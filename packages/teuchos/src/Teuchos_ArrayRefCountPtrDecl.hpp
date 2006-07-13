@@ -43,7 +43,7 @@ namespace Teuchos {
  * This is a reference-counted class similar to <tt>RefCountPtr</tt> except
  * that it is designed to use reference counting to manage an array of objects
  * that use value semantics.  Managing an array of objects is very different
- * from managing a pointer to an individual, possibly polymophic, object.  For
+ * from managing a pointer to an individual, possibly polymorphic, object.  For
  * example, while implicit conversions from derived to base types is a good
  * thing when dealing with pointers to single objects, it is a very bad thing
  * when working with arrays of objects.  Therefore, this class contains those
@@ -115,7 +115,7 @@ public:
 	 * compilers will generate this function automatically which will
 	 * give an incorrect implementation.
 	 *
-	 * Postconditons:<ul>
+	 * Postconditions:<ul>
 	 * <li><tt>this->get() == r_ptr.get()</tt>
 	 * <li><tt>this->count() == r_ptr.count()</tt>
 	 * <li><tt>this->has_ownership() == r_ptr.has_ownership()</tt>
@@ -147,7 +147,7 @@ public:
 	 * <tt>r_ptr</tt>.  Assignment to self (i.e. <tt>this->get() ==
 	 * r_ptr.get()</tt>) is harmless and this function does nothing.
 	 *
-	 * Postconditons:
+	 * Postconditions:
 	 * <ul>
 	 * <li><tt>this->get() == r_ptr.get()</tt>
 	 * <li><tt>this->count() == r_ptr.count()</tt>
@@ -318,7 +318,7 @@ public:
 
 	/** \brief Return object for only const access to data.
    *
-   * This function should compile only sucessfully if the type <tt>T</tt> is
+   * This function should compile only successfully if the type <tt>T</tt> is
    * not already declared <tt>const</tt>!
    */
 	ArrayRefCountPtr<const T> getConst() const;
@@ -355,7 +355,7 @@ public:
 	/** \brief Returns true if the smart pointers share the same underlying reference-counted object.
 	 *
 	 * This method does more than just check if <tt>this->get() == r_ptr.get()</tt>.
-	 * It also checks to see if the underlying reference counting machinary is the
+	 * It also checks to see if the underlying reference counting machinery is the
 	 * same.
 	 */
 	template<class T2>
@@ -413,7 +413,7 @@ public:
 	/** \brief Release the ownership of the underlying array.
 	 *
 	 * After this function is called then the client is responsible for deleting
-	 * the returned pointer no matter how many <tt>ref_count_prt<T></tt> objects
+	 * the returned pointer no matter how many <tt>ref_count_ptr<T></tt> objects
 	 * have a reference to it.  If <tt>this-></tt>get() <tt>== NULL</tt>, then
 	 * this call is meaningless.
 	 *
@@ -528,7 +528,7 @@ public:
   static std::string name() { return "ArrayRefCountPtr<"+TypeNameTraits<T>::name()+">"; }
 };
 
-/** \brief Wrapps a preallocated array of data with the assumption to call the
+/** \brief Wraps a preallocated array of data with the assumption to call the
  * array version of delete.
  *
  * \relates ArrayRefCountPtr
@@ -540,7 +540,7 @@ ArrayRefCountPtr<T> arcp(
   , bool owns_mem = true
   );
 
-/** \brief Wrapps a preallocated array of data and uses a templated
+/** \brief Wraps a preallocated array of data and uses a templated
  * deallocation strategy object to define deletion .
  *
  * \relates ArrayRefCountPtr
@@ -657,14 +657,10 @@ bool operator>=( const ArrayRefCountPtr<T1> &p1, const ArrayRefCountPtr<T2> &p2 
  *
  * The function will compile only if (<tt>reinterpret_cast<T2*>(p1.get());</tt>) compiles.
  *
- * <b>Warning!</b> Do not use this function unless you absolutly know what you
- * are doing.  While implicit casting of pointers to single objects is usually
- * 100% safe, implicit casting pointers to arrays of objects can be very
- * dangerous.  One exception that is alwasy safe is when you are implicit
- * casting an array of pointers to non-const objects to an array of const
- * pointers to const objects.  For example, the following implicit conversion
- * from a array pointer objects <tt>aptr1</tt> of type
- * <tt>ArrayRefCountPtr<T*></tt> to 
+ * <b>Warning!</b> Do not use this function unless you absolutely know what
+ * you are doing.  Doing a reinterpret cast is always a tricking thing and
+ * must only be done by developers who are 100% comfortable with what they are
+ * doing.
  *
  * \relates ArrayRefCountPtr
  */
@@ -676,10 +672,10 @@ ArrayRefCountPtr<T2> arcp_reinterpret_cast(const ArrayRefCountPtr<T1>& p1);
  *
  * The function will compile only if (<tt>T2 *p = p1.get();</tt>) compiles.
  *
- * <b>Warning!</b> Do not use this function unless you absolutly know what you
+ * <b>Warning!</b> Do not use this function unless you absolutely know what you
  * are doing.  While implicit casting of pointers to single objects is usually
  * 100% safe, implicit casting pointers to arrays of objects can be very
- * dangerous.  One exception that is alwasy safe is when you are implicit
+ * dangerous.  One exception that is always safe is when you are implicit
  * casting an array of pointers to non-const objects to an array of const
  * pointers to const objects.  For example, the following implicit conversion
  * from a array pointer objects <tt>aptr1</tt> of type
@@ -692,7 +688,7 @@ ArrayRefCountPtr<T2> arcp_reinterpret_cast(const ArrayRefCountPtr<T1>& p1);
 
  \endcode
 
- * is alwasy legal and safe to do.
+ * is always legal and safe to do.
  *
  * \relates ArrayRefCountPtr
  */
@@ -709,7 +705,7 @@ ArrayRefCountPtr<T2> arcp_implicit_cast(const ArrayRefCountPtr<T1>& p1);
  *               the other data will be overwritten.
  * @param  p     [out] On output, will be updated with the input <tt>extra_data</tt>
  * @param  destroy_when
- *               [in] Determines when <tt>extra_data</tt> will be destoryed
+ *               [in] Determines when <tt>extra_data</tt> will be destroyed
  *               in relation to the underlying reference-counted object.
  *               If <tt>destroy_when==PRE_DESTROY</tt> then <tt>extra_data</tt>
  *               will be deleted before the underlying reference-counted object.
@@ -739,7 +735,7 @@ ArrayRefCountPtr<T2> arcp_implicit_cast(const ArrayRefCountPtr<T1>& p1);
  * that was added with <tt>destroy_when==PRE_DESTROY</tt> is then deleted.
  * The order in which the objects are destroyed is not guaranteed.  Therefore,
  * clients should be careful not to add extra data that has deletion
- * dependancies (instead consider using nested ArrayRefCountPtr objects as extra
+ * dependencies (instead consider using nested ArrayRefCountPtr objects as extra
  * data which will guarantee the order of deletion).
  *
  * <b>Preconditions:</b><ul>
@@ -777,7 +773,7 @@ inline void set_extra_data( const T1 &extra_data, const std::string& name, Array
 
 /** \brief Get a non-const reference to extra data associated with a <tt>ArrayRefCountPtr</tt> object.
  *
- * @param  p    [in] Smart pointer object that extra data is being extraced from.
+ * @param  p    [in] Smart pointer object that extra data is being extracted from.
  * @param  name [in] Name of the extra data.
  *
  * @return Returns a non-const reference to the extra_data object.
@@ -798,7 +794,7 @@ T1& get_extra_data( ArrayRefCountPtr<T2>& p, const std::string& name );
 
 /** \brief Get a const reference to extra data associated with a <tt>ArrayRefCountPtr</tt> object.
  *
- * @param  p    [in] Smart pointer object that extra data is being extraced from.
+ * @param  p    [in] Smart pointer object that extra data is being extracted from.
  * @param  name [in] Name of the extra data.
  *
  * @return Returns a const reference to the extra_data object.
@@ -826,7 +822,7 @@ const T1& get_extra_data( const ArrayRefCountPtr<T2>& p, const std::string& name
 /** \brief Get a pointer to non-const extra data (if it exists) associated
  * with a <tt>ArrayRefCountPtr</tt> object.
  *
- * @param  p    [in] Smart pointer object that extra data is being extraced from.
+ * @param  p    [in] Smart pointer object that extra data is being extracted from.
  * @param  name [in] Name of the extra data.
  *
  * @return Returns a non-const pointer to the extra_data object.
@@ -851,7 +847,7 @@ T1* get_optional_extra_data( ArrayRefCountPtr<T2>& p, const std::string& name );
 
 /** \brief Get a pointer to const extra data (if it exists) associated with a <tt>ArrayRefCountPtr</tt> object.
  *
- * @param  p    [in] Smart pointer object that extra data is being extraced from.
+ * @param  p    [in] Smart pointer object that extra data is being extracted from.
  * @param  name [in] Name of the extra data.
  *
  * @return Returns a const pointer to the extra_data object if it exists.
