@@ -33,7 +33,14 @@
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_Version.hpp"
 
-//#define SHOW_COMPILE_FAILURE_1;
+// Temporarily uncomment any or all of these macros to see compilation
+// failures for code that is rightfully not supposed to compile (which is a
+// wonderful thing)!  The fact that this code does not compile show that the
+// design of the Teuchos::ArrayRefCountPtr class supports full support of
+// const projection in all of its forms when dealing with arrays of objects.
+//#define SHOW_COMPILE_FAILURE_1
+//#define SHOW_COMPILE_FAILURE_2
+//#define SHOW_COMPILE_FAILURE_3
 
 template<class T>
 void test_ArrayRefCountPtr_iterators(
@@ -56,7 +63,7 @@ void test_ArrayRefCountPtr_iterators(
 
   Teuchos::OSTab tab(out);
 
-  const int dim = ptr.dim();
+  const int size = ptr.size();
 
   // Pointer ++
   
@@ -64,7 +71,7 @@ void test_ArrayRefCountPtr_iterators(
     if(verbose)
       *out << "\nChecking ++itr and < ...\n";
     ArrayRefCountPtr<T> itr = ptr;
-    for( int i = 0; itr < ptr+dim; ++i, ++itr )
+    for( int i = 0; itr < ptr+size; ++i, ++itr )
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
   
@@ -72,7 +79,7 @@ void test_ArrayRefCountPtr_iterators(
     if(verbose)
       *out << "\nChecking itr++ and <= ...\n";
     ArrayRefCountPtr<T> itr = ptr;
-    for( int i = 0;  itr <= ptr+dim-1; ++i, itr++ )
+    for( int i = 0;  itr <= ptr+size-1; ++i, itr++ )
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
   
@@ -80,7 +87,7 @@ void test_ArrayRefCountPtr_iterators(
     if(verbose)
       *out << "\nChecking itr+=1 and != ...\n";
     ArrayRefCountPtr<T> itr = ptr;
-    for( int i = 0; itr != ptr+dim; ++i, itr+=1 )
+    for( int i = 0; itr != ptr+size; ++i, itr+=1 )
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
   
@@ -88,7 +95,7 @@ void test_ArrayRefCountPtr_iterators(
     if(verbose)
       *out << "\nChecking itr=itr+1 and == ...\n";
     ArrayRefCountPtr<T> itr = ptr;
-    for( int i = 0; !( itr == ptr+dim ); ++i, itr=itr+1 )
+    for( int i = 0; !( itr == ptr+size ); ++i, itr=itr+1 )
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
 
@@ -97,32 +104,32 @@ void test_ArrayRefCountPtr_iterators(
   if(1) {
     if(verbose)
       *out << "\nChecking --itr and >= ...\n";
-    ArrayRefCountPtr<T> itr = ptr+dim-1;
-    for( int i = dim-1; itr >= ptr; --i, --itr )
+    ArrayRefCountPtr<T> itr = ptr+size-1;
+    for( int i = size-1; itr >= ptr; --i, --itr )
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
   
   if(1) {
     if(verbose)
       *out << "\nChecking itr-- and > ...\n";
-    ArrayRefCountPtr<T> itr = ptr+dim-1;
-    for( int i = dim-1; itr+1 > ptr; i--, itr-- )
+    ArrayRefCountPtr<T> itr = ptr+size-1;
+    for( int i = size-1; itr+1 > ptr; i--, itr-- )
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
   
   if(1) {
     if(verbose)
       *out << "\nChecking itr-=1 and != ...\n";
-    ArrayRefCountPtr<T> itr = ptr+dim-1;
-    for( int i = dim-1; itr+1 != ptr; i--, itr-=1 )
+    ArrayRefCountPtr<T> itr = ptr+size-1;
+    for( int i = size-1; itr+1 != ptr; i--, itr-=1 )
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
   
   if(1) {
     if(verbose)
       *out << "\nChecking itr=itr-1 and == ...\n";
-    ArrayRefCountPtr<T> itr = ptr+dim-1;
-    for( int i = dim-1; !( itr+1 == ptr ); i--, itr=itr-1 )
+    ArrayRefCountPtr<T> itr = ptr+size-1;
+    for( int i = size-1; !( itr+1 == ptr ); i--, itr=itr-1 )
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
 
@@ -165,32 +172,32 @@ void test_ArrayRefCountPtr_iterators(
   if(1) {
     if(verbose)
       *out << "\nChecking iterator --itr and >= ...\n";
-    typename ArrayRefCountPtr<T>::const_iterator itr = ptr.begin()+dim-1;
-    for( int i = dim-1; itr >= ptr.begin(); --i, --itr )
+    typename ArrayRefCountPtr<T>::const_iterator itr = ptr.begin()+size-1;
+    for( int i = size-1; itr >= ptr.begin(); --i, --itr )
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
   
   if(1) {
     if(verbose)
       *out << "\nChecking iterator itr-- and > ...\n";
-    typename ArrayRefCountPtr<T>::const_iterator itr = ptr.begin()+dim-1;
-    for( int i = dim-1; itr+1 > ptr.begin(); i--, itr-- )
+    typename ArrayRefCountPtr<T>::const_iterator itr = ptr.begin()+size-1;
+    for( int i = size-1; itr+1 > ptr.begin(); i--, itr-- )
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
   
   if(1) {
     if(verbose)
       *out << "\nChecking iterator itr-=1 and != ...\n";
-    typename ArrayRefCountPtr<T>::const_iterator itr = ptr.begin()+dim-1;
-    for( int i = dim-1; itr+1 != ptr.begin(); i--, itr-=1 )
+    typename ArrayRefCountPtr<T>::const_iterator itr = ptr.begin()+size-1;
+    for( int i = size-1; itr+1 != ptr.begin(); i--, itr-=1 )
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
   
   if(1) {
     if(verbose)
       *out << "\nChecking iterator itr=itr-1 and == ...\n";
-    typename ArrayRefCountPtr<T>::const_iterator itr = ptr.begin()+dim-1;
-    for( int i = dim-1; !( itr+1 == ptr.begin() ); i--, itr=itr-1 )
+    typename ArrayRefCountPtr<T>::const_iterator itr = ptr.begin()+size-1;
+    for( int i = size-1; !( itr+1 == ptr.begin() ); i--, itr=itr-1 )
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
 
@@ -217,12 +224,12 @@ void test_ArrayRefCountPtr(
 
   Teuchos::OSTab tab(out);
 
-  const int dim = ptr.dim();
+  const int size = ptr.size();
   
   if(1) {
     if(verbose)
       *out << "\nInitializing data ...\n";
-    for( int i = 0; i < dim; ++i )
+    for( int i = 0; i < size; ++i )
       ptr[i] = i;
   }
 
@@ -282,7 +289,7 @@ int main( int argc, char* argv[] ) {
     if(verbose)
       *out << "\nchar_ptr1 = " << char_ptr1 << "\n";
 
-    TEST_FOR_EXCEPT( !(char_ptr1.dim() == total_bytes) );
+    TEST_FOR_EXCEPT( !(char_ptr1.size() == total_bytes) );
     TEST_FOR_EXCEPT( !(char_ptr1.lowerOffset() == 0) );
     TEST_FOR_EXCEPT( !(char_ptr1.upperOffset() == total_bytes-1) );
     TEST_FOR_EXCEPT( !(char_ptr1.count() == 1) );
@@ -294,7 +301,7 @@ int main( int argc, char* argv[] ) {
     if(verbose)
       *out << "\nchar_ptr2 = " << char_ptr2 << "\n";
 
-    TEST_FOR_EXCEPT( !(char_ptr2.dim() == 0) );
+    TEST_FOR_EXCEPT( !(char_ptr2.size() == 0) );
     TEST_FOR_EXCEPT( !(char_ptr2.get() == NULL) );
     TEST_FOR_EXCEPT( !(char_ptr2.count() == 0) );
 
@@ -304,7 +311,7 @@ int main( int argc, char* argv[] ) {
     if(verbose)
       *out << "\nchar_ptr2b = " << char_ptr2b << "\n";
 
-    TEST_FOR_EXCEPT( !(char_ptr2b.dim() == total_bytes) );
+    TEST_FOR_EXCEPT( !(char_ptr2b.size() == total_bytes) );
     TEST_FOR_EXCEPT( !(char_ptr2b.lowerOffset() == 0) );
     TEST_FOR_EXCEPT( !(char_ptr2b.upperOffset() == total_bytes-1) );
     TEST_FOR_EXCEPT( !(char_ptr2b.count() == 2) );
@@ -312,7 +319,7 @@ int main( int argc, char* argv[] ) {
 
     char_ptr2b = null;
 
-    TEST_FOR_EXCEPT( !(char_ptr2b.dim() == 0) );
+    TEST_FOR_EXCEPT( !(char_ptr2b.size() == 0) );
     TEST_FOR_EXCEPT( !(char_ptr2.get() == NULL) );
     TEST_FOR_EXCEPT( !(char_ptr2b.count() == 0) );
     TEST_FOR_EXCEPT( !(char_ptr1.count() == 1) );
@@ -343,7 +350,7 @@ int main( int argc, char* argv[] ) {
 
     TEST_FOR_EXCEPT( !(char_ptr1.count() == 3) );
     TEST_FOR_EXCEPT( !(double_ptr1.count() == 3) );
-    TEST_FOR_EXCEPT( !(double_ptr1.dim() == num_doubles) );
+    TEST_FOR_EXCEPT( !(double_ptr1.size() == num_doubles) );
 
     test_ArrayRefCountPtr(double_ptr1,verbose,*out);
     
@@ -358,7 +365,7 @@ int main( int argc, char* argv[] ) {
 
     TEST_FOR_EXCEPT( !(char_ptr1.count() == 4) );
     TEST_FOR_EXCEPT( !(int_ptr1.count() == 4) );
-    TEST_FOR_EXCEPT( !(int_ptr1.dim() == num_ints) );
+    TEST_FOR_EXCEPT( !(int_ptr1.size() == num_ints) );
 
     test_ArrayRefCountPtr(int_ptr1,verbose,*out);
 
@@ -374,7 +381,9 @@ int main( int argc, char* argv[] ) {
     // This will not compile since this function tries to use operator[] to
     // change data but it can't since it returns a reference to a const
     // double!
-    test_ArrayRefCountPtr(double_ptr2,verbose,*out);
+    for( int i = 0; i < double_ptr2.size(); ++i ) {
+      double_ptr2[i] = 1.0; // Error, you can change the value!
+    }
 #endif
 
     if(verbose)
@@ -389,12 +398,62 @@ int main( int argc, char* argv[] ) {
     test_ArrayRefCountPtr_iterators(rcp_ptr1,verbose,*out);
 
     if(verbose)
-      *out << "\nCreating a constant view of double_ptr1\n";
+      *out << "\nCreating a const view of rcp_ptr1\n";
 
     ArrayRefCountPtr<const RefCountPtr<double> >
       rcp_ptr2 = rcp_ptr1.getConst();
 
     test_ArrayRefCountPtr_iterators(rcp_ptr2,verbose,*out);
+
+    if(verbose)
+      *out << "\nCreating an ARCP<double*> object doubleptr_ptr1 and dynamically allocation each element\n";
+
+    ArrayRefCountPtr<double*>
+      doubleptr_ptr1 = arcp<double*>(total_bytes);
+
+    for( int i = 0; i < doubleptr_ptr1.size(); ++i )
+      doubleptr_ptr1[i] = new double(i);
+
+    test_ArrayRefCountPtr_iterators(doubleptr_ptr1,verbose,*out);
+
+    if(verbose)
+      *out << "\nCreating an ARCP<double*const> view of a doubleptr_ptr1\n";
+    
+    ArrayRefCountPtr<double*const>
+      doubleptr_ptr2 = doubleptr_ptr1.getConst();
+
+    test_ArrayRefCountPtr_iterators(doubleptr_ptr2,verbose,*out);
+
+#ifdef SHOW_COMPILE_FAILURE_2
+    // This will not compile since this function tries to use operator[] to
+    // change data but it can't since it returns a reference to a double*const
+    // object!
+    for( int i = 0; i < doubleptr_ptr2.size(); ++i ) {
+      *doubleptr_ptr2[i] = 1.0; // Fine, you can change the value that is being pointed to for this entry!
+      doubleptr_ptr2[i] = NULL; // Error, you can't change the pointer entry!
+    }
+#endif
+
+    if(verbose)
+      *out << "\nCreating an ARCP<const double * const> view of a doubleptr_ptr1\n";
+    
+    ArrayRefCountPtr<const double*const>
+      doubleptr_ptr3 = Teuchos::arcp_implicit_cast<const double*const>(doubleptr_ptr1);
+
+    test_ArrayRefCountPtr_iterators(doubleptr_ptr3,verbose,*out);
+
+#ifdef SHOW_COMPILE_FAILURE_3
+    // This will not compile since this function tries to use operator[] to
+    // change data but it can't since it returns a reference to a double*const
+    // object!
+    for( int i = 0; i < doubleptr_ptr3.size(); ++i ) {
+      *doubleptr_ptr3[i] = 1.0; // Error, you can't change the value that is being pointed to!
+      doubleptr_ptr3[i] = NULL; // Error, you can't change the pointer either!
+    }
+#endif
+
+    for( int i = 0; i < doubleptr_ptr1.size(); ++i )
+      delete doubleptr_ptr1[i];
 
     if(verbose)
       *out << "\nWrapping std::vector<T> objects as ArrayRefCount objects ...\n";

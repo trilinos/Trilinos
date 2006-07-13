@@ -302,7 +302,7 @@ ArrayRefCountPtr<T>::upperOffset() const
 template<class T>
 REFCOUNTPTR_INLINE
 typename ArrayRefCountPtr<T>::Ordinal
-ArrayRefCountPtr<T>::dim() const
+ArrayRefCountPtr<T>::size() const
 {
   return upperOffset_-lowerOffset_+1;
 }
@@ -512,9 +512,9 @@ T* p, typename ArrayRefCountPtr<T>::Ordinal lowerOffset
 template<class T>
 inline
 Teuchos::ArrayRefCountPtr<T>
-Teuchos::arcp( typename ArrayRefCountPtr<T>::Ordinal dim )
+Teuchos::arcp( typename ArrayRefCountPtr<T>::Ordinal size )
 {
-	return ArrayRefCountPtr<T>(new T[dim],0,dim-1,true);
+	return ArrayRefCountPtr<T>(new T[size],0,size-1,true);
 }
 
 template<class T>
@@ -635,7 +635,21 @@ Teuchos::arcp_reinterpret_cast(const ArrayRefCountPtr<T1>& p1)
     ptr2,lowerOffset2,upperOffset2
     ,p1.access_node()
     );
-  return null;
+  // Note: Above is just fine even if p1.get()==NULL!
+}
+
+template<class T2, class T1>
+REFCOUNTPTR_INLINE
+Teuchos::ArrayRefCountPtr<T2>
+Teuchos::arcp_implicit_cast(const ArrayRefCountPtr<T1>& p1)
+{
+  typedef typename ArrayRefCountPtr<T1>::Ordinal Ordinal;
+  T2 * raw_ptr2 = p1.get();
+  return ArrayRefCountPtr<T2>(
+    raw_ptr2,p1.lowerOffset(),p1.upperOffset()
+    ,p1.access_node()
+    );
+  // Note: Above is just fine even if p1.get()==NULL!
 }
 
 template<class T1, class T2>
@@ -739,7 +753,7 @@ std::ostream& Teuchos::operator<<( std::ostream& out, const ArrayRefCountPtr<T>&
     << "ptr="<<(const void*)(p.get()) // I can't find any alternative to this C cast :-(
     <<",lowerOffset="<<p.lowerOffset()
     <<",upperOffset="<<p.upperOffset()
-    <<",dim="<<p.dim()
+    <<",size="<<p.size()
     <<",node="<<p.access_node()
     <<",count="<<p.count()
     <<"}";

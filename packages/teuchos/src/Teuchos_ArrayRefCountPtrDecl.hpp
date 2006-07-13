@@ -370,7 +370,7 @@ public:
   /** \brief The total number of items in the managed array
    * (i.e. <tt>upperOffset()-lowerOffset()+1</tt>).
    */
-  Ordinal dim() const;
+  Ordinal size() const;
 
   //@}
 
@@ -554,15 +554,14 @@ ArrayRefCountPtr<T> arcp(
  
 /** \brief Allocate a new array just given a dimension.
  *
- *
- * <b>Warning!</b> The memory is allocated using <tt>new T[dim]</tt> and is
+ * <b>Warning!</b> The memory is allocated using <tt>new T[size]</tt> and is
  * *not* initialized (unless there is a default constructor for a user-defined
  * type).
  *
  * \relates ArrayRefCountPtr
  */
 template<class T>
-ArrayRefCountPtr<T> arcp( typename ArrayRefCountPtr<T>::Ordinal dim );
+ArrayRefCountPtr<T> arcp( typename ArrayRefCountPtr<T>::Ordinal size );
 
 /** \brief Wrap an <tt>std::vector<T></tt> object as an
  * <tt>ArrayRefCountPtr<T></tt> object.
@@ -658,10 +657,47 @@ bool operator>=( const ArrayRefCountPtr<T1> &p1, const ArrayRefCountPtr<T2> &p2 
  *
  * The function will compile only if (<tt>reinterpret_cast<T2*>(p1.get());</tt>) compiles.
  *
+ * <b>Warning!</b> Do not use this function unless you absolutly know what you
+ * are doing.  While implicit casting of pointers to single objects is usually
+ * 100% safe, implicit casting pointers to arrays of objects can be very
+ * dangerous.  One exception that is alwasy safe is when you are implicit
+ * casting an array of pointers to non-const objects to an array of const
+ * pointers to const objects.  For example, the following implicit conversion
+ * from a array pointer objects <tt>aptr1</tt> of type
+ * <tt>ArrayRefCountPtr<T*></tt> to 
+ *
  * \relates ArrayRefCountPtr
  */
 template<class T2, class T1>
 ArrayRefCountPtr<T2> arcp_reinterpret_cast(const ArrayRefCountPtr<T1>& p1);
+
+/** \brief Implicit case the underlying <tt>ArrayRefCountPtr</tt> type from
+ * <tt>T1*</tt> to <tt>T2*</tt>.
+ *
+ * The function will compile only if (<tt>T2 *p = p1.get();</tt>) compiles.
+ *
+ * <b>Warning!</b> Do not use this function unless you absolutly know what you
+ * are doing.  While implicit casting of pointers to single objects is usually
+ * 100% safe, implicit casting pointers to arrays of objects can be very
+ * dangerous.  One exception that is alwasy safe is when you are implicit
+ * casting an array of pointers to non-const objects to an array of const
+ * pointers to const objects.  For example, the following implicit conversion
+ * from a array pointer objects <tt>aptr1</tt> of type
+ * <tt>ArrayRefCountPtr<T*></tt> to 
+
+ \code
+
+  ArrayRefCountPtr<const T * const>
+    aptr2 = arcp_implicit_cast<const T * const>(ptr1);
+
+ \endcode
+
+ * is alwasy legal and safe to do.
+ *
+ * \relates ArrayRefCountPtr
+ */
+template<class T2, class T1>
+ArrayRefCountPtr<T2> arcp_implicit_cast(const ArrayRefCountPtr<T1>& p1);
 
 /** \brief Set extra data associated with a <tt>ArrayRefCountPtr</tt> object.
  *
