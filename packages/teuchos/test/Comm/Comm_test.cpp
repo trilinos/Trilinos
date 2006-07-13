@@ -404,8 +404,10 @@ bool masterTestComm(
 
   *out << "\nOrdinal type = "<<OT::name()<<" with an extent of "<<sizeof(Ordinal)<<" bytes\n";
   
-  result = testComm<Ordinal,char>(*comm,out);
-  if(!result) success = false;
+  if( comm->getSize() <= 4 ) {
+    result = testComm<Ordinal,char>(*comm,out);
+    if(!result) success = false;
+  }
   
   result = testComm<Ordinal,int>(*comm,out);
   if(!result) success = false;

@@ -2,10 +2,13 @@
 # FRAMEWORK group
 #
 
+# Below I suppress the startup banner since
+# this was getting in the way of the generation
+# if the output string for the commparison
 (FRAMEWORK,INSTALL) {
     TESTS = RefCountPtr/RefCountPtr_test.exe,
             RefCountPtr/ArrayRefCountPtr_test.exe;
-    ARGS = --verbose;
+    ARGS = --verbose --teuchos-suppress-startup-banner;
     EXIT-STATUS = STRING-COMPARISON;
     COMM = MPI,SERIAL;
 }
