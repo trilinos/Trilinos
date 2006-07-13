@@ -27,4 +27,4 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = NOX_1DFEMNonlinear NOX_1DFEMNonlinearColoring LOCA_Brusselator_xyzt LOCA_Tcubed
+SUBDIRS = NOX_1DFEMNonlinear LOCA_Brusselator_xyzt LOCA_Tcubed

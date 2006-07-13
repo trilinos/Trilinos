@@ -589,7 +589,7 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(nox, epetraext, NOX_EPETRAEXT, BUILD_NOX_EPETRAEX
 # ------------------------------------------------------------------------
 # NOX-Epetra Multiphysics support
 # ------------------------------------------------------------------------
-AM_CONDITIONAL(BUILD_EPETRA_MULTIPHYSICS, false)
+AM_CONDITIONAL(BUILD_EPETRA_MULTIPHYSICS, true)
 
 # ------------------------------------------------------------------------
 # NOX-Epetra-ML support
@@ -940,7 +940,6 @@ AC_CONFIG_FILES([
 		examples/lapack/LOCA_1DFDPitchfork/Makefile
 		examples/epetra/Makefile
 		examples/epetra/NOX_1DFEMNonlinear/Makefile
-		examples/epetra/NOX_1DFEMNonlinearColoring/Makefile
 		examples/epetra/LOCA_Tcubed/Makefile
 		examples/epetra/LOCA_Brusselator_xyzt/Makefile
                 examples/petsc/Makefile
