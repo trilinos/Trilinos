@@ -94,6 +94,9 @@
 #include "EpetraExt_MapColoringIndex.h" 
 #endif
 
+// New coupling library headers
+#include "NOX_Multiphysics_Solver_Manager.H" 
+
 // User's application specific files 
 #include "Problem_Manager.H" 
 #include "Problem_Interface.H" 
@@ -146,7 +149,7 @@ int main(int argc, char *argv[])
   bool runMF         = true  ;
   bool useMatlab     = false ;
   bool doOffBlocks   = false ;
-  bool noFlow        = false ;
+  bool noFlow        = true ;
   bool doBrusselator = true  ;  // default to Brusselator problem
   bool doHMX         = false ; 
   bool doConvDiff    = false ; 
@@ -344,14 +347,14 @@ int main(int argc, char *argv[])
   // Create the convergence tests
   // Note: as for the parameter list, both (all) problems use the same 
   // convergence test(s) for now, but each could have its own.
-  Teuchos::RefCountPtr<NOX::StatusTest::NormF> absresid = 
-    Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8));
-  Teuchos::RefCountPtr<NOX::StatusTest::NormUpdate> update = 
-    Teuchos::rcp(new NOX::StatusTest::NormUpdate(1.0e-5));
-  Teuchos::RefCountPtr<NOX::StatusTest::Combo> converged = 
-    Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::AND));
+  Teuchos::RefCountPtr<NOX::StatusTest::NormF>          absresid  =
+      Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8));
+  Teuchos::RefCountPtr<NOX::StatusTest::NormUpdate>     update    = 
+      Teuchos::rcp(new NOX::StatusTest::NormUpdate(1.0e-5));
+  Teuchos::RefCountPtr<NOX::StatusTest::Combo>          converged = 
+      Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::AND));
   converged->addStatusTest(absresid);
-  converged->addStatusTest(update);
+  //converged->addStatusTest(update);
   Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> maxiters = 
     Teuchos::rcp(new NOX::StatusTest::MaxIters(20));
   Teuchos::RefCountPtr<NOX::StatusTest::FiniteValue> finiteValue = 
@@ -445,8 +448,28 @@ int main(int argc, char *argv[])
       if( runMF )
         problemManager.solveMF(); // Need a status test check here ....
       else
-        problemManager.solve(); // Need a status test check here ....
-    
+      {
+        // Create the loose coupling solver manager
+        Teuchos::RefCountPtr<vector<NOX::Solver::Manager*> > solversVec =
+          Teuchos::rcp( new vector<NOX::Solver::Manager*> );
+
+        map<int, NOX::Solver::Manager*>::iterator iter = problemManager.getSolvers().begin(),
+                                              iter_end = problemManager.getSolvers().end()   ;
+        for( ; iter_end != iter; ++iter )
+        {
+          cout << " ........  registered Solver::Manager # " << (*iter).first << endl;
+          solversVec->push_back( (*iter).second );
+        }
+
+        // Package the Problem_Manager as the DataExchange::Intreface
+        Teuchos::RefCountPtr<NOX::Multiphysics::DataExchange::Interface> dataExInterface =
+          Teuchos::rcp( &problemManager, false );
+
+        NOX::Multiphysics::Solver::Manager cplSolv( solversVec, dataExInterface, combo, nlParamsPtr );
+
+        cplSolv.solve();
+      }
+
       problemManager.outputSolutions(timeStep);
   
       // Reset problems by copying solution into old solution
@@ -656,8 +679,8 @@ int main(int argc, char *argv[])
   { // Convection-Diffusion coupled problem
 
     // Coupling parameters
-    double alpha		= 0.8           ;
-    double beta 		= 0.2           ;
+    double alpha		= 0.50          ;
+    double beta 		= 0.40          ;
 
     // Domain boundary temperaures
     double Tleft  		= 0.98          ;
@@ -669,8 +692,12 @@ int main(int argc, char *argv[])
     double kappa_1      	= 1.0           ;
     double kappa_2		= 0.1           ;
 
-    double T1_analytic          = ( kappa_2*(1.0-exp(peclet_1))*Tright - Tleft*peclet_1*exp(peclet_1) ) /
-                                  ( kappa_2*(1.0-exp(peclet_1)) - peclet_1*exp(peclet_1) );
+    //double T1_analytic          = ( kappa_2*(1.0-exp(peclet_1))*Tright - Tleft*peclet_1*exp(peclet_1) ) /
+    //                              ( kappa_2*(1.0-exp(peclet_1)) - peclet_1*exp(peclet_1) );
+    //double T1_analytic          = 0.99430092; // 5.67
+    double T1_analytic          = 0.99050495; // 2.50
+    //double T1_analytic          = 0.98247093; // 0.3
+    //double T1_analytic          = 0.98177822; // 0.2
 
     // Create Region 1 PDE
     string myName 		= "Region_1"    ;
@@ -692,7 +719,7 @@ int main(int argc, char *argv[])
                     myName  );
 
     // Override default initialization with values we want
-    Reg1_PDE.initializeSolution(1.0);
+    Reg1_PDE.initializeSolution(0.995);
 
     problemManager.addProblem(Reg1_PDE);
 
@@ -717,7 +744,7 @@ int main(int argc, char *argv[])
                     myName  );
 
     // Override default initialization with values we want
-    Reg2_PDE.initializeSolution(1.0);
+    Reg2_PDE.initializeSolution(0.995);
 
     problemManager.addProblem(Reg2_PDE);
 

@@ -31,6 +31,7 @@
 #define NOX_PROBLEM_MANAGER_H
 
 #include "NOX.H"
+#include "NOX_Multiphysics_DataExchange_Interface.H"
 #include "NOX_Epetra.H"
 
 #include "Problem_Interface.H"
@@ -45,7 +46,8 @@ class OffBlock_Manager;
 
 #include <vector>
 
-class Problem_Manager : public GenericEpetraProblem 
+class Problem_Manager : public GenericEpetraProblem ,
+                        public NOX::Multiphysics::DataExchange::Interface
 {
 
 public:
@@ -76,6 +78,10 @@ public:
 
   // Get the compositeSoln vector
   Teuchos::RefCountPtr<Epetra_Vector> getCompositeSoln();
+
+  // Get the container of solver managers
+  map<int, NOX::Solver::Manager*> & getSolvers()
+  {  return Solvers; }
 
   // Get the composite NOX solver
   NOX::Solver::Manager * getCompositeSolver()
@@ -149,10 +155,10 @@ public:
   double getNormSum();
 
   // Copy final solution from NOX solver into the problem's solution vector
-  void updateWithFinalSolution(int id);
+  void copyGroupCurrentXtoProblemX(int id);
 
   // Copy final solution from NOX solvers into each problem's solution vector
-  void updateAllWithFinalSolution();
+  void copyAllGroupXtoProblems();
 
   // Copy a composite problem vector to each problem's vector
   void copyCompositeToProblems(const Epetra_Vector& compositeVec, VectorType);
@@ -199,6 +205,11 @@ public:
   bool evaluate(NOX::Epetra::Interface::Required::FillType type,
                const Epetra_Vector *solnVector,
                Epetra_Vector *rhsVector);
+
+  // Inherited methods to allow use of library fixed-point
+  virtual bool exchangeAllData();
+
+  virtual bool exchangeDataTo(int solverId);
 
 private:
 

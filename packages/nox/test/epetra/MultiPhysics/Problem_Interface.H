@@ -79,6 +79,8 @@ public:
 
 #endif
 
+#ifdef HAVE_MATLAB
+
 #ifndef Matlab_Interface_H
 #define Matlab_Interface_H
 //-----------------------------------------------------------------------------
@@ -872,4 +874,5 @@ protected:
   Problem_Manager & problemManager;
 };
 
+#endif
 #endif

@@ -110,11 +110,13 @@ Problem_Manager::~Problem_Manager()
 
   for( unsigned int i = 0; i < Problems.size(); ++i )
   {
-    delete ProblemToCompositeIndices [i];
-    delete Solvers                   [i];
+    delete ProblemToCompositeIndices [i+1];
+    delete Solvers                   [i+1];
   }
 
-  delete compositeMap ; compositeMap  = 0;
+  delete compositeNOXSoln ; compositeNOXSoln = 0;
+  delete compositeMap     ; compositeMap     = 0;
+  delete compositeSolver  ; compositeSolver  = 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -556,6 +558,7 @@ void Problem_Manager::registerComplete()
 
   compositeSolver = new NOX::Solver::Manager(compositeGroup, statusTest, nlParams);
 
+#ifdef HAVE_MATLAB
   // Just a test to see if the Matlab engine is working - RWH
   if( useMatlab )
   {
@@ -564,6 +567,7 @@ void Problem_Manager::registerComplete()
    
     testMatlab.interact();
   }
+#endif
 
   return;
 }
@@ -964,9 +968,9 @@ Problem_Manager::getResidual(int probId )
 
 //-----------------------------------------------------------------------------
 
-void Problem_Manager::updateWithFinalSolution(int probId)
+void Problem_Manager::copyGroupCurrentXtoProblemX(int probId)
 {
-  // Copy final solution from NOX solver into the problem's solution vector
+  // Copy Current solution X from NOX solver group into the problem's solution vector
 
   GenericEpetraProblem *problem = Problems[probId];
 
@@ -997,7 +1001,7 @@ void Problem_Manager::updateWithFinalSolution(int probId)
 
 //-----------------------------------------------------------------------------
 
-void Problem_Manager::updateAllWithFinalSolution()
+void Problem_Manager::copyAllGroupXtoProblems()
 {
   // Copy final solution from NOX solvers into each problem's solution vector
 
@@ -1007,7 +1011,7 @@ void Problem_Manager::updateAllWithFinalSolution()
   for( ; problemIter != problemLast; ++problemIter )
   {
     int probId = (*problemIter).first;
-    updateWithFinalSolution(probId);
+    copyGroupCurrentXtoProblemX(probId);
   }
 }
 
@@ -1281,16 +1285,18 @@ double Problem_Manager::getNormSum()
   for( ; problemIter != problemLast; problemIter++) {
     int probId = (*problemIter).first;
 
-    Teuchos::RefCountPtr<NOX::Epetra::Group> grp = Groups[ probId ];
+    //Teuchos::RefCountPtr<NOX::Epetra::Group> grp = Groups[ probId ];
+    NOX::Epetra::Group grp = const_cast<NOX::Epetra::Group&>(dynamic_cast<const NOX::Epetra::Group&>(Solvers[ probId ]->getSolutionGroup()));
 
-    if( Teuchos::is_null(grp) ) 
-    {
-      cout << "ERROR: Could not get appropriate group for use in NormSum !!"
-           << endl;
-      throw "Problem_Manager ERROR";
-    }
+    //if( Teuchos::is_null(grp) ) 
+    //{
+    //  cout << "ERROR: Could not get appropriate group for use in NormSum !!"
+    //       << endl;
+    //  throw "Problem_Manager ERROR";
+    //}
 
-    double problemNorm = grp->getNormF();
+    //double problemNorm = grp->getNormF();
+    double problemNorm = grp.getNormF();
     cout << "2-Norm of Problem " << probId << " --> " << problemNorm
          << endl;
     normSum += problemNorm * problemNorm;
@@ -1353,7 +1359,7 @@ bool Problem_Manager::solve()
 
   int nlIter = 0; 
 
-  while( nlIter < 100 && normSum > 1.0e-8 ) // Hard-coded convergence criterion for now.
+  while( nlIter < 1000 && normSum > 1.0e-8 ) // Hard-coded convergence criterion for now.
   {
     iter++;
 
@@ -1384,10 +1390,8 @@ bool Problem_Manager::solve()
           cout << "\nRegistered Problem ## failed to converge !!"  << endl;
       }
 
-      outputSolutions(iter);
-
       // Copy final solution from group into problem solution vector
-      updateWithFinalSolution(probId);
+      copyGroupCurrentXtoProblemX(probId);
     }
 
     // Determine final residuals for use in testing convergence
@@ -1433,7 +1437,7 @@ bool Problem_Manager::solveMF()
       cout << "\nMatrix-Free coupled Problem failed to converge !!"  << endl;
 
   // Update all problem's solutions with final solutions from solvers
-  updateAllWithFinalSolution();
+  copyAllGroupXtoProblems();
 
   // Cleanup locally allocated memory
   delete AA; AA = 0;
@@ -1753,5 +1757,50 @@ void Problem_Manager::outputStatus( ostream & os )
     os << endl;
   }
 }
+
+//-----------------------------------------------------------------------------
+
+bool
+Problem_Manager::exchangeAllData()
+{ 
+  cout << "Problem_Manager::exchangeAllData() .... called." << endl;
+
+  // Preceding this call, the solution vector for each problem has been placed
+  // in each solver's group X vector.  We need to copy this into each problem's
+  // corresponding solution vector and then fire off the appropriate transfers 
+  // into auxillary data vectors.
+
+  copyAllGroupXtoProblems();
+
+  syncAllProblems();
+
+  return true;
+} 
+
+//-----------------------------------------------------------------------------
+
+bool
+Problem_Manager::exchangeDataTo(int solverId)
+{ 
+  cout << "Problem_Manager::exchangeDataTo( " << solverId << " ) .... called." << endl;
+
+  // Note: the incoming solverId reflects the order in which this problem occurs
+  // in the container of solvers passed to the coupling solver and is 0-based.
+  // We need to convert this to 1-based nd account for any permutations of problem
+  // ordering.
+
+  solverId++;
+
+  // Preceding this call, the solution vector for each problem has been placed
+  // in each solver's group X vector.  We need to copy this into each problem's
+  // corresponding solution vector and then fire off the appropriate transfers 
+  // into auxillary data vectors.
+
+  copyAllGroupXtoProblems();
+
+  Problems[solverId]->doTransfer();
+
+  return false;
+} 
 
 //-----------------------------------------------------------------------------

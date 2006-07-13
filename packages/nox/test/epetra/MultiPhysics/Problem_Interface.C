@@ -67,6 +67,8 @@ bool Problem_Interface::computePreconditioner(const Epetra_Vector& x,
 }
 //-----------------------------------------------------------------------------
 
+#ifdef HAVE_MATLAB
+
 // This is a new class that may evantually get moved into NOX.  For now,
 // this is simply used as a testbed for driving NOX using Matlab
 
@@ -1135,3 +1137,4 @@ bool CMD_getAllRes::doCommand( std::string command )
   }
   return true;
 }
+#endif
