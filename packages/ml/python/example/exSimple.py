@@ -13,8 +13,8 @@ options,args = parser.parse_args()
 if options.testharness:
   import setpath
   import Epetra
+  import Galeri
   import AztecOO
-  import Triutils
   import ML
 else:
   try:
