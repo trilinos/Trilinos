@@ -55,6 +55,7 @@ CPPFLAGS=-Wno-long-double \
 --enable-teuchos \
 --enable-teuchos-abc \
 --enable-teuchos-complex \
+--enable-teuchos-expat \
 --enable-teuchos-extended \
 --enable-thyra \
 --enable-tpetra \
