@@ -777,7 +777,7 @@ namespace Teuchos {
     // Check for compatible dimensions
     if ((numRows_ != A.numRows_) || (numCols_ != A.numCols_))
       {
-	TEUCHOS_CHK_ERR(-1); // Return error
+        TEUCHOS_CHK_ERR(-1); // Return error
       }    
     for (j=0; j<numCols_; j++) {
       ptr = values_ + j*stride_;
@@ -791,13 +791,13 @@ namespace Teuchos {
   int  SerialDenseMatrix<OrdinalType, ScalarType>::multiply(ETransp transa, ETransp transb, ScalarType alpha, const SerialDenseMatrix<OrdinalType, ScalarType> &A, const SerialDenseMatrix<OrdinalType, ScalarType> &B, ScalarType beta)
   {
     // Check for compatible dimensions
-    int A_nrows = (ETranspChar[transa]=='T') ? A.numCols() : A.numRows();
-    int A_ncols = (ETranspChar[transa]=='T') ? A.numRows() : A.numCols();
-    int B_nrows = (ETranspChar[transb]=='T') ? B.numCols() : B.numRows();
-    int B_ncols = (ETranspChar[transb]=='T') ? B.numRows() : B.numCols();
+    int A_nrows = (ETranspChar[transa]!='N') ? A.numCols() : A.numRows();
+    int A_ncols = (ETranspChar[transa]!='N') ? A.numRows() : A.numCols();
+    int B_nrows = (ETranspChar[transb]!='N') ? B.numCols() : B.numRows();
+    int B_ncols = (ETranspChar[transb]!='N') ? B.numRows() : B.numCols();
     if ((numRows_ != A_nrows) || (A_ncols != B_nrows) || (numCols_ != B_ncols))
       {
-	TEUCHOS_CHK_ERR(-1); // Return error
+        TEUCHOS_CHK_ERR(-1); // Return error
       }
     // Call GEMM function
     this->GEMM(transa, transb, numRows_, numCols_, A_ncols, alpha, A.values(), A.stride(), B.values(), B.stride(), beta, values_, stride_);
