@@ -280,12 +280,16 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
                   zz->Communicator);
 
     nonempty_nparts = 0;
+    tmp_max_nparts = -1;
+
     for (i=0; i<max_nparts; i++){
-      if (max_arr[i] > 0)
+      if (max_arr[i] > 0){
         nonempty_nparts++;
+        if (i > tmp_max_nparts) tmp_max_nparts = i;
+      }
     }
 
-    nparts = max_nparts;
+    nparts = tmp_max_nparts + 1;
 
     ZOLTAN_FREE(&max_arr);
 
