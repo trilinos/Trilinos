@@ -94,7 +94,7 @@ following:
    directories, but you should double check to make sure they are
    there:
 
-     string_replace.pl
+     string-replace.pl
      strip_dup_incl_paths.pl
      strip_dup_libs.pl
 
