@@ -1,6 +1,3 @@
-// $Id$ 
-// $Source$ 
-
 //@HEADER
 // ************************************************************************
 // 
@@ -30,16 +27,16 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef NOX_SOLVER_LINESEARCHBASED_H
-#define NOX_SOLVER_LINESEARCHBASED_H
+#ifndef NOX_MULTIPHYSICS_SOLVER_LINESEARCHBASED_H
+#define NOX_MULTIPHYSICS_SOLVER_LINESEARCHBASED_H
 
-#include "NOX_Solver_Generic.H"	         // base class
-#include "NOX_LineSearch_Manager.H"      // class data element
-#include "NOX_Direction_Manager.H"       // class data element
-#include "NOX_Solver_PrePostOperator.H"  // class data element
-#include "Teuchos_ParameterList.hpp"	         // class data element
-#include "NOX_Utils.H"		         // class data element
-#include "Teuchos_RefCountPtr.hpp"       // class data element
+#include "NOX_Multiphysics_Solver_Generic.H"  // base class
+#include "NOX_Multiphysics_Group.H"  // base class
+#include "NOX_LineSearch_Manager.H"           // class data element
+#include "NOX_Direction_Manager.H"            // class data element
+#include "NOX_Solver_PrePostOperator.H"       // class data element
+#include "NOX_Utils.H"		              // class data element
+#include "Teuchos_RefCountPtr.hpp"            // class data element
 
 // Forward declarations
 namespace NOX {
@@ -47,6 +44,7 @@ namespace NOX {
 }
 
 namespace NOX {
+namespace Multiphysics {
 namespace Solver {
 
 /*!
@@ -101,7 +99,7 @@ namespace Solver {
   \author Tammy Kolda (SNL 8950), Roger Pawlowski (SNL 9233)
 */
 
-class LineSearchBased : public Generic {
+class FixedPointBased : public NOX::Multiphysics::Solver::Generic {
 
 public:
 
@@ -109,14 +107,19 @@ public:
   /*!
     See reset(NOX::Abstract::Group&, NOX::StatusTest::Generic&, Teuchos::ParameterList&) for description
    */
-  LineSearchBased(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
+  FixedPointBased(const Teuchos::RefCountPtr< vector<NOX::Solver::Manager*> >& solvers,
+		  const Teuchos::RefCountPtr<NOX::Multiphysics::DataExchange::Interface>& interface, 
 		  const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests, 
 		  const Teuchos::RefCountPtr<Teuchos::ParameterList>& params);
 
   //! Destructor
-  virtual ~LineSearchBased();
+  virtual ~FixedPointBased();
 
   virtual bool reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
+		     const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests, 
+		     const Teuchos::RefCountPtr<Teuchos::ParameterList>& params);
+  virtual bool reset(const Teuchos::RefCountPtr<vector<NOX::Solver::Manager*> >& solvers, 
+		     const Teuchos::RefCountPtr<NOX::Multiphysics::DataExchange::Interface>& interface, 
 		     const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests, 
 		     const Teuchos::RefCountPtr<Teuchos::ParameterList>& params);
   virtual bool reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
@@ -135,7 +138,7 @@ public:
 
 protected:
   
-  //! Print out initialization information and calcuation the RHS.
+  //! Print out initialization information and calcuate the RHS.
   virtual void init();
 
   //! Prints the current iteration information.
@@ -143,6 +146,12 @@ protected:
 
 protected:
   
+  //! Pointer to the container of solvers for each problem to be coupled
+  Teuchos::RefCountPtr<vector<NOX::Solver::Manager*> > solversVecPtr;
+
+  //! Pointer to the callback interface needed to echange data among solvers
+  Teuchos::RefCountPtr<NOX::Multiphysics::DataExchange::Interface> dataExInterface;
+
   //! Pointer to the global data object.
   Teuchos::RefCountPtr<NOX::GlobalData> globalDataPtr;
 
@@ -150,19 +159,19 @@ protected:
   Teuchos::RefCountPtr<NOX::Utils> utilsPtr;
   
   //! Current solution.
-  Teuchos::RefCountPtr<NOX::Abstract::Group> solnPtr;		
+  Teuchos::RefCountPtr<NOX::Multiphysics::Group> solnPtr;		
 
   //! Previous solution pointer. 
-  Teuchos::RefCountPtr<NOX::Abstract::Group> oldSolnPtr;	
+  Teuchos::RefCountPtr<NOX::Multiphysics::Group> oldSolnPtr;	
 
   //! Current search direction pointer.
   Teuchos::RefCountPtr<NOX::Abstract::Vector> dirPtr;
 
   //! Stopping test.
-  Teuchos::RefCountPtr<NOX::StatusTest::Generic> testPtr;		
+  Teuchos::RefCountPtr<NOX::StatusTest::Generic> testPtr;
 
   //! Input parameters.
-  Teuchos::RefCountPtr<Teuchos::ParameterList> paramsPtr;	
+  Teuchos::RefCountPtr<Teuchos::ParameterList> paramsPtr;
 
   //! Linesearch. 
   NOX::LineSearch::Manager lineSearch; 
@@ -187,6 +196,7 @@ protected:
 
 };
 } // namespace Solver
+} // namespace Multiphysics
 } // namespace NOX
 
 #endif

@@ -143,6 +143,14 @@ reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xgrp,
   return true;
 }
 
+bool NOX::Solver::TensorBasedTest::
+reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xgrp)
+{
+  solnptr = xgrp;
+  init();
+  return true;
+}
+
 NOX::Solver::TensorBasedTest::~TensorBasedTest() 
 {
 

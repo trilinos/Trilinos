@@ -1,6 +1,3 @@
-// $Id$ 
-// $Source$ 
-
 //@HEADER
 // ************************************************************************
 // 
@@ -30,23 +27,23 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_Solver_LineSearchBased.H"	// class definition
+#include "NOX_Multiphysics_Solver_FixedPointBased.H"	// class definition
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
 #include "NOX_Common.H"
-#include "Teuchos_ParameterList.hpp"
 #include "NOX_Utils.H"
 #include "NOX_GlobalData.H"
 
-NOX::Solver::LineSearchBased::
-LineSearchBased(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xGrp, 
+NOX::Multiphysics::Solver::FixedPointBased::
+FixedPointBased(const Teuchos::RefCountPtr< vector<NOX::Solver::Manager*> >& solvers, 
+		const Teuchos::RefCountPtr<NOX::Multiphysics::DataExchange::Interface>& i, 
 		const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t, 
 		const Teuchos::RefCountPtr<Teuchos::ParameterList>& p) :
+  solversVecPtr(solvers),
+  dataExInterface(i),
   globalDataPtr(Teuchos::rcp(new NOX::GlobalData(p))),
   utilsPtr(globalDataPtr->getUtils()), 
-  solnPtr(xGrp),		                       // pointer to xGrp
-  oldSolnPtr(xGrp->clone(DeepCopy)),     // create via clone
-  dirPtr(xGrp->getX().clone(ShapeCopy)), // create via clone 
+  solnPtr( Teuchos::rcp(new Group(solvers, t, p)) ),
   testPtr(t),		
   paramsPtr(p),		               
   lineSearch(globalDataPtr, paramsPtr->sublist("Line Search")), 
@@ -56,8 +53,10 @@ LineSearchBased(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xGrp,
   init();
 }
 
+
 // Protected
-void NOX::Solver::LineSearchBased::init()
+void 
+NOX::Multiphysics::Solver::FixedPointBased::init()
 {
   // Initialize 
   stepSize = 0.0;
@@ -66,26 +65,29 @@ void NOX::Solver::LineSearchBased::init()
 
   // Get the checktype
   checkType = (NOX::StatusTest::CheckType) paramsPtr->
-    sublist("Solver Options").get("Status Test Check Type", 
-					   NOX::StatusTest::Minimal);
+    sublist("Solver Options").get("Status Test Check Type", NOX::StatusTest::Minimal);
 
   // Print out parameters
   if (utilsPtr->isPrintType(NOX::Utils::Parameters)) 
   {
     utilsPtr->out() << "\n" << NOX::Utils::fill(72) << "\n";
-    utilsPtr->out() << "\n-- Parameters Passed to Nonlinear Solver --\n\n";
+    utilsPtr->out() << "\n-- Parameters Passed to Fixed-Point Coupling Solver --\n\n";
     paramsPtr->print(utilsPtr->out(),5);
   }
 
 }
 
-bool NOX::Solver::LineSearchBased::
-reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xGrp, 
+bool 
+NOX::Multiphysics::Solver::FixedPointBased::reset(
+      const Teuchos::RefCountPtr<vector<NOX::Solver::Manager*> >& solvers, 
+      const Teuchos::RefCountPtr<NOX::Multiphysics::DataExchange::Interface>& i, 
       const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t, 
       const Teuchos::RefCountPtr<Teuchos::ParameterList>& p) 
 {
+  solversVecPtr = solvers;
   globalDataPtr = Teuchos::rcp(new NOX::GlobalData(p));
-  solnPtr = xGrp;
+  solnPtr = Teuchos::rcp( new NOX::Multiphysics::Group(solvers, t, p) );
+  oldSolnPtr = Teuchos::rcp( dynamic_cast<NOX::Multiphysics::Group*>(solnPtr->clone(DeepCopy).get() ) );
   testPtr = t;
   paramsPtr = p;		
   utilsPtr = globalDataPtr->getUtils();
@@ -95,69 +97,79 @@ reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xGrp,
 
   init();
 
-  return true;
+  return false;
 }
 
-bool NOX::Solver::LineSearchBased::
-reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xGrp, 
+bool 
+NOX::Multiphysics::Solver::FixedPointBased::reset(
+      const Teuchos::RefCountPtr<NOX::Abstract::Group>& xGrp, 
+      const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t, 
+      const Teuchos::RefCountPtr<Teuchos::ParameterList>& p) 
+{
+  return false;
+}
+
+bool 
+NOX::Multiphysics::Solver::FixedPointBased::reset(
+      const Teuchos::RefCountPtr<NOX::Abstract::Group>& xGrp, 
       const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t)
 {
-  solnPtr = xGrp;
-  testPtr = t;
-  init();
-  return true;
+  return false;
 }
 
-bool NOX::Solver::LineSearchBased::
-reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xGrp)
+bool 
+NOX::Multiphysics::Solver::FixedPointBased::reset(
+      const Teuchos::RefCountPtr<NOX::Abstract::Group>& xGrp)
 {
-  solnPtr = xGrp;
-  init();
-  return true;
+  return false;
 }
 
-NOX::Solver::LineSearchBased::~LineSearchBased() 
+NOX::Multiphysics::Solver::FixedPointBased::~FixedPointBased() 
 {
  
 }
 
 
-NOX::StatusTest::StatusType NOX::Solver::LineSearchBased::getStatus()
+NOX::StatusTest::StatusType 
+NOX::Multiphysics::Solver::FixedPointBased::getStatus()
 {
   return status;
 }
 
-NOX::StatusTest::StatusType NOX::Solver::LineSearchBased::step()
+NOX::StatusTest::StatusType 
+NOX::Multiphysics::Solver::FixedPointBased::step()
 {
   prePostOperator.runPreIterate(*this);
 
   // On the first step, do some initializations
-  if (nIter == 0) {
+  if (nIter == 0) 
+  {
     // Compute F of initital guess
+    dataExInterface->exchangeAllData();
     NOX::Abstract::Group::ReturnType rtype = solnPtr->computeF();
-    if (rtype != NOX::Abstract::Group::Ok) {
-      utilsPtr->out() << "NOX::Solver::LineSearchBased::init - "
+    if (rtype != NOX::Abstract::Group::Ok) 
+    {
+      utilsPtr->out() << "NOX::Multiphysics::Solver::FixedPointBased::step - "
 		      << "Unable to compute F" << endl;
       throw "NOX Error";
     }
 
     // Test the initial guess
     status = testPtr->checkStatus(*this, checkType);
-    if ((status == NOX::StatusTest::Converged) &&
-	(utilsPtr->isPrintType(NOX::Utils::Warning))) {
-      utilsPtr->out() << "Warning: NOX::Solver::LineSearchBased::init() - "
-		      << "The solution passed into the solver (either "
-		      << "through constructor or reset method) "
-		      << "is already converged!  The solver wil not "
-		      << "attempt to solve this system since status is "
-		      << "flagged as converged." << endl;
-    }
+    if ((status == NOX::StatusTest::Converged) && (utilsPtr->isPrintType(NOX::Utils::Warning))) 
+        utilsPtr->out() << "Warning: NOX::Multiphysics::Solver::FixedPointBased::step() - "
+                        << "The solution passed into the solver (either "
+                        << "through constructor or reset method) "
+                        << "is already converged!  The solver wil not "
+                        << "attempt to solve this system since status is "
+                        << "flagged as converged." << endl;
 
     printUpdate();
   }
 
   // First check status
-  if (status != NOX::StatusTest::Unconverged) {
+  if (status != NOX::StatusTest::Unconverged) 
+  {
     prePostOperator.runPostIterate(*this);
     return status;
   }
@@ -166,12 +178,36 @@ NOX::StatusTest::StatusType NOX::Solver::LineSearchBased::step()
   NOX::Abstract::Group& soln = *solnPtr;
   NOX::StatusTest::Generic& test = *testPtr;
 
-  // Compute the direction for the update vector at the current solution.
-  bool ok;
-  ok = direction.compute(*dirPtr, soln, *this);
-  if (!ok) 
+  NOX::StatusTest::StatusType status = NOX::StatusTest::Unconverged;
+
+  vector<NOX::Solver::Manager*>::iterator     iter = (*solversVecPtr).begin(),
+                                          iter_end = (*solversVecPtr).end()   ;
+  
+  for( int i = 0; iter_end != iter; ++iter, ++i )
   {
-    utilsPtr->out() << "NOX::Solver::LineSearchBased::iterate - unable to calculate direction" << endl;
+    status = NOX::StatusTest::Unconverged;
+
+    // Bring all data needed from other problems to the current one
+    dataExInterface->exchangeDataTo(i);
+
+    // Reset the problem's group
+    const_cast<NOX::Abstract::Group&>((*iter)->getSolutionGroup()).setX((*iter)->getSolutionGroup().getX());
+
+    const Teuchos::RefCountPtr<NOX::Abstract::Group> sameGrp = 
+        Teuchos::rcp( const_cast<NOX::Abstract::Group*>(&(*iter)->getSolutionGroup()), false );
+
+    (*iter)->reset( sameGrp );
+  
+    status = (*iter)->solve();
+
+    // Check return status
+  }
+
+  // Compute F for new current solution.
+  NOX::Abstract::Group::ReturnType rtype = soln.computeF();
+  if (rtype != NOX::Abstract::Group::Ok) 
+  {
+    utilsPtr->out() << "NOX::Multiphysics::Solver::FixedPointBased::step - unable to compute F" << endl;
     status = NOX::StatusTest::Failed;
     prePostOperator.runPostIterate(*this);
     return status;
@@ -180,32 +216,17 @@ NOX::StatusTest::StatusType NOX::Solver::LineSearchBased::step()
   // Update iteration count.
   nIter ++;
 
-  // Copy current soln to the old soln.
-  *oldSolnPtr = *solnPtr;
-
-  // Do line search and compute new soln.
-  ok = lineSearch.compute(soln, stepSize, *dirPtr, *this);
-  if (!ok) 
-  {
-    if (stepSize == 0.0) 
-    {
-      utilsPtr->out() << "NOX::Solver::LineSearchBased::iterate - line search failed" << endl;
-      status = NOX::StatusTest::Failed;
-      prePostOperator.runPostIterate(*this);
-      return status;
-    }
-    else if (utilsPtr->isPrintType(NOX::Utils::Warning))
-      utilsPtr->out() << "NOX::Solver::LineSearchBased::iterate - using recovery step for line search" << endl;
-  }
-
-  // Compute F for new current solution.
-  NOX::Abstract::Group::ReturnType rtype = soln.computeF();
+  // Bring all problems up-to-date - including forced residual evaluation
+  dataExInterface->exchangeAllData();
+  for( iter = (*solversVecPtr).begin(); iter_end != iter; ++iter )
+    // Reset the problem's group
+    const_cast<NOX::Abstract::Group&>((*iter)->getSolutionGroup()).setX((*iter)->getSolutionGroup().getX());
+  rtype = solnPtr->computeF();
   if (rtype != NOX::Abstract::Group::Ok) 
   {
-    utilsPtr->out() << "NOX::Solver::LineSearchBased::iterate - unable to compute F" << endl;
-    status = NOX::StatusTest::Failed;
-    prePostOperator.runPostIterate(*this);
-    return status;
+    utilsPtr->out() << "NOX::Multiphysics::Solver::FixedPointBased::step - "
+                    << "Unable to compute F" << endl;
+    throw "NOX Error";
   }
 
   // Evaluate the current status.
@@ -217,7 +238,8 @@ NOX::StatusTest::StatusType NOX::Solver::LineSearchBased::step()
   return status;
 }
 
-NOX::StatusTest::StatusType NOX::Solver::LineSearchBased::solve()
+NOX::StatusTest::StatusType 
+NOX::Multiphysics::Solver::FixedPointBased::solve()
 {
   prePostOperator.runPreSolve(*this);
 
@@ -237,31 +259,31 @@ NOX::StatusTest::StatusType NOX::Solver::LineSearchBased::solve()
   return status;
 }
 
-const NOX::Abstract::Group& 
-NOX::Solver::LineSearchBased::getSolutionGroup() const
+const NOX::Abstract::Group &  
+NOX::Multiphysics::Solver::FixedPointBased::getSolutionGroup() const
 {
   return *solnPtr;
 }
 
 const NOX::Abstract::Group& 
-NOX::Solver::LineSearchBased::getPreviousSolutionGroup() const
+NOX::Multiphysics::Solver::FixedPointBased::getPreviousSolutionGroup() const
 {
   return *oldSolnPtr;
 }
 
-int NOX::Solver::LineSearchBased::getNumIterations() const
+int NOX::Multiphysics::Solver::FixedPointBased::getNumIterations() const
 {
   return nIter;
 }
 
 const Teuchos::ParameterList& 
-NOX::Solver::LineSearchBased::getList() const
+NOX::Multiphysics::Solver::FixedPointBased::getList() const
 {
   return *paramsPtr;
 }
 
 // protected
-void NOX::Solver::LineSearchBased::printUpdate() 
+void NOX::Multiphysics::Solver::FixedPointBased::printUpdate() 
 {
   double normSoln = 0;
   double normStep = 0;
@@ -280,17 +302,17 @@ void NOX::Solver::LineSearchBased::printUpdate()
   if (utilsPtr->isPrintType(NOX::Utils::OuterIteration)) 
   {
     normSoln = solnPtr->getNormF();
-    normStep = (nIter > 0) ? dirPtr->norm() : 0;
+    //normStep = (nIter > 0) ? dirPtr->norm() : 0;
   }
 
   // ...But only the print process actually prints the result.
   if (utilsPtr->isPrintType(NOX::Utils::OuterIteration)) 
   {
     utilsPtr->out() << "\n" << NOX::Utils::fill(72) << "\n";
-    utilsPtr->out() << "-- Nonlinear Solver Step " << nIter << " -- \n";
-    utilsPtr->out() << "||F|| = " << utilsPtr->sciformat(normSoln);
+    utilsPtr->out() << "-- Fixed-point Solver Step " << nIter << " -- \n";
+    utilsPtr->out() << "Fixed-point ||F|| = " << utilsPtr->sciformat(normSoln);
     utilsPtr->out() << "  step = " << utilsPtr->sciformat(stepSize);
-    utilsPtr->out() << "  dx = " << utilsPtr->sciformat(normStep);
+    //utilsPtr->out() << "  dx = " << utilsPtr->sciformat(normStep);
     if (status == NOX::StatusTest::Converged)
       utilsPtr->out() << " (Converged!)";
     if (status == NOX::StatusTest::Failed)
@@ -309,7 +331,7 @@ void NOX::Solver::LineSearchBased::printUpdate()
   }
 }
 
-double NOX::Solver::LineSearchBased::getStepSize() const
+double NOX::Multiphysics::Solver::FixedPointBased::getStepSize() const
 {
   return stepSize;
 }

@@ -1,6 +1,3 @@
-// $Id$ 
-// $Source$ 
-
 //@HEADER
 // ************************************************************************
 // 
@@ -30,16 +27,18 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef NOX_SOLVER_GENERIC_H
-#define NOX_SOLVER_GENERIC_H
+#ifndef NOX_MULTIPHYSICS_SOLVER_GENERIC_H
+#define NOX_MULTIPHYSICS_SOLVER_GENERIC_H
 
-#include "NOX_StatusTest_Generic.H"  // for NOX::StatusTest::StatusType
+#include "NOX_StatusTest_Generic.H"  // base class
+#include "NOX_Multiphysics_DataExchange_Interface.H"
+#include "NOX_Solver_Manager.H"  // for NOX::StatusTest::StatusType
 
 // Forward declarations
-namespace Teuchos {
-  class ParameterList;
-}
 namespace NOX {
+  namespace Parameter {
+    class List;
+  }
   namespace Abstract {
     class Group;
   }
@@ -47,6 +46,7 @@ namespace NOX {
 #include "Teuchos_RefCountPtr.hpp"
 
 namespace NOX {
+namespace Multiphysics {
 
 /*! 
   \brief %NOX nonlinear solvers namespace.
@@ -67,12 +67,12 @@ namespace Solver {
   <li>Find the solution via solve() or perform a single iterations via iterate().
   <li>Get information about the current solver state via
       getSolutionGroup(), getPreviousSolutionGroup(),
-      getNumIterations(), and getList() --- particularily
+      getNumIterations(), and getParameterList() --- particularily
       useful for NOX::StatusTest methods.
   <li>Get the current status of the solver via getStatus().
   </ul>
  */
-class Generic {
+class Generic : virtual public NOX::Solver::Generic {
 
 public:
 
@@ -106,66 +106,24 @@ public:
     call reset() again with the modified objects.
   */
   virtual bool 
+  reset(const Teuchos::RefCountPtr<vector<NOX::Solver::Manager*> >& solvers, 
+	const Teuchos::RefCountPtr<NOX::Multiphysics::DataExchange::Interface>& interface, 
+	const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests, 
+	const Teuchos::RefCountPtr<Teuchos::ParameterList>& params) = 0;
+
+  //! reset methods inherited from NOX::Solver::Generic and needed here to avoid hiding this overloaded virtual method
+  virtual bool 
   reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
 	const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests, 
 	const Teuchos::RefCountPtr<Teuchos::ParameterList>& params) = 0;
 
-  /*! 
-    \brief An even softer reset of the nonlinear solver for a new problem.
-  
-    This is a light-weight version of reset that takes no
-    parameter list or status tests.  Therefore, this reset only resets 
-    counters and the initial guess (contained in the grp argument).
-
-    This reset allows problems to bypass the potentially time consuming
-    parsing of the parameter lists and to re-use existing status tests.
-  */
-  virtual bool 
-  reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp) = 0;
-
-  /*! 
-    \brief A soft reset of the nonlinear solver for a new problem.
-  
-    This is a light-weight version of reset that takes no
-    parameter list.  Therefore, this reset only resets counters,
-    the initial guess (contained in the grp argument) and new status 
-    tests (contained in the tests argument).
-
-    This reset allows problems to bypass the potentially time consuming
-    parsing of the parameter lists.
-  */
   virtual bool 
   reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
 	const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests) = 0;
 
-  //! Check current convergence and failure status. 
-  virtual NOX::StatusTest::StatusType getStatus() = 0;
-
-  //! Do one nonlinear step in the iteration sequence and return status.
-  virtual NOX::StatusTest::StatusType step() = 0;
-
-  /*! 
-    \brief Solve the nonlinear problem and return final status.
-
-    By "solve", we call iterate() until the NOX::StatusTest value is
-    either NOX::StatusTest::Converged or NOX::StatusTest::Failed. 
-  */
-  virtual NOX::StatusTest::StatusType solve() = 0;
-
-  //! Return a reference to the current solution group.
-  virtual const NOX::Abstract::Group& getSolutionGroup() const = 0;
-
-  //! Return a reference to the previous solution group.
-  virtual const NOX::Abstract::Group& getPreviousSolutionGroup() const = 0;
-
-  //! Get number of iterations.
-  virtual int getNumIterations() const = 0;
-
-  //! Return a refernece to the solver parameters.
-  virtual const Teuchos::ParameterList& getList() const = 0;
-
 };
 } // namespace Solver
+} // namespace Multiphysics
 } // namespace NOX
 
 

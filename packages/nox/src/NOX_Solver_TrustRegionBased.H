@@ -246,6 +246,7 @@ public:
 		     const Teuchos::RefCountPtr<Teuchos::ParameterList>& p);
   virtual bool reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xgrp, 
 		     const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t);
+  virtual bool reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xgrp);
   virtual NOX::StatusTest::StatusType getStatus();
   virtual NOX::StatusTest::StatusType step();
   virtual NOX::StatusTest::StatusType solve();

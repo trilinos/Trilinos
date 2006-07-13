@@ -286,6 +286,43 @@ reset(const Teuchos::RefCountPtr<Abstract::Group>& grp,
 }
 
 //*************************************************************************
+//**** reset (without reparsing of parameter list or status tests)
+//*************************************************************************
+bool NOX::Solver::InexactTrustRegionBased::
+reset(const Teuchos::RefCountPtr<Abstract::Group>& grp)
+{
+  solnPtr = grp;
+
+  // Initialize 
+  nIter = 0;
+  dx = 0.0;
+  status = StatusTest::Unconverged;
+  if (useCounters)
+    resetCounters();
+
+  // Print out initialization information
+  if (utils->isPrintType(NOX::Utils::Parameters)) {
+    utils->out() << "\n" << NOX::Utils::fill(72) << "\n";
+    utils->out() << "\n-- Parameters Passed to Nonlinear Solver --\n\n";
+    paramsPtr->print(utils->out(),5);
+  }
+
+  // Compute F of initital guess
+  solnPtr->computeF();
+  newF = meritFuncPtr->computef(*solnPtr);
+
+  // Test the initial guess
+  status = testPtr->checkStatus(*this, checkType);
+
+  if (utils->isPrintType(NOX::Utils::Parameters)) {
+    utils->out() << "\n-- Status Tests Passed to Nonlinear Solver --\n\n";
+    testPtr->print(utils->out(), 5);
+    utils->out() <<"\n" << NOX::Utils::fill(72) << "\n";
+  }
+  return true;
+}
+
+//*************************************************************************
 //**** getStatus
 //*************************************************************************
 NOX::StatusTest::StatusType NOX::Solver::InexactTrustRegionBased::getStatus()

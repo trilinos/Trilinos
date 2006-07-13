@@ -251,6 +251,14 @@ reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xGrp,
   return true;
 }
 
+bool NOX::Solver::TensorBased::
+reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xGrp)
+{
+  solnPtr = xGrp;
+  init();
+  return true;
+}
+
 NOX::Solver::TensorBased::~TensorBased() 
 {
 #ifdef DEVELOPER_CODE

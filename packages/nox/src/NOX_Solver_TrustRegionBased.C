@@ -183,6 +183,27 @@ reset(const Teuchos::RefCountPtr<Abstract::Group>& grp,
   return true;
 }
 
+bool TrustRegionBased::
+reset(const Teuchos::RefCountPtr<Abstract::Group>& grp)
+{
+  // New initial guess and status test
+  solnPtr = grp;
+
+  // Initialize 
+  nIter = 0;
+  dx = 0;
+  status = StatusTest::Unconverged;
+
+  // Print out initialization information
+  if (utilsPtr->isPrintType(NOX::Utils::Parameters)) {
+    utilsPtr->out() << "\n" << NOX::Utils::fill(72) << "\n";
+    utilsPtr->out() << "\n-- Parameters Passed to Nonlinear Solver --\n\n";
+    paramsPtr->print(utilsPtr->out(),5);
+  }
+
+  return true;
+}
+
 TrustRegionBased::~TrustRegionBased() 
 {
   

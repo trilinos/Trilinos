@@ -145,9 +145,13 @@ am__objects_7 = libnox_a-NOX_Utils.$(OBJEXT) \
 	libnox_a-NOX_Random.$(OBJEXT) libnox_a-NOX_Version.$(OBJEXT) \
 	libnox_a-NOX_GlobalData.$(OBJEXT)
 am__objects_8 = libnox_a-NOX_MultiVector.$(OBJEXT)
+am__objects_9 = libnox_a-NOX_Multiphysics_Group.$(OBJEXT) \
+	libnox_a-NOX_Multiphysics_Solver_Manager.$(OBJEXT) \
+	libnox_a-NOX_Multiphysics_Solver_FixedPointBased.$(OBJEXT)
 am_libnox_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
 	$(am__objects_3) $(am__objects_4) $(am__objects_5) \
-	$(am__objects_6) $(am__objects_7) $(am__objects_8)
+	$(am__objects_6) $(am__objects_7) $(am__objects_8) \
+	$(am__objects_9)
 @BUILD_PRERELEASE_TRUE@nodist_libnox_a_OBJECTS = libnox_a-NOX_Solver_TensorBasedTest.$(OBJEXT) \
 @BUILD_PRERELEASE_TRUE@	libnox_a-NOX_LineSearch_Tensor.$(OBJEXT) \
 @BUILD_PRERELEASE_TRUE@	libnox_a-NOX_Direction_Tensor.$(OBJEXT) \
@@ -182,6 +186,9 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/libnox_a-NOX_LineSearch_Utils_Slope.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libnox_a-NOX_MeritFunction_SumOfSquares.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libnox_a-NOX_MultiVector.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/libnox_a-NOX_Multiphysics_Group.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/libnox_a-NOX_Multiphysics_Solver_FixedPointBased.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/libnox_a-NOX_Multiphysics_Solver_Manager.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libnox_a-NOX_Random.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libnox_a-NOX_Solver_InexactTrustRegionBased.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libnox_a-NOX_Solver_LineSearchBased.Po \
@@ -441,7 +448,8 @@ libnox_a_SOURCES = \
 	$(MERITFUNCTION) \
 	$(STATUSTEST) \
 	$(UTILS) \
-	$(MULTIVECS)
+	$(MULTIVECS) \
+	$(MULTIPHYSICS)
 
 libnox_a_CXXFLAGS = -I$(top_srcdir)/src $(TRILINOS_CXXFLAGS) 
 
@@ -458,7 +466,8 @@ include_HEADERS = \
 	$(MERITFUNCTION_H) \
 	$(STATUSTEST_H) \
 	$(UTILS_H) \
-	$(MULTIVECS_H)
+	$(MULTIVECS_H) \
+	$(MULTIPHYSICS_H)
 
 
 # ------------------------------------------------------------------------
@@ -618,6 +627,18 @@ MULTIVECS_H = \
 
 MULTIVECS = \
 	$(srcdir)/NOX_MultiVector.C
+
+MULTIPHYSICS_H = \
+	$(srcdir)/NOX_Multiphysics_Group.H \
+	$(srcdir)/NOX_Multiphysics_Solver_Manager.H \
+	$(srcdir)/NOX_Multiphysics_Solver_Generic.H \
+	$(srcdir)/NOX_Multiphysics_Solver_FixedPointBased.H \
+	$(srcdir)/NOX_Multiphysics_DataExchange_Interface.H
+
+MULTIPHYSICS = \
+	$(srcdir)/NOX_Multiphysics_Group.C \
+	$(srcdir)/NOX_Multiphysics_Solver_Manager.C \
+	$(srcdir)/NOX_Multiphysics_Solver_FixedPointBased.C
 
 @USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(NOX_INCLUDES)
 @USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(NOX_INCLUDES))
@@ -782,6 +803,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnox_a-NOX_LineSearch_Utils_Slope.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnox_a-NOX_MeritFunction_SumOfSquares.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnox_a-NOX_MultiVector.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnox_a-NOX_Multiphysics_Group.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnox_a-NOX_Multiphysics_Solver_FixedPointBased.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnox_a-NOX_Multiphysics_Solver_Manager.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnox_a-NOX_Random.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnox_a-NOX_Solver_InexactTrustRegionBased.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnox_a-NOX_Solver_LineSearchBased.Po@am__quote@
@@ -1441,6 +1465,54 @@ libnox_a-NOX_MultiVector.obj: $(srcdir)/NOX_MultiVector.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libnox_a-NOX_MultiVector.Po' tmpdepfile='$(DEPDIR)/libnox_a-NOX_MultiVector.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -c -o libnox_a-NOX_MultiVector.obj `if test -f '$(srcdir)/NOX_MultiVector.C'; then $(CYGPATH_W) '$(srcdir)/NOX_MultiVector.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_MultiVector.C'; fi`
+
+libnox_a-NOX_Multiphysics_Group.o: $(srcdir)/NOX_Multiphysics_Group.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -MT libnox_a-NOX_Multiphysics_Group.o -MD -MP -MF "$(DEPDIR)/libnox_a-NOX_Multiphysics_Group.Tpo" -c -o libnox_a-NOX_Multiphysics_Group.o `test -f '$(srcdir)/NOX_Multiphysics_Group.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Multiphysics_Group.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libnox_a-NOX_Multiphysics_Group.Tpo" "$(DEPDIR)/libnox_a-NOX_Multiphysics_Group.Po"; else rm -f "$(DEPDIR)/libnox_a-NOX_Multiphysics_Group.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Multiphysics_Group.C' object='libnox_a-NOX_Multiphysics_Group.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libnox_a-NOX_Multiphysics_Group.Po' tmpdepfile='$(DEPDIR)/libnox_a-NOX_Multiphysics_Group.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -c -o libnox_a-NOX_Multiphysics_Group.o `test -f '$(srcdir)/NOX_Multiphysics_Group.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Multiphysics_Group.C
+
+libnox_a-NOX_Multiphysics_Group.obj: $(srcdir)/NOX_Multiphysics_Group.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -MT libnox_a-NOX_Multiphysics_Group.obj -MD -MP -MF "$(DEPDIR)/libnox_a-NOX_Multiphysics_Group.Tpo" -c -o libnox_a-NOX_Multiphysics_Group.obj `if test -f '$(srcdir)/NOX_Multiphysics_Group.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Multiphysics_Group.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Multiphysics_Group.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libnox_a-NOX_Multiphysics_Group.Tpo" "$(DEPDIR)/libnox_a-NOX_Multiphysics_Group.Po"; else rm -f "$(DEPDIR)/libnox_a-NOX_Multiphysics_Group.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Multiphysics_Group.C' object='libnox_a-NOX_Multiphysics_Group.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libnox_a-NOX_Multiphysics_Group.Po' tmpdepfile='$(DEPDIR)/libnox_a-NOX_Multiphysics_Group.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -c -o libnox_a-NOX_Multiphysics_Group.obj `if test -f '$(srcdir)/NOX_Multiphysics_Group.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Multiphysics_Group.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Multiphysics_Group.C'; fi`
+
+libnox_a-NOX_Multiphysics_Solver_Manager.o: $(srcdir)/NOX_Multiphysics_Solver_Manager.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -MT libnox_a-NOX_Multiphysics_Solver_Manager.o -MD -MP -MF "$(DEPDIR)/libnox_a-NOX_Multiphysics_Solver_Manager.Tpo" -c -o libnox_a-NOX_Multiphysics_Solver_Manager.o `test -f '$(srcdir)/NOX_Multiphysics_Solver_Manager.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Multiphysics_Solver_Manager.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libnox_a-NOX_Multiphysics_Solver_Manager.Tpo" "$(DEPDIR)/libnox_a-NOX_Multiphysics_Solver_Manager.Po"; else rm -f "$(DEPDIR)/libnox_a-NOX_Multiphysics_Solver_Manager.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Multiphysics_Solver_Manager.C' object='libnox_a-NOX_Multiphysics_Solver_Manager.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libnox_a-NOX_Multiphysics_Solver_Manager.Po' tmpdepfile='$(DEPDIR)/libnox_a-NOX_Multiphysics_Solver_Manager.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -c -o libnox_a-NOX_Multiphysics_Solver_Manager.o `test -f '$(srcdir)/NOX_Multiphysics_Solver_Manager.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Multiphysics_Solver_Manager.C
+
+libnox_a-NOX_Multiphysics_Solver_Manager.obj: $(srcdir)/NOX_Multiphysics_Solver_Manager.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -MT libnox_a-NOX_Multiphysics_Solver_Manager.obj -MD -MP -MF "$(DEPDIR)/libnox_a-NOX_Multiphysics_Solver_Manager.Tpo" -c -o libnox_a-NOX_Multiphysics_Solver_Manager.obj `if test -f '$(srcdir)/NOX_Multiphysics_Solver_Manager.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Multiphysics_Solver_Manager.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Multiphysics_Solver_Manager.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libnox_a-NOX_Multiphysics_Solver_Manager.Tpo" "$(DEPDIR)/libnox_a-NOX_Multiphysics_Solver_Manager.Po"; else rm -f "$(DEPDIR)/libnox_a-NOX_Multiphysics_Solver_Manager.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Multiphysics_Solver_Manager.C' object='libnox_a-NOX_Multiphysics_Solver_Manager.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libnox_a-NOX_Multiphysics_Solver_Manager.Po' tmpdepfile='$(DEPDIR)/libnox_a-NOX_Multiphysics_Solver_Manager.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -c -o libnox_a-NOX_Multiphysics_Solver_Manager.obj `if test -f '$(srcdir)/NOX_Multiphysics_Solver_Manager.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Multiphysics_Solver_Manager.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Multiphysics_Solver_Manager.C'; fi`
+
+libnox_a-NOX_Multiphysics_Solver_FixedPointBased.o: $(srcdir)/NOX_Multiphysics_Solver_FixedPointBased.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -MT libnox_a-NOX_Multiphysics_Solver_FixedPointBased.o -MD -MP -MF "$(DEPDIR)/libnox_a-NOX_Multiphysics_Solver_FixedPointBased.Tpo" -c -o libnox_a-NOX_Multiphysics_Solver_FixedPointBased.o `test -f '$(srcdir)/NOX_Multiphysics_Solver_FixedPointBased.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Multiphysics_Solver_FixedPointBased.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libnox_a-NOX_Multiphysics_Solver_FixedPointBased.Tpo" "$(DEPDIR)/libnox_a-NOX_Multiphysics_Solver_FixedPointBased.Po"; else rm -f "$(DEPDIR)/libnox_a-NOX_Multiphysics_Solver_FixedPointBased.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Multiphysics_Solver_FixedPointBased.C' object='libnox_a-NOX_Multiphysics_Solver_FixedPointBased.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libnox_a-NOX_Multiphysics_Solver_FixedPointBased.Po' tmpdepfile='$(DEPDIR)/libnox_a-NOX_Multiphysics_Solver_FixedPointBased.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -c -o libnox_a-NOX_Multiphysics_Solver_FixedPointBased.o `test -f '$(srcdir)/NOX_Multiphysics_Solver_FixedPointBased.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Multiphysics_Solver_FixedPointBased.C
+
+libnox_a-NOX_Multiphysics_Solver_FixedPointBased.obj: $(srcdir)/NOX_Multiphysics_Solver_FixedPointBased.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -MT libnox_a-NOX_Multiphysics_Solver_FixedPointBased.obj -MD -MP -MF "$(DEPDIR)/libnox_a-NOX_Multiphysics_Solver_FixedPointBased.Tpo" -c -o libnox_a-NOX_Multiphysics_Solver_FixedPointBased.obj `if test -f '$(srcdir)/NOX_Multiphysics_Solver_FixedPointBased.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Multiphysics_Solver_FixedPointBased.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Multiphysics_Solver_FixedPointBased.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libnox_a-NOX_Multiphysics_Solver_FixedPointBased.Tpo" "$(DEPDIR)/libnox_a-NOX_Multiphysics_Solver_FixedPointBased.Po"; else rm -f "$(DEPDIR)/libnox_a-NOX_Multiphysics_Solver_FixedPointBased.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Multiphysics_Solver_FixedPointBased.C' object='libnox_a-NOX_Multiphysics_Solver_FixedPointBased.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libnox_a-NOX_Multiphysics_Solver_FixedPointBased.Po' tmpdepfile='$(DEPDIR)/libnox_a-NOX_Multiphysics_Solver_FixedPointBased.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -c -o libnox_a-NOX_Multiphysics_Solver_FixedPointBased.obj `if test -f '$(srcdir)/NOX_Multiphysics_Solver_FixedPointBased.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Multiphysics_Solver_FixedPointBased.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Multiphysics_Solver_FixedPointBased.C'; fi`
 
 libnox_a-NOX_Solver_TensorBasedTest.o: $(srcdir)/NOX_Solver_TensorBasedTest.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnox_a_CXXFLAGS) $(CXXFLAGS) -MT libnox_a-NOX_Solver_TensorBasedTest.o -MD -MP -MF "$(DEPDIR)/libnox_a-NOX_Solver_TensorBasedTest.Tpo" -c -o libnox_a-NOX_Solver_TensorBasedTest.o `test -f '$(srcdir)/NOX_Solver_TensorBasedTest.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Solver_TensorBasedTest.C; \

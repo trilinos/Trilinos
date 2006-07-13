@@ -55,7 +55,8 @@ libnox_a_SOURCES = \
 	$(MERITFUNCTION) \
 	$(STATUSTEST) \
 	$(UTILS) \
-	$(MULTIVECS)
+	$(MULTIVECS) \
+	$(MULTIPHYSICS)
 
 libnox_a_CXXFLAGS = -I$(top_srcdir)/src $(TRILINOS_CXXFLAGS) 
 
@@ -73,7 +74,8 @@ include_HEADERS = \
 	$(MERITFUNCTION_H) \
 	$(STATUSTEST_H) \
 	$(UTILS_H) \
-	$(MULTIVECS_H)
+	$(MULTIVECS_H) \
+	$(MULTIPHYSICS_H)
 
 # ------------------------------------------------------------------------
 # Parts of the code that are not ready to be included in nightly release
@@ -241,6 +243,18 @@ MULTIVECS_H = \
 
 MULTIVECS = \
 	$(srcdir)/NOX_MultiVector.C
+
+MULTIPHYSICS_H = \
+	$(srcdir)/NOX_Multiphysics_Group.H \
+	$(srcdir)/NOX_Multiphysics_Solver_Manager.H \
+	$(srcdir)/NOX_Multiphysics_Solver_Generic.H \
+	$(srcdir)/NOX_Multiphysics_Solver_FixedPointBased.H \
+	$(srcdir)/NOX_Multiphysics_DataExchange_Interface.H
+
+MULTIPHYSICS = \
+	$(srcdir)/NOX_Multiphysics_Group.C \
+	$(srcdir)/NOX_Multiphysics_Solver_Manager.C \
+	$(srcdir)/NOX_Multiphysics_Solver_FixedPointBased.C
 
 
 # ------------------------------------------------------------------------

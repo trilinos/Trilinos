@@ -139,6 +139,12 @@ reset(const Teuchos::RefCountPtr<Abstract::Group>& grp,
   return ptr->reset(grp, tests);
 }
 
+bool NOX::Solver::Manager::
+reset(const Teuchos::RefCountPtr<Abstract::Group>& grp)
+{
+  return ptr->reset(grp);
+}
+
 // PRIVATE
 void NOX::Solver::Manager::deprecated(const string& oldName, const string& newName) const
 {
