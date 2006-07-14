@@ -65,7 +65,6 @@ void EpetraLinearOp::initialize(
   )
 {
   // Validate input, allocate spaces, validate ...
-  namespace mmp = MemMngPack;
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION( op.get()==NULL, std::invalid_argument, "EpetraLinearOp::initialize(...): Error!" );
 #endif
@@ -297,7 +296,6 @@ void EpetraLinearOp::euclideanApply(
 Teuchos::RefCountPtr<const LinearOpBase<EpetraLinearOp::Scalar> >
 EpetraLinearOp::clone() const
 {
-  namespace mmp = MemMngPack;
   assert(0); // ToDo: Implement when needed
   return Teuchos::null;
 }
