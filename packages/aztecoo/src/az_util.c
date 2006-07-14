@@ -878,6 +878,9 @@ double *AZ_manage_memory(unsigned int input_size, int action, int type,
                    = AZ_CLEAR: free all memory associated with any chunk of
                                memory that has the memory-type 'type'.
 
+                   = AZ_CLEAR_ALL: free all memory associated with any chunk of
+                               memory regardless of 'type'.
+
                    = AZ_SELECTIVE_CLEAR: free all memory associated with any
                                chunk ofmemory that has the memory-type 'type'
                                and the memory-name 'name'.
@@ -930,6 +933,9 @@ double *dtmp;
   current = head;
 
   if (action == -43) {
+
+    printf("AZ_manage_memory: \n");
+    if (current == NULL) printf("  current==NULL\n");
 
     /* print the list */
 
@@ -1024,6 +1030,18 @@ double *dtmp;
         prev    = current;
         current = current->next;
       }
+    }
+    return (double *) 0;
+  }
+
+  else if (action == AZ_CLEAR_ALL) {
+    prev = NULL;
+    while (current != NULL) {
+      if (prev == NULL) head       = current->next;
+      else              prev->next = current->next;
+      temp = current->next;
+      AZ_free(current->address);
+      current = temp;
     }
     return (double *) 0;
   }

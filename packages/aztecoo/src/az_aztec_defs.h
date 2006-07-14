@@ -609,6 +609,7 @@
 #define AZ_EVERYBODY_BUT_CLEAR  7
 #define AZ_EMPTY                8
 #define AZ_LOOKFOR_PRINT        9
+#define AZ_CLEAR_ALL           10
 #define AZ_SYS                 -914901
 #define AZ_OLD_ADDRESS         0
 #define AZ_NEW_ADDRESS         1

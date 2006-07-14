@@ -167,11 +167,15 @@ int main(int argc, char *argv[])
     cout << "Initial 2-norm of b-A*x: "<<initial_norm<<endl;
   }
 
+  AZ_manage_memory(0, -43, 0, 0, 0);
+
   int err = test_azoo_as_precond_op(A, x, b, verbose);
   if (err != 0) {
     cout << "test_azoo_as_precond_op err, test FAILED."<<endl;
     return(err);
   }
+
+  AZ_manage_memory(0, -43, 0, 0, 0);
 
   err = test_azoo_with_ilut(A, x, b, verbose);
   if (err != 0) {
@@ -188,6 +192,11 @@ int main(int argc, char *argv[])
   options[AZ_solver] = AZ_cg;
   options[AZ_subdomain_solve] = AZ_none;
   options[AZ_precond] = AZ_Jacobi;
+
+  if (verbose)
+    std::cout << "about to call test_AZ_iterate_AZ_pre_calc_AZ_reuse"
+       <<std::endl;
+  AZ_manage_memory(0, -43, 0, 0, 0);
 
   err = test_AZ_iterate_AZ_pre_calc_AZ_reuse(comm, options, verbose);
   if (err != 0) {
@@ -323,6 +332,8 @@ int test_azoo_as_precond_op(Epetra_CrsMatrix& A,
     cout << "now make sure the precond AztecOO instance"
       << " hasn't been corrupted."<<endl;
   }
+
+  AZ_manage_memory(0, -43, 0, 0, 0);
 
   x.PutScalar(0.0);
   azoo0->Iterate(&A, &x, &b, maxiters, tolerance);
@@ -515,7 +526,18 @@ int test_azoo_scaling(Epetra_CrsMatrix& A,
   if (err != 0) {
     if (verbose) {
       cerr << "AztecOO_scale_epetra returned err=="<<err
-          <<"when asked to reuse scaling data"<<endl;
+          <<" when asked to reuse scaling data"<<endl;
+    }
+    return(err);
+  }
+
+  options[AZ_pre_calc] = AZ_calc;
+  err = AztecOO_scale_epetra(AZ_DESTROY_SCALING_DATA, Amat,
+                             options, bvals, xvals, NULL, scaling);
+  if (err != 0) {
+    if (verbose) {
+      std::cerr << "AztecOO_scale_epetra returned err=="<<err
+      << " when asked to destroy scaling data."<<std::endl;
     }
     return(err);
   }
@@ -524,6 +546,8 @@ int test_azoo_scaling(Epetra_CrsMatrix& A,
   delete [] options; 
   delete [] params;
   AZ_scaling_destroy(&scaling);
+
+  AZ_manage_memory(0, AZ_CLEAR_ALL, 0, 0, 0);
 
   return(0);
 }
@@ -599,6 +623,8 @@ int test_AZ_iterate_AZ_pre_calc_AZ_reuse(Epetra_Comm& Comm,
  // Amsr->data_org[AZ_name] = 1;
  // Avbr->data_org[AZ_name] = 2;
 
+  AZ_manage_memory(0, -43, 0, 0, 0);
+
   //First solve with the first matrix (Amsr).
   if (verbose)
     cout << "solve Amsr, name: "<<Amsr->data_org[AZ_name]<<endl;
@@ -606,12 +632,18 @@ int test_AZ_iterate_AZ_pre_calc_AZ_reuse(Epetra_Comm& Comm,
   call_AZ_iterate(Amsr, Pmsr, Smsr, x, b, az_options, params, status,
                   proc_config, 1, AZ_calc, verbose);
 
+  AZ_manage_memory(0, -43, 0, 0, 0);
+
   //First solve with the second matrix (Avbr).
   if (verbose)
     cout << "solve Avbr, name: " <<Avbr->data_org[AZ_name]<<endl;
 
+  AZ_manage_memory(0, -43, 0, 0, 0);
+
   call_AZ_iterate(Avbr, Pvbr, Svbr, x, b, az_options, params, status,
                   proc_config, 0, AZ_calc, verbose);
+
+  AZ_manage_memory(0, -43, 0, 0, 0);
 
   //Second solve with Amsr, reusing preconditioner
   if (verbose)
@@ -620,6 +652,8 @@ int test_AZ_iterate_AZ_pre_calc_AZ_reuse(Epetra_Comm& Comm,
   call_AZ_iterate(Amsr, Pmsr, Smsr, x, b, az_options, params, status,
                   proc_config, 1, AZ_reuse, verbose);
 
+  AZ_manage_memory(0, -43, 0, 0, 0);
+
   //Second solve with Avbr, not reusing preconditioner
   if (verbose)
     cout << "solve Avbr (keepinfo==0), name: " <<Avbr->data_org[AZ_name]<<endl;
@@ -627,8 +661,14 @@ int test_AZ_iterate_AZ_pre_calc_AZ_reuse(Epetra_Comm& Comm,
   call_AZ_iterate(Avbr, Pvbr, Svbr, x, b, az_options, params, status,
                   proc_config, 0, AZ_calc, verbose);
 
+  AZ_manage_memory(0, -43, 0, 0, 0);
+  if (verbose)
+    std::cout << "calling AZ_free_memory..."<<std::endl;
+
   AZ_free_memory(Amsr->data_org[AZ_name]);
   AZ_free_memory(Avbr->data_org[AZ_name]);
+
+  AZ_manage_memory(0, -43, 0, 0, 0);
 
   //solve with Amsr again, not reusing preconditioner
   if (verbose)
@@ -636,6 +676,8 @@ int test_AZ_iterate_AZ_pre_calc_AZ_reuse(Epetra_Comm& Comm,
 
   call_AZ_iterate(Amsr, Pmsr, Smsr, x, b, az_options, params, status,
                   proc_config, 0, AZ_calc, verbose);
+
+  AZ_manage_memory(0, -43, 0, 0, 0);
 
   //Second solve with Avbr, this time with keepinfo==1
   if (verbose)
