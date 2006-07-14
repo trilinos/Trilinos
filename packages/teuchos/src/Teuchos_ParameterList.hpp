@@ -124,7 +124,7 @@ public:
   ParameterList(const ParameterList& source);
   
   //! Deconstructor
-  ~ParameterList();
+  virtual ~ParameterList();
 
   //@}
   
