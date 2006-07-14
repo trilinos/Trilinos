@@ -38,7 +38,7 @@ EXTRA_DIST = \
 MAINTAINERCLEANFILES = Makefile.in
 
 # Define the suite of tests
-TEST_SUITE = testTeuchos testParameterList
+TEST_SUITE = testTeuchos testParameterList testPyDictParameterList
 
 SETPATH = setpath.py
 
