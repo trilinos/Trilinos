@@ -55,108 +55,9 @@ in-depth information."
 #include "Teuchos_ParameterEntry.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-// Teuchos::ParameterList can support parameters of any type, but the
-// python wrappers need a subset of types supported a-priori.  Since
-// this subset shows up in many places, the setPythonParameter()
-// function is provided here that handles conversion from PyObjects to
-// the supported types, assigning it to the specified ParameterList.
-// It returns true if the conversion was made, false if the requested
-// conversion is not supported.
-  bool setPythonParameter(Teuchos::ParameterList & plist,
-			  const std::string      & name,
-			  PyObject               * value) {
-
-    // Boolean values
-    if (PyBool_Check(value)) {
-      if (value == Py_True) plist.set(name,true );
-      else                  plist.set(name,false);
-    }
-
-    // Integer values
-    else if (PyInt_Check(value)) {
-      plist.set(name, (int)PyInt_AsLong(value));
-    }
-
-    // Floating point values
-    else if (PyFloat_Check(value)) {
-      plist.set(name, PyFloat_AsDouble(value));
-    }
-
-    // String values
-    else if (PyString_Check(value)) {
-      plist.set(name, PyString_AsString(value));
-    }
-
-    // ParameterList values
-    else {
-      static swig_type_info * ty = SWIG_TypeQuery("Teuchos::ParameterList *");
-      void * argp;
-      int res = SWIG_ConvertPtr(value, &argp, ty, 0);
-      if (SWIG_CheckState(res)) {
-	Teuchos::ParameterList *arg = reinterpret_cast< Teuchos::ParameterList * >(argp);
-	plist.set(name, &arg);
-      }
-
-      // Unsupported value types
-      else {
-	return false;
-      }
-    }
-    return true;
-  }
-
-// The getPythonParameter() function is the get counterpart to
-// setPythonParameter().  If the requested parameter name does not
-// exist, None is returned (a type that is guaranteed not to be
-// supported).  If the name exists and its type is supported, it is
-// returned as a python object.  If the name exists, but the type is
-// not supported, NULL is returned, to indicate an error.
-  PyObject * getPythonParameter(const Teuchos::ParameterList & plist,
-				const std::string            & name) {
-    static swig_type_info * swig_TPL_ptr = SWIG_TypeQuery("Teuchos::ParameterList *");
-
-    // Check for parameter existence
-    if (!plist.isParameter(name)) return Py_BuildValue("");
-
-    // Boolean parameter values
-    if (Teuchos::isParameterType<bool>(plist,name)) {
-      bool value = Teuchos::getParameter<bool>(plist,name);
-      return PyBool_FromLong((long)value);
-    }
-
-    // Integer parameter values
-    else if (Teuchos::isParameterType<int>(plist,name)) {
-      int value = Teuchos::getParameter<int>(plist,name);
-      return PyInt_FromLong((long)value);
-    }
-
-    // Double parameter values
-    else if (Teuchos::isParameterType<double>(plist,name)) {
-      double value = Teuchos::getParameter<double>(plist,name);
-      return PyFloat_FromDouble(value);
-    }
-
-    // String parameter values
-    else if (Teuchos::isParameterType<std::string>(plist,name)) {
-      std::string value = Teuchos::getParameter<std::string>(plist,name);
-      return PyString_FromString(value.c_str());
-    }
-
-    // Char* parameter values
-    else if (Teuchos::isParameterType<char*>(plist,name)) {
-      char* value = Teuchos::getParameter<char*>(plist,name);
-      return PyString_FromString(value);
-    }
-
-    // ParameterList values
-    else if (Teuchos::isParameterType<Teuchos::ParameterList>(plist,name)) {
-      Teuchos::ParameterList value = Teuchos::getParameter<Teuchos::ParameterList>(plist,name);
-      return SWIG_NewPointerObj((void*) &value, swig_TPL_ptr, 0);
-    }
-
-    // Unsupported type
-    return NULL;
-  }
+// Teuchos python interface includes
+#include "Teuchos_PythonParameter.hpp"
+#include "Teuchos_PyDictParameterList.hpp"
 %}
 
 // Ignore directives.  Here we use them to prevent wrapping the Print
@@ -166,15 +67,22 @@ in-depth information."
 // python cannot wrap, such as operator=.
 %ignore *::operator=;
 %ignore *::print;
-%ignore Teuchos::ParameterList::set(const string &, Teuchos::any);
-%ignore Teuchos::ParameterList::set(const string &, Teuchos::ParameterList);
+%ignore Teuchos::ParameterList::set(const string &, ParameterList);
 %ignore Teuchos::ParameterList::set(const string &, const char[ ]);
-%ignore Teuchos::ParameterList::get(const string &, Teuchos::any);
+%ignore Teuchos::ParameterList::setEntry(const string &, const ParameterEntry &);
 %ignore Teuchos::ParameterList::get(const string &, const char[ ]);
 %ignore Teuchos::ParameterList::getPtr(const string &);
 %ignore Teuchos::ParameterList::getPtr(const string &) const;
 %ignore Teuchos::ParameterList::getEntryPtr(const string &);
 %ignore Teuchos::ParameterList::getEntryPtr(const string &) const;
+%ignore Teuchos::ParameterList::sublist(const string &) const;
+%ignore Teuchos::ParameterList::isType(const string &) const;
+%ignore Teuchos::ParameterList::isType(const string &, any*) const;
+%ignore Teuchos::ParameterList::unused(ostream &) const;
+%ignore Teuchos::ParameterList::begin() const;
+%ignore Teuchos::ParameterList::end() const;
+%ignore Teuchos::ParameterList::entry(ConstIterator) const;
+%ignore Teuchos::ParameterList::name(ConstIterator) const;
 
 // Define macro for handling exceptions thrown by Teuchos methods and
 // constructors
@@ -183,14 +91,26 @@ in-depth information."
   try {
     $action
     if (PyErr_Occurred()) SWIG_fail;
-  } catch(std::runtime_error) {
-    PyErr_SetString(PyExc_RuntimeError, "See stderr for details");
+  }
+
+  catch(std::runtime_error e) {
+    PyErr_SetString(PyExc_RuntimeError, e.what());
+    SWIG_fail;
+  }
+
+  catch(Teuchos::Exceptions::InvalidParameter e) {
+    PyErr_SetString(PyExc_KeyError, e.what());
     SWIG_fail;
   }
 }
 %enddef
 
 TEUCHOS_EXCEPTION(ParameterList,sublist)
+TEUCHOS_EXCEPTION(ParameterList,get)
+TEUCHOS_EXCEPTION(PyDictParameterList,PyDictParameterList)
+TEUCHOS_EXCEPTION(PyDictParameterList,set)
+TEUCHOS_EXCEPTION(PyDictParameterList,get)
+TEUCHOS_EXCEPTION(PyDictParameterList,sublist)
 
 // Auto-documentation feature.  This ensures that calling help() on a
 // wrapped method returns an argument list (or lists, in the case of
@@ -211,19 +131,13 @@ TEUCHOS_EXCEPTION(ParameterList,sublist)
 // class, and Newp_Jambo contains an optional class.
 using namespace std;
 %include "Teuchos_Version.hpp"
-%include "Teuchos_RefCountPtrDecl.hpp"
+%import  "Teuchos_RefCountPtrDecl.hpp"
 %import  "Teuchos_any.hpp"
-%include "Teuchos_ParameterEntry.hpp"
+%import  "Teuchos_ParameterEntry.hpp"
 %include "Teuchos_ParameterList.hpp"
+%include "Teuchos_PyDictParameterList.hpp"
 
-// Extensions.  The %extend directive allows you to extend classes to
-// include additional methods.  In this example, we are adding a
-// __str__() method, which is a standard python method for classes.
-// When the python "print" command encounters a non-string object, it
-// calls the str() function, which in turn looks for a __str__()
-// method in the class.  Thus if hello is a Newp_Hello object, then
-// "print hello" will return a string obtained from the C++ Print()
-// method.
+// Extensions.
 %extend Teuchos::ParameterList {
 
   PyObject * set(const string &name, PyObject *value) {
@@ -293,6 +207,56 @@ using namespace std;
     }
     Py_INCREF(returnObject);
     return returnObject;
+  fail:
+    return NULL;
+  }
+
+  PyObject * unused(PyObject * pf=NULL) {
+
+    // No arguments
+    if (pf==NULL) {
+      self->unused(std::cout);
+    }
+
+    // Given non-file pf argument
+    else {
+      if (!PyFile_Check(pf)) {
+	PyErr_SetString(PyExc_IOError, "unused() method expects a file object");
+	goto fail;
+      }
+
+      // Given file pf argument
+      else {
+	std::FILE *f = PyFile_AsFile(pf);
+	Teuchos::FILEstream buffer(f);
+	std::ostream os(&buffer);
+	self->unused(os);
+      }
+    }
+    return Py_BuildValue("");
+  fail:
+    return NULL;
+  }
+
+  PyObject * type(const string & name) {
+
+    PyObject * value = getPythonParameter(*self,name);
+
+    // Type not supported
+    if (value == NULL) {
+      PyErr_SetString(PyExc_TypeError, "ParameterList value type not supported");
+      goto fail;
+    }
+
+    // Name not found
+    else if (value == Py_None) {
+      PyErr_Format(PyExc_KeyError, "'%s'", name.c_str());
+      goto fail;
+    }
+
+    // Name found and type supported
+    return PyObject_Type(value);
+
   fail:
     return NULL;
   }

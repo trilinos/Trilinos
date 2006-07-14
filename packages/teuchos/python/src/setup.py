@@ -84,7 +84,7 @@ for option in options:
         extra_link_args.append(option)
 
 # Define the strings that refer to the required local source files
-teuchosWrap = "Teuchos_wrap.cpp"
+srcFiles = ["Teuchos_wrap.cpp"]
 
 # Compiler and linker
 sysconfig.get_config_vars()
@@ -93,7 +93,7 @@ sysconfig._config_vars["CXX"] = CXX
 
 # _Teuchos extension module
 _Teuchos = Extension("PyTrilinos._Teuchos",
-                     [teuchosWrap],
+                     srcFiles,
                      define_macros      = define_macros,
                      include_dirs       = include_dirs,
                      library_dirs       = library_dirs,
