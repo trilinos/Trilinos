@@ -67,6 +67,7 @@ bool testComm(
     << "\nprocRank = rank(comm) = " << procRank << "\n";
   
   const Ordinal count = numProcs*2;
+
   Teuchos::Array<Packet> sendBuff(count), recvBuff(count), recvBuff2(count);
   for( int i = 0; i < count; ++i )
     sendBuff[i] = Packet(procRank+1)*Packet(i);
@@ -403,7 +404,7 @@ bool masterTestComm(
     << "\n***\n";
 
   *out << "\nOrdinal type = "<<OT::name()<<" with an extent of "<<sizeof(Ordinal)<<" bytes\n";
-  
+
   if( comm->getSize() <= 4 ) {
     result = testComm<Ordinal,char>(*comm,out);
     if(!result) success = false;
