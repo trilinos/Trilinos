@@ -275,8 +275,9 @@ int Epetra_BasicDirectory::Generate(const Epetra_BlockMap& Map)
 
   EPETRA_CHK_ERR(Distor->Do(reinterpret_cast<char *> (export_elements), 
 			    packetSize * (int)sizeof( int ),
-                  len_import_elements,
-		  c_import_elements ));
+			    len_import_elements,
+			    c_import_elements ));
+
   import_elements = reinterpret_cast<int *>(c_import_elements);
   
   //bool MYPID = (Map.Comm().MyPID()==0);
@@ -336,7 +337,8 @@ int Epetra_BasicDirectory::GetDirectoryEntries( const Epetra_BlockMap& Map,
 						const int * GlobalEntries,
 						int * Procs,
 						int * LocalEntries,
-						int * EntrySizes ) const
+						int * EntrySizes,
+						bool high_rank_sharing_procs) const
 {
   int ierr = 0;
   int j;
@@ -550,7 +552,27 @@ int Epetra_BasicDirectory::GetDirectoryEntries( const Epetra_BlockMap& Map,
 	*ptr++ = curr_GID;
 	curr_LID = DirectoryMap_->LID(curr_GID);
 	assert(curr_LID!=-1); // Internal error 
-	*ptr++ = ProcList_[ curr_LID ];
+	if (high_rank_sharing_procs==false) {
+	  *ptr++ = ProcList_[ curr_LID ];
+	}
+	else {
+	  //high_rank_sharing_procs==true means that if multiple procs share a
+	  //GID, we want to use the proc with highest rank rather than the
+	  //proc with lowest rank.
+	  if (numProcLists_ > 0) {
+	    int num = ProcListLens_[curr_LID];
+	    if (num > 1) {
+	      *ptr++ = ProcListLists_[curr_LID][num-1];
+	    }
+	    else {
+	      *ptr++ = ProcList_[ curr_LID ];
+	    }
+	  }
+	  else {
+	    *ptr++ = ProcList_[ curr_LID ];
+	  }
+	}
+
 	if (DoLIDs) *ptr++ = LocalIndexList_[curr_LID];
 	if (DoSizes) *ptr++ = SizeList_[curr_LID];
       }

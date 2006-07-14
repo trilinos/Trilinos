@@ -30,11 +30,13 @@
 
 #include "Epetra_Time.h"
 #include "Epetra_BlockMap.h"
+#include "Epetra_Map.h"
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
 #include <mpi.h>
 #endif
 #include "Epetra_SerialComm.h"
+#include "Epetra_Util.h"
 #include "../epetra_test_err.h"
 #include "Epetra_Version.h"
 #include "Epetra_Directory.h"
@@ -42,6 +44,7 @@
 int directory_test_1(Epetra_Comm& Comm);
 int directory_test_2(Epetra_Comm& Comm);
 int directory_test_3(Epetra_Comm& Comm);
+int directory_test_4(Epetra_Comm& Comm);
 
 int main(int argc, char *argv[]) {
   bool verbose = false;
@@ -80,6 +83,8 @@ int main(int argc, char *argv[]) {
   EPETRA_TEST_ERR( directory_test_2(Comm), returnierr );
 
   EPETRA_TEST_ERR( directory_test_3(Comm), returnierr );
+
+  EPETRA_TEST_ERR( directory_test_4(Comm), returnierr );
 
 #ifdef EPETRA_MPI
   MPI_Finalize();
@@ -230,6 +235,64 @@ int directory_test_3(Epetra_Comm& Comm)
 
   if (uniqueGIDs) {
     return(-1);
+  }
+
+  return(0);
+}
+
+int directory_test_4(Epetra_Comm& Comm)
+{
+  int myPID = Comm.MyPID();
+  int numProcs = Comm.NumProc();
+
+  if (numProcs < 2) return(0);
+
+  //Set up a map with overlapping ranges of GIDs.
+  int num = 5;
+  int numMyGIDs = 2*num;
+  int myFirstGID = myPID*num;
+
+  int* myGIDs = new int[numMyGIDs];
+
+  for(int i=0; i<numMyGIDs; ++i) {
+    myGIDs[i] = myFirstGID+i;
+  }
+
+  Epetra_Map overlappingmap(-1, numMyGIDs, myGIDs, 0, Comm);
+
+  delete [] myGIDs;
+
+  int numGlobal0 = overlappingmap.NumGlobalElements();
+
+  Epetra_Map uniquemap1 =
+    Epetra_Util::Create_OneToOne_Map(overlappingmap);
+
+  bool use_high_sharing_proc = true;
+
+  Epetra_Map uniquemap2 =
+    Epetra_Util::Create_OneToOne_Map(overlappingmap, use_high_sharing_proc);
+
+  int numGlobal1 = uniquemap1.NumGlobalElements();
+  int numGlobal2 = uniquemap2.NumGlobalElements();
+
+  //The two one-to-one maps should have the same number of global elems.
+  if (numGlobal1 != numGlobal2) {
+    return(-1);
+  }
+
+  //The number of global elems should be greater in the original map
+  //than in the one-to-one map.
+  if (numGlobal0 <= numGlobal1) {
+    return(-2);
+  }
+
+  int numLocal1 = uniquemap1.NumMyElements();
+  int numLocal2 = uniquemap2.NumMyElements();
+
+  //If this is proc 0 or proc numProcs-1, then the number of
+  //local elements should be different in the two one-to-one maps.
+  if ((myPID==0 || myPID==numProcs-1) && numLocal1 == numLocal2) {
+    return(-3);
   }
 
   return(0);

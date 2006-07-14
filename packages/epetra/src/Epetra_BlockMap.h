@@ -436,7 +436,7 @@ class Epetra_BlockMap: public Epetra_Object {
       only once on a single processor and nowhere else.  This boolean test returns true if this property
       is true, otherwise it returns false.
   */
-  bool  UniqueGIDs() const {return(true);};
+  bool  UniqueGIDs() const {return(IsOneToOne());};
 
   //! Returns true if map has constant element size.
   bool  ConstantElementSize() const {return(BlockMapData_->ConstantElementSize_);};

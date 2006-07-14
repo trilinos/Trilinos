@@ -29,6 +29,9 @@
 
 #include "Epetra_Util.h"
 #include "Epetra_Object.h"
+#include "Epetra_Comm.h"
+#include "Epetra_Directory.h"
+#include "Epetra_Map.h"
 #include "Epetra_CrsGraph.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_MultiVector.h"
@@ -78,10 +81,10 @@ int Epetra_Util::SetSeed(unsigned int Seed) {
 }
 
 //=============================================================================
-  void Epetra_Util::Sort(bool SortAscending, int NumKeys, int * Keys, 
-			int NumDoubleCompanions,double ** DoubleCompanions, 
-			int NumIntCompanions, int ** IntCompanions) const {
-
+void Epetra_Util::Sort(bool SortAscending, int NumKeys, int * Keys, 
+		       int NumDoubleCompanions,double ** DoubleCompanions, 
+		       int NumIntCompanions, int ** IntCompanions)
+{
   int i;
 
   int n = NumKeys;
@@ -114,7 +117,50 @@ int Epetra_Util::SetSeed(unsigned int Seed) {
       }
     m = m/2;
   }
+}
 
+//----------------------------------------------------------------------------
+Epetra_Map
+Epetra_Util::Create_OneToOne_Map(const Epetra_Map& usermap,
+				 bool high_rank_proc_owns_shared)
+{
+  //if usermap is already 1-to-1 then we'll just return a copy of it.
+  if (usermap.IsOneToOne()) {
+    Epetra_Map newmap(usermap);
+    return(newmap);
+  }
+
+  int myPID = usermap.Comm().MyPID();
+  Epetra_Directory* directory = usermap.Comm().CreateDirectory(usermap);
+
+  int numMyElems = usermap.NumMyElements();
+  const int* myElems = usermap.MyGlobalElements();
+
+  int* owner_procs = new int[numMyElems];
+
+  directory->GetDirectoryEntries(usermap, numMyElems, myElems, owner_procs,
+				 0, 0, high_rank_proc_owns_shared);
+
+  //we'll fill a list of map-elements which belong on this processor
+
+  int* myOwnedElems = new int[numMyElems];
+  int numMyOwnedElems = 0;
+
+  for(int i=0; i<numMyElems; ++i) {
+    int GID = myElems[i];
+    int owner = owner_procs[i];
+
+    if (myPID == owner) {
+      myOwnedElems[numMyOwnedElems++] = GID;
+    }
+  }
+
+  Epetra_Map one_to_one_map(-1, numMyOwnedElems, myOwnedElems,
+			 usermap.IndexBase(), usermap.Comm());
+
+  delete [] myOwnedElems;
+
+  return(one_to_one_map);
 }
 
 //----------------------------------------------------------------------------

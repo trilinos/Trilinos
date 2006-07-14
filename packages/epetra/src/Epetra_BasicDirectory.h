@@ -77,8 +77,9 @@ class Epetra_BasicDirectory: public virtual Epetra_Directory {
            GlobalEntries - List of Global IDs being passed in.
     \param InOut
            Procs - User allocated array of length at least NumEntries.  On return contains list of processors
-	   owning the Global IDs in question. If any of the GIDs is owned by more than
-	   one processor, then the lowest-numbered processor is listed in this array.
+	   owning the Global IDs in question. If any of the GIDs is shared by more than
+	   one processor, then the lowest-numbered processor is listed in this array, unless the optional
+	   argument 'high_rank_sharing_procs' is given as true.
     \param InOut
            LocalEntries - User allocated array of length at least NumEntries.  On return contains the local ID of
 	   the global on the owning processor. If LocalEntries is zero, no local ID information is returned.
@@ -86,13 +87,20 @@ class Epetra_BasicDirectory: public virtual Epetra_Directory {
            EntrySizes - User allocated array of length at least NumEntries.  On return contains the size of the
 	   object associated with this global ID. If LocalEntries is zero, no size information is returned.
 	   
+    \param In
+           high_rank_sharing_procs Optional argument, defaults to true. If any GIDs appear on multiple
+	   processors (referred to as "sharing procs"), this specifies whether the lowest-rank proc or the
+	   highest-rank proc is chosen as the "owner".
+
     \return Integer error code, set to 0 if successful.
   */
   int GetDirectoryEntries( const Epetra_BlockMap& Map,
 			   const int NumEntries,
 			   const int * GlobalEntries,
 			   int * Procs,
-			   int * LocalEntries, int * EntrySizes) const;
+			   int * LocalEntries,
+			   int * EntrySizes,
+			   bool high_rank_sharing_procs=false) const;
 
   //!GIDsAllUniquelyOwned: returns true if all GIDs appear on just one processor.
   /*! If any GIDs are owned by multiple processors, returns false.

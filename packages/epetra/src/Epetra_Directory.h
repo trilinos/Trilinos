@@ -72,6 +72,11 @@ class Epetra_Directory {
            EntrySizes - User allocated array of length at least NumEntries.  On return contains the size of the
 	   object associated with this global ID. If LocalEntries is zero, no size information is returned.
 	   
+    \param In
+           high_rank_sharing_procs Optional argument, defaults to true. If any GIDs appear on multiple
+	   processors (referred to as "sharing procs"), this specifies whether the lowest-rank proc or the
+	   highest-rank proc is chosen as the "owner".
+	   
     \return Integer error code, set to 0 if successful.
   */
   virtual int GetDirectoryEntries( const Epetra_BlockMap& Map,
@@ -79,8 +84,12 @@ class Epetra_Directory {
 				   const int * GlobalEntries,
 				   int * Procs,
 				   int * LocalEntries,
-				   int * EntrySizes) const = 0;
+				   int * EntrySizes,
+				   bool high_rank_sharing_procs=false) const = 0;
 
+  //!GIDsAllUniquelyOwned: returns true if all GIDs appear on just one processor.
+  /*! If any GIDs are owned by multiple processors, returns false.
+   */
   virtual bool GIDsAllUniquelyOwned() const = 0;
   //@}
 };

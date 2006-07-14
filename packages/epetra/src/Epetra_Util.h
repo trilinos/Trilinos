@@ -33,23 +33,33 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #define EPETRA_UTIL_H
 
 #include "Epetra_Object.h"
+class Epetra_Map;
 class Epetra_CrsMatrix;
 class Epetra_MultiVector;
 
 //! Epetra_Util:  The Epetra Util Wrapper Class.
 /*! The Epetra_Util class is a collection of useful functions that cut across a broad
-    set of other classes.  Specifically, sorting is provided by this class. A random
-		number generator is also provided.
+  set of other classes.
+<ul>
+<li> A random number generator is provided, along with methods to set and
+retrieve the random-number seed.
 
-    Epetra_Util is a serial interface only.  This is appropriate since the standard 
-    utilities are only specified for serial execution (or shared memory parallel).
+The random number generator is a multiplicative linear congruential generator, 
+with multiplier 16807 and modulus 2^31 - 1. It is based on the algorithm described in
+"Random Number Generators: Good Ones Are Hard To Find", S. K. Park and K. W. Miller, 
+Communications of the ACM, vol. 31, no. 10, pp. 1192-1201.
 
-		The random number generator is a multiplicative linear congruential generator, 
-		with multiplier 16807 and modulus 2^31 - 1. It is based on the algorithm described in
-		"Random Number Generators: Good Ones Are Hard To Find", S. K. Park and K. W. Miller, 
-		Communications of the ACM, vol. 31, no. 10, pp. 1192-1201.
+<li> Sorting is provided by a static function on this class (i.e., it is not
+necessary to construct an instance of this class to use the Sort function).
+
+<li> A static function is provided for creating a new Epetra_Map object with
+ 1-to-1 ownership of entries from an existing map which may have entries that
+appear on multiple processors.
+</ul>
+
+  Epetra_Util is a serial interface only.  This is appropriate since the standard 
+  utilities are only specified for serial execution (or shared memory parallel).
 */
-
 class Epetra_Util {
     
   public:
@@ -69,17 +79,17 @@ class Epetra_Util {
 
   //@{ \name Random number utilities
 
-	//! Returns a random integer on the interval (0, 2^31-1)
-	unsigned int RandomInt();
+  //! Returns a random integer on the interval (0, 2^31-1)
+  unsigned int RandomInt();
 
-	//! Returns a random double on the interval (-1.0,1.0)
-	double RandomDouble();
+  //! Returns a random double on the interval (-1.0,1.0)
+  double RandomDouble();
 
   //! Get seed from Random function.
   /*!
     \return Current random number seed.
   */
-	unsigned int Seed() const;
+  unsigned int Seed() const;
 
   //! Set seed for Random function.
   /*!
@@ -88,7 +98,7 @@ class Epetra_Util {
 
     \return Integer error code, set to 0 if successful.
   */
-	int SetSeed(unsigned int Seed);
+  int SetSeed(unsigned int Seed);
 
 	//@}
   
@@ -116,9 +126,17 @@ class Epetra_Util {
            IntCompanions - IntCompanions[i] is a pointer to the ith list of integers to be sorted with key.
 	   
   */
-  void Sort(bool SortAscending, int NumKeys, int * Keys, 
-	    int NumDoubleCompanions,double ** DoubleCompanions, 
-	    int NumIntCompanions, int ** IntCompanions) const;
+  static void Sort(bool SortAscending, int NumKeys, int * Keys, 
+		   int NumDoubleCompanions,double ** DoubleCompanions, 
+		   int NumIntCompanions, int ** IntCompanions);
+
+  //! Epetra_Util Create_OneToOne_Map function
+  /*! Function to create a new Epetra_Map object with 1-to-1 ownership of
+    entries from an existing map which may have entries that appear on
+    multiple processors.
+  */
+  static Epetra_Map Create_OneToOne_Map(const Epetra_Map& usermap,
+					bool high_rank_proc_owns_shared=false);
 
   //! Epetra_Util Chop method.  Return zero if input Value is less than ChopValue
   static double Chop(const double & Value){
@@ -130,7 +148,6 @@ class Epetra_Util {
 
  private:
 	unsigned int Seed_;
-
 };
 
 
