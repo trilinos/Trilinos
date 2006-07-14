@@ -85,6 +85,22 @@ class PyDictParameterListTestCase(unittest.TestCase):
             self.assertEqual(plist.get(key), d[key])
 
     def testConstructor3(self):
+        "Test Teuchos.PyDictParameterList dictionary constructor, bad key"
+        d = {"i" : 5,
+             "f" : 3.14,
+             "s" : "New Mexico",
+             1   : "Should fail"}
+        self.assertRaises(KeyError, Teuchos.PyDictParameterList, d)
+
+    def testConstructor4(self):
+        "Test Teuchos.PyDictParameterList dictionary constructor, bad value"
+        d = {"i" : 5,
+             "f" : 3.14,
+             "s" : "New Mexico",
+             "b" : (1,2,3)}
+        self.assertRaises(TypeError, Teuchos.PyDictParameterList, d)
+
+    def testConstructor5(self):
         "Test Teuchos.PyDictParameterList ParameterList constructor"
         plist = Teuchos.ParameterList()
         plist.set("unity",1)
@@ -92,7 +108,7 @@ class PyDictParameterListTestCase(unittest.TestCase):
         self.assertEqual(isinstance(pyDictPlist,Teuchos.PyDictParameterList), True)
         self.assertEqual(pyDictPlist.get("unity"),1)
 
-    def testConstructor4(self):
+    def testConstructor6(self):
         "Test Teuchos.PyDictParameterList copy constructor"
         plist_copy = Teuchos.PyDictParameterList(self.plist)
         self.assertEqual(isinstance(plist_copy,Teuchos.PyDictParameterList), True)
