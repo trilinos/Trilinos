@@ -19,8 +19,9 @@ Trilinos/packages/external/NEW1 (and so on)
 
 2. In Trilinos/packages/external, type ./CustomizeExternal.csh NEW NEW1 ...
 
-3. Build Trilinos in the usual way, adding any arguments necessary for NEW, 
-NEW1, ...
+3. Build Trilinos in the usual way, adding '--enable-external' to the list of 
+configure arguments.  Also add any configure arguments necessary for the 
+external package(s) being added to the build process.
 
 The setup requirements for NEW are fairly minimal:
 
@@ -29,8 +30,8 @@ packages do.
 
 2. sed must be in your path.
 
-3. (When adding more than 1 package at the external/ level only) autoconf
-version 2.59 and automake version 1.8.2 must be in your path.
+3. Autoconf version 2.59 and automake version 1.8.2 must be in your path when 
+adding *more than one* package at the external/ level.
 
 It is suggested that packages also:
 
