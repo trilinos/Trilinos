@@ -60,27 +60,26 @@ Solving the linear system with sillyCgSolve(...) ...
   describe x:
     DefaultSpmdVector<float>{dim=500}
   
-  Iter = 0, ||b-A*x||/||b-A*x0|| = 1.000000e+000
-  Iter = 31, ||b-A*x||/||b-A*x0|| = 6.768250e-001
-  Iter = 62, ||b-A*x||/||b-A*x0|| = 1.586830e-001
-  Iter = 93, ||b-A*x||/||b-A*x0|| = 3.874917e-002
-  Iter = 124, ||b-A*x||/||b-A*x0|| = 9.400059e-003
-  Iter = 155, ||b-A*x||/||b-A*x0|| = 2.241088e-003
-  Iter = 186, ||b-A*x||/||b-A*x0|| = 5.136720e-004
-  Iter = 217, ||b-A*x||/||b-A*x0|| = 1.038897e-004
-  Iter = 218, ||b-A*x||/||b-A*x0|| = 9.815032e-005
+  Iter = 0, ||b-A*x||/||b-A*x0|| = 1.000000e+00
+  Iter = 31, ||b-A*x||/||b-A*x0|| = 3.172030e-01
+  Iter = 62, ||b-A*x||/||b-A*x0|| = 4.875919e-02
+  Iter = 93, ||b-A*x||/||b-A*x0|| = 1.090162e-02
+  Iter = 124, ||b-A*x||/||b-A*x0|| = 2.477407e-03
+  Iter = 155, ||b-A*x||/||b-A*x0|| = 8.997934e-04
+  Iter = 186, ||b-A*x||/||b-A*x0|| = 1.621064e-04
+  Iter = 202, ||b-A*x||/||b-A*x0|| = 9.563797e-05
 
 Checking the residual ourselves ...
   
-  ||b-A*x||/||b|| = 6.379066e-003/2.120641e+001 = 3.008084e-004 <= 10.0*tolerance = 9.999999e-004: passed
+  ||b-A*x||/||b|| = 1.318619e-03/1.270762e+01 = 1.037660e-04 <= 10.0*tolerance = 9.999999e-04: passed
 
-Total time = 7.000000e-002 sec
+Total time = 3.000000e-02 sec
 
 ***
 *** Running silly CG solver using scalar type = 'double' ...
 ***
 
-Constructing tridiagonal matrix A of dimension = 500 and diagonal multiplier = 1.001000e+000 ...
+Constructing tridiagonal matrix A of dimension = 500 and diagonal multiplier = 1.001000e+00 ...
 
 Testing the constructed linear operator A ...
   
@@ -137,20 +136,171 @@ Solving the linear system with sillyCgSolve(...) ...
   describe x:
     DefaultSpmdVector<double>{dim=500}
   
-  Iter = 0, ||b-A*x||/||b-A*x0|| = 1.000000e+000
-  Iter = 31, ||b-A*x||/||b-A*x0|| = 6.768643e-001
-  Iter = 62, ||b-A*x||/||b-A*x0|| = 1.586982e-001
-  Iter = 93, ||b-A*x||/||b-A*x0|| = 3.875455e-002
-  Iter = 124, ||b-A*x||/||b-A*x0|| = 9.401826e-003
-  Iter = 155, ||b-A*x||/||b-A*x0|| = 2.241628e-003
-  Iter = 186, ||b-A*x||/||b-A*x0|| = 5.138224e-004
-  Iter = 217, ||b-A*x||/||b-A*x0|| = 1.039247e-004
-  Iter = 218, ||b-A*x||/||b-A*x0|| = 9.818353e-005
+  Iter = 0, ||b-A*x||/||b-A*x0|| = 1.000000e+00
+  Iter = 31, ||b-A*x||/||b-A*x0|| = 3.172143e-01
+  Iter = 62, ||b-A*x||/||b-A*x0|| = 4.876230e-02
+  Iter = 93, ||b-A*x||/||b-A*x0|| = 1.090262e-02
+  Iter = 124, ||b-A*x||/||b-A*x0|| = 2.477719e-03
+  Iter = 155, ||b-A*x||/||b-A*x0|| = 8.999423e-04
+  Iter = 186, ||b-A*x||/||b-A*x0|| = 1.621384e-04
+  Iter = 202, ||b-A*x||/||b-A*x0|| = 9.565884e-05
 
 Checking the residual ourselves ...
   
-  ||b-A*x||/||b|| = 2.082119e-003/2.120640e+001 = 9.818353e-005 <= 10.0*tolerance = 1.000000e-003: passed
+  ||b-A*x||/||b|| = 1.215596e-03/1.270762e+01 = 9.565884e-05 <= 10.0*tolerance = 1.000000e-03: passed
 
-Total time = 7.000000e-002 sec
+Total time = 4.000000e-02 sec
+
+***
+*** Running silly CG solver using scalar type = 'std::complex<float>' ...
+***
+
+Constructing tridiagonal matrix A of dimension = 500 and diagonal multiplier = (1.001000e+00,0.000000e+00) ...
+
+Testing the constructed linear operator A ...
+  
+  *** Entering LinearOpTester<std::complex<float>,std::complex<float>>::check(op,...) ...
+  
+  describe op:
+    ExampleTridiagSerialLinearOp<std::complex<float>>{rangeDim=500,domainDim=500}
+  
+  Checking the domain and range spaces ... passed!
+  
+  this->check_linear_properties()==true: Checking the linear properties of the forward linear operator ... passed!
+  
+  (this->check_linear_properties()&&this->check_adjoint())==false: Skipping the check of the linear properties of the adjoint operator!
+  
+  this->check_adjoint()==false: Skipping check for the agreement of the adjoint and forward operators!
+  
+  this->check_for_symmetry()==false: Skipping check of symmetry ...
+  
+  Congratulations, this LinearOpBase object seems to check out!
+  
+  *** Leaving LinearOpTester<std::complex<float>,std::complex<float>>::check(...)
+
+Testing the linear operator used with the solve ...
+  
+  *** Entering LinearOpTester<std::complex<float>,std::complex<float>>::check(op,...) ...
+  
+  describe op:
+    ExampleTridiagSerialLinearOp<std::complex<float>>{rangeDim=500,domainDim=500}
+  
+  Checking the domain and range spaces ... passed!
+  
+  this->check_linear_properties()==true: Checking the linear properties of the forward linear operator ... passed!
+  
+  (this->check_linear_properties()&&this->check_adjoint())==false: Skipping the check of the linear properties of the adjoint operator!
+  
+  this->check_adjoint()==false: Skipping check for the agreement of the adjoint and forward operators!
+  
+  this->check_for_symmetry()==true: Performing check of symmetry ... passed!
+  
+  Congratulations, this LinearOpBase object seems to check out!
+  
+  *** Leaving LinearOpTester<std::complex<float>,std::complex<float>>::check(...)
+
+Solving the linear system with sillyCgSolve(...) ...
+  
+  Starting CG solver ...
+  
+  describe A:
+    ExampleTridiagSerialLinearOp<std::complex<float>>{rangeDim=500,domainDim=500}
+  
+  describe b:
+    DefaultSpmdVector<std::complex<float>>{dim=500}
+  
+  describe x:
+    DefaultSpmdVector<std::complex<float>>{dim=500}
+  
+  Iter = 0, ||b-A*x||/||b-A*x0|| = 1.000000e+00
+  Iter = 31, ||b-A*x||/||b-A*x0|| = 3.578967e-01
+  Iter = 62, ||b-A*x||/||b-A*x0|| = 6.437086e-02
+  Iter = 93, ||b-A*x||/||b-A*x0|| = 1.508291e-02
+  Iter = 124, ||b-A*x||/||b-A*x0|| = 3.664470e-03
+  Iter = 155, ||b-A*x||/||b-A*x0|| = 9.545368e-04
+  Iter = 186, ||b-A*x||/||b-A*x0|| = 2.053413e-04
+  Iter = 202, ||b-A*x||/||b-A*x0|| = 9.788751e-05
+
+Checking the residual ourselves ...
+  
+  ||b-A*x||/||b|| = 1.914953e-03/1.818107e+01 = 1.053268e-04 <= 10.0*tolerance = 9.999999e-04: passed
+
+Total time = 8.000000e-02 sec
+
+***
+*** Running silly CG solver using scalar type = 'std::complex<double>' ...
+***
+
+Constructing tridiagonal matrix A of dimension = 500 and diagonal multiplier = (1.001000e+00,0.000000e+00) ...
+
+Testing the constructed linear operator A ...
+  
+  *** Entering LinearOpTester<std::complex<double>,std::complex<double>>::check(op,...) ...
+  
+  describe op:
+    ExampleTridiagSerialLinearOp<std::complex<double>>{rangeDim=500,domainDim=500}
+  
+  Checking the domain and range spaces ... passed!
+  
+  this->check_linear_properties()==true: Checking the linear properties of the forward linear operator ... passed!
+  
+  (this->check_linear_properties()&&this->check_adjoint())==false: Skipping the check of the linear properties of the adjoint operator!
+  
+  this->check_adjoint()==false: Skipping check for the agreement of the adjoint and forward operators!
+  
+  this->check_for_symmetry()==false: Skipping check of symmetry ...
+  
+  Congratulations, this LinearOpBase object seems to check out!
+  
+  *** Leaving LinearOpTester<std::complex<double>,std::complex<double>>::check(...)
+
+Testing the linear operator used with the solve ...
+  
+  *** Entering LinearOpTester<std::complex<double>,std::complex<double>>::check(op,...) ...
+  
+  describe op:
+    ExampleTridiagSerialLinearOp<std::complex<double>>{rangeDim=500,domainDim=500}
+  
+  Checking the domain and range spaces ... passed!
+  
+  this->check_linear_properties()==true: Checking the linear properties of the forward linear operator ... passed!
+  
+  (this->check_linear_properties()&&this->check_adjoint())==false: Skipping the check of the linear properties of the adjoint operator!
+  
+  this->check_adjoint()==false: Skipping check for the agreement of the adjoint and forward operators!
+  
+  this->check_for_symmetry()==true: Performing check of symmetry ... passed!
+  
+  Congratulations, this LinearOpBase object seems to check out!
+  
+  *** Leaving LinearOpTester<std::complex<double>,std::complex<double>>::check(...)
+
+Solving the linear system with sillyCgSolve(...) ...
+  
+  Starting CG solver ...
+  
+  describe A:
+    ExampleTridiagSerialLinearOp<std::complex<double>>{rangeDim=500,domainDim=500}
+  
+  describe b:
+    DefaultSpmdVector<std::complex<double>>{dim=500}
+  
+  describe x:
+    DefaultSpmdVector<std::complex<double>>{dim=500}
+  
+  Iter = 0, ||b-A*x||/||b-A*x0|| = 1.000000e+00
+  Iter = 31, ||b-A*x||/||b-A*x0|| = 3.579080e-01
+  Iter = 62, ||b-A*x||/||b-A*x0|| = 6.437509e-02
+  Iter = 93, ||b-A*x||/||b-A*x0|| = 1.508444e-02
+  Iter = 124, ||b-A*x||/||b-A*x0|| = 3.664968e-03
+  Iter = 155, ||b-A*x||/||b-A*x0|| = 9.546967e-04
+  Iter = 186, ||b-A*x||/||b-A*x0|| = 2.053825e-04
+  Iter = 202, ||b-A*x||/||b-A*x0|| = 9.790892e-05
+
+Checking the residual ourselves ...
+  
+  ||b-A*x||/||b|| = 1.780089e-03/1.818107e+01 = 9.790892e-05 <= 10.0*tolerance = 1.000000e-03: passed
+
+Total time = 9.000000e-02 sec
 
 Congratulations! All of the tests checked out!

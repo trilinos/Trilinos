@@ -1,9 +1,9 @@
 
 Echoing the command-line:
 
-c:\_mystuff\PROJECTS\Trilinos.base\BUILDS\INTEL\SERIAL_DEBUG\packages\thyra\example\operator_vector\sillyCgSolve_serial.exe --echo-command-line --help 
+../example/operator_vector/sillyCgSolve_serial.exe --echo-command-line --help 
 
-Usage: c:\_mystuff\PROJECTS\Trilinos.base\BUILDS\INTEL\SERIAL_DEBUG\packages\thyra\example\operator_vector\sillyCgSolve_serial.exe [options]
+Usage: ../example/operator_vector/sillyCgSolve_serial.exe [options]
   options:
   --help                                Prints this help message
   --pause-for-debugging                 Pauses for user input to allow attaching a debugger

@@ -1,10 +1,9 @@
-Teuchos::GlobalMPISession::GlobalMPISession(): started serial run
 
 Echoing the command-line:
 
-c:\_mystuff\PROJECTS\Trilinos.base\BUILDS\INTEL\SERIAL_DEBUG\packages\thyra\example\operator_vector\sillyCgSolve_mpi.exe --echo-command-line --help 
+../example/operator_vector/sillyCgSolve_mpi.exe --echo-command-line --help 
 
-Usage: c:\_mystuff\PROJECTS\Trilinos.base\BUILDS\INTEL\SERIAL_DEBUG\packages\thyra\example\operator_vector\sillyCgSolve_mpi.exe [options]
+Usage: ../example/operator_vector/sillyCgSolve_mpi.exe [options]
   options:
   --help                                Prints this help message
   --pause-for-debugging                 Pauses for user input to allow attaching a debugger
@@ -33,3 +32,4 @@ Usage: c:\_mystuff\PROJECTS\Trilinos.base\BUILDS\INTEL\SERIAL_DEBUG\packages\thy
                                         (default: --max-num-iters=300)
   --dump-all                    bool    Determines if vectors are printed or not.
   --no-dump-all                         (default: --no-dump-all)
+Teuchos::GlobalMPISession::GlobalMPISession(): started processor with name sahp6556.sandia.gov and rank 0!
