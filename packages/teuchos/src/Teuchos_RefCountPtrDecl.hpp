@@ -46,10 +46,6 @@
 #  define TEUCHOS_REFCOUNTPTR_ASSERT_NONNULL
 #endif
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-namespace MemMngPack {} // ToDo: Take out latter!
-#endif
-
 /** \class Teuchos::DeallocDelete
     \brief Policy class for deallocator that uses <tt>delete</tt> to delete a
     pointer which is used by <tt>RefCountPtr</tt>.
@@ -582,7 +578,7 @@ public:
 	RefCountPtr<T>& operator=(const RefCountPtr<T>& r_ptr);
 	/** \brief Pointer (<tt>-></tt>) access to members of underlying object.
 	 *
-	 * Preconditions:
+	 * <b>Preconditions:</b>
 	 * <ul>
 	 * <li> <tt>this->get() != NULL</tt> (throws <tt>std::logic_error</tt>)
 	 * </ul>
@@ -590,7 +586,7 @@ public:
 	T* operator->() const;
 	/** \brief Dereference the underlying object.
 	 *
-	 * Preconditions:
+	 * <b>Preconditions:</b>
 	 * <ul>
 	 * <li> <tt>this->get() != NULL</tt> (throws <tt>std::logic_error</tt>)
 	 * </ul>
@@ -601,18 +597,19 @@ public:
 	T* get() const;
 	/** \brief Release the ownership of the underlying dynamically allocated object.
 	 *
-	 * After this function is called then the client is responsible for calling
-	 * delete on the returned pointer no matter how many <tt>ref_count_prt<T></tt> objects
-	 * have a reference to it.  If <tt>this-></tt>get() <tt>== NULL</tt>, then this call is
-	 * meaningless.
+	 * After this function is called then the client is responsible for
+	 * deallocating the shared object no matter how many
+	 * <tt>ref_count_prt<T></tt> objects have a reference to it.  If
+	 * <tt>this-></tt>get()<tt>== NULL</tt>, then this call is meaningless.
 	 *
 	 * Note that this function does not have the exact same semantics as does
-	 * <tt>auto_ptr<T>::release()</tt>.  In <tt>auto_ptr<T>::release()</tt>, <tt>this</tt>
-	 * is set to <tt>NULL</tt> while here in RefCountPtr<T>:: release() only an ownership flag is set
-	 * and <tt>this</tt> still points to the same object.  It would be difficult to duplicate
-	 * the behavior of <tt>auto_ptr<T>::release()</tt> for this class.
+	 * <tt>auto_ptr<T>::release()</tt>.  In <tt>auto_ptr<T>::release()</tt>,
+	 * <tt>this</tt> is set to <tt>NULL</tt> while here in RefCountPtr<T>::
+	 * release() only an ownership flag is set and <tt>*this</tt> still points
+	 * to the same object.  It would be difficult to duplicate the behavior of
+	 * <tt>auto_ptr<T>::release()</tt> for this class.
 	 *
-	 * Postconditions:
+	 * <b>Postconditions:</b>
 	 * <ul>
 	 * <li> <tt>this->has_ownership() == false</tt>
 	 * </ul>
@@ -633,7 +630,7 @@ public:
 	 * See ~RefCountPtr() above.  This function
 	 * does nothing if <tt>this->get() == NULL</tt>.
 	 *
-	 * Postconditions:
+	 * <b>Postconditions:</b>
 	 * <ul>
 	 * <li> If <tt>this->get() == NULL</tt> then
 	 *   <ul>
@@ -719,7 +716,7 @@ public:
  *            will happen to delete the the object pointed to by
  *            <tt>p</tt> when the last reference is removed.
  *
- * Preconditions:<ul>
+ * <b>Preconditions:</b><ul>
  * <li> If <tt>owns_mem==true</tt> then <tt>p</tt> must have been
  *      created by calling <tt>new</tt> to create the object since
  *      <tt>delete p</tt> will be called eventually.
@@ -751,11 +748,11 @@ template<class T> inline RefCountPtr<T> rcp( T* p ) { return rcp(p,true); }
  *                 the underlying pointer by calling <tt>dealloc.free(p)</tt>.
  *                 when all references have been removed.
  *
- * Preconditions:<ul>
+ * <b>Preconditions:</b><ul>
  * <li> The function <tt>void Dealloc_T::free(T* p)</tt> exists.
  * </ul>
  *
- * Postconditions:<ul>
+ * <b>Postconditions:</b><ul>
  * <li> <tt>return.get() == p</tt>
  * <li> If <tt>p == NULL</tt> then
  *   <ul>
@@ -845,7 +842,7 @@ RefCountPtr<T2> rcp_const_cast(const RefCountPtr<T1>& p1);
  *                        a <tt>std::bad_cast</tt> exception is thrown with a very informative
  *                        error message.
  *
- * Postconditions:<ul>
+ * <b>Postconditions:</b><ul>
  * <li> If <tt>( p1.get()!=NULL && throw_on_fail==true && dynamic_cast<T2*>(p1.get())==NULL ) == true</tt>
  *      then an <tt>std::bad_cast</tt> exception is thrown with a very informative error message.
  * <li> If <tt>( p1.get()!=NULL && dynamic_cast<T2*>(p1.get())!=NULL ) == true</tt>
@@ -914,7 +911,7 @@ template<class T2, class T1> inline RefCountPtr<T2> rcp_dynamic_cast( const RefC
  * dependancies (instead consider using nested RefCountPtr objects as extra
  * data which will guarantee the order of deletion).
  *
- * Preconditions:<ul>
+ * <b>Preconditions:</b><ul>
  * <li> <tt>p->get() != NULL</tt> (throws <tt>std::logic_error</tt>)
  * <li> If this function has already been called with the same template
  *      type <tt>T1</tt> for <tt>extra_data</tt> and the same string <tt>name</tt>
@@ -952,7 +949,7 @@ inline void set_extra_data( const T1 &extra_data, const std::string& name, RefCo
  *
  * @return Returns a non-const reference to the extra_data object.
  *
- * Preconditions:<ul>
+ * <b>Preconditions:</b><ul>
  * <li> <tt>p.get() != NULL</tt> (throws <tt>std::logic_error</tt>)
  * <li> <tt>name</tt> and <tt>T1</tt> must have been used in a previous
  *      call to <tt>set_extra_data()</tt> (throws <tt>std::invalid_argument</tt>).
@@ -971,7 +968,7 @@ T1& get_extra_data( RefCountPtr<T2>& p, const std::string& name );
  *
  * @return Returns a const reference to the extra_data object.
  *
- * Preconditions:<ul>
+ * <b>Preconditions:</b><ul>
  * <li> <tt>p.get() != NULL</tt> (throws <tt>std::logic_error</tt>)
  * <li> <tt>name</tt> and <tt>T1</tt> must have been used in a previous
  *      call to <tt>set_extra_data()</tt> (throws <tt>std::invalid_argument</tt>).
@@ -997,11 +994,11 @@ const T1& get_extra_data( const RefCountPtr<T2>& p, const std::string& name );
  *
  * @return Returns a non-const pointer to the extra_data object.
  *
- * Preconditions:<ul>
+ * <b>Preconditions:</b><ul>
  * <li> <tt>p.get() != NULL</tt> (throws <tt>std::logic_error</tt>)
  * </ul>
  *
- * Postconditions:<ul>
+ * <b>Postconditions:</b><ul>
  * <li> If <tt>name</tt> and <tt>T1</tt> have been used in a previous
  *      call to <tt>set_extra_data()</tt> then <tt>return !=NULL</tt>
  *      and otherwise <tt>return == NULL</tt>.
@@ -1020,11 +1017,11 @@ T1* get_optional_extra_data( RefCountPtr<T2>& p, const std::string& name );
  *
  * @return Returns a const pointer to the extra_data object if it exists.
  *
- * Preconditions:<ul>
+ * <b>Preconditions:</b><ul>
  * <li> <tt>p.get() != NULL</tt> (throws <tt>std::logic_error</tt>)
  * </ul>
  *
- * Postconditions:<ul>
+ * <b>Postconditions:</b><ul>
  * <li> If <tt>name</tt> and <tt>T1</tt> have been used in a previous
  *      call to <tt>set_extra_data()</tt> then <tt>return !=NULL</tt>
  *      and otherwise <tt>return == NULL</tt>.
@@ -1044,7 +1041,7 @@ const T1* get_optional_extra_data( const RefCountPtr<T2>& p, const std::string& 
 
 /** \brief Return a non-<tt>const</tt> reference to the underlying deallocator object.
  *
- * Preconditions:<ul>
+ * <b>Preconditions:</b><ul>
  * <li> <tt>p.get() != NULL</tt> (throws <tt>std::logic_error</tt>)
  * <li> The deallocator object type used to construct <tt>p</tt> is same as <tt>Dealloc_T</tt>
  *      (throws <tt>std::logic_error</tt>)
@@ -1056,7 +1053,7 @@ Dealloc_T& get_dealloc( RefCountPtr<T>& p );
 
 /** \brief Return a <tt>const</tt> reference to the underlying deallocator object.
  *
- * Preconditions:<ul>
+ * <b>Preconditions:</b><ul>
  * <li> <tt>p.get() != NULL</tt> (throws <tt>std::logic_error</tt>)
  * <li> The deallocator object type used to construct <tt>p</tt> is same as <tt>Dealloc_T</tt>
  *      (throws <tt>std::logic_error</tt>)
@@ -1075,11 +1072,11 @@ const Dealloc_T& get_dealloc( const RefCountPtr<T>& p );
 /** \brief Return a pointer to the underlying non-<tt>const</tt> deallocator
  * object if it exists.
  *
- * Preconditions:<ul>
+ * <b>Preconditions:</b><ul>
  * <li> <tt>p.get() != NULL</tt> (throws <tt>std::logic_error</tt>)
  * </ul>
  *
- * Postconditions:<ul>
+ * <b>Postconditions:</b><ul>
  * <li> If the deallocator object type used to construct <tt>p</tt> is same as <tt>Dealloc_T</tt>
  *      then <tt>return!=NULL</tt>, otherwise <tt>return==NULL</tt>
  * </ul>
@@ -1090,11 +1087,11 @@ Dealloc_T* get_optional_dealloc( RefCountPtr<T>& p );
 /** \brief Return a pointer to the underlying <tt>const</tt> deallocator
  * object if it exists.
  *
- * Preconditions:<ul>
+ * <b>Preconditions:</b><ul>
  * <li> <tt>p.get() != NULL</tt> (throws <tt>std::logic_error</tt>)
  * </ul>
  *
- * Postconditions:<ul>
+ * <b>Postconditions:</b><ul>
  * <li> If the deallocator object type used to construct <tt>p</tt> is same as <tt>Dealloc_T</tt>
  *      then <tt>return!=NULL</tt>, otherwise <tt>return==NULL</tt>
  * </ul>
