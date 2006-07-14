@@ -934,9 +934,6 @@ double *dtmp;
 
   if (action == -43) {
 
-    printf("AZ_manage_memory: \n");
-    if (current == NULL) printf("  current==NULL\n");
-
     /* print the list */
 
     while (current != NULL) {
