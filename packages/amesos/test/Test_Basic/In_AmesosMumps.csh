@@ -109,7 +109,7 @@ $mpigo 1 amesos_test.exe MUMPS SuperLU.rua 0 1 1 0 1e-14 1e-13 >>SST.stdout
 $mpigo 1 amesos_test.exe MUMPS 662_bus_out.rsa 0 1 1 0 3e-10 2e-12 >>SST.stdout
 $mpigo 1 amesos_test.exe MUMPS 662_bus_out.rsa 0 1 4 0 3e-10 2e-12 >>SST.stdout
 $mpigo 1 amesos_test.exe MUMPS 662_bus_out.rsa 0 1 -2 0 3e-10 2e-12 >>SST.stdout
-$mpigo 1 amesos_test.exe MUMPS nos1.mtx 0 1 1 0 1e-10 2e-6 >>SST.stdout
+$mpigo 1 amesos_test.exe MUMPS nos1.mtx 0 1 1 0 1e-9 2e-6 >>SST.stdout
 $mpigo 1 amesos_test.exe MUMPS nos5.mtx 0 1 1 0 1e-12 5e-9 >>SST.stdout
 
 
