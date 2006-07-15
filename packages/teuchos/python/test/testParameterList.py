@@ -121,6 +121,24 @@ class ParameterListTestCase(unittest.TestCase):
         self.plist.set(name, value)
         self.assertEqual(self.plist.get(name), value)
 
+    def testSetDictionary(self):
+        "Test Teuchos.ParameterList set method for a dictionary"
+        name = "dict parameter"
+        d    = {"a" : 1,
+                "b" : 2,
+                "c" : 3 }
+        print "\nrefcount(d) =", sys.getrefcount(d)
+        self.plist.set(name, d)
+        print "refcount(d) =", sys.getrefcount(d)
+        print "list ="
+        self.plist._print()
+        sublist = self.plist.get(name)
+        print "sublist ="
+        sublist._print()
+        self.assertEqual(isinstance(sublist, Teuchos.ParameterList), True)
+        for key in d.keys():
+            self.assertEqual(sublist.get(key), d[key])
+
     def testSetParameterList(self):
         "Test Teuchos.ParameterList set and get methods for a ParameterList"
         name    = "sublist"
@@ -128,6 +146,7 @@ class ParameterListTestCase(unittest.TestCase):
         self.plist.set(name, sublist)
         self.assertEqual(isinstance(self.plist.get(name),
                                     Teuchos.ParameterList), True)
+        self.assertEqual(self.plist.isSublist(name), True)
 
     def testSetNone(self):
         "Test Teuchos.ParameterList set method for None"

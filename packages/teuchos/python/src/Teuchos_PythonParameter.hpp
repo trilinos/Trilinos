@@ -44,22 +44,28 @@ namespace Teuchos {
 
     // Dictionary values
     else if (PyDict_Check(value)) {
-      
+      // Convert the python dictionary to a PyDictParameterList
+      PyDictParameterList newList = PyDictParameterList(value);
+      if (PyErr_Occurred()) return false;
+      // Try to cast plist to PyDictParameterList; if you can, store the newList
+      if (dynamic_cast<PyDictParameterList *>(&plist)) plist.set(name, newList);
+      // Cast failed -> plist is a ParameterList, so store an upcast newList
+      else plist.sublist(name) = dynamic_cast<ParameterList &>(newList);
     }
 
-    // None
+    // None object
     else if (value == Py_None) {
       return false;
     }
 
     // PyDictParameterList values
-    else if (SWIG_CheckState(SWIG_Python_ConvertPtr(value, &argp, swig_TPDPL_ptr, 0))){
+    else if (SWIG_CheckState(SWIG_Python_ConvertPtr(value, &argp, swig_TPDPL_ptr, 0))) {
       PyDictParameterList *arg = reinterpret_cast<PyDictParameterList *>(argp);
       plist.set(name, *arg);
     }
 
     // ParameterList values
-    else if (SWIG_CheckState(SWIG_Python_ConvertPtr(value, &argp, swig_TPL_ptr, 0))){
+    else if (SWIG_CheckState(SWIG_Python_ConvertPtr(value, &argp, swig_TPL_ptr, 0))) {
       ParameterList *arg = reinterpret_cast<ParameterList *>(argp);
       plist.set(name, *arg);
     }
@@ -84,6 +90,8 @@ namespace Teuchos {
 
     static swig_type_info * swig_TPL_ptr   = SWIG_TypeQuery("Teuchos::ParameterList *"      );
     static swig_type_info * swig_TPDPL_ptr = SWIG_TypeQuery("Teuchos::PyDictParameterList *");
+
+    printf("Inside getPythonParameter\n");
 
     // Check for parameter existence
     if (!plist.isParameter(name)) return Py_BuildValue("");
@@ -120,12 +128,14 @@ namespace Teuchos {
 
     // PyDictParameterList values
     else if (isParameterType<PyDictParameterList>(plist,name)) {
+      printf("PyDictParameterList detected!\n");
       PyDictParameterList value = getParameter<PyDictParameterList>(plist, name);
       return SWIG_NewPointerObj((void*) &value, swig_TPDPL_ptr, 0);
     }
 
     // ParameterList values
     else if (isParameterType<ParameterList>(plist,name)) {
+      printf("ParameterList detected!\n");
       ParameterList value = getParameter<ParameterList>(plist,name);
       return SWIG_NewPointerObj((void*) &value, swig_TPL_ptr, 0);
     }

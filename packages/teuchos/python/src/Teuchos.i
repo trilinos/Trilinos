@@ -186,7 +186,9 @@ using namespace std;
 
     // No arguments
     if (pf==NULL) {
+      printf("About to call self->print\n");
       self->print(std::cout,indent,showTypes);
+      printf("Back from self->print\n");
       returnObject = Py_None;
     }
 

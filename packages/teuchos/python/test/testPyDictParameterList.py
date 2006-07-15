@@ -85,6 +85,24 @@ class PyDictParameterListTestCase(unittest.TestCase):
             self.assertEqual(plist.get(key), d[key])
 
     def testConstructor3(self):
+        "Test Teuchos.PyDictParameterList nested dictionary constructor"
+        d = {"i" : 5,
+             "f" : 3.14,
+             "s" : "New Mexico",
+             "d" : {"a":1, "b":2} }
+        plist = Teuchos.PyDictParameterList(d)
+        print
+        plist._print()
+        for key in d.keys():
+            if key == "d":
+                sublist = plist.get(key)
+                subdict = d["d"]
+                for subKey in subdict.keys():
+                    self.assertEqual(sublist.get(subKey), subdict[subKey])
+            else:
+                self.assertEqual(plist.get(key), d[key])
+
+    def testConstructor4(self):
         "Test Teuchos.PyDictParameterList dictionary constructor, bad key"
         d = {"i" : 5,
              "f" : 3.14,
@@ -92,7 +110,7 @@ class PyDictParameterListTestCase(unittest.TestCase):
              1   : "Should fail"}
         self.assertRaises(KeyError, Teuchos.PyDictParameterList, d)
 
-    def testConstructor4(self):
+    def testConstructor5(self):
         "Test Teuchos.PyDictParameterList dictionary constructor, bad value"
         d = {"i" : 5,
              "f" : 3.14,
@@ -100,7 +118,7 @@ class PyDictParameterListTestCase(unittest.TestCase):
              "b" : (1,2,3)}
         self.assertRaises(TypeError, Teuchos.PyDictParameterList, d)
 
-    def testConstructor5(self):
+    def testConstructor6(self):
         "Test Teuchos.PyDictParameterList ParameterList constructor"
         plist = Teuchos.ParameterList()
         plist.set("unity",1)
@@ -108,7 +126,7 @@ class PyDictParameterListTestCase(unittest.TestCase):
         self.assertEqual(isinstance(pyDictPlist,Teuchos.PyDictParameterList), True)
         self.assertEqual(pyDictPlist.get("unity"),1)
 
-    def testConstructor6(self):
+    def testConstructor7(self):
         "Test Teuchos.PyDictParameterList copy constructor"
         plist_copy = Teuchos.PyDictParameterList(self.plist)
         self.assertEqual(isinstance(plist_copy,Teuchos.PyDictParameterList), True)
@@ -161,6 +179,7 @@ class PyDictParameterListTestCase(unittest.TestCase):
         self.plist.set(name, sublist)
         self.assertEqual(isinstance(self.plist.get(name),
                                     Teuchos.PyDictParameterList), True)
+        self.assertEqual(self.plist.isSublist(name), True)
 
     def testSetPyDictParameterList(self):
         "Test Teuchos.PyDictParameterList set and get methods for a PyDictParameterList"
@@ -169,6 +188,7 @@ class PyDictParameterListTestCase(unittest.TestCase):
         self.plist.set(name, sublist)
         self.assertEqual(isinstance(self.plist.get(name),
                                     Teuchos.PyDictParameterList), True)
+        self.assertEqual(self.plist.isSublist(name), True)
 
     def testSetNone(self):
         "Test Teuchos.PyDictParameterList set method for None"

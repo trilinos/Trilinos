@@ -61,10 +61,10 @@ namespace Teuchos {
     PyDictParameterList(PyObject * dict) :
       Teuchos::ParameterList()
     {
-      PyObject 	  * key   = NULL;
-      PyObject 	  * value = NULL;
-      int      	    pos   = 0;
-      char        * name;
+      PyObject * key   = NULL;
+      PyObject * value = NULL;
+      int        pos   = 0;
+      char     * name;
       if (!PyDict_Check(dict)) {
 	PyErr_SetString(PyExc_TypeError, "Expecting type dict");
 	__pyDict__ = NULL;
@@ -95,12 +95,13 @@ namespace Teuchos {
       __pyDict__ = PyDict_New();
     }
 
-//    // -------------------------------------------------------------------------
-//    PyDictParameterList(const PyDictParameterList & source) :
-//     Teuchos::ParameterList(source)
-//    {
-//      __pyDict__ = PyDict_New();
-//    }
+    // -------------------------------------------------------------------------
+    PyDictParameterList(const PyDictParameterList & source) :
+      Teuchos::ParameterList(source)
+    {
+      Py_INCREF(source.__pyDict__);
+      __pyDict__ = source.__pyDict__;
+    }
 
     // -------------------------------------------------------------------------
     ~PyDictParameterList()
