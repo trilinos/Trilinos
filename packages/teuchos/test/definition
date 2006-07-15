@@ -75,7 +75,7 @@
         DIRS = ../python/example;
         ARGS = --testharness;
         EXIT-STATUS = STRING-COMPARISON;
-        COMM = SERIAL, MPI(1-4);
+        COMM = SERIAL;
 }
 
 (FRAMEWORK, INSTALL, TeuchosPyTests) {
@@ -83,5 +83,5 @@
         DESCEND_DIRS = YES;
         ARGS = --testharness;
         EXIT-STATUS = STRING-COMPARISON;
-        COMM = SERIAL, MPI(1-4);
+        COMM = SERIAL;
 }
