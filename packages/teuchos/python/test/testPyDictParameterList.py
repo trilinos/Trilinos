@@ -84,23 +84,23 @@ class PyDictParameterListTestCase(unittest.TestCase):
         for key in d.keys():
             self.assertEqual(plist.get(key), d[key])
 
-    def testConstructor3(self):
-        "Test Teuchos.PyDictParameterList nested dictionary constructor"
-        d = {"i" : 5,
-             "f" : 3.14,
-             "s" : "New Mexico",
-             "d" : {"a":1, "b":2} }
-        plist = Teuchos.PyDictParameterList(d)
-        print
-        plist._print()
-        for key in d.keys():
-            if key == "d":
-                sublist = plist.get(key)
-                subdict = d["d"]
-                for subKey in subdict.keys():
-                    self.assertEqual(sublist.get(subKey), subdict[subKey])
-            else:
-                self.assertEqual(plist.get(key), d[key])
+#     def testConstructor3(self):
+#         "Test Teuchos.PyDictParameterList nested dictionary constructor"
+#         d = {"i" : 5,
+#              "f" : 3.14,
+#              "s" : "New Mexico",
+#              "d" : {"a":1, "b":2} }
+#         plist = Teuchos.PyDictParameterList(d)
+#         print
+#         plist._print()
+#         for key in d.keys():
+#             if key == "d":
+#                 sublist = plist.get(key)
+#                 subdict = d["d"]
+#                 for subKey in subdict.keys():
+#                     self.assertEqual(sublist.get(subKey), subdict[subKey])
+#             else:
+#                 self.assertEqual(plist.get(key), d[key])
 
     def testConstructor4(self):
         "Test Teuchos.PyDictParameterList dictionary constructor, bad key"
