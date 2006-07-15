@@ -4,6 +4,7 @@ F77=g77 \
 RANLIB="ranlib -s" \
 CPPFLAGS=-Wno-long-double \
 MACOSX_DEPLOYMENT_TARGET=10.4 \
+--with-incdirs="-I/sw/include" \
 --with-ldflags="-L/sw/lib/ -framework veclib -bind_at_load" \
 --with-libs="-lsuperlu -lumfpack -lamd -lg2c" \
 --cache-file=config.cache \

@@ -11,6 +11,7 @@ CXX=c++-3.3 \
 F77=g77 \
 RANLIB="ranlib -s" \
 CPPFLAGS=-Wno-long-double \
+--with-incdirs="-I/sw/include" \
 --with-ldflags="-framework veclib" \
 --enable-mpi \
 --with-mpi-compilers \
