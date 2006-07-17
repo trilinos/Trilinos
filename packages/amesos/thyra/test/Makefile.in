@@ -352,7 +352,7 @@ common_dependencies = $(top_builddir)/thyra/src/libamesosthyra.a $(top_builddir)
 @USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(AMESOS_EXTRA_INCLUDES) $(AMESOS_INCLUDES))
 @USING_GNUMAKE_FALSE@EXPORT_LIBS = $(AMESOS_LIBS)  $(AMESOS_EXTRA_LIBS)
 @USING_GNUMAKE_TRUE@EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl  $(AMESOS_LIBS) $(AMESOS_EXTRA_LIBS))
-AM_CPPFLAGS = $(EXPORT_INCLUDES)
+AM_CPPFLAGS = $(EXPORT_INCLUDES) -I$(top_srcdir)/../thyra/example/operator_solve
 common_ldadd = $(EXPORT_LIBS)
 EXTRA_DIST = \
 	$(srcdir)/test_single_amesos_thyra_solver.hpp

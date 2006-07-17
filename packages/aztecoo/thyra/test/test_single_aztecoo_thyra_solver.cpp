@@ -31,6 +31,7 @@
 #ifndef __sun
 
 #include "Thyra_AztecOOLinearOpWithSolveFactory.hpp"
+#include "Thyra_DefaultScaledAdjointLinearOp.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_LinearOpTester.hpp"
 #include "Thyra_LinearOpWithSolveBase.hpp"
@@ -341,7 +342,7 @@ bool Thyra::test_single_aztecoo_thyra_solver(
       if(out.get()) *out << "\nQ) Create an implicitly scaled (by 2.5) and transposed matrix A3 = scale(2.5,transpose(A)) and initialize nsA2 ...\n";
     
       Teuchos::RefCountPtr<const LinearOpBase<double> >
-        A3 = scale(2.5,transpose(A));
+        A3 = scale<double>(2.5,transpose<double>(A));
       Teuchos::RefCountPtr<LinearOpWithSolveBase<double> >
         nsA2 = createAndInitializeLinearOpWithSolve(*lowsFactory,A3);
     

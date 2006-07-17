@@ -243,24 +243,24 @@ struct SolveStatus {
 
 /** \brief Print the solve status to a stream */
 template <class Scalar>
-std::ostream& operator<<( std::ostream& out, const SolveStatus<Scalar> &solveStatus )
+std::ostream& operator<<( std::ostream& out_arg, const SolveStatus<Scalar> &solveStatus )
 {
-  out
+  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+    out = Teuchos::getFancyOStream(Teuchos::rcp(&out_arg,false));
+  Teuchos::OSTab tab(out);
+  *out
     << "solveStatus = " << toString(solveStatus.solveStatus) << std::endl
     << "achievedTol = " << SolveStatus<Scalar>::achievedTolToString(solveStatus.achievedTol) << std::endl
     << "message: \"" << solveStatus.message << "\"" << std::endl
     << "extraParameters:";
   if(solveStatus.extraParameters.get()) {
-    out << "\n";
-    solveStatus.extraParameters->print(
-      *Teuchos::OSTab(Teuchos::getFancyOStream(Teuchos::rcp(&out,false))).getOStream()
-      ,1000,true
-      );
+    *out << "\n";
+    solveStatus.extraParameters->print(Teuchos::OSTab(out)(),1000,true);
   }
   else {
-    out << " NONE\n";
+    *out << " NONE\n";
   }
-  return out;
+  return out_arg;
 }
 
 /** \brief Enum how a <tt>LinearOpWithSolveBase</tt> object will be used for

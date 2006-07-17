@@ -155,7 +155,7 @@ void DefaultBlockedLinearOp<Scalar>::endBlockFill()
   // Insert the block LOB objects if doing a flexible fill.
   if(Ops_stack_.size()) {
     Ops_.resize(numRowBlocks_*numColBlocks_);
-    for( int k = 0; k < Ops_stack_.size(); ++k ) {
+    for( int k = 0; k < static_cast<int>(Ops_stack_.size()); ++k ) {
       const BlockEntry<Scalar> &block_i_j = Ops_stack_[k];
       Ops_[numRowBlocks_*block_i_j.j+block_i_j.i] = block_i_j.block;
     }

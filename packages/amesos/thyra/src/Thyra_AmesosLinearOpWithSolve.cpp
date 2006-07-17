@@ -254,6 +254,7 @@ void AmesosLinearOpWithSolve::solve(
         = (blockSolveCriteria[i].solveCriteria.solveMeasureType.useDefault()
            ? SOLVE_STATUS_UNKNOWN : SOLVE_STATUS_CONVERGED );
       blockSolveStatus[i].achievedTol = SS::unknownTolerance();
+      blockSolveStatus[i].message = std::string("Solver: ")+typeid(*amesosSolver_).name();
     }
   }
 }

@@ -91,34 +91,20 @@ namespace Thyra {
  *   </ul>
  * </ul>
  *
- * \subsection LOWSFB_single_linear_solve_sec Performing a single linear solve with the forward operator
+ * \dontinclude Thyra_LinearOpWithSolveFactoryExamples.hpp
+ *
+ * \subsection LOWSFB_single_linear_solve_sec Performing a single linear solve given a forward operator
  *
  * Performing a single linear solve is at minimum a two step process but can
  * be performed in a single line of code.  The following example function
  * shows how to take a <tt>LinearOpBase</tt> object, a compatible
  * <tt>LinearOpWithSolveFactoryBase</tt> object, a RHS and a LHS and then
  * solve the linear system using a default solve:
-
- \code
-
-  template<class Scalar>
-  void singleLinearSolve(
-    const Thyra::LinearOpBase<Scalar>                    &A
-    ,const Thyra::LinearOpWithSolveFactoryBase<Scalar>   &opFactory
-    ,const Thyra::VectorBase<Scalar>                     &b
-    ,Thyra::VectorBase<Scalar>                           *x
-    )
-  {
-    // Create the LOWSB object that will be used to solve the linear system
-    Teuchos::RefCountPtr<const Thyra::LinearOpWithSolveBase<Scalar> >
-      invertibleA = createAndInitializeLinearOpWithSolve(opFactory,Teuchos::rcp(&A,false));
-    // Solve the system using a default solve criteria using a non-member helper function 
-    assign(&*x,Teuchos::ScalarTraits<Scalar>::zero()); // Must initialize to a guess before solve!
-    solve(*invertibleA,NOTRANS,b,x);
-  }
-
- \endcode
-
+ *
+ * \skip begin singleLinearSolve
+ * \skip template
+ * \until end singleLinearSolve
+ *
  * See the documentation for the <tt>LinearOpWithSolveBase</tt> interface for
  * how to specify solve criteria.
  *
@@ -135,98 +121,61 @@ namespace Thyra {
  * \subsection LOWSFB_scaled_adjoint_sec Creating invertible operators for scaled and/or adjoint forward operators
  *
  * This interface requires that all good implementations support implicitly
- * scaled and adjoint (or transposed) forward operators.  The following example
- * function shows how this looks:
-
- \code
-
-  template<class Scalar>
-  Teuchos::RefCountPtr<Thyra::LinearOpWithSolveBase<Scalar> 
-  createScaledAdjoint(
-    Teuchos::RefCountPtr<const Thyra::LinearOpBase<Scalar> >     &A          // A persisting relationship!
-    ,const Scalar                                                scalar
-    ,const Thyra::LinearOpWithSolveFactoryBase<Scalar>           &opFactory
-    )
-  {
-    return createAndInitializeLinearOpWithSolve(opFactory,scale(scalar,adjoint(A)));
-  }
-
- \endcode
- 
+ * scaled and adjoint (or transposed) forward operators.  The following
+ * example function shows how this looks:
+ *
+ * \skip begin createScaledAdjointLinearOpWithSolve
+ * \skip template
+ * \until end createScaledAdjointLinearOpWithSolve
+ *
  * In the above example, the functions <tt>adjoint()</tt> and <tt>scale()</tt>
- * create an implicitly scaled and adjoint operator of type
+ * create an implicitly scaled adjoint operator of type
  * <tt>DefaultScaledAdjointLinearOp</tt> which is then unwrapped by the
- * <tt>opFactory</tt> implementation.  The idea is that any operation that
+ * <tt>lowsFactory</tt> implementation.  The idea is that any operation that
  * works with a particular forward operator <tt>A</tt> should automatically
  * work with an implicitly scaled and/or adjoint view of that forward
  * operator.  The specification of this interface actually says that all
  * <tt>LinearOpBase</tt> objects that support the abstract mix-in interface
- * <tt>ScaledAdjointLinearOpBase</tt> should be supported.
+ * <tt>ScaledAdjointLinearOpBase</tt> will allow this feature.
  *
  * Above also note that the forward operator <tt>A</tt> is passed in as a
  * <tt>Teuchos::RefCountPtr</tt> wrapped object since it will be used to
  * create a persisting relationship with the returned
  * <tt>Thyra::LinearOpWithSolveBase</tt> object.  Also note that the
- * <tt>opFactory</tt> object is still passed in as a raw object reference
- * since no persisting relationship with <tt>opFactory</tt> is created as a
+ * <tt>lowsFactory</tt> object is still passed in as a raw object reference
+ * since no persisting relationship with <tt>lowsFactory</tt> is created as a
  * side effect of calling this function.  Remember, the specification of this
  * interface requires that the returned <tt>LinearOpWithSolveBase</tt> be
- * independent from the the <tt>opFactory</tt> object that creates it.
+ * independent from the the <tt>lowsFactory</tt> object that creates it.  In
+ * other words, once a <tt>LinearOpWithSolveFactoryBase</tt> object creates a
+ * <tt>LinearOpWithSolveBase</tt> object, then the
+ * <tt>LinearOpWithSolveFactoryBase</tt> object can be deleted and the
+ * <tt>LinearOpWithSolveBase</tt> it created must still be valid.
  *
  * \subsection LOWSFB_updated_of_linear_op_sec Updates of linear operator between linear solves
  *
  * In this use case, we show how to:
  * <ul>
- * <li> Create a <tt>LinearOpWithSolveBase</tt> object from a <tt>LinearOpBase</tt> objects
+ * <li> Create a <tt>LinearOpWithSolveBase</tt> object from a <tt>LinearOpBase</tt> object
  * <li> Use the <tt>LinearOpWithSolveBase</tt> object to solve one or more linear systems
  * <li> Modify the <tt>LinearOpBase</tt> object and reinitialize the <tt>LinearOpWithSolveBase</tt> object
  * <li> Use the updated <tt>LinearOpWithSolveBase</tt> object to solve one or more linear systems
  * </ul>
  *
  * The below code fragment shows how this looks.
-
- \code
-
-  template<class Scalar>
-  void solveChangeSolve(
-    const Thyra::LinearOpBase<Scalar>                    &A
-    ,const Thyra::LinearOpWithSolveFactoryBase<Scalar>   &opFactory
-    )
-  {
-    // Get a local non-owned RCP to A to be used by opFactory
-    Teuchos::RefCountPtr<const Thyra::LinearOpBase<Scalar> >
-      rcpA = Teuchos::rcp(&A,false);
-    // Create the LOWSB object that will be used to solve the linear system
-    Teuchos::RefCountPtr<const Thyra::LinearOpWithSolveBase<Scalar> >
-      invertibleA = opFactory.createOp();
-    // Initialize the invertible linear operator given the forward operator
-    opFactory.initializeOp(rcpA,&*invertibleA);
-    // Solve the system using a default solve criteria using a non-member helper function
-    solve(*invertibleA,...);
-    // Change the operator and reinitialize the invertible operator
-    opFactory.uninitializeOp(&*invertibleA);
-      // Note that the above uninitialization is not required but
-      // is recommended before a change of A since the object invertibleA may
-      // become invalid and this avoids accidental use until it is reinitialized
-      // below.
-    someChange(&A);
-    opFactory.initializeOp(rcpA,&*invertibleA);
-      // Note that above will reuse any factorization structures that may have been
-      // created in the first call to initializeOp(...)
-    // Solve another linear system with new values of A
-    solve(*invertibleA,...);
-  }
-
- \endcode
-
+ *
+ * \skip begin solveNumericalChangeSolve
+ * \skip template
+ * \until end solveNumericalChangeSolve
+ *
  * In the above code fragment the call to the function
- * <tt>opFactory.uninitializeOp(&*invertibleA)</tt> may not fully uninitialize
- * the <tt>*invertibleA</tt> object as it may contain memory of a
+ * <tt>lowsFactory.uninitializeOp(&*invertibleA)</tt> may not fully
+ * uninitialize the <tt>*invertibleA</tt> object as it may contain memory of a
  * factorization structure, or a communication pattern, or whatever may have
  * been computed in the first call to
- * <tt>opFactory.initializeOp(rcpA,&*invertibleA)</tt>.  This allows for a
+ * <tt>lowsFactory.initializeOp(rcpA,&*invertibleA)</tt>.  This allows for a
  * more efficient reinitialization on the second call of
- * <tt>opFactory.initializeOp(rcpA,&*invertibleA)</tt>.
+ * <tt>lowsFactory.initializeOp(rcpA,&*invertibleA)</tt>.
  *
  * \subsection LOWSFB_reuse_of_factorization_sec Reuse of factorizations for small changes in the forward operator
  *
@@ -239,41 +188,21 @@ namespace Thyra {
  * effective in some problems.
  *
  * The below example function shows what this looks like:
-
- \code
-
-  template<class Scalar>
-  void solveSmallChangeSolve(
-    const Thyra::LinearOpBase<Scalar>                    &A
-    ,const Thyra::LinearOpWithSolveFactoryBase<Scalar>   &opFactory
-    )
-  {
-    // Get a local non-owned RCP to A to be used by opFactory
-    Teuchos::RefCountPtr<const Thyra::LinearOpBase<Scalar> >
-      rcpA = Teuchos::rcp(&A,false);
-    // Create the LOWSB object that will be used to solve the linear system
-    Teuchos::RefCountPtr<const Thyra::LinearOpWithSolveBase<Scalar> >
-      invertibleA = opFactory.createOp();
-    // Initialize the invertible linear operator given the forward operator
-    opFactory.initializeOp(rcpA,&*invertibleA);
-    // Solve the system using a default solve criteria using a non-member helper function
-    solve(*invertibleA,...);
-    // Change the operator and reinitialize the invertible operator
-    opFactory.uninitializeOp(&*invertibleA);
-      // Note that the above uninitialization is not required but
-      // is recommended before a change of A since the object invertibleA may
-      // become invalid and this avoids accidental use until it is reinitialized
-      // below.
-    someSmallChange(&A);
-    opFactory.initializeAndReuseOp(rcpA,&*invertibleA);
-      // Note that above will reuse any factorization values (i.e. preconditioners)
-      // that may have been created in the first call to initializeOp(...)
-    // Solve another linear system with new values of A
-    solve(*invertibleA,...);
-  }
-
- \endcode
- 
+ *
+ * \skip begin solveSmallNumericalChangeSolve
+ * \skip template
+ * \until end solveSmallNumericalChangeSolve
+ *
+ * Note that the <tt>*invertiableA</tt> object reinitialized in the second
+ * call to <tt>lowsFactory.initializeAndReuseOp(rcpA,&*invertibleA)</tt> must
+ * be able to correctly solve the linear systems to an appropriate accuracy.
+ * For example, a preconditioned iterative linear solver might keep the same
+ * preconditioner but would use the updated forward operator to define the
+ * linear system.  A direct solver can not reuse the factorization unless it
+ * has an iterative refinement feature (which uses the updated forward
+ * operator) or some other device.  Or a direct solver might, for instance,
+ * reuse the same factorization structure and not repiviot where it might
+ * repivot generally.
  *
  * \subsection LOWSFB_major_changes_in_op_sec Major changes in the structure of the forward operator
  *
@@ -284,41 +213,10 @@ namespace Thyra {
  * before the reinitialization.
  *
  * The below example function shows what this looks like:
-
- \code
-
-  template<class Scalar>
-  void solveMajorChangeSolve(
-    const Thyra::LinearOpBase<Scalar>                    &A
-    ,const Thyra::LinearOpWithSolveFactoryBase<Scalar>   &opFactory
-    )
-  {
-    // Get a local non-owned RCP to A to be used by opFactory
-    Teuchos::RefCountPtr<const Thyra::LinearOpBase<Scalar> >
-      rcpA = Teuchos::rcp(&A,false);
-    // Create the LOWSB object that will be used to solve the linear system
-    Teuchos::RefCountPtr<const Thyra::LinearOpWithSolveBase<Scalar> >
-      invertibleA = opFactory.createOp();
-    // Initialize the invertible linear operator given the forward operator
-    opFactory.initializeOp(rcpA,&*invertibleA);
-    // Solve the system using a default solve criteria using a non-member helper function
-    solve(*invertibleA,...);
-    // Change the operator and initialize the invertible operator anew
-    invertibleA = Teuchos::null;
-      // Note that the above whip out of the invertibleA object is not required but
-      // is recommended before a change of A since the object invertibleA may
-      // become invalid and this avoids accidental use until it is recreated below.
-    someMajorChange(&A);
-    invertibleA = opFactory.createOp(); // Starting from scratch
-    opFactory.initializeOp(rcpA,&*invertibleA);
-      // Note that above will reuse any factorization values (i.e. preconditioners)
-      // that may have been created in the first call to initializeOp(...)
-    // Solve another linear system with new values of A
-    solve(*invertibleA,...);
-  }
-
- \endcode
-
+ *
+ * \skip begin solveMajorChangeSolve
+ * \skip template
+ * \until end solveMajorChangeSolve
  *
  * \subsection LOWSFB_external_prec_sec The use of externally defined preconditioners
  *
@@ -350,12 +248,12 @@ namespace Thyra {
   createOperatorPreconditioned(
     Teuchos::RefCountPtr<const Thyra::LinearOpBase<Scalar> >     &A          // A persisting relationship!
     Teuchos::RefCountPtr<const Thyra::LinearOpBase<Scalar> >     &Pop        // A persisting relationship!
-    ,const Thyra::LinearOpWithSolveFactoryBase<Scalar>           &opFactory
+    ,const Thyra::LinearOpWithSolveFactoryBase<Scalar>           &lowsFactory
     )
   {
     Teuchos::RefCountPtr<const Thyra::LinearOpWithSolveBase<Scalar> >
-      invertibleA = opFactory.createOp();
-    opFactory.initializePreconditionedOp(A,Pop,Thyra::PRECONDITIONER_INPUT_TYPE_AS_OPERATOR,&*invertibleA);
+      invertibleA = lowsFactory.createOp();
+    lowsFactory.initializePreconditionedOp(A,Pop,Thyra::PRECONDITIONER_INPUT_TYPE_AS_OPERATOR,&*invertibleA);
     return invertibleA;
   }
 
@@ -363,7 +261,7 @@ namespace Thyra {
 
  * As show above, the type of the preconditioner is flagged using the enum
  * value of <tt>Thyra::PRECONDITIONER_INPUT_TYPE_AS_OPERATOR</tt>.  This allows the
- * <tt>opFactory</tt> implementation to determine how the interpret the input
+ * <tt>lowsFactory</tt> implementation to determine how the interpret the input
  * preconditioner object <tt>P</tt>.  Once this <tt>invertibleA</tt> object
  * is returned, it can be used just like any other
  * <tt>LinearOpWithSolveBase</tt> object.
@@ -385,12 +283,12 @@ namespace Thyra {
   createOperatorPreconditioned(
     Teuchos::RefCountPtr<const Thyra::LinearOpBase<Scalar> >     &A          // A persisting relationship!
     Teuchos::RefCountPtr<const Thyra::LinearOpBase<Scalar> >     &Pmat       // A persisting relationship!
-    ,const Thyra::LinearOpWithSolveFactoryBase<Scalar>           &opFactory
+    ,const Thyra::LinearOpWithSolveFactoryBase<Scalar>           &lowsFactory
     )
   {
     Teuchos::RefCountPtr<const Thyra::LinearOpWithSolveBase<Scalar> >
-      invertibleA = opFactory.createOp();
-    opFactory.initializePreconditionedOp(A,Pmat,Thyra::PRECONDITIONER_INPUT_TYPE_AS_MATRIX,&*invertibleA);
+      invertibleA = lowsFactory.createOp();
+    lowsFactory.initializePreconditionedOp(A,Pmat,Thyra::PRECONDITIONER_INPUT_TYPE_AS_MATRIX,&*invertibleA);
     return invertibleA;
   }
 
@@ -398,7 +296,7 @@ namespace Thyra {
 
  * As show above, the type of the preconditioner is flagged using the enum
  * value of <tt>Thyra::PRECONDITIONER_INPUT_TYPE_AS_MATRIX</tt>.  This allows the
- * <tt>opFactory</tt> implementation to determine how the interpret the input
+ * <tt>lowsFactory</tt> implementation to determine how the interpret the input
  * preconditioner object <tt>P</tt>.  This mode is very similar to the default
  * mode as supported by <tt>initializeOp()</tt> where the preconditioner is
  * generated from the forward matrix itself.  Except here a different matrix
@@ -422,29 +320,29 @@ namespace Thyra {
   void preconditionedSolveChangeSolve(
     const Thyra::LinearOpBase<Scalar>                    &A
     const Thyra::LinearOpBase<Scalar>                    &P
-    ,const Thyra::LinearOpWithSolveFactoryBase<Scalar>   &opFactory
+    ,const Thyra::LinearOpWithSolveFactoryBase<Scalar>   &lowsFactory
     )
   {
-    // Get a local non-owned RCP  objects to A and P to be used by opFactory
+    // Get a local non-owned RCP  objects to A and P to be used by lowsFactory
     Teuchos::RefCountPtr<const Thyra::LinearOpBase<Scalar> >
       rcpA = Teuchos::rcp(&A,false),
       rcpP = Teuchos::rcp(&A,false);
     // Create the LOWSB object that will be used to solve the linear system
     Teuchos::RefCountPtr<const Thyra::LinearOpWithSolveBase<Scalar> >
-      invertibleA = opFactory.createOp();
+      invertibleA = lowsFactory.createOp();
     // Initialize the preconditioned invertible linear operator given the
     // forward and preconditioner operators
-    opFactory.initializePreconditionedOp(rcpA,rcpP,Thyra::PRECONDITIONER_INPUT_TYPE_AS_OPERATOR,&*invertibleA);
+    lowsFactory.initializePreconditionedOp(rcpA,rcpP,Thyra::PRECONDITIONER_INPUT_TYPE_AS_OPERATOR,&*invertibleA);
     // Solve the system using a default solve criteria using a non-member helper function
     solve(*invertibleA,...);
     // Change the operator and reinitialize the invertible operator
-    opFactory.uninitializeOp(&*invertibleA);
+    lowsFactory.uninitializeOp(&*invertibleA);
       // Note that the above uninitialization is not required but
       // is recommended before a change of A since the object invertibleA may
       // become invalid and this avoids accidental use until it is reinitialized
       // below.
     someSmallChange(&A);
-    opFactory.initializePreconditionedOp(rcpA,rcpP,Thyra::PRECONDITIONER_INPUT_TYPE_AS_OPERATOR,&*invertibleA);
+    lowsFactory.initializePreconditionedOp(rcpA,rcpP,Thyra::PRECONDITIONER_INPUT_TYPE_AS_OPERATOR,&*invertibleA);
       // Note that above we assume that P is independent from A so that when A
       // is changed it will have not impact on P.  If P was dependent on A,
       // then the client would need to know what the side effects were and if

@@ -367,7 +367,7 @@ private:
  */
 template<class Scalar>
 Teuchos::RefCountPtr<LinearOpBase<Scalar> >
-scale( const Scalar &scalar, const Teuchos::RefCountPtr<LinearOpBase<Scalar> > &Op );
+nonconstScale( const Scalar &scalar, const Teuchos::RefCountPtr<LinearOpBase<Scalar> > &Op );
 
 /** \brief Build an implicit <tt>const</tt> scaled linear operator.
  *
@@ -403,7 +403,7 @@ scale( const Scalar &scalar, const Teuchos::RefCountPtr<const LinearOpBase<Scala
  */
 template<class Scalar>
 Teuchos::RefCountPtr<LinearOpBase<Scalar> >
-adjoint( const Teuchos::RefCountPtr<LinearOpBase<Scalar> > &Op );
+nonconstAdjoint( const Teuchos::RefCountPtr<LinearOpBase<Scalar> > &Op );
 
 /** \brief Build an implicit <tt>const</tt> adjoined linear operator.
  *
@@ -439,7 +439,7 @@ adjoint( const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &Op );
  */
 template<class Scalar>
 Teuchos::RefCountPtr<LinearOpBase<Scalar> >
-transpose( const Teuchos::RefCountPtr<LinearOpBase<Scalar> > &Op );
+nonconstTranspose( const Teuchos::RefCountPtr<LinearOpBase<Scalar> > &Op );
 
 /** \brief Build an implicit <tt>const</tt> transposed linear operator.
  *
@@ -475,7 +475,7 @@ transpose( const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &Op );
  */
 template<class Scalar>
 Teuchos::RefCountPtr<LinearOpBase<Scalar> >
-scaleAndAdjoint( const Scalar &scalar, const ETransp &transp, const Teuchos::RefCountPtr<LinearOpBase<Scalar> > &Op );
+nonconstScaleAndAdjoint( const Scalar &scalar, const ETransp &transp, const Teuchos::RefCountPtr<LinearOpBase<Scalar> > &Op );
 
 /** \brief Build an implicit <tt>const</tt> scaled and/or adjoined (transposed) linear operator.
  *
@@ -547,7 +547,7 @@ void DefaultScaledAdjointLinearOp<Scalar>::assertInitialized() const
 
 template<class Scalar>
 inline Teuchos::RefCountPtr<Thyra::LinearOpBase<Scalar> >
-Thyra::scale(
+Thyra::nonconstScale(
   const Scalar &scalar, const Teuchos::RefCountPtr<LinearOpBase<Scalar> > &Op
   )
 {
@@ -567,7 +567,7 @@ Thyra::scale(
 
 template<class Scalar>
 inline Teuchos::RefCountPtr<Thyra::LinearOpBase<Scalar> >
-Thyra::adjoint( const Teuchos::RefCountPtr<LinearOpBase<Scalar> > &Op )
+Thyra::nonconstAdjoint( const Teuchos::RefCountPtr<LinearOpBase<Scalar> > &Op )
 {
   return Teuchos::rcp(
     new DefaultScaledAdjointLinearOp<Scalar>(
@@ -589,7 +589,7 @@ Thyra::adjoint( const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &Op )
 
 template<class Scalar>
 inline Teuchos::RefCountPtr<Thyra::LinearOpBase<Scalar> >
-Thyra::transpose( const Teuchos::RefCountPtr<LinearOpBase<Scalar> > &Op )
+Thyra::nonconstTranspose( const Teuchos::RefCountPtr<LinearOpBase<Scalar> > &Op )
 {
   return Teuchos::rcp(
     new DefaultScaledAdjointLinearOp<Scalar>(
@@ -611,7 +611,7 @@ Thyra::transpose( const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &Op )
 
 template<class Scalar>
 inline Teuchos::RefCountPtr<Thyra::LinearOpBase<Scalar> >
-Thyra::scaleAndAdjoint(
+Thyra::nonconstScaleAndAdjoint(
   const Scalar &scalar, const ETransp &transp
   ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> > &Op
   )

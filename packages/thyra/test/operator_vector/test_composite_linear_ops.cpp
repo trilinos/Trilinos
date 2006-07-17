@@ -210,13 +210,13 @@ bool run_composite_linear_ops_tests(
   if(!result) success = false;
 
   if(out.get()) *out << "\nCalling all of the rest of the functions for non-const just to test them ...\n";
-  RefCountPtr<const Thyra::LinearOpBase<Scalar> >
-    A4 = scale(
+  RefCountPtr<Thyra::LinearOpBase<Scalar> >
+    A4 = nonconstScale(
       Scalar(0.25)
-      ,adjoint(
-        transpose(
-          adjoint(
-            scaleAndAdjoint(
+      ,nonconstAdjoint(
+        nonconstTranspose(
+          nonconstAdjoint(
+            nonconstScaleAndAdjoint(
               Scalar(4.0)
               ,Thyra::TRANS
               ,Teuchos::rcp_const_cast<Thyra::LinearOpBase<Scalar> >(origA)
@@ -225,7 +225,7 @@ bool run_composite_linear_ops_tests(
           )
         )
       );
-  if(!ST::isComplex) A4 = transpose(adjoint(A4)); // Should result in CONJ
+  if(!ST::isComplex) A4 = nonconstTranspose(nonconstAdjoint(A4)); // Should result in CONJ
   if(out.get()) *out << "\nA4 =\n" << describe(*A4,verbLevel);
 
   if(out.get()) *out << "\nTesting A4 ...\n";
@@ -243,7 +243,7 @@ bool run_composite_linear_ops_tests(
             scaleAndAdjoint(
               Scalar(4.0)
               ,Thyra::TRANS
-              ,Teuchos::rcp_const_cast<Thyra::LinearOpBase<Scalar> >(origA)
+              ,origA
               )
             )
           )
@@ -523,8 +523,6 @@ int main( int argc, char* argv[] ) {
   bool verbose = true;
 
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
-  const int procRank = Teuchos::GlobalMPISession::getRank();
-  const int numProc = Teuchos::GlobalMPISession::getNProc();
 
   const Teuchos::RefCountPtr<const Teuchos::Comm<Thyra::Index> >
     comm = Teuchos::DefaultComm<Thyra::Index>::getComm();

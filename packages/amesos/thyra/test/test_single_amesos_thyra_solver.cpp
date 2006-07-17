@@ -31,6 +31,8 @@
 #ifndef __sun
 
 #include "Thyra_AmesosLinearOpWithSolveFactory.hpp"
+#include "Thyra_LinearOpWithSolveFactoryExamples.hpp"
+#include "Thyra_DefaultScaledAdjointLinearOp.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_LinearOpTester.hpp"
 #include "Thyra_LinearOpWithSolveTester.hpp"
@@ -95,25 +97,25 @@ bool Thyra::test_single_amesos_thyra_solver(
 
   if(out.get() && dumpAll) *out << "\ndescribe(A) =\n" << describe(*A,Teuchos::VERB_EXTREME);
 
-  if(out.get()) *out << "\nB) Creating a AmesosLinearOpWithSolveFactory object opFactory ...\n";
+  if(out.get()) *out << "\nB) Creating a AmesosLinearOpWithSolveFactory object lowsFactory ...\n";
 
   Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<double> >
-    opFactory = Teuchos::rcp(new AmesosLinearOpWithSolveFactory());
+    lowsFactory = Teuchos::rcp(new AmesosLinearOpWithSolveFactory());
 
-  opFactory->setParameterList(Teuchos::rcp(amesosLOWSFPL,false));
+  lowsFactory->setParameterList(Teuchos::rcp(amesosLOWSFPL,false));
 
   if(out.get()) {
-    *out << "\nopFactory.description() = " << opFactory->description() << std::endl;
-    *out << "\nopFactory.getValidParameters() =\n";
-    opFactory->getValidParameters()->print(*OSTab(out).getOStream(),0,true,false);
+    *out << "\nlowsFactory.description() = " << lowsFactory->description() << std::endl;
+    *out << "\nlowsFactory.getValidParameters() =\n";
+    lowsFactory->getValidParameters()->print(*OSTab(out).getOStream(),0,true,false);
   }
 
   if(out.get()) *out << "\nC) Creating a AmesosLinearOpWithSolve object nsA ...\n";
 
   Teuchos::RefCountPtr<LinearOpWithSolveBase<double> >
-    nsA = opFactory->createOp();
+    nsA = lowsFactory->createOp();
 
-  opFactory->initializeOp( A, &*nsA );
+  lowsFactory->initializeOp( A, &*nsA );
 
   if(out.get()) *out << "\nD) Testing the LinearOpBase interface of nsA ...\n";
 
@@ -165,9 +167,9 @@ bool Thyra::test_single_amesos_thyra_solver(
 
   if(out.get()) *out << "\nF) Uninitialize the matrix object nsA, scale the epetra_A object by 2.5, and then refactor nsA with epetra_A ...\n";
 
-  opFactory->uninitializeOp(&*nsA); // Optional call but a good idea if changing the operator
+  lowsFactory->uninitializeOp(&*nsA); // Optional call but a good idea if changing the operator
   epetra_A->Scale(2.5);
-  opFactory->initializeOp(A,&*nsA);
+  lowsFactory->initializeOp(A,&*nsA);
   
   if(out.get()) *out << "\nG) Testing the LinearOpBase interface of nsA ...\n";
 
@@ -188,7 +190,7 @@ bool Thyra::test_single_amesos_thyra_solver(
   epetra_A2->Scale(2.5);
   Teuchos::RefCountPtr<LinearOpBase<double> >
     A2 = Teuchos::rcp(new EpetraLinearOp(epetra_A2));
-  opFactory->initializeOp(A2,&*nsA);
+  lowsFactory->initializeOp(A2,&*nsA);
   
   if(out.get()) *out << "\nJ) Testing the LinearOpBase interface of nsA ...\n";
 
@@ -205,9 +207,9 @@ bool Thyra::test_single_amesos_thyra_solver(
   if(out.get()) *out << "\nL) Create an implicitly scaled (by 2.5) and transposed matrix A3 = scale(2.5,transpose(A)) and initialize nsA2 ...\n";
 
   Teuchos::RefCountPtr<const LinearOpBase<double> >
-    A3 = scale(2.5,transpose(A));
+    A3 = scale<double>(2.5,Thyra::transpose<double>(A));
   Teuchos::RefCountPtr<LinearOpWithSolveBase<double> >
-    nsA2 = createAndInitializeLinearOpWithSolve(*opFactory,A3);
+    nsA2 = createAndInitializeLinearOpWithSolve(*lowsFactory,A3);
   
   if(out.get()) *out << "\nM) Testing the LinearOpBase interface of nsA2 ...\n";
 
@@ -228,6 +230,12 @@ bool Thyra::test_single_amesos_thyra_solver(
     ,out.get()
     );
   if(!result) success = false;
+
+  if(out.get()) *out << "\nP) Running example use cases ...\n";
+
+  nonExternalPreconditionedLinearSolveUseCases(
+    *A,*lowsFactory,*out
+    );
 
 #else // __sun
   
