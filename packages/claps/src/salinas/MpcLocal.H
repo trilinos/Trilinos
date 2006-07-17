@@ -1,3 +1,32 @@
+//@HEADER
+// ************************************************************************
+//
+//         Claps: A Collection of Domain Decomposition Preconditioners
+//                and Solvers
+//         Copyright (2006) Sandia Corporation
+//
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+//
+// This library is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 2.1 of the
+// License, or (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// USA
+// Questions? Contact Clark R. Dohrmann (crdohrm@sandia.gov)
+//
+// ************************************************************************
+//@HEADER
+
 #ifndef Salinas_MpcLocal_H
 #define Salinas_MpcLocal_H
 
@@ -202,6 +231,9 @@ public:
  * class definition created by Garth Reese - Jan 19,1999
 
  $Log$
+ Revision 1.3  2006/07/17 22:38:22  jmwille
+ Adding missing copyright notices to a few files.
+
  Revision 1.2  2006/04/19 14:07:15  crdohrm
  Added and modified files so that building claps doesn't require Salinas include files
 
