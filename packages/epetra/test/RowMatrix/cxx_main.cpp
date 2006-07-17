@@ -135,7 +135,7 @@ int main(int argc, char *argv[])
   if(verbose && rank!=0) 
 		verbose = false;
 
-  int NumMyEquations = 100000;
+  int NumMyEquations = 10000;
   int NumGlobalEquations = (NumMyEquations * NumProc) + EPETRA_MIN(NumProc,3);
   if(MyPID < 3) 
     NumMyEquations++;

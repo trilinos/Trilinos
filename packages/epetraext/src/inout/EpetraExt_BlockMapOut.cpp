@@ -114,7 +114,7 @@ int BlockMapToHandle(FILE * handle, const Epetra_BlockMap & map) {
   int numProc = comm.NumProc();
   bool doSizes = !map.ConstantElementSize();
 
-  if (numProc==0) {
+  if (numProc==1) {
     int * myElements = map.MyGlobalElements();
     int * elementSizeList = 0;
     if (doSizes) elementSizeList = map.ElementSizeList();

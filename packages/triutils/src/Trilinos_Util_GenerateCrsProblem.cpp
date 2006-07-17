@@ -67,82 +67,82 @@
 // Note: Caller of this function is responsible for deleting all output objects.
 
 void Trilinos_Util_GenerateCrsProblem(int nx, int ny, int npoints, int * xoff, int * yoff,
-																		 const Epetra_Comm  &comm, 
-																		 Epetra_Map *& map, 
-																		 Epetra_CrsMatrix *& A, 
-																		 Epetra_Vector *& x, 
-																		 Epetra_Vector *& b,
-																		 Epetra_Vector *&xexact) {
+				      const Epetra_Comm  &comm, 
+				      Epetra_Map *& map, 
+				      Epetra_CrsMatrix *& A, 
+				      Epetra_Vector *& x, 
+				      Epetra_Vector *& b,
+				      Epetra_Vector *&xexact, int indexBase) {
 
-	Epetra_MultiVector * x1, * b1, * xexact1;
+  Epetra_MultiVector * x1, * b1, * xexact1;
 	
-	Trilinos_Util_GenerateCrsProblem(nx, ny, npoints, xoff, yoff, 1, comm, map, A, x1, b1, xexact1);
+  Trilinos_Util_GenerateCrsProblem(nx, ny, npoints, xoff, yoff, 1, comm, map, A, x1, b1, xexact1, indexBase);
 
-	x = dynamic_cast<Epetra_Vector *>(x1);
-	b = dynamic_cast<Epetra_Vector *>(b1);
-	xexact = dynamic_cast<Epetra_Vector *>(xexact1);
+  x = dynamic_cast<Epetra_Vector *>(x1);
+  b = dynamic_cast<Epetra_Vector *>(b1);
+  xexact = dynamic_cast<Epetra_Vector *>(xexact1);
 
-	return;
+  return;
 }
 
 void Trilinos_Util_GenerateCrsProblem(int nx, int ny, int npoints, int * xoff, int * yoff, int nrhs,
-																		 const Epetra_Comm  &comm, 
-																		 Epetra_Map *& map, 
-																		 Epetra_CrsMatrix *& A, 
-																		 Epetra_MultiVector *& x, 
-																		 Epetra_MultiVector *& b,
-																		 Epetra_MultiVector *&xexact) {
+				      const Epetra_Comm  &comm, 
+				      Epetra_Map *& map, 
+				      Epetra_CrsMatrix *& A, 
+				      Epetra_MultiVector *& x, 
+				      Epetra_MultiVector *& b,
+				      Epetra_MultiVector *&xexact, int indexBase) {
 
-	// Number of global equations is nx*ny.  These will be distributed in a linear fashion
-	int numGlobalEquations = nx*ny;
-  map = new Epetra_Map(numGlobalEquations, 0, comm); // Create map with equal distribution of equations.
-
-	int numMyEquations = map->NumMyElements();
+  // Number of global equations is nx*ny.  These will be distributed in a linear fashion
+  int numGlobalEquations = nx*ny;
+  map = new Epetra_Map(numGlobalEquations, indexBase, comm); // Create map with equal distribution of equations.
+  
+  int numMyEquations = map->NumMyElements();
   
   A = new Epetra_CrsMatrix(Copy, *map, 0); // Construct matrix
-
-	int * indices = new int[npoints];
-	double * values = new double[npoints];
-
-	double dnpoints = (double) npoints;
-
-	for (int i=0; i<numMyEquations; i++) {
-
-		int rowID = map->GID(i);
-		int numIndices = 0;
-
-		for (int j=0; j<npoints; j++) {
-			int colID = rowID + xoff[j] + nx*yoff[j]; // Compute column ID based on stencil offsets
-			if (colID>-1 && colID<numGlobalEquations) {
-				indices[numIndices] = colID;
-				double value = - ((double) rand())/ ((double) RAND_MAX);
-				if (colID==rowID)
-					values[numIndices++] = dnpoints - value; // Make diagonal dominant
-				else
-					values[numIndices++] = -value;
-			}
-		}
-		
-		A->InsertGlobalValues(rowID, numIndices, values, indices);
-	}
-
-	delete [] indices;
-	delete [] values;
+  
+  int * indices = new int[npoints];
+  double * values = new double[npoints];
+  
+  double dnpoints = (double) npoints;
+  
+  for (int i=0; i<numMyEquations; i++) {
+    
+    int rowID = map->GID(i);
+    int numIndices = 0;
+    
+    for (int j=0; j<npoints; j++) {
+      int colID = rowID + xoff[j] + nx*yoff[j]; // Compute column ID based on stencil offsets
+      if (colID>indexBase-1 && colID<indexBase+numGlobalEquations) {
+	indices[numIndices] = colID;
+	double value = - ((double) rand())/ ((double) RAND_MAX);
+	if (colID==rowID)
+	  values[numIndices++] = dnpoints - value; // Make diagonal dominant
+	else
+	  values[numIndices++] = -value;
+      }
+    }
+    
+    A->InsertGlobalValues(rowID, numIndices, values, indices);
+  }
+  
+  delete [] indices;
+  delete [] values;
 
   A->FillComplete();
 
-	if (nrhs<=1) {  
-		x = new Epetra_Vector(*map);
-		b = new Epetra_Vector(*map);
-		xexact = new Epetra_Vector(*map);
-	}
-	else {
-		x = new Epetra_MultiVector(*map, nrhs);
-		b = new Epetra_MultiVector(*map, nrhs);
-		xexact = new Epetra_MultiVector(*map, nrhs);
-	}
+  if (nrhs<=1) {  
+    x = new Epetra_Vector(*map);
+    b = new Epetra_Vector(*map);
+    xexact = new Epetra_Vector(*map);
+  }
+  else {
+    x = new Epetra_MultiVector(*map, nrhs);
+    b = new Epetra_MultiVector(*map, nrhs);
+    xexact = new Epetra_MultiVector(*map, nrhs);
+  }
 
-	xexact->Random(); // Fill xexact with random values
+  xexact->Random(); // Fill xexact with random values
 
   A->Multiply(false, *xexact, *b);
 

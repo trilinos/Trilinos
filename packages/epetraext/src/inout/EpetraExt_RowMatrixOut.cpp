@@ -58,7 +58,7 @@ int RowMatrixToMatrixMarketFile( const char *filename, const Epetra_RowMatrix & 
   if (A.RowMatrixRowMap().Comm().MyPID()==0) { // Only PE 0 does this section
 
     handle = fopen(filename,"w");
-    if (!handle) return(-1);
+    if (!handle) {EPETRA_CHK_ERR(-1);}
     MM_typecode matcode;
     mm_initialize_typecode(&matcode);
     mm_set_matrix(&matcode);
@@ -67,26 +67,25 @@ int RowMatrixToMatrixMarketFile( const char *filename, const Epetra_RowMatrix & 
 
     if (writeHeader==true) { // Only write header if requested (true by default)
     
-      if (mm_write_banner(handle, matcode)) return(-1);
+      if (mm_write_banner(handle, matcode)!=0) {EPETRA_CHK_ERR(-1);}
       
       if (matrixName!=0) fprintf(handle, "%% \n%% %s\n", matrixName);
       if (matrixDescription!=0) fprintf(handle, "%% %s\n%% \n", matrixDescription);
       
-      if (mm_write_mtx_crd_size(handle, M, N, nz)) return(-1);
+      if (mm_write_mtx_crd_size(handle, M, N, nz)!=0) {EPETRA_CHK_ERR(-1);}
     }
   }
     
-  if (RowMatrixToHandle(handle, A)) return(-1); // Everybody calls this routine
+  if (RowMatrixToHandle(handle, A)!=0) {EPETRA_CHK_ERR(-1);}// Everybody calls this routine
 
   if (A.RowMatrixRowMap().Comm().MyPID()==0) // Only PE 0 opened a file
-    if (fclose(handle)) return(-1);
+    if (fclose(handle)!=0) {EPETRA_CHK_ERR(-1);}
   return(0);
 }
 
 int RowMatrixToHandle(FILE * handle, const Epetra_RowMatrix & A) {
 
   Epetra_Map map = A.RowMatrixRowMap();
-  int base = map.IndexBase();
   const Epetra_Comm & comm = map.Comm();
   int numProc = comm.NumProc();
 
@@ -95,7 +94,7 @@ int RowMatrixToHandle(FILE * handle, const Epetra_RowMatrix & A) {
   else {
     int numRows = map.NumMyElements();
     
-    Epetra_Map allGidsMap(-1, numRows, base,comm);
+    Epetra_Map allGidsMap(-1, numRows, 0,comm);
     
     Epetra_IntVector allGids(allGidsMap);
     for (int i=0; i<numRows; i++) allGids[i] = map.GID(i);
@@ -104,7 +103,7 @@ int RowMatrixToHandle(FILE * handle, const Epetra_RowMatrix & A) {
     int numChunks = numProc;
     int stripSize = allGids.GlobalLength()/numChunks;
     int remainder = allGids.GlobalLength()%numChunks;
-    int curStart = base;
+    int curStart = 0;
     int curStripSize = 0;
     Epetra_IntSerialDenseVector importGidList;
     int numImportGids = 0;
@@ -118,23 +117,24 @@ int RowMatrixToHandle(FILE * handle, const Epetra_RowMatrix & A) {
 	curStart += curStripSize;
       }
       // The following import map will be non-trivial only on PE 0.
-      Epetra_Map importGidMap(-1, curStripSize, importGidList.Values(), base, comm);
+      if (comm.MyPID()>0) assert(curStripSize==0);
+      Epetra_Map importGidMap(-1, curStripSize, importGidList.Values(), 0, comm);
       Epetra_Import gidImporter(importGidMap, allGidsMap);
       Epetra_IntVector importGids(importGidMap);
-      if (importGids.Import(allGids, gidImporter, Insert)) return(-1); 
+      if (importGids.Import(allGids, gidImporter, Insert)!=0) {EPETRA_CHK_ERR(-1); }
 
       // importGids now has a list of GIDs for the current strip of matrix rows.
       // Use these values to build another importer that will get rows of the matrix.
 
       // The following import map will be non-trivial only on PE 0.
-      Epetra_Map importMap(-1, importGids.MyLength(), importGids.Values(), base, comm);
+      Epetra_Map importMap(-1, importGids.MyLength(), importGids.Values(), map.IndexBase(), comm);
       Epetra_Import importer(importMap, map);
       Epetra_CrsMatrix importA(Copy, importMap, 0);
-      if (importA.Import(A, importer, Insert)) return(-1); 
-      if (importA.FillComplete()) return(-1);
+      if (importA.Import(A, importer, Insert)!=0) {EPETRA_CHK_ERR(-1); }
+      if (importA.FillComplete(A.OperatorDomainMap(), importMap)!=0) {EPETRA_CHK_ERR(-1);}
 
       // Finally we are ready to write this strip of the matrix to ostream
-      if (writeRowMatrix(handle, importA)) return(-1);
+      if (writeRowMatrix(handle, importA)!=0) {EPETRA_CHK_ERR(-1);}
     }
   }
   return(0);
@@ -145,25 +145,24 @@ int writeRowMatrix(FILE * handle, const Epetra_RowMatrix & A) {
   int numRows = A.NumGlobalRows();
   Epetra_Map rowMap = A.RowMatrixRowMap();
   Epetra_Map colMap = A.RowMatrixColMap();
-  int offset;
-  if (rowMap.IndexBase() == 0) offset = 1;
-  else                         offset = 0;
   const Epetra_Comm & comm = rowMap.Comm();
+  int ioffset = 1 - rowMap.IndexBase(); // Matlab indices start at 1
+  int joffset = 1 - colMap.IndexBase(); // Matlab indices start at 1
   if (comm.MyPID()!=0) {
-    if (A.NumMyRows()!=0) ierr = -1;
-    if (A.NumMyCols()!=0) ierr = -1;
+    if (A.NumMyRows()!=0) {EPETRA_CHK_ERR(-1);}
+    if (A.NumMyCols()!=0) {EPETRA_CHK_ERR(-1);}
   }
   else {
-    if (numRows!=A.NumMyRows()) ierr = -1;
+    if (numRows!=A.NumMyRows()) {EPETRA_CHK_ERR(-1);}
     Epetra_SerialDenseVector values(A.MaxNumEntries());
     Epetra_IntSerialDenseVector indices(A.MaxNumEntries());
     for (int i=0; i<numRows; i++) {
-      int I = rowMap.GID(i) + offset;
+      int I = rowMap.GID(i) + ioffset;
       int numEntries;
       if (A.ExtractMyRowCopy(i, values.Length(), numEntries, 
-			     values.Values(), indices.Values())) return(-1);
+			     values.Values(), indices.Values())!=0) {EPETRA_CHK_ERR(-1);}
       for (int j=0; j<numEntries; j++) {
-	int J = colMap.GID(indices[j]) + offset;
+	int J = colMap.GID(indices[j]) + ioffset;
 	double val = values[j];
 	fprintf(handle, "%d %d %22.16e\n", I, J, val);
       }

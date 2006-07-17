@@ -101,12 +101,16 @@ int MatrixMarketFileToCrsMatrixHandle(const char *filename,
   // Now read in each triplet and store to the local portion of the matrix if the row is owned.
   int I, J;
   double V;
-  const Epetra_Map & map = A->RowMap();
+  const Epetra_Map & rowMap = A->RowMap();
+  const Epetra_Map & colMap = A->ColMap();
+  int ioffset = rowMap.IndexBase()-1;
+  int joffset = colMap.IndexBase()-1;
+  
   for (int i=0; i<NZ; i++) {
     if(fgets(line, lineLength, handle)==0) return(-1);
     if(sscanf(line, "%d %d %lg\n", &I, &J, &V)==0) return(-1);
-    I--; J--; // Convert to Zero based
-    if (map.MyGID(I))
+    I+=ioffset; J+=joffset; // Convert to Zero based
+    if (rowMap.MyGID(I))
       A->InsertGlobalValues(I, 1, &V, &J);
   }
 
@@ -116,8 +120,6 @@ int MatrixMarketFileToCrsMatrixHandle(const char *filename,
   else {
     A->FillComplete();
   }
-  
-  if (fclose(handle)) return(-1);
 
   return(0);
 }

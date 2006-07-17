@@ -307,29 +307,29 @@ void Trilinos_Util_dusmm(int m, int nrhs, int k, double alpha, SPBLASMAT *A,
 void  Trilinos_Util_dusds_vbr( SPBLASMAT *A);
 
 void Trilinos_Util_GenerateCrsProblem(int nx, int ny, int npoints, int * xoff, int * yoff,
-																			const Epetra_Comm  &comm, 
-																			Epetra_Map *& map, 
-																			Epetra_CrsMatrix *& A, 
-																			Epetra_Vector *& x, 
-																			Epetra_Vector *& b,
-																			Epetra_Vector *&xexact);
+				      const Epetra_Comm  &comm, 
+				      Epetra_Map *& map, 
+				      Epetra_CrsMatrix *& A, 
+				      Epetra_Vector *& x, 
+				      Epetra_Vector *& b,
+				      Epetra_Vector *&xexact, int indexBase = 0);
 
 void Trilinos_Util_GenerateCrsProblem(int nx, int ny, int npoints, int * xoff, int * yoff, int nrhs,
-																			const Epetra_Comm  &comm, 
-																			Epetra_Map *& map, 
-																			Epetra_CrsMatrix *& A, 
-																			Epetra_MultiVector *& x, 
-																			Epetra_MultiVector *& b,
-																			Epetra_MultiVector *&xexact);
+				      const Epetra_Comm  &comm, 
+				      Epetra_Map *& map, 
+				      Epetra_CrsMatrix *& A, 
+				      Epetra_MultiVector *& x, 
+				      Epetra_MultiVector *& b,
+				      Epetra_MultiVector *&xexact, int indexBase = 0);
 
 void Trilinos_Util_GenerateVbrProblem(int nx, int ny, int npoints, int * xoff, int * yoff,
-																			int nsizes, int * sizes,
-																			const Epetra_Comm  &comm, 
-																			Epetra_BlockMap *& map, 
-																			Epetra_VbrMatrix *& A, 
-																			Epetra_Vector *& x, 
-																			Epetra_Vector *& b,
-																			Epetra_Vector *&xexact);
+				      int nsizes, int * sizes,
+				      const Epetra_Comm  &comm, 
+				      Epetra_BlockMap *& map, 
+				      Epetra_VbrMatrix *& A, 
+				      Epetra_Vector *& x, 
+				      Epetra_Vector *& b,
+				      Epetra_Vector *&xexact);
 
 void Trilinos_Util_GenerateVbrProblem(int nx, int ny, int npoints, int * xoff, int * yoff,
 				      int nsizes, int * sizes, int nrhs,

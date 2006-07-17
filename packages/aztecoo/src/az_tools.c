@@ -210,7 +210,7 @@ void AZ_order_ele(int update_index[], int extern_index[], int *internal,
 /******************************************************************************/
 
 void AZ_invorder_vec(double vector[], int data_org[], int update_index[], 
-	int rpntr[], double new[])
+	int rpntr[], double newp[])
 {
 
 /*******************************************************************************
@@ -245,14 +245,14 @@ void AZ_invorder_vec(double vector[], int data_org[], int update_index[],
     length = data_org[AZ_N_int_blk] + data_org[AZ_N_bord_blk];
 
     if (data_org[AZ_matrix_type] == AZ_MSR_MATRIX) {
-      for (i = 0 ; i < length ; i++ ) new[i] = vector[ update_index[i] ] ;
+      for (i = 0 ; i < length ; i++ ) newp[i] = vector[ update_index[i] ] ;
     }
     else if (data_org[AZ_matrix_type] == AZ_VBR_MATRIX) {
       current = 0;
       for (i = 0 ; i < length ; i++ ) {
         ii = update_index[i];
         for (j = rpntr[ii] ; j < rpntr[ii+1] ; j++ ) { 
-          new[current++] = vector[j] ;
+          newp[current++] = vector[j] ;
         }
       }
     }
