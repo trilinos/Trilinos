@@ -34,6 +34,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 
 #include "Epetra_Object.h"
 class Epetra_Map;
+class Epetra_BlockMap;
 class Epetra_CrsMatrix;
 class Epetra_MultiVector;
 
@@ -137,6 +138,14 @@ class Epetra_Util {
   */
   static Epetra_Map Create_OneToOne_Map(const Epetra_Map& usermap,
 					bool high_rank_proc_owns_shared=false);
+
+  //! Epetra_Util Create_OneToOne_Map function
+  /*! Function to create a new Epetra_Map object with 1-to-1 ownership of
+    entries from an existing map which may have entries that appear on
+    multiple processors.
+  */
+  static Epetra_BlockMap Create_OneToOne_BlockMap(const Epetra_BlockMap& usermap,
+						  bool high_rank_proc_owns_shared=false);
 
   //! Epetra_Util Chop method.  Return zero if input Value is less than ChopValue
   static double Chop(const double & Value){

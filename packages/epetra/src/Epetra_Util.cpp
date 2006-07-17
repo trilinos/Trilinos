@@ -159,6 +159,55 @@ Epetra_Util::Create_OneToOne_Map(const Epetra_Map& usermap,
 			 usermap.IndexBase(), usermap.Comm());
 
   delete [] myOwnedElems;
+  delete [] owner_procs;
+
+  return(one_to_one_map);
+}
+
+//----------------------------------------------------------------------------
+Epetra_BlockMap
+Epetra_Util::Create_OneToOne_BlockMap(const Epetra_BlockMap& usermap,
+				      bool high_rank_proc_owns_shared)
+{
+  //if usermap is already 1-to-1 then we'll just return a copy of it.
+  if (usermap.IsOneToOne()) {
+    Epetra_BlockMap newmap(usermap);
+    return(newmap);
+  }
+
+  int myPID = usermap.Comm().MyPID();
+  Epetra_Directory* directory = usermap.Comm().CreateDirectory(usermap);
+
+  int numMyElems = usermap.NumMyElements();
+  const int* myElems = usermap.MyGlobalElements();
+
+  int* owner_procs = new int[numMyElems*2];
+  int* sizes = owner_procs+numMyElems;
+
+  directory->GetDirectoryEntries(usermap, numMyElems, myElems, owner_procs,
+				 0, sizes, high_rank_proc_owns_shared);
+
+  //we'll fill a list of map-elements which belong on this processor
+
+  int* myOwnedElems = new int[numMyElems*2];
+  int* ownedSizes = myOwnedElems+numMyElems;
+  int numMyOwnedElems = 0;
+
+  for(int i=0; i<numMyElems; ++i) {
+    int GID = myElems[i];
+    int owner = owner_procs[i];
+
+    if (myPID == owner) {
+      ownedSizes[numMyOwnedElems] = sizes[i];
+      myOwnedElems[numMyOwnedElems++] = GID;
+    }
+  }
+
+  Epetra_BlockMap one_to_one_map(-1, numMyOwnedElems, myOwnedElems,
+				 sizes, usermap.IndexBase(), usermap.Comm());
+
+  delete [] myOwnedElems;
+  delete [] owner_procs;
 
   return(one_to_one_map);
 }

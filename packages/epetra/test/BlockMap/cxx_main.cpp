@@ -180,7 +180,12 @@ int main(int argc, char *argv[]) {
 
   if (verbose) cout << "Checking non-oneToOne Epetra_BlockMap(...)"<<endl;
   ierr = Map->IsOneToOne() == false ? 0 : -1;
-  EPETRA_TEST_ERR(ierr,returnierr);
+
+  //this Map is 1-to-1 if we're running on 1 processor, otherwise it
+  //should not be 1-to-1.
+  if (Comm.NumProc() > 1) {
+    EPETRA_TEST_ERR(ierr,returnierr);
+  }
   if (verbose && ierr==0) cout << "Checked OK\n\n" <<endl;
 
   delete [] myElems;
