@@ -3,7 +3,7 @@
 // @HEADER
 // ***********************************************************************
 //
-//       PyTrilinos.New_Package: Python Interface to New_Package
+//            PyTrilinos.Galeri: Python Interface to Galeri
 //                 Copyright (2005) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
