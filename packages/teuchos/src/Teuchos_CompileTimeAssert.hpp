@@ -38,6 +38,7 @@
 namespace Teuchos {
 
 /*! \defgroup CompileTimeAssert_grp  Template classes for testing assertions at compile time.
+ \ingroup teuchos_language_support_grp
 */
 ///@{
 

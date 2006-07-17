@@ -46,7 +46,7 @@ QUIET                  = NO
 WARNINGS               = YES
 WARN_IF_UNDOCUMENTED   = YES
 WARN_FORMAT            = "$file:$line: $text"
-INPUT                  = index.doc \
+INPUT                  = index.doc groups.doc \
                          ../src
 #INPUT                  = index.doc
 FILE_PATTERNS          = *.h *.hpp *.cpp
@@ -59,6 +59,7 @@ EXAMPLE_PATH           =  ../example/BLAS/cxx_main.cpp \
                           ../example/ParameterList/cxx_main.cpp \
                           ../test/RefCountPtr/cxx_main.cpp \
                           ../example/RefCountPtr/cxx_main.cpp \
+                          ../example/RefCountPtr/ArrayRefCountPtr_test.cpp \
                           ../example/DenseMatrix/cxx_main.cpp \
                           ../example/TimeMonitor/cxx_main.cpp \
                           ../test/FancyOutputting/FancyOutputting_test.cpp

@@ -154,6 +154,8 @@ copy constructor being called which is almost never a desirable situation.
 The <tt>arrayArg()</tt> function is overloaded to accept 1, 2, 3, 4, 5 and 6 
 arguments.  If more elements are needed, then more overrides are easy to add.
 
+\ingroup teuchos_language_support_grp
+
 */
 
 /** \brief Utility class that allows arrays to be passed into argument list.

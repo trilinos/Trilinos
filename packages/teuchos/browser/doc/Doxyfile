@@ -17,7 +17,7 @@ OUTPUT_DIRECTORY       = ../browser/doc
 #
 # What and how documentation is extracted
 #
-INPUT                  = ../browser/doc/index.doc \
+INPUT                  = ../browser/doc/index.doc ../browser/doc/groups.doc \
                          ../src \
                          ../example \
                          ../test

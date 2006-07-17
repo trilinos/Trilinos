@@ -578,7 +578,6 @@ template<class T1, class T2>
 REFCOUNTPTR_INLINE
 bool Teuchos::operator==( const ArrayRefCountPtr<T1> &p1, const ArrayRefCountPtr<T2> &p2 )
 {
-  Utilities::assert_shares_resource(p1,p2);
   return p1.access_ptr() == p2.access_ptr();
 }
 
@@ -586,7 +585,6 @@ template<class T1, class T2>
 REFCOUNTPTR_INLINE
 bool Teuchos::operator!=( const ArrayRefCountPtr<T1> &p1, const ArrayRefCountPtr<T2> &p2 )
 {
-  Utilities::assert_shares_resource(p1,p2);
   return p1.access_ptr() != p2.access_ptr();
 }
 

@@ -487,6 +487,18 @@ public:
       updateState();
     }
   /** \brief. */
+  basic_OSTab(
+    basic_FancyOStream<CharT,Traits>                       &fancyOStream
+    ,const int                                             tabs = 1
+    ,const std::basic_string<CharT,Traits>                 linePrefix = ""
+    )
+    :fancyOStream_(rcp(&fancyOStream,false))
+    ,tabs_(tabs)
+    ,linePrefix_(linePrefix)
+    {
+      updateState();
+    }
+  /** \brief. */
   basic_OSTab( const basic_OSTab &osTab )
     :fancyOStream_(osTab.fancyOStream_)
     ,tabs_(osTab.tabs_)
@@ -526,6 +538,11 @@ public:
   RefCountPtr<basic_FancyOStream<CharT,Traits> > getOStream() const
     {
       return fancyOStream_;
+    }
+  /** \brief. */
+  basic_FancyOStream<CharT,Traits>& operator()() const
+    {
+      return *fancyOStream_;
     }
   
 private:

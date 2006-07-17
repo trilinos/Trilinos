@@ -45,9 +45,7 @@ for converting back and forth.
 The following code shows how to convert back and forth between these two smart
 pointer types:
 
-
-
-
+\ingroup teuchos_mem_mng_grp
 
 */
 //@{

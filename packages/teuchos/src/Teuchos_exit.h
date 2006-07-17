@@ -37,6 +37,8 @@ calls to <tt>exit(int)</tt> in C and C++ code.
 #include "Teuchos_ConfigDefs.hpp"
 
 /*! \defgroup Teuchos_exit_grp Utility code for replacing calls to exit() with macros that result in thrown exceptions. 
+
+\ingroup teuchos_language_support_grp
 */
 /* @{ */
 

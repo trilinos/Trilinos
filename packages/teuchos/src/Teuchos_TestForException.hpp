@@ -36,6 +36,7 @@
 #include "Teuchos_ConfigDefs.hpp"
 
 /*! \defgroup TestForException_grp Utility code for throwing exceptions and setting breakpoints. 
+\ingroup teuchos_language_support_grp
 */
 //@{
 

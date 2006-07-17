@@ -29,11 +29,6 @@
 #ifndef TEUCHOS_ARRAY_REFCOUNTPTR_DECL_HPP
 #define TEUCHOS_ARRAY_REFCOUNTPTR_DECL_HPP
 
-/*! \file Teuchos_ArrayRefCountPtrDecl.hpp
-    \brief Reference-counted array pointer class and non-member templated function
-	definitions
-*/
-
 #include "Teuchos_RefCountPtr.hpp"
 
 namespace Teuchos {
@@ -61,6 +56,8 @@ namespace Teuchos {
  * with the range of valid data.
  *
  * ToDo: Finish documentation!
+ *
+ * \ingroup teuchos_mem_mng_grp
  */
 template<class T>
 class ArrayRefCountPtr {
@@ -520,7 +517,7 @@ public:
 
 /** \brief Traits specialization.
  *
- * \relates RefCountPtr
+ * \relates ArrayRefCountPtr
  */
 template<typename T>
 class TypeNameTraits<ArrayRefCountPtr<T> > {
@@ -565,26 +562,34 @@ ArrayRefCountPtr<T> arcp( typename ArrayRefCountPtr<T>::Ordinal size );
 
 /** \brief Wrap an <tt>std::vector<T></tt> object as an
  * <tt>ArrayRefCountPtr<T></tt> object.
+ *
+ * \relates ArrayRefCountPtr
  */
 template<class T>
 ArrayRefCountPtr<T> arcp( const RefCountPtr<std::vector<T> > &v );
 
-/** \brief Get an <tt>std::vector<T></tt> object out of an
- * <tt>ArrayRefCountPtr<T></tt> object that was created using the
- * <tt>arcp()</tt> above to wrap the vector in the first place..
- */
-template<class T>
-RefCountPtr<std::vector<T> > get_std_vector( const ArrayRefCountPtr<T> &ptr );
-
 /** \brief Wrap a <tt>const std::vector<T></tt> object as an
  * <tt>ArrayRefCountPtr<const T></tt> object.
+ *
+ * \relates ArrayRefCountPtr
  */
 template<class T>
 ArrayRefCountPtr<const T> arcp( const RefCountPtr<const std::vector<T> > &v );
 
+/** \brief Get an <tt>std::vector<T></tt> object out of an
+ * <tt>ArrayRefCountPtr<T></tt> object that was created using the
+ * <tt>arcp()</tt> above to wrap the vector in the first place..
+ *
+ * \relates ArrayRefCountPtr
+ */
+template<class T>
+RefCountPtr<std::vector<T> > get_std_vector( const ArrayRefCountPtr<T> &ptr );
+
 /** \brief Get a <tt>const std::vector<T></tt> object out of an
  * <tt>ArrayRefCountPtr<const T></tt> object that was created using the
  * <tt>arcp()</tt> above to wrap the vector in the first place.
+ *
+ * \relates ArrayRefCountPtr
  */
 template<class T>
 RefCountPtr<const std::vector<T> > get_std_vector( const ArrayRefCountPtr<const T> &ptr );

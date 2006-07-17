@@ -56,6 +56,8 @@ namespace Teuchos {
  *
  * ToDo: Include an example/testing function for a few different use
  * cases to demonstrate how to use this interface properly.
+ *
+ * \ingroup teuchos_outputting_grp
  */
 class Describable {
 public:
@@ -116,23 +118,16 @@ public:
   
 };
 
-/** \defgroup Teuchos_Describable_Stream_Manipulators Stream Manipulators for Describable Objects.
- *
- * This code allows a client to call the function
- * <tt>Describable::describe(...)</tt> inside of a string of output stream
- * calls.
- */
-
-/** \brief Describable stream manipulator state.
- *
- * \relates Describable
- */
+// Describable stream manipulator state class
+//
+// This is not a class that a user needs to see and that is why it is not
+// being given doxygen documentation!
 struct DescribableStreamManipulatorState {
   const Describable          &describable;
 	const EVerbosityLevel      verbLevel;
   DescribableStreamManipulatorState(
     const Describable          &_describable
-    ,const EVerbosityLevel     _verbLevel
+    ,const EVerbosityLevel     _verbLevel=VERB_MEDIUM
     )
     :describable(_describable)
     ,verbLevel(_verbLevel)
@@ -141,6 +136,21 @@ struct DescribableStreamManipulatorState {
 
 /** \brief Describable output stream maniuplator.
  *
+ * This simple function allows you to insert ouptut from
+ * <tt>Describable::describe()</tt> right in the middle of a chain of
+ * insertion operations.  For example, you can write:
+ 
+ \code
+
+  void someFunc( const Teuchos::Describable &obj )
+  {
+    ...
+    std::cout << "The object is described as " << describe(obj,Teuchos::VERB_MEDIUM);
+    ...
+  }
+
+ \endcode
+
  * \relates Describable
  */
 inline DescribableStreamManipulatorState describe(
@@ -153,6 +163,19 @@ inline DescribableStreamManipulatorState describe(
 
 /** \brief Output stream operator for Describable manipulator.
  *
+ * To call this function use something like:
+ 
+ \code
+
+  void someFunc( const Teuchos::Describable &obj )
+  {
+    ...
+    std::cout << "The object is described as " << describe(obj,Teuchos::VERB_MEDIUM);
+    ...
+  }
+
+ \endcode
+
  * Note: The input <tt>std::ostream</tt> is casted to a <tt>FancyOStream</tt>
  * object before calling <tt>Describable::describe()</tt> on the underlying
  * <tt>Describable</tt> object.  There is no way around this since this

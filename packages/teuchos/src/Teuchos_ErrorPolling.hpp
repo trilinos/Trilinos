@@ -29,35 +29,34 @@
 #ifndef TEUCHOS_ERRORPOLLING_H
 #define TEUCHOS_ERRORPOLLING_H
 
-/*! \file Teuchos_ErrorPolling.hpp
-\brief Functions for sharing exception detection status across all processors
-*/
-
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_TestForException.hpp"
 
-/*! \defgroup ErrorPolling_grp Utility code for synchronizing 
-  exception detection across processors. 
+/*! \defgroup ErrorPolling_grp Utility code for synchronizing exception detection across processors. 
 */
 //@{
 
-
+/** \brief . */
 namespace Teuchos
 {
   class MPIComm;
 
-  /**
-   * ErrorPolling provides utilities for establishing agreement
-   * between processors on whether an exception has been detected
-   * on any one processor. The two functions must be used in a coordinated
-   * way. The simplest use case is to embed a call to reportFailure() whenever
-   * an exception is detected at the top-level try/catch block, and then to
-   * do a call to pollForFailures() whenever it is desired to check for off-processor
+  /** \brief ErrorPolling provides utilities for establishing agreement
+   * between processors on whether an exception has been detected on any one
+   * processor.
+   *
+   * The two functions must be used in a coordinated way. The simplest use
+   * case is to embed a call to reportFailure() whenever an exception is
+   * detected at the top-level try/catch block, and then to do a call to
+   * pollForFailures() whenever it is desired to check for off-processor
    * errors before proceeding. The macro
-   * \code
-   * TEUCHOS_TEST_FOR_FAILURE(comm);
-   * \endcode  
-   * calls pollForFailures() and throws an exception if the return value is true. 
+
+    \code
+    TEUCHOS_TEST_FOR_FAILURE(comm);
+    \endcode  
+
+   * calls pollForFailures() and throws an exception if the return value is
+   * true.
    *
    * Polling is a collective operation (an MPI_Reduce) and so incurs some
    * performance overhead. It can be disabled with a call to 
@@ -69,7 +68,6 @@ namespace Teuchos
    * operations in pollForFailures() will hang because some processors cannot be 
    * contacted. 
    */
-  
   class ErrorPolling
   {
   public:
@@ -99,8 +97,6 @@ namespace Teuchos
     /** Set or check whether error polling is active */
     static bool& isActive() {static bool rtn = true; return rtn;}
   };
-
-
 
   /** 
    * This macro polls all processors in the given communicator to find

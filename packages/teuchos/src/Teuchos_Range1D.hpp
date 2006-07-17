@@ -154,16 +154,11 @@ private:
   
 }; // end class Range1D
   
-/** \defgroup Range1D_funcs_grp  Non-Member Functions Associated with Range1D.
- *
- * The first three are arithmetic operator functions for incrementing the index
- * and the last is utility function.
- */
-//@{
-  
 /** \brief rng1 == rng2.
  *
  * @return Returns <tt>rng1.lbound() == rng2.ubound() && rng1.ubound() == rng2.ubound()</tt>.
+ *
+ * \relates Range1D
  */
 inline bool operator==(const Range1D& rng1, const Range1D& rng2 )
 {
@@ -178,6 +173,8 @@ inline bool operator==(const Range1D& rng1, const Range1D& rng2 )
   *	<li> <tt>rng_lhs.lbound() == rng_rhs.lbound() + i</tt>
   *	<li> <tt>rng_lhs.ubound() == rng_rhs.ubound() + i</tt>
   *	</ul>
+ *
+ * \relates Range1D
   */
 inline Range1D operator+(const Range1D &rng_rhs, Range1D::Index i)
 {
@@ -192,6 +189,8 @@ inline Range1D operator+(const Range1D &rng_rhs, Range1D::Index i)
   *	<li> <tt>rng_lhs.lbound() == i + rng_rhs.lbound()</tt>
   *	<li> <tt>rng_lhs.ubound() == i + rng_rhs.ubound()</tt>
   *	</ul>
+ *
+ * \relates Range1D
   */
 inline Range1D operator+(Range1D::Index i, const Range1D &rng_rhs)
 {
@@ -206,6 +205,8 @@ inline Range1D operator+(Range1D::Index i, const Range1D &rng_rhs)
   *	<li> <tt>rng_lhs.lbound() == rng_rhs.lbound() - i</tt>
   *	<li> <tt>rng_lhs.ubound() == rng_rhs.ubound() - i</tt>
   *	</ul>
+ *
+ * \relates Range1D
   */
 inline Range1D operator-(const Range1D &rng_rhs, Range1D::Index i)
 {
@@ -224,11 +225,11 @@ inline Range1D operator-(const Range1D &rng_rhs, Range1D::Index i)
   *	<li> [<tt>rng.full_range() == false</tt>] <tt>return.lbound() == rng.lbound()</tt>
   *	<li> [<tt>rng.full_range() == false</tt>] <tt>return.ubound() == rng.ubound()</tt>
   *	</ul>
+ *
+ * \relates Range1D
   */
 inline Range1D full_range(const Range1D &rng, Range1D::Index lbound, Range1D::Index ubound)
 {	return rng.full_range() ? Range1D(lbound,ubound) : rng; }
-
-//@}
 
 // //////////////////////////////////////////////////////////
 // Inline members

@@ -39,20 +39,21 @@
 
 namespace Teuchos {
 
-/** \defgroup Teuchos_opaque_wrappers_grp */
-
 /** \brief Base class for wrapped opaque objects.
  *
- * \ingroup Teuchos_opaque_wrappers_grp
+ * \ingroup teuchos_mem_mng_grp
  */
 template <class Opaque>
 class OpaqueWrapper {
 public:
+  /** \brief . */
   OpaqueWrapper( Opaque opaque )
     : opaque_(opaque)
     {}
+  /** \brief . */
   operator Opaque () const
     { return opaque_; }
+  /** \brief . */
   Opaque operator()() const
     { return opaque_; }
 protected:
@@ -65,7 +66,7 @@ private:
 
 /** \brief Subclass for wrapped opaque objects with a free function.
  *
- * \ingroup Teuchos_opaque_wrappers_grp
+ * \relates OpaqueWrapper
  */
 template <class Opaque, class OpaqueFree>
 class OpaqueWrapperWithFree : public OpaqueWrapper<Opaque> {
@@ -96,7 +97,7 @@ private:
 /** \brief Helper function created a new <tt>OpaqueWrapper</tt> object without
  * a free function.
  *
- * \ingroup Teuchos_opaque_wrappers_grp
+ * \relates OpaqueWrapper
  */
 template <class Opaque>
 inline
@@ -109,7 +110,7 @@ opaqueWrapper( Opaque opaque)
 /** \brief Helper function created a new <tt>OpaqueWrapper</tt> object with a
  * free function.
  *
- * \ingroup Teuchos_opaque_wrappers_grp
+ * \relates OpaqueWrapper
  */
 template <class Opaque, class OpaqueFree>
 inline

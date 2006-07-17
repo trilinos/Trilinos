@@ -44,7 +44,9 @@ class RawWorkspace;
  * variables on the stack to be used for temporary workspace without
  * requiring expensive calls opeator <tt>new</tt> or operator
  * <tt>delete</tt>.
- */
+ *
+ * \ingroup teuchos_mem_mng_grp
+*/
 //@{
 
 /** \brief Set pointer to global workspace object.

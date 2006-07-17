@@ -29,11 +29,6 @@
 #ifndef TEUCHOS_REFCOUNTPTR_DECL_H
 #define TEUCHOS_REFCOUNTPTR_DECL_H
 
-/*! \file Teuchos_RefCountPtrDecl.hpp
-    \brief Reference-counted pointer class and non-member templated function
-	definitions
-*/
-
 #include "Teuchos_any.hpp"
 
 #ifdef REFCOUNTPTR_INLINE_FUNCS
@@ -46,28 +41,27 @@
 #  define TEUCHOS_REFCOUNTPTR_ASSERT_NONNULL
 #endif
 
-/** \class Teuchos::DeallocDelete
-    \brief Policy class for deallocator that uses <tt>delete</tt> to delete a
-    pointer which is used by <tt>RefCountPtr</tt>.
- */
-
-/** \class Teuchos::RefCountPtr
-    \brief Templated class for reference counted smart pointers (see \ref RefCountPtr_stuff "description").
- *
- * This is a class for smart reference counted pointer objects
- * that deletes an object (if the object is owned) that was allocated
- * by <tt>new</tt> after all refereces to it have been removed.
- *
- * To see how to use this class see \ref RefCountPtr_stuff "description".
- */
-
 namespace Teuchos {
 
 namespace PrivateUtilityPack {
 	class RefCountPtr_node;
 }
 
-/** \defgroup RefCountPtr_stuff Reference counting smart pointer class for automatic garbage collection.
+/** \brief Used to initialize a <tt>RefCountPtr</tt> object to NULL using an
+ * implicit conversion!
+ *
+ * \relates RefCountPtr
+ */
+enum ENull { null };
+
+/** \brief Used to specify a pre or post destruction of extra data
+ *
+ * \relates RefCountPtr
+ */
+enum EPrePostDestruction { PRE_DESTROY, POST_DESTROY };
+
+/** \brief Smart reference counting pointer class for automatic garbage
+  collection.
   
 For a carefully written discussion about what this class is and basic
 details on how to use it see the
@@ -398,102 +392,9 @@ if(b1) (*b1)->f();
 
 </ol>
 
+\ingroup teuchos_mem_mng_grp
+
  */
-//@{
-
-/** \brief Used to initialize a <tt>RefCountPtr</tt> object to NULL using an implicit conversion! */
-enum ENull { null };
-
-/** \brief Used to specify a pre or post destruction of extra data */
-enum EPrePostDestruction { PRE_DESTROY, POST_DESTROY };
-
-/** \brief  Deallocator for <tt>new</tt> which calls <tt>delete</tt> */
-template<class T>
-class DeallocDelete
-{
-public:
-	/// Gives the type (required)
-	typedef T ptr_t;
-	/// Deallocates a pointer <tt>ptr</tt> using <tt>delete ptr</tt> (required).
-	void free( T* ptr ) { if(ptr) delete ptr; }
-};
-
-/** \brief Deallocator for <tt>new []</tt> which calls <tt>delete []</tt> */
-template<class T>
-class DeallocArrayDelete
-{
-public:
-	/// Gives the type (required)
-	typedef T ptr_t;
-	/// Deallocates a pointer <tt>ptr</tt> using <tt>delete [] ptr</tt> (required).
-	void free( T* ptr ) { if(ptr) delete [] ptr; }
-};
-
-/** \brief Deallocator subclass that Allows any functor object (including a
- * function pointer) to be used to free an object.
- *
- * Note, the only requirement is that deleteFuctor(ptr) can be called (which
- * is true for a function pointer).
- *
- * Note, a client should generally use the function
- * <tt>deallocFunctorDelete()</tt> to create this object and not try to
- * construct it directly.
- */
-template<class T, class DeleteFunctor>
-class DeallocFunctorDelete
-{
-public:
-  DeallocFunctorDelete( DeleteFunctor deleteFunctor ) : deleteFunctor_(deleteFunctor) {}
-  typedef T ptr_t;
-  void free( T* ptr ) { if(ptr) deleteFunctor_(ptr); }
-private:
-  DeleteFunctor deleteFunctor_;
-  DeallocFunctorDelete(); // Not defined and not to be called!
-};
-
-/** \brief A simple function used to create a functor deallocator object.
- */
-template<class T, class DeleteFunctor>
-DeallocFunctorDelete<T,DeleteFunctor>
-deallocFunctorDelete( DeleteFunctor deleteFunctor )
-{
-  return DeallocFunctorDelete<T,DeleteFunctor>(deleteFunctor);
-}
-
-/** \brief Deallocator subclass that Allows any functor object (including a
- * function pointer) to be used to free a handle (i.e. pointer to pointer) to
- * an object.
- *
- * Note, the only requirement is that deleteFuctor(ptrptr) can be called
- * (which is true for a function pointer).
- *
- * Note, a client should generally use the function
- * <tt>deallocFunctorDelete()</tt> to create this object and not try to
- * construct it directly.
- */
-template<class T, class DeleteHandleFunctor>
-class DeallocFunctorHandleDelete
-{
-public:
-  DeallocFunctorHandleDelete( DeleteHandleFunctor deleteHandleFunctor )
-    : deleteHandleFunctor_(deleteHandleFunctor) {}
-  typedef T ptr_t;
-  void free( T* ptr ) { if(ptr) { T **hdl = &ptr; deleteHandleFunctor_(hdl); } }
-private:
-  DeleteHandleFunctor deleteHandleFunctor_;
-  DeallocFunctorHandleDelete(); // Not defined and not to be called!
-};
-
-/** \brief A simple function used to create a functor deallocator object.
- */
-template<class T, class DeleteHandleFunctor>
-DeallocFunctorHandleDelete<T,DeleteHandleFunctor>
-deallocFunctorHandleDelete( DeleteHandleFunctor deleteHandleFunctor )
-{
-  return DeallocFunctorHandleDelete<T,DeleteHandleFunctor>(deleteHandleFunctor);
-}
-
-/** \brief . */
 template<class T>
 class RefCountPtr {
 public:
@@ -522,7 +423,7 @@ public:
 	 * compilers will generate this function automatically which will
 	 * give an incorrect implementation.
 	 *
-	 * Postconditons:<ul>
+	 * <b>Postconditons:</b><ul>
 	 * <li> <tt>this->get() == r_ptr.get()</tt>
 	 * <li> <tt>this->count() == r_ptr.count()</tt>
 	 * <li> <tt>this->has_ownership() == r_ptr.has_ownership()</tt>
@@ -536,7 +437,7 @@ public:
 	 * like with raw C++ pointers.  Note that this function will only compile
 	 * if the statement <tt>T1 *ptr = r_ptr.get()</tt> will compile.
 	 *
-	 * Postconditons: <ul>
+	 * <b>Postconditons:</b> <ul>
 	 * <li> <tt>this->get() == r_ptr.get()</tt>
 	 * <li> <tt>this->count() == r_ptr.count()</tt>
 	 * <li> <tt>this->has_ownership() == r_ptr.has_ownership()</tt>
@@ -567,8 +468,7 @@ public:
 	 * <tt>r_ptr</tt>.  Assignment to self (i.e. <tt>this->get() ==
 	 * r_ptr.get()</tt>) is harmless and this function does nothing.
 	 *
-	 * Postconditons:
-	 * <ul>
+	 * <b>Postconditons:</b><ul>
 	 * <li> <tt>this->get() == r_ptr.get()</tt>
 	 * <li> <tt>this->count() == r_ptr.count()</tt>
 	 * <li> <tt>this->has_ownership() == r_ptr.has_ownership()</tt>
@@ -578,16 +478,14 @@ public:
 	RefCountPtr<T>& operator=(const RefCountPtr<T>& r_ptr);
 	/** \brief Pointer (<tt>-></tt>) access to members of underlying object.
 	 *
-	 * <b>Preconditions:</b>
-	 * <ul>
+	 * <b>Preconditions:</b><ul>
 	 * <li> <tt>this->get() != NULL</tt> (throws <tt>std::logic_error</tt>)
 	 * </ul>
 	 */
 	T* operator->() const;
 	/** \brief Dereference the underlying object.
 	 *
-	 * <b>Preconditions:</b>
-	 * <ul>
+	 * <b>Preconditions:</b><ul>
 	 * <li> <tt>this->get() != NULL</tt> (throws <tt>std::logic_error</tt>)
 	 * </ul>
 	 */
@@ -621,7 +519,7 @@ public:
 	 * to the underlying pointer that is being shared.
 	 *
 	 * @return  If <tt>this->get() == NULL</tt> then this function returns 0.
-	 * Otherwise, this function returns <tt>> 0</tt>.
+	 * Otherwise, this function returns <tt>0</tt>.
 	 */
 	int count() const;
 	/** \brief Give <tt>this</tt> and other <tt>RefCountPtr<></tt> objects ownership 
@@ -706,6 +604,109 @@ public:
   static std::string name() { return "RefCountPtr<"+TypeNameTraits<T>::name()+">"; }
 };
 
+
+/** \brief Policy class for deallocator that uses <tt>delete</tt> to delete a
+ * pointer which is used by <tt>RefCountPtr</tt>.
+ *
+ * \ingroup teuchos_mem_mng_grp
+ */
+template<class T>
+class DeallocDelete
+{
+public:
+	/// Gives the type (required)
+	typedef T ptr_t;
+	/// Deallocates a pointer <tt>ptr</tt> using <tt>delete ptr</tt> (required).
+	void free( T* ptr ) { if(ptr) delete ptr; }
+};
+
+/** \brief Deallocator class that uses <tt>delete []</tt> to delete memory
+ * allocated uisng <tt>new []</tt>
+ *
+ * \ingroup teuchos_mem_mng_grp
+ */
+template<class T>
+class DeallocArrayDelete
+{
+public:
+	/// Gives the type (required)
+	typedef T ptr_t;
+	/// Deallocates a pointer <tt>ptr</tt> using <tt>delete [] ptr</tt> (required).
+	void free( T* ptr ) { if(ptr) delete [] ptr; }
+};
+
+/** \brief Deallocator subclass that Allows any functor object (including a
+ * function pointer) to be used to free an object.
+ *
+ * Note, the only requirement is that deleteFuctor(ptr) can be called (which
+ * is true for a function pointer).
+ *
+ * Note, a client should generally use the function
+ * <tt>deallocFunctorDelete()</tt> to create this object and not try to
+ * construct it directly.
+ *
+ * \ingroup teuchos_mem_mng_grp
+ */
+template<class T, class DeleteFunctor>
+class DeallocFunctorDelete
+{
+public:
+  DeallocFunctorDelete( DeleteFunctor deleteFunctor ) : deleteFunctor_(deleteFunctor) {}
+  typedef T ptr_t;
+  void free( T* ptr ) { if(ptr) deleteFunctor_(ptr); }
+private:
+  DeleteFunctor deleteFunctor_;
+  DeallocFunctorDelete(); // Not defined and not to be called!
+};
+
+/** \brief A simple function used to create a functor deallocator object.
+ *
+ * \relates DeallocFunctorDelete
+ */
+template<class T, class DeleteFunctor>
+DeallocFunctorDelete<T,DeleteFunctor>
+deallocFunctorDelete( DeleteFunctor deleteFunctor )
+{
+  return DeallocFunctorDelete<T,DeleteFunctor>(deleteFunctor);
+}
+
+/** \brief Deallocator subclass that Allows any functor object (including a
+ * function pointer) to be used to free a handle (i.e. pointer to pointer) to
+ * an object.
+ *
+ * Note, the only requirement is that deleteFuctor(ptrptr) can be called
+ * (which is true for a function pointer).
+ *
+ * Note, a client should generally use the function
+ * <tt>deallocFunctorDelete()</tt> to create this object and not try to
+ * construct it directly.
+ *
+ * \ingroup teuchos_mem_mng_grp
+ */
+template<class T, class DeleteHandleFunctor>
+class DeallocFunctorHandleDelete
+{
+public:
+  DeallocFunctorHandleDelete( DeleteHandleFunctor deleteHandleFunctor )
+    : deleteHandleFunctor_(deleteHandleFunctor) {}
+  typedef T ptr_t;
+  void free( T* ptr ) { if(ptr) { T **hdl = &ptr; deleteHandleFunctor_(hdl); } }
+private:
+  DeleteHandleFunctor deleteHandleFunctor_;
+  DeallocFunctorHandleDelete(); // Not defined and not to be called!
+};
+
+/** \brief A simple function used to create a functor deallocator object.
+ *
+ * \relates DeallocFunctorHandleDelete
+ */
+template<class T, class DeleteHandleFunctor>
+DeallocFunctorHandleDelete<T,DeleteHandleFunctor>
+deallocFunctorHandleDelete( DeleteHandleFunctor deleteHandleFunctor )
+{
+  return DeallocFunctorHandleDelete<T,DeleteHandleFunctor>(deleteHandleFunctor);
+}
+
 /** \brief Create a <tt>RefCountPtr</tt> object properly typed.
  *
  * @param  p  [in] Pointer to an object to be reference counted.
@@ -726,6 +727,8 @@ public:
  * either the client should use the version of <tt>rcp()</tt> that
  * that uses a deallocator policy object or should pass in 
  * <tt>owns_mem = false</tt>.
+ *
+ * \relates RefCountPtr
  */
 template<class T>
 RefCountPtr<T> rcp( T* p, bool owns_mem
@@ -776,33 +779,45 @@ template<class T> inline RefCountPtr<T> rcp( T* p ) { return rcp(p,true); }
  * object that will free the pointer.  The other functions use a
  * default deallocator of type <tt>DeallocDelete</tt> which has a method
  * <tt>DeallocDelete::free()</tt> which just calls <tt>delete p</tt>.
+ *
+ * \relates RefCountPtr
  */
 template<class T, class Dealloc_T>
 RefCountPtr<T> rcp( T* p, Dealloc_T dealloc, bool owns_mem );
 
 /** \brief Returns true if <tt>p.get()==NULL</tt>.
+ *
+ * \relates RefCountPtr
  */
 template<class T>
 bool is_null( const RefCountPtr<T> &p );
 
 /** \brief Returns true if <tt>p.get()==NULL</tt>.
+ *
+ * \relates RefCountPtr
  */
 template<class T>
 bool operator==( const RefCountPtr<T> &p, ENull );
 
 /** \brief Returns true if <tt>p.get()!=NULL</tt>.
+ *
+ * \relates RefCountPtr
  */
 template<class T>
 bool operator!=( const RefCountPtr<T> &p, ENull );
 
 /** \brief Return true if two <tt>RefCountPtr</tt> objects point to the same
  * referenced-counted object and have the same node.
+ *
+ * \relates RefCountPtr
  */
 template<class T1, class T2>
 bool operator==( const RefCountPtr<T1> &p1, const RefCountPtr<T2> &p2 );
 
 /** \brief Return true if two <tt>RefCountPtr</tt> objects do not point to the
  * same referenced-counted object and have the same node.
+ *
+ * \relates RefCountPtr
  */
 template<class T1, class T2>
 bool operator!=( const RefCountPtr<T1> &p1, const RefCountPtr<T2> &p2 );
@@ -813,6 +828,8 @@ bool operator!=( const RefCountPtr<T1> &p1, const RefCountPtr<T2> &p2 );
  *
  * This is to be used for conversions up an inheritance hierarchy and from non-const to
  * const and any other standard implicit pointer conversions allowed by C++.
+ *
+ * \relates RefCountPtr
  */
 template<class T2, class T1>
 RefCountPtr<T2> rcp_implicit_cast(const RefCountPtr<T1>& p1);
@@ -824,6 +841,8 @@ RefCountPtr<T2> rcp_implicit_cast(const RefCountPtr<T1>& p1);
  * This can safely be used for conversion down an inheritance hierarchy
  * with polymorphic types only if <tt>dynamic_cast<T2>(p1.get()) == static_cast<T2>(p1.get())</tt>.
  * If not then you have to use <tt>rcp_dynamic_cast<tt><T2>(p1)</tt>.
+ *
+ * \relates RefCountPtr
  */
 template<class T2, class T1>
 RefCountPtr<T2> rcp_static_cast(const RefCountPtr<T1>& p1);
@@ -831,6 +850,8 @@ RefCountPtr<T2> rcp_static_cast(const RefCountPtr<T1>& p1);
 /** \brief Constant cast of underlying <tt>RefCountPtr</tt> type from <tt>T1*</tt> to <tt>T2*</tt>.
  *
  * This function will compile only if (<tt>const_cast<T2*>(p1.get());</tt>) compiles.
+ *
+ * \relates RefCountPtr
  */
 template<class T2, class T1>
 RefCountPtr<T2> rcp_const_cast(const RefCountPtr<T1>& p1);
@@ -854,6 +875,8 @@ RefCountPtr<T2> rcp_const_cast(const RefCountPtr<T1>& p1);
  * </ul>
  *
  * This function will compile only if (<tt>dynamic_cast<T2*>(p1.get());</tt>) compiles.
+ *
+ * \relates RefCountPtr
  */
 template<class T2, class T1>
 RefCountPtr<T2> rcp_dynamic_cast(
@@ -921,6 +944,8 @@ template<class T2, class T1> inline RefCountPtr<T2> rcp_dynamic_cast( const RefC
  *
  * Note, this function is made a non-member function to be consistent
  * with the non-member <tt>get_extra_data()</tt> functions.
+ *
+ * \relates RefCountPtr
  */
 template<class T1, class T2>
 void set_extra_data( const T1 &extra_data, const std::string& name, RefCountPtr<T2> *p
@@ -957,6 +982,8 @@ inline void set_extra_data( const T1 &extra_data, const std::string& name, RefCo
  *
  * Note, this function must be a non-member function since the client
  * must manually select the first template argument.
+ *
+ * \relates RefCountPtr
  */
 template<class T1, class T2>
 T1& get_extra_data( RefCountPtr<T2>& p, const std::string& name );
@@ -982,6 +1009,8 @@ T1& get_extra_data( RefCountPtr<T2>& p, const std::string& name );
  * into a non-const object and then use the non-const version to
  * change the data.  However, its presence will help to avoid some
  * types of accidental changes to this extra data.
+ *
+ * \relates RefCountPtr
  */
 template<class T1, class T2>
 const T1& get_extra_data( const RefCountPtr<T2>& p, const std::string& name );
@@ -1006,6 +1035,8 @@ const T1& get_extra_data( const RefCountPtr<T2>& p, const std::string& name );
  *
  * Note, this function must be a non-member function since the client
  * must manually select the first template argument.
+ *
+ * \relates RefCountPtr
  */
 template<class T1, class T2>
 T1* get_optional_extra_data( RefCountPtr<T2>& p, const std::string& name );
@@ -1035,6 +1066,8 @@ T1* get_optional_extra_data( RefCountPtr<T2>& p, const std::string& name );
  * into a non-const object and then use the non-const version to
  * change the data.  However, its presence will help to avoid some
  * types of accidental changes to this extra data.
+ *
+ * \relates RefCountPtr
  */
 template<class T1, class T2>
 const T1* get_optional_extra_data( const RefCountPtr<T2>& p, const std::string& name );
@@ -1047,6 +1080,7 @@ const T1* get_optional_extra_data( const RefCountPtr<T2>& p, const std::string& 
  *      (throws <tt>std::logic_error</tt>)
  * </ul>
  *
+ * \relates RefCountPtr
  */
 template<class Dealloc_T, class T>
 Dealloc_T& get_dealloc( RefCountPtr<T>& p );
@@ -1065,6 +1099,8 @@ Dealloc_T& get_dealloc( RefCountPtr<T>& p );
  * non-<tt>const</tt> <tt>RefCountPtr<T></tt> object from any
  * <tt>const</tt> <tt>RefCountPtr<T></tt> object and then call the
  * non-<tt>const</tt> version of this function.
+ *
+ * \relates RefCountPtr
  */
 template<class Dealloc_T, class T>
 const Dealloc_T& get_dealloc( const RefCountPtr<T>& p );
@@ -1080,6 +1116,8 @@ const Dealloc_T& get_dealloc( const RefCountPtr<T>& p );
  * <li> If the deallocator object type used to construct <tt>p</tt> is same as <tt>Dealloc_T</tt>
  *      then <tt>return!=NULL</tt>, otherwise <tt>return==NULL</tt>
  * </ul>
+ *
+ * \relates RefCountPtr
  */
 template<class Dealloc_T, class T>
 Dealloc_T* get_optional_dealloc( RefCountPtr<T>& p );
@@ -1102,6 +1140,8 @@ Dealloc_T* get_optional_dealloc( RefCountPtr<T>& p );
  * non-<tt>const</tt> <tt>RefCountPtr<T></tt> object from any
  * <tt>const</tt> <tt>RefCountPtr<T></tt> object and then call the
  * non-<tt>const</tt> version of this function.
+ *
+ * \relates RefCountPtr
  */
 template<class Dealloc_T, class T>
 const Dealloc_T* get_optional_dealloc( const RefCountPtr<T>& p );
@@ -1110,11 +1150,11 @@ const Dealloc_T* get_optional_dealloc( const RefCountPtr<T>& p );
  *
  * The implementation of this function just print pointer addresses and
  * therefore puts not restrictions on the data types involved.
+ *
+ * \relates RefCountPtr
  */
 template<class T>
 std::ostream& operator<<( std::ostream& out, const RefCountPtr<T>& p );
-
-//@}
 
 } // end namespace Teuchos
 

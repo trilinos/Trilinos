@@ -240,9 +240,3 @@ href="../../browser/doc/html/dirs.html">directory structure of teuchos</a>, to <
 href="../../browser/doc/html/files.html">locate files</a>, etc.
 
 */
-
-/** \defgroup teuchos_outputting_grp Teuchos Outputting Utilities */
-
-/** \defgroup teuchos_language_support_grp Teuchos Language Support Utilities */
-
-/** \example FancyOutputting_test.cpp */
