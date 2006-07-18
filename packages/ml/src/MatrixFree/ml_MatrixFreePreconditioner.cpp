@@ -8,7 +8,6 @@
 #include "Epetra_Operator.h"
 #include "Epetra_RowMatrix.h"
 #include "Epetra_CrsGraph.h"
-#include "Epetra_CrsMatrix.h"
 #include "Epetra_FECrsMatrix.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Import.h"

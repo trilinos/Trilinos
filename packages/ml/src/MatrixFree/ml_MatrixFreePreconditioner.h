@@ -21,6 +21,7 @@
 #include "Epetra_Time.h"
 #include "Epetra_Operator.h"
 #include "Epetra_Comm.h"
+#include "Epetra_CrsMatrix.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 #include <vector>
@@ -33,7 +34,6 @@ class Epetra_CrsGraph;
 class Epetra_Vector;
 class Epetra_MultiVector;
 class Epetra_RowMatrix;
-class Epetra_CrsMatrix;
 class Epetra_FECrsMatrix;
 class Ifpack_Chebyshev;
 
