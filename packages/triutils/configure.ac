@@ -156,12 +156,14 @@ TAC_ARG_ENABLE_EXPORT_MAKEFILES(yes)
 # Checks for header files
 # ------------------------------------------------------------------------
 
-AC_CHECK_HEADERS([cstdlib stdlib.h], [break],)
-AC_CHECK_HEADERS([cstdio stdio.h], [break],)
+AC_CHECK_HEADERS([cstdlib stdlib.h],,)
+AC_CHECK_HEADERS([stdlib.h], [break],)
+AC_CHECK_HEADERS([cstdio], [break],)
+AC_CHECK_HEADERS([stdio.h], [break],)
 AC_CHECK_HEADERS([iostream iostream.h], [break],)
 #We need to check for cmath and math.h because of a problem on some SGI's
 AC_CHECK_HEADERS([cmath math.h],,)
-AC_CHECK_HEADERS([string string.h], [break],)
+AC_CHECK_HEADERS([string string.h],,)
 AC_CHECK_HEADERS([map map.h], [break],)
 AC_CHECK_HEADERS([malloc.h],,)
 
