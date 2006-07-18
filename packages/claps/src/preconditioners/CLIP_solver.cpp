@@ -1893,7 +1893,7 @@ void CLIP_solver::pcg_solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
 	fout << "condition # estimate      relative residual" 
 	     << "   iteration" << endl;
 	calculate_condition(cg_iter);
-	fout << setiosflags(std::ios::scientific | std::ios::uppercase);
+	fout << std::setiosflags(std::ios::scientific | std::ios::uppercase);
 	for (i=0; i<num_iter; i++) {
 	  double ee = 0;
 	  if (i >= (num_iter-cg_iter)) ee = econa[i-(num_iter-cg_iter)]; 
@@ -1905,8 +1905,8 @@ void CLIP_solver::pcg_solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
 	       << i+1 << endl;
 	}
       }
-      fout << resetiosflags(std::ios::scientific);
-      fout << resetiosflags(std::ios::uppercase);
+      fout << std::resetiosflags(std::ios::scientific);
+      fout << std::resetiosflags(std::ios::uppercase);
       fout << std::setprecision(6);
     }
   }

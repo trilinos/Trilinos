@@ -1324,7 +1324,7 @@ void CLOP_solver::pcg_solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
       fout << "condition # estimate      relative residual" 
 	   << "   iteration" << endl;
       if (pcg_iter == num_iter) calculate_condition(pcg_iter);
-      fout << setiosflags(std::ios::scientific | std::ios::uppercase);
+      fout << std::setiosflags(std::ios::scientific | std::ios::uppercase);
       for (i=0; i<num_iter; i++) {
 	double ee = 0;
 	if (pcg_iter == num_iter) ee = econa[i]; 
@@ -1336,8 +1336,8 @@ void CLOP_solver::pcg_solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
 	     << i+1 << endl;
       }
     }
-    fout << resetiosflags(std::ios::scientific);
-    fout << resetiosflags(std::ios::uppercase);
+    fout << std::resetiosflags(std::ios::scientific);
+    fout << std::resetiosflags(std::ios::uppercase);
     fout << std::setprecision(6);
   }
 }
@@ -1471,7 +1471,7 @@ void CLOP_solver::gmres_solve(Epetra_Vector* uStand,
       if (iflag == 2) {
 	cout << "condition # estimate      relative residual" 
 	     << "   iteration" << endl;
-	cout << setiosflags(std::ios::scientific | std::ios::uppercase);
+	cout << std::setiosflags(std::ios::scientific | std::ios::uppercase);
 	for (i=0; i<num_iter; i++) {
 	  cout << " " 
 	       << std::setw(17) << std::setprecision(10) << 0
@@ -1481,8 +1481,8 @@ void CLOP_solver::gmres_solve(Epetra_Vector* uStand,
 	       << i+1 << endl;
 	}
       }
-      cout << resetiosflags(std::ios::scientific);
-      cout << resetiosflags(std::ios::uppercase);
+      cout << std::resetiosflags(std::ios::scientific);
+      cout << std::resetiosflags(std::ios::uppercase);
       cout << std::setprecision(6);
     }
   }
