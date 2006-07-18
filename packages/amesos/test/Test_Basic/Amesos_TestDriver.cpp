@@ -48,6 +48,7 @@
 //  exits with -1 if command line options or file permissions are wrong 
 //
 #include "Amesos_ConfigDefs.h"
+#include <stdio.h>
 
   int SuperLU_permc ; 
 
