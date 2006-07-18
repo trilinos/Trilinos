@@ -79,7 +79,8 @@
 
 #ifdef HAVE_CSTDIO
 #include <cstdio>
-#elif defined(HAVE_STDIO_H)
+#endif
+#if defined(HAVE_STDIO_H)
 #include <stdio.h>
 #endif
 

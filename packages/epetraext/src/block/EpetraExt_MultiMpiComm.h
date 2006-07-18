@@ -31,6 +31,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #ifndef EPETRAEXT_MULTIMPICOMM_H
 #define EPETRAEXT_MULTIMPICOMM_H
 
+#include "EpetraExt_ConfigDefs.h"
 #include "Epetra_MpiComm.h" 
 
 //! EpetraExt::MultiMpiComm is a class for keeping track of two levels of

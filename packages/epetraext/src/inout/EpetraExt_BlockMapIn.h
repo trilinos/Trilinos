@@ -25,7 +25,7 @@
 // 
 // ***********************************************************************
 //@HEADER
-#include <Epetra_ConfigDefs.h>
+#include <EpetraExt_ConfigDefs.h>
 class Epetra_Comm;
 class Epetra_BlockMap;
 class Epetra_Map;

@@ -223,10 +223,10 @@ fi
 # Checks for header files
 # ------------------------------------------------------------------------
 
-AC_CHECK_HEADERS([cstdlib stdlib.h], [break],)
-AC_CHECK_HEADERS([cstdio stdio.h], [break],)
+AC_CHECK_HEADERS([cstdlib stdlib.h],,)
+AC_CHECK_HEADERS([cstdio stdio.h],,)
 AC_CHECK_HEADERS([cassert assert.h], [break],)
-AC_CHECK_HEADERS([cmath math.h], [break],)
+AC_CHECK_HEADERS([cmath math.h],,)
 AC_CHECK_HEADERS([iomanip iomanip.h], [break],)
 AC_CHECK_HEADERS([iostream iostream.h], [break],)
 AC_CHECK_HEADERS([string string.h], [break],)

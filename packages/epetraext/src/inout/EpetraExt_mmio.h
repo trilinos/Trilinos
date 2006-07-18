@@ -6,6 +6,9 @@
 *
 */
 
+#include <stdio.h>
+#include <stdlib.h>
+
 #ifndef MM_IO_H
 #define MM_IO_H
 
