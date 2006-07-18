@@ -92,25 +92,31 @@ in-depth information."
     $action
     if (PyErr_Occurred()) SWIG_fail;
   }
-
+  catch(Teuchos::Exceptions::InvalidParameter e) {
+    PyErr_SetString(PyExc_KeyError, e.what());
+    SWIG_fail;
+  }
   catch(std::runtime_error e) {
     PyErr_SetString(PyExc_RuntimeError, e.what());
     SWIG_fail;
   }
-
-  catch(Teuchos::Exceptions::InvalidParameter e) {
-    PyErr_SetString(PyExc_KeyError, e.what());
+  catch(std::logic_error e) {
+    PyErr_SetString(PyExc_RuntimeError, e.what());
     SWIG_fail;
   }
 }
 %enddef
 
-TEUCHOS_EXCEPTION(ParameterList,sublist)
+TEUCHOS_EXCEPTION(ParameterList,ParameterList)
+TEUCHOS_EXCEPTION(ParameterList,set)
 TEUCHOS_EXCEPTION(ParameterList,get)
+TEUCHOS_EXCEPTION(ParameterList,sublist)
+TEUCHOS_EXCEPTION(ParameterList,type)
 TEUCHOS_EXCEPTION(PyDictParameterList,PyDictParameterList)
 TEUCHOS_EXCEPTION(PyDictParameterList,set)
 TEUCHOS_EXCEPTION(PyDictParameterList,get)
 TEUCHOS_EXCEPTION(PyDictParameterList,sublist)
+TEUCHOS_EXCEPTION(PyDictParameterList,type)
 
 // Auto-documentation feature.  This ensures that calling help() on a
 // wrapped method returns an argument list (or lists, in the case of
@@ -125,19 +131,17 @@ TEUCHOS_EXCEPTION(PyDictParameterList,sublist)
 // and python strings.
 %include "std_string.i"
 
-// Teuchos interface includes.  Create a %include line for every
-// header file with a prototype you want wrapped.  In this example,
-// Teuchos_Version contains a function, Newp_Hello contains a
-// class, and Newp_Jambo contains an optional class.
+// Teuchos interface includes
 using namespace std;
 %include "Teuchos_Version.hpp"
 %import  "Teuchos_RefCountPtrDecl.hpp"
 %import  "Teuchos_any.hpp"
 %import  "Teuchos_ParameterEntry.hpp"
+%import  "Teuchos_PythonParameter.hpp"
 %include "Teuchos_ParameterList.hpp"
 %include "Teuchos_PyDictParameterList.hpp"
 
-// Extensions.
+// Extensions
 %extend Teuchos::ParameterList {
 
   PyObject * set(const string &name, PyObject *value) {
@@ -169,6 +173,7 @@ using namespace std;
 	PyErr_Format(PyExc_KeyError, "'%s'", name.c_str());
 	goto fail;
       }
+      Py_DECREF(value);
       Py_INCREF(default_value);
       return default_value;
     }
@@ -177,18 +182,18 @@ using namespace std;
     else return value;
 
   fail:
+    Py_XDECREF(value);
     return NULL;
   }
 
-  PyObject * _print(PyObject * pf=NULL, int indent=0, bool showTypes=false) {
+  PyObject * _print(PyObject * pf=NULL, int indent=0, bool showTypes=false,
+		    bool showFlags=true) {
 
     PyObject * returnObject = pf;
 
     // No arguments
     if (pf==NULL) {
-      printf("About to call self->print\n");
-      self->print(std::cout,indent,showTypes);
-      printf("Back from self->print\n");
+      self->print(std::cout,indent,showTypes,showFlags);
       returnObject = Py_None;
     }
 
@@ -204,7 +209,7 @@ using namespace std;
 	std::FILE *f = PyFile_AsFile(pf);
 	Teuchos::FILEstream buffer(f);
 	std::ostream os(&buffer);
-	self->print(os,indent,showTypes);
+	self->print(os,indent,showTypes,showFlags);
       }
     }
     Py_INCREF(returnObject);

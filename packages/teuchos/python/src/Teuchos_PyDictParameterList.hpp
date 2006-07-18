@@ -32,6 +32,7 @@
 #include "Python.h"
 
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_FILEstream.hpp"
 
 namespace Teuchos {
 
@@ -44,34 +45,47 @@ namespace Teuchos {
   public:
 
     // -------------------------------------------------------------------------
+    // Default constructor returns PyDictParameterList with empty
+    // ParameterList and empty python dictionary
     PyDictParameterList() :
-      Teuchos::ParameterList()
+      ParameterList()
     {
+      // Create an empty python dictionary
       __pyDict__ = PyDict_New();
     }
 
     // -------------------------------------------------------------------------
+    // String constructor returns PyDictParameterList with named empty
+    // ParameterList and empty python dictionary
     PyDictParameterList(const string & name) :
-      Teuchos::ParameterList(name)
+      ParameterList(name)
     {
+      // Create an empty python dictionary
       __pyDict__ = PyDict_New();
     }
 
     // -------------------------------------------------------------------------
-    PyDictParameterList(PyObject * dict) :
-      Teuchos::ParameterList()
+    // Python dictionary constructor returns PyDictParameterList with
+    // synchronized ParameterList and owned reference to provided
+    // dictionary
+    PyDictParameterList(PyObject * dict, string lName = string("ANONYMOUS")) :
+      ParameterList(lName)
     {
       PyObject * key   = NULL;
       PyObject * value = NULL;
       int        pos   = 0;
       char     * name;
+      // Check for a python dictionary
       if (!PyDict_Check(dict)) {
 	PyErr_SetString(PyExc_TypeError, "Expecting type dict");
 	__pyDict__ = NULL;
 	goto fail;
       }
+      // Take ownership of a reference to the python dictionary
       Py_INCREF(dict);
       __pyDict__ = dict;
+      // Iterate over the python dictionary entries and create
+      // corresponding ParameterList entries
       while (PyDict_Next(__pyDict__, &pos, &key, &value)) {
 	if (!PyString_Check(key)) {
 	  PyErr_SetString(PyExc_KeyError,"Dictionary keys must be strings");
@@ -89,27 +103,74 @@ namespace Teuchos {
     }
 
     // -------------------------------------------------------------------------
-    PyDictParameterList(const ParameterList & source) :
-      Teuchos::ParameterList(source)
-    {
-      __pyDict__ = PyDict_New();
-    }
-
-    // -------------------------------------------------------------------------
+    // Copy constructor returns copy of source PyDictParameterList
     PyDictParameterList(const PyDictParameterList & source) :
-      Teuchos::ParameterList(source)
+      ParameterList(source)
     {
+      // Take ownership of a reference to the source
+      // PyDictParameterList's python dictionary
       Py_INCREF(source.__pyDict__);
       __pyDict__ = source.__pyDict__;
     }
 
     // -------------------------------------------------------------------------
-    ~PyDictParameterList()
+    // ParameterList constructor returns PyDictParameterList with copy
+    // of provided ParameterList and synchronized python dictionary
+    PyDictParameterList(const ParameterList & source) :
+      ParameterList(source)
     {
+      // Create an empty python dictionary
+      __pyDict__ = PyDict_New();
+      // Iterate over the ParameterList entries and create
+      // corresponding python dictionary entries
+      for (ConstIterator i = begin(); i != end(); i++) {
+	const string & name  = this->name(i);
+	PyObject     * value = getPythonParameter(*this, name);
+	// Unsupported python type
+	if (value == NULL) {
+	  PyErr_SetString(PyExc_TypeError,
+			  "Source ParameterList has entry of unsupported python type");
+	  goto fail;
+	}
+	// Parameter not found
+	else if (value == Py_None) {
+	  PyErr_Format(PyExc_KeyError, "'%s'", name.c_str());
+	  goto fail;
+	}
+	// Parameter found and type supported
+	if (PyDict_SetItemString(__pyDict__, name.c_str(), value) == -1)
+	  goto fail;
+      }
+      return;
+    fail:
       Py_DECREF(__pyDict__);
     }
 
-    // Overloaded / overridden ParameterList methods
+    // -------------------------------------------------------------------------
+    ~PyDictParameterList()
+    {
+      // Release ownership of the reference to the python dictionary.
+      // If the constructor failed, the pointer could be NULL
+      Py_XDECREF(__pyDict__);
+    }
+
+    // -------------------------------------------------------------------------
+    // Assignment operator
+    PyDictParameterList & operator=(const PyDictParameterList &source)
+    {
+      // Do nothing if self-assignment is requested
+      if (&source == this) return *this;
+      // Perform base class copy
+      ParameterList::operator=(source);
+      // Copy the python dictionary (do not take ownership of old reference)
+      Py_XDECREF(__pyDict__);
+      __pyDict__ = PyDict_Copy(source.__pyDict__);
+      return *this;
+    }
+
+    /////////////////////////////////////////////////
+    // Overloaded or overridden ParameterList methods
+    /////////////////////////////////////////////////
 
     // -------------------------------------------------------------------------
     void set(const string &name, PyObject * value)
@@ -121,7 +182,7 @@ namespace Teuchos {
     // -------------------------------------------------------------------------
     void set(const string &name, ParameterList value)
     {
-      sublist(name) = PyDictParameterList(value);
+      ParameterList::sublist(name) = PyDictParameterList(value);
     }
 
     // -------------------------------------------------------------------------
@@ -133,19 +194,20 @@ namespace Teuchos {
     // -------------------------------------------------------------------------
     PyDictParameterList & sublist(const string &name)
     {
+      PyDictParameterList * pdpl_ptr;
       // If parameter exists, throw an exception for non-lists, or
       // return the parameter if it is a list
       if (isParameter(name)) {
 	TEST_FOR_EXCEPTION(!isSublist(name), std::runtime_error,
 			   "Parameter " << name << "exists, but is not a list");
-	PyDictParameterList * pdpl_ptr = getPtr<PyDictParameterList>(name);
+	pdpl_ptr = getPtr<PyDictParameterList>(name);
 	return (*pdpl_ptr);
       }
       // If the parameter does not exist, create a new, empty sublist,
       // insert it in the list and return its reference
       const PyDictParameterList newSublist(this->name()+std::string("->")+name);
       setEntry(name,ParameterEntry(newSublist,false,true));
-      PyDictParameterList * pdpl_ptr = getPtr<PyDictParameterList>(name);
+      pdpl_ptr = getPtr<PyDictParameterList>(name);
       return (*pdpl_ptr);
     }
 
@@ -161,10 +223,80 @@ namespace Teuchos {
       return (*pdpl_ptr);
     }
 
+    // -------------------------------------------------------------------------
+    ostream& print(ostream& os, int indent, bool showTypes, bool showFlags) const
+    {
+      if (begin() == end()) {
+	for (int j = 0; j < indent; j ++)
+	  os << ' ';
+	os << "[empty list]" << endl;
+      }
+      else { 
+	// Print parameters first
+	for (ConstIterator i = begin(); i != end(); ++i) 
+	  {
+	    const ParameterEntry &entry_i = entry(i);
+	    if (entry_i.isList())
+	      continue;
+	    for (int j = 0; j < indent; ++j)
+	      os << ' ';
+	    os << name(i);
+	    if(showTypes)
+	      os << " : " << entry_i.getAny(false).typeName();
+	    os << " = "; entry_i.leftshift(os,showFlags); os << endl;
+	  }
+	// Print sublists second
+	for (ConstIterator i = begin(); i != end(); ++i) 
+	  {
+	    const ParameterEntry &entry_i = entry(i);
+	    if (!entry_i.isList())
+	      continue;
+	    for (int j = 0; j < indent; j ++)
+	      os << ' ';
+	    os << name(i) << " -> " << endl;
+	    getValue<PyDictParameterList>(entry_i).print(os, indent+2, showTypes, showFlags);
+	  }
+      }
+      return os;
+    }
+
+    // -------------------------------------------------------------------------
+    PyObject * _print(PyObject * pf=NULL, int indent=0, bool showTypes=false,
+		      bool showFlags=true) {
+      PyObject * returnObject = pf;
+      // No arguments
+      if (pf==NULL) {
+	print(std::cout,indent,showTypes,showFlags);
+	returnObject = Py_None;
+      }
+
+      // Given non-file pf argument
+      else {
+	if (!PyFile_Check(pf)) {
+	  PyErr_SetString(PyExc_IOError, "_print() method expects a file object");
+	  goto fail;
+	}
+
+	// Given file pf argument
+	else {
+	  std::FILE *f = PyFile_AsFile(pf);
+	  FILEstream buffer(f);
+	  std::ostream os(&buffer);
+	  print(os,indent,showTypes,showFlags);
+	}
+      }
+      Py_INCREF(returnObject);
+      return returnObject;
+    fail:
+      return NULL;
+    }
+
 //    // -------------------------------------------------------------------------
 //    bool isSublist(const string &name) const
 
+//   ///////////////////////////////////////////////////
 //   // Python methods that provide PyDict-like behavior
+//   ///////////////////////////////////////////////////
 
 //   // -------------------------------------------------------------------------
 //   int        __cmp__(PyObject * dict) const
@@ -279,6 +411,48 @@ namespace Teuchos {
 
 //   // -------------------------------------------------------------------------
 //   PyObject * values() const
+
+//   //////////////////////////////////////////////////
+//   // Special methods specific to PyDictParameterList
+//   //////////////////////////////////////////////////
+
+    // -------------------------------------------------------------------------
+    bool isSynchronized() const
+    {
+      PyObject * key   = NULL;
+      PyObject * value = NULL;
+      PyObject * param = NULL;
+      int        pos   = 0;
+      string     name;
+      // Check that all entries in ParameterList are also in the
+      // python dictionary
+      for (ConstIterator i = begin(); i != end(); i++) {
+	name  = this->name(i);
+	param = getPythonParameter(  *this     ,name.c_str());
+	value = PyDict_GetItemString(__pyDict__,name.c_str());
+	if (param == NULL)                                   goto fail;
+	if (value == NULL)                                   goto fail;
+	if (PyObject_RichCompareBool(param,value,Py_EQ) < 1) goto fail;
+	Py_DECREF(param);
+      }
+      // Check that all entries in the python dictionary are also in
+      // the ParameterList
+      while (PyDict_Next(__pyDict__, &pos, &key, &value)) {
+	if (!PyString_Check(key)) goto fail;
+	name  = string(PyString_AsString(key));
+	param = getPythonParameter(*this, name);
+	if (!isParameter(name))                              goto fail;
+	if (param == NULL     )                              goto fail;
+	if (PyObject_RichCompareBool(param,value,Py_EQ) < 1) goto fail;
+	Py_DECREF(param);
+      }
+      // All checks passed
+      return true;
+
+    fail:
+      Py_XDECREF(param);
+      return false;
+    }
 
   private:
 

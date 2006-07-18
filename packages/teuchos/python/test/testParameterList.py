@@ -127,26 +127,20 @@ class ParameterListTestCase(unittest.TestCase):
 #         d    = {"a" : 1,
 #                 "b" : 2,
 #                 "c" : 3 }
-#         print "\nrefcount(d) =", sys.getrefcount(d)
 #         self.plist.set(name, d)
-#         print "refcount(d) =", sys.getrefcount(d)
-#         print "list ="
-#         self.plist._print()
 #         sublist = self.plist.get(name)
-#         print "sublist ="
-#         sublist._print()
 #         self.assertEqual(isinstance(sublist, Teuchos.ParameterList), True)
 #         for key in d.keys():
 #             self.assertEqual(sublist.get(key), d[key])
 
-    def testSetParameterList(self):
-        "Test Teuchos.ParameterList set and get methods for a ParameterList"
-        name    = "sublist"
-        sublist = Teuchos.ParameterList()
-        self.plist.set(name, sublist)
-        self.assertEqual(isinstance(self.plist.get(name),
-                                    Teuchos.ParameterList), True)
-        self.assertEqual(self.plist.isSublist(name), True)
+#     def testSetParameterList(self):
+#         "Test Teuchos.ParameterList set and get methods for a ParameterList"
+#         name    = "sublist"
+#         sublist = Teuchos.ParameterList()
+#         self.plist.set(name, sublist)
+#         self.assertEqual(isinstance(self.plist.get(name),
+#                                     Teuchos.ParameterList), True)
+#         self.assertEqual(self.plist.isSublist(name), True)
 
     def testSetNone(self):
         "Test Teuchos.ParameterList set method for None"
@@ -161,12 +155,12 @@ class ParameterListTestCase(unittest.TestCase):
         default = None
         self.assertEqual(self.plist.get("junk",None), None)
 
-    def testSublistNew(self):
-        "Test Teuchos.ParameterList sublist method for new sublist"
-        sublist = self.plist.sublist("new")
-        self.assertEqual(isinstance(sublist, Teuchos.ParameterList), True)
-        sublist = self.plist.get("new")
-        self.assertEqual(isinstance(sublist, Teuchos.ParameterList), True)
+#     def testSublistNew(self):
+#         "Test Teuchos.ParameterList sublist method for new sublist"
+#         sublist = self.plist.sublist("new")
+#         self.assertEqual(isinstance(sublist, Teuchos.ParameterList), True)
+#         sublist = self.plist.get("new")
+#         self.assertEqual(isinstance(sublist, Teuchos.ParameterList), True)
 
     def testSublistOld(self):
         "Test Teuchos.ParameterList sublist method for existing sublist"
@@ -288,16 +282,16 @@ class ParameterListTestCase(unittest.TestCase):
         result = result[:-1] + "}"
         self.assertEqual(self.plist.currentParametersString(), result)
 
-    def testType(self):
-        "Test Teuchos.ParameterList type method"
-        sublist = Teuchos.ParameterList()
-        names  = ["iParm", "fParm", "sParm", "lParm"              ]
-        values = [2006   , 2.71828, "Hello", sublist              ]
-        types  = [int    , float  , str    , Teuchos.ParameterList]
-        for i in range(len(names)):
-            self.plist.set(names[i],values[i])
-        for i in range(len(names)):
-            self.assertEqual(self.plist.type(names[i]), types[i])
+#     def testType(self):
+#         "Test Teuchos.ParameterList type method"
+#         sublist = Teuchos.ParameterList()
+#         names  = ["iParm", "fParm", "sParm", "lParm"              ]
+#         values = [2006   , 2.71828, "Hello", sublist              ]
+#         types  = [int    , float  , str    , Teuchos.ParameterList]
+#         for i in range(len(names)):
+#             self.plist.set(names[i],values[i])
+#         for i in range(len(names)):
+#             self.assertEqual(self.plist.type(names[i]), types[i])
 
 ####################################################################
 

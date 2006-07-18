@@ -44,13 +44,15 @@ namespace Teuchos {
 
     // Dictionary values
     else if (PyDict_Check(value)) {
+      PyDictParameterList * pdplist = NULL;
       // Convert the python dictionary to a PyDictParameterList
-      PyDictParameterList newList = PyDictParameterList(value);
+      PyDictParameterList sublist = PyDictParameterList(value,name);
       if (PyErr_Occurred()) return false;
-      // Try to cast plist to PyDictParameterList; if you can, store the newList
-      if (dynamic_cast<PyDictParameterList *>(&plist)) plist.set(name, newList);
-      // Cast failed -> plist is a ParameterList, so store an upcast newList
-      else plist.sublist(name) = dynamic_cast<ParameterList &>(newList);
+      // Try to cast plist to PyDictParameterList; if you can, store the sublist
+      pdplist = dynamic_cast<PyDictParameterList *>(&plist);
+      if (pdplist) pdplist->set(name, sublist);
+      // Cast failed -> plist is a ParameterList, so store an upcast sublist
+      else plist.sublist(name) = dynamic_cast<ParameterList &>(sublist);
     }
 
     // None object
@@ -91,8 +93,6 @@ namespace Teuchos {
     static swig_type_info * swig_TPL_ptr   = SWIG_TypeQuery("Teuchos::ParameterList *"      );
     static swig_type_info * swig_TPDPL_ptr = SWIG_TypeQuery("Teuchos::PyDictParameterList *");
 
-    printf("Inside getPythonParameter\n");
-
     // Check for parameter existence
     if (!plist.isParameter(name)) return Py_BuildValue("");
 
@@ -128,21 +128,24 @@ namespace Teuchos {
 
     // PyDictParameterList values
     else if (isParameterType<PyDictParameterList>(plist,name)) {
-      printf("PyDictParameterList detected!\n");
-      PyDictParameterList value = getParameter<PyDictParameterList>(plist, name);
+      //PyDictParameterList * value = getParameter<PyDictParameterList>(plist, name);
+      //const PyDictParameterList * value = plist.getPtr<const PyDictParameterList>(name);
+      const PyDictParameterList & value = plist.get<const PyDictParameterList>(name);
       return SWIG_NewPointerObj((void*) &value, swig_TPDPL_ptr, 0);
     }
 
     // ParameterList values
     else if (isParameterType<ParameterList>(plist,name)) {
-      printf("ParameterList detected!\n");
-      ParameterList value = getParameter<ParameterList>(plist,name);
+      //ParameterList * value = getParameter<ParameterList>(plist,name);
+      //const ParameterList * value = plist.getPtr<const ParameterList>(name);
+      const ParameterList & value = plist.get<const ParameterList>(name);
       return SWIG_NewPointerObj((void*) &value, swig_TPL_ptr, 0);
     }
 
     // Unsupported type
     return NULL;
-  }
+
+  }    // getPythonParameter
 
 }    // namespace Teuchos
 
