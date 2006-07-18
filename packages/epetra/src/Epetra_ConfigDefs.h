@@ -90,14 +90,16 @@ const double Epetra_Underflow = 2.23E-308;
 
 #ifdef HAVE_CSTDLIB
 #include <cstdlib>
-#else
+#endif
+#ifdef HAVE_STDLIB_H
 #include <stdlib.h>
 #endif
 
 #ifdef HAVE_CSTDIO
 #include <cstdio>
 using std::sprintf;
-#else
+#endif
+#ifdef HAVE_STDIO_H
 #include <stdio.h>
 #endif
 
