@@ -1,9 +1,8 @@
 //@HEADER
-
 // ***********************************************************************
 // 
-//                     Rythmos Package
-//                 Copyright (2005) Sandia Corporation
+//                           Rythmos Package
+//                 Copyright (2006) Sandia Corporation
 // 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
@@ -22,7 +21,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Todd S. Coffey (tscoffe@sandia.gov)
 // 
 // ***********************************************************************
 //@HEADER
