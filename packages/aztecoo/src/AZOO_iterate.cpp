@@ -29,6 +29,7 @@
 */
 
 #include "AZOO_iterate.h"
+#include <stdlib.h>
 
 
 void AZOO_iterate(double * xsolve, double * b, 

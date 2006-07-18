@@ -27,6 +27,7 @@
 //@HEADER
 
 #include "Poisson2dOperator.h"
+#include <stdlib.h>
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Map.h"
 #include "Epetra_Import.h"

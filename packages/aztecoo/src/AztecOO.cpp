@@ -569,8 +569,13 @@ int AztecOO::SetProcConfig(const Epetra_Comm & Comm) {
 
   if (!procConfigSet_) {
 #ifdef AZTEC_MPI
-    const Epetra_MpiComm & comm1 = dynamic_cast<const Epetra_MpiComm &> (Comm);
-    AZ_set_proc_config(proc_config_, comm1.Comm());
+    const Epetra_MpiComm* comm1 = dynamic_cast<const Epetra_MpiComm*> (&Comm);
+    if (comm1 == 0) {
+      std::cerr << "AztecOO::SetProcConfig ERROR, failed to dynamic_cast "
+        << "Comm to Epetra_MpiComm."<<std::endl;
+      return(-1);
+    }
+    AZ_set_proc_config(proc_config_, comm1->Comm());
 #else
     AZ_set_proc_config(proc_config_, 0);
 #endif
