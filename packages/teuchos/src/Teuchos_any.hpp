@@ -227,6 +227,11 @@ ValueType& any_cast(any &operand)
 		<< "any::holder<"<<ValueTypeName<<"> failed since the actual underlying type is \'"
 		<< typeid(*operand.access_content()).name() << "!"
 		);
+	TEST_FOR_EXCEPTION(
+		!operand.access_content(), bad_any_cast
+		,"any_cast<"<<ValueTypeName<<">(operand): Error, cast to type "
+		<< "any::holder<"<<ValueTypeName<<"> failed because the content is NULL"
+		);
 	any::holder<ValueType>
 		*dyn_cast_content = dynamic_cast<any::holder<ValueType>*>(operand.access_content());
 	TEST_FOR_EXCEPTION(
