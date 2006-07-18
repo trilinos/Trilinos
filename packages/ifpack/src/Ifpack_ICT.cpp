@@ -104,6 +104,7 @@ int Ifpack_ICT::SetParameters(Teuchos::ParameterList& List)
       + ", athr=" + Ifpack_toString(AbsoluteThreshold()) 
       + ", rthr=" + Ifpack_toString(RelativeThreshold())
       + ", relax=" + Ifpack_toString(RelaxValue())
+      + ", droptol=" + Ifpack_toString(DropTolerance())
       + ")";
 
     return(0);

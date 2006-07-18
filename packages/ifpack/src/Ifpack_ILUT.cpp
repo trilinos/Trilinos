@@ -102,11 +102,13 @@ int Ifpack_ILUT::SetParameters(Teuchos::ParameterList& List)
     Athresh_ = List.get<double>("fact: absolute threshold", Athresh_);
     Rthresh_ = List.get<double>("fact: relative threshold", Rthresh_);
     Relax_ = List.get<double>("fact: relax value", Relax_);
+    DropTolerance_ = List.get<double>("fact: drop tolerance", DropTolerance_);
 
     Label_ = "IFPACK ILUT (fill=" + Ifpack_toString(LevelOfFill())
       + ", relax=" + Ifpack_toString(RelaxValue())
       + ", athr=" + Ifpack_toString(AbsoluteThreshold())
       + ", rthr=" + Ifpack_toString(RelativeThreshold())
+      + ", droptol=" + Ifpack_toString(DropTolerance())
       + ")";
     return(0);
   }
