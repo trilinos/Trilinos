@@ -293,6 +293,15 @@ class AztecOO {
   Epetra_MultiVector * GetLHS() const {return(X_);};
   //! Get a pointer to the right-hand-side B.
   Epetra_MultiVector * GetRHS() const {return(B_);};
+
+  //! Print linear-system to files.
+  /**
+     \param name Print the matrix to the file A_'name', and print the
+     solution and rhs vectors to files X_'name' and B_'name', respectively.
+     Will only produce a matrix file if the run-time-type of the matrix is
+     either Epetra_CrsMatrix or Epetra_VbrMatrix.
+  */
+  void PrintLinearSystem(const char* name);
   //@}
 
   /** \name Standard AztecOO option and parameter setting methods. */ //@{

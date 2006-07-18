@@ -36,6 +36,8 @@
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
 #include "Epetra_RowMatrix.h"
+#include "Epetra_CrsMatrix.h"
+#include "Epetra_VbrMatrix.h"
 #include "Epetra_Operator.h"
 #include "Epetra_Import.h"
 
@@ -749,18 +751,54 @@ int AztecOO::recursiveIterate(int MaxIters, double Tolerance)
 
   // Determine end status
 
-  int ierr = 0;
-  if (status_[AZ_why]==AZ_normal) ierr = 0;
-  else if (status_[AZ_why]==AZ_param) ierr = -1;
-  else if (status_[AZ_why]==AZ_breakdown) ierr = -2;
-  else if (status_[AZ_why]==AZ_loss) ierr = -3;
-  else if (status_[AZ_why]==AZ_ill_cond) ierr = -4;
-  else if (status_[AZ_why]==AZ_maxits) return(1);
-  else throw B_->ReportError("Internal AztecOO Error", -5);
-
-  if (options_[AZ_diagnostics]!=AZ_none ) {
-    EPETRA_CHK_ERR(ierr);
+  //If status is AZ_normal or AZ_maxits, then make a quick exit:
+  if (status_[AZ_why]==AZ_normal) {
+    return(0);
   }
+  else if (status_[AZ_why]==AZ_maxits) {
+    return(1);
+  }
+
+  //If status is not AZ_normal or AZ_maxits, then we have to decide
+  //which error-code to return, and also decide whether to print an
+  //error-message to cerr, and what to print.
+
+  int MyPID = X_->Map().Comm().MyPID();
+
+  bool print_msg = (MyPID == 0) &&
+                   (Epetra_Object::GetTracebackMode()>0) &&
+                   (options_[AZ_diagnostics]!=AZ_none);
+
+  int ierr = 0;
+  if (status_[AZ_why] == AZ_param) {
+    ierr = -1;
+    if (print_msg) {
+      cerr << "Aztec status AZ_param: option not implemented" << endl;
+    }
+  }
+  else if (status_[AZ_why] == AZ_breakdown) {
+    ierr = -2;
+    if (print_msg) {
+      cerr << "Aztec status AZ_breakdown: numerical breakdown" << endl;
+    }
+  }
+  else if (status_[AZ_why] == AZ_loss) {
+    ierr = -3;
+    if (print_msg) {
+      cerr << "Aztec status AZ_loss: loss of precision" << endl;
+    }
+  }
+  else if (status_[AZ_why] == AZ_ill_cond) {
+    ierr = -4;
+    if (print_msg) {
+      cerr << "Aztec status AZ_ill_cond: GMRES hessenberg ill-conditioned"
+           << endl;
+    }
+  }
+  else {
+    throw B_->ReportError("Internal AztecOO Error", -5);
+  }
+
   return(ierr);
 }
 //=============================================================================
@@ -824,7 +862,10 @@ int AztecOO::Iterate(int MaxIters, double Tolerance)
   //which error-code to return, and also decide whether to print an
   //error-message to cerr, and what to print.
 
-  bool print_msg = (Epetra_Object::GetTracebackMode()>0) &&
+  int MyPID = X_->Map().Comm().MyPID();
+
+  bool print_msg = (MyPID == 0) &&
+                   (Epetra_Object::GetTracebackMode()>0) &&
                    (options_[AZ_diagnostics]!=AZ_none);
 
   int ierr = 0;
@@ -1085,19 +1126,164 @@ int AztecOO::AdaptiveIterate(int MaxIters, int MaxSolveAttempts, double Toleranc
   if (Prec_!=0) DestroyPreconditioner(); // Delete preconditioner
   // Determine end status
 
-  int ierr = 0;
-  if (status_[AZ_why]==AZ_normal) ierr = 0;
-  else if (status_[AZ_why]==AZ_param) ierr = -1;
-  else if (status_[AZ_why]==AZ_breakdown) ierr = -2;
-  else if (status_[AZ_why]==AZ_loss) ierr = -3;
-  else if (status_[AZ_why]==AZ_ill_cond) ierr = -4;
-  else if (status_[AZ_why]==AZ_maxits) return(1);
-  else throw B_->ReportError("Internal AztecOO Error", -5);
+  //If status is AZ_normal or AZ_maxits, then make a quick exit:
+  if (status_[AZ_why]==AZ_normal) {
+    return(0);
+  }
+  else if (status_[AZ_why]==AZ_maxits) {
+    return(1);
+  }
 
-  EPETRA_CHK_ERR(ierr);
-  return(0);
+  //If status is not AZ_normal or AZ_maxits, then we have to decide
+  //which error-code to return, and also decide whether to print an
+  //error-message to cerr, and what to print.
+
+  int MyPID = X_->Map().Comm().MyPID();
+
+  bool print_msg = (MyPID == 0) &&
+                   (Epetra_Object::GetTracebackMode()>0) &&
+                   (options_[AZ_diagnostics]!=AZ_none);
+
+  int ierr = 0;
+  if (status_[AZ_why] == AZ_param) {
+    ierr = -1;
+    if (print_msg) {
+      cerr << "Aztec status AZ_param: option not implemented" << endl;
+    }
+  }
+  else if (status_[AZ_why] == AZ_breakdown) {
+    ierr = -2;
+    if (print_msg) {
+      cerr << "Aztec status AZ_breakdown: numerical breakdown" << endl;
+    }
+  }
+  else if (status_[AZ_why] == AZ_loss) {
+    ierr = -3;
+    if (print_msg) {
+      cerr << "Aztec status AZ_loss: loss of precision" << endl;
+    }
+  }
+  else if (status_[AZ_why] == AZ_ill_cond) {
+    ierr = -4;
+    if (print_msg) {
+      cerr << "Aztec status AZ_ill_cond: GMRES hessenberg ill-conditioned"
+           << endl;
+    }
+  }
+  else {
+    throw B_->ReportError("Internal AztecOO Error", -5);
+  }
+
+  return(ierr);
 }
 
+//=============================================================================
+void AztecOO::PrintLinearSystem(const char* name)
+{
+  std::ostringstream aostr;
+  std::ostringstream xostr;
+  std::ostringstream bostr;
+
+  aostr << "A_";
+  xostr << "X_";
+  bostr << "B_";
+
+  if (name != 0) {
+    aostr << name;
+    xostr << name;
+    bostr << name;
+  }
+
+  int MyPID = 0;
+  int numProcs = 1;
+
+  const Epetra_Comm* comm = 0;
+
+  if (X_ != 0) comm = &(X_->Map().Comm());
+  else {
+    if (B_ != 0) comm = &(B_->Map().Comm());
+    else if (GetUserMatrix() != 0) {
+      comm = &(GetUserMatrix()->RowMatrixRowMap().Comm());
+    }
+  }
+
+  if (comm == 0) {
+    std::cerr << "Aztec::PrintLinearSystem: matrix and vectors seem to all"
+        << " be NULL." << std::endl;
+    return;
+  }
+
+  MyPID = comm->MyPID();
+  numProcs = comm->NumProc();
+
+  std::ios::openmode mode = std::ios::app;
+  if (MyPID == 0) mode = std::ios::out;
+
+  for(int p=0; p<numProcs; ++p) {
+    comm->Barrier();
+
+    if (p != MyPID) continue;
+
+    if (UserMatrixData_ != 0) {
+      std::string afilename = aostr.str();
+
+      if (GetUserMatrix() != 0) {
+        Epetra_CrsMatrix* crs =
+          dynamic_cast<Epetra_CrsMatrix*>(GetUserMatrix());
+        if (crs != 0) {
+          std::ofstream afile(afilename.c_str(), mode);
+          if (afile && !afile.bad()) {
+            crs->Print(afile);
+          }
+          else {
+            std::cerr << "AztecOO::PrintLinearSystem: unable to open file '"
+                 << afilename << "'."<<std::endl;
+          }
+        }
+        else {
+          Epetra_VbrMatrix* vbr =
+            dynamic_cast<Epetra_VbrMatrix*>(GetUserMatrix());
+          if (vbr != 0) {
+            std::ofstream afile(afilename.c_str(), mode);
+            if (afile && !afile.bad()) {
+              crs->Print(afile);
+            }
+            else {
+              std::cerr << "AztecOO::PrintLinearSystem: unable to open file '"
+                   << afilename << "'."<<std::endl;
+            }
+          }
+        }
+      }
+    }
+
+    if (X_ != 0) {
+      std::string xfilename = xostr.str();
+
+      std::ofstream xfile(xfilename.c_str(), mode);
+      if (xfile && !xfile.bad()) {
+        X_->Print(xfile);
+      }
+      else {
+        std::cerr << "AztecOO::PrintLinearSystem: unable to open file '"
+             << xfilename << "'."<<std::endl;
+      }
+    }
+
+    if (B_ != 0) {
+      std::string bfilename = bostr.str();
+
+      std::ofstream bfile(bfilename.c_str(), mode);
+      if (bfile && !bfile.bad()) {
+        B_->Print(bfile);
+      }
+      else {
+        std::cerr << "AztecOO::PrintLinearSystem: unable to open file '"
+             << bfilename << "'."<<std::endl;
+      }
+    }
+  }
+}
 
 
 //=============================================================================
