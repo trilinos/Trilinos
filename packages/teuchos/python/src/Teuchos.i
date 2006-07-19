@@ -119,7 +119,9 @@ TEUCHOS_EXCEPTION(PyDictParameterList,setParameters)
 TEUCHOS_EXCEPTION(PyDictParameterList,sublist)
 TEUCHOS_EXCEPTION(PyDictParameterList,type)
 TEUCHOS_EXCEPTION(PyDictParameterList,__contains__)
+TEUCHOS_EXCEPTION(PyDictParameterList,__setitem__)
 TEUCHOS_EXCEPTION(PyDictParameterList,has_key)
+TEUCHOS_EXCEPTION(PyDictParameterList,update)
 
 // Auto-documentation feature.  This ensures that calling help() on a
 // wrapped method returns an argument list (or lists, in the case of
