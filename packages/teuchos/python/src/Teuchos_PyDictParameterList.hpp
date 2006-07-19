@@ -285,12 +285,6 @@ namespace Teuchos {
       return result;
     }
 
-//     // -------------------------------------------------------------------------
-//     void __delitem__(const char * key)
-//     {
-      
-//     }
-
     // -------------------------------------------------------------------------
     PyObject * __eq__(PyObject * ob) const
     {
@@ -302,9 +296,6 @@ namespace Teuchos {
     {
       return PyBool_FromLong((long)isEquivalent(__pyDict__, plist));
     }
-
-//   // -------------------------------------------------------------------------
-//   PyObject * __getattribute__(char * name) const
 
     // -------------------------------------------------------------------------
     PyObject * __getitem__(const char * key) const
@@ -319,8 +310,11 @@ namespace Teuchos {
       return result;
     }
 
-//   // -------------------------------------------------------------------------
-//   PyObject * __iter__() const
+    // -------------------------------------------------------------------------
+    PyObject * __iter__() const
+    {
+      return PyObject_GetIter(PyDict_Keys(__pyDict__));
+    }
 
     // -------------------------------------------------------------------------
     int __len__() const
@@ -370,15 +364,6 @@ namespace Teuchos {
       return PyObject_Str(__pyDict__);
     }
 
-//   // -------------------------------------------------------------------------
-//   void clear()
-
-//     // -------------------------------------------------------------------------
-//     PyDictParameterList copy() const
-//     {
-//       return PyDictParameterList(*this);
-//     }
-
     // -------------------------------------------------------------------------
     int has_key(const char * key) const
     {
@@ -398,14 +383,23 @@ namespace Teuchos {
       return PyDict_Items(__pyDict__);
     }
 
-//   // -------------------------------------------------------------------------
-//   PyObject * iteritems() const
+    // -------------------------------------------------------------------------
+    PyObject * iteritems() const
+    {
+      return PyObject_GetIter(PyDict_Items(__pyDict__));
+    }
 
-//   // -------------------------------------------------------------------------
-//   PyObject * iterkeys() const
+    // -------------------------------------------------------------------------
+    PyObject * iterkeys() const
+    {
+      return PyObject_GetIter(PyDict_Keys(__pyDict__));
+    }
 
-//   // -------------------------------------------------------------------------
-//   PyObject * itervalues() const
+    // -------------------------------------------------------------------------
+    PyObject * itervalues() const
+    {
+      return PyObject_GetIter(PyDict_Values(__pyDict__));
+    }
 
     // -------------------------------------------------------------------------
     PyObject * keys() const {
@@ -413,13 +407,7 @@ namespace Teuchos {
     }
 
 //   // -------------------------------------------------------------------------
-//   PyObject * pop(const char * key, PyObject * default = Py_None)
-
-//   // -------------------------------------------------------------------------
-//   PyObject * popitem()
-
-//   // -------------------------------------------------------------------------
-//   void       setdefault(const char * key, PyObject * value = Py_None)
+//   void setdefault(const char * key, PyObject * value = Py_None)
 
     // -------------------------------------------------------------------------
     void update(const PyDictParameterList & source)

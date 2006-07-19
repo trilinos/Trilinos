@@ -557,6 +557,15 @@ class PyDictParameterListTestCase(unittest.TestCase):
         self.plist.update(d)
         self.assertEqual(self.plist.isSynchronized(), True)
 
+    def test__iter__(self):
+        "Test Teuchos.PyDictParameterList __iter__ method"
+        values = range(10)
+        for i in values:
+            self.plist.set(str(i), i)
+        keys = self.plist.keys()
+        for p in self.plist:        # This invokes the __iter__ method
+            self.assertEqual(p in keys, True)
+
 ####################################################################
 
 if __name__ == "__main__":
