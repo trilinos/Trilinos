@@ -1,0 +1,20 @@
+## Required dependency on teuchos
+include @abs_top_builddir@/../teuchos/Makefile.export.teuchos
+
+# Optional dependancy on epetra and epetraext
+
+@ENABLE_EPETRA_TRUE@include @abs_top_builddir@/../epetra/Makefile.export.epetra
+@ENABLE_EPETRAEXT_TRUE@include @abs_top_builddir@/../epetraext/Makefile.export.epetraext
+
+_ISORROPIA_INCLUDES = -I@abs_top_builddir@/src -I@abs_top_srcdir@/src \
+	           $(TEUCHOS_INCLUDES) $(EPETRA_INCLUDES) \
+                   $(EPETRAEXT_INCLUDES) $(TEUCHOS_INCLUDES) 
+
+_ISORROPIA_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lisorropia \
+	       $(EPETRAEXT_LIBS) $(EPETRA_LIBS) $(TEUCHOS_LIBS) \
+               @LAPACK_LIBS@ @BLAS_LIBS@ @LIBS@ @FLIBS@
+
+@USING_GNUMAKE_TRUE@ISORROPIA_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_ISORROPIA_INCLUDES))
+@USING_GNUMAKE_TRUE@ISORROPIA_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_ISORROPIA_LIBS))
+@USING_GNUMAKE_FALSE@ISORROPIA_INCLUDES = $(_ISORROPIA_INCLUDES)
+@USING_GNUMAKE_FALSE@ISORROPIA_LIBS     = $(_ISORROPIA_LIBS)
