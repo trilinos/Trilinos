@@ -166,6 +166,7 @@ class PyDictParameterListTestCase(unittest.TestCase):
         value = 12.0
         self.plist.set(name, value)
         self.assertEqual(self.plist.get(name), value)
+        self.assertEqual(self.plist.isSynchronized(), True)
 
     def testSetString(self):
         "Test Teuchos.PyDictParameterList set and get methods for a string"
@@ -173,51 +174,71 @@ class PyDictParameterListTestCase(unittest.TestCase):
         value = "12"
         self.plist.set(name, value)
         self.assertEqual(self.plist.get(name), value)
+        self.assertEqual(self.plist.isSynchronized(), True)
 
-#     def testSetParameterList(self):
-#         "Test Teuchos.PyDictParameterList set and get methods for a ParameterList"
-#         name    = "sublist"
-#         sublist = Teuchos.ParameterList()
-#         self.plist.set(name, sublist)
-#         self.assertEqual(isinstance(self.plist.get(name),
-#                                     Teuchos.ParameterList), True)
-#         self.assertEqual(self.plist.isSublist(name), True)
+    def testSetDictionary(self):
+        "Test Teuchos.PyDictParameterList set and get methods for a dictionary"
+        name = "dict parameter"
+        d    = {"a" : 1,
+                "b" : 2,
+                "c" : 3 }
+        self.plist.set(name, d)
+        sublist = self.plist.get(name)
+        self.assertEqual(isinstance(sublist, Teuchos.ParameterList), True)
+        for key in d.keys():
+            self.assertEqual(sublist.get(key), d[key])
+        self.assertEqual(self.plist.isSynchronized(), True)
 
-#     def testSetPyDictParameterList(self):
-#         "Test Teuchos.PyDictParameterList set and get methods for a PyDictParameterList"
-#         name    = "sublist"
-#         sublist = Teuchos.PyDictParameterList()
-#         self.plist.set(name, sublist)
-#         self.assertEqual(isinstance(self.plist.get(name),
-#                                     Teuchos.PyDictParameterList), True)
-#         self.assertEqual(self.plist.isSublist(name), True)
+    def testSetParameterList(self):
+        "Test Teuchos.PyDictParameterList set and get methods for a ParameterList"
+        name    = "sublist"
+        sublist = Teuchos.ParameterList()
+        self.plist.set(name, sublist)
+        self.assertEqual(isinstance(self.plist.get(name),
+                                    Teuchos.ParameterList), True)
+        self.assertEqual(self.plist.isSublist(name), True)
+        self.assertEqual(self.plist.isSynchronized(), True)
+
+    def testSetPyDictParameterList(self):
+        "Test Teuchos.PyDictParameterList set and get methods for a PyDictParameterList"
+        name    = "sublist"
+        sublist = Teuchos.PyDictParameterList()
+        self.plist.set(name, sublist)
+        self.assertEqual(isinstance(self.plist.get(name),
+                                    Teuchos.ParameterList), True)
+        self.assertEqual(self.plist.isSublist(name), True)
+        self.assertEqual(self.plist.isSynchronized(), True)
 
     def testSetNone(self):
         "Test Teuchos.PyDictParameterList set method for None"
         self.assertRaises(ValueError, self.plist.set, "bad parameter", None)
+        self.assertEqual(self.plist.isSynchronized(), True)
 
     def testSetBadType(self):
         "Test Teuchos.PyDictParameterList set method for an unsupported type"
         self.assertRaises(RuntimeError, self.plist.set, "bad parameter", (1,2,3))
+        self.assertEqual(self.plist.isSynchronized(), True)
 
     def testGetDefault(self):
         "Test Teuchos.PyDictParameterList get method using default value"
         default = None
         self.assertEqual(self.plist.get("junk",None), None)
 
-#     def testSublistNew(self):
-#         "Test Teuchos.PyDictParameterList sublist method for new sublist"
-#         sublist = self.plist.sublist("new")
-#         self.assertEqual(isinstance(sublist, Teuchos.PyDictParameterList), True)
-#         sublist = self.plist.get("new")
-#         self.assertEqual(isinstance(sublist, Teuchos.PyDictParameterList), True)
+    def testSublistNew(self):
+        "Test Teuchos.PyDictParameterList sublist method for new sublist"
+        sublist = self.plist.sublist("new")
+        self.assertEqual(isinstance(sublist, Teuchos.ParameterList), True)
+        sublist = self.plist.get("new")
+        self.assertEqual(isinstance(sublist, Teuchos.ParameterList), True)
+        self.assertEqual(self.plist.isSynchronized(), True)
 
     def testSublistOld(self):
         "Test Teuchos.PyDictParameterList sublist method for existing sublist"
         sublist = self.plist.sublist("new")
-        self.assertEqual(isinstance(sublist, Teuchos.PyDictParameterList), True)
+        self.assertEqual(isinstance(sublist, Teuchos.ParameterList), True)
         sublist = self.plist.sublist("new")
-        self.assertEqual(isinstance(sublist, Teuchos.PyDictParameterList), True)
+        self.assertEqual(isinstance(sublist, Teuchos.ParameterList), True)
+        self.assertEqual(self.plist.isSynchronized(), True)
 
     def testSublistBad(self):
         "Test Teuchos.PyDictParameterList sublist method for non-sublist"
@@ -228,11 +249,13 @@ class PyDictParameterListTestCase(unittest.TestCase):
         "Test Teuchos.PyDictParameterList isParameter method existing parameter"
         name = "string parameter"
         self.plist.set(name,"Hello")
+        self.assertEqual(self.plist.isSynchronized(), True)
         self.assertEqual(self.plist.isParameter(name), True)
 
     def testIsParameterFalse(self):
         "Test Teuchos.PyDictParameterList isParameter method nonexisting parameter"
         name = "parameter"
+        self.assertEqual(self.plist.isSynchronized(), True)
         self.assertEqual(self.plist.isParameter(name), False)
 
     def testIsSublistTrue(self):
@@ -310,6 +333,7 @@ class PyDictParameterListTestCase(unittest.TestCase):
         values = ["Hello", "World", "Albuquerque"]
         for i in range(len(names)):
             self.plist.set(names[i], values[i])
+        self.assertEqual(self.plist.isSynchronized(), True)
         fName = "testPyDictParameterList.dat"
         f = open(fName,"w")
         self.plist.unused(f)
@@ -332,16 +356,17 @@ class PyDictParameterListTestCase(unittest.TestCase):
         result = result[:-1] + "}"
         self.assertEqual(self.plist.currentParametersString(), result)
 
-#     def testType(self):
-#         "Test Teuchos.PyDictParameterList type method"
-#         sublist = Teuchos.PyDictParameterList()
-#         names  = ["iParm", "fParm", "sParm", "lParm"                    ]
-#         values = [2006   , 2.71828, "Hello", sublist                    ]
-#         types  = [int    , float  , str    , Teuchos.PyDictParameterList]
-#         for i in range(len(names)):
-#             self.plist.set(names[i],values[i])
-#         for i in range(len(names)):
-#             self.assertEqual(self.plist.type(names[i]), types[i])
+    def testType(self):
+        "Test Teuchos.PyDictParameterList type method"
+        sublist = Teuchos.PyDictParameterList()
+        names  = ["iParm", "fParm", "sParm", "lParm"              ]
+        values = [2006   , 2.71828, "Hello", sublist              ]
+        types  = [int    , float  , str    , Teuchos.ParameterList]
+        for i in range(len(names)):
+            self.plist.set(names[i],values[i])
+        self.assertEqual(self.plist.isSynchronized(), True)
+        for i in range(len(names)):
+            self.assertEqual(self.plist.type(names[i]), types[i])
 
 ####################################################################
 

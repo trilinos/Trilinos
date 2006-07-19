@@ -44,15 +44,16 @@ namespace Teuchos {
 
     // Dictionary values
     else if (PyDict_Check(value)) {
-      PyDictParameterList * pdplist = NULL;
+
       // Convert the python dictionary to a PyDictParameterList
-      PyDictParameterList sublist = PyDictParameterList(value,name);
+      const PyDictParameterList pdplist(value,name);
       if (PyErr_Occurred()) return false;
-      // Try to cast plist to PyDictParameterList; if you can, store the sublist
-      pdplist = dynamic_cast<PyDictParameterList *>(&plist);
-      if (pdplist) pdplist->set(name, sublist);
-      // Cast failed -> plist is a ParameterList, so store an upcast sublist
-      else plist.sublist(name) = dynamic_cast<ParameterList &>(sublist);
+
+      // Convert the PyDictParameterList to a regular ParameterList
+      const ParameterList sublist(pdplist);
+
+      // Store the ParameterList
+      plist.set(name,sublist);
     }
 
     // None object
@@ -60,10 +61,11 @@ namespace Teuchos {
       return false;
     }
 
-    // PyDictParameterList values
+    // PyDictParameterList values get stored as ParameterLists
     else if (SWIG_CheckState(SWIG_Python_ConvertPtr(value, &argp, swig_TPDPL_ptr, 0))) {
       PyDictParameterList *arg = reinterpret_cast<PyDictParameterList *>(argp);
-      plist.set(name, *arg);
+      ParameterList sublist(*arg);
+      plist.set(name, sublist);
     }
 
     // ParameterList values
@@ -90,10 +92,9 @@ namespace Teuchos {
   PyObject * getPythonParameter(const ParameterList & plist,
 				const std::string   & name) {
 
-    static swig_type_info * swig_TPL_ptr   = SWIG_TypeQuery("Teuchos::ParameterList *"      );
-    static swig_type_info * swig_TPDPL_ptr = SWIG_TypeQuery("Teuchos::PyDictParameterList *");
+    static swig_type_info * swig_TPL_ptr = SWIG_TypeQuery("Teuchos::ParameterList *");
 
-    // Check for parameter existence
+    // If parameter does not exist, return None
     if (!plist.isParameter(name)) return Py_BuildValue("");
 
     // Boolean parameter values
@@ -120,25 +121,15 @@ namespace Teuchos {
       return PyString_FromString(value.c_str());
     }
 
-    // Char* parameter values
-    else if (isParameterType<char*>(plist,name)) {
-      char* value = getParameter<char*>(plist,name);
+    // Char * parameter values
+    else if (isParameterType<char *>(plist,name)) {
+      char * value = getParameter<char *>(plist,name);
       return PyString_FromString(value);
-    }
-
-    // PyDictParameterList values
-    else if (isParameterType<PyDictParameterList>(plist,name)) {
-      //PyDictParameterList * value = getParameter<PyDictParameterList>(plist, name);
-      //const PyDictParameterList * value = plist.getPtr<const PyDictParameterList>(name);
-      const PyDictParameterList & value = plist.get<const PyDictParameterList>(name);
-      return SWIG_NewPointerObj((void*) &value, swig_TPDPL_ptr, 0);
     }
 
     // ParameterList values
     else if (isParameterType<ParameterList>(plist,name)) {
-      //ParameterList * value = getParameter<ParameterList>(plist,name);
-      //const ParameterList * value = plist.getPtr<const ParameterList>(name);
-      const ParameterList & value = plist.get<const ParameterList>(name);
+      const ParameterList & value = plist.sublist(name);
       return SWIG_NewPointerObj((void*) &value, swig_TPL_ptr, 0);
     }
 
@@ -146,6 +137,62 @@ namespace Teuchos {
     return NULL;
 
   }    // getPythonParameter
+
+  // Function isEquivalent() is a utility for determining whether a
+  // python dictionary is functionally equivalent to a ParameterList.
+  // It supports interpreting ParameterList sublists as nested python
+  // dictionaries, so it calls itself recursively.
+  bool isEquivalent(PyObject * dict, const ParameterList & plist) {
+    PyObject * key   = NULL;
+    PyObject * value = NULL;
+    PyObject * param = NULL;
+    int        pos   = 0;
+    string     name;
+
+    // The dict pointer must point to a dictionary
+    if (!PyDict_Check(dict)) return false;
+
+    // Check that all entries in ParameterList are also in the
+    // python dictionary
+    for (ParameterList::ConstIterator i = plist.begin(); i != plist.end(); i++) {
+      name = plist.name(i);
+      value = PyDict_GetItemString(dict ,name.c_str());
+      if (value == NULL) goto fail;
+      if (plist.isSublist(name)) {
+	if (!isEquivalent(value, plist.sublist(name)))
+	  goto fail;
+      }
+      else {
+	param = getPythonParameter(  plist,name.c_str());
+	if (param == NULL) goto fail;
+	if (PyObject_RichCompareBool(param,value,Py_EQ) < 1) goto fail;
+	Py_DECREF(param);
+      }
+    }
+    // Check that all entries in the python dictionary are also in
+    // the ParameterList
+    while (PyDict_Next(dict, &pos, &key, &value)) {
+      if (!PyString_Check(key)) goto fail;
+      name  = string(PyString_AsString(key));
+      if (!plist.isParameter(name)) goto fail;
+      if (plist.isSublist(name)) {
+	if (!isEquivalent(value, plist.sublist(name)))
+	  goto fail;
+      }
+      else {
+	param = getPythonParameter(plist, name);
+	if (param == NULL) goto fail;
+	if (PyObject_RichCompareBool(param,value,Py_EQ) < 1) goto fail;
+	Py_DECREF(param);
+      }
+    }
+    // All checks passed
+    return true;
+
+  fail:
+    Py_XDECREF(param);
+    return false;
+  }    // isEquivalent
 
 }    // namespace Teuchos
 
