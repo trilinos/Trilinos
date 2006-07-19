@@ -189,7 +189,7 @@ namespace Teuchos {
     // -------------------------------------------------------------------------
     void set(const string &name, ParameterList plist)
     {
-      sublist(name) = plist;
+      sublist(name) = plist;  // This sets both ParameterList and python dictionary
     }
 
     // -------------------------------------------------------------------------
@@ -201,6 +201,48 @@ namespace Teuchos {
       PyDict_SetItemString(__pyDict__, name.c_str(), pdplist.__pyDict__);
     }
 
+    // -------------------------------------------------------------------------
+    ParameterList & setParameters(const PyDictParameterList & source)
+    {
+      // Update the python dictionary
+      PyDict_Update(__pyDict__, source.__pyDict__);
+
+      // Update the ParameterList
+      return ParameterList::setParameters(source);
+    }
+
+    // -------------------------------------------------------------------------
+    ParameterList & setParameters(const ParameterList & source)
+    {
+      // Create a temporary PyDictParameterList
+      PyDictParameterList pdSource(source);
+
+      // Update the python dictionary
+      PyDict_Update(__pyDict__, pdSource.__pyDict__);
+
+      // Update the ParameterList
+      return ParameterList::setParameters(source);
+    }
+
+    // -------------------------------------------------------------------------
+    ParameterList & setParameters(PyObject * dict)
+    {
+      // Input argument must be a python dictionary
+      if (!PyDict_Check(dict)) {
+	PyErr_SetString(PyExc_TypeError, "Expecting a dictionary");
+	return (*this);
+      }
+
+      // Update the python dictionary
+      PyDict_Update(__pyDict__, dict);
+
+      // Create a temporary PyDictParameterList
+      PyDictParameterList pdSource(dict);
+      if (PyErr_Occurred()) return (*this);
+
+      // Update the ParameterList
+      return ParameterList::setParameters(pdSource);
+    }
 
     // -------------------------------------------------------------------------
     ParameterList & sublist(const string &name)
@@ -256,21 +298,9 @@ namespace Teuchos {
     }
 
     // -------------------------------------------------------------------------
-    PyObject * __eq__(const PyDictParameterList & plist) const
+    PyObject * __eq__(const ParameterList & plist) const
     {
-      return PyObject_RichCompare(__pyDict__, plist.__pyDict__, Py_EQ);
-    }
-
-    // -------------------------------------------------------------------------
-    PyObject * __ge__(PyObject * ob) const
-    {
-      return PyObject_RichCompare(__pyDict__, ob, Py_GE);
-    }
-
-    // -------------------------------------------------------------------------
-    PyObject * __ge__(const PyDictParameterList & plist) const
-    {
-      return PyObject_RichCompare(__pyDict__, plist.__pyDict__, Py_GE);
+      return PyBool_FromLong((long)isEquivalent(__pyDict__, plist));
     }
 
 //   // -------------------------------------------------------------------------
@@ -280,53 +310,22 @@ namespace Teuchos {
     PyObject * __getitem__(const char * key) const
     {
       PyObject * result = PyDict_GetItemString(__pyDict__, key);
-      if (result == NULL) PyErr_Format(PyExc_KeyError,"'%s'",key);
+      if (result == NULL) {
+	PyErr_Format(PyExc_KeyError,"'%s'",key);
+      }
+      else {
+	Py_INCREF(result);
+      }
       return result;
-    }
-
-    // -------------------------------------------------------------------------
-    PyObject * __gt__(PyObject * ob) const
-    {
-      return PyObject_RichCompare(__pyDict__, ob, Py_GT);
-    }
-
-    // -------------------------------------------------------------------------
-    PyObject * __gt__(const PyDictParameterList & plist) const
-    {
-      return PyObject_RichCompare(__pyDict__, plist.__pyDict__, Py_GT);
     }
 
 //   // -------------------------------------------------------------------------
 //   PyObject * __iter__() const
 
     // -------------------------------------------------------------------------
-    PyObject * __le__(PyObject * ob) const
-    {
-      return PyObject_RichCompare(__pyDict__, ob, Py_LE);
-    }
-
-    // -------------------------------------------------------------------------
-    PyObject * __le__(const PyDictParameterList & plist) const
-    {
-      return PyObject_RichCompare(__pyDict__, plist.__pyDict__, Py_LE);
-    }
-
-    // -------------------------------------------------------------------------
     int __len__() const
     {
       return PyDict_Size(__pyDict__);
-    }
-
-    // -------------------------------------------------------------------------
-    PyObject * __lt__(PyObject * ob) const
-    {
-      return PyObject_RichCompare(__pyDict__, ob, Py_LT);
-    }
-
-    // -------------------------------------------------------------------------
-    PyObject * __lt__(const PyDictParameterList & plist) const
-    {
-      return PyObject_RichCompare(__pyDict__, plist.__pyDict__, Py_LT);
     }
 
     // -------------------------------------------------------------------------
@@ -336,9 +335,9 @@ namespace Teuchos {
     }
 
     // -------------------------------------------------------------------------
-    PyObject * __ne__(const PyDictParameterList & plist) const
+    PyObject * __ne__(const ParameterList & plist) const
     {
-      return PyObject_RichCompare(__pyDict__, plist.__pyDict__, Py_NE);
+      return PyBool_FromLong((long)(not isEquivalent(__pyDict__, plist)));
     }
 
     // -------------------------------------------------------------------------
@@ -347,8 +346,23 @@ namespace Teuchos {
       return PyObject_Repr(__pyDict__);
     }
 
-//   // -------------------------------------------------------------------------
-//   int        __setitem__(const char * key, PyObject * value)
+    // -------------------------------------------------------------------------
+    void __setitem__(const string & key, PyObject * value)
+    {
+      set(key, value);
+    }
+
+    // -------------------------------------------------------------------------
+    void __setitem__(const string & key, PyDictParameterList & value)
+    {
+      set(key, value);
+    }
+
+    // -------------------------------------------------------------------------
+    void __setitem__(const string & key, ParameterList & value)
+    {
+      set(key, value);
+    }
 
     // -------------------------------------------------------------------------
     PyObject * __str__() const
@@ -357,13 +371,13 @@ namespace Teuchos {
     }
 
 //   // -------------------------------------------------------------------------
-//   void       clear()
+//   void clear()
 
-    // -------------------------------------------------------------------------
-    PyDictParameterList copy() const
-    {
-      return PyDictParameterList(*this);
-    }
+//     // -------------------------------------------------------------------------
+//     PyDictParameterList copy() const
+//     {
+//       return PyDictParameterList(*this);
+//     }
 
     // -------------------------------------------------------------------------
     int has_key(const char * key) const
@@ -407,11 +421,23 @@ namespace Teuchos {
 //   // -------------------------------------------------------------------------
 //   void       setdefault(const char * key, PyObject * value = Py_None)
 
-//   // -------------------------------------------------------------------------
-//   void       update(PyObject * dict)
+    // -------------------------------------------------------------------------
+    void update(const PyDictParameterList & source)
+    {
+      setParameters(source);
+    }
 
-//   // -------------------------------------------------------------------------
-//   void       update(const PyDictParameterList & plist)
+    // -------------------------------------------------------------------------
+    void update(const ParameterList & source)
+    {
+      setParameters(source);
+    }
+
+    // -------------------------------------------------------------------------
+    void update(PyObject * dict)
+    {
+      setParameters(dict);
+    }
 
     // -------------------------------------------------------------------------
     PyObject * values() const

@@ -139,9 +139,8 @@ class PyDictParameterListTestCase(unittest.TestCase):
         self.plist.setName(self.name)
         self.assertEqual(self.plist.name(), self.name)
 
-
-    def testSetParameters(self):
-        "Test Teuchos.PyDictParameterList setParameters method"
+    def testSetParameters1(self):
+        "Test Teuchos.PyDictParameterList setParameters method for a PyDictParameterList"
         intName    = "int parameter"
         intValue   = 8
         floatName  = "float parameter"
@@ -152,6 +151,22 @@ class PyDictParameterListTestCase(unittest.TestCase):
         newList.setParameters(self.plist)
         self.assertEqual(newList.get(intName  ), intValue  )
         self.assertEqual(newList.get(floatName), floatValue)
+        self.assertEqual(newList.isSynchronized(), True)
+
+    def testSetParameters2(self):
+        "Test Teuchos.PyDictParameterList setParameters method for a ParameterList"
+        plist = Teuchos.ParameterList()
+        plist.set("int parameter"  , 8)
+        plist.set("float parameter", 3.14)
+        self.plist.setParameters(plist)
+        self.assertEqual(self.plist.isSynchronized(), True)
+
+    def testSetParameters3(self):
+        "Test Teuchos.PyDictParameterList setParameters method for a dictionary"
+        d = {"int parameter"   : 8,
+             "float parameter" : 3.14 }
+        self.plist.setParameters(d)
+        self.assertEqual(self.plist.isSynchronized(), True)
 
     def testSetInt(self):
         "Test Teuchos.PyDictParameterList set and get methods for an integer"
@@ -367,6 +382,180 @@ class PyDictParameterListTestCase(unittest.TestCase):
         self.assertEqual(self.plist.isSynchronized(), True)
         for i in range(len(names)):
             self.assertEqual(self.plist.type(names[i]), types[i])
+
+    def test__cmp__1(self):
+        "Test Teuchos.PyDictParameterList __cmp__ method with dictionary"
+        d1 = { "a" : 2 }
+        d2 = { "a" : 2, "b" : 1 }
+        plist = Teuchos.PyDictParameterList(d1)
+        self.assertEqual(cmp(plist, d1), 0)
+        self.assertEqual(cmp(plist, d2),-1)
+
+    def test__cmp__2(self):
+        "Test Teuchos.PyDictParameterList __cmp__ method with ParameterList"
+        d = { "a" : 2, "b" : 1 }
+        pdplist = Teuchos.PyDictParameterList(d)
+        plist   = Teuchos.ParameterList(pdplist)
+        self.assertEqual(cmp(pdplist, plist), 0)
+        plist.set("c",3)
+        self.assertEqual(cmp(pdplist, plist), 1)
+
+    def test__contains__(self):
+        "Test Teuchos.PyDictParameterList __contains__ method"
+        d = { "a" : 2, "b" : 1 }
+        plist = Teuchos.PyDictParameterList(d)
+        self.assertEqual("b" in d, True )
+        self.assertEqual("c" in d, False)
+
+    def test__eq__1(self):
+        "Test Teuchos.PyDictParameterList __eq__ method with dictionary"
+        d1 = { "a" : 2 }
+        d2 = { "a" : 2, "b" : 1 }
+        plist = Teuchos.PyDictParameterList(d1)
+        self.assertEqual(plist == d1, True )
+        self.assertEqual(plist == d2, False)
+
+    def test__eq__2(self):
+        "Test Teuchos.PyDictParameterList __eq__ method with ParameterList"
+        d = { "a" : 2, "b" : 1 }
+        pdplist = Teuchos.PyDictParameterList(d)
+        plist   = Teuchos.ParameterList(pdplist)
+        self.assertEqual(pdplist == plist, True )
+        plist.set("c",3)
+        self.assertEqual(pdplist == plist, False)
+
+    def test__getitem__(self):
+        "Test Teuchos.PyDictParameterList __getitem__ method"
+        d = {"i" : 10,
+             "f" : 2.718,
+             "s" : "Albuquerque"
+             }
+        plist = Teuchos.PyDictParameterList(d)
+        for key in plist.dict():
+            self.assertEqual(plist[key], plist.get(key))
+
+    def test__len__(self):
+        "Test Teuchos.PyDictParameterList __len__ method"
+        d = {"i" : 10,
+             "f" : 2.718,
+             "s" : "Albuquerque",
+             "d" : { "a" : 1, "b" : 2}
+             }
+        plist = Teuchos.PyDictParameterList(d)
+        self.assertEqual(len(plist), len(d))
+
+    def test__ne__1(self):
+        "Test Teuchos.PyDictParameterList __ne__ method with dictionary"
+        d1 = { "a" : 2 }
+        d2 = { "a" : 2, "b" : 1 }
+        plist = Teuchos.PyDictParameterList(d1)
+        self.assertEqual(plist != d1, False)
+        self.assertEqual(plist != d2, True )
+
+    def test__ne__2(self):
+        "Test Teuchos.PyDictParameterList __ne__ method with ParameterList"
+        d = { "a" : 2, "b" : 1 }
+        pdplist = Teuchos.PyDictParameterList(d)
+        plist   = Teuchos.ParameterList(pdplist)
+        self.assertEqual(pdplist != plist, False)
+        plist.set("c",3)
+        self.assertEqual(pdplist != plist, True )
+
+    def test__repr__(self):
+        "Test Teuchos.PyDictParameterList __repr__ method"
+        plist = Teuchos.PyDictParameterList({"a":1,"b":2})
+        d = eval(repr(plist))
+        self.assertEqual(isinstance(d, dict), True)
+
+    def test__setitem__1(self):
+        "Test Teuchos.PyDictParameterList __setitem__ method"
+        self.plist[self.name] = 2006
+        self.assertEqual(self.plist.get(self.name), 2006)
+
+    def test__setitem__2(self):
+        "Test Teuchos.PyDictParameterList __setitem__ method for a ParameterList"
+        plist = Teuchos.ParameterList()
+        self.plist[self.name] = plist
+        self.assertEqual(isinstance(self.plist.get(self.name),
+                                    Teuchos.ParameterList), True)
+
+    def test__setitem__3(self):
+        "Test Teuchos.PyDictParameterList __setitem__ method for a PyDictParameterList"
+        plist = Teuchos.PyDictParameterList()
+        self.plist[self.name] = plist
+        self.assertEqual(isinstance(self.plist.get(self.name),
+                                    Teuchos.ParameterList), True)
+
+    def test__str__(self):
+        "Test Teuchos.PyDictParameterList __str__ method"
+        plist = Teuchos.PyDictParameterList({"a":1,"b":2})
+        d = eval(str(plist))
+        self.assertEqual(isinstance(d, dict), True)
+
+    def testDict(self):
+        "Test Teuchos.PyDictParameterList dict method"
+        d = {"maxits"         : 100,
+             "tolerance"      : 1.0e-6,
+             "preconditioner" : "diagonal"
+             }
+        plist = Teuchos.PyDictParameterList(d)
+        self.assertEqual(plist.dict(), d)
+
+    def testItems(self):
+        "Test Teuchos.PyDictParameterList items method"
+        d = {"maxits"         : 100,
+             "tolerance"      : 1.0e-6,
+             "preconditioner" : "diagonal"
+             }
+        plist = Teuchos.PyDictParameterList(d)
+        self.assertEqual(plist.items(), d.items())
+
+    def testKeys(self):
+        "Test Teuchos.PyDictParameterList keys method"
+        d = {"maxits"         : 100,
+             "tolerance"      : 1.0e-6,
+             "preconditioner" : "diagonal"
+             }
+        plist = Teuchos.PyDictParameterList(d)
+        self.assertEqual(plist.keys(), d.keys())
+
+    def testValues(self):
+        "Test Teuchos.PyDictParameterList values method"
+        d = {"maxits"         : 100,
+             "tolerance"      : 1.0e-6,
+             "preconditioner" : "diagonal"
+             }
+        plist = Teuchos.PyDictParameterList(d)
+        self.assertEqual(plist.values(), d.values())
+
+    def testUpdate1(self):
+        "Test Teuchos.PyDictParameterList update method for a PyDictParameterList"
+        intName    = "int parameter"
+        intValue   = 8
+        floatName  = "float parameter"
+        floatValue = 3.14
+        self.plist.set(intName,  intValue  )
+        self.plist.set(floatName,floatValue)
+        newList = Teuchos.PyDictParameterList()
+        newList.update(self.plist)
+        self.assertEqual(newList.get(intName  ), intValue  )
+        self.assertEqual(newList.get(floatName), floatValue)
+        self.assertEqual(newList.isSynchronized(), True)
+
+    def testUpdate2(self):
+        "Test Teuchos.PyDictParameterList update method for a ParameterList"
+        plist = Teuchos.ParameterList()
+        plist.set("int parameter"  , 8)
+        plist.set("float parameter", 3.14)
+        self.plist.update(plist)
+        self.assertEqual(self.plist.isSynchronized(), True)
+
+    def testUpdate3(self):
+        "Test Teuchos.PyDictParameterList update method for a dictionary"
+        d = {"int parameter"   : 8,
+             "float parameter" : 3.14 }
+        self.plist.update(d)
+        self.assertEqual(self.plist.isSynchronized(), True)
 
 ####################################################################
 
