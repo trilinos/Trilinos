@@ -25,6 +25,9 @@
 // 
 // ***********************************************************************
 //@HEADER
+#ifndef EPETRAEXT_BLOCKMAPOUT_H
+#define EPETRAEXT_BLOCKMAPOUT_H
+
 #include <EpetraExt_ConfigDefs.h>
 class Epetra_BlockMap;
 namespace EpetraExt {
@@ -78,3 +81,4 @@ namespace EpetraExt {
   int writeBlockMap(FILE * handle, int length, const int * v1, const int * v2, bool doSizes);
 
 } // namespace EpetraExt
+#endif /* EPETRAEXT_BLOCKMAPOUT_H */

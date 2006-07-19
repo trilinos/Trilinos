@@ -25,6 +25,9 @@
 // 
 // ***********************************************************************
 //@HEADER
+#ifndef EPETRAEXT_BLOCKMAPIN_H
+#define EPETRAEXT_BLOCKMAPIN_H
+
 #include <EpetraExt_ConfigDefs.h>
 class Epetra_Comm;
 class Epetra_BlockMap;
@@ -99,4 +102,4 @@ namespace EpetraExt {
                                   Epetra_BlockMap*& rangemap,
                                   Epetra_BlockMap*& domainmap);
 } // namespace EpetraExt
-
+#endif /* EPETRAEXT_BLOCKMAPIN_H */

@@ -174,6 +174,7 @@ EXTRA_TRIUTILS_INOUT = \
 
 EXTRA_INOUT_H = \
      $(srcdir)/inout/EpetraExt_mmio.h \
+     $(srcdir)/inout/EpetraExt_OperatorOut.h \
      $(srcdir)/inout/EpetraExt_RowMatrixOut.h \
      $(srcdir)/inout/EpetraExt_MultiVectorOut.h \
      $(srcdir)/inout/EpetraExt_VectorOut.h \
@@ -192,6 +193,7 @@ EXTRA_INOUT_H = \
 
 EXTRA_INOUT = \
      $(srcdir)/inout/EpetraExt_mmio.cpp \
+     $(srcdir)/inout/EpetraExt_OperatorOut.cpp \
      $(srcdir)/inout/EpetraExt_RowMatrixOut.cpp \
      $(srcdir)/inout/EpetraExt_MultiVectorOut.cpp \
      $(srcdir)/inout/EpetraExt_VectorOut.cpp \

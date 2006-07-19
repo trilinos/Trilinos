@@ -25,6 +25,8 @@
 // 
 // ***********************************************************************
 //@HEADER
+#ifndef EPETRAEXT_ROWMATRIXOUT_H
+#define EPETRAEXT_ROWMATRIXOUT_H
 #include <EpetraExt_ConfigDefs.h>
 class Epetra_RowMatrix;
 
@@ -113,3 +115,4 @@ namespace EpetraExt {
   int writeRowMatrix(FILE * handle, const Epetra_RowMatrix & A);
 
 } // namespace EpetraExt
+#endif /* EPETRAEXT_ROWMATRIXOUT_H */

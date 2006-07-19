@@ -52,6 +52,13 @@
 #include "EpetraExt_BlockMapIn.h"
 #include "EpetraExt_CrsMatrixIn.h"
 #include "EpetraExt_VectorIn.h"
+// include the header files again to check if guards are in place
+#include "EpetraExt_RowMatrixOut.h"
+#include "EpetraExt_VectorOut.h"
+#include "EpetraExt_BlockMapOut.h"
+#include "EpetraExt_BlockMapIn.h"
+#include "EpetraExt_CrsMatrixIn.h"
+#include "EpetraExt_VectorIn.h"
 #include <string>
 
 // prototypes
@@ -192,6 +199,7 @@ int runTests(Epetra_Map & map, Epetra_CrsMatrix & A, Epetra_Vector & x, Epetra_V
 				       
   Epetra_Map * map1;
   Epetra_CrsMatrix * A1; 
+  Epetra_CrsMatrix * A2; 
   Epetra_Vector * x1; 
   Epetra_Vector * b1;
   Epetra_Vector * xexact1;
@@ -206,6 +214,8 @@ int runTests(Epetra_Map & map, Epetra_CrsMatrix & A, Epetra_Vector & x, Epetra_V
     ierr += 1;
   }
   EPETRA_CHK_ERR(EpetraExt::MatrixMarketFileToCrsMatrix("Test_A.mm", *map1, A1));
+  // If map is zero-based, then we can compare to the convenient reading version
+  if (map1->IndexBase()==0) EPETRA_CHK_ERR(EpetraExt::MatrixMarketFileToCrsMatrix("Test_A.mm", map1->Comm(), A2));
   EPETRA_CHK_ERR(EpetraExt::MatrixMarketFileToVector("Test_x.mm", *map1, x1));
   EPETRA_CHK_ERR(EpetraExt::MatrixMarketFileToVector("Test_xexact.mm", *map1, xexact1));
   EPETRA_CHK_ERR(EpetraExt::MatrixMarketFileToVector("Test_b.mm", *map1, b1));
@@ -224,12 +234,20 @@ int runTests(Epetra_Map & map, Epetra_CrsMatrix & A, Epetra_Vector & x, Epetra_V
   ierr += checkValues(rxx1,rxx,"Norm of xexact", verbose);
 
   Epetra_Vector tmp11(*map1);
-  A.Multiply(false, *xexact1, tmp11);
+  A1->Multiply(false, *xexact1, tmp11);
 
   tmp11.Norm2(&residual); double rAx1 = residual;
   if (verbose) cout << "Norm of A1*x1                                                     = " << residual << endl;
-  ierr += checkValues(rAx1,rAx,"Norm of A*x", verbose);
+  ierr += checkValues(rAx1,rAx,"Norm of A1*x", verbose);
 
+  if (map1->IndexBase()==0) {
+    Epetra_Vector tmp12(*map1);
+    A2->Multiply(false, *xexact1, tmp12);
+    
+    tmp12.Norm2(&residual); double rAx2 = residual;
+    if (verbose) cout << "Norm of A2*x1                                                     = " << residual << endl;
+    ierr += checkValues(rAx2,rAx,"Norm of A2*x", verbose);
+  }
   b1->Norm2(&residual); double rb1 = residual;
   if (verbose) cout << "Norm of b1 (should equal norm of Ax)                              = " << residual << endl;
   ierr += checkValues(rb1,rb,"Norm of b", verbose);
@@ -239,6 +257,7 @@ int runTests(Epetra_Map & map, Epetra_CrsMatrix & A, Epetra_Vector & x, Epetra_V
   if (verbose) cout << "Norm of difference between computed A1x1 and A1x1 from file        = " << residual << endl;
   ierr += checkValues(residual,0.0,"Norm of difference between computed A1x1 and A1x1 from file", verbose);
 
+  if (map1->IndexBase()==0) delete A2;
   delete A1;
   delete x1;
   delete b1;

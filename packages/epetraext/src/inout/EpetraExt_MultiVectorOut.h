@@ -25,6 +25,8 @@
 // 
 // ***********************************************************************
 //@HEADER
+#ifndef EPETRAEXT_MULTIVECTOROUT_H
+#define EPETRAEXT_MULTIVECTOROUT_H
 #include <EpetraExt_ConfigDefs.h>
 class Epetra_MultiVector;
 namespace EpetraExt {
@@ -109,3 +111,4 @@ namespace EpetraExt {
   int writeMultiVector(FILE * handle, const Epetra_MultiVector & A, bool mmFormat);
 
 } // namespace EpetraExt
+#endif /* EPETRAEXT_MULTIVECTOROUT_H */

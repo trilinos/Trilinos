@@ -25,6 +25,8 @@
 // 
 // ***********************************************************************
 //@HEADER
+#ifndef EPETRAEXT_VECTORIN_H
+#define EPETRAEXT_VECTORIN_H
 #include <EpetraExt_ConfigDefs.h>
 class Epetra_Comm;
 class Epetra_Vector;
@@ -48,3 +50,4 @@ namespace EpetraExt {
   int MatrixMarketFileToVector( const char *filename, const Epetra_BlockMap & map, Epetra_Vector * & A);
 
 } // namespace EpetraExt
+#endif /* EPETRAEXT_VECTORIN_H */
