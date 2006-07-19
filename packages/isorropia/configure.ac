@@ -298,6 +298,7 @@ AC_SUBST(ac_aux_dir)
 #
 AC_CONFIG_FILES([
     Makefile
+    Makefile.export.isorropia
     src/Makefile
     src/Makefile.include
     example/Makefile
