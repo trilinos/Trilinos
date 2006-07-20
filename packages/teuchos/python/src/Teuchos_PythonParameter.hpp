@@ -56,7 +56,10 @@ namespace Teuchos {
       plist.set(name,sublist);
     }
 
-    // None object
+    // None object not allowed: this is a python type not usable by
+    // Trilinos solver packages, so we reserve it for the
+    // getPythonParameter() function to indicate that the requested
+    // parameter does not exist in the given ParameterList
     else if (value == Py_None) {
       return false;
     }
@@ -74,7 +77,7 @@ namespace Teuchos {
       plist.set(name, *arg);
     }
 
-    // Unsupported value types
+    // All other value types are unsupported
     else {
       return false;
     }
@@ -88,7 +91,8 @@ namespace Teuchos {
   // exist, None is returned (a type that is guaranteed not to be
   // supported).  If the name exists and its type is supported, it is
   // returned as a python object.  If the name exists, but the type is
-  // not supported, NULL is returned, to indicate an error.
+  // not supported, NULL is returned, to indicate an error.  All
+  // returned python object pointers are new references.
   PyObject * getPythonParameter(const ParameterList & plist,
 				const std::string   & name) {
 
@@ -133,7 +137,7 @@ namespace Teuchos {
       return SWIG_NewPointerObj((void*) &value, swig_TPL_ptr, 0);
     }
 
-    // Unsupported type
+    // All  other types are unsupported
     return NULL;
 
   }    // getPythonParameter
@@ -150,12 +154,12 @@ namespace Teuchos {
     string     name;
 
     // The dict pointer must point to a dictionary
-    if (!PyDict_Check(dict)) return false;
+    if (!PyDict_Check(dict)) goto fail;
 
     // Check that all entries in ParameterList are also in the
     // python dictionary
     for (ParameterList::ConstIterator i = plist.begin(); i != plist.end(); i++) {
-      name = plist.name(i);
+      name  = plist.name(i);
       value = PyDict_GetItemString(dict ,name.c_str());
       if (value == NULL) goto fail;
       if (plist.isSublist(name)) {
@@ -163,7 +167,7 @@ namespace Teuchos {
 	  goto fail;
       }
       else {
-	param = getPythonParameter(  plist,name.c_str());
+	param = getPythonParameter(plist,name.c_str());
 	if (param == NULL) goto fail;
 	if (PyObject_RichCompareBool(param,value,Py_EQ) < 1) goto fail;
 	Py_DECREF(param);
@@ -173,7 +177,7 @@ namespace Teuchos {
     // the ParameterList
     while (PyDict_Next(dict, &pos, &key, &value)) {
       if (!PyString_Check(key)) goto fail;
-      name  = string(PyString_AsString(key));
+      name = string(PyString_AsString(key));
       if (!plist.isParameter(name)) goto fail;
       if (plist.isSublist(name)) {
 	if (!isEquivalent(value, plist.sublist(name)))

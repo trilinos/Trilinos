@@ -284,3 +284,51 @@ using namespace std;
   __version__ = Teuchos_Version().split()[2]
 
 %}
+
+// Typemaps.  These are intended for other packages that import this
+// interface file.  They allow C++ methods that expect ParameterList&
+// arguments to have python wrappers that accept ParameterList,
+// PyDictParameterList, or python dictionary arguments.  C++ methods
+// that output ParameterLists will have pyton wrappers that output
+// PyDictParameterLists.
+%typemap(in) (Teuchos::ParameterList &)
+{
+  static swig_type_info        * PDPL_type = SWIG_TypeQuery("Teuchos::PyDictParameterList *");
+  static swig_type_info        * PL_type   = SWIG_TypeQuery("Teuchos::ParameterList *"      );
+  void                         * argp;
+
+  // Input is a python dictionary
+  if (PyDict_Check($input)) {
+    $1 = new Teuchos::PyDictParameterList($input);
+    if (PyErr_Occurred()) SWIG_fail;
+  }
+  // Input is a Teuchos::PyDictParameterList
+  else if (SWIG_CheckState(SWIG_Python_ConvertPtr($input,&argp,PDPL_type,0))) {
+    Teuchos::PyDictParameterList * arg = reinterpret_cast<Teuchos::PyDictParameterList *>(argp);
+    $1 = new Teuchos::PyDictParameterList(*arg);
+    if (PyErr_Occurred()) SWIG_fail;
+  }
+  // Input is a Teuchos::ParameterList
+  else if (SWIG_CheckState(SWIG_Python_ConvertPtr($input,&argp,PL_type,0))) {
+    Teuchos::ParameterList * arg = reinterpret_cast<Teuchos::ParameterList *>(argp);
+    $1 = new Teuchos::PyDictParameterList(*arg);
+    if (PyErr_Occurred()) SWIG_fail;
+  }
+  // Unsupported input
+  else {
+    PyErr_SetString(PyExc_TypeError, "Expected Teuchos.ParameterList or python dictionary");
+    SWIG_fail;
+  }
+}
+
+%typemap(freearg) (Teuchos::ParameterList& List)
+{
+  if ($1) delete($1);
+}
+
+%typemap(out) (Teuchos::ParameterList &)
+{
+  static swig_type_info * PDPL_type SWIG_TypeQuery("Teuchos::PyDictParameterList *");
+  Teuchos::PyDictParameterList * pdpl = new Teuchos::PyDictParameterList($1);
+  $result = SWIG_NewPointer(pdpl, PDPL_type, 1);
+}
