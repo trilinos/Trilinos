@@ -45,11 +45,13 @@ parser.add_option("-v", "--verbosity", type="int", dest="verbosity", default=2,
 options,args = parser.parse_args()
 if options.testharness:
   import setpath
-  import Epetra, Galeri
+  import Epetra
+  import Galeri
 else:
   try:
     import setpath
-    import Epetra, Galeri
+    import Epetra
+    import Galeri
   except ImportError:
     from PyTrilinos import Epetra, Galeri
     print >>sys.stderr, "Using system-installed Epetra, Galeri"
