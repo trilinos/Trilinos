@@ -126,50 +126,50 @@ void AZ_fact_lu(double b[], AZ_MATRIX *A_overlapped, double *aflag,
 
 
   if (*ifail != 0) {
-    (void) fprintf(stderr, "direct: ifail is not zero (%d)\n", *ifail);
+    (void) AZ_printf_err( "direct: ifail is not zero (%d)\n", *ifail);
     switch(*ifail) {
     case 4:
-      (void) fprintf(stderr, "Large growth factor\n");
+      (void) AZ_printf_err( "Large growth factor\n");
     break;
     case 3:
-      (void) fprintf(stderr, "Matrix may be singular\n");
+      (void) AZ_printf_err( "Matrix may be singular\n");
     break;
     case 5:
-      (void) fprintf(stderr, "Allocated space not large enough\n");
+      (void) AZ_printf_err( "Allocated space not large enough\n");
     break;
     case 6:
-      (void) fprintf(stderr, "Allocated space not large enough\n");
+      (void) AZ_printf_err( "Allocated space not large enough\n");
     break;
     case 7:
-      (void) fprintf(stderr, "Either the matrix may be singular\n"
+      (void) AZ_printf_err( "Either the matrix may be singular\n"
                      "or the drop tolerance may be too high\n");
     break;
     case 8:
-      (void) fprintf(stderr, "Either the matrix may be singular\n"
+      (void) AZ_printf_err( "Either the matrix may be singular\n"
                      "or the drop tolerance may be too high\n");
     break;
     case 11:
-      (void) fprintf(stderr, "two elements in the same (i,j) position\n");
+      (void) AZ_printf_err( "two elements in the same (i,j) position\n");
     break;
     case 12:
-      (void) fprintf(stderr, "System has less than two rows\n");
+      (void) AZ_printf_err( "System has less than two rows\n");
     break;
     case 17:
-      (void) fprintf(stderr, "A row without nonzero elements found\n");
+      (void) AZ_printf_err( "A row without nonzero elements found\n");
     break;
     case 18:
-      (void) fprintf(stderr, "A column without nonzero elements found\n");
+      (void) AZ_printf_err( "A column without nonzero elements found\n");
     break;
     case 24:
-      (void) fprintf(stderr, "A column index exceeds matrix dimension \n");
+      (void) AZ_printf_err( "A column index exceeds matrix dimension \n");
     break;
     case 25:
-      (void) fprintf(stderr, "A row index exceeds matrix dimension \n");
+      (void) AZ_printf_err( "A row index exceeds matrix dimension \n");
     break;
     default:
       break;
     }
-    (void) fprintf(stderr, "        Check y12m manual for more information.\n");
+    (void) AZ_printf_err( "        Check y12m manual for more information.\n");
       exit(-1);
   }
 

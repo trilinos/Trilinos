@@ -129,8 +129,8 @@ void AZ_exchange_bdry(double x[], int data_org[], int proc_config[])
 
 #ifdef AZTEC_MPI 
   if ( proc_config[AZ_Comm_Set] != AZ_Done_by_User) {
-      printf("Error: Communicator not set. Use AZ_set_comm()\n");
-      printf("       (e.g. AZ_set_comm(proc_config,MPI_COMM_WORLD)).\n");
+      AZ_printf_err("Error: Communicator not set. Use AZ_set_comm()\n");
+      AZ_printf_err("       (e.g. AZ_set_comm(proc_config,MPI_COMM_WORLD)).\n");
       exit(1);
   }
 #endif
@@ -495,7 +495,7 @@ int AZ_gsum_int(int val, int proc_config[])
     /* post receives on the hypercube portion of the machine partition */
 
     if (mdwrap_iread((void *) &val2, sizeof(int), &partner, &type, &request)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_iread failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_iread failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -508,7 +508,7 @@ int AZ_gsum_int(int val, int proc_config[])
      */
 
     if (mdwrap_write((void *) &val, sizeof(int), partner, type, &cflag)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_write failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_write failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -520,7 +520,7 @@ int AZ_gsum_int(int val, int proc_config[])
 
     if (mdwrap_wait((void *) &val2, sizeof(int), &partner, &type, &cflag,
                      &request) != sizeof(int)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_wait failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_wait failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -537,20 +537,20 @@ int AZ_gsum_int(int val, int proc_config[])
       partner = node ^ mask;
       if (mdwrap_iread((void *) &val2, sizeof(int), &partner, &type,
                         &request)) {
-        (void) fprintf(stderr, "%sERROR on node %d\nmd_iread failed, message "
+        (void) AZ_printf_err( "%sERROR on node %d\nmd_iread failed, message "
                        "type = %d\n", yo, node, type);
         exit(-1);
       }
 
       if (mdwrap_write((void *) &val, sizeof(int), partner, type, &cflag)) {
-        (void) fprintf(stderr, "%sERROR on node %d\nmd_write failed, message "
+        (void) AZ_printf_err( "%sERROR on node %d\nmd_write failed, message "
                        "type = %d\n", yo, node, type);
         exit(-1);
       }
 
       if (mdwrap_wait((void *) &val2, sizeof(int), &partner, &type, &cflag,
                        &request) != sizeof(int)) {
-        (void) fprintf(stderr, "%sERROR on node %d\nmd_wait failed, message "
+        (void) AZ_printf_err( "%sERROR on node %d\nmd_wait failed, message "
                        "type = %d\n", yo, node, type);
         exit(-1);
       }
@@ -564,7 +564,7 @@ int AZ_gsum_int(int val, int proc_config[])
   partner = node ^ nprocs_small;
   if (node & nprocs_small) {
     if (mdwrap_iread((void *) &val, sizeof(int), &partner, &type, &request)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_iread failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_iread failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -572,7 +572,7 @@ int AZ_gsum_int(int val, int proc_config[])
 
   else if (node+nprocs_small < nprocs ) {
     if (mdwrap_write((void *) &val, sizeof(int), partner, type, &cflag)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_write failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_write failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -581,7 +581,7 @@ int AZ_gsum_int(int val, int proc_config[])
   if (node & nprocs_small) {
     if (mdwrap_wait((void *) &val, sizeof(int), &partner, &type, &cflag,
                      &request) != sizeof(int)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_wait failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_wait failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -662,7 +662,7 @@ double AZ_gsum_double(double val, int proc_config[])
 
     if (mdwrap_iread((void *) &val2, sizeof(double), &partner, &type,
                       &request)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_iread failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_iread failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -675,7 +675,7 @@ double AZ_gsum_double(double val, int proc_config[])
      */
 
     if (mdwrap_write((void *) &val, sizeof(double), partner, type, &cflag)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_write failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_write failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -687,7 +687,7 @@ double AZ_gsum_double(double val, int proc_config[])
 
     if (mdwrap_wait((void *) &val2, sizeof(double), &partner, &type, &cflag,
                      &request) != sizeof(double)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_wait failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_wait failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -705,20 +705,20 @@ double AZ_gsum_double(double val, int proc_config[])
 
       if (mdwrap_iread((void *) &val2, sizeof(double), &partner, &type,
                         &request)) {
-        (void) fprintf(stderr, "%sERROR on node %d\nmd_iread failed, message "
+        (void) AZ_printf_err( "%sERROR on node %d\nmd_iread failed, message "
                        "type = %d\n", yo, node, type);
         exit(-1);
       }
 
       if (mdwrap_write((void *) &val, sizeof(double), partner, type, &cflag)) {
-        (void) fprintf(stderr, "%sERROR on node %d\nmd_write failed, message "
+        (void) AZ_printf_err( "%sERROR on node %d\nmd_write failed, message "
                        "type = %d\n", yo, node, type);
         exit(-1);
       }
 
       if (mdwrap_wait((void *) &val2, sizeof(double), &partner, &type, &cflag,
                        &request) != sizeof(double)) {
-        (void) fprintf(stderr, "%sERROR on node %d\nmd_wait failed, message "
+        (void) AZ_printf_err( "%sERROR on node %d\nmd_wait failed, message "
                        "type = %d\n", yo, node, type);
         exit(-1);
       }
@@ -733,7 +733,7 @@ double AZ_gsum_double(double val, int proc_config[])
   if (node & nprocs_small) {
     if (mdwrap_iread((void *) &val, sizeof(double), &partner, &type,
                       &request)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_iread failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_iread failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -741,7 +741,7 @@ double AZ_gsum_double(double val, int proc_config[])
 
   else if (node+nprocs_small < nprocs ) {
     if (mdwrap_write((void *) &val, sizeof(double), partner, type, &cflag)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_write failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_write failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -750,7 +750,7 @@ double AZ_gsum_double(double val, int proc_config[])
   if (node & nprocs_small) {
     if (mdwrap_wait((void *) &val, sizeof(double), &partner, &type, &cflag,
                      &request) != sizeof(double)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_wait failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_wait failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -829,7 +829,7 @@ double AZ_gmax_double(double val, int proc_config[])
 
     if (mdwrap_iread((void *) &val2, sizeof(double), &partner, &type,
                       &request)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_iread failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_iread failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -842,7 +842,7 @@ double AZ_gmax_double(double val, int proc_config[])
      */
 
     if (mdwrap_write((void *) &val, sizeof(double), partner, type, &cflag)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_write failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_write failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -854,7 +854,7 @@ double AZ_gmax_double(double val, int proc_config[])
 
     if (mdwrap_wait((void *) &val2, sizeof(double), &partner, &type, &cflag,
                      &request) != sizeof(double)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_wait failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_wait failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -872,20 +872,20 @@ double AZ_gmax_double(double val, int proc_config[])
 
       if (mdwrap_iread((void *) &val2, sizeof(double), &partner, &type,
                         &request)) {
-        (void) fprintf(stderr, "%sERROR on node %d\nmd_iread failed, message "
+        (void) AZ_printf_err( "%sERROR on node %d\nmd_iread failed, message "
                        "type = %d\n", yo, node, type);
         exit(-1);
       }
 
       if (mdwrap_write((void *) &val, sizeof(double), partner, type, &cflag)) {
-        (void) fprintf(stderr, "%sERROR on node %d\nmd_write failed, message "
+        (void) AZ_printf_err( "%sERROR on node %d\nmd_write failed, message "
                        "type = %d\n", yo, node, type);
         exit(-1);
       }
 
       if (mdwrap_wait((void *) &val2, sizeof(double), &partner, &type, &cflag,
                        &request) != sizeof(double)) {
-        (void) fprintf(stderr, "%sERROR on node %d\nmd_wait failed, message "
+        (void) AZ_printf_err( "%sERROR on node %d\nmd_wait failed, message "
                        "type = %d\n", yo, node, type);
         exit(-1);
       }
@@ -901,7 +901,7 @@ double AZ_gmax_double(double val, int proc_config[])
   if (node & nprocs_small) {
     if (mdwrap_iread((void *) &val, sizeof(double), &partner, &type,
                       &request)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_iread failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_iread failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -909,7 +909,7 @@ double AZ_gmax_double(double val, int proc_config[])
 
   else if (node+nprocs_small < nprocs ) {
     if (mdwrap_write((void *) &val, sizeof(double), partner, type, &cflag)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_write failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_write failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -918,7 +918,7 @@ double AZ_gmax_double(double val, int proc_config[])
   if (node & nprocs_small) {
     if (mdwrap_wait((void *) &val, sizeof(double), &partner, &type, &cflag,
                      &request) != sizeof(double)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_wait failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_wait failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -995,7 +995,7 @@ double AZ_gmin_double(double val, int proc_config[])
 
     if (mdwrap_iread((void *) &val2, sizeof(double), &partner, &type,
                       &request)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_iread failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_iread failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -1008,7 +1008,7 @@ double AZ_gmin_double(double val, int proc_config[])
      */
 
     if (mdwrap_write((void *) &val, sizeof(double), partner, type, &cflag)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_write failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_write failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -1020,7 +1020,7 @@ double AZ_gmin_double(double val, int proc_config[])
 
     if (mdwrap_wait((void *) &val2, sizeof(double), &partner, &type, &cflag,
                      &request) != sizeof(double)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_wait failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_wait failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -1038,20 +1038,20 @@ double AZ_gmin_double(double val, int proc_config[])
 
       if (mdwrap_iread((void *) &val2, sizeof(double), &partner, &type,
                         &request)) {
-        (void) fprintf(stderr, "%sERROR on node %d\nmd_iread failed, message "
+        (void) AZ_printf_err( "%sERROR on node %d\nmd_iread failed, message "
                        "type = %d\n", yo, node, type);
         exit(-1);
       }
 
       if (mdwrap_write((void *) &val, sizeof(double), partner, type, &cflag)) {
-        (void) fprintf(stderr, "%sERROR on node %d\nmd_write failed, message "
+        (void) AZ_printf_err( "%sERROR on node %d\nmd_write failed, message "
                        "type = %d\n", yo, node, type);
         exit(-1);
       }
 
       if (mdwrap_wait((void *) &val2, sizeof(double), &partner, &type, &cflag,
                        &request) != sizeof(double)) {
-        (void) fprintf(stderr, "%sERROR on node %d\nmd_wait failed, message "
+        (void) AZ_printf_err( "%sERROR on node %d\nmd_wait failed, message "
                        "type = %d\n", yo, node, type);
         exit(-1);
       }
@@ -1067,7 +1067,7 @@ double AZ_gmin_double(double val, int proc_config[])
   if (node & nprocs_small) {
     if (mdwrap_iread((void *) &val, sizeof(double), &partner, &type,
                       &request)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_iread failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_iread failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -1075,7 +1075,7 @@ double AZ_gmin_double(double val, int proc_config[])
 
   else if (node+nprocs_small < nprocs ) {
     if (mdwrap_write((void *) &val, sizeof(double), partner, type, &cflag)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_write failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_write failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -1084,7 +1084,7 @@ double AZ_gmin_double(double val, int proc_config[])
   if (node & nprocs_small) {
     if (mdwrap_wait((void *) &val, sizeof(double), &partner, &type, &cflag,
                      &request) != sizeof(double)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_wait failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_wait failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -1160,7 +1160,7 @@ int AZ_gmax_int(int val, int proc_config[])
     /* post receives on the hypercube portion of the machine partition */
 
     if (mdwrap_iread((void *) &val2, sizeof(int), &partner, &type, &request)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_iread failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_iread failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -1173,7 +1173,7 @@ int AZ_gmax_int(int val, int proc_config[])
      */
 
     if (mdwrap_write((void *) &val, sizeof(int), partner, type, &cflag)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_write failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_write failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -1185,7 +1185,7 @@ int AZ_gmax_int(int val, int proc_config[])
 
     if (mdwrap_wait((void *) &val2, sizeof(int), &partner, &type, &cflag,
                      &request) != sizeof(int)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_wait failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_wait failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -1202,20 +1202,20 @@ int AZ_gmax_int(int val, int proc_config[])
       partner = node ^ mask;
       if (mdwrap_iread((void *) &val2, sizeof(int), &partner, &type,
                         &request)) {
-        (void) fprintf(stderr, "%sERROR on node %d\nmd_iread failed, message "
+        (void) AZ_printf_err( "%sERROR on node %d\nmd_iread failed, message "
                        "type = %d\n", yo, node, type);
         exit(-1);
       }
 
       if (mdwrap_write((void *) &val, sizeof(int), partner, type, &cflag)) {
-        (void) fprintf(stderr, "%sERROR on node %d\nmd_write failed, message "
+        (void) AZ_printf_err( "%sERROR on node %d\nmd_write failed, message "
                        "type = %d\n", yo, node, type);
         exit(-1);
       }
 
       if (mdwrap_wait((void *) &val2, sizeof(int), &partner, &type, &cflag,
                        &request) != sizeof(int)) {
-        (void) fprintf(stderr, "%sERROR on node %d\nmd_wait failed, message "
+        (void) AZ_printf_err( "%sERROR on node %d\nmd_wait failed, message "
                        "type = %d\n", yo, node, type);
         exit(-1);
       }
@@ -1229,7 +1229,7 @@ int AZ_gmax_int(int val, int proc_config[])
   partner = node ^ nprocs_small;
   if (node & nprocs_small) {
     if (mdwrap_iread((void *) &val, sizeof(int), &partner, &type, &request)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_iread failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_iread failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -1237,7 +1237,7 @@ int AZ_gmax_int(int val, int proc_config[])
 
   else if (node+nprocs_small < nprocs ) {
     if (mdwrap_write((void *) &val, sizeof(int), partner, type, &cflag)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_write failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_write failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -1246,7 +1246,7 @@ int AZ_gmax_int(int val, int proc_config[])
   if (node & nprocs_small) {
     if (mdwrap_wait((void *) &val, sizeof(int), &partner, &type, &cflag,
                      &request) != sizeof(int)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_wait failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_wait failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -1354,7 +1354,7 @@ int AZ_gmin_int(int val, int proc_config[])
     /* post receives on the hypercube portion of the machine partition */
 
     if (mdwrap_iread((void *) &val2, sizeof(int), &partner, &type, &request)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_iread failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_iread failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -1367,7 +1367,7 @@ int AZ_gmin_int(int val, int proc_config[])
      */
 
     if (mdwrap_write((void *) &val, sizeof(int), partner, type, &cflag)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_write failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_write failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -1379,7 +1379,7 @@ int AZ_gmin_int(int val, int proc_config[])
 
     if (mdwrap_wait((void *) &val2, sizeof(int), &partner, &type, &cflag,
                      &request) != sizeof(int)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_wait failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_wait failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -1396,20 +1396,20 @@ int AZ_gmin_int(int val, int proc_config[])
       partner = node ^ mask;
       if (mdwrap_iread((void *) &val2, sizeof(int), &partner, &type,
                         &request)) {
-        (void) fprintf(stderr, "%sERROR on node %d\nmd_iread failed, message "
+        (void) AZ_printf_err( "%sERROR on node %d\nmd_iread failed, message "
                        "type = %d\n", yo, node, type);
         exit(-1);
       }
 
       if (mdwrap_write((void *) &val, sizeof(int), partner, type, &cflag)) {
-        (void) fprintf(stderr, "%sERROR on node %d\nmd_write failed, message "
+        (void) AZ_printf_err( "%sERROR on node %d\nmd_write failed, message "
                        "type = %d\n", yo, node, type);
         exit(-1);
       }
 
       if (mdwrap_wait((void *) &val2, sizeof(int), &partner, &type, &cflag,
                        &request) != sizeof(int)) {
-        (void) fprintf(stderr, "%sERROR on node %d\nmd_wait failed, message "
+        (void) AZ_printf_err( "%sERROR on node %d\nmd_wait failed, message "
                        "type = %d\n", yo, node, type);
         exit(-1);
       }
@@ -1423,7 +1423,7 @@ int AZ_gmin_int(int val, int proc_config[])
   partner = node ^ nprocs_small;
   if (node & nprocs_small) {
     if (mdwrap_iread((void *) &val, sizeof(int), &partner, &type, &request)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_iread failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_iread failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -1431,7 +1431,7 @@ int AZ_gmin_int(int val, int proc_config[])
 
   else if (node+nprocs_small < nprocs ) {
     if (mdwrap_write((void *) &val, sizeof(int), partner, type, &cflag)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_write failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_write failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -1440,7 +1440,7 @@ int AZ_gmin_int(int val, int proc_config[])
   if (node & nprocs_small) {
     if (mdwrap_wait((void *) &val, sizeof(int), &partner, &type, &cflag,
                      &request) != sizeof(int)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_wait failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_wait failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -1528,7 +1528,7 @@ void AZ_gdot_vec(int N, double dots[], double dots2[], int proc_config[])
     /* post receives on the hypercube portion of the machine partition */
 
     if (mdwrap_iread((void *) dots2, msg_size, &partner, &type, &request)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_iread failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_iread failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -1541,7 +1541,7 @@ void AZ_gdot_vec(int N, double dots[], double dots2[], int proc_config[])
      */
 
     if (mdwrap_write((void *) dots, msg_size, partner, type, &cflag)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_write failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_write failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -1553,7 +1553,7 @@ void AZ_gdot_vec(int N, double dots[], double dots2[], int proc_config[])
 
     if (mdwrap_wait((void *) dots2, msg_size, &partner, &type, &cflag,
                      &request) < msg_size) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_wait failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_wait failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -1570,20 +1570,20 @@ void AZ_gdot_vec(int N, double dots[], double dots2[], int proc_config[])
       partner = node ^ mask;
 
       if (mdwrap_iread((void *) dots2, msg_size, &partner, &type, &request)) {
-        (void) fprintf(stderr, "%sERROR on node %d\nmd_iread failed, message "
+        (void) AZ_printf_err( "%sERROR on node %d\nmd_iread failed, message "
                        "type = %d\n", yo, node, type);
         exit(-1);
       }
 
       if (mdwrap_write((void *) dots, msg_size, partner, type, &cflag)) {
-        (void) fprintf(stderr, "%sERROR on node %d\nmd_write failed, message "
+        (void) AZ_printf_err( "%sERROR on node %d\nmd_write failed, message "
                        "type = %d\n", yo, node, type);
         exit(-1);
       }
 
       if (mdwrap_wait((void *) dots2, msg_size, &partner, &type, &cflag,
                        &request) < msg_size) {
-        (void) fprintf(stderr, "%sERROR on node %d\nmd_wait failed, message "
+        (void) AZ_printf_err( "%sERROR on node %d\nmd_wait failed, message "
                        "type = %d\n", yo, node, type);
         exit(-1);
       }
@@ -1597,7 +1597,7 @@ void AZ_gdot_vec(int N, double dots[], double dots2[], int proc_config[])
   partner = node ^ nprocs_small;
   if (node & nprocs_small) {
     if (mdwrap_iread((void *) dots, msg_size, &partner, &type, &request)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_iread failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_iread failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -1605,7 +1605,7 @@ void AZ_gdot_vec(int N, double dots[], double dots2[], int proc_config[])
 
   else if (node+nprocs_small < nprocs ) {
     if (mdwrap_write((void *) dots, msg_size, partner, type, &cflag)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_write failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_write failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -1614,7 +1614,7 @@ void AZ_gdot_vec(int N, double dots[], double dots2[], int proc_config[])
   if (node & nprocs_small) {
     if (mdwrap_wait((void *) dots, msg_size, &partner, &type, &cflag,
                      &request) < msg_size) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_wait failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_wait failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -1673,11 +1673,11 @@ void AZ_print_sync_start(int proc, int do_print_line, int proc_config[])
 
   else {
     if (do_print_line) {
-      (void) printf("\n");
-      for (flag = 0; flag < 37; flag++) (void) printf("#");
-      (void) printf(" PRINT_SYNC_START ");
-      for (flag = 0; flag < 25; flag++) (void) printf("#");
-      (void) printf("\n");
+      (void) AZ_printf_out("\n");
+      for (flag = 0; flag < 37; flag++) (void) AZ_printf_out("#");
+      (void) AZ_printf_out(" PRINT_SYNC_START ");
+      for (flag = 0; flag < 25; flag++) (void) AZ_printf_out("#");
+      (void) AZ_printf_out("\n");
     }
   }
 
@@ -1734,11 +1734,11 @@ void AZ_print_sync_end(int proc_config[], int do_print_line)
   else {
     to = 0;
     if (do_print_line) {
-      (void) printf("\n");
-      for (flag = 0; flag < 37; flag++) (void) printf("#");
-      (void) printf(" PRINT_SYNC_END__ ");
-      for (flag = 0; flag < 25; flag++) (void) printf("#");
-      (void) printf("\n\n");
+      (void) AZ_printf_out("\n");
+      for (flag = 0; flag < 37; flag++) (void) AZ_printf_out("#");
+      (void) AZ_printf_out(" PRINT_SYNC_END__ ");
+      for (flag = 0; flag < 25; flag++) (void) AZ_printf_out("#");
+      (void) AZ_printf_out("\n\n");
     }
   }
 
@@ -1823,7 +1823,7 @@ void AZ_sync(int proc_config[])
     /* post receives on the hypercube portion of the machine partition */
 
     if (mdwrap_iread((void *) NULL, 0, &partner, &type, &request)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_iread failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_iread failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -1836,7 +1836,7 @@ void AZ_sync(int proc_config[])
      */
 
     if (mdwrap_write((void *) NULL, 0, partner, type, &cflag)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_write failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_write failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -1858,13 +1858,13 @@ void AZ_sync(int proc_config[])
     for (mask = nprocs_small>>1; mask; mask >>= 1) {
       partner = node ^ mask;
       if (mdwrap_iread((void *) NULL, 0, &partner, &type, &request)) {
-        (void) fprintf(stderr, "%sERROR on node %d\nmd_iread failed, message "
+        (void) AZ_printf_err( "%sERROR on node %d\nmd_iread failed, message "
                        "type = %d\n", yo, node, type);
         exit(-1);
       }
 
       if (mdwrap_write((void *) NULL, 0, partner, type, &cflag)) {
-        (void) fprintf(stderr, "%sERROR on node %d\nmd_write failed, message "
+        (void) AZ_printf_err( "%sERROR on node %d\nmd_write failed, message "
                        "type = %d\n", yo, node, type);
         exit(-1);
       }
@@ -1883,7 +1883,7 @@ void AZ_sync(int proc_config[])
   partner = node ^ nprocs_small;
   if (node & nprocs_small) {
     if (mdwrap_iread((void *) NULL, 0, &partner, &type, &request)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_iread failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_iread failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -1891,7 +1891,7 @@ void AZ_sync(int proc_config[])
 
   else if (node+nprocs_small < nprocs ) {
     if (mdwrap_write((void *) NULL, 0, partner, type, &cflag)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_write failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_write failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -1986,7 +1986,7 @@ void AZ_gsum_vec_int(int vals[], int vals2[], int length, int proc_config[])
 
     if (mdwrap_iread((void *) vals2, length*sizeof(int), &partner, &type,
                       &request)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_iread failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_iread failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -2000,7 +2000,7 @@ void AZ_gsum_vec_int(int vals[], int vals2[], int length, int proc_config[])
 
     if (mdwrap_write((void *) vals, length*sizeof(int), partner, type,
                       &cflag)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_write failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_write failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -2012,7 +2012,7 @@ void AZ_gsum_vec_int(int vals[], int vals2[], int length, int proc_config[])
 
     if (mdwrap_wait((void *) vals2, length*sizeof(int), &partner, &type,
                      &cflag, &request) < length*sizeof(int)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_wait failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_wait failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -2030,21 +2030,21 @@ void AZ_gsum_vec_int(int vals[], int vals2[], int length, int proc_config[])
 
       if (mdwrap_iread((void *) vals2, length*sizeof(int), &partner, &type,
                         &request)) {
-        (void) fprintf(stderr, "%sERROR on node %d\nmd_iread failed, message "
+        (void) AZ_printf_err( "%sERROR on node %d\nmd_iread failed, message "
                        "type = %d\n", yo, node, type);
         exit(-1);
       }
 
       if (mdwrap_write((void *) vals, length*sizeof(int), partner, type,
                         &cflag)) {
-        (void) fprintf(stderr, "%sERROR on node %d\nmd_write failed, message "
+        (void) AZ_printf_err( "%sERROR on node %d\nmd_write failed, message "
                        "type = %d\n", yo, node, type);
         exit(-1);
       }
 
       if (mdwrap_wait((void *) vals2, length*sizeof(int), &partner, &type,
                        &cflag, &request) < length*sizeof(int)) {
-        (void) fprintf(stderr, "%sERROR on node %d\nmd_wait failed, message "
+        (void) AZ_printf_err( "%sERROR on node %d\nmd_wait failed, message "
                        "type = %d\n", yo, node, type);
         exit(-1);
       }
@@ -2059,7 +2059,7 @@ void AZ_gsum_vec_int(int vals[], int vals2[], int length, int proc_config[])
   if (node & nprocs_small) {
     if (mdwrap_iread((void *) vals, length*sizeof(int), &partner, &type,
                       &request)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_iread failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_iread failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -2068,7 +2068,7 @@ void AZ_gsum_vec_int(int vals[], int vals2[], int length, int proc_config[])
   else if (node+nprocs_small < nprocs ) {
     if (mdwrap_write((void *) vals, length*sizeof(int), partner, type,
                       &cflag)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_write failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_write failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -2077,7 +2077,7 @@ void AZ_gsum_vec_int(int vals[], int vals2[], int length, int proc_config[])
   if (node & nprocs_small) {
     if (mdwrap_wait((void *) vals, length*sizeof(int), &partner, &type, &cflag,
                      &request) < length*sizeof(int)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_wait failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_wait failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -2167,7 +2167,7 @@ void AZ_gappend(int vals[], int *cur_length, int total_length,
     if ( mdwrap_iread((void *) &(vals[*cur_length]),
                        (total_length - *cur_length) * sizeof(int), &partner,
                        &type, &request) ) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_iread failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_iread failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -2181,7 +2181,7 @@ void AZ_gappend(int vals[], int *cur_length, int total_length,
 
     if (mdwrap_write((void *) vals, (*cur_length)*sizeof(int), partner, type,
                       &cflag)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_write failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_write failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -2206,14 +2206,14 @@ void AZ_gappend(int vals[], int *cur_length, int total_length,
       if (mdwrap_iread((void *) &(vals[*cur_length]),
                         (total_length - *cur_length)*sizeof(int), &partner,
                         &type, &request)) {
-        (void) fprintf(stderr, "%sERROR on node %d\nmd_iread failed, message "
+        (void) AZ_printf_err( "%sERROR on node %d\nmd_iread failed, message "
                        "type = %d\n", yo, node, type);
         exit(-1);
       }
 
       if (mdwrap_write((void *) vals, *cur_length*sizeof(int), partner, type,
                         &cflag)) {
-        (void) fprintf(stderr, "%sERROR on node %d\nmd_write failed, message "
+        (void) AZ_printf_err( "%sERROR on node %d\nmd_write failed, message "
                        "type = %d\n", yo, node, type);
         exit(-1);
       }
@@ -2231,7 +2231,7 @@ void AZ_gappend(int vals[], int *cur_length, int total_length,
   if (node & nprocs_small) {
     if (mdwrap_iread((void *) vals, total_length*sizeof(int), &partner, &type,
                       &request)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_iread failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_iread failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -2240,7 +2240,7 @@ void AZ_gappend(int vals[], int *cur_length, int total_length,
   else if (node+nprocs_small < nprocs ) {
     if (mdwrap_write((void *) vals, *cur_length*sizeof(int), partner, type,
                       &cflag)) {
-      (void) fprintf(stderr, "%sERROR on node %d\nmd_write failed, message "
+      (void) AZ_printf_err( "%sERROR on node %d\nmd_write failed, message "
                      "type = %d\n", yo, node, type);
       exit(-1);
     }
@@ -2336,7 +2336,7 @@ void AZ_broadcast(char *ptr, int length, int proc_config[], int action)
       brdcst_buffer = (char *) AZ_allocate(buf_len * sizeof(char));
       if (brdcst_buffer == NULL) {
 
-        (void) fprintf(stderr, "no space in AZ_broadcast: brdcst_buffer\n");
+        (void) AZ_printf_err( "no space in AZ_broadcast: brdcst_buffer\n");
         exit(-1);
       }
     }
@@ -2352,7 +2352,7 @@ void AZ_broadcast(char *ptr, int length, int proc_config[], int action)
         buf_len += AZ_MAX(500, length);
         temp = (char *) AZ_allocate(buf_len * sizeof(char));
         if (temp == NULL) {
-          (void) fprintf(stderr, "no space in AZ_broadcast: temp\n");
+          (void) AZ_printf_err( "no space in AZ_broadcast: temp\n");
           exit(-1);
         }
 
@@ -2364,7 +2364,7 @@ void AZ_broadcast(char *ptr, int length, int proc_config[], int action)
       }
 
       if (brdcst_buffer == 0) {
-        (void) fprintf(stderr,
+        (void) AZ_printf_err(
                        "Error: Not enough space in AZ_broadcast_pack\n");
         exit(-1);
       }
@@ -2401,7 +2401,7 @@ void AZ_broadcast(char *ptr, int length, int proc_config[], int action)
           AZ_free(brdcst_buffer);
           brdcst_buffer = (char *) AZ_allocate(buf_len * sizeof(char));
           if ( brdcst_buffer == NULL) {
-            (void) fprintf(stderr,
+            (void) AZ_printf_err(
                            "no space in AZ_broadcast: brdcst_buffer \n");
             exit(-1);
 
@@ -2708,14 +2708,14 @@ void AZ_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
                                     (double) (messg_size_doubles));
 
     if (proc_config[AZ_node] == 0 && DEBUG == TRUE) {
-      (void) printf("\n\t\tSplitting up messages in splitup_big_msg\n"
+      (void) AZ_printf_out("\n\t\tSplitting up messages in splitup_big_msg\n"
                     "\t\tmax_buffer_size required  (bytes): %d\n",
                     max_buffer_size*element_size);
-      (void) printf("\t\tmax_buffer_size allocated (bytes): %d\n",
+      (void) AZ_printf_out("\t\tmax_buffer_size allocated (bytes): %d\n",
                     allowed_buff_size*element_size);
-      (void) printf("\t\tindividual message size   (bytes): %d\n",
+      (void) AZ_printf_out("\t\tindividual message size   (bytes): %d\n",
                     messg_size_doubles*element_size);
-      (void) printf("\t\ttotal number of split messages to be sent: %d\n\n",
+      (void) AZ_printf_out("\t\ttotal number of split messages to be sent: %d\n\n",
                     number_of_messages);
     }
 
@@ -2733,7 +2733,7 @@ void AZ_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
 
         send_buffer =(char *) AZ_allocate((total_send_size+1)*element_size);
         if (send_buffer == NULL) {
-           (void) fprintf(stderr,
+           (void) AZ_printf_err(
                           "no space in AZ_splitup_big_msg: send_buffer \n");
            exit(-1);
         }
@@ -2848,7 +2848,7 @@ void AZ_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
                              &messg_type, &flag, request+n); 
 
           if (length > size) {
-           (void) fprintf(stderr,"%sERROR on node %d\nmd_wait failed, message "
+           (void) AZ_printf_err("%sERROR on node %d\nmd_wait failed, message "
                           "type = %d\n", yo, proc_config[AZ_node], messg_type);
            exit(-1);
           }
@@ -2865,7 +2865,7 @@ void AZ_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
                              &messg_type, &flag, request+n); 
 
           if (length > size) {
-           (void) fprintf(stderr,"%sERROR on node %d\nmd_wait failed, message "
+           (void) AZ_printf_err("%sERROR on node %d\nmd_wait failed, message "
                           "type = %d\n", yo, proc_config[AZ_node], messg_type);
            exit(-1);
           }
@@ -2881,7 +2881,7 @@ void AZ_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
                              &messg_type, &flag, request+n); 
 
           if (length > size) {
-           (void) fprintf(stderr,"%sERROR on node %d\nmd_wait failed, message "
+           (void) AZ_printf_err("%sERROR on node %d\nmd_wait failed, message "
                           "type = %d\n", yo, proc_config[AZ_node], messg_type);
            exit(-1);
           }
@@ -2910,7 +2910,7 @@ void AZ_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
         }
         send_buffer = (char *) AZ_allocate((total_send_size+1)*element_size);
         if (send_buffer == NULL) {
-           (void) fprintf(stderr,"no space AZ_splitup_big_msg: send_buffer \n");
+           (void) AZ_printf_err("no space AZ_splitup_big_msg: send_buffer \n");
            exit(-1);
         }
    
@@ -2951,7 +2951,7 @@ void AZ_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
         length =  mdwrap_wait((void *) &obuffer[j], size, &messg_from,
                                &rtype, &st, request+n); 
         if ((length != size) && (size !=0) ) {
-           (void) fprintf(stderr, "%sERROR on node %d\nmd_wait failed, message "
+           (void) AZ_printf_err( "%sERROR on node %d\nmd_wait failed, message "
                           "type = %d\n", yo, proc_config[AZ_node] , rtype);
            exit(-1);
         }
@@ -2984,7 +2984,7 @@ int AZ_extract_comm_info(int **idata_org,int (*user_comm)(double *,AZ_MATRIX *),
    if (user_comm == NULL) {
       data_org = (int  *) AZ_allocate(AZ_COMMLESS_DATA_ORG_SIZE*sizeof(int));
       if (data_org == NULL) {
-         printf("Error: Not enough space in AZ_extract_comm_info().\n");
+         AZ_printf_err("Error: Not enough space in AZ_extract_comm_info().\n");
          exit(1);
       }
       data_org[AZ_N_neigh]    = 0;
@@ -3000,7 +3000,7 @@ int AZ_extract_comm_info(int **idata_org,int (*user_comm)(double *,AZ_MATRIX *),
    procs    = (int    *) AZ_allocate(nprocs  * sizeof(int));
    tempo    = (int    *) AZ_allocate(nprocs * sizeof(int));
    if ( (data_vec == NULL) || (procs == NULL) || (tempo == NULL)) {
-       printf("AZ_extract_comm_info: Out of space\n"); exit(1);
+       AZ_printf_err("AZ_extract_comm_info: Out of space\n"); exit(1);
    }
 
    for (i = 0; i < N_cols+Nghost; i++) data_vec[i] = (double ) proc_id;
@@ -3028,7 +3028,7 @@ int AZ_extract_comm_info(int **idata_org,int (*user_comm)(double *,AZ_MATRIX *),
    rcv_length     = (int * ) AZ_allocate( (N_rcv_procs+1)*sizeof(int));
    rcv_list       = (int **) AZ_allocate( (N_rcv_procs+1)*sizeof(int *));
    if ( rcv_list == NULL) {
-       printf("AZ_extract_comm_info: Out of space\n"); exit(1);
+       AZ_printf_err("AZ_extract_comm_info: Out of space\n"); exit(1);
    }
    N_rcv_procs    = 0;
    for (i = 0; i < nprocs; i++) {
@@ -3036,7 +3036,7 @@ int AZ_extract_comm_info(int **idata_org,int (*user_comm)(double *,AZ_MATRIX *),
          rcv_neighbors[N_rcv_procs] = i;
          rcv_list[N_rcv_procs] = (int *) AZ_allocate(procs[i] * sizeof(int) );
          if ( rcv_list[N_rcv_procs] == NULL) {
-            printf("AZ_extract_comm_info: Out of space\n"); exit(1);
+            AZ_printf_err("AZ_extract_comm_info: Out of space\n"); exit(1);
          }
          procs[i] = N_rcv_procs++;
       }
@@ -3052,8 +3052,8 @@ int AZ_extract_comm_info(int **idata_org,int (*user_comm)(double *,AZ_MATRIX *),
           index = procs[j];
           rcv_list[   index    ][ rcv_length[index]++ ] = i;
           if (i < N_cols) {
-             printf("AZ_extract_comm_info: Received elements must be stored ");
-             printf("after\n                   all %d local elements\n",N_cols);
+             AZ_printf_err("AZ_extract_comm_info: Received elements must be stored ");
+             AZ_printf_err("after\n                   all %d local elements\n",N_cols);
              exit(1);
           }
       }
@@ -3075,7 +3075,7 @@ int AZ_extract_comm_info(int **idata_org,int (*user_comm)(double *,AZ_MATRIX *),
    request         = (MPI_AZRequest *)  AZ_allocate((N_send_procs+N_rcv_procs+1)*
                                               sizeof(MPI_AZRequest));
    if ( (send_neighbors==NULL)||(send_length==NULL)||(request==NULL)) {
-       printf("AZ_extract_comm_info: Out of space\n"); exit(1);
+       AZ_printf_err("AZ_extract_comm_info: Out of space\n"); exit(1);
    }
 
    type = 4901;
@@ -3099,14 +3099,14 @@ int AZ_extract_comm_info(int **idata_org,int (*user_comm)(double *,AZ_MATRIX *),
    for (i = 0; i < N_send_procs; i++) j += send_length[i];
    send_list = (int *) AZ_allocate(sizeof(int)*(j+1));
    if ( send_list == NULL) {
-       printf("AZ_extract_comm_info: Out of space\n"); exit(1);
+       AZ_printf_err("AZ_extract_comm_info: Out of space\n"); exit(1);
    }
    j = 1;
    for (i = 0; i < N_rcv_procs; i++)
       if (j < rcv_length[i]) j = rcv_length[i];
    collect = (int *) AZ_allocate(sizeof(int)*j);
    if ( collect == NULL) {
-       printf("AZ_extract_comm_info: Out of space\n"); exit(1);
+       AZ_printf_err("AZ_extract_comm_info: Out of space\n"); exit(1);
    }
 
 
@@ -3142,7 +3142,7 @@ int AZ_extract_comm_info(int **idata_org,int (*user_comm)(double *,AZ_MATRIX *),
    data_org = (int *) AZ_allocate((AZ_send_list+j)*sizeof(int));
    *idata_org = data_org;
    if (data_org == NULL) {
-      printf("No space for data_org\n");
+      AZ_printf_err("No space for data_org\n");
       exit(1);
    }
    data_org[AZ_total_send] = j;
@@ -3151,7 +3151,7 @@ int AZ_extract_comm_info(int **idata_org,int (*user_comm)(double *,AZ_MATRIX *),
    sort_ind    = (int *) AZ_allocate( sizeof(int)*(1+N_rcv_procs));
    start_index = (int *) AZ_allocate( sizeof(int)*(1+N_rcv_procs));
    if ( start_index == NULL) {
-       printf("AZ_extract_comm_info: Out of space\n"); exit(1);
+       AZ_printf_err("AZ_extract_comm_info: Out of space\n"); exit(1);
    }
    start_index[0] = N_cols;
 
@@ -3159,8 +3159,8 @@ int AZ_extract_comm_info(int **idata_org,int (*user_comm)(double *,AZ_MATRIX *),
       AZ_sort(rcv_list[i],rcv_length[i],NULL,NULL);
       for (k = 1; k < rcv_length[i]; k++) {
          if ( rcv_list[i][k] != rcv_list[i][k-1]+1 ) {
-            printf("AZ_extract_comm_info: elements received from a processor ");
-            printf("are not stored contiguously.\n");
+            AZ_printf_err("AZ_extract_comm_info: elements received from a processor ");
+            AZ_printf_err("are not stored contiguously.\n");
             exit(1);
          }
       }
@@ -3170,14 +3170,14 @@ int AZ_extract_comm_info(int **idata_org,int (*user_comm)(double *,AZ_MATRIX *),
    }
    AZ_sort( start_index, N_rcv_procs, sort_ind, NULL);
    if (start_index[0] != N_cols ) {
-      printf("AZ_extract_comm_info: elements received do not start ");
-      printf("immediately after\n                   local components.\n");
+      AZ_printf_err("AZ_extract_comm_info: elements received do not start ");
+      AZ_printf_err("immediately after\n                   local components.\n");
       exit(1);
    }
    for (i = 1; i < N_rcv_procs; i++) {
       if ( start_index[i-1] + rcv_length[sort_ind[i-1]] != start_index[i] ) {
-          printf("AZ_extract_comm_info: elements received from processors ");
-          printf("are not stored contiguously.\n");
+          AZ_printf_err("AZ_extract_comm_info: elements received from processors ");
+          AZ_printf_err("are not stored contiguously.\n");
           exit(1);
       }
    }

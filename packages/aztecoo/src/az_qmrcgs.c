@@ -226,7 +226,7 @@ void AZ_pqmrs(double b[], double x[], double weight[], int options[],
       (options[AZ_output] != AZ_warnings) &&
       (options[AZ_output] != AZ_summary) &&
       (options[AZ_conv]!=AZTECOO_conv_test) && (proc == 0))
-    (void) fprintf(stdout, "%siter:    0           residual = %e\n",prefix,scaled_r_norm);
+    (void) AZ_printf_out("%siter:    0           residual = %e\n",prefix,scaled_r_norm);
 
   norm_r_nm1_cgs = est_residual;
   tau_mm1        = norm_r_nm1_cgs;
@@ -434,7 +434,7 @@ void AZ_pqmrs(double b[], double x[], double weight[], int options[],
 
     if ( (iter%print_freq == 0)  &&
 	 (options[AZ_conv]!=AZTECOO_conv_test) && proc == 0 )
-      (void) fprintf(stdout, "%siter: %4d           residual = %e\n",prefix,iter,
+      (void) AZ_printf_out("%siter: %4d           residual = %e\n",prefix,iter,
                      scaled_r_norm);
 
     /* convergence tests */
@@ -482,7 +482,7 @@ void AZ_pqmrs(double b[], double x[], double weight[], int options[],
   if ( (iter%print_freq != 0) &&
        (options[AZ_conv]!=AZTECOO_conv_test)  && (proc == 0) && (options[AZ_output] != AZ_none)
        && (options[AZ_output] != AZ_warnings))
-    (void) fprintf(stdout, "%siter: %4d           residual = %e\n",prefix,iter,
+    (void) AZ_printf_out("%siter: %4d           residual = %e\n",prefix,iter,
                    scaled_r_norm);
 
   /* check if we exceeded maximum number of iterations */

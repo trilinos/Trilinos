@@ -262,8 +262,8 @@ L30:
 	goto L30;
 L60:
 	if (aptr + lenl + heap2len + orig_U_len + fill - 2 >= bindx[i + 1]) {
-            fprintf(stderr,"ERROR: not enough memory for ILUT. Decrease\n");
-            fprintf(stderr,"       fill-in or increase drop tolerance.\n");
+            AZ_printf_err("ERROR: not enough memory for ILUT. Decrease\n");
+            AZ_printf_err("       fill-in or increase drop tolerance.\n");
             exit(-1);
         }
 	k = 0;
@@ -286,7 +286,7 @@ L60:
 
         /*  Pick out the diagonal element, store its reciprocal. */
 	if (nextrow[i - 1] == 0.) {
-            fprintf(stderr,"ilut: zero pivot encountered!\n");
+            AZ_printf_err("ilut: zero pivot encountered!\n");
 	    nextrow[i - 1] = rownorm;
 	}
 	pattern[i] = 0;

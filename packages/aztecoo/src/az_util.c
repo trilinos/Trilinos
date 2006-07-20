@@ -332,7 +332,7 @@ void AZ_time_kernals(int gN, double gnzeros, double val[], int indx[],
 
   if (data_org[AZ_matrix_type] == AZ_USER_MATRIX){
       if (az_proc == 0) {
-        (void) fprintf(stderr, "ERROR: matrix-vector timing not available for"
+        (void) AZ_printf_err( "ERROR: matrix-vector timing not available for"
                        "matrix-free.\n"
                        "      (data_org[AZ_matrix_type] = %d)\n\n",
                        data_org[AZ_matrix_type]);
@@ -341,7 +341,7 @@ void AZ_time_kernals(int gN, double gnzeros, double val[], int indx[],
   }
 
   if (data_org[AZ_matrix_type] != AZ_VBR_MATRIX) {
-    (void) fprintf(stderr, "I'm not sure if the timing stuff works for \n"
+    (void) AZ_printf_err( "I'm not sure if the timing stuff works for \n"
                    "nonVBR matrices. For example I don't think that\n"
                    "we have overlapped communication/computations.\n"
                    "However, probably a lot of the stuff works?\n");
@@ -352,15 +352,15 @@ void AZ_time_kernals(int gN, double gnzeros, double val[], int indx[],
   if (ntimes < 200) ntimes = 200;
 
   if (Proc == 0) {
-    (void) printf("++++++++++ timing run ++++++++++\n");
-    (void) printf("\nnprocs: %d ntimes: %d\n", Num_Proc, ntimes);
-    (void) printf("N: %d\tNzeros: %e\t\n\n", gN, gnzeros);
+    (void) AZ_printf_out("++++++++++ timing run ++++++++++\n");
+    (void) AZ_printf_out("\nnprocs: %d ntimes: %d\n", Num_Proc, ntimes);
+    (void) AZ_printf_out("N: %d\tNzeros: %e\t\n\n", gN, gnzeros);
   }
 
   /* sparax */
 
   if (iout > 0 && Proc == 0) {
-    (void) printf("timing nonoverlapped matrix vector multiply\n");
+    (void) AZ_printf_out("timing nonoverlapped matrix vector multiply\n");
   }
 
   start_t = AZ_second();
@@ -373,7 +373,7 @@ void AZ_time_kernals(int gN, double gnzeros, double val[], int indx[],
   /* exchange boundary */
 
   if (iout > 0 && Proc ==0){
-    (void) printf("timing unstructured communication\n");
+    (void) AZ_printf_out("timing unstructured communication\n");
   }
 
   start_t = AZ_second();
@@ -388,7 +388,7 @@ void AZ_time_kernals(int gN, double gnzeros, double val[], int indx[],
   /* overlapped communication */
 
   if (iout > 0 && Proc == 0) {
-    (void) printf("timing overlapped sparse matrix vector multiply\n");
+    (void) AZ_printf_out("timing overlapped sparse matrix vector multiply\n");
   }
   start_t = AZ_second();
   for (i = 1; i <= ntimes; i++)
@@ -404,7 +404,7 @@ void AZ_time_kernals(int gN, double gnzeros, double val[], int indx[],
   sparax_overlap_border_comp_t   = (double) 0.0;
 
   if (iout > 0 && Proc == 0) {
-    (void) printf("time the individual routines for sparax_overlap\n");
+    (void) AZ_printf_out("time the individual routines for sparax_overlap\n");
   }
 
   start_overall_t = AZ_second();
@@ -507,7 +507,7 @@ void AZ_time_kernals(int gN, double gnzeros, double val[], int indx[],
   /* dot */
 
   if (iout > 0 && Proc == 0) {
-    (void) printf("time the individual routines for ddot\n");
+    (void) AZ_printf_out("time the individual routines for ddot\n");
   }
 
   start_t = AZ_second();
@@ -523,7 +523,7 @@ void AZ_time_kernals(int gN, double gnzeros, double val[], int indx[],
   /* daxpy */
 
   if (iout > 0 && Proc == 0) {
-    (void) printf("time the individual routines for daxpy\n");
+    (void) AZ_printf_out("time the individual routines for daxpy\n");
   }
   start_t = AZ_second();
   for (i = 1; i <= ntimes; i++) {
@@ -533,15 +533,15 @@ void AZ_time_kernals(int gN, double gnzeros, double val[], int indx[],
   daxpy_comp_t = AZ_gmax_double(AZ_second() - start_t, proc_config);
 
   if (Proc == 0) {              /* calculate and print results */
-    (void) printf("\n********** sparax ***********\n\n");
-    (void) printf("nonoverlapped\n");
-    (void) printf("\t\tmax\t\tavg\t\tmin\n");
+    (void) AZ_printf_out("\n********** sparax ***********\n\n");
+    (void) AZ_printf_out("nonoverlapped\n");
+    (void) AZ_printf_out("\t\tmax\t\tavg\t\tmin\n");
   }
 
   /* dzpax */
 
   if (iout > 0 && Proc == 0) {
-    (void) printf("time the individual routines for dzpax\n");
+    (void) AZ_printf_out("time the individual routines for dzpax\n");
   }
 
   z1 = (double *) AZ_allocate(N * sizeof(double));
@@ -566,25 +566,25 @@ void AZ_time_kernals(int gN, double gnzeros, double val[], int indx[],
   AZ_free((void *) z3);
 
   if (Proc == 0) {              /* calculate and print results */
-    (void) printf("\n********** sparax ***********\n\n");
-    (void) printf("nonoverlapped\n");
-    (void) printf("\t\tmax\t\tavg\t\tmin\n");
+    (void) AZ_printf_out("\n********** sparax ***********\n\n");
+    (void) AZ_printf_out("nonoverlapped\n");
+    (void) AZ_printf_out("\t\tmax\t\tavg\t\tmin\n");
   }
 
   max = AZ_gmax_double(sprx_t, proc_config);
   avg = AZ_gavg_double(sprx_t, proc_config);
   min = AZ_gmin_double(sprx_t, proc_config);
-  if (Proc == 0) (void) printf("total_time\t%e\t%e\t%e\n", max, avg, min);
+  if (Proc == 0) (void) AZ_printf_out("total_time\t%e\t%e\t%e\n", max, avg, min);
 
   max = AZ_gmax_double(sprx_comp_t, proc_config);
   avg = AZ_gavg_double(sprx_comp_t, proc_config);
   min = AZ_gmin_double(sprx_comp_t, proc_config);
-  if (Proc == 0) (void) printf("comp_time\t%e\t%e\t%e\n", max, avg, min);
+  if (Proc == 0) (void) AZ_printf_out("comp_time\t%e\t%e\t%e\n", max, avg, min);
 
   max = AZ_gmax_double(sprx_comm_t, proc_config);
   avg = AZ_gavg_double(sprx_comm_t, proc_config);
   min = AZ_gmin_double(sprx_comm_t, proc_config);
-  if (Proc == 0) (void) printf("comm_time\t%e\t%e\t%e\n", max, avg, min);
+  if (Proc == 0) (void) AZ_printf_out("comm_time\t%e\t%e\t%e\n", max, avg, min);
 
   sprx_comp_t = AZ_gmax_double(sprx_comp_t, proc_config);
   sprx_t      = AZ_gmax_double(sprx_t, proc_config);
@@ -596,137 +596,137 @@ void AZ_time_kernals(int gN, double gnzeros, double val[], int indx[],
     Mflops_comm       = Mflop/sprx_t;
     Mflops_node_comm  = Mflops_comm/(double) Num_Proc;
 
-    (void) printf("computation Mflops: %e \n", Mflops_comp);
-    (void) printf("computation Mflops per node: %e \n", Mflops_node_comp);
-    (void) printf("comp & comm Mflops: %e \n", Mflops_comm);
-    (void) printf("comp & comm Mflops per node: %e \n\n", Mflops_node_comm);
+    (void) AZ_printf_out("computation Mflops: %e \n", Mflops_comp);
+    (void) AZ_printf_out("computation Mflops per node: %e \n", Mflops_node_comp);
+    (void) AZ_printf_out("comp & comm Mflops: %e \n", Mflops_comm);
+    (void) AZ_printf_out("comp & comm Mflops per node: %e \n\n", Mflops_node_comm);
   }
 
   /* statistics */
 
   if (Proc == 0) {
-    (void) printf("overlapped\n\t\tmax\t\tavg\t\tmin\n");
+    (void) AZ_printf_out("overlapped\n\t\tmax\t\tavg\t\tmin\n");
   }
 
   max = AZ_gmax_double(time, proc_config);
   min = AZ_gmin_double(time, proc_config);
   avg = AZ_gavg_double(time, proc_config);
-  if (Proc == 0) (void) printf("total_time\t%e\t%e\t%e\n", max, avg, min);
+  if (Proc == 0) (void) AZ_printf_out("total_time\t%e\t%e\t%e\n", max, avg, min);
 
   max = AZ_gmax_double(gather_t, proc_config);
   min = AZ_gmin_double(gather_t, proc_config);
   avg = AZ_gavg_double(gather_t, proc_config);
-  if (Proc == 0) (void) printf("gather_t\t%e\t%e\t%e\n", max, avg, min);
+  if (Proc == 0) (void) AZ_printf_out("gather_t\t%e\t%e\t%e\n", max, avg, min);
 
   max = AZ_gmax_double(write_t, proc_config);
   min = AZ_gmin_double(write_t, proc_config);
   avg = AZ_gavg_double(write_t, proc_config);
-  if (Proc == 0) (void) printf("write_t \t%e\t%e\t%e\n", max, avg, min);
+  if (Proc == 0) (void) AZ_printf_out("write_t \t%e\t%e\t%e\n", max, avg, min);
 
   max = AZ_gmax_double(sparax_overlap_internal_comp_t, proc_config);
   min = Az_gmin_double(sparax_overlap_internal_comp_t, proc_config);
   avg = AZ_gavg_double(sparax_overlap_internal_comp_t, proc_config);
-  if (Proc == 0) (void) printf("internal_t\t%e\t%e\t%e\n", max, avg, min);
+  if (Proc == 0) (void) AZ_printf_out("internal_t\t%e\t%e\t%e\n", max, avg, min);
 
   max = AZ_gmax_double(read_t, proc_config);
   min = Az_gmin_double(read_t, proc_config);
   avg = AZ_gavg_double(read_t, proc_config);
-  if (Proc == 0) (void) printf("read_t   \t%e\t%e\t%e\n", max, avg, min);
+  if (Proc == 0) (void) AZ_printf_out("read_t   \t%e\t%e\t%e\n", max, avg, min);
 
   max = AZ_gmax_double(sparax_overlap_border_comp_t, proc_config);
   min = AZ_gmin_double(sparax_overlap_border_comp_t, proc_config);
   avg = AZ_gavg_double(sparax_overlap_border_comp_t, proc_config);
-  if (Proc == 0) (void) printf("border_t\t%e\t%e\t%e\n", max, avg, min);
+  if (Proc == 0) (void) AZ_printf_out("border_t\t%e\t%e\t%e\n", max, avg, min);
 
   if (Proc == 0) {
     Mflops_comm      = Mflop/time_overlap_max;
     Mflops_node_comm = Mflops_comm/(double) Num_Proc;
-    (void) printf("comp & comm Mflops: %e \n", Mflops_comm);
-    (void) printf("comp & comm Mflops per node: %e \n\n", Mflops_node_comm);
+    (void) AZ_printf_out("comp & comm Mflops: %e \n", Mflops_comm);
+    (void) AZ_printf_out("comp & comm Mflops per node: %e \n\n", Mflops_node_comm);
 
-    (void) printf("Ratio of overlapped/nonoverlapped sparax times: %e\n\n",
+    (void) AZ_printf_out("Ratio of overlapped/nonoverlapped sparax times: %e\n\n",
                   time_overlap_max/sprx_t);
-    (void) printf("Ratio of overlapped/nonoverlapped read times: %e\n\n",
+    (void) AZ_printf_out("Ratio of overlapped/nonoverlapped read times: %e\n\n",
                   read_t_max/read_nonoverlap_t_max);
   }
 
   max = AZ_gmax_double(time, proc_config);
   if (time  ==  max) {
-    (void) printf("max time proc\n");
-    (void) printf("\nProc:%d\tNum_Neighbors: %d\n", Proc, data_org[AZ_N_neigh]);
-    (void) printf("total_time: %e\n", time);
-    (void) printf("gather_t  : %e\n", gather_t);
-    (void) printf("write_t   : %e\n", write_t);
-    (void) printf("internal_t: %e\n", sparax_overlap_internal_comp_t);
-    (void) printf("read_t    : %e\n", read_t);
-    (void) printf("border_t  : %e\n\n", sparax_overlap_border_comp_t);
+    (void) AZ_printf_out("max time proc\n");
+    (void) AZ_printf_out("\nProc:%d\tNum_Neighbors: %d\n", Proc, data_org[AZ_N_neigh]);
+    (void) AZ_printf_out("total_time: %e\n", time);
+    (void) AZ_printf_out("gather_t  : %e\n", gather_t);
+    (void) AZ_printf_out("write_t   : %e\n", write_t);
+    (void) AZ_printf_out("internal_t: %e\n", sparax_overlap_internal_comp_t);
+    (void) AZ_printf_out("read_t    : %e\n", read_t);
+    (void) AZ_printf_out("border_t  : %e\n\n", sparax_overlap_border_comp_t);
   }
 
   max = AZ_gmax_double(overall_t, proc_config);
   if (overall_t  ==  max) {
-    (void) printf("overall max time proc\n");
-    (void) printf("\nProc:%d\tNum_Neighbors: %d\n", Proc, data_org[AZ_N_neigh]);
-    (void) printf("overall total_time: %e\n", overall_t);
-    (void) printf("total_time: %e\n", time);
-    (void) printf("gather_t  : %e\n", gather_t);
-    (void) printf("write_t   : %e\n", write_t);
-    (void) printf("internal_t: %e\n", sparax_overlap_internal_comp_t);
-    (void) printf("read_t    : %e\n", read_t);
-    (void) printf("border_t  : %e\n\n", sparax_overlap_border_comp_t);
+    (void) AZ_printf_out("overall max time proc\n");
+    (void) AZ_printf_out("\nProc:%d\tNum_Neighbors: %d\n", Proc, data_org[AZ_N_neigh]);
+    (void) AZ_printf_out("overall total_time: %e\n", overall_t);
+    (void) AZ_printf_out("total_time: %e\n", time);
+    (void) AZ_printf_out("gather_t  : %e\n", gather_t);
+    (void) AZ_printf_out("write_t   : %e\n", write_t);
+    (void) AZ_printf_out("internal_t: %e\n", sparax_overlap_internal_comp_t);
+    (void) AZ_printf_out("read_t    : %e\n", read_t);
+    (void) AZ_printf_out("border_t  : %e\n\n", sparax_overlap_border_comp_t);
   }
   /*
     if (Proc == 0) {
-    (void) printf("cop overlapped\n");
-    (void) printf("\t\tmax\t\tavg\t\tmin\n");
+    (void) AZ_printf_out("cop overlapped\n");
+    (void) AZ_printf_out("\t\tmax\t\tavg\t\tmin\n");
     }
 
     max = AZ_gmax_double(sprx_overlap_cop_t, proc_config);
     min = AZ_gmin_double(sprx_overlap_cop_t, proc_config);
     avg = AZ_gavg_double(sprx_overlap_cop_t, proc_config);
-    if (Proc == 0) (void) printf("total_time\t%e\t%e\t%e\n", max, avg, min);
+    if (Proc == 0) (void) AZ_printf_out("total_time\t%e\t%e\t%e\n", max, avg, min);
 
     if (Proc == 0) {
     Mflops_comm = Mflop/max;
     Mflops_node_comm  = Mflops_comm/(double)Num_Proc;
-    (void) printf("comp & comm Mflops: %e \n", Mflops_comm);
-    (void) printf("comp & comm Mflops per node: %e \n\n", Mflops_node_comm);
+    (void) AZ_printf_out("comp & comm Mflops: %e \n", Mflops_comm);
+    (void) AZ_printf_out("comp & comm Mflops per node: %e \n\n", Mflops_node_comm);
     }
     */
   if (Proc == 0) {
-    (void) printf("\n********* exchange **********\n\n");
-    (void) printf("comm_time = %7.4e sec.\n", sprx_comm_t);
+    (void) AZ_printf_out("\n********* exchange **********\n\n");
+    (void) AZ_printf_out("comm_time = %7.4e sec.\n", sprx_comm_t);
 
-    (void) printf("\n************ dot ************\n\n");
+    (void) AZ_printf_out("\n************ dot ************\n\n");
     Mflop = (double) ntimes * 2.0 * ((double) gN * 1.0e-06);
 
-    (void) printf("comp_time = %7.4e sec.\n", dot_comp_t);
-    (void) printf("comm_time = %7.4e sec.\n", dot_comm_t);
+    (void) AZ_printf_out("comp_time = %7.4e sec.\n", dot_comp_t);
+    (void) AZ_printf_out("comm_time = %7.4e sec.\n", dot_comm_t);
 
     Mflops_comp      = Mflop/dot_comp_t;
     Mflops_node_comp = Mflops_comp/(double) Num_Proc;
     Mflops_comm      = Mflop/(dot_comm_t + dot_comp_t);
     Mflops_node_comm = Mflops_comm/(double) Num_Proc;
 
-    (void) printf("computation Mflops: %e \n", Mflops_comp);
-    (void) printf("computation Mflops per node: %e \n", Mflops_node_comp);
-    (void) printf("comp & comm Mflops: %e \n", Mflops_comm);
-    (void) printf("comp & comm Mflops per node: %e \n\n", Mflops_node_comm);
+    (void) AZ_printf_out("computation Mflops: %e \n", Mflops_comp);
+    (void) AZ_printf_out("computation Mflops per node: %e \n", Mflops_node_comp);
+    (void) AZ_printf_out("comp & comm Mflops: %e \n", Mflops_comm);
+    (void) AZ_printf_out("comp & comm Mflops per node: %e \n\n", Mflops_node_comm);
 
-    (void) printf("\n*********** daxpy ***********\n\n");
-    (void) printf("comp_time = %7.4e sec.\n", daxpy_comp_t);
+    (void) AZ_printf_out("\n*********** daxpy ***********\n\n");
+    (void) AZ_printf_out("comp_time = %7.4e sec.\n", daxpy_comp_t);
     Mflops_comp      = Mflop/daxpy_comp_t;
     Mflops_node_comp = Mflops_comp/(double) Num_Proc;
 
-    (void) printf("computation Mflops: %e \n", Mflops_comp);
-    (void) printf("computation Mflops per node: %e \n", Mflops_node_comp);
+    (void) AZ_printf_out("computation Mflops: %e \n", Mflops_comp);
+    (void) AZ_printf_out("computation Mflops per node: %e \n", Mflops_node_comp);
 
-    (void) printf("\n*********** dzpax ***********\n\n");
-    (void) printf("comp_time = %7.4e sec.\n", dzpax_comp_t);
+    (void) AZ_printf_out("\n*********** dzpax ***********\n\n");
+    (void) AZ_printf_out("comp_time = %7.4e sec.\n", dzpax_comp_t);
     Mflops_comp  = Mflop/dzpax_comp_t;
     Mflops_node_comp  = Mflops_comp/(double) Num_Proc;
 
-    (void) printf("computation Mflops: %e \n", Mflops_comp);
-    (void) printf("computation Mflops per node: %e \n", Mflops_node_comp);
+    (void) AZ_printf_out("computation Mflops: %e \n", Mflops_comp);
+    (void) AZ_printf_out("computation Mflops per node: %e \n", Mflops_node_comp);
   }
 
 } /* AZ_time_kernals */
@@ -937,7 +937,7 @@ double *dtmp;
     /* print the list */
 
     while (current != NULL) {
-      (void) printf("(%8d,%8d  %ld) ==> %s\n", current->type, current->size,
+      (void) AZ_printf_out("(%8d,%8d  %ld) ==> %s\n", current->type, current->size,
                       (long int) current->address, current->name);
       prev    = current;
       current = current->next;
@@ -981,10 +981,10 @@ double *dtmp;
                                                 aligned_size) );
 
       if (dtmp== NULL) {
-        (void) fprintf(stderr, "Error: Not enough space to allocate\n");
-        (void) fprintf(stderr, "       '%s' in memory_manage()\n", name);
-        (void) fprintf(stderr, "        Asked for %ld bytes. Perhaps\n", size);
-        (void) fprintf(stderr, "        a smaller problem should be run\n");
+        (void) AZ_printf_err( "Error: Not enough space to allocate\n");
+        (void) AZ_printf_err( "       '%s' in memory_manage()\n", name);
+        (void) AZ_printf_err( "        Asked for %ld bytes. Perhaps\n", size);
+        (void) AZ_printf_err( "        a smaller problem should be run\n");
         exit(-1);
       }
       temp = (struct mem_ptr *) &(dtmp[aligned_size/sizeof(double)]);
@@ -1122,9 +1122,9 @@ double *dtmp;
       current = current->next;
     }
     if (current == NULL) {
-      (void) fprintf(stderr, "memory_management error: %s with type %d not",
+      (void) AZ_printf_err( "memory_management error: %s with type %d not",
                      name, type);
-      (void) fprintf(stderr, " found during reallocation\n");
+      (void) AZ_printf_err( " found during reallocation\n");
       exit(-1);
     }
     if ( (action == AZ_REALLOC) && (current->special != 'N')) {
@@ -1153,9 +1153,9 @@ double *dtmp;
     dtmp    = (double *) AZ_realloc((char *) dtmp,(unsigned int) 
                                     aligned_str_mem+aligned_j+aligned_size);
     if (dtmp == NULL) {
-      (void) fprintf(stderr, "Error:Not enough memory for '%s'\n", name);
-      (void) fprintf(stderr, "      Asked for %ld bytes. Perhaps\n", size);
-      (void) fprintf(stderr, "      a smaller problem should be run\n");
+      (void) AZ_printf_err( "Error:Not enough memory for '%s'\n", name);
+      (void) AZ_printf_err( "      Asked for %ld bytes. Perhaps\n", size);
+      (void) AZ_printf_err( "      a smaller problem should be run\n");
       exit(-1);
     }
     temp = (struct mem_ptr *) &(dtmp[aligned_size/sizeof(double)]);
@@ -1193,9 +1193,9 @@ double *dtmp;
        current = current->next;
      }
      if (current == NULL) {
-       (void) fprintf(stderr, "memory_management error: %s with type %d not",
+       (void) AZ_printf_err( "memory_management error: %s with type %d not",
                       name, type);
-       (void) fprintf(stderr, " found while changing name\n");
+       (void) AZ_printf_err( " found while changing name\n");
        exit(-1);
      }
      sprintf(current->name,"%s",&(name[nn]));
@@ -1208,16 +1208,16 @@ double *dtmp;
   else if (action == AZ_LOOKFOR_PRINT) {
     /* first look for entry */
 
-    printf("Looking in system for possible mismatches\n");
+    AZ_printf_out("Looking in system for possible mismatches\n");
     while ( current != NULL) {
       if (current->name[0] == 'P') {
          if (current->type != type) {
-            printf("AZ_name/type does not match %d %d\n\n", current->type,type);
+            AZ_printf_out("AZ_name/type does not match %d %d\n\n", current->type,type);
             return(NULL);
          }
          i = strcmp(current->name,name);
          if (i != 0) {
-            printf("option keys do not match (%s) (%s)\n", current->name,name);
+            AZ_printf_out("option keys do not match (%s) (%s)\n", current->name,name);
          
             nn = 1;
             while ( (current->name[nn] != ' ' )&&(nn < (int) strlen(current->name))) {
@@ -1227,29 +1227,29 @@ double *dtmp;
             if ((current->name[nn] != ' ') || (name[nn] != ' ')) {
                sscanf(&(current->name[1]),"%d", &i);
                sscanf(&(name[1]),"%d", &j);
-               printf("found context with different matrix size (%d vs. %d)\n",
+               AZ_printf_out("found context with different matrix size (%d vs. %d)\n",
                       i,j);
                return(NULL);
             }
             i = (int) ( name[++nn] - '!');
             j = (int) ( current->name[nn] - '!');
             if (j != i) {
-               printf("==> check overlapping and reordering choices\n");
+               AZ_printf_out("==> check overlapping and reordering choices\n");
                return(NULL);
             }
             i = (int) ( name[++nn] - '!');
             j = (int) ( current->name[nn] - '!');
             if (j != i) {
-              printf("==> check preconditioner and subdomain solver choices\n");
+              AZ_printf_out("==> check preconditioner and subdomain solver choices\n");
               return(NULL);
             }
             i = (int) ( name[++nn] - '!');
             j = (int) ( current->name[nn] - '!');
             if (j != i) {
-              printf("==> check scaling choices\n");
+              AZ_printf_out("==> check scaling choices\n");
               return(NULL);
             }
-           printf("==> check AZ_ilut_fill, AZ_drop & AZ_graph_fill choices\n");
+           AZ_printf_out("==> check AZ_ilut_fill, AZ_drop & AZ_graph_fill choices\n");
            return(NULL);
          }
       }
@@ -1258,7 +1258,7 @@ double *dtmp;
     }
   }
   else {
-    (void) fprintf(stderr, "Error: Invalid action(%d) in AZ_manage_memory()\n",
+    (void) AZ_printf_err( "Error: Invalid action(%d) in AZ_manage_memory()\n",
                    action);
     exit(-1);
   }
@@ -1338,7 +1338,7 @@ void AZ_p_error(char *str, int proc)
 *******************************************************************************/
 
 {
-  if (proc == 0) (void) fprintf(stdout, "%s", str);
+  if (proc == 0) (void) AZ_printf_out( "%s", str);
 }
 
 /******************************************************************************/
@@ -1396,7 +1396,7 @@ int AZ_get_new_eps(double *epsilon, double recursive, double actual,
    }
 
   if (proc_config[AZ_node] == 0 && options[AZ_output]!=AZ_none)
-    (void) printf("\n\t\tTrying to reduce actual residual "
+    (void) AZ_printf_out("\n\t\tTrying to reduce actual residual "
                   "further\n\t\t     (recursive = %e, actual = %e)\n\n",
                   recursive, actual);
 
@@ -1564,113 +1564,113 @@ void AZ_terminate_status_print(int situation, int iter, double status[],
     (void) sprintf(solver_name, "lu");
     break;
   default:
-    (void) fprintf(stderr,
+    (void) AZ_printf_err(
                    "Error: invalid solver flag %d passed to terminate_status\n",
                    solver_flag);
   exit(-1);
   }
 
   if (proc_config[AZ_node] == 0) {
-    (void) fprintf(stderr, "\n\n");
-    (void) fprintf(stderr,"\t*************************************************"
+    (void) AZ_printf_err( "\n\n");
+    (void) AZ_printf_err("\t*************************************************"
                    "**************\n\n");
 
     switch (situation) {
     case AZ_ill_cond:
-      (void) fprintf(stderr, "\tWarning: the GMRES Hessenberg matrix is "
+      (void) AZ_printf_err( "\tWarning: the GMRES Hessenberg matrix is "
                      "ill-conditioned.  This may \n\tindicate that the "
                      "application matrix is singular. In this case, GMRES\n"
                      "\tmay have a least-squares solution.\n");
     break;
     case AZ_breakdown:
       if (!solver_flag) {
-        (void) fprintf(stderr, "\tWarning: direction vector is no longer "
+        (void) AZ_printf_err( "\tWarning: direction vector is no longer "
                        "A-conjugate \n\tto previous vector but solution has "
                        "not converged.\n");
       }
       else {
-        (void) fprintf(stderr, "\tWarning: a breakdown in this "
+        (void) AZ_printf_err( "\tWarning: a breakdown in this "
                        "method\n\thas occurred and solution has not "
                        "converged.\n");
       }
       break;
 
     case AZ_loss:
-      (void) fprintf(stderr, "\tWarning: recursive residual indicates "
+      (void) AZ_printf_err( "\tWarning: recursive residual indicates "
                      "convergence\n\tthough the true residual is too large.\n");
-      (void) fprintf(stderr, "\n\tSometimes this occurs when storage is ");
-      (void) fprintf(stderr, "overwritten (e.g. the\n\tsolution vector was not ");
-      (void) fprintf(stderr, "dimensioned large enough to hold\n\texternal ");
-      (void) fprintf(stderr, "variables). Other times, this is due to roundoff. ");
-      (void) fprintf(stderr, "In\n\tthis case, the solution has either ");
-      (void) fprintf(stderr, "converged to the accuracy\n\tof the machine or ");
-      (void) fprintf(stderr, "intermediate roundoff errors ");
-      (void) fprintf(stderr, "occurred\n\tpreventing full convergence. In the ");
-      (void) fprintf(stderr, "latter case, try solving\n\tagain using the new ");
-      (void) fprintf(stderr, "solution as an initial guess.\n");
+      (void) AZ_printf_err( "\n\tSometimes this occurs when storage is ");
+      (void) AZ_printf_err( "overwritten (e.g. the\n\tsolution vector was not ");
+      (void) AZ_printf_err( "dimensioned large enough to hold\n\texternal ");
+      (void) AZ_printf_err( "variables). Other times, this is due to roundoff. ");
+      (void) AZ_printf_err( "In\n\tthis case, the solution has either ");
+      (void) AZ_printf_err( "converged to the accuracy\n\tof the machine or ");
+      (void) AZ_printf_err( "intermediate roundoff errors ");
+      (void) AZ_printf_err( "occurred\n\tpreventing full convergence. In the ");
+      (void) AZ_printf_err( "latter case, try solving\n\tagain using the new ");
+      (void) AZ_printf_err( "solution as an initial guess.\n");
       break;
 
     case AZ_maxits:
-      (void) fprintf(stderr, "\tWarning: maximum number of iterations "
+      (void) AZ_printf_err( "\tWarning: maximum number of iterations "
                      "exceeded\n\twithout convergence\n");
     break;
 
     default:
-      (void) fprintf(stderr, "\tError: improper code passed from solver %s\n\n",
+      (void) AZ_printf_err( "\tError: improper code passed from solver %s\n\n",
                      solver_name);
-    (void) fprintf(stderr,"\t***********************************************%s",
+    (void) AZ_printf_err("\t***********************************************%s",
                    "**********\n\n");
     exit(-1);
     }
 
-    (void) fprintf(stdout,"\n\tSolver:\t\t\t%s\n", solver_name);
-    (void) fprintf(stdout,"\tnumber of iterations:\t%d\n\n", iter);
+    (void) AZ_printf_out("\n\tSolver:\t\t\t%s\n", solver_name);
+    (void) AZ_printf_out("\tnumber of iterations:\t%d\n\n", iter);
 
     if (actual_residual != -1.0)
-      (void) fprintf(stdout,"\tActual residual = %11.4e",actual_residual);
+      (void) AZ_printf_out("\tActual residual = %11.4e",actual_residual);
 
-    (void) fprintf(stdout,"\tRecursive residual = %11.4e\n\n",rec_residual);
-    (void) fprintf(stdout,"\tCalculated Norms\t\t\t\tRequested Norm\n");
-    (void) fprintf(stdout,"\t--------------------------------------------");
-    (void) fprintf(stdout,"\t--------------\n\n");
+    (void) AZ_printf_out("\tRecursive residual = %11.4e\n\n",rec_residual);
+    (void) AZ_printf_out("\tCalculated Norms\t\t\t\tRequested Norm\n");
+    (void) AZ_printf_out("\t--------------------------------------------");
+    (void) AZ_printf_out("\t--------------\n\n");
 
     switch (conv_flag) {
     case AZ_noscaled:
-      (void) fprintf(stdout, "\t||r||_2 :\t\t%e\t%e\n", scaled_r_norm,
+      (void) AZ_printf_out( "\t||r||_2 :\t\t%e\t%e\n", scaled_r_norm,
                      eps);
     break;
     case AZ_r0:
-      (void) fprintf(stdout, "\t||r||_2 / ||r0||_2:\t\t%e\t%e\n", scaled_r_norm,
+      (void) AZ_printf_out( "\t||r||_2 / ||r0||_2:\t\t%e\t%e\n", scaled_r_norm,
                      eps);
     break;
     case AZ_rhs:
-      (void) fprintf(stdout, "\t||r||_2 / ||b||_2:\t\t%e\t%e\n", scaled_r_norm,
+      (void) AZ_printf_out( "\t||r||_2 / ||b||_2:\t\t%e\t%e\n", scaled_r_norm,
                      eps);
     break;
     case AZ_Anorm:
-      (void) fprintf(stdout, "\t||r||_2 / ||A||_inf:\t\t%e\t%e\n",
+      (void) AZ_printf_out( "\t||r||_2 / ||A||_inf:\t\t%e\t%e\n",
                      scaled_r_norm, eps);
     break;
     case AZ_sol:
-      (void) fprintf(stdout, "\t\t||r||_inf\n");
-    (void) fprintf(stdout, "\t----------------------------- : %e\t%e\n",
+      (void) AZ_printf_out( "\t\t||r||_inf\n");
+    (void) AZ_printf_out( "\t----------------------------- : %e\t%e\n",
                    scaled_r_norm, eps);
-    (void) fprintf(stdout, "\t||A||_inf ||x||_1 + ||b||_inf\n");
+    (void) AZ_printf_out( "\t||A||_inf ||x||_1 + ||b||_inf\n");
     break;
     case AZ_expected_values:
     case AZ_weighted:
-      (void) fprintf(stdout, "\t||r||_WRMS:\t\t%e\t%e\n", scaled_r_norm, eps);
+      (void) AZ_printf_out( "\t||r||_WRMS:\t\t%e\t%e\n", scaled_r_norm, eps);
     break;
     case AZTECOO_conv_test:
-      (void) fprintf(stdout, "\tUser-defined AztecOO_StatusTest\n");
+      (void) AZ_printf_out( "\tUser-defined AztecOO_StatusTest\n");
     break;
     default:
-      (void) fprintf(stderr, "terminate_status: ERROR: convergence test %d "
+      (void) AZ_printf_err( "terminate_status: ERROR: convergence test %d "
                      "not implemented\n", conv_flag);
     exit(-1);
     }
 
-    (void) fprintf(stderr,"\n\t*********************************************"
+    (void) AZ_printf_err("\n\t*********************************************"
                    "******************\n\n");
   }
 
@@ -1853,7 +1853,7 @@ void AZ_print_it() {
 
    current = widget_head;
    while (current != NULL) {
-      printf("(%d,%d,%u)\n",current->order, current->size, current->address);
+      AZ_printf_out("(%d,%d,%u)\n",current->order, current->size, current->address);
       current = current->next;
    }
 }
@@ -1902,7 +1902,7 @@ char *AZ_allocate(unsigned int isize) {
 
     widget->order = allo_count;
 if (size == 7*sizeof(double) ) {
-printf("allocating 0 space %u (%d)\n",ptr,size);
+AZ_printf_out("allocating 0 space %u (%d)\n",ptr,size);
  i = 0;
  size = 1/i;
  widget = NULL;
@@ -1958,7 +1958,7 @@ void AZ_free(void *vptr) {
     ptr = (char *) vptr;
     free_count++;
     if (ptr == NULL) {
-       printf("Trying to free a NULL ptr\n");
+       AZ_printf_out("Trying to free a NULL ptr\n");
 i = 0;
 size = 1/i;
 widget_head = NULL;
@@ -1977,7 +1977,7 @@ widget_head = NULL;
           else { prev = current; current = current->next; }
        }
        if (current == NULL) {
-          printf("the pointer %u was not found and thus can not be freed.\n",
+          AZ_printf_out("the pointer %u was not found and thus can not be freed.\n",
                   ptr);
           exit(1);
        }
@@ -1988,7 +1988,7 @@ widget_head = NULL;
 
            for (i = 0 ; i < 3*sizeof(double)/sizeof(char) ; i++ ) {
               if (header_start[i] != 'x') {
-                 printf("header is corrupted for %u (%d,%d)\n",ptr,
+                 AZ_printf_out("header is corrupted for %u (%d,%d)\n",ptr,
                          current->size,current->order);
                  size =  0;
                  size = 1/size;
@@ -1999,7 +1999,7 @@ widget_head = NULL;
            /* check to see if the sizes are different */
 
            if (current->size != size) {
-              printf("Freeing %u whose size has changed (%d,%d)\n",
+              AZ_printf_out("Freeing %u whose size has changed (%d,%d)\n",
                      current->address,current->size,size);
               exit(1);
            }
@@ -2012,7 +2012,7 @@ widget_head = NULL;
 
            while (header_start <= header_end) {
               if ( *header_start != 'x') {
-                 printf("trailer is corrupted for %u (%d,%d)\n",
+                 AZ_printf_out("trailer is corrupted for %u (%d,%d)\n",
                          ptr, size,
                          current->order);
                  size =  0;
@@ -2044,7 +2044,7 @@ char *AZ_realloc(void *vptr, unsigned int new_size) {
 
     ptr = (char *) vptr;
     if (ptr == NULL) {
-       printf("Trying to realloc a NULL ptr\n");
+       AZ_printf_out("Trying to realloc a NULL ptr\n");
        exit(1);
     }
     else {
@@ -2062,7 +2062,7 @@ data1 = ptr;
           else { prev = current; current = current->next; }
        }
        if (current == NULL) {
-          printf("the pointer %u was not found and thus can not be realloc.\n",
+          AZ_printf_out("the pointer %u was not found and thus can not be realloc.\n",
                   ptr);
           exit(1);
        }
@@ -2073,7 +2073,7 @@ data1 = ptr;
 
            for (i = 0 ; i < 3*sizeof(double)/sizeof(char) ; i++ ) {
               if (header_start[i] != 'x') {
-                 printf("realloc header is corrupted for %u (%d,%d)\n",ptr,
+                 AZ_printf_out("realloc header is corrupted for %u (%d,%d)\n",ptr,
                          current->size,current->order);
                  size =  0;
                  size = 1/size;
@@ -2126,9 +2126,9 @@ data2 = (char *) &(new_dptr[4]);
 
 void spit_it_out()
 {
-printf("malloc/free %d %d\n",allo_count,free_count);
+AZ_printf_out("malloc/free %d %d\n",allo_count,free_count);
 if (allo_count != free_count) 
-printf("WHOA XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\n");
+AZ_printf_out("WHOA XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\n");
 AZ_print_it();
 }
 
@@ -2153,8 +2153,8 @@ extern void spit_it_out(void);
 void spit_it_out()
 {
 if (allo_count != free_count) 
-   printf("malloc/free %d %d XXXXXXXX\n",allo_count,free_count);
-else printf("malloc/free %d %d\n",allo_count,free_count);
+   AZ_printf_out("malloc/free %d %d XXXXXXXX\n",allo_count,free_count);
+else AZ_printf_out("malloc/free %d %d\n",allo_count,free_count);
 }
 
 #endif
@@ -2166,7 +2166,7 @@ void AZ_perror(char *string)
 {
 /* Print out 'string' and exit */
 
-   (void) fprintf(stderr,"%s",string);
+   (void) AZ_printf_err("%s",string);
    exit(-1);
 }
 
@@ -2261,7 +2261,7 @@ int AZ_set_solver_parameters(double *params, int *options, AZ_MATRIX *A,
   name--;
 
   if ((options[AZ_conv] == AZ_weighted) || (options[AZ_conv] == AZ_expected_values)) {
-     fprintf(stderr,"Sorry weighted norm can not be used with this routine.\n");
+     AZ_printf_err("Sorry weighted norm can not be used with this routine.\n");
      exit(1);
   }
 
@@ -2339,8 +2339,8 @@ void AZ_recover_sol_params(int instance, int **sub_options, double **sub_params,
   sprintf(str,"sol_param %d",instance);
   tparams = AZ_manage_memory(size, AZ_ALLOC, -777, str, &i);
   if (i == AZ_NEW_ADDRESS) {
-     fprintf(stderr,"Error:\tSolver parameters corresponding to ");
-     fprintf(stderr,"the internal solver = %d\n\twere not found.\n",
+     AZ_printf_err("Error:\tSolver parameters corresponding to ");
+     AZ_printf_err("the internal solver = %d\n\twere not found.\n",
              instance);
      exit(1);
   }
@@ -2387,7 +2387,7 @@ void AZ_set_precond_print_string(struct AZ_PREC_STRUCT *precond, const char str[
    if ( precond->print_string != NULL) AZ_free( precond->print_string);
    precond->print_string = (char *) AZ_allocate( (strlen(str)+1)*sizeof(char));
    if (precond->print_string == NULL) {
-      printf("AZ_set_precond_print_string: Not enough space to allocate string\n");
+      AZ_printf_out("AZ_set_precond_print_string: Not enough space to allocate string\n");
       exit(1);
    }
    sprintf(precond->print_string,"%s",str);
@@ -2398,7 +2398,7 @@ void AZ_set_matrix_print_string(AZ_MATRIX *Amat, const char str[])
    if ( Amat->print_string != NULL) AZ_free( Amat->print_string);
    Amat->print_string = (char *) AZ_allocate( (strlen(str)+1)*sizeof(char));
    if (Amat->print_string == NULL) {
-      printf("AZ_set_matrix_print_string: Not enough space to allocate string\n");
+      AZ_printf_out("AZ_set_matrix_print_string: Not enough space to allocate string\n");
       exit(1);
    }
    sprintf(Amat->print_string,"%s",str);
@@ -2415,7 +2415,7 @@ AZ_PRECOND *AZ_precond_create(AZ_MATRIX *Pmat, void (*prec_fun)(
 
    precond = (AZ_PRECOND *) AZ_allocate(sizeof(AZ_PRECOND));
    if (precond == NULL) {
-      printf("Error: Not enough space in AZ_precond_create().\n");
+      AZ_printf_out("Error: Not enough space in AZ_precond_create().\n");
       exit(1);
    }
    precond->Pmat          = Pmat;
@@ -2463,7 +2463,7 @@ AZ_MATRIX *AZ_matrix_create(int local)
 
    Amat     = (AZ_MATRIX *) AZ_allocate(sizeof(AZ_MATRIX));
    if (Amat == NULL) {
-      printf("Error: Not enough space in AZ_matrix_create().\n");
+      AZ_printf_out("Error: Not enough space in AZ_matrix_create().\n");
       exit(1);
    }
    AZ_matrix_init(Amat, local);
@@ -2526,7 +2526,7 @@ void AZ_matrix_init(AZ_MATRIX *Amat, int local)
 
    Amat     = (AZ_MATRIX *) AZ_allocate(sizeof(AZ_MATRIX));
    if (Amat == NULL) {
-      printf("Error: Not enough space in AZ_matrix_create().\n");
+      AZ_printf_out("Error: Not enough space in AZ_matrix_create().\n");
       exit(1);
    }
 */
@@ -2636,7 +2636,7 @@ void AZ_set_MATFREE(AZ_MATRIX *Amat, void *data,
    int    *data_org;
 
    if ( Amat->getrow != NULL) {
-      printf("Error: AZ_set_MATFREE must be called before AZ_set_MATFREE_getrow\n");
+      AZ_printf_out("Error: AZ_set_MATFREE must be called before AZ_set_MATFREE_getrow\n");
       exit(1);
    }
    Amat->N_nz  = -1;
@@ -2646,7 +2646,7 @@ void AZ_set_MATFREE(AZ_MATRIX *Amat, void *data,
       Amat->must_free_data_org = 1;
       data_org = (int  *) AZ_allocate(AZ_COMMLESS_DATA_ORG_SIZE*sizeof(int));
       if (data_org == NULL) {
-         printf("Error: Not enough space in AZ_create_matrix().\n");
+         AZ_printf_out("Error: Not enough space in AZ_create_matrix().\n");
          exit(1);
       }
       Amat->data_org = data_org;
@@ -2741,13 +2741,13 @@ AZ_MATRIX *AZ_create_matrix(int local, int additional, int matrix_type,
    name++;
    Amat     = (AZ_MATRIX *) AZ_allocate(sizeof(AZ_MATRIX));
    if (Amat == NULL) {
-      printf("Error: Not enough space in AZ_create_matrix().\n");
+      AZ_printf_out("Error: Not enough space in AZ_create_matrix().\n");
       exit(1);
    }
    if (idata_org == AZ_NOT_USING_AZTEC_MATVEC) {
       data_org = (int  *) AZ_allocate(AZ_COMMLESS_DATA_ORG_SIZE*sizeof(int));
       if (data_org == NULL) {
-         printf("Error: Not enough space in AZ_create_matrix().\n");
+         AZ_printf_out("Error: Not enough space in AZ_create_matrix().\n");
          exit(1);
       }
  /* mheroux change */
@@ -3032,7 +3032,7 @@ void AZ_loc_avg(AZ_MATRIX *Amat, double r[], double newr[], int Nfixed,
       }
    }
    else {
-      printf("Smoothing can only be done with MSR or VBR matrices\n");
+      AZ_printf_out("Smoothing can only be done with MSR or VBR matrices\n");
       exit(1);
    }
 
@@ -3041,7 +3041,7 @@ void AZ_loc_avg(AZ_MATRIX *Amat, double r[], double newr[], int Nfixed,
    flag = 0;
    for (i = 0; i < Nfixed; i++ ) {
       if ((flag==0) && (fabs(r[fixed_pts[i]]) > 1.0e-9)) {
-         printf("boundary not zero %e\n",r[fixed_pts[i]]);
+         AZ_printf_out("boundary not zero %e\n",r[fixed_pts[i]]);
          flag = 1;
       }
       newr[fixed_pts[i]] = r[fixed_pts[i]];
@@ -3059,16 +3059,16 @@ void AZ_matfree_Nnzs(AZ_MATRIX *Amat)
    max_length = 0;
    N     = data_org[AZ_N_internal] + data_org[AZ_N_border];
    if ( (Amat->getrow == NULL) && (N != 0) ) {
-      printf("Error: Only matrices with getrow() defined via ");
-      printf("AZ_set_MATFREE_getrow(...)\n       can compute");
-      printf(" their nonzeros information.\n");
+      AZ_printf_out("Error: Only matrices with getrow() defined via ");
+      AZ_printf_out("AZ_set_MATFREE_getrow(...)\n       can compute");
+      AZ_printf_out(" their nonzeros information.\n");
       exit(1);
    }
    space = 30;
    cols    = (int    *) AZ_allocate(sizeof(int)*space);
    val    = (double *) AZ_allocate(sizeof(double)*space);
    if (val == NULL) {
-      printf("AZ_matfree_Nnzs: Out of space. Requested %d.\n",space);
+      AZ_printf_out("AZ_matfree_Nnzs: Out of space. Requested %d.\n",space);
       exit(1);
    }
   
@@ -3083,7 +3083,7 @@ void AZ_matfree_Nnzs(AZ_MATRIX *Amat)
             cols   = (int    *) AZ_allocate(sizeof(int)*space);
             val    = (double *) AZ_allocate(sizeof(double)*space);
             if (val  == NULL) {
-               printf("AZ_matfree_Nnzs: Out of space. Requested %d.\n",space);
+               AZ_printf_out("AZ_matfree_Nnzs: Out of space. Requested %d.\n",space);
                exit(1);
             }
          }
@@ -3124,14 +3124,14 @@ void AZ_matfree_2_msr(AZ_MATRIX *Amat, double *val, int *bindx, int N_nz)
    data_org = Amat->data_org;
    N     = data_org[AZ_N_internal] + data_org[AZ_N_border];
    if ( (Amat->getrow == NULL) && (N != 0) ) {
-      printf("Error: Only matrices with getrow() defined via ");
-      printf("AZ_set_MATFREE_getrow(...) can be converted to MSR \n");
+      AZ_printf_out("Error: Only matrices with getrow() defined via ");
+      AZ_printf_out("AZ_set_MATFREE_getrow(...) can be converted to MSR \n");
       exit(1);
    }
    if (N_nz < Amat->N_nz) {
-      printf("AZ_matfree_2_msr: Something is wrong. The number of nonzeros\n");
-      printf("    allocated for preconditioner is less than the number of\n");
-      printf("    nonzeros in matrix (%d vs. %d)!\n",N_nz, Amat->N_nz);
+      AZ_printf_out("AZ_matfree_2_msr: Something is wrong. The number of nonzeros\n");
+      AZ_printf_out("    allocated for preconditioner is less than the number of\n");
+      AZ_printf_out("    nonzeros in matrix (%d vs. %d)!\n",N_nz, Amat->N_nz);
       exit(1);
    }
   
@@ -3142,9 +3142,9 @@ void AZ_matfree_2_msr(AZ_MATRIX *Amat, double *val, int *bindx, int N_nz)
       flag = Amat->getrow(&(bindx[nz_ptr]), &(val[nz_ptr]), &length, Amat, 1, 
                    &i, N_nz);
       if (flag == 0) {
-         printf("AZ_matfree_2_msr: Something is wrong. The number of nonzeros");
-         printf("in matrix is\n   greater than the number of nonzeros");
-         printf("recorded in Amat->N_nz (%d)\n",Amat->N_nz);
+         AZ_printf_out("AZ_matfree_2_msr: Something is wrong. The number of nonzeros");
+         AZ_printf_out("in matrix is\n   greater than the number of nonzeros");
+         AZ_printf_out("recorded in Amat->N_nz (%d)\n",Amat->N_nz);
          exit(1);
       }
       /* move diagonal to proper location */
@@ -3245,7 +3245,7 @@ int  AZ_VBR_getrow(int columns[], double values[], int row_lengths[],
 }
 void AZ__MPI_comm_space_ok() {
    if (sizeof(MPI_AZComm)/sizeof(int) > SIZEOF_MPI_AZCOMM) {
-      printf("AZ__MPI_comm_space_ok: Recompile all Aztec files with -DSIZEOF_MPI_AZCOMM=%d\n",(int) (sizeof(MPI_AZComm)/sizeof(int) + 1));
+      AZ_printf_out("AZ__MPI_comm_space_ok: Recompile all Aztec files with -DSIZEOF_MPI_AZCOMM=%d\n",(int) (sizeof(MPI_AZComm)/sizeof(int) + 1));
       exit(1);
    }
 }
@@ -3339,22 +3339,22 @@ void AZ_space_for_kvecs(int request, int **kvec_sizes, double ***saveme,
    if (request == AZ_OLD_ADDRESS) {
      if ((*kvec_sizes)[AZ_Nkept] > (*kvec_sizes)[AZ_Nspace]) {
          if (proc == 0) 
-            printf("Number of krylov vectors exceeds space for krylov vectors?\n");
+            AZ_printf_out("Number of krylov vectors exceeds space for krylov vectors?\n");
          exit(1);
      }
      if ((*kvec_sizes)[AZ_Nspace] == 0) {
          if ((proc == 0) && (options[AZ_output] != AZ_none)) {
-            printf("AZ_kvec_space:  No previous krylov vectors available ");
-            printf("for subspace solution.\n");
-            printf("  - Do you want options[AZ_apply_kvecs] set to AZ_APPLY?\n");
-            printf("  - Was options[AZ_keep_info] = 1 on previous solve?\n");
-            printf("  - Was options[AZ_keep_kvecs] > 0 on previous solve?\n");
+            AZ_printf_out("AZ_kvec_space:  No previous krylov vectors available ");
+            AZ_printf_out("for subspace solution.\n");
+            AZ_printf_out("  - Do you want options[AZ_apply_kvecs] set to AZ_APPLY?\n");
+            AZ_printf_out("  - Was options[AZ_keep_info] = 1 on previous solve?\n");
+            AZ_printf_out("  - Was options[AZ_keep_kvecs] > 0 on previous solve?\n");
          }
      }
      else if ((*kvec_sizes)[AZ_Nkept] == 0) {
          if ((proc == 0) && (options[AZ_output] != AZ_none)) {
-            printf("AZ_kvec_space: Space allocated but no previous Krylov "); 
-            printf("vectors were kept.\n");
+            AZ_printf_out("AZ_kvec_space: Space allocated but no previous Krylov "); 
+            AZ_printf_out("vectors were kept.\n");
          }
      }
    }   
@@ -3388,7 +3388,7 @@ int AZ_compare_update_vs_soln(int N, double update_norm, double alpha, double p[
 
   if (t1 > t2*update_reduction) {
      if ((output_flag != AZ_none) && *first_time && (proc_config[AZ_node] == 0) ) {
-        printf("Update too large, convergence deferred: ||update|| = %10.3e ||sol|| = %10.3e\n",
+        AZ_printf_out("Update too large, convergence deferred: ||update|| = %10.3e ||sol|| = %10.3e\n",
                 t1, t2);
       }
       converged   = AZ_FALSE;
@@ -3414,7 +3414,7 @@ struct AZ_SCALING *AZ_scale_matrix_only(AZ_MATRIX *Amat, int options[],
    size = data_org[AZ_N_internal]+data_org[AZ_N_border]+data_org[AZ_N_external];
    temp = (double *) malloc(sizeof(double)*size);
    if (temp == NULL) {
-      printf("AZ_scale_matrix_only: Not enough space\n"); exit(1);
+      AZ_printf_out("AZ_scale_matrix_only: Not enough space\n"); exit(1);
    }
    for (i = 0; i < size; i++) temp[i] = 0.0;
    AZ_scale_f(AZ_SCALE_MAT_RHS_SOL, Amat, options, temp, temp, proc_config,
@@ -3498,7 +3498,7 @@ void AZ_restore_unreordered_bindx(int bindx[], double val[], int update[],
   /* first check that we have an MSR matrix */
 
   if ( data_org[AZ_matrix_type] != AZ_MSR_MATRIX) {
-    fprintf(stderr,"AZ_restore_unreordered_bindx: Error! Only MSR matrices can be restored.\n");
+    AZ_printf_err("AZ_restore_unreordered_bindx: Error! Only MSR matrices can be restored.\n");
     exit(1);
   }
 
@@ -3506,9 +3506,9 @@ void AZ_restore_unreordered_bindx(int bindx[], double val[], int update[],
 
   for (i = 0; i < N; i++) {
     if (update_index[i] != i) {
-      fprintf(stderr,"AZ_restore_unreordered_bindx: Only unreordered matrices can be restored.\n");
-      fprintf(stderr,"                              Change AZ_ALL in the file 'az_tools.c'\n");
-      fprintf(stderr,"                              during the AZ_order_ele() invokation within 'AZ_transform()' to AZ_EXTERNS'.\n");
+      AZ_printf_err("AZ_restore_unreordered_bindx: Only unreordered matrices can be restored.\n");
+      AZ_printf_err("                              Change AZ_ALL in the file 'az_tools.c'\n");
+      AZ_printf_err("                              during the AZ_order_ele() invokation within 'AZ_transform()' to AZ_EXTERNS'.\n");
       exit(1);
     }
   }
@@ -3517,7 +3517,7 @@ void AZ_restore_unreordered_bindx(int bindx[], double val[], int update[],
 
   rev_extern_ind = (int *) AZ_allocate(sizeof(int)*(Nghost+1));
   if (rev_extern_ind == NULL) {
-    fprintf(stderr,"AZ_restore_unreordered_bindx: Not enough space\n");
+    AZ_printf_err("AZ_restore_unreordered_bindx: Not enough space\n");
     exit(1);
   }
 
@@ -3597,7 +3597,7 @@ void AZ_global2local(int data_org[], int bindx[], int update[], int update_index
   N_update = data_org[AZ_N_internal] + data_org[AZ_N_border];
   N_external = data_org[AZ_N_external];
   if ( data_org[AZ_matrix_type] != AZ_MSR_MATRIX) {
-    fprintf(stderr,"AZ_restore_unreordered_bindx: Error! Only MSR matrices can be restored.\n");
+    AZ_printf_err("AZ_restore_unreordered_bindx: Error! Only MSR matrices can be restored.\n");
     exit(1);
   }
 
@@ -3605,9 +3605,9 @@ void AZ_global2local(int data_org[], int bindx[], int update[], int update_index
 
   for (i = 0; i < N_update; i++) {
     if (update_index[i] != i) {
-      fprintf(stderr,"AZ_restore_unreordered_bindx: Only unreordered matrices can be restored.\n");
-      fprintf(stderr,"                              Change AZ_ALL in the file 'az_tools.c'\n");
-      fprintf(stderr,"                              during the AZ_order_ele() invokation within 'AZ_transform()' to AZ_EXTERNS'.\n");
+      AZ_printf_err("AZ_restore_unreordered_bindx: Only unreordered matrices can be restored.\n");
+      AZ_printf_err("                              Change AZ_ALL in the file 'az_tools.c'\n");
+      AZ_printf_err("                              during the AZ_order_ele() invokation within 'AZ_transform()' to AZ_EXTERNS'.\n");
       exit(1);
     }
   }
@@ -3616,7 +3616,7 @@ void AZ_global2local(int data_org[], int bindx[], int update[], int update_index
 
   bins = (int *) AZ_allocate((N_update / 4 + 10)*sizeof(int));
   if  (bins == NULL) {
-    (void) fprintf(stderr, "ERROR: Not enough temp space\n");
+    (void) AZ_printf_err( "ERROR: Not enough temp space\n");
     exit(-1);
   }
 
@@ -3637,7 +3637,7 @@ void AZ_global2local(int data_org[], int bindx[], int update[], int update_index
        k = AZ_find_index(bindx[j], externs,N_external);
        if (k != -1) bindx[j] = extern_index[k];
        else {
-        (void) fprintf(stderr, "ERROR: column number not found %d\n",
+        (void) AZ_printf_err( "ERROR: column number not found %d\n",
                        bindx[j]);
         exit(-1);
       }

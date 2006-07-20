@@ -122,9 +122,9 @@ int AZ_check_input(int data_org[], int options[], double params[],
 
       /* set blocks information for msr applications */
 
-      (void) fprintf(stdout, "Warning: Setting the number of blocks equal\n");
-      (void) fprintf(stdout, "         to the number of unknowns for this\n");
-      (void) fprintf(stdout, "         MSR application.                  \n");
+      (void) AZ_printf_out( "Warning: Setting the number of blocks equal\n");
+      (void) AZ_printf_out( "         to the number of unknowns for this\n");
+      (void) AZ_printf_out( "         MSR application.                  \n");
       data_org[AZ_N_int_blk]  = data_org[AZ_N_internal];
       data_org[AZ_N_bord_blk] = data_org[AZ_N_border];
       data_org[AZ_N_ext_blk]  = data_org[AZ_N_external];
@@ -210,51 +210,51 @@ int AZ_check_input(int data_org[], int options[], double params[],
         data_org[AZ_send_length + i] < 0         ) return -24;
     else {
       if (data_org[AZ_send_length + i] > data_org[AZ_N_border]) {
-        (void) fprintf(stderr, "WARNING: Processor %d sends more than just its \
+        (void) AZ_printf_err( "WARNING: Processor %d sends more than just its \
 border points implying that the\n         matrix sparsity pattern is not \
 symmetric.\n", 
                        proc_config[AZ_node]);
 /*
-        (void) fprintf(stderr, "WARNING: Processor %d sends more than just ",
+        (void) AZ_printf_err( "WARNING: Processor %d sends more than just ",
                        proc_config[AZ_node]);
-        (void) fprintf(stderr,"its border points implying that the matrix\n");
-        (void) fprintf(stderr,"         sparsity pattern is not symmetric.\n");
+        (void) AZ_printf_err("its border points implying that the matrix\n");
+        (void) AZ_printf_err("         sparsity pattern is not symmetric.\n");
 */
       }
     }
   }
 
   if ( (options[AZ_output] > 0) && proc_config[AZ_node] == 0) {
-    (void) fprintf(stdout,"\n======================================="
+    (void) AZ_printf_out("\n======================================="
                    "========================================\n");
-    (void) fprintf(stdout,"%sSetup information on processor 0\n\n", yo);
-    (void) fprintf(stdout,"\tsolver:\t\t\t\t\t%d\n", options[AZ_solver]);
-    (void) fprintf(stdout,"\tconvergence flag:\t\t\t%d\n", options[AZ_conv]);
-    (void) fprintf(stdout,"\tmaximum iterations:\t\t\t%d\n",
+    (void) AZ_printf_out("%sSetup information on processor 0\n\n", yo);
+    (void) AZ_printf_out("\tsolver:\t\t\t\t\t%d\n", options[AZ_solver]);
+    (void) AZ_printf_out("\tconvergence flag:\t\t\t%d\n", options[AZ_conv]);
+    (void) AZ_printf_out("\tmaximum iterations:\t\t\t%d\n",
                    options[AZ_max_iter]);
-    (void) fprintf(stdout,"\treordering:    \t\t\t\t%d\n", options[AZ_reorder]);
-    (void) fprintf(stdout,"\tpreconditioner:\t\t\t\t%d\n", options[AZ_precond]);
-    (void) fprintf(stdout,"\tpolynomial order:\t\t\t%d\n",
+    (void) AZ_printf_out("\treordering:    \t\t\t\t%d\n", options[AZ_reorder]);
+    (void) AZ_printf_out("\tpreconditioner:\t\t\t\t%d\n", options[AZ_precond]);
+    (void) AZ_printf_out("\tpolynomial order:\t\t\t%d\n",
                    options[AZ_poly_ord]);
   if (options[AZ_solver]==AZ_gmres) {
-    (void) fprintf(stdout,"\tGMRES ill conditioning threshold:\t\t\t%7.1e\n",
+    (void) AZ_printf_out("\tGMRES ill conditioning threshold:\t\t\t%7.1e\n",
                    params[AZ_ill_cond_thresh]);
-    (void) fprintf(stdout,"\tGMRES restart size:\t\t\t%d\n",
+    (void) AZ_printf_out("\tGMRES restart size:\t\t\t%d\n",
                    options[AZ_kspace]);
-    (void) fprintf(stdout,"\torthogonalization:\t\t\t%d\n", options[AZ_orthog]);}
-    (void) fprintf(stdout,"\ttolerance:\t\t\t\t%7.1e\n", params[AZ_tol]);
-    (void) fprintf(stdout,"\tdrop:\t\t\t\t\t%7.1e\n", params[AZ_drop]);
+    (void) AZ_printf_out("\torthogonalization:\t\t\t%d\n", options[AZ_orthog]);}
+    (void) AZ_printf_out("\ttolerance:\t\t\t\t%7.1e\n", params[AZ_tol]);
+    (void) AZ_printf_out("\tdrop:\t\t\t\t\t%7.1e\n", params[AZ_drop]);
     if ( (options[AZ_precond] == AZ_dom_decomp) &&
          (options[AZ_subdomain_solve] == AZ_ilut) ) {
       if (params[AZ_rthresh]!=0.0)
-      (void) fprintf(stdout,"\tRelative threshold:\t\t\t%7.1e\n", params[AZ_rthresh]);
+      (void) AZ_printf_out("\tRelative threshold:\t\t\t%7.1e\n", params[AZ_rthresh]);
       if (params[AZ_athresh]!=0.0)
-      (void) fprintf(stdout,"\tAbsolute threshold:\t\t\t%7.1e\n", params[AZ_athresh]);
+      (void) AZ_printf_out("\tAbsolute threshold:\t\t\t%7.1e\n", params[AZ_athresh]);
 
-    (void) fprintf(stdout,"\tfill-in:\t\t\t\t%7.1e\n", params[AZ_ilut_fill]);}
+    (void) AZ_printf_out("\tfill-in:\t\t\t\t%7.1e\n", params[AZ_ilut_fill]);}
     if ( (options[AZ_precond] == AZ_dom_decomp) &&
          (options[AZ_subdomain_solve] == AZ_rilu) ) {
-    (void) fprintf(stdout,"\tomega:\t\t\t\t\t%7.1e\n", params[AZ_omega]);}
+    (void) AZ_printf_out("\tomega:\t\t\t\t\t%7.1e\n", params[AZ_omega]);}
     if ( (options[AZ_precond] == AZ_dom_decomp) && (
          (options[AZ_subdomain_solve] == AZ_rilu) ||
          (options[AZ_subdomain_solve] == AZ_ilu ) ||
@@ -262,43 +262,43 @@ symmetric.\n",
          (options[AZ_subdomain_solve] == AZ_bilu_ifp) ||
          (options[AZ_subdomain_solve] == AZ_icc)) ) {
       if (params[AZ_rthresh]!=0.0)
-      (void) fprintf(stdout,"\tRelative threshold:\t\t\t%7.1e\n", params[AZ_rthresh]);
+      (void) AZ_printf_out("\tRelative threshold:\t\t\t%7.1e\n", params[AZ_rthresh]);
       if (params[AZ_athresh]!=0.0)
-      (void) fprintf(stdout,"\tAbsolute threshold:\t\t\t%7.1e\n", params[AZ_athresh]);
-    (void) fprintf(stdout,"\tfill-in:\t\t\t\t\t%d\n", options[AZ_graph_fill]);
-    (void) fprintf(stdout,"\toverlap:\t\t\t\t\t%d\n", options[AZ_overlap]);
+      (void) AZ_printf_out("\tAbsolute threshold:\t\t\t%7.1e\n", params[AZ_athresh]);
+    (void) AZ_printf_out("\tfill-in:\t\t\t\t\t%d\n", options[AZ_graph_fill]);
+    (void) AZ_printf_out("\toverlap:\t\t\t\t\t%d\n", options[AZ_overlap]);
   if ( proc_config[AZ_N_procs] > 0) 
-    (void) fprintf(stdout,"\ttypeoverlap:\t\t\t\t%d\n", options[AZ_type_overlap]);}
-    (void) fprintf(stdout, "\n");
+    (void) AZ_printf_out("\ttypeoverlap:\t\t\t\t%d\n", options[AZ_type_overlap]);}
+    (void) AZ_printf_out( "\n");
   }
 
   /* output debug information */
 
  if ((options[AZ_output] > 0) && proc_config[AZ_node] == 0) {
-    (void) fprintf(stdout, "\tNumber of internal unknowns:\t\t%d\n",
+    (void) AZ_printf_out( "\tNumber of internal unknowns:\t\t%d\n",
                    data_org[AZ_N_internal]);
-    (void) fprintf(stdout, "\tNumber of border  unknowns:\t\t%d\n",
+    (void) AZ_printf_out( "\tNumber of border  unknowns:\t\t%d\n",
                    data_org[AZ_N_border]);
-    (void) fprintf(stdout, "\tTotal number of unknowns:\t\t%d\n",
+    (void) AZ_printf_out( "\tTotal number of unknowns:\t\t%d\n",
                    data_org[AZ_N_internal] + data_org[AZ_N_border]);
-    (void) fprintf(stdout,"\tNumber of external unknowns:\t\t%d\n",
+    (void) AZ_printf_out("\tNumber of external unknowns:\t\t%d\n",
                    data_org[AZ_N_external]);
-    (void) fprintf(stdout, "\tNumber of internal blocks:\t\t%d\n",
+    (void) AZ_printf_out( "\tNumber of internal blocks:\t\t%d\n",
                    data_org[AZ_N_int_blk]);
-    (void) fprintf(stdout, "\tNumber of border  blocks:\t\t%d\n",
+    (void) AZ_printf_out( "\tNumber of border  blocks:\t\t%d\n",
                    data_org[AZ_N_bord_blk]);
-    (void) fprintf(stdout, "\tTotal number of blocks:\t\t\t%d\n",
+    (void) AZ_printf_out( "\tTotal number of blocks:\t\t\t%d\n",
                    data_org[AZ_N_int_blk] + data_org[AZ_N_bord_blk]);
-    (void) fprintf(stdout,"\tNumber of external blocks:\t\t%d\n",
+    (void) AZ_printf_out("\tNumber of external blocks:\t\t%d\n",
                    data_org[AZ_N_ext_blk]);
-    (void) fprintf(stdout, "\tNumber of processors:\t\t\t%d\n",
+    (void) AZ_printf_out( "\tNumber of processors:\t\t\t%d\n",
                    proc_config[AZ_N_procs]);
-    (void) fprintf(stdout, "\tNode number:\t\t\t\t%d\n", proc_config[AZ_node]);
-    (void) fprintf(stdout, "\tNumber of neighbors:\t\t\t%d\n",
+    (void) AZ_printf_out( "\tNode number:\t\t\t\t%d\n", proc_config[AZ_node]);
+    (void) AZ_printf_out( "\tNumber of neighbors:\t\t\t%d\n",
                    data_org[AZ_N_neigh]);
-    (void) fprintf(stdout, "\tNumber of unknowns sent to neighbors:\t%d\n",
+    (void) AZ_printf_out( "\tNumber of unknowns sent to neighbors:\t%d\n",
                    data_org[AZ_total_send]);
-    (void) fprintf(stdout, "======================================="
+    (void) AZ_printf_out( "======================================="
                    "========================================\n");
   }
 
@@ -348,86 +348,86 @@ void AZ_print_error(int error_code)
   case 0:
     break;
   case -1:
-    (void) fprintf(stderr, "%s%sAZ_solver%s\n", yo, options_str, value_str);
+    (void) AZ_printf_err( "%s%sAZ_solver%s\n", yo, options_str, value_str);
   break;
   case -2:
-    (void) fprintf(stderr, "%s%sAZ_scaling%s\n", yo, options_str, value_str);
+    (void) AZ_printf_err( "%s%sAZ_scaling%s\n", yo, options_str, value_str);
   break;
   case -3:
-    (void) fprintf(stderr, "%s%sAZ_precond%s\n", yo, options_str, value_str);
+    (void) AZ_printf_err( "%s%sAZ_precond%s\n", yo, options_str, value_str);
   break;
   case -4:
-    (void) fprintf(stderr, "%s%sAZ_conv%s\n", yo, options_str, value_str);
+    (void) AZ_printf_err( "%s%sAZ_conv%s\n", yo, options_str, value_str);
   break;
   case -5:
-    (void) fprintf(stderr, "%s%sAZ_output%s\n", yo, options_str, value_str);
+    (void) AZ_printf_err( "%s%sAZ_output%s\n", yo, options_str, value_str);
   break;
   case -6:
-    (void) fprintf(stderr, "%s%sAZ_pre_calc%s\n", yo, options_str, value_str);
+    (void) AZ_printf_err( "%s%sAZ_pre_calc%s\n", yo, options_str, value_str);
   break;
   case -7:
-    (void) fprintf(stderr, "%s%sAZ_max_iter%s\n", yo, options_str, value_str);
+    (void) AZ_printf_err( "%s%sAZ_max_iter%s\n", yo, options_str, value_str);
   break;
   case -8:
-    (void) fprintf(stderr, "%s%sAZ_poly_ord%s\n", yo, options_str, value_str);
+    (void) AZ_printf_err( "%s%sAZ_poly_ord%s\n", yo, options_str, value_str);
   break;
   case -9:
-    (void) fprintf(stderr, "%s%sAZ_overlap%s\n", yo, options_str, value_str);
+    (void) AZ_printf_err( "%s%sAZ_overlap%s\n", yo, options_str, value_str);
   break;
   case -10:
-    (void) fprintf(stderr, "%s%sAZ_kspace%s\n", yo, options_str, value_str);
+    (void) AZ_printf_err( "%s%sAZ_kspace%s\n", yo, options_str, value_str);
   break;
   case -11:
-    (void) fprintf(stderr, "%s%sAZ_orthog%s\n", yo, options_str, value_str);
+    (void) AZ_printf_err( "%s%sAZ_orthog%s\n", yo, options_str, value_str);
   break;
   case -12:
-    (void) fprintf(stderr, "%s%sAZ_aux_vec%s\n", yo, options_str, value_str);
+    (void) AZ_printf_err( "%s%sAZ_aux_vec%s\n", yo, options_str, value_str);
   break;
   case -13:
-    (void) fprintf(stderr, "%s%sAZ_N_border%s\n", yo, data_org_str, value_str);
+    (void) AZ_printf_err( "%s%sAZ_N_border%s\n", yo, data_org_str, value_str);
   break;
   case -14:
-    (void) fprintf(stderr, "%s%sAZ_N_internal%s\n", yo, data_org_str,
+    (void) AZ_printf_err( "%s%sAZ_N_internal%s\n", yo, data_org_str,
                    value_str);
   break;
   case -15:
-    (void) fprintf(stderr, "%s%sAZ_N_external%s\n", yo, data_org_str,
+    (void) AZ_printf_err( "%s%sAZ_N_external%s\n", yo, data_org_str,
                    value_str);
   break;
   case -16:
-    (void) fprintf(stderr, "%s%sAZ_N_bord_blk%s\n", yo, data_org_str,
+    (void) AZ_printf_err( "%s%sAZ_N_bord_blk%s\n", yo, data_org_str,
                    value_str);
   break;
   case -17:
-    (void) fprintf(stderr, "%s%sAZ_N_int_blk%s\n", yo, data_org_str, value_str);
+    (void) AZ_printf_err( "%s%sAZ_N_int_blk%s\n", yo, data_org_str, value_str);
   break;
   case -18:
-    (void) fprintf(stderr, "%s%sAZ_N_ext_blk%s\n", yo, data_org_str, value_str);
+    (void) AZ_printf_err( "%s%sAZ_N_ext_blk%s\n", yo, data_org_str, value_str);
   break;
   case -19:
-    (void) fprintf(stderr, "%s%sAZ_N_neigh%s\n", yo, data_org_str, value_str);
+    (void) AZ_printf_err( "%s%sAZ_N_neigh%s\n", yo, data_org_str, value_str);
   break;
   case -20:
-    (void) fprintf(stderr, "%s%sAZ_N_procs%s\n", yo, proc_config_str,
+    (void) AZ_printf_err( "%s%sAZ_N_procs%s\n", yo, proc_config_str,
                    value_str);
   break;
   case -21:
-    (void) fprintf(stderr, "%s%sAZ_N_node%s\n", yo, proc_config_str, value_str);
+    (void) AZ_printf_err( "%s%sAZ_N_node%s\n", yo, proc_config_str, value_str);
   break;
   case -22:
-    (void) fprintf(stderr, "%s%sAZ_neighbors+i%s\n", yo, data_org_str,
+    (void) AZ_printf_err( "%s%sAZ_neighbors+i%s\n", yo, data_org_str,
                    value_str);
   break;
   case -23:
-    (void) fprintf(stderr, "%s%sAZ_rec_length+i%s\n", yo, data_org_str,
+    (void) AZ_printf_err( "%s%sAZ_rec_length+i%s\n", yo, data_org_str,
                    value_str);
   break;
   case -24:
-    (void) fprintf(stderr, "%s%sAZ_send_length+i%s\n", yo, data_org_str,
+    (void) AZ_printf_err( "%s%sAZ_send_length+i%s\n", yo, data_org_str,
                    value_str);
   break;
   default:
-    (void) fprintf(stderr, "%sERROR: invalid error code (%d)\n", yo,
+    (void) AZ_printf_err( "%sERROR: invalid error code (%d)\n", yo,
                    error_code);
   }
 
@@ -509,21 +509,21 @@ int AZ_check_options(int options[], int az_proc, int data_org[], int az_nprocs,
 #ifdef HAVE_AZLU
     if (az_nprocs != 1) {
       if (az_proc == 0) {
-        (void) fprintf(stderr, "%sERROR: LU not implemented in parallel."
+        (void) AZ_printf_err( "%sERROR: LU not implemented in parallel."
                        "\n       Try domain decompostion with LU "
                        "preconditioning.\n\n", yo);
       }
       return 0;
     }
 #else
-    fprintf(stderr,"AZ_lu unavailable: configure with --enable-aztecoo-azlu to make available\n");
+    AZ_printf_err("AZ_lu unavailable: configure with --enable-aztecoo-azlu to make available\n");
     exit(1);
 #endif
     break;
 
   default:
     if (az_proc == 0) {
-      (void) fprintf(stderr, "%sERROR: options[AZ_solver] has improper value "
+      (void) AZ_printf_err( "%sERROR: options[AZ_solver] has improper value "
                      "(%d)\n\n", yo, options[AZ_solver]);
     }
     return 0;
@@ -538,7 +538,7 @@ int AZ_check_options(int options[], int az_proc, int data_org[], int az_nprocs,
   case AZ_ls:
     if (options[AZ_poly_ord] > AZ_MAX_POLY_ORDER) {
       if (az_proc == 0) {
-        (void) fprintf(stderr, "%sERROR: Exceeds highest order least_squares "
+        (void) AZ_printf_err( "%sERROR: Exceeds highest order least_squares "
                        "polynomial available: %d vs %d\n\n", yo,
                        options[AZ_poly_ord], AZ_MAX_POLY_ORDER);
       }
@@ -552,7 +552,7 @@ int AZ_check_options(int options[], int az_proc, int data_org[], int az_nprocs,
   case AZ_sym_GS:
     if (data_org[AZ_matrix_type] != AZ_MSR_MATRIX) {
       if (az_proc == 0) {
-        (void) fprintf(stderr, "%sERROR: sym GS preconditioning can only "
+        (void) AZ_printf_err( "%sERROR: sym GS preconditioning can only "
                        "be used with MSR matrices.\n"
                        "       data_org[AZ_matrix_type] = %d\n\n", yo,
                        data_org[AZ_matrix_type]);
@@ -562,7 +562,7 @@ int AZ_check_options(int options[], int az_proc, int data_org[], int az_nprocs,
 /*
     if (precond->Pmat!=Amat) {
       if (az_proc == 0) {
-        (void) fprintf(stderr, "%sERROR: sym GS preconditioning can only %s",
+        (void) AZ_printf_err( "%sERROR: sym GS preconditioning can only %s",
                        yo,"be used with Pmat=Amat .\n");
       }
       return 0;
@@ -580,17 +580,17 @@ int AZ_check_options(int options[], int az_proc, int data_org[], int az_nprocs,
      if (options[AZ_reorder]) {
         options[AZ_reorder] = 0;
         if ((options[AZ_output] != AZ_none) && (az_proc  == 0)) {
-           printf("\t\t***** Reordering not implemented for Block ILU.\n");
-           printf("\t\t***** Continuing without reordering\n");
+           AZ_printf_out("\t\t***** Reordering not implemented for Block ILU.\n");
+           AZ_printf_out("\t\t***** Continuing without reordering\n");
         }
      }
 
     if (data_org[AZ_matrix_type] != AZ_VBR_MATRIX) {
       if (az_proc == 0) {
-        (void) fprintf(stderr, "%sERROR: Block ILU can only be used on VBR "
+        (void) AZ_printf_err( "%sERROR: Block ILU can only be used on VBR "
                        "matrices\n       data_org[AZ_matrix_type] = %d\n", yo,
                        data_org[AZ_matrix_type]);
-        (void) fprintf(stderr, "       options[AZ_precond]      = %d\n\n",
+        (void) AZ_printf_err( "       options[AZ_precond]      = %d\n\n",
                        options[AZ_precond]);
       }
       return 0;
@@ -598,14 +598,14 @@ int AZ_check_options(int options[], int az_proc, int data_org[], int az_nprocs,
     if ( (options[AZ_solver] == AZ_cg) && (options[AZ_overlap] > 0) &&
          (options[AZ_type_overlap] != AZ_symmetric)) {
       if (az_proc == 0) {
-        (void) fprintf(stderr, "%sWARNING: Preconditioned matrix may not be"
+        (void) AZ_printf_err( "%sWARNING: Preconditioned matrix may not be"
                        " symmetric (due to overlap).\n\n", yo);
       }
     }
     break;
   case AZ_multilevel:
     if (az_proc == 0) 
-      printf("Are you sure you want the multilevel preconditioner\n");
+      AZ_printf_out("Are you sure you want the multilevel preconditioner\n");
     break;
   case AZ_dom_decomp:
 /* Begin Aztec 2.1 mheroux mod */
@@ -614,8 +614,8 @@ int AZ_check_options(int options[], int az_proc, int data_org[], int az_nprocs,
 /* End Aztec 2.1 mheroux mod */
         options[AZ_reorder] = 0;
         if ((options[AZ_output] != AZ_none) && (az_proc  == 0)) {
-           printf("\t\t***** Reordering not implemented for Block ILU.\n");
-           printf("\t\t***** Continuing without reordering\n");
+           AZ_printf_out("\t\t***** Reordering not implemented for Block ILU.\n");
+           AZ_printf_out("\t\t***** Continuing without reordering\n");
         }
     }
    if ( (options[AZ_solver] == AZ_cg) && 
@@ -624,7 +624,7 @@ int AZ_check_options(int options[], int az_proc, int data_org[], int az_nprocs,
            (options[AZ_subdomain_solve] == AZ_bilu_ifp) ||
            (options[AZ_subdomain_solve] == AZ_ilut))) {
       if (az_proc == 0) {
-        (void) fprintf(stderr, "%sWARNING: Preconditioned matrix may not be"
+        (void) AZ_printf_err( "%sWARNING: Preconditioned matrix may not be"
                        " symmetric.\n\n", yo);
       }
     }
@@ -640,7 +640,7 @@ int AZ_check_options(int options[], int az_proc, int data_org[], int az_nprocs,
          (options[AZ_subdomain_solve] != AZ_bilu) ) {
        if (options[AZ_subdomain_solve] >= AZ_SOLVER_PARAMS) {
           if (az_proc == 0) {
-             (void) fprintf(stderr, "%sERROR: options[AZ_subdomain_solve]"
+             (void) AZ_printf_err( "%sERROR: options[AZ_subdomain_solve]"
                     " has improper value = %d\n\n", yo, 
                     options[AZ_subdomain_solve]);
            }
@@ -665,7 +665,7 @@ int AZ_check_options(int options[], int az_proc, int data_org[], int az_nprocs,
   case AZ_ilut:
     if (options[AZ_overlap] < AZ_diag) {
       if (az_proc == 0) {
-        (void) fprintf(stderr, "%sERROR: Negative overlapping not allowed\n",
+        (void) AZ_printf_err( "%sERROR: Negative overlapping not allowed\n",
                        yo);
       }
        return 0;
@@ -673,7 +673,7 @@ int AZ_check_options(int options[], int az_proc, int data_org[], int az_nprocs,
     if ( (options[AZ_solver] == AZ_cg) && (options[AZ_overlap] > 0) &&
          (options[AZ_type_overlap] != AZ_symmetric)) {
       if (az_proc == 0) {
-        (void) fprintf(stderr, "%sWARNING: Preconditioned matrix may not be"
+        (void) AZ_printf_err( "%sWARNING: Preconditioned matrix may not be"
                        " symmetric (due to overlap).\n\n", yo);
       }
     }
@@ -688,7 +688,7 @@ int AZ_check_options(int options[], int az_proc, int data_org[], int az_nprocs,
   default:
     if (options[AZ_precond] >= AZ_SOLVER_PARAMS) {
     if (az_proc == 0) {
-      (void) fprintf(stderr, "%sERROR: options[AZ_precond] has improper "
+      (void) AZ_printf_err( "%sERROR: options[AZ_precond] has improper "
                      "value = %d\n\n", yo, options[AZ_precond]);
     }
     return 0; }
@@ -707,7 +707,7 @@ int AZ_check_options(int options[], int az_proc, int data_org[], int az_nprocs,
   case AZ_Jacobi:
     if (data_org[AZ_matrix_type] == AZ_VBR_MATRIX) {
       if (az_proc == 0) {
-        (void) fprintf(stderr, "%sWARNING: Jacobi scaling for VBR matrices "
+        (void) AZ_printf_err( "%sWARNING: Jacobi scaling for VBR matrices "
                        "is not implemented. Substituting\n"
                        "         block Jacobi instead.\n\n", yo);
       }
@@ -715,7 +715,7 @@ int AZ_check_options(int options[], int az_proc, int data_org[], int az_nprocs,
 
     if (options[AZ_solver] == AZ_cg) {
       if (az_proc == 0) {
-        (void) fprintf(stderr, "%sWARNING: Jacobi scaling may make matrix "
+        (void) AZ_printf_err( "%sWARNING: Jacobi scaling may make matrix "
                        "unsymmetric for CG.\n\n", yo);
       }
     }
@@ -725,7 +725,7 @@ int AZ_check_options(int options[], int az_proc, int data_org[], int az_nprocs,
     if ((data_org[AZ_matrix_type] != AZ_MSR_MATRIX) &&
         (data_org[AZ_matrix_type] != AZ_VBR_MATRIX)) {
       if (az_proc == 0) {
-        (void) fprintf(stderr, "%sWARNING: block Jacobi scaling can only be "
+        (void) AZ_printf_err( "%sWARNING: block Jacobi scaling can only be "
                        "used with MSR or VBR\n                 matrices."
                        "Turning off scaling.\n\n", yo);
       }
@@ -733,7 +733,7 @@ int AZ_check_options(int options[], int az_proc, int data_org[], int az_nprocs,
 
     if (data_org[AZ_matrix_type] == AZ_MSR_MATRIX) {
       if (az_proc == 0) {
-        (void) fprintf(stderr, "%sWARNING: Block Jacobi for MSR matrices is "
+        (void) AZ_printf_err( "%sWARNING: Block Jacobi for MSR matrices is "
                        "not implemented. Substituting \n"
                        "         Jacobi instead.\n\n", yo);
       }
@@ -741,7 +741,7 @@ int AZ_check_options(int options[], int az_proc, int data_org[], int az_nprocs,
 
     if (options[AZ_solver] == AZ_cg) {
       if (az_proc == 0) {
-        (void) fprintf(stderr, "%sWARNING: Jacobi scaling may make matrix "
+        (void) AZ_printf_err( "%sWARNING: Jacobi scaling may make matrix "
                        "unsymmetric for CG.\n\n", yo);
       }
     }
@@ -750,7 +750,7 @@ int AZ_check_options(int options[], int az_proc, int data_org[], int az_nprocs,
   case AZ_row_sum:
     if (options[AZ_solver] == AZ_cg) {
       if (az_proc == 0) {
-        (void) fprintf(stderr, "%sWARNING: row sum scaling may make matrix "
+        (void) AZ_printf_err( "%sWARNING: row sum scaling may make matrix "
                        "unsymmetric for CG.\n\n", yo);
       }
     }
@@ -760,7 +760,7 @@ int AZ_check_options(int options[], int az_proc, int data_org[], int az_nprocs,
     if ((data_org[AZ_matrix_type] != AZ_MSR_MATRIX) &&
         (data_org[AZ_matrix_type] != AZ_VBR_MATRIX)) {
       if (az_proc == 0) {
-        (void) fprintf(stderr, "%sWARNING: sym diag scaling can only be "
+        (void) AZ_printf_err( "%sWARNING: sym diag scaling can only be "
                        "used with MSR or VBR\n                 matrices. "
                        "Turning off.\n\n", yo);
       }
@@ -771,7 +771,7 @@ int AZ_check_options(int options[], int az_proc, int data_org[], int az_nprocs,
   case AZ_sym_BJacobi:
     if (data_org[AZ_matrix_type] != AZ_VBR_MATRIX) {
       if (az_proc == 0) {
-        (void) fprintf(stderr, "%sWARNING: sym block diag. scaling can only be "
+        (void) AZ_printf_err( "%sWARNING: sym block diag. scaling can only be "
                        "used with VBR\n                 matrices."
                        " Turning off.\n\n", yo);
       }
@@ -782,7 +782,7 @@ int AZ_check_options(int options[], int az_proc, int data_org[], int az_nprocs,
     if ((data_org[AZ_matrix_type] != AZ_MSR_MATRIX) &&
         (data_org[AZ_matrix_type] != AZ_VBR_MATRIX)) {
       if (az_proc == 0) {
-        (void) fprintf(stderr, "%sWARNING: sym row scaling can only be "
+        (void) AZ_printf_err( "%sWARNING: sym row scaling can only be "
                        "used with MSR or VBR matrices.\n"
                        "                     Turning off.\n\n", yo);
       }
@@ -793,7 +793,7 @@ int AZ_check_options(int options[], int az_proc, int data_org[], int az_nprocs,
     if ((data_org[AZ_matrix_type] != AZ_MSR_MATRIX) &&
         (data_org[AZ_matrix_type] != AZ_VBR_MATRIX)) {
       if (az_proc == 0) {
-        (void) fprintf(stderr, "%sWARNING: equilibrated scaling can only be "
+        (void) AZ_printf_err( "%sWARNING: equilibrated scaling can only be "
                        "used with MSR or VBR matrices.\n"
                        "                     Turning off.\n\n", yo);
       }
@@ -802,7 +802,7 @@ int AZ_check_options(int options[], int az_proc, int data_org[], int az_nprocs,
 
   default:
     if (az_proc == 0) {
-      (void) fprintf(stderr, "%sERROR: scaling flag %d not implemented.\n\n",
+      (void) AZ_printf_err( "%sERROR: scaling flag %d not implemented.\n\n",
                      yo, options[AZ_scaling]);
     }
     return 0;
@@ -813,7 +813,7 @@ int AZ_check_options(int options[], int az_proc, int data_org[], int az_nprocs,
       ((data_org[AZ_matrix_type] != AZ_MSR_MATRIX) &&
        (data_org[AZ_matrix_type] != AZ_VBR_MATRIX))) {
         if (az_proc == 0) {
-        (void) fprintf(stderr, "%sERROR: The norm of the matrix can only be "
+        (void) AZ_printf_err( "%sERROR: The norm of the matrix can only be "
                        "computed  with MSR or VBR matrices.\n"
                        "       data_org[AZ_matrix_type] = %d\n\n", yo,
                        data_org[AZ_matrix_type]);
@@ -826,7 +826,7 @@ int AZ_check_options(int options[], int az_proc, int data_org[], int az_nprocs,
   if (((options[AZ_conv] == 4) || (options[AZ_conv] == 3)) &&
       ((options[AZ_solver] == AZ_gmres) || (options[AZ_solver] == AZ_tfqmr))){
     if (az_proc == 0) {
-      (void) fprintf(stderr, "%sWARNING: This convergence option requires "
+      (void) AZ_printf_err( "%sWARNING: This convergence option requires "
                      "slightly more work for this solver\n"
                      "         in order to compute the residual.\n\n", yo);
     }
@@ -837,7 +837,7 @@ int AZ_check_options(int options[], int az_proc, int data_org[], int az_nprocs,
   if (options[AZ_conv] == 4) {
     for (i = 0; i < data_org[AZ_N_internal] + data_org[AZ_N_border]; i++) {
       if (params[AZ_weights+i] <= 0.0) {
-        (void) fprintf(stderr, "%sWARNING: A weight vector component is <= 0, "
+        (void) AZ_printf_err( "%sWARNING: A weight vector component is <= 0, "
                        "check params[AZ_WEIGHTS]\n\n", yo);
         return 0;
       }

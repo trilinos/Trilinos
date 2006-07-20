@@ -180,7 +180,7 @@ void AZ_compute_global_scalars(AZ_MATRIX *Amat,
     if ( (conv_info->scaling->action == AZ_left_scaling) ||
          (conv_info->scaling->action == AZ_left_and_right_scaling) ) {
       if (!(*r_avail) && (conv_info->not_initialized==AZ_FALSE)) {
-        printf("AZ_compute_global_scalars: Error residual is needed to \
+        AZ_printf_err("AZ_compute_global_scalars: Error residual is needed to \
                    ignore scaling in convergence tests\n");
         exit(1);
       }
@@ -246,8 +246,8 @@ void AZ_compute_global_scalars(AZ_MATRIX *Amat,
       conv_info->b_norm = sqrt(dots[count--]);
       if (conv_info->b_norm == 0.0) {
         if ((proc_config[AZ_node]==0) && (options[AZ_output] != AZ_none)) {
-          printf("AZ_compute_global_scalars: ||rhs|| = 0. Can not use AZ_rhs as a convergence option.\n");
-          printf("Changing convergence criteria to use unscaled residual norm in convergence tests.\n");
+          AZ_printf_out("AZ_compute_global_scalars: ||rhs|| = 0. Can not use AZ_rhs as a convergence option.\n");
+          AZ_printf_out("Changing convergence criteria to use unscaled residual norm in convergence tests.\n");
         }
         conv_info->b_norm = 1.;
       }
@@ -278,10 +278,10 @@ void AZ_compute_global_scalars(AZ_MATRIX *Amat,
            (options[AZ_scaling] != AZ_none) &&
            (options[AZ_pre_calc] == AZ_reuse)) {
         if ((proc_config[AZ_node]==0) && (options[AZ_output] != AZ_none)) {
-          printf("Warning:No previous definition for A_norm found. Was ");
-          printf("AZ_iterate used\n\tpreviously and was the scaling object ");
-          printf("passed in the same as for\n\tthis invokation of ");
-          printf("AZ_iterate()?\n");
+          AZ_printf_out("Warning:No previous definition for A_norm found. Was ");
+          AZ_printf_out("AZ_iterate used\n\tpreviously and was the scaling object ");
+          AZ_printf_out("passed in the same as for\n\tthis invokation of ");
+          AZ_printf_out("AZ_iterate()?\n");
         }
       }
 
@@ -327,10 +327,10 @@ void AZ_compute_global_scalars(AZ_MATRIX *Amat,
            (options[AZ_scaling] != AZ_none) &&
            (options[AZ_pre_calc] == AZ_reuse)) {
         if ((proc_config[AZ_node]==0) && (options[AZ_output] != AZ_none)) {
-          printf("Warning:No previous definition for A_norm found. Was ");
-          printf("AZ_iterate used\n\tpreviously and was the scaling object ");
-          printf("passed in the same as for\n\tthis invokation of ");
-          printf("AZ_iterate()?\n");
+          AZ_printf_out("Warning:No previous definition for A_norm found. Was ");
+          AZ_printf_out("AZ_iterate used\n\tpreviously and was the scaling object ");
+          AZ_printf_out("passed in the same as for\n\tthis invokation of ");
+          AZ_printf_out("AZ_iterate()?\n");
         }
       }
       if  ((options[AZ_ignore_scaling]) && (conv_info->scaling->A_norm != 0.0))
@@ -451,7 +451,7 @@ void AZ_compute_global_scalars(AZ_MATRIX *Amat,
 
   default:
     if (proc_config[AZ_node] == 0) {
-      (void) fprintf(stderr, "Error: Improper value, options[AZ_conv] = %d\n",
+      (void) AZ_printf_err( "Error: Improper value, options[AZ_conv] = %d\n",
                      options[AZ_conv]);
     }
     exit(-1);
@@ -556,7 +556,7 @@ struct AZ_CONVERGE_STRUCT *AZ_converge_create()
   temp = (struct AZ_CONVERGE_STRUCT *) AZ_allocate(sizeof(struct
                                                           AZ_CONVERGE_STRUCT));
   if (temp == NULL) {
-    printf("AZ_converge_create: Not enough space\n");
+    AZ_printf_err("AZ_converge_create: Not enough space\n");
     exit(1);
   }
   temp->r0_norm = 0.0;

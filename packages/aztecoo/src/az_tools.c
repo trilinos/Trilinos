@@ -140,7 +140,7 @@ void AZ_order_ele(int update_index[], int extern_index[], int *internal,
     if (m_type == AZ_MSR_MATRIX)      t_ptr = bindx;
     else if (m_type == AZ_VBR_MATRIX) t_ptr = bpntr;
     else {
-      (void) fprintf(stderr, "%sERROR: Unknown matrix type (%d)\n", yo, m_type);
+      (void) AZ_printf_err( "%sERROR: Unknown matrix type (%d)\n", yo, m_type);
       exit(1);
     }
 
@@ -257,7 +257,7 @@ void AZ_invorder_vec(double vector[], int data_org[], int update_index[],
       }
     }
     else {
-      (void) fprintf(stderr,"Error: Unknown matrix type (%d) in AZ_reorder_vec\n",
+      (void) AZ_printf_err("Error: Unknown matrix type (%d) in AZ_reorder_vec\n",
 		     data_org[AZ_matrix_type]);
       exit(-1);
     }
@@ -314,7 +314,7 @@ void AZ_reorder_vec(double vector[], int data_org[], int update_index[],
     else if (data_org[AZ_matrix_type] == AZ_VBR_MATRIX) {
        temp = (int *) AZ_allocate( (length+1)*sizeof(int));
        if (temp == NULL) {
-          (void) fprintf(stderr, "Out of memory in AZ_reorder_vec()\n");
+          (void) AZ_printf_err( "Out of memory in AZ_reorder_vec()\n");
           exit(-1);
        }
        for (i = 0 ; i < length ; i++ ) {
@@ -326,7 +326,7 @@ void AZ_reorder_vec(double vector[], int data_org[], int update_index[],
        AZ_free(temp);
     }
     else {
-      (void) fprintf(stderr,"Error: Unknown matrix type (%d) in AZ_reorder_vec\n",
+      (void) AZ_printf_err("Error: Unknown matrix type (%d) in AZ_reorder_vec\n",
 		     data_org[AZ_matrix_type]);
       exit(-1);
     }
@@ -434,7 +434,7 @@ void AZ_reorder_matrix(int N_update, int bindx[], double val[],
 
     temp = (int *) AZ_allocate((unsigned)(N_external + 1)*sizeof(int));
     if (temp == NULL) {
-      (void) fprintf(stderr,
+      (void) AZ_printf_err(
                      "%sERROR: not enough memory to malloc temporary space\n",
                      yo);
       exit(-1);
@@ -451,7 +451,7 @@ void AZ_reorder_matrix(int N_update, int bindx[], double val[],
     AZ_convert_values_to_ptrs(cnptr, N_update + N_external, 0);
   }
   else {
-    (void) fprintf(stderr, "%sERROR: matrix is not MSR or VBR\n", yo);
+    (void) AZ_printf_err( "%sERROR: matrix is not MSR or VBR\n", yo);
     exit(-1);
   }
 
@@ -500,7 +500,7 @@ void AZ_reorder_matrix(int N_update, int bindx[], double val[],
 
     temp = (int *) AZ_allocate((unsigned) (N_update+1)*sizeof(int));
     if (temp == NULL) {
-      (void) fprintf(stderr, "%sERROR: Not enough temp space in reorder.\n",
+      (void) AZ_printf_err( "%sERROR: Not enough temp space in reorder.\n",
                      yo);
       exit(-1);
     }
@@ -674,7 +674,7 @@ void AZ_set_message_info(int N_external, int extern_index[], int N_update,
 
   new_extern_proc = (int *) AZ_allocate((unsigned) (N_external+1)*sizeof(int));
   if (new_extern_proc == NULL) {
-    (void) fprintf(stderr, "%sERROR: Not enough dynamic space.\n", yo);
+    (void) AZ_printf_err( "%sERROR: Not enough dynamic space.\n", yo);
     exit(-1);
   }
   for (i = 0 ; i < nprocs ; i++)  neighbors[i] = 0;
@@ -718,7 +718,7 @@ void AZ_set_message_info(int N_external, int extern_index[], int N_update,
 
   recv_list = (int *) AZ_allocate((unsigned) AZ_MAX_NEIGHBORS*sizeof(int));
   if (recv_list == NULL) {
-    (void) fprintf(stderr, "%sERROR: Not enough dynamic space.\n", yo);
+    (void) AZ_printf_err( "%sERROR: Not enough dynamic space.\n", yo);
     exit(-1);
   }
 
@@ -749,7 +749,7 @@ void AZ_set_message_info(int N_external, int extern_index[], int N_update,
 
   send_list = (int *)AZ_allocate((unsigned) (num_send_neighbors+1)*sizeof(int));
   if (send_list == NULL) {
-    (void) fprintf(stderr, "%sERROR: Not enough dynamic space.\n", yo);
+    (void) AZ_printf_err( "%sERROR: Not enough dynamic space.\n", yo);
     exit(-1);
   }
   for (i = 0 ; i < num_send_neighbors+1 ; i++ ) send_list[i] = 0;
@@ -815,7 +815,7 @@ void AZ_set_message_info(int N_external, int extern_index[], int N_update,
                                *sizeof(int));
   }
   if (*data_org == NULL) {
-    (void) fprintf(stderr, "%sERROR: Not enough dynamic space.\n", yo);
+    (void) AZ_printf_err( "%sERROR: Not enough dynamic space.\n", yo);
     exit(-1);
   }
   if (!AZ_using_fortran) {
@@ -833,7 +833,7 @@ void AZ_set_message_info(int N_external, int extern_index[], int N_update,
 
   new_external = (int *) AZ_allocate((unsigned) (N_external+1)*sizeof(int));
   if (new_external == NULL) {
-    (void) fprintf(stderr, "%sERROR: Not enough dynamic space.\n", yo);
+    (void) AZ_printf_err( "%sERROR: Not enough dynamic space.\n", yo);
     exit(-1);
   }
 
@@ -853,7 +853,7 @@ void AZ_set_message_info(int N_external, int extern_index[], int N_update,
 
   lens = (int *) AZ_allocate((num_recv_neighbors+1)*sizeof(int));
   if (lens == NULL) {
-    (void) fprintf(stderr, "%sERROR: Not enough dynamic space.\n", yo);
+    (void) AZ_printf_err( "%sERROR: Not enough dynamic space.\n", yo);
     exit(-1);
   }
 
@@ -972,7 +972,7 @@ void AZ_set_message_info(int N_external, int extern_index[], int N_update,
 
   bins = (int *) AZ_allocate((unsigned) (N_update / 4 + 10)*sizeof(int));
   if (bins == NULL) {
-    (void) fprintf(stderr, "%sERROR: Not enough dynamic space.\n", yo);
+    (void) AZ_printf_err( "%sERROR: Not enough dynamic space.\n", yo);
     exit(-1);
   }
   for (i = 0 ; i < N_update / 4 + 10 ; i++ ) bins[i] = 0;
@@ -986,7 +986,7 @@ void AZ_set_message_info(int N_external, int extern_index[], int N_update,
 
     j = AZ_quick_find(send_ptr[i], update, N_update, shift, bins);
     if (j == -1) {
-      (void) fprintf(stderr, "%sERROR: A point (%d) requested from processor "
+      (void) AZ_printf_err( "%sERROR: A point (%d) requested from processor "
                      "%d\nwas not found among the update ele of proc %d\n", yo,
                      send_ptr[i], (*data_org)[AZ_neighbors+current-firstone],
                      proc);
@@ -1301,13 +1301,13 @@ int AZ_find_block_in_row(int bindx[], int bnptr[], int blk_row, int blk_col,
   /* block was not found so let us create a new block */
 
   if (bnptr[blk_row + 1] + 2 >= blk_space) {
-    (void) fprintf(stderr, "%sERROR: not enough space for block ptrs (indx)\n",
+    (void) AZ_printf_err( "%sERROR: not enough space for block ptrs (indx)\n",
                    yo);
     exit(-1);
   }
 
   if (indx[bnptr[blk_row + 1]] + no_elements >= nz_space) {
-    (void) fprintf(stderr, "%sERROR: not enough space for nonzeros (val)\n",
+    (void) AZ_printf_err( "%sERROR: not enough space for nonzeros (val)\n",
                    yo);
     exit(-1);
   }
@@ -1483,37 +1483,37 @@ void AZ_check_msr(int bindx[], int N_update, int N_external, int option,
     if (num > largest) largest = num;
 
     if (num < 0) {
-      (void) fprintf(stderr, "%sERROR on proc %d: Number of ", yo,
+      (void) AZ_printf_err( "%sERROR on proc %d: Number of ", yo,
                      proc_config[AZ_node]);
-      (void) fprintf(stderr,
+      (void) AZ_printf_err(
                      "nonzeros offdiagonals in row %d = (%d - %d) = %d\n", i,
                      bindx[i + 1], bindx[i], bindx[i + 1] - bindx[i]);
-                     (void) fprintf(stderr, "is negative inside MSR check?\n");
+                     (void) AZ_printf_err( "is negative inside MSR check?\n");
     }
   }
 
   if (option == AZ_LOCAL) {
     if (largest > N_update + N_external) {
-      (void) fprintf(stderr, "%sERROR on proc %d: Number of ", yo,
+      (void) AZ_printf_err( "%sERROR on proc %d: Number of ", yo,
                      proc_config[AZ_node]);
-      (void) fprintf(stderr, "offdiagonals in row %d exceeds the", largest);
-      (void) fprintf(stderr, " number of elements on the processor %d\n",
+      (void) AZ_printf_err( "offdiagonals in row %d exceeds the", largest);
+      (void) AZ_printf_err( " number of elements on the processor %d\n",
                                     N_update + N_external);
     }
   }
   else {
     if (largest > total_ele) {
-      (void) fprintf(stderr, "%sERROR on proc %d: Number of ", yo,
+      (void) AZ_printf_err( "%sERROR on proc %d: Number of ", yo,
                      proc_config[AZ_node]);
-      (void) fprintf(stderr, "offdiagonals in row %d exceeds the", largest);
-      (void) fprintf(stderr, " total number of elements in simulation %d\n",
+      (void) AZ_printf_err( "offdiagonals in row %d exceeds the", largest);
+      (void) AZ_printf_err( " total number of elements in simulation %d\n",
                                     total_ele);
     }
   }
 
   largest = AZ_gmax_int(largest, proc_config);
   if (proc_config[AZ_node] == 0) {
-    (void) fprintf(stdout, "The max number of nonzeros in a row = %d\n",
+    (void) AZ_printf_out( "The max number of nonzeros in a row = %d\n",
                    largest);
   }
 
@@ -1522,7 +1522,7 @@ void AZ_check_msr(int bindx[], int N_update, int N_external, int option,
   largest = -1;
   for (i = bindx[0]; i < bindx[N_update]; i++) {
     if (bindx[i] < 0) {
-      (void) fprintf(stderr, "%sWARNING on proc %d: Negative column (%d)= %d\n",
+      (void) AZ_printf_err( "%sWARNING on proc %d: Negative column (%d)= %d\n",
                      yo, proc_config[AZ_node], i, bindx[i]);
     }
 
@@ -1531,12 +1531,12 @@ void AZ_check_msr(int bindx[], int N_update, int N_external, int option,
 
   if (option == AZ_LOCAL) {
     if (largest > N_update + N_external) {
-      (void) fprintf(stderr, "%sWARNING on proc %d: Column ", yo,
+      (void) AZ_printf_err( "%sWARNING on proc %d: Column ", yo,
                      proc_config[AZ_node]);
-      (void) fprintf(stderr, "referenced (%d) that does not exist\n", largest);
-      (void) fprintf(stderr, "    # of elements update on proc = %d\n",
+      (void) AZ_printf_err( "referenced (%d) that does not exist\n", largest);
+      (void) AZ_printf_err( "    # of elements update on proc = %d\n",
                      N_update);
-      (void) fprintf(stderr, "    # of external elements       = %d\n",
+      (void) AZ_printf_err( "    # of external elements       = %d\n",
                      N_external);
     }
   }
@@ -1545,10 +1545,10 @@ void AZ_check_msr(int bindx[], int N_update, int N_external, int option,
     /* find largest possible index */
 
     if (largest > total_ele) {
-      (void) fprintf(stderr, "%sWARNING on proc %d: Column ", yo,
+      (void) AZ_printf_err( "%sWARNING on proc %d: Column ", yo,
                      proc_config[AZ_node]);
-      (void) fprintf(stderr, "referenced (%d) that is larger than ", largest);
-      (void) fprintf(stderr, "the total number of elements in simulation %d.\n",
+      (void) AZ_printf_err( "referenced (%d) that is larger than ", largest);
+      (void) AZ_printf_err( "the total number of elements in simulation %d.\n",
                      total_ele);
     }
   }
@@ -1644,33 +1644,33 @@ void AZ_check_vbr(int N_update, int N_external, int option,
     if (num > largest) largest = num;
 
     if (num < 0) {
-      (void) fprintf(stderr, "%sERROR on proc %d: Number of nonzeros ", yo,
+      (void) AZ_printf_err( "%sERROR on proc %d: Number of nonzeros ", yo,
                      proc);
-      (void) fprintf(stderr, "blocks in row %d = (%d - %d) = %d\n", i,
+      (void) AZ_printf_err( "blocks in row %d = (%d - %d) = %d\n", i,
                      bnptr[i + 1], bnptr[i], bnptr[i + 1] - bnptr[i]);
-      (void) fprintf(stderr, "are negative inside AZ_vbr_check()?\n");
+      (void) AZ_printf_err( "are negative inside AZ_vbr_check()?\n");
     }
   }
 
   if (option == AZ_LOCAL) {
     if (largest > N_update + N_external) {
-      (void) fprintf(stderr, "ERROR on proc %d: Number of blocks ", proc);
-      (void) fprintf(stderr, "in a row (%d) exceeds the number of ", largest);
-      (void) fprintf(stderr, "blocks on the processor %d\n",
+      (void) AZ_printf_err( "ERROR on proc %d: Number of blocks ", proc);
+      (void) AZ_printf_err( "in a row (%d) exceeds the number of ", largest);
+      (void) AZ_printf_err( "blocks on the processor %d\n",
                      N_update + N_external);
     }
   }
   else {
     if (largest > total_ele) {
-      (void) fprintf(stderr, "ERROR on proc %d: Number of blocks ", proc);
-      (void) fprintf(stderr, "in row %d exceeds the total number ", largest);
-      (void) fprintf(stderr, "of blocks in simulation %d\n", total_ele);
+      (void) AZ_printf_err( "ERROR on proc %d: Number of blocks ", proc);
+      (void) AZ_printf_err( "in row %d exceeds the total number ", largest);
+      (void) AZ_printf_err( "of blocks in simulation %d\n", total_ele);
     }
   }
 
   largest = AZ_gmax_int(largest, proc_config);
   if (proc == 0) {
-    (void) fprintf(stderr, "The max number of nonzero blocks in a row = %d\n",
+    (void) AZ_printf_err( "The max number of nonzero blocks in a row = %d\n",
                    largest);
   }
 
@@ -1679,8 +1679,8 @@ void AZ_check_vbr(int N_update, int N_external, int option,
   largest = -1;
   for (i = 0; i < bnptr[N_update]; i++) {
     if (bindx[i] < 0) {
-      (void) fprintf(stderr, "Warning on proc %d: Negative ", proc);
-      (void) fprintf(stderr, "column (%d)= %d\n", i, bindx[i]);
+      (void) AZ_printf_err( "Warning on proc %d: Negative ", proc);
+      (void) AZ_printf_err( "column (%d)= %d\n", i, bindx[i]);
     }
 
     if (bindx[i] > largest) largest = bindx[i];
@@ -1688,31 +1688,31 @@ void AZ_check_vbr(int N_update, int N_external, int option,
 
   if (option == AZ_LOCAL) {
     if (largest > N_update + N_external) {
-      (void) fprintf(stderr, "Warning on proc %d: Column referenced ", proc);
-      (void) fprintf(stderr, "(%d) that does not exist\n", largest);
-      (void) fprintf(stderr, "    # of blocks update on proc = %d\n",
+      (void) AZ_printf_err( "Warning on proc %d: Column referenced ", proc);
+      (void) AZ_printf_err( "(%d) that does not exist\n", largest);
+      (void) AZ_printf_err( "    # of blocks update on proc = %d\n",
                      N_update);
-      (void) fprintf(stderr, "    # of external blocks = %d\n", N_external);
+      (void) AZ_printf_err( "    # of external blocks = %d\n", N_external);
     }
   }
   else {
     if (largest > total_ele) {
-      (void) fprintf(stderr, "Warning on proc %d: Column referenced ", proc);
-      (void) fprintf(stderr, "(%d) that is larger than the total ", largest);
-      (void) fprintf(stderr, "number of blocks in simulation %d\n", total_ele);
+      (void) AZ_printf_err( "Warning on proc %d: Column referenced ", proc);
+      (void) AZ_printf_err( "(%d) that is larger than the total ", largest);
+      (void) AZ_printf_err( "number of blocks in simulation %d\n", total_ele);
     }
   }
 
   largest = AZ_gmax_int(largest, proc_config);
   if (proc == 0) {
-    (void) fprintf(stderr, "The largest block column index is = %d\n", largest);
+    (void) AZ_printf_err( "The largest block column index is = %d\n", largest);
   }
 
   /* check rnptr */
 
   for (i = 0; i <= N_update; i++) {
     if (rnptr[i] != cnptr[i]) {
-      (void) fprintf(stderr,
+      (void) AZ_printf_err(
                      "ERROR on proc %d: rnptr(%d) != cnptr(%d) (%d vs %d)\n",
                      proc, i, i, rnptr[i], cnptr[i]);
     }
@@ -1726,15 +1726,15 @@ void AZ_check_vbr(int N_update, int N_external, int option,
     if (num > largest) largest = num;
 
     if (num <= 0) {
-      (void) fprintf(stderr, "ERROR on proc %d: Block Size for ", proc);
-      (void) fprintf(stderr, "column %d = (%d - %d) = %d\n", i, cnptr[i + 1],
+      (void) AZ_printf_err( "ERROR on proc %d: Block Size for ", proc);
+      (void) AZ_printf_err( "column %d = (%d - %d) = %d\n", i, cnptr[i + 1],
                      cnptr[i], cnptr[i + 1] - cnptr[i]);
     }
   }
 
   largest = AZ_gmax_int(largest, proc_config);
   if (proc == 0) {
-    (void) fprintf(stderr, "The largest column block size is = %d\n", largest);
+    (void) AZ_printf_err( "The largest column block size is = %d\n", largest);
   }
 
 } /* AZ_check_vbr */
@@ -1878,7 +1878,7 @@ int oldk, iii, *ext_copy, **exch_buffers, exch_count,
   if (!AZ_using_fortran) {
     *extern_proc = (int *) AZ_allocate((unsigned) (N_external+1)*sizeof(int));
     if ( *extern_proc == NULL) {
-       (void) fprintf(stderr, "%d: Not enough memory for extern_proc\n",proc);
+       (void) AZ_printf_err( "%d: Not enough memory for extern_proc\n",proc);
        exit(-1);
      }
   }
@@ -1889,7 +1889,7 @@ int oldk, iii, *ext_copy, **exch_buffers, exch_count,
   tempneigh  = (int *) AZ_allocate((unsigned) nprocs*sizeof(int));
 
   if ( (neigh_list == NULL) || (tempneigh == NULL)) {
-       (void) fprintf(stderr, " Not enough memory to find externals\n");
+       (void) AZ_printf_err( " Not enough memory to find externals\n");
        exit(-1);
   }
 
@@ -1906,7 +1906,7 @@ int oldk, iii, *ext_copy, **exch_buffers, exch_count,
 
   extern_mess = (int *) AZ_allocate((unsigned) buf_size*sizeof(int));
   if (extern_mess == NULL) {
-    (void) fprintf(stderr, " Not enough memory to find the external procs\n");
+    (void) AZ_printf_err( " Not enough memory to find the external procs\n");
     exit(-1);
   }
   for (i = 0 ; i < buf_size ; i++) extern_mess[i] = 0;
@@ -1984,18 +1984,18 @@ int oldk, iii, *ext_copy, **exch_buffers, exch_count,
     num_recv_neighbors = neigh_list[proc];
 
     if ((num_sublist_elements != 0) && (num_recv_neighbors == 0)) {
-      (void) fprintf(stderr, "A column referenced on one processor was not\n");
-      (void) fprintf(stderr,
+      (void) AZ_printf_err( "A column referenced on one processor was not\n");
+      (void) AZ_printf_err(
                      "found on any other processors. This means that\n");
-      (void) fprintf(stderr, "no processor is assigned to the row equal to \n");
-      (void) fprintf(stderr, "this column number.\n");
-      (void) fprintf(stderr, "Note: matrices must be square.\n");
-      (void) fprintf(stderr, "The following columns were not found:\n");
+      (void) AZ_printf_err( "no processor is assigned to the row equal to \n");
+      (void) AZ_printf_err( "this column number.\n");
+      (void) AZ_printf_err( "Note: matrices must be square.\n");
+      (void) AZ_printf_err( "The following columns were not found:\n");
 
       for (i = 0 ; i < num_sublist_elements; i++ ) {
-        (void) fprintf(stderr, "%3d ", external[i * stride + first_extern]);
+        (void) AZ_printf_err( "%3d ", external[i * stride + first_extern]);
       }
-      (void) fprintf(stderr,"\n");
+      (void) AZ_printf_err("\n");
         exit(-1);
     }
 
@@ -2047,7 +2047,7 @@ int oldk, iii, *ext_copy, **exch_buffers, exch_count,
     ext_copy = (int *) AZ_allocate((k+1)*sizeof(int));
     exch_buffers = (int **) AZ_allocate((num_send_neighbors+1)*sizeof(int *));
     if ( (ext_copy == NULL) || (exch_buffers == NULL) ) {
-       printf("Error: Out of memory in AZ_transform\n");
+       AZ_printf_err("Error: Out of memory in AZ_transform\n");
        exit(1);
     }
     for (iii = 0 ; iii < k ; iii++ ) ext_copy[iii] = external[first_extern+iii];
@@ -2092,8 +2092,8 @@ int oldk, iii, *ext_copy, **exch_buffers, exch_count,
             }
             exch_buffers[exch_count] = (int *) AZ_allocate((kk+1)*sizeof(int));
             if (exch_buffers[exch_count] == NULL) {
-               (void) fprintf(stderr, " Not enough memory to find the ");
-               (void) fprintf(stderr, "external procs\n");
+               (void) AZ_printf_err( " Not enough memory to find the ");
+               (void) AZ_printf_err( "external procs\n");
                exit(-1);
             }
             newbuffer = exch_buffers[exch_count];
@@ -2232,7 +2232,7 @@ void AZ_find_local_indices(int N_update, int bindx[], int update[],
 
   bins = (int *) AZ_allocate((unsigned) (N_update / 4 + 10)*sizeof(int));
   if  (bins == NULL) {
-    (void) fprintf(stderr, "ERROR: Not enough temp space\n");
+    (void) AZ_printf_err( "ERROR: Not enough temp space\n");
     exit(-1);
   }
   for (i = 0 ; i < N_update / 4 + 10 ; i++ ) bins[i] = 0;
@@ -2269,7 +2269,7 @@ void AZ_find_local_indices(int N_update, int bindx[], int update[],
     if (k != -1) bindx[j] = k;
     else {
       if (bindx[j] < 0) {
-        (void) fprintf(stderr, "ERROR: Negative column number found %d\n",
+        (void) AZ_printf_err( "ERROR: Negative column number found %d\n",
                        bindx[j]);
         exit(-1);
       }
@@ -2285,7 +2285,7 @@ void AZ_find_local_indices(int N_update, int bindx[], int update[],
 
   temp_ele = (int *) AZ_allocate((unsigned) (*N_external+1)*sizeof(int));
   if (temp_ele == NULL) {
-    (void) fprintf(stderr,
+    (void) AZ_printf_err(
                    "Not enough temp space in AZ_find_local_indices()\n");
     exit(-1);
   }
@@ -2317,7 +2317,7 @@ void AZ_find_local_indices(int N_update, int bindx[], int update[],
   if (!AZ_using_fortran)
     *external = (int *) AZ_allocate((unsigned) (*N_external+1)*sizeof(int));
   if (*external == NULL) {
-    (void) fprintf(stderr, "Not enough space for external in %s",
+    (void) AZ_printf_err( "Not enough space for external in %s",
                    "AZ_find_local_indices()\n");
     exit(-1);
   }
@@ -2439,25 +2439,25 @@ void AZ_read_update(int *N_update, int *update[], int proc_config[],
     /* determine the number of processors in each direction */
 
     if (proc == 0) {
-       (void) fprintf(stdout,"Input the dimensions of the processor cube\n\n");
-       (void) fprintf(stdout,"Enter the number of processors along x axis>");
+       (void) printf("Input the dimensions of the processor cube\n\n");
+       (void) printf("Enter the number of processors along x axis>");
        (void) fflush(stdout);
        scanf("%d",&proc_x);
-       (void) fprintf(stdout,"Enter the number of processors along y axis>");
+       (void) printf("Enter the number of processors along y axis>");
        (void) fflush(stdout);
        scanf("%d",&proc_y);
-       (void) fprintf(stdout,"Enter the number of processors along z axis>");
+       (void) printf("Enter the number of processors along z axis>");
        (void) fflush(stdout);
        scanf("%d",&proc_z);
 
-       (void) fprintf(stdout,"Input the grid dimensions\n\n");
-       (void) fprintf(stdout,"Enter the number of grid points along x axis>");
+       (void) printf("Input the grid dimensions\n\n");
+       (void) printf("Enter the number of grid points along x axis>");
        (void) fflush(stdout);
        scanf("%d",&pts_x);
-       (void) fprintf(stdout,"Enter the number of grid points along y axis>");
+       (void) printf("Enter the number of grid points along y axis>");
        (void) fflush(stdout);
        scanf("%d",&pts_y);
-       (void) fprintf(stdout,"Enter the number of grid points along z axis>");
+       (void) printf("Enter the number of grid points along z axis>");
        (void) fflush(stdout);
        scanf("%d",&pts_z);
     }
@@ -2475,42 +2475,42 @@ void AZ_read_update(int *N_update, int *update[], int proc_config[],
 
     if ( proc_x*proc_y*proc_z != nprocs) {
         if (proc == 0) {
-          (void) fprintf(stdout,"Error: %d x %d x %d != %d ",
+          (void) printf("Error: %d x %d x %d != %d ",
  			 proc_x, proc_y, proc_z, nprocs);
-          (void) fprintf(stdout," (total number of processors)\n");
+          (void) printf(" (total number of processors)\n");
         }
 	exit(1);
     }
 
     if ( pts_x * pts_y * pts_z != N ) {
         if (proc == 0) {
-          (void) fprintf(stdout,"Error: %d x %d x %d != %d ",
+          (void) printf("Error: %d x %d x %d != %d ",
  			 pts_x, pts_y, pts_z, N);
-          (void) fprintf(stdout," (total number of grid points)\n");
+          (void) printf(" (total number of grid points)\n");
         }
 	exit(1);
     }
     if ( pts_x%proc_x != 0 ) {
         if (proc == 0) {
-          (void) fprintf(stdout,"Error: grid points along x axis are not an ");
-          (void) fprintf(stdout,"even multiple of processors\n");
-	  (void) fprintf(stdout,"       along x axis.");
+          (void) printf("Error: grid points along x axis are not an ");
+          (void) printf("even multiple of processors\n");
+	  (void) printf("       along x axis.");
         }
 	exit(1);
     }
     if ( pts_y%proc_y != 0 ) {
         if (proc == 0) {
-          (void) fprintf(stdout,"Error: grid points along y axis is not an ");
-          (void) fprintf(stdout,"even multiple of processors\n");
-	  (void) fprintf(stdout,"       along y axis.");
+          (void) printf("Error: grid points along y axis is not an ");
+          (void) printf("even multiple of processors\n");
+	  (void) printf("       along y axis.");
         }
 	exit(1);
     }
     if ( pts_z%proc_z != 0 ) {
         if (proc == 0) {
-          (void) fprintf(stdout,"Error: grid points along z axis is not an ");
-          (void) fprintf(stdout,"even multiple of processors\n");
-	  (void) fprintf(stdout,"       along z axis.");
+          (void) printf("Error: grid points along z axis is not an ");
+          (void) printf("even multiple of processors\n");
+	  (void) printf("       along z axis.");
         }
 	exit(1);
     }
@@ -2578,7 +2578,7 @@ void AZ_read_update(int *N_update, int *update[], int proc_config[],
        *update = (int *) AZ_allocate((*N_update+1)*sizeof(int));
 
     if (*update == NULL) {
-      (void) fprintf (stderr, "Not enough space to allocate 'update'\n");
+      (void) printf( "Not enough space to allocate 'update'\n");
       exit(-1);
     }
 
@@ -2601,10 +2601,10 @@ void AZ_read_update(int *N_update, int *update[], int proc_config[],
 
     t1 = 0;            /* total number of points distributed */
     if (proc == 0) {
-      (void) printf("Reading from file .update\n"); fflush(stdout);
+      (void) printf("Reading from file .update\n"); AZ_flush_out();
 
       if ( (fp = fopen(".update", "r")) == NULL) {
-        (void) fprintf(stderr, "ERROR: file '.update' not found\n");
+        (void) printf( "ERROR: file '.update' not found\n");
         exit(-1);
       }
 
@@ -2767,25 +2767,25 @@ a file speficied by the input argument datafile instead of .update
     /* determine the number of processors in each direction */
 
     if (proc == 0) {
-       (void) fprintf(stdout,"Input the dimensions of the processor cube\n\n");
-       (void) fprintf(stdout,"Enter the number of processors along x axis>");
+       (void) printf("Input the dimensions of the processor cube\n\n");
+       (void) printf("Enter the number of processors along x axis>");
        (void) fflush(stdout);
        scanf("%d",&proc_x);
-       (void) fprintf(stdout,"Enter the number of processors along y axis>");
+       (void) printf("Enter the number of processors along y axis>");
        (void) fflush(stdout);
        scanf("%d",&proc_y);
-       (void) fprintf(stdout,"Enter the number of processors along z axis>");
+       (void) printf("Enter the number of processors along z axis>");
        (void) fflush(stdout);
        scanf("%d",&proc_z);
 
-       (void) fprintf(stdout,"Input the grid dimensions\n\n");
-       (void) fprintf(stdout,"Enter the number of grid points along x axis>");
+       (void) printf("Input the grid dimensions\n\n");
+       (void) printf("Enter the number of grid points along x axis>");
        (void) fflush(stdout);
        scanf("%d",&pts_x);
-       (void) fprintf(stdout,"Enter the number of grid points along y axis>");
+       (void) printf("Enter the number of grid points along y axis>");
        (void) fflush(stdout);
        scanf("%d",&pts_y);
-       (void) fprintf(stdout,"Enter the number of grid points along z axis>");
+       (void) printf("Enter the number of grid points along z axis>");
        (void) fflush(stdout);
        scanf("%d",&pts_z);
     }
@@ -2803,42 +2803,42 @@ a file speficied by the input argument datafile instead of .update
 
     if ( proc_x*proc_y*proc_z != nprocs) {
         if (proc == 0) {
-          (void) fprintf(stdout,"Error: %d x %d x %d != %d ",
+          (void) printf("Error: %d x %d x %d != %d ",
  			 proc_x, proc_y, proc_z, nprocs);
-          (void) fprintf(stdout," (total number of processors)\n");
+          (void) printf(" (total number of processors)\n");
         }
 	exit(1);
     }
 
     if ( pts_x * pts_y * pts_z != N ) {
         if (proc == 0) {
-          (void) fprintf(stdout,"Error: %d x %d x %d != %d ",
+          (void) printf("Error: %d x %d x %d != %d ",
  			 pts_x, pts_y, pts_z, N);
-          (void) fprintf(stdout," (total number of grid points)\n");
+          (void) printf(" (total number of grid points)\n");
         }
 	exit(1);
     }
     if ( pts_x%proc_x != 0 ) {
         if (proc == 0) {
-          (void) fprintf(stdout,"Error: grid points along x axis are not an ");
-          (void) fprintf(stdout,"even multiple of processors\n");
-	  (void) fprintf(stdout,"       along x axis.");
+          (void) printf("Error: grid points along x axis are not an ");
+          (void) printf("even multiple of processors\n");
+	  (void) printf("       along x axis.");
         }
 	exit(1);
     }
     if ( pts_y%proc_y != 0 ) {
         if (proc == 0) {
-          (void) fprintf(stdout,"Error: grid points along y axis is not an ");
-          (void) fprintf(stdout,"even multiple of processors\n");
-	  (void) fprintf(stdout,"       along y axis.");
+          (void) printf("Error: grid points along y axis is not an ");
+          (void) printf("even multiple of processors\n");
+	  (void) printf("       along y axis.");
         }
 	exit(1);
     }
     if ( pts_z%proc_z != 0 ) {
         if (proc == 0) {
-          (void) fprintf(stdout,"Error: grid points along z axis is not an ");
-          (void) fprintf(stdout,"even multiple of processors\n");
-	  (void) fprintf(stdout,"       along z axis.");
+          (void) printf("Error: grid points along z axis is not an ");
+          (void) printf("even multiple of processors\n");
+	  (void) printf("       along z axis.");
         }
 	exit(1);
     }
@@ -2906,7 +2906,7 @@ a file speficied by the input argument datafile instead of .update
        *update = (int *) AZ_allocate((*N_update+1)*sizeof(int));
 
     if (*update == NULL) {
-      (void) fprintf (stderr, "Not enough space to allocate 'update'\n");
+      (void) AZ_printf_err( "Not enough space to allocate 'update'\n");
       exit(-1);
     }
 
@@ -2929,10 +2929,10 @@ a file speficied by the input argument datafile instead of .update
 
     t1 = 0;            /* total number of points distributed */
     if (proc == 0) {
-      (void) printf("reading from file %s\n", datafile); fflush(stdout);
+      (void) AZ_printf_out("reading from file %s\n", datafile); AZ_flush_out();
 
       if ( (fp = fopen(datafile, "r")) == NULL) {
-        (void) fprintf(stderr, "ERROR: file %s not found\n", datafile);
+        (void) AZ_printf_err( "ERROR: file %s not found\n", datafile);
         exit(-1);
       }
 
@@ -2966,7 +2966,7 @@ a file speficied by the input argument datafile instead of .update
           if (!AZ_using_fortran)
             *update = (int *) AZ_allocate(allocated*sizeof(int));
           if (*update == NULL) {
-            (void) fprintf(stderr,
+            (void) AZ_printf_err(
                            "Not enough space to allocate 'update'\n");
             exit(-1);
           }
@@ -2981,8 +2981,8 @@ a file speficied by the input argument datafile instead of .update
       fclose(fp);
 
       if (t1 != N*chunk) {
-        (void) fprintf(stderr,"AZ_read_update() found %d points in file\n", t1);
-        (void) fprintf(stderr,"%s instead of the requested %d\n", datafile,
+        (void) AZ_printf_err("AZ_read_update() found %d points in file\n", t1);
+        (void) AZ_printf_err("%s instead of the requested %d\n", datafile,
                        N*chunk);
         exit(-1);
       }
@@ -2999,7 +2999,7 @@ a file speficied by the input argument datafile instead of .update
       if (!AZ_using_fortran)
         *update = (int *) AZ_allocate((*N_update+1)*sizeof(int));
       if (*update == NULL)  {
-        (void) fprintf(stderr, "Not enough space to allocate 'update'\n");
+        (void) AZ_printf_err( "Not enough space to allocate 'update'\n");
         exit(-1);
       }
 
@@ -3020,10 +3020,10 @@ a file speficied by the input argument datafile instead of .update
     check = AZ_gsum_int(check, proc_config);
     if (check != 1) {
        if (proc == 0) {
-          (void) fprintf(stderr,"Error: In AZ_read_update(), the %s", datafile);
-          (void) fprintf(stderr,"file does not contain\n       one ");
-          (void) fprintf(stderr,"occurance of row 0. Make sure that rows are");
-          (void) fprintf(stderr," numbered\n       from 0 to n-1.\n");
+          (void) AZ_printf_err("Error: In AZ_read_update(), the %s", datafile);
+          (void) AZ_printf_err("file does not contain\n       one ");
+          (void) AZ_printf_err("occurance of row 0. Make sure that rows are");
+          (void) AZ_printf_err(" numbered\n       from 0 to n-1.\n");
        }
        exit(1);
     }
@@ -3031,7 +3031,7 @@ a file speficied by the input argument datafile instead of .update
 
   }
   else {
-    (void) fprintf(stderr,"Unknown input option (%d) in AZ_read_update()\n",
+    (void) AZ_printf_err("Unknown input option (%d) in AZ_read_update()\n",
                    input_option);
     exit(1);
   }
@@ -3120,9 +3120,9 @@ int AZ_read_external(int N_external, int external[],
 
       if (i == 0) {
         if (length != N_external) {
-          (void) fprintf(stderr, "%sERROR: %d: number of extern elements in "
+          (void) AZ_printf_err( "%sERROR: %d: number of extern elements in "
                          "file", yo, proc);
-          (void) fprintf(stderr, " is not what I\n    found in matrix"
+          (void) AZ_printf_err( " is not what I\n    found in matrix"
                          "(%d vs %d)\n", length, N_external);
           exit(-1);
         }
@@ -3141,7 +3141,7 @@ int AZ_read_external(int N_external, int external[],
 
         temp_buffer = (int *) AZ_allocate(allocated*sizeof(int));
         if (temp_buffer == NULL) {
-          (void) fprintf(stderr, "%sERROR: not enough dynamic memory to "
+          (void) AZ_printf_err( "%sERROR: not enough dynamic memory to "
                          "allocate 'temp_buffer'\n", yo);
           exit(-1);
         }
@@ -3166,9 +3166,9 @@ int AZ_read_external(int N_external, int external[],
     mdwrap_wait((void *) &length, sizeof(int), &partner, &type, &cflag,&request);
 
     if (length != N_external) {
-      (void) fprintf(stderr, "%sERROR: %d:number of extern elements in file is",
+      (void) AZ_printf_err( "%sERROR: %d:number of extern elements in file is",
                      yo, proc);
-      (void) fprintf(stderr, " not what I\n   found in the matrix "
+      (void) AZ_printf_err( " not what I\n   found in the matrix "
                      "(%d vs %d)\n", length, N_external);
       exit(-1);
     }
@@ -3177,7 +3177,7 @@ int AZ_read_external(int N_external, int external[],
 
     temp_buffer = (int *) AZ_allocate((length+1)*sizeof(int));
     if (temp_buffer == NULL) {
-      (void) fprintf (stderr, "%sERROR: not enough dynamic memory to allocate "
+      (void) AZ_printf_err( "%sERROR: not enough dynamic memory to allocate "
                       "'temp'\n", yo);
       exit(-1);
     }
@@ -3198,7 +3198,7 @@ int AZ_read_external(int N_external, int external[],
      *extern_proc = (int *) AZ_allocate((N_external+1)*sizeof(int));
   }
   if (*extern_proc == NULL) {
-    (void) fprintf(stderr, "%sERROR: not enough dynamic memory for external "
+    (void) AZ_printf_err( "%sERROR: not enough dynamic memory for external "
                    "procs\n", yo);
     exit(-1);
   }
@@ -3209,9 +3209,9 @@ int AZ_read_external(int N_external, int external[],
   for (i = 0 ; i < N_external ; i++ ) {
     loc = AZ_find_index(temp_buffer[2*i], external, N_external);
     if (loc == -1) {
-      (void) fprintf(stderr, "%sERROR: external point (%d) in input \n", yo,
+      (void) AZ_printf_err( "%sERROR: external point (%d) in input \n", yo,
                      temp_buffer[2*i]);
-      (void) fprintf(stderr, "       file was not found in the matrix \n");
+      (void) AZ_printf_err( "       file was not found in the matrix \n");
                      exit(-1);
     }
 
@@ -3321,7 +3321,7 @@ void AZ_read_msr_matrix(int update[], double **val, int **bindx, int N_update,
   totalN = AZ_gsum_int(N_update, proc_config);
   str    = (char *) AZ_allocate((buf_len+1)*sizeof(char));
   if (str == NULL) {
-    printf("ERROR: NOT enough dynamic memory in AZ_read_msr_matrix\n");
+    AZ_printf_err("ERROR: NOT enough dynamic memory in AZ_read_msr_matrix\n");
     exit(-1);
   }
   msr_len = 8*N_update+2;
@@ -3331,7 +3331,7 @@ void AZ_read_msr_matrix(int update[], double **val, int **bindx, int N_update,
   }
 
   if (*val == NULL) {
-    (void) fprintf(stderr,
+    (void) AZ_printf_err(
                    "ERROR: NOT enough dynamic memory in AZ_read_msr_matrix\n");
     exit(-1);
   }
@@ -3363,7 +3363,7 @@ void AZ_read_msr_matrix(int update[], double **val, int **bindx, int N_update,
         buf_len = (unsigned int) lil[0];
         str = (char *) AZ_realloc(str,buf_len*sizeof(char));
         if (str == 0) {
-          (void) fprintf(stderr,
+          (void) AZ_printf_err(
                          "ERROR: NoT enough dynamic memory in AZ_read_msr()\n");
           exit(-1);
         }
@@ -3386,11 +3386,11 @@ void AZ_read_msr_matrix(int update[], double **val, int **bindx, int N_update,
     dfp = fopen(".data", "r");
 #endif
     if (dfp == NULL) {
-      (void) fprintf(stderr, "ERROR: Matrix file '.data' not found\n");
+      (void) AZ_printf_err( "ERROR: Matrix file '.data' not found\n");
       exit(-1);
     }
-    (void) fprintf(stdout, " reading matrix (current version is very slow) .");
-    (void) fflush(stdout);
+    (void) AZ_printf_out( " reading matrix (current version is very slow) .");
+    (void) AZ_flush_out();
 
     /* read in number of blks */
     /*
@@ -3407,13 +3407,13 @@ void AZ_read_msr_matrix(int update[], double **val, int **bindx, int N_update,
 #endif
 
     if (kkk <= 0) {
-       (void) fprintf(stderr,"\nfile '.data' is empty\n");
+       (void) AZ_printf_err("\nfile '.data' is empty\n");
        exit(1);
     }
 
     if (total != totalN) {
-       (void) fprintf(stderr,"\nError:file '.data' contains %d rows ",total);
-       (void) fprintf(stderr,"while the user's input\n     requires %d rows.\n",
+       (void) AZ_printf_err("\nError:file '.data' contains %d rows ",total);
+       (void) AZ_printf_err("while the user's input\n     requires %d rows.\n",
                       totalN);
        exit(1);
     }
@@ -3439,8 +3439,8 @@ void AZ_read_msr_matrix(int update[], double **val, int **bindx, int N_update,
     for (i = 0; i < total; i++) {
       count++;
       if (count%1000 == 0) {
-        (void) fprintf(stdout, ".");
-        (void) fflush(stdout);
+        (void) AZ_printf_out( ".");
+        (void) AZ_flush_out();
       }
       if ((current < N_update) && (i == update[current])) {
         AZ_add_new_row(i, &nz_ptr, &current, val, bindx, 0, dfp, &msr_len,
@@ -3453,8 +3453,8 @@ void AZ_read_msr_matrix(int update[], double **val, int **bindx, int N_update,
         kkk = fscanf(dfp, "%d", &temp);
 #endif
         if (kkk <= 0) {
-           (void) fprintf(stderr,"\nError: AZ_read_msr(), end-of-file reached");
-           (void) fprintf(stderr," while reading row %d.\n",i);
+           (void) AZ_printf_err("\nError: AZ_read_msr(), end-of-file reached");
+           (void) AZ_printf_err(" while reading row %d.\n",i);
            exit(1);
         }
         if (temp == 0) column0 = 1;
@@ -3468,8 +3468,8 @@ void AZ_read_msr_matrix(int update[], double **val, int **bindx, int N_update,
           kkk = fscanf(dfp, "%lf", &dtemp);
 #endif
           if (kkk <= 0) {
-           (void) fprintf(stderr,"\nError: AZ_read_msr(), end-of-file reached");
-           (void) fprintf(stderr," while reading row %d.\n",i);
+           (void) AZ_printf_err("\nError: AZ_read_msr(), end-of-file reached");
+           (void) AZ_printf_err(" while reading row %d.\n",i);
            exit(1);
           }
 
@@ -3478,7 +3478,7 @@ void AZ_read_msr_matrix(int update[], double **val, int **bindx, int N_update,
             str = (char *) AZ_realloc(str,buf_len*sizeof(char));
 
             if (str == 0) {
-              (void) fprintf(stderr,"ERROR: Not Enough dynamic memory in "
+              (void) AZ_printf_err("ERROR: Not Enough dynamic memory in "
                              "AZ_read_msr()\n");
               exit(-1);
             }
@@ -3511,8 +3511,8 @@ void AZ_read_msr_matrix(int update[], double **val, int **bindx, int N_update,
           kkk = fscanf(dfp, "%d", &temp);
 #endif
           if (kkk <= 0) {
-           (void) fprintf(stderr,"\nError: AZ_read_msr(), end-of-file reached");
-           (void) fprintf(stderr," while reading row %d.\n",i);
+           (void) AZ_printf_err("\nError: AZ_read_msr(), end-of-file reached");
+           (void) AZ_printf_err(" while reading row %d.\n",i);
            exit(1);
           }
           if (temp == 0) column0 = 1;
@@ -3532,9 +3532,9 @@ void AZ_read_msr_matrix(int update[], double **val, int **bindx, int N_update,
 
         while ((k < nprocs) && (requests[k] != i)) k++;
         if (k == nprocs) {
-           (void) fprintf(stderr,"\nError: AZ_read_msr(), input file contains");
-           (void) fprintf(stderr," a row (%d)\n       that is not ",i);
-           (void) fprintf(stderr,"assigned to any processor?\n");
+           (void) AZ_printf_err("\nError: AZ_read_msr(), input file contains");
+           (void) AZ_printf_err(" a row (%d)\n       that is not ",i);
+           (void) AZ_printf_err("assigned to any processor?\n");
            exit(1);
         }
         mdwrap_write((void *) str, (unsigned int) j, k, type2, &st);
@@ -3553,25 +3553,25 @@ void AZ_read_msr_matrix(int update[], double **val, int **bindx, int N_update,
 
     for (k = 0 ; k < nprocs ; k++ ) {
        if (requests[k] != -1) {
-          (void) fprintf(stderr,"\nError: AZ_read_msr(), processor %d ",k);
-          (void) fprintf(stderr,"requested  but never received\n       ");
-          (void) fprintf(stderr,"matrix row %d. Check '.data' file.\n",
+          (void) AZ_printf_err("\nError: AZ_read_msr(), processor %d ",k);
+          (void) AZ_printf_err("requested  but never received\n       ");
+          (void) AZ_printf_err("matrix row %d. Check '.data' file.\n",
                          requests[k]);
           exit(1);
        }
     }
 
     if (column0 == 0) {
-       (void) fprintf(stderr,"\nWARNING: AZ_read_msr(), column 0 contains ");
-       (void) fprintf(stderr,"no off-diagonal elements.\n         Are you ");
-       (void) fprintf(stderr,"sure that you numbered the matrix rows/columns");
-       (void) fprintf(stderr," from\n         0 to n-1 (and not 1 to n).\n");
+       (void) AZ_printf_err("\nWARNING: AZ_read_msr(), column 0 contains ");
+       (void) AZ_printf_err("no off-diagonal elements.\n         Are you ");
+       (void) AZ_printf_err("sure that you numbered the matrix rows/columns");
+       (void) AZ_printf_err(" from\n         0 to n-1 (and not 1 to n).\n");
     }
 
 
     AZ_free(requests);
     fclose(dfp);
-    (void) fprintf(stdout, "\n");
+    (void) AZ_printf_out( "\n");
   }
 
   AZ_free(str);
@@ -3633,7 +3633,7 @@ file specified by the input argument datafile instead from a file called
   totalN = AZ_gsum_int(N_update, proc_config);
   str    = (char *) AZ_allocate((buf_len+1)*sizeof(char));
   if (str == NULL) {
-    printf("ERROR: NOT enough dynamic memory in AZ_input_msr_matrix\n");
+    AZ_printf_out("ERROR: NOT enough dynamic memory in AZ_input_msr_matrix\n");
     exit(-1);
   }
   msr_len = 8*N_update+2;
@@ -3643,7 +3643,7 @@ file specified by the input argument datafile instead from a file called
   }
 
   if (*val == NULL) {
-    (void) fprintf(stderr,
+    (void) AZ_printf_err(
                    "ERROR: NOT enough dynamic memory in AZ_input_msr_matrix\n");
     exit(-1);
   }
@@ -3675,7 +3675,7 @@ file specified by the input argument datafile instead from a file called
         buf_len = (unsigned int) lil[0];
         str = (char *) AZ_realloc(str,buf_len*sizeof(char));
         if (str == 0) {
-          (void) fprintf(stderr,
+          (void) AZ_printf_err(
                          "ERROR: Not enough dynamic memory in AZ_input_msr()\n");
           exit(-1);
         }
@@ -3698,12 +3698,12 @@ file specified by the input argument datafile instead from a file called
     dfp = fopen(datafile, "r");
 #endif
     if (dfp == NULL) {
-      (void) fprintf(stderr, "ERROR: Matrix data file %s not found\n", datafile);
+      (void) AZ_printf_err( "ERROR: Matrix data file %s not found\n", datafile);
       exit(-1);
     }
-    (void) fprintf(stdout, "Reading matrix from %s "
+    (void) AZ_printf_out( "Reading matrix from %s "
                            "(current version is very slow) .",datafile);
-    (void) fflush(stdout);
+    (void) AZ_flush_out();
 
     /* read in number of blks */
     /*
@@ -3720,13 +3720,13 @@ file specified by the input argument datafile instead from a file called
 #endif
 
     if (kkk <= 0) {
-       (void) fprintf(stderr,"data file %s is empty\n", datafile);
+       (void) AZ_printf_err("data file %s is empty\n", datafile);
        exit(1);
     }
 
     if (total != totalN) {
-       (void) fprintf(stderr,"\nError: data file %s contains %d rows ",datafile, total);
-       (void) fprintf(stderr,"while the user's input\n     requires %d rows.\n",
+       (void) AZ_printf_err("\nError: data file %s contains %d rows ",datafile, total);
+       (void) AZ_printf_err("while the user's input\n     requires %d rows.\n",
                       totalN);
        exit(1);
     }
@@ -3752,8 +3752,8 @@ file specified by the input argument datafile instead from a file called
     for (i = 0; i < total; i++) {
       count++;
       if (count%1000 == 0) {
-        (void) fprintf(stdout, ".");
-        (void) fflush(stdout);
+        (void) AZ_printf_out( ".");
+        (void) AZ_flush_out();
       }
       if ((current < N_update) && (i == update[current])) {
         AZ_add_new_row(i, &nz_ptr, &current, val, bindx, 0, dfp, &msr_len,
@@ -3766,8 +3766,8 @@ file specified by the input argument datafile instead from a file called
         kkk = fscanf(dfp, "%d", &temp);
 #endif
         if (kkk <= 0) {
-           (void) fprintf(stderr,"\nError: AZ_input_msr(), end-of-file reached");
-           (void) fprintf(stderr," while reading row %d.\n",i);
+           (void) AZ_printf_err("\nError: AZ_input_msr(), end-of-file reached");
+           (void) AZ_printf_err(" while reading row %d.\n",i);
            exit(1);
         }
         if (temp == 0) column0 = 1;
@@ -3781,8 +3781,8 @@ file specified by the input argument datafile instead from a file called
           kkk = fscanf(dfp, "%lf", &dtemp);
 #endif
           if (kkk <= 0) {
-           (void) fprintf(stderr,"\nError: AZ_input_msr(), end-of-file reached");
-           (void) fprintf(stderr," while reading row %d.\n",i);
+           (void) AZ_printf_err("\nError: AZ_input_msr(), end-of-file reached");
+           (void) AZ_printf_err(" while reading row %d.\n",i);
            exit(1);
           }
 
@@ -3791,7 +3791,7 @@ file specified by the input argument datafile instead from a file called
             str = (char *) AZ_realloc(str,buf_len*sizeof(char));
 
             if (str == 0) {
-              (void) fprintf(stderr,"ERROR: Not Enough dynamic memory in "
+              (void) AZ_printf_err("ERROR: Not Enough dynamic memory in "
                              "AZ_input_msr()\n");
               exit(-1);
             }
@@ -3824,8 +3824,8 @@ file specified by the input argument datafile instead from a file called
           kkk = fscanf(dfp, "%d", &temp);
 #endif
           if (kkk <= 0) {
-           (void) fprintf(stderr,"\nError: AZ_input_msr(), end-of-file reached");
-           (void) fprintf(stderr," while reading row %d.\n",i);
+           (void) AZ_printf_err("\nError: AZ_input_msr(), end-of-file reached");
+           (void) AZ_printf_err(" while reading row %d.\n",i);
            exit(1);
           }
           if (temp == 0) column0 = 1;
@@ -3845,9 +3845,9 @@ file specified by the input argument datafile instead from a file called
 
         while ((k < nprocs) && (requests[k] != i)) k++;
         if (k == nprocs) {
-           (void) fprintf(stderr,"\nError: AZ_input_msr(), input file contains");
-           (void) fprintf(stderr," a row (%d)\n       that is not ",i);
-           (void) fprintf(stderr,"assigned to any processor?\n");
+           (void) AZ_printf_err("\nError: AZ_input_msr(), input file contains");
+           (void) AZ_printf_err(" a row (%d)\n       that is not ",i);
+           (void) AZ_printf_err("assigned to any processor?\n");
            exit(1);
         }
         mdwrap_write((void *) str, (unsigned int) j, k, type2, &st);
@@ -3866,25 +3866,25 @@ file specified by the input argument datafile instead from a file called
 
     for (k = 0 ; k < nprocs ; k++ ) {
        if (requests[k] != -1) {
-          (void) fprintf(stderr,"\nError: AZ_input_msr(), processor %d ",k);
-          (void) fprintf(stderr,"requested  but never received\n       ");
-          (void) fprintf(stderr,"matrix row %d. Check data file.\n",
+          (void) AZ_printf_err("\nError: AZ_input_msr(), processor %d ",k);
+          (void) AZ_printf_err("requested  but never received\n       ");
+          (void) AZ_printf_err("matrix row %d. Check data file.\n",
                          requests[k]);
           exit(1);
        }
     }
 
     if (column0 == 0) {
-       (void) fprintf(stderr,"\nWARNING: AZ_input_msr(), column 0 contains ");
-       (void) fprintf(stderr,"no off-diagonal elements.\n         Are you ");
-       (void) fprintf(stderr,"sure that you numbered the matrix rows/columns");
-       (void) fprintf(stderr," from\n         0 to n-1 (and not 1 to n).\n");
+       (void) AZ_printf_err("\nWARNING: AZ_input_msr(), column 0 contains ");
+       (void) AZ_printf_err("no off-diagonal elements.\n         Are you ");
+       (void) AZ_printf_err("sure that you numbered the matrix rows/columns");
+       (void) AZ_printf_err(" from\n         0 to n-1 (and not 1 to n).\n");
     }
 
 
     AZ_free(requests);
     fclose(dfp);
-    (void) fprintf(stdout, "\n");
+    (void) AZ_printf_out( "\n");
   }
 
   AZ_free(str);
@@ -3958,10 +3958,10 @@ void AZ_add_new_row(int therow, int *nz_ptr, int *current, double **val,
 #endif
 
     if (kk <= 0) {
-         (void) fprintf(stderr,"\nError: format error in '.data' file ");
-         (void) fprintf(stderr,"on row '%d'\n",*current);
-         (void) fprintf(stderr,"      This can be caused if exponents are\n");
-         (void) fprintf(stderr,"      given using 'D' instead of 'E'. \n");
+         (void) AZ_printf_err("\nError: format error in '.data' file ");
+         (void) AZ_printf_err("on row '%d'\n",*current);
+         (void) AZ_printf_err("      This can be caused if exponents are\n");
+         (void) AZ_printf_err("      given using 'D' instead of 'E'. \n");
        exit(1);
     }
     if (temp == 0) *column0 = 1;
@@ -3980,10 +3980,10 @@ void AZ_add_new_row(int therow, int *nz_ptr, int *current, double **val,
        kk = fscanf(dfp, "%lf", &dtemp);
 #endif
        if (kk <= 0) {
-         (void) fprintf(stderr,"\nError: format error in '.data' file ");
-         (void) fprintf(stderr,"on row '%d'\n",*current);
-         (void) fprintf(stderr,"       This can be caused if exponents are\n");
-         (void) fprintf(stderr,"       given using 'D' instead of 'E'. \n");
+         (void) AZ_printf_err("\nError: format error in '.data' file ");
+         (void) AZ_printf_err("on row '%d'\n",*current);
+         (void) AZ_printf_err("       This can be caused if exponents are\n");
+         (void) AZ_printf_err("       given using 'D' instead of 'E'. \n");
          exit(1);
        }
     }
@@ -4002,7 +4002,7 @@ void AZ_add_new_row(int therow, int *nz_ptr, int *current, double **val,
           *val   = (double *) AZ_realloc(*val,*msr_len*sizeof(double));
         }
         if (*val == 0) {
-          (void) fprintf(stderr,
+          (void) AZ_printf_err(
                          "ERROR: Not enough dynamic memory in AZ_read_msr()\n");
           exit(-1);
         }
@@ -4019,10 +4019,10 @@ void AZ_add_new_row(int therow, int *nz_ptr, int *current, double **val,
        kk = fscanf(dfp, "%d", &temp);
 #endif
        if (kk <= 0) {
-         (void) fprintf(stderr,"\nError: format error in '.data' file ");
-         (void) fprintf(stderr,"on row '%d'\n",*current);
-         (void) fprintf(stderr,"       This can be caused if exponents are\n");
-         (void) fprintf(stderr,"       given using 'D' instead of 'E'. \n");
+         (void) AZ_printf_err("\nError: format error in '.data' file ");
+         (void) AZ_printf_err("on row '%d'\n",*current);
+         (void) AZ_printf_err("       This can be caused if exponents are\n");
+         (void) AZ_printf_err("       given using 'D' instead of 'E'. \n");
          exit(1);
        }
        if (temp == 0) *column0 = 1;
@@ -4127,16 +4127,16 @@ void AZ_check_update(int update[], int N_update, int proc_config[])
 
   if (real_sum != sum) {
     if (proc == 0) {
-      (void) fprintf(stderr, "ERROR: update elements test failed\n");
-      (void) fprintf(stderr, "       theor. sum of update = %d\n", sum);
-      (void) fprintf(stderr, "       actual sum of update = %d\n",
+      (void) AZ_printf_err( "ERROR: update elements test failed\n");
+      (void) AZ_printf_err( "       theor. sum of update = %d\n", sum);
+      (void) AZ_printf_err( "       actual sum of update = %d\n",
                      real_sum);
     }
   }
   else return;
 
   if (proc == 0)
-    (void) fprintf(stderr, "Performing a detailed (slow) check\n");
+    (void) AZ_printf_err( "Performing a detailed (slow) check\n");
 
   /* Now do a slow and detailed check */
 
@@ -4187,9 +4187,9 @@ void AZ_check_update(int update[], int N_update, int proc_config[])
         while ((requests[k] != i) && (k < nprocs)) k++;
 
         if (k == nprocs) {
-          (void) fprintf(stderr, "ERROR: A grid point (%d) was not found\n",
+          (void) AZ_printf_err( "ERROR: A grid point (%d) was not found\n",
                          current);
-          (void) fprintf(stderr, "       among the update elements\n");
+          (void) AZ_printf_err( "       among the update elements\n");
           exit(-1);
         }
 
@@ -4412,8 +4412,8 @@ void AZ_transform(int proc_config[], int *external[], int bindx[], double val[],
   AZ__MPI_comm_space_ok();
 #ifdef AZTEC_MPI
   if ( proc_config[AZ_Comm_Set] != AZ_Done_by_User) {
-      printf("Error: Communicator not set. Use AZ_set_comm()\n");
-      printf("       (e.g. AZ_set_comm(proc_config,MPI_COMM_WORLD)).\n");
+      AZ_printf_err("Error: Communicator not set. Use AZ_set_comm()\n");
+      AZ_printf_err("       (e.g. AZ_set_comm(proc_config,MPI_COMM_WORLD)).\n");
       exit(1);
   }
 #endif
@@ -4435,7 +4435,7 @@ void AZ_transform(int proc_config[], int *external[], int bindx[], double val[],
     if (!AZ_using_fortran) {
       *cnptr = (int *) AZ_allocate((N_update + N_extern + 1)*sizeof(int));
       if (*cnptr == NULL) {
-         printf("Out of memory in AZ_transform\n");
+         AZ_printf_err("Out of memory in AZ_transform\n");
          exit(1);
       }
     }
@@ -4485,7 +4485,7 @@ void AZ_transform(int proc_config[], int *external[], int bindx[], double val[],
   }
 
   if (*extern_index == NULL)  {
-    (void) fprintf(stderr,
+    (void) AZ_printf_err(
                    "Error: Not enough space in main() for extern_index[]\n");
     exit(1);
   }
@@ -4602,7 +4602,7 @@ unsigned long int diff;
    if (sizeof(int) > sizeof(double)) i = sizeof(int);
    dtemp = (double *) AZ_allocate(((unsigned int) i*((unsigned int) (N+1))));
    if (dtemp == NULL) {
-      fprintf(stderr,"Note enough space in msr2vbr_mem_eff()\n");
+      AZ_printf_err("Note enough space in msr2vbr_mem_eff()\n");
       exit(1);
    }
    itemp = (int    *) dtemp;
@@ -4765,7 +4765,7 @@ unsigned long int diff;
    }
    dtemp = (double *) AZ_allocate(sizeof(double)*((unsigned int) (jj+1)));
    if (dtemp == NULL) {
-      fprintf(stderr,"Note enough space in msr2vbr_mem_eff()\n");
+      AZ_printf_err("Note enough space in msr2vbr_mem_eff()\n");
       exit(1);
    }
 

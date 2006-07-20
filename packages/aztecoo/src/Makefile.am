@@ -94,6 +94,7 @@ WITH_CPP_H = \
 	$(srcdir)/Epetra_MsrMatrix.h \
 	$(srcdir)/Aztec2Petra.h \
 	$(srcdir)/AZOO_iterate.h \
+	$(srcdir)/AZOO_printf.h \
         $(srcdir)/AztecOO_Scaling.h \
         $(srcdir)/AztecOO_StatusTest.h \
         $(srcdir)/AztecOO_StatusType.h \
@@ -110,6 +111,7 @@ WITH_CPP = \
 	$(srcdir)/Epetra_MsrMatrix.cpp \
 	$(srcdir)/Aztec2Petra.cpp \
 	$(srcdir)/AZOO_iterate.cpp \
+	$(srcdir)/AZOO_printf.cpp \
         $(srcdir)/AztecOO_Scaling.cpp \
         $(srcdir)/AztecOO_StatusTestCombo.cpp \
         $(srcdir)/AztecOO_StatusTestMaxIters.cpp \
@@ -226,6 +228,7 @@ DIST = \
 	$(srcdir)/az_ilut.c \
 	$(srcdir)/az_lu_y12.c \
 	$(srcdir)/az_poly.c \
+	$(srcdir)/az_printf.c \
 	$(srcdir)/az_qmrcgs.c \
 	$(srcdir)/az_rilu.c \
 	$(srcdir)/az_subdomain_solver.c \

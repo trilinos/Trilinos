@@ -110,7 +110,7 @@ int AZOO_Scale_Jacobi_or_row_sum(int action,
 
   int numMyRows = A->NumMyRows();
 
-  const Epetra_Map& rowmap = A->RowMatrixRowMap();
+  //const Epetra_Map& rowmap = A->RowMatrixRowMap();
 
   Epetra_Vector* vec = NULL;
 

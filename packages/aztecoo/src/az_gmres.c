@@ -274,7 +274,7 @@ void AZ_pgmres (double b[], double x[],double weight[], int options[],
        (options[AZ_output] != AZ_warnings) &&
        (options[AZ_output] != AZ_summary) &&
        (options[AZ_conv]!=AZTECOO_conv_test) && (proc == 0) )
-    (void) fprintf(stdout, "%siter:    0           residual = %e\n",prefix,scaled_r_norm);
+    (void) AZ_printf_out("%siter:    0           residual = %e\n",prefix,scaled_r_norm);
 
   iter = 0;
   while (!(convergence_info->converged) && iter < options[AZ_max_iter] && !(convergence_info->isnan)) {
@@ -453,7 +453,7 @@ void AZ_pgmres (double b[], double x[],double weight[], int options[],
 
       if ( (iter%print_freq == 0) &&
            (options[AZ_conv]!=AZTECOO_conv_test) && proc == 0)
-        (void) fprintf(stdout, "%siter: %4d           residual = %e\n",prefix,iter,
+        (void) AZ_printf_out("%siter: %4d           residual = %e\n",prefix,iter,
                        scaled_r_norm);
 
       i++;      /* subspace dim. counter dim(K) = i - 1 */
@@ -524,7 +524,7 @@ void AZ_pgmres (double b[], double x[],double weight[], int options[],
 
   if ( (iter%print_freq != 0) && (proc == 0) && (options[AZ_output] != AZ_none)
        && (options[AZ_output] != AZ_warnings) && (options[AZ_conv]!=AZTECOO_conv_test))
-    (void) fprintf(stdout, "%siter: %4d           residual = %e\n",prefix,iter,
+    (void) AZ_printf_out("%siter: %4d           residual = %e\n",prefix,iter,
                    scaled_r_norm);
 
 

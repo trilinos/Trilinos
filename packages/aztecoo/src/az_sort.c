@@ -568,7 +568,7 @@ void AZ_sortqlists(char a[], int b[], int indices[], int length, int type_length
       AZ_sort_dble(a, indices, 0, type_length*length-1, b, &midpoint, real_lists,
                    abuffer, buf_len, the_first, 0);
     else
-      (void) fprintf(stderr, "ERROR: unknown type size in AZ_sortqlists\n");
+      (void) AZ_printf_err("ERROR: unknown type size in AZ_sortqlists\n");
 
     AZ_free(abuffer);
 

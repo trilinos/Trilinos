@@ -214,6 +214,18 @@ class AztecOO {
     other status test objects for sophisticated convergence testing.
   */
   int SetStatusTest(AztecOO_StatusTest * StatusTest);
+
+  //! Set std::ostream for Aztec's screen output.
+  /*! This sets the destination for output that Aztec would normally
+      send to stdout.
+  */
+  void SetOutputStream(std::ostream& ostrm);
+
+  //! Set std::ostream for Aztec's error output.
+  /*! This sets the destination for output that Aztec would normally
+      send to stderr.
+  */
+  void SetErrorStream(std::ostream& errstrm);
   //@}
 
   //** \name Post-construction setup methods (classic approach: ONLY EXPERTS SHOULD USE THESE METHODS). */ //@{
@@ -578,6 +590,8 @@ class AztecOO {
   OperatorData * UserOperatorData_;
   OperatorData * PrecOperatorData_;
 
+  std::ostream* out_stream_;
+  std::ostream* err_stream_;
 };
 
 // External prototypes

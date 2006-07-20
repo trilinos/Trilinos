@@ -43,6 +43,7 @@
 
 #include <AztecOO_string_maps.h>
 #include <AztecOO_Scaling.h>
+#include <AZOO_printf.h>
 
 #ifdef HAVE_AZTECOO_TEUCHOS
 #include <Teuchos_ParameterList.hpp>
@@ -75,6 +76,8 @@ AztecOO::OperatorData::~OperatorData()
 AztecOO::AztecOO(Epetra_Operator * A, 
                    Epetra_MultiVector * X,
                    Epetra_MultiVector * B) {
+  out_stream_ = 0;
+  err_stream_ = 0;
 
   inConstructor_ = true;  // Shut down complaints about zero pointers for a while
   AllocAzArrays();
@@ -96,6 +99,8 @@ AztecOO::AztecOO(Epetra_Operator * A,
 AztecOO::AztecOO(Epetra_RowMatrix * A, 
 		 Epetra_MultiVector * X,
 		 Epetra_MultiVector * B) {
+  out_stream_ = 0;
+  err_stream_ = 0;
 
   inConstructor_ = true;  // Shut down complaints about zero pointers for a while
   AllocAzArrays();
@@ -110,6 +115,8 @@ AztecOO::AztecOO(Epetra_RowMatrix * A,
 
 //=============================================================================
 AztecOO::AztecOO(const Epetra_LinearProblem& prob) {
+  out_stream_ = 0;
+  err_stream_ = 0;
 
   inConstructor_ = true;  // Shut down complaints about zero pointers for a while
   AllocAzArrays();
@@ -121,6 +128,9 @@ AztecOO::AztecOO(const Epetra_LinearProblem& prob) {
 
 //=============================================================================
 AztecOO::AztecOO() {
+  out_stream_ = 0;
+  err_stream_ = 0;
+
   inConstructor_ = true;  // Shut down complaints about zero pointers for a while
   AllocAzArrays();
   SetAztecDefaults();
@@ -129,6 +139,8 @@ AztecOO::AztecOO() {
 
 //=============================================================================
 AztecOO::AztecOO(const AztecOO& source) {
+  out_stream_ = source.out_stream_;
+  err_stream_ = source.err_stream_;
 
   inConstructor_ = true;  // Shut down complaints about zero pointers for a while
   AllocAzArrays();
@@ -293,7 +305,8 @@ int AztecOO::SetParameters(Teuchos::ParameterList& parameterlist,
     }
 
     if (cerr_warning_if_unused && !entry_used) {
-      cerr << "AztecOO:SetParameters warning: '"<<name<<"' not used."<<endl;
+      std::ostream& ostrm = err_stream_ ? *err_stream_ : std::cerr;
+      ostrm << "AztecOO:SetParameters warning: '"<<name<<"' not used."<<endl;
     }
 
     name = " ";
@@ -451,6 +464,20 @@ int AztecOO::SetUserMatrix(Epetra_RowMatrix * UserMatrix) {
 
 
 //=============================================================================
+void AztecOO::SetOutputStream(std::ostream& ostrm)
+{
+  out_stream_ = &ostrm;
+  AZOO_set_stream_out(ostrm);
+}
+
+//=============================================================================
+void AztecOO::SetErrorStream(std::ostream& ostrm)
+{
+  err_stream_ = &ostrm;
+  AZOO_set_stream_err(ostrm);
+}
+
+//=============================================================================
 int AztecOO::SetPrecMatrix(Epetra_RowMatrix * PrecMatrix) {
 
   if (PrecMatrix == 0 && inConstructor_ == true) return(0);
@@ -571,7 +598,8 @@ int AztecOO::SetProcConfig(const Epetra_Comm & Comm) {
 #ifdef AZTEC_MPI
     const Epetra_MpiComm* comm1 = dynamic_cast<const Epetra_MpiComm*> (&Comm);
     if (comm1 == 0) {
-      std::cerr << "AztecOO::SetProcConfig ERROR, failed to dynamic_cast "
+      std::ostream& ostrm = err_stream_ ? *err_stream_ : std::cerr;
+      ostrm << "AztecOO::SetProcConfig ERROR, failed to dynamic_cast "
         << "Comm to Epetra_MpiComm."<<std::endl;
       return(-1);
     }
@@ -774,29 +802,34 @@ int AztecOO::recursiveIterate(int MaxIters, double Tolerance)
                    (Epetra_Object::GetTracebackMode()>0) &&
                    (options_[AZ_diagnostics]!=AZ_none);
 
+  std::ostream* ostrm = 0;
+  if (print_msg) {
+    ostrm = err_stream_ ? err_stream_ : &std::cerr;
+  }
+
   int ierr = 0;
   if (status_[AZ_why] == AZ_param) {
     ierr = -1;
     if (print_msg) {
-      cerr << "Aztec status AZ_param: option not implemented" << endl;
+      *ostrm << "Aztec status AZ_param: option not implemented" << endl;
     }
   }
   else if (status_[AZ_why] == AZ_breakdown) {
     ierr = -2;
     if (print_msg) {
-      cerr << "Aztec status AZ_breakdown: numerical breakdown" << endl;
+      *ostrm << "Aztec status AZ_breakdown: numerical breakdown" << endl;
     }
   }
   else if (status_[AZ_why] == AZ_loss) {
     ierr = -3;
     if (print_msg) {
-      cerr << "Aztec status AZ_loss: loss of precision" << endl;
+      *ostrm << "Aztec status AZ_loss: loss of precision" << endl;
     }
   }
   else if (status_[AZ_why] == AZ_ill_cond) {
     ierr = -4;
     if (print_msg) {
-      cerr << "Aztec status AZ_ill_cond: GMRES hessenberg ill-conditioned"
+      *ostrm << "Aztec status AZ_ill_cond: GMRES hessenberg ill-conditioned"
            << endl;
     }
   }
@@ -873,29 +906,34 @@ int AztecOO::Iterate(int MaxIters, double Tolerance)
                    (Epetra_Object::GetTracebackMode()>0) &&
                    (options_[AZ_diagnostics]!=AZ_none);
 
+  std::ostream* ostrm = 0;
+  if (print_msg) {
+    ostrm = err_stream_ ? err_stream_ : &std::cerr;
+  }
+
   int ierr = 0;
   if (status_[AZ_why] == AZ_param) {
     ierr = -1;
     if (print_msg) {
-      cerr << "Aztec status AZ_param: option not implemented" << endl;
+      *ostrm << "Aztec status AZ_param: option not implemented" << endl;
     }
   }
   else if (status_[AZ_why] == AZ_breakdown) {
     ierr = -2;
     if (print_msg) {
-      cerr << "Aztec status AZ_breakdown: numerical breakdown" << endl;
+      *ostrm << "Aztec status AZ_breakdown: numerical breakdown" << endl;
     }
   }
   else if (status_[AZ_why] == AZ_loss) {
     ierr = -3;
     if (print_msg) {
-      cerr << "Aztec status AZ_loss: loss of precision" << endl;
+      *ostrm << "Aztec status AZ_loss: loss of precision" << endl;
     }
   }
   else if (status_[AZ_why] == AZ_ill_cond) {
     ierr = -4;
     if (print_msg) {
-      cerr << "Aztec status AZ_ill_cond: GMRES hessenberg ill-conditioned"
+      *ostrm << "Aztec status AZ_ill_cond: GMRES hessenberg ill-conditioned"
            << endl;
     }
   }
@@ -1149,29 +1187,34 @@ int AztecOO::AdaptiveIterate(int MaxIters, int MaxSolveAttempts, double Toleranc
                    (Epetra_Object::GetTracebackMode()>0) &&
                    (options_[AZ_diagnostics]!=AZ_none);
 
+  std::ostream* ostrm = 0;
+  if (print_msg) {
+    ostrm = err_stream_ ? err_stream_ : &std::cerr;
+  }
+
   int ierr = 0;
   if (status_[AZ_why] == AZ_param) {
     ierr = -1;
     if (print_msg) {
-      cerr << "Aztec status AZ_param: option not implemented" << endl;
+      *ostrm << "Aztec status AZ_param: option not implemented" << endl;
     }
   }
   else if (status_[AZ_why] == AZ_breakdown) {
     ierr = -2;
     if (print_msg) {
-      cerr << "Aztec status AZ_breakdown: numerical breakdown" << endl;
+      *ostrm << "Aztec status AZ_breakdown: numerical breakdown" << endl;
     }
   }
   else if (status_[AZ_why] == AZ_loss) {
     ierr = -3;
     if (print_msg) {
-      cerr << "Aztec status AZ_loss: loss of precision" << endl;
+      *ostrm << "Aztec status AZ_loss: loss of precision" << endl;
     }
   }
   else if (status_[AZ_why] == AZ_ill_cond) {
     ierr = -4;
     if (print_msg) {
-      cerr << "Aztec status AZ_ill_cond: GMRES hessenberg ill-conditioned"
+      *ostrm << "Aztec status AZ_ill_cond: GMRES hessenberg ill-conditioned"
            << endl;
     }
   }
@@ -1212,8 +1255,11 @@ void AztecOO::PrintLinearSystem(const char* name)
     }
   }
 
+  std::ostream& ostrm = err_stream_ ? *err_stream_ : std::cerr;
+
   if (comm == 0) {
-    std::cerr << "Aztec::PrintLinearSystem: matrix and vectors seem to all"
+
+    ostrm << "Aztec::PrintLinearSystem: matrix and vectors seem to all"
         << " be NULL." << std::endl;
     return;
   }
@@ -1241,7 +1287,7 @@ void AztecOO::PrintLinearSystem(const char* name)
             crs->Print(afile);
           }
           else {
-            std::cerr << "AztecOO::PrintLinearSystem: unable to open file '"
+            ostrm << "AztecOO::PrintLinearSystem: unable to open file '"
                  << afilename << "'."<<std::endl;
           }
         }
@@ -1254,7 +1300,7 @@ void AztecOO::PrintLinearSystem(const char* name)
               crs->Print(afile);
             }
             else {
-              std::cerr << "AztecOO::PrintLinearSystem: unable to open file '"
+              ostrm << "AztecOO::PrintLinearSystem: unable to open file '"
                    << afilename << "'."<<std::endl;
             }
           }
@@ -1270,7 +1316,7 @@ void AztecOO::PrintLinearSystem(const char* name)
         X_->Print(xfile);
       }
       else {
-        std::cerr << "AztecOO::PrintLinearSystem: unable to open file '"
+        ostrm << "AztecOO::PrintLinearSystem: unable to open file '"
              << xfilename << "'."<<std::endl;
       }
     }
@@ -1283,7 +1329,7 @@ void AztecOO::PrintLinearSystem(const char* name)
         B_->Print(bfile);
       }
       else {
-        std::cerr << "AztecOO::PrintLinearSystem: unable to open file '"
+        ostrm << "AztecOO::PrintLinearSystem: unable to open file '"
              << bfilename << "'."<<std::endl;
       }
     }
@@ -1500,7 +1546,9 @@ void AztecOO_StatusTest_wrapper(void * conv_test_obj,/* pointer to AztecOO_Statu
   AztecOO_StatusType Status = StatusTest->CheckStatus(iteration, ResidualVector, 
 								  *rnorm, SolutionUpdated);
   
-  if ((Status==Converged && print_info==0) || print_info==1) StatusTest->Print(cout);
+  if ((Status==Converged && print_info==0) || print_info==1) {
+    StatusTest->Print(std::cout);
+  }
   if (StatusTest->ResidualVectorRequired())
     *r_avail = AZ_TRUE;
   else
@@ -1517,3 +1565,4 @@ void AztecOO_StatusTest_wrapper(void * conv_test_obj,/* pointer to AztecOO_Statu
 
   return;
 }
+

@@ -219,7 +219,7 @@ int Epetra_MsrMatrix::InvColSums(Epetra_Vector& x) const {
   if (!OperatorDomainMap().SameAs(x.Map())) EPETRA_CHK_ERR(-2); // x must have the same distribution as the domain of A
   
 
-  Epetra_Vector * xp;
+  Epetra_Vector * xp = 0;
   Epetra_Vector * x_tmp = 0;
   
 
@@ -301,7 +301,7 @@ int Epetra_MsrMatrix::RightScale(const Epetra_Vector& x) {
 
   int * bindx = Amat_->bindx;
   double * val = Amat_->val;
-  Epetra_Vector * xp;
+  Epetra_Vector * xp = 0;
   Epetra_Vector * x_tmp = 0;
 
   // If we have a non-trivial importer, we must import elements that are permuted or are on other processors
@@ -354,7 +354,7 @@ double Epetra_MsrMatrix::NormOne() const {
 
   Epetra_Vector * x = new Epetra_Vector(RowMatrixRowMap()); // Need temp vector for column sums
   
-  Epetra_Vector * xp;
+  Epetra_Vector * xp = 0;
   Epetra_Vector * x_tmp = 0;
   
 

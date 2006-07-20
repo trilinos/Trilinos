@@ -363,7 +363,7 @@ void AZ_factor_subdomain(struct context *context, int N, int N_nz,
               context->N_nz_factors = N_nz;
               fake_rhs = (double *) AZ_allocate(N*sizeof(double));
               if (fake_rhs == NULL) {
-                 printf("Not enough memory inside subdomain_solve\n");
+                 AZ_printf_out("Not enough memory inside subdomain_solve\n");
               }
               for (i = 0 ; i < N ; i++ ) fake_rhs[i] = 0.0;
               AZ_fact_lu(fake_rhs, context->A_overlapped,aflag, 
@@ -387,14 +387,14 @@ void AZ_factor_subdomain(struct context *context, int N, int N_nz,
            AZ_free(rnr);
            AZ_free(aflag);
 #else
-	   fprintf(stderr,"AZ_lu unavailable: configure with --enable-aztecoo-azlu to make available\n");
+	   AZ_printf_err("AZ_lu unavailable: configure with --enable-aztecoo-azlu to make available\n");
 	   exit(1);
 #endif
            break;
         default:
            if (context->aztec_choices->options[AZ_subdomain_solve]
                   >= AZ_SOLVER_PARAMS) {
-              fprintf(stderr,"Unknown subdomain solver(%d)\n",
+              AZ_printf_err("Unknown subdomain solver(%d)\n",
                    context->aztec_choices->options[AZ_subdomain_solve]);
               exit(1);
            }
@@ -513,7 +513,7 @@ void AZ_hold_space(struct context *context, int N)
 
         if (context->space_holder == NULL) AZ_perror("Out of space in lu.\n");
 #else
-	fprintf(stderr,"AZ_lu unavailable: configure with --enable-aztecoo-azlu to make available\n");
+	AZ_printf_err("AZ_lu unavailable: configure with --enable-aztecoo-azlu to make available\n");
 	exit(1);
 #endif
       break;
@@ -707,14 +707,14 @@ int  t1, t2, t3, i, t4, t5 = 0;
                       &ifail, &(context->N_nz_factors),
 		      &N, &N);
 #else
-    fprintf(stderr,"AZ_lu unavailable: configure with --enable-aztecoo-azlu to make available\n");
+    AZ_printf_err("AZ_lu unavailable: configure with --enable-aztecoo-azlu to make available\n");
     exit(1);
 #endif
       break;
    default: 
       if (context->aztec_choices->options[AZ_subdomain_solve]
                   >= AZ_SOLVER_PARAMS) {
-         printf("ERROR: Unknown subdomain solver %d\n",
+         AZ_printf_out("ERROR: Unknown subdomain solver %d\n",
                 context->aztec_choices->options[AZ_subdomain_solve]);
          exit(1);
        }
@@ -739,7 +739,7 @@ int  t1, t2, t3, i, t4, t5 = 0;
           hold_data_org = context->A_overlapped->data_org;
           new_data_org = (int *) AZ_allocate( sizeof(int) * AZ_send_list );
           if (new_data_org == NULL) {
-             printf("Error: Not enough space for subdomain matrix\n");
+             AZ_printf_out("Error: Not enough space for subdomain matrix\n");
              exit(1);
           }
           context->A_overlapped->data_org = new_data_org;
@@ -872,8 +872,8 @@ void AZ_space_for_factors(double input_fill, int N_nz, int N,
      fill = options[AZ_graph_fill];
 /* End Aztec 2.1 mheroux mod */
      if (fill < 0) {
-         printf("options[AZ_graph_fill] must be greater or equal to 0\n");
-         printf("when using an incomplete factorization\n");
+         AZ_printf_out("options[AZ_graph_fill] must be greater or equal to 0\n");
+         AZ_printf_out("when using an incomplete factorization\n");
          exit(1);
      }
      if (fill == 0) *extra_factor_nonzeros = 3;

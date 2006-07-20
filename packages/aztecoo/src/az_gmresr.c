@@ -216,7 +216,7 @@ char *T2 = "N";
        (options[AZ_output] != AZ_last) &&
        (options[AZ_output] != AZ_summary) &&
        (options[AZ_output] != AZ_warnings) && (proc == 0) )
-    (void) fprintf(stdout, "%siter:    0           residual = %e\n",
+    (void) AZ_printf_out("%siter:    0           residual = %e\n",
                            prefix,scaled_r_norm);
 
   iter = 0;
@@ -302,7 +302,7 @@ char *T2 = "N";
       converged = scaled_r_norm < epsilon;
 
       if ( (iter%print_freq == 0) && proc == 0)
-        (void) fprintf(stdout, "%siter: %4d           residual = %e\n",
+        (void) AZ_printf_out("%siter: %4d           residual = %e\n",
                        prefix,iter, scaled_r_norm);
 
       i++;      /* subspace dim. counter dim(K) = i - 1 */
@@ -345,7 +345,7 @@ char *T2 = "N";
 
   if ( (iter%print_freq != 0) && (proc == 0) && (options[AZ_output] != AZ_none)
        && (options[AZ_output] != AZ_warnings))
-    (void) fprintf(stdout, "%siter: %4d           residual = %e\n",
+    (void) AZ_printf_out("%siter: %4d           residual = %e\n",
 		   prefix,iter, scaled_r_norm);
 
   /* check if we exceeded maximum number of iterations */

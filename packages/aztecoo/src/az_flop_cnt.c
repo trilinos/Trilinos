@@ -133,7 +133,7 @@ double AZ_calc_solve_flops(int options[], int total_its, double total_time,
     scale_flops =  gnnz;
   }
   else {
-    (void) printf("\t\tFlops not available for options[AZ_scaling] = %d\n",
+    (void) AZ_printf_out("\t\tFlops not available for options[AZ_scaling] = %d\n",
                   options[AZ_scaling]);
     return -1.0;
   }
@@ -167,9 +167,9 @@ double AZ_calc_solve_flops(int options[], int total_its, double total_time,
   total_flops = scale_flops + iter_flops + precond_flops;
 
   if (proc_config[AZ_node] == 0) {
-    (void) printf("\t\tscale_flops: %e\titer_flops: %e\n", scale_flops,
+    (void) AZ_printf_out("\t\tscale_flops: %e\titer_flops: %e\n", scale_flops,
                   iter_flops);
-    (void) printf("\t\tprecond_flops: %e\ttotal_flops: %e\n\n", precond_flops,
+    (void) AZ_printf_out("\t\tprecond_flops: %e\ttotal_flops: %e\n\n", precond_flops,
                   total_flops);
   }
 
@@ -260,12 +260,12 @@ double AZ_calc_iter_flops(int solver_flag, double inner_flops,
       total_its*(7.0*inner_flops + 2.0*matvec_flops + 2.0*daxpy_flops + 6.0));
 
   case AZ_lu:
-    (void) fprintf(stderr,
+    (void) AZ_printf_err(
                    "\t\tWARNING: Flop count not implemented for lu solver\n");
   return -1.0;
 
   default:
-    (void) fprintf(stdout, "\t\tFlops not available for options[AZ_solver] = %d\n",
+    (void) AZ_printf_out( "\t\tFlops not available for options[AZ_solver] = %d\n",
                    solver_flag);
   return -1.0;
   }
@@ -397,7 +397,7 @@ double AZ_calc_precond_flops(int solver_flag, int options[],
     break;
 
   default:
-    (void) fprintf(stdout, "\t\tFlops not available for options[AZ_precond] = %d\n",
+    (void) AZ_printf_out( "\t\tFlops not available for options[AZ_precond] = %d\n",
                    options[AZ_precond]);
   return -1.0;
   }

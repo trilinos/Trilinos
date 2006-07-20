@@ -208,7 +208,7 @@ int *garbage;
         context->N_nz_factors = N_nz;
 
         if (N_nz <= N_nz_unpadded) {
-           printf("Error: Not enough space for domain decomposition\n");
+           AZ_printf_out("Error: Not enough space for domain decomposition\n");
            AZ_exit(1);
         }
 
@@ -251,7 +251,7 @@ int *garbage;
 
 /*
         if (proc_config[AZ_node] == 0)
-           printf("matrix padding took %e seconds\n",AZ_second()-start_t);
+           AZ_printf_out("matrix padding took %e seconds\n",AZ_second()-start_t);
 */
 
 
@@ -266,7 +266,7 @@ int *garbage;
                                 &(context->inv_ordering),name,context);
 /*
            if (proc_config[AZ_node] == 0) 
-              printf("took %e seconds to find ordering\n", AZ_second()-start_t);
+              AZ_printf_out("took %e seconds to find ordering\n", AZ_second()-start_t);
 */
 /*
            start_t = AZ_second();
@@ -275,7 +275,7 @@ int *garbage;
                           context->ordering, context->inv_ordering);
 /*
            if (proc_config[AZ_node] == 0) 
-              printf("took %e seconds to reorder\n", AZ_second()-start_t);
+              AZ_printf_out("took %e seconds to reorder\n", AZ_second()-start_t);
 */
                 /* NOTE: ordering is freed inside AZ_mat_reorder */
 #ifdef AZ_COL_REORDER
@@ -295,11 +295,11 @@ int *garbage;
         AZ_factor_subdomain(context, N, N_nz, &nz_used);
 
        if (options[AZ_output] > 0 && options[AZ_diagnostics]!=AZ_none) {
-          printf("\n*********************************************************************\n");
+          AZ_printf_out("\n*********************************************************************\n");
 	  condest = AZ_condest(N, context);
-          printf("*****  Condition number estimate for subdomain preconditioner on PE %d = %.4e\n",
+          AZ_printf_out("*****  Condition number estimate for subdomain preconditioner on PE %d = %.4e\n",
                proc_config[AZ_node], condest);
-          printf("*********************************************************************\n");
+          AZ_printf_out("*********************************************************************\n");
         }
 
 
@@ -308,7 +308,7 @@ int *garbage;
         max_time = AZ_gmax_double(start_t,proc_config);
         min_time = AZ_gmin_double(start_t,proc_config);
         if (proc_config[AZ_node] == 0) 
-           printf("time for subdomain solvers ranges from %e to %e\n",
+           AZ_printf_out("time for subdomain solvers ranges from %e to %e\n",
                   min_time,max_time);
 */
   
@@ -415,20 +415,20 @@ void AZ_print_header(int options[], int mem_overlapped,
 if ((options[AZ_overlap] < 1) && 
     (options[AZ_subdomain_solve] != AZ_ilut)) return;
  if ((options[AZ_output] != AZ_none ) && (options[AZ_output] != AZ_warnings) && (options[AZ_diagnostics]==AZ_all)){
-      printf("\n\t\t*******************************************************\n");
+      AZ_printf_out("\n\t\t*******************************************************\n");
       if (options[AZ_overlap] > 0) {
-         printf("\t\t*****       Subdomain overlapping requires %.3e times\n", 
+         AZ_printf_out("\t\t*****       Subdomain overlapping requires %.3e times\n", 
                 ((double) mem_overlapped)/ ((double) mem_orig));
-         printf("\t\t*****       the memory used for the nonoverlapped\n");
-         printf("\t\t*****       subdomain matrix.\n");
+         AZ_printf_out("\t\t*****       the memory used for the nonoverlapped\n");
+         AZ_printf_out("\t\t*****       subdomain matrix.\n");
       }
       if (options[AZ_subdomain_solve] == AZ_ilut) {
-         printf("\t\t***** ilut: The ilut factors require %.3e times \n\t\t", 
+         AZ_printf_out("\t\t***** ilut: The ilut factors require %.3e times \n\t\t", 
                  ((double) mem_factor)/((double) mem_overlapped));
-         printf("*****       the memory of the overlapped subdomain matrix.");
+         AZ_printf_out("*****       the memory of the overlapped subdomain matrix.");
       }
-      printf("\n\t\t*******************************************************\n");
-      printf("\n");
+      AZ_printf_out("\n\t\t*******************************************************\n");
+      AZ_printf_out("\n");
    }
 }
 
@@ -487,7 +487,7 @@ void AZ_find_MSR_ordering(int bindx2[],int **ordering,int N,
                                             str,&i);
    mask          = (int *) AZ_allocate((N+1)*sizeof(int));
    if (mask == NULL) {
-      printf("Not enough space for RCM reordering\n");
+      AZ_printf_out("Not enough space for RCM reordering\n");
       AZ_exit(1);
    }
 
@@ -508,7 +508,7 @@ void AZ_find_MSR_ordering(int bindx2[],int **ordering,int N,
       }
       total += ccsize;
       if (ccsize == 0) {
-         printf("Error inside reordering\n");
+         AZ_printf_out("Error inside reordering\n");
          AZ_exit(1);
       }
    }
@@ -677,12 +677,12 @@ int count, start, end, j;
 			   context);
 
            if (New_N_rows > *N) {
-              printf("Incorrectly estimated the overlap space reqirements.\n");
-              printf("N_unpadded = %d, N_external = %d, overlap = %d\n",
+              AZ_printf_out("Incorrectly estimated the overlap space reqirements.\n");
+              AZ_printf_out("N_unpadded = %d, N_external = %d, overlap = %d\n",
 		     N_unpadded, data_org[AZ_N_external], overlap);
-              printf("Guess = %d, actual number of padded rows = %d\n",
+              AZ_printf_out("Guess = %d, actual number of padded rows = %d\n",
                      *N, New_N_rows);
-              printf("\n\nTry less overlapping and maybe we'll get it right\n");
+              AZ_printf_out("\n\nTry less overlapping and maybe we'll get it right\n");
 
               AZ_exit(1);
            }
@@ -713,7 +713,7 @@ int count, start, end, j;
        *N = data_org[AZ_N_internal] + data_org[AZ_N_border];
 
        if (*N_nz < *N + data_org[AZ_N_external]) {
-          fprintf(stderr,"Not enough memory for diagonal overlapping\n");
+          AZ_printf_err("Not enough memory for diagonal overlapping\n");
           AZ_exit(1);
        }
 

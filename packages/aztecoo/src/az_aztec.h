@@ -1541,11 +1541,19 @@ extern void AZ_print_vbr_matrix(
                          /* the number of nonzero blocks of matrix A plus one.*/
         );
 
-
 extern double AZ_sync_timer(int proc_config[]);
 
+/* most Aztec code calls the following functions for stdout/stderr output
+  rather than the regular printf and fprintf(stderr,...) functions. This
+  allows for the possibility that a C++ user (such as the AztecOO class)
+  can specify arbitrary C++ std::ostreams to receive Aztec's output instead
+  of having it go to stdout/stderr. The C++ functions for setting the
+  ostreams are in AZOO_printf.[h,cpp].
+*/
+extern int AZ_printf_out(const char* format, ...);
+extern int AZ_printf_err(const char* format, ...);
 
-
+extern void AZ_flush_out();
 
 
 

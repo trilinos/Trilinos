@@ -168,7 +168,7 @@ void AZ_fix_pt(double b[], double x[], double weight[], int options[],
       (options[AZ_output] != AZ_last) &&
       (options[AZ_output] != AZ_summary) &&
       (options[AZ_output] != AZ_warnings) && (proc == 0))
-    (void) fprintf(stdout, "%siter:    0           residual = %e\n",
+    (void) AZ_printf_out("%siter:    0           residual = %e\n",
                    prefix,scaled_r_norm);
 
   converged = scaled_r_norm < epsilon;
@@ -202,7 +202,7 @@ void AZ_fix_pt(double b[], double x[], double weight[], int options[],
 			 dummy, convergence_info);
 
        if ( (iter%print_freq == 0) && proc == 0 )
-          (void) fprintf(stdout, "%siter: %4d           residual = %e\n", 
+          (void) AZ_printf_out("%siter: %4d           residual = %e\n", 
 		     prefix, iter, scaled_r_norm);
 
        converged = scaled_r_norm < epsilon;
@@ -225,7 +225,7 @@ void AZ_fix_pt(double b[], double x[], double weight[], int options[],
                               data_org, proc_config, &r_avail, dummy, dummy, 
                               dummy, convergence_info);
     
-    (void) fprintf(stdout, "%siter: %4d           residual = %e\n", 
+    (void) AZ_printf_out("%siter: %4d           residual = %e\n", 
 		   prefix, iter, scaled_r_norm);
   }
     

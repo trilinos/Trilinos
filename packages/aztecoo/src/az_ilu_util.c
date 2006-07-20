@@ -425,7 +425,7 @@ void order_parallel(int M, double *val_old, double *val_new, int *bindx_old,
 
   sort = (int *) AZ_allocate(sizeof(int) * (M));
   if (sort == NULL) {
-    (void) fprintf(stderr, "Error: not enough memory inside order_parallel\n"
+    (void) AZ_printf_err("Error: not enough memory inside order_parallel\n"
                    "       must run a smaller problem\n");
     exit(-1);
   }
@@ -659,7 +659,7 @@ void AZ_MSR_mult_patterns(int bindx[], int N, int last[], int bindx_length,
       }
 
       if (next_nz+Ncols-2 > last[i]) {
-         printf("Not enough room for the larger sparsity pattern\n");
+         AZ_printf_err("Not enough room for the larger sparsity pattern\n");
          exit(1);
       }
       for (k = 0 ; k < Ncols ; k++) {

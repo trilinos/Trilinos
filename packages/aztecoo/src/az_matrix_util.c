@@ -183,7 +183,7 @@ double AZ_gmax_matrix_norm(double val[], int indx[],int bindx[], int rpntr[],
   }
 
   else {
-    (void) fprintf(stderr, "ERROR: invalid matrix type %d\n",
+    (void) AZ_printf_err( "ERROR: invalid matrix type %d\n",
                    data_org[AZ_matrix_type]);
     exit(1);
   }
@@ -330,38 +330,38 @@ void AZ_print_vbr_matrix(int matrix_flag, int Proc, int itotal_nodes,
 
   /* print out the VBR indexing information for the matrix */
 
-  (void) printf("\n----- Proc: %d indx -----\n\n", Proc);
+  (void) AZ_printf_out("\n----- Proc: %d indx -----\n\n", Proc);
 
   for (iblk = 0; iblk < itotal_nodes; iblk++) {
     for (i = *(bpntr+iblk); i < *(bpntr+iblk+1); i++)
-      (void) printf("%d ", *(indx+i));
+      (void) AZ_printf_out("%d ", *(indx+i));
 
     if (iblk == itotal_nodes - 1){
-      (void) printf("%d\n", *(indx+i));
+      (void) AZ_printf_out("%d\n", *(indx+i));
     }
     else
-      (void) printf("\n");
+      (void) AZ_printf_out("\n");
   }
 
-  (void) printf("\n----- Proc: %d bindx -----\n\n", Proc);
+  (void) AZ_printf_out("\n----- Proc: %d bindx -----\n\n", Proc);
 
   for (iblk = 0; iblk < itotal_nodes; iblk++) {
     for (i = *(bpntr+iblk); i < *(bpntr+iblk+1); i++)
-      (void) printf("%d ", *(bindx+i));
-    (void) printf("\n");
+      (void) AZ_printf_out("%d ", *(bindx+i));
+    (void) AZ_printf_out("\n");
   }
 
-  (void) printf("\n----- Proc: %d rpntr -----\n\n", Proc);
+  (void) AZ_printf_out("\n----- Proc: %d rpntr -----\n\n", Proc);
 
   for (i = 0; i < itotal_nodes + ext_nodes + 1; i++)
-    (void) printf("%d ", *(rpntr+i));
-  (void) printf("\n");
+    (void) AZ_printf_out("%d ", *(rpntr+i));
+  (void) AZ_printf_out("\n");
 
-  (void) printf("\n----- Proc: %d bpntr -----\n\n", Proc);
+  (void) AZ_printf_out("\n----- Proc: %d bpntr -----\n\n", Proc);
 
   for (i = 0; i < itotal_nodes + 1; i++)
-    (void) printf("%d ", *(bpntr+i));
-  (void) printf("\n");
+    (void) AZ_printf_out("%d ", *(bpntr+i));
+  (void) AZ_printf_out("\n");
 
   /* dump of matrix in a block output format */
 
@@ -396,18 +396,18 @@ void AZ_print_vbr_matrix(int matrix_flag, int Proc, int itotal_nodes,
 
         n1 = ib2 - ib1;
 
-        (void) printf("\nProc: %d Block Row: %d Block Column: %d "
+        (void) AZ_printf_out("\nProc: %d Block Row: %d Block Column: %d "
                       "Row Pointer: %d Column Pointer: %d\n", Proc, iblk_row,
                       jblk, rpntr[iblk_row], rpntr[jblk]);
 
-        (void) printf("---------------------------------------"
+        (void) AZ_printf_out("---------------------------------------"
                       "---------------------------------------\n");
 
         for (ipoint = 0; ipoint < m1; ipoint++) {
           for (jpoint = 0; jpoint < n1; jpoint++)
-            (void) printf("val[%d]: %e ", ival+jpoint*m1+ipoint,
+            (void) AZ_printf_out("val[%d]: %e ", ival+jpoint*m1+ipoint,
                           val[ival+jpoint*m1+ipoint]);
-          (void) printf("\n");
+          (void) AZ_printf_out("\n");
         }
 
         ival += m1*n1;
@@ -612,35 +612,35 @@ void AZ_print_out(int update_index[], int extern_index[], int update[],
       mdwrap_iread((void *) &i, 0, &neighbor, &type, &request);
       mdwrap_wait((void *) &i, 0, &neighbor, &type, &cflag, &request);
    }
-   printf("proc %d:\n",proc_config[AZ_node]);
+   AZ_printf_out("proc %d:\n",proc_config[AZ_node]);
 
    if (choice == AZ_input_form ) {
      if ( update != (int *) NULL) {
-        printf("  N_update: %5d\n",N_update); printf("  update:");
+        AZ_printf_out("  N_update: %5d\n",N_update); AZ_printf_out("  update:");
         AZ_list_print(update, N_update, (double *) NULL , 0);
      }
 
      if (matrix == AZ_MSR_MATRIX) {
-        printf("  bindx: ");
+        AZ_printf_out("  bindx: ");
         AZ_list_print(bindx, bindx[N_update], (double *) NULL , 0);
 
-        printf("  val:   ");
+        AZ_printf_out("  val:   ");
         AZ_list_print((int *) NULL , N_update, val , bindx[N_update]);
      }
      else if (matrix == AZ_VBR_MATRIX) {
-        printf("  rpntr: ");
+        AZ_printf_out("  rpntr: ");
         AZ_list_print(rpntr, N_update+1, (double *) NULL , 0);
         if ( cpntr != (int *) NULL ) {
-           printf("  cpntr: ");
+           AZ_printf_out("  cpntr: ");
            AZ_list_print(cpntr, N_update+1+ N_external, (double *) NULL , 0);
         }
-        printf("  bpntr: ");
+        AZ_printf_out("  bpntr: ");
         AZ_list_print(bpntr, N_update+1, (double *) NULL , 0);
-        printf("  bindx: ");
+        AZ_printf_out("  bindx: ");
         AZ_list_print(bindx, bpntr[N_update], (double *) NULL , 0);
-        printf("  indx:  ");
+        AZ_printf_out("  indx:  ");
         AZ_list_print(indx, bpntr[N_update]+1, (double *) NULL , 0);
-        printf("  val:   ");
+        AZ_printf_out("  val:   ");
         AZ_list_print((int *) NULL, indx[bpntr[N_update]], val, 0);
      }
    }
@@ -648,13 +648,13 @@ void AZ_print_out(int update_index[], int extern_index[], int update[],
      if ( matrix == AZ_MSR_MATRIX) {
         for (i = 0 ; i < N_update; i++ ) {
           ii = update_index[i];
-          printf("   a(%d,%d) = %20.13e;\n",update[i]+of,update[i]+of,val[ii]);
+          AZ_printf_out("   a(%d,%d) = %20.13e;\n",update[i]+of,update[i]+of,val[ii]);
           for (j = bindx[ii] ; j < bindx[ii+1] ; j++ ) {
             tj = AZ_find_simple(bindx[j], update_index, N_update, extern_index,
                               N_external,update,external);
             if (tj != -1) 
-               printf("   a(%d,%d) = %20.13e;\n",update[i]+of,tj+of,val[j]);
-            else (void) fprintf(stderr,"col %d (= bindx[%d]) is undefined\n",
+               AZ_printf_out("   a(%d,%d) = %20.13e;\n",update[i]+of,tj+of,val[j]);
+            else (void) AZ_printf_err("col %d (= bindx[%d]) is undefined\n",
                                 tj, j);
           }
         }
@@ -671,7 +671,7 @@ void AZ_print_out(int update_index[], int extern_index[], int update[],
               new_jblk = AZ_find_simple(bindx[ii], update_index, N_update, 
 			 extern_index, N_external,update,external);
               if (new_jblk == -1) {
-                 printf("local column %d not found\n",new_jblk);
+                 AZ_printf_out("local column %d not found\n",new_jblk);
                  exit(-1);
               }
               jblk = bindx[ii];
@@ -681,7 +681,7 @@ void AZ_print_out(int update_index[], int extern_index[], int update[],
 
               for (i = 0; i < m1; i++) {
                  for (j = 0; j < n1; j++)
-                    (void) printf("   a(%d(%d),%d(%d)) = %20.13e;\n",update[iblk]+
+                    (void) AZ_printf_out("   a(%d(%d),%d(%d)) = %20.13e;\n",update[iblk]+
 				  of,i+of, new_jblk+of, j+of, val[ival+j*m1+i]);
               }
            }
@@ -693,9 +693,9 @@ void AZ_print_out(int update_index[], int extern_index[], int update[],
         for (i = 0 ; i < N_update; i++ ) {
           if (update == NULL) tj = i+of;
           else tj = update[i] + of;
-          printf("   a(%d,%d) = %20.13e;\n",tj,tj,val[i]);
+          AZ_printf_out("   a(%d,%d) = %20.13e;\n",tj,tj,val[i]);
           for (j = bindx[i] ; j < bindx[i+1] ; j++ ) {
-               printf("   a(%d,%d) = %20.13e;\n",tj,bindx[j]+of,val[j]);
+               AZ_printf_out("   a(%d,%d) = %20.13e;\n",tj,bindx[j]+of,val[j]);
           }
         }
      }
@@ -715,7 +715,7 @@ void AZ_print_out(int update_index[], int extern_index[], int update[],
 
               for (i = 0; i < m1; i++) {
                  for (j = 0; j < n1; j++)
-                    (void) printf("   a(%d(%d),%d(%d)) = %20.13e;\n", tj, 
+                    (void) AZ_printf_out("   a(%d(%d),%d(%d)) = %20.13e;\n", tj, 
 				  i+of, jblk+of, j+of, val[ival+j*m1+i]);
               }
  
@@ -723,7 +723,7 @@ void AZ_print_out(int update_index[], int extern_index[], int update[],
         }
      }
    }
-   else (void) fprintf(stderr,"AZ_matrix_out: output choice unknown\n");
+   else (void) AZ_printf_err("AZ_matrix_out: output choice unknown\n");
 
    neighbor = proc_config[AZ_node] + 1;
    if ( proc_config[AZ_node] != proc_config[AZ_N_procs] - 1) 
@@ -756,26 +756,26 @@ void AZ_list_print(int ivec[] , int length1, double dvec[],int length2)
 
    if (ivec != (int *) NULL) {
       for (i = 0 ; i < length1 ; i++ ) {
-         printf("%8d ",ivec[i]); count += 8;
-         if (count > 50) { count = 0; printf("\n         "); }
+         AZ_printf_out("%8d ",ivec[i]); count += 8;
+         if (count > 50) { count = 0; AZ_printf_out("\n         "); }
       }
    }
    else if (dvec != (double *) NULL) {
       for (i = 0 ; i < length1 ; i++ ) {
-         printf("%8.1e ",dvec[i]); count += 8;
-         if (count > 50) { count = 0; printf("\n         "); }
+         AZ_printf_out("%8.1e ",dvec[i]); count += 8;
+         if (count > 50) { count = 0; AZ_printf_out("\n         "); }
       }
       if (length2 != 0) { 
-         printf("      -- "); count += 8;
-         if (count > 50) { count = 0; printf("\n         "); }
+         AZ_printf_out("      -- "); count += 8;
+         if (count > 50) { count = 0; AZ_printf_out("\n         "); }
       }
 
       for (i = length1+1 ; i < length2 ; i++ ) {
-         printf("%8.1e ",dvec[i]); count += 8;
-         if (count > 50) { count = 0; printf("\n         "); }
+         AZ_printf_out("%8.1e ",dvec[i]); count += 8;
+         if (count > 50) { count = 0; AZ_printf_out("\n         "); }
       }
    }
-   printf("\n");
+   AZ_printf_out("\n");
 }
 
 /******************************************************************************/
@@ -1078,7 +1078,7 @@ void AZ_capture_matrix(AZ_MATRIX *Amat, int proc_config[],
       Proc               = proc_config[AZ_node];
       Num_Proc           = proc_config[AZ_N_procs];
       if (Num_Proc != 1)
-	printf("\nMatrix Capture Routine currently only works for one PE\n");
+	AZ_printf_out("\nMatrix Capture Routine currently only works for one PE\n");
       else {
 
 	AZ_print_sync_start(Proc, AZ_TRUE, proc_config);
@@ -1263,7 +1263,7 @@ AZ_MATRIX *AZ_submatrix_create(AZ_MATRIX *Amat, int Nsub_rows, int sub_rows[],
 	new_dataptr->sub_cols = (int *) malloc(Nsub_cols * sizeof(int));
 
 	if ((new_dataptr->sub_rows == NULL) || (new_dataptr->sub_cols == NULL)) {
-		printf("couldn't allocate memory for submatrix rows or cols\n");
+		AZ_printf_out("couldn't allocate memory for submatrix rows or cols\n");
 		exit(-1);
 	}
 
@@ -1325,7 +1325,7 @@ int  AZ_subMSR_getrow(int columns[], double values[], int row_lengths[],
 			fullrow = sub_rows[subrow]; /* row number in the full matrix (of which
 																		 this matrix is a part) */
 		else {
-			printf("getrow requested row %d of a submatrix with only %d rows\n",
+			AZ_printf_out("getrow requested row %d of a submatrix with only %d rows\n",
 						 subrow, Nsub_rows);
 			exit(-1);
 		}
@@ -1457,7 +1457,7 @@ AZ_MATRIX *AZ_blockmatrix_create(AZ_MATRIX **submat_list, int Nsub_mats, int **s
 	new_dataptr->sub_cols    = (int **) malloc(Nblock_cols * sizeof(int *));
 	
 	if (new_dataptr->sub_cols == NULL) {
-		printf("memory allocation error\n");
+		AZ_printf_out("memory allocation error\n");
 		exit(-1);
 	}
 	
@@ -1465,7 +1465,7 @@ AZ_MATRIX *AZ_blockmatrix_create(AZ_MATRIX **submat_list, int Nsub_mats, int **s
 		new_dataptr->submat_list[i]=submat_list[i];
 		new_dataptr->submat_locs[i]=(int *) malloc(2*sizeof(int));
 		if (new_dataptr->submat_locs[i] == NULL) {
-			printf("memory allocation error\n");
+			AZ_printf_out("memory allocation error\n");
 			exit(-1);
 		}
 		new_dataptr->submat_locs[i][0]=submat_locs[i][0];
@@ -1476,7 +1476,7 @@ AZ_MATRIX *AZ_blockmatrix_create(AZ_MATRIX **submat_list, int Nsub_mats, int **s
 		new_dataptr->Nsub_rows[i] = Nsub_rows[i];
 		new_dataptr->sub_rows[i] = (int *) malloc(Nsub_rows[i] * sizeof(int));
 		if (new_dataptr->sub_rows[i] == NULL) {
-			printf("memory allocation error\n");
+			AZ_printf_out("memory allocation error\n");
 			exit(-1);
 		}
 		
@@ -1488,7 +1488,7 @@ AZ_MATRIX *AZ_blockmatrix_create(AZ_MATRIX **submat_list, int Nsub_mats, int **s
 		new_dataptr->Nsub_cols[i] = Nsub_cols[i];
 		new_dataptr->sub_cols[i] = (int *) malloc(Nsub_cols[i] * sizeof(int));
 		if (new_dataptr->sub_cols[i] == NULL) {
-			printf("memory allocation error\n");
+			AZ_printf_out("memory allocation error\n");
 			exit(-1);
 		}
 		
@@ -1563,7 +1563,7 @@ int  AZ_blockMSR_getrow(int cols[], double vals[], int row_lengths[],
 	tmpcols = (int *) malloc(max_nnz_per_row*sizeof(int));
 	tmpvals = (double *) malloc(max_nnz_per_row*sizeof(double));
 	if (tmpvals==NULL) {
-		printf("memory allocation error\n");
+		AZ_printf_out("memory allocation error\n");
 		exit(-1);
 	}
 	tmp_alloc_space = max_nnz_per_row;
@@ -1573,7 +1573,7 @@ int  AZ_blockMSR_getrow(int cols[], double vals[], int row_lengths[],
 		count_row = 0;
 		full_req_row  = requested_rows[i];
 		if (full_req_row > dataptr->tot_Nrows) {
-			printf("Error: requested row %d of a matrix with %d rows\n", 
+			AZ_printf_out("Error: requested row %d of a matrix with %d rows\n", 
 						 full_req_row+1, dataptr->tot_Nrows);
 			exit(-1);
 		}
@@ -1659,7 +1659,7 @@ void AZ_blockMSR_matvec_mult (double *b, double *c, struct AZ_MATRIX_STRUCT *Ama
 	tmpb= (double *) malloc(Nrows * sizeof(double));
 	tmpc= (double *) malloc(Nrows * sizeof(double));
 	if (tmpc == NULL) {
-		printf("memory allocation error\n");
+		AZ_printf_out("memory allocation error\n");
 		exit(-1);
 	}
 
@@ -1804,7 +1804,7 @@ void AZ_abs_matvec_mult(double *b, double *c,AZ_MATRIX *Amat,int proc_config[])
 
   }
   else {
-     printf("Error: AZ_expected_value convergence options can only be done with MSR or VBR matrices\n");
+     AZ_printf_out("Error: AZ_expected_value convergence options can only be done with MSR or VBR matrices\n");
      AZ_exit(1);
   }
  

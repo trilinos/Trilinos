@@ -254,9 +254,9 @@ void AZ_pcg_f_condnum(double b[], double x[], double weight[], int options[],
       (options[AZ_output] != AZ_summary) &&
       (options[AZ_conv]!=AZTECOO_conv_test) && (proc == 0))
     {
-      (void) fprintf(stdout, "%siter:    0           residual = %e\n",
+      (void) AZ_printf_out("%siter:    0           residual = %e\n",
                      prefix,scaled_r_norm);
-      fflush(stdout);
+      AZ_flush_out();
     }
 
 
@@ -381,9 +381,9 @@ void AZ_pcg_f_condnum(double b[], double x[], double weight[], int options[],
 
     if ( (iter%print_freq == 0) && (options[AZ_conv]!=AZTECOO_conv_test) && proc == 0 )
       {
-        (void) fprintf(stdout, "%siter: %4d           residual = %e\n", prefix, iter,
+        (void) AZ_printf_out("%siter: %4d           residual = %e\n", prefix, iter,
                        scaled_r_norm);
-        fflush(stdout);
+        AZ_flush_out();
       }
 
     /* convergence tests */
@@ -465,9 +465,9 @@ void AZ_pcg_f_condnum(double b[], double x[], double weight[], int options[],
        && (options[AZ_output] != AZ_warnings) &&
       (options[AZ_conv]!=AZTECOO_conv_test) )
     {
-      (void) fprintf(stdout, "%siter: %4d           residual = %e\n", prefix, iter,
+      (void) AZ_printf_out("%siter: %4d           residual = %e\n", prefix, iter,
                      scaled_r_norm);
-      fflush(stdout);
+      AZ_flush_out();
     }
 
   /* check if we exceeded maximum number of iterations */

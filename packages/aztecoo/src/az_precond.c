@@ -250,8 +250,8 @@ void AZ_precondition(double x[], int input_options[], int proc_config[],
                  AZ_matfree_Nnzs(Pmat);
 
               if ( (Pmat->getrow == NULL) && (N != 0) ) {
-                 printf("Error: Only matrices with getrow() defined via ");
-                 printf("AZ_set_MATFREE_getrow(...) can do Jacobi preconditioning\n");
+                 AZ_printf_err("Error: Only matrices with getrow() defined via ");
+                 AZ_printf_err("AZ_set_MATFREE_getrow(...) can do Jacobi preconditioning\n");
                  exit(1);
               }
               sprintf(tag,"dtemp %s",precond->context->tag);
@@ -333,14 +333,14 @@ void AZ_precondition(double x[], int input_options[], int proc_config[],
                                          d2_bpntr, data_org);
                  }
                  else if (i == AZ_NEW_ADDRESS) {
-                   fprintf(stderr, "Error: options[AZ_pre_calc]==AZ_reuse and"
+                   AZ_printf_err( "Error: options[AZ_pre_calc]==AZ_reuse and"
                          "previous factors\n       not found. Check"
                          "data_org[AZ_name].\n");
                    exit(-1);
                  }
            }
            else if (previous_factors != data_org[AZ_name]) {
-              fprintf(stderr, "Warning: Using a previous factorization as a"
+              AZ_printf_err( "Warning: Using a previous factorization as a"
                        "preconditioner\neven though matrix"
                        "(data_org[AZ_name]) has changed\n");
            }
@@ -400,7 +400,7 @@ void AZ_precondition(double x[], int input_options[], int proc_config[],
      case AZ_icc:
         /* incomplete Cholesky factorization */
 
-        (void) printf("Incomplete Cholesky not available (use ilu).\n");
+        (void) AZ_printf_out("Incomplete Cholesky not available (use ilu).\n");
      break;
 
      case AZ_user_precond:
@@ -428,7 +428,7 @@ void AZ_precondition(double x[], int input_options[], int proc_config[],
            fixed_pts = Amat->aux_ival[1];
         }
         else if (options[AZ_pre_calc] != AZ_sys_reuse)
-           printf("Warning: Not fixed points set for local smoothing!!\n");
+           AZ_printf_out("Warning: Not fixed points set for local smoothing!!\n");
 
         for (j = 0; j < options[AZ_poly_ord]; j++) {
            AZ_loc_avg(Amat, tttemp, y, N_fixed, fixed_pts, proc_config);
@@ -438,13 +438,13 @@ void AZ_precondition(double x[], int input_options[], int proc_config[],
                   (options[AZ_output] != AZ_last) &&
                   (options[AZ_output] != AZ_summary) &&
                   (options[AZ_output] != AZ_warnings))
-                  printf("   %d  %e\n",j, norm1);
+                  AZ_printf_out("   %d  %e\n",j, norm1);
               else if ((j==options[AZ_poly_ord]-1) && 
 		  (options[AZ_output] != AZ_none) && 
                   (options[AZ_output] != AZ_warnings))
-                  printf("   %d  %e\n",j, norm1);
+                  AZ_printf_out("   %d  %e\n",j, norm1);
               else if ((options[AZ_output] > 0) && (j%options[AZ_output] == 0))
-                  printf("   %d  %e\n",j, norm1);
+                  AZ_printf_out("   %d  %e\n",j, norm1);
            }
            for (i = 0 ; i < N ; i++ ) tttemp[i] = y[i];
         }
@@ -491,7 +491,7 @@ void AZ_precondition(double x[], int input_options[], int proc_config[],
                        Aptr, Pptr, Sptr);
         }
         else {
-           (void) fprintf(stderr, "%sERROR: invalid preconditioning flag.\n"
+           (void) AZ_printf_err( "%sERROR: invalid preconditioning flag.\n"
                    "       options[AZ_precond] improperly set (%d).\n", yo,
 			   options[AZ_precond]);
            exit(-1);
@@ -642,7 +642,7 @@ void AZ_calc_blk_diag_inv(double *val, int *indx, int *bindx, int *rpntr,
         /* error check */
 
         if (n1 != m1) {
-          (void) fprintf(stderr, "%sERROR: diagonal blocks are not square\n.",
+          (void) AZ_printf_err( "%sERROR: diagonal blocks are not square\n.",
                          yo);
           exit(-1);
         }
@@ -662,13 +662,13 @@ void AZ_calc_blk_diag_inv(double *val, int *indx, int *bindx, int *rpntr,
           DGETRF_F77(&m1, &m1, &d_inv[d_indx[iblk_count]], &m1, ipiv, &info);
 
           if (info < 0) {
-            (void) fprintf(stderr, "%sERROR: argument %d is illegal.\n", yo,
+            (void) AZ_printf_err( "%sERROR: argument %d is illegal.\n", yo,
                            -info);
             exit(-1);
           }
 
           else if (info > 0) {
-            (void) fprintf(stderr, "%sERROR: the factorization has produced a "
+            (void) AZ_printf_err( "%sERROR: the factorization has produced a "
                            "singular U with U[%d][%d] being exactly zero.\n",
                            yo, info, info);
             exit(-1);
@@ -677,15 +677,15 @@ void AZ_calc_blk_diag_inv(double *val, int *indx, int *bindx, int *rpntr,
           DGETRI_F77(&m1, &d_inv[d_indx[iblk_count]], &m1, ipiv, work, &m1, &info);
 
           if (info < 0) {
-            (void) fprintf(stderr, "%sERROR: argument %d is illegal.\n", yo,
+            (void) AZ_printf_err( "%sERROR: argument %d is illegal.\n", yo,
                            -info);
             exit(-1);
           }
 
           else if (info > 0) {
-            (void) fprintf(stderr, "%sERROR: U[%d][%d] is exactly zero;\n", yo,
+            (void) AZ_printf_err( "%sERROR: U[%d][%d] is exactly zero;\n", yo,
                            info, info);
-            (void) fprintf(stderr, "the matrix is singular and its inverse "
+            (void) AZ_printf_err( "the matrix is singular and its inverse "
                            "could not be computed.\n");
             exit(-1);
           }
@@ -817,7 +817,7 @@ void AZ_calc_blk_diag_LU(double *val, int *indx, int *bindx, int *rpntr,
         /* error check */
 
         if (n1 != m1) {
-          (void) fprintf(stderr, "%sERROR: diagonal blocks are not square\n.",
+          (void) AZ_printf_err( "%sERROR: diagonal blocks are not square\n.",
                          yo);
           exit(-1);
         }
@@ -837,13 +837,13 @@ void AZ_calc_blk_diag_LU(double *val, int *indx, int *bindx, int *rpntr,
           DGETRF_F77(&m1, &m1, &d_inv[d_indx[iblk_count]], &m1, &(ipvt[rpntr[iblk_row]]), &info);
 
           if (info < 0) {
-            (void) fprintf(stderr, "%sERROR: argument %d is illegal.\n", yo,
+            (void) AZ_printf_err( "%sERROR: argument %d is illegal.\n", yo,
                            -info);
             exit(-1);
           }
 
           else if (info > 0) {
-            (void) fprintf(stderr, "%sERROR: the factorization has produced a "
+            (void) AZ_printf_err( "%sERROR: the factorization has produced a "
                            "singular U with U[%d][%d] being exactly zero.\n",
                            yo, info, info);
             exit(-1);
@@ -947,7 +947,7 @@ extern void AZ_sym_gauss_seidel(void)
 
   /**************************** execution begins ******************************/
 
-  (void) fprintf(stderr, "WARNING: sym Gauss-Seidel preconditioning not\n"
+  (void) AZ_printf_err( "WARNING: sym Gauss-Seidel preconditioning not\n"
                  "         implemented for VBR matrices\n");
   exit(-1);
 
@@ -1091,8 +1091,8 @@ int N;
       }
     }
     else {
-       (void) fprintf(stderr,"AZ_slu with option[AZ_poly_ord] > 0 only \n");
-       (void) fprintf(stderr,"implemented for MSR matrices.\n");
+       (void) AZ_printf_err("AZ_slu with option[AZ_poly_ord] > 0 only \n");
+       (void) AZ_printf_err("implemented for MSR matrices.\n");
        exit(-1);
     }
 

@@ -137,8 +137,8 @@ void AZ_polynomial_expansion( double z[], int options[], int proc_config[],
        lambda_max = precond->Pmat->matrix_norm;
        if (lambda_max < 0.0) {
            if (proc_config[AZ_node] == 0) {
-               printf("Error: Matrix norm not given. Use ");
-               printf("AZ_set_MATFREE_matrix_norm() to set it.\n");
+               AZ_printf_err("Error: Matrix norm not given. Use ");
+               AZ_printf_err("AZ_set_MATFREE_matrix_norm() to set it.\n");
            }
            exit(1);
        }
@@ -195,7 +195,7 @@ void AZ_polynomial_expansion( double z[], int options[], int proc_config[],
 
   default:
     if (proc_config[AZ_node] == 0) {
-      (void) fprintf(stderr, "Error: invalid polynomial preconditioner\n"
+      (void) AZ_printf_err( "Error: invalid polynomial preconditioner\n"
                      "       options[AZ_precond] improperly set.\n");
     }
     exit(-1);
@@ -396,10 +396,10 @@ void AZ_change_sign(double *lambda_max, double val[], int indx[], int bindx[],
 
     if ((pos == 0) && (neg == 0) && 
         (data_org[AZ_N_internal] + data_org[AZ_N_border] != 0) ) 
-      (void) fprintf(stderr, "Warning: No nonzero matrix diagonal elements\n");
+      (void) AZ_printf_err( "Warning: No nonzero matrix diagonal elements\n");
 
     if (pos + neg == 2) {
-      (void) fprintf(stderr,
+      (void) AZ_printf_err(
                      "Warning: Negative and positive matrix diagonal elements\n"
                      "         Better to use scaling with polynomial\n"
                      "         preconditioners in this case.\n");

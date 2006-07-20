@@ -129,13 +129,13 @@ void AZ_scale_f(int action, AZ_MATRIX *Amat, int options[], double b[], double x
     if (scaling->scale != 0) {
       int err = scaling->scale(action, Amat, options, b, x, proc_config, scaling);
       if (err != 0) {
-        printf("AZ_scale_f ERROR, code %d returned from user-scaling function\n",
+        AZ_printf_out("AZ_scale_f ERROR, code %d returned from user-scaling function\n",
                err);
       }
       return;
     }
     else {
-      printf("AZ_scale_f WARNING: have user-matrix, but scaling struct contains null 'scale' callback. Turning off scaling.\n");
+      AZ_printf_out("AZ_scale_f WARNING: have user-matrix, but scaling struct contains null 'scale' callback. Turning off scaling.\n");
       options[AZ_scaling] = AZ_none;
     }
   }
@@ -193,7 +193,7 @@ void AZ_scale_f(int action, AZ_MATRIX *Amat, int options[], double b[], double x
     break;
 
   default:
-    (void) fprintf(stderr, "%sERROR: invalid scaling option.\n"
+    (void) AZ_printf_err( "%sERROR: invalid scaling option.\n"
                    "          options[AZ_scaling] = %d\n", yo,
                    options[AZ_scaling]);
   exit(-1);
@@ -321,7 +321,7 @@ double one = 1.0;
       }
 
       if (itemp == AZ_NEW_ADDRESS) {
-        (void) fprintf(stderr, "%sERROR: Previous scaling not found for matrix "
+        (void) AZ_printf_err( "%sERROR: Previous scaling not found for matrix "
                      "with\ndata_org[AZ_name] = %d. Check\n"
                      "options[AZ_pre_calc]\n", yo,
                      data_org[AZ_name]);
@@ -397,7 +397,7 @@ double one = 1.0;
 
     if (((action == AZ_SCALE_RHS) || (action == AZ_INVSCALE_RHS) || 
          (options[AZ_pre_calc] >= AZ_reuse)) && (itemp == AZ_NEW_ADDRESS)) {
-      (void) fprintf(stderr, "%sERROR: Previous scaling not found for matrix "
+      (void) AZ_printf_err( "%sERROR: Previous scaling not found for matrix "
                      "with\ndata_org[AZ_name] = %d. Check\n"
                      "options[AZ_pre_calc]\n", yo,
                      data_org[AZ_name]);
@@ -428,7 +428,7 @@ double one = 1.0;
 
       work = (double *) AZ_allocate(max_blk*max_blk*sizeof(double));
       if (work == NULL) {
-        (void) fprintf(stderr, "%sERROR: not enough memory for diagonal\n"
+        (void) AZ_printf_err( "%sERROR: not enough memory for diagonal\n"
                        "      scaling. Not able to allocate work\n"
                        "      array. Must run a smaller problem\n", yo);
         exit(-1);
@@ -474,7 +474,7 @@ double one = 1.0;
 
             if (m1 != n1) {
               if (Proc == 0) {
-                (void) fprintf(stderr, "%sERROR: diagonal blocks are not\n"
+                (void) AZ_printf_err( "%sERROR: diagonal blocks are not\n"
                                "       square inside scaling\n", yo);
               }
               exit(-1);
@@ -490,7 +490,7 @@ double one = 1.0;
 
           else {
             if (itemp > max_blk*max_blk) {
-              (void) fprintf(stderr, "%sERROR: block size (%d) is too big =>\n",
+              (void) AZ_printf_err( "%sERROR: block size (%d) is too big =>\n",
                              yo, itemp);
               exit(-1);
             }
@@ -516,7 +516,7 @@ double one = 1.0;
 
     c = (double *) AZ_allocate((unsigned) N * sizeof(double));
     if (c == NULL) {
-       (void) fprintf(stderr, "%sERROR: not enough memory for block diagonal\n"
+       (void) AZ_printf_err( "%sERROR: not enough memory for block diagonal\n"
                      "       scaling. Not able to allocate c\n"
                      "       array. Must run a smaller problem\n", yo);
        exit(-1);
@@ -635,7 +635,7 @@ void AZ_sym_block_diagonal_scaling(double val[], int indx[], int bindx[],
 
   /**************************** execution begins ******************************/
 
-  printf("Error: Symmetric block scaling not implemented\n");
+  AZ_printf_out("Error: Symmetric block scaling not implemented\n");
   exit(-1);
 
   /* initialize */
@@ -672,7 +672,7 @@ void AZ_sym_block_diagonal_scaling(double val[], int indx[], int bindx[],
                                          data_org[AZ_name], label, &itemp);
 
   if ((options[AZ_pre_calc] >= AZ_reuse) && (itemp == AZ_NEW_ADDRESS)) {
-    (void) fprintf(stderr, "%sERROR: Previous scaling not found for matrix "
+    (void) AZ_printf_err( "%sERROR: Previous scaling not found for matrix "
                    "with\ndata_org[AZ_name] = %d. Check\n"
                    "options[AZ_pre_calc]\n", yo, data_org[AZ_name]);
     exit(-1);
@@ -704,7 +704,7 @@ void AZ_sym_block_diagonal_scaling(double val[], int indx[], int bindx[],
     }
     work = (double *) AZ_allocate(max_blk*max_blk*sizeof(double));
     if (work == NULL) {
-      (void) fprintf(stderr, "%sERROR: not enough memory for diagonal\n"
+      (void) AZ_printf_err( "%sERROR: not enough memory for diagonal\n"
                      "      scaling. Not able to allocate work\n"
                      "      array. Must run a smaller problem\n", yo);
       exit(-1);
@@ -746,7 +746,7 @@ void AZ_sym_block_diagonal_scaling(double val[], int indx[], int bindx[],
 
           if (m1 != n1) {
             if (Proc == 0) {
-              (void) fprintf(stderr, "%sERROR: diagonal blocks are not\n"
+              (void) AZ_printf_err( "%sERROR: diagonal blocks are not\n"
                              "       square inside scaling\n", yo);
             }
             exit(-1);
@@ -767,7 +767,7 @@ void AZ_sym_block_diagonal_scaling(double val[], int indx[], int bindx[],
           /* lower off-diagonal block */
 
           if (itemp > max_blk*max_blk) {
-            (void) fprintf(stderr, "%sERROR: block size (%d) is too big =>\n",
+            (void) AZ_printf_err( "%sERROR: block size (%d) is too big =>\n",
                            yo, itemp);
             exit(-1);
           }
@@ -984,7 +984,7 @@ void AZ_row_sum_scaling(int action, AZ_MATRIX *Amat, double b[],
       }
 
     if (k == AZ_NEW_ADDRESS) {
-      (void) fprintf(stderr, "%sERROR: Previous scaling not found for matrix "
+      (void) AZ_printf_err( "%sERROR: Previous scaling not found for matrix "
                      "with\ndata_org[AZ_name] = %d. Check\n"
                      "options[AZ_pre_calc]\n", yo,
                      data_org[AZ_name]);
@@ -1010,7 +1010,7 @@ void AZ_row_sum_scaling(int action, AZ_MATRIX *Amat, double b[],
         row_sum = row_sum * AZ_SGN(val[irow]);
 
         if (fabs(row_sum) < DBL_MIN) {
-          (void) fprintf(stderr, "%sERROR: Row %d is all zero's\n", yo, irow);
+          (void) AZ_printf_err( "%sERROR: Row %d is all zero's\n", yo, irow);
           exit(-1);
         }
 
@@ -1078,13 +1078,13 @@ void AZ_row_sum_scaling(int action, AZ_MATRIX *Amat, double b[],
           iblk -= num_col_blks;
 
           if ( fabs(sign) < (1.0 - sqrt(DBL_EPSILON)) ) {
-            (void) fprintf(stderr, "%sERROR: sign not set => no diagonal "
+            (void) AZ_printf_err( "%sERROR: sign not set => no diagonal "
                            "entry.\n         inside row_sum.\n", yo);
             exit(-1);
           }
 
           if (fabs(row_sum) == 0.0) {
-            (void) fprintf(stderr,"%sERROR: row %d is all 0's.\n", yo, I);
+            (void) AZ_printf_err("%sERROR: row %d is all 0's.\n", yo, I);
             exit(-1);
           }
 
@@ -1239,7 +1239,7 @@ void AZ_sym_diagonal_scaling(int action, AZ_MATRIX *Amat,
     }
 
     if (i == AZ_NEW_ADDRESS) {
-      (void) fprintf(stderr, "%sERROR: Previous scaling not found for matrix "
+      (void) AZ_printf_err( "%sERROR: Previous scaling not found for matrix "
                    "with\ndata_org[AZ_name] = %d. Check\n"
                    "options[AZ_pre_calc]\n\n", yo,
                    data_org[AZ_name]);
@@ -1263,7 +1263,7 @@ void AZ_sym_diagonal_scaling(int action, AZ_MATRIX *Amat,
         bindx_row = bindx[irow];
 
         if (fabs(val[irow]) < DBL_MIN) {
-          (void) fprintf(stderr, "%sERROR: diagonal of row %d is zero\n", yo,
+          (void) AZ_printf_err( "%sERROR: diagonal of row %d is zero\n", yo,
                          irow);
           exit(-1);
         }
@@ -1477,7 +1477,7 @@ void AZ_sym_row_sum_scaling(int action, AZ_MATRIX *Amat,
     }
 
     if (i == AZ_NEW_ADDRESS) {
-      (void) fprintf(stderr, "%sERROR: Previous scaling not found for matrix "
+      (void) AZ_printf_err( "%sERROR: Previous scaling not found for matrix "
                      "with\ndata_org[AZ_name] = %d. Check\n"
                      "options[AZ_pre_calc]\n", yo,
                      data_org[AZ_name]);
@@ -1545,7 +1545,7 @@ void AZ_sym_row_sum_scaling(int action, AZ_MATRIX *Amat,
 /*        
           Debugging tool
           if( i >= N  ){
-            printf("i %d > N %d   m %d > blkrow %d  and  %d > %d\n",
+            AZ_printf_out("i %d > N %d   m %d > blkrow %d  and  %d > %d\n",
                     i, N, m, blkrow, rblksz, row);
           }
 */
@@ -1559,7 +1559,7 @@ void AZ_sym_row_sum_scaling(int action, AZ_MATRIX *Amat,
 /*        
               Debugging tool
               if( index >= nnzers ){
-                printf("N_nz %d < index %d\n", nnzers, index);
+                AZ_printf_out("N_nz %d < index %d\n", nnzers, index);
               }
 */
 
@@ -1571,7 +1571,7 @@ void AZ_sym_row_sum_scaling(int action, AZ_MATRIX *Amat,
           if (fabs(row_sum) < DBL_MIN){ 
 /*        
               Debugging tool
-              printf("Zed: i= %d   %d > %d  and  %d > %d\n",
+              AZ_printf_out("Zed: i= %d   %d > %d  and  %d > %d\n",
                       i, numblk, blkcol, rblksz, row);
 */
             row_sum = one;
@@ -1727,7 +1727,7 @@ void AZ_equil_scaling(int action, AZ_MATRIX *Amat,
     }
 
     if (i == AZ_NEW_ADDRESS) {
-      (void) fprintf(stderr, "%sERROR: Previous scaling not found for matrix "
+      (void) AZ_printf_err( "%sERROR: Previous scaling not found for matrix "
                      "with\ndata_org[AZ_name] = %d. Check\n"
                      "options[AZ_pre_calc]\n", yo, data_org[AZ_name]);
       exit(-1);
@@ -1973,7 +1973,7 @@ void AZ_sym_rescale_sl(double x[], int data_org[], int options[],
 
   if ((data_org[AZ_matrix_type] != AZ_MSR_MATRIX) &&
       (data_org[AZ_matrix_type] != AZ_VBR_MATRIX) ) {
-     (void) fprintf(stderr,"%sWARNING: Matrix type is neither MSR nor VBR\n",
+     (void) AZ_printf_err("%sWARNING: Matrix type is neither MSR nor VBR\n",
                     yo);
      return;
   }
@@ -1989,7 +1989,7 @@ void AZ_sym_rescale_sl(double x[], int data_org[], int options[],
   scaling->action = AZ_left_and_right_scaling;
 
   if (k == AZ_NEW_ADDRESS) {
-    (void) fprintf(stderr, "%sWARNING: Scaling vector not found: "
+    (void) AZ_printf_err( "%sWARNING: Scaling vector not found: "
                    "Not rescaling solution\n", yo);
     return;
   }
@@ -2042,7 +2042,7 @@ void AZ_sym_reinvscale_sl(double x[], int data_org[], int options[],
 
   if ((data_org[AZ_matrix_type] != AZ_MSR_MATRIX) &&
       (data_org[AZ_matrix_type] != AZ_VBR_MATRIX) ) {
-     (void) fprintf(stderr,"%sWARNING: Matrix type is neither MSR nor VBR\n",
+     (void) AZ_printf_err("%sWARNING: Matrix type is neither MSR nor VBR\n",
                     yo);
      return;
   }
@@ -2058,7 +2058,7 @@ void AZ_sym_reinvscale_sl(double x[], int data_org[], int options[],
   scaling->action = AZ_left_and_right_scaling;
 
   if (k == AZ_NEW_ADDRESS) {
-    (void) fprintf(stderr, "%sWARNING: Scaling vector not found: "
+    (void) AZ_printf_err( "%sWARNING: Scaling vector not found: "
                    "Not rescaling solution\n", yo);
     return;
   }
@@ -2174,7 +2174,7 @@ static void calc_blk_diag_Chol(double *val, int *indx, int *bindx, int *rpntr,
         /* error check */
 
         if (n1 != m1) {
-          (void) fprintf(stderr, "%sERROR: diagonal blocks are not square.\n",
+          (void) AZ_printf_err( "%sERROR: diagonal blocks are not square.\n",
                          yo);
           exit(-1);
         }
@@ -2195,12 +2195,12 @@ static void calc_blk_diag_Chol(double *val, int *indx, int *bindx, int *rpntr,
           DPOTRF_F77(CHAR_MACRO(uplo[0]), &m1, L+iL, &m1, &info);
 
           if (info < 0) {
-            (void) fprintf(stderr, "%sERROR: argument %d is illegal\n", yo,
+            (void) AZ_printf_err( "%sERROR: argument %d is illegal\n", yo,
                            -info);
             exit(-1);
           }
           else if (info > 0) {
-            (void) fprintf(stderr, "%sERROR: the factorization has produced a "
+            (void) AZ_printf_err( "%sERROR: the factorization has produced a "
                            "singular L with L[%d][%d] being exactly zero\n",
                            yo, info, info);
             exit(-1);
@@ -2271,7 +2271,7 @@ void AZ_sym_rescale_vbr(double x[], int data_org[], int options[])
   scaling->action = AZ_left_and_right_scaling;
 
   if (k == AZ_NEW_ADDRESS) {
-    (void) fprintf(stderr, "%sWARNING: Scaling vector not found - "
+    (void) AZ_printf_err( "%sWARNING: Scaling vector not found - "
                    "not rescaling solution\n", yo);
     return;
   }
@@ -2289,7 +2289,7 @@ struct AZ_SCALING *AZ_scaling_create()
 
    temp = (struct AZ_SCALING *) AZ_allocate(sizeof(struct AZ_SCALING));
    if (temp == NULL) {
-      printf("AZ_scaling_create: Not enough space\n");
+      AZ_printf_err("AZ_scaling_create: Not enough space\n");
       exit(1);
    }
    temp->A_norm = 0.0;
@@ -2349,7 +2349,7 @@ void AZ_sum_bdry(double x[], int data_org[], int proc_config[])
   for ( i = 0 ; i < data_org[AZ_N_neigh] ; i++ )
      total += data_org[AZ_send_length+i];
   /*
-  printf("(%d) mtype %d n_mes %d total words %d\n",p, type, data_org[AZ_N_neigh],total);
+  AZ_printf_out("(%d) mtype %d n_mes %d total words %d\n",p, type, data_org[AZ_N_neigh],total);
    */
   buffer= (double *) AZ_manage_memory(total*sizeof(double), AZ_ALLOC,
                      name, "temp in combine", &i);
@@ -2364,7 +2364,7 @@ void AZ_sum_bdry(double x[], int data_org[], int proc_config[])
                   &from, &type, request+i);
      count += data_org[AZ_send_length+i];
      /*
-      * printf("(%d) post receive %d from %d count %d\n",p, i, from, count);
+      * AZ_printf_out("(%d) post receive %d from %d count %d\n",p, i, from, count);
       */
   }
 
@@ -2385,7 +2385,7 @@ void AZ_sum_bdry(double x[], int data_org[], int proc_config[])
                   sizeof(double)*nwords, &from, &type, &st,request+i);
      count += nwords;
      /*
-      * printf("(%d) receive %d from %d count %d\n",p, i, from, count);
+      * AZ_printf_out("(%d) receive %d from %d count %d\n",p, i, from, count);
       */
   }
   for ( j = 0 ; j < total; j++ )

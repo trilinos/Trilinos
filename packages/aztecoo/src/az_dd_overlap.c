@@ -128,7 +128,7 @@ char str[80];
   enlarged_N = bindx[0] - 1;
   nzeros     = bindx[enlarged_N];
   if (bindx_length < nzeros) {
-      fprintf(stderr,"Not enough memory allocated for overlapping\n");
+      AZ_printf_err("Not enough memory allocated for overlapping\n");
       exit(1);
   }
   SET_VAL(val    , bindx_length);
@@ -179,7 +179,7 @@ char str[80];
 
   enlarged_Rownum = (int*)    BV_ALLOC((enlarged_N+1) * sizeof(int));
   if (enlarged_Rownum == NULL) {
-    printf("Error in allocating memory for enlarged_Rownum.\n");
+    AZ_printf_err("Error in allocating memory for enlarged_Rownum.\n");
     exit(-1);
   }
   for (i=0; i<enlarged_N; i++) enlarged_Rownum[i] = Rownum[i];
@@ -223,7 +223,7 @@ char str[80];
 
   sorted_New_Rownum = (int*) BV_ALLOC((enlarged_N+1) * sizeof(int));
   if (sorted_New_Rownum == NULL) {
-    printf("Error in allocating memory for sorted_New_Rownum.\n");
+    AZ_printf_err("Error in allocating memory for sorted_New_Rownum.\n");
     exit(-1);
   }
   for (i=0; i<enlarged_N; i++) sorted_New_Rownum[i] = Rownum[i];
@@ -275,7 +275,7 @@ char str[80];
 
     nzeros = bindx[enlarged_N] + net_gain_N;
     if (bindx_length < nzeros) {
-       fprintf(stderr,"Not enough memory allocated for overlapping\n");
+       AZ_printf_err("Not enough memory allocated for overlapping\n");
        exit(1);
     }
     RESET_USAGE(nzeros);
@@ -308,7 +308,7 @@ char str[80];
        comm_size = k+1;
        comm_buffer = (double *) BV_ALLOC( comm_size * sizeof(double));
        if (comm_buffer == NULL) {
-	 printf("AZ_setup_dd_olap_msr: Not enough memory for comm_buff\n");
+	 AZ_printf_err("AZ_setup_dd_olap_msr: Not enough memory for comm_buff\n");
 	 exit(1);
        }
        iptr = (int *) comm_buffer;
@@ -329,7 +329,7 @@ char str[80];
 
     tRownum  = (int*)    BV_ALLOC((net_gain_N + enlarged_N+1) * sizeof(int));
     if (tRownum == NULL) {
-      printf("Error in allocating memory for tRownum (%d).\n",enlarged_N);
+      AZ_printf_err("Error in allocating memory for tRownum (%d).\n",enlarged_N);
       exit(-1);
     }
     for (i=0; i<enlarged_N; i++) tRownum[i] = enlarged_Rownum[i];
@@ -401,7 +401,7 @@ char str[80];
 
     nzeros = bindx[enlarged_N + net_gain_N];
     if (bindx_length < nzeros) {
-       fprintf(stderr,"Not enough memory allocated for overlapping\n");
+       AZ_printf_err("Not enough memory allocated for overlapping\n");
        exit(1);
     }
     RESET_USAGE(nzeros);
@@ -494,7 +494,7 @@ char str[80];
 
     sorted_New_Rownum = (int*) BV_ALLOC((enlarged_N+1) * sizeof(int));
     if (sorted_New_Rownum == NULL) {
-      printf("Error in allocating memory for sorted_New_Rownum.\n");
+      AZ_printf_err("Error in allocating memory for sorted_New_Rownum.\n");
       exit(-1);
     }
     for (i=0; i<enlarged_N; i++) sorted_New_Rownum[i] = enlarged_Rownum[i];
@@ -843,7 +843,7 @@ void PAZ_find_local_indices(int N_update, int bindx[], int update[],
 
   bins = (int *) BV_ALLOC((N_update / 4 + 10)*sizeof(int));
   if  (bins == NULL) {
-    (void) fprintf(stderr, "ERROR: Not enough temp space\n");
+    (void) AZ_printf_err( "ERROR: Not enough temp space\n");
     exit(-1);
   }
 
@@ -876,7 +876,7 @@ void PAZ_find_local_indices(int N_update, int bindx[], int update[],
        k = AZ_find_index(bindx[j], sorted_ext,N_external);
        if (k != -1) bindx[j] = map[k];
        else {
-        (void) fprintf(stderr, "ERROR: column number not found %d\n",
+        (void) AZ_printf_err( "ERROR: column number not found %d\n",
                        bindx[j]);
         exit(-1);
       }
@@ -1037,7 +1037,7 @@ void PAZ_set_message_info(int N_external, int N_update,
 
   new_extern_proc = (int *) BV_ALLOC((N_external+1)*sizeof(int));
   if (new_extern_proc == NULL) {
-    (void) fprintf(stderr, "%sERROR: Not enough dynamic space.\n", yo);
+    (void) AZ_printf_err( "%sERROR: Not enough dynamic space.\n", yo);
     exit(-1);
   }
 
@@ -1077,7 +1077,7 @@ void PAZ_set_message_info(int N_external, int N_update,
 
   recv_list = (int *) BV_ALLOC(AZ_MAX_NEIGHBORS*sizeof(int));
   if (recv_list == NULL) {
-    (void) fprintf(stderr, "%sERROR: Not enough dynamic space.\n", yo);
+    (void) AZ_printf_err( "%sERROR: Not enough dynamic space.\n", yo);
     exit(-1);
   }
 
@@ -1108,7 +1108,7 @@ void PAZ_set_message_info(int N_external, int N_update,
 
   send_list = (int *) BV_ALLOC((num_send_neighbors+1)*sizeof(int));
   if (send_list == NULL) {
-    (void) fprintf(stderr, "%sERROR: Not enough dynamic space.\n", yo);
+    (void) AZ_printf_err( "%sERROR: Not enough dynamic space.\n", yo);
     exit(-1);
   }
   for (i = 0 ; i < num_send_neighbors; i++ ) send_list[i] = 0;
@@ -1183,7 +1183,7 @@ void PAZ_set_message_info(int N_external, int N_update,
 
   new_external = (int *) BV_ALLOC((N_external+1)*sizeof(int));
   if (new_external == NULL) {
-    (void) fprintf(stderr, "%sERROR: Not enough dynamic space.\n", yo);
+    (void) AZ_printf_err( "%sERROR: Not enough dynamic space.\n", yo);
     exit(-1);
   }
 
@@ -1203,7 +1203,7 @@ void PAZ_set_message_info(int N_external, int N_update,
 
   lens = (int *) BV_ALLOC((num_recv_neighbors+1)*sizeof(int));
   if (lens == NULL) {
-    (void) fprintf(stderr, "%sERROR: Not enough dynamic space.\n", yo);
+    (void) AZ_printf_err( "%sERROR: Not enough dynamic space.\n", yo);
     exit(-1);
   }
 
@@ -1322,7 +1322,7 @@ void PAZ_set_message_info(int N_external, int N_update,
 
   bins = (int *) BV_ALLOC((N_update / 4 + 10)*sizeof(int));
   if (bins == NULL) {
-    (void) fprintf(stderr, "%sERROR: Not enough dynamic space.\n", yo);
+    (void) AZ_printf_err( "%sERROR: Not enough dynamic space.\n", yo);
     exit(-1);
   }
 
@@ -1335,7 +1335,7 @@ void PAZ_set_message_info(int N_external, int N_update,
 
     j = AZ_quick_find(send_ptr[i], update, N_update, shift, bins);
     if (j == -1) {
-      (void) fprintf(stderr, "%sERROR: A point (%d) requested from processor "
+      (void) AZ_printf_err( "%sERROR: A point (%d) requested from processor "
                      "%d\nwas not found among the update ele of proc %d\n", yo,
                      send_ptr[i], (*data_org)[AZ_neighbors+current-firstone],
                      proc);
@@ -1522,13 +1522,13 @@ char *AZ_allocate_or_free(void *ptr, unsigned int input_size, int action)
         v_lastused = size/sizeof(int);
      
         if (b_lastused > b_smallest_free) {
-          printf("Error: Out of space due to poor estimate of memory needed\n");
-          printf("       for overlapping.\n");
+          AZ_printf_err("Error: Out of space due to poor estimate of memory needed\n");
+          AZ_printf_err("       for overlapping.\n");
           exit(1);
         }
         if (v_lastused > v_smallest_free) {
-          printf("Error: Out of space due to poor estimate of memory needed\n");
-          printf("       for overlapping.\n");
+          AZ_printf_err("Error: Out of space due to poor estimate of memory needed\n");
+          AZ_printf_err("       for overlapping.\n");
         }
     }
     else if (action == ESTIMATED_SET) {
@@ -1540,28 +1540,28 @@ char *AZ_allocate_or_free(void *ptr, unsigned int input_size, int action)
         v_estimated_need = size/sizeof(int);
     }
     else if (action == -43) {
-       printf("v_list: ");
+       AZ_printf_out("v_list: ");
        current = v_freelist;
        prev    = -1;
        while (current != -1) {
-          printf("(%d, %d) ",(int) current,(int) v[current-1]);
+          AZ_printf_out("(%d, %d) ",(int) current,(int) v[current-1]);
           prev = current;
           current = (long int) v[current];
        }
-       printf("\n");
-       printf("b_list: ");
+       AZ_printf_out("\n");
+       AZ_printf_out("b_list: ");
        current = b_freelist;
        prev    = -1;
        while (current != -1) {
-          printf("(%d, %d) ",(int) current,(int) b[current-1]);
+          AZ_printf_out("(%d, %d) ",(int) current,(int) b[current-1]);
           prev = current;
           current = (long int) b[current];
        }
-       printf("\n\n");
+       AZ_printf_out("\n\n");
 
     }
     else {
-        printf("Error: unknown option (%d) for allocate_or_free\n",action);
+        AZ_printf_err("Error: unknown option (%d) for allocate_or_free\n",action);
         exit(1);
     }
     return((char *) NULL);

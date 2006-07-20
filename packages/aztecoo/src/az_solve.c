@@ -140,16 +140,16 @@ NOTE: Users can still invoke AZ_solve() in the old Aztec way. AZ_solve
   AZ__MPI_comm_space_ok();
   if (Amat->mat_create_called != 1) {
     if (proc_config[AZ_node] == 0) {
-      printf("AZ_iterate: AZ_matrix_create(int) should be called to\n");
-      printf("            create matrix object (Amat) to be solved!\n");
+      AZ_printf_out("AZ_iterate: AZ_matrix_create(int) should be called to\n");
+      AZ_printf_out("            create matrix object (Amat) to be solved!\n");
     }
     exit(1);
   }
   if (precond == NULL) {
     if (options[AZ_precond] == AZ_user_precond) {
       if (proc_config[AZ_node] == 0) {
-        printf("AZ_iterate: Can not use NULL for precond argument when\n");
-        printf("            options[AZ_precond] == AZ_user_precond.\n");
+        AZ_printf_out("AZ_iterate: Can not use NULL for precond argument when\n");
+        AZ_printf_out("            options[AZ_precond] == AZ_user_precond.\n");
       }
       exit(1);
     }
@@ -158,23 +158,23 @@ NOTE: Users can still invoke AZ_solve() in the old Aztec way. AZ_solve
   }
   if (precond->prec_create_called != 1) {
     if (proc_config[AZ_node] == 0) {
-      printf("AZ_iterate: AZ_precond_create should be called to\n   ");
-      printf("       create preconditioning object!\n");
+      AZ_printf_out("AZ_iterate: AZ_precond_create should be called to\n   ");
+      AZ_printf_out("       create preconditioning object!\n");
     }
     exit(1);
   }
   if (precond->Pmat->mat_create_called != 1) {
     if (proc_config[AZ_node] == 0) {
-      printf("AZ_iterate: AZ_matrix_create(int) should be called to\n   ");
-      printf("       create preconditioning matrix object (precond->Pmat)!\n");
+      AZ_printf_out("AZ_iterate: AZ_matrix_create(int) should be called to\n   ");
+      AZ_printf_out("       create preconditioning matrix object (precond->Pmat)!\n");
     }
     exit(1);
   }
   if (Amat->matvec == NULL) {
     if (proc_config[AZ_node] == 0) {
-      printf("AZ_iterate: Matrix vector product needs to be set via ");
-      printf("AZ_set_MSR(...),\n             AZ_set_VBR(...), or ");
-      printf("AZ_set_MATFREE(...).\n");
+      AZ_printf_out("AZ_iterate: Matrix vector product needs to be set via ");
+      AZ_printf_out("AZ_set_MSR(...),\n             AZ_set_VBR(...), or ");
+      AZ_printf_out("AZ_set_MATFREE(...).\n");
     }
     exit(1);
   }
@@ -193,8 +193,8 @@ NOTE: Users can still invoke AZ_solve() in the old Aztec way. AZ_solve
   status[AZ_solve_time] = total_time;
   if ((options[AZ_output] != AZ_none) && (options[AZ_output] != AZ_warnings)) {
     if (proc_config[AZ_node] == 0) {
-      (void) printf("\n\n\t\tSolution time: %f (sec.)\n", total_time);
-      (void) printf("\t\ttotal iterations: %d\n", (int) status[AZ_its]);
+      (void) AZ_printf_out("\n\n\t\tSolution time: %f (sec.)\n", total_time);
+      (void) AZ_printf_out("\t\ttotal iterations: %d\n", (int) status[AZ_its]);
     }
   }
 
@@ -296,14 +296,14 @@ void AZ_solve(double x[], double b[], int options[], double params[],
     AZ_set_VBR(Amat, rpntr, cpntr, bpntr, indx, bindx, val,
                data_org, 0, NULL, AZ_LOCAL);
   else {
-    fprintf(stderr,"Unknown matrix type (%d)\n",data_org[AZ_matrix_type]);
-    fprintf(stderr,"Matrix-free is now available via AZ_iterate()\n");
+    AZ_printf_err("Unknown matrix type (%d)\n",data_org[AZ_matrix_type]);
+    AZ_printf_err("Matrix-free is now available via AZ_iterate()\n");
     exit(1);
   }
 
   if (options[AZ_precond] == AZ_user_precond) {
-    fprintf(stderr,"Unknown preconditioning options[AZ_precond] =  (%d)\n",options[AZ_precond]);
-    fprintf(stderr,"User preconditioning is now available via AZ_iterate()\n");
+    AZ_printf_err("Unknown preconditioning options[AZ_precond] =  (%d)\n",options[AZ_precond]);
+    AZ_printf_err("User preconditioning is now available via AZ_iterate()\n");
     exit(1);
   }
 
@@ -329,8 +329,8 @@ void AZ_solve(double x[], double b[], int options[], double params[],
   status[AZ_solve_time] = total_time;
   if ((options[AZ_output] != AZ_none) && (options[AZ_output] != AZ_warnings)) {
     if (proc_config[AZ_node] == 0) {
-      (void) printf("\n\n\t\tSolution time: %f (sec.)\n", total_time);
-      (void) printf("\t\ttotal iterations: %d\n", (int) status[AZ_its]);
+      (void) AZ_printf_out("\n\n\t\tSolution time: %f (sec.)\n", total_time);
+      (void) AZ_printf_out("\t\ttotal iterations: %d\n", (int) status[AZ_its]);
     }
   }
 
@@ -510,7 +510,7 @@ void AZ_oldsolve(double x[], double b[], int options[], double params[],
 
   /* solve the system */
 
-  fflush(stdout);
+  AZ_flush_out();
   switch (options[AZ_solver]) {
 
   case AZ_cg:
@@ -623,15 +623,15 @@ void AZ_oldsolve(double x[], double b[], int options[], double params[],
     row_length = 0;
     if (global_largest == largest) {
       allocated = size2/2;
-      printf("processor %d (with %d rows) has largest value (%e,%d) in the lambda-vec\n",
+      AZ_printf_out("processor %d (with %d rows) has largest value (%e,%d) in the lambda-vec\n",
              proc_config[AZ_node], size1, largest,largest_index);
       ML_get_matrix_row(&(ml->Pmat[0]), 1, &largest_index, &allocated, &ibuf, &dbuf,
                         &row_length, 0);
-      printf("interpolation operator at that point\n");
-      for (i = 0; i < row_length; i++) printf("\t(%d, %e)\n",ibuf[i],dbuf[i]);
-      printf("Interpolation columns corresponding to above c-points\n");
+      AZ_printf_out("interpolation operator at that point\n");
+      for (i = 0; i < row_length; i++) AZ_printf_out("\t(%d, %e)\n",ibuf[i],dbuf[i]);
+      AZ_printf_out("Interpolation columns corresponding to above c-points\n");
     }
-    fflush(stdout);
+    AZ_flush_out();
 
     /* Print out interpolation column for each coarse grid    */
     /* point that appears in the above interpolation stencil. */
@@ -646,9 +646,9 @@ void AZ_oldsolve(double x[], double b[], int options[], double params[],
 
       ML_Operator_Apply(&(ml->Pmat[0]),ml->Pmat[0].invec_leng,tempv,size1,tempy);
       for (j = 0; j < size1; j++)
-        if (tempy[j] != 0.0) printf("%d: \t (%d,%d %e)\n",proc_config[AZ_node],ibuf[i],j,tempy[j]);
+        if (tempy[j] != 0.0) AZ_printf_out("%d: \t (%d,%d %e)\n",proc_config[AZ_node],ibuf[i],j,tempy[j]);
     }
-    fflush(stdout);
+    AZ_flush_out();
 
     if (global_largest == largest) {
 
@@ -657,20 +657,20 @@ void AZ_oldsolve(double x[], double b[], int options[], double params[],
       already_printed = (int *) tempy;
       for (i = 0; i < size2; i++) already_printed[i] = 0;
 
-      printf("neighbors (A, lvec)\n");
+      AZ_printf_out("neighbors (A, lvec)\n");
       ML_get_matrix_row(&(ml->Amat[1]), 1, &largest_index, &allocated, &ibuf, &dbuf,
                         &row_length, 0);
       for (i = 0; i < row_length; i++) {
         boundary = ' ';
         if ((ibuf[i] < size1) && (Amat->val[ibuf[i]] == 1.0)) boundary = 'b';
-        printf("%d: \t%d (%e , %e) %c\n",proc_config[AZ_node],ibuf[i], dbuf[i],
+        AZ_printf_out("%d: \t%d (%e , %e) %c\n",proc_config[AZ_node],ibuf[i], dbuf[i],
                x[ibuf[i]], boundary);
         already_printed[ibuf[i]] = 1;
       }
 
       /* Print out the distance two values */
 
-      printf("\ndistance 2 neighbors\n");
+      AZ_printf_out("\ndistance 2 neighbors\n");
       ibuf2 = (int *) tempv;
       for (i = 0; i < row_length; i++) {
         ML_get_matrix_row(&(ml->Amat[1]), 1, &(ibuf[i]), &allocated, &ibuf2, &dbuf,
@@ -679,14 +679,14 @@ void AZ_oldsolve(double x[], double b[], int options[], double params[],
           boundary = ' ';
           if ((ibuf2[i] < size1) && (Amat->val[ibuf2[i]] == 1.0)) boundary = 'b';
           if ( already_printed[ ibuf2[j] ] == 0) {
-            printf("%d: \t(%d, %e) %c via %d\n",proc_config[AZ_node],ibuf2[j],
+            AZ_printf_out("%d: \t(%d, %e) %c via %d\n",proc_config[AZ_node],ibuf2[j],
                    x[ibuf2[j]],boundary,i);
             already_printed[ibuf2[i]] = 1;
           }
         }
       }
     }
-    fflush(stdout);
+    AZ_flush_out();
 #endif
 
 
@@ -734,7 +734,7 @@ void AZ_oldsolve(double x[], double b[], int options[], double params[],
     AZ_psymmlq(b, x, &(newparams[AZ_weights]), options, params, proc_config, status,
                Amat, precond, conv_info);
 #else
-    printf("symmlq not implemented in this version\n");
+    AZ_printf_out("symmlq not implemented in this version\n");
 #endif
     break;
 
@@ -816,10 +816,10 @@ void AZ_oldsolve(double x[], double b[], int options[], double params[],
     AZ_factor_subdomain(&context, N, N_nz_factors, &nz_used);
 
     if ((options[AZ_output] != AZ_none ) && (options[AZ_output] != AZ_warnings)){
-      printf("\n********************************************************************\n");
-      printf("*****  Condition number estimate for preconditioner = %.4e\n",
+      AZ_printf_out("\n********************************************************************\n");
+      AZ_printf_out("*****  Condition number estimate for preconditioner = %.4e\n",
              AZ_condest(N, &context));
-      printf("********************************************************************\n");
+      AZ_printf_out("********************************************************************\n");
     }
 
     AZ_solve_subdomain(x, N, &context);
@@ -835,17 +835,17 @@ void AZ_oldsolve(double x[], double b[], int options[], double params[],
     status[AZ_rec_r]    = (double ) 0.0;
     status[AZ_scaled_r] = (double ) 0.0;
 #else
-    fprintf(stderr,"AZ_lu unavailable: configure with --enable-aztecoo-azlu to make available\n");
+    AZ_printf_err("AZ_lu unavailable: configure with --enable-aztecoo-azlu to make available\n");
     exit(1);
 #endif
     break;
 
   default:
-    (void) fprintf(stderr,"ERROR: options[AZ_solver] has improper value(%d)\n",
+    (void) AZ_printf_err("ERROR: options[AZ_solver] has improper value(%d)\n",
                    options[AZ_solver]);
     exit(-1);
   }
-  fflush(stdout);
+  AZ_flush_out();
 
   /* Must delete conv_info if we created it */
   if (options[AZ_conv]!=AZTECOO_conv_test)
@@ -904,7 +904,7 @@ void AZ_print_call_iter_solve(int options[], double params[], int az_proc,
   prefix[str_leng++] = '\0';
 
   if ( recur == 0 )
-    (void) printf("\n\t\t****************************************"
+    (void) AZ_printf_out("\n\t\t****************************************"
                   "***************\n");
 
   /* First print problem description (if available) */
@@ -912,156 +912,156 @@ void AZ_print_call_iter_solve(int options[], double params[], int az_proc,
 
   if (Amat != NULL) {
     if (Amat->print_string != NULL) {
-      (void) printf(prefix);
-      (void) printf("Problem: ");
-      (void) printf("%s\n",Amat->print_string);
+      (void) AZ_printf_out(prefix);
+      (void) AZ_printf_out("Problem: ");
+      (void) AZ_printf_out("%s\n",Amat->print_string);
     }
   }
 
-  (void) printf(prefix);
+  (void) AZ_printf_out(prefix);
 
   /* next, print out chosen solver */
 
   switch (options[AZ_solver]) {
 
   case AZ_cg:
-    (void) printf("Preconditioned CG"); break;
+    (void) AZ_printf_out("Preconditioned CG"); break;
   case AZ_cg_condnum:
-    (void) printf("Preconditioned CG (with condnum)"); break;
+    (void) AZ_printf_out("Preconditioned CG (with condnum)"); break;
   case AZ_gmres:
-    (void) printf("Preconditioned GMRES"); break;
+    (void) AZ_printf_out("Preconditioned GMRES"); break;
   case AZ_gmres_condnum:
-    (void) printf("Preconditioned GMRES (with condnum)"); break;
+    (void) AZ_printf_out("Preconditioned GMRES (with condnum)"); break;
   case AZ_analyze:
-    (void) printf("Preconditioned analysis"); break;
+    (void) AZ_printf_out("Preconditioned analysis"); break;
   case AZ_GMRESR:
-    (void) printf("Preconditioned GMRESR"); break;
+    (void) AZ_printf_out("Preconditioned GMRESR"); break;
   case AZ_fixed_pt:
-    (void) printf("Preconditioned fixed-point iter."); break;
+    (void) AZ_printf_out("Preconditioned fixed-point iter."); break;
   case AZ_cgs:
-    (void) printf("Preconditioned CGS"); break;
+    (void) AZ_printf_out("Preconditioned CGS"); break;
   case AZ_tfqmr:
-    (void) printf("Preconditioned TFQMR"); break;
+    (void) AZ_printf_out("Preconditioned TFQMR"); break;
   case AZ_bicgstab:
-    (void) printf("Preconditioned BICGSTAB"); break;
+    (void) AZ_printf_out("Preconditioned BICGSTAB"); break;
   case AZ_symmlq:
-    (void) printf("Preconditioned SYMMLQ-like"); break;
+    (void) AZ_printf_out("Preconditioned SYMMLQ-like"); break;
   case AZ_lu:
-    (void) printf("LU");
+    (void) AZ_printf_out("LU");
   }
 
-  (void) printf(" solution\n");
+  (void) AZ_printf_out(" solution\n");
 
   /* next output preconditioning options */
 
-  (void) printf(prefix);
+  (void) AZ_printf_out(prefix);
 
   if ((precond != NULL) && (precond->prec_function != AZ_precondition)) {
-    if (precond->print_string == NULL) (void) printf("user ");
-    else printf("%s",precond->print_string);
+    if (precond->print_string == NULL) (void) AZ_printf_out("user ");
+    else AZ_printf_out("%s",precond->print_string);
   }
   else {
     switch (options[AZ_precond]) {
     case AZ_none:
-      (void) printf("No preconditioning"); break;
+      (void) AZ_printf_out("No preconditioning"); break;
     case AZ_Neumann:
-      (void) printf("Order %d Neumann series polynomial", options[AZ_poly_ord]);
+      (void) AZ_printf_out("Order %d Neumann series polynomial", options[AZ_poly_ord]);
       break;
     case AZ_ls:
-      (void) printf("Order %d least-squares polynomial", options[AZ_poly_ord]);
+      (void) AZ_printf_out("Order %d least-squares polynomial", options[AZ_poly_ord]);
       break;
     case AZ_Jacobi:
-      (void) printf("%d step block Jacobi", options[AZ_poly_ord]);
+      (void) AZ_printf_out("%d step block Jacobi", options[AZ_poly_ord]);
       break;
     case AZ_smoother:
-      (void) printf("%d step loc avg smoother", options[AZ_poly_ord]);
+      (void) AZ_printf_out("%d step loc avg smoother", options[AZ_poly_ord]);
       break;
     case AZ_sym_GS:
-      (void) printf("%d step symmetric Gauss-Seidel", options[AZ_poly_ord]);
+      (void) AZ_printf_out("%d step symmetric Gauss-Seidel", options[AZ_poly_ord]);
       break;
     case AZ_dom_decomp:
       if (options[AZ_subdomain_solve] == AZ_bilu)
-        printf("BILU(%d) domain decomp. with", options[AZ_graph_fill]);
+        AZ_printf_out("BILU(%d) domain decomp. with", options[AZ_graph_fill]);
       /* Begin Aztec 2.1 mheroux mod */
       else if (options[AZ_subdomain_solve] == AZ_bilu_ifp) {
-        printf("IFPACK BILU(%d) ( ATHRESH = %.3e, RTHRESH = %.3e)\n ",
+        AZ_printf_out("IFPACK BILU(%d) ( ATHRESH = %.3e, RTHRESH = %.3e)\n ",
                options[AZ_graph_fill],params[AZ_athresh], params[AZ_rthresh]);
-        printf(prefix); printf("with");
+        AZ_printf_out(prefix); AZ_printf_out("with");
       }
       /* End Aztec 2.1 mheroux mod */
       else if (options[AZ_subdomain_solve] == AZ_ilut) {
-        printf("ILUT( fill-in = %.3e, drop = %.3e)\n ",
+        AZ_printf_out("ILUT( fill-in = %.3e, drop = %.3e)\n ",
                params[AZ_ilut_fill], params[AZ_drop]);
-        printf(prefix); printf("with");
+        AZ_printf_out(prefix); AZ_printf_out("with");
       }
       else if (options[AZ_subdomain_solve] == AZ_ilu)
-        printf("ILU(%d) domain decomp. with", options[AZ_graph_fill]);
+        AZ_printf_out("ILU(%d) domain decomp. with", options[AZ_graph_fill]);
       else if (options[AZ_subdomain_solve] == AZ_rilu)
-        printf("RILU(%d,%.2f) domain decomp. with",options[AZ_graph_fill],
+        AZ_printf_out("RILU(%d,%.2f) domain decomp. with",options[AZ_graph_fill],
                params[AZ_omega]);
       else if (options[AZ_subdomain_solve] == AZ_lu)
-        printf("LU domain decomp. with");
+        AZ_printf_out("LU domain decomp. with");
       else if (options[AZ_subdomain_solve] == AZ_icc)
-        printf("icc(%d) domain decomp. with",options[AZ_graph_fill]);
+        AZ_printf_out("icc(%d) domain decomp. with",options[AZ_graph_fill]);
       else if (options[AZ_subdomain_solve] < AZ_SOLVER_PARAMS)
-        (void) printf("iterative subdomain solve with");
+        (void) AZ_printf_out("iterative subdomain solve with");
       else {
-        (void) printf("Unknown subdomain solver (%d)\n",
+        (void) AZ_printf_out("Unknown subdomain solver (%d)\n",
                       options[AZ_subdomain_solve]);
         exit(1);
       }
-      if      (options[AZ_overlap] == AZ_none) printf("out overlap");
-      else if (options[AZ_overlap] == AZ_diag) printf(" diagonal overlap");
-      else if (options[AZ_type_overlap] == AZ_symmetric) printf(" symmetric");
-      if (options[AZ_overlap] >= 1) printf(" overlap = %d ",options[AZ_overlap]);
+      if      (options[AZ_overlap] == AZ_none) AZ_printf_out("out overlap");
+      else if (options[AZ_overlap] == AZ_diag) AZ_printf_out(" diagonal overlap");
+      else if (options[AZ_type_overlap] == AZ_symmetric) AZ_printf_out(" symmetric");
+      if (options[AZ_overlap] >= 1) AZ_printf_out(" overlap = %d ",options[AZ_overlap]);
       super_special = 1;
       break;
     case AZ_icc:
-      (void) printf("incomplete Choleski decomposition");
+      (void) AZ_printf_out("incomplete Choleski decomposition");
       super_special = 1;
       break;
     case AZ_user_precond:
-      (void) printf("user ");
+      (void) AZ_printf_out("user ");
     default:
       if (options[AZ_precond] < AZ_SOLVER_PARAMS)
-        (void) printf("iterative preconditioner");
+        (void) AZ_printf_out("iterative preconditioner");
     }
   }
 
-  (void) printf("\n");
+  (void) AZ_printf_out("\n");
 
-  (void) printf(prefix);
+  (void) AZ_printf_out(prefix);
 
   /* lastly, print out the scaling information */
 
   switch (options[AZ_scaling]) {
 
   case AZ_none:
-    (void) printf("No"); break;
+    (void) AZ_printf_out("No"); break;
   case AZ_Jacobi:
-    (void) printf("block Jacobi"); break;
+    (void) AZ_printf_out("block Jacobi"); break;
   case AZ_BJacobi:
-    (void) printf("block Jacobi"); break;
+    (void) AZ_printf_out("block Jacobi"); break;
   case AZ_row_sum:
-    (void) printf("left row-sum"); break;
+    (void) AZ_printf_out("left row-sum"); break;
   case AZ_sym_diag:
-    (void) printf("symmetric diagonal"); break;
+    (void) AZ_printf_out("symmetric diagonal"); break;
   case AZ_sym_row_sum:
-    (void) printf("symmetric row sum"); break;
+    (void) AZ_printf_out("symmetric row sum"); break;
   case AZ_equil:
-    (void) printf("equilibrated");
+    (void) AZ_printf_out("equilibrated");
   }
 
-  (void) printf(" scaling\n");
+  (void) AZ_printf_out(" scaling\n");
 
   if (super_special==1) {
-    (void) printf("%sNOTE: convergence VARIES when the total number "
+    (void) AZ_printf_out("%sNOTE: convergence VARIES when the total number "
                   "of\n",prefix);
-    (void) printf("%s      processors is changed.\n",prefix);
+    (void) AZ_printf_out("%s      processors is changed.\n",prefix);
   }
 
   if ( recur == 0 )
-    (void) printf("\t\t****************************************"
+    (void) AZ_printf_out("\t\t****************************************"
                   "***************\n");
 
 } /* AZ_print_call_iter_solver */
@@ -1129,43 +1129,43 @@ void AZ_output_matrix(double val[], int indx[], int bindx[], int rpntr[],
 
     AZ_print_sync_start(Proc, AZ_TRUE, proc_config);
 
-    (void) printf("\n----- Proc: %d indx -----\n\n", Proc);
+    (void) AZ_printf_out("\n----- Proc: %d indx -----\n\n", Proc);
     for (iblk = 0; iblk < num_total_nodes; iblk++) {
       for (i = *(bpntr+iblk); i < *(bpntr+iblk+1); i++)
-        (void) printf("%d ", *(indx+i));
+        (void) AZ_printf_out("%d ", *(indx+i));
 
       if (iblk == num_total_nodes - 1)
-        (void) printf("%d\n",*(indx+i));
+        (void) AZ_printf_out("%d\n",*(indx+i));
       else
-        (void) printf("\n");
+        (void) AZ_printf_out("\n");
     }
 
-    (void) printf("\n----- Proc: %d bindx -----\n\n", Proc);
+    (void) AZ_printf_out("\n----- Proc: %d bindx -----\n\n", Proc);
     for (iblk = 0; iblk < num_total_nodes; iblk++) {
       for (i = *(bpntr+iblk); i < *(bpntr+iblk+1); i++)
-        (void) printf("%d ", *(bindx+i));
-      (void) printf("\n");
+        (void) AZ_printf_out("%d ", *(bindx+i));
+      (void) AZ_printf_out("\n");
     }
 
-    (void) printf("\n----- Proc: %d rpntr -----\n\n", Proc);
+    (void) AZ_printf_out("\n----- Proc: %d rpntr -----\n\n", Proc);
     for (i = 0; i < num_total_nodes + 1; i++)
-      (void) printf("%d ", *(rpntr+i));
-    (void) printf("\n");
+      (void) AZ_printf_out("%d ", *(rpntr+i));
+    (void) AZ_printf_out("\n");
 
-    (void) printf("\n----- Proc: %d cpntr -----\n\n", Proc);
+    (void) AZ_printf_out("\n----- Proc: %d cpntr -----\n\n", Proc);
     for (i = 0; i < num_total_nodes + N_external_nodes + 1; i++)
-      (void) printf("%d ", *(cpntr+i));
-    (void) printf("\n");
+      (void) AZ_printf_out("%d ", *(cpntr+i));
+    (void) AZ_printf_out("\n");
 
-    (void) printf("\n----- Proc: %d bpntr -----\n\n", Proc);
+    (void) AZ_printf_out("\n----- Proc: %d bpntr -----\n\n", Proc);
     for (i = 0; i < num_total_nodes + 1; i++)
-      (void) printf("%d ", *(bpntr+i));
-    (void) printf("\n");
+      (void) AZ_printf_out("%d ", *(bpntr+i));
+    (void) AZ_printf_out("\n");
 
     AZ_print_sync_end(proc_config, AZ_TRUE);
 
     AZ_print_sync_start(Proc, AZ_TRUE, proc_config);
-    (void) printf("AZ_solve debug output - full matrix dump: Processor %d\n",
+    (void) AZ_printf_out("AZ_solve debug output - full matrix dump: Processor %d\n",
                   Proc);
 
     /* loop over block rows */
@@ -1197,17 +1197,17 @@ void AZ_output_matrix(double val[], int indx[], int bindx[], int rpntr[],
 
         n1 = ib2 - ib1;
 
-        (void) printf("\nProc: %d Block Row: %d Block Column: %d "
+        (void) AZ_printf_out("\nProc: %d Block Row: %d Block Column: %d "
                       "Row Pointer: %d Column Pointer: %d\n", Proc, iblk_row,
                       jblk, rpntr[iblk_row], rpntr[jblk]);
-        (void) printf("----------------------------------------"
+        (void) AZ_printf_out("----------------------------------------"
                       "----------------------------------------\n");
 
         for (ipoint = 0; ipoint < m1; ipoint++) {
           for (jpoint = 0; jpoint < n1; jpoint++)
-            (void) printf("a[%d]: %e ", ival+jpoint*m1+ipoint,
+            (void) AZ_printf_out("a[%d]: %e ", ival+jpoint*m1+ipoint,
                           val[ival+jpoint*m1+ipoint]);
-          (void) printf("\n");
+          (void) AZ_printf_out("\n");
         }
 
         ival += m1*n1;
@@ -1233,37 +1233,37 @@ void AZ_output_matrix(double val[], int indx[], int bindx[], int rpntr[],
 
     AZ_print_sync_start(Proc, AZ_TRUE, proc_config);
 
-    (void) printf("\n----- Proc: %d -----\n\n", Proc);
+    (void) AZ_printf_out("\n----- Proc: %d -----\n\n", Proc);
 
     num_nonzeros = bindx[num_total_nodes];
-    (void) printf("val:  ");
+    (void) AZ_printf_out("val:  ");
     for (i = 0; i < num_nonzeros; i++) {
-      (void) printf("%9.1e", val[i]);
-      if ((i%8) == 7) (void) printf("\n    ");
+      (void) AZ_printf_out("%9.1e", val[i]);
+      if ((i%8) == 7) (void) AZ_printf_out("\n    ");
     }
 
-    (void) printf("\nbindx:");
+    (void) AZ_printf_out("\nbindx:");
     for (i = 0; i < num_nonzeros; i++) {
-      (void) printf("%9d", bindx[i]);
-      if ((i%8) == 7) (void) printf("\n    ");
+      (void) AZ_printf_out("%9d", bindx[i]);
+      if ((i%8) == 7) (void) AZ_printf_out("\n    ");
     }
-    (void) printf("\n");
+    (void) AZ_printf_out("\n");
 
     for (i = 0; i < num_total_nodes; i++ ) {
-      (void) printf("\nrow");
-      (void) printf(str, i);
-      (void) printf(":");
-      (void) printf(nstr, i, val[i]);
+      (void) AZ_printf_out("\nrow");
+      (void) AZ_printf_out(str, i);
+      (void) AZ_printf_out(":");
+      (void) AZ_printf_out(nstr, i, val[i]);
       k = 0;
       for (j = bindx[i]; j < bindx[i+1]; j++ ) {
-        (void) printf(nstr, bindx[j], val[j]);
+        (void) AZ_printf_out(nstr, bindx[j], val[j]);
         k++;
         if (((k%4) == 3) && (j != bindx[i+1]-1))
-          (void) printf("\n      ");
+          (void) AZ_printf_out("\n      ");
       }
     }
 
-    (void) printf("\n");
+    (void) AZ_printf_out("\n");
     AZ_print_sync_end( proc_config, AZ_TRUE);
   }
 
@@ -1299,8 +1299,8 @@ void AZ_flop_rates(int data_org[],int indx[],int bpntr[], int bindx[],
       MFlops = AZ_calc_solve_flops(options, (int) status[AZ_its],total_time,gn,
                                    gnnz, data_org, proc_config);
       if (MFlops > 0.0) {
-        (void) printf("\t\tSolver MFlop rate: %f MFlops/sec.\n\t\t", MFlops);
-        (void) printf("Solver processor MFlop rate: %f MFlops/sec.\n\n",
+        (void) AZ_printf_out("\t\tSolver MFlop rate: %f MFlops/sec.\n\t\t", MFlops);
+        (void) AZ_printf_out("Solver processor MFlop rate: %f MFlops/sec.\n\n",
                       MFlops/proc_config[AZ_N_procs]);
       }
     }
@@ -1388,23 +1388,23 @@ void AZ_mk_context(int options[], double params[], int data_org[],
   if (istatus == AZ_NEW_ADDRESS) {
     AZ_zero_out_context(precond->context);
     if ((options[AZ_pre_calc] == AZ_reuse) && (proc_config[AZ_node] == 0)){
-      fprintf(stderr,"Error:\tDid not find previous factorization (");
-      fprintf(stderr, "requested \n\tby setting options[AZ_pre_calc] to ");
-      fprintf(stderr, "AZ_reuse).\n\tTo find this factorization, the ");
-      fprintf(stderr, "following\n\tparameters must match the previous");
-      fprintf(stderr," factorization:");
-      fprintf(stderr, "\n\t\t 1) Total number of unknowns.");
-      fprintf(stderr, "\n\t\t 2) options[AZ_overlap]");
-      fprintf(stderr, "\n\t\t 3) options[AZ_scaling]");
-      fprintf(stderr, "\n\t\t 4) options[AZ_precond]");
-      fprintf(stderr, "\n\t\t 5) options[AZ_reorder]");
-      fprintf(stderr, "\n\t\t 6) options[AZ_type_overlap]");
-      fprintf(stderr, "\n\t\t 7) options[AZ_subdomain_solve]");
-      fprintf(stderr, "\n\t\t 8) options[AZ_graph_fill]");
-      fprintf(stderr, "\n\t\t 9) params[AZ_ilut_fill]");
-      fprintf(stderr, "\n\t\t10) params[AZ_drop]");
-      fprintf(stderr, "\n\t\t11) data_org[AZ_name]\n");
-      printf("XXX%sXXX %d %d\n",tag,data_org[AZ_name],(int) sizeof(struct context));
+      AZ_printf_err("Error:\tDid not find previous factorization (");
+      AZ_printf_err( "requested \n\tby setting options[AZ_pre_calc] to ");
+      AZ_printf_err( "AZ_reuse).\n\tTo find this factorization, the ");
+      AZ_printf_err( "following\n\tparameters must match the previous");
+      AZ_printf_err(" factorization:");
+      AZ_printf_err( "\n\t\t 1) Total number of unknowns.");
+      AZ_printf_err( "\n\t\t 2) options[AZ_overlap]");
+      AZ_printf_err( "\n\t\t 3) options[AZ_scaling]");
+      AZ_printf_err( "\n\t\t 4) options[AZ_precond]");
+      AZ_printf_err( "\n\t\t 5) options[AZ_reorder]");
+      AZ_printf_err( "\n\t\t 6) options[AZ_type_overlap]");
+      AZ_printf_err( "\n\t\t 7) options[AZ_subdomain_solve]");
+      AZ_printf_err( "\n\t\t 8) options[AZ_graph_fill]");
+      AZ_printf_err( "\n\t\t 9) params[AZ_ilut_fill]");
+      AZ_printf_err( "\n\t\t10) params[AZ_drop]");
+      AZ_printf_err( "\n\t\t11) data_org[AZ_name]\n");
+      AZ_printf_out("XXX%sXXX %d %d\n",tag,data_org[AZ_name],(int) sizeof(struct context));
       (void) AZ_manage_memory(0, -43, AZ_SYS+az_iterate_id, (char *) 0, (int *) 0);
     }
     if (options[AZ_pre_calc] == AZ_reuse) exit(1);
@@ -1533,8 +1533,8 @@ int AZ_oldsolve_setup(double x[], double b[], int options[], double params[],
   if (options[AZ_recursion_level] == 0) precond->timing[0] = 0.0;
 #ifdef AZTEC_MPI
   if ( proc_config[AZ_Comm_Set] != AZ_Done_by_User) {
-    printf("Error: Communicator not set. Use AZ_set_comm()\n");
-    printf("       (e.g. AZ_set_comm(proc_config,MPI_COMM_WORLD)).\n");
+    AZ_printf_out("Error: Communicator not set. Use AZ_set_comm()\n");
+    AZ_printf_out("       (e.g. AZ_set_comm(proc_config,MPI_COMM_WORLD)).\n");
     exit(1);
   }
 #endif
@@ -1558,9 +1558,9 @@ int AZ_oldsolve_setup(double x[], double b[], int options[], double params[],
   else if (options[AZ_precond] == AZ_rilu) sprintf(tag,"AZ_rilu");
   else i = 0;
   if (i == 1) {
-    printf("To use this preconditioner, you must now set\n");
-    printf("      options[AZ_precond] = AZ_dom_decomp;\n");
-    printf("      options[AZ_subdomain_solve] = %s;\n",tag);
+    AZ_printf_out("To use this preconditioner, you must now set\n");
+    AZ_printf_out("      options[AZ_precond] = AZ_dom_decomp;\n");
+    AZ_printf_out("      options[AZ_subdomain_solve] = %s;\n",tag);
     exit(1);
   }
 
@@ -1636,7 +1636,7 @@ int AZ_oldsolve_setup(double x[], double b[], int options[], double params[],
     else if (i == AZ_last || i == AZ_summary) toptions[AZ_print_freq] =toptions[AZ_max_iter] + 1;
     else                   toptions[AZ_print_freq] =toptions[AZ_output];
     if ((i != AZ_none) && (i != AZ_warnings) &&
-        (proc_config[AZ_node] == 0)) printf("\n");
+        (proc_config[AZ_node] == 0)) AZ_printf_out("\n");
 
     /*  Setup data structure to record domain decomposition factorization */
     /*  information that can be used in future solves.                    */
@@ -1683,7 +1683,7 @@ void AZ_oldsolve_finish(double x[], double b[], int options[],
   options[AZ_reorder]         = save_old_values[AZ_oldreorder];
   options[AZ_pre_calc]        = save_old_values[AZ_oldpre_calc];
 
-  fflush(stdout);
+  AZ_flush_out();
 
 } /* AZ_oldsolve_finish  */
 
