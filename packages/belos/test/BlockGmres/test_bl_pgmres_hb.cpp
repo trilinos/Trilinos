@@ -37,7 +37,7 @@
 // information used by block solver - can be user specified) to solve for
 // other sizes of systems. For example, one could set numrhs = 1 and block = 1,
 // to solve a single right-hand side system in the traditional way, or, set
-// numrhs = 1 and block > 1 to sove a single rhs-system with a block implementation. 
+// numrhs = 1 and block > 1 to solve a single rhs-system with a block implementation. 
 //
 // 
 #include "BelosConfigDefs.hpp"
@@ -82,6 +82,7 @@ int main(int argc, char *argv[]) {
   int blocksize = 10;
   int numrhs = 15;
   int numrestarts = 15; // number of restarts allowed 
+  int length = 15;
   std::string filename("orsirr1.hb");
   MT tol = 1.0e-5;  // relative residual tolerance
 
@@ -93,6 +94,7 @@ int main(int argc, char *argv[]) {
   cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
   cmdp.setOption("num-restarts",&numrestarts,"Number of restarts allowed for GMRES solver.");
   cmdp.setOption("block-size",&blocksize,"Block size used by GMRES.");
+  cmdp.setOption("subspace-size",&length,"Dimension of Krylov subspace used by GMRES.");  
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
   }
@@ -115,7 +117,7 @@ int main(int argc, char *argv[]) {
   int Lfill = 0;
   // if (argc > 2) Lfill = atoi(argv[2]);
   if (proc_verbose) cout << "Using Lfill = " << Lfill << endl;
-  int Overlap = 0;
+  int Overlap = 1;
   // if (argc > 3) Overlap = atoi(argv[3]);
   if (proc_verbose) cout << "Using Level Overlap = " << Overlap << endl;
   double Athresh = 0.0;
@@ -160,7 +162,6 @@ int main(int argc, char *argv[]) {
   //
   const int NumGlobalElements = Map.NumGlobalElements();
   int maxits = NumGlobalElements/blocksize - 1; // maximum number of iterations to run
-  int length = 15;
   //
   ParameterList My_PL;
   My_PL.set( "Length", length );
@@ -172,8 +173,8 @@ int main(int argc, char *argv[]) {
   rhs.MvRandom();
   Belos::LinearProblem<double,MV,OP>
     My_LP( rcp(&Amat,false), rcp(&soln,false), rcp(&rhs,false) );
-  My_LP.SetRightPrec( rcp(&Prec,false) );
-  //My_LP.SetLeftPrec( rcp(&Prec,false) );
+  //My_LP.SetRightPrec( rcp(&Prec,false) );
+  My_LP.SetLeftPrec( rcp(&Prec,false) );
   My_LP.SetBlockSize( blocksize );
   
   Belos::OutputManager<double> My_OM( MyPID );
