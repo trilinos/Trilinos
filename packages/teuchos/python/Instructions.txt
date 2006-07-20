@@ -29,7 +29,7 @@ with the Teuchos wrappers, follow these steps:
     #include "Teuchos_ParameterList.hpp"
 
     // Teuchos Python utility code
-    #include "Teuchos_PythonParameters.hpp"
+    #include "Teuchos_PythonParameter.hpp"
     #include "Teuchos_PyDictParameterList.hpp"
 
     If your package already supported python dictionaries as
