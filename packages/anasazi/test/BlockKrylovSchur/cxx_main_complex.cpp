@@ -44,6 +44,7 @@
 #include "AnasaziMVOPTester.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "AnasaziBasicOutputManager.hpp"
 
 #ifdef HAVE_MPI
 #include <mpi.h>
@@ -113,25 +114,20 @@ int main(int argc, char *argv[])
   ST ONE  = SCT::one();
 
   // Create default output manager 
-  RefCountPtr<Anasazi::OutputManager<ST> > MyOM 
-    = rcp( new Anasazi::OutputManager<ST>( MyPID ) );
+  RefCountPtr<Anasazi::OutputManager<ST> > MyOM = Teuchos::rcp( new Anasazi::BasicOutputManager<ST>() );
   // Set verbosity level
   if (verbose) {
-    MyOM->SetVerbosity( Anasazi::Warning + Anasazi::FinalSummary + Anasazi::TimingDetails );
+    MyOM->setVerbosity( Anasazi::Warning + Anasazi::FinalSummary + Anasazi::TimingDetails );
   }
+  MyOM->stream(Anasazi::Warning) << Anasazi::Anasazi_Version() << endl << endl;
 
-  if (MyOM->isVerbosityAndPrint(Anasazi::Warning)) {
-    cout << Anasazi::Anasazi_Version() << endl << endl;
-  }
 
 #ifndef HAVE_ANASAZI_TRIUTILS
   cout << "This test requires Triutils. Please configure with --enable-triutils." << endl;
 #ifdef HAVE_MPI
   MPI_Finalize() ;
 #endif
-  if (MyOM->isVerbosityAndPrint(Anasazi::Warning)) {
-    cout << "End Result: TEST FAILED" << endl;	
-  }
+  MyOM->print(Anasazi::Warning, "End Result: TEST FAILED\n" );
   return -1;
 #endif
 
@@ -150,10 +146,9 @@ int main(int argc, char *argv[])
   info = readHB_newmat_double(filename.c_str(),&dim,&dim2,&nnz,
                               &colptr,&rowind,&dvals);
   if (info == 0 || nnz < 0) {
-    if (MyOM->isVerbosityAndPrint(Anasazi::Warning)) {
-      cout << "Error reading '" << filename << "'" << endl;
-      cout << "End Result: TEST FAILED" << endl;
-    }
+    MyOM->stream(Anasazi::Warning) 
+        << "Error reading '" << filename << "'" << endl
+        << "End Result: TEST FAILED" << endl;
 #ifdef HAVE_MPI
     MPI_Finalize();
 #endif
@@ -201,10 +196,9 @@ int main(int argc, char *argv[])
   // Inform the eigenproblem that you are done passing it information
   info = MyProblem->SetProblem();
   if (info) {
-    if (MyOM->isVerbosityAndPrint(Anasazi::Warning)) {
-      cout << "Anasazi::BasicEigenproblem::SetProblem() returned with code : "<< info << endl;
-      cout << "End Result: TEST FAILED" << endl;	
-    }
+    MyOM->stream(Anasazi::Warning)
+           << "Anasazi::BasicEigenproblem::SetProblem() returned with code : "<< info << endl
+           << "End Result: TEST FAILED" << endl;	
 #ifdef HAVE_MPI
     MPI_Finalize() ;
 #endif
@@ -249,17 +243,13 @@ int main(int argc, char *argv[])
 #endif
 
   if (testFailed) {
-    if (MyOM->isVerbosityAndPrint(Anasazi::Warning)) {
-      cout << "End Result: TEST FAILED" << endl;	
-    }
+    MyOM->print(Anasazi::Warning, "End Result: TEST FAILED\n" );
     return -1;
   }
   //
   // Default return value
   //
-  if (MyOM->isVerbosityAndPrint(Anasazi::Warning)) {
-    cout << "End Result: TEST PASSED" << endl;
-  }
+  MyOM->print(Anasazi::Warning, "End Result: TEST PASSED\n" );
   return 0;
 
 }	

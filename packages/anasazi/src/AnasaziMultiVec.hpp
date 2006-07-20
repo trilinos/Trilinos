@@ -33,8 +33,8 @@
 #ifndef ANASAZI_MULTI_VEC_HPP
 #define ANASAZI_MULTI_VEC_HPP
 
-#include "AnasaziMultiVecTraits.hpp"
 #include "AnasaziConfigDefs.hpp"
+#include "AnasaziMultiVecTraits.hpp"
 
 /*! 	\class Anasazi::MultiVec
 

@@ -26,6 +26,7 @@
 //
 //**************************************************************************
 
+#include "AnasaziConfigDefs.hpp"
 #include "CheckingTools.h"
 
 
@@ -233,7 +234,7 @@ int CheckingTools::errorSubspaces(const Epetra_MultiVector &Q, const Epetra_Mult
     cout << " Reference space built with " << Qex.NumVectors() << " vectors." << endl;
     cout << " Dimension of computed space: " << Q.NumVectors() << endl;
     cout << endl;
-    cout.setf(std::ios::scientific, std::ios::floatfield);
+    cout.setf(ios::scientific, ios::floatfield);
     cout.precision(4);
     cout << " Smallest singular value = " << sv[0] << endl;
     cout << " Largest singular value  = " << sv[svSize-1] << endl;
@@ -312,7 +313,7 @@ void CheckingTools::errorEigenResiduals(const Epetra_MultiVector &Q, double *lam
       cout << " ";
       cout.width(4);
       cout.precision(8);
-      cout.setf(std::ios::scientific, std::ios::floatfield);
+      cout.setf(ios::scientific, ios::floatfield);
       cout << j+1 << ". " << lambda[j] << " ";
       if (normWeight) {
         cout << residualUser << " ";
@@ -411,7 +412,7 @@ void CheckingTools::errorEigenResiduals(const Epetra_MultiVector &Q, double *lam
       cout << " ";
       cout.width(4);
       cout.precision(8);
-      cout.setf(std::ios::scientific, std::ios::floatfield);
+      cout.setf(ios::scientific, ios::floatfield);
       cout << j+1 << ". " << lambda[j] << " ";
       cout << residualMinv << " ";
       cout << ((lambda[j] == 0.0) ? 0.0 : residualMinv/lambda[j]) << " ";
@@ -511,7 +512,7 @@ int CheckingTools::errorLambda(double *continuous, double *discrete, int numDisc
       if (myPid == 0) {
         cout << "      ************** ************** ";
         cout.precision(8);
-        cout.setf(std::ios::scientific, std::ios::floatfield);
+        cout.setf(ios::scientific, ios::floatfield);
         cout << lambda[i];
         cout << "  *********  *********" << endl;
       }
@@ -531,7 +532,7 @@ int CheckingTools::errorLambda(double *continuous, double *discrete, int numDisc
         cout.width(4);
         cout << i+1 << ". ";
         cout.precision(8);
-        cout.setf(std::ios::scientific, std::ios::floatfield);
+        cout.setf(ios::scientific, ios::floatfield);
         cout << continuous[i] << " " << discrete[i] << " ";
         cout << "**************  *********  ";
         cout.precision(3);
@@ -546,7 +547,7 @@ int CheckingTools::errorLambda(double *continuous, double *discrete, int numDisc
         cout.width(4);
         cout << i+1 << ". ";
         cout.precision(8);
-        cout.setf(std::ios::scientific, std::ios::floatfield);
+        cout.setf(ios::scientific, ios::floatfield);
         cout << continuous[i] << " " << discrete[i] << " " << lambda[used[i]] << "  ";
         cout.precision(3);
         cout << fabs(lambda[used[i]]-discrete[i])/discrete[i] << "  ";

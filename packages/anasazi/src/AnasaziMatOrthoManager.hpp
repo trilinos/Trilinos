@@ -31,8 +31,6 @@
           inner products.
 */
 
-// FINISH: update documentation
-
 #ifndef ANASAZI_MATORTHOMANAGER_HPP
 #define ANASAZI_MATORTHOMANAGER_HPP
 
@@ -47,6 +45,7 @@
   \author Chris Baker, Ulrich Hetmaniuk, Rich Lehoucq, and Heidi Thornquist
 */
 
+#include "AnasaziConfigDefs.hpp"
 #include "AnasaziTypes.hpp"
 #include "AnasaziOrthoManager.hpp"
 #include "AnasaziMultiVecTraits.hpp"
@@ -87,7 +86,7 @@ namespace Anasazi {
 
     /*! \brief Provides the inner product defining the orthogonality concepts, using the provided operator.
      */
-    virtual ReturnType innerProd( const MV& X, const MV& Y, 
+    virtual void innerProd( const MV& X, const MV& Y, 
                                   Teuchos::SerialDenseMatrix<int,ScalarType>& Z ) const {
       typedef Teuchos::ScalarTraits<ScalarType> SCT;
       typedef MultiVecTraits<ScalarType,MV>     MVT;
@@ -95,91 +94,131 @@ namespace Anasazi {
 
       Teuchos::RefCountPtr<const MV> P,Q;
       Teuchos::RefCountPtr<MV> R;
-      ReturnType ret;
 
       if (_hasOp) {
         // attempt to minimize the amount of work in applying 
         if ( MVT::GetNumberVecs(X) < MVT::GetNumberVecs(Y) ) {
           R = MVT::Clone(X,MVT::GetNumberVecs(X));
-          ret = OPT::Apply(*_Op,X,*R);
+          OPT::Apply(*_Op,X,*R);
           P = R;
           Q = Teuchos::rcp( &Y, false );
         }
         else {
           P = Teuchos::rcp( &X, false );
           R = MVT::Clone(Y,MVT::GetNumberVecs(Y));
-          ret = OPT::Apply(*_Op,Y,*R);
+          OPT::Apply(*_Op,Y,*R);
           Q = R;
         }
       }
       else {
         P = Teuchos::rcp( &X, false );
         Q = Teuchos::rcp( &Y, false );
-        ret = Ok;
       }
       
       MVT::MvTransMv(SCT::one(),*P,*Q,Z);
-      return ret;
     }
 
     /*! \brief Provides the inner product defining the orthogonality concepts, using the provided operator.
      *  The method has the option of
      *  exploiting a caller-provided \c MX, and returning updated information to the caller.
      */
-    virtual ReturnType innerProd( const MV& X, const MV& Y, Teuchos::RefCountPtr<const MV> MY, 
-                                  Teuchos::SerialDenseMatrix<int,ScalarType>& Z ) const {
+    virtual void innerProd( const MV& X, const MV& Y, Teuchos::RefCountPtr<const MV> MY, 
+                            Teuchos::SerialDenseMatrix<int,ScalarType>& Z ) const {
       typedef Teuchos::ScalarTraits<ScalarType> SCT;
       typedef MultiVecTraits<ScalarType,MV>     MVT;
       typedef OperatorTraits<ScalarType,MV,OP>  OPT;
 
       Teuchos::RefCountPtr<MV> P,Q;
-      ReturnType ret;
 
       if ( MY == Teuchos::null ) {
-        return innerProd(X,Y,Z);
+        innerProd(X,Y,Z);
+      }
+      else if ( _hasOp ) {
+        // the user has done the matrix vector for us
+        MVT::MvTransMv(SCT::one(),X,*MY,Z);
+      }
+      else {
+        // there is no matrix vector
+        MVT::MvTransMv(SCT::one(),X,Y,Z);
+      }
+    }
+
+    /*! \brief Provides the norm induced by innerProd().
+     */
+    virtual void norm( const MV& X, std::vector< typename Teuchos::ScalarTraits<ScalarType>::magnitudeType > * normvec ) const {
+      norm(X,Teuchos::null,normvec);
+    }
+
+    /*! \brief Provides the norm induced by innerProd().
+     */
+    virtual void norm( const MV& X, Teuchos::RefCountPtr<const MV> MX, std::vector< typename Teuchos::ScalarTraits<ScalarType>::magnitudeType > * normvec ) const {
+
+      typedef Teuchos::ScalarTraits<ScalarType> SCT;
+      typedef MultiVecTraits<ScalarType,MV>     MVT;
+      typedef OperatorTraits<ScalarType,MV,OP>  OPT;
+      
+      if (!_hasOp) {
+        MX = Teuchos::rcp(&X,false);
+      }
+      else if (MX == Teuchos::null) {
+        Teuchos::RefCountPtr<MV> R = MVT::Clone(X,MVT::GetNumberVecs(X));
+        OPT::Apply(*_Op,X,*R);
+        MX = R;
       }
 
-      // the user has done the matrix vector for us
-      MVT::MvTransMv(SCT::one(),X,*MY,Z);
-      return Ok;
+      Teuchos::SerialDenseMatrix<int,ScalarType> z(1,1);
+      Teuchos::RefCountPtr<const MV> Xi, MXi;
+      std::vector<int> ind(1);
+      for (int i=0; i<MVT::GetNumberVecs(X); i++) {
+        ind[0] = i;
+        Xi = MVT::CloneView(X,ind);
+        MXi = MVT::CloneView(*MX,ind);
+        MVT::MvTransMv(SCT::one(),*Xi,*MXi,z);
+        (*normvec)[i] = SCT::magnitude( SCT::squareroot( z(0,0) ) );
+      }
     }
 
-
-    /*! \brief This method takes a multivector and projects it onto the space orthogonal to 
-     *  another given multivector, in a specified inner product.
+    
+    /*! \brief Given a list of (mutually and independently) orthonormal bases \c Q, this method
+     * takes a multivector \c X and projects it onto the space orthogonal to the individual \c Q[i], 
+     * returning optionally the coefficients of \c X in the individual \c Q[i]. All of this is done with respect
+     * to innerProd().
      *  
-     @param X [in/out] The multivector to the modified. 
-       On output, \c X will be orthogonal to \c Q with respect to \c innerProd().
-      
-     @param Q [in] A multivector specifying the space to be orthogonalized against. 
-      
-     @return Code specifying failure of the routine, as defined by the implementation.
+     @param X [in/out] The multivector to be modified.
+       On output, \c X will be orthogonal to \c Q[i] with respect to innerProd().
+
+     @param C [out] The coefficients of \c X in the \c Q[i], with respect to innerProd().
+
+     @param Q [in] A list of multivectors specifying the bases to be orthogonalized against. Each \c Q[i] is assumed to have
+     orthonormal columns, and the \c Q[i] are assumed to be mutually orthogonal.
     */
-    virtual ReturnType project ( MV &X, 
-                                 Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > C, 
-                                 const MV &Q ) const {
-      return project(X,Teuchos::null,C,Q);
+    virtual void project ( MV &X, 
+                           Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
+                           Teuchos::Array<Teuchos::RefCountPtr<const MV> > Q) const {
+      project(X,Teuchos::null,C,Q);
     }
 
-
-    /*! \brief This method takes a multivector and projects it onto the space orthogonal to 
-     *  another given multivector, in a specified inner product. The method has the option of
-     *  exploiting a caller-provided \c MX, and returning updated information to the caller.
+    /*! \brief Given a list of (mutually and independently) orthonormal bases \c Q, this method
+     * takes a multivector \c X and projects it onto the space orthogonal to the individual \c Q[i], 
+     * returning optionally the coefficients of \c X in the individual \c Q[i]. All of this is done with respect
+     * to innerProd(). The method has the option of
+     * exploiting a caller-provided \c MX, and returning updated information to the caller.
      *  
-     @param X [in/out] The multivector to the modified. 
-       On output, \c X will be orthogonal to \c Q with respect to \c innerProd().
-      
+     @param X [in/out] The multivector to be modified.
+       On output, \c X will be orthogonal to \c Q[i] with respect to innerProd().
+     
      @param MX [in/out] The image of \c X under the operator \c M. 
        If <tt>MX != 0</tt>: On input, this is expected to be consistent with \c X. On output, this is updated consistent with updates to \c X.
        If <tt>MX == 0</tt> or <tt>M == 0</tt>: \c MX is not referenced.
             
-     @param Q [in] A multivector specifying the space to be orthogonalized against. 
-            
-     @return Code specifying failure of the routine, as defined by the implementation.
+     @param C [out] The coefficients of \c X in the \c Q[i], with respect to innerProd().
+     
+     @param Q [in] A list of multivectors specifying the bases to be orthogonalized against. Each \c Q[i] is assumed to have
+     orthonormal columns, and the \c Q[i] are assumed to be mutually orthogonal.
     */
-    virtual ReturnType project ( MV &X, Teuchos::RefCountPtr<MV> MX, 
-                                 Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > C, 
-                                 const MV &Q ) const = 0;
+    virtual void project ( MV &X, Teuchos::RefCountPtr<MV> MX, 
+                           Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
+                           Teuchos::Array<Teuchos::RefCountPtr<const MV> > Q) const = 0;
 
 
     /*! \brief This method takes a multivector and orthonormalizes the columns, with respect to \c innerProd().
@@ -187,14 +226,10 @@ namespace Anasazi {
      @param X [in/out] The multivector to the modified. 
        On output, the columns are M-orthonormal.
     
-     @param rank [out] Rank of the basis computed by this method.
-    
-     @return Code specifying failure of the routine, as defined by the implementation.
+     @return Rank of the basis computed by this method.
     */
-    virtual ReturnType normalize ( MV &X, 
-                                   Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > R, 
-                                   int &rank ) const {
-      return normalize(X,Teuchos::null,R,rank);
+    virtual int normalize ( MV &X, Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > R ) const {
+      return normalize(X,Teuchos::null,R);
     }
 
 
@@ -209,62 +244,59 @@ namespace Anasazi {
        If <tt>MX != 0</tt>: On input, this is expected to be consistent with \c X. On output, this is updated consistent with updates to \c X.
        If <tt>MX == 0</tt> or <tt>M == 0</tt>: \c MX is not referenced.
       
-     @param rank [out] Rank of the basis computed by this method.
-    
-     @return Code specifying failure of the routine, as defined by the implementation.
+     @return Rank of the basis computed by this method.
     */
-    virtual ReturnType normalize ( MV &X, Teuchos::RefCountPtr<MV> MX, 
-                                   Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > R, 
-                                   int &rank ) const = 0;
+    virtual int normalize ( MV &X, Teuchos::RefCountPtr<MV> MX, 
+                            Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > R ) const = 0;
 
 
     /*! \brief This method takes a multivector and projects it onto the space orthogonal to 
      *  another given multivector.  It also orthonormalizes the 
      *  columns of the resulting multivector. Both of these operations are conducted 
-     *  with respect to \c innerProd().
+     *  with respect to innerProd().
      *  
      @param X [in/out] The multivector to the modified. 
-       On output, the columns of \c X are M-orthogonal to the columns of \c Q, and the columns of \c X are M-orthonormal.
-      
-     @param Q [in] A multivector specifying the space to be orthogonalized against. \c Q is assumed to have orthonormal
-     columns with respect to \c innerProd().
-      
-     @param rank [out] Rank of the basis computed by this method.
-      
-     @return Code specifying failure of the routine, as defined by the implementation.
+       On output, \c X will be orthogonal to \c Q and will have orthonormal columns, with respect to innerProd().
+
+     @param C [out] The coefficients of \c X in the \c Q[i], with respect to innerProd().
+
+     @param R [out] The coefficients of the original X with respect to the produced basis.
+
+     @param Q [in] A list of multivectors specifying the bases to be orthogonalized against. Each \c Q[i] is assumed to have
+     orthonormal columns, and the \c Q[i] are assumed to be mutually orthogonal.
+
+     @return Rank of the basis computed by this method.
     */
-    virtual ReturnType projectAndNormalize ( MV &X, 
-                                             Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > C, 
-                                             Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > R,
-                                             const MV &Q, int &rank ) const {
-      return projectAndNormalize(X,Teuchos::null,C,R,Q,rank);
+    virtual int projectAndNormalize ( MV &X, 
+                                      Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
+                                      Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > R, 
+                                      Teuchos::Array<Teuchos::RefCountPtr<const MV> > Q ) const {
+      return projectAndNormalize(X,Teuchos::null,C,R,Q);
     }
 
     /*! \brief This method takes a multivector and projects it onto the space orthogonal to 
      *  another given multivector.  It also orthonormalizes the 
      *  columns of the resulting multivector. Both of these operations are conducted 
-     *  with respect to \c innerProd().
+     *  with respect to innerProd().
      *  The method has the option of
      *  exploiting a caller-provided \c MX, and returning updated information to the caller.
      *  
      @param X [in/out] The multivector to the modified. 
-       On output, the columns of \c X are M-orthogonal to the columns of \c Q, and the columns of \c X are M-orthonormal.
-      
-     @param MX [in/out] The image of \c X under the operator \c M. 
-       If <tt>MX != 0</tt>: On input, this is expected to be consistent with \c X. On output, this is updated consistent with updates to \c X.
-       If <tt>MX == 0</tt> or <tt>M == 0</tt>: \c MX is not referenced.
-      
-     @param Q [in] A multivector specifying the space to be orthogonalized against. \c Q is assumed to have orthonormal
-     columns with respect to \c innerProd().
-      
-     @param rank [out] Rank of the basis computed by this method.
-      
-     @return Code specifying failure of the routine, as defined by the implementation.
+       On output, \c X will be orthogonal to \c Q and will have orthonormal columns, with respect to innerProd().
+
+     @param C [out] The coefficients of \c X in the \c Q[i], with respect to innerProd().
+
+     @param R [out] The coefficients of the original X with respect to the produced basis.
+
+     @param Q [in] A list of multivectors specifying the bases to be orthogonalized against. Each \c Q[i] is assumed to have
+     orthonormal columns, and the \c Q[i] are assumed to be mutually orthogonal.
+
+     @return Rank of the basis computed by this method.
     */
-    virtual ReturnType projectAndNormalize ( MV &X, Teuchos::RefCountPtr<MV> MX, 
-                                             Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > C, 
-                                             Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > R, 
-                                             const MV &Q, int &rank ) const = 0;
+    virtual int projectAndNormalize ( MV &X, Teuchos::RefCountPtr<MV> MX, 
+                                      Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
+                                      Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > R, 
+                                      Teuchos::Array<Teuchos::RefCountPtr<const MV> > Q ) const = 0;
 
     //@}
 

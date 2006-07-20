@@ -271,7 +271,8 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-SUBDIRS = ModalSolverUtils BlockDavidson BlockKrylovSchur LOBPCG MVOPTester ARPACKExamples OrthoManager scripts 
+DISABLED = BlockDavidson BlockKrylovSchur ARPACKExamples 
+SUBDIRS = ModalSolverUtils LOBPCG MVOPTester OrthoManager scripts 
 EXTRA_DIST = definition
 all: all-recursive
 

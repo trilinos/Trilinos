@@ -1,6 +1,8 @@
 # Doxyfile 1.3.9.1
 
-@INCLUDE               = ../../common/Doxyfile
+@INCLUDE               = Doxyfile.options
+# @INCLUDE               = ../../common/Doxyfile
+
 
 ############################################################################
 # TRILINOS PACKAGE DEVELOPERS:
@@ -42,10 +44,12 @@
 
 PROJECT_NAME           = Anasazi
 
-INPUT                  = ../src ../thyra/src index.doc
+INPUT                  = groups.doc ../src ../thyra/src index.doc 
+
+EXCLUDE                = ../src/ModalAnalysisSolvers ../src/AnasaziDenseMatTraits.hpp
 
 EXAMPLE_PATH           = ../example
 
-TAGFILES               = ../../common/tag_files/epetra.tag=../../../epetra/doc/html
+TAGFILES               = ../../common/tag_files/epetra.tag=../../../epetra/doc/html ../../common/tag_files/teuchos.tag=../../../teuchos/doc/html
 
 GENERATE_TAGFILE       = ../../common/tag_files/anasazi.tag

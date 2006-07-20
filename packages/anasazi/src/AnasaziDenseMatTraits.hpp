@@ -33,6 +33,7 @@
   \brief Virtual base class which defines basic traits for the dense matrix type
 */
 
+#include "AnasaziConfigDefs.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 

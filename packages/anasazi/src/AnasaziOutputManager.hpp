@@ -30,39 +30,23 @@
 #define ANASAZI_OUTPUT_MANAGER_HPP
 
 /*!     \file AnasaziOutputManager.hpp
-        \brief Basic output manager for sending information of select verbosity levels to the appropriate output stream
+        \brief Abstract class definition for Anasazi Output Managers.
 */
 
 #include "AnasaziConfigDefs.hpp"
+#include "AnasaziTypes.hpp"
 
 /*!  \class Anasazi::OutputManager
 
-  \brief Anasazi's basic output manager for sending information of select verbosity levels
-  to the appropriate output stream.
+  \brief Output managers remove the need for the eigensolver to know any information
+  about the required output.  Calling isVerbosity( MsgType type ) informs the solver if
+  it is supposed to output the information corresponding to the message type.
 
-  This output manager will remove the need for the eigensolver to know any information
-  about the required output.  Calling <tt>isVerbosity( MsgType type )</tt> will inform the solver if
-  it is supposed to output the information corresponding to the message type (\c type ).
-
-  \author Ulrich Hetmaniuk, Rich Lehoucq, and Heidi Thornquist
+  \author Chris Baker, Ulrich Hetmaniuk, Rich Lehoucq, and Heidi Thornquist
 */
 
 namespace Anasazi {
 
-  /*! \enum MsgType
-    \brief Enumerated list of available message types recognized by the eigensolvers.
-  */
-  enum MsgType 
-    {
-      Error = 0,                  /*!< Errors [ always printed ] */
-      Warning = 0x1,              /*!< Internal warnings */
-      IterationDetails = 0x2,     /*!< Approximate eigenvalues, errors */
-      OrthoDetails = 0x4,         /*!< Orthogonalization/orthonormalization details */
-      FinalSummary = 0x8,         /*!< Final computational summary */
-      TimingDetails = 0x10,       /*!< Timing details */
-      Debug = 0x20                /*!< Debugging information */
-    };
-  
 template <class ScalarType>
 class OutputManager {
 
@@ -71,48 +55,35 @@ class OutputManager {
   //@{ \name Constructors/Destructor.
 
   //! Default constructor
-  OutputManager();
-
-  //! Basic constructor.
-  OutputManager( int myID, int vb = Anasazi::Error, int printID = 0, ostream& os = std::cout );
+  OutputManager( int vb = Anasazi::Errors ) : _vb(vb) {};
 
   //! Destructor.
   virtual ~OutputManager() {};
   //@}
   
-  //@{ \name Set methods.
-
-  //! Set the output stream for this manager.
-  void SetOStream( ostream& os ) { myOS_ = os; };
+  //@{ \name Set/Get methods.
 
   //! Set the message output types for this manager.
-  void SetVerbosity( int vb ) { vb_ = vb; }; 
+  virtual void setVerbosity( int vb ) { _vb = vb; }
+
+  //! Get the message output types for this manager.
+  virtual int getVerbosity( ) { return _vb; }
 
   //@}
 
-  //@{ \name Get methods.
-
-  //! Get the output stream for this manager.
-  ostream& GetOStream() { return myOS_; };
-
-  //@}
-
-  //@{ \name Query methods.
+  //@{ \name Output methods.
 
   //! Find out whether we need to print out information for this message type.
   /*! This method is used by the solver to determine whether computations are
       necessary for this message type.
   */
-  bool isVerbosity( MsgType type ) { return (( type == Anasazi::Error ) || ( vb_ & type )); }; 
+  virtual bool isVerbosity( MsgType type ) = 0;
 
-  //! Find out whether this processor needs to print out information for this message type.
-  /*! This method is used by the solver to determine whether this output stream has been
-      selected to output the information for this message type.
-  */
-  bool isVerbosityAndPrint( MsgType type ) { return ( iPrint_ && isVerbosity( type )); }; 
+  //! Send output to the output manager.
+  virtual void print( MsgType type, const string output ) = 0;
 
-  //! Find out whether information can be outputted through this output stream.
-  bool doPrint( void ) { return (iPrint_); };
+  //! Create a stream for outputting to.
+  virtual ostream &stream( MsgType type ) = 0;
 
   //@}
 
@@ -128,31 +99,9 @@ class OutputManager {
 
   //@}
 
-  int myID_, printID_;
-  int vb_;
-  bool iPrint_;
-  ostream& myOS_;
+  protected:
+  int _vb;
 };
-
-template<class ScalarType>
-OutputManager<ScalarType>::OutputManager() :
-  myID_(0),
-  printID_(0),
-  vb_(Anasazi::Error),
-  iPrint_(true),
-  myOS_(std::cout)
-{
-}
-
-template<class ScalarType>
-OutputManager<ScalarType>::OutputManager( int myID, int vb, int printID, ostream& os ) :
-  myID_(myID),
-  printID_(printID),
-  vb_(vb),
-  iPrint_(myID == printID),
-  myOS_(os)
-{
-}
 
 } // end Anasazi namespace
 

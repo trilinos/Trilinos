@@ -33,10 +33,24 @@
         \brief Virtual base class which defines basic traits for the operator type
 */
 
-#include "AnasaziTypes.hpp"
 #include "AnasaziConfigDefs.hpp"
+#include "AnasaziTypes.hpp"
+
+
+
 
 namespace Anasazi {
+
+
+    //@{ \name OperatorTraits Exceptions
+
+    /** \brief Exceptions thrown to signal error in operator application.
+    */
+    class OperatorError : public AnasaziError
+    {public: OperatorError(const std::string& what_arg) : AnasaziError(what_arg) {}};
+
+    //@}
+
 
 /*! \struct UndefinedOperatorTraits
    \brief This is the default struct used by OperatorTraits<ScalarType, MV, OP> class to produce a
@@ -51,7 +65,7 @@ namespace Anasazi {
       that the template specialization of Anasazi::OperatorTraits class does not exist for type
       <tt>OP</tt>, or is not complete.
     */
-    static inline ReturnType notDefined() { return OP::this_type_is_missing_a_specialization(); };
+    static inline void notDefined() { return OP::this_type_is_missing_a_specialization(); };
   };
   
   /*! \class OperatorTraits
@@ -68,14 +82,11 @@ namespace Anasazi {
     
     //@{ Matrix/Operator application method.
     
-    //! Application method which performs operation <b>y = Op*x</b>
-    /*!
-      \return Status of the operation.
-    */
-    static ReturnType Apply ( const OP& Op, 
+    //! Application method which performs operation <b>y = Op*x</b>. An OperatorError exception is thrown if there is an error.
+    static void Apply ( const OP& Op, 
 			      const MV& x, 
 			      MV& y )
-    { return UndefinedOperatorTraits<ScalarType, MV, OP>::notDefined(); };
+    { UndefinedOperatorTraits<ScalarType, MV, OP>::notDefined(); };
     
     //@}
     

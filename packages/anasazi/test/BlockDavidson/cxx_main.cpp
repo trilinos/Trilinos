@@ -35,6 +35,7 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Vector.h"
 #include "AnasaziBasicSort.hpp"
+#include "AnasaziBasicOutputManager.hpp"
 
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
@@ -102,11 +103,12 @@ int main(int argc, char *argv[])
   elements[0] = 100;
 
   // Create default output manager 
-  Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM = Teuchos::rcp( new Anasazi::OutputManager<double>( MyPID ) );
+  Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM = Teuchos::rcp( new Anasazi::BasicOutputManager<double>() );
 
   // Set verbosity level
-  if (verbose)
-    MyOM->SetVerbosity( Anasazi::FinalSummary + Anasazi::TimingDetails );
+  if (verbose) {
+    MyOM->setVerbosity( Anasazi::FinalSummary + Anasazi::TimingDetails );
+  }
 
   // Create problem
   Teuchos::RefCountPtr<ModalProblem> testCase = Teuchos::rcp( new ModeLaplace1DQ1(Comm, brick_dim[0], elements[0]) );
@@ -146,8 +148,9 @@ int main(int argc, char *argv[])
 
   // Inform the eigenproblem that you are finishing passing it information
   info = MyProblem->SetProblem();
-  if (info)
-    cout << "Anasazi::BasicEigenproblem::SetProblem() returned with code : "<< info << endl;
+  if (info) {
+    MyOM->stream(Anasazi::Error) << "Anasazi::BasicEigenproblem::SetProblem() returned with code : "<< info << endl;
+  }
 
   // Create the sort manager
   Teuchos::RefCountPtr<Anasazi::BasicSort<double, MV, OP> > MySM = 
@@ -193,15 +196,16 @@ int main(int argc, char *argv[])
 #endif
 
   if (testFailed) {
-    if (verbose && MyPID==0)
-      cout << "End Result: TEST FAILED" << endl;	
+    if (verbose) {
+      MyOM->print(Anasazi::Error,"End Result: TEST FAILED\n");
+    }
     return -1;
   }
   //
   // Default return value
   //
-  if (verbose && MyPID==0)
-    cout << "End Result: TEST PASSED" << endl;
+  if (verbose) {
+    MyOM->print(Anasazi::Error,"End Result: TEST PASSED\n");
+  }
   return 0;
-
 }	

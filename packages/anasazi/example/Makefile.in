@@ -108,8 +108,7 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	uninstall-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = BlockDavidson BlockKrylovSchur LOBPCG MVOPTester \
-	BlockJacobiDavidson
+DIST_SUBDIRS = $(SUBDIRS)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALTERNATE_AR = @ALTERNATE_AR@
@@ -272,8 +271,8 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-@BUILD_ANASAZI_EXPERIMENTAL_TRUE@EXPERIMENTAL_SUBDIR = BlockJacobiDavidson
-SUBDIRS = BlockDavidson BlockKrylovSchur LOBPCG MVOPTester $(EXPERIMENTAL_SUBDIR)
+DISABLED = BlockDavidson BlockKrylovSchur 
+SUBDIRS = LOBPCG MVOPTester
 all: all-recursive
 
 .SUFFIXES:
@@ -451,7 +450,7 @@ distdir: $(DISTFILES)
 	    || exit 1; \
 	  fi; \
 	done
-	list='$(DIST_SUBDIRS)'; for subdir in $$list; do \
+	list='$(SUBDIRS)'; for subdir in $$list; do \
 	  if test "$$subdir" = .; then :; else \
 	    test -d "$(distdir)/$$subdir" \
 	    || mkdir "$(distdir)/$$subdir" \

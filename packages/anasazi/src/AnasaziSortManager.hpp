@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef ANASAZI_SORT_MANAGER_HPP
-#define ANASAZI_SORT_MANAGER_HPP
+#ifndef ANASAZI_SORTMANAGER_HPP
+#define ANASAZI_SORTMANAGER_HPP
 
 /*!     \file AnasaziSortManager.hpp
         \brief Virtual base class which defines the interface between an eigensolver and a class whose
@@ -44,10 +44,24 @@
        \author Ulrich Hetmaniuk, Rich Lehoucq, and Heidi Thornquist
 */
 
-#include "AnasaziTypes.hpp"
 #include "AnasaziConfigDefs.hpp"
+#include "AnasaziTypes.hpp"
+#include "Teuchos_TestForException.hpp"
+
+
 
 namespace Anasazi {
+
+
+  //@{ \name LOBPCG Exceptions
+  /** \brief SortManagerError is thrown when the Anasazi::SortManager is unable to sort the numbers,
+   *  due to some failure of the sort method or error in calling it.
+   * \relates Anasazi::SortManager
+   */
+  class SortManagerError : public AnasaziError
+  {public: SortManagerError(const std::string& what_arg) : AnasaziError(what_arg) {}};
+
+  //@}
 
   template<class ScalarType, class MV, class OP>
   class Eigensolver;
@@ -72,13 +86,17 @@ namespace Anasazi {
        @param evals [in/out] Array of length n containing the eigenvalues to be sorted
 
        @param perm [out] Vector of length n to store the permutation (optional)
-
-       @return Returns the status of the sorting routine [ Undefined by default ] 
     */
-    virtual ReturnType sort(Eigensolver<ScalarType,MV,OP>* solver, int n, ScalarType *evals, std::vector<int> *perm = 0) const { return Undefined; };
+    virtual void sort(Eigensolver<ScalarType,MV,OP>* solver, int n, ScalarType *evals, std::vector<int> *perm = 0) const { 
+      TEST_FOR_EXCEPTION(true,SortManagerError,"Anasazi::SortManager::sort() not defined");
+    };
     
-    //! Sort the vectors of eigenpairs, optionally returning the permutation vector.
-    /**
+    /*! \brief Sort the vectors of eigenpairs, optionally returning the permutation vector.
+
+       This routine takes two vectors, one for each part of a complex
+       eigenvalue. This is helpful for solving real, non-symmetric eigenvalue
+       problems.
+
        @param solver [in] Eigensolver that is calling the sorting routine
 
        @param n [in] Size of the array
@@ -88,14 +106,14 @@ namespace Anasazi {
        @param i_evals [in/out] Array of length n containing the imaginary part of the eigenvalues to be sorted 
 
        @param perm [out] Vector of length n to store the permutation (optional)
-
-       @return Returns the status of the sorting routine [ Undefined by default ] 
     */
-    virtual ReturnType sort(Eigensolver<ScalarType,MV,OP>* solver, int n, ScalarType *r_evals, ScalarType *i_evals, std::vector<int> *perm = 0) const { return Undefined; };
+    virtual void sort(Eigensolver<ScalarType,MV,OP>* solver, int n, ScalarType *r_evals, ScalarType *i_evals, std::vector<int> *perm = 0) const { 
+      TEST_FOR_EXCEPTION(true,SortManagerError,"Anasazi::SortManager::sort() not defined");
+    };
     
   };
   
 }
 
-#endif // ANASAZI_SORT_MANAGER_HPP
+#endif // ANASAZI_SORTMANAGER_HPP
 

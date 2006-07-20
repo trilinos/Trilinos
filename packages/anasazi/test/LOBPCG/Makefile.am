@@ -50,7 +50,7 @@ endif
 endif
 
 #np# List all executable names here
-noinst_PROGRAMS = LOBPCG_test $(LOBPCG_COMPLEX_TEST)
+noinst_PROGRAMS = LOBPCG_test LOBPCG_simple LOBPCG_solvertest $(LOBPCG_COMPLEX_TEST)
 
 Dummy$(EXEEXT): $(srcdir)/Dummy
 	cp  $(srcdir)/../MVOPTester/mhd1280b.cua mhd1280b.cua
@@ -60,6 +60,10 @@ Dummy$(EXEEXT): $(srcdir)/Dummy
 #np# files needed to compile the exe.
 LOBPCG_test_SOURCES = $(srcdir)/cxx_main.cpp
 
+LOBPCG_simple_SOURCES = $(srcdir)/cxx_simple.cpp
+
+LOBPCG_solvertest_SOURCES = $(srcdir)/cxx_main_solvertest.cpp
+
 LOBPCGComplex_test_SOURCES = $(srcdir)/cxx_main_complex.cpp 
 
 Dummy_SOURCES = Dummy
@@ -67,6 +71,18 @@ Dummy_SOURCES = Dummy
 #np# One DEPENDENCIES primary is needed for each exe.  List any libraries that the 
 #np# exe depends on.  (This primary is not absolutely essential.)
 LOBPCG_test_DEPENDENCIES = \
+	$(top_builddir)/src/libanasazi.a \
+	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a
+
+LOBPCG_simple = \
+	$(top_builddir)/src/libanasazi.a \
+	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a
+
+LOBPCG_solvertest_DEPENDENCIES = \
 	$(top_builddir)/src/libanasazi.a \
 	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
@@ -82,11 +98,23 @@ LOBPCGComplex_test_DEPENDENCIES = \
 #np# building the exe.
 LOBPCG_test_CXXFLAGS = -I$(top_srcdir)/src
 
+LOBPCG_simple_CXXFLAGS = -I$(top_srcdir)/src
+
+LOBPCG_solvertest_CXXFLAGS = -I$(top_srcdir)/src
+
 LOBPCGComplex_test_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPTester
 
 #np# One LDADD primary can be defined for each exe.  Include any LDFLAGS necessary for 
 #np# building the exe.
 LOBPCG_test_LDADD = \
+	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
+	$(EXPORT_LIBS) 
+
+LOBPCG_simple_LDADD = \
+	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
+	$(EXPORT_LIBS) 
+
+LOBPCG_solvertest_LDADD = \
 	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
 	$(EXPORT_LIBS) 
 

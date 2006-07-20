@@ -148,8 +148,8 @@ int main(int argc, char *argv[])
   ivec->Random();
 
   // create a Thyra::VectorSpaceBase
-  Teuchos::RefCountPtr<const Thyra::SpmdVectorSpaceBase<double> > epetra_vs = 
-    Thyra::create_VectorSpace(Map);
+  Teuchos::RefCountPtr<const Thyra::MPIVectorSpaceBase<double> > epetra_vs = 
+    Thyra::create_VectorSpaceBase(Map);
 
   // then, a ScalarProdVectorSpaceBase
   Teuchos::RefCountPtr<const Thyra::ScalarProdVectorSpaceBase<double> > sp_domain = 

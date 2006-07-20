@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 //
-#ifndef _ANASAZI_MVOPTESTER_HPP
-#define _ANASAZI_MVOPTESTER_HPP
+#ifndef ANASAZI_MVOPTESTER_HPP
+#define ANASAZI_MVOPTESTER_HPP
 
 // Assumptions that I have made:
 // * I assume/verify that a multivector must have at least one vector. This seems 
@@ -39,21 +39,24 @@
   \brief Test routines for MultiVecTraits and OperatorTraits conformity.
 */
 
+#include "AnasaziConfigDefs.hpp"
+#include "AnasaziTypes.hpp"
+
 #include "AnasaziMultiVecTraits.hpp"
 #include "AnasaziOperatorTraits.hpp"
-#include "AnasaziTypes.hpp"
-#include "Teuchos_RefCountPtr.hpp"
 #include "AnasaziOutputManager.hpp"
+
+#include "Teuchos_RefCountPtr.hpp"
 
 namespace Anasazi {
 
-/*! \fn TestMultiVecTraits
-    \brief This is a function to test the correctness of a MultiVecTraits 
-    specialization and multivector implementation.
-    \return Status of the test: OK or Failed
+/*!  \brief This is a function to test the correctness of a MultiVecTraits
+ * specialization and multivector implementation.
+ *
+ *  \return Status of the test: true is success, false is error
 */
   template< class ScalarType, class MV >
-  ReturnType TestMultiVecTraits( 
+  bool TestMultiVecTraits( 
                 const Teuchos::RefCountPtr<OutputManager<ScalarType> > &om,
                 const Teuchos::RefCountPtr<const MV> &A ) {
 
@@ -142,7 +145,6 @@ namespace Anasazi {
 
     int i,j;
     std::vector<int> ind(numvecs_2);
-    std::ostream &out(om->GetOStream());
 
     /* Initialize indices for selected copies/views
        The MVT specialization should not assume that 
@@ -164,11 +166,10 @@ namespace Anasazi {
        1) This number should be strictly positive
     *********************************************************************/
     if ( MVT::GetNumberVecs(*A) <= 0 ) {
-      if ( om->isVerbosityAndPrint(Warning) ) {
-        out << "*** ERROR *** MultiVectorTraits::GetNumberVecs()." << endl
-            << "Returned <= 0." << endl;
-      }
-      return Failed;
+      om->stream(Warnings)
+        << "*** ERROR *** MultiVectorTraits::GetNumberVecs()." << endl
+        << "Returned <= 0." << endl;
+      return false;
     }
 
 
@@ -177,11 +178,10 @@ namespace Anasazi {
        1) This number should be strictly positive
     *********************************************************************/
     if ( MVT::GetVecLength(*A) <= 0 ) {
-      if ( om->isVerbosityAndPrint(Warning) ) {
-        out << "*** ERROR *** MultiVectorTraits::GetVecLength()" << endl
-            << "Returned <= 0." << endl;
-      }
-      return Failed;
+      om->stream(Warnings)
+        << "*** ERROR *** MultiVectorTraits::GetVecLength()" << endl
+        << "Returned <= 0." << endl;
+      return false;
     }
 
 
@@ -196,34 +196,30 @@ namespace Anasazi {
       Teuchos::RefCountPtr<MV> B = MVT::Clone(*A,numvecs);
       std::vector<MagType> norms(2*numvecs);
       if ( MVT::GetNumberVecs(*B) != numvecs ) {
-        if ( om->isVerbosityAndPrint(Warning) ) {
-          out << "*** ERROR *** MultiVecTraits::Clone()." << endl
-              << "Did not allocate requested number of vectors." << endl;
-        }
-        return Failed;
+        om->stream(Warnings)
+          << "*** ERROR *** MultiVecTraits::Clone()." << endl
+          << "Did not allocate requested number of vectors." << endl;
+        return false;
       }
       if ( MVT::GetVecLength(*B) != MVT::GetVecLength(*A) ) {
-        if ( om->isVerbosityAndPrint(Warning) ) {
-          out << "*** ERROR *** MultiVecTraits::Clone()." << endl
-              << "Did not allocate requested number of vectors." << endl;
-        }
-        return Failed;
+        om->stream(Warnings)
+          << "*** ERROR *** MultiVecTraits::Clone()." << endl
+          << "Did not allocate requested number of vectors." << endl;
+        return false;
       }
       MVT::MvNorm(*B, &norms);
       if ( norms.size() != 2*numvecs ) {
-        if ( om->isVerbosityAndPrint(Warning) ) {
-          out << "*** ERROR *** MultiVecTraits::MvNorm()." << endl
-              << "Method resized the output vector." << endl;
-        }
-        return Failed;
+        om->stream(Warnings)
+          << "*** ERROR *** MultiVecTraits::MvNorm()." << endl
+          << "Method resized the output vector." << endl;
+        return false;
       }
       for (i=0; i<numvecs; i++) {
         if ( norms[i] < zero_mag ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
-            out << "*** ERROR *** MultiVecTraits::Clone()." << endl
-                << "Vector had negative norm." << endl;
-          }
-          return Failed;
+          om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::Clone()." << endl
+            << "Vector had negative norm." << endl;
+          return false;
         }
       }
     }
@@ -252,12 +248,11 @@ namespace Anasazi {
       MVT::MvNorm(*B, &norms);
       for (i=0; i<numvecs; i++) {
         if ( norms[i] != zero_mag ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
-            out << "*** ERROR *** MultiVecTraits::MvInit() "
-                << "and MultiVecTraits::MvNorm()" << endl
-                << "Supposedly zero vector has non-zero norm." << endl;
-          }
-          return Failed;
+          om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::MvInit() "
+            << "and MultiVecTraits::MvNorm()" << endl
+            << "Supposedly zero vector has non-zero norm." << endl;
+          return false;
         }
       }
       MVT::MvRandom(*B);
@@ -266,25 +261,22 @@ namespace Anasazi {
       MVT::MvNorm(*B, &norms2);
       for (i=0; i<numvecs; i++) {
         if ( norms[i] == zero_mag || norms2[i] == zero_mag ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
-            out << "*** ERROR *** MultiVecTraits::MvRandom()." << endl
-                << "Random vector was empty (very unlikely)." << endl;
-          }
-          return Failed;
+          om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::MvRandom()." << endl
+            << "Random vector was empty (very unlikely)." << endl;
+          return false;
         }
         else if ( norms[i] < zero_mag || norms2[i] < zero_mag ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
-            out << "*** ERROR *** MultiVecTraits::MvRandom()." << endl
-                << "Vector had negative norm." << endl;
-          }
-          return Failed;
+          om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::MvRandom()." << endl
+            << "Vector had negative norm." << endl;
+          return false;
         }
         else if ( norms[i] == norms2[i] ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
-            out << "*** ERROR *** MutliVecTraits::MvRandom()." << endl
-                << "Vectors not random enough." << endl;
-          }
-          return Failed;
+          om->stream(Warnings)
+            << "*** ERROR *** MutliVecTraits::MvRandom()." << endl
+            << "Vectors not random enough." << endl;
+          return false;
         }
       }
     }
@@ -312,19 +304,17 @@ namespace Anasazi {
       bool BadNormWarning = false;
       for (i=0; i<numvecs; i++) {
         if ( norms[i] < zero_mag ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
-            out << "*** ERROR *** MultiVecTraits::MvRandom()." << endl
-                << "Vector had negative norm." << endl;
-          }
-          return Failed;
+          om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::MvRandom()." << endl
+            << "Vector had negative norm." << endl;
+          return false;
         }
         else if ( norms[i] != SCT::squareroot(MVT::GetVecLength(*B)) && !BadNormWarning ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
-            out << endl;
-            out << "Warning testing MultiVecTraits::MvInit()." << endl
-                << "Ones vector should have norm sqrt(dim)." << endl
-                << "norms[i]: " << norms[i] << "\tdim: " << MVT::GetVecLength(*B) << endl << endl;
-          }
+          om->stream(Warnings)
+            << endl
+            << "Warning testing MultiVecTraits::MvInit()." << endl
+            << "Ones vector should have norm sqrt(dim)." << endl
+            << "norms[i]: " << norms[i] << "\tdim: " << MVT::GetVecLength(*B) << endl << endl;
           BadNormWarning = true;
         }
       }
@@ -345,18 +335,16 @@ namespace Anasazi {
       MVT::MvNorm(*B, &norms);
       for (i=0; i<numvecs; i++) {
         if ( norms[i] < zero_mag ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
-            out << "*** ERROR *** MultiVecTraits::MvInit()." << endl
-                << "Vector had negative norm." << endl;
-          }
-          return Failed;
+          om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::MvInit()." << endl
+            << "Vector had negative norm." << endl;
+          return false;
         }
         else if ( norms[i] != zero_mag ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
-            out << "*** ERROR *** MultiVecTraits::MvInit()." << endl
-                << "Zero vector should have norm zero." << endl;
-          }
-          return Failed;
+          om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::MvInit()." << endl
+            << "Zero vector should have norm zero." << endl;
+          return false;
         }
       }
     }
@@ -377,38 +365,34 @@ namespace Anasazi {
       C = MVT::CloneCopy(*B,ind);
       MVT::MvNorm(*C, &norms2);
       if ( MVT::GetNumberVecs(*C) != numvecs_2 ) {
-        if ( om->isVerbosityAndPrint(Warning) ) {
-          out << "*** ERROR *** MultiVecTraits::CloneCopy(ind)." << endl
-              << "Wrong number of vectors." << endl;
-        }
-        return Failed;
+        om->stream(Warnings)
+          << "*** ERROR *** MultiVecTraits::CloneCopy(ind)." << endl
+          << "Wrong number of vectors." << endl;
+        return false;
       }
       if ( MVT::GetVecLength(*C) != MVT::GetVecLength(*B) ) {
-        if ( om->isVerbosityAndPrint(Warning) ) {
-          out << "*** ERROR *** MultiVecTraits::CloneCopy(ind)." << endl
-              << "Vector lengths don't match." << endl;
-        }
-        return Failed;
+        om->stream(Warnings)
+          << "*** ERROR *** MultiVecTraits::CloneCopy(ind)." << endl
+          << "Vector lengths don't match." << endl;
+        return false;
       }
       for (i=0; i<numvecs_2; i++) {
         if ( norms2[i] != norms[ind[i]] ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
-            out << "*** ERROR *** MultiVecTraits::CloneCopy(ind)." << endl
-                << "Copied vectors do not agree:" 
-                << norms2[i] << " != " << norms[ind[i]] << endl;
-          }
-          return Failed;
+          om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::CloneCopy(ind)." << endl
+            << "Copied vectors do not agree:" 
+            << norms2[i] << " != " << norms[ind[i]] << endl;
+          return false;
         }
       }
       MVT::MvInit(*B,zero);
       MVT::MvNorm(*C, &norms); 
       for (i=0; i<numvecs_2; i++) {
         if ( norms2[i] != norms[i] ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
-            out << "*** ERROR *** MultiVecTraits::CloneCopy(ind)." << endl
-                << "Copied vectors were not independent." << endl;
-          }
-          return Failed;
+          om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::CloneCopy(ind)." << endl
+            << "Copied vectors were not independent." << endl;
+          return false;
         }
       }
     }    
@@ -429,30 +413,27 @@ namespace Anasazi {
       C = MVT::CloneCopy(*B);
       MVT::MvNorm(*C, &norms2);
       if ( MVT::GetNumberVecs(*C) != numvecs ) {
-        if ( om->isVerbosityAndPrint(Warning) ) {
-          out << "*** ERROR *** MultiVecTraits::CloneCopy()." << endl
-              << "Wrong number of vectors." << endl;
-        }
-        return Failed;
+        om->stream(Warnings)
+          << "*** ERROR *** MultiVecTraits::CloneCopy()." << endl
+          << "Wrong number of vectors." << endl;
+        return false;
       }
       for (i=0; i<numvecs; i++) {
         if ( norms2[i] != norms[i] ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
-            out << "*** ERROR *** MultiVecTraits::CloneCopy()." << endl
-                << "Copied vectors do not agree." << endl;
-          }
-          return Failed;
+          om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::CloneCopy()." << endl
+            << "Copied vectors do not agree." << endl;
+          return false;
         }
       }
       MVT::MvInit(*B,zero);
       MVT::MvNorm(*C, &norms); 
       for (i=0; i<numvecs; i++) {
         if ( norms2[i] != norms[i] ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
-            out << "*** ERROR *** MultiVecTraits::CloneCopy()." << endl
-                << "Copied vectors were not independent." << endl;
-          }
-          return Failed;
+          om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::CloneCopy()." << endl
+            << "Copied vectors were not independent." << endl;
+          return false;
         }
       }
     }
@@ -474,19 +455,17 @@ namespace Anasazi {
       C = MVT::CloneView(*B,ind);
       MVT::MvNorm(*C, &norms2);
       if ( MVT::GetNumberVecs(*C) != numvecs_2 ) {
-        if ( om->isVerbosityAndPrint(Warning) ) {
-          out << "*** ERROR *** MultiVecTraits::CloneView(ind)." << endl
-              << "Wrong number of vectors." << endl;
-        }
-        return Failed;
+        om->stream(Warnings)
+          << "*** ERROR *** MultiVecTraits::CloneView(ind)." << endl
+          << "Wrong number of vectors." << endl;
+        return false;
       }
       for (i=0; i<numvecs_2; i++) {
         if ( norms2[i] != norms[ind[i]] ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
-            out << "*** ERROR *** MultiVecTraits::CloneView(ind)." << endl
-                << "Viewed vectors do not agree." << endl;
-          }
-          return Failed;
+          om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::CloneView(ind)." << endl
+            << "Viewed vectors do not agree." << endl;
+          return false;
         }
       }
       /*
@@ -494,11 +473,11 @@ namespace Anasazi {
       MVT::MvNorm(*C, &norms2); 
       for (i=0; i<numvecs_2; i++) {
         if ( norms2[i] != zero ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
+          if ( om->isVerbosityAndPrint(Warnings) ) {
             out << "*** ERROR *** MultiVecTraits::CloneView(ind)." << endl
                 << "Copied vectors were not dependent." << endl;
           }
-          return Failed;
+          return false;
         }
       }
       */
@@ -528,19 +507,17 @@ namespace Anasazi {
       C = MVT::CloneView(*constB,ind);
       MVT::MvNorm(*C, &normsC);
       if ( MVT::GetNumberVecs(*C) != numvecs_2 ) {
-        if ( om->isVerbosityAndPrint(Warning) ) {
-          out << "*** ERROR *** const MultiVecTraits::CloneView(ind)." << endl
-              << "Wrong number of vectors." << endl;
-        }
-        return Failed;
+        om->stream(Warnings)
+          << "*** ERROR *** const MultiVecTraits::CloneView(ind)." << endl
+          << "Wrong number of vectors." << endl;
+        return false;
       }
       for (i=0; i<numvecs_2; i++) {
         if ( normsC[i] != normsB[ind[i]] ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
-            out << "*** ERROR *** const MultiVecTraits::CloneView(ind)." << endl
-                << "Viewed vectors do not agree." << endl;
-          }
-          return Failed;
+          om->stream(Warnings)
+            << "*** ERROR *** const MultiVecTraits::CloneView(ind)." << endl
+            << "Viewed vectors do not agree." << endl;
+          return false;
         }
       }
       /*
@@ -548,11 +525,11 @@ namespace Anasazi {
       MVT::MvNorm(*constB, &normsB); 
       for (i=0; i<numvecs_2; i++) {
         if ( normsB[ind[i]] != SCT::zero() ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
+          if ( om->isVerbosityAndPrint(Warnings) ) {
             out << "*** ERROR *** const MultiVecTraits::CloneView(ind)." << endl
                 << "Copied vectors were not dependent." << endl;
           }
-          return Failed;
+          return false;
         }
       }
       */
@@ -594,11 +571,10 @@ namespace Anasazi {
       // check that C was not changed by SetBlock
       for (i=0; i<numvecs_2; i++) {
         if ( normsC1[i] != normsC2[i] ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
-            out << "*** ERROR *** MultiVecTraits::SetBlock()." << endl
-                << "Operation modified source vectors." << endl;
-          }
-          return Failed;
+          om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::SetBlock()." << endl
+            << "Operation modified source vectors." << endl;
+          return false;
         }
       }
       // check that the correct vectors of B were modified
@@ -607,21 +583,19 @@ namespace Anasazi {
         if (i % 2 == 0) {
           // should be a vector from C
           if ( normsB2[i] != normsC1[i/2] ) {
-            if ( om->isVerbosityAndPrint(Warning) ) {
-              out << "*** ERROR *** MultiVecTraits::SetBlock()." << endl
-                  << "Copied vectors do not agree." << endl;
-            }
-            return Failed;
+            om->stream(Warnings)
+              << "*** ERROR *** MultiVecTraits::SetBlock()." << endl
+              << "Copied vectors do not agree." << endl;
+            return false;
           }
         }
         else {
           // should be an original vector
           if ( normsB1[i] != normsB2[i] ) {
-            if ( om->isVerbosityAndPrint(Warning) ) {
-              out << "*** ERROR *** MultiVecTraits::SetBlock()." << endl
-                  << "Incorrect vectors were modified." << endl;
-            }
-            return Failed;
+            om->stream(Warnings)
+              << "*** ERROR *** MultiVecTraits::SetBlock()." << endl
+              << "Incorrect vectors were modified." << endl;
+            return false;
           }
         }
       }
@@ -630,11 +604,10 @@ namespace Anasazi {
       // verify that we copied and didn't reference
       for (i=0; i<numvecs; i++) {
         if ( normsB1[i] != normsB2[i] ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
-            out << "*** ERROR *** MultiVecTraits::SetBlock()." << endl
-                << "Copied vectors were not independent." << endl;
-          }
-          return Failed;
+          om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::SetBlock()." << endl
+            << "Copied vectors were not independent." << endl;
+          return false;
         }
       }
     }
@@ -683,11 +656,10 @@ namespace Anasazi {
       // check that C was not changed by SetBlock
       for (i=0; i<CSize; i++) {
         if ( normsC1[i] != normsC2[i] ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
-            out << "*** ERROR *** MultiVecTraits::SetBlock()." << endl
-                << "Operation modified source vectors." << endl;
-          }
-          return Failed;
+          om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::SetBlock()." << endl
+            << "Operation modified source vectors." << endl;
+          return false;
         }
       }
       // check that the correct vectors of B were modified
@@ -696,21 +668,19 @@ namespace Anasazi {
         if (i % 2 == 0) {
           // should be a vector from C
           if ( normsB2[i] != normsC1[i/2] ) {
-            if ( om->isVerbosityAndPrint(Warning) ) {
-              out << "*** ERROR *** MultiVecTraits::SetBlock()." << endl
-                  << "Copied vectors do not agree." << endl;
-            }
-            return Failed;
+            om->stream(Warnings)
+              << "*** ERROR *** MultiVecTraits::SetBlock()." << endl
+              << "Copied vectors do not agree." << endl;
+            return false;
           }
         }
         else {
           // should be an original vector
           if ( normsB1[i] != normsB2[i] ) {
-            if ( om->isVerbosityAndPrint(Warning) ) {
-              out << "*** ERROR *** MultiVecTraits::SetBlock()." << endl
-                  << "Incorrect vectors were modified." << endl;
-            }
-            return Failed;
+            om->stream(Warnings)
+              << "*** ERROR *** MultiVecTraits::SetBlock()." << endl
+              << "Incorrect vectors were modified." << endl;
+            return false;
           }
         }
       }
@@ -719,11 +689,10 @@ namespace Anasazi {
       // verify that we copied and didn't reference
       for (i=0; i<numvecs; i++) {
         if ( normsB1[i] != normsB2[i] ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
-            out << "*** ERROR *** MultiVecTraits::SetBlock()." << endl
-                << "Copied vectors were not independent." << endl;
-          }
-          return Failed;
+          om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::SetBlock()." << endl
+            << "Copied vectors were not independent." << endl;
+          return false;
         }
       }
     }
@@ -769,20 +738,18 @@ namespace Anasazi {
    
       // check the sizes: not allowed to have shrunk
       if ( SDM.numRows() != p || SDM.numCols() != q ) {
-        if ( om->isVerbosityAndPrint(Warning) ) {
-          out << "*** ERROR *** MultiVecTraits::MvTransMv()." << endl
-              << "Routine resized SerialDenseMatrix." << endl;
-        }
-        return Failed;
+        om->stream(Warnings)
+          << "*** ERROR *** MultiVecTraits::MvTransMv()." << endl
+          << "Routine resized SerialDenseMatrix." << endl;
+        return false;
       }
    
       // check that zero**A^H*B == zero
       if ( SDM.normOne() != zero ) {
-        if ( om->isVerbosityAndPrint(Warning) ) {
-          out << "*** ERROR *** MultiVecTraits::MvTransMv()." << endl
-              << "Scalar argument processed incorrectly." << endl;
-        }
-        return Failed;
+        om->stream(Warnings)
+          << "*** ERROR *** MultiVecTraits::MvTransMv()." << endl
+          << "Scalar argument processed incorrectly." << endl;
+        return false;
       }
    
       // perform SDM  = one * B^H * C
@@ -794,15 +761,14 @@ namespace Anasazi {
         for (j=0; j<q; j++) {
           if (   SCT::magnitude(SDM(i,j)) 
                > SCT::magnitude(normsB[i]*normsC[j]) ) {
-            if ( om->isVerbosityAndPrint(Warning) ) {
-              out << "*** ERROR *** MultiVecTraits::MvTransMv()." << endl
-                  << "Triangle inequality did not hold: " 
-                  << SCT::magnitude(SDM(i,j)) 
-                  << " > " 
-                  << SCT::magnitude(normsB[i]*normsC[j]) 
-                  << endl;
-            }
-            return Failed;
+            om->stream(Warnings)
+              << "*** ERROR *** MultiVecTraits::MvTransMv()." << endl
+              << "Triangle inequality did not hold: " 
+              << SCT::magnitude(SDM(i,j)) 
+              << " > " 
+              << SCT::magnitude(normsB[i]*normsC[j]) 
+              << endl;
+            return false;
           }
         }
       }
@@ -812,11 +778,10 @@ namespace Anasazi {
       for (i=0; i<p; i++) {
         for (j=0; j<q; j++) {
           if ( SDM(i,j) != zero ) {
-            if ( om->isVerbosityAndPrint(Warning) ) {
-              out << "*** ERROR *** MultiVecTraits::MvTransMv()." << endl
-                  << "Inner products not zero for C==0." << endl;
-            }
-            return Failed;
+            om->stream(Warnings)
+              << "*** ERROR *** MultiVecTraits::MvTransMv()." << endl
+              << "Inner products not zero for C==0." << endl;
+            return false;
           }
         }
       }
@@ -826,11 +791,10 @@ namespace Anasazi {
       for (i=0; i<p; i++) {
         for (j=0; j<q; j++) {
           if ( SDM(i,j) != zero ) {
-            if ( om->isVerbosityAndPrint(Warning) ) {
-              out << "*** ERROR *** MultiVecTraits::MvTransMv()." << endl
-                  << "Inner products not zero for B==0." << endl;
-            }
-            return Failed;
+            om->stream(Warnings)
+              << "*** ERROR *** MultiVecTraits::MvTransMv()." << endl
+              << "Inner products not zero for B==0." << endl;
+            return false;
           }
         }
       }
@@ -859,20 +823,18 @@ namespace Anasazi {
       MVT::MvNorm(*C,&normsC);
       MVT::MvDot( *B, *C, &iprods );
       if ( iprods.size() != p+q ) {
-        if ( om->isVerbosityAndPrint(Warning) ) {
-          out << "*** ERROR *** MultiVecTraits::MvDot." << endl
-              << "Routine resized results vector." << endl;
-        }
-        return Failed;
+        om->stream(Warnings)
+          << "*** ERROR *** MultiVecTraits::MvDot." << endl
+          << "Routine resized results vector." << endl;
+        return false;
       }
       for (i=0; i<ANASAZI_MIN(p,q); i++) {
         if ( SCT::magnitude(iprods[i]) 
              > SCT::magnitude(normsB[i]*normsC[i]) ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
-            out << "*** ERROR *** MultiVecTraits::MvDot()." << endl
-                << "Inner products not valid." << endl;
-          }
-          return Failed;
+          om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::MvDot()." << endl
+            << "Inner products not valid." << endl;
+          return false;
         }
       }
       MVT::MvInit(*B);
@@ -880,11 +842,10 @@ namespace Anasazi {
       MVT::MvDot( *B, *C, &iprods );
       for (i=0; i<p; i++) {
         if ( iprods[i] != zero ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
-            out << "*** ERROR *** MultiVecTraits::MvDot()." << endl
-                << "Inner products not zero for B==0." << endl;
-          }
-          return Failed;
+          om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::MvDot()." << endl
+            << "Inner products not zero for B==0." << endl;
+          return false;
         }
       }
       MVT::MvInit(*C);
@@ -892,11 +853,10 @@ namespace Anasazi {
       MVT::MvDot( *B, *C, &iprods );
       for (i=0; i<p; i++) {
         if ( iprods[i] != zero ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
-            out << "*** ERROR *** MultiVecTraits::MvDot()." << endl
-                << "Inner products not zero for C==0." << endl;
-          }
-          return Failed;
+          om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::MvDot()." << endl
+            << "Inner products not zero for C==0." << endl;
+          return false;
         }
       }
     }
@@ -934,25 +894,22 @@ namespace Anasazi {
       MVT::MvNorm(*D,&normsD1);
       for (i=0; i<p; i++) {
         if ( normsB1[i] != normsB2[i] ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
-            out << "*** ERROR *** MultiVecTraits::MvAddMv()." << endl
-                << "Input arguments were modified." << endl;
-          }
-          return Failed;
+          om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::MvAddMv()." << endl
+            << "Input arguments were modified." << endl;
+          return false;
         }
         else if ( normsC1[i] != normsC2[i] ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
-            out << "*** ERROR *** MultiVecTraits::MvAddMv()." << endl
-                << "Input arguments were modified." << endl;
-          }
-          return Failed;
+          om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::MvAddMv()." << endl
+            << "Input arguments were modified." << endl;
+          return false;
         }
         else if ( normsC1[i] != normsD1[i] ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
-            out << "*** ERROR *** MultiVecTraits::MvAddMv()." << endl
-                << "Assignment did not work." << endl;
-          }
-          return Failed;
+          om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::MvAddMv()." << endl
+            << "Assignment did not work." << endl;
+          return false;
         }
       }
 
@@ -963,25 +920,22 @@ namespace Anasazi {
       MVT::MvNorm(*D,&normsD1);
       for (i=0; i<p; i++) {
         if ( normsB1[i] != normsB2[i] ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
-            out << "*** ERROR *** MultiVecTraits::MvAddMv()." << endl
-                << "Input arguments were modified." << endl;
-          }
-          return Failed;
+          om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::MvAddMv()." << endl
+            << "Input arguments were modified." << endl;
+          return false;
         }
         else if ( normsC1[i] != normsC2[i] ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
-            out << "*** ERROR *** MultiVecTraits::MvAddMv()." << endl
-                << "Input arguments were modified." << endl;
-          }
-          return Failed;
+          om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::MvAddMv()." << endl
+            << "Input arguments were modified." << endl;
+          return false;
         }
         else if ( normsB1[i] != normsD1[i] ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
-            out << "*** ERROR *** MultiVecTraits::MvAddMv()." << endl
-                << "Assignment did not work." << endl;
-          }
-          return Failed;
+          om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::MvAddMv()." << endl
+            << "Assignment did not work." << endl;
+          return false;
         }
       }
 
@@ -995,18 +949,16 @@ namespace Anasazi {
       // check that input args are not modified
       for (i=0; i<p; i++) {
         if ( normsB1[i] != normsB2[i] ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
-            out << "*** ERROR *** MultiVecTraits::MvAddMv()." << endl
-                << "Input arguments were modified." << endl;
-          }
-          return Failed;
+          om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::MvAddMv()." << endl
+            << "Input arguments were modified." << endl;
+          return false;
         }
         else if ( normsC1[i] != normsC2[i] ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
-            out << "*** ERROR *** MultiVecTraits::MvAddMv()." << endl
-                << "Input arguments were modified." << endl;
-          }
-          return Failed;
+          om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::MvAddMv()." << endl
+            << "Input arguments were modified." << endl;
+          return false;
         }
       }
       // next, try zero D
@@ -1019,25 +971,22 @@ namespace Anasazi {
       // as the above test
       for (i=0; i<p; i++) {
         if ( normsB1[i] != normsB2[i] ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
-            out << "*** ERROR *** MultiVecTraits::MvAddMv()." << endl
-                << "Input arguments were modified." << endl;
-          }
-          return Failed;
+          om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::MvAddMv()." << endl
+            << "Input arguments were modified." << endl;
+          return false;
         }
         else if ( normsC1[i] != normsC2[i] ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
-            out << "*** ERROR *** MultiVecTraits::MvAddMv()." << endl
-                << "Input arguments were modified." << endl;
-          }
-          return Failed;
+          om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::MvAddMv()." << endl
+            << "Input arguments were modified." << endl;
+          return false;
         }
         else if ( normsD1[i] != normsD2[i] ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
-            out << "*** ERROR *** MultiVecTraits::MvAddMv()." << endl
-                << "Results varies depending on initial state of dest vectors." << endl;
-          }
-          return Failed;
+          om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::MvAddMv()." << endl
+            << "Results varies depending on initial state of dest vectors." << endl;
+          return false;
         }
       }
     }
@@ -1080,11 +1029,10 @@ namespace Anasazi {
       MVT::MvNorm(*D,&normsD);
       for (i=0; i<p; i++) {
         if ( normsB[i] != normsD[i] ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
-            out << "*** ERROR *** MultiVecTraits::MvAddMv() #2" << endl
-                << "Assignment did not work." << endl;
-          }
-          return Failed;
+          om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::MvAddMv() #2" << endl
+            << "Assignment did not work." << endl;
+          return false;
         }
       }
 
@@ -1093,11 +1041,10 @@ namespace Anasazi {
       MVT::MvNorm(*D,&normsD);
       for (i=0; i<p; i++) {
         if ( normsB[i] != normsD[i] ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
-            out << "*** ERROR *** MultiVecTraits::MvAddMv() #2" << endl
-                << "Assignment did not work." << endl;
-          }
-          return Failed;
+          om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::MvAddMv() #2" << endl
+            << "Assignment did not work." << endl;
+          return false;
         }
       }
 
@@ -1134,20 +1081,18 @@ namespace Anasazi {
       MVT::MvNorm(*C,&normsC2);
       for (i=0; i<p; i++) {
         if ( normsB1[i] != normsB2[i] ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
-            out << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
-                << "Input vectors were modified." << endl;
-          }
-          return Failed;
+          om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
+            << "Input vectors were modified." << endl;
+          return false;
         }
       }
       for (i=0; i<q; i++) {
         if ( normsC1[i] != normsC2[i] ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
-            out << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
-                << "Arithmetic test 1 failed." << endl;
-          }
-          return Failed;
+          om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
+            << "Arithmetic test 1 failed." << endl;
+          return false;
         }
       }
 
@@ -1162,24 +1107,22 @@ namespace Anasazi {
       MVT::MvNorm(*C,&normsC2);
       for (i=0; i<p; i++) {
         if ( normsB1[i] != normsB2[i] ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
-            out << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
-                << "Input vectors were modified." << endl;
-          }
-          return Failed;
+          om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
+            << "Input vectors were modified." << endl;
+          return false;
         }
       }
       for (i=0; i<q; i++) {
         if ( normsC2[i] != zero ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
-            out << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
-                << "Arithmetic test 2 failed: " 
-                << normsC2[i] 
-                << " != " 
-                << zero 
-                << endl;
-          }
-          return Failed;
+          om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
+            << "Arithmetic test 2 failed: " 
+            << normsC2[i] 
+            << " != " 
+            << zero 
+            << endl;
+          return false;
         }
       }
 
@@ -1198,24 +1141,22 @@ namespace Anasazi {
       MVT::MvNorm(*C,&normsC2);
       for (i=0; i<p; i++) {
         if ( normsB1[i] != normsB2[i] ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
-            out << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
-                << "Input vectors were modified." << endl;
-          }
-          return Failed;
+          om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
+            << "Input vectors were modified." << endl;
+          return false;
         }
       }
       for (i=0; i<q; i++) {
         if ( normsB1[i] != normsC2[i] ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
-            out << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
-                << "Arithmetic test 3 failed: "
-                << normsB1[i] 
-                << " != "
-                << normsC2[i]
-                << endl;
-          }
-          return Failed;
+          om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
+            << "Arithmetic test 3 failed: "
+            << normsB1[i] 
+            << " != "
+            << normsC2[i]
+            << endl;
+          return false;
         }
       }
 
@@ -1230,20 +1171,18 @@ namespace Anasazi {
       MVT::MvNorm(*C,&normsC2);
       for (i=0; i<p; i++) {
         if ( normsB1[i] != normsB2[i] ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
-            out << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
-                << "Input vectors were modified." << endl;
-          }
-          return Failed;
+          om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
+            << "Input vectors were modified." << endl;
+          return false;
         }
       }
       for (i=0; i<q; i++) {
         if ( normsC1[i] != normsC2[i] ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
-            out << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
-                << "Arithmetic test 4 failed." << endl;
-          }
-          return Failed;
+          om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
+            << "Arithmetic test 4 failed." << endl;
+          return false;
         }
       }
     }
@@ -1278,20 +1217,18 @@ namespace Anasazi {
       MVT::MvNorm(*C,&normsC2);
       for (i=0; i<p; i++) {
         if ( normsB1[i] != normsB2[i] ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
-            out << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
-                << "Input vectors were modified." << endl;
-          }
-          return Failed;
+          om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
+            << "Input vectors were modified." << endl;
+          return false;
         }
       }
       for (i=0; i<q; i++) {
         if ( normsC1[i] != normsC2[i] ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
-            out << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
-                << "Arithmetic test 5 failed." << endl;
-          }
-          return Failed;
+          om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
+            << "Arithmetic test 5 failed." << endl;
+          return false;
         }
       }
 
@@ -1306,24 +1243,22 @@ namespace Anasazi {
       MVT::MvNorm(*C,&normsC2);
       for (i=0; i<p; i++) {
         if ( normsB1[i] != normsB2[i] ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
-            out << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
-                << "Input vectors were modified." << endl;
-          }
-          return Failed;
+          om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
+            << "Input vectors were modified." << endl;
+          return false;
         }
       }
       for (i=0; i<q; i++) {
         if ( normsC2[i] != zero ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
-            out << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
-                << "Arithmetic test 6 failed: " 
-                << normsC2[i] 
-                << " != " 
-                << zero 
-                << endl;
-          }
-          return Failed;
+          om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
+            << "Arithmetic test 6 failed: " 
+            << normsC2[i] 
+            << " != " 
+            << zero 
+            << endl;
+          return false;
         }
       }
 
@@ -1341,29 +1276,26 @@ namespace Anasazi {
       MVT::MvNorm(*C,&normsC2);
       for (i=0; i<p; i++) {
         if ( normsB1[i] != normsB2[i] ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
-            out << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
-                << "Input vectors were modified." << endl;
-          }
-          return Failed;
+          om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
+            << "Input vectors were modified." << endl;
+          return false;
         }
       }
       for (i=0; i<p; i++) {
         if ( normsB1[i] != normsC2[i] ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
-            out << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
-                << "Arithmetic test 7 failed." << endl;
-          }
-          return Failed;
+          om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
+            << "Arithmetic test 7 failed." << endl;
+          return false;
         }
       }
       for (i=p; i<q; i++) {
         if ( normsC2[i] != zero ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
-            out << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
-                << "Arithmetic test 7 failed." << endl;
-          }
-          return Failed;
+          om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
+            << "Arithmetic test 7 failed." << endl;
+          return false;
         }
       }
 
@@ -1378,37 +1310,35 @@ namespace Anasazi {
       MVT::MvNorm(*C,&normsC2);
       for (i=0; i<p; i++) {
         if ( normsB1[i] != normsB2[i] ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
-            out << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
-                << "Input vectors were modified." << endl;
-          }
-          return Failed;
+          om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
+            << "Input vectors were modified." << endl;
+          return false;
         }
       }
       for (i=0; i<q; i++) {
         if ( normsC1[i] != normsC2[i] ) {
-          if ( om->isVerbosityAndPrint(Warning) ) {
-            out << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
-                << "Arithmetic test 8 failed." << endl;
-          }
-          return Failed;
+          om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
+            << "Arithmetic test 8 failed." << endl;
+          return false;
         }
       }
     }
 
-    return Ok;
+    return true;
 
   }
 
 
 
-/*! \fn TestOperatorTraits
-    \brief This function tests the correctness of an operator 
-    implementation with respect to an OperatorTraits specialization 
-    \return Status of the test: OK or Failed
+/*!  \brief This function tests the correctness of an operator implementation
+ * with respect to an OperatorTraits specialization 
+ *
+ *  \return Status of the test: true is successful, false otherwise.
 */
   template< class ScalarType, class MV, class OP>
-  ReturnType TestOperatorTraits( 
+  bool TestOperatorTraits( 
                 const Teuchos::RefCountPtr<OutputManager<ScalarType> > &om,
                 const Teuchos::RefCountPtr<const MV> &A,
                 const Teuchos::RefCountPtr<const OP> &M) {
@@ -1432,8 +1362,6 @@ namespace Anasazi {
 
     std::vector<MagType> normsB1(numvecs), normsB2(numvecs),
                          normsC1(numvecs), normsC2(numvecs);
-    ReturnType ret;
-    std::ostream &out(om->GetOStream());
     bool NonDeterministicWarning;
     int i;
 
@@ -1448,61 +1376,43 @@ namespace Anasazi {
     MVT::MvInit(*B);
     MVT::MvRandom(*C);
     MVT::MvNorm(*B,&normsB1);
-    ret = OPT::Apply(*M,*B,*C);
+    OPT::Apply(*M,*B,*C);
     MVT::MvNorm(*B,&normsB2);
     MVT::MvNorm(*C,&normsC2);
-    if (ret != Ok) {
-      if (om->isVerbosityAndPrint(Warning)) {
-        out << "*** ERROR *** OperatorTraits::Apply() [1]" << endl
-            << "Apply() returned an error." << endl;
-      }
-      return Failed;
-    }
     for (i=0; i<numvecs; i++) {
       if (normsB2[i] != normsB1[i]) {
-        if ( om->isVerbosityAndPrint(Warning) ) {
-          out << "*** ERROR *** OperatorTraits::Apply() [1]" << endl
-              << "Apply() modified the input vectors." << endl;
-        }
-        return Failed;
+        om->stream(Warnings)
+          << "*** ERROR *** OperatorTraits::Apply() [1]" << endl
+          << "Apply() modified the input vectors." << endl;
+        return false;
       }
       if (normsC2[i] != SCT::zero()) {
-        if ( om->isVerbosityAndPrint(Warning) ) {
-          out << "*** ERROR *** OperatorTraits::Apply() [1]" << endl
-              << "Operator applied to zero did not return zero." << endl;
-        }
-        return Failed;
+        om->stream(Warnings)
+          << "*** ERROR *** OperatorTraits::Apply() [1]" << endl
+          << "Operator applied to zero did not return zero." << endl;
+        return false;
       }
     }
 
     // If we send in a random matrix, we should not get a zero return
     MVT::MvRandom(*B);
     MVT::MvNorm(*B,&normsB1);
-    ret = OPT::Apply(*M,*B,*C);
+    OPT::Apply(*M,*B,*C);
     MVT::MvNorm(*B,&normsB2);
     MVT::MvNorm(*C,&normsC2);
-    if (ret != Ok) {
-      if (om->isVerbosityAndPrint(Warning)) {
-        out << "*** ERROR *** OperatorTraits::Apply() [2]" << endl
-            << "Apply() returned an error." << endl;
-      }
-      return Failed;
-    }
     bool ZeroWarning = false;
     for (i=0; i<numvecs; i++) {
       if (normsB2[i] != normsB1[i]) {
-        if ( om->isVerbosityAndPrint(Warning) ) {
-          out << "*** ERROR *** OperatorTraits::Apply() [2]" << endl
-              << "Apply() modified the input vectors." << endl;
-        }
-        return Failed;
+        om->stream(Warnings)
+          << "*** ERROR *** OperatorTraits::Apply() [2]" << endl
+          << "Apply() modified the input vectors." << endl;
+        return false;
       }
       if (normsC2[i] == SCT::zero() && ZeroWarning==false ) {
-        if ( om->isVerbosityAndPrint(Warning) ) {
-          out << "*** ERROR *** OperatorTraits::Apply() [2]" << endl
-              << "Operator applied to random vectors returned zero." << endl;
-          ZeroWarning = true;
-        }
+        om->stream(Warnings)
+          << "*** ERROR *** OperatorTraits::Apply() [2]" << endl
+          << "Operator applied to random vectors returned zero." << endl;
+        ZeroWarning = true;
       }
     }
 
@@ -1510,23 +1420,15 @@ namespace Anasazi {
     MVT::MvRandom(*B);
     MVT::MvNorm(*B,&normsB1);
     MVT::MvInit(*C);
-    ret = OPT::Apply(*M,*B,*C);
+    OPT::Apply(*M,*B,*C);
     MVT::MvNorm(*B,&normsB2);
     MVT::MvNorm(*C,&normsC1);
-    if (ret != Ok) {
-      if ( om->isVerbosityAndPrint(Warning) ) {
-        out << "*** ERROR *** OperatorTraits::Apply() [3]" << endl
-            << "Apply() returned an error." << endl;
-      }
-      return Failed;
-    }
     for (i=0; i<numvecs; i++) {
       if (normsB2[i] != normsB1[i]) {
-        if ( om->isVerbosityAndPrint(Warning) ) {
-          out << "*** ERROR *** OperatorTraits::Apply() [3]" << endl
-              << "Apply() modified the input vectors." << endl;
-        }
-        return Failed;
+        om->stream(Warnings)
+          << "*** ERROR *** OperatorTraits::Apply() [3]" << endl
+          << "Apply() modified the input vectors." << endl;
+        return false;
       }
     }
 
@@ -1536,36 +1438,27 @@ namespace Anasazi {
     //   operator. We do not want to prejudice against a 
     //   stochastic operator.
     MVT::MvRandom(*C);
-    ret = OPT::Apply(*M,*B,*C);
+    OPT::Apply(*M,*B,*C);
     MVT::MvNorm(*B,&normsB2);
     MVT::MvNorm(*C,&normsC2);
     NonDeterministicWarning = false;
-    if (ret != Ok) {
-      if (om->isVerbosityAndPrint(Warning)) {
-        out << "*** ERROR *** OperatorTraits::Apply() [4]" << endl
-            << "Apply() returned an error." << endl;
-      }
-      return Failed;
-    }
     for (i=0; i<numvecs; i++) {
       if (normsB2[i] != normsB1[i]) {
-        if ( om->isVerbosityAndPrint(Warning) ) {
-          out << "*** ERROR *** OperatorTraits::Apply() [4]" << endl
-              << "Apply() modified the input vectors." << endl;
-        }
-        return Failed;
+        om->stream(Warnings)
+          << "*** ERROR *** OperatorTraits::Apply() [4]" << endl
+          << "Apply() modified the input vectors." << endl;
+        return false;
       }
       if (normsC1[i] != normsC2[i] && !NonDeterministicWarning) {
-        if ( om->isVerbosityAndPrint(Warning) ) {
-          out << endl;
-          out << "*** WARNING *** OperatorTraits::Apply() [4]" << endl
-              << "Apply() returned two different results." << endl << endl;
-        }
+        om->stream(Warnings)
+          << endl
+          << "*** WARNING *** OperatorTraits::Apply() [4]" << endl
+          << "Apply() returned two different results." << endl << endl;
         NonDeterministicWarning = true;
       }
     }
 
-    return Ok;
+    return true;
 
   }
 

@@ -42,6 +42,7 @@
 #include "AnasaziBlockDavidson.hpp"
 #include "AnasaziBasicSort.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
+#include "AnasaziBasicOutputManager.hpp"
 
 #ifdef HAVE_MPI
 #include <mpi.h>
@@ -115,24 +116,20 @@ int main(int argc, char *argv[])
 
   // Create default output manager 
   RefCountPtr<Anasazi::OutputManager<ST> > MyOM 
-    = rcp( new Anasazi::OutputManager<ST>( MyPID ) );
+    = rcp( new Anasazi::BasicOutputManager<ST>() );
   // Set verbosity level
   if (verbose) {
-    MyOM->SetVerbosity( Anasazi::Warning + Anasazi::FinalSummary + Anasazi::TimingDetails );
+    MyOM->setVerbosity( Anasazi::Warning + Anasazi::FinalSummary + Anasazi::TimingDetails );
   }
 
-  if (MyOM->doPrint()) {
-    cout << Anasazi::Anasazi_Version() << endl << endl;
-  }
+  MyOM->stream(Anasazi::Error) << Anasazi::Anasazi_Version() << endl << endl;
 
 #ifndef HAVE_ANASAZI_TRIUTILS
-  cout << "This test requires Triutils. Please configure with --enable-triutils." << endl;
+  MyOM->stream(Anasazi::Error) << "This test requires Triutils. Please configure with --enable-triutils." << endl;
 #ifdef HAVE_MPI
   MPI_Finalize() ;
 #endif
-  if (MyOM->doPrint()) {
-    cout << "End Result: TEST FAILED" << endl;	
-  }
+  MyOM->stream(Anasazi::Error) << "End Result: TEST FAILED" << endl;	
   return -1;
 #endif
 
@@ -151,16 +148,12 @@ int main(int argc, char *argv[])
   info = readHB_newmat_double(filename.c_str(),&dim,&dim2,&nnz,
                               &colptr,&rowind,&dvals);
   if (info == 0 || nnz < 0) {
-    if (MyOM->doPrint()) {
-      cout << "Error reading '" << filename << "'" << endl;
-      if (MyOM->doPrint()) {
-        cout << "End Result: TEST FAILED" << endl;
-      }
+      MyOM->stream(Anasazi::Error) << "Error reading '" << filename << "'" << endl
+                                   << "End Result: TEST FAILED" << endl;
 #ifdef HAVE_MPI
       MPI_Finalize();
 #endif
       return -1;
-    }
   }
   // Convert interleaved doubles to complex values
   cvals = new ST[nnz];
@@ -202,13 +195,11 @@ int main(int argc, char *argv[])
   // Inform the eigenproblem that you are done passing it information
   info = MyProblem->SetProblem();
   if (info) {
-    cout << "Anasazi::BasicEigenproblem::SetProblem() returned with code : "<< info << endl;
+    MyOM->stream(Anasazi::Error) << "Anasazi::BasicEigenproblem::SetProblem() returned with code : "<< info << endl;
 #ifdef HAVE_MPI
     MPI_Finalize() ;
 #endif
-    if (MyOM->doPrint()) {
-      cout << "End Result: TEST FAILED" << endl;	
-    }
+    MyOM->stream(Anasazi::Error) << "End Result: TEST FAILED" << endl;	
     return -1;
   }
 
@@ -250,17 +241,13 @@ int main(int argc, char *argv[])
 #endif
 
   if (testFailed) {
-    if (MyOM->doPrint()) {
-      cout << "End Result: TEST FAILED" << endl;	
-    }
+    MyOM->stream(Anasazi::Error) << "End Result: TEST FAILED" << endl;	
     return -1;
   }
   //
   // Default return value
   //
-  if (MyOM->doPrint()) {
-    cout << "End Result: TEST PASSED" << endl;
-  }
+  MyOM->stream(Anasazi::Error) << "End Result: TEST PASSED" << endl;
   return 0;
 
 }	

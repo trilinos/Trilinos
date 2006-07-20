@@ -29,11 +29,12 @@
 //  This test is for the BasicOrthoManager
 //
 #include "AnasaziConfigDefs.hpp"
-#include "AnasaziBasicOrthoManager.hpp"
 #include "AnasaziEpetraAdapter.hpp"
 #include "AnasaziModalSolverUtils.hpp"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Vector.h"
+#include "AnasaziBasicOutputManager.hpp"
+#include "AnasaziSVQBOrthoManager.hpp"
 
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
@@ -47,34 +48,33 @@
 using namespace Teuchos;
 using namespace Anasazi;
 
-typedef Epetra_MultiVector MV;
-typedef Epetra_Operator OP;
+typedef double                       ST;
+typedef Epetra_MultiVector           MV;
+typedef Epetra_Operator              OP;
 typedef MultiVecTraits<double,MV>    MVT;
 typedef OperatorTraits<double,MV,OP> OPT;
 typedef ScalarTraits<double>         SCT;
-typedef SCT::magnitudeType   MT;
+typedef SCT::magnitudeType           MT;
 
-const double ONE = SCT::one();
-const double ZERO = SCT::magnitude(SCT::zero());
+const ST ONE = SCT::one();
+const MT ZERO = SCT::magnitude(SCT::zero());
 
 // this is the tolerance that all tests are performed against
-const double TOL = 1.0e-14;
+const MT TOL = 1.0e-14;
+const MT ATOL = 100;
 
 bool verbose = false;
 
-
 // some forward declarations
-int testProjectAndNormalize(RefCountPtr<MatOrthoManager<double,MV,OP> > OM, 
+int testProjectAndNormalize(RefCountPtr<MatOrthoManager<ST,MV,OP> > OM, 
                             RefCountPtr<MV> X, RefCountPtr<const MV> Q);
-int testProject(RefCountPtr<MatOrthoManager<double,MV,OP> > OM, 
+int testProject(RefCountPtr<MatOrthoManager<ST,MV,OP> > OM, 
                 RefCountPtr<const MV> X, RefCountPtr<const MV> Q);
-int testNormalize(RefCountPtr<MatOrthoManager<double,MV,OP> > OM, RefCountPtr<MV> X);
-double MVDiff(const MV &X, const MV &Y);
+int testNormalize(RefCountPtr<MatOrthoManager<ST,MV,OP> > OM, RefCountPtr<MV> X);
+MT MVDiff(const MV &X, const MV &Y);
 
 int main(int argc, char *argv[]) 
 {
-  int i;
-  int info = 0;
   
 #ifdef EPETRA_MPI
   // Initialize MPI
@@ -83,11 +83,10 @@ int main(int argc, char *argv[])
 #else
   Epetra_SerialComm Comm;
 #endif
-  
+
   int MyPID = Comm.MyPID();
-  
+
   int numFailed = 0;
-  verbose = false;
   if (argc>1) {
     if (argv[1][0]=='-' && argv[1][1]=='v') {
       verbose = true;
@@ -98,18 +97,16 @@ int main(int argc, char *argv[])
   if (verbose) {
     cout << Anasazi_Version() << endl << endl;
   }
-  
-  ReturnType ret;
-  
+
   // Problem information
   const int space_dim = 1;
-  std::vector<double> brick_dim( space_dim );
+  std::vector<ST> brick_dim( space_dim );
   brick_dim[0] = 1.0;
   std::vector<int> elements( space_dim );
   elements[0] = 100;
   const int sizeX = 4;
   const int sizeQ = 10; // MUST: sizeX + sizeQ <= elements[0]-1
-  double err;
+  MT err;
   bool tfail;
 
   // Create problem
@@ -117,21 +114,21 @@ int main(int argc, char *argv[])
   // Get the mass matrix
   RefCountPtr<const Epetra_CrsMatrix> M = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getMass()), false );
 
-  // Create a basic ortho manager 
-  RefCountPtr<MatOrthoManager<double,MV,OP> > OM   = rcp( new BasicOrthoManager<double,MV,OP>() );
-  RefCountPtr<MatOrthoManager<double,MV,OP> > OM_M = rcp( new BasicOrthoManager<double,MV,OP>(M) );
+  // Create an SVQB ortho manager 
+  RefCountPtr<MatOrthoManager<ST,MV,OP> > OM   = rcp( new SVQBOrthoManager<ST,MV,OP>() );
+  RefCountPtr<MatOrthoManager<ST,MV,OP> > OM_M = rcp( new SVQBOrthoManager<ST,MV,OP>(M) );
 
   // multivector to spawn off of
   RefCountPtr<MV> X = rcp( new Epetra_MultiVector(M->OperatorDomainMap(), sizeX) );
 
-  cout << " Generating Q1 for project() testing... " << endl;
+  cout << " Generating Q1 for project() : testing... " << endl;
   RefCountPtr<MV> Q1  = MVT::Clone(*X,sizeQ);
   MVT::MvRandom(*Q1);
   int dummy = 0;
-  ret = OM_M->normalize(*Q1,null,dummy);
+  dummy = OM_M->normalize(*Q1,null);
   tfail = false;
-  if ( ret  != Ok ) {
-    cout << "   vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         FAILED!!! normalize() return " << ret << "/" << dummy << " . Further tests will not be valid." << endl;
+  if ( dummy != sizeQ ) {
+    cout << "   vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         FAILED!!! normalize() returned " << dummy << " . Further tests will not be valid." << endl;
     numFailed += 1;
     tfail = true;
   }
@@ -145,13 +142,13 @@ int main(int argc, char *argv[])
     cout << "   || Q1^T M Q1 - I ||_F        : " << err << endl << endl;
   }
 
-  cout << " Generating Q2 for project() testing... " << endl;
+  cout << " Generating Q2 for project() : testing... " << endl;
   RefCountPtr<MV> Q2 = MVT::Clone(*X,sizeQ);
   MVT::MvRandom(*Q2);
   tfail = false;
-  ret = OM->normalize(*Q2,null,dummy);
-  if ( ret != Ok ) {
-    cout << "   vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         FAILED!!! normalize() return " << ret << "/" << dummy << " . Further tests will not be valid." << endl;
+  dummy = OM->normalize(*Q2,null);
+  if ( dummy != sizeQ ) {
+    cout << "   vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         FAILED!!! normalize() returned " << dummy << " . Further tests will not be valid." << endl;
     numFailed += 1;
     tfail = true;
   }
@@ -166,32 +163,32 @@ int main(int argc, char *argv[])
   }
 
   {
-    cout << " project() with M testing on random multivector " << endl;
+    cout << " project() with M    : testing on random multivector " << endl;
     
     MVT::MvRandom(*X);
     numFailed += testProject(OM_M,X,Q1);
   }
   {
-    cout << " project() without M testing on random multivector " << endl;
+    cout << " project() without M : testing on random multivector " << endl;
     
     MVT::MvRandom(*X);
     numFailed += testProject(OM,X,Q2);
   }
 
   {
-    cout << " normalize() with M testing on random multivector " << endl;
+    cout << " normalize() with M    : testing on random multivector " << endl;
     MVT::MvRandom(*X);
     numFailed += testNormalize(OM_M,X);
   }
   {
-    cout << " normalize() without M testing on random multivector " << endl;
+    cout << " normalize() without M : testing on random multivector " << endl;
     MVT::MvRandom(*X);
     numFailed += testNormalize(OM,X);
   }
 
 
   {
-    cout << " normalize() with M testing on rank-deficient multivector " << endl;
+    cout << " normalize() with M    : testing on rank-deficient multivector " << endl;
     std::vector<int> ind(1); 
     // Assuming here that sizeX == 4
     MVT::MvRandom(*X);
@@ -203,7 +200,7 @@ int main(int argc, char *argv[])
     numFailed += testNormalize(OM_M,X);
   }
   {
-    cout << " normalize() without M testing on rank-deficient multivector " << endl;
+    cout << " normalize() without M : testing on rank-deficient multivector " << endl;
     std::vector<int> ind(1); 
     // Assuming here that sizeX == 4
     MVT::MvRandom(*X);
@@ -217,7 +214,7 @@ int main(int argc, char *argv[])
 
 
   {
-    cout << " normalize() with M testing on rank-1 multivector " << endl;
+    cout << " normalize() with M    : testing on rank-1 multivector " << endl;
     std::vector<int> ind(1); 
     MVT::MvRandom(*X);
     // get column 0
@@ -232,7 +229,7 @@ int main(int argc, char *argv[])
     numFailed += testNormalize(OM_M,X);
   }
   {
-    cout << " normalize() without M testing on rank-1 multivector " << endl;
+    cout << " normalize() without M : testing on rank-1 multivector " << endl;
     std::vector<int> ind(1); 
     MVT::MvRandom(*X);
     // get column 0
@@ -248,14 +245,14 @@ int main(int argc, char *argv[])
   }
 
   {
-    cout << " projectAndNormalize() with M testing on random multivector " << endl;
+    cout << " projectAndNormalize() with M    : testing on random multivector " << endl;
     std::vector<int> ind(1); 
     MVT::MvRandom(*X);
     
     numFailed += testProjectAndNormalize(OM_M,X,Q1);
   }
   {
-    cout << " projectAndNormalize() without M testing on random multivector " << endl;
+    cout << " projectAndNormalize() without M : testing on random multivector " << endl;
     std::vector<int> ind(1); 
     MVT::MvRandom(*X);
     
@@ -263,7 +260,24 @@ int main(int argc, char *argv[])
   }
 
   {
-    cout << " projectAndNormalize() with M testing on rank-deficient multivector " << endl;
+    cout << " projectAndNormalize() with M    : testing on Q-range multivector " << endl;
+    SerialDenseMatrix<int,ST> B(sizeQ,sizeX);
+    B.random();
+    MVT::MvTimesMatAddMv(ONE,*Q1,B,ZERO,*X);
+    
+    numFailed += testProjectAndNormalize(OM_M,X,Q1);
+  }
+  {
+    cout << " projectAndNormalize() without M : testing on Q-range multivector " << endl;
+    SerialDenseMatrix<int,ST> B(sizeQ,sizeX);
+    B.random();
+    MVT::MvTimesMatAddMv(ONE,*Q2,B,ZERO,*X);
+    
+    numFailed += testProjectAndNormalize(OM,X,Q2);
+  }
+
+  {
+    cout << " projectAndNormalize() with M    : testing on rank-deficient multivector " << endl;
     std::vector<int> ind(1); 
     MVT::MvRandom(*X);
     // Assuming here that sizeX == 4
@@ -275,7 +289,7 @@ int main(int argc, char *argv[])
     numFailed += testProjectAndNormalize(OM_M,X,Q1);
   }
   {
-    cout << " projectAndNormalize() without M testing on rank-deficient multivector " << endl;
+    cout << " projectAndNormalize() without M : testing on rank-deficient multivector " << endl;
     std::vector<int> ind(1); 
     MVT::MvRandom(*X);
     // Assuming here that sizeX == 4
@@ -288,7 +302,7 @@ int main(int argc, char *argv[])
   }
 
   {
-    cout << " projectAndNormalize() with M testing on rank-1 multivector " << endl;
+    cout << " projectAndNormalize() with M    : testing on rank-1 multivector " << endl;
     MVT::MvRandom(*X);
     std::vector<int> ind(1); 
     // get column 0
@@ -303,7 +317,7 @@ int main(int argc, char *argv[])
     numFailed += testProjectAndNormalize(OM_M,X,Q1);
   }
   {
-    cout << " projectAndNormalize() without M testing on rank-1 multivector " << endl;
+    cout << " projectAndNormalize() without M : testing on rank-1 multivector " << endl;
     MVT::MvRandom(*X);
     std::vector<int> ind(1); 
     // get column 0
@@ -338,28 +352,28 @@ int main(int argc, char *argv[])
 
 
 //////////////////////////////////////////////////////////////////////
-int testProjectAndNormalize(RefCountPtr<MatOrthoManager<double,MV,OP> > OM, 
+int testProjectAndNormalize(RefCountPtr<MatOrthoManager<ST,MV,OP> > OM, 
                             RefCountPtr<MV> X, RefCountPtr<const MV> Q) {
 
   const int sizeX = MVT::GetNumberVecs(*X);
   const int sizeQ = MVT::GetNumberVecs(*Q);
-  double err;
+  MT err;
   int rank;
-  ReturnType ret;
   RefCountPtr<MV> tmp, smlX, smlMX;
   std::vector<int> ind;
   int numerr = 0;
   bool hasM = (OM->getOp() != null);
   std::ostringstream sout;
   RefCountPtr<MV> xcopy, mxcopy, smlOX;
-  RefCountPtr<SerialDenseMatrix<int,double> > C, smlC, R, smlR, newR;
+  RefCountPtr<SerialDenseMatrix<int,ST> > C, smlC, R, smlR, newR;
+  bool warning = false;
 
   int numtests;
   RefCountPtr<MV> MX;
   if (hasM) {
     numtests = 4;
     MX = MVT::Clone(*X,sizeX);
-    if ( OPT::Apply(*(OM->getOp()),*X,*MX) != Ok ) return 1;
+    OPT::Apply(*(OM->getOp()),*X,*MX);
   }
   else {
     MX = MVT::CloneCopy(*X);
@@ -375,7 +389,7 @@ int testProjectAndNormalize(RefCountPtr<MatOrthoManager<double,MV,OP> > OM,
 
 
   // first, run with MSUtils
-  ModalSolverUtils<double,MV,OP> MSU(rcp(new OutputManager<double>()));
+  ModalSolverUtils<ST,MV,OP> MSU(rcp(new BasicOutputManager<ST>()));
   xcopy  = MVT::CloneCopy(*X);
   mxcopy = MVT::CloneCopy(*MX);
   int iret = MSU.massOrthonormalize(*xcopy,*mxcopy,OM->getOp().get(),*Q,sizeX,0);
@@ -395,9 +409,9 @@ int testProjectAndNormalize(RefCountPtr<MatOrthoManager<double,MV,OP> > OM,
     }
 
     if (t & 1) {
-      C = rcp( new SerialDenseMatrix<int,double>(sizeQ,sizeX) );
+      C = rcp( new SerialDenseMatrix<int,ST>(sizeQ,sizeX) );
       C->putScalar(ZERO);
-      R = rcp( new SerialDenseMatrix<int,double>(sizeX,sizeX) );
+      R = rcp( new SerialDenseMatrix<int,ST>(sizeX,sizeX) );
       R->putScalar(ZERO);
     }
     else {
@@ -405,69 +419,12 @@ int testProjectAndNormalize(RefCountPtr<MatOrthoManager<double,MV,OP> > OM,
       R = null;
     }
 
-    ret = OM->projectAndNormalize(*xcopy,mxcopy,C,R,*Q,rank);
-    switch (ret) {
-    case Ok:
-      // check the following:
-      // rank == sizeX
-      if (rank != sizeX) {
-        sout << "   vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         rank != sizeX: test failed!" << endl;
-        numerr++;
-      }
-      // MX == M*X
-      if (mxcopy != null) {
-        tmp = MVT::Clone(*xcopy,sizeX);
-        OPT::Apply(*(OM->getOp()),*xcopy,*tmp);
-        err = MVDiff(*tmp,*mxcopy);
-        if (err > TOL) {
-          sout << "   vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! test failed!" << endl;
-          numerr++;
-        }
-        sout << "  " << t << "|| MX - M*X ||_F           : " << err << endl;
-      }
-      // X = xcopy*R
-      if (R != null) {
-        newR = rcp( new SerialDenseMatrix<int,double>(sizeX,sizeX) );
-        OM->innerProd(*xcopy,*X,*newR);
-        *newR -= *R;
-        err = newR->normFrobenius();
-        if (err > TOL) {
-          sout << "   vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! test failed!" << endl;
-          numerr++;
-        }
-        sout << "  " << t << "|| newX'*X-R ||_F          : " << err << endl;
-      }
-      // X^T M X == I
-      err = OM->orthonormError(*xcopy);
-      if (err > TOL) {
-        sout << "   vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! test failed!" << endl;
-        numerr++;
-      }
-      sout << "  " << t << "|| X^T M X - I ||_F after  : " << err << endl;
-      // X = Q*C + xcopy*R
-      if (C != null) {
-        tmp = MVT::Clone(*xcopy,sizeX);
-        MVT::MvTimesMatAddMv(ONE,*xcopy,*R,ZERO,*tmp);
-        MVT::MvTimesMatAddMv(ONE,*Q,*C,ONE,*tmp);
-        err = MVDiff(*tmp,*X);
-        if (err > TOL) {
-          sout << "   vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! test failed!" << endl;
-          numerr++;
-        }
-        sout << "  " << t << "|| X-QC-newX ||_F          : " << err << endl;
-      }
-      // Q^T M X == I
-      err = OM->orthogError(*xcopy,*Q);
-      if (err > TOL) {
-        sout << "   vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! test failed!" << endl;
-        numerr++;
-      }
-      sout << "  " << t << "|| Q^T M X ||_F after      : " << err << endl;
+    try {
+      rank = OM->projectAndNormalize(*xcopy,mxcopy,
+                                     tuple< RefCountPtr< SerialDenseMatrix<int,ST> > >(C),R,
+                                     tuple<RefCountPtr<const MV> >(Q) );
 
-      break;
-  
-    case Undefined:
-      sout << "projectAndNormalize() returned Undefined, rank " << rank << endl;
+      sout << "projectAndNormalize() returned rank " << rank << endl;
 
       ind.resize(rank);
       for (int i=0; i<rank; i++) {
@@ -479,7 +436,7 @@ int testProjectAndNormalize(RefCountPtr<MatOrthoManager<double,MV,OP> > OM,
         smlMX = MVT::CloneView(*mxcopy,ind); 
       }
       else {
-        smlMX = smlX;
+        smlMX = null;
       }
 
       // MX == M*X
@@ -495,14 +452,14 @@ int testProjectAndNormalize(RefCountPtr<MatOrthoManager<double,MV,OP> > OM,
       }
       // X = xcopy*R
       if (R != null) {
-        smlR = rcp( new SerialDenseMatrix<int,double>(Teuchos::Copy,*R,rank,rank) );
-        newR = rcp( new SerialDenseMatrix<int,double>(rank,rank) );
+        smlR = rcp( new SerialDenseMatrix<int,ST>(Teuchos::Copy,*R,rank,rank) );
+        newR = rcp( new SerialDenseMatrix<int,ST>(rank,rank) );
         OM->innerProd(*smlX,*smlOX,*newR);
         *newR -= *smlR;
         err = newR->normFrobenius();
-        if (err > TOL) {
-          sout << "   vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! test failed!" << endl;
-          numerr++;
+        if (err > ATOL*TOL) {
+          warning = true;
+          sout << "   vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! warning!" << endl;
         }
         sout << "  " << t << "|| newX'*X-R ||_F          : " << err << endl;
       }
@@ -515,17 +472,17 @@ int testProjectAndNormalize(RefCountPtr<MatOrthoManager<double,MV,OP> > OM,
       sout << "   || X^T M X - I ||_F after  : " << err << endl;
       // X = Q*C + xcopy*R
       if (C != null) {
-        smlR = rcp( new SerialDenseMatrix<int,double>(Teuchos::Copy,*R,rank,rank) );
-        smlC = rcp( new SerialDenseMatrix<int,double>(Teuchos::Copy,*C,sizeQ,rank) );
+        smlR = rcp( new SerialDenseMatrix<int,ST>(Teuchos::Copy,*R,rank,rank) );
+        smlC = rcp( new SerialDenseMatrix<int,ST>(Teuchos::Copy,*C,sizeQ,rank) );
         tmp = MVT::Clone(*smlX,rank);
         MVT::MvTimesMatAddMv(ONE,*smlX,*smlR,ZERO,*tmp);
         MVT::MvTimesMatAddMv(ONE,*Q,*smlC,ONE,*tmp);
         err = MVDiff(*tmp,*smlOX);
-        if (err > TOL) {
-          sout << "   vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! test failed!" << endl;
-          numerr++;
+        if (err > ATOL*TOL) {
+          warning = true;
+          sout << "   vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! warning!" << endl;
         }
-        sout << "  " << t << "|| X-QC-newX ||_F          : " << err << endl;
+        sout << "  " << t << "|| X-Q*C-newX*R ||_F       : " << err << endl;
       }
       // Q^T M X == I
       err = OM->orthogError(*smlX,*Q);
@@ -534,21 +491,17 @@ int testProjectAndNormalize(RefCountPtr<MatOrthoManager<double,MV,OP> > OM,
         numerr++;
       }
       sout << "  " << t << "|| Q^T M X ||_F after      : " << err << endl;
-      break;
 
-    case Failed:
+    }
+    catch (OrthoError e) {
       sout << "   -------------------------------------------         projectAndNormalize() Failed" << endl;
+      sout << "   Error: " << e.what() << endl;
       numerr++;
-      break;
-    default:   
-      sout << "   -------------------------------------------         projectAndNormalize() returned invalid value" << endl;
-      numerr++;
-      break;
     }
 
   } // test for
 
-  if (verbose || numerr>0) {
+  if (verbose || numerr>0 || warning) {
     cout << sout.str();
     cout << endl;
   }
@@ -559,26 +512,26 @@ int testProjectAndNormalize(RefCountPtr<MatOrthoManager<double,MV,OP> > OM,
 
 
 //////////////////////////////////////////////////////////////////////
-int testProject(RefCountPtr<MatOrthoManager<double,MV,OP> > OM, 
+int testProject(RefCountPtr<MatOrthoManager<ST,MV,OP> > OM, 
                 RefCountPtr<const MV> X, RefCountPtr<const MV> Q) {
 
   const int sizeX = MVT::GetNumberVecs(*X);
   const int sizeQ = MVT::GetNumberVecs(*Q);
-  double err;
-  ReturnType ret;
+  MT err;
   RefCountPtr<MV> tmp;
   bool hasM = (OM->getOp() != null);
   int numerr = 0;
   std::ostringstream sout;
   RefCountPtr<MV> xcopy, mxcopy;
-  RefCountPtr<SerialDenseMatrix<int,double> > C;
+  RefCountPtr<SerialDenseMatrix<int,ST> > C;
+  bool warning = false;
 
   int numtests;
   RefCountPtr<MV> MX;
   if (hasM) {
     numtests = 4;
     MX = MVT::Clone(*X,sizeX);
-    if ( OPT::Apply(*(OM->getOp()),*X,*MX) != Ok ) return 1;
+    OPT::Apply(*(OM->getOp()),*X,*MX);
   }
   else {
     MX = MVT::CloneCopy(*X);
@@ -590,7 +543,7 @@ int testProject(RefCountPtr<MatOrthoManager<double,MV,OP> > OM,
   sout << "   || Q^T M X ||_F before     : " << err << endl;
 
   // first, run with MSUtils
-  ModalSolverUtils<double,MV,OP> MSU(rcp(new OutputManager<double>()));
+  ModalSolverUtils<ST,MV,OP> MSU(rcp(new BasicOutputManager<ST>()));
   xcopy = MVT::CloneCopy(*X);
   mxcopy = MVT::CloneCopy(*MX);
   int iret = MSU.massOrthonormalize(*xcopy,*mxcopy,OM->getOp().get(),*Q,sizeX,1);
@@ -609,15 +562,16 @@ int testProject(RefCountPtr<MatOrthoManager<double,MV,OP> > OM,
     }
 
     if (t & 1) {
-      C = rcp( new SerialDenseMatrix<int,double>(sizeQ,sizeX) );
+      C = rcp( new SerialDenseMatrix<int,ST>(sizeQ,sizeX) );
     }
     else {
       C = null;
     }
 
-    ret = OM->project(*xcopy,mxcopy,C,*Q);
-    switch (ret) {
-    case Ok:
+    try {
+      OM->project(*xcopy,mxcopy,
+                  tuple<RefCountPtr<SerialDenseMatrix<int,ST> > >(C),
+                  tuple<RefCountPtr<const MV> >(Q));
       // MX == M*X
       if (mxcopy != null) {
         tmp = MVT::CloneCopy(*xcopy);
@@ -634,11 +588,11 @@ int testProject(RefCountPtr<MatOrthoManager<double,MV,OP> > OM,
         tmp = MVT::CloneCopy(*xcopy);
         MVT::MvTimesMatAddMv(ONE,*Q,*C,ONE,*tmp);
         err = MVDiff(*tmp,*X);
-        if (err > TOL) {
-          sout << "   vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! test failed!" << endl;
-          numerr++;
+        if (err > ATOL*TOL) {
+          warning = true;
+          sout << "   vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! warning!" << endl;
         }
-        sout << "  " << t << "|| X-QC-newX ||_F          : " << err << endl;
+        sout << "  " << t << "|| X-Q*C-newX ||_F         : " << err << endl;
       }
       // Q^T M X == I
       err = OM->orthogError(*xcopy,*Q);
@@ -647,22 +601,16 @@ int testProject(RefCountPtr<MatOrthoManager<double,MV,OP> > OM,
         numerr++;
       }
       sout << "  " << t << "|| Q^T M X ||_F after      : " << err << endl;
-      break;
-  
-    case Failed:
+    }
+    catch (OrthoError e) {
       sout << "   -------------------------------------------         project() Failed" << endl;
+      sout << "   Error: " << e.what() << endl;
       numerr++;
-      break;
-  
-    default:   
-      sout << "   -------------------------------------------         project() returned invalid value" << endl;
-      numerr++;
-      break;
     }
 
   } // for test
 
-  if (verbose || numerr>0) {
+  if (verbose || numerr>0 || warning) {
     cout << sout.str();
     cout << endl;
   }
@@ -673,26 +621,26 @@ int testProject(RefCountPtr<MatOrthoManager<double,MV,OP> > OM,
 
 
 //////////////////////////////////////////////////////////////////////
-int testNormalize(RefCountPtr<MatOrthoManager<double,MV,OP> > OM, RefCountPtr<MV> X) {
+int testNormalize(RefCountPtr<MatOrthoManager<ST,MV,OP> > OM, RefCountPtr<MV> X) {
 
   const int sizeX = MVT::GetNumberVecs(*X);
-  double err;
+  MT err;
   int rank;
-  ReturnType ret;
   RefCountPtr<MV> tmp, smlX, smlMX;
   std::vector<int> ind;
   bool hasM = (OM->getOp() != null);
   int numerr = 0;
   std::ostringstream sout;
   RefCountPtr<MV> xcopy, mxcopy;
-  RefCountPtr<SerialDenseMatrix<int,double> > R;
+  RefCountPtr<SerialDenseMatrix<int,ST> > R;
+  bool warning = false;
 
   int numtests;
   RefCountPtr<MV> MX;
   if (hasM) {
     numtests = 4;
     MX = MVT::Clone(*X,sizeX);
-    if ( OPT::Apply(*(OM->getOp()),*X,*MX) != Ok ) return 1;
+    OPT::Apply(*(OM->getOp()),*X,*MX);
   }
   else {
     MX = MVT::CloneCopy(*X);
@@ -706,7 +654,7 @@ int testNormalize(RefCountPtr<MatOrthoManager<double,MV,OP> > OM, RefCountPtr<MV
 
 
   // first, run with MSUtils
-  ModalSolverUtils<double,MV,OP> MSU(rcp(new OutputManager<double>()));
+  ModalSolverUtils<ST,MV,OP> MSU(rcp(new BasicOutputManager<ST>()));
   xcopy  = MVT::CloneCopy(*X);
   mxcopy = MVT::CloneCopy(*MX);
   int iret = MSU.massOrthonormalize(*xcopy,*mxcopy,OM->getOp().get(),*xcopy,sizeX,2);
@@ -725,55 +673,16 @@ int testNormalize(RefCountPtr<MatOrthoManager<double,MV,OP> > OM, RefCountPtr<MV
     }
 
     if (t & 1) {
-      R = rcp( new SerialDenseMatrix<int,double>(sizeX,sizeX) );
+      R = rcp( new SerialDenseMatrix<int,ST>(sizeX,sizeX) );
       R->putScalar(ZERO);
     }
     else {
       R = null;
     }
 
-    ret = OM->normalize(*xcopy,mxcopy,R,rank);
-    switch (ret) {
-    case Ok:
-      // check the following:
-      // rank == orig
-      if (rank != sizeX) {
-        sout << "   vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         rank != orig: test failed!" << endl;
-        numerr++;
-      }
-      // MX == M*X
-      if (mxcopy != null) {
-        tmp = MVT::CloneCopy(*xcopy);
-        OPT::Apply(*(OM->getOp()),*xcopy,*tmp);
-        err = MVDiff(*tmp,*mxcopy);
-        if (err > TOL) {
-          sout << "   vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! test failed!" << endl;
-          numerr++;
-        }
-        sout << "  " << t << "|| MX - M*X ||_F           : " << err << endl;
-      }
-      // X = xcopy*R
-      if (R != null) {
-        tmp = MVT::Clone(*xcopy,sizeX);
-        MVT::MvTimesMatAddMv(ONE,*xcopy,*R,ZERO,*tmp);
-        err = MVDiff(*tmp,*X);
-        if (err > TOL) {
-          sout << "   vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! test failed!" << endl;
-          numerr++;
-        }
-        sout << "  " << t << "|| newX'*X-R ||_F          : " << err << endl;
-      }
-      // X^T M X == I
-      err = OM->orthonormError(*xcopy);
-      if (err > TOL) {
-        sout << "   vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! test failed!" << endl;
-        numerr++;
-      }
-      sout << "  " << t << "|| X^T M X - I ||_F after  : " << err << endl;
-      break;
-  
-    case Undefined:
-      sout << "normalize() returned Undefined, rank " << rank << endl;
+    try {
+      rank = OM->normalize(*xcopy,mxcopy,R);
+      sout << "normalize() returned rank " << rank << endl;
   
       ind.resize(rank);
       for (int i=0; i<rank; i++) {
@@ -784,7 +693,7 @@ int testNormalize(RefCountPtr<MatOrthoManager<double,MV,OP> > OM, RefCountPtr<MV
         smlMX = MVT::CloneView(*mxcopy,ind); 
       }
       else {
-        smlMX = smlX;
+        smlMX = null;
       }
 
       // MX == M*X
@@ -800,13 +709,13 @@ int testNormalize(RefCountPtr<MatOrthoManager<double,MV,OP> > OM, RefCountPtr<MV
       }
       // X = xcopy*R
       if (R != null) {
-        SerialDenseMatrix<int,double> smlR(Teuchos::Copy,*R,rank,rank);
+        SerialDenseMatrix<int,ST> smlR(Teuchos::Copy,*R,rank,rank);
         tmp = MVT::Clone(*smlX,rank);
         MVT::MvTimesMatAddMv(ONE,*smlX,smlR,ZERO,*tmp);
         err = MVDiff(*tmp,*X);
-        if (err > TOL) {
-          sout << "   vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! test failed!" << endl;
-          numerr++;
+        if (err > ATOL*TOL) {
+          warning = true;
+          sout << "   vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! warning!" << endl;
         }
         sout << "  " << t << "|| newX'*X-R ||_F          : " << err << endl;
       }
@@ -817,20 +726,16 @@ int testNormalize(RefCountPtr<MatOrthoManager<double,MV,OP> > OM, RefCountPtr<MV
         numerr++;
       }
       sout << "   || X^T M X - I ||_F after  : " << err << endl;
-      break;
-    case Failed:
+    }
+    catch (OrthoError e) {
       sout << "   -------------------------------------------         normalize() Failed" << endl;
+      sout << "   Error: " << e.what() << endl;
       numerr++;
-      break;
-    default:   
-      sout << "   -------------------------------------------         normalize() returned invalid value" << endl;
-      numerr++;
-      break;
     }
 
   } // for test
 
-  if (verbose || numerr>0) {
+  if (verbose || numerr>0 || warning) {
     cout << sout.str();
     cout << endl;
   }
@@ -839,9 +744,9 @@ int testNormalize(RefCountPtr<MatOrthoManager<double,MV,OP> > OM, RefCountPtr<MV
 }
 
 
-double MVDiff(const MV &X, const MV &Y) {
+MT MVDiff(const MV &X, const MV &Y) {
   const int sizeX = MVT::GetNumberVecs(X);
-  SerialDenseMatrix<int,double> xTmx(sizeX,sizeX);
+  SerialDenseMatrix<int,ST> xTmx(sizeX,sizeX);
 
   // tmp <- X
   RefCountPtr<MV> tmp = MVT::CloneCopy(X);
@@ -850,9 +755,9 @@ double MVDiff(const MV &X, const MV &Y) {
   MVT::MvAddMv(-ONE,Y,ONE,*tmp,*tmp);
 
   MVT::MvTransMv(ONE,*tmp,*tmp,xTmx);
-  double err = 0;
+  MT err = 0;
   for (int i=0; i<sizeX; i++) {
-    err += xTmx(i,i);
+    err += SCT::magnitude(xTmx(i,i));
   }
-  return SCT::squareroot(err);
+  return SCT::magnitude(SCT::squareroot(err));
 }

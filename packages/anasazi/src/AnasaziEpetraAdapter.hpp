@@ -33,10 +33,10 @@
 #ifndef ANASAZI_EPETRA_ADAPTER_HPP
 #define ANASAZI_EPETRA_ADAPTER_HPP
 
-#include "AnasaziMultiVec.hpp"
-#include "AnasaziOperator.hpp"
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziTypes.hpp"
+#include "AnasaziMultiVec.hpp"
+#include "AnasaziOperator.hpp"
 
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Epetra_MultiVector.h"
@@ -239,8 +239,7 @@ namespace Anasazi {
     /*! \brief This method takes the Anasazi::MultiVec \c X and
       applies the operator to it resulting in the Anasazi::MultiVec \c Y.
     */
-    ReturnType Apply ( const MultiVec<double>& X, 
-		       MultiVec<double>& Y ) const;
+    void Apply ( const MultiVec<double>& X, MultiVec<double>& Y ) const;
     //@} 
     
   private:
@@ -283,7 +282,7 @@ namespace Anasazi {
     //! Apply method [inherited from Anasazi::Operator class]
     /*! This method will apply \f$A^{-1}M\f$ or \f$AM\f$ to \c X, returning \c Y.
      */
-    ReturnType Apply ( const MultiVec<double>& X, MultiVec<double>& Y ) const; 
+    void Apply ( const MultiVec<double>& X, MultiVec<double>& Y ) const; 
 
     //! Apply method [inherited from Epetra_Operator class]
     /*! This method will apply \f$A^{-1}M\f$ or \f$AM\f$ to \c X, returning \c Y.
@@ -356,7 +355,7 @@ namespace Anasazi {
     //! Apply method [inherited from Anasazi::Operator class]
     /*! This method will apply \f$A^TA\f$ or \f$AA^T\f$ to \c X, returning \c Y.
      */
-    ReturnType Apply ( const MultiVec<double>& X, MultiVec<double>& Y ) const; 
+    void Apply ( const MultiVec<double>& X, MultiVec<double>& Y ) const; 
 
     //! Apply method [inherited from Epetra_Operator class]
     /*! This method will apply \f$A^TA\f$ or \f$AA^T\f$ to \c X, returning \c Y.
@@ -431,7 +430,7 @@ namespace Anasazi {
     //! Apply method 
     /*! This method will apply \f$A^TA\f$ or \f$AA^T\f$ to \c X, returning \c Y.
      */
-    ReturnType Apply ( const MultiVec<double>& X, MultiVec<double>& Y ) const; 
+    void Apply ( const MultiVec<double>& X, MultiVec<double>& Y ) const; 
 
   private:
     Teuchos::RefCountPtr<Epetra_MultiVector> Epetra_MV;
@@ -659,10 +658,12 @@ namespace Anasazi {
     /*! \brief This method takes the Epetra_MultiVector \c x and
       applies the Epetra_Operator \c Op to it resulting in the Epetra_MultiVector \c y.
     */    
-    static ReturnType Apply ( const Epetra_Operator& Op, 
+    static void Apply ( const Epetra_Operator& Op, 
 			      const Epetra_MultiVector& x, 
 			      Epetra_MultiVector& y )
-    { return ( Op.Apply( x, y ) == 0 ? Ok : Failed ); }
+    { 
+      TEST_FOR_EXCEPTION( Op.Apply( x, y ) != 0, OperatorError, "Error in Epetra_Operator::Apply()!" );
+    }
     
   };
   

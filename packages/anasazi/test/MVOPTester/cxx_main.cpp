@@ -46,11 +46,13 @@
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziMVOPTester.hpp"
 #include "AnasaziEpetraAdapter.hpp"
+#include "AnasaziBasicOutputManager.hpp"
 
 int main(int argc, char *argv[])
 {
-  int i, ierr, gerr;
-  gerr = 0;
+  int i;
+  bool ierr, gerr;
+  gerr = true;
 
 #ifdef HAVE_MPI
   // Initialize MPI and setup an Epetra communicator
@@ -65,10 +67,7 @@ int main(int argc, char *argv[])
   int dim = 100;
   int blockSize = 5;
 
-  // PID info
-  int MyPID = Comm->MyPID();
-  bool verbose = 0;
-
+  bool verbose = false;
   if (argc>1) {
     if (argv[1][0]=='-' && argv[1][1]=='v') {
       verbose = true;
@@ -149,43 +148,29 @@ int main(int argc, char *argv[])
   ivec->Random();
 
   // Create an output manager to handle the I/O from the solver
-  Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM = Teuchos::rcp( new Anasazi::OutputManager<double>( MyPID ) );
+  Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM = Teuchos::rcp( new Anasazi::BasicOutputManager<double>() );
   if (verbose) {
-    MyOM->SetVerbosity( Anasazi::Warning );
+    MyOM->setVerbosity( Anasazi::Warnings );
   }
 
   // test the Epetra adapter multivector
   ierr = Anasazi::TestMultiVecTraits<double,EMV>(MyOM,ivec);
-  gerr |= ierr;
-  switch (ierr) {
-  case Anasazi::Ok:
-    if ( verbose && MyPID==0 ) {
-      cout << "*** EpetraAdapter PASSED TestMultiVecTraits()" << endl;
-    }
-    break;
-  case Anasazi::Failed:
-    if ( verbose && MyPID==0 ) {
-      cout << "*** EpetraAdapter FAILED TestMultiVecTraits() ***" 
-           << endl << endl;
-    }
-    break;
+  gerr &= ierr;
+  if (ierr) {
+    MyOM->print(Anasazi::Warnings,"*** EpetraAdapter PASSED TestMultiVecTraits()\n");
+  }
+  else {
+    MyOM->print(Anasazi::Warnings,"*** EpetraAdapter FAILED TestMultiVecTraits() ***\n\n");
   }
 
   // test the Epetra adapter operator 
   ierr = Anasazi::TestOperatorTraits<double,EMV,EOP>(MyOM,ivec,op);
-  gerr |= ierr;
-  switch (ierr) {
-  case Anasazi::Ok:
-    if ( verbose && MyPID==0 ) {
-      cout << "*** EpetraAdapter PASSED TestOperatorTraits()" << endl;
-    }
-    break;
-  case Anasazi::Failed:
-    if ( verbose && MyPID==0 ) {
-      cout << "*** EpetraAdapter FAILED TestOperatorTraits() ***" 
-           << endl << endl;
-    }
-    break;
+  gerr &= ierr;
+  if (ierr) {
+    MyOM->print(Anasazi::Warnings,"*** EpetraAdapter PASSED TestOperatorTraits()\n");
+  }
+  else {
+    MyOM->print(Anasazi::Warnings,"*** EpetraAdapter FAILED TestOperatorTraits() ***\n\n");
   }
 
 
@@ -193,16 +178,14 @@ int main(int argc, char *argv[])
   MPI_Finalize();
 #endif
 
-  if (gerr) {
-    if (verbose && MyPID==0)
-      cout << "End Result: TEST FAILED" << endl;	
+  if (gerr == false) {
+    MyOM->print(Anasazi::Warnings,"End Result: TEST FAILED\n");
     return -1;
   }
   //
   // Default return value
   //
-  if (verbose && MyPID==0)
-    cout << "End Result: TEST PASSED" << endl;
+  MyOM->print(Anasazi::Warnings,"End Result: TEST PASSED\n");
   return 0;
 
 }

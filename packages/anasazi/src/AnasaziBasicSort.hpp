@@ -40,6 +40,7 @@
        \author Ulrich Hetmaniuk, Rich Lehoucq, and Heidi Thornquist
 */
 
+#include "AnasaziConfigDefs.hpp"
 #include "AnasaziSortManager.hpp"
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_ScalarTraits.hpp"
@@ -91,10 +92,8 @@ namespace Anasazi {
        @param evals [in/out] Array of length n containing the eigenvalues to be sorted
 
        @param perm [out] Vector of length n to store the permutation (optional)
-
-       @return Returns the status of the sorting routine [ Undefined by default ] 
     */
-    ReturnType sort(Eigensolver<ScalarType,MV,OP>* solver, int n, ScalarType *evals, std::vector<int> *perm = 0) const;
+    void sort(Eigensolver<ScalarType,MV,OP>* solver, int n, ScalarType *evals, std::vector<int> *perm = 0) const;
     
     //! Sort the vectors of eigenpairs with respect to the chosen sorting type, optionally returning the permutation vector.
     /**
@@ -107,10 +106,8 @@ namespace Anasazi {
        @param i_evals [in/out] Array of length n containing the imaginary part of the eigenvalues to be sorted 
 
        @param perm [out] Vector of length n to store the permutation (optional)
-
-       @return Returns the status of the sorting routine [ Undefined by default ] 
     */
-    ReturnType sort(Eigensolver<ScalarType,MV,OP>* solver, int n, ScalarType *r_evals, ScalarType *i_evals, std::vector<int> *perm = 0) const;
+    void sort(Eigensolver<ScalarType,MV,OP>* solver, int n, ScalarType *r_evals, ScalarType *i_evals, std::vector<int> *perm = 0) const;
     
   protected: 
     
@@ -130,7 +127,7 @@ namespace Anasazi {
   };
 
   template<class ScalarType, class MV, class OP>
-  ReturnType BasicSort<ScalarType,MV,OP>::sort(Eigensolver<ScalarType,MV,OP>* solver, int n, ScalarType *evals, std::vector<int> *perm) const 
+  void BasicSort<ScalarType,MV,OP>::sort(Eigensolver<ScalarType,MV,OP>* solver, int n, ScalarType *evals, std::vector<int> *perm) const 
   {
     int i=0, j=0;
 
@@ -174,7 +171,7 @@ namespace Anasazi {
         if (perm) 
           (*perm)[i+1] = tempord;
       }
-      return Ok;
+      return;
     }
     //---------------------------------------------------------------
     // Sort eigenvalues in increasing order of real part
@@ -193,16 +190,15 @@ namespace Anasazi {
         if (perm)
           (*perm)[i+1] = tempord;
       }
-      return Ok;
+      return;
     }
     //---------------------------------------------------------------
     // Sort eigenvalues in increasing order of imaginary part
     // NOTE:  There is no implementation for this since this sorting
     // method assumes only real eigenvalues.
     //---------------------------------------------------------------
-    if (!_which.compare("SI")) {
-      return Undefined;
-    }
+    TEST_FOR_EXCEPTION(!_which.compare("SI"), SortManagerError, 
+                       "Anasazi::BasicSort::sort() assumes real eigenvalues");
     //---------------------------------------------------------------
     // Sort eigenvalues in decreasing order of magnitude
     //---------------------------------------------------------------
@@ -221,7 +217,7 @@ namespace Anasazi {
         if (perm)
           (*perm)[i+1] = tempord;
         }
-      return Ok;
+      return;
     }
     //---------------------------------------------------------------
     // Sort eigenvalues in decreasing order of real part
@@ -240,24 +236,24 @@ namespace Anasazi {
         if (perm)
           (*perm)[i+1] = tempord;
       }
-      return Ok;
+      return;
     }
     //---------------------------------------------------------------
     // Sort eigenvalues in decreasing order of imaginary part
     // NOTE:  There is no implementation for this since this templating
     // assumes only real eigenvalues.
     //---------------------------------------------------------------
-    if (!_which.compare("LI")) {
-      return Undefined;
-    }
+    TEST_FOR_EXCEPTION(!_which.compare("LI"), SortManagerError, 
+                       "Anasazi::BasicSort::sort() assumes real eigenvalues");
     
     // The character string held by this class is not valid.  
-    return Undefined;    
+    TEST_FOR_EXCEPTION(true, SortManagerError, 
+                       "Anasazi::BasicSort::sort(): sorting order is not valid");
   }
 
 
   template<class ScalarType, class MV, class OP>
-  ReturnType BasicSort<ScalarType,MV,OP>::sort(Eigensolver<ScalarType,MV,OP>* solver, int n, ScalarType *r_evals, ScalarType *i_evals, std::vector<int> *perm) const {
+  void BasicSort<ScalarType,MV,OP>::sort(Eigensolver<ScalarType,MV,OP>* solver, int n, ScalarType *r_evals, ScalarType *i_evals, std::vector<int> *perm) const {
     int i=0, j=0, tempord=0;
     ScalarType temp, tempr, tempi;
     Teuchos::LAPACK<int,ScalarType> lapack;
@@ -289,7 +285,7 @@ namespace Anasazi {
         if (perm)
           (*perm)[i+1] = tempord;
       }
-      return Ok;
+      return;
     }
     //---------------------------------------------------------------
     // Sort eigenvalues in increasing order of real part
@@ -308,7 +304,7 @@ namespace Anasazi {
         if (perm)
           (*perm)[i+1] = tempord;
       }
-      return Ok;
+      return;
     }
     //---------------------------------------------------------------
     // Sort eigenvalues in increasing order of imaginary part
@@ -327,7 +323,7 @@ namespace Anasazi {
         if (perm)
           (*perm)[i+1] = tempord;
       }
-      return Ok;
+      return;
     }
     //---------------------------------------------------------------
     // Sort eigenvalues in decreasing order of magnitude
@@ -347,7 +343,7 @@ namespace Anasazi {
         if (perm)
           (*perm)[i+1] = tempord;
       }        
-      return Ok;
+      return;
     }
     //---------------------------------------------------------------
     // Sort eigenvalues in decreasing order of real part
@@ -366,7 +362,7 @@ namespace Anasazi {
         if (perm)
           (*perm)[i+1] = tempord;
       }        
-      return Ok;
+      return;
     }
     //---------------------------------------------------------------
     // Sort eigenvalues in decreasing order of imaginary part
@@ -385,11 +381,11 @@ namespace Anasazi {
         if (perm)
           (*perm)[i+1] = tempord;
       }
-      return Ok;
+      return;
     }
 
-    // The character string held by this class is not valid.  
-    return Undefined;      
+    TEST_FOR_EXCEPTION(true, SortManagerError, 
+                       "Anasazi::BasicSort::sort(): sorting order is not valid");
   }
   
 #if ( defined(HAVE_COMPLEX) || defined(HAVE_COMPLEX_H) ) && defined(HAVE_TEUCHOS_COMPLEX)
@@ -451,10 +447,8 @@ namespace Anasazi {
        @param evals [in/out] Array of length n containing the eigenvalues to be sorted
 
        @param perm [out] Vector of length n to store the permutation (optional)
-
-       @return Returns the status of the sorting routine [ Undefined by default ] 
     */
-    ReturnType sort(Eigensolver<ANSZI_CPLX_CLASS<ScalarType>,MV,OP>* solver, int n, ANSZI_CPLX_CLASS<ScalarType> *evals, std::vector<int> *perm = 0) const;
+    void sort(Eigensolver<ANSZI_CPLX_CLASS<ScalarType>,MV,OP>* solver, int n, ANSZI_CPLX_CLASS<ScalarType> *evals, std::vector<int> *perm = 0) const;
     
     //! Sort the vectors of eigenpairs with respect to the chosen sorting type, optionally returning the permutation vector.
     /**
@@ -467,10 +461,8 @@ namespace Anasazi {
        @param i_evals [in/out] Array of length n containing the imaginary part of the eigenvalues to be sorted 
 
        @param perm [out] Vector of length n to store the permutation (optional)
-
-       @return Returns the status of the sorting routine [ Undefined by default ] 
     */
-    ReturnType sort(Eigensolver<ANSZI_CPLX_CLASS<ScalarType>,MV,OP>* solver, int n, ANSZI_CPLX_CLASS<ScalarType> *r_evals, 
+    void sort(Eigensolver<ANSZI_CPLX_CLASS<ScalarType>,MV,OP>* solver, int n, ANSZI_CPLX_CLASS<ScalarType> *r_evals, 
 		    ANSZI_CPLX_CLASS<ScalarType> *i_evals, std::vector<int> *perm = 0) const;
     
   protected: 
@@ -492,7 +484,7 @@ namespace Anasazi {
 
   // Partial specialization for complex numbers templated on real type ScalarType
   template<class ScalarType, class MV, class OP>
-  ReturnType BasicSort<ANSZI_CPLX_CLASS<ScalarType>,MV,OP>::sort(Eigensolver<ANSZI_CPLX_CLASS<ScalarType>,MV,OP>* solver, 
+  void BasicSort<ANSZI_CPLX_CLASS<ScalarType>,MV,OP>::sort(Eigensolver<ANSZI_CPLX_CLASS<ScalarType>,MV,OP>* solver, 
 								 int n, ANSZI_CPLX_CLASS<ScalarType> *evals, std::vector<int> *perm) const 
   {
     int i=0, j=0;
@@ -537,7 +529,7 @@ namespace Anasazi {
         if (perm) 
           (*perm)[i+1] = tempord;
       }
-      return Ok;
+      return;
     }
     //---------------------------------------------------------------
     // Sort eigenvalues in increasing order of real part
@@ -556,7 +548,7 @@ namespace Anasazi {
         if (perm)
           (*perm)[i+1] = tempord;
       }
-      return Ok;
+      return;
     }
     //---------------------------------------------------------------
     // Sort eigenvalues in increasing order of imagninary part
@@ -575,7 +567,7 @@ namespace Anasazi {
         if (perm)
           (*perm)[i+1] = tempord;
       }
-      return Ok;
+      return;
     }
     //---------------------------------------------------------------
     // Sort eigenvalues in decreasing order of magnitude
@@ -595,7 +587,7 @@ namespace Anasazi {
         if (perm)
           (*perm)[i+1] = tempord;
         }
-      return Ok;
+      return;
     }
     //---------------------------------------------------------------
     // Sort eigenvalues in decreasing order of real part
@@ -614,7 +606,7 @@ namespace Anasazi {
         if (perm)
           (*perm)[i+1] = tempord;
       }
-      return Ok;
+      return;
     }
     //---------------------------------------------------------------
     // Sort eigenvalues in decreasing order of imaginary part
@@ -633,18 +625,19 @@ namespace Anasazi {
         if (perm)
           (*perm)[i+1] = tempord;
       }
-      return Ok;
+      return;
     }
 
     // The character string held by this class is not valid.  
-    return Undefined;      
+    TEST_FOR_EXCEPTION(true, SortManagerError, 
+                       "Anasazi::BasicSort::sort(): sorting order is not valid");
   }
 
   // Partial specialization for complex numbers templated on real type ScalarType
   // NOTE:  This implementation doesn't perform any operations on i_evals because r_evals is a vector of complex 
   //        scalar type and should hold all the approximate eigenvalues that need to be sorted.
   template<class ScalarType, class MV, class OP>
-  ReturnType BasicSort<ANSZI_CPLX_CLASS<ScalarType>,MV,OP>::sort(Eigensolver<ANSZI_CPLX_CLASS<ScalarType>,MV,OP>* solver, 
+  void BasicSort<ANSZI_CPLX_CLASS<ScalarType>,MV,OP>::sort(Eigensolver<ANSZI_CPLX_CLASS<ScalarType>,MV,OP>* solver, 
 								 int n, ANSZI_CPLX_CLASS<ScalarType> *r_evals, 
 								 ANSZI_CPLX_CLASS<ScalarType> *i_evals,
 								 std::vector<int> *perm) const 
@@ -691,7 +684,7 @@ namespace Anasazi {
         if (perm) 
           (*perm)[i+1] = tempord;
       }
-      return Ok;
+      return;
     }
     //---------------------------------------------------------------
     // Sort eigenvalues in increasing order of real part
@@ -710,7 +703,7 @@ namespace Anasazi {
         if (perm)
           (*perm)[i+1] = tempord;
       }
-      return Ok;
+      return;
     }
     //---------------------------------------------------------------
     // Sort eigenvalues in increasing order of imagninary part
@@ -729,7 +722,7 @@ namespace Anasazi {
         if (perm)
           (*perm)[i+1] = tempord;
       }
-      return Ok;
+      return;
     }
     //---------------------------------------------------------------
     // Sort eigenvalues in decreasing order of magnitude
@@ -749,7 +742,7 @@ namespace Anasazi {
         if (perm)
           (*perm)[i+1] = tempord;
         }
-      return Ok;
+      return;
     }
     //---------------------------------------------------------------
     // Sort eigenvalues in decreasing order of real part
@@ -768,7 +761,7 @@ namespace Anasazi {
         if (perm)
           (*perm)[i+1] = tempord;
       }
-      return Ok;
+      return;
     }
     //---------------------------------------------------------------
     // Sort eigenvalues in decreasing order of imaginary part
@@ -787,11 +780,12 @@ namespace Anasazi {
         if (perm)
           (*perm)[i+1] = tempord;
       }
-      return Ok;
+      return;
     }
 
     // The character string held by this class is not valid.  
-    return Undefined;      
+    TEST_FOR_EXCEPTION(true, SortManagerError, 
+                       "Anasazi::BasicSort::sort(): sorting order is not valid");
   }
 
 #endif // ( defined(HAVE_COMPLEX) || defined(HAVE_COMPLEX_H) ) && defined(HAVE_TEUCHOS_COMPLEX)

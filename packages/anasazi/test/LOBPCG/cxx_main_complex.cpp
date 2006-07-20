@@ -38,9 +38,11 @@
 // NNZ: 22778 entries
 
 #include "AnasaziConfigDefs.hpp"
+#include "AnasaziTypes.hpp"
+
 #include "AnasaziBasicEigenproblem.hpp"
-#include "AnasaziLOBPCG.hpp"
-#include "AnasaziBasicSort.hpp"
+#include "AnasaziSimpleLOBPCGSolverManager.hpp"
+
 #include "AnasaziMVOPTester.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 
@@ -62,6 +64,7 @@ using namespace Teuchos;
 int main(int argc, char *argv[]) 
 {
   int info = 0;
+  bool boolret;
   int MyPID = 0;
 
 #ifdef HAVE_MPI
@@ -73,12 +76,12 @@ int main(int argc, char *argv[])
   bool testFailed;
   bool verbose = 0;
   std::string filename("mhd1280b.cua");
-  std::string which("LR");
+  std::string which("LM");
 
   CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
   cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
-  cmdp.setOption("sort",&which,"Targetted eigenvalues (SR or LR).");
+  cmdp.setOption("sort",&which,"Targetted eigenvalues (SM or LM).");
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
 #ifdef HAVE_MPI
     MPI_Finalize();
@@ -112,34 +115,29 @@ int main(int argc, char *argv[])
   ST ZERO = SCT::zero();
 
 
-  // Create default output manager 
-  RefCountPtr<Anasazi::OutputManager<ST> > MyOM 
-    = rcp( new Anasazi::OutputManager<ST>( MyPID ) );
   // Set verbosity level
+  int msgs = Anasazi::Errors;
   if (verbose) {
-    MyOM->SetVerbosity( Anasazi::Warning + Anasazi::FinalSummary + Anasazi::TimingDetails );
+    msgs += Anasazi::FinalSummary + Anasazi::TimingDetails;
   }
 
-  if (MyOM->isVerbosityAndPrint(Anasazi::Warning)) {
+  if (verbose && MyPID == 0) {
     cout << Anasazi::Anasazi_Version() << endl << endl;
   }
+
 
 #ifndef HAVE_ANASAZI_TRIUTILS
   cout << "This test requires Triutils. Please configure with --enable-triutils." << endl;
 #ifdef HAVE_MPI
   MPI_Finalize() ;
 #endif
-  if (MyOM->isVerbosityAndPrint(Anasazi::Warning)) {
+  if (verbose && MyPID == 0) {
     cout << "End Result: TEST FAILED" << endl;	
   }
   return -1;
 #endif
 
-  Anasazi::ReturnType returnCode = Anasazi::Ok;  
-
-  // Create the sort manager
-  RefCountPtr<Anasazi::BasicSort<ST,MV,OP> > MySM = 
-     rcp( new Anasazi::BasicSort<ST,MV,OP>(which) );
+  Anasazi::ReturnType returnCode;
 
   // Get the data from the HB file
   int dim,dim2,nnz;
@@ -150,9 +148,9 @@ int main(int argc, char *argv[])
   info = readHB_newmat_double(filename.c_str(),&dim,&dim2,&nnz,
                               &colptr,&rowind,&dvals);
   if (info == 0 || nnz < 0) {
-    if (MyOM->isVerbosityAndPrint(Anasazi::Warning)) {
-      cout << "Error reading '" << filename << "'" << endl;
-      cout << "End Result: TEST FAILED" << endl;
+    if (verbose && MyPID == 0) {
+      cout << "Error reading '" << filename << "'" << endl
+           << "End Result: TEST FAILED" << endl;
     }
 #ifdef HAVE_MPI
     MPI_Finalize();
@@ -174,11 +172,12 @@ int main(int argc, char *argv[])
   int maxIters = 500;
   MT tol = 1.0e-6;
 
-  // Create parameter list to pass into solver
+  // Create parameter list to pass into the solver manager
   ParameterList MyPL;
-  MyPL.set( "Block Size", blockSize );
-  MyPL.set( "Max Iters", maxIters );
-  MyPL.set( "Tol", tol );
+  MyPL.set( "Block Size", blockSize );    // SimpleLOBPCGSolverManager ignores this
+  MyPL.set( "Max Iters", maxIters );      // SimpleLOBPCGSolverManager ignores this
+  MyPL.set( "Tol", tol );                 // SimpleLOBPCGSolverManager ignores this
+  MyPL.set( "Which", which );
 
   // Create initial vectors
   RefCountPtr<MyMultiVec<ST> > ivec = rcp( new MyMultiVec<ST>(dim,blockSize) );
@@ -189,17 +188,17 @@ int main(int argc, char *argv[])
     rcp( new Anasazi::BasicEigenproblem<ST,MV,OP>(A, ivec) );
 
   // Inform the eigenproblem that the operator A is symmetric
-  MyProblem->SetSymmetric(true);
+  MyProblem->setHermitian(true);
 
   // Set the number of eigenvalues requested and the blocksize the solver should use
-  MyProblem->SetNEV( nev );
+  MyProblem->setNEV( nev );
 
   // Inform the eigenproblem that you are done passing it information
-  info = MyProblem->SetProblem();
-  if (info) {
-    if (MyOM->isVerbosityAndPrint(Anasazi::Warning)) {
-      cout << "Anasazi::BasicEigenproblem::SetProblem() returned with code : "<< info << endl;
-      cout << "End Result: TEST FAILED" << endl;	
+  boolret = MyProblem->setProblem();
+  if (boolret != true) {
+    if (verbose && MyPID == 0) {
+      cout << "Anasazi::BasicEigenproblem::SetProblem() returned with error." << endl
+           << "End Result: TEST FAILED" << endl;	
     }
 #ifdef HAVE_MPI
     MPI_Finalize() ;
@@ -207,26 +206,27 @@ int main(int argc, char *argv[])
     return -1;
   }
 
-  // Create the eigensolver 
-  Anasazi::LOBPCG<ST,MV,OP> MySolver(MyProblem, MySM, MyOM, MyPL);
+  // Create the solver manager
+  Anasazi::SimpleLOBPCGSolverManager<ST, MV, OP> MySolverMan(MyProblem, MyPL);
 
   // Solve the problem to the specified tolerances or length
-  returnCode = MySolver.solve();
+  returnCode = MySolverMan.solve();
   testFailed = false;
-  if (returnCode != Anasazi::Ok) {
+  if (returnCode != Anasazi::Converged) {
     testFailed = true; 
   }
 
   // Get the eigenvalues and eigenvectors from the eigenproblem
-  RefCountPtr<std::vector<ST> > evals = MyProblem->GetEvals();
-  RefCountPtr<MV > evecs = MyProblem->GetEvecs();
+  Anasazi::Eigensolution<ST,MV> sol = MyProblem->getSolution();
+  std::vector<MT> evals = sol.Evals;
+  Teuchos::RefCountPtr<MV> evecs = sol.Evecs;
   int nevecs = MVT::GetNumberVecs(*evecs);
 
   // Compute the direct residual
   std::vector<MT> normV( nevecs );
   SerialDenseMatrix<int,ST> T(nevecs,nevecs);
   for (int i=0; i<nevecs; i++) {
-    T(i,i) = (*evals)[i];
+    T(i,i) = evals[i];
   }
   RefCountPtr<MV > Avecs = MVT::Clone( *evecs, nevecs );
   OPT::Apply( *A, *evecs, *Avecs );
@@ -234,7 +234,7 @@ int main(int argc, char *argv[])
   MVT::MvNorm( *Avecs, &normV );
 
   for (int i=0; i<nevecs; i++) {
-    if ( SCT::magnitude(normV[i]/(*evals)[i]) > 5.0e-5 ) {
+    if ( SCT::magnitude(normV[i]/evals[i]) > 5.0e-5 ) {
       testFailed = true;
     }
   }
@@ -245,7 +245,7 @@ int main(int argc, char *argv[])
 #endif
 
   if (testFailed) {
-    if (MyOM->isVerbosityAndPrint(Anasazi::Warning)) {
+    if (verbose && MyPID == 0) {
       cout << "End Result: TEST FAILED" << endl;	
     }
     return -1;
@@ -253,7 +253,7 @@ int main(int argc, char *argv[])
   //
   // Default return value
   //
-  if (MyOM->isVerbosityAndPrint(Anasazi::Warning)) {
+  if (verbose && MyPID == 0) {
     cout << "End Result: TEST PASSED" << endl;
   }
   return 0;

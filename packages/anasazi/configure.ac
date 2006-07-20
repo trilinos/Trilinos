@@ -124,8 +124,8 @@ TAC_ARG_CONFIG_MPI
 # ------------------------------------------------------------------------
 
 AC_PROG_CC(cc gcc)
-AC_PROG_CXX(CC g++ c++ cxx)
-AC_PROG_F77(f77 g77 gfortran f90 xlf90 f95)
+AC_PROG_CXX(CC g++ gcc c++ cxx)
+AC_PROG_F77(f77 g77 f90 xlf90)
 AC_PROG_RANLIB
 
 # ------------------------------------------------------------------------
@@ -161,7 +161,7 @@ TAC_ARG_ENABLE_EXPORT_MAKEFILES(yes)
 #NOTE: This section still needs to be updated for new_package, it is still 
 # code from Epetra
 # ------------------------------------------------------------------------
-# Checks for header files - used in Epetra_ConfigDefs.h 
+# Checks for header files - used in Anasazi_ConfigDefs.h 
 # ------------------------------------------------------------------------
 
 AC_CHECK_HEADERS([cstdlib stdlib.h], [break],)
@@ -173,6 +173,8 @@ AC_CHECK_HEADERS([iostream iostream.h], [break],)
 AC_CHECK_HEADERS([string string.h], [break],)
 AC_CHECK_HEADERS([vector vector.h], [break],)
 AC_CHECK_HEADERS([complex complex.h], [break],)
+AC_CHECK_HEADERS([algorithm algo.h algorithm.h], [break],)
+AC_CHECK_HEADERS([stdexcept stdexcept.h], [break],)
 
 if test "X$ac_cv_header_cstdlib" != "Xyes" && test "X$ac_cv_header_stdlib_h" != "Xyes"; then
   AC_MSG_ERROR([[Cannot find cstdlib or stdlib.h.  Anasazi requires at least one or the other.]])
@@ -218,7 +220,7 @@ AC_C_CONST
 AC_C_INLINE
 
 # ------------------------------------------------------------------------
-# Checks for compiler characteristics - Epetra_ConfigDefs.h uses these, 
+# Checks for compiler characteristics - Anasazi_ConfigDefs.h uses these, 
 # so it makes sense to leave them in - see PORTABILITY in this directory
 # ------------------------------------------------------------------------
 AC_CXX_NAMESPACES
@@ -264,7 +266,7 @@ AC_CXX_STD_SPRINTF
 # ------------------------------------------------------------------------
 
 #
-#  #np# - These options are specific to Epetra and are left only as examples.
+#  #np# - These options are specific to Anasazi and are left only as examples.
 #         If uncommented, the following lines would define HAVE_FATAL_MESSAGES
 #         in the (package)_config.h file.  Developers should use a 
 #         more specific name such as 'new_package-fatal_messages', rather
@@ -276,7 +278,7 @@ AC_CXX_STD_SPRINTF
 #TAC_ARG_ENABLE_OPTION(format_io, [Use package-defined IO formatting for output], 
 #                   FORMAT_IO, yes)
 
-#  #np# - These are specific to Epetra and are left only as examples.
+#  #np# - These are specific to Anasazi and are left only as examples.
 #         If uncommented, the following line would define HAVE_ZOLTAN in
 #         the (package)_config.h file.  Developers should use a more
 #         specific name such as 'new_package-zoltan', rather than 'zoltan'.
@@ -443,7 +445,6 @@ AC_CONFIG_FILES([
 		util/ModeLaplace/Makefile
 		example/Makefile
 		example/BlockDavidson/Makefile
-		example/BlockJacobiDavidson/Makefile
 		example/BlockKrylovSchur/Makefile
 		example/LOBPCG/Makefile
 		example/MVOPTester/Makefile

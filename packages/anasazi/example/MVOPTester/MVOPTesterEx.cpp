@@ -45,6 +45,7 @@
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziEpetraAdapter.hpp"
 #include "AnasaziMVOPTester.hpp"
+#include "AnasaziBasicOutputManager.hpp"
 
 int main(int argc, char *argv[])
 {
@@ -63,8 +64,12 @@ int main(int argc, char *argv[])
   int dim = 100;
   int blockSize = 5;
 
-  // PID info
-  int MyPID = Comm.MyPID();
+  bool verbose = false;
+  if (argc>1) {
+    if (argv[1][0]=='-' && argv[1][1]=='v') {
+      verbose = true;
+    }
+  }
 
   // Construct a Map that puts approximately the same number of 
   // equations on each processor.
@@ -141,41 +146,31 @@ int main(int argc, char *argv[])
   ivec->Random();
 
   // Create an output manager to handle the I/O from the solver
-  Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM =
-    Teuchos::rcp( new Anasazi::OutputManager<double>( MyPID ) );
-  MyOM->SetVerbosity( Anasazi::Warning );
+  Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM = Teuchos::rcp( new Anasazi::BasicOutputManager<double>() );
+  if (verbose) {
+    MyOM->setVerbosity( Anasazi::Warnings );
+  }
 
   // test the multivector class
-  ierr = Anasazi::TestMultiVecTraits<double,MV>(MyOM,ivec);
-  switch (ierr) {
-  case Anasazi::Ok:
-    if ( MyOM->doPrint() ) {
-      cout << "*** PASSED TestMultiVecTraits()" << endl;
-    }
-    break;
-  case Anasazi::Failed:
-    if ( MyOM->doPrint() ) {
-      cout << "*** FAILED TestMultiVecTraits() ***" << endl;
-    }
-    return ierr;
-    break;
+  bool testret;
+  testret = Anasazi::TestMultiVecTraits<double,MV>(MyOM,ivec);
+  if (testret) {
+    MyOM->print(Anasazi::Warnings,"*** PASSED TestMultiVecTraits() ***\n");
+  }
+  else {
+    MyOM->print(Anasazi::Warnings,"*** FAILED TestMultiVecTraits() ***\n");
+    return -1;
   }
 
 
   // test the operator class
-  ierr = Anasazi::TestOperatorTraits<double,MV,OP>(MyOM,ivec,A);
-  switch (ierr) {
-  case Anasazi::Ok:
-    if ( MyOM->doPrint() ) {
-      cout << "*** PASSED TestOperatorTraits()" << endl;
-    }
-    break;
-  case Anasazi::Failed:
-    if ( MyOM->doPrint() ) {
-      cout << "*** FAILED TestOperatorTraits() ***" << endl;
-    }
-    return ierr;
-    break;
+  testret = Anasazi::TestOperatorTraits<double,MV,OP>(MyOM,ivec,A);
+  if (testret) {
+    MyOM->print(Anasazi::Warnings,"*** PASSED TestOperatorTraits() ***\n");
+  }
+  else {
+    MyOM->print(Anasazi::Warnings,"*** FAILED TestOperatorTraits() ***\n");
+    return -1;
   }
 
   // Release all objects
@@ -188,5 +183,5 @@ int main(int argc, char *argv[])
   MPI_Finalize();
 #endif
 
-  return ierr;
+  return 0;
 }

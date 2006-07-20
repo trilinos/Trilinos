@@ -45,8 +45,11 @@
        \author Ulrich Hetmaniuk, Rich Lehoucq, and Heidi Thornquist
 */
 
+#include "AnasaziConfigDefs.hpp"
 #include "AnasaziMultiVecTraits.hpp"
 #include "AnasaziOperatorTraits.hpp"
+#include "Teuchos_ScalarTraits.hpp"
+
 #include "AnasaziOutputManager.hpp"
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_LAPACK.hpp"
@@ -490,17 +493,13 @@ namespace Anasazi {
       // Update MX
       if (M) {
         if (qc >= xc) {
-          //timeProj_MassMult -= MyWatch.WallTime();
+          // FINISH: add accounting
           OPT::Apply( *M, *XX, *MXX);
-          //timeProj_MassMult += MyWatch.WallTime();
-          //numProj_MassMult += xc;
         }
         else {
           Teuchos::RefCountPtr<MV> MQ = MVT::Clone( Q, qc );
-          //timeProj_MassMult -= MyWatch.WallTime();
+          // FINISH: add accounting
           OPT::Apply( *M, Q, *MQ );
-          //timeProj_MassMult += MyWatch.WallTime();
-          //numProj_MassMult += qc;
           MVT::MvTimesMatAddMv( -one, *MQ, qTmx, one, *MXX );
         }  // if (qc >= xc)
       } // if (M)
@@ -515,28 +514,22 @@ namespace Anasazi {
         if ( SCT::magnitude(kappa*newDot[j]) < SCT::magnitude(oldDot[j]) ) {
           
           // Apply another step of classical Gram-Schmidt
-          //timeQtMult -= MyWatch.WallTime();
+          // FINISH: add accounting
           MVT::MvTransMv( one, Q, *MXX, qTmx );
-          //timeQtMult += MyWatch.WallTime();
           
-          //timeQMult -= MyWatch.WallTime();
+          // FINISH: add accounting
           MVT::MvTimesMatAddMv( -one, Q, qTmx, one, *XX );
-          //timeQMult += MyWatch.WallTime();
           
           // Update MX
           if (M) {
             if (qc >= xc) {
-              //timeProj_MassMult -= MyWatch.WallTime();
+              // FINISH: add accounting
               OPT::Apply( *M, *XX, *MXX);
-              //timeProj_MassMult += MyWatch.WallTime();
-              //numProj_MassMult += xc;
             }
             else {
               Teuchos::RefCountPtr<MV> MQ = MVT::Clone( Q, qc );
-              //timeProj_MassMult -= MyWatch.WallTime();
+              // FINISH: add accounting
               OPT::Apply( *M, Q, *MQ);
-              //timeProj_MassMult += MyWatch.WallTime();
-              //numProj_MassMult += qc;
               MVT::MvTimesMatAddMv( -one, *MQ, qTmx, one, *MXX );
             } // if (qc >= xc)
           } // if (M)
@@ -630,10 +623,8 @@ namespace Anasazi {
                 MVT::MvTimesMatAddMv( -one, *prevMXj, product, one, *MXj );
               }
               else {
-                //timeNorm_MassMult -= MyWatch.WallTime();
+                // FINISH: add accounting
                 OPT::Apply( *M, *Xj, *MXj );
-                //timeNorm_MassMult += MyWatch.WallTime();
-                //numNorm_MassMult += 1;
               }
             }
             //
@@ -657,10 +648,8 @@ namespace Anasazi {
                   MVT::MvTimesMatAddMv( -one, *prevMXj, product, one, *MXj );
                 }
                 else {
-                  //timeNorm_MassMult -= MyWatch.WallTime();
+                  // FINISH: add accounting
                   OPT::Apply( *M, *Xj, *MXj );
-                  //timeNorm_MassMult += MyWatch.WallTime();
-                  //numNorm_MassMult += 1;
                 }
               }
             } // if (kappa*newDot[0] < oldDot[0])
@@ -690,10 +679,8 @@ namespace Anasazi {
             info += 1;
             MVT::MvRandom( *Xj );
             if (M) {
-              //timeNorm_MassMult -= MyWatch.WallTime();
+              // FINISH: add accounting
               OPT::Apply( *M, *Xj, *MXj );
-              //timeNorm_MassMult += MyWatch.WallTime();
-              //numNorm_MassMult += 1;
             }
             if (orthoType == 0)
               massOrthonormalize(*Xj, *MXj, M, Q, 1, 1, kappa);

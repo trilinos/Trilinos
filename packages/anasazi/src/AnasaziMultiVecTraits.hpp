@@ -33,6 +33,7 @@
   \brief Virtual base class which defines basic traits for the multi-vector type
 */
 
+#include "AnasaziConfigDefs.hpp"
 #include "AnasaziTypes.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"

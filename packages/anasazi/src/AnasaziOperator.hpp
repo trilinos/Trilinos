@@ -33,6 +33,7 @@
 #ifndef ANASAZI_OPERATOR_HPP
 #define ANASAZI_OPERATOR_HPP
 
+#include "AnasaziConfigDefs.hpp"
 #include "AnasaziOperatorTraits.hpp"
 #include "AnasaziMultiVec.hpp"
 #include "Teuchos_ScalarTraits.hpp"
@@ -66,7 +67,7 @@ namespace Anasazi {
     /*! \brief This method takes the Anasazi::MultiVec \c x and
       applies the operator to it resulting in the Anasazi::MultiVec \c y.
     */
-    virtual ReturnType Apply ( const MultiVec<ScalarType>& x, MultiVec<ScalarType>& y ) const = 0;
+    virtual void Apply ( const MultiVec<ScalarType>& x, MultiVec<ScalarType>& y ) const = 0;
 
     //@}
   };
@@ -96,10 +97,10 @@ namespace Anasazi {
     /*! \brief This method takes the Anasazi::MultiVec \c x and
       applies the Anasazi::Operator \c Op to it resulting in the Anasazi::MultiVec \c y.
     */
-    static ReturnType Apply ( const Operator<ScalarType>& Op, 
+    static void Apply ( const Operator<ScalarType>& Op, 
 			      const MultiVec<ScalarType>& x, 
 			      MultiVec<ScalarType>& y )
-    { return Op.Apply( x, y ); }
+    { Op.Apply( x, y ); }
 
     //@}
     

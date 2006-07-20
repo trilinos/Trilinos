@@ -38,6 +38,7 @@
 #include "AnasaziBasicSort.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "AnasaziMVOPTester.hpp"
+#include "AnasaziBasicOutputManager.hpp"
 
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
@@ -100,15 +101,14 @@ int main(int argc, char *argv[])
 
   // Create default output manager 
   RefCountPtr<Anasazi::OutputManager<ST> > MyOM 
-    = rcp( new Anasazi::OutputManager<ST>( MyPID ) );
+    = rcp( new Anasazi::BasicOutputManager<ST>() );
   // Set verbosity level
   if (verbose) {
-    MyOM->SetVerbosity( Anasazi::Warning + Anasazi::FinalSummary );
+    MyOM->setVerbosity( Anasazi::Warning + Anasazi::FinalSummary );
   }
 
-  if (MyOM->isVerbosityAndPrint(Anasazi::Warning)) {
-    cout << Anasazi::Anasazi_Version() << endl << endl;
-  }
+  // print greeting
+  MyOM->stream(Anasazi::Warning) << Anasazi::Anasazi_Version() << endl << endl;
 
   Anasazi::ReturnType returnCode = Anasazi::Ok;  
 
@@ -138,10 +138,9 @@ int main(int argc, char *argv[])
 
   prob = GetARPACKExample<ST>(problem,dim);
   if (!prob.get()) {
-    if ( MyOM->isVerbosityAndPrint(Anasazi::Warning) ) {
-      cout << "Invalid driver name. Try something like ""ndrv3"" or ""sdrv2""." << endl;
-      cout << "End Result: TEST FAILED" << endl;	
-    }
+    MyOM->stream(Anasazi::Warning)
+      << "Invalid driver name. Try something like ""ndrv3"" or ""sdrv2""." << endl
+      << "End Result: TEST FAILED" << endl;	
 #ifdef HAVE_MPI
     MPI_Finalize();
 #endif
@@ -177,31 +176,25 @@ int main(int argc, char *argv[])
   // test multivector and operators
   int ierr;
   ierr = Anasazi::TestMultiVecTraits<ST,MV>(MyOM,ivec);
-  if (verbose) {
-    cout << "Testing MultiVector";
-    if (ierr == Anasazi::Ok) {      
-      cout << "... PASSED TestMultiVecTraits()" << endl;
-    } else {
-      cout << "... FAILED TestMultiVecTraits()" << endl;
-    }
+  MyOM->print(Anasazi::Warning,"Testing MultiVector... ");
+  if (ierr == Anasazi::Ok) {      
+    MyOM->print(Anasazi::Warning,"PASSED TestMultiVecTraits()\n");
+  } else {
+    MyOM->print(Anasazi::Warning,"FAILED TestMultiVecTraits()\n");
   }
   ierr = Anasazi::TestOperatorTraits<ST,MV,OP>(MyOM,ivec,A);
-  if (verbose) {
-    cout << "Testing OP";
-    if (ierr == Anasazi::Ok) {
-      cout << "... PASSED TestOperatorTraits()" << endl;
-    } else {
-      cout << "... FAILED TestOperatorTraits()" << endl;
-    }
+  MyOM->print(Anasazi::Warning,"Testing OP... ");
+  if (ierr == Anasazi::Ok) {
+    MyOM->print(Anasazi::Warning,"PASSED TestOperatorTraits()\n");
+  } else {
+    MyOM->print(Anasazi::Warning,"FAILED TestOperatorTraits()\n");
   }
   ierr = Anasazi::TestOperatorTraits<ST,MV,OP>(MyOM,ivec,M);
-  if (verbose) {
-    cout << "Testing M";
-    if (ierr == Anasazi::Ok) {
-      cout << "... PASSED TestOperatorTraits()" << endl;
-    } else {
-      cout << "... FAILED TestOperatorTraits()" << endl;
-    }
+  MyOM->print(Anasazi::Warning,"Testing M... ");
+  if (ierr == Anasazi::Ok) {
+    MyOM->print(Anasazi::Warning,"PASSED TestOperatorTraits()\n");
+  } else {
+    MyOM->print(Anasazi::Warning,"FAILED TestOperatorTraits()\n");
   }
 
   // Create the sort manager
@@ -225,10 +218,9 @@ int main(int argc, char *argv[])
   // Inform the eigenproblem that you are done passing it information
   info = MyProblem->SetProblem();
   if (info) {
-    if (MyOM->isVerbosityAndPrint(Anasazi::Warning)) {
-      cout << "Anasazi::BasicEigenproblem::SetProblem() returned with code : "<< info << endl;
-      cout << "End Result: TEST FAILED" << endl;	
-    }
+    MyOM->stream(Anasazi::Warning)
+      << "Anasazi::BasicEigenproblem::SetProblem() returned with code : "<< info << endl
+      << "End Result: TEST FAILED" << endl;	
 #ifdef EPETRA_MPI
     MPI_Finalize() ;
 #endif
@@ -249,18 +241,15 @@ int main(int argc, char *argv[])
     MySolver = rcp( new Anasazi::BlockDavidson<ST,MV,OP>(MyProblem, MySM, MyOM, MyPL));
   }
   else {
-    if (MyOM->isVerbosityAndPrint(Anasazi::Warning)) {
-      cout << "Invalid solver: " << solver << endl;
-      cout << "End Result: TEST FAILED" << endl;	
-    }
+    MyOM->stream(Anasazi::Warning)
+      << "Invalid solver: " << solver << endl
+      << "End Result: TEST FAILED" << endl;	
 #ifdef HAVE_MPI
     MPI_Finalize();
 #endif
     return -1;
   }
-  if ( MyOM->isVerbosityAndPrint(Anasazi::Warning) ) {
-    cout << "Using solver: " << solver << endl;
-  }
+  MyOM->stream(Anasazi::Warning) << "Using solver: " << solver << endl;
 
   // Solve the problem to the specified tolerances or length
   returnCode = MySolver->solve();
@@ -305,18 +294,20 @@ int main(int argc, char *argv[])
     }
   }
 
-  if ( MyOM->isVerbosityAndPrint(Anasazi::FinalSummary) ) {
+  {
+    stringstream os;
     //      28,5,22
-    cout << "Back transformed eigenvalues     Relative Residual Norm" << endl
-         << "-------------------------------------------------------" << endl;
+    os << "Back transformed eigenvalues     Relative Residual Norm" << endl
+       << "-------------------------------------------------------" << endl;
     for (int i=0; i<nev; i++) {
-      cout.setf(ios::scientific, ios::floatfield);  
-      cout.precision(10);
-      cout << std::setw(28) << std::right << (*evals)[i] 
-           << "     "
-           << std::setw(22) << std::right << normV[i] 
-           << endl;
+      os.setf(ios::scientific, ios::floatfield);  
+      os.precision(10);
+      os << std::setw(28) << std::right << (*evals)[i] 
+         << "     "
+         << std::setw(22) << std::right << normV[i] 
+         << endl;
     }
+    MyOM->print(Anasazi::Warning,os.str());
   }
 
   // Exit
@@ -325,17 +316,13 @@ int main(int argc, char *argv[])
 #endif
 
   if (testFailed) {
-    if (MyOM->isVerbosityAndPrint(Anasazi::Warning)) {
-      cout << "End Result: TEST FAILED" << endl;	
-    }
+    MyOM->print(Anasazi::Warning,"End Result: TEST FAILED\n");
     return -1;
   }
   //
   // Default return value
   //
-  if (MyOM->isVerbosityAndPrint(Anasazi::Warning)) {
-    cout << "End Result: TEST PASSED" << endl;
-  }
+  MyOM->print(Anasazi::Warning,"End Result: TEST PASSED\n");
   return 0;
 
 }	

@@ -34,18 +34,20 @@
 #define ANASAZI_BLOCK_DAVIDSON_HPP
 
 #include "AnasaziEigensolver.hpp"
-#include "AnasaziEigenproblem.hpp"
+#include "AnasaziOutputManager.hpp"
+#include "AnasaziSortManager.hpp"
+#include "AnasaziMatOrthoManager.hpp"
+
 #include "AnasaziMultiVecTraits.hpp"
 #include "AnasaziOperatorTraits.hpp"
-#include "AnasaziOutputManager.hpp"
+#include "Teuchos_ScalarTraits.hpp"
+
+#include "AnasaziBasicOrthoManager.hpp"
 #include "AnasaziModalSolverUtils.hpp"
-#include "AnasaziSortManager.hpp"
 
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
-#include "Teuchos_SerialDenseVector.hpp"
-#include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
@@ -130,7 +132,9 @@ namespace Anasazi {
     //
     // Internal methods
     //
-    void accuracyCheck(const MV *X, const MV *MX, const MV *Q) const; 
+    void accuracyCheck(Teuchos::RefCountPtr<const MV> X, 
+                       Teuchos::RefCountPtr<const MV> MX, 
+                       Teuchos::RefCountPtr<const MV> Q) const; 
     //
     // Classes inputed through constructor that define the eigenproblem to be solved.
     //
@@ -157,11 +161,11 @@ namespace Anasazi {
     // Internal utilities class required by eigensolver.
     //
     ModalSolverUtils<ScalarType,MV,OP> _MSUtils;
+    // 
+    // Orthogonalization manager
+    //
+    Teuchos::RefCountPtr< MatOrthoManager<ScalarType,MV,OP> > _orthman;
     std::vector<MagnitudeType> _theta, _normR, _resids;
-    //
-    // Output stream from the output manager
-    //
-    std::ostream& _os;
     //
     // Internal timers
     //
@@ -203,7 +207,7 @@ namespace Anasazi {
     _dimSearch(_blockSize*_numBlocks),    
     _knownEV(0),
     _MSUtils(om),
-    _os(_om->GetOStream()),
+    _orthman(_pl.get("OrthoManager", Teuchos::rcp(new BasicOrthoManager<ScalarType,MV,OP>(_MOp)))),
     _restartTimers(_pl.get("Restart Timers", false)),
     _timerOp(Teuchos::TimeMonitor::getNewTimer("Operation Op*x")),
     _timerMOp(Teuchos::TimeMonitor::getNewTimer("Operation M*x")),
@@ -234,56 +238,58 @@ namespace Anasazi {
   BlockDavidson<ScalarType,MV,OP>::currentStatus() 
   {
     int i;
-    if (_om->doPrint()) {
-      _os.setf(ios::scientific, ios::floatfield);
-      _os.precision(6);
-      _os <<endl;
-      _os <<"******************* CURRENT STATUS *******************"<<endl;
-      _os <<"The number of iterations performed is " <<_iter<<endl;
-      _os <<"The number of restarts performed is "<<_numRestarts<<endl;
-      _os <<"The block size is "<<_blockSize<<endl;
-      _os <<"The number of eigenvalues requested is "<<_nev<<endl;
-      _os <<"The number of eigenvalues computed is "<<_knownEV<<endl;
-      _os <<"The requested residual tolerance is "<<_residual_tolerance<<endl;
-      _os <<"The number of operations Op*x   is "<<_count_ApplyOp<<endl;
-      _os <<"The number of operations M*x    is "<<_count_ApplyM<<endl;
-      _os <<"The number of operations Prec*x is "<<_count_ApplyPrec<<endl;
-      _os <<endl;
-      _os <<"COMPUTED EIGENVALUES                 "<<endl;
-      _os.setf(ios_base::right, ios_base::adjustfield);
-      _os << std::setw(16) << "Eigenvalue" 
-          << std::setw(16) << "Ritz Residual"
-          << endl;
-      _os <<"------------------------------------------------------"<<endl;
-      if ( _knownEV > 0 ) {
-        for (i=0; i<_knownEV; i++) {
-          _os << std::setw(16) << (*_evals)[i]
-              << std::setw(16) << _resids[i]
-              << endl;
-        }
-      } 
-      else {
-        _os <<"[none computed]"<<endl;
+    stringstream os;
+    os.setf(ios::scientific, ios::floatfield);
+    os.precision(6);
+    os <<endl;
+    os <<"******************* CURRENT STATUS *******************"<<endl;
+    os <<"The number of iterations performed is " <<_iter<<endl;
+    os <<"The number of restarts performed is "<<_numRestarts<<endl;
+    os <<"The block size is "<<_blockSize<<endl;
+    os <<"The number of eigenvalues requested is "<<_nev<<endl;
+    os <<"The number of eigenvalues computed is "<<_knownEV<<endl;
+    os <<"The requested residual tolerance is "<<_residual_tolerance<<endl;
+    os <<"The number of operations Op*x   is "<<_count_ApplyOp<<endl;
+    os <<"The number of operations M*x    is "<<_count_ApplyM<<endl;
+    os <<"The number of operations Prec*x is "<<_count_ApplyPrec<<endl;
+    os <<endl;
+    os <<"COMPUTED EIGENVALUES                 "<<endl;
+    os.setf(ios_base::right, ios_base::adjustfield);
+    os << std::setw(16) << "Eigenvalue" 
+        << std::setw(16) << "Ritz Residual"
+        << endl;
+    os <<"------------------------------------------------------"<<endl;
+    if ( _knownEV > 0 ) {
+      for (i=0; i<_knownEV; i++) {
+        os << std::setw(16) << (*_evals)[i]
+            << std::setw(16) << _resids[i]
+            << endl;
       }
-      _os <<endl;
-      _os <<"CURRENT EIGENVALUE ESTIMATES             "<<endl;
-      _os << std::setw(16) << "Ritz value" 
-          << std::setw(16) << "Residual"
-          << endl;
-      _os <<"------------------------------------------------------"<<endl;
-      if ( _iter > 0 ) {
-        for (i=0; i<_blockSize; i++) {
-          _os << std::setw(16) << _theta[i] 
-              << std::setw(16) << _normR[i]
-              << endl;
-        }
-      } 
-      else {
-        _os <<"[none computed]" << endl;
-      }
-      _os << "******************************************************" << endl;  
-      _os << endl; 
+    } 
+    else {
+      os <<"[none computed]"<<endl;
     }
+    os <<endl;
+    os <<"CURRENT EIGENVALUE ESTIMATES             "<<endl;
+    os << std::setw(16) << "Ritz value" 
+        << std::setw(16) << "Residual"
+        << endl;
+    os <<"------------------------------------------------------"<<endl;
+    if ( _iter > 0 ) {
+      for (i=0; i<_blockSize; i++) {
+        os << std::setw(16) << _theta[i] 
+            << std::setw(16) << _normR[i]
+            << endl;
+      }
+    } 
+    else {
+      os <<"[none computed]" << endl;
+    }
+    os << "******************************************************" << endl;  
+    os << endl; 
+
+    // send string to output manager
+    _om->print(Anasazi::IterationDetails, os.str());
   }
   
   template <class ScalarType, class MV, class OP>
@@ -308,16 +314,14 @@ namespace Anasazi {
     // Check the Anasazi::Eigenproblem was set by user, if not, return failed.
     //
     if ( !_problem->IsProblemSet() ) {
-      if (_om->isVerbosityAndPrint( Anasazi::Error ))
-        _os << "ERROR : Anasazi::Eigenproblem was not set, call Anasazi::Eigenproblem::SetProblem() before calling solve"<< endl;
+      _om->print(Anasazi::Error,"ERROR : Anasazi::Eigenproblem was not set, call Anasazi::Eigenproblem::SetProblem() before calling solve\n");
       return Failed;
     }
     //
     // Check the Anasazi::Eigenproblem is symmetric, if not, return failed.
     //
     if ( !_problem->IsSymmetric() ) {
-      if (_om->isVerbosityAndPrint( Anasazi::Error ))
-        _os << "ERROR : Anasazi::Eigenproblem is not symmetric" << endl;
+      _om->print(Anasazi::Error, "ERROR : Anasazi::Eigenproblem is not symmetric\n" );
       return Failed;
     }
     //
@@ -326,8 +330,7 @@ namespace Anasazi {
     Teuchos::RefCountPtr<MV> iVec = _problem->GetInitVec();
     //
     if ( iVec.get() == 0 ) {
-      if (_om->isVerbosityAndPrint( Anasazi::Error )) 
-        _os << "ERROR : Initial vector is not specified, set initial vector in eigenproblem "<<endl;
+      _om->print( Anasazi::Error, "ERROR : Initial vector is not specified, set initial vector in eigenproblem\n");
       return Failed;
     }
     
@@ -336,24 +339,22 @@ namespace Anasazi {
     // Check that the maximum number of blocks for the eigensolver is a positive number
     //    
     if ( _numBlocks<=0 ) {
-      if (_om->isVerbosityAndPrint( Anasazi::Error )) 
-        _os << "ERROR : numBlocks = "<< _numBlocks <<" [ should be positive number ] " << endl;
+      _om->stream(Anasazi::Error) << "ERROR : numBlocks = "<< _numBlocks <<" [ should be positive number ] " << endl;
       return Failed;
     } 
     //
     // Check that the maximum number of iterations is a positive number
     //    
     if ( _maxIter<=0 ) {
-      if (_om->isVerbosityAndPrint( Anasazi::Error )) 
-        _os << "ERROR : maxIter = "<< _maxIter <<" [ should be positive number ] " << endl;
+      _om->stream(Anasazi::Error) << "ERROR : maxIter = "<< _maxIter <<" [ should be positive number ] " << endl;
       return Failed;
     } 
     //
     // Check that the search subspace is larger than the number of eigenvalues requested
     //
     if ( _numBlocks*_blockSize < _nev ) {
-      if (_om->isVerbosityAndPrint( Anasazi::Error )) 
-        _os << "ERROR : Search space dimension (numBlocks*blockSize) = "<< _numBlocks*_blockSize 
+      _om->stream( Anasazi::Error ) 
+            << "ERROR : Search space dimension (numBlocks*blockSize) = "<< _numBlocks*_blockSize 
             << " [ should be greater than "<< _nev << " ] " << endl;
       return Failed;
     } 
@@ -362,8 +363,8 @@ namespace Anasazi {
     // then we must be computing all of them.
     //
     if ( (_numBlocks*_blockSize == _nev) && (_nev != dim) ) {
-      if (_om->isVerbosityAndPrint( Anasazi::Error ))
-        _os << "ERROR : Search space dimension (numBlocks*blockSize) = "<< _numBlocks*_blockSize 
+      _om->stream( Anasazi::Error )
+            << "ERROR : Search space dimension (numBlocks*blockSize) = "<< _numBlocks*_blockSize 
             << " [ should be greater than "<< _nev << " ] " << endl;
       return Failed;
     }
@@ -372,15 +373,15 @@ namespace Anasazi {
     // the maximum number of blocks accordingly.
     //    
     if (_numBlocks*_blockSize > dim ) {
-      if (_om->isVerbosityAndPrint( Anasazi::Warning ))
-        _os << "WARNING : Search space dimension (numBlocks*blockSize) = "<< _numBlocks*_blockSize 
+      _om->stream( Anasazi::Warning )
+            << "WARNING : Search space dimension (numBlocks*blockSize) = "<< _numBlocks*_blockSize 
             <<" [ should not be greater than " << dim << " ] " << endl;
       
       // Set the maximum number of blocks in the factorization below the dimension of the space.
       _numBlocks = dim / _blockSize;
       
-      if (_om->isVerbosityAndPrint( Anasazi::Warning ))
-        _os << "WARNING : numBlocks reset to "<< _numBlocks << endl;
+      _om->stream( Anasazi::Warning )
+            << "WARNING : numBlocks reset to "<< _numBlocks << endl;
     }
     //
     // Reinitialize internal data and pointers, prepare for solve
@@ -530,18 +531,11 @@ namespace Anasazi {
         // Apply the mass matrix.
         //        
         if (_MOp.get()) {
-	  {
-	    Teuchos::TimeMonitor MassTimer(*_timerMOp);
-	    ret = OPT::Apply( *_MOp, *Xcurrent, *MX );
-	  }
-          _count_ApplyM += MVT::GetNumberVecs( *Xcurrent );
-          if (ret != Ok) {
-            if (_om->isVerbosityAndPrint(Error)) {
-              _os << "ERROR : Applying M operator in BlockReduction" << endl;
-            }
-            criticalExit = true;
-            break; // break out of for(nb) loop
+          {
+            Teuchos::TimeMonitor MassTimer(*_timerMOp);
+            OPT::Apply( *_MOp, *Xcurrent, *MX );
           }
+          _count_ApplyM += MVT::GetNumberVecs( *Xcurrent );
         }
         //
         // Orthonormalize Xcurrent against the known eigenvectors and previous vectors.
@@ -549,57 +543,59 @@ namespace Anasazi {
         if (nb == bStart) {
           if (nFound > 0) {
             if (_knownEV == 0) {
-	      {
-		Teuchos::TimeMonitor OrtoTimer(*_timerOrtho);
-		info = _MSUtils.massOrthonormalize( *Xcurrent, *MX, _MOp.get(), *Xcurrent, nFound, 2 );
-	      }
+              {
+                Teuchos::TimeMonitor OrtoTimer(*_timerOrtho);
+                ret = _orthman->normalize(*Xcurrent,MX,Teuchos::null,info);
+              }
             }
             else {
-	      {
-		Teuchos::TimeMonitor OrthoTimer(*_timerOrtho);
-		info = _MSUtils.massOrthonormalize( *Xcurrent, *MX, _MOp.get(), *Xprev,    nFound, 0 );
-	      }
+              {
+                Teuchos::TimeMonitor OrthoTimer(*_timerOrtho);
+                ret = _orthman->projectAndNormalize(*Xcurrent,MX,
+                                                    Teuchos::tuple<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > >(Teuchos::null),
+                                                    Teuchos::null,
+                                                    Teuchos::tuple<Teuchos::RefCountPtr<const MV> >(Xprev),
+                                                    info);
+              }
             }
           }
           nFound = 0;
         } 
         else {
-	  {
-	    Teuchos::TimeMonitor OrthoTimer(*_timerOrtho);
-	    info = _MSUtils.massOrthonormalize( *Xcurrent, *MX, _MOp.get(), *Xprev, _blockSize, 0 );
-	  }
+          {
+            Teuchos::TimeMonitor OrthoTimer(*_timerOrtho);
+            ret = _orthman->projectAndNormalize(*Xcurrent,MX,
+                                                Teuchos::tuple<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > >(Teuchos::null),
+                                                Teuchos::null,
+                                                Teuchos::tuple<Teuchos::RefCountPtr<const MV> >(Xprev),
+                                                info);
+          }
         }
         //
         // Exit the code if there has been a problem.
         //
-        if (info < 0) 
+        if (ret != Ok) {
           return Failed;
+        }
         //
         // Check orthogonality of X ( if required )
         //
-        if (_om->isVerbosity( OrthoDetails ) ) {
+        if (_om->isVerbosity( Anasazi::OrthoDetails ) ) {
           if (localSize > 0) {
-            accuracyCheck( Xcurrent.get(), MX.get(), Xprev.get() );
+            accuracyCheck( Xcurrent, MX, Xprev);
           }
           else {
-            accuracyCheck( Xcurrent.get(), MX.get(), NULL );
+            accuracyCheck( Xcurrent, MX, Teuchos::null );
           }
         }
         //
         // Apply the stiffness matrix.
         //
-	{
-	  Teuchos::TimeMonitor OpTimer(*_timerOp);
-	  ret = OPT::Apply( *_Op, *Xcurrent, *KX );
-	}
-        _count_ApplyOp += MVT::GetNumberVecs( *Xcurrent );
-        if (ret != Ok) {
-          if (_om->isVerbosityAndPrint(Error)) {
-            _os << "ERROR : Applying Op operator in BlockReduction" << endl;
-          }
-          criticalExit = true;
-          break; // break out of for(nb) loop
+        {
+          Teuchos::TimeMonitor OpTimer(*_timerOp);
+          OPT::Apply( *_Op, *Xcurrent, *KX );
         }
+        _count_ApplyOp += MVT::GetNumberVecs( *Xcurrent );
         //
         // Update the local stiffness matrix ( Xtotal^T * K * Xcurrent where Xtotal = [Xprev Xcurrent] )
         // Note:  Only the upper half of the matrix is stored in KK
@@ -615,10 +611,10 @@ namespace Anasazi {
         // Perform spectral decomposition
         //
         int nevLocal = localSize+_blockSize;
-	{
-	  Teuchos::TimeMonitor DSTimer(*_timerDS);
-	  info = _MSUtils.directSolver(localSize+_blockSize, KK, 0, &S, &_theta, &nevLocal, 10);
-	}
+        {
+          Teuchos::TimeMonitor DSTimer(*_timerDS);
+          info = _MSUtils.directSolver(localSize+_blockSize, KK, 0, &S, &_theta, &nevLocal, 10);
+        }
         //
         // Exit the code if there has been a problem.
         //
@@ -653,22 +649,20 @@ namespace Anasazi {
         // The sort manager is templated on ScalarType
         // Make a ScalarType copy of _theta for sorting
         std::vector<ScalarType> _theta_st(_theta.size());
-	{
-	  Teuchos::TimeMonitor SortTimer(*_timerSortEval);
-	  std::copy<MTiter,STiter>(_theta.begin(),_theta.begin()+localSize+_blockSize,_theta_st.begin());
-	  _order.resize(localSize+_blockSize);
-	  ret = _sm->sort( this, localSize+_blockSize, &(_theta_st[0]), &_order );
+        {
+          Teuchos::TimeMonitor SortTimer(*_timerSortEval);
+          std::copy<MTiter,STiter>(_theta.begin(),_theta.begin()+localSize+_blockSize,_theta_st.begin());
+          _order.resize(localSize+_blockSize);
+          ret = _sm->sort( this, localSize+_blockSize, &(_theta_st[0]), &_order );
 
-	  // Reorder _theta according to sorting results from _theta_st
-	  std::vector<MagnitudeType> _theta_copy(_theta);
-	  for (i=0; i<localSize+_blockSize; i++) {
-	    _theta[i] = _theta_copy[_order[i]];
-	  }
-	}
-        if (ret != Ok) {
-          if (_om->isVerbosityAndPrint(Error)) {
-            _os << "ERROR : Sorting in solve()" << endl;
+          // Reorder _theta according to sorting results from _theta_st
+          std::vector<MagnitudeType> _theta_copy(_theta);
+          for (i=0; i<localSize+_blockSize; i++) {
+            _theta[i] = _theta_copy[_order[i]];
           }
+        }
+        if (ret != Ok) {
+          _om->print(Anasazi::Error, "ERROR : Sorting in solve()\n" );
           criticalExit = true;
           break; // break out of for(nb) loop
         }
@@ -692,34 +686,20 @@ namespace Anasazi {
         // Apply the mass matrix for the next block
         // 
         if (_MOp.get()) {
-	  {
-	    Teuchos::TimeMonitor MOpTimer(*_timerMOp);
-	    ret = OPT::Apply( *_MOp, *KX, *MX );
-	  }
-          _count_ApplyM += MVT::GetNumberVecs( *KX );
-          if (ret != Ok) {
-            if (_om->isVerbosityAndPrint(Error)) {
-              _os << "ERROR : Applying M operator in BlockReduction" << endl;
-            }
-            criticalExit = true;
-            break; // break out of for(nb) loop
+          {
+            Teuchos::TimeMonitor MOpTimer(*_timerMOp);
+            OPT::Apply( *_MOp, *KX, *MX );
           }
+          _count_ApplyM += MVT::GetNumberVecs( *KX );
         }
         //
         // Apply the stiffness matrix for the next block
         //
-	{
-	  Teuchos::TimeMonitor OpTimer(*_timerOp);
-	  ret = OPT::Apply( *_Op, *KX, *R );
-	}
-        _count_ApplyOp += MVT::GetNumberVecs( *KX );
-        if (ret != Ok) {
-          if (_om->isVerbosityAndPrint(Error)) {
-            _os << "ERROR : Applying Op operator in BlockReduction" << endl;
-          }
-          criticalExit = true;
-          break; // break out of for(nb) loop
+        {
+          Teuchos::TimeMonitor OpTimer(*_timerOp);
+          OPT::Apply( *_Op, *KX, *R );
         }
+        _count_ApplyOp += MVT::GetNumberVecs( *KX );
         //
         // Compute the residual :
         // R = KX - MX*diag(theta)
@@ -751,27 +731,29 @@ namespace Anasazi {
           }
         }
         // Print information on current iteration
-        if (_om->isVerbosityAndPrint( IterationDetails )) {
-          _os << " Iteration " << _iter << " - Number of converged eigenvectors ";
-          _os << _knownEV + nFound << endl;
-        } 
+        _om->stream( Anasazi::IterationDetails)
+              << " Iteration " << _iter << " - Number of converged eigenvectors "
+              << _knownEV + nFound << endl;
         
-        if (_om->isVerbosityAndPrint( IterationDetails )) {
-          _os << endl;
-          cout.precision(2);
-          cout.setf(ios::scientific, ios::floatfield);
+        if (_om->isVerbosity( Anasazi::IterationDetails )) {
+          stringstream os;
+          os << endl;
+          os.precision(2);
+          os.setf(ios::scientific, ios::floatfield);
           for (i=0; i<_blockSize; ++i) {
-            _os << " Iteration " << _iter << " - Scaled Norm of Residual " << i;
-            _os << " = " << _normR[i] << endl;
+            os << " Iteration " << _iter << " - Scaled Norm of Residual " << i;
+            os << " = " << _normR[i] << endl;
           }
-          _os << endl;
-          cout.precision(2);
+          os << endl;
+          os.precision(2);
           for (i=0; i<localSize + _blockSize; ++i) {
-            _os << " Iteration "<< _iter << " - Ritz eigenvalue " << i;
-            cout.setf((fabs(_theta[i]) < 0.01) ? ios::scientific : ios::fixed, ios::floatfield);
-            _os << " = " << _theta[i] << endl;
+            os << " Iteration "<< _iter << " - Ritz eigenvalue " << i;
+            os.setf((fabs(_theta[i]) < 0.01) ? ios::scientific : ios::fixed, ios::floatfield);
+            os << " = " << _theta[i] << endl;
           }
-          _os << endl;
+          os << endl;
+          
+          _om->print(Anasazi::IterationDetails,os.str());
         }
         //
         // Exit the loop to treat the converged eigenvectors
@@ -786,18 +768,11 @@ namespace Anasazi {
         //
         if (maxBlock == 1) {
           if (_Prec.get()) {
-	    {
-	      Teuchos::TimeMonitor PrecTimer(*_timerPrec);
-	      ret = OPT::Apply( *_Prec, *R, *Xcurrent );
-	    }
-            _count_ApplyPrec += MVT::GetNumberVecs( *R );
-            if (ret != Ok) {
-              if (_om->isVerbosityAndPrint(Error)) {
-                _os << "ERROR : Applying Prec operator in BlockReduction" << endl;
-              }
-              criticalExit = true;
-              break; // break out of for(nb) loop
+            {
+              Teuchos::TimeMonitor PrecTimer(*_timerPrec);
+              OPT::Apply( *_Prec, *R, *Xcurrent );
             }
+            _count_ApplyPrec += MVT::GetNumberVecs( *R );
           }
           else
             MVT::MvAddMv( one, *R, zero, *R, *Xcurrent );
@@ -821,18 +796,11 @@ namespace Anasazi {
         }
         Xnext = MVT::CloneView( *X, index );
         if (_Prec.get()) {
-	  {
-	    Teuchos::TimeMonitor PrecTimer(*_timerPrec);
-	    ret = OPT::Apply( *_Prec, *R, *Xnext );
-	  }
-          _count_ApplyPrec += MVT::GetNumberVecs( *R );
-          if (ret != Ok) {
-            if (_om->isVerbosityAndPrint(Error)) {
-              _os << "ERROR : Applying Prec operator in BlockReduction" << endl;
-            }
-            criticalExit = true;
-            break; // break out of for(nb) loop
+          {
+            Teuchos::TimeMonitor PrecTimer(*_timerPrec);
+            OPT::Apply( *_Prec, *R, *Xnext );
           }
+          _count_ApplyPrec += MVT::GetNumberVecs( *R );
         }
         else {
           MVT::MvAddMv( one, *R, zero, *R, *Xnext );
@@ -1048,14 +1016,11 @@ namespace Anasazi {
       // Sort the eigenvalues
       _order.resize(_knownEV);
       {
-	Teuchos::TimeMonitor SortTimer(*_timerSortEval);
-	ret = _sm->sort( this, _knownEV, &(*_evals)[0], &_order );
+        Teuchos::TimeMonitor SortTimer(*_timerSortEval);
+        ret = _sm->sort( this, _knownEV, &(*_evals)[0], &_order );
       }
       if (ret != Ok) {
-        if (_om->isVerbosityAndPrint(Error)) {
-          _os << "ERROR : Sorting in solve()"
-              << endl;
-        }
+        _om->print(Error,"ERROR : Sorting in solve()\n");
         criticalExit = true;
       }
       else {
@@ -1080,11 +1045,9 @@ namespace Anasazi {
     Teuchos::TimeMonitor::format().setPageWidth(54);
 
     if (_om->isVerbosity( Anasazi::TimingDetails )) {
-      if (_om->doPrint())
-        _os <<"********************TIMING DETAILS********************"<<endl;
-      Teuchos::TimeMonitor::summarize( _os );
-      if (_om->doPrint())
-        _os <<"******************************************************"<<endl;
+      _om->print(Anasazi::TimingDetails,"********************TIMING DETAILS********************\n");
+      Teuchos::TimeMonitor::summarize( _om->stream(Anasazi::TimingDetails) );
+      _om->print(Anasazi::TimingDetails,"******************************************************\n");
     }
 
     if (_knownEV == _nev) {
@@ -1098,56 +1061,38 @@ namespace Anasazi {
 
   template <class ScalarType, class MV, class OP>
   void 
-  BlockDavidson<ScalarType,MV,OP>::accuracyCheck(const MV *X, const MV *MX, const MV *Q) const 
+  BlockDavidson<ScalarType,MV,OP>::accuracyCheck(Teuchos::RefCountPtr<const MV> X,  
+                                                 Teuchos::RefCountPtr<const MV> MX, 
+                                                 Teuchos::RefCountPtr<const MV> Q) const 
     {
-      cout.precision(2);
-      cout.setf(ios::scientific, ios::floatfield);
+      stringstream os;
+      os.precision(2);
+      os.setf(ios::scientific, ios::floatfield);
       ScalarType tmp;
       
-      if (X) {
-        if (_MOp.get()) {
-          if (MX) {
-            tmp = _MSUtils.errorEquality(X, MX, _MOp.get());
-            if (_om->doPrint())
-              _os << " >> Difference between MX and M*X = " << tmp << endl;
-          }
-          tmp = _MSUtils.errorOrthonormality(X, _MOp.get());
-          if (_om->doPrint())
-            _os << " >> Error in X^T M X - I = " << tmp << endl;
+      if (X != Teuchos::null) {
+        if (MX != Teuchos::null) {
+          tmp = _MSUtils.errorEquality(X.get(), MX.get(), _MOp.get());
+          os << " >> Difference between MX and M*X = " << tmp << endl;
         }
-        else {
-          tmp = _MSUtils.errorOrthonormality(X, 0);
-          if (_om->doPrint())
-            _os << " >> Error in X^T X - I = " << tmp << endl;
-        }
+        tmp = _orthman->orthonormError(*X,MX);
+        os << " >> Error in X^T M X - I = " << tmp << endl;
       }
       
-      if (Q == 0) {
-	_os << endl;     
+      if (Q == Teuchos::null) {
+        os << endl;     
         return;
       }      
 
-      if (_MOp.get()) {
-        tmp = _MSUtils.errorOrthonormality(Q, _MOp.get());
-        if (_om->doPrint())
-          _os << " >> Error in Q^T M Q - I = " << tmp << endl;
-        if (X) {
-          tmp = _MSUtils.errorOrthogonality(Q, X, _MOp.get());
-          if (_om->doPrint())
-            _os << " >> Orthogonality Q^T M X up to " << tmp << endl;
-        }
+      tmp = _orthman->orthonormError(*Q);
+      os << " >> Error in Q^T M Q - I = " << tmp << endl;
+      if (X != Teuchos::null) {
+        tmp = _orthman->orthogError(*X,MX,*Q);
+        os << " >> Orthogonality Q^T M X up to " << tmp << endl;
       }
-      else {
-        tmp = _MSUtils.errorOrthonormality(Q, 0);
-        if (_om->doPrint())
-          _os << " >> Error in Q^T Q - I = " << tmp << endl;
-        if (X) {
-          tmp = _MSUtils.errorOrthogonality(Q, X, 0);
-          if (_om->doPrint())
-            _os << " >> Orthogonality Q^T X up to " << tmp << endl;
-        }
-      } 
-      _os << endl;     
+      os << endl;     
+      
+      _om->print(Error,os.str());
     }
   
   } // End of namespace Anasazi

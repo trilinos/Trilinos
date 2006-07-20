@@ -470,20 +470,23 @@ int CheckingTools::errorLambda(double *continuous, double *discrete, int numDisc
   double gap = Epetra_MaxDouble;
   for (i=0; i<numDiscrete; ++i) {
     used[i] = -1;
-    for (int j = i; j < numDiscrete; ++j)
+    for (int j = i; j < numDiscrete; ++j) {
       if (discrete[j] > (1.0 + 10.0*eps)*discrete[i]) {
         double tmp = (discrete[j] - discrete[i])/discrete[i];
         gap = (tmp < gap) ? tmp : gap;
         break;
       }
+    }
   }
 
-  for (i=0; i<nev; ++i) 
+  for (i=0; i<nev; ++i) {
     bestMatch[i] = -1;
+  }
 
   for (i=0; i<nev; ++i) {
-    if (lambda[i] < continuous[0])
+    if (lambda[i] < continuous[0]) {
       continue;
+    }
     bestMatch[i] = (i == 0) ? 0 : bestMatch[i-1] + 1;
     int jStart = bestMatch[i];
     for (j = jStart; j < numDiscrete; ++j) {
@@ -521,8 +524,9 @@ int CheckingTools::errorLambda(double *continuous, double *discrete, int numDisc
 
   double lastDiscrete = 0.0;
   for (i=0; i<numDiscrete; ++i) {
-    if ((iCount == nev) && (discrete[i] > lastDiscrete))
+    if ((iCount == nev) && (discrete[i] > lastDiscrete)) {
       break;
+    }
     if (used[i] < 0) {
       nMax += 1;
       lastDiscrete = discrete[i];

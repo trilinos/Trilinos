@@ -34,17 +34,19 @@
 #define ANASAZI_BLOCK_KRYLOV_SCHUR_HPP
 
 #include "AnasaziEigensolver.hpp"
-#include "AnasaziEigenproblem.hpp"
+
 #include "AnasaziMultiVecTraits.hpp"
 #include "AnasaziOperatorTraits.hpp"
+#include "Teuchos_ScalarTraits.hpp"
+
 #include "AnasaziSortManager.hpp"
 #include "AnasaziOutputManager.hpp"
+#include "AnasaziBasicOrthoManager.hpp"
 
-#include "Teuchos_LAPACK.hpp"
 #include "Teuchos_BLAS.hpp"
+#include "Teuchos_LAPACK.hpp"
+
 #include "Teuchos_SerialDenseMatrix.hpp"
-#include "Teuchos_SerialDenseVector.hpp"
-#include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
@@ -153,13 +155,10 @@ namespace Anasazi {
     
     /*! \brief Internal methods
      */
-    void QRFactorization( MV&, Teuchos::SerialDenseMatrix<int,ScalarType>& );
     void ComputeSchurForm( const bool apply );
     void SortSchurForm( Teuchos::SerialDenseMatrix<int,ScalarType>& H, 
                         Teuchos::SerialDenseMatrix<int,ScalarType>& Q );
     int BlockReduction();
-    void BlkOrth( MV& Vec_in, const int j );
-    void BlkOrthSing( MV& Vec_in, const int j );
     void ComputeEvecs();
     void Restart();
     void SetBlkTols();
@@ -184,17 +183,18 @@ namespace Anasazi {
     const MagnitudeType _residual_tolerance;
     int _numRestarts, _iter, _jstart, _jend, _nevblock, _totallength;
     int _offset, _maxoffset;
-    bool _isdecompcurrent, _isevecscurrent, _exit_flg, _dep_flg, _error_flg;
+    bool _isdecompcurrent, _isevecscurrent, _exit_flg, _error_flg;
+    // bool _dep_flg;
     MagnitudeType _schurerror, _dep_tol, _blk_tol, _sing_tol, _def_tol;
     std::vector<int> _order;
     Teuchos::RefCountPtr<MV> _basisvecs;
     Teuchos::SerialDenseMatrix<int,ScalarType> _hessmatrix;
     Teuchos::RefCountPtr<std::vector<ScalarType> > _ritzvalues;
     Teuchos::RefCountPtr<std::vector<MagnitudeType> > _ritzresiduals;
+    // 
+    // Orthogonalization manager
     //
-    // Output stream from the output manager
-    //
-    std::ostream& _os;
+    Teuchos::RefCountPtr< OrthoManager<ScalarType,MV> > _orthman;
     //
     // Internal timers
     //
@@ -244,14 +244,14 @@ namespace Anasazi {
     _isdecompcurrent(false),
     _isevecscurrent(false),
     _exit_flg(false),
-    _dep_flg(false),
+    // _dep_flg(false),
     _error_flg(false),
     _schurerror(1.0), 
     _dep_tol(1.0), 
     _blk_tol(1.0),
     _sing_tol(1.0),
     _def_tol(1.0),
-    _os(_om->GetOStream()),
+    _orthman(_pl.get("OrthoManager", Teuchos::rcp(new BasicOrthoManager<ScalarType,MV,OP>(_MOp)))),
     _restartTimers(_pl.get("Restart Timers", false)),
     _timerOp(Teuchos::TimeMonitor::getNewTimer("Operation Op*x")),
     _timerSortEval(Teuchos::TimeMonitor::getNewTimer("Sorting eigenvalues")),
@@ -287,77 +287,80 @@ namespace Anasazi {
   void 
   BlockKrylovSchur<ScalarType,MV,OP>::currentStatus() {
     int i;
-    if (_om->doPrint()) {
-      _os.setf(ios::scientific, ios::floatfield);
-      _os.precision(6);
-      _os <<endl;
-      _os <<"******************* CURRENT STATUS *******************"<<endl;
-      _os <<"The number of iterations performed is " <<_iter<<endl;
-      _os <<"The number of restarts performed is " 
-          << (_numRestarts>_restarts ? _numRestarts-1 : _numRestarts) 
-          << " of " << _restarts << endl;
-      _os <<"The current block size is "<<_blockSize<<endl;
-      _os <<"The number of eigenvalues requested is "<<_nev<<endl;
-      _os <<"The requested residual tolerance is "<<_residual_tolerance<<endl;        
-      _os <<"The error for the partial Schur decomposition is "<< _schurerror <<endl;
-      _os <<"The number of operations Op*x is "<<_count_ApplyOp<<endl;
-      //
-      //  Determine status of solver and output information correctly.
-      //
-      if ( _schurerror < _residual_tolerance ) {
-        _os <<endl;
-        _os <<"COMPUTED EIGENVALUES                  "<<endl;
-      } 
-      else {
-        if (_exit_flg) {
-          _os <<"ERROR: Complete orthogonal basis could not be computed"<<endl;
-        }
-        else if (_error_flg) {
-          _os << "ERROR: Encountered unrecoverable error" << endl;
-        }
-        _os <<endl;
-        _os <<"CURRENT EIGENVALUE ESTIMATES              "<<endl;
+
+    stringstream os;
+    os.setf(ios::scientific, ios::floatfield);
+    os.precision(6);
+    os <<endl;
+    os <<"******************* CURRENT STATUS *******************"<<endl;
+    os <<"The number of iterations performed is " <<_iter<<endl;
+    os <<"The number of restarts performed is " 
+        << (_numRestarts>_restarts ? _numRestarts-1 : _numRestarts) 
+        << " of " << _restarts << endl;
+    os <<"The current block size is "<<_blockSize<<endl;
+    os <<"The number of eigenvalues requested is "<<_nev<<endl;
+    os <<"The requested residual tolerance is "<<_residual_tolerance<<endl;        
+    os <<"The error for the partial Schur decomposition is "<< _schurerror <<endl;
+    os <<"The number of operations Op*x is "<<_count_ApplyOp<<endl;
+    //
+    //  Determine status of solver and output information correctly.
+    //
+    if ( _schurerror < _residual_tolerance ) {
+      os <<endl;
+      os <<"COMPUTED EIGENVALUES                  "<<endl;
+    } 
+    else {
+      if (_exit_flg) {
+        os <<"ERROR: Complete orthogonal basis could not be computed"<<endl;
       }
-      //
-      //  Print out current computed eigenvalues.  If we don't have all the requested
-      //  eigenvalues yet, print out the ones we have.
-      //
-      int _nevtemp = _nev;
-      if (_jstart < _nevblock) { _nevtemp = _jstart*_blockSize; }
-      //
-      if (_problem->IsSymmetric() || Teuchos::ScalarTraits<ScalarType>::isComplex) {
-        _os << std::setw(16) << std::right << "Eigenvalue" 
-            << std::setw(16) << std::right << "Ritz Residual"
-            << endl;
-        _os <<"------------------------------------------------------"<<endl;
-        if ( _nevtemp == 0 ) {
-          _os <<"[none computed]"<<endl;
-        } else {
-          for (i=0; i<_nevtemp; i++) {
-            _os << std::setw(16) << std::right << (*_evals)[i]
-                << std::setw(16) << std::right << (*_ritzresiduals)[i]
-                << endl;
-          }
-        }
-      } 
-      else {
-        _os << std::setw(16) << std::right << "Real Part"
-            << std::setw(16) << std::right << "Imag Part" 
-            << std::setw(16) << std::right << "Ritz Residual"
-            << endl;
-        _os <<"------------------------------------------------------"<<endl;
-        if ( _nevtemp == 0 ) {
-          _os <<"[none computed]"<<endl;
-        } else {
-          for (i=0; i<_nevtemp; i++) {
-            _os << std::setw(16) << std::right << (*_evals)[i]
-                << std::setw(16) << std::right << (*_evals)[_nev+i]
-                << std::setw(16) << std::right << (*_ritzresiduals)[i]<<endl;
-          }
+      else if (_error_flg) {
+        os << "ERROR: Encountered unrecoverable error" << endl;
+      }
+      os <<endl;
+      os <<"CURRENT EIGENVALUE ESTIMATES              "<<endl;
+    }
+    //
+    //  Print out current computed eigenvalues.  If we don't have all the requested
+    //  eigenvalues yet, print out the ones we have.
+    //
+    int _nevtemp = _nev;
+    if (_jstart < _nevblock) { _nevtemp = _jstart*_blockSize; }
+    //
+    if (_problem->IsSymmetric() || Teuchos::ScalarTraits<ScalarType>::isComplex) {
+      os << std::setw(16) << std::right << "Eigenvalue" 
+          << std::setw(16) << std::right << "Ritz Residual"
+          << endl;
+      os <<"------------------------------------------------------"<<endl;
+      if ( _nevtemp == 0 ) {
+        os <<"[none computed]"<<endl;
+      } else {
+        for (i=0; i<_nevtemp; i++) {
+          os << std::setw(16) << std::right << (*_evals)[i]
+              << std::setw(16) << std::right << (*_ritzresiduals)[i]
+              << endl;
         }
       }
-      _os <<"******************************************************"<<endl << endl;;
-    }        
+    } 
+    else {
+      os << std::setw(16) << std::right << "Real Part"
+          << std::setw(16) << std::right << "Imag Part" 
+          << std::setw(16) << std::right << "Ritz Residual"
+          << endl;
+      os <<"------------------------------------------------------"<<endl;
+      if ( _nevtemp == 0 ) {
+        os <<"[none computed]"<<endl;
+      } else {
+        for (i=0; i<_nevtemp; i++) {
+          os << std::setw(16) << std::right << (*_evals)[i]
+              << std::setw(16) << std::right << (*_evals)[_nev+i]
+              << std::setw(16) << std::right << (*_ritzresiduals)[i]<<endl;
+        }
+      }
+    }
+    os << "******************************************************" << endl << endl;;
+
+    // send string to output manager
+    _om->print(Anasazi::IterationDetails, os.str());
   }
 
   //----------------------------------------------------------------------------------------
@@ -384,8 +387,8 @@ namespace Anasazi {
     // Check the Anasazi::Eigenproblem was set by user, if not, return failed.
     //
     if ( !_problem->IsProblemSet() ) {
-      if (_om->isVerbosityAndPrint( Anasazi::Error ))
-        _os << "ERROR : Anasazi::Eigenproblem was not set, call Anasazi::Eigenproblem::SetProblem() before calling solve"<< endl;
+      _om->stream(Anasazi::Error) << "ERROR : Anasazi::Eigenproblem was not set, call Anasazi::Eigenproblem::SetProblem() before calling solve"
+                                 << endl;
       return Failed;
     }
     //
@@ -394,8 +397,7 @@ namespace Anasazi {
     Teuchos::RefCountPtr<MV> ivec = _problem->GetInitVec();
     //
     if ( ivec.get() == 0 ) {
-      if (_om->isVerbosityAndPrint( Anasazi::Error )) 
-        _os << "ERROR : Initial vector is not specified, set initial vector in eigenproblem "<<endl;
+      _om->stream(Anasazi::Error) << "ERROR : Initial vector is not specified, set initial vector in eigenproblem" << endl;
       return Failed;
     }
 
@@ -404,24 +406,23 @@ namespace Anasazi {
     // Check that the maximum number of blocks for the eigensolver is a positive number
     //    
     if ( _maxBlocks<=0 ) {
-      if (_om->isVerbosityAndPrint( Anasazi::Error )) 
-        _os << "ERROR : maxBlocks = "<< _maxBlocks <<" [ should be positive number ] " << endl;
+      _om->stream(Anasazi::Error) << "ERROR : maxBlocks = " << _maxBlocks << " [ should be positive number ]" << endl;
       return Failed;
     } 
 
     if ( _maxBlocks*_blockSize < _nev ) {
-      if (_om->isVerbosityAndPrint( Anasazi::Error )) 
-        _os << "ERROR : Krylov subspace dimension (maxBlocks*blockSize) = "<< _maxBlocks*_blockSize 
-            << " [ should be greater than "<< _nev << " ] " << endl;
+      _om->stream(Anasazi::Error) << "ERROR : Krylov subspace dimension (maxBlocks*blockSize) = " 
+                                 << _maxBlocks*_blockSize << " [ should be greater than " << _nev << " ] " 
+                                 << endl;
       return Failed;
     } 
     //
     // Check that the Krylov subspace is larger than the number of eigenvalues requested
     //
     if ( _maxBlocks*_blockSize < _nev ) {
-      if (_om->isVerbosityAndPrint( Anasazi::Error )) 
-        _os << "ERROR : Krylov subspace dimension (maxBlocks*blockSize) = "<< _maxBlocks*_blockSize 
-            << " [ should be greater than "<< _nev << " ] " << endl;
+      _om->stream(Anasazi::Error) 
+              << "ERROR : Krylov subspace dimension (maxBlocks*blockSize) = " << _maxBlocks*_blockSize 
+              << " [ should be greater than " << _nev << " ] " << endl;
       return Failed;
     } 
     //
@@ -429,8 +430,8 @@ namespace Anasazi {
     // then we must be computing all of them.
     //
     if ( (_maxBlocks*_blockSize == _nev) && (_nev != dim) ) {
-      if (_om->isVerbosityAndPrint( Anasazi::Error ))
-        _os << "ERROR : Krylov subspace dimension (maxBlocks*blockSize) = "<< _maxBlocks*_blockSize 
+      _om->stream(Anasazi::Error) 
+            << "ERROR : Krylov subspace dimension (maxBlocks*blockSize) = "<< _maxBlocks*_blockSize 
             << " [ should be greater than "<< _nev << " ] " << endl;
       return Failed;
     }
@@ -439,20 +440,19 @@ namespace Anasazi {
     // the maximum number of blocks accordingly.
     //    
     if (_maxBlocks*_blockSize > dim ) {
-      if (_om->isVerbosityAndPrint( Anasazi::Warning ))
-        _os << "WARNING : Krylov subspace dimension (maxBlocks*blockSize) = "<< _maxBlocks*_blockSize 
-            <<" [ should not be greater than " << dim << " ] " << endl;
+      _om->stream(Anasazi::Warning) 
+          << "WARNING : Krylov subspace dimension (maxBlocks*blockSize) = "<< _maxBlocks*_blockSize 
+          <<" [ should not be greater than " << dim << " ] " << endl;
       
       // Set the maximum number of blocks in the factorization below the dimension of the space.
       _maxBlocks = dim / _blockSize;
       
-      if (_om->isVerbosityAndPrint( Anasazi::Warning ))
-        _os << "WARNING : maxBlocks reset to "<< _maxBlocks << endl;
+      _om->stream(Anasazi::Error) << "WARNING : maxBlocks reset to "<< _maxBlocks << endl;
     }
     
     if ( (_maxBlocks*_blockSize == _nev) && (_nev != dim) ) {
-      if (_om->isVerbosityAndPrint( Anasazi::Error ))
-        _os << "ERROR : Krylov subspace dimension (maxBlocks*blockSize) = "<< _maxBlocks*_blockSize 
+      _om->stream(Anasazi::Error) 
+            << "ERROR : Krylov subspace dimension (maxBlocks*blockSize) = "<< _maxBlocks*_blockSize 
             << " [ should be greater than "<< _nev << " ] " << endl;
       return Failed;
     }
@@ -460,8 +460,7 @@ namespace Anasazi {
     // Check that the step size for the eigensolver is a positive number.
     //
     if ( _stepSize<=0 ) {
-      if (_om->isVerbosityAndPrint( Anasazi::Error )) 
-        _os << "ERROR : stepSize = "<< _stepSize <<" [ should be positive number ] " << endl;
+      _om->stream(Anasazi::Error) << "ERROR : stepSize = "<< _stepSize <<" [ should be positive number ] " << endl;
       return Failed;
     } 
 
@@ -486,7 +485,8 @@ namespace Anasazi {
     // 
     _numRestarts=0; _iter=0; _jstart=0; _jend=0; 
     _isdecompcurrent=false; _isevecscurrent=false; 
-    _exit_flg=false; _dep_flg=false; _error_flg=false;
+    _exit_flg=false; _error_flg=false;
+    // _dep_flg=false;
     _schurerror=1.0; 
     //
     // Make room for the Arnoldi vectors and F.
@@ -542,24 +542,21 @@ namespace Anasazi {
     Teuchos::TimeMonitor::format().setPageWidth(54);
 
     if (_om->isVerbosity( Anasazi::TimingDetails )) {
-      if (_om->doPrint())
-        _os <<"********************TIMING DETAILS********************"<<endl;
-      Teuchos::TimeMonitor::summarize( _os );
-      if (_om->doPrint())
-        _os <<"******************************************************"<<endl;
+      _om->print(Anasazi::TimingDetails,"********************TIMING DETAILS********************\n");
+      Teuchos::TimeMonitor::summarize( _om->stream(Anasazi::TimingDetails) );
+      _om->print(Anasazi::TimingDetails,"******************************************************\n");
     }
 
     // Return Failed if we did not meet the specified tolerance
     if (_schurerror > _residual_tolerance) {
-      if (_om->isVerbosityAndPrint( Anasazi::Error )) 
-        _os << "ERROR : Specified residual tolerance ( "<< _residual_tolerance<<" ) was not reached"<< endl;
+      _om->stream(Anasazi::Error) << "ERROR : Specified residual tolerance ( " 
+          << _residual_tolerance<<" ) was not reached"<< endl;
       return Unconverged;
     }
 
     // Output warning if numerical breakdown was detected in orthogonalization
     if (_exit_flg) {
-      if (_om->isVerbosityAndPrint( Anasazi::Warning )) 
-        _os << "WARNING : Numerical breakdown detected in Anasazi::BlockKrylovSchur"<< endl;
+      _om->print(Anasazi::Warning,"WARNING : Numerical breakdown detected in Anasazi::BlockKrylovSchur\n");
     }
     
     if (_error_flg) {
@@ -583,8 +580,9 @@ namespace Anasazi {
     //
     if (!_iter) {
       int numIVecs = MVT::GetNumberVecs( *(_problem->GetInitVec()) );
-      if (numIVecs > _blockSize)
+      if (numIVecs > _blockSize) {
         numIVecs = _blockSize;
+      }
       std::vector<int> index( numIVecs );
       for (i=0; i<numIVecs; i++) {
         index[i] = i;
@@ -609,11 +607,18 @@ namespace Anasazi {
       // Orthogonalize the first block of vectors.
       //      
       index.resize(_blockSize);
-        for (i=0; i<_blockSize; i++)
-          index[i] = i;
+      for (i=0; i<_blockSize; i++) {
+        index[i] = i;
+      }
       Teuchos::RefCountPtr<MV> U_vec = MVT::CloneView( *_basisvecs, index );
-      Teuchos::SerialDenseMatrix<int,ScalarType> G10( _blockSize,_blockSize );
-      QRFactorization( *U_vec, G10 );
+
+      int rank;
+      ReturnType ret;
+      {
+        Teuchos::TimeMonitor OrthTimer(*_timerOrtho);
+        ret = _orthman->normalize(*U_vec,Teuchos::null,rank);
+      }
+      assert( ret == Ok && rank == _blockSize );
     }
     //
     // Leave the iteration method now if the orthogonal subspace can't be extended.
@@ -664,7 +669,8 @@ namespace Anasazi {
           Restart();  
           _isdecompcurrent = true;
           _numRestarts++;
-        } else {
+        } 
+        else {
           ComputeSchurForm( false );
           _numRestarts++;
           _isdecompcurrent = false;
@@ -689,12 +695,13 @@ namespace Anasazi {
     int i,j;
     ReturnType ret;
     std::vector<int> index( _blockSize );
-    Teuchos::RefCountPtr<MV> U_vec, F_vec;
+    Teuchos::RefCountPtr<MV> U_vec, F_vec, V_prev;
     
     for ( j = _jstart; j < _jend; j++ ) {
       //
       // Associate the j-th block of _basisvecs with U_vec.
       //
+      index.resize(_blockSize);
       for ( i=0; i<_blockSize; i++ ) {
         index[i] = j*_blockSize+i;
       }
@@ -702,47 +709,59 @@ namespace Anasazi {
       //
       // Associate (j+1)-st block of ArnoldiVecs with F_vec.
       //
-      //for ( i=0; i<_blockSize; i++ ) {
-      //        index[i] = (j+1)*_blockSize+i;
-      //}
-      F_vec = MVT::Clone( *_basisvecs, _blockSize );
-      //F_vec = MVT::CloneView( *_basisvecs, index );
+      for ( i=0; i<_blockSize; i++ ) {
+        index[i] = (j+1)*_blockSize+i;
+      }
+      F_vec = MVT::CloneView( *_basisvecs, index );
       //
       //  Compute F_vec = OP * U_vec
       //
       {
-	Teuchos::TimeMonitor OpTimer(*_timerOp);
-	ret = OPT::Apply( *_Op, *U_vec, *F_vec ); 
+        Teuchos::TimeMonitor OpTimer(*_timerOp);
+        OPT::Apply( *_Op, *U_vec, *F_vec ); 
       }
       _count_ApplyOp += MVT::GetNumberVecs(*U_vec);
-      if (ret != Ok) {
-        // Apply() failed. Return error code.
-        if (_om->isVerbosityAndPrint(Error)) {
-          _os << "ERROR : Applying Op operator in BlockReduction" << endl;
-        }
+
+      //
+      // Orthogonalize F_vec against previous vectors and orthonormalize its columns
+      //
+      int num_prev = (j+1)*_blockSize;
+      int row_offset = (j+1)*_blockSize, 
+          col_offset = j*_blockSize;
+      Teuchos::RefCountPtr< Teuchos::SerialDenseMatrix<int,ScalarType> > 
+        C = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View, _hessmatrix, num_prev, _blockSize, 0, j*_blockSize ) ), 
+        R = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View, _hessmatrix, _blockSize, _blockSize, row_offset, col_offset ) );
+      //
+      // Grab all previous Arnoldi vectors
+      //
+      index.resize( num_prev );
+      for (i=0; i<num_prev; i++){
+        index[i] = i;
+      }
+      Teuchos::RefCountPtr<MV> V_prev = MVT::CloneView( *_basisvecs, index );
+
+      int rank;
+      {
+        // perform the orthonormalization
+        Teuchos::TimeMonitor OrthTimer(*_timerOrtho);
+        ret = _orthman->projectAndNormalize(*F_vec,
+                                            Teuchos::tuple<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > >(C),R,
+                                            Teuchos::tuple<Teuchos::RefCountPtr<const MV> >(V_prev),
+                                            rank);
+      }
+      if (ret != Ok || rank != _blockSize) {
+        // FINISH : is this the proper way to handle this situation?
         _error_flg = true;
-        return -1;
       }
-      //
-      // Use previous dependency information to decide which orthogonalization
-      // method to use for the new block.  The global variable _dep_flg tells us
-      // if we've had problems with orthogonality before.  If no problems have
-      // been detected before we will use standard block orthogonalization.
-      // However, if there are problems with this, we will use a more stringent
-      // approach.
-      //
-      if (!_dep_flg) {
-        BlkOrth( *F_vec, j );
-      }
-      //
-      // If any block dependency was detected previously, then the more stringent
-      // orthogonalization will be used.  If this method can't resolve the
-      // dependency, then the _exit_flg will be set indicating that we can't proceed
-      // any further.
-      //
-      if (_dep_flg) {
-        BlkOrthSing( *F_vec, j );
-      }
+
+      // release the views into _basisvecs
+      V_prev.release();
+      F_vec.release();
+      U_vec.release();
+      // release the views into _hessmatrix
+      C.release();
+      R.release();
+
       //
       // If we cannot go any further with the factorization, then we need to exit
       // this method.
@@ -757,507 +776,6 @@ namespace Anasazi {
 
   } // end BlockReduction()
   
-  
-  //----------------------------------------------------------------------------------------
-  //----------------------------------------------------------------------------------------
-
-  template <class ScalarType, class MV, class OP>
-  void 
-  BlockKrylovSchur<ScalarType,MV,OP>::BlkOrth( MV& Vec_in, const int j ) {
-    //
-    // Orthogonalization is first done between the new block of
-    // vectors and all previous blocks, then the vectors within the
-    // new block are orthogonalized.
-
-    // Local timer
-    Teuchos::TimeMonitor LocalTimer(*_timerOrtho);
-
-    const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
-    const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
-    const int max_num_orth = 2;
-    int i, row_offset, col_offset;
-    std::vector<int> index( _blockSize );
-    std::vector<MagnitudeType> norm1( _blockSize );
-    std::vector<MagnitudeType> norm2( _blockSize );
-    //
-    // Associate (j+1)-st block of ArnoldiVecs with F_vec.
-    //
-    for ( i=0; i<_blockSize; i++ ) {
-      index[i] = (j+1)*_blockSize+i;
-    }
-    Teuchos::RefCountPtr<MV> F_vec = MVT::CloneView( *_basisvecs, index );
-    MVT::MvAddMv( one, Vec_in, zero, Vec_in, *F_vec );
-    //
-    // Zero out the full block column of the Hessenberg matrix
-    // even though we're only going to set the coefficients in
-    // rows [0:(j+1)*_blockSize-1]
-    //
-    int num_prev = (j+1)*_blockSize;
-    //
-    Teuchos::SerialDenseMatrix<int,ScalarType> tmp_hess( Teuchos::View, _hessmatrix, num_prev, _blockSize, 0, j*_blockSize );
-    tmp_hess.putScalar( zero );
-    //
-    // Grab all previous Arnoldi vectors
-    //
-    index.resize( num_prev );
-    for (i=0; i<num_prev; i++){
-      index[i] = i;
-    }
-    Teuchos::RefCountPtr<MV> V_prev = MVT::CloneView( *_basisvecs, index );
-    //
-    // Create a matrix to store the product trans(V_prev)*B*F_vec
-    //
-    Teuchos::SerialDenseMatrix<int,ScalarType> dense_mat(num_prev, _blockSize );
-    //
-    MVT::MvNorm( *F_vec, &norm1 );
-    //
-    // Check the norm of the candidate block of vectors to make sure they're
-    // not zero.  [ This might happen if the matrix is the zero matrix ]
-    //
-    for (i=0; i<_blockSize; i++) {
-      if (norm1[i] == zero) {
-        _dep_flg = true;
-        if (_om->isVerbosityAndPrint( Debug )){
-          _os << "Col " << num_prev+i << " is the zero vector" << endl;
-          _os << endl;
-        }
-      }          
-    }
-    //
-    // Perform two steps of block classical Gram-Schmidt so that
-    // F_vec is B-orthogonal to the columns of V_prev.
-    //
-    for ( int num_orth=0; num_orth<max_num_orth; num_orth++ ) {
-      //
-      // Compute trans(V_prev)*B*F_vec and store in the j'th diagonal
-      // block of the Hessenberg matrix
-      //
-      _problem->InnerProd( *V_prev, *F_vec, dense_mat );
-      //
-      // Update the orthogonalization coefficients for the j-th block
-      // column of the Hessenberg matrix.
-      //
-      tmp_hess += dense_mat;
-      //
-      // F_vec <- F_vec - V(0:(j+1)*block-1,:) * H(0:num_prev-1,j:num_prev-1)
-      //
-      MVT::MvTimesMatAddMv( -one, *V_prev, dense_mat, one, *F_vec );
-      //
-    } // end for num_orth=0;...)
-    //
-    MVT::MvNorm( *F_vec, &norm2 );
-    //
-    // Check to make sure the new block of Arnoldi vectors are
-    // not dependent on previous Arnoldi vectors.  
-    //
-    for (i=0; i<_blockSize; i++){
-      if (norm2[i] < norm1[i] * _blk_tol) {
-        _dep_flg = true;
-        if (_om->isVerbosityAndPrint( Warning )) {
-          _os << "WARNING : Col " << num_prev+i << " is dependent on previous "
-               << "Arnoldi vectors in V_prev" << endl;
-          _os << endl;
-        }
-      }
-    } // end for (i=0;...)
-    //
-    if (_om->isVerbosity( OrthoDetails )) {
-      if (_om->doPrint()) {
-        _os << "Checking Orthogonality after BlkOrth()"
-            << " Iteration: " << j << endl<<endl;
-      }
-      CheckBlkArnRed(j);
-      // This may have triggered an error flag, in which case we
-      // should quit.
-      if (_error_flg) {
-        return;
-      }
-    }
-    //
-    // If dependencies have not already been detected, compute
-    // the QR factorization of the next block. Otherwise,
-    // this block of Arnoldi vectors will be re-computed via and
-    // implementation of A. Ruhe's block Arnoldi.
-    //
-    if (!_dep_flg) {
-      //
-      // Compute the QR factorization of F_vec
-      //
-      row_offset = (j+1)*_blockSize; col_offset = j*_blockSize;
-      Teuchos::SerialDenseMatrix<int,ScalarType> sub_blockSize_hess(Teuchos::View, _hessmatrix, _blockSize, 
-                                                                    _blockSize, row_offset, col_offset);
-      
-      QRFactorization( *F_vec, sub_blockSize_hess );
-    }
-    //
-  }  // end BlkOrth()
-  
-  
-  //----------------------------------------------------------------------------------------
-  //----------------------------------------------------------------------------------------
-
-  template <class ScalarType, class MV, class OP>
-  void 
-  BlockKrylovSchur<ScalarType,MV,OP>::BlkOrthSing( MV& Vec_in, const int j ) {
-    //
-    // This is a variant of A. Ruhe's block Arnoldi
-    // The orthogonalization of the vectors F_vec is done
-    // one at a time. If a dependency is detected, a random
-    // vector is added and orthogonalized against all previous
-    // Arnoldi vectors.
-    
-    // Local timer
-    Teuchos::TimeMonitor LocalTimer(*_timerOrtho);
-
-    const int IntOne = 1;
-    const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
-    const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
-    int i, num_prev;
-    std::vector<int> index( _blockSize );
-    Teuchos::SerialDenseVector<int,ScalarType> dense_vec;
-    std::vector<MagnitudeType> norm1(IntOne);
-    std::vector<MagnitudeType> norm2(IntOne);
-    //
-    // Place the candidate vectors Vec_in into the (j+1)-st block of ArnoldiVecs.
-    //
-    for ( i=0; i<_blockSize; i++ ) {
-      index[i] = (j+1)*_blockSize+i;
-    }
-    MVT::SetBlock( Vec_in, index, *_basisvecs ); 
-    //
-    // Zero out the full block column of the Hessenberg matrix
-    //
-    int n_row = _hessmatrix.numRows();
-    //
-    Teuchos::SerialDenseMatrix<int,ScalarType> tmp_hess( Teuchos::View, _hessmatrix, n_row, _blockSize, 0, j*_blockSize );
-    tmp_hess.putScalar( zero );
-    //
-    Teuchos::RefCountPtr<MV>  q_vec, Q_vec, tptr;
-    tptr = MVT::Clone( *_basisvecs, IntOne ); 
-    //
-    // Start a loop to orthogonalize each of the _blockSize
-    // columns of the (j+1)-st block of _basisvecs against all 
-    // the others.
-    //
-    std::vector<int> index2(IntOne);
-    //
-    for (int iter=0; iter<_blockSize; iter++){
-      num_prev = (j+1)*_blockSize + iter; // number of previous _basisvecs
-      dense_vec.size(num_prev);
-      Teuchos::SerialDenseMatrix<int,ScalarType> tmp_hess_col( Teuchos::View, _hessmatrix, num_prev, 1, 0, j*_blockSize+iter );
-      //
-      // Grab the next column of _basisvecs
-      //
-      index2[0] = num_prev;
-      q_vec = MVT::CloneView( *_basisvecs, index2 ); 
-      //
-      // Grab all previous columns of _basisvecs
-      //
-      index.resize(num_prev);
-      for (i=0; i<num_prev; i++){
-        index[i] = i;
-      }
-      Q_vec = MVT::CloneView( *_basisvecs, index ); 
-      //
-      // Create matrix to store product trans(Q_vec)*B*q_vec
-      //
-      // Do one step of classical Gram-Schmidt B-orthogonalization
-      // with a 2nd correction step if needed.
-      //
-      MVT::MvNorm( *q_vec, &norm1 );
-      //
-      // Leave if this is the zero vector, there is no more we can do here.
-      //
-      if (norm1[0] == zero) { 
-        if (_om->isVerbosityAndPrint( Debug )) {
-          _os << "Column " << num_prev << " of _basisvecs is the zero vector" 
-               << endl<<endl;
-        }
-        _exit_flg = true; 
-        break; 
-      }
-      //
-      // Compute trans(Q_vec)*B*q_vec
-      //
-      _problem->InnerProd( *Q_vec, *q_vec, dense_vec );
-      //
-      // Sum results [0:num_prev-1] into column (num_prev-_blockSize)
-      // of the Hessenberg matrix
-      //
-      tmp_hess_col += dense_vec;
-      //
-      // Compute q_vec<- q_vec - Q_vec * dense_vec
-      //
-      MVT::MvTimesMatAddMv( -one, *Q_vec, dense_vec, one, *q_vec );
-      //
-      MVT::MvNorm( *q_vec, &norm2 );
-      //
-      if (norm2[0] < norm1[0] * _dep_tol) {
-        //
-        // Repeat process with newly computed q_vec
-        //
-        // Compute trans(Q_vec)*q_vec
-        //
-        _problem->InnerProd( *Q_vec, *q_vec, dense_vec );
-        //
-        // Sum results [0:num_prev-1] into column (num_prev-_blockSize)
-        // of the Hessenberg matrix
-        //
-        tmp_hess_col += dense_vec;
-              //
-        // Compute q_vec<- q_vec - Q_vec * dense_vec
-        //
-        MVT::MvTimesMatAddMv( -one, *Q_vec, dense_vec, one, *q_vec );
-        //
-        MVT::MvNorm( *q_vec, &norm2 );
-      }
-      //
-      // Check for linear dependence
-      //
-      if (norm2[0] < norm1[0] * _sing_tol) {
-        if (_om->isVerbosityAndPrint( Warning )) {
-          _os << "WARNING : Column " << num_prev << " of _basisvecs is dependent" 
-              << endl<<endl;
-        }
-        //
-        // Create a random vector and orthogonalize it against all
-        // previous cols of _basisvecs
-        // We could try adding a random unit vector instead -- not
-        // sure if this would make any difference.
-        //
-        MVT::MvRandom( *tptr );
-        MVT::MvNorm( *tptr, &norm1 );
-        //
-        // This code  is automatically doing 2 steps of B-orthogonalization
-        // after adding a random vector. We could do one step of
-        // orthogonalization with a correction step if needed.
-        //
-        for (int num_orth=0; num_orth<2; num_orth++){
-          _problem->InnerProd( *Q_vec, *tptr, dense_vec );
-          // Note that we don't change the entries of the
-          // Hessenberg matrix when we orthogonalize a
-          // random vector
-          MVT::MvTimesMatAddMv( -one, *Q_vec, dense_vec, one, *tptr );
-        }
-        //
-        MVT::MvNorm( *tptr, &norm2 );
-        //
-        if (norm2[0] > norm1[0] * _sing_tol){
-          // Copy vector into the current column of _basisvecs
-          MVT::MvAddMv( one, *tptr, zero, *tptr, *q_vec );
-          MVT::MvNorm( *q_vec, &norm2 );
-          //
-          // Normalize the new q_vec
-          //
-          ScalarType rjj = one/norm2[0];
-          MVT::MvAddMv( rjj, *q_vec, zero, *q_vec, *q_vec );
-          //
-          // Enter a zero in the [(j+1)*_blockSize + iter] row in the
-          // [(j*_blockSize + iter] column of the Hessenberg matrix
-          //
-          _hessmatrix((j+1)*_blockSize+iter, j*_blockSize+iter) = zero;
-        }
-        else {
-          // Can't produce a new orthonormal basis vector
-          // Clean up and exit this block Arnoldi factorization!
-          _exit_flg = true;
-          return;
-        }
-      }
-      else {
-        //
-        // Normalize the new q_vec
-        //
-        ScalarType rjj = one/norm2[0];
-        MVT::MvAddMv( rjj, *q_vec, zero, *q_vec, *q_vec );
-        //
-        // Enter norm of q_vec to the [(j+1)*_blockSize + iter] row
-        // in the [(j*_blockSize + iter] column of the Hessenberg matrix
-        //
-        _hessmatrix((j+1)*_blockSize+iter, j*_blockSize+iter) = norm2[0];
-      } // end else ...
-    } // end for (i=0;...)
-    //
-    if (_om->isVerbosity( OrthoDetails )) {
-      if (_om->doPrint()) {
-        _os << "Checking Orthogonality after BlkOrthSing()"
-            << " Iteration: " << j << endl<<endl;
-      }
-      CheckBlkArnRed(j);
-      // This may have triggered an error flag, in which case we
-      // should quit.
-      if (_error_flg) {
-        return;
-      }
-    }
-  } // end BlkOrthSing()
-
-  
-  //----------------------------------------------------------------------------------------
-  //----------------------------------------------------------------------------------------
-
-  template <class ScalarType, class MV, class OP>
-  void 
-  BlockKrylovSchur<ScalarType,MV,OP>::QRFactorization (MV& VecIn, 
-						       Teuchos::SerialDenseMatrix<int,ScalarType>& R) {
-    // local timer
-    Teuchos::TimeMonitor LocalTimer(*_timerQRFact);
-
-    int i,j;
-    int nb = MVT::GetNumberVecs( VecIn ); assert (nb == _blockSize);
-    const int IntOne=1;
-    std::vector<int> index;
-    std::vector<int> index2(IntOne);
-    const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
-    const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
-    bool addvec = false; 
-    //
-    std::vector<MagnitudeType> norm1(IntOne), norm2(IntOne);
-    Teuchos::RefCountPtr<MV> qj, Qj, tptr;
-    tptr = MVT::Clone( *_basisvecs, IntOne ); 
-    //
-    // Zero out the array that will contain the Fourier coefficients.
-    //
-    R.putScalar( zero );
-    //
-    // Start the loop to orthogonalize the nb columns of VecIn.
-    //
-    for ( j=0; j<nb; j++ ) {
-      //
-      // Grab the j-th column of VecIn (the first column is indexed to 
-      // be the zero-th one).
-      //
-      index2[0] = j;
-      qj = MVT::CloneView( VecIn, index2 );
-      //
-      // If we are beyong the 1st column, orthogonalize against the previous
-      // vectors in the current block.
-      //
-      if ( j ) {
-        Teuchos::SerialDenseMatrix<int,ScalarType> R_col( Teuchos::View, R, j, 1, 0, j );
-        index.resize( j );
-        for ( i=0; i<j; i++ ) {
-          index[i] = i;
-        }
-        //
-        // Grab the first j columns of VecIn (that are now an orthogonal
-        // basis for first j columns of the entering VecIn).
-        //
-        Qj = MVT::CloneView( VecIn, index );
-        Teuchos::SerialDenseVector<int,ScalarType> rj(j);
-        _problem->MvNorm( *qj, &norm1 );
-        //
-        // Do one step of classical Gram-Schmidt orthogonalization
-        // with a second correction step if needed
-        //
-        // Determine the Fourier coefficients for B-orthogonalizing column
-        // j of VecIn against columns 0:j-1 of VecIn. In other words,
-        // result = trans(Qj)*B*qj.
-        //
-        _problem->InnerProd( *Qj, *qj, rj );
-        //
-        // Sum results[0:j-1] into column j of R.
-        //
-        R_col += rj;
-        //
-        // Compute qj <- qj - Qj * rj.
-        //
-        MVT::MvTimesMatAddMv( -one, *Qj, rj, one, *qj );
-        //
-        _problem->MvNorm( *qj, &norm2 );
-        //
-        if (norm2[0] < norm1[0] * _dep_tol){
-          //
-          // Repeat process with newly computed qj
-          //
-          _problem->InnerProd( *Qj, *qj, rj );
-          //
-          // Sum results[0:j-1] into column j of R.
-          //
-          R += rj;
-          //
-          // Compute qj <- qj - Qj * rj.
-          //
-          MVT::MvTimesMatAddMv( -one, *Qj, rj, one, *qj );
-          //
-          _problem->MvNorm( *qj, &norm2 );
-        }
-        //
-        // Check for dependencies
-        //
-        if (_iter) {
-          // This is not the 1st block. A looser tolerance is used to
-          // determine dependencies. If a dependency is detected, a flag
-          // is set so we can back out this method and out of BlkOrth.
-          // The method BlkOrthSing is used to construct the new block
-          // of orthonormal basis vectors one at a time. If a dependency
-          // is detected within this method, a random vector is added
-          // and orthogonalized against all previous basis vectors.
-          //
-          if (norm2[0] < norm1[0] * _blk_tol) {
-            if (_om->isVerbosityAndPrint( Debug )) {
-              _os << "Column " << j << " of current block is dependent"<<endl;
-            }
-            _dep_flg = true;
-            return;
-          }
-        }
-        else {
-          // This is the 1st block of basis vectors.
-          // Use a tighter tolerance to determine dependencies, because
-          // if a dependency is detected we will be adding a random
-          // vector and orthogonalizing it against previous vectors
-          // in the 1st block
-          //
-          if (norm2[0] < norm1[0] * _sing_tol) {
-            // The 1st block of vectors are dependent
-            // Add a random vector and orthogonalize it against
-            // previous vectors in block.
-            //
-            addvec = true;
-            Teuchos::SerialDenseVector<int,ScalarType> tj(j);
-            //
-            MVT::MvRandom( *tptr );
-            _problem->MvNorm( *tptr, &norm1 );
-            //
-            for (int num_orth=0; num_orth<2; num_orth++){
-              _problem->InnerProd( *Qj, *tptr, tj );
-              MVT::MvTimesMatAddMv( -one, *Qj, tj, one, *tptr );
-            }
-            _problem->MvNorm( *tptr, &norm2 );
-            //
-            if (norm2[0] > norm1[0] * _sing_tol){
-              // Copy vector into current column of _basisvecs
-              MVT::MvAddMv( one, *tptr, zero, *tptr, *qj );
-            }
-            else {
-              _exit_flg = true;
-              return;
-            }
-          }
-        } // if (_iter) ...
-      } // if (j) ...
-      //
-      // If we have not exited, compute the norm of column j of
-      // VecIn (qj), then normalize qj to make it into a unit vector
-      //
-      std::vector<MagnitudeType> normq(IntOne);
-      _problem->MvNorm( *qj, &normq );
-      //
-      ScalarType rjj = one / normq[0];
-      MVT::MvAddMv ( rjj, *qj, zero, *qj, *qj );
-      //
-      if (addvec){
-        // We've added a random vector, so
-        // enter a zero in j'th diagonal element of R
-        R(j,j) = zero;
-      }
-      else {
-        R(j,j) = normq[0];
-      }
-    } // for (j=0; j<nb; j++) ...
-    //
-  }
   
   //----------------------------------------------------------------------------------------
   //----------------------------------------------------------------------------------------
@@ -1323,10 +841,8 @@ namespace Anasazi {
     // Check the Schur form.
     //
     if (_om->isVerbosity( OrthoDetails )) {
-      if (_om->doPrint()) {
-        _os << "Checking Schur Factorization"
-            << " Iteration: " << _jstart << endl<<endl;
-      }
+      _om->stream(Anasazi::Error) << "Checking Schur Factorization"
+        << " Iteration: " << _jstart << endl << endl;
       CheckSchurVecs( _jstart );
     }
     //
@@ -1336,8 +852,7 @@ namespace Anasazi {
     //
     if (_problem->IsSymmetric()) {
       index.resize( curr_nev );
-      for (k=0; k<curr_nev; k++)
-        index[k] = k;
+      for (k=0; k<curr_nev; k++) { index[k] = k; }
       MVT::SetBlock( *basistemp, index, *_evecs );
     } 
     else {  
@@ -1708,62 +1223,58 @@ namespace Anasazi {
     //---------------------------------------------------
     //
     if (_problem->IsSymmetric()) {
-      if (_om->isVerbosityAndPrint( Debug )) {
-        _os <<endl<<"Iteration ( "<< _iter <<" ) : [ Ritz Values Before Sorting (from SortManager) ]"<<endl;
-        for(i=0; i<n; i++) {
-          _os << (*_ritzvalues)[i] << endl;
-        }
-        _os <<endl;
+      _om->stream(Anasazi::Debug) << endl 
+                                  << "Iteration ( " << _iter << " ) : [ Ritz Values Before Sorting (from SortManager) ]" 
+                                  << endl;
+      for(i=0; i<n; i++) {
+        _om->stream(Anasazi::Debug) << (*_ritzvalues)[i] << endl;
       }
+      _om->stream(Anasazi::Debug) <<endl;
       //
-      
       {
-	Teuchos::TimeMonitor SortTimer(*_timerSortEval);
-	ret = _sm->sort( this, n, &(*_ritzvalues)[0], &_order );
+        Teuchos::TimeMonitor SortTimer(*_timerSortEval);
+        ret = _sm->sort( this, n, &(*_ritzvalues)[0], &_order );
       }
       if (ret != Ok) {
-        if (_om->isVerbosityAndPrint(Error)) {
-          _os << "ERROR : Sorting in SortSchurForm"
-              << endl;
-        }
+        _om->print(Anasazi::Error,"ERROR : Sorting in SortSchurForm\n" );
         _error_flg = true;
         return;
       }
       //
-      if (_om->isVerbosityAndPrint( Debug )) {
-        _os <<endl<<"Iteration ( "<< _iter <<" ) : [ Ritz Values After Sorting (from SortManager) ]"<<endl;
-        for(i=0; i<n; i++)
-          _os << (*_ritzvalues)[i] << "\t" << _order[i] << endl;
-        _os <<endl;
+      _om->stream(Anasazi::Debug) << endl 
+                                  << "Iteration ( "<< _iter <<" ) : [ Ritz Values After Sorting (from SortManager) ]"
+                                  << endl;
+      for (i=0; i<n; i++) {
+        _om->stream(Anasazi::Debug) << (*_ritzvalues)[i] << "\t" << _order[i] << endl;
       }
+      _om->stream(Anasazi::Debug) << endl;
       //
     } else {
-      if (_om->isVerbosityAndPrint( Debug )) {
-        _os <<endl<<"Iteration ( "<< _iter <<" ) : [ Ritz Values Before Sorting (from SortManager) ]"<<endl;
-        for(i=0; i<n; i++)
-          _os << (*_ritzvalues)[i] << "\t" << (*_ritzvalues)[_totallength+i] << endl;
-        _os <<endl;
+      _om->stream(Anasazi::Debug) << endl 
+            << "Iteration ( " << _iter << " ) : [ Ritz Values Before Sorting (from SortManager) ]" 
+            << endl;
+      for (i=0; i<n; i++) {
+        _om->stream(Anasazi::Debug) << (*_ritzvalues)[i] << "\t" << (*_ritzvalues)[_totallength+i] << endl;
       }
+      _om->stream(Anasazi::Debug) << endl;
       //
       {
-	Teuchos::TimeMonitor SortTimer(*_timerSortEval);
-	ret = _sm->sort( this, n, &(*_ritzvalues)[0], &(*_ritzvalues)[_totallength], &_order );
+        Teuchos::TimeMonitor SortTimer(*_timerSortEval);
+        ret = _sm->sort( this, n, &(*_ritzvalues)[0], &(*_ritzvalues)[_totallength], &_order );
       }
       if (ret != Ok) {
-        if (_om->isVerbosityAndPrint(Error)) {
-          _os << "Error sorting in SortSchurForm!"
-              << endl;
-        }
+        _om->print(Anasazi::Error,"Error sorting in SortSchurForm!\n");
         _error_flg = true;
         return;
       }
       //
-      if (_om->isVerbosityAndPrint( Debug )) {
-        _os <<endl<<"Iteration ( "<< _iter <<" ) : [ Ritz Values After Sorting (from SortManager) ]"<<endl;
-        for(i=0; i<n; i++)
-          _os << (*_ritzvalues)[i] << "\t" << (*_ritzvalues)[_totallength+i] << "\t" << _order[i] << endl;
-        _os <<endl;
+      _om->stream(Anasazi::Debug) << endl 
+          << "Iteration ( " << _iter << " ) : [ Ritz Values After Sorting (from SortManager) ]" 
+          << endl;
+      for(i=0; i<n; i++) {
+        _om->stream(Anasazi::Debug) << (*_ritzvalues)[i] << "\t" << (*_ritzvalues)[_totallength+i] << "\t" << _order[i] << endl;
       }
+      _om->stream(Anasazi::Debug) <<endl;
     }
     //
     // Re-sort _ritzresiduals based on _order
@@ -1787,11 +1298,11 @@ namespace Anasazi {
     // up the reordering, since the pair is moved if one of the pair is moved.
     //---------------------------------------------------
     //
-    if (_om->isVerbosityAndPrint( Debug )) {
-      _os <<endl<<"Iteration ( "<< _iter <<" ) : [ Before sorting the Schur form ( H ) ]"<<endl;
-      H.print(_os);          
-      _os <<endl;
-    }
+    _om->stream(Anasazi::Debug) << endl
+                                << "Iteration ( " << _iter << " ) : [ Before sorting the Schur form ( H ) ]" 
+                                << endl;
+    H.print(_om->stream(Anasazi::Debug));
+    _om->stream(Anasazi::Debug) << endl;
     //
     int _nevtemp = 0;
     char compq = 'V';
@@ -1822,11 +1333,11 @@ namespace Anasazi {
       assert(info==0);
     }
     //
-    if (_om->isVerbosityAndPrint( Debug )) {
-      _os <<endl<<"Iteration ( "<< _iter <<" ) : [ After sorting and reordering the Schur form ( H ) ]"<<endl;
-      H.print(_os);          
-      _os <<endl;
-    }
+    _om->stream(Anasazi::Debug) << endl
+                                << "Iteration ( " << _iter << " ) : [ After sorting and reordering the Schur form ( H ) ]" 
+                                << endl;
+    H.print(_om->stream(Anasazi::Debug));
+    _om->stream(Anasazi::Debug) << endl;
     //
     // Determine largest off diagonal element of Schur matrix for symmetric case.
     // (this is being disabled for the time being, since it's not being used)
@@ -1890,25 +1401,15 @@ namespace Anasazi {
     Teuchos::RefCountPtr<MV> basistemp = MVT::Clone( *_basisvecs, n );
     {
       Teuchos::TimeMonitor OpTimer(*_timerOp);
-    ret = OPT::Apply( *_Op, *Z, *basistemp );
+      OPT::Apply( *_Op, *Z, *basistemp );
     }
     _count_ApplyOp += MVT::GetNumberVecs(*Z);
-    if (ret != Ok) {
-      if (_om->isVerbosityAndPrint(Error)) {
-        _os << "ERROR : Applying Op operator in CheckSchurVecs"
-            << endl;
-      }
-      _error_flg = true;
-      return;
-    }
     MVT::MvTransMv( one, *Z, *basistemp, SchurProj );
     SchurProj.scale( -one );
     SchurProj += Hj;
-    if (_om->doPrint()) {
-      _os << endl 
+    _om->stream(Anasazi::Error) << endl
           << "Error in Schur Projection ( || (VQ)^T*A*(VQ) - S || ) at restart " 
           << _numRestarts << " is "<< SchurProj.normFrobenius() << endl;
-    }
   }
   
   //----------------------------------------------------------------------------------------
@@ -1941,14 +1442,12 @@ namespace Anasazi {
     }
     Teuchos::RefCountPtr<MV> Vj = MVT::CloneView( *_basisvecs, index );
 
-    if (_om->doPrint()) {
-      _os << endl;
-      _os << "********Block Arnoldi Iteration "<<j+1<<"******** " << endl;
-      _os << endl;
-    }    
+    _om->stream(Anasazi::Error) << endl
+          << "********Block Arnoldi Iteration " << j+1 << "******** " << endl
+          << endl;
 
     Teuchos::SerialDenseMatrix<int,ScalarType> VTV(m,m);
-    _problem->InnerProd( *Vj, *Vj, VTV );
+    _orthman->innerProd( *Vj, *Vj, VTV );
     ScalarType* ptr=VTV.values();
     ScalarType column_sum;
     
@@ -1961,18 +1460,16 @@ namespace Anasazi {
         column_sum += ptr[i];
       }
 
-      if (_om->doPrint()) {
-        _os << endl 
+      _om->stream(Anasazi::Error) << endl
             <<" V^T*B*V-I " << "for column " << k << " is " 
             << Teuchos::ScalarTraits<ScalarType>::magnitude(column_sum) 
             << endl;
-      }
       ptr += m;
     }
     
     Teuchos::SerialDenseMatrix<int,ScalarType> E(m,_blockSize);
     
-    _problem->InnerProd( *Vj, *F_vec, E );
+    _orthman->innerProd( *Vj, *F_vec, E );
     ScalarType* ptr_Ej=E.values();
     
     for (k=0;k<_blockSize;k++) {
@@ -1983,29 +1480,18 @@ namespace Anasazi {
       ptr_Ej += m;
       if (ptr_norms[k]) column_sum = column_sum/ptr_norms[k];
 
-      if (_om->doPrint()) {
-        _os << endl 
+      _om->stream(Anasazi::Error) << endl
             << " B-Orthogonality with F " << "for column " << k 
             << " is " << Teuchos::ScalarTraits<ScalarType>::magnitude(column_sum) 
             << endl;
-      }
     }
     
     Teuchos::RefCountPtr<MV> AVj = MVT::Clone( *_basisvecs, m ); 
     {
       Teuchos::TimeMonitor OpTimer(*_timerOp);
-      ret = OPT::Apply( *_Op, *Vj, *AVj );
+      OPT::Apply( *_Op, *Vj, *AVj );
     }
     _count_ApplyOp += MVT::GetNumberVecs( *Vj );
-    if (ret != Ok) {
-      // Apply() failed. Return error code.
-      if (_om->isVerbosityAndPrint(Error)) {
-        _os << "Error applying Op operator in CheckBlkArnRed!"
-            << endl;
-      }
-      _error_flg = true;
-      return;
-    }
     Teuchos::SerialDenseMatrix<int,ScalarType> Hj(Teuchos::View, _hessmatrix, m, m);
     MVT::MvTimesMatAddMv( -one, *Vj, Hj, one, *AVj );
     index.resize( _blockSize );
@@ -2019,11 +1505,9 @@ namespace Anasazi {
     MVT::MvNorm( *AVj, &ptr_norms );
     
     for ( i=0; i<m; i++ ) { 
-      if (_om->doPrint()) {
-        _os << endl
-            << " Arnoldi relation " << "for column " << i << " is " << ptr_norms[i] 
+      _om->stream(Anasazi::Error) << endl
+            << " Arnoldi relation for column " << i << " is " << ptr_norms[i] 
             << endl;  
-      }
     }
   }
 
@@ -2032,6 +1516,3 @@ namespace Anasazi {
 #endif
 
 // End of file AnasaziBlockKrylovSchur.hpp
-
-
-

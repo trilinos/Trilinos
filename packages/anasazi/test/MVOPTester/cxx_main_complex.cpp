@@ -36,6 +36,7 @@
 #include "AnasaziEpetraAdapter.hpp"
 #include "AnasaziMVOPTester.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
+#include "AnasaziBasicOutputManager.hpp"
 
 #ifdef HAVE_MPI
 #include <mpi.h>
@@ -54,16 +55,14 @@ using namespace Teuchos;
 
 int main(int argc, char *argv[])
 {
-  int ierr, gerr;
-  gerr = 0;
+  bool ierr, gerr;
+  gerr = true;
 
 #ifdef HAVE_MPI
   // Initialize MPI and setup an Epetra communicator
   MPI_Init(&argc,&argv);
 #endif
 
-  // PID info
-  int MyPID = 0;
 #ifdef HAVE_MPI
   MPI_Comm_rank(MPI_COMM_WORLD, &MyPID);
 #endif
@@ -111,9 +110,9 @@ int main(int argc, char *argv[])
 
   // Create an output manager to handle the I/O from the solver
   RefCountPtr<Anasazi::OutputManager<ST> > MyOM 
-    = rcp( new Anasazi::OutputManager<ST>( MyPID ) );
+    = rcp( new Anasazi::BasicOutputManager<ST>() );
   if (verbose) {
-    MyOM->SetVerbosity( Anasazi::Warning );
+    MyOM->setVerbosity( Anasazi::Warnings );
   }
 
 
@@ -122,9 +121,7 @@ int main(int argc, char *argv[])
 #ifdef EPETRA_MPI
   MPI_Finalize() ;
 #endif
-  if (verbose && MyPID==0) {
-    cout << "End Result: TEST FAILED" << endl;	
-  }
+  MyOM->print(Anasazi::Warnings,"End Result: TEST FAILED\n");
   return -1;
 #endif
 
@@ -137,10 +134,9 @@ int main(int argc, char *argv[])
   nnz = -1;
   info = readHB_newmat_double(filename.c_str(),&dim,&dim2,&nnz,&colptr,&rowind,&dvals);
   if (info == 0 || nnz < 0) {
-    if (MyOM->isVerbosityAndPrint(Anasazi::Warning)) {
-      cout << "Error reading '" << filename << "'" << endl;
-      cout << "End Result: TEST FAILED" << endl;
-    }
+    MyOM->stream(Anasazi::Warnings) 
+      << "Warning reading '" << filename << "'" << endl
+      << "End Result: TEST FAILED" << endl;
 #ifdef HAVE_MPI
     MPI_Finalize();
 #endif
@@ -166,69 +162,46 @@ int main(int argc, char *argv[])
 
   // test the multivector and its adapter
   ierr = Anasazi::TestMultiVecTraits<ST,MV>(MyOM,ivec);
-  gerr |= ierr;
-  switch (ierr) {
-  case Anasazi::Ok:
-    if ( verbose && MyPID==0 ) {
-      cout << "*** MyMultiVec<complex> PASSED TestMultiVecTraits()" << endl;
-    }
-    break;
-  case Anasazi::Failed:
-    if ( verbose && MyPID==0 ) {
-      cout << "*** MyMultiVec<complex> FAILED TestMultiVecTraits() ***" 
-           << endl << endl;
-    }
-    break;
+  gerr &= ierr;
+  if (ierr) {
+    MyOM->print(Anasazi::Warnings, "*** MyMultiVec<complex> PASSED TestMultiVecTraits()\n");
+  }
+  else {
+    MyOM->print(Anasazi::Warnings, "*** MyMultiVec<complex> FAILED TestMultiVecTraits() ***\n\n");
   }
 
   // test the operator and its adapter
   ierr = Anasazi::TestOperatorTraits<ST,MV,OP>(MyOM,ivec,A2);
-  gerr |= ierr;
-  switch (ierr) {
-  case Anasazi::Ok:
-    if ( verbose && MyPID==0 ) {
-      cout << "*** MyOperator<complex> PASSED TestOperatorTraits()" << endl;
-    }
-    break;
-  case Anasazi::Failed:
-    if ( verbose && MyPID==0 ) {
-      cout << "*** MyOperator<complex> FAILED TestOperatorTraits() ***" 
-           << endl << endl;
-    }
-    break;
+  gerr &= ierr;
+  if (ierr) {
+    MyOM->print(Anasazi::Warnings,"*** MyOperator<complex> PASSED TestOperatorTraits()\n");
+  }
+  else {
+    MyOM->print(Anasazi::Warnings,"*** MyOperator<complex> FAILED TestOperatorTraits() ***\n\n");
   }
 
   // test the operator and its adapter
   ierr = Anasazi::TestOperatorTraits<ST,MV,OP>(MyOM,ivec,A1);
-  gerr |= ierr;
-  switch (ierr) {
-  case Anasazi::Ok:
-    if ( verbose && MyPID==0 ) {
-      cout << "*** MyBetterOperator<complex> PASSED TestOperatorTraits()" << endl;
-    }
-    break;
-  case Anasazi::Failed:
-    if ( verbose && MyPID==0 ) {
-      cout << "*** MyBetterOperator<complex> FAILED TestOperatorTraits() ***" 
-           << endl << endl;
-    }
-    break;
+  gerr &= ierr;
+  if (ierr) {
+    MyOM->print(Anasazi::Warnings,"*** MyBetterOperator<complex> PASSED TestOperatorTraits()\n");
+  }
+  else {
+    MyOM->print(Anasazi::Warnings,"*** MyBetterOperator<complex> FAILED TestOperatorTraits() ***\n\n");
   }
 
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
 
-  if (gerr) {
-    if (verbose && MyPID==0)
-      cout << "End Result: TEST FAILED" << endl;
+  if (gerr == false) {
+    MyOM->print(Anasazi::Warnings,"End Result: TEST FAILED\n");
     return -1;
   }
   //
   // Default return value
   //
-  if (verbose && MyPID==0)
-    cout << "End Result: TEST PASSED" << endl;
+  MyOM->print(Anasazi::Warnings,"End Result: TEST PASSED\n");
   return 0;
 
 }

@@ -128,8 +128,6 @@ SUBDIRS = src $(UTIL_SUBDIR) $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) $(THYRA_SUBDIR) \
 all-libs:
 	cd src ; $(MAKE) all-libs
 
-libs:
-	cd src ; $(MAKE)
 
 ## #######################################################################
 ## The below targets allow you to use the new

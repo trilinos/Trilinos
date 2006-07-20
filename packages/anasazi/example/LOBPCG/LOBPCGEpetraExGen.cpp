@@ -32,12 +32,12 @@
 //
 //
 #include "AnasaziConfigDefs.hpp"
-#include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziEpetraAdapter.hpp"
-#include "AnasaziLOBPCG.hpp"
-#include "AnasaziBasicSort.hpp"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Vector.h"
+
+#include "AnasaziBasicEigenproblem.hpp"
+#include "AnasaziSimpleLOBPCGSolverManager.hpp"
 
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
@@ -69,10 +69,9 @@ int main(int argc, char *argv[])
   
   int MyPID = Comm.MyPID();
 
-  // Create an output manager to handle the I/O from the solver
-  Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM =
-    Teuchos::rcp( new Anasazi::OutputManager<double>( MyPID ) );
-  MyOM->SetVerbosity( Anasazi::FinalSummary );  
+  Anasazi::ReturnType returnCode;
+  bool testFailed = false;
+  bool verbose = true;
 
   std::string which;
   if (argc > 1) {
@@ -82,7 +81,7 @@ int main(int argc, char *argv[])
     which = "SM";
   }
   if ( which != "SM" && which != "LM" && which != "SR" && which != "LR" ) {
-    if (MyOM->doPrint()) {
+    if (verbose && MyPID==0) {
       std::cout << "Usage: " << argv[0] << " [sort string]" << endl
         << "where:" << endl
         << "sort string       - SM | LM | SR | LR" << endl << endl;
@@ -93,8 +92,6 @@ int main(int argc, char *argv[])
     return -1;
   }
   
-  Anasazi::ReturnType returnCode = Anasazi::Ok;  
-
   typedef Epetra_MultiVector MV;
   typedef Epetra_Operator OP;
 
@@ -111,10 +108,6 @@ int main(int argc, char *argv[])
   elements[0] = 10;
   elements[1] = 10;
   
-  // Create the sort manager
-  Teuchos::RefCountPtr<Anasazi::BasicSort<double, MV, OP> > MySM = 
-     Teuchos::rcp( new Anasazi::BasicSort<double, MV, OP>(which) );
-
   // Create problem
   Teuchos::RefCountPtr<ModalProblem> testCase = 
     Teuchos::rcp( new ModeLaplace2DQ2(Comm, brick_dim[0], elements[0], brick_dim[1], elements[1]) );
@@ -128,14 +121,6 @@ int main(int argc, char *argv[])
   int blockSize = 5;
   int maxIters = 500;
   double tol = 1.0e-6;
-  //
-  // Create parameter list to pass into solver
-  //
-  Teuchos::ParameterList MyPL;
-  MyPL.set( "Block Size", blockSize );
-  MyPL.set( "Max Iters", maxIters );
-  MyPL.set( "Tol", tol );
-
   // Create eigenproblem
 
   Teuchos::RefCountPtr<Epetra_MultiVector> ivec = Teuchos::rcp( new Epetra_MultiVector(K->OperatorDomainMap(), blockSize) );
@@ -145,26 +130,36 @@ int main(int argc, char *argv[])
     Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>(K, M, ivec) );
 
   // Inform the eigenproblem that the operator A is symmetric
-  MyProblem->SetSymmetric(true);
+  MyProblem->setHermitian(true);
 
   // Set the number of eigenvalues requested and the blocksize the solver should use
-  MyProblem->SetNEV( nev );
+  MyProblem->setNEV( nev );
 
   // Inform the eigenproblem that you are finishing passing it information
-  info = MyProblem->SetProblem();
+  info = MyProblem->setProblem();
   if (info)
-    cout << "Anasazi::BasicEigenproblem::SetProblem() returned with code : "<< info << endl;
+    cout << "Anasazi::BasicEigenproblem::setProblem() returned with code : "<< info << endl;
 
-  // Create the eigensolver
+  //
+  // Create parameter list to pass into the solver manager
+  //
+  Teuchos::ParameterList MyPL;
+  MyPL.set( "Block Size", blockSize );
+  MyPL.set( "Max Iters", maxIters );
+  MyPL.set( "Tol", tol );
+  MyPL.set( "Which", which );
+  //
+  // Create the solver manager
+  Anasazi::SimpleLOBPCGSolverManager<double, MV, OP> MySolverMan(MyProblem, MyPL);
 
-  Anasazi::LOBPCG<double, MV, OP> MySolver(MyProblem, MySM, MyOM, MyPL);
+  // Solve the problem
+  returnCode = MySolverMan.solve();
+  if (returnCode != Anasazi::Converged) {
+    testFailed = true;
+  }
 
-  // Solve the problem to the specified tolerances or length
-
-  returnCode = MySolver.solve();
-
-  // Check that the solver returned Ok, if not exit example
-  if (returnCode != Anasazi::Ok) {
+  // Check that the solver returned Converged, if not exit example
+  if (returnCode != Anasazi::Converged) {
 #ifdef EPETRA_MPI
     MPI_Finalize() ;
 #endif
@@ -172,14 +167,15 @@ int main(int argc, char *argv[])
   }
   
   // Get the eigenvalues and eigenvectors from the eigenproblem
-  Teuchos::RefCountPtr<std::vector<double> > evals = MyProblem->GetEvals();
-  Teuchos::RefCountPtr<Epetra_MultiVector> evecs = MyProblem->GetEvecs();
+  Anasazi::Eigensolution<double,MV> sol = MyProblem->getSolution();
+  std::vector<double> evals = sol.Evals;
+  Teuchos::RefCountPtr<MV> evecs = sol.Evecs;
   
   // Compute the direct residual
   std::vector<double> normV( evecs->NumVectors() );
   Teuchos::SerialDenseMatrix<int,double> T(evecs->NumVectors(), evecs->NumVectors());
   for (int i=0; i<evecs->NumVectors(); i++) {
-    T(i,i) = (*evals)[i];
+    T(i,i) = evals[i];
   }
   Epetra_MultiVector Kvec( K->OperatorDomainMap(), evecs->NumVectors() );
   K->Apply( *evecs, Kvec );  
@@ -189,7 +185,7 @@ int main(int argc, char *argv[])
   info = Kvec.Norm2( &normV[0] );
   assert( info==0 );
 
-  if (MyOM->doPrint()) {
+  if (verbose && MyPID==0) {
     cout.setf(ios_base::right, ios_base::adjustfield);
     cout<<"Actual Residuals"<<endl;
     cout<<"------------------------------------------------------"<<endl;
@@ -198,8 +194,8 @@ int main(int argc, char *argv[])
 	<<endl;
     cout<<"------------------------------------------------------"<<endl;
     for (i=0; i<nev; i++) {
-      cout<<std::setw(16)<<(*evals)[i]
-	  <<std::setw(16)<<normV[i]/(*evals)[i]
+      cout<<std::setw(16)<<evals[i]
+	  <<std::setw(16)<<normV[i]/evals[i]
 	  <<endl;
     }
     cout<<"------------------------------------------------------"<<endl;

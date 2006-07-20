@@ -34,24 +34,24 @@
   status test class to compute solutions to an eigenproblem
 */
 
+#include "AnasaziConfigDefs.hpp"
 #include "AnasaziTypes.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
-#include "Teuchos_SerialDenseVector.hpp"
 #include "Teuchos_RefCountPtr.hpp"
+
 
 /*! \class Anasazi::Eigenproblem
     \brief This class defines the interface required by an eigensolver and status
     test class to compute solutions to an eigenproblem.
 */
 
-
 namespace Anasazi {
   
   template<class ScalarType, class MV, class OP>
   class Eigenproblem {
-    
+
   public:
-    
+
     //@{ \name Constructors/Destructor.
     
     //! Empty constructor 
@@ -64,118 +64,108 @@ namespace Anasazi {
     //@{ \name Set Methods.
     
     /*! \brief Set the operator for which eigenvalues will be computed.  
-
-    \note This may be different from the \c A if a spectral transformation is employed. 
-    For example, this operator may apply the operation \f$(A-\sigma I)^{-1}\f$ if you are
-    looking for eigenvalues of \c A around \f$\sigma\f$.  
-    */
-    virtual void SetOperator( const Teuchos::RefCountPtr<OP> &Op ) = 0;
-    
-    /*! \brief Set the operator \c A of the eigenvalue problem \f$Ax=\lambda Mx\f$.
-    */
-    virtual void SetA( const Teuchos::RefCountPtr<OP> &A ) = 0;
-    
-    /*! \brief Set the operator \c M of the eigenvalue problem \f$Ax=\lambda Mx\f$.
-    */
-    virtual void SetM( const Teuchos::RefCountPtr<OP> &M ) = 0;
-    
-    /*! \brief Set the preconditioner for this eigenvalue problem \f$Ax=\lambda Mx\f$.
+     * 
+     * \note This may be different from the \c A if a spectral transformation
+     * is employed.  For example, this operator may apply the operation
+     * \f$(A-\sigma I)^{-1}\f$ if you are looking for eigenvalues of \c A
+     * around \f$\sigma\f$.  
      */
-    virtual void SetPrec( const Teuchos::RefCountPtr<OP> &Prec ) = 0;
-    
+    virtual void setOperator( const Teuchos::RefCountPtr<OP> &Op ) = 0;
+
+    //! \brief Set the operator \c A of the eigenvalue problem \f$Ax=\lambda Mx\f$.
+    virtual void setA( const Teuchos::RefCountPtr<OP> &A ) = 0;
+
+    //! \brief Set the operator \c M of the eigenvalue problem \f$Ax=\lambda Mx\f$.
+    virtual void setM( const Teuchos::RefCountPtr<OP> &M ) = 0;
+
+    //! \brief Set the preconditioner for this eigenvalue problem \f$Ax=\lambda Mx\f$.
+    virtual void setPrec( const Teuchos::RefCountPtr<OP> &Prec ) = 0;
+
     /*! \brief Set the initial guess.  
+     *
+     * \note This multivector should have the same number of columns as the blocksize.
+     */
+    virtual void setInitVec( const Teuchos::RefCountPtr<MV> &InitVec ) = 0; 
 
-    \note This multivector should have the same number of columns as the blocksize.
-    */
-    virtual void SetInitVec( const Teuchos::RefCountPtr<MV> &InitVec ) = 0; 
-    
-    /*! \brief Set auxilliary vectors.
-
-    \note This multivector can have any number of columns, and most likely will contain vectors that
-    will be used by the eigensolver to orthogonalize against.
-    */
-    virtual void SetAuxVec( const Teuchos::RefCountPtr<MV> &AuxVec ) = 0;
+    /*! \brief Set auxilliary vectors: finish
+     *
+     * \note This multivector can have any number of columns, and most likely
+     * will contain vectors that will be used by the eigensolver to
+     * orthogonalize against.
+     */
+    virtual void setAuxVecs( const Teuchos::RefCountPtr<MV> &AuxVecs ) = 0;
 
     //! The number of eigenvalues (NEV) that are requested.
-    virtual void SetNEV( const int nev ) = 0;
+    virtual void setNEV( const int nev ) = 0;
 
-    //! Specify the symmetry of the eigenproblem.
-    /*! This knowledge may allow the solver to take advantage of the eigenproblems' symmetry.
-      Some computational work can be avoided by setting this properly.
-    */
-    virtual void SetSymmetric( const bool isSym ) = 0;
-    
-    //! Specify that this eigenproblem is fully defined.
-    /*! \note The user MUST call this routine before they send the eigenproblem to any solver!
+    /*! \brief Specify the symmetry of the eigenproblem.
+     *
+     *  This knowledge may allow the solver to take advantage of the eigenproblems' symmetry.
+     *  Some computational work may be avoided by setting this properly.
      */
-    virtual ReturnType SetProblem() = 0;
+    virtual void setHermitian( const bool isSym ) = 0;
+
+    /*! \brief Specify that this eigenproblem is fully defined.
+     *
+     * This routine serves multiple purpose:
+     * <ul>
+     * <li> sanity check that the eigenproblem has been fully and constently defined
+     * <li> opportunity for the eigenproblem to allocate internal storage for eigenvalues
+     * and eigenvectors (to be used by eigensolvers and solver managers)
+     * </ul>
+     *
+     * \note The user MUST call this routine before they send the eigenproblem to any solver or solver manager.
+     *
+     * \returns \c true signifies success, \c false signifies error.
+     */
+    virtual bool setProblem() = 0;
+
+    /*! \brief Set the solution to the eigenproblem.
+     *
+     * This mechanism allows an Eigensolution struct to be associated with an Eigenproblem object.
+     * setSolution() is usually called by a solver manager at the end of its SolverManager::solve() 
+     * routine.
+     */
+    virtual void setSolution(const Eigensolution<ScalarType,MV> &sol) = 0;
 
     //@}
     
     //@{ \name Accessor Methods.
-    
+
     //! Get a pointer to the operator for which eigenvalues will be computed.
-    virtual Teuchos::RefCountPtr<OP> GetOperator() const = 0;
-    
+    virtual Teuchos::RefCountPtr<OP> getOperator() const = 0;
+
     //! Get a pointer to the operator \c A of the eigenproblem \f$AX=\lambda Mx\f$.
-    virtual Teuchos::RefCountPtr<OP> GetA() const = 0;
-    
+    virtual Teuchos::RefCountPtr<OP> getA() const = 0;
+
     //! Get a pointer to the operator \c M of the eigenproblem \f$AX=\lambda Mx\f$.
-    virtual Teuchos::RefCountPtr<OP> GetM() const = 0;
-    
+    virtual Teuchos::RefCountPtr<OP> getM() const = 0;
+
     //! Get a pointer to the preconditioner.
-    virtual Teuchos::RefCountPtr<OP> GetPrec() const = 0;
-    
+    virtual Teuchos::RefCountPtr<OP> getPrec() const = 0;
+
     //! Get a pointer to the initial vector
-    virtual Teuchos::RefCountPtr<MV> GetInitVec() const = 0;
-    
+    virtual Teuchos::RefCountPtr<const MV> getInitVec() const = 0;
+
     //! Get a pointer to the auxilliary vector
-    virtual Teuchos::RefCountPtr<MV> GetAuxVec() const = 0;
-    
-    /*! \brief Get a pointer to the eigenvalues of the operator.
-    
-    \note If the operator is nonsymmetric, the length of this vector is 2*NEV where the 
-    real part of eigenvalue \c j is entry \c j and the imaginary part is entry \c j+NEV .
-    */
-    virtual Teuchos::RefCountPtr<std::vector<ScalarType> > GetEvals() = 0;
-    
-    /*! \brief Get a pointer to the eigenvectors of the operator.
-      
-    \note If the operator is nonsymmetric, this multivector has 2*NEV columns where the 
-    real part of eigenvector \c j is column \c j and the imaginary part is column \c j+NEV .
-    */
-    virtual Teuchos::RefCountPtr<MV> GetEvecs() = 0;
-    
+    virtual Teuchos::RefCountPtr<const MV> getAuxVecs() const = 0;
+
     //! Get the number of eigenvalues (NEV) that are required by this eigenproblem.
-    virtual int GetNEV() const = 0;
-    
+    virtual int getNEV() const = 0;
+
     //! Get the symmetry information for this eigenproblem.
-    virtual bool IsSymmetric() const = 0;
+    virtual bool isHermitian() const = 0;
 
     //! If the problem has been set, this method will return true.
-    virtual bool IsProblemSet() const = 0;
-    
-    //@}	
-    
-    //@{ \name Inner Product Methods.
-    /*! \brief Computes inner product as needed by the eigensolver, for orthogonalization purposes.
+    virtual bool isProblemSet() const = 0;
 
-    \note This can be different than the MvTransMv method for the multivector class.  For example,
-    if there is a mass matrix \c M, then this might be the \c M inner product (\f$x^HMx\f$)
+    /*! \brief Get the solution to the eigenproblem.
+     *
+     * There is no computation associated with this method. It only provides a 
+     * mechanism for associating an Eigensolution with a Eigenproblem.
      */
-    virtual ReturnType InnerProd( const MV& X, const MV& Y,
-				  Teuchos::SerialDenseMatrix<int,ScalarType>& Z ) const = 0;
-    //@}
+    virtual const Eigensolution<ScalarType,MV> & getSolution() const = 0;
 
-    //@{ \name Norm Methods.
-    /*! \brief Computes the multivector norm as needed by the eigensolver, for orthogonalization purposes.
-    
-    On return, normvec[i] holds the norm of the \c i-th vector (column) of \c X.
-    \note This can be different than the MvNorm method for the multivector class.  For example,
-    if there is a mass matrix \c M, then this might be the <tt>M</tt>-norm (\f$||x_i||_M\f$)
-     */
-    virtual ReturnType MvNorm( const MV& X, std::vector< typename Teuchos::ScalarTraits<ScalarType>::magnitudeType >* normvec ) const = 0;
-    
     //@}	
   };
    

@@ -59,7 +59,7 @@ public:
   {}
   
   //! Applies the tridiagonal or diagonal matrix to a multivector.
-  Anasazi::ReturnType Apply(const Anasazi::MultiVec<ScalarType>& X, 
+  void Apply(const Anasazi::MultiVec<ScalarType>& X, 
                             Anasazi::MultiVec<ScalarType>& Y) const
   {
     const MyMultiVec<ScalarType>* MyX;
@@ -106,7 +106,6 @@ public:
         }
       }      
     }
-    return(Anasazi::Ok);
   }
   
 private:

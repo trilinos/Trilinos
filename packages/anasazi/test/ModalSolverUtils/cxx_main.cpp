@@ -33,6 +33,7 @@
 #include "AnasaziModalSolverUtils.hpp"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Vector.h"
+#include "AnasaziBasicOutputManager.hpp"
 
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
@@ -71,7 +72,7 @@ int main(int argc, char *argv[])
   int numberFailedTests = 0;
 
   //  Create default output manager 
-  Teuchos::RefCountPtr<Anasazi::OutputManager<double> > om = Teuchos::rcp( new Anasazi::OutputManager<double>( MyPID ) );
+  Teuchos::RefCountPtr<Anasazi::OutputManager<double> > om = Teuchos::rcp( new Anasazi::BasicOutputManager<double>() );
 
   //  Create ModalSolverUtils object
   Anasazi::ModalSolverUtils<double, Epetra_MultiVector, Epetra_Operator> msUtils( om );

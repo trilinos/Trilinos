@@ -37,8 +37,11 @@
 #include "AnasaziEigenproblem.hpp"
 #include "AnasaziSortManager.hpp"
 #include "AnasaziOutputManager.hpp"
+#include "AnasaziOrthoManager.hpp"
+#include "AnasaziStatusTest.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_Array.hpp"
 
 /*! \class Anasazi::Eigensolver
   \brief The Anasazi::Eigensolver is a templated virtual base class that defines the
@@ -52,7 +55,7 @@ namespace Anasazi {
 
 template<class ScalarType, class MV, class OP>
 class Eigensolver {
-    
+
   public:
 
   //@{ \name Constructors/Destructor.
@@ -63,53 +66,90 @@ class Eigensolver {
   //! Basic Constructor.
   /*! This constructor, implemented by all Anasazi eigensolvers, takes an Anasazi::Eigenproblem,
     Anasazi::SortManager, Anasazi::OutputManager, and Teuchos::ParameterList as input.  These
-    four arguments are sufficient enough for constructing an Anasazi::Eigensolver object.
+    four arguments are sufficient enough for constructing any Anasazi::Eigensolver object.
   */
   Eigensolver( const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem, 
-	       const Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > &sm,
-	       const Teuchos::RefCountPtr<OutputManager<ScalarType> > &om,
-	       Teuchos::ParameterList &pl
-	       );
+               const Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > &sm,
+               const Teuchos::RefCountPtr<OutputManager<ScalarType> > &om,
+               const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > &tester,
+               const Teuchos::RefCountPtr<OrthoManager<ScalarType,MV> > &ortho,
+               Teuchos::ParameterList &params );
 
   //! Destructor.
   virtual ~Eigensolver() {};
   //@}
+
+
+  //@{ \name Solver methods.
   
-  //@{ \name Accessor methods
-
-  //! Get the current iteration count.
-  virtual int GetNumIters() const = 0;
-
-  //! Get the current restart count of the iteration method.
-  /*! Some eigensolvers can perform restarts (i.e. Arnoldi) to reduce memory
-	and orthogonalization costs.  For other eigensolvers that don't
-	perform restarts (i.e. LOBPCG), this is not a valid stopping criteria.
+  /*! \brief This method performs eigensolvers iterations until the status test
+    indicates the need to stop or an error occurs (in which case, an exception is thrown).
   */
-  virtual int GetNumRestarts() const = 0;
-
-  //! Get the blocksize to be used by the iterative solver in solving this eigenproblem.
-  virtual int GetBlockSize() const = 0;
-
-  /*! \brief Get a constant reference to the current linear problem, 
-    	which may include a current solution.
-  */
-  virtual Eigenproblem<ScalarType,MV,OP>& GetEigenproblem() const = 0;
+  virtual void iterate() = 0;
 
   //@}
 
-  //@{ \name Solver application methods.
     
-  /*! \brief This method uses information given to the eigensolver
-    to compute approximate solutions to the specified eigenproblem.
-    
-    \return Status of the solver on completion:
-    <ul>
-    <li> Ok - Eigensolver computed requested number of eigenvalues
-    <li> Unconverged - Eigensolver reached maximum number of iterations/restarts before computing all requested eigenvalues
-    <li> Failed - Numerical failure in eigensolver or bad input parameters
-    </ul>    
-  */
-  virtual ReturnType solve() = 0;
+  //@{ \name Status methods.
+  
+  //! \brief Get the current iteration count.
+  virtual int getNumIters() const = 0;
+
+  //! \brief Reset the iteration count.
+  virtual void resetNumIters() = 0;
+
+  //! \brief Get the current approximate eigenspace
+  virtual Teuchos::RefCountPtr<const MV> getEvecs() = 0;
+
+  //! \brief Get the residual vectors.
+  virtual Teuchos::RefCountPtr<const MV> getResidualVecs() = 0;
+
+  //! \brief Get the current eigenvalue estimates
+  /*! \return A vector of length blockSize containing the eigenvalue estimates associated with the current iterate.
+   */
+  virtual std::vector< typename Teuchos::ScalarTraits<ScalarType>::magnitudeType > getEigenvalues() = 0;
+
+  //! \brief Get the current residual norms
+  /*! \return A vector of length blockSize containing the norms of the residuals, 
+      according to the orthogonalization manager norm() method.
+   */
+  virtual std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getResNorms() = 0;
+
+  //! Get the current residual 2-norms
+  //! \return A vector of length blockSize containing the 2-norms of the residuals. 
+  virtual std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getRes2Norms() = 0;
+
+  //@}
+
+
+  
+  //@{ \name Accessor methods
+
+  //! Get a constant reference to the eigenvalue problem.
+  virtual const Eigenproblem<ScalarType,MV,OP>& getProblem() const = 0;
+
+  //! Get the blocksize to be used by the iterative solver in solving this eigenproblem.
+  virtual int getBlockSize() const = 0;
+  
+  //! \brief Set the blocksize to be used by the iterative solver in solving this eigenproblem.
+  virtual void setBlockSize(int blockSize) = 0;
+
+  //! Set the auxilliary vectors for the solver.
+  virtual void setAuxVecs(const Teuchos::Array<Teuchos::RefCountPtr<const MV> > &auxvecs) = 0;
+
+  //! Get the auxilliary vectors for the solver.
+  virtual Teuchos::Array<Teuchos::RefCountPtr<const MV> > getAuxVecs() const = 0;
+
+  //! States whether the solver has been initialized or not.
+  virtual bool isInitialized() = 0;
+
+  //@}
+
+  //@{ \name Output methods.
+  
+  //! This method requests that the solver print out its current status to screen.
+  virtual void currentStatus(ostream &os) = 0;
+
   //@}
   
 };

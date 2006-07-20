@@ -229,7 +229,7 @@ namespace Anasazi {
   //
   // AnasaziOperator applications
   //
-  ReturnType EpetraOp::Apply ( const MultiVec<double>& X, 
+  void EpetraOp::Apply ( const MultiVec<double>& X, 
 			       MultiVec<double>& Y ) const 
   {
     //
@@ -242,12 +242,8 @@ namespace Anasazi {
     assert( vec_X!=NULL && vec_Y!=NULL );
 
     int info = Epetra_Op->Apply( *vec_X, *vec_Y );
-    
-    if (info==0) { 
-      return Ok; 
-    } else { 
-      return Failed; 
-    }	
+    TEST_FOR_EXCEPTION( info != 0, OperatorError, 
+                        "Anasazi::EpetraOp::Apply(): Error returned from Epetra_Operator::Apply()" );
   }
 
   ///////////////////////////////////////////////////////////////////////////////
@@ -273,7 +269,7 @@ namespace Anasazi {
   //
   // AnasaziOperator applications
   //
-  ReturnType EpetraGenOp::Apply ( const MultiVec<double>& X, MultiVec<double>& Y ) const 
+  void EpetraGenOp::Apply ( const MultiVec<double>& X, MultiVec<double>& Y ) const 
   {
     //
     // This generalized operator computes Y = A^{-1}*M*X
@@ -291,17 +287,17 @@ namespace Anasazi {
     //
     // Apply M
     info = Epetra_MOp->Apply( *vec_X, temp_Y );
-    assert(info==0);
+    TEST_FOR_EXCEPTION( info != 0, OperatorError, 
+                        "Anasazi::EpetraGenOp::Apply(): Error returned from Epetra_Operator::Apply()" );
     // Apply A or A^{-1}
-    if (isAInverse)
+    if (isAInverse) {
       info = Epetra_AOp->ApplyInverse( temp_Y, *vec_Y );
-    else 
+    }
+    else {
       info = Epetra_AOp->Apply( temp_Y, *vec_Y );
-    if (info==0) { 
-      return Ok; 
-    } else { 
-      return Failed; 
-    }	
+    }
+    TEST_FOR_EXCEPTION( info != 0, OperatorError, 
+                        "Anasazi::EpetraGenOp::Apply(): Error returned from Epetra_Operator::Apply()" );
   }
   
   int EpetraGenOp::Apply(const Epetra_MultiVector &X, Epetra_MultiVector &Y) const
@@ -367,7 +363,7 @@ namespace Anasazi {
   //
   // AnasaziOperator applications
   //
-  ReturnType EpetraSymOp::Apply ( const MultiVec<double>& X, 
+  void EpetraSymOp::Apply ( const MultiVec<double>& X, 
 				  MultiVec<double>& Y ) const 
   {
     int info=0;
@@ -386,31 +382,44 @@ namespace Anasazi {
     //
     // Transpose the operator (if isTrans_ = true)
     if (isTrans_) {
-      info=Epetra_Op->SetUseTranspose( isTrans_ );
-      if (info!=0) { delete temp_vec; return Failed; }
+      info = Epetra_Op->SetUseTranspose( isTrans_ );
+      if (info != 0) {
+        delete temp_vec;
+        TEST_FOR_EXCEPTION( true, OperatorError, 
+                            "Anasazi::EpetraSymOp::Apply(): Error returned from Epetra_Operator::Apply()" );
+      }
     }
     //
     // Compute A*X or A'*X 
     //
     info=Epetra_Op->Apply( *vec_X, *temp_vec );
-    if (info!=0) { delete temp_vec; return Failed; }
+    if (info!=0) { 
+      delete temp_vec; 
+      TEST_FOR_EXCEPTION( true, OperatorError, 
+                          "Anasazi::EpetraSymOp::Apply(): Error returned from Epetra_Operator::Apply()" );
+    }
     //
     // Transpose/Un-transpose the operator based on value of isTrans_
     info=Epetra_Op->SetUseTranspose( !isTrans_ );
-    if (info!=0) { delete temp_vec; return Failed; }
+    if (info!=0) { 
+      delete temp_vec; 
+      TEST_FOR_EXCEPTION( true, OperatorError, 
+                          "Anasazi::EpetraSymOp::Apply(): Error returned from Epetra_Operator::Apply()" );
+    }
     
     // Compute A^T*(A*X) or A*A^T
     info=Epetra_Op->Apply( *temp_vec, *vec_Y );
-    if (info!=0) { delete temp_vec; return Failed; }
+    if (info!=0) { 
+      delete temp_vec; 
+      TEST_FOR_EXCEPTION( true, OperatorError, 
+                          "Anasazi::EpetraSymOp::Apply(): Error returned from Epetra_Operator::Apply()" );
+    }
     
     // Un-transpose the operator
     info=Epetra_Op->SetUseTranspose( false );
     delete temp_vec;
-    
-    if (info==0)
-      return Ok; 
-    else
-      return Failed; 
+    TEST_FOR_EXCEPTION( info != 0, OperatorError, 
+                        "Anasazi::EpetraSymOp::Apply(): Error returned from Epetra_Operator::Apply()" );
   }
   
   int EpetraSymOp::Apply(const Epetra_MultiVector &X, Epetra_MultiVector &Y) const
@@ -496,7 +505,7 @@ namespace Anasazi {
   //
   // AnasaziOperator applications
   //
-  ReturnType EpetraSymMVOp::Apply ( const MultiVec<double>& X, MultiVec<double>& Y ) const 
+  void EpetraSymMVOp::Apply ( const MultiVec<double>& X, MultiVec<double>& Y ) const 
   {
     int info=0;
     MultiVec<double> & temp_X = const_cast<MultiVec<double> &>(X);
@@ -509,9 +518,13 @@ namespace Anasazi {
       
       /* A'*X */
       info = temp_vec.Multiply( 'T', 'N', 1.0, *Epetra_MV, *vec_X, 0.0 );
+      TEST_FOR_EXCEPTION( info != 0, OperatorError, 
+                          "Anasazi::EpetraSymMVOp::Apply(): Error returned from Epetra_Operator::Apply()" );
       
       /* A*(A'*X) */
       info = vec_Y->Multiply( 'N', 'N', 1.0, *Epetra_MV, temp_vec, 0.0 );      
+      TEST_FOR_EXCEPTION( info != 0, OperatorError, 
+                          "Anasazi::EpetraSymMVOp::Apply(): Error returned from Epetra_Operator::Apply()" );
     } 
     else {
       
@@ -519,15 +532,14 @@ namespace Anasazi {
       
       /* A*X */
       info = temp_vec.Multiply( 'N', 'N', 1.0, *Epetra_MV, *vec_X, 0.0 );
+      TEST_FOR_EXCEPTION( info != 0, OperatorError, 
+                          "Anasazi::EpetraSymMVOp::Apply(): Error returned from Epetra_Operator::Apply()" );
       
       /* A'*(A*X) */
       info = vec_Y->Multiply( 'T', 'N', 1.0, *Epetra_MV, temp_vec, 0.0 );
+      TEST_FOR_EXCEPTION( info != 0, OperatorError, 
+                          "Anasazi::EpetraSymMVOp::Apply(): Error returned from Epetra_Operator::Apply()" );
     }
-    
-    if (info==0)
-      return Ok; 
-    else
-      return Failed; 
   }
 
 } // end namespace Anasazi

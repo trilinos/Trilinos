@@ -123,6 +123,12 @@
 #include <iostream.h>
 #endif
 
+#if HAVE_STDEXCEPT
+#include <stdexcept>
+#elif HAVE_STDEXCEPT_H
+#include <stdexcept.h>
+#endif
+
 #ifndef JANUS_STLPORT
 #ifdef HAVE_CMATH
 #include <cmath>

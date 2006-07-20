@@ -35,6 +35,7 @@
 #include "AnasaziEpetraAdapter.hpp"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Vector.h"
+#include "AnasaziBasicOutputManager.hpp"
 
 #include "ModeLaplace1DQ1.h"
 #include "BlockPCGSolver.h"
@@ -46,6 +47,8 @@
 #include "Epetra_SerialComm.h"
 #endif
 #include "Epetra_Map.h"
+
+using namespace Teuchos;
 
 int main(int argc, char *argv[]) 
 {
@@ -89,10 +92,6 @@ int main(int argc, char *argv[])
     }
   }
 
-  if (verbose && MyPID == 0) {
-    cout << Anasazi::Anasazi_Version() << endl << endl;
-  }
-  
   typedef Epetra_MultiVector MV;
   typedef Epetra_Operator OP;
 
@@ -141,8 +140,9 @@ int main(int argc, char *argv[])
 
   // Inform the eigenproblem that you are finishing passing it information
   info = MyProblem->SetProblem();
-  if (info)
+  if (info) {
     cout << "Anasazi::BasicEigenproblem::SetProblem() returned with code : "<< info << endl;
+  }
 
   // Create parameter list to pass into solver
   Teuchos::ParameterList MyPL;
@@ -152,12 +152,12 @@ int main(int argc, char *argv[])
   MyPL.set( "Tol", tol );
 
   // Create default output manager 
-  Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM = Teuchos::rcp( new Anasazi::OutputManager<double>( MyPID ) );
-
+  RefCountPtr<Anasazi::OutputManager<double> > MyOM = Teuchos::rcp( new Anasazi::BasicOutputManager<double>() );
   // Set verbosity level
   if (verbose) {
-    MyOM->SetVerbosity( Anasazi::FinalSummary + Anasazi::TimingDetails );
+    MyOM->setVerbosity( Anasazi::Warning + Anasazi::FinalSummary + Anasazi::TimingDetails );
   }
+  MyOM->stream(Anasazi::Warning) << Anasazi::Anasazi_Version() << endl << endl;
 
   // Create a sorting manager to handle the sorting of eigenvalues in the solver
   Teuchos::RefCountPtr<Anasazi::BasicSort<double, MV, OP> > MySM = 
@@ -178,8 +178,9 @@ int main(int argc, char *argv[])
   Teuchos::RefCountPtr<Epetra_MultiVector> evecs = MyProblem->GetEvecs();
   
   // Check eigenvalues with ModeLaplace
-  if (verbose)
+  if (verbose) {
     info = testCase->eigenCheck( *evecs, &(*evals)[0], 0 );
+  }
 
   Epetra_MultiVector tempvec(K->OperatorDomainMap(), evecs->NumVectors());	
   K->Apply( *evecs, tempvec );

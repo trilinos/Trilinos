@@ -47,9 +47,6 @@
 #include "AnasaziMultiVecTraits.hpp"
 #include "AnasaziOperatorTraits.hpp"
 
-
-// FINISH: using findBasis may have been more trouble than it is worth; consider rewriting?
-
 namespace Anasazi {
 
   template<class ScalarType, class MV, class OP>
@@ -86,25 +83,27 @@ namespace Anasazi {
 
     //@{ \name Orthogonalization methods.
 
-    /*! \brief This method takes a multivector and projects it onto the space orthogonal to 
-     *  another given multivector, in a specified inner product. The method has the option of
-     *  exploiting a caller-provided \c MX, and returning updated information to the caller.
+    /*! \brief Given a list of (mutually and independently) orthonormal bases \c Q, this method
+     * takes a multivector \c X and projects it onto the space orthogonal to the individual \c Q[i], 
+     * returning optionally the coefficients of \c X in the individual \c Q[i]. All of this is done with respect
+     * to innerProd(). The method has the option of
+     * exploiting a caller-provided \c MX, and returning updated information to the caller.
      *  
-     @param X [in/out] The multivector to the modified. 
-       On output, \c X will be orthogonal to \c Q with respect to \c innerProd().
-      
-     @param MX [in/out] The image of \c X under the operator \c Op. 
-       If \f$ MX != 0\f$: On input, this is expected to be consistent with \c X. On output, this is updated consistent with updates to \c X.
-       If \f$ MX == 0\f$ or \f$ Op == 0\f$: \c MX is not referenced.
-            
-     @param Q [in] A multivector specifying the space to be orthogonalized against. 
-            
-     @return Code specifying failure of the routine, as defined by the implementation.
-    */
-    ReturnType project ( MV &X, Teuchos::RefCountPtr<MV> MX, 
-                         Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > C, 
-                         const MV &Q ) const;
+     @param X [in/out] The multivector to be modified.
+       On output, \c X will be orthogonal to \c Q[i] with respect to innerProd().
 
+     @param MX [in/out] The image of \c X under the operator \c M. 
+       If <tt>MX != 0</tt>: On input, this is expected to be consistant with \c X. On output, this is updated consistant with updates to \c X.
+       If <tt>MX == 0</tt> or <tt>M == 0</tt>: \c MX is not referenced.
+            
+     @param C [out] The coefficients of \c X in the \c Q[i], with respect to innerProd().
+
+     @param Q [in] A list of multivectors specifying the bases to be orthogonalized against. Each \c Q[i] is assumed to have
+     orthonormal columns, and the \c Q[i] are assumed to be mutually orthogonal.
+    */
+    virtual void project ( MV &X, Teuchos::RefCountPtr<MV> MX, 
+                                  Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
+                                  Teuchos::Array<Teuchos::RefCountPtr<const MV> > Q) const;
 
     /*! \brief This method takes a multivector and orthonormalizes the columns, with respect to \c innerProd().
      *  The method has the option of
@@ -114,16 +113,13 @@ namespace Anasazi {
        On output, the columns are Op-orthonormal
     
      @param MX [in/out] The image of \c X under the operator \c Op. 
-       If \f$ MX != 0\f$: On input, this is expected to be consistent with \c X. On output, this is updated consistent with updates to \c X.
+       If \f$ MX != 0\f$: On input, this is expected to be consistant with \c X. On output, this is updated consistant with updates to \c X.
        If \f$ MX == 0\f$ or \f$ Op == 0\f$: \c MX is not referenced.
-      
-     @param rank [out] Rank of the basis computed by this method.
     
-     @return Code specifying failure of the routine, as defined by the implementation.
+     @return Rank of the basis computed by this method.
     */
-    ReturnType normalize ( MV &X, Teuchos::RefCountPtr<MV> MX, 
-                           Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > R, 
-                           int &rank ) const;
+    int normalize ( MV &X, Teuchos::RefCountPtr<MV> MX, 
+                    Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > R) const;
 
 
     /*! \brief This method takes a multivector and projects it onto the space orthogonal to 
@@ -137,20 +133,18 @@ namespace Anasazi {
        On output, the columns of X are Op-orthonormal and Op-orthogonal to Q.
       
      @param MX [in/out] The image of \c X under the operator \c Op. 
-       If \f$ MX != 0\f$: On input, this is expected to be consistent with \c X. On output, this is updated consistent with updates to \c X.
+       If \f$ MX != 0\f$: On input, this is expected to be consistant with \c X. On output, this is updated consistant with updates to \c X.
        If \f$ MX == 0\f$ or \f$ Op == 0\f$: \c MX is not referenced.
       
      @param Q [in] A multivector specifying the space to be orthogonalized against. \c Q is assumed to have orthonormal
      columns with respect to \c innerProd().
       
-     @param rank [out] Rank of the basis computed by this method.
-      
-     @return Code specifying failure of the routine, as defined by the implementation.
+     @return Rank of the basis computed by this method.
     */
-    ReturnType projectAndNormalize ( MV &X, Teuchos::RefCountPtr<MV> MX, 
-                                     Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > C, 
-                                     Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > R, 
-                                     const MV &Q, int &rank ) const;
+    int projectAndNormalize ( MV &X, Teuchos::RefCountPtr<MV> MX, 
+                              Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
+                              Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > R, 
+                              Teuchos::Array<Teuchos::RefCountPtr<const MV> > Q) const;
 
     //@}
 
@@ -163,7 +157,7 @@ namespace Anasazi {
     typename Teuchos::ScalarTraits<ScalarType>::magnitudeType 
     orthonormError(const MV &X, Teuchos::RefCountPtr<const MV> MX) const;
 
-    /*! \brief This method computes the error in orthogonality of two multivectors, measure via \f$ \|Q^T Op X \|_F \f$.
+    /*! \brief This method computes the error in orthogonality of two multivectors, measured via \f$ \|Q^T Op X \|_F \f$.
      *  The method has the option of
      *  exploiting a caller-provided \c MX.
      */
@@ -178,9 +172,9 @@ namespace Anasazi {
     MagnitudeType _kappa;
   
     // ! Routine to find an orthonormal basis for the 
-    ReturnType findBasis(MV &X, Teuchos::RefCountPtr<MV> MX, 
+    int findBasis(MV &X, Teuchos::RefCountPtr<MV> MX, 
                          Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > C, 
-                         int &rank, bool completeBasis, int howMany = -1 ) const;
+                         bool completeBasis, int howMany = -1 ) const;
     
   };
 
@@ -193,8 +187,7 @@ namespace Anasazi {
     const ScalarType ONE = SCT::one();
     int rank = MVT::GetNumberVecs(X);
     Teuchos::SerialDenseMatrix<int,ScalarType> xTx(rank,rank);
-    ReturnType ret = innerProd(X,X,MX,xTx);
-    TEST_FOR_EXCEPTION( ret != Ok, std::runtime_error, "BasicOrthoManager::orthonormError(): innerProd returned error!" );
+    innerProd(X,X,MX,xTx);
     for (int i=0; i<rank; i++) {
       xTx(i,i) -= ONE;
     }
@@ -209,33 +202,27 @@ namespace Anasazi {
     int r1 = MVT::GetNumberVecs(X1);
     int r2  = MVT::GetNumberVecs(X2);
     Teuchos::SerialDenseMatrix<int,ScalarType> xTx(r2,r1);
-    ReturnType ret = innerProd(X2,X1,MX1,xTx);
-    TEST_FOR_EXCEPTION( ret != Ok, std::runtime_error, "BasicOrthoManager::orthogError(): innerProd returned error!" );
+    innerProd(X2,X1,MX1,xTx);
     return xTx.normFrobenius();
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Find an Op-orthonormal basis for span(X) - span(W)
   template<class ScalarType, class MV, class OP>
-  ReturnType BasicOrthoManager<ScalarType, MV, OP>::projectAndNormalize(
+  int BasicOrthoManager<ScalarType, MV, OP>::projectAndNormalize(
                                     MV &X, Teuchos::RefCountPtr<MV> MX, 
-                                    Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > C, 
+                                    Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
                                     Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > R, 
-                                    const MV &Q, int &rank ) const {
+                                    Teuchos::Array<Teuchos::RefCountPtr<const MV> > Q ) const {
 
-    int qc = MVT::GetNumberVecs( Q );
-    int qr = MVT::GetVecLength( Q );
+    int nq = Q.length();
     int xc = MVT::GetNumberVecs( X );
     int xr = MVT::GetVecLength( X );
-    ReturnType ret;
-
+    int rank;
 
     /* if the user doesn't want to store the coefficienets, 
      * allocate some local memory for them 
      */
-    if ( C == Teuchos::null ) {
-      C = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(qc,xc) );
-    }
     if ( R == Teuchos::null ) {
       R = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(xc,xc) );
     }
@@ -245,8 +232,7 @@ namespace Anasazi {
       if (MX == Teuchos::null) {
         // we need to allocate space for MX
         MX = MVT::Clone(X,MVT::GetNumberVecs(X));
-        ret = OPT::Apply(*(this->_Op),X,*MX);
-        if (ret != Ok) return Failed;
+        OPT::Apply(*(this->_Op),X,*MX);
       }
     }
     else {
@@ -258,39 +244,28 @@ namespace Anasazi {
     int mxr = MVT::GetVecLength( *MX );
 
     // short-circuit
-    if (xc == 0 || xr == 0) {
-      return Ok;
+    TEST_FOR_EXCEPTION( xc == 0 || xr == 0, OrthoError, "Anasazi::BasicOrthoManager::projectAndNormalize(): X must be non-empty" );
+
+    int numbas = 0;
+    for (int i=0; i<nq; i++) {
+      numbas += MVT::GetNumberVecs( *Q[i] );
     }
 
     // check size of C, R
-    if ( C->numRows() != qc || C->numCols() != xc || 
-         R->numRows() != xc || R->numCols() != xc ) {
-      return Failed;
-    }
-    // check size of X and Q w.r.t. common sense
-    else if (xc<0 || xr<0 || mxc<0 || mxr<0) {
-      return Failed;
-    }
+    TEST_FOR_EXCEPTION( R->numRows() != xc || R->numCols() != xc, OrthoError, 
+                        "Anasazi::BasicOrthoManager::projectAndNormalize(): Size of X must be consistant with size of R" );
+    // check size of X and MX
+    TEST_FOR_EXCEPTION( xc<0 || xr<0 || mxc<0 || mxr<0, OrthoError, 
+                        "Anasazi::BasicOrthoManager::projectAndNormalize(): MVT returned negative dimensions for X,MX" );
     // check size of X w.r.t. MX 
-    else if ( xc!=mxc || xr!=mxr ) {
-      return Failed;
-    }
-    // check Q
-    else if ( qr!=0 && qc!=0 && qr<qc ) {
-      return Failed;
-    }
-    // check size of Q
-    else if ( qr!=0 && qc!=0 && qr!=xr ) {
-      return Failed;
-    }
+    TEST_FOR_EXCEPTION( xc!=mxc || xr!=mxr, OrthoError, 
+                        "Anasazi::BasicOrthoManager::projectAndNormalize(): Size of X must be consistant with size of MX" );
     // check feasibility
-    else if ( qc+xc > xr ) {
-      return Failed;
-    }
+    TEST_FOR_EXCEPTION( numbas+xc > xr, OrthoError, 
+                        "Anasazi::BasicOrthoManager::projectAndNormalize(): Orthogonality constraints not feasible" );
 
     // orthogonalize all of X against Q
-    ret = project(X,MX,C,Q);
-    if (ret == Failed) return Failed;
+    project(X,MX,C,Q);
 
     Teuchos::SerialDenseMatrix<int,ScalarType> oldCoeff(xc,1);
 
@@ -299,13 +274,12 @@ namespace Anasazi {
     int numTries = 10;   // each vector in X gets 10 random chances to escape degeneracy
     int oldrank = -1;
     do {
-
       int curxsize = xc - rank;
 
       // orthonormalize X, but quit if it is rank deficient
       // we can't let findBasis generated random vectors to complete the basis,
       // because it doesn't know about Q; we will do this ourselves below
-      ret = findBasis(X,MX,R,rank,false,curxsize);
+      rank = findBasis(X,MX,R,false,curxsize);
 
       if (rank < xc && numTries == 10) {
         // we quit on this vector, and for the first time;
@@ -322,16 +296,13 @@ namespace Anasazi {
         }
       }
 
-      if (ret == Failed) {
-        return Failed;
-      }
-      else if (ret == Ok) {
+      if (ret == xc) {
         // we are done
         break;
       }
       else {
-        TEST_FOR_EXCEPTION( ret != Undefined, std::logic_error, "BasicOrthoManager::projectAndNormalize(): findBasis returned impossible value" );
-        TEST_FOR_EXCEPTION( rank < oldrank, std::logic_error,   "BasicOrthoManager::projectAndNormalize(): basis lost rank; this shouldn't happen");
+        TEST_FOR_EXCEPTION( rank < oldrank, OrthoError,   
+                            "Anasazi::BasicOrthoManager::projectAndNormalize(): basis lost rank; this shouldn't happen");
 
         if (rank != oldrank) {
           // we added a basis vector from random info; reset the chance counter
@@ -359,26 +330,20 @@ namespace Anasazi {
         MVT::MvRandom(*curX);
         if (this->_hasOp) {
           curMX = MVT::CloneView(*MX,ind);
-          if ( OPT::Apply( *(this->_Op), *curX, *curMX ) != Ok ) return Failed;
+          OPT::Apply( *(this->_Op), *curX, *curMX );
         }
 
         // orthogonalize against Q
         // if !this->_hasOp, the curMX will be ignored.
         // we don't care about these coefficients; in fact, we need to preserve the previous coeffs
-        if ( project(*curX,curMX,Teuchos::null,Q) != Ok ) return Failed;
-        
-        continue;
+        project(*curX,curMX,Teuchos::null,Q);
       }
-
     } while (1);
 
-    if (rank < xc) {
-      return Undefined;
-    }
-
     // this should not raise an exception; but our post-conditions oblige us to check
-    TEST_FOR_EXCEPTION( rank != xc, std::logic_error, "BasicOrthoManager::projectAndNormalize(): error in rank variable" );
-    return Ok; 
+    TEST_FOR_EXCEPTION( rank > xc || rank < 0, OrthoError, 
+                        "Anasazi::BasicOrthoManager::projectAndNormalize(): Debug error in rank variable." );
+    return rank;
   }
 
 
@@ -386,24 +351,23 @@ namespace Anasazi {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Find an M-orthonormal basis for span(X), with rank numvectors(X)
   template<class ScalarType, class MV, class OP>
-  ReturnType BasicOrthoManager<ScalarType, MV, OP>::normalize(
+  int BasicOrthoManager<ScalarType, MV, OP>::normalize(
                                 MV &X, Teuchos::RefCountPtr<MV> MX, 
-                                Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > R, 
-                                int &rank ) const {
+                                Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > R ) const {
     // call findBasis, with the instruction to try to generate a basis of rank numvecs(X)
-    return findBasis(X, MX, R, rank, true );
+    return findBasis(X, MX, R, true );
   }
 
 
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   template<class ScalarType, class MV, class OP>
-  ReturnType BasicOrthoManager<ScalarType, MV, OP>::project(
-                                MV &X, Teuchos::RefCountPtr<MV> MX, 
-                                Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > C, 
-                                const MV &Q ) const {
+  void BasicOrthoManager<ScalarType, MV, OP>::project(
+                          MV &X, Teuchos::RefCountPtr<MV> MX, 
+                          Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
+                          Teuchos::Array<Teuchos::RefCountPtr<const MV> > Q) const {
     // For the inner product defined by the operator M or the identity (M == 0)
-    //   -> Orthogonalize X against Q
+    //   -> Orthogonalize X against each Q[i]
     // Modify MX accordingly
     //
     // Note that when M is 0, MX is not referenced
@@ -414,75 +378,68 @@ namespace Anasazi {
     //
     // MX : Image of the block vector X by the mass matrix
     //
-    // Q  : Vectors to orthogonalize against. These are assumed orthonormal.
+    // Q  : Bases to orthogonalize against. These are assumed orthonormal, mutually and independenty.
     //
-    // Return the status of the computation
-    //
-    // Ok     >> Success
-    // Failed >> Failure >> Length of vectors in X != length of vectors in MX
-    //                   >> Number of columns of X != number of columns of MX
-    //                   >> Length of vectors in X != length of vectors in Q
-    //                   >> Failure applying operator M
 
     ScalarType    ONE  = SCT::one();
     MagnitudeType ZERO = SCT::magnitude(SCT::zero());
     ScalarType    EPS  = SCT::eps();
 
-    int qc = MVT::GetNumberVecs( Q );
-    int qr = MVT::GetVecLength( Q );
     int xc = MVT::GetNumberVecs( X );
     int xr = MVT::GetVecLength( X );
-
-    /* if the user doesn't want to store the coefficienets, 
-     * allocate some local memory for them 
-     */
-    if ( C == Teuchos::null ) {
-      C = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(qc,xc) );
+    int nq = Q.length();
+    std::vector<int> qcs(nq);
+    // short-circuit
+    if (nq == 0 || xc == 0 || xr == 0) {
+      return;
     }
+    int qr = MVT::GetVecLength ( *Q[0] );
+    // if we don't have enough C, expand it with null references
+    // if we have too many, resize to throw away the latter ones
+    // if we have exactly as many as we have Q, this call has no effect
+    C.resize(nq);
+
 
     /******   DO NO MODIFY *MX IF _hasOp == false   ******/
-
     if (this->_hasOp) {
       if (MX == Teuchos::null) {
         // we need to allocate space for MX
         MX = MVT::Clone(X,MVT::GetNumberVecs(X));
-        ReturnType ret = OPT::Apply(*(this->_Op),X,*MX);
-        if (ret != Ok) return Failed;
+        OPT::Apply(*(this->_Op),X,*MX);
       }
     }
     else {
       // Op == I  -->  MX = X (ignore it if the user passed it in)
       MX = Teuchos::rcp( &X, false );
     }
-
     int mxc = MVT::GetNumberVecs( *MX );
     int mxr = MVT::GetVecLength( *MX );
 
-    // short-circuit
-    if (xc == 0 || xr == 0 || qc == 0 || qr == 0 ) {
-      return Ok;
-    }
-
-    // check size of C, R
-    if ( C->numRows() != qc || C->numCols() != xc ) {
-      return Failed;
-    }
     // check size of X and Q w.r.t. common sense
-    else if (xc<0 || xr<0 || mxc<0 || mxr<0) {
-      return Failed;
-    }
+    TEST_FOR_EXCEPTION( xc<0 || xr<0 || mxc<0 || mxr<0, OrthoError, 
+                        "Anasazi::BasicOrthoManager::project(): MVT returned negative dimensions for X,MX" );
     // check size of X w.r.t. MX and Q
-    else if ( xc!=mxc || xr!=mxr || xr!=qr ) {
-      return Failed;
-    }
-    // check Q
-    else if ( qr<qc ) {
-      return Failed;
-    }
+    TEST_FOR_EXCEPTION( xc!=mxc || xr!=mxr || xr!=qr, OrthoError, 
+                        "Anasazi::BasicOrthoManager::project(): Size of X not consistant with MX,Q" );
 
-    std::vector<int> index(xc);
-    for (int i=0; i<xc; i++) {
-      index[i] = i;
+    // tally up size of all Q and check/allocate C
+    int baslen = 0;
+    for (int i=0; i<nq; i++) {
+      TEST_FOR_EXCEPTION( MVT::GetVecLength( *Q[i] ) != qr, OrthoError, 
+                          "Anasazi::BasicOrthoManager::project(): Q lengths not mutually consistant" );
+      qcs[i] = MVT::GetNumberVecs( *Q[i] );
+      TEST_FOR_EXCEPTION( qr < qcs[i], OrthoError, 
+                          "Anasazi::BasicOrthoManager::project(): Q has less rows than columns" );
+      baslen += qcs[i];
+
+      // check size of C[i]
+      if ( C[i] == Teuchos::null ) {
+        C[i] = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(qcs[i],xc) );
+      }
+      else {
+        TEST_FOR_EXCEPTION( C[i]->numRows() != qcs[i] || C[i]->numCols() != xc , OrthoError, 
+                           "Anasazi::BasicOrthoManager::project(): Size of Q not consistant with size of C" );
+      }
     }
 
     // Perform the Gram-Schmidt transformation for a block of vectors
@@ -491,27 +448,25 @@ namespace Anasazi {
     std::vector<ScalarType> oldDot( xc );
     MVT::MvDot( X, *MX, &oldDot );
 
+    Teuchos::Array<Teuchos::RefCountPtr<MV> > MQ(nq);
     // Define the product Q^T * (M*X)
-    // Multiply Q' with MX
-    innerProd(Q,X,MX,*C);
-    // Multiply by Q and subtract the result in X
-    MVT::MvTimesMatAddMv( -ONE, Q, *C, ONE, X );
+    for (int i=0; i<nq; i++) {
+      // Multiply Q' with MX
+      innerProd(*Q[i],X,MX,*C[i]);
+      // Multiply by Q and subtract the result in X
+      MVT::MvTimesMatAddMv( -ONE, *Q[i], *C[i], ONE, X );
 
-    // Update MX, with the least number of applications of M as possible
-    Teuchos::RefCountPtr<MV> MQ;
-    if (this->_hasOp) {
-      if (xc <= qc) {
-        if ( OPT::Apply( *(this->_Op), X, *MX) != Ok ) {
-          return Failed;
+      // Update MX, with the least number of applications of M as possible
+      if (this->_hasOp) {
+        if (xc <= qcs[i]) {
+          OPT::Apply( *(this->_Op), X, *MX);
         }
-      }
-      else {
-        // this will possibly be used again below; don't delete it
-        MQ = MVT::Clone( Q, qc );
-        if ( OPT::Apply( *(this->_Op), Q, *MQ ) != Ok ) {
-          return Failed;
+        else {
+          // this will possibly be used again below; don't delete it
+          MQ[i] = MVT::Clone( *Q[i], qcs[i] );
+          OPT::Apply( *(this->_Op), *Q[i], *MQ[i] );
+          MVT::MvTimesMatAddMv( -ONE, *MQ[i], *C[i], ONE, *MX );
         }
-        MVT::MvTimesMatAddMv( -ONE, *MQ, *C, ONE, *MX );
       }
     }
 
@@ -524,32 +479,29 @@ namespace Anasazi {
       
       if ( SCT::magnitude(_kappa*newDot[j]) < SCT::magnitude(oldDot[j]) ) {
 
-        Teuchos::SerialDenseMatrix<int,ScalarType> C2(*C);
-        
-        // Apply another step of classical Gram-Schmidt
-        innerProd(Q,X,MX,C2);
-        *C += C2;
-        MVT::MvTimesMatAddMv( -ONE, Q, C2, ONE, X );
-        
-        // Update MX, with the least number of applications of M as possible
-        if (this->_hasOp) {
-          if (MQ.get()) {
-            // MQ was allocated and computed above; use it
-            MVT::MvTimesMatAddMv( -ONE, *MQ, C2, ONE, *MX );
-          }
-          else if (xc <= qc) {
-            // MQ was not allocated and computed above; it was cheaper to use X before and it still is
-            if ( OPT::Apply( *(this->_Op), X, *MX) != Ok ) { 
-              return Failed;
+        for (int i=0; i<nq; i++) {
+          Teuchos::SerialDenseMatrix<int,ScalarType> C2(*C[i]);
+          
+          // Apply another step of classical Gram-Schmidt
+          innerProd(*Q[i],X,MX,C2);
+          *C[i] += C2;
+          MVT::MvTimesMatAddMv( -ONE, *Q[i], C2, ONE, X );
+          
+          // Update MX, with the least number of applications of M as possible
+          if (this->_hasOp) {
+            if (MQ[i].get()) {
+              // MQ was allocated and computed above; use it
+              MVT::MvTimesMatAddMv( -ONE, *MQ[i], C2, ONE, *MX );
+            }
+            else if (xc <= qcs[i]) {
+              // MQ was not allocated and computed above; it was cheaper to use X before and it still is
+              OPT::Apply( *(this->_Op), X, *MX);
             }
           }
         }
-        
         break;
       } // if (_kappa*newDot[j] < oldDot[j])
     } // for (int j = 0; j < xc; ++j)
-
-    return Ok;
   }
 
 
@@ -557,10 +509,10 @@ namespace Anasazi {
   // Find an M-orthonormal basis for span(X), with the option of extending the subspace so that 
   // the rank is numvectors(X)
   template<class ScalarType, class MV, class OP>
-  ReturnType BasicOrthoManager<ScalarType, MV, OP>::findBasis(
+  int BasicOrthoManager<ScalarType, MV, OP>::findBasis(
                 MV &X, Teuchos::RefCountPtr<MV> MX, 
                 Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > R,
-                int &rank, bool completeBasis, int howMany ) const {
+                bool completeBasis, int howMany ) const {
     // For the inner product defined by the operator M or the identity (M == 0)
     //   -> Orthonormalize X 
     // Modify MX accordingly
@@ -579,15 +531,6 @@ namespace Anasazi {
     // kappa= Coefficient determining when to perform a second Gram-Schmidt step
     //        Default value = 1.5625 = (1.25)^2 (as suggested in Parlett's book)
     //
-    // Return the status of the computation
-    // Ok        >> Success
-    // Undefined >> X is rank deficient and completeBasis == false
-    // Failed    >> Failure >> X has zero columns or zero rows
-    //                      >> Length of vectors in X != length of vectors in MX
-    //                      >> Number of columns of X != number of columns of MX
-    //                      >> Number of columns of X  > number of rows of X
-    //                      >> X is rank deficient and completeBasis == true and we couldn't fix it
-    //                      >> Failure applying operator M
 
     const ScalarType ONE  = SCT::one();
     const MagnitudeType ZERO = SCT::magnitude(SCT::zero());
@@ -610,8 +553,7 @@ namespace Anasazi {
       if (MX == Teuchos::null) {
         // we need to allocate space for MX
         MX = MVT::Clone(X,xc);
-        ReturnType ret = OPT::Apply(*(this->_Op),X,*MX);
-        if (ret != Ok) return Failed;
+        OPT::Apply(*(this->_Op),X,*MX);
       }
     }
 
@@ -626,24 +568,16 @@ namespace Anasazi {
     int mxr = (this->_hasOp) ? MVT::GetVecLength( *MX )  : xr;
 
     // check size of C, R
-    if ( R->numRows() != xc || R->numCols() != xc ) {
-      return Failed;
-    }
-    else if (xc != mxc) {
-      return Failed;
-    }
-    else if (xc > xr) {
-      return Failed;
-    }
-    else if (xr != mxr) {
-      return Failed;
-    }
-    else if (xc == 0 || xr == 0) {
-      return Failed;
-    }
-    else if (howMany < 0 || howMany > xc) {
-      return Failed;
-    }
+    TEST_FOR_EXCEPTION( xc == 0 || xr == 0, OrthoError, 
+                        "Anasazi::BasicOrthoManager::findBasis(): X must be non-empty" );
+    TEST_FOR_EXCEPTION( R->numRows() != xc || R->numCols() != xc, OrthoError, 
+                        "Anasazi::BasicOrthoManager::findBasis(): Size of X not consistant with size of R" );
+    TEST_FOR_EXCEPTION( xc != mxc || xr != mxr, OrthoError, 
+                        "Anasazi::BasicOrthoManager::findBasis(): Size of X not consistant with size of MX" );
+    TEST_FOR_EXCEPTION( xc > xr, OrthoError, 
+                        "Anasazi::BasicOrthoManager::findBasis(): Size of X not feasible for normalization" );
+    TEST_FOR_EXCEPTION( howMany < 0 || howMany > xc, OrthoError, 
+                        "Anasazi::BasicOrthoManager::findBasis(): Invalid howMany parameter" );
 
     /* xstart is which column we are starting the process with, based on howMany
      * columns before xstart are assumed to be M-orthonormal already
@@ -702,15 +636,14 @@ namespace Anasazi {
         Teuchos::RefCountPtr<MV> oldMXj = MVT::CloneCopy( *MXj ); 
         MVT::MvDot( *Xj, *MXj, &oldDot );
         // Xj^H M Xj should be real and positive, by the hermitian positive definiteness of M
-        if ( SCT::real(oldDot[0]) < ZERO ) {
-          return Failed;
-        }
+        TEST_FOR_EXCEPTION( SCT::real(oldDot[0]) < ZERO, OrthoError, 
+                            "Anasazi::BasicOrthoManager::findBasis(): Negative definiteness discovered in inner product" );
 
         if (numX > 0) {
           // Apply the first step of Gram-Schmidt
 
           // product <- prevX^T MXj
-          innerProd(*prevX,*prevX,MXj,product);
+          innerProd(*prevX,*Xj,MXj,product);
 
           // Xj <- Xj - prevX prevX^T MXj   
           //     = Xj - prevX product
@@ -733,7 +666,7 @@ namespace Anasazi {
             // This is the same as above
             Teuchos::SerialDenseMatrix<int,ScalarType> P2(numX,1);
 
-            innerProd(*prevX,*prevX,MXj,P2);
+            innerProd(*prevX,*Xj,MXj,P2);
             product += P2;
             MVT::MvTimesMatAddMv( -ONE, *prevX, P2, ONE, *Xj );
             if ((this->_hasOp)) {
@@ -796,7 +729,7 @@ namespace Anasazi {
 #endif
             MVT::MvRandom( *Xj );
             if (this->_hasOp) {
-              if ( OPT::Apply( *(this->_Op), *Xj, *MXj ) != Ok ) return Failed;
+              OPT::Apply( *(this->_Op), *Xj, *MXj );
             }
           }
           else {
@@ -810,22 +743,19 @@ namespace Anasazi {
 
       // if rankDef == true, then quit and notify user of rank obtained
       if (rankDef == true) {
-        rank = j;
         (*R)(j,j) = ZERO;
         MVT::MvInit( *Xj, ZERO );
         if (this->_hasOp) {
           MVT::MvInit( *MXj, ZERO );
         }
-        if (completeBasis) {
-          return Failed;
-        }
-        return Undefined;
+        TEST_FOR_EXCEPTION( completeBasis, OrthoError, 
+                            "Anasazi::BasicOrthoManager::findBasis(): Unable to complete basis" );
+        return j;
       }
 
     } // for (j = 0; j < xc; ++j)
 
-    rank = xc;
-    return Ok;
+    return xc;
   }
 
 } // namespace Anasazi
