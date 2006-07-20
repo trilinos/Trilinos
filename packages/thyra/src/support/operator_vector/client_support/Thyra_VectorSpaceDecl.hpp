@@ -116,6 +116,28 @@ namespace Thyra
   Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > 
   productSpace(VectorSpace<Scalar>& s1,VectorSpace<Scalar>& s2,
                VectorSpace<Scalar>& s3);
+
+
+  /** 
+   * \relates VectorSpace 
+   * Returns the lowest global index accessible on this processor.
+   * This function will throw an exception if the space is not
+   * a SpmdVectorSpaceBase. 
+   */
+  template <class Scalar>
+  int lowestLocallyOwnedIndex(const VectorSpace<Scalar>& s) ;
+
+  /** 
+   * \relates VectorSpace 
+   * Return the number of elements owned by this processor.
+   * This function will throw an exception if the space is not
+   * a SpmdVectorSpaceBase. 
+   */
+  template <class Scalar>
+  int numLocalElements(const VectorSpace<Scalar>& s) ;
+
+  
+
 }
 
 #endif

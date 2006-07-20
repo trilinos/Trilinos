@@ -43,7 +43,6 @@ namespace Thyra
   template <class Scalar> inline
   Scalar ConstVector<Scalar>::operator[](Index globalIndex) const 
   {
-    cout << "calling const [] " << endl;
     ConstDetachedVectorView<Scalar> view(this->ptr(), Range1D(0, dim(*this)-1));
     return view[globalIndex];
   }
@@ -91,7 +90,10 @@ namespace Thyra
     return *this;
   }
 
-
+  /** */
+  template <class Scalar> inline 
+  Scalar Vector<Scalar>::operator[](Index globalIndex) const 
+  {return ConstVector<Scalar>::operator[](globalIndex);}
   
 
   /** 
@@ -131,7 +133,7 @@ namespace Thyra
                            "a product vector");
         return *this;
       }
-    Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > b = pv->getBlock(i);
+    Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > b = pv->getVectorBlock(i);
     return b;
   }
 
@@ -148,13 +150,10 @@ namespace Thyra
                            "a product vector");
         return *this;
       }
-    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > b = pv->getBlock(i);
+    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > b = pv->getNonconstVectorBlock(i);
     return b;
   }
 
-  
-  //@}
-  
   /** \relates Vector */
   template <class Scalar> inline  
   void setElement(const Vector<Scalar>& x, Index i, const Scalar& x_i);
@@ -162,6 +161,9 @@ namespace Thyra
   /** \relates ConstVector */
   template <class Scalar> inline  
   const Scalar& getElement(const ConstVector<Scalar>& x, Index i);
+
+  
+  
 
 
 }

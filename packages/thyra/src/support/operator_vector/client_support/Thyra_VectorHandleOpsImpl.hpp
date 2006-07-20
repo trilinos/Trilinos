@@ -35,6 +35,21 @@
 namespace Thyra
 {
   
+  /* */
+  template <class Scalar> inline  
+  void setToConstant(Vector<Scalar>& x, const Scalar& a)
+  {
+    put_scalar(a, x.ptr().get());
+  }
+
+  /* */
+  template <class Scalar> inline  
+  void zeroOut(Vector<Scalar>& x)
+  {
+    setToConstant(x, 0.0);
+  }
+
+  
 
   /* abs */
   THYRA_UNARY_VECTOR_OP(abs, absInto, abs, "absolute value")
@@ -125,6 +140,7 @@ namespace Thyra
                    const Converter<Scalar, ConstVector<Scalar> >& y,
                    Vector<Scalar>& result)
     {
+      zeroOut(result);
       Thyra::ele_wise_prod(1.0, *(toVector(x).ptr()), *(toVector(y).ptr()), 
                            result.ptr().get());
     }

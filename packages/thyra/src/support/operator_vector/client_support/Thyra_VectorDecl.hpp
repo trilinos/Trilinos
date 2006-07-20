@@ -107,7 +107,7 @@ namespace Thyra
     void addInto(Vector<Scalar>& other, Thyra::LCSign sign) const ;
 
     /** */
-    Scalar operator[](Index globalIndex) const ;
+    virtual Scalar operator[](Index globalIndex) const ;
 
     /** */
     ConstVector<Scalar> convert() const {return *this;}
@@ -218,10 +218,13 @@ namespace Thyra
     /** */
     IndexObject operator[](Index globalIndex)
     {
-      *Teuchos::VerboseObjectBase::getDefaultOStream()
-        << "calling non-const [] " << endl;
+      //      *Teuchos::VerboseObjectBase::getDefaultOStream()
+      // << "calling non-const [] " << endl;
       return IndexObject(this->ptr(), globalIndex);
     }
+
+    /** */
+    Scalar operator[](Index globalIndex) const ;
 
     /** \name Product vector operations */
     //@{

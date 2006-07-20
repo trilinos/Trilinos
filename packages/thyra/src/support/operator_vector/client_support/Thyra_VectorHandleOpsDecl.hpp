@@ -35,6 +35,14 @@
 
 namespace Thyra 
 {
+  /** \relates Vector */
+  template <class Scalar> inline  
+  void setToConstant(const Vector<Scalar>& x, const Scalar& a);
+
+  /** \relates Vector */
+  template <class Scalar> inline  
+  void zeroOut(const Vector<Scalar>& x);
+
   /* abs */
   THYRA_UNARY_VECTOR_OP_DECL(abs, absInto, abs, "absolute value");
 

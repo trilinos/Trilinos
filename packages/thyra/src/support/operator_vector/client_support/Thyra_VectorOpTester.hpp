@@ -174,8 +174,8 @@ namespace Thyra
         /* do the operation with member functions */
 
         /* do the operation elementwise */
-        int low = space_.lowestLocallyOwnedIndex();
-        int high = low + space_.numLocalElements();
+        int low = lowestLocallyOwnedIndex(space_);
+        int high = low + numLocalElements(space_);
 
         cout << "setting values" << endl;
 
@@ -231,8 +231,8 @@ namespace Thyra
          * the sum of all elements. If done correctly, the sum will equal 
          * N*(N+1)*(2N+1)/6.
          */
-        int low = space_.lowestLocallyOwnedIndex();
-        int high = low + space_.numLocalElements();
+        int low = lowestLocallyOwnedIndex(space_);
+        int high = low + numLocalElements(space_);
 
         for (int i=low; i<high; i++)
           {
@@ -240,7 +240,25 @@ namespace Thyra
           }
         cout << "a = " << endl << a << endl;
         Vector<double> b = copy(a);
+
+        for (int i=low; i<high; i++)
+          {
+            ConstVector<Scalar>& aa = a;
+            ConstVector<Scalar>& bb = b;
+            cout << "i=" << i << " a[i]=" << aa[i] << endl;
+            cout << "i=" << i << " b[i]=" << bb[i] << endl;
+          }
+
+        cout << "doing dot-star" << endl;
         b = dotStar(a, b);
+
+        for (int i=low; i<high; i++)
+          {
+            ConstVector<Scalar>& aa = a;
+            ConstVector<Scalar>& bb = b;
+            cout << "i=" << i << " a[i]=" << aa[i] << endl;
+            cout << "i=" << i << " b[i]=" << bb[i] << endl;
+          }
 
         double sum = 0.0;
         for (int i=low; i<high; i++)
@@ -248,6 +266,14 @@ namespace Thyra
             cout << i << " " << a[i] << " " << i*a[i]
                  << endl;
             sum += i * a[i];
+          }
+
+        for (int i=low; i<high; i++)
+          {
+            ConstVector<Scalar>& aa = a;
+            ConstVector<Scalar>& bb = b;
+            cout << "i=" << i << " a[i]=" << aa[i] << endl;
+            cout << "i=" << i << " b[i]=" << bb[i] << endl;
           }
 
 #ifdef HAVE_MPI
@@ -303,16 +329,13 @@ namespace Thyra
          * the sum of all elements. If done correctly, the sum will equal 
          * N*(N+1)*(2N+1)/6.
          */
-        int low = space_.lowestLocallyOwnedIndex();
-        int high = low + space_.numLocalElements();
+        int low = lowestLocallyOwnedIndex(space_);
+        int high = low + numLocalElements(space_);
 
         for (int i=low; i<high; i++)
           {
-            //a.setElement(i, i);
-            a[i] = i;
-            ab[i] = i;
-            // 	    prod[i] = i;
-            // 	    prod[i + space_.dim()] = i + space_.dim();
+            prod[i] = i;
+            prod[i + space_.dim()] = i + space_.dim();
           }
 
         cout << "a = " << endl << a << endl;
@@ -416,8 +439,8 @@ namespace Thyra
         x = dotStar(a,b);
 
         /* do the operation elementwise */
-        int low = space_.lowestLocallyOwnedIndex();
-        int high = low + space_.numLocalElements();
+        int low = lowestLocallyOwnedIndex(space_);
+        int high = low + numLocalElements(space_);
 
         for (int i=low; i<high; i++)
           {
@@ -472,8 +495,8 @@ namespace Thyra
         x = dotSlash(a,b);
 
         /* do the operation elementwise */
-        int low = space_.lowestLocallyOwnedIndex();
-        int high = low + space_.numLocalElements();
+        int low = lowestLocallyOwnedIndex(space_);
+        int high = low + numLocalElements(space_);
 
         for (int i=low; i<high; i++)
           {
@@ -526,8 +549,8 @@ namespace Thyra
         x = 3.14*a;
 
         /* do the operation elementwise */
-        int low = space_.lowestLocallyOwnedIndex();
-        int high = low + space_.numLocalElements();
+        int low = lowestLocallyOwnedIndex(space_);
+        int high = low + numLocalElements(space_);
 
         for (int i=low; i<high; i++)
           {
@@ -580,8 +603,8 @@ namespace Thyra
         x = 3.14*a + 1.4*b;
 
         /* do the operation elementwise */
-        int low = space_.lowestLocallyOwnedIndex();
-        int high = low + space_.numLocalElements();
+        int low = lowestLocallyOwnedIndex(space_);
+        int high = low + numLocalElements(space_);
 
         for (int i=low; i<high; i++)
           {
@@ -630,8 +653,8 @@ namespace Thyra
         Vector<Scalar> y = space_.createMember();
 
         /* load the operation elementwise */
-        int low = space_.lowestLocallyOwnedIndex();
-        int high = low + space_.numLocalElements();
+        int low = lowestLocallyOwnedIndex(space_);
+        int high = low + numLocalElements(space_);
 
         int denomsAreOK = true;
         for (int i=low; i<high; i++)
@@ -703,8 +726,8 @@ namespace Thyra
         randomizeVec(b);
 
         /* perform the operation elementwise */
-        int low = space_.lowestLocallyOwnedIndex();
-        int high = low + space_.numLocalElements();
+        int low = lowestLocallyOwnedIndex(space_);
+        int high = low + numLocalElements(space_);
 
         double minQLocal = Teuchos::ScalarTraits<Scalar>::rmax();
         for (int i=low; i<high; i++)
@@ -770,8 +793,8 @@ namespace Thyra
         Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
 
         /* load the operation elementwise */
-        int low = space_.lowestLocallyOwnedIndex();
-        int high = low + space_.numLocalElements();
+        int low = lowestLocallyOwnedIndex(space_);
+        int high = low + numLocalElements(space_);
 
         int allFeasible = true;
         for (int i=low; i<high; i++)
@@ -864,8 +887,8 @@ namespace Thyra
         Thyra::VCompare(s, *(a.ptr()), x.ptr().get());
 
         /* do the operation elementwise */
-        int low = space_.lowestLocallyOwnedIndex();
-        int high = low + space_.numLocalElements();
+        int low = lowestLocallyOwnedIndex(space_);
+        int high = low + numLocalElements(space_);
 
         for (int i=low; i<high; i++)
           {
@@ -917,8 +940,8 @@ namespace Thyra
         Thyra::VCompare(s, *(a.ptr()), x.ptr().get());
 
         /* do the operation elementwise */
-        int low = space_.lowestLocallyOwnedIndex();
-        int high = low + space_.numLocalElements();
+        int low = lowestLocallyOwnedIndex(space_);
+        int high = low + numLocalElements(space_);
 
         for (int i=low; i<high; i++)
           {

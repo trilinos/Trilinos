@@ -30,6 +30,7 @@
 #define THYRA_VECTORSPACEIMPL_HPP
 
 #include "Thyra_ProductVectorSpaceBase.hpp"
+#include "Thyra_SpmdVectorSpaceBase.hpp"
 #include "Thyra_DefaultProductVectorSpace.hpp"
 #include "Thyra_VectorSpaceDecl.hpp"
 #include "Teuchos_Describable.hpp"
@@ -172,6 +173,28 @@ namespace Thyra
   {
     return productSpace(Teuchos::tuple(s1, s2, s3));
   }
+
+
+  //========================================================================
+  template <class Scalar>
+  int lowestLocallyOwnedIndex(const VectorSpace<Scalar>& s) 
+  {
+    RefCountPtr<const SpmdVectorSpaceBase<Scalar> > spmdSpace
+      = rcp_dynamic_cast<const SpmdVectorSpaceBase<Scalar> >(s.ptr());
+    return spmdSpace->localOffset();
+  }
+
+  //========================================================================
+  template <class Scalar>
+  int numLocalElements(const VectorSpace<Scalar>& s) 
+  {
+    RefCountPtr<const SpmdVectorSpaceBase<Scalar> > spmdSpace
+      = rcp_dynamic_cast<const SpmdVectorSpaceBase<Scalar> >(s.ptr());
+    return spmdSpace->localSubDim();
+  }
+
+
+  
 
 } // namespace Thyra
 

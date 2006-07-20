@@ -82,9 +82,9 @@ int main( int argc, char *argv[] )
       *out << "i=" << i << " x=" << x_i << endl;
     }
     
-    //  VectorOpTester<double> tester(space, TestSpecifier<double>(true, 1.0e-13, 1.0e-10));
+    VectorOpTester<double> tester(space, TestSpecifier<double>(true, 1.0e-13, 1.0e-10));
     
-    //      tester.runAllTests();
+    tester.runAllTests();
     
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true,out.get()?*out:std::cerr,success)
