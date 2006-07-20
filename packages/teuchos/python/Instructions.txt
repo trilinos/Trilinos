@@ -22,8 +22,8 @@ package (or it has already been created).  If not, see
 Once these steps have been completed and you wish to add integration
 with the Teuchos wrappers, follow these steps:
 
-1.  In your *.i interface file within the %{...%} section, add the
-    following:
+1.  In your python/src/PACKAGE.i interface file within the %{...%}
+    section, add the following:
 
     // Teuchos includes
     #include "Teuchos_ParameterList.hpp"
@@ -37,6 +37,9 @@ with the Teuchos wrappers, follow these steps:
     and you should delete the line
 
     #include "PyTeuchos_Util.h"
+
+    as well as any %typemap directives that involve
+    Teuchos::ParameterList.
 
 2.  Also within your interface file, add
 
