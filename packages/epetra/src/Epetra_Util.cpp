@@ -32,9 +32,12 @@
 #include "Epetra_Comm.h"
 #include "Epetra_Directory.h"
 #include "Epetra_Map.h"
+#include "Epetra_LocalMap.h"
 #include "Epetra_CrsGraph.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_MultiVector.h"
+#include "Epetra_IntVector.h"
+#include "Epetra_Import.h"
 
 const double Epetra_Util::chopVal_ = 1.0e-15;
 
@@ -162,6 +165,81 @@ Epetra_Util::Create_OneToOne_Map(const Epetra_Map& usermap,
   delete [] owner_procs;
 
   return(one_to_one_map);
+}
+
+//----------------------------------------------------------------------------
+Epetra_Map
+Epetra_Util::Create_Root_Map(const Epetra_Map& usermap,
+				 int root)
+{
+
+  int numProc = usermap.Comm().NumProc();
+  if (numProc==1) {
+    Epetra_Map newmap(usermap);
+    return(newmap);
+  }
+
+  const Epetra_Comm & comm = usermap.Comm();
+  bool isRoot = usermap.Comm().MyPID()==root;
+
+  //if usermap is already completely owned by root then we'll just return a copy of it.
+  int quickreturn = 0;
+  int globalquickreturn = 0;
+
+  if (isRoot) {
+    if (usermap.NumMyElements()==usermap.NumGlobalElements()) quickreturn = 1;
+  }
+  else {
+    if (usermap.NumMyElements()==0) quickreturn = 1;
+  }
+  usermap.Comm().MinAll(&quickreturn, &globalquickreturn, 1);
+  
+  if (globalquickreturn==1) {
+    Epetra_Map newmap(usermap);
+    return(newmap);
+  }
+  
+  // Linear map: Simple case, just put all GIDs linearly on root processor
+  if (usermap.LinearMap() && root!=-1) {
+    int numMyElements = 0;
+    if (isRoot) numMyElements = usermap.MaxAllGID()+1;
+    Epetra_Map newmap(-1, numMyElements, usermap.IndexBase(), comm);
+    return(newmap);
+  }
+
+  if (!usermap.UniqueGIDs()) 
+    throw usermap.ReportError("usermap must have unique GIDs",-1);
+
+  // General map
+
+  // Build IntVector of the GIDs, then ship them to root processor
+  int numMyElements = usermap.NumMyElements();
+  Epetra_Map allGidsMap(-1, numMyElements, 0, comm);
+  Epetra_IntVector allGids(allGidsMap);
+  for (int i=0; i<numMyElements; i++) allGids[i] = usermap.GID(i);
+  
+  int numGlobalElements = usermap.NumGlobalElements();
+  if (root!=-1) {
+    int n1 = 0; if (isRoot) n1 = numGlobalElements;
+    Epetra_Map allGidsOnRootMap(-1, n1, 0, comm);
+    Epetra_Import importer(allGidsOnRootMap, allGidsMap);
+    Epetra_IntVector allGidsOnRoot(allGidsOnRootMap);
+    allGidsOnRoot.Import(allGids, importer, Insert);
+    
+    Epetra_Map rootMap(-1, allGidsOnRoot.MyLength(), allGidsOnRoot.Values(), usermap.IndexBase(), comm);
+    return(rootMap);
+  }
+  else {
+    int n1 = numGlobalElements;
+    Epetra_LocalMap allGidsOnRootMap(n1, 0, comm);
+    Epetra_Import importer(allGidsOnRootMap, allGidsMap);
+    Epetra_IntVector allGidsOnRoot(allGidsOnRootMap);
+    allGidsOnRoot.Import(allGids, importer, Insert);
+    
+    Epetra_Map rootMap(-1, allGidsOnRoot.MyLength(), allGidsOnRoot.Values(), usermap.IndexBase(), comm);
+
+    return(rootMap);
+  }
 }
 
 //----------------------------------------------------------------------------

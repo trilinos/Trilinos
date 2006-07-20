@@ -131,6 +131,16 @@ class Epetra_Util {
 		   int NumDoubleCompanions,double ** DoubleCompanions, 
 		   int NumIntCompanions, int ** IntCompanions);
 
+  //! Epetra_Util Create_Root_Map function
+  /*! Function to create a new Epetra_Map object with all GIDs sent to the root processor
+      which is zero by default.  All all processors will have no GIDs.  This root map can then 
+      be used to create an importer or exporter that will migrate all data to the root processor.
+
+      If root is set to -1 then the user map will be replicated completely on all processors.
+  */
+  static Epetra_Map Create_Root_Map(const Epetra_Map & usermap,
+					int root = 0);
+
   //! Epetra_Util Create_OneToOne_Map function
   /*! Function to create a new Epetra_Map object with 1-to-1 ownership of
     entries from an existing map which may have entries that appear on

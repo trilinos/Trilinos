@@ -32,6 +32,8 @@ noinst_PROGRAMS = inout_test
 
 inout_test_SOURCES = \
   $(srcdir)/cxx_main.cpp \
+  $(srcdir)/Poisson2dOperator.h \
+  $(srcdir)/Poisson2dOperator.cpp \
   $(top_srcdir)/test/epetra_test_err.h
 
 inout_test_DEPENDENCIES = \

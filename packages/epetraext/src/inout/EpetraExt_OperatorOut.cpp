@@ -63,6 +63,10 @@ int OperatorToMatrixMarketFile( const char *filename, const Epetra_Operator & A,
 
   FILE * handle = 0;
 
+  // To get count of nonzero terms we do multiplies ...
+  int nz = 0;
+  if (get_nz(A, nz)) {EPETRA_CHK_ERR(-1);}
+
   if (domainMap.Comm().MyPID()==0) { // Only PE 0 does this section
 
     handle = fopen(filename,"w");
@@ -73,9 +77,6 @@ int OperatorToMatrixMarketFile( const char *filename, const Epetra_Operator & A,
     mm_set_coordinate(&matcode);
     mm_set_real(&matcode);
     
-    // To get count of nonzero terms we do multiplies ...
-    int nz = 0;
-    if (get_nz(A, nz)) {if (handle!=0) fclose(handle); EPETRA_CHK_ERR(-1);}
 
     if (writeHeader==true) { // Only write header if requested (true by default)
     
@@ -90,7 +91,7 @@ int OperatorToMatrixMarketFile( const char *filename, const Epetra_Operator & A,
     
   if (OperatorToHandle(handle, A)!=0) {if (handle!=0) fclose(handle); EPETRA_CHK_ERR(-1);}// Everybody calls this routine
 
-  if (fclose(handle)!=0) fclose(handle);
+  if (handle!=0) fclose(handle);
   return(0);
 }
 
@@ -100,7 +101,9 @@ int OperatorToHandle(FILE * handle, const Epetra_Operator & A) {
   const Epetra_Map & rangeMap = A.OperatorRangeMap();
   int N = domainMap.NumGlobalElements();
 
+  //cout << "rangeMap = " << rangeMap << endl;
   Epetra_Map rootRangeMap = Epetra_Util::Create_Root_Map(rangeMap);
+  //cout << "rootRangeMap = " << rootRangeMap << endl;
   Epetra_Map rootDomainMap = Epetra_Util::Create_Root_Map(domainMap, -1); // Replicate on all processors
   Epetra_Import importer(rootRangeMap, rangeMap);
 
@@ -122,8 +125,8 @@ int OperatorToHandle(FILE * handle, const Epetra_Operator & A) {
       }
     }
     EPETRA_CHK_ERR(A.Apply(xrem, yrem));
-    yrem1.Import(yrem, importer, Insert);
-    writeOperatorStrip(handle, yrem1, rootDomainMap, rootRangeMap, 0);
+    EPETRA_CHK_ERR(yrem1.Import(yrem, importer, Insert));
+    EPETRA_CHK_ERR(writeOperatorStrip(handle, yrem1, rootDomainMap, rootRangeMap, 0));
   }
 
   if (numchunks>0) {
@@ -141,13 +144,13 @@ int OperatorToHandle(FILE * handle, const Epetra_Operator & A) {
 	}
       }
       EPETRA_CHK_ERR(A.Apply(x, y));
-      y1.Import(y, importer, Insert);
-      writeOperatorStrip(handle, y1, rootDomainMap, rootRangeMap, startCol);
+      EPETRA_CHK_ERR(y1.Import(y, importer, Insert));
+      EPETRA_CHK_ERR(writeOperatorStrip(handle, y1, rootDomainMap, rootRangeMap, startCol));
       // Put 0's in slots
       for (int j=0; j<chunksize; j++) {
 	int curGlobalCol = rootDomainMap.GID(startCol+j); // Should return same value on all processors
 	if (domainMap.MyGID(curGlobalCol)){
-	  int curCol = A.OperatorDomainMap().LID(curGlobalCol);
+	  int curCol = domainMap.LID(curGlobalCol);
 	  x[j][curCol] = 0.0;
 	}
       }
@@ -156,7 +159,7 @@ int OperatorToHandle(FILE * handle, const Epetra_Operator & A) {
 
   return(0);
 }
-  int writeOperatorStrip(FILE * handle, const Epetra_MultiVector & y, const Epetra_Map & rootDomainMap, const Epetra_Map & rootRangeMap, int startColumn) {
+int writeOperatorStrip(FILE * handle, const Epetra_MultiVector & y, const Epetra_Map & rootDomainMap, const Epetra_Map & rootRangeMap, int startColumn) {
 
   int ierr = 0;
   int numRows = y.GlobalLength();
@@ -168,21 +171,28 @@ int OperatorToHandle(FILE * handle, const Epetra_Operator & A) {
   }
   else {
     if (numRows!=y.MyLength()) {EPETRA_CHK_ERR(-1);}
-    for (int j=0; numCols; j++) {
+    for (int j=0; j<numCols; j++) {
       int J = rootDomainMap.GID(j + startColumn) + ioffset;
       for (int i=0; i<numRows; i++) {
-      int I = rootRangeMap.GID(i) + ioffset;
 	double val = y[j][i];
-	fprintf(handle, "%d %d %22.16e\n", I, J, val);
+	if (val!=0.0) {
+	  int I = rootRangeMap.GID(i) + ioffset;
+	  fprintf(handle, "%d %d %22.16e\n", I, J, val);
+	}
       }
     }
   }
   return(0);
 }
-  int get_nz(const Epetra_Operator & A, int & nz) {
+int get_nz(const Epetra_Operator & A, int & nz) {
+  
+  const Epetra_Map & domainMap = A.OperatorDomainMap();
+  const Epetra_Map & rangeMap = A.OperatorRangeMap();
+    
 
-  int N = A.OperatorDomainMap().NumGlobalElements();
-  Epetra_Map rootDomainMap = Epetra_Util::Create_Root_Map(A.OperatorDomainMap(), -1); // Replicate on all processors
+  int N = domainMap.NumGlobalElements();
+  Epetra_Map rootDomainMap = Epetra_Util::Create_Root_Map(domainMap, -1); // Replicate on all processors
+
 
   int chunksize = 5; // Let's do multiple RHS at a time
   int numchunks = N/chunksize;
@@ -190,41 +200,41 @@ int OperatorToHandle(FILE * handle, const Epetra_Operator & A) {
 
   int lnz = 0;
   if (rem>0) {
-    Epetra_MultiVector xrem(A.OperatorDomainMap(), rem);
-    Epetra_MultiVector yrem(A.OperatorRangeMap(), rem);
+    Epetra_MultiVector xrem(domainMap, rem);
+    Epetra_MultiVector yrem(rangeMap, rem);
     // Put 1's in slots
     for (int j=0; j<rem; j++) {
       int curGlobalCol = rootDomainMap.GID(j);
-      if (A.OperatorDomainMap().MyGID(curGlobalCol)) xrem[j][A.OperatorRangeMap().LID(curGlobalCol)] = 1.0;
+      if (domainMap.MyGID(curGlobalCol)) xrem[j][domainMap.LID(curGlobalCol)] = 1.0;
     }
     EPETRA_CHK_ERR(A.Apply(xrem, yrem));
     for (int j=0; j<rem; j++) {
       int mylength = yrem.MyLength();
       for (int i=0; i<mylength; i++) 
-	if (yrem[j][i]==0.0) lnz++;
+	if (yrem[j][i]!=0.0) lnz++;
     }
   }
 
   if (numchunks>0) {
-    Epetra_MultiVector x(A.OperatorDomainMap(), chunksize);
-    Epetra_MultiVector y(A.OperatorRangeMap(), chunksize);
+    Epetra_MultiVector x(domainMap, chunksize);
+    Epetra_MultiVector y(rangeMap, chunksize);
     for (int ichunk = 0; ichunk<numchunks; ichunk++) {
       int startCol = ichunk*chunksize+rem;
       // Put 1's in slots
       for (int j=0; j<chunksize; j++) {
 	int curGlobalCol = rootDomainMap.GID(startCol+j);
-	if (A.OperatorDomainMap().MyGID(curGlobalCol)) x[j][A.OperatorRangeMap().LID(curGlobalCol)] = 1.0;
+	if (domainMap.MyGID(curGlobalCol)) x[j][domainMap.LID(curGlobalCol)] = 1.0;
       }
       EPETRA_CHK_ERR(A.Apply(x, y));
       for (int j=0; j<chunksize; j++) {
 	int mylength = y.MyLength();
 	for (int i=0; i<mylength; i++) 
-	  if (y[j][i]==0.0) lnz++;
+	  if (y[j][i]!=0.0) lnz++;
       }
       // Put 0's in slots
       for (int j=0; j<chunksize; j++) {
 	int curGlobalCol = rootDomainMap.GID(startCol+j);
-	if (A.OperatorDomainMap().MyGID(curGlobalCol)) x[j][A.OperatorRangeMap().LID(curGlobalCol)] = 0.0;
+	if (domainMap.MyGID(curGlobalCol)) x[j][domainMap.LID(curGlobalCol)] = 0.0;
       }
     }
   }

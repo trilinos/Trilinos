@@ -106,13 +106,15 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/EpetraExt_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_inout_test_OBJECTS = inout_test-cxx_main.$(OBJEXT)
+am_inout_test_OBJECTS = inout_test-cxx_main.$(OBJEXT) \
+	inout_test-Poisson2dOperator.$(OBJEXT)
 inout_test_OBJECTS = $(am_inout_test_OBJECTS)
 am__DEPENDENCIES_1 =
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/inout_test-cxx_main.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/inout_test-Poisson2dOperator.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/inout_test-cxx_main.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -301,6 +303,8 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 inout_test_SOURCES = \
   $(srcdir)/cxx_main.cpp \
+  $(srcdir)/Poisson2dOperator.h \
+  $(srcdir)/Poisson2dOperator.cpp \
   $(top_srcdir)/test/epetra_test_err.h
 
 inout_test_DEPENDENCIES = \
@@ -369,6 +373,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/inout_test-Poisson2dOperator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/inout_test-cxx_main.Po@am__quote@
 
 .cpp.o:
@@ -402,6 +407,22 @@ inout_test-cxx_main.obj: $(srcdir)/cxx_main.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/inout_test-cxx_main.Po' tmpdepfile='$(DEPDIR)/inout_test-cxx_main.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(inout_test_CXXFLAGS) $(CXXFLAGS) -c -o inout_test-cxx_main.obj `if test -f '$(srcdir)/cxx_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main.cpp'; fi`
+
+inout_test-Poisson2dOperator.o: $(srcdir)/Poisson2dOperator.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(inout_test_CXXFLAGS) $(CXXFLAGS) -MT inout_test-Poisson2dOperator.o -MD -MP -MF "$(DEPDIR)/inout_test-Poisson2dOperator.Tpo" -c -o inout_test-Poisson2dOperator.o `test -f '$(srcdir)/Poisson2dOperator.cpp' || echo '$(srcdir)/'`$(srcdir)/Poisson2dOperator.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/inout_test-Poisson2dOperator.Tpo" "$(DEPDIR)/inout_test-Poisson2dOperator.Po"; else rm -f "$(DEPDIR)/inout_test-Poisson2dOperator.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Poisson2dOperator.cpp' object='inout_test-Poisson2dOperator.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/inout_test-Poisson2dOperator.Po' tmpdepfile='$(DEPDIR)/inout_test-Poisson2dOperator.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(inout_test_CXXFLAGS) $(CXXFLAGS) -c -o inout_test-Poisson2dOperator.o `test -f '$(srcdir)/Poisson2dOperator.cpp' || echo '$(srcdir)/'`$(srcdir)/Poisson2dOperator.cpp
+
+inout_test-Poisson2dOperator.obj: $(srcdir)/Poisson2dOperator.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(inout_test_CXXFLAGS) $(CXXFLAGS) -MT inout_test-Poisson2dOperator.obj -MD -MP -MF "$(DEPDIR)/inout_test-Poisson2dOperator.Tpo" -c -o inout_test-Poisson2dOperator.obj `if test -f '$(srcdir)/Poisson2dOperator.cpp'; then $(CYGPATH_W) '$(srcdir)/Poisson2dOperator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Poisson2dOperator.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/inout_test-Poisson2dOperator.Tpo" "$(DEPDIR)/inout_test-Poisson2dOperator.Po"; else rm -f "$(DEPDIR)/inout_test-Poisson2dOperator.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Poisson2dOperator.cpp' object='inout_test-Poisson2dOperator.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/inout_test-Poisson2dOperator.Po' tmpdepfile='$(DEPDIR)/inout_test-Poisson2dOperator.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(inout_test_CXXFLAGS) $(CXXFLAGS) -c -o inout_test-Poisson2dOperator.obj `if test -f '$(srcdir)/Poisson2dOperator.cpp'; then $(CYGPATH_W) '$(srcdir)/Poisson2dOperator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Poisson2dOperator.cpp'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
