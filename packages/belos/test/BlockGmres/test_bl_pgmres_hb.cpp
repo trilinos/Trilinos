@@ -79,10 +79,10 @@ int main(int argc, char *argv[]) {
 
   bool verbose = false, proc_verbose = false;
   int frequency = -1;  // how often residuals are printed by solver
-  int blocksize = 10;
+  int blocksize = 4;
   int numrhs = 15;
   int numrestarts = 15; // number of restarts allowed 
-  int length = 15;
+  int length = 25;
   std::string filename("orsirr1.hb");
   MT tol = 1.0e-5;  // relative residual tolerance
 
@@ -172,7 +172,7 @@ int main(int argc, char *argv[]) {
   Belos::EpetraMultiVec rhs(Map, numrhs);
   rhs.MvRandom();
   Belos::LinearProblem<double,MV,OP>
-    My_LP( rcp(&Amat,false), rcp(&soln,false), rcp(&rhs,false) );
+  My_LP( rcp(&Amat,false), rcp(&soln,false), rcp(&rhs,false) );
   //My_LP.SetRightPrec( rcp(&Prec,false) );
   My_LP.SetLeftPrec( rcp(&Prec,false) );
   My_LP.SetBlockSize( blocksize );
