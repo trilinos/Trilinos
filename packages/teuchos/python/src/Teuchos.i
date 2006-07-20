@@ -289,7 +289,7 @@ using namespace std;
 // interface file.  They allow C++ methods that expect ParameterList&
 // arguments to have python wrappers that accept ParameterList,
 // PyDictParameterList, or python dictionary arguments.  C++ methods
-// that output ParameterLists will have pyton wrappers that output
+// that output ParameterLists will have python wrappers that output
 // PyDictParameterLists.
 %typemap(in) (Teuchos::ParameterList &)
 {
