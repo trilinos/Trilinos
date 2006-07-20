@@ -1,0 +1,12 @@
+
+/** \defgroup teuchos_outputting_grp Teuchos Outputting Utilities */
+
+/** \defgroup teuchos_language_support_grp Teuchos Language Support Utilities */
+
+/** \defgroup teuchos_mem_mng_grp Teuchos Memory Management Utilities */
+
+/** \example FancyOutputting_test.cpp */
+
+/** \example ArrayRefCountPtr_test.cpp */
+
+/** \example ArrayRefCountPtr_test.cpp */
