@@ -85,6 +85,10 @@ For examples of usage, please consult the python/example subdirectory.
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 
+// Teuchos Python utility code
+#include "Teuchos_PythonParameter.hpp"
+#include "Teuchos_PyDictParameterList.hpp"
+
 // Amesos includes
 #include "Amesos_ConfigDefs.h"
 #include "Amesos.h"
@@ -125,11 +129,11 @@ For examples of usage, please consult the python/example subdirectory.
 #include "Epetra_NumPyVector.h"
 #include "NumPyArray.h"
 #include "NumPyWrapper.h"
-#include "PyTeuchos_Utils.h"
 
 %}
 
-// Epetra
+// External Trilinos packages
+%import "Teuchos.i"
 %import "Epetra.i"
 
 // Auto-documentation feature
@@ -152,21 +156,6 @@ For examples of usage, please consult the python/example subdirectory.
 // SWIG library includes
 %include "std_string.i"
 
-// typemaps
-%typemap(in) (Teuchos::ParameterList& ParameterList)
-{
-  $1 = CreateList($input);
-  if ($1 == 0)
-  {
-    PyErr_SetString(PyExc_ValueError, "Expecting a dictionary");
-    return NULL;
-  }
-}
-
-%typemap(freearg) (Teuchos::ParameterList& ParameterList)
-{
-   if ($1) delete($1);
-}
 // Amesos interface includes
 %include "Amesos_config.h"
 %include "Amesos_ConfigDefs.h"

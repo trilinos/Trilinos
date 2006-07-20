@@ -126,7 +126,8 @@ def main():
         sys.exit(-2)
 
     AmesosList = {"PrintStatus": True,
-                  "PrintTiming": True  }
+                  "PrintTiming": True
+                  }
     Solver.SetParameters(AmesosList)
     if Comm.MyPID() == 0:
         print "1) Performing symbolic factorizations..."
@@ -139,6 +140,7 @@ def main():
     ierr = Solver.Solve()
     if Comm.MyPID() == 0:
         print "   Solver.Solve() return code = ", ierr
+
     del Solver
 
     # Exit with a code that indicates the total number of successes

@@ -79,26 +79,26 @@ NumLocalRows = Map.NumMyElements()
 for ii in range(0, NumLocalRows):
   i = Map.GID(ii)
   if i == 0:
-    Indices = [i, i + 1];
-    Values  = [2.0, -1.0];
+    Indices = [i, i + 1]
+    Values  = [2.0, -1.0]
   elif i == NumGlobalRows - 1:
-    Indices = [i, i - 1];
-    Values  = [2.0, -1.0];
+    Indices = [i, i - 1]
+    Values  = [2.0, -1.0]
   else:
-    Indices = [  i,  i - 1, i + 1];
-    Values  = [2.0,   -1.0,  -1.0];
-  Matrix.InsertGlobalValues(i, Values, Indices);
-ierr = Matrix.FillComplete();
+    Indices = [  i,  i - 1, i + 1]
+    Values  = [2.0,   -1.0,  -1.0]
+  Matrix.InsertGlobalValues(i, Values, Indices)
+ierr = Matrix.FillComplete()
 
 # Builds a solution that is `i' at node `i', then the
 # corresponding right-hand side, then set the solution to 0
 for i in range(0, NumLocalRows):
-  LHS[i] = i;
-Matrix.Multiply(False, LHS, RHS);
-LHS.PutScalar(0.0);
+  LHS[i] = i
+Matrix.Multiply(False, LHS, RHS)
+LHS.PutScalar(0.0)
 
-Problem = Epetra.LinearProblem(Matrix, LHS, RHS);
-Factory = Amesos.Factory();
+Problem = Epetra.LinearProblem(Matrix, LHS, RHS)
+Factory = Amesos.Factory()
 
 # Creates the solver using the Amesos' factory
 Type = "Amesos_Lapack"
@@ -106,28 +106,27 @@ if Factory.Query(Type) == False:
   print "Selected solver (%s) not supported" % (Type)
   Epetra.Finalize()
   raise "Solver not supported"
-Solver = Factory.Create(Type, Problem);
+Solver = Factory.Create(Type, Problem)
 
 # Setting parameters using a Python' dictionary. The list of supported
 # parameters can be found on the user's guide.
-AmesosList = {
-  "PrintTiming":         True,
-  "PrintStatus":         True,
-}
-Solver.SetParameters(AmesosList);
+AmesosList = {"PrintTiming" : True,
+              "PrintStatus" : True
+              }
+Solver.SetParameters(AmesosList)
 
 # Note: we don't check here the return parameters for brevity. 
 Solver.SymbolicFactorization()
 Solver.NumericFactorization()
-Solver.Solve();
+Solver.Solve()
 
 del Solver
 
-error = 0.0;
+error = 0.0
 for i in range(0, NumLocalRows):
-  error = error + abs(LHS[i] - i);
+  error = error + abs(LHS[i] - i)
 if iAmRoot:
-  print "Using %s, ||x - x_ex||_1 = %e" % (Type, error);
+  print "Using %s, ||x - x_ex||_1 = %e" % (Type, error)
 
 # Exit with a code that indicates the total number of successes
 successes = Comm.SumAll(1)

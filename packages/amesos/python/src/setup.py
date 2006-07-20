@@ -92,7 +92,8 @@ libraries.insert(index+1,teuchos)
 amesosWrap = "Amesos_wrap.cpp"
 
 # An additional include directory
-include_dirs.append(os.path.join(top_srcdir,"..","epetra","python","src"))
+include_dirs.append(os.path.join(top_srcdir,"..","teuchos","python","src"))
+include_dirs.append(os.path.join(top_srcdir,"..","epetra", "python","src"))
 
 # Compiler and linker
 sysconfig.get_config_vars()

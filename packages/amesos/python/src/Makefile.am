@@ -44,7 +44,8 @@ AMESOS_PYTHON_INCLUDES = $(_AMESOS_PYTHON_INCLUDES)
 AMESOS_PYTHON_LIBS     = $(_AMESOS_PYTHON_LIBS)
 endif
 
-SWIG_CXXFLAGS = $(AMESOS_PYTHON_INCLUDES)            \
+SWIG_CXXFLAGS = $(AMESOS_PYTHON_INCLUDES) \
+		-I$(top_srcdir)/../teuchos/python/src \
 		-I$(top_srcdir)/../epetra/python/src
 
 EXTRA_DIST = Amesos.i setup.py

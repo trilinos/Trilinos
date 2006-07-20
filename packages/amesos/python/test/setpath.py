@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#         PyTrilinos.Amesos: Python Interface to Amesos
+#              PyTrilinos.Amesos: Python Interface to Amesos
 #                   Copyright (2005) Sandia Corporation
 #
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -41,15 +41,20 @@ myDir,myName = os.path.split(__file__)
 libDir = "lib.%s-%s" % (get_platform(), sys.version[0:3])
 
 # Get the full path to the build directories
-fullPath   = os.path.normpath(os.path.join(myDir, "..", "src", "build", libDir,
-                                           "PyTrilinos"))
-epetraPath = os.path.normpath(os.path.join(myDir, "..", "..", "..", "epetra",
-                                           "python", "src", "build", libDir,
-                                           "PyTrilinos"))
+fullPath    = os.path.normpath(os.path.join(myDir, "..", "src", "build", libDir,
+                                            "PyTrilinos"))
+teuchosPath = os.path.normpath(os.path.join(myDir, "..", "..", "..", "teuchos",
+                                            "python", "src", "build", libDir,
+                                            "PyTrilinos"))
+epetraPath  = os.path.normpath(os.path.join(myDir, "..", "..", "..", "epetra",
+                                            "python", "src", "build", libDir,
+                                            "PyTrilinos"))
 
 # Insert the full path to the build library directory
 # at the beginning of the python search path
 if fullPath:
     sys.path.insert(0,fullPath)
+if teuchosPath:
+    sys.path.insert(1,teuchosPath)
 if epetraPath:
     sys.path.insert(1,epetraPath)
