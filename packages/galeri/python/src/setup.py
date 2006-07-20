@@ -40,12 +40,7 @@ sys.path.insert(0,os.path.join(TRILINOS_HOME_DIR,"commonTools","buildTools"))
 from MakefileVariables import *
 
 # Build the makeVars dictionary by processing relevant Makefiles
-makeVars = { }
-makeVars.update(processMakefile(os.path.join("..","..","..","epetra"    ,
-                                             "Makefile.export.epetra"    )))
-makeVars.update(processMakefile(os.path.join("..","..","..","PyTrilinos",
-                                             "Makefile.export.pytrilinos")))
-makeVars.update(processMakefile(os.path.join("Makefile")))
+makeVars = processMakefile(os.path.join("Makefile"))
 
 # Import the variable names and values into the global namespace.  This is
 # crucual: every variable name/value pair obtained by processing the specified
@@ -62,29 +57,17 @@ except KeyError:
 include_dirs       = [srcdir]
 library_dirs       = [      ]
 libraries          = [      ]
-extra_compile_args = []
+extra_compile_args = [      ]
 extra_link_args    = [      ]
 extra_compile_args = CPPFLAGS.split() + CXXFLAGS.split()
 uniquifyList(extra_compile_args)
 
-# the GALERI and GALERI_LIBS variables from scratch
-GALERI_INCLUDES = "-I%s -I%s -I%s -I%s -I%s -I%s" % (os.path.normpath(os.path.join(top_srcdir,"src")),
-                                      os.path.normpath(os.path.join(top_builddir,"src")),
-                                      os.path.normpath(os.path.join(top_srcdir,"../epetra/python/src")),
-                                      os.path.normpath(os.path.join(top_builddir,"../epetra/python/src")),
-                                      os.path.normpath(os.path.join(top_srcdir,"../teuchos/src")),
-                                      os.path.normpath(os.path.join(top_builddir,"../teuchos/src")))
-GALERI_LIBS     = "-L%s -lgaleri -L%s -lteuchos" % (os.path.normpath(os.path.join(top_builddir,"src")), 
-      os.path.normpath(os.path.join(top_builddir,"../teuchos/src")))
-
 # Get the relevant Makefile export variable values, split them into lists of
 # strings, add them together to obtain a big list of option strings, and then
 # remove any duplicate entries
-options = GALERI_INCLUDES.split() + \
-          GALERI_LIBS.split()     + \
-          EPETRA_INCLUDES.split()      + \
-          EPETRA_LIBS.split()          + \
-          PYTRILINOS_INCLUDES.split()  + \
+options = GALERI_INCLUDES.split()     + \
+          GALERI_LIBS.split()         + \
+          PYTRILINOS_INCLUDES.split() + \
           PYTRILINOS_LIBS.split()
 uniquifyList(options)
 
@@ -99,9 +82,11 @@ for option in options:
     else:
         extra_link_args.append(option)
 
-# An additional include directory
-epetraPythonSrcDir = os.path.normpath(os.path.join(top_srcdir,"..","epetra","python","src"))
-include_dirs.append(epetraPythonSrcDir)
+# An additional include directories
+teuchosPythonSrcDir = os.path.normpath(os.path.join(top_srcdir,"..","teuchos","python","src"))
+epetraPythonSrcDir  = os.path.normpath(os.path.join(top_srcdir,"..","epetra", "python","src"))
+include_dirs.append(teuchosPythonSrcDir)
+include_dirs.append(epetraPythonSrcDir )
 
 # Define the strings that refer to the required local source files
 galeriWrap             = "Galeri_wrap.cpp"

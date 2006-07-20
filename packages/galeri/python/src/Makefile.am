@@ -26,16 +26,19 @@
 # ************************************************************************
 # @HEADER
 
+# Include the export Makefiles
+include $(top_builddir)/Makefile.export.galeri
+include $(top_builddir)/../PyTrilinos/Makefile.export.PyTrilinos
+
 # MPI support
 @HAVE_MPI_TRUE@MPI_FLAG = -DHAVE_MPI
 
 # Include swig rules
 include $(top_srcdir)/config/swig.am
-SWIG_CXXFLAGS = \
-	-I$(top_srcdir)/src  \
-	-I$(top_srcdir)/../epetra/src  \
-	-I$(top_srcdir)/../epetra/python/src  \
-	-I$(top_srcdir)/../PyTrilinos/src  \
+SWIG_CXXFLAGS = $(GALERI_INCLUDES) \
+	-I$(top_srcdir)/../teuchos/python/src \
+	-I$(top_srcdir)/../epetra/python/src \
+	-I$(top_srcdir)/../PyTrilinos/src \
 	$(MPI_FLAG)
 
 # Default make target

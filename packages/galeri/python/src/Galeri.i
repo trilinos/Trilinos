@@ -37,7 +37,7 @@ Epetra_CrsMatrix's.  Use the python help() facility for local documentation on
 classes and methods, or see the on-line documentation for more in-depth
 information. Also give a look to the examples in galeri/python/example.
 
-The most important classes of the IFPACK module are:
+The most important classes of the Galeri module are:
 - Galeri.CreateMap()
 - Galeri.CreateCrsMatrix()
 - Galeri.ReadHB()
@@ -80,7 +80,8 @@ Galeri requires the Epetra and Teuchos modules of PyTrilinos.
 #include "Teuchos_ParameterList.hpp"
 
 // Teuchos Python utility code
-#include "PyTeuchos_Utils.h"
+#include "Teuchos_PythonParameter.hpp"
+#include "Teuchos_PyDictParameterList.hpp"
 
 // Galeri includes
 #include "Galeri_ConfigDefs.h"
@@ -99,28 +100,16 @@ void Galeri_Dummy(Epetra_Vector* xxx)
 
 %}
 
+// Package imports
+%import "Teuchos.i"
 %import "Epetra.i"
 
+// Turn on autodocumentation
 %feature("autodoc", "1");
 
+// Typemap support for std::string
 %include "std_string.i"
 using namespace std;
-
-// typemaps
-%typemap(in) (Teuchos::ParameterList& List)
-{
-  $1 = CreateList($input);
-  if ($1 == 0)
-  {
-    PyErr_SetString(PyExc_ValueError, "Expecting a dictionary");
-    return NULL;
-  }
-}
-
-%typemap(freearg) (Teuchos::ParameterList& List)
-{
-  if ($1) delete($1);
-}
 
 %include "Galeri_Version.h"
 %include "Galeri_Maps.h"

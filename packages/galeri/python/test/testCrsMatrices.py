@@ -55,7 +55,7 @@ else:
         import Epetra
         import Galeri
     except ImportError:
-        from PyTrilinos import Epetra, Galeri
+        from PyTrilinos import Teuchos, Epetra, Galeri
         print >>sys.stderr, "Using system-installed Epetra, Galeri"
 
 ##########################################################################
