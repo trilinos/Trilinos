@@ -25,6 +25,8 @@ void Ifpack_BreakForDebugger(Epetra_Comm& Comm)
     if (i == Comm.MyPID() ) {
 #if defined(TFLOP) || defined(JANUS_STLPORT)
       sprintf(buf, "Host: %s   PID: %d", "janus", getpid());
+#elif defined(__INTEL_COMPILER) && defined(_WIN32)
+      sprintf(buf,"Intel compiler, unknown hostname and PID!");
 #else
       gethostname(hostname, sizeof(hostname));
       sprintf(buf, "Host: %s\tComm.MyPID(): %d\tPID: %d",
@@ -32,7 +34,9 @@ void Ifpack_BreakForDebugger(Epetra_Comm& Comm)
 #endif
       printf("%s\n",buf);
       fflush(stdout);
+#if !( defined(__INTEL_COMPILER) && defined(_WIN32) )
       sleep(1);
+#endif
     }
   }
   if(Comm.MyPID() == 0) {

@@ -3,7 +3,9 @@
 
 #include "Ifpack_ConfigDefs.h"
 #include "Epetra_Comm.h"
-#include "unistd.h"
+#if !( defined(__INTEL_COMPILER) && defined(_WIN32) )
+#  include "unistd.h" // Not a standard header file!
+#endif
 class Epetra_RowMatrix;
 class Epetra_CrsMatrix;
 class Epetra_CrsGraph;
