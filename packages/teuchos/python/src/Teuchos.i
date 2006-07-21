@@ -329,6 +329,6 @@ using namespace std;
 %typemap(out) (Teuchos::ParameterList &)
 {
   static swig_type_info * PDPL_type = SWIG_TypeQuery("Teuchos::PyDictParameterList *");
-  Teuchos::PyDictParameterList * pdpl = new Teuchos::PyDictParameterList($1);
+  Teuchos::PyDictParameterList * pdpl = new Teuchos::PyDictParameterList(*$1);
   $result = SWIG_NewPointerObj(pdpl, PDPL_type, 1);
 }
