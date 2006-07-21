@@ -58,10 +58,14 @@
 #include "Thyra_TestingTools.hpp"
 
 // Includes for Amesos:
-#include "Thyra_AmesosLinearOpWithSolveFactory.hpp"
+#ifdef HAVE_RYTHMOS_AMESOS
+#  include "Thyra_AmesosLinearOpWithSolveFactory.hpp"
+#endif
 
 // Includes for AztecOO:
-#include "Thyra_AztecOOLinearOpWithSolveFactory.hpp"
+#ifdef HAVE_RYTHMOS_AZTECOO
+#  include "Thyra_AztecOOLinearOpWithSolveFactory.hpp"
+#endif
 
 #include <string>
 
@@ -178,10 +182,14 @@ int main(int argc, char *argv[])
     // Create the factory for the LinearOpWithSolveBase object
     Teuchos::RefCountPtr<Thyra::LinearOpWithSolveFactoryBase<double> >
       W_factory;
-    if((method_val == METHOD_BE) | (method_val == METHOD_BDF))
+    if((method_val == METHOD_BE) | (method_val == METHOD_BDF)) {
       //W_factory = Teuchos::rcp(new Thyra::DiagonalEpetraLinearOpWithSolveFactory());
+#ifdef HAVE_RYTHMOS_AMESOS
       W_factory = Teuchos::rcp(new Thyra::AmesosLinearOpWithSolveFactory());
-      //W_factory = Teuchos::rcp(new Thyra::AztecOOLinearOpWithSolveFactory());
+#elif defined(HAVE_RYTHMOS_AZTECOO)
+      W_factory = Teuchos::rcp(new Thyra::AztecOOLinearOpWithSolveFactory());
+#endif
+    }
 
     // create interface to problem
     Teuchos::RefCountPtr<ExampleApplication>
