@@ -293,9 +293,9 @@ using namespace std;
 // PyDictParameterLists.
 %typemap(in) (Teuchos::ParameterList &)
 {
-  static swig_type_info        * PDPL_type = SWIG_TypeQuery("Teuchos::PyDictParameterList *");
-  static swig_type_info        * PL_type   = SWIG_TypeQuery("Teuchos::ParameterList *"      );
-  void                         * argp;
+  static swig_type_info * PDPL_type = SWIG_TypeQuery("Teuchos::PyDictParameterList *");
+  static swig_type_info * PL_type   = SWIG_TypeQuery("Teuchos::ParameterList *"      );
+  static void           * argp      = NULL;
 
   // Input is a python dictionary
   if (PyDict_Check($input)) {
@@ -328,7 +328,7 @@ using namespace std;
 
 %typemap(out) (Teuchos::ParameterList &)
 {
-  static swig_type_info * PDPL_type SWIG_TypeQuery("Teuchos::PyDictParameterList *");
+  static swig_type_info * PDPL_type = SWIG_TypeQuery("Teuchos::PyDictParameterList *");
   Teuchos::PyDictParameterList * pdpl = new Teuchos::PyDictParameterList($1);
-  $result = SWIG_NewPointer(pdpl, PDPL_type, 1);
+  $result = SWIG_NewPointerObj(pdpl, PDPL_type, 1);
 }
