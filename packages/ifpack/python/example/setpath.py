@@ -41,30 +41,35 @@ myDir,myName = os.path.split(__file__)
 libDir = "lib.%s-%s" % (get_platform(), sys.version[0:3])
 
 # Get the full path to the build directories
-fullPath   = os.path.normpath(os.path.join(myDir, "..", "src", "build", libDir,
-                                           "PyTrilinos"))
-epetraPath = os.path.normpath(os.path.join(myDir, "..", "..", "..", "epetra",
-                                           "python", "src", "build", libDir,
-                                           "PyTrilinos"))
+fullPath     = os.path.normpath(os.path.join(myDir, "..", "src", "build", libDir,
+                                             "PyTrilinos"))
+teuchosPath  = os.path.normpath(os.path.join(myDir, "..", "..", "..", "teuchos",
+                                             "python", "src", "build", libDir,
+                                             "PyTrilinos"))
+epetraPath   = os.path.normpath(os.path.join(myDir, "..", "..", "..", "epetra",
+                                             "python", "src", "build", libDir,
+                                             "PyTrilinos"))
 triutilsPath = os.path.normpath(os.path.join(myDir, "..", "..", "..", "triutils",
                                              "python", "src", "build", libDir,
                                              "PyTrilinos"))
-galeriPath = os.path.normpath(os.path.join(myDir, "..", "..", "..", "galeri",
+galeriPath   = os.path.normpath(os.path.join(myDir, "..", "..", "..", "galeri",
                                              "python", "src", "build", libDir,
                                              "PyTrilinos"))
-aztecooPath = os.path.normpath(os.path.join(myDir, "..", "..", "..", "aztecoo",
-                                            "python", "src", "build", libDir,
-                                            "PyTrilinos"))
+aztecooPath  = os.path.normpath(os.path.join(myDir, "..", "..", "..", "aztecoo",
+                                             "python", "src", "build", libDir,
+                                             "PyTrilinos"))
 
 # Insert the full path to the build library directory
 # at the beginning of the python search path
 if fullPath:
     sys.path.insert(0,fullPath)
+if teuchosPath:
+    sys.path.insert(1,teuchosPath)
 if epetraPath:
-    sys.path.insert(1,epetraPath)
+    sys.path.insert(2,epetraPath)
 if triutilsPath:
-    sys.path.insert(2,triutilsPath)
+    sys.path.insert(3,triutilsPath)
 if galeriPath:
-    sys.path.insert(3,galeriPath)
+    sys.path.insert(4,galeriPath)
 if aztecooPath:
-    sys.path.insert(4,aztecooPath)
+    sys.path.insert(5,aztecooPath)

@@ -84,6 +84,10 @@ Finally, the following functions are avaiable in the IFPACK module:
 // Teuchos include
 #include "Teuchos_ParameterList.hpp"
 
+// Teuchos Python utility code
+#include "Teuchos_PythonParameter.hpp"
+#include "Teuchos_PyDictParameterList.hpp"
+
 // IFPACK includes
 #include "Ifpack.h"
 #include "Ifpack_Version.h"
@@ -94,9 +98,6 @@ Finally, the following functions are avaiable in the IFPACK module:
 #include "Ifpack_ILU.h"
 #include "Ifpack_ILUT.h"
 #include "Ifpack_PointRelaxation.h"
-
-// local includes
-#include "PyTeuchos_Utils.h"
 
 %}
 
@@ -123,25 +124,10 @@ Finally, the following functions are avaiable in the IFPACK module:
 %include "Ifpack_config.h"
 %include "Ifpack_ConfigDefs.h"
 
-// typemaps
-%typemap(in) (Teuchos::ParameterList& List)
-{
-  $1 = CreateList($input);
-  if ($1 == 0)
-  {
-    PyErr_SetString(PyExc_ValueError, "Expecting a dictionary");
-    return NULL;
-  }
-}
-
-%typemap(freearg) Teuchos::ParameterList& List
-{
-  delete($1);
-}
-
 using namespace std;
 
-// Epetra interface includes
+// External Trilinos modules
+%import "Teuchos.i"
 %import "Epetra.i"
 
 // IFPACK interface includes

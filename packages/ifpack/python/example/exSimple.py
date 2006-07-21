@@ -25,13 +25,13 @@ else:
     import Galeri
     import AztecOO
     import IFPACK
-  except:
+  except ImportError:
     from PyTrilinos import Epetra
     from PyTrilinos import Triutils
     from PyTrilinos import Galeri
     from PyTrilinos import AztecOO
     from PyTrilinos import IFPACK
-    print >>sys.stderr, "Using system-installed Epetra, Galeri, AztecOO, IFPACK"
+    print >>sys.stderr, "Using system-installed Epetra, Triutils, Galeri, AztecOO, IFPACK"
 
 comm    = Epetra.PyComm()
 iAmRoot = comm.MyPID() == 0
@@ -42,16 +42,17 @@ def main():
   # first argument in the compile line. If no filename is specified, then the
   # code build a matrix using matrix gallery.
   if len(args) == 0:
-    nx = 30; ny = 30
+    nx = 30
+    ny = 30
     GaleriList = {"n"  : nx * ny,
                   "nx" : nx,
                   "ny" : ny
                   }
-    Map = Galeri.CreateMap("Linear", comm, GaleriList)
+    Map    = Galeri.CreateMap("Linear", comm, GaleriList)
     Matrix = Galeri.CreateCrsMatrix("Recirc2D", Map, GaleriList)
-    Exact = Epetra.Vector(Map) 
-    LHS = Epetra.Vector(Map) 
-    RHS = Epetra.Vector(Map) 
+    Exact  = Epetra.Vector(Map) 
+    LHS    = Epetra.Vector(Map) 
+    RHS    = Epetra.Vector(Map) 
     Exact.Random()       # fix exact solution
     LHS.PutScalar(0.0)   # fix starting solution
     Matrix.Multiply(False, Exact, RHS) # fix rhs corresponding to Exact
@@ -62,9 +63,8 @@ def main():
   # Cholesky factorization, with fill-in of 5
   Factory = IFPACK.Factory()
   Prec = Factory.Create("ILU", Matrix)
-  IFPACKList = {
-    "fact: level-of-fill": 1
-    }
+  IFPACKList = {"fact: level-of-fill": 1
+                }
   Prec.SetParameters(IFPACKList)
   Prec.Initialize()
   Prec.Compute()
