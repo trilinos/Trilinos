@@ -25,6 +25,9 @@
 
 # Originally written by Alexandre Oliva <oliva@dcc.unicamp.br>.
 
+#echo "Calling depmode!  I am stopping now!"
+#exit 1
+
 if test -z "$depmode" || test -z "$source" || test -z "$object"; then
   echo "depcomp: Variables source, object and depmode must be set" 1>&2
   exit 1
@@ -249,15 +252,15 @@ dashmstdout)
       for arg
       do # cycle over the arguments
         case "$arg" in
-  "--mode=compile")
-    # insert --quiet before "--mode=compile"
-    set fnord "$@" --quiet
-    shift # fnord
-    ;;
-  esac
-  set fnord "$@" "$arg"
-  shift # fnord
-  shift # "$arg"
+	"--mode=compile")
+	  # insert --quiet before "--mode=compile"
+	  set fnord "$@" --quiet
+	  shift # fnord
+	  ;;
+	esac
+	set fnord "$@" "$arg"
+	shift # fnord
+	shift # "$arg"
       done
       ;;
     esac
@@ -292,15 +295,15 @@ makedepend)
     for arg in "$@"; do
       case $cleared in no)
         set ""; shift
-  cleared=yes
+	cleared=yes
       esac
       case "$arg" in
         -D*|-I*)
-    set fnord "$@" "$arg"; shift;;
-  -*)
-    ;;
-  *)
-    set fnord "$@" "$arg"; shift;;
+	  set fnord "$@" "$arg"; shift;;
+	-*)
+	  ;;
+	*)
+	  set fnord "$@" "$arg"; shift;;
       esac
     done
     obj_suffix="`echo $object | sed 's/^.*\././'`"
@@ -332,15 +335,15 @@ cpp)
       for arg
       do # cycle over the arguments
         case $arg in
-  "--mode=compile")
-    # insert --quiet before "--mode=compile"
-    set fnord "$@" --quiet
-    shift # fnord
-    ;;
-  esac
-  set fnord "$@" "$arg"
-  shift # fnord
-  shift # "$arg"
+	"--mode=compile")
+	  # insert --quiet before "--mode=compile"
+	  set fnord "$@" --quiet
+	  shift # fnord
+	  ;;
+	esac
+	set fnord "$@" "$arg"
+	shift # fnord
+	shift # "$arg"
       done
       ;;
     esac
@@ -370,15 +373,15 @@ msvisualcpp)
       for arg
       do # cycle over the arguments
         case $arg in
-  "--mode=compile")
-    # insert --quiet before "--mode=compile"
-    set fnord "$@" --quiet
-    shift # fnord
-    ;;
-  esac
-  set fnord "$@" "$arg"
-  shift # fnord
-  shift # "$arg"
+	"--mode=compile")
+	  # insert --quiet before "--mode=compile"
+	  set fnord "$@" --quiet
+	  shift # fnord
+	  ;;
+	esac
+	set fnord "$@" "$arg"
+	shift # fnord
+	shift # "$arg"
       done
       ;;
     esac
@@ -399,7 +402,34 @@ msvisualcpp)
   ;;
 
 none)
-  exec "$@"
+  if test -n "$CYGWIN_INTEL_WINDOWS"; then
+    #echo "Using the intel compiler icl under Windows XP to generate dependency files!" 
+    #exec "$@"
+    # First, generate the dependency file
+    "$@" -QM "$object" -QMM -QMF "$tmpdepfile"
+    # Next, actually compile the source file
+    "$@"
+    stat=$?
+    if test $stat -eq 0; then :
+    else
+     rm -f "$tmpdepfile"
+     exit $stat
+    fi
+    #rm -f "$depfile"
+    echo "$object : \\" > "$depfile"
+    cat "$tmpdepfile" | sed 's%.* \([a-z]\):%/cygdrive/\1%' \
+      | perl -e 'foreach(<STDIN>) { $_=~s%\\%/%g; print $_; }' \
+      | sed 's%\(^.*$\)%\1 \\%' | sed 's%^.*: %%' >> "$depfile"
+    rm -f "$tmpdepfile"
+    # Above I had to use perl since sed would refuse to replace
+    # the file path sep '\' correctly with '/'.
+    # Remove these two commands once you get the above figured out!
+    #mv "$depfile" "$tmpdepfile"
+    #echo "# dummy" > "$depfile"
+  else
+    echo "depcomp: depmode==none, not building in depeandency tracking!"
+    exec "$@"
+  fi
   ;;
 
 *)
