@@ -51,13 +51,14 @@
 
 /*! \class Anasazi::LOBPCGSolverManager
  *
- *  \brief The Anasazi::LOBPCGSolverManager provides a simple solver manager
- *  over the LOBPCG eigensolver.
+ *  \brief The Anasazi::LOBPCGSolverManager provides a powerful and fully-featured solver manager over the LOBPCG eigensolver.
  *
- *  This solver manager provides locking for eigenvectors determined to be
- *  converged. It accepts many more parameters dictating the behavior of the
- *  solver.
-*/
+ *  Features include: FINISH
+ *  <ul>
+ *  <li>
+ *  </ul>
+ *
+ */
 
 namespace Anasazi {
 
@@ -416,7 +417,6 @@ LOBPCGSolverManager<ScalarType,MV,OP>::solve() {
       }
     }
     catch (LOBPCGRitzFailure re) {
-      // finish: something is not right here
       if (_fullOrtho) {
         // if we are already using full orthogonalization, there isn't much we can do here. 
         // the most recent information in the status tests is still valid, and can be used to extract/return the 
@@ -442,7 +442,7 @@ LOBPCGSolverManager<ScalarType,MV,OP>::solve() {
       MVT::SetBlock(*curstate.H,ind,*restart);
       // optionally, put P into [2*blockSize,3*blockSize)
       if (localsize == 3*_blockSize) {
-        for (int i=0; i < _blockSize; i++) ind[i] = _blockSize+i;
+        for (int i=0; i < _blockSize; i++) ind[i] = 2*_blockSize+i;
         MVT::SetBlock(*curstate.P,ind,*restart);
       }
       // project against auxvecs and locked vecs, and orthonormalize the basis
@@ -505,6 +505,27 @@ LOBPCGSolverManager<ScalarType,MV,OP>::solve() {
                                 << "Recovery failed." << endl;
         throw;
       }
+      theta.resize(rank);
+      // sort the ritz values using the sort manager
+      {
+        Teuchos::BLAS<int,ScalarType> blas;
+        std::vector<int> order(rank);
+        std::vector<ScalarType> theta_st(theta.size());
+        std::copy(theta.begin(),theta.end(),theta_st.begin());
+        sorter->sort( lobpcg_solver.get(), rank, &(theta_st[0]), &order );   // don't catch exception
+        
+        //  Reorder theta according to sorting results from theta_st
+        std::vector<MagnitudeType> theta_copy(theta);
+        for (int i=0; i<rank; i++) {
+          theta[i] = theta_copy[order[i]];
+        }
+        // Sort the primitive ritz vectors
+        Teuchos::SerialDenseMatrix<int,ScalarType> copyS( S );
+        for (int i=0; i<rank; i++) {
+          blas.COPY(localsize, copyS[order[i]], 1, S[i], 1);
+        }
+      }
+      //
       Teuchos::SerialDenseMatrix<int,ScalarType> S1(Teuchos::View,S,localsize,_blockSize);
       // compute the ritz vectors
       LOBPCGState<ScalarType,MV> newstate;

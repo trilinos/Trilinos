@@ -1148,7 +1148,7 @@ namespace Anasazi {
       // _nevLocal < _blockSize 
       // Case 1: We compute less than _blockSize Ritz vectors, so that we can't generate X of dimension _blockSize
       TEST_FOR_EXCEPTION(_nevLocal < _blockSize, LOBPCGRitzFailure, "Not enough Ritz vectors to continue algorithm." );
-      TEST_FOR_EXCEPTION(_iter == 50, LOBPCGRitzFailure, "Fake failure.");    // finish: remove this
+      // TEST_FOR_EXCEPTION(_iter == 50, LOBPCGRitzFailure, "Fake failure.");    // for testing LOBPCGSolverManager restarting
       if (_nevLocal == oneBlock) {
         localSize = oneBlock;    // Case 2: _nevLocal == oneBlock, so we set X = X*S11. 
                                  // This is not technically a reason to quit, although we won't make any progress on this step.

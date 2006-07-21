@@ -28,8 +28,6 @@
 // @HEADER
 //
 
-// FINISH: there is a bug here, exhibiting itself in LOBPCGSolverManager
-
 #ifndef ANASAZI_STATUS_TEST_ORDEREDRESNORM_HPP
 #define ANASAZI_STATUS_TEST_ORDEREDRESNORM_HPP
 
