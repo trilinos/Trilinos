@@ -271,7 +271,8 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 
 #SUBDIRS = ModalSolverUtils BlockDavidson BlockKrylovSchur LOBPCG MVOPTester scripts 
-SUBDIRS = MVOPTester LOBPCG BlockKrylovSchur BlockDavidson
+DISABLED = MVOPTester LOBPCG BlockKrylovSchur BlockDavidson
+SUBDIRS = 
 all: all-recursive
 
 .SUFFIXES:
