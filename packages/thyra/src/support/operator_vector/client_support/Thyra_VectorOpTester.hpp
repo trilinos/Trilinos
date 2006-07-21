@@ -131,7 +131,9 @@ namespace Thyra
 
     pass = sumTest() && pass;
     pass = setElementTest() && pass;
+#ifdef BRACKET_TEST
     pass = setElementUsingBracketTest() && pass;
+#endif
     pass = dotStarTest() && pass;
     pass = dotSlashTest() && pass;
     pass = scalarMultTest() && pass;
@@ -177,20 +179,12 @@ namespace Thyra
         int low = lowestLocallyOwnedIndex(space_);
         int high = low + numLocalElements(space_);
 
-        cout << "setting values" << endl;
-
         for (int i=low; i<high; i++)
           {
-            cout << "reading a for i=" << i << endl;
             double a_i = ((ConstVector<Scalar>) a)[i];
-            cout << "reading b for i=" << i << endl;
             double b_i = ((ConstVector<Scalar>) b)[i];
-            cout << "setting i=" << i << endl;
             y[i] = a_i + b_i;
-            cout << "done setting i=" << i << endl;
           }
-	
-        cout << "computing norm" << endl;
 
         double err = normInf(x-y);
 
@@ -238,43 +232,16 @@ namespace Thyra
           {
             a[i]=i;
           }
-        cout << "a = " << endl << a << endl;
         Vector<double> b = copy(a);
 
-        for (int i=low; i<high; i++)
-          {
-            ConstVector<Scalar>& aa = a;
-            ConstVector<Scalar>& bb = b;
-            cout << "i=" << i << " a[i]=" << aa[i] << endl;
-            cout << "i=" << i << " b[i]=" << bb[i] << endl;
-          }
-
-        cout << "doing dot-star" << endl;
         b = dotStar(a, b);
-
-        for (int i=low; i<high; i++)
-          {
-            ConstVector<Scalar>& aa = a;
-            ConstVector<Scalar>& bb = b;
-            cout << "i=" << i << " a[i]=" << aa[i] << endl;
-            cout << "i=" << i << " b[i]=" << bb[i] << endl;
-          }
 
         double sum = 0.0;
         for (int i=low; i<high; i++)
           {
-            cout << i << " " << a[i] << " " << i*a[i]
-                 << endl;
             sum += i * a[i];
           }
 
-        for (int i=low; i<high; i++)
-          {
-            ConstVector<Scalar>& aa = a;
-            ConstVector<Scalar>& bb = b;
-            cout << "i=" << i << " a[i]=" << aa[i] << endl;
-            cout << "i=" << i << " b[i]=" << bb[i] << endl;
-          }
 
 #ifdef HAVE_MPI
         Scalar localSum = sum;
@@ -282,8 +249,6 @@ namespace Thyra
                        1, MPI_DOUBLE, MPI_SUM, comm_.getComm());
 #endif
         double thyraSum = Thyra::sum(*(b.rawPtr()));
-        cout << "elemwise sum = " << sum << endl;
-        cout << "thyra sum = " << thyraSum << endl;
 
         double err = ::fabs(sum - thyraSum);
 

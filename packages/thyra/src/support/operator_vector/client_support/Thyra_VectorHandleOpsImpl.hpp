@@ -168,6 +168,7 @@ namespace Thyra
                    const Converter<Scalar, ConstVector<Scalar> >& y,
                    Vector<Scalar>& result)
     {
+      zeroOut(result);
       Thyra::ele_wise_divide(1.0, *(toVector(x).ptr()), *(toVector(y).ptr()), 
                              result.ptr().get());
     }
