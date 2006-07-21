@@ -46,6 +46,7 @@ namespace Thyra {
  * <ul>
  * <li>\ref LOWSFB_intro_sec
  * <li>\ref LOWSFB_use_cases_sec
+ * <li>\ref LOWSFB_verbosity_level_sec
  * <li>\ref LOWSFB_developer_notes_sec
  * </ul>
  *
@@ -66,13 +67,20 @@ namespace Thyra {
  *
  * This interface supports the concept of an external preconditioner that can
  * be created by the client an passed into the function
+ * <tt>initializePreconditionedOp()</tt>
  *
  * \section LOWSFB_use_cases_sec Use cases
  *
  * The following use cases demonstrate and specify the behavior of this
  * interface in several different situations.  These use cases don't cover
  * very possible variation but implementors and clients should get a pretty
- * good idea of the behavior specified here.
+ * good idea of the desired behavior from what is specified below.
+ *
+ * <b>Note:</b> All of the code fragments shown in the below use cases is code
+ * that is compiled and run automatically by the test harness and the code
+ * fragments are automatically pulled into this HTML documentation whenever
+ * the documentation is rebuilt.  Therefore, one can have a very high degree
+ * of confidence that the code shown in these examples is correct.
  *
  * The following use cases are described below:
  *
@@ -91,27 +99,28 @@ namespace Thyra {
  *   </ul>
  * </ul>
  *
- * \dontinclude Thyra_LinearOpWithSolveFactoryExamples.hpp
- *
  * \subsection LOWSFB_single_linear_solve_sec Performing a single linear solve given a forward operator
  *
- * Performing a single linear solve is at minimum a two step process but can
- * be performed in a single line of code.  The following example function
- * shows how to take a <tt>LinearOpBase</tt> object, a compatible
- * <tt>LinearOpWithSolveFactoryBase</tt> object, a RHS and a LHS and then
- * solve the linear system using a default solve:
+ * Performing a single linear solve is at minimum a two step process.  The
+ * following example function shows how to take a <tt>LinearOpBase</tt>
+ * object, a compatible <tt>LinearOpWithSolveFactoryBase</tt> object, a RHS
+ * and a LHS and then solve the linear system using the default solve
+ * criteria:
  *
+ * \dontinclude Thyra_LinearOpWithSolveFactoryExamples.hpp
  * \skip begin singleLinearSolve
  * \skip template
  * \until end singleLinearSolve
  *
  * See the documentation for the <tt>LinearOpWithSolveBase</tt> interface for
- * how to specify solve criteria.
+ * how to specify solve criteria, how to perform adjoint (i.e. transpose)
+ * solve, and how to solve systems with multiple RHSs.
  *
- * Note that the forward operator <tt>A</tt> is passed in as a raw object
- * reference and not as a <tt>Teuchos::RefCountPtr</tt> wrapped object since
- * no persisting relationship with this object will be last after this
- * function exists, even if an exception is thrown.
+ * Note that the forward operator <tt>A</tt> is passed into this function
+ * <tt>singleLinearSolve(...)</tt> as a raw object reference and not as a
+ * <tt>Teuchos::RefCountPtr</tt> wrapped object since no persisting
+ * relationship with this object will be last after this function exists, even
+ * if an exception is thrown.
  *
  * Also note that once the above function exits that all memory of the
  * invertible operator created as part of the <tt>invertibleA</tt> object will
@@ -124,6 +133,7 @@ namespace Thyra {
  * scaled and adjoint (or transposed) forward operators.  The following
  * example function shows how this looks:
  *
+ * \dontinclude Thyra_LinearOpWithSolveFactoryExamples.hpp
  * \skip begin createScaledAdjointLinearOpWithSolve
  * \skip template
  * \until end createScaledAdjointLinearOpWithSolve
@@ -145,8 +155,8 @@ namespace Thyra {
  * <tt>lowsFactory</tt> object is still passed in as a raw object reference
  * since no persisting relationship with <tt>lowsFactory</tt> is created as a
  * side effect of calling this function.  Remember, the specification of this
- * interface requires that the returned <tt>LinearOpWithSolveBase</tt> be
- * independent from the the <tt>lowsFactory</tt> object that creates it.  In
+ * interface requires that the returned <tt>LinearOpWithSolveBase</tt> objects
+ * be independent from the <tt>lowsFactory</tt> object that creates them.  In
  * other words, once a <tt>LinearOpWithSolveFactoryBase</tt> object creates a
  * <tt>LinearOpWithSolveBase</tt> object, then the
  * <tt>LinearOpWithSolveFactoryBase</tt> object can be deleted and the
@@ -154,16 +164,17 @@ namespace Thyra {
  *
  * \subsection LOWSFB_updated_of_linear_op_sec Updates of linear operator between linear solves
  *
- * In this use case, we show how to:
+ * In this use case is comprised of:
  * <ul>
- * <li> Create a <tt>LinearOpWithSolveBase</tt> object from a <tt>LinearOpBase</tt> object
- * <li> Use the <tt>LinearOpWithSolveBase</tt> object to solve one or more linear systems
- * <li> Modify the <tt>LinearOpBase</tt> object and reinitialize the <tt>LinearOpWithSolveBase</tt> object
- * <li> Use the updated <tt>LinearOpWithSolveBase</tt> object to solve one or more linear systems
+ * <li> Creating a <tt>LinearOpWithSolveBase</tt> object from a <tt>LinearOpBase</tt> object
+ * <li> Using the <tt>LinearOpWithSolveBase</tt> object to solve one or more linear systems
+ * <li> Modifying the <tt>LinearOpBase</tt> object and reinitializing the <tt>LinearOpWithSolveBase</tt> object
+ * <li> Using the updated <tt>LinearOpWithSolveBase</tt> object to solve one or more linear systems
  * </ul>
  *
  * The below code fragment shows how this looks.
  *
+ * \dontinclude Thyra_LinearOpWithSolveFactoryExamples.hpp
  * \skip begin solveNumericalChangeSolve
  * \skip template
  * \until end solveNumericalChangeSolve
@@ -189,6 +200,7 @@ namespace Thyra {
  *
  * The below example function shows what this looks like:
  *
+ * \dontinclude Thyra_LinearOpWithSolveFactoryExamples.hpp
  * \skip begin solveSmallNumericalChangeSolve
  * \skip template
  * \until end solveSmallNumericalChangeSolve
@@ -204,7 +216,7 @@ namespace Thyra {
  * reuse the same factorization structure and not repiviot where it might
  * repivot generally.
  *
- * \subsection LOWSFB_major_changes_in_op_sec Major changes in the structure of the forward operator
+ * \subsection LOWSFB_major_changes_in_op_sec Updating the linear solver for major changes in the structure of the forward operator
  *
  * A major change in the shape or structure of a forward operator generally
  * eliminates the possibility of reusing any computations between different
@@ -214,145 +226,118 @@ namespace Thyra {
  *
  * The below example function shows what this looks like:
  *
+ * \dontinclude Thyra_LinearOpWithSolveFactoryExamples.hpp
  * \skip begin solveMajorChangeSolve
  * \skip template
  * \until end solveMajorChangeSolve
  *
- * \subsection LOWSFB_external_prec_sec The use of externally defined preconditioners
+ * \subsection LOWSFB_external_prec_sec Externally defined preconditioners
  *
  * This interface also supports the use of externally defined preconditioners
  * that are created and controlled by the client.  Client-created and
  * client-controlled preconditioners can be passed along with the forward
- * operator through the function <tt>initializePreconditionedOp()</tt>.  Only
- * objects that return <tt>supportsPreconditionerType()==true</tt> will
- * support externally defined preconditioners.  In general, iterative linear
- * solver implementations will support externally defined preconditioners and
- * direct linear solver implementations will not.
+ * operator through the function initializePreconditionedOp().  Only
+ * <tt>LinearOpWithSolveFactoryBase</tt> objects that return
+ * <tt>supportsPreconditionerType()==true</tt> will support externally defined
+ * preconditioners.  In general, iterative linear solver implementations will
+ * support externally defined preconditioners and direct linear solver
+ * implementations will not.
  *
- * Externally defined preconditioners can be passed in as operators or as matrices
- * and these two sub use cases are described next.
+ * Externally defined preconditioners can be passed in as operators or as
+ * matrices and these two sub use cases are described below.
  *
- * \subsubsection LOWSFB_external_prec_op_sec The use of externally defined preconditioner operators
+ * \subsubsection LOWSFB_external_prec_op_sec Use of externally defined preconditioner operators
  *
- * In this use case, the preconditioner is passed in as an operator to be
- * directly applied to as an operator.
+ * The client can use externally defined preconditioner linear operator(s) for
+ * <tt>LinearOpWithSolveFactoryBase</tt> objects that accept preconditioners.
+ * Preconditioner operator(s) are specified through the
+ * <tt>PreconditionerBase</tt> interface.  A <tt>PreconditionerBase</tt>
+ * object is essentally an encapsulation of a left, right, or split left/right
+ * preconditioner.
  *
- * The following example function shows how a <tt>LinearOpWithSolveBase</tt>
- * object is created and initialized using an externally defined
- * preconditioner operator:
-
- \code
-
-  template<class Scalar>
-  Teuchos::RefCountPtr<Thyra::LinearOpWithSolveBase<Scalar> 
-  createOperatorPreconditioned(
-    Teuchos::RefCountPtr<const Thyra::LinearOpBase<Scalar> >     &A          // A persisting relationship!
-    Teuchos::RefCountPtr<const Thyra::LinearOpBase<Scalar> >     &Pop        // A persisting relationship!
-    ,const Thyra::LinearOpWithSolveFactoryBase<Scalar>           &lowsFactory
-    )
-  {
-    Teuchos::RefCountPtr<const Thyra::LinearOpWithSolveBase<Scalar> >
-      invertibleA = lowsFactory.createOp();
-    lowsFactory.initializePreconditionedOp(A,Pop,Thyra::PRECONDITIONER_INPUT_TYPE_AS_OPERATOR,&*invertibleA);
-    return invertibleA;
-  }
-
- \endcode
-
- * As show above, the type of the preconditioner is flagged using the enum
- * value of <tt>Thyra::PRECONDITIONER_INPUT_TYPE_AS_OPERATOR</tt>.  This allows the
- * <tt>lowsFactory</tt> implementation to determine how the interpret the input
- * preconditioner object <tt>P</tt>.  Once this <tt>invertibleA</tt> object
- * is returned, it can be used just like any other
- * <tt>LinearOpWithSolveBase</tt> object.
+ * <b>Using an externally defined <tt>PreconditionerBase</tt> object</b>
+ *
+ * Given an externally defined <tt>PreconditionerBase</tt> object, the client
+ * can pass it allow with a forward linear operator to initialize a
+ * <tt>LinearOpWithSolveBase</tt> object as shown in the following code
+ * fragment:
+ *
+ * \dontinclude Thyra_LinearOpWithSolveFactoryExamples.hpp
+ * \skip begin createGeneralPreconditionedLinearOpWithSolve
+ * \skip template
+ * \until end createGeneralPreconditionedLinearOpWithSolve
+ *
+ * <b>Using a single externally defined <tt>LinearOpBase</tt> object as an unspecified precondtioner</b>
+ *
+ * A client can easily use any compatible appropriately defined
+ * <tt>LinearOpBase</tt> object as a precondtioner operator.  To do so, it can
+ * just be wrapped by the default <tt>PreconditionerBase</tt> implementation
+ * class <tt>DefaultPreconditioner</tt>.
+ *
+ * The following code fragment shows show to use an externally defined
+ * <tt>LinearOpBase</tt> object as a preconditioner operator without
+ * specifying whether it should be applied on the right or on the left.
+ *
+ * \dontinclude Thyra_LinearOpWithSolveFactoryExamples.hpp
+ * \skip begin createUnspecifiedPreconditionedLinearOpWithSolve
+ * \skip template
+ * \until end createUnspecifiedPreconditionedLinearOpWithSolve
+ *
+ * <b>Using a single externally defined <tt>LinearOpBase</tt> object as a left precondtioner</b>
+ *
+ * An externally defined <tt>LinearOpBase</tt> object can be used as a
+ * preconditioner operator targeted as a left preconditioner as shown in the
+ * following code fragement:
+ *
+ * \dontinclude Thyra_LinearOpWithSolveFactoryExamples.hpp
+ * \skip begin createLeftPreconditionedLinearOpWithSolve
+ * \skip template
+ * \until end createLeftPreconditionedLinearOpWithSolve
+ *
+ * <b>Using a single externally defined <tt>LinearOpBase</tt> object as a right precondtioner</b>
+ *
+ * An externally defined <tt>LinearOpBase</tt> object can be used as a
+ * preconditioner operator targeted as a right preconditioner as shown in the
+ * following code fragement:
+ *
+ * \dontinclude Thyra_LinearOpWithSolveFactoryExamples.hpp
+ * \skip begin createRightPreconditionedLinearOpWithSolve
+ * \skip template
+ * \until end createRightPreconditionedLinearOpWithSolve
+ *
+ * <b>Using two single externally defined <tt>LinearOpBase</tt> objects as a split left/right precondtioner</b>
+ *
+ * Two externally defined <tt>LinearOpBase</tt> objects can be used as
+ * preconditioner operators for form a split preconditioner targeted to the
+ * left and right as shown in the following code fragement:
+ *
+ * \dontinclude Thyra_LinearOpWithSolveFactoryExamples.hpp
+ * \skip begin createLeftRightPreconditionedLinearOpWithSolve
+ * \skip template
+ * \until end createLeftRightPreconditionedLinearOpWithSolve
  *
  * \subsubsection LOWSFB_external_prec_mat_sec The use of externally defined preconditioner matrices
  *
- * In this use case, the preconditioner is passed in as a matrix object to be
- * used to generate (using an algebraic method such as ILU or some multi-level
- * method) preconditioner operator that then is used as the preconditioner.
+ * A different linear operator can be used to build a preconditioner
+ * internally when initializing a <tt>LinearOpWithSolveBase</tt> object.  The
+ * following code fragement shows how to use an approximate forward linear
+ * from which to form a preconditioner internally:
  *
- * The following example function shows how a <tt>LinearOpWithSolveBase</tt>
- * object is created and initialized using an externally defined
- * preconditioner matrix:
-
- \code
-
-  template<class Scalar>
-  Teuchos::RefCountPtr<Thyra::LinearOpWithSolveBase<Scalar> 
-  createOperatorPreconditioned(
-    Teuchos::RefCountPtr<const Thyra::LinearOpBase<Scalar> >     &A          // A persisting relationship!
-    Teuchos::RefCountPtr<const Thyra::LinearOpBase<Scalar> >     &Pmat       // A persisting relationship!
-    ,const Thyra::LinearOpWithSolveFactoryBase<Scalar>           &lowsFactory
-    )
-  {
-    Teuchos::RefCountPtr<const Thyra::LinearOpWithSolveBase<Scalar> >
-      invertibleA = lowsFactory.createOp();
-    lowsFactory.initializePreconditionedOp(A,Pmat,Thyra::PRECONDITIONER_INPUT_TYPE_AS_MATRIX,&*invertibleA);
-    return invertibleA;
-  }
-
- \endcode
-
- * As show above, the type of the preconditioner is flagged using the enum
- * value of <tt>Thyra::PRECONDITIONER_INPUT_TYPE_AS_MATRIX</tt>.  This allows the
- * <tt>lowsFactory</tt> implementation to determine how the interpret the input
- * preconditioner object <tt>P</tt>.  This mode is very similar to the default
- * mode as supported by <tt>initializeOp()</tt> where the preconditioner is
- * generated from the forward matrix itself.  Except here a different matrix
- * is used to generate the preconditioner. This would be the case where the
- * forward operator is not a matrix (i.e. it can only be applied) and a
- * different, perhaps simplified physics-based, matrix approximation is used to
- * generate the preconditioner.
+ * \dontinclude Thyra_LinearOpWithSolveFactoryExamples.hpp
+ * \skip begin createMatrixPreconditionedLinearOpWithSolve
+ * \skip template
+ * \until end createMatrixPreconditionedLinearOpWithSolve
  *
  * \subsubsection LOWSFB_external_prec_op_reuse_sec Reuse of externally defined preconditioner operators
  *
- * Reusing an externally defined preconditioner operator is a very
- * straightforward matter.  Since the client controls the creation and
- * initialization of the preconditioner operator, this can be passed into
- *
- * The below example function shows what it looks like to reuse a
- * preconditioner operator:
-
- \code
-
-  template<class Scalar>
-  void preconditionedSolveChangeSolve(
-    const Thyra::LinearOpBase<Scalar>                    &A
-    const Thyra::LinearOpBase<Scalar>                    &P
-    ,const Thyra::LinearOpWithSolveFactoryBase<Scalar>   &lowsFactory
-    )
-  {
-    // Get a local non-owned RCP  objects to A and P to be used by lowsFactory
-    Teuchos::RefCountPtr<const Thyra::LinearOpBase<Scalar> >
-      rcpA = Teuchos::rcp(&A,false),
-      rcpP = Teuchos::rcp(&A,false);
-    // Create the LOWSB object that will be used to solve the linear system
-    Teuchos::RefCountPtr<const Thyra::LinearOpWithSolveBase<Scalar> >
-      invertibleA = lowsFactory.createOp();
-    // Initialize the preconditioned invertible linear operator given the
-    // forward and preconditioner operators
-    lowsFactory.initializePreconditionedOp(rcpA,rcpP,Thyra::PRECONDITIONER_INPUT_TYPE_AS_OPERATOR,&*invertibleA);
-    // Solve the system using a default solve criteria using a non-member helper function
-    solve(*invertibleA,...);
-    // Change the operator and reinitialize the invertible operator
-    lowsFactory.uninitializeOp(&*invertibleA);
-      // Note that the above uninitialization is not required but
-      // is recommended before a change of A since the object invertibleA may
-      // become invalid and this avoids accidental use until it is reinitialized
-      // below.
-    someSmallChange(&A);
-    lowsFactory.initializePreconditionedOp(rcpA,rcpP,Thyra::PRECONDITIONER_INPUT_TYPE_AS_OPERATOR,&*invertibleA);
-      // Note that above we assume that P is independent from A so that when A
-      // is changed it will have not impact on P.  If P was dependent on A,
-      // then the client would need to know what the side effects were and if
-      // this was reasonable or not.
-    // Solve another linear system with new values of A but same preconditioner P
-    solve(*invertibleA,...);
-  }
-
- \endcode
-
+ * Reusing an externally defined preconditioner is a very straightforward
+ * matter consuputally.  Since the client controls the creation and
+ * initialization of the preconditioner, the client can control which
+ * preconditioners are paried with which forward operators in order to form
+ * <tt>LinearOpWithSolveBase</tt> objects.  However, when an abstract
+ * <tt>PreconditionerFactoryBase</tt> object is used to create and maintain
+ * the preconditioner, the exact nature of the preconditioner after the
+ * operator is updated is undefined.
  *
  * \subsubsection LOWSFB_external_prec_mat_reuse_sec Reuse of externally defined preconditioner matrices
  *
@@ -366,7 +351,7 @@ namespace Thyra {
  * <tt>initializeAndReuseOp()</tt> can be called to reuse the internal
  * preconditioner but this is implementation defined.
  * 
- * \section LOWSFB_verbosity_level_sec 
+ * \section LOWSFB_verbosity_level_sec Output and verbosity
  *
  * <b>TODO:</b> Provide some guidance on how clients and subclasses should
  * interpret Teuchos::EVerbLevel.
@@ -636,7 +621,7 @@ public:
 
   /** \brief Initialize a pre-created <tt>LinearOpWithSolveBase</tt> object
    * given a "compatible" <tt>LinearOpBase</tt> object and an optional
-   * <tt>PreconditionBase</tt> object.
+   * <tt>PreconditionerBase</tt> object.
    *
    * \param  fwdOp  [in] The forward linear operator that will be used to create
    *                the output <tt>LinearOpWithSolveBase</tt> object.

@@ -41,6 +41,7 @@ namespace Thyra {
 
 /** \brief Abstract strategy interface for changing
  * <tt>Thyra::LinearOpBase</tt> objects.
+ * \ingroup thyra_operator_solve_support_LOWSF_examples
  */
 template<class Scalar>
 class LinearOpChanger {
@@ -51,7 +52,9 @@ public:
   virtual void changeOp( LinearOpBase<Scalar> *op ) const = 0;
 };
 
-/** \brief No-op changer. */
+/** \brief No-op changer.
+ * \ingroup thyra_operator_solve_support_LOWSF_examples
+ */
 template<class Scalar>
 class NullLinearOpChanger : public LinearOpChanger<Scalar> {
 public:
@@ -64,9 +67,11 @@ public:
 //
 // Individual non-externally preconditioned use cases
 //
-  
+
 // begin singleLinearSolve
-/** \brief Performing a single linear solve given a forward operator. */
+/** \brief Performing a single linear solve given a forward operator.
+ * \ingroup thyra_operator_solve_support_LOWSF_examples
+ */
 template<class Scalar>
 void singleLinearSolve(
   const Thyra::LinearOpBase<Scalar>                    &A
@@ -91,6 +96,7 @@ void singleLinearSolve(
 // begin createScaledAdjointLinearOpWithSolve
 /** \brief Create a <tt>LinearOpWithSolveBase</tt> object from an implicitly
  * scaled adjoint <tt>LinearOpBase</tt> object.
+ * \ingroup thyra_operator_solve_support_LOWSF_examples
  */
 template<class Scalar>
 Teuchos::RefCountPtr<Thyra::LinearOpWithSolveBase<Scalar> >
@@ -108,7 +114,7 @@ createScaledAdjointLinearOpWithSolve(
     invertibleAdjointA
     = Thyra::createAndInitializeLinearOpWithSolve(
       lowsFactory
-      ,Thyra::scale(scalar,Thyra::adjoint(Teuchos::rcp(&A,false)))
+      ,scale(scalar,adjoint(Teuchos::rcp(&A,false)))
       );
   out << "\nCreated LOWSB object:\n" << describe(*invertibleAdjointA,Teuchos::VERB_MEDIUM);
   return invertibleAdjointA;
@@ -117,6 +123,7 @@ createScaledAdjointLinearOpWithSolve(
 // begin solveNumericalChangeSolve
 /** \brief Create a <tt>LinearOpWithSolveBase</tt> object and perform a solve,
  * then change the <tt>LinearOpBase</tt> object and solve again.
+ * \ingroup thyra_operator_solve_support_LOWSF_examples
  */
 template<class Scalar>
 void solveNumericalChangeSolve(
@@ -153,8 +160,8 @@ void solveNumericalChangeSolve(
   opChanger.changeOp(A);
   lowsFactory.initializeOp(rcpA,&*invertibleA);
   // Note that above will reuse any factorization structures that may have been
-  // created in the first call to initializeOp(...)
-  // Solve another linear system with new values of A
+  // created in the first call to initializeOp(...).
+  // Finally, solve another linear system with new values of A
   Thyra::assign(x2,Scalar(0.0));
   solve(*invertibleA,Thyra::NOTRANS,b2,x2);
 } // end solveNumericalChangeSolve
@@ -163,6 +170,7 @@ void solveNumericalChangeSolve(
 /** \brief Create a <tt>LinearOpWithSolveBase</tt> object and perform a solve,
  * then change the <tt>LinearOpBase</tt> object in a very small way and solve
  * again.
+ * \ingroup thyra_operator_solve_support_LOWSF_examples
  */
 template<class Scalar>
 void solveSmallNumericalChangeSolve(
@@ -208,6 +216,7 @@ void solveSmallNumericalChangeSolve(
 /** \brief Create a <tt>LinearOpWithSolveBase</tt> object and perform a solve,
  * then change the <tt>LinearOpBase</tt> object in a very small way and solve
  * again.
+ * \ingroup thyra_operator_solve_support_LOWSF_examples
  */
 template<class Scalar>
 void solveMajorChangeSolve(
@@ -254,9 +263,11 @@ void solveMajorChangeSolve(
 // Individual externally preconditioned use cases
 //
 
+// begin createGeneralPreconditionedLinearOpWithSolve
 /** \brief Create a <tt>Thyra::LinearOpWithSolveBase</tt> object given an
  * externally created preconditioner specified as a
  * <tt>Thyra::PreconditionerBase</tt> object.
+ * \ingroup thyra_operator_solve_support_LOWSF_examples
  */
 template<class Scalar>
 Teuchos::RefCountPtr<Thyra::LinearOpWithSolveBase<Scalar> >
@@ -274,11 +285,13 @@ createGeneralPreconditionedLinearOpWithSolve(
   lowsFactory.initializePreconditionedOp(A,P,&*invertibleA);
   out << "\nCreated LOWSB object:\n" << describe(*invertibleA,Teuchos::VERB_MEDIUM);
   return invertibleA;
-}
+} // end createGeneralPreconditionedLinearOpWithSolve
 
+// begin createUnspecifiedPreconditionedLinearOpWithSolve
 /** \brief Create a <tt>Thyra::LinearOpWithSolveBase</tt> object given an
  * externally created preconditioner specified as a single
  * <tt>Thyra::LinearOpBase</tt> object not targeted for the left or right.
+ * \ingroup thyra_operator_solve_support_LOWSF_examples
  */
 template<class Scalar>
 Teuchos::RefCountPtr<Thyra::LinearOpWithSolveBase<Scalar> >
@@ -290,19 +303,23 @@ createUnspecifiedPreconditionedLinearOpWithSolve(
   )
 {
   Teuchos::OSTab tab(out);
-  out << "\nCreating an LinearOpWithSolveBase object given a preconditioner operator ...\n";
+  out << "\nCreating an LinearOpWithSolveBase object given a preconditioner operator not targeted to the left or right ...\n";
   Teuchos::RefCountPtr<Thyra::PreconditionerBase<Scalar> >
     P = Teuchos::rcp(new Thyra::DefaultPreconditioner<Scalar>(P_op));
   Teuchos::RefCountPtr<Thyra::LinearOpWithSolveBase<Scalar> >
     invertibleA = lowsFactory.createOp();
   lowsFactory.initializePreconditionedOp(A,P,&*invertibleA);
+  // Above, the lowsFactory object will decide whether to apply the single
+  // preconditioner operator on the left or on the right.
   out << "\nCreated LOWSB object:\n" << describe(*invertibleA,Teuchos::VERB_MEDIUM);
   return invertibleA;
-}
+} // end createUnspecifiedPreconditionedLinearOpWithSolve
 
+// begin createLeftPreconditionedLinearOpWithSolve
 /** \brief Create a <tt>Thyra::LinearOpWithSolveBase</tt> object given an
  * externally created preconditioner specified as <tt>Thyra::LinearOpBase</tt>
  * object to be applied on the left.
+ * \ingroup thyra_operator_solve_support_LOWSF_examples
  */
 template<class Scalar>
 Teuchos::RefCountPtr<Thyra::LinearOpWithSolveBase<Scalar> >
@@ -322,11 +339,13 @@ createLeftPreconditionedLinearOpWithSolve(
   lowsFactory.initializePreconditionedOp(A,P,&*invertibleA);
   out << "\nCreated LOWSB object:\n" << describe(*invertibleA,Teuchos::VERB_MEDIUM);
   return invertibleA;
-}
+} // end createLeftPreconditionedLinearOpWithSolve
 
+// begin createRightPreconditionedLinearOpWithSolve
 /** \brief Create a <tt>Thyra::LinearOpWithSolveBase</tt> object given an
  * externally created preconditioner specified as <tt>Thyra::LinearOpBase</tt>
  * object to be applied on the right.
+ * \ingroup thyra_operator_solve_support_LOWSF_examples
  */
 template<class Scalar>
 Teuchos::RefCountPtr<Thyra::LinearOpWithSolveBase<Scalar> >
@@ -346,11 +365,13 @@ createRightPreconditionedLinearOpWithSolve(
   lowsFactory.initializePreconditionedOp(A,P,&*invertibleA);
   out << "\nCreated LOWSB object:\n" << describe(*invertibleA,Teuchos::VERB_MEDIUM);
   return invertibleA;
-}
+} // end createRightPreconditionedLinearOpWithSolve
 
+// begin createLeftRightPreconditionedLinearOpWithSolve
 /** \brief Create a <tt>Thyra::LinearOpWithSolveBase</tt> object given an
  * externally created preconditioner specified as left and right
  * <tt>Thyra::LinearOpBase</tt> objects.
+ * \ingroup thyra_operator_solve_support_LOWSF_examples
  */
 template<class Scalar>
 Teuchos::RefCountPtr<Thyra::LinearOpWithSolveBase<Scalar> >
@@ -371,11 +392,13 @@ createLeftRightPreconditionedLinearOpWithSolve(
   lowsFactory.initializePreconditionedOp(A,P,&*invertibleA);
   out << "\nCreated LOWSB object:\n" << describe(*invertibleA,Teuchos::VERB_MEDIUM);
   return invertibleA;
-}
+} // end createLeftRightPreconditionedLinearOpWithSolve
 
+// begin createMatrixPreconditionedLinearOpWithSolve
 /** \brief Create a <tt>Thyra::LinearOpWithSolveBase</tt> object given an
  * approximate forward operator that will be used to create the preconditioner
  * internally.
+ * \ingroup thyra_operator_solve_support_LOWSF_examples
  */
 template<class Scalar>
 Teuchos::RefCountPtr<Thyra::LinearOpWithSolveBase<Scalar> >
@@ -394,7 +417,7 @@ createMatrixPreconditionedLinearOpWithSolve(
   lowsFactory.initializeApproxPreconditionedOp(A,A_approx,&*invertibleA);
   out << "\nCreated LOWSB object:\n" << describe(*invertibleA,Teuchos::VERB_MEDIUM);
   return invertibleA;
-}
+} // end createMatrixPreconditionedLinearOpWithSolve
 
 //
 // Combined use cases
@@ -403,6 +426,7 @@ createMatrixPreconditionedLinearOpWithSolve(
 /** \brief Combined use cases for the use of a
  * <tt>Thyra::LinearOpWithSolveFactoryBase</tt> object without an externally
  * set preconditioner.
+ * \ingroup thyra_operator_solve_support_LOWSF_examples
  */
 template<class Scalar>
 void nonExternallyPreconditionedLinearSolveUseCases(
@@ -452,6 +476,7 @@ void nonExternallyPreconditionedLinearSolveUseCases(
 /** \brief Combined use cases for the use of a
  * <tt>Thyra::LinearOpWithSolveFactoryBase</tt> object which use an externally
  * set preconditioner.
+ * \ingroup thyra_operator_solve_support_LOWSF_examples
  */
 template<class Scalar>
 void externallyPreconditionedLinearSolveUseCases(

@@ -81,36 +81,3 @@ to to define an iterative linear solver such as GMRES or CG.
 
 */
 
-
-//
-// FFT examples
-//
-
-/** \example ComplexFFTLinearOp.hpp
-
-Click \ref Thyra_Op_Vec_examples_fft_grp "here" for an example program that
-use this example class.
-
-*/
-
-/** \example RealComplexFFTLinearOp.hpp
-
-Click \ref Thyra_Op_Vec_examples_fft_grp "here" for an example program that
-use this example class.
-
-*/
-
-/** \defgroup Thyra_Op_Vec_examples_fft_grp Templated FFT examples
-
-\ingroup Thyra_Op_Vec_examples_grp
-
-To see the full listing of this example program click: <a
-href="silly1DFFT__serial_8cpp-example.html">
-silly1DFFT_serial.cpp </a>
-
-*/
-
-/** \example silly1DFFT_serial.cpp
-
-*/
-
