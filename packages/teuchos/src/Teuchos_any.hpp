@@ -37,7 +37,8 @@
 
 namespace Teuchos {
 
-/** \brief  \brief Modified boost::any class, which is a container for a templated value.
+/** \brief Modified boost::any class, which is a container for a templated
+ * value.
  */
 class any
 {
@@ -214,7 +215,7 @@ public:
 
     \note <ul> 	<li> If the templated value type and templated type are not the same then a 
 		bad_any_cast is thrown.
-		<li> If the dynamic cast fails, then a logic_error is thrown.
+		<li> If the dynamic cast fails, then a Teuchos::bad_any_cast exception is thrown.
 	  </ul>
 */
 template<typename ValueType>

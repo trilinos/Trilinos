@@ -50,10 +50,10 @@ namespace Teuchos {
  * \relates ParameterList
  */
 enum EValidateUsed {
-  VALIDATE_USED_ENABLED   /*< Validate that parameters in <tt>*this</tt> list
+  VALIDATE_USED_ENABLED   /*< \brief Validate that parameters in <tt>*this</tt> list
                               set using the default value are present in
                               the validation list */
-  ,VALIDATE_USED_DISABLED /*< Do not validate that parameters in <tt>*this</tt> list
+  ,VALIDATE_USED_DISABLED /*< \brief Do not validate that parameters in <tt>*this</tt> list
                               set using the default value are present in
                               the validation list */
 };
@@ -62,10 +62,10 @@ enum EValidateUsed {
  * \relates ParameterList
  */
 enum EValidateDefaults {
-  VALIDATE_DEFAULTS_ENABLED   /*< Validate that parameters in <tt>*this</tt> list
+  VALIDATE_DEFAULTS_ENABLED   /*< \brief Validate that parameters in <tt>*this</tt> list
                                   set using the default value are present in
                                    the validation list */
-  ,VALIDATE_DEFAULTS_DISABLED /*< Do not validate that parameters in <tt>*this</tt> list
+  ,VALIDATE_DEFAULTS_DISABLED /*< \brief Do not validate that parameters in <tt>*this</tt> list
                                   set using the default value are present in
                                   the validation list */
 };
@@ -333,9 +333,6 @@ public:
   /** \brief Validate the parameters is this list given valid selections in
    * the input list.
    *
-   * \param  paramListName
-   *              [in] The name of <tt>*this</tt> parameter list.  This is used to generate
-   *              the exception message in case of a failure.
    * \param  validParamList
    *              [in] This is the list that the parameters and sublist in <tt>*this</tt>
    *              are compared against.
