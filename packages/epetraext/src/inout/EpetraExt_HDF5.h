@@ -1,4 +1,4 @@
-/@HEADER
+//@HEADER
 // ***********************************************************************
 //
 //     EpetraExt: Epetra Extended - Linear Algebra Services Package
