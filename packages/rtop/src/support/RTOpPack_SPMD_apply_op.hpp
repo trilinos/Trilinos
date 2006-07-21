@@ -1,8 +1,9 @@
 // @HEADER
 // ***********************************************************************
 // 
-//      Thyra: Interfaces and Support Code for the Interoperability of Abstract Numerical Algorithms 
-//                 Copyright (2004) Sandia Corporation
+// RTOp: Interfaces and Support Software for Vector Reduction Transformation
+//       Operations
+//                Copyright (2006) Sandia Corporation
 // 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
@@ -21,7 +22,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov) 
 // 
 // ***********************************************************************
 // @HEADER
@@ -97,8 +98,8 @@ void RTOpPack::serialize(
   typedef Teuchos::SerializationTraits<int,char_type>            CTST;
   const int
     prim_value_type_size = PVTST::fromCountToIndirectBytes(1),
-    index_type_size      = ITST::fromCountToIndirectBytes(1),
-    char_type_size       = CTST::fromCountToIndirectBytes(1);
+    index_type_size      = ITST::fromCountToIndirectBytes(1);
+  //char_type_size       = CTST::fromCountToIndirectBytes(1);
   const int
     num_values_off  = 0,
     num_indexes_off = num_values_off  + index_type_size,
@@ -134,8 +135,8 @@ void RTOpPack::deserialize(
   typedef Teuchos::SerializationTraits<int,char_type>            CTST;
   const int
     prim_value_type_size = PVTST::fromCountToIndirectBytes(1),
-    index_type_size      = ITST::fromCountToIndirectBytes(1),
-    char_type_size       = CTST::fromCountToIndirectBytes(1);
+    index_type_size      = ITST::fromCountToIndirectBytes(1);
+  //char_type_size       = CTST::fromCountToIndirectBytes(1);
   const int
     num_values_off  = 0,
     num_indexes_off = num_values_off  + index_type_size,

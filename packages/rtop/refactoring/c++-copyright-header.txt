@@ -26,39 +26,3 @@
 // 
 // ***********************************************************************
 // @HEADER
-
-#ifndef RTOPPACK_TOP_RECIPROCAL_HPP
-#define RTOPPACK_TOP_RECIPROCAL_HPP
-
-#include "RTOpPack_RTOpTHelpers.hpp"
-
-namespace RTOpPack {
-
-/** \brief VectorBase assignment transformation operator: <tt>z0[i] = v0[i], i=0...n-1</tt>.
- */
-template<class Scalar>
-class TOpReciprocal : public RTOpT<Scalar> {
-public:
-  /** \brief . */
-  TOpReciprocal() : RTOpT<Scalar>("TOpReciprocal") {}
-  /** @name Overridden from RTOpT */
-  //@{
-  /** \brief . */
-  void apply_op(
-    const int   num_vecs,       const ConstSubVectorView<Scalar>         sub_vecs[]
-    ,const int  num_targ_vecs,  const SubVectorView<Scalar>  targ_sub_vecs[]
-    ,ReductTarget *reduct_obj
-    ) const
-    {
-      RTOP_APPLY_OP_1_1(num_vecs,sub_vecs,num_targ_vecs,targ_sub_vecs);
-      const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
-      for( Teuchos_Index i = 0; i < subDim; ++i, v0_val += v0_s, z0_val += z0_s ) {
-        *z0_val = one / *v0_val;
-      }
-    }
-  //@}
-}; // class TOpReciprocal
-
-} // namespace RTOpPack
-
-#endif // RTOPPACK_TOP_RECIPROCAL_HPP
