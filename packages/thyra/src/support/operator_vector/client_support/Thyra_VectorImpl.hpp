@@ -90,11 +90,6 @@ namespace Thyra
     return *this;
   }
 
-  /** */
-  template <class Scalar> inline 
-  Scalar Vector<Scalar>::operator[](Index globalIndex) const 
-  {return ConstVector<Scalar>::operator[](globalIndex);}
-  
 
   /** 
    * \relates ConstVector

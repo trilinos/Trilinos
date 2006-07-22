@@ -67,16 +67,10 @@ namespace Thyra
     bool sumTest() const ;
 
     /** */
-    bool setElementTest() const ;
-
-    /** */
     bool setElementUsingBracketTest() const ;
 
     /** */
     bool dotStarTest() const ;
-
-    /** */
-    bool dotSlashTest() const ;
 
     /** */
     bool scalarMultTest() const ;
@@ -113,6 +107,8 @@ namespace Thyra
 
     Teuchos::MPIComm comm_;
 
+    Teuchos::RefCountPtr<Teuchos::FancyOStream> out_;
+
   };
 
   template <class Scalar> 
@@ -120,7 +116,8 @@ namespace Thyra
   ::VectorOpTester(const VectorSpace<Scalar>& space,
                    const TestSpecifier<Scalar>& spec,
                    const Teuchos::MPIComm& comm)
-    : spec_(spec), space_(space), comm_(comm)
+    : spec_(spec), space_(space), comm_(comm), 
+      out_(Teuchos::VerboseObjectBase::getDefaultOStream())
   {;}
 
   template <class Scalar> 
@@ -129,13 +126,9 @@ namespace Thyra
   {
     bool pass = true;
 
-    pass = sumTest() && pass;
-    pass = setElementTest() && pass;
-#ifdef BRACKET_TEST
     pass = setElementUsingBracketTest() && pass;
-#endif
+    pass = sumTest() && pass;
     pass = dotStarTest() && pass;
-    pass = dotSlashTest() && pass;
     pass = scalarMultTest() && pass;
     pass = overloadedUpdateTest() && pass;
     pass = reciprocalTest() && pass;
@@ -161,7 +154,7 @@ namespace Thyra
   {
     if (spec_.doTest())
       {
-        cout << "running vector addition test..." << endl;
+        *out_ << "running vector addition test..." << endl;
 
         Vector<Scalar> a = space_.createMember();
         Vector<Scalar> b = space_.createMember();
@@ -172,108 +165,42 @@ namespace Thyra
 
         /* do the operation with member functions */
         x = a + b ;
-
-        /* do the operation with member functions */
-
-        /* do the operation elementwise */
-        int low = lowestLocallyOwnedIndex(space_);
-        int high = low + numLocalElements(space_);
-
-        for (int i=low; i<high; i++)
+        
+        /* do the operation elementwise. For off-processor elements, this is a no-op */
+        for (int i=0; i<space_.dim(); i++)
           {
-            double a_i = ((ConstVector<Scalar>) a)[i];
-            double b_i = ((ConstVector<Scalar>) b)[i];
+            *out_ << "i=" << i << " of N=" << space_.dim() << endl;
+            double a_i = a[i];
+            double b_i = b[i];
             y[i] = a_i + b_i;
           }
 
         double err = normInf(x-y);
 
-        cout << "|sum error|=" << err << endl;
+        *out_ << "|sum error|=" << err << endl;
         if (err > spec_.errorTol())
           {
-            cout << "vector sum test FAILED: tol = " 
+            *out_ << "vector sum test FAILED: tol = " 
                  << spec_.errorTol() << endl;
             return false;
           }
         else if (err > spec_.warningTol())
           {
-            cout << "WARNING: vector sum test could not beat tol = " 
+            *out_ << "WARNING: vector sum test could not beat tol = " 
                  << spec_.warningTol() << endl;
           }
 	
       }
     else
       {
-        cout << "skipping vector addition test..." << endl;
+        *out_ << "skipping vector addition test..." << endl;
       }
-    cout << "vector addition test PASSED: tol = " 
+    *out_ << "vector addition test PASSED: tol = " 
          << spec_.errorTol() << endl;
     return true;
   }
 
-  template <class Scalar> 
-  inline bool VectorOpTester<Scalar>
-  ::setElementTest() const 
-  {
-    if (spec_.doTest())
-      {
-        cout << "running setElement test..." << endl;
-
-        Vector<Scalar> a = space_.createMember();
-	
-        /* we will load a vector with a_i = i, and then do
-         * the sum of all elements. If done correctly, the sum will equal 
-         * N*(N+1)*(2N+1)/6.
-         */
-        int low = lowestLocallyOwnedIndex(space_);
-        int high = low + numLocalElements(space_);
-
-        for (int i=low; i<high; i++)
-          {
-            a[i]=i;
-          }
-        Vector<double> b = copy(a);
-
-        b = dotStar(a, b);
-
-        double sum = 0.0;
-        for (int i=low; i<high; i++)
-          {
-            sum += i * a[i];
-          }
-
-
-#ifdef HAVE_MPI
-        Scalar localSum = sum;
-        MPI_Allreduce( (void*) &localSum, (void*) &sum, 
-                       1, MPI_DOUBLE, MPI_SUM, comm_.getComm());
-#endif
-        double thyraSum = Thyra::sum(*(b.rawPtr()));
-
-        double err = ::fabs(sum - thyraSum);
-
-        cout << "|setElement error|=" << err << endl;
-        if (err > spec_.errorTol())
-          {
-            cout << "vector setElement test FAILED: tol = " 
-                 << spec_.errorTol() << endl;
-            return false;
-          }
-        else if (err > spec_.warningTol())
-          {
-            cout << "WARNING: vector setElement test could not beat tol = " 
-                 << spec_.warningTol() << endl;
-          }
-	
-      }
-    else
-      {
-        cout << "skipping vector setElement test..." << endl;
-      }
-    cout << "vector setElement test PASSED: tol = " 
-         << spec_.errorTol() << endl;
-    return true;
-  }
+ 
 
 
   template <class Scalar> 
@@ -282,101 +209,61 @@ namespace Thyra
   {
     if (spec_.doTest())
       {
-        cout << "running setElementUsingBracket test..." << endl;
+        Vector<Scalar> a = space_.createMember();
 
-        VectorSpace<Scalar> prodSp = 
-          productSpace(tuple(space_, space_));
-        Vector<Scalar> prod = prodSp.createMember();
-        Vector<Scalar> a = prod.getBlock(0);
-        Vector<Scalar> ab = prod.getBlock(1);
-	
-        /* we will load a vector with a_i = i, and then do
-         * the sum of all elements. If done correctly, the sum will equal 
-         * N*(N+1)*(2N+1)/6.
-         */
-        int low = lowestLocallyOwnedIndex(space_);
-        int high = low + numLocalElements(space_);
+        /* We will load a vector with zeros, then set a randomly selected element to 1.0 and 
+         * another to -1.0. Run minloc and maxloc to test that the minimum and
+         * maximum values are at the expected locations. */
 
-        for (int i=low; i<high; i++)
+        zeroOut(a);
+
+        int N = space_.dim();
+        int nTrials = 50;
+
+        /* pick a seed in a way that is deterministic across processors */
+        unsigned int seed = 107*N % 101;
+        Teuchos::ScalarTraits<int>::seedrandom( seed );
+
+        double err = 0.0;
+
+        for (int t=0; t<nTrials; t++)
           {
-            prod[i] = i;
-            prod[i + space_.dim()] = i + space_.dim();
+            zeroOut(a);
+            Index minIndex = Teuchos::ScalarTraits<int>::random() % N;
+            Index maxIndex = Teuchos::ScalarTraits<int>::random() % N;
+            /* skip cases where we've generated identical indices */
+            if (minIndex == maxIndex) continue;
+            a[minIndex] = -1.0;
+            a[maxIndex] = 1.0;
+            Index findMin = -1;
+            Index findMax = -1;
+            Scalar minVal = Thyra::minloc(a, findMin);
+            Scalar maxVal = Thyra::maxloc(a, findMax);
+            err += ::fabs(-1.0 - minVal);
+            err += ::fabs(1.0 - maxVal);
+            err += ::fabs(findMin - minIndex);
+            err += ::fabs(findMax - maxIndex);
           }
-
-        cout << "a = " << endl << a << endl;
-        cout << "ab = " << endl << ab << endl;
-        cout << "prod = " << endl << prod.getBlock(0) << prod.getBlock(1) << endl;
-        Vector<double> b = copy(a);
-        Vector<double> prodB = copy(prod);
-        b = dotStar(a,b);
-        prodB = dotStar(prodB, prod);
-
-        double sum = 0.0;
-        double sumP = 0.0;
-        for (int i=low; i<high; i++)
-          {
-            cout << i << " " << prod[i] << " " << i*prod[i]
-                 << endl;
-            cout << i << " " << a[i] << " " << i*a[i]
-                 << endl;
-            cout << i << " " << prod[i] << " " << i*prod[i] << " "
-                 << prod[i + space_.dim()] << endl;
-            //sum += i * a[i];
-            sum += i * a[i];
-            sumP += i * prod[i] + (i) * prod[i + space_.dim()];
-          }
-
-#ifdef HAVE_MPI
-        Scalar localSum = sum;
-        MPI_Allreduce( (void*) &localSum, (void*) &sum, 
-                       1, MPI_DOUBLE, MPI_SUM, comm_.getComm());
-        Scalar localSumP = sumP;
-        MPI_Allreduce( (void*) &localSumP, (void*) &sumP, 
-                       1, MPI_DOUBLE, MPI_SUM, comm_.getComm());
-#endif
-	
-        double thyraSum = Thyra::sum(*(b.ptr()));
-        cout << "elemwise sum = " << sum << endl;
-        cout << "thyra sum = " << thyraSum << endl;
-        double thyraSumP = Thyra::sum(*(prodB.ptr()));
-        cout << "elemwise sum = " << sumP << endl;
-        cout << "thyra sum = " << thyraSumP << endl;
-
-        double err = ::fabs(sum - thyraSum);
-        double errP = ::fabs(sumP - thyraSumP);
-
-        cout << "|setElement error|=" << err << endl;
+        
+        *out_ << "|bracket error|=" << err << endl;
         if (err > spec_.errorTol())
           {
-            cout << "vector setElement test FAILED: tol = " 
+            *out_ << "vector bracket test FAILED: tol = " 
                  << spec_.errorTol() << endl;
             return false;
           }
         else if (err > spec_.warningTol())
           {
-            cout << "WARNING: vector setElementUsingBracket test could not beat tol = " 
+            *out_ << "WARNING: vector setElementUsingBracket test could not beat tol = " 
                  << spec_.warningTol() << endl;
           }
 
-        cout << "|setElement errorP|=" << errP << endl;
-        if (errP > spec_.errorTol())
-          {
-            cout << "product vector setElement test FAILED: tol = " 
-                 << spec_.errorTol() << endl;
-            return false;
-          }
-        else if (errP > spec_.warningTol())
-          {
-            cout << "WARNING: product vector setElementUsingBracket test could not beat tol = " 
-                 << spec_.warningTol() << endl;
-          }
-	
       }
     else
       {
-        cout << "skipping vector setElementUsingBracket test..." << endl;
+        *out_ << "skipping vector setElementUsingBracket test..." << endl;
       }
-    cout << "vector setElementUsingBracket test PASSED: tol = " 
+    *out_ << "vector setElementUsingBracket test PASSED: tol = " 
          << spec_.errorTol() << endl;
     return true;
   }
@@ -390,119 +277,51 @@ namespace Thyra
   {
     if (spec_.doTest())
       {
-        cout << "running vector dotStar test..." << endl;
+        *out_ << "running vector dotStar test..." << endl;
 
         Vector<Scalar> a = space_.createMember();
         Vector<Scalar> b = space_.createMember();
         Vector<Scalar> x = space_.createMember();
         Vector<Scalar> y = space_.createMember();
+        Vector<Scalar> z = space_.createMember();
         randomizeVec(a);
         randomizeVec(b);
 
-
-        /* do the operation with member functions */
         x = dotStar(a,b);
+        z = dotSlash(x, b);
+        
+        double err = normInf(a-z);
 
-        /* do the operation elementwise */
-        int low = lowestLocallyOwnedIndex(space_);
-        int high = low + numLocalElements(space_);
-
-        for (int i=low; i<high; i++)
-          {
-            double a_i = a[i];
-            double b_i = b[i];
-            y[i] = a_i * b_i;
-          }
-	
-        double err = normInf(x-y);
-
-        cout << "|dotStar error|=" << err << endl;
+        *out_ << "|dotStar error|=" << err << endl;
         if (err > spec_.errorTol())
           {
-            cout << "vector dotStar test FAILED: tol = " 
+            *out_ << "vector dotStar test FAILED: tol = " 
                  << spec_.errorTol() << endl;
             return false;
           }
         else if (err > spec_.warningTol())
           {
-            cout << "WARNING: vector dotStar test could not beat tol = " 
+            *out_ << "WARNING: vector dotStar test could not beat tol = " 
                  << spec_.warningTol() << endl;
           }
 	
       }
     else
       {
-        cout << "skipping vector dotStar test..." << endl;
+        *out_ << "skipping vector dotStar test..." << endl;
       }
-    cout << "vector dotStar test PASSED: tol = " 
+    *out_ << "vector dotStar test PASSED: tol = " 
          << spec_.errorTol() << endl;
     return true;
   }
 
-
-  template <class Scalar> 
-  inline bool VectorOpTester<Scalar>
-  ::dotSlashTest() const 
-  {
-    if (spec_.doTest())
-      {
-        cout << "running vector dotSlash test..." << endl;
-
-        Vector<Scalar> a = space_.createMember();
-        Vector<Scalar> b = space_.createMember();
-        Vector<Scalar> x = space_.createMember();
-        Vector<Scalar> y = space_.createMember();
-        randomizeVec(a);
-        randomizeVec(b);
-
-
-        /* do the operation with member functions */
-        x = dotSlash(a,b);
-
-        /* do the operation elementwise */
-        int low = lowestLocallyOwnedIndex(space_);
-        int high = low + numLocalElements(space_);
-
-        for (int i=low; i<high; i++)
-          {
-            double a_i = a[i];
-            double b_i = b[i];
-            y[i]=  a_i / b_i;
-          }
-	
-        double err = normInf(x-y);
-
-        cout << "|dotSlash error|=" << err << endl;
-        if (err > spec_.errorTol())
-          {
-            cout << "vector dotSlash test FAILED: tol = " 
-                 << spec_.errorTol() << endl;
-            return false;
-          }
-        else if (err > spec_.warningTol())
-          {
-            cout << "WARNING: vector dotSlash test could not beat tol = " 
-                 << spec_.warningTol() << endl;
-          }
-	
-      }
-    else
-      {
-        cout << "skipping vector dotSlash test..." << endl;
-      }
-    cout << "vector dotSlash test PASSED: tol = " 
-         << spec_.errorTol() << endl;
-    return true;
-  }
-
-  
   template <class Scalar> 
   inline bool VectorOpTester<Scalar>
   ::scalarMultTest() const 
   {
     if (spec_.doTest())
       {
-        cout << "running vector scalarMult test..." << endl;
+        *out_ << "running vector scalarMult test..." << endl;
 
         Vector<Scalar> a = space_.createMember();
         Vector<Scalar> x = space_.createMember();
@@ -514,10 +333,8 @@ namespace Thyra
         x = 3.14*a;
 
         /* do the operation elementwise */
-        int low = lowestLocallyOwnedIndex(space_);
-        int high = low + numLocalElements(space_);
 
-        for (int i=low; i<high; i++)
+        for (int i=0; i<space_.dim(); i++)
           {
             double a_i = a[i];
             y[i]= 3.14*a_i;
@@ -525,25 +342,25 @@ namespace Thyra
 	
         double err = normInf(x-y);
 
-        cout << "|scalarMult error|=" << err << endl;
+        *out_ << "|scalarMult error|=" << err << endl;
         if (err > spec_.errorTol())
           {
-            cout << "vector scalarMult test FAILED: tol = " 
+            *out_ << "vector scalarMult test FAILED: tol = " 
                  << spec_.errorTol() << endl;
             return false;
           }
         else if (err > spec_.warningTol())
           {
-            cout << "WARNING: vector scalarMult test could not beat tol = " 
+            *out_ << "WARNING: vector scalarMult test could not beat tol = " 
                  << spec_.warningTol() << endl;
           }
 	
       }
     else
       {
-        cout << "skipping vector scalarMult test..." << endl;
+        *out_ << "skipping vector scalarMult test..." << endl;
       }
-    cout << "vector scalarMult test PASSED: tol = " 
+    *out_ << "vector scalarMult test PASSED: tol = " 
          << spec_.errorTol() << endl;
     return true;
   }
@@ -554,7 +371,7 @@ namespace Thyra
   {
     if (spec_.doTest())
       {
-        cout << "running vector overloadedUpdate test..." << endl;
+        *out_ << "running vector overloadedUpdate test..." << endl;
 
         Vector<Scalar> a = space_.createMember();
         Vector<Scalar> b = space_.createMember();
@@ -568,10 +385,7 @@ namespace Thyra
         x = 3.14*a + 1.4*b;
 
         /* do the operation elementwise */
-        int low = lowestLocallyOwnedIndex(space_);
-        int high = low + numLocalElements(space_);
-
-        for (int i=low; i<high; i++)
+        for (int i=0; i<space_.dim(); i++)
           {
             double a_i = a[i];
             double b_i = b[i];
@@ -580,25 +394,25 @@ namespace Thyra
 	
         double err = normInf(x-y);
 
-        cout << "|overloadedUpdate error|=" << err << endl;
+        *out_ << "|overloadedUpdate error|=" << err << endl;
         if (err > spec_.errorTol())
           {
-            cout << "vector overloadedUpdate test FAILED: tol = " 
+            *out_ << "vector overloadedUpdate test FAILED: tol = " 
                  << spec_.errorTol() << endl;
             return false;
           }
         else if (err > spec_.warningTol())
           {
-            cout << "WARNING: vector overloadedUpdate test could not beat tol = " 
+            *out_ << "WARNING: vector overloadedUpdate test could not beat tol = " 
                  << spec_.warningTol() << endl;
           }
 	
       }
     else
       {
-        cout << "skipping vector overloadedUpdate test..." << endl;
+        *out_ << "skipping vector overloadedUpdate test..." << endl;
       }
-    cout << "vector overloadedUpdate test PASSED: tol = " 
+    *out_ << "vector overloadedUpdate test PASSED: tol = " 
          << spec_.errorTol() << endl;
     return true;
   }
@@ -610,7 +424,7 @@ namespace Thyra
 #ifdef TRILINOS_6
     if (spec_.doTest())
       {
-        cout << "running vector reciprocal test..." << endl;
+        *out_ << "running vector reciprocal test..." << endl;
 
         Vector<Scalar> a = space_.createMember();
         randomizeVec(a);
@@ -646,30 +460,30 @@ namespace Thyra
                        1, MPI_INT, MPI_LAND, comm_.getComm());
 #endif
 
-        cout << "|reciprocal error|=" << err << endl;
+        *out_ << "|reciprocal error|=" << err << endl;
         if (err > spec_.errorTol())
           {
-            cout << "vector reciprocal test FAILED: tol = " 
+            *out_ << "vector reciprocal test FAILED: tol = " 
                  << spec_.errorTol() << endl;
             return false;
           }
         else if (tDenomsAreOK != denomsAreOK)
           {
-            cout << "vector reciprocal test FAILED: trilinosDenomsOK="
+            *out_ << "vector reciprocal test FAILED: trilinosDenomsOK="
                  << tDenomsAreOK << ", denomsOK=" << denomsAreOK << endl;
             return false;
           }
         else if (err > spec_.warningTol())
           {
-            cout << "WARNING: vector reciprocal test could not beat tol = " 
+            *out_ << "WARNING: vector reciprocal test could not beat tol = " 
                  << spec_.warningTol() << endl;
           }
       }
     else
       {
-        cout << "skipping vector reciprocal test..." << endl;
+        *out_ << "skipping vector reciprocal test..." << endl;
       }
-    cout << "vector reciprocal test PASSED: tol = " 
+    *out_ << "vector reciprocal test PASSED: tol = " 
          << spec_.errorTol() << endl;
 #endif
     return true;
@@ -682,7 +496,7 @@ namespace Thyra
 #ifdef TRILINOS_6
     if (spec_.doTest())
       {
-        cout << "running vector minQuotient test..." << endl;
+        *out_ << "running vector minQuotient test..." << endl;
 
         Vector<Scalar> a = space_.createMember();
         Vector<Scalar> b = space_.createMember();
@@ -712,28 +526,28 @@ namespace Thyra
 	
 
         double tMinQ = Thyra::VMinQuotient(*(a.ptr()), *(b.ptr()));
-        cout << "trilinos minQ = " << tMinQ << endl;
-        cout << "elemwise minQ = " << minQ << endl;
+        *out_ << "trilinos minQ = " << tMinQ << endl;
+        *out_ << "elemwise minQ = " << minQ << endl;
         double err = fabs(minQ - tMinQ);
         
-        cout << "min quotient error=" << err << endl;
+        *out_ << "min quotient error=" << err << endl;
         if (err > spec_.errorTol())
           {
-            cout << "min quotient test FAILED: tol = " 
+            *out_ << "min quotient test FAILED: tol = " 
                  << spec_.errorTol() << endl;
             return false;
           }
         else if (err > spec_.warningTol())
           {
-            cout << "WARNING: min quotient test could not beat tol = " 
+            *out_ << "WARNING: min quotient test could not beat tol = " 
                  << spec_.warningTol() << endl;
           }
       }
     else
       {
-        cout << "skipping min quotient test..." << endl;
+        *out_ << "skipping min quotient test..." << endl;
       }
-    cout << "min quotient test PASSED: tol = " 
+    *out_ << "min quotient test PASSED: tol = " 
          << spec_.errorTol() << endl;
 #endif
     return true;
@@ -748,7 +562,7 @@ namespace Thyra
 #ifdef TRILINOS_6
     if (spec_.doTest())
       {
-        cout << "running vector constraintMask test..." << endl;
+        *out_ << "running vector constraintMask test..." << endl;
 
         Vector<Scalar> a = space_.createMember();
         Vector<Scalar> c = space_.createMember();
@@ -797,36 +611,36 @@ namespace Thyra
 
 #ifdef HAVE_MPI
         int localAllFeas = allFeasible;
-        cout << "local all feas=" << localAllFeas << endl;
+        *out_ << "local all feas=" << localAllFeas << endl;
         MPI_Allreduce( (void*) &localAllFeas, (void*) &allFeasible, 
                        1, MPI_INT, MPI_LAND, comm_.getComm());
-        cout << "globalal all feas=" << allFeasible << endl;
+        *out_ << "globalal all feas=" << allFeasible << endl;
 #endif
 
-        cout << "|constraintMask error|=" << err << endl;
+        *out_ << "|constraintMask error|=" << err << endl;
         if (err > spec_.errorTol())
           {
-            cout << "vector constraintMask test FAILED: tol = " 
+            *out_ << "vector constraintMask test FAILED: tol = " 
                  << spec_.errorTol() << endl;
             return false;
           }
         else if (allFeasible != tAllFeasible)
           {
-            cout << "vector constraintMask test FAILED: trilinosFeas="
+            *out_ << "vector constraintMask test FAILED: trilinosFeas="
                  << tAllFeasible << ", feas=" << allFeasible << endl;
             return false;
           }
         else if (err > spec_.warningTol())
           {
-            cout << "WARNING: vector constraintMask test could not beat tol = " 
+            *out_ << "WARNING: vector constraintMask test could not beat tol = " 
                  << spec_.warningTol() << endl;
           }
       }
     else
       {
-        cout << "skipping vector constraintMask test..." << endl;
+        *out_ << "skipping vector constraintMask test..." << endl;
       }
-    cout << "vector constraintMask test PASSED: tol = " 
+    *out_ << "vector constraintMask test PASSED: tol = " 
          << spec_.errorTol() << endl;
 #endif
     return true;
@@ -840,7 +654,7 @@ namespace Thyra
 #ifdef TRILINOS_6
     if (spec_.doTest())
       {
-        cout << "running vector compare-to-scalar test..." << endl;
+        *out_ << "running vector compare-to-scalar test..." << endl;
 
         Vector<Scalar> a = space_.createMember();
         Vector<Scalar> x = space_.createMember();
@@ -863,25 +677,25 @@ namespace Thyra
 	
         double err = normInf(x-y);
 
-        cout << "|compare-to-scalar error|=" << err << endl;
+        *out_ << "|compare-to-scalar error|=" << err << endl;
         if (err > spec_.errorTol())
           {
-            cout << "vector compare-to-scalar test FAILED: tol = " 
+            *out_ << "vector compare-to-scalar test FAILED: tol = " 
                  << spec_.errorTol() << endl;
             return false;
           }
         else if (err > spec_.warningTol())
           {
-            cout << "WARNING: vector compare-to-scalar test could not beat tol = " 
+            *out_ << "WARNING: vector compare-to-scalar test could not beat tol = " 
                  << spec_.warningTol() << endl;
           }
 	
       }
     else
       {
-        cout << "skipping vector compare-to-scalar test..." << endl;
+        *out_ << "skipping vector compare-to-scalar test..." << endl;
       }
-    cout << "vector compare-to-scalar test PASSED: tol = " 
+    *out_ << "vector compare-to-scalar test PASSED: tol = " 
          << spec_.errorTol() << endl;
 #endif
     return true;
@@ -895,7 +709,7 @@ namespace Thyra
 #ifdef TRILINOS_6
     if (spec_.doTest())
       {
-        cout << "running vector index test..." << endl;
+        *out_ << "running vector index test..." << endl;
         Vector<Scalar> a = space_.createMember();
         Vector<Scalar> x = space_.createMember();
         Vector<Scalar> y = space_.createMember();
@@ -916,25 +730,25 @@ namespace Thyra
 	
         double err = normInf(x-y);
 
-        cout << "|index error|=" << err << endl;
+        *out_ << "|index error|=" << err << endl;
         if (err > spec_.errorTol())
           {
-            cout << "vector index test FAILED: tol = " 
+            *out_ << "vector index test FAILED: tol = " 
                  << spec_.errorTol() << endl;
             return false;
           }
         else if (err > spec_.warningTol())
           {
-            cout << "WARNING: vector index test could not beat tol = " 
+            *out_ << "WARNING: vector index test could not beat tol = " 
                  << spec_.warningTol() << endl;
           }
 	
       }
     else
       {
-        cout << "skipping vector index test..." << endl;
+        *out_ << "skipping vector index test..." << endl;
       }
-    cout << "vector index test PASSED: tol = " 
+    *out_ << "vector index test PASSED: tol = " 
          << spec_.errorTol() << endl;
 #endif
     return true;

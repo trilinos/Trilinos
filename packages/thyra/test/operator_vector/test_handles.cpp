@@ -54,7 +54,7 @@ int main( int argc, char *argv[] )
   
   try {
     
-    int  n = 4;
+    int  n = 100;
     CommandLineProcessor  clp;
     clp.throwExceptions(false);
     clp.addOutputSetupOptions(true);
@@ -68,23 +68,43 @@ int main( int argc, char *argv[] )
           Teuchos::DefaultComm<Index>::getComm(),n,-1
           )
         );
-    
+
+    /* ------- test on a monolithic space ------------ */
+
+    *out << "======= Testing on a monolithic vector space ======" << std::endl;
     VectorSpace<double> space = sp;
     
-    Vector<double> x = space.createMember();
-    
-    Thyra::randomize((double)(-ST::one()), (double)(+ST::one()), 
-                     x.ptr().get());
-    
-    for (int i=0; i<sp->dim(); i++)
-    {
-      double x_i = x[i];
-      *out << "i=" << i << " x=" << x_i << endl;
-    }
-    
     VectorOpTester<double> tester(space, TestSpecifier<double>(true, 1.0e-13, 1.0e-10));
-    
+
     tester.runAllTests();
+
+    /* -------- test on a block space ----------------*/
+    *out << "======= Testing on a block vector space ======" << std::endl;
+    VectorSpace<double> blockSpace = productSpace(space, space);
+    
+    tester = VectorOpTester<double>(blockSpace, 
+                                    TestSpecifier<double>(true, 1.0e-13, 1.0e-10));
+    
+    tester.runAllTests();           
+
+
+    
+
+    /* -------- test on a space with recursive block structure -----------*/
+    *out << "======= Testing on a recursively blocked vector space ======" << std::endl;
+    VectorSpace<double> recSpace = productSpace(space, blockSpace);
+    
+    tester = VectorOpTester<double>(recSpace, 
+                                    TestSpecifier<double>(true, 1.0e-13, 1.0e-10));
+    
+    tester.runAllTests();           
+
+
+    
+
+
+    
+    
     
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true,out.get()?*out:std::cerr,success)

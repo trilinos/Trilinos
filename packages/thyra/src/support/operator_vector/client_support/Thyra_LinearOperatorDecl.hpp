@@ -31,26 +31,34 @@
 
 #include "Teuchos_Handle.hpp"
 #include "Thyra_ConfigDefs.hpp"
-#include "Thyra_SingleScalarLinearOpBaseDecl.hpp"
+#include "Thyra_LinearOpBaseDecl.hpp"
 
 namespace Thyra
 {
   /** 
    *
    */
-  template <class Scalar>
+  template <class RangeScalar, class DomainScalar=RangeScalar>
   class ConstLinearOperator 
-    : public virtual Teuchos::ConstHandle<SingleScalarLinearOpBase<Scalar> >
+    : public virtual Teuchos::ConstHandle<LinearOpBase<RangeScalar, DomainScalar> >
   {
   public:
-    TEUCHOS_CONST_HANDLE_CTORS(ConstLinearOperator<Scalar>, 
-                               SingleScalarLinearOpBase<Scalar>);
+    /** Empty ctor */
+    ConstLinearOperator() : Teuchos::ConstHandle<LinearOpBase<RangeScalar, DomainScalar> >(){;}
+
+    /** Construct from a raw pointer */
+    ConstLinearOperator(Teuchos::ConstHandleable<LinearOpBase<RangeScalar, DomainScalar> >* rawPtr) 
+      : Teuchos::ConstHandle<LinearOpBase<RangeScalar, DomainScalar> >(rawPtr){;}
+
+    /** Construct from a smart pointer */
+    ConstLinearOperator(const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar, DomainScalar> >& smartPtr) 
+      : Teuchos::ConstHandle<LinearOpBase<RangeScalar, DomainScalar> >(smartPtr){;}
 
     /** Return the domain */
-    const VectorSpace<Scalar> domain() const ;
+    const VectorSpace<DomainScalar> domain() const ;
 
     /** Return the range */
-    const VectorSpace<Scalar> range() const ;
+    const VectorSpace<RangeScalar> range() const ;
 
 
     /** 
@@ -59,10 +67,10 @@ namespace Thyra
      * out = beta*out + alpha*op*in;
      * \endcode
      **/
-    void apply(const ConstVector<Scalar>& in,
-	       Vector<Scalar>& out,
-	       const Scalar& alpha = 1.0,
-	       const Scalar& beta = 0.0) const ;
+    void apply(const ConstVector<DomainScalar>& in,
+	       Vector<RangeScalar>& out,
+	       const RangeScalar& alpha = 1.0,
+	       const RangeScalar& beta = 0.0) const ;
 
     /**  
      * Compute
@@ -70,10 +78,10 @@ namespace Thyra
      * out = beta*out + alpha*op^T*in;
      * \endcode
      **/
-    void applyTranspose(const ConstVector<Scalar>& in,
-			Vector<Scalar>& out,
-			const Scalar& alpha = 1.0,
-			const Scalar& beta = 0.0) const ;
+    void applyTranspose(const ConstVector<RangeScalar>& in,
+			Vector<DomainScalar>& out,
+			const DomainScalar& alpha = 1.0,
+			const DomainScalar& beta = 0.0) const ;
 
   };
 
@@ -81,14 +89,22 @@ namespace Thyra
   /** 
    *
    */
-  template <class Scalar>
+  template <class RangeScalar, class DomainScalar=RangeScalar>
   class LinearOperator 
-    : public Teuchos::Handle<SingleScalarLinearOpBase<Scalar> >,
-      public ConstLinearOperator<Scalar>
+    : public Teuchos::Handle<LinearOpBase<RangeScalar, DomainScalar> >,
+      public ConstLinearOperator<RangeScalar, DomainScalar>
   {
   public:
-    TEUCHOS_HANDLE_CTORS(LinearOperator<Scalar>, 
-                         SingleScalarLinearOpBase<Scalar>);
+     /** Empty ctor */
+    LinearOperator() : Teuchos::Handle<LinearOpBase<RangeScalar, DomainScalar> >(){;}
+
+    /** Construct from a raw pointer */
+    LinearOperator(Teuchos::Handleable<LinearOpBase<RangeScalar, DomainScalar> >* rawPtr) 
+      : Teuchos::Handle<LinearOpBase<RangeScalar, DomainScalar> >(rawPtr){;}
+
+    /** Construct from a smart pointer */
+    LinearOperator(const Teuchos::RefCountPtr<LinearOpBase<RangeScalar, DomainScalar> >& smartPtr) 
+      : Teuchos::Handle<LinearOpBase<RangeScalar, DomainScalar> >(smartPtr){;}
   };
 
   

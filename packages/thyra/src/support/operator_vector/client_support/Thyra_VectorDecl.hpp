@@ -223,8 +223,6 @@ namespace Thyra
       return IndexObject(this->ptr(), globalIndex);
     }
 
-    /** */
-    Scalar operator[](Index globalIndex) const ;
 
     /** \name Product vector operations */
     //@{

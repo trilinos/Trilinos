@@ -35,24 +35,25 @@
 
 namespace Thyra
 {
-
-  
   /* Return the domain */
-  template <class Scalar> inline 
-  const VectorSpace<Scalar> ConstLinearOperator<Scalar>::domain() const 
+  template <class RangeScalar, class DomainScalar> inline 
+  const VectorSpace<DomainScalar> ConstLinearOperator<RangeScalar, DomainScalar>
+  ::domain() const 
   {return this->ptr()->domain();}
     
   
   /* Return the range */
-  template <class Scalar> inline 
-  const VectorSpace<Scalar> ConstLinearOperator<Scalar>::range() const 
+  template <class RangeScalar, class DomainScalar> inline 
+  const VectorSpace<RangeScalar> ConstLinearOperator<RangeScalar, DomainScalar>
+  ::range() const 
   {return this->ptr()->domain();}
 
-  template <class Scalar> inline 
-  void ConstLinearOperator<Scalar>::apply(const ConstVector<Scalar>& in,
-                                          Vector<Scalar>& out,
-                                          const Scalar& alpha,
-                                          const Scalar& beta) const
+  template <class RangeScalar, class DomainScalar> inline 
+  void ConstLinearOperator<RangeScalar, DomainScalar>
+  ::apply(const ConstVector<DomainScalar>& in,
+          Vector<RangeScalar>& out,
+          const RangeScalar& alpha,
+          const RangeScalar& beta) const
   {
     /* the result vector might not be initialized. If it's null,
      * create a new vector in the range space */
@@ -65,11 +66,12 @@ namespace Thyra
   }
 
 
-  template <class Scalar> inline 
-  void ConstLinearOperator<Scalar>::applyTranspose(const ConstVector<Scalar>& in,
-                                                   Vector<Scalar>& out,
-                                                   const Scalar& alpha,
-                                                   const Scalar& beta) const
+  template <class RangeScalar, class DomainScalar> inline 
+  void ConstLinearOperator<RangeScalar, DomainScalar>
+  ::applyTranspose(const ConstVector<RangeScalar>& in,
+                   Vector<DomainScalar>& out,
+                   const DomainScalar& alpha,
+                   const DomainScalar& beta) const
   {
     /* the result vector might not be initialized. If it's null,
      * create a new vector in the domain space (i.e., the range space
