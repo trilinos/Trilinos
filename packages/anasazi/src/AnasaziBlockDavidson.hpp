@@ -33,16 +33,14 @@
 #ifndef ANASAZI_BLOCK_DAVIDSON_HPP
 #define ANASAZI_BLOCK_DAVIDSON_HPP
 
-#include "AnasaziEigensolver.hpp"
-#include "AnasaziOutputManager.hpp"
-#include "AnasaziSortManager.hpp"
-#include "AnasaziMatOrthoManager.hpp"
+#include "AnasaziTypes.hpp"
 
+#include "AnasaziEigensolver.hpp"
 #include "AnasaziMultiVecTraits.hpp"
 #include "AnasaziOperatorTraits.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 
-#include "AnasaziBasicOrthoManager.hpp"
+#include "AnasaziMatOrthoManager.hpp"
 #include "AnasaziModalSolverUtils.hpp"
 
 #include "Teuchos_LAPACK.hpp"
@@ -56,10 +54,52 @@
         \brief This class implements the block Davidson method, an iterative
         method for solving symmetric eigenvalue problems.
 
-        \author Ulrich Hetmaniuk, Rich Lehoucq, Heidi Thornquist
+        \author Chris Baker, Ulrich Hetmaniuk, Rich Lehoucq, Heidi Thornquist
 */
 
 namespace Anasazi {
+
+  //@{ \name BlockDavidson Structures 
+
+  /** \brief Structure to contain pointers to BlockDavidson state variables.
+   *
+   * This struct is utilized by BlockDavidson::initialize() and BlockDavidson::getState().
+   */
+  template <class ScalarType, class MV>
+  struct BlockDavidsonState {
+    Teuchos::RefCountPtr<const MV> X, KX, MX;
+    Teuchos::RefCountPtr<const MV> V, KV, MV;
+    Teuchos::RefCountPtr<const MV> H, KH, MH;
+    Teuchos::RefCountPtr<const MV> R;
+    Teuchos::RefCountPtr<const std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> > T;
+    BlockDavidson() : X(Teuchos::null),KX(Teuchos::null),MX(Teuchos::null),
+                      V(Teuchos::null),KV(Teuchos::null),MV(Teuchos::null),
+                      R(Teuchos::null),T(Teuchos::null) {};
+  };
+
+  //@}
+
+  //@{ \name BlockDavidson Exceptions
+
+  /** \brief BlockDavidsonInitFailure is thrown when the BlockDavidson solver is unable to
+   * generate an initial iterate in the BlockDavidson::initialize() routine. 
+   *
+   * This exception is thrown from the BlockDavidson::initialize() method, which is
+   * called by the user or from the BlockDavidson::iterate() method if isInitialized()
+   * == \c false.
+   *
+   * In the case that this exception is thrown, BlockDavidson::hasP() and
+   * BlockDavidson::isInitialized() will be \c false and the user will need to provide
+   * a new initial iterate to the solver.
+   *
+   * \relates BlockDavidson, BlockDavidson::initialize()
+   */
+  class BlockDavidsonInitFailure : public AnasaziError {public:
+    BlockDavidsonInitFailure(const std::string& what_arg) : AnasaziError(what_arg)
+    {}};
+
+  //@}
+ 
   
   template <class ScalarType, class MV, class OP>
   class BlockDavidson : public Eigensolver<ScalarType,MV,OP> { 
@@ -68,52 +108,208 @@ namespace Anasazi {
     
     //! %Anasazi::BlockDavidson constructor.
     BlockDavidson( const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem, 
-                   const Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > &sm,
-                   const Teuchos::RefCountPtr<OutputManager<ScalarType> > &om,
-                   Teuchos::ParameterList &pl
-                   );
+                   const Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > &sorter,
+                   const Teuchos::RefCountPtr<OutputManager<ScalarType> > &printer,
+                   const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > &tester,
+                   const Teuchos::RefCountPtr<MatOrthoManager<ScalarType,MV,OP> > &ortho,
+                   Teuchos::ParameterList &params 
+                 );
     
     //! %Anasazi::BlockDavidson destructor.
     virtual ~BlockDavidson() {};
     //@}
     
-    //@{ \name Solver application methods.
+    //@{ \name Solver methods.
     
-    /*! \brief This method uses iterate to compute approximate solutions to the
-      original problem.  It may return without converging if it has taken the
-      maximum number of iterations or numerical breakdown is observed.
-    */
-    ReturnType solve();
+    /*! \brief This method performs %BlockDavidson iterations until the status
+     * test indicates the need to stop or an error occurs (in which case, an
+     * exception is thrown).
+     *
+     * iterate() will first determine whether the solver is inintialized; if
+     * not, it will call initialize() using default arguments. After
+     * initialization, the solver performs %BlockDavidson iterations until the
+     * status test evaluates as Passed, at which point the method returns to
+     * the caller. 
+     *
+     * Possible exceptions thrown include: finish
+     */
+    void solve();
     //@}
-    
-    //@{ \name Solver status methods.
-    
-    //! Get the current iteration count.
-    int GetNumIters() const { return(_iter); };
-    
-    //! Get the current restart count of the iteration method.
-    /*! Some eigensolvers can perform restarts (i.e.Arnoldi) to reduce memory
-      and orthogonalization costs.  For other eigensolvers, like LOBPCG or block Davidson,
-      this is not a valid stopping criteria.
-    */
-    int GetNumRestarts() const { return(_numRestarts); };
+
+    /*! \brief Initialize the solver to an iterate, optionally providing the
+     * Ritz values, residual, and search direction.
+     *
+     * The %BlockDavidson eigensolver contains a certain amount of state
+     * relating to the current eigenvectors, including the current residual,
+     * the current Krylov basis, and the images of these under the operators.
+     *
+     * initialize() gives the user the opportunity to manually set these,
+     * although this must be done with caution, abiding by the rules given
+     * below. All notions of orthogonality and orthonormality are derived from
+     * the inner product specified by the orthogonalization manager.
+     *
+     * \post 
+     * <li>isInitialized() == true (see post-conditions of isInitialize())
+     *
+     * The user has the option of specifying any component of the state using
+     * initialize(). However, these arguments are assumed to match the
+     * post-conditions specified under isInitialized(). Any component of the
+     * state (i.e., KX) not given to initialize() will be generated.
+     */
+    void initialize(LOBPCGState<ScalarType,MV> state);
+    void initialize();
+
+    /*! \brief Indicates whether the solver has been initialized or not.
+     *
+     * \return bool indicating the state of the solver.
+     * \post
+     * <ul>
+     * <li> finish
+     * </ul>
+     */
+    bool isInitialized() { return _initialized; }
+
+    /*! \brief Get the current state of the eigensolver.
+     * 
+     * The data is only valid if isInitialized() == \c true. 
+     *
+     * The data for the preconditioned residual is only meaningful in the
+     * scenario that the solver throws an ::LOBPCGRitzFailure exception
+     * during iterate().
+     *
+     * \returns A BlockDavidsonState object containing const pointers to the current
+     * solver state.
+     */
+    BlockDavidsonState<ScalarType,MV> getState() const {
+      BlockDavidsonState<ScalarType,MV> state;
+      state.X = _X;
+      state.KX = _KX;
+      state.P = _P;
+      state.KP = _KP;
+      state.H = _H;
+      state.KH = _KH;
+      state.R = _R;
+      state.T = Teuchos::rcp(new std::vector<MagnitudeType>(_theta));
+      if (_hasM) {
+        state.MX = _MX;
+        state.MP = _MP;
+        state.MH = _MH;
+      }
+      else {
+        state.MX = Teuchos::null;
+        state.MP = Teuchos::null;
+        state.MH = Teuchos::null;
+      }
+      return state;
+    }
+
+    //@}
+
+    //@{ \name Status methods.
+
+    //! \brief Get the current iteration count.
+    int getNumIters() const { return(_iter); };
+
+    //! \brief Reset the iteration count.
+    void resetNumIters() { _iter=0; };
+
+    //! \brief Get the current approximate eigenvectors.
+    Teuchos::RefCountPtr<const MV> getEvecs() {return _X;}
+
+    //! \brief Get the residual vectors.
+    Teuchos::RefCountPtr<const MV> getResidualVecs() {return _R;}
+
+    /*! \brief Get the current eigenvalue estimates.
+     *
+     *  \return A vector of length getBlockSize() containing the eigenvalue
+     *  estimates associated with the current iterate.
+     */
+    std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getEigenvalues() { 
+      std::vector<MagnitudeType> ret = _theta;
+      ret.resize(_blockSize);
+      return ret;
+    }
+
+    /*! \brief Get the Ritz values for the previous iteration.
+     *
+     *  \return A vector of length not exceeding 3*getBlockSize() containing the Ritz values from the
+     *  previous projected eigensolve.
+     */
+    std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getRitzValues() { 
+      std::vector<MagnitudeType> ret = _theta;
+      ret.resize(_nevLocal);
+      return ret;
+    }
+
+    /*! \brief Get the current residual norms
+     *
+     *  \return A vector of length blockSize containing the norms of the
+     *  residuals, with respect to the orthogonalization manager norm() method.
+     */
+    std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getResNorms()    {return _Rnorms;}
+
+
+    /*! \brief Get the current residual 2-norms
+     *
+     *  \return A vector of length blockSize containing the 2-norms of the
+     *  residuals. 
+     */
+    std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getRes2Norms()   {return _R2norms;}
+
+    //@{ \name Accessor routines
+
+
+    //! Get a constant reference to the eigenvalue problem.
+    const Eigenproblem<ScalarType,MV,OP>& getProblem() const { return(*_problem); };
+
+
+    /*! \brief Set the blocksize and number of blocks to be used by the
+     * iterative solver in solving this eigenproblem.
+     *  
+     *  If the block size is reduced, then the new iterate (and residual and
+     *  search direction) are chosen as the subset of the current iterate
+     *  preferred by the sort manager.  Otherwise, the solver state is set to
+     *  uninitialized.
+     */
+    void setSize(int blockSize, int numBlocks);
+
+
+    //! Get the size of the basis: blockSize * numBlocks
+    int getSize() const { return(_blockSize*_numBlocks); }
+
 
     //! Get the blocksize to be used by the iterative solver in solving this eigenproblem.
-    int GetBlockSize() const { return(_blockSize); }
-    
-    /*! \brief Get a constant reference to the current linear problem, 
-      which may include a current solution.
-    */
-    Eigenproblem<ScalarType,MV,OP>& GetEigenproblem() const { return(*_problem); };
-    
+    int getBlockSize() const { return(_blockSize); }
+
+
+
+    /*! \brief Set the auxilliary vectors for the solver.
+     *
+     *  Because the current iterate X and search direction P cannot be assumed
+     *  orthogonal to the new auxilliary vectors, a call to setAuxVecs() may
+     *  reset the solver to the uninitialized state. This happens only in the
+     *  case where the user requests full orthogonalization when the solver is
+     *  in an initialized state with full orthogonalization disabled.
+     *
+     *  In order to preserve the current iterate, the user will need to extract
+     *  it from the solver using getEvecs(), orthogonalize it against the new
+     *  auxilliary vectors, and manually reinitialize the solver using
+     *  initialize().
+     */
+    void setAuxVecs(const Teuchos::Array<Teuchos::RefCountPtr<const MV> > &auxvecs);
+
+    //! Get the auxilliary vectors for the solver.
+    Teuchos::Array<Teuchos::RefCountPtr<const MV> > getAuxVecs() const {return _auxVecs;}
+
     //@}
-    
+
     //@{ \name Output methods.
     
     //! This method requests that the solver print out its current status to screen.
-    void currentStatus();
+    void currentStatus(ostream &os);
 
     //@}
+
   private:
     //
     // Convenience typedefs
@@ -124,52 +320,45 @@ namespace Anasazi {
     typedef typename SCT::magnitudeType MagnitudeType;
     typedef typename std::vector<ScalarType>::iterator STiter;
     typedef typename std::vector<MagnitudeType>::iterator MTiter;
-
-    /*! \brief These methods will not be defined.
-     */
-    BlockDavidson(const BlockDavidson<ScalarType,MV,OP> &method);
-    BlockDavidson<ScalarType,MV,OP>& operator=(const BlockDavidson<ScalarType,MV,OP> &method);
+    //
+    // Internal structs
+    //
+    struct CheckList {
+      bool checkX, checkMX, checkKX;
+      bool checkH, checkMH;
+      bool checkV, checkMV, checkKV;
+      bool checkR, checkQ;
+      CheckList() : checkX(false),checkMX(false),checkKX(false),
+                    checkH(false),checkMH(false),
+                    checkV(false),checkMV(false),checkKV(false),
+                    checkR(false),checkQ(false) {};
+    };
     //
     // Internal methods
     //
-    void accuracyCheck(Teuchos::RefCountPtr<const MV> X, 
-                       Teuchos::RefCountPtr<const MV> MX, 
-                       Teuchos::RefCountPtr<const MV> Q) const; 
+    string accuracyCheck(const CheckList &chk, const string &where) const;
     //
     // Classes inputed through constructor that define the eigenproblem to be solved.
     //
-    Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > _problem; 
-    Teuchos::RefCountPtr<OutputManager<ScalarType> > _om; 
-    Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > _sm; 
-    Teuchos::ParameterList _pl;
+    const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> >     _problem;
+    const Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> >      _sm;
+    const Teuchos::RefCountPtr<OutputManager<ScalarType> >          _om;
+    const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> >       _tester;
+    const Teuchos::RefCountPtr<MatOrthoManager<ScalarType,MV,OP> >  _orthman;
     //
     // Information obtained from the eigenproblem
     //
     Teuchos::RefCountPtr<OP> _Op;
     Teuchos::RefCountPtr<OP> _MOp;
     Teuchos::RefCountPtr<OP> _Prec;
-    Teuchos::RefCountPtr<MV> _evecs;
-    Teuchos::RefCountPtr<std::vector<ScalarType> > _evals;
-    const int _nev;  
-    //
-    // Internal data.
-    //
-    const int _maxIter, _blockSize;
-    const MagnitudeType _residual_tolerance;
-    int _numBlocks, _numRestarts, _iter, _dimSearch, _knownEV;
+    bool _hasM;
     //
     // Internal utilities class required by eigensolver.
     //
     ModalSolverUtils<ScalarType,MV,OP> _MSUtils;
-    // 
-    // Orthogonalization manager
-    //
-    Teuchos::RefCountPtr< MatOrthoManager<ScalarType,MV,OP> > _orthman;
-    std::vector<MagnitudeType> _theta, _normR, _resids;
     //
     // Internal timers
     //
-    bool _restartTimers;
     Teuchos::RefCountPtr<Teuchos::Time> _timerOp, _timerMOp, _timerPrec,
                                         _timerSortEval, _timerDS,
                                         _timerOrtho, _timerTotal;
@@ -178,37 +367,73 @@ namespace Anasazi {
     //
     int _count_ApplyOp, _count_ApplyM, _count_ApplyPrec;
 
+    //
+    // Algorithmic parameters.
+    //
+    // _blockSize is the solver block size; it controls the number of eigenvectors that 
+    // we compute, the number of residual vectors that we compute, and therefore the number
+    // of vectors added to the basis on each iteration.
+    int _blockSize;
+    // _numBlocks is the size of the allocated space for the Krylov basis, in blocks.
+    int _numBlocks; 
+    
+    // 
+    // Current solver state
+    //
+    // _initialized specifies that the basis vectors have been initialized and the iterate() routine
+    // is capable of running; _initialize is controlled  by the initialize() member method
+    // For the implications of the state of _initialized, please see documentation for initialize()
+    bool _initialized;
+    //
+    // _nevLocal reflects how much of the current basis is valid 
+    // NOTE: 0 <= _nevLocal <= _blockSize*_numBlocks
+    // this also tells us how many of the values in _theta are valid Ritz values
+    int _nevLocal;
+    //
+    // State Multivecs
+    Teuchos::RefCountPtr<MV> _X, _KX, _MX, _R,
+                             _H, _KH, _MH,
+                             _V, _KV, _MV;
+    // 
+    // Auxilliary vectors
+    Teuchos::Array<Teuchos::RefCountPtr<const MV> > _auxVecs;
+    int _numAuxVecs;
+    //
+    // Number of iterations that have been performed.
+    int _iter;
+    // 
+    // Current eigenvalues, residual norms
+    std::vector<MagnitudeType> _theta, _Rnorms, _R2norms;
+
   };
-  //
-  // Implementation
-  //
+
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Constructor
   template <class ScalarType, class MV, class OP>
-  BlockDavidson<ScalarType,MV,OP>::BlockDavidson(const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem, 
-                                                 const Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > &sm,
-                                                 const Teuchos::RefCountPtr<OutputManager<ScalarType> > &om,
-                                                 Teuchos::ParameterList &pl
-                                                 ):
+  BlockDavidson<ScalarType,MV,OP>::BlockDavidson(
+        const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem, 
+        const Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > &sorter,
+        const Teuchos::RefCountPtr<OutputManager<ScalarType> > &printer,
+        const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > &tester,
+        const Teuchos::RefCountPtr<MatOrthoManager<ScalarType,MV,OP> > &ortho,
+        Teuchos::ParameterList &params
+        ) :
+    ONE(Teuchos::ScalarTraits<MagnitudeType>::one()),
+    ZERO(Teuchos::ScalarTraits<MagnitudeType>::zero()),
+    NANVAL(Teuchos::ScalarTraits<MagnitudeType>::nan()),
+    // problem, tools
     _problem(problem), 
-    _om(om),
-    _sm(sm),
-    _pl(pl),
-    _Op(_problem->GetOperator()),
-    _MOp(_problem->GetM()),
-    _Prec(_problem->GetPrec()),
-    _evecs(_problem->GetEvecs()), 
-    _evals(problem->GetEvals()), 
-    _nev(problem->GetNEV()), 
-    _maxIter(_pl.get("Max Iters", 300)),
-    _blockSize(_pl.get("Block Size", 1)),
-    _residual_tolerance(_pl.get("Tol", (MagnitudeType)(1.0e-6) )),
-    _numBlocks(_pl.get("Max Blocks", 25)), 
-    _numRestarts(0), 
-    _iter(0), 
-    _dimSearch(_blockSize*_numBlocks),    
-    _knownEV(0),
-    _MSUtils(om),
-    _orthman(_pl.get("OrthoManager", Teuchos::rcp(new BasicOrthoManager<ScalarType,MV,OP>(_MOp)))),
-    _restartTimers(_pl.get("Restart Timers", false)),
+    _sm(sorter),
+    _om(printer),
+    _tester(tester),
+    _orthman(ortho),
+    _Op(_problem->getOperator()),
+    _MOp(_problem->getM()),
+    _Prec(_problem->getPrec()),
+    _hasM(_MOp != Teuchos::null),
+    _MSUtils(_om),
+    // timers, counters
     _timerOp(Teuchos::TimeMonitor::getNewTimer("Operation Op*x")),
     _timerMOp(Teuchos::TimeMonitor::getNewTimer("Operation M*x")),
     _timerPrec(Teuchos::TimeMonitor::getNewTimer("Operation Prec*x")),
@@ -218,80 +443,504 @@ namespace Anasazi {
     _timerTotal(Teuchos::TimeMonitor::getNewTimer("Total time")),
     _count_ApplyOp(0),
     _count_ApplyM(0),
-    _count_ApplyPrec(0)
+    _count_ApplyPrec(0),
+    // internal data
+    _iter(0), 
+    _fullOrtho(params.get("Full Ortho", true)),
+    _initialized(false),
+    _nevLocal(0),
+    _hasP(false),
+    _auxVecs( Teuchos::Array<Teuchos::RefCountPtr<const MV> >(0) ), 
+    _numAuxVecs(0)
   {     
-    //
-    // Define dense local matrices and arrays
-    //
-    // theta = Storage for local eigenvalues     (size: dimSearch)
-    // normR = Storage for the norm of residuals (size: blockSize)
-    // resids = Storage for the norm of the computed eigenvalues
-    //
-    _theta.resize( _dimSearch );
-    _normR.resize( _blockSize );
-    _resids.resize( _nev );
-    //    
+    // set the block size and allocate data
+    _blockSize = 0;
+    _numBlocks = 0;
+    int bs = params.get("Block Size", _problem->getNEV());
+    int nb = params.get("Num Blocks", 1);
+    setSize(bs,nb);
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Set the block size and make necessary adjustments.
+  template <class ScalarType, class MV, class OP>
+  void BlockDavidson<ScalarType,MV,OP>::setSize (int blockSize, int numBlocks) 
+  {
+    // This routine only allocates space; it doesn't not perform any computation
+    // if size is decreased, take the first blockSize vectors of all and leave state as is
+    // otherwise, grow/allocate space and set solver to unitialized
+
+    TEST_FOR_EXCEPTION(numBlocks <= 0 || blockSize <= 0, std::logic_error, "Anasazi::BlockDavidson::setSize was passed a non-positive argument.");
+    if (blockSize == _blockSize && numBlocks == _numBlocks) {
+      // do nothing
+      return;
+    }
+
+    // We will perform no significant computation in this routine.
+
+    // We are bound by the requirement that X contains the preferred Ritz
+    // vectors with respect to the basis V. Therefore, if we modify V
+    // (via truncation) we must invalidate the state of the solver.
+    // Also, if we must enlarge X, we must invalidate the state of the 
+    // solver.
+
+    // handle those things dependant only on blockSize:
+    // X,KX,MX, R, H,KH,MH, _Rnorms,_R2norms
+    if (blockSize < _blockSize) {
+      //
+      // shrink vectors
+      //
+      // H,KH,MH have no state; just shrink them
+      _H = MVT::Clone(*_H,blockSize);
+      _KH = MVT::Clone(*_H,blockSize);
+      if (_hasM) {
+        _MH = MVT::Clone(*_H,blockSize);
+      }
+      else {
+        _MH = _H;
+      }
+
+      // shrink the vectors for norms and values
+      _Rnorms.resize(blockSize);
+      _R2norms.resize(blockSize);
+
+      // handle X,KX,MX,R
+      if (_initialized) {
+        // shrink multivectors with copy
+        // create ind = {0, 1, ..., blockSize-1}
+        std::vector<int> ind(blockSize);
+        for (int i=0; i<blockSize; i++) ind[i] = i;
+        
+        _X  = MVT::CloneCopy(*_X,ind);
+        _KX = MVT::CloneCopy(*_KX,ind);
+        if (_hasM) {
+          _MX = MVT::CloneCopy(*_MX,ind);
+        }
+        else {
+          _MX = _X;
+        }
+        _R  = MVT::CloneCopy(*_R,ind);
+      }
+      else {
+        // shrink multivectors without copying
+        _X = MVT::Clone(*_X,blockSize);
+        _KX = MVT::Clone(*_KX,blockSize);
+        if (_hasM) {
+          _MX = MVT::Clone(*_MX,blockSize);
+        }
+        else {
+          _MX = _X;
+        }
+        _R = MVT::Clone(*_R,blockSize);
+      }
+    }
+    else {  // blockSize > _blockSize
+      // this is also the scenario for our initial call to setBlockSize(), in the constructor
+      // in this case, _blockSize == 0 and none of the multivecs have been allocated
+      _initialized = false;
+
+      Teuchos::RefCountPtr<const MV> tmp;
+      // grab some Multivector to Clone
+      // in practice, getInitVec() should always provide this, but it is possible to use a 
+      // Eigenproblem with nothing in getInitVec() by manually initializing with initialize(); 
+      // in case of that strange scenario, we will try to Clone from _X
+      if (_X != Teuchos::null) { // this is equivalent to _blockSize > 0
+        tmp = _X;
+      }
+      else {
+        tmp = _problem->getInitVec();
+        TEST_FOR_EXCEPTION(tmp == Teuchos::null,std::logic_error,
+                           "Anasazi::BlockDavidson::setSize(): Eigenproblem did not specify initial vectors to clone from");
+      }
+      // grow/allocate vectors
+      _Rnorms.resize(blockSize,NANVAL);
+      _R2norms.resize(blockSize,NANVAL);
+      
+      // clone multivectors off of tmp
+      _X = MVT::Clone(*tmp,blockSize);
+      _KX = MVT::Clone(*tmp,blockSize);
+      if (_hasM) {
+        _MX = MVT::Clone(*tmp,blockSize);
+      }
+      else {
+        _MX = _X;
+      }
+      _R = MVT::Clone(*tmp,blockSize);
+      _H = MVT::Clone(*tmp,blockSize);
+      _KH = MVT::Clone(*tmp,blockSize);
+      if (_hasM) {
+        _MH = MVT::Clone(*tmp,blockSize);
+      }
+      else {
+        _MH = _H;
+      }
+    }
+
+    // now, handle those things dependant on blockSize and numBlocks
+    // V,KV,MV, _theta
+    if (blockSize*numBlocks > _blockSize*_numBlocks) {
+      // grow the basis
+      _theta.resize(blockSize*numBlocks);
+      int newsd = blockSize*numBlocks;
+
+      if (_initialized) {
+        // copy the old data to the new basis
+        std::vector<int> ind(_nevLocal);
+        for (int i=0; i<_nevLocal; i++) ind[i] = i;
+        Teuchos::RefCountPtr<MV> newV;
+        // V
+        newV = MVT::Clone(*_X,newsd);
+        MVT::SetBlock(*_V,ind,*newV);
+        _V = newV;
+        // KV
+        newV = MVT::Clone(*_X,newsd);
+        MVT::SetBlock(*_KV,ind,*newV);
+        _KV = newV;
+        if (_hasM) {
+          // MV
+          newV = MVT::Clone(*_X,newsd);
+          MVT::SetBlock(*_MV,ind,*newV);
+          _MV = newV;
+        }
+        else {
+          _MV = _V;
+        }
+      }
+      else {
+        // just allocate space
+        _V = MVT::Clone(*_X,newsd);
+        _KV = MVT::Clone(*_X,newsd);
+        if (_hasM) {
+          _MV = MVT::Clone(*_X,newsd);
+        }
+        else {
+          _MV = _V;
+        }
+      }
+    }
+    else if (blockSize*numBlocks < _blockSize*_numBlocks) {
+      // the space has shrunk: if we have to truncate vectors, then reset to uninitialized
+      int newsd = blockSize*numBlocks;
+      if (newsd < _nevLocal) {
+        _initialized == false;
+      }
+
+      // if we are still initialized, reallocate and copy
+      // otherwise, just allocate
+      if (_initialized) {
+        _theta.resize(blockSize*numBlocks);
+
+        Techos::RefCountPtr<MV> newV;
+        std::vector<int> ind(_nevLocal);
+        for (int i=0; i<_nevLocal; i++) ind[i] = i;
+        // V
+        newV = MVT::Clone(*_X,newsd);
+        _V = MVT::CloneView(*_V,ind);
+        MVT::SetBlock(*_V,ind,*newV);
+        _V = newV;
+        // KV
+        newV = MVT::Clone(*_X,newsd);
+        _KV = MVT::CloneView(*_KV,ind);
+        MVT::SetBlock(*_KV,ind,*newV);
+        _KV = newV;
+        if (_hasM) {
+          // MV
+          newV = MVT::Clone(*_X,newsd);
+          _MV = MVT::CloneView(*_MV,ind);
+          MVT::SetBlock(*_MV,ind,*newV);
+          _MV = newV;
+        }
+        else {
+          _MV = _V;
+        }
+      }
+      else {
+        _theta.resize(blockSize*numBlocks,NANVAL);
+        // just allocate space
+        _V = MVT::Clone(*_X,newsd);
+        _KV = MVT::Clone(*_X,newsd);
+        if (_hasM) {
+          _MV = MVT::Clone(*_X,newsd);
+        }
+        else {
+          _MV = _V;
+        }
+      }
+    }
+
+    // change the local numbers
+    if (_initialized) {
+      // check that everything is still okay
+      CheckList chk;
+      chk.X = true;
+      chk.KX = true;
+      chk.MX = true;
+      chk.V = true;
+      chk.KV = true;
+      chk.MV = true;
+      chk.R = true;
+      _om->print(Debug, accuracyCheck(chk, ": after setSize()") );
+    }
+    else {
+      _nevLocal = 0;
+    }
+    _blockSize = blockSize;
+    _numBlocks = numBlocks;
+  }
+
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Set the auxilliary vectors
+  template <class ScalarType, class MV, class OP>
+  void LOBPCG<ScalarType,MV,OP>::setAuxVecs(const Teuchos::Array<Teuchos::RefCountPtr<const MV> > &auxvecs) {
+    typedef typename Teuchos::Array<Teuchos::RefCountPtr<const MV> >::iterator tarcpmv;
+
+    // set new auxilliary vectors
+    _auxVecs = auxvecs;
+    
+    if (_om->isVerbosity( Debug ) ) {
+      // Check almost everything here
+      CheckList chk;
+      chk.checkQ = true;
+      _om->print( Debug, accuracyCheck(chk, ": in setAuxVecs()") );
+    }
+
+    _numAuxVecs = 0;
+    for (tarcpmv i=_auxVecs.begin(); i != _auxVecs.end(); i++) {
+      _numAuxVecs += MVT::GetNumberVecs(**i);
+    }
+    
+    // If the solver has been initialized, X and P are not necessarily orthogonal to new auxilliary vectors
+    if (_auxVecs.size() > 0 && _initialized) {
+      _initialized = false;
+      _hasP = false;
+    }
+  }
+
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  /* Initialize the state of the solver
+   * 
+   * POST-CONDITIONS:
+   *
+   * V is orthonormal, orthogonal to _auxVecs, for first _nevLocal vectors
+   * KV = Op*V
+   * MV = M*V if _hasM
+   * _theta contains Ritz w.r.t. V
+   * X is Ritz vectors w.r.t. V
+   * KX = Op*X
+   * MX = M*X if _hasM
+   * R = KX - MX*diag(_theta)
+   */
+  template <class ScalarType, class MV, class OP>
+  void BlockDavidson<ScalarType,MV,OP>::initialize(BlockDavidsonState<ScalarType,MV> state)
+  // finish: finish writing this method
+  {
+    // NOTE: memory has been allocated by setBlockSize(). Use SetBlock below; do not Clone
+
+    std::vector<int> bsind(_blockSize);
+    for (int i=0; i<_blockSize; i++) bsind[i] = i;
+
+    // set up X: if the user doesn't specify X, ignore the rest
+    if (state.X != Teuchos::null && MVT::GetNumberVecs(*state.X) >= _blockSize && MVT::GetVecLength(*state.X) == MVT::GetVecLength(*_X) ) {
+
+      // put data in X,MX,KX
+      MVT::SetBlock(*state.X,bsind,*_X);
+      if (_hasM) {
+        if (state.MX != Teuchos::null && MVT::GetNumberVecs(*state.MX) >= _blockSize && MVT::GetVecLength(*state.MX) == MVT::GetVecLength(*_MX) ) {
+          MVT::SetBlock(*state.MX,bsind,*_MX);
+        }
+        else {
+          OPT::Apply(*_MOp,*_X,*_MX);
+          _count_ApplyM += _blockSize;
+        }
+      }
+      else {
+        // an assignment would be redundant; take advantage of this opportunity to debug a little
+        TEST_FOR_EXCEPTION(_MX != _X, std::logic_error, "Anasazi::LOBPCG::initialize(): invariant not satisfied");
+      }
+      if (state.KX != Teuchos::null && MVT::GetNumberVecs(*state.KX) >= _blockSize && MVT::GetVecLength(*state.KX) == MVT::GetVecLength(*_KX) ) {
+        MVT::SetBlock(*state.KX,bsind,*_KX);
+      }
+      else {
+        OPT::Apply(*_Op,*_X,*_KX);
+        _count_ApplyOp += _blockSize;
+      }
+
+      // set up Ritz values
+      _theta.resize(3*_blockSize,NANVAL);
+      if (state.T != Teuchos::null && (signed int)(state.T->size()) >= _blockSize) {
+        for (int i=0; i<_blockSize; i++) {
+          _theta[i] = (*state.T)[i];
+        }
+      }
+      else {
+        // get ritz vecs/vals
+        Teuchos::SerialDenseMatrix<int,ScalarType> KK(_blockSize,_blockSize),
+                                                   MM(_blockSize,_blockSize),
+                                                    S(_blockSize,_blockSize);
+        // project K
+        MVT::MvTransMv(ONE,*_X,*_KX,KK);
+        // project M
+        MVT::MvTransMv(ONE,*_X,*_MX,MM);
+        _nevLocal = _blockSize;
+        _MSUtils.directSolver(_blockSize, KK, &MM, &S, &_theta, &_nevLocal, 1);
+        TEST_FOR_EXCEPTION(_nevLocal < _blockSize,LOBPCGInitFailure,
+                           "Anasazi::LOBPCG::initialize(): Not enough Ritz vectors to initialize algorithm.");
+        // X <- X*S
+        MVT::MvAddMv( ONE, *_X, ZERO, *_X, *_R );        
+        MVT::MvTimesMatAddMv( ONE, *_R, S, ZERO, *_X );
+        // KX <- KX*S
+        MVT::MvAddMv( ONE, *_KX, ZERO, *_KX, *_R );        
+        MVT::MvTimesMatAddMv( ONE, *_R, S, ZERO, *_KX );
+        if (_hasM) {
+          // MX <- MX*S
+          MVT::MvAddMv( ONE, *_MX, ZERO, *_MX, *_R );        
+          MVT::MvTimesMatAddMv( ONE, *_R, S, ZERO, *_MX );
+        }
+      }
+  
+      // set up R
+      if (state.R != Teuchos::null && MVT::GetNumberVecs(*state.R) >= _blockSize && MVT::GetVecLength(*state.R) == MVT::GetVecLength(*_R) ) {
+        MVT::SetBlock(*state.R,bsind,*_R);
+      }
+      else {
+        // form R <- KX - MX*T
+        MVT::MvAddMv(ZERO,*_KX,ONE,*_KX,*_R);
+        Teuchos::SerialDenseMatrix<int,ScalarType> T(_blockSize,_blockSize);
+        T.putScalar(ZERO);
+        for (int i=0; i<_blockSize; i++) T(i,i) = _theta[i];
+        MVT::MvTimesMatAddMv(-ONE,*_MX,T,ONE,*_R);
+      }
+      // Update the residual norms
+      _orthman->norm(*_R,&_Rnorms);
+      // Update the residual 2-norms 
+      MVT::MvNorm(*_R,&_R2norms);
+
+  
+      // put data in P,KP,MP: P is not used to set theta
+      if (state.P != Teuchos::null && MVT::GetNumberVecs(*state.P) >= _blockSize && MVT::GetVecLength(*state.P) == MVT::GetVecLength(*_P) ) {
+        _hasP = true;
+
+        MVT::SetBlock(*state.P,bsind,*_P);
+
+        if (state.KP != Teuchos::null && MVT::GetNumberVecs(*state.KP) >= _blockSize && MVT::GetVecLength(*state.KP) == MVT::GetVecLength(*_KP) ) {
+          MVT::SetBlock(*state.KP,bsind,*_KP);
+        }
+        else {
+          OPT::Apply(*_Op,*_P,*_KP);
+          _count_ApplyOp += _blockSize;
+        }
+
+        if (_hasM) {
+          if (state.MP != Teuchos::null && MVT::GetNumberVecs(*state.MP) >= _blockSize && MVT::GetVecLength(*state.MP) == MVT::GetVecLength(*_MP) ) {
+            MVT::SetBlock(*state.MP,bsind,*_MP);
+          }
+          else {
+            OPT::Apply(*_MOp,*_P,*_MP);
+            _count_ApplyM += _blockSize;
+          }
+        }
+      }
+
+      _initialized = true;
+
+      if (_om->isVerbosity( Debug ) ) {
+        // Check almost everything here
+        CheckList chk;
+        chk.checkX = true;
+        chk.checkKX = true;
+        chk.checkMX = true;
+        chk.checkP = true;
+        chk.checkKP = true;
+        chk.checkMP = true;
+        chk.checkR = true;
+        chk.checkQ = true;
+        _om->print( Debug, accuracyCheck(chk, ": after initialize()") );
+      }
+
+    }
+    else {
+      // generate something, projectAndNormalize, call myself recursively
+      Teuchos::RefCountPtr<const MV> ivec = _problem->getInitVec();
+      TEST_FOR_EXCEPTION(ivec == Teuchos::null,std::logic_error,
+                         "Anasazi::LOBPCG::initialize(): Eigenproblem did not specify initial vectors to clone from");
+
+      int initSize = MVT::GetNumberVecs(*ivec);
+      if (initSize > _blockSize) {
+        // we need only the first _blockSize vectors from ivec; get a view of them
+        initSize = _blockSize;
+        std::vector<int> ind(_blockSize);
+        for (int i=0; i<_blockSize; i++) ind[i] = i;
+        ivec = MVT::CloneView(*ivec,ind);
+      }
+
+      // alloc newX
+      Teuchos::RefCountPtr<MV> newMX, newX = MVT::Clone(*ivec,_blockSize);
+      // assign ivec to first part of newX
+      std::vector<int> ind(initSize);
+      if (initSize > 0) {
+        for (int i=0; i<initSize; i++) ind[i] = i;
+        MVT::SetBlock(*ivec,ind,*newX);
+      }
+      // fill the rest of newX with random
+      if (_blockSize > initSize) {
+        ind.resize(_blockSize - initSize);
+        for (int i=0; i<_blockSize - initSize; i++) ind[i] = initSize + i;
+        Teuchos::RefCountPtr<MV> rX = MVT::CloneView(*newX,ind);
+        MVT::MvRandom(*rX);
+        rX = Teuchos::null;
+      }
+
+      // compute newMX if _hasM
+      if (_hasM) {
+        newMX = MVT::Clone(*ivec,_blockSize);
+        OPT::Apply(*_MOp,*newX,*newMX);
+        _count_ApplyM += _blockSize;
+      }
+      else {
+        newMX = Teuchos::null;
+      }
+
+      // remove auxVecs from newX and normalize newX
+      if (_auxVecs.size() > 0) {
+        Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > dummy;
+        int rank = _orthman->projectAndNormalize(*newX,newMX,dummy,Teuchos::null,_auxVecs);
+        TEST_FOR_EXCEPTION(rank != _blockSize,LOBPCGInitFailure,
+                           "Anasazi::LOBPCG::initialize(): Couldn't generate initial basis of full rank.");
+      }
+      else {
+        int rank = _orthman->normalize(*newX,newMX,Teuchos::null);
+        TEST_FOR_EXCEPTION(rank != _blockSize,LOBPCGInitFailure,
+                           "Anasazi::LOBPCG::initialize(): Couldn't generate initial basis of full rank.");
+      }
+
+      // call myself recursively
+      LOBPCGState<ScalarType,MV> newstate;
+      newstate.X = newX;
+      newstate.MX = newMX;
+      initialize(newstate);
+    }
   }
 
   template <class ScalarType, class MV, class OP>
-  void 
-  BlockDavidson<ScalarType,MV,OP>::currentStatus() 
+  void LOBPCG<ScalarType,MV,OP>::initialize()
   {
-    int i;
-    stringstream os;
-    os.setf(ios::scientific, ios::floatfield);
-    os.precision(6);
-    os <<endl;
-    os <<"******************* CURRENT STATUS *******************"<<endl;
-    os <<"The number of iterations performed is " <<_iter<<endl;
-    os <<"The number of restarts performed is "<<_numRestarts<<endl;
-    os <<"The block size is "<<_blockSize<<endl;
-    os <<"The number of eigenvalues requested is "<<_nev<<endl;
-    os <<"The number of eigenvalues computed is "<<_knownEV<<endl;
-    os <<"The requested residual tolerance is "<<_residual_tolerance<<endl;
-    os <<"The number of operations Op*x   is "<<_count_ApplyOp<<endl;
-    os <<"The number of operations M*x    is "<<_count_ApplyM<<endl;
-    os <<"The number of operations Prec*x is "<<_count_ApplyPrec<<endl;
-    os <<endl;
-    os <<"COMPUTED EIGENVALUES                 "<<endl;
-    os.setf(ios_base::right, ios_base::adjustfield);
-    os << std::setw(16) << "Eigenvalue" 
-        << std::setw(16) << "Ritz Residual"
-        << endl;
-    os <<"------------------------------------------------------"<<endl;
-    if ( _knownEV > 0 ) {
-      for (i=0; i<_knownEV; i++) {
-        os << std::setw(16) << (*_evals)[i]
-            << std::setw(16) << _resids[i]
-            << endl;
-      }
-    } 
-    else {
-      os <<"[none computed]"<<endl;
-    }
-    os <<endl;
-    os <<"CURRENT EIGENVALUE ESTIMATES             "<<endl;
-    os << std::setw(16) << "Ritz value" 
-        << std::setw(16) << "Residual"
-        << endl;
-    os <<"------------------------------------------------------"<<endl;
-    if ( _iter > 0 ) {
-      for (i=0; i<_blockSize; i++) {
-        os << std::setw(16) << _theta[i] 
-            << std::setw(16) << _normR[i]
-            << endl;
-      }
-    } 
-    else {
-      os <<"[none computed]" << endl;
-    }
-    os << "******************************************************" << endl;  
-    os << endl; 
-
-    // send string to output manager
-    _om->print(Anasazi::IterationDetails, os.str());
+    LOBPCGState<ScalarType,MV> empty;
+    initialize(empty);
   }
-  
+
+
+
+
+
+
+
+
+
+
+
+
   template <class ScalarType, class MV, class OP>
   ReturnType 
   BlockDavidson<ScalarType,MV,OP>::solve () 
@@ -1094,6 +1743,47 @@ namespace Anasazi {
       
       _om->print(Error,os.str());
     }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////
+    // Print the current status of the solver
+    template <class ScalarType, class MV, class OP>
+    void 
+    BlockDavidson<ScalarType,MV,OP>::currentStatus(ostream &os) 
+    {
+      os.setf(ios::scientific, ios::floatfield);
+      os.precision(6);
+      os <<endl;
+      os <<"******************* CURRENT STATUS *******************"<<endl;
+      os <<"The number of iterations performed is " <<_iter<<endl;
+      os <<"The block size is         " << _blockSize<<endl;
+      os <<"The number of blocks is   " << _numBlocks<<endl;
+      os <<"The current basis size is " << _nevLocal<<end;
+      os <<"The number of operations Op*x   is "<<_count_ApplyOp<<endl;
+      os <<"The number of operations M*x    is "<<_count_ApplyM<<endl;
+      os <<"The number of operations Prec*x is "<<_count_ApplyPrec<<endl;
+      os <<endl;
+  
+      os.setf(ios_base::right, ios_base::adjustfield);
+  
+      os <<"CURRENT EIGENVALUE ESTIMATES             "<<endl;
+      os << std::setw(16) << "Ritz value" 
+          << std::setw(16) << "Residual"
+          << endl;
+      os <<"------------------------------------------------------"<<endl;
+      if ( _iter > 0 || _nevLocal > 0 ) {
+        for (int i=0; i<_blockSize; i++) {
+          os << std::setw(16) << _theta[i] 
+             << std::setw(16) << _Rnorms[i]
+             << endl;
+        }
+      } 
+      else {
+        os <<"[none computed]" << endl;
+      }
+      os << "******************************************************" << endl;  
+      os << endl; 
+    }
+
   
   } // End of namespace Anasazi
 

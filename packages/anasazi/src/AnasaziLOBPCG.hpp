@@ -186,7 +186,7 @@ namespace Anasazi {
      * iterate() will first determine whether the solver is initialized; if
      * not, it will call initialize() using default arguments.  After
      * initialization, the solver performs %LOBPCG iterations until the status
-     * test evaluates to Passed, at which point the method returns to the
+     * test evaluates as Passed, at which point the method returns to the
      * caller.
      *
      * Possible exceptions thrown include std::logic_error or
@@ -200,8 +200,9 @@ namespace Anasazi {
      * The %LOBPCG eigensolver contains a certain amount of state relating to
      * the current iterate, including the current residual, the current search
      * direction, and the images of these spaces under the operators.
-     * initialize() gives the user the opportunity to manually set these
-     * subspaces, although this must be done with caution, abiding by the rules
+     *
+     * initialize() gives the user the opportunity to manually set these,
+     * although this must be done with caution, abiding by the rules
      * given below. All notions of orthogonality and orthonormality are derived
      * from the inner product specified by the orthogonalization manager.
      *
@@ -218,6 +219,66 @@ namespace Anasazi {
     void initialize(LOBPCGState<ScalarType,MV> state);
     void initialize();
 
+    /*! \brief Indicates whether the solver has been initialized or not.
+     *
+     * \return bool indicating the state of the solver.
+     * \post
+     * If isInitialized() == true,
+     * <ul>
+     * <li>X is orthogonal to auxilliary vectors and has orthonormal columns
+     * <li>KX = Op*X
+     * <li>MX = M*X if M != null
+     * <li>getEigenvalues() returns the Ritz values with respect to X
+     * <li>getResidualVecs() returns the residual vectors with respect to X
+     * <li>If hasP() == true,
+     *   <ul>
+     *   <li>P orthogonal to auxilliary vectors
+     *   <li>If getFullOrtho() == true,
+     *     <ul>
+     *     <li>P orthogonal to X and has orthonormal columns
+     *     </ul>
+     *   <li>KP = Op*P
+     *   <li>MP = M*P if M != null
+     *   </ul>
+     * </ul>
+     */
+    bool isInitialized() { return _initialized; }
+
+    /*! \brief Get the current state of the eigensolver.
+     * 
+     * The data is only valid if isInitialized() == \c true. Furthermore, the
+     * data for the search directions \c P is only meaningful if hasP() == \c
+     * true.
+     *
+     * The data for the preconditioned residual is only meaningful in the scenario that
+     * the solver throws an ::LOBPCGRitzFailure exception during iterate().
+     *
+     * \returns An LOBPCGState object containing const pointers to the current
+     * solver state.
+     */
+    LOBPCGState<ScalarType,MV> getState() const {
+      LOBPCGState<ScalarType,MV> state;
+      state.X = _X;
+      state.KX = _KX;
+      state.P = _P;
+      state.KP = _KP;
+      state.H = _H;
+      state.KH = _KH;
+      state.R = _R;
+      state.T = Teuchos::rcp(new std::vector<MagnitudeType>(_theta));
+      if (_hasM) {
+        state.MX = _MX;
+        state.MP = _MP;
+        state.MH = _MH;
+      }
+      else {
+        state.MX = Teuchos::null;
+        state.MP = Teuchos::null;
+        state.MH = Teuchos::null;
+      }
+      return state;
+    }
+
     //@}
 
     //@{ \name Status methods.
@@ -228,32 +289,38 @@ namespace Anasazi {
     //! \brief Reset the iteration count.
     void resetNumIters() { _iter=0; };
 
-    //! \brief Get the current approximate eigenspace.
+    //! \brief Get the current approximate eigenvectors.
     Teuchos::RefCountPtr<const MV> getEvecs() {return _X;}
 
     //! \brief Get the residual vectors.
     Teuchos::RefCountPtr<const MV> getResidualVecs() {return _R;}
 
-
     /*! \brief Get the current eigenvalue estimates.
-     *
-     *  Note, as %LOBPCG requires a symmetric eigenvalue problem, the entries
-     *  will be real even if ScalarType is complex.
      *
      *  \return A vector of length getBlockSize() containing the eigenvalue
      *  estimates associated with the current iterate.
      */
-
     std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getEigenvalues() { 
       std::vector<MagnitudeType> ret = _theta;
       ret.resize(_blockSize);
       return ret;
     }
 
+    /*! \brief Get the Ritz values for the previous iteration.
+     *
+     *  \return A vector of length not exceeding 3*getBlockSize() containing the Ritz values from the
+     *  previous projected eigensolve.
+     */
+    std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getRitzValues() { 
+      std::vector<MagnitudeType> ret = _theta;
+      ret.resize(_nevLocal);
+      return ret;
+    }
+
     /*! \brief Get the current residual norms
      *
      *  \return A vector of length blockSize containing the norms of the
-     *  residuals, according to the orthogonalization manager norm() method.
+     *  residuals, with respect to the orthogonalization manager norm() method.
      */
     std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getResNorms()    {return _Rnorms;}
 
@@ -321,69 +388,6 @@ namespace Anasazi {
     bool hasP() {return _hasP;}
 
 
-    /*! \brief Indicates whether the solver has been initialized or not.
-     *
-     * \return bool indicating the state of the solver.
-     * \post
-     * If isInitialized() == true,
-     * <ul>
-     * <li>X is orthogonal to auxilliary vectors and has orthonormal columns
-     * <li>KX = Op*X
-     * <li>MX = M*X if M != null
-     * <li>getEigenvalues() returns the Ritz values with respect to X
-     * <li>getResidualVecs() returns the residual vectors with respect to X
-     * <li>If hasP() == true,
-     *   <ul>
-     *   <li>P orthogonal to auxilliary vectors
-     *   <li>If getFullOrtho() == true,
-     *     <ul>
-     *     <li>P orthogonal to X and has orthonormal columns
-     *     </ul>
-     *   <li>KP = Op*P
-     *   <li>MP = M*P if M != null
-     *   </ul>
-     * </ul>
-     */
-    bool isInitialized() { return _initialized; }
-
-
-    /*! \brief Get the current state of the eigensolver.
-     * 
-     * The data is only valid if isInitialized() == \c true. Furthermore, 
-     * 
-     * the data for the search directions \c P is only meaningful if 
-     * hasP() == \c true.
-     *
-     * The data for the preconditioned is only meaningful in the
-     * scenario that the solver throws an ::LOBPCGRitzFailure exception
-     * during iterate().
-     *
-     * \returns An LOBPCGState object containing const pointers to the current
-     * solver state.
-     */
-    LOBPCGState<ScalarType,MV> getState() const {
-      LOBPCGState<ScalarType,MV> state;
-      state.X = _X;
-      state.KX = _KX;
-      state.P = _P;
-      state.KP = _KP;
-      state.H = _H;
-      state.KH = _KH;
-      state.R = _R;
-      state.T = Teuchos::rcp(new std::vector<MagnitudeType>(_theta));
-      if (_hasM) {
-        state.MX = _MX;
-        state.MP = _MP;
-        state.MH = _MH;
-      }
-      else {
-        state.MX = Teuchos::null;
-        state.MP = Teuchos::null;
-        state.MH = Teuchos::null;
-      }
-      return state;
-    }
-
     //@}
     
     //@{ \name Output methods.
@@ -401,8 +405,6 @@ namespace Anasazi {
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename SCT::magnitudeType MagnitudeType;
-    typedef typename std::vector<ScalarType>::iterator STiter;
-    typedef typename std::vector<MagnitudeType>::iterator MTiter;
     const MagnitudeType ONE;  
     const MagnitudeType ZERO; 
     const MagnitudeType NANVAL;
@@ -456,9 +458,6 @@ namespace Anasazi {
     //
     // Number of operator applications
     int _count_ApplyOp, _count_ApplyM, _count_ApplyPrec;
-    //
-    // Number of iterations that have been performed.
-    int _iter;
 
     //
     // Algorithmic parameters.
@@ -497,6 +496,9 @@ namespace Anasazi {
     // Auxilliary vectors
     Teuchos::Array<Teuchos::RefCountPtr<const MV> > _auxVecs;
     int _numAuxVecs;
+    //
+    // Number of iterations that have been performed.
+    int _iter;
     // 
     // Current eigenvalues, residual norms
     std::vector<MagnitudeType> _theta, _Rnorms, _R2norms;
@@ -509,13 +511,14 @@ namespace Anasazi {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Constructor
   template <class ScalarType, class MV, class OP>
-  LOBPCG<ScalarType,MV,OP>::LOBPCG(const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem, 
-                                   const Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > &sorter,
-                                   const Teuchos::RefCountPtr<OutputManager<ScalarType> > &printer,
-                                   const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > &tester,
-                                   const Teuchos::RefCountPtr<MatOrthoManager<ScalarType,MV,OP> > &ortho,
-                                   Teuchos::ParameterList &params
-                                   ) :
+  LOBPCG<ScalarType,MV,OP>::LOBPCG(
+        const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem, 
+        const Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > &sorter,
+        const Teuchos::RefCountPtr<OutputManager<ScalarType> > &printer,
+        const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > &tester,
+        const Teuchos::RefCountPtr<MatOrthoManager<ScalarType,MV,OP> > &ortho,
+        Teuchos::ParameterList &params
+        ) :
     ONE(Teuchos::ScalarTraits<MagnitudeType>::one()),
     ZERO(Teuchos::ScalarTraits<MagnitudeType>::zero()),
     NANVAL(Teuchos::ScalarTraits<MagnitudeType>::nan()),
@@ -546,13 +549,13 @@ namespace Anasazi {
     _count_ApplyM(0),
     _count_ApplyPrec(0),
     // internal data
-    _iter(0), 
     _fullOrtho(params.get("Full Ortho", true)),
     _initialized(false),
     _nevLocal(0),
     _hasP(false),
     _auxVecs( Teuchos::Array<Teuchos::RefCountPtr<const MV> >(0) ), 
-    _numAuxVecs(0)
+    _numAuxVecs(0),
+    _iter(0)
   {     
     // set the block size and allocate data
     _blockSize = 0;
@@ -580,11 +583,6 @@ namespace Anasazi {
       _blockSize = blockSize;
 
       _theta.resize(3*_blockSize);
-      // only the first _blockSize Ritz values (those corresponding to _X) are valid: clear the rest
-      for (int i=_blockSize; i<3*_blockSize; i++) {
-        _theta[i] = NANVAL;
-      }
-      // _R will be shrunk, so these will still be valid if _initialized == true
       _Rnorms.resize(_blockSize);
       _R2norms.resize(_blockSize);
 
@@ -1176,7 +1174,7 @@ namespace Anasazi {
       std::vector<ScalarType> _theta_st(_theta.size());
       {
         Teuchos::TimeMonitor SortTimer( *_timerSortEval );
-        std::copy<MTiter,STiter>(_theta.begin(),_theta.begin()+_nevLocal,_theta_st.begin());
+        std::copy(_theta.begin(),_theta.begin()+_nevLocal,_theta_st.begin());
         _sm->sort( this, _nevLocal, &(_theta_st[0]), &_order );   // don't catch exception
         
         //  Reorder _theta according to sorting results from _theta_st
@@ -1729,8 +1727,6 @@ namespace Anasazi {
   void 
   LOBPCG<ScalarType,MV,OP>::currentStatus(ostream &os) 
   {
-    int i;
-
     os.setf(ios::scientific, ios::floatfield);  
     os.precision(6);
     os <<endl;
@@ -1743,25 +1739,7 @@ namespace Anasazi {
     os <<"The number of operations Prec*x is " << _count_ApplyPrec << endl;
     os << endl;
 
-    /*
-    os <<"COMPUTED EIGENVALUES                 "<<endl;
     os.setf(ios_base::right, ios_base::adjustfield);
-    os << std::setw(16) << "Eigenvalue" 
-        << std::setw(16) << "Ritz Residual"
-        << endl;
-    os <<"------------------------------------------------------"<<endl;
-    if ( _knownEV > 0 ) {
-      for (i=0; i<_knownEV; i++) {
-        os << std::setw(16) << (*_evals)[i] 
-            << std::setw(16) << _resids[i] 
-            << endl;
-      }
-    } 
-    else {
-      os <<"[none computed]"<<endl;
-    }
-    os <<endl;
-    */
 
     os <<"CURRENT EIGENVALUE ESTIMATES             "<<endl;
     os << std::setw(16) << "Ritz value" 
@@ -1769,10 +1747,10 @@ namespace Anasazi {
         << endl;
     os <<"------------------------------------------------------"<<endl;
     if ( _iter > 0 || _nevLocal > 0 ) {
-      for (i=0; i<_blockSize; i++) {
+      for (int i=0; i<_blockSize; i++) {
         os << std::setw(16) << _theta[i] 
-            << std::setw(16) << _Rnorms[i] 
-            << endl;
+           << std::setw(16) << _Rnorms[i] 
+           << endl;
       }
     } 
     else {
