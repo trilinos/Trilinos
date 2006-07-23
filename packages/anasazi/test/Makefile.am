@@ -33,9 +33,9 @@ all-local:
 	@echo "Trilinos package anasazi subdirectory test built successfully."
 	@echo ""
 
-DISABLED = BlockDavidson BlockKrylovSchur ARPACKExamples 
+DISABLED = BlockKrylovSchur ARPACKExamples 
 
-SUBDIRS = ModalSolverUtils LOBPCG MVOPTester OrthoManager scripts 
+SUBDIRS = ModalSolverUtils LOBPCG MVOPTester OrthoManager scripts BlockDavidson 
 
 EXTRA_DIST = definition
  

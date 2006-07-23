@@ -557,6 +557,13 @@ namespace Anasazi {
     _numAuxVecs(0),
     _iter(0)
   {     
+    TEST_FOR_EXCEPTION(_problem == Teuchos::null,std::logic_error,
+                       "Anasazi::LOBPCG::constructor: user specified null problem pointer.");
+    TEST_FOR_EXCEPTION(_problem->isProblemSet() == false, std::logic_error,
+                       "Anasazi::LOBPCG::constructor: user specified problem is not set.");
+    TEST_FOR_EXCEPTION(_problem->isHermitian() == false, std::logic_error,
+                       "Anasazi::LOBPCG::constructor: user specified problem is not hermitian.");
+
     // set the block size and allocate data
     _blockSize = 0;
     int bs = params.get("Block Size", _problem->getNEV());
@@ -786,6 +793,7 @@ namespace Anasazi {
       }
       else {
         // get ritz vecs/vals
+        // finish: these need to be sorted in X
         Teuchos::SerialDenseMatrix<int,ScalarType> KK(_blockSize,_blockSize),
                                                    MM(_blockSize,_blockSize),
                                                     S(_blockSize,_blockSize);
@@ -1177,7 +1185,7 @@ namespace Anasazi {
         std::copy(_theta.begin(),_theta.begin()+_nevLocal,_theta_st.begin());
         _sm->sort( this, _nevLocal, &(_theta_st[0]), &_order );   // don't catch exception
         
-        //  Reorder _theta according to sorting results from _theta_st
+        // Reorder _theta according to sorting results from _theta_st
         std::vector<MagnitudeType> _theta_copy(_theta);
         for (int i=0; i<_nevLocal; i++) {
           _theta[i] = _theta_copy[_order[i]];
