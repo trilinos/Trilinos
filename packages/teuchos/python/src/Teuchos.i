@@ -40,6 +40,12 @@ in-depth information."
 // Define the module name, its package and documentation string
 %module(package="PyTrilinos", docstring=DOCSTRING) Teuchos
 
+// SWIG does not support wrapping nested classes.  We will %import the
+// Teuchos::any class (ie, tell swig about it, but not wrap it), which
+// has nested classes.  To suppress the swig warning that would
+// otherwise result, we use the following:
+#pragma SWIG nowarn=312
+
 // Code within the percent-bracket delimiters is copied verbatim to
 // the C++ wrapper source file.  Anything that is %include-ed later
 // needs to be #include-ed here.
@@ -131,14 +137,20 @@ TEUCHOS_EXCEPTION(PyDictParameterList,update)
 %feature("autodoc", "1");
 
 // C++ STL support.  If the wrapped class uses standard template
-// library containers, the following %include-s wraps the containers
+// library containers, the following %include wraps the containers
 // and makes certain conversions seamless, such as between std::string
 // and python strings.
-%include "std_string.i"
+%include "stl.i"
+
+namespace std {
+  class logic_error;
+  class runtime_error;
+}
 
 // Teuchos interface includes
 using namespace std;
 %include "Teuchos_Version.hpp"
+%import  "Teuchos_TypeNameTraits.hpp"
 %import  "Teuchos_RefCountPtrDecl.hpp"
 %import  "Teuchos_any.hpp"
 %import  "Teuchos_ParameterEntry.hpp"
@@ -291,7 +303,7 @@ using namespace std;
 // PyDictParameterList, or python dictionary arguments.  C++ methods
 // that output ParameterLists will have python wrappers that output
 // PyDictParameterLists.
-%typemap(in) (Teuchos::ParameterList &)
+%typemap(in) Teuchos::ParameterList & (bool cleanup)
 {
   static swig_type_info * PDPL_type = SWIG_TypeQuery("Teuchos::PyDictParameterList *");
   static swig_type_info * PL_type   = SWIG_TypeQuery("Teuchos::ParameterList *"      );
@@ -299,20 +311,19 @@ using namespace std;
 
   // Input is a python dictionary
   if (PyDict_Check($input)) {
+    cleanup = true;
     $1 = new Teuchos::PyDictParameterList($input);
     if (PyErr_Occurred()) SWIG_fail;
   }
   // Input is a Teuchos::PyDictParameterList
   else if (SWIG_CheckState(SWIG_Python_ConvertPtr($input,&argp,PDPL_type,0))) {
-    Teuchos::PyDictParameterList * arg = reinterpret_cast<Teuchos::PyDictParameterList *>(argp);
-    $1 = new Teuchos::PyDictParameterList(*arg);
-    if (PyErr_Occurred()) SWIG_fail;
+    cleanup = false;
+    $1 = reinterpret_cast<Teuchos::PyDictParameterList *>(argp);
   }
   // Input is a Teuchos::ParameterList
   else if (SWIG_CheckState(SWIG_Python_ConvertPtr($input,&argp,PL_type,0))) {
-    Teuchos::ParameterList * arg = reinterpret_cast<Teuchos::ParameterList *>(argp);
-    $1 = new Teuchos::PyDictParameterList(*arg);
-    if (PyErr_Occurred()) SWIG_fail;
+    cleanup = false;
+    $1 = reinterpret_cast<Teuchos::ParameterList *>(argp);
   }
   // Unsupported input
   else {
@@ -321,12 +332,12 @@ using namespace std;
   }
 }
 
-%typemap(freearg) (Teuchos::ParameterList& List)
+%typemap(freearg) Teuchos::ParameterList& List
 {
-  if ($1) delete($1);
+  if (cleanup$argnum && $1) delete($1);
 }
 
-%typemap(out) (Teuchos::ParameterList &)
+%typemap(out) Teuchos::ParameterList &
 {
   static swig_type_info * PDPL_type = SWIG_TypeQuery("Teuchos::PyDictParameterList *");
   Teuchos::PyDictParameterList * pdpl = new Teuchos::PyDictParameterList(*$1);
