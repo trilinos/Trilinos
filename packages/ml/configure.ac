@@ -310,6 +310,8 @@ else
   AC_MSG_RESULT(no)
 fi
 
+
+
 # ------------------------------------------------------------------------
 # Checks for special package flags
 # ------------------------------------------------------------------------
@@ -524,6 +526,7 @@ TAC_ARG_ENABLE_FEATURE_SUB( ml, python, [Build ML Python wrappers (requires --en
 AM_CONDITIONAL(BUILD_ML_PYTHON, test "X$ac_cv_use_ml_python" != "Xno")
 TAC_ENABLE_PYTHON
 
+
 # ------------------------------------------------------------------------
 # Specify other directories 
 # ------------------------------------------------------------------------
@@ -532,6 +535,7 @@ TAC_ENABLE_PYTHON
 TAC_ARG_WITH_LIBDIRS
 # enable use of --with-incdirs="-Lincdir1 -Lincdir2 ..." to prepend to CPPFLAGS
 TAC_ARG_WITH_INCDIRS
+
 
 # Yet another opportunity to remove code if you aren't
 # using Fortran
@@ -555,16 +559,28 @@ dnl Replace `main' with a function in -lm:
 AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
 AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
 
+
 TAC_ARG_WITH_BLASLIB
 TAC_ARG_WITH_LAPACKLIB
 
 # find or choose to supply valid blas and lapack libraries
   ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)]])])
-  ACX_LAPACK([], [AC_MSG_ERROR([[Cannot find lapack library, specify a path using --with-ldflags=-I<DIR> (ex. --with-dlflags=-I/usr/path/lib) or a specific library using --with-lapack=DIR/LIB (ex.  --with-lapack=/usr/path/lib/libcxml.a)]])])
+  ACX_LAPACK([], [AC_MSG_ERROR([[Cannot find lapack library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-lapack=DIR/LIB (ex.  --with-lapack=/usr/path/lib/libcxml.a)]])])
 
 fi
 # end of the list of libraries that don't need to be checked for if
 # tests and examples are disabled.
+
+
+# ------------------------------------------------------------------------
+# Enable optional matlab wrappers - this needs to be after the other directories
+# or else we'll never find the matlab libraries / includes
+# ------------------------------------------------------------------------
+TAC_ARG_ENABLE_FEATURE_SUB( ml, matlab, [Build ML Matlab wrappers (requires --with-matlab, which is NOT set by default)], ML_MATLAB, no)
+AM_CONDITIONAL(BUILD_ML_MATLAB, test "X$ac_cv_use_ml_matlab" != "Xno")
+TAC_ENABLE_MATLAB
+
+
 
 # ------------------------------------------------------------------------
 # Checks for compiler characteristics
@@ -666,7 +682,7 @@ AC_CONFIG_FILES([
 		Makefile.export
 		Makefile.export.ml
 		src/Makefile
-        doc/Makefile
+        	doc/Makefile
 		examples/Makefile
 		examples/Advanced/Makefile
 		examples/BasicExamples/Makefile
@@ -708,6 +724,7 @@ AC_CONFIG_FILES([
                 python/src/.deps/dummy
                 python/example/Makefile
                 python/test/Makefile
+		matlab/Makefile
                 ])
 
 AC_OUTPUT()

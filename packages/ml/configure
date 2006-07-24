@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CXX CXXFLAGS LDFLAGS CPPFLAGS ac_ct_CXX EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CC CFLAGS ac_ct_CC CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB ML_BUILD_DIRECTORY USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP USING_EXPORT_MAKEFILES_TRUE USING_EXPORT_MAKEFILES_FALSE PERL_EXE HAVE_PERL USING_PERL_TRUE USING_PERL_FALSE USING_GNUMAKE_TRUE USING_GNUMAKE_FALSE EGREP LIBOBJS ML_CFUNC_TRUE ML_CFUNC_FALSE ML_BENCHMARKING_TRUE ML_BENCHMARKING_FALSE ML_USING_NOX_TRUE ML_USING_NOX_FALSE ML_USING_EPETRA_TRUE ML_USING_EPETRA_FALSE ML_USING_AMESOS_TRUE ML_USING_AMESOS_FALSE ML_USING_IFPACK_TRUE ML_USING_IFPACK_FALSE ML_USING_TEUCHOS_TRUE ML_USING_TEUCHOS_FALSE ML_USING_ANASAZI_TRUE ML_USING_ANASAZI_FALSE ML_USING_AZTECOO_TRUE ML_USING_AZTECOO_FALSE ML_USING_EPETRAEXT_TRUE ML_USING_EPETRAEXT_FALSE ML_USING_GALERI_TRUE ML_USING_GALERI_FALSE ML_STANDALONE_MODE_TRUE ML_STANDALONE_MODE_FALSE ML_BUILD_EXAMPLES_TRUE ML_BUILD_EXAMPLES_FALSE BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_ML_PYTHON_TRUE BUILD_ML_PYTHON_FALSE PYTHON_USE_TRUE PYTHON_USE_FALSE PYTHON PYTHON_PREFIX PYTHON_EXECPREFIX BUILD_PYTHON_TRUE BUILD_PYTHON_FALSE PYTHON_CSPEC PYTHON_LSPEC WITH_SWIG SWIG SWIG_LIB SWIG_PYTHON_OPT SWIG_PYTHON_CPPFLAGS HAVE_SWIG_TRUE HAVE_SWIG_FALSE GNU_HAVE_SWIG FLIBS BLAS_LIBS LAPACK_LIBS TRILINOS_TEMPLATE_OBJS ac_aux_dir LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CXX CXXFLAGS LDFLAGS CPPFLAGS ac_ct_CXX EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CC CFLAGS ac_ct_CC CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB ML_BUILD_DIRECTORY USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP USING_EXPORT_MAKEFILES_TRUE USING_EXPORT_MAKEFILES_FALSE PERL_EXE HAVE_PERL USING_PERL_TRUE USING_PERL_FALSE USING_GNUMAKE_TRUE USING_GNUMAKE_FALSE EGREP LIBOBJS ML_CFUNC_TRUE ML_CFUNC_FALSE ML_BENCHMARKING_TRUE ML_BENCHMARKING_FALSE ML_USING_NOX_TRUE ML_USING_NOX_FALSE ML_USING_EPETRA_TRUE ML_USING_EPETRA_FALSE ML_USING_AMESOS_TRUE ML_USING_AMESOS_FALSE ML_USING_IFPACK_TRUE ML_USING_IFPACK_FALSE ML_USING_TEUCHOS_TRUE ML_USING_TEUCHOS_FALSE ML_USING_ANASAZI_TRUE ML_USING_ANASAZI_FALSE ML_USING_AZTECOO_TRUE ML_USING_AZTECOO_FALSE ML_USING_EPETRAEXT_TRUE ML_USING_EPETRAEXT_FALSE ML_USING_GALERI_TRUE ML_USING_GALERI_FALSE ML_STANDALONE_MODE_TRUE ML_STANDALONE_MODE_FALSE ML_BUILD_EXAMPLES_TRUE ML_BUILD_EXAMPLES_FALSE BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_ML_PYTHON_TRUE BUILD_ML_PYTHON_FALSE PYTHON_USE_TRUE PYTHON_USE_FALSE PYTHON PYTHON_PREFIX PYTHON_EXECPREFIX BUILD_PYTHON_TRUE BUILD_PYTHON_FALSE PYTHON_CSPEC PYTHON_LSPEC WITH_SWIG SWIG SWIG_LIB SWIG_PYTHON_OPT SWIG_PYTHON_CPPFLAGS HAVE_SWIG_TRUE HAVE_SWIG_FALSE GNU_HAVE_SWIG FLIBS BLAS_LIBS LAPACK_LIBS BUILD_ML_MATLAB_TRUE BUILD_ML_MATLAB_FALSE MATLAB_USE_TRUE MATLAB_USE_FALSE MATLAB_ROOT_USE_TRUE MATLAB_ROOT_USE_FALSE MATLAB_EXE MEX MATLAB MATLAB_ROOT MEXEXT MEXEXT_VALUE BUILD_MATLAB_TRUE BUILD_MATLAB_FALSE ML_MATLAB_INCLUDES TRILINOS_TEMPLATE_OBJS ac_aux_dir LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -792,6 +792,14 @@ ac_env_PYTHON_set=${PYTHON+set}
 ac_env_PYTHON_value=$PYTHON
 ac_cv_env_PYTHON_set=${PYTHON+set}
 ac_cv_env_PYTHON_value=$PYTHON
+ac_env_MATLAB_EXE_set=${MATLAB_EXE+set}
+ac_env_MATLAB_EXE_value=$MATLAB_EXE
+ac_cv_env_MATLAB_EXE_set=${MATLAB_EXE+set}
+ac_cv_env_MATLAB_EXE_value=$MATLAB_EXE
+ac_env_MATLAB_ROOT_set=${MATLAB_ROOT+set}
+ac_env_MATLAB_ROOT_value=$MATLAB_ROOT
+ac_cv_env_MATLAB_ROOT_set=${MATLAB_ROOT+set}
+ac_cv_env_MATLAB_ROOT_value=$MATLAB_ROOT
 
 #
 # Report the --help message.
@@ -991,6 +999,8 @@ Optional Features:
                           which is NOT set by default) (default is yes)
   --enable-python[=PYTHON]
                           absolute path name of Python executable
+  --enable-ml-matlab      Build ML Matlab wrappers (requires --with-matlab,
+                          which is NOT set by default) (default is no)
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -1120,6 +1130,10 @@ Optional Packages:
                           directories for -lname
   --with-blas=<lib>       use BLAS library <lib>
   --with-lapack=<lib>     use LAPACK library <lib>
+  --with-matlab-exec[=MATLAB_EXE]
+                          absolute path of Matlab executable
+  --with-matlab-root[=MATLAB_ROOT]
+                          absolute path name of Matlab root directory
 
 Some influential environment variables:
   CXX         C++ compiler command
@@ -1134,6 +1148,8 @@ Some influential environment variables:
   FFLAGS      Fortran 77 compiler flags
   CXXCPP      C++ preprocessor
   PYTHON      Python Executable Path
+  MATLAB_EXE  Matlab Executable Path
+  MATLAB_ROOT Matlab Root Directory
 
 Use these variables to override the choices made by `configure' or to help
 it to find libraries and programs with nonstandard names/locations.
@@ -4016,7 +4032,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:4019:" \
+echo "$as_me:4035:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -7554,6 +7570,8 @@ else
 echo "${ECHO_T}no" >&6
 fi
 
+
+
 # ------------------------------------------------------------------------
 # Checks for special package flags
 # ------------------------------------------------------------------------
@@ -9754,6 +9772,7 @@ GNU_HAVE_SWIG=${WITH_SWIG}
 
 
 
+
 # ------------------------------------------------------------------------
 # Specify other directories
 # ------------------------------------------------------------------------
@@ -9795,6 +9814,7 @@ else
 echo "${ECHO_T}no" >&6
 
 fi;
+
 
 
 # Yet another opportunity to remove code if you aren't
@@ -9852,7 +9872,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:9855: \"$ac_link\") >&5
+(eval echo $as_me:9875: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9930,7 +9950,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:9933: \"$ac_link\") >&5
+(eval echo $as_me:9953: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10922,6 +10942,7 @@ else
 echo "$as_me: error: Cannot find math library" >&2;}
    { (exit 1); exit 1; }; }
 fi
+
 
 
 
@@ -12755,8 +12776,8 @@ _ACEOF
         :
 else
         acx_lapack_ok=no
-        { { echo "$as_me:$LINENO: error: Cannot find lapack library, specify a path using --with-ldflags=-I<DIR> (ex. --with-dlflags=-I/usr/path/lib) or a specific library using --with-lapack=DIR/LIB (ex.  --with-lapack=/usr/path/lib/libcxml.a)" >&5
-echo "$as_me: error: Cannot find lapack library, specify a path using --with-ldflags=-I<DIR> (ex. --with-dlflags=-I/usr/path/lib) or a specific library using --with-lapack=DIR/LIB (ex.  --with-lapack=/usr/path/lib/libcxml.a)" >&2;}
+        { { echo "$as_me:$LINENO: error: Cannot find lapack library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-lapack=DIR/LIB (ex.  --with-lapack=/usr/path/lib/libcxml.a)" >&5
+echo "$as_me: error: Cannot find lapack library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-lapack=DIR/LIB (ex.  --with-lapack=/usr/path/lib/libcxml.a)" >&2;}
    { (exit 1); exit 1; }; }
 fi
 
@@ -12764,6 +12785,906 @@ fi
 fi
 # end of the list of libraries that don't need to be checked for if
 # tests and examples are disabled.
+
+
+# ------------------------------------------------------------------------
+# Enable optional matlab wrappers - this needs to be after the other directories
+# or else we'll never find the matlab libraries / includes
+# ------------------------------------------------------------------------
+
+# Check whether --enable-ml-matlab or --disable-ml-matlab was given.
+if test "${enable_ml_matlab+set}" = set; then
+  enableval="$enable_ml_matlab"
+  ac_cv_use_ml_matlab=$enableval
+else
+  ac_cv_use_ml_matlab=no
+fi;
+
+echo "$as_me:$LINENO: checking whether to use ml-matlab" >&5
+echo $ECHO_N "checking whether to use ml-matlab... $ECHO_C" >&6
+
+if test "X$ac_cv_use_ml_matlab" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_ML_MATLAB
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+
+if test "X$ac_cv_use_ml_matlab" != "Xno"; then
+  BUILD_ML_MATLAB_TRUE=
+  BUILD_ML_MATLAB_FALSE='#'
+else
+  BUILD_ML_MATLAB_TRUE='#'
+  BUILD_ML_MATLAB_FALSE=
+fi
+
+
+
+    az_matlab_use=false
+
+
+if test x"$az_matlab_use" = x"true"; then
+  MATLAB_USE_TRUE=
+  MATLAB_USE_FALSE='#'
+else
+  MATLAB_USE_TRUE='#'
+  MATLAB_USE_FALSE=
+fi
+
+
+
+if test x"$az_matlab_use" = x"true"; then
+  MATLAB_ROOT_USE_TRUE=
+  MATLAB_ROOT_USE_FALSE='#'
+else
+  MATLAB_ROOT_USE_TRUE='#'
+  MATLAB_ROOT_USE_FALSE=
+fi
+
+  # Default to no matlab support
+
+
+
+    # unless MATLAB was supplied to us (as a precious variable),
+    # see if --with-matlab[=MatlabExecutablePath], --with-matlab,
+    # --without-matlab or --with-matlab=no was given.
+    if test -z "$MATLAB_EXE"
+    then
+        echo "$as_me:$LINENO: checking for --with-matlab-exec" >&5
+echo $ECHO_N "checking for --with-matlab-exec... $ECHO_C" >&6
+
+# Check whether --with-matlab-exec or --without-matlab-exec was given.
+if test "${with_matlab_exec+set}" = set; then
+  withval="$with_matlab_exec"
+
+                if test "$withval" = "yes"
+                then
+                    # "yes" was specified, but we don't have a path
+                    # for the executable.
+                    # So, let's searth the PATH Environment Variable.
+                    echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+                    # Extract the first word of "mex", so it can be a program name with args.
+set dummy mex; ac_word=$2
+echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
+if test "${ac_cv_path_MEX+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  case $MEX in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_MEX="$MEX" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_MEX="$as_dir/$ac_word$ac_exec_ext"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+
+  ;;
+esac
+fi
+MEX=$ac_cv_path_MEX
+
+if test -n "$MEX"; then
+  echo "$as_me:$LINENO: result: $MEX" >&5
+echo "${ECHO_T}$MEX" >&6
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+                    # Extract the first word of "matlab", so it can be a program name with args.
+set dummy matlab; ac_word=$2
+echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
+if test "${ac_cv_path_MATLAB+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  case $MATLAB in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_MATLAB="$MATLAB" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_MATLAB="$as_dir/$ac_word$ac_exec_ext"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+
+  ;;
+esac
+fi
+MATLAB=$ac_cv_path_MATLAB
+
+if test -n "$MATLAB"; then
+  echo "$as_me:$LINENO: result: $MATLAB" >&5
+echo "${ECHO_T}$MATLAB" >&6
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+                    if test -z "$MATLAB_EXE"
+                    then
+                        { { echo "$as_me:$LINENO: error: no path to matlab found" >&5
+echo "$as_me: error: no path to matlab found" >&2;}
+   { (exit 1); exit 1; }; }
+                    fi
+                    az_matlab_use=true
+
+
+if test x"$az_matlab_use" = x"true"; then
+  MATLAB_USE_TRUE=
+  MATLAB_USE_FALSE='#'
+else
+  MATLAB_USE_TRUE='#'
+  MATLAB_USE_FALSE=
+fi
+
+                elif test "$withval" = "no"
+                then
+                    echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+                    az_matlab_use=false
+
+
+if test x"$az_matlab_use" = x"true"; then
+  MATLAB_USE_TRUE=
+  MATLAB_USE_FALSE='#'
+else
+  MATLAB_USE_TRUE='#'
+  MATLAB_USE_FALSE=
+fi
+
+                else
+                    # $withval must be the executable path then.
+                    MATLAB_EXE="${withval}"
+
+                    echo "$as_me:$LINENO: result: $withval" >&5
+echo "${ECHO_T}$withval" >&6
+                    # Extract the first word of "mex", so it can be a program name with args.
+set dummy mex; ac_word=$2
+echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
+if test "${ac_cv_path_MEX+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  case $MEX in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_MEX="$MEX" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $MATLAB_EXE
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_MEX="$as_dir/$ac_word$ac_exec_ext"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+
+  ;;
+esac
+fi
+MEX=$ac_cv_path_MEX
+
+if test -n "$MEX"; then
+  echo "$as_me:$LINENO: result: $MEX" >&5
+echo "${ECHO_T}$MEX" >&6
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+                    # Extract the first word of "matlab", so it can be a program name with args.
+set dummy matlab; ac_word=$2
+echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
+if test "${ac_cv_path_MATLAB+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  case $MATLAB in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_MATLAB="$MATLAB" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $MATLAB_EXE
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_MATLAB="$as_dir/$ac_word$ac_exec_ext"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+
+  ;;
+esac
+fi
+MATLAB=$ac_cv_path_MATLAB
+
+if test -n "$MATLAB"; then
+  echo "$as_me:$LINENO: result: $MATLAB" >&5
+echo "${ECHO_T}$MATLAB" >&6
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+                    az_matlab_use=true
+
+
+if test x"$az_matlab_use" = x"true"; then
+  MATLAB_USE_TRUE=
+  MATLAB_USE_FALSE='#'
+else
+  MATLAB_USE_TRUE='#'
+  MATLAB_USE_FALSE=
+fi
+
+                fi
+
+else
+
+                # --with-matlab-exec was not specified.
+                echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+                az_matlab_use=false
+
+
+if test x"$az_matlab_use" = x"true"; then
+  MATLAB_USE_TRUE=
+  MATLAB_USE_FALSE='#'
+else
+  MATLAB_USE_TRUE='#'
+  MATLAB_USE_FALSE=
+fi
+
+
+
+fi;
+    fi
+
+     # Check for --with-matlab-exec
+
+
+
+    # unless MATLAB_ROOT was supplied to us (as a precious variable),
+    # see if --with-matlab-root[=MatlabExecutablePath], --with-matlab-root,
+    # --without-matlab or --with-matlab=no was given.
+    if test -z "$MATLAB_ROOT"
+    then
+        echo "$as_me:$LINENO: checking for --with-matlab-root" >&5
+echo $ECHO_N "checking for --with-matlab-root... $ECHO_C" >&6
+
+# Check whether --with-matlab-root or --without-matlab-root was given.
+if test "${with_matlab_root+set}" = set; then
+  withval="$with_matlab_root"
+
+                if test "$withval" = "yes"
+                then
+                    # "yes" was specified, not an actual path.  Well, we'd better hope that
+                    # has the root path for matlab.  We'll use mexext to check (not to mention
+                    # we need to find it anyway
+                    echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+                    # Extract the first word of "mexext", so it can be a program name with args.
+set dummy mexext; ac_word=$2
+echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
+if test "${ac_cv_path_MEXEXT+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  case $MEXEXT in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_MEXEXT="$MEXEXT" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in /bin
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_MEXEXT="$as_dir/$ac_word$ac_exec_ext"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+
+  ;;
+esac
+fi
+MEXEXT=$ac_cv_path_MEXEXT
+
+if test -n "$MEXEXT"; then
+  echo "$as_me:$LINENO: result: $MEXEXT" >&5
+echo "${ECHO_T}$MEXEXT" >&6
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+                    if test -z "$MEXEXT"
+                    then
+                        { { echo "$as_me:$LINENO: error: matlab root not found" >&5
+echo "$as_me: error: matlab root not found" >&2;}
+   { (exit 1); exit 1; }; }
+                    else
+                      MV=`$MEXEXT`
+                      MEXEXT_VALUE="$MV"
+
+                    fi
+                    az_matlab_root_use=true
+
+
+if test x"$az_matlab_root_use" = x"true"; then
+  MATLAB_ROOT_USE_TRUE=
+  MATLAB_ROOT_USE_FALSE='#'
+else
+  MATLAB_ROOT_USE_TRUE='#'
+  MATLAB_ROOT_USE_FALSE=
+fi
+
+                elif test "$withval" = "no"
+                then
+                    echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+                    az_matlab_root_use=false
+
+
+if test x"$az_matlab_root_use" = x"true"; then
+  MATLAB_ROOT_USE_TRUE=
+  MATLAB_ROOT_USE_FALSE='#'
+else
+  MATLAB_ROOT_USE_TRUE='#'
+  MATLAB_ROOT_USE_FALSE=
+fi
+
+                else
+                    # $withval must be the root path then.
+                    MATLAB_ROOT="${withval}"
+
+                    echo "$as_me:$LINENO: result: $withval" >&5
+echo "${ECHO_T}$withval" >&6
+
+                    # Check for mexext
+                    # Extract the first word of "mexext", so it can be a program name with args.
+set dummy mexext; ac_word=$2
+echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
+if test "${ac_cv_path_MEXEXT+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  case $MEXEXT in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_MEXEXT="$MEXEXT" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $MATLAB_ROOT/bin
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_MEXEXT="$as_dir/$ac_word$ac_exec_ext"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+
+  ;;
+esac
+fi
+MEXEXT=$ac_cv_path_MEXEXT
+
+if test -n "$MEXEXT"; then
+  echo "$as_me:$LINENO: result: $MEXEXT" >&5
+echo "${ECHO_T}$MEXEXT" >&6
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+                    if test -z "$MEXEXT"
+                    then
+                        { { echo "$as_me:$LINENO: error: mexext not found in $MATLAB_ROOT/bin" >&5
+echo "$as_me: error: mexext not found in $MATLAB_ROOT/bin" >&2;}
+   { (exit 1); exit 1; }; }
+                    else
+                      MV=`$MEXEXT`
+                      MEXEXT_VALUE="$MV"
+
+                    fi
+                    az_matlab_root_use=true
+
+
+if test x"$az_matlab_root_use" = x"true"; then
+  MATLAB_ROOT_USE_TRUE=
+  MATLAB_ROOT_USE_FALSE='#'
+else
+  MATLAB_ROOT_USE_TRUE='#'
+  MATLAB_ROOT_USE_FALSE=
+fi
+
+                fi
+
+else
+
+                # --with-matlab-root was not specified.
+                echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+                az_matlab_use=false
+
+
+if test x"$az_matlab_use" = x"true"; then
+  MATLAB_ROOT_USE_TRUE=
+  MATLAB_ROOT_USE_FALSE='#'
+else
+  MATLAB_ROOT_USE_TRUE='#'
+  MATLAB_ROOT_USE_FALSE=
+fi
+
+
+
+fi;
+    fi
+
+     # Check for --with-matlab-root
+
+echo "$as_me:$LINENO: checking whether we should build the matlab wrappers" >&5
+echo $ECHO_N "checking whether we should build the matlab wrappers... $ECHO_C" >&6
+if test -n "$MATLAB_EXE"; then
+  BUILD_MATLAB=yes
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+
+if true; then
+  BUILD_MATLAB_TRUE=
+  BUILD_MATLAB_FALSE='#'
+else
+  BUILD_MATLAB_TRUE='#'
+  BUILD_MATLAB_FALSE=
+fi
+
+
+  # Let's include the appropriate MATLAB include directories
+  if test -n "$MATLAB_ROOT"; then
+    MATLAB_INCLUDES=-I$MATLAB_ROOT/extern/include
+    echo "Setting MATLAB_INCLUDES to: $MATLAB_INCLUDES" #debug line
+  else
+    MATLAB_INCLUDES=
+
+  fi
+    ML_MATLAB_INCLUDES=$MATLAB_INCLUDES
+
+
+  # Cache the old CPPFLAGS, add $MATLAB_INCLUDE
+  save_CPPFLAGS=$CPPFLAGS; CPPFLAGS="$CPPFLAGS $MATLAB_INCLUDES"
+
+  # These checks are based on the relvant counterparts in epetraext.  They've been
+  # cleaned up to be in the style of the autoconf 2.5.9
+  # Check for engine.h
+  if test "${ac_cv_header_engine_h+set}" = set; then
+  echo "$as_me:$LINENO: checking for engine.h" >&5
+echo $ECHO_N "checking for engine.h... $ECHO_C" >&6
+if test "${ac_cv_header_engine_h+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+fi
+echo "$as_me:$LINENO: result: $ac_cv_header_engine_h" >&5
+echo "${ECHO_T}$ac_cv_header_engine_h" >&6
+else
+  # Is the header compilable?
+echo "$as_me:$LINENO: checking engine.h usability" >&5
+echo $ECHO_N "checking engine.h usability... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+#include <engine.h>
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_header_compiler=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_header_compiler=no
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
+echo "${ECHO_T}$ac_header_compiler" >&6
+
+# Is the header present?
+echo "$as_me:$LINENO: checking engine.h presence" >&5
+echo $ECHO_N "checking engine.h presence... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <engine.h>
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+    ac_cpp_err=$ac_cpp_err$ac_cxx_werror_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+  ac_header_preproc=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+  ac_header_preproc=no
+fi
+rm -f conftest.err conftest.$ac_ext
+echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
+echo "${ECHO_T}$ac_header_preproc" >&6
+
+# So?  What about this header?
+case $ac_header_compiler:$ac_header_preproc:$ac_cxx_preproc_warn_flag in
+  yes:no: )
+    { echo "$as_me:$LINENO: WARNING: engine.h: accepted by the compiler, rejected by the preprocessor!" >&5
+echo "$as_me: WARNING: engine.h: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { echo "$as_me:$LINENO: WARNING: engine.h: proceeding with the compiler's result" >&5
+echo "$as_me: WARNING: engine.h: proceeding with the compiler's result" >&2;}
+    ac_header_preproc=yes
+    ;;
+  no:yes:* )
+    { echo "$as_me:$LINENO: WARNING: engine.h: present but cannot be compiled" >&5
+echo "$as_me: WARNING: engine.h: present but cannot be compiled" >&2;}
+    { echo "$as_me:$LINENO: WARNING: engine.h:     check for missing prerequisite headers?" >&5
+echo "$as_me: WARNING: engine.h:     check for missing prerequisite headers?" >&2;}
+    { echo "$as_me:$LINENO: WARNING: engine.h: see the Autoconf documentation" >&5
+echo "$as_me: WARNING: engine.h: see the Autoconf documentation" >&2;}
+    { echo "$as_me:$LINENO: WARNING: engine.h:     section \"Present But Cannot Be Compiled\"" >&5
+echo "$as_me: WARNING: engine.h:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { echo "$as_me:$LINENO: WARNING: engine.h: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: engine.h: proceeding with the preprocessor's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: engine.h: in the future, the compiler will take precedence" >&5
+echo "$as_me: WARNING: engine.h: in the future, the compiler will take precedence" >&2;}
+    (
+      cat <<\_ASBOX
+## ----------------------------- ##
+## Report this to jhu@sandia.gov ##
+## ----------------------------- ##
+_ASBOX
+    ) |
+      sed "s/^/$as_me: WARNING:     /" >&2
+    ;;
+esac
+echo "$as_me:$LINENO: checking for engine.h" >&5
+echo $ECHO_N "checking for engine.h... $ECHO_C" >&6
+if test "${ac_cv_header_engine_h+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_cv_header_engine_h=$ac_header_preproc
+fi
+echo "$as_me:$LINENO: result: $ac_cv_header_engine_h" >&5
+echo "${ECHO_T}$ac_cv_header_engine_h" >&6
+
+fi
+if test $ac_cv_header_engine_h = yes; then
+  :
+else
+
+	 echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+	 echo "-----"
+     	 echo "Cannot find Matlab libeng header file engine.h."
+	 echo "Use --with-matlab-root=<DIR> to add the matlab root directory"
+         echo "(such that <DIR>/extern/include constains engine.h)"
+     	 echo "-----"
+     	 { { echo "$as_me:$LINENO: error: Matlab header file engine.h not found" >&5
+echo "$as_me: error: Matlab header file engine.h not found" >&2;}
+   { (exit 1); exit 1; }; }
+
+fi
+
+
+
+  # Check for mex.h
+  if test "${ac_cv_header_mex_h+set}" = set; then
+  echo "$as_me:$LINENO: checking for mex.h" >&5
+echo $ECHO_N "checking for mex.h... $ECHO_C" >&6
+if test "${ac_cv_header_mex_h+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+fi
+echo "$as_me:$LINENO: result: $ac_cv_header_mex_h" >&5
+echo "${ECHO_T}$ac_cv_header_mex_h" >&6
+else
+  # Is the header compilable?
+echo "$as_me:$LINENO: checking mex.h usability" >&5
+echo $ECHO_N "checking mex.h usability... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+#include <mex.h>
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_header_compiler=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_header_compiler=no
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
+echo "${ECHO_T}$ac_header_compiler" >&6
+
+# Is the header present?
+echo "$as_me:$LINENO: checking mex.h presence" >&5
+echo $ECHO_N "checking mex.h presence... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <mex.h>
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+    ac_cpp_err=$ac_cpp_err$ac_cxx_werror_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+  ac_header_preproc=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+  ac_header_preproc=no
+fi
+rm -f conftest.err conftest.$ac_ext
+echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
+echo "${ECHO_T}$ac_header_preproc" >&6
+
+# So?  What about this header?
+case $ac_header_compiler:$ac_header_preproc:$ac_cxx_preproc_warn_flag in
+  yes:no: )
+    { echo "$as_me:$LINENO: WARNING: mex.h: accepted by the compiler, rejected by the preprocessor!" >&5
+echo "$as_me: WARNING: mex.h: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { echo "$as_me:$LINENO: WARNING: mex.h: proceeding with the compiler's result" >&5
+echo "$as_me: WARNING: mex.h: proceeding with the compiler's result" >&2;}
+    ac_header_preproc=yes
+    ;;
+  no:yes:* )
+    { echo "$as_me:$LINENO: WARNING: mex.h: present but cannot be compiled" >&5
+echo "$as_me: WARNING: mex.h: present but cannot be compiled" >&2;}
+    { echo "$as_me:$LINENO: WARNING: mex.h:     check for missing prerequisite headers?" >&5
+echo "$as_me: WARNING: mex.h:     check for missing prerequisite headers?" >&2;}
+    { echo "$as_me:$LINENO: WARNING: mex.h: see the Autoconf documentation" >&5
+echo "$as_me: WARNING: mex.h: see the Autoconf documentation" >&2;}
+    { echo "$as_me:$LINENO: WARNING: mex.h:     section \"Present But Cannot Be Compiled\"" >&5
+echo "$as_me: WARNING: mex.h:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { echo "$as_me:$LINENO: WARNING: mex.h: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: mex.h: proceeding with the preprocessor's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: mex.h: in the future, the compiler will take precedence" >&5
+echo "$as_me: WARNING: mex.h: in the future, the compiler will take precedence" >&2;}
+    (
+      cat <<\_ASBOX
+## ----------------------------- ##
+## Report this to jhu@sandia.gov ##
+## ----------------------------- ##
+_ASBOX
+    ) |
+      sed "s/^/$as_me: WARNING:     /" >&2
+    ;;
+esac
+echo "$as_me:$LINENO: checking for mex.h" >&5
+echo $ECHO_N "checking for mex.h... $ECHO_C" >&6
+if test "${ac_cv_header_mex_h+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_cv_header_mex_h=$ac_header_preproc
+fi
+echo "$as_me:$LINENO: result: $ac_cv_header_mex_h" >&5
+echo "${ECHO_T}$ac_cv_header_mex_h" >&6
+
+fi
+if test $ac_cv_header_mex_h = yes; then
+  :
+else
+
+	 echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+	 echo "-----"
+     	 echo "Cannot find Matlab libmx header file mex.h."
+	 echo "Use --with-matlab-root=<DIR> to add the matlab root directory "
+         echo "(such that <DIR>/extern/include constains mex.h)"
+     	 echo "-----"
+     	 { { echo "$as_me:$LINENO: error: Matlab header file mex.h not found" >&5
+echo "$as_me: error: Matlab header file mex.h not found" >&2;}
+   { (exit 1); exit 1; }; }
+
+fi
+
+
+  # Restore CPPFLAGS
+  CPPFLAGS=$save_CPPFLAGS
+
+  # Since there's no reliable way to figure out the location of the mex libraries, let's just not check form them.
+  # If you've managed to get maltab and mex installed and specified the matlab root so we can find mexext and the
+  # mex headers, I'm going to presume that mex can link ok.
+  # TODO: Fix this later
+
+  # Link checks - if these two libraries work, chances are, they all do.
+#  save_LIBS=$LIBS
+
+#  AC_CHECK_LIB(mx,mxCreateDoubleMatrix,[],[AC_MSG_ERROR([Cannot find libmx.a library needed for Matlab subpkg, specify using --with-libdirs=-L<DIR> For information on how to specify the proper Matlab headers/libraries see epetraext/doc/matlab.README.])],[-lut -licudata -licui18n -licuio -licuuc])
+
+ # AC_CHECK_LIB(eng,engPutVariable,[],[
+ #    AC_CHECK_LIB(eng,engPutArray,[]
+ #       [AC_MSG_ERROR([Cannot find libeng.a library needed for Matlab subpkg, specify using --with-libdirs=-L<DIR> For information on how to specify the proper Matlab headers/libraries see epetraext/doc/matlab.README])],[-lut -lmx -lmat -licudata -licui18n -licuio -licuuc])
+ #],[-lut -lmx -lmat -licudata -licui18n -licuio -licuuc])
+
+  # Saves us from tryint to link everything into MATLAB
+#  LIBS=$save_LIBS
+
+
+  # If user specifies prefix, use it for the MATLAB_PREFIX
+#  if test "$prefix" != "$ac_default_prefix"; then
+#    MATLAB_PREFIX=$prefix
+#  fi
+#  if test "$exec_prefix" != "$ac_default_prefix"; then
+#    MATLAB_EXECPREFIX=$exec_prefix
+#  fi
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+  BUILD_MATLAB=no
+
+
+if false; then
+  BUILD_MATLAB_TRUE=
+  BUILD_MATLAB_FALSE='#'
+else
+  BUILD_MATLAB_TRUE='#'
+  BUILD_MATLAB_FALSE=
+fi
+
+fi
+
+
+
 
 # ------------------------------------------------------------------------
 # Checks for compiler characteristics
@@ -12902,7 +13823,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:12905: \"$ac_link\") >&5
+(eval echo $as_me:13826: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -12980,7 +13901,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:12983: \"$ac_link\") >&5
+(eval echo $as_me:13904: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -13230,7 +14151,7 @@ fi
 #                test/scripts/daily/mpi/Makefile
 #                test/scripts/daily/serial/Makefile
 #		])
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ac_config_files="$ac_config_files Makefile Makefile.export Makefile.export.ml src/Makefile doc/Makefile examples/Makefile examples/Advanced/Makefile examples/BasicExamples/Makefile examples/Elasticity/Makefile examples/MatrixFormats/Makefile examples/MatrixReading/Makefile examples/MatrixFree/Makefile examples/StandAlone/Makefile examples/TwoLevelDD/Makefile examples/Maxwell/Makefile examples/Visualization/Makefile examples/MultipleRHS/Makefile examples/MLAPI/Makefile examples/NonlinML/Makefile examples/Other/Makefile test/Makefile test/MultiLevelPreconditioner_NonSym/Makefile test/MultiLevelPreconditioner_Sym/Makefile test/MultiLevelPreconditioner_Maxwell/Makefile test/MultiLevelPreconditioner_Aux/Makefile test/MultiLevelPreconditioner_GetRow/Makefile test/ML_Operator2Epetra_RowMatrix/Makefile test/AztecSimple/Makefile test/2d_Poisson/Makefile test/3d_Poisson/Makefile test/IFPACKSmoothers/Makefile test/MLAPICompare/Makefile test/MLAPILinearCombination/Makefile test/MLAPISerialMatrix/Makefile test/MLAPIDistributedMatrix/Makefile test/Communicator/Makefile test/SelfSmoother/Makefile test/METISCoarsening/Makefile test/MatrixFree/Makefile python/Makefile python/src/Makefile python/src/TRILINOS_HOME_DIR python/src/__init__.py python/src/.deps/dummy python/example/Makefile python/test/Makefile"
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      ac_config_files="$ac_config_files Makefile Makefile.export Makefile.export.ml src/Makefile doc/Makefile examples/Makefile examples/Advanced/Makefile examples/BasicExamples/Makefile examples/Elasticity/Makefile examples/MatrixFormats/Makefile examples/MatrixReading/Makefile examples/MatrixFree/Makefile examples/StandAlone/Makefile examples/TwoLevelDD/Makefile examples/Maxwell/Makefile examples/Visualization/Makefile examples/MultipleRHS/Makefile examples/MLAPI/Makefile examples/NonlinML/Makefile examples/Other/Makefile test/Makefile test/MultiLevelPreconditioner_NonSym/Makefile test/MultiLevelPreconditioner_Sym/Makefile test/MultiLevelPreconditioner_Maxwell/Makefile test/MultiLevelPreconditioner_Aux/Makefile test/MultiLevelPreconditioner_GetRow/Makefile test/ML_Operator2Epetra_RowMatrix/Makefile test/AztecSimple/Makefile test/2d_Poisson/Makefile test/3d_Poisson/Makefile test/IFPACKSmoothers/Makefile test/MLAPICompare/Makefile test/MLAPILinearCombination/Makefile test/MLAPISerialMatrix/Makefile test/MLAPIDistributedMatrix/Makefile test/Communicator/Makefile test/SelfSmoother/Makefile test/METISCoarsening/Makefile test/MatrixFree/Makefile python/Makefile python/src/Makefile python/src/TRILINOS_HOME_DIR python/src/__init__.py python/src/.deps/dummy python/example/Makefile python/test/Makefile matlab/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -13580,6 +14501,97 @@ if test -z "${HAVE_SWIG_TRUE}" && test -z "${HAVE_SWIG_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"HAVE_SWIG\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"HAVE_SWIG\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_ML_MATLAB_TRUE}" && test -z "${BUILD_ML_MATLAB_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_ML_MATLAB\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_ML_MATLAB\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${MATLAB_USE_TRUE}" && test -z "${MATLAB_USE_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"MATLAB_USE\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"MATLAB_USE\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${MATLAB_ROOT_USE_TRUE}" && test -z "${MATLAB_ROOT_USE_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"MATLAB_ROOT_USE\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"MATLAB_ROOT_USE\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${MATLAB_USE_TRUE}" && test -z "${MATLAB_USE_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"MATLAB_USE\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"MATLAB_USE\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${MATLAB_USE_TRUE}" && test -z "${MATLAB_USE_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"MATLAB_USE\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"MATLAB_USE\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${MATLAB_USE_TRUE}" && test -z "${MATLAB_USE_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"MATLAB_USE\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"MATLAB_USE\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${MATLAB_USE_TRUE}" && test -z "${MATLAB_USE_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"MATLAB_USE\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"MATLAB_USE\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${MATLAB_ROOT_USE_TRUE}" && test -z "${MATLAB_ROOT_USE_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"MATLAB_ROOT_USE\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"MATLAB_ROOT_USE\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${MATLAB_ROOT_USE_TRUE}" && test -z "${MATLAB_ROOT_USE_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"MATLAB_ROOT_USE\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"MATLAB_ROOT_USE\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${MATLAB_ROOT_USE_TRUE}" && test -z "${MATLAB_ROOT_USE_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"MATLAB_ROOT_USE\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"MATLAB_ROOT_USE\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${MATLAB_ROOT_USE_TRUE}" && test -z "${MATLAB_ROOT_USE_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"MATLAB_ROOT_USE\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"MATLAB_ROOT_USE\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_MATLAB_TRUE}" && test -z "${BUILD_MATLAB_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_MATLAB\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_MATLAB\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_MATLAB_TRUE}" && test -z "${BUILD_MATLAB_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_MATLAB\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_MATLAB\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -14073,6 +15085,7 @@ do
   "python/src/.deps/dummy" ) CONFIG_FILES="$CONFIG_FILES python/src/.deps/dummy" ;;
   "python/example/Makefile" ) CONFIG_FILES="$CONFIG_FILES python/example/Makefile" ;;
   "python/test/Makefile" ) CONFIG_FILES="$CONFIG_FILES python/test/Makefile" ;;
+  "matlab/Makefile" ) CONFIG_FILES="$CONFIG_FILES matlab/Makefile" ;;
   "depfiles" ) CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
   "src/ml_config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS src/ml_config.h:src/ml_config.h.in" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
@@ -14294,6 +15307,21 @@ s,@GNU_HAVE_SWIG@,$GNU_HAVE_SWIG,;t t
 s,@FLIBS@,$FLIBS,;t t
 s,@BLAS_LIBS@,$BLAS_LIBS,;t t
 s,@LAPACK_LIBS@,$LAPACK_LIBS,;t t
+s,@BUILD_ML_MATLAB_TRUE@,$BUILD_ML_MATLAB_TRUE,;t t
+s,@BUILD_ML_MATLAB_FALSE@,$BUILD_ML_MATLAB_FALSE,;t t
+s,@MATLAB_USE_TRUE@,$MATLAB_USE_TRUE,;t t
+s,@MATLAB_USE_FALSE@,$MATLAB_USE_FALSE,;t t
+s,@MATLAB_ROOT_USE_TRUE@,$MATLAB_ROOT_USE_TRUE,;t t
+s,@MATLAB_ROOT_USE_FALSE@,$MATLAB_ROOT_USE_FALSE,;t t
+s,@MATLAB_EXE@,$MATLAB_EXE,;t t
+s,@MEX@,$MEX,;t t
+s,@MATLAB@,$MATLAB,;t t
+s,@MATLAB_ROOT@,$MATLAB_ROOT,;t t
+s,@MEXEXT@,$MEXEXT,;t t
+s,@MEXEXT_VALUE@,$MEXEXT_VALUE,;t t
+s,@BUILD_MATLAB_TRUE@,$BUILD_MATLAB_TRUE,;t t
+s,@BUILD_MATLAB_FALSE@,$BUILD_MATLAB_FALSE,;t t
+s,@ML_MATLAB_INCLUDES@,$ML_MATLAB_INCLUDES,;t t
 s,@TRILINOS_TEMPLATE_OBJS@,$TRILINOS_TEMPLATE_OBJS,;t t
 s,@ac_aux_dir@,$ac_aux_dir,;t t
 s,@LTLIBOBJS@,$LTLIBOBJS,;t t

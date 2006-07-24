@@ -122,7 +122,12 @@ PYTHON_SUBDIR=python
 endif
 endif
 
-SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) doc $(PYTHON_SUBDIR)
+if BUILD_ML_MATLAB
+MATLAB_SUBDIR=matlab
+endif
+
+
+SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) doc $(PYTHON_SUBDIR) $(MATLAB_SUBDIR)
 
 
 ## #######################################################################
