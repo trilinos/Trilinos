@@ -26,33 +26,28 @@
 # ************************************************************************
 # @HEADER
 
-"""Set the python search path to include the library build directory
-created by the python distutils module."""
+"""
+Set the python search path to include the library build directory created by the
+python distutils module.
+"""
 
 # System includes
-import commands
 import os
-import string
 import sys
 from   distutils.util import get_platform
 
-# Consruct the setup.txt file name
+# Obtain the current directory name
 myDir,myName = os.path.split(__file__)
-setup_txt    = os.path.normpath(os.path.join(myDir, "..", "src", "setup.txt"))
-
-f = open(setup_txt)
-makeInfo = f.readlines()
-f.close()
-makeInfo = eval(string.join(makeInfo))
 
 # Construct the the build library directory name
 libDir = "lib.%s-%s" % (get_platform(), sys.version[0:3])
 
-# Get the path to the build directories
-fullPath = os.path.normpath(os.path.join(myDir, "..", "src", "build", libDir,
-                                         "PyTrilinos"))
+# List the packages that should be added to the search path
+packages = ["nox", "epetra"]
 
-# Insert the full path to the build library directory
-# at the beginning of the python search path
-if fullPath:
-    sys.path.insert(0,fullPath)
+# Add the python build directory for each package to the search path
+for package in packages:
+    fullPath = os.path.normpath(os.path.join(myDir, "..", "..", "..", package,
+                                             "python", "src", "build", libDir,
+                                             "PyTrilinos"))
+    sys.path.insert(1,fullPath)

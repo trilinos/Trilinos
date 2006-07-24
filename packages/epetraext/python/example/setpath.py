@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#         PyTrilinos.New_Package: Python Interface to New_Package
+#           PyTrilinos.EpetraExt: Python Interface to EpetraExt
 #                   Copyright (2005) Sandia Corporation
 #
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -26,8 +26,10 @@
 # ************************************************************************
 # @HEADER
 
-"""Set the python search path to include the library build directory
-created by the python distutils module."""
+"""
+Set the python search path to include the library build directory created by the
+python distutils module.
+"""
 
 # System includes
 import os
@@ -40,16 +42,12 @@ myDir,myName = os.path.split(__file__)
 # Construct the the build library directory name
 libDir = "lib.%s-%s" % (get_platform(), sys.version[0:3])
 
-# Get the full path to the build directories
-fullPath   = os.path.normpath(os.path.join(myDir, "..", "src", "build", libDir,
-                                           "PyTrilinos"))
-epetraPath = os.path.normpath(os.path.join(myDir, "..", "..", "..", "epetra",
-                                           "python", "src", "build", libDir,
-                                           "PyTrilinos"))
+# List the packages that should be added to the search path
+packages = ["epetraext", "epetra"]
 
-# Insert the full path to the build library directory
-# at the beginning of the python search path
-if fullPath:
-    sys.path.insert(0,fullPath)
-if epetraPath:
-    sys.path.insert(1,epetraPath)
+# Add the python build directory for each package to the search path
+for package in packages:
+    fullPath = os.path.normpath(os.path.join(myDir, "..", "..", "..", package,
+                                             "python", "src", "build", libDir,
+                                             "PyTrilinos"))
+    sys.path.insert(1,fullPath)

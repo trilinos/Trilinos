@@ -26,8 +26,10 @@
 # ************************************************************************
 # @HEADER
 
-"""Set the python search path to include the library build directory
-created by the python distutils module."""
+"""
+Set the python search path to include the library build directory created by the
+python distutils module.
+"""
 
 # System includes
 import os
@@ -40,21 +42,12 @@ myDir,myName = os.path.split(__file__)
 # Construct the the build library directory name
 libDir = "lib.%s-%s" % (get_platform(), sys.version[0:3])
 
-# Get the full path to the build directories
-fullPath    = os.path.normpath(os.path.join(myDir, "..", "src", "build", libDir,
-                                            "PyTrilinos"))
-teuchosPath = os.path.normpath(os.path.join(myDir, "..", "..", "..", "teuchos",
-                                            "python", "src", "build", libDir,
-                                            "PyTrilinos"))
-epetraPath  = os.path.normpath(os.path.join(myDir, "..", "..", "..", "epetra",
-                                            "python", "src", "build", libDir,
-                                            "PyTrilinos"))
+# List the packages that should be added to the search path
+packages = ["amesos", "teuchos", "epetra"]
 
-# Insert the full path to the build library directory
-# at the beginning of the python search path
-if fullPath:
-    sys.path.insert(0,fullPath)
-if teuchosPath:
-    sys.path.insert(1,teuchosPath)
-if epetraPath:
-    sys.path.insert(1,epetraPath)
+# Add the python build directory for each package to the search path
+for package in packages:
+    fullPath = os.path.normpath(os.path.join(myDir, "..", "..", "..", package,
+                                             "python", "src", "build", libDir,
+                                             "PyTrilinos"))
+    sys.path.insert(1,fullPath)
