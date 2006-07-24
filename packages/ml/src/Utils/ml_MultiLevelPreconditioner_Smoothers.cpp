@@ -600,7 +600,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       }
       else if (SubSmootherType == "symmetric Gauss-Seidel") {
         sprintf(parameter,"subsmoother: damping factor (level %d)",
-                level);
+                logical_level);
         omega = List_.get(parameter,ML_DDEFAULT);
         nodal_smoother=(void *) ML_Gen_Smoother_SymGaussSeidel;
         ML_Smoother_Arglist_Set(nodal_args_, 0, &nodal_its);
