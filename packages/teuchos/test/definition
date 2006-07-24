@@ -67,7 +67,7 @@
 
 (FRAMEWORK,INSTALL) {
     TESTS = Comm/Comm_test.exe;
-    ARGS = --verbose --teuchos-suppress-startup-banner;
+    ARGS = --teuchos-suppress-startup-banner;
     EXIT-STATUS = STRING-COMPARISON;
     COMM = MPI(1-10),SERIAL;
 }
