@@ -54,29 +54,6 @@ if test -n "$MATLAB_EXE"; then
   # Since there's no reliable way to figure out the location of the mex libraries, let's just not check form them.  
   # If you've managed to get maltab and mex installed and specified the matlab root so we can find mexext and the 
   # mex headers, I'm going to presume that mex can link ok. 
-  # TODO: Fix this later
-
-  # Link checks - if these two libraries work, chances are, they all do.
-#  save_LIBS=$LIBS
-
-#  AC_CHECK_LIB(mx,mxCreateDoubleMatrix,[],[AC_MSG_ERROR([Cannot find libmx.a library needed for Matlab subpkg, specify using --with-libdirs=-L<DIR> For information on how to specify the proper Matlab headers/libraries see epetraext/doc/matlab.README.])],[-lut -licudata -licui18n -licuio -licuuc])
-
- # AC_CHECK_LIB(eng,engPutVariable,[],[
- #    AC_CHECK_LIB(eng,engPutArray,[]
- #       [AC_MSG_ERROR([Cannot find libeng.a library needed for Matlab subpkg, specify using --with-libdirs=-L<DIR> For information on how to specify the proper Matlab headers/libraries see epetraext/doc/matlab.README])],[-lut -lmx -lmat -licudata -licui18n -licuio -licuuc])
- #],[-lut -lmx -lmat -licudata -licui18n -licuio -licuuc])
-
-  # Saves us from tryint to link everything into MATLAB
-#  LIBS=$save_LIBS	
-
-
-  # If user specifies prefix, use it for the MATLAB_PREFIX
-#  if test "$prefix" != "$ac_default_prefix"; then
-#    MATLAB_PREFIX=$prefix
-#  fi
-#  if test "$exec_prefix" != "$ac_default_prefix"; then
-#    MATLAB_EXECPREFIX=$exec_prefix
-#  fi
 
 else
   AC_MSG_RESULT(no)
