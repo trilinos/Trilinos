@@ -154,7 +154,7 @@ namespace Anasazi {
   class LOBPCGOrthoFailure : public AnasaziError {public:
     LOBPCGOrthoFailure(const std::string& what_arg) : AnasaziError(what_arg)
     {}};
-  
+
   //@}
 
 
@@ -1178,27 +1178,31 @@ namespace Anasazi {
       //---------------------------------------------------
       // The sort manager is templated on ScalarType
       // Make a ScalarType copy of _theta for sorting
-      std::vector<int> _order(_nevLocal);
-      std::vector<ScalarType> _theta_st(_theta.size());
       {
         Teuchos::TimeMonitor SortTimer( *_timerSortEval );
+
+        std::vector<int> _order(_nevLocal);
+
+        std::vector<ScalarType> _theta_st(_theta.size());
         std::copy(_theta.begin(),_theta.begin()+_nevLocal,_theta_st.begin());
+
         _sm->sort( this, _nevLocal, &(_theta_st[0]), &_order );   // don't catch exception
         
         // Reorder _theta according to sorting results from _theta_st
         std::vector<MagnitudeType> _theta_copy(_theta);
         for (int i=0; i<_nevLocal; i++) {
-          _theta[i] = _theta_copy[_order[i]];
+          _theta[i] = SCT::real(_theta_copy[_order[i]]);
+        }
+
+        // Sort the primitive ritz vectors
+        // We need the first _blockSize vectors ordered to generate the next
+        // columns immediately below, as well as later, when/if we restart.
+        Teuchos::SerialDenseMatrix<int,ScalarType> copyS( S );
+        for (int i=0; i<_nevLocal; i++) {
+          blas.COPY(_nevLocal, copyS[_order[i]], 1, S[i], 1);
         }
       }
       _om->stream(Debug) << " After directSolve: localSize == " << localSize << " \tnevLocal == " << _nevLocal << endl;
-      // Sort the primitive ritz vectors
-      // We need the first _blockSize vectors ordered to generate the next
-      // columns immediately below, as well as later, when/if we restart.
-      Teuchos::SerialDenseMatrix<int,ScalarType> copyS( S );
-      for (int i=0; i<_nevLocal; i++) {
-        blas.COPY(_nevLocal, copyS[_order[i]], 1, S[i], 1);
-      }
       
       // before computing X,P: perform second orthogonalization per Ulrich,Rich paper
       // CX will be the coefficients of [X,H,P] for new X, CP for new P
