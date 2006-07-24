@@ -82,12 +82,10 @@ For examples of usage, please consult the python/example subdirectory.
 #include "Epetra_PyRowMatrix.h"
 
 // Teuchos includes
-#include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 
 // Teuchos Python utility code
 #include "Teuchos_PythonParameter.hpp"
-#include "Teuchos_PyDictParameterList.hpp"
 
 // Amesos includes
 #include "Amesos_ConfigDefs.h"
