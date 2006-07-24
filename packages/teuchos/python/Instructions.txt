@@ -63,19 +63,12 @@ with the Teuchos wrappers, follow these steps:
 
 5.  For the test and example scripts to find the Teuchos module,
     change the setpath.py scripts in python/example and python/test
-    directories to include
+    directories so that the "packages" list
 
-    teuchosPath = os.path.normpath(os.path.join(myDir, "..", "..", "..", "teuchos",
-                                                "python", "src", "build", libDir,
-                                                "PyTrilinos"))
+    packages = [...]
 
-    and
-
-    if teuchosPath:
-        sys.path.insert(1,teuchosPath)
-
-    and make sure the insert methods do not overwrite each other.
+    includes the string "teuchos".
 
 
-After these changes are made, you should be able to bootstrap,
-configure and make the python wrappers for your package.
+After these changes are made, you are ready to bootstrap, configure,
+make and debug the python wrappers for your package.
