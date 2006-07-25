@@ -117,6 +117,8 @@ TAC_ARG_ENABLE_FEATURE(rtop, [Build RTOP], RTOP, no)
 
 TAC_ARG_ENABLE_FEATURE(thyra, [Build thyra], THYRA, no)
 
+TAC_ARG_ENABLE_FEATURE(stratimikos, [Build stratimikos], STRATIMIKOS, no)
+
 TAC_ARG_ENABLE_FEATURE(moocho, [Build moocho], MOOCHO, no)
 
 TAC_ARG_ENABLE_FEATURE(tpetra, [Build tpetra], TPETRA, no)
@@ -139,6 +141,7 @@ AC_ARG_ENABLE(aztecoo-teuchos,
 
 if test "X$ac_cv_use_teuchos" != "Xno" ||
 	test "X$ac_cv_use_thyra" != "Xno" ||
+	test "X$ac_cv_use_stratimikos" != "Xno" ||
 	test "X$ac_cv_use_tpetra" != "Xno" ||
         test "X$ac_cv_use_tsfextended" != "Xno" ||
  	test "X$ac_cv_use_tsfcore" != "Xno" ||
@@ -181,7 +184,8 @@ AM_CONDITIONAL(BUILD_RTOP, test "X$BUILD_RTOP" != "Xno")
 
 if test "X$ac_cv_use_thyra" != "Xno" ||
 	test "X$ac_cv_use_capo" != "Xno" ||
-	test "X$ac_cv_use_rythmos" != "Xno"; then
+	test "X$ac_cv_use_rythmos" != "Xno" ||
+	test "X$ac_cv_use_stratimikos" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/thyra])
   BUILD_THYRA=yes
   if test "X$ac_cv_use_thyra_explicit" != "Xyes"; then
@@ -191,6 +195,17 @@ else
   BUILD_THYRA=no
 fi
 AM_CONDITIONAL(BUILD_THYRA, test "X$BUILD_THYRA" != "Xno")
+
+if test "X$ac_cv_use_stratimikos" != "Xno"; then
+  AC_CONFIG_SUBDIRS([packages/stratimikos])
+  BUILD_STRATIMIKOS=yes
+  if test "X$ac_cv_use_stratimikos_explicit" != "Xyes"; then
+    ac_configure_args="$ac_configure_args --enable-stratimikos"
+  fi
+else
+  BUILD_STRATIMIKOS=no
+fi
+AM_CONDITIONAL(BUILD_STRATIMIKOS, test "X$BUILD_STRATIMIKOS" != "Xno")
 
 if test "X$ac_cv_use_kokkos" != "Xno" ||
   	test "X$ac_cv_use_tpetra" != "Xno"; then
