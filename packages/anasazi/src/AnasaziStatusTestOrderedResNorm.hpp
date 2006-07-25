@@ -236,9 +236,14 @@ TestStatus StatusTestOrderedResNorm<ScalarType,MV,OP>::checkStatus( Eigensolver<
   // add -1 residuals for the auxiliary values (-1 < _tol)
   res.insert(res.end(),numaux,-MT::one());
 
-  // sort the eigenvalues
+  // sort the eigenvalues; SortManager takes a vector of ScalarType, so promote our eigenvalues
+  // we don't actually need the sorted eigenvalues; just the permutation vector
+  std::vector<ScalarType> evals_st(evals.size());
+  copy(evals.begin(),evals.end(),evals_st.begin());
   std::vector<int> perm(num,-1);
-  _sorter->sort(solver,num,&evals[0],&perm);
+  _sorter->sort(solver,num,&evals_st[0],&perm);
+  // we don't need to the eigenvalues anymore, so don't bother moving the sorted values back to the MagnitudeType vector
+
   // sort the residuals
   std::vector<MagnitudeType> oldres = res;
   // apply the sorting to the residuals and original indices
@@ -246,7 +251,7 @@ TestStatus StatusTestOrderedResNorm<ScalarType,MV,OP>::checkStatus( Eigensolver<
     res[i] = oldres[perm[i]];
   }
 
-  // indices: [0,bs) are solver evals, [bs,bs+numaux) are from _vals
+  // indices: [0,bs) are from solver, [bs,bs+numaux) are from _vals
   _ind.resize(num);
 
   // test the norms: we want res [0,quorum) to be <= tol

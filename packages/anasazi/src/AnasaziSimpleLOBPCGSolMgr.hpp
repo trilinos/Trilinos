@@ -27,11 +27,11 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef ANASAZI_SIMPLE_LOBPCG_SOLVERMANAGER_HPP
-#define ANASAZI_SIMPLE_LOBPCG_SOLVERMANAGER_HPP
+#ifndef ANASAZI_SIMPLE_LOBPCG_SOLMGR_HPP
+#define ANASAZI_SIMPLE_LOBPCG_SOLMGR_HPP
 
-/*! \file AnasaziSimpleLOBPCGSolverManager.hpp
-  \brief The Anasazi::SimpleLOBPCGSolverManager provides a simple solver manager over the LOBPCG 
+/*! \file AnasaziSimpleLOBPCGSolMgr.hpp
+  \brief The Anasazi::SimpleLOBPCGSolMgr provides a simple solver manager over the LOBPCG 
   eigensolver.
 */
 
@@ -50,11 +50,11 @@
 #include "AnasaziBasicOutputManager.hpp"
 #include "AnasaziModalSolverUtils.hpp"
 
-/*! \class Anasazi::SimpleLOBPCGSolverManager
-  \brief The Anasazi::SimpleLOBPCGSolverManager provides a simple solver
+/*! \class Anasazi::SimpleLOBPCGSolMgr
+  \brief The Anasazi::SimpleLOBPCGSolMgr provides a simple solver
   manager over the LOBPCG eigensolver. 
 
-  Anasazi::SimpleLOBPCGSolverManager allows the user to specify convergence
+  Anasazi::SimpleLOBPCGSolMgr allows the user to specify convergence
   tolerance, verbosity level and block size. When block size is less than the
   number of requested eigenvalues specified in the eigenproblem, checkpointing
   is activated.
@@ -72,7 +72,7 @@
 namespace Anasazi {
 
 template<class ScalarType, class MV, class OP>
-class SimpleLOBPCGSolverManager : public SolverManager<ScalarType,MV,OP> {
+class SimpleLOBPCGSolMgr : public SolverManager<ScalarType,MV,OP> {
 
   private:
     typedef MultiVecTraits<ScalarType,MV> MVT;
@@ -84,11 +84,11 @@ class SimpleLOBPCGSolverManager : public SolverManager<ScalarType,MV,OP> {
   //@{ \name Constructors/Destructor.
 
   //! Basic Constructor.
-  SimpleLOBPCGSolverManager( const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem,
+  SimpleLOBPCGSolMgr( const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem,
                              Teuchos::ParameterList &pl );
 
   //! Destructor.
-  virtual ~SimpleLOBPCGSolverManager() {};
+  virtual ~SimpleLOBPCGSolMgr() {};
   //@}
   
   //@{ \name Accessor methods
@@ -126,7 +126,7 @@ class SimpleLOBPCGSolverManager : public SolverManager<ScalarType,MV,OP> {
 
 ////////////////////////////////////////////////////////////////////////////////////////
 template<class ScalarType, class MV, class OP>
-SimpleLOBPCGSolverManager<ScalarType,MV,OP>::SimpleLOBPCGSolverManager( 
+SimpleLOBPCGSolMgr<ScalarType,MV,OP>::SimpleLOBPCGSolMgr( 
         const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem,
         Teuchos::ParameterList &pl ) : 
   _problem(problem),
@@ -136,26 +136,26 @@ SimpleLOBPCGSolverManager<ScalarType,MV,OP>::SimpleLOBPCGSolverManager(
   _blockSize(0),
   _maxIters(0)
 {
-  TEST_FOR_EXCEPTION(_problem == Teuchos::null, AnasaziError, "SimpleLOBPCGSolverManager: Problem not given to solver manager.");
-  TEST_FOR_EXCEPTION(!_problem->isProblemSet(), AnasaziError, "SimpleLOBPCGSolverManager: Problem not set.");
-  TEST_FOR_EXCEPTION(!_problem->isHermitian(), AnasaziError,  "SimpleLOBPCGSolverManager: Problem not hermitian.");
+  TEST_FOR_EXCEPTION(_problem == Teuchos::null, AnasaziError, "SimpleLOBPCGSolMgr: Problem not given to solver manager.");
+  TEST_FOR_EXCEPTION(!_problem->isProblemSet(), AnasaziError, "SimpleLOBPCGSolMgr: Problem not set.");
+  TEST_FOR_EXCEPTION(!_problem->isHermitian(), AnasaziError,  "SimpleLOBPCGSolMgr: Problem not hermitian.");
 
   _whch = pl.get("Which","SM");
   TEST_FOR_EXCEPTION(_whch != "SM" && _whch != "LM" && _whch != "SR" && _whch != "LR",
                      AnasaziError,
-                     "SimpleLOBPCGSolverManager: \"Which\" parameter must be SM, LM, SR or LR.");
+                     "SimpleLOBPCGSolMgr: \"Which\" parameter must be SM, LM, SR or LR.");
 
   _tol = pl.get("Convergence Tolerance",_tol);
   TEST_FOR_EXCEPTION(_tol <= 0,
                      AnasaziError,
-                     "SimpleLOBPCGSolverManager: \"Tolerance\" parameter must be strictly postiive.");
+                     "SimpleLOBPCGSolMgr: \"Tolerance\" parameter must be strictly postiive.");
 
   _verb = pl.get("Verbosity",_verb);
 
   _blockSize= pl.get("Block Size",_problem->getNEV());
   TEST_FOR_EXCEPTION(_blockSize <= 0,
                      AnasaziError,
-                     "SimpleLOBPCGSolverManager: \"Block Size\" parameter must be strictly positive.");
+                     "SimpleLOBPCGSolMgr: \"Block Size\" parameter must be strictly positive.");
 
   _maxIters = pl.get("Max Iters",_maxIters);
 }
@@ -165,7 +165,7 @@ SimpleLOBPCGSolverManager<ScalarType,MV,OP>::SimpleLOBPCGSolverManager(
 ////////////////////////////////////////////////////////////////////////////////////////
 template<class ScalarType, class MV, class OP>
 ReturnType 
-SimpleLOBPCGSolverManager<ScalarType,MV,OP>::solve() {
+SimpleLOBPCGSolMgr<ScalarType,MV,OP>::solve() {
 
   // sort manager
   Teuchos::RefCountPtr<BasicSort<ScalarType,MV,OP> > sorter = Teuchos::rcp( new BasicSort<ScalarType,MV,OP>(_whch) );
@@ -234,7 +234,7 @@ SimpleLOBPCGSolverManager<ScalarType,MV,OP>::solve() {
       // if num < _blockSize, it is because we are on the last iteration: num+numfound>=nev
       TEST_FOR_EXCEPTION(num < _blockSize && num+numfound < nev,
                          std::logic_error,
-                         "Anasazi::SimpleLOBPCGSolverManager::solve(): logic error.");
+                         "Anasazi::SimpleLOBPCGSolMgr::solve(): logic error.");
       std::vector<int> ind = norm->whichVecs();
       // just grab the ones that we need
       if (num + numfound > nev) {
@@ -289,11 +289,11 @@ SimpleLOBPCGSolverManager<ScalarType,MV,OP>::solve() {
       break;  // while(numfound < nev)
     }
     else {
-      TEST_FOR_EXCEPTION(true,std::logic_error,"Anasazi::SimpleLOBPCGSolverManager::solve(): solver returned without satisfy status test.");
+      TEST_FOR_EXCEPTION(true,std::logic_error,"Anasazi::SimpleLOBPCGSolMgr::solve(): solver returned without satisfy status test.");
     }
   } // end of while(numfound < nev)
 
-  TEST_FOR_EXCEPTION(foundvecs.size() != foundvals.size(),std::logic_error,"Anasazi::SimpleLOBPCGSolverManager::solve(): inconsistent array sizes");
+  TEST_FOR_EXCEPTION(foundvecs.size() != foundvals.size(),std::logic_error,"Anasazi::SimpleLOBPCGSolMgr::solve(): inconsistent array sizes");
 
   // create contiguous storage for all eigenvectors, eigenvalues
   Eigensolution<ScalarType,MV> sol;
@@ -313,7 +313,7 @@ SimpleLOBPCGSolverManager<ScalarType,MV,OP>::solve() {
   // store eigenvectors, eigenvalues
   int curttl = 0;
   for (unsigned int i=0; i<foundvals.size(); i++) {
-    TEST_FOR_EXCEPTION((signed int)(foundvals[i]->size()) != MVT::GetNumberVecs(*foundvecs[i]), std::logic_error, "Anasazi::SimpleLOBPCGSolverManager::solve(): inconsistent sizes");
+    TEST_FOR_EXCEPTION((signed int)(foundvals[i]->size()) != MVT::GetNumberVecs(*foundvecs[i]), std::logic_error, "Anasazi::SimpleLOBPCGSolMgr::solve(): inconsistent sizes");
     unsigned int lclnum = foundvals[i]->size();
     std::vector<int> lclind(lclnum);
     for (unsigned int j=0; j<lclnum; j++) lclind[j] = curttl+j;
@@ -324,7 +324,7 @@ SimpleLOBPCGSolverManager<ScalarType,MV,OP>::solve() {
 
     curttl += lclnum;
   }
-  TEST_FOR_EXCEPTION( curttl != sol.numVecs, std::logic_error, "Anasazi::SimpleLOBPCGSolverManager::solve(): inconsistent sizes");
+  TEST_FOR_EXCEPTION( curttl != sol.numVecs, std::logic_error, "Anasazi::SimpleLOBPCGSolMgr::solve(): inconsistent sizes");
 
   // sort the eigenvalues and permute the eigenvectors appropriately
   // this requires making a ScalarType version of our MagnitudeType eigenvalues
@@ -344,7 +344,7 @@ SimpleLOBPCGSolverManager<ScalarType,MV,OP>::solve() {
   // send the solution to the eigenproblem
   _problem->setSolution(sol);
 
-  // return from SolverManager::solve()
+  // return from SolMgr::solve()
   if (sol.numVecs < nev) return Unconverged;
   return Converged;
 }
@@ -354,4 +354,4 @@ SimpleLOBPCGSolverManager<ScalarType,MV,OP>::solve() {
 
 } // end Anasazi namespace
 
-#endif /* ANASAZI_SIMPLE_LOBPCG_SOLVERMANAGER_HPP */
+#endif /* ANASAZI_SIMPLE_LOBPCG_SOLMGR_HPP */

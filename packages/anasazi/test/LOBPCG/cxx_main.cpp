@@ -26,7 +26,8 @@
 // ***********************************************************************
 // @HEADER
 //
-//  This test is for the internal utilities that are used by the modal analysis solver.
+// This test is for LOBPCG solving a standard (Ax=xl) real Hermitian
+// eigenvalue problem, using the LOBPCGSolMgr solver manager.
 //
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziTypes.hpp"
@@ -36,7 +37,7 @@
 #include "Epetra_Vector.h"
 
 #include "AnasaziBasicEigenproblem.hpp"
-#include "AnasaziLOBPCGSolverManager.hpp"
+#include "AnasaziLOBPCGSolMgr.hpp"
 
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
@@ -46,12 +47,12 @@
 #endif
 
 #include "ModeLaplace1DQ1.h"
+using namespace Teuchos;
 
 int main(int argc, char *argv[]) 
 {
   int i;
   int info = 0;
-  bool boolret;
   
 #ifdef EPETRA_MPI
 
@@ -67,7 +68,7 @@ int main(int argc, char *argv[])
 
   int MyPID = Comm.MyPID();
 
-  bool testFailed = false;
+  bool testFailed;
   bool verbose = 0;
   std::string which("LM");
   if (argc>1) {
@@ -94,7 +95,7 @@ int main(int argc, char *argv[])
   Anasazi::ReturnType returnCode;
   
   typedef double ScalarType;
-  typedef Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
+  typedef ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
   typedef Epetra_MultiVector MV;
   typedef Epetra_Operator OP;
 
@@ -105,23 +106,21 @@ int main(int argc, char *argv[])
   std::vector<int> elements( space_dim );
   elements[0] = 100;
 
-  // Create problem
-  Teuchos::RefCountPtr<ModalProblem> testCase = Teuchos::rcp( new ModeLaplace1DQ1(Comm, brick_dim[0], elements[0]) );
-  int nev = 5;
+  RefCountPtr<ModalProblem> testCase = rcp( new ModeLaplace1DQ1(Comm, brick_dim[0], elements[0]) );
   //
   // Get the stiffness and mass matrices
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> K = Teuchos::rcp( const_cast<Epetra_CrsMatrix *>(testCase->getStiffness()), false );
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> M = Teuchos::rcp( const_cast<Epetra_CrsMatrix *>(testCase->getMass()), false );
+  RefCountPtr<Epetra_CrsMatrix> K = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getStiffness()), false );
+  RefCountPtr<Epetra_CrsMatrix> M = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getMass()), false );
   //
   // Create the initial vectors
   int blockSize = 5;
-  Teuchos::RefCountPtr<Epetra_MultiVector> ivec = Teuchos::rcp( new Epetra_MultiVector(K->OperatorDomainMap(), blockSize) );
+  RefCountPtr<Epetra_MultiVector> ivec = rcp( new Epetra_MultiVector(K->OperatorDomainMap(), blockSize) );
   ivec->Random();
-  //
+
   // Create eigenproblem
-  Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<ScalarType, MV, OP> > MyProblem =
-    Teuchos::rcp( new Anasazi::BasicEigenproblem<ScalarType, MV, OP>(K, M, ivec) );
-  //  MyProblem->SetPrec( Teuchos::rcp( const_cast<Epetra_Operator *>(opStiffness->getPreconditioner()), false ) );
+  int nev = 5;
+  RefCountPtr<Anasazi::BasicEigenproblem<ScalarType,MV,OP> > MyProblem =
+    rcp( new Anasazi::BasicEigenproblem<ScalarType,MV,OP>(K,M,ivec) );
   //
   // Inform the eigenproblem that the operator A is symmetric
   MyProblem->setHermitian(true);
@@ -129,8 +128,8 @@ int main(int argc, char *argv[])
   // Set the number of eigenvalues requested and the blocksize the solver should use
   MyProblem->setNEV( nev );
   //
-  // Inform the eigenproblem that you are finishing passing it information
-  boolret = MyProblem->setProblem();
+  // Inform the eigenproblem that you are done passing it information
+  bool boolret = MyProblem->setProblem();
   if (boolret != true) {
     if (verbose && MyPID == 0) {
       cout << "Anasazi::BasicEigenproblem::SetProblem() returned with error." << endl
@@ -141,11 +140,12 @@ int main(int argc, char *argv[])
 #endif
     return -1;
   }
-  
 
+
+  // Set verbosity level
   int verbosity = Anasazi::Errors + Anasazi::Warnings;
   if (verbose) {
-    verbosity += Anasazi::IterationDetails + Anasazi::Debug;
+    verbosity += Anasazi::FinalSummary + Anasazi::TimingDetails;
   }
 
 
@@ -153,22 +153,23 @@ int main(int argc, char *argv[])
   int maxIters = 450;
   MagnitudeType tol = 1.0e-6;
   //
-  // Create parameter list to pass into solver manager
-  Teuchos::ParameterList MyPL;
+  // Create parameter list to pass into the solver manager
+  ParameterList MyPL;
   MyPL.set( "Block Size", blockSize );
   MyPL.set( "Maximum Iterations", maxIters );
   MyPL.set( "Convergence Tolerance", tol );
   MyPL.set( "Use Locking", true );
   MyPL.set( "Locking Tolerance", tol/10 );
   MyPL.set( "Which", which );
-  MyPL.set( "Full Ortho", false );      // finish: set this back to true
+  MyPL.set( "Full Ortho", true );
   MyPL.set( "Verbosity", verbosity );
   //
   // Create the solver manager
-  Anasazi::LOBPCGSolverManager<ScalarType, MV, OP> MySolverMan(MyProblem, MyPL);
+  Anasazi::LOBPCGSolMgr<ScalarType,MV,OP> MySolverMan(MyProblem, MyPL);
 
   // Solve the problem to the specified tolerances or length
   returnCode = MySolverMan.solve();
+  testFailed = false;
   if (returnCode != Anasazi::Converged) {
     testFailed = true;
   }
@@ -176,7 +177,7 @@ int main(int argc, char *argv[])
   // Get the eigenvalues and eigenvectors from the eigenproblem
   Anasazi::Eigensolution<ScalarType,MV> sol = MyProblem->getSolution();
   std::vector<MagnitudeType> evals = sol.Evals;
-  Teuchos::RefCountPtr<Epetra_MultiVector> evecs = sol.Evecs;
+  RefCountPtr<Epetra_MultiVector> evecs = sol.Evecs;
   
   // Check the problem against the analytical solutions
   if (verbose && returnCode == Anasazi::Converged) {
@@ -185,7 +186,7 @@ int main(int argc, char *argv[])
   
   // Compute the direct residual
   std::vector<MagnitudeType> normV( evecs->NumVectors() );
-  Teuchos::SerialDenseMatrix<int,ScalarType> T(evecs->NumVectors(), evecs->NumVectors());
+  SerialDenseMatrix<int,ScalarType> T(evecs->NumVectors(), evecs->NumVectors());
   for (int i=0; i<evecs->NumVectors(); i++) {
     T(i,i) = evals[i];
   }
@@ -198,7 +199,7 @@ int main(int argc, char *argv[])
   assert( info==0 );
   
   for ( i=0; i<nev; i++ ) {
-    if ( Teuchos::ScalarTraits<ScalarType>::magnitude(normV[i]/evals[i]) > 5.0e-5 ) {
+    if ( ScalarTraits<ScalarType>::magnitude(normV[i]/evals[i]) > 5.0e-5 ) {
       testFailed = true;
     }
   }

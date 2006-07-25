@@ -27,11 +27,11 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef ANASAZI_LOBPCG_SOLVERMANAGER_HPP
-#define ANASAZI_LOBPCG_SOLVERMANAGER_HPP
+#ifndef ANASAZI_BLOCKDAVIDSON_SOLMGR_HPP
+#define ANASAZI_BLOCKDAVIDSON_SOLMGR_HPP
 
-/*! \file AnasaziLOBPCGSolverManager.hpp
- *  \brief The Anasazi::LOBPCGSolverManager provides a powerful solver manager for the LOBPCG eigensolver.
+/*! \file AnasaziBlockDavidsonSolMgr.hpp
+ *  \brief The Anasazi::BlockDavidsonSolMgr provides a powerful solver manager for the BlockDavidson eigensolver.
 */
 
 #include "AnasaziConfigDefs.hpp"
@@ -40,7 +40,7 @@
 #include "AnasaziEigenproblem.hpp"
 #include "AnasaziSolverManager.hpp"
 
-#include "AnasaziLOBPCG.hpp"
+#include "AnasaziBlockDavidson.hpp"
 #include "AnasaziBasicSort.hpp"
 #include "AnasaziSVQBOrthoManager.hpp"
 #include "AnasaziStatusTestMaxIters.hpp"
@@ -49,9 +49,9 @@
 #include "AnasaziStatusTestCombo.hpp"
 #include "AnasaziBasicOutputManager.hpp"
 
-/*! \class Anasazi::LOBPCGSolverManager
+/*! \class Anasazi::BlockDavidsonSolMgr
  *
- *  \brief The Anasazi::LOBPCGSolverManager provides a powerful and fully-featured solver manager over the LOBPCG eigensolver.
+ *  \brief The Anasazi::BlockDavidsonSolMgr provides a powerful and fully-featured solver manager over the BlockDavidson eigensolver.
  *
  *  Features include: FINISH
  *  <ul>
@@ -63,7 +63,7 @@
 namespace Anasazi {
 
 template<class ScalarType, class MV, class OP>
-class LOBPCGSolverManager : public SolverManager<ScalarType,MV,OP> {
+class BlockDavidsonSolMgr : public SolverManager<ScalarType,MV,OP> {
 
   private:
     typedef MultiVecTraits<ScalarType,MV> MVT;
@@ -77,14 +77,14 @@ class LOBPCGSolverManager : public SolverManager<ScalarType,MV,OP> {
   //@{ \name Constructors/Destructor.
 
   //! Default Constructor.
-  LOBPCGSolverManager() {};
+  BlockDavidsonSolMgr() {};
 
   //! Basic Constructor.
-  LOBPCGSolverManager( const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem,
+  BlockDavidsonSolMgr( const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem,
                              Teuchos::ParameterList &pl );
 
   //! Destructor.
-  virtual ~LOBPCGSolverManager() {};
+  virtual ~BlockDavidsonSolMgr() {};
   //@}
   
   //@{ \name Accessor methods
@@ -101,7 +101,7 @@ class LOBPCGSolverManager : public SolverManager<ScalarType,MV,OP> {
    * until the problem has been solved (as decided by the solver manager) or the solver manager decides to 
    * quit.
    *
-   * In the case of LOBPCGSolverManager, FINISH
+   * In the case of BlockDavidsonSolMgr, FINISH
    *
    * \returns ReturnType specifying:
    * <ul>
@@ -121,8 +121,7 @@ class LOBPCGSolverManager : public SolverManager<ScalarType,MV,OP> {
   int _maxIters;
   bool _useLocking;
   bool _relconvtol, _rellocktol;
-  int _blockSize;
-  bool _fullOrtho;
+  int _blockSize, _numBlocks;
   int _maxLocked;
   int _verbosity;
   int _lockQuorum;
@@ -131,7 +130,7 @@ class LOBPCGSolverManager : public SolverManager<ScalarType,MV,OP> {
 
 // Constructor
 template<class ScalarType, class MV, class OP>
-LOBPCGSolverManager<ScalarType,MV,OP>::LOBPCGSolverManager( 
+BlockDavidsonSolMgr<ScalarType,MV,OP>::BlockDavidsonSolMgr( 
         const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem,
         Teuchos::ParameterList &pl ) : 
   _problem(problem),
@@ -143,7 +142,7 @@ LOBPCGSolverManager<ScalarType,MV,OP>::LOBPCGSolverManager(
   _relconvtol(true),
   _rellocktol(true),
   _blockSize(0),
-  _fullOrtho(true),
+  _numBlocks(0),
   _maxLocked(0),
   _verbosity(Anasazi::Errors),
   _lockQuorum(1)
@@ -151,7 +150,6 @@ LOBPCGSolverManager<ScalarType,MV,OP>::LOBPCGSolverManager(
   TEST_FOR_EXCEPTION(_problem == Teuchos::null, AnasaziError, "Problem not given to solver manager.");
   TEST_FOR_EXCEPTION(!_problem->isProblemSet(), AnasaziError, "Problem not set.");
   TEST_FOR_EXCEPTION(!_problem->isHermitian(), AnasaziError, "Problem not symmetric.");
-
 
   // which values to solve for
   _whch = pl.get("Which",_whch);
@@ -174,7 +172,10 @@ LOBPCGSolverManager<ScalarType,MV,OP>::LOBPCGSolverManager(
   // block size: default is nev()
   _blockSize = pl.get("Block Size",_problem->getNEV());
   TEST_FOR_EXCEPTION(_blockSize <= 0, std::invalid_argument,
-                     "Anasazi::LOBPCGSolverManager: \"Block Size\" must be strictly positive.");
+                     "Anasazi::BlockDavidsonSolMgr: \"Block Size\" must be strictly positive.");
+  _numBlocks = pl.get("Num Blocks",1);
+  TEST_FOR_EXCEPTION(_numBlocks <= 0, std::invalid_argument,
+                     "Anasazi::BlockDavidsonSolMgr: \"Num Blocks\" must be strictly positive.");
 
   // max locked: default is nev(), must satisfy _maxLocked + _blockSize >= nev
   if (_useLocking) {
@@ -187,20 +188,17 @@ LOBPCGSolverManager<ScalarType,MV,OP>::LOBPCGSolverManager(
     _useLocking = false;
   }
   TEST_FOR_EXCEPTION(_maxLocked < 0, std::invalid_argument,
-                     "Anasazi::LOBPCGSolverManager: \"Max Locked\" must be positive.");
+                     "Anasazi::BlockDavidsonSolMgr: \"Max Locked\" must be positive.");
   TEST_FOR_EXCEPTION(_maxLocked + _blockSize < _problem->getNEV(), 
                      std::logic_error,
-                     "Anasazi::LOBPCGSolverManager: Not enough storage space for requested number of eigenpairs.");
+                     "Anasazi::BlockDavidsonSolMgr: Not enough storage space for requested number of eigenpairs.");
 
   if (_useLocking) {
     _lockQuorum = pl.get("Locking Quorum",_lockQuorum);
     TEST_FOR_EXCEPTION(_lockQuorum <= 0,
                        std::logic_error,
-                       "Anasazi::LOBPCGSolverManager: \"Locking Quorum\" must be strictly positive.");
+                       "Anasazi::BlockDavidsonSolMgr: \"Locking Quorum\" must be strictly positive.");
   }
-
-  // full orthogonalization: default true
-  _fullOrtho = pl.get("Full Ortho",_fullOrtho);
 
   // verbosity level
   _verbosity = pl.get("Verbosity", _verbosity);
@@ -210,7 +208,7 @@ LOBPCGSolverManager<ScalarType,MV,OP>::LOBPCGSolverManager(
 // solve()
 template<class ScalarType, class MV, class OP>
 ReturnType 
-LOBPCGSolverManager<ScalarType,MV,OP>::solve() {
+BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
 
   const int nev = _problem->getNEV();
 
@@ -238,6 +236,9 @@ LOBPCGSolverManager<ScalarType,MV,OP>::solve() {
   if (_useLocking) {
     locktest = Teuchos::rcp( new StatusTestResNorm<ScalarType,MV,OP>(_locktol,_lockQuorum,false,_rellocktol) );
   }
+  // restarting 
+  // FINISH
+  // combo class
   Teuchos::Array<Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > > alltests;
   // for an OR test, the order doesn't matter
   alltests.push_back(convtest);
@@ -259,9 +260,9 @@ LOBPCGSolverManager<ScalarType,MV,OP>::solve() {
   plist.set("Full Ortho",_fullOrtho);
 
   //////////////////////////////////////////////////////////////////////////////////////
-  // LOBPCG solver
-  Teuchos::RefCountPtr<LOBPCG<ScalarType,MV,OP> > lobpcg_solver 
-    = Teuchos::rcp( new LOBPCG<ScalarType,MV,OP>(_problem,sorter,printer,combotest,ortho,plist) );
+  // BlockDavidson solver
+  Teuchos::RefCountPtr<BlockDavidson<ScalarType,MV,OP> > lobpcg_solver 
+    = Teuchos::rcp( new BlockDavidson<ScalarType,MV,OP>(_problem,sorter,printer,combotest,ortho,plist) );
   // set any auxilliary vectors defined in the problem
   Teuchos::RefCountPtr< const MV > probauxvecs = _problem->getAuxVecs();
   if (probauxvecs != Teuchos::null) {
@@ -299,7 +300,7 @@ LOBPCGSolverManager<ScalarType,MV,OP>::solve() {
 
         // remove the locked vectors,values from lobpcg_solver: put them in newvecs, newvals
         int numnew = locktest->howMany();
-        TEST_FOR_EXCEPTION(numnew <= 0,std::logic_error,"Anasazi::LOBPCGSolverManager::solve(): status test mistake.");
+        TEST_FOR_EXCEPTION(numnew <= 0,std::logic_error,"Anasazi::BlockDavidsonSolMgr::solve(): status test mistake.");
         // get the indices
         std::vector<int> indnew = locktest->whichVecs();
         {
@@ -346,7 +347,7 @@ LOBPCGSolverManager<ScalarType,MV,OP>::solve() {
         convtest->setAuxVals(lockvals);
         // fill out the empty state in the solver
         {
-          LOBPCGState<ScalarType,MV> state = lobpcg_solver->getState();
+          BlockDavidsonState<ScalarType,MV> state = lobpcg_solver->getState();
           // don't need the following: KX, KP, R, T, H, KH, MH
           // if hasP(), then ortho it against new aux vecs (and maybe against X); otherwise, it is invalid, so wipe it
           state.R = Teuchos::null;
@@ -413,151 +414,14 @@ LOBPCGSolverManager<ScalarType,MV,OP>::solve() {
         }
       }
       else {
-        TEST_FOR_EXCEPTION(true,std::logic_error,"Anasazi::LOBPCGSolverManager::solve(): Invalid return from lobpcg_solver::iterate().");
+        TEST_FOR_EXCEPTION(true,std::logic_error,"Anasazi::BlockDavidsonSolMgr::solve(): Invalid return from lobpcg_solver::iterate().");
       }
     }
-    catch (LOBPCGRitzFailure re) {
-      if (_fullOrtho) {
-        // if we are already using full orthogonalization, there isn't much we can do here. 
-        // the most recent information in the status tests is still valid, and can be used to extract/return the 
-        // eigenpairs that have converged.
-        break; // while(1)
-      }
-      printer->stream(Errors) << "Error! Caught LOBPCGRitzFailure at iteration " << lobpcg_solver->getNumIters() << endl
-                              << "Full orthogonalization is off; will try to recover." << endl;
-      // otherwise, get the current "basis" from the solver, orthonormalize it, do a rayleigh-ritz, and restart with the ritz vectors
-      // if there aren't enough, break and quit with what we have
-      LOBPCGState<ScalarType,MV> curstate = lobpcg_solver->getState();
-      Teuchos::RefCountPtr<MV> restart, Krestart, Mrestart;
-      int localsize = lobpcg_solver->hasP() ? 3*_blockSize : 2*_blockSize;
-      bool hasM = _problem->getM() != Teuchos::null;
-      restart  = MVT::Clone(*curstate.X, localsize);
-      std::vector<int> ind(_blockSize);
-      // set restart = [X H P] and Krestart = [X H P]
-      // put X into [0 , blockSize)
-      for (int i=0; i < _blockSize; i++) ind[i] = i;
-      MVT::SetBlock(*curstate.X,ind,*restart);
-      // put H into [_blockSize , 2*blockSize)
-      for (int i=0; i < _blockSize; i++) ind[i] = _blockSize+i;
-      MVT::SetBlock(*curstate.H,ind,*restart);
-      // optionally, put P into [2*blockSize,3*blockSize)
-      if (localsize == 3*_blockSize) {
-        for (int i=0; i < _blockSize; i++) ind[i] = 2*_blockSize+i;
-        MVT::SetBlock(*curstate.P,ind,*restart);
-      }
-      // project against auxvecs and locked vecs, and orthonormalize the basis
-      if (hasM) {
-        Mrestart = MVT::Clone(*restart, localsize);
-        OPT::Apply(*_problem->getM(),*restart,*Mrestart);
-      }
-      else {
-        Mrestart = restart;
-      }
-      Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > dummy;
-      Teuchos::Array<Teuchos::RefCountPtr<const MV> > Q;
-      {
-        if (numlocked > 0) {
-          std::vector<int> indlock(numlocked);
-          for (int i=0; i<numlocked; i++) indlock[i] = i;
-          Teuchos::RefCountPtr<const MV> curlocked = MVT::CloneView(*lockvecs,indlock);
-          Q.push_back(curlocked);
-        }
-        if (probauxvecs != Teuchos::null) {
-          Q.push_back(probauxvecs);
-        }
-      }
-      int rank = ortho->projectAndNormalize(*restart,Mrestart,dummy,Teuchos::null,Q);
-      if (rank < _blockSize) {
-        // quit
-        printer->stream(Errors) << "Error! Recovered basis only rank " << rank << ". Block size is " << _blockSize << ".\n"
-                                << "Recovery failed." << endl;
-        throw;
-      }
-      // reduce multivec size if necessary
-      if (rank < localsize) {
-        localsize = rank;
-        ind.resize(localsize);
-        for (int i=0; i<localsize; i++) ind[i] = i;
-        // grab the first part of restart,Mrestart
-        restart = MVT::CloneView(*restart,ind);
-        if (hasM) {
-          Mrestart = MVT::CloneView(*Mrestart,ind);
-        }
-        else {
-          Mrestart = restart;
-        }
-      }
-      // project the matrices
-      Krestart = MVT::Clone(*restart, localsize);
-      OPT::Apply(*_problem->getOperator(),*restart,*Krestart);
-      Teuchos::SerialDenseMatrix<int,ScalarType> KK(localsize,localsize), MM(localsize,localsize), S(localsize,localsize);
-      std::vector<MagnitudeType> theta(localsize);
-      // KK = restart^H K restart
-      MVT::MvTransMv(1.0,*restart,*Krestart,KK);
-      // MM = restart^H M restart
-      MVT::MvTransMv(1.0,*restart,*Mrestart,MM);
-      rank = localsize;
-      ModalSolverUtils<ScalarType,MV,OP> msutils(printer);
-      msutils.directSolver(localsize,KK,&MM,&S,&theta,&rank,1);
-      if (rank < _blockSize) {
-        printer->stream(Errors) << "Error! Recovered basis of rank " << rank << " produced only " << rank << "ritz vectors.\n"
-                                << "Block size is " << _blockSize << ".\n"
-                                << "Recovery failed." << endl;
-        throw;
-      }
-      theta.resize(rank);
-      // sort the ritz values using the sort manager
-      {
-        Teuchos::BLAS<int,ScalarType> blas;
-        std::vector<int> order(rank);
-        std::vector<ScalarType> theta_st(theta.size());
-        std::copy(theta.begin(),theta.end(),theta_st.begin());
-        sorter->sort( lobpcg_solver.get(), rank, &(theta_st[0]), &order );   // don't catch exception
-        
-        //  Reorder theta according to sorting results from theta_st
-        std::vector<MagnitudeType> theta_copy(theta);
-        for (int i=0; i<rank; i++) {
-          theta[i] = theta_copy[order[i]];
-        }
-        // Sort the primitive ritz vectors
-        Teuchos::SerialDenseMatrix<int,ScalarType> copyS( S );
-        for (int i=0; i<rank; i++) {
-          blas.COPY(localsize, copyS[order[i]], 1, S[i], 1);
-        }
-      }
-      //
-      Teuchos::SerialDenseMatrix<int,ScalarType> S1(Teuchos::View,S,localsize,_blockSize);
-      // compute the ritz vectors
-      LOBPCGState<ScalarType,MV> newstate;
-      Teuchos::RefCountPtr<MV> newX, newKX, newMX;
-      // X
-      newX = MVT::Clone(*restart,_blockSize);
-      MVT::MvTimesMatAddMv(1.0,*restart,S1,0.0,*newX);
-      newstate.X = newX;
-      // KX
-      newKX = MVT::Clone(*restart,_blockSize);
-      MVT::MvTimesMatAddMv(1.0,*Krestart,S1,0.0,*newKX);
-      newstate.KX = newKX;
-      // MX
-      if (hasM) {
-        newMX = MVT::Clone(*restart,_blockSize);
-        MVT::MvTimesMatAddMv(1.0,*Mrestart,S1,0.0,*newMX);
-        newstate.MX = newMX;
-      }
-      theta.resize(_blockSize);
-      newstate.T = Teuchos::rcp( new std::vector<MagnitudeType>(theta) );
-      // clear all of this memory before we initialize
-      curstate = LOBPCGState<ScalarType,MV>();
-      restart = Teuchos::null;
-      Krestart = Teuchos::null;
-      Mrestart = Teuchos::null;
-      newX = Teuchos::null;
-      newMX = Teuchos::null;
-      newKX = Teuchos::null;
-      // initialize
-      lobpcg_solver->initialize(newstate);
+    catch (std::exception e) {
+      printer->stream(Errors) << "Error! Caught exception in BlockDavidson::iterate() at iteration " << bd_solver->getNumIters() << endl 
+                              << e.what() << endl;
+      throw;
     }
-    // don't catch any other exceptions
   }
 
   sol.numVecs = convtest->howMany();
@@ -578,12 +442,12 @@ LOBPCGSolverManager<ScalarType,MV,OP>::solve() {
       }
       else {
         // sanity check
-        TEST_FOR_EXCEPTION(which[i] >= numlocked+_blockSize,std::logic_error,"Anasazi::LOBPCGSolverManager::solve(): indexing mistake.");
+        TEST_FOR_EXCEPTION(which[i] >= numlocked+_blockSize,std::logic_error,"Anasazi::BlockDavidsonSolMgr::solve(): indexing mistake.");
         inlocked.push_back(which[i] - _blockSize);
       }
     }
 
-    TEST_FOR_EXCEPTION(insolver.size() + inlocked.size() != (unsigned int)sol.numVecs,std::logic_error,"Anasazi::LOBPCGSolverManager::solve(): indexing mistake.");
+    TEST_FOR_EXCEPTION(insolver.size() + inlocked.size() != (unsigned int)sol.numVecs,std::logic_error,"Anasazi::BlockDavidsonSolMgr::solve(): indexing mistake.");
 
     // set the vecs,vals in the solution
     if (insolver.size() > 0) {
@@ -623,12 +487,12 @@ LOBPCGSolverManager<ScalarType,MV,OP>::solve() {
   printer->stream(Debug) << "Returning " << sol.numVecs << " to eigenproblem." << endl;
 
   if (sol.numVecs < nev) {
-    return Unconverged; // return from LOBPCGSolverManager::solve() 
+    return Unconverged; // return from BlockDavidsonSolMgr::solve() 
   }
-  return Converged; // return from LOBPCGSolverManager::solve() 
+  return Converged; // return from BlockDavidsonSolMgr::solve() 
 }
 
 
 } // end Anasazi namespace
 
-#endif /* ANASAZI_LOBPCG_SOLVERMANAGER_HPP */
+#endif /* ANASAZI_BLOCKDAVIDSON_SOLMGR_HPP */

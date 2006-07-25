@@ -36,7 +36,7 @@
 #include "Epetra_CrsMatrix.h"
 
 #include "AnasaziBasicEigenproblem.hpp"
-#include "AnasaziSimpleLOBPCGSolverManager.hpp"
+#include "AnasaziSimpleLOBPCGSolMgr.hpp"
 
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
@@ -269,9 +269,9 @@ int main(int argc, char *argv[]) {
   //
   //  Variables used for the LOBPCG Method
   //
-  int nev = 4;
+  int nev = 10;
   int blockSize = 5;
-  int maxIters = 300;
+  int maxIters = 500;
   double tol = 1e-8;  
 
   typedef Epetra_MultiVector MV;
@@ -294,9 +294,9 @@ int main(int argc, char *argv[]) {
   MyProblem->setNEV( nev );
   
   // Inform the eigenproblem that you are finishing passing it information
-  info = MyProblem->setProblem();
-  if (info) {
-    cout << "Anasazi::BasicEigenproblem::setProblem() returned with code : "<< info << endl;
+  bool boolret = MyProblem->setProblem();
+  if (boolret != true) {
+    cout << "Anasazi::BasicEigenproblem::setProblem() returned an error." << endl;
   }
 
   //
@@ -309,7 +309,7 @@ int main(int argc, char *argv[]) {
   MyPL.set( "Which", which );
   //
   // Create the solver manager
-  Anasazi::SimpleLOBPCGSolverManager<double, MV, OP> MySolverMan(MyProblem, MyPL);
+  Anasazi::SimpleLOBPCGSolMgr<double, MV, OP> MySolverMan(MyProblem, MyPL);
   
   // Solve the problem
   returnCode = MySolverMan.solve();
@@ -343,12 +343,12 @@ int main(int argc, char *argv[]) {
     cout<<"Actual Residuals"<<endl;
     cout<<"------------------------------------------------------"<<endl;
     cout<<std::setw(16)<<"Eigenvalue"
-	<<std::setw(16)<<"Direct Residual"
+	<<std::setw(18)<<"Direct Residual"
 	<<endl;
     cout<<"------------------------------------------------------"<<endl;
     for (i=0; i<nev; i++) {
       cout<<std::setw(16)<<evals[i]
-	  <<std::setw(16)<<normA[i]/evals[i] 
+	  <<std::setw(18)<<normA[i]/evals[i] 
 	  <<endl;
     }  
     cout<<"------------------------------------------------------"<<endl;

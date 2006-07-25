@@ -1054,7 +1054,7 @@ namespace Anasazi {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Perform BlockDavidson iterations until the StatusTest tells us to stop.
   template <class ScalarType, class MV, class OP>
-  void BlockDavidson<ScalarType,MV,OP>::iterate () 
+  void BlockDavidson<ScalarType,MV,OP>::iterate ()
   {
     //
     // Allocate/initialize data structures
@@ -1267,7 +1267,7 @@ namespace Anasazi {
 
     } // end while (statusTest == false)
 
-  }
+  } // end of iterate()
 
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1395,6 +1395,7 @@ namespace Anasazi {
     os.precision(6);
     os <<endl;
     os <<"******************* CURRENT STATUS *******************"<<endl;
+    os <<"The solver is "<<(_initialized ? "initialized." : "not initialized.") << endl;
     os <<"The number of iterations performed is " <<_iter<<endl;
     os <<"The block size is         " << _blockSize<<endl;
     os <<"The number of blocks is   " << _numBlocks<<endl;

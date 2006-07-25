@@ -36,7 +36,7 @@
 #include "Epetra_Vector.h"
 
 #include "AnasaziBasicEigenproblem.hpp"
-#include "AnasaziSimpleLOBPCGSolverManager.hpp"
+#include "AnasaziSimpleLOBPCGSolMgr.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 
 #ifdef EPETRA_MPI
@@ -156,7 +156,7 @@ int main(int argc, char *argv[])
   }
   //
   // Create the solver manager
-  Anasazi::SimpleLOBPCGSolverManager<double, MV, OP> MySolverMan(MyProblem, MyPL);
+  Anasazi::SimpleLOBPCGSolMgr<double, MV, OP> MySolverMan(MyProblem, MyPL);
 
   // Solve the problem to the specified tolerances or length
   returnCode = MySolverMan.solve();
