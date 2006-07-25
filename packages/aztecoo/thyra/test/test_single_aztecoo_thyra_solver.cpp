@@ -31,6 +31,7 @@
 #ifndef __sun
 
 #include "Thyra_AztecOOLinearOpWithSolveFactory.hpp"
+#include "Thyra_LinearOpWithSolveFactoryExamples.hpp"
 #include "Thyra_DefaultScaledAdjointLinearOp.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_LinearOpTester.hpp"
@@ -230,6 +231,10 @@ bool Thyra::test_single_aztecoo_thyra_solver(
 
     }
 
+    
+    Teuchos::RefCountPtr<PreconditionerFactoryBase<double> >
+      precFactory;
+
 #ifdef HAVE_AZTECOO_IFPACK
 
     if(useAztecPrec) {
@@ -241,8 +246,7 @@ bool Thyra::test_single_aztecoo_thyra_solver(
       
       if(out.get()) *out << "\nJ) Create an ifpack preconditioner precA for A ...\n";
 
-      Teuchos::RefCountPtr<PreconditionerFactoryBase<double> >
-        precFactory = Teuchos::rcp(new IfpackPreconditionerFactory());
+      precFactory = Teuchos::rcp(new IfpackPreconditionerFactory());
 
       if(out.get()) {
         *out << "\nprecFactory.description() = " << precFactory->description() << std::endl;
@@ -366,6 +370,20 @@ bool Thyra::test_single_aztecoo_thyra_solver(
       if(out.get()) *out << "\nSkipping testing steps Q, R, and S because we are using internal AztecOO preconditioners!\n";
 
     }
+
+  if(out.get()) *out << "\nT) Running example use cases ...\n";
+
+  nonExternallyPreconditionedLinearSolveUseCases(
+    *A,*lowsFactory,*out
+    );
+
+  if(0) { // Put this back in latter!
+    if(precFactory.get()) {
+      externallyPreconditionedLinearSolveUseCases(
+        *A,*lowsFactory,*precFactory,*out
+        );
+    }
+  }
 
 #else // __sun
     

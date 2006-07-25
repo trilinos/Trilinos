@@ -90,7 +90,7 @@ EXPORT_INCLUDES = $(_EXPORT_INCLUDES)
 EXPORT_LIBS = $(_EXPORT_LIBS)
 endif
 
-AM_CPPFLAGS = -I$(top_srcdir)/../amesos/thyra/test $(EXPORT_INCLUDES)
+AM_CPPFLAGS = -I$(top_srcdir)/../amesos/thyra/test $(EXPORT_INCLUDES) -I$(top_srcdir)/../thyra/example/operator_solve
 
 common_ldadd = $(EXPORT_LIBS)
 

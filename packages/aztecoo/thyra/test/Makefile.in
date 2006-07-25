@@ -321,7 +321,7 @@ _EXPORT_LIBS = $(AZTECOO_EXTRA_LIBS) $(IFPACK_LIBS) $(AZTECOO_LIBS)
 @USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(_EXPORT_INCLUDES))
 @USING_GNUMAKE_FALSE@EXPORT_LIBS = $(_EXPORT_LIBS)
 @USING_GNUMAKE_TRUE@EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(_EXPORT_LIBS))
-AM_CPPFLAGS = -I$(top_srcdir)/../amesos/thyra/test $(EXPORT_INCLUDES)
+AM_CPPFLAGS = -I$(top_srcdir)/../amesos/thyra/test $(EXPORT_INCLUDES) -I$(top_srcdir)/../thyra/example/operator_solve
 common_ldadd = $(EXPORT_LIBS)
 EXTRA_DIST = $(srcdir)/test_single_aztecoo_thyra_solver.hpp
 all: all-am
