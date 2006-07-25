@@ -383,7 +383,7 @@ LOCA::Epetra::Group::scaleVector(NOX::Abstract::Vector& x) const
 }
 
 NOX::Abstract::Group::ReturnType 
-LOCA::Epetra::Group::augmentJacobianForHomotopy(double conParamValue)
+LOCA::Epetra::Group::augmentJacobianForHomotopy(double p)
 {
 
   //Allocate temporary vectors if not aready done
@@ -392,7 +392,7 @@ LOCA::Epetra::Group::augmentJacobianForHomotopy(double conParamValue)
   if (tmpVectorPtr2 == Teuchos::null)
     tmpVectorPtr2 = Teuchos::rcp(new Epetra_Vector(xVector.getEpetraVector()));
 
-  tmpVectorPtr2->PutScalar(1.0-conParamValue);
+  tmpVectorPtr2->PutScalar(1.0-p);
 
   // See if it is an Epetra_CrsMatrix
   Teuchos::RefCountPtr<const Epetra_CrsMatrix> constTestCrs;
@@ -401,7 +401,7 @@ LOCA::Epetra::Group::augmentJacobianForHomotopy(double conParamValue)
     (sharedLinearSystem.getObject(this)->getJacobianOperator());
   if (constTestCrs != Teuchos::null) {
     testCrs = Teuchos::rcp_const_cast<Epetra_CrsMatrix>(constTestCrs);
-    testCrs->Scale(conParamValue);
+    testCrs->Scale(p);
     testCrs->ExtractDiagonalCopy(*tmpVectorPtr);
     tmpVectorPtr->Update(1.0, *tmpVectorPtr2, 1.0);
     testCrs->ReplaceDiagonalValues(*tmpVectorPtr);
@@ -416,7 +416,7 @@ LOCA::Epetra::Group::augmentJacobianForHomotopy(double conParamValue)
     (sharedLinearSystem.getObject(this)->getJacobianOperator());
   if (constTestVbr != Teuchos::null) {
     testVbr = Teuchos::rcp_const_cast<Epetra_VbrMatrix>(constTestVbr);
-    testVbr->Scale(conParamValue);
+    testVbr->Scale(p);
     testVbr->ExtractDiagonalCopy(*tmpVectorPtr);
     tmpVectorPtr->Update(1.0, *tmpVectorPtr2, 1.0);
     testVbr->ReplaceDiagonalValues(*tmpVectorPtr);
