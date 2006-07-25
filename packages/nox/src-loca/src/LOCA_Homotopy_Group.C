@@ -30,17 +30,22 @@
 // ************************************************************************
 //@HEADER
 
-#include "LOCA_Homotopy_Group.H"      // class definition
-#include "Teuchos_ParameterList.hpp"      // data member
+#include "Teuchos_ParameterList.hpp" 
+
+#include "LOCA_Homotopy_Group.H"
+#include "LOCA_Homotopy_AbstractGroup.H"
 #include "LOCA_Parameter_Vector.H"
-#include "LOCA_Utils.H"
+#include "LOCA_GlobalData.H"
 #include "LOCA_ErrorCheck.H"
+#include "NOX_Utils.H"
 
 LOCA::Homotopy::Group::Group(
-		 Teuchos::ParameterList& locaSublist,
-		 const Teuchos::RefCountPtr<LOCA::Homotopy::AbstractGroup>& g,
-		 double scalarRandom,
-		 double scalarInitialGuess) :
+	 Teuchos::ParameterList& locaSublist,
+	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+	 const Teuchos::RefCountPtr<LOCA::Homotopy::AbstractGroup>& g,
+	 double scalarRandom,
+	 double scalarInitialGuess) :
+  globalData(global_data),
   grpPtr(g),
   gVecPtr(g->getX().clone(NOX::ShapeCopy)),
   randomVecPtr(gVecPtr->clone(NOX::ShapeCopy)),
@@ -74,9 +79,11 @@ LOCA::Homotopy::Group::Group(
 }
 
 LOCA::Homotopy::Group::Group(
-		 Teuchos::ParameterList& locaSublist,
-		 const Teuchos::RefCountPtr<LOCA::Homotopy::AbstractGroup>& g,
-		 const NOX::Abstract::Vector& randomVector) :
+	 Teuchos::ParameterList& locaSublist,
+	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+	 const Teuchos::RefCountPtr<LOCA::Homotopy::AbstractGroup>& g,
+	 const NOX::Abstract::Vector& randomVector) :
+  globalData(global_data),
   grpPtr(g),
   gVecPtr(g->getX().clone(NOX::ShapeCopy)),
   randomVecPtr(gVecPtr->clone(NOX::ShapeCopy)),
@@ -109,6 +116,7 @@ LOCA::Homotopy::Group::Group(
 
 LOCA::Homotopy::Group::Group(const LOCA::Homotopy::Group& source, 
 			     NOX::CopyType type) : 
+  globalData(source.globalData),
   grpPtr(Teuchos::rcp_dynamic_cast<LOCA::Homotopy::AbstractGroup>(source.grpPtr->clone(type))),
   gVecPtr(source.gVecPtr->clone(type)),
   randomVecPtr(source.randomVecPtr->clone(NOX::DeepCopy)), //deep copy to keep the set of equations consistent
@@ -136,8 +144,9 @@ LOCA::Homotopy::Group::Group(const LOCA::Homotopy::Group& source,
     resetIsValidFlags();
   }
   else {
-    LOCA::ErrorCheck::throwError("LOCA::Homotopy::Group::Group(copy ctor)",
-				 "CopyType is invalid!");
+    globalData->locaErrorCheck->throwError(
+			       "LOCA::Homotopy::Group::Group(copy ctor)",
+			       "CopyType is invalid!");
   }
 
 }
@@ -147,47 +156,10 @@ LOCA::Homotopy::Group::~Group()
 {
 }
 
-LOCA::Continuation::AbstractGroup&
-LOCA::Homotopy::Group::operator=(
-			     const LOCA::Continuation::AbstractGroup& source)
-{
-  return *this = dynamic_cast<const LOCA::Homotopy::Group&>(source);
-}
-
-LOCA::Extended::AbstractGroup&
-LOCA::Homotopy::Group::operator=(
-			     const LOCA::Extended::AbstractGroup& source)
-{
-  return *this = dynamic_cast<const LOCA::Homotopy::Group&>(source);
-}
-
 NOX::Abstract::Group&
-LOCA::Homotopy::Group::operator=(const NOX::Abstract::Group& source)
+LOCA::Homotopy::Group::operator=(const NOX::Abstract::Group& source) 
 {
-  return *this = dynamic_cast<const LOCA::Homotopy::Group&>(source);
-}
-
-LOCA::Homotopy::Group&
-LOCA::Homotopy::Group::operator=(const LOCA::Homotopy::Group& source) 
-{
-
-  // Protect against A = A
-  if (this != &source) {
-
-    conParam = source.conParam;
-    *grpPtr = *(source.grpPtr);
-    *gVecPtr = *(source.gVecPtr);
-    *randomVecPtr = *(source.randomVecPtr);
-    if (newtonVecPtr != Teuchos::null)
-      *newtonVecPtr = *(source.newtonVecPtr);
-    if (gradVecPtr != Teuchos::null)
-      *gradVecPtr = *(source.gradVecPtr);
-    isValidF = source.isValidF;
-    isValidJacobian = source.isValidJacobian;
-    isValidNewton = source.isValidNewton;
-    isValidGradient = source.isValidGradient;
-  }
-
+  copy(source);
   return *this;
 }
 
@@ -198,70 +170,6 @@ LOCA::Homotopy::Group::clone(NOX::CopyType type) const
 }
 
 void
-LOCA::Homotopy::Group::setParams(const LOCA::ParameterVector& p) 
-{
-  resetIsValidFlags();
-  grpPtr->setParams(p);
-  p.getValue(conParamLabel);
-}
-
-const LOCA::ParameterVector&
-LOCA::Homotopy::Group::getParams() const 
-{
-  return grpPtr->getParams();
-}
-
-void
-LOCA::Homotopy::Group::setParam(int paramID, double val)
-{
-  resetIsValidFlags();
-  grpPtr->setParam(paramID, val);
-  if (paramID == conParamID)
-    conParam = val;
-}
-
-double
-LOCA::Homotopy::Group::getParam(int paramID) const
-{
-  return grpPtr->getParam(paramID);
-}
-
-void
-LOCA::Homotopy::Group::setParam(string paramID, double val)
-{
-  resetIsValidFlags();
-  grpPtr->setParam(paramID, val);
-  if (paramID == conParamLabel)
-    conParam = val;
-}
-
-double
-LOCA::Homotopy::Group::getParam(string paramID) const
-{
-  return grpPtr->getParam(paramID);
-}
-
-NOX::Abstract::Group::ReturnType
-LOCA::Homotopy::Group::computeDfDp(int paramID, 
-				   NOX::Abstract::Vector& result)
-{
-  string callingFunction = 
-    "LOCA::Homotopy::Group::computeDfDp()";
-  NOX::Abstract::Group::ReturnType finalStatus;
-
-  // Compute f
-  finalStatus = grpPtr->computeF();
-  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
-
-  // g = conParam * f(x) + ((1.0 - conParam) * (x - randomVec))
-  // dg/dp = f(x) - (x - randomVec) where p = conParam
-  result = grpPtr->getF();
-  result.update(-1.0, grpPtr->getX(), 1.0, *randomVecPtr, 1.0); 
-
-  return finalStatus;
-}
-
-void
 LOCA::Homotopy::Group::setX(const NOX::Abstract::Vector& y) 
 {
   resetIsValidFlags();
@@ -269,44 +177,34 @@ LOCA::Homotopy::Group::setX(const NOX::Abstract::Vector& y)
 }
 
 void
-LOCA::Homotopy::Group::computeX(const NOX::Abstract::Group& g, 
-			      const NOX::Abstract::Vector& d,
-			      double step) 
-{
-  computeX( dynamic_cast<const LOCA::Homotopy::Group&>(g), d, step);
-}
-
-void
-LOCA::Homotopy::Group::computeX(const LOCA::Homotopy::Group& g, 
-			      const NOX::Abstract::Vector& d,
-			      double step) 
+LOCA::Homotopy::Group::computeX(const NOX::Abstract::Group& grp, 
+				const NOX::Abstract::Vector& d,
+				double step) 
 {
   resetIsValidFlags();
+  const LOCA::Homotopy::Group& g = 
+    dynamic_cast<const LOCA::Homotopy::Group&>(grp);
   grpPtr->computeX(*(g.grpPtr), d, step);
 }
 
-NOX::Abstract::Group::ReturnType LOCA::Homotopy::Group::computeF()
+NOX::Abstract::Group::ReturnType 
+LOCA::Homotopy::Group::computeF()
 {
   if (isValidF)
     return NOX::Abstract::Group::Ok;
 
-  string callingFunction = 
-    "LOCA::Homotopy::Group::computeF()";
-  NOX::Abstract::Group::ReturnType finalStatus;
-
-  finalStatus = grpPtr->computeF();
-  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
+  // compute f(x)
+  NOX::Abstract::Group::ReturnType status = grpPtr->computeF();
   
   // g = conParam * f(x) + ((1.0 - conParam) * (x - randomVec))
   *gVecPtr = grpPtr->getX();
   gVecPtr->update(-1.0, *randomVecPtr, 1.0); 
   gVecPtr->scale( 1.0 - conParam);
   gVecPtr->update(conParam, grpPtr->getF(), 1.0);
- 
 
   isValidF = true;
 
-  return finalStatus;
+  return status;
 }
 
 NOX::Abstract::Group::ReturnType
@@ -315,14 +213,10 @@ LOCA::Homotopy::Group::computeJacobian()
   if (isValidJacobian)
     return NOX::Abstract::Group::Ok;
 
-  string callingFunction = 
-    "LOCA::Homotopy::Group::computeJacobian()";
-  NOX::Abstract::Group::ReturnType finalStatus;
+  // Compute J
+  NOX::Abstract::Group::ReturnType status = grpPtr->computeJacobian();
 
-  finalStatus = grpPtr->computeJacobian();
-  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
-
-  // Augment the group's Jacobian for homotopy
+  // Compute p*J + (1-p)*I
   NOX::Abstract::Group::ReturnType augHomTest = 
     grpPtr->augmentJacobianForHomotopy(conParam);
   // If it is not implemented, augment the Jacobian during the 
@@ -332,7 +226,7 @@ LOCA::Homotopy::Group::computeJacobian()
 
   isValidJacobian = true;
 
-  return finalStatus;
+  return status;
 }
 
 NOX::Abstract::Group::ReturnType
@@ -345,18 +239,21 @@ LOCA::Homotopy::Group::computeGradient()
     "LOCA::Homotopy::Group::computeGradient()";
   NOX::Abstract::Group::ReturnType status, finalStatus;
 
+  if (gradVecPtr == Teuchos::null)
+    gradVecPtr = gVecPtr->clone(NOX::ShapeCopy);
+
   finalStatus = computeF();
-  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
+  globalData->locaErrorCheck->checkReturnType(finalStatus, callingFunction);
   
   status = computeJacobian();
   finalStatus = 
-    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						 callingFunction);
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
+							   callingFunction);
 
   status = applyJacobianTranspose(*gVecPtr, *gradVecPtr);
   finalStatus = 
-    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						 callingFunction);
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
+							   callingFunction);
   
   return finalStatus;
 }
@@ -375,17 +272,17 @@ LOCA::Homotopy::Group::computeNewton(Teuchos::ParameterList& params)
     newtonVecPtr = gVecPtr->clone(NOX::ShapeCopy);
   
   finalStatus = computeF();
-  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
+  globalData->locaErrorCheck->checkReturnType(finalStatus, callingFunction);
   
   status = computeJacobian();
   finalStatus = 
-    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						 callingFunction);
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
+							   callingFunction);
 
   status = applyJacobianInverse(params, *gVecPtr, *newtonVecPtr);
   finalStatus = 
-    LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						 callingFunction);
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
+							   callingFunction);
 
   newtonVecPtr->scale(-1.0);
   
@@ -396,26 +293,20 @@ LOCA::Homotopy::Group::computeNewton(Teuchos::ParameterList& params)
 
 NOX::Abstract::Group::ReturnType
 LOCA::Homotopy::Group::applyJacobian(const NOX::Abstract::Vector& input,
-				   NOX::Abstract::Vector& result) const 
+				     NOX::Abstract::Vector& result) const 
 {
   if (!isValidJacobian)
     return NOX::Abstract::Group::BadDependency;
   
-  string callingFunction = 
-    "LOCA::Homotopy::Group::applyJacobian()";
-  NOX::Abstract::Group::ReturnType finalStatus;
-
-  finalStatus = grpPtr->applyJacobian(input, result);
-  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
+  NOX::Abstract::Group::ReturnType status = 
+    grpPtr->applyJacobian(input, result);
 
   // If the Jacobian is not augmented for homotopy (i.e. using MFNK)
   // then lets augment it here.
-  if (augmentJacForHomotopyNotImplemented) {
-    double value = 1.0 - conParam;
-    result.update(value, input, 1.0);
-  }
+  if (augmentJacForHomotopyNotImplemented)
+    result.update(1.0-conParam, input, conParam);
 
-  return finalStatus;
+  return status;
 }
 
 NOX::Abstract::Group::ReturnType
@@ -426,14 +317,15 @@ LOCA::Homotopy::Group::applyJacobianTranspose(
   if (!isValidJacobian)
     return NOX::Abstract::Group::BadDependency;
 
-  string callingFunction = 
-    "LOCA::Homotopy::Group::applyJacobianTranspose()";
-  NOX::Abstract::Group::ReturnType finalStatus; 
+  NOX::Abstract::Group::ReturnType status = 
+    grpPtr->applyJacobianTranspose(input, result);
 
-  finalStatus = grpPtr->applyJacobianTranspose(input, result);
-  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
+  // If the Jacobian is not augmented for homotopy (i.e. using MFNK)
+  // then lets augment it here.
+  if (augmentJacForHomotopyNotImplemented)
+    result.update(1.0-conParam, input, conParam);
 
-  return finalStatus;
+  return status;
 }
 
 NOX::Abstract::Group::ReturnType
@@ -441,14 +333,54 @@ LOCA::Homotopy::Group::applyJacobianInverse(Teuchos::ParameterList& params,
 					  const NOX::Abstract::Vector& input,
 					  NOX::Abstract::Vector& result) const 
 {
-  string callingFunction = 
-    "LOCA::Homotopy::Group::applyJacobianInverse()";
-  NOX::Abstract::Group::ReturnType finalStatus; 
+  return grpPtr->applyJacobianInverse(params, input, result);
+}
 
-  finalStatus = grpPtr->applyJacobianInverse(params, input, result);
-  LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
+NOX::Abstract::Group::ReturnType
+LOCA::Homotopy::Group::applyJacobianMultiVector(
+				      const NOX::Abstract::MultiVector& input,
+				      NOX::Abstract::MultiVector& result) const
+{
+  if (!isValidJacobian)
+    return NOX::Abstract::Group::BadDependency;
+  
+  NOX::Abstract::Group::ReturnType status = 
+    grpPtr->applyJacobianMultiVector(input, result);
 
-  return finalStatus;
+  // If the Jacobian is not augmented for homotopy (i.e. using MFNK)
+  // then lets augment it here.
+  if (augmentJacForHomotopyNotImplemented)
+    result.update(1.0-conParam, input, conParam);
+
+  return status;
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::Homotopy::Group::applyJacobianTransposeMultiVector(
+			              const NOX::Abstract::MultiVector& input,
+			              NOX::Abstract::MultiVector& result) const
+{
+  if (!isValidJacobian)
+    return NOX::Abstract::Group::BadDependency;
+
+  NOX::Abstract::Group::ReturnType status = 
+    grpPtr->applyJacobianTransposeMultiVector(input, result);
+
+  // If the Jacobian is not augmented for homotopy (i.e. using MFNK)
+  // then lets augment it here.
+  if (augmentJacForHomotopyNotImplemented)
+    result.update(1.0-conParam, input, conParam);
+
+  return status;
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::Homotopy::Group::applyJacobianInverseMultiVector(
+				      Teuchos::ParameterList& params,
+				      const NOX::Abstract::MultiVector& input,
+				      NOX::Abstract::MultiVector& result) const
+{
+  return grpPtr->applyJacobianInverseMultiVector(params, input, result);
 }
 
 bool
@@ -497,8 +429,9 @@ const NOX::Abstract::Vector&
 LOCA::Homotopy::Group::getGradient() const 
 {
   if (gradVecPtr == Teuchos::null) {
-    LOCA::ErrorCheck::throwError("LOCA::Homotopy::Group::getGradient", 
-				 "gradVecPtr is NULL!");
+    globalData->locaErrorCheck->throwError(
+				      "LOCA::Homotopy::Group::getGradient", 
+				      "gradVecPtr is NULL!");
   }
   return *gradVecPtr;
 }
@@ -507,19 +440,198 @@ const NOX::Abstract::Vector&
 LOCA::Homotopy::Group::getNewton() const 
 {
   if (newtonVecPtr == Teuchos::null) {
-    LOCA::ErrorCheck::throwError("LOCA::Homotopy::Group::getNewton", 
-				 "newtonVecPtr is NULL!");
+    globalData->locaErrorCheck->throwError("LOCA::Homotopy::Group::getNewton", 
+					   "newtonVecPtr is NULL!");
   }
   return *newtonVecPtr;
+}
+
+Teuchos::RefCountPtr<const LOCA::MultiContinuation::AbstractGroup> 
+LOCA::Homotopy::Group::getUnderlyingGroup() const
+{
+  return grpPtr;
+}
+
+Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup> 
+LOCA::Homotopy::Group::getUnderlyingGroup()
+{
+  return grpPtr;
+}
+
+
+void
+LOCA::Homotopy::Group::copy(const NOX::Abstract::Group& src) 
+{
+
+  const LOCA::Homotopy::Group& source = 
+    dynamic_cast<const LOCA::Homotopy::Group&>(src);
+
+  // Protect against A = A
+  if (this != &source) {
+
+    globalData = source.globalData;
+     grpPtr->copy(*(source.grpPtr));
+    *gVecPtr = *(source.gVecPtr);
+    *randomVecPtr = *(source.randomVecPtr);
+    if (newtonVecPtr != Teuchos::null)
+      *newtonVecPtr = *(source.newtonVecPtr);
+    if (gradVecPtr != Teuchos::null)
+      *gradVecPtr = *(source.gradVecPtr);
+    isValidF = source.isValidF;
+    isValidJacobian = source.isValidJacobian;
+    isValidNewton = source.isValidNewton;
+    isValidGradient = source.isValidGradient;
+    paramVec = source.paramVec;
+    conParam = source.conParam;
+    conParamID = source.conParamID;
+    augmentJacForHomotopyNotImplemented = 
+      source.augmentJacForHomotopyNotImplemented;
+  }
+
+}
+
+void
+LOCA::Homotopy::Group::setParamsMulti(
+			  const vector<int>& paramIDs, 
+			  const NOX::Abstract::MultiVector::DenseMatrix& vals)
+{
+  resetIsValidFlags();
+  grpPtr->setParamsMulti(paramIDs, vals);
+  for (unsigned int i=0; i<paramIDs.size(); i++)
+    if (paramIDs[i] == conParamID)
+      conParam = vals(i,0);
+}
+
+void
+LOCA::Homotopy::Group::setParams(const LOCA::ParameterVector& p) 
+{
+  resetIsValidFlags();
+  grpPtr->setParams(p);
+  conParam = p.getValue(conParamLabel);
+}
+
+void
+LOCA::Homotopy::Group::setParam(int paramID, double val)
+{
+  resetIsValidFlags();
+  grpPtr->setParam(paramID, val);
+  if (paramID == conParamID)
+    conParam = val;
+}
+
+void
+LOCA::Homotopy::Group::setParam(string paramID, double val)
+{
+  resetIsValidFlags();
+  grpPtr->setParam(paramID, val);
+  if (paramID == conParamLabel)
+    conParam = val;
+}
+
+const LOCA::ParameterVector&
+LOCA::Homotopy::Group::getParams() const 
+{
+  return grpPtr->getParams();
+}
+
+double
+LOCA::Homotopy::Group::getParam(int paramID) const
+{
+  return grpPtr->getParam(paramID);
+}
+
+double
+LOCA::Homotopy::Group::getParam(string paramID) const
+{
+  return grpPtr->getParam(paramID);
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::Homotopy::Group::computeDfDpMulti(const vector<int>& paramIDs, 
+					NOX::Abstract::MultiVector& dfdp, 
+					bool isValidF)
+{
+  // g = conParam * f(x) + ((1.0 - conParam) * (x - randomVec))
+  // dg/dp = f(x) - (x - randomVec) when p = conParam
+  // dg/dp = conParam * df/dp when p != conParam
+
+  // For simplicity, we always recompute g, even if isValidF is true
+  // Things get kind of messy otherwise
+
+  // Extract parameter IDs that are not the continuation parameter
+  vector<int> pIDs;
+  vector<int> idx(1);
+  idx[0] = 0; // index 0 corrsponds to f in dfdp
+  for (unsigned int i=0; i<paramIDs.size(); i++)
+    if (paramIDs[i] != conParamID) {
+      pIDs.push_back(paramIDs[i]);
+      idx.push_back(i+1);
+    }
+
+  // Create view of dfdp for parameters that aren't the continuation parameter
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> fp = 
+    dfdp.subView(idx);
+
+  // Compute df/dp for non-continuation parameter parameters
+  // We force recomputation of f for simplicity
+  NOX::Abstract::Group::ReturnType status = 
+    grpPtr->computeDfDpMulti(pIDs, *fp, false);
+
+  // Compute conParam * df/dp
+  fp->scale(conParam);
+
+  // Compute g
+  double v = 1.0-conParam;
+  dfdp[0].update(v, grpPtr->getX(), -v, *randomVecPtr, 1.0);
+
+  // Compute dg/dp for p = conParam
+  grpPtr->computeF();
+  for (unsigned int i=0; i<paramIDs.size(); i++)
+    if (paramIDs[i] == conParamID) {
+      dfdp[i+1] = grpPtr->getF();
+      dfdp[i+1].update(-1.0, grpPtr->getX(), 1.0, *randomVecPtr, 1.0);
+    }
+
+  return status;
+}
+
+void
+LOCA::Homotopy::Group::preProcessContinuationStep(
+			     LOCA::Abstract::Iterator::StepStatus stepStatus)
+{
+  grpPtr->preProcessContinuationStep(stepStatus);
+}
+
+void
+LOCA::Homotopy::Group::postProcessContinuationStep(
+			     LOCA::Abstract::Iterator::StepStatus stepStatus)
+{
+  grpPtr->postProcessContinuationStep(stepStatus);
+}
+
+void
+LOCA::Homotopy::Group::projectToDraw(const NOX::Abstract::Vector& x,
+				     double *px) const
+{
+  grpPtr->projectToDraw(x, px);
+  px[this->projectToDrawDimension()] = conParam;
+}
+
+int
+LOCA::Homotopy::Group::projectToDrawDimension() const
+{
+  return grpPtr->projectToDrawDimension()+1;
 }
 
 void
 LOCA::Homotopy::Group::printSolution(const double conParm) const 
 {
-  if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails)) {
-    cout << "LOCA::Homotopy::Group::printSolution\n";
-    cout << "Nothing to print at this time!";
+  if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
+    globalData->locaUtils->out() << 
+      "\tPrinting Solution Vector for homotopy parameter = " << 
+      globalData->locaUtils->sciformat(conParam) << std::endl;
   }
+  grpPtr->printSolution(conParam);
   return;
 }
 
@@ -527,10 +639,12 @@ void
 LOCA::Homotopy::Group::printSolution(const NOX::Abstract::Vector& x_,
 				     const double conParm) const 
 {
-  if (LOCA::Utils::doPrint(LOCA::Utils::StepperDetails)) {
-    cout << "LOCA::Homotopy::Group::printSolution\n";
-    cout << "Nothing to print at this time!";
+  if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
+    globalData->locaUtils->out() << 
+      "\tPrinting Solution Vector for homotopy parameter = " << 
+      globalData->locaUtils->sciformat(conParam) << std::endl;
   }
+  grpPtr->printSolution(conParam);
   return;
 }
 
@@ -570,16 +684,4 @@ LOCA::Homotopy::Group::setStepperParameters(Teuchos::ParameterList& params)
   stepSizeList.set("Max Step Size", 1.0);
   stepSizeList.set("Aggressiveness", 0.5);
   return;
-}
-
-const LOCA::Continuation::AbstractGroup&
-LOCA::Homotopy::Group::getUnderlyingGroup() const
-{
-  return *grpPtr;
-}
-
-LOCA::Continuation::AbstractGroup&
-LOCA::Homotopy::Group::getUnderlyingGroup()
-{
-  return *grpPtr;
 }

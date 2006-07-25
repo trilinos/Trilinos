@@ -68,11 +68,11 @@ LOCA::Abstract::Group::~Group()
 {
 }
 
-// NOX::Abstract::Group::ReturnType 
-// LOCA::Abstract::Group::augmentJacobianForHomotopy(double conParamValue)
-// {
-//   return NOX::Abstract::Group::NotDefined;
-// }
+NOX::Abstract::Group::ReturnType 
+LOCA::Abstract::Group::augmentJacobianForHomotopy(double conParamValue)
+{
+  return NOX::Abstract::Group::NotDefined;
+}
 
 NOX::Abstract::Group::ReturnType
 LOCA::Abstract::Group::applyShiftedMatrixInverse(

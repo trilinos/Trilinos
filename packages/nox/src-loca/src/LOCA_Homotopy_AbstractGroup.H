@@ -33,7 +33,7 @@
 #ifndef LOCA_HOMOTOPY_ABSTRACTGROUP_H
 #define LOCA_HOMOTOPY_ABSTRACTGROUP_H
 
-#include "LOCA_Continuation_AbstractGroup.H"    // base class
+#include "LOCA_MultiContinuation_AbstractGroup.H"    // base class
 
 namespace LOCA { 
 
@@ -50,7 +50,7 @@ namespace LOCA {
      * diagonal of the Jacobian by a constant times the identity matrix.
      */
     class AbstractGroup : 
-      public virtual LOCA::Continuation::AbstractGroup {
+      public virtual LOCA::MultiContinuation::AbstractGroup {
 
     public:
   
@@ -66,17 +66,17 @@ namespace LOCA {
        */
       //@{
 
-      //! Assignment operator
-      virtual AbstractGroup& operator=(const AbstractGroup& source) = 0;
-
       /*! 
-       * \brief Replace Jacobian \f$J\f$ by \f$J+pI\f$ where \f$I\f$ is the 
-       * identity matrix and \f$p\f$ is a scalar (\b conParamValue).
+       * \brief Replace Jacobian \f$J\f$ by \f$pJ+(1-p)I\f$ where \f$I\f$ is 
+       * the identity matrix and \f$p\f$ is a scalar.
        */
       virtual NOX::Abstract::Group::ReturnType 
-      augmentJacobianForHomotopy(double conParamValue) = 0;
+      augmentJacobianForHomotopy(double p) = 0;
 
       //@}
+
+      //! Bring NOX::Abstract::Group::operator=() into scope
+      using NOX::Abstract::Group::operator=;
 
     };
   } // namespace Homotopy

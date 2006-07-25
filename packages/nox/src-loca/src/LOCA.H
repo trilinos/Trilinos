@@ -51,7 +51,7 @@
 #include "LOCA_TimeDependent_AbstractGroup.H"
 
 // Homotopy group
-// #include "LOCA_Homotopy_Group.H"
+#include "LOCA_Homotopy_Group.H"
 
 #include "LOCA_Abstract_Group.H"
 #include "LOCA_Abstract_Factory.H"

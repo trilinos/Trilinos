@@ -37,7 +37,7 @@
 
 // #include "LOCA_Bifurcation_HopfBord_FiniteDifferenceGroup.H"  // base class
 // #include "LOCA_Bifurcation_TPBord_SingularSolveGroup.H"       // base class
-// #include "LOCA_Homotopy_AbstractGroup.H"                      // base class
+#include "LOCA_Homotopy_AbstractGroup.H"                      // base class
 #include "LOCA_TimeDependent_AbstractGroup.H"
 #include "LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.H"// base class
 #include "LOCA_Pitchfork_MooreSpence_AbstractGroup.H"// base class
@@ -63,7 +63,7 @@ namespace LOCA {
     class Group : 
 //       public LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup,
 //       public LOCA::Bifurcation::TPBord::SingularSolveGroup,
-//       public virtual LOCA::Homotopy::AbstractGroup,
+      public virtual LOCA::Homotopy::AbstractGroup,
       public LOCA::TimeDependent::AbstractGroup,
       public LOCA::TurningPoint::MinimallyAugmented::FiniteDifferenceGroup,
       public LOCA::Pitchfork::MooreSpence::AbstractGroup
@@ -138,15 +138,15 @@ namespace LOCA {
       //@{
 
       /*! 
-       * \brief Replace Jacobian \f$J\f$ by \f$J+pI\f$ where \f$I\f$ is the 
-       * identity matrix and \f$p\f$ is a scalar (\b conParamValue).
+       * \brief Replace Jacobian \f$J\f$ by \f$pJ+(1-p)I\f$ where \f$I\f$ is 
+       * the identity matrix and \f$p\f$ is a scalar.
        */
       /*!
        * Implementation here prints an error message and returns 
        * NOX::Abstract::Group::NotDefined.
        */
-//       virtual NOX::Abstract::Group::ReturnType 
-//       augmentJacobianForHomotopy(double conParamValue);
+      virtual NOX::Abstract::Group::ReturnType 
+      augmentJacobianForHomotopy(double conParamValue);
 
       //@}
 

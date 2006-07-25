@@ -56,9 +56,7 @@ LOCA_OLD_H = \
 	$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.H \
 	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.H \
 	$(srcdir)/LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.H \
-	$(srcdir)/LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.H \
-	$(srcdir)/LOCA_Homotopy_AbstractGroup.H \
-        $(srcdir)/LOCA_Homotopy_Group.H 
+	$(srcdir)/LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.H
 
 LOCA_OLD = \
 	$(srcdir)/LOCA_SingularJacobianSolve_Manager.C \
@@ -78,8 +76,7 @@ LOCA_OLD = \
 	$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.C \
 	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.C \
 	$(srcdir)/LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.C \
-	$(srcdir)/LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.C \
-	$(srcdir)/LOCA_Homotopy_Group.C 
+	$(srcdir)/LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.C 
 
 LOCA_ABSTRACT_H = \
         $(srcdir)/LOCA_Abstract_Group.H \
@@ -120,10 +117,6 @@ LOCA_BORDERED_SOLVER = \
 	$(srcdir)/LOCA_BorderedSolver_HouseholderQR.C \
 	$(srcdir)/LOCA_BorderedSolver_Nested.C \
 	$(srcdir)/LOCA_BorderedSolver_Factory.C
-
-LOCA_CONTINUATION_H =
-
-LOCA_CONTINUATION = 
 
 LOCA_MULTICONTINUATION_H = \
 	$(srcdir)/LOCA_MultiContinuation_ExtendedVector.H \
@@ -212,9 +205,12 @@ LOCA_BIFURCATION = \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_SolverFactory.C \
 	$(srcdir)/LOCA_Bifurcation_Factory.C
 
-LOCA_HOMOTOPY_H = 
+LOCA_HOMOTOPY_H = \
+	$(srcdir)/LOCA_Homotopy_AbstractGroup.H \
+        $(srcdir)/LOCA_Homotopy_Group.H 
 
-LOCA_HOMOTOPY = 
+LOCA_HOMOTOPY = \
+	$(srcdir)/LOCA_Homotopy_Group.C 
 
 LOCA_DERIVUTILS_H = \
         $(srcdir)/LOCA_DerivUtils.H

@@ -33,240 +33,334 @@
 #ifndef LOCA_HOMOTOPY_GROUP_H
 #define LOCA_HOMOTOPY_GROUP_H
 
-#include "LOCA_Continuation_AbstractGroup.H"    // base class
-#include "LOCA_Extended_AbstractGroup.H"        // base class
-#include "LOCA_Homotopy_AbstractGroup.H"        // class data element
+#include "Teuchos_RefCountPtr.hpp"
+
+#include "LOCA_MultiContinuation_AbstractGroup.H"    // base class
+#include "LOCA_Extended_MultiAbstractGroup.H"        // base class
 
 #include "LOCA_Parameter_Vector.H"  // class data member
+
+namespace LOCA {
+  class GlobalData;
+  namespace Homotopy {
+    class AbstractGroup;
+  }
+}
 
 namespace LOCA { 
 
   namespace Homotopy {
   
     /*! 
-      \brief %LOCA's Homotopy Algorithm.  
-    */
+     * \brief %LOCA's Homotopy Algorithm.  
+     */
     /*!
-      The %HomotopyGroup is a concrete implementation of the 
-      LOCA::Continuation::AbstractGroup that modifies the set of nonlinear equations to be solved to allow for Homotopy to be applied to the system.  This object should be used in conjunction with the LOCA::Stepper object to drive the continuation.  This algorithm solves a system of nonlinear equations supplied by the user (\f$ F(x) \f$) through continuation.  An artificial parameter \f$ \lambda \f$ is used to control the continuation.  The idea is to solve a simple equation starting at \f$ \lambda \f$ = 0 and, using the solution from the previous step, solve systems of equations that gets progressively closer to the true system of interest ( at \f$ \lambda \f$ = 1.0 we recover the original equations \f$ F(x) \f$).  By constraining the definition of \f$ g(x, \lambda) \f$ and using artificial parameter contiuation, the continuation branch should be free of multiplicity and bifurcation phenomena.
- 
-      The modified system of equations, \f$ g(x, \lambda) \f$, supplied by the HomotopyGroup is defined as:
-
-      \f[ g(x, \lambda) = \lambda F(x) + (1.0 - \lambda)(x - a) \f]
-    
-      where \f$x\f$ is the solution vector, \f$ \lambda \f$ is an artificial 
-      parameter, \f$ F(x) \f$ is the set of nonlinear equations the user 
-      supplies, \f$ g(x) \f$ is the corresponding set of 
-      homotopy equations that LOCA will solve, and \f$ a \f$ is a random vector.
-
-      This group requires the loca Stepper for continuation
-      from \f$ \lambda \f$ = 0.0 (a simple set of equations to solve) to 
-      \f$ \lambda \f$ = 1.0 (the set of equations requested by the user, 
-      \f$ F(x) \f$).  The Homotopy::Group will generate the Stepper parameter sublist in the parameter list that is passed in to the constructor.  The user is free to modify this list (it sets default values) before passing it into the stepper object but should NOT change the starting and stopping values for the continuation parameter.
-   
-      References:
-
-      - ALGORITHM 652 HOMPACK: A Suite of Codes for Globally Convergent Homotopy Algorithms, Watson, L.T., Billups, S.C, and Morgan, A.P., ACM Transactions on Mathematical Software, Vol. 13, No. 3, September 1987, pp281-310.
-
-    */
+     * The %HomotopyGroup is a concrete implementation of the 
+     * LOCA::Continuation::AbstractGroup that modifies the set of nonlinear 
+     * equations to be solved to allow for Homotopy to be applied to the 
+     * system.  This object should be used in conjunction with the 
+     * LOCA::Stepper object to drive the continuation.  This algorithm solves 
+     * a system of nonlinear equations supplied by the user (\f$ F(x) \f$) 
+     * through continuation.  An artificial parameter \f$ \lambda \f$ is used 
+     * to control the continuation.  The idea is to solve a simple equation 
+     * starting at \f$ \lambda \f$ = 0 and, using the solution from the 
+     * previous step, solve systems of equations that gets progressively 
+     * closer to the true system of interest ( at \f$ \lambda \f$ = 1.0 we 
+     * recover the original equations \f$ F(x) \f$).  By constraining the 
+     * definition of \f$ g(x, \lambda) \f$ and using artificial parameter 
+     * contiuation, the continuation branch should be free of multiplicity and 
+     * bifurcation phenomena.
+     * 
+     * The modified system of equations, \f$ g(x, \lambda) \f$, supplied by 
+     * the HomotopyGroup is defined as:
+     *
+     * \f[ g(x, \lambda) = \lambda F(x) + (1.0 - \lambda)(x - a) \f]
+     *
+     * where \f$x\f$ is the solution vector, \f$ \lambda \f$ is an artificial 
+     * parameter, \f$ F(x) \f$ is the set of nonlinear equations the user 
+     * supplies, \f$ g(x) \f$ is the corresponding set of 
+     * homotopy equations that LOCA will solve, and \f$ a \f$ is a random 
+     * vector.
+     *
+     * This group requires the loca Stepper for continuation
+     * from \f$ \lambda \f$ = 0.0 (a simple set of equations to solve) to 
+     * \f$ \lambda \f$ = 1.0 (the set of equations requested by the user, 
+     * \f$ F(x) \f$).  The Homotopy::Group will generate the Stepper parameter 
+     * sublist in the parameter list that is passed in to the constructor.  
+     * The user is free to modify this list (it sets default values) before 
+     * passing it into the stepper object but should NOT change the starting 
+     * and stopping values for the continuation parameter.
+     *
+     * References:
+     * 
+     * - ALGORITHM 652 HOMPACK: A Suite of Codes for Globally Convergent 
+     * Homotopy Algorithms, Watson, L.T., Billups, S.C, and Morgan, A.P., 
+     * ACM Transactions on Mathematical Software, Vol. 13, No. 3, September 
+     * 1987, pp281-310.
+     */
 
     class Group : 
-      public LOCA::Continuation::AbstractGroup,
-      public LOCA::Extended::AbstractGroup {
+      public LOCA::MultiContinuation::AbstractGroup,
+      public LOCA::Extended::MultiAbstractGroup {
 
     public:
   
-      //! Constructor to set the base group and generate the "%Stepper" sublist for homotopy continuation.
       /*! 
-	The locaSublist variable is the "LOCA" sublist (of type Teuchos::ParameterList) that will be used in loca continuation runs.
-
-	The variables scalarRandomVector and scalarInitialGuess are used to give some control over the generation of the random vector.  In certain instances we have seen the random vector force the solution to a set of variables that are unphysical and could break the function evaluations (cause them to return nan).  For example, in heat transfer problems, the temperature could be the dependent variable.  If the solution vector has an unphysical temperature (the random vector could force the temperature to negative or near zero values for the solution at \f$ \lambda = 0\f$) then property evaluations could break.  The random vector can be modified to keep the values near the initial guess based on values supplied to the constructor of the HomotopyGroup: 
-
-	\f[
-	a = abs(r) * \mbox{scalarRandom} + x_o * \mbox{scalarInitialGuess}
-	\f]
-
-	where \f$ r \f$ is the random vector generated by a call to NOX::Abstract::Vector::random(), \f$ \mbox{scalarRandom} \f$ is a scalar value, \f$ x_o \f$ is the initial guess to the solution vector, and \f$ \mbox{scalarInitialGuess} \f$ is a scalar value.  The defualt values force the random vector to be calculated as:
-
-	\f[
-	a = abs(r)
-	\f]
-
-	IMPORTANT: For homotopy to work correctly you should not change the starting and stopping parameter values (0.0 and 1.0 respectively) set in the "%Stepper" sublist.
-      */
-      Group(Teuchos::ParameterList& locaSublist,
-	    const Teuchos::RefCountPtr<LOCA::Homotopy::AbstractGroup>& g,
-	    double scaleRandom = 1.0,
-	    double scaleInitialGuess = 0.0);
+       * \brief Constructor to set the base group and generate the "%Stepper" 
+       * sublist for homotopy continuation.
+       */
+      /*! 
+       * The locaSublist variable is the "LOCA" sublist (of type 
+       * Teuchos::ParameterList) that will be used in loca continuation runs.
+       *
+       * The variables scalarRandomVector and scalarInitialGuess are used to 
+       * give some control over the generation of the random vector.  In 
+       * certain instances we have seen the random vector force the solution 
+       * to a set of variables that are unphysical and could break the 
+       * function evaluations (cause them to return nan).  For example, in 
+       * heat transfer problems, the temperature could be the dependent 
+       * variable.  If the solution vector has an unphysical temperature (
+       * the random vector could force the temperature to negative or near 
+       * zero values for the solution at \f$ \lambda = 0\f$) then property 
+       * evaluations could break.  The random vector can be modified to keep 
+       * the values near the initial guess based on values supplied to the 
+       * constructor of the HomotopyGroup: 
+       * 
+       * \f[
+       * a = abs(r) * \mbox{scalarRandom} + x_o * \mbox{scalarInitialGuess}
+       * \f]
+       * 
+       * where \f$ r \f$ is the random vector generated by a call to 
+       * NOX::Abstract::Vector::random(), \f$ \mbox{scalarRandom} \f$ is a 
+       * scalar value, \f$ x_o \f$ is the initial guess to the solution 
+       * vector, and \f$ \mbox{scalarInitialGuess} \f$ is a scalar value.  
+       * The defualt values force the random vector to be calculated as:
+       *
+       * \f[
+       * a = abs(r)
+       * \f]
+       *
+       * IMPORTANT: For homotopy to work correctly you should not change the 
+       * starting and stopping parameter values (0.0 and 1.0 respectively) set 
+       * in the "%Stepper" sublist.
+       */
+      Group(
+	 Teuchos::ParameterList& locaSublist,
+	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+	 const Teuchos::RefCountPtr<LOCA::Homotopy::AbstractGroup>& g,
+	 double scaleRandom = 1.0,
+	 double scaleInitialGuess = 0.0);
 
       //! Constructor with a user supplied random vector.
-      Group(Teuchos::ParameterList& locaSublist,
-	    const Teuchos::RefCountPtr<LOCA::Homotopy::AbstractGroup>& g,
-	    const NOX::Abstract::Vector& randomVector);
+      Group(
+	 Teuchos::ParameterList& locaSublist,
+	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+	 const Teuchos::RefCountPtr<LOCA::Homotopy::AbstractGroup>& g,
+	 const NOX::Abstract::Vector& randomVector);
 
       //! Copy constructor.
       Group(const Group& source, NOX::CopyType type = NOX::DeepCopy);
 
       //! Destructor.
       virtual ~Group();
-  
-      //! Assignment operator
-      virtual LOCA::Continuation::AbstractGroup& 
-      operator=(const LOCA::Continuation::AbstractGroup& source);
 
-      //! Assignment operator
-      virtual LOCA::Extended::AbstractGroup& 
-      operator=(const LOCA::Extended::AbstractGroup& source);
+      /*! 
+       * @name Implementation of NOX::Abstract::Group virtual methods 
+       */
+      //@{
 
       //! Assignment operator
       virtual NOX::Abstract::Group& 
       operator=(const NOX::Abstract::Group& source);
-
-      //! Assignment operator
-      virtual Group& operator=(const Group& source);
      
       //! Cloning function
       virtual Teuchos::RefCountPtr<NOX::Abstract::Group> 
       clone(NOX::CopyType type = NOX::DeepCopy) const;
 
-      //! Set the parameter list in the group to p (pVector = p).  
-      virtual void setParams(const ParameterVector& p);
-
-      //! Return a const reference to the ParameterVector owned by the group. 
-      virtual const ParameterVector& getParams() const;
-
-      //! Set parameter indexed by paramID
-      virtual void setParam(int paramID, double val);
-
-      //! Return copy of parameter indexed by paramID
-      virtual double getParam(int paramID) const;
-
-      //! Set parameter indexed by paramID
-      virtual void setParam(string paramID, double val);
-
-      //! Return copy of parameter indexed by paramID
-      virtual double getParam(string paramID) const;
-
-      //! Compute \f$dF/dp\f$ for the extended system
-      virtual NOX::Abstract::Group::ReturnType
-      computeDfDp(int paramID, NOX::Abstract::Vector& result);
-
-      //@{ \name "Compute" functions.
-
       //! Set the solution vector, x, to y.
       virtual void setX(const NOX::Abstract::Vector& y);
 
-      //! Compute and return solution vector, x, where this.x = grp.x + step * d.
+      //! Compute this.x = grp.x + step * d.
       virtual void computeX(const NOX::Abstract::Group& g, 
 			    const NOX::Abstract::Vector& d,
 			    double step);
 
-      //! Compute and return solution vector, x, where this.x = grp.x + step * d.
-      virtual void computeX(const Group& g, 
-			    const NOX::Abstract::Vector& d,
-			    double step);
-
-      //! Compute the turning point equation residual $G$ 
+      //! Compute the homotopy residual $g$ 
       virtual NOX::Abstract::Group::ReturnType computeF();
 
-      //! Compute the blocks of the Jacobian derivative of $G$
-      /*!
-	Certain second derivatives such as (Jn)_x are not calculated since
-	only their action on vectors are needed for later solves.
-      */
+      //! Compute the Jacobian derivative of the homotopy residual $g$
       virtual NOX::Abstract::Group::ReturnType computeJacobian();
 
-      //! Gradient computation is not defined for this group
+      //! Compute gradient of homotopy residual $g$
       virtual NOX::Abstract::Group::ReturnType computeGradient();
 
-      //! Compute %Newton direction using bordering algorithm
+      //! Compute %Newton direction using applyJacobianInverse
       virtual NOX::Abstract::Group::ReturnType 
       computeNewton(Teuchos::ParameterList& params);
-
-      //@}
-
-      /** @name Jacobian operations. */
-
-      //@{
   
-      //! Computes the extended Jacobian vector product
+      //! Computes the homotopy Jacobian vector product
       virtual NOX::Abstract::Group::ReturnType 
       applyJacobian(const NOX::Abstract::Vector& input, 
 		    NOX::Abstract::Vector& result) const;
 
-      //! Jacobian transpose product is not defined by this group
+      //! Computes the homotopy Jacobian-transpose vector product
       virtual NOX::Abstract::Group::ReturnType 
       applyJacobianTranspose(const NOX::Abstract::Vector& input, 
 			     NOX::Abstract::Vector& result) const;
 
-      //! Applies the inverse of the extended Jacobian matrix using the bordering algorithm
+      //! Applies the inverse of the homotopy Jacobian matrix 
       virtual NOX::Abstract::Group::ReturnType 
       applyJacobianInverse(Teuchos::ParameterList& params, 
 			   const NOX::Abstract::Vector& input, 
 			   NOX::Abstract::Vector& result) const;
-      //@}
 
-      /** @name "Is" functions.
-   
-      Checks to see if various objects have been computed. Returns \c true
-      if the corresponding "compute" function has been called since the
-      last update to the solution vector (via instantiation or
-      computeX).
-      */
+      //! Applies Jacobian for homotopy system
+      virtual NOX::Abstract::Group::ReturnType 
+      applyJacobianMultiVector(const NOX::Abstract::MultiVector& input, 
+			       NOX::Abstract::MultiVector& result) const;
 
-      //@{
+      //! Applies Jacobian-transpose for homotopy system
+      virtual NOX::Abstract::Group::ReturnType 
+      applyJacobianTransposeMultiVector(
+				     const NOX::Abstract::MultiVector& input, 
+				     NOX::Abstract::MultiVector& result) const;
+
+      //! Applies Jacobian inverse for homotopy system
+      virtual NOX::Abstract::Group::ReturnType 
+      applyJacobianInverseMultiVector(
+				    Teuchos::ParameterList& params, 
+				    const NOX::Abstract::MultiVector& input, 
+				    NOX::Abstract::MultiVector& result) const;
   
-      //! Return \c true if the extended residual \f$G\f$ is valid.
+      //! Return \c true if the homotopy residual \f$g\f$ is valid.
       virtual bool isF() const;
 
-      //! Return \c true if the extended Jacobian is valid.
+      //! Return \c true if the homotopy Jacobian is valid.
       virtual bool isJacobian() const;
 
-      //! Always returns false.
+      //!  Return \c true if the homotopy gradient is valid.
       virtual bool isGradient() const;
 
-      //! Return \c true if the extended Newton direction is valid.
+      //! Return \c true if the homotopy Newton direction is valid.
       virtual bool isNewton() const;
-      //@}
 
-      /** @name "Get" functions.
-   
-      Note that these function do not check whether or not the vectors
-      are valid. Must use the "Is" functions for that purpose.
-      */
-      //@{ 
-
-      //! Return extended solution vector \f$z\f$.  
+      //! Return homotopy solution vector \f$x\f$.  
       virtual const NOX::Abstract::Vector& getX() const;
 
-      //! Return extended equation residual \f$G(z)\f$
+      //! Return homotopy residual \f$g\f$
       virtual const NOX::Abstract::Vector& getF() const;
 
-      //! Return 2-norm of \f$G(z)\f$. 
+      //! Return 2-norm of \f$g\f$. 
       virtual double getNormF() const;
 
-      //! Vector returned is not valid.
+      //! Return homotopy gradient
       virtual const NOX::Abstract::Vector& getGradient() const;
 
-      //! Return extended Newton direction.
+      //! Return homotopy Newton direction.
       virtual const NOX::Abstract::Vector& getNewton() const;
 
       //@}
 
-      //! Calls groups print function for solution vector null vec, and params 
-      virtual void printSolution(const double conParm) const;
-
-      //! Calls groups print function for solution vector null vec, and params
-      virtual void printSolution(const NOX::Abstract::Vector& x_,
-				 const double conParm) const;
+      /*! 
+       * @name Implementation of LOCA::Extended::MultiAbstractGroup 
+       * virtual methods 
+       */
+      //@{
 
       //! Return underlying group
-      virtual const LOCA::Continuation::AbstractGroup& 
+      virtual 
+      Teuchos::RefCountPtr<const LOCA::MultiContinuation::AbstractGroup> 
       getUnderlyingGroup() const;
       
-      //! Return underlying group
-      virtual LOCA::Continuation::AbstractGroup& 
+	//! Return underlying group
+      virtual 
+      Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>
       getUnderlyingGroup();
+      
+      //@}
+
+      /*! 
+       * @name Implementation of LOCA::MultiContinuation::AbstractGroup
+       * virtual methods 
+       */
+      //@{
+
+      //! Assignment
+      virtual void copy(const NOX::Abstract::Group& source);
+
+      //! Set parameters indexed by (integer) paramIDs
+      virtual void setParamsMulti(
+			  const vector<int>& paramIDs, 
+			  const NOX::Abstract::MultiVector::DenseMatrix& vals);
+
+      //! Set the parameter vector in the group to p.
+      virtual void setParams(const ParameterVector& p);
+
+      //! Set parameter indexed by paramID
+      virtual void setParam(int paramID, double val);
+
+      //! Set parameter indexed by paramID
+      virtual void setParam(string paramID, double val);
+
+      //! Return a const reference to the paramter vector owned by the group.
+      virtual const ParameterVector& getParams() const;
+
+      //! Return copy of parameter indexed by paramID
+      virtual double getParam(int paramID) const;
+
+      //! Return copy of parameter indexed by paramID
+      virtual double getParam(string paramID) const;
+
+      /*! 
+       * Compute \f$\partial F/\partial p\f$ for each parameter \f$p\f$ 
+       * indexed by paramIDs.  The first column of \em dfdp holds F,
+       * which is valid if \em isValidF is true.  Otherwise F must be
+       * computed.
+       */
+      virtual NOX::Abstract::Group::ReturnType
+      computeDfDpMulti(const vector<int>& paramIDs, 
+		       NOX::Abstract::MultiVector& dfdp, 
+		       bool isValidF);
+
+      //! Perform any preprocessing before a continuation step starts.
+      /*!
+       * The \c stepStatus argument indicates whether the previous step was
+       * successful.
+       */
+      virtual void 
+      preProcessContinuationStep(
+			     LOCA::Abstract::Iterator::StepStatus stepStatus);
+      
+      //! Perform any postprocessing after a continuation step finishes.
+      /*!
+       * The \c stepStatus argument indicates whether the step was
+       * successful.
+       */
+      virtual void 
+      postProcessContinuationStep(
+			 LOCA::Abstract::Iterator::StepStatus stepStatus);
+
+      //! Projects solution to a few scalars for multiparameter continuation
+      virtual void projectToDraw(const NOX::Abstract::Vector& x,
+				 double *px) const;
+
+      //! Returns the dimension of the project to draw array
+      virtual int projectToDrawDimension() const;
+
+      /*! 
+       * \brief Function to print out solution and continuation 
+       * parameter after successful continuation step.
+       */
+      virtual void printSolution(const double conParam) const;
+
+      /*! 
+       * \brief Function to print out solution and continuation 
+       * parameter after successful continuation step.
+       */
+      virtual void printSolution(const NOX::Abstract::Vector& x_,
+				 const double conParam) const;
+
+      //@}
 
     protected:
       
@@ -279,7 +373,15 @@ namespace LOCA {
       //! Creates and sets the "Stepper" parameter sublist
       void setStepperParameters(Teuchos::ParameterList& params);
 
+    private:
+
+      //! Prohibit generation and use of operator=()
+      Group& operator=(const Group&);
+
     protected:
+
+      //! Pointer LOCA global data object
+      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
 
       //! Stores the underlying loca group.
       Teuchos::RefCountPtr<LOCA::Homotopy::AbstractGroup> grpPtr;   
@@ -290,10 +392,16 @@ namespace LOCA {
       //! Stores the random Vector, \f$ a \f$.
       Teuchos::RefCountPtr<NOX::Abstract::Vector> randomVecPtr;
 
-      //! Stores the homotopy Newton vector, \f$ \frac{\partial r}{\partial x} \f$.
+      /*! 
+       * \brief Stores the homotopy Newton vector, 
+       * \f$ \frac{\partial r}{\partial x} \f$.
+       */
       Teuchos::RefCountPtr<NOX::Abstract::Vector> newtonVecPtr;
 
-      //! Stores the homotopy gradient vector if needed, \f$ \frac{\partial r}{\partial x} \f$.
+      /*! 
+       * Stores the homotopy gradient vector if needed, 
+       * \f$ \frac{\partial r}{\partial x} \f$.
+       */
       Teuchos::RefCountPtr<NOX::Abstract::Vector> gradVecPtr;
 
       //! Is residual vector valid
@@ -314,21 +422,31 @@ namespace LOCA {
       
       //! Value of the homotopy continuation parameter.
       /*! Ranges from 0.0 (easy solution) to 1.0 (solution to the system of 
-	interest).
-      */
+       * interest).
+       */
       double conParam;
 
       //! Continuatioin parameter ID number from the ParameterVector.
       int conParamID;
       
-      //! Contains the string used to identify the homotopy parameter in the ParameterVector object.
+      /*! 
+       * \brief Contains the string used to identify the homotopy parameter in 
+       * the ParameterVector object.
+       */
       const string conParamLabel;
 
-      //! Tracks whether the LOCA::Homotopy::Group method augmentJacobianForHomotopy is implemented.  If not, the augmentation is applied during the applyJacobian assuming a matrix-free implementation.
+      /*!
+       * \brief Tracks whether the LOCA::Homotopy::Group method 
+       * augmentJacobianForHomotopy is implemented.  If not, the augmentation 
+       * is applied during the applyJacobian assuming a matrix-free 
+       * implementation.
+       */
       bool augmentJacForHomotopyNotImplemented;
-    };
+
+    }; // class Group
 
   } // namespace Homotopy
+
 } // namespace LOCA
 
 #endif
