@@ -152,10 +152,6 @@ namespace Thyra
 
 namespace Thyra
 {
-  using Thyra::OpTimesLC;
-  using Thyra::LC2;
-  using Thyra::LCAdd;
-  using Thyra::LCSubtract;
 
   /* ------------------------ global methods ----------------------- */
 

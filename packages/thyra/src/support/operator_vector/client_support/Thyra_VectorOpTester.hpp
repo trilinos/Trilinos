@@ -42,7 +42,6 @@ namespace Thyra
 {
   using namespace Teuchos;
   using std::ostream;
-  using Thyra::TestSpecifier;
 
   /** 
    * Run comparisons between element-wise calculations and Vector member
@@ -152,6 +151,9 @@ namespace Thyra
   inline bool VectorOpTester<Scalar>
   ::sumTest() const 
   {
+
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    
     if (spec_.doTest())
       {
         *out_ << "running vector addition test..." << endl;
@@ -170,12 +172,12 @@ namespace Thyra
         for (int i=0; i<space_.dim(); i++)
           {
             *out_ << "i=" << i << " of N=" << space_.dim() << endl;
-            double a_i = a[i];
-            double b_i = b[i];
+            Scalar a_i = a[i];
+            Scalar b_i = b[i];
             y[i] = a_i + b_i;
           }
 
-        double err = normInf(x-y);
+        ScalarMag err = normInf(x-y);
 
         *out_ << "|sum error|=" << err << endl;
         if (err > spec_.errorTol())
@@ -207,6 +209,9 @@ namespace Thyra
   inline bool VectorOpTester<Scalar>
   ::setElementUsingBracketTest() const 
   {
+    
+    typedef Teuchos::ScalarTraits<int> ST;
+
     if (spec_.doTest())
       {
         Vector<Scalar> a = space_.createMember();
@@ -222,15 +227,15 @@ namespace Thyra
 
         /* pick a seed in a way that is deterministic across processors */
         unsigned int seed = 107*N % 101;
-        Teuchos::ScalarTraits<int>::seedrandom( seed );
+        ST::seedrandom( seed );
 
-        double err = 0.0;
+        ScalarMag err = 0.0;
 
         for (int t=0; t<nTrials; t++)
           {
             zeroOut(a);
-            Index minIndex = Teuchos::ScalarTraits<int>::random() % N;
-            Index maxIndex = Teuchos::ScalarTraits<int>::random() % N;
+            Index minIndex = ST::random() % N;
+            Index maxIndex = ST::random() % N;
             /* skip cases where we've generated identical indices */
             if (minIndex == maxIndex) continue;
             a[minIndex] = -1.0;
@@ -239,10 +244,10 @@ namespace Thyra
             Index findMax = -1;
             Scalar minVal = Thyra::minloc(a, findMin);
             Scalar maxVal = Thyra::maxloc(a, findMax);
-            err += ::fabs(-1.0 - minVal);
-            err += ::fabs(1.0 - maxVal);
-            err += ::fabs(findMin - minIndex);
-            err += ::fabs(findMax - maxIndex);
+            err += ST::magnitude(-1.0 - minVal);
+            err += ST::magnitude(1.0 - maxVal);
+            err += ST::magnitude(findMin - minIndex);
+            err += ST::magnitude(findMax - maxIndex);
           }
         
         *out_ << "|bracket error|=" << err << endl;
@@ -290,7 +295,7 @@ namespace Thyra
         x = dotStar(a,b);
         z = dotSlash(x, b);
         
-        double err = normInf(a-z);
+        ScalarMag err = normInf(a-z);
 
         *out_ << "|dotStar error|=" << err << endl;
         if (err > spec_.errorTol())
@@ -336,11 +341,11 @@ namespace Thyra
 
         for (int i=0; i<space_.dim(); i++)
           {
-            double a_i = a[i];
+            Scalar a_i = a[i];
             y[i]= 3.14*a_i;
           }
 	
-        double err = normInf(x-y);
+        ScalarMag err = normInf(x-y);
 
         *out_ << "|scalarMult error|=" << err << endl;
         if (err > spec_.errorTol())
@@ -387,12 +392,12 @@ namespace Thyra
         /* do the operation elementwise */
         for (int i=0; i<space_.dim(); i++)
           {
-            double a_i = a[i];
-            double b_i = b[i];
+            Scalar a_i = a[i];
+            Scalar b_i = b[i];
             y[i] = 3.14*a_i + 1.4*b_i;
           }
 	
-        double err = normInf(x-y);
+        ScalarMag err = normInf(x-y);
 
         *out_ << "|overloadedUpdate error|=" << err << endl;
         if (err > spec_.errorTol())
@@ -438,7 +443,7 @@ namespace Thyra
         int denomsAreOK = true;
         for (int i=low; i<high; i++)
           {
-            double a_i = a[i];
+            Scalar a_i = a[i];
             if (a_i != Teuchos::ScalarTraits<Scalar>::zero()) 
               {
                 y[i] = 1.0/a_i;
@@ -452,7 +457,7 @@ namespace Thyra
         
         Vector<Scalar> x = space_.createMember();
         int tDenomsAreOK = Thyra::VInvTest(*(a.ptr()), x.ptr().get());
-        double err = (x - y).norm2();
+        ScalarMag err = (x - y).norm2();
 
 #ifdef HAVE_MPI
         int localDenomsAreOK = denomsAreOK;
@@ -508,27 +513,27 @@ namespace Thyra
         int low = lowestLocallyOwnedIndex(space_);
         int high = low + numLocalElements(space_);
 
-        double minQLocal = Teuchos::ScalarTraits<Scalar>::rmax();
+        Scalar minQLocal = Teuchos::ScalarTraits<Scalar>::rmax();
         for (int i=low; i<high; i++)
           {
-            double a_i = a[i];
-            double b_i = b[i];
+            Scalar a_i = a[i];
+            Scalar b_i = b[i];
             if (b_i != Teuchos::ScalarTraits<Scalar>::zero())
               {
-                double q = a_i/b_i;
+                Scalar q = a_i/b_i;
                 if (q < minQLocal) minQLocal = q;
               }
           }
 
-        double minQ = minQLocal;
+        Scalar minQ = minQLocal;
         comm_.allReduce((void*) &minQLocal, (void*) &minQ, 1, Teuchos::MPIComm::DOUBLE,
                         Teuchos::MPIComm::MIN);
 	
 
-        double tMinQ = Thyra::VMinQuotient(*(a.ptr()), *(b.ptr()));
+        Scalar tMinQ = Thyra::VMinQuotient(*(a.ptr()), *(b.ptr()));
         *out_ << "trilinos minQ = " << tMinQ << endl;
         *out_ << "elemwise minQ = " << minQ << endl;
-        double err = fabs(minQ - tMinQ);
+        ScalarMag err = ST::magnitude(minQ - tMinQ);
         
         *out_ << "min quotient error=" << err << endl;
         if (err > spec_.errorTol())
@@ -579,7 +584,7 @@ namespace Thyra
         for (int i=low; i<high; i++)
           {
             int feasible = true;
-            double a_i = a[i];
+            Scalar a_i = a[i];
             switch(i%4)
               {
               case 0:
@@ -607,7 +612,7 @@ namespace Thyra
 	
         Vector<Scalar> m = space_.createMember();
         int tAllFeasible = Thyra::VConstrMask(*(a.ptr()), *(c.ptr()), m.ptr().get());
-        double err = (m - y).norm2();
+        ScalarMag err = (m - y).norm2();
 
 #ifdef HAVE_MPI
         int localAllFeas = allFeasible;
@@ -671,11 +676,11 @@ namespace Thyra
 
         for (int i=low; i<high; i++)
           {
-            double a_i = a[i];
+            Scalar a_i = a[i];
             y[i] = fabs(a_i) >= s ;
           }
 	
-        double err = normInf(x-y);
+        ScalarMag err = normInf(x-y);
 
         *out_ << "|compare-to-scalar error|=" << err << endl;
         if (err > spec_.errorTol())
@@ -724,11 +729,11 @@ namespace Thyra
 
         for (int i=low; i<high; i++)
           {
-            double a_i = a[i];
+            Scalar a_i = a[i];
             y[i] =  fabs(a_i) >= s;
           }
 	
-        double err = normInf(x-y);
+        ScalarMag err = normInf(x-y);
 
         *out_ << "|index error|=" << err << endl;
         if (err > spec_.errorTol())

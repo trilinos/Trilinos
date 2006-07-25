@@ -65,19 +65,19 @@ namespace Thyra
   template <class Scalar, class TargetType> class Converter
   {
   public:
-    /** */
+    /** \brief . */
     virtual ~Converter(){;}
 
-    /** */
+    /** \brief . */
     virtual TargetType convert() const = 0 ;
 
-    /** */
+    /** \brief . */
     virtual void evalInto(Vector<Scalar>& acceptor) const = 0 ;
 
-    /** */
+    /** \brief . */
     virtual bool containsVector(const Thyra::VectorBase<Scalar>* vec) const = 0 ;
 
-    /** */
+    /** \brief . */
     virtual void addInto(Vector<Scalar>& other, Thyra::LCSign sign) const = 0 ;
   };
 
@@ -94,22 +94,22 @@ namespace Thyra
     /** Construct a vector from the result of an overloaded operator  */
     ConstVector(const Thyra::ConvertibleToVector<Scalar>& x);
 
-    /** */
+    /** \brief . */
     ConstVector<Scalar> evalToConst() const {return *this;}
 
-    /** */
+    /** \brief . */
     bool containsVector(const Thyra::VectorBase<Scalar>* vec) const ;
 
-    /** */
+    /** \brief . */
     void evalInto(Vector<Scalar>& other) const ;
 
-    /** */
+    /** \brief . */
     void addInto(Vector<Scalar>& other, Thyra::LCSign sign) const ;
 
-    /** */
+    /** \brief . */
     virtual Scalar operator[](Index globalIndex) const ;
 
-    /** */
+    /** \brief . */
     ConstVector<Scalar> convert() const {return *this;}
       
     /** get read-only block */
@@ -125,11 +125,11 @@ namespace Thyra
   Index dim(const ConstVector<Scalar>& x) ;
 
 
-  /** */
+  /** \brief . */
   template <class Scalar> 
   std::ostream& operator<<(std::ostream& os, const ConstVector<Scalar>& v);
 
-  /** */
+  /** \brief . */
   template <class Scalar> inline 
   ConstVector<Scalar> toVector(const Converter<Scalar, ConstVector<Scalar> >& x) 
   {return x.convert();}
@@ -144,7 +144,7 @@ namespace Thyra
   public:
     TEUCHOS_HANDLE_CTORS(Vector<Scalar>, VectorBase<Scalar>);
 
-    /** */
+    /** \brief . */
     class IndexObject
     {
     public:
@@ -215,14 +215,19 @@ namespace Thyra
     /** Write the contents of another vector into this vector */
     Vector<Scalar>& acceptCopyOf(const ConstVector<Scalar>& x);
 
-    /** */
+    /** \brief . */
+    Scalar operator[](Index globalIndex) const
+      {
+        return ConstVector<Scalar>::operator[](globalIndex);
+      }
+
+    /** \brief . */
     IndexObject operator[](Index globalIndex)
     {
       //      *Teuchos::VerboseObjectBase::getDefaultOStream()
       // << "calling non-const [] " << endl;
       return IndexObject(this->ptr(), globalIndex);
     }
-
 
     /** \name Product vector operations */
     //@{
@@ -238,11 +243,11 @@ namespace Thyra
   /* copy */
   THYRA_UNARY_VECTOR_OP_DECL(copy, copyInto, assign, "copy");
 
-  /** */
+  /** \brief . */
   template <class Scalar> inline
   Thyra::Vector<Scalar> formVector(const Thyra::Vector<Scalar>& x) {return x;}
   
-  /** */
+  /** \brief . */
   template <class Scalar> inline
   Thyra::Vector<Scalar> formVector(const Thyra::ConstVector<Scalar>& x) 
   {return copy(x);}
