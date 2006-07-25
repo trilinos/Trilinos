@@ -798,16 +798,23 @@ int AZ_check_options(int options[], int az_proc, int data_org[], int az_nprocs,
   }
 
   /* check the the norm used */
-  if (((options[AZ_conv] == AZ_sol) || (options[AZ_conv] == AZ_Anorm)) &&
-      ((data_org[AZ_matrix_type] != AZ_MSR_MATRIX) &&
-       (data_org[AZ_matrix_type] != AZ_VBR_MATRIX))) {
+  /* If options[AZ_conv]==AZ_Anorm and matrix is not MSR or VBR, then make
+     sure that Amat->mat_norm is greater than zero. If it isn't, then
+     issue an error.
+  */
+  if ((options[AZ_conv] == AZ_sol) || (options[AZ_conv] == AZ_Anorm)) {
+    if ( ((data_org[AZ_matrix_type] != AZ_MSR_MATRIX) &&
+          (data_org[AZ_matrix_type] != AZ_VBR_MATRIX)) ) {
+      if (Amat->matrix_norm <= 0.0) {
         if (az_proc == 0) {
-        (void) AZ_printf_err( "%sERROR: The norm of the matrix can only be "
-                       "computed  with MSR or VBR matrices.\n"
+          (void) AZ_printf_err( "%sERROR: The matrix is not MSR or VBR, but "
+                       "Amat->matrix_norm <= 0.0. Matrix norm must be set.\n"
                        "       data_org[AZ_matrix_type] = %d\n\n", yo,
                        data_org[AZ_matrix_type]);
+        }
+        return 0;
       }
-      return 0;
+    }
   }
 
 

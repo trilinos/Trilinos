@@ -366,7 +366,7 @@ int test_azoo_with_ilut(Epetra_CrsMatrix& A,
 
   azoo0->SetAztecOption(AZ_solver, AZ_gmres);
   azoo0->SetAztecOption(AZ_output, AZ_none);
-  azoo0->SetAztecOption(AZ_conv, AZ_none);
+  azoo0->SetAztecOption(AZ_conv, AZ_Anorm);
   azoo0->SetAztecOption(AZ_precond, AZ_dom_decomp);
   azoo0->SetAztecOption(AZ_subdomain_solve, AZ_ilut);
   azoo0->SetAztecOption(AZ_keep_info, 1);

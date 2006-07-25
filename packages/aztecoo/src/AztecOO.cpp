@@ -409,8 +409,8 @@ int AztecOO::SetUserOperator(Epetra_Operator * UserOperator) {
     Amat_ = 0;
   }
 
-	if (UserOperatorData_!=0) delete UserOperatorData_;
-	UserOperatorData_ = new OperatorData(UserOperator); // Initialize User Operator Data
+  if (UserOperatorData_!=0) delete UserOperatorData_;
+  UserOperatorData_ = new OperatorData(UserOperator); // Initialize User Operator Data
 
   SetProcConfig(UserOperator->Comm());
 

@@ -286,11 +286,27 @@ void AZ_compute_global_scalars(AZ_MATRIX *Amat,
       }
 
 
-      if  ((options[AZ_ignore_scaling]) && (conv_info->scaling->A_norm != 0.0))
+      if  ((options[AZ_ignore_scaling]) && (conv_info->scaling->A_norm != 0.0)){
         conv_info->A_norm = conv_info->scaling->A_norm;
-      else conv_info->A_norm = AZ_gmax_matrix_norm(Amat->val, Amat->indx,
-                                                   Amat->bindx, Amat->rpntr, Amat->cpntr,
-                                                   Amat->bpntr, proc_config, Amat->data_org);
+      }
+      else {
+        if (Amat->matrix_type == AZ_MSR_MATRIX ||
+            Amat->matrix_type == AZ_VBR_MATRIX) {
+          conv_info->A_norm =
+            AZ_gmax_matrix_norm(Amat->val, Amat->indx, Amat->bindx, Amat->rpntr,
+                              Amat->cpntr, Amat->bpntr, proc_config,
+                              Amat->data_org);
+        }
+        else {
+          if (Amat->matrix_norm <= 0.0) {
+            if (proc_config[AZ_node]==0) {
+              AZ_printf_out("Error: matrix is not MSR or VBR, and Amat->"
+                "matrix_norm <= 0.0.\n");
+            }
+          }
+          conv_info->A_norm = Amat->matrix_norm;
+        }
+      }
 
       if (fabs(conv_info->A_norm) < DBL_MIN) {
         AZ_p_error("Error: ||A||_infinity = 0\n\tSomething wrong with A\n",

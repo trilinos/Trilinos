@@ -2467,33 +2467,6 @@ AZ_MATRIX *AZ_matrix_create(int local)
       exit(1);
    }
    AZ_matrix_init(Amat, local);
-/*
-   Amat->matrix_type = AZ_none;
-   Amat->N_local = local;
-   Amat->N_ghost = 0;
-   Amat->mat_create_called = 1;
-   Amat->must_free_data_org = 0;
-   Amat->rpntr       = NULL;
-   Amat->cpntr       = NULL;
-   Amat->bpntr       = NULL;
-   Amat->bindx       = NULL;
-   Amat->indx        = NULL;
-   Amat->val         = NULL;
-   Amat->data_org    = NULL;
-   Amat->matvec      = NULL;
-   Amat->getrow      = NULL;
-   Amat->user_comm   = NULL;
-   Amat->matrix_norm = -1.0;
-   Amat->aux_ival    = NULL;
-   Amat->aux_dval    = NULL;
-   Amat->aux_ptr     = NULL;
-   Amat->matvec_data = NULL;
-   Amat->getrow_data = NULL;
-   Amat->aux_matrix  = NULL;
-   Amat->N_nz        = -1;
-   Amat->max_per_row = -1;
-   Amat->largest_band= -1;
-*/
 
    return(Amat);
 } 

@@ -38,10 +38,15 @@ AztecOO_StatusTestMaxIters::AztecOO_StatusTestMaxIters(int MaxIters)
   status_ = Unchecked;
 }
 
-AztecOO_StatusType AztecOO_StatusTestMaxIters::CheckStatus(int CurrentIter, 
-							   Epetra_MultiVector * CurrentResVector, 
-							   double CurrentResNormEst,
-							   bool SolutionUpdated) {
+AztecOO_StatusType
+AztecOO_StatusTestMaxIters::CheckStatus(int CurrentIter, 
+                                        Epetra_MultiVector * CurrentResVector, 
+                                        double CurrentResNormEst,
+                                        bool SolutionUpdated)
+{
+  (void)CurrentResVector;
+  (void)CurrentResNormEst;
+  (void)SolutionUpdated;
   status_ = Unconverged;
   Niters_ = CurrentIter;
   if (Niters_ >= MaxIters_)

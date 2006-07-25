@@ -140,11 +140,13 @@ void AZ_scale_f(int action, AZ_MATRIX *Amat, int options[], double b[], double x
     }
   }
 
-  if ( (options[AZ_ignore_scaling] == AZ_TRUE) && (options[AZ_pre_calc] <= AZ_recalc) 
-      && (action == AZ_SCALE_MAT_RHS_SOL)) 
+  if ( (options[AZ_ignore_scaling] == AZ_TRUE) &&
+       (options[AZ_pre_calc] <= AZ_recalc) &&
+       (action == AZ_SCALE_MAT_RHS_SOL)) {
     scaling->A_norm = AZ_gmax_matrix_norm(Amat->val, Amat->indx, Amat->bindx, 
-                                          Amat->rpntr, Amat->cpntr, Amat->bpntr, 
+                                         Amat->rpntr, Amat->cpntr, Amat->bpntr, 
                                           proc_config, Amat->data_org);
+  }
 
   switch (options[AZ_scaling]) {
 
