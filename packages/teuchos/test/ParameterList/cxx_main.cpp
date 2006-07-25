@@ -552,7 +552,7 @@ int main(int argc, char *argv[])
   }
 
 
-#if defined(HAVE_TEUCHOS_EXTENDED) && defined(HAVE_TEUCHOS_EXPAT)
+#if defined(HAVE_TEUCHOS_EXTENDED)
 
   try {
 
@@ -594,11 +594,12 @@ int main(int argc, char *argv[])
   }
   catch(const std::exception& e)
   {
-    cerr << "caught exception " << e.what() << endl;
+    if(verbose)
+      cerr << "caught exception " << e.what() << endl;
     FailedTests++;
   }
 
-#endif
+#endif // defined(HAVE_TEUCHOS_EXTENDED)
 
   //-----------------------------------------------------------
   // Print out main list
@@ -642,10 +643,12 @@ int main(int argc, char *argv[])
     ++FailedTests;
   }
   catch(const Teuchos::Exceptions::InvalidParameter &e) {
-    cerr << "caught expected Teuchos::Exceptions::InvalidParameter: " << e.what() << endl;
+    if(verbose)
+      cerr << "caught expected Teuchos::Exceptions::InvalidParameter: " << e.what() << endl;
   }
   catch(const std::exception &e) {
-    cerr << "caught unexpected exception: " << e.what() << endl;
+    if(verbose)
+      cerr << "caught unexpected exception: " << e.what() << endl;
     ++FailedTests;
   }
 
@@ -660,10 +663,12 @@ int main(int argc, char *argv[])
     ++FailedTests;
   }
   catch(const Teuchos::Exceptions::InvalidParameter &e) {
-    cerr << "caught expected Teuchos::Exceptions::InvalidParameter: " << e.what() << endl;
+    if(verbose)
+      cerr << "caught expected Teuchos::Exceptions::InvalidParameter: " << e.what() << endl;
   }
   catch(const std::exception &e) {
-    cerr << "caught unexpected exception: " << e.what() << endl;
+    if(verbose)
+      cerr << "caught unexpected exception: " << e.what() << endl;
     ++FailedTests;
   }
 
@@ -684,7 +689,8 @@ int main(int argc, char *argv[])
     if (verbose) cout << "Did not throw exception, success!\n\n";
   }
   catch(const std::exception &e) {
-    cerr << "caught unexpected exception " << e.what() << endl;
+    if(verbose)
+      cerr << "caught unexpected exception " << e.what() << endl;
     ++FailedTests;
   }
 
@@ -700,10 +706,12 @@ int main(int argc, char *argv[])
     ++FailedTests;
   }
   catch(const Teuchos::Exceptions::InvalidParameter &e) {
-    cerr << "caught expected Teuchos::Exceptions::InvalidParameter: " << e.what() << endl;
+    if(verbose)
+      cerr << "caught expected Teuchos::Exceptions::InvalidParameter: " << e.what() << endl;
   }
   catch(const std::exception &e) {
-    cerr << "caught unexpected exception: " << e.what() << endl;
+    if(verbose)
+      cerr << "caught unexpected exception: " << e.what() << endl;
     ++FailedTests;
   }
   PL_Main_copy.sublist("Line Search").sublist("Polynomial").set("Max Iters",10); // Put back the valid int!
@@ -720,10 +728,12 @@ int main(int argc, char *argv[])
     ++FailedTests;
   }
   catch(const Teuchos::Exceptions::InvalidParameter &e) {
-    cerr << "caught expected Teuchos::Exceptions::InvalidParameter: " << e.what() << endl;
+    if(verbose)
+      cerr << "caught expected Teuchos::Exceptions::InvalidParameter: " << e.what() << endl;
   }
   catch(const std::exception &e) {
-    cerr << "caught unexpected exception: " << e.what() << endl;
+    if(verbose)
+      cerr << "caught unexpected exception: " << e.what() << endl;
     ++FailedTests;
   }
 
@@ -739,10 +749,12 @@ int main(int argc, char *argv[])
     ++FailedTests;
   }
   catch(const Teuchos::Exceptions::InvalidParameter &e) {
-    cerr << "caught expected Teuchos::Exceptions::InvalidParameter: " << e.what() << endl;
+    if(verbose)
+      cerr << "caught expected Teuchos::Exceptions::InvalidParameter: " << e.what() << endl;
   }
   catch(const std::exception &e) {
-    cerr << "caught unexpected exception: " << e.what() << endl;
+    if(verbose)
+      cerr << "caught unexpected exception: " << e.what() << endl;
     ++FailedTests;
   }
 
@@ -756,7 +768,8 @@ int main(int argc, char *argv[])
     if (verbose) cout << "Did not throw exception, success!\n\n";
   }
   catch(const std::exception &e) {
-    cerr << "caught unexpected exception " << e.what() << endl;
+    if(verbose)
+      cerr << "caught unexpected exception " << e.what() << endl;
     ++FailedTests;
   }
 

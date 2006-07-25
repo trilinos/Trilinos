@@ -36,6 +36,7 @@
 #include "Teuchos_ConfigDefs.hpp"
 
 #ifdef HAVE_TEUCHOS_EXPAT
+
 #include "Teuchos_TreeBuildingXMLHandler.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 
@@ -58,7 +59,6 @@ extern "C"
                                  int len);
 }
 
-#endif
+#endif // HAVE_TEUCHOS_EXPAT
 
-
-#endif
+#endif // TEUCHOS_EXPATHANDLERADAPTER_H

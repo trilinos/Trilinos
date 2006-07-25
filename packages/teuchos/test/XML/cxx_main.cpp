@@ -67,8 +67,6 @@ int main(int argc, void** argv)
       string str = problem.toString();
       cerr << str << endl;
 
-#ifdef HAVE_TEUCHOS_EXPAT
-
       /* parse XML in a string */
       StringInputSource src(str);
       XMLObject reread = src.getObject();
@@ -83,8 +81,6 @@ int main(int argc, void** argv)
       XMLObject fileXML = fileSrc.getObject();
       
       cerr << fileXML << endl;
-      
-#endif
 
       return 0;
     }

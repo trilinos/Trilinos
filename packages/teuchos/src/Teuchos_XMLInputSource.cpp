@@ -31,18 +31,17 @@
 
 
 #ifdef HAVE_TEUCHOS_EXPAT
-#include "Teuchos_ExpatHandlerAdapter.hpp"
-#define EXPAT_BUFSIZE 8192
-#endif
-
-#ifdef HAVE_TEUCHOS_LIBXML2
-#include <libxml/parser.h>
+#  include "Teuchos_ExpatHandlerAdapter.hpp"
+#  define EXPAT_BUFSIZE 8192
+#else
+#  include "Teuchos_XMLParser.hpp"
 #endif
 
 using namespace Teuchos;
 
 XMLObject XMLInputSource::getObject() const
 {
+
 #ifdef HAVE_TEUCHOS_EXPAT
 
 	RefCountPtr<TreeBuildingXMLHandler> handler = rcp(new TreeBuildingXMLHandler());
@@ -73,12 +72,13 @@ XMLObject XMLInputSource::getObject() const
 		}
 
 	return handler->getObject();
-
   
 #else
 
-  TEST_FOR_EXCEPTION(true, logic_error, "XMLInputSource::getObject() - no XML parser installed");
-  return XMLObject(); // -Wall
+  XMLParser parser(stream());
+  
+  return parser.parse();
+
 #endif
 
 }

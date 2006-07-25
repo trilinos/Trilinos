@@ -82,4 +82,4 @@ void expatCharacterDataHandler(void* handler,
   delete [] str;
 }
 
-#endif
+#endif // HAVE_TEUCHOS_EXPAT
