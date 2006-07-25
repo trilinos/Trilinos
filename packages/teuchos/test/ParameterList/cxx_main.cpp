@@ -49,7 +49,7 @@ double Plus ( double a, double b ) { return a+b; }
 
 int main(int argc, char *argv[])
 {
-  bool verbose = false;
+  bool verbose = true;
   int FailedTests = 0;
   int procRank = 0;
   bool result;
@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
 
   // Read options from the command line. 
   CommandLineProcessor  clp(false); // Don't throw exceptions
-  clp.setOption( "v", "q", &verbose, "Set if output is printed or not." );
+  clp.setOption( "verbose", "quiet", &verbose, "Set if output is printed or not." );
   CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
   if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) {
     cout << "Processor "<< procRank <<", parse_return "<< parse_return << endl;
@@ -267,13 +267,12 @@ int main(int argc, char *argv[])
     //-----------------------------------------------------------
     float mbf = 0.0;
     tempMeth = false;
-    FailedTests++;  // Increment it prematurely, it will get decremented if the test passes.
     try {
       mbf = PL_LinSol.INVALID_TEMPLATE_QUALIFIER get<float>( "Tol" );
+      FailedTests++;
     }
     catch( const Teuchos::Exceptions::InvalidParameter& e ) {
       tempMeth = true;
-      FailedTests--;        
     }
     if (verbose) {
       cout<< "  Can we retrieve information using the WRONG variable type ... ";
@@ -303,13 +302,12 @@ int main(int argc, char *argv[])
     // Retrieve some information from the parameter list that we know is a bad "get".
     //-----------------------------------------------------------
     tempMeth = false;
-    FailedTests++;  // Increment it prematurely, it will get decremented if the test passes.
     try {
       mbf = PL_LinSol.INVALID_TEMPLATE_QUALIFIER get<float>( "Tol" );
+      FailedTests++;
     }
     catch( const Teuchos::Exceptions::InvalidParameter& e ) {
       tempMeth = true;
-      FailedTests--;        
     }
     if (verbose) {
       cout<< "  Can we retrieve information using the WRONG variable type ... ";
@@ -360,12 +358,11 @@ int main(int argc, char *argv[])
     //  non-templated code needs ".template" before the method name )
     //-----------------------------------------------------------
     float* mbf_ptr = 0;
-    FailedTests++;  // Increment it prematurely, it will get decremented if the test passes.
 
     mbf_ptr = PL_LinSol.INVALID_TEMPLATE_QUALIFIER getPtr<float>( "Tol" );
 
-    if (!mbf_ptr)
-      FailedTests--;        
+    if (mbf_ptr)
+      ++FailedTests;        
 
     if (verbose) {
       cout<< "  Can we retrieve information using the WRONG variable type ... ";
@@ -399,12 +396,10 @@ int main(int argc, char *argv[])
     //  non-templated code needs ".template" before the method name )
     //-----------------------------------------------------------
 
-    FailedTests++;  // Increment it prematurely, it will get decremented if the test passes.
-
     mbf_ptr = PL_LinSol.INVALID_TEMPLATE_QUALIFIER getPtr<float>( "Tol" );
 
-    if (!mbf_ptr)
-      FailedTests--;        
+    if (mbf_ptr)
+      ++FailedTests;        
 
     if (verbose) {
       cout<< "  Can we retrieve information using the WRONG variable type ... ";
@@ -623,6 +618,19 @@ int main(int argc, char *argv[])
   // Show error outputs
   //-----------------------------------------------------------
 
+  if (verbose) {
+    print_break();
+    cout << "Accessing a sublist using the wrong name (should throw a Teuchos::Exceptions::InvalidParameter exception)...\n";
+    print_break();
+  }
+  try {
+    PL_Main.sublist("Direction").sublist("Newton").sublist("Linear Solvers",true);
+    if (verbose) cout << "Did not throw exception, error!\n";
+    ++FailedTests;
+  }
+  catch(const Teuchos::Exceptions::InvalidParameter &e) {
+    cerr << "caught expected Teuchos::Exceptions::InvalidParameter: " << e.what() << endl;
+  }
   if (verbose) {
     print_break();
     cout << "Accessing a parameter using the wrong name (should throw a Teuchos::Exceptions::InvalidParameter exception)...\n";

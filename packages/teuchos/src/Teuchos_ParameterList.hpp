@@ -248,7 +248,7 @@ public:
    *  sublist. If the name exists but is not a sublist, an exception is
    *  thrown.
    */
-  ParameterList& sublist(const string& name);
+  ParameterList& sublist(const string& name, bool mustAlreadyExist = false);
   
   /*! \brief Return a const reference to an existing sublist \c name.  If the
    *  list does not already exist or the name exists but is not a sublist, an
@@ -632,10 +632,12 @@ bool isParameterType( const ParameterList& l, const string& name )
   \brief Return a RCP to a sublist in another RCP-ed parameter list.
 */
 inline
-RefCountPtr<ParameterList> sublist( const RefCountPtr<ParameterList> &paramList, const string& name )
+RefCountPtr<ParameterList> sublist(
+  const RefCountPtr<ParameterList> &paramList, const string& name, bool mustAlreadyExist = false
+  )
 {
   RefCountPtr<ParameterList>
-    sublist = Teuchos::rcp(&paramList->sublist(name),false);
+    sublist = Teuchos::rcp(&paramList->sublist(name,mustAlreadyExist),false);
   set_extra_data(paramList,"masterParamList",&sublist);
   return sublist;
 }

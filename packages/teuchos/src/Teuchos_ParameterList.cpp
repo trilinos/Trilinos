@@ -147,7 +147,7 @@ bool ParameterList::isParameter(const string& name) const
   return (params_.find(name) != params_.end());
 }
 
-ParameterList& ParameterList::sublist(const string& name)
+ParameterList& ParameterList::sublist(const string& name, bool mustAlreadyExist)
 {
   // Find name in list, if it exists.
   Iterator i = params_.find(name);
@@ -163,6 +163,10 @@ ParameterList& ParameterList::sublist(const string& name)
   }
 
   // The list does not exist so create a new empty list and return its reference
+  TEST_FOR_EXCEPTION(
+    mustAlreadyExist, Exceptions::InvalidParameter
+    ,"The sublist "<<this->name()<<"->\""<<name<<"\" does not exist!"
+    );
   const ParameterList newSubList(this->name()+std::string("->")+name);
   return any_cast<ParameterList>(
     params_.insert(
@@ -180,8 +184,10 @@ const ParameterList& ParameterList::sublist(const string& name) const
   ConstIterator i = params_.find(name);
 
   // If it does not exist, throw an error
-  TEST_FOR_EXCEPTION( i == params_.end(), std::runtime_error,
-                      " Parameter " << name << " is not a valid list!" );
+  TEST_FOR_EXCEPTION(
+    i == params_.end(), Exceptions::InvalidParameter
+    ,"The sublist "<<this->name()<<"->\""<<name<<"\" does not exist!"
+    );
 
   // If it does exist and is a list, return the list value.
   TEST_FOR_EXCEPTION( !entry(i).isList(), std::runtime_error,

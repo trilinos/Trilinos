@@ -54,7 +54,7 @@
 
 (FRAMEWORK,INSTALL) {
     TESTS = ParameterList/ParameterList_test.exe;
-    ARGS = --v;
+    ARGS = --verbose;
     EXIT-STATUS = STRING-COMPARISON;
     COMM = MPI,SERIAL;
 }
