@@ -25,27 +25,3 @@
 // 
 // ***********************************************************************
 // @HEADER
-
-#ifndef TEST_SINGLE_STRATIMIKOS_SOLVER_HPP
-#define TEST_SINGLE_STRATIMIKOS_SOLVER_HPP
-
-#include "Stratimikos_Config.h"
-#include "Teuchos_ConfigDefs.hpp"
-#include "Teuchos_FancyOStream.hpp"
-
-namespace Teuchos { class ParameterList; }
-
-namespace Thyra {
-
-/** \brief Testing function for a single stratimikos solver for a single
- * matrix.
- */
-bool test_single_stratimikos_solver(
-  Teuchos::ParameterList                  *paramList
-  ,const bool                             dumpAll
-  ,Teuchos::FancyOStream                  *out
-  );
-
-} // namespace Thyra
-
-#endif // TEST_SINGLE_STRATIMIKOS_SOLVER_HPP
