@@ -14,11 +14,6 @@
 
 @SET_MAKE@
 
-#np# Typically the only line that needs to be edited in this file is the last 
-#np# line.  Set 'SUBDIRS= (list all subdirectories that are autotool'ed here)'
-#np# List all subdirectories even if one or more are configured/built only
-#np# conditionally.
-
 # @HEADER
 # ************************************************************************
 # 
@@ -43,10 +38,15 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
-# Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+# Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov) 
 # 
 # ************************************************************************
 # @HEADER
+
+#np# Typically the only line that needs to be edited in this file is the last 
+#np# line.  Set 'SUBDIRS= (list all subdirectories that are autotool'ed here)'
+#np# List all subdirectories even if one or more are configured/built only
+#np# conditionally.
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
 VPATH = @srcdir@
