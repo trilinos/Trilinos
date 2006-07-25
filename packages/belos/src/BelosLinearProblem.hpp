@@ -141,7 +141,8 @@ namespace Belos {
       linear problem from having to recompute the residual vector everytime it's asked for if
       the solution hasn't been updated.
     */
-    void SolutionUpdated( const MV* SolnUpdate = 0 );
+    void SolutionUpdated( const MV* SolnUpdate = 0,
+                          ScalarType scale = Teuchos::ScalarTraits<ScalarType>::one() );
     
     //@}
     
@@ -555,7 +556,7 @@ namespace Belos {
   }
   
   template <class ScalarType, class MV, class OP>
-  void LinearProblem<ScalarType,MV,OP>::SolutionUpdated( const MV* SolnUpdate )
+  void LinearProblem<ScalarType,MV,OP>::SolutionUpdated( const MV* SolnUpdate, ScalarType scale )
   { 
     if (SolnUpdate) {
       if (Right_Prec_) {
@@ -563,9 +564,9 @@ namespace Belos {
 	// Apply the right preconditioner before computing the current solution.
 	RefCountPtr<MV> TrueUpdate = MVT::Clone( *SolnUpdate, MVT::GetNumberVecs( *SolnUpdate ) );
 	OPT::Apply( *RP_, *SolnUpdate, *TrueUpdate ); 
-	MVT::MvAddMv( 1.0, *CurX_, 1.0, *TrueUpdate, *CurX_ ); 
+	MVT::MvAddMv( 1.0, *CurX_, scale, *TrueUpdate, *CurX_ ); 
       } else {
-	MVT::MvAddMv( 1.0, *CurX_, 1.0, *SolnUpdate, *CurX_ ); 
+	MVT::MvAddMv( 1.0, *CurX_, scale, *SolnUpdate, *CurX_ ); 
       }
     }
     solutionUpdated_ = true; 
