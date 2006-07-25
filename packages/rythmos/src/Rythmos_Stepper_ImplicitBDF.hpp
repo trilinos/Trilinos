@@ -211,7 +211,7 @@ void ImplicitBDFStepper<Scalar>::InitializeStepper(
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
   // Initialize algorithm coefficients
-  maxOrder = implicitBDFParameters.get<int>( "maxOrder", 5 ); // maximum order
+  maxOrder = implicitBDFParameters.get("maxOrder",int(5)); // maximum order
   currentOrder=1; // Current order of integration
   oldOrder=1; // previous order of integration
   usedOrder=1;  // order used in current step (used after currentOrder is updated)
@@ -250,14 +250,14 @@ void ImplicitBDFStepper<Scalar>::InitializeStepper(
   newOrder=1;
   initialPhase=true;
 
-  relErrTol = implicitBDFParameters.get<Scalar>( "relErrTol", Scalar(1.0e-4) );
-  absErrTol = implicitBDFParameters.get<Scalar>( "absErrTol", Scalar(1.0e-6) );
-  constantStepSize = implicitBDFParameters.get<bool>( "constantStepSize", false );
-  stopTime = implicitBDFParameters.get<Scalar>( "stopTime", Scalar(10.0) );
+  relErrTol = implicitBDFParameters.get( "relErrTol", Scalar(1.0e-4) );
+  absErrTol = implicitBDFParameters.get( "absErrTol", Scalar(1.0e-6) );
+  constantStepSize = implicitBDFParameters.get( "constantStepSize", false );
+  stopTime = implicitBDFParameters.get( "stopTime", Scalar(10.0) );
 
 
 #ifdef Rythmos_DEBUG
-  debugLevel = implicitBDFParameters.get<int>( "debugLevel", 1 );
+  debugLevel = implicitBDFParameters.get( "debugLevel", int(1) );
   debug_out = Teuchos::VerboseObjectBase::getDefaultOStream();
   debug_out->precision(15);
   debug_out->setMaxLenLinePrefix(28);
@@ -349,22 +349,22 @@ void ImplicitBDFStepper<Scalar>::setDefaultMagicNumbers(
     Teuchos::ParameterList &magicNumberList)
 {
   // Magic Number Defaults:
-  h0_safety      = magicNumberList.get<Scalar>( "h0_safety",      Scalar(2.0)     );
-  h0_max_factor  = magicNumberList.get<Scalar>( "h0_max_factor",  Scalar(0.001)   );
-  h_phase0_incr  = magicNumberList.get<Scalar>( "h_phase0_incr",  Scalar(2.0)     );
-  h_max_inv      = magicNumberList.get<Scalar>( "h_max_inv",      Scalar(0.0)     );
-  Tkm1_Tk_safety = magicNumberList.get<Scalar>( "Tkm1_Tk_safety", Scalar(2.0)     );
-  Tkp1_Tk_safety = magicNumberList.get<Scalar>( "Tkp1_Tk_safety", Scalar(0.5)     );
-  r_factor       = magicNumberList.get<Scalar>( "r_factor",       Scalar(0.9)     );
-  r_safety       = magicNumberList.get<Scalar>( "r_safety",       Scalar(2.0)     );
-  r_fudge        = magicNumberList.get<Scalar>( "r_fudge",        Scalar(0.0001)  );
-  r_min          = magicNumberList.get<Scalar>( "r_min",          Scalar(0.125)   );
-  r_max          = magicNumberList.get<Scalar>( "r_max",          Scalar(0.9)     );
-  r_hincr_test   = magicNumberList.get<Scalar>( "r_hincr_test",   Scalar(2.0)     );
-  r_hincr        = magicNumberList.get<Scalar>( "r_hincr",        Scalar(2.0)     );
-  max_LET_fail   = magicNumberList.get<int>   ( "max_LET_fail",   15              );
-  minTimeStep    = magicNumberList.get<Scalar>( "minTimeStep",    Scalar(0.0)     );
-  maxTimeStep    = magicNumberList.get<Scalar>( "maxTimeStep",    Scalar(10.0)    ); 
+  h0_safety      = magicNumberList.get( "h0_safety",      Scalar(2.0)     );
+  h0_max_factor  = magicNumberList.get( "h0_max_factor",  Scalar(0.001)   );
+  h_phase0_incr  = magicNumberList.get( "h_phase0_incr",  Scalar(2.0)     );
+  h_max_inv      = magicNumberList.get( "h_max_inv",      Scalar(0.0)     );
+  Tkm1_Tk_safety = magicNumberList.get( "Tkm1_Tk_safety", Scalar(2.0)     );
+  Tkp1_Tk_safety = magicNumberList.get( "Tkp1_Tk_safety", Scalar(0.5)     );
+  r_factor       = magicNumberList.get( "r_factor",       Scalar(0.9)     );
+  r_safety       = magicNumberList.get( "r_safety",       Scalar(2.0)     );
+  r_fudge        = magicNumberList.get( "r_fudge",        Scalar(0.0001)  );
+  r_min          = magicNumberList.get( "r_min",          Scalar(0.125)   );
+  r_max          = magicNumberList.get( "r_max",          Scalar(0.9)     );
+  r_hincr_test   = magicNumberList.get( "r_hincr_test",   Scalar(2.0)     );
+  r_hincr        = magicNumberList.get( "r_hincr",        Scalar(2.0)     );
+  max_LET_fail   = magicNumberList.get( "max_LET_fail",   int(15)         );
+  minTimeStep    = magicNumberList.get( "minTimeStep",    Scalar(0.0)     );
+  maxTimeStep    = magicNumberList.get( "maxTimeStep",    Scalar(10.0)    ); 
 
 #ifdef Rythmos_DEBUG
   if (debugLevel > 1)
