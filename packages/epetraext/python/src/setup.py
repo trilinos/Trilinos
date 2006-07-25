@@ -83,8 +83,10 @@ for option in options:
         extra_link_args.append(option)
 
 # An additional include directory
-epetraPythonSrcDir = os.path.normpath(os.path.join(top_srcdir,"..","epetra","python","src"))
-include_dirs.append(epetraPythonSrcDir)
+teuchosPythonSrcDir = os.path.normpath(os.path.join(top_srcdir,"..","teuchos","python","src"))
+epetraPythonSrcDir  = os.path.normpath(os.path.join(top_srcdir,"..","epetra" ,"python","src"))
+include_dirs.append(teuchosPythonSrcDir)
+include_dirs.append(epetraPythonSrcDir )
 
 # Define the strings that refer to the required local source files
 epetraExtWrap          = "EpetraExt_wrap.cpp"
@@ -92,8 +94,8 @@ epetraNumPyMultiVector = os.path.normpath(os.path.join(epetraPythonSrcDir,
                                                        "Epetra_NumPyMultiVector.cpp"))
 epetraNumPyVector      = os.path.normpath(os.path.join(epetraPythonSrcDir,
                                                        "Epetra_NumPyVector.cpp"     ))
-epetraNumPyIntVector      = os.path.normpath(os.path.join(epetraPythonSrcDir,
-                                                       "Epetra_NumPyIntVector.cpp"     ))
+epetraNumPyIntVector   = os.path.normpath(os.path.join(epetraPythonSrcDir,
+                                                       "Epetra_NumPyIntVector.cpp"  ))
 
 # Compiler and linker
 sysconfig.get_config_vars()

@@ -29,12 +29,10 @@
 // @HEADER
 
 %define EPETRAEXT_DOCSTRING
-"The EpetraExt module allows access to The Trilinos package EpetraExt.  Note
-that the 'EpetraExt_' prefix has been stripped from all EpetraExt objects,
-but that if imported with 'from PyTrilinos import EpetraExt', these
-objects exist in the 'EpetraExt' python namespace.  Use the python help()
-facility for local documentation on classes and methods, or see the
-on-line documentation for more in-depth information.
+"The EpetraExt module allows access to The Trilinos package EpetraExt.
+Use the python help() facility for local documentation on classes and
+methods, or see the on-line documentation for more in-depth
+information.
 
 The most important classes of the EpetraExt module are:
 *) Graph coloring classes:
@@ -64,6 +62,9 @@ The most important classes of the EpetraExt module are:
 %{
 // System includes
 #include <vector>
+
+// Teuchos includes
+#include "Teuchos_PythonParameter.hpp"
 
 // Epetra includes
 #include "Epetra_Object.h"
@@ -104,15 +105,15 @@ The most important classes of the EpetraExt module are:
 #include "EpetraExt_CrsMatrixIn.h"
 #include "EpetraExt_MatrixMatrix.h"
 
-#include "EpetraExt_HDF5.h" // FIXME: memory management still scary...
-#include "EpetraExt_XMLReader.h" // FIXME: memory management still scary...
+#include "EpetraExt_HDF5.h"
+#include "EpetraExt_XMLReader.h"
 #include "EpetraExt_XMLWriter.h" // FIXME: memory management still scary...
 
 namespace EpetraExt {
-  int MatrixMarketFileToCrsMatrix(const char *filename, Epetra_CrsMatrix* A)
-  {
-    return(MatrixMarketFileToCrsMatrixHandle(filename, A));
-  }
+//   int MatrixMarketFileToCrsMatrix(const char *filename, Epetra_CrsMatrix* A)
+//   {
+//     return(MatrixMarketFileToCrsMatrixHandle(filename, A));
+//   }
   int MatrixMarketFileToCrsMatrix(const char *filename, const Epetra_BlockMap & map, 
                                Epetra_CrsMatrix * & OutCrsMatrix)
   {
@@ -128,119 +129,74 @@ namespace EpetraExt {
 %}
 
 // Ignore directives
-// %ignore Epetra_CrsGraph::operator[](int);
-// %ignore Epetra_CrsGraph::operator[](int) const;
-// %ignore Epetra_CrsGraph::operator=(const Epetra_CrsGraph &);
-// %ignore Epetra_IntVector::operator=(const Epetra_IntVector &);
-// %ignore Epetra_IntVector::operator[](int);
-// %ignore Epetra_IntVector::operator[](int) const;
-// %ignore Epetra_MapColoring::operator[](int);
-// %ignore Epetra_MapColoring::operator[](int) const;
+%ignore EpetraExt::HDF5::Read;
+%ignore EpetraExt::XMLReader::Read;
 
 using namespace std;
 // C++ STL support
-%include "std_string.i"
-%include "std_vector.i"
+%include "stl.i"
 
 // Epetra interface import
+%import "Teuchos.i"
 %import "Epetra.i"
 
 // Typemaps
-%typemap(argout) Epetra_BlockMap*& OutBlockMap {
-  PyObject *o1, *oBlockMap;
-  oBlockMap = SWIG_NewPointerObj((void*)(*$1), SWIGTYPE_p_Epetra_BlockMap, 1);
+%define OUTPUT_ARGUMENT(ClassName)
+%typemap(in,numinputs=0) ClassName *& (ClassName * _object) {
+  $1 = &_object;
+}
+%typemap(argout) ClassName *& {
+  PyObject * obj1;
+  PyObject * obj2;
+  static swig_type_info * swig_CN_ptr = SWIG_TypeQuery("ClassName *");
+  obj1 = SWIG_NewPointerObj((void*)(*$1), swig_CN_ptr, 1);
+  if (result < 0) obj1 = Py_BuildValue("");
   if (!PyTuple_Check($result)) $result = Py_BuildValue("(O)", $result);
-  if (result >= 0)
-    o1 = Py_BuildValue("(O)", oBlockMap);
-  else
-    o1 = Py_BuildValue("(i)", 0);
-  $result = PySequence_Concat($result,o1);
+  obj2 = Py_BuildValue("(O)", obj1);
+  $result = PySequence_Concat($result,obj2);
 }
+%enddef
 
-%typemap(in,numinputs=0) Epetra_BlockMap *&OutBlockMap(Epetra_BlockMap* _BlockMap) {
-  $1 = &_BlockMap;
+%define OUTPUT_EPETRA_ARRAY_ARGUMENT(ClassName)
+%typemap(in,numinputs=0) Epetra_ ## ClassName *& (Epetra_ ## ClassName * _object) {
+  $1 = &_object;
 }
-
-%typemap(argout) Epetra_Map*& OutMap {
-  PyObject *o1, *oMap;
-  oMap = SWIG_NewPointerObj((void*)(*$1), SWIGTYPE_p_Epetra_Map, 1);
+%typemap(argout) Epetra_ ## ClassName *& {
+  PyObject * obj1;
+  PyObject * obj2;
+  static swig_type_info * swig_NP_ptr = SWIG_TypeQuery("Epetra_NumPy" "ClassName *");
+  Epetra_NumPy ## ClassName * npa = new Epetra_NumPy ## ClassName(**$1);
+  obj1 = SWIG_NewPointerObj((void*)npa, swig_NP_ptr, 1);
+  if (result < 0) obj1 = Py_BuildValue("");
   if (!PyTuple_Check($result)) $result = Py_BuildValue("(O)", $result);
-  if (result >= 0)
-    o1 = Py_BuildValue("(O)", oMap);
-  else
-    o1 = Py_BuildValue("(i)", 0);
-  $result = PySequence_Concat($result,o1);
+  obj2 = Py_BuildValue("(O)", obj1);
+  $result = PySequence_Concat($result,obj2);
 }
+%enddef
 
-%typemap(in,numinputs=0) Epetra_Map *&OutMap(Epetra_Map* _Map) {
-  $1 = &_Map;
-}
+OUTPUT_ARGUMENT(Epetra_BlockMap )
+OUTPUT_ARGUMENT(Epetra_Map      )
+OUTPUT_ARGUMENT(Epetra_CrsMatrix)
 
-%typemap(argout) Epetra_MultiVector*& OutVector {
-  PyObject *o1, *oVector;
-  Epetra_NumPyMultiVector * npmv;
-  static swig_type_info *ty = SWIG_TypeQuery("Epetra_NumPyMultiVector *");
-  npmv = new Epetra_NumPyMultiVector(**$1);
-  oVector = SWIG_NewPointerObj(npmv, ty, 1);
-  if (!PyTuple_Check($result)) $result = Py_BuildValue("(O)", $result);
-  if (!result) {
-    o1 = Py_BuildValue("(O)", oVector);}
-  else {
-    o1 = Py_BuildValue("(i)", 0);
-  }
-  $result = PySequence_Concat($result, o1);
-}
-
-%typemap(in,numinputs=0) Epetra_MultiVector *&OutVector(Epetra_MultiVector* _Vector) {
-  $1 = &_Vector;
-}
-
-%typemap(argout) Epetra_Vector*& OutVector {
-  PyObject *o1, *oVector;
-  oVector = SWIG_NewPointerObj((void*)(*$1), SWIGTYPE_p_Epetra_Vector, 1);
-  if (!PyTuple_Check($result)) $result = Py_BuildValue("(O)", $result);
-  if (!result) 
-    o1 = Py_BuildValue("(O)",oVector);
-  else
-    o1 = Py_BuildValue("(i)", 0);
-  $result = PySequence_Concat($result, o1);
-}
-
-%typemap(in,numinputs=0) Epetra_Vector *&OutVector(Epetra_Vector* _Vector) {
-  $1 = &_Vector;
-}
-
-%typemap(argout) Epetra_CrsMatrix*& OutCrsMatrix {
-  PyObject *o1, *oCrsMatrix;
-  oCrsMatrix = SWIG_NewPointerObj((void*)(*$1), SWIGTYPE_p_Epetra_CrsMatrix, 1);
-  if (!PyTuple_Check($result)) $result = Py_BuildValue("(O)", $result);
-  if (!result) 
-    o1 = Py_BuildValue("(O)", oCrsMatrix);
-  else
-    o1 = Py_BuildValue("(i)", 0);
-  $result = PySequence_Concat($result, o1);
-}
-
-%typemap(in,numinputs=0) Epetra_CrsMatrix *&OutCrsMatrix(Epetra_CrsMatrix* _CrsMatrix) {
-  $1 = &_CrsMatrix;
-}
+OUTPUT_EPETRA_ARRAY_ARGUMENT(MultiVector)
+OUTPUT_EPETRA_ARRAY_ARGUMENT(Vector     )
 
 // EpetraExt interface includes
 %include "EpetraExt_Version.h"
+%include "EpetraExt_HDF5.h"
+%include "EpetraExt_XMLReader.h"
+%include "EpetraExt_XMLWriter.h"
+
 %include "EpetraExt_Transform.h"
 %template () std::vector<Epetra_IntVector>;
 %template () EpetraExt::Transform<Epetra_CrsGraph, Epetra_MapColoring>;
 %template () EpetraExt::Transform<Epetra_CrsGraph, std::vector<Epetra_IntVector,
 							       std::allocator<Epetra_IntVector> > >;
-//%template () EpetraExt::Transform<Epetra_CrsGraph, std::vector<Epetra_IntVector> >;
 %template () EpetraExt::StructuralTransform<Epetra_CrsGraph, Epetra_MapColoring>;
 %template () EpetraExt::StructuralTransform<Epetra_CrsGraph, std::vector<Epetra_IntVector> >;
 
 %include "EpetraExt_MapColoring.h"
 %include "EpetraExt_MapColoringIndex.h"
-%include "EpetraExt_HDF5.h"
-%include "EpetraExt_XMLReader.h"
-%include "EpetraExt_XMLWriter.h"
 
 namespace EpetraExt 
 {
@@ -283,100 +239,57 @@ namespace EpetraExt
                                Epetra_CrsMatrix * & OutCrsMatrix);
   int MatrixMarketFileToCrsMatrix(const char *filename, const Epetra_Map & map, 
                                Epetra_CrsMatrix * & OutCrsMatrix);
-
 }
 
-%extend EpetraExt::HDF5 
+// The overloaded HDF5 Read() methods cannot be type-disambiguated in
+// python.  We therefore replace each overloaded Read() method with a
+// python version that has the type in the method name.  For example,
+//
+//   void HDF5::Read(std::string, Epetra_Map *&)
+//
+// is translated from C++ to python as
+//
+//   HDF5.ReadMap(str) -> Epetra.Map
+//
+// These translations are made possible by the following macro:
+%define READ_EPETRA_CLASS(ClassName)
+Epetra_ ## ClassName * Read ## ClassName(string name)
 {
-  Epetra_BlockMap* ReadBlockMap(string Name)
-  {
-    Epetra_BlockMap* obj = 0;
-    self->Read(Name, obj);
-    return(obj);
+  Epetra_ ## ClassName * obj = NULL;
+  try {
+    self->Read(name, obj);
+  } catch(std::logic_error e) {
+    PyErr_SetString(PyExc_RuntimeError, e.what());
+    return NULL;
   }
-
-  Epetra_Map* ReadMap(string Name)
-  {
-    Epetra_Map* obj = 0;
-    self->Read(Name, obj);
-    return(obj);
-  }
-
-  Epetra_MultiVector* ReadMultiVector(string Name)
-  {
-    Epetra_MultiVector* obj = 0;
-    self->Read(Name, obj);
-    return(obj);
-  }
-
-  Epetra_CrsGraph* ReadCrsGraph(string Name)
-  {
-    Epetra_CrsGraph* obj = 0;
-    self->Read(Name, obj);
-    return(obj);
-  }
-
-  Epetra_CrsMatrix* ReadCrsMatrix(string Name)
-  {
-    Epetra_CrsMatrix* obj = 0;
-    self->Read(Name, obj);
-    return(obj);
-  }
-
-  Epetra_IntVector* ReadIntVector(string Name)
-  {
-    Epetra_IntVector* obj = 0;
-    self->Read(Name, obj);
-    return(obj);
-  }
+  return obj;
 }
+%enddef
 
-%extend EpetraExt::XMLReader 
-{
-  Epetra_Map* ReadMap(string Name)
-  {
-    Epetra_Map* obj = 0;
-    try {
-      self->Read(Name, obj);
-    } catch(...) {
-      cout << "Caught generic exception, maybe the specified class does not exist" << endl;
-    }
-    return(obj);
-  }
+namespace EpetraExt {
 
-  Epetra_MultiVector* ReadMultiVector(string Name)
-  {
-    Epetra_MultiVector* obj = 0;
-    try {
-      self->Read(Name, obj);
-    } catch(...) {
-      cout << "Caught generic exception, maybe the specified class does not exist" << endl;
-    }
-    return(obj);
-  }
+#ifdef HAVE_EPETRAEXT_HDF5
+  %extend HDF5 {
 
-  Epetra_CrsGraph* ReadCrsGraph(string Name)
-  {
-    Epetra_CrsGraph* obj = 0;
-    try {
-      self->Read(Name, obj);
-    } catch(...) {
-      cout << "Caught generic exception, maybe the specified class does not exist" << endl;
-    }
-    return(obj);
-  }
+    READ_EPETRA_CLASS(BlockMap   )
+    READ_EPETRA_CLASS(Map        )
+    READ_EPETRA_CLASS(MultiVector)
+    READ_EPETRA_CLASS(CrsGraph   )
+    READ_EPETRA_CLASS(CrsMatrix  )
+    READ_EPETRA_CLASS(IntVector  )
+  }    // HDF5
+#endif
 
-  Epetra_CrsMatrix* ReadCrsMatrix(string Name)
-  {
-    Epetra_CrsMatrix* obj = 0;
-    try {
-      self->Read(Name, obj);
-    } catch(...) {
-      cout << "Caught generic exception, maybe the specified class does not exist" << endl;
-    }
-    return(obj);
-  }
-}
+  %extend XMLReader {
+
+    READ_EPETRA_CLASS(Map        )
+    READ_EPETRA_CLASS(MultiVector)
+    READ_EPETRA_CLASS(CrsGraph   )
+    READ_EPETRA_CLASS(CrsMatrix  )
+  }    // XMLReader
+
+}    // EpetraExt
+
 
 %inline %{
   namespace EpetraExt

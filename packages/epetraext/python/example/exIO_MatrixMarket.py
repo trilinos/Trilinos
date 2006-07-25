@@ -45,9 +45,11 @@ if options.testharness:
 else:
     try:
         import setpath
-        import Epetra, EpetraExt
+        import Epetr
+        import EpetraExt
     except ImportError:
-        from PyTrilinos import Epetra, EpetraExt
+        from PyTrilinos import Epetra
+        from PyTrilinos import EpetraExt
         print >>sys.stderr, "Using system-installed Epetra, EptraExt"
 
 # Build a global communicator
@@ -75,8 +77,6 @@ def main():
     if iAmRoot: print "I/O for Map ... ",
     EpetraExt.BlockMapToMatrixMarketFile("map.mm", map)
     (ierr, map2) = EpetraExt.MatrixMarketFileToMap("map.mm", comm)
-    print "ierr =", ierr
-    print "map2 =", map2
     if map2.SameAs(map):
         if iAmRoot: print "ok"
     else:

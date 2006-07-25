@@ -43,7 +43,7 @@ myDir,myName = os.path.split(__file__)
 libDir = "lib.%s-%s" % (get_platform(), sys.version[0:3])
 
 # List the packages that should be added to the search path
-packages = ["epetraext", "epetra"]
+packages = ["epetraext", "epetra", "teuchos"]
 
 # Add the python build directory for each package to the search path
 for package in packages:
