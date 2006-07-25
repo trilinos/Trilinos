@@ -297,10 +297,16 @@ bool VectorStdOpsTester<Scalar>::checkStdOps(
   if(out) *out << "\nTesting Vt_S(&*z,alpha) ...\n";
   v1  = createMember(vecSpc);
   v2  = createMember(vecSpc);
+/* RAB: I commented this out since it was not setting
+ * (real,imag) but just the real part.
+ */
+/*
   if (ST::isComplex)
     alpha = (Scalar(1.2345), Scalar(1.2345));
   else
     alpha = Scalar(1.2345);
+*/
+  alpha = Scalar(1.2345);
   seed_randomize<Scalar>(12345);
   randomize(Scalar(-ST::one()),ST::one(),&*v1);
   V_V(&*v2,*v1);
