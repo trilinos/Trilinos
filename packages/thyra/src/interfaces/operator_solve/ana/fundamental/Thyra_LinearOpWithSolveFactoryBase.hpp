@@ -404,9 +404,14 @@ public:
 
   /** \brief Set a preconditioner factory object.
    *
+   * \param  precFactory
+   *           [in] The preconditioner factory to be used internally to create preconditioners.
+   * \param  precFactoryName
+   *           [in] The name to give to the preconditioner factory internally.  This name is used
+   *           when setting parameters in the parameter list.
+   *
    * <b>Preconditions:</b><ul>
    * <li><tt>precFactory.get()!=NULL</tt>
-   * <li><tt>precFactoryName.length()>0</tt>
    * </ul>
    *
    * <b>Postconditions:</b><ul>
