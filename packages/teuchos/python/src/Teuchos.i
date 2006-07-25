@@ -303,7 +303,7 @@ using namespace std;
 // PyDictParameterList, or python dictionary arguments.  C++ methods
 // that output ParameterLists will have python wrappers that output
 // PyDictParameterLists.
-%typemap(in) Teuchos::ParameterList & (bool cleanup)
+%typemap(in) Teuchos::ParameterList & (bool cleanup = false)
 {
   static swig_type_info * PDPL_type = SWIG_TypeQuery("Teuchos::PyDictParameterList *");
   static swig_type_info * PL_type   = SWIG_TypeQuery("Teuchos::ParameterList *"      );
@@ -317,12 +317,10 @@ using namespace std;
   }
   // Input is a Teuchos::PyDictParameterList
   else if (SWIG_CheckState(SWIG_Python_ConvertPtr($input,&argp,PDPL_type,0))) {
-    cleanup = false;
     $1 = reinterpret_cast<Teuchos::PyDictParameterList *>(argp);
   }
   // Input is a Teuchos::ParameterList
   else if (SWIG_CheckState(SWIG_Python_ConvertPtr($input,&argp,PL_type,0))) {
-    cleanup = false;
     $1 = reinterpret_cast<Teuchos::ParameterList *>(argp);
   }
   // Unsupported input
