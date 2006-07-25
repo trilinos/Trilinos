@@ -628,11 +628,11 @@ private:
       \param matrixName - (In) Optional label for the incoming matrix.
    */
 
-  Epetra_RowMatrix*
-  ModifyEpetraMatrixColMap(
-    const Epetra_RowMatrix &A, EpetraExt::CrsMatrix_SolverMap &transform, const char*
-    matrixName
-    );
+#ifdef HAVE_ML_EPETRAEXT
+  Epetra_RowMatrix* ModifyEpetraMatrixColMap( const Epetra_RowMatrix &A,
+                                   EpetraExt::CrsMatrix_SolverMap &transform,
+                                   const char* matrixName );
+#endif
 
   //! Sets prolongator smoother parameters.
   int SetSmoothingDamping();
