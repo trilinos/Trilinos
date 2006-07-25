@@ -46,7 +46,7 @@ EXEEXT = .exe
 
 CHANCONT = chanContinuation
 CHANTPCONT = chanTPContinuation
-#CHANHOMOTOPY = chanHomotopy
+CHANHOMOTOPY = chanHomotopy
 CHANCONTCONSTRAINTS = chanContinuation_Constraints
 
 if BUILD_LIBLOCAMF
@@ -54,7 +54,7 @@ CHANMULTICONT = chanMultiContinuation
 endif
 
 if BUILD_LOCA_LAPACK_EXAMPLES
-noinst_PROGRAMS = $(CHANCONT) $(CHANTPCONT) \
+noinst_PROGRAMS = $(CHANCONT) $(CHANTPCONT) $(CHANHOMOTOPY) \
 	          $(CHANMULTICONT) $(CHANCONTCONSTRAINTS)
 endif
 
@@ -78,13 +78,13 @@ chanTPContinuation_DEPENDENCIES = $(chanContinuation_DEPENDENCIES)
 
 chanTPContinuation_LDADD = $(EXAMPLE_LIBS)
 
-#chanHomotopy_SOURCES = $(srcdir)/ChanHomotopy.C \
-#		$(srcdir)/ChanProblemInterface.H \
-#		$(srcdir)/ChanProblemInterface.C
+chanHomotopy_SOURCES = $(srcdir)/ChanHomotopy.C \
+		$(srcdir)/ChanProblemInterface.H \
+		$(srcdir)/ChanProblemInterface.C
 
-#chanHomotopy_DEPENDENCIES = $(chanContinuation_DEPENDENCIES)
+chanHomotopy_DEPENDENCIES = $(chanContinuation_DEPENDENCIES)
 
-#chanHomotopy_LDADD = $(EXAMPLE_LIBS)
+chanHomotopy_LDADD = $(EXAMPLE_LIBS)
 
 chanMultiContinuation_SOURCES = \
 	$(srcdir)/ChanMultiContinuation.C \
