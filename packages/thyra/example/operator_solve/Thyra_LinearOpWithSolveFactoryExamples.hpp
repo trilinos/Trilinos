@@ -419,6 +419,60 @@ createMatrixPreconditionedLinearOpWithSolve(
   return invertibleA;
 } // end createMatrixPreconditionedLinearOpWithSolve
 
+// begin externalPreconditionerReuseWithSolves
+/** \brief Example use case for preconditioner reuse
+ * \ingroup thyra_operator_solve_support_LOWSF_examples
+ */
+template<class Scalar>
+void externalPreconditionerReuseWithSolves(
+  Thyra::LinearOpBase<Scalar>                                         *A_inout
+  ,const Thyra::LinearOpChanger<Scalar>                               &opChanger
+  ,const Thyra::LinearOpWithSolveFactoryBase<Scalar>                  &lowsFactory
+  ,const Thyra::PreconditionerFactoryBase<Scalar>                     &precFactory
+  ,const Thyra::VectorBase<Scalar>                                    &b1
+  ,Thyra::VectorBase<Scalar>                                          *x1
+  ,const Thyra::VectorBase<Scalar>                                    &b2
+  ,Thyra::VectorBase<Scalar>                                          *x2
+  ,Teuchos::FancyOStream                                              &out
+  )
+{
+  Teuchos::OSTab tab(out);
+  out << "\nShowing resuse of the preconditioner ...\n";
+  Teuchos::RefCountPtr<Thyra::LinearOpBase<Scalar> >
+    A = rcp(A_inout,false);
+  // Create the initial preconditioner for the input forward operator
+  Teuchos::RefCountPtr<Thyra::PreconditionerBase<Scalar> >
+    P = precFactory.createPrec();
+  precFactory.initializePrec(A,&*P);
+  // Create the invertible LOWS object given the preconditioner
+  Teuchos::RefCountPtr<Thyra::LinearOpWithSolveBase<Scalar> >
+    invertibleA = lowsFactory.createOp();
+  lowsFactory.initializePreconditionedOp(A,P,&*invertibleA);
+  // Solve the first linear system
+  assign(&*x1,Teuchos::ScalarTraits<Scalar>::zero());
+  Thyra::SolveStatus<Scalar>
+    status1 = Thyra::solve(*invertibleA,Thyra::NOTRANS,b1,x1);
+  out << "\nSolve status:\n" << status1;
+  // Change the forward linear operator without changing the preconditioner
+  opChanger.changeOp(&*A);
+  // Warning!  After the above change the integrity of the preconditioner
+  // linear operators in P is undefined.  For some implementations of the
+  // preconditioner, its behavior will remain unchanged (e.g. ILU) which in
+  // other cases the behavior will change but the preconditioner will still
+  // work (e.g. Jacobi).  However, there may be valid implementations where
+  // the preconditioner will simply break if the forward operator that it is
+  // based on breaks.
+  //
+  // Reinitialize the LOWS object given the updated forward operator A and the
+  // old preconditioner P.
+  lowsFactory.initializePreconditionedOp(A,P,&*invertibleA);
+  // Solve the second linear system
+  assign(&*x2,Teuchos::ScalarTraits<Scalar>::zero());
+  Thyra::SolveStatus<Scalar>
+    status2 = Thyra::solve(*invertibleA,Thyra::NOTRANS,b2,x2);
+  out << "\nSolve status:\n" << status2;
+} // end externalPreconditionerReuseWithSolves
+
 //
 // Combined use cases
 //
@@ -534,6 +588,13 @@ void externallyPreconditionedLinearSolveUseCases(
   // operator to construct the preconditoner out of.
   invertibleA = createMatrixPreconditionedLinearOpWithSolve<Scalar>(
     Teuchos::rcp(&A,false),Teuchos::rcp(&A,false),lowsFactory,out);
+  // Preconditioner reuse example
+  externalPreconditionerReuseWithSolves(
+    const_cast<Thyra::LinearOpBase<Scalar>*>(&A) // Don't worry, it will not be changed!
+    ,Thyra::NullLinearOpChanger<Scalar>()        // This object will not really change A!
+    ,lowsFactory,precFactory
+    ,*b1,&*x1,*b2,&*x2,out
+    );
 }
 
 #endif // THYRA_LINEAR_OP_WITH_SOLVE_EXAMPLES_HPP

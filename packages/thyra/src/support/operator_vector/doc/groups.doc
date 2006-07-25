@@ -893,7 +893,7 @@ can be found at:
 \verbatim ./example/operator_vector/sillyPowerMethod_serial.exe \endverbatim
 
 where <tt>./</tt> is the base build directory for %Thyra
-(e.g. <tt>???/Trilinos/$BUILD_DIR/packages/Thyra</tt>).
+(e.g. <tt>$TRILINOS_BUILD_DIR/packages/thyra</tt>).
 
 This example program should run successfully with no arguments and produces
 the following output:
@@ -1068,7 +1068,7 @@ can be found at:
 \verbatim ./example/operator_vector/sillyCgSolve_serial.exe \endverbatim
 
 where <tt>./</tt> is the base build directory for %Thyra
-(e.g. <tt>???/Trilinos/$BUILD_DIR/packages/Thyra</tt>).
+(e.g. <tt>$TRILINOS_BUILD_DIR/packages/thyra</tt>).
 
 This example program should run successfully with no arguments and produces
 the following output:
@@ -1176,7 +1176,7 @@ can be found at:
 \verbatim ./example/operator_vector/sillyCgSolve_mpi.exe \endverbatim
 
 where <tt>./</tt> is the base build directory for %Thyra
-(e.g. <tt>???/Trilinos/$BUILD_DIR/packages/Thyra</tt>).
+(e.g. <tt>$TRILINOS_BUILD_DIR/packages/thyra</tt>).
 
 This example program should run successfully with no arguments for any number
 of processors and for one processor produces the following output:
