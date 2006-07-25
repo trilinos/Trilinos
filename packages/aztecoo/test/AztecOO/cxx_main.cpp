@@ -432,6 +432,9 @@ int test_azoo_scaling(Epetra_CrsMatrix& A,
   Epetra_Vector diag(x);
   Epetra_Vector vec3(x);
   Epetra_Vector vec4(x);
+  Epetra_Vector rhs(x);
+  Epetra_Vector soln_rowsum(x);
+  Epetra_Vector soln_symdiag(x);
 
   vec1.PutScalar(1.0);
 
@@ -481,6 +484,12 @@ int test_azoo_scaling(Epetra_CrsMatrix& A,
     return(-1);
   }
 
+  x.PutScalar(1.0);
+
+  Atmp.Multiply(false, x, rhs);
+
+  x.PutScalar(0.0);
+
   AztecOO azoo(&A, &x, &b);
 
   azoo.SetAztecOption(AZ_scaling, AZ_Jacobi);
@@ -493,11 +502,52 @@ int test_azoo_scaling(Epetra_CrsMatrix& A,
 
   azoo.Iterate(100, 1.e-6);
 
-  x.PutScalar(0.0);
+  Epetra_CrsMatrix Atmp1(A);
 
-  azoo.SetAztecOption(AZ_scaling, AZ_row_sum);
+  x.PutScalar(1.0);
 
-  azoo.Iterate(100, 1.e-6);
+  Atmp1.Multiply(false, x, rhs);
+
+  soln_rowsum.PutScalar(0.0);
+
+  AztecOO azoo1(&Atmp1, &soln_rowsum, &rhs);
+
+  azoo1.SetAztecOption(AZ_scaling, AZ_row_sum);
+
+  azoo1.Iterate(100, 1.e-8);
+
+  Epetra_CrsMatrix Atmp2(A);
+
+  x.PutScalar(1.0);
+
+  Atmp2.Multiply(false, x, rhs);
+
+  soln_symdiag.PutScalar(0.0);
+
+  AztecOO azoo2(&Atmp2, &soln_symdiag, &rhs);
+
+  azoo2.SetAztecOption(AZ_scaling, AZ_sym_diag);
+
+  azoo2.Iterate(100, 1.e-8);
+
+  //at this point, soln_rowsum and soln_symdiag should be the same
+  //or at least very close to the same.
+  
+  //form vec1 = soln_symdiag - soln_rowsum
+  vec1.PutScalar(0.0);
+  vec1.Update(1.0, soln_symdiag, 0.0);
+  vec1.Update(-1.0, soln_rowsum, 1.0);
+
+  double norm_check = 0.0;
+  vec1.Norm2(&norm_check);
+
+  if (std::abs(norm_check) > 1.e-6) {
+    if (verbose) {
+      cerr << "AZ_row_sum and AZ_sym_diag produced different solns"
+      << endl;
+    }
+    return(-1);
+  }
 
   options[AZ_pre_calc] = AZ_reuse;
 

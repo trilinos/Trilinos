@@ -47,12 +47,12 @@
 //Prototypes for utility functions that are used internally by
 //AztecOO_scale_epetra.
 
-int AZOO_Scale_Jacobi_or_row_sum(int action,
-                                 Epetra_RowMatrix* A,
-                                 double b[],
-                                 double x[],
-                                 int options[],
-                                 AZ_SCALING* scaling);
+int AZOO_Scale(int action,
+               Epetra_RowMatrix* A,
+               double b[],
+               double x[],
+               int options[],
+               AZ_SCALING* scaling);
 
 Epetra_Vector* AZOO_create_scaling_vector(Epetra_RowMatrix* A,
                                           int scaling_type);
@@ -75,9 +75,9 @@ int AztecOO_scale_epetra(int action,
   int returnValue = 0;
 
   if (options[AZ_scaling] == AZ_Jacobi ||
-      options[AZ_scaling] == AZ_row_sum) {
-    returnValue = AZOO_Scale_Jacobi_or_row_sum(action, A, b, x,
-                                               options, scaling);
+      options[AZ_scaling] == AZ_row_sum ||
+      options[AZ_scaling] == AZ_sym_diag) {
+    returnValue = AZOO_Scale(action, A, b, x, options, scaling);
   }
   else {
     returnValue = -1;
@@ -86,17 +86,17 @@ int AztecOO_scale_epetra(int action,
   return(returnValue);
 }
 
-int AZOO_Scale_Jacobi_or_row_sum(int action,
-                                 Epetra_RowMatrix* A,
-                                 double b[],
-                                 double x[],
-                                 int options[],
-                                 AZ_SCALING* scaling)
+int AZOO_Scale(int action,
+               Epetra_RowMatrix* A,
+               double b[],
+               double x[],
+               int options[],
+               AZ_SCALING* scaling)
 {
-  //This function performs either Jacobi or row-sum scaling, and
+  //This function performs Jacobi, row-sum or sym_diag scaling, and
   //basically mirrors the functionality provided by the
-  //functions AZ_block_diagonal_scaling and AZ_row_sum_scaling
-  //in the file az_scaling.c.
+  //functions AZ_block_diagonal_scaling, AZ_row_sum_scaling and
+  //AZ_sym_diagonal_scaling in the file az_scaling.c.
 
   if (action == AZ_INVSCALE_SOL || action == AZ_SCALE_SOL) return(0);
 
@@ -144,6 +144,10 @@ int AZOO_Scale_Jacobi_or_row_sum(int action,
 
   if (action == AZ_SCALE_MAT_RHS_SOL) {
     A->LeftScale(*vec);
+
+    if (options[AZ_scaling] == AZ_sym_diag) {
+      A->RightScale(*vec);
+    }
   }
 
   if (action == AZ_SCALE_MAT_RHS_SOL || action == AZ_SCALE_RHS) {
@@ -187,7 +191,7 @@ Epetra_Vector* AZOO_create_scaling_vector(Epetra_RowMatrix* A,
 
   Epetra_Vector* vec = new Epetra_Vector(A->RowMatrixRowMap());
 
-  if (scaling_type == AZ_Jacobi) {
+  if (scaling_type == AZ_Jacobi || scaling_type == AZ_sym_diag) {
     int err = A->ExtractDiagonalCopy(*vec);
     if (err != 0) {
       delete vec; vec = 0;

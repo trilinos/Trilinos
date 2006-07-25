@@ -703,6 +703,7 @@ int AZ_check_options(int options[], int az_proc, int data_org[], int az_nprocs,
   switch (options[AZ_scaling]) {
 
   case AZ_none:
+  case AZ_sym_diag:
     break;
   case AZ_Jacobi:
     if (data_org[AZ_matrix_type] == AZ_VBR_MATRIX) {
@@ -755,18 +756,6 @@ int AZ_check_options(int options[], int az_proc, int data_org[], int az_nprocs,
       }
     }
     break;
-
-  case AZ_sym_diag:
-    if ((data_org[AZ_matrix_type] != AZ_MSR_MATRIX) &&
-        (data_org[AZ_matrix_type] != AZ_VBR_MATRIX)) {
-      if (az_proc == 0) {
-        (void) AZ_printf_err( "%sWARNING: sym diag scaling can only be "
-                       "used with MSR or VBR\n                 matrices. "
-                       "Turning off.\n\n", yo);
-      }
-    }
-    break;
-
 
   case AZ_sym_BJacobi:
     if (data_org[AZ_matrix_type] != AZ_VBR_MATRIX) {
