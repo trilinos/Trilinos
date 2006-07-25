@@ -46,10 +46,10 @@ EXEEXT = .exe
 
 CHANCONT = chanContinuation
 CHANTPCONT = chanTPContinuation
-#CHANHOMOTOPY = chanHomotopy
+CHANHOMOTOPY = chanHomotopy
 
 if BUILD_LOCA_LAPACK_TESTS
-noinst_PROGRAMS = $(CHANCONT) $(CHANTPCONT) 
+noinst_PROGRAMS = $(CHANCONT) $(CHANTPCONT) $(CHANHOMOTOPY)
 endif
 
 chanContinuation_SOURCES = $(srcdir)/ChanContinuation.C 
@@ -70,11 +70,11 @@ chanTPContinuation_DEPENDENCIES = $(chanContinuation_DEPENDENCIES)
 
 chanTPContinuation_LDADD = $(TEST_LIBS)
 
-#chanHomotopy_SOURCES = $(srcdir)/ChanHomotopy.C 
+chanHomotopy_SOURCES = $(srcdir)/ChanHomotopy.C 
 
-#chanHomotopy_DEPENDENCIES = $(chanContinuation_DEPENDENCIES)
+chanHomotopy_DEPENDENCIES = $(chanContinuation_DEPENDENCIES)
 
-#chanHomotopy_LDADD = $(TEST_LIBS)
+chanHomotopy_LDADD = $(TEST_LIBS)
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'

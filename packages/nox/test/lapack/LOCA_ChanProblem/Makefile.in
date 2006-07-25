@@ -43,7 +43,7 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(chanContinuation_SOURCES) $(chanTPContinuation_SOURCES)
+SOURCES = $(chanContinuation_SOURCES) $(chanHomotopy_SOURCES) $(chanTPContinuation_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -67,7 +67,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
 @BUILD_LOCA_LAPACK_TESTS_TRUE@noinst_PROGRAMS = $(am__EXEEXT_1) \
-@BUILD_LOCA_LAPACK_TESTS_TRUE@	$(am__EXEEXT_2)
+@BUILD_LOCA_LAPACK_TESTS_TRUE@	$(am__EXEEXT_2) $(am__EXEEXT_3)
 subdir = test/lapack/LOCA_ChanProblem
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -101,6 +101,7 @@ CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
 CONFIG_CLEAN_FILES =
 am__EXEEXT_1 = chanContinuation$(EXEEXT)
 am__EXEEXT_2 = chanTPContinuation$(EXEEXT)
+am__EXEEXT_3 = chanHomotopy$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_chanContinuation_OBJECTS = ChanContinuation.$(OBJEXT)
 chanContinuation_OBJECTS = $(am_chanContinuation_OBJECTS)
@@ -108,20 +109,24 @@ am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
 @USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
 @USING_GNUMAKE_TRUE@	$(LOCA_LAPACK_TEST_LIBS))
+am_chanHomotopy_OBJECTS = ChanHomotopy.$(OBJEXT)
+chanHomotopy_OBJECTS = $(am_chanHomotopy_OBJECTS)
 am_chanTPContinuation_OBJECTS = ChanTPContinuation.$(OBJEXT)
 chanTPContinuation_OBJECTS = $(am_chanTPContinuation_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/ChanContinuation.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ChanHomotopy.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ChanTPContinuation.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(chanContinuation_SOURCES) $(chanTPContinuation_SOURCES)
-DIST_SOURCES = $(chanContinuation_SOURCES) \
+SOURCES = $(chanContinuation_SOURCES) $(chanHomotopy_SOURCES) \
+	$(chanTPContinuation_SOURCES)
+DIST_SOURCES = $(chanContinuation_SOURCES) $(chanHomotopy_SOURCES) \
 	$(chanTPContinuation_SOURCES)
 ETAGS = etags
 CTAGS = ctags
@@ -341,6 +346,7 @@ target_vendor = @target_vendor@
 AM_CPPFLAGS = $(TEST_INCLUDES) -I$(top_srcdir)/test/lapack/LOCA_TestProblems
 CHANCONT = chanContinuation
 CHANTPCONT = chanTPContinuation
+CHANHOMOTOPY = chanHomotopy
 chanContinuation_SOURCES = $(srcdir)/ChanContinuation.C 
 chanContinuation_DEPENDENCIES = \
         $(top_builddir)/src/libnox.a \
@@ -354,12 +360,9 @@ chanContinuation_LDADD = $(TEST_LIBS)
 chanTPContinuation_SOURCES = $(srcdir)/ChanTPContinuation.C 
 chanTPContinuation_DEPENDENCIES = $(chanContinuation_DEPENDENCIES)
 chanTPContinuation_LDADD = $(TEST_LIBS)
-
-#chanHomotopy_SOURCES = $(srcdir)/ChanHomotopy.C 
-
-#chanHomotopy_DEPENDENCIES = $(chanContinuation_DEPENDENCIES)
-
-#chanHomotopy_LDADD = $(TEST_LIBS)
+chanHomotopy_SOURCES = $(srcdir)/ChanHomotopy.C 
+chanHomotopy_DEPENDENCIES = $(chanContinuation_DEPENDENCIES)
+chanHomotopy_LDADD = $(TEST_LIBS)
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'
@@ -409,6 +412,9 @@ clean-noinstPROGRAMS:
 chanContinuation$(EXEEXT): $(chanContinuation_OBJECTS) $(chanContinuation_DEPENDENCIES) 
 	@rm -f chanContinuation$(EXEEXT)
 	$(CXXLINK) $(chanContinuation_LDFLAGS) $(chanContinuation_OBJECTS) $(chanContinuation_LDADD) $(LIBS)
+chanHomotopy$(EXEEXT): $(chanHomotopy_OBJECTS) $(chanHomotopy_DEPENDENCIES) 
+	@rm -f chanHomotopy$(EXEEXT)
+	$(CXXLINK) $(chanHomotopy_LDFLAGS) $(chanHomotopy_OBJECTS) $(chanHomotopy_LDADD) $(LIBS)
 chanTPContinuation$(EXEEXT): $(chanTPContinuation_OBJECTS) $(chanTPContinuation_DEPENDENCIES) 
 	@rm -f chanTPContinuation$(EXEEXT)
 	$(CXXLINK) $(chanTPContinuation_LDFLAGS) $(chanTPContinuation_OBJECTS) $(chanTPContinuation_LDADD) $(LIBS)
@@ -420,6 +426,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ChanContinuation.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ChanHomotopy.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ChanTPContinuation.Po@am__quote@
 
 .C.o:
@@ -453,6 +460,22 @@ ChanContinuation.obj: $(srcdir)/ChanContinuation.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ChanContinuation.Po' tmpdepfile='$(DEPDIR)/ChanContinuation.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ChanContinuation.obj `if test -f '$(srcdir)/ChanContinuation.C'; then $(CYGPATH_W) '$(srcdir)/ChanContinuation.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanContinuation.C'; fi`
+
+ChanHomotopy.o: $(srcdir)/ChanHomotopy.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ChanHomotopy.o -MD -MP -MF "$(DEPDIR)/ChanHomotopy.Tpo" -c -o ChanHomotopy.o `test -f '$(srcdir)/ChanHomotopy.C' || echo '$(srcdir)/'`$(srcdir)/ChanHomotopy.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ChanHomotopy.Tpo" "$(DEPDIR)/ChanHomotopy.Po"; else rm -f "$(DEPDIR)/ChanHomotopy.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanHomotopy.C' object='ChanHomotopy.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ChanHomotopy.Po' tmpdepfile='$(DEPDIR)/ChanHomotopy.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ChanHomotopy.o `test -f '$(srcdir)/ChanHomotopy.C' || echo '$(srcdir)/'`$(srcdir)/ChanHomotopy.C
+
+ChanHomotopy.obj: $(srcdir)/ChanHomotopy.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ChanHomotopy.obj -MD -MP -MF "$(DEPDIR)/ChanHomotopy.Tpo" -c -o ChanHomotopy.obj `if test -f '$(srcdir)/ChanHomotopy.C'; then $(CYGPATH_W) '$(srcdir)/ChanHomotopy.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanHomotopy.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ChanHomotopy.Tpo" "$(DEPDIR)/ChanHomotopy.Po"; else rm -f "$(DEPDIR)/ChanHomotopy.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ChanHomotopy.C' object='ChanHomotopy.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ChanHomotopy.Po' tmpdepfile='$(DEPDIR)/ChanHomotopy.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ChanHomotopy.obj `if test -f '$(srcdir)/ChanHomotopy.C'; then $(CYGPATH_W) '$(srcdir)/ChanHomotopy.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ChanHomotopy.C'; fi`
 
 ChanTPContinuation.o: $(srcdir)/ChanTPContinuation.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ChanTPContinuation.o -MD -MP -MF "$(DEPDIR)/ChanTPContinuation.Tpo" -c -o ChanTPContinuation.o `test -f '$(srcdir)/ChanTPContinuation.C' || echo '$(srcdir)/'`$(srcdir)/ChanTPContinuation.C; \
