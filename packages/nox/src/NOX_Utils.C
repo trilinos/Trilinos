@@ -92,7 +92,14 @@ NOX::Utils& NOX::Utils::operator=(const NOX::Utils& source)
 void NOX::Utils::reset(Teuchos::ParameterList& p)
 {
   // Basic info
-  printTest = p.get("Output Information", 0xf);
+
+  // "Output Information" may be stored as an int or as NOX::Utils::MsgType
+  if (p.isType<NOX::Utils::MsgType>("Output Information"))
+    printTest = p.INVALID_TEMPLATE_QUALIFIER
+      get<NOX::Utils::MsgType>("Output Information");
+  else
+    printTest = p.get("Output Information", 0xf);
+
 #ifdef HAVE_MPI
   if (p.isParameter("MyPID"))
     myPID = p.get("MyPID", 0);
