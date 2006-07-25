@@ -121,8 +121,9 @@ DONE
 IF PACKAGE epetraext THEN
 REMOVE --enable-epetraext
 REMOVE --enable-moertel
-REMOVE --enable-thyra
 DONE
+
+# REMOVE --enable-thyra
 
 IF PACKAGE epetraext SUBDIRECTORY thyra THEN
 INSERT --disable-epetraext-thyra
@@ -240,6 +241,7 @@ DONE
 IF PACKAGE rtop THEN
 REMOVE --enable-rtop
 REMOVE --enable-thyra
+REMOVE --enable-stratimikos
 REMOVE --enable-moocho
 DONE
 
@@ -271,6 +273,7 @@ REMOVE --enable-galeri
 REMOVE --enable-rythmos
 REMOVE --enable-rtop
 REMOVE --enable-thyra
+REMOVE --enable-stratimikos
 DONE
 
 # Tpetra -----------------------------------------------------------------------
@@ -281,10 +284,12 @@ DONE
 # Thyra ------------------------------------------------------------------------
 IF PACKAGE thyra THEN
 REMOVE --enable-thyra
-REMOVE --enable-epetra-thyra
+REMOVE --enable-stratimikos
 REMOVE --enable-capo
 REMOVE --enable-rythmos
 DONE
+
+# REMOVE --enable-epetra-thyra
 
 IF PACKAGE thyra SUBDIRECTORY python THEN
 INSERT --disable-thyra-python

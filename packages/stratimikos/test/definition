@@ -1,0 +1,14 @@
+#
+# FRAMEWORK group
+#
+
+(FRAMEWORK, INSTALL) {
+    TESTS = ./test_single_stratimikos_solver_driver.exe;\
+    ARGS = --input-file=FourByFour.xml,
+           --input-file=FourByFour.amesos.xml,
+           --input-file=FourByFour.aztecoo.np.xml,
+           --input-file=FourByFour.aztecoo.ifpack.xml,
+           --input-file=FourByFour.belos.np.xml,
+           --input-file=FourByFour.belos.ifpack.xml;
+    COMM = MPI(1),SERIAL;
+}

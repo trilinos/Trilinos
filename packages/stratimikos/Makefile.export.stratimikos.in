@@ -1,0 +1,28 @@
+
+include @abs_top_builddir@/../thyra/Makefile.export.thyra
+@ENABLE_STRATIMIKOS_AMESOS_THYRA_TRUE@include @abs_top_builddir@/../amesos/Makefile.export.amesos
+@ENABLE_STRATIMIKOS_AZTECOO_THYRA_TRUE@include @abs_top_builddir@/../aztecoo/Makefile.export.aztecoo
+@ENABLE_STRATIMIKOS_BELOS_THYRA_TRUE@include @abs_top_builddir@/../belos/Makefile.export.belos
+@ENABLE_STRATIMIKOS_IFPACK_THYRA_TRUE@include @abs_top_builddir@/../ifpack/Makefile.export.ifpack
+
+_STRATIMIKOS_INCLUDES = \
+  -I@abs_top_srcdir@/src \
+  -I@abs_top_builddir@/src \
+  $(BELOS_INCLUDES) \
+  $(AZTECOO_INCLUDES) \
+  $(IFPACK_INCLUDES) \
+  $(AMESOS_INCLUDES) \
+  $(THYRA_INCLUDES)
+
+_STRATIMIKOS_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lstratimikos \
+ $(BELOS_LIBS) \
+ $(AZTECOO_LIBS) \
+ $(IFPACK_LIBS) \
+ $(AMESOS_LIBS) \
+ $(THYRA_LIBS) \
+ @LIBS@ @FLIBS@ 
+
+@USING_GNUMAKE_TRUE@STRATIMIKOS_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_STRATIMIKOS_INCLUDES))
+@USING_GNUMAKE_TRUE@STRATIMIKOS_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_STRATIMIKOS_LIBS))
+@USING_GNUMAKE_FALSE@STRATIMIKOS_INCLUDES = $(_STRATIMIKOS_INCLUDES)
+@USING_GNUMAKE_FALSE@STRATIMIKOS_LIBS     = $(_STRATIMIKOS_LIBS)

@@ -5,6 +5,7 @@ _THYRA_INCLUDES = \
   -I@abs_top_srcdir@/src/interfaces/operator_vector/ana/fundamental\
   -I@abs_top_srcdir@/src/interfaces/operator_vector/ana/extended\
   -I@abs_top_srcdir@/src/interfaces/operator_solve/ana/fundamental\
+  -I@abs_top_srcdir@/src/interfaces/operator_solve/ana/extended\
   -I@abs_top_srcdir@/src/interfaces/nonlinear/model_evaluator/ana/fundamental\
   -I@abs_top_srcdir@/src/interfaces/nonlinear/solvers/ana/fundamental\
   -I@abs_top_srcdir@/src/support/operator_vector/adapter_support\
