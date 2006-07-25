@@ -114,10 +114,10 @@ int main(int argc, char *argv[]) {
   //
   if (proc_verbose) cout << endl << endl;
   if (proc_verbose) cout << "Constructing ILU preconditioner" << endl;
-  int Lfill = 0;
+  int Lfill = 2;
   // if (argc > 2) Lfill = atoi(argv[2]);
   if (proc_verbose) cout << "Using Lfill = " << Lfill << endl;
-  int Overlap = 1;
+  int Overlap = 2;
   // if (argc > 3) Overlap = atoi(argv[3]);
   if (proc_verbose) cout << "Using Level Overlap = " << Overlap << endl;
   double Athresh = 0.0;
