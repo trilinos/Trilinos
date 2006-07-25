@@ -629,9 +629,10 @@ private:
    */
 
   Epetra_RowMatrix*
-ML_Epetra::MultiLevelPreconditioner::ModifyEpetraMatrixColMap(const
-Epetra_RowMatrix &A, EpetraExt::CrsMatrix_SolverMap &transform, const char*
-matrixName);
+  ModifyEpetraMatrixColMap(
+    const Epetra_RowMatrix &A, EpetraExt::CrsMatrix_SolverMap &transform, const char*
+    matrixName
+    );
 
   //! Sets prolongator smoother parameters.
   int SetSmoothingDamping();
