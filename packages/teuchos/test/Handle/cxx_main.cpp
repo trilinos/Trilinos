@@ -186,7 +186,7 @@ public:
   TEUCHOS_CONST_HANDLE_CTORS(ConstVector, VecBase);
   
 
-  RefCountPtr<const VecSpaceBase> space() const {return ptr()->space();}
+  RefCountPtr<const VecSpaceBase> space() const {return constPtr()->space();}
 
   double operator*(const ConstVector& other) const ;  
 
@@ -194,9 +194,9 @@ public:
 
   void copyInto(Vector& x) const ;
 
-  int dim() const {return ptr()->dim();}
+  int dim() const {return constPtr()->dim();}
 
-  const double& getElement(int i) const {return ptr()->getElement(i);}
+  const double& getElement(int i) const {return constPtr()->getElement(i);}
 };
 
 class Vector : public ConstVector,
@@ -243,12 +243,12 @@ void ConstVector::add(const ConstVector& other, Vector& result) const
 {
   result = space()->create(space());
   RefCountPtr<VecBase> tmp = result.ptr();
-  ptr()->add(other.ptr().get(), tmp);
+  constPtr()->add(other.constPtr().get(), tmp);
 }
 
 void ConstVector::copyInto(Vector& result) const 
 {
-  result = ptr()->copy();
+  result = constPtr()->copy();
 }
 
 
@@ -259,13 +259,13 @@ class VectorSpace : public ConstHandle<VecSpaceBase>
 public:
   TEUCHOS_CONST_HANDLE_CTORS(VectorSpace, VecSpaceBase);
   
-  Vector create() const {return ptr()->create(ptr());}
+  Vector create() const {return constPtr()->create(constPtr());}
 };
 
 
 std::ostream& operator<<(std::ostream& os, const ConstVector& v)
 {
-  v.ptr()->print(os);
+  v.constPtr()->print(os);
   return os;
 }
 
@@ -314,7 +314,7 @@ int main(int argc, char** argv)
         }
       
       VectorSpace s2 = new VecSpaceA(5);
-      VecBase* vb = new VecA(5, s2.ptr());
+      VecBase* vb = new VecA(5, s2.constPtr());
       Vector b = vb;
 
       cout << "b = " << b << endl;

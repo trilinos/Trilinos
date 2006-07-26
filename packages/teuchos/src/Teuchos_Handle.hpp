@@ -73,10 +73,10 @@ namespace Teuchos
     explicit ConstHandle(const ConstHandleable<PointerType>* ptr) : ptr_(ptr->getConstRcp()) {;}
 
     /** \brief Read-only access to the underlying smart pointer. */
-    const RefCountPtr<const PointerType>& ptr() const {return ptr_;}
+    const RefCountPtr<const PointerType>& constPtr() const {return ptr_;}
 
     /** Access to raw pointer */
-    const PointerType * const rawPtr() {return this->ptr().get();}
+    const PointerType * const rawPtr() {return this->constPtr().get();}
 
   protected:
     /** \brief The empty ctor will only be called by Handle ctors */
@@ -158,7 +158,7 @@ namespace Teuchos
     /** \brief Conversion to a non-const pointer, used for interoperability
      * with user-level code that ignores ConstHandle. Don't use this unless you know
      * what you're doing. */
-    RefCountPtr<PointerType> nonconstPointer() const 
+    RefCountPtr<PointerType> ptr() const 
     {return rcp_const_cast<PointerType>(ptr());}
 
 
