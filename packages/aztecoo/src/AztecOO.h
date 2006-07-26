@@ -31,6 +31,8 @@
 #ifndef _AZTECOO_H_
 #define _AZTECOO_H_
 
+#include <AztecOO_ConfigDefs.h>
+
 class Epetra_Comm;
 class Epetra_BlockMap;
 class Epetra_MultiVector;

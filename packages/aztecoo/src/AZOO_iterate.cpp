@@ -36,8 +36,10 @@ void AZOO_iterate(double * xsolve, double * b,
 		  int * options, double * params, 
 		  double * status, int *proc_config,
 		  AZ_MATRIX * Amat,
-		  AZ_PRECOND *precond, struct AZ_SCALING *scaling) {
-
+		  AZ_PRECOND *precond, struct AZ_SCALING *scaling)
+{
+  (void)precond;
+  (void)scaling;
   bool verbose = (options[AZ_output]!=AZ_none); // Print info unless all output is turned off
 
   Epetra_Comm * comm;

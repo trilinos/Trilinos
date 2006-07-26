@@ -69,6 +69,7 @@ int AztecOO_scale_epetra(int action,
                          int proc_config[],
                          AZ_SCALING* scaling)
 {
+  (void)proc_config;
   AztecOO::MatrixData* Data = (AztecOO::MatrixData*)AZ_get_matvec_data(Amat);
   Epetra_RowMatrix* A = (Epetra_RowMatrix*)(Data->A);
 
@@ -93,6 +94,7 @@ int AZOO_Scale(int action,
                int options[],
                AZ_SCALING* scaling)
 {
+  (void)x;
   //This function performs Jacobi, row-sum or sym_diag scaling, and
   //basically mirrors the functionality provided by the
   //functions AZ_block_diagonal_scaling, AZ_row_sum_scaling and

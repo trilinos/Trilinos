@@ -109,12 +109,13 @@ bool AztecOO_StatusTestResNorm::ResidualVectorRequired() const
   return(resvecrequired_);
 }
 
-AztecOO_StatusType AztecOO_StatusTestResNorm::CheckStatus(int CurrentIter, 
-							      Epetra_MultiVector * CurrentResVector, 
-							      double CurrentResNormEst,  
-							      bool SolutionUpdated)
+AztecOO_StatusType
+AztecOO_StatusTestResNorm::CheckStatus(int CurrentIter, 
+                                       Epetra_MultiVector * CurrentResVector, 
+                                       double CurrentResNormEst,  
+                                       bool SolutionUpdated)
 {
-
+  (void)CurrentIter;
   Epetra_Vector * crv = dynamic_cast<Epetra_Vector *>(CurrentResVector);
 
   // This section computes the norm of the residual vector

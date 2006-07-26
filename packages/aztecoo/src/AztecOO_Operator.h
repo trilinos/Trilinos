@@ -72,7 +72,8 @@ class AztecOO_Operator: public virtual Epetra_Operator {
 
     \warning - This method has no effect and returns -1 as error code.
   */
-  int SetUseTranspose(bool UseTranspose){return(-1);};
+  int SetUseTranspose(bool UseTranspose)
+    {(void)UseTranspose; return(-1);}
   //@}
   
   //@{ \name Mathematical functions.
@@ -86,7 +87,9 @@ class AztecOO_Operator: public virtual Epetra_Operator {
 
     \warning - This method has no effect and returns -1 as error code.
   */
-  int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {return(-1);};
+  int Apply(const Epetra_MultiVector& X,
+            Epetra_MultiVector& Y) const
+    {(void)X; (void)Y; return(-1);}
 
   //! Returns the result of a AztecOO_Operator inverse applied to an Epetra_MultiVector X in Y.
   /*! 
@@ -151,7 +154,7 @@ class AztecOO_Operator: public virtual Epetra_Operator {
   AztecOO * solver_;
   int NumIters_;
   double Tol_;
-  char * Label_;
+  const char * Label_;
 };
 
 #endif /* _AZTECOO_OPERATOR_H_ */

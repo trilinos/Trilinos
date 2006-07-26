@@ -30,8 +30,8 @@
 
 #include <stdio.h>
 #include <stdarg.h>
-#include <iostream>
 
+#include <AztecOO_ConfigDefs.h>
 #include <az_aztec.h>
 
 /** az_ostream_out is a singleton class that holds a std::ostream pointer

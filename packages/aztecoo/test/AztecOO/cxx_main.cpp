@@ -609,6 +609,7 @@ int test_AZ_iterate_AZ_pre_calc_AZ_reuse(Epetra_Comm& Comm,
                                          int* options,
                                          bool verbose)
 {
+  (void)Comm;
   if (verbose) {
     cout << "testing AZ_keep_info/AZ_reuse with 'old' Aztec (solver "
          <<options[AZ_solver] <<", precond "<<options[AZ_precond]<<"/"
@@ -818,6 +819,7 @@ int call_AZ_iterate(AZ_MATRIX* Amat,
                     
 int test_AZ_iterate_then_AZ_scale_f(Epetra_Comm& Comm, bool verbose)
 {
+  (void)Comm;
   if (verbose) {
     cout << "testing AZ_iterate/AZ_scale_f with 'old' Aztec"<<endl;
   }

@@ -117,8 +117,11 @@ int Epetra_MsrMatrix::ExtractDiagonalCopy(Epetra_Vector & Diagonal) const {
   return(0);
 }
 //=============================================================================
-int Epetra_MsrMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
-
+int Epetra_MsrMatrix::Multiply(bool TransA,
+                               const Epetra_MultiVector& X,
+                               Epetra_MultiVector& Y) const
+{
+  (void)TransA;
   int NumVectors = X.NumVectors();
   if (NumVectors!=Y.NumVectors()) EPETRA_CHK_ERR(-1);  // X and Y must have same number of vectors
 
@@ -146,8 +149,14 @@ int Epetra_MsrMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
 
 //=============================================================================
 int Epetra_MsrMatrix::Solve(bool Upper, bool Trans, bool UnitDiagonal, 
-				   const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
-
+                            const Epetra_MultiVector& X,
+                            Epetra_MultiVector& Y) const
+{
+  (void)Upper;
+  (void)Trans;
+  (void)UnitDiagonal;
+  (void)X;
+  (void)Y;
   return(-1); // Not implemented
 }
 

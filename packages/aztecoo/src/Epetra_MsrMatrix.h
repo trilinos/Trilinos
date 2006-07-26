@@ -284,7 +284,8 @@ class Epetra_MsrMatrix: public Epetra_Object, public Epetra_CompObject, public v
 
     \return Always returns 0.
   */
-  int SetUseTranspose(bool UseTranspose) {return(-1);};
+  int SetUseTranspose(bool UseTranspose)
+    {(void)UseTranspose; return(-1);}
 
     //! Returns the result of a Epetra_Operator applied to a Epetra_MultiVector X in Y.
     /*! 
@@ -312,13 +313,15 @@ class Epetra_MsrMatrix: public Epetra_Object, public Epetra_CompObject, public v
 
     \return Integer error code, set to 0 if successful.
   */
-  int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {return(-1);};
+  int ApplyInverse(const Epetra_MultiVector& X,
+                   Epetra_MultiVector& Y) const
+    {(void)X; (void)Y; return(-1);}
 
     //! Returns true because this class can compute an Inf-norm.
-    virtual bool HasNormInf() const {return(true);};
+    virtual bool HasNormInf() const {return(true);}
 
     //! Returns the current UseTranspose setting.
-    virtual bool UseTranspose() const {return(false);};
+    virtual bool UseTranspose() const {return(false);}
 
   //@}
   //@{ \name Additional methods required to implement RowMatrix interface.
@@ -367,6 +370,6 @@ class Epetra_MsrMatrix: public Epetra_Object, public Epetra_CompObject, public v
     
 
  //! Copy constructor (not accessible to users).
-  Epetra_MsrMatrix(const Epetra_MsrMatrix & Matrix) {};
+  Epetra_MsrMatrix(const Epetra_MsrMatrix & Matrix) {(void)Matrix;}
 };
 #endif /* _EPETRA_MSRMATRIX_H_ */

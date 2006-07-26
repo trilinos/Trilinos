@@ -1338,9 +1338,11 @@ void AztecOO::PrintLinearSystem(const char* name)
 
 
 //=============================================================================
-void Epetra_Aztec_matvec(double x[], double y[], AZ_MATRIX *Amat, int proc_config[]) {
+void Epetra_Aztec_matvec(double x[], double y[],
+                         AZ_MATRIX *Amat, int proc_config[])
+{
+  (void)proc_config;
 
-	
   AztecOO::MatrixData * Data = (AztecOO::MatrixData *) AZ_get_matvec_data(Amat);
   Epetra_RowMatrix * A = (Epetra_RowMatrix *) Data->A;
 	Epetra_Vector * X = (Epetra_Vector *) Data->X;
@@ -1365,8 +1367,10 @@ void Epetra_Aztec_matvec(double x[], double y[], AZ_MATRIX *Amat, int proc_confi
 }
 
 //=============================================================================
-void Epetra_Aztec_operatorvec(double x[], double y[], AZ_MATRIX *Amat, int proc_config[]) {
-
+void Epetra_Aztec_operatorvec(double x[], double y[],
+                              AZ_MATRIX *Amat, int proc_config[])
+{
+  (void)proc_config;
   AztecOO::OperatorData * Data = (AztecOO::OperatorData *) AZ_get_matvec_data(Amat);
   Epetra_Operator * A = (Epetra_Operator *) Data->A;
 	Epetra_Vector * X = (Epetra_Vector *) Data->X;
@@ -1392,9 +1396,13 @@ void Epetra_Aztec_operatorvec(double x[], double y[], AZ_MATRIX *Amat, int proc_
 
 //=============================================================================
 void Epetra_Aztec_precond(double x[], int input_options[],
-			  int proc_config[], double input_params[], AZ_MATRIX *Amat,
-			  AZ_PRECOND *prec) {
-
+			  int proc_config[], double input_params[],
+                          AZ_MATRIX *Amat, AZ_PRECOND *prec)
+{
+  (void)input_options;
+  (void)proc_config;
+  (void)input_params;
+  (void)Amat;
   AztecOO::OperatorData * Data = (AztecOO::OperatorData *) AZ_get_precond_data(prec);
   Epetra_Operator * A = (Epetra_Operator *) Data->A;
 	Epetra_Vector * X = (Epetra_Vector *) Data->X;

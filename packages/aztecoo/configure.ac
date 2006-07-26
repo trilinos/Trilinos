@@ -165,6 +165,7 @@ AC_CHECK_HEADERS([string string.h], [break],)
 AC_CHECK_HEADERS([cfloat float.h], [break],)
 AC_CHECK_HEADERS([ctime sys/time.h], [break],)
 AC_CHECK_HEADERS([malloc.h],,)
+AC_CHECK_HEADERS([iostream sstream fstream iomanip],,)
 
 if test "X$ac_cv_header_cstdlib" != "Xyes" && test "X$ac_cv_header_stdlib_h" != "Xyes"; then
   AC_MSG_ERROR([[Cannot find cstdlib or stdlib.h.  AztecOO requires at least one or the other.]])
@@ -199,6 +200,18 @@ if test "X$ac_cv_header_malloc_h" != "Xyes"; then
  #if test "X$ac_cv_func_malloc_works" != "Xyes"; then
  #  AC_MSG_ERROR([malloc(...) not working, required by AztecOO])
  #fi
+fi
+
+if test "X$ac_cv_header_iostream" != "Xyes" ; then
+  AC_MSG_ERROR([[Cannot find iostream.  AztecOO requires iostream.]])
+fi
+
+if test "X$ac_cv_header_sstream" != "Xyes" ; then
+  AC_MSG_ERROR([[Cannot find sstream.  AztecOO requires sstream.]])
+fi
+
+if test "X$ac_cv_header_fstream" != "Xyes" ; then
+  AC_MSG_ERROR([[Cannot find fstream.  AztecOO requires fstream.]])
 fi
 
 # Checks for typedefs, structures, and compiler characteristics.
