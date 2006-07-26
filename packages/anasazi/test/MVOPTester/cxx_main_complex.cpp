@@ -63,6 +63,7 @@ int main(int argc, char *argv[])
   MPI_Init(&argc,&argv);
 #endif
 
+  int MyPID = 0;
 #ifdef HAVE_MPI
   MPI_Comm_rank(MPI_COMM_WORLD, &MyPID);
 #endif
