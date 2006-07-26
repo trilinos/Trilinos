@@ -165,4 +165,58 @@ int MatrixMarketFileToCrsMatrixHandle(const char *filename,
   if (handle!=0) fclose(handle);
   return(0);
 }
+
+int MatlabFileToCrsMatrix(const char *filename,
+				const Epetra_Comm & comm,
+				Epetra_CrsMatrix * & A)
+{
+  const int lineLength = 1025;
+  char line[lineLength];
+  int I, J;
+  double V;
+
+  FILE * handle = 0;
+
+  handle = fopen(filename,"r");  // Open file
+  if (handle == 0)
+    EPETRA_CHK_ERR(-1); // file not found
+
+  int numGlobalRows = 0;
+  int numGlobalCols = 0;
+  while(fgets(line, lineLength, handle)!=0) {
+    if(sscanf(line, "%d %d %lg\n", &I, &J, &V)==0) {if (handle!=0) fclose(handle); EPETRA_CHK_ERR(-1);}
+    if (I>numGlobalRows) numGlobalRows = I;
+    if (J>numGlobalCols) numGlobalCols = J;
+  }
+
+  if (handle!=0) fclose(handle);
+
+  Epetra_Map domainMap(numGlobalRows, 0, comm);
+  Epetra_Map rangeMap(numGlobalCols, 0, comm);
+  A = new Epetra_CrsMatrix(Copy, rangeMap, 0);
+
+  // Now read in each triplet and store to the local portion of the matrix if the row is owned.
+  const Epetra_Map & rowMap1 = A->RowMap();
+  
+  handle = 0;
+
+  handle = fopen(filename,"r");  // Open file
+  if (handle == 0)
+    EPETRA_CHK_ERR(-1); // file not found
+
+  while (fgets(line, lineLength, handle)!=0) {
+    if(sscanf(line, "%d %d %lg\n", &I, &J, &V)==0) {if (handle!=0) fclose(handle); EPETRA_CHK_ERR(-1);}
+    I--; J--; // Convert to Zero based
+    if (rowMap1.MyGID(I)) {
+      int ierr = A->InsertGlobalValues(I, 1, &V, &J);
+      if (ierr<0) EPETRA_CHK_ERR(ierr);
+    }
+  }
+    
+  EPETRA_CHK_ERR(A->FillComplete(domainMap, rangeMap));
+
+  if (handle!=0) fclose(handle);
+  return(0);
+}
 } // namespace EpetraExt
+
