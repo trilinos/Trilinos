@@ -50,6 +50,8 @@ _ML_INCLUDES = \
 	    -I@abs_top_srcdir@/src/MatrixFree \
 	    -I@abs_top_srcdir@/src/Include \
 	    $(EPETRA_INCLUDES) \
+	    $(AMESOS_INCLUDES) \
+	    $(IFPACK_INCLUDES) \
 	    $(TEUCHOS_INCLUDES) \
 	    $(AZTECOO_INCLUDES) \
 	    $(EPETRAEXT_INCLUDES)
