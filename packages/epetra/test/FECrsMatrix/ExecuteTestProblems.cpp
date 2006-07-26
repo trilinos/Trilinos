@@ -151,6 +151,7 @@ int Drumm1(const Epetra_Map& map, bool verbose)
   delete [] values;
 
   EPETRA_TEST_ERR( A.GlobalAssemble(), ierr );
+  EPETRA_TEST_ERR( A.GlobalAssemble(), ierr );
 
   //now the test is to check whether the FECrsMatrix data matches the
   //epetra_test::matrix_data object...
@@ -225,6 +226,7 @@ int Drumm2(const Epetra_Map& map, bool verbose)
 			  values, Epetra_FECrsMatrix::ROW_MAJOR),ierr);
 
     EPETRA_TEST_ERR( A.GlobalAssemble(), ierr );
+    EPETRA_TEST_ERR( A.GlobalAssemble(), ierr );
 
     if (verbose) {
     A.Print(cout);
@@ -267,6 +269,7 @@ int Drumm2(const Epetra_Map& map, bool verbose)
 			  numMyNodes, myNodes,
 			  values, Epetra_FECrsMatrix::ROW_MAJOR),ierr);
 
+    EPETRA_TEST_ERR( A.GlobalAssemble(), ierr );
     EPETRA_TEST_ERR( A.GlobalAssemble(), ierr );
 
     if (verbose) {
@@ -345,6 +348,7 @@ int Drumm3(const Epetra_Map& map, bool verbose)
                         Values,
                         Epetra_FECrsMatrix::ROW_MAJOR);
 
+  A.GlobalAssemble();
   A.GlobalAssemble();
 
 //  A.Print(cout);

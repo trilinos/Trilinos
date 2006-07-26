@@ -188,12 +188,22 @@ Epetra_CrsGraphData::~Epetra_CrsGraphData() {
 //==========================================================================
 int Epetra_CrsGraphData::MakeImportExport() {
   // Create Import object for use by matrix classes.    This is only needed if ColMap and DomainMap are different
-  if (!ColMap_.SameAs(DomainMap_))
+  if (!ColMap_.SameAs(DomainMap_)) {
+    if (Importer_ != 0) {
+      delete Importer_;
+      Importer_ = 0;
+    }
     Importer_ = new Epetra_Import(ColMap_, DomainMap_);
+  }
   
   // Now see if we need to define an export map.  This is only needed if RowMap and RangeMap are different
-  if (!RowMap_.SameAs(RangeMap_))
+  if (!RowMap_.SameAs(RangeMap_)) {
+    if (Exporter_ != 0) {
+      delete Exporter_;
+      Exporter_ = 0;
+    }
     Exporter_ = new Epetra_Export(RowMap_, RangeMap_); // Create Export object. 
+  }
    
   return(0);
 }
