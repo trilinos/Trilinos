@@ -181,7 +181,7 @@ int main(int argc, char *argv[])
     */
 
     // Compute the direct residual
-    std::vector<MagnitudeType> normV( numev );
+    std::vector<ScalarType> normV( numev );
     SerialDenseMatrix<int,ScalarType> T(numev,numev);
     for (int i=0; i<numev; i++) {
       T(i,i) = evals[i];
@@ -191,9 +191,12 @@ int main(int argc, char *argv[])
     OPT::Apply( *K, *evecs, *Kvecs );
     OPT::Apply( *M, *evecs, *Mvecs );
     MVT::MvTimesMatAddMv( -ONE, *Mvecs, T, ONE, *Kvecs );
-    MVT::MvNorm( *Kvecs, &normV );
+    // compute M-norm of residuals
+    OPT::Apply( *M, *Kvecs, *Mvecs );
+    MVT::MvDot( *Mvecs, *Kvecs, &normV );
   
     for (int i=0; i<numev; i++) {
+      normV[i] = SCT::squareroot( normV[i] );
       if ( SCT::magnitude(normV[i]/evals[i]) > tol ) {
         testFailed = true;
       }
