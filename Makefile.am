@@ -174,6 +174,7 @@ run-tests: all-am
 	@if [ -d packages/didasko   ]; then cd packages/didasko;   $(MAKE) run-tests; fi
 
 run-pytests: all-am
+	@if [ -d packages/teuchos     ]; then cd packages/teuchos;     $(MAKE) run-pytests; fi
 	@if [ -d packages/thyra       ]; then cd packages/thyra;       $(MAKE) run-pytests; fi
 	@if [ -d packages/epetra      ]; then cd packages/epetra;      $(MAKE) run-pytests; fi
 	@if [ -d packages/triutils    ]; then cd packages/triutils;    $(MAKE) run-pytests; fi
@@ -188,6 +189,7 @@ run-pytests: all-am
 	@if [ -d packages/new_package ]; then cd packages/new_package; $(MAKE) run-pytests; fi
 
 run-pyexamples: all-am
+	@if [ -d packages/teuchos     ]; then cd packages/teuchos;     $(MAKE) run-pyexamples; fi
 	@if [ -d packages/thyra       ]; then cd packages/thyra;       $(MAKE) run-pyexamples; fi
 	@if [ -d packages/epetra      ]; then cd packages/epetra;      $(MAKE) run-pyexamples; fi
 	@if [ -d packages/triutils    ]; then cd packages/triutils;    $(MAKE) run-pyexamples; fi
@@ -203,6 +205,7 @@ run-pyexamples: all-am
 
 clean-python: all-am
 	@if [ -d packages/PyTrilinos         ]; then cd packages/PyTrilinos;         $(MAKE) clean; fi
+	@if [ -d packages/teuchos/python     ]; then cd packages/teuchos/python;     $(MAKE) clean; fi
 	@if [ -d packages/thyra/python       ]; then cd packages/thyra/python;       $(MAKE) clean; fi
 	@if [ -d packages/epetra/python      ]; then cd packages/epetra/python;      $(MAKE) clean; fi
 	@if [ -d packages/triutils/python    ]; then cd packages/triutils/python;    $(MAKE) clean; fi
