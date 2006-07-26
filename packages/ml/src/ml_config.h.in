@@ -81,9 +81,6 @@
 /* Define if want to build with ml enabled */
 #undef HAVE_ML_AMESOS
 
-/* Define if want to build with ml enabled */
-#undef HAVE_ML_ANASAZI
-
 /* Define if want to build with ml_arpack enabled */
 #undef HAVE_ML_ARPACK
 
@@ -122,6 +119,9 @@
 
 /* Define if want to build with ml enabled */
 #undef HAVE_ML_IFPACK
+
+/* Define if want to build ml-matlab */
+#undef HAVE_ML_MATLAB
 
 /* Define if want to build with ml_memory_checking enabled */
 #undef HAVE_ML_MEMORY_CHECK

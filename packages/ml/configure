@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CXX CXXFLAGS LDFLAGS CPPFLAGS ac_ct_CXX EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CC CFLAGS ac_ct_CC CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB ML_BUILD_DIRECTORY USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP USING_EXPORT_MAKEFILES_TRUE USING_EXPORT_MAKEFILES_FALSE PERL_EXE HAVE_PERL USING_PERL_TRUE USING_PERL_FALSE USING_GNUMAKE_TRUE USING_GNUMAKE_FALSE EGREP LIBOBJS ML_CFUNC_TRUE ML_CFUNC_FALSE ML_BENCHMARKING_TRUE ML_BENCHMARKING_FALSE ML_USING_NOX_TRUE ML_USING_NOX_FALSE ML_USING_EPETRA_TRUE ML_USING_EPETRA_FALSE ML_USING_AMESOS_TRUE ML_USING_AMESOS_FALSE ML_USING_IFPACK_TRUE ML_USING_IFPACK_FALSE ML_USING_TEUCHOS_TRUE ML_USING_TEUCHOS_FALSE ML_USING_ANASAZI_TRUE ML_USING_ANASAZI_FALSE ML_USING_AZTECOO_TRUE ML_USING_AZTECOO_FALSE ML_USING_EPETRAEXT_TRUE ML_USING_EPETRAEXT_FALSE ML_USING_GALERI_TRUE ML_USING_GALERI_FALSE ML_STANDALONE_MODE_TRUE ML_STANDALONE_MODE_FALSE ML_BUILD_EXAMPLES_TRUE ML_BUILD_EXAMPLES_FALSE BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_ML_PYTHON_TRUE BUILD_ML_PYTHON_FALSE PYTHON_USE_TRUE PYTHON_USE_FALSE PYTHON PYTHON_PREFIX PYTHON_EXECPREFIX BUILD_PYTHON_TRUE BUILD_PYTHON_FALSE PYTHON_CSPEC PYTHON_LSPEC WITH_SWIG SWIG SWIG_LIB SWIG_PYTHON_OPT SWIG_PYTHON_CPPFLAGS HAVE_SWIG_TRUE HAVE_SWIG_FALSE GNU_HAVE_SWIG FLIBS BLAS_LIBS LAPACK_LIBS BUILD_ML_MATLAB_TRUE BUILD_ML_MATLAB_FALSE MATLAB_USE_TRUE MATLAB_USE_FALSE MATLAB_ROOT_USE_TRUE MATLAB_ROOT_USE_FALSE MATLAB_EXE MEX MATLAB MATLAB_ROOT MEXEXT MEXEXT_VALUE BUILD_MATLAB_TRUE BUILD_MATLAB_FALSE ML_MATLAB_INCLUDES TRILINOS_TEMPLATE_OBJS ac_aux_dir LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CXX CXXFLAGS LDFLAGS CPPFLAGS ac_ct_CXX EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CC CFLAGS ac_ct_CC CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB ML_BUILD_DIRECTORY USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP USING_EXPORT_MAKEFILES_TRUE USING_EXPORT_MAKEFILES_FALSE PERL_EXE HAVE_PERL USING_PERL_TRUE USING_PERL_FALSE USING_GNUMAKE_TRUE USING_GNUMAKE_FALSE EGREP LIBOBJS ML_CFUNC_TRUE ML_CFUNC_FALSE ML_BENCHMARKING_TRUE ML_BENCHMARKING_FALSE ML_USING_NOX_TRUE ML_USING_NOX_FALSE ML_USING_EPETRA_TRUE ML_USING_EPETRA_FALSE ML_USING_AMESOS_TRUE ML_USING_AMESOS_FALSE ML_USING_IFPACK_TRUE ML_USING_IFPACK_FALSE ML_USING_TEUCHOS_TRUE ML_USING_TEUCHOS_FALSE ML_USING_AZTECOO_TRUE ML_USING_AZTECOO_FALSE ML_USING_EPETRAEXT_TRUE ML_USING_EPETRAEXT_FALSE ML_USING_GALERI_TRUE ML_USING_GALERI_FALSE ML_STANDALONE_MODE_TRUE ML_STANDALONE_MODE_FALSE ML_BUILD_EXAMPLES_TRUE ML_BUILD_EXAMPLES_FALSE BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_ML_PYTHON_TRUE BUILD_ML_PYTHON_FALSE PYTHON_USE_TRUE PYTHON_USE_FALSE PYTHON PYTHON_PREFIX PYTHON_EXECPREFIX BUILD_PYTHON_TRUE BUILD_PYTHON_FALSE PYTHON_CSPEC PYTHON_LSPEC WITH_SWIG SWIG SWIG_LIB SWIG_PYTHON_OPT SWIG_PYTHON_CPPFLAGS HAVE_SWIG_TRUE HAVE_SWIG_FALSE GNU_HAVE_SWIG FLIBS BLAS_LIBS LAPACK_LIBS BUILD_ML_MATLAB_TRUE BUILD_ML_MATLAB_FALSE MATLAB_USE_TRUE MATLAB_USE_FALSE MATLAB_ROOT_USE_TRUE MATLAB_ROOT_USE_FALSE MATLAB_EXE MEX MATLAB MATLAB_ROOT MEXEXT MEXEXT_VALUE BUILD_MATLAB_TRUE BUILD_MATLAB_FALSE ML_MATLAB_INCLUDES TRILINOS_TEMPLATE_OBJS ac_aux_dir LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -721,13 +721,13 @@ echo X"$0" |
   	  /^X\(\/\).*/{ s//\1/; q; }
   	  s/.*/./; q'`
   srcdir=$ac_confdir
-  if test ! -r $srcdir/$ac_unique_file; then
+  if test ! -r "$srcdir/$ac_unique_file"; then
     srcdir=..
   fi
 else
   ac_srcdir_defaulted=no
 fi
-if test ! -r $srcdir/$ac_unique_file; then
+if test ! -r "$srcdir/$ac_unique_file"; then
   if test "$ac_srcdir_defaulted" = yes; then
     { echo "$as_me: error: cannot find sources ($ac_unique_file) in $ac_confdir or .." >&2
    { (exit 1); exit 1; }; }
@@ -736,7 +736,7 @@ if test ! -r $srcdir/$ac_unique_file; then
    { (exit 1); exit 1; }; }
   fi
 fi
-(cd $srcdir && test -r ./$ac_unique_file) 2>/dev/null ||
+(cd $srcdir && test -r "./$ac_unique_file") 2>/dev/null ||
   { echo "$as_me: error: sources are in $srcdir, but \`cd $srcdir' does not work" >&2
    { (exit 1); exit 1; }; }
 srcdir=`echo "$srcdir" | sed 's%\([^\\/]\)[\\/]*$%\1%'`
@@ -952,13 +952,6 @@ Optional Features:
                           is required by the class Epetra_ML_Preconditioner.
                           Teuchos requires --enable-epetra. See notes for
                           --enable-ml_metis.
-  --enable-anasazi        Enable ANASAZI support. Anasazi, a Trilinos package,
-                          can be used for eigenvalue estimates. Anasazi
-                          requires --enable-epetra and --enable-teuchos. Can
-                          be overridden with --disable-ml-anasazi.
-  --enable-ml-anasazi     Enable ANASAZI support. Anasazi, a Trilinos package,
-                          can be used for eigenvalue estimates. Anasazi
-                          requires --enable-epetra and --enable-teuchos.
   --enable-aztecoo        Enable AztecOO support. AztecOO, a Trilinos package,
                           can be used in adaptive preconditioning. Requires
                           --enable-epetra --enable-teuchos. See notes for
@@ -1940,7 +1933,7 @@ else
 echo "$as_me: WARNING: \`missing' script is too old or missing" >&2;}
 fi
 
-if mkdir -p -- . 2>/dev/null; then
+if mkdir -p --version . >/dev/null 2>&1 && test ! -d ./--version; then
   # Keeping the `.' argument allows $(mkdir_p) to be used without
   # argument.  Indeed, we sometimes output rules like
   #   $(mkdir_p) $(somedir)
@@ -1953,7 +1946,7 @@ else
   # recognize any option.  It will interpret all options as
   # directories to create, and then abort because `.' already
   # exists.
-  for d in ./-p ./--;
+  for d in ./-p ./--version;
   do
     test -d $d && rmdir $d
   done
@@ -3238,7 +3231,9 @@ else
     : > sub/conftest.c
     for i in 1 2 3 4 5 6; do
       echo '#include "conftst'$i'.h"' >> sub/conftest.c
-      : > sub/conftst$i.h
+      # Using `: > sub/conftst$i.h' creates only sub/conftst1.h with
+      # Solaris 8's {/usr,}/bin/sh.
+      touch sub/conftst$i.h
     done
     echo "${am__include} ${am__quote}sub/conftest.Po${am__quote}" > confmf
 
@@ -3266,9 +3261,14 @@ else
        grep sub/conftest.${OBJEXT-o} sub/conftest.Po > /dev/null 2>&1 &&
        ${MAKE-make} -s -f confmf > /dev/null 2>&1; then
       # icc doesn't choke on unknown options, it will just issue warnings
-      # (even with -Werror).  So we grep stderr for any message
-      # that says an option was ignored.
-      if grep 'ignoring option' conftest.err >/dev/null 2>&1; then :; else
+      # or remarks (even with -Werror).  So we grep stderr for any message
+      # that says an option was ignored or not supported.
+      # When given -MP, icc 7.0 and 7.1 complain thusly:
+      #   icc: Command line warning: ignoring option '-M'; no argument required
+      # The diagnosis changed in icc 8.0:
+      #   icc: Command line remark: option '-MP' not supported
+      if (grep 'ignoring option' conftest.err ||
+          grep 'not supported' conftest.err) >/dev/null 2>&1; then :; else
         am_cv_CXX_dependencies_compiler_type=$depmode
         break
       fi
@@ -3879,7 +3879,9 @@ else
     : > sub/conftest.c
     for i in 1 2 3 4 5 6; do
       echo '#include "conftst'$i'.h"' >> sub/conftest.c
-      : > sub/conftst$i.h
+      # Using `: > sub/conftst$i.h' creates only sub/conftst1.h with
+      # Solaris 8's {/usr,}/bin/sh.
+      touch sub/conftst$i.h
     done
     echo "${am__include} ${am__quote}sub/conftest.Po${am__quote}" > confmf
 
@@ -3907,9 +3909,14 @@ else
        grep sub/conftest.${OBJEXT-o} sub/conftest.Po > /dev/null 2>&1 &&
        ${MAKE-make} -s -f confmf > /dev/null 2>&1; then
       # icc doesn't choke on unknown options, it will just issue warnings
-      # (even with -Werror).  So we grep stderr for any message
-      # that says an option was ignored.
-      if grep 'ignoring option' conftest.err >/dev/null 2>&1; then :; else
+      # or remarks (even with -Werror).  So we grep stderr for any message
+      # that says an option was ignored or not supported.
+      # When given -MP, icc 7.0 and 7.1 complain thusly:
+      #   icc: Command line warning: ignoring option '-M'; no argument required
+      # The diagnosis changed in icc 8.0:
+      #   icc: Command line remark: option '-MP' not supported
+      if (grep 'ignoring option' conftest.err ||
+          grep 'not supported' conftest.err) >/dev/null 2>&1; then :; else
         am_cv_CC_dependencies_compiler_type=$depmode
         break
       fi
@@ -4032,7 +4039,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:4035:" \
+echo "$as_me:4042:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -8454,58 +8461,7 @@ fi
 
 
 #
-
-
-# Check whether --enable-anasazi or --disable-anasazi was given.
-if test "${enable_anasazi+set}" = set; then
-  enableval="$enable_anasazi"
-  ac_cv_implicit_use_anasazi=$enableval
-else
-  ac_cv_implicit_use_anasazi=no
-fi;
-
-if test "Xyes" != "Xno"; then
-  ac_cv_ml_using_anasazi_default=$ac_cv_implicit_use_anasazi
-else
-  ac_cv_ml_using_anasazi_default=no
-fi
-
-# Check whether --enable-ml-anasazi or --disable-ml-anasazi was given.
-if test "${enable_ml_anasazi+set}" = set; then
-  enableval="$enable_ml_anasazi"
-  ac_cv_use_anasazi=$enableval
-else
-  ac_cv_use_anasazi=$ac_cv_ml_using_anasazi_default
-fi;
-
-echo "$as_me:$LINENO: checking whether to build optional anasazi dependent code in ml" >&5
-echo $ECHO_N "checking whether to build optional anasazi dependent code in ml... $ECHO_C" >&6
-
-if test "X$ac_cv_use_anasazi" != "Xno"; then
-  echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_ML_ANASAZI 1
-_ACEOF
-
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-
-
-if test "X$ac_cv_use_anasazi" = "Xyes"; then
-  ML_USING_ANASAZI_TRUE=
-  ML_USING_ANASAZI_FALSE='#'
-else
-  ML_USING_ANASAZI_TRUE='#'
-  ML_USING_ANASAZI_FALSE=
-fi
-
-
-
+#TAC_ARG_ENABLE_CAN_USE_PACKAGE(ml, anasazi, ML_ANASAZI, ML_USING_ANASAZI, yes, [Enable ANASAZI support. Anasazi, a Trilinos package, can be used for eigenvalue estimates. Anasazi requires --enable-epetra and --enable-teuchos.], [Enable ANASAZI support. Anasazi, a Trilinos package, can be used for eigenvalue estimates. Anasazi requires --enable-epetra and --enable-teuchos. Can be overridden with --disable-ml-anasazi.])
 #
 
 
@@ -9872,7 +9828,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:9875: \"$ac_link\") >&5
+(eval echo $as_me:9831: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9950,7 +9906,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:9953: \"$ac_link\") >&5
+(eval echo $as_me:9909: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -13643,29 +13599,6 @@ fi
   # Since there's no reliable way to figure out the location of the mex libraries, let's just not check form them.
   # If you've managed to get maltab and mex installed and specified the matlab root so we can find mexext and the
   # mex headers, I'm going to presume that mex can link ok.
-  # TODO: Fix this later
-
-  # Link checks - if these two libraries work, chances are, they all do.
-#  save_LIBS=$LIBS
-
-#  AC_CHECK_LIB(mx,mxCreateDoubleMatrix,[],[AC_MSG_ERROR([Cannot find libmx.a library needed for Matlab subpkg, specify using --with-libdirs=-L<DIR> For information on how to specify the proper Matlab headers/libraries see epetraext/doc/matlab.README.])],[-lut -licudata -licui18n -licuio -licuuc])
-
- # AC_CHECK_LIB(eng,engPutVariable,[],[
- #    AC_CHECK_LIB(eng,engPutArray,[]
- #       [AC_MSG_ERROR([Cannot find libeng.a library needed for Matlab subpkg, specify using --with-libdirs=-L<DIR> For information on how to specify the proper Matlab headers/libraries see epetraext/doc/matlab.README])],[-lut -lmx -lmat -licudata -licui18n -licuio -licuuc])
- #],[-lut -lmx -lmat -licudata -licui18n -licuio -licuuc])
-
-  # Saves us from tryint to link everything into MATLAB
-#  LIBS=$save_LIBS
-
-
-  # If user specifies prefix, use it for the MATLAB_PREFIX
-#  if test "$prefix" != "$ac_default_prefix"; then
-#    MATLAB_PREFIX=$prefix
-#  fi
-#  if test "$exec_prefix" != "$ac_default_prefix"; then
-#    MATLAB_EXECPREFIX=$exec_prefix
-#  fi
 
 else
   echo "$as_me:$LINENO: result: no" >&5
@@ -13823,7 +13756,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:13826: \"$ac_link\") >&5
+(eval echo $as_me:13759: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -13901,7 +13834,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:13904: \"$ac_link\") >&5
+(eval echo $as_me:13837: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -14361,13 +14294,6 @@ if test -z "${ML_USING_TEUCHOS_TRUE}" && test -z "${ML_USING_TEUCHOS_FALSE}"; th
   { { echo "$as_me:$LINENO: error: conditional \"ML_USING_TEUCHOS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"ML_USING_TEUCHOS\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${ML_USING_ANASAZI_TRUE}" && test -z "${ML_USING_ANASAZI_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"ML_USING_ANASAZI\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"ML_USING_ANASAZI\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -15271,8 +15197,6 @@ s,@ML_USING_IFPACK_TRUE@,$ML_USING_IFPACK_TRUE,;t t
 s,@ML_USING_IFPACK_FALSE@,$ML_USING_IFPACK_FALSE,;t t
 s,@ML_USING_TEUCHOS_TRUE@,$ML_USING_TEUCHOS_TRUE,;t t
 s,@ML_USING_TEUCHOS_FALSE@,$ML_USING_TEUCHOS_FALSE,;t t
-s,@ML_USING_ANASAZI_TRUE@,$ML_USING_ANASAZI_TRUE,;t t
-s,@ML_USING_ANASAZI_FALSE@,$ML_USING_ANASAZI_FALSE,;t t
 s,@ML_USING_AZTECOO_TRUE@,$ML_USING_AZTECOO_TRUE,;t t
 s,@ML_USING_AZTECOO_FALSE@,$ML_USING_AZTECOO_FALSE,;t t
 s,@ML_USING_EPETRAEXT_TRUE@,$ML_USING_EPETRAEXT_TRUE,;t t
@@ -15950,14 +15874,14 @@ echo X"$mf" |
   grep '^DEP_FILES *= *[^ #]' < "$mf" > /dev/null || continue
   # Extract the definition of DEP_FILES from the Makefile without
   # running `make'.
-  DEPDIR=`sed -n -e '/^DEPDIR = / s///p' < "$mf"`
+  DEPDIR=`sed -n 's/^DEPDIR = //p' < "$mf"`
   test -z "$DEPDIR" && continue
   # When using ansi2knr, U may be empty or an underscore; expand it
-  U=`sed -n -e '/^U = / s///p' < "$mf"`
+  U=`sed -n 's/^U = //p' < "$mf"`
   test -d "$dirpart/$DEPDIR" || mkdir "$dirpart/$DEPDIR"
   # We invoke sed twice because it is the simplest approach to
   # changing $(DEPDIR) to its actual value in the expansion.
-  for file in `sed -n -e '
+  for file in `sed -n '
     /^DEP_FILES = .*\\\\$/ {
       s/^DEP_FILES = //
       :loop
