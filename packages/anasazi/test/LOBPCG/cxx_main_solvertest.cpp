@@ -42,8 +42,9 @@
 #include "AnasaziSVQBOrthoManager.hpp"
 #include "AnasaziBasicSort.hpp"
 #include "AnasaziStatusTestMaxIters.hpp"
+#include "Teuchos_CommandLineProcessor.hpp"
 
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
 #include <mpi.h>
 #else
@@ -56,52 +57,46 @@ class get_out : public std::logic_error {
   public: get_out(const std::string &whatarg) : std::logic_error(whatarg) {}
 };
 
+
+using namespace Teuchos;
 using namespace Anasazi;
-
-  
-typedef Epetra_MultiVector MV;
-typedef Epetra_Operator OP;
-typedef double ScalarType;
-typedef MultiVecTraits<ScalarType,MV>    MVT;
-typedef OperatorTraits<ScalarType,MV,OP> OPT;
-
 
 int main(int argc, char *argv[]) 
 {
-  
-#ifdef EPETRA_MPI
+  bool boolret;
+  int MyPID;
 
+#ifdef HAVE_MPI
   // Initialize MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
-
 #else
-
   Epetra_SerialComm Comm;
-
 #endif
+  MyPID = Comm.MyPID();
 
-  int MyPID = Comm.MyPID();
-
-  bool testFailed = false;
-  bool verbose = 0;
+  bool testFailed;
+  bool verbose = false;
+  std::string filename("mhd1280b.cua");
   std::string which("LM");
-  if (argc>1) {
-    if (argv[1][0]=='-' && argv[1][1]=='v') {
-      verbose = true;
-    }
-    else {
-      which = argv[1];
-    }
+
+  CommandLineProcessor cmdp(false,true);
+  cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+  cmdp.setOption("sort",&which,"Targetted eigenvalues (SM or LM).");
+  if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
+#ifdef HAVE_MPI
+    MPI_Finalize();
+#endif
+    return -1;
   }
-  if (argc>2) {
-    if (argv[2][0]=='-' && argv[2][1]=='v') {
-      verbose = true;
-    }
-    else {
-      which = argv[2];
-    }
-  }
+
+  typedef double                              ScalarType;
+  typedef ScalarTraits<ScalarType>                   SCT;
+  typedef SCT::magnitudeType               MagnitudeType;
+  typedef Epetra_MultiVector                 MV;
+  typedef Epetra_Operator                    OP;
+  typedef MultiVecTraits<ScalarType,MV>     MVT;
+  typedef OperatorTraits<ScalarType,MV,OP>  OPT;
 
   if (verbose && MyPID == 0) {
     cout << Anasazi_Version() << endl << endl;
@@ -116,20 +111,20 @@ int main(int argc, char *argv[])
 
   // Create problem
   Teuchos::RefCountPtr<ModalProblem> testCase = Teuchos::rcp( new ModeLaplace1DQ1(Comm, brick_dim[0], elements[0]) );
-  int nev = 4;
   //
   // Get the stiffness and mass matrices
   Teuchos::RefCountPtr<Epetra_CrsMatrix> K = Teuchos::rcp( const_cast<Epetra_CrsMatrix *>(testCase->getStiffness()), false );
   Teuchos::RefCountPtr<Epetra_CrsMatrix> M = Teuchos::rcp( const_cast<Epetra_CrsMatrix *>(testCase->getMass()), false );
   //
   // Create the initial vectors
-  Teuchos::RefCountPtr<Epetra_MultiVector> ivec = Teuchos::rcp( new Epetra_MultiVector(K->OperatorDomainMap(), nev) );
+  const int blockSize = 4;
+  Teuchos::RefCountPtr<Epetra_MultiVector> ivec = Teuchos::rcp( new Epetra_MultiVector(K->OperatorDomainMap(), blockSize) );
   ivec->Random();
   //
   // Create eigenproblem
-  Teuchos::RefCountPtr<BasicEigenproblem<ScalarType, MV, OP> > problem =
-    Teuchos::rcp( new BasicEigenproblem<ScalarType, MV, OP>(K, M, ivec) );
-  //  problem->SetPrec( Teuchos::rcp( const_cast<Epetra_Operator *>(opStiffness->getPreconditioner()), false ) );
+  const int nev = 4;
+  RefCountPtr<BasicEigenproblem<ScalarType,MV,OP> > problem =
+    rcp( new BasicEigenproblem<ScalarType, MV, OP>(K, M, ivec) );
   //
   // Inform the eigenproblem that the operator A is symmetric
   problem->setHermitian(true);
@@ -138,8 +133,16 @@ int main(int argc, char *argv[])
   problem->setNEV( nev );
   //
   // Inform the eigenproblem that you are finishing passing it information
-  if (problem->setProblem() != true) {  
-    cout << "Anasazi::BasicEigenproblem::SetProblem() returned false." << endl;
+  boolret = problem->setProblem();
+  if (boolret != true) {
+    if (verbose && MyPID == 0) {
+      cout << "Anasazi::BasicEigenproblem::SetProblem() returned with error." << endl
+           << "End Result: TEST FAILED" << endl;	
+    }
+#ifdef HAVE_MPI
+    MPI_Finalize() ;
+#endif
+    return -1;
   }
 
   // create the output manager
@@ -156,6 +159,9 @@ int main(int argc, char *argv[])
   pls.set<bool>("Full Ortho",false);
   // create the solver
   Teuchos::RefCountPtr< LOBPCG<ScalarType,MV,OP> > solver = Teuchos::rcp( new LOBPCG<ScalarType,MV,OP>(problem,sorter,printer,tester,ortho,pls) );
+
+  // begin testing 
+  testFailed = false;
 
   try 
   {
@@ -199,7 +205,7 @@ int main(int argc, char *argv[])
   }
 
   
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
   MPI_Finalize() ;
 #endif
 

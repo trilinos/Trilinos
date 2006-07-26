@@ -38,8 +38,8 @@
 
 #include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziLOBPCGSolMgr.hpp"
-
-#ifdef EPETRA_MPI
+#include "Teuchos_CommandLineProcessor.hpp"
+#ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
 #include <mpi.h>
 #else
@@ -49,55 +49,50 @@
 #include "ModeLaplace1DQ1.h"
 using namespace Teuchos;
 
+
+using namespace Teuchos;
+
 int main(int argc, char *argv[]) 
 {
-  int i;
-  int info = 0;
-  
-#ifdef EPETRA_MPI
+  bool boolret;
+  int MyPID;
 
+#ifdef HAVE_MPI
   // Initialize MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
-
 #else
-
   Epetra_SerialComm Comm;
-
 #endif
-
-  int MyPID = Comm.MyPID();
+  MyPID = Comm.MyPID();
 
   bool testFailed;
   bool verbose = 0;
+  std::string filename("mhd1280b.cua");
   std::string which("LM");
-  if (argc>1) {
-    if (argv[1][0]=='-' && argv[1][1]=='v') {
-      verbose = true;
-    }
-    else {
-      which = argv[1];
-    }
+
+  CommandLineProcessor cmdp(false,true);
+  cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+  cmdp.setOption("sort",&which,"Targetted eigenvalues (SM or LM).");
+  if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
+#ifdef HAVE_MPI
+    MPI_Finalize();
+#endif
+    return -1;
   }
-  if (argc>2) {
-    if (argv[2][0]=='-' && argv[2][1]=='v') {
-      verbose = true;
-    }
-    else {
-      which = argv[2];
-    }
-  }
+
+  typedef double ScalarType;
+  typedef ScalarTraits<ScalarType>                   SCT;
+  typedef SCT::magnitudeType               MagnitudeType;
+  typedef Epetra_MultiVector                          MV;
+  typedef Epetra_Operator                             OP;
+  typedef Anasazi::MultiVecTraits<ScalarType,MV>     MVT;
+  typedef Anasazi::OperatorTraits<ScalarType,MV,OP>  OPT;
+  const ScalarType ONE  = SCT::one();
 
   if (verbose && MyPID == 0) {
     cout << Anasazi::Anasazi_Version() << endl << endl;
   }
-
-  Anasazi::ReturnType returnCode;
-  
-  typedef double ScalarType;
-  typedef ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
-  typedef Epetra_MultiVector MV;
-  typedef Epetra_Operator OP;
 
   //  Problem information
   int space_dim = 1;
@@ -106,6 +101,7 @@ int main(int argc, char *argv[])
   std::vector<int> elements( space_dim );
   elements[0] = 100;
 
+  // Create problem
   RefCountPtr<ModalProblem> testCase = rcp( new ModeLaplace1DQ1(Comm, brick_dim[0], elements[0]) );
   //
   // Get the stiffness and mass matrices
@@ -118,18 +114,18 @@ int main(int argc, char *argv[])
   ivec->Random();
 
   // Create eigenproblem
-  int nev = 5;
-  RefCountPtr<Anasazi::BasicEigenproblem<ScalarType,MV,OP> > MyProblem =
+  const int nev = 5;
+  RefCountPtr<Anasazi::BasicEigenproblem<ScalarType,MV,OP> > problem =
     rcp( new Anasazi::BasicEigenproblem<ScalarType,MV,OP>(K,M,ivec) );
   //
-  // Inform the eigenproblem that the operator A is symmetric
-  MyProblem->setHermitian(true);
+  // Inform the eigenproblem that the operator K is symmetric
+  problem->setHermitian(true);
   //
-  // Set the number of eigenvalues requested and the blocksize the solver should use
-  MyProblem->setNEV( nev );
+  // Set the number of eigenvalues requested
+  problem->setNEV( nev );
   //
   // Inform the eigenproblem that you are done passing it information
-  bool boolret = MyProblem->setProblem();
+  boolret = problem->setProblem();
   if (boolret != true) {
     if (verbose && MyPID == 0) {
       cout << "Anasazi::BasicEigenproblem::SetProblem() returned with error." << endl
@@ -155,56 +151,62 @@ int main(int argc, char *argv[])
   //
   // Create parameter list to pass into the solver manager
   ParameterList MyPL;
+  MyPL.set( "Verbosity", verbosity );
+  MyPL.set( "Which", which );
   MyPL.set( "Block Size", blockSize );
   MyPL.set( "Maximum Iterations", maxIters );
   MyPL.set( "Convergence Tolerance", tol );
   MyPL.set( "Use Locking", true );
   MyPL.set( "Locking Tolerance", tol/10 );
-  MyPL.set( "Which", which );
   MyPL.set( "Full Ortho", true );
-  MyPL.set( "Verbosity", verbosity );
   //
   // Create the solver manager
-  Anasazi::LOBPCGSolMgr<ScalarType,MV,OP> MySolverMan(MyProblem, MyPL);
+  Anasazi::LOBPCGSolMgr<ScalarType,MV,OP> MySolverMan(problem, MyPL);
 
   // Solve the problem to the specified tolerances or length
-  returnCode = MySolverMan.solve();
+  Anasazi::ReturnType returnCode = MySolverMan.solve();
   testFailed = false;
   if (returnCode != Anasazi::Converged) {
     testFailed = true;
   }
 
   // Get the eigenvalues and eigenvectors from the eigenproblem
-  Anasazi::Eigensolution<ScalarType,MV> sol = MyProblem->getSolution();
+  Anasazi::Eigensolution<ScalarType,MV> sol = problem->getSolution();
   std::vector<MagnitudeType> evals = sol.Evals;
-  RefCountPtr<Epetra_MultiVector> evecs = sol.Evecs;
-  
-  // Check the problem against the analytical solutions
-  if (verbose && returnCode == Anasazi::Converged) {
-    info = testCase->eigenCheck( *evecs, &evals[0], 0 );
-  }
-  
-  // Compute the direct residual
-  std::vector<MagnitudeType> normV( evecs->NumVectors() );
-  SerialDenseMatrix<int,ScalarType> T(evecs->NumVectors(), evecs->NumVectors());
-  for (int i=0; i<evecs->NumVectors(); i++) {
-    T(i,i) = evals[i];
-  }
-  Epetra_MultiVector Kvec( K->OperatorDomainMap(), evecs->NumVectors() );
-  K->Apply( *evecs, Kvec );  
-  Epetra_MultiVector Mvec( M->OperatorDomainMap(), evecs->NumVectors() );
-  M->Apply( *evecs, Mvec );  
-  Anasazi::MultiVecTraits<ScalarType,Epetra_MultiVector>::MvTimesMatAddMv( -1.0, Mvec, T, 1.0, Kvec );
-  info = Kvec.Norm2( &normV[0] );
-  assert( info==0 );
-  
-  for ( i=0; i<nev; i++ ) {
-    if ( ScalarTraits<ScalarType>::magnitude(normV[i]/evals[i]) > 5.0e-5 ) {
-      testFailed = true;
+  RefCountPtr<MV> evecs = sol.Evecs;
+  int numev = sol.numVecs;
+
+  if (numev > 0) {
+
+    /* finish: this code has bugs: it only works properly when which == "SM" or "SR"
+    // Check the problem against the analytical solutions
+    if (verbose && which == "SM") {
+      info = testCase->eigenCheck( *evecs, &evals[0], 0 );
     }
+    */
+
+    // Compute the direct residual
+    std::vector<MagnitudeType> normV( numev );
+    SerialDenseMatrix<int,ScalarType> T(numev,numev);
+    for (int i=0; i<numev; i++) {
+      T(i,i) = evals[i];
+    }
+    RefCountPtr<MV> Mvecs = MVT::Clone( *evecs, numev ),
+                    Kvecs = MVT::Clone( *evecs, numev );
+    OPT::Apply( *K, *evecs, *Kvecs );
+    OPT::Apply( *M, *evecs, *Mvecs );
+    MVT::MvTimesMatAddMv( -ONE, *Mvecs, T, ONE, *Kvecs );
+    MVT::MvNorm( *Kvecs, &normV );
+  
+    for (int i=0; i<numev; i++) {
+      if ( SCT::magnitude(normV[i]/evals[i]) > tol ) {
+        testFailed = true;
+      }
+    }
+
   }
 
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
   MPI_Finalize() ;
 #endif
 

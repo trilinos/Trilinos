@@ -42,8 +42,6 @@
 
 #include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziLOBPCGSolMgr.hpp"
-
-#include "AnasaziMVOPTester.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 
 #ifdef HAVE_MPI
@@ -65,12 +63,14 @@ int main(int argc, char *argv[])
 {
   int info = 0;
   bool boolret;
-  int MyPID = 0;
+  int MyPID;
 
 #ifdef HAVE_MPI
   // Initialize MPI
   MPI_Init(&argc,&argv);
   MPI_Comm_rank( MPI_COMM_WORLD, &MyPID );
+#else
+  MyPID = 0;
 #endif
 
   bool testFailed;
@@ -88,6 +88,17 @@ int main(int argc, char *argv[])
 #endif
     return -1;
   }
+
+#ifndef HAVE_ANASAZI_TRIUTILS
+  cout << "This test requires Triutils. Please configure with --enable-triutils." << endl;
+#ifdef HAVE_MPI
+  MPI_Finalize() ;
+#endif
+  if (verbose && MyPID == 0) {
+    cout << "End Result: TEST FAILED" << endl;	
+  }
+  return -1;
+#endif
 
 #ifdef HAVE_COMPLEX
   typedef std::complex<double> ScalarType;
@@ -111,30 +122,13 @@ int main(int argc, char *argv[])
   typedef Anasazi::Operator<ScalarType>               OP;
   typedef Anasazi::MultiVecTraits<ScalarType,MV>     MVT;
   typedef Anasazi::OperatorTraits<ScalarType,MV,OP>  OPT;
-  ScalarType ONE  = SCT::one();
-  ScalarType ZERO = SCT::zero();
-
-
+  const ScalarType ONE  = SCT::one();
 
   if (verbose && MyPID == 0) {
     cout << Anasazi::Anasazi_Version() << endl << endl;
   }
 
-
-#ifndef HAVE_ANASAZI_TRIUTILS
-  cout << "This test requires Triutils. Please configure with --enable-triutils." << endl;
-#ifdef HAVE_MPI
-  MPI_Finalize() ;
-#endif
-  if (verbose && MyPID == 0) {
-    cout << "End Result: TEST FAILED" << endl;	
-  }
-  return -1;
-#endif
-
-  Anasazi::ReturnType returnCode;
-
-  // Get the data from the HB file
+  //  Problem information
   int dim,dim2,nnz;
   double *dvals;
   int *colptr,*rowind;
@@ -158,7 +152,7 @@ int main(int argc, char *argv[])
     cvals[ii] = ScalarType(dvals[ii*2],dvals[ii*2+1]);
   }
   // Build the problem matrix
-  RefCountPtr< MyBetterOperator<ScalarType> > A 
+  RefCountPtr< MyBetterOperator<ScalarType> > K 
     = rcp( new MyBetterOperator<ScalarType>(dim,colptr,nnz,rowind,cvals) );
 
   // Create initial vectors
@@ -167,18 +161,18 @@ int main(int argc, char *argv[])
   ivec->MvRandom();
 
   // Create eigenproblem
-  int nev = 4;
-  RefCountPtr<Anasazi::BasicEigenproblem<ScalarType,MV,OP> > MyProblem =
-    rcp( new Anasazi::BasicEigenproblem<ScalarType,MV,OP>(A,ivec) );
+  const int nev = 4;
+  RefCountPtr<Anasazi::BasicEigenproblem<ScalarType,MV,OP> > problem =
+    rcp( new Anasazi::BasicEigenproblem<ScalarType,MV,OP>(K,ivec) );
   //
-  // Inform the eigenproblem that the operator A is symmetric
-  MyProblem->setHermitian(true);
+  // Inform the eigenproblem that the operator K is symmetric
+  problem->setHermitian(true);
   //
-  // Set the number of eigenvalues requested and the blocksize the solver should use
-  MyProblem->setNEV( nev );
+  // Set the number of eigenvalues requested
+  problem->setNEV( nev );
   //
   // Inform the eigenproblem that you are done passing it information
-  boolret = MyProblem->setProblem();
+  boolret = problem->setProblem();
   if (boolret != true) {
     if (verbose && MyPID == 0) {
       cout << "Anasazi::BasicEigenproblem::SetProblem() returned with error." << endl
@@ -204,46 +198,52 @@ int main(int argc, char *argv[])
   //
   // Create parameter list to pass into the solver manager
   ParameterList MyPL;
+  MyPL.set( "Verbosity", verbosity );
+  MyPL.set( "Which", which );
   MyPL.set( "Block Size", blockSize );
   MyPL.set( "Maximum Iterations", maxIters );
   MyPL.set( "Convergence Tolerance", tol );
   MyPL.set( "Use Locking", true );
   MyPL.set( "Locking Tolerance", tol/10 );
-  MyPL.set( "Which", which );
   MyPL.set( "Full Ortho", true );
-  MyPL.set( "Verbosity", verbosity );
   //
   // Create the solver manager
-  Anasazi::LOBPCGSolMgr<ScalarType,MV,OP> MySolverMan(MyProblem, MyPL);
+  Anasazi::LOBPCGSolMgr<ScalarType,MV,OP> MySolverMan(problem, MyPL);
 
   // Solve the problem to the specified tolerances or length
-  returnCode = MySolverMan.solve();
+  Anasazi::ReturnType returnCode = MySolverMan.solve();
   testFailed = false;
   if (returnCode != Anasazi::Converged) {
-    testFailed = true; 
+    testFailed = true;
   }
 
   // Get the eigenvalues and eigenvectors from the eigenproblem
-  Anasazi::Eigensolution<ScalarType,MV> sol = MyProblem->getSolution();
+  Anasazi::Eigensolution<ScalarType,MV> sol = problem->getSolution();
   std::vector<MagnitudeType> evals = sol.Evals;
   RefCountPtr<MV> evecs = sol.Evecs;
-  int nevecs = MVT::GetNumberVecs(*evecs);
+  int numev = sol.numVecs;
 
-  // Compute the direct residual
-  std::vector<MagnitudeType> normV( nevecs );
-  SerialDenseMatrix<int,ScalarType> T(nevecs,nevecs);
-  for (int i=0; i<nevecs; i++) {
-    T(i,i) = evals[i];
-  }
-  RefCountPtr<MV > Avecs = MVT::Clone( *evecs, nevecs );
-  OPT::Apply( *A, *evecs, *Avecs );
-  MVT::MvTimesMatAddMv( -ONE, *evecs, T, ONE, *Avecs );
-  MVT::MvNorm( *Avecs, &normV );
+  if (numev > 0) {
 
-  for (int i=0; i<nevecs; i++) {
-    if ( SCT::magnitude(normV[i]/evals[i]) > 5.0e-5 ) {
-      testFailed = true;
+    // Compute the direct residual
+    std::vector<MagnitudeType> normV( numev );
+    SerialDenseMatrix<int,ScalarType> T(numev,numev);
+    for (int i=0; i<numev; i++) {
+      T(i,i) = evals[i];
     }
+    RefCountPtr<MV> Kvecs = MVT::Clone( *evecs, numev );
+
+    OPT::Apply( *K, *evecs, *Kvecs );
+
+    MVT::MvTimesMatAddMv( -ONE, *evecs, T, ONE, *Kvecs );
+    MVT::MvNorm( *Kvecs, &normV );
+  
+    for (int i=0; i<numev; i++) {
+      if ( SCT::magnitude(normV[i]/evals[i]) > tol ) {
+        testFailed = true;
+      }
+    }
+
   }
 
 #ifdef HAVE_MPI
