@@ -58,7 +58,7 @@ namespace Teuchos
    * ConstHandleable interface; this is necessary to avoid any implicit conversions
    * from raw pointers to smart pointers.
    * 
-   * Note that the first form must be used whenever the object being handled has
+   * Note that the first form with rcp() must be used whenever the object being handled has
    * been allocated on the stack.
    *
    */
@@ -74,7 +74,6 @@ namespace Teuchos
 
     /** \brief Read-only access to the underlying smart pointer. */
     const RefCountPtr<const PointerType>& ptr() const {return ptr_;}
-
 
     /** Access to raw pointer */
     const PointerType * const rawPtr() {return this->ptr().get();}
@@ -155,6 +154,21 @@ namespace Teuchos
     /** \brief Read/write access to the underlying smart pointer. 
      */
     RefCountPtr<PointerType> ptr() {return this->nonConstPtr();}
+
+    /** \brief Conversion to a non-const pointer, used for interoperability
+     * with user-level code that ignores ConstHandle. Don't use this unless you know
+     * what you're doing. */
+    RefCountPtr<PointerType> nonconstPointer() const 
+    {return rcp_const_cast<PointerType>(ptr_);}
+
+
+    /** Access to raw pointer */
+    const PointerType * const rawPtr() {return this->ptr().get();}
+
+  protected:
+    /** \brief The empty ctor will only be called by Handle ctors */
+    explicit ConstHandle() : ptr_() {;}
+
 
     /** Access to raw pointer */
     PointerType* rawPtr() {return this->nonConstPtr().get();}
