@@ -165,9 +165,12 @@ namespace Belos {
     //! Output stream.
     RefCountPtr<ostream> _os;
     
-    //! Current blocksize, iteration number, and basis pointer.
+    //! Current iteration number.
     int _iter;
-    
+
+    //! Current residual norm estimate.
+    std::vector<MagnitudeType> _tau;
+
     //! Restart timers each time Solve() is called.
     bool _restartTimers;
 
@@ -191,6 +194,7 @@ namespace Belos {
     _pl(pl),
     _os(om->GetOStream()),
     _iter(0),
+    _tau(1),
     _restartTimers(true),
     _timerOp(Teuchos::TimeMonitor::getNewTimer("Operation Op*x")),
     _timerTotal(Teuchos::TimeMonitor::getNewTimer("Total time"))
@@ -201,10 +205,11 @@ namespace Belos {
   RefCountPtr<const MV> 
   TFQMR<ScalarType,MV,OP>::GetNativeResiduals( std::vector<MagnitudeType> *normvec ) const 
   {
-    std::vector<int> index( 1 );
-    index[0] = 0;
-    RefCountPtr<MV> ResidMV = MVT::CloneView( *_residvec, index );
-    return ResidMV;
+    MagnitudeType one = Teuchos::ScalarTraits<MagnitudeType>::one();
+    if (normvec)
+      (*normvec)[0] = Teuchos::ScalarTraits<MagnitudeType>::squareroot( _iter + one )*_tau[0];
+
+    return Teuchos::null;
   }
   
   template <class ScalarType, class MV, class OP>
@@ -224,13 +229,11 @@ namespace Belos {
     const ScalarType STzero = Teuchos::ScalarTraits<ScalarType>::zero();
     const MagnitudeType MTzero = Teuchos::ScalarTraits<MagnitudeType>::zero();
     bool exit_flg = false;
-    bool isPrec = ( _lp->GetLeftPrec().get()!=NULL );
     Teuchos::SerialDenseMatrix<int,ScalarType> _alpha( 1, 1 );
-    Teuchos::SerialDenseMatrix<int,ScalarType> _rho( 1, 1 ), _old_rho( 1, 1 );
-    Teuchos::SerialDenseMatrix<int,ScalarType> _beta( 1, 1 );
+    Teuchos::SerialDenseMatrix<int,ScalarType> _rho( 1, 1 ), _rho_old( 1, 1 );
     RefCountPtr<MV> _v, _w, _u, _Au, _d, _rtilde;
-    ScalarType _eta;
-    MagnitudeType _cs, _tau, _theta;
+    ScalarType _eta = STzero, _beta = STzero;
+    std::vector<MagnitudeType> _cs(1,MTzero), _theta(1,MTzero);
     //
     // Retrieve the first linear system to be solved.
     //
@@ -253,7 +256,8 @@ namespace Belos {
       }	
       //
       _d = MVT::Clone( *_cur_block_sol, 1 );
-      MVT::MvInit( *_d, STzero );
+      _v = MVT::Clone( *_cur_block_sol, 1 );
+      MVT::MvInit( *_d );
       //
       // ************ Compute the initial residual ********************************
       //
@@ -262,9 +266,9 @@ namespace Belos {
       _residvec = MVT::Clone( *_cur_block_sol, 1 );
       _lp->ComputeResVec( &*_residvec, &*_cur_block_sol, &*_cur_block_rhs );
       //
-      _w = MVT::CloneCopy( *_residvec, 1 ); 
-      _u = MVT::CloneCopy( *_residvec, 1 ); 
-      _rtilde = MVT::CloneCopy( *_residvec, 1 ); 
+      _w = MVT::CloneCopy( *_residvec ); 
+      _u = MVT::CloneCopy( *_residvec ); 
+      _rtilde = MVT::CloneCopy( *_residvec ); 
       //
       // Multiply the current residual by Op and store in _v
       //       _v = _Op*_residvec 
@@ -273,14 +277,12 @@ namespace Belos {
 	Teuchos::TimeMonitor OpTimer(*_timerOp);
 	_lp->Apply( *_residvec, *_v );
       }
-      _Au = MVT::CloneCopy( *_v, 1 ); 
+      _Au = MVT::CloneCopy( *_v ); 
       //
       // Compute initial scalars: theta, eta, tau, rho_old
       //
-      _theta = MTzero;
-      _eta = STzero;
-      MVT::MvNorm( *_residvec, _tau );                        // tau = ||r_0||
-      MVT::MvTransMv( *_residvec, *_residtilde, rho_old );    // rho = (r_0, r_tilde)
+      MVT::MvNorm( *_residvec, &_tau );                         // tau = ||r_0||
+      MVT::MvTransMv( one, *_residvec, *_rtilde, _rho_old );    // rho = (r_0, r_tilde)
       //
       // ***************************************************************************
       // ************************Main TFQMR Loop***************************************
@@ -294,8 +296,8 @@ namespace Belos {
 	  //--------------------------------------------------------
 	  //
 	  if (_iter%2 == 0) {
-	    MVT::MvTransMv( *_v, *_rtilde, _alpha );      //   alpha = rho / (v, r_tilde) 
-	    alpha(0,0) = _rho_old(0,0)/_alpha(0,0);
+	    MVT::MvTransMv( one, *_v, *_rtilde, _alpha );      //   alpha = rho / (v, r_tilde) 
+	    _alpha(0,0) = _rho_old(0,0)/_alpha(0,0);
 	  }
 	  //
 	  //--------------------------------------------------------
@@ -303,14 +305,14 @@ namespace Belos {
 	  //   d = u + (theta^2/alpha)eta*d
 	  //--------------------------------------------------------
 	  //
-	  MVT::MvAddMv( one, *_u, (_theta^2/alpha(0,0))*eta, *_d, *_d );
+	  MVT::MvAddMv( one, *_u, (_theta[0]*_theta[0]/_alpha(0,0))*_eta, *_d, *_d );
 	  //
 	  //--------------------------------------------------------
 	  // Update w.
 	  //   w = w - alpha*Au
 	  //--------------------------------------------------------
 	  //
-	  MVT::MvAddMv( one, *_w, -alpha(0,0), *_Au, *_w );
+	  MVT::MvAddMv( one, *_w, -_alpha(0,0), *_Au, *_w );
 	  //
 	  //--------------------------------------------------------
 	  // Update u if we need to.
@@ -320,28 +322,28 @@ namespace Belos {
 	  //--------------------------------------------------------
 	  //
 	  if (_iter%2 == 0) {
-	    MVT::MvAddMv( one, *_u, -alpha(0,0), *_v, *_u );
+	    MVT::MvAddMv( one, *_u, -_alpha(0,0), *_v, *_u );
 	  }
 	  //
 	  //--------------------------------------------------------
 	  // Compute the new theta, c, eta, tau; i.e. the update to the least squares solution.
 	  //--------------------------------------------------------
 	  //
-	  MVT::MvNorm( *_w, theta );    // theta = ||w|| / tau
-	  _theta /= _tau;
+	  MVT::MvNorm( *_w, &_theta );     // theta = ||w|| / tau
+	  _theta[0] /= _tau[0];
 
 	  // cs = sqrt( 1 + theta^2 )
-	  _cs = Teuchos::ScalarTraits<ScalarType>::squareroot(one + _theta^2);
+	  _cs[0] = Teuchos::ScalarTraits<ScalarType>::squareroot(one + _theta[0]*_theta[0]);
 
-	  _tau *= _theta*_cs;           // tau = tau * theta * cs
-	  _eta = _cs^2*_alpha(0,0);     // eta = cs^2 * alpha
+	  _tau[0] *= _theta[0]*_cs[0];     // tau = tau * theta * cs
+	  _eta = _cs[0]*_cs[0]*_alpha(0,0);     // eta = cs^2 * alpha
 
 	  //
 	  //--------------------------------------------------------
 	  // Update the solution.
 	  //--------------------------------------------------------
 	  //
-	  _lp->SolutionUpdated( *_d, _eta );
+	  _lp->SolutionUpdated( &*_d, _eta );
 	  //
 	  if (_iter%2) {
 	    //
@@ -358,19 +360,19 @@ namespace Belos {
 	    // Note: We are updating v in two stages to be memory efficient
 	    //--------------------------------------------------------
 	    //
-	    MVT::MvAddMv( one, *_w, _beta, *_u, *_u );   // u = w + beta*u
+	    MVT::MvAddMv( one, *_w, _beta, *_u, *_u );       // u = w + beta*u
 
 	    // First stage of v update.
-	    MVT::MvAddMv( one, *_Au, _beta, *_v, *_v );  // v = Au + beta*v 
+	    MVT::MvAddMv( one, *_Au, _beta, *_v, *_v );      // v = Au + beta*v 
 
 	    // Update Au.
 	    {
 	      Teuchos::TimeMonitor OpTimer(*_timerOp);
-	      _lp::Apply( *_u, *_Au );                   // Au = A*u
+	      _lp->Apply( *_u, *_Au );                       // Au = A*u
 	    }
 
 	    // Second stage of v update.
-	    MVT::MvAddMv( one, *_Au, _beta, *_v, *_v );  // v = Au + beta*v
+	    MVT::MvAddMv( one, *_Au, _beta, *_v, *_v );      // v = Au + beta*v
 	  }
 
 	} // end of the main TFQMR loop -- for(_iter = 0;...)

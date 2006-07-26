@@ -10785,7 +10785,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 # ------------------------------------------------------------------------
 ##
 
-                                                                                                                                                                                              ac_config_files="$ac_config_files Makefile Makefile.export.belos src/Makefile test/Makefile test/BlockCG/Makefile test/BlockGmres/Makefile test/MVOPTester/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile thyra/Makefile thyra/src/Makefile thyra/test/Makefile thyra/test/MVOPTester/Makefile thyra/test/LOWSFactory/Makefile thyra/example/Makefile thyra/example/LOWSFactory/Makefile thyra/example/LOWSFactory/Epetra/Makefile thyra/example/LOWSFactory/Tpetra/Makefile"
+                                                                                                                                                                                                        ac_config_files="$ac_config_files Makefile Makefile.export.belos src/Makefile test/Makefile test/BlockCG/Makefile test/BlockGmres/Makefile test/BlockTFQMR/Makefile test/MVOPTester/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile thyra/Makefile thyra/src/Makefile thyra/test/Makefile thyra/test/MVOPTester/Makefile thyra/test/LOWSFactory/Makefile thyra/example/Makefile thyra/example/LOWSFactory/Makefile thyra/example/LOWSFactory/Epetra/Makefile thyra/example/LOWSFactory/Tpetra/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -11469,6 +11469,7 @@ do
   "test/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
   "test/BlockCG/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/BlockCG/Makefile" ;;
   "test/BlockGmres/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/BlockGmres/Makefile" ;;
+  "test/BlockTFQMR/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/BlockTFQMR/Makefile" ;;
   "test/MVOPTester/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/MVOPTester/Makefile" ;;
   "test/scripts/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/Makefile" ;;
   "test/scripts/daily/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/daily/Makefile" ;;
