@@ -619,12 +619,16 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
     sol.index.resize(sol.numVecs,0);
   }
 
+  // print final summary
+  lobpcg_solver->currentStatus(printer->stream(FinalSummary));
+
+  // print timing information
+  Teuchos::TimeMonitor::summarize(printer->stream(TimingDetails));
   _problem->setSolution(sol);
+
   printer->stream(Debug) << "Returning " << sol.numVecs << " to eigenproblem." << endl;
 
-  if (sol.numVecs < nev) {
-    return Unconverged; // return from LOBPCGSolMgr::solve() 
-  }
+  if (sol.numVecs < nev) return Unconverged; // return from LOBPCGSolMgr::solve() 
   return Converged; // return from LOBPCGSolMgr::solve() 
 }
 

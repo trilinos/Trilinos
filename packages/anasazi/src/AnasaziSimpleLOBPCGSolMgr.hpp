@@ -50,6 +50,8 @@
 #include "AnasaziBasicOutputManager.hpp"
 #include "AnasaziModalSolverUtils.hpp"
 
+#include "Teuchos_TimeMonitor.hpp"
+
 /*! \class Anasazi::SimpleLOBPCGSolMgr
   \brief The Anasazi::SimpleLOBPCGSolMgr provides a simple solver
   manager over the LOBPCG eigensolver. 
@@ -341,8 +343,16 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::solve() {
     msutils.permuteVectors(sol.numVecs,order,*sol.Evecs);
   }
 
+  // print final summary
+  lobpcg_solver->currentStatus(printer->stream(FinalSummary));
+
+  // print timing information
+  Teuchos::TimeMonitor::summarize(printer->stream(TimingDetails));
+
   // send the solution to the eigenproblem
   _problem->setSolution(sol);
+
+  printer->stream(Debug) << "Returning " << sol.numVecs << " to eigenproblem." << endl;
 
   // return from SolMgr::solve()
   if (sol.numVecs < nev) return Unconverged;
