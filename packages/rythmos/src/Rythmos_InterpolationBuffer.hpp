@@ -39,42 +39,37 @@ template<class Scalar>
 class InterpolationBuffer : virtual public Teuchos::Describable
 {
   public:
-    
+
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
+
     /// Destructor
     virtual ~InterpolationBuffer() {};
 
-    /// Add point to buffer
-    virtual bool SetPoint(const ScalarMag& time, const Thyra::VectorBase<Scalar>& x, const Thyra::VectorBase<Scalar>& xdot);
-    // 06/29/06 tscoffe:  This could be limiting, especially for extra
-    // parameters passed through InArgs.  Also, in the ODE case, xdot = f(x),
-    // so there's the question of including additional functions from OutArgs
-    // in the interpolation buffer also.  One fix would be to use
-    // std::vector<Thyra::VectorBase<Scalar> > for (x,xdot).  Would this handle
-    // parameters in InArgs correctly?   If we use std::vector though, we don't
-    // know that the first two elements represent an x, xdot relationship which
-    // is advantagous for many interpolation algorithms.  An alternative would
-    // be to use (x, xdot, std::vector<Thyra::VectorBase<Scalar> > u) as input,
-    // with u optional.  And this adds further complications for SetRange when
-    // the other interpolation buffer uses optional inputs and this one doesn't
-    // or vice versa.  Another strategy would use InArgs directly as input and
-    // process interpolation over all the valid data present.  The
-    // InArgs/OutArgs approach implies that InArgs are the independent
-    // variables and OutArgs are the dependent variables.  In the basic case of
-    // storing the solution to a DE, the independent variable is time and the
-    // dependent variable is everything else in the InArgs object.  This
-    // splitting of the object is awkward.  Fundamentally, our independent
-    // variable is a ScalarMag labeled "time" and everything else is part of
-    // the dependent variable that will be interpolated between values of
-    // "time" provided.
+    /// Add points to buffer
+    virtual bool SetPoints(
+      const std::vector<Scalar>& time_list
+      ,const std::vector<Thyra::VectorBase<Scalar> >& x_list
+      ,const std::vector<Thyra::VectorBase<Scalar> >& xdot_list) =0;
 
-    /// Get value from buffer
-    virtual bool GetPoint(const ScalarMag& time, Thyra::VectorBase<Scalar>* x, Thyra::VectorBase<Scalar>* xdot) const;
+    /// Get values from buffer
+    virtual bool GetPoints(
+      const std::vector<Scalar>& time_list
+      ,std::vector<Thyra::VectorBase<Scalar> >* x_list
+      ,std::vector<Thyra::VectorBase<Scalar> >* xdot_list
+      ,std::vector<ScalarMag>* accuracy_list) const =0;
 
     /// Fill data in from another interpolation buffer
-    virtual bool SetRange(const ScalarMagRange& time_range, const InterpolationBuffer<Scalar>& IB);
+    virtual bool SetRange(
+      const Scalar& time_lower
+      ,const Scalar& time_upper
+      ,const InterpolationBuffer<Scalar> & IB) =0;
 
     /// Get interpolation nodes
-    virtual bool GetNodes(std::vector<ScalarMag>* time_list) const;
+    virtual bool GetNodes(std::vector<Scalar>* time_list) const =0;
+
+    /// Get order of interpolation
+    virtual int GetOrder() const =0;
+
 };
 
 } // namespace Rythmos

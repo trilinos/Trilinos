@@ -135,6 +135,9 @@ namespace Rythmos {
    * <li> "Taylor Polynomial Degree" (int) [Default = 40] Degree of local Taylor polynomial approximation.
    * </ul>
    */
+
+  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
+
   template<class Scalar>
   class ExplicitTaylorPolynomialStepper : public Stepper<Scalar>
   {
@@ -171,6 +174,29 @@ namespace Rythmos {
       ,const std::string          leadingIndent
       ,const std::string          indentSpacer
       ) const;
+
+    /// Redefined from InterpolationBuffer 
+    /// Add points to buffer
+    bool SetPoints(
+      const std::vector<Scalar>& time_list
+      ,const std::vector<Thyra::VectorBase<Scalar> >& x_list
+      ,const std::vector<Thyra::VectorBase<Scalar> >& xdot_list);
+
+    /// Get values from buffer
+    bool GetPoints(
+      const std::vector<Scalar>& time_list
+      ,std::vector<Thyra::VectorBase<Scalar> >* x_list
+      ,std::vector<Thyra::VectorBase<Scalar> >* xdot_list
+      ,std::vector<ScalarMag>* accuracy_list) const;
+
+    /// Fill data in from another interpolation buffer
+    bool SetRange(
+      const Scalar& time_lower
+      ,const Scalar& time_upper
+      ,const InterpolationBuffer<Scalar> & IB);
+
+    /// Get interpolation nodes
+    bool GetNodes(std::vector<Scalar>* time_list) const;
 
   protected:
 
@@ -543,6 +569,47 @@ namespace Rythmos {
     }
     return(out);
   }
+
+
+template<class Scalar>
+bool ExplicitTaylorPolynomialStepper<Scalar>::SetPoints(
+    const std::vector<Scalar>& time_list
+    ,const std::vector<Thyra::VectorBase<Scalar> >& x_list
+    ,const std::vector<Thyra::VectorBase<Scalar> >& xdot_list)
+{
+  return(false);
+}
+
+template<class Scalar>
+bool ExplicitTaylorPolynomialStepper<Scalar>::GetPoints(
+    const std::vector<Scalar>& time_list
+    ,std::vector<Thyra::VectorBase<Scalar> >* x_list
+    ,std::vector<Thyra::VectorBase<Scalar> >* xdot_list
+    ,std::vector<ScalarMag>* accuracy_list) const
+{
+  return(false);
+}
+
+template<class Scalar>
+bool ExplicitTaylorPolynomialStepper<Scalar>::SetRange(
+    const Scalar& time_lower
+    ,const Scalar& time_upper
+    ,const InterpolationBuffer<Scalar>& IB)
+{
+  return(false);
+}
+
+template<class Scalar>
+bool ExplicitTaylorPolynomialStepper<Scalar>::GetNodes(std::vector<Scalar>* time_list) const
+{
+  return(false);
+}
+
+template<class Scalar>
+int ExplicitTaylorPolynomialStepper<Scalar>::GetOrder() const
+{
+  return(4);
+}
 
 
 } // namespace Rythmos

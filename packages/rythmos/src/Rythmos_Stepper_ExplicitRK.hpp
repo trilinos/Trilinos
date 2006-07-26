@@ -39,9 +39,11 @@ namespace Rythmos {
 
 /** \brief . */
 template<class Scalar>
-class ExplicitRKStepper : public Stepper<Scalar>
+class ExplicitRKStepper : virtual public Stepper<Scalar>
 {
   public:
+
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
     
     /** \brief . */
     ExplicitRKStepper();
@@ -69,6 +71,32 @@ class ExplicitRKStepper : public Stepper<Scalar>
       ,const std::string          leadingIndent
       ,const std::string          indentSpacer
       ) const;
+
+    /// Redefined from InterpolationBuffer 
+    /// Add points to buffer
+    bool SetPoints(
+      const std::vector<Scalar>& time_list
+      ,const std::vector<Thyra::VectorBase<Scalar> >& x_list
+      ,const std::vector<Thyra::VectorBase<Scalar> >& xdot_list);
+    
+    /// Get values from buffer
+    bool GetPoints(
+      const std::vector<Scalar>& time_list
+      ,std::vector<Thyra::VectorBase<Scalar> >* x_list
+      ,std::vector<Thyra::VectorBase<Scalar> >* xdot_list
+      ,std::vector<ScalarMag>* accuracy_list) const;
+
+    /// Fill data in from another interpolation buffer
+    bool SetRange(
+      const Scalar& time_lower
+      ,const Scalar& time_upper
+      ,const InterpolationBuffer<Scalar> & IB);
+
+    /// Get interpolation nodes
+    bool GetNodes(std::vector<Scalar>* time_list) const;
+
+    /// Get order of interpolation
+    int GetOrder() const;
 
   private:
 
@@ -324,6 +352,45 @@ std::ostream& ExplicitRKStepper<Scalar>::describe(
   return(out);
 }
 
+template<class Scalar>
+bool ExplicitRKStepper<Scalar>::SetPoints(
+    const std::vector<Scalar>& time_list
+    ,const std::vector<Thyra::VectorBase<Scalar> >& x_list
+    ,const std::vector<Thyra::VectorBase<Scalar> >& xdot_list)
+{
+  return(false);
+}
+
+template<class Scalar>
+bool ExplicitRKStepper<Scalar>::GetPoints(
+    const std::vector<Scalar>& time_list
+    ,std::vector<Thyra::VectorBase<Scalar> >* x_list
+    ,std::vector<Thyra::VectorBase<Scalar> >* xdot_list
+    ,std::vector<ScalarMag>* accuracy_list) const
+{
+  return(false);
+}
+
+template<class Scalar>
+bool ExplicitRKStepper<Scalar>::SetRange(
+    const Scalar& time_lower
+    ,const Scalar& time_upper
+    ,const InterpolationBuffer<Scalar>& IB)
+{
+  return(false);
+}
+
+template<class Scalar>
+bool ExplicitRKStepper<Scalar>::GetNodes(std::vector<Scalar>* time_list) const
+{
+  return(false);
+}
+
+template<class Scalar>
+int ExplicitRKStepper<Scalar>::GetOrder() const
+{
+  return(4);
+}
 
 } // namespace Rythmos
 

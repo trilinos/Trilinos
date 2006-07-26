@@ -39,9 +39,11 @@ namespace Rythmos {
 
 /** \brief . */
 template<class Scalar>
-class ForwardEulerStepper : public Stepper<Scalar>
+class ForwardEulerStepper : virtual public Stepper<Scalar>
 {
   public:
+
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
     
     /** \brief . */
     ForwardEulerStepper();
@@ -72,6 +74,33 @@ class ForwardEulerStepper : public Stepper<Scalar>
       ,const std::string          leadingIndent
       ,const std::string          indentSpacer
       ) const;
+    
+    /// Redefined from InterpolationBuffer 
+    /// Add points to buffer
+    bool SetPoints(
+      const std::vector<Scalar>& time_list
+      ,const std::vector<Thyra::VectorBase<Scalar> >& x_list
+      ,const std::vector<Thyra::VectorBase<Scalar> >& xdot_list);
+    
+    /// Get values from buffer
+    bool GetPoints(
+      const std::vector<Scalar>& time_list
+      ,std::vector<Thyra::VectorBase<Scalar> >* x_list
+      ,std::vector<Thyra::VectorBase<Scalar> >* xdot_list
+      ,std::vector<ScalarMag>* accuracy_list) const;
+
+    /// Fill data in from another interpolation buffer
+    bool SetRange(
+      const Scalar& time_lower
+      ,const Scalar& time_upper
+      ,const InterpolationBuffer<Scalar> & IB);
+
+    /// Get interpolation nodes
+    bool GetNodes(std::vector<Scalar>* time_list) const;
+
+    /// Get order of interpolation
+    int GetOrder() const;
+
 
 
   private:
@@ -173,6 +202,47 @@ std::ostream& ForwardEulerStepper<Scalar>::describe(
   }
   return(out);
 }
+
+template<class Scalar>
+bool ForwardEulerStepper<Scalar>::SetPoints(
+    const std::vector<Scalar>& time_list
+    ,const std::vector<Thyra::VectorBase<Scalar> >& x_list
+    ,const std::vector<Thyra::VectorBase<Scalar> >& xdot_list)
+{
+  return(false);
+}
+
+template<class Scalar>
+bool ForwardEulerStepper<Scalar>::GetPoints(
+    const std::vector<Scalar>& time_list
+    ,std::vector<Thyra::VectorBase<Scalar> >* x_list
+    ,std::vector<Thyra::VectorBase<Scalar> >* xdot_list
+    ,std::vector<ScalarMag>* accuracy_list) const
+{
+  return(false);
+}
+
+template<class Scalar>
+bool ForwardEulerStepper<Scalar>::SetRange(
+    const Scalar& time_lower
+    ,const Scalar& time_upper
+    ,const InterpolationBuffer<Scalar>& IB)
+{
+  return(false);
+}
+
+template<class Scalar>
+bool ForwardEulerStepper<Scalar>::GetNodes(std::vector<Scalar>* time_list) const
+{
+  return(false);
+}
+
+template<class Scalar>
+int ForwardEulerStepper<Scalar>::GetOrder() const
+{
+  return(1);
+}
+
 
 } // namespace Rythmos
 

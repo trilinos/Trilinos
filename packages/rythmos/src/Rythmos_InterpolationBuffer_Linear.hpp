@@ -39,6 +39,8 @@ template<class Scalar>
 class LinearInterpolationBuffer : virtual public InterpolationBuffer<Scalar>
 {
   public:
+
+    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
     
     /** \brief. */
     LinearInterpolationBuffer();
@@ -56,20 +58,33 @@ class LinearInterpolationBuffer : virtual public InterpolationBuffer<Scalar>
     ~LinearInterpolationBuffer() {};
 
     /// Add point to buffer
-    bool SetPoint(const ScalarMag& time, const Thyra::VectorBase<Scalar>& x, const Thyra::VectorBase<Scalar>& xdot);
+    bool SetPoints(
+      const std::vector<Scalar>& time_list
+      ,const std::vector<Thyra::VectorBase<Scalar> >& x_list
+      ,const std::vector<Thyra::VectorBase<Scalar> >& xdot_list);
 
     /// Get value from buffer
-    bool GetPoint(const ScalarMag& time, Thyra::VectorBase<Scalar>* x, Thyra::VectorBase<Scalar>* xdot) const;
+    bool GetPoints(
+      const std::vector<Scalar>& time_list
+      ,std::vector<Thyra::VectorBase<Scalar> >* x_list
+      ,std::vector<Thyra::VectorBase<Scalar> >* xdot_list
+      ,std::vector<ScalarMag>* accuracy_list) const;
 
     /// Fill data in from another interpolation buffer
-    bool SetRange(const ScalarMagRange& time_range, const InterpolationBuffer<Scalar>& IB);
+    bool SetRange(
+      const Scalar& time_lower
+      ,const Scalar& time_upper
+      ,const InterpolationBuffer<Scalar>& IB);
 
     /// Get interpolation nodes
-    bool GetNodes(std::vector<ScalarMag>* time_list) const;
+    bool GetNodes(std::vector<Scalar>* time_list) const;
+
+    /// Get order of interpolation
+    int GetOrder() const;
 
   private:
 
-    std::vector<ScalarMag> indep_values
+    std::vector<Scalar> indep_values
     std::vector<std::vector<Thyra::VectorBase<Scalar> > > dep_values;
     ScalarMag accuracy;
     int storage_limit;
@@ -105,10 +120,10 @@ LinearInterpolationBuffer<Scalar>::SetStorage( int storage_ )
 }
 
 template<class Scalar>
-bool LinearInterpolationBuffer<Scalar>::SetPoint( 
-    const ScalarMag& time
-    ,const Thyra::VectorBase<Scalar>& x
-    ,const Thyra::VectorBase<Scalar>& xdot );
+bool LinearInterpolationBuffer<Scalar>::SetPoints( 
+    const std::vector<Scalar>& time_list
+    ,const std::vector<Thyra::VectorBase<Scalar> >& x
+    ,const std::vector<Thyra::VectorBase<Scalar> >& xdot );
 {
   // Determine if time is already in list and if so, replace existing data with new data.
   // If we're already at our max_storage limit, then report failure.
@@ -117,10 +132,11 @@ bool LinearInterpolationBuffer<Scalar>::SetPoint(
 }
 
 template<class Scalar>
-bool LinearInterpolationBuffer<Scalar>::GetPoint(
-    const ScalarMag& time
-    ,Thyra::VectorBase<Scalar>* x
-    ,Thyra::VectorBase<Scalar>* xdot) const
+bool LinearInterpolationBuffer<Scalar>::GetPoints(
+    const std::vector<Scalar>& time_list
+    ,std::vector<Thyra::VectorBase<Scalar> >* x
+    ,std::vector<Thyra::VectorBase<Scalar> >* xdot
+    ,std::vector<ScalarMag>* accuracy_list) const
 {
   // If time is outside range of indep_values, then return failure
   // Find indep_values on either side of time
@@ -143,10 +159,16 @@ bool LinearInterpolationBuffer<Scalar>::SetRange(
 }
 
 template<class Scalar>
-bool LinearInterpolationBuffer<Scalar>::GetNodes( std::vector<ScalarMag>* time_list ) const
+bool LinearInterpolationBuffer<Scalar>::GetNodes( std::vector<Scalar>* time_list ) const
 {
   time_list = indep_values; // std::copy of data (this may be incorrect)
   return(true);
+}
+
+template<class Scalar>
+int LinearInterpolationBuffer<Scalar>::GetOrder() const
+{
+  return(1);
 }
 
 } // namespace Rythmos

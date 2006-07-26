@@ -33,12 +33,14 @@
 #include "Teuchos_RefCountPtr.hpp"
 #include "Thyra_VectorBase.hpp"
 #include "Teuchos_Describable.hpp"
+#include "Rythmos_InterpolationBuffer.hpp"
 
 namespace Rythmos {
 
 /** \brief Base class for defining stepper functionality. */
 template<class Scalar> 
-class Stepper : virtual public Teuchos::Describable
+//class Stepper : virtual public InterpolationBuffer<Scalar>
+class Stepper : virtual public InterpolationBuffer<Scalar>
 {
   public:
     
@@ -53,7 +55,7 @@ class Stepper : virtual public Teuchos::Describable
 
     /// Get solution vector
     virtual Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_solution() const = 0;
-    
+
 };
 
 } // namespace Rythmos
