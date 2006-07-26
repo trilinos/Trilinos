@@ -115,10 +115,12 @@ repartition(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
 
   Teuchos::RefCountPtr<Zoltan::QueryObject> queryObject;
   if (costs.get() == 0) {
-    queryObject = Teuchos::rcp(new Isorropia::ZoltanQuery(input_graph, tgraph));
+    queryObject = Teuchos::rcp(new Isorropia::ZoltanQuery(input_graph,
+                                                          tgraph));
   }
   else {
-    queryObject = Teuchos::rcp(new Isorropia::ZoltanQuery(input_graph, tgraph, costs));
+    queryObject = Teuchos::rcp(new Isorropia::ZoltanQuery(input_graph,
+                                                          tgraph, costs));
   }
 
   const Epetra_Comm* ecomm = &(input_graph->RowMap().Comm());
@@ -182,6 +184,13 @@ load_balance(MPI_Comm comm,
   char * dummy = 0;
   Zoltan::LoadBalance LB( 0, &dummy, &version );
   int err = LB.Create( comm );
+
+  //if DEBUG_LEVEL has not been specified, then set it to 0. (Zoltan's
+  //default is 1, which we wish to override.)
+  std::string dbg_level_str("DEBUG_LEVEL");
+  if (!paramlist.isParameter(dbg_level_str)) {
+    paramlist.set(dbg_level_str, "0");
+  }
 
   //if LB_METHOD has not been specified, then set it to GRAPH.
   std::string lb_method_str("LB_METHOD");
