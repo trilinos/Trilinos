@@ -159,18 +159,10 @@ namespace Teuchos
      * with user-level code that ignores ConstHandle. Don't use this unless you know
      * what you're doing. */
     RefCountPtr<PointerType> nonconstPointer() const 
-    {return rcp_const_cast<PointerType>(ptr_);}
+    {return rcp_const_cast<PointerType>(ptr());}
 
 
-    /** Access to raw pointer */
-    const PointerType * const rawPtr() {return this->ptr().get();}
-
-  protected:
-    /** \brief The empty ctor will only be called by Handle ctors */
-    explicit ConstHandle() : ptr_() {;}
-
-
-    /** Access to raw pointer */
+    /** Access to non-const raw pointer */
     PointerType* rawPtr() {return this->nonConstPtr().get();}
 
   };
