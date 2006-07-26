@@ -302,6 +302,11 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(
   [Allows aztecoo/thyra adapters to use ifpack in examples and tests.],
   [Allows aztecoo/thyra adapters to use ifpack in examples and tests.  Can be overridden with --disable-aztecoo-ifpack.])
 
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(epetraext, [Enables EPETRAEXT examples.],
+                      AZTECOO_EPETRAEXT)
+AM_CONDITIONAL(HAVE_AZTECOO_EPETRAEXT, test "X$ac_cv_use_epetraext" = "Xyes")
+
+
 # ------------------------------------------------------------------------
 # Specify other directories 
 # ------------------------------------------------------------------------
@@ -413,6 +418,8 @@ AC_CONFIG_FILES([
     example/simple_epetra_aztecoo/Makefile.include
     example/AztecOO_UserOpUserMat/Makefile
     example/AztecOO_UserOpUserMat/Makefile.include
+    example/AztecOO_MatlabInput/Makefile
+    example/AztecOO_MatlabInput/Makefile.include
     example/AztecOO/Makefile
     example/AztecOO/Makefile.include
     example/ClassicAztec/Makefile

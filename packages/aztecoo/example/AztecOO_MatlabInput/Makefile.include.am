@@ -26,25 +26,20 @@
 # ************************************************************************
 #@HEADER
 
-# The following line helps the test harness recover from build errors.
+EXEEXT = .exe
 
-all-local:
-	@echo ""
-	@echo "Trilinos package aztecoo subdirectory example built successfully."
-	@echo ""
+noinst_PROGRAMS = AztecOO_MatlabInput
 
-#SUBDIRS = azoo_iterate_hb aztec_app aztec_hb AztecOO AztecOO_UserOpUserMat \
-#	IfpackAztecOO simple_epetra_aztecoo
-# note that simple_epetra_aztecoo, any AztecOO*, and azoo should not be built when "core Aztec" is 
-# being built
+AztecOO_MatlabInput_SOURCES = $(srcdir)/cxx_main.cpp 
+AztecOO_MatlabInput_DEPENDENCIES = $(top_builddir)/src/libaztecoo.a $(top_builddir)/../epetraext/src/libepetraext.a
 
-#if BUILD_TRIUTILS
-USER_OP_USER_MAT_SUBDIR=AztecOO_UserOpUserMat
-AZTECOO_SUBDIR=AztecOO
-#endif
+AztecOO_MatlabInput_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/../epetra/src \
+	-I$(top_srcdir)/../epetraext/src/inout -I$(top_srcdir)/../epetraext/src \
+	-I$(top_srcdir)/../triutils/src -I$(top_builddir)/../epetra/src \
+        -I$(top_builddir)/../epetraext/src/inout -I$(top_builddir)/../epetraext/src \
+	-I$(top_builddir)/../triutils/src
 
-if HAVE_AZTECOO_EPETRAEXT
-AZTECOO_EPETRAEXT_SUBDIR=AztecOO_MatlabInput
-endif
+AztecOO_MatlabInput_LDADD = $(AZTECOO_LIBS) $(top_builddir)/../epetraext/src/libepetraext.a \
+     $(top_builddir)/../epetra/src/libepetra.a \
+	$(LIBS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
 
-SUBDIRS = $(AZTECOO_SUBDIR) $(USER_OP_USER_MAT_SUBDIR) $(AZTECOO_EPETRAEXT_SUBDIR) simple_epetra_aztecoo UG_Ex1 ClassicAztec

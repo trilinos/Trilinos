@@ -26,9 +26,8 @@
 // ***********************************************************************
 //@HEADER
 */
-
-#include "AztecOO_ConfigDefs.h"
-#ifdef AZTECOO_MPI
+#include "AztecOO_config.h"
+#ifdef HAVE_MPI
 #include "mpi.h"
 #include "Epetra_MpiComm.h"
 #else
@@ -40,6 +39,7 @@
 #include "EpetraExt_OperatorOut.h"
 #include "EpetraExt_CrsMatrixIn.h"
 #include "AztecOO_Operator.h"
+#include "Epetra_InvOperator.h"
 #include <string>
 // prototypes
 
@@ -56,7 +56,7 @@ int checkValues( double x, double y, string message = "", bool verbose = false) 
 
 int main(int argc, char *argv[]) {
 
-#ifdef AZTECOO_MPI
+#ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm comm (MPI_COMM_WORLD);
 #else
@@ -92,33 +92,37 @@ int main(int argc, char *argv[]) {
   A->Apply(x,b); // Generate RHS from x
   Epetra_Vector xx(x); // Copy x to xx for later use
 
-  Epetra_LinearProblem problem(&A, &x, &bb);
+  Epetra_LinearProblem problem(A, &x, &b);
   // Construct a solver object for this problem
 
-  cout << "Building AztecOO solver" << endl;
-
   AztecOO solver(problem);
-  AztecOO_Operator AinvOp(&solver, A->NumGlobalEquations());
+  solver.SetAztecOption(AZ_precond, AZ_none);
+  if (!verbose1) solver.SetAztecOption(AZ_output, AZ_none);
+  solver.SetAztecOption(AZ_kspace, A->NumGlobalRows());
+  AztecOO_Operator AOpInv(&solver, A->NumGlobalRows());
+  Epetra_InvOperator AInvOp(&AOpInv);
 
-  EPETRA_CHK_ERR(EpetraExt::OperatorToMatlabFile("Ainv.dat", AinvOp));
+  EPETRA_CHK_ERR(EpetraExt::OperatorToMatlabFile("Ainv.dat", AInvOp));
 
-  Epetra_CrsMatrix * Ainv; 
-  EPETRA_CHK_ERR(EpetraExt::MatlabFileToCrsMatrix("Ainv.dat", comm, Ainv));
+  comm.Barrier();
 
-  Ainv->Apply(b,x);
+  Epetra_CrsMatrix * AInv; 
+  EPETRA_CHK_ERR(EpetraExt::MatlabFileToCrsMatrix("Ainv.dat", comm, AInv));
 
-  x.Update(1.0, xx, -1.0);
+  EPETRA_CHK_ERR(AInv->Apply(b,x));
+
+  EPETRA_CHK_ERR(x.Update(1.0, xx, -1.0));
   double residual = 0.0;
-  x.Norm2(&residual);
+  EPETRA_CHK_ERR(x.Norm2(&residual));
   if (verbose) cout << "Norm of difference between computed x and exact x = " << residual << endl;
-  ierr += checkValues(residual,0.0,"Norm of difference between computed A1x1 and A1x1 from file", verbose);
+  int ierr = checkValues(residual,0.0,"Norm of difference between computed A1x1 and A1x1 from file", verbose);
 
   
   delete A;
-  delete Ainv;
+  delete AInv;
 
 
-  #ifdef AZTECOO_MPI
+  #ifdef HAVE_MPI
   MPI_Finalize() ;
 #endif
 

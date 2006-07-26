@@ -20,6 +20,9 @@
 /* Define if you want to build AZ_lu */
 #undef HAVE_AZLU
 
+/* Define if want to build with epetraext enabled */
+#undef HAVE_AZTECOO_EPETRAEXT
+
 /* Define if want to build aztecoo-examples */
 #undef HAVE_AZTECOO_EXAMPLES
 

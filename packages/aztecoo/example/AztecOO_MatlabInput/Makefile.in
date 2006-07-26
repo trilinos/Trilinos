@@ -1,3 +1,4 @@
+
 #@HEADER
 # ************************************************************************
 # 
@@ -26,25 +27,7 @@
 # ************************************************************************
 #@HEADER
 
-# The following line helps the test harness recover from build errors.
+include ../../Makefile.export
 
-all-local:
-	@echo ""
-	@echo "Trilinos package aztecoo subdirectory example built successfully."
-	@echo ""
+include Makefile.include
 
-#SUBDIRS = azoo_iterate_hb aztec_app aztec_hb AztecOO AztecOO_UserOpUserMat \
-#	IfpackAztecOO simple_epetra_aztecoo
-# note that simple_epetra_aztecoo, any AztecOO*, and azoo should not be built when "core Aztec" is 
-# being built
-
-#if BUILD_TRIUTILS
-USER_OP_USER_MAT_SUBDIR=AztecOO_UserOpUserMat
-AZTECOO_SUBDIR=AztecOO
-#endif
-
-if HAVE_AZTECOO_EPETRAEXT
-AZTECOO_EPETRAEXT_SUBDIR=AztecOO_MatlabInput
-endif
-
-SUBDIRS = $(AZTECOO_SUBDIR) $(USER_OP_USER_MAT_SUBDIR) $(AZTECOO_EPETRAEXT_SUBDIR) simple_epetra_aztecoo UG_Ex1 ClassicAztec
