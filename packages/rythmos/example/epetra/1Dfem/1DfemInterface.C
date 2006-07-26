@@ -28,7 +28,8 @@
  
 // NOX include (for iostream, cmath, etc...)
 #include "NOX_Common.H"
-#include "NOX_Parameter_List.H"
+
+#include "Teuchos_ParameterList.hpp"
 
 // Class Definition
 #include "1DfemInterface.H"
@@ -158,7 +159,7 @@ bool Interface::computePrecMatrix(const Epetra_Vector& x)
 }
 bool Interface::computePreconditioner(const Epetra_Vector& x,
 				      Epetra_Operator& Prec,
-				      NOX::Parameter::List* precParams)
+				      Teuchos::ParameterList* precParams)
 {
   cout << "ERROR: Interface::preconditionVector() - "
        << "Use Explicit Jaciban only for this test problem!" << endl;

@@ -79,7 +79,7 @@ public:
   virtual bool computePrecMatrix(const Epetra_Vector& x);
   virtual bool computePreconditioner(const Epetra_Vector& x,
 				     Epetra_Operator& Prec,
-				     NOX::Parameter::List* precParams = 0);
+				     Teuchos::ParameterList* precParams = 0);
 
 
   // Return a reference to the Epetra_Vector with the initial guess
