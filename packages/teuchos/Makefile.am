@@ -102,6 +102,12 @@ TRILINOS_HOME_DIR=@abs_top_srcdir@/../..
 TRILINOS_BUILD_DIR=@abs_top_builddir@/../..
 TRILINOS_TEST_CATEGORY=INSTALL
 
+if HAVE_MPI
+TEUCHOS_CHECK_COMM=mpi
+else
+TEUCHOS_CHECK_COMM=serial
+endif
+
 runtests-serial :
 	$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
   --trilinos-dir=$(TRILINOS_HOME_DIR) \
@@ -158,3 +164,39 @@ install-exec-hook:
 uninstall-hook:
 
 endif
+
+run-pyexamples:
+	@echo
+	@echo "======================================"
+	@echo "Running the Python/Teuchos examples..."
+	@echo "======================================"
+	@echo
+	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
+	@echo
+	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
+	--trilinos-dir=$(TRILINOS_HOME_DIR) \
+	--comm=$(TEUCHOS_CHECK_COMM) \
+	--mpi-go="$(TRILINOS_MPI_GO)" \
+	--build-dir=$(TRILINOS_BUILD_DIR) \
+	--category=TeuchosPyExamples \
+	--output-dir=@abs_top_builddir@/test/runtests-results \
+	--verbosity=1 \
+	--packages=teuchos
+
+run-pytests:
+	@echo
+	@echo "==================================="
+	@echo "Running the Python/Teuchos tests..."
+	@echo "==================================="
+	@echo
+	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
+	@echo
+	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
+	--trilinos-dir=$(TRILINOS_HOME_DIR) \
+	--comm=$(TEUCHOS_CHECK_COMM) \
+	--mpi-go="$(TRILINOS_MPI_GO)" \
+	--build-dir=$(TRILINOS_BUILD_DIR) \
+	--category=TeuchosPyTests \
+	--output-dir=@abs_top_builddir@/test/runtests-results \
+	--verbosity=1 \
+	--packages=teuchos
