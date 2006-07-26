@@ -166,6 +166,7 @@ endif
 
 USERBASE_H = \
 	$(srcdir)/Epetra_Operator.h \
+	$(srcdir)/Epetra_InvOperator.h \
 	$(srcdir)/Epetra_RowMatrix.h
 
 
