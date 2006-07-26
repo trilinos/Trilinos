@@ -3,6 +3,7 @@
 #include "Epetra_Comm.h"
 #include "Epetra_RowMatrix.h"
 #include <map>
+using namespace std;
 
 extern "C" void F77_FUNC(mc64id, MC64ID)(int*);
 extern "C" void F77_FUNC(mc64ad, MC64AD)(int*, int*, int*, int*, int*, 

@@ -43,6 +43,7 @@
 
 #include "Amesos_ConfigDefs.h"
 #if defined(HAVE_AMESOS_MC64)
+#include <vector>
 #include "Amesos_Scaling.h"
 #include "Amesos_Reordering.h"
 
@@ -119,8 +120,8 @@ class Amesos_MC64 : public Amesos_Scaling, public Amesos_Reordering
     const Epetra_RowMatrix& A_;
     int ICNTL_[10];
     int INFO_[10];
-    vector<int> CPERM_;
-    vector<double> DW_;
+    std::vector<int> CPERM_;
+    std::vector<double> DW_;
 };
 
 #endif
