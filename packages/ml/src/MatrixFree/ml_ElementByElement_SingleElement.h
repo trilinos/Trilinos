@@ -72,7 +72,7 @@ class ElementByElement_SingleElement: public Epetra_Operator
       // build the map for the operator, which is the "extended" 
       // version of GraphMap
       
-      vector<int> MyGlobalElements2(Graph_->ColMap().NumMyElements() * NumPDEEqns);
+      std::vector<int> MyGlobalElements2(Graph_->ColMap().NumMyElements() * NumPDEEqns);
       int* MyGlobalElements = Graph_->RowMap().MyGlobalElements();
       int NumMyElements = Graph_->RowMap().NumMyElements();
 
