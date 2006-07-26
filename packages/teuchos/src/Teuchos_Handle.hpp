@@ -67,9 +67,9 @@ namespace Teuchos
   {
   public:
     /** \brief Construct with an existing RefCountPtr. */
-    explicit ConstHandle(const RefCountPtr<const PointerType>& ptr) : ptr_(ptr) {;}
+    ConstHandle(const RefCountPtr<const PointerType>& ptr) : ptr_(ptr) {;}
     /** \brief Construct with a raw pointer to a ConstHandleable. This will make
-     * a call to rcp(), thus removing it from the user interface. */
+     * a call to rcp(), thus removing that call from the user interface. */
     explicit ConstHandle(const ConstHandleable<PointerType>* ptr) : ptr_(ptr->getConstRcp()) {;}
 
     /** \brief Read-only access to the underlying smart pointer. */
@@ -90,7 +90,9 @@ namespace Teuchos
 
     
 
-    /** \brief Protected non-const access to the underlying smart pointer. */
+    /** \brief Protected non-const access to the underlying smart pointer. 
+     * This will be called by the nonConstPtr() method of the non-const 
+     * Handle subclass */
     RefCountPtr<PointerType> nonConstPtr() 
     {return rcp_const_cast<PointerType>(ptr_);}
     
@@ -132,7 +134,7 @@ namespace Teuchos
       : ConstHandle<PointerType>() {}
 
     /** \brief Construct with an existing RefCountPtr */
-    explicit Handle(const RefCountPtr<PointerType>& smartPtr)
+    Handle(const RefCountPtr<PointerType>& smartPtr)
       : ConstHandle<PointerType>() 
     {
       /* \brief We need to set the rcp in the base class */
@@ -141,7 +143,7 @@ namespace Teuchos
 
     /** \brief Construct with a raw pointer to a Handleable.
      *
-     * This will make a call to rcp() internally, thus removing it from the
+     * This will make a call to rcp() internally, thus removing that call from the
      * user interface.
      */
     explicit Handle(Handleable<PointerType>* rawPtr)
@@ -156,10 +158,10 @@ namespace Teuchos
     RefCountPtr<PointerType> ptr() {return this->nonConstPtr();}
 
     /** \brief Conversion to a non-const pointer, used for interoperability
-     * with user-level code that ignores ConstHandle. Don't use this unless you know
-     * what you're doing. */
+     * with user-level code that ignores ConstHandle. 
+     * Don't use this unless you know what you're doing. */
     RefCountPtr<PointerType> ptr() const 
-    {return rcp_const_cast<PointerType>(ptr());}
+    {return rcp_const_cast<PointerType>(this->constPtr());}
 
 
     /** Access to non-const raw pointer */
