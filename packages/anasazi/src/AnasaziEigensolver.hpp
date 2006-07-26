@@ -109,6 +109,9 @@ class Eigensolver {
    */
   virtual std::vector< typename Teuchos::ScalarTraits<ScalarType>::magnitudeType > getEigenvalues() = 0;
 
+  //! \brief Get the Ritz values from the previous iteration.
+  virtual std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getRitzValues() = 0;
+
   //! \brief Get the current residual norms
   /*! \return A vector of length blockSize containing the norms of the residuals, 
       according to the orthogonalization manager norm() method.
@@ -118,6 +121,12 @@ class Eigensolver {
   //! Get the current residual 2-norms
   //! \return A vector of length blockSize containing the 2-norms of the residuals. 
   virtual std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getRes2Norms() = 0;
+
+  //! Get the dimension of the search subspace used to generate the current eigenvectors and eigenvalues.
+  virtual int getCurSubspaceDim() = 0;
+
+  //! Get the maximum dimension allocated for the search subspace.
+  virtual int getMaxSubspaceDim() = 0;
 
   //@}
 
