@@ -210,7 +210,8 @@ namespace Thyra
   ::setElementUsingBracketTest() const 
   {
     
-    typedef Teuchos::ScalarTraits<int> ST;
+    typedef Teuchos::ScalarTraits<Index> IST;
+    typedef Teuchos::ScalarTraits<Scalar> ST;
 
     if (spec_.doTest())
       {
@@ -234,18 +235,18 @@ namespace Thyra
         for (int t=0; t<nTrials; t++)
           {
             zeroOut(a);
-            Index minIndex = ST::random() % N;
-            Index maxIndex = ST::random() % N;
+            Index minIndex = IST::random() % N;
+            Index maxIndex = IST::random() % N;
             /* skip cases where we've generated identical indices */
             if (minIndex == maxIndex) continue;
-            a[minIndex] = -1.0;
-            a[maxIndex] = 1.0;
+            a[minIndex] = -ST::one();
+            a[maxIndex] = ST::one();
             Index findMin = -1;
             Index findMax = -1;
             Scalar minVal = Thyra::minloc(a, findMin);
             Scalar maxVal = Thyra::maxloc(a, findMax);
-            err += ST::magnitude(-1.0 - minVal);
-            err += ST::magnitude(1.0 - maxVal);
+            err += ST::magnitude(-ST::one() - minVal);
+            err += ST::magnitude(ST::one() - maxVal);
             err += ST::magnitude(findMin - minIndex);
             err += ST::magnitude(findMax - maxIndex);
           }
@@ -456,7 +457,7 @@ namespace Thyra
           }
         
         Vector<Scalar> x = space_.createMember();
-        int tDenomsAreOK = Thyra::VInvTest(*(a.ptr()), x.ptr().get());
+        int tDenomsAreOK = Thyra::VInvTest(*(a.constPtr()), x.ptr().get());
         ScalarMag err = (x - y).norm2();
 
 #ifdef HAVE_MPI
@@ -530,7 +531,7 @@ namespace Thyra
                         Teuchos::MPIComm::MIN);
 	
 
-        Scalar tMinQ = Thyra::VMinQuotient(*(a.ptr()), *(b.ptr()));
+        Scalar tMinQ = Thyra::VMinQuotient(*(a.constPtr()), *(b.constPtr()));
         *out_ << "trilinos minQ = " << tMinQ << endl;
         *out_ << "elemwise minQ = " << minQ << endl;
         ScalarMag err = ST::magnitude(minQ - tMinQ);
@@ -611,7 +612,7 @@ namespace Thyra
           }
 	
         Vector<Scalar> m = space_.createMember();
-        int tAllFeasible = Thyra::VConstrMask(*(a.ptr()), *(c.ptr()), m.ptr().get());
+        int tAllFeasible = Thyra::VConstrMask(*(a.constPtr()), *(c.constPtr()), m.ptr().get());
         ScalarMag err = (m - y).norm2();
 
 #ifdef HAVE_MPI
@@ -668,7 +669,7 @@ namespace Thyra
 
         /* do the operation with member functions */
         Scalar s = 0.5;
-        Thyra::VCompare(s, *(a.ptr()), x.ptr().get());
+        Thyra::VCompare(s, *(a.constPtr()), x.ptr().get());
 
         /* do the operation elementwise */
         int low = lowestLocallyOwnedIndex(space_);
@@ -721,7 +722,7 @@ namespace Thyra
         randomizeVec(a);
         /* do the operation with member functions */
         Scalar s = 0.5;
-        Thyra::VCompare(s, *(a.ptr()), x.ptr().get());
+        Thyra::VCompare(s, *(a.constPtr()), x.ptr().get());
 
         /* do the operation elementwise */
         int low = lowestLocallyOwnedIndex(space_);

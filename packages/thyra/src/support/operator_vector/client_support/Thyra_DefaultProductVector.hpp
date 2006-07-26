@@ -160,6 +160,26 @@ DefaultProductVector<Scalar>::getNonconstMultiVectorBlock(const int k)
 }
 
 template <class Scalar>
+void DefaultProductVector<Scalar>
+::setBlock(int i, 
+           const Teuchos::RefCountPtr<const VectorBase<Scalar> >& b)
+{
+  TEST_FOR_EXCEPT(i < 0 || i >= numBlocks_);
+  TEST_FOR_EXCEPT(!productSpace_->getBlock(i)->isCompatible(*(b->space())));
+  vecs_[i] = b;
+}
+
+template <class Scalar>
+void DefaultProductVector<Scalar>
+::setNonconstBlock(int i, 
+                   const Teuchos::RefCountPtr<VectorBase<Scalar> >& b)
+{
+  TEST_FOR_EXCEPT(i < 0 || i >= numBlocks_);
+  TEST_FOR_EXCEPT(!productSpace_->getBlock(i)->isCompatible(*(b->space())));
+  vecs_[i] = b;
+}
+
+template <class Scalar>
 Teuchos::RefCountPtr<const MultiVectorBase<Scalar> >
 DefaultProductVector<Scalar>::getMultiVectorBlock(const int k) const
 {

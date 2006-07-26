@@ -86,7 +86,7 @@ namespace Thyra
     Scalar maxEl;
     Scalar* maxElP = &maxEl;
     int* indexP = &index;
-    Thyra::max(*(toVector(x).ptr()), maxElP, indexP); 
+    Thyra::max(*(toVector(x).constPtr()), maxElP, indexP); 
     return maxEl;
   }
 
@@ -99,7 +99,7 @@ namespace Thyra
     Scalar minEl;
     Scalar* minElP = &minEl;
     int* indexP = &index;
-    Thyra::min(*(toVector(x).ptr()), minElP, indexP); 
+    Thyra::min(*(toVector(x).constPtr()), minElP, indexP); 
     return minEl;
   }
 
@@ -113,7 +113,7 @@ namespace Thyra
     Scalar minEl;
     Scalar* minElP = &minEl;
     int* indexP = &index;
-    Thyra::minGreaterThanBound(*(toVector(x).ptr()), bound, minElP, indexP); 
+    Thyra::minGreaterThanBound(*(toVector(x).constPtr()), bound, minElP, indexP); 
     return minEl;
   }
 
@@ -128,7 +128,7 @@ namespace Thyra
     Scalar maxEl;
     Scalar* maxElP = &maxEl;
     int* indexP = &index;
-    Thyra::maxLessThanBound(*(toVector(x).ptr()), bound, maxElP, indexP); 
+    Thyra::maxLessThanBound(*(toVector(x).constPtr()), bound, maxElP, indexP); 
     return maxEl;
   }
 
@@ -141,7 +141,7 @@ namespace Thyra
                    Vector<Scalar>& result)
     {
       zeroOut(result);
-      Thyra::ele_wise_prod(1.0, *(toVector(x).ptr()), *(toVector(y).ptr()), 
+      Thyra::ele_wise_prod(1.0, *(toVector(x).constPtr()), *(toVector(y).constPtr()), 
                            result.ptr().get());
     }
 
@@ -169,7 +169,7 @@ namespace Thyra
                    Vector<Scalar>& result)
     {
       zeroOut(result);
-      Thyra::ele_wise_divide(1.0, *(toVector(x).ptr()), *(toVector(y).ptr()), 
+      Thyra::ele_wise_divide(1.0, *(toVector(x).constPtr()), *(toVector(y).constPtr()), 
                              result.ptr().get());
     }
 
@@ -191,12 +191,12 @@ namespace Thyra
    * 
    */
   template <class Scalar> inline  
-  void axpy(const double& a, const Converter<Scalar, ConstVector<Scalar> >& xIn, 
+  void axpy(const Scalar& a, const Converter<Scalar, ConstVector<Scalar> >& xIn, 
             Vector<Scalar>& y)
   {
     ConstVector<Scalar> x = toVector(xIn);
     VectorBase<Scalar>* p = y.ptr().get();
-    const VectorBase<Scalar>* px = x.ptr().get();
+    const VectorBase<Scalar>* px = x.constPtr().get();
     Vp_StV(p, a, *px);
   }
 
@@ -204,7 +204,7 @@ namespace Thyra
    * 
    */
   template <class Scalar> inline  
-  void scale(Vector<Scalar>& x, const double& a)
+  void scale(Vector<Scalar>& x, const Scalar& a)
   {
     VectorBase<Scalar>* p = x.ptr().get();
     Thyra::scale(a, p);
@@ -215,7 +215,7 @@ namespace Thyra
    */
   template <class Scalar> inline     
   void scaleInto(const Converter<Scalar, ConstVector<Scalar> >& x,
-                 const double& alpha, Vector<Scalar>& result)
+                 const Scalar& alpha, Vector<Scalar>& result)
   {
     x.evalInto(result);
     result.scale(alpha);

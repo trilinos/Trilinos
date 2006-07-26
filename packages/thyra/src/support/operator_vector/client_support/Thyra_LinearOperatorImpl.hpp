@@ -32,6 +32,8 @@
 #include "Teuchos_Handle.hpp"
 #include "Thyra_ConfigDefs.hpp"
 #include "Thyra_LinearOperatorDecl.hpp"
+#include "Thyra_BlockedLinearOpBase.hpp"
+#include "Thyra_DefaultBlockedLinearOp.hpp"
 
 namespace Thyra
 {
@@ -39,14 +41,14 @@ namespace Thyra
   template <class RangeScalar, class DomainScalar> inline 
   const VectorSpace<DomainScalar> ConstLinearOperator<RangeScalar, DomainScalar>
   ::domain() const 
-  {return this->ptr()->domain();}
+  {return this->constPtr()->domain();}
     
   
   /* Return the range */
   template <class RangeScalar, class DomainScalar> inline 
   const VectorSpace<RangeScalar> ConstLinearOperator<RangeScalar, DomainScalar>
   ::range() const 
-  {return this->ptr()->domain();}
+  {return this->constPtr()->range();}
 
   template <class RangeScalar, class DomainScalar> inline 
   void ConstLinearOperator<RangeScalar, DomainScalar>
@@ -61,7 +63,7 @@ namespace Thyra
       {
         out = this->range().createMember();
       }
-    this->ptr()->apply(NONCONJ_ELE, *(in.ptr().get()),
+    this->constPtr()->apply(NONCONJ_ELE, *(in.constPtr().get()),
                        out.ptr().get(), alpha, beta);
   }
 
@@ -80,11 +82,138 @@ namespace Thyra
       {
         out = this->domain().createMember();
       }
-    this->ptr()->applyTranspose(NONCONJ_ELE, *(in.ptr().get()),
-                                out.ptr().get(), alpha, beta);
+    this->constPtr()->applyTranspose(NONCONJ_ELE, *(in.constPtr().get()),
+                                out.ptr().get(), 
+                                alpha, beta);
   }
   
- 
+  
+  template <class RangeScalar, class DomainScalar> inline 
+  int ConstLinearOperator<RangeScalar, DomainScalar>::numBlockRows() const
+  {
+    return range().numBlocks();
+  }
+  
+  
+  template <class RangeScalar, class DomainScalar> inline 
+  int ConstLinearOperator<RangeScalar, DomainScalar>::numBlockCols() const
+  {
+    return domain().numBlocks();
+  }
+
+  template <class RangeScalar, class DomainScalar> inline 
+  ConstLinearOperator<RangeScalar, DomainScalar> 
+  ConstLinearOperator<RangeScalar, DomainScalar>::getBlock(int blockRow, 
+                                                           int blockCol) const
+  {
+    const Thyra::BlockedLinearOpBase<RangeScalar, DomainScalar>* p = 
+      dynamic_cast<const Thyra::BlockedLinearOpBase<RangeScalar, DomainScalar>* >(this->constPtr().get());
+    TEST_FOR_EXCEPTION(p==0 && blockRow != 0, runtime_error,
+                       "request for block row=" << blockRow << " in a non-block operator");
+    
+    TEST_FOR_EXCEPTION(p==0 && blockCol != 0, runtime_error,
+                       "request for block col=" << blockCol << " in a non-block operator");
+    
+    if (p != 0)
+      {
+        return p->getBlock(blockRow, blockCol);
+      }
+    return *this;
+  }
+  
+
+
+  template <class RangeScalar, class DomainScalar> inline 
+  LinearOperator<RangeScalar, DomainScalar> 
+  LinearOperator<RangeScalar, DomainScalar>::getBlock(int blockRow, 
+                                                      int blockCol) 
+  {
+    Thyra::BlockedLinearOpBase<RangeScalar, DomainScalar>* p = 
+      dynamic_cast<Thyra::BlockedLinearOpBase<RangeScalar, DomainScalar>* >(this->ptr().get());
+    TEST_FOR_EXCEPTION(p==0 && blockRow != 0, runtime_error,
+                       "request for block row=" << blockRow << " in a non-block operator");
+    
+    TEST_FOR_EXCEPTION(p==0 && blockCol != 0, runtime_error,
+                       "request for block col=" << blockCol << " in a non-block operator");
+    
+    if (p != 0)
+      {
+        return p->getNonconstBlock(blockRow, blockCol);
+      }
+    return *this;
+  }
+  
+
+  template <class Scalar> inline 
+  ConstLinearOperator<Scalar>
+  block2x2(const ConstLinearOperator<Scalar>& A00,
+           const ConstLinearOperator<Scalar>& A01,
+           const ConstLinearOperator<Scalar>& A10,
+           const ConstLinearOperator<Scalar>& A11)
+  {
+    return block2x2(A00.constPtr(), A01.constPtr(), A10.constPtr(), A11.constPtr());
+  }
+  
+
+  template <class Scalar> inline 
+  ConstLinearOperator<Scalar>
+  block2x1(const ConstLinearOperator<Scalar>& A00,
+           const ConstLinearOperator<Scalar>& A10)
+  {
+    return block2x1(A00.constPtr(), A10.constPtr());
+  }
+  
+
+  template <class Scalar> inline 
+  ConstLinearOperator<Scalar>
+  block1x2(const ConstLinearOperator<Scalar>& A00,
+           const ConstLinearOperator<Scalar>& A01)
+  {
+    return block2x1(A00.constPtr(), A01.constPtr());
+  }
+  
+
+  
+
+
+  template <class Scalar> inline 
+  LinearOperator<Scalar>
+  block2x2(const LinearOperator<Scalar>& A00,
+           const LinearOperator<Scalar>& A01,
+           const LinearOperator<Scalar>& A10,
+           const LinearOperator<Scalar>& A11)
+  {
+    return block2x2(A00.ptr(), 
+                    A01.ptr(), 
+                    A10.ptr(), 
+                    A11.ptr());
+  }
+  
+
+  template <class Scalar> inline 
+  LinearOperator<Scalar>
+  block2x1(const LinearOperator<Scalar>& A00,
+           const LinearOperator<Scalar>& A10)
+  {
+    return block2x1(A00.ptr(), 
+                    A10.ptr());
+  }
+  
+
+  template <class Scalar> inline 
+  LinearOperator<Scalar>
+  block1x2(const LinearOperator<Scalar>& A00,
+           const LinearOperator<Scalar>& A01)
+  {
+    return block2x1(A00.ptr(), 
+                    A01.ptr());
+  }
+  
+
+  
+
+
+  
   
 }
 

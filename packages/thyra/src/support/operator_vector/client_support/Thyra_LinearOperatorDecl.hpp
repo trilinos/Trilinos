@@ -68,9 +68,9 @@ namespace Thyra
      * \endcode
      **/
     void apply(const ConstVector<DomainScalar>& in,
-	       Vector<RangeScalar>& out,
-	       const RangeScalar& alpha = 1.0,
-	       const RangeScalar& beta = 0.0) const ;
+               Vector<RangeScalar>& out,
+               const RangeScalar& alpha = 1.0,
+               const RangeScalar& beta = 0.0) const ;
 
     /**  
      * Compute
@@ -79,10 +79,19 @@ namespace Thyra
      * \endcode
      **/
     void applyTranspose(const ConstVector<RangeScalar>& in,
-			Vector<DomainScalar>& out,
-			const DomainScalar& alpha = 1.0,
-			const DomainScalar& beta = 0.0) const ;
+                        Vector<DomainScalar>& out,
+                        const DomainScalar& alpha = 1.0,
+                        const DomainScalar& beta = 0.0) const ;
 
+
+    /** Return the number of block rows */
+    int numBlockRows() const ;
+
+    /** Return the number of block columns */
+    int numBlockCols() const ;
+
+    /** Return the (blockRow, blockCol)-th subblock */
+    ConstLinearOperator<RangeScalar, DomainScalar> getBlock(int blockRow, int blockCol) const ;
   };
 
 
@@ -95,7 +104,7 @@ namespace Thyra
       public ConstLinearOperator<RangeScalar, DomainScalar>
   {
   public:
-     /** Empty ctor */
+    /** Empty ctor */
     LinearOperator() : Teuchos::Handle<LinearOpBase<RangeScalar, DomainScalar> >(){;}
 
     /** Construct from a raw pointer */
@@ -105,9 +114,82 @@ namespace Thyra
     /** Construct from a smart pointer */
     LinearOperator(const Teuchos::RefCountPtr<LinearOpBase<RangeScalar, DomainScalar> >& smartPtr) 
       : Teuchos::Handle<LinearOpBase<RangeScalar, DomainScalar> >(smartPtr){;}
+
+    /** Return the (blockRow, blockCol)-th subblock */
+    LinearOperator<RangeScalar, DomainScalar> getBlock(int blockRow, int blockCol) ;
   };
 
   
+  /** \brief Form an implicit block 2x2 linear operator <tt>[ A00, A01; A10, A11 ]</tt>.
+   *
+   * \relates LinearOperator
+   */
+  template<class Scalar>
+  ConstLinearOperator<Scalar>
+  block2x2(
+           const ConstLinearOperator<Scalar>&    A00,
+           const ConstLinearOperator<Scalar>&   A01,
+           const ConstLinearOperator<Scalar>&   A10,
+           const ConstLinearOperator<Scalar>&   A11
+           );
+
+  /** \brief Form an implicit block 2x1 linear operator <tt>[ A00; A10 ]</tt>.
+   *
+   * \relates LinearOperator
+   */
+  template<class Scalar>
+  ConstLinearOperator<Scalar>
+  block2x1(
+           const ConstLinearOperator<Scalar>&    A00,
+           const ConstLinearOperator<Scalar>&   A10
+           );
+
+  /** \brief Form an implicit block 1x2 linear operator <tt>[ A00, A01 ]</tt>.
+   *
+   * \relates LinearOperator
+   */
+  template<class Scalar>
+  ConstLinearOperator<Scalar>
+  block1x2(
+           const ConstLinearOperator<Scalar>&    A00,
+           const ConstLinearOperator<Scalar>&   A01
+           );
+  
+  /** \brief Form an implicit block 2x2 linear operator <tt>[ A00, A01; A10, A11 ]</tt>.
+   *
+   * \relates LinearOperator
+   */
+  template<class Scalar>
+  LinearOperator<Scalar>
+  block2x2(
+           const LinearOperator<Scalar>&    A00,
+           const LinearOperator<Scalar>&   A01,
+           const LinearOperator<Scalar>&   A10,
+           const LinearOperator<Scalar>&   A11
+           );
+
+  /** \brief Form an implicit block 2x1 linear operator <tt>[ A00; A10 ]</tt>.
+   *
+   * \relates LinearOperator
+   */
+  template<class Scalar>
+  LinearOperator<Scalar>
+  block2x1(
+           const LinearOperator<Scalar>&    A00,
+           const LinearOperator<Scalar>&   A10
+           );
+
+  /** \brief Form an implicit block 1x2 linear operator <tt>[ A00, A01 ]</tt>.
+   *
+   * \relates LinearOperator
+   */
+  template<class Scalar>
+  LinearOperator<Scalar>
+  block1x2(
+           const LinearOperator<Scalar>&    A00,
+           const LinearOperator<Scalar>&   A01
+           );
+
 }
 
 #endif

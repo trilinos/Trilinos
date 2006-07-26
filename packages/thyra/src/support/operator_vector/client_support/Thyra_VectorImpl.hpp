@@ -43,14 +43,14 @@ namespace Thyra
   template <class Scalar> inline
   Scalar ConstVector<Scalar>::operator[](Index globalIndex) const 
   {
-    ConstDetachedVectorView<Scalar> view(this->ptr(), Range1D(0, dim(*this)-1));
+    ConstDetachedVectorView<Scalar> view(this->constPtr(), Range1D(0, dim(*this)-1));
     return view[globalIndex];
   }
 
   template <class Scalar> inline
   bool ConstVector<Scalar>::containsVector(const Thyra::VectorBase<Scalar>* vec) const
   {
-    return this->ptr().get()==vec;
+    return this->constPtr().get()==vec;
   }
   
 
@@ -63,7 +63,7 @@ namespace Thyra
   template <class Scalar> inline
   void ConstVector<Scalar>::addInto(Vector<Scalar>& acceptor, LCSign sign) const
   {
-    axpy(sign, *this, acceptor);
+    Thyra::axpy(sign * Teuchos::ScalarTraits<Scalar>::one(), *this, acceptor);
   }
 
 
@@ -79,7 +79,7 @@ namespace Thyra
   Vector<Scalar>& Vector<Scalar>::acceptCopyOf(const ConstVector<Scalar>& other)
   {
     Thyra::VectorBase<Scalar>* p = this->ptr().get();
-    const Thyra::VectorBase<Scalar>* px = other.ptr().get();
+    const Thyra::VectorBase<Scalar>* px = other.constPtr().get();
     
     if (p==0) 
       {
@@ -98,7 +98,7 @@ namespace Thyra
   template <class Scalar> inline
   Index dim(const ConstVector<Scalar>& x) 
   {
-    return x.ptr()->space()->dim();
+    return x.constPtr()->space()->dim();
   }
 
   
@@ -108,7 +108,7 @@ namespace Thyra
   template <class Scalar> inline
   VectorSpace<Scalar> space(const ConstVector<Scalar>& x) 
   {
-    return x.ptr()->space();
+    return x.constPtr()->space();
   }
 
   /* copy */
@@ -117,10 +117,24 @@ namespace Thyra
 
   //===========================================================================
   template <class Scalar> inline
+  int ConstVector<Scalar>::numBlocks() const
+  {
+    const Thyra::ProductVectorSpaceBase<Scalar>* pvs = 
+      dynamic_cast <const Thyra::ProductVectorSpaceBase<Scalar>* >(space(*this).constPtr().get());
+    if (pvs==0) 
+      {
+        return 1;
+      }
+    
+    return pvs->numBlocks();
+  }
+
+  //===========================================================================
+  template <class Scalar> inline
   ConstVector<Scalar> ConstVector<Scalar>::getBlock(int i) const
   {
     const Thyra::ProductVectorBase<Scalar>* pv = 
-      dynamic_cast <const Thyra::ProductVectorBase<Scalar>* >(this->ptr().get());
+      dynamic_cast <const Thyra::ProductVectorBase<Scalar>* >(this->constPtr().get());
     if (pv==0) 
       {
         TEST_FOR_EXCEPTION(i != 0, runtime_error,
@@ -148,6 +162,33 @@ namespace Thyra
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > b = pv->getNonconstVectorBlock(i);
     return b;
   }
+
+  //===========================================================================
+  template <class Scalar> inline
+  void Vector<Scalar>::setBlock(int i, const ConstVector<Scalar>& b) 
+  {
+    Thyra::DefaultProductVector<Scalar>* pv = 
+      dynamic_cast <Thyra::DefaultProductVector<Scalar>* >(this->ptr().get());
+    TEST_FOR_EXCEPTION(pv == 0, runtime_error,
+                       "setBlock() called on a vector that is not a default product vector");
+    pv->setBlock(i, b.constPtr());
+    
+  }
+
+  //===========================================================================
+  template <class Scalar> inline
+  void Vector<Scalar>::setBlock(int i, const Vector<Scalar>& b) 
+  {
+    Thyra::DefaultProductVector<Scalar>* pv = 
+      dynamic_cast <Thyra::DefaultProductVector<Scalar>* >(this->ptr().get());
+    TEST_FOR_EXCEPTION(pv == 0, runtime_error,
+                       "setBlock() called on a vector that is not a default product vector");
+    pv->setNonconstBlock(i, b.ptr());
+    
+  }
+
+
+
 
   /** \relates Vector */
   template <class Scalar> inline  

@@ -62,7 +62,14 @@ namespace Thyra
   template <class Scalar>
   Vector<Scalar> VectorSpace<Scalar>::createMember() const 
   {
-    return Thyra::createMember(this->ptr());
+    return Thyra::createMember(this->constPtr());
+  }
+
+  //========================================================================
+  template <class Scalar>
+  RefCountPtr<MultiVectorBase<Scalar> > VectorSpace<Scalar>::createMembers(int n) const 
+  {
+    return Thyra::createMembers(this->constPtr(), n);
   }
 
 
@@ -71,9 +78,9 @@ namespace Thyra
   template <class Scalar>
   bool VectorSpace<Scalar>::isCompatible(const VectorSpace<Scalar>& vecSpc) const 
   {
-    TEST_FOR_EXCEPTION(vecSpc.ptr().get() == 0, runtime_error,
+    TEST_FOR_EXCEPTION(vecSpc.constPtr().get() == 0, runtime_error,
                        "null argument in VectorSpace<Scalar>::isCompatible()");
-    return this->ptr().get()->isCompatible(*(vecSpc.ptr().get()));
+    return this->constPtr().get()->isCompatible(*(vecSpc.constPtr().get()));
   }
 
 
@@ -93,7 +100,7 @@ namespace Thyra
   int VectorSpace<Scalar>::numBlocks() const
   {
     const Thyra::ProductVectorSpaceBase<Scalar>* pvs = 
-      dynamic_cast<const Thyra::ProductVectorSpaceBase<Scalar>* > (this->ptr().get());
+      dynamic_cast<const Thyra::ProductVectorSpaceBase<Scalar>* > (this->constPtr().get());
     if (pvs != 0)
       {
         return pvs->numBlocks();
@@ -108,7 +115,7 @@ namespace Thyra
   VectorSpace<Scalar> VectorSpace<Scalar>::getBlock(const int i) const
   {
     const Thyra::ProductVectorSpaceBase<Scalar>* pvs = 
-      dynamic_cast<const Thyra::ProductVectorSpaceBase<Scalar>* > (this->ptr().get());
+      dynamic_cast<const Thyra::ProductVectorSpaceBase<Scalar>* > (this->constPtr().get());
     TEST_FOR_EXCEPTION(pvs == 0 && numBlocks()!=1, runtime_error,
                        "Space not a ProductVectorSpace" << endl);
     if (pvs != 0)
@@ -125,7 +132,7 @@ namespace Thyra
   // 				   const VectorSpace<Scalar>& space)
   // {
   //   const Thyra::ProductVectorSpace<Scalar>*  pvs = 
-  //     dynamic_cast<const Thyra::ProductVectorSpace<Scalar>* >  (this->ptr().get());
+  //     dynamic_cast<const Thyra::ProductVectorSpace<Scalar>* >  (this->constPtr().get());
 
   //   TEST_FOR_EXCEPTION(pvs == 0, runtime_error,
   // 		     "Can't set block of vector space that is " <<
@@ -143,7 +150,7 @@ namespace Thyra
     Teuchos::Array<Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > > data(spaces.size());
     for (unsigned int i=0; i<spaces.size(); i++)
       {
-        data[i] = spaces[i].ptr();
+        data[i] = spaces[i].constPtr();
       }
     return rcp(new Thyra::DefaultProductVectorSpace<Scalar>(data.size(), &(data[0])));
   }
@@ -180,7 +187,7 @@ namespace Thyra
   int lowestLocallyOwnedIndex(const VectorSpace<Scalar>& s) 
   {
     RefCountPtr<const SpmdVectorSpaceBase<Scalar> > spmdSpace
-      = rcp_dynamic_cast<const SpmdVectorSpaceBase<Scalar> >(s.ptr());
+      = rcp_dynamic_cast<const SpmdVectorSpaceBase<Scalar> >(s.constPtr());
     return spmdSpace->localOffset();
   }
 
@@ -189,7 +196,7 @@ namespace Thyra
   int numLocalElements(const VectorSpace<Scalar>& s) 
   {
     RefCountPtr<const SpmdVectorSpaceBase<Scalar> > spmdSpace
-      = rcp_dynamic_cast<const SpmdVectorSpaceBase<Scalar> >(s.ptr());
+      = rcp_dynamic_cast<const SpmdVectorSpaceBase<Scalar> >(s.constPtr());
     return spmdSpace->localSubDim();
   }
 

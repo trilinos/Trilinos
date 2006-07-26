@@ -40,13 +40,48 @@
 using namespace Teuchos;
 using namespace Thyra;
 
+
+template <class Scalar> inline 
+void runVectorTests(int n, Teuchos::RefCountPtr<Teuchos::FancyOStream>& out)
+{
+  /* ------- test on a monolithic space ------------ */
+  
+  *out << "======= Testing on a monolithic vector space ======" << std::endl;
+  VectorSpace<Scalar> space 
+    = new DefaultSpmdVectorSpace<Scalar>(DefaultComm<Index>::getComm(),n,-1);
+  
+  VectorOpTester<Scalar> tester(space, TestSpecifier<Scalar>(true, 1.0e-13, 1.0e-10));
+  
+  tester.runAllTests();
+  
+  /* -------- test on a block space ----------------*/
+  *out << "======= Testing on a block vector space ======" << std::endl;
+  VectorSpace<Scalar> blockSpace = productSpace(space, space);
+  
+  tester = VectorOpTester<Scalar>(blockSpace, 
+                                  TestSpecifier<Scalar>(true, 1.0e-13, 1.0e-10));
+  
+  tester.runAllTests();           
+  
+  
+  
+  
+  /* -------- test on a space with recursive block structure -----------*/
+  *out << "======= Testing on a recursively blocked vector space ======" << std::endl;
+  VectorSpace<Scalar> recSpace = productSpace(space, blockSpace);
+  
+  tester = VectorOpTester<Scalar>(recSpace, 
+                                  TestSpecifier<Scalar>(true, 1.0e-13, 1.0e-10));
+  
+  tester.runAllTests();           
+}
+
+
 int main( int argc, char *argv[] ) 
 {
-  
   bool success = false;
   
   GlobalMPISession mpiSession(&argc, &argv);
-  typedef Teuchos::ScalarTraits<double> ST;
     
   // Get stream that can print to just root or all streams!
   Teuchos::RefCountPtr<Teuchos::FancyOStream>
@@ -62,48 +97,31 @@ int main( int argc, char *argv[] )
     CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
     if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
     
-    RefCountPtr<const VectorSpaceBase<double> >
-      sp = rcp(
-        new DefaultSpmdVectorSpace<double>(
-          Teuchos::DefaultComm<Index>::getComm(),n,-1
-          )
-        );
-
-    /* ------- test on a monolithic space ------------ */
-
-    *out << "======= Testing on a monolithic vector space ======" << std::endl;
-    VectorSpace<double> space = sp;
     
-    VectorOpTester<double> tester(space, TestSpecifier<double>(true, 1.0e-13, 1.0e-10));
+    /* testing on doubles */ 
+    *out << "========================================================" << std::endl;
+    *out << "========== TESTING ON DOUBLES ==========================" << std::endl; 
+    *out << "========================================================" << std::endl;
 
-    tester.runAllTests();
+    runVectorTests<double>(n, out);
 
-    /* -------- test on a block space ----------------*/
-    *out << "======= Testing on a block vector space ======" << std::endl;
-    VectorSpace<double> blockSpace = productSpace(space, space);
-    
-    tester = VectorOpTester<double>(blockSpace, 
-                                    TestSpecifier<double>(true, 1.0e-13, 1.0e-10));
-    
-    tester.runAllTests();           
+#ifdef BLAH
 
+    /* testing on doubles */ 
+    *out << "========================================================" << std::endl;
+    *out << "========== TESTING ON FLOATS ===========================" << std::endl; 
+    *out << "========================================================" << std::endl;
 
-    
+    runVectorTests<float>(n, out);
 
-    /* -------- test on a space with recursive block structure -----------*/
-    *out << "======= Testing on a recursively blocked vector space ======" << std::endl;
-    VectorSpace<double> recSpace = productSpace(space, blockSpace);
-    
-    tester = VectorOpTester<double>(recSpace, 
-                                    TestSpecifier<double>(true, 1.0e-13, 1.0e-10));
-    
-    tester.runAllTests();           
+    /* testing on doubles */ 
+    *out << "========================================================" << std::endl;
+    *out << "========== TESTING ON COMPLEX===========================" << std::endl; 
+    *out << "========================================================" << std::endl;
 
+    runVectorTests<complex>(n, out);
 
-    
-
-
-    
+    #endif
     
     
   }

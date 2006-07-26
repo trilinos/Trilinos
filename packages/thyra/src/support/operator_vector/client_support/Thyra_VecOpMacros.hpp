@@ -54,7 +54,7 @@
         acceptor = space(donor).createMember();                         \
       }                                                                 \
     Thyra::VectorBase<Scalar>* p = acceptor.ptr().get();                \
-    const Thyra::VectorBase<Scalar>* px = donor.ptr().get();            \
+    const Thyra::VectorBase<Scalar>* px = donor.constPtr().get();            \
     Thyra::thyraOpName(p, *px);                                         \
   }      
 
@@ -76,7 +76,7 @@
   Scalar funcName(const Converter<Scalar, ConstVector<Scalar> >& x) \
   {                                                         \
     Thyra::ConstVector<Scalar> y = Thyra::toVector(x);      \
-    return Thyra::ROpName(*(y.ptr)());                      \
+    return Thyra::ROpName(*(y.constPtr()));                      \
   }                                                                    
 
 /** \brief Boilerplate code for declaring unary vector reduction operations.

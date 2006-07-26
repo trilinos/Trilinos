@@ -29,6 +29,7 @@
 #ifndef THYRA_SPMD_VECTOR_SPACE_STD_DECL_HPP
 #define THYRA_SPMD_VECTOR_SPACE_STD_DECL_HPP
 
+#include "Teuchos_Handleable.hpp"
 #include "Thyra_SpmdVectorSpaceDefaultBaseDecl.hpp"
 
 namespace Thyra {
@@ -48,8 +49,12 @@ namespace Thyra {
  * \ingroup Thyra_Op_Vec_adapters_Spmd_concrete_std_grp
  */
 template<class Scalar>
-class DefaultSpmdVectorSpace : public SpmdVectorSpaceDefaultBase<Scalar> {
+class DefaultSpmdVectorSpace : public SpmdVectorSpaceDefaultBase<Scalar>,
+                               public Teuchos::Handleable<VectorSpaceBase<Scalar> >
+{
 public:
+  /* handleable interface */
+  TEUCHOS_GET_RCP(VectorSpaceBase<Scalar>);
 
   /** @name Constructors and initializers */
   //@{

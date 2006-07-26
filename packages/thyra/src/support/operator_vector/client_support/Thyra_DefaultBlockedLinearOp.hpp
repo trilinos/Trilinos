@@ -610,4 +610,56 @@ Thyra::block1x2(
   return M;
 }
 
+template<class Scalar>
+Teuchos::RefCountPtr<Thyra::LinearOpBase<Scalar> >
+Thyra::block2x2(
+  const Teuchos::RefCountPtr<LinearOpBase<Scalar> >    &A00
+  ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >   &A01
+  ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >   &A10
+  ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >   &A11
+  )
+{
+  Teuchos::RefCountPtr<PhysicallyBlockedLinearOpBase<Scalar> >
+    M = Teuchos::rcp(new DefaultBlockedLinearOp<Scalar>());
+  M->beginBlockFill(2,2);
+  if(A00.get()) M->setNonconstBlock(0,0,A00);
+  if(A01.get()) M->setNonconstBlock(0,1,A01);
+  if(A10.get()) M->setNonconstBlock(1,0,A10);
+  if(A11.get()) M->setNonconstBlock(1,1,A11);
+  M->endBlockFill();
+  return M;
+}
+
+template<class Scalar>
+Teuchos::RefCountPtr<Thyra::LinearOpBase<Scalar> >
+Thyra::block2x1(
+  const Teuchos::RefCountPtr<LinearOpBase<Scalar> >    &A00
+  ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >   &A10
+  )
+{
+  Teuchos::RefCountPtr<PhysicallyBlockedLinearOpBase<Scalar> >
+    M = Teuchos::rcp(new DefaultBlockedLinearOp<Scalar>());
+  M->beginBlockFill(2,1);
+  if(A00.get()) M->setNonconstBlock(0,0,A00);
+  if(A10.get()) M->setNonconstBlock(1,0,A10);
+  M->endBlockFill();
+  return M;
+}
+
+template<class Scalar>
+Teuchos::RefCountPtr<Thyra::LinearOpBase<Scalar> >
+Thyra::block1x2(
+  const Teuchos::RefCountPtr<LinearOpBase<Scalar> >    &A00
+  ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >   &A01
+  )
+{
+  Teuchos::RefCountPtr<PhysicallyBlockedLinearOpBase<Scalar> >
+    M = Teuchos::rcp(new DefaultBlockedLinearOp<Scalar>());
+  M->beginBlockFill(1,2);
+  if(A00.get()) M->setNonconstBlock(0,0,A00);
+  if(A01.get()) M->setNonconstBlock(0,1,A01);
+  M->endBlockFill();
+  return M;
+}
+
 #endif	// THYRA_DEFAULT_BLOCKED_LINEAR_OP_HPP

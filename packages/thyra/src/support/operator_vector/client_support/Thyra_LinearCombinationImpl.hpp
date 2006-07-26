@@ -57,7 +57,7 @@ namespace Thyra
   template <class Scalar, class Node> inline
   void OpTimesLC<Scalar, Node>::evalInto(Thyra::Vector<Scalar>& result) const
   {
-    if (op_.ptr().get() != 0)
+    if (op_.constPtr().get() != 0)
       {
         op_.apply(x_.evalToConst(), result, alpha_);
       }
@@ -72,7 +72,7 @@ namespace Thyra
   void OpTimesLC<Scalar, Node>::addInto(Thyra::Vector<Scalar>& result,
                             LCSign sign) const
   {
-    if (op_.ptr().get() != 0)
+    if (op_.constPtr().get() != 0)
       {
         Thyra::Vector<Scalar> tmp;
         op_.apply(x_.evalToConst(), tmp);
@@ -90,16 +90,19 @@ namespace Thyra
   Thyra::Vector<Scalar> OpTimesLC<Scalar, Node>::formVector() const 
   {
     Thyra::Vector<Scalar> result;
-    if (op_.ptr().get() != 0)
+    if (op_.constPtr().get() != 0)
       {
         result = op_.range().createMember();
+        cout << "result = " << result.constPtr().get() << endl;
         op_.apply(x_.evalToConst(), result, alpha_);
+        cout << "result = " << result.constPtr().get() << endl;
       }
     else
       {
         result = Thyra::formVector(x_);
         if (alpha_ != one()) scale(result, alpha_);    
       }
+    cout << "result = " << result.constPtr().get() << endl;
     return result;
   }
 
@@ -239,7 +242,7 @@ namespace Thyra
   /* op * vec */
   template <class Scalar> inline
   OpTimesLC<Scalar, Thyra::ConstVector<Scalar> > 
-  operator*(const LinearOperator<Scalar>& op, 
+  operator*(const ConstLinearOperator<Scalar>& op, 
             const Thyra::ConstVector<Scalar>& x)
   {
     return OpTimesLC<Scalar, Thyra::ConstVector<Scalar> >(Teuchos::ScalarTraits<Scalar>::one(), op, x);
@@ -249,12 +252,12 @@ namespace Thyra
   /* op * OpTimesLC */
   template <class Scalar, class Node> inline
   OpTimesLC<Scalar, Node> 
-  operator*(const LinearOperator<Scalar>& op, 
+  operator*(const ConstLinearOperator<Scalar>& op, 
             const OpTimesLC<Scalar, Node>& x)
   {
-    TEST_FOR_EXCEPTION(op.ptr().get()==0, runtime_error,
+    TEST_FOR_EXCEPTION(op.constPtr().get()==0, runtime_error,
                        "null operator in LinearOperator * ( OpTimesLC )");
-    if (x.op().ptr().get()==0)
+    if (x.op().constPtr().get()==0)
       {
         return OpTimesLC<Scalar, Node>(x.alpha(), op, x.node());
       }
@@ -268,7 +271,7 @@ namespace Thyra
   /* op * LC2 */
   template <class Scalar, class Node1, class Node2> inline
   OpTimesLC<Scalar, LC2<Scalar, Node1, Node2> > 
-  operator*(const LinearOperator<Scalar>& op, 
+  operator*(const ConstLinearOperator<Scalar>& op, 
             const LC2<Scalar, Node1, Node2>& x)
   {
     return OpTimesLC<Scalar, LC2<Scalar, Node1, Node2> >(Teuchos::ScalarTraits<Scalar>::one(), op, x);
@@ -558,27 +561,29 @@ namespace Thyra
 
   template <class Scalar>
   Thyra::ConstVector<Scalar>::ConstVector(const Thyra::ConvertibleToVector<Scalar>& x)
-    : Teuchos::ConstHandle<Thyra::VectorBase<Scalar> >(x.formVector().ptr())
+    : Teuchos::ConstHandle<Thyra::VectorBase<Scalar> >(x.formVector().constPtr())
   {;}
   /*
   template <class Scalar> 
   template <class Node> inline
   Thyra::ConstVector<Scalar>::ConstVector(const Thyra::OpTimesLC<Scalar, Node>& x)
-    : Teuchos::ConstHandle<Thyra::VectorBase<Scalar> >(x.formVector().ptr())
+    : Teuchos::ConstHandle<Thyra::VectorBase<Scalar> >(x.formVector().constPtr())
   {;}
   */
 
   template <class Scalar>
   template <class Node1, class Node2> inline
   Thyra::Vector<Scalar>::Vector(const Thyra::LC2<Scalar, Node1, Node2>& x)
-    : Thyra::ConstVector<Scalar>(x.formVector().ptr())
+    : Thyra::ConstVector<Scalar>(x.formVector().constPtr())
   {;}
 
   template <class Scalar> 
   template <class Node> inline
   Thyra::Vector<Scalar>::Vector(const Thyra::OpTimesLC<Scalar, Node>& x)
-    : Thyra::ConstVector<Scalar>(x.formVector().ptr())
-  {;}
+    : Thyra::ConstVector<Scalar>(x.formVector())
+  {
+    cout << "ptr().get() = " << this->ptr().get() << endl;
+  }
 
 
 #ifdef EXTENDED_OPS_ARE_READY

@@ -123,15 +123,15 @@ namespace Thyra
   /** */
   template <class Scalar>   
   void scaleInto(const Converter<Scalar, ConstVector<Scalar> >& x,
-                 const double& alpha, Vector<Scalar>& result);
+                 const Scalar& alpha, Vector<Scalar>& result);
 
   /** */
   template <class Scalar>   
-  void scale(Vector<Scalar>& x, const double& alpha);
+  void scale(Vector<Scalar>& x, const Scalar& alpha);
 
   /** */
   template <class Scalar>   
-  void axpy(const double& a, const Converter<Scalar, ConstVector<Scalar> >& x, 
+  void axpy(const Scalar& a, const Converter<Scalar, ConstVector<Scalar> >& x, 
             Vector<Scalar>& y);
   
 }

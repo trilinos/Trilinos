@@ -131,6 +131,14 @@ public:
 
   //@}
 
+  /** @name Extensions to ProductVectorBase suitable for physically-blocked vectors */
+  //@{
+  /** */
+  void setBlock(int i, const Teuchos::RefCountPtr<const VectorBase<Scalar> >& b); 
+  /** */
+  void setNonconstBlock(int i, const Teuchos::RefCountPtr<VectorBase<Scalar> >& b); 
+  //@}
+
   /** @name Overridden from ProductMultiVectorBase */
   //@{
 

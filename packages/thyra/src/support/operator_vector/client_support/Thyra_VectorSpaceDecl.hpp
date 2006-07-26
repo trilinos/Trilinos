@@ -50,8 +50,11 @@ namespace Thyra
     /** Create a new element of this vector space */
     Vector<Scalar>  createMember() const ;
 
+    /** Create a multivector in this vector space */
+    Teuchos::RefCountPtr<MultiVectorBase<Scalar> > createMembers(int n) const ;
+
     /** Return the dimension of the space */
-    int dim() const {return this->ptr()->dim();}
+    int dim() const {return this->constPtr()->dim();}
 
     /** Check compatibility with another space. Implementation note: 
      * we don't know if the argument vec space is a handle to another
@@ -67,7 +70,7 @@ namespace Thyra
 
 
     /** Tell if vectors of this space are in core  */
-    bool isInCore() const {return this->ptr()->isInCore();}
+    bool isInCore() const {return this->constPtr()->isInCore();}
 
    
 

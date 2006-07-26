@@ -284,6 +284,41 @@ block1x2(
   ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >   &A01
   );
 
+/** \brief Form an implicit block 2x2 linear operator <tt>[ A00, A01; A10, A11 ]</tt>.
+ *
+ * \relates DefaultBlockedLinearOp
+ */
+template<class Scalar>
+Teuchos::RefCountPtr<LinearOpBase<Scalar> >
+block2x2(
+  const Teuchos::RefCountPtr<LinearOpBase<Scalar> >    &A00
+  ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >   &A01
+  ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >   &A10
+  ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >   &A11
+  );
+
+/** \brief Form an implicit block 2x1 linear operator <tt>[ A00; A10 ]</tt>.
+ *
+ * \relates DefaultBlockedLinearOp
+ */
+template<class Scalar>
+Teuchos::RefCountPtr<LinearOpBase<Scalar> >
+block2x1(
+  const Teuchos::RefCountPtr<LinearOpBase<Scalar> >    &A00
+  ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >   &A10
+  );
+
+/** \brief Form an implicit block 1x2 linear operator <tt>[ A00, A01 ]</tt>.
+ *
+ * \relates DefaultBlockedLinearOp
+ */
+template<class Scalar>
+Teuchos::RefCountPtr<LinearOpBase<Scalar> >
+block1x2(
+  const Teuchos::RefCountPtr<LinearOpBase<Scalar> >    &A00
+  ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >   &A01
+  );
+
 } // namespace Thyra
 
 #endif	// THYRA_DEFAULT_BLOCKED_LINEAR_OP_DECL_HPP

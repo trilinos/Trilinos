@@ -111,6 +111,9 @@ namespace Thyra
 
     /** \brief . */
     ConstVector<Scalar> convert() const {return *this;}
+
+    /** return number of blocks */
+    int numBlocks() const ;
       
     /** get read-only block */
     ConstVector<Scalar> getBlock(Index i) const ;
@@ -176,7 +179,7 @@ namespace Thyra
 
       operator Scalar () const {return val_;}
 
-      IndexObject& operator=(const double& value)
+      IndexObject& operator=(const Scalar& value)
       {
         val_ = value;
         return *this;
@@ -231,6 +234,9 @@ namespace Thyra
 
     /** \name Product vector operations */
     //@{
+    /** set block  */
+    void setBlock(int i, const ConstVector<Scalar>& v);
+
     /** set block  */
     void setBlock(int i, const Vector<Scalar>& v);
       
