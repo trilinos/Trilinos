@@ -79,14 +79,18 @@
                    }
 
 // prints out an error message if variable is not zero,
-// and return this value.
-// #define AMESOS_CHK_ERR(amesos_err) \
-//{ if (amesos_err != 0) { \
-//  std::cerr << "AMESOS ERROR " << amesos_err << ", " \
-//    << __FILE__ << ", line " << __LINE__ << std::endl; \
-//    return(amesos_err);  } }
+// and return this value. This is a copy of macro EPETRA_CHK_ERR,
+// here modified so that the user sees an "AMESOS ERROR" instead
+// of a possibly misleading "Epetra ERROR".
 
-#define AMESOS_CHK_ERR(amesos_err) { EPETRA_CHK_ERR( amesos_err ) }
+#define AMESOS_CHK_ERR(a) { { int amesos_err = a; \
+                              if ((amesos_err < 0 && Epetra_Object::GetTracebackMode() > 0) || \
+                                  (amesos_err > 0 && Epetra_Object::GetTracebackMode() > 1)) { \
+                      cerr << "AMESOS ERROR " << amesos_err << ", " \
+                           << __FILE__ << ", line " << __LINE__ << endl; }\
+                      if (amesos_err != 0) return(amesos_err);  }\
+                   }
+//#define AMESOS_CHK_ERR(amesos_err) { EPETRA_CHK_ERR( amesos_err ) }
 
 // prints out an error message if variable is not zero,
 // returns void
