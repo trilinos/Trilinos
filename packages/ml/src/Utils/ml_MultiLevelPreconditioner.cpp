@@ -851,8 +851,10 @@ ComputePreconditioner(const bool CheckPreconditioner)
 
     ml_->output_level = OutputLevel;
 
+#ifdef HAVE_ML_EPETRAEXT
     RowMatrix_ = ModifyEpetraMatrixColMap(*RowMatrix_,RowMatrixColMapTrans_,
                                           "Main linear system");
+#endif
     int NumMyRows;
     NumMyRows = RowMatrix_->NumMyRows();
     int N_ghost = RowMatrix_->NumMyCols() - NumMyRows;
@@ -1043,19 +1045,23 @@ ComputePreconditioner(const bool CheckPreconditioner)
 
     // if curl-curl and mass matrix were given separately, add them
     if (CurlCurlMatrix_) {
+#ifdef HAVE_ML_EPETRAEXT
       CurlCurlMatrix_ = ModifyEpetraMatrixColMap(*CurlCurlMatrix_,
                                                 CurlCurlMatrixColMapTrans_,
                                                 "(curl,curl)");
       MassMatrix_ = ModifyEpetraMatrixColMap(*MassMatrix_,
                                              MassMatrixColMapTrans_,"mass");
+#endif
       Epetra_RowMatrix *cc = const_cast<Epetra_RowMatrix*>(CurlCurlMatrix_);
       Epetra_RowMatrix *mm = const_cast<Epetra_RowMatrix*>(MassMatrix_);
       RowMatrix_ = Epetra_MatrixAdd(cc,mm,1.0);
     }
 
+#ifdef HAVE_ML_EPETRAEXT
     EdgeMatrix_ = ModifyEpetraMatrixColMap(*RowMatrix_,
                                            RowMatrixColMapTrans_,
                                            "edge element matrix");
+#endif
     RowMatrix_ = EdgeMatrix_;
     NumMyRows = EdgeMatrix_->NumMyRows();
     N_ghost   = EdgeMatrix_->NumMyCols() - NumMyRows;
@@ -1081,8 +1087,10 @@ ComputePreconditioner(const bool CheckPreconditioner)
     
     ML_Create(&ml_nodes_,MaxCreationLevels);
     ML_Set_Label(ml_nodes_, "nodes");
+#ifdef HAVE_ML_EPETRAEXT
     NodeMatrix_ = ModifyEpetraMatrixColMap(*NodeMatrix_,
                                            NodeMatrixColMapTrans_,"Node");
+#endif
     NumMyRows = NodeMatrix_->NumMyRows();
     N_ghost   = NodeMatrix_->NumMyCols() - NumMyRows;
     
@@ -1329,8 +1337,10 @@ ComputePreconditioner(const bool CheckPreconditioner)
   } // if (SolvingMaxwell_ == false)
   else {
 
+#ifdef HAVE_ML_EPETRAEXT
     TMatrix_ = ModifyEpetraMatrixColMap(*TMatrix_,
                                         TMatrixColMapTrans_,"Gradient");
+#endif
     Apply_BCsToGradient( *EdgeMatrix_, *TMatrix_);
 
     if (CurlCurlMatrix_ != 0) CheckNullSpace();
@@ -3190,6 +3200,7 @@ CheckNullSpace()
 
 // ============================================================================
 
+#ifdef HAVE_ML_EPETRAEXT
 Epetra_RowMatrix* ML_Epetra::MultiLevelPreconditioner::
 ModifyEpetraMatrixColMap(const Epetra_RowMatrix &A,
                          EpetraExt::CrsMatrix_SolverMap &transform,
@@ -3198,7 +3209,6 @@ ModifyEpetraMatrixColMap(const Epetra_RowMatrix &A,
     Epetra_RowMatrix *B;
     Epetra_CrsMatrix *Acrs;
 
-#ifdef HAVE_ML_EPETRAEXT
     const Epetra_CrsMatrix *Atmp = dynamic_cast<const Epetra_CrsMatrix*>(&A);
     if (Atmp != 0) {
       Acrs = const_cast<Epetra_CrsMatrix*>(Atmp);
@@ -3215,17 +3225,8 @@ ModifyEpetraMatrixColMap(const Epetra_RowMatrix &A,
     }
 
     return B;
-#else
-    B = &A;
-    if (verbose_) {
-      cout << "WARNING: You have not configured with --enable-epetra_ext. "
-           << "The preconditioner " << endl
-           << "WARNING: may not work as expected. Proceed at your own "
-           << "risk." << endl;
-    }
-    return B;
-#endif
 } //ModifyEpetraMatrixColMap()
+#endif
 
 
 #endif /*ifdef HAVE_ML_EPETRA && HAVE_ML_TEUCHOS */
