@@ -1,5 +1,3 @@
-## $Id$ 
-## $Source$ 
 #@HEADER
 # ************************************************************************
 # 
@@ -29,23 +27,26 @@
 # ************************************************************************
 #@HEADER
 
-# Include NOX export makefile
 include $(top_builddir)/Makefile.export.nox
 
 if USING_GNUMAKE
-EXAMPLE_LIBS     = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(NOX_LIBS))
-EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(NOX_INCLUDES))
+TEST_LIBS     = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(NOX_LIBS))
+TEST_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(NOX_INCLUDES))
 else
-EXAMPLE_LIBS     = $(NOX_LIBS)
-EXAMPLE_INCLUDES = $(NOX_INCLUDES)
+TEST_LIBS     = $(NOX_LIBS)
+TEST_INCLUDES = $(NOX_INCLUDES)
 endif
 
-AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
+AM_CPPFLAGS = $(TEST_INCLUDES)
 
 EXEEXT = .exe
 
+if BUILD_EPETRA_TESTS
+
 if BUILD_NOX_EPETRAEXT_SUPPORT
 noinst_PROGRAMS = FiniteDifferenceColoring
+endif
+
 endif
 
 FiniteDifferenceColoring_SOURCES = \
@@ -60,4 +61,4 @@ FiniteDifferenceColoring_SOURCES = \
 FiniteDifferenceColoring_DEPENDENCIES = $(top_builddir)/src/libnox.a \
         $(top_builddir)/src-epetra/libnoxepetra.a
 
-FiniteDifferenceColoring_LDADD = $(EXAMPLE_LIBS)
+FiniteDifferenceColoring_LDADD = $(TEST_LIBS)

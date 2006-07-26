@@ -66,7 +66,7 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@noinst_PROGRAMS = FiniteDifferenceColoring$(EXEEXT)
+@BUILD_EPETRA_TESTS_TRUE@@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@noinst_PROGRAMS = FiniteDifferenceColoring$(EXEEXT)
 subdir = test/epetra/FiniteDifferenceColoring
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -336,11 +336,11 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-@USING_GNUMAKE_FALSE@EXAMPLE_LIBS = $(NOX_LIBS)
-@USING_GNUMAKE_TRUE@EXAMPLE_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(NOX_LIBS))
-@USING_GNUMAKE_FALSE@EXAMPLE_INCLUDES = $(NOX_INCLUDES)
-@USING_GNUMAKE_TRUE@EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(NOX_INCLUDES))
-AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
+@USING_GNUMAKE_FALSE@TEST_LIBS = $(NOX_LIBS)
+@USING_GNUMAKE_TRUE@TEST_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(NOX_LIBS))
+@USING_GNUMAKE_FALSE@TEST_INCLUDES = $(NOX_INCLUDES)
+@USING_GNUMAKE_TRUE@TEST_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(NOX_INCLUDES))
+AM_CPPFLAGS = $(TEST_INCLUDES)
 FiniteDifferenceColoring_SOURCES = \
         $(srcdir)/Example.C \
 	$(srcdir)/FiniteElementProblem.C \
@@ -353,7 +353,7 @@ FiniteDifferenceColoring_SOURCES = \
 FiniteDifferenceColoring_DEPENDENCIES = $(top_builddir)/src/libnox.a \
         $(top_builddir)/src-epetra/libnoxepetra.a
 
-FiniteDifferenceColoring_LDADD = $(EXAMPLE_LIBS)
+FiniteDifferenceColoring_LDADD = $(TEST_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -648,7 +648,6 @@ uninstall-am: uninstall-info-am
 	uninstall-am uninstall-info-am
 
 
-# Include NOX export makefile
 include $(top_builddir)/Makefile.export.nox
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
