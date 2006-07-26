@@ -1,0 +1,5 @@
+/** \defgroup matrix_1 matrix_1.cpp
+
+\verbinclude ../example/matrix_1.cpp
+
+*/

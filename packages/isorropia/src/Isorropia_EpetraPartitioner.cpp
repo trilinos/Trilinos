@@ -151,15 +151,28 @@ void Epetra::Partitioner::compute_partitioning(bool force_repartitioning)
   }
 
   if (input_graph_.get() == 0 && input_matrix_.get() == 0) {
-    std::string str1("Isorropia::Epetra::Partitioner::compute_partitioning ERROR: ");
-    std::string str2("not holding valid input graph or matrix.");
+    std::string str1("Isorropia::Epetra::Partitioner::compute_partitioning ");
+    std::string str2("ERROR: not holding valid input graph OR matrix.");
     throw Isorropia::Exception(str1+str2);
   }
 
   int err = 0;
 
+  //if Isorropia was configured with Zoltan support, then we will use
+  //Zoltan unless the user specified "PARTITIONING_METHOD" = "SIMPLE_LINEAR".
+
+  bool use_zoltan = false;
+#ifdef HAVE_ISORROPIA_ZOLTAN
+  std::string partitioning_method_str("PARTITIONING_METHOD");
+  std::string partitioning_method =
+    paramlist_.get(partitioning_method_str, "UNSPECIFIED");
+  if (partitioning_method != "SIMPLE_LINEAR") {
+    use_zoltan = true;
+  }
+#endif
+
   std::string zoltan("Zoltan");
-  if (paramlist_.isSublist(zoltan)) {
+  if (use_zoltan || paramlist_.isSublist(zoltan)) {
 #ifdef HAVE_ISORROPIA_ZOLTAN
 
     Teuchos::ParameterList& sublist = paramlist_.sublist(zoltan);
@@ -172,11 +185,16 @@ void Epetra::Partitioner::compute_partitioning(bool force_repartitioning)
       err = Isorropia_Zoltan::repartition(input_graph_, costs_, sublist,
 					  myNewElements_, exports_, imports_);
     }
+
+    if (err != 0) {
+      throw Isorropia::Exception("error in Isorropia_Zoltan::repartition");
+    }
+
 #else
-    throw Isorropia::Exception("Zoltan requested, but zoltan not enabled.");
+    throw Isorropia::Exception("Zoltan requested, but Zoltan not enabled.");
 #endif
   }
-  else {
+  else { //we'll use the built-in simple-linear partitioner.
     if (input_graph_.get() != 0) {
       weights_ = Teuchos::rcp(Epetra::create_row_weights_nnz(*input_graph_));
     }
@@ -188,10 +206,10 @@ void Epetra::Partitioner::compute_partitioning(bool force_repartitioning)
                                                *weights_,
                                                myNewElements_,
                                                exports_, imports_);
-  }
 
-  if (err != 0) {
-    throw Isorropia::Exception("error in repartitioning");
+    if (err != 0) {
+      throw Isorropia::Exception("error in simple linear repartitioning");
+    }
   }
 
   partitioning_already_computed_ = true;

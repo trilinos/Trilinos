@@ -244,7 +244,13 @@ WARN_FORMAT            = "$file:$line: $text"
 # directories like "/usr/src/myproject". Separate the files or directories 
 # with spaces. 
 
-INPUT                  = index.doc ../src
+INPUT                  = index.doc \
+                         matrix_1.doc \
+                         vert_weights.doc \
+                         graphedge_weights.doc \
+                         hgedge_weights.doc \
+                         part_redist.doc \
+                         ../src
 
 # If the value of the INPUT tag contains directories, you can use the 
 # FILE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp 
@@ -277,7 +283,11 @@ EXCLUDE_PATTERNS       = *.x \
 # directories that contain example code fragments that are included (see 
 # the \include command). 
 
-EXAMPLE_PATH        = ../example/part_redist.cpp
+EXAMPLE_PATH        = ../example/matrix_1.cpp \
+                      ../example/vert_weights.cpp \
+                      ../example/graphedge_weights.cpp \
+                      ../example/hgedge_weights.cpp \
+                      ../example/part_redist.cpp
 
 # If the value of the EXAMPLE_PATH tag contains directories, you can use the 
 # EXAMPLE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp 

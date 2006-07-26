@@ -173,11 +173,12 @@ int main(int argc, char** argv) {
   //Isorropia::Partitioner class.
   Teuchos::ParameterList paramlist;
 
+#ifdef HAVE_ISORROPIA_ZOLTAN
   // If Zoltan is available, we'll specify that the Zoltan package be
   // used for the partitioning operation, by creating a parameter
   // sublist named "Zoltan".
   // In the sublist, we'll set parameters that we want sent to Zoltan.
-#ifdef HAVE_ISORROPIA_ZOLTAN
+
   Teuchos::ParameterList& sublist = paramlist.sublist("Zoltan");
   sublist.set("LB_METHOD", "GRAPH");
   sublist.set("PARMETIS_METHOD", "PARTKWAY");

@@ -192,14 +192,14 @@ load_balance(MPI_Comm comm,
     paramlist.set(dbg_level_str, "0");
   }
 
-  //if LB_METHOD has not been specified, then set it to GRAPH.
+  //check for the value of LB_METHOD (using "HYPERGRAPH" by default)
   std::string lb_method_str("LB_METHOD");
-  if (!paramlist.isParameter(lb_method_str)) {
-    paramlist.set(lb_method_str, "GRAPH");
-  }
+  std::string lb_meth = paramlist.get(lb_method_str, "HYPERGRAPH");
 
-  //check for the value of LB_METHOD (using "GRAPH" by default)
-  std::string lb_meth = paramlist.get(lb_method_str, "GRAPH");
+  //if LB_METHOD has not been specified, then set it.
+  if (!paramlist.isParameter(lb_method_str)) {
+    paramlist.set(lb_method_str, lb_meth);
+  }
 
   if (lb_meth == "HYPERGRAPH") {
     //tell the load-balance object to register the hypergraph query functions

@@ -1,0 +1,5 @@
+/** \defgroup hgedge_weights hgedge_weights.cpp
+
+\verbinclude ../example/hgedge_weights.cpp
+
+*/

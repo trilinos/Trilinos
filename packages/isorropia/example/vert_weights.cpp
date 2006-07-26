@@ -29,7 +29,7 @@
 
 //--------------------------------------------------------------------
 //This file is a self-contained example of creating an Epetra_RowMatrix
-//object, and using Isorropia to create a rebalanced copy of it.
+//object, and using Isorropia to repartition/redistribute a copy of it.
 //Vertex weights are used to influence the repartitioning.
 //--------------------------------------------------------------------
 
@@ -99,15 +99,14 @@ int main(int argc, char** argv) {
   // If Zoltan is available, we'll specify that the Zoltan package be
   // used for the partitioning operation, by creating a parameter
   // sublist named "Zoltan".
-  // In the sublist, we'll set parameters that we want sent to Zoltan.
+  // In the sublist, we'll set parameters that we want to send to Zoltan.
 #ifdef HAVE_ISORROPIA_ZOLTAN
   Teuchos::ParameterList& sublist = paramlist.sublist("Zoltan");
   sublist.set("LB_METHOD", "GRAPH");
 #else
   // If Zoltan is not available, a simple linear partitioner will be
-  // used to partition such that the number of nonzeros is equal (or
-  // close to equal) on each processor. No parameter is necessary to
-  // specify this.
+  // used.
+  // No parameter is necessary to specify this.
 #endif
 
 
@@ -120,9 +119,9 @@ int main(int argc, char** argv) {
   const Epetra_BlockMap& map = rowmatrix->RowMatrixRowMap();
   int num = map.NumMyElements();
 
-  //For this demo, we'll assign the weights to be elem+1, where 'elem' is
-  //the global-id of the corresponding row. (If we don't use +1, zoltan
-  //complains that the first vertex has a zero weight.)
+  //For this demo, we'll assign the weights to be i+1, where 'i' is
+  //the global-id of the corresponding matrix row. (If we don't use +1,
+  //zoltan complains that the first vertex has a zero weight.)
 
   //Using these linearly-increasing weights should cause the partitioner
   //to put an UN-EQUAL number of rows on each processor...
@@ -135,8 +134,14 @@ int main(int argc, char** argv) {
 
   costs->setVertexWeights(vweights);
 
+  if (localProc == 0) {
+    std::cout <<"\n Repartitioning with linearly-increasing vertex weights, \n"
+    << " which should cause the partitioner to put an UN-EQUAL \n"
+    << " portion of the matrix on each processor...\n" << std::endl;
+  }
+
   //Now create the partitioner object using an Isorropia factory-like
-  //function...
+  //'create_partitioner' function...
   Teuchos::RefCountPtr<Isorropia::Partitioner> partitioner =
     Isorropia::Epetra::create_partitioner(rowmatrix, costs, paramlist);
 

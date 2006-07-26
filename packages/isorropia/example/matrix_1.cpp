@@ -64,7 +64,7 @@ Teuchos::RefCountPtr<Epetra_CrsMatrix>
   create_epetra_matrix(int numProcs, int localProc);
 #endif
 
-/** matrix_1 example program demonstrating Isorropia usage.
+/** matrix_1 example program demonstrating simple Isorropia usage.
 */
 int main(int argc, char** argv) {
 #if defined(HAVE_MPI) && defined(HAVE_EPETRA)
@@ -92,8 +92,14 @@ int main(int argc, char** argv) {
   }
 
   //Now call Isorropia::create_balanced_copy to create a balanced
-  //copy of crsgraph. By default, the result graph is balanced so that
-  //the number of nonzeros on each processor is equal or close to equal.
+  //copy of crsgraph. By default, Isorropia will use Zoltan for the
+  //repartitioning, if Isorropia was configured with Zoltan support.
+  //(i.e., --enable-isorropia-zoltan flag to configure, plus Zoltan include
+  //paths and library directives)
+  //If Isorropia was not configured with Zoltan support, then a simple
+  //built-in linear partitioner will be used to make sure the number
+  //of nonzeros on each processor is equal or close to equal.
+  //
   //Use a try-catch block because Isorropia will throw an exception
   //if it encounters a fatal error.
 
@@ -102,19 +108,21 @@ int main(int argc, char** argv) {
   }
 
   Teuchos::ParameterList paramlist;
-  // If Zoltan is available, we'll specify that the Zoltan package be
-  // used for the partitioning operation, by creating a parameter
-  // sublist named "Zoltan".
-  // In the sublist, we'll set parameters that we want sent to Zoltan.
+
 #ifdef HAVE_ISORROPIA_ZOLTAN
+
+  // If Zoltan is available, we'll specify that the Zoltan package use
+  // graph-partitioning for the partitioning operation and specifically
+  // PARMETIS_METHOD=PARTKWAY, by creating a parameter sublist named
+  // "Zoltan" and setting the appropriate values.
+  // (See Zoltan documentation for other valid parameters...)
+
   Teuchos::ParameterList& sublist = paramlist.sublist("Zoltan");
   sublist.set("LB_METHOD", "GRAPH");
   sublist.set("PARMETIS_METHOD", "PARTKWAY");
+
 #else
-  // If Zoltan is not available, a simple linear partitioner will be
-  // used to partition such that the number of nonzeros is equal (or
-  // close to equal) on each processor. No parameter is necessary to
-  // specify this.
+  //If Zoltan is not available, we don't need to set any parameters.
 #endif
 
   Teuchos::RefCountPtr<Epetra_CrsGraph> balanced_graph;
@@ -182,8 +190,9 @@ int main(int argc, char** argv) {
 #endif
 
   if (localProc == 0) {
-    std::cout << " calling Isorropia::Epetra::create_balanced_copy..."
-            << std::endl;
+    std::cout << " calling Isorropia::Epetra::create_balanced_copy...\n"
+            << "Specifying HYPERGRAPH partitioning if Zoltan available..."
+        << std::endl;
   }
 
   Teuchos::RefCountPtr<Epetra_CrsMatrix> balanced_matrix;

@@ -1,0 +1,5 @@
+/** \defgroup vert_weights vert_weights.cpp
+
+\verbinclude ../example/vert_weights.cpp
+
+*/

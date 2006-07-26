@@ -92,19 +92,18 @@ int main(int argc, char** argv) {
   //Isorropia::Partitioner class.
   Teuchos::ParameterList paramlist;
 
-  // If Zoltan is available, we'll specify that the Zoltan package be
-  // used for the partitioning operation, by creating a parameter
-  // sublist named "Zoltan".
-  // In the sublist, we'll set parameters that we want sent to Zoltan.
-#ifdef HAVE_ISORROPIA_ZOLTAN
-  Teuchos::ParameterList& sublist = paramlist.sublist("Zoltan");
-  sublist.set("LB_METHOD", "HYPERGRAPH");
-#else
+  // If Zoltan is available, the Zoltan package will be used for
+  // the partitioning operation. By default, Isorropia selects Zoltan's
+  // Hypergraph partitioner. If a method other than Hypergraph is
+  // desired, it can be specified by first creating a parameter sublist
+  // named "Zoltan", and then setting appropriate Zoltan parameters in
+  // that sublist. A sublist is created like this:
+  //      Teuchos::ParameterList& sublist = paramlist.sublist("Zoltan");
+  //
+
   // If Zoltan is not available, a simple linear partitioner will be
   // used to partition such that the number of nonzeros is equal (or
-  // close to equal) on each processor. No parameter is necessary to
-  // specify this.
-#endif
+  // close to equal) on each processor.
 
 
   Epetra_RowMatrix* rowmatrix = linprob->GetMatrix();

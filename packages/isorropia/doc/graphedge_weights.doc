@@ -1,0 +1,5 @@
+/** \defgroup graphedge_weights graphedge_weights.cpp
+
+\verbinclude ../example/graphedge_weights.cpp
+
+*/

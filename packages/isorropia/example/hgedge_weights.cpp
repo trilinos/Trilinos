@@ -97,11 +97,15 @@ int main(int argc, char** argv) {
   //Isorropia::Partitioner class.
   Teuchos::ParameterList paramlist;
 
+#ifdef HAVE_ISORROPIA_ZOLTAN
   // If Zoltan is available, we'll specify that the Zoltan package be
   // used for the partitioning operation, by creating a parameter
   // sublist named "Zoltan".
   // In the sublist, we'll set parameters that we want sent to Zoltan.
-#ifdef HAVE_ISORROPIA_ZOLTAN
+  // (As it turns out, Isorropia selects Zoltan's hypergraph partitioner
+  //  by default, so we don't actually need to specify it. But it's
+  //  useful for illustration...)
+
   Teuchos::ParameterList& sublist = paramlist.sublist("Zoltan");
   sublist.set("LB_METHOD", "HYPERGRAPH");
 #else

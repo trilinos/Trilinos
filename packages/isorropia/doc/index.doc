@@ -18,11 +18,18 @@ include-paths and library specifications
 for Zoltan version 2.0 (provide these to configure using the
 '--with-incdirs' and '--with-libs' configure arguments).
 
+<ul>
+<li> <a href="#overview">Overview of Isorropia</a>
+<li> <a href="#example_programs">Example Programs</a>
+<li> <a href="#defaults_params">Defaults, Parameters</a>
+</ul>
+
+<a name="overview"> </a>
 \section isorropia_startup Overview of Isorropia.
 
 Isorropia's user interface consists primarily of the Isorropia::Partitioner,
 Isorropia::Redistributor and Isorropia::CostDescriber classes, as well as the
-Isorropia::create_balanced_copy functions.
+Isorropia::Epetra::create_balanced_copy functions.
 
 The Isorropia::create_balanced_copy functions are free-standing functions
 (not class members) which simply take an input object (Epetra_CrsGraph,
@@ -48,13 +55,45 @@ Isorropia is currently aimed primarily at repartitioning/redistributing
 Epetra objects, including Epetra_CrsGraph, Epetra_RowMatrix (which includes
 Epetra_CrsMatrix and Epetra_VbrMatrix) and Epetra_MultiVector.
 
-\section zoltanparams Passing parameters through to Zoltan
+<a name="example_programs"> </a>
+\section isorropia_example Example Programs
 
-Some Isorropia classes accept a Teuchos::ParameterList object. To
-specify that Zoltan be used to perform the partitioning, create a
-sublist with name "Zoltan" in the parameter-list object. Then, any
-parameters that should be passed to Zoltan itself, can be stored in
-the sublist exactly as they appear in the Zoltan users guide. Example:
+A number of example programs which demonstrate using Isorropia are
+provided in the 'packages/isorropia/example' subdirectory.
+
+\ref matrix_1 demonstrates creating a balanced copy of Epetra_CrsGraph and
+Epetra_CrsMatrix objects using Isorropia::Epetra::create_balanced_copy
+functions.
+
+\ref part_redist demonstrates repartitioning and redistributing the
+contents of an Epetra_LinearProblem object, using the Isorropia::Partitioner
+and Isorropia::Redistributor classes. This program does not use
+user-specified weights/costs.
+
+Other programs in the example subdirectory demonstrate the use of
+weights/costs data to influence the partitioner.
+See \ref vert_weights, \ref graphedge_weights and \ref hgedge_weights.
+
+<a name="defaults_params"> </a>
+\section defaults Defaults, Parameters, ...
+
+Several Isorropia classes and methods accept Teuchos::ParameterList
+objects, allowing the user to control certain behavior.
+<ul>
+<li>Choice of partitioner<br>
+If Isorropia is configured with Zoltan support, then by default Zoltan will
+be used as the partitioner. To use the simple built-in linear partitioner
+instead, set the following parameter:
+\verbatim
+  Teuchos::ParameterList params;
+  params.set("PARTITIONING_METHOD", "SIMPLE_LINEAR");
+\endverbatim
+
+<li>Passing parameters through to Zoltan<br>
+Isorropia can relay Zoltan parameters directly to Zoltan. Before passing
+a Teuchos::ParameterList to Isorropia, create a sublist in it named "Zoltan".
+Then, any parameters that should be passed to Zoltan itself, can be stored
+in the sublist exactly as they appear in the Zoltan users guide. Example:
 \verbatim
   Teuchos::ParameterList params;
   Teuchos::ParameterList& sublist = params.sublist("Zoltan");
@@ -64,18 +103,6 @@ the sublist exactly as they appear in the Zoltan users guide. Example:
 Refer to the Zoltan users guide (available at
 <a href=http://www.cs.sandia.gov/zoltan>www.cs.sandia.gov/zoltan</a>)
 for available Zoltan parameters.
-
-\section isorropia_example Example Codes
-
-A couple of example programs which demonstrate using Isorropia are
-provided in the 'packages/isorropia/example' subdirectory.
-
-The program shown below is packages/isorropia/example/part_redist.cpp, which
-demonstrates a simple repartitioning operation which does not use
-user-specified weights/costs. Other programs in the example subdirectory
-demonstrate the use of weights/costs data to influence the partitioner. See
-vert_weights.cpp, graph_edge_weights.cpp and hgedge_weights.cpp.
-
-\verbinclude ../example/part_redist.cpp
+</ul>
 
 */
