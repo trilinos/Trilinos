@@ -42,7 +42,7 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(test_composite_linear_ops_SOURCES) $(test_handles_SOURCES) $(test_product_space_SOURCES) $(test_scalar_product_SOURCES) $(test_std_ops_SOURCES)
+SOURCES = $(test_composite_linear_ops_SOURCES) $(test_product_space_SOURCES) $(test_scalar_product_SOURCES) $(test_std_ops_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -66,7 +66,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
 noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
-	$(am__EXEEXT_4) $(am__EXEEXT_5)
+	$(am__EXEEXT_4)
 subdir = test/operator_vector
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -94,7 +94,6 @@ am__EXEEXT_1 = test_product_space$(EXEEXT)
 am__EXEEXT_2 = test_scalar_product$(EXEEXT)
 am__EXEEXT_3 = test_composite_linear_ops$(EXEEXT)
 am__EXEEXT_4 = test_std_ops$(EXEEXT)
-am__EXEEXT_5 = test_handles$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_test_composite_linear_ops_OBJECTS =  \
 	test_composite_linear_ops.$(OBJEXT)
@@ -105,8 +104,6 @@ am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
 @USING_GNUMAKE_TRUE@	$(THYRA_LIBS))
 am__DEPENDENCIES_3 = $(am__DEPENDENCIES_2)
-am_test_handles_OBJECTS = test_handles.$(OBJEXT)
-test_handles_OBJECTS = $(am_test_handles_OBJECTS)
 am_test_product_space_OBJECTS = test_product_space.$(OBJEXT)
 test_product_space_OBJECTS = $(am_test_product_space_OBJECTS)
 am_test_scalar_product_OBJECTS = test_scalar_product.$(OBJEXT)
@@ -117,7 +114,6 @@ DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/test_composite_linear_ops.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/test_handles.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/test_product_space.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/test_scalar_product.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/test_std_ops.Po
@@ -126,12 +122,12 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(test_composite_linear_ops_SOURCES) $(test_handles_SOURCES) \
+SOURCES = $(test_composite_linear_ops_SOURCES) \
 	$(test_product_space_SOURCES) $(test_scalar_product_SOURCES) \
 	$(test_std_ops_SOURCES)
 DIST_SOURCES = $(test_composite_linear_ops_SOURCES) \
-	$(test_handles_SOURCES) $(test_product_space_SOURCES) \
-	$(test_scalar_product_SOURCES) $(test_std_ops_SOURCES)
+	$(test_product_space_SOURCES) $(test_scalar_product_SOURCES) \
+	$(test_std_ops_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -286,7 +282,6 @@ TEST_PRODUCT_SPACE = test_product_space
 TEST_SCALAR_PRODUCT = test_scalar_product
 TEST_COMPOSITE_LINEAR_OPS = test_composite_linear_ops
 TEST_STD_OPS = test_std_ops
-TEST_HANDLES = test_handles
 test_product_space_SOURCES = $(srcdir)/test_product_space.cpp
 test_product_space_DEPENDENCIES = $(common_dependencies)
 test_product_space_LDADD = $(common_ldadd)
@@ -299,9 +294,10 @@ test_composite_linear_ops_LDADD = $(common_ldadd)
 test_std_ops_SOURCES = $(srcdir)/test_std_ops.cpp
 test_std_ops_DEPENDENCIES = $(common_dependencies)
 test_std_ops_LDADD = $(common_ldadd)
-test_handles_SOURCES = $(srcdir)/test_handles.cpp
-test_handles_DEPENDENCIES = $(common_dependencies)
-test_handles_LDADD = $(common_ldadd)
+
+#test_handles_SOURCES = $(srcdir)/test_handles.cpp
+#test_handles_DEPENDENCIES = $(common_dependencies)
+#test_handles_LDADD = $(common_ldadd)
 
 #
 # Common stuff
@@ -354,9 +350,6 @@ clean-noinstPROGRAMS:
 test_composite_linear_ops$(EXEEXT): $(test_composite_linear_ops_OBJECTS) $(test_composite_linear_ops_DEPENDENCIES) 
 	@rm -f test_composite_linear_ops$(EXEEXT)
 	$(CXXLINK) $(test_composite_linear_ops_LDFLAGS) $(test_composite_linear_ops_OBJECTS) $(test_composite_linear_ops_LDADD) $(LIBS)
-test_handles$(EXEEXT): $(test_handles_OBJECTS) $(test_handles_DEPENDENCIES) 
-	@rm -f test_handles$(EXEEXT)
-	$(CXXLINK) $(test_handles_LDFLAGS) $(test_handles_OBJECTS) $(test_handles_LDADD) $(LIBS)
 test_product_space$(EXEEXT): $(test_product_space_OBJECTS) $(test_product_space_DEPENDENCIES) 
 	@rm -f test_product_space$(EXEEXT)
 	$(CXXLINK) $(test_product_space_LDFLAGS) $(test_product_space_OBJECTS) $(test_product_space_LDADD) $(LIBS)
@@ -374,7 +367,6 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_composite_linear_ops.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_handles.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_product_space.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_scalar_product.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_std_ops.Po@am__quote@
@@ -410,22 +402,6 @@ test_composite_linear_ops.obj: $(srcdir)/test_composite_linear_ops.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/test_composite_linear_ops.Po' tmpdepfile='$(DEPDIR)/test_composite_linear_ops.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o test_composite_linear_ops.obj `if test -f '$(srcdir)/test_composite_linear_ops.cpp'; then $(CYGPATH_W) '$(srcdir)/test_composite_linear_ops.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_composite_linear_ops.cpp'; fi`
-
-test_handles.o: $(srcdir)/test_handles.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT test_handles.o -MD -MP -MF "$(DEPDIR)/test_handles.Tpo" -c -o test_handles.o `test -f '$(srcdir)/test_handles.cpp' || echo '$(srcdir)/'`$(srcdir)/test_handles.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/test_handles.Tpo" "$(DEPDIR)/test_handles.Po"; else rm -f "$(DEPDIR)/test_handles.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_handles.cpp' object='test_handles.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/test_handles.Po' tmpdepfile='$(DEPDIR)/test_handles.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o test_handles.o `test -f '$(srcdir)/test_handles.cpp' || echo '$(srcdir)/'`$(srcdir)/test_handles.cpp
-
-test_handles.obj: $(srcdir)/test_handles.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT test_handles.obj -MD -MP -MF "$(DEPDIR)/test_handles.Tpo" -c -o test_handles.obj `if test -f '$(srcdir)/test_handles.cpp'; then $(CYGPATH_W) '$(srcdir)/test_handles.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_handles.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/test_handles.Tpo" "$(DEPDIR)/test_handles.Po"; else rm -f "$(DEPDIR)/test_handles.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_handles.cpp' object='test_handles.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/test_handles.Po' tmpdepfile='$(DEPDIR)/test_handles.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o test_handles.obj `if test -f '$(srcdir)/test_handles.cpp'; then $(CYGPATH_W) '$(srcdir)/test_handles.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_handles.cpp'; fi`
 
 test_product_space.o: $(srcdir)/test_product_space.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT test_product_space.o -MD -MP -MF "$(DEPDIR)/test_product_space.Tpo" -c -o test_product_space.o `test -f '$(srcdir)/test_product_space.cpp' || echo '$(srcdir)/'`$(srcdir)/test_product_space.cpp; \
