@@ -79,7 +79,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
     // Although, eigenvectors with 0-norm are discarded.
     if( NullSpaceDim == 0 ) NullSpaceDim = NumPDEEqns_;
     
-#ifdef HAVE_ML_ANASAZI
+#ifdef HAVE_ML_ANASAxI
 
     Epetra_Time Time(Comm());
     

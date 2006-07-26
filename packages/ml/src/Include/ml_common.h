@@ -158,9 +158,9 @@
 #endif
 #endif
 
-#ifdef HAVE_ANASAZI
-#ifndef HAVE_ML_ANASAZI
-#define HAVE_ML_ANASAZI
+#ifdef HAVE_ANASAxI
+#ifndef HAVE_ML_ANASAxI
+#define HAVE_ML_ANASAxI
 #endif
 #endif
 

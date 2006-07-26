@@ -21,7 +21,7 @@
 #include "ml_MultiLevelPreconditioner.h"
 #include "ml_viz_xyz.h"
 #include "ml_agg_info.h"
-#ifdef HAVE_ML_ANASAZI
+#ifdef HAVE_ML_ANASAxI
 #include "ml_anasazi.h"
 #endif
 
@@ -248,7 +248,7 @@ ComputeAdaptivePreconditioner(int TentativeNullSpaceSize,
 
       int NumRealEigenvectors = 0, NumImagEigenvectors = 0;
 
-#ifdef HAVE_ML_ANASAZI
+#ifdef HAVE_ML_ANASAxI
       // 2.- call Anasazi and store the results in eigenvectors      
       ML_Anasazi::Interface(RowMatrix_,EigenVectors,&RealEigenvalues[0],
                             &ImagEigenvalues[0], AnasaziList, &RealEigenvectors[0], 0,

@@ -78,12 +78,12 @@ double MaxEigAnasazi(const Operator& Op, const bool DiagonalScaling)
   else
     DiagScal = ML_FALSE;
 
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_ANASAZI) && defined(HAVE_ML_TEUCHOS)
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_ANASAxI) && defined(HAVE_ML_TEUCHOS)
   ML_Anasazi_Get_SpectralNorm_Anasazi(Op.GetML_Operator(), 0, 10, 1e-5,
                                       ML_FALSE, DiagScal, &MaxEigen);
 #else
-  ML_THROW("Configure w/ --enable-epetra --enable-anasazi --enable-teuchos",
-           -1);
+  //ML_THROW("Configure w/ --enable-epetra --enable-anasazi --enable-teuchos", -1);
+  ML_THROW("Anasazi is no longer supported", -1);
 #endif
   return(MaxEigen);
 }
@@ -157,13 +157,13 @@ void Eigs(const Operator& A, int NumEigenvalues,
   Epetra_MultiVector EigenVectors(A.GetRowMatrix()->OperatorDomainMap(),
                                   NumEigenvalues);
   EigenVectors.Random();
-#ifdef HAVE_ML_ANASAZI
+#ifdef HAVE_ML_ANASAxI
   //int NumRealEigenvectors, NumImagEigenvectors;
 #endif
 
   AnasaziList.set("eigen-analysis: action", "LM");
 
-#ifdef HAVE_ML_ANASAZI
+#ifdef HAVE_ML_ANASAxI
   ML_THROW("fixme...", -1);
   /* FIXME
   ML_Anasazi::Interface(A.GetRowMatrix(),EigenVectors,ER.GetValues(),
@@ -171,7 +171,7 @@ void Eigs(const Operator& A, int NumEigenvalues,
 			&NumRealEigenvectors, &NumImagEigenvectors, 0);
                         */
 #else
-  ML_THROW("Configure ML with --enable-anasazi to use Eigs()", -1);
+  ML_THROW("Anasazi is no longer supported", -1);
 #endif
 
   return;

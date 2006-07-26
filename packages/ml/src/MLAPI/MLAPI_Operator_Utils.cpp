@@ -8,7 +8,7 @@
 #include "ml_amesos.h"
 #include "ml_epetra_utils.h"
 #include "ml_amesos_wrap.h"
-#ifdef HAVE_ML_ANASAZI
+#ifdef HAVE_ML_ANASAxI
 #include "ml_anasazi.h"
 #endif
 #include "Teuchos_ParameterList.hpp"

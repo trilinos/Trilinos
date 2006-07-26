@@ -505,11 +505,11 @@ else
 ML_USING_TEUCHOS_LIBS = 
 endif
 
-if ML_USING_ANASAZI
-ML_USING_ANASAZI_LIBS = cd $(top_builddir)/../anasazi ; $(MAKE) all-libs 
-else
-ML_USING_ANASAZI_LIBS = 
-endif
+#if ML_USING_ANASAZI
+#ML_USING_ANASAZI_LIBS = cd $(top_builddir)/../anasazi ; $(MAKE) all-libs 
+#else
+#ML_USING_ANASAZI_LIBS = 
+#endif
 
 if ML_USING_AZTECOO
 ML_USING_AZTECOO_LIBS = cd $(top_builddir)/../aztecoo ; $(MAKE) all-libs 

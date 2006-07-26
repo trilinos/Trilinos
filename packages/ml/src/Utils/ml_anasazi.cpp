@@ -2,7 +2,7 @@
 #include "ml_include.h"
 #include "ml_smoother.h"
 
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_ANASAZI) && defined(HAVE_ML_TEUCHOS)
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_ANASAxI) && defined(HAVE_ML_TEUCHOS)
 
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"

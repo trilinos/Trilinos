@@ -104,18 +104,25 @@ int ML_Epetra::MultiLevelPreconditioner::SetFiltering()
 
   // FIXME: this is not a genius stroke, I should simply get
   // the Schur decomposition from Anasazi
-#ifdef HAVE_ML_ANASAZI
+#ifdef HAVE_ML_ANASAxI
   // call Anasazi and store the results in eigenvectors      
   ML_Anasazi::Interface(RowMatrix_,EigenVectors,&RealEigenvalues[0],
                         &ImagEigenvalues[0], AnasaziList, &RealEigenvectors[0],
                         &ImagEigenvectors[0],
                         &NumRealEigenvectors, &NumImagEigenvectors, ml_);
 #else
+  /*
   if (Comm().MyPID() == 0) {
     cerr << ErrorMsg_ << "ML has been configure without the Anasazi interface" << endl
       << ErrorMsg_ << "You must add the option --enable-anasazi to use" << endl
       << ErrorMsg_ << "filtering and Anasazi" << endl;
   }
+  */
+  if (Comm().MyPID() == 0) {
+    cerr << ErrorMsg_ << "The Anasazi support is no longer maintained in ML." << endl;
+    cerr << ErrorMsg_ << "Please check with the developers for more details." << endl;
+  }
+
   ML_EXIT(EXIT_FAILURE);
 #endif
 
