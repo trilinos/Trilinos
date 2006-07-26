@@ -26,7 +26,7 @@
 # ************************************************************************
 #@HEADER
 
-include $(top_builddir)/Makefile.export
+include $(top_builddir)/Makefile.export.ml
 
 TEST_LIBS     = $(ML_LIBS)     $(ML_EXTRA_LIBS)
 TEST_INCLUDES = $(ML_INCLUDES) $(ML_EXTRA_INCLUDES)

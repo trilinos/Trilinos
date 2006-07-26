@@ -3,7 +3,7 @@
 # include definitions of ML_INCLUDES and ML_LIBS
 # ML_EXTRA_LIBS and ML_EXTRA_INCLUDES contain additional libraries and
 # header files required to compile and link some of the ML examples.
-include $(top_builddir)/Makefile.export
+include $(top_builddir)/Makefile.export.ml
 
 EXAMPLE_LIBS     = $(ML_EXTRA_LIBS)     $(ML_LIBS)
 EXAMPLE_INCLUDES = $(ML_EXTRA_INCLUDES) $(ML_INCLUDES)

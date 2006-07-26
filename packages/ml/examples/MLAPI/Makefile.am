@@ -1,7 +1,7 @@
 #@HEADER
 
 # include definitions of ML_INCLUDES and ML_LIBS
-include $(top_builddir)/Makefile.export
+include $(top_builddir)/Makefile.export.ml
 
 EXAMPLE_LIBS     = $(ML_LIBS)     $(ML_EXTRA_LIBS)
 EXAMPLE_INCLUDES = $(ML_INCLUDES) $(ML_EXTRA_INCLUDES)

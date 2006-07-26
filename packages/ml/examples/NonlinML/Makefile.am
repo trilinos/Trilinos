@@ -2,7 +2,7 @@
 #@HEADER
 
 # include definitions of ML_INCLUDES and ML_LIBS
-include $(top_builddir)/Makefile.export
+include $(top_builddir)/Makefile.export.ml
 
 EXEEXT = .exe
 
