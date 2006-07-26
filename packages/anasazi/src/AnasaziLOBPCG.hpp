@@ -1602,8 +1602,6 @@ namespace Anasazi {
         } // if (localSize == threeBlocks)
       } // end timing block
 
-      // FINISH: do we need to explicitly project X,P away from _auxVecs ???
-      
       // Compute the new residuals, explicitly
       {
         Teuchos::TimeMonitor lcltimer( *_timerCompRes );

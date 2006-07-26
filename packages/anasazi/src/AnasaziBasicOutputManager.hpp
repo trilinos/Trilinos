@@ -37,6 +37,10 @@
 #include "AnasaziOutputManager.hpp"
 #include "Teuchos_oblackholestream.hpp"
 
+#ifdef HAVE_MPI
+#include <mpi.h>
+#endif
+
 /*!  \class Anasazi::BasicOutputManager
 
   \brief Anasazi's basic output manager for sending information of select verbosity levels

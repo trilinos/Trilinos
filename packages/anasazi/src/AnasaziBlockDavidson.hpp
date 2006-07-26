@@ -59,7 +59,7 @@
   
         \brief This class implements the block Davidson method, an iterative
         method for solving symmetric eigenvalue problems.
-
+        
         \author Chris Baker, Ulrich Hetmaniuk, Rich Lehoucq, Heidi Thornquist
 */
 
@@ -137,7 +137,8 @@ namespace Anasazi {
     //! %Anasazi::BlockDavidson destructor.
     virtual ~BlockDavidson() {};
     //@}
-    
+
+
     //@{ \name Solver methods.
     
     /*! \brief This method performs %BlockDavidson iterations until the status
@@ -153,7 +154,6 @@ namespace Anasazi {
      * Possible exceptions thrown include: finish
      */
     void iterate();
-    //@}
 
     /*! \brief Initialize the solver to an iterate, optionally providing the
      * Ritz values, residual, and search direction.
@@ -217,8 +217,9 @@ namespace Anasazi {
       state.T = Teuchos::rcp(new std::vector<MagnitudeType>(_theta));
       return state;
     }
-
+    
     //@}
+
 
     //@{ \name Status methods.
 
@@ -1081,7 +1082,8 @@ namespace Anasazi {
 
     ////////////////////////////////////////////////////////////////
     // iterate until the status test tells us to stop.
-    while (_tester->checkStatus(this) != Passed) {
+    // also break if our basis is full
+    while (_tester->checkStatus(this) != Passed && _curDim < searchDim) {
 
       _iter++;
 

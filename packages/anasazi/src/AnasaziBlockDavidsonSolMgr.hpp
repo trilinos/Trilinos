@@ -236,8 +236,6 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
   if (_useLocking) {
     locktest = Teuchos::rcp( new StatusTestResNorm<ScalarType,MV,OP>(_locktol,_lockQuorum,false,_rellocktol) );
   }
-  // restarting 
-  // FINISH
   // combo class
   Teuchos::Array<Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > > alltests;
   // for an OR test, the order doesn't matter
@@ -257,16 +255,16 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
   // Parameter list
   Teuchos::ParameterList plist;
   plist.set("Block Size",_blockSize);
-  plist.set("Full Ortho",_fullOrtho);
+  plist.set("Num Blocks",_numBlocks);
 
   //////////////////////////////////////////////////////////////////////////////////////
   // BlockDavidson solver
-  Teuchos::RefCountPtr<BlockDavidson<ScalarType,MV,OP> > lobpcg_solver 
+  Teuchos::RefCountPtr<BlockDavidson<ScalarType,MV,OP> > bd_solver 
     = Teuchos::rcp( new BlockDavidson<ScalarType,MV,OP>(_problem,sorter,printer,combotest,ortho,plist) );
   // set any auxilliary vectors defined in the problem
   Teuchos::RefCountPtr< const MV > probauxvecs = _problem->getAuxVecs();
   if (probauxvecs != Teuchos::null) {
-    lobpcg_solver->setAuxVecs( Teuchos::tuple< Teuchos::RefCountPtr<const MV> >(probauxvecs) );
+    bd_solver->setAuxVecs( Teuchos::tuple< Teuchos::RefCountPtr<const MV> >(probauxvecs) );
   }
 
   //////////////////////////////////////////////////////////////////////////////////////
@@ -283,10 +281,10 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
   sol.numVecs = 0;
   _problem->setSolution(sol);
 
-  // tell the lobpcg_solver to iterate
+  // tell bd_solver to iterate
   while (1) {
     try {
-      lobpcg_solver->iterate();
+      bd_solver->iterate();
 
       // check convergence first
       if (convtest->getStatus() == Passed || (maxtest != Teuchos::null && maxtest->getStatus() == Passed) ) {
@@ -298,7 +296,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
       // check locking if we didn't converge
       else if (locktest != Teuchos::null && locktest->getStatus() == Passed) {
 
-        // remove the locked vectors,values from lobpcg_solver: put them in newvecs, newvals
+        // remove the locked vectors,values from bd_solver: put them in newvecs, newvals
         int numnew = locktest->howMany();
         TEST_FOR_EXCEPTION(numnew <= 0,std::logic_error,"Anasazi::BlockDavidsonSolMgr::solve(): status test mistake.");
         // get the indices
@@ -314,9 +312,9 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
         {
           // work in a local scope, to hide the variabes needed for extracting this info
           // get the vectors
-          newvecs = MVT::CloneView(*lobpcg_solver->getEvecs(),indnew);
+          newvecs = MVT::CloneView(*bd_solver->getEvecs(),indnew);
           // get the values
-          std::vector<MagnitudeType> allvals = lobpcg_solver->getEigenvalues();
+          std::vector<MagnitudeType> allvals = bd_solver->getEigenvalues();
           for (int i=0; i<numnew; i++) {
             newvals[i] = allvals[indnew[i]];
           }
@@ -337,17 +335,17 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
           for (int i=0; i<numlocked; i++) indlock[i] = i;
           Teuchos::RefCountPtr<const MV> curlocked = MVT::CloneView(*lockvecs,indlock);
           if (probauxvecs != Teuchos::null) {
-            lobpcg_solver->setAuxVecs( Teuchos::tuple< Teuchos::RefCountPtr<const MV> >(probauxvecs,curlocked) );
+            bd_solver->setAuxVecs( Teuchos::tuple< Teuchos::RefCountPtr<const MV> >(probauxvecs,curlocked) );
           }
           else {
-            lobpcg_solver->setAuxVecs( Teuchos::tuple< Teuchos::RefCountPtr<const MV> >(curlocked) );
+            bd_solver->setAuxVecs( Teuchos::tuple< Teuchos::RefCountPtr<const MV> >(curlocked) );
           }
         }
         // add locked vals to convtest
         convtest->setAuxVals(lockvals);
-        // fill out the empty state in the solver
+        // restart the solver
         {
-          BlockDavidsonState<ScalarType,MV> state = lobpcg_solver->getState();
+          BlockDavidsonState<ScalarType,MV> state = bd_solver->getState();
           // don't need the following: KX, KP, R, T, H, KH, MH
           // if hasP(), then ortho it against new aux vecs (and maybe against X); otherwise, it is invalid, so wipe it
           state.R = Teuchos::null;
@@ -375,7 +373,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
           newnewX = Teuchos::null;
           newnewMX = Teuchos::null;
 
-          Teuchos::Array<Teuchos::RefCountPtr<const MV> > curauxvecs = lobpcg_solver->getAuxVecs();
+          Teuchos::Array<Teuchos::RefCountPtr<const MV> > curauxvecs = bd_solver->getAuxVecs();
           Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > dummy;
           // ortho X against the aux vectors
           ortho->projectAndNormalize(*newX,newMX,dummy,Teuchos::null,curauxvecs);
@@ -383,7 +381,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
           state.X = newX;
           state.MX = newMX;
 
-          if (lobpcg_solver->hasP()) {
+          if (bd_solver->hasP()) {
             Teuchos::RefCountPtr<MV> newMP, newP = MVT::CloneCopy(*state.P);
             if (state.MP != Teuchos::null) {
               newMP = MVT::CloneCopy(*state.MP);
@@ -405,7 +403,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
             state.MP = Teuchos::null;
           }
           // set the new state
-          lobpcg_solver->initialize(state);
+          bd_solver->initialize(state);
         }
 
         if (numlocked == _maxLocked) {
@@ -414,7 +412,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
         }
       }
       else {
-        TEST_FOR_EXCEPTION(true,std::logic_error,"Anasazi::BlockDavidsonSolMgr::solve(): Invalid return from lobpcg_solver::iterate().");
+        TEST_FOR_EXCEPTION(true,std::logic_error,"Anasazi::BlockDavidsonSolMgr::solve(): Invalid return from bd_solver::iterate().");
       }
     }
     catch (std::exception e) {
@@ -455,10 +453,10 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
       int lclnum = insolver.size();
       std::vector<int> tosol(lclnum);
       for (int i=0; i<lclnum; i++) tosol[i] = i;
-      Teuchos::RefCountPtr<const MV> v = MVT::CloneView(*lobpcg_solver->getEvecs(),insolver);
+      Teuchos::RefCountPtr<const MV> v = MVT::CloneView(*bd_solver->getEvecs(),insolver);
       MVT::SetBlock(*v,tosol,*sol.Evecs);
       // set vals
-      std::vector<MagnitudeType> fromsolver = lobpcg_solver->getEigenvalues();
+      std::vector<MagnitudeType> fromsolver = bd_solver->getEigenvalues();
       for (unsigned int i=0; i<insolver.size(); i++) {
         sol.Evals[i] = fromsolver[insolver[i]];
       }
