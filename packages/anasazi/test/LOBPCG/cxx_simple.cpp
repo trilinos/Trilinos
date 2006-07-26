@@ -66,11 +66,13 @@ int main(int argc, char *argv[])
 
   bool testFailed;
   bool verbose = false;
+  bool debug = false;
   std::string filename("mhd1280b.cua");
   std::string which("LM");
 
   CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+  cmdp.setOption("debug","nodebug",&debug,"Print debugging information.");
   cmdp.setOption("sort",&which,"Targetted eigenvalues (SM or LM).");
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
 #ifdef HAVE_MPI
@@ -141,13 +143,16 @@ int main(int argc, char *argv[])
   if (verbose) {
     verbosity += Anasazi::FinalSummary + Anasazi::TimingDetails;
   }
+  if (debug) {
+    verbosity += Anasazi::Debug;
+  }
 
 
   // Eigensolver parameters
   int maxIters = 450;
   MagnitudeType tol = 1.0e-6;
   //
-  // Create parameter list to pass into solver manager
+  // Create parameter list to pass into the solver manager
   ParameterList MyPL;
   MyPL.set( "Verbosity", verbosity );
   MyPL.set( "Which", which );

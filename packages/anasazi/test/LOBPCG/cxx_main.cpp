@@ -67,12 +67,14 @@ int main(int argc, char *argv[])
   MyPID = Comm.MyPID();
 
   bool testFailed;
-  bool verbose = 0;
+  bool verbose = false;
+  bool debug = false;
   std::string filename("mhd1280b.cua");
   std::string which("LM");
 
   CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+  cmdp.setOption("debug","nodebug",&debug,"Print debugging information.");
   cmdp.setOption("sort",&which,"Targetted eigenvalues (SM or LM).");
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
 #ifdef HAVE_MPI
@@ -142,6 +144,9 @@ int main(int argc, char *argv[])
   int verbosity = Anasazi::Errors + Anasazi::Warnings;
   if (verbose) {
     verbosity += Anasazi::FinalSummary + Anasazi::TimingDetails;
+  }
+  if (debug) {
+    verbosity += Anasazi::Debug;
   }
 
 
