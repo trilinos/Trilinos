@@ -1540,7 +1540,7 @@ int ParseRfmt(char* fmt, int* perline, int* width, int* prec, int* flag)
        while ( strchr(tmp2+1,')') != NULL ) {
           tmp2 = strchr(tmp2+1,')');
        }
-       *(tmp2+1) = (int) NULL;
+       *(tmp2+1) = (char) NULL;
     }
     if (strchr(fmt,'P') != NULL)  /* Remove any scaling factor, which */
     {                             /* affects output only, not input */
@@ -1550,11 +1550,11 @@ int ParseRfmt(char* fmt, int* perline, int* width, int* prec, int* flag)
         tmp3 = strchr(fmt,'(')+1;
         len = tmp-tmp3;
         tmp2 = tmp3;
-        while ( *(tmp2+len) != (int) NULL ) {
+        while ( *(tmp2+len) != (char) NULL ) {
            *tmp2=*(tmp2+len);
            tmp2++; 
         }
-        *(strchr(fmt,')')+1) = (int) NULL;
+        *(strchr(fmt,')')+1) = (char) NULL;
       }
     }
     if (strchr(fmt,'E') != NULL) { 
