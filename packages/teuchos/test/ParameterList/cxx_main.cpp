@@ -27,6 +27,7 @@
 // @HEADER
 
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_getConst.hpp"
 #include "Teuchos_Version.hpp"
@@ -47,17 +48,14 @@ using namespace Teuchos;
 void print_break() { cout << "---------------------------------------------------" << endl; }
 double Plus ( double a, double b ) { return a+b; }
 
-int main(int argc, char *argv[])
+int main( int argc, char *argv[] )
 {
   bool verbose = true;
   int FailedTests = 0;
-  int procRank = 0;
   bool result;
 
-#ifdef HAVE_MPI
-  MPI_Init( &argc, &argv );
-  MPI_Comm_rank( MPI_COMM_WORLD, &procRank );
-#endif
+  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
+  const int procRank = Teuchos::GlobalMPISession::getRank();
 
   bool success = true;
 
@@ -69,9 +67,6 @@ int main(int argc, char *argv[])
   CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
   if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) {
     cout << "Processor "<< procRank <<", parse_return "<< parse_return << endl;
-#ifdef HAVE_MPI
-    MPI_Finalize();
-#endif
     cout << "End Result: TEST FAILED" << endl;
     return parse_return;
   }
@@ -840,13 +835,9 @@ int main(int argc, char *argv[])
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose,std::cerr,success);
   if(!success) ++FailedTests;
 
-#ifdef HAVE_MPI
-  MPI_Finalize();  
-#endif
-
   if ( FailedTests > 0 ) { 
     cout << "End Result: TEST FAILED" << endl;
-    return (-1); 
+    return 1; // Can't return negative numbers from main()!
   }
 
   if ( FailedTests == 0 )

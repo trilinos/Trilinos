@@ -124,6 +124,7 @@ XMLObject XMLParser::parse()
   bool done = false;
   int curopen = 0;  // number of currently open tags, or "do we process character data?"
   int gotRoot = 0;
+
   while (!done) {
     
     string tag, cdata;

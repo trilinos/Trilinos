@@ -26,17 +26,18 @@
 # ************************************************************************
 #@HEADER
 
-# The following line helps the test harness recover from build errors.
+EXEEXT = .exe
 
-all-local:
-	@echo ""
-	@echo "Trilinos package teuchos subdirectory example built successfully."
-	@echo ""
+noinst_PROGRAMS = XmlToParameterList
 
-if HAVE_TEUCHOS_EXTENDED
-XML_SUBDIR = XML
-endif
+XmlToParameterList_SOURCES = $(srcdir)/XmlToParameterList.cpp
 
-STANDARD_SUBDIRS = BLAS CommandLineProcessor DenseMatrix hilbert LAPACK ParameterList RefCountPtr TimeMonitor
+XmlToParameterList_DEPENDENCIES = $(top_builddir)/src/libteuchos.a Example1.xml
 
-SUBDIRS = $(STANDARD_SUBDIRS) $(XML_SUBDIR)
+XmlToParameterList_CXXFLAGS = -I$(top_srcdir)/src
+
+XmlToParameterList_LDADD = $(top_builddir)/src/libteuchos.a $(LIBS) $(FLIBS)
+
+Example1.xml:
+	cp $(srcdir)/_Example1.xml  Example1.xml
+	cp $(srcdir)/_Example2.xml  Example2.xml

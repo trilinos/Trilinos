@@ -777,6 +777,7 @@ AC_CONFIG_FILES([
 		example/ParameterList/Makefile
 		example/RefCountPtr/Makefile
 		example/TimeMonitor/Makefile
+		example/XML/Makefile
 		python/Makefile
 		python/src/Makefile
 		python/src/TRILINOS_HOME_DIR
