@@ -198,48 +198,12 @@ OUTPUT_EPETRA_ARRAY_ARGUMENT(Vector     )
 %include "EpetraExt_MapColoring.h"
 %include "EpetraExt_MapColoringIndex.h"
 
-namespace EpetraExt 
-{
-  int VectorToMatrixMarketFile(const char *filename, const Epetra_Vector & A,
-                               const char * matrixName=0,
-                               const char *matrixDescription=0,
-                               bool writeHeader=true);
-  int VectorToMatlabFile(const char *filename, const Epetra_Vector & A);
-
-  int MultiVectorToMatrixMarketFile(const char *filename, const Epetra_MultiVector & A,
-                                    const char * matrixName=0,
-                                    const char *matrixDescription=0,
-                                    bool writeHeader=true);
-  int MultiVectorToMatlabFile(const char *filename, const Epetra_MultiVector & A);
-
-  int RowMatrixToMatrixMarketFile(const char *filename, const Epetra_RowMatrix & A,
-                                  const char * matrixName=0,
-                                  const char *matrixDescription=0,
-                                  bool writeHeader=true);
-  int RowMatrixToMatlabFile(const char *filename, const Epetra_RowMatrix & A);
-
-  int BlockMapToMatrixMarketFile(const char *filename, const Epetra_BlockMap & blockMap,
-                                 const char * mapName=0,
-                                 const char *mapDescription=0,
-                                 bool writeHeader=true);
-
-  int MatrixMarketFileToBlockMap(const char *filename, const Epetra_Comm &
-                                 comm, Epetra_BlockMap * & OutBlockMap);
-
-  int MatrixMarketFileToMap(const char *filename, const Epetra_Comm &
-                                 comm, Epetra_Map * & OutMap);
-
-  int MatrixMarketFileToMultiVector(const char *filename, const Epetra_BlockMap & map, 
-                               Epetra_MultiVector * & OutVector);
-
-  int MatrixMarketFileToVector(const char *filename, const Epetra_BlockMap & map, 
-                               Epetra_Vector * & OutVector);
-
-  int MatrixMarketFileToCrsMatrix(const char *filename, const Epetra_BlockMap & map, 
-                               Epetra_CrsMatrix * & OutCrsMatrix);
-  int MatrixMarketFileToCrsMatrix(const char *filename, const Epetra_Map & map, 
-                               Epetra_CrsMatrix * & OutCrsMatrix);
-}
+%include "EpetraExt_MultiVectorIn.h"
+%include "EpetraExt_MultiVectorOut.h"
+%include "EpetraExt_CrsMatrixIn.h"
+%include "EpetraExt_RowMatrixOut.h"
+%include "EpetraExt_BlockMapIn.h"
+%include "EpetraExt_BlockMapOut.h"
 
 // The overloaded HDF5 Read() methods cannot be type-disambiguated in
 // python.  We therefore replace each overloaded Read() method with a
