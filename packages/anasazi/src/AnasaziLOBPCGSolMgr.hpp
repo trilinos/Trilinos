@@ -302,6 +302,13 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
         TEST_FOR_EXCEPTION(numnew <= 0,std::logic_error,"Anasazi::LOBPCGSolMgr::solve(): status test mistake.");
         // get the indices
         std::vector<int> indnew = locktest->whichVecs();
+
+        // don't lock more than _maxLocked; we didn't allocate enough space.
+        if (numlocked + numnew > _maxLocked) {
+          numnew = _maxLocked - numlocked;
+          indnew.resize(numnew);
+        }
+
         {
           // debug printing
           printer->print(Debug,"Locking vectors: ");
@@ -624,9 +631,9 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
 
   // print timing information
   Teuchos::TimeMonitor::summarize(printer->stream(TimingDetails));
-  _problem->setSolution(sol);
 
-  printer->stream(Debug) << "Returning " << sol.numVecs << " to eigenproblem." << endl;
+  _problem->setSolution(sol);
+  printer->stream(Debug) << "Returning " << sol.numVecs << " eigenpairs to eigenproblem." << endl;
 
   if (sol.numVecs < nev) return Unconverged; // return from LOBPCGSolMgr::solve() 
   return Converged; // return from LOBPCGSolMgr::solve() 
