@@ -328,5 +328,13 @@ int main(int argc, char** argv)
     }
   MPISession::finalize();
 
+  if (state != 0)
+    {
+      cout << "TEST FAILED" << endl;
+      return -1;
+    }
+
+  
+  cout << "TEST PASSED" << endl;
   return state;
 }
