@@ -98,7 +98,9 @@ int MatrixMarketFileToCrsMatrix(const char *filename,
 				Epetra_CrsMatrix * & A)
 {
   A = new Epetra_CrsMatrix(Copy, rowMap, 0);
-  return(EpetraExt::MatrixMarketFileToCrsMatrixHandle(filename, A, &rangeMap, &domainMap));
+  return(EpetraExt::MatrixMarketFileToCrsMatrixHandle(filename, A->Comm(), A,
+                                                      &rowMap,NULL,
+                                                      &rangeMap, &domainMap));
 } 
 
 ML_Comm *mlcomm;
@@ -135,10 +137,6 @@ int main(int argc, char *argv[])
 
   Epetra_Map *edgeMap=NULL, *nodeMap=NULL;
   Epetra_CrsMatrix *CCplusM=NULL, *Mass=NULL, *T=NULL, *Kn=NULL;
-  Epetra_CrsMatrix *Ttmp;
-  Epetra_Vector *epx;
-  Epetra_Vector *epb;
-  Epetra_Vector *xexact;
 
   // ================================================= //
   // READ IN MAPS FROM FILE                            //
@@ -169,8 +167,6 @@ int main(int argc, char *argv[])
   // ===================================================== //
 
   for (int i = 1; i <4; i++) {
-    Epetra_CrsMatrix *tmp;
-    Epetra_Map *rowmap,*colmap;
     datafile = argv[i];
     if (Comm.MyPID() == 0) {
       printf("reading %s ....\n",datafile); fflush(stdout);
