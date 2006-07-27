@@ -64,9 +64,9 @@ namespace Thyra
 
     bool doTest_;
 
-    double warningTol_;
+    ScalarMag warningTol_;
 
-    double errorTol_;
+    ScalarMag errorTol_;
   };
 }
 #endif

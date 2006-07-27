@@ -50,13 +50,13 @@ namespace Thyra
   THYRA_UNARY_VECTOR_OP_DECL(reciprocal, reciprocalInto, reciprocal, "reciprocal");
 
   /* */
-  THYRA_UNARY_VECTOR_ROP_DECL(norm1, norm_1, "1-norm");
+  THYRA_UNARY_VECTOR_ROP_MAG_DECL(norm1, norm_1, "1-norm");
 
   /* */
-  THYRA_UNARY_VECTOR_ROP_DECL(norm2, norm_2, "2-norm");
+  THYRA_UNARY_VECTOR_ROP_MAG_DECL(norm2, norm_2, "2-norm");
 
   /* */
-  THYRA_UNARY_VECTOR_ROP_DECL(normInf, norm_inf, "inf-norm");
+  THYRA_UNARY_VECTOR_ROP_MAG_DECL(normInf, norm_inf, "inf-norm");
   //template <class Scalar> 
   //  Scalar normInf(const Thyra::ConvertibleToVector<Scalar>& x);
 
@@ -64,10 +64,10 @@ namespace Thyra
   THYRA_UNARY_VECTOR_ROP_DECL(sum, sum, "sum of the elements");
 
   /* */ 
-  THYRA_UNARY_VECTOR_ROP_DECL(max, max, "max element");
+  THYRA_UNARY_VECTOR_ROP_MAG_DECL(max, max, "max element");
 
   /* */ 
-  THYRA_UNARY_VECTOR_ROP_DECL(min, min, "min element");
+  THYRA_UNARY_VECTOR_ROP_MAG_DECL(min, min, "min element");
 
   /** 
    * \relates Vector

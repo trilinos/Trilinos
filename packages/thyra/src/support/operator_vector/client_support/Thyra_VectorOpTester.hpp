@@ -153,6 +153,7 @@ namespace Thyra
   {
 
     typedef Teuchos::ScalarTraits<Scalar> ST;
+    ScalarMag err = ST::magnitude(ST::zero());
     
     if (spec_.doTest())
       {
@@ -171,13 +172,12 @@ namespace Thyra
         /* do the operation elementwise. For off-processor elements, this is a no-op */
         for (int i=0; i<space_.dim(); i++)
           {
-            *out_ << "i=" << i << " of N=" << space_.dim() << endl;
             Scalar a_i = a[i];
             Scalar b_i = b[i];
             y[i] = a_i + b_i;
           }
 
-        ScalarMag err = normInf(x-y);
+        err = normInf(x-y);
 
         *out_ << "|sum error|=" << err << endl;
         if (err > spec_.errorTol())
@@ -197,7 +197,7 @@ namespace Thyra
       {
         *out_ << "skipping vector addition test..." << endl;
       }
-    *out_ << "vector addition test PASSED: tol = " 
+    *out_ << "vector addition test PASSED: error=" << err << ", tol = " 
          << spec_.errorTol() << endl;
     return true;
   }
@@ -212,6 +212,8 @@ namespace Thyra
     
     typedef Teuchos::ScalarTraits<Index> IST;
     typedef Teuchos::ScalarTraits<Scalar> ST;
+
+    ScalarMag err = ST::magnitude(ST::zero());
 
     if (spec_.doTest())
       {
@@ -230,7 +232,7 @@ namespace Thyra
         unsigned int seed = 107*N % 101;
         ST::seedrandom( seed );
 
-        ScalarMag err = 0.0;
+
 
         for (int t=0; t<nTrials; t++)
           {
@@ -269,7 +271,7 @@ namespace Thyra
       {
         *out_ << "skipping vector setElementUsingBracket test..." << endl;
       }
-    *out_ << "vector setElementUsingBracket test PASSED: tol = " 
+    *out_ << "vector setElementUsingBracket test PASSED: error=" << err << ", tol = " 
          << spec_.errorTol() << endl;
     return true;
   }
@@ -281,6 +283,9 @@ namespace Thyra
   inline bool VectorOpTester<Scalar>
   ::dotStarTest() const 
   {
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    ScalarMag err = ST::magnitude(ST::zero());
+
     if (spec_.doTest())
       {
         *out_ << "running vector dotStar test..." << endl;
@@ -296,7 +301,7 @@ namespace Thyra
         x = dotStar(a,b);
         z = dotSlash(x, b);
         
-        ScalarMag err = normInf(a-z);
+        err = normInf(a-z);
 
         *out_ << "|dotStar error|=" << err << endl;
         if (err > spec_.errorTol())
@@ -316,7 +321,7 @@ namespace Thyra
       {
         *out_ << "skipping vector dotStar test..." << endl;
       }
-    *out_ << "vector dotStar test PASSED: tol = " 
+    *out_ << "vector dotStar test PASSED: error=" << err << ", tol = " 
          << spec_.errorTol() << endl;
     return true;
   }
@@ -325,6 +330,9 @@ namespace Thyra
   inline bool VectorOpTester<Scalar>
   ::scalarMultTest() const 
   {
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    ScalarMag err = ST::magnitude(ST::zero());
+
     if (spec_.doTest())
       {
         *out_ << "running vector scalarMult test..." << endl;
@@ -336,17 +344,18 @@ namespace Thyra
 
 
         /* do the operation with member functions */
-        x = 3.14*a;
+        Scalar alpha = 3.14;
+        x = alpha * a;
 
         /* do the operation elementwise */
 
         for (int i=0; i<space_.dim(); i++)
           {
             Scalar a_i = a[i];
-            y[i]= 3.14*a_i;
+            y[i]= alpha *a_i;
           }
 	
-        ScalarMag err = normInf(x-y);
+        err = normInf(x-y);
 
         *out_ << "|scalarMult error|=" << err << endl;
         if (err > spec_.errorTol())
@@ -366,7 +375,7 @@ namespace Thyra
       {
         *out_ << "skipping vector scalarMult test..." << endl;
       }
-    *out_ << "vector scalarMult test PASSED: tol = " 
+    *out_ << "vector scalarMult test PASSED: error=" << err << ", tol = " 
          << spec_.errorTol() << endl;
     return true;
   }
@@ -375,6 +384,9 @@ namespace Thyra
   inline bool VectorOpTester<Scalar>
   ::overloadedUpdateTest() const 
   {
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    ScalarMag err = ST::magnitude(ST::zero());
+
     if (spec_.doTest())
       {
         *out_ << "running vector overloadedUpdate test..." << endl;
@@ -388,17 +400,19 @@ namespace Thyra
 
 
         /* do the operation with member functions */
-        x = 3.14*a + 1.4*b;
+        Scalar alpha = 3.14;
+        Scalar beta = 1.4;
+        x = alpha*a + beta*b;
 
         /* do the operation elementwise */
         for (int i=0; i<space_.dim(); i++)
           {
             Scalar a_i = a[i];
             Scalar b_i = b[i];
-            y[i] = 3.14*a_i + 1.4*b_i;
+            y[i] = alpha*a_i + beta*b_i;
           }
 	
-        ScalarMag err = normInf(x-y);
+        err = normInf(x-y);
 
         *out_ << "|overloadedUpdate error|=" << err << endl;
         if (err > spec_.errorTol())
@@ -418,7 +432,7 @@ namespace Thyra
       {
         *out_ << "skipping vector overloadedUpdate test..." << endl;
       }
-    *out_ << "vector overloadedUpdate test PASSED: tol = " 
+    *out_ << "vector overloadedUpdate test PASSED: error=" << err << ", tol = " 
          << spec_.errorTol() << endl;
     return true;
   }
@@ -428,6 +442,9 @@ namespace Thyra
   ::reciprocalTest() const 
   {
 #ifdef TRILINOS_6
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    ScalarMag err = ST::magnitude(ST::zero());
+
     if (spec_.doTest())
       {
         *out_ << "running vector reciprocal test..." << endl;
@@ -447,7 +464,7 @@ namespace Thyra
             Scalar a_i = a[i];
             if (a_i != Teuchos::ScalarTraits<Scalar>::zero()) 
               {
-                y[i] = 1.0/a_i;
+                y[i] = Teuchos::ScalarTraits<Scalar>::one()/a_i;
               }
             else
               {
@@ -458,7 +475,7 @@ namespace Thyra
         
         Vector<Scalar> x = space_.createMember();
         int tDenomsAreOK = Thyra::VInvTest(*(a.constPtr()), x.ptr().get());
-        ScalarMag err = (x - y).norm2();
+        err = (x - y).norm2();
 
 #ifdef HAVE_MPI
         int localDenomsAreOK = denomsAreOK;
@@ -489,7 +506,7 @@ namespace Thyra
       {
         *out_ << "skipping vector reciprocal test..." << endl;
       }
-    *out_ << "vector reciprocal test PASSED: tol = " 
+    *out_ << "vector reciprocal test PASSED: error=" << err << ", tol = " 
          << spec_.errorTol() << endl;
 #endif
     return true;
@@ -500,6 +517,9 @@ namespace Thyra
   ::minQuotientTest() const 
   {
 #ifdef TRILINOS_6
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    ScalarMag err = ST::magnitude(ST::zero());
+
     if (spec_.doTest())
       {
         *out_ << "running vector minQuotient test..." << endl;
@@ -534,7 +554,7 @@ namespace Thyra
         Scalar tMinQ = Thyra::VMinQuotient(*(a.constPtr()), *(b.constPtr()));
         *out_ << "trilinos minQ = " << tMinQ << endl;
         *out_ << "elemwise minQ = " << minQ << endl;
-        ScalarMag err = ST::magnitude(minQ - tMinQ);
+        err = ST::magnitude(minQ - tMinQ);
         
         *out_ << "min quotient error=" << err << endl;
         if (err > spec_.errorTol())
@@ -553,7 +573,7 @@ namespace Thyra
       {
         *out_ << "skipping min quotient test..." << endl;
       }
-    *out_ << "min quotient test PASSED: tol = " 
+    *out_ << "min quotient test PASSED: error=" << err << ", tol = " 
          << spec_.errorTol() << endl;
 #endif
     return true;
@@ -566,6 +586,9 @@ namespace Thyra
   ::constraintMaskTest() const 
   {
 #ifdef TRILINOS_6
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    ScalarMag err = ST::magnitude(ST::zero());
+
     if (spec_.doTest())
       {
         *out_ << "running vector constraintMask test..." << endl;
@@ -613,7 +636,7 @@ namespace Thyra
 	
         Vector<Scalar> m = space_.createMember();
         int tAllFeasible = Thyra::VConstrMask(*(a.constPtr()), *(c.constPtr()), m.ptr().get());
-        ScalarMag err = (m - y).norm2();
+        err = (m - y).norm2();
 
 #ifdef HAVE_MPI
         int localAllFeas = allFeasible;
@@ -646,7 +669,7 @@ namespace Thyra
       {
         *out_ << "skipping vector constraintMask test..." << endl;
       }
-    *out_ << "vector constraintMask test PASSED: tol = " 
+    *out_ << "vector constraintMask test PASSED: error=" << err << ", tol = " 
          << spec_.errorTol() << endl;
 #endif
     return true;
@@ -658,6 +681,9 @@ namespace Thyra
   ::compareToScalarTest() const 
   {
 #ifdef TRILINOS_6
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    ScalarMag err = ST::magnitude(ST::zero());
+
     if (spec_.doTest())
       {
         *out_ << "running vector compare-to-scalar test..." << endl;
@@ -681,7 +707,7 @@ namespace Thyra
             y[i] = fabs(a_i) >= s ;
           }
 	
-        ScalarMag err = normInf(x-y);
+        err = normInf(x-y);
 
         *out_ << "|compare-to-scalar error|=" << err << endl;
         if (err > spec_.errorTol())
@@ -701,7 +727,7 @@ namespace Thyra
       {
         *out_ << "skipping vector compare-to-scalar test..." << endl;
       }
-    *out_ << "vector compare-to-scalar test PASSED: tol = " 
+    *out_ << "vector compare-to-scalar test PASSED: error=" << err << ", tol = " 
          << spec_.errorTol() << endl;
 #endif
     return true;
@@ -713,6 +739,9 @@ namespace Thyra
   ::indexTest() const 
   {
 #ifdef TRILINOS_6
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    ScalarMag err = ST::magnitude(ST::zero());
+
     if (spec_.doTest())
       {
         *out_ << "running vector index test..." << endl;
@@ -734,7 +763,7 @@ namespace Thyra
             y[i] =  fabs(a_i) >= s;
           }
 	
-        ScalarMag err = normInf(x-y);
+        err = normInf(x-y);
 
         *out_ << "|index error|=" << err << endl;
         if (err > spec_.errorTol())
@@ -754,7 +783,7 @@ namespace Thyra
       {
         *out_ << "skipping vector index test..." << endl;
       }
-    *out_ << "vector index test PASSED: tol = " 
+    *out_ << "vector index test PASSED: error=" << err << ", tol = " 
          << spec_.errorTol() << endl;
 #endif
     return true;

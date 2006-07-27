@@ -46,7 +46,7 @@ namespace Thyra
   template <class Scalar> inline  
   void zeroOut(Vector<Scalar>& x)
   {
-    setToConstant(x, 0.0);
+    setToConstant(x, Teuchos::ScalarTraits<Scalar>::zero());
   }
 
   
@@ -58,22 +58,22 @@ namespace Thyra
     THYRA_UNARY_VECTOR_OP(reciprocal, reciprocalInto, reciprocal, "reciprocal")
     
   /* */
-    THYRA_UNARY_VECTOR_ROP(norm1, norm_1, "1-norm")
+    THYRA_UNARY_VECTOR_ROP_MAG(norm1, norm_1, "1-norm")
 
   /* */
-    THYRA_UNARY_VECTOR_ROP(norm2, norm_2, "2-norm")
+    THYRA_UNARY_VECTOR_ROP_MAG(norm2, norm_2, "2-norm")
 
   /* */
-    THYRA_UNARY_VECTOR_ROP(normInf, norm_inf, "inf-norm")
+    THYRA_UNARY_VECTOR_ROP_MAG(normInf, norm_inf, "inf-norm")
 
   /* */ 
     THYRA_UNARY_VECTOR_ROP(sum, sum, "sum of the elements")
 
   /* */ 
-    THYRA_UNARY_VECTOR_ROP(max, max, "max element")
+    THYRA_UNARY_VECTOR_ROP_MAG(max, max, "max element")
 
   /* */ 
-    THYRA_UNARY_VECTOR_ROP(min, min, "min element")
+    THYRA_UNARY_VECTOR_ROP_MAG(min, min, "min element")
 
   /**
    * \relates ConstVector
@@ -141,7 +141,8 @@ namespace Thyra
                    Vector<Scalar>& result)
     {
       zeroOut(result);
-      Thyra::ele_wise_prod(1.0, *(toVector(x).constPtr()), *(toVector(y).constPtr()), 
+      Thyra::ele_wise_prod(Teuchos::ScalarTraits<Scalar>::one(), 
+                           *(toVector(x).constPtr()), *(toVector(y).constPtr()), 
                            result.ptr().get());
     }
 
@@ -169,7 +170,8 @@ namespace Thyra
                    Vector<Scalar>& result)
     {
       zeroOut(result);
-      Thyra::ele_wise_divide(1.0, *(toVector(x).constPtr()), *(toVector(y).constPtr()), 
+      Thyra::ele_wise_divide(Teuchos::ScalarTraits<Scalar>::one(), 
+                             *(toVector(x).constPtr()), *(toVector(y).constPtr()), 
                              result.ptr().get());
     }
 

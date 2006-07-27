@@ -41,27 +41,42 @@ using namespace Teuchos;
 using namespace Thyra;
 
 
+#define SKIP_BLOCK_TESTS
+
+#define TEST_FLOATS
+//#define TEST_COMPLEX
+
 template <class Scalar> inline 
-void runVectorTests(int n, Teuchos::RefCountPtr<Teuchos::FancyOStream>& out)
+bool runVectorTests(int n, Teuchos::RefCountPtr<Teuchos::FancyOStream>& out)
 {
+  typedef typename Teuchos::ScalarTraits<Scalar> ST;
+  typedef typename ST::magnitudeType Mag;
+
+  bool ok = true;
+  
+  Mag epsErr = 1.0e1 * ST::prec();
+  Mag epsWarn = 1.0e2 * epsErr;
+
   /* ------- test on a monolithic space ------------ */
   
   *out << "======= Testing on a monolithic vector space ======" << std::endl;
   VectorSpace<Scalar> space 
     = new DefaultSpmdVectorSpace<Scalar>(DefaultComm<Index>::getComm(),n,-1);
   
-  VectorOpTester<Scalar> tester(space, TestSpecifier<Scalar>(true, 1.0e-13, 1.0e-10));
+  VectorOpTester<Scalar> tester(space, TestSpecifier<Scalar>(true, epsErr, epsWarn));
   
-  tester.runAllTests();
+  ok = tester.runAllTests() && ok;
   
+
+#ifndef SKIP_BLOCK_TESTS
   /* -------- test on a block space ----------------*/
   *out << "======= Testing on a block vector space ======" << std::endl;
   VectorSpace<Scalar> blockSpace = productSpace(space, space);
   
   tester = VectorOpTester<Scalar>(blockSpace, 
-                                  TestSpecifier<Scalar>(true, 1.0e-13, 1.0e-10));
+                                  TestSpecifier<Scalar>(true, epsErr, epsWarn));
   
-  tester.runAllTests();           
+  ok = tester.runAllTests() && ok;           
   
   
   
@@ -71,9 +86,12 @@ void runVectorTests(int n, Teuchos::RefCountPtr<Teuchos::FancyOStream>& out)
   VectorSpace<Scalar> recSpace = productSpace(space, blockSpace);
   
   tester = VectorOpTester<Scalar>(recSpace, 
-                                  TestSpecifier<Scalar>(true, 1.0e-13, 1.0e-10));
+                                  TestSpecifier<Scalar>(true, epsErr, epsWarn));
   
-  tester.runAllTests();           
+  ok = tester.runAllTests() && ok;
+#endif           
+
+  return ok;
 }
 
 
@@ -103,29 +121,44 @@ int main( int argc, char *argv[] )
     *out << "========== TESTING ON DOUBLES ==========================" << std::endl; 
     *out << "========================================================" << std::endl;
 
-    runVectorTests<double>(n, out);
+    success = runVectorTests<double>(n, out) ;
 
-#ifdef BLAH
 
-    /* testing on doubles */ 
+#ifdef TEST_FLOATS
+    /* testing on floats */ 
     *out << "========================================================" << std::endl;
     *out << "========== TESTING ON FLOATS ===========================" << std::endl; 
     *out << "========================================================" << std::endl;
 
-    runVectorTests<float>(n, out);
+    success = runVectorTests<float>(n, out) && success;
+#endif
 
-    /* testing on doubles */ 
+#if defined(TEST_COMPLEX) && defined(HAVE_COMPLEX) && defined(HAVE_TEUCHOS_COMPLEX)
+
+    /* testing on complex */ 
     *out << "========================================================" << std::endl;
     *out << "========== TESTING ON COMPLEX===========================" << std::endl; 
     *out << "========================================================" << std::endl;
 
-    runVectorTests<complex>(n, out);
+    Teuchos::ScalarTraits<std::complex<double> >::magnitudeType fred;
 
-    #endif
-    
+    fred = Teuchos::ScalarTraits<std::complex<double> >::magnitude(Teuchos::ScalarTraits<std::complex<double> >::zero());
+    success = runVectorTests<std::complex<double> >(n, out) && success;
+
+#endif
     
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true,out.get()?*out:std::cerr,success)
 
+    if (success)
+      {
+        *out << "all tests PASSED!" << std::endl;
+        return 0;
+      }
+    else
+      {
+        *out << "at least one test FAILED!" << std::endl;
+        return 1;
+      }
 }
 

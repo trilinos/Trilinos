@@ -30,7 +30,7 @@
 #define THYRA_VECOPMACROS_HPP
 
 #include "Thyra_ConfigDefs.hpp"
-
+#include "Teuchos_ScalarTraits.hpp"
 
 /** \brief Boilerplate code for defining unary vector transformation
  * operations.
@@ -69,7 +69,27 @@
   void intoOpName(const Converter<Scalar, ConstVector<Scalar> >& donor,         \
                   Vector<Scalar>& acceptor)
 
-/** \brief Boilerplate code for defining unary vector reduction operations.
+/** \brief Boilerplate code for defining unary vector reduction operations that
+ * return a magnitude type.
+ */ 
+#define THYRA_UNARY_VECTOR_ROP_MAG(funcName, ROpName, descr)    \
+  template <class Scalar> inline                            \
+  typename Teuchos::ScalarTraits<Scalar>::magnitudeType funcName(const Converter<Scalar, ConstVector<Scalar> >& x) \
+  {                                                         \
+    Thyra::ConstVector<Scalar> y = Thyra::toVector(x);      \
+    return Thyra::ROpName(*(y.constPtr()));                      \
+  }                                                                    
+
+/** \brief Boilerplate code for declaring unary vector reduction operation sthat
+ * return a magnitude type.
+ */ 
+#define THYRA_UNARY_VECTOR_ROP_MAG_DECL(funcName, ROpName, descr) \
+  template <class Scalar>                                     \
+  typename Teuchos::ScalarTraits<Scalar>::magnitudeType funcName(const Converter<Scalar, ConstVector<Scalar> >& x)           
+
+
+/** \brief Boilerplate code for defining unary vector reduction operations that
+ * return a scalar.
  */ 
 #define THYRA_UNARY_VECTOR_ROP(funcName, ROpName, descr)    \
   template <class Scalar> inline                            \
@@ -79,7 +99,8 @@
     return Thyra::ROpName(*(y.constPtr()));                      \
   }                                                                    
 
-/** \brief Boilerplate code for declaring unary vector reduction operations.
+/** \brief Boilerplate code for declaring unary vector reduction operations
+ * that return a scalar.
  */ 
 #define THYRA_UNARY_VECTOR_ROP_DECL(funcName, ROpName, descr) \
   template <class Scalar>                                     \
