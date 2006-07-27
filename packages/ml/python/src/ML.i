@@ -118,6 +118,7 @@ print r.Norm2()
 #include "Epetra_Map.h"
 #include "Epetra_FEVector.h"
 #include "Epetra_Operator.h"
+#include "Epetra_InvOperator.h"
 #include "Epetra_RowMatrix.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_VbrMatrix.h"

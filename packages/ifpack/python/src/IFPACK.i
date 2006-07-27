@@ -68,8 +68,9 @@ Finally, the following functions are avaiable in the IFPACK module:
 #include "Epetra_MpiComm.h"
 #endif
 #include "Epetra_FEVector.h"
-#include "Epetra_RowMatrix.h"
 #include "Epetra_Operator.h"
+#include "Epetra_InvOperator.h"
+#include "Epetra_RowMatrix.h"
 #include "Epetra_VbrMatrix.h"
 #include "Epetra_BasicRowMatrix.h"
 #include "Epetra_JadMatrix.h"
@@ -81,12 +82,8 @@ Finally, the following functions are avaiable in the IFPACK module:
 #include "Epetra_PyOperator.h"
 #include "Epetra_PyRowMatrix.h"
 
-// Teuchos include
-#include "Teuchos_ParameterList.hpp"
-
 // Teuchos Python utility code
 #include "Teuchos_PythonParameter.hpp"
-#include "Teuchos_PyDictParameterList.hpp"
 
 // IFPACK includes
 #include "Ifpack.h"

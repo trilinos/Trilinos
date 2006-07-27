@@ -114,17 +114,17 @@ namespace EpetraExt {
 //   {
 //     return(MatrixMarketFileToCrsMatrixHandle(filename, A));
 //   }
-  int MatrixMarketFileToCrsMatrix(const char *filename, const Epetra_BlockMap & map, 
-                               Epetra_CrsMatrix * & OutCrsMatrix)
-  {
-    // MS // this works out only for serial runs
-    if (map.Comm().NumProc() != 1)
-      EPETRA_CHK_ERR(-2);
-    if (map.NumGlobalElements() != map.NumGlobalPoints())
-      EPETRA_CHK_ERR(-1);
-    Epetra_Map map2(map.NumGlobalElements(), map.IndexBase(), map.Comm());
-    return(MatrixMarketFileToCrsMatrix(filename, map2, OutCrsMatrix));
-  }
+//   int MatrixMarketFileToCrsMatrix(const char *filename, const Epetra_BlockMap & map, 
+//                                Epetra_CrsMatrix * & OutCrsMatrix)
+//   {
+//     // MS // this works out only for serial runs
+//     if (map.Comm().NumProc() != 1)
+//       EPETRA_CHK_ERR(-2);
+//     if (map.NumGlobalElements() != map.NumGlobalPoints())
+//       EPETRA_CHK_ERR(-1);
+//     Epetra_Map map2(map.NumGlobalElements(), map.IndexBase(), map.Comm());
+//     return(MatrixMarketFileToCrsMatrix(filename, map2, OutCrsMatrix));
+//   }
 }
 %}
 
@@ -205,9 +205,10 @@ OUTPUT_EPETRA_ARRAY_ARGUMENT(Vector     )
 %include "EpetraExt_BlockMapIn.h"
 %include "EpetraExt_BlockMapOut.h"
 
-// The overloaded HDF5 Read() methods cannot be type-disambiguated in
-// python.  We therefore replace each overloaded Read() method with a
-// python version that has the type in the method name.  For example,
+// The overloaded HDF5 and XMLReader Read() methods cannot be
+// type-disambiguated in python.  We therefore replace selected
+// overloaded Read() methods with a python version that has the type
+// in the method name.  For example,
 //
 //   void HDF5::Read(std::string, Epetra_Map *&)
 //
@@ -216,6 +217,7 @@ OUTPUT_EPETRA_ARRAY_ARGUMENT(Vector     )
 //   HDF5.ReadMap(str) -> Epetra.Map
 //
 // These translations are made possible by the following macro:
+//
 %define READ_EPETRA_CLASS(ClassName)
 Epetra_ ## ClassName * Read ## ClassName(string name)
 {
