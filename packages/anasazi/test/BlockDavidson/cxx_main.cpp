@@ -26,74 +26,74 @@
 // ***********************************************************************
 // @HEADER
 //
-//  This test is for the internal utilities that are used by the modal analysis solver.
+// This test is for BlockDavidson solving a generalized (Ax=Bxl) real Hermitian
+// eigenvalue problem, using the BlockDavidsonSolMgr solver manager.
 //
 #include "AnasaziConfigDefs.hpp"
-#include "AnasaziBasicEigenproblem.hpp"
+#include "AnasaziTypes.hpp"
+
 #include "AnasaziEpetraAdapter.hpp"
-#include "AnasaziBlockDavidson.hpp"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Vector.h"
-#include "AnasaziBasicSort.hpp"
-#include "AnasaziBasicOutputManager.hpp"
 
-#ifdef EPETRA_MPI
+#include "AnasaziBasicEigenproblem.hpp"
+#include "AnasaziBlockDavidsonSolMgr.hpp"
+#include "Teuchos_CommandLineProcessor.hpp"
+#ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
 #include <mpi.h>
 #else
 #include "Epetra_SerialComm.h"
 #endif
-#include "Epetra_Map.h"
 
 #include "ModeLaplace1DQ1.h"
 
+using namespace Teuchos;
+
 int main(int argc, char *argv[]) 
 {
-  int i;
-  int info = 0;
-  
-#ifdef EPETRA_MPI
-  
+  bool boolret;
+  int MyPID;
+
+#ifdef HAVE_MPI
   // Initialize MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
-
 #else
-
   Epetra_SerialComm Comm;
 
 #endif
-  
-  int MyPID = Comm.MyPID();
-  
-  bool testFailed = false;
-  bool verbose = 0;
-  std::string which("SM");
-  if (argc>1) {
-    if (argv[1][0]=='-' && argv[1][1]=='v') {
-      verbose = true;
-    }
-    else {
-      which = argv[1];
-    }
+  MyPID = Comm.MyPID();
+
+  bool testFailed;
+  bool verbose = false;
+  bool debug = false;
+  std::string filename("mhd1280b.cua");
+  std::string which("LM");
+
+  CommandLineProcessor cmdp(false,true);
+  cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+  cmdp.setOption("debug","nodebug",&debug,"Print debugging information.");
+  cmdp.setOption("sort",&which,"Targetted eigenvalues (SM or LM).");
+  if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
+#ifdef HAVE_MPI
+    MPI_Finalize();
+#endif
+    return -1;
   }
-  if (argc>2) {
-    if (argv[2][0]=='-' && argv[2][1]=='v') {
-      verbose = true;
-    }
-    else {
-      which = argv[2];
-    }
-  }
-  
+
+  typedef double ScalarType;
+  typedef ScalarTraits<ScalarType>                   SCT;
+  typedef SCT::magnitudeType               MagnitudeType;
+  typedef Epetra_MultiVector                          MV;
+  typedef Epetra_Operator                             OP;
+  typedef Anasazi::MultiVecTraits<ScalarType,MV>     MVT;
+  typedef Anasazi::OperatorTraits<ScalarType,MV,OP>  OPT;
+  const ScalarType ONE  = SCT::one();
+
   if (verbose && MyPID == 0) {
     cout << Anasazi::Anasazi_Version() << endl << endl;
   }
-  
-  Anasazi::ReturnType returnCode = Anasazi::Ok;  
-
-  typedef Epetra_MultiVector MV;
-  typedef Epetra_Operator OP;
 
   //  Problem information
   int space_dim = 1;
@@ -102,110 +102,135 @@ int main(int argc, char *argv[])
   std::vector<int> elements( space_dim );
   elements[0] = 100;
 
-  // Create default output manager 
-  Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM = Teuchos::rcp( new Anasazi::BasicOutputManager<double>() );
+  // Create problem
+  RefCountPtr<ModalProblem> testCase = rcp( new ModeLaplace1DQ1(Comm, brick_dim[0], elements[0]) );
+  //
+  // Get the stiffness and mass matrices
+  RefCountPtr<Epetra_CrsMatrix> K = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getStiffness()), false );
+  RefCountPtr<Epetra_CrsMatrix> M = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getMass()), false );
+  //
+  // Create the initial vectors
+  int blockSize = 5;
+  RefCountPtr<Epetra_MultiVector> ivec = rcp( new Epetra_MultiVector(K->OperatorDomainMap(), blockSize) );
+  ivec->Random();
+
+  // Create eigenproblem
+  const int nev = 5;
+  RefCountPtr<Anasazi::BasicEigenproblem<ScalarType,MV,OP> > problem =
+    rcp( new Anasazi::BasicEigenproblem<ScalarType,MV,OP>(K,M,ivec) );
+  //
+  // Inform the eigenproblem that the operator K is symmetric
+  problem->setHermitian(true);
+  //
+  // Set the number of eigenvalues requested
+  problem->setNEV( nev );
+  //
+  // Inform the eigenproblem that you are done passing it information
+  boolret = problem->setProblem();
+  if (boolret != true) {
+    if (verbose && MyPID == 0) {
+      cout << "Anasazi::BasicEigenproblem::SetProblem() returned with error." << endl
+           << "End Result: TEST FAILED" << endl;	
+    }
+#ifdef HAVE_MPI
+    MPI_Finalize() ;
+#endif
+    return -1;
+  }
+
 
   // Set verbosity level
+  int verbosity = Anasazi::Errors + Anasazi::Warnings;
   if (verbose) {
-    MyOM->setVerbosity( Anasazi::FinalSummary + Anasazi::TimingDetails );
+    verbosity += Anasazi::FinalSummary + Anasazi::TimingDetails;
+  }
+  if (debug) {
+    verbosity += Anasazi::Debug;
   }
 
-  // Create problem
-  Teuchos::RefCountPtr<ModalProblem> testCase = Teuchos::rcp( new ModeLaplace1DQ1(Comm, brick_dim[0], elements[0]) );
-
-  // Get the stiffness and mass matrices
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> K = Teuchos::rcp( const_cast<Epetra_CrsMatrix *>(testCase->getStiffness()), false );
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> M = Teuchos::rcp( const_cast<Epetra_CrsMatrix *>(testCase->getMass()), false );
 
   // Eigensolver parameters
-  int nev = 4;
-  int blockSize = 5;
-  int maxBlocks = 8;
-  int maxIters = 500;
-  double tol = 1.0e-6;
+  int numBlocks = 8;
+  int maxRestarts = 100;
+  MagnitudeType tol = 1.0e-6;
   //
-  // Create parameter list to pass into solver
-  //
-  Teuchos::ParameterList MyPL;
+  // Create parameter list to pass into the solver manager
+  ParameterList MyPL;
+  MyPL.set( "Verbosity", verbosity );
+  MyPL.set( "Which", which );
   MyPL.set( "Block Size", blockSize );
-  MyPL.set( "Max Blocks", maxBlocks );
-  MyPL.set( "Max Iters", maxIters );
-  MyPL.set( "Tol", tol );
-  
-  // Create eigenproblem
+  MyPL.set( "Num Blocks", numBlocks );
+  MyPL.set( "Maximum Restarts", maxRestarts );
+  MyPL.set( "Convergence Tolerance", tol );
+  MyPL.set( "Use Locking", false );               // finish: re-enable this when locking is fully implemented
+  MyPL.set( "Locking Tolerance", tol/10 );
+  //
+  // Create the solver manager
+  Anasazi::BlockDavidsonSolMgr<ScalarType,MV,OP> MySolverMan(problem, MyPL);
 
-  Teuchos::RefCountPtr<Epetra_MultiVector> ivec = Teuchos::rcp( new Epetra_MultiVector(K->OperatorDomainMap(), blockSize) );
-  ivec->Random();
-  
-  Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double, MV, OP> > MyProblem =
-    Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>(K, M, ivec) );
-  
-  // Inform the eigenproblem that the operator A is symmetric
-  MyProblem->SetSymmetric(true);
-  
-  // Set the number of eigenvalues requested and the blocksize the solver should use
-  MyProblem->SetNEV( nev );
-
-  // Inform the eigenproblem that you are finishing passing it information
-  info = MyProblem->SetProblem();
-  if (info) {
-    MyOM->stream(Anasazi::Error) << "Anasazi::BasicEigenproblem::SetProblem() returned with code : "<< info << endl;
-  }
-
-  // Create the sort manager
-  Teuchos::RefCountPtr<Anasazi::BasicSort<double, MV, OP> > MySM = 
-     Teuchos::rcp( new Anasazi::BasicSort<double, MV, OP>(which) );
-
-  // Create the eigensolver  
-  Anasazi::BlockDavidson<double, MV, OP> MySolver(MyProblem, MySM, MyOM, MyPL);
-  
-  // Solve the problem to the specified tolerances or length  
-  returnCode = MySolver.solve();
-  if (returnCode != Anasazi::Ok)
+  // Solve the problem to the specified tolerances or length
+  Anasazi::ReturnType returnCode = MySolverMan.solve();
+  testFailed = false;
+  if (returnCode != Anasazi::Converged) {
     testFailed = true;
-  
-  // Get the eigenvalues and eigenvectors from the eigenproblem
-  Teuchos::RefCountPtr<std::vector<double> > evals = MyProblem->GetEvals();
-  Teuchos::RefCountPtr<Epetra_MultiVector> evecs = MyProblem->GetEvecs();
-  
-  if (verbose)
-    info = testCase->eigenCheck( *evecs, &(*evals)[0], 0 );
-  
-  // Compute the direct residual
-  std::vector<double> normV( evecs->NumVectors() );
-  Teuchos::SerialDenseMatrix<int,double> T(evecs->NumVectors(), evecs->NumVectors());
-  for (int i=0; i<evecs->NumVectors(); i++)
-    T(i,i) = (*evals)[i];
-  Epetra_MultiVector Kvec( K->OperatorDomainMap(), evecs->NumVectors() );
-  K->Apply( *evecs, Kvec );  
-  Epetra_MultiVector Mvec( M->OperatorDomainMap(), evecs->NumVectors() );
-  M->Apply( *evecs, Mvec );  
-  Anasazi::MultiVecTraits<double,Epetra_MultiVector>::MvTimesMatAddMv( -1.0, Mvec, T, 1.0, Kvec );
-  info = Kvec.Norm2( &normV[0] );
-  assert( info==0 );
-  
-  for ( i=0; i<nev; i++ ) {
-    if ( Teuchos::ScalarTraits<double>::magnitude(normV[i]/(*evals)[i]) > 5.0e-5 )
-      testFailed = true;
   }
 
-#ifdef EPETRA_MPI
+  // Get the eigenvalues and eigenvectors from the eigenproblem
+  Anasazi::Eigensolution<ScalarType,MV> sol = problem->getSolution();
+  std::vector<MagnitudeType> evals = sol.Evals;
+  RefCountPtr<MV> evecs = sol.Evecs;
+  int numev = sol.numVecs;
 
+  if (numev > 0) {
+
+    /* finish: this code has bugs: it only works properly when which == "SM" or "SR"
+    // Check the problem against the analytical solutions
+    if (verbose && which == "SM") {
+      info = testCase->eigenCheck( *evecs, &evals[0], 0 );
+    }
+    */
+
+    // Compute the direct residual
+    std::vector<ScalarType> normV( numev );
+    SerialDenseMatrix<int,ScalarType> T(numev,numev);
+    for (int i=0; i<numev; i++) {
+      T(i,i) = evals[i];
+    }
+    RefCountPtr<MV> Mvecs = MVT::Clone( *evecs, numev ),
+                    Kvecs = MVT::Clone( *evecs, numev );
+    OPT::Apply( *K, *evecs, *Kvecs );
+    OPT::Apply( *M, *evecs, *Mvecs );
+    MVT::MvTimesMatAddMv( -ONE, *Mvecs, T, ONE, *Kvecs );
+    // compute M-norm of residuals
+    OPT::Apply( *M, *Kvecs, *Mvecs );
+    MVT::MvDot( *Mvecs, *Kvecs, &normV );
+  
+    for (int i=0; i<numev; i++) {
+      normV[i] = SCT::squareroot( normV[i] );
+      if ( SCT::magnitude(normV[i]/evals[i]) > tol ) {
+        testFailed = true;
+      }
+    }
+
+  }
+
+#ifdef HAVE_MPI
   MPI_Finalize() ;
-
 #endif
 
   if (testFailed) {
-    if (verbose) {
-      MyOM->print(Anasazi::Error,"End Result: TEST FAILED\n");
+    if (verbose && MyPID==0) {
+      cout << "End Result: TEST FAILED" << endl;	
     }
     return -1;
   }
   //
   // Default return value
   //
-  if (verbose) {
-    MyOM->print(Anasazi::Error,"End Result: TEST PASSED\n");
+  if (verbose && MyPID==0) {
+    cout << "End Result: TEST PASSED" << endl;
   }
   return 0;
+
+
 }	

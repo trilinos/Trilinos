@@ -7,7 +7,6 @@
             OrthoManager/OrthoManager_test.exe,
             MVOPTester/MVOPTester_test.exe,
             BlockDavidson/BlockDavidson_test.exe,
-            BlockDavidson/BlockDavidson_solvertest.exe,
             BlockKrylovSchur/BlockKrylovSchur_test.exe;
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = -v;
@@ -17,7 +16,8 @@
 (FRAMEWORK,INSTALL,AnasaziTests,AnasaziEpetraTests) {
     TESTS = LOBPCG/LOBPCG_test.exe,
             LOBPCG/LOBPCG_solvertest.exe,
-            LOBPCG/LOBPCG_simple.exe;
+            LOBPCG/LOBPCG_simple.exe,
+            BlockDavidson/BlockDavidson_solvertest.exe;
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = --verbose;
     COMM = SERIAL, MPI;
