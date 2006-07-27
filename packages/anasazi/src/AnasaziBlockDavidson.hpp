@@ -33,8 +33,6 @@
 // TODO: the documentation here needs to be made rigorous
 // in particular, getState() and initialize() need to exactly describe their 
 // input and output
-//
-// check accurate accounting of timers and counters
 
 #ifndef ANASAZI_BLOCK_DAVIDSON_HPP
 #define ANASAZI_BLOCK_DAVIDSON_HPP
@@ -391,6 +389,7 @@ namespace Anasazi {
     //
     Teuchos::RefCountPtr<Teuchos::Time> _timerOp, _timerMOp, _timerPrec,
                                         _timerSortEval, _timerDS,
+                                        _timerLocal, _timerCompRes, 
                                         _timerOrtho;
     //
     // Counters
@@ -476,6 +475,8 @@ namespace Anasazi {
     _timerPrec(Teuchos::TimeMonitor::getNewTimer("Operation Prec*x")),
     _timerSortEval(Teuchos::TimeMonitor::getNewTimer("Sorting eigenvalues")),
     _timerDS(Teuchos::TimeMonitor::getNewTimer("Direct solve")),
+    _timerLocal(Teuchos::TimeMonitor::getNewTimer("Local update")),
+    _timerCompRes(Teuchos::TimeMonitor::getNewTimer("Computing residuals")),
     _timerOrtho(Teuchos::TimeMonitor::getNewTimer("Orthogonalization")),
     _count_ApplyOp(0),
     _count_ApplyM(0),
@@ -831,21 +832,28 @@ namespace Anasazi {
       else {
         // compute ritz vecs/vals
         Teuchos::SerialDenseMatrix<int,ScalarType> S(_curDim,_curDim);
-        //
-        int rank = _curDim;
-        _MSUtils.directSolver(_curDim, *lclKK, 0, &S, &_theta, &rank, 10);
-        // we want all ritz values back
-        TEST_FOR_EXCEPTION(rank != _curDim,BlockDavidsonInitFailure,
-                           "Anasazi::BlockDavidson::initialize(): Not enough Ritz vectors to initialize algorithm.");
         {
+          Teuchos::TimeMonitor lcltimer( *_timerDS );
+          int rank = _curDim;
+          _MSUtils.directSolver(_curDim, *lclKK, 0, &S, &_theta, &rank, 10);
+          // we want all ritz values back
+          TEST_FOR_EXCEPTION(rank != _curDim,BlockDavidsonInitFailure,
+                             "Anasazi::BlockDavidson::initialize(): Not enough Ritz vectors to initialize algorithm.");
+        }
+        // sort ritz pairs
+        {
+          Teuchos::TimeMonitor lcltimer( *_timerSortEval );
+
           std::vector<int> _order(_curDim);
           // make a ScalarType copy of theta
           std::vector<ScalarType> _theta_st(_curDim);
           std::copy(_theta.begin(),_theta.begin()+_curDim,_theta_st.begin());
           // sort it
           _sm->sort( NULL, _curDim, &(_theta_st[0]), &_order );   // don't catch exception
-          // copy back to the MagnitudeType 
-          std::copy(_theta_st.begin(),_theta_st.begin()+_curDim,_theta.begin());
+          // Put the sorted ritz values back into _theta
+          for (int i=0; i<_curDim; i++) {
+            _theta[i] = SCT::real(_theta_st[i]);
+          }
           // Sort the primitive ritz vectors
           Teuchos::SerialDenseMatrix<int,ScalarType> copyS( S );
           for (int i=0; i<_curDim; i++) {
@@ -853,8 +861,12 @@ namespace Anasazi {
           }
         }
         Teuchos::SerialDenseMatrix<int,ScalarType> S1(Teuchos::View,S,_curDim,_blockSize);
-        // X <- lclV*S
-        MVT::MvTimesMatAddMv( ONE, *lclV, S1, ZERO, *_X );
+        {
+          Teuchos::TimeMonitor lcltimer( *_timerLocal );
+
+          // X <- lclV*S
+          MVT::MvTimesMatAddMv( ONE, *lclV, S1, ZERO, *_X );
+        }
         // we generated theta,X so we don't want to use the user's KX,MX
         state.KX = Teuchos::null;
         state.MX = Teuchos::null;
@@ -883,9 +895,13 @@ namespace Anasazi {
       }
       else {
         // generate KX,MX
-        OPT::Apply(*_Op,*_X,*_KX);
-        _count_ApplyOp += _blockSize;
+        {
+          Teuchos::TimeMonitor lcltimer( *_timerOp );
+          OPT::Apply(*_Op,*_X,*_KX);
+          _count_ApplyOp += _blockSize;
+        }
         if (_hasM) {
+          Teuchos::TimeMonitor lcltimer( *_timerMOp );
           OPT::Apply(*_MOp,*_X,*_MX);
           _count_ApplyM += _blockSize;
         }
@@ -906,6 +922,8 @@ namespace Anasazi {
         MVT::SetBlock(*state.R,bsind,*_R);
       }
       else {
+        Teuchos::TimeMonitor lcltimer( *_timerCompRes );
+
         // form R <- KX - MX*T
         MVT::MvAddMv(ZERO,*_KX,ONE,*_KX,*_R);
         Teuchos::SerialDenseMatrix<int,ScalarType> T(_blockSize,_blockSize);
@@ -931,6 +949,14 @@ namespace Anasazi {
         chk.checkR = true;
         chk.checkQ = true;
         _om->print( Debug, accuracyCheck(chk, ": after initialize()") );
+      }
+
+      // Print information on current status
+      if (_om->isVerbosity(Debug)) {
+        currentStatus( _om->stream(Debug) );
+      }
+      else if (_om->isVerbosity(IterationDetails)) {
+        currentStatus( _om->stream(IterationDetails) );
       }
     }
     else {
@@ -970,8 +996,11 @@ namespace Anasazi {
       // compute newMV if _hasM
       if (_hasM) {
         newMV = MVT::Clone(*newV,lclDim);
-        OPT::Apply(*_MOp,*newV,*newMV);
-        _count_ApplyM += lclDim;
+        {
+          Teuchos::TimeMonitor lcltimer( *_timerMOp );
+          OPT::Apply(*_MOp,*newV,*newMV);
+          _count_ApplyM += lclDim;
+        }
       }
       else {
         newMV = Teuchos::null;
@@ -979,20 +1008,27 @@ namespace Anasazi {
 
       // remove auxVecs from newV and normalize newV
       if (_auxVecs.size() > 0) {
+        Teuchos::TimeMonitor lcltimer( *_timerOrtho );
+
         Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > dummy;
         int rank = _orthman->projectAndNormalize(*newV,newMV,dummy,Teuchos::null,_auxVecs);
         TEST_FOR_EXCEPTION(rank != lclDim,BlockDavidsonInitFailure,
                            "Anasazi::BlockDavidson::initialize(): Couldn't generate initial basis of full rank.");
       }
       else {
+        Teuchos::TimeMonitor lcltimer( *_timerOrtho );
+
         int rank = _orthman->normalize(*newV,newMV,Teuchos::null);
         TEST_FOR_EXCEPTION(rank != lclDim,BlockDavidsonInitFailure,
                            "Anasazi::BlockDavidson::initialize(): Couldn't generate initial basis of full rank.");
       }
 
       // compute newKV
-      OPT::Apply(*_Op,*newV,*newKV);
-      _count_ApplyOp += lclDim;
+      {
+        Teuchos::TimeMonitor lcltimer( *_timerOp );
+        OPT::Apply(*_Op,*newV,*newKV);
+        _count_ApplyOp += lclDim;
+      }
 
       // generate KK
       Teuchos::RefCountPtr< Teuchos::SerialDenseMatrix<int,ScalarType> > KK;
@@ -1189,7 +1225,11 @@ namespace Anasazi {
       Teuchos::SerialDenseMatrix<int,ScalarType> S1( Teuchos::View, S, _curDim, _blockSize );
 
       // Compute the new Ritz vectors
-      MVT::MvTimesMatAddMv(ONE,*curV,S1,ZERO,*_X);
+      {
+        Teuchos::TimeMonitor lcltimer( *_timerLocal );
+        MVT::MvTimesMatAddMv(ONE,*curV,S1,ZERO,*_X);
+      }
+
       // Apply the stiffness matrix for the next block
       {
         Teuchos::TimeMonitor lcltimer( *_timerOp );
@@ -1209,6 +1249,8 @@ namespace Anasazi {
       // Compute the residual
       // R = KX - MX*diag(theta)
       {
+        Teuchos::TimeMonitor lcltimer( *_timerCompRes );
+
         MVT::MvAddMv( ONE, *_KX, ZERO, *_KX, *_R );
         Teuchos::SerialDenseMatrix<int,ScalarType> T( _blockSize, _blockSize );
         for (int i = 0; i < _blockSize; i++) {
@@ -1406,22 +1448,24 @@ namespace Anasazi {
     os <<"The number of operations Op*x   is "<<_count_ApplyOp<<endl;
     os <<"The number of operations M*x    is "<<_count_ApplyM<<endl;
     os <<"The number of operations Prec*x is "<<_count_ApplyPrec<<endl;
-    os <<endl;
 
     os.setf(ios_base::right, ios_base::adjustfield);
 
     if (_initialized) {
+      os << endl;
       os <<"CURRENT EIGENVALUE ESTIMATES             "<<endl;
-      os << std::setw(16) << "Eigenvalue" 
-         << std::setw(16) << "Residual"
+      os << std::setw(20) << "Eigenvalue" 
+         << std::setw(20) << "Residual(M)"
+         << std::setw(20) << "Residual(2)"
          << endl;
       os <<"--------------------------------------------------------------------------------"<<endl;
       for (int i=0; i<_blockSize; i++) {
-        os << std::setw(16) << _theta[i] 
-           << std::setw(16) << _Rnorms[i]
+        os << std::setw(20) << _theta[i] 
+           << std::setw(20) << _Rnorms[i] 
+           << std::setw(20) << _R2norms[i] 
            << endl;
       }
-    } 
+    }
     os <<"================================================================================" << endl;
     os << endl;
   }

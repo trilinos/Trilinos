@@ -342,12 +342,10 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
           std::vector<int> indlock(numlocked);
           for (int i=0; i<numlocked; i++) indlock[i] = i;
           Teuchos::RefCountPtr<const MV> curlocked = MVT::CloneView(*lockvecs,indlock);
-          if (probauxvecs != Teuchos::null) {
-            bd_solver->setAuxVecs( Teuchos::tuple< Teuchos::RefCountPtr<const MV> >(probauxvecs,curlocked) );
-          }
-          else {
-            bd_solver->setAuxVecs( Teuchos::tuple< Teuchos::RefCountPtr<const MV> >(curlocked) );
-          }
+          Teuchos::Array< Teuchos::RefCountPtr<const MV> > aux;
+          if (probauxvecs != Teuchos::null) aux.push_back(probauxvecs);
+          aux.push_back(curlocked);
+          bd_solver->setAuxVecs(aux);
         }
         // add locked vals to convtest
         convtest->setAuxVals(lockvals);
@@ -355,7 +353,6 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
         //
         // restart the solver
         //
-        // finish
         // we have to get the projected stiffness matrix from the solver, compute the projected eigenvectors and sort them
         // then all of the ones that don't correspond to the ones we wish to lock get orthogonalized using QR factorization
         // then we generate new (slightly smaller basis) and augment this basis with random information to preserve rank 
@@ -391,8 +388,23 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
           msutils.directSolver(curdim,*curKK,0,&S,&theta,&rank,10);
           TEST_FOR_EXCEPTION(rank != curdim,std::logic_error,"Anasazi::BlockDavidsonSolMgr::solve(): direct solve did not compute all eigenvectors."); // this should never happen
           // 
-          // sort the eigenvalues (so that we can order the eigenvectors): finish
-          //
+          // sort the eigenvalues (so that we can order the eigenvectors)
+          {
+            std::vector<int> order(curdim);
+            // make a ScalarType copy of theta
+            std::vector<ScalarType> theta_st(curdim);
+            std::copy(theta.begin(),theta.end(),theta_st.begin());
+            sorter->sort(NULL,curdim,&(theta_st[0]),&order);
+            // Put the sorted ritz values back into theta
+            for (int i=0; i<curdim; i++) {
+              theta[i] = SCT::real(theta_st[i]);
+            }
+            // Sort the primitive ritz vectors
+            Teuchos::SerialDenseMatrix<int,ScalarType> copyS( S );
+            for (int i=0; i<curdim; i++) {
+              blas.COPY(curdim, copyS[order[i]], 1, S[i], 1);
+            }
+          }
           // select the non-locked eigenvectors
           std::vector<int> unlockind(curdim-numnew);
           set_difference(curind.begin(),curind.end(),newind.begin(),newind.end(),unlockind.begin());
@@ -401,7 +413,25 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
             blas.COPY(curdim, S[unlockind[i]], 1, Sunlocked[i], 1);
           }
           // 
-          // compute the qr factorization: finish
+          // compute the qr factorization
+          {
+            Teuchos::LAPACK<int,ScalarType> lapack;
+            int info, lwork = (curdim*numnew)*lapack.ILAENV( 1, "geqrf", "", curdim, curdim-numnew );
+            std::vector<ScalarType> tau(curdim-numnew), work(lwork);
+            lapack.GEQRF(curdim,curdim-numnew,Sunlocked.values(),Sunlocked.stride(),&tau[0],&work[0],lwork,&info);
+            TEST_FOR_EXCEPTION(info != 0,std::logic_error,"Anasazi::BlockDavidsonSolMgr::solve(): Error calling GEQRF in locking code.");
+            lapack.UNGQR(curdim,curdim-numnew,curdim-numnew,Sunlocked.values(),Sunlocked.stride(),&tau[0],&work[0],lwork,&info);
+            TEST_FOR_EXCEPTION(info != 0,std::logic_error,"Anasazi::BlockDavidsonSolMgr::solve(): Error calling UNGQR in locking code.");
+
+            if (printer->isVerbosity(Debug)) {
+              Teuchos::SerialDenseMatrix<int,ScalarType> StS(curdim-numnew,curdim-numnew);
+              StS.multiply(Teuchos::CONJ_TRANS,Teuchos::NO_TRANS,ONE,Sunlocked,Sunlocked,ZERO);
+              for (int i=0; i<curdim-numnew; i++) {
+                StS(i,i) -= ONE;
+              }
+              printer->stream(Debug) << "Locking: Error in Snew^T Snew == I : " << StS.normFrobenius() << endl;
+            }
+          }
           //
           // allocate space for the new basis, compute it
           Teuchos::RefCountPtr<MV> newV = MVT::Clone(*curV,curdim);
@@ -432,7 +462,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
           // generate random data to fill the rest of the basis back to curdim
           Teuchos::RefCountPtr<MV> augV;
           {
-            std::vector<int> augind(curdim-numnew);
+            std::vector<int> augind(numnew);
             for (int i=0; i<numnew; i++) augind[i] = curdim-numnew+i;
             augV = MVT::CloneView(*newV,augind);
             MVT::MvRandom(*augV);
@@ -441,16 +471,14 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
           // orthogonalize it against auxvecs and the current basis
           {
             Teuchos::Array<Teuchos::RefCountPtr<const MV> > against = bd_solver->getAuxVecs();
+            Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > dummy;
             against.push_back(genV);
-            ortho->projectAndNormalize(*augV,Teuchos::null,
-                                       Teuchos::tuple<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > >(Teuchos::null),Teuchos::null,
-                                       against);
-
+            ortho->projectAndNormalize(*augV,Teuchos::null,dummy,Teuchos::null,against);
           }
           //
           // project the stiffness matrix on the new part
           {
-            Teuchos::RefCountPtr<MV> augKV = MVT::Clone(*augV,curdim-numnew);
+            Teuchos::RefCountPtr<MV> augKV = MVT::Clone(*augV,numnew);
             OPT::Apply(*_problem->getOperator(),*augV,*augKV);
             Teuchos::SerialDenseMatrix<int,ScalarType> KK12(Teuchos::View,*newKK,curdim-numnew,numnew,0,curdim-numnew),
                                                        KK22(Teuchos::View,*newKK,numnew,numnew,curdim-numnew,curdim-numnew);

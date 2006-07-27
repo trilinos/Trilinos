@@ -1796,19 +1796,21 @@ namespace Anasazi {
     os <<"The number of operations Op*x   is " << _count_ApplyOp   << endl;
     os <<"The number of operations M*x    is " << _count_ApplyM    << endl;
     os <<"The number of operations Prec*x is " << _count_ApplyPrec << endl;
-    os << endl;
 
     os.setf(ios_base::right, ios_base::adjustfield);
 
     if (_initialized) {
+      os << endl;
       os <<"CURRENT EIGENVALUE ESTIMATES             "<<endl;
-      os << std::setw(16) << "Eigenvalue" 
-         << std::setw(16) << "Residual"
+      os << std::setw(20) << "Eigenvalue" 
+         << std::setw(20) << "Residual(M)"
+         << std::setw(20) << "Residual(2)"
          << endl;
       os <<"--------------------------------------------------------------------------------"<<endl;
       for (int i=0; i<_blockSize; i++) {
-        os << std::setw(16) << _theta[i] 
-           << std::setw(16) << _Rnorms[i] 
+        os << std::setw(20) << _theta[i] 
+           << std::setw(20) << _Rnorms[i] 
+           << std::setw(20) << _R2norms[i] 
            << endl;
       }
     }

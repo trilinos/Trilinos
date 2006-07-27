@@ -162,7 +162,7 @@ int main(int argc, char *argv[])
   MyPL.set( "Num Blocks", numBlocks );
   MyPL.set( "Maximum Restarts", maxRestarts );
   MyPL.set( "Convergence Tolerance", tol );
-  MyPL.set( "Use Locking", false );               // finish: re-enable this when locking is fully implemented
+  MyPL.set( "Use Locking", true );
   MyPL.set( "Locking Tolerance", tol/10 );
   //
   // Create the solver manager
