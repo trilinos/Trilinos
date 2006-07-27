@@ -351,8 +351,7 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::solve() {
 
   // send the solution to the eigenproblem
   _problem->setSolution(sol);
-
-  printer->stream(Debug) << "Returning " << sol.numVecs << " to eigenproblem." << endl;
+  printer->stream(Debug) << "Returning " << sol.numVecs << " eigenpairs to eigenproblem." << endl;
 
   // return from SolMgr::solve()
   if (sol.numVecs < nev) return Unconverged;
