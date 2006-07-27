@@ -6,7 +6,7 @@ CPPFLAGS=-Wno-long-double \
 MACOSX_DEPLOYMENT_TARGET=10.4 \
 --with-incdirs="-I/sw/include" \
 --with-ldflags="-L/sw/lib/ -framework veclib -bind_at_load" \
---with-libs="-lsuperlu -lumfpack -lamd -lg2c" \
+--with-libs="-lsuperlu -lumfpack -lamd -lg2c -lexpat -lhdf5" \
 --cache-file=config.cache \
 --with-gnumake \
 --disable-default-packages \
@@ -23,6 +23,7 @@ MACOSX_DEPLOYMENT_TARGET=10.4 \
 --enable-epetra-abc \
 --enable-epetra-thyra \
 --enable-epetraext \
+--enable-epetraext-hdf5 \
 --enable-epetraext-inout \
 --enable-epetraext-coloring \
 --enable-epetraext-transform \

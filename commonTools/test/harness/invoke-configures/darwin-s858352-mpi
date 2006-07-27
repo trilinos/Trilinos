@@ -13,6 +13,7 @@ RANLIB="ranlib -s" \
 CPPFLAGS=-Wno-long-double \
 --with-incdirs="-I/sw/include" \
 --with-ldflags="-framework veclib" \
+--with-libs="-lexpat -lhdf5" \
 --enable-mpi \
 --with-mpi-compilers \
 --cache-file=config.cache \
@@ -29,6 +30,7 @@ CPPFLAGS=-Wno-long-double \
 --enable-epetra-abc \
 --enable-epetra-thyra \
 --enable-epetraext \
+--enable-epetraext-hdf5 \
 --enable-epetraext-inout \
 --enable-epetraext-coloring \
 --enable-epetraext-transform \
