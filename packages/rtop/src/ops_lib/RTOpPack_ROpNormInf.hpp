@@ -37,13 +37,17 @@ namespace RTOpPack {
 /** \brief Infinity norm reduction operator: <tt>result = sum( |v0[i]|, i=0...n-1 )</tt>.
  */
 template<class Scalar>
-class ROpNormInf : public ROpScalarReductionBase<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> {
+class ROpNormInf
+  : public ROpScalarReductionBase<Scalar,typename Teuchos::ScalarTraits<Scalar>::magnitudeType>
+{
 public:
+  /** \brief . */
+  typedef   typename Teuchos::ScalarTraits<Scalar>::magnitudeType  ScalarMag;
   /** \brief . */
   ROpNormInf() : RTOpT<Scalar>("ROpNormInf") {}
   /** \brief . */
-  typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-  operator()(const ReductTarget& reduct_obj ) const { return this->getRawVal(reduct_obj); }
+  ScalarMag operator()(const ReductTarget& reduct_obj ) const
+    { return this->getRawVal(reduct_obj); }
   /** @name Overridden from RTOpT */
   //@{
   /** \brief . */
@@ -52,33 +56,34 @@ public:
     ) const
     {
       using Teuchos::dyn_cast;
-      const ReductTargetScalar<Scalar>
-        &in_reduct_obj = dyn_cast<const ReductTargetScalar<Scalar> >(_in_reduct_obj);
-      ReductTargetScalar<Scalar>
-        &inout_reduct_obj = dyn_cast<ReductTargetScalar<Scalar> >(*_inout_reduct_obj);
+      const ReductTargetScalar<ScalarMag>
+        &in_reduct_obj = dyn_cast<const ReductTargetScalar<ScalarMag> >(_in_reduct_obj);
+      ReductTargetScalar<ScalarMag>
+        &inout_reduct_obj = dyn_cast<ReductTargetScalar<ScalarMag> >(*_inout_reduct_obj);
       if( in_reduct_obj.get() > inout_reduct_obj.get() ) inout_reduct_obj.set(in_reduct_obj.get());
     }
   /** \brief . */
   void apply_op(
-    const int   num_vecs,       const ConstSubVectorView<Scalar>         sub_vecs[]
-    ,const int  num_targ_vecs,  const SubVectorView<Scalar>  targ_sub_vecs[]
+    const int   num_vecs,       const ConstSubVectorView<Scalar>    sub_vecs[]
+    ,const int  num_targ_vecs,  const SubVectorView<Scalar>         targ_sub_vecs[]
     ,ReductTarget *_reduct_obj
     ) const
     {
       using Teuchos::dyn_cast;
-      ReductTargetScalar<Scalar> &reduct_obj = dyn_cast<ReductTargetScalar<Scalar> >(*_reduct_obj); 
+      ReductTargetScalar<ScalarMag>
+        &reduct_obj = dyn_cast<ReductTargetScalar<ScalarMag> >(*_reduct_obj); 
       RTOP_APPLY_OP_1_0(num_vecs,sub_vecs,num_targ_vecs,targ_sub_vecs);
-      typename Teuchos::ScalarTraits<Scalar>::magnitudeType norm_inf = reduct_obj.get();
+      ScalarMag norm_inf = reduct_obj.get();
       if( v0_s == 1 ) {
         for( Teuchos_Index i = 0; i < subDim; ++i ) {
-          const typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+          const ScalarMag
             mag = Teuchos::ScalarTraits<Scalar>::magnitude(*v0_val++);
           norm_inf = mag > norm_inf ? mag : norm_inf;
         }
       }
       else {
         for( Teuchos_Index i = 0; i < subDim; ++i, v0_val += v0_s ) {
-          const typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+          const ScalarMag
             mag = Teuchos::ScalarTraits<Scalar>::magnitude(*v0_val);
           norm_inf = mag > norm_inf ? mag : norm_inf;
         }

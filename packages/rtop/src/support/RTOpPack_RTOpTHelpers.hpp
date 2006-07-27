@@ -92,6 +92,9 @@ private:
   ScalarIndex<Scalar> scalarIndex_;
 };
 
+template<bool isComplex, class Scalar, class ReductScalar>
+class ROpScalarReductionBaseRawValSetter;
+
 /** \brief Simple base class for all reduction operators that return a simple
  * scalar reduction object.
  *
@@ -101,28 +104,30 @@ private:
  *
  * \ingroup RTOpPack_RTOpTHelpers_grp
  */
-template<class Scalar>
+template<class Scalar, class ReductScalar = Scalar>
 class ROpScalarReductionBase : virtual public RTOpT<Scalar> {
 public:
-  typedef typename RTOpT<Scalar>::primitive_value_type primitive_value_type;
+  typedef typename RTOpT<Scalar>::primitive_value_type        primitive_value_type;
   /** \brief . */
-  ROpScalarReductionBase( const Scalar &initReductObjValue = Teuchos::ScalarTraits<Scalar>::zero() )
+  ROpScalarReductionBase(
+    const ReductScalar &initReductObjValue = Teuchos::ScalarTraits<ReductScalar>::zero()
+    )
     :RTOpT<Scalar>(""), initReductObjValue_(initReductObjValue) 
     {}
   /** \brief . */
-  const Scalar& getRawVal( const ReductTarget &reduct_obj ) const
+  const ReductScalar& getRawVal( const ReductTarget &reduct_obj ) const
     {
       using Teuchos::dyn_cast;
-      return dyn_cast<const ReductTargetScalar<Scalar> >(reduct_obj).get();
+      return dyn_cast<const ReductTargetScalar<ReductScalar> >(reduct_obj).get();
     }
   /** \brief . */
-  void setRawVal( const Scalar &rawVal, ReductTarget *reduct_obj ) const
+  void setRawVal( const ReductScalar &rawVal, ReductTarget *reduct_obj ) const
     {
 #ifdef TEUCHOS_DEBUG
       TEST_FOR_EXCEPTION( reduct_obj==NULL, std::invalid_argument, "Error!" );
 #endif
       using Teuchos::dyn_cast;
-      dyn_cast<ReductTargetScalar<Scalar> >(*reduct_obj).set(rawVal);
+      dyn_cast<ReductTargetScalar<ReductScalar> >(*reduct_obj).set(rawVal);
     }
   /** @name Overridden from RTOpT */
   //@{
@@ -140,15 +145,15 @@ public:
   /** \brief . */
   Teuchos::RefCountPtr<ReductTarget> reduct_obj_create() const
     {
-      return Teuchos::rcp(new ReductTargetScalar<Scalar>(initReductObjValue()));
+      return Teuchos::rcp(new ReductTargetScalar<ReductScalar>(initReductObjValue()));
     }
   /** \brief Default implementation here is for a sum. */
   void reduce_reduct_objs(
     const ReductTarget& in_reduct_obj, ReductTarget* inout_reduct_obj
     ) const
     {
-      const Scalar in_val    = getRawVal(in_reduct_obj);
-      const Scalar inout_val = getRawVal(*inout_reduct_obj);
+      const ReductScalar in_val    = getRawVal(in_reduct_obj);
+      const ReductScalar inout_val = getRawVal(*inout_reduct_obj);
       setRawVal( in_val + inout_val, inout_reduct_obj );
     }
   /** \brief . */
@@ -186,21 +191,42 @@ public:
     ,ReductTarget                  *reduct_obj
     ) const
     {
+      typedef Teuchos::ScalarTraits<Scalar> ST;
 #ifdef TEUCHOS_DEBUG
       TEST_FOR_EXCEPTION(
         num_values==0 || value_data==NULL || num_indexes!=0 || index_data!=NULL || num_chars!=0 || char_data!=NULL
         ,std::invalid_argument, "Error!"
         );
 #endif
-      Scalar val = Teuchos::ScalarTraits<Scalar>::zero();
+      Scalar val = ST::zero();
       Teuchos::PrimitiveTypeTraits<Scalar>::loadPrimitiveObjs( num_values, value_data, &val );
-      setRawVal( val, reduct_obj );
+      ROpScalarReductionBaseRawValSetter<ST::isComplex,Scalar,ReductScalar>::setRawVal( *this, val, reduct_obj );
     }
   //@}
 protected:
   /** \brief . */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( Scalar, initReductObjValue )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( ReductScalar, initReductObjValue )
 }; // class ROpScalarReductionBase
+
+template<class Scalar, class ReductScalar>
+class ROpScalarReductionBaseRawValSetter<true,Scalar,ReductScalar> {
+public:
+  static void setRawVal(
+    const ROpScalarReductionBase<Scalar,ReductScalar> &rtop
+    ,const Scalar &rawVal, ReductTarget *reduct_obj
+    )
+      { rtop.setRawVal(Teuchos::ScalarTraits<Scalar>::real(rawVal),reduct_obj); }
+};
+
+template<class Scalar, class ReductScalar>
+class ROpScalarReductionBaseRawValSetter<false,Scalar,ReductScalar> {
+public:
+  static void setRawVal(
+    const ROpScalarReductionBase<Scalar,ReductScalar> &rtop
+    ,const Scalar &rawVal, ReductTarget *reduct_obj
+    )
+      { rtop.setRawVal(rawVal,reduct_obj); }
+};
 
 /** \brief Base class for all reduction operators that return a
  * <tt>ScalarIndex</tt> reduction object.

@@ -234,6 +234,21 @@ bool VectorStdOpsTester<Scalar>::checkStdOps(
   assign(&*v2,Scalar(-3.0));
   if(out) *out << "\nassign(&*v3,-4.0);\n";
   assign(&*v3,Scalar(-4.0));
+
+  if(!testRelErr<Scalar>(
+       "norm_inf(*v1)",norm_inf(*v1),"2.0",Scalar(2.0)
+       ,"error_tol",error_tol(),"warning_tol",warning_tol(),out)
+    ) success=false;
+
+  if(!testRelErr<Scalar>(
+       "norm_2(*v1)",norm_2(*v1),"2.0*sqrt(vecSpc.dim())",Scalar(2.0)*ST::squareroot(vecSpc.dim())
+       ,"error_tol",error_tol(),"warning_tol",warning_tol(),out)
+    ) success=false;
+
+  if(!testRelErr<Scalar>(
+       "norm_1(*v1)",norm_1(*v1),"2.0*vecSpc.dim()",Scalar(2.0)*Scalar(vecSpc.dim())
+       ,"error_tol",error_tol(),"warning_tol",warning_tol(),out)
+    ) success=false;
   
   if(out) *out << "\nabs(&*z,*v1);\n";
   abs(&*z,*v1);

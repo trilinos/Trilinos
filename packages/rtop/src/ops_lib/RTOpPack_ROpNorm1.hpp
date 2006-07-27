@@ -37,27 +37,31 @@ namespace RTOpPack {
 /** \brief One norm reduction operator: <tt>result = max( |v0[i]|, i=0...n-1 )</tt>.
  */
 template<class Scalar>
-class ROpNorm1 : public ROpScalarReductionBase<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> {
+class ROpNorm1
+  : public ROpScalarReductionBase<Scalar,typename Teuchos::ScalarTraits<Scalar>::magnitudeType>
+{
 public:
+  /** \brief . */
+  typedef   typename Teuchos::ScalarTraits<Scalar>::magnitudeType  ScalarMag;
   /** \brief . */
   ROpNorm1() : RTOpT<Scalar>("ROpNorm1") {}
   /** \brief . */
-  typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-  operator()(const ReductTarget& reduct_obj ) const
+  ScalarMag operator()(const ReductTarget& reduct_obj ) const
     { return this->getRawVal(reduct_obj); }
   /** @name Overridden from RTOpT */
   //@{
   /** \brief . */
   void apply_op(
-    const int   num_vecs,       const ConstSubVectorView<Scalar>         sub_vecs[]
-    ,const int  num_targ_vecs,  const SubVectorView<Scalar>  targ_sub_vecs[]
+    const int   num_vecs,       const ConstSubVectorView<Scalar>    sub_vecs[]
+    ,const int  num_targ_vecs,  const SubVectorView<Scalar>         targ_sub_vecs[]
     ,ReductTarget *_reduct_obj
     ) const
     {
       using Teuchos::dyn_cast;
-      ReductTargetScalar<Scalar> &reduct_obj = dyn_cast<ReductTargetScalar<Scalar> >(*_reduct_obj); 
+      ReductTargetScalar<ScalarMag>
+        &reduct_obj = dyn_cast<ReductTargetScalar<ScalarMag> >(*_reduct_obj); 
       RTOP_APPLY_OP_1_0(num_vecs,sub_vecs,num_targ_vecs,targ_sub_vecs);
-      typename Teuchos::ScalarTraits<Scalar>::magnitudeType norm1 = reduct_obj.get();
+      ScalarMag norm1 = reduct_obj.get();
       if( v0_s == 1 ) {
         for( Teuchos_Index i = 0; i < subDim; ++i )
           norm1 += Teuchos::ScalarTraits<Scalar>::magnitude(*v0_val++);
