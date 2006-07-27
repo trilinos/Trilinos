@@ -165,11 +165,11 @@ private:
 
   template<typename kind>
   kind getParameter(string name,kind dvalue) const
-  { return (*params_).template get(name,dvalue); }
+  { return (*params_).get(name,dvalue); }
 
   template<typename kind>
   void setParameter(string name,kind dvalue) const
-  { (*params_).template set(name,dvalue); return; }
+  { (*params_).set(name,dvalue); return; }
 
   int                                                     level_;
   bool                                                    isnlncg_;
