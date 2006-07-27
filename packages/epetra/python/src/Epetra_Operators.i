@@ -80,8 +80,8 @@
 %ignore Epetra_CrsMatrix::ExtractGlobalRowView(int,int,int&,double*&);
 %ignore Epetra_CrsMatrix::ExtractMyRowView(    int,int,int&,double*&);
 %ignore Epetra_CrsMatrix::ExtractCrsDataPointers(int*&,int*&,double*&);
-%ignore Epetra_BasicRowMatrix::ExtractMyEntryView(int,double*,int&,int&);
-%ignore Epetra_JadMatrix::ExtractMyEntryView(int,double*,int&,int&);
+%ignore Epetra_BasicRowMatrix::ExtractMyEntryView(int,double*&,int&,int&);
+%ignore Epetra_JadMatrix::ExtractMyEntryView(int,double*&,int&,int&);
 
 // Rename directives
 %rename(Operator          ) Epetra_Operator;
@@ -481,49 +481,49 @@ int method(int row, PyObject * values, PyObject * indices) {
     return self->InsertGlobalValues(1, &i, 1, &j2, &val2);
   }
 
-  int InsertGlobalValues(const int row, PyObject* Values, PyObject* Indices)
-  {
-    if (row < 0)
-      return(-1);
+//   int InsertGlobalValues(const int row, PyObject* Values, PyObject* Indices)
+//   {
+//     if (row < 0)
+//       return(-1);
 
-    if (PyList_Check(Values) == 0 || PyList_Check(Indices) == 0) 
-    {
-      cerr << "Input object is not a list" << endl;
-      return(-1);
-    }
+//     if (PyList_Check(Values) == 0 || PyList_Check(Indices) == 0) 
+//     {
+//       cerr << "Input object is not a list" << endl;
+//       return(-1);
+//     }
 
-    int len = PyList_Size(Values);
-    if (len != PyList_Size(Indices))
-    {
-      cerr << "Length of input lists differ" << endl;
-      return(-1);
-    }
+//     int len = PyList_Size(Values);
+//     if (len != PyList_Size(Indices))
+//     {
+//       cerr << "Length of input lists differ" << endl;
+//       return(-1);
+//     }
 
-    for (int i = 0 ; i < len ; ++i)
-    {
-      PyObject* Value,* Index;
-      Value = PyList_GetItem(Values, i);
-      Index = PyList_GetItem(Indices, i);
+//     for (int i = 0 ; i < len ; ++i)
+//     {
+//       PyObject* Value,* Index;
+//       Value = PyList_GetItem(Values, i);
+//       Index = PyList_GetItem(Indices, i);
 
-      if (PyInt_Check(Index) == 0)
-      {
-        cerr << "Indices must be integers" << endl;
-        return(-1);
-      }
+//       if (PyInt_Check(Index) == 0)
+//       {
+//         cerr << "Indices must be integers" << endl;
+//         return(-1);
+//       }
 
-      if (PyFloat_Check(Value) == 0)
-      {
-        cerr << "Values must be doubles" << endl;
-        return(-1);
-      }
+//       if (PyFloat_Check(Value) == 0)
+//       {
+//         cerr << "Values must be doubles" << endl;
+//         return(-1);
+//       }
 
-      int cIndex = PyLong_AsLong(Index);
-      double cValue = PyFloat_AsDouble(Value);
-      if (self->InsertGlobalValues(1, &row, 1, &cIndex, &cValue) < 0)
-        return(-1);
-    }
-    return(0);
-  }
+//       int cIndex = PyLong_AsLong(Index);
+//       double cValue = PyFloat_AsDouble(Value);
+//       if (self->InsertGlobalValues(1, &row, 1, &cIndex, &cValue) < 0)
+//         return(-1);
+//     }
+//     return(0);
+//   }
 }
 
 %warnfilter(473) PyOperator;
