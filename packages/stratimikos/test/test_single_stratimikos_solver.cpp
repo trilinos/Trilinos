@@ -62,7 +62,7 @@ bool Thyra::test_single_stratimikos_solver(
 
     if(out) {
       *out << "\nEchoing input parameters ...\n";
-      paramList->print(*out,1,true,true);
+      paramList->print(*out,1,true,false);
     }
 
     // Create list of valid parameter sublists
@@ -102,7 +102,7 @@ bool Thyra::test_single_stratimikos_solver(
 
     if(out) {
       *out << "\nValid parameters for DefaultRealLinearSolverBuilder ...\n";
-      linearSolverBuilder->getValidParameters()->print(*out,1,true,true);
+      linearSolverBuilder->getValidParameters()->print(*out,1,true,false);
     }
 
     linearSolverBuilder->setParameterList(solverBuilderSL);

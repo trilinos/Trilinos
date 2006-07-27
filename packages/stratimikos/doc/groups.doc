@@ -1,0 +1,20 @@
+
+/** \example test_single_stratimikos_solver.cpp
+
+The bottom of this page shows a simple test program for how the
+<tt>Thyra::DefaultRealLinearSolverBuilder</tt> class is used to take a
+parameter list (e.g. read from a file) and use it to build
+<tt>Thyra::LinearOpWithSolveFactory</tt> and
+<tt>Thyra::PreconditionerFactoryBase</tt> objects.
+
+The arguments that the testing program driver that calls this example are:
+
+\verbinclude test_single_stratimikos_solver_driver.help.out
+
+Sample output looks like:
+
+\verbinclude test_single_stratimikos_solver_driver.FourByFour.belos.ifpack.out
+
+Here is the main driver itself:
+
+*/

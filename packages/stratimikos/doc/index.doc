@@ -1,0 +1,24 @@
+/*! \mainpage Stratimikos: Thyra-based strategies for linear solvers
+
+The package Stratimikos contains a unified set of Thyra-based wrappers to
+linear solver and preconditioner capabilities in Trilinos.  The name
+Stratimikos was created from the Greek words "stratigiki" and "grammikos"
+which which mean "strategy" and "linear in English.  The word "stratimikos"
+itself has not real meaning itself.  The Stratimikos package is also a place
+where unified testing of linear solvers and preconditioners can be performed.
+
+<ul>
+
+<li><tt>Thyra::DefaultRealLinearSolverBuilder</tt>: A utility class that
+provides uniform access to linear solver capability in Amesos, AztecOO, Belos,
+Ifpack, and ML for Epetra-based linear operators.
+
+</ul>
+
+You can browse all of Stratimikos as a <A HREF="../../browser/doc/html/index.html">single
+doxygen collection</A>. Warning, this is not the recommended way to learn
+about Stratimikos software.  However, this is a good way to browse the <a
+href="../../browser/doc/html/dirs.html">directory structure of rtop</a>, to <a
+href="../../browser/doc/html/files.html">locate files</a>, etc.
+
+*/

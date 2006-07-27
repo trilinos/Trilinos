@@ -1,0 +1,21 @@
+#!/bin/bash
+
+if [ $TRILINOS_HOME ]; then
+  echo "TRILINOS_HOME has already been set!"
+else
+  echo "TRILINOS_HOME has not been set.  Setting it!"
+  export TRILINOS_HOME=`pwd`/../../..
+fi
+
+echo
+echo "Building doxygen browser documentation for al of stratimikos as a single doxygen collection ..."
+echo
+
+doxygen ../browser/doc/Doxyfile
+
+echo
+echo "Building main doxygen documentation page for stratimikos ..."
+echo
+
+doxygen Doxyfile
+

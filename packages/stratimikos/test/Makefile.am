@@ -76,22 +76,9 @@ common_dependencies = $(top_builddir)/src/libstratimikos.a
 
 include $(top_builddir)/Makefile.export.stratimikos
 
-# Here we have to include the stratimikos stuff explicitly since ifpack may have been 
-# configured with --disable-ifpack-stratimikos.  Either way, this will work just fine!
-_EXPORT_INCLUDES = $(STRATIMIKOS_INCLUDES)
-_EXPORT_LIBS =  $(STRATIMIKOS_LIBS)
+AM_CPPFLAGS =  -I$(top_srcdir)/../thyra/example/operator_solve $(STRATIMIKOS_INCLUDES)
 
-if USING_GNUMAKE
-EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(_EXPORT_INCLUDES))
-EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(_EXPORT_LIBS))
-else
-EXPORT_INCLUDES = $(_EXPORT_INCLUDES)
-EXPORT_LIBS = $(_EXPORT_LIBS)
-endif
-
-AM_CPPFLAGS =  -I$(top_srcdir)/../thyra/example/operator_solve $(EXPORT_INCLUDES)
-
-common_ldadd = $(EXPORT_LIBS)
+common_ldadd = $(STRATIMIKOS_LIBS)
 
 EXTRA_DIST = $(srcdir)/test_single_stratimikos_solver.hpp
 

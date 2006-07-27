@@ -26,22 +26,26 @@
 // ***********************************************************************
 // @HEADER
 
-#include "test_single_stratimikos_solver.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
+#include "Thyra_DefaultRealLinearSolverBuilder.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 
 int main(int argc, char* argv[])
 {
-
-  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
-  
+  using Teuchos::rcp;
+  using Teuchos::RefCountPtr;
+  using Teuchos::OSTab;
+  using Teuchos::ParameterList;
+  using Teuchos::getParameter;
   using Teuchos::CommandLineProcessor;
 
-  bool success = true;
+  bool result, success = true;
   bool verbose = true;
+
+  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
 
   Teuchos::RefCountPtr<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
@@ -54,30 +58,69 @@ int main(int argc, char* argv[])
     
     std::string     inputFile              = "";
     std::string     extraParams            = "";
+    bool            onlyPrintOptions       = false;
+    bool            printXmlFormat         = false;
     bool            dumpAll                = false;
 
     CommandLineProcessor  clp(false); // Don't throw exceptions
+
     clp.setOption( "input-file", &inputFile, "Input file [Required].", true );
     clp.setOption( "extra-params", &extraParams, "Extra parameters overriding the parameters read in from --input-file");
+    clp.setOption( "only-print-options", "continue-after-printing-options", &onlyPrintOptions
+                   ,"Only print options and stop or continue on" );
+    clp.setOption( "print-xml-format", "print-readable-format", &printXmlFormat
+                   ,"Print the valid options in XML format or in readable format." );
+                   
     clp.setDocString(
-      "Testing program for Trilinos (and non-Trilinos) linear solvers access through Thyra."
+      "Simple example for the use of Stratimikos software.  Right now this only prints"
+      " out valid options and then stops.\n\n"
+      "To print out just the valid options use --input-file=\"\" --only-print-options with --print-xml-format"
+      " or --print-readable-format."
       );
 
     CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
     if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
 
+    RefCountPtr<Thyra::LinearSolverBuilderBase<double> >
+      linearSolverBuilder = rcp(new Thyra::DefaultRealLinearSolverBuilder);
+
+    //
+    // Print out the valid options if asked to
+    //
+
+    if(onlyPrintOptions) {
+      if(printXmlFormat)
+        Teuchos::writeParameterListToXmlOStream(
+          *linearSolverBuilder->getValidParameters()
+          ,*out
+          );
+      else
+        linearSolverBuilder->getValidParameters()->print(*out,1,true,false);
+      return 0;
+    }
+
+    //
+    // Reading in the solver parameters
+    //
+
     Teuchos::ParameterList paramList;
-    if(verbose) *out << "\nReading parameters from XML file \""<<inputFile<<"\" ...\n";
-    Teuchos::updateParametersFromXmlFile(inputFile,&paramList);
+
+    if(inputFile.length()) {
+      if(verbose) *out << "\nReading parameters from XML file \""<<inputFile<<"\" ...\n";
+      Teuchos::updateParametersFromXmlFile(inputFile,&paramList);
+    }
     if(extraParams.length()) {
       if(verbose) *out << "\nAppending extra parameters from the XML string \""<<extraParams<<"\" ...\n";
       Teuchos::updateParametersFromXmlString(extraParams,&paramList);
     }
-    
-    success
-      = Thyra::test_single_stratimikos_solver(
-        &paramList,dumpAll,verbose?&*out:0
-        );
+
+    //
+    // Solve a linear system or something ...
+    //
+
+    TEST_FOR_EXCEPTION(
+      true,std::logic_error,"Error, this example is not finished yet!"
+      );
     
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose,std::cerr,success)

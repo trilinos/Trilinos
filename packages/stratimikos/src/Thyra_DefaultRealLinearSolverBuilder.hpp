@@ -35,10 +35,21 @@
 
 namespace Thyra {
 
-/** \brief Abstract interface for an object that can create
- * <tt>LinearOpWithSolveFactoryBase</tt> objects on demand.
+/** \brief Concrete subclass of <tt>Thyra::LinearSolverBuilderBase</tt> for
+ * creating <tt>LinearOpWithSolveFactoryBase</tt> objects on demand for
+ * various Trilinos linear solver packages.
  *
- * ToDo: Finish documentation!
+ * The parameters this class accepts are shown below in human readable format
+ * and in XML (i.e. machine readable) format.
+ *
+ * <b>Human readable format for valid parameters (with default values) accepted by this class</b>
+ *
+ * \verbinclude simple_stratimikos_example.options.readable.out
+ *
+ * <b>XML format for valid parameters (with default values) accepted by this class</b>
+ *
+ * \verbinclude simple_stratimikos_example.options.xml.out
+ * 
  */
 class DefaultRealLinearSolverBuilder : public LinearSolverBuilderBase<double>
 {
@@ -121,14 +132,18 @@ private:
   Teuchos::RefCountPtr<Teuchos::ParameterList>                 paramList_;
   mutable Teuchos::RefCountPtr<const Teuchos::ParameterList>   validParamList_;
   lowsf_map_t                                                  lowsf_map_;
+  std::vector<std::string>                                     validLowsfNames_;
   std::string                                                  defaultLOWSF_;
   pf_map_t                                                     pf_map_;
+  std::vector<std::string>                                     validPfNames_;
   std::string                                                  defaultPF_;
 
   // //////////////////////////////////////
   // Private member functions
 
   void initializeDefaults();
+  std::string validLinearSolveStrategyNames() const;
+  std::string validPreconditioningStrategyNames() const;
 
 };
 

@@ -12,3 +12,8 @@
            --input-file=FourByFour.belos.ifpack.xml;
     COMM = MPI(1),SERIAL;
 }
+
+(DOCUMENTATION) {
+    TESTS = ../example/generate-sample-output.pl;
+    COMM = MPI(1),SERIAL;
+}

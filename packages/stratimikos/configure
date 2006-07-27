@@ -6061,7 +6061,7 @@ fi
 # Output files
 # ------------------------------------------------------------------------
 
-                                        ac_config_files="$ac_config_files Makefile Makefile.export.stratimikos src/Makefile test/Makefile"
+                                                            ac_config_files="$ac_config_files Makefile Makefile.export.stratimikos src/Makefile example/Makefile example/generate-sample-output.pl.stub test/Makefile"
 
 
 
@@ -6722,6 +6722,8 @@ do
   "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
   "Makefile.export.stratimikos" ) CONFIG_FILES="$CONFIG_FILES Makefile.export.stratimikos" ;;
   "src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
+  "example/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/Makefile" ;;
+  "example/generate-sample-output.pl.stub" ) CONFIG_FILES="$CONFIG_FILES example/generate-sample-output.pl.stub" ;;
   "test/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
   "depfiles" ) CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
   "src/Stratimikos_Config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS src/Stratimikos_Config.h:src/Stratimikos_Config.h.in" ;;

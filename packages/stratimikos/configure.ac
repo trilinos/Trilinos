@@ -298,6 +298,8 @@ AC_CONFIG_FILES([
     Makefile 
     Makefile.export.stratimikos
     src/Makefile
+    example/Makefile
+    example/generate-sample-output.pl.stub
     test/Makefile
     ])
 

@@ -26,6 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
+//#define THYRA_DEFAULT_REAL_LINEAR_SOLVER_BUILDER_DUMP
+
 #include "Thyra_DefaultRealLinearSolverBuilder.hpp"
 #ifdef HAVE_STRATIMIKOS_AMESOS_THYRA
 #  include "Thyra_AmesosLinearOpWithSolveFactory.hpp"
@@ -71,6 +73,7 @@ void DefaultRealLinearSolverBuilder::setLinearSolveStrategyFactory(
   )
 {
   lowsf_map_[solveStrategyName] = solveStrategyFactory;
+  validLowsfNames_.push_back(solveStrategyName);
   defaultLOWSF_ = solveStrategyName;
   validParamList_ = Teuchos::null;
 }
@@ -81,6 +84,7 @@ void DefaultRealLinearSolverBuilder::setPreconditioningStrategyFactory(
   )
 {
   pf_map_[precStrategyName] = precStrategyFactory;
+  validPfNames_.push_back(precStrategyName);
   defaultPF_ = precStrategyName;
   validParamList_ = Teuchos::null;
 }
@@ -182,16 +186,27 @@ DefaultRealLinearSolverBuilder::createLinearSolveStrategy(
   ) const
 {
   // Get the name of the linear solve strategy
+#ifdef THYRA_DEFAULT_REAL_LINEAR_SOLVER_BUILDER_DUMP
+  std::cout << "\nEntering DefaultRealLinearSolverBuilder::createLinearSolveStrategy(...) ...\n";
+  std::cout << "\nlinearSolveStrategyName = \"" << linearSolveStrategyName << "\"\n";
+  std::cout << "\nlinearSolveStrategyName.length() = " << linearSolveStrategyName.length() << "\n";
+  std::cout << "\ndefaultLOWSF_ = \"" << defaultLOWSF_ << "\"\n";
+  std::cout << "\nthis->getLinearSolveStrategyName() = \"" << this->getLinearSolveStrategyName() << "\"\n";
+#endif
   const std::string
-    &name = ( linearSolveStrategyName.length()
-              ? linearSolveStrategyName
-              : this->getLinearSolveStrategyName() );
+    name = ( linearSolveStrategyName.length()
+             ? linearSolveStrategyName
+             : this->getLinearSolveStrategyName() );
+#ifdef THYRA_DEFAULT_REAL_LINEAR_SOLVER_BUILDER_DUMP
+  std::cout << "\nname = \"" << name << "\"\n";
+#endif
   // Validate that the linear solver strategy with this name exists
   lowsf_map_t::const_iterator itr = lowsf_map_.find(name);
   TEST_FOR_EXCEPTION(
     itr == lowsf_map_.end(), std::invalid_argument
     ,"Error, the value \""<<LinearSolverType_name<<"\"=\""<<name<<"\" is not a valid"
-    " linear solver type.  See the list of valid linear solver types from this->getValidParameters()."
+    " linear solver type.  Valid linear solve strategy names include "
+    <<validLinearSolveStrategyNames()<<"!"
     );
   // Create the uninitialized LOWSFB object
   Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<double> >
@@ -218,9 +233,9 @@ DefaultRealLinearSolverBuilder::createPreconditioningStrategy(
 {
   // Get the name of the preconditioning strategy
   const std::string
-    &name = ( preconditioningStrategyName.length()
-              ? preconditioningStrategyName
-              : this->getPreconditionerStrategyName() );
+    name = ( preconditioningStrategyName.length()
+             ? preconditioningStrategyName
+             : this->getPreconditionerStrategyName() );
   Teuchos::RefCountPtr<PreconditionerFactoryBase<double> >
     pf = Teuchos::null;
   if( name != "None" ) {
@@ -228,7 +243,8 @@ DefaultRealLinearSolverBuilder::createPreconditioningStrategy(
     TEST_FOR_EXCEPTION(
       itr == pf_map_.end(), std::invalid_argument
       ,"Error, the value \""<<PreconditionerType_name<<"\"=\""<<name<<"\" is not a valid"
-      " preconditioner type.  See the list of valid preconditioner types from this->getValidParameters()."
+      " preconditioner type.  Valid preconditioning strategy names include "
+      <<validPreconditioningStrategyNames()<<"!"
       );
     Teuchos::RefCountPtr<PreconditionerFactoryBase<double> >
       pf = itr->second->create();
@@ -271,6 +287,34 @@ void DefaultRealLinearSolverBuilder::initializeDefaults()
     ,"Ifpack"
     );
 #endif
+}
+
+std::string
+DefaultRealLinearSolverBuilder::validLinearSolveStrategyNames() const
+{
+  std::ostringstream oss;
+  oss << "{";
+  for( int i = 0; i < validLowsfNames_.size(); ++i ) {
+    oss << "\"" << validLowsfNames_[i] << "\"";
+    if( i != validLowsfNames_.size()-1 )
+      oss << ",";
+  }
+  oss << "}";
+  return oss.str();
+}
+
+std::string
+DefaultRealLinearSolverBuilder::validPreconditioningStrategyNames() const
+{
+  std::ostringstream oss;
+  oss << "{";
+  for( int i = 0; i < validPfNames_.size(); ++i ) {
+    oss << "\"" << validPfNames_[i] << "\"";
+    if( i != validPfNames_.size()-1 )
+      oss << ",";
+  }
+  oss << "}";
+  return oss.str();
 }
 
 } // namespace Thyra

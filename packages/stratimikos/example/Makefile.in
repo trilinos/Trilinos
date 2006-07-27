@@ -42,7 +42,9 @@
 # ************************************************************************
 # @HEADER
 
-SOURCES = $(test_single_stratimikos_solver_driver_SOURCES)
+# The following line helps the test harness recover from build errors.
+
+SOURCES = $(simple_stratimikos_example_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -66,8 +68,9 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
 noinst_PROGRAMS = $(am__EXEEXT_1)
-subdir = test
-DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
+subdir = example
+DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
+	$(srcdir)/generate-sample-output.pl.stub.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
@@ -85,28 +88,25 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Stratimikos_Config.h
-CONFIG_CLEAN_FILES =
-am__EXEEXT_1 = test_single_stratimikos_solver_driver$(EXEEXT)
+CONFIG_CLEAN_FILES = generate-sample-output.pl.stub
+am__EXEEXT_1 = simple_stratimikos_example$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
-am__objects_1 = test_single_stratimikos_solver.$(OBJEXT)
-am_test_single_stratimikos_solver_driver_OBJECTS =  \
-	test_single_stratimikos_solver_driver.$(OBJEXT) \
-	$(am__objects_1)
-test_single_stratimikos_solver_driver_OBJECTS =  \
-	$(am_test_single_stratimikos_solver_driver_OBJECTS)
+am_simple_stratimikos_example_OBJECTS =  \
+	simple_stratimikos_example.$(OBJEXT)
+simple_stratimikos_example_OBJECTS =  \
+	$(am_simple_stratimikos_example_OBJECTS)
 am__DEPENDENCIES_1 =
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/test_single_stratimikos_solver.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/test_single_stratimikos_solver_driver.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/simple_stratimikos_example.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(test_single_stratimikos_solver_driver_SOURCES)
-DIST_SOURCES = $(test_single_stratimikos_solver_driver_SOURCES)
+SOURCES = $(simple_stratimikos_example_SOURCES)
+DIST_SOURCES = $(simple_stratimikos_example_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -147,7 +147,7 @@ ENABLE_STRATIMIKOS_EPETRAEXT_THYRA_FALSE = @ENABLE_STRATIMIKOS_EPETRAEXT_THYRA_F
 ENABLE_STRATIMIKOS_EPETRAEXT_THYRA_TRUE = @ENABLE_STRATIMIKOS_EPETRAEXT_THYRA_TRUE@
 ENABLE_STRATIMIKOS_IFPACK_THYRA_FALSE = @ENABLE_STRATIMIKOS_IFPACK_THYRA_FALSE@
 ENABLE_STRATIMIKOS_IFPACK_THYRA_TRUE = @ENABLE_STRATIMIKOS_IFPACK_THYRA_TRUE@
-EXEEXT = .exe
+EXEEXT = @EXEEXT@
 F77 = @F77@
 FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
@@ -245,29 +245,18 @@ target_vendor = @target_vendor@
 #
 # Actual programs
 #
-TEST_SINGLE_STRATIMIKOS_SOLVER_DRIVER = test_single_stratimikos_solver_driver
-test_single_stratimikos_solver_driver_SOURCES = $(srcdir)/test_single_stratimikos_solver_driver.cpp $(common_sources)
-test_single_stratimikos_solver_driver_DEPENDENCIES = $(common_dependencies)  FourByFour.xml
-test_single_stratimikos_solver_driver_LDADD = $(common_ldadd)
-#	cp  $(top_srcdir)/../amesos/test/Test_Basic/In_bcsstk01.mtx bcsstk01.mtx                              
-#	cp  $(top_srcdir)/../amesos/test/Test_Basic/In_bcsstk02.mtx bcsstk02.mtx                              
-#	cp  $(top_srcdir)/../amesos/test/Test_Basic/In_bcsstk04.mtx bcsstk04.mtx                              
-#	cp  $(top_srcdir)/../amesos/test/Test_Basic/In_nos1.mtx nos1.mtx                                      
-#	cp  $(top_srcdir)/../amesos/test/Test_Basic/In_nos5.mtx nos5.mtx                                      
-#	cp  $(top_srcdir)/../amesos/test/Test_Basic/In_Diagonal.mtx Diagonal.mtx                              
-#	cp  $(top_srcdir)/../amesos/test/Test_Basic/In_MissingADiagonal.mtx MissingADiagonal.mtx                              
-#	cp  $(top_srcdir)/../amesos/test/Test_Basic/In_KheadK.mtx KheadK.mtx                                  
-#	cp  $(top_srcdir)/../amesos/test/Test_Basic/In_KheadSorted.mtx  KheadSorted.mtx
-#	cp  $(top_srcdir)/../amesos/test/Test_Basic/In_Khead.triS Khead.triS  
+SIMPLE_STRATIMIKOS_EXAMPLE = simple_stratimikos_example
+simple_stratimikos_example_SOURCES = $(srcdir)/simple_stratimikos_example.cpp
+simple_stratimikos_example_DEPENDENCIES = $(common_dependencies)
+simple_stratimikos_example_LDADD = $(common_ldadd)
 
 #
 # Common stuff
 #
-common_sources = $(srcdir)/test_single_stratimikos_solver.cpp
 common_dependencies = $(top_builddir)/src/libstratimikos.a
-AM_CPPFLAGS = -I$(top_srcdir)/../thyra/example/operator_solve $(STRATIMIKOS_INCLUDES)
+AM_CPPFLAGS = $(STRATIMIKOS_INCLUDES)
 common_ldadd = $(STRATIMIKOS_LIBS)
-EXTRA_DIST = $(srcdir)/test_single_stratimikos_solver.hpp
+EXTRA_DIST = $(srcdir)/simple_stratimikos_example.cpp
 all: all-am
 
 .SUFFIXES:
@@ -281,9 +270,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  test/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  example/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  test/Makefile
+	  $(AUTOMAKE) --foreign  example/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -301,12 +290,14 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
+generate-sample-output.pl.stub: $(top_builddir)/config.status $(srcdir)/generate-sample-output.pl.stub.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-test_single_stratimikos_solver_driver$(EXEEXT): $(test_single_stratimikos_solver_driver_OBJECTS) $(test_single_stratimikos_solver_driver_DEPENDENCIES) 
-	@rm -f test_single_stratimikos_solver_driver$(EXEEXT)
-	$(CXXLINK) $(test_single_stratimikos_solver_driver_LDFLAGS) $(test_single_stratimikos_solver_driver_OBJECTS) $(test_single_stratimikos_solver_driver_LDADD) $(LIBS)
+simple_stratimikos_example$(EXEEXT): $(simple_stratimikos_example_OBJECTS) $(simple_stratimikos_example_DEPENDENCIES) 
+	@rm -f simple_stratimikos_example$(EXEEXT)
+	$(CXXLINK) $(simple_stratimikos_example_LDFLAGS) $(simple_stratimikos_example_OBJECTS) $(simple_stratimikos_example_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -314,8 +305,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_single_stratimikos_solver.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_single_stratimikos_solver_driver.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/simple_stratimikos_example.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -333,37 +323,21 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-test_single_stratimikos_solver_driver.o: $(srcdir)/test_single_stratimikos_solver_driver.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT test_single_stratimikos_solver_driver.o -MD -MP -MF "$(DEPDIR)/test_single_stratimikos_solver_driver.Tpo" -c -o test_single_stratimikos_solver_driver.o `test -f '$(srcdir)/test_single_stratimikos_solver_driver.cpp' || echo '$(srcdir)/'`$(srcdir)/test_single_stratimikos_solver_driver.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/test_single_stratimikos_solver_driver.Tpo" "$(DEPDIR)/test_single_stratimikos_solver_driver.Po"; else rm -f "$(DEPDIR)/test_single_stratimikos_solver_driver.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_single_stratimikos_solver_driver.cpp' object='test_single_stratimikos_solver_driver.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/test_single_stratimikos_solver_driver.Po' tmpdepfile='$(DEPDIR)/test_single_stratimikos_solver_driver.TPo' @AMDEPBACKSLASH@
+simple_stratimikos_example.o: $(srcdir)/simple_stratimikos_example.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT simple_stratimikos_example.o -MD -MP -MF "$(DEPDIR)/simple_stratimikos_example.Tpo" -c -o simple_stratimikos_example.o `test -f '$(srcdir)/simple_stratimikos_example.cpp' || echo '$(srcdir)/'`$(srcdir)/simple_stratimikos_example.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/simple_stratimikos_example.Tpo" "$(DEPDIR)/simple_stratimikos_example.Po"; else rm -f "$(DEPDIR)/simple_stratimikos_example.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/simple_stratimikos_example.cpp' object='simple_stratimikos_example.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/simple_stratimikos_example.Po' tmpdepfile='$(DEPDIR)/simple_stratimikos_example.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o test_single_stratimikos_solver_driver.o `test -f '$(srcdir)/test_single_stratimikos_solver_driver.cpp' || echo '$(srcdir)/'`$(srcdir)/test_single_stratimikos_solver_driver.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o simple_stratimikos_example.o `test -f '$(srcdir)/simple_stratimikos_example.cpp' || echo '$(srcdir)/'`$(srcdir)/simple_stratimikos_example.cpp
 
-test_single_stratimikos_solver_driver.obj: $(srcdir)/test_single_stratimikos_solver_driver.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT test_single_stratimikos_solver_driver.obj -MD -MP -MF "$(DEPDIR)/test_single_stratimikos_solver_driver.Tpo" -c -o test_single_stratimikos_solver_driver.obj `if test -f '$(srcdir)/test_single_stratimikos_solver_driver.cpp'; then $(CYGPATH_W) '$(srcdir)/test_single_stratimikos_solver_driver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_single_stratimikos_solver_driver.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/test_single_stratimikos_solver_driver.Tpo" "$(DEPDIR)/test_single_stratimikos_solver_driver.Po"; else rm -f "$(DEPDIR)/test_single_stratimikos_solver_driver.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_single_stratimikos_solver_driver.cpp' object='test_single_stratimikos_solver_driver.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/test_single_stratimikos_solver_driver.Po' tmpdepfile='$(DEPDIR)/test_single_stratimikos_solver_driver.TPo' @AMDEPBACKSLASH@
+simple_stratimikos_example.obj: $(srcdir)/simple_stratimikos_example.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT simple_stratimikos_example.obj -MD -MP -MF "$(DEPDIR)/simple_stratimikos_example.Tpo" -c -o simple_stratimikos_example.obj `if test -f '$(srcdir)/simple_stratimikos_example.cpp'; then $(CYGPATH_W) '$(srcdir)/simple_stratimikos_example.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/simple_stratimikos_example.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/simple_stratimikos_example.Tpo" "$(DEPDIR)/simple_stratimikos_example.Po"; else rm -f "$(DEPDIR)/simple_stratimikos_example.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/simple_stratimikos_example.cpp' object='simple_stratimikos_example.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/simple_stratimikos_example.Po' tmpdepfile='$(DEPDIR)/simple_stratimikos_example.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o test_single_stratimikos_solver_driver.obj `if test -f '$(srcdir)/test_single_stratimikos_solver_driver.cpp'; then $(CYGPATH_W) '$(srcdir)/test_single_stratimikos_solver_driver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_single_stratimikos_solver_driver.cpp'; fi`
-
-test_single_stratimikos_solver.o: $(srcdir)/test_single_stratimikos_solver.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT test_single_stratimikos_solver.o -MD -MP -MF "$(DEPDIR)/test_single_stratimikos_solver.Tpo" -c -o test_single_stratimikos_solver.o `test -f '$(srcdir)/test_single_stratimikos_solver.cpp' || echo '$(srcdir)/'`$(srcdir)/test_single_stratimikos_solver.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/test_single_stratimikos_solver.Tpo" "$(DEPDIR)/test_single_stratimikos_solver.Po"; else rm -f "$(DEPDIR)/test_single_stratimikos_solver.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_single_stratimikos_solver.cpp' object='test_single_stratimikos_solver.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/test_single_stratimikos_solver.Po' tmpdepfile='$(DEPDIR)/test_single_stratimikos_solver.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o test_single_stratimikos_solver.o `test -f '$(srcdir)/test_single_stratimikos_solver.cpp' || echo '$(srcdir)/'`$(srcdir)/test_single_stratimikos_solver.cpp
-
-test_single_stratimikos_solver.obj: $(srcdir)/test_single_stratimikos_solver.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT test_single_stratimikos_solver.obj -MD -MP -MF "$(DEPDIR)/test_single_stratimikos_solver.Tpo" -c -o test_single_stratimikos_solver.obj `if test -f '$(srcdir)/test_single_stratimikos_solver.cpp'; then $(CYGPATH_W) '$(srcdir)/test_single_stratimikos_solver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_single_stratimikos_solver.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/test_single_stratimikos_solver.Tpo" "$(DEPDIR)/test_single_stratimikos_solver.Po"; else rm -f "$(DEPDIR)/test_single_stratimikos_solver.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_single_stratimikos_solver.cpp' object='test_single_stratimikos_solver.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/test_single_stratimikos_solver.Po' tmpdepfile='$(DEPDIR)/test_single_stratimikos_solver.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o test_single_stratimikos_solver.obj `if test -f '$(srcdir)/test_single_stratimikos_solver.cpp'; then $(CYGPATH_W) '$(srcdir)/test_single_stratimikos_solver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_single_stratimikos_solver.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o simple_stratimikos_example.obj `if test -f '$(srcdir)/simple_stratimikos_example.cpp'; then $(CYGPATH_W) '$(srcdir)/simple_stratimikos_example.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/simple_stratimikos_example.cpp'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
@@ -442,7 +416,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(PROGRAMS)
+all-am: Makefile $(PROGRAMS) all-local
 installdirs:
 install: install-am
 install-exec: install-exec-am
@@ -517,30 +491,26 @@ ps-am:
 
 uninstall-am: uninstall-info-am
 
-.PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-noinstPROGRAMS ctags distclean distclean-compile \
-	distclean-generic distclean-tags distdir dvi dvi-am html \
-	html-am info info-am install install-am install-data \
-	install-data-am install-exec install-exec-am install-info \
-	install-info-am install-man install-strip installcheck \
-	installcheck-am installdirs maintainer-clean \
+.PHONY: CTAGS GTAGS all all-am all-local check check-am clean \
+	clean-generic clean-noinstPROGRAMS ctags distclean \
+	distclean-compile distclean-generic distclean-tags distdir dvi \
+	dvi-am html html-am info info-am install install-am \
+	install-data install-data-am install-exec install-exec-am \
+	install-info install-info-am install-man install-strip \
+	installcheck installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am uninstall-info-am
 
 
-#test_stratimikos_driver_SOURCES = $(srcdir)/test_stratimikos_driver.cpp $(common_sources)
-#test_stratimikos_driver_DEPENDENCIES = $(common_dependencies) FourByFour.mtx
-#test_stratimikos_driver_LDADD = $(common_ldadd)
+all-local: generate-sample-output.pl
+	@echo ""
+	@echo "Trilinos package stratimikos subdirectory example built successfully."
+	@echo ""
 
-FourByFour.xml:
-	cp  $(top_srcdir)/../amesos/test/Test_Basic/In_FourByFour.mtx FourByFour.mtx                          
-	cp  $(srcdir)/_FourByFour.xml FourByFour.xml
-	cp  $(srcdir)/_FourByFour.amesos.xml FourByFour.amesos.xml
-	cp  $(srcdir)/_FourByFour.aztecoo.np.xml FourByFour.aztecoo.np.xml
-	cp  $(srcdir)/_FourByFour.aztecoo.ifpack.xml FourByFour.aztecoo.ifpack.xml
-	cp  $(srcdir)/_FourByFour.belos.np.xml FourByFour.belos.np.xml
-	cp  $(srcdir)/_FourByFour.belos.ifpack.xml FourByFour.belos.ifpack.xml
+generate-sample-output.pl : generate-sample-output.pl.stub
+	cp generate-sample-output.pl.stub generate-sample-output.pl
+	chmod a+x generate-sample-output.pl
 
 include $(top_builddir)/Makefile.export.stratimikos
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
