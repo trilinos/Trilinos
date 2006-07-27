@@ -146,7 +146,6 @@ int main( int argc, char *argv[] )
     success = runVectorTests<std::complex<double> >(n, out) && success;
 
 #endif
-    
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true,out.get()?*out:std::cerr,success)
 

@@ -72,17 +72,16 @@ namespace Thyra
   void OpTimesLC<Scalar, Node>::addInto(Thyra::Vector<Scalar>& result,
                             LCSign sign) const
   {
+    Scalar s = sign;
     if (op_.constPtr().get() != 0)
       {
         Thyra::Vector<Scalar> tmp;
         op_.apply(x_.evalToConst(), tmp);
-        axpy(sign*alpha_, tmp, result);
-        //        result.update(sign*alpha_, tmp);
+        axpy(s*alpha_, tmp, result);
       }
     else
       {
-        axpy(sign*alpha_, x_.evalToConst(), result);
-        //        result.update(sign*alpha_, x_.evalToConst());
+        axpy(s*alpha_, x_.evalToConst(), result);
       }
   } 
 

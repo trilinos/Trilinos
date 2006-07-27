@@ -209,13 +209,13 @@ namespace Thyra
   inline bool VectorOpTester<Scalar>
   ::setElementUsingBracketTest() const 
   {
-    
     typedef Teuchos::ScalarTraits<Index> IST;
     typedef Teuchos::ScalarTraits<Scalar> ST;
 
     ScalarMag err = ST::magnitude(ST::zero());
 
-    if (spec_.doTest())
+    /* this test requires a comparison operator to make sense */
+    if (ST::isComparable && spec_.doTest())
       {
         Vector<Scalar> a = space_.createMember();
 
@@ -273,8 +273,30 @@ namespace Thyra
       }
     *out_ << "vector setElementUsingBracket test PASSED: error=" << err << ", tol = " 
          << spec_.errorTol() << endl;
+
     return true;
   }
+
+  /* specialize the set element test for complex types to a no-op. 
+   * This is because minloc and maxloc do not exist for complex vectors 
+   */
+#if defined(HAVE_COMPLEX) && defined(HAVE_TEUCHOS_COMPLEX)
+  template <> 
+  inline bool VectorOpTester<std::complex<double> >
+  ::setElementUsingBracketTest() const 
+  {
+    *out_ << "skipping vector setElementUsingBracket test..." << endl;
+    return true;
+  }
+
+  template <> 
+  inline bool VectorOpTester<std::complex<float> >
+  ::setElementUsingBracketTest() const 
+  {
+    *out_ << "skipping vector setElementUsingBracket test..." << endl;
+    return true;
+  }
+#endif
 
 
   

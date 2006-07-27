@@ -63,7 +63,8 @@ namespace Thyra
   template <class Scalar> inline
   void ConstVector<Scalar>::addInto(Vector<Scalar>& acceptor, LCSign sign) const
   {
-    Thyra::axpy(sign * Teuchos::ScalarTraits<Scalar>::one(), *this, acceptor);
+    Scalar s = sign;
+    Thyra::axpy(s, *this, acceptor);
   }
 
 
