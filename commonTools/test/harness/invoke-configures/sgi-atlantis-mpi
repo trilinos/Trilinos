@@ -42,7 +42,6 @@ LDFLAGS=" -64 -L/usr/lib64/mips4/r10000 -L/usr/lib64/mips4 -L/usr/lib64 -LANG:st
 --enable-didasko \
 --enable-epetra \
 --enable-epetra-abc \
---enable-epetra-thyra \
 --enable-epetraext \
 --enable-epetraext-inout \
 --enable-epetraext-coloring \
