@@ -1,9 +1,9 @@
-Teuchos::GlobalMPISession::GlobalMPISession(): started serial run
 
 Echoing the command-line:
 
-c:\_mystuff\PROJECTS\Trilinos.base\BUILDS\INTEL\SERIAL_DEBUG\packages\stratimikos\test\test_single_stratimikos_solver_driver.exe --echo-command-line --input-file=FourByFour.xml 
+./test_single_stratimikos_solver_driver.exe --echo-command-line --input-file=FourByFour.xml 
 
+Teuchos::GlobalMPISession::GlobalMPISession(): started serial run
 
 Reading parameters from XML file "FourByFour.xml" ...
 
@@ -40,7 +40,7 @@ Valid parameters for DefaultRealLinearSolverBuilder ...
      NoDestroy : bool = 0
      OutputLevel : int = 1
      PrintTiming : bool = 0
-     RcondThreshold : double = 1e-012
+     RcondThreshold : double = 1e-12
      Redistribute : bool = 0
      Refactorize : bool = 0
      Reindex : int = 0
@@ -56,10 +56,48 @@ Valid parameters for DefaultRealLinearSolverBuilder ...
        [empty list]
      Superludist -> 
        [empty list]
+ AztecOO -> 
+   Output Every RHS : bool = 0
+   Adjoint Solve -> 
+     Max Iterations : int = 400
+     Tolerance : double = 1e-06
+     AztecOO -> 
+       Aztec Preconditioner : string = ilu
+       Aztec Solver : string = GMRES
+       Convergence Test : string = r0
+       Drop Tolerance : double = 0
+       Fill Factor : double = 1
+       Graph Fill : int = 0
+       Ill-Conditioning Threshold : double = 1e+11
+       Orthogonalization : string = Classical
+       Output Frequency : int = 0
+       Overlap : int = 0
+       Polynomial Order : int = 3
+       RCM Reordering : string = Disabled
+       Size of Krylov Subspace : int = 300
+       Steps : int = 3
+   Forward Solve -> 
+     Max Iterations : int = 400
+     Tolerance : double = 1e-06
+     AztecOO -> 
+       Aztec Preconditioner : string = ilu
+       Aztec Solver : string = GMRES
+       Convergence Test : string = r0
+       Drop Tolerance : double = 0
+       Fill Factor : double = 1
+       Graph Fill : int = 0
+       Ill-Conditioning Threshold : double = 1e+11
+       Orthogonalization : string = Classical
+       Output Frequency : int = 0
+       Overlap : int = 0
+       Polynomial Order : int = 3
+       RCM Reordering : string = Disabled
+       Size of Krylov Subspace : int = 300
+       Steps : int = 3
  Belos -> 
    Adjustable Block Size : bool = 1
    Block Size : int = 1
-   Default Rel Res Norm : double = 1e-006
+   Default Rel Res Norm : double = 1e-06
    Max Iters : int = 400
    Max Restarts : int = 25
    Solver Type : string = GMRES
@@ -118,13 +156,13 @@ Running example use cases ...
     Solve status:
       solveStatus = SOLVE_STATUS_UNKNOWN
       achievedTol = unknownTolerance()
-      message: "Solver: class Amesos_Klu"
+      message: "Solver: 10Amesos_Klu"
       extraParameters: NONE
     
     Creating a scaled adjoint LinearOpWithSolveBase object ...
     
     Created LOWSB object:
-      Thyra::AmesosLinearOpWithSolve(fwdOp='DefaultScaledAdjointLinearOp<double>{2,CONJTRANS,Thyra::EpetraLinearOp{op='class Epetra_CrsMatrix'}}',amesosSolver='class Amesos_Klu'){rangeDim=4,domainDim=4}
+      Thyra::AmesosLinearOpWithSolve(fwdOp='DefaultScaledAdjointLinearOp<double>{2,CONJTRANS,Thyra::EpetraLinearOp{op='16Epetra_CrsMatrix'}}',amesosSolver='10Amesos_Klu'){rangeDim=4,domainDim=4}
     
     Performing a solve, changing the operator, then performing another solve ...
     

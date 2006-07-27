@@ -1,10 +1,9 @@
-Teuchos::GlobalMPISession::GlobalMPISession(): started serial run
 
 Echoing the command-line:
 
-c:\_mystuff\PROJECTS\Trilinos.base\BUILDS\INTEL\SERIAL_DEBUG\packages\stratimikos\test\test_single_stratimikos_solver_driver.exe --echo-command-line --help 
+./test_single_stratimikos_solver_driver.exe --echo-command-line --help 
 
-Usage: c:\_mystuff\PROJECTS\Trilinos.base\BUILDS\INTEL\SERIAL_DEBUG\packages\stratimikos\test\test_single_stratimikos_solver_driver.exe [options]
+Usage: ./test_single_stratimikos_solver_driver.exe [options]
   options:
   --help                         Prints this help message
   --pause-for-debugging          Pauses for user input to allow attaching a debugger
@@ -18,3 +17,4 @@ DETAILED DOCUMENTATION:
 
 Testing program for Trilinos (and non-Trilinos) linear solvers access through Thyra.
 
+Teuchos::GlobalMPISession::GlobalMPISession(): started serial run

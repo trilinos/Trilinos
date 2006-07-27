@@ -42,8 +42,6 @@
 # ************************************************************************
 # @HEADER
 
-# The following line helps the test harness recover from build errors.
-
 SOURCES = $(simple_stratimikos_example_SOURCES)
 
 srcdir = @srcdir@
@@ -147,7 +145,7 @@ ENABLE_STRATIMIKOS_EPETRAEXT_THYRA_FALSE = @ENABLE_STRATIMIKOS_EPETRAEXT_THYRA_F
 ENABLE_STRATIMIKOS_EPETRAEXT_THYRA_TRUE = @ENABLE_STRATIMIKOS_EPETRAEXT_THYRA_TRUE@
 ENABLE_STRATIMIKOS_IFPACK_THYRA_FALSE = @ENABLE_STRATIMIKOS_IFPACK_THYRA_FALSE@
 ENABLE_STRATIMIKOS_IFPACK_THYRA_TRUE = @ENABLE_STRATIMIKOS_IFPACK_THYRA_TRUE@
-EXEEXT = @EXEEXT@
+EXEEXT = .exe
 F77 = @F77@
 FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
@@ -502,6 +500,8 @@ uninstall-am: uninstall-info-am
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am uninstall-info-am
 
+
+# The following line helps the test harness recover from build errors.
 
 all-local: generate-sample-output.pl
 	@echo ""

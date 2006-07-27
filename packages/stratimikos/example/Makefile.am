@@ -26,6 +26,8 @@
 # ************************************************************************
 # @HEADER
 
+EXEEXT = .exe
+
 # The following line helps the test harness recover from build errors.
 
 all-local: generate-sample-output.pl

@@ -1,9 +1,9 @@
-Teuchos::GlobalMPISession::GlobalMPISession(): started serial run
 
 Echoing the command-line:
 
-c:\_mystuff\PROJECTS\Trilinos.base\BUILDS\INTEL\SERIAL_DEBUG\packages\stratimikos\test\test_single_stratimikos_solver_driver.exe --echo-command-line --input-file=FourByFour.belos.np.xml 
+./test_single_stratimikos_solver_driver.exe --echo-command-line --input-file=FourByFour.belos.np.xml 
 
+Teuchos::GlobalMPISession::GlobalMPISession(): started serial run
 
 Reading parameters from XML file "FourByFour.belos.np.xml" ...
 
@@ -41,7 +41,7 @@ Valid parameters for DefaultRealLinearSolverBuilder ...
      NoDestroy : bool = 0
      OutputLevel : int = 1
      PrintTiming : bool = 0
-     RcondThreshold : double = 1e-012
+     RcondThreshold : double = 1e-12
      Redistribute : bool = 0
      Refactorize : bool = 0
      Reindex : int = 0
@@ -57,10 +57,48 @@ Valid parameters for DefaultRealLinearSolverBuilder ...
        [empty list]
      Superludist -> 
        [empty list]
+ AztecOO -> 
+   Output Every RHS : bool = 0
+   Adjoint Solve -> 
+     Max Iterations : int = 400
+     Tolerance : double = 1e-06
+     AztecOO -> 
+       Aztec Preconditioner : string = ilu
+       Aztec Solver : string = GMRES
+       Convergence Test : string = r0
+       Drop Tolerance : double = 0
+       Fill Factor : double = 1
+       Graph Fill : int = 0
+       Ill-Conditioning Threshold : double = 1e+11
+       Orthogonalization : string = Classical
+       Output Frequency : int = 0
+       Overlap : int = 0
+       Polynomial Order : int = 3
+       RCM Reordering : string = Disabled
+       Size of Krylov Subspace : int = 300
+       Steps : int = 3
+   Forward Solve -> 
+     Max Iterations : int = 400
+     Tolerance : double = 1e-06
+     AztecOO -> 
+       Aztec Preconditioner : string = ilu
+       Aztec Solver : string = GMRES
+       Convergence Test : string = r0
+       Drop Tolerance : double = 0
+       Fill Factor : double = 1
+       Graph Fill : int = 0
+       Ill-Conditioning Threshold : double = 1e+11
+       Orthogonalization : string = Classical
+       Output Frequency : int = 0
+       Overlap : int = 0
+       Polynomial Order : int = 3
+       RCM Reordering : string = Disabled
+       Size of Krylov Subspace : int = 300
+       Steps : int = 3
  Belos -> 
    Adjustable Block Size : bool = 1
    Block Size : int = 1
-   Default Rel Res Norm : double = 1e-006
+   Default Rel Res Norm : double = 1e-06
    Max Iters : int = 400
    Max Restarts : int = 25
    Solver Type : string = GMRES
@@ -119,7 +157,7 @@ Running example use cases ...
     Solve status:
       solveStatus = SOLVE_STATUS_UNKNOWN
       achievedTol = unknownTolerance()
-      message: "The Belos solver of type "Belos::BlockGmres<...,double>{Variant='Standard'}" returned a solve status of "Converged" in 4 iterations and achieved an approximate max tolerance of 0 with total CPU time of 0.12 sec"
+      message: "The Belos solver of type "Belos::BlockGmres<...,double>{Variant='Standard'}" returned a solve status of "Converged" in 4 iterations and achieved an approximate max tolerance of 0 with total CPU time of 0.008676 sec"
       extraParameters: NONE
     
     Creating a scaled adjoint LinearOpWithSolveBase object ...
@@ -137,7 +175,7 @@ Running example use cases ...
                 transp=CONJTRANS
                   origOp =
                     type = 'Thyra::EpetraLinearOp', rangeDim = 4, domainDim = 4
-                      op='class Epetra_CrsMatrix'
+                      op='16Epetra_CrsMatrix'
                       opTrans=NOTRANS
                       applyAs=EPETRA_OP_APPLY_APPLY
                       adjointSupport=EPETRA_OP_ADJOINT_SUPPORTED
@@ -156,7 +194,7 @@ Printing the parameter list (showing what was used) ...
    Belos -> 
      Adjustable Block Size : bool = 1   [default]
      Block Size : int = 1   [default]
-     Default Rel Res Norm : double = 1e-006   [default]
+     Default Rel Res Norm : double = 1e-06   [default]
      Max Iters : int = 400   [default]
      Max Restarts : int = 25   [default]
      Solver Type : string = GMRES   [default]

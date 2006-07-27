@@ -15,7 +15,7 @@
      NoDestroy : bool = 0
      OutputLevel : int = 1
      PrintTiming : bool = 0
-     RcondThreshold : double = 1e-012
+     RcondThreshold : double = 1e-12
      Redistribute : bool = 0
      Refactorize : bool = 0
      Reindex : int = 0
@@ -31,10 +31,48 @@
        [empty list]
      Superludist -> 
        [empty list]
+ AztecOO -> 
+   Output Every RHS : bool = 0
+   Adjoint Solve -> 
+     Max Iterations : int = 400
+     Tolerance : double = 1e-06
+     AztecOO -> 
+       Aztec Preconditioner : string = ilu
+       Aztec Solver : string = GMRES
+       Convergence Test : string = r0
+       Drop Tolerance : double = 0
+       Fill Factor : double = 1
+       Graph Fill : int = 0
+       Ill-Conditioning Threshold : double = 1e+11
+       Orthogonalization : string = Classical
+       Output Frequency : int = 0
+       Overlap : int = 0
+       Polynomial Order : int = 3
+       RCM Reordering : string = Disabled
+       Size of Krylov Subspace : int = 300
+       Steps : int = 3
+   Forward Solve -> 
+     Max Iterations : int = 400
+     Tolerance : double = 1e-06
+     AztecOO -> 
+       Aztec Preconditioner : string = ilu
+       Aztec Solver : string = GMRES
+       Convergence Test : string = r0
+       Drop Tolerance : double = 0
+       Fill Factor : double = 1
+       Graph Fill : int = 0
+       Ill-Conditioning Threshold : double = 1e+11
+       Orthogonalization : string = Classical
+       Output Frequency : int = 0
+       Overlap : int = 0
+       Polynomial Order : int = 3
+       RCM Reordering : string = Disabled
+       Size of Krylov Subspace : int = 300
+       Steps : int = 3
  Belos -> 
    Adjustable Block Size : bool = 1
    Block Size : int = 1
-   Default Rel Res Norm : double = 1e-006
+   Default Rel Res Norm : double = 1e-06
    Max Iters : int = 400
    Max Restarts : int = 25
    Solver Type : string = GMRES
