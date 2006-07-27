@@ -519,7 +519,7 @@ static int seq_part (
     /* If order==NULL, then use linear order. */
     j = order ? order[i] : i;
     /* for non-fixed vertices */
-    if ((!hg->fixed) || (hg->fixed[i] == -1)){
+    if ((!hg->fixed) || (hg->fixed[j] == -1)){
       part[j] = pnumber;
       old_sum = part_sum;
       part_sum += hg->vwgt[j*vwgtdim];
