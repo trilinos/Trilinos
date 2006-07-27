@@ -30,6 +30,7 @@
 
 %{
 #include "Epetra_Operator.h"
+#include "Epetra_InvOperator.h"
 #include "Epetra_RowMatrix.h"
 #include "Epetra_BasicRowMatrix.h"
 #include "Epetra_CrsMatrix.h"
@@ -47,6 +48,7 @@
 
 // Feature directives
 %feature("director") Epetra_Operator;
+%feature("director") Epetra_InvOperator;
 %feature("director") PyOperator;
 %feature("director") Epetra_RowMatrix;
 %feature("director") PyRowMatrix;
@@ -85,6 +87,7 @@
 
 // Rename directives
 %rename(Operator          ) Epetra_Operator;
+%rename(InvOperator       ) Epetra_InvOperator;
 %rename(RowMatrix         ) Epetra_RowMatrix;
 %rename(BasicRowMatrix    ) Epetra_BasicRowMatrix;
 %rename(CrsMatrix         ) Epetra_CrsMatrix;
@@ -110,8 +113,10 @@ EXCEPTION_HANDLER(Epetra_JadMatrix    ,Epetra_JadMatrix   )
 
 // Include directives
 %warnfilter(473) Epetra_Operator;
+%warnfilter(473) Epetra_InvOperator;
 %warnfilter(473) Epetra_RowMatrix;
 %include "Epetra_Operator.h"
+%include "Epetra_InvOperator.h"
 %include "Epetra_RowMatrix.h"
 %include "Epetra_BasicRowMatrix.h"
 %include "Epetra_CrsMatrix.h"
