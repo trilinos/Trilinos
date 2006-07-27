@@ -63,9 +63,11 @@ int main(int argc, char *argv[])
   MPI_Init(&argc,&argv);
 #endif
 
-  int MyPID = 0;
+  int MyPID;
 #ifdef HAVE_MPI
   MPI_Comm_rank(MPI_COMM_WORLD, &MyPID);
+#else 
+  MyPID = 0;
 #endif
   bool verbose = false;
   std::string filename("mhd1280b.cua");

@@ -26,7 +26,7 @@
 // ***********************************************************************
 // @HEADER
 //
-// This test is for LOBPCG solving a standard (Ax=xl) real Hermitian
+// This test is for LOBPCG solving a generalized (Ax=Bxl) real Hermitian
 // eigenvalue problem, using the LOBPCGSolMgr solver manager.
 //
 #include "AnasaziConfigDefs.hpp"
@@ -47,8 +47,6 @@
 #endif
 
 #include "ModeLaplace1DQ1.h"
-using namespace Teuchos;
-
 
 using namespace Teuchos;
 
