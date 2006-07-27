@@ -50,8 +50,7 @@ endif
 endif
 
 #np# List all executable names here
-dontcompile = $(BLOCK_DAVIDSON_COMPLEX_TEST)
-noinst_PROGRAMS = BlockDavidson_solvertest BlockDavidson_test 
+noinst_PROGRAMS = BlockDavidson_solvertest BlockDavidson_test $(BLOCK_DAVIDSON_COMPLEX_TEST)
 
 Dummy$(EXEEXT): $(srcdir)/Dummy
 	cp  $(srcdir)/../MVOPTester/mhd1280b.cua mhd1280b.cua
