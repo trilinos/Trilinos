@@ -104,11 +104,11 @@ public:
   /** \brief . */
   using VectorDefaultBase<Scalar>::applyOp;
   /** \brief . */
-  using VectorBase<Scalar>::acquireDetachedView;
+  //using VectorBase<Scalar>::acquireDetachedView;
   /** \brief . */
-  using VectorBase<Scalar>::releaseDetachedView;
+  //using VectorBase<Scalar>::releaseDetachedView;
   /** \brief . */
-  using VectorBase<Scalar>::commitDetachedView;
+  //using VectorBase<Scalar>::commitDetachedView;
 
   /** \brief . */
   SpmdVectorBase();
