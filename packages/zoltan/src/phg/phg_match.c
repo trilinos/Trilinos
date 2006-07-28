@@ -40,6 +40,11 @@ typedef struct triplet {
     
 static HGraph *HG_Ptr;
 
+#define MATCH_OK(hgp, hg, fv1, fv2) \
+        (!((hgp)->UseFixedVtx)   ||     \
+         ((fv1) < 0) ||     \
+         ((fv2) < 0) ||     \
+         ((((fv1) < (hg)->bisec_split) ? 0 : 1) == (((fv2) < (hg)->bisec_split) ? 0 : 1)))
 
 
 /*****************************************************************************/
@@ -212,7 +217,7 @@ static int Zoltan_PHG_match_isolated(
                      and match vertices that share a common neighbor */
                   if (v==-1)
                       v = i;
-                  else if (!hgp->UseFixedVtx || (hg->fixed[i] == hg->fixed[v])){
+                  else if (MATCH_OK(hgp, hg, hg->fixed[i], hg->fixed[v])) {
                       match[v] = i;
                       match[i] = v;
                       v = -1;
@@ -298,8 +303,7 @@ static int matching_ipm(ZZ *zz, HGraph *hg, PHGPartParams *hgp,
         for (i = 0; i < n; i++) {
             v2 = adj[i];
             if (ips[v2] > maxip && v2 != v1 && match[v2] == v2
-&& (!(hgp->UseFixedVtx) || !(hg->fixed[v2] >= 0 && hg->fixed[v1] >= 0
-&& hg->fixed[v1] != hg->fixed[v2]))         
+&& MATCH_OK(hgp, hg, hg->fixed[v1], hg->fixed[v2])
             ) {
                 maxip = ips[v2];
                 maxindex = v2;
@@ -864,8 +868,7 @@ fixed = hg->fixed[candidate_gno];
         for (i = 0; i < m; i++)  {
           lno = index[i];
           if (sums[lno] > PSUM_THRESHOLD
-&& (!(hgp->UseFixedVtx) || !(hg->fixed[lno] >= 0 && fixed >= 0
-&& hg->fixed[lno] != fixed)))
+&& MATCH_OK(hgp, hg, hg->fixed[lno], fixed))
             aux[count++] = lno;      /* save lno for significant partial sum */
           else
             sums[lno] = 0.0;         /* clear unwanted entries */  
