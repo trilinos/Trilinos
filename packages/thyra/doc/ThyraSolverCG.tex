@@ -1,0 +1,20 @@
+\noindent {\bf Remarks:}
+\begin{itemize}
+    \item \lcode{ThyraSolverCG} derives from \lcode{IterativeSolver}
+  which, in turn, derives from \lcode{LinearSolverBase}.  If the
+  solver is derived from  \lcode{LinearSolverBase} it can be attached
+  to a linear operator using the \lcode{inverse} method.  The
+  \lcode{IterativeSolver} class has several methods specific to
+  iterative solvers, including methods to set and retrieve controls
+  such as the tolerance value for convergence and the maximum number
+  of iterations allowed.
+    \item \lcode{ThyraSolverCG} also derives from \lcode{Printable}
+  and \lcode{Describable} which are interfaces that provide a standard
+  way for a class to describe itself to the outside world.
+    \item verbosity
+    \item \paramList\ is used to pass in a set of parameters in a
+  standard way.  Basically, \paramList\ is a set of key-value pairs.
+  It can be constructed using methods in the class itself or its
+  information can be obtained from an \xml\ input file.  We'll show
+  how to do this in the main code that follows.
+\end{itemize}
