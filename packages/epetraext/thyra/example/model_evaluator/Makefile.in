@@ -304,8 +304,8 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 ForwardSolveEpetraModelEval2DSim_SOURCES = \
   $(srcdir)/ForwardSolveEpetraModelEval2DSimMain.cpp\
-  $(top_srcdir)/example/model_evaluator/EpetraModelEval2DSim.cpp \
-  $(top_srcdir)/example/model_evaluator/EpetraModelEval4DOpt.cpp
+  $(top_srcdir)/example/model_evaluator/2dsim/EpetraModelEval2DSim.cpp \
+  $(top_srcdir)/example/model_evaluator/4dopt/EpetraModelEval4DOpt.cpp
 
 ForwardSolveEpetraModelEval2DSim_DEPENDENCIES = $(common_dependencies)
 ForwardSolveEpetraModelEval2DSim_LDADD = $(common_ldadd)
@@ -313,7 +313,10 @@ common_dependencies = \
   $(top_builddir)/../amesos/src/libamesos.a \
   $(top_builddir)/../amesos/thyra/src/libamesosthyra.a
 
-AM_CPPFLAGS = $(AMESOS_INCLUDES) -I$(top_srcdir)/example/model_evaluator
+AM_CPPFLAGS = $(AMESOS_INCLUDES) \
+  -I$(top_srcdir)/example/model_evaluator/2dsim \
+  -I$(top_srcdir)/example/model_evaluator/4dopt
+
 common_ldadd = $(AMESOS_LIBS)
 all: all-am
 
@@ -397,37 +400,37 @@ ForwardSolveEpetraModelEval2DSimMain.obj: $(srcdir)/ForwardSolveEpetraModelEval2
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ForwardSolveEpetraModelEval2DSimMain.obj `if test -f '$(srcdir)/ForwardSolveEpetraModelEval2DSimMain.cpp'; then $(CYGPATH_W) '$(srcdir)/ForwardSolveEpetraModelEval2DSimMain.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ForwardSolveEpetraModelEval2DSimMain.cpp'; fi`
 
-EpetraModelEval2DSim.o: $(top_srcdir)/example/model_evaluator/EpetraModelEval2DSim.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraModelEval2DSim.o -MD -MP -MF "$(DEPDIR)/EpetraModelEval2DSim.Tpo" -c -o EpetraModelEval2DSim.o `test -f '$(top_srcdir)/example/model_evaluator/EpetraModelEval2DSim.cpp' || echo '$(srcdir)/'`$(top_srcdir)/example/model_evaluator/EpetraModelEval2DSim.cpp; \
+EpetraModelEval2DSim.o: $(top_srcdir)/example/model_evaluator/2dsim/EpetraModelEval2DSim.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraModelEval2DSim.o -MD -MP -MF "$(DEPDIR)/EpetraModelEval2DSim.Tpo" -c -o EpetraModelEval2DSim.o `test -f '$(top_srcdir)/example/model_evaluator/2dsim/EpetraModelEval2DSim.cpp' || echo '$(srcdir)/'`$(top_srcdir)/example/model_evaluator/2dsim/EpetraModelEval2DSim.cpp; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/EpetraModelEval2DSim.Tpo" "$(DEPDIR)/EpetraModelEval2DSim.Po"; else rm -f "$(DEPDIR)/EpetraModelEval2DSim.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(top_srcdir)/example/model_evaluator/EpetraModelEval2DSim.cpp' object='EpetraModelEval2DSim.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(top_srcdir)/example/model_evaluator/2dsim/EpetraModelEval2DSim.cpp' object='EpetraModelEval2DSim.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/EpetraModelEval2DSim.Po' tmpdepfile='$(DEPDIR)/EpetraModelEval2DSim.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraModelEval2DSim.o `test -f '$(top_srcdir)/example/model_evaluator/EpetraModelEval2DSim.cpp' || echo '$(srcdir)/'`$(top_srcdir)/example/model_evaluator/EpetraModelEval2DSim.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraModelEval2DSim.o `test -f '$(top_srcdir)/example/model_evaluator/2dsim/EpetraModelEval2DSim.cpp' || echo '$(srcdir)/'`$(top_srcdir)/example/model_evaluator/2dsim/EpetraModelEval2DSim.cpp
 
-EpetraModelEval2DSim.obj: $(top_srcdir)/example/model_evaluator/EpetraModelEval2DSim.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraModelEval2DSim.obj -MD -MP -MF "$(DEPDIR)/EpetraModelEval2DSim.Tpo" -c -o EpetraModelEval2DSim.obj `if test -f '$(top_srcdir)/example/model_evaluator/EpetraModelEval2DSim.cpp'; then $(CYGPATH_W) '$(top_srcdir)/example/model_evaluator/EpetraModelEval2DSim.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/example/model_evaluator/EpetraModelEval2DSim.cpp'; fi`; \
+EpetraModelEval2DSim.obj: $(top_srcdir)/example/model_evaluator/2dsim/EpetraModelEval2DSim.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraModelEval2DSim.obj -MD -MP -MF "$(DEPDIR)/EpetraModelEval2DSim.Tpo" -c -o EpetraModelEval2DSim.obj `if test -f '$(top_srcdir)/example/model_evaluator/2dsim/EpetraModelEval2DSim.cpp'; then $(CYGPATH_W) '$(top_srcdir)/example/model_evaluator/2dsim/EpetraModelEval2DSim.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/example/model_evaluator/2dsim/EpetraModelEval2DSim.cpp'; fi`; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/EpetraModelEval2DSim.Tpo" "$(DEPDIR)/EpetraModelEval2DSim.Po"; else rm -f "$(DEPDIR)/EpetraModelEval2DSim.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(top_srcdir)/example/model_evaluator/EpetraModelEval2DSim.cpp' object='EpetraModelEval2DSim.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(top_srcdir)/example/model_evaluator/2dsim/EpetraModelEval2DSim.cpp' object='EpetraModelEval2DSim.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/EpetraModelEval2DSim.Po' tmpdepfile='$(DEPDIR)/EpetraModelEval2DSim.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraModelEval2DSim.obj `if test -f '$(top_srcdir)/example/model_evaluator/EpetraModelEval2DSim.cpp'; then $(CYGPATH_W) '$(top_srcdir)/example/model_evaluator/EpetraModelEval2DSim.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/example/model_evaluator/EpetraModelEval2DSim.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraModelEval2DSim.obj `if test -f '$(top_srcdir)/example/model_evaluator/2dsim/EpetraModelEval2DSim.cpp'; then $(CYGPATH_W) '$(top_srcdir)/example/model_evaluator/2dsim/EpetraModelEval2DSim.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/example/model_evaluator/2dsim/EpetraModelEval2DSim.cpp'; fi`
 
-EpetraModelEval4DOpt.o: $(top_srcdir)/example/model_evaluator/EpetraModelEval4DOpt.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraModelEval4DOpt.o -MD -MP -MF "$(DEPDIR)/EpetraModelEval4DOpt.Tpo" -c -o EpetraModelEval4DOpt.o `test -f '$(top_srcdir)/example/model_evaluator/EpetraModelEval4DOpt.cpp' || echo '$(srcdir)/'`$(top_srcdir)/example/model_evaluator/EpetraModelEval4DOpt.cpp; \
+EpetraModelEval4DOpt.o: $(top_srcdir)/example/model_evaluator/4dopt/EpetraModelEval4DOpt.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraModelEval4DOpt.o -MD -MP -MF "$(DEPDIR)/EpetraModelEval4DOpt.Tpo" -c -o EpetraModelEval4DOpt.o `test -f '$(top_srcdir)/example/model_evaluator/4dopt/EpetraModelEval4DOpt.cpp' || echo '$(srcdir)/'`$(top_srcdir)/example/model_evaluator/4dopt/EpetraModelEval4DOpt.cpp; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/EpetraModelEval4DOpt.Tpo" "$(DEPDIR)/EpetraModelEval4DOpt.Po"; else rm -f "$(DEPDIR)/EpetraModelEval4DOpt.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(top_srcdir)/example/model_evaluator/EpetraModelEval4DOpt.cpp' object='EpetraModelEval4DOpt.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(top_srcdir)/example/model_evaluator/4dopt/EpetraModelEval4DOpt.cpp' object='EpetraModelEval4DOpt.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/EpetraModelEval4DOpt.Po' tmpdepfile='$(DEPDIR)/EpetraModelEval4DOpt.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraModelEval4DOpt.o `test -f '$(top_srcdir)/example/model_evaluator/EpetraModelEval4DOpt.cpp' || echo '$(srcdir)/'`$(top_srcdir)/example/model_evaluator/EpetraModelEval4DOpt.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraModelEval4DOpt.o `test -f '$(top_srcdir)/example/model_evaluator/4dopt/EpetraModelEval4DOpt.cpp' || echo '$(srcdir)/'`$(top_srcdir)/example/model_evaluator/4dopt/EpetraModelEval4DOpt.cpp
 
-EpetraModelEval4DOpt.obj: $(top_srcdir)/example/model_evaluator/EpetraModelEval4DOpt.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraModelEval4DOpt.obj -MD -MP -MF "$(DEPDIR)/EpetraModelEval4DOpt.Tpo" -c -o EpetraModelEval4DOpt.obj `if test -f '$(top_srcdir)/example/model_evaluator/EpetraModelEval4DOpt.cpp'; then $(CYGPATH_W) '$(top_srcdir)/example/model_evaluator/EpetraModelEval4DOpt.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/example/model_evaluator/EpetraModelEval4DOpt.cpp'; fi`; \
+EpetraModelEval4DOpt.obj: $(top_srcdir)/example/model_evaluator/4dopt/EpetraModelEval4DOpt.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraModelEval4DOpt.obj -MD -MP -MF "$(DEPDIR)/EpetraModelEval4DOpt.Tpo" -c -o EpetraModelEval4DOpt.obj `if test -f '$(top_srcdir)/example/model_evaluator/4dopt/EpetraModelEval4DOpt.cpp'; then $(CYGPATH_W) '$(top_srcdir)/example/model_evaluator/4dopt/EpetraModelEval4DOpt.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/example/model_evaluator/4dopt/EpetraModelEval4DOpt.cpp'; fi`; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/EpetraModelEval4DOpt.Tpo" "$(DEPDIR)/EpetraModelEval4DOpt.Po"; else rm -f "$(DEPDIR)/EpetraModelEval4DOpt.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(top_srcdir)/example/model_evaluator/EpetraModelEval4DOpt.cpp' object='EpetraModelEval4DOpt.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(top_srcdir)/example/model_evaluator/4dopt/EpetraModelEval4DOpt.cpp' object='EpetraModelEval4DOpt.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/EpetraModelEval4DOpt.Po' tmpdepfile='$(DEPDIR)/EpetraModelEval4DOpt.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraModelEval4DOpt.obj `if test -f '$(top_srcdir)/example/model_evaluator/EpetraModelEval4DOpt.cpp'; then $(CYGPATH_W) '$(top_srcdir)/example/model_evaluator/EpetraModelEval4DOpt.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/example/model_evaluator/EpetraModelEval4DOpt.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraModelEval4DOpt.obj `if test -f '$(top_srcdir)/example/model_evaluator/4dopt/EpetraModelEval4DOpt.cpp'; then $(CYGPATH_W) '$(top_srcdir)/example/model_evaluator/4dopt/EpetraModelEval4DOpt.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/example/model_evaluator/4dopt/EpetraModelEval4DOpt.cpp'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)

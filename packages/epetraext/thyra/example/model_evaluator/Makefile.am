@@ -32,8 +32,8 @@ noinst_PROGRAMS = ForwardSolveEpetraModelEval2DSim
 
 ForwardSolveEpetraModelEval2DSim_SOURCES = \
   $(srcdir)/ForwardSolveEpetraModelEval2DSimMain.cpp\
-  $(top_srcdir)/example/model_evaluator/EpetraModelEval2DSim.cpp \
-  $(top_srcdir)/example/model_evaluator/EpetraModelEval4DOpt.cpp
+  $(top_srcdir)/example/model_evaluator/2dsim/EpetraModelEval2DSim.cpp \
+  $(top_srcdir)/example/model_evaluator/4dopt/EpetraModelEval4DOpt.cpp
 ForwardSolveEpetraModelEval2DSim_DEPENDENCIES = $(common_dependencies)
 ForwardSolveEpetraModelEval2DSim_LDADD = $(common_ldadd)
 
@@ -49,7 +49,9 @@ common_ldadd = $(AMESOS_LIBS)
 # This is already added part of AMESOS_LIBS and therefore automake does not need to add this again!
 LIBS =
 
-AM_CPPFLAGS += -I$(top_srcdir)/example/model_evaluator
+AM_CPPFLAGS += \
+  -I$(top_srcdir)/example/model_evaluator/2dsim \
+  -I$(top_srcdir)/example/model_evaluator/4dopt
 
 $(top_builddir)/../amesos/src/libamesos.a:
 	cd $(top_builddir)/../amesos ; make all-libs
