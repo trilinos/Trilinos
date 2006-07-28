@@ -36,7 +36,8 @@ ML_PYTHON_LIBS     = $(ML_LIBS)     $(ML_EXTRA_LIBS) $(PYTRILINOS_LIBS)
 
 # Include swig rules
 include $(top_srcdir)/config/swig.am
-SWIG_CXXFLAGS = $(ML_PYTHON_INCLUDES)                \
+SWIG_CXXFLAGS = $(ML_PYTHON_INCLUDES) \
+                -I$(top_srcdir)/../teuchos/python/src \
                 -I$(top_srcdir)/../epetra/python/src
 
 EXTRA_DIST = ML.i setup.py

@@ -81,7 +81,8 @@ for option in options:
         extra_link_args.append(option)
 
 # An additional include directory
-include_dirs.append(os.path.join(top_srcdir,"..","epetra","python","src"))
+include_dirs.append(os.path.join(top_srcdir,"..","teuchos","python","src"))
+include_dirs.append(os.path.join(top_srcdir,"..","epetra" ,"python","src"))
 
 # Alter the order of the libraries to ensure proper linking.  This seems to be
 # necessary when SuperLU_DIST is enabled for an MPI build and the g2c library is

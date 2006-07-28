@@ -133,21 +133,19 @@ print r.Norm2()
 #include "Epetra_PyRowMatrix.h"
 
 #include "ml_MultiLevelPreconditioner.h"
-#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_PythonParameter.hpp"
 #include "MLAPI.h"
 #include "MLAPI_PyMatrix.h"
 #include "PyEpetra_Utils.h"
-#include "PyTeuchos_Utils.h"
 
 MLAPI::Operator GetPNonSmoothed(const MLAPI::Operator& A,
                                 const MLAPI::MultiVector& ThisNS,
                                 MLAPI::MultiVector& NextNS,
                                 PyObject* obj)
 {   
-  Teuchos::ParameterList* List = CreateList(obj);
+  Teuchos::PyDictParameterList List(obj);
   MLAPI::Operator Ptent;
-  MLAPI::GetPtent(A, *List, ThisNS, Ptent, NextNS);
-  delete List;
+  MLAPI::GetPtent(A, List, ThisNS, Ptent, NextNS);
   return(Ptent);
 }
 
@@ -155,12 +153,10 @@ bool Iterate(const MLAPI::Operator& A, const MLAPI::MultiVector& LHS,
              const MLAPI::MultiVector& RHS, const MLAPI::BaseOperator& Prec, 
              PyObject* obj)
 {
-  Teuchos::ParameterList* List;
-  List = CreateList(obj);
-  if (List == 0)
+  Teuchos::PyDictParameterList List(obj);
+  if (PyErr_Occurred())
     return(false);
-  Krylov(A, LHS, RHS, Prec, *List);
-  delete List;
+  Krylov(A, LHS, RHS, Prec, List);
   return(true);
 }
 
@@ -176,24 +172,12 @@ using namespace std;
 // Auto-documentation feature
 %feature("autodoc", "1");
 
-%typemap(in) (const ParameterList & List)
-{
-  $1 = CreateList($input);
-}
-
-%typemap(in) (Teuchos::ParameterList& List)
-{
-  $1 = CreateList($input);
-}
-
-%typemap(freearg) (const MLAPI::Operator& A, Teuchos::ParameterList& List,
-                   const MLAPI::MultiVector& ThisNS, 
-                   MLAPI::Operator& Ptent, MLAPI::MultiVector& NextNS)
-{   
-  if ($2) delete($2);
-}   
-
+// Director callback feature
 %feature("director") MLAPI::BaseOperator;
+%warnfilter(473)     MLAPI::BaseOperator;
+
+// External Trilinos package imports
+%import "Teuchos.i"
 %import "Epetra.i"
 
 // ML interface includes
@@ -225,7 +209,8 @@ using namespace std;
   int SetParameterListAndNullSpace(PyObject* obj,
                                    Epetra_MultiVector& NullSpace)
   {
-    Teuchos::ParameterList* List = CreateList(obj);
+    Teuchos::PyDictParameterList pdList(obj);
+    Teuchos::ParameterList       List(pdList);
 
     // WARNING: THIS IS DELICATE, NULLSPACE SHOULD NOT DISAPPEAR
     // otherwise the pointer here stored will vanish. This function should
@@ -233,13 +218,11 @@ using namespace std;
     double* NullSpacePtr = (double*)NullSpace.Values();
     int NullSpaceDim = NullSpace.NumVectors();
 
-    List->set("null space: type", "pre-computed");
-    List->set("null space: vectors", NullSpacePtr);
-    List->set("null space: dimension", NullSpaceDim);
+    List.set("null space: type", "pre-computed");
+    List.set("null space: vectors", NullSpacePtr);
+    List.set("null space: dimension", NullSpaceDim);
 
-    self->SetParameterList(*List);
-
-    delete List;
+    self->SetParameterList(List);
 
     return(0);
   }
@@ -348,12 +331,11 @@ fail:
 
   bool Reshape(const Operator& Op, const string Type, PyObject* obj)
   {
-    Teuchos::ParameterList* List = CreateList(obj);
-    if (List == 0)
+    Teuchos::PyDictParameterList List(obj);
+    if (PyErr_Occurred())
       return(false);
     else
-      self->Reshape(Op, Type, *List);
-    delete List;
+      self->Reshape(Op, Type, List);
     return(true);
   }
 }
