@@ -72,8 +72,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
 DIST_COMMON = $(am__configure_deps) $(srcdir)/Makefile.am \
-	$(srcdir)/Makefile.export.in $(srcdir)/Makefile.export.ml.in \
-	$(srcdir)/Makefile.in $(top_srcdir)/configure \
+	$(srcdir)/Makefile.export.ml.in $(srcdir)/Makefile.in \
+	$(top_srcdir)/configure \
 	$(top_srcdir)/python/src/.deps/dummy.in config/compile \
 	config/config.guess config/config.sub config/depcomp \
 	config/install-sh config/missing config/mkinstalldirs
@@ -116,8 +116,7 @@ am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno configure.status.lineno
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/ml_config.h
-CONFIG_CLEAN_FILES = Makefile.export Makefile.export.ml \
-	python/src/.deps/dummy
+CONFIG_CLEAN_FILES = Makefile.export.ml python/src/.deps/dummy
 SOURCES =
 DIST_SOURCES =
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
@@ -389,8 +388,6 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(srcdir) && $(AUTOCONF)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(srcdir) && $(ACLOCAL) $(ACLOCAL_AMFLAGS)
-Makefile.export: $(top_builddir)/config.status $(srcdir)/Makefile.export.in
-	cd $(top_builddir) && $(SHELL) ./config.status $@
 Makefile.export.ml: $(top_builddir)/config.status $(srcdir)/Makefile.export.ml.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 python/src/.deps/dummy: $(top_builddir)/config.status $(top_srcdir)/python/src/.deps/dummy.in

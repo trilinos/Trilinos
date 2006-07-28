@@ -458,14 +458,17 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(ml, epetra, ML_EPETRA,  ML_USING_EPETRA, yes, [En
 #
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(ml, amesos, ML_AMESOS, ML_USING_AMESOS, yes, [Enable AMESOS support. Amesos, a Trilinos package, can be used to interface ML with various direct solvers, such as SuperLU, MUMPS, UMFPACK, KLU, and other.  Amesos requires --enable-epetra. See notes for --enable-ml_metis.], [Enable AMESOS support. Amesos, a Trilinos package, can be used to interface ML with various direct solvers, such as SuperLU, SuperLUdist, MUMPS, UMFPACK, KLU, and other. Amesos requires --enable-epetra. See notes for --enable-ml_metis. Can be overridden with --disable-ml-amesos.])
 #
-if test "X${ac_cv_use_amesos}" = "Xyes"; then
-   #Issue an error message and abort if the user has configured with
-   #both the Amesos interface and ML's internal SuperLU interface enabled.
-   #Amesos wants SuperLU version 3.0, whereas ML uses SuperLU versions 1.0/2.0.
-   if test "X$ac_cv_use_ml_superlu" = "Xyes" || test "X${ac_cv_use_ml_superlu2}" = "Xyes" || test "X${ac_cv_use_ml_superlu_dist}" = "Xyes"; then
-     AC_MSG_ERROR([[You cannot use Amesos and ML's internal interface to SuperLU/SuperLU-dist at the same time.]])
-   fi
-fi
+# JJH 7/27/2006 commenting this next section out because it causes problems for
+# ALEGRA
+#
+#if test "X${ac_cv_use_amesos}" = "Xyes"; then
+#   #Issue an error message and abort if the user has configured with
+#   #both the Amesos interface and ML's internal SuperLU interface enabled.
+#   #Amesos wants SuperLU version 3.0, whereas ML uses SuperLU versions 1.0/2.0.
+#   if test "X$ac_cv_use_ml_superlu" = "Xyes" || test "X${ac_cv_use_ml_superlu2}" = "Xyes" || test "X${ac_cv_use_ml_superlu_dist}" = "Xyes"; then
+#     AC_MSG_ERROR([[You cannot use Amesos and ML's internal interface to SuperLU/SuperLU-dist at the same time.]])
+#   fi
+#fi
 #
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(ml, ifpack, ML_IFPACK, ML_USING_IFPACK, yes, [Enable IFPACK support. Ifpack, a Trilinos package, can provide incomplete factorization smoothers to ML. Ifpack requires --enable-epetra. See notes for --enable-ml_metis.], [Enable IFPACK support. Ifpack, a Trilinos package, can provide incomplete factorization smoothers to ML. Ifpack requires --enable-epetra. See notes for --enable-ml_metis. Can be overridden with --disable-ml-ifpack.])
 #
@@ -679,7 +682,6 @@ AC_SUBST(ac_aux_dir)
 #		])
 AC_CONFIG_FILES([
 		Makefile 
-		Makefile.export
 		Makefile.export.ml
 		src/Makefile
         	doc/Makefile

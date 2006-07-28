@@ -352,7 +352,7 @@ else
 nox_incdir =
 endif
 
-include $(top_builddir)/Makefile.export
+include $(top_builddir)/Makefile.export.ml
 
 EXPORT_INCLUDES = $(ML_INCLUDES) $(GALERI_INCLUDES)
 

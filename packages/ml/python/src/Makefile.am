@@ -27,7 +27,7 @@
 # @HEADER
 
 # Include export Makefiles
-include  $(top_builddir)/Makefile.export
+include  $(top_builddir)/Makefile.export.ml
 include  $(top_builddir)/../PyTrilinos/Makefile.export.pytrilinos
 
 # I need extra_libs because of MLAPI::Gallery, which calls Galeri.

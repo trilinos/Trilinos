@@ -27,7 +27,7 @@
 # @HEADER
 
 # Include export Makefiles
-include  $(top_builddir)/Makefile.export
+include  $(top_builddir)/Makefile.export.ml
 
 # I need extra_libs because of MLAPI::Gallery, which calls Galeri.
 ML_MLMEX_INCLUDES = $(ML_INCLUDES) $(ML_EXTRA_INCLUDES) $(ML_MATLAB_INCLUDES)

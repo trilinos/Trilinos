@@ -8330,16 +8330,17 @@ fi
 
 
 #
-if test "X${ac_cv_use_amesos}" = "Xyes"; then
-   #Issue an error message and abort if the user has configured with
-   #both the Amesos interface and ML's internal SuperLU interface enabled.
-   #Amesos wants SuperLU version 3.0, whereas ML uses SuperLU versions 1.0/2.0.
-   if test "X$ac_cv_use_ml_superlu" = "Xyes" || test "X${ac_cv_use_ml_superlu2}" = "Xyes" || test "X${ac_cv_use_ml_superlu_dist}" = "Xyes"; then
-     { { echo "$as_me:$LINENO: error: You cannot use Amesos and ML's internal interface to SuperLU/SuperLU-dist at the same time." >&5
-echo "$as_me: error: You cannot use Amesos and ML's internal interface to SuperLU/SuperLU-dist at the same time." >&2;}
-   { (exit 1); exit 1; }; }
-   fi
-fi
+# JJH 7/27/2006 commenting this next section out because it causes problems for
+# ALEGRA
+#
+#if test "X${ac_cv_use_amesos}" = "Xyes"; then
+#   #Issue an error message and abort if the user has configured with
+#   #both the Amesos interface and ML's internal SuperLU interface enabled.
+#   #Amesos wants SuperLU version 3.0, whereas ML uses SuperLU versions 1.0/2.0.
+#   if test "X$ac_cv_use_ml_superlu" = "Xyes" || test "X${ac_cv_use_ml_superlu2}" = "Xyes" || test "X${ac_cv_use_ml_superlu_dist}" = "Xyes"; then
+#     AC_MSG_ERROR([[You cannot use Amesos and ML's internal interface to SuperLU/SuperLU-dist at the same time.]])
+#   fi
+#fi
 #
 
 
@@ -9814,7 +9815,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:9817: \"$ac_link\") >&5
+(eval echo $as_me:9818: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9892,7 +9893,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:9895: \"$ac_link\") >&5
+(eval echo $as_me:9896: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -13742,7 +13743,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:13745: \"$ac_link\") >&5
+(eval echo $as_me:13746: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -13820,7 +13821,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:13823: \"$ac_link\") >&5
+(eval echo $as_me:13824: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -14070,7 +14071,7 @@ fi
 #                test/scripts/daily/mpi/Makefile
 #                test/scripts/daily/serial/Makefile
 #		])
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      ac_config_files="$ac_config_files Makefile Makefile.export Makefile.export.ml src/Makefile doc/Makefile examples/Makefile examples/Advanced/Makefile examples/BasicExamples/Makefile examples/Elasticity/Makefile examples/MatrixFormats/Makefile examples/MatrixReading/Makefile examples/MatrixFree/Makefile examples/StandAlone/Makefile examples/TwoLevelDD/Makefile examples/Maxwell/Makefile examples/Visualization/Makefile examples/MultipleRHS/Makefile examples/MLAPI/Makefile examples/NonlinML/Makefile examples/Other/Makefile test/Makefile test/MultiLevelPreconditioner_NonSym/Makefile test/MultiLevelPreconditioner_Sym/Makefile test/MultiLevelPreconditioner_Maxwell/Makefile test/MultiLevelPreconditioner_Aux/Makefile test/MultiLevelPreconditioner_GetRow/Makefile test/ML_Operator2Epetra_RowMatrix/Makefile test/AztecSimple/Makefile test/2d_Poisson/Makefile test/3d_Poisson/Makefile test/IFPACKSmoothers/Makefile test/MLAPICompare/Makefile test/MLAPILinearCombination/Makefile test/MLAPISerialMatrix/Makefile test/MLAPIDistributedMatrix/Makefile test/Communicator/Makefile test/SelfSmoother/Makefile test/METISCoarsening/Makefile test/MatrixFree/Makefile python/Makefile python/src/Makefile python/src/TRILINOS_HOME_DIR python/src/__init__.py python/src/.deps/dummy python/example/Makefile python/test/Makefile matlab/Makefile"
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ac_config_files="$ac_config_files Makefile Makefile.export.ml src/Makefile doc/Makefile examples/Makefile examples/Advanced/Makefile examples/BasicExamples/Makefile examples/Elasticity/Makefile examples/MatrixFormats/Makefile examples/MatrixReading/Makefile examples/MatrixFree/Makefile examples/StandAlone/Makefile examples/TwoLevelDD/Makefile examples/Maxwell/Makefile examples/Visualization/Makefile examples/MultipleRHS/Makefile examples/MLAPI/Makefile examples/NonlinML/Makefile examples/Other/Makefile test/Makefile test/MultiLevelPreconditioner_NonSym/Makefile test/MultiLevelPreconditioner_Sym/Makefile test/MultiLevelPreconditioner_Maxwell/Makefile test/MultiLevelPreconditioner_Aux/Makefile test/MultiLevelPreconditioner_GetRow/Makefile test/ML_Operator2Epetra_RowMatrix/Makefile test/AztecSimple/Makefile test/2d_Poisson/Makefile test/3d_Poisson/Makefile test/IFPACKSmoothers/Makefile test/MLAPICompare/Makefile test/MLAPILinearCombination/Makefile test/MLAPISerialMatrix/Makefile test/MLAPIDistributedMatrix/Makefile test/Communicator/Makefile test/SelfSmoother/Makefile test/METISCoarsening/Makefile test/MatrixFree/Makefile python/Makefile python/src/Makefile python/src/TRILINOS_HOME_DIR python/src/__init__.py python/src/.deps/dummy python/example/Makefile python/test/Makefile matlab/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -14952,7 +14953,6 @@ do
   case "$ac_config_target" in
   # Handling of arguments.
   "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
-  "Makefile.export" ) CONFIG_FILES="$CONFIG_FILES Makefile.export" ;;
   "Makefile.export.ml" ) CONFIG_FILES="$CONFIG_FILES Makefile.export.ml" ;;
   "src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
   "doc/Makefile" ) CONFIG_FILES="$CONFIG_FILES doc/Makefile" ;;

@@ -3146,7 +3146,7 @@ all-local:
 	@echo "Trilinos package ml subdirectory src built successfully."
 	@echo ""
 
-include $(top_builddir)/Makefile.export
+include $(top_builddir)/Makefile.export.ml
 
 all-libs:
 	$(MAKE) libml.a

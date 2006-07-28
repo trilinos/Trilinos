@@ -31,6 +31,21 @@ Please submit ML bugs at software.sandia.gov/buzgilla, or
 report bugs to jhu@sandia.gov.
 
 ------------------------------------------------------------------------------
+
+July 2006
+
+       * Moved ML over to using Makefile.export.ml instead of Makefile.export.
+
+------------------------------------------------------------------------------
+
+June 2006
+
+        * Fixed a subtle translation problem between ML's handling of ghost
+          unknowns and Epetra's.  This could only happen in parallel.
+        * Added a constructor for Maxwell's equations that takes the mass and
+          curl-curl terms separately.
+
+------------------------------------------------------------------------------
 	
 Apr 2006
 
