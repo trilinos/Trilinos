@@ -120,8 +120,8 @@ endif
 #MPI_LIBPATH = -L/usr/lib/gcc-lib/i386-redhat-linux/2.96
 
 
-#PARMETIS_LIBPATH        = -L/Net/local/proj/zoltan/arch/linux/lib/ParMETIS3 
-#PARMETIS_INCPATH        = -I/Net/local/proj/zoltan/arch/all/src/ParMETIS3
+PARMETIS_LIBPATH        = -L/Net/local/proj/zoltan/arch/linux64/lib/ParMETIS3 
+PARMETIS_INCPATH        = -I/Net/local/proj/zoltan/arch/all/src/ParMETIS3
 
 #JOSTLE_LIBPATH 	= -L/Net/local/proj/zoltan/arch/linux/lib
 #JOSTLE_INCPATH 	= -I/Net/local/proj/zoltan/arch/all/src
