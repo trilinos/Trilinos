@@ -873,8 +873,8 @@ int Ifpack_PrintSparsity(const Epetra_RowMatrix& A, const char* InputFileName,
   int NumGlobalCols;
   int MyPID;
   int NumProc;
-  char FileName[80];
-  char title[80];
+  char FileName[1024];
+  char title[1024];
   
   const Epetra_Comm& Comm = A.Comm();
 
