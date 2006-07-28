@@ -45,7 +45,7 @@ if options.testharness:
 else:
     try:
         import setpath
-        import Epetr
+        import Epetra
         import EpetraExt
     except ImportError:
         from PyTrilinos import Epetra
