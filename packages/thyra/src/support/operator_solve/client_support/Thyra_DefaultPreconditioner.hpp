@@ -61,8 +61,10 @@ DefaultPreconditioner<RangeScalar,DomainScalar>::DefaultPreconditioner(
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( leftPrecOp.get()==NULL && rightPrecOp.get()==NULL ); 
 #endif
-  leftPrecOp_.initialize(leftPrecOp);
-  rightPrecOp_.initialize(rightPrecOp);
+  if(leftPrecOp.get())
+    leftPrecOp_.initialize(leftPrecOp);
+  if(rightPrecOp.get())
+    rightPrecOp_.initialize(rightPrecOp);
 }
 
 template <class RangeScalar, class DomainScalar>

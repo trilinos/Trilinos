@@ -234,7 +234,7 @@ bool Thyra::test_single_amesos_thyra_solver(
   if(out.get()) *out << "\nP) Running example use cases ...\n";
 
   nonExternallyPreconditionedLinearSolveUseCases(
-    *A,*lowsFactory,*out
+    *A,*lowsFactory,true,*out
     );
 
 #else // __sun

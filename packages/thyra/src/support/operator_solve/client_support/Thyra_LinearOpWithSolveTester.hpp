@@ -388,9 +388,11 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
         *oss
           <<endl<< "solve status:\n";
         *OSTab(oss).getOStream() << solveStatus;
+        result = solveStatus.solveStatus==SOLVE_STATUS_CONVERGED;
+        if(!result) these_results = false;
         *oss
           <<endl<< "check: solveStatus = " << toString(solveStatus.solveStatus) << " == SOLVE_STATUS_CONVERGED : "
-          << passfail(solveStatus.solveStatus==SOLVE_STATUS_CONVERGED)<<endl;
+          << passfail(result)<<endl;
       
         *oss <<endl<< "v4 = Op*v3 - v2 ...\n" ;
         Teuchos::RefCountPtr<MultiVectorBase<RangeScalar> > v4 = createMembers(range,num_rhs);
@@ -624,9 +626,11 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
         *oss
           <<endl<< "solve status:\n";
         *OSTab(oss).getOStream() << solveStatus;
+        result = solveStatus.solveStatus==SOLVE_STATUS_CONVERGED;
+        if(!result) these_results = false;
         *oss
           <<endl<< "check: solveStatus = " << toString(solveStatus.solveStatus) << " == SOLVE_STATUS_CONVERGED : "
-          << passfail(solveStatus.solveStatus==SOLVE_STATUS_CONVERGED)<<endl;
+          << passfail(result)<<endl;
         if(solveStatus.achievedTol==SolveStatus<RangeScalar>::unknownTolerance())
           *oss <<endl<<"achievedTol==unknownTolerance(): Setting achievedTol = adjoint_residual_solve_tol() = "<<adjoint_residual_solve_tol()<<endl;
       

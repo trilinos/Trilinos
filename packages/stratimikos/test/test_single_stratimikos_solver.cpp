@@ -115,7 +115,7 @@ bool Thyra::test_single_stratimikos_solver(
     if(out) *out << "\nRunning example use cases ...\n";
     
     nonExternallyPreconditionedLinearSolveUseCases(
-      *A,*lowsFactory,*out
+      *A,*lowsFactory,false,*out
       );
     
     // ToDo: Finish tests!

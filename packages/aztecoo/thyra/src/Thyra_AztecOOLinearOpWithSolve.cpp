@@ -323,7 +323,7 @@ void AztecOOLinearOpWithSolve::solve(
   if( numBlocks && blockSolveCriteria ) {
     if( blockSolveCriteria[0].solveCriteria.requestedTol != SC::unspecifiedTolerance() ) {
       tol = blockSolveCriteria[0].solveCriteria.requestedTol;
-      isDefaultSolveCriteria = true;
+      isDefaultSolveCriteria = false;
     }
   }
   //

@@ -122,6 +122,9 @@ bool Thyra::test_single_aztecoo_thyra_solver(
     }
     aztecooLOWSFPL->sublist("Forward Solve").set("Tolerance",maxResid);
     aztecooLOWSFPL->sublist("Adjoint Solve").set("Tolerance",maxResid);
+    if(showAllTests) {
+      aztecooLOWSFPL->set("Output Every RHS",bool(true));
+    }
     if(out.get()) {
       *out << "\naztecooLOWSFPL before setting parameters:\n";
       aztecooLOWSFPL->print(*OSTab(out).getOStream(),0,true);
@@ -374,15 +377,14 @@ bool Thyra::test_single_aztecoo_thyra_solver(
   if(out.get()) *out << "\nT) Running example use cases ...\n";
 
   nonExternallyPreconditionedLinearSolveUseCases(
-    *A,*lowsFactory,*out
+    *A,*lowsFactory,testTranspose,*out
     );
 
-  if(0) { // Put this back in latter!
-    if(precFactory.get()) {
-      externallyPreconditionedLinearSolveUseCases(
-        *A,*lowsFactory,*precFactory,*out
-        );
-    }
+  if(precFactory.get()) {
+    externallyPreconditionedLinearSolveUseCases(
+      *A,*lowsFactory,*precFactory,false,true,*out
+      );
+
   }
 
 #else // __sun
@@ -394,7 +396,7 @@ bool Thyra::test_single_aztecoo_thyra_solver(
 
   }
   catch( const std::exception &excpt ) {
-    std::cerr << "*** Caught standard exception : " << excpt.what() << std::endl;
+    std::cerr << "\n*** Caught standard exception : " << excpt.what() << std::endl;
     success = false;
   }
    

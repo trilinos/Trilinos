@@ -486,6 +486,7 @@ template<class Scalar>
 void nonExternallyPreconditionedLinearSolveUseCases(
   const Thyra::LinearOpBase<Scalar>                    &A
   ,const Thyra::LinearOpWithSolveFactoryBase<Scalar>   &lowsFactory
+  ,bool                                                supportsAdjoints
   ,Teuchos::FancyOStream                               &out
   )
 {
@@ -504,9 +505,11 @@ void nonExternallyPreconditionedLinearSolveUseCases(
   // Perform a single, non-adjoint, linear solve
   singleLinearSolve(A,lowsFactory,*b1,&*x1,out);
   // Creating a scaled adjoint LinearOpWithSolveBase object
-  Teuchos::RefCountPtr<Thyra::LinearOpWithSolveBase<Scalar> >
-    invertibleAdjointA = createScaledAdjointLinearOpWithSolve(
-      A,Scalar(2.0),lowsFactory,out);
+  if(supportsAdjoints) {
+    Teuchos::RefCountPtr<Thyra::LinearOpWithSolveBase<Scalar> >
+      invertibleAdjointA = createScaledAdjointLinearOpWithSolve(
+        A,Scalar(2.0),lowsFactory,out);
+  }
   // Perform a solve, change the operator, and then solve again.
   solveNumericalChangeSolve(
     const_cast<Thyra::LinearOpBase<Scalar>*>(&A) // Don't worry, it will not be changed!
@@ -537,6 +540,8 @@ void externallyPreconditionedLinearSolveUseCases(
   const Thyra::LinearOpBase<Scalar>                    &A
   ,const Thyra::LinearOpWithSolveFactoryBase<Scalar>   &lowsFactory
   ,const Thyra::PreconditionerFactoryBase<Scalar>      &precFactory
+  ,const bool                                          supportsLeftPrec
+  ,const bool                                          supportsRightPrec
   ,Teuchos::FancyOStream                               &out
   )
 {
@@ -576,16 +581,23 @@ void externallyPreconditionedLinearSolveUseCases(
   invertibleA = createUnspecifiedPreconditionedLinearOpWithSolve(
     Teuchos::rcp(&A,false),P_op,lowsFactory,out);
   // Create a LOWSB object given a left preconditioner operator
-  invertibleA = createLeftPreconditionedLinearOpWithSolve(
-    Teuchos::rcp(&A,false),P_op,lowsFactory,out);
+  if(supportsLeftPrec) {
+    invertibleA = createLeftPreconditionedLinearOpWithSolve(
+      Teuchos::rcp(&A,false),P_op,lowsFactory,out);
+  }
   // Create a LOWSB object given a right preconditioner operator
-  invertibleA = createRightPreconditionedLinearOpWithSolve(
-    Teuchos::rcp(&A,false),P_op,lowsFactory,out);
-  // Create a LOWSB object given (bad set of) left and right preconditioner operators
-  invertibleA = createLeftRightPreconditionedLinearOpWithSolve(
-    Teuchos::rcp(&A,false),P_op,P_op,lowsFactory,out);
+  if(supportsRightPrec) {
+    invertibleA = createRightPreconditionedLinearOpWithSolve(
+      Teuchos::rcp(&A,false),P_op,lowsFactory,out);
+  }
+  // Create a LOWSB object given (bad set of) left and right preconditioner
+  // operators
+  if( supportsLeftPrec && supportsRightPrec ) {
+    invertibleA = createLeftRightPreconditionedLinearOpWithSolve(
+      Teuchos::rcp(&A,false),P_op,P_op,lowsFactory,out);
+  }
   // Create a LOWSB object given a (very good) approximate forward linear
-  // operator to construct the preconditoner out of.
+  // operator to construct the preconditoner from..
   invertibleA = createMatrixPreconditionedLinearOpWithSolve<Scalar>(
     Teuchos::rcp(&A,false),Teuchos::rcp(&A,false),lowsFactory,out);
   // Preconditioner reuse example
