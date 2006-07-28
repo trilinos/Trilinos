@@ -94,7 +94,7 @@ namespace Anasazi {
    * called by the user or from the BlockDavidson::iterate() method if isInitialized()
    * == \c false.
    *
-   * In the case that this exception is thrown, BlockDavidson::hasP() and
+   * In the case that this exception is thrown, 
    * BlockDavidson::isInitialized() will be \c false and the user will need to provide
    * a new initial iterate to the solver.
    *
@@ -247,7 +247,7 @@ namespace Anasazi {
 
     /*! \brief Get the Ritz values for the previous iteration.
      *
-     *  \return A vector of length not exceeding 3*getBlockSize() containing the Ritz values from the
+     *  \return A vector of length getCurSubspaceDim() containing the Ritz values from the
      *  previous projected eigensolve.
      */
     std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getRitzValues() { 
@@ -258,7 +258,7 @@ namespace Anasazi {
 
     /*! \brief Get the current residual norms
      *
-     *  \return A vector of length blockSize containing the norms of the
+     *  \return A vector of length getCurSubspaceDim() containing the norms of the
      *  residuals, with respect to the orthogonalization manager norm() method.
      */
     std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getResNorms()    {return _Rnorms;}
@@ -266,10 +266,20 @@ namespace Anasazi {
 
     /*! \brief Get the current residual 2-norms
      *
-     *  \return A vector of length blockSize containing the 2-norms of the
+     *  \return A vector of length getCurSubspaceDim() containing the 2-norms of the
      *  residuals. 
      */
     std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getRes2Norms()   {return _R2norms;}
+
+    /*! \brief Get the 2-norms of the Ritz residuals.
+     *
+     *  \return A vector of length getCurSubspaceDim() containing the 2-norms of the Ritz residuals.
+     */
+    std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getRitzRes2Norms() {
+      std::vector<MagnitudeType> ret = _ritz2norms;
+      ret.resize(_curDim);
+      return ret;
+    }
 
     //@{ \name Accessor routines
 
@@ -281,10 +291,8 @@ namespace Anasazi {
     /*! \brief Set the blocksize and number of blocks to be used by the
      * iterative solver in solving this eigenproblem.
      *  
-     *  If the block size is reduced, then the new iterate (and residual and
-     *  search direction) are chosen as the subset of the current iterate
-     *  preferred by the sort manager.  Otherwise, the solver state is set to
-     *  uninitialized.
+     *  Changing either the block size or the number of blocks will reset the
+     *  solver to an uninitialized state.
      */
     void setSize(int blockSize, int numBlocks);
 
@@ -439,7 +447,7 @@ namespace Anasazi {
     int _iter;
     // 
     // Current eigenvalues, residual norms
-    std::vector<MagnitudeType> _theta, _Rnorms, _R2norms;
+    std::vector<MagnitudeType> _theta, _Rnorms, _R2norms, _ritz2norms;
 
   };
 
@@ -499,7 +507,7 @@ namespace Anasazi {
     _blockSize = 0;
     _numBlocks = 0;
     int bs = params.get("Block Size", _problem->getNEV());
-    int nb = params.get("Num Blocks", 1);
+    int nb = params.get("Num Blocks", 2);
     setSize(bs,nb);
   }
 
@@ -520,8 +528,7 @@ namespace Anasazi {
   void BlockDavidson<ScalarType,MV,OP>::setSize (int blockSize, int numBlocks) 
   {
     // This routine only allocates space; it doesn't not perform any computation
-    // if size is decreased, take the first blockSize vectors of all and leave state as is
-    // otherwise, grow/allocate space and set solver to unitialized
+    // any change in size will invalidate the state of the solver.
 
     TEST_FOR_EXCEPTION(numBlocks <= 0 || blockSize <= 0, std::logic_error, "Anasazi::BlockDavidson::setSize was passed a non-positive argument.");
     if (blockSize == _blockSize && numBlocks == _numBlocks) {
@@ -529,186 +536,52 @@ namespace Anasazi {
       return;
     }
 
-    // We will perform no significant computation in this routine.
-
-    // We are bound by the requirement that X contains the preferred Ritz
-    // vectors with respect to the basis V. Therefore, if we modify V
-    // (via truncation) we must invalidate the state of the solver.
-    // Also, if we must enlarge X, we must invalidate the state of the 
-    // solver.
-
-    // handle those things dependant only on blockSize:
-    // X,KX,MX, R, H,KH,MH, _Rnorms,_R2norms
-    if (blockSize < _blockSize) {
-      //
-      // shrink vectors
-      //
-
-      // shrink the vectors for norms and values
-      _Rnorms.resize(blockSize);
-      _R2norms.resize(blockSize);
-
-      // handle X,KX,MX,R
-      if (_initialized) {
-        // shrink multivectors with copy
-        // create ind = {0, 1, ..., blockSize-1}
-        std::vector<int> ind(blockSize);
-        for (int i=0; i<blockSize; i++) ind[i] = i;
-        
-        _X  = MVT::CloneCopy(*_X,ind);
-        _KX = MVT::CloneCopy(*_KX,ind);
-        if (_hasM) {
-          _MX = MVT::CloneCopy(*_MX,ind);
-        }
-        else {
-          _MX = _X;
-        }
-        _R  = MVT::CloneCopy(*_R,ind);
-      }
-      else {
-        // shrink multivectors without copying
-        _X = MVT::Clone(*_X,blockSize);
-        _KX = MVT::Clone(*_KX,blockSize);
-        if (_hasM) {
-          _MX = MVT::Clone(*_MX,blockSize);
-        }
-        else {
-          _MX = _X;
-        }
-        _R = MVT::Clone(*_R,blockSize);
-      }
-    }
-    else {  // blockSize > _blockSize
-      // this is also the scenario for our initial call to setSize(), in the constructor
-      // in this case, _blockSize == 0 and none of the multivecs have been allocated
-      _initialized = false;
-
-      Teuchos::RefCountPtr<const MV> tmp;
-      // grab some Multivector to Clone
-      // in practice, getInitVec() should always provide this, but it is possible to use a 
-      // Eigenproblem with nothing in getInitVec() by manually initializing with initialize(); 
-      // in case of that strange scenario, we will try to Clone from _X
-      if (_X != Teuchos::null) { // this is equivalent to _blockSize > 0
-        tmp = _X;
-      }
-      else {
-        tmp = _problem->getInitVec();
-        TEST_FOR_EXCEPTION(tmp == Teuchos::null,std::logic_error,
-                           "Anasazi::BlockDavidson::setSize(): Eigenproblem did not specify initial vectors to clone from");
-      }
-      // grow/allocate vectors
-      _Rnorms.resize(blockSize,NANVAL);
-      _R2norms.resize(blockSize,NANVAL);
-      
-      // clone multivectors off of tmp
-      _X = MVT::Clone(*tmp,blockSize);
-      _KX = MVT::Clone(*tmp,blockSize);
-      if (_hasM) {
-        _MX = MVT::Clone(*tmp,blockSize);
-      }
-      else {
-        _MX = _X;
-      }
-      _R = MVT::Clone(*tmp,blockSize);
-    }
-
-    // now, handle those things dependant on blockSize and numBlocks
-    // V, KK, theta
-    if (blockSize*numBlocks > _blockSize*_numBlocks) {
-      // grow the basis
-      _theta.resize(blockSize*numBlocks);
-      int newsd = blockSize*numBlocks;
-
-      if (_initialized) {
-        // copy the old data to the new basis
-        std::vector<int> ind(_curDim);
-        for (int i=0; i<_curDim; i++) ind[i] = i;
-        Teuchos::RefCountPtr<MV> newV;
-        // V
-        newV = MVT::Clone(*_X,newsd);
-        MVT::SetBlock(*_V,ind,*newV);
-        _V = newV;
-        // KK
-        Teuchos::RefCountPtr< Teuchos::SerialDenseMatrix<int,ScalarType> > tmp1,tmp2,tmp3;
-        // create new KK and a submatrix view; then assign from old KK
-        tmp1 = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(newsd,newsd) );
-        tmp2 = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( 
-                  Teuchos::View, *tmp1, _curDim, _curDim
-               ) );
-        tmp3 = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(
-                  Teuchos::View, *_KK, _curDim, _curDim
-               ) );
-        tmp2->assign(*tmp3);
-        tmp3 = Teuchos::null;
-        tmp2 = Teuchos::null;
-        _KK = tmp1;
-        tmp1 = Teuchos::null;
-      }
-      else {
-        // just allocate space
-        _V = MVT::Clone(*_X,newsd);
-        _KK = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(newsd,newsd) );
-      }
-    }
-    else if (blockSize*numBlocks < _blockSize*_numBlocks) {
-      // the space has shrunk: if we have to truncate vectors, then reset to uninitialized
-      int newsd = blockSize*numBlocks;
-      if (newsd < _curDim) {
-        _initialized = false;
-      }
-
-      // if we are still initialized, reallocate and copy
-      // otherwise, just allocate
-      if (_initialized) {
-        _theta.resize(blockSize*numBlocks);
-
-        Teuchos::RefCountPtr<MV> newV;
-        std::vector<int> ind(_curDim);
-        for (int i=0; i<_curDim; i++) ind[i] = i;
-        // V
-        newV = MVT::Clone(*_X,newsd);
-        _V = MVT::CloneView(*_V,ind);
-        MVT::SetBlock(*_V,ind,*newV);
-        _V = newV;
-        // create new KK and a submatrix view; then assign from old KK
-        Teuchos::RefCountPtr< Teuchos::SerialDenseMatrix<int,ScalarType> > tmp1,tmp2,tmp3;
-        tmp1 = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(newsd,newsd) );
-        tmp2 = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( 
-                  Teuchos::View, *tmp1, _curDim, _curDim
-               ) );
-        tmp3 = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(
-                  Teuchos::View, *_KK, _curDim, _curDim
-               ) );
-        tmp2->assign(*tmp3);
-        tmp3 = Teuchos::null;
-        tmp2 = Teuchos::null;
-        _KK = tmp1;
-        tmp1 = Teuchos::null;
-      }
-      else {
-        _theta.resize(blockSize*numBlocks,NANVAL);
-        // just allocate space
-        _V = MVT::Clone(*_X,newsd);
-        _KK = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(newsd,newsd) );
-      }
-    }
-
-    // change the local numbers
-    if (_initialized) {
-      // check that everything is still okay
-      CheckList chk;
-      chk.checkX = true;
-      chk.checkKX = true;
-      chk.checkMX = true;
-      chk.checkV = true;
-      chk.checkR = true;
-      _om->print(Debug, accuracyCheck(chk, ": after setSize()") );
-    }
-    else {
-      _curDim = 0;
-    }
     _blockSize = blockSize;
     _numBlocks = numBlocks;
+
+    Teuchos::RefCountPtr<const MV> tmp;
+    // grab some Multivector to Clone
+    // in practice, getInitVec() should always provide this, but it is possible to use a 
+    // Eigenproblem with nothing in getInitVec() by manually initializing with initialize(); 
+    // in case of that strange scenario, we will try to Clone from _X first, then resort to getInitVec()
+    if (_X != Teuchos::null) { // this is equivalent to _blockSize > 0
+      tmp = _X;
+    }
+    else {
+      tmp = _problem->getInitVec();
+      TEST_FOR_EXCEPTION(tmp == Teuchos::null,std::logic_error,
+                         "Anasazi::BlockDavidson::setSize(): Eigenproblem did not specify initial vectors to clone from");
+    }
+
+    //////////////////////////////////
+    // blockSize dependent
+    //
+    // grow/allocate vectors
+    _Rnorms.resize(_blockSize,NANVAL);
+    _R2norms.resize(_blockSize,NANVAL);
+    //
+    // clone multivectors off of tmp
+    _X = MVT::Clone(*tmp,_blockSize);
+    _KX = MVT::Clone(*tmp,_blockSize);
+    if (_hasM) {
+      _MX = MVT::Clone(*tmp,_blockSize);
+    }
+    else {
+      _MX = _X;
+    }
+    _R = MVT::Clone(*tmp,_blockSize);
+
+    //////////////////////////////////
+    // blockSize*numBlocks dependent
+    //
+    int newsd = _blockSize*_numBlocks;
+    _theta.resize(_blockSize*_numBlocks,NANVAL);
+    _ritz2norms.resize(_blockSize*_numBlocks,NANVAL);
+    _V = MVT::Clone(*tmp,newsd);
+    _KK = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(newsd,newsd) );
+
+    _initialized = false;
+    _curDim = 0;
   }
 
 
@@ -734,7 +607,7 @@ namespace Anasazi {
     }
     
     // If the solver has been initialized, X and P are not necessarily orthogonal to new auxilliary vectors
-    if (_auxVecs.size() > 0 && _initialized) {
+    if (_numAuxVecs > 0 && _initialized) {
       _initialized = false;
     }
   }
@@ -745,11 +618,10 @@ namespace Anasazi {
    * 
    * POST-CONDITIONS:
    *
-   * V is orthonormal, orthogonal to _auxVecs, for first _curDim vectors
-   * KV = Op*V
-   * MV = M*V if _hasM
-   * _theta contains Ritz w.r.t. V
-   * X is Ritz vectors w.r.t. V
+   * _V is orthonormal, orthogonal to _auxVecs, for first _curDim vectors
+   * _theta contains Ritz w.r.t. _V(1:_curDim)
+   * _ritz2norms contains Ritz residuals w.r.t. V(1:_curDim)
+   * X is Ritz vectors w.r.t. _V(1:_curDim)
    * KX = Op*X
    * MX = M*X if _hasM
    * R = KX - MX*diag(_theta)
@@ -828,6 +700,9 @@ namespace Anasazi {
                             std::logic_error, errstr );
         MVT::SetBlock(*state.X,bsind,*_X);
         std::copy(state.T->begin(),state.T->end(),_theta.begin());
+
+        // we don't have primitive ritz vector
+        for (int i=0; i<_curDim; i++) _ritz2norms[i] = NANVAL;
       }
       else {
         // compute ritz vecs/vals
@@ -860,6 +735,20 @@ namespace Anasazi {
             blas.COPY(_curDim, copyS[_order[i]], 1, S[i], 1);
           }
         }
+        // compute ritz residual norms
+        {
+          Teuchos::BLAS<int,ScalarType> blas;
+          Teuchos::SerialDenseMatrix<int,ScalarType> R(_curDim,_curDim), T(_curDim,_curDim);
+          // R = S*diag(theta) - KK*S
+          for (int i=0; i<_curDim; i++) T(i,i) = _theta[i];
+          R.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,ONE,S,T,ZERO);
+          R.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,-ONE,*lclKK,S,ONE);
+          for (int i=0; i<_curDim; i++) {
+            _ritz2norms[i] = blas.NRM2(_curDim,R[i],1);
+          }
+        }
+
+        // compute eigenvectors
         Teuchos::SerialDenseMatrix<int,ScalarType> S1(Teuchos::View,S,_curDim,_blockSize);
         {
           Teuchos::TimeMonitor lcltimer( *_timerLocal );
@@ -1218,6 +1107,20 @@ namespace Anasazi {
         Teuchos::SerialDenseMatrix<int,ScalarType> copyS( S );
         for (int i=0; i<_curDim; i++) {
           blas.COPY(_curDim, copyS[_order[i]], 1, S[i], 1);
+        }
+      }
+
+      // compute ritz residual norms
+      {
+        Teuchos::BLAS<int,ScalarType> blas;
+        Teuchos::SerialDenseMatrix<int,ScalarType> R(_curDim,_curDim), T(_curDim,_curDim);
+        Teuchos::SerialDenseMatrix<int,ScalarType> curKK(Teuchos::View,*_KK,_curDim,_curDim);
+        // R = S*diag(theta) - KK*S
+        for (int i=0; i<_curDim; i++) T(i,i) = _theta[i];
+        R.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,ONE,S,T,ZERO);
+        R.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,-ONE,curKK,S,ONE);
+        for (int i=0; i<_curDim; i++) {
+          _ritz2norms[i] = blas.NRM2(_curDim,R[i],1);
         }
       }
 

@@ -122,6 +122,10 @@ class Eigensolver {
   //! \return A vector of length blockSize containing the 2-norms of the residuals. 
   virtual std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getRes2Norms() = 0;
 
+  //! Get the 2-norms of the Ritz residuals.
+  //! \return A vector of length blockSize containing the 2-norms of the Ritz residuals.
+  virtual std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getRitzRes2Norms() = 0;
+
   //! Get the dimension of the search subspace used to generate the current eigenvectors and eigenvalues.
   virtual int getCurSubspaceDim() = 0;
 

@@ -583,6 +583,7 @@ namespace Anasazi {
             }
             cout << lambda[xc-1] << ")" << endl;
           }
+
           // remember, HEEV orders the eigenvalues from smallest to largest
           // examine condition number of Lambda, compute Lambda^{-.5}
           MagnitudeType maxLambda = lambda[xc-1],
@@ -681,7 +682,7 @@ namespace Anasazi {
             break; // break from while(condT > tolerance)
           }
 
-          condT = maxLambda / minLambda;
+          condT = SCTM::magnitude(maxLambda / minLambda);
           if (_debug) {
             cout << dbgstr << "condT: " << condT << endl;
           }

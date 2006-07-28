@@ -309,7 +309,7 @@ namespace Anasazi {
 
     /*! \brief Get the Ritz values from the previous iteration.
      *
-     *  \return A vector of length not exceeding 3*getBlockSize() containing the Ritz values from the
+     *  \return A vector of length getCurSubspaceDim() containing the Ritz values from the
      *  previous projected eigensolve.
      */
     std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getRitzValues() { 
@@ -320,7 +320,7 @@ namespace Anasazi {
 
     /*! \brief Get the current residual norms
      *
-     *  \return A vector of length blockSize containing the norms of the
+     *  \return A vector of length getCurSubspaceDim() containing the norms of the
      *  residuals, with respect to the orthogonalization manager norm() method.
      */
     std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getResNorms()    {return _Rnorms;}
@@ -328,10 +328,22 @@ namespace Anasazi {
 
     /*! \brief Get the current residual 2-norms
      *
-     *  \return A vector of length blockSize containing the 2-norms of the
+     *  \return A vector of length getCurSubspaceDim() containing the 2-norms of the
      *  residuals. 
      */
     std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getRes2Norms()   {return _R2norms;}
+
+
+    /*! \brief Get the 2-norms of the Ritz residuals.
+     *
+     *  \return A vector of length getCurSubspaceDim() containing the 2-norms of the Ritz residuals.
+     */
+    std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getRitzRes2Norms() {
+      std::vector<MagnitudeType> ret = _ritz2norms;
+      ret.resize(_nevLocal);
+      return ret;
+    }
+
 
     /*! \brief Get the dimension of the search subspace used to generate the current eigenvectors and eigenvalues.
      *
@@ -522,7 +534,7 @@ namespace Anasazi {
     int _iter;
     // 
     // Current eigenvalues, residual norms
-    std::vector<MagnitudeType> _theta, _Rnorms, _R2norms;
+    std::vector<MagnitudeType> _theta, _Rnorms, _R2norms, _ritz2norms;
 
   };
 
@@ -614,6 +626,7 @@ namespace Anasazi {
       _blockSize = blockSize;
 
       _theta.resize(3*_blockSize);
+      _ritz2norms.resize(3*_blockSize);
       _Rnorms.resize(_blockSize);
       _R2norms.resize(_blockSize);
 
@@ -690,6 +703,7 @@ namespace Anasazi {
       }
       // grow/allocate vectors
       _theta.resize(3*blockSize,NANVAL);
+      _ritz2norms.resize(3*_blockSize,NANVAL);
       _Rnorms.resize(blockSize,NANVAL);
       _R2norms.resize(blockSize,NANVAL);
       
@@ -815,10 +829,12 @@ namespace Anasazi {
 
       // set up Ritz values
       _theta.resize(3*_blockSize,NANVAL);
+      _ritz2norms.resize(3*_blockSize,NANVAL);
       if (state.T != Teuchos::null && (signed int)(state.T->size()) >= _blockSize) {
         for (int i=0; i<_blockSize; i++) {
           _theta[i] = (*state.T)[i];
         }
+
       }
       else {
         // get ritz vecs/vals
@@ -869,6 +885,21 @@ namespace Anasazi {
           }
         }
 
+        // compute ritz residual norms
+        {
+          Teuchos::BLAS<int,ScalarType> blas;
+          Teuchos::SerialDenseMatrix<int,ScalarType> R(_blockSize,_blockSize);
+          // R = MM*S*diag(theta) - KK*S
+          R.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,ONE,MM,S,ZERO);
+          for (int i=0; i<_blockSize; i++) {
+            blas.SCAL(_blockSize,_theta[i],R[i],1);
+          }
+          R.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,-ONE,KK,S,ONE);
+          for (int i=0; i<_blockSize; i++) {
+            _ritz2norms[i] = blas.NRM2(_blockSize,R[i],1);
+          }
+        }
+
         // update the solution
         {
           Teuchos::TimeMonitor lcltimer( *_timerLocalUpdate );
@@ -885,6 +916,7 @@ namespace Anasazi {
           }
         }
       }
+
   
       // set up R
       if (state.R != Teuchos::null && MVT::GetNumberVecs(*state.R) >= _blockSize && MVT::GetVecLength(*state.R) == MVT::GetVecLength(*_R) ) {
@@ -1251,6 +1283,23 @@ namespace Anasazi {
           blas.COPY(_nevLocal, copyS[_order[i]], 1, S[i], 1);
         }
       }
+
+      // compute ritz residual norms
+      {
+        Teuchos::SerialDenseMatrix<int,ScalarType> R(_nevLocal,_nevLocal);
+        Teuchos::SerialDenseMatrix<int,ScalarType> lclKK(Teuchos::View,KK,_nevLocal,_nevLocal),
+                                                   lclMM(Teuchos::View,MM,_nevLocal,_nevLocal);
+        // R = MM*S*diag(theta) - KK*S
+        R.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,ONE,lclMM,S,ZERO);
+        for (int i=0; i<_nevLocal; i++) {
+          blas.SCAL(_nevLocal,_theta[i],R[i],1);
+        }
+        R.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,-ONE,lclKK,S,ONE);
+        for (int i=0; i<_nevLocal; i++) {
+          _ritz2norms[i] = blas.NRM2(_nevLocal,R[i],1);
+        }
+      }
+
 
       // before computing X,P: perform second orthogonalization per Ulrich,Rich paper
       // CX will be the coefficients of [X,H,P] for new X, CP for new P
