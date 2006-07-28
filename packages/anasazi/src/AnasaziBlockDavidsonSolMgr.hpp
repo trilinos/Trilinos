@@ -34,6 +34,8 @@
  *  \brief The Anasazi::BlockDavidsonSolMgr provides a powerful solver manager for the BlockDavidson eigensolver.
 */
 
+// finish: allocate memory for all restarting at beginning of solve().... not every time we restart
+
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziTypes.hpp"
 
@@ -60,6 +62,7 @@
  *  <li>
  *  </ul>
  *
+ *  \author Chris Baker, Ulrich Hetmaniuk, Rich Lehoucq, Heidi Thornquist
  */
 
 namespace Anasazi {
@@ -137,8 +140,8 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::BlockDavidsonSolMgr(
         Teuchos::ParameterList &pl ) : 
   _problem(problem),
   _whch("SR"),
-  _convtol(MT::prec()),
-  _locktol(MT::prec()/10),
+  _convtol(0),
+  _locktol(0),
   _maxRestarts(20),
   _useLocking(false),
   _relconvtol(true),
@@ -160,13 +163,13 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::BlockDavidsonSolMgr(
   }
 
   // convergence tolerance
-  _convtol = pl.get("Convergence Tolerance",_convtol);
+  _convtol = pl.get("Convergence Tolerance",MT::prec());
   _relconvtol = pl.get("Relative Convergence Tolerance",_relconvtol);
   
   // locking tolerance
   _useLocking = pl.get("Use Locking",_useLocking);
   _rellocktol = pl.get("Relative Locking Tolerance",_rellocktol);
-  _locktol = pl.get("Locking Tolerance",_locktol);
+  _locktol = pl.get("Locking Tolerance",_convtol/10.0);
 
   // maximum number of restarts
   _maxRestarts = pl.get("Maximum Restarts",_maxRestarts);
@@ -176,7 +179,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::BlockDavidsonSolMgr(
   TEST_FOR_EXCEPTION(_blockSize <= 0, std::invalid_argument,
                      "Anasazi::BlockDavidsonSolMgr: \"Block Size\" must be strictly positive.");
   _numBlocks = pl.get("Num Blocks",1);
-  TEST_FOR_EXCEPTION(_numBlocks <= 0, std::invalid_argument,
+  TEST_FOR_EXCEPTION(_numBlocks <= 1, std::invalid_argument,
                      "Anasazi::BlockDavidsonSolMgr: \"Num Blocks\" must be strictly positive.");
 
   // max locked: default is nev(), must satisfy _maxLocked + _blockSize >= nev
@@ -372,7 +375,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
           state.H = Teuchos::null;
           state.T = Teuchos::null;
           //
-          // get current size of basis, build index, and get a view of the current basis and project stiffness matrix
+          // get current size of basis, build index, and get a view of the current basis and projected stiffness matrix
           int curdim = state.curDim;
           std::vector<int> curind(curdim);
           for (int i=0; i<curdim; i++) curind[i] = i;
@@ -496,7 +499,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
 
         if (numlocked == _maxLocked) {
           // disabled locking now by setting quorum to unreachable number
-          locktest->setQuorum(_blockSize*_numBlocks+1);
+          locktest->setQuorum(_blockSize+1);
         }
 
       }
@@ -626,6 +629,8 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
 
   _problem->setSolution(sol);
   printer->stream(Debug) << "Returning " << sol.numVecs << " eigenpairs to eigenproblem." << endl;
+
+  // finish: sort eigenpairs in Eigensolution
 
   if (sol.numVecs < nev) {
     return Unconverged; // return from BlockDavidsonSolMgr::solve() 

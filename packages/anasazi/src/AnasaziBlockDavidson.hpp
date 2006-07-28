@@ -34,6 +34,8 @@
 // in particular, getState() and initialize() need to exactly describe their 
 // input and output
 
+// finish: add numblocks+blocksize+numauxvecs >= GetLength test
+
 #ifndef ANASAZI_BLOCK_DAVIDSON_HPP
 #define ANASAZI_BLOCK_DAVIDSON_HPP
 
@@ -490,6 +492,8 @@ namespace Anasazi {
     _count_ApplyM(0),
     _count_ApplyPrec(0),
     // internal data
+    _blockSize(0),
+    _numBlocks(0),
     _initialized(false),
     _curDim(0),
     _auxVecs( Teuchos::Array<Teuchos::RefCountPtr<const MV> >(0) ), 
@@ -504,8 +508,6 @@ namespace Anasazi {
                        "Anasazi::BlockDavidson::constructor: user specified problem is not hermitian.");
 
     // set the block size and allocate data
-    _blockSize = 0;
-    _numBlocks = 0;
     int bs = params.get("Block Size", _problem->getNEV());
     int nb = params.get("Num Blocks", 2);
     setSize(bs,nb);
@@ -530,7 +532,7 @@ namespace Anasazi {
     // This routine only allocates space; it doesn't not perform any computation
     // any change in size will invalidate the state of the solver.
 
-    TEST_FOR_EXCEPTION(numBlocks <= 0 || blockSize <= 0, std::logic_error, "Anasazi::BlockDavidson::setSize was passed a non-positive argument.");
+    TEST_FOR_EXCEPTION(numBlocks <= 1 || blockSize <= 0, std::logic_error, "Anasazi::BlockDavidson::setSize was passed a non-positive argument.");
     if (blockSize == _blockSize && numBlocks == _numBlocks) {
       // do nothing
       return;
@@ -1096,9 +1098,8 @@ namespace Anasazi {
         _sm->sort( this, _curDim, &(_theta_st[0]), &_order );   // don't catch exception
         
         // Reorder _theta according to sorting results from _theta_st
-        std::vector<MagnitudeType> _theta_copy(_theta);
         for (int i=0; i<_curDim; i++) {
-          _theta[i] = SCT::real(_theta_copy[_order[i]]);
+          _theta[i] = SCT::real(_theta_st[i]);
         }
 
         // Sort the primitive ritz vectors
@@ -1153,7 +1154,7 @@ namespace Anasazi {
       // R = KX - MX*diag(theta)
       {
         Teuchos::TimeMonitor lcltimer( *_timerCompRes );
-
+        
         MVT::MvAddMv( ONE, *_KX, ZERO, *_KX, *_R );
         Teuchos::SerialDenseMatrix<int,ScalarType> T( _blockSize, _blockSize );
         for (int i = 0; i < _blockSize; i++) {

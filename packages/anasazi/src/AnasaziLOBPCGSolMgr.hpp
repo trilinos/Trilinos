@@ -60,6 +60,7 @@
  *
  */
 
+
 namespace Anasazi {
 
 template<class ScalarType, class MV, class OP>
@@ -634,6 +635,8 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
 
   _problem->setSolution(sol);
   printer->stream(Debug) << "Returning " << sol.numVecs << " eigenpairs to eigenproblem." << endl;
+
+  // finish: sort eigenpairs in Eigensolution
 
   if (sol.numVecs < nev) return Unconverged; // return from LOBPCGSolMgr::solve() 
   return Converged; // return from LOBPCGSolMgr::solve() 
