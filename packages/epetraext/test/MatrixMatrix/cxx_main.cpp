@@ -765,7 +765,11 @@ Epetra_CrsMatrix* create_epetra_crsmatrix(int numProcs,
                                           int local_n)
 {
   (void)localProc;
+#ifdef EPETRA_MPI
   Epetra_MpiComm comm(MPI_COMM_WORLD);
+#else
+  Epetra_SerialComm comm;
+#endif
   int global_num_rows = numProcs*local_n;
 
   Epetra_Map rowmap(global_num_rows, local_n, 0, comm);
