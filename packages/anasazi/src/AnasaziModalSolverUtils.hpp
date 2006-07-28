@@ -493,12 +493,10 @@ namespace Anasazi {
       // Update MX
       if (M) {
         if (qc >= xc) {
-          // FINISH: add accounting
           OPT::Apply( *M, *XX, *MXX);
         }
         else {
           Teuchos::RefCountPtr<MV> MQ = MVT::Clone( Q, qc );
-          // FINISH: add accounting
           OPT::Apply( *M, Q, *MQ );
           MVT::MvTimesMatAddMv( -one, *MQ, qTmx, one, *MXX );
         }  // if (qc >= xc)
@@ -514,21 +512,17 @@ namespace Anasazi {
         if ( SCT::magnitude(kappa*newDot[j]) < SCT::magnitude(oldDot[j]) ) {
           
           // Apply another step of classical Gram-Schmidt
-          // FINISH: add accounting
           MVT::MvTransMv( one, Q, *MXX, qTmx );
           
-          // FINISH: add accounting
           MVT::MvTimesMatAddMv( -one, Q, qTmx, one, *XX );
           
           // Update MX
           if (M) {
             if (qc >= xc) {
-              // FINISH: add accounting
               OPT::Apply( *M, *XX, *MXX);
             }
             else {
               Teuchos::RefCountPtr<MV> MQ = MVT::Clone( Q, qc );
-              // FINISH: add accounting
               OPT::Apply( *M, Q, *MQ);
               MVT::MvTimesMatAddMv( -one, *MQ, qTmx, one, *MXX );
             } // if (qc >= xc)
@@ -623,7 +617,6 @@ namespace Anasazi {
                 MVT::MvTimesMatAddMv( -one, *prevMXj, product, one, *MXj );
               }
               else {
-                // FINISH: add accounting
                 OPT::Apply( *M, *Xj, *MXj );
               }
             }
@@ -648,7 +641,6 @@ namespace Anasazi {
                   MVT::MvTimesMatAddMv( -one, *prevMXj, product, one, *MXj );
                 }
                 else {
-                  // FINISH: add accounting
                   OPT::Apply( *M, *Xj, *MXj );
                 }
               }
@@ -679,7 +671,6 @@ namespace Anasazi {
             info += 1;
             MVT::MvRandom( *Xj );
             if (M) {
-              // FINISH: add accounting
               OPT::Apply( *M, *Xj, *MXj );
             }
             if (orthoType == 0)

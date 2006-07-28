@@ -42,13 +42,13 @@
       \author Chris Baker, Ulrich Hetmaniuk, Rich Lehoucq, and Heidi Thornquist
 */
 
-// #define ORTHO_DEBUG
-
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziMultiVecTraits.hpp"
 #include "AnasaziOperatorTraits.hpp"
 #include "AnasaziMatOrthoManager.hpp"
 #include "Teuchos_LAPACK.hpp"
+
+std::string dbgstr("                    *** ");
 
 namespace Anasazi {
 
@@ -66,7 +66,7 @@ namespace Anasazi {
     
     //@{ \name Constructor/Destructor.
     //! Constructor specifying re-orthogonalization tolerance.
-    SVQBOrthoManager( Teuchos::RefCountPtr<const OP> Op = Teuchos::null );
+    SVQBOrthoManager( Teuchos::RefCountPtr<const OP> Op = Teuchos::null, bool debug = false );
 
     //! Destructor
     ~SVQBOrthoManager() {};
@@ -162,6 +162,7 @@ namespace Anasazi {
   private:
     
     MagnitudeType _eps;
+    bool _debug;
   
     // ! Routine to find an orthogonal/orthonormal basis for the 
     int findBasis( MV &X, Teuchos::RefCountPtr<MV> MX, 
@@ -175,11 +176,14 @@ namespace Anasazi {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Constructor
   template<class ScalarType, class MV, class OP>
-  SVQBOrthoManager<ScalarType,MV,OP>::SVQBOrthoManager( Teuchos::RefCountPtr<const OP> Op) 
-    : MatOrthoManager<ScalarType,MV,OP>(Op) {
+  SVQBOrthoManager<ScalarType,MV,OP>::SVQBOrthoManager( Teuchos::RefCountPtr<const OP> Op, bool debug) 
+    : MatOrthoManager<ScalarType,MV,OP>(Op), _debug(debug) {
     
     Teuchos::LAPACK<int,MagnitudeType> lapack;
     _eps = lapack.LAMCH('E');
+    if (_debug) {
+      std::cout << "_eps == " << _eps << endl;
+    }
   }
 
 
@@ -429,9 +433,6 @@ namespace Anasazi {
     bool doGramSchmidt = true;          
     // variable for testing orthonorm/orthog 
     MagnitudeType tolerance = MONE/SCTM::squareroot(_eps);
-    MagnitudeType eps500 = SCTM::squareroot(_eps);
-    MagnitudeType eps250 = SCTM::squareroot(eps500);
-    MagnitudeType eps125 = SCTM::squareroot(eps250);
 
     // outer loop
     while (doGramSchmidt) {
@@ -459,24 +460,21 @@ namespace Anasazi {
             MXi = Teuchos::null;
           }
         }
-#ifdef ORTHO_DEBUG
         // check that vectors are normalized now
-        {
+        if (_debug) {
           std::vector<MagnitudeType> nrm2(xc);
-          norm(X,&nrm2);
-          cout << "*****   " << "post-scale norms without MX" << endl;
-          for (int i=0; i<xc; i++) {
-            cout << nrm2[i] << "\t";
-          }
-          cout << endl;
+          cout << dbgstr << "max post-scale norm: (with/without MX) : ";
+          MagnitudeType maxpsnw = ZERO, maxpsnwo = ZERO;
           norm(X,MX,&nrm2);
-          cout << "*****   " << "post-scale norms with MX" << endl;
           for (int i=0; i<xc; i++) {
-            cout << nrm2[i] << "\t";
+            maxpsnw = (nrm2[i] > maxpsnw ? nrm2[i] : maxpsnw);
           }
-          cout << endl;
+          norm(X,&nrm2);
+          for (int i=0; i<xc; i++) {
+            maxpsnwo = (nrm2[i] > maxpsnwo ? nrm2[i] : maxpsnwo);
+          }
+          cout << "(" << maxpsnw << "," << maxpsnwo << ")" << endl;
         }
-#endif
         // project the vectors onto the Qi
         for (int i=0; i<nq; i++) {
           innerProd(*Q[i],X,MX,*newC[i]);
@@ -497,27 +495,24 @@ namespace Anasazi {
           OPT::Apply(*(this->_Op),X,*MX);
         }
 
-        //                                 (  C[0]   )
-        // Compute inf-norm, 1-norm of C = (  ....   )
-        //                                 ( C[nq-1] )
-        MagnitudeType nrm1 = ZERO, nrminf = ZERO;
-        // 1-norm
-        for (int j=0; j<xc; j++) {
+        //          
+        // Compute largest column norm of 
+        //            (  C[0]   )  
+        //        C = (  ....   )
+        //            ( C[nq-1] )
+        MagnitudeType maxNorm = ZERO;
+        for  (int j=0; j<xc; j++) {
           MagnitudeType sum = ZERO;
-          for (int i=0; i<nq; i++) {
-            for (int k=0; k<qcs[i]; k++) {
-              sum += SCT::magnitude( (*newC[i])(k,j) );
+          for (int k=0; k<nq; k++) {
+            for (int i=0; i<qcs[k]; i++) {
+              sum += SCT::magnitude((*newC[k])(i,j))*SCT::magnitude((*newC[k])(i,j));
             }
           }
-          nrm1 = (nrm1 > sum) ? nrm1 : sum;
+          maxNorm = (sum > maxNorm) ? sum : maxNorm;
         }
-        // inf-norm
-        for (int i=0; i<nq; i++) {
-          MagnitudeType tmp = newC[i]->normInf();
-          nrminf = (nrminf > tmp) ? nrminf : tmp;
-        }
+              
         // do we perform another GS?
-        if ( nrminf*nrm1 < 0.5 ) {
+        if (maxNorm < 0.36) {
           doGramSchmidt = false;
         }
 
@@ -553,10 +548,10 @@ namespace Anasazi {
       // perform normalization
       if (normalize) {
 
-        MagnitudeType condT;
-        MagnitudeType prevCondT = ZERO;
-
-        do {
+        MagnitudeType condT = tolerance;
+        
+        // finish : test to make sure _eps is correct
+        while (condT >= tolerance) {
 
           numSVQB++;
 
@@ -567,7 +562,7 @@ namespace Anasazi {
           std::vector<MagnitudeType> Dh(xc), Dhi(xc);
           for (int i=0; i<xc; i++) {
             Dh[i]  = SCT::magnitude(SCT::squareroot(XtMX(i,i)));
-            Dhi[i] = Dh[i] == ZERO ? ZERO : MONE/Dh[i];
+            Dhi[i] = (Dh[i] == ZERO ? ZERO : MONE/Dh[i]);
           }
           // scale XtMX :   S = D^{-.5} * XtMX * D^{-.5}
           for (int i=0; i<xc; i++) {
@@ -581,21 +576,30 @@ namespace Anasazi {
           lapack.HEEV('V', 'U', xc, XtMX.values(), XtMX.stride(), &lambda[0], &work[0], work.size(), &rwork[0], &info);
           TEST_FOR_EXCEPTION( info != 0, OrthoError, 
                               "Anasazi::SVQBOrthoManager::findBasis(): Error code from HEEV" );
-
+          if (_debug) {
+            cout << dbgstr << "eigenvalues of XtMX: (";
+            for (int i=0; i<xc-1; i++) {
+              cout << lambda[i] << ",";
+            }
+            cout << lambda[xc-1] << ")" << endl;
+          }
+          // remember, HEEV orders the eigenvalues from smallest to largest
           // examine condition number of Lambda, compute Lambda^{-.5}
           MagnitudeType maxLambda = lambda[xc-1],
                         minLambda = lambda[0];
           int iZeroMax = -1;
           for (int i=0; i<xc; i++) {
-            if (lambda[i] < _eps*_eps*maxLambda) {
+            if (lambda[i] < 10*_eps*maxLambda) {      // finish: this was _eps*_eps*maxLambda
               iZeroMax = i;
               lambda[i]  = ZERO;
               lambdahi[i] = ZERO;
             }
+            /*
             else if (lambda[i] < _eps*maxLambda) {
               lambda[i]  = SCTM::squareroot(_eps*maxLambda);
               lambdahi[i] = MONE/lambda[i];
             }
+            */
             else {
               lambda[i] = SCTM::squareroot(lambda[i]);
               lambdahi[i] = MONE/lambda[i];
@@ -653,6 +657,10 @@ namespace Anasazi {
 
           // check iZeroMax (rank indicator)
           if (iZeroMax >= 0) {
+            if (_debug) {
+              cout << dbgstr << "augmenting multivec with " << iZeroMax+1 << " random directions" << endl;
+            }
+
             numRand++;
             // put random info in the first iZeroMax+1 vectors of X,MX
             std::vector<int> ind(iZeroMax+1);
@@ -670,28 +678,31 @@ namespace Anasazi {
             Xnull = Teuchos::null;
             condT = tolerance;
             doGramSchmidt = true;
+            break; // break from while(condT > tolerance)
           }
 
-          if ( maxLambda*eps125 < 0.5*minLambda ) {
-            break;
+          condT = maxLambda / minLambda;
+          if (_debug) {
+            cout << dbgstr << "condT: " << condT << endl;
           }
-          prevCondT = maxLambda / minLambda;
           
-        } while (1);
+        } // end while (condT >= tolerance)
 
-        if ((doGramSchmidt == false) && (prevCondT*eps250 >= 0.5)) {
+        if ((doGramSchmidt == false) && (condT > SCTM::squareroot(tolerance))) {
           doGramSchmidt = true;
         }
       }
-      // else normalize == false
+      // end if(normalize)
        
-    }
+    } // end while (doGramSchmidt)
 
-#ifdef ORTHO_DEBUG
-    cout <<   "numGS  : " << numGS 
-         << "\tnumSVQB: " << numSVQB 
-         << "\tnumRand: " << numRand << endl;
-#endif
+    if (_debug) {
+      cout << dbgstr << "(numGS,numSVQB,numRand)                : " 
+           << "(" << numGS 
+           << "," << numSVQB 
+           << "," << numRand 
+           << ")" << endl;
+    }
 
     return xc;
   }

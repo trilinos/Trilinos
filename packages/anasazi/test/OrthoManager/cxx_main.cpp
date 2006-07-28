@@ -35,6 +35,7 @@
 #include "Epetra_Vector.h"
 #include "AnasaziBasicOutputManager.hpp"
 #include "AnasaziSVQBOrthoManager.hpp"
+#include "Teuchos_CommandLineProcessor.hpp"
 
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
@@ -60,7 +61,7 @@ const ST ONE = SCT::one();
 const MT ZERO = SCT::magnitude(SCT::zero());
 
 // this is the tolerance that all tests are performed against
-const MT TOL = 1.0e-14;
+const MT TOL = 1.0e-13;
 const MT ATOL = 100;
 
 bool verbose = false;
@@ -83,14 +84,19 @@ int main(int argc, char *argv[])
 #else
   Epetra_SerialComm Comm;
 #endif
-
   int MyPID = Comm.MyPID();
 
   int numFailed = 0;
-  if (argc>1) {
-    if (argv[1][0]=='-' && argv[1][1]=='v') {
-      verbose = true;
-    }
+  bool debug = false;
+
+  CommandLineProcessor cmdp(false,true);
+  cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+  cmdp.setOption("debug","nodebug",&debug,"Print debugging information.");
+  if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
+#ifdef HAVE_MPI
+    MPI_Finalize();
+#endif
+    return -1;
   }
   verbose = verbose && (MyPID==0);
 
@@ -115,8 +121,8 @@ int main(int argc, char *argv[])
   RefCountPtr<const Epetra_CrsMatrix> M = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getMass()), false );
 
   // Create an SVQB ortho manager 
-  RefCountPtr<MatOrthoManager<ST,MV,OP> > OM   = rcp( new SVQBOrthoManager<ST,MV,OP>() );
-  RefCountPtr<MatOrthoManager<ST,MV,OP> > OM_M = rcp( new SVQBOrthoManager<ST,MV,OP>(M) );
+  RefCountPtr<MatOrthoManager<ST,MV,OP> > OM   = rcp( new SVQBOrthoManager<ST,MV,OP>(Teuchos::null,debug) );
+  RefCountPtr<MatOrthoManager<ST,MV,OP> > OM_M = rcp( new SVQBOrthoManager<ST,MV,OP>(M,debug) );
 
   // multivector to spawn off of
   RefCountPtr<MV> X = rcp( new Epetra_MultiVector(M->OperatorDomainMap(), sizeX) );
@@ -430,8 +436,8 @@ int testProjectAndNormalize(RefCountPtr<MatOrthoManager<ST,MV,OP> > OM,
       for (int i=0; i<rank; i++) {
         ind[i] = i;
       }
-      smlOX = MVT::CloneView(*X,ind);
       smlX = MVT::CloneView(*xcopy,ind); 
+      smlOX = MVT::CloneView(*X,ind);
       if (mxcopy != null) {
         smlMX = MVT::CloneView(*mxcopy,ind); 
       }
@@ -461,7 +467,7 @@ int testProjectAndNormalize(RefCountPtr<MatOrthoManager<ST,MV,OP> > OM,
           warning = true;
           sout << "   vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! warning!" << endl;
         }
-        sout << "  " << t << "|| newX'*X-R ||_F          : " << err << endl;
+        sout << "  " << t << "|| newX'*M*X-R ||_F          : " << err << endl;
       }
       // X^T M X == I
       err = OM->orthonormError(*smlX);
@@ -631,8 +637,8 @@ int testNormalize(RefCountPtr<MatOrthoManager<ST,MV,OP> > OM, RefCountPtr<MV> X)
   bool hasM = (OM->getOp() != null);
   int numerr = 0;
   std::ostringstream sout;
-  RefCountPtr<MV> xcopy, mxcopy;
-  RefCountPtr<SerialDenseMatrix<int,ST> > R;
+  RefCountPtr<MV> xcopy, mxcopy, smlOX;
+  RefCountPtr<SerialDenseMatrix<int,ST> > R, smlR, newR;
   bool warning = false;
 
   int numtests;
@@ -689,6 +695,7 @@ int testNormalize(RefCountPtr<MatOrthoManager<ST,MV,OP> > OM, RefCountPtr<MV> X)
         ind[i] = i;
       }
       smlX = MVT::CloneView(*xcopy,ind); 
+      smlOX = MVT::CloneView(*X,ind);
       if (mxcopy != null) {
         smlMX = MVT::CloneView(*mxcopy,ind); 
       }
@@ -698,7 +705,7 @@ int testNormalize(RefCountPtr<MatOrthoManager<ST,MV,OP> > OM, RefCountPtr<MV> X)
 
       // MX == M*X
       if (smlMX != null) {
-        tmp = MVT::CloneCopy(*smlX);
+        tmp = MVT::Clone(*smlX,rank);
         OPT::Apply(*(OM->getOp()),*smlX,*tmp);
         err = MVDiff(*tmp,*smlMX);
         if (err > TOL) {
@@ -709,15 +716,16 @@ int testNormalize(RefCountPtr<MatOrthoManager<ST,MV,OP> > OM, RefCountPtr<MV> X)
       }
       // X = xcopy*R
       if (R != null) {
-        SerialDenseMatrix<int,ST> smlR(Teuchos::Copy,*R,rank,rank);
-        tmp = MVT::Clone(*smlX,rank);
-        MVT::MvTimesMatAddMv(ONE,*smlX,smlR,ZERO,*tmp);
-        err = MVDiff(*tmp,*X);
+        smlR = rcp( new SerialDenseMatrix<int,ST>(Teuchos::Copy,*R,rank,rank) );
+        newR = rcp( new SerialDenseMatrix<int,ST>(rank,rank) );
+        OM->innerProd(*smlX,*smlOX,*newR);
+        *newR -= *smlR;
+        err = newR->normFrobenius();
         if (err > ATOL*TOL) {
           warning = true;
           sout << "   vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! warning!" << endl;
         }
-        sout << "  " << t << "|| newX'*X-R ||_F          : " << err << endl;
+        sout << "  " << t << "|| newX'*M*X-R ||_F          : " << err << endl;
       }
       // X^T M X == I
       err = OM->orthonormError(*smlX);
