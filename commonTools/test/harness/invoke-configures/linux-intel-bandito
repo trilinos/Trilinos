@@ -1,5 +1,50 @@
 ../configure CFLAGS="-O2" CXXFLAGS="-O2 -cxxlib-icc" \
-CC=icc CXX=icpc F77=ifort --disable-ml \
+CC=icc CXX=icpc F77=ifort \
+--cache-file=config.cache \
+--disable-default-packages \
+--enable-amesos \
+--enable-anasazi \
+--enable-aztecoo \
+--enable-belos \
+--enable-capo \
+--enable-claps \
+--enable-didasko \
+--enable-epetra \
+--enable-epetra-abc \
+--enable-epetra-thyra \
+--enable-epetraext \
+--enable-epetraext-inout \
+--enable-epetraext-coloring \
+--enable-epetraext-transform \
+--enable-galeri \
+--enable-ifpack \
+--enable-kokkos \
+--enable-komplex \
+--enable-loca \
+--with-loca-anasazi \
+--enable-meros \
+--enable-ml \
+--enable-moertel \
+--enable-new_package \
+--enable-new_swahili \
+--enable-nox \
+--enable-nox-epetra \
+--enable-nox-epetra-examples \
+--enable-nox-lapack \
+--enable-nox-lapack-examples \
+--enable-nox-tests \
+--enable-python \
+--enable-rythmos \
+--enable-teuchos \
+--enable-teuchos-abc \
+--enable-teuchos-complex \
+--enable-teuchos-extended \
+--enable-thyra \
+--enable-tpetra \
+--enable-triutils \
+--enable-moocho \
+--with-gnumake \
 --with-incdirs="-I/opt/intel/cc/9.0/include -I/opt/intel/fc/9.0/include" \
 --with-blas="-L/opt/intel/mkl/8.0.2/lib/32 -lmkl_ia32 -lguide -lpthread -lpthread_nonshared" \
---with-lapack="-L/opt/intel/mkl/8.0.2/lib/32 -lmkl_lapack -lmkl_ia32 -lpthread" 
+--with-lapack="-L/opt/intel/mkl/8.0.2/lib/32 -lmkl_lapack -lmkl_ia32 -lpthread"
+ 
