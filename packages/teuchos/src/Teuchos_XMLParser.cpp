@@ -123,12 +123,12 @@ XMLObject XMLParser::parse()
   
   bool done = false;
   int curopen = 0;  // number of currently open tags, or "do we process character data?"
-  int gotRoot = 0;
+  bool gotRoot = false;
 
   while (!done) {
     
     string tag, cdata;
-    unsigned char c1, c2, c3;
+    unsigned char c1, c2;
     Teuchos::map<string,string> attrs;
     
     // Consume any whitespace
@@ -165,8 +165,8 @@ XMLObject XMLParser::parse()
         getSTag(c2, tag, attrs, emptytag);
         handler->startElement(tag,attrs);
         if (curopen == 0) {
-          TEST_FOR_EXCEPTION(gotRoot, std::runtime_error , "XMLParser::getETag(): document not well-formed: more than one root element specified");
-          gotRoot = 1;
+          TEST_FOR_EXCEPTION(gotRoot == true, std::runtime_error , "XMLParser::getETag(): document not well-formed: more than one root element specified");
+          gotRoot = true;
         }
         curopen++;
         if (emptytag) {
@@ -203,8 +203,11 @@ XMLObject XMLParser::parse()
     }
   }
 
+  // valid XML requires a root object; we will allow empty XML files
+  TEST_FOR_EXCEPTION( gotRoot == false, EmptyXMLError, "XMLParser::parse(): XML specification requires a root object!" );
+
   TEST_FOR_EXCEPTION( curopen != 0 , std::runtime_error, "XMLParser::parse(): document not well-formed: elements not matched" );
-  
+
   return handler->getObject();
 }
 

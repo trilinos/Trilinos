@@ -48,6 +48,11 @@ namespace Teuchos
   class XMLParser
     {
     public:
+
+      //! Thrown when attempting to parse an empty XML string.
+      class EmptyXMLError : public std::runtime_error
+      {public: EmptyXMLError(const std::string& what_arg) : std::runtime_error(what_arg) {}};
+     
       /** \brief Constructor */
       XMLParser(RefCountPtr<XMLInputStream> is) : _is(is) {;}
       
