@@ -203,12 +203,10 @@ XMLObject XMLParser::parse()
     }
   }
 
-  // valid XML requires a root object; we will allow empty XML files
-  TEST_FOR_EXCEPTION( gotRoot == false, EmptyXMLError, "XMLParser::parse(): XML specification requires a root object!" );
-
   TEST_FOR_EXCEPTION( curopen != 0 , std::runtime_error, "XMLParser::parse(): document not well-formed: elements not matched" );
 
   return handler->getObject();
+
 }
 
 

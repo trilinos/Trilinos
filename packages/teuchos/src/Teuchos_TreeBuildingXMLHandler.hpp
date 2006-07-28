@@ -53,7 +53,16 @@ namespace Teuchos
       TreeBuildingXMLHandler();
 
       /** \brief Retrieve the entire XML tree */
-      const XMLObject& getObject() const {return root_.getChild(0);}
+      const XMLObject& getObject() const
+        {
+          // valid XML requires a root object; we will allow empty XML files
+          TEST_FOR_EXCEPTION(
+            root_.isEmpty(), EmptyXMLError
+            ,"Error, An empty XML string or file was specified!"
+            "  The XML specification requires at minimum the presence"
+            " of a root element!" );
+          return root_.getChild(0);
+        }
 
       /** \brief Process character data */
       void characters(const string& chars);

@@ -32,11 +32,19 @@
     TESTS = ../example/XML/XmlToParameterList.exe;
     ARGS = --xml-in-file=../example/XML/Example1.xml,
            --xml-in-file=../example/XML/Example1.xml --extra-xml="<ParameterList><ParameterList name=\"Direction\"><ParameterList name=\"Newton\"><ParameterList name=\"Linear Solver\"><Parameter name=\"Tol\" type=\"double\" value=\"1e-2\"/></ParameterList></ParameterList></ParameterList></ParameterList>",
-           --extra-xml="<ParameterList/>",
-           --xml-in-file=../example/XML/Example2.xml,
-           --extra-xml=" ";
+           --extra-xml="<ParameterList/>";
+    EXIT-STATUS = STRING-COMPARISON;
     COMM = MPI(1),SERIAL;
 }
+
+(FRAMEWORK,INSTALL,XML) {
+    TESTS = ../example/XML/XmlToParameterList.exe;
+    ARGS = --xml-in-file=../example/XML/Example2.xml,
+           --extra-xml=" ";
+    EXIT-STATUS = STRING-COMPARISON(EmptyXMLError);
+    COMM = MPI(1),SERIAL;
+}
+
 # Note that above the last two test cases fail due to empty lists!
 
 (FRAMEWORK,INSTALL) {

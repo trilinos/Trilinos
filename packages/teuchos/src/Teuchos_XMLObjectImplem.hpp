@@ -30,7 +30,7 @@
 #define TEUCHOS_XMLOBJECTIMPLEM_H
 
 /*! \file Teuchos_XMLObjectImplem.hpp
-    \brief Low level implementation of XMLObject
+  \brief Low level implementation of XMLObject
 */
 
 #include "Teuchos_map.hpp"
@@ -40,83 +40,84 @@
 namespace Teuchos
 {
 
-	class XMLObject;
+class XMLObject;
 
-	/** 
-	 * \brief The XMLObjectImplem class takes care of the low-level implementation 
-		details of XMLObject
-	 */
-	class XMLObjectImplem
-		{
-      typedef Teuchos::map<string, string> Map;
+/** 
+ * \brief The XMLObjectImplem class takes care of the low-level implementation 
+ details of XMLObject
+*/
+class XMLObjectImplem
+{
+  typedef Teuchos::map<string, string> Map;
 
-		public:
-			//! Construct with a tag string 
-			XMLObjectImplem(const string& string);
+public:
+  //! Construct with a tag string 
+  XMLObjectImplem(const string& string);
 
-			//! Deep copy
-			XMLObjectImplem* deepCopy() const ;
+  //! Deep copy
+  XMLObjectImplem* deepCopy() const ;
 
-			//! Add a [name, value] attribute
-      void addAttribute(const string& name, const string& value);
+  //! Add a [name, value] attribute
+  void addAttribute(const string& name, const string& value);
 
-			//! Add a child XMLObject
-			void addChild(const XMLObject& child);
+  //! Add a child XMLObject
+  void addChild(const XMLObject& child);
 
-			//! Add a content line
-			void addContent(const string& contentLine);
+  //! Add a content line
+  void addContent(const string& contentLine);
 
-			//! Return the tag string
-			const string& getTag() const {return tag_;}
+  //! Return the tag string
+  const string& getTag() const {return tag_;}
 
-			//! Determine whether an attribute exists
-			bool hasAttribute(const string& name) const 
-				{return attributes_.find(name) != attributes_.end();}
+  //! Determine whether an attribute exists
+  bool hasAttribute(const string& name) const 
+    {return attributes_.find(name) != attributes_.end();}
 
-			//! Look up an attribute by name
-			const string& getAttribute(const string& name) const 
-      {return (*(attributes_.find(name))).second;}
+  //! Look up an attribute by name
+  const string& getAttribute(const string& name) const 
+    {return (*(attributes_.find(name))).second;}
 
-			//! Return the number of children
-			int numChildren() const ;
+  //! Return the number of children
+  int numChildren() const ;
 
-			//! Look up a child by its index
-			const XMLObject& getChild(int i) const ;
+  //! Look up a child by its index
+  const XMLObject& getChild(int i) const ;
 
-			//! Get the number of content lines
-			int numContentLines() const {return content_.length();}
+  //! Get the number of content lines
+  int numContentLines() const {return content_.length();}
 
-			//! Look up a content line by index
-			const string& getContentLine(int i) const {return content_[i];}
+  //! Look up a content line by index
+  const string& getContentLine(int i) const {return content_[i];}
 
-      //!  Print to stream with the given indentation level. Output will be well-formed XML.
-      void print(ostream& os, int indent) const ;
+  //!  Print to stream with the given indentation level. Output will be well-formed XML.
+  void print(ostream& os, int indent) const ;
 
-			//! Write as a string. Output may be ill-formed XML.
-			string toString() const ;
+  //! Write as a string. Output may be ill-formed XML.
+  string toString() const ;
 
-			//! Write the header
-			string header(bool strictXML = false) const ;
+  //! Write the header
+  string header(bool strictXML = false) const ;
 
-			//! Write the header terminated as <Header/>
-			string terminatedHeader(bool strictXML = false) const ;
+  //! Write the header terminated as <Header/>
+  string terminatedHeader(bool strictXML = false) const ;
 
-			//! Write the footer
-			string footer() const {return "</" + getTag() + ">";}
+  //! Write the footer
+  string footer() const {return "</" + getTag() + ">";}
 
-		private:
+private:
 
-      //! Print content lines using the given indentation level
-      void printContent(ostream& os, int indent) const ;
+  //! Print content lines using the given indentation level
+  void printContent(ostream& os, int indent) const ;
   
-      //! Convert attribute value text into well-formed XML
-      static string XMLifyAttVal(const string &attval);
+  //! Convert attribute value text into well-formed XML
+  static string XMLifyAttVal(const string &attval);
 
-			string tag_;
-			Map attributes_;
-			Array<XMLObject> children_;
-			Array<string> content_;
-		};
+  string tag_;
+  Map attributes_;
+  Array<XMLObject> children_;
+  Array<string> content_;
+
+};
 
 }
 
