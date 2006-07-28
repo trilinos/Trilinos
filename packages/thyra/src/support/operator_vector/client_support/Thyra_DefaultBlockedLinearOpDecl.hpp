@@ -71,7 +71,7 @@ class DefaultBlockedLinearOp
 public:
 
   /** \brief . */
-  using LinearOpBase<Scalar>::apply;
+  using SingleScalarLinearOpBase<Scalar>::apply;
 
   /** @name Constructors */
   //@{

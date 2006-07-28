@@ -71,7 +71,7 @@ class DefaultVectorMultiVector : virtual public VectorDefaultBase<Scalar> {
 public:
 
   /** \brief . */
-  using VectorBase<Scalar>::col;
+  //using VectorBase<Scalar>::col;
 
   /** @name Constructors/initializers/accessors */
   //@{

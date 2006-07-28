@@ -36,9 +36,6 @@ namespace Thyra {
 /** \brief . */
 template <class Scalar> class DefaultClusteredSpmdProductVectorSpace;
 
-/** \brief . */
-template <class Scalar> class SpmdVectorBase;
-
 /** \brief Concrete implementation of a clustered Spmd-based product vector.
  *
  * ToDo: Finish documentation!

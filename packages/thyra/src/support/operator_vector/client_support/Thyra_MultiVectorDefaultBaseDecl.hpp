@@ -59,13 +59,13 @@ class MultiVectorDefaultBase
 public:
 
   /** \brief . */
-  using LinearOpDefaultBase<Scalar>::describe;
-  /** \brief . */
   using MultiVectorBase<Scalar>::applyOp;
   /** \brief . */
   using MultiVectorBase<Scalar>::col;
   /** \brief . */
   using MultiVectorBase<Scalar>::subView;
+  /** \brief . */
+  using LinearOpDefaultBase<Scalar>::describe;
 
   /** \name Overridden public member functions from MultiVectorBase */
   //@{

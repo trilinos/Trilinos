@@ -68,14 +68,19 @@ class VectorDefaultBase
 public:
 
   /** \brief . */
-  using SingleRhsLinearOpBase<Scalar>::apply;
+  using VectorBase<Scalar>::acquireDetachedView;
+  /** \brief . */
+  using VectorBase<Scalar>::releaseDetachedView;
+  /** \brief . */
+  using VectorBase<Scalar>::commitDetachedView;
   /** \brief . */
   using MultiVectorDefaultBase<Scalar>::describe;
   /** \brief . */
   using MultiVectorDefaultBase<Scalar>::applyOp;
   /** \brief . */
   using MultiVectorDefaultBase<Scalar>::col;
-
+  /** \brief . */
+  using SingleRhsLinearOpBase<Scalar>::apply;
 
   /** @name Public functions overridden from Teuchos::Describable */
   //@{

@@ -44,6 +44,8 @@ public:
 
   /** \brief . */
   using LinearOpBase<RangeScalar,DomainScalar>::apply;
+  /** \brief . */
+  using LinearOpBase<RangeScalar,DomainScalar>::describe;
 
   /** @name Public functions overridden from Teuchos::Describable */
   //@{

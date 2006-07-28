@@ -115,7 +115,7 @@ class DefaultScaledAdjointLinearOp
 public:
 
   /** \brief . */
-  using ScaledAdjointLinearOpBase<Scalar>::apply;
+  using SingleScalarLinearOpBase<Scalar>::apply;
 
   /** @name Constructors/initializers/accessors */
   //@{

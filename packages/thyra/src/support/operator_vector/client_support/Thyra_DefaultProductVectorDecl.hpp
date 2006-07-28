@@ -61,11 +61,11 @@ public:
   /** \brief . */
   using ProductVectorBase<Scalar>::applyOp;
   /** \brief . */
-  using VectorBase<Scalar>::acquireDetachedView;
+  using VectorDefaultBase<Scalar>::acquireDetachedView;
   /** \brief . */
-  using VectorBase<Scalar>::releaseDetachedView;
+  using VectorDefaultBase<Scalar>::releaseDetachedView;
   /** \brief . */
-  using VectorBase<Scalar>::commitDetachedView;
+  using VectorDefaultBase<Scalar>::commitDetachedView;
 
   /** @name Constructors/initializers/accessors */
   //@{
