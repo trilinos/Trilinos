@@ -231,6 +231,7 @@ AC_CHECK_HEADERS([iomanip iomanip.h], [break],)
 AC_CHECK_HEADERS([iostream iostream.h], [break],)
 AC_CHECK_HEADERS([string string.h], [break],)
 AC_CHECK_HEADERS([algorithm algo.h algorithm.h],,)
+AC_CHECK_HEADERS([map vector],,)
 
 if test "X$ac_cv_header_cstdlib" != "Xyes" && test "X$ac_cv_header_stdlib_h" != "Xyes"; then
   AC_MSG_ERROR([[Cannot find cstdlib or stdlib.h.  EpetraExt requires at least one or the other.]])

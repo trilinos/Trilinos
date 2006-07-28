@@ -72,6 +72,13 @@ int two_proc_test(Epetra_Comm& Comm,
 
 int test_find_rows(Epetra_Comm& Comm);
 
+Epetra_CrsMatrix* create_epetra_crsmatrix(int numProcs,
+                                          int localProc,
+                                          int local_n);
+
+int time_matrix_matrix_multiply(Epetra_Comm& Comm,
+                                bool verbose);
+
 /////////////////////////////////////
 //Global variable!!!!
 char* path;
@@ -163,6 +170,8 @@ int main(int argc, char** argv) {
   if (!input_file_specified) delete [] input_file;
   if (!path_specified) delete [] path;
 
+  err = time_matrix_matrix_multiply(Comm, verbose);
+
 #ifdef EPETRA_MPI
   MPI_Finalize();
 #endif
@@ -250,7 +259,7 @@ int broadcast_name(Epetra_Comm& Comm, const char*& name)
   int len;
   int localProc = Comm.MyPID();
   if (localProc == 0) {
-    len = strlen(name)+1;
+    len = (int)strlen(name)+1;
     
     MPI_Bcast(&len, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast((void*)name, len, MPI_CHAR, 0, MPI_COMM_WORLD);
@@ -273,11 +282,11 @@ int read_input_file(Epetra_Comm& Comm,
 {
   int local_err = 0, global_err = 0;
   ifstream* infile = NULL;
-  int pathlen = path != 0 ? strlen(path): 0;
+  int pathlen = path != 0 ? (int)strlen(path): 0;
 
   if (Comm.MyPID() == 0) {
     char* full_name = NULL;
-    int filenamelen = input_file_name != 0 ? strlen(input_file_name) : 0;
+    int filenamelen = input_file_name != 0 ? (int)strlen(input_file_name) : 0;
 
     full_name = new char[pathlen+filenamelen+2];
     if (path != 0) {
@@ -505,7 +514,7 @@ int read_matrix_file_names(Epetra_Comm& Comm,
                            bool& transB,
                            char*& C_file)
 {
-  int pathlen = path!=0 ? strlen(path) : 0;
+  int pathlen = path!=0 ? (int)strlen(path) : 0;
 
   if (Comm.MyPID()==0) {
     ifstream infile(input_file_name);
@@ -607,6 +616,7 @@ int read_matrix(const char* filename,
                 const Epetra_Map* domainmap,
                 Epetra_CrsMatrix*& mat)
 {
+  (void)Comm;
   int err = EpetraExt::MatrixMarketFileToCrsMatrix(filename, *rowmap, *colmap,
                                                    *rangemap, *domainmap, mat);
 
@@ -616,6 +626,7 @@ int read_matrix(const char* filename,
 int two_proc_test(Epetra_Comm& Comm,
                   bool verbose)
 {
+  (void)verbose;
   int thisproc = Comm.MyPID();
   int numprocs = Comm.NumProc();
 
@@ -680,5 +691,137 @@ int two_proc_test(Epetra_Comm& Comm,
   delete [] mycols;
 
   return(err);
+}
+
+int time_matrix_matrix_multiply(Epetra_Comm& Comm, bool verbose)
+{
+  int localn = 36000/Comm.NumProc();
+
+  Epetra_CrsMatrix* A = create_epetra_crsmatrix(Comm.NumProc(),
+                                                Comm.MyPID(),
+                                                localn);
+
+  Epetra_CrsMatrix* C = new Epetra_CrsMatrix(Copy, A->RowMap(), 0);
+
+  Epetra_Time timer(Comm);
+  double start_time = timer.WallTime();
+
+  int err = EpetraExt::MatrixMatrix::Multiply(*A, false, *A, false, *C);
+
+  int globaln = localn*Comm.NumProc();
+  if (verbose) {
+    std::cout << "size: " << globaln << "x"<<globaln<<", time for A*A: "
+       << timer.WallTime()-start_time << ", err: " << err << std::endl;
+  }
+
+  delete C;
+
+  C = new Epetra_CrsMatrix(Copy, A->RowMap(), 0);
+
+  start_time = timer.WallTime();
+
+  err = EpetraExt::MatrixMatrix::Multiply(*A, false, *A, true, *C);
+
+  if (verbose) {
+    std::cout << "size: " << globaln << "x"<<globaln<<", time for A*A^T: "
+       << timer.WallTime()-start_time << ", err: " << err << std::endl;
+  }
+
+  delete C;
+
+  C = new Epetra_CrsMatrix(Copy, A->RowMap(), 0);
+
+  start_time = timer.WallTime();
+
+  err = EpetraExt::MatrixMatrix::Multiply(*A, true, *A, false, *C);
+
+  if (verbose) {
+    std::cout << "size: " << globaln << "x"<<globaln<<", time for A^T*A: "
+       << timer.WallTime()-start_time << ", err: " << err << std::endl;
+  }
+
+  delete C;
+
+  C = new Epetra_CrsMatrix(Copy, A->RowMap(), 0);
+
+  start_time = timer.WallTime();
+
+  err = EpetraExt::MatrixMatrix::Multiply(*A, true, *A, true, *C);
+
+  if (verbose) {
+    std::cout << "size: " << globaln << "x"<<globaln<<", time for A^T*A^T: "
+       << timer.WallTime()-start_time << ", err: " << err << std::endl;
+  }
+
+  delete C;
+
+  delete A;
+
+  return(err);
+}
+
+Epetra_CrsMatrix* create_epetra_crsmatrix(int numProcs,
+                                          int localProc,
+                                          int local_n)
+{
+  (void)localProc;
+  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  int global_num_rows = numProcs*local_n;
+
+  Epetra_Map rowmap(global_num_rows, local_n, 0, comm);
+
+  int nnz_per_row = 9;
+  Epetra_CrsMatrix* matrix =
+    new Epetra_CrsMatrix(Copy, rowmap, nnz_per_row);
+
+  // Add  rows one-at-a-time
+  double negOne = -1.0;
+  double posTwo = 2.0;
+  for (int i=0; i<local_n; i++) {
+    int GlobalRow = matrix->GRID(i);
+    int RowLess1 = GlobalRow - 1;
+    int RowPlus1 = GlobalRow + 1;
+    int RowLess2 = GlobalRow - 2;
+    int RowPlus2 = GlobalRow + 2;
+    int RowLess3 = GlobalRow - 3;
+    int RowPlus3 = GlobalRow + 3;
+    int RowLess4 = GlobalRow - 4;
+    int RowPlus4 = GlobalRow + 4;
+
+    if (RowLess4>=0) {
+      matrix->InsertGlobalValues(GlobalRow, 1, &negOne, &RowLess4);
+    }
+    if (RowLess3>=0) {
+      matrix->InsertGlobalValues(GlobalRow, 1, &negOne, &RowLess3);
+    }
+    if (RowLess2>=0) {
+      matrix->InsertGlobalValues(GlobalRow, 1, &negOne, &RowLess2);
+    }
+    if (RowLess1>=0) {
+      matrix->InsertGlobalValues(GlobalRow, 1, &negOne, &RowLess1);
+    }
+    if (RowPlus1<global_num_rows) {
+      matrix->InsertGlobalValues(GlobalRow, 1, &negOne, &RowPlus1);
+    }
+    if (RowPlus2<global_num_rows) {
+      matrix->InsertGlobalValues(GlobalRow, 1, &negOne, &RowPlus2);
+    }
+    if (RowPlus3<global_num_rows) {
+      matrix->InsertGlobalValues(GlobalRow, 1, &negOne, &RowPlus3);
+    }
+    if (RowPlus4<global_num_rows) {
+      matrix->InsertGlobalValues(GlobalRow, 1, &negOne, &RowPlus4);
+    }
+
+    matrix->InsertGlobalValues(GlobalRow, 1, &posTwo, &GlobalRow);
+  }
+
+  int err = matrix->FillComplete();
+  if (err != 0) {
+    std::cout << "create_epetra_matrix: error in matrix.FillComplete()"
+       <<std::endl;
+  }
+
+  return(matrix);
 }
 

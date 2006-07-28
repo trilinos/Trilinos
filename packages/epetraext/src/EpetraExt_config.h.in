@@ -131,6 +131,9 @@
 /* Define to 1 if you have the `zoltan' library (-lzoltan). */
 #undef HAVE_LIBZOLTAN
 
+/* Define to 1 if you have the <map> header file. */
+#undef HAVE_MAP
+
 /* Define to 1 if you have the <math.h> header file. */
 #undef HAVE_MATH_H
 
@@ -196,6 +199,9 @@
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
+
+/* Define to 1 if you have the <vector> header file. */
+#undef HAVE_VECTOR
 
 /* Define if want to build with warning_messages enabled */
 #undef HAVE_WARNING_MESSAGES

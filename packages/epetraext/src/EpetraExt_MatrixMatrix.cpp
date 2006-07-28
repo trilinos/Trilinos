@@ -26,6 +26,7 @@
 // ***********************************************************************
 //@HEADER
 
+#include <EpetraExt_ConfigDefs.h>
 #include <EpetraExt_MatrixMatrix.h>
 
 #include <EpetraExt_Transpose_RowMatrix.h>
@@ -39,6 +40,10 @@
 #include <Epetra_Directory.h>
 #include <Epetra_HashTable.h>
 #include <Epetra_Distributor.h>
+
+#ifdef HAVE_VECTOR
+#include <vector>
+#endif
 
 namespace EpetraExt {
 
@@ -174,8 +179,16 @@ int mult_A_B(CrsMatrixStruct& Aview,
   //Our goal, of course, is to navigate the data in A and B once, without
   //performing searches for column-indices, etc.
 
+  std::vector<int> inds_i;
+  inds_i.reserve(C_numCols);
+
+  std::vector<int> inds_i_import;
+  inds_i_import.reserve(C_numCols_import);
+
   //loop over the rows of A.
   for(i=0; i<Aview.numRows; ++i) {
+    inds_i.resize(0);
+    inds_i_import.resize(0);
 
     //only navigate the local portion of Aview... (It's probable that we
     //imported more of A than we need for A*B, because other cases like A^T*B 
@@ -204,12 +217,14 @@ int mult_A_B(CrsMatrixStruct& Aview,
 	for(j=0; j<Bview.numEntriesPerRow[Ak]; ++j) {
 	  int loc = Bcol_inds[j] - C_firstCol_import;
 	  C_row_i_import[loc] += Aval*Bvals_k[j];
+          inds_i_import.push_back(loc);
 	}
       }
       else {
 	for(j=0; j<Bview.numEntriesPerRow[Ak]; ++j) {
 	  int loc = Bcol_inds[j] - C_firstCol;
 	  C_row_i[loc] += Aval*Bvals_k[j];
+          inds_i.push_back(loc);
 	}
       }
     }
@@ -220,7 +235,12 @@ int mult_A_B(CrsMatrixStruct& Aview,
 
     int global_row = Aview.rowMap->GID(i);
 
-    for(j=0; j<C_numCols; ++j) {
+    std::vector<int>::const_iterator
+      it = inds_i.begin(),
+      it_end = inds_i.end();
+
+    for (; it != it_end; ++it) {
+      j=*it;
       //If this value is zero, don't put it into the C matrix.
       if (C_row_i[j] == 0.0) continue;
 
@@ -249,7 +269,12 @@ int mult_A_B(CrsMatrixStruct& Aview,
 
     //Now loop across the C_row_i_import values and put the non-zeros into C.
 
-    for(j=0; j<C_numCols_import; ++j) {
+    std::vector<int>::const_iterator
+      iit = inds_i_import.begin(),
+      iit_end = inds_i_import.end();
+
+    for(; iit != iit_end; ++iit) {
+      j=*iit;
       //If this value is zero, don't put it into the C matrix.
       if (C_row_i_import[j] == 0.0) continue;
 
@@ -307,20 +332,55 @@ int mult_A_Btrans(CrsMatrixStruct& Aview,
   //dumpCrsMatrixStruct(Bview);
 
   int numBcols = Bview.colMap->NumMyElements();
+  int numBrows = Bview.numRows;
 
-  int iworklen = maxlen*2;
-  int* iwork = new int[iworklen+numBcols];
+  int iworklen = maxlen*2 + numBcols;
+  int* iwork = new int[iworklen];
 
-  int* bcols = iwork+iworklen;
+  int* bcols = iwork+maxlen*2;
   int* bgids = Bview.colMap->MyGlobalElements();
   double* bvals = new double[maxlen*2];
   double* avals = bvals+maxlen;
+
+  int max_all_b = Bview.colMap->MaxAllGID();
+  int min_all_b = Bview.colMap->MinAllGID();
 
   //bcols will hold the GIDs from B's column-map for fast access
   //during the computations below
   for(i=0; i<numBcols; ++i) {
     int blid = Bview.colMap->LID(bgids[i]);
     bcols[blid] = bgids[i];
+  }
+
+  //next create arrays indicating the first and last column-index in
+  //each row of B, so that we can know when to skip certain rows below.
+  //This will provide a large performance gain for banded matrices, and
+  //a somewhat smaller gain for *most* other matrices.
+  int* b_firstcol = new int[2*numBrows];
+  int* b_lastcol = b_firstcol+numBrows;
+  int temp;
+  for(i=0; i<numBrows; ++i) {
+    b_firstcol[i] = max_all_b;
+    b_lastcol[i] = min_all_b;
+
+    int Blen_i = Bview.numEntriesPerRow[i];
+    if (Blen_i < 1) continue;
+    int* Bindices_i = Bview.indices[i];
+
+    if (Bview.remote[i]) {
+      for(k=0; k<Blen_i; ++k) {
+        temp = Bview.importColMap->GID(Bindices_i[k]);
+        if (temp < b_firstcol[i]) b_firstcol[i] = temp;
+        if (temp > b_lastcol[i]) b_lastcol[i] = temp;
+      }
+    }
+    else {
+      for(k=0; k<Blen_i; ++k) {
+        temp = bcols[Bindices_i[k]];
+        if (temp < b_firstcol[i]) b_firstcol[i] = temp;
+        if (temp > b_lastcol[i]) b_lastcol[i] = temp;
+      }
+    }
   }
 
   Epetra_Util util;
@@ -345,6 +405,9 @@ int mult_A_Btrans(CrsMatrixStruct& Aview,
     int* Aindices_i = Aview.indices[i];
     double* Aval_i  = Aview.values[i];
     int A_len_i = Aview.numEntriesPerRow[i];
+    if (A_len_i < 1) {
+      continue;
+    }
 
     for(k=0; k<A_len_i; ++k) {
       Aind[k] = Aview.colMap->GID(Aindices_i[k]);
@@ -353,29 +416,60 @@ int mult_A_Btrans(CrsMatrixStruct& Aview,
 
     util.Sort(true, A_len_i, Aind, 1, &avals, 0, NULL);
 
+    int mina = Aind[0];
+    int maxa = Aind[A_len_i-1];
+
+    if (mina > max_all_b || maxa < min_all_b) {
+      continue;
+    }
+
     int global_row = Aview.rowMap->GID(i);
 
     //loop over the rows of B and form results C_ij = dot(A(i,:),B(j,:))
     for(j=0; j<Bview.numRows; ++j) {
+      if (b_firstcol[j] > maxa || b_lastcol[j] < mina) {
+        continue;
+      }
+
       int* Bindices_j = Bview.indices[j];
-      bool remoterows = false;
-      for(k=0; k<Bview.numEntriesPerRow[j]; ++k) {
-	if (Bview.remote[j]) {
-	  Bind[k] = Bview.importColMap->GID(Bindices_j[k]);
-          bvals[k] = Bview.values[j][k];
-          remoterows = true;
+      int B_len_j = Bview.numEntriesPerRow[j];
+      if (B_len_j < 1) {
+        continue;
+      }
+
+      int tmp, Blen = 0;
+
+      if (Bview.remote[j]) {
+        for(k=0; k<B_len_j; ++k) {
+	  tmp = Bview.importColMap->GID(Bindices_j[k]);
+          if (tmp < mina || tmp > maxa) {
+            continue;
+          }
+
+          bvals[Blen] = Bview.values[j][k];
+          Bind[Blen++] = tmp;
 	}
-	else {
-	  Bind[k] = bcols[Bindices_j[k]];
-          bvals[k] = Bview.values[j][k];
+      }
+      else {
+        for(k=0; k<B_len_j; ++k) {
+	  tmp = bcols[Bindices_j[k]];
+          if (tmp < mina || tmp > maxa) {
+            continue;
+          }
+
+          bvals[Blen] = Bview.values[j][k];
+          Bind[Blen++] = tmp;
 	}
       }
 
-      util.Sort(true, Bview.numEntriesPerRow[j], Bind, 1, &bvals, 0, NULL);
+      if (Blen < 1) {
+        continue;
+      }
+
+      util.Sort(true, Blen, Bind, 1, &bvals, 0, NULL);
 
       double C_ij = sparsedot(avals, Aind, A_len_i,
-			      bvals, Bind,
-			      Bview.numEntriesPerRow[j]);
+			      bvals, Bind, Blen);
 
       if (C_ij == 0.0) {
 	continue;
@@ -408,6 +502,7 @@ int mult_A_Btrans(CrsMatrixStruct& Aview,
 
   delete [] iwork;
   delete [] bvals;
+  delete [] b_firstcol;
 
   return(returnValue);
 }
@@ -460,6 +555,12 @@ int mult_Atrans_B(CrsMatrixStruct& Aview,
 
   int* Arows = Aview.rowMap->MyGlobalElements();
 
+  std::vector<int> inds_i;
+  inds_i.reserve(C_numCols);
+
+  std::vector<int> inds_i_import;
+  inds_i_import.reserve(C_numCols_import);
+
   //loop over the rows of A.
   for(k=0; k<Aview.numRows; ++k) {
 
@@ -481,6 +582,9 @@ int mult_Atrans_B(CrsMatrixStruct& Aview,
     //A(k,i)*B(k,j) into our partial sum quantities C_row_i.
 
     for(i=0; i<Aview.numEntriesPerRow[k]; ++i) {
+      inds_i.resize(0);
+      inds_i_import.resize(0);
+
       int Ai = Aindices_k[i];
       double Aval = Aval_k[i];
 
@@ -500,12 +604,14 @@ int mult_Atrans_B(CrsMatrixStruct& Aview,
 	for(j=0; j<Bview.numEntriesPerRow[Bk]; ++j) {
 	  int loc = Bcol_inds[j] - C_firstCol_import;
 	  C_row_i_import[loc] += Aval*Bvals_k[j];
+          inds_i_import.push_back(loc);
 	}
       }
       else {
 	for(j=0; j<Bview.numEntriesPerRow[Bk]; ++j) {
 	  int loc = Bcol_inds[j] - C_firstCol;
 	  C_row_i[loc] += Aval*Bvals_k[j];
+          inds_i.push_back(loc);
 	}
       }
 
@@ -513,7 +619,12 @@ int mult_Atrans_B(CrsMatrixStruct& Aview,
       //Now loop across the C_row_i values and put the non-zeros into C.
       //
 
-      for(j=0; j<C_numCols; ++j) {
+      std::vector<int>::const_iterator
+        it = inds_i.begin(),
+        it_end = inds_i.end();
+
+      for(; it != it_end; ++it) {
+        j = *it;
 	//If this value is zero, don't put it into the C matrix.
 	if (C_row_i[j] == 0.0) continue;
 
@@ -542,7 +653,12 @@ int mult_Atrans_B(CrsMatrixStruct& Aview,
 
       //Now loop across the C_row_i_import values and put the non-zeros into C.
 
-      for(j=0; j<C_numCols_import; ++j) {
+      std::vector<int>::const_iterator
+        iit = inds_i_import.begin(),
+        iit_end = inds_i_import.end();
+
+      for(; iit != iit_end; ++iit) {
+        j = *iit;
 	//If this value is zero, don't put it into the C matrix.
 	if (C_row_i_import[j] == 0.0) continue;
 
@@ -632,6 +748,12 @@ int mult_Atrans_Btrans(CrsMatrixStruct& Aview,
 
   int* Brows = Bview.rowMap->MyGlobalElements();
 
+  std::vector<int> inds_i;
+  inds_i.reserve(C_numCols);
+
+  std::vector<int> inds_i_import;
+  inds_i_import.reserve(C_numCols_import);
+
   //loop across the rows of B
   for(j=0; j<Bview.numRows; ++j) {
     int* Bindices_j = Bview.indices[j];
@@ -646,6 +768,9 @@ int mult_Atrans_Btrans(CrsMatrixStruct& Aview,
     //calculate updates for column j of the result matrix C.
 
     for(k=0; k<Bview.numEntriesPerRow[j]; ++k) {
+      inds_i.resize(0);
+      inds_i_import.resize(0);
+
       int bk = Bindices_j[k];
       double Bval = Bvals_j[k];
 
@@ -670,18 +795,25 @@ int mult_Atrans_Btrans(CrsMatrixStruct& Aview,
 	for(i=0; i<Aview.numEntriesPerRow[ak]; ++i) {
 	  int loc = Aindices_k[i] - C_firstCol_import;
 	  C_col_j_import[loc] += Avals_k[i]*Bval;
+          inds_i_import.push_back(loc);
 	}
       }
       else {
 	for(i=0; i<Aview.numEntriesPerRow[ak]; ++i) {
 	  int loc = Aindices_k[i] - C_firstCol;
 	  C_col_j[loc] += Avals_k[i]*Bval;
+          inds_i.push_back(loc);
 	}
       }
 
       //Now loop across the C_col_j values and put non-zeros into C.
 
-      for(i=0; i<C_numCols; ++i) {
+      std::vector<int>::const_iterator
+        it = inds_i.begin(),
+        it_end = inds_i.end();
+
+      for(; it != it_end; ++it) {
+        i = *it;
 	if (C_col_j[i] == 0.0) continue;
 
 	int global_row = Aview.colMap->GID(C_firstCol+i);
@@ -705,7 +837,12 @@ int mult_Atrans_Btrans(CrsMatrixStruct& Aview,
 	C_col_j[i] = 0.0;
       }
 
-      for(i=0; i<C_numCols_import; ++i) {
+      std::vector<int>::const_iterator
+        iit = inds_i_import.begin(),
+        iit_end = inds_i_import.end();
+
+      for(; iit != iit_end; ++iit) {
+        i = *iit;
 	if (C_col_j_import[i] == 0.0) continue;
 
 	int global_row = Aview.importColMap->GID(C_firstCol_import + i);
@@ -900,10 +1037,10 @@ Epetra_Map* create_map_from_imported_rows(const Epetra_Map* map,
   assert( err == 0 );
 
   char* c_recv_objs = numRecv>0 ? new char[numRecv*sizeof(int)] : NULL;
-  int num_c_recv = numRecv*sizeof(int);
+  int num_c_recv = numRecv*(int)sizeof(int);
 
   err = distributor->Do(reinterpret_cast<char*>(sendRows),
-			sizeof(int), num_c_recv, c_recv_objs);
+			(int)sizeof(int), num_c_recv, c_recv_objs);
   assert( err == 0 );
 
   int* recvRows = reinterpret_cast<int*>(c_recv_objs);
