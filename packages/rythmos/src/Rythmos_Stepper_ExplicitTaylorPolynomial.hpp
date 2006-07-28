@@ -198,6 +198,12 @@ namespace Rythmos {
     /// Get interpolation nodes
     bool GetNodes(std::vector<Scalar>* time_list) const;
 
+    /// Remove interpolation nodes
+    bool RemoveNodes(std::vector<Scalar>* time_list) const;
+
+    /// Get order of interpolation
+    int GetOrder() const;
+
   protected:
 
     //! Computes a local Taylor series solution to the ODE
@@ -604,6 +610,13 @@ bool ExplicitTaylorPolynomialStepper<Scalar>::GetNodes(std::vector<Scalar>* time
 {
   return(false);
 }
+
+template<class Scalar>
+bool ExplicitTaylorPolynomialStepper<Scalar>::RemoveNodes(std::vector<Scalar>* time_list) const
+{
+  return(false);
+}
+
 
 template<class Scalar>
 int ExplicitTaylorPolynomialStepper<Scalar>::GetOrder() const

@@ -48,14 +48,14 @@ class InterpolationBuffer : virtual public Teuchos::Describable
     /// Add points to buffer
     virtual bool SetPoints(
       const std::vector<Scalar>& time_list
-      ,const std::vector<Thyra::VectorBase<Scalar> >& x_list
-      ,const std::vector<Thyra::VectorBase<Scalar> >& xdot_list) =0;
+      ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& x_list
+      ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& xdot_list) =0;
 
     /// Get values from buffer
     virtual bool GetPoints(
       const std::vector<Scalar>& time_list
-      ,std::vector<Thyra::VectorBase<Scalar> >* x_list
-      ,std::vector<Thyra::VectorBase<Scalar> >* xdot_list
+      ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* x_list
+      ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* xdot_list
       ,std::vector<ScalarMag>* accuracy_list) const =0;
 
     /// Fill data in from another interpolation buffer
@@ -66,6 +66,9 @@ class InterpolationBuffer : virtual public Teuchos::Describable
 
     /// Get interpolation nodes
     virtual bool GetNodes(std::vector<Scalar>* time_list) const =0;
+
+    /// Remove interpolation nodes
+    virtual bool RemoveNodes(std::vector<Scalar>& time_list) const =0;
 
     /// Get order of interpolation
     virtual int GetOrder() const =0;

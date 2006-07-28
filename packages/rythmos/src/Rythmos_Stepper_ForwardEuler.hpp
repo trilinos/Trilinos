@@ -79,14 +79,14 @@ class ForwardEulerStepper : virtual public Stepper<Scalar>
     /// Add points to buffer
     bool SetPoints(
       const std::vector<Scalar>& time_list
-      ,const std::vector<Thyra::VectorBase<Scalar> >& x_list
-      ,const std::vector<Thyra::VectorBase<Scalar> >& xdot_list);
+      ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& x_list
+      ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& xdot_list);
     
     /// Get values from buffer
     bool GetPoints(
       const std::vector<Scalar>& time_list
-      ,std::vector<Thyra::VectorBase<Scalar> >* x_list
-      ,std::vector<Thyra::VectorBase<Scalar> >* xdot_list
+      ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* x_list
+      ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* xdot_list
       ,std::vector<ScalarMag>* accuracy_list) const;
 
     /// Fill data in from another interpolation buffer
@@ -97,6 +97,9 @@ class ForwardEulerStepper : virtual public Stepper<Scalar>
 
     /// Get interpolation nodes
     bool GetNodes(std::vector<Scalar>* time_list) const;
+
+    /// Remove interpolation nodes
+    bool RemoveNodes(std::vector<Scalar>& time_list) const;
 
     /// Get order of interpolation
     int GetOrder() const;
@@ -206,8 +209,8 @@ std::ostream& ForwardEulerStepper<Scalar>::describe(
 template<class Scalar>
 bool ForwardEulerStepper<Scalar>::SetPoints(
     const std::vector<Scalar>& time_list
-    ,const std::vector<Thyra::VectorBase<Scalar> >& x_list
-    ,const std::vector<Thyra::VectorBase<Scalar> >& xdot_list)
+    ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& x_list
+    ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& xdot_list)
 {
   return(false);
 }
@@ -215,8 +218,8 @@ bool ForwardEulerStepper<Scalar>::SetPoints(
 template<class Scalar>
 bool ForwardEulerStepper<Scalar>::GetPoints(
     const std::vector<Scalar>& time_list
-    ,std::vector<Thyra::VectorBase<Scalar> >* x_list
-    ,std::vector<Thyra::VectorBase<Scalar> >* xdot_list
+    ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* x_list
+    ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* xdot_list
     ,std::vector<ScalarMag>* accuracy_list) const
 {
   return(false);
@@ -233,6 +236,12 @@ bool ForwardEulerStepper<Scalar>::SetRange(
 
 template<class Scalar>
 bool ForwardEulerStepper<Scalar>::GetNodes(std::vector<Scalar>* time_list) const
+{
+  return(false);
+}
+
+template<class Scalar>
+bool ForwardEulerStepper<Scalar>::RemoveNodes(std::vector<Scalar>& time_list) const
 {
   return(false);
 }
