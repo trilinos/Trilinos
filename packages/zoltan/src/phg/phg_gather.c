@@ -27,7 +27,8 @@ extern "C" {
 int Zoltan_PHG_Gather_To_All_Procs(
   ZZ *zz, 
   HGraph *phg,           /* Input:   Local part of distributed hypergraph */
-  PHGComm *scomm,         /* Input:   Serial PHGComm for use by shg. */
+  PHGPartParams *hgp,        /* Input:   Hypergraph parameters */
+  PHGComm *scomm,        /* Input:   Serial PHGComm for use by shg. */
   HGraph **gathered_hg   /* Output:  combined hypergraph combined to proc */
 )
 {
@@ -107,7 +108,7 @@ int max_nProc_xy = MAX(nProc_x, nProc_y);
                                                   * sizeof(float));
   /* Fixed vertices */
   shg->bisec_split = phg->bisec_split;
-  if (phg->fixed)
+  if (hgp->UseFixedVtx)
     shg->fixed = (int *) ZOLTAN_MALLOC(shg->nVtx * sizeof(int));
   
   /* Allocate arrays for use in gather operations */
@@ -265,7 +266,7 @@ int max_nProc_xy = MAX(nProc_x, nProc_y);
     /* Copy vwgt and fixed arrays so shg owns this memory */
     for (i = 0; i < shg->VtxWeightDim*shg->nVtx; i++)
       shg->vwgt[i] = phg->vwgt[i];
-    if (phg->fixed)
+    if (hgp->UseFixedVtx)
       for (i = 0; i < shg->nVtx; i++)
         shg->fixed[i] = phg->fixed[i];
   }
@@ -340,7 +341,7 @@ int max_nProc_xy = MAX(nProc_x, nProc_y);
     }
   
     /* Gather fixed array, if any  */
-    if (phg->fixed){
+    if (hgp->UseFixedVtx){
   
 #define DEBUG_
 #ifdef DEBUG_

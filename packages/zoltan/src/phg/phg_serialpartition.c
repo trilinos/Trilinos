@@ -121,6 +121,7 @@ static int timer_cpart=-1, timer_gather=-1, timer_refine=-1;
 /* 10 when p=1, and 1 when p is large. */
 const int num_coarse_iter = 1 + 9/zz->Num_Proc; 
 
+
   ZOLTAN_TRACE_ENTER(zz, yo);
 
   if (fine_timing) {
@@ -167,7 +168,7 @@ const int num_coarse_iter = 1 + 9/zz->Num_Proc;
           ierr = ZOLTAN_WARN;
         }
         /* Impose fixed vertex constraints. */
-        if (phg->fixed && (phg->fixed[i] >= 0))
+        if (hgp->UseFixedVtx && (phg->fixed[i] >= 0))
           part[i] = phg->fixed[i];
         else
           part[i] = part[i] % numPart; /* map to a valid part no. */
@@ -178,7 +179,7 @@ const int num_coarse_iter = 1 + 9/zz->Num_Proc;
     for (i =  0; i < phg->nVtx; i++)
       part[i] = 0;
   }
-  else if (!phg->fixed && numPart >= phg->dist_x[phg->comm->nProc_x]) { 
+  else if (!hgp->UseFixedVtx && numPart >= phg->dist_x[phg->comm->nProc_x]) { 
     /* more partitions than vertices, trivial answer */
     for (i = 0; i < phg->nVtx; i++)
       part[i] = phg->dist_x[phg->comm->myProc_x]+i;
@@ -237,7 +238,7 @@ const int num_coarse_iter = 1 + 9/zz->Num_Proc;
         ZOLTAN_TIMER_START(zz->ZTime, timer_gather, phg->comm->Communicator);
       }
 
-      ierr = Zoltan_PHG_Gather_To_All_Procs(zz, phg, &scomm, &shg);
+      ierr = Zoltan_PHG_Gather_To_All_Procs(zz, phg, hgp, &scomm, &shg);
       if (ierr < 0) {
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from gather.");
         goto End;
@@ -472,14 +473,14 @@ static int seq_part (
     return ZOLTAN_FATAL;
   }
 
-  if (hg->fixed) {
+  if (hgp->UseFixedVtx) {
     fixed_wgts = (double *) ZOLTAN_CALLOC(p, sizeof(double));
   }
 
   /* Sum up all the vertex weights. */
   for (i=0; i<hg->nVtx; i++){
     weight_sum += hg->vwgt[i*vwgtdim];
-    if (hg->fixed)
+    if (hgp->UseFixedVtx)
       if (hg->fixed[i] >= 0){
         uprintf(hg->comm, "bisec_split=%d, i=%d, fixed=%d\n", hg->bisec_split, i, hg->fixed[i]);
         /* Set partition number for fixed vtx. */
@@ -497,7 +498,7 @@ static int seq_part (
   }
  
 #if 0
-  if (hg->fixed)
+  if (hgp->UseFixedVtx)
     printf("fixed[0,1]= %d, %d\n", hg->fixed[0], hg->fixed[1]);
   printf("part[0,1]= %d, %d\n", part[0], part[1]);
 #endif
@@ -519,7 +520,7 @@ static int seq_part (
     /* If order==NULL, then use linear order. */
     j = order ? order[i] : i;
     /* for non-fixed vertices */
-    if ((!hg->fixed) || (hg->fixed[j] == -1)){
+    if ((!hgp->UseFixedVtx) || (hg->fixed[j] == -1)){
       part[j] = pnumber;
       old_sum = part_sum;
       part_sum += hg->vwgt[j*vwgtdim];
@@ -546,9 +547,7 @@ static int seq_part (
        i, j, part[j], part_sum, cutoff);
   }
 
-  if (hg->fixed) {
-    ZOLTAN_FREE(&fixed_wgts);
-  }
+  if (fixed_wgts) ZOLTAN_FREE(&fixed_wgts);
 
   ZOLTAN_TRACE_EXIT(zz, yo);
   return ZOLTAN_OK;
@@ -676,7 +675,7 @@ static int greedy_grow_part (
   /* Initially put all vertices in part 0, except fixed ones. */
   for (i=0; i<hg->nVtx; i++)
     part[i] = 0;   
-  if (hg->fixed){
+  if (hgp->UseFixedVtx){
     for (i=0; i<hg->nVtx; i++)
       if ((hg->bisec_split >= 0) && (hg->fixed[i] >= hg->bisec_split))
         part[i] = 1;   
@@ -722,14 +721,14 @@ static int greedy_grow_part (
     printf("Debug: Starting new greedy growing at vertex %d, part=%2d\n", start_vtx, p);
 
   /* Initialize heap. */
-  if (!hg->fixed) 
+  if (!hgp->UseFixedVtx) 
     gain[start_vtx] = 1e10;      /* Make start_vtx max value in heap. */
                                  /* All other values should be negative. */
   Zoltan_Heap_Init(zz, &h[0], hg->nVtx);
   Zoltan_Heap_Init(zz, &h[1], 0);       /* Dummy heap, not used. */
   for (i=0; i<hg->nVtx; i++){
     /* Insert all non-fixed vertices into heap. */
-    if (!hg->fixed || (hg->fixed[i] < 0))
+    if (!hgp->UseFixedVtx || (hg->fixed[i] < 0))
       Zoltan_Heap_Input(h, i, gain[i]);
   }
   Zoltan_Heap_Make(h);

@@ -220,7 +220,7 @@ int    best_imbalance, imbalance;
   Zoltan_Heap_Init(zz, &heap[0], hg->nVtx);
   Zoltan_Heap_Init(zz, &heap[1], hg->nVtx);  
   for (i = 0; i < hg->nVtx; i++)
-      if (!hg->fixed || hg->fixed[i]<0) {
+      if (!hgp->UseFixedVtx || hg->fixed[i]<0) {
 #ifdef HANDLE_ISOLATED_VERTICES          
           if (hg->vindex[i+1]==hg->vindex[i]) { /* isolated vertex */
               part_weight[part[i]] -= hg->vwgt ? hg->vwgt[i] : 1.0;
@@ -360,7 +360,7 @@ int    best_imbalance, imbalance;
       isoimbalbefore = (targetw0==0) ? 0.0 : (part_weight[0] - targetw0)/ targetw0;
 #endif
       for (i=0; i < hg->nVtx; ++i)
-          if (!hg->fixed || hg->fixed[i]<0) {
+          if (!hgp->UseFixedVtx || hg->fixed[i]<0) {
               if (hg->vindex[i+1]==hg->vindex[i])  { /* go over isolated vertices */
                   int npno = (part_weight[0] <  targetw0) ? 0 : 1;
                   part_weight[npno] += hg->vwgt ? hg->vwgt[i] : 1.0;                
@@ -676,7 +676,7 @@ static int refine_fm2 (ZZ *zz,
 
         if (hgc->myProc_y==root.rank) { /* root marks isolated vertices */
             for (i=0; i<hg->nVtx; ++i)
-                if (!hg->fixed || hg->fixed[i]<0) {
+                if (!hgp->UseFixedVtx || hg->fixed[i]<0) {
                     if (!deg[i]) {
                         moves[--isocnt] = i;
                         part[i] = -(part[i]+1); /* remove those vertices from that part*/
@@ -750,7 +750,7 @@ static int refine_fm2 (ZZ *zz,
         
         for (i = 0; i < hg->nVtx; ++i) {
             lgain[i] = 0.0;
-            if ((part[i]==from) && (!hg->fixed || hg->fixed[i]<0))
+            if ((part[i]==from) && (!hgp->UseFixedVtx || hg->fixed[i]<0))
                 for (j = hg->vindex[i]; j < hg->vindex[i+1]; j++) {
                     int edge = hg->vedge[j];
                     if ((pins[0][edge]+pins[1][edge])>1) { /* if they have at least 2 pins :) */
@@ -804,7 +804,7 @@ static int refine_fm2 (ZZ *zz,
             /* Initialize the heaps and fill them with the gain values */
             Zoltan_Heap_Clear(&heap[from]);  
             for (i = 0; i < hg->nVtx; ++i)
-                if ((part[i]==from) && (!hg->fixed || hg->fixed[i]<0))
+                if ((part[i]==from) && (!hgp->UseFixedVtx || hg->fixed[i]<0))
                     Zoltan_Heap_Input(&heap[from], i, gain[i]);
             Zoltan_Heap_Make(&heap[from]);
             if (detail_timing) {

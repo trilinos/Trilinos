@@ -413,19 +413,24 @@ ZOLTAN_ID_PTR fixedGIDs = NULL, fixedLIDs = NULL;        /* RTHRTH */
        goto End;
     }
     MPI_Allreduce (&nFixed, &GnFixed, 1, MPI_INT, MPI_SUM, zz->Communicator);
+    if (hgp) hgp->UseFixedVtx = GnFixed;  /* Don't need to set UseFixedVtx
+                                             if called from Zoltan_LB_Eval. */
     
+    if (GnFixed && zhg->nObj) {
+      myObjs.fixed = (int*) ZOLTAN_MALLOC (sizeof(int) * zhg->nObj);
+      if (!myObjs.fixed) MEMORY_ERROR;
+      for (i = 0; i < zhg->nObj; i++)
+        myObjs.fixed[i] = -1;              /* default - no fixed assignment */
+    }
+      
     if (GnFixed && nFixed && zhg->nObj)  {
       fixedPart = (int*) ZOLTAN_MALLOC (sizeof(int) * nFixed);
-      myObjs.fixed = (int*) ZOLTAN_MALLOC (sizeof(int) * zhg->nObj);
       fixedGIDs    = ZOLTAN_MALLOC_GID_ARRAY (zz, nFixed);
       fixedLIDs    = ZOLTAN_MALLOC_LID_ARRAY (zz, nFixed);
        
-      if (!fixedPart || !myObjs.fixed || !fixedGIDs || !fixedLIDs)
+      if (!fixedPart || !fixedGIDs || !fixedLIDs)
         MEMORY_ERROR;
           
-      for (i = 0; i < zhg->nObj; i++)
-        myObjs.fixed[i] = -1;              /* default - no fixed assignment */
-       
       if (zz->Get_Fixed_Obj_List) {
         zz->Get_Fixed_Obj_List (zz->Get_Fixed_Obj_List_Data, nFixed,
          num_gid_entries, num_lid_entries, fixedGIDs, fixedLIDs, fixedPart,
@@ -1595,10 +1600,10 @@ ZOLTAN_ID_PTR fixedGIDs = NULL, fixedLIDs = NULL;        /* RTHRTH */
   phg->vwgt = (float *)ZOLTAN_MALLOC(sizeof(float) * nwgt);
   
   if (GnFixed) {                              /* RTHRTH */
-    tmpfixed   = (int*) ZOLTAN_MALLOC (phg->nVtx * sizeof(int));
-    phg->fixed = (int*) ZOLTAN_MALLOC (phg->nVtx * sizeof(int));
+    tmpfixed   = (int*) ZOLTAN_MALLOC(phg->nVtx * sizeof(int));
+    phg->fixed = (int*) ZOLTAN_MALLOC(phg->nVtx * sizeof(int));
 
-    if (!tmpfixed || !phg->fixed)
+    if (phg->nVtx && (!tmpfixed || !phg->fixed))
       MEMORY_ERROR;
       
     for (i = 0 ; i < phg->nVtx; i++)
@@ -1607,7 +1612,7 @@ ZOLTAN_ID_PTR fixedGIDs = NULL, fixedLIDs = NULL;        /* RTHRTH */
 
   if (phg->nVtx && 
        (!tmpparts || !*input_parts || !tmpwgts || !phg->vwgt)) MEMORY_ERROR;
-
+  
   if (phg->comm->nProc_x == 1)  {
     for (i = 0; i < myObjs.size; i++) {
       idx = myObjs.vtx_gno[i];

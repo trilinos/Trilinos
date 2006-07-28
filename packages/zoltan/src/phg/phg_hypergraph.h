@@ -87,11 +87,12 @@ typedef struct {
   double ratio;     /* split when recursively dividing for p > 2 */
   int redl;         /* working reduction limit */
 
-  int *fixed;       /* an array of size |V| containing part assignements of fixed
-                       vertices. If it is NULL no vertex is fixed in any part, otherwise 
-                       < 0 (negative) : vertex is free,
-                       [0,..., p-1]: part that vertex is fixed
-                       >= p is invalid. */
+  int *fixed;       /* an array of size |V| containing part assignments of fixed
+                       vertices. If it is NULL no vertex is fixed in any part; 
+                       otherwise 
+                         < 0 (negative) : vertex is free,
+                         [0,..., p-1]: part that vertex is fixed
+                         >= p is invalid. */
   int bisec_split;  /* For fixed vertex partitioning via Recursive Bisection
                        treat vertices fixed in parts < bisec_split as
                        they were in the part 0 and the others in part 1.

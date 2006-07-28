@@ -61,8 +61,10 @@ static void PrintArr(PHGComm *hgc, char *st, int *ar, int n)
 
 static int Zoltan_PHG_Redistribute_Hypergraph(
     ZZ *zz, 
+    PHGPartParams *hgp,     /* Input:  parameters; used only for UseFixedVtx */
     HGraph  *ohg,           /* Input:  Local part of distributed hypergraph */
-    int     firstproc,      /* Input:  rank (in ocomm) of the first proc of the ncomm*/
+    int     firstproc,      /* Input:  rank (in ocomm) of the first proc of 
+                                       the ncomm*/
     int     *v2Col,         /* Input:  Vertex to processor Column Mapping */
     int     *n2Row,         /* Input:  Net to processor Row Mapping */
     PHGComm *ncomm,         /* Input:  communicators of new distribution */
@@ -255,7 +257,7 @@ static int Zoltan_PHG_Redistribute_Hypergraph(
     }    
 
     /* communicate fixed vertices, if any */
-    if (ohg->fixed) {
+    if (hgp->UseFixedVtx) {
         if (nVtx)
             nhg->fixed = (int *) ZOLTAN_MALLOC(nVtx*sizeof(int));
         --msg_tag;
@@ -429,7 +431,9 @@ int Zoltan_PHG_Redistribute(
     for (i=0; i<ohg->nEdge; ++i) 
         n2Row[i] = (int) ((float) i / frac);
 
-    ierr |= Zoltan_PHG_Redistribute_Hypergraph(zz, ohg, lo, v2Col, n2Row, ncomm, nhg, vmap, vdest);
+    ierr |= Zoltan_PHG_Redistribute_Hypergraph(zz, hgp, ohg, lo, 
+                                               v2Col, n2Row, ncomm, 
+                                               nhg, vmap, vdest);
     Zoltan_Multifree(__FILE__, __LINE__, 2,
                      &v2Col, &n2Row);
     

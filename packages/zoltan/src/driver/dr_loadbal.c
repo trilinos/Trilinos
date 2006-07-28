@@ -2042,7 +2042,6 @@ int proc, nprocs;
       /* Fix 10% of objects */
       for (i = 0; i < mesh->num_elems; i+=10) {
         mesh->elements[i].fixed_part = i % Num_Global_Parts;
-        /* printf("%d: i=%d, Fixed object %d to %d\n", proc, i, mesh->elements[i].globalID, i % nprocs); */
       }
       break;
   case 4:

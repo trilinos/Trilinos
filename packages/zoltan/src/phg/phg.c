@@ -199,7 +199,7 @@ int **exp_to_part )         /* list of partitions to which exported objs
   *imp_procs = *exp_procs = NULL;
   
   /* Initialize HG parameters. */
-  err = Zoltan_PHG_Initialize_Params (zz, part_sizes, &hgp);
+  err = Zoltan_PHG_Initialize_Params(zz, part_sizes, &hgp);
   if (err != ZOLTAN_OK)
     goto End;
 
@@ -600,6 +600,7 @@ int Zoltan_PHG_Initialize_Params(
   hgp->ProRedL = 0.5;
   hgp->patoh_alloc_pool0 = 0;
   hgp->patoh_alloc_pool1 = 0;
+  hgp->UseFixedVtx = 0;
   
   /* Get application values of parameters. */
   err = Zoltan_Assign_Param_Vals(zz->Params, PHG_params, zz->Debug_Level, 

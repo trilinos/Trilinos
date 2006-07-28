@@ -27,7 +27,8 @@
 #define PHG_PROC_SPLIT 1
 
 
-static int split_hypergraph(int *pins[2], HGraph*, HGraph*, Partition, int,
+static int split_hypergraph(int *pins[2], HGraph*, HGraph*, PHGPartParams*,
+                            Partition, int,
                             ZZ*, double *, double *, int connectivitycut);
 
 
@@ -137,7 +138,7 @@ int Zoltan_PHG_rdivide(
     ZOLTAN_TIMER_STOP(zz->ZTime, timer_before, hgc->Communicator);
 
   /*uprintf(hgc, "OLD MAxImbal: %.3f   New MaxImbal: %.3f\n", bal_tol, hgp->bal_tol);*/
-  if (hg->fixed)
+  if (hgp->UseFixedVtx)
       hg->bisec_split = mid+1;
   ierr = Zoltan_PHG_Partition (zz, hg, 2, bisec_part_sizes, part, hgp);
 
@@ -193,7 +194,8 @@ int Zoltan_PHG_rdivide(
       if (!(left = (HGraph*) ZOLTAN_MALLOC (sizeof (HGraph))))
           MEMORY_ERROR;
       
-      ierr = split_hypergraph (pins, hg, left, part, 0, zz, &leftw, &rightw, hgp->connectivity_cut);
+      ierr = split_hypergraph (pins, hg, left, hgp, part, 0, zz, 
+                               &leftw, &rightw, hgp->connectivity_cut);
       if (ierr != ZOLTAN_OK) 
           goto End;
       if (!left->dist_x[hgc->nProc_x]) { /* left is empty */
@@ -209,7 +211,8 @@ int Zoltan_PHG_rdivide(
   if (hi>mid+1) { /* only split if we need it */
       if (!(right = (HGraph*) ZOLTAN_MALLOC (sizeof (HGraph))))
           MEMORY_ERROR;
-      ierr = split_hypergraph (pins, hg, right, part, 1, zz, &rightw, &leftw, hgp->connectivity_cut);
+      ierr = split_hypergraph (pins, hg, right, hgp, part, 1, zz, 
+                               &rightw, &leftw, hgp->connectivity_cut);
   
       if (ierr != ZOLTAN_OK)
           goto End;
@@ -542,8 +545,10 @@ static int rdivide_and_prepsend(int lo, int hi, Partition final, ZZ *zz,
 
 
 
-static int split_hypergraph (int *pins[2], HGraph *ohg, HGraph *nhg, Partition part,
-                             int partid, ZZ *zz, double *splitpw, double *otherpw, int connectivitycut)
+static int split_hypergraph (int *pins[2], HGraph *ohg, HGraph *nhg, 
+                             PHGPartParams *hgp, Partition part, int partid, 
+                             ZZ *zz, double *splitpw, double *otherpw, 
+                             int connectivitycut)
 {
   int *tmap = NULL;  /* temporary array mapping from old HGraph info to new */
   int edge, i, ierr=ZOLTAN_OK;  
@@ -571,7 +576,7 @@ static int split_hypergraph (int *pins[2], HGraph *ohg, HGraph *nhg, Partition p
   if (nhg->nVtx && ohg->vwgt && nhg->VtxWeightDim &&
       !(nhg->vwgt=(float*)ZOLTAN_MALLOC(nhg->nVtx*sizeof(float)*nhg->VtxWeightDim)))
       MEMORY_ERROR;
-  if (nhg->nVtx && ohg->fixed &&
+  if (nhg->nVtx && hgp->UseFixedVtx &&
       !(nhg->fixed = (int*)ZOLTAN_MALLOC(nhg->nVtx*sizeof(int))))
       MEMORY_ERROR;
   if (nhg->nVtx && (nhg->vmap = (int*) ZOLTAN_MALLOC (nhg->nVtx * sizeof (int)))==NULL)
@@ -581,7 +586,7 @@ static int split_hypergraph (int *pins[2], HGraph *ohg, HGraph *nhg, Partition p
       int v=tmap[i];
       if (v!=-1) {
           nhg->vmap[v] = ohg->vmap[i];
-          if (nhg->fixed)
+          if (hgp->UseFixedVtx)
               nhg->fixed[v] = ohg->fixed[i];
           if (nhg->VtxWeightDim) {
               /* UVC: TODO CHECK we're only using 1st weight! Right now this will be used

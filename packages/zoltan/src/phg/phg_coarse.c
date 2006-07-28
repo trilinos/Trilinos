@@ -239,6 +239,7 @@ int Zoltan_PHG_Coarsening
   c_hg->vmap    = NULL;             /* only needed by rec-bisec */
   c_hg->redl    = hg->redl;  /* to stop coarsening near desired count */
   c_hg->VtxWeightDim  = hg->VtxWeightDim;
+  c_hg->bisec_split = hg->bisec_split;
   c_hg->fixed = (hg->fixed) ? (int*)ZOLTAN_MALLOC(hg->nVtx * sizeof(int)) : NULL;
   
 if (c_hg->fixed)  
@@ -317,13 +318,13 @@ if (c_hg->fixed)
               int v = i;
               int fixed = -1; 
               while (!vmark[v])  {
-                  if (hg->fixed && hg->fixed[v] >= 0)
+                  if (hgp->UseFixedVtx && hg->fixed[v] >= 0)
                       fixed = hg->fixed[v];
                   LevelMap[v] = c_hg->nVtx;         /* next available coarse vertex */      
                   vmark[v] = 1;  /* flag this as done already */
                   v = match[v];  
               }
-              if (hg->fixed)
+              if (hgp->UseFixedVtx)
                   c_hg->fixed[c_hg->nVtx] = fixed;      
               ++c_hg->nVtx;
           }
@@ -366,7 +367,7 @@ if (c_hg->fixed)
   
   /* size and allocate the send buffer */
   { 
-  int header = (hg->fixed ? 4 : 3);
+  int header = (hgp->UseFixedVtx ? 4 : 3);
   size += ((header + hg->VtxWeightDim) * count);
   if (size > 0 && !(buffer = (char*) ZOLTAN_MALLOC (size * sizeof(int))))
       MEMORY_ERROR;
@@ -440,7 +441,7 @@ if (c_hg->fixed)
     source_lno              = ip[i++];
     lno = VTX_GNO_TO_LNO (hg, ip[i++]);
        
-    if (hg->fixed)  {
+    if (hgp->UseFixedVtx)  {
       int fixed = ip[i++];
       c_hg->fixed [LevelMap[lno]] = (fixed >= 0) ? fixed : hg->fixed[lno];
     } 
@@ -466,7 +467,7 @@ if (c_hg->fixed)
   for (ip = (int*) rbuffer, i = 0; i < size; )  {
     int j, sz, lno=VTX_GNO_TO_LNO (hg, ip[i+1]);
 
-    i += (hg->fixed ? 3 : 2) + hg->VtxWeightDim;  /* skip header + vtx weights */
+    i += (hgp->UseFixedVtx ? 3 : 2) + hg->VtxWeightDim;  /* skip header + vtx weights */
     sz = ip[i++];             /* get sz to a diff var, skip size*/
     for (j=0; j<sz; ++j)      /* count extra vertices per edge */
         ahvertex[--ahindex[ip[i+j]]] = lno;

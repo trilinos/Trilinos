@@ -58,6 +58,8 @@ struct PHGPartParamsStruct {
   int redl;                      /* Reduction limit (constant). */
   int nCand;                     /* Maximum number of candidates per round;
                                     currently only used in agglomerative matching */
+  int UseFixedVtx;               /* Flag indicating whether any vertices of
+                                    hypergraph are fixed. */
 
   char convert_str[MAX_PARAM_STRING_LEN];  /* Graph->HG conversion method. */
   char redm_str[MAX_PARAM_STRING_LEN];  /* Reduction method string. */
@@ -165,7 +167,8 @@ int Zoltan_PHG_Coarsening(ZZ*, HGraph*, Matching, HGraph*, int*, int*, int*,
 /*********************************/
 /* Coarse Partitioning functions */
 /*********************************/
-extern int Zoltan_PHG_Gather_To_All_Procs(ZZ*, HGraph*, PHGComm*, HGraph**);
+extern int Zoltan_PHG_Gather_To_All_Procs(ZZ*, HGraph*, PHGPartParams*,
+                                          PHGComm*, HGraph**);
 extern int Zoltan_PHG_CoarsePartition(ZZ*, HGraph*, int, float *, Partition, 
                                       PHGPartParams*);
 ZOLTAN_PHG_COARSEPARTITION_FN *Zoltan_PHG_Set_CoarsePartition_Fn(PHGPartParams*,

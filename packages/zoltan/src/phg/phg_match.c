@@ -211,7 +211,7 @@ static int Zoltan_PHG_match_isolated(
                      and match vertices that share a common neighbor */
                   if (v==-1)
                       v = i;
-                  else {
+                  else if (hg->fixed[i] == hg->fixed[v]) {
                       match[v] = i;
                       match[i] = v;
                       v = -1;
@@ -237,7 +237,8 @@ End:
 /* by Aaron Becker, UIUC, Summer 2004                                        */
 /* 8/5/04  Erik says matching_ipm is nearly equivalent to matching_rhm;
    but rhm uses a scaled inner product. */
-static int matching_ipm(ZZ *zz, HGraph *hg, Matching match, int *limit)
+static int matching_ipm(ZZ *zz, HGraph *hg, PHGPartParams *hgp,
+                        Matching match, int *limit)
 {
     int   i, j, k, n, v1, v2, edge, maxindex;
     float maxip;
@@ -296,7 +297,7 @@ static int matching_ipm(ZZ *zz, HGraph *hg, Matching match, int *limit)
         for (i = 0; i < n; i++) {
             v2 = adj[i];
             if (ips[v2] > maxip && v2 != v1 && match[v2] == v2
-&& (hg->fixed == NULL  || !(hg->fixed[v2] >= 0 && hg->fixed[v1] >= 0
+&& (!(hgp->UseFixedVtx) || !(hg->fixed[v2] >= 0 && hg->fixed[v1] >= 0
 && hg->fixed[v1] != hg->fixed[v2]))         
             ) {
                 maxip = ips[v2];
@@ -345,7 +346,7 @@ static int pmatching_local_ipm(
     /* UVC: In order to simplify adding/testing old sequential matching codes easy
        I'm keeping the interface same; just move your favorite matching code to this file
        and change the function name in the next line */ 
-    err = matching_ipm(zz, hg, match, &limit);
+    err = matching_ipm(zz, hg, hgp, match, &limit);
     
     /* UVC: again to simplify testing Optimization; I'm leaving the call here, just
      move your function and rename the call
@@ -740,7 +741,7 @@ int fixed;
         lno = select[i];
         if (hg->vindex[lno+1] > hg->vindex[lno])
           sendsize += hg->vindex[lno+1] - hg->vindex[lno] + HEADER_SIZE 
-+ (hg->fixed ? 1 : 0); 
++ (hgp->UseFixedVtx ? 1 : 0); 
       }
       if (sendsize > nSend)
         MACRO_REALLOC (1.2 * sendsize, nSend, send);    /* resize send buffer */    
@@ -751,7 +752,7 @@ int fixed;
         if (hg->vindex[lno+1] > hg->vindex[lno]) {
           *s++ = VTX_LNO_TO_GNO(hg, lno);                  /* gno of candidate */
           *s++ = i + first_candidate_index;                 /* candidate index */
-if (hg->fixed)          
+if (hgp->UseFixedVtx)          
 *s++ = hg->fixed[lno];       /* fixed partition info */
           *s++ = hg->vindex[lno+1] - hg->vindex[lno];            /* edge count */
           for (j = hg->vindex[lno]; j < hg->vindex[lno+1]; j++)  
@@ -790,7 +791,7 @@ if (hg->fixed)
       for (i = 0 ; i < recsize; i += count)   {
         int indx        = i++;              /* position of next gno in edgebuf */
         candidate_index = edgebuf[i++];
-if (hg->fixed)        
+if (hgp->UseFixedVtx)        
 fixed           = edgebuf[i++];   /* skip over fixed vertex information */
         count           = edgebuf[i++];     /* count of edges */      
         permute[candidate_index] = indx ;   /* save position of gno in edgebuf */
@@ -818,14 +819,14 @@ fixed           = edgebuf[i++];   /* skip over fixed vertex information */
           r = &edgebuf[permute[select[k]]];
           candidate_gno   = *r++;          /* gno of candidate vertex */
           candidate_index = *r++;          /* candidate_index of vertex */
-if (hg->fixed)          
+if (hgp->UseFixedVtx)          
 fixed = *r++;     /* fixed vertex information */          
           count           = *r++;          /* count of following hyperedges */
         }
         else  {
           candidate_index = k;
           candidate_gno   = permute[k];  /* need to use next local vertex */
-if (hg->fixed)          
+if (hgp->UseFixedVtx)          
 fixed = hg->fixed[candidate_gno];          
         }                          /* here candidate_gno is really a local id */
                   
@@ -862,7 +863,7 @@ fixed = hg->fixed[candidate_gno];
         for (i = 0; i < m; i++)  {
           lno = index[i];
           if (sums[lno] > PSUM_THRESHOLD
-&& (hg->fixed == NULL || !(hg->fixed[lno] >= 0 && fixed >= 0
+&& (!(hgp->UseFixedVtx) || !(hg->fixed[lno] >= 0 && fixed >= 0
 && hg->fixed[lno] != fixed)))
             aux[count++] = lno;      /* save lno for significant partial sum */
           else
@@ -1431,7 +1432,7 @@ static int pmatching_agg_ipm (ZZ *zz,
       lno = locCandidates[i];
 /*      if (hg->vindex[lno+1] > hg->vindex[lno]) */
         sendsize += hg->vindex[lno+1] - hg->vindex[lno] + hg->VtxWeightDim + HEADER_SIZE 
-          + (hg->fixed ? 1 : 0); 
+          + (hgp->UseFixedVtx ? 1 : 0); 
     }
     if (sendsize > nSend)
       MACRO_RESIZE (1.2 * sendsize, nSend, send);    /* resize send buffer */    
@@ -1444,7 +1445,7 @@ static int pmatching_agg_ipm (ZZ *zz,
         *s++ = candIdx[hgc->myProc_x] + i;               /* candidate index */
         memcpy(s, &cw[lno*VtxDim], sizeof(float) * VtxDim);
         s += VtxDim;
-        if (hg->fixed)          
+        if (hgp->UseFixedVtx)          
           *s++ = hg->fixed[lno];       /* fixed partition info */
         *s++ = hg->vindex[lno+1] - hg->vindex[lno];            /* edge count */
         for (j = hg->vindex[lno]; j < hg->vindex[lno+1]; j++)  
@@ -1485,7 +1486,7 @@ static int pmatching_agg_ipm (ZZ *zz,
       candidate_index = edgebuf[i++];
       memcpy(&candw[candidate_index*VtxDim], &edgebuf[i], sizeof(float)*VtxDim);
       i += VtxDim;
-      if (hg->fixed)        
+      if (hgp->UseFixedVtx)        
         fixed   = edgebuf[i++];   /* skip over fixed vertex information */
       count           = edgebuf[i++];     /* count of edges */      
       idxptr[candidate_index] = indx ;   /* save position of gno in edgebuf */
@@ -1513,7 +1514,7 @@ static int pmatching_agg_ipm (ZZ *zz,
         candidate_gno   = *r++;          /* gno of candidate vertex */
         candidate_index = *r++;          /* candidate_index of vertex */
         r += VtxDim;
-        if (hg->fixed)          
+        if (hgp->UseFixedVtx)          
           fixed = *r++;     /* fixed vertex information */          
         count           = *r++;          /* count of following hyperedges */
         
