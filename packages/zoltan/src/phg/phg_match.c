@@ -28,8 +28,8 @@ static ZOLTAN_PHG_MATCHING_FN pmatching_alt_ipm;     /* alternating ipm */
 static ZOLTAN_PHG_MATCHING_FN pmatching_hybrid_ipm;  /* hybrid ipm */
 
 
-static int Zoltan_PHG_match_isolated(ZZ* zz, HGraph* hg, Matching match, 
-                                     int small_degree);
+static int Zoltan_PHG_match_isolated(ZZ* zz, HGraph* hg, PHGPartParams* hgp,
+                                     Matching match, int small_degree);
 
 typedef struct triplet {
     int candidate;      /* gno of candidate vertex */
@@ -104,14 +104,14 @@ char  *yo = "Zoltan_PHG_Matching";
   /* Do the matching */
   if (hgp->matching) {
     /* first match isolated vertices */
-    Zoltan_PHG_match_isolated(zz, hg, match, 0);
+    Zoltan_PHG_match_isolated(zz, hg, hgp, match, 0);
     /* now do the real matching */
     ierr = hgp->matching (zz, hg, match, hgp);
     /* clean up by matching "near-isolated" vertices of degree 1 */
     /* only useful in special cases (e.g. near-diagonal matrices).
        in many cases there is a slight increase in cuts, so 
        turn it off for now.                                      */
-    /* Zoltan_PHG_match_isolated(zz, hg, match, 1); */
+    /* Zoltan_PHG_match_isolated(zz, hg, hgp, match, 1); */
   }
 
 End: 
@@ -171,6 +171,7 @@ static void phasethreereduce (
 static int Zoltan_PHG_match_isolated(
   ZZ *zz,
   HGraph *hg,
+  PHGPartParams *hgp,
   Matching match,
   int small_degree /* 0 or 1; 0 corresponds to truely isolated vertices */
 )
@@ -211,7 +212,7 @@ static int Zoltan_PHG_match_isolated(
                      and match vertices that share a common neighbor */
                   if (v==-1)
                       v = i;
-                  else if (hg->fixed[i] == hg->fixed[v]) {
+                  else if (!hgp->UseFixedVtx || (hg->fixed[i] == hg->fixed[v])){
                       match[v] = i;
                       match[i] = v;
                       v = -1;
