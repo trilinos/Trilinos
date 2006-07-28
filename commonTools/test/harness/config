@@ -396,3 +396,22 @@ RUN (sais028-mpi) {
     SSG-USERNAME        = jmwille;
 
 }
+
+###############################################################################
+#
+# bandito nightly serial
+#
+###############################################################################
+
+RUN (bandito-nightly-serial) {
+
+    BUILD-LABEL         = default;
+    BUILD-DIR           = TH-SERIAL;
+    COMM                = serial;
+    INVOKE-CONFIGURE    = linux-intel-bandito;
+    TEST-CATEGORY       = FRAMEWORK;
+    TTR-DIR             = /home/jmwille/TrilinosTestHarness/TrilinosTestResults;
+    SSG-USERNAME        = jmwille;
+
+}
+
