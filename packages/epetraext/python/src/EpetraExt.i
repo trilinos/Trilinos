@@ -109,23 +109,6 @@ The most important classes of the EpetraExt module are:
 #include "EpetraExt_XMLReader.h"
 #include "EpetraExt_XMLWriter.h" // FIXME: memory management still scary...
 
-namespace EpetraExt {
-//   int MatrixMarketFileToCrsMatrix(const char *filename, Epetra_CrsMatrix* A)
-//   {
-//     return(MatrixMarketFileToCrsMatrixHandle(filename, A));
-//   }
-//   int MatrixMarketFileToCrsMatrix(const char *filename, const Epetra_BlockMap & map, 
-//                                Epetra_CrsMatrix * & OutCrsMatrix)
-//   {
-//     // MS // this works out only for serial runs
-//     if (map.Comm().NumProc() != 1)
-//       EPETRA_CHK_ERR(-2);
-//     if (map.NumGlobalElements() != map.NumGlobalPoints())
-//       EPETRA_CHK_ERR(-1);
-//     Epetra_Map map2(map.NumGlobalElements(), map.IndexBase(), map.Comm());
-//     return(MatrixMarketFileToCrsMatrix(filename, map2, OutCrsMatrix));
-//   }
-}
 %}
 
 // Ignore directives
