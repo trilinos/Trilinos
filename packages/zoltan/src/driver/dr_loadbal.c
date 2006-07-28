@@ -2063,24 +2063,26 @@ int proc, nprocs;
       }
       break;
   case 7:
-      /* Fix one object on each proc. */
-      for (i = 0; i < MIN(1, mesh->num_elems); i++) {
-        mesh->elements[i].fixed_part = proc;
-      }
+      /* Fix one object on each proc < Num_Global_Parts. */
+      if (proc < Num_Global_Parts)
+        for (i = 0; i < MIN(1, mesh->num_elems); i++) {
+          mesh->elements[i].fixed_part = proc;
+        }
       break;
   case 8:
-      /* Fix two objects on half the procs */
-      if (proc%2){
+      /* Fix two objects on half the procs < Num_Global_Parts. */
+      if (proc%2 && proc < Num_Global_Parts){
         for (i = 0; i < MIN(2, mesh->num_elems); i++) {
           mesh->elements[i].fixed_part = proc;
         }
       }
       break;
   case 9:
-      /* Fix myproc objects on each proc. */
-      for (i = 0; i < MIN(proc, mesh->num_elems); i++) {
-        mesh->elements[i].fixed_part = proc;
-      }
+      /* Fix myproc objects on each proc < Num_Global_Parts. */
+      if (proc < Num_Global_Parts)
+        for (i = 0; i < MIN(proc, mesh->num_elems); i++) {
+          mesh->elements[i].fixed_part = proc;
+        }
       break;
   case 10:
       /* Fix 0% of objects */
