@@ -482,7 +482,9 @@ static int seq_part (
     weight_sum += hg->vwgt[i*vwgtdim];
     if (hgp->UseFixedVtx)
       if (hg->fixed[i] >= 0){
+/*
         uprintf(hg->comm, "bisec_split=%d, i=%d, fixed=%d\n", hg->bisec_split, i, hg->fixed[i]);
+*/
         /* Set partition number for fixed vtx. */
         if (hg->bisec_split < 0){
           /* direct k-way, use part numbers directly */
