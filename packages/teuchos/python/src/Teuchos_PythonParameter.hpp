@@ -94,7 +94,7 @@ namespace Teuchos {
 
     // String values
     else if (PyString_Check(value)) {
-      plist.set(name, PyString_AsString(value));
+      plist.set(name, std::string(PyString_AsString(value)));
     }
 
     // Dictionary values
