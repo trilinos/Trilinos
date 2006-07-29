@@ -69,7 +69,7 @@ bool run_product_space_tests(
   vectorSpaceTester.show_all_tests(showAllTests);
   vectorSpaceTester.dump_all(dumpAll);
 
-  std::vector<Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > >
+  Teuchos::Array<Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > >
     vecSpaces(numBlocks);
   const Teuchos::RefCountPtr<const Teuchos::Comm<Thyra::Index> >
     comm = Teuchos::DefaultComm<Thyra::Index>::getComm();
@@ -104,11 +104,24 @@ bool run_product_space_tests(
   if(out.get()) *out << "\nTesting the VectorSpaceBase interface of ps ...\n";
   result = vectorSpaceTester.check(ps,out.get());
   if(!result) success = false;
+  
+  if(out.get()) *out << "\nB) Testing a nested product space of product vector spaces called pps ...\n";
+
+  Teuchos::Array<Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > >
+    blockVecSpaces(numBlocks);
+  for( int i = 0; i < numBlocks; ++i )
+    blockVecSpaces[i] = Teuchos::rcp(&ps,false);
+
+  Thyra::DefaultProductVectorSpace<Scalar> pps(numBlocks,&blockVecSpaces[0]);
+  
+  if(out.get()) *out << "\nTesting the VectorSpaceBase interface of pps ...\n";
+  result = vectorSpaceTester.check(pps,out.get());
+  if(!result) success = false;
 
   if(numProcs==1) {
 
     if(out.get()) *out
-      << "\nB) Test the compatibility of serial vectors and product vectors with serial blocks."
+      << "\nC) Test the compatibility of serial vectors and product vectors with serial blocks."
       << "\n   These tests demonstrate the principle of how all in-core vectors are compatible ...\n";
     
     const Scalar

@@ -248,6 +248,12 @@ void DefaultProductVector<Scalar>::applyOp(
       );
   }
 #endif
+  //
+  // The first thing that we do is to see if all of the vectors involved are
+  // incore, serial vectors.  In this case, the vectors should be compatible.
+  // To accomplish this we will pick the continguous vector to implement
+  // the applyOp(...) function.
+  //
   // Get the index of an incore-only input vector and input/output vector?
   const bool this_isInCore = productSpace_->hasInCoreView(
     Range1D(),VIEW_TYPE_DETACHED,STRIDE_TYPE_NONUNIT
@@ -290,8 +296,8 @@ void DefaultProductVector<Scalar>::applyOp(
         );
     }
   }
-  // Let a incore-only vector handle this through explicit vector access
-  // if all else fails?
+  // Let a incore-only vector with a contiguous view handle this through
+  // explicit vector access?
   if( incore_vec_k >= 0 ) {
     vecs[incore_vec_k]->applyOp(
       op,num_vecs,vecs,num_targ_vecs,targ_vecs,reduct_obj
@@ -306,7 +312,10 @@ void DefaultProductVector<Scalar>::applyOp(
       );
     return;
   }
-  // Perform the reduction on each vector segment at a time.
+  //
+  // If we get here, then we will implement the applyOp(...)  one vector block
+  // at a time.
+  //
   const Index this_dim = n;
   const Index sub_dim  = ( sub_dim_in < 0
                            ? this_dim - first_ele_offset_in
@@ -320,14 +329,15 @@ void DefaultProductVector<Scalar>::applyOp(
   Index g_off = -first_ele_offset_in;
   for(int k = 0; k < numBlocks; ++k) {
     const Index local_dim = productSpace_->getBlock(k)->dim();
-    if( g_off < 0 && -g_off > local_dim ) {
+    if( g_off < 0 && -g_off+1 > local_dim ) {
       g_off += local_dim;
       continue;
     }
     const Index
-      local_sub_dim = ( g_off >= 0
-                        ? std::min( local_dim, num_elements_remaining )
-                        : std::min( local_dim + g_off, num_elements_remaining ) );
+      local_sub_dim
+      = ( g_off >= 0
+          ? std::min( local_dim, num_elements_remaining )
+          : std::min( local_dim + g_off, num_elements_remaining ) );
     if( local_sub_dim <= 0 )
       break;
     for( int i = 0; i < num_vecs; ++i )       // Fill constituent vectors for block k

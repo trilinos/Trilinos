@@ -83,11 +83,11 @@ bool run_std_ops_tests(
   if(out.get()) *out << "\nTesting standard multi-vector ops with svs ...\n";
   if(!multiVectorStdOpsTester.checkStdOps(svs,OSTab(out).getOStream().get(),dumpAll)) success = false;
 
-  const int numBlocks = 2;
+  const int numBlocks = 3;
 
   if(out.get()) *out << "\nCreating a product space pvs with numBlocks="<<numBlocks<<" and n="<<n<<"vector elements per block ...\n";
 
-  std::vector<Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > >
+  Teuchos::Array<Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > >
     vecSpaces(numBlocks);
   Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> >
     spaceBlock = Teuchos::rcp(new Thyra::DefaultSpmdVectorSpace<Scalar>(comm,n,-1));
@@ -102,6 +102,21 @@ bool run_std_ops_tests(
 
   if(out.get()) *out << "\nTesting standard multi-vector ops with pvs ...\n";
   if(!multiVectorStdOpsTester.checkStdOps(pvs,OSTab(out).getOStream().get(),dumpAll)) success = false;
+
+  if(out.get()) *out << "\nCreating a nested product space ppvs with numBlocks="<<numBlocks<<" product spaces as components ...\n";
+
+  Teuchos::Array<Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > >
+    blockVecSpaces(numBlocks);
+  for( int i = 0; i < numBlocks; ++i )
+    blockVecSpaces[i] = Teuchos::rcp(&pvs,false);
+
+  Thyra::DefaultProductVectorSpace<Scalar> ppvs(numBlocks,&blockVecSpaces[0]);
+
+  if(out.get()) *out << "\nTesting standard vector ops with ppvs ...\n";
+  if(!vectorStdOpsTester.checkStdOps(ppvs,OSTab(out).getOStream().get(),dumpAll)) success = false;
+
+  if(out.get()) *out << "\nTesting standard multi-vector ops with ppvs ...\n";
+  if(!multiVectorStdOpsTester.checkStdOps(ppvs,OSTab(out).getOStream().get(),dumpAll)) success = false;
 
   return success;
 

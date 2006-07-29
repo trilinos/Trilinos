@@ -40,9 +40,6 @@
 using namespace Teuchos;
 using namespace Thyra;
 
-
-#define SKIP_BLOCK_TESTS
-
 #define TEST_FLOATS
 //#define TEST_COMPLEX
 
@@ -67,8 +64,6 @@ bool runVectorTests(int n, Teuchos::RefCountPtr<Teuchos::FancyOStream>& out)
   
   ok = tester.runAllTests() && ok;
   
-
-#ifndef SKIP_BLOCK_TESTS
   /* -------- test on a block space ----------------*/
   *out << "======= Testing on a block vector space ======" << std::endl;
   VectorSpace<Scalar> blockSpace = productSpace(space, space);
@@ -89,7 +84,6 @@ bool runVectorTests(int n, Teuchos::RefCountPtr<Teuchos::FancyOStream>& out)
                                   TestSpecifier<Scalar>(true, epsErr, epsWarn));
   
   ok = tester.runAllTests() && ok;
-#endif           
 
   return ok;
 }
