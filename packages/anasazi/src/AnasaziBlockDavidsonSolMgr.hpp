@@ -254,6 +254,9 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
   Teuchos::RefCountPtr<SVQBOrthoManager<ScalarType,MV,OP> > ortho 
     = Teuchos::rcp( new SVQBOrthoManager<ScalarType,MV,OP>(_problem->getM()) );
 
+  // utils
+  ModalSolverUtils<ScalarType,MV,OP> msutils(printer);
+
   //////////////////////////////////////////////////////////////////////////////////////
   // Parameter list
   Teuchos::ParameterList plist;
@@ -384,7 +387,6 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
           curKK = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*state.KK,curdim,curdim) );
           //
           // compute eigenvectors of the projected stiffness matrix
-          ModalSolverUtils<ScalarType,MV,OP> msutils(printer);
           Teuchos::SerialDenseMatrix<int,ScalarType> S(curdim,curdim);
           std::vector<MagnitudeType> theta(curdim);
           int rank = curdim;
@@ -619,6 +621,19 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
 
     // setup sol.index, remembering that all eigenvalues are real so that index = {0,...,0}
     sol.index.resize(sol.numVecs,0);
+
+    // sort the eigenvalues and permute the eigenvectors appropriately
+    {
+      std::vector<int> order(sol.numVecs);
+      std::vector<ScalarType> vals_st(sol.numVecs);
+      std::copy(sol.Evals.begin(),sol.Evals.end(),vals_st.begin());
+      sorter->sort( NULL, sol.numVecs, &vals_st[0], &order );
+      for (int i=0; i<sol.numVecs; i++) {
+        sol.Evals[i] = SCT::real( vals_st[i] );
+      }
+      // now permute the eigenvectors according to order
+      msutils.permuteVectors(sol.numVecs,order,*sol.Evecs);
+    }
   }
 
   // print final summary
@@ -629,8 +644,6 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
 
   _problem->setSolution(sol);
   printer->stream(Debug) << "Returning " << sol.numVecs << " eigenpairs to eigenproblem." << endl;
-
-  // finish: sort eigenpairs in Eigensolution
 
   if (sol.numVecs < nev) {
     return Unconverged; // return from BlockDavidsonSolMgr::solve() 

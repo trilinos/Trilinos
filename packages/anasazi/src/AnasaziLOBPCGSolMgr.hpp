@@ -259,6 +259,9 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
   plist.set("Block Size",_blockSize);
   plist.set("Full Ortho",_fullOrtho);
 
+  // utils
+  ModalSolverUtils<ScalarType,MV,OP> msutils(printer);
+
   //////////////////////////////////////////////////////////////////////////////////////
   // LOBPCG solver
   Teuchos::RefCountPtr<LOBPCG<ScalarType,MV,OP> > lobpcg_solver 
@@ -505,7 +508,6 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
       // MM = restart^H M restart
       MVT::MvTransMv(1.0,*restart,*Mrestart,MM);
       rank = localsize;
-      ModalSolverUtils<ScalarType,MV,OP> msutils(printer);
       msutils.directSolver(localsize,KK,&MM,&S,&theta,&rank,1);
       if (rank < _blockSize) {
         printer->stream(Errors) << "Error! Recovered basis of rank " << rank << " produced only " << rank << "ritz vectors.\n"
@@ -625,6 +627,19 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
 
     // setup sol.index, remembering that all eigenvalues are real so that index = {0,...,0}
     sol.index.resize(sol.numVecs,0);
+
+    // sort the eigenvalues and permute the eigenvectors appropriately
+    {
+      std::vector<int> order(sol.numVecs);
+      std::vector<ScalarType> vals_st(sol.numVecs);
+      std::copy(sol.Evals.begin(),sol.Evals.end(),vals_st.begin());
+      sorter->sort( NULL, sol.numVecs, &vals_st[0], &order );
+      for (int i=0; i<sol.numVecs; i++) {
+        sol.Evals[i] = SCT::real( vals_st[i] );
+      }
+      // now permute the eigenvectors according to order
+      msutils.permuteVectors(sol.numVecs,order,*sol.Evecs);
+    }
   }
 
   // print final summary
@@ -635,8 +650,6 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
 
   _problem->setSolution(sol);
   printer->stream(Debug) << "Returning " << sol.numVecs << " eigenpairs to eigenproblem." << endl;
-
-  // finish: sort eigenpairs in Eigensolution
 
   if (sol.numVecs < nev) return Unconverged; // return from LOBPCGSolMgr::solve() 
   return Converged; // return from LOBPCGSolMgr::solve() 
