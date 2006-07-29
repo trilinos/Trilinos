@@ -743,8 +743,10 @@ namespace Anasazi {
           Teuchos::SerialDenseMatrix<int,ScalarType> R(_curDim,_curDim), T(_curDim,_curDim);
           // R = S*diag(theta) - KK*S
           for (int i=0; i<_curDim; i++) T(i,i) = _theta[i];
-          R.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,ONE,S,T,ZERO);
-          R.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,-ONE,*lclKK,S,ONE);
+          int info = R.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,ONE,S,T,ZERO);
+          TEST_FOR_EXCEPTION(info != 0, std::logic_error, "Anasazi::BlockDavidson::initialize(): Input error to SerialDenseMatrix::multiply.");
+          info = R.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,-ONE,*lclKK,S,ONE);
+          TEST_FOR_EXCEPTION(info != 0, std::logic_error, "Anasazi::BlockDavidson::initialize(): Input error to SerialDenseMatrix::multiply.");
           for (int i=0; i<_curDim; i++) {
             _ritz2norms[i] = blas.NRM2(_curDim,R[i],1);
           }
@@ -1115,11 +1117,14 @@ namespace Anasazi {
       {
         Teuchos::BLAS<int,ScalarType> blas;
         Teuchos::SerialDenseMatrix<int,ScalarType> R(_curDim,_curDim), T(_curDim,_curDim);
-        Teuchos::SerialDenseMatrix<int,ScalarType> curKK(Teuchos::View,*_KK,_curDim,_curDim);
+        Teuchos::SerialDenseMatrix<int,ScalarType> curKK(Teuchos::View,*_KK,_curDim,_curDim),
+                                                    curS(Teuchos::View,S,_curDim,_curDim);
         // R = S*diag(theta) - KK*S
         for (int i=0; i<_curDim; i++) T(i,i) = _theta[i];
-        R.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,ONE,S,T,ZERO);
-        R.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,-ONE,curKK,S,ONE);
+        int info = R.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,ONE,curS,T,ZERO);
+        TEST_FOR_EXCEPTION(info != 0, std::logic_error, "Anasazi::BlockDavidson::iterate(): Input error to SerialDenseMatrix::multiply.");
+        info = R.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,-ONE,curKK,curS,ONE);
+        TEST_FOR_EXCEPTION(info != 0, std::logic_error, "Anasazi::BlockDavidson::iterate(): Input error to SerialDenseMatrix::multiply.");
         for (int i=0; i<_curDim; i++) {
           _ritz2norms[i] = blas.NRM2(_curDim,R[i],1);
         }
