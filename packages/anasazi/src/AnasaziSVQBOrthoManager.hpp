@@ -527,8 +527,10 @@ namespace Anasazi {
         // accumulate into C
         if (normalize) {
           // we are normalizing
+          int info;
           for (int i=0; i<nq; i++) {
-            C[i]->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,ONE,*newC[i],*R,ONE);
+            info = C[i]->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,ONE,*newC[i],*R,ONE);
+            TEST_FOR_EXCEPTION(info != 0, std::logic_error, "Anasazi::SVQBOrthoManager::findBasis(): Input error to SerialDenseMatrix::multiply.");
           }
         }
         else {
@@ -649,7 +651,8 @@ namespace Anasazi {
               workU(i,j) = Dh[i] * (*R)(i,j);
             }
           }
-          R->multiply(Teuchos::CONJ_TRANS,Teuchos::NO_TRANS,ONE,XtMX,workU,ZERO);
+          info = R->multiply(Teuchos::CONJ_TRANS,Teuchos::NO_TRANS,ONE,XtMX,workU,ZERO);
+          TEST_FOR_EXCEPTION(info != 0, std::logic_error, "Anasazi::SVQBOrthoManager::findBasis(): Input error to SerialDenseMatrix::multiply.");
           for (int j=0; j<xc ;j++) {
             for (int i=0; i<xc; i++) {
               (*R)(i,j) *= lambda[i];

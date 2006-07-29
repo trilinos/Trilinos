@@ -816,9 +816,11 @@ namespace Anasazi {
           }
         }
         // U = 0*U + 1*MMcopy*KKcopy = MMcopy * KKcopy
-        U->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,*MMcopy,*KKcopy,zero);
+        int ret = U->multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,*MMcopy,*KKcopy,zero);
+        assert( ret == 0 );
         // MMcopy = 0*MMcopy + 1*KKcopy^H*U = KKcopy^H * MMcopy * KKcopy
-        MMcopy->multiply(Teuchos::CONJ_TRANS,Teuchos::NO_TRANS,one,*KKcopy,*U,zero);
+        ret = MMcopy->multiply(Teuchos::CONJ_TRANS,Teuchos::NO_TRANS,one,*KKcopy,*U,zero);
+        assert( ret == 0 );
         MagnitudeType maxNorm = SCT::magnitude(zero);
         MagnitudeType maxOrth = SCT::magnitude(zero);
         for (i = 0; i < rank; ++i) {

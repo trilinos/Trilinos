@@ -34,8 +34,6 @@
  *  \brief The Anasazi::BlockDavidsonSolMgr provides a powerful solver manager for the BlockDavidson eigensolver.
 */
 
-// finish: allocate memory for all restarting at beginning of solve().... not every time we restart
-
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziTypes.hpp"
 
@@ -275,12 +273,30 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
 
   //////////////////////////////////////////////////////////////////////////////////////
   // Storage
+  // for locked vectors
   int numlocked = 0;
   Teuchos::RefCountPtr<MV> lockvecs;
+  // lockvecs is used to hold the locked eigenvectors, as well as for temporary storage when locking
+  // when locking, we will lock some number of vectors numnew, where numnew <= maxlocked - curlocked
+  // we will allocated numnew random vectors, which will go into workMV (see below)
+  // we will also need numnew storage for the image of these random vectors under A and M; 
+  // columns [curlocked+1,curlocked+numnew] will be used for this storage
   if (_maxLocked > 0) {
     lockvecs = MVT::Clone(*_problem->getInitVec(),_maxLocked);
   }
   std::vector<MagnitudeType> lockvals;
+  // workMV will be used when restarting because of 
+  // a) full basis, in which case we need 2*blockSize, for X and KX
+  // b) locking, in which case we will need as many vectors as in the current basis, 
+  //    a number which will be always <= (numblocks-1)*blocksize
+  //    [note: this is because we never lock with curdim == numblocks*blocksize]
+  Teuchos::RefCountPtr<MV> workMV;
+  if (_useLocking) {
+    workMV = MVT::Clone(*_problem->getInitVec(),(_numBlocks-1)*_blockSize);
+  }
+  else {
+    workMV = MVT::Clone(*_problem->getInitVec(),2*_blockSize);
+  }
 
   // go ahead and initialize the solution to nothing in case we throw an exception
   Eigensolution<ScalarType,MV> sol;
@@ -296,23 +312,85 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
 
       // check convergence first
       if (convtest->getStatus() == Passed ) {
-        // we have convergence or not
+        // we have convergence
         // convtest->whichVecs() tells us which vectors from lockvecs and solver->getEvecs() are the ones we want
         // convtest->howMany() will tell us how many
         break;
       }
-      // check locking if we didn't converge
+      // check for restarting before locking: if we need to lock, it will happen after the restart
+      else if ( bd_solver->getCurSubspaceDim() == bd_solver->getMaxSubspaceDim() ) {
+
+        if ( numRestarts >= _maxRestarts ) {
+          break; // break from while(1){bd_solver->iterate()}
+        }
+        numRestarts++;
+
+        printer->stream(Debug) << " Performing restart number " << numRestarts << " of " << _maxRestarts << endl << endl;
+
+        // the solver has filled its basis. 
+        // the current eigenvectors will be used to restart the basis.
+        std::vector<int> b1ind(_blockSize), b2ind(_blockSize);
+        for (int i=0;i<_blockSize;i++) {
+          b1ind[i] = i;
+          b2ind[i] = _blockSize+i;
+        }
+
+        // these will be pointers into workMV
+        Teuchos::RefCountPtr<MV> newV, newKV, newMV;
+        { 
+          // we want curstate (and its pointers) to go out of scope and be deleted
+          BlockDavidsonState<ScalarType,MV> curstate = bd_solver->getState();
+          newV = MVT::CloneView(*workMV,b1ind);
+          MVT::SetBlock(*curstate.X,b1ind,*newV);
+        }
+
+        if (_problem->getM() != Teuchos::null) {
+          newMV = MVT::CloneView(*workMV,b2ind);
+          OPT::Apply(*_problem->getM(),*newV,*newMV);
+        }
+        else {
+          newMV = Teuchos::null;
+        }
+
+        // send this basis to the orthomanager to ensure orthonormality
+        // we don't want anything in our Krylov basis that hasn't been sent through the ortho manager
+        Teuchos::Array<Teuchos::RefCountPtr<const MV> > curauxvecs = bd_solver->getAuxVecs();
+        Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > dummy;
+        ortho->projectAndNormalize(*newV,newMV,dummy,Teuchos::null,curauxvecs);
+        // don't need newMV anymore, and the storage it points to will be needed for newKV
+        newMV = Teuchos::null;
+
+        // compute K*newV
+        newKV = MVT::CloneView(*workMV,b2ind);
+        OPT::Apply(*_problem->getOperator(),*newV,*newKV);
+
+        // compute projected stiffness matrix
+        Teuchos::RefCountPtr< Teuchos::SerialDenseMatrix<int,ScalarType> > 
+            newKK = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(_blockSize,_blockSize) );
+        MVT::MvTransMv(SCT::one(),*newV,*newKV,*newKK);
+
+        // initialize() will do the rest
+        BlockDavidsonState<ScalarType,MV> newstate;
+        newstate.V = newV;
+        newstate.KK = newKK;
+        bd_solver->initialize(newstate);
+
+        // don't need either of these anymore
+        newKV = Teuchos::null;
+        newV = Teuchos::null;
+      }
+      // check locking if we didn't converge or restart
       else if (locktest != Teuchos::null && locktest->getStatus() == Passed) {
 
-        // remove the locked vectors,values from bd_solver: put them in newvecs, newvals
+        // get number,indices of vectors to be locked
         int numnew = locktest->howMany();
         TEST_FOR_EXCEPTION(numnew <= 0,std::logic_error,"Anasazi::BlockDavidsonSolMgr::solve(): status test mistake.");
-        // get the indices
         std::vector<int> newind = locktest->whichVecs();
 
         // don't lock more than _maxLocked; we didn't allocate enough space.
         if (numlocked + numnew > _maxLocked) {
           numnew = _maxLocked - numlocked;
+          // just use the first of them
           newind.resize(numnew);
         }
 
@@ -322,64 +400,73 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
           for (unsigned int i=0; i<newind.size(); i++) {printer->stream(Debug) << " " << newind[i];}
           printer->print(Debug,"\n");
         }
+
+        BlockDavidsonState<ScalarType,MV> state = bd_solver->getState();
+        //
+        // get current size of basis, build index, and get a view of the current basis and projected stiffness matrix
+        int curdim = state.curDim;
+
+        // workMV will be partitioned as follows:
+        // workMV = [genV augV ...]
+        // genV will be of size curdim - numnew, and contain the generated basis
+        // augV will be of size numnew, and contain random directions to make up for
+        //      the lost space
+        //
+        // lockvecs will be partitioned as follows:
+        // lockvecs = [curlocked augTmp ...]
+        // augTmp will be used for the storage of M*augV and K*augV
+        // later, the locked vectors (storeg inside the eigensolver and referenced via 
+        // an MV view) will be moved into lockvecs on top of augTmp when the space is no
+        // longer needed.
+        Teuchos::RefCountPtr<const MV> newvecs, curlocked;
+        Teuchos::RefCountPtr<MV> genV, augV, augTmp;
+        Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > newKK;
+        newKK = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(curdim,curdim) );
+        // newvecs,newvals will contain the to-be-locked eigenpairs
         std::vector<MagnitudeType> newvals(numnew);
-        Teuchos::RefCountPtr<const MV> newvecs;
         {
-          // get the vectors
+          // setup genV
+          std::vector<int> genind(curdim-numnew);
+          for (int i=0; i<curdim-numnew; i++) genind[i] = i;
+          genV = MVT::CloneView(*workMV,genind);
+          // setup augV
+          std::vector<int> augind(numnew);
+          for (int i=0; i<numnew; i++) augind[i] = curdim-numnew+i;
+          augV = MVT::CloneView(*workMV,augind);
+          // setup curlocked
+          if (numlocked > 0) {
+            std::vector<int> lockind(numlocked);
+            for (int i=0; i<numlocked; i++) lockind[i] = i;
+            curlocked = MVT::CloneView(*lockvecs,lockind);
+          }
+          else {
+            curlocked = Teuchos::null;
+          }
+          // setup augTmp
+          std::vector<int> augtmpind(numnew); 
+          for (int i=0; i<numnew; i++) augtmpind[i] = numlocked+i;
+          augTmp = MVT::CloneView(*lockvecs,augtmpind);
+          // setup newvecs
           newvecs = MVT::CloneView(*bd_solver->getEvecs(),newind);
-          // get the values
+          // setup newvals
           std::vector<MagnitudeType> allvals = bd_solver->getEigenvalues();
           for (int i=0; i<numnew; i++) {
             newvals[i] = allvals[newind[i]];
           }
         }
-        // put newvecs into lockvecs
-        {
-          std::vector<int> indlock(numnew);
-          for (int i=0; i<numnew; i++) indlock[i] = numlocked+i;
-          MVT::SetBlock(*newvecs,indlock,*lockvecs);
-          newvecs = Teuchos::null;
-        }
-        // put newvals into lockvals
-        lockvals.insert(lockvals.end(),newvals.begin(),newvals.end());
-        numlocked += numnew;
-        // add locked vecs as aux vecs, along with aux vecs from problem
-        {
-          std::vector<int> indlock(numlocked);
-          for (int i=0; i<numlocked; i++) indlock[i] = i;
-          Teuchos::RefCountPtr<const MV> curlocked = MVT::CloneView(*lockvecs,indlock);
-          Teuchos::Array< Teuchos::RefCountPtr<const MV> > aux;
-          if (probauxvecs != Teuchos::null) aux.push_back(probauxvecs);
-          aux.push_back(curlocked);
-          bd_solver->setAuxVecs(aux);
-        }
-        // add locked vals to convtest
-        convtest->setAuxVals(lockvals);
 
         //
         // restart the solver
         //
         // we have to get the projected stiffness matrix from the solver, compute the projected eigenvectors and sort them
         // then all of the ones that don't correspond to the ones we wish to lock get orthogonalized using QR factorization
-        // then we generate new (slightly smaller basis) and augment this basis with random information to preserve rank 
-        // (which must be a muliple of blockSize) and hand this to the solver
-
+        // then we generate new, slightly smaller basis (in genV) and augment this basis with random information (in augV)
+        // to preserve rank (which must be a muliple of blockSize)
         Teuchos::BLAS<int,ScalarType> blas;
         {
           const ScalarType ONE = SCT::one();
           const ScalarType ZERO = SCT::zero();
 
-          BlockDavidsonState<ScalarType,MV> state = bd_solver->getState();
-          // don't need the following
-          state.X = Teuchos::null;
-          state.KX = Teuchos::null;
-          state.MX = Teuchos::null;
-          state.R = Teuchos::null;
-          state.H = Teuchos::null;
-          state.T = Teuchos::null;
-          //
-          // get current size of basis, build index, and get a view of the current basis and projected stiffness matrix
-          int curdim = state.curDim;
           std::vector<int> curind(curdim);
           for (int i=0; i<curdim; i++) curind[i] = i;
           Teuchos::RefCountPtr<const MV> curV = MVT::CloneView(*state.V,curind);
@@ -430,27 +517,19 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
 
             if (printer->isVerbosity(Debug)) {
               Teuchos::SerialDenseMatrix<int,ScalarType> StS(curdim-numnew,curdim-numnew);
-              StS.multiply(Teuchos::CONJ_TRANS,Teuchos::NO_TRANS,ONE,Sunlocked,Sunlocked,ZERO);
+              int info = StS.multiply(Teuchos::CONJ_TRANS,Teuchos::NO_TRANS,ONE,Sunlocked,Sunlocked,ZERO);
+              TEST_FOR_EXCEPTION(info != 0, std::logic_error, "Anasazi::BlockDavidsonSolMgr::solve(): Input error to SerialDenseMatrix::multiply.");
               for (int i=0; i<curdim-numnew; i++) {
                 StS(i,i) -= ONE;
               }
               printer->stream(Debug) << "Locking: Error in Snew^T Snew == I : " << StS.normFrobenius() << endl;
             }
           }
+
+          // compute the first part of the new basis: genV = curV*Sunlocked
+          MVT::MvTimesMatAddMv(ONE,*curV,Sunlocked,ZERO,*genV);
           //
-          // allocate space for the new basis, compute it
-          Teuchos::RefCountPtr<MV> newV = MVT::Clone(*curV,curdim);
-          Teuchos::RefCountPtr<MV> genV;
-          { 
-            std::vector<int> genind(curdim-numnew);
-            for (int i=0; i<curdim-numnew; i++) genind[i] = i;
-            genV = MVT::CloneView(*newV,genind);
-            MVT::MvTimesMatAddMv(ONE,*curV,Sunlocked,ZERO,*genV);
-          }
-          //
-          // allocate space for the new projected stiffness matrix, compute leading block
-          Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > newKK;
-          newKK = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(curdim,curdim) );
+          // compute leading block of the new projected stiffness matrix
           {
             Teuchos::SerialDenseMatrix<int,ScalarType> tmpKK(curdim,curdim-numnew),
                                                        newKK11(Teuchos::View,*newKK,curdim-numnew,curdim-numnew),
@@ -460,42 +539,81 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
                 curKKsym(i,j) = curKKsym(j,i);
               }
             }
-            tmpKK.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,ONE,curKKsym,Sunlocked,ZERO);
-            newKK11.multiply(Teuchos::CONJ_TRANS,Teuchos::NO_TRANS,ONE,Sunlocked,tmpKK,ZERO);
+            int info = tmpKK.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,ONE,curKKsym,Sunlocked,ZERO);
+            TEST_FOR_EXCEPTION(info != 0, std::logic_error, "Anasazi::BlockDavidsonSolMgr::solve(): Input error to SerialDenseMatrix::multiply.");
+            info = newKK11.multiply(Teuchos::CONJ_TRANS,Teuchos::NO_TRANS,ONE,Sunlocked,tmpKK,ZERO);
+            TEST_FOR_EXCEPTION(info != 0, std::logic_error, "Anasazi::BlockDavidsonSolMgr::solve(): Input error to SerialDenseMatrix::multiply.");
           }
           //
           // generate random data to fill the rest of the basis back to curdim
-          Teuchos::RefCountPtr<MV> augV;
-          {
-            std::vector<int> augind(numnew);
-            for (int i=0; i<numnew; i++) augind[i] = curdim-numnew+i;
-            augV = MVT::CloneView(*newV,augind);
-            MVT::MvRandom(*augV);
-          }
+          MVT::MvRandom(*augV);
           // 
-          // orthogonalize it against auxvecs and the current basis
+          // orthogonalize it against auxvecs, the current basis, and all locked vectors
           {
-            Teuchos::Array<Teuchos::RefCountPtr<const MV> > against = bd_solver->getAuxVecs();
+            Teuchos::Array<Teuchos::RefCountPtr<const MV> > against;
             Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > dummy;
+            if (probauxvecs != Teuchos::null) against.push_back(probauxvecs);
+            if (curlocked != Teuchos::null)   against.push_back(curlocked);
+            against.push_back(newvecs);
             against.push_back(genV);
             ortho->projectAndNormalize(*augV,Teuchos::null,dummy,Teuchos::null,against);
           }
           //
           // project the stiffness matrix on the new part
           {
-            Teuchos::RefCountPtr<MV> augKV = MVT::Clone(*augV,numnew);
-            OPT::Apply(*_problem->getOperator(),*augV,*augKV);
+            OPT::Apply(*_problem->getOperator(),*augV,*augTmp);
             Teuchos::SerialDenseMatrix<int,ScalarType> KK12(Teuchos::View,*newKK,curdim-numnew,numnew,0,curdim-numnew),
                                                        KK22(Teuchos::View,*newKK,numnew,numnew,curdim-numnew,curdim-numnew);
-            MVT::MvTransMv(ONE,*genV,*augKV,KK12);
-            MVT::MvTransMv(ONE,*augV,*augKV,KK22);
+            MVT::MvTransMv(ONE,*genV,*augTmp,KK12);
+            MVT::MvTransMv(ONE,*augV,*augTmp,KK22);
           }
-          //
-          // pass all of this to the solver
-          genV = augV = Teuchos::null;
-          state.V = newV;
+        }
+
+        // done with pointers
+        augV = genV = augTmp = Teuchos::null;
+        curlocked = Teuchos::null;
+
+        // put newvecs into lockvecs, newvals into lockvals
+        {
+          lockvals.insert(lockvals.end(),newvals.begin(),newvals.end());
+
+          std::vector<int> indlock(numnew);
+          for (int i=0; i<numnew; i++) indlock[i] = numlocked+i;
+          MVT::SetBlock(*newvecs,indlock,*lockvecs);
+          newvecs = Teuchos::null;
+
+          numlocked += numnew;
+          std::vector<int> curind(numlocked);
+          for (int i=0; i<numlocked; i++) curind[i] = i;
+          curlocked = MVT::CloneView(*lockvecs,curind);
+        }
+        // add locked vecs as aux vecs, along with aux vecs from problem
+        // add lockvals to convtest
+        {
+          convtest->setAuxVals(lockvals);
+
+          Teuchos::Array< Teuchos::RefCountPtr<const MV> > aux;
+          if (probauxvecs != Teuchos::null) aux.push_back(probauxvecs);
+          aux.push_back(curlocked);
+          bd_solver->setAuxVecs(aux);
+        }
+
+        // get pointer to new basis, KK
+        {
+          std::vector<int> curind(curdim);
+          for (int i=0; i<curdim; i++) curind[i] = i;
+          state.V = MVT::CloneView(*workMV,curind);
           state.KK = newKK;
           state.curDim = curdim;
+          // clear the rest
+          state.X = Teuchos::null;
+          state.KX = Teuchos::null;
+          state.MX = Teuchos::null;
+          state.R = Teuchos::null;
+          state.H = Teuchos::null;
+          state.T = Teuchos::null;
+          //
+          // pass new state to the solver
           bd_solver->initialize(state);
         }
 
@@ -503,55 +621,6 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
           // disabled locking now by setting quorum to unreachable number
           locktest->setQuorum(_blockSize+1);
         }
-
-      }
-      // didn't lock, didn't converge; it must be time to restart
-      // however, if numBlocks == 1, we never restart, and solver should not have quit.
-      else if ( bd_solver->getCurSubspaceDim() == bd_solver->getMaxSubspaceDim() ) {
-
-        if ( numRestarts >= _maxRestarts ) {
-          break; // break from while(1){bd_solver->iterate}
-        }
-        numRestarts++;
-
-        printer->stream(Debug) << " Performing restart number " << numRestarts << " of " << _maxRestarts << endl << endl;
-
-        // the solver has filled its basis. 
-        // the current eigenvectors will be used to restart the basis.
-        Teuchos::RefCountPtr<MV> newV, newKV, newMV;
-        { 
-          // we want curstate (and its pointers) to go out of scope and be deleted
-          BlockDavidsonState<ScalarType,MV> curstate = bd_solver->getState();
-          newV = MVT::CloneCopy(*curstate.X);
-        }
-
-        if (_problem->getM() != Teuchos::null) {
-          newMV = MVT::Clone(*newV,_blockSize);
-          OPT::Apply(*_problem->getM(),*newV,*newMV);
-        }
-        else {
-          newMV = Teuchos::null;
-        }
-
-        // send this basis to the orthomanager to ensure orthonormality
-        Teuchos::Array<Teuchos::RefCountPtr<const MV> > curauxvecs = bd_solver->getAuxVecs();
-        Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > dummy;
-        ortho->projectAndNormalize(*newV,newMV,dummy,Teuchos::null,curauxvecs);
-
-        // compute K*newV
-        newKV = MVT::Clone(*newV,_blockSize);
-        OPT::Apply(*_problem->getOperator(),*newV,*newKV);
-
-        // compute projected stiffness matrix
-        Teuchos::RefCountPtr< Teuchos::SerialDenseMatrix<int,ScalarType> > 
-            newKK = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(_blockSize,_blockSize) );
-        MVT::MvTransMv(SCT::one(),*newV,*newKV,*newKK);
-
-        // initialize() will do the rest
-        BlockDavidsonState<ScalarType,MV> newstate;
-        newstate.V = newV;
-        newstate.KK = newKK;
-        bd_solver->initialize(newstate);
       }
       else {
         TEST_FOR_EXCEPTION(true,std::logic_error,"Anasazi::BlockDavidsonSolMgr::solve(): Invalid return from bd_solver::iterate().");
@@ -563,6 +632,9 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
       throw;
     }
   }
+
+  // clear temp space
+  workMV = Teuchos::null;
 
   sol.numVecs = convtest->howMany();
   if (sol.numVecs > 0) {
