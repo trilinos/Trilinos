@@ -28,7 +28,6 @@
 
 # Include the export Makefiles
 include $(top_builddir)/Makefile.export.new_package
-include $(top_builddir)/../PyTrilinos/Makefile.export.pytrilinos
 
 # Swahili support
 if HAVE_NEWP_SWAHILI
