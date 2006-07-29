@@ -471,7 +471,6 @@ uninstall-am: uninstall-info-am
 
 # Include the export Makefiles
 include $(top_builddir)/Makefile.export.teuchos
-include $(top_builddir)/../PyTrilinos/Makefile.export.pytrilinos
 include $(DEPFILES)
 
 # Wrapper and proxy targets

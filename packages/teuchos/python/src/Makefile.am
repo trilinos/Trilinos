@@ -28,7 +28,6 @@
 
 # Include the export Makefiles
 include $(top_builddir)/Makefile.export.teuchos
-include $(top_builddir)/../PyTrilinos/Makefile.export.pytrilinos
 
 # MPI support
 @HAVE_MPI_TRUE@MPI_FLAG = -DHAVE_MPI
