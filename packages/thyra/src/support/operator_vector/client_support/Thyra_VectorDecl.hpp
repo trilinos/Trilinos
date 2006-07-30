@@ -37,52 +37,63 @@
 #include "RTOpPack_Types.hpp"
 #include "Teuchos_VerboseObject.hpp"
 
-// namespace ThyraOverloadedOps
-// {
-//   template <class Scalar, class Node1, class Node2> class LC2;
-//   template <class Scalar, class Node> class OpTimesLC; 
-//   template <class Scalar> class ConvertibleToVector; 
-//   /** 
-//    * 
-//    */
-//   enum LCSign {LCAdd = 1, LCSubtract = -1};
-// }
-
 
 namespace Thyra
 {
+  
   template <class Scalar> class Vector;
 
   template <class Scalar, class Node1, class Node2> class LC2;
   template <class Scalar, class Node> class OpTimesLC; 
   template <class Scalar> class ConvertibleToVector; 
+  
+
   /** 
-   * 
+   * LCSign is used to indicate whether a linear combination object represents
+   * addition or subtraction.
    */
   enum LCSign {LCAdd = 1, LCSubtract = -1};
 
-
+  /**
+   * Converter defines the interface for objects that can be converted to vectors.
+   * Obviously, vectors can be converted to vectors, but so can linear combinations
+   * of vectors or operators times vectors. 
+   *
+   * This interface is key to efficient overloaded operators. Operators do not
+   * perform vector operations directly; rather, they construct Converter subtypes
+   * (such as LC2 or OpTimesLC) that represent the operation to be performed. The
+   * actual operations are carried out only upon either (a) assignment to a vector,   
+   * or (b) the Converter is used in a context in which its vector value is required,
+   * for instance, when an operation such as a norm is to be performed.
+   * 
+   * Because overloaded operators must always create and return temporary objects,
+   * returning constant-size deferred-evaluation Converter subtypes rather than
+   * vectors results in constant-time overhead rather than the \f$O(N)\f$ 
+   * overhead that would be incurred with vector return values.
+   */
   template <class Scalar, class TargetType> class Converter
   {
   public:
     /** \brief . */
     virtual ~Converter(){;}
 
-    /** \brief . */
+    /** \brief Convert to the specified target type (e.g., Vector or ConstVector). */
     virtual TargetType convert() const = 0 ;
 
-    /** \brief . */
+    /** \brief Evaluate this object, writing the results into the acceptor vector. */
     virtual void evalInto(Vector<Scalar>& acceptor) const = 0 ;
 
-    /** \brief . */
+    /** \brief Determine whether this object contains the given vector. */
     virtual bool containsVector(const Thyra::VectorBase<Scalar>* vec) const = 0 ;
 
-    /** \brief . */
+    /** \brief Evaluate this object, adding the results into the argument vector. 
+     * The sign argument indicates whether this operation is an addition
+     * or a subtraction. */
     virtual void addInto(Vector<Scalar>& other, Thyra::LCSign sign) const = 0 ;
   };
 
   /** 
-   *
+   * ConstVector is a read-only representation of a vector. 
    */
   template <class Scalar>
   class ConstVector : public virtual Teuchos::ConstHandle<VectorBase<Scalar> >,
@@ -95,8 +106,13 @@ namespace Thyra
     ConstVector(const Thyra::ConvertibleToVector<Scalar>& x);
 
     /** \brief . */
-    ConstVector<Scalar> evalToConst() const {return *this;}
+    ConstVector<Scalar> convert() const 
+    {
+      return *this;
+    }
 
+    /** \name Implementation of the Converter interface */
+    //@{
     /** \brief . */
     bool containsVector(const Thyra::VectorBase<Scalar>* vec) const ;
 
@@ -106,17 +122,25 @@ namespace Thyra
     /** \brief . */
     void addInto(Vector<Scalar>& other, Thyra::LCSign sign) const ;
 
-    /** \brief . */
+    //@}
+
+    /** Element access */
+    //@{
+    /** \brief Read-only access to an element. */
     virtual Scalar operator[](Index globalIndex) const ;
+    //@}
 
-    /** \brief . */
-    ConstVector<Scalar> convert() const {return *this;}
-
-    /** return number of blocks */
+    /** \name Block-related functions */
+    //@{
+    /** \brief Return number the of blocks in this vector. If the vector is not
+     * a product vector, this function will return 1. */
     int numBlocks() const ;
       
-    /** get read-only block */
+    /** \brief Read-only access to the \f$i\f$-th block. If the vector is not
+     * a product vector, this function will throw an exception if \f$i\ne 0\f$,
+     * or otherwise return the whole vector. */
     ConstVector<Scalar> getBlock(Index i) const ;
+    //@}
     
   };
 
@@ -128,17 +152,19 @@ namespace Thyra
   Index dim(const ConstVector<Scalar>& x) ;
 
 
-  /** \brief . */
+  /** \brief \relates Vector Write to a stream. */
   template <class Scalar> 
   std::ostream& operator<<(std::ostream& os, const ConstVector<Scalar>& v);
 
-  /** \brief . */
+  /* \brief \relates ConstVector. */
   template <class Scalar> inline 
   ConstVector<Scalar> toVector(const Converter<Scalar, ConstVector<Scalar> >& x) 
   {return x.convert();}
 
   /** 
+   * \brief Vector class with operator overloading support.
    *
+   * \ingroup thrya_handle_grp
    */
   template <class Scalar>
   class Vector : public Teuchos::Handle<VectorBase<Scalar> >,
@@ -198,19 +224,19 @@ namespace Thyra
 
     
 
-    /** Construct a vector from a 2-term LC */
+    /** \brief Construct a vector from a 2-term LC */
     template<class Node1, class Node2>
     Vector(const Thyra::LC2<Scalar, Node1, Node2>& x);
 
-    /** Construct a vector from an operator times a linear combination */
+    /** \brief  Construct a vector from an operator times a linear combination */
     template<class Node>
     Vector(const Thyra::OpTimesLC<Scalar, Node>& x);
 
-    /** Assign a linear combination of vectors to this vector */
+    /**  \brief Assign a linear combination of vectors to this vector */
     template<class Node1, class Node2>
     Vector& operator=(const Thyra::LC2<Scalar, Node1, Node2>& x);
 
-    /** Assign a scaled linear combination to this vector */
+    /**  \brief Assign a scaled linear combination to this vector */
     template<class Node>
     Vector& operator=(const Thyra::OpTimesLC<Scalar, Node>& x);
 
@@ -234,13 +260,13 @@ namespace Thyra
 
     /** \name Product vector operations */
     //@{
-    /** set block  */
+    /**  \brief set block  */
     void setBlock(int i, const ConstVector<Scalar>& v);
 
-    /** set block  */
+    /**  \brief set block  */
     void setBlock(int i, const Vector<Scalar>& v);
       
-    /** get modifiable block */
+    /**  \brief get modifiable block */
     Vector<Scalar> getBlock(int i);
       
     //@}
@@ -249,11 +275,12 @@ namespace Thyra
   /* copy */
   THYRA_UNARY_VECTOR_OP_DECL(copy, copyInto, assign, "copy");
 
-  /** \brief . */
+  /** \brief \relates Converter Form a Vector from this object. For Vector, the
+   * operation is simply a pass-through.. */
   template <class Scalar> inline
   Thyra::Vector<Scalar> formVector(const Thyra::Vector<Scalar>& x) {return x;}
   
-  /** \brief . */
+  /** \brief \relates Converter Form a Vector from this object. */
   template <class Scalar> inline
   Thyra::Vector<Scalar> formVector(const Thyra::ConstVector<Scalar>& x) 
   {return copy(x);}

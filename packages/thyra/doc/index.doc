@@ -24,6 +24,7 @@
       <li><a href="index.html#interfaces_nonlinear_solvers_ana_fundamental">Fundamental ANA Nonlinear Solver Interfaces</a>
       </ul>
     </ul>
+  <li>\ref thyra_handle_sec
   <li>\ref thyra_support_sec
     <ul>
     <li><a href="index.html#support_operator_vector">Operator/Vector Support</a>
@@ -156,6 +157,12 @@ structure of thyra</a>.
 
   </ul>
 
+</ul>
+
+\subsection thyra_handle_sec Thyra user interface with overloaded operators
+
+<ul>
+<li> The \ref thyra_handle_grp is described here
 </ul>
 
 \subsection thyra_support_sec Thyra support software and examples

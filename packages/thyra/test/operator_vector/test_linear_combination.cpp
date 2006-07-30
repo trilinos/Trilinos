@@ -30,7 +30,7 @@
 #include "Teuchos_DefaultComm.hpp"
 #include "Thyra_VectorImpl.hpp"
 #include "Thyra_VectorSpaceImpl.hpp"
-#include "Thyra_VectorOpTester.hpp"
+#include "Thyra_LinearCombinationTester.hpp"
 #include "Thyra_DefaultSpmdVectorSpace.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_ScalarTraits.hpp"
@@ -41,15 +41,18 @@ using namespace Teuchos;
 using namespace Thyra;
 
 
+#define SKIP_BLOCK_TESTS
+
+#define TEST_FLOATS
+#define TEST_COMPLEX
+
 template <class Scalar> inline 
-bool runVectorTests(int n, Teuchos::RefCountPtr<Teuchos::FancyOStream>& out)
+bool runTests(int n, Teuchos::RefCountPtr<Teuchos::FancyOStream>& out)
 {
   typedef typename Teuchos::ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType Mag;
 
-  bool ok = true;
-  
-  Mag epsErr = 1.0e1 * ST::prec();
+  Mag epsErr = n * 1.0e2 * ST::prec();
   Mag epsWarn = 1.0e2 * epsErr;
 
   /* ------- test on a monolithic space ------------ */
@@ -58,34 +61,12 @@ bool runVectorTests(int n, Teuchos::RefCountPtr<Teuchos::FancyOStream>& out)
   VectorSpace<Scalar> space 
     = new DefaultSpmdVectorSpace<Scalar>(DefaultComm<Index>::getComm(),n,-1);
   
-  VectorOpTester<Scalar> tester(space, out, TestSpecifier<Scalar>(true, epsErr, epsWarn));
+  TestSpecifier<Scalar> spec(true, epsErr, epsWarn);
   
-  ok = tester.runAllTests() && ok;
+  LinearCombinationTester<Scalar> tester(space, out, spec); 
   
-  /* -------- test on a block space ----------------*/
-  *out << "======= Testing on a block vector space ======" << std::endl;
-  VectorSpace<Scalar> blockSpace = productSpace(space, space);
-  
-  tester = VectorOpTester<Scalar>(blockSpace, out, 
-                                  TestSpecifier<Scalar>(true, epsErr, epsWarn));
-  
-  ok = tester.runAllTests() && ok;           
-  
-  
-  
-  
-  /* -------- test on a space with recursive block structure -----------*/
-  *out << "======= Testing on a recursively blocked vector space ======" << std::endl;
-  VectorSpace<Scalar> recSpace = productSpace(space, blockSpace);
-  
-  tester = VectorOpTester<Scalar>(recSpace, out,
-                                  TestSpecifier<Scalar>(true, epsErr, epsWarn));
-  
-  ok = tester.runAllTests() && ok;
-
-  return ok;
-}
-
+  return tester.runAllTests();
+}  
 
 int main( int argc, char *argv[] ) 
 {
@@ -99,32 +80,31 @@ int main( int argc, char *argv[] )
   
   try {
     
-    int  n = 100;
+    int  n = 20;
     CommandLineProcessor  clp;
     clp.throwExceptions(false);
-    clp.addOutputSetupOptions(true);
     bool verbose = false;
-    clp.setOption( "verbose", "quiet", &verbose,
-                   "Determines if any output is printed or not." );
+    clp.addOutputSetupOptions(true);
+    clp.setOption( "verbose", "quiet", &verbose, "Determines if any output is printed or not." );
     clp.setOption( "local-dim", &n, "Local number of elements in each constituent vector." );
     CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
     if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
+
     if (!verbose) out = rcp(new FancyOStream(rcp(new oblackholestream())));
     
-    
     /* testing on doubles */ 
-    success = runVectorTests<double>(n, out) ;
+    success = runTests<double>(n, out) ;
 
     /* testing on floats */ 
-    success = runVectorTests<float>(n, out) && success;
+    success = runTests<float>(n, out) && success;
 
 #if defined(HAVE_COMPLEX) && defined(HAVE_TEUCHOS_COMPLEX)
 
     /* testing on complex */ 
-    success = runVectorTests<std::complex<double> >(n, out) && success;
-
+    success = runTests<std::complex<double> >(n, out) && success;
 #endif
   }
+  
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true,out.get()?*out:std::cerr,success)
 
     if (success)

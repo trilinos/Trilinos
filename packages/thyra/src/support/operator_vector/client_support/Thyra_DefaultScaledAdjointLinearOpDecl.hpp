@@ -32,6 +32,7 @@
 #include "Thyra_ScaledAdjointLinearOpBaseDecl.hpp"
 #include "Thyra_SingleScalarLinearOpBaseDecl.hpp"
 #include "Teuchos_ConstNonconstObjectContainer.hpp"
+#include "Teuchos_Handleable.hpp"
 
 namespace Thyra {
 
@@ -111,8 +112,11 @@ template<class Scalar>
 class DefaultScaledAdjointLinearOp
   : virtual public ScaledAdjointLinearOpBase<Scalar>     // Interface
   , virtual protected SingleScalarLinearOpBase<Scalar>   // Implementation
+  , virtual public Teuchos::Handleable<LinearOpBase<Scalar> >
 {
 public:
+  /* */
+  TEUCHOS_GET_RCP(LinearOpBase<Scalar>);
 
   /** \brief . */
   using SingleScalarLinearOpBase<Scalar>::apply;

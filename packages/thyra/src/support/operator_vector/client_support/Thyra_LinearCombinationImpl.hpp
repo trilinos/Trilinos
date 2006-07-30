@@ -59,7 +59,7 @@ namespace Thyra
   {
     if (op_.constPtr().get() != 0)
       {
-        op_.apply(x_.evalToConst(), result, alpha_);
+        op_.apply(x_.convert(), result, alpha_);
       }
     else
       {
@@ -76,12 +76,12 @@ namespace Thyra
     if (op_.constPtr().get() != 0)
       {
         Thyra::Vector<Scalar> tmp;
-        op_.apply(x_.evalToConst(), tmp);
+        op_.apply(x_.convert(), tmp);
         axpy(s*alpha_, tmp, result);
       }
     else
       {
-        axpy(s*alpha_, x_.evalToConst(), result);
+        axpy(s*alpha_, x_.convert(), result);
       }
   } 
 
@@ -92,16 +92,13 @@ namespace Thyra
     if (op_.constPtr().get() != 0)
       {
         result = op_.range().createMember();
-        cout << "result = " << result.constPtr().get() << endl;
-        op_.apply(x_.evalToConst(), result, alpha_);
-        cout << "result = " << result.constPtr().get() << endl;
+        op_.apply(x_.convert(), result, alpha_);
       }
     else
       {
         result = Thyra::formVector(x_);
         if (alpha_ != one()) scale(result, alpha_);    
       }
-    cout << "result = " << result.constPtr().get() << endl;
     return result;
   }
 
@@ -120,7 +117,9 @@ namespace Thyra
   template <class Scalar, class Node1, class Node2> inline
   LC2<Scalar, Node1, Node2>::LC2(const Node1& x1, const Node2& x2, LCSign sign)
     : x1_(x1), x2_(x2), sign_(sign) 
-  {;}
+  {
+    ;
+  }
 
   template <class Scalar, class Node1, class Node2> inline
   bool LC2<Scalar, Node1, Node2>::containsVector(const Thyra::VectorBase<Scalar>* vec) const
@@ -164,7 +163,10 @@ namespace Thyra
    *
    *======================================================================*/
 
-  /* scalar * vec */
+  /**
+   * \relates Vector
+   * \brief Overloaded multiplication operator for scalar times vector 
+   */
   template <class Scalar> inline
   OpTimesLC<Scalar, Thyra::ConstVector<Scalar> > 
   operator*(const Scalar& alpha, 
@@ -173,7 +175,10 @@ namespace Thyra
     return OpTimesLC<Scalar, Thyra::ConstVector<Scalar> >(alpha, x);
   } 
 
-  /* vec * scalar */
+  /**
+   * \relates Vector
+   * \brief Overloaded multiplication operator for scalar times vector 
+   */
   template <class Scalar> inline
   OpTimesLC<Scalar, Thyra::ConstVector<Scalar> > 
   operator*(const Thyra::ConstVector<Scalar>& x, 
@@ -337,12 +342,12 @@ namespace Thyra
   
   /* OpTimesLC - vec */
   template <class Scalar, class Node> inline
-  LC2<Scalar, OpTimesLC<Scalar, Node>, Thyra::Vector<Scalar> >
+  LC2<Scalar, OpTimesLC<Scalar, Node>, Thyra::ConstVector<Scalar> >
   operator-(const OpTimesLC<Scalar, Node>& x1, 
             const Thyra::ConstVector<Scalar>& x2)
   {
-    return LC2<Scalar, OpTimesLC<Scalar, Node>, Thyra::Vector<Scalar> >(x1, x2,
-                                                                 LCSubtract);
+    return LC2<Scalar, OpTimesLC<Scalar, Node>, Thyra::ConstVector<Scalar> >(x1, x2,
+                                                                             LCSubtract);
   }
 
   
@@ -573,15 +578,21 @@ namespace Thyra
   template <class Scalar>
   template <class Node1, class Node2> inline
   Thyra::Vector<Scalar>::Vector(const Thyra::LC2<Scalar, Node1, Node2>& x)
-    : Thyra::ConstVector<Scalar>(x.formVector().constPtr())
-  {;}
+    : Teuchos::Handle<VectorBase<Scalar> >(),
+      Thyra::ConstVector<Scalar>()
+  {
+    setRcp(x.formVector().ptr());
+  }
 
   template <class Scalar> 
   template <class Node> inline
   Thyra::Vector<Scalar>::Vector(const Thyra::OpTimesLC<Scalar, Node>& x)
-    : Thyra::ConstVector<Scalar>(x.formVector())
+    : Teuchos::Handle<VectorBase<Scalar> >(),
+      Thyra::ConstVector<Scalar>()
+
   {
-    cout << "ptr().get() = " << this->ptr().get() << endl;
+    Vector<Scalar> y = x.formVector();
+    setRcp(y.ptr());
   }
 
 

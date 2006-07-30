@@ -34,6 +34,9 @@
 #include "Thyra_LinearOperatorDecl.hpp"
 #include "Thyra_BlockedLinearOpBase.hpp"
 #include "Thyra_DefaultBlockedLinearOp.hpp"
+#include "Thyra_DefaultMultipliedLinearOp.hpp"
+#include "Thyra_DefaultAddedLinearOp.hpp"
+#include "Thyra_DefaultScaledAdjointLinearOp.hpp"
 
 namespace Thyra
 {
@@ -143,7 +146,49 @@ namespace Thyra
     return *this;
   }
   
+  template <class Scalar> inline 
+  LinearOperator<Scalar> operator*(const ConstLinearOperator<Scalar>& A,
+                                   const ConstLinearOperator<Scalar>& B)
+  {
+    Teuchos::Array<Teuchos::RefCountPtr<const LinearOpBase<Scalar> > > AB(2);
+    AB[0] = A.constPtr();
+    AB[1] = B.constPtr();
 
+    Teuchos::RefCountPtr<LinearOpBase<Scalar> > ab 
+      = rcp(new DefaultMultipliedLinearOp<Scalar>(2, &(AB[0])));
+    return ab;
+  }
+
+  template <class Scalar> inline 
+  LinearOperator<Scalar> operator*(const Scalar& a, 
+                                   const ConstLinearOperator<Scalar>& A)
+  {
+    Teuchos::RefCountPtr<LinearOpBase<Scalar> > s  
+      = rcp(new DefaultScaledAdjointLinearOp<Scalar>(a, NOTRANS, A.constPtr()));
+    return s;
+  }
+
+  
+  template <class Scalar> inline 
+  LinearOperator<Scalar> operator*(const ConstLinearOperator<Scalar>& A,
+                                   const Scalar& a)
+  {
+    return a*A;
+  }
+  
+  template <class Scalar> inline 
+  LinearOperator<Scalar> operator+(const ConstLinearOperator<Scalar>& A,
+                                   const ConstLinearOperator<Scalar>& B)
+  {
+    Teuchos::Array<Teuchos::RefCountPtr<const LinearOpBase<Scalar> > > AB(2);
+    AB[0] = A.constPtr();
+    AB[1] = B.constPtr();
+
+    Teuchos::RefCountPtr<LinearOpBase<Scalar> > ab 
+      = rcp(new DefaultAddedLinearOp<Scalar>(2, &(AB[0])));
+    return ab;
+  }
+  
   template <class Scalar> inline 
   ConstLinearOperator<Scalar>
   block2x2(const ConstLinearOperator<Scalar>& A00,

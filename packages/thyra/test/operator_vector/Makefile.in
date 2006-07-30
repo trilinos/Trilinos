@@ -42,7 +42,7 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(test_block_op_SOURCES) $(test_composite_linear_ops_SOURCES) $(test_handles_SOURCES) $(test_product_space_SOURCES) $(test_scalar_product_SOURCES) $(test_std_ops_SOURCES)
+SOURCES = $(test_block_op_SOURCES) $(test_composite_linear_ops_SOURCES) $(test_handles_SOURCES) $(test_linear_combination_SOURCES) $(test_product_space_SOURCES) $(test_scalar_product_SOURCES) $(test_std_ops_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -66,7 +66,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
 noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
-	$(am__EXEEXT_4) $(am__EXEEXT_5) $(am__EXEEXT_6)
+	$(am__EXEEXT_4) $(am__EXEEXT_5) $(am__EXEEXT_6) \
+	$(am__EXEEXT_7)
 subdir = test/operator_vector
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -96,6 +97,7 @@ am__EXEEXT_3 = test_composite_linear_ops$(EXEEXT)
 am__EXEEXT_4 = test_std_ops$(EXEEXT)
 am__EXEEXT_5 = test_handles$(EXEEXT)
 am__EXEEXT_6 = test_block_op$(EXEEXT)
+am__EXEEXT_7 = test_linear_combination$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_test_block_op_OBJECTS = test_block_op.$(OBJEXT)
 test_block_op_OBJECTS = $(am_test_block_op_OBJECTS)
@@ -110,6 +112,10 @@ test_composite_linear_ops_OBJECTS =  \
 	$(am_test_composite_linear_ops_OBJECTS)
 am_test_handles_OBJECTS = test_handles.$(OBJEXT)
 test_handles_OBJECTS = $(am_test_handles_OBJECTS)
+am_test_linear_combination_OBJECTS =  \
+	test_linear_combination.$(OBJEXT)
+test_linear_combination_OBJECTS =  \
+	$(am_test_linear_combination_OBJECTS)
 am_test_product_space_OBJECTS = test_product_space.$(OBJEXT)
 test_product_space_OBJECTS = $(am_test_product_space_OBJECTS)
 am_test_scalar_product_OBJECTS = test_scalar_product.$(OBJEXT)
@@ -122,6 +128,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/test_block_op.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/test_composite_linear_ops.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/test_handles.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/test_linear_combination.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/test_product_space.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/test_scalar_product.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/test_std_ops.Po
@@ -132,10 +139,12 @@ CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
 SOURCES = $(test_block_op_SOURCES) \
 	$(test_composite_linear_ops_SOURCES) $(test_handles_SOURCES) \
+	$(test_linear_combination_SOURCES) \
 	$(test_product_space_SOURCES) $(test_scalar_product_SOURCES) \
 	$(test_std_ops_SOURCES)
 DIST_SOURCES = $(test_block_op_SOURCES) \
 	$(test_composite_linear_ops_SOURCES) $(test_handles_SOURCES) \
+	$(test_linear_combination_SOURCES) \
 	$(test_product_space_SOURCES) $(test_scalar_product_SOURCES) \
 	$(test_std_ops_SOURCES)
 ETAGS = etags
@@ -294,6 +303,7 @@ TEST_COMPOSITE_LINEAR_OPS = test_composite_linear_ops
 TEST_STD_OPS = test_std_ops
 TEST_HANDLES = test_handles
 TEST_BLOCK_OP = test_block_op
+TEST_LINEAR_COMBINATION = test_linear_combination
 test_product_space_SOURCES = $(srcdir)/test_product_space.cpp
 test_product_space_DEPENDENCIES = $(common_dependencies)
 test_product_space_LDADD = $(common_ldadd)
@@ -312,6 +322,9 @@ test_handles_LDADD = $(common_ldadd)
 test_block_op_SOURCES = $(srcdir)/test_block_op.cpp
 test_block_op_DEPENDENCIES = $(common_dependencies)
 test_block_op_LDADD = $(common_ldadd)
+test_linear_combination_SOURCES = $(srcdir)/test_linear_combination.cpp
+test_linear_combination_DEPENDENCIES = $(common_dependencies)
+test_linear_combination_LDADD = $(common_ldadd)
 
 #
 # Common stuff
@@ -370,6 +383,9 @@ test_composite_linear_ops$(EXEEXT): $(test_composite_linear_ops_OBJECTS) $(test_
 test_handles$(EXEEXT): $(test_handles_OBJECTS) $(test_handles_DEPENDENCIES) 
 	@rm -f test_handles$(EXEEXT)
 	$(CXXLINK) $(test_handles_LDFLAGS) $(test_handles_OBJECTS) $(test_handles_LDADD) $(LIBS)
+test_linear_combination$(EXEEXT): $(test_linear_combination_OBJECTS) $(test_linear_combination_DEPENDENCIES) 
+	@rm -f test_linear_combination$(EXEEXT)
+	$(CXXLINK) $(test_linear_combination_LDFLAGS) $(test_linear_combination_OBJECTS) $(test_linear_combination_LDADD) $(LIBS)
 test_product_space$(EXEEXT): $(test_product_space_OBJECTS) $(test_product_space_DEPENDENCIES) 
 	@rm -f test_product_space$(EXEEXT)
 	$(CXXLINK) $(test_product_space_LDFLAGS) $(test_product_space_OBJECTS) $(test_product_space_LDADD) $(LIBS)
@@ -389,6 +405,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_block_op.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_composite_linear_ops.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_handles.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_linear_combination.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_product_space.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_scalar_product.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_std_ops.Po@am__quote@
@@ -456,6 +473,22 @@ test_handles.obj: $(srcdir)/test_handles.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/test_handles.Po' tmpdepfile='$(DEPDIR)/test_handles.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o test_handles.obj `if test -f '$(srcdir)/test_handles.cpp'; then $(CYGPATH_W) '$(srcdir)/test_handles.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_handles.cpp'; fi`
+
+test_linear_combination.o: $(srcdir)/test_linear_combination.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT test_linear_combination.o -MD -MP -MF "$(DEPDIR)/test_linear_combination.Tpo" -c -o test_linear_combination.o `test -f '$(srcdir)/test_linear_combination.cpp' || echo '$(srcdir)/'`$(srcdir)/test_linear_combination.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/test_linear_combination.Tpo" "$(DEPDIR)/test_linear_combination.Po"; else rm -f "$(DEPDIR)/test_linear_combination.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_linear_combination.cpp' object='test_linear_combination.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/test_linear_combination.Po' tmpdepfile='$(DEPDIR)/test_linear_combination.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o test_linear_combination.o `test -f '$(srcdir)/test_linear_combination.cpp' || echo '$(srcdir)/'`$(srcdir)/test_linear_combination.cpp
+
+test_linear_combination.obj: $(srcdir)/test_linear_combination.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT test_linear_combination.obj -MD -MP -MF "$(DEPDIR)/test_linear_combination.Tpo" -c -o test_linear_combination.obj `if test -f '$(srcdir)/test_linear_combination.cpp'; then $(CYGPATH_W) '$(srcdir)/test_linear_combination.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_linear_combination.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/test_linear_combination.Tpo" "$(DEPDIR)/test_linear_combination.Po"; else rm -f "$(DEPDIR)/test_linear_combination.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_linear_combination.cpp' object='test_linear_combination.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/test_linear_combination.Po' tmpdepfile='$(DEPDIR)/test_linear_combination.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o test_linear_combination.obj `if test -f '$(srcdir)/test_linear_combination.cpp'; then $(CYGPATH_W) '$(srcdir)/test_linear_combination.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_linear_combination.cpp'; fi`
 
 test_product_space.o: $(srcdir)/test_product_space.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT test_product_space.o -MD -MP -MF "$(DEPDIR)/test_product_space.Tpo" -c -o test_product_space.o `test -f '$(srcdir)/test_product_space.cpp' || echo '$(srcdir)/'`$(srcdir)/test_product_space.cpp; \

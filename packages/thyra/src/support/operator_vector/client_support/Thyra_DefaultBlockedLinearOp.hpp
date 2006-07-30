@@ -543,7 +543,7 @@ void DefaultBlockedLinearOp<Scalar>::setBlockImpl(
     // We are doing a flexible fill so add the block to the stack of blocks or
     // replace a block that already exists.
     bool foundBlock = false;
-    for( int k = 0; k < Ops_stack_.size(); ++k ) {
+    for( unsigned int k = 0; k < Ops_stack_.size(); ++k ) {
       BlockEntry<Scalar> &block_i_j = Ops_stack_[k];
       if( block_i_j.i == i && block_i_j.j == j ) {
         block_i_j.block = block;

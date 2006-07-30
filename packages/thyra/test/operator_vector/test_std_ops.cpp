@@ -133,8 +133,9 @@ int main( int argc, char* argv[] ) {
   bool dumpAll = false;
 
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
-  const int procRank = Teuchos::GlobalMPISession::getRank();
-  const int numProc = Teuchos::GlobalMPISession::getNProc();
+  // KL 27 Jul 2006 -- Commenting out unused variables 
+  // const int procRank = Teuchos::GlobalMPISession::getRank();
+  // const int numProc = Teuchos::GlobalMPISession::getNProc();
 
   Teuchos::RefCountPtr<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();

@@ -182,7 +182,7 @@ namespace Thyra
   Vector<Scalar> dotSlash(const Converter<Scalar, ConstVector<Scalar> >& xIn, 
                           const Converter<Scalar, ConstVector<Scalar> >& y)
     {
-      ConstVector<Scalar> x = toVector(xIn);
+      ConstVector<Scalar> x = xIn.convert();
       Vector<Scalar> result = space(x).createMember();
       dotSlashInto(x, toVector(y), result);
       return result;
@@ -196,9 +196,10 @@ namespace Thyra
   void axpy(const Scalar& a, const Converter<Scalar, ConstVector<Scalar> >& xIn, 
             Vector<Scalar>& y)
   {
-    ConstVector<Scalar> x = toVector(xIn);
+    ConstVector<Scalar> x = xIn.convert();
     VectorBase<Scalar>* p = y.ptr().get();
-    const VectorBase<Scalar>* px = x.constPtr().get();
+    const VectorBase<Scalar>* px = x.rawPtr();
+    TEST_FOR_EXCEPT(px==0);
     Vp_StV(p, a, *px);
   }
 
@@ -208,7 +209,8 @@ namespace Thyra
   template <class Scalar> inline  
   void scale(Vector<Scalar>& x, const Scalar& a)
   {
-    VectorBase<Scalar>* p = x.ptr().get();
+    VectorBase<Scalar>* p = x.rawPtr();
+    TEST_FOR_EXCEPT(p==0);
     Thyra::scale(a, p);
   }
 

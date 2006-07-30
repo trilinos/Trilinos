@@ -31,7 +31,7 @@
 
 #include "Thyra_VectorImpl.hpp"
 #include "Thyra_VectorSpaceImpl.hpp"
-#include "Thyra_TestSpecifier.hpp"
+#include "Thyra_TesterBase.hpp"
 //#include "Thyra_SUNDIALS_Ops.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_MPIComm.hpp"
@@ -48,7 +48,7 @@ namespace Thyra
    * functions.
    */
   template <class Scalar>
-  class VectorOpTester
+  class VectorOpTester : public TesterBase<Scalar>
   {
   public:
     /** \brief Local typedef for promoted scalar magnitude */
@@ -56,8 +56,8 @@ namespace Thyra
 
     /** */
     VectorOpTester(const VectorSpace<Scalar>& space,
-                   const TestSpecifier<Scalar>& spec,
-                   const Teuchos::MPIComm& comm = Teuchos::MPIComm::world());
+                   Teuchos::RefCountPtr<Teuchos::FancyOStream>& out,
+                   const TestSpecifier<Scalar>& spec);
 
     /** */
     bool runAllTests() const ;
@@ -96,27 +96,16 @@ namespace Thyra
     bool indexTest() const ;
 
   private:
-
-    /** */
-    void randomizeVec(Vector<Scalar>& x) const ;
-
     TestSpecifier<Scalar> spec_;
-
-    VectorSpace<Scalar> space_;
-
-    Teuchos::MPIComm comm_;
-
-    Teuchos::RefCountPtr<Teuchos::FancyOStream> out_;
-
   };
 
   template <class Scalar> 
   inline VectorOpTester<Scalar>
   ::VectorOpTester(const VectorSpace<Scalar>& space,
-                   const TestSpecifier<Scalar>& spec,
-                   const Teuchos::MPIComm& comm)
-    : spec_(spec), space_(space), comm_(comm), 
-      out_(Teuchos::VerboseObjectBase::getDefaultOStream())
+                   Teuchos::RefCountPtr<Teuchos::FancyOStream>& out,
+                   const TestSpecifier<Scalar>& spec)
+    : TesterBase<Scalar>(space, 1, out),
+      spec_(spec)
   {;}
 
   template <class Scalar> 
@@ -140,14 +129,6 @@ namespace Thyra
   }
 
   template <class Scalar> 
-  inline void VectorOpTester<Scalar>
-  ::randomizeVec(Vector<Scalar>& x) const
-  {
-    typedef Teuchos::ScalarTraits<Scalar> ST;
-    Thyra::randomize(Scalar(-ST::one()),Scalar(+ST::one()),x.ptr().get());
-  }
-
-  template <class Scalar> 
   inline bool VectorOpTester<Scalar>
   ::sumTest() const 
   {
@@ -155,51 +136,28 @@ namespace Thyra
     typedef Teuchos::ScalarTraits<Scalar> ST;
     ScalarMag err = ST::magnitude(ST::zero());
     
-    if (spec_.doTest())
+    this->out() << "running vector addition test..." << endl;
+
+    Vector<Scalar> a = this->space().createMember();
+    Vector<Scalar> b = this->space().createMember();
+    Vector<Scalar> x = this->space().createMember();
+    Vector<Scalar> y = this->space().createMember();
+    randomizeVec(a);
+    randomizeVec(b);
+    
+    /* do the operation with member functions */
+    x = a + b ;
+    
+    /* do the operation elementwise. For off-processor elements, 
+     * this is a no-op */
+    for (int i=0; i<this->space().dim(); i++)
       {
-        *out_ << "running vector addition test..." << endl;
-
-        Vector<Scalar> a = space_.createMember();
-        Vector<Scalar> b = space_.createMember();
-        Vector<Scalar> x = space_.createMember();
-        Vector<Scalar> y = space_.createMember();
-        randomizeVec(a);
-        randomizeVec(b);
-
-        /* do the operation with member functions */
-        x = a + b ;
-        
-        /* do the operation elementwise. For off-processor elements, this is a no-op */
-        for (int i=0; i<space_.dim(); i++)
-          {
-            Scalar a_i = a[i];
-            Scalar b_i = b[i];
-            y[i] = a_i + b_i;
-          }
-
-        err = normInf(x-y);
-
-        *out_ << "|sum error|=" << err << endl;
-        if (err > spec_.errorTol())
-          {
-            *out_ << "vector sum test FAILED: tol = " 
-                 << spec_.errorTol() << endl;
-            return false;
-          }
-        else if (err > spec_.warningTol())
-          {
-            *out_ << "WARNING: vector sum test could not beat tol = " 
-                 << spec_.warningTol() << endl;
-          }
-	
+        Scalar a_i = a[i];
+        Scalar b_i = b[i];
+        y[i] = a_i + b_i;
       }
-    else
-      {
-        *out_ << "skipping vector addition test..." << endl;
-      }
-    *out_ << "vector addition test PASSED: error=" << err << ", tol = " 
-         << spec_.errorTol() << endl;
-    return true;
+    err = normInf(x-y);
+    return this->checkTest(spec_, err, "vector addition");
   }
 
  
@@ -212,20 +170,21 @@ namespace Thyra
     typedef Teuchos::ScalarTraits<Index> IST;
     typedef Teuchos::ScalarTraits<Scalar> ST;
 
-    ScalarMag err = ST::magnitude(ST::zero());
-
     /* this test requires a comparison operator to make sense */
     if (ST::isComparable && spec_.doTest())
       {
-        Vector<Scalar> a = space_.createMember();
+        ScalarMag err = ST::magnitude(ST::zero());
 
-        /* We will load a vector with zeros, then set a randomly selected element to 1.0 and 
+        Vector<Scalar> a = this->space().createMember();
+
+        /* We will load a vector with zeros, then set a randomly 
+         * selected element to 1.0 and 
          * another to -1.0. Run minloc and maxloc to test that the minimum and
          * maximum values are at the expected locations. */
 
         zeroOut(a);
 
-        int N = space_.dim();
+        int N = this->space().dim();
         int nTrials = 50;
 
         /* pick a seed in a way that is deterministic across processors */
@@ -252,29 +211,14 @@ namespace Thyra
             err += ST::magnitude(findMin - minIndex);
             err += ST::magnitude(findMax - maxIndex);
           }
-        
-        *out_ << "|bracket error|=" << err << endl;
-        if (err > spec_.errorTol())
-          {
-            *out_ << "vector bracket test FAILED: tol = " 
-                 << spec_.errorTol() << endl;
-            return false;
-          }
-        else if (err > spec_.warningTol())
-          {
-            *out_ << "WARNING: vector setElementUsingBracket test could not beat tol = " 
-                 << spec_.warningTol() << endl;
-          }
 
+        return this->checkTest(spec_, err, "bracket operator");
       }
     else
       {
-        *out_ << "skipping vector setElementUsingBracket test..." << endl;
+        this->out() << "skipping bracket operator test..." << endl;
+        return true;
       }
-    *out_ << "vector setElementUsingBracket test PASSED: error=" << err << ", tol = " 
-         << spec_.errorTol() << endl;
-
-    return true;
   }
 
   /* specialize the set element test for complex types to a no-op. 
@@ -285,7 +229,7 @@ namespace Thyra
   inline bool VectorOpTester<std::complex<double> >
   ::setElementUsingBracketTest() const 
   {
-    *out_ << "skipping vector setElementUsingBracket test..." << endl;
+    this->out() << "skipping vector bracket operator test..." << endl;
     return true;
   }
 
@@ -293,7 +237,7 @@ namespace Thyra
   inline bool VectorOpTester<std::complex<float> >
   ::setElementUsingBracketTest() const 
   {
-    *out_ << "skipping vector setElementUsingBracket test..." << endl;
+    this->out() << "skipping vector bracket operator test..." << endl;
     return true;
   }
 #endif
@@ -308,45 +252,26 @@ namespace Thyra
     typedef Teuchos::ScalarTraits<Scalar> ST;
     ScalarMag err = ST::magnitude(ST::zero());
 
-    if (spec_.doTest())
-      {
-        *out_ << "running vector dotStar test..." << endl;
-
-        Vector<Scalar> a = space_.createMember();
-        Vector<Scalar> b = space_.createMember();
-        Vector<Scalar> x = space_.createMember();
-        Vector<Scalar> y = space_.createMember();
-        Vector<Scalar> z = space_.createMember();
-        randomizeVec(a);
-        randomizeVec(b);
-
-        x = dotStar(a,b);
-        z = dotSlash(x, b);
-        
-        err = normInf(a-z);
-
-        *out_ << "|dotStar error|=" << err << endl;
-        if (err > spec_.errorTol())
-          {
-            *out_ << "vector dotStar test FAILED: tol = " 
-                 << spec_.errorTol() << endl;
-            return false;
-          }
-        else if (err > spec_.warningTol())
-          {
-            *out_ << "WARNING: vector dotStar test could not beat tol = " 
-                 << spec_.warningTol() << endl;
-          }
-	
-      }
-    else
-      {
-        *out_ << "skipping vector dotStar test..." << endl;
-      }
-    *out_ << "vector dotStar test PASSED: error=" << err << ", tol = " 
-         << spec_.errorTol() << endl;
-    return true;
+    this->out() << "running vector dotStar test..." << endl;
+    
+    Vector<Scalar> a = this->space().createMember();
+    Vector<Scalar> b = this->space().createMember();
+    Vector<Scalar> x = this->space().createMember();
+    Vector<Scalar> y = this->space().createMember();
+    Vector<Scalar> z = this->space().createMember();
+    randomizeVec(a);
+    randomizeVec(b);
+    
+    x = dotStar(a,b);
+    z = dotSlash(x, b);
+    
+    err = normInf(a-z);
+    
+    this->out() << "|dotStar error|=" << err << endl;
+    return this->checkTest(spec_, err, "dot-star");
   }
+
+
 
   template <class Scalar> 
   inline bool VectorOpTester<Scalar>
@@ -355,51 +280,30 @@ namespace Thyra
     typedef Teuchos::ScalarTraits<Scalar> ST;
     ScalarMag err = ST::magnitude(ST::zero());
 
-    if (spec_.doTest())
+    this->out() << "running vector scalarMult test..." << endl;
+    
+    Vector<Scalar> a = this->space().createMember();
+    Vector<Scalar> x = this->space().createMember();
+    Vector<Scalar> y = this->space().createMember();
+    randomizeVec(a);
+    
+    
+    /* do the operation with member functions */
+    Scalar alpha = 3.14;
+    x = alpha * a;
+    
+    /* do the operation elementwise */
+    
+    for (int i=0; i<this->space().dim(); i++)
       {
-        *out_ << "running vector scalarMult test..." << endl;
-
-        Vector<Scalar> a = space_.createMember();
-        Vector<Scalar> x = space_.createMember();
-        Vector<Scalar> y = space_.createMember();
-        randomizeVec(a);
-
-
-        /* do the operation with member functions */
-        Scalar alpha = 3.14;
-        x = alpha * a;
-
-        /* do the operation elementwise */
-
-        for (int i=0; i<space_.dim(); i++)
-          {
-            Scalar a_i = a[i];
-            y[i]= alpha *a_i;
-          }
-	
-        err = normInf(x-y);
-
-        *out_ << "|scalarMult error|=" << err << endl;
-        if (err > spec_.errorTol())
-          {
-            *out_ << "vector scalarMult test FAILED: tol = " 
-                 << spec_.errorTol() << endl;
-            return false;
-          }
-        else if (err > spec_.warningTol())
-          {
-            *out_ << "WARNING: vector scalarMult test could not beat tol = " 
-                 << spec_.warningTol() << endl;
-          }
-	
+        Scalar a_i = a[i];
+        y[i]= alpha *a_i;
       }
-    else
-      {
-        *out_ << "skipping vector scalarMult test..." << endl;
-      }
-    *out_ << "vector scalarMult test PASSED: error=" << err << ", tol = " 
-         << spec_.errorTol() << endl;
-    return true;
+    
+    err = normInf(x-y);
+    
+    this->out() << "|scalarMult error|=" << err << endl;
+    return this->checkTest(spec_, err, "scalar multiplication");
   }
  
   template <class Scalar> 
@@ -409,54 +313,33 @@ namespace Thyra
     typedef Teuchos::ScalarTraits<Scalar> ST;
     ScalarMag err = ST::magnitude(ST::zero());
 
-    if (spec_.doTest())
+    this->out() << "running vector overloadedUpdate test..." << endl;
+    
+    Vector<Scalar> a = this->space().createMember();
+    Vector<Scalar> b = this->space().createMember();
+    Vector<Scalar> x = this->space().createMember();
+    Vector<Scalar> y = this->space().createMember();
+    randomizeVec(a);
+    randomizeVec(b);
+    
+    
+    /* do the operation with member functions */
+    Scalar alpha = 3.14;
+    Scalar beta = 1.4;
+    x = alpha*a + beta*b;
+    
+    /* do the operation elementwise */
+    for (int i=0; i<this->space().dim(); i++)
       {
-        *out_ << "running vector overloadedUpdate test..." << endl;
-
-        Vector<Scalar> a = space_.createMember();
-        Vector<Scalar> b = space_.createMember();
-        Vector<Scalar> x = space_.createMember();
-        Vector<Scalar> y = space_.createMember();
-        randomizeVec(a);
-        randomizeVec(b);
-
-
-        /* do the operation with member functions */
-        Scalar alpha = 3.14;
-        Scalar beta = 1.4;
-        x = alpha*a + beta*b;
-
-        /* do the operation elementwise */
-        for (int i=0; i<space_.dim(); i++)
-          {
-            Scalar a_i = a[i];
-            Scalar b_i = b[i];
-            y[i] = alpha*a_i + beta*b_i;
-          }
-	
-        err = normInf(x-y);
-
-        *out_ << "|overloadedUpdate error|=" << err << endl;
-        if (err > spec_.errorTol())
-          {
-            *out_ << "vector overloadedUpdate test FAILED: tol = " 
-                 << spec_.errorTol() << endl;
-            return false;
-          }
-        else if (err > spec_.warningTol())
-          {
-            *out_ << "WARNING: vector overloadedUpdate test could not beat tol = " 
-                 << spec_.warningTol() << endl;
-          }
-	
+        Scalar a_i = a[i];
+        Scalar b_i = b[i];
+        y[i] = alpha*a_i + beta*b_i;
       }
-    else
-      {
-        *out_ << "skipping vector overloadedUpdate test..." << endl;
-      }
-    *out_ << "vector overloadedUpdate test PASSED: error=" << err << ", tol = " 
-         << spec_.errorTol() << endl;
-    return true;
+    
+    err = normInf(x-y);
+    
+    this->out() << "|overloadedUpdate error|=" << err << endl;
+    return this->checkTest(spec_, err, "overloaded update");
   }
 
   template <class Scalar> 
@@ -469,16 +352,16 @@ namespace Thyra
 
     if (spec_.doTest())
       {
-        *out_ << "running vector reciprocal test..." << endl;
+        this->out() << "running vector reciprocal test..." << endl;
 
-        Vector<Scalar> a = space_.createMember();
+        Vector<Scalar> a = this->space().createMember();
         randomizeVec(a);
 
-        Vector<Scalar> y = space_.createMember();
+        Vector<Scalar> y = this->space().createMember();
 
         /* load the operation elementwise */
-        int low = lowestLocallyOwnedIndex(space_);
-        int high = low + numLocalElements(space_);
+        int low = lowestLocallyOwnedIndex(this->space());
+        int high = low + numLocalElements(this->space());
 
         int denomsAreOK = true;
         for (int i=low; i<high; i++)
@@ -495,7 +378,7 @@ namespace Thyra
               }
           }
         
-        Vector<Scalar> x = space_.createMember();
+        Vector<Scalar> x = this->space().createMember();
         int tDenomsAreOK = Thyra::VInvTest(*(a.constPtr()), x.ptr().get());
         err = (x - y).norm2();
 
@@ -505,30 +388,30 @@ namespace Thyra
                        1, MPI_INT, MPI_LAND, comm_.getComm());
 #endif
 
-        *out_ << "|reciprocal error|=" << err << endl;
+        this->out() << "|reciprocal error|=" << err << endl;
         if (err > spec_.errorTol())
           {
-            *out_ << "vector reciprocal test FAILED: tol = " 
+            this->out() << "vector reciprocal test FAILED: tol = " 
                  << spec_.errorTol() << endl;
             return false;
           }
         else if (tDenomsAreOK != denomsAreOK)
           {
-            *out_ << "vector reciprocal test FAILED: trilinosDenomsOK="
+            this->out() << "vector reciprocal test FAILED: trilinosDenomsOK="
                  << tDenomsAreOK << ", denomsOK=" << denomsAreOK << endl;
             return false;
           }
         else if (err > spec_.warningTol())
           {
-            *out_ << "WARNING: vector reciprocal test could not beat tol = " 
+            this->out() << "WARNING: vector reciprocal test could not beat tol = " 
                  << spec_.warningTol() << endl;
           }
       }
     else
       {
-        *out_ << "skipping vector reciprocal test..." << endl;
+        this->out() << "skipping vector reciprocal test..." << endl;
       }
-    *out_ << "vector reciprocal test PASSED: error=" << err << ", tol = " 
+    this->out() << "vector reciprocal test PASSED: error=" << err << ", tol = " 
          << spec_.errorTol() << endl;
 #endif
     return true;
@@ -544,17 +427,17 @@ namespace Thyra
 
     if (spec_.doTest())
       {
-        *out_ << "running vector minQuotient test..." << endl;
+        this->out() << "running vector minQuotient test..." << endl;
 
-        Vector<Scalar> a = space_.createMember();
-        Vector<Scalar> b = space_.createMember();
+        Vector<Scalar> a = this->space().createMember();
+        Vector<Scalar> b = this->space().createMember();
 
         randomizeVec(a);
         randomizeVec(b);
 
         /* perform the operation elementwise */
-        int low = lowestLocallyOwnedIndex(space_);
-        int high = low + numLocalElements(space_);
+        int low = lowestLocallyOwnedIndex(this->space());
+        int high = low + numLocalElements(this->space());
 
         Scalar minQLocal = Teuchos::ScalarTraits<Scalar>::rmax();
         for (int i=low; i<high; i++)
@@ -574,28 +457,28 @@ namespace Thyra
 	
 
         Scalar tMinQ = Thyra::VMinQuotient(*(a.constPtr()), *(b.constPtr()));
-        *out_ << "trilinos minQ = " << tMinQ << endl;
-        *out_ << "elemwise minQ = " << minQ << endl;
+        this->out() << "trilinos minQ = " << tMinQ << endl;
+        this->out() << "elemwise minQ = " << minQ << endl;
         err = ST::magnitude(minQ - tMinQ);
         
-        *out_ << "min quotient error=" << err << endl;
+        this->out() << "min quotient error=" << err << endl;
         if (err > spec_.errorTol())
           {
-            *out_ << "min quotient test FAILED: tol = " 
+            this->out() << "min quotient test FAILED: tol = " 
                  << spec_.errorTol() << endl;
             return false;
           }
         else if (err > spec_.warningTol())
           {
-            *out_ << "WARNING: min quotient test could not beat tol = " 
+            this->out() << "WARNING: min quotient test could not beat tol = " 
                  << spec_.warningTol() << endl;
           }
       }
     else
       {
-        *out_ << "skipping min quotient test..." << endl;
+        this->out() << "skipping min quotient test..." << endl;
       }
-    *out_ << "min quotient test PASSED: error=" << err << ", tol = " 
+    this->out() << "min quotient test PASSED: error=" << err << ", tol = " 
          << spec_.errorTol() << endl;
 #endif
     return true;
@@ -613,18 +496,18 @@ namespace Thyra
 
     if (spec_.doTest())
       {
-        *out_ << "running vector constraintMask test..." << endl;
+        this->out() << "running vector constraintMask test..." << endl;
 
-        Vector<Scalar> a = space_.createMember();
-        Vector<Scalar> c = space_.createMember();
+        Vector<Scalar> a = this->space().createMember();
+        Vector<Scalar> c = this->space().createMember();
         randomizeVec(a);
 
-        Vector<Scalar> y = space_.createMember();
+        Vector<Scalar> y = this->space().createMember();
         Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
 
         /* load the operation elementwise */
-        int low = lowestLocallyOwnedIndex(space_);
-        int high = low + numLocalElements(space_);
+        int low = lowestLocallyOwnedIndex(this->space());
+        int high = low + numLocalElements(this->space());
 
         int allFeasible = true;
         for (int i=low; i<high; i++)
@@ -656,42 +539,42 @@ namespace Thyra
             allFeasible = allFeasible && feasible;
           }
 	
-        Vector<Scalar> m = space_.createMember();
+        Vector<Scalar> m = this->space().createMember();
         int tAllFeasible = Thyra::VConstrMask(*(a.constPtr()), *(c.constPtr()), m.ptr().get());
         err = (m - y).norm2();
 
 #ifdef HAVE_MPI
         int localAllFeas = allFeasible;
-        *out_ << "local all feas=" << localAllFeas << endl;
+        this->out() << "local all feas=" << localAllFeas << endl;
         MPI_Allreduce( (void*) &localAllFeas, (void*) &allFeasible, 
                        1, MPI_INT, MPI_LAND, comm_.getComm());
-        *out_ << "globalal all feas=" << allFeasible << endl;
+        this->out() << "globalal all feas=" << allFeasible << endl;
 #endif
 
-        *out_ << "|constraintMask error|=" << err << endl;
+        this->out() << "|constraintMask error|=" << err << endl;
         if (err > spec_.errorTol())
           {
-            *out_ << "vector constraintMask test FAILED: tol = " 
+            this->out() << "vector constraintMask test FAILED: tol = " 
                  << spec_.errorTol() << endl;
             return false;
           }
         else if (allFeasible != tAllFeasible)
           {
-            *out_ << "vector constraintMask test FAILED: trilinosFeas="
+            this->out() << "vector constraintMask test FAILED: trilinosFeas="
                  << tAllFeasible << ", feas=" << allFeasible << endl;
             return false;
           }
         else if (err > spec_.warningTol())
           {
-            *out_ << "WARNING: vector constraintMask test could not beat tol = " 
+            this->out() << "WARNING: vector constraintMask test could not beat tol = " 
                  << spec_.warningTol() << endl;
           }
       }
     else
       {
-        *out_ << "skipping vector constraintMask test..." << endl;
+        this->out() << "skipping vector constraintMask test..." << endl;
       }
-    *out_ << "vector constraintMask test PASSED: error=" << err << ", tol = " 
+    this->out() << "vector constraintMask test PASSED: error=" << err << ", tol = " 
          << spec_.errorTol() << endl;
 #endif
     return true;
@@ -708,11 +591,11 @@ namespace Thyra
 
     if (spec_.doTest())
       {
-        *out_ << "running vector compare-to-scalar test..." << endl;
+        this->out() << "running vector compare-to-scalar test..." << endl;
 
-        Vector<Scalar> a = space_.createMember();
-        Vector<Scalar> x = space_.createMember();
-        Vector<Scalar> y = space_.createMember();
+        Vector<Scalar> a = this->space().createMember();
+        Vector<Scalar> x = this->space().createMember();
+        Vector<Scalar> y = this->space().createMember();
         randomizeVec(a);
 
         /* do the operation with member functions */
@@ -720,8 +603,8 @@ namespace Thyra
         Thyra::VCompare(s, *(a.constPtr()), x.ptr().get());
 
         /* do the operation elementwise */
-        int low = lowestLocallyOwnedIndex(space_);
-        int high = low + numLocalElements(space_);
+        int low = lowestLocallyOwnedIndex(this->space());
+        int high = low + numLocalElements(this->space());
 
         for (int i=low; i<high; i++)
           {
@@ -731,25 +614,25 @@ namespace Thyra
 	
         err = normInf(x-y);
 
-        *out_ << "|compare-to-scalar error|=" << err << endl;
+        this->out() << "|compare-to-scalar error|=" << err << endl;
         if (err > spec_.errorTol())
           {
-            *out_ << "vector compare-to-scalar test FAILED: tol = " 
+            this->out() << "vector compare-to-scalar test FAILED: tol = " 
                  << spec_.errorTol() << endl;
             return false;
           }
         else if (err > spec_.warningTol())
           {
-            *out_ << "WARNING: vector compare-to-scalar test could not beat tol = " 
+            this->out() << "WARNING: vector compare-to-scalar test could not beat tol = " 
                  << spec_.warningTol() << endl;
           }
 	
       }
     else
       {
-        *out_ << "skipping vector compare-to-scalar test..." << endl;
+        this->out() << "skipping vector compare-to-scalar test..." << endl;
       }
-    *out_ << "vector compare-to-scalar test PASSED: error=" << err << ", tol = " 
+    this->out() << "vector compare-to-scalar test PASSED: error=" << err << ", tol = " 
          << spec_.errorTol() << endl;
 #endif
     return true;
@@ -766,18 +649,18 @@ namespace Thyra
 
     if (spec_.doTest())
       {
-        *out_ << "running vector index test..." << endl;
-        Vector<Scalar> a = space_.createMember();
-        Vector<Scalar> x = space_.createMember();
-        Vector<Scalar> y = space_.createMember();
+        this->out() << "running vector index test..." << endl;
+        Vector<Scalar> a = this->space().createMember();
+        Vector<Scalar> x = this->space().createMember();
+        Vector<Scalar> y = this->space().createMember();
         randomizeVec(a);
         /* do the operation with member functions */
         Scalar s = 0.5;
         Thyra::VCompare(s, *(a.constPtr()), x.ptr().get());
 
         /* do the operation elementwise */
-        int low = lowestLocallyOwnedIndex(space_);
-        int high = low + numLocalElements(space_);
+        int low = lowestLocallyOwnedIndex(this->space());
+        int high = low + numLocalElements(this->space());
 
         for (int i=low; i<high; i++)
           {
@@ -787,25 +670,25 @@ namespace Thyra
 	
         err = normInf(x-y);
 
-        *out_ << "|index error|=" << err << endl;
+        this->out() << "|index error|=" << err << endl;
         if (err > spec_.errorTol())
           {
-            *out_ << "vector index test FAILED: tol = " 
+            this->out() << "vector index test FAILED: tol = " 
                  << spec_.errorTol() << endl;
             return false;
           }
         else if (err > spec_.warningTol())
           {
-            *out_ << "WARNING: vector index test could not beat tol = " 
+            this->out() << "WARNING: vector index test could not beat tol = " 
                  << spec_.warningTol() << endl;
           }
 	
       }
     else
       {
-        *out_ << "skipping vector index test..." << endl;
+        this->out() << "skipping vector index test..." << endl;
       }
-    *out_ << "vector index test PASSED: error=" << err << ", tol = " 
+    this->out() << "vector index test PASSED: error=" << err << ", tol = " 
          << spec_.errorTol() << endl;
 #endif
     return true;

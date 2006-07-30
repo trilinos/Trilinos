@@ -34,6 +34,7 @@
 #include "Thyra_ProductVectorSpaceBase.hpp"
 #include "Teuchos_ConstNonconstObjectContainer.hpp"
 #include "Teuchos_Array.hpp"
+#include "Teuchos_Handleable.hpp"
 #include "Teuchos_arrayArg.hpp"
 
 namespace Thyra {
@@ -67,8 +68,11 @@ template<class Scalar>
 class DefaultBlockedLinearOp
   : virtual public PhysicallyBlockedLinearOpBase<Scalar>  // Public interface
   , virtual protected SingleScalarLinearOpBase<Scalar>    // Implementation detail
+  , virtual public Teuchos::Handleable<LinearOpBase<Scalar, Scalar> >
 {
 public:
+  /* */
+  TEUCHOS_GET_RCP(LinearOpBase<Scalar>);
 
   /** \brief . */
   using SingleScalarLinearOpBase<Scalar>::apply;

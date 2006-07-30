@@ -18,6 +18,9 @@
 
 (FRAMEWORK, INSTALL) {
     TESTS = operator_vector/test_product_space.exe,
+            operator_vector/test_handles.exe,
+            operator_vector/test_block_op.exe,
+            operator_vector/test_linear_combination.exe,
             operator_vector/test_std_ops.exe;
     ARGS = --verbose;
     COMM = MPI, SERIAL;
@@ -48,6 +51,7 @@
     ARGS = --use-spmd --verbose;
     COMM = MPI,SERIAL;
 }
+
 
 (FRAMEWORK, INSTALL) {
     TESTS = ../example/operator_vector/sillyCgSolve_serial.exe;

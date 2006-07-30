@@ -38,8 +38,12 @@ TEST_COMPOSITE_LINEAR_OPS = test_composite_linear_ops
 TEST_STD_OPS = test_std_ops
 TEST_HANDLES = test_handles
 TEST_BLOCK_OP = test_block_op
+TEST_LINEAR_COMBINATION = test_linear_combination
 
-noinst_PROGRAMS = $(TEST_PRODUCT_SPACE) $(TEST_SCALAR_PRODUCT) $(TEST_COMPOSITE_LINEAR_OPS) $(TEST_STD_OPS) $(TEST_HANDLES) $(TEST_BLOCK_OP)
+noinst_PROGRAMS = $(TEST_PRODUCT_SPACE) $(TEST_SCALAR_PRODUCT) \
+$(TEST_COMPOSITE_LINEAR_OPS) $(TEST_STD_OPS) $(TEST_HANDLES) \
+$(TEST_BLOCK_OP) $(TEST_LINEAR_COMBINATION)
+
 
 test_product_space_SOURCES = $(srcdir)/test_product_space.cpp
 test_product_space_DEPENDENCIES = $(common_dependencies)
@@ -65,6 +69,12 @@ test_handles_LDADD = $(common_ldadd)
 test_block_op_SOURCES = $(srcdir)/test_block_op.cpp
 test_block_op_DEPENDENCIES = $(common_dependencies)
 test_block_op_LDADD = $(common_ldadd)
+
+
+
+test_linear_combination_SOURCES = $(srcdir)/test_linear_combination.cpp
+test_linear_combination_DEPENDENCIES = $(common_dependencies)
+test_linear_combination_LDADD = $(common_ldadd)
 
 #
 # Common stuff

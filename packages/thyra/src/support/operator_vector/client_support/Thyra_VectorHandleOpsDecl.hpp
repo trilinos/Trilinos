@@ -120,16 +120,25 @@ namespace Thyra
                 const Scalar& bound, Index& index);
 
 
-  /** */
+  /**  
+   * \relates Vector
+   * \brief.
+   * */
   template <class Scalar>   
   void scaleInto(const Converter<Scalar, ConstVector<Scalar> >& x,
                  const Scalar& alpha, Vector<Scalar>& result);
 
-  /** */
+  /**  
+   * \relates Vector
+   * \brief.
+   * */
   template <class Scalar>   
   void scale(Vector<Scalar>& x, const Scalar& alpha);
 
-  /** */
+  /** 
+   * \relates Vector
+   * \brief.
+   *  */
   template <class Scalar>   
   void axpy(const Scalar& a, const Converter<Scalar, ConstVector<Scalar> >& x, 
             Vector<Scalar>& y);

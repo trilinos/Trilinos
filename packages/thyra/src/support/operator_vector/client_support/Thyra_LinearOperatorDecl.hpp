@@ -96,7 +96,10 @@ namespace Thyra
 
 
   /** 
-   *
+   * \brief LinearOperator is a user-level linear operator object supporting 
+   * overloaded operators.
+   * 
+   * \ingroup thrya_handle_grp
    */
   template <class RangeScalar, class DomainScalar=RangeScalar>
   class LinearOperator 
@@ -117,8 +120,29 @@ namespace Thyra
 
     /** Return the (blockRow, blockCol)-th subblock */
     LinearOperator<RangeScalar, DomainScalar> getBlock(int blockRow, int blockCol) ;
+
   };
 
+  /** \brief \relates LinearOperator */
+  template <class Scalar>
+  LinearOperator<Scalar> operator*(const Scalar& a, 
+                                   const ConstLinearOperator<Scalar>& A);
+
+  /** \brief \relates LinearOperator */
+  template <class Scalar>
+  LinearOperator<Scalar> operator*(const ConstLinearOperator<Scalar>& A,
+                                   const Scalar& a);
+
+  /** \brief \relates LinearOperator */
+  template <class Scalar>
+  LinearOperator<Scalar> operator*(const ConstLinearOperator<Scalar>& A,
+                                   const ConstLinearOperator<Scalar>& B);
+
+  /** \brief \relates LinearOperator */
+  template <class Scalar>
+  LinearOperator<Scalar> operator+(const ConstLinearOperator<Scalar>& A,
+                                   const ConstLinearOperator<Scalar>& B);
+  
   
   /** \brief Form an implicit block 2x2 linear operator <tt>[ A00, A01; A10, A11 ]</tt>.
    *

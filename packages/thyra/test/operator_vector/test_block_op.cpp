@@ -46,13 +46,18 @@ using namespace Teuchos;
 using namespace Thyra;
 
 
-LinearOperator<double> makeRandomDenseOperator(int nc, const VectorSpace<double>& rowSp)
+template <class Scalar> inline
+LinearOperator<Scalar> makeRandomDenseOperator(int nc, const VectorSpace<Scalar>& rowSp)
 {
-  RefCountPtr<Thyra::MultiVectorBase<double> > mv = rowSp.createMembers(nc);
-  Thyra::randomize(-1.0, 1.0, &*mv);
-  RefCountPtr<Thyra::LinearOpBase<double> > rtn = mv;
+  typedef typename Teuchos::ScalarTraits<Scalar> ST;
+  RefCountPtr<Thyra::MultiVectorBase<Scalar> > mv = rowSp.createMembers(nc);
+  Thyra::randomize(-ST::one(), ST::one(), &*mv);
+  RefCountPtr<Thyra::LinearOpBase<Scalar> > rtn = mv;
   return rtn;
 }
+
+template <class Scalar>
+bool runTest(Teuchos::RefCountPtr<Teuchos::FancyOStream>& out);
 
 int main(int argc, char *argv[]) 
 {
@@ -67,113 +72,142 @@ int main(int argc, char *argv[])
   
   try
     {
-      Array<int> rangeSpaceSizes = tuple(5, 10);
-      Array<int> domainSpaceSizes = tuple(5, 8);
+      CommandLineProcessor  clp;
+      clp.throwExceptions(false);
+      clp.addOutputSetupOptions(true);
+      bool verbose = false;
+      clp.setOption( "verbose", "quiet", &verbose, 
+                     "Determines if any output is printed or not." );
 
-      Array<VectorSpace<double> > rangeBlocks(rangeSpaceSizes.size());
-
-      Array<Array<LinearOperator<double> > > blocks(rangeSpaceSizes.size());
-
-      for (unsigned int br=0; br<rangeSpaceSizes.size(); br++)
-        {
-          int n = rangeSpaceSizes[br];
-          rangeBlocks[br] 
-            = new DefaultSpmdVectorSpace<double>(DefaultComm<Index>::getComm(),n,-1);
-
-          blocks[br].resize(domainSpaceSizes.size());
-
-          for (unsigned int bc=0; bc<domainSpaceSizes.size(); bc++)
-            {
-              blocks[br][bc] = makeRandomDenseOperator(domainSpaceSizes[bc],
-                                                       rangeBlocks[br]);
-            }
-        }
       
-      
-      LinearOperator<double> A = block2x2(blocks[0][0], blocks[0][1],
-                                          blocks[1][0], blocks[1][1]);
+      CommandLineProcessor::EParseCommandLineReturn parse_return 
+        = clp.parse(argc,argv);
+      if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
 
-      VectorSpace<double> domain = A.domain();
-      VectorSpace<double> range = A.range();
+      if (!verbose) out = rcp(new FancyOStream(rcp(new oblackholestream())));
 
-      *out << "A num block rows = " << A.numBlockRows() << endl;
-      *out << "A num block cols = " << A.numBlockCols() << endl;
 
-      *out << "A domain size = " << domain.dim() << endl;
-      *out << "A range size = " << range.dim() << endl;
+      success = runTest<double>(out);
 
-      Vector<double> x = domain.createMember();
-      cerr << "randomizing trial vector" << endl;
-      Thyra::randomize(-1.0, 1.0, x.ptr().get());
+      success = runTest<float>(out) && success;
 
-      Array<Vector<double> > xBlock(domain.numBlocks());
-      for (unsigned int i=0; i<xBlock.size(); i++)
-        {
-          xBlock[i] = x.getBlock(i);
-        }
-
-      *out << "x size = " << space(x).dim() << endl;
-
-      cerr << "------------------------------------------------------------" << endl;
-      cerr << "computing A*x..." << endl;
-      Vector<double> y0;
-      y0 = A * x;
-      cout << "y0 = " << y0.ptr().get() << endl;
-      for (int i=0; i<space(y0).numBlocks(); i++)
-        {
-          cerr << "y0[" << i << "] = " << endl << y0.getBlock(i) << endl;
-        }
-      
-
-      Vector<double> y1 = range.createMember();
-      cerr << "------------------------------------------------------------" << endl;
-      cerr << "computing A*x block-by-block..." << endl;
-      Array<Vector<double> > yBlock(range.numBlocks());
-      for (unsigned int i=0; i<yBlock.size(); i++)
-        {
-          yBlock[i] = range.getBlock(i).createMember();
-          zeroOut(yBlock[i]);
-          for (unsigned int j=0; j<xBlock.size(); j++)
-            {
-              LinearOperator<double> Aij = A.getBlock(i,j);
-              if (Aij.ptr().get() != 0)
-                {
-                  cerr << "A(" << i << ", " << j << ") = " << endl 
-                       << Aij << endl;
-                }
-              else
-                {
-                  cerr << "A(" << i << ", " << j << ") = 0 " << endl;
-                }
-              cerr << "x[" << j << "] = " << endl << xBlock[j] << endl;
-              if (Aij.ptr().get()==0) continue;
-              yBlock[i] = yBlock[i] + Aij * xBlock[j];
-            }
-          y1.setBlock(i, yBlock[i]);
-        }
-
-      for (int i=0; i<space(y1).numBlocks(); i++)
-        {
-          cerr << "y1[" << i << "] = " << endl << y1.getBlock(i) << endl;
-        }
-      double err = norm2(y1 - y0);
-      cerr << "error = " << err << endl;
-
-      double tol = 1.0e-13;
-      if (err < tol)
-        {
-          cerr << "block op test PASSED" << endl;
-        }
-      else
-        {
-          cerr << "block op test FAILED" << endl;
-        }
+      success = runTest<std::complex<double> >(out) && success;
     }
-  catch(std::exception& e)
-    {
-      cerr << "Caught exception: " << e.what() << endl;
-    }
+
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(true,out.get()?*out:std::cerr,success)
+
+    if (success)
+      {
+        *out << "all tests PASSED!" << std::endl;
+        return 0;
+      }
+    else
+      {
+        *out << "at least one test FAILED!" << std::endl;
+        return 1;
+      }
 }
 
 
+
+
+
+
+template <class Scalar> inline
+bool runTest(Teuchos::RefCountPtr<Teuchos::FancyOStream>& out)
+{
+  typedef typename Teuchos::ScalarTraits<Scalar> ST;
+  typedef typename ST::magnitudeType ScalarMag;
+  *out << "==========================================================================="
+       << endl;
+  *out << "running block operator test for " << ST::name() << endl;
+  *out << "==========================================================================="
+       << endl;
+  Array<int> rangeSpaceSizes = tuple(5, 10);
+  Array<int> domainSpaceSizes = tuple(5, 8);
+  
+  Array<VectorSpace<Scalar> > rangeBlocks(rangeSpaceSizes.size());
+  
+  Array<Array<LinearOperator<Scalar> > > blocks(rangeSpaceSizes.size());
+  
+  for (unsigned int br=0; br<rangeSpaceSizes.size(); br++)
+    {
+      int n = rangeSpaceSizes[br];
+      rangeBlocks[br] 
+        = new DefaultSpmdVectorSpace<Scalar>(DefaultComm<Index>::getComm(),n,-1);
+      
+      blocks[br].resize(domainSpaceSizes.size());
+      
+      for (unsigned int bc=0; bc<domainSpaceSizes.size(); bc++)
+        {
+          blocks[br][bc] = makeRandomDenseOperator<Scalar>(domainSpaceSizes[bc],
+                                                           rangeBlocks[br]);
+        }
+    }
+  
+  
+  LinearOperator<Scalar> A = block2x2(blocks[0][0], blocks[0][1],
+                                      blocks[1][0], blocks[1][1]);
+  
+  VectorSpace<Scalar> domain = A.domain();
+  VectorSpace<Scalar> range = A.range();
+  
+  *out << "A num block rows = " << A.numBlockRows() << endl;
+  *out << "A num block cols = " << A.numBlockCols() << endl;
+  
+  *out << "A domain size = " << domain.dim() << endl;
+  *out << "A range size = " << range.dim() << endl;
+  
+  Vector<Scalar> x = domain.createMember();
+  *out << "randomizing trial vector" << endl;
+  Thyra::randomize(-ST::one(), ST::one(), x.ptr().get());
+  
+  Array<Vector<Scalar> > xBlock(domain.numBlocks());
+  for (unsigned int i=0; i<xBlock.size(); i++)
+    {
+      xBlock[i] = x.getBlock(i);
+    }
+  
+  *out << "x size = " << space(x).dim() << endl;
+  
+  *out << "------------------------------------------------------------" << endl;
+  *out << "computing A*x..." << endl;
+  Vector<Scalar> y0;
+  y0 = A * x;
+  
+  
+  Vector<Scalar> y1 = range.createMember();
+  *out << "------------------------------------------------------------" << endl;
+  *out << "computing A*x block-by-block..." << endl;
+  Array<Vector<Scalar> > yBlock(range.numBlocks());
+  for (unsigned int i=0; i<yBlock.size(); i++)
+    {
+      yBlock[i] = range.getBlock(i).createMember();
+      zeroOut(yBlock[i]);
+      for (unsigned int j=0; j<xBlock.size(); j++)
+        {
+          LinearOperator<Scalar> Aij = A.getBlock(i,j);
+          if (Aij.ptr().get()==0) continue;
+          yBlock[i] = yBlock[i] + Aij * xBlock[j];
+        }
+      y1.setBlock(i, yBlock[i]);
+    }
+  
+  ScalarMag err = norm2(y1 - y0);
+  *out << "error = " << err << endl;
+  
+  ScalarMag tol = 1.0e2 * ST::prec();
+
+  bool ok = err < tol;
+  if (ok)
+    {
+      *out << "err=" << err << " tol=" << tol << ", test PASSED!" << endl;
+    }
+  else
+    {
+      *out << "err=" << err << " tol=" << tol << ", test FAILED!" << endl;
+    }
+
+  return err < tol;
+}
 

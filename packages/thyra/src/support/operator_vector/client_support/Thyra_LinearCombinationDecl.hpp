@@ -50,7 +50,11 @@ namespace Thyra
     virtual Thyra::Vector<Scalar> formVector() const = 0 ;
 
     /** */
-    Thyra::ConstVector<Scalar> convert() const {return this->formVector();}
+    Thyra::ConstVector<Scalar> convert() const 
+    {
+      Thyra::ConstVector<Scalar> rtn = this->formVector();
+      return this->formVector();
+    }
   };
 
 
@@ -89,7 +93,7 @@ namespace Thyra
     bool containsVector(const Thyra::VectorBase<Scalar>* vec) const ;
 
     /** */
-    const Thyra::ConstLinearOperator<Scalar>& op() const {return op_;}
+     const Thyra::ConstLinearOperator<Scalar>& op() const {return op_;}
 
     /** */
     const Scalar& alpha() const {return alpha_;}

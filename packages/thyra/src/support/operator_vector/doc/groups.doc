@@ -16,6 +16,8 @@ non-member functions.
 
 <li> \ref Thyra_Op_Vec_Adapters_grp
 
+<li> \ref thyra_handle_grp
+
 </ol>
 
 */
@@ -375,6 +377,13 @@ linear operators.
  *
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
+
+/** \defgroup thyra_handle_grp User interface with overloaded operators
+ *
+ * \ingroup Thyra_Op_Vec_ANA_Development_support_code_grp
+ */
+
+
 
 /** \defgroup Thyra_Op_Vec_ANA_Development_support_code_utils_grp General ANA support code utilities
  *

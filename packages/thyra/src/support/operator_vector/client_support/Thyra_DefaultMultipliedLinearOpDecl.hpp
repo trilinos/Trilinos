@@ -33,6 +33,7 @@
 #include "Thyra_SingleScalarLinearOpBase.hpp"
 #include "Teuchos_ConstNonconstObjectContainer.hpp"
 #include "Teuchos_arrayArg.hpp"
+#include "Teuchos_Handleable.hpp"
 
 namespace Thyra {
 
@@ -107,8 +108,11 @@ template<class Scalar>
 class DefaultMultipliedLinearOp
   : virtual public MultipliedLinearOpBase<Scalar>        // Public interface
   , virtual protected SingleScalarLinearOpBase<Scalar>   // Implementation detail
+  , virtual public Teuchos::Handleable<LinearOpBase<Scalar> >
 {
 public:
+  /* */
+  TEUCHOS_GET_RCP(LinearOpBase<Scalar>);
 
   /** \brief . */
   using SingleScalarLinearOpBase<Scalar>::apply;
