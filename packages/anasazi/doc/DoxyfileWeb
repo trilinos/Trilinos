@@ -46,7 +46,7 @@ PROJECT_NAME           = Anasazi
 
 INPUT                  = groups.doc ../src ../thyra/src index.doc 
 
-EXCLUDE                = ../src/ModalAnalysisSolvers ../src/AnasaziDenseMatTraits.hpp
+EXCLUDE                = ../src/ModalAnalysisSolvers ../src/AnasaziDenseMatTraits.hpp ../src/AnasaziDirectSolver.hpp
 
 EXAMPLE_PATH           = ../example
 

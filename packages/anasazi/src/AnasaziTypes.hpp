@@ -37,7 +37,8 @@
   \brief Types and exceptions used within Anasazi solvers and interfaces.
 */
 
-/*! Namespace %Anasazi contains the solvers, structs, enums and utilities used by the %Anasazi package.
+/*! \namespace Anasazi
+ *  \brief Namespace %Anasazi contains the solvers, structs, enums and utilities used by the %Anasazi package.
  */
 namespace Anasazi {
   //! @name Anasazi Exceptions
