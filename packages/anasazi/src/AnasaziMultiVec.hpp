@@ -53,7 +53,8 @@ template <class ScalarType>
 class MultiVec {
 public:
 
-	//@{ \name Constructor/Destructor.
+    //! @name Constructor/Destructor
+	//@{ 
 	//! Anasazi::MultiVec constructor.
 	MultiVec() {};
 
@@ -61,7 +62,8 @@ public:
 	virtual ~MultiVec () {};
 
 	//@}
-	//@{ \name Creation methods
+    //! @name Creation methods
+	//@{ 
 
 	/*! \brief Creates a new empty Anasazi::MultiVec containing \c numvecs columns.
 
@@ -97,7 +99,8 @@ public:
 	virtual MultiVec<ScalarType> * CloneView ( const std::vector<int>& index ) = 0;
 	//@}
 
-	//@{ \name Attribute methods	
+  //! @name Attribute methods	
+	//@{ 
 	//! Obtain the vector length of *this.
 
 	virtual int GetVecLength () const = 0;
@@ -107,7 +110,8 @@ public:
 	virtual int GetNumberVecs () const = 0;
 
 	//@}
-	//@{ \name Update methods
+  //! @name Update methods
+	//@{ 
 	/*! \brief Update \c *this with \c alpha * \c A * \c B + \c beta * (\c *this).
 	*/
 
@@ -139,7 +143,8 @@ public:
 			     ) const = 0;
   
 	//@}
-	//@{ \name Norm method
+  //! @name Norm method
+	//@{ 
 
 	/*! \brief Compute the 2-norm of each individual vector of \c *this.  
 	   Upon return, \c normvec[i] holds the 2-norm of the \c i-th vector of \c *this
@@ -148,7 +153,8 @@ public:
 	virtual void MvNorm ( std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>* normvec ) const = 0;
 
 	//@}
-	//@{ \name Initialization methods
+  //! @name Initialization methods
+	//@{ 
 	/*! \brief Copy the vectors in \c A to a set of vectors in \c *this.  The \c 
   	    numvecs vectors in \c A are copied to a subset of vectors in \c *this
 	    indicated by the indices given in \c index.
@@ -167,7 +173,8 @@ public:
 	virtual void MvInit ( const ScalarType alpha ) = 0;
 
 	//@}
-	//@{ \name Print method.
+  //! @name Print method
+	//@{ 
 	/*! \brief Print \c *this multivector to the \c os output stream.
 	*/
 	virtual void MvPrint ( ostream& os ) const = 0;
@@ -195,7 +202,8 @@ public:
   {
   public:
 
-    //@{ \name Creation methods
+    //! @name Creation methods
+    //@{ 
 
     /*! \brief Creates a new empty \c Anasazi::MultiVec containing \c numvecs columns.
       
@@ -237,7 +245,8 @@ public:
 
     //@}
 
-    //@{ \name Attribute methods
+    //! @name Attribute methods
+    //@{ 
 
     //! Obtain the vector length of \c mv.
     static int GetVecLength( const MultiVec<ScalarType>& mv )
@@ -249,7 +258,8 @@ public:
 
     //@}
 
-    //@{ \name Update methods
+    //! @name Update methods
+    //@{ 
 
     /*! \brief Update \c mv with \f$ \alpha AB + \beta mv \f$.
      */
@@ -290,7 +300,8 @@ public:
 		); }
 
     //@}
-    //@{ \name Norm method
+    //! @name Norm method
+    //@{ 
 
     /*! \brief Compute the 2-norm of each individual vector of \c mv.  
       Upon return, \c normvec[i] holds the value of \f$||mv_i||_2\f$, the \c i-th column of \c mv.
@@ -299,7 +310,8 @@ public:
     { mv.MvNorm(normvec); }
 
     //@}
-    //@{ \name Initialization methods
+    //! @name Initialization methods
+    //@{ 
     /*! \brief Copy the vectors in \c A to a set of vectors in \c mv indicated by the indices given in \c index.
 
     The \c numvecs vectors in \c A are copied to a subset of vectors in \c mv indicated by the indices given in \c index,
@@ -320,7 +332,8 @@ public:
 
     //@}
 
-    //@{ \name Print method
+    //! @name Print method
+    //@{ 
 
     /*! \brief Print the \c mv multi-vector to the \c os output stream.
      */

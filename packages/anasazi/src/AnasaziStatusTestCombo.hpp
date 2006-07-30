@@ -86,7 +86,8 @@ class StatusTestCombo : public StatusTest<ScalarType,MV,OP> {
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
-  //@{ \name Constructors/destructors.
+  //! @name Constructors/destructors
+  //@{ 
 
   //! Constructor
   //! \brief Default constructor has no tests and initializes to ComboType OR.
@@ -105,7 +106,8 @@ class StatusTestCombo : public StatusTest<ScalarType,MV,OP> {
   virtual ~StatusTestCombo() {};
   //@}
 
-  //@{ \name Status methods
+  //! @name Status methods
+  //@{ 
   /*! Check status as defined by test.
     
     \return TestStatus indicating whether the test passed or failed.
@@ -118,7 +120,8 @@ class StatusTestCombo : public StatusTest<ScalarType,MV,OP> {
   }
   //@}
 
-  //@{ \name Accessor methods
+  //! @name Accessor methods
+  //@{ 
 
   /*! \brief Set the maximum number of iterations.
    *  This also resets the test status to Undefined.
@@ -159,7 +162,8 @@ class StatusTestCombo : public StatusTest<ScalarType,MV,OP> {
 
   //@}
 
-  //@{ \name Reset methods
+  //! @name Reset methods
+  //@{ 
   //! \brief Informs the status test that it should reset its internal configuration to the uninitialized state.
   /*! The StatusTestCombo class has no internal state, but children classes might, so this method will call
      reset() on all child status tests. It also resets the test status to Undefined.
@@ -176,7 +180,8 @@ class StatusTestCombo : public StatusTest<ScalarType,MV,OP> {
 
   //@}
 
-  //@{ \name Print methods
+  //! @name Print methods
+  //@{ 
   
   //! Output formatted description of stopping test to output stream.
   ostream& print(ostream& os, int indent = 0) const;

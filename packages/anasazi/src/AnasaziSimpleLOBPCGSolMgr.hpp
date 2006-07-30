@@ -83,7 +83,8 @@ class SimpleLOBPCGSolMgr : public SolverManager<ScalarType,MV,OP> {
     
   public:
 
-  //@{ \name Constructors/Destructor.
+    //!@name Constructors/Destructor 
+  //@{ 
 
   //! Basic Constructor.
   SimpleLOBPCGSolMgr( const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem,
@@ -93,7 +94,8 @@ class SimpleLOBPCGSolMgr : public SolverManager<ScalarType,MV,OP> {
   virtual ~SimpleLOBPCGSolMgr() {};
   //@}
   
-  //@{ \name Accessor methods
+  //! @name Accessor methods
+  //@{ 
 
   Eigenproblem<ScalarType,MV,OP>& getProblem() const {
     return *_problem;
@@ -101,7 +103,8 @@ class SimpleLOBPCGSolMgr : public SolverManager<ScalarType,MV,OP> {
 
   //@}
 
-  //@{ \name Solver application methods.
+  //! @name Solver application methods
+  //@{ 
     
   /*! \brief This method performs possibly repeated calls to the underlying eigensolver's iterate() routine
    * until the problem has been solved (as decided by the solver manager) or the solver manager decides to 

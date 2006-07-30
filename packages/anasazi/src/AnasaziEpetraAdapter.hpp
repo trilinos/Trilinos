@@ -60,7 +60,8 @@ namespace Anasazi {
   */
   class EpetraMultiVec : public MultiVec<double>, public Epetra_MultiVector {
   public:
-    //@{ \name Constructors/Destructors
+    //! @name Constructors/Destructors
+    //@{ 
 
     //! Basic EpetraMultiVec constructor.
     /*! @param Map [in] An Epetra_LocalMap, Epetra_Map or Epetra_BlockMap.
@@ -98,7 +99,8 @@ namespace Anasazi {
 
     //@}
 
-    //@{ \name Creation methods
+    //! @name Creation methods
+    //@{ 
 
     /*! \brief Creates a new empty EpetraMultiVec containing \c numvecs columns.
       
@@ -133,7 +135,8 @@ namespace Anasazi {
 
     //@}
 
-    //@{ \name Attribute methods	
+    //! @name Attribute methods	
+    //@{ 
 
     //! Obtain the vector length of *this.
     int GetNumberVecs () const { return NumVectors(); }
@@ -143,7 +146,8 @@ namespace Anasazi {
 
     //@}
 
-    //@{ \name Update methods
+    //! @name Update methods
+    //@{ 
     /*! \brief Update \c *this with \f$\alpha AB + \beta (*this)\f$.
      */
     void MvTimesMatAddMv ( const double alpha, const MultiVec<double>& A, 
@@ -171,7 +175,8 @@ namespace Anasazi {
 		 ) const;
 
     //@}
-    //@{ \name Norm method
+    //! @name Norm method
+    //@{ 
     
     /*! \brief Compute the 2-norm of each individual vector of \c *this.  
       Upon return, \c normvec[i] holds the 2-norm of the \c i-th vector of \c *this
@@ -184,7 +189,8 @@ namespace Anasazi {
     };
     //@}
 
-    //@{ \name Initialization methods
+    //! @name Initialization methods
+    //@{ 
     /*! \brief Copy the vectors in \c A to a set of vectors in \c *this.  
 
     The \c numvecs vectors in \c A are copied to a subset of vectors in \c *this
@@ -201,7 +207,8 @@ namespace Anasazi {
     void MvInit ( const double alpha ) { int ret = PutScalar( alpha ); assert( ret == 0 ); };
 
     //@}
-    //@{ \name Print method.
+    //! @name Print method
+    //@{ 
     /*! \brief Print \c *this EpetraMultiVec.
      */
     void MvPrint( ostream& os ) const { os << *this << endl; };
@@ -225,7 +232,8 @@ namespace Anasazi {
   */
   class EpetraOp : public virtual Operator<double> {
   public:
-    //@{ \name Constructor/Destructor
+    //! @name Constructor/Destructor
+    //@{ 
     
     //! Basic constructor.  Accepts reference-counted pointer to an Epetra_Operator.
     EpetraOp(const Teuchos::RefCountPtr<Epetra_Operator> &Op );
@@ -234,7 +242,8 @@ namespace Anasazi {
     ~EpetraOp();
     //@}
     
-    //@{ \name Operator application method.
+    //! @name Operator application method
+    //@{ 
     
     /*! \brief This method takes the Anasazi::MultiVec \c X and
       applies the operator to it resulting in the Anasazi::MultiVec \c Y.
@@ -461,7 +470,8 @@ namespace Anasazi {
   {
   public:
 
-    //@{ \name Creation methods
+    //! @name Creation methods
+    //@{ 
 
     /*! \brief Creates a new empty Epetra_MultiVector containing \c numvecs columns.
       
@@ -512,7 +522,8 @@ namespace Anasazi {
 
     //@}
 
-    //@{ \name Attribute methods
+    //! @name Attribute methods
+    //@{ 
 
     //! Obtain the vector length of \c mv.
     static int GetVecLength( const Epetra_MultiVector& mv )
@@ -523,7 +534,8 @@ namespace Anasazi {
     { return mv.NumVectors(); }
     //@}
 
-    //@{ \name Update methods
+    //! @name Update methods
+    //@{ 
 
     /*! \brief Update \c mv with \f$ \alpha AB + \beta mv \f$.
      */
@@ -574,7 +586,8 @@ namespace Anasazi {
     }
 
     //@}
-    //@{ \name Norm method
+    //! @name Norm method
+    //@{ 
 
     /*! \brief Compute the 2-norm of each individual vector of \c mv.  
       Upon return, \c normvec[i] holds the value of \f$||mv_i||_2\f$, the \c i-th column of \c mv.
@@ -587,7 +600,8 @@ namespace Anasazi {
 
     //@}
 
-    //@{ \name Initialization methods
+    //! @name Initialization methods
+    //@{ 
     /*! \brief Copy the vectors in \c A to a set of vectors in \c mv indicated by the indices given in \c index.
      */
     static void SetBlock( const Epetra_MultiVector& A, const std::vector<int>& index, Epetra_MultiVector& mv )
@@ -623,7 +637,8 @@ namespace Anasazi {
 
     //@}
 
-    //@{ \name Print method
+    //! @name Print method
+    //@{ 
 
     /*! \brief Print the \c mv multi-vector to the \c os output stream.
      */

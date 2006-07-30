@@ -75,7 +75,8 @@ class LOBPCGSolMgr : public SolverManager<ScalarType,MV,OP> {
     
   public:
 
-  //@{ \name Constructors/Destructor.
+    //! @name Constructors/Destructor
+  //@{ 
 
   //! Default Constructor.
   LOBPCGSolMgr() {};
@@ -88,7 +89,8 @@ class LOBPCGSolMgr : public SolverManager<ScalarType,MV,OP> {
   virtual ~LOBPCGSolMgr() {};
   //@}
   
-  //@{ \name Accessor methods
+    //! @name Accessor methods
+  //@{ 
 
   Eigenproblem<ScalarType,MV,OP>& getProblem() const {
     return *_problem;
@@ -96,7 +98,8 @@ class LOBPCGSolMgr : public SolverManager<ScalarType,MV,OP> {
 
   //@}
 
-  //@{ \name Solver application methods.
+    //! @name Solver application methods
+  //@{ 
     
   /*! \brief This method performs possibly repeated calls to the underlying eigensolver's iterate() routine
    * until the problem has been solved (as decided by the solver manager) or the solver manager decides to 

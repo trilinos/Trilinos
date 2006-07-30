@@ -67,7 +67,8 @@
 
 namespace Anasazi {
 
-  //@{ \name BlockKrylovSchur Structures 
+  //! @name BlockKrylovSchur Structures 
+  //@{ 
 
   /** \brief Structure to contain pointers to BlockKrylovSchur state variables.
    *
@@ -88,7 +89,8 @@ namespace Anasazi {
 
   //@}
 
-  //@{ \name BlockKrylovSchur Exceptions
+  //! @name BlockKrylovSchur Exceptions
+  //@{ 
 
   /** \brief BlockKrylovSchurInitFailure is thrown when the BlockKrylovSchur solver is unable to
    * generate an initial iterate in the BlockKrylovSchur::initialize() routine. 
@@ -125,7 +127,8 @@ namespace Anasazi {
   template <class ScalarType, class MV, class OP>
   class BlockKrylovSchur : public Eigensolver<ScalarType,MV,OP> { 
   public:
-    //@{ \name Constructor/Destructor.
+    //! @name Constructor/Destructor
+    //@{ 
     
     //! %Anasazi::BlockKrylovSchur constructor.
     BlockKrylovSchur( const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem, 
@@ -141,7 +144,8 @@ namespace Anasazi {
     //@}
 
 
-    //@{ \name Solver methods.
+    //! @name Solver methods
+    //@{ 
     
     /*! \brief This method performs %BlockKrylovSchur iterations until the status
      * test indicates the need to stop or an error occurs (in which case, an
@@ -225,7 +229,8 @@ namespace Anasazi {
     //@}
 
 
-    //@{ \name Status methods.
+    //! @name Status methods
+    //@{ 
 
     //! \brief Get the current iteration count.
     int getNumIters() const { return(_iter); };
@@ -276,7 +281,8 @@ namespace Anasazi {
      */
     std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getRes2Norms()   {return _R2norms;}
 
-    //@{ \name Accessor routines
+    //! @name Accessor routines
+    //@{ 
 
 
     //! Get a constant reference to the eigenvalue problem.
@@ -337,7 +343,8 @@ namespace Anasazi {
 
     //@}
 
-    //@{ \name Output methods.
+    //! @name Output methods
+    //@{ 
     
     //! This method requests that the solver print out its current status to screen.
     void currentStatus(ostream &os);

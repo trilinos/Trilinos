@@ -32,10 +32,12 @@
 */
 
 /*
-    LOBPCG contains local storage of up to 10*_blockSize eigenvectors, representing 10 entities
+    LOBPCG contains local storage of up to 10*_blockSize vectors, representing 10 entities
       X,H,P,R
       KX,KH,KP  (product of K and the above)
       MX,MH,MP  (product of M and the above, not allocated if we don't have an M matrix)
+    If full orthogonalization is enabled, one extra multivector of _blockSize vectors is required to 
+    compute the local update of X and P.
     
     A solver is bound to an eigenproblem at declaration.
     Other solver parameters (e.g., block size, auxilliary vectors) can be changed dynamically.
@@ -69,22 +71,26 @@
 /*!     \class Anasazi::LOBPCG
         
         \brief This class implements the Locally-Optimal Block Preconditioned
-        Conjugate Gradient method for solving symmetric eigenvalue problems.
+        Conjugate Gradient (%LOBPCG) method for solving Hermitian eigenvalue problems.
         
-        This implementation is a modification of the one found in :
+        This implementation is a modification of the one found in 
         A. Knyazev, "Toward the optimal preconditioned eigensolver:
         Locally optimal block preconditioner conjugate gradient method",
-        SIAM J. Sci. Comput., vol 23, n 2, pp. 517-541
+        SIAM J. Sci. Comput., vol 23, n 2, pp. 517-541.
         
         The modification consists of the orthogonalization steps recommended in
-        U. Hetmaniuk and R. Lehoucq, "Basis Selection in LOBPCG", Journal of Computational Physics
+        U. Hetmaniuk and R. Lehoucq, "Basis Selection in LOBPCG", Journal of Computational Physics. 
+        
+        These modifcation are referred to as full orthogonalization, and consist of also conducting
+        the local optimization using an orthonormal basis.
         
         \author Chris Baker, Ulrich Hetmaniuk, Rich Lehoucq, Heidi Thornquist
 */
 
 namespace Anasazi {
 
-  //@{ \name LOBPCG Structures 
+  //! @name LOBPCG Structures
+  //@{ 
 
   /** \brief Structure to contain pointers to Anasazi state variables.
    *
@@ -105,7 +111,8 @@ namespace Anasazi {
 
   //@}
 
-  //@{ \name LOBPCG Exceptions
+  //! @name LOBPCG Exceptions
+  //@{ 
 
   /** \brief LOBPCGRitzFailure is thrown when the LOBPCG solver is unable to
    *  continue a call to LOBPCG::iterate() due to a failure of the algorithm.
@@ -129,7 +136,7 @@ namespace Anasazi {
    * generate an initial iterate in the LOBPCG::initialize() routine. 
    *
    * This exception is thrown from the LOBPCG::initialize() method, which is
-   * called by the user or from the LOBPCG::iterate() method if isInitialized()
+   * called by the user or from the LOBPCG::iterate() method when isInitialized()
    * == \c false.
    *
    * In the case that this exception is thrown, LOBPCG::hasP() and
@@ -142,13 +149,21 @@ namespace Anasazi {
     LOBPCGInitFailure(const std::string& what_arg) : AnasaziError(what_arg)
     {}};
 
-  /** \brief LOBPCGOrthoFailure is thrown when the orthogonalization manager is
-   * unable to orthogonalize the preconditioned residual (a.k.a. \c H) against
-   * the current iterate and search direction (\c X and \c P).
+  /** \brief LOBPCGOrthoFailure is thrown when an orthogonalization attempt 
+   * fails.
    *
-   * This exception is thrown from the LOBPCG::iterate() method, and only when
-   * full orthogonalization has been requested (LOBPCG::getFullOrtho() == \c
-   * true).
+   * This is thrown in one of two scenarios. After preconditioning the residual,
+   * the orthogonalization manager is asked to orthogonalize the preconditioned
+   * residual (\c H) against the auxiliary vectors. If full orthogonalization
+   * is enabled, \c H is also orthogonalized against \c X and \c P and normalized.
+   *
+   * The second scenario involves the generation of new \c X and \c P from the
+   * basis \c [X H P]. When full orthogonalization is enabled, an attempt is
+   * made to select coefficients for \c X and \c P so that they will be
+   * mutually orthogonal and orthonormal.
+   *
+   * If either of these attempts fail, the solver throws an LOBPCGOrthoFailure
+   * exception.
    *
    * \relates LOBPCG, LOBPCG::iterate(), LOBPCG::getFullOrtho()
    */
@@ -163,9 +178,10 @@ namespace Anasazi {
   class LOBPCG : public Eigensolver<ScalarType,MV,OP> { 
   public:
     
-    //@{ \name Constructor/Destructor.
+    //! @name Constructor/Destructor
+    //@{ 
     
-    //! %LOBPCG constructor.
+    //! %LOBPCG constructor
     LOBPCG( const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem, 
             const Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > &sorter,
             const Teuchos::RefCountPtr<OutputManager<ScalarType> > &printer,
@@ -174,11 +190,13 @@ namespace Anasazi {
             Teuchos::ParameterList &params 
           );
     
-    //! %LOBPCG destructor.
+    //! %LOBPCG destructor
     virtual ~LOBPCG() {};
+
     //@}
 
-    //@{ \name Solver methods.
+    //! @name Solver methods
+    //@{
     
     /*! \brief This method performs %LOBPCG iterations until the status test
      * indicates the need to stop or an error occurs (in which case, an
@@ -190,8 +208,8 @@ namespace Anasazi {
      * test evaluates as Passed, at which point the method returns to the
      * caller.
      *
-     * Possible exceptions thrown include std::logic_error or
-     * one of many LOBPCG-specific exceptions.
+     * Possible exceptions thrown include std::logic_error, std::invalid_argument or
+     * one of the LOBPCG-specific exceptions.
     */
     void iterate();
 
@@ -224,19 +242,19 @@ namespace Anasazi {
      *
      * \return bool indicating the state of the solver.
      * \post
-     * If isInitialized() == true,
+     * If isInitialized() == \c true,
      * <ul>
      * <li>X is orthogonal to auxilliary vectors and has orthonormal columns
      * <li>KX = Op*X
      * <li>MX = M*X if M != null
      * <li>getEigenvalues() returns the Ritz values with respect to X
      * <li>getResidualVecs() returns the residual vectors with respect to X
-     * <li>If hasP() == true,
+     * <li>If hasP() == \c true,
      *   <ul>
      *   <li>P orthogonal to auxilliary vectors
-     *   <li>If getFullOrtho() == true,
+     *   <li>If getFullOrtho() == \c true,
      *     <ul>
-     *     <li>P orthogonal to X and has orthonormal columns
+     *     <li>P is orthogonal to X and has orthonormal columns
      *     </ul>
      *   <li>KP = Op*P
      *   <li>MP = M*P if M != null
@@ -247,11 +265,9 @@ namespace Anasazi {
 
     /*! \brief Get the current state of the eigensolver.
      * 
-     * The data is only valid if isInitialized() == \c true. Furthermore, the
+     * The data is only valid if isInitialized() == \c true. The
      * data for the search directions \c P is only meaningful if hasP() == \c
-     * true.
-     *
-     * The data for the preconditioned residual is only meaningful in the scenario that
+     * true. Finally, the data for the preconditioned residual (\c H) is only meaningful in the situation where
      * the solver throws an ::LOBPCGRitzFailure exception during iterate().
      *
      * \returns An LOBPCGState object containing const pointers to the current
@@ -282,7 +298,8 @@ namespace Anasazi {
 
     //@}
 
-    //@{ \name Status methods.
+    //! @name Status methods
+    //@{
 
     //! \brief Get the current iteration count.
     int getNumIters() const { return(_iter); };
@@ -364,7 +381,8 @@ namespace Anasazi {
 
     //@}
 
-    //@{ \name Accessor routines
+    //!  @name Accessor routines
+    //@{
 
 
     //! Get a constant reference to the eigenvalue problem.
@@ -389,24 +407,23 @@ namespace Anasazi {
     /*! \brief Set the auxilliary vectors for the solver.
      *
      *  Because the current iterate X and search direction P cannot be assumed
-     *  orthogonal to the new auxilliary vectors, a call to setAuxVecs() may
-     *  reset the solver to the uninitialized state. This happens only in the
-     *  case where the user requests full orthogonalization when the solver is
-     *  in an initialized state with full orthogonalization disabled.
+     *  orthogonal to the new auxilliary vectors, a call to setAuxVecs() with a
+     *  non-empty argument will reset the solver to the uninitialized state.
      *
-     *  In order to preserve the current iterate, the user will need to extract
-     *  it from the solver using getEvecs(), orthogonalize it against the new
+     *  In order to preserve the current state, the user will need to extract
+     *  it from the solver using getState(), orthogonalize it against the new
      *  auxilliary vectors, and manually reinitialize the solver using
      *  initialize().
      */
     void setAuxVecs(const Teuchos::Array<Teuchos::RefCountPtr<const MV> > &auxvecs);
 
-    //! Get the auxilliary vectors for the solver.
+    //! Get the current auxilliary vectors.
     Teuchos::Array<Teuchos::RefCountPtr<const MV> > getAuxVecs() const {return _auxVecs;}
 
     //@}
 
-    //@{ \name %LOBPCG-specific accessor routines
+    //!  @name %LOBPCG-specific accessor routines
+    //@{
 
     //! Determine if the LOBPCG iteration is using full orthogonality.
     bool getFullOrtho() const { return(_fullOrtho); }
@@ -421,11 +438,11 @@ namespace Anasazi {
     //! Indicates whether the search direction given by getState() is valid.
     bool hasP() {return _hasP;}
 
-
     //@}
     
-    //@{ \name Output methods.
-    
+    //!  @name Output methods
+    //@{
+
     //! This method requests that the solver print out its current status to screen.
     void currentStatus(ostream &os);
 
@@ -589,11 +606,11 @@ namespace Anasazi {
     _numAuxVecs(0),
     _iter(0)
   {     
-    TEST_FOR_EXCEPTION(_problem == Teuchos::null,std::logic_error,
+    TEST_FOR_EXCEPTION(_problem == Teuchos::null,std::invalid_argument,
                        "Anasazi::LOBPCG::constructor: user specified null problem pointer.");
-    TEST_FOR_EXCEPTION(_problem->isProblemSet() == false, std::logic_error,
+    TEST_FOR_EXCEPTION(_problem->isProblemSet() == false, std::invalid_argument,
                        "Anasazi::LOBPCG::constructor: user specified problem is not set.");
-    TEST_FOR_EXCEPTION(_problem->isHermitian() == false, std::logic_error,
+    TEST_FOR_EXCEPTION(_problem->isHermitian() == false, std::invalid_argument,
                        "Anasazi::LOBPCG::constructor: user specified problem is not hermitian.");
 
     // set the block size and allocate data
@@ -616,7 +633,7 @@ namespace Anasazi {
     // if size is decreased, take the first blockSize vectors of all and leave state as is
     // otherwise, grow/allocate space and set solver to unitialized
 
-    TEST_FOR_EXCEPTION(blockSize <= 0, std::logic_error, "Anasazi::LOBPCG::setBlockSize was passed a non-positive block size");
+    TEST_FOR_EXCEPTION(blockSize <= 0, std::invalid_argument, "Anasazi::LOBPCG::setBlockSize was passed a non-positive block size");
     if (blockSize == _blockSize) {
       // do nothing
       return;
@@ -816,7 +833,7 @@ namespace Anasazi {
       }
       else {
         // an assignment would be redundant; take advantage of this opportunity to debug a little
-        TEST_FOR_EXCEPTION(_MX != _X, std::logic_error, "Anasazi::LOBPCG::initialize(): invariant not satisfied");
+        TEST_FOR_EXCEPTION(_MX != _X, std::logic_error, "Anasazi::LOBPCG::initialize(): solver invariant not satisfied");
       }
       if (state.KX != Teuchos::null && MVT::GetNumberVecs(*state.KX) >= _blockSize && MVT::GetVecLength(*state.KX) == MVT::GetVecLength(*_KX) ) {
         MVT::SetBlock(*state.KX,bsind,*_KX);

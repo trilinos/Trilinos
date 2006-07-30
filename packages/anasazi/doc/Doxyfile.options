@@ -2,7 +2,7 @@
 # Include the global look and feel options
 #
 @INCLUDE_PATH          = $(TRILINOS_HOME)/packages
-@INCLUDE               = ../../common/Doxyfile
+@INCLUDE               = common/Doxyfile
 #
 # Package options
 #
@@ -43,14 +43,14 @@ INLINE_INFO            = YES
 SORT_MEMBER_DOCS       = NO
 TAB_SIZE               = 2
 ENABLED_SECTIONS       = 
-GENERATE_TODOLIST      = NO # changed CGB
+GENERATE_TODOLIST      = YES
 GENERATE_TESTLIST      = YES
 QUIET                  = NO
 WARNINGS               = YES
 WARN_IF_UNDOCUMENTED   = YES
 WARN_FORMAT            = "$file:$line: $text"
 ALPHABETICAL_INDEX     = YES
-COLS_IN_ALPHA_INDEX    = 4
+COLS_IN_ALPHA_INDEX    = 5
 #
 # What diagrams are created
 #

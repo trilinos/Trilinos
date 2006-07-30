@@ -55,7 +55,8 @@
 
 namespace Anasazi {
 
-  //@{ \name StatusTest Exceptions
+  //! @name StatusTest Exceptions
+  //@{ 
 
   /** \brief Exception thrown to signal error in a status test during Anasazi::StatusTest::checkStatus().
    * \relates Anasazi::StatusTest
@@ -69,7 +70,8 @@ template <class ScalarType, class MV, class OP>
 class StatusTest {
 
  public:
-  //@{ \name Constructors/destructors.
+   //! @name Constructors/destructors
+  //@{ 
 
   //! Constructor
   StatusTest() {};
@@ -78,7 +80,8 @@ class StatusTest {
   virtual ~StatusTest() {};
   //@}
 
-  //@{ \name Status methods
+  //! @name Status methods
+  //@{ 
   /*! Check status as defined by test.
     
     \return TestStatus indicating whether the test passed or failed.
@@ -89,7 +92,8 @@ class StatusTest {
   virtual TestStatus getStatus() const = 0;
   //@}
 
-  //@{ \name Reset methods
+  //! @name Reset methods
+  //@{ 
   //! Informs the status test that it should reset its internal configuration to the uninitialized state.
   /*! This is necessary for the case when the status test is being reused by another solver or for another
     eigenvalue problem. The status test may have information that pertains to a particular problem or solver 
@@ -108,7 +112,8 @@ class StatusTest {
 
   //@}
 
-  //@{ \name Print methods
+  //! @name Print methods
+  //@{ 
   
   //! Output formatted description of stopping test to output stream.
   virtual ostream& print(ostream& os, int indent = 0) const = 0;

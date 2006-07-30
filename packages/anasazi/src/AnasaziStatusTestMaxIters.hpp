@@ -65,7 +65,8 @@ template <class ScalarType, class MV, class OP>
 class StatusTestMaxIters : public StatusTest<ScalarType,MV,OP> {
 
  public:
-  //@{ \name Constructors/destructors.
+   //! @name Constructors/destructors
+  //@{ 
 
   //! Constructor
   StatusTestMaxIters(int maxIter, bool negate = false) : _state(Undefined), _negate(negate) {
@@ -76,7 +77,8 @@ class StatusTestMaxIters : public StatusTest<ScalarType,MV,OP> {
   virtual ~StatusTestMaxIters() {};
   //@}
 
-  //@{ \name Status methods
+  //! @name Status methods
+  //@{ 
 
   /*! \brief Check status as defined by test.
     \return TestStatus indicating whether the test passed or failed.
@@ -96,7 +98,8 @@ class StatusTestMaxIters : public StatusTest<ScalarType,MV,OP> {
   }
   //@}
 
-  //@{ \name Accessor methods
+  //! @name Accessor methods
+  //@{ 
 
   /*! \brief Set the maximum number of iterations.
    *  This also resets the test status to Undefined.
@@ -111,7 +114,8 @@ class StatusTestMaxIters : public StatusTest<ScalarType,MV,OP> {
 
   //@}
 
-  //@{ \name Reset methods
+  //! @name Reset methods
+  //@{ 
   //! Informs the status test that it should reset its internal configuration to the uninitialized state.
   /*! The StatusTestMaxIters class has no internal state, so this call is equivalent to calling clearStatus().
     eigenvalue problem. The status test may have information that pertains to a particular problem or solver 
@@ -134,7 +138,8 @@ class StatusTestMaxIters : public StatusTest<ScalarType,MV,OP> {
 
   //@}
 
-  //@{ \name Print methods
+  //! @name Print methods
+  //@{ 
   
   //! Output formatted description of stopping test to output stream.
   ostream& print(ostream& os, int indent = 0) const {

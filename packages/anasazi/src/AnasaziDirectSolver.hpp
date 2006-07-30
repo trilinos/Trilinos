@@ -57,7 +57,8 @@ namespace Anasazi {
   {  
   public:
     
-    //@{ \name Constructor/Destructor
+    //! @name Constructor/Destructor
+    //@{ 
 
     //! Basic constructor.  
     DirectSolver() {}
@@ -67,7 +68,8 @@ namespace Anasazi {
     
     //@}
     
-    //@{ \name Eigensolver Projection Methods
+    //! @name Eigensolver Projection Methods
+    //@{ 
 
     //! Routine for computing the generalized eigenpairs of the symmetric pencil <tt>(KK, MM)</tt>
     /*!

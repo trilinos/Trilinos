@@ -54,7 +54,8 @@ namespace Anasazi {
   template <class ScalarType>
   class Operator {
   public:
-    //@{ \name Constructor/Destructor.
+    //! @name Constructor/Destructor
+    //@{ 
     //! Default constructor.
     Operator() {};
     
@@ -62,7 +63,8 @@ namespace Anasazi {
     virtual ~Operator() {};
     //@}
     
-    //@{ \name Operator application method.
+    //! @name Operator application method
+    //@{ 
     
     /*! \brief This method takes the Anasazi::MultiVec \c x and
       applies the operator to it resulting in the Anasazi::MultiVec \c y.
@@ -92,7 +94,8 @@ namespace Anasazi {
   {
   public:
   
-    //@{ \name Operator application method
+    //! @name Operator application method
+    //@{ 
 
     /*! \brief This method takes the Anasazi::MultiVec \c x and
       applies the Anasazi::Operator \c Op to it resulting in the Anasazi::MultiVec \c y.

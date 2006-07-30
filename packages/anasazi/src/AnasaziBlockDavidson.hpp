@@ -65,7 +65,8 @@
 
 namespace Anasazi {
 
-  //@{ \name BlockDavidson Structures 
+  //! @name BlockDavidson Structures 
+  //@{ 
 
   /** \brief Structure to contain pointers to BlockDavidson state variables.
    *
@@ -87,7 +88,8 @@ namespace Anasazi {
 
   //@}
 
-  //@{ \name BlockDavidson Exceptions
+  //! @name BlockDavidson Exceptions
+  //@{ 
 
   /** \brief BlockDavidsonInitFailure is thrown when the BlockDavidson solver is unable to
    * generate an initial iterate in the BlockDavidson::initialize() routine. 
@@ -124,7 +126,8 @@ namespace Anasazi {
   template <class ScalarType, class MV, class OP>
   class BlockDavidson : public Eigensolver<ScalarType,MV,OP> { 
   public:
-    //@{ \name Constructor/Destructor.
+    //! @name Constructor/Destructor
+    //@{ 
     
     //! %Anasazi::BlockDavidson constructor.
     BlockDavidson( const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem, 
@@ -140,7 +143,8 @@ namespace Anasazi {
     //@}
 
 
-    //@{ \name Solver methods.
+    //! @name Solver methods
+    //@{ 
     
     /*! \brief This method performs %BlockDavidson iterations until the status
      * test indicates the need to stop or an error occurs (in which case, an
@@ -222,7 +226,8 @@ namespace Anasazi {
     //@}
 
 
-    //@{ \name Status methods.
+    //! @name Status methods
+    //@{ 
 
     //! \brief Get the current iteration count.
     int getNumIters() const { return(_iter); };
@@ -283,7 +288,8 @@ namespace Anasazi {
       return ret;
     }
 
-    //@{ \name Accessor routines
+    //! @name Accessor routines
+    //@{ 
 
 
     //! Get a constant reference to the eigenvalue problem.
@@ -338,7 +344,8 @@ namespace Anasazi {
 
     //@}
 
-    //@{ \name Output methods.
+    //! @name Output methods
+    //@{ 
     
     //! This method requests that the solver print out its current status to screen.
     void currentStatus(ostream &os);

@@ -63,7 +63,8 @@ namespace Anasazi {
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
     typedef typename Teuchos::ScalarTraits<ScalarType>  SCT;
     
-    //@{ \name Constructor/Destructor
+    //! @name Constructor/Destructor
+    //@{ 
 
     //! Basic constructor.  
     /*! @param om [in] OutputManager to handle output from the utilities.
@@ -75,7 +76,8 @@ namespace Anasazi {
     
     //@}
     
-    //@{ \name Sorting Methods
+    //! @name Sorting Methods
+    //@{ 
     
     //! Sort the vector of eigenvalues \c y, optionally returning the permutation vector \c perm. 
     int sortScalars(int n, ScalarType *y, int *perm = 0) const;
@@ -88,7 +90,8 @@ namespace Anasazi {
 
     //@} 
 
-    //@{ \name Eigensolver Projection Methods
+    //! @name Eigensolver Projection Methods
+    //@{ 
 
     //! Mass orthogonalize \c X with-respect-to the orthogonalization parameter \c orthoType.
     /*! @param X [in/out] Multi-vector being orthogonalized/orthonormalized.
@@ -150,7 +153,8 @@ namespace Anasazi {
                      int* nev, int esType = 0) const;
     //@}
 
-    //@{ \name Sanity Checking Methods
+    //! @name Sanity Checking Methods
+    //@{ 
 
     //! Return the maximum value of \f$R_i^T M X_j / || MR_i || || X_j ||\f$
     /*! \note When \c M is not specified, the identity is used.
@@ -174,7 +178,8 @@ namespace Anasazi {
     // Reference counted pointer to output manager used by eigensolver.
     Teuchos::RefCountPtr<OutputManager<ScalarType> > _om;
 
-    //@{ \name Internal Typedefs
+    //! @name Internal Typedefs
+    //@{ 
 
     typedef MultiVecTraits<ScalarType,MV> MVT;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;

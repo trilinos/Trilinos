@@ -60,7 +60,8 @@ namespace Anasazi {
     bool _hasOp;
 
   public:
-    //@{ \name Constructor/Destructor.
+    //! @name Constructor/Destructor
+    //@{ 
     //! Default constructor.
     MatOrthoManager(Teuchos::RefCountPtr<const OP> Op = Teuchos::null) : _Op(Op), _hasOp(Op!=Teuchos::null) {};
 
@@ -68,7 +69,8 @@ namespace Anasazi {
     virtual ~MatOrthoManager() {};
     //@}
 
-    //@{ \name Accessor routines
+    //! @name Accessor routines
+    //@{ 
 
     //! Set operator.
     void setOp( Teuchos::RefCountPtr<const OP> Op ) { 
@@ -82,7 +84,8 @@ namespace Anasazi {
     //@}
 
 
-    //@{ \name Orthogonalization methods.
+    //! @name Orthogonalization methods
+    //@{ 
 
     /*! \brief Provides the inner product defining the orthogonality concepts, using the provided operator.
      */
@@ -300,7 +303,8 @@ namespace Anasazi {
 
     //@}
 
-    //@{ \name Error methods.
+    //! @name Error methods
+    //@{ 
 
     /*! \brief This method computes the error in orthonormality of a multivector.
      */

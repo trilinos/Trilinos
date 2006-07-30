@@ -53,7 +53,8 @@ class SolverManager {
     
   public:
 
-  //@{ \name Constructors/Destructor.
+    //!@name Constructors/Destructor 
+  //@{ 
 
   //! Default Constructor.
   SolverManager() {};
@@ -70,13 +71,15 @@ class SolverManager {
   virtual ~SolverManager() {};
   //@}
   
-  //@{ \name Accessor methods
+  //! @name Accessor methods
+  //@{ 
 
   virtual Eigenproblem<ScalarType,MV,OP>& getProblem() const = 0;
 
   //@}
 
-  //@{ \name Solver application methods.
+  //! @name Solver application methods
+  //@{ 
     
   /*! \brief This method performs possibly repeated calls to the underlying eigensolver's iterate() routine
    * until the problem has been solved (as decided by the solver manager) or the solver manager decides to 

@@ -58,7 +58,8 @@ class Eigensolver {
 
   public:
 
-  //@{ \name Constructors/Destructor.
+    //! @name Constructors/Destructor
+  //@{ 
 
   //! Default Constructor.
   Eigensolver() {};
@@ -80,7 +81,8 @@ class Eigensolver {
   //@}
 
 
-  //@{ \name Solver methods.
+    //! @name Solver methods
+  //@{ 
   
   /*! \brief This method performs eigensolvers iterations until the status test
     indicates the need to stop or an error occurs (in which case, an exception is thrown).
@@ -90,7 +92,8 @@ class Eigensolver {
   //@}
 
     
-  //@{ \name Status methods.
+    //! @name Status methods
+  //@{ 
   
   //! \brief Get the current iteration count.
   virtual int getNumIters() const = 0;
@@ -136,7 +139,8 @@ class Eigensolver {
 
 
   
-  //@{ \name Accessor methods
+    //! @name Accessor methods
+  //@{ 
 
   //! Get a constant reference to the eigenvalue problem.
   virtual const Eigenproblem<ScalarType,MV,OP>& getProblem() const = 0;
@@ -158,7 +162,8 @@ class Eigensolver {
 
   //@}
 
-  //@{ \name Output methods
+    //! @name Output methods
+  //@{ 
 
   //! This method requests that the solver print out its current status to screen.
   virtual void currentStatus(ostream &os) = 0;

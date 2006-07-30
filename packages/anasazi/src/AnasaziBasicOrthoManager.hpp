@@ -60,7 +60,8 @@ namespace Anasazi {
 
   public:
     
-    //@{ \name Constructor/Destructor.
+    //! @name Constructor/Destructor
+    //@{ 
     //! Constructor specifying re-orthogonalization tolerance.
     BasicOrthoManager( Teuchos::RefCountPtr<const OP> Op = Teuchos::null,
                        const MagnitudeType kappa = SCT::magnitude(1.5625) ) : MatOrthoManager<ScalarType,MV,OP>(Op), _kappa(kappa) {};
@@ -70,7 +71,8 @@ namespace Anasazi {
     //@}
 
 
-    //@{ \name Accessor routines
+    //! @name Accessor routines
+    //@{ 
 
     //! Set parameter for re-orthogonalization threshhold.
     void setKappa( const MagnitudeType kappa ) { _kappa = kappa; };
@@ -81,7 +83,8 @@ namespace Anasazi {
     //@} 
 
 
-    //@{ \name Orthogonalization methods.
+    //! @name Orthogonalization methods
+    //@{ 
 
     /*! \brief Given a list of (mutually and independently) orthonormal bases \c Q, this method
      * takes a multivector \c X and projects it onto the space orthogonal to the individual \c Q[i], 
@@ -148,7 +151,8 @@ namespace Anasazi {
 
     //@}
 
-    //@{ \name Error methods.
+    //! @name Error methods
+    //@{ 
 
     /*! \brief This method computes the error in orthonormality of a multivector, measured via \f$ \|X^T Op X - I\|_F \f$.
      *  The method has the option of

@@ -65,7 +65,8 @@ class StatusTestResNorm : public StatusTest<ScalarType,MV,OP> {
   typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
 
  public:
-  //@{ \name Constructors/destructors.
+  //! @name Constructors/destructors
+  //@{ 
 
   //! Constructor
   StatusTestResNorm(MagnitudeType tol, int quorum = -1, bool use2Norm = false, bool scaled = true);
@@ -74,7 +75,8 @@ class StatusTestResNorm : public StatusTest<ScalarType,MV,OP> {
   virtual ~StatusTestResNorm() {};
   //@}
 
-  //@{ \name Status methods
+  //! @name Status methods
+  //@{ 
   /*! Check status as defined by test.
     \return TestStatus indicating whether the test passed or failed.
   */
@@ -84,7 +86,8 @@ class StatusTestResNorm : public StatusTest<ScalarType,MV,OP> {
   TestStatus getStatus() const { return _state; }
   //@}
 
-  //@{ \name Reset methods
+  //! @name Reset methods
+  //@{ 
   //! Informs the status test that it should reset its internal configuration to the uninitialized state.
   /*! This is necessary for the case when the status test is being reused by another solver or for another
     eigenvalue problem. The status test may have information that pertains to a particular problem or solver 
@@ -107,7 +110,8 @@ class StatusTestResNorm : public StatusTest<ScalarType,MV,OP> {
 
   //@}
 
-  //@{ \name Accessor methods
+  //! @name Accessor methods
+  //@{ 
 
   /*! \brief Set quorum.
    *
@@ -170,7 +174,8 @@ class StatusTestResNorm : public StatusTest<ScalarType,MV,OP> {
 
   //@}
 
-  //@{ \name Print methods
+  //! @name Print methods
+  //@{ 
   
   //! Output formatted description of stopping test to output stream.
   ostream& print(ostream& os, int indent = 0) const;

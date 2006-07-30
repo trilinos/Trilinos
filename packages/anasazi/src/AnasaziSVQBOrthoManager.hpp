@@ -64,7 +64,8 @@ namespace Anasazi {
 
   public:
     
-    //@{ \name Constructor/Destructor.
+    //! @name Constructor/Destructor
+    //@{ 
     //! Constructor specifying re-orthogonalization tolerance.
     SVQBOrthoManager( Teuchos::RefCountPtr<const OP> Op = Teuchos::null, bool debug = false );
 
@@ -73,7 +74,8 @@ namespace Anasazi {
     //@}
 
 
-    //@{ \name Orthogonalization methods.
+    //! @name Orthogonalization methods
+    //@{ 
 
     /*! \brief Given a list of (mutually and independently) orthonormal bases \c Q, this method
      * takes a multivector \c X and projects it onto the space orthogonal to the individual \c Q[i], 
@@ -141,7 +143,8 @@ namespace Anasazi {
 
     //@}
 
-    //@{ \name Error methods.
+    //! @name Error methods
+    //@{ 
 
     /*! \brief This method computes the error in orthonormality of a multivector, measured via \f$ \|X^T Op X - I\|_F \f$.
      *  The method has the option of

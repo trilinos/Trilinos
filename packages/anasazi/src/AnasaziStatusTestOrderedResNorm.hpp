@@ -76,7 +76,8 @@ class StatusTestOrderedResNorm : public StatusTest<ScalarType,MV,OP> {
   typedef Teuchos::ScalarTraits<ScalarType>    SCT;
 
  public:
-  //@{ \name Constructors/destructors.
+  //! @name Constructors/destructors
+  //@{ 
 
   //! Constructor
   StatusTestOrderedResNorm(Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > sorter, MagnitudeType tol, int quorum = -1, bool use2Norm = false, bool scaled = true);
@@ -85,7 +86,8 @@ class StatusTestOrderedResNorm : public StatusTest<ScalarType,MV,OP> {
   virtual ~StatusTestOrderedResNorm() {};
   //@}
 
-  //@{ \name Status methods
+  //! @name Status methods
+  //@{ 
   /*! Check status as defined by test.
     \return TestStatus indicating whether the test passed or failed.
   */
@@ -95,7 +97,8 @@ class StatusTestOrderedResNorm : public StatusTest<ScalarType,MV,OP> {
   TestStatus getStatus() const { return _state; }
   //@}
 
-  //@{ \name Reset methods
+  //! @name Reset methods
+  //@{ 
   //! Informs the status test that it should reset its internal configuration to the uninitialized state.
   /*! This is necessary for the case when the status test is being reused by another solver or for another
     eigenvalue problem. The status test may have information that pertains to a particular problem or solver 
@@ -131,7 +134,8 @@ class StatusTestOrderedResNorm : public StatusTest<ScalarType,MV,OP> {
 
   //@}
 
-  //@{ \name Accessor methods
+  //! @name Accessor methods
+  //@{ 
 
   /*! \brief Set tolerance.
    *  This also resets the test status to Undefined.
@@ -179,7 +183,8 @@ class StatusTestOrderedResNorm : public StatusTest<ScalarType,MV,OP> {
 
   //@}
 
-  //@{ \name Print methods
+  //! @name Print methods
+  //@{ 
   
   //! Output formatted description of stopping test to output stream.
   ostream& print(ostream& os, int indent = 0) const;

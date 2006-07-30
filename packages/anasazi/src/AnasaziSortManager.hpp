@@ -53,7 +53,8 @@
 namespace Anasazi {
 
 
-  //@{ \name LOBPCG Exceptions
+  //! @name LOBPCG Exceptions
+  //@{ 
   /** \brief SortManagerError is thrown when the Anasazi::SortManager is unable to sort the numbers,
    *  due to some failure of the sort method or error in calling it.
    * \relates Anasazi::SortManager

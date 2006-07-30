@@ -42,7 +42,8 @@
 namespace Anasazi {
 
 
-    //@{ \name OperatorTraits Exceptions
+  //! @name OperatorTraits Exceptions
+    //@{ 
 
     /** \brief Exceptions thrown to signal error in operator application.
     */
@@ -80,7 +81,8 @@ namespace Anasazi {
   {
   public:
     
-    //@{ Matrix/Operator application method.
+    //! @name Operator application method.
+    //@{ 
     
     //! Application method which performs operation <b>y = Op*x</b>. An OperatorError exception is thrown if there is an error.
     static void Apply ( const OP& Op, 

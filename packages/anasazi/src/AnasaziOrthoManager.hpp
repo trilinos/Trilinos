@@ -57,7 +57,8 @@
 namespace Anasazi {
 
 
-  //@{ \name OrthoManager Exceptions
+  //! @name OrthoManager Exceptions
+  //@{ 
 
   /** \brief Exception thrown to signal error in an orthogonalization manager method.
    * \relates Anasazi::OrthoManager
@@ -70,7 +71,8 @@ namespace Anasazi {
   template <class ScalarType, class MV>
   class OrthoManager {
   public:
-    //@{ \name Constructor/Destructor.
+    //! @name Constructor/Destructor
+    //@{ 
     //! Default constructor.
     OrthoManager() {};
 
@@ -78,7 +80,8 @@ namespace Anasazi {
     virtual ~OrthoManager() {};
     //@}
 
-    //@{ \name Orthogonalization methods.
+    //! @name Orthogonalization methods
+    //@{ 
 
     /*! \brief Provides the inner product defining the orthogonality concepts.
 
@@ -147,7 +150,8 @@ namespace Anasazi {
 
     //@}
 
-    //@{ \name Error methods.
+    //! @name Error methods
+    //@{ 
 
     /*! \brief This method computes the error in orthonormality of a multivector.
      */

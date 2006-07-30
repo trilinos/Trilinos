@@ -38,7 +38,8 @@
 */
 
 namespace Anasazi {
-  //@{ \name Anasazi Exceptions
+  //! @name Anasazi Exceptions
+  //@{ 
 
   /** \brief An exception class parent to all Anasazi exceptions.
    */
@@ -52,7 +53,8 @@ namespace Anasazi {
 
 namespace Anasazi {
 
-  //@{ \name Anasazi Structures
+  //! @name Anasazi Structures
+  //@{ 
 
   /*! \struct Eigensolution
    *  \brief Struct for storing an eigenproblem solution.
@@ -69,7 +71,8 @@ namespace Anasazi {
 
   //@}
 
-  //@{ \name Anasazi Enumerations
+  //! @name Anasazi Enumerations
+  //@{ 
 
   /*!  \enum ReturnType    
        \brief Enumerated type used to pass back information from a solver manager.

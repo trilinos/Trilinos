@@ -49,7 +49,8 @@ namespace Anasazi {
     
   public:
     
-    //@{ \name Constructors/Destructor.
+    //! @name Constructors/Destructor
+    //@{ 
     
     //! Empty constructor - allows Anasazi::BasicEigenproblem to be described at a later time through "Set Methods".
     BasicEigenproblem();
@@ -67,7 +68,8 @@ namespace Anasazi {
     virtual ~BasicEigenproblem() {};
     //@}
     
-    //@{ \name Set Methods.
+    //! @name Set Methods
+    //@{ 
     
     /*! \brief Set the operator for which eigenvalues will be computed.  
 
@@ -142,7 +144,8 @@ namespace Anasazi {
 
     //@}
     
-    //@{ \name Accessor Methods.
+    //! @name Accessor Methods
+    //@{ 
     
     //! Get a pointer to the operator for which eigenvalues will be computed.
     Teuchos::RefCountPtr<OP> getOperator() const { return( _Op ); };

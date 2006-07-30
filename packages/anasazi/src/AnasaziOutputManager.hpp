@@ -52,7 +52,8 @@ class OutputManager {
 
   public:
 
-  //@{ \name Constructors/Destructor.
+    //!@name Constructors/Destructor 
+  //@{ 
 
   //! Default constructor
   OutputManager( int vb = Anasazi::Errors ) : _vb(vb) {};
@@ -61,7 +62,8 @@ class OutputManager {
   virtual ~OutputManager() {};
   //@}
   
-  //@{ \name Set/Get methods.
+  //! @name Set/Get methods
+  //@{ 
 
   //! Set the message output types for this manager.
   virtual void setVerbosity( int vb ) { _vb = vb; }
@@ -71,7 +73,8 @@ class OutputManager {
 
   //@}
 
-  //@{ \name Output methods.
+  //! @name Output methods
+  //@{ 
 
   //! Find out whether we need to print out information for this message type.
   /*! This method is used by the solver to determine whether computations are
@@ -89,7 +92,8 @@ class OutputManager {
 
   private:
 
-  //@{ \name Undefined methods.
+  //! @name Undefined methods
+  //@{ 
 
   //! Copy constructor.
   OutputManager( const OutputManager<ScalarType>& OM );

@@ -68,7 +68,8 @@ namespace Anasazi {
   {
   public:
     
-    //@{ \name Creation methods
+    //! @name Creation methods
+    //@{ 
 
     /*! \brief Creates a new empty \c MV containing \c numvecs columns.
       
@@ -110,7 +111,8 @@ namespace Anasazi {
 
     //@}
 
-    //@{ \name Attribute methods
+    //! @name Attribute methods
+    //@{ 
 
     //! Obtain the vector length of \c mv.
     static int GetVecLength( const MV& mv )
@@ -122,7 +124,8 @@ namespace Anasazi {
 
     //@}
 
-    //@{ \name Update methods
+    //! @name Update methods
+    //@{ 
 
     /*! \brief Update \c mv with \f$ \alpha AB + \beta mv \f$.
      */
@@ -155,7 +158,8 @@ namespace Anasazi {
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }     
 
     //@}
-    //@{ \name Norm method
+    //! @name Norm method
+    //@{ 
 
     /*! \brief Compute the 2-norm of each individual vector of \c mv.  
       Upon return, \c normvec[i] holds the value of \f$||mv_i||_2\f$, the \c i-th column of \c mv.
@@ -165,7 +169,8 @@ namespace Anasazi {
 
     //@}
 
-    //@{ \name Initialization methods
+    //! @name Initialization methods
+    //@{ 
     /*! \brief Copy the vectors in \c A to a set of vectors in \c mv indicated by the indices given in \c index.
 
     The \c numvecs vectors in \c A are copied to a subset of vectors in \c mv indicated by the indices given in \c index,
@@ -186,7 +191,8 @@ namespace Anasazi {
 
     //@}
 
-    //@{ \name Print method
+    //! @name Print method
+    //@{ 
 
     /*! \brief Print the \c mv multi-vector to the \c os output stream.
      */

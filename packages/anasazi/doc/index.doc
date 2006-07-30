@@ -6,17 +6,26 @@
    %Anasazi is an extensible and interoperable framework for large-scale eigenvalue algorithms.
 The motivation for this framework is to provide a generic interface to a collection of algorithms for 
 solving large-scale eigenvalue problems.
-Anasazi is interoperable because both the matrix and vectors (defining the
+%Anasazi is interoperable because both the matrix and vectors (defining the
 eigenspace) are considered to be opaque objects---only knowledge of the matrix and
-vectors via elementary operations is necessary. An implementation of Anasazi
+vectors via elementary operations is necessary. An implementation of %Anasazi
 is accomplished via the use of interfaces. Current interfaces available include
 Epetra and so any libraries that understand Epetra matrices and vectors (such
-as AztecOO) may also be used in conjunction with Anasazi.
+as AztecOO) may also be used in conjunction with %Anasazi.
 
-One of the goals of Anasazi is to allow the user the flexibility to specify the
+One of the goals of %Anasazi is to allow the user the flexibility to specify the
 data representation for the matrix and vectors and so leverage any existing software
-investment. The algorithms that are currently available through Anasazi are block Krylov-Schur,
-block Davidson, and locally-optimal block preconditioned conjugate gradient (LOBPCG) method. 
+investment. 
+
+   \section solvers Current Eigensolvers
+
+The algorithms that are currently available are:
+
+   <ul>
+   <li>block Krylov-Schur,
+   <li>block Davidson,
+   <li>locally-optimal block preconditioned conjugate gradient (LOBPCG) method. 
+   </ul>
 
    \section contributors Anasazi Contributors
 

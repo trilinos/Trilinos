@@ -56,7 +56,8 @@ class BasicOutputManager : public OutputManager<ScalarType> {
 
   public:
 
-  //@{ \name Constructors/Destructor.
+  //! @name Constructors/Destructor
+  //@{ 
 
   //! Default constructor
   BasicOutputManager( int vb = Anasazi::Errors, Teuchos::RefCountPtr<ostream> os = Teuchos::rcp(&std::cout,false) );
@@ -65,7 +66,8 @@ class BasicOutputManager : public OutputManager<ScalarType> {
   virtual ~BasicOutputManager() {};
   //@}
   
-  //@{ \name Set/Get methods.
+  //! @name Set/Get methods
+  //@{ 
 
   //! Set the output stream for this manager.
   void setOStream( Teuchos::RefCountPtr<ostream> os ) { _myOS = os; };
@@ -75,7 +77,8 @@ class BasicOutputManager : public OutputManager<ScalarType> {
 
   //@}
 
-  //@{ \name Output methods.
+  //! @name Output methods
+  //@{ 
 
   //! Find out whether we need to print out information for this message type.
   /*! This method is used by the solver to determine whether computations are
@@ -93,7 +96,8 @@ class BasicOutputManager : public OutputManager<ScalarType> {
 
   private:
 
-  //@{ \name Undefined methods.
+  //! @name Undefined methods
+  //@{ 
 
   //! Copy constructor.
   BasicOutputManager( const OutputManager<ScalarType>& OM );
