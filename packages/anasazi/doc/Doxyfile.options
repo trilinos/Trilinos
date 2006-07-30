@@ -12,7 +12,7 @@ PROJECT_NUMBER         = "Version of the Day"
 # What and how documentation is extracted
 #
 SUBGROUPING            = NO
-EXTRACT_ALL            = YES
+EXTRACT_ALL            = NO
 EXTRACT_PRIVATE        = NO
 EXTRACT_STATIC         = YES
 EXTRACT_LOCAL_CLASSES  = NO
