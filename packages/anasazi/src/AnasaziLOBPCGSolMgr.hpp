@@ -53,17 +53,16 @@
  *
  *  \brief The Anasazi::LOBPCGSolMgr provides a powerful and fully-featured solver manager over the LOBPCG eigensolver.
  *
- *  Features include: FINISH
- *  <ul>
- *  <li>
- *  </ul>
+ * This solver manager exists to provide a flexible manager over the Anasazi::LOBPCG eigensolver intended for general use. Features 
+ * provided by this solver manager include:
+ *   - locking of converged eigenpairs
+ *   - global convergence on only the significant eigenpairs (instead of any eigenpairs with low residual)
+ *   - recovery from Anasazi::LOBPCGRitzFailure when full orthogonalization is disabled
  *
- *
+ * These options are all driven by a list of parameters handed to the solver manager at construction. For more information, see Anasazi::LOBPCGSolMgr::LOBPCGSolMgr().
 
  \ingroup anasazi_solvermanagers
  */
-
-// finish: no memory allocation at runtime; be more efficient about this
 
 namespace Anasazi {
 
@@ -123,13 +122,27 @@ class LOBPCGSolMgr : public SolverManager<ScalarType,MV,OP> {
    * until the problem has been solved (as decided by the solver manager) or the solver manager decides to 
    * quit.
    *
-   * In the case of LOBPCGSolMgr, FINISH
+   * This method calls LOBPCG::iterate(), which will return either because a specially constructed status test evaluates to ::Passed
+   * or an exception is thrown.
    *
-   * \returns ReturnType specifying:
-   * <ul>
-   *    <li>Converged: the eigenproblem was solved to the specification required by the solver manager.
-   *    <li>Unconverged: the eigenproblem was not solved to the specification desired by the solver manager.
-   * </ul>
+   * In this case, a return from LOBPCG::iterate() signifies one of the following scenarios:
+   *    - the maximum number of iterations has been exceeded. In this scenario, the solver manager will place\n
+   *      all converged eigenpairs into the eigenproblem and return ::Unconverged.
+   *    - the locking conditions have been met. In this scenario, some of the current eigenpairs will be removed\n
+   *      from the eigensolver and place into auxiliary storage. The eigensolver will be restarted with the remaining\n
+   *      eigenpairs and some random information to replace the removed eigenpairs.
+   *    - global convergence has been met. In this case, the most significant NEV eigenpairs in the solver and locked storage  \n
+   *      have met the convergence criterion. (Here, NEV refers to the number of eigenpairs requested by the Eigenproblem.)    \n
+   *      In this scenario, the solver manager will return ::Converged.
+   *    - an LOBPCGRitzFailure exception has been thrown. If full orthogonalization is enabled and recovery from this exception\n
+   *      is requested, the solver manager will attempt to recover from this exception by gathering the current eigenvectors,  \n
+   *      preconditioned residual, and search directions from the eigensolver, orthogonormalizing the basis composed of these  \n
+   *      three, projecting the eigenproblem, and restarting the eigensolver with the solution of the project eigenproblem. Any \n
+   *      additional failure that occurs during this recovery effort will result in the eigensolver returning ::Unconverged.
+   *
+   * \returns ::ReturnType specifying:
+   *    - ::Converged: the eigenproblem was solved to the specification required by the solver manager.
+   *    - ::Unconverged: the eigenproblem was not solved to the specification desired by the solver manager
   */
   ReturnType solve();
   //@}
@@ -574,7 +587,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
         // quit
         printer->stream(Errors) << "Error! Recovered basis only rank " << rank << ". Block size is " << _blockSize << ".\n"
                                 << "Recovery failed." << endl;
-        throw;
+        break;
       }
       // reduce multivec size if necessary
       if (rank < localsize) {
@@ -609,7 +622,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
         printer->stream(Errors) << "Error! Recovered basis of rank " << rank << " produced only " << rank << "ritz vectors.\n"
                                 << "Block size is " << _blockSize << ".\n"
                                 << "Recovery failed." << endl;
-        throw;
+        break;
       }
       theta.resize(rank);
       //

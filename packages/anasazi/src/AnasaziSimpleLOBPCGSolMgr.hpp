@@ -121,11 +121,9 @@ class SimpleLOBPCGSolMgr : public SolverManager<ScalarType,MV,OP> {
    * until the problem has been solved (as decided by the solver manager) or the solver manager decides to 
    * quit.
    *
-   * \returns ReturnType specifying:
-   * <ul>
-   *    <li>Converged: the eigenproblem was solved to the specification required by the solver manager.
-   *    <li>Unconverged: the eigenproblem was not solved to the specification desired by the solver manager
-   * </ul>
+   * \returns ::ReturnType specifying:
+   *    - ::Converged: the eigenproblem was solved to the specification required by the solver manager.
+   *    - ::Unconverged: the eigenproblem was not solved to the specification desired by the solver manager
   */
   ReturnType solve();
   //@}
@@ -210,7 +208,7 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::solve() {
   // parameter list
   Teuchos::ParameterList plist;
   plist.set("Block Size",_blockSize);
-  plist.set("Full Ortho",false);
+  plist.set("Full Ortho",true);
 
   // create an LOBPCG solver
   Teuchos::RefCountPtr<LOBPCG<ScalarType,MV,OP> > lobpcg_solver 
