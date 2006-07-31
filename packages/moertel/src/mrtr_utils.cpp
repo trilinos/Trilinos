@@ -418,9 +418,9 @@ int MOERTEL::MatrixMatrixAdd(const Epetra_CrsMatrix& A, bool transposeA,double s
       for (int j=0; j<NumEntries; ++j)
       {
         err = B.SumIntoGlobalValues(Row,1,&Values[j],&Indices[j]);
-        if (err)
-        err = B.InsertGlobalValues(Row,1,&Values[j],&Indices[j]);
-        if (err != 0 && err != 1)
+        if (err<0 || err==2)
+          err = B.InsertGlobalValues(Row,1,&Values[j],&Indices[j]);
+        if (err < 0)
         {
           cout << "***ERR*** MOERTEL::MatrixMatrixAdd:\n"
                << "***ERR*** InsertGlobalValues returned " << err << "\n"
