@@ -85,10 +85,19 @@ class SimpleLOBPCGSolMgr : public SolverManager<ScalarType,MV,OP> {
     
   public:
 
-    //!@name Constructors/Destructor 
+  //!@name Constructors/Destructor 
   //@{ 
 
-  //! Basic Constructor.
+  /*! \brief Basic constructor for SimpleLOBPCGSolMgr.
+   *
+   * This constructor accepts the Eigenproblem to be solved in addition
+   * to a parameter list of options for the solver manager. These options include the following:
+   *   - "Which" - a \c string specifying the desired eigenvalues: SM, LM, SR or LR. Default: SR
+   *   - "Block Size" - a \c int specifying the block size to be used by the underlying LOBPCG solver. Default: problem->getNEV()
+   *   - "Maximum Iterations" - a \c int specifying the maximum number of iterations the underlying solver is allowed to perform. Default: 100
+   *   - "Verbosity" - a sum of MsgType specifying the verbosity. Default: Anasazi::Errors
+   *   - "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide convergence. Default: machine precision
+   */
   SimpleLOBPCGSolMgr( const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem,
                              Teuchos::ParameterList &pl );
 
@@ -141,13 +150,13 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::SimpleLOBPCGSolMgr(
   _tol(1e-6),
   _verb(Anasazi::Errors),
   _blockSize(0),
-  _maxIters(0)
+  _maxIters(100)
 {
   TEST_FOR_EXCEPTION(_problem == Teuchos::null, AnasaziError, "SimpleLOBPCGSolMgr: Problem not given to solver manager.");
   TEST_FOR_EXCEPTION(!_problem->isProblemSet(), AnasaziError, "SimpleLOBPCGSolMgr: Problem not set.");
   TEST_FOR_EXCEPTION(!_problem->isHermitian(), AnasaziError,  "SimpleLOBPCGSolMgr: Problem not hermitian.");
 
-  _whch = pl.get("Which","SM");
+  _whch = pl.get("Which","SR");
   TEST_FOR_EXCEPTION(_whch != "SM" && _whch != "LM" && _whch != "SR" && _whch != "LR",
                      AnasaziError,
                      "SimpleLOBPCGSolMgr: \"Which\" parameter must be SM, LM, SR or LR.");
@@ -164,7 +173,7 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::SimpleLOBPCGSolMgr(
                      AnasaziError,
                      "SimpleLOBPCGSolMgr: \"Block Size\" parameter must be strictly positive.");
 
-  _maxIters = pl.get("Max Iters",_maxIters);
+  _maxIters = pl.get("Maximum Iterations",_maxIters);
 }
 
 

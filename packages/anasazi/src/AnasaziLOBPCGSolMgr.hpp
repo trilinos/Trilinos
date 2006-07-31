@@ -63,6 +63,7 @@
  \ingroup anasazi_solvermanagers
  */
 
+// finish: no memory allocation at runtime; be more efficient about this
 
 namespace Anasazi {
 
@@ -78,13 +79,26 @@ class LOBPCGSolMgr : public SolverManager<ScalarType,MV,OP> {
     
   public:
 
-    //! @name Constructors/Destructor
+  //! @name Constructors/Destructor
   //@{ 
 
-  //! Default Constructor.
-  LOBPCGSolMgr() {};
-
-  //! Basic Constructor.
+  /*! \brief Basic constructor for LOBPCGSolMgr.
+   *
+   * This constructor accepts the Eigenproblem to be solved in addition
+   * to a parameter list of options for the solver manager. These options include the following:
+   *   - "Which" - a \c string specifying the desired eigenvalues: SM, LM, SR or LR. Default: "SR"
+   *   - "Block Size" - a \c int specifying the block size to be used by the underlying LOBPCG solver. Default: problem->getNEV()
+   *   - "Full Ortho" - a \c bool specifying whether the underlying solver should employ the full orthogonalization scheme. Default: true
+   *   - "Maximum Iterations" - a \c int specifying the maximum number of iterations the underlying solver is allowed to perform. Default: 100
+   *   - "Verbosity" - a sum of MsgType specifying the verbosity. Default: Anasazi::Errors
+   *   - "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide convergence. Default: machine precision.
+   *   - "Relative Convergence Tolerance" - a \c bool specifying whether residuals norms should be scaled by their eigenvalues for the purposing of deciding convergence. Default: true
+   *   - "Use Locking" - a \c bool specifying whether the algorithm should employ locking of converged eigenpairs. Default: false
+   *   - "Max Locked" - a \c int specifying the maximum number of eigenpairs to be locked. Default: problem->getNEV()
+   *   - "Locking Quorum" - a \c int specifying the number of eigenpairs that must meet the locking criteria before locking actually occurs. Default: 1
+   *   - "Locking Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide locking. Default: 0.1*convergence tolerance
+   *   - "Relative Locking Tolerance" - a \c bool specifying whether residuals norms should be scaled by their eigenvalues for the purposing of deciding locking. Default: true
+   */
   LOBPCGSolMgr( const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem,
                              Teuchos::ParameterList &pl );
 

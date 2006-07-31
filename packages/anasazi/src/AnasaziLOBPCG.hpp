@@ -182,7 +182,7 @@ namespace Anasazi {
     
     /*! \brief LOBPCG constructor with eigenproblem, solver utilities, and parameter list of solver options.
      *
-     * This constructor takes pointer required by the eigensolver, in addition
+     * This constructor takes pointers required by the eigensolver, in addition
      * to a parameter list of options for the eigensolver. These options include the following:
      *   - "Block Size" - an \c int specifying the block size used by the algorithm. This can also be specified using the setBlockSize() method.
      *   - "Full Ortho" - a \c bool specifying whether the solver should employ a full orthogonalization technique. This can also be specified using the setFullOrtho() method.
