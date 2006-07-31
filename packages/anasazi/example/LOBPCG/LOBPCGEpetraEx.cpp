@@ -31,7 +31,6 @@
 
 #include "AnasaziConfigDefs.hpp"
 
-#include "BlockPCGSolver.h"
 #include "AnasaziEpetraAdapter.hpp"
 #include "Epetra_CrsMatrix.h"
 

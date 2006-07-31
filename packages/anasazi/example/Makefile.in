@@ -271,8 +271,8 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-DISABLED = BlockDavidson BlockKrylovSchur 
-SUBDIRS = LOBPCG MVOPTester
+DISABLED = BlockKrylovSchur 
+SUBDIRS = BlockDavidson LOBPCG MVOPTester
 all: all-recursive
 
 .SUFFIXES:

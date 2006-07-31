@@ -32,9 +32,9 @@
 //
 //
 #include "AnasaziConfigDefs.hpp"
+
 #include "AnasaziEpetraAdapter.hpp"
 #include "Epetra_CrsMatrix.h"
-#include "Epetra_Vector.h"
 
 #include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziSimpleLOBPCGSolMgr.hpp"

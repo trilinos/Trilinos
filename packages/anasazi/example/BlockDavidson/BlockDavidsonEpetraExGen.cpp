@@ -27,17 +27,18 @@
 // @HEADER
 //
 // This example computes the smallest eigenvalues of the discretized 2D Laplacian
-// operator using the block Davidson method.  This problem is discretized using 
+// operator using the Block Davidson method.  This problem is discretized using 
 // Q2 finite elements, resulting in a generalized eigenvalue problem of the form 
 // Ax = Mx\lambda.
 //
 //
 #include "AnasaziConfigDefs.hpp"
-#include "AnasaziBlockDavidson.hpp"
+
 #include "AnasaziEpetraAdapter.hpp"
 #include "Epetra_CrsMatrix.h"
-#include "AnasaziBasicSort.hpp"
+
 #include "AnasaziBasicEigenproblem.hpp"
+#include "AnasaziBlockDavidsonSolMgr.hpp"
 
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
@@ -49,27 +50,24 @@
 
 #include "ModeLaplace2DQ2.h"
 
-int main(int argc, char *argv[]) 
-{
+int main(int argc, char *argv[]) {
   int i;
-  int info = 0;
-  
-#ifdef EPETRA_MPI  
+
+#ifdef EPETRA_MPI
   // Initialize MPI
   MPI_Init(&argc,&argv);
+#endif
+
+#ifdef EPETRA_MPI
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
 #else
   Epetra_SerialComm Comm;
 #endif
-  
-  Anasazi::ReturnType returnCode = Anasazi::Ok;  
-  
+
   int MyPID = Comm.MyPID();
 
-  // Create an output manager to handle the I/O from the solver
-  Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM =
-    Teuchos::rcp( new Anasazi::OutputManager<double>( MyPID ) );
-  MyOM->SetVerbosity( Anasazi::FinalSummary );  
+  Anasazi::ReturnType returnCode;
+  bool verbose = true;
 
   std::string which;
   if (argc > 1) {
@@ -79,7 +77,7 @@ int main(int argc, char *argv[])
     which = "SM";
   }
   if ( which != "SM" && which != "LM" && which != "SR" && which != "LR" ) {
-    if (MyOM->doPrint()) {
+    if (verbose && MyPID==0) {
       std::cout << "Usage: " << argv[0] << " [sort string]" << endl
         << "where:" << endl
         << "sort string       - SM | LM | SR | LR" << endl << endl;
@@ -89,9 +87,10 @@ int main(int argc, char *argv[])
 #endif
     return -1;
   }
-
+  
   typedef Epetra_MultiVector MV;
   typedef Epetra_Operator OP;
+  typedef Anasazi::MultiVecTraits<double, Epetra_MultiVector> MVT;
 
   // Number of dimension of the domain
   int space_dim = 2;
@@ -107,105 +106,91 @@ int main(int argc, char *argv[])
   elements[1] = 10;
   
   // Create problem
-  Teuchos::RefCountPtr<ModalProblem> testCase = Teuchos::rcp( new ModeLaplace2DQ2(Comm, brick_dim[0], elements[0], brick_dim[1], elements[1]) );
+  Teuchos::RefCountPtr<ModalProblem> testCase = 
+    Teuchos::rcp( new ModeLaplace2DQ2(Comm, brick_dim[0], elements[0], brick_dim[1], elements[1]) );
   
   // Get the stiffness and mass matrices
   Teuchos::RefCountPtr<Epetra_CrsMatrix> K = Teuchos::rcp( const_cast<Epetra_CrsMatrix *>(testCase->getStiffness()), false );
   Teuchos::RefCountPtr<Epetra_CrsMatrix> M = Teuchos::rcp( const_cast<Epetra_CrsMatrix *>(testCase->getMass()), false );
-  
+
   // Eigensolver parameters
-  int nev = 10;
+  int nev = 4;
   int blockSize = 5;
-  int maxBlocks = 8;
-  int maxIters = 500;
-  double tol = 1.0e-6;
-  //
-  // Create parameter list to pass into solver
-  //
-  Teuchos::ParameterList MyPL;
-  MyPL.set( "Block Size", blockSize );
-  MyPL.set( "Max Blocks", maxBlocks );
-  MyPL.set( "Max Iters", maxIters );
-  MyPL.set( "Tol", tol );
-  
-  // Create eigenproblem
+  int numBlocks = 8;
+  int maxRestarts = 500;
+  double tol = 1.0e-8;
 
   Teuchos::RefCountPtr<Epetra_MultiVector> ivec = Teuchos::rcp( new Epetra_MultiVector(K->OperatorDomainMap(), blockSize) );
   ivec->Random();
-  
+
+  // Create the eigenproblem.
   Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double, MV, OP> > MyProblem =
     Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>(K, M, ivec) );
-  
+
   // Inform the eigenproblem that the operator A is symmetric
-  MyProblem->SetSymmetric(true);
-  
-  // Set the number of eigenvalues requested and the blocksize the solver should use
-  MyProblem->SetNEV( nev );
-  
+  MyProblem->setHermitian(true);
+
+  // Set the number of eigenvalues requested
+  MyProblem->setNEV( nev );
+
   // Inform the eigenproblem that you are finishing passing it information
-  info = MyProblem->SetProblem();
-  if (info)
-    cout << "Anasazi::BasicEigenproblem::SetProblem() returned with code : "<< info << endl;
-
-  // Create the sort manager
-
-  Teuchos::RefCountPtr<Anasazi::BasicSort<double, MV, OP> > MySM = 
-     Teuchos::rcp( new Anasazi::BasicSort<double, MV, OP>(which) );
-  
-  // Create the eigensolver
-  
-  Anasazi::BlockDavidson<double, MV, OP> MySolver(MyProblem, MySM, MyOM, MyPL);
-  
-  // Solve the problem to the specified tolerances or length
-
-  returnCode = MySolver.solve();
-
-  // Check that the solver returned Ok, if not exit example
-  if (returnCode != Anasazi::Ok)
-    return -1;
-  
-  // Get the eigenvalues and eigenvectors from the eigenproblem
-  Teuchos::RefCountPtr<std::vector<double> > evals = MyProblem->GetEvals();
-  Teuchos::RefCountPtr<Epetra_MultiVector> evecs = MyProblem->GetEvecs();
-  
-  //  if (verbose)
-  //info = testCase->eigenCheck( *evecs, &(*evals)[0], 0 );
-  
-  // Compute the direct residual
-  std::vector<double> normV( evecs->NumVectors() );
-  Teuchos::SerialDenseMatrix<int,double> T(evecs->NumVectors(), evecs->NumVectors());
-  for (int i=0; i<evecs->NumVectors(); i++) {
-    T(i,i) = (*evals)[i];
+  bool boolret = MyProblem->setProblem();
+  if (boolret != true) {
+    cout << "Anasazi::BasicEigenproblem::setProblem() returned an error." << endl;
   }
-  Epetra_MultiVector Kvec( K->OperatorDomainMap(), evecs->NumVectors() );
-  K->Apply( *evecs, Kvec );  
-  Epetra_MultiVector Mvec( M->OperatorDomainMap(), evecs->NumVectors() );
-  M->Apply( *evecs, Mvec );  
-  Anasazi::MultiVecTraits<double,Epetra_MultiVector>::MvTimesMatAddMv( -1.0, Mvec, T, 1.0, Kvec );
-  info = Kvec.Norm2( &normV[0] );
-  assert( info==0 );
 
-  if (MyOM->doPrint()) {
+  //
+  // Create parameter list to pass into the solver manager
+  //
+  Teuchos::ParameterList MyPL;
+  MyPL.set( "Which", which );
+  MyPL.set( "Block Size", blockSize );
+  MyPL.set( "Num Blocks", numBlocks );
+  MyPL.set( "Maximum Restarts", maxRestarts );
+  MyPL.set( "Convergence Tolerance", tol );
+  //
+  // Create the solver manager
+  Anasazi::BlockDavidsonSolMgr<double, MV, OP> MySolverMan(MyProblem, MyPL);
+
+  // Solve the problem
+  returnCode = MySolverMan.solve();
+
+  // Get the eigenvalues and eigenvectors from the eigenproblem
+  Anasazi::Eigensolution<double,MV> sol = MyProblem->getSolution();
+  std::vector<double> evals = sol.Evals;
+  Teuchos::RefCountPtr<MV> evecs = sol.Evecs;
+
+  // Compute residuals.
+  std::vector<double> normR(sol.numVecs);
+  if (sol.numVecs > 0) {
+    Teuchos::SerialDenseMatrix<int,double> T(sol.numVecs, sol.numVecs);
+    Epetra_MultiVector Kvec( K->OperatorDomainMap(), evecs->NumVectors() );
+    Epetra_MultiVector Mvec( M->OperatorDomainMap(), evecs->NumVectors() );
+    T.putScalar(0.0); 
+    for (i=0; i<sol.numVecs; i++) {
+      T(i,i) = evals[i]; 
+    }
+    K->Apply( *evecs, Kvec );  
+    M->Apply( *evecs, Mvec );  
+    MVT::MvTimesMatAddMv( -1.0, Mvec, T, 1.0, Kvec );
+    MVT::MvNorm( Kvec, &normR );
+  }
+  
+  if (verbose && MyPID==0) {
     cout.setf(ios_base::right, ios_base::adjustfield);
-    cout<<"Actual Residuals"<<endl;
+    cout<<"Solver manager returned " << (returnCode == Anasazi::Converged ? "converged." : "unconverged.") << endl;
+    cout<<endl;
     cout<<"------------------------------------------------------"<<endl;
-    cout<< std::setw(16) << "Eigenvalue"
-	<< std::setw(16) << "Direct Residual"
-	<< endl;
+    cout<<std::setw(16)<<"Eigenvalue"
+	      <<std::setw(18)<<"Direct Residual"
+	      <<endl;
     cout<<"------------------------------------------------------"<<endl;
-    for (i=0; i<nev; i++) {
-      cout<< std::setw(16) << (*evals)[i]
-	  << std::setw(16) << normV[i]/(*evals)[i]
-	  << endl;
+    for (i=0; i<sol.numVecs; i++) {
+      cout<<std::setw(16)<<evals[i]
+	        <<std::setw(18)<<normR[i]/evals[i]
+	        <<endl;
     }
     cout<<"------------------------------------------------------"<<endl;
   }
-
-#ifdef EPETRA_MPI
-  MPI_Finalize();
-#endif
-  //
-  // Default return value
-  //
   return 0;
 }

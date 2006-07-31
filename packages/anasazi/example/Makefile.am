@@ -33,7 +33,7 @@ all-local:
 	@echo "Trilinos package anasazi subdirectory example built successfully."
 	@echo ""
 
-DISABLED = BlockDavidson BlockKrylovSchur 
+DISABLED = BlockKrylovSchur 
 
-SUBDIRS = LOBPCG MVOPTester
+SUBDIRS = BlockDavidson LOBPCG MVOPTester
 
