@@ -49,7 +49,7 @@ namespace Anasazi {
   //
   ////////////////////////////////////////////////////////////////////////////
 
-  /*! \class MultiVecTraits< ScalarType, Thyra::MultiVectorBase<ScalarType> >
+  /*! 
     \brief Template specialization of Anasazi::MultiVecTraits class using the
     Thyra::MultiVectorBase class.
 
@@ -345,9 +345,8 @@ namespace Anasazi {
   //
   ///////////////////////////////////////////////////////////////////////// 
 
-  /*! \class OperatorTraits< ScalarType ,
-                             Thyra::MultiVectorBase<ScalarType> ,  
-                             Thyra::LinearOpBase<ScalarType> >
+  /*! 
+                         
     \brief Template specialization of Anasazi::OperatorTraits class using the
     Thyra::LinearOpBase virtual base class and Thyra::MultiVectorBase class.
 

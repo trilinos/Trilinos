@@ -57,7 +57,6 @@ namespace Anasazi {
   //@{ 
   /** \brief SortManagerError is thrown when the Anasazi::SortManager is unable to sort the numbers,
    *  due to some failure of the sort method or error in calling it.
-   * \relates Anasazi::SortManager
    */
   class SortManagerError : public AnasaziError
   {public: SortManagerError(const std::string& what_arg) : AnasaziError(what_arg) {}};

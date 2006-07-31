@@ -36,19 +36,19 @@
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziMultiVecTraits.hpp"
 
-/*! 	\class Anasazi::MultiVec
+namespace Anasazi {
+
+
+/*! 	\class MultiVec
 
 	\brief Anasazi's templated virtual class for constructing a multi-vector that can interface with the 
-	Anasazi::MultiVecTraits class used by the eigensolvers.
+	MultiVecTraits class used by the eigensolvers.
 
 	A concrete implementation of this class is necessary.  The user can create
 	their own implementation if those supplied are not suitable for their needs.
 
 	\author Ulrich Hetmaniuk, Rich Lehoucq, and Heidi Thornquist
 */
-
-namespace Anasazi {
-
 template <class ScalarType>
 class MultiVec {
 public:
@@ -189,7 +189,7 @@ public:
   //
   ////////////////////////////////////////////////////////////////////
 
-  /*! \class MultiVecTraits< ScalarType, MultiVec<ScalarType> >
+  /*! 
     \brief Template specialization of Anasazi::MultiVecTraits class using the Anasazi::MultiVec virtual
     base class.
 

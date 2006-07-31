@@ -60,7 +60,10 @@
  *  <li>
  *  </ul>
  *
- *  \author Chris Baker, Ulrich Hetmaniuk, Rich Lehoucq, Heidi Thornquist
+
+ \ingroup anasazi_solvermanagers
+
+ \author Chris Baker, Ulrich Hetmaniuk, Rich Lehoucq, Heidi Thornquist
  */
 
 namespace Anasazi {

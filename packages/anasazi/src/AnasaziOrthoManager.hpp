@@ -61,7 +61,6 @@ namespace Anasazi {
   //@{ 
 
   /** \brief Exception thrown to signal error in an orthogonalization manager method.
-   * \relates Anasazi::OrthoManager
    */
   class OrthoError : public AnasaziError
   {public: OrthoError(const std::string& what_arg) : AnasaziError(what_arg) {}};

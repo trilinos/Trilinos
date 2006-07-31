@@ -59,7 +59,6 @@ namespace Anasazi {
   //@{ 
 
   /** \brief Exception thrown to signal error in a status test during Anasazi::StatusTest::checkStatus().
-   * \relates Anasazi::StatusTest
    */
   class StatusTestError : public AnasaziError
   {public: StatusTestError(const std::string& what_arg) : AnasaziError(what_arg) {}};

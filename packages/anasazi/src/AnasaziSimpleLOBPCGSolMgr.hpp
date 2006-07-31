@@ -69,6 +69,8 @@
 
   This solver manager does not verify before quitting that the nev eigenvectors
   that have converged are also the smallest nev eigenvectors that are known.
+
+  \ingroup anasazi_solvermanagers
 */
 
 namespace Anasazi {

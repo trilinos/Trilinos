@@ -58,6 +58,9 @@
  *  <li>
  *  </ul>
  *
+ *
+
+ \ingroup anasazi_solvermanagers
  */
 
 

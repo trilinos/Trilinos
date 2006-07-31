@@ -38,19 +38,19 @@
 #include "AnasaziMultiVec.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 
-/*!	\class Anasazi::Operator
+
+namespace Anasazi {
+  
+/*!	\class Operator
 
 	\brief Anasazi's templated virtual class for constructing an operator that can interface with the 
-	Anasazi::OperatorTraits class used by the eigensolvers.
+	OperatorTraits class used by the eigensolvers.
 	
 	A concrete implementation of this class is necessary.  The user can create their own implementation
 	if those supplied are not suitable for their needs.
 
 	\author Ulrich Hetmaniuk, Rich Lehoucq, and Heidi Thornquist
 */
-
-namespace Anasazi {
-  
   template <class ScalarType>
   class Operator {
   public:
@@ -81,7 +81,7 @@ namespace Anasazi {
   //
   ////////////////////////////////////////////////////////////////////  
   
-  /*! \class OperatorTraits< ScalarType, MultiVec<ScalarType>, Operator<ScalarType> >
+  /*! 
     \brief Template specialization of Anasazi::OperatorTraits class using Anasazi::Operator and Anasazi::MultiVec virtual
     base classes.
 

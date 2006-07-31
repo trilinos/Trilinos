@@ -455,7 +455,7 @@ namespace Anasazi {
   //
   ////////////////////////////////////////////////////////////////////
 
-  /*! \class MultiVecTraits< double, Epetra_MultiVector >
+  /*! 
     \brief Template specialization of Anasazi::MultiVecTraits class using the Epetra_MultiVector class.
 
     This interface will ensure that any Epetra_MultiVector will be accepted by the Anasazi
@@ -654,7 +654,7 @@ namespace Anasazi {
   //
   ////////////////////////////////////////////////////////////////////
 
-  /*! \class OperatorTraits< double, Epetra_MultiVector, Epetra_Operator >
+  /*! 
     \brief Template specialization of Anasazi::OperatorTraits class using the Epetra_Operator virtual base class and 
     Epetra_MultiVector class.
 

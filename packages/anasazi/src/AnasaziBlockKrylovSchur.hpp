@@ -62,6 +62,8 @@
   in "A Krylov-Schur Algorithm for Large Eigenproblems", 
   SIAM J. Matrix Anal. Appl., Vol 23(2001), No. 3, pp. 601-614.
   
+  \ingroup anasazi_solvers
+
   \author Chris Baker, Ulrich Hetmaniuk, Rich Lehoucq, Heidi Thornquist
 */
 
@@ -103,7 +105,6 @@ namespace Anasazi {
    * BlockKrylovSchur::isInitialized() will be \c false and the user will need to provide
    * a new initial iterate to the solver.
    *
-   * \relates BlockKrylovSchur, BlockKrylovSchur::initialize()
    */
   class BlockKrylovSchurInitFailure : public AnasaziError {public:
     BlockKrylovSchurInitFailure(const std::string& what_arg) : AnasaziError(what_arg)
@@ -115,7 +116,6 @@ namespace Anasazi {
    *
    * This exception is thrown from the BlockKrylovSchur::iterate() method.
    *
-   * \relates BlockKrylovSchur, BlockKrylovSchur::iterate()
    */
   class BlockKrylovSchurOrthoFailure : public AnasaziError {public:
     BlockKrylovSchurOrthoFailure(const std::string& what_arg) : AnasaziError(what_arg)
@@ -157,7 +157,6 @@ namespace Anasazi {
      * status test evaluates as Passed, at which point the method returns to
      * the caller. 
      *
-     * Possible exceptions thrown include: finish
      */
     void iterate();
 
@@ -180,6 +179,7 @@ namespace Anasazi {
      * initialize(). However, these arguments are assumed to match the
      * post-conditions specified under isInitialized(). Any component of the
      * state (i.e., KX) not given to initialize() will be generated.
+     *
      */
     void initialize(BlockKrylovSchurState<ScalarType,MV> state);
     void initialize();

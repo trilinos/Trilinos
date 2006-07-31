@@ -1,0 +1,10 @@
+
+/*! \namespace Anasazi
+ *  \brief Namespace %Anasazi contains the solvers, structs, enums and utilities used by the %Anasazi package.
+ */
+
+//! \defgroup anasazi_opvec_interfaces Anasazi Operator/Vector Interfaces
+
+//! \defgroup anasazi_solvers Anasazi Eigensolvers
+
+//! \defgroup anasazi_solvermanagers Anasazi Eigensolver Managers

@@ -84,6 +84,9 @@
         These modifcation are referred to as full orthogonalization, and consist of also conducting
         the local optimization using an orthonormal basis.
         
+
+        \ingroup anasazi_solvers
+
         \author Chris Baker, Ulrich Hetmaniuk, Rich Lehoucq, Heidi Thornquist
 */
 
@@ -126,7 +129,6 @@ namespace Anasazi {
    *  catching this exception, the user can recover the subspace via
    *  LOBPCG::getState(). This information can be used to restart the solver.
    *
-   * \relates LOBPCG, LOBPCG::iterate()
    */
   class LOBPCGRitzFailure : public AnasaziError {public:
     LOBPCGRitzFailure(const std::string& what_arg) : AnasaziError(what_arg)
@@ -143,7 +145,6 @@ namespace Anasazi {
    * LOBPCG::isInitialized() will be \c false and the user will need to provide
    * a new initial iterate to the solver.
    *
-   * \relates LOBPCG, LOBPCG::initialize()
    */
   class LOBPCGInitFailure : public AnasaziError {public:
     LOBPCGInitFailure(const std::string& what_arg) : AnasaziError(what_arg)
@@ -154,18 +155,16 @@ namespace Anasazi {
    *
    * This is thrown in one of two scenarios. After preconditioning the residual,
    * the orthogonalization manager is asked to orthogonalize the preconditioned
-   * residual (\c H) against the auxiliary vectors. If full orthogonalization
-   * is enabled, \c H is also orthogonalized against \c X and \c P and normalized.
+   * residual (H) against the auxiliary vectors. If full orthogonalization
+   * is enabled, H is also orthogonalized against X and P and normalized.
    *
-   * The second scenario involves the generation of new \c X and \c P from the
-   * basis \c [X H P]. When full orthogonalization is enabled, an attempt is
-   * made to select coefficients for \c X and \c P so that they will be
+   * The second scenario involves the generation of new X and P from the
+   * basis [X H P]. When full orthogonalization is enabled, an attempt is
+   * made to select coefficients for X and P so that they will be
    * mutually orthogonal and orthonormal.
    *
    * If either of these attempts fail, the solver throws an LOBPCGOrthoFailure
    * exception.
-   *
-   * \relates LOBPCG, LOBPCG::iterate(), LOBPCG::getFullOrtho()
    */
   class LOBPCGOrthoFailure : public AnasaziError {public:
     LOBPCGOrthoFailure(const std::string& what_arg) : AnasaziError(what_arg)
@@ -181,7 +180,13 @@ namespace Anasazi {
     //! @name Constructor/Destructor
     //@{ 
     
-    //! %LOBPCG constructor
+    /*! \brief LOBPCG constructor with eigenproblem, solver utilities, and parameter list of solver options.
+     *
+     * This constructor takes pointer required by the eigensolver, in addition
+     * to a parameter list of options for the eigensolver. These options include the following:
+     *   - "Block Size" - an \c int specifying the block size used by the algorithm. This can also be specified using the setBlockSize() method.
+     *   - "Full Ortho" - a \c bool specifying whether the solver should employ a full orthogonalization technique. This can also be specified using the setFullOrtho() method.
+     */
     LOBPCG( const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem, 
             const Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > &sorter,
             const Teuchos::RefCountPtr<OutputManager<ScalarType> > &printer,
@@ -208,8 +213,21 @@ namespace Anasazi {
      * test evaluates as Passed, at which point the method returns to the
      * caller.
      *
+     * The %LOBPCG iteration proceeds as follows:
+     * -# The current residual (R) is preconditioned to form H
+     * -# H is orthogonalized against the auxiliary vectors and, if full orthogonalization\n
+     *    is enabled, against X and P. 
+     * -# The basis [X H P] is used to project the problem matrices.
+     * -# The projected eigenproblem is solved, and the desired eigenvectors and eigenvalues are selected.
+     * -# These are used to form the new eigenvector estimates (X) and the search directions (P).\n
+     *    If full orthogonalization is enabled, these are generated to be mutually orthogonal and with orthonormal columns.
+     * -# The new residual (R) is formed.
+     *
+     * The status test is queried at the beginning of the iteration.
+     *
      * Possible exceptions thrown include std::logic_error, std::invalid_argument or
      * one of the LOBPCG-specific exceptions.
+     *
     */
     void iterate();
 
@@ -226,48 +244,45 @@ namespace Anasazi {
      * from the inner product specified by the orthogonalization manager.
      *
      * \post 
-     * <li>isInitialized() == true (see post-conditions of isInitialize())
-     * <li>If P != null, hasP() == true
-     * <li>Otherwise, hasP() == false
+     *   - isInitialized() == true (see post-conditions of isInitialize())
+     *   - If newstate.P != Teuchos::null, hasP() == true.\n
+     *     Otherwise, hasP() == false
      *
      * The user has the option of specifying any component of the state using
      * initialize(). However, these arguments are assumed to match the
      * post-conditions specified under isInitialized(). Any component of the
      * state (i.e., KX) not given to initialize() will be generated.
+     *
      */
-    void initialize(LOBPCGState<ScalarType,MV> state);
+    void initialize(LOBPCGState<ScalarType,MV> newstate);
     void initialize();
 
     /*! \brief Indicates whether the solver has been initialized or not.
      *
      * \return bool indicating the state of the solver.
      * \post
-     * If isInitialized() == \c true,
-     * <ul>
-     * <li>X is orthogonal to auxilliary vectors and has orthonormal columns
-     * <li>KX = Op*X
-     * <li>MX = M*X if M != null
-     * <li>getEigenvalues() returns the Ritz values with respect to X
-     * <li>getResidualVecs() returns the residual vectors with respect to X
-     * <li>If hasP() == \c true,
-     *   <ul>
-     *   <li>P orthogonal to auxilliary vectors
-     *   <li>If getFullOrtho() == \c true,
-     *     <ul>
-     *     <li>P is orthogonal to X and has orthonormal columns
-     *     </ul>
-     *   <li>KP = Op*P
-     *   <li>MP = M*P if M != null
-     *   </ul>
-     * </ul>
+     * If isInitialized() == \c true:
+     *   - X is orthogonal to auxilliary vectors and has orthonormal columns
+     *   - KX == Op*X
+     *   - MX == M*X if M != Teuchos::null\n
+     *     Otherwise, MX == Teuchos::null
+     *   - getEigenvalues() returns the Ritz values with respect to X
+     *   - getResidualVecs() returns the residual vectors with respect to X
+     *   - If hasP() == \c true,
+     *      - P orthogonal to auxilliary vectors
+     *      - If getFullOrtho() == \c true,
+     *        - P is orthogonal to X and has orthonormal columns
+     *      - KP == Op*P
+     *      - MP == M*P if M != Teuchos::null\n
+     *        Otherwise, MP == Teuchos::null
      */
     bool isInitialized() { return _initialized; }
 
     /*! \brief Get the current state of the eigensolver.
      * 
      * The data is only valid if isInitialized() == \c true. The
-     * data for the search directions \c P is only meaningful if hasP() == \c
-     * true. Finally, the data for the preconditioned residual (\c H) is only meaningful in the situation where
+     * data for the search directions P is only meaningful if hasP() == \c
+     * true. Finally, the data for the preconditioned residual (H) is only meaningful in the situation where
      * the solver throws an ::LOBPCGRitzFailure exception during iterate().
      *
      * \returns An LOBPCGState object containing const pointers to the current
@@ -375,13 +390,14 @@ namespace Anasazi {
       return _nevLocal;
     }
 
-    //! Get the maximum dimension allocated for the search subspace. For %LOBPCG, this always returns 3*getBlockSize(), the dimension of the 
-    // subspace \c colspan([X H P]).
+    /*! \brief Get the maximum dimension allocated for the search subspace. For %LOBPCG, this always returns 3*getBlockSize(), the dimension of the 
+     *   subspace colspan([X H P]).
+     */
     int getMaxSubspaceDim() {return 3*_blockSize;}
 
     //@}
 
-    //!  @name Accessor routines
+    //!  @name Accessor routines from Eigensolver
     //@{
 
 
@@ -804,7 +820,7 @@ namespace Anasazi {
    *   MP = M*P
    */
   template <class ScalarType, class MV, class OP>
-  void LOBPCG<ScalarType,MV,OP>::initialize(LOBPCGState<ScalarType,MV> state)
+  void LOBPCG<ScalarType,MV,OP>::initialize(LOBPCGState<ScalarType,MV> newstate)
   {
     // NOTE: memory has been allocated by setBlockSize(). Use SetBlock below; do not Clone
     // NOTE: Time spent in this routine is allotted to _timerInit, in addition to the respective sections.
@@ -815,15 +831,15 @@ namespace Anasazi {
     for (int i=0; i<_blockSize; i++) bsind[i] = i;
 
     // set up X: if the user doesn't specify X, ignore the rest
-    if (state.X != Teuchos::null && MVT::GetNumberVecs(*state.X) >= _blockSize && MVT::GetVecLength(*state.X) == MVT::GetVecLength(*_X) ) {
+    if (newstate.X != Teuchos::null && MVT::GetNumberVecs(*newstate.X) >= _blockSize && MVT::GetVecLength(*newstate.X) == MVT::GetVecLength(*_X) ) {
 
       Teuchos::TimeMonitor lcltimer( *_timerInit );
 
       // put data in X,MX,KX
-      MVT::SetBlock(*state.X,bsind,*_X);
+      MVT::SetBlock(*newstate.X,bsind,*_X);
       if (_hasM) {
-        if (state.MX != Teuchos::null && MVT::GetNumberVecs(*state.MX) >= _blockSize && MVT::GetVecLength(*state.MX) == MVT::GetVecLength(*_MX) ) {
-          MVT::SetBlock(*state.MX,bsind,*_MX);
+        if (newstate.MX != Teuchos::null && MVT::GetNumberVecs(*newstate.MX) >= _blockSize && MVT::GetVecLength(*newstate.MX) == MVT::GetVecLength(*_MX) ) {
+          MVT::SetBlock(*newstate.MX,bsind,*_MX);
         }
         else {
           Teuchos::TimeMonitor lcltimer( *_timerMOp );
@@ -835,8 +851,8 @@ namespace Anasazi {
         // an assignment would be redundant; take advantage of this opportunity to debug a little
         TEST_FOR_EXCEPTION(_MX != _X, std::logic_error, "Anasazi::LOBPCG::initialize(): solver invariant not satisfied");
       }
-      if (state.KX != Teuchos::null && MVT::GetNumberVecs(*state.KX) >= _blockSize && MVT::GetVecLength(*state.KX) == MVT::GetVecLength(*_KX) ) {
-        MVT::SetBlock(*state.KX,bsind,*_KX);
+      if (newstate.KX != Teuchos::null && MVT::GetNumberVecs(*newstate.KX) >= _blockSize && MVT::GetVecLength(*newstate.KX) == MVT::GetVecLength(*_KX) ) {
+        MVT::SetBlock(*newstate.KX,bsind,*_KX);
       }
       else {
         Teuchos::TimeMonitor lcltimer( *_timerOp );
@@ -847,9 +863,9 @@ namespace Anasazi {
       // set up Ritz values
       _theta.resize(3*_blockSize,NANVAL);
       _ritz2norms.resize(3*_blockSize,NANVAL);
-      if (state.T != Teuchos::null && (signed int)(state.T->size()) >= _blockSize) {
+      if (newstate.T != Teuchos::null && (signed int)(newstate.T->size()) >= _blockSize) {
         for (int i=0; i<_blockSize; i++) {
-          _theta[i] = (*state.T)[i];
+          _theta[i] = (*newstate.T)[i];
         }
 
       }
@@ -936,8 +952,8 @@ namespace Anasazi {
 
   
       // set up R
-      if (state.R != Teuchos::null && MVT::GetNumberVecs(*state.R) >= _blockSize && MVT::GetVecLength(*state.R) == MVT::GetVecLength(*_R) ) {
-        MVT::SetBlock(*state.R,bsind,*_R);
+      if (newstate.R != Teuchos::null && MVT::GetNumberVecs(*newstate.R) >= _blockSize && MVT::GetVecLength(*newstate.R) == MVT::GetVecLength(*_R) ) {
+        MVT::SetBlock(*newstate.R,bsind,*_R);
       }
       else {
         Teuchos::TimeMonitor lcltimer( *_timerCompRes );
@@ -955,13 +971,13 @@ namespace Anasazi {
 
   
       // put data in P,KP,MP: P is not used to set theta
-      if (state.P != Teuchos::null && MVT::GetNumberVecs(*state.P) >= _blockSize && MVT::GetVecLength(*state.P) == MVT::GetVecLength(*_P) ) {
+      if (newstate.P != Teuchos::null && MVT::GetNumberVecs(*newstate.P) >= _blockSize && MVT::GetVecLength(*newstate.P) == MVT::GetVecLength(*_P) ) {
         _hasP = true;
 
-        MVT::SetBlock(*state.P,bsind,*_P);
+        MVT::SetBlock(*newstate.P,bsind,*_P);
 
-        if (state.KP != Teuchos::null && MVT::GetNumberVecs(*state.KP) >= _blockSize && MVT::GetVecLength(*state.KP) == MVT::GetVecLength(*_KP) ) {
-          MVT::SetBlock(*state.KP,bsind,*_KP);
+        if (newstate.KP != Teuchos::null && MVT::GetNumberVecs(*newstate.KP) >= _blockSize && MVT::GetVecLength(*newstate.KP) == MVT::GetVecLength(*_KP) ) {
+          MVT::SetBlock(*newstate.KP,bsind,*_KP);
         }
         else {
           Teuchos::TimeMonitor lcltimer( *_timerOp );
@@ -970,8 +986,8 @@ namespace Anasazi {
         }
 
         if (_hasM) {
-          if (state.MP != Teuchos::null && MVT::GetNumberVecs(*state.MP) >= _blockSize && MVT::GetVecLength(*state.MP) == MVT::GetVecLength(*_MP) ) {
-            MVT::SetBlock(*state.MP,bsind,*_MP);
+          if (newstate.MP != Teuchos::null && MVT::GetNumberVecs(*newstate.MP) >= _blockSize && MVT::GetVecLength(*newstate.MP) == MVT::GetVecLength(*_MP) ) {
+            MVT::SetBlock(*newstate.MP,bsind,*_MP);
           }
           else {
             Teuchos::TimeMonitor lcltimer( *_timerMOp );

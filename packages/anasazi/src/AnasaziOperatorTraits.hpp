@@ -74,6 +74,8 @@ namespace Anasazi {
 
     An adapter for this traits class must exist for the <tt>MV</tt> and <tt>OP</tt> types.
     If not, this class will produce a compile-time error.
+
+    \ingroup anasazi_opvec_interfaces
   */
 
   template <class ScalarType, class MV, class OP>

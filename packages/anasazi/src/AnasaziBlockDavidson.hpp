@@ -60,6 +60,8 @@
         \brief This class implements the block Davidson method, an iterative
         method for solving symmetric eigenvalue problems.
         
+        \ingroup anasazi_solvers
+
         \author Chris Baker, Ulrich Hetmaniuk, Rich Lehoucq, Heidi Thornquist
 */
 
@@ -102,7 +104,6 @@ namespace Anasazi {
    * BlockDavidson::isInitialized() will be \c false and the user will need to provide
    * a new initial iterate to the solver.
    *
-   * \relates BlockDavidson, BlockDavidson::initialize()
    */
   class BlockDavidsonInitFailure : public AnasaziError {public:
     BlockDavidsonInitFailure(const std::string& what_arg) : AnasaziError(what_arg)
@@ -114,7 +115,6 @@ namespace Anasazi {
    *
    * This exception is thrown from the BlockDavidson::iterate() method.
    *
-   * \relates BlockDavidson, BlockDavidson::iterate()
    */
   class BlockDavidsonOrthoFailure : public AnasaziError {public:
     BlockDavidsonOrthoFailure(const std::string& what_arg) : AnasaziError(what_arg)
@@ -156,7 +156,6 @@ namespace Anasazi {
      * status test evaluates as Passed, at which point the method returns to
      * the caller. 
      *
-     * Possible exceptions thrown include: finish
      */
     void iterate();
 
@@ -179,6 +178,7 @@ namespace Anasazi {
      * initialize(). However, these arguments are assumed to match the
      * post-conditions specified under isInitialized(). Any component of the
      * state (i.e., KX) not given to initialize() will be generated.
+     *
      */
     void initialize(BlockDavidsonState<ScalarType,MV> state);
     void initialize();
@@ -634,6 +634,7 @@ namespace Anasazi {
    * KX = Op*X
    * MX = M*X if _hasM
    * R = KX - MX*diag(_theta)
+   *
    */
   template <class ScalarType, class MV, class OP>
   void BlockDavidson<ScalarType,MV,OP>::initialize(BlockDavidsonState<ScalarType,MV> state)
