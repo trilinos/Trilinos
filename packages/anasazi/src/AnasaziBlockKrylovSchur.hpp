@@ -61,10 +61,10 @@
 
 /*!     \class Anasazi::BlockKrylovSchur
   
-  \brief This class implements the Restarted Block Krylov Schur Method,
-  an iterative method for solving eigenvalue problems.
+  \brief This class implements the block Krylov-Schur iteration,
+  for solving eigenvalue problems.
   
-  This method is a block version of the method presented by G.W. Stewart 
+  This method is a block version of the iteration presented by G.W. Stewart 
   in "A Krylov-Schur Algorithm for Large Eigenproblems", 
   SIAM J. Matrix Anal. Appl., Vol 23(2001), No. 3, pp. 601-614.
   
@@ -212,13 +212,11 @@ namespace Anasazi {
      */
     BlockKrylovSchurState<ScalarType,MV> getState() const {
       BlockKrylovSchurState<ScalarType,MV> state;
-      /* finish
       state.curDim = _curDim;
       state.V = _V;
       state.X = _X;
       state.H = _H;
-      state.T = Teuchos::rcp(new std::vector<MagnitudeType>(_theta));
-      */
+      state.T = Teuchos::rcp(new std::vector<MagnitudeType>(_ritzvalues));
       return state;
     }
     
@@ -246,18 +244,18 @@ namespace Anasazi {
      *  estimates associated with the current iterate.
      */
     std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getEigenvalues() { 
-      std::vector<MagnitudeType> ret = _theta;
+      std::vector<MagnitudeType> ret = _ritzvalues;
       ret.resize(_blockSize);
       return ret;
     }
 
     /*! \brief Get the Ritz values for the previous iteration.
      *
-     *  \return A vector of length not exceeding 3*getBlockSize() containing the Ritz values from the
-     *  previous projected eigensolve.
+     *  \return A vector of length not exceeding the maximum dimension of the subspace 
+     *  containing the Ritz values from the previous projected eigensolve.
      */
     std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getRitzValues() { 
-      std::vector<MagnitudeType> ret = _theta;
+      std::vector<MagnitudeType> ret = _ritzvalues;
       ret.resize(_curDim);
       return ret;
     }
@@ -282,7 +280,7 @@ namespace Anasazi {
      *  \return A vector of length blockSize containing the 2-norms of the
      *  ritz residuals.
      */
-    std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getRitzRes2Norms() {return _R2norms;}
+    std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getRitzRes2Norms() {return _ritzresiduals;}
 
     //! @name Accessor routines
     //@{ 
@@ -326,22 +324,22 @@ namespace Anasazi {
     int getMaxSubspaceDim() {return _blockSize*_numBlocks;}
 
 
-    /*! \brief Set the auxilliary vectors for the solver.
+    /*! \brief Set the auxiliary vectors for the solver.
      *
      *  Because the current iterate X and search direction P cannot be assumed
-     *  orthogonal to the new auxilliary vectors, a call to setAuxVecs() may
+     *  orthogonal to the new auxiliary vectors, a call to setAuxVecs() may
      *  reset the solver to the uninitialized state. This happens only in the
      *  case where the user requests full orthogonalization when the solver is
      *  in an initialized state with full orthogonalization disabled.
      *
      *  In order to preserve the current iterate, the user will need to extract
      *  it from the solver using getEvecs(), orthogonalize it against the new
-     *  auxilliary vectors, and manually reinitialize the solver using
+     *  auxiliary vectors, and manually reinitialize the solver using
      *  initialize().
      */
     void setAuxVecs(const Teuchos::Array<Teuchos::RefCountPtr<const MV> > &auxvecs);
 
-    //! Get the auxilliary vectors for the solver.
+    //! Get the auxiliary vectors for the solver.
     Teuchos::Array<Teuchos::RefCountPtr<const MV> > getAuxVecs() const {return _auxVecs;}
 
     //@}
@@ -443,7 +441,7 @@ namespace Anasazi {
     //
     Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > _H;
     // 
-    // Auxilliary vectors
+    // Auxiliary vectors
     Teuchos::Array<Teuchos::RefCountPtr<const MV> > _auxVecs;
     int _numAuxVecs;
     //
@@ -451,9 +449,9 @@ namespace Anasazi {
     int _iter;
     // 
     // Current eigenvalues, residual norms
-    std::vector<MagnitudeType> _theta, _Rnorms, _R2norms, _ritz2norms;
+    std::vector<MagnitudeType> _ritzvalues, _Rnorms, _R2norms, _ritzresiduals;
     //
-    // Current Schur Error
+    // Current Schur Error || Op*V - VR ||.
     MagnitudeType _schurError;
 
   };
@@ -531,7 +529,7 @@ namespace Anasazi {
   template <class ScalarType, class MV, class OP>
   void BlockKrylovSchur<ScalarType,MV,OP>::setStepSize (int stepSize)
   {
-    TEST_FOR_EXCEPTION(stepSize <= 0, std::logic_error, "Anasazi::BlockKrylovSchur::setStepSize(): new step size must be positive.");
+    TEST_FOR_EXCEPTION(stepSize <= 0, std::logic_error, "Anasazi::BlockKrylovSchur::setStepSize(): new step size must be positive and non-zero.");
     _stepSize = stepSize;
   }
 
@@ -581,8 +579,8 @@ namespace Anasazi {
     // blockSize*numBlocks dependent
     //
     int newsd = _blockSize*_numBlocks;
-    _theta.resize(_blockSize*_numBlocks,NANVAL);
-    _ritz2norms.resize(_blockSize*_numBlocks,NANVAL);
+    _ritzvalues.resize(newsd,NANVAL);
+    _ritzresiduals.resize(newsd,NANVAL);
     _V = MVT::Clone(*tmp,newsd);
     _H = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(newsd+_blockSize,newsd) );
 
@@ -592,12 +590,12 @@ namespace Anasazi {
 
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
-  // Set the auxilliary vectors
+  // Set the auxiliary vectors
   template <class ScalarType, class MV, class OP>
   void BlockKrylovSchur<ScalarType,MV,OP>::setAuxVecs(const Teuchos::Array<Teuchos::RefCountPtr<const MV> > &auxvecs) {
     typedef typename Teuchos::Array<Teuchos::RefCountPtr<const MV> >::iterator tarcpmv;
 
-    // set new auxilliary vectors
+    // set new auxiliary vectors
     _auxVecs = auxvecs;
     
     if (_om->isVerbosity( Debug ) ) {
@@ -612,7 +610,7 @@ namespace Anasazi {
       _numAuxVecs += MVT::GetNumberVecs(**i);
     }
     
-    // If the solver has been initialized, X and P are not necessarily orthogonal to new auxilliary vectors
+    // If the solver has been initialized, X and P are not necessarily orthogonal to new auxiliary vectors
     if (_numAuxVecs > 0 && _initialized) {
       _initialized = false;
     }
@@ -625,9 +623,8 @@ namespace Anasazi {
    * POST-CONDITIONS:
    *
    * _V is orthonormal, orthogonal to _auxVecs, for first _curDim vectors
-   * _theta contains Ritz w.r.t. V
+   * _ritzvalues contains Ritz w.r.t. V
    * X is Ritz vectors w.r.t. V
-   * R = KX - MX*diag(_theta)
    */
   template <class ScalarType, class MV, class OP>
   void BlockKrylovSchur<ScalarType,MV,OP>::initialize(BlockKrylovSchurState<ScalarType,MV> state)
@@ -641,24 +638,14 @@ namespace Anasazi {
 
     // in BlockKrylovSchur, V is primary
     // the order of dependence follows like so.
-    // --init->               V,KK
-    //    --ritz analysis->   theta,X  
-    //        --op apply->    KX,MX  
-    //            --compute-> R
-    // 
-    // if the user specifies all data for a level, we will accept it.
-    // otherwise, we will generate the whole level, and all subsequent levels.
-    //
-    // the data members are ordered based on dependence, and the levels are
-    // partitioned according to the amount of work required to produce the
-    // items in a level.
+    // --init->               V,H
     //
     // inconsitent multivectors widths and lengths will not be tolerated, and
     // will be treated with exceptions.
     //
     std::string errstr("Anasazi::BlockKrylovSchur::initialize(): multivectors must have a consistent length and width.");
 
-    // set up V,KK: if the user doesn't specify these, ignore the rest
+    // set up V,H: if the user doesn't specify these, ignore the rest
     if (state.V != Teuchos::null && state.H != Teuchos::null) {
       TEST_FOR_EXCEPTION( MVT::GetVecLength(*state.V) != MVT::GetVecLength(*_V),
                           std::logic_error, errstr );
@@ -669,22 +656,23 @@ namespace Anasazi {
 
       _curDim = MVT::GetNumberVecs(*state.V);
       // pick an integral amount
-      _curDim = (int)(_curDim / _blockSize)*_blockSize;
+      //_curDim = (int)(_curDim / _blockSize)*_blockSize;
 
       // this test is equivalent to _curDim == 0, but makes for more helpful output
       TEST_FOR_EXCEPTION( _curDim < _blockSize, BlockKrylovSchurInitFailure, "Anasazi::BlockKrylovSchur::initialize(): user-specified V must be >= blockSize.");
       // check size of H
       TEST_FOR_EXCEPTION(state.H->numRows() < _curDim || state.H->numCols() < _curDim, std::logic_error, errstr);
 
+      // create index vector to copy over current basis vectors
       std::vector<int> nevind(_curDim);
       for (int i=0; i<_curDim; i++) nevind[i] = i;
 
-      // put data in V
+      // copy basis vectors from the state into V
       MVT::SetBlock(*state.V,nevind,*_V);
 
       // get local view of V: view of first _curDim vectors
-      // lclKV and lclMV will be temporarily allocated space for M*lclV and K*lclV
-      Teuchos::RefCountPtr<MV> lclV, lclKV, lclMV;
+      Teuchos::RefCountPtr<MV> lclV;
+
       // generate lclV in case we need it below
       lclV = MVT::CloneView(*_V,nevind);
 
@@ -693,7 +681,7 @@ namespace Anasazi {
       lclH = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*_H,_curDim,_curDim) );
       lclH->assign(*state.H);
 
-      // X,theta require Ritz analisys; if we have to generate one of these, we might as well generate both
+      // X,ritzvalues require Ritz analisys; if we have to generate one of these, we might as well generate both
       if (state.X != Teuchos::null && state.T != Teuchos::null) {
         TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.X) != _blockSize,
                             std::logic_error, errstr );
@@ -702,7 +690,7 @@ namespace Anasazi {
         TEST_FOR_EXCEPTION((signed int)(state.T->size()) != _curDim,
                             std::logic_error, errstr );
         MVT::SetBlock(*state.X,bsind,*_X);
-        std::copy(state.T->begin(),state.T->end(),_theta.begin());
+        std::copy(state.T->begin(),state.T->end(),_ritzvalues.begin());
       }
       else {
         // compute ritz vecs/vals
@@ -710,7 +698,7 @@ namespace Anasazi {
         {
           Teuchos::TimeMonitor lcltimer( *_timerCompSF );
           int rank = _curDim;
-          _MSUtils.directSolver(_curDim, *lclH, 0, &S, &_theta, &rank, 10);
+          _MSUtils.directSolver(_curDim, *lclH, 0, &S, &_ritzvalues, &rank, 10);
           // we want all ritz values back
           TEST_FOR_EXCEPTION(rank != _curDim,BlockKrylovSchurInitFailure,
                              "Anasazi::BlockKrylovSchur::initialize(): Not enough Ritz vectors to initialize algorithm.");
@@ -720,14 +708,14 @@ namespace Anasazi {
           Teuchos::TimeMonitor lcltimer( *_timerSortEval );
 
           std::vector<int> _order(_curDim);
-          // make a ScalarType copy of theta
-          std::vector<ScalarType> _theta_st(_curDim);
-          std::copy(_theta.begin(),_theta.begin()+_curDim,_theta_st.begin());
+          // make a ScalarType copy of ritzvalues
+          std::vector<ScalarType> _ritzvalues_st(_curDim);
+          std::copy(_ritzvalues.begin(),_ritzvalues.begin()+_curDim,_ritzvalues_st.begin());
           // sort it
-          _sm->sort( NULL, _curDim, &(_theta_st[0]), &_order );   // don't catch exception
-          // Put the sorted ritz values back into _theta
+          _sm->sort( NULL, _curDim, &(_ritzvalues_st[0]), &_order );   // don't catch exception
+          // Put the sorted ritz values back into _ritzvalues
           for (int i=0; i<_curDim; i++) {
-            _theta[i] = SCT::real(_theta_st[i]);
+            _ritzvalues[i] = SCT::real(_ritzvalues_st[i]);
           }
           // Sort the primitive ritz vectors
           Teuchos::SerialDenseMatrix<int,ScalarType> copyS( S );
@@ -918,7 +906,7 @@ namespace Anasazi {
       {
         Teuchos::TimeMonitor lcltimer(*_timerCompSF);
         int nevlocal = _curDim;
-        int info = _MSUtils.directSolver(_curDim,*_H,0,&S,&_theta,&nevlocal,10);
+        int info = _MSUtils.directSolver(_curDim,*_H,0,&S,&_ritzvalues,&nevlocal,10);
         TEST_FOR_EXCEPTION(info != 0,std::logic_error,"Anasazi::BlockKrylovSchur::iterate(): direct solve returned error code.");
         // we did not ask directSolver to perform deflation, so nevLocal 
         TEST_FOR_EXCEPTION(nevlocal != _curDim,std::logic_error,"Anasazi::BlockKrylovSchur::iterate(): direct solve did not compute all eigenvectors."); // this should never happen
@@ -930,15 +918,15 @@ namespace Anasazi {
 
         std::vector<int> _order(_curDim);
 
-        std::vector<ScalarType> _theta_st(_theta.size());
-        std::copy(_theta.begin(),_theta.begin()+_curDim,_theta_st.begin());
+        std::vector<ScalarType> _ritzvalues_st(_ritzvalues.size());
+        std::copy(_ritzvalues.begin(),_ritzvalues.begin()+_curDim,_ritzvalues_st.begin());
 
-        _sm->sort( this, _curDim, &(_theta_st[0]), &_order );   // don't catch exception
+        _sm->sort( this, _curDim, &(_ritzvalues_st[0]), &_order );   // don't catch exception
         
-        // Reorder _theta according to sorting results from _theta_st
-        std::vector<MagnitudeType> _theta_copy(_theta);
+        // Reorder _ritzvalues according to sorting results from _ritzvalues_st
+        std::vector<MagnitudeType> _ritzvalues_copy(_ritzvalues);
         for (int i=0; i<_curDim; i++) {
-          _theta[i] = SCT::real(_theta_copy[_order[i]]);
+          _ritzvalues[i] = SCT::real(_ritzvalues_copy[_order[i]]);
         }
 
         // Sort the primitive ritz vectors
@@ -1012,10 +1000,10 @@ namespace Anasazi {
   //          orthogonal to V and H and auxvecs
   // checkMH: check MH == M*H
   // checkR : check R orthogonal to X
-  // checkAux: check that auxilliary vectors are actually orthonormal
+  // checkAux: check that auxiliary vectors are actually orthonormal
   //
   // TODO: 
-  //  add checkTheta 
+  //  add checkRitzvalues 
   //
   template <class ScalarType, class MV, class OP>
   std::string BlockKrylovSchur<ScalarType,MV,OP>::accuracyCheck( const CheckList &chk, const string &where ) const 
@@ -1142,7 +1130,7 @@ namespace Anasazi {
          << endl;
       os <<"--------------------------------------------------------------------------------"<<endl;
       for (int i=0; i<_blockSize; i++) {
-        os << std::setw(20) << _theta[i] 
+        os << std::setw(20) << _ritzvalues[i] 
            << std::setw(20) << _Rnorms[i] 
            << std::setw(20) << _R2norms[i] 
            << endl;
