@@ -49,28 +49,23 @@
 
 #include "ModeLaplace2DQ2.h"
 
-int main(int argc, char *argv[]) 
-{
+int main(int argc, char *argv[]) {
   int i;
-  int info = 0;
-  
+
 #ifdef EPETRA_MPI
-  
   // Initialize MPI
   MPI_Init(&argc,&argv);
-  
 #endif
-  
+
 #ifdef EPETRA_MPI
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
 #else
   Epetra_SerialComm Comm;
 #endif
-  
+
   int MyPID = Comm.MyPID();
 
   Anasazi::ReturnType returnCode;
-  bool testFailed = false;
   bool verbose = true;
 
   std::string which;
@@ -94,6 +89,7 @@ int main(int argc, char *argv[])
   
   typedef Epetra_MultiVector MV;
   typedef Epetra_Operator OP;
+  typedef Anasazi::MultiVecTraits<double, Epetra_MultiVector> MVT;
 
   // Number of dimension of the domain
   int space_dim = 2;
@@ -121,18 +117,18 @@ int main(int argc, char *argv[])
   int blockSize = 5;
   int maxIters = 500;
   double tol = 1.0e-8;
-  // Create eigenproblem
 
   Teuchos::RefCountPtr<Epetra_MultiVector> ivec = Teuchos::rcp( new Epetra_MultiVector(K->OperatorDomainMap(), blockSize) );
   ivec->Random();
 
+  // Create the eigenproblem.
   Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double, MV, OP> > MyProblem =
     Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>(K, M, ivec) );
 
   // Inform the eigenproblem that the operator A is symmetric
   MyProblem->setHermitian(true);
 
-  // Set the number of eigenvalues requested and the blocksize the solver should use
+  // Set the number of eigenvalues requested
   MyProblem->setNEV( nev );
 
   // Inform the eigenproblem that you are finishing passing it information
@@ -145,64 +141,53 @@ int main(int argc, char *argv[])
   // Create parameter list to pass into the solver manager
   //
   Teuchos::ParameterList MyPL;
-  MyPL.set( "Block Size", blockSize );
-  MyPL.set( "Max Iters", maxIters );
-  MyPL.set( "Tol", tol );
   MyPL.set( "Which", which );
+  MyPL.set( "Block Size", blockSize );
+  MyPL.set( "Maximum Iterations", maxIters );
+  MyPL.set( "Convergence Tolerance", tol );
   //
   // Create the solver manager
   Anasazi::SimpleLOBPCGSolMgr<double, MV, OP> MySolverMan(MyProblem, MyPL);
 
   // Solve the problem
   returnCode = MySolverMan.solve();
-  if (returnCode != Anasazi::Converged) {
-    testFailed = true;
-  }
 
-  // Check that the solver returned Converged, if not exit example
-  if (returnCode != Anasazi::Converged) {
-#ifdef EPETRA_MPI
-    MPI_Finalize() ;
-#endif
-    return -1;
-  }
-  
   // Get the eigenvalues and eigenvectors from the eigenproblem
   Anasazi::Eigensolution<double,MV> sol = MyProblem->getSolution();
   std::vector<double> evals = sol.Evals;
   Teuchos::RefCountPtr<MV> evecs = sol.Evecs;
-  
-  // Compute the direct residual
-  std::vector<double> normV( evecs->NumVectors() );
-  Teuchos::SerialDenseMatrix<int,double> T(evecs->NumVectors(), evecs->NumVectors());
-  for (int i=0; i<evecs->NumVectors(); i++) {
-    T(i,i) = evals[i];
-  }
-  Epetra_MultiVector Kvec( K->OperatorDomainMap(), evecs->NumVectors() );
-  K->Apply( *evecs, Kvec );  
-  Epetra_MultiVector Mvec( M->OperatorDomainMap(), evecs->NumVectors() );
-  M->Apply( *evecs, Mvec );  
-  Anasazi::MultiVecTraits<double,Epetra_MultiVector>::MvTimesMatAddMv( -1.0, Mvec, T, 1.0, Kvec );
-  info = Kvec.Norm2( &normV[0] );
-  assert( info==0 );
 
+  // Compute residuals.
+  std::vector<double> normR(sol.numVecs);
+  if (sol.numVecs > 0) {
+    Teuchos::SerialDenseMatrix<int,double> T(sol.numVecs, sol.numVecs);
+    Epetra_MultiVector Kvec( K->OperatorDomainMap(), evecs->NumVectors() );
+    Epetra_MultiVector Mvec( M->OperatorDomainMap(), evecs->NumVectors() );
+    T.putScalar(0.0); 
+    for (i=0; i<sol.numVecs; i++) {
+      T(i,i) = evals[i]; 
+    }
+    K->Apply( *evecs, Kvec );  
+    M->Apply( *evecs, Mvec );  
+    MVT::MvTimesMatAddMv( -1.0, Mvec, T, 1.0, Kvec );
+    MVT::MvNorm( Kvec, &normR );
+  }
+  
   if (verbose && MyPID==0) {
     cout.setf(ios_base::right, ios_base::adjustfield);
-    cout<<"Actual Residuals"<<endl;
+    cout<<"Solver manager returned " << (returnCode == Anasazi::Converged ? "converged." : "unconverged.") << endl;
+    cout<<endl;
     cout<<"------------------------------------------------------"<<endl;
     cout<<std::setw(16)<<"Eigenvalue"
-	<<std::setw(18)<<"Direct Residual"
-	<<endl;
+	      <<std::setw(18)<<"Direct Residual"
+	      <<endl;
     cout<<"------------------------------------------------------"<<endl;
-    for (i=0; i<nev; i++) {
+    for (i=0; i<sol.numVecs; i++) {
       cout<<std::setw(16)<<evals[i]
-	  <<std::setw(18)<<normV[i]/evals[i]
-	  <<endl;
+	        <<std::setw(18)<<normR[i]/evals[i]
+	        <<endl;
     }
     cout<<"------------------------------------------------------"<<endl;
   }
-  //
-  // Default return value
-  //
   return 0;
 }

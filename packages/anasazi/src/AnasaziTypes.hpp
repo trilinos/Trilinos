@@ -38,34 +38,39 @@
 */
 
 namespace Anasazi {
-  //! @name Anasazi Exceptions
-  //@{ 
 
-  /** \brief An exception class parent to all Anasazi exceptions.
+  //! @name Anasazi Exceptions
+  //@{
+
+  /*! \class AnasaziError
+      \brief An exception class parent to all Anasazi exceptions.
    */
   class AnasaziError : public std::logic_error { 
     public: AnasaziError(const std::string& what_arg) : std::logic_error(what_arg) {} 
   };
 
   //@}
-}
 
-namespace Anasazi {
-
-  //! @name Anasazi Structures
-  //@{ 
+  //! @name Anasazi Structs
+  //@{
 
   /*! \struct Eigensolution
-   *  \brief Struct for storing an eigenproblem solution.
+      \brief Struct for storing an eigenproblem solution.
    */
   template <class ScalarType, class MV>
   struct Eigensolution {
-    Teuchos::RefCountPtr<MV> Evecs, Espace;
-    std::vector<int>         index;
+    //! The computed eigenvectors
+    Teuchos::RefCountPtr<MV> Evecs;
+    //! An orthonormal basis for the computed eigenspace
+    Teuchos::RefCountPtr<MV> Espace;
+    //! The computed eigenvalues
     std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>  Evals;
+    //! An index into Evecs and Evals
+    std::vector<int>         index;
+    //! The number of computed eigenpairs
     int numVecs;
-
-    Eigensolution() : Evecs(),Espace(),index(0),Evals(0),numVecs(0) {}
+    
+    Eigensolution() : Evecs(),Espace(),Evals(0),index(0),numVecs(0) {}
   };
 
   //@}

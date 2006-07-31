@@ -46,14 +46,13 @@
 #endif
 #include "Epetra_Map.h"
 
+
 int main(int argc, char *argv[]) {
   int i, info = 0;
 
 #ifdef EPETRA_MPI
-
   // Initialize MPI
   MPI_Init(&argc,&argv);
-
 #endif
 
 #ifdef EPETRA_MPI
@@ -75,7 +74,7 @@ int main(int argc, char *argv[]) {
     which = "SM";
   }
   if ( which != "SM" && which != "LM" && which != "SR" && which != "LR" ) {
-    if (verbose && MyPID == 0) {
+    if (verbose && MyPID==0) {
       std::cout << "Usage: " << argv[0] << " [sort string]" << endl
         << "where:" << endl
         << "sort string       - SM | LM | SR | LR" << endl << endl;
@@ -272,7 +271,7 @@ int main(int argc, char *argv[]) {
   int nev = 10;
   int blockSize = 5;
   int maxIters = 500;
-  double tol = 1e-8;  
+  double tol = 1.0e-8;
 
   typedef Epetra_MultiVector MV;
   typedef Epetra_Operator OP;
@@ -286,13 +285,13 @@ int main(int argc, char *argv[]) {
   // Create the eigenproblem.
   Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double, MV, OP> > MyProblem =
     Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>(A, ivec) );
-  
+
   // Inform the eigenproblem that the operator A is symmetric
-  MyProblem->setHermitian(true); 
-  
+  MyProblem->setHermitian(true);
+
   // Set the number of eigenvalues requested
   MyProblem->setNEV( nev );
-  
+
   // Inform the eigenproblem that you are finishing passing it information
   bool boolret = MyProblem->setProblem();
   if (boolret != true) {
@@ -303,54 +302,50 @@ int main(int argc, char *argv[]) {
   // Create parameter list to pass into the solver manager
   //
   Teuchos::ParameterList MyPL;
-  MyPL.set( "Block Size", blockSize );
-  MyPL.set( "Max Iters", maxIters );
-  MyPL.set( "Tol", tol );
   MyPL.set( "Which", which );
+  MyPL.set( "Block Size", blockSize );
+  MyPL.set( "Maximum Iterations", maxIters );
+  MyPL.set( "Convergence Tolerance", tol );
   //
   // Create the solver manager
   Anasazi::SimpleLOBPCGSolMgr<double, MV, OP> MySolverMan(MyProblem, MyPL);
-  
+
   // Solve the problem
   returnCode = MySolverMan.solve();
-  // Check that the solver returned Converged, if not exit example
-  if (returnCode != Anasazi::Converged) {
-#ifdef EPETRA_MPI
-    MPI_Finalize() ;
-#endif
-    return -1;
-  }
 
-  // Retrieve eigenvalues,eigenvectors
+  // Get the eigenvalues and eigenvectors from the eigenproblem
   Anasazi::Eigensolution<double,MV> sol = MyProblem->getSolution();
   std::vector<double> evals = sol.Evals;
   Teuchos::RefCountPtr<MV> evecs = sol.Evecs;
 
   // Compute residuals.
-  Teuchos::SerialDenseMatrix<int,double> T(nev, nev);
-  Epetra_MultiVector tempAevec( Map, nev );
-  std::vector<double> normA(nev);
-  T.putScalar(0.0); 
-  for (i=0; i<nev; i++) {
-    T(i,i) = evals[i]; 
+  std::vector<double> normR(sol.numVecs);
+  if (sol.numVecs > 0) {
+    Teuchos::SerialDenseMatrix<int,double> T(sol.numVecs, sol.numVecs);
+    Epetra_MultiVector tempAevec( Map, sol.numVecs );
+    T.putScalar(0.0); 
+    for (i=0; i<sol.numVecs; i++) {
+      T(i,i) = evals[i]; 
+    }
+    A->Apply( *evecs, tempAevec );
+    MVT::MvTimesMatAddMv( -1.0, *evecs, T, 1.0, tempAevec );
+    MVT::MvNorm( tempAevec, &normR );
   }
-  A->Apply( *evecs, tempAevec );
-  MVT::MvTimesMatAddMv( -1.0, *evecs, T, 1.0, tempAevec );
-  MVT::MvNorm( tempAevec, &normA );
-  
-  if (verbose && MyPID == 0) {
+
+  if (verbose && MyPID==0) {
     cout.setf(ios_base::right, ios_base::adjustfield);
-    cout<<"Actual Residuals"<<endl;
+    cout<<"Solver manager returned " << (returnCode == Anasazi::Converged ? "converged." : "unconverged.") << endl;
+    cout<<endl;
     cout<<"------------------------------------------------------"<<endl;
     cout<<std::setw(16)<<"Eigenvalue"
-	<<std::setw(18)<<"Direct Residual"
-	<<endl;
+	      <<std::setw(18)<<"Direct Residual"
+	      <<endl;
     cout<<"------------------------------------------------------"<<endl;
-    for (i=0; i<nev; i++) {
+    for (i=0; i<sol.numVecs; i++) {
       cout<<std::setw(16)<<evals[i]
-	  <<std::setw(18)<<normA[i]/evals[i] 
-	  <<endl;
-    }  
+	        <<std::setw(18)<<normR[i]/evals[i]
+	        <<endl;
+    }
     cout<<"------------------------------------------------------"<<endl;
   }
   return 0;
