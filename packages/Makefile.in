@@ -93,7 +93,7 @@ DIST_SUBDIRS = PyTrilinos teuchos rtop thyra kokkos epetra triutils \
 	tpetra epetraext isorropia aztecoo galeri amesos ifpack \
 	komplex claps TSFCoreUtils TSFCore belos anasazi pliris ml \
 	moertel stratimikos TSF meros nox capo rythmos new_package \
-	moocho TSFExtended didasko external
+	moocho TSFExtended didasko WebTrilinos external
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = aclocal -I config
 AMTAR = @AMTAR@
@@ -169,6 +169,8 @@ BUILD_TSFEXTENDED_FALSE = @BUILD_TSFEXTENDED_FALSE@
 BUILD_TSFEXTENDED_TRUE = @BUILD_TSFEXTENDED_TRUE@
 BUILD_TSF_FALSE = @BUILD_TSF_FALSE@
 BUILD_TSF_TRUE = @BUILD_TSF_TRUE@
+BUILD_WEBTRILINOS_FALSE = @BUILD_WEBTRILINOS_FALSE@
+BUILD_WEBTRILINOS_TRUE = @BUILD_WEBTRILINOS_TRUE@
 CYGPATH_W = @CYGPATH_W@
 DEFS = @DEFS@
 ECHO_C = @ECHO_C@
@@ -332,6 +334,9 @@ AUTOMAKE_OPTIONS = foreign
 @BUILD_TSFEXTENDED_TRUE@TSFEXTENDED_SUBDIR = TSFExtended
 @BUILD_TSFEXTENDED_TRUE@TSFEXTENDED_LIBS_BUILD_CMND = echo "TSFExtended does not support libs target yet";
 @BUILD_TSFEXTENDED_TRUE@TSFEXTENDED_ALL_LIBS_BUILD_CMND = echo "TSFExtended does not support all-libs target yet";
+@BUILD_WEBTRILINOS_TRUE@WEBTRILINOS_SUBDIR = WebTrilinos
+@BUILD_WEBTRILINOS_TRUE@WEBTRILINOS_LIBS_BUILD_CMND = echo "WebTrilinos does not support libs target";
+@BUILD_WEBTRILINOS_TRUE@WEBTRILINOS_ALL_LIBS_BUILD_CMND = echo "WebTrilinos does not support all-libs target";
 
 # Must list the packages in the order that they are built!
 SUBDIRS = \
@@ -368,6 +373,7 @@ SUBDIRS = \
 	$(MOOCHO_SUBDIR)       \
 	$(TSFEXTENDED_SUBDIR)  \
 	$(DIDASKO_SUBDIR) \
+	$(WEBTRILINOS_SUBDIR) \
 	$(EXTERNAL_SUBDIR)
 
 all: all-recursive
@@ -684,6 +690,7 @@ libs:
 	$(TSFEXTENDED_LIBS_BUILD_CMND)
 	$(MOOCHO_LIBS_BUILD_CMND)
 	$(DIDASKO_LIBS_BUILD_CMND)
+	$(WEBTRILINOS_LIBS_BUILD_CMND)
 	$(EXTERNAL_LIBS_BUILD_CMND)
 
 all-libs:
@@ -720,6 +727,7 @@ all-libs:
 	$(TSFEXTENDED_ALL_LIBS_BUILD_CMND)
 	$(MOOCHO_ALL_LIBS_BUILD_CMND)
 	$(DIDASKO_ALL_LIBS_BUILD_CMND)
+	$(WEBTRILINOS_ALL_LIBS_BUILD_CMND)
 	$(EXTERNAL_ALL_LIBS_BUILD_CMND)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

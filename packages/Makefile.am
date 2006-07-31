@@ -267,6 +267,12 @@ TSFEXTENDED_LIBS_BUILD_CMND = echo "TSFExtended does not support libs target yet
 TSFEXTENDED_ALL_LIBS_BUILD_CMND = echo "TSFExtended does not support all-libs target yet";
 endif
 
+if BUILD_WEBTRILINOS
+WEBTRILINOS_SUBDIR = WebTrilinos
+WEBTRILINOS_LIBS_BUILD_CMND = echo "WebTrilinos does not support libs target";
+WEBTRILINOS_ALL_LIBS_BUILD_CMND = echo "WebTrilinos does not support all-libs target";
+endif
+
 # Must list the packages in the order that they are built!
 
 SUBDIRS = \
@@ -303,6 +309,7 @@ SUBDIRS = \
 	$(MOOCHO_SUBDIR)       \
 	$(TSFEXTENDED_SUBDIR)  \
 	$(DIDASKO_SUBDIR) \
+	$(WEBTRILINOS_SUBDIR) \
 	$(EXTERNAL_SUBDIR)
 
 libs:
@@ -339,6 +346,7 @@ libs:
 	$(TSFEXTENDED_LIBS_BUILD_CMND)
 	$(MOOCHO_LIBS_BUILD_CMND)
 	$(DIDASKO_LIBS_BUILD_CMND)
+	$(WEBTRILINOS_LIBS_BUILD_CMND)
 	$(EXTERNAL_LIBS_BUILD_CMND)
 
 all-libs:
@@ -375,4 +383,6 @@ all-libs:
 	$(TSFEXTENDED_ALL_LIBS_BUILD_CMND)
 	$(MOOCHO_ALL_LIBS_BUILD_CMND)
 	$(DIDASKO_ALL_LIBS_BUILD_CMND)
+	$(WEBTRILINOS_ALL_LIBS_BUILD_CMND)
 	$(EXTERNAL_ALL_LIBS_BUILD_CMND)
+

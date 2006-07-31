@@ -111,6 +111,9 @@
 /* Define if want to build tsfextended */
 #undef HAVE_TSFEXTENDED
 
+/* Define if want to build webtrilinos */
+#undef HAVE_WEBTRILINOS
+
 /* Define if want to build with python enabled */
 #undef HAVE_WPYTHON
 

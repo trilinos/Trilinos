@@ -135,6 +135,8 @@ TAC_ARG_ENABLE_FEATURE(tsfcoreutils, [Build TSFCoreUtils], TSFCOREUTILS, no)
 
 TAC_ARG_ENABLE_FEATURE(tsfextended, [Build TSFExtended], TSFEXTENDED, no)
 
+TAC_ARG_ENABLE_FEATURE(webtrilinos, [Build WebTrilinos], WEBTRILINOS, no)
+
 AC_ARG_ENABLE(aztecoo-teuchos,
  [AC_HELP_STRING([--enable-aztecoo-teuchos],[Enable AztecOO Teuchos::ParameterList interface. Default is no. Requires Teuchos package.])],
  ac_cv_use_aztecoo_teuchos=$enableval, ac_cv_use_aztecoo_teuchos=no)
@@ -158,6 +160,7 @@ if test "X$ac_cv_use_teuchos" != "Xno" ||
 	test "X$ac_cv_use_rythmos" != "Xno" ||
 	test "X$ac_cv_use_isorropia" != "Xno" ||
 	test "X$ac_cv_use_moertel" != "Xno" ||
+	test "X$ac_cv_use_webtrilinos" != "Xno" ||
 	test "X$ac_cv_use_belos" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/teuchos])
   BUILD_TEUCHOS=yes
@@ -233,6 +236,7 @@ if test "X$ac_cv_use_epetra" != "Xno" || test "X$ac_cv_use_ifpack" != "Xno" ||
 	test "X$ac_cv_use_anasazi" != "Xno" ||
         test "X$ac_cv_use_claps" != "Xno" ||
         test "X$ac_cv_use_moertel" != "Xno" ||
+	test "X$ac_cv_use_webtrilinos" != "Xno" ||
 	test "X$ac_cv_use_komplex" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/epetra])
   BUILD_EPETRA=yes
@@ -269,7 +273,8 @@ else
 fi
 AM_CONDITIONAL(BUILD_TRIUTILS, test "X$BUILD_TRIUTILS" != "Xno")
 
-if test "X$ac_cv_use_galeri" != "Xno"; then
+if test "X$ac_cv_use_galeri" != "Xno" ||
+	test "X$ac_cv_use_webtrilinos" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/galeri])
   BUILD_GALERI=yes
   if test "X$ac_cv_use_galeri_explicit" != "Xyes"; then
@@ -280,7 +285,8 @@ else
 fi
 AM_CONDITIONAL(BUILD_GALERI, test "X$BUILD_GALERI" != "Xno")
 
-if test "X$ac_cv_use_ifpack" != "Xno"; then
+if test "X$ac_cv_use_ifpack" != "Xno" ||
+	test "X$ac_cv_use_webtrilinos" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/ifpack])
   BUILD_IFPACK=yes
   if test "X$ac_cv_use_ifpack_explicit" != "Xyes"; then
@@ -293,6 +299,7 @@ AM_CONDITIONAL(BUILD_IFPACK, test "X$BUILD_IFPACK" != "Xno")
 
 if test "X$ac_cv_use_aztecoo" != "Xno" || 
 	test "X$ac_cv_use_moertel" != "Xno" ||
+	test "X$ac_cv_use_webtrilinos" != "Xno" ||
 	test "X$ac_cv_use_komplex" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/aztecoo])
   BUILD_AZTECOO=yes
@@ -373,6 +380,7 @@ fi
 AM_CONDITIONAL(BUILD_TSFCOREUTILS, test "X$BUILD_TSFCOREUTILS" != "Xno")
 
 if test "X$ac_cv_use_amesos" != "Xno" ||
+	test "X$ac_cv_use_webtrilinos" != "Xno" ||
         test "X$ac_cv_use_moertel" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/amesos])
   BUILD_AMESOS=yes
@@ -386,6 +394,7 @@ AM_CONDITIONAL(BUILD_AMESOS, test "X$BUILD_AMESOS" != "Xno")
 
 if test "X$ac_cv_use_epetraext" != "Xno" ||
         test "X$ac_cv_use_moertel" != "Xno" ||
+	test "X$ac_cv_use_webtrilinos" != "Xno" ||
 	( test "X$ac_cv_use_thyra" != "Xno" && test "X$ac_cv_use_aztecoo" != "Xno" ); then
   AC_CONFIG_SUBDIRS([packages/epetraext])
   BUILD_EPETRAEXT=yes
@@ -431,6 +440,7 @@ fi
 AM_CONDITIONAL(BUILD_MEROS, test "X$BUILD_MEROS" != "Xno")
 
 if test "X$ac_cv_use_ml" != "Xno" ||
+	test "X$ac_cv_use_webtrilinos" != "Xno" ||
         test "X$ac_cv_use_moertel" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/ml])
   BUILD_ML=yes
@@ -500,6 +510,7 @@ fi
 AM_CONDITIONAL(BUILD_MOERTEL, test "X$BUILD_MOERTEL" != "Xno")
 
 if test "X$ac_cv_use_pytrilinos" != "Xno" ||
+	test "X$ac_cv_use_webtrilinos" != "Xno" ||
 	test "X$ac_cv_use_python" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/PyTrilinos])
   BUILD_PYTRILINOS=yes
@@ -543,6 +554,17 @@ else
   BUILD_DIDASKO=no
 fi
 AM_CONDITIONAL(BUILD_DIDASKO, test "X$BUILD_DIDASKO" != "Xno")
+
+if test "X$ac_cv_use_webtrilinos" != "Xno"; then
+  AC_CONFIG_SUBDIRS([packages/WebTrilinos])
+  BUILD_WEBTRILINOS=yes
+  if test "X$ac_cv_use_webtrilinos_explicit" != "Xyes"; then
+    ac_configure_args="$ac_configure_args --enable-webtrilinos"
+  fi
+else
+  BUILD_WEBTRILINOS=no
+fi
+AM_CONDITIONAL(BUILD_WEBTRILINOS, test "X$BUILD_WEBTRILINOS" != "Xno")
 
 if test "X$ac_cv_use_external" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/external])
