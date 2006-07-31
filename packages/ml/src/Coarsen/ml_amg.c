@@ -285,7 +285,8 @@ int ML_AMG_Coarsen(ML_AMG *amg,ML_Operator *Amatrix,ML_Operator **Pmatrix,
    t0 = GetClock() - t0;
    t0 = ML_gsum_double(t0, comm);
    t0 = t0/((double) comm->ML_nprocs);
-   if ( mypid == 0 ) printf(" AMG setup time \t= %e\n",t0);
+   if ( mypid == 0 && ML_Get_PrintLevel() > 10)
+     printf(" AMG setup time \t= %e\n",t0);
 #endif
 
    return Ncoarse;

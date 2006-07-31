@@ -706,7 +706,7 @@ int ML_Gen_CoarseSolverXYT( ML *ml, int i)
   if (!(local_xyt_handle = XYT_new())) {printf("XYT_new failed\n"); exit(0);}
 
 #ifdef ML_TIMING
-  if (ml->comm->ML_mypid == 0) {
+  if (ml->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 10) {
      printf("setup henry time %e\n",GetClock() - t0);
   }
 #endif

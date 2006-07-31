@@ -273,28 +273,29 @@ int ML_Smoother_Clean(ML_Smoother *ml_sm)
    }
 
 
-   if ( (ml_sm->label != NULL) && (mypid == 0) && (nprocs > 0) )
+   if ( (ml_sm->label != NULL) && (mypid == 0) && (nprocs > 0)
+         && ML_Get_PrintLevel() > 10 )
      printf(" Active processors for %s = %d\n",ml_sm->label,nprocs);
 
    if (ml_sm->my_level != NULL && nprocs > 0) {
      comm = ml_sm->my_level->comm;
      t1 = ML_gsum_double( (proc_active ? ml_sm->build_time : 0.0), ml_sm->my_level->comm);
      t1 = t1/((double) nprocs);
-     if ((ml_sm->label != NULL) && mypid == 0)
+     if ((ml_sm->label != NULL) && mypid == 0 && ML_Get_PrintLevel() > 10)
        printf(" Build time for %s (average) \t= %e\n",ml_sm->label,t1);
      t1 = ML_gmax_double( (proc_active ? ml_sm->build_time : 0.0 ), comm);
      i = ML_gmax_int((t1 == ml_sm->build_time ? mypid:0),comm);
-     if ( (ml_sm->label != NULL) && mypid == 0)
+     if ( (ml_sm->label != NULL) && mypid == 0 && ML_Get_PrintLevel() > 10)
        printf(" Build time for %s (maximum %d) \t= %e\n",ml_sm->label,i,t1);
      t1 = - ml_sm->build_time;
      t1 = ML_gmax_double( (proc_active ? t1: -1.0e20), comm);
      t1 = - t1;
      i = ML_gmax_int((t1 == ml_sm->build_time ? mypid:0), comm);
-     if ( (ml_sm->label != NULL)  && mypid == 0)
+     if ( (ml_sm->label != NULL)  && mypid == 0 && ML_Get_PrintLevel() > 10)
        printf(" Build time for %s (minimum %d) \t= %e\n",ml_sm->label,i,t1);
      t1 = ML_Global_Standard_Deviation(ml_sm->build_time, nprocs,
                                        proc_active, ml_sm->my_level->comm);
-     if ( (comm->ML_mypid == 0) )
+     if ( (comm->ML_mypid == 0)  && ML_Get_PrintLevel() > 10)
         printf(" Build time for %s (std dev) \t= %e\n",ml_sm->label,t1);
    }
 #endif
@@ -306,23 +307,24 @@ int ML_Smoother_Clean(ML_Smoother *ml_sm)
       t1 = ML_gsum_double( (proc_active ? ml_sm->apply_time : 0.0), comm);
       /*printf("(%s) %d's apply time = %e (active = * %d)\n",ml_sm->label,comm->ML_mypid,ml_sm->apply_time,proc_active);*/
       t1 = t1/((double) nprocs);
-      if (mypid == 0)
+      if (mypid == 0 && ML_Get_PrintLevel() > 10)
          printf(" Apply time for %s (average) \t= %e\n",ml_sm->label,t1);
       t1 = ML_gmax_double( (proc_active ? ml_sm->apply_time : 0.0 ), comm);
       i = ML_gmax_int((t1 == ml_sm->apply_time ? mypid:0), comm);
-      if (mypid == 0)
+      if (mypid == 0 && ML_Get_PrintLevel() > 10)
          printf(" Apply time for %s (maximum %d) \t= %e\n",ml_sm->label,i,t1);
       t1 = - ml_sm->apply_time;
       t1 = ML_gmax_double( (proc_active ? t1: -1.0e20), comm);
       t1 = - t1;
       i = ML_gmax_int((t1 == ml_sm->apply_time ? mypid:0), comm);
-      if (mypid == 0)
+      if (mypid == 0 && ML_Get_PrintLevel() > 10)
          printf(" Apply time for %s (minimum %d) \t= %e\n",ml_sm->label,i,t1);
       t1 = ML_Global_Standard_Deviation(ml_sm->apply_time, nprocs,
                                         proc_active, ml_sm->my_level->comm);
-      if (comm->ML_mypid == 0)
+      if (comm->ML_mypid == 0 && ML_Get_PrintLevel() > 10)
          printf(" Apply time for %s (std dev) \t= %e\n",ml_sm->label,t1);
-      if ( (mypid == 0) && (ml_sm->times_applied != 0))
+      if ( (mypid == 0) && (ml_sm->times_applied != 0)
+            && ML_Get_PrintLevel() > 10)
          printf(" Number of Applies for %s \t= %d\n",ml_sm->label,ml_sm->times_applied);
    }
 #endif

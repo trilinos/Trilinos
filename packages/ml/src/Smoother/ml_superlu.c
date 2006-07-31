@@ -136,7 +136,7 @@ int ML_SuperLU_Solve(ML_Solver *vsolver,int ilen,double *x,int olen,double *rhs)
       if (perm_c != NULL) ML_memory_free((void**) &(solver->int_params2));
       solver->int_params2 = NULL;
 #ifdef ML_TIMING_DETAILED
-      if ( comm->ML_mypid == 0 )
+      if ( comm->ML_mypid == 0 && ML_Get_PrintLevel() > 10)
          printf("Total SuperLU solve time = %e\n", solver->dble_data);
 #endif
       return 0;
@@ -2458,7 +2458,7 @@ for ( int KK = 0 ; KK != ep_x.NumVectors() ; KK++ ) {
       if (perm_c != NULL) ML_memory_free((void**) &(solver->int_params2));
       solver->int_params2 = NULL;
 #ifdef ML_TIMING_DETAILED
-      if ( comm->ML_mypid == 0 )
+      if ( comm->ML_mypid == 0 && ML_Get_PrintLevel() > 10)
          printf("Total SuperLU solve time = %e\n", solver->dble_data);
 #endif
       return 0;

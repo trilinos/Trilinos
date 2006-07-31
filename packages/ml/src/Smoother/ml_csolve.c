@@ -95,14 +95,16 @@ int ML_CSolve_Clean(ML_CSolve *ml_cs)
    if (ml_cs->label != NULL) {
       t1 = ML_gsum_double(ml_cs->build_time, global_comm);
       t1 = t1/((double) global_comm->ML_nprocs);
-      if ( (global_comm->ML_mypid == 0) && (t1 != 0.0))
+      if ( (global_comm->ML_mypid == 0) && (t1 != 0.0) && ML_Get_PrintLevel() >
+10 )
          printf(" Build time for %s\t= %e\n",ml_cs->label,t1);
    }
 
    if  (ml_cs->label != NULL) {
       t1 = ML_gsum_double(ml_cs->apply_time, global_comm);
       t1 = t1/((double) global_comm->ML_nprocs);
-      if ( (global_comm->ML_mypid == 0) && (t1 != 0.0))
+      if ( (global_comm->ML_mypid == 0) && (t1 != 0.0) && ML_Get_PrintLevel() >
+10 )
          printf(" Apply time for %s\t= %e\n",ml_cs->label,t1);
     }
 #endif

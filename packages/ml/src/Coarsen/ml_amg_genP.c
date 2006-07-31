@@ -96,7 +96,7 @@ int ML_Gen_MGHierarchy_UsingAMG(ML *ml, int start,
    }
 #ifdef ML_TIMING
    t0 = GetClock() - t0;
-   if ( ml->comm->ML_mypid == 0 && ml_amg->print_flag < ML_Get_PrintLevel())
+   if ( ml->comm->ML_mypid == 0 &&  ML_Get_PrintLevel() > 10 )
       printf("AMG total setup time = %e\n", t0);
 #endif
 
@@ -157,7 +157,7 @@ int ML_AMG_Gen_MGHierarchy(ML *ml, int fine_level,
       ML_Gen_AmatrixRAP(ml, level, next);
 #ifdef ML_TIMING
       t0 = GetClock() - t0;
-      if ( ml->comm->ML_mypid == 0 && amg->print_flag < ML_Get_PrintLevel())
+      if ( ml->comm->ML_mypid == 0  && ML_Get_PrintLevel() > 10 )
          printf("AMG RAP time at level %3d = %e\n", level, t0);
 #endif
 

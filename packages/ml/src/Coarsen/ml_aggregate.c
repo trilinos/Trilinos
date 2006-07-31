@@ -1218,7 +1218,7 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
    t0 = GetClock() - t0;
    t0 = ML_gsum_double(t0, comm);
    t0 = t0/((double) comm->ML_nprocs);
-   if (comm->ML_mypid == 0)
+   if (comm->ML_mypid == 0 && ML_Get_PrintLevel() > 10)
       printf("Aggregation time \t= %e\n",t0);
 #endif
 

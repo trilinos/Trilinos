@@ -148,7 +148,7 @@ int ML_Gen_MGHierarchy_UsingAggregation(ML *ml, int start,
    }
 #ifdef ML_TIMING
    t0 = GetClock() - t0;
-   if ( ml->comm->ML_mypid == 0 && ml_ag->print_flag < ML_Get_PrintLevel()) 
+   if ( ml->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 10 ) 
       printf("Aggregation total setup time = %e seconds\n", t0);
 #endif
 
@@ -305,7 +305,7 @@ MPI_Barrier(MPI_COMM_WORLD);
 
 #ifdef ML_TIMING
       t0 = GetClock() - t0;
-      if ( ml->comm->ML_mypid == 0 && ag->print_flag < ML_Get_PrintLevel()) 
+      if ( ml->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 10 )
          printf("RAP time for level %2d = %e\n", level, t0);
 #endif
 
@@ -2345,7 +2345,7 @@ int ML_Gen_MultiLevelHierarchy_UsingAggregation(ML *ml, int start,
    }
 #ifdef ML_TIMING
    t0 = GetClock() - t0;
-   if ( ml->comm->ML_mypid == 0 && ml_ag->print_flag < ML_Get_PrintLevel()) 
+   if ( ml->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 10 )
      printf("Aggregation total setup time = %e seconds\n", t0);
 #endif
    
@@ -2499,7 +2499,7 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
 
 #ifdef ML_TIMING
       t0 = GetClock() - t0;
-      if ( ml->comm->ML_mypid == 0 && 8 < ML_Get_PrintLevel()) 
+      if ( ml->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 10 )
          printf("ML_Gen_MultiLevelHierarchy (level %d) : RAP time = %e\n", level, t0);
 #endif
 

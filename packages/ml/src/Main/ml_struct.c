@@ -5604,13 +5604,15 @@ int ML_Print_Timing(ML *ml)
    t5 = - t5;
    t6 = - t6;
 
-   printf("\nML Timing information\n\n");
-   if (t1 != 0.0) printf(" Time to apply preconditioner (average) = %e\n",t1);
-   if (t3 != 0.0) printf(" Time to apply preconditioner (maximum) = %e\n",t3);
-   if (t5 != 0.0) printf(" Time to apply preconditioner (minimum) = %e\n",t5);
-   if (t2 != 0.0) printf(" Time to build kernels        (average) = %e\n",t2);
-   if (t4 != 0.0) printf(" Time to build kernels        (maximum) = %e\n",t4);
-   if (t6 != 0.0) printf(" Time to build kernels        (minimum) = %e\n",t6);
+   if (ml->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 10 ) {
+     printf("\nML Timing information\n\n");
+     if (t1 != 0.0) printf(" Time to apply preconditioner (average) = %e\n",t1);
+     if (t3 != 0.0) printf(" Time to apply preconditioner (maximum) = %e\n",t3);
+     if (t5 != 0.0) printf(" Time to apply preconditioner (minimum) = %e\n",t5);
+     if (t2 != 0.0) printf(" Time to build kernels        (average) = %e\n",t2);
+     if (t4 != 0.0) printf(" Time to build kernels        (maximum) = %e\n",t4);
+     if (t6 != 0.0) printf(" Time to build kernels        (minimum) = %e\n",t6);
+   }
 #else
    if (ml != NULL) ML_avoid_unused_param((void *) ml);
 #endif
@@ -5915,7 +5917,7 @@ int ML_Gen_CoarseSolverAggregation(ML *ml_handle, int level, ML_Aggregate *ag)
 #ifdef ML_TIMING
    sl->csolve->build_time = GetClock() - t0;
    ml_handle->timing->total_build_time += sl->csolve->build_time;
-   if ( ml_handle->comm->ML_mypid == 0 )
+   if ( ml_handle->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 10 )
       printf("Local Aggregation total setup time = %e\n",
          sl->csolve->build_time);
 #endif
@@ -5954,6 +5956,7 @@ int ML_Gen_Smoother_BlockHiptmair( ML *ml , int nl, int pre_or_post, int ntimes,
 
    if (nl == ML_ALL_LEVELS) {start_level = 0; end_level = ml->ML_num_levels-1;
 #ifdef ML_TIMING
+   if (ML_Get_PrintLevel() > 10)
       printf("Timing is incorrect when ML_ALL_LEVELS is used with Hiptmair\n");
 #endif
 }
@@ -6071,7 +6074,8 @@ int ML_Gen_Smoother_Hiptmair( ML *ml , int nl, int pre_or_post, int ntimes,
 
    if (nl == ML_ALL_LEVELS) {start_level = 0; end_level = ml->ML_num_levels-1;
 #ifdef ML_TIMING
-      printf("Timing is incorrect when ML_ALL_LEVELS is used with Hiptmair\n");
+   if (ML_Get_PrintLevel() > 10)
+     printf("Timing is incorrect when ML_ALL_LEVELS is used with Hiptmair\n");
 #endif
 }
    else { start_level = nl; end_level = nl;}
