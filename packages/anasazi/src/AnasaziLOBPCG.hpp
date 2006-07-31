@@ -867,7 +867,6 @@ namespace Anasazi {
         for (int i=0; i<_blockSize; i++) {
           _theta[i] = (*newstate.T)[i];
         }
-
       }
       else {
         // get ritz vecs/vals
@@ -1726,9 +1725,13 @@ namespace Anasazi {
       // Update the residual 2-norms 
       MVT::MvNorm(*_R,&_R2norms);
 
-      // Print information on current iteration
-      currentStatus( _om->stream(IterationDetails) );
-
+      // Print information on current status
+      if (_om->isVerbosity(Debug)) {
+        currentStatus( _om->stream(Debug) );
+      }
+      else if (_om->isVerbosity(IterationDetails)) {
+        currentStatus( _om->stream(IterationDetails) );
+      }
     } // end while (statusTest == false)
   }
 
