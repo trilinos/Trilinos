@@ -70,7 +70,7 @@ class get_out : public std::logic_error {
   public: get_out(const std::string &whatarg) : std::logic_error(whatarg) {}
 };
 
-void checks( RefCountPtr<BlockKyrlovSchur<ScalarType,MV,OP> > solver, int blocksize, int numblocks, 
+void checks( RefCountPtr<BlockKrylovSchur<ScalarType,MV,OP> > solver, int blocksize, int numblocks, 
              RefCountPtr<Eigenproblem<ScalarType,MV,OP> > problem,
              RefCountPtr<MatOrthoManager<ScalarType,MV,OP> > ortho,
              ModalSolverUtils<ScalarType,MV,OP> &msutils) {
@@ -78,11 +78,9 @@ void checks( RefCountPtr<BlockKyrlovSchur<ScalarType,MV,OP> > solver, int blocks
   
   TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.V)  != solver->getMaxSubspaceDim(),get_out,"getMaxSubspaceDim() does not match allocated size for V");
   TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.X)  != solver->getBlockSize(),get_out,"blockSize() does not match allocated size for X");
-  TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.R)  != solver->getBlockSize(),get_out,"blockSize() does not match allocated size for R");
-  TEST_FOR_EXCEPTION(state.T->size() != solver->getMaxSubspaceDim(),get_out,"getMaxSubspaceDim() does not match returned size of ritz values");
+  TEST_FOR_EXCEPTION(state.T->size() != (unsigned int)solver->getMaxSubspaceDim(),get_out,"getMaxSubspaceDim() does not match returned size of ritz values");
   TEST_FOR_EXCEPTION(solver->getBlockSize() != blocksize, get_out,"Solver block size does not match specified block size.");  
   TEST_FOR_EXCEPTION(&solver->getProblem() != problem.get(),get_out,"getProblem() did not return the submitted problem.");
-  TEST_FOR_EXCEPTION(solver->getResidualVecs() != state.R,get_out,"getResidualVecs() not pointing to state.R");
   TEST_FOR_EXCEPTION(solver->getEvecs()        != state.X,get_out,"getEvecs() not pointing to state.X");
   TEST_FOR_EXCEPTION(solver->getMaxSubspaceDim() != blocksize*numblocks+1,get_out,"BlockKrylovSchur::getMaxSubspaceDim() should always be 3*blocksize");
 
