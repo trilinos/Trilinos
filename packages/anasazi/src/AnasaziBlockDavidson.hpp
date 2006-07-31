@@ -68,13 +68,37 @@ namespace Anasazi {
    *
    * This struct is utilized by BlockDavidson::initialize() and BlockDavidson::getState().
    */
-  template <class ScalarType, class MulVec>
+  template <class ScalarType, class MV>
   struct BlockDavidsonState {
+    /*! \brief The current dimension of the solver.
+     *
+     * This should always be equal to BlockDavdison::getCurSubspaceDim()
+     */
     int curDim;
-    Teuchos::RefCountPtr<const MulVec> V;
-    Teuchos::RefCountPtr<const MulVec> X, KX, MX;
-    Teuchos::RefCountPtr<const MulVec> R, H;
+    /*! \brief The basis for the Krylov space.
+     *
+     * V has BlockDavidson::getMaxSubspaceDim() vectors, but only the first \c curDim are valid.
+     */
+    Teuchos::RefCountPtr<const MV> V;
+    //! The current eigenvectors.
+    Teuchos::RefCountPtr<const MV> X; 
+    //! The image of the current eigenvectors under K.
+    Teuchos::RefCountPtr<const MV> KX; 
+    //! The image of the current eigenvectors under M, or Teuchos::null if M was not specified.
+    Teuchos::RefCountPtr<const MV> MX;
+    //! The current residual vectors
+    Teuchos::RefCountPtr<const MV> R;
+    /*! \brief The current preconditioned residual vectors.
+     *
+     *  H is a pointer into V, and is only useful when BlockDavidson::iterate() throw a BlockDavidsonOrthoFailure exception.
+     */
+    Teuchos::RefCountPtr<const MV> H;
+    //! The current Ritz values.
     Teuchos::RefCountPtr<const std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> > T;
+    /*! \brief The current projected K matrix.
+     *
+     * KK is of order BlockDavidson::getMaxSubspaceDim(), but only the principal submatrix of order \c curDim is meaningful.
+     */
     Teuchos::RefCountPtr<const Teuchos::SerialDenseMatrix<int,ScalarType> > KK;
     BlockDavidsonState() : curDim(0), V(Teuchos::null),
                            X(Teuchos::null), KX(Teuchos::null), MX(Teuchos::null),

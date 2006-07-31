@@ -101,10 +101,30 @@ namespace Anasazi {
    */
   template <class ScalarType, class MV>
   struct LOBPCGState {
-    Teuchos::RefCountPtr<const MV> X, KX, MX;
-    Teuchos::RefCountPtr<const MV> P, KP, MP;
-    Teuchos::RefCountPtr<const MV> H, KH, MH;
+    //! The current eigenvectors.
+    Teuchos::RefCountPtr<const MV> X; 
+    //! The image of the current eigenvectors under K.
+    Teuchos::RefCountPtr<const MV> KX; 
+    //! The image of the current eigenvectors under M, or Teuchos::null if M was not specified.
+    Teuchos::RefCountPtr<const MV> MX;
+    //! The current search direction.
+    Teuchos::RefCountPtr<const MV> P; 
+    //! The image of the current search direction under K.
+    Teuchos::RefCountPtr<const MV> KP; 
+    //! The image of the current search direction under M, or Teuchos::null if M was not specified.
+    Teuchos::RefCountPtr<const MV> MP;
+    /*! \brief The current preconditioned residual vectors.
+     *
+     *  H is only useful when LOBPCG::iterate() throw a LOBPCGRitzFailure exception.
+     */
+    Teuchos::RefCountPtr<const MV> H; 
+    //! The image of the current preconditioned residual vectors under K.
+    Teuchos::RefCountPtr<const MV> KH; 
+    //! The image of the current preconditioned residual vectors under M, or Teuchos::null if M was not specified.
+    Teuchos::RefCountPtr<const MV> MH;
+    //! The current residual vectors.
     Teuchos::RefCountPtr<const MV> R;
+    //! The current Ritz values.
     Teuchos::RefCountPtr<const std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> > T;
     LOBPCGState() : X(Teuchos::null),KX(Teuchos::null),MX(Teuchos::null),
                     P(Teuchos::null),KP(Teuchos::null),MP(Teuchos::null),
