@@ -16,6 +16,7 @@ IF PACKAGE amesos THEN
 REMOVE --enable-amesos
 REMOVE --with-ml_amesos
 REMOVE --enable-moertel
+REMOVE --enable-webtrilinos
 DONE
 
 IF PACKAGE amesos SUBDIRECTORY thyra THEN
@@ -49,6 +50,7 @@ REMOVE --enable-nox-epetra
 REMOVE --enable-nox-epetra-examples
 REMOVE --enable-tsfcore-aztecoo
 REMOVE --enable-moertel
+REMOVE --enable-webtrilinos
 DONE
 
 IF PACKAGE aztecoo SUBDIRECTORY thyra THEN
@@ -107,6 +109,7 @@ REMOVE --enable-triutils
 REMOVE --enable-tsfcore-aztecoo
 REMOVE --enable-tsfcore-epetra
 REMOVE --enable-tsfextended 
+REMOVE --enable-webtrilinos
 DONE
 
 IF PACKAGE epetra SUBDIRECTORY thyra THEN
@@ -121,6 +124,7 @@ DONE
 IF PACKAGE epetraext THEN
 REMOVE --enable-epetraext
 REMOVE --enable-moertel
+REMOVE --enable-webtrilinos
 DONE
 
 # REMOVE --enable-thyra
@@ -136,6 +140,7 @@ DONE
 # Galeri -----------------------------------------------------------------------
 IF PACKAGE galeri THEN
 REMOVE --enable-galeri
+REMOVE --enable-webtrilinos
 DONE
 
 IF PACKAGE galeri SUBDIRECTORY python THEN
@@ -148,6 +153,7 @@ REMOVE --enable-ifpack
 REMOVE --enable-nox-epetra
 REMOVE --enable-nox-epetra-examples
 REMOVE --with-ml_ifpack
+REMOVE --enable-webtrilinos
 DONE
 
 IF PACKAGE ifpack SUBDIRECTORY thyra THEN
@@ -186,6 +192,7 @@ REMOVE --enable-moertel
 REMOVE --enable-nox
 REMOVE --enable-loca
 INSERT --disable-loca
+REMOVE --enable-webtrilinos
 DONE
 
 IF PACKAGE ml SUBDIRECTORY python THEN
@@ -235,6 +242,7 @@ DONE
 # PyTrilinos -------------------------------------------------------------------
 IF PACKAGE pytrilinos THEN
 REMOVE --enable-pytrilinos
+REMOVE --enable-webtrilinos
 DONE
 
 # RTOp -------------------------------------------------------------------------
@@ -274,6 +282,7 @@ REMOVE --enable-rythmos
 REMOVE --enable-rtop
 REMOVE --enable-thyra
 REMOVE --enable-stratimikos
+REMOVE --enable-webtrilinos
 DONE
 
 # Tpetra -----------------------------------------------------------------------
@@ -306,6 +315,7 @@ REMOVE --enable-belos
 REMOVE --enable-amesos
 REMOVE --with-ml_amesos 
 REMOVE --enable-moertel
+REMOVE --enable-webtrilinos
 DONE
 
 IF PACKAGE triutils SUBDIRECTORY python THEN
@@ -335,3 +345,9 @@ DONE
 IF PACKAGE tsfextended THEN
 REMOVE --enable-tsfextended
 DONE
+
+# WebTrilinos ------------------------------------------------------------------
+IF PACKAGE webtrilinos THEN
+REMOVE --enable-webtrilinos
+DONE
+
