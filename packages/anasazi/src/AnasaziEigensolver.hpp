@@ -151,10 +151,10 @@ class Eigensolver {
   //! \brief Set the blocksize to be used by the iterative solver in solving this eigenproblem.
   virtual void setBlockSize(int blockSize) = 0;
 
-  //! Set the auxilliary vectors for the solver.
+  //! Set the auxiliary vectors for the solver.
   virtual void setAuxVecs(const Teuchos::Array<Teuchos::RefCountPtr<const MV> > &auxvecs) = 0;
 
-  //! Get the auxilliary vectors for the solver.
+  //! Get the auxiliary vectors for the solver.
   virtual Teuchos::Array<Teuchos::RefCountPtr<const MV> > getAuxVecs() const = 0;
 
   //! States whether the solver has been initialized or not.

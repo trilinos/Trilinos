@@ -34,7 +34,7 @@
 /*!
   \file AnasaziStatusTestOrderedResNorm.hpp
   \brief A status test for testing the norm of the eigenvectors residuals along with a 
-         set of auxilliary eigenvalues.
+         set of auxiliary eigenvalues.
 */
 
 
@@ -45,7 +45,7 @@
     \class Anasazi::StatusTestOrderedResNorm 
     
     \brief A status test for testing the norm of the eigenvectors residuals
-    along with a set of auxilliary eigenvalues. 
+    along with a set of auxiliary eigenvalues. 
     
     The test evaluates to Passed when then the most significant of the
     eigenvalues all have a residual below a certain threshhold. The purpose of
@@ -119,7 +119,7 @@ class StatusTestOrderedResNorm : public StatusTest<ScalarType,MV,OP> {
     _state = Undefined;
   }
 
-  //! Set the auxilliary eigenvalues.
+  //! Set the auxiliary eigenvalues.
   /*! This routine also resets the state to Undefined.
    */
   void setAuxVals(const std::vector<MagnitudeType> &vals) {
@@ -127,7 +127,7 @@ class StatusTestOrderedResNorm : public StatusTest<ScalarType,MV,OP> {
     _state = Undefined;
   }
 
-  //! Get the auxilliary eigenvalues and their residuals.
+  //! Get the auxiliary eigenvalues and their residuals.
   void getAuxVals(std::vector<MagnitudeType> &vals) const {
     vals = _vals;
   }

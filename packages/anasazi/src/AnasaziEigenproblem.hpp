@@ -89,7 +89,7 @@ namespace Anasazi {
      */
     virtual void setInitVec( const Teuchos::RefCountPtr<MV> &InitVec ) = 0; 
 
-    /*! \brief Set auxilliary vectors: finish
+    /*! \brief Set auxiliary vectors. 
      *
      * \note This multivector can have any number of columns, and most likely
      * will contain vectors that will be used by the eigensolver to
@@ -150,7 +150,7 @@ namespace Anasazi {
     //! Get a pointer to the initial vector
     virtual Teuchos::RefCountPtr<const MV> getInitVec() const = 0;
 
-    //! Get a pointer to the auxilliary vector
+    //! Get a pointer to the auxiliary vector
     virtual Teuchos::RefCountPtr<const MV> getAuxVecs() const = 0;
 
     //! Get the number of eigenvalues (NEV) that are required by this eigenproblem.

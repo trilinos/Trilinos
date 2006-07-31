@@ -40,9 +40,9 @@
     compute the local update of X and P.
     
     A solver is bound to an eigenproblem at declaration.
-    Other solver parameters (e.g., block size, auxilliary vectors) can be changed dynamically.
+    Other solver parameters (e.g., block size, auxiliary vectors) can be changed dynamically.
     
-    The orthogonalization manager is used to project away from the auxilliary vectors.
+    The orthogonalization manager is used to project away from the auxiliary vectors.
     If full orthogonalization is enabled, the orthogonalization manager is also used to construct an M orthonormal basis.
     The orthogonalization manager is subclass of MatOrthoManager, which LOBPCG assumes to be defined by the M inner product.
     LOBPCG will not work correctly if the orthomanager uses a different inner product.
@@ -262,14 +262,14 @@ namespace Anasazi {
      * \return bool indicating the state of the solver.
      * \post
      * If isInitialized() == \c true:
-     *   - X is orthogonal to auxilliary vectors and has orthonormal columns
+     *   - X is orthogonal to auxiliary vectors and has orthonormal columns
      *   - KX == Op*X
      *   - MX == M*X if M != Teuchos::null\n
      *     Otherwise, MX == Teuchos::null
      *   - getEigenvalues() returns the Ritz values with respect to X
      *   - getResidualVecs() returns the residual vectors with respect to X
      *   - If hasP() == \c true,
-     *      - P orthogonal to auxilliary vectors
+     *      - P orthogonal to auxiliary vectors
      *      - If getFullOrtho() == \c true,
      *        - P is orthogonal to X and has orthonormal columns
      *      - KP == Op*P
@@ -405,10 +405,6 @@ namespace Anasazi {
     const Eigenproblem<ScalarType,MV,OP>& getProblem() const { return(*_problem); };
 
 
-    //! Get the blocksize to be used by the iterative solver in solving this eigenproblem.
-    int getBlockSize() const { return(_blockSize); }
-
-
     /*! \brief Set the blocksize to be used by the iterative solver in solving
      * this eigenproblem.
      *  
@@ -420,20 +416,24 @@ namespace Anasazi {
     void setBlockSize(int blockSize);
 
 
-    /*! \brief Set the auxilliary vectors for the solver.
+    //! Get the blocksize to be used by the iterative solver in solving this eigenproblem.
+    int getBlockSize() const { return(_blockSize); }
+
+
+    /*! \brief Set the auxiliary vectors for the solver.
      *
      *  Because the current iterate X and search direction P cannot be assumed
-     *  orthogonal to the new auxilliary vectors, a call to setAuxVecs() with a
+     *  orthogonal to the new auxiliary vectors, a call to setAuxVecs() with a
      *  non-empty argument will reset the solver to the uninitialized state.
      *
      *  In order to preserve the current state, the user will need to extract
      *  it from the solver using getState(), orthogonalize it against the new
-     *  auxilliary vectors, and manually reinitialize the solver using
+     *  auxiliary vectors, and manually reinitialize the solver using
      *  initialize().
      */
     void setAuxVecs(const Teuchos::Array<Teuchos::RefCountPtr<const MV> > &auxvecs);
 
-    //! Get the current auxilliary vectors.
+    //! Get the current auxiliary vectors.
     Teuchos::Array<Teuchos::RefCountPtr<const MV> > getAuxVecs() const {return _auxVecs;}
 
     //@}
@@ -441,9 +441,6 @@ namespace Anasazi {
     //!  @name %LOBPCG-specific accessor routines
     //@{
 
-    //! Determine if the LOBPCG iteration is using full orthogonality.
-    bool getFullOrtho() const { return(_fullOrtho); }
-    
     /*! \brief Instruct the LOBPCG iteration to use full orthogonality.
      *
      *  If the getFullOrtho() == \c false and isInitialized() == \c true and hasP() == \c true, then
@@ -451,6 +448,9 @@ namespace Anasazi {
      */
     void setFullOrtho(bool fullOrtho);
 
+    //! Determine if the LOBPCG iteration is using full orthogonality.
+    bool getFullOrtho() const { return(_fullOrtho); }
+    
     //! Indicates whether the search direction given by getState() is valid.
     bool hasP() {return _hasP;}
 
@@ -559,7 +559,7 @@ namespace Anasazi {
     // and deallocate it inside of iterate()
     Teuchos::RefCountPtr<MV> _tmpMV;        
     // 
-    // Auxilliary vectors
+    // auxiliary vectors
     Teuchos::Array<Teuchos::RefCountPtr<const MV> > _auxVecs;
     int _numAuxVecs;
     //
@@ -773,12 +773,12 @@ namespace Anasazi {
 
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
-  // Set the auxilliary vectors
+  // Set the auxiliary vectors
   template <class ScalarType, class MV, class OP>
   void LOBPCG<ScalarType,MV,OP>::setAuxVecs(const Teuchos::Array<Teuchos::RefCountPtr<const MV> > &auxvecs) {
     typedef typename Teuchos::Array<Teuchos::RefCountPtr<const MV> >::iterator tarcpmv;
 
-    // set new auxilliary vectors
+    // set new auxiliary vectors
     _auxVecs = auxvecs;
     
     if (_om->isVerbosity( Debug ) ) {
@@ -793,7 +793,7 @@ namespace Anasazi {
       _numAuxVecs += MVT::GetNumberVecs(**i);
     }
     
-    // If the solver has been initialized, X and P are not necessarily orthogonal to new auxilliary vectors
+    // If the solver has been initialized, X and P are not necessarily orthogonal to new auxiliary vectors
     if (_numAuxVecs > 0 && _initialized) {
       _initialized = false;
       _hasP = false;
@@ -1180,7 +1180,7 @@ namespace Anasazi {
         _count_ApplyM += _blockSize;
       }
 
-      // orthogonalize H against the auxilliary vectors
+      // orthogonalize H against the auxiliary vectors
       // optionally: orthogonalize H against X and P ([X P] is already orthonormal)
       Teuchos::Array<Teuchos::RefCountPtr<const MV> > Q;
       Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > C = 
@@ -1758,7 +1758,7 @@ namespace Anasazi {
   //          orthogonal to auxvecs
   // checkMH: check MH == M*H
   // checkR : check R orthogonal to X
-  // checkQ : check that auxilliary vectors are actually orthonormal
+  // checkQ : check that auxiliary vectors are actually orthonormal
   //
   // TODO: 
   //  add checkTheta 

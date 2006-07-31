@@ -150,9 +150,10 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::SimpleLOBPCGSolMgr(
   _blockSize(0),
   _maxIters(100)
 {
-  TEST_FOR_EXCEPTION(_problem == Teuchos::null, AnasaziError, "SimpleLOBPCGSolMgr: Problem not given to solver manager.");
-  TEST_FOR_EXCEPTION(!_problem->isProblemSet(), AnasaziError, "SimpleLOBPCGSolMgr: Problem not set.");
-  TEST_FOR_EXCEPTION(!_problem->isHermitian(), AnasaziError,  "SimpleLOBPCGSolMgr: Problem not hermitian.");
+  TEST_FOR_EXCEPTION(_problem == Teuchos::null,              std::invalid_argument, "Problem not given to solver manager.");
+  TEST_FOR_EXCEPTION(!_problem->isProblemSet(),              std::invalid_argument, "Problem not set.");
+  TEST_FOR_EXCEPTION(!_problem->isHermitian(),               std::invalid_argument, "Problem not symmetric.");
+  TEST_FOR_EXCEPTION(_problem->getInitVec() == Teuchos::null,std::invalid_argument, "Problem does not contain initial vectors to clone from.");
 
   _whch = pl.get("Which","SR");
   TEST_FOR_EXCEPTION(_whch != "SM" && _whch != "LM" && _whch != "SR" && _whch != "LR",
@@ -260,7 +261,7 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::solve() {
       Teuchos::RefCountPtr<MV> newvecs = MVT::CloneCopy(*lobpcg_solver->getEvecs(),ind);
       // store them
       foundvecs.push_back(newvecs);
-      // add them as auxilliary vectors
+      // add them as auxiliary vectors
       Teuchos::Array<Teuchos::RefCountPtr<const MV> > auxvecs = lobpcg_solver->getAuxVecs();
       auxvecs.push_back(newvecs);
       // setAuxVecs() will reset the solver to uninitialized, without messing with numIters()
@@ -288,7 +289,7 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::solve() {
         ortho->normalize(*newvecs,Teuchos::null,Teuchos::null);
         // store them
         foundvecs.push_back(newvecs);
-        // don't bother adding them as auxilliary vectors; we have reached maxiters and are going to quit
+        // don't bother adding them as auxiliary vectors; we have reached maxiters and are going to quit
         
         // copy the converged eigenvalues
         Teuchos::RefCountPtr<std::vector<MagnitudeType> > newvals = Teuchos::rcp( new std::vector<MagnitudeType>(num) );

@@ -55,11 +55,8 @@
  *
  *  \brief The Anasazi::BlockDavidsonSolMgr provides a powerful and fully-featured solver manager over the BlockDavidson eigensolver.
  *
- *  Features include: FINISH
- *  <ul>
- *  <li>
- *  </ul>
- *
+ * This solver mangaer implements a hard-locking mechanism, whereby eigenpairs designated to be locked are moved from the eigensolver and placed in
+ * auxiliary storage. The eigensolver is then restarted and continues to iterate, always orthogonal to the locked eigenvectors.
 
  \ingroup anasazi_solvermanagers
 
@@ -83,10 +80,23 @@ class BlockDavidsonSolMgr : public SolverManager<ScalarType,MV,OP> {
   //! @name Constructors/Destructor
   //@{ 
 
-  //! Default Constructor.
-  BlockDavidsonSolMgr() {};
-
-  //! Basic Constructor.
+  /*! \brief Basic constructor for BlockDavidsonSolMgr.
+   *
+   * This constructor accepts the Eigenproblem to be solved in addition
+   * to a parameter list of options for the solver manager. These options include the following:
+   *   - "Which" - a \c string specifying the desired eigenvalues: SM, LM, SR or LR. Default: "SR"
+   *   - "Block Size" - a \c int specifying the block size to be used by the underlying LOBPCG solver. Default: problem->getNEV()
+   *   - "Num Blocks" - a \c int specifying the number of blocks allocated for the Krylov basis. Default: 2
+   *   - "Maximum Restarts" - a \c int specifying the maximum number of restarts the underlying solver is allowed to perform. Default: 20
+   *   - "Verbosity" - a sum of MsgType specifying the verbosity. Default: Anasazi::Errors
+   *   - "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide convergence. Default: machine precision.
+   *   - "Relative Convergence Tolerance" - a \c bool specifying whether residuals norms should be scaled by their eigenvalues for the purposing of deciding convergence. Default: true
+   *   - "Use Locking" - a \c bool specifying whether the algorithm should employ locking of converged eigenpairs. Default: false
+   *   - "Max Locked" - a \c int specifying the maximum number of eigenpairs to be locked. Default: problem->getNEV()
+   *   - "Locking Quorum" - a \c int specifying the number of eigenpairs that must meet the locking criteria before locking actually occurs. Default: 1
+   *   - "Locking Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide locking. Default: 0.1*convergence tolerance
+   *   - "Relative Locking Tolerance" - a \c bool specifying whether residuals norms should be scaled by their eigenvalues for the purposing of deciding locking. Default: true
+   */
   BlockDavidsonSolMgr( const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem,
                              Teuchos::ParameterList &pl );
 
@@ -110,12 +120,23 @@ class BlockDavidsonSolMgr : public SolverManager<ScalarType,MV,OP> {
    * until the problem has been solved (as decided by the solver manager) or the solver manager decides to 
    * quit.
    *
-   * In the case of BlockDavidsonSolMgr, FINISH
+   * This method calls BlockDavidson::iterate(), which will return either because a specially constructed status test evaluates to ::Passed
+   * or an exception is thrown.
    *
-   * \returns ReturnType specifying:
+   * A return from BlockDavidson::iterate() signifies one of the following scenarios:
+   *    - the maximum number of restarts has been exceeded. In this scenario, the solver manager will place\n
+   *      all converged eigenpairs into the eigenproblem and return ::Unconverged.
+   *    - the locking conditions have been met. In this scenario, some of the current eigenpairs will be removed\n
+   *      from the eigensolver and placed into auxiliary storage. The eigensolver will be restarted with the remaining part of the Krylov subspace\n
+   *      and some random information to replace the removed subspace.
+   *    - global convergence has been met. In this case, the most significant NEV eigenpairs in the solver and locked storage  \n
+   *      have met the convergence criterion. (Here, NEV refers to the number of eigenpairs requested by the Eigenproblem.)    \n
+   *      In this scenario, the solver manager will return ::Converged.
+   *
+   * \returns ::ReturnType specifying:
    * <ul>
-   *    <li>Converged: the eigenproblem was solved to the specification required by the solver manager.
-   *    <li>Unconverged: the eigenproblem was not solved to the specification desired by the solver manager.
+   *     - ::Converged: the eigenproblem was solved to the specification required by the solver manager.
+   *     - ::Unconverged: the eigenproblem was not solved to the specification desired by the solver manager.
    * </ul>
   */
   ReturnType solve();
@@ -156,9 +177,10 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::BlockDavidsonSolMgr(
   _verbosity(Anasazi::Errors),
   _lockQuorum(1)
 {
-  TEST_FOR_EXCEPTION(_problem == Teuchos::null, AnasaziError, "Problem not given to solver manager.");
-  TEST_FOR_EXCEPTION(!_problem->isProblemSet(), AnasaziError, "Problem not set.");
-  TEST_FOR_EXCEPTION(!_problem->isHermitian(), AnasaziError, "Problem not symmetric.");
+  TEST_FOR_EXCEPTION(_problem == Teuchos::null,               std::invalid_argument, "Problem not given to solver manager.");
+  TEST_FOR_EXCEPTION(!_problem->isProblemSet(),               std::invalid_argument, "Problem not set.");
+  TEST_FOR_EXCEPTION(!_problem->isHermitian(),                std::invalid_argument, "Problem not symmetric.");
+  TEST_FOR_EXCEPTION(_problem->getInitVec() == Teuchos::null, std::invalid_argument, "Problem does not contain initial vectors to clone from.");
 
   // which values to solve for
   _whch = pl.get("Which",_whch);
@@ -182,7 +204,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::BlockDavidsonSolMgr(
   _blockSize = pl.get("Block Size",_problem->getNEV());
   TEST_FOR_EXCEPTION(_blockSize <= 0, std::invalid_argument,
                      "Anasazi::BlockDavidsonSolMgr: \"Block Size\" must be strictly positive.");
-  _numBlocks = pl.get("Num Blocks",1);
+  _numBlocks = pl.get("Num Blocks",2);
   TEST_FOR_EXCEPTION(_numBlocks <= 1, std::invalid_argument,
                      "Anasazi::BlockDavidsonSolMgr: \"Num Blocks\" must be strictly positive.");
 
@@ -199,16 +221,16 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::BlockDavidsonSolMgr(
   TEST_FOR_EXCEPTION(_maxLocked < 0, std::invalid_argument,
                      "Anasazi::BlockDavidsonSolMgr: \"Max Locked\" must be positive.");
   TEST_FOR_EXCEPTION(_maxLocked + _blockSize < _problem->getNEV(), 
-                     std::logic_error,
+                     std::invalid_argument,
                      "Anasazi::BlockDavidsonSolMgr: Not enough storage space for requested number of eigenpairs.");
   TEST_FOR_EXCEPTION(_numBlocks*_blockSize + _maxLocked > MVT::GetVecLength(*_problem->getInitVec()),
-                     std::logic_error,
+                     std::invalid_argument,
                      "Anasazi::BlockDavidsonSolMgr: Potentially impossible orthogonality requests. Reduce basis size or locking size.");
 
   if (_useLocking) {
     _lockQuorum = pl.get("Locking Quorum",_lockQuorum);
     TEST_FOR_EXCEPTION(_lockQuorum <= 0,
-                       std::logic_error,
+                       std::invalid_argument,
                        "Anasazi::BlockDavidsonSolMgr: \"Locking Quorum\" must be strictly positive.");
   }
 
@@ -271,7 +293,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
   // BlockDavidson solver
   Teuchos::RefCountPtr<BlockDavidson<ScalarType,MV,OP> > bd_solver 
     = Teuchos::rcp( new BlockDavidson<ScalarType,MV,OP>(_problem,sorter,printer,combotest,ortho,plist) );
-  // set any auxilliary vectors defined in the problem
+  // set any auxiliary vectors defined in the problem
   Teuchos::RefCountPtr< const MV > probauxvecs = _problem->getAuxVecs();
   if (probauxvecs != Teuchos::null) {
     bd_solver->setAuxVecs( Teuchos::tuple< Teuchos::RefCountPtr<const MV> >(probauxvecs) );

@@ -30,12 +30,6 @@
   \brief Implementation of the block Davidson method
 */
 
-// TODO: the documentation here needs to be made rigorous
-// in particular, getState() and initialize() need to exactly describe their 
-// input and output
-
-// finish: add numblocks+blocksize+numauxvecs >= GetLength test
-
 #ifndef ANASAZI_BLOCK_DAVIDSON_HPP
 #define ANASAZI_BLOCK_DAVIDSON_HPP
 
@@ -156,6 +150,18 @@ namespace Anasazi {
      * status test evaluates as Passed, at which point the method returns to
      * the caller. 
      *
+     * The block Davidson iteration proceeds as follows:
+     * -# The current residual (R) is preconditioned to form H
+     * -# H is orthogonalized against the auxiliary vectors and the previous basis vectors, and made orthonormal.
+     * -# The current basis is expanded by H and used to project the eigenproblem
+     * -# The projected eigenproblem is solved, and the desired eigenvectors and eigenvalues are selected.
+     * -# These are used to form the new eigenvector estimates (X).
+     * -# The new residual (R) is formed.
+     *
+     * The status test is queried at the beginning of the iteration.
+     *
+     * Possible exceptions thrown include std::logic_error, std::invalid_argument or
+     * one of the BlockDavidson-specific exceptions.
      */
     void iterate();
 
@@ -187,9 +193,16 @@ namespace Anasazi {
      *
      * \return bool indicating the state of the solver.
      * \post
-     * <ul>
-     * <li> finish
-     * </ul>
+     * If isInitialized() == \c true:
+     *    - getCurSubspaceDim() > 0
+     *    - the first getCurSubspaceDim() vectors of V are orthogonal to auxiliary vectors and have orthonormal columns
+     *    - the principal submatrix of order getCurSubspaceDim() of KK contains the project eigenproblem matrix
+     *    - X contains the Ritz vectors with respect to the current Krylov basis
+     *    - T contains the Ritz values with respect to the current Krylov basis
+     *    - KX == Op*X
+     *    - MX == M*X if M != Teuchos::null\n
+     *      Otherwise, MX == Teuchos::null
+     *    - R contains the residual vectors with respect to X
      */
     bool isInitialized() { return _initialized; }
 
@@ -288,28 +301,6 @@ namespace Anasazi {
       return ret;
     }
 
-    //! @name Accessor routines
-    //@{ 
-
-
-    //! Get a constant reference to the eigenvalue problem.
-    const Eigenproblem<ScalarType,MV,OP>& getProblem() const { return(*_problem); };
-
-
-    /*! \brief Set the blocksize and number of blocks to be used by the
-     * iterative solver in solving this eigenproblem.
-     *  
-     *  Changing either the block size or the number of blocks will reset the
-     *  solver to an uninitialized state.
-     */
-    void setSize(int blockSize, int numBlocks);
-
-    //! \brief Set the blocksize. 
-    void setBlockSize(int blockSize);
-
-    //! Get the blocksize to be used by the iterative solver in solving this eigenproblem.
-    int getBlockSize() const { return(_blockSize); }
-
     /*! \brief Get the dimension of the search subspace used to generate the current eigenvectors and eigenvalues.
      *
      *  \return An integer specifying the rank of the Krylov subspace currently in use by the eigensolver. If isInitialized() == \c false, 
@@ -324,23 +315,50 @@ namespace Anasazi {
     int getMaxSubspaceDim() {return _blockSize*_numBlocks;}
 
 
-    /*! \brief Set the auxilliary vectors for the solver.
+
+    //! @name Accessor routines from Eigensolver
+    //@{ 
+
+
+    //! Get a constant reference to the eigenvalue problem.
+    const Eigenproblem<ScalarType,MV,OP>& getProblem() const { return(*_problem); };
+
+    //! \brief Set the blocksize. 
+    void setBlockSize(int blockSize);
+
+    //! Get the blocksize to be used by the iterative solver in solving this eigenproblem.
+    int getBlockSize() const { return(_blockSize); }
+
+    /*! \brief Set the auxiliary vectors for the solver.
      *
      *  Because the current iterate X and search direction P cannot be assumed
-     *  orthogonal to the new auxilliary vectors, a call to setAuxVecs() may
+     *  orthogonal to the new auxiliary vectors, a call to setAuxVecs() may
      *  reset the solver to the uninitialized state. This happens only in the
      *  case where the user requests full orthogonalization when the solver is
      *  in an initialized state with full orthogonalization disabled.
      *
      *  In order to preserve the current iterate, the user will need to extract
      *  it from the solver using getEvecs(), orthogonalize it against the new
-     *  auxilliary vectors, and manually reinitialize the solver using
+     *  auxiliary vectors, and manually reinitialize the solver using
      *  initialize().
      */
     void setAuxVecs(const Teuchos::Array<Teuchos::RefCountPtr<const MV> > &auxvecs);
 
-    //! Get the auxilliary vectors for the solver.
+    //! Get the auxiliary vectors for the solver.
     Teuchos::Array<Teuchos::RefCountPtr<const MV> > getAuxVecs() const {return _auxVecs;}
+
+    //@}
+
+    //! @name BlockDavidson-specific accessor routines
+    //@{ 
+
+    /*! \brief Set the blocksize and number of blocks to be used by the
+     * iterative solver in solving this eigenproblem.
+     *  
+     *  Changing either the block size or the number of blocks will reset the
+     *  solver to an uninitialized state.
+     */
+    void setSize(int blockSize, int numBlocks);
 
     //@}
 
@@ -448,7 +466,7 @@ namespace Anasazi {
     //
     Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > _KK;
     // 
-    // Auxilliary vectors
+    // auxiliary vectors
     Teuchos::Array<Teuchos::RefCountPtr<const MV> > _auxVecs;
     int _numAuxVecs;
     //
@@ -595,12 +613,12 @@ namespace Anasazi {
 
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
-  // Set the auxilliary vectors
+  // Set the auxiliary vectors
   template <class ScalarType, class MV, class OP>
   void BlockDavidson<ScalarType,MV,OP>::setAuxVecs(const Teuchos::Array<Teuchos::RefCountPtr<const MV> > &auxvecs) {
     typedef typename Teuchos::Array<Teuchos::RefCountPtr<const MV> >::iterator tarcpmv;
 
-    // set new auxilliary vectors
+    // set new auxiliary vectors
     _auxVecs = auxvecs;
     
     if (_om->isVerbosity( Debug ) ) {
@@ -615,7 +633,7 @@ namespace Anasazi {
       _numAuxVecs += MVT::GetNumberVecs(**i);
     }
     
-    // If the solver has been initialized, X and P are not necessarily orthogonal to new auxilliary vectors
+    // If the solver has been initialized, X and P are not necessarily orthogonal to new auxiliary vectors
     if (_numAuxVecs > 0 && _initialized) {
       _initialized = false;
     }
@@ -1028,7 +1046,7 @@ namespace Anasazi {
       for (int i=0; i<_curDim; i++) prevind[i] = i;
       Teuchos::RefCountPtr<MV> Vprev = MVT::CloneView(*_V,prevind);
 
-      // Orthogonalize H against the previous vectors and the auxilliary vectors, and normalize
+      // Orthogonalize H against the previous vectors and the auxiliary vectors, and normalize
       {
         Teuchos::TimeMonitor lcltimer( *_timerOrtho );
 
@@ -1235,7 +1253,7 @@ namespace Anasazi {
   //          orthogonal to V and H and auxvecs
   // checkMH: check MH == M*H
   // checkR : check R orthogonal to X
-  // checkQ : check that auxilliary vectors are actually orthonormal
+  // checkQ : check that auxiliary vectors are actually orthonormal
   //
   // TODO: 
   //  add checkTheta 

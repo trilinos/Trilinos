@@ -100,7 +100,7 @@ namespace Anasazi {
     */
     void setInitVec( const Teuchos::RefCountPtr<MV>& InitVec ) { _InitVec = InitVec; _isSet=false; };
     
-    /*! \brief Set auxilliary vectors.
+    /*! \brief Set auxiliary vectors.
 
     \note This multivector can have any number of columns, and most likely will contain vectors that
     will be used by the eigensolver to orthogonalize against.
@@ -162,7 +162,7 @@ namespace Anasazi {
     //! Get a pointer to the initial vector
     Teuchos::RefCountPtr<const MV> getInitVec() const { return( _InitVec ); };
     
-    //! Get a pointer to the auxilliary vector
+    //! Get a pointer to the auxiliary vector
     Teuchos::RefCountPtr<const MV> getAuxVecs() const { return( _AuxVecs ); };
     
     //! Get the number of eigenvalues (NEV) that are required by this eigenproblem.
@@ -200,7 +200,7 @@ namespace Anasazi {
     //! Reference-counted pointer for the initial vector of the eigenproblem \f$Ax=\lambda Mx\f$
     Teuchos::RefCountPtr<MV> _InitVec;
 
-    //! Reference-counted pointer for the auxilliary vector of the eigenproblem \f$Ax=\lambda Mx\f$
+    //! Reference-counted pointer for the auxiliary vector of the eigenproblem \f$Ax=\lambda Mx\f$
     Teuchos::RefCountPtr<MV> _AuxVecs;
 
     //! Reference-counted pointer for the computed eigenvectors of \f$Ax=\lambda Mx\f$

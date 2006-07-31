@@ -125,11 +125,11 @@ class LOBPCGSolMgr : public SolverManager<ScalarType,MV,OP> {
    * This method calls LOBPCG::iterate(), which will return either because a specially constructed status test evaluates to ::Passed
    * or an exception is thrown.
    *
-   * In this case, a return from LOBPCG::iterate() signifies one of the following scenarios:
+   * A return from LOBPCG::iterate() signifies one of the following scenarios:
    *    - the maximum number of iterations has been exceeded. In this scenario, the solver manager will place\n
    *      all converged eigenpairs into the eigenproblem and return ::Unconverged.
    *    - the locking conditions have been met. In this scenario, some of the current eigenpairs will be removed\n
-   *      from the eigensolver and place into auxiliary storage. The eigensolver will be restarted with the remaining\n
+   *      from the eigensolver and placed into auxiliary storage. The eigensolver will be restarted with the remaining\n
    *      eigenpairs and some random information to replace the removed eigenpairs.
    *    - global convergence has been met. In this case, the most significant NEV eigenpairs in the solver and locked storage  \n
    *      have met the convergence criterion. (Here, NEV refers to the number of eigenpairs requested by the Eigenproblem.)    \n
@@ -308,7 +308,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
   // LOBPCG solver
   Teuchos::RefCountPtr<LOBPCG<ScalarType,MV,OP> > lobpcg_solver 
     = Teuchos::rcp( new LOBPCG<ScalarType,MV,OP>(_problem,sorter,printer,combotest,ortho,plist) );
-  // set any auxilliary vectors defined in the problem
+  // set any auxiliary vectors defined in the problem
   Teuchos::RefCountPtr< const MV > probauxvecs = _problem->getAuxVecs();
   if (probauxvecs != Teuchos::null) {
     lobpcg_solver->setAuxVecs( Teuchos::tuple< Teuchos::RefCountPtr<const MV> >(probauxvecs) );

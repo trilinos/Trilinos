@@ -555,7 +555,6 @@ namespace Anasazi {
 
         MagnitudeType condT = tolerance;
         
-        // finish : test to make sure _eps is correct
         while (condT >= tolerance) {
 
           numSVQB++;
