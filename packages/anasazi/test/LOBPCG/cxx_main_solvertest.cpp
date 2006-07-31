@@ -115,7 +115,7 @@ void checks( RefCountPtr<LOBPCG<ScalarType,MV,OP> > solver, int blocksize, bool 
       OPT::Apply(*problem->getM(),*evecs,*Mevecs);
     }
     vector<MagnitudeType> theta = solver->getEigenvalues();
-    TEST_FOR_EXCEPTION(theta.size() != blocksize,get_out,"getEigenvalues() has incorrect size.");
+    TEST_FOR_EXCEPTION(theta.size() != (unsigned int)blocksize,get_out,"getEigenvalues() has incorrect size.");
     SerialDenseMatrix<int,ScalarType> T(blocksize,blocksize);
     for (int i=0; i<blocksize; i++) T(i,i) = theta[i];
     // LOBPCG computes residuals like R = K*X - M*X*T 
@@ -135,7 +135,7 @@ void checks( RefCountPtr<LOBPCG<ScalarType,MV,OP> > solver, int blocksize, bool 
 
     // check that eigenvectors match ritz vectors
     std::vector<MagnitudeType> rvals = solver->getRitzValues();
-    TEST_FOR_EXCEPTION(rvals.size() != solver->getCurSubspaceDim(),get_out,"getRitzValues() has incorrect size.");
+    TEST_FOR_EXCEPTION(rvals.size() !=(unsigned int)solver->getCurSubspaceDim(),get_out,"getRitzValues() has incorrect size.");
     error = 0.0;
     for (int i=0; i<blocksize; i++) error += SCT::magnitude(theta[i] - rvals[i]);
     // this should be exact; we will require it
