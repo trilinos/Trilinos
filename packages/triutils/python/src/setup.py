@@ -65,10 +65,8 @@ uniquifyList(extra_compile_args)
 # Get the relevant Makefile export variable values, split them into lists of
 # strings, add them together to obtain a big list of option strings, and then
 # remove any duplicate entries
-options = TRIUTILS_INCLUDES.split()   + \
-          TRIUTILS_LIBS.split()       + \
-          PYTRILINOS_INCLUDES.split() + \
-          PYTRILINOS_LIBS.split()
+options = TRIUTILS_INCLUDES.split() + \
+          TRIUTILS_LIBS.split()
 uniquifyList(options)
 
 # Distribute the individual options to the appropriate Extension class arguments

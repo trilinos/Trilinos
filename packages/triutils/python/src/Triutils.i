@@ -44,6 +44,7 @@
 #include "Epetra_VbrMatrix.h"
 
 // Epetra wrapper helper includes
+#include "NumPyImporter.h"
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"
 

@@ -28,12 +28,10 @@
 
 # Include export makefiles
 include $(top_builddir)/Makefile.export.triutils
-include $(top_builddir)/../PyTrilinos/Makefile.export.pytrilinos
 
 # Include swig rules
 include $(top_srcdir)/config/swig.am
-SWIG_CXXFLAGS = $(TRIUTILS_INCLUDES)                 \
-		$(PYTRILINOS_INCLUDES)               \
+SWIG_CXXFLAGS = $(TRIUTILS_INCLUDES) \
                 -I$(top_srcdir)/../epetra/python/src
 
 EXTRA_DIST = Triutils.i setup.py
