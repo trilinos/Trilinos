@@ -155,6 +155,7 @@ if test "X$ac_cv_use_teuchos" != "Xno" ||
 	test "X$ac_cv_use_aztecoo_teuchos" != "Xno" ||
 	test "X$ac_cv_use_capo" != "Xno" ||
 	test "X$ac_cv_use_epetraext" != "Xno" ||
+	test "X$ac_cv_use_meros" != "Xno" ||
 	test "X$ac_cv_use_moocho" != "Xno" ||
 	test "X$ac_cv_use_rtop" != "Xno" ||
 	test "X$ac_cv_use_rythmos" != "Xno" ||
@@ -174,6 +175,10 @@ AM_CONDITIONAL(BUILD_TEUCHOS, test "X$BUILD_TEUCHOS" != "Xno")
 
 if test "X$ac_cv_use_rtop" != "Xno" ||
 	test "X$ac_cv_use_moocho" != "Xno" ||
+	test "X$ac_cv_use_capo" != "Xno" ||
+	test "X$ac_cv_use_meros" != "Xno" ||
+	test "X$ac_cv_use_rythmos" != "Xno" ||
+	test "X$ac_cv_use_stratimikos" != "Xno" ||
 	test "X$ac_cv_use_thyra" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/rtop])
   BUILD_RTOP=yes
@@ -187,6 +192,7 @@ AM_CONDITIONAL(BUILD_RTOP, test "X$BUILD_RTOP" != "Xno")
 
 if test "X$ac_cv_use_thyra" != "Xno" ||
 	test "X$ac_cv_use_capo" != "Xno" ||
+	test "X$ac_cv_use_meros" != "Xno" ||
 	test "X$ac_cv_use_rythmos" != "Xno" ||
 	test "X$ac_cv_use_stratimikos" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/thyra])
@@ -334,8 +340,7 @@ else
 fi
 AM_CONDITIONAL(BUILD_KOMPLEX, test "X$BUILD_KOMPLEX" != "Xno")
 
-if test "X$ac_cv_use_tsf" != "Xno" ||
-	test "X$ac_cv_use_meros" != "Xno"; then
+if test "X$ac_cv_use_tsf" != "Xno"; then 
   AC_CONFIG_SUBDIRS([packages/TSF])
   BUILD_TSF=yes
   if test "X$ac_cv_use_tsf_explicit" != "Xyes"; then

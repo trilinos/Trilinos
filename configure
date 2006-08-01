@@ -2977,6 +2977,7 @@ if test "X$ac_cv_use_teuchos" != "Xno" ||
 	test "X$ac_cv_use_aztecoo_teuchos" != "Xno" ||
 	test "X$ac_cv_use_capo" != "Xno" ||
 	test "X$ac_cv_use_epetraext" != "Xno" ||
+	test "X$ac_cv_use_meros" != "Xno" ||
 	test "X$ac_cv_use_moocho" != "Xno" ||
 	test "X$ac_cv_use_rtop" != "Xno" ||
 	test "X$ac_cv_use_rythmos" != "Xno" ||
@@ -3008,6 +3009,10 @@ fi
 
 if test "X$ac_cv_use_rtop" != "Xno" ||
 	test "X$ac_cv_use_moocho" != "Xno" ||
+	test "X$ac_cv_use_capo" != "Xno" ||
+	test "X$ac_cv_use_meros" != "Xno" ||
+	test "X$ac_cv_use_rythmos" != "Xno" ||
+	test "X$ac_cv_use_stratimikos" != "Xno" ||
 	test "X$ac_cv_use_thyra" != "Xno"; then
 
 
@@ -3033,6 +3038,7 @@ fi
 
 if test "X$ac_cv_use_thyra" != "Xno" ||
 	test "X$ac_cv_use_capo" != "Xno" ||
+	test "X$ac_cv_use_meros" != "Xno" ||
 	test "X$ac_cv_use_rythmos" != "Xno" ||
 	test "X$ac_cv_use_stratimikos" != "Xno"; then
 
@@ -3312,8 +3318,7 @@ else
 fi
 
 
-if test "X$ac_cv_use_tsf" != "Xno" ||
-	test "X$ac_cv_use_meros" != "Xno"; then
+if test "X$ac_cv_use_tsf" != "Xno"; then
 
 
 subdirs="$subdirs packages/TSF"

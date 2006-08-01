@@ -248,6 +248,9 @@ DONE
 # RTOp -------------------------------------------------------------------------
 IF PACKAGE rtop THEN
 REMOVE --enable-rtop
+REMOVE --enable-capo
+REMOVE --enable-meros
+REMOVE --enable-rythmos
 REMOVE --enable-thyra
 REMOVE --enable-stratimikos
 REMOVE --enable-moocho
@@ -273,6 +276,7 @@ REMOVE --enable-amesos
 REMOVE --with-ml_amesos
 REMOVE --enable-epetraext
 REMOVE --enable-moertel
+REMOVE --enable-meros
 REMOVE --enable-moocho
 REMOVE --enable-anasazi
 REMOVE --with-loca-anasazi
@@ -293,6 +297,7 @@ DONE
 # Thyra ------------------------------------------------------------------------
 IF PACKAGE thyra THEN
 REMOVE --enable-thyra
+REMOVE --enable-meros
 REMOVE --enable-stratimikos
 REMOVE --enable-capo
 REMOVE --enable-rythmos
@@ -325,7 +330,6 @@ DONE
 # TSF --------------------------------------------------------------------------
 IF PACKAGE tsf THEN
 REMOVE --enable-tsf
-REMOVE --enable-meros
 DONE
 
 # TSFCore ----------------------------------------------------------------------
