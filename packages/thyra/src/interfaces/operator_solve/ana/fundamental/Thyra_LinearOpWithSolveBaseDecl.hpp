@@ -525,6 +525,27 @@ public:
  */
 //@{
 
+/** \brief Determine if a <tt>LinearOpWithSolveBase<Scalar></tt> object
+ * supports a particular type of solve or not..
+ *
+ * \ingroup Thyra_LinearOpWithSolveBase_helper_grp
+ */
+template<class Scalar>
+bool solveSupports(
+  const LinearOpWithSolveBase<Scalar>   &A
+  ,const ETransp                        A_trans
+  )
+{
+  if( real_trans(A_trans) == NOTRANS ) {
+    return A.solveSupportsConj(
+      A_trans == NOTRANS ? NONCONJ_ELE : CONJ_ELE
+      );
+  }
+  return A.solveTransposeSupportsConj(
+    A_trans == TRANS ? NONCONJ_ELE : CONJ_ELE
+    );
+}
+
 /** \brief Solve a set of forward linear systems with a single set of
  * tolerances and a single scalar type.
  *
