@@ -32,6 +32,7 @@
 
 #include "ComplexFFTLinearOp.hpp"
 #include "RealComplexFFTLinearOp.hpp"
+#include "Thyra_DefaultInverseLinearOp.hpp"
 #include "Thyra_LinearOpTester.hpp"
 #include "Thyra_LinearOpWithSolveTester.hpp"
 #include "Thyra_ListedMultiVectorRandomizer.hpp"
@@ -106,12 +107,12 @@ bool run1DFFTExample(
   Teuchos::Time timer("");
   timer.start(true);
 
-  if(verbose) *out << "\nConstructing a 1D complex-to-complex FFT linear operator C ...\n";
+  if(verbose) *out << "\nA) Constructing a 1D complex-to-complex FFT linear operator C ...\n";
 
   Teuchos::RefCountPtr< const Thyra::LinearOpWithSolveBase<ComplexScalar> >
     C = Teuchos::rcp( new ComplexFFTLinearOp<RealScalar>(N) );
 
-  if(verbose) *out << "\nConstructing as set of simple known vectors to be used as random domain and range vectors ...\n";
+  if(verbose) *out << "\nB) Constructing as set of simple known vectors to be used as random domain and range vectors ...\n";
   Thyra::DefaultSerialVectorSpaceConverter<RealScalar,ComplexScalar>
     realToComplexConverter;
   RefCountPtr<const Thyra::VectorSpaceBase<RealScalar> >
@@ -135,7 +136,7 @@ bool run1DFFTExample(
     complexDomainRand( Teuchos::arrayArg<RefCountPtr<const Thyra::MultiVectorBase<ComplexScalar> > >(complexDomainVec)(), 1 ),
     complexRangeRand( Teuchos::arrayArg<RefCountPtr<const Thyra::MultiVectorBase<ComplexScalar> > >(complexRangeVec)(), 1 );
 
-  if(verbose) *out << "\nTesting the LinearOpBase interface of the constructed linear operator C ...\n";
+  if(verbose) *out << "\nC) Testing the LinearOpBase interface of the constructed linear operator C ...\n";
   Thyra::LinearOpTester<ComplexScalar> linearOpTester;
   linearOpTester.set_all_error_tol(tolerance);
   linearOpTester.set_all_warning_tol(RealScalar(RealScalar(1e-2)*tolerance));
@@ -144,7 +145,7 @@ bool run1DFFTExample(
   result = linearOpTester.check(*C,&complexRangeRand,&complexDomainRand,out.get());
   if(!result) success = false;
 
-  if(verbose) *out << "\nTesting the LinearOpWithSolveBase interface of the constructed linear operator C ...\n";
+  if(verbose) *out << "\nD) Testing the LinearOpWithSolveBase interface of the constructed linear operator C ...\n";
 
   Thyra::LinearOpWithSolveTester<ComplexScalar> linearOpWithSolveTester;
   linearOpWithSolveTester.set_all_solve_tol(tolerance);
@@ -155,12 +156,20 @@ bool run1DFFTExample(
   result = linearOpWithSolveTester.check(*C,out.get());
   if(!result) success = false;
 
-  if(verbose) *out << "\nConstructing a 1D real-to-complex FFT linear operator R ...\n";
+  if(out.get()) *out << "\nE) Creating a DefaultInverseLinearOp object invC from C and testing the LinearOpBase interface ...\n";
+
+  Teuchos::RefCountPtr<const Thyra::LinearOpBase<ComplexScalar> >
+    invC = inverse(C);
+
+  result = linearOpTester.check(*invC,out.get());
+  if(!result) success = false;
+
+  if(verbose) *out << "\nF) Constructing a 1D real-to-complex FFT linear operator R ...\n";
 
   Teuchos::RefCountPtr< const Thyra::LinearOpWithSolveBase< ComplexScalar, RealScalar > >
     R = Teuchos::rcp( new RealComplexFFTLinearOp<RealScalar>(N) );
 
-  if(verbose) *out << "\nTesting the LinearOpBase interface of the constructed linear operator R ...\n";
+  if(verbose) *out << "\nG) Testing the LinearOpBase interface of the constructed linear operator R ...\n";
   SymmetricComplexMultiVectorRandomizer<RealScalar> symmetricComplexMultiVectorRandomizer;
   Thyra::LinearOpTester<ComplexScalar,RealScalar> RlinearOpTester;
   RlinearOpTester.set_all_error_tol(tolerance);

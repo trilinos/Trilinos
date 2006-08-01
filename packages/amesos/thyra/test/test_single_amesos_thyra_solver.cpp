@@ -33,6 +33,7 @@
 #include "Thyra_AmesosLinearOpWithSolveFactory.hpp"
 #include "Thyra_LinearOpWithSolveFactoryExamples.hpp"
 #include "Thyra_DefaultScaledAdjointLinearOp.hpp"
+#include "Thyra_DefaultInverseLinearOp.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_LinearOpTester.hpp"
 #include "Thyra_LinearOpWithSolveTester.hpp"
@@ -236,6 +237,14 @@ bool Thyra::test_single_amesos_thyra_solver(
   nonExternallyPreconditionedLinearSolveUseCases(
     *A,*lowsFactory,true,*out
     );
+
+  if(out.get()) *out << "\nQ) Creating a DefaultInverseLinearOp object from nsA and testing the LinearOpBase interface ...\n";
+
+  Teuchos::RefCountPtr<const LinearOpBase<double> >
+    invA = inverse<double>(nsA);
+
+  result = linearOpTester.check(*invA,out.get());
+  if(!result) success = false;
 
 #else // __sun
   
