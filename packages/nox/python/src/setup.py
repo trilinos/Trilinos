@@ -65,8 +65,8 @@ uniquifyList(extra_compile_args)
 # Get the relevant Makefile export variable values, split them into lists of
 # strings, add them together to obtain a big list of option strings, and then
 # remove any duplicate entries
-options = NOX_PYTHON_INCLUDES.split() + \
-          NOX_PYTHON_LIBS.split()
+options = NOX_INCLUDES.split() + \
+          NOX_LIBS.split()
 uniquifyList(options)
 
 # Distribute the individual options to the appropriate Extension class arguments

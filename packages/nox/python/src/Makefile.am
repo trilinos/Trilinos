@@ -28,16 +28,10 @@
 
 # Include export Makefiles
 include $(top_builddir)/Makefile.export.nox
-if BUILD_NOX_PYTHON
-include $(top_builddir)/../PyTrilinos/Makefile.export.pytrilinos
-endif
-
-NOX_PYTHON_INCLUDES = $(NOX_INCLUDES) $(PYTRILINOS_INCLUDES)
-NOX_PYTHON_LIBS     = $(NOX_LIBS)     $(PYTRILINOS_LIBS)
 
 # Include swig rules
 include $(top_srcdir)/config/swig.am
-SWIG_CXXFLAGS = $(NOX_PYTHON_INCLUDES)               \
+SWIG_CXXFLAGS = $(NOX_INCLUDES) \
 		-I$(top_srcdir)/../epetra/python/src
 
 # Default make target
