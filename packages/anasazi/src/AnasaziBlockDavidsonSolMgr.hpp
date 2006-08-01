@@ -48,6 +48,7 @@
 #include "AnasaziStatusTestResNorm.hpp"
 #include "AnasaziStatusTestOrderedResNorm.hpp"
 #include "AnasaziStatusTestCombo.hpp"
+#include "AnasaziStatusTestOutput.hpp"
 #include "AnasaziBasicOutputManager.hpp"
 #include "Teuchos_BLAS.hpp"
 
@@ -274,6 +275,9 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
   // combo: convergence || locking 
   Teuchos::RefCountPtr<StatusTestCombo<ScalarType,MV,OP> > combotest
     = Teuchos::rcp( new StatusTestCombo<ScalarType,MV,OP>( StatusTestCombo<ScalarType,MV,OP>::OR, alltests) );
+  // printing StatusTest
+  Teuchos::RefCountPtr<StatusTestOutput<ScalarType,MV,OP> > outputtest
+    = Teuchos::rcp( new StatusTestOutput<ScalarType,MV,OP>( printer,combotest,1,Passed ) );
 
   //////////////////////////////////////////////////////////////////////////////////////
   // Orthomanager
@@ -292,7 +296,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
   //////////////////////////////////////////////////////////////////////////////////////
   // BlockDavidson solver
   Teuchos::RefCountPtr<BlockDavidson<ScalarType,MV,OP> > bd_solver 
-    = Teuchos::rcp( new BlockDavidson<ScalarType,MV,OP>(_problem,sorter,printer,combotest,ortho,plist) );
+    = Teuchos::rcp( new BlockDavidson<ScalarType,MV,OP>(_problem,sorter,printer,outputtest,ortho,plist) );
   // set any auxiliary vectors defined in the problem
   Teuchos::RefCountPtr< const MV > probauxvecs = _problem->getAuxVecs();
   if (probauxvecs != Teuchos::null) {

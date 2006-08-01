@@ -51,9 +51,9 @@
     determine the final outcome, short-circuiting on the first test that
     conclusively decides the outcome. More formally, SEQAND runs the tests in
     the order they were given to the StatusTestCombo class and stops after the
-    first test that evaluates Undefined. SEQOR run the tests in the order they
+    first test that evaluates ::Failed. SEQOR run the tests in the order they
     were given to the StatusTestCombo class and stops after the first test that
-    evaluates Passed.
+    evaluates ::Passed.
   */
 
 namespace Anasazi {
@@ -124,7 +124,7 @@ class StatusTestCombo : public StatusTest<ScalarType,MV,OP> {
   //@{ 
 
   /*! \brief Set the maximum number of iterations.
-   *  This also resets the test status to Undefined.
+   *  This also resets the test status to ::Undefined.
    */
   void setComboType(ComboType type) {
     _type = type;
@@ -135,7 +135,7 @@ class StatusTestCombo : public StatusTest<ScalarType,MV,OP> {
   ComboType getComboType() const {return _type;}
 
   /*! \brief Set the tests
-   *  This also resets the test status to Undefined.
+   *  This also resets the test status to ::Undefined.
    */
   void setTests(Teuchos::Array<Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > > tests) {
     _tests = tests;
@@ -147,7 +147,7 @@ class StatusTestCombo : public StatusTest<ScalarType,MV,OP> {
 
   /*! \brief Add a test to the combination.
    *
-   *  This also resets the test status to Undefined.
+   *  This also resets the test status to ::Undefined.
    */
   void addTest(Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > test) {
     _tests.push_back(test);
@@ -156,7 +156,7 @@ class StatusTestCombo : public StatusTest<ScalarType,MV,OP> {
 
   /*! \brief Removes a test from the combination, if it exists in the tester.
    *
-   * This also resets the test status to Undefined, if a test was removed.
+   * This also resets the test status to ::Undefined, if a test was removed.
    */
   void removeTest(const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > &test);
 
@@ -166,15 +166,15 @@ class StatusTestCombo : public StatusTest<ScalarType,MV,OP> {
   //@{ 
   //! \brief Informs the status test that it should reset its internal configuration to the uninitialized state.
   /*! The StatusTestCombo class has no internal state, but children classes might, so this method will call
-     reset() on all child status tests. It also resets the test status to Undefined.
+     reset() on all child status tests. It also resets the test status to ::Undefined.
   */
   void reset();
 
   //! \brief Clears the results of the last status test.
   /*! This should be distinguished from the reset() method, as it only clears the cached result from the last 
-   * status test, so that a call to getStatus() will return Undefined. This is necessary for the SEQOR and SEQAND
+   * status test, so that a call to getStatus() will return ::Undefined. This is necessary for the SEQOR and SEQAND
    * tests in the StatusTestCombo class, which may short circuit and not evaluate all of the StatusTests contained
-   * in them. It also resets the test status to Undefined.
+   * in them.
   */
   void clearStatus();
 
@@ -253,7 +253,7 @@ void StatusTestCombo<ScalarType,MV,OP>::clearStatus() {
 template <class ScalarType, class MV, class OP>
 ostream& StatusTestCombo<ScalarType,MV,OP>::print(ostream& os, int indent) const {
   string ind(indent,' ');
-  os << ind << "ComboTest: ";
+  os << ind << "- StatusTestCombo: ";
   switch (_state) {
   case Passed:
     os << "Passed" << endl;

@@ -103,7 +103,7 @@ class StatusTest {
 
   //! Clears the results of the last status test.
   /*! This should be distinguished from the reset() method, as it only clears the cached result from the last 
-   * status test, so that a call to getStatus() will return Undefined. This is necessary for the SEQOR and SEQAND
+   * status test, so that a call to getStatus() will return ::Undefined. This is necessary for the SEQOR and SEQAND
    * tests in the StatusTestCombo class, which may short circuit and not evaluate all of the StatusTests contained
    * in them.
   */

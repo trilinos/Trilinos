@@ -47,6 +47,7 @@
 #include "AnasaziStatusTestMaxIters.hpp"
 #include "AnasaziStatusTestResNorm.hpp"
 #include "AnasaziStatusTestCombo.hpp"
+#include "AnasaziStatusTestOutput.hpp"
 #include "AnasaziBasicOutputManager.hpp"
 #include "AnasaziModalSolverUtils.hpp"
 
@@ -203,6 +204,9 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::solve() {
       = Teuchos::rcp( new StatusTestCombo<ScalarType,MV,OP>(
               StatusTestCombo<ScalarType,MV,OP>::OR, alltests
         ));
+  // printing StatusTest
+  Teuchos::RefCountPtr<StatusTestOutput<ScalarType,MV,OP> > outputtest
+    = Teuchos::rcp( new StatusTestOutput<ScalarType,MV,OP>( printer,combo,1,Passed ) );
   // orthomanager
   Teuchos::RefCountPtr<SVQBOrthoManager<ScalarType,MV,OP> > ortho 
     = Teuchos::rcp( new SVQBOrthoManager<ScalarType,MV,OP>(_problem->getM()) );
@@ -213,7 +217,7 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::solve() {
 
   // create an LOBPCG solver
   Teuchos::RefCountPtr<LOBPCG<ScalarType,MV,OP> > lobpcg_solver 
-    = Teuchos::rcp( new LOBPCG<ScalarType,MV,OP>(_problem,sorter,printer,combo,ortho,plist) );
+    = Teuchos::rcp( new LOBPCG<ScalarType,MV,OP>(_problem,sorter,printer,outputtest,ortho,plist) );
   // add the auxillary vecs from the eigenproblem to the solver
   if (_problem->getAuxVecs() != Teuchos::null) {
     lobpcg_solver->setAuxVecs( Teuchos::tuple<Teuchos::RefCountPtr<const MV> >(_problem->getAuxVecs()) );

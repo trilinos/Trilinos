@@ -104,9 +104,9 @@ namespace Anasazi {
   */
   enum TestStatus
   {
-    Passed,       /*!< The solver passed the test */
-    Failed,       /*!< The solver failed the test */
-    Undefined     /*!< The test has not been evaluated on the solver */ 
+    Passed    = 0x1,    /*!< The solver passed the test */
+    Failed    = 0x2,    /*!< The solver failed the test */
+    Undefined = 0x4     /*!< The test has not been evaluated on the solver */ 
   };
 
 
@@ -121,7 +121,8 @@ namespace Anasazi {
     OrthoDetails = 0x4,         /*!< Orthogonalization/orthonormalization details */
     FinalSummary = 0x8,         /*!< Final computational summary */
     TimingDetails = 0x10,       /*!< Timing details */
-    Debug = 0x20                /*!< Debugging information */
+    StatusTestDetails = 0x20,   /*!< Status test details */
+    Debug = 0x40                /*!< Debugging information */
   };
 
   //@}

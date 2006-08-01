@@ -100,7 +100,7 @@ class StatusTestResNorm : public StatusTest<ScalarType,MV,OP> {
 
   //! Clears the results of the last status test.
   /*! This should be distinguished from the reset() method, as it only clears the cached result from the last 
-   * status test, so that a call to getStatus() will return Undefined. This is necessary for the SEQOR and SEQAND
+   * status test, so that a call to getStatus() will return ::Undefined. This is necessary for the SEQOR and SEQAND
    * tests in the StatusTestCombo class, which may short circuit and not evaluate all of the StatusTests contained
    * in them.
   */
@@ -116,7 +116,7 @@ class StatusTestResNorm : public StatusTest<ScalarType,MV,OP> {
   /*! \brief Set quorum.
    *
    *  Setting quorum to -1 signifies that all residuals from the solver must meet the tolerance.
-   *  This also resets the test status to Undefined.
+   *  This also resets the test status to ::Undefined.
    */
   void setQuorum(int quorum) {
     _state = Undefined;
@@ -130,7 +130,7 @@ class StatusTestResNorm : public StatusTest<ScalarType,MV,OP> {
   }
 
   /*! \brief Set tolerance.
-   *  This also resets the test status to Undefined.
+   *  This also resets the test status to ::Undefined.
    */
   void setTolerance(MagnitudeType tol) {
     _state = Undefined;
@@ -141,7 +141,7 @@ class StatusTestResNorm : public StatusTest<ScalarType,MV,OP> {
   MagnitudeType getTolerance() {return _tol;}
 
   /*! \brief Set the norm. If true, the test uses the 2-norm. Otherwise, it uses the norm defined by the OrthoManager.
-   *  This also resets the test status to Undefined.
+   *  This also resets the test status to ::Undefined.
    */
   void setNorm(bool use2Norm) {
     _state = Undefined;
@@ -152,7 +152,7 @@ class StatusTestResNorm : public StatusTest<ScalarType,MV,OP> {
   bool uses2Norm() {return _use2Norm;}
 
   /*! \brief Instruct test to scale norms by eigenvalue estimates (relative scale).
-   *  This also resets the test status to Undefined.
+   *  This also resets the test status to ::Undefined.
    */
   void setScale(bool relscale) {
     _state = Undefined;
@@ -238,12 +238,34 @@ TestStatus StatusTestResNorm<ScalarType,MV,OP>::checkStatus( Eigensolver<ScalarT
 template <class ScalarType, class MV, class OP>
 ostream& StatusTestResNorm<ScalarType,MV,OP>::print(ostream& os, int indent) const {
   string ind(indent,' ');
-  if (_state == Undefined) {
-    os << ind << "ResNorm <= " << _tol << " undefined." << endl;
+  os << ind << "- StatusTestResNorm: ";
+  switch (_state) {
+  case Passed:
+    os << "Passed" << endl;
+    break;
+  case Failed:
+    os << "Failed" << endl;
+    break;
+  case Undefined:
+    os << "Undefined" << endl;
+    break;
   }
-  else {
-    os << ind << "ResNorm <= " << _tol << " for " << _ind.size() 
-       << " vectors. Status " << (_state == Passed ? "Passed" : "Failed") << endl;
+  os << ind << "(Tolerance,Use2Norm,Scaled,Quorum): " 
+            << "(" << _tol 
+            << "," << (_use2Norm ? "true" : "false") 
+            << "," << (_scaled   ? "true" : "false")
+            << "," << _quorum 
+            << ")" << endl;
+
+  if (_state != Undefined) {
+    os << ind << "Which vectors: ";
+    if (_ind.size() > 0) {
+      for (unsigned int i=0; i<_ind.size(); i++) os << _ind[i] << " ";
+      os << endl;
+    }
+    else {
+      os << "[empty]" << endl;
+    }
   }
   return os;
 }

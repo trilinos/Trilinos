@@ -47,6 +47,7 @@
 #include "AnasaziStatusTestResNorm.hpp"
 #include "AnasaziStatusTestOrderedResNorm.hpp"
 #include "AnasaziStatusTestCombo.hpp"
+#include "AnasaziStatusTestOutput.hpp"
 #include "AnasaziBasicOutputManager.hpp"
 
 /*! \class Anasazi::LOBPCGSolMgr
@@ -289,6 +290,9 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
   // combo: convergence || locking || max iters
   Teuchos::RefCountPtr<StatusTestCombo<ScalarType,MV,OP> > combotest
     = Teuchos::rcp( new StatusTestCombo<ScalarType,MV,OP>( StatusTestCombo<ScalarType,MV,OP>::OR, alltests) );
+  // printing StatusTest
+  Teuchos::RefCountPtr<StatusTestOutput<ScalarType,MV,OP> > outputtest
+    = Teuchos::rcp( new StatusTestOutput<ScalarType,MV,OP>( printer,combotest,1,Passed ) );
 
   //////////////////////////////////////////////////////////////////////////////////////
   // Orthomanager
@@ -307,7 +311,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
   //////////////////////////////////////////////////////////////////////////////////////
   // LOBPCG solver
   Teuchos::RefCountPtr<LOBPCG<ScalarType,MV,OP> > lobpcg_solver 
-    = Teuchos::rcp( new LOBPCG<ScalarType,MV,OP>(_problem,sorter,printer,combotest,ortho,plist) );
+    = Teuchos::rcp( new LOBPCG<ScalarType,MV,OP>(_problem,sorter,printer,outputtest,ortho,plist) );
   // set any auxiliary vectors defined in the problem
   Teuchos::RefCountPtr< const MV > probauxvecs = _problem->getAuxVecs();
   if (probauxvecs != Teuchos::null) {

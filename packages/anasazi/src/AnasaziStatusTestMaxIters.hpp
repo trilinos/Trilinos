@@ -47,9 +47,9 @@
     Anasazi::StatusTestMaxIters will test true when an eigensolver has reached some number 
     of iterations. Specifically, 
     <div>
-                     { true,   if solver->getNumIters() >= maxIter
+                     { Passed,   if solver->getNumIters() >= maxIter
     status(solver) = {
-                     { false,  if solver->getNumIters()  < maxIter
+                     { Failed,  if solver->getNumIters()  < maxIter
     </div>
     where maxIter is the parameter given to the status tester.
     
@@ -102,7 +102,7 @@ class StatusTestMaxIters : public StatusTest<ScalarType,MV,OP> {
   //@{ 
 
   /*! \brief Set the maximum number of iterations.
-   *  This also resets the test status to Undefined.
+   *  This also resets the test status to ::Undefined.
    */
   void setMaxIters(int maxIters) {
     _state = Undefined;
@@ -128,7 +128,7 @@ class StatusTestMaxIters : public StatusTest<ScalarType,MV,OP> {
 
   //! \brief Clears the results of the last status test.
   /*! This should be distinguished from the reset() method, as it only clears the cached result from the last 
-   * status test, so that a call to getStatus() will return Undefined. This is necessary for the SEQOR and SEQAND
+   * status test, so that a call to getStatus() will return ::Undefined. This is necessary for the SEQOR and SEQAND
    * tests in the StatusTestCombo class, which may short circuit and not evaluate all of the StatusTests contained
    * in them.
   */
@@ -144,19 +144,19 @@ class StatusTestMaxIters : public StatusTest<ScalarType,MV,OP> {
   //! Output formatted description of stopping test to output stream.
   ostream& print(ostream& os, int indent = 0) const {
     string ind(indent,' ');
-    os << ind << "solver->getNumIters() >= " << _maxIters 
-       << (_negate ? " tests " : " negates ");
-    switch(_state){
-      case Passed:
-        os << "Passed" << endl;
-        break;
-      case Undefined:
-        os << "Undefined" << endl;
-        break;
-      case Failed:
-        os << "Failed" << endl;
-        break;
+    os << ind << "- StatusTestMaxIters: ";
+    switch (_state) {
+    case Passed:
+      os << "Passed" << endl;
+      break;
+    case Failed:
+      os << "Failed" << endl;
+      break;
+    case Undefined:
+      os << "Undefined" << endl;
+      break;
     }
+    os << ind << "MaxIters: " << _maxIters;
     return os;
   }
  

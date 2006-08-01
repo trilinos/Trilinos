@@ -47,7 +47,7 @@
     \brief A status test for testing the norm of the eigenvectors residuals
     along with a set of auxiliary eigenvalues. 
     
-    The test evaluates to Passed when then the most significant of the
+    The test evaluates to ::Passed when then the most significant of the
     eigenvalues all have a residual below a certain threshhold. The purpose of
     the test is to not only test convergence for some number of eigenvalues,
     but to test convergence for the correct ones.
@@ -57,7 +57,7 @@
       <li> the norm to be used: 2-norm or OrthoManager::norm()
       <li> the scale: absolute or relative to magnitude of Ritz value 
       <li> the quorum: the number of vectors required for the test to 
-           evaluate as Passed.
+           evaluate as ::Passed.
     </ul>
 
     Finally, the user must specify the Anasazi::SortManager used for deciding
@@ -111,7 +111,7 @@ class StatusTestOrderedResNorm : public StatusTest<ScalarType,MV,OP> {
 
   //! Clears the results of the last status test.
   /*! This should be distinguished from the reset() method, as it only clears the cached result from the last 
-   * status test, so that a call to getStatus() will return Undefined. This is necessary for the SEQOR and SEQAND
+   * status test, so that a call to getStatus() will return ::Undefined. This is necessary for the SEQOR and SEQAND
    * tests in the StatusTestCombo class, which may short circuit and not evaluate all of the StatusTests contained
    * in them.
   */
@@ -120,7 +120,7 @@ class StatusTestOrderedResNorm : public StatusTest<ScalarType,MV,OP> {
   }
 
   //! Set the auxiliary eigenvalues.
-  /*! This routine also resets the state to Undefined.
+  /*! This routine also resets the state to ::Undefined.
    */
   void setAuxVals(const std::vector<MagnitudeType> &vals) {
     _vals = vals;
@@ -138,7 +138,7 @@ class StatusTestOrderedResNorm : public StatusTest<ScalarType,MV,OP> {
   //@{ 
 
   /*! \brief Set tolerance.
-   *  This also resets the test status to Undefined.
+   *  This also resets the test status to ::Undefined.
    */
   void setTolerance(MagnitudeType tol) {
     TEST_FOR_EXCEPTION(tol <= MT::zero(), StatusTestError, "StatusTestOrderedResNorm: test tolerance must be strictly positive.");
@@ -150,7 +150,7 @@ class StatusTestOrderedResNorm : public StatusTest<ScalarType,MV,OP> {
   MagnitudeType getTolerance() {return _tol;}
 
   /*! \brief Set the norm. If true, the test uses the 2-norm. Otherwise, it uses the norm defined by the OrthoManager.
-   *  This also resets the test status to Undefined.
+   *  This also resets the test status to ::Undefined.
    */
   void setNorm(bool use2Norm) {
     _state = Undefined;
@@ -161,7 +161,7 @@ class StatusTestOrderedResNorm : public StatusTest<ScalarType,MV,OP> {
   bool uses2Norm() {return _use2Norm;}
 
   /*! \brief Instruct test to scale norms by eigenvalue estimates (relative scale).
-   *  This also resets the test status to Undefined.
+   *  This also resets the test status to ::Undefined.
    */
   void setScale(bool relscale) {
     _state = Undefined;
@@ -278,12 +278,44 @@ TestStatus StatusTestOrderedResNorm<ScalarType,MV,OP>::checkStatus( Eigensolver<
 template <class ScalarType, class MV, class OP>
 ostream& StatusTestOrderedResNorm<ScalarType,MV,OP>::print(ostream& os, int indent) const {
   string ind(indent,' ');
-  if (_state == Undefined) {
-    os << ind << "OrderedResNorm <= " << _tol << " undefined." << endl;
+  os << ind << "- StatusTestOrderedResNorm: ";
+  switch (_state) {
+  case Passed:
+    os << "Passed" << endl;
+    break;
+  case Failed:
+    os << "Failed" << endl;
+    break;
+  case Undefined:
+    os << "Undefined" << endl;
+    break;
+  }
+  os << ind << "(Tolerance,Use2Norm,Scaled,Quorum): " 
+            << "(" << _tol 
+            << "," << (_use2Norm ? "true" : "false") 
+            << "," << (_scaled   ? "true" : "false")
+            << "," << _quorum 
+            << ")" << endl;
+  os << ind << "Auxiliary values: ";
+  if (_vals.size() > 0) {
+    for (unsigned int i=0; i<_vals.size(); i++) {
+      os << _vals[i] << ", ";
+    }
+    os << endl;
   }
   else {
-    os << ind << "OrderedResNorm <= " << _tol << " for " << _ind.size() 
-       << " vectors. Status " << (_state == Passed ? "Passed" : "Failed") << endl;
+    os << "[empty]" << endl;
+  }
+
+  if (_state != Undefined) {
+    os << ind << "Which vectors: ";
+    if (_ind.size() > 0) {
+      for (unsigned int i=0; i<_ind.size(); i++) os << _ind[i] << " ";
+      os << endl;
+    }
+    else {
+      os << "[empty]" << endl;
+    }
   }
   return os;
 }
