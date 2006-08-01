@@ -42,6 +42,7 @@
 --enable-loca \
 --enable-meros \
 --enable-ml \
+--enable-moocho \
 --enable-new-package \
 --enable-nox \
 --enable-pliris \

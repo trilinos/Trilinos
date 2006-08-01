@@ -51,6 +51,7 @@
 --enable-nox \
 --enable-pliris \
 --enable-rythmos \
+--enable-moocho \
 --enable-thyra \
 --enable-tpetra \
 --enable-teuchos-complex \

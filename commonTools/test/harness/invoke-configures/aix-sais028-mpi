@@ -29,6 +29,7 @@
 --with-loca-anasazi \
 --enable-ml \
 --with-ml-64bit-integer="long long" \
+--enable-moocho \
 --enable-new_package \
 --enable-new_swahili \
 --enable-nox \
