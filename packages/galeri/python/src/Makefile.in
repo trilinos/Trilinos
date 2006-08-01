@@ -295,7 +295,6 @@ SWIGCOMPILE = $(SWIG) $(SWIG_PYTHON_OPT) $(SWIG_CXXFLAGS)
 SWIG_CXXFLAGS = $(GALERI_INCLUDES) \
 	-I$(top_srcdir)/../teuchos/python/src \
 	-I$(top_srcdir)/../epetra/python/src \
-	-I$(top_srcdir)/../PyTrilinos/src \
 	$(MPI_FLAG)
 
 
@@ -466,7 +465,6 @@ uninstall-am: uninstall-info-am
 
 # Include the export Makefiles
 include $(top_builddir)/Makefile.export.galeri
-include $(top_builddir)/../PyTrilinos/Makefile.export.pytrilinos
 include $(DEPFILES)
 
 # Wrapper and proxy targets
