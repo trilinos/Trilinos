@@ -53,6 +53,7 @@
 #include "AnasaziOutputManager.hpp"
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_LAPACK.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
 
 namespace Anasazi {
 
@@ -85,8 +86,11 @@ namespace Anasazi {
     //! Sort the vector of eigenvalues \c lambda, and optionally the corresponding multi-vector \c Q and residual vector \c resids. 
     int sortScalars_Vectors(int n, ScalarType* lambda, MV* Q, std::vector<MagnitudeType>* resids = 0) const;
 
-    //! Permute the vectors according to the permutation vector \c perm, and optionally the residual vector \c resids
-    int permuteVectors(const int n, const std::vector<int> &perm, MV &Q, std::vector<MagnitudeType>* resids = 0) const;
+    //! Permute the vectors in a multivector according to the permutation vector \c perm, and optionally the residual vector \c resids
+    void permuteVectors(const int n, const std::vector<int> &perm, MV &Q, std::vector<MagnitudeType>* resids = 0) const;
+
+    //! Permute the columns of a Teuchos::SerialDenseMatrix according to the permutation vector \c perm
+    void permuteVectors(const std::vector<int> &perm, Teuchos::SerialDenseMatrix<int,ScalarType> &Q) const;
 
     //@} 
 
@@ -328,8 +332,10 @@ namespace Anasazi {
     return info;  
   }
 
+  //////////////////////////////////////////////////////////////////////////
+  // permuteVectors for MV
   template<class ScalarType, class MV, class OP>
-  int ModalSolverUtils<ScalarType, MV, OP>::permuteVectors(
+  void ModalSolverUtils<ScalarType, MV, OP>::permuteVectors(
               const int n,
               const std::vector<int> &perm, 
               MV &Q, 
@@ -344,29 +350,23 @@ namespace Anasazi {
     ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
     ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
 
-    if ( n > MVT::GetNumberVecs( Q ) ) { return -1; }
+    TEST_FOR_EXCEPTION(n > MVT::GetNumberVecs(Q), std::invalid_argument, "Anasazi::ModalSolverUtils::permuteVectors(): argument n larger than width of input multivector.");
 
     // We want to recover the elementary permutations (individual swaps) 
     // from the permutation vector. Do this by constructing the inverse
     // of the permutation, by sorting them to {1,2,...,n}, and recording
     // the elementary permutations of the inverse.
     for (i=0; i<n-1; i++) {
-      
+      //
       // find i in the permcopy vector
       for (j=i; j<n; j++) {
-
         if (permcopy[j] == i) {
           // found it at index j
           break;
         }
-
-        if (j == n-1) {
-          // perm must contain {1,...,n}
-          // we should have found (i+1) by now
-          return -1;
-        }
+        TEST_FOR_EXCEPTION(j == n-1, std::invalid_argument, "Anasazi::ModalSolverUtils::permuteVectors(): permutation index invalid.");
       }
-
+      //
       // Swap two scalars
       std::swap<int>( permcopy[j], permcopy[i] );
 
@@ -375,16 +375,15 @@ namespace Anasazi {
       
     // now apply the elementary permutations of the inverse in reverse order
     for (i=n-2; i>=0; i--) {
-
       j = swapvec[i];
-
+      //
       // Swap (i,j)
-
+      //
       // Swap residuals (if they exist)
       if (resids) {
         std::swap<MagnitudeType>(  (*resids)[i], (*resids)[j] );
       }
-
+      //
       // Swap corresponding vectors
       index[0] = j;
       Teuchos::RefCountPtr<MV> tmpQ = MVT::CloneCopy( Q, index );
@@ -393,10 +392,30 @@ namespace Anasazi {
       Teuchos::RefCountPtr<MV> tmpQi = MVT::CloneView( Q, index );
       MVT::MvAddMv( one, *tmpQi, zero, *tmpQi, *tmpQj );
       MVT::MvAddMv( one, *tmpQ, zero, *tmpQ, *tmpQi );
-
     }
+  }
+
+
+  //////////////////////////////////////////////////////////////////////////
+  // permuteVectors for MV
+  template<class ScalarType, class MV, class OP>
+  void ModalSolverUtils<ScalarType, MV, OP>::permuteVectors(
+              const std::vector<int> &perm, 
+              Teuchos::SerialDenseMatrix<int,ScalarType> &Q) const 
+  {
+    // Permute the vectors in Q according to the permutation vector \c perm, and
+    // optionally the residual vector \c resids
+    Teuchos::BLAS<int,ScalarType> blas;
+    const int n = perm.size();
+    const int m = Q.numRows();
     
-    return 0;  
+    TEST_FOR_EXCEPTION(n != Q.numCols(), std::invalid_argument, "Anasazi::ModalSolverUtils::permuteVectors(): size of permutation vector not equal to number of columns.");
+
+    // Sort the primitive ritz vectors
+    Teuchos::SerialDenseMatrix<int,ScalarType> copyQ( Q );
+    for (int i=0; i<n; i++) {
+      blas.COPY(m, copyQ[perm[i]], 1, Q[i], 1);
+    }
   }
   
   //-----------------------------------------------------------------------------

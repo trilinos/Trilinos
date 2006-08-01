@@ -519,11 +519,9 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
             for (int i=0; i<curdim; i++) {
               theta[i] = SCT::real(theta_st[i]);
             }
-            // Sort the primitive ritz vectors
-            Teuchos::SerialDenseMatrix<int,ScalarType> copyS( S );
-            for (int i=0; i<curdim; i++) {
-              blas.COPY(curdim, copyS[order[i]], 1, S[i], 1);
-            }
+            //
+            // apply the same ordering to the primitive ritz vectors
+            msutils.permuteVectors(order,S);
           }
           // select the non-locked eigenvectors
           std::vector<int> unlockind(curdim-numnew);

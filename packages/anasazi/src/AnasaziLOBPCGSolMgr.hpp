@@ -630,20 +630,18 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
       {
         Teuchos::BLAS<int,ScalarType> blas;
         std::vector<int> order(rank);
+        // make a ScalarType copy for sorting
         std::vector<ScalarType> theta_st(theta.size());
         std::copy(theta.begin(),theta.end(),theta_st.begin());
+        // sort
         sorter->sort( lobpcg_solver.get(), rank, &(theta_st[0]), &order );   // don't catch exception
-        
-        //  Reorder theta according to sorting results from theta_st
-        std::vector<MagnitudeType> theta_copy(theta);
+        // put back into theta
         for (int i=0; i<rank; i++) {
-          theta[i] = theta_copy[order[i]];
+          theta[i] = SCT::real(theta_st[i]);
         }
         // Sort the primitive ritz vectors
-        Teuchos::SerialDenseMatrix<int,ScalarType> copyS( S );
-        for (int i=0; i<rank; i++) {
-          blas.COPY(localsize, copyS[order[i]], 1, S[i], 1);
-        }
+        Teuchos::SerialDenseMatrix<int,ScalarType> curS(Teuchos::View,S,rank,rank);
+        msutils.permuteVectors(order,curS);
       }
       //
       Teuchos::SerialDenseMatrix<int,ScalarType> S1(Teuchos::View,S,localsize,_blockSize);

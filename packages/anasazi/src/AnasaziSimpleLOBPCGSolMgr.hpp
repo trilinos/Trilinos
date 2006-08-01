@@ -234,7 +234,7 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::solve() {
       lobpcg_solver->iterate();
     }
     catch (std::exception e) {
-      // we are a stupid solver manager. we don't really catch exceptions. set solution empty, then rethrow.
+      // we are a simple solver manager. we don't catch exceptions. set solution empty, then rethrow.
       printer->stream(Anasazi::Errors) << "Exception: " << e.what() << endl;
       Eigensolution<ScalarType,MV> sol;
       sol.numVecs = 0;
