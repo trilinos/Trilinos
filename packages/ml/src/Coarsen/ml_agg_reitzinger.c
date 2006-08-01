@@ -905,6 +905,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
           in Hiptmair setup.*/
         ML_free(pos_encoded_dir_node);
         ML_free(neg_encoded_dir_node);
+        ML_free(encoded_dir_edge);
         /* Current level "grid_level" cannot be used b/c Tcoarse_trans
            would be used in Hiptmair smoother generation, but Tcoarse_trans
            hasn't been calculated. Hence no "+1".*/
