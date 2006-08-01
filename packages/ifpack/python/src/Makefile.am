@@ -28,17 +28,13 @@
 
 # Include the export Makefiles
 include $(top_builddir)/Makefile.export
-include $(top_builddir)/../PyTrilinos/Makefile.export.pytrilinos
 
 # Include swig rules
 include $(top_srcdir)/config/swig.am
 
-IFPACK_PYTHON_INCLUDES = $(IFPACK_INCLUDES) $(PYTRILINOS_INCLUDES)
-IFPACK_PYTHON_LIBS     = $(IFPACK_LIBS) $(IFPACK_EXTRA_LIBS) $(PYTRILINOS_LIBS)
-
-SWIG_CXXFLAGS = $(IFPACK_PYTHON_INCLUDES) \
-	-I$(top_srcdir)/../teuchos/python/src \
-        -I$(top_srcdir)/../epetra/python/src
+SWIG_CXXFLAGS = $(IFPACK_INCLUDES) \
+		-I$(top_srcdir)/../teuchos/python/src \
+		-I$(top_srcdir)/../epetra/python/src
 
 EXTRA_DIST = IFPACK.i setup.py
 
