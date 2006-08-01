@@ -95,6 +95,7 @@ Solver.Iterate(1550, 1e-5)
 #include "Epetra_JadMatrix.h"
 
 // Epetra python includes
+#include "NumPyImporter.h"
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"
 #include "Epetra_PyOperator.h"
