@@ -382,18 +382,11 @@ static int pmatching_alt_ipm(
 {
   int ierr = ZOLTAN_OK;
   char redm_orig[MAX_PARAM_STRING_LEN];
-  static int level=0;
-  static int old_nvtx=0;
 
   strcpy(redm_orig, hgp->redm_str); /* save original parameter string */
 
-  if (hg->dist_x[hg->comm->nProc_x] > old_nvtx){
-    /* larger hgraph; must have started new bisection v-cycle */
-    level= 0;
-  }
-
   /* first level is 0 */
-  if ((level&1) == 0)  /* alternate even-odd levels */
+  if ((hg->info&1) == 0)  /* alternate even-odd levels */
     strcpy(hgp->redm_str, hgp->redm_fast); /* fast method is typically l-ipm */
   else
     strcpy(hgp->redm_str, "ipm");  
@@ -401,9 +394,6 @@ static int pmatching_alt_ipm(
   Zoltan_PHG_Set_Matching_Fn (hgp);  /* set pointer to the desired matching function */
   ierr = hgp->matching (zz, hg, match, hgp);
   hgp->matching = pmatching_alt_ipm;  /* reset function pointer */
-
-  ++level;  /* we don't have access to level data, so keep track this way */
-  old_nvtx = hg->dist_x[hg->comm->nProc_x];
 
   /* set redm parameter back to original */
   strcpy(hgp->redm_str, redm_orig);
@@ -1237,7 +1227,7 @@ static int pmatching_agg_ipm (ZZ *zz,
   int *r, *s;                                /* pointers to send/rec buffers */
   int lno, count, kstart, old_kstart;                      /* temp variables */
   int candidate_gno;                             /* gno of current candidate */
-  int sendcnt, sendsize, reccnt, recsize, msgsize;         /* temp variables */
+  int sendcnt, sendsize, reccnt=0, recsize, msgsize;       /* temp variables */
   int nRounds;                /* # of matching rounds to be performed;       */
   /* identical on all procs in hgc->Communicator.*/
   int nCandidates;            /* # of candidates on this proc; identical     */
