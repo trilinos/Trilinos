@@ -82,7 +82,7 @@ int  nblocks, *blocks;
 #endif
 	if (fp==NULL)
 		{
-			printf("couldn't open file .data\n");
+			printf("Couldn't open file .data\nYou may need to gunzip it and copy it from the example source directory.\n");
 #ifdef HAVE_MPI
                         MPI_Finalize();
 #endif
