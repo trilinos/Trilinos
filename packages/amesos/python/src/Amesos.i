@@ -123,9 +123,9 @@ For examples of usage, please consult the python/example subdirectory.
 #endif
 
 // Local includes
+#include "NumPyImporter.h"
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"
-#include "NumPyWrapper.h"
 
 %}
 
