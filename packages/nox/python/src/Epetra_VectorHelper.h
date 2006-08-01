@@ -17,12 +17,12 @@ public:
 
   static void            loadViaCopy      (Epetra_Vector * p_epetraVector,
 					   PyObject      * p_pyObject);
-  static void            loadViaCopy      (Epetra_Vector & epetraVector,
-					   const NumPyArrayBase & numPyArray);
+//   static void            loadViaCopy      (Epetra_Vector & epetraVector,
+// 					   const NumPyArrayBase & numPyArray);
   static void            unloadViaCopy    (const Epetra_Vector * p_epetraVector,
 					   PyObject            * p_pyObject);
-  static void            unloadViaCopy    (const Epetra_Vector & epetraVector,
-					   NumPyArrayBase      & numPyArray);
+//   static void            unloadViaCopy    (const Epetra_Vector & epetraVector,
+// 					   NumPyArrayBase      & numPyArray);
 
 protected:
   // Class should never be instantiated, it just holds

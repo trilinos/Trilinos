@@ -57,9 +57,9 @@
 #include "NOX_Epetra_Vector.H"
 
 // Local includes
+#include "NumPyImporter.h"
 #include "Epetra_NumPyVector.h"
 #include "Epetra_VectorHelper.h"
-#include "NumPyWrapper.h"
 #include "Callback.h"
 #include "PyInterface.h"
 
