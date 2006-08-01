@@ -337,13 +337,7 @@ CLEANFILES = $(DEPDIR)/*.Pi $(WRAPPERS) $(PROXIES)
 SWIGCOMPILE = $(SWIG) $(SWIG_PYTHON_OPT) $(SWIG_CXXFLAGS)
 
 # Include swig rules
-_AMESOS_PYTHON_INCLUDES = $(AMESOS_INCLUDES) $(PYTRILINOS_INCLUDES)
-_AMESOS_PYTHON_LIBS = $(AMESOS_LIBS)     $(PYTRILINOS_LIBS) 
-@USING_GNUMAKE_FALSE@AMESOS_PYTHON_INCLUDES = $(_AMESOS_PYTHON_INCLUDES)
-@USING_GNUMAKE_TRUE@AMESOS_PYTHON_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(_AMESOS_PYTHON_INCLUDES))
-@USING_GNUMAKE_FALSE@AMESOS_PYTHON_LIBS = $(_AMESOS_PYTHON_LIBS)
-@USING_GNUMAKE_TRUE@AMESOS_PYTHON_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(_AMESOS_PYTHON_LIBS))
-SWIG_CXXFLAGS = $(AMESOS_PYTHON_INCLUDES) \
+SWIG_CXXFLAGS = $(AMESOS_INCLUDES) \
 		-I$(top_srcdir)/../teuchos/python/src \
 		-I$(top_srcdir)/../epetra/python/src
 
@@ -515,7 +509,6 @@ uninstall-am: uninstall-info-am
 
 # Include export Makefiles
 include $(top_builddir)/Makefile.export.amesos
-include $(top_builddir)/../PyTrilinos/Makefile.export.pytrilinos
 include $(DEPFILES)
 
 # Wrapper and proxy targets

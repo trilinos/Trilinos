@@ -28,23 +28,11 @@
 
 # Include export Makefiles
 include $(top_builddir)/Makefile.export.amesos
-include $(top_builddir)/../PyTrilinos/Makefile.export.pytrilinos
 
 # Include swig rules
 include $(top_srcdir)/config/swig.am
 
-_AMESOS_PYTHON_INCLUDES = $(AMESOS_INCLUDES) $(PYTRILINOS_INCLUDES)
-_AMESOS_PYTHON_LIBS     = $(AMESOS_LIBS)     $(PYTRILINOS_LIBS) 
-
-if USING_GNUMAKE
-AMESOS_PYTHON_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(_AMESOS_PYTHON_INCLUDES))
-AMESOS_PYTHON_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(_AMESOS_PYTHON_LIBS))
-else
-AMESOS_PYTHON_INCLUDES = $(_AMESOS_PYTHON_INCLUDES)
-AMESOS_PYTHON_LIBS     = $(_AMESOS_PYTHON_LIBS)
-endif
-
-SWIG_CXXFLAGS = $(AMESOS_PYTHON_INCLUDES) \
+SWIG_CXXFLAGS = $(AMESOS_INCLUDES) \
 		-I$(top_srcdir)/../teuchos/python/src \
 		-I$(top_srcdir)/../epetra/python/src
 

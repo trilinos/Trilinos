@@ -125,7 +125,6 @@ For examples of usage, please consult the python/example subdirectory.
 // Local includes
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"
-#include "NumPyArray.h"
 #include "NumPyWrapper.h"
 
 %}
@@ -201,5 +200,3 @@ For examples of usage, please consult the python/example subdirectory.
     delete self;
   }
 }
-
-
