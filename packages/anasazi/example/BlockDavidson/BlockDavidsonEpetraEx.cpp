@@ -29,6 +29,11 @@
 //  This example computes the specified eigenvalues of the discretized 2D Laplacian
 //  using the block Davidson method.  
 
+/**
+ \example BlockDavidsonEpetraEx.cpp
+   This is an example of how to use the Anasazi::BlockDavidsonSolMgr.
+ */
+
 #include "AnasaziConfigDefs.hpp"
 
 #include "AnasaziEpetraAdapter.hpp"

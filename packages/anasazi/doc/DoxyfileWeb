@@ -1,7 +1,6 @@
 # Doxyfile 1.3.9.1
 
 @INCLUDE               = Doxyfile.options
-# @INCLUDE               = ../../common/Doxyfile
 
 
 ############################################################################
@@ -48,7 +47,7 @@ INPUT                  = groups.doc ../src ../thyra/src index.doc
 
 EXCLUDE                = ../src/ModalAnalysisSolvers ../src/AnasaziDenseMatTraits.hpp ../src/AnasaziDirectSolver.hpp
 
-EXAMPLE_PATH           = ../example
+EXAMPLE_PATH           = ../example/LOBPCG ../example/BlockDavidson ../example/MVOPTester
 
 TAGFILES               = ../../common/tag_files/epetra.tag=../../../epetra/doc/html ../../common/tag_files/teuchos.tag=../../../teuchos/doc/html
 

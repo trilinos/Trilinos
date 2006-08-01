@@ -72,6 +72,8 @@
   that have converged are also the smallest nev eigenvectors that are known.
 
   \ingroup anasazi_solvermanagers
+
+  \author Chris Baker, Ulrich Hetmaniuk, Rich Lehoucq, Heidi Thornquist
 */
 
 namespace Anasazi {
