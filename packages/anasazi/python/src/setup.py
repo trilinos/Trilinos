@@ -67,9 +67,7 @@ uniquifyList(extra_compile_args)
 # strings, add them together to obtain a big list of option strings, and then
 # remove any duplicate entries
 options = ANASAZI_INCLUDES.split()    + \
-          ANASAZI_LIBS.split()        + \
-          PYTRILINOS_INCLUDES.split() + \
-          PYTRILINOS_LIBS.split()
+          ANASAZI_LIBS.split()
 uniquifyList(options)
 
 # Distribute the individual options to the appropriate Extension class arguments
