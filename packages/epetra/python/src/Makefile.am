@@ -28,16 +28,14 @@
 
 # Include export Makefiles
 include $(top_builddir)/Makefile.export.epetra
-include $(top_builddir)/../PyTrilinos/Makefile.export.pytrilinos
 
 # Include swig rules
 include $(top_srcdir)/config/swig.am
 @HAVE_MPI_TRUE@MPI_FLAG = -DHAVE_MPI
 
-SWIG_CXXFLAGS = $(EPETRA_INCLUDES)     \
-	        $(PYTRILINOS_INCLUDES) \
-	        -I$(srcdir)            \
-		$(MPI_FLAG)
+SWIG_CXXFLAGS = $(EPETRA_INCLUDES) \
+		$(MPI_FLAG)        \
+		-I$(top_srcdir)/../teuchos/src
 
 EXTRA_DIST = Epetra.i                             \
 	     Epetra_Base.i                        \
@@ -63,6 +61,10 @@ EXTRA_DIST = Epetra.i                             \
 	     Epetra_NumPyVector.h                 \
 	     Epetra_PyOperator.h                  \
 	     Epetra_PyRowMatrix.h                 \
+	     NumPyImporter.h                      \
+	     numpy.i                              \
+	     numpy_include.h                      \
+	     PyEpetra_Utils.h                     \
 	     setup.py
 
 # Default make target

@@ -84,6 +84,9 @@ IntSerialDenseMatrix classes.
 #include <iostream>
 #include <sstream>
 #include <vector>
+
+// Import the numpy interface
+#include "NumPyImporter.h"
 %}
 
 // Auto-documentation feature
@@ -95,7 +98,7 @@ using namespace std;
 %include "std_vector.i"
 %include "exception.i"
 
-// Trilinos library include
+// SWIG NumPy interface file
 %include "numpy.i"
 
 // Epetra interface includes

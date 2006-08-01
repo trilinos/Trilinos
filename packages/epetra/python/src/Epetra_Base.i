@@ -48,12 +48,10 @@
 // Local includes
 #include "Epetra_DArray.h"
 #include "Epetra_IArray.h"
-
-// PyTrilinos includes
-#include "FileStream.h"
-#include "NumPyArray.h"
-#include "NumPyWrapper.h"
 #include "PyEpetra_Utils.h"  
+
+// Teuchos include
+#include "Teuchos_FILEstream.hpp"
 
 // Epetra python exception
 static PyObject * PyExc_EpetraError = PyErr_NewException("Epetra.Error",NULL,NULL);
@@ -65,8 +63,6 @@ static PyObject * PyExc_EpetraError = PyErr_NewException("Epetra.Error",NULL,NUL
 %ignore *::operator[] const;  // Replaced with __getitem__ method
 %ignore *::print;             // Replaced with __str__ method
 %ignore operator<<(ostream &, const Epetra_Object &);// From python, use __str__
-%ignore NumPyArrayBase::getDataArray() const;
-%ignore NumPyArrayBase::getArrayObject() const;
 %ignore Epetra_Object::Print(ostream &) const;
 %ignore Epetra_MapColoring::Epetra_MapColoring(const Epetra_BlockMap &, int*, const int);
 %ignore Epetra_MapColoring::operator()(int) const;
@@ -116,7 +112,7 @@ static PyObject * PyExc_EpetraError = PyErr_NewException("Epetra.Error",NULL,NUL
 }
 %enddef
 
-// Define macro for handling exceptions thrown by Epetra_NumPy
+// Define macro for handling exceptions thrown by Epetra_NumPy*
 // constructors
 %define NUMPY_CONSTRUCTOR_EXCEPTION_HANDLER(className)
 %exception className::className {
@@ -257,8 +253,8 @@ static PyObject * PyExc_EpetraError = PyErr_NewException("Epetra.Error",NULL,NUL
 	PyErr_SetString(PyExc_IOError, "Print() method expects file object");
 	return NULL;
       } else {
-	std::FILE*   f = PyFile_AsFile(pf);
-	FileStream   buffer(f);
+	std::FILE * f = PyFile_AsFile(pf);
+	Teuchos::FILEstream buffer(f);
 	std::ostream os(&buffer);
 	self->Print(os);
       }

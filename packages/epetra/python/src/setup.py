@@ -40,8 +40,7 @@ sys.path.insert(0,os.path.join(TRILINOS_HOME_DIR,"commonTools","buildTools"))
 from MakefileVariables import *
 
 # Build the makeVars dictionary by processing relevant Makefiles
-makeVars = { }
-makeVars.update(processMakefile("Makefile"))
+makeVars = processMakefile("Makefile")
 
 # Import the variable names and values into the global namespace.  This is
 # crucual: every variable name/value pair obtained by processing the specified
@@ -65,10 +64,8 @@ extra_link_args    = extra_compile_args[:]    # Shallow copy
 # Get the relevant Makefile export variable values, split them into lists of
 # strings, add them together to obtain a big list of option strings, and then
 # remove any duplicate entries
-options = EPETRA_INCLUDES.split()     + \
-          EPETRA_LIBS.split()         + \
-          PYTRILINOS_INCLUDES.split() + \
-          PYTRILINOS_LIBS.split()
+options = EPETRA_INCLUDES.split() + \
+          EPETRA_LIBS.split()
 uniquifyList(options)
 
 # Distribute the individual options to the appropriate Extension class arguments
@@ -81,6 +78,8 @@ for option in options:
         libraries.append(option[2:])
     else:
         extra_link_args.append(option)
+
+include_dirs.append(os.path.join(top_srcdir,"..","teuchos","src"))
 
 # Define the strings that refer to the required local source files
 srcFiles = ["Epetra_wrap.cpp",
