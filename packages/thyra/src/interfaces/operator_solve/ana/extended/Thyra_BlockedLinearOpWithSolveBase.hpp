@@ -39,7 +39,7 @@ namespace Thyra {
  *
  * ToDo: Finish Documentation.
  *
- * \ingroup Thyra_Op_Vec_Interoperability_Extended_Interfaces_grp
+ * \ingroup Thyra_Op_Solve_Interoperability_Extended_Interfaces_grp
  */
 template<class RangeScalar, class DomainScalar=RangeScalar>
 class BlockedLinearOpWithSolveBase
