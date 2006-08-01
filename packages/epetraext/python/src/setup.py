@@ -66,9 +66,7 @@ uniquifyList(extra_compile_args)
 # strings, add them together to obtain a big list of option strings, and then
 # remove any duplicate entries
 options = EPETRAEXT_INCLUDES.split()  + \
-          EPETRAEXT_LIBS.split()      + \
-          PYTRILINOS_INCLUDES.split() + \
-          PYTRILINOS_LIBS.split()
+          EPETRAEXT_LIBS.split()
 uniquifyList(options)
 
 # Distribute the individual options to the appropriate Extension class arguments

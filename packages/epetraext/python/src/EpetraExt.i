@@ -82,6 +82,7 @@ The most important classes of the EpetraExt module are:
 #include "Epetra_MapColoring.h"
 
 // Epetra python includes
+#include "NumPyImporter.h"
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"
 #include "Epetra_NumPyIntVector.h"

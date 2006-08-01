@@ -28,7 +28,6 @@
 
 # Include export Makefiles
 include $(top_builddir)/Makefile.export.epetraext
-include $(top_builddir)/../PyTrilinos/Makefile.export.pytrilinos
 
 # HDF5 Support
 if HAVE_EPETRAEXT_HDF5
@@ -40,7 +39,6 @@ endif
 # Include swig rules
 include $(top_srcdir)/config/swig.am
 SWIG_CXXFLAGS = $(EPETRAEXT_INCLUDES)  \
-	        $(PYTRILINOS_INCLUDES) \
 		$(HDF5)                \
 		-I$(top_srcdir)/../teuchos/python/src \
 		-I$(top_srcdir)/../epetra/python/src 
