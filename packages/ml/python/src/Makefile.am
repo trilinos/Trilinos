@@ -30,13 +30,9 @@
 include  $(top_builddir)/Makefile.export.ml
 include  $(top_builddir)/../PyTrilinos/Makefile.export.pytrilinos
 
-# I need extra_libs because of MLAPI::Gallery, which calls Galeri.
-ML_PYTHON_INCLUDES = $(ML_INCLUDES) $(PYTRILINOS_INCLUDES)
-ML_PYTHON_LIBS     = $(ML_LIBS)     $(ML_EXTRA_LIBS) $(PYTRILINOS_LIBS)
-
 # Include swig rules
 include $(top_srcdir)/config/swig.am
-SWIG_CXXFLAGS = $(ML_PYTHON_INCLUDES) \
+SWIG_CXXFLAGS = $(ML_INCLUDES) \
                 -I$(top_srcdir)/../teuchos/python/src \
                 -I$(top_srcdir)/../epetra/python/src
 
