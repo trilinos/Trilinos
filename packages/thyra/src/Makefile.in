@@ -365,6 +365,8 @@ SUPPORT_OPERATOR_VECTOR_CLIENT_SUPPORT_H = \
   $(srcdir)/support/operator_vector/client_support/Thyra_VectorDecl.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_VectorDefaultBase.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_VectorDefaultBaseDecl.hpp\
+  $(srcdir)/support/operator_vector/client_support/Thyra_VectorHandleOpsDecl.hpp\
+  $(srcdir)/support/operator_vector/client_support/Thyra_VectorHandleOpsImpl.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_VectorImpl.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_VectorOpTester.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_VectorSpaceDecl.hpp\
