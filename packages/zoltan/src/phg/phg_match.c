@@ -1855,7 +1855,7 @@ static int pmatching_agg_ipm (ZZ *zz,
     if (recsize>nSend) /* for procs other than 0; that might be true */
       MACRO_RESIZE (recsize, nSend, send);  /* increase buffer size */
 
-    MPI_Bcast (send, nSend, MPI_INT, 0, hgc->col_comm);
+    MPI_Bcast (send, recsize, MPI_INT, 0, hgc->col_comm);
 
     if (hgc->myProc_y !=0) { /* master row already done this */
       for (s = send; s < send + recsize; ) {
