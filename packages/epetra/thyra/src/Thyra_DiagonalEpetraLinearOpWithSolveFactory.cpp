@@ -41,11 +41,13 @@
 namespace Thyra {
 
 bool DiagonalEpetraLinearOpWithSolveFactory::isCompatible(
-  const LinearOpBase<double> &fwdOp
+  const LinearOpSourceBase<double> &fwdOpSrc
   ) const
 {
+  Teuchos::RefCountPtr<const LinearOpBase<double> >
+    fwdOp = fwdOpSrc.getOp();
   const EpetraLinearOpBase *eFwdOp = NULL;
-  if( ! (eFwdOp = dynamic_cast<const EpetraLinearOpBase*>(&fwdOp)) )
+  if( ! (eFwdOp = dynamic_cast<const EpetraLinearOpBase*>(&*fwdOp)) )
     return false;
   Teuchos::RefCountPtr<const Epetra_Operator> epetraFwdOp;
   ETransp                                     epetraFwdOpTransp;
@@ -66,12 +68,15 @@ DiagonalEpetraLinearOpWithSolveFactory::createOp() const
 }
 
 void DiagonalEpetraLinearOpWithSolveFactory::initializeOp(
-  const Teuchos::RefCountPtr<const LinearOpBase<double> >    &fwdOp
-  ,LinearOpWithSolveBase<double>                             *Op
-  ,const ESupportSolveUse                                    supportSolveUse
+  const Teuchos::RefCountPtr<const LinearOpSourceBase<double> >    &fwdOpSrc
+  ,LinearOpWithSolveBase<double>                                   *Op
+  ,const ESupportSolveUse                                          supportSolveUse
   ) const
 {
   TEST_FOR_EXCEPT(Op==NULL);
+  TEST_FOR_EXCEPT(fwdOpSrc.get()==NULL);
+  TEST_FOR_EXCEPT(fwdOpSrc->getOp().get()==NULL);
+  Teuchos::RefCountPtr<const LinearOpBase<double> > fwdOp = fwdOpSrc->getOp();
   const EpetraLinearOpBase &eFwdOp = Teuchos::dyn_cast<const EpetraLinearOpBase>(*fwdOp);
   Teuchos::RefCountPtr<const Epetra_Operator> epetraFwdOp;
   ETransp                                     epetraFwdOpTransp;
@@ -89,8 +94,8 @@ void DiagonalEpetraLinearOpWithSolveFactory::initializeOp(
     space = create_VectorSpace(Teuchos::rcp(new Epetra_Map(map)));
   Teuchos::RefCountPtr< const SpmdVectorBase<double> >
     diag = create_Vector(e_diag,space);
-  Teuchos::set_extra_data<Teuchos::RefCountPtr<const LinearOpBase<double> > >(
-    fwdOp, "Thyra::DiagonalEpetraLinearOpWithSolveFactory::fwdOp", &diag
+  Teuchos::set_extra_data<Teuchos::RefCountPtr<const LinearOpSourceBase<double> > >(
+    fwdOpSrc, "Thyra::DiagonalEpetraLinearOpWithSolveFactory::fwdOpSrc", &diag
     );
   Teuchos::dyn_cast< DefaultDiagonalLinearOpWithSolve<double> >(*Op).initialize(
     Teuchos::rcp_implicit_cast<const VectorBase<double> >(diag)
@@ -100,9 +105,9 @@ void DiagonalEpetraLinearOpWithSolveFactory::initializeOp(
 
 void DiagonalEpetraLinearOpWithSolveFactory::uninitializeOp(
   LinearOpWithSolveBase<double>                               *Op
-  ,Teuchos::RefCountPtr<const LinearOpBase<double> >          *fwdOp
+  ,Teuchos::RefCountPtr<const LinearOpSourceBase<double> >    *fwdOpSrc
   ,Teuchos::RefCountPtr<const PreconditionerBase<double> >    *prec
-  ,Teuchos::RefCountPtr<const LinearOpBase<double> >          *approxFwdOp
+  ,Teuchos::RefCountPtr<const LinearOpSourceBase<double> >    *approxFwdOpSrc
   ,ESupportSolveUse                                           *supportSolveUse
   ) const
 {
@@ -112,19 +117,19 @@ void DiagonalEpetraLinearOpWithSolveFactory::uninitializeOp(
     &diagOp = Teuchos::dyn_cast<DefaultDiagonalLinearOpWithSolve<double> >(*Op);
   Teuchos::RefCountPtr< const VectorBase<double> >
     diag = diagOp.getDiag();
-  if( fwdOp ) {
+  if( fwdOpSrc ) {
     if(diag.get()) {
-      *fwdOp =
-        get_extra_data<Teuchos::RefCountPtr<const LinearOpBase<double> > >(
-          diag,"Thyra::DiagonalEpetraLinearOpWithSolveFactory::fwdOp"
+      *fwdOpSrc =
+        get_extra_data<Teuchos::RefCountPtr<const LinearOpSourceBase<double> > >(
+          diag,"Thyra::DiagonalEpetraLinearOpWithSolveFactory::fwdOpSrc"
           );
     }
   }
   else {
-    *fwdOp = Teuchos::null;
+    *fwdOpSrc = Teuchos::null;
   }
   if(prec) *prec = Teuchos::null; // We never keep a preconditioner!
-  if(approxFwdOp) *approxFwdOp = Teuchos::null; // We never keep a preconditioner!
+  if(approxFwdOpSrc) *approxFwdOpSrc = Teuchos::null; // We never keep a preconditioner!
 }
 
 // Overridden from ParameterListAcceptor

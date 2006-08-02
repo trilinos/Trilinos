@@ -83,9 +83,10 @@ AztecOOLinearOpWithSolve::AztecOOLinearOpWithSolve(
 
 void AztecOOLinearOpWithSolve::initialize(
   const Teuchos::RefCountPtr<const LinearOpBase<double> >                 &fwdOp
+  ,const Teuchos::RefCountPtr<const LinearOpSourceBase<double> >          &fwdOpSrc
   ,const Teuchos::RefCountPtr<const PreconditionerBase<double> >          &prec
   ,const bool                                                             isExternalPrec
-  ,const Teuchos::RefCountPtr<const LinearOpBase<double> >                &approxFwdOp
+  ,const Teuchos::RefCountPtr<const LinearOpSourceBase<double> >          &approxFwdOpSrc
   ,const Teuchos::RefCountPtr<AztecOO>                                    &aztecFwdSolver
   ,const bool                                                             allowInexactFwdSolve
   ,const Teuchos::RefCountPtr<AztecOO>                                    &aztecAdjSolver
@@ -95,12 +96,14 @@ void AztecOOLinearOpWithSolve::initialize(
 {
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(fwdOp.get()==NULL);
+  TEST_FOR_EXCEPT(fwdOpSrc.get()==NULL);
   TEST_FOR_EXCEPT(aztecFwdSolver.get()==NULL);
 #endif
   fwdOp_ = fwdOp;
+  fwdOpSrc_ = fwdOpSrc;
   isExternalPrec_ = isExternalPrec;
   prec_ = prec;
-  approxFwdOp_ = approxFwdOp;
+  approxFwdOpSrc_ = approxFwdOpSrc;
   aztecFwdSolver_ = aztecFwdSolver;
   allowInexactFwdSolve_ = allowInexactFwdSolve;
   aztecAdjSolver_ = aztecAdjSolver;
@@ -108,18 +111,20 @@ void AztecOOLinearOpWithSolve::initialize(
   aztecSolverScalar_ = aztecSolverScalar;
 }
 
-Teuchos::RefCountPtr<const LinearOpBase<double> >
-AztecOOLinearOpWithSolve::extract_fwdOp()
+Teuchos::RefCountPtr<const LinearOpSourceBase<double> >
+AztecOOLinearOpWithSolve::extract_fwdOpSrc()
 {
-  Teuchos::RefCountPtr<const LinearOpBase<double> > _fwdOp = fwdOp_;
-  fwdOp_ = Teuchos::null;
-  return _fwdOp;
+  Teuchos::RefCountPtr<const LinearOpSourceBase<double> >
+    _fwdOpSrc = fwdOpSrc_;
+  fwdOpSrc_ = Teuchos::null;
+  return _fwdOpSrc;
 }
 
 Teuchos::RefCountPtr<const PreconditionerBase<double> >
 AztecOOLinearOpWithSolve::extract_prec()
 {
-  Teuchos::RefCountPtr<const PreconditionerBase<double> > _prec = prec_;
+  Teuchos::RefCountPtr<const PreconditionerBase<double> >
+    _prec = prec_;
   prec_ = Teuchos::null;
   return _prec;
 }
@@ -129,19 +134,21 @@ bool AztecOOLinearOpWithSolve::isExternalPrec() const
   return isExternalPrec_;
 }
 
-Teuchos::RefCountPtr<const LinearOpBase<double> >
-AztecOOLinearOpWithSolve::extract_approxFwdOp()
+Teuchos::RefCountPtr<const LinearOpSourceBase<double> >
+AztecOOLinearOpWithSolve::extract_approxFwdOpSrc()
 {
-  Teuchos::RefCountPtr<const LinearOpBase<double> > _approxFwdOp = approxFwdOp_;
-  approxFwdOp_ = Teuchos::null;
-  return _approxFwdOp;
+  Teuchos::RefCountPtr<const LinearOpSourceBase<double> >
+    _approxFwdOpSrc = approxFwdOpSrc_;
+  approxFwdOpSrc_ = Teuchos::null;
+  return _approxFwdOpSrc;
 }
 
 void AztecOOLinearOpWithSolve::uninitialize(
   Teuchos::RefCountPtr<const LinearOpBase<double> >                 *fwdOp
+  ,Teuchos::RefCountPtr<const LinearOpSourceBase<double> >          *fwdOpSrc
   ,Teuchos::RefCountPtr<const PreconditionerBase<double> >          *prec
   ,bool                                                             *isExternalPrec
-  ,Teuchos::RefCountPtr<const LinearOpBase<double> >                *approxFwdOp
+  ,Teuchos::RefCountPtr<const LinearOpSourceBase<double> >          *approxFwdOpSrc
   ,Teuchos::RefCountPtr<AztecOO>                                    *aztecFwdSolver
   ,bool                                                             *allowInexactFwdSolve
   ,Teuchos::RefCountPtr<AztecOO>                                    *aztecAdjSolver
@@ -150,9 +157,10 @@ void AztecOOLinearOpWithSolve::uninitialize(
   )
 {
   if(fwdOp) *fwdOp = fwdOp_;
+  if(fwdOpSrc) *fwdOpSrc = fwdOpSrc_;
   if(prec) *prec = prec_;
   if(isExternalPrec) *isExternalPrec = isExternalPrec_;
-  if(approxFwdOp) *approxFwdOp = approxFwdOp_;
+  if(approxFwdOpSrc) *approxFwdOpSrc = approxFwdOpSrc_;
   if(aztecFwdSolver) *aztecFwdSolver = aztecFwdSolver_;
   if(allowInexactFwdSolve) *allowInexactFwdSolve = allowInexactFwdSolve_;
   if(aztecAdjSolver) *aztecAdjSolver = aztecAdjSolver_;
@@ -160,9 +168,10 @@ void AztecOOLinearOpWithSolve::uninitialize(
   if(aztecSolverScalar) *aztecSolverScalar = aztecSolverScalar_;
 
   fwdOp_ = Teuchos::null;
+  fwdOpSrc_ = Teuchos::null;
   prec_ = Teuchos::null;
   isExternalPrec_ = false; // Just to make unique
-  approxFwdOp_ = Teuchos::null;
+  approxFwdOpSrc_ = Teuchos::null;
   aztecFwdSolver_ = Teuchos::null;
   allowInexactFwdSolve_ = false;
   aztecAdjSolver_ = Teuchos::null;

@@ -43,23 +43,23 @@ public:
   //@{
 
   /** \brief . */
-  bool isCompatible( const LinearOpBase<double> &fwdOp ) const;
+  bool isCompatible( const LinearOpSourceBase<double> &fwdOpSrc ) const;
 
   /** \brief . */
   Teuchos::RefCountPtr<LinearOpWithSolveBase<double> > createOp() const;
 
   /** \brief . */
   void initializeOp(
-    const Teuchos::RefCountPtr<const LinearOpBase<double> >    &fwdOp
-    ,LinearOpWithSolveBase<double>                             *Op
-    ,const ESupportSolveUse                                    supportSolveUse
+    const Teuchos::RefCountPtr<const LinearOpSourceBase<double> >    &fwdOpSrc
+    ,LinearOpWithSolveBase<double>                                   *Op
+    ,const ESupportSolveUse                                          supportSolveUse
     ) const;
 
   void uninitializeOp(
     LinearOpWithSolveBase<double>                               *Op
-    ,Teuchos::RefCountPtr<const LinearOpBase<double> >          *fwdOp
+    ,Teuchos::RefCountPtr<const LinearOpSourceBase<double> >    *fwdOpSrc
     ,Teuchos::RefCountPtr<const PreconditionerBase<double> >    *prec
-    ,Teuchos::RefCountPtr<const LinearOpBase<double> >          *approxFwdOp
+    ,Teuchos::RefCountPtr<const LinearOpSourceBase<double> >    *approxFwdOpSrc
     ,ESupportSolveUse                                           *supportSolveUse
     ) const;
 

@@ -135,10 +135,12 @@ void BelosLinearOpWithSolveFactory<Scalar>::unsetPreconditionerFactory(
 
 template<class Scalar>
 bool BelosLinearOpWithSolveFactory<Scalar>::isCompatible(
-  const LinearOpBase<Scalar> &fwdOp
+  const LinearOpSourceBase<Scalar> &fwdOpSrc
   ) const
 {
-  return true; // Until we build a preconditioner internally
+  if(precFactory_.get())
+    return precFactory_->isCompatible(fwdOpSrc);
+  return true; // Without a preconditioner, we are compatible with all linear operators!
 }
 
 template<class Scalar>
@@ -150,23 +152,23 @@ BelosLinearOpWithSolveFactory<Scalar>::createOp() const
 
 template<class Scalar>
 void BelosLinearOpWithSolveFactory<Scalar>::initializeOp(
-  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >    &fwdOp
-  ,LinearOpWithSolveBase<Scalar>                             *Op
-  ,const ESupportSolveUse                                    supportSolveUse
+  const Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >    &fwdOpSrc
+  ,LinearOpWithSolveBase<Scalar>                                   *Op
+  ,const ESupportSolveUse                                          supportSolveUse
   ) const
 {
   using Teuchos::null;
-  initializeOpImpl(fwdOp,null,null,false,Op,supportSolveUse);
+  initializeOpImpl(fwdOpSrc,null,null,false,Op,supportSolveUse);
 }
 
 template<class Scalar>
 void BelosLinearOpWithSolveFactory<Scalar>::initializeAndReuseOp(
-  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >    &fwdOp
-  ,LinearOpWithSolveBase<Scalar>                             *Op
+  const Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >    &fwdOpSrc
+  ,LinearOpWithSolveBase<Scalar>                                   *Op
   ) const
 {
   using Teuchos::null;
-  initializeOpImpl(fwdOp,null,null,true,Op,SUPPORT_SOLVE_UNSPECIFIED);
+  initializeOpImpl(fwdOpSrc,null,null,true,Op,SUPPORT_SOLVE_UNSPECIFIED);
 }
 
 template<class Scalar>
@@ -181,34 +183,34 @@ bool BelosLinearOpWithSolveFactory<Scalar>::supportsPreconditionerInputType(
 
 template<class Scalar>
 void BelosLinearOpWithSolveFactory<Scalar>::initializePreconditionedOp(
-  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >             &fwdOp
+  const Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >       &fwdOpSrc
   ,const Teuchos::RefCountPtr<const PreconditionerBase<Scalar> >      &prec
   ,LinearOpWithSolveBase<Scalar>                                      *Op
   ,const ESupportSolveUse                                             supportSolveUse
   ) const
 {
   using Teuchos::null;
-  initializeOpImpl(fwdOp,null,prec,false,Op,supportSolveUse);
+  initializeOpImpl(fwdOpSrc,null,prec,false,Op,supportSolveUse);
 }
 
 template<class Scalar>
 void BelosLinearOpWithSolveFactory<Scalar>::initializeApproxPreconditionedOp(
-  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >             &fwdOp
-  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >            &approxFwdOp
+  const Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >      &fwdOpSrc
+  ,const Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >     &approxFwdOpSrc
   ,LinearOpWithSolveBase<Scalar>                                      *Op
   ,const ESupportSolveUse                                             supportSolveUse
   ) const
 {
   using Teuchos::null;
-  initializeOpImpl(fwdOp,approxFwdOp,null,false,Op,supportSolveUse);
+  initializeOpImpl(fwdOpSrc,approxFwdOpSrc,null,false,Op,supportSolveUse);
 }
 
 template<class Scalar>
 void BelosLinearOpWithSolveFactory<Scalar>::uninitializeOp(
   LinearOpWithSolveBase<Scalar>                               *Op
-  ,Teuchos::RefCountPtr<const LinearOpBase<Scalar> >          *fwdOp
+  ,Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >    *fwdOpSrc
   ,Teuchos::RefCountPtr<const PreconditionerBase<Scalar> >    *prec
-  ,Teuchos::RefCountPtr<const LinearOpBase<Scalar> >          *approxFwdOp
+  ,Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >    *approxFwdOpSrc
   ,ESupportSolveUse                                           *supportSolveUse
   ) const
 {
@@ -217,20 +219,20 @@ void BelosLinearOpWithSolveFactory<Scalar>::uninitializeOp(
 #endif
   BelosLinearOpWithSolve<Scalar>
     &belosOp = Teuchos::dyn_cast<BelosLinearOpWithSolve<Scalar> >(*Op);
-  Teuchos::RefCountPtr<const LinearOpBase<Scalar> > 
-    _fwdOp = belosOp.extract_fwdOp();
+  Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> > 
+    _fwdOpSrc = belosOp.extract_fwdOpSrc();
   Teuchos::RefCountPtr<const PreconditionerBase<Scalar> >
     _prec = ( belosOp.isExternalPrec() ? belosOp.extract_prec() : Teuchos::null );
   // Note: above we only extract the preconditioner if it was passed in
   // externally.  Otherwise, we need to hold on to it so that we can reuse it
   // in the next initialization.
-  Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
-    _approxFwdOp = belosOp.extract_approxFwdOp();
+  Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >
+    _approxFwdOpSrc = belosOp.extract_approxFwdOpSrc();
   ESupportSolveUse
     _supportSolveUse = belosOp.supportSolveUse();
-  if(fwdOp) *fwdOp = _fwdOp;
+  if(fwdOpSrc) *fwdOpSrc = _fwdOpSrc;
   if(prec) *prec = _prec;
-  if(approxFwdOp) *approxFwdOp = _approxFwdOp;
+  if(approxFwdOpSrc) *approxFwdOpSrc = _approxFwdOpSrc;
   if(supportSolveUse) *supportSolveUse = _supportSolveUse;
 }
 
@@ -347,8 +349,8 @@ void BelosLinearOpWithSolveFactory<Scalar>::updateThisValidParamList()
 
 template<class Scalar>
 void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
-  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >             &fwdOp
-  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >            &approxFwdOp
+  const Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >       &fwdOpSrc
+  ,const Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >      &approxFwdOpSrc
   ,const Teuchos::RefCountPtr<const PreconditionerBase<Scalar> >      &prec_in
   ,const bool                                                         reusePrec
   ,LinearOpWithSolveBase<Scalar>                                      *Op
@@ -373,16 +375,16 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
   typedef Teuchos::VerboseObjectTempState<PreconditionerFactoryBase<Scalar> > VOTSPF;
   VOTSPF precFactoryOutputTempState(precFactory_,out,verbLevel);
   
-  //
-  // Unwrap the forward operator
-  //
-
-  // ToDo: Once we generate preconditioners internally
+  TEST_FOR_EXCEPT(Op==NULL);
+  TEST_FOR_EXCEPT(fwdOpSrc.get()==NULL);
+  TEST_FOR_EXCEPT(fwdOpSrc->getOp().get()==NULL);
+  Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
+    fwdOp = fwdOpSrc->getOp(),
+    approxFwdOp = ( approxFwdOpSrc.get() ? approxFwdOpSrc->getOp() : Teuchos::null );
 
   //
   // Get the BelosLinearOpWithSolve interface
   //
-  TEST_FOR_EXCEPT(Op==NULL);
   BelosLinearOpWithSolve<Scalar>
     *belosOp = &Teuchos::dyn_cast<BelosLinearOpWithSolve<Scalar> >(*Op);
   //
@@ -418,9 +420,9 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
       else {
         // Update the preconditioner
         if(approxFwdOp.get())
-          precFactory_->initializePrec(approxFwdOp,&*myPrec);
+          precFactory_->initializePrec(approxFwdOpSrc,&*myPrec);
         else
-          precFactory_->initializePrec(fwdOp,&*myPrec);
+          precFactory_->initializePrec(fwdOpSrc,&*myPrec);
       }
       prec = myPrec;
     }
@@ -569,7 +571,7 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
       : AdjustableBlockSize_default );
   belosOp->initialize(
     lp,adjustableBlockSize,maxNumberOfKrylovVectors,gmresPL,resNormST,iterativeSolver,outputManager
-    ,prec,myPrec.get()==NULL,approxFwdOp,supportSolveUse
+    ,fwdOpSrc,prec,myPrec.get()==NULL,approxFwdOpSrc,supportSolveUse
     );
   belosOp->setOStream(out);
   belosOp->setVerbLevel(verbLevel);

@@ -38,6 +38,7 @@
 
 // Thyra includes
 #include "Thyra_BelosLinearOpWithSolveFactory.hpp"
+#include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
 #include "Thyra_TpetraLinearOp.hpp"
 
 // Tpetra includes
@@ -284,7 +285,7 @@ int main(int argc, char* argv[])
     nsA = belosLOWSFactory->createOp();
   
   // Initialize the BelosLinearOpWithSolve object with the Thyra linear operator.
-  belosLOWSFactory->initializeOp( A, &*nsA );
+  Thyra::initializeOp<ST>( *belosLOWSFactory, A, &*nsA );
   
   // Perform solve using the linear operator to get the approximate solution of Ax=b,
   // where b is the right-hand side and x is the left-hand side.

@@ -52,15 +52,16 @@ BelosLinearOpWithSolve<Scalar>::BelosLinearOpWithSolve(
   ,const Teuchos::RefCountPtr<Belos::StatusTestResNorm<Scalar,MV_t,LO_t> >    &resNormST
   ,const Teuchos::RefCountPtr<Belos::IterativeSolver<Scalar,MV_t,LO_t> >      &iterativeSolver
   ,const Teuchos::RefCountPtr<Belos::OutputManager<Scalar> >                  &outputManager
+  ,const Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >              &fwdOpSrc
   ,const Teuchos::RefCountPtr<const PreconditionerBase<Scalar> >              &prec
   ,const bool                                                                 isExternalPrec
-  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >                    &approxFwdOp
+  ,const Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >              &approxFwdOpSrc
   ,const ESupportSolveUse                                                     &supportSolveUse
   )
 {
   initialize(
     lp,adjustableBlockSize,maxNumberOfKrylovVectors,gmresPL,resNormST,iterativeSolver
-    ,outputManager,prec,isExternalPrec,approxFwdOp,supportSolveUse
+    ,outputManager,fwdOpSrc,prec,isExternalPrec,approxFwdOpSrc,supportSolveUse
     );
 }
 
@@ -73,9 +74,10 @@ void BelosLinearOpWithSolve<Scalar>::initialize(
   ,const Teuchos::RefCountPtr<Belos::StatusTestResNorm<Scalar,MV_t,LO_t> >    &resNormST
   ,const Teuchos::RefCountPtr<Belos::IterativeSolver<Scalar,MV_t,LO_t> >      &iterativeSolver
   ,const Teuchos::RefCountPtr<Belos::OutputManager<Scalar> >                  &outputManager
+  ,const Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >              &fwdOpSrc
   ,const Teuchos::RefCountPtr<const PreconditionerBase<Scalar> >              &prec
   ,const bool                                                                 isExternalPrec
-  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >                    &approxFwdOp
+  ,const Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >              &approxFwdOpSrc
   ,const ESupportSolveUse                                                     &supportSolveUse
   )
 {
@@ -88,23 +90,22 @@ void BelosLinearOpWithSolve<Scalar>::initialize(
   resNormST_ = resNormST;
   iterativeSolver_ = iterativeSolver;
   outputManager_ = outputManager;
+  fwdOpSrc_ = fwdOpSrc;
   prec_ = prec;
   isExternalPrec_ = isExternalPrec;
-  approxFwdOp_ = approxFwdOp;
+  approxFwdOpSrc_ = approxFwdOpSrc;
   supportSolveUse_ = supportSolveUse;
   defaultTol_ = resNormST_->GetTolerance(); // We need to remember this!
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
-BelosLinearOpWithSolve<Scalar>::extract_fwdOp()
+Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >
+BelosLinearOpWithSolve<Scalar>::extract_fwdOpSrc()
 {
-  Teuchos::RefCountPtr<const LinearOpBase<Scalar> > _fwdOp;
-  if(lp_.get()) {
-    _fwdOp = lp_->GetOperator();
-    lp_->SetOperator(Teuchos::null);
-  }
-  return _fwdOp;
+  Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >
+    _fwdOpSrc = fwdOpSrc_;
+  fwdOpSrc_ = Teuchos::null;
+  return _fwdOpSrc;
 }
 
 template<class Scalar>
@@ -124,13 +125,13 @@ bool BelosLinearOpWithSolve<Scalar>::isExternalPrec() const
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
-BelosLinearOpWithSolve<Scalar>::extract_approxFwdOp()
+Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >
+BelosLinearOpWithSolve<Scalar>::extract_approxFwdOpSrc()
 {
-  Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
-    _approxFwdOp = approxFwdOp_;
-  approxFwdOp_ = Teuchos::null;
-  return _approxFwdOp;
+  Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >
+    _approxFwdOpSrc = approxFwdOpSrc_;
+  approxFwdOpSrc_ = Teuchos::null;
+  return _approxFwdOpSrc;
 }
 
 template<class Scalar>
@@ -148,13 +149,14 @@ void BelosLinearOpWithSolve<Scalar>::uninitialize(
   ,Teuchos::RefCountPtr<Belos::StatusTestResNorm<Scalar,MV_t,LO_t> >    *resNormST
   ,Teuchos::RefCountPtr<Belos::IterativeSolver<Scalar,MV_t,LO_t> >      *iterativeSolver
   ,Teuchos::RefCountPtr<Belos::OutputManager<Scalar> >                  *outputManager
+  ,Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >              *fwdOpSrc
   ,Teuchos::RefCountPtr<const PreconditionerBase<Scalar> >              *prec
   ,bool                                                                 *isExternalPrec
-  ,Teuchos::RefCountPtr<const LinearOpBase<Scalar> >                    *approxFwdOp
+  ,Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >              *approxFwdOpSrc
   ,ESupportSolveUse                                                     *supportSolveUse
   )
 {
-  TEST_FOR_EXCEPT(true);
+  TEST_FOR_EXCEPT(true); // ToDo: Implement when needed!
 }
 
 // Overridden from LinearOpBase

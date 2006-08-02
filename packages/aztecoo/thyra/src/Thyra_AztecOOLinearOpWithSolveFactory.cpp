@@ -31,6 +31,7 @@
 
 #include "Thyra_AztecOOLinearOpWithSolveFactory.hpp"
 #include "Thyra_AztecOOLinearOpWithSolve.hpp"
+#include "Thyra_PreconditionerFactoryHelpers.hpp"
 #include "Thyra_EpetraOperatorViewExtractorStd.hpp"
 #include "Thyra_ScaledAdjointLinearOpBase.hpp"
 #include "Thyra_EpetraLinearOpBase.hpp"
@@ -59,7 +60,7 @@ const std::string  Tolerance_name = "Tolerance";
 const double       Tolerance_default = 1e-6;
 const std::string  OutputEveryRhs_name = "Output Every RHS";
 const bool         OutputEveryRhs_default = false;
-const std::string  AztecOO_name = "AztecOO";
+const std::string  AztecOO_Settings_name = "AztecOO Settings";
 
 } // namespace
 
@@ -122,10 +123,10 @@ void AztecOOLinearOpWithSolveFactory::unsetPreconditionerFactory(
 }
 
 bool AztecOOLinearOpWithSolveFactory::isCompatible(
-  const LinearOpBase<double> &fwdOp
+  const LinearOpSourceBase<double> &fwdOpSrc
   ) const
 {
-  return epetraFwdOpViewExtractor_->isCompatible(fwdOp);
+  return epetraFwdOpViewExtractor_->isCompatible(*fwdOpSrc.getOp());
 }
 
 Teuchos::RefCountPtr<LinearOpWithSolveBase<double> >
@@ -135,26 +136,26 @@ AztecOOLinearOpWithSolveFactory::createOp() const
 }
 
 void AztecOOLinearOpWithSolveFactory::initializeOp(
-  const Teuchos::RefCountPtr<const LinearOpBase<double> >    &fwdOp
-  ,LinearOpWithSolveBase<double>                             *Op
-  ,const ESupportSolveUse                                     supportSolveUse
+  const Teuchos::RefCountPtr<const LinearOpSourceBase<double> >    &fwdOpSrc
+  ,LinearOpWithSolveBase<double>                                   *Op
+  ,const ESupportSolveUse                                          supportSolveUse
   ) const
 {
-  this->initializeOp_impl(fwdOp,Teuchos::null,Teuchos::null,false,Op);
+  this->initializeOp_impl(fwdOpSrc,Teuchos::null,Teuchos::null,false,Op);
 }
 
 void AztecOOLinearOpWithSolveFactory::initializeAndReuseOp(
-  const Teuchos::RefCountPtr<const LinearOpBase<double> >    &fwdOp
-  ,LinearOpWithSolveBase<double>                             *Op
+  const Teuchos::RefCountPtr<const LinearOpSourceBase<double> >    &fwdOpSrc
+  ,LinearOpWithSolveBase<double>                                   *Op
   ) const
 {
-  this->initializeOp_impl(fwdOp,Teuchos::null,Teuchos::null,true,Op);
+  this->initializeOp_impl(fwdOpSrc,Teuchos::null,Teuchos::null,true,Op);
 }
 
 bool AztecOOLinearOpWithSolveFactory::supportsPreconditionerInputType(const EPreconditionerInputType precOpType) const
 {
   const_cast<bool&>(useAztecPrec_) = (
-    paramList_.get() && paramList_->sublist(ForwardSolve_name).sublist(AztecOO_name).get("Aztec Preconditioner","none")!="none"
+    paramList_.get() && paramList_->sublist(ForwardSolve_name).sublist(AztecOO_Settings_name).get("Aztec Preconditioner","none")!="none"
     );
   switch(precOpType) {
     case PRECONDITIONER_INPUT_TYPE_AS_OPERATOR:
@@ -170,32 +171,33 @@ bool AztecOOLinearOpWithSolveFactory::supportsPreconditionerInputType(const EPre
 }
 
 void AztecOOLinearOpWithSolveFactory::initializePreconditionedOp(
-  const Teuchos::RefCountPtr<const LinearOpBase<double> >             &fwdOp
+  const Teuchos::RefCountPtr<const LinearOpSourceBase<double> >       &fwdOpSrc
   ,const Teuchos::RefCountPtr<const PreconditionerBase<double> >      &prec
   ,LinearOpWithSolveBase<double>                                      *Op
   ,const ESupportSolveUse                                             supportSolveUse
   ) const
 {
   TEST_FOR_EXCEPT(prec.get()==NULL);
-  this->initializeOp_impl(fwdOp,prec,Teuchos::null,false,Op);
+  this->initializeOp_impl(fwdOpSrc,prec,Teuchos::null,false,Op);
 }
 
 void AztecOOLinearOpWithSolveFactory::initializeApproxPreconditionedOp(
-  const Teuchos::RefCountPtr<const LinearOpBase<double> >             &fwdOp
-  ,const Teuchos::RefCountPtr<const LinearOpBase<double> >            &approxFwdOp
+  const Teuchos::RefCountPtr<const LinearOpSourceBase<double> >       &fwdOpSrc
+  ,const Teuchos::RefCountPtr<const LinearOpSourceBase<double> >      &approxFwdOpSrc
   ,LinearOpWithSolveBase<double>                                      *Op
   ,const ESupportSolveUse                                             supportSolveUse
   ) const
 {
-  TEST_FOR_EXCEPT(approxFwdOp.get()==NULL);
-  this->initializeOp_impl(fwdOp,Teuchos::null,approxFwdOp,false,Op);
+  TEST_FOR_EXCEPT(approxFwdOpSrc.get()==NULL);
+  TEST_FOR_EXCEPT(approxFwdOpSrc->getOp().get()==NULL);
+  this->initializeOp_impl(fwdOpSrc,Teuchos::null,approxFwdOpSrc,false,Op);
 }
 
 void AztecOOLinearOpWithSolveFactory::uninitializeOp(
   LinearOpWithSolveBase<double>                               *Op
-  ,Teuchos::RefCountPtr<const LinearOpBase<double> >          *fwdOp
+  ,Teuchos::RefCountPtr<const LinearOpSourceBase<double> >    *fwdOpSrc
   ,Teuchos::RefCountPtr<const PreconditionerBase<double> >    *prec
-  ,Teuchos::RefCountPtr<const LinearOpBase<double> >          *approxFwdOp
+  ,Teuchos::RefCountPtr<const LinearOpSourceBase<double> >    *approxFwdOpSrc
   ,ESupportSolveUse                                           *supportSolveUse
   ) const
 {
@@ -205,11 +207,11 @@ void AztecOOLinearOpWithSolveFactory::uninitializeOp(
   AztecOOLinearOpWithSolve
     *aztecOp = &Teuchos::dyn_cast<AztecOOLinearOpWithSolve>(*Op);
   // Extract and unset the fwdOP and approxFwdOp objects
-  Teuchos::RefCountPtr<const LinearOpBase<double> >
-    _fwdOp = aztecOp->extract_fwdOp(),             // Will be null if not initialized!
-    _approxFwdOp = aztecOp->extract_approxFwdOp(); // Will be null if no approxFwdOp set
-  if(fwdOp) *fwdOp = _fwdOp;
-  if(approxFwdOp) *approxFwdOp = _approxFwdOp;
+  Teuchos::RefCountPtr<const LinearOpSourceBase<double> >
+    _fwdOpSrc = aztecOp->extract_fwdOpSrc(),             // Will be null if not initialized!
+    _approxFwdOpSrc = aztecOp->extract_approxFwdOpSrc(); // Will be null if no approxFwdOp set
+  if(fwdOpSrc) *fwdOpSrc = _fwdOpSrc;
+  if(approxFwdOpSrc) *approxFwdOpSrc = _approxFwdOpSrc;
   // Only extract and uset the prec object if it is external.  If it is
   // internal, then we need to hold on to this so that we can reinitialize it
   // later.
@@ -301,7 +303,7 @@ AztecOOLinearOpWithSolveFactory::generateAndGetValidParameters()
       &fwdSolvePL = validParamList->sublist(ForwardSolve_name);
     fwdSolvePL.set(Tolerance_name,Tolerance_default);
     fwdSolvePL.set(MaxIterations_name,MaxIterations_default);
-    fwdSolvePL.sublist(AztecOO_name).setParameters(*aztecParamList);
+    fwdSolvePL.sublist(AztecOO_Settings_name).setParameters(*aztecParamList);
     Teuchos::ParameterList
       &adjSolvePL = validParamList->sublist(AdjointSolve_name);
     adjSolvePL.setParameters(fwdSolvePL); // Make the adjoint solve have same defaults as forward solve
@@ -324,9 +326,9 @@ void AztecOOLinearOpWithSolveFactory::updateThisValidParamList()
 }
 
 void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
-  const Teuchos::RefCountPtr<const LinearOpBase<double> >             &fwdOp
+  const Teuchos::RefCountPtr<const LinearOpSourceBase<double> >       &fwdOpSrc
   ,const Teuchos::RefCountPtr<const PreconditionerBase<double> >      &prec
-  ,const Teuchos::RefCountPtr<const LinearOpBase<double> >            &approxFwdOp
+  ,const Teuchos::RefCountPtr<const LinearOpSourceBase<double> >      &approxFwdOpSrc
   ,const bool                                                         reusePrec
   ,LinearOpWithSolveBase<double>                                      *Op
   ) const
@@ -351,7 +353,12 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
 
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(Op==NULL);
+  TEST_FOR_EXCEPT(fwdOpSrc.get()==NULL);
+  TEST_FOR_EXCEPT(fwdOpSrc->getOp().get()==NULL);
 #endif
+  Teuchos::RefCountPtr<const LinearOpBase<double> >
+    fwdOp = fwdOpSrc->getOp(),
+    approxFwdOp = ( approxFwdOpSrc.get() ? approxFwdOpSrc->getOp() : Teuchos::null );
   //
   // Get the AztecOOLinearOpWithSolve object
   //
@@ -397,7 +404,7 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
     else {
       myPrec = precFactory_->createPrec();
     }
-    precFactory_->initializePrec(fwdOp,&*myPrec);
+    precFactory_->initializePrec(fwdOpSrc,&*myPrec);
     precUsed = myPrec;
   }
   //
@@ -500,17 +507,19 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
     // the already created AztecOO objects.  If they are not, then the client
     // should have created a new LOWSB object from scratch!
     Teuchos::RefCountPtr<const LinearOpBase<double> >        old_fwdOp;
+    Teuchos::RefCountPtr<const LinearOpSourceBase<double> >  old_fwdOpSrc;
     Teuchos::RefCountPtr<const PreconditionerBase<double> >  old_prec;
     bool                                                     old_isExternalPrec;
-    Teuchos::RefCountPtr<const LinearOpBase<double> >        old_approxFwdOp;
+    Teuchos::RefCountPtr<const LinearOpSourceBase<double> >  old_approxFwdOpSrc;
     Teuchos::RefCountPtr<AztecOO>                            old_aztecFwdSolver;
     Teuchos::RefCountPtr<AztecOO>                            old_aztecAdjSolver;
     double                                                   old_aztecSolverScalar;
     aztecOp->uninitialize(
       &old_fwdOp
+      ,&old_fwdOpSrc
       ,&old_prec
       ,&old_isExternalPrec
-      ,&old_approxFwdOp
+      ,&old_approxFwdOpSrc
       ,&old_aztecFwdSolver
       ,NULL
       ,&old_aztecAdjSolver
@@ -583,9 +592,9 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
   //
   if( startingOver ) {
     if(paramList_.get())
-      setAztecOOParameters(&paramList_->sublist(ForwardSolve_name).sublist(AztecOO_name),&*aztecFwdSolver);
+      setAztecOOParameters(&paramList_->sublist(ForwardSolve_name).sublist(AztecOO_Settings_name),&*aztecFwdSolver);
     if(aztecAdjSolver.get() && paramList_.get())
-      setAztecOOParameters(&paramList_->sublist(AdjointSolve_name).sublist(AztecOO_name),&*aztecAdjSolver);
+      setAztecOOParameters(&paramList_->sublist(AdjointSolve_name).sublist(AztecOO_Settings_name),&*aztecAdjSolver);
   }
   //
   // Process the forward operator
@@ -738,13 +747,13 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
   //
   if(aztecAdjSolver.get()) {
     aztecOp->initialize(
-      fwdOp,precUsed,prec.get()!=NULL,approxFwdOp
+      fwdOp,fwdOpSrc,precUsed,prec.get()!=NULL,approxFwdOpSrc
       ,aztecFwdSolver,true,aztecAdjSolver,true,epetra_epetraFwdOpScalar
       );
   }
   else {
     aztecOp->initialize(
-      fwdOp,precUsed,prec.get()!=NULL,approxFwdOp
+      fwdOp,fwdOpSrc,precUsed,prec.get()!=NULL,approxFwdOpSrc
       ,aztecFwdSolver,true,null,false,epetra_epetraFwdOpScalar
       );
   }

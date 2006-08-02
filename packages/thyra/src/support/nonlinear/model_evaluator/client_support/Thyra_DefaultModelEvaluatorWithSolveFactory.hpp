@@ -30,7 +30,7 @@
 #define THYRA_DEFAULT_MODEL_EVALUATOR_WITH_SOLVE_FACTORY_HPP
 
 #include "Thyra_ModelEvaluatorDelegatorBase.hpp"
-#include "Thyra_LinearOpWithSolveFactoryBase.hpp"
+#include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
 #include "Teuchos_Time.hpp"
 
 namespace Thyra {
@@ -225,7 +225,7 @@ void DefaultModelEvaluatorWithSolveFactory<Scalar>::evalModel(
   RefCountPtr<const LinearOpBase<Scalar> >    fwdW;
   RefCountPtr<LinearOpBase<Scalar> >          nonconst_fwdW;
   if( outArgs.supports(MEB::OUT_ARG_W) && (W = outArgs.get_W()).get() ) {
-    W_factory_->uninitializeOp(&*W,&fwdW);
+    Thyra::uninitializeOp<Scalar>(*W_factory_,&*W,&fwdW);
     if(fwdW.get()) {
       nonconst_fwdW = rcp_const_cast<LinearOpBase<Scalar> >(fwdW);
     }
@@ -261,7 +261,7 @@ void DefaultModelEvaluatorWithSolveFactory<Scalar>::evalModel(
   timer.start(true);
   
   if( W.get() ) {
-    W_factory_->initializeOp(fwdW,&*W);
+    Thyra::initializeOp<Scalar>(*W_factory_,fwdW,&*W);
     W->setVerbLevel(this->getVerbLevel());
     W->setOStream(this->getOStream());
   }

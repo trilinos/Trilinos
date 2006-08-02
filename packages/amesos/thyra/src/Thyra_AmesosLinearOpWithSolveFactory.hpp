@@ -79,7 +79,7 @@ public:
   /** \brief . */
   static const std::string ThrowOnPreconditionerInput_name;
   /** \brief . */
-  static const std::string AMESOS_name;
+  static const std::string Amesos_Settings_name;
 
   //@}
 
@@ -89,38 +89,15 @@ public:
   /** \brief Constructor which sets the defaults.
    */
   AmesosLinearOpWithSolveFactory(
-    const Amesos::ESolverType                            solverType
-#ifdef HAVE_AMESOS_KLU
-                                                                                = Amesos::KLU
-#else
-                                                                                = Amesos::LAPACK
-#endif
-    ,const Amesos::ERefactorizationPolicy                refactorizationPolicy  = Amesos::REPIVOT_ON_REFACTORIZATION
-    ,const bool                                          throwOnPrecInput       = true
+    const Amesos::ESolverType                 solverType
+#ifdef HAVE_AMESOS_KLU                        
+                                                                     = Amesos::KLU
+#else                                         
+                                                                     = Amesos::LAPACK
+#endif                                        
+    ,const Amesos::ERefactorizationPolicy     refactorizationPolicy  = Amesos::REPIVOT_ON_REFACTORIZATION
+    ,const bool                               throwOnPrecInput       = true
     );
-
-  /** \brief Set the type of solver to use.
-   *
-   * Note, do not change the solver type between refactorizations of the same
-   * matrix (i.e. in calls to <tt>this->initializeOp()</tt>)!  Doing so will
-   * have undefined behavior.
-   */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( Amesos::ESolverType, solverType )
-
-  /** \brief Set the refactorization policy.
-   *
-   * This option can be changed inbetween refactorizations (i.e. between calls
-   * to <tt>this->initializeOp()</tt>).
-   */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( Amesos::ERefactorizationPolicy, refactorizationPolicy )
-
-  /** \brief Set if an exception is thrown when <tt>this->initializePreconditionedOp()</tt>
-   * is called or not.
-   *
-   * This option can be changed inbetween refactorizations (i.e. between calls
-   * to <tt>this->initializeOp()</tt>).
-   */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, throwOnPrecInput )
     
   /** \brief Set the strategy object used to extract an
    * <tt>Epetra_Operator</tt> view of an input forward operator.
@@ -137,38 +114,40 @@ public:
   /** @name Overridden public functions from LinearOpWithSolveFactoryBase */
   //@{
 
-  /** \brief Returns true if <tt>dynamic_cast<const EpetraLinearOpBase*>(fwdOp)!=NULL</tt> . */
-  bool isCompatible( const LinearOpBase<double> &fwdOp ) const;
+  /** \brief Returns true if <tt>dynamic_cast<const
+   * EpetraLinearOpBase*>(fwdOpSrc)!=NULL</tt> .
+   */
+  bool isCompatible( const LinearOpSourceBase<double> &fwdOpSrc ) const;
 
   /** \brief . */
   Teuchos::RefCountPtr<LinearOpWithSolveBase<double> > createOp() const;
 
   /** \brief . */
   void initializeOp(
-    const Teuchos::RefCountPtr<const LinearOpBase<double> >    &fwdOp
-    ,LinearOpWithSolveBase<double>                             *Op
-    ,const ESupportSolveUse                                    supportSolveUse
+    const Teuchos::RefCountPtr<const LinearOpSourceBase<double> >    &fwdOpSrc
+    ,LinearOpWithSolveBase<double>                                   *Op
+    ,const ESupportSolveUse                                          supportSolveUse
     ) const;
 
   /** \brief Returns <tt>false</tt> . */
   bool supportsPreconditionerInputType(const EPreconditionerInputType precOpType) const;
 
   /** \brief Throws exception if <tt>this->throwOnPrecInput()==true</tt> and
-   * calls <tt>this->initializeOp(fwdOp,Op)</tt> otherwise
+   * calls <tt>this->initializeOp(fwdOpSrc,Op)</tt> otherwise
    */
   void initializePreconditionedOp(
-    const Teuchos::RefCountPtr<const LinearOpBase<double> >             &fwdOp
+    const Teuchos::RefCountPtr<const LinearOpSourceBase<double> >       &fwdOpSrc
     ,const Teuchos::RefCountPtr<const PreconditionerBase<double> >      &prec
     ,LinearOpWithSolveBase<double>                                      *Op
     ,const ESupportSolveUse                                             supportSolveUse
     ) const;
 
   /** \brief Throws exception if <tt>this->throwOnPrecInput()==true</tt> and
-   * calls <tt>this->initializeOp(fwdOp,Op)</tt> otherwise
+   * calls <tt>this->initializeOp(fwdOpSrc,Op)</tt> otherwise
    */
   void initializePreconditionedOp(
-    const Teuchos::RefCountPtr<const LinearOpBase<double> >             &fwdOp
-    ,const Teuchos::RefCountPtr<const LinearOpBase<double> >            &approxFwdOp
+    const Teuchos::RefCountPtr<const LinearOpSourceBase<double> >       &fwdOpSrc
+    ,const Teuchos::RefCountPtr<const LinearOpSourceBase<double> >      &approxFwdOpSrc
     ,LinearOpWithSolveBase<double>                                      *Op
     ,const ESupportSolveUse                                             supportSolveUse
     ) const;
@@ -176,9 +155,9 @@ public:
   /** \brief . */
   void uninitializeOp(
     LinearOpWithSolveBase<double>                               *Op
-    ,Teuchos::RefCountPtr<const LinearOpBase<double> >          *fwdOp
+    ,Teuchos::RefCountPtr<const LinearOpSourceBase<double> >    *fwdOpSrc
     ,Teuchos::RefCountPtr<const PreconditionerBase<double> >    *prec
-    ,Teuchos::RefCountPtr<const LinearOpBase<double> >          *approxFwdOp
+    ,Teuchos::RefCountPtr<const LinearOpSourceBase<double> >    *approxFwdOpSrc
     ,ESupportSolveUse                                           *supportSolveUse
     ) const;
 
@@ -213,14 +192,18 @@ private:
   // /////////////////////////
   // Private data members
 
-  Teuchos::RefCountPtr<Teuchos::ParameterList>  paramList_;
+  Amesos::ESolverType                             solverType_;
+  Amesos::ERefactorizationPolicy                  refactorizationPolicy_;
+  bool                                            throwOnPrecInput_;
+  Teuchos::RefCountPtr<Teuchos::ParameterList>    paramList_;
 
   // /////////////////////////
   // Private member functions
 
   static void initializeTimers();
 
-  static Teuchos::RefCountPtr<const Teuchos::ParameterList> generateAndGetValidParameters();
+  static Teuchos::RefCountPtr<const Teuchos::ParameterList>
+  generateAndGetValidParameters();
 
 };
 

@@ -32,6 +32,7 @@
 #include "Thyra_LinearOpTester.hpp"
 #include "Thyra_LinearOpWithSolveTester.hpp"
 #include "Thyra_DiagonalEpetraLinearOpWithSolveFactory.hpp"
+#include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
 #include "Epetra_SerialComm.h"
 #include "Epetra_LocalMap.h"
 #include "Epetra_CrsMatrix.h"
@@ -823,7 +824,7 @@ int main( int argc, char* argv[] )
       Thyra::DiagonalEpetraLinearOpWithSolveFactory diagLOWSFactory;
 
       Teuchos::RefCountPtr<Thyra::LinearOpWithSolveBase<Scalar> >
-        diagLOWS = Thyra::createAndInitializeLinearOpWithSolve(diagLOWSFactory,Op);
+        diagLOWS = Thyra::linearOpWithSolve<double>(diagLOWSFactory,Op);
 
       if(verbose) *out << "\nTesting LinearOpBase interface of diagLOWS ...\n";
 

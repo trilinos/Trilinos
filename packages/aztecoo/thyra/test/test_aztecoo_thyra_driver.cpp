@@ -153,8 +153,8 @@ int main(int argc, char* argv[])
           &fwdSolvePL = paramList.sublist("Forward Solve"),
           &adjSolvePL = paramList.sublist("Adjoint Solve");
         Teuchos::ParameterList
-          &fwdAztecOOPL = fwdSolvePL.sublist("AztecOO"),
-          &adjAztecOOPL = adjSolvePL.sublist("AztecOO");
+          &fwdAztecOOPL = fwdSolvePL.sublist("AztecOO Settings"),
+          &adjAztecOOPL = adjSolvePL.sublist("AztecOO Settings");
         if( aztecOutputLevel != "freq" ) {
           fwdAztecOOPL.set("Output Frequency",aztecOutputLevel);
           adjAztecOOPL.set("Output Frequency",aztecOutputLevel);

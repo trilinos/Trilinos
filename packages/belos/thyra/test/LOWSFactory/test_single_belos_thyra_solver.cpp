@@ -3,6 +3,7 @@
 #ifndef __sun
 
 #include "Thyra_BelosLinearOpWithSolveFactory.hpp"
+#include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_LinearOpTester.hpp"
 #include "Thyra_LinearOpWithSolveBase.hpp"
@@ -90,7 +91,7 @@ bool Thyra::test_single_belos_thyra_solver(
       }
       lowsFactory->setPreconditionerFactory(
         Teuchos::rcp(new IfpackPreconditionerFactory())
-        ,"IfpackPreconditionerFactory"
+        ,"Ifpack"
         );
 #else
       TEST_FOR_EXCEPT(usePreconditioner);
@@ -116,7 +117,7 @@ bool Thyra::test_single_belos_thyra_solver(
     Teuchos::RefCountPtr<LinearOpWithSolveBase<double> >
       nsA = lowsFactory->createOp();
 
-    lowsFactory->initializeOp( A, &*nsA );
+    Thyra::initializeOp<double>( *lowsFactory,  A, &*nsA );
 
     if(out.get()) *out << "\nD) Testing the LinearOpBase interface of nsA ...\n";
 

@@ -31,6 +31,7 @@
 #define THYRA_AZTECOO_LINEAR_OP_WITH_SOLVE_HPP
 
 #include "Thyra_SingleScalarLinearOpWithSolveBase.hpp"
+#include "Thyra_LinearOpSourceBase.hpp"
 #include "Thyra_SingleRhsLinearOpBase.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_PreconditionerBase.hpp"
@@ -78,10 +79,10 @@ public:
    */
    AztecOOLinearOpWithSolve(
      const int       fwdDefaultMaxIterations       = 400
-    ,const double   fwdDefaultTol                 = 1e-6
+     ,const double   fwdDefaultTol                 = 1e-6
      ,const int      adjDefaultMaxIterations       = 400
-    ,const double   adjDefaultTol                 = 1e-6
-    ,const bool     outputEveryRhs                = false
+     ,const double   adjDefaultTol                 = 1e-6
+     ,const bool     outputEveryRhs                = false
     );
 
   /** \brief The default maximum number of iterations for forward solves. */
@@ -98,7 +99,10 @@ public:
   /** \brief Sets up this object.
    *
    * \param  fwdOp   [in] The forward operator object that defines this objects
-   *                 <tt>LinearOpBase</tt> interface.  This also should be the
+   *                 <tt>LinearOpBase</tt> interface.
+   *                 interface.
+   * \param  fwdOpSrc
+   *                 [in] The source for the forward operator object <tt>fwdOp</tt>.  This also should be the
    *                 exact same object that is passed in through a <tt>LinearOpWithSolveFactoryBase</tt>
    *                 interface.
    * \param  prec    [in] The original abstract preconditioner object that was passed through the
@@ -107,10 +111,10 @@ public:
    * \param  isExternalPrec
    *                 [in] True if the precondition was created externally from the <tt>LinearOpWithSolveFactoryBase</tt>
    *                  object, false otherwise.
-   * \param  approxFwdOp
-   *                 [in] The original abstract approximate forward operator object that was passed through the
+   * \param  approxFwdOpSrc
+   *                 [in] The source for the original abstract approximate forward operator object that was passed through the
    *                 <tt>LinearOpWithSolveFactoryBase</tt> interface.  This object
-   *                 is not used for anything and can be set as <tt>approxFwdOp==Teuchos::null</tt>.
+   *                 is not used for anything and can be set as <tt>approxFwdOpSrc==Teuchos::null</tt>.
    * \param  aztecFwdSolver
    *                 [in] The <tt>AztecOO</tt> object used to perform forward solves.  This object must be
    *                 be ready to call <tt>aztecFwdSolver->SetRHS()</tt> and <tt>aztecFwdSolver->SetLHS()</tt>
@@ -135,6 +139,7 @@ public:
    *
    * <b>Preconditions:</b><ul>
    * <li><tt>fwdOp.get()!=NULL</tt>
+   * <li><tt>fwdOpSrc.get()!=NULL</tt>
    * <li><tt>fwdFwdSolver.get()!=NULL</tt>
    * </ul>
    *
@@ -153,9 +158,10 @@ public:
    */
   void initialize(
     const Teuchos::RefCountPtr<const LinearOpBase<double> >                 &fwdOp
+    ,const Teuchos::RefCountPtr<const LinearOpSourceBase<double> >          &fwdOpSrc
     ,const Teuchos::RefCountPtr<const PreconditionerBase<double> >          &prec
     ,const bool                                                             isExternalPrec
-    ,const Teuchos::RefCountPtr<const LinearOpBase<double> >                &approxFwdOp
+    ,const Teuchos::RefCountPtr<const LinearOpSourceBase<double> >          &approxFwdOpSrc
     ,const Teuchos::RefCountPtr<AztecOO>                                    &aztecFwdSolver
     ,const bool                                                             allowInexactFwdSolve       = false
     ,const Teuchos::RefCountPtr<AztecOO>                                    &aztecAdjSolver            = Teuchos::null
@@ -165,7 +171,7 @@ public:
 
   /** \brief Extract the forward <tt>LinearOpBase<double></tt> object so that it can be modified.
    */
-  Teuchos::RefCountPtr<const LinearOpBase<double> > extract_fwdOp();
+  Teuchos::RefCountPtr<const LinearOpSourceBase<double> > extract_fwdOpSrc();
 
   /** \brief Extract the preconditioner.
    */
@@ -177,14 +183,15 @@ public:
 
   /** \brief Extract the approximate forward <tt>LinearOpBase<double></tt> object used to build the preconditioner.
    */
-  Teuchos::RefCountPtr<const LinearOpBase<double> > extract_approxFwdOp();
+  Teuchos::RefCountPtr<const LinearOpSourceBase<double> > extract_approxFwdOpSrc();
   
   /** \brief Uninitialize. */
   void uninitialize(
     Teuchos::RefCountPtr<const LinearOpBase<double> >                 *fwdOp                     = NULL
+    ,Teuchos::RefCountPtr<const LinearOpSourceBase<double> >          *fwdOpSrc                  = NULL
     ,Teuchos::RefCountPtr<const PreconditionerBase<double> >          *prec                      = NULL
-    ,bool                                                             *isExternalPrec              = NULL
-    ,Teuchos::RefCountPtr<const LinearOpBase<double> >                *approxFwdOp               = NULL
+    ,bool                                                             *isExternalPrec            = NULL
+    ,Teuchos::RefCountPtr<const LinearOpSourceBase<double> >          *approxFwdOpSrc            = NULL
     ,Teuchos::RefCountPtr<AztecOO>                                    *aztecFwdSolver            = NULL
     ,bool                                                             *allowInexactFwdSolve      = NULL
     ,Teuchos::RefCountPtr<AztecOO>                                    *aztecAdjSolver            = NULL
@@ -235,7 +242,9 @@ protected:
   /** \brief . */
   bool solveSupportsTrans(ETransp M_trans) const;
   /** \brief . */
-  bool solveSupportsSolveMeasureType(ETransp M_trans, const SolveMeasureType& solveMeasureType) const;
+  bool solveSupportsSolveMeasureType(
+    ETransp M_trans, const SolveMeasureType& solveMeasureType
+    ) const;
   /** \brief . */
   void solve(
     const ETransp                         M_trans
@@ -250,9 +259,10 @@ protected:
 private:
   
   Teuchos::RefCountPtr<const LinearOpBase<double> >                fwdOp_;
+  Teuchos::RefCountPtr<const LinearOpSourceBase<double> >          fwdOpSrc_;
   Teuchos::RefCountPtr<const PreconditionerBase<double> >          prec_;
   bool                                                             isExternalPrec_;
-  Teuchos::RefCountPtr<const LinearOpBase<double> >                approxFwdOp_;
+  Teuchos::RefCountPtr<const LinearOpSourceBase<double> >          approxFwdOpSrc_;
   Teuchos::RefCountPtr<AztecOO>                                    aztecFwdSolver_;
   bool                                                             allowInexactFwdSolve_;
   Teuchos::RefCountPtr<AztecOO>                                    aztecAdjSolver_;

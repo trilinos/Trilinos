@@ -76,7 +76,7 @@ int main(int argc, char* argv[])
     outputterSL.set("Output Frequency",int(outputFrequency));
     outputterSL.set("Output Max Res Only",bool(outputMaxResOnly));
     if(usePreconditioner) {
-      Teuchos::ParameterList &ifpackPFSL = belosLOWSFPL.sublist("IfpackPreconditionerFactory");
+      Teuchos::ParameterList &ifpackPFSL = belosLOWSFPL.sublist("Ifpack");
       ifpackPFSL.set("Overlap",int(2));
       ifpackPFSL.set("Prec Type","ILUT");
     }

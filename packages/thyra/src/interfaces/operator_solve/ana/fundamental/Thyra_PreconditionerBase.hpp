@@ -84,8 +84,7 @@ public:
   /** \brief Return a non-const left preconditioner linear operator if one is
    * designed or targeted to be applied on the left.
    *
-   * <b>Preconditions:</b>
-   * <ul>
+   * <b>Preconditions:</b><ul>
    * <li>[<tt>isLeftPrecOpConst()==true</tt>] <tt>getLeftPrecOp().get()==NULL</tt>
    * </ul>
    */
@@ -104,8 +103,7 @@ public:
   /** \brief Return a non-const right preconditioner linear operator if one is
    * designed or targeted to be applied on the right.
    *
-   * <b>Preconditions:</b>
-   * <ul>
+   * <b>Preconditions:</b><ul>
    * <li>[<tt>isRightPrecOpConst()==true</tt>] <tt>getRightPrecOp().get()==NULL</tt>
    * </ul>
    */
@@ -129,8 +127,7 @@ public:
   /** \brief Return a const generic preconditioner linear operator that is not
    * designed or targeted to be applied on the left or on the right.
    *
-   * <b>Preconditions:</b>
-   * <ul>
+   * <b>Preconditions:</b><ul>
    * <li>[<tt>isUnspecifiedPrecOpConst()==true</tt>] <tt>getUnspecifiedPrecOp().get()==NULL</tt>
    * </ul>
    */

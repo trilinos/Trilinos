@@ -49,11 +49,11 @@ public:
     ,const Teuchos::RefCountPtr<Belos::StatusTestResNorm<Scalar,MV_t,LO_t> >    &resNormST
     ,const Teuchos::RefCountPtr<Belos::IterativeSolver<Scalar,MV_t,LO_t> >      &iterativeSolver
     ,const Teuchos::RefCountPtr<Belos::OutputManager<Scalar> >                  &outputManager
+    ,const Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >              &fwdOpSrc
     ,const Teuchos::RefCountPtr<const PreconditionerBase<Scalar> >              &prec
     ,const bool                                                                 isExternalPrec
-    ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >                    &approxFwdOp
+    ,const Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >              &approxFwdOpSrc
     ,const ESupportSolveUse                                                     &supportSolveUse
-    
     );
 
   /** \brief Initializes given precreated solver objects.
@@ -78,6 +78,10 @@ public:
    * \param outputManager
    *             [in] The output manager that was passed to the iterative solver.
    *             This is used to reset the output level and the outptu stream on a solve by solve basis.
+   * \param fwdOpSrc
+   *             [in] The source for the forward operator object defining the linear system.
+   *             This object is not used here, it is just being "remembered" so that it can be extracted
+   *             by <tt>BelosLinearOpWithSolveFactory::unitializeOp()</tt>.
    * \param prec
    *             [in] The preconditioner object that was used to get the precondtioners set in <tt>*lp</tt>
    *             This object is not used here, it is just being "remembered" so that it can be extracted
@@ -87,7 +91,7 @@ public:
    *             by the <tt>BelosLinearOpWithSolveFactory</tt> object.
    *             This is not used here, it is just being "remembered" so that it can be used in the logic for
    *             <tt>BelosLinearOpWithSolveFactory::unitializeOp()</tt>.
-   * \param approxFwdOp
+   * \param approxFwdOpSrc
    *             [in] The external approximate forward operator object that was used to create the internal
    *             preconditioner.
    *             This object is not used here, it is just being "remembered" so that it can be extracted
@@ -106,14 +110,15 @@ public:
     ,const Teuchos::RefCountPtr<Belos::StatusTestResNorm<Scalar,MV_t,LO_t> >    &resNormST
     ,const Teuchos::RefCountPtr<Belos::IterativeSolver<Scalar,MV_t,LO_t> >      &iterativeSolver
     ,const Teuchos::RefCountPtr<Belos::OutputManager<Scalar> >                  &outputManager
+    ,const Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >              &fwdOpSrc
     ,const Teuchos::RefCountPtr<const PreconditionerBase<Scalar> >              &prec
     ,const bool                                                                 isExternalPrec
-    ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >                    &approxFwdOp
+    ,const Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >              &approxFwdOpSrc
     ,const ESupportSolveUse                                                     &supportSolveUse
     );
 
   /** \brief . */
-  Teuchos::RefCountPtr<const LinearOpBase<Scalar> > extract_fwdOp();
+  Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> > extract_fwdOpSrc();
 
   /** \brief . */
   Teuchos::RefCountPtr<const PreconditionerBase<Scalar> > extract_prec();
@@ -122,7 +127,7 @@ public:
   bool isExternalPrec() const;
 
   /** \brief . */
-  Teuchos::RefCountPtr<const LinearOpBase<Scalar> > extract_approxFwdOp();
+  Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> > extract_approxFwdOpSrc();
 
   /** \brief . */
   ESupportSolveUse supportSolveUse() const;
@@ -139,9 +144,10 @@ public:
     ,Teuchos::RefCountPtr<Belos::StatusTestResNorm<Scalar,MV_t,LO_t> >    *resNormST                 = NULL
     ,Teuchos::RefCountPtr<Belos::IterativeSolver<Scalar,MV_t,LO_t> >      *iterativeSolver           = NULL
     ,Teuchos::RefCountPtr<Belos::OutputManager<Scalar> >                  *outputManager             = NULL
+    ,Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >              *fwdOpSrc                  = NULL
     ,Teuchos::RefCountPtr<const PreconditionerBase<Scalar> >              *prec                      = NULL
     ,bool                                                                 *isExternalPrec            = NULL
-    ,Teuchos::RefCountPtr<const LinearOpBase<Scalar> >                    *approxFwdOp               = NULL
+    ,Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >              *approxFwdOpSrc            = NULL
     ,ESupportSolveUse                                                     *supportSolveUse           = NULL
     );
 
@@ -232,9 +238,10 @@ private:
   Teuchos::RefCountPtr<Belos::IterativeSolver<Scalar,MV_t,LO_t> >         iterativeSolver_;
   Teuchos::RefCountPtr<Belos::OutputManager<Scalar> >                     outputManager_;
 
+  Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >                 fwdOpSrc_;
   Teuchos::RefCountPtr<const PreconditionerBase<Scalar> >                 prec_;
   bool                                                                    isExternalPrec_;
-  Teuchos::RefCountPtr<const LinearOpBase<Scalar> >                       approxFwdOp_;
+  Teuchos::RefCountPtr<const LinearOpSourceBase<Scalar> >                 approxFwdOpSrc_;
   ESupportSolveUse                                                        supportSolveUse_;
 
   typename Teuchos::ScalarTraits<Scalar>::magnitudeType                   defaultTol_;

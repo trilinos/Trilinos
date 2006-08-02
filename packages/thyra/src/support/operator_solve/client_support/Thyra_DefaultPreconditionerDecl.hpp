@@ -195,6 +195,66 @@ private:
   
 };
 
+// ///////////////////////
+// Related functions
+
+/** \brief Create a precondioner from a single linear operator not targeted to
+ * be used on the left or the right.
+ *
+ * \relates DefaultPreconditioner
+ */
+template <class Scalar>
+Teuchos::RefCountPtr<const DefaultPreconditioner<Scalar> >
+unspecifiedPrec(
+  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >    &unspecifiedPrecOp
+  )
+{
+  return Teuchos::rcp(new DefaultPreconditioner<Scalar>(unspecifiedPrecOp));
+}
+
+/** \brief Create a precondioner from a single linear operator targeted to be
+ * used on the left.
+ *
+ * \relates DefaultPreconditioner
+ */
+template <class Scalar>
+Teuchos::RefCountPtr<const DefaultPreconditioner<Scalar> >
+leftPrec(
+  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >    &leftPrecOp
+  )
+{
+  return Teuchos::rcp(new DefaultPreconditioner<Scalar>(leftPrecOp,Teuchos::null));
+}
+
+/** \brief Create a precondioner from a single linear operator targeted to be
+ * used on the right.
+ *
+ * \relates DefaultPreconditioner
+ */
+template <class Scalar>
+Teuchos::RefCountPtr<const DefaultPreconditioner<Scalar> >
+rightPrec(
+  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >    &rightPrecOp
+  )
+{
+  return Teuchos::rcp(new DefaultPreconditioner<Scalar>(Teuchos::null,rightPrecOp));
+}
+
+/** \brief Create a split precondioner from two linear operators, one to be
+ * applied on the left and one to be applied on the right.
+ *
+ * \relates DefaultPreconditioner
+ */
+template <class Scalar>
+Teuchos::RefCountPtr<const DefaultPreconditioner<Scalar> >
+splitPrec(
+  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >     &leftPrecOp
+  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >    &rightPrecOp
+  )
+{
+  return Teuchos::rcp(new DefaultPreconditioner<Scalar>(leftPrecOp,rightPrecOp));
+}
+
 } // namespace Thyra
 
 #endif // THYRA_DEFUALT_PRECONDITIONER_DECL_HPP

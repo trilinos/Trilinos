@@ -38,6 +38,7 @@
 
 // Thyra includes
 #include "Thyra_BelosLinearOpWithSolveFactory.hpp"
+#include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
 #include "Thyra_TpetraLinearOp.hpp"
 
 // Tpetra includes
@@ -191,7 +192,7 @@ int main(int argc, char* argv[])
     nsA = belosLOWSFactory->createOp();
 
   // Initialize the BelosLinearOpWithSolve object with the Thyra linear operator.
-  belosLOWSFactory->initializeOp( A, &*nsA );
+  Thyra::initializeOp<ST>( *belosLOWSFactory, A, &*nsA );
 
   // Create a right-hand side with numRhs vectors in it.
   Teuchos::RefCountPtr< Thyra::MultiVectorBase<ST> > 

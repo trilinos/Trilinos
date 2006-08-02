@@ -29,6 +29,10 @@
 //#define THYRA_DEFAULT_REAL_LINEAR_SOLVER_BUILDER_DUMP
 
 #include "Thyra_DefaultRealLinearSolverBuilder.hpp"
+#include "Teuchos_AbstractFactoryStd.hpp"
+#include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
+
 #ifdef HAVE_STRATIMIKOS_AMESOS_THYRA
 #  include "Thyra_AmesosLinearOpWithSolveFactory.hpp"
 #endif
@@ -41,12 +45,13 @@
 #ifdef HAVE_STRATIMIKOS_IFPACK_THYRA
 #  include "Thyra_IfpackPreconditionerFactory.hpp"
 #endif
-#include "Teuchos_AbstractFactoryStd.hpp"
 
 namespace {
 
-const std::string LinearSolverType_name = "Linear Solver Type";
-const std::string PreconditionerType_name = "Preconditioner Type";
+const std::string LinearSolverTypes_name   = "Linear Solver Types";
+const std::string LinearSolverType_name    = "Linear Solver Type";
+const std::string PreconditionerTypes_name   = "Preconditioner Types";
+const std::string PreconditionerType_name    = "Preconditioner Type";
 
 } // namespace 
 
@@ -54,17 +59,22 @@ namespace Thyra {
 
 // Constructors/Initializers/Accessors
 
-DefaultRealLinearSolverBuilder::DefaultRealLinearSolverBuilder()
-{
-  this->initializeDefaults();
-}
-
 DefaultRealLinearSolverBuilder::DefaultRealLinearSolverBuilder(
-  Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList
+  const std::string    &paramsXmlFileName
+  ,const std::string   &extraParamsXmlString
+  ,const std::string   &paramsUsedXmlOutFileName
+  ,const std::string   &paramsXmlFileNameOption
+  ,const std::string   &extraParamsXmlStringOption
+  ,const std::string   &paramsUsedXmlOutFileNameOption
   )
+  :paramsXmlFileName_(paramsXmlFileName)
+   ,extraParamsXmlString_(extraParamsXmlString)
+   ,paramsUsedXmlOutFileName_(paramsUsedXmlOutFileName)
+   ,paramsXmlFileNameOption_(paramsXmlFileNameOption)
+   ,extraParamsXmlStringOption_(extraParamsXmlStringOption)
+   ,paramsUsedXmlOutFileNameOption_(paramsUsedXmlOutFileNameOption)
 {
   this->initializeDefaults();
-  this->setParameterList(paramList);
 }
 
 void DefaultRealLinearSolverBuilder::setLinearSolveStrategyFactory(
@@ -89,21 +99,62 @@ void DefaultRealLinearSolverBuilder::setPreconditioningStrategyFactory(
   validParamList_ = Teuchos::null;
 }
 
+void DefaultRealLinearSolverBuilder::setupCLP( Teuchos::CommandLineProcessor *clp )
+{
+  TEST_FOR_EXCEPT(clp==NULL);
+  clp->setOption(
+    paramsXmlFileNameOption().c_str(),&paramsXmlFileName_
+    ,"Name of an XML file containing parameters for linear solver options to be appended first."
+    );
+  clp->setOption(
+    extraParamsXmlStringOption().c_str(),&extraParamsXmlString_
+    ,"An XML string containing linear solver parameters to be appended second."
+    );
+  clp->setOption(
+    paramsUsedXmlOutFileNameOption().c_str(),&paramsUsedXmlOutFileName_
+    ,"Name of an XML file that can be written with the parameter list after it has been used on completion of this program."
+    );
+}
+
+void DefaultRealLinearSolverBuilder::readParameters( std::ostream *out )
+{
+  if(!paramList_.get())
+    paramList_ = Teuchos::rcp(new Teuchos::ParameterList("DefaultRealLinearSolverBuilder"));
+  if(paramsXmlFileName().length()) {
+    if(out) *out << "\nReading parameters from XML file \""<<paramsXmlFileName()<<"\" ...\n";
+    Teuchos::updateParametersFromXmlFile(paramsXmlFileName(),&*paramList_);
+  }
+  if(extraParamsXmlString().length()) {
+    if(out) *out << "\nAppending extra parameters from the XML string \""<<extraParamsXmlString()<<"\" ...\n";
+    Teuchos::updateParametersFromXmlString(extraParamsXmlString(),&*paramList_);
+  }
+}
+
+void DefaultRealLinearSolverBuilder::writeParamsFile(
+  const LinearOpWithSolveFactoryBase<double>   &lowsFactory
+  ,const std::string                           &outputXmlFileName
+  ) const
+{
+  TEST_FOR_EXCEPT(!paramList_.get());
+  std::string xmlOutputFile
+    = ( outputXmlFileName.length() ? outputXmlFileName : paramsUsedXmlOutFileName() );
+  if(xmlOutputFile.length()) {
+    Teuchos::writeParameterListToXmlFile(*paramList_,xmlOutputFile);
+  }
+}
 
 std::string
 DefaultRealLinearSolverBuilder::getLinearSolveStrategyName() const
 {
   TEST_FOR_EXCEPT(!paramList_.get());
-  const std::string &name = paramList_->get(LinearSolverType_name,defaultLOWSF_);
-  return name;
+  return paramList_->sublist(LinearSolverTypes_name).get(LinearSolverType_name,defaultLOWSF_);
 }
 
 std::string
 DefaultRealLinearSolverBuilder::getPreconditionerStrategyName() const
 {
   TEST_FOR_EXCEPT(!paramList_.get());
-  const std::string &name = paramList_->get(PreconditionerType_name,defaultPF_);
-  return name;
+  return paramList_->sublist(PreconditionerTypes_name).get(PreconditionerType_name,defaultPF_);
 }
 
 
@@ -145,8 +196,10 @@ DefaultRealLinearSolverBuilder::getValidParameters() const
   if(!validParamList_.get()) {
     Teuchos::RefCountPtr<Teuchos::ParameterList>
       validParamList = Teuchos::rcp(new Teuchos::ParameterList);
-    // Linear Solver Type
+    // Linear Solver Types
     validParamList->set(LinearSolverType_name,defaultLOWSF_);
+    Teuchos::RefCountPtr<Teuchos::ParameterList>
+      linearSolverTypesSL = sublist(validParamList,LinearSolverTypes_name);
     for(
       lowsf_map_t::const_iterator itr = lowsf_map_.begin();
       itr != lowsf_map_.end();
@@ -157,10 +210,12 @@ DefaultRealLinearSolverBuilder::getValidParameters() const
         &name = itr->first;
       const Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<double> >
         lowsf = itr->second->create();
-      validParamList->sublist(name).setParameters(*lowsf->getValidParameters());
+      linearSolverTypesSL->sublist(name).setParameters(*lowsf->getValidParameters());
     }
     // Preconditioner Type
     validParamList->set(PreconditionerType_name,defaultPF_);
+    Teuchos::RefCountPtr<Teuchos::ParameterList>
+      precTypesSL = sublist(validParamList,PreconditionerTypes_name);
     for(
       pf_map_t::const_iterator itr = pf_map_.begin();
       itr != pf_map_.end();
@@ -171,7 +226,7 @@ DefaultRealLinearSolverBuilder::getValidParameters() const
         &name = itr->first;
       const Teuchos::RefCountPtr<PreconditionerFactoryBase<double> >
         pf = itr->second->create();
-      validParamList->sublist(name).setParameters(*pf->getValidParameters());
+      precTypesSL->sublist(name).setParameters(*pf->getValidParameters());
     }
     validParamList_ = validParamList;
   }
@@ -294,9 +349,9 @@ DefaultRealLinearSolverBuilder::validLinearSolveStrategyNames() const
 {
   std::ostringstream oss;
   oss << "{";
-  for( int i = 0; i < validLowsfNames_.size(); ++i ) {
+  for( int i = 0; i < int(validLowsfNames_.size()); ++i ) {
     oss << "\"" << validLowsfNames_[i] << "\"";
-    if( i != validLowsfNames_.size()-1 )
+    if( i != int(validLowsfNames_.size()-1) )
       oss << ",";
   }
   oss << "}";
@@ -308,9 +363,9 @@ DefaultRealLinearSolverBuilder::validPreconditioningStrategyNames() const
 {
   std::ostringstream oss;
   oss << "{";
-  for( int i = 0; i < validPfNames_.size(); ++i ) {
+  for( int i = 0; i < int(validPfNames_.size()); ++i ) {
     oss << "\"" << validPfNames_[i] << "\"";
-    if( i != validPfNames_.size()-1 )
+    if( i != int(validPfNames_.size()-1) )
       oss << ",";
   }
   oss << "}";

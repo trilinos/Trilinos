@@ -66,7 +66,7 @@ public:
   //@{
 
   /** \brief . */
-  bool isCompatible( const LinearOpBase<double> &fwdOp ) const;
+  bool isCompatible( const LinearOpSourceBase<double> &fwdOpSrc ) const;
   /** \brief . */
   bool applySupportsConj(EConj conj) const;
   /** \brief . */
@@ -75,15 +75,15 @@ public:
   Teuchos::RefCountPtr<PreconditionerBase<double> > createPrec() const;
   /** \brief . */
   void initializePrec(
-    const Teuchos::RefCountPtr<const LinearOpBase<double> >    &fwdOp
-    ,PreconditionerBase<double>                                *prec
-    ,const ESupportSolveUse                                    supportSolveUse
+    const Teuchos::RefCountPtr<const LinearOpSourceBase<double> >    &fwdOpSrc
+    ,PreconditionerBase<double>                                      *prec
+    ,const ESupportSolveUse                                           supportSolveUse
     ) const;
   /** \brief . */
   void uninitializePrec(
-    PreconditionerBase<double>                          *prec
-    ,Teuchos::RefCountPtr<const LinearOpBase<double> >  *fwdOp
-    ,ESupportSolveUse                                   *supportSolveUse
+    PreconditionerBase<double>                                *prec
+    ,Teuchos::RefCountPtr<const LinearOpSourceBase<double> >  *fwdOpSrc
+    ,ESupportSolveUse                                         *supportSolveUse
     ) const;
 
   //@}

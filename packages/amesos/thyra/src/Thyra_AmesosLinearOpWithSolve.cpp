@@ -51,68 +51,70 @@ AmesosLinearOpWithSolve::AmesosLinearOpWithSolve()
 }
 
 AmesosLinearOpWithSolve::AmesosLinearOpWithSolve(
-  const Teuchos::RefCountPtr<const LinearOpBase<double> >    &fwdOp
-  ,const Teuchos::RefCountPtr<Epetra_LinearProblem>          &epetraLP
-  ,const Teuchos::RefCountPtr<Amesos_BaseSolver>             &amesosSolver
-  ,const ETransp                                             amesosSolverTransp
-  ,const double                                              amesosSolverScalar
+  const Teuchos::RefCountPtr<const LinearOpBase<double> >          &fwdOp
+  ,const Teuchos::RefCountPtr<const LinearOpSourceBase<double> >   &fwdOpSrc
+  ,const Teuchos::RefCountPtr<Epetra_LinearProblem>                &epetraLP
+  ,const Teuchos::RefCountPtr<Amesos_BaseSolver>                   &amesosSolver
+  ,const ETransp                                                   amesosSolverTransp
+  ,const double                                                    amesosSolverScalar
   )
 {
   initializeTimers();
-  this->initialize(fwdOp,epetraLP,amesosSolver,amesosSolverTransp,amesosSolverScalar);
+  this->initialize(fwdOp,fwdOpSrc,epetraLP,amesosSolver,amesosSolverTransp,amesosSolverScalar);
 }
 
 void AmesosLinearOpWithSolve::initialize(
-  const Teuchos::RefCountPtr<const LinearOpBase<double> >    &fwdOp
-  ,const Teuchos::RefCountPtr<Epetra_LinearProblem>          &epetraLP
-  ,const Teuchos::RefCountPtr<Amesos_BaseSolver>             &amesosSolver
-  ,const ETransp                                             amesosSolverTransp
-  ,const double                                              amesosSolverScalar
+  const Teuchos::RefCountPtr<const LinearOpBase<double> >          &fwdOp
+  ,const Teuchos::RefCountPtr<const LinearOpSourceBase<double> >   &fwdOpSrc
+  ,const Teuchos::RefCountPtr<Epetra_LinearProblem>                &epetraLP
+  ,const Teuchos::RefCountPtr<Amesos_BaseSolver>                   &amesosSolver
+  ,const ETransp                                                   amesosSolverTransp
+  ,const double                                                    amesosSolverScalar
   )
 {
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(fwdOp.get()==NULL);
+  TEST_FOR_EXCEPT(fwdOpSrc.get()==NULL);
   TEST_FOR_EXCEPT(epetraLP.get()==NULL);
   TEST_FOR_EXCEPT(amesosSolver.get()==NULL);
   TEST_FOR_EXCEPT(epetraLP->GetLHS()!=NULL);
   TEST_FOR_EXCEPT(epetraLP->GetRHS()!=NULL);
 #endif
   fwdOp_              = fwdOp;
+  fwdOpSrc_           = fwdOpSrc;
   epetraLP_           = epetraLP;
   amesosSolver_       = amesosSolver;
   amesosSolverTransp_ = amesosSolverTransp;
   amesosSolverScalar_ = amesosSolverScalar;
 }
 
-Teuchos::RefCountPtr<const LinearOpBase<double> >
-AmesosLinearOpWithSolve::extract_fwdOp()
+Teuchos::RefCountPtr<const LinearOpSourceBase<double> >
+AmesosLinearOpWithSolve::extract_fwdOpSrc()
 {
-  Teuchos::RefCountPtr<const LinearOpBase<double> > _fwdOp = fwdOp_;
-  fwdOp_ = Teuchos::null;
-  return _fwdOp;
-}
-
-void AmesosLinearOpWithSolve::reset_fwdOp( const Teuchos::RefCountPtr<const LinearOpBase<double> > &fwdOp )
-{
-  fwdOp_ = fwdOp;
+  Teuchos::RefCountPtr<const LinearOpSourceBase<double> > _fwdOpSrc = fwdOpSrc_;
+  fwdOpSrc_ = Teuchos::null;
+  return _fwdOpSrc;
 }
 
 void AmesosLinearOpWithSolve::uninitialize(
-  Teuchos::RefCountPtr<const LinearOpBase<double> >    *fwdOp
-  ,Teuchos::RefCountPtr<Epetra_LinearProblem>          *epetraLP
-  ,Teuchos::RefCountPtr<Amesos_BaseSolver>             *amesosSolver
-  ,ETransp                                             *amesosSolverTransp
-  ,double                                              *amesosSolverScalar
+  Teuchos::RefCountPtr<const LinearOpBase<double> >          *fwdOp
+  ,Teuchos::RefCountPtr<const LinearOpSourceBase<double> >   *fwdOpSrc
+  ,Teuchos::RefCountPtr<Epetra_LinearProblem>                *epetraLP
+  ,Teuchos::RefCountPtr<Amesos_BaseSolver>                   *amesosSolver
+  ,ETransp                                                   *amesosSolverTransp
+  ,double                                                    *amesosSolverScalar
   )
 {
 
   if(fwdOp)              *fwdOp              = fwdOp_;
+  if(fwdOpSrc)           *fwdOpSrc           = fwdOpSrc_;
   if(epetraLP)           *epetraLP           = epetraLP_;
   if(amesosSolver)       *amesosSolver       = amesosSolver_;
   if(amesosSolverTransp) *amesosSolverTransp = amesosSolverTransp_;
   if(amesosSolverScalar) *amesosSolverScalar = amesosSolverScalar_;
 
   fwdOp_              = Teuchos::null;
+  fwdOpSrc_           = Teuchos::null;
   epetraLP_           = Teuchos::null;
   amesosSolver_       = Teuchos::null;
   amesosSolverTransp_ = NOTRANS;

@@ -27,6 +27,7 @@
 // @HEADER
 
 #include "Thyra_EpetraModelEvaluator.hpp"
+#include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
 #include "Teuchos_Time.hpp"
@@ -392,7 +393,7 @@ void EpetraModelEvaluator::evalModel( const InArgs<double>& inArgs_in, const Out
   RefCountPtr<const LinearOpBase<double> >    fwdW;
   RefCountPtr<EpetraLinearOp>                 efwdW;
   if( outArgs.supports(OUT_ARG_W) && (W = outArgs.get_W()).get() ) {
-    W_factory_->uninitializeOp(&*W,&fwdW);
+    Thyra::uninitializeOp<double>(*W_factory_,&*W,&fwdW);
     if(fwdW.get()) {
       efwdW = rcp_const_cast<EpetraLinearOp>(rcp_dynamic_cast<const EpetraLinearOp>(fwdW,true));
     }
@@ -491,7 +492,7 @@ void EpetraModelEvaluator::evalModel( const InArgs<double>& inArgs_in, const Out
     efwdW->initialize(eW);  // This will directly update W_op if W.get()==NULL!
   
   if( W.get() ) {
-    W_factory_->initializeOp(fwdW,&*W);
+    Thyra::initializeOp<double>(*W_factory_,fwdW,&*W);
     W->setOStream(this->getOStream());
   }
 

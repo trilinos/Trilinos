@@ -31,6 +31,7 @@
 #ifndef __sun
 
 #include "Thyra_AmesosLinearOpWithSolveFactory.hpp"
+
 #include "Thyra_AmesosLinearOpWithSolve.hpp"
 #include "Thyra_EpetraOperatorViewExtractorStd.hpp"
 #include "Amesos.h"
@@ -93,7 +94,7 @@ const std::string AmesosLinearOpWithSolveFactory::RefactorizationPolicy_name = "
 
 const std::string AmesosLinearOpWithSolveFactory::ThrowOnPreconditionerInput_name = "Throw on Preconditioner Input";
 
-const std::string AmesosLinearOpWithSolveFactory::AMESOS_name = "AMESOS";
+const std::string AmesosLinearOpWithSolveFactory::Amesos_Settings_name = "Amesos Settings";
 
 // Constructors/initializers/accessors
 
@@ -102,10 +103,10 @@ AmesosLinearOpWithSolveFactory::AmesosLinearOpWithSolveFactory(
   ,const Amesos::ERefactorizationPolicy                refactorizationPolicy
   ,const bool                                          throwOnPrecInput
     )
-  :solverType_(solverType)
+  :epetraFwdOpViewExtractor_(Teuchos::rcp(new EpetraOperatorViewExtractorStd()))
+  ,solverType_(solverType)
   ,refactorizationPolicy_(refactorizationPolicy)
   ,throwOnPrecInput_(throwOnPrecInput)
-  ,epetraFwdOpViewExtractor_(Teuchos::rcp(new EpetraOperatorViewExtractorStd()))
 {
   initializeTimers();
 }
@@ -113,16 +114,18 @@ AmesosLinearOpWithSolveFactory::AmesosLinearOpWithSolveFactory(
 // Overridden from LinearOpWithSolveFactoryBase
 
 bool AmesosLinearOpWithSolveFactory::isCompatible(
-  const LinearOpBase<double> &fwdOp
+  const LinearOpSourceBase<double> &fwdOpSrc
   ) const
 {
+  Teuchos::RefCountPtr<const LinearOpBase<double> >
+    fwdOp = fwdOpSrc.getOp();
   Teuchos::RefCountPtr<const Epetra_Operator> epetraFwdOp;
   ETransp                                     epetraFwdOpTransp;
   EApplyEpetraOpAs                            epetraFwdOpApplyAs;
   EAdjointEpetraOp                            epetraFwdOpAdjointSupport;
   double                                      epetraFwdOpScalar;
   epetraFwdOpViewExtractor_->getEpetraOpView(
-    Teuchos::rcp(&fwdOp,false)
+    fwdOp
     ,&epetraFwdOp,&epetraFwdOpTransp,&epetraFwdOpApplyAs,&epetraFwdOpAdjointSupport,&epetraFwdOpScalar
     );
   if( !dynamic_cast<const Epetra_RowMatrix*>(&*epetraFwdOp) )
@@ -137,15 +140,17 @@ AmesosLinearOpWithSolveFactory::createOp() const
 }
 
 void AmesosLinearOpWithSolveFactory::initializeOp(
-  const Teuchos::RefCountPtr<const LinearOpBase<double> >    &fwdOp
-  ,LinearOpWithSolveBase<double>                             *Op
-  ,const ESupportSolveUse                                    supportSolveUse
+  const Teuchos::RefCountPtr<const LinearOpSourceBase<double> >    &fwdOpSrc
+  ,LinearOpWithSolveBase<double>                                   *Op
+  ,const ESupportSolveUse                                          supportSolveUse
   ) const
 {
   Teuchos::TimeMonitor overallTimeMonitor(*overallTimer);
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(Op==NULL);
 #endif
+  const Teuchos::RefCountPtr<const LinearOpBase<double> > 
+    fwdOp = fwdOpSrc->getOp();
   //
   // Unwrap and get the forward Epetra_Operator object
   //
@@ -193,7 +198,7 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
       amesosSolver;
     if(1) {
       Teuchos::TimeMonitor constructTimeMonitor(*constructTimer);
-      switch(solverType()) {
+      switch(solverType_) {
         case Thyra::Amesos::LAPACK :
           amesosSolver = Teuchos::rcp(new Amesos_Lapack(*epetraLP));
           break;
@@ -255,7 +260,7 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
         default:
           TEST_FOR_EXCEPTION(
             true, std::logic_error
-            ,"Error, the solver type ID = " << solverType() << " is invalid!"
+            ,"Error, the solver type ID = " << solverType_ << " is invalid!"
             );
       }
     }
@@ -271,7 +276,7 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
       amesosSolver->NumericFactorization();
     }
     // Initialize the LOWS object and we are done!
-    amesosOp->initialize(fwdOp,epetraLP,amesosSolver,epetraFwdOpTransp,epetraFwdOpScalar);
+    amesosOp->initialize(fwdOp,fwdOpSrc,epetraLP,amesosSolver,epetraFwdOpTransp,epetraFwdOpScalar);
   }
   else {
     //
@@ -288,9 +293,9 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
     epetraLP->SetOperator(const_cast<Epetra_Operator*>(&*epetraFwdOp));
     Teuchos::get_extra_data< Teuchos::RefCountPtr<const Epetra_Operator> >(epetraLP,epetraFwdOp_str) = epetraFwdOp;
     // Reset the parameters
-    if(paramList_.get()) amesosSolver->SetParameters(paramList_->sublist(AMESOS_name));
+    if(paramList_.get()) amesosSolver->SetParameters(paramList_->sublist(Amesos_Settings_name));
     // Repivot if asked
-    if(refactorizationPolicy()==Amesos::REPIVOT_ON_REFACTORIZATION) {
+    if(refactorizationPolicy_==Amesos::REPIVOT_ON_REFACTORIZATION) {
       Teuchos::TimeMonitor symbolicTimeMonitor(*symbolicTimer);
       amesosSolver->SymbolicFactorization();
     }
@@ -300,7 +305,7 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
     }
     // Reinitialize the LOWS object and we are done! (we must do this to get the
     // possibly new transpose and scaling factors back in)
-    amesosOp->initialize(fwdOp,epetraLP,amesosSolver,epetraFwdOpTransp,epetraFwdOpScalar);
+    amesosOp->initialize(fwdOp,fwdOpSrc,epetraLP,amesosSolver,epetraFwdOpTransp,epetraFwdOpScalar);
   }
 }
 
@@ -310,40 +315,40 @@ bool AmesosLinearOpWithSolveFactory::supportsPreconditionerInputType(const EPrec
 }
 
 void AmesosLinearOpWithSolveFactory::initializePreconditionedOp(
-  const Teuchos::RefCountPtr<const LinearOpBase<double> >             &fwdOp
+  const Teuchos::RefCountPtr<const LinearOpSourceBase<double> >       &fwdOpSrc
   ,const Teuchos::RefCountPtr<const PreconditionerBase<double> >      &prec
   ,LinearOpWithSolveBase<double>                                      *Op
   ,const ESupportSolveUse                                             supportSolveUse
   ) const
 {
   TEST_FOR_EXCEPTION(
-    this->throwOnPrecInput(), std::logic_error
+    this->throwOnPrecInput_, std::logic_error
     ,"Error, the concrete implementation described as \'"<<this->description()<<"\' does not support precondtioners "
     "and has been configured to throw this exception when the  initializePreconditionedOp(...) function is called!"
     );
-  this->initializeOp(fwdOp,Op,supportSolveUse); // Ignore the precondtioner!
+  this->initializeOp(fwdOpSrc,Op,supportSolveUse); // Ignore the precondtioner!
 }
 
 void AmesosLinearOpWithSolveFactory::initializePreconditionedOp(
-  const Teuchos::RefCountPtr<const LinearOpBase<double> >             &fwdOp
-  ,const Teuchos::RefCountPtr<const LinearOpBase<double> >            &approxFwdOp
+  const Teuchos::RefCountPtr<const LinearOpSourceBase<double> >       &fwdOpSrc
+  ,const Teuchos::RefCountPtr<const LinearOpSourceBase<double> >      &approxFwdOpSrc
   ,LinearOpWithSolveBase<double>                                      *Op
   ,const ESupportSolveUse                                             supportSolveUse
   ) const
 {
   TEST_FOR_EXCEPTION(
-    this->throwOnPrecInput(), std::logic_error
+    this->throwOnPrecInput_, std::logic_error
     ,"Error, the concrete implementation described as \'"<<this->description()<<"\' does not support precondtioners "
     "and has been configured to throw this exception when the  initializePreconditionedOp(...) function is called!"
     );
-  this->initializeOp(fwdOp,Op,supportSolveUse); // Ignore the precondtioner!
+  this->initializeOp(fwdOpSrc,Op,supportSolveUse); // Ignore the precondtioner!
 }
 
 void AmesosLinearOpWithSolveFactory::uninitializeOp(
   LinearOpWithSolveBase<double>                               *Op
-  ,Teuchos::RefCountPtr<const LinearOpBase<double> >          *fwdOp
+  ,Teuchos::RefCountPtr<const LinearOpSourceBase<double> >    *fwdOpSrc
   ,Teuchos::RefCountPtr<const PreconditionerBase<double> >    *prec
-  ,Teuchos::RefCountPtr<const LinearOpBase<double> >          *approxFwdOp
+  ,Teuchos::RefCountPtr<const LinearOpSourceBase<double> >    *approxFwdOpSrc
   ,ESupportSolveUse                                           *supportSolveUse
   ) const
 {
@@ -352,47 +357,51 @@ void AmesosLinearOpWithSolveFactory::uninitializeOp(
 #endif
   AmesosLinearOpWithSolve
     *amesosOp = &Teuchos::dyn_cast<AmesosLinearOpWithSolve>(*Op);
-  Teuchos::RefCountPtr<const LinearOpBase<double> >
-    _fwdOp = amesosOp->extract_fwdOp(); // Will be null if uninitialized!
-  if(_fwdOp.get()) {
+  Teuchos::RefCountPtr<const LinearOpSourceBase<double> >
+    _fwdOpSrc = amesosOp->extract_fwdOpSrc(); // Will be null if uninitialized!
+  if(_fwdOpSrc.get()) {
     // Erase the Epetra_Operator view of the forward operator!
     Teuchos::RefCountPtr<Epetra_LinearProblem> epetraLP = amesosOp->get_epetraLP();
-    Teuchos::get_extra_data< Teuchos::RefCountPtr<const Epetra_Operator> >(epetraLP,epetraFwdOp_str) = Teuchos::null;
-    // Note, we did not erase the address of the operator in epetraLP->GetOperator() since
-    // it seems that the amesos solvers do not recheck the value of GetProblem()->GetOperator()
-    // so you had better not rest this!
+    Teuchos::get_extra_data< Teuchos::RefCountPtr<const Epetra_Operator> >(
+      epetraLP,epetraFwdOp_str
+      )
+      = Teuchos::null;
+    // Note, we did not erase the address of the operator in
+    // epetraLP->GetOperator() since it seems that the amesos solvers do not
+    // recheck the value of GetProblem()->GetOperator() so you had better not
+    // rest this!
   }
-  if(fwdOp) *fwdOp = _fwdOp; // It is fine if the client does not want this object back!
+  if(fwdOpSrc) *fwdOpSrc = _fwdOpSrc; // It is fine if the client does not want this object back!
   if(prec) *prec = Teuchos::null; // We never keep a preconditioner!
-  if(approxFwdOp) *approxFwdOp = Teuchos::null; // We never keep a preconditioner!
+  if(approxFwdOpSrc) *approxFwdOpSrc = Teuchos::null; // We never keep an approximate fwd operator!
 }
 
 // Overridden from ParameterListAcceptor
 
-void AmesosLinearOpWithSolveFactory::setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList)
+void AmesosLinearOpWithSolveFactory::setParameterList(
+  Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList
+  )
 {
   TEST_FOR_EXCEPT(paramList.get()==NULL);
   paramList->validateParameters(*this->getValidParameters(),0); // Only validate this level for now!
   paramList_ = paramList;
-  solverType(
+  solverType_ =
     Amesos::solverTypeNameToEnumMap.get<Amesos::ESolverType>(
       paramList_->get(
         SolverType_name
-        ,Amesos::toString(solverType())
+        ,Amesos::toString(solverType_)
         )
       ,paramList_->name()+"->"+SolverType_name
-      )
-    );
-  refactorizationPolicy(
+      );
+  refactorizationPolicy_ = 
     Amesos::refactorizationPolicyNameToEnumMap.get<Amesos::ERefactorizationPolicy>(
       paramList_->get(
         RefactorizationPolicy_name
-        ,Amesos::toString(refactorizationPolicy())
+        ,Amesos::toString(refactorizationPolicy_)
         )
       ,paramList_->name()+"->"+RefactorizationPolicy_name
-      )
-    );
-  throwOnPrecInput(paramList_->get(ThrowOnPreconditionerInput_name,throwOnPrecInput()));
+      );
+  throwOnPrecInput_ = paramList_->get(ThrowOnPreconditionerInput_name,throwOnPrecInput_);
 }
 
 Teuchos::RefCountPtr<Teuchos::ParameterList>
@@ -450,7 +459,7 @@ AmesosLinearOpWithSolveFactory::generateAndGetValidParameters()
 {
   static Teuchos::RefCountPtr<Teuchos::ParameterList> validParamList;
   if(validParamList.get()==NULL) {
-    validParamList = Teuchos::rcp(new Teuchos::ParameterList("AmesosLinearOpWithSolveFactory"));
+    validParamList = Teuchos::rcp(new Teuchos::ParameterList("Amesos"));
     validParamList->set(
       SolverType_name
 #ifdef HAVE_AMESOS_KLU
@@ -461,7 +470,7 @@ AmesosLinearOpWithSolveFactory::generateAndGetValidParameters()
       );
     validParamList->set(RefactorizationPolicy_name,Amesos::toString(Amesos::REPIVOT_ON_REFACTORIZATION));
     validParamList->set(ThrowOnPreconditionerInput_name,bool(true));
-    validParamList->sublist(AMESOS_name).setParameters(::Amesos::GetValidParameters());
+    validParamList->sublist(Amesos_Settings_name).setParameters(::Amesos::GetValidParameters());
   }
   return validParamList;
 }

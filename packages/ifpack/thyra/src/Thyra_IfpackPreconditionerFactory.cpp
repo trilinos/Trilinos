@@ -42,6 +42,11 @@ namespace {
 
 Teuchos::RefCountPtr<Teuchos::Time> overallTimer, creationTimer, factorizationTimer;
 
+const std::string Ifpack_name = "Ifpack";
+const std::string IfpackSettings_name = "Ifpack Settings";
+const std::string PrecType_name = "Prec Type";
+const std::string Overlap_name = "Overlap";
+
 } // namespace
 
 namespace Thyra {
@@ -58,7 +63,9 @@ IfpackPreconditionerFactory::IfpackPreconditionerFactory()
 
 // Overridden from PreconditionerFactoryBase
 
-bool IfpackPreconditionerFactory::isCompatible( const LinearOpBase<double> &fwdOp ) const
+bool IfpackPreconditionerFactory::isCompatible(
+  const LinearOpSourceBase<double> &fwdOpSrc
+  ) const
 {
   Teuchos::RefCountPtr<const Epetra_Operator> epetraFwdOp;
   ETransp                                     epetraFwdOpTransp;
@@ -66,7 +73,7 @@ bool IfpackPreconditionerFactory::isCompatible( const LinearOpBase<double> &fwdO
   EAdjointEpetraOp                            epetraFwdOpAdjointSupport;
   double                                      epetraFwdOpScalar;
   epetraFwdOpViewExtractor_->getEpetraOpView(
-    Teuchos::rcp(&fwdOp,false)
+    fwdOpSrc.getOp()
     ,&epetraFwdOp,&epetraFwdOpTransp,&epetraFwdOpApplyAs,&epetraFwdOpAdjointSupport,&epetraFwdOpScalar
     );
   if( !dynamic_cast<const Epetra_RowMatrix*>(&*epetraFwdOp) )
@@ -91,9 +98,9 @@ IfpackPreconditionerFactory::createPrec() const
 }
 
 void IfpackPreconditionerFactory::initializePrec(
-  const Teuchos::RefCountPtr<const LinearOpBase<double> >    &fwdOp
-  ,PreconditionerBase<double>                                *prec
-  ,const ESupportSolveUse                                    supportSolveUse
+  const Teuchos::RefCountPtr<const LinearOpSourceBase<double> >    &fwdOpSrc
+  ,PreconditionerBase<double>                                      *prec
+  ,const ESupportSolveUse                                           supportSolveUse
   ) const
 {
   using Teuchos::OSTab;
@@ -114,8 +121,13 @@ void IfpackPreconditionerFactory::initializePrec(
   if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
     *out << "\nEntering Thyra::IfpackPreconditionerFactory::initializePrec(...) ...\n";
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(fwdOp.get()==NULL);
+  TEST_FOR_EXCEPT(fwdOpSrc.get()==NULL);
   TEST_FOR_EXCEPT(prec==NULL);
+#endif
+  Teuchos::RefCountPtr<const LinearOpBase<double> >
+    fwdOp = fwdOpSrc->getOp();
+#ifdef TEUCHOS_DEBUG
+  TEST_FOR_EXCEPT(fwdOp.get()==NULL);
 #endif
   //
   // Unwrap and get the forward Epetra_Operator object
@@ -199,7 +211,7 @@ void IfpackPreconditionerFactory::initializePrec(
       );
     // Set parameters if the list exists
     if(paramList_.get())
-      TEST_FOR_EXCEPT(0!=ifpack_precOp->SetParameters(paramList_->sublist("Ifpack"))); // This will create new sublist if it does not exist!
+      TEST_FOR_EXCEPT(0!=ifpack_precOp->SetParameters(paramList_->sublist(IfpackSettings_name))); // This will create new sublist if it does not exist!
     // Initailize the structure for the preconditioner
     TEST_FOR_EXCEPT(0!=ifpack_precOp->Initialize());
   }
@@ -229,7 +241,7 @@ void IfpackPreconditionerFactory::initializePrec(
   //
   // Attach fwdOp to the ifpack_precOp
   //
-  set_extra_data(fwdOp,"IFPF::fwdOp",&ifpack_precOp,Teuchos::POST_DESTROY,false);
+  set_extra_data(fwdOpSrc,"IFPF::fwdOpSrc",&ifpack_precOp,Teuchos::POST_DESTROY,false);
   //
   // Initialize the output EpetraLinearOp
   //
@@ -256,12 +268,12 @@ void IfpackPreconditionerFactory::initializePrec(
 }
 
 void IfpackPreconditionerFactory::uninitializePrec(
-  PreconditionerBase<double>                          *prec
-  ,Teuchos::RefCountPtr<const LinearOpBase<double> >  *fwdOp
-  ,ESupportSolveUse                                   *supportSolveUse
+  PreconditionerBase<double>                                *prec
+  ,Teuchos::RefCountPtr<const LinearOpSourceBase<double> >  *fwdOpSrc
+  ,ESupportSolveUse                                         *supportSolveUse
   ) const
 {
-  TEST_FOR_EXCEPT(true);
+  TEST_FOR_EXCEPT(true); // ToDo: Implement when needed!
 }
 
 // Overridden from ParameterListAcceptor
@@ -271,11 +283,11 @@ void IfpackPreconditionerFactory::setParameterList(Teuchos::RefCountPtr<Teuchos:
   TEST_FOR_EXCEPT(paramList.get()==NULL);
   paramList->validateParameters(*this->getValidParameters(),1);
   paramList_ = paramList;
-  overlap_ = paramList_->get("Overlap",overlap_);
+  overlap_ = paramList_->get(Overlap_name,overlap_);
   std::ostringstream oss;
   oss << "(sub)list \""<<paramList->name()<<"\"parameter \"Prec Type\"";
   precType_ = Ifpack::precTypeNameToEnum(
-    paramList_->get("Prec Type",toString(precType_))
+    paramList_->get(PrecType_name,toString(precType_))
     ,oss.str()
     );
 }
@@ -334,10 +346,10 @@ IfpackPreconditionerFactory::generateAndGetValidParameters()
 {
   static Teuchos::RefCountPtr<Teuchos::ParameterList> validParamList;
   if(validParamList.get()==NULL) {
-    validParamList = Teuchos::rcp(new Teuchos::ParameterList("IfpackPreconditionerFactory"));
-    validParamList->set("Prec Type","ILU");
-    validParamList->set("Overlap",0);
-    validParamList->sublist("Ifpack").setParameters(Ifpack_GetValidParameters());
+    validParamList = Teuchos::rcp(new Teuchos::ParameterList(Ifpack_name));
+    validParamList->set(PrecType_name,"ILU");
+    validParamList->set(Overlap_name,0);
+    validParamList->sublist(IfpackSettings_name).setParameters(Ifpack_GetValidParameters());
   }
   return validParamList;
 }

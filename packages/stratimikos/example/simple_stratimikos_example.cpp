@@ -60,12 +60,13 @@ int main(int argc, char* argv[])
     std::string     extraParams            = "";
     bool            onlyPrintOptions       = false;
     bool            printXmlFormat         = false;
-    bool            dumpAll                = false;
+
+    Thyra::DefaultRealLinearSolverBuilder linearSolverBuilder;
 
     CommandLineProcessor  clp(false); // Don't throw exceptions
 
-    clp.setOption( "input-file", &inputFile, "Input file [Required].", true );
-    clp.setOption( "extra-params", &extraParams, "Extra parameters overriding the parameters read in from --input-file");
+    linearSolverBuilder.setupCLP(&clp);
+
     clp.setOption( "only-print-options", "continue-after-printing-options", &onlyPrintOptions
                    ,"Only print options and stop or continue on" );
     clp.setOption( "print-xml-format", "print-readable-format", &printXmlFormat
@@ -81,9 +82,6 @@ int main(int argc, char* argv[])
     CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
     if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
 
-    RefCountPtr<Thyra::LinearSolverBuilderBase<double> >
-      linearSolverBuilder = rcp(new Thyra::DefaultRealLinearSolverBuilder);
-
     //
     // Print out the valid options if asked to
     //
@@ -91,11 +89,11 @@ int main(int argc, char* argv[])
     if(onlyPrintOptions) {
       if(printXmlFormat)
         Teuchos::writeParameterListToXmlOStream(
-          *linearSolverBuilder->getValidParameters()
+          *linearSolverBuilder.getValidParameters()
           ,*out
           );
       else
-        linearSolverBuilder->getValidParameters()->print(*out,1,true,false);
+        linearSolverBuilder.getValidParameters()->print(*out,1,true,false);
       return 0;
     }
 
@@ -103,24 +101,22 @@ int main(int argc, char* argv[])
     // Reading in the solver parameters
     //
 
-    Teuchos::ParameterList paramList;
-
-    if(inputFile.length()) {
-      if(verbose) *out << "\nReading parameters from XML file \""<<inputFile<<"\" ...\n";
-      Teuchos::updateParametersFromXmlFile(inputFile,&paramList);
-    }
-    if(extraParams.length()) {
-      if(verbose) *out << "\nAppending extra parameters from the XML string \""<<extraParams<<"\" ...\n";
-      Teuchos::updateParametersFromXmlString(extraParams,&paramList);
-    }
+    linearSolverBuilder.readParameters(out.get());
 
     //
     // Solve a linear system or something ...
     //
 
-    TEST_FOR_EXCEPTION(
-      true,std::logic_error,"Error, this example is not finished yet!"
-      );
+    Teuchos::RefCountPtr<Thyra::LinearOpWithSolveFactoryBase<double> >
+      lowsFactory = linearSolverBuilder.createLinearSolveStrategy("");
+
+    // ToDo: Solve a linear system or something!
+
+    //
+    // Write the linear solver parameter after they where read
+    //
+    
+    linearSolverBuilder.writeParamsFile(*lowsFactory);
     
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose,std::cerr,success)

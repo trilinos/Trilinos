@@ -38,6 +38,8 @@
 
 // Thyra includes
 #include "Thyra_BelosLinearOpWithSolveFactory.hpp"
+#include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
+#include "Thyra_PreconditionerFactoryHelpers.hpp"
 #include "Thyra_TpetraLinearOp.hpp"
 #include "Thyra_DefaultPreconditioner.hpp"
 
@@ -158,9 +160,8 @@ int main(int argc, char* argv[])
                     Teuchos::rcp_implicit_cast<Tpetra::Operator<OT,ST> >(tpetra_Prec) ) );
 
   // Create a Thyra default preconditioner (DefPrec) using the Thyra linear operator (Prec)
-  RefCountPtr<Thyra::DefaultPreconditioner<ST> >
-    DefPrec = Teuchos::rcp( new Thyra::DefaultPreconditioner<ST>() );
-  DefPrec->initializeUnspecified( Prec );
+  RefCountPtr<const Thyra::DefaultPreconditioner<ST> >
+    DefPrec = Thyra::unspecifiedPrec<ST>(Prec);
 
   //
   // Set the parameters for the Belos LOWS Factory and create a parameter list.
@@ -215,7 +216,7 @@ int main(int argc, char* argv[])
 
   // Initialize the BelosLinearOpWithSolve object with the Thyra linear operator (A)
   // and preconditioner (DefPrec).
-  belosLOWSFactory->initializePreconditionedOp( A, DefPrec, &*nsA );
+  Thyra::initializeOp<ST>( *belosLOWSFactory, A, &*nsA );
 
   // Create a right-hand side with numRhs vectors in it and randomize it.
   Teuchos::RefCountPtr< Thyra::MultiVectorBase<ST> > 

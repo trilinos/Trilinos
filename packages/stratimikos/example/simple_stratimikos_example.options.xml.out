@@ -1,127 +1,131 @@
 <ParameterList>
-  <ParameterList name="Amesos">
-    <ParameterList name="AMESOS">
-      <Parameter name="AddToDiag" type="double" value="0"/>
-      <Parameter name="AddZeroToDiag" type="bool" value="0"/>
-      <Parameter name="ComputeTrueResidual" type="bool" value="0"/>
-      <Parameter name="ComputeVectorNorms" type="bool" value="0"/>
-      <Parameter name="DebugLevel" type="int" value="0"/>
-      <ParameterList name="Lapack"/>
-      <Parameter name="MatrixProperty" type="string" value="general"/>
-      <Parameter name="MaxProcs" type="int" value="-1"/>
-      <ParameterList name="Mumps"/>
-      <Parameter name="NoDestroy" type="bool" value="0"/>
-      <Parameter name="OutputLevel" type="int" value="1"/>
-      <ParameterList name="Pardiso"/>
-      <Parameter name="PrintTiming" type="bool" value="0"/>
-      <Parameter name="RcondThreshold" type="double" value="1e-12"/>
-      <Parameter name="Redistribute" type="bool" value="0"/>
-      <Parameter name="Refactorize" type="bool" value="0"/>
-      <Parameter name="Reindex" type="int" value="0"/>
-      <ParameterList name="Scalapack"/>
-      <Parameter name="ScaleMethod" type="int" value="0"/>
-      <ParameterList name="Superludist"/>
-      <Parameter name="TrustMe" type="bool" value="0"/>
-    </ParameterList>
-    <Parameter name="Refactorization Policy" type="string" value="RepivotOnRefactorization"/>
-    <Parameter name="Solver Type" type="string" value="Klu"/>
-    <Parameter name="Throw on Preconditioner Input" type="bool" value="1"/>
-  </ParameterList>
-  <ParameterList name="AztecOO">
-    <ParameterList name="Adjoint Solve">
-      <ParameterList name="AztecOO">
-        <Parameter name="Aztec Preconditioner" type="string" value="ilu"/>
-        <Parameter name="Aztec Solver" type="string" value="GMRES"/>
-        <Parameter name="Convergence Test" type="string" value="r0"/>
-        <Parameter name="Drop Tolerance" type="double" value="0"/>
-        <Parameter name="Fill Factor" type="double" value="1"/>
-        <Parameter name="Graph Fill" type="int" value="0"/>
-        <Parameter name="Ill-Conditioning Threshold" type="double" value="1e+11"/>
-        <Parameter name="Orthogonalization" type="string" value="Classical"/>
-        <Parameter name="Output Frequency" type="int" value="0"/>
-        <Parameter name="Overlap" type="int" value="0"/>
-        <Parameter name="Polynomial Order" type="int" value="3"/>
-        <Parameter name="RCM Reordering" type="string" value="Disabled"/>
-        <Parameter name="Size of Krylov Subspace" type="int" value="300"/>
-        <Parameter name="Steps" type="int" value="3"/>
-      </ParameterList>
-      <Parameter name="Max Iterations" type="int" value="400"/>
-      <Parameter name="Tolerance" type="double" value="1e-06"/>
-    </ParameterList>
-    <ParameterList name="Forward Solve">
-      <ParameterList name="AztecOO">
-        <Parameter name="Aztec Preconditioner" type="string" value="ilu"/>
-        <Parameter name="Aztec Solver" type="string" value="GMRES"/>
-        <Parameter name="Convergence Test" type="string" value="r0"/>
-        <Parameter name="Drop Tolerance" type="double" value="0"/>
-        <Parameter name="Fill Factor" type="double" value="1"/>
-        <Parameter name="Graph Fill" type="int" value="0"/>
-        <Parameter name="Ill-Conditioning Threshold" type="double" value="1e+11"/>
-        <Parameter name="Orthogonalization" type="string" value="Classical"/>
-        <Parameter name="Output Frequency" type="int" value="0"/>
-        <Parameter name="Overlap" type="int" value="0"/>
-        <Parameter name="Polynomial Order" type="int" value="3"/>
-        <Parameter name="RCM Reordering" type="string" value="Disabled"/>
-        <Parameter name="Size of Krylov Subspace" type="int" value="300"/>
-        <Parameter name="Steps" type="int" value="3"/>
-      </ParameterList>
-      <Parameter name="Max Iterations" type="int" value="400"/>
-      <Parameter name="Tolerance" type="double" value="1e-06"/>
-    </ParameterList>
-    <Parameter name="Output Every RHS" type="bool" value="0"/>
-  </ParameterList>
-  <ParameterList name="Belos">
-    <Parameter name="Adjustable Block Size" type="bool" value="1"/>
-    <Parameter name="Block Size" type="int" value="1"/>
-    <Parameter name="Default Rel Res Norm" type="double" value="1e-06"/>
-    <ParameterList name="GMRES">
-      <Parameter name="Max Number of Krylov Vectors" type="int" value="300"/>
-      <Parameter name="Variant" type="string" value="Standard"/>
-    </ParameterList>
-    <Parameter name="Max Iters" type="int" value="400"/>
-    <Parameter name="Max Restarts" type="int" value="25"/>
-    <ParameterList name="Outputter">
-      <Parameter name="Output Frequency" type="int" value="10"/>
-      <Parameter name="Output Max Res Only" type="bool" value="1"/>
-    </ParameterList>
-    <Parameter name="Solver Type" type="string" value="GMRES"/>
-  </ParameterList>
-  <ParameterList name="Ifpack">
-    <ParameterList name="Ifpack">
-      <Parameter name="amesos: solver type" type="string" value="Amesos_Klu"/>
-      <Parameter name="fact: absolute threshold" type="double" value="0"/>
-      <Parameter name="fact: drop tolerance" type="double" value="0"/>
-      <Parameter name="fact: ict level-of-fill" type="double" value="1"/>
-      <Parameter name="fact: ilut level-of-fill" type="double" value="1"/>
-      <Parameter name="fact: level-of-fill" type="int" value="0"/>
-      <Parameter name="fact: relative threshold" type="double" value="1"/>
-      <Parameter name="fact: relax value" type="double" value="0"/>
-      <Parameter name="fact: sparskit: alph" type="double" value="0"/>
-      <Parameter name="fact: sparskit: droptol" type="double" value="0"/>
-      <Parameter name="fact: sparskit: lfil" type="int" value="0"/>
-      <Parameter name="fact: sparskit: mbloc" type="int" value="-1"/>
-      <Parameter name="fact: sparskit: permtol" type="double" value="0.1"/>
-      <Parameter name="fact: sparskit: tol" type="double" value="0"/>
-      <Parameter name="fact: sparskit: type" type="string" value="ILUT"/>
-      <Parameter name="partitioner: local parts" type="int" value="1"/>
-      <Parameter name="partitioner: overlap" type="int" value="0"/>
-      <Parameter name="partitioner: print level" type="int" value="0"/>
-      <Parameter name="partitioner: type" type="string" value="greedy"/>
-      <Parameter name="partitioner: use symmetric graph" type="bool" value="1"/>
-      <Parameter name="relaxation: damping factor" type="double" value="1"/>
-      <Parameter name="relaxation: min diagonal value" type="double" value="1"/>
-      <Parameter name="relaxation: sweeps" type="int" value="1"/>
-      <Parameter name="relaxation: type" type="string" value="Jacobi"/>
-      <Parameter name="relaxation: zero starting solution" type="bool" value="1"/>
-      <Parameter name="schwarz: combine mode" type="string" value="Zero"/>
-      <Parameter name="schwarz: compute condest" type="bool" value="1"/>
-      <Parameter name="schwarz: filter singletons" type="bool" value="0"/>
-      <Parameter name="schwarz: reordering type" type="string" value="none"/>
-    </ParameterList>
-    <Parameter name="Overlap" type="int" value="0"/>
-    <Parameter name="Prec Type" type="string" value="ILU"/>
-  </ParameterList>
   <Parameter name="Linear Solver Type" type="string" value="Amesos"/>
+  <ParameterList name="Linear Solver Types">
+    <ParameterList name="Amesos">
+      <ParameterList name="Amesos Settings">
+        <Parameter name="AddToDiag" type="double" value="0"/>
+        <Parameter name="AddZeroToDiag" type="bool" value="0"/>
+        <Parameter name="ComputeTrueResidual" type="bool" value="0"/>
+        <Parameter name="ComputeVectorNorms" type="bool" value="0"/>
+        <Parameter name="DebugLevel" type="int" value="0"/>
+        <ParameterList name="Lapack"/>
+        <Parameter name="MatrixProperty" type="string" value="general"/>
+        <Parameter name="MaxProcs" type="int" value="-1"/>
+        <ParameterList name="Mumps"/>
+        <Parameter name="NoDestroy" type="bool" value="0"/>
+        <Parameter name="OutputLevel" type="int" value="1"/>
+        <ParameterList name="Pardiso"/>
+        <Parameter name="PrintTiming" type="bool" value="0"/>
+        <Parameter name="RcondThreshold" type="double" value="1e-12"/>
+        <Parameter name="Redistribute" type="bool" value="0"/>
+        <Parameter name="Refactorize" type="bool" value="0"/>
+        <Parameter name="Reindex" type="int" value="0"/>
+        <ParameterList name="Scalapack"/>
+        <Parameter name="ScaleMethod" type="int" value="0"/>
+        <ParameterList name="Superludist"/>
+        <Parameter name="TrustMe" type="bool" value="0"/>
+      </ParameterList>
+      <Parameter name="Refactorization Policy" type="string" value="RepivotOnRefactorization"/>
+      <Parameter name="Solver Type" type="string" value="Klu"/>
+      <Parameter name="Throw on Preconditioner Input" type="bool" value="1"/>
+    </ParameterList>
+    <ParameterList name="AztecOO">
+      <ParameterList name="Adjoint Solve">
+        <ParameterList name="AztecOO Settings">
+          <Parameter name="Aztec Preconditioner" type="string" value="ilu"/>
+          <Parameter name="Aztec Solver" type="string" value="GMRES"/>
+          <Parameter name="Convergence Test" type="string" value="r0"/>
+          <Parameter name="Drop Tolerance" type="double" value="0"/>
+          <Parameter name="Fill Factor" type="double" value="1"/>
+          <Parameter name="Graph Fill" type="int" value="0"/>
+          <Parameter name="Ill-Conditioning Threshold" type="double" value="1e+11"/>
+          <Parameter name="Orthogonalization" type="string" value="Classical"/>
+          <Parameter name="Output Frequency" type="int" value="0"/>
+          <Parameter name="Overlap" type="int" value="0"/>
+          <Parameter name="Polynomial Order" type="int" value="3"/>
+          <Parameter name="RCM Reordering" type="string" value="Disabled"/>
+          <Parameter name="Size of Krylov Subspace" type="int" value="300"/>
+          <Parameter name="Steps" type="int" value="3"/>
+        </ParameterList>
+        <Parameter name="Max Iterations" type="int" value="400"/>
+        <Parameter name="Tolerance" type="double" value="1e-06"/>
+      </ParameterList>
+      <ParameterList name="Forward Solve">
+        <ParameterList name="AztecOO Settings">
+          <Parameter name="Aztec Preconditioner" type="string" value="ilu"/>
+          <Parameter name="Aztec Solver" type="string" value="GMRES"/>
+          <Parameter name="Convergence Test" type="string" value="r0"/>
+          <Parameter name="Drop Tolerance" type="double" value="0"/>
+          <Parameter name="Fill Factor" type="double" value="1"/>
+          <Parameter name="Graph Fill" type="int" value="0"/>
+          <Parameter name="Ill-Conditioning Threshold" type="double" value="1e+11"/>
+          <Parameter name="Orthogonalization" type="string" value="Classical"/>
+          <Parameter name="Output Frequency" type="int" value="0"/>
+          <Parameter name="Overlap" type="int" value="0"/>
+          <Parameter name="Polynomial Order" type="int" value="3"/>
+          <Parameter name="RCM Reordering" type="string" value="Disabled"/>
+          <Parameter name="Size of Krylov Subspace" type="int" value="300"/>
+          <Parameter name="Steps" type="int" value="3"/>
+        </ParameterList>
+        <Parameter name="Max Iterations" type="int" value="400"/>
+        <Parameter name="Tolerance" type="double" value="1e-06"/>
+      </ParameterList>
+      <Parameter name="Output Every RHS" type="bool" value="0"/>
+    </ParameterList>
+    <ParameterList name="Belos">
+      <Parameter name="Adjustable Block Size" type="bool" value="1"/>
+      <Parameter name="Block Size" type="int" value="1"/>
+      <Parameter name="Default Rel Res Norm" type="double" value="1e-06"/>
+      <ParameterList name="GMRES">
+        <Parameter name="Max Number of Krylov Vectors" type="int" value="300"/>
+        <Parameter name="Variant" type="string" value="Standard"/>
+      </ParameterList>
+      <Parameter name="Max Iters" type="int" value="400"/>
+      <Parameter name="Max Restarts" type="int" value="25"/>
+      <ParameterList name="Outputter">
+        <Parameter name="Output Frequency" type="int" value="10"/>
+        <Parameter name="Output Max Res Only" type="bool" value="1"/>
+      </ParameterList>
+      <Parameter name="Solver Type" type="string" value="GMRES"/>
+    </ParameterList>
+  </ParameterList>
   <Parameter name="Preconditioner Type" type="string" value="Ifpack"/>
+  <ParameterList name="Preconditioner Types">
+    <ParameterList name="Ifpack">
+      <ParameterList name="Ifpack Settings">
+        <Parameter name="amesos: solver type" type="string" value="Amesos_Klu"/>
+        <Parameter name="fact: absolute threshold" type="double" value="0"/>
+        <Parameter name="fact: drop tolerance" type="double" value="0"/>
+        <Parameter name="fact: ict level-of-fill" type="double" value="1"/>
+        <Parameter name="fact: ilut level-of-fill" type="double" value="1"/>
+        <Parameter name="fact: level-of-fill" type="int" value="0"/>
+        <Parameter name="fact: relative threshold" type="double" value="1"/>
+        <Parameter name="fact: relax value" type="double" value="0"/>
+        <Parameter name="fact: sparskit: alph" type="double" value="0"/>
+        <Parameter name="fact: sparskit: droptol" type="double" value="0"/>
+        <Parameter name="fact: sparskit: lfil" type="int" value="0"/>
+        <Parameter name="fact: sparskit: mbloc" type="int" value="-1"/>
+        <Parameter name="fact: sparskit: permtol" type="double" value="0.1"/>
+        <Parameter name="fact: sparskit: tol" type="double" value="0"/>
+        <Parameter name="fact: sparskit: type" type="string" value="ILUT"/>
+        <Parameter name="partitioner: local parts" type="int" value="1"/>
+        <Parameter name="partitioner: overlap" type="int" value="0"/>
+        <Parameter name="partitioner: print level" type="int" value="0"/>
+        <Parameter name="partitioner: type" type="string" value="greedy"/>
+        <Parameter name="partitioner: use symmetric graph" type="bool" value="1"/>
+        <Parameter name="relaxation: damping factor" type="double" value="1"/>
+        <Parameter name="relaxation: min diagonal value" type="double" value="1"/>
+        <Parameter name="relaxation: sweeps" type="int" value="1"/>
+        <Parameter name="relaxation: type" type="string" value="Jacobi"/>
+        <Parameter name="relaxation: zero starting solution" type="bool" value="1"/>
+        <Parameter name="schwarz: combine mode" type="string" value="Zero"/>
+        <Parameter name="schwarz: compute condest" type="bool" value="1"/>
+        <Parameter name="schwarz: filter singletons" type="bool" value="0"/>
+        <Parameter name="schwarz: reordering type" type="string" value="none"/>
+      </ParameterList>
+      <Parameter name="Overlap" type="int" value="0"/>
+      <Parameter name="Prec Type" type="string" value="ILU"/>
+    </ParameterList>
+  </ParameterList>
 </ParameterList>
 

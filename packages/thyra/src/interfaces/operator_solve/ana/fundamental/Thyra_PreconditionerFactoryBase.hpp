@@ -30,6 +30,7 @@
 #define THYRA_PRECONDITIONER_FACTORY_BASE_DECL_HPP
 
 #include "Thyra_SolveSupportTypes.hpp"
+#include "Thyra_LinearOpSourceBase.hpp"
 #include "Thyra_PreconditionerBase.hpp"
 #include "Teuchos_Describable.hpp"
 #include "Teuchos_ParameterListAcceptor.hpp"
@@ -56,7 +57,7 @@ public:
   /** \brief Check that a <tt>LinearOpBase</tt> object is compatible with
    * <tt>*this</tt> factory object.
    */
-  virtual bool isCompatible( const LinearOpBase<RangeScalar,DomainScalar> &fwdOp ) const = 0;
+  virtual bool isCompatible( const LinearOpSourceBase<RangeScalar,DomainScalar> &fwdOpSrc ) const = 0;
 
   /** \brief Create an (uninitialized) <tt>LinearOpBase</tt> object to be
    * initalized as the preconditioner later in
@@ -72,7 +73,7 @@ public:
   /** \brief Initialize a pre-created <tt>LinearOpBase</tt> preconditioner
    * object given a "compatible" <tt>LinearOpBase</tt> object.
    *
-   * \param  fwdOp  [in] The forward linear operator that will be used to create
+   * \param  fwdOpSrc  [in] The forward linear operator that will be used to create
    *                the output <tt>LinearOpBase</tt> preconditioner object.
    *                Note that this object is remembered by the <tt>*Op</tt> object on output.
    * \param  prec   [in/out] The output <tt>PreconditionerBase</tt> preconditioner object.  This object must have
@@ -87,8 +88,8 @@ public:
    *                Default <tt>supportSolveUse=SUPPORT_SOLVE_UNSPECIFIED</tt>
    *
    * <b>Preconditions:</b><ul>
-   * <li><tt>fwdOp.get()!=NULL</tt>
-   * <li><tt>this->isCompatible(*fwdOp)==true</tt>
+   * <li><tt>fwdOpSrc.get()!=NULL</tt>
+   * <li><tt>this->isCompatible(*fwdOpSrc)==true</tt>
    * <li><tt>prec!=NULL</tt>
    * <li><tt>*prec</tt> must have been created by <tt>this->createPrec()</tt> prior to calling
    *     this function.
@@ -104,21 +105,21 @@ public:
    * <b>Postconditions:</b><ul>
    * <li>Throws <tt>CatastrophicSolveFailure</tt> if the preconditioner could
    *     not be created successfully (e.g. due to a factorization failure or some other cause).
-   * <li><tt>precOp->range()->isCompatible(*fwdOp->domain())==true</tt>
-   * <li><tt>precOp->domain()->isCompatible(*fwdOp->range())==true</tt>
+   * <li><tt>precOp->range()->isCompatible(*fwdOpSrc->domain())==true</tt>
+   * <li><tt>precOp->domain()->isCompatible(*fwdOpSrc->range())==true</tt>
    * <li><t>precOp->applySupportsConj(conj)==this->applySupportsConj(conj)</tt>
    * <li><t>precOp->applyTransposeSupportsConj(conj)==this->applyTransposeSupportsConj(conj)</tt>
-   * <li><tt>fwdOp.count()</tt> after output is greater than <tt>fwdOp.count()</tt>
-   *     just before this call and therefore the client can assume that the <tt>*fwdOp</tt> object will 
+   * <li><tt>fwdOpSrc.count()</tt> after output is greater than <tt>fwdOpSrc.count()</tt>
+   *     just before this call and therefore the client can assume that the <tt>*fwdOpSrc</tt> object will 
    *     be remembered by the <tt>*prec</tt> object.  The client must be careful
-   *     not to modify the <tt>*fwdOp</tt> object or else the <tt>*precOp</tt> object may also
+   *     not to modify the <tt>*fwdOpSrc</tt> object or else the <tt>*precOp</tt> object may also
    *     be modified and become invalid.
    * </ul>
    */
   virtual void initializePrec(
-    const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >    &fwdOp
-    ,PreconditionerBase<DomainScalar,RangeScalar>                                *precOp
-    ,const ESupportSolveUse                                                      supportSolveUse = SUPPORT_SOLVE_UNSPECIFIED
+    const Teuchos::RefCountPtr<const LinearOpSourceBase<RangeScalar,DomainScalar> >   &fwdOpSrc
+    ,PreconditionerBase<DomainScalar,RangeScalar>                                     *precOp
+    ,const ESupportSolveUse                                                           supportSolveUse = SUPPORT_SOLVE_UNSPECIFIED
     ) const = 0;
 
   /** \brief Uninitialize a <tt>LinearOpBase</tt> preconditioner object and
@@ -127,10 +128,10 @@ public:
    * \param  prec   [in/out] On input, <tt>*precOp</tt> is an initialized or uninitialized
    *                object and on output is uninitialized.  Note that "uninitialized"
    *                does not mean that <tt>precOp</tt> is completely stateless.  It may still
-   *                remember some aspect of the matrix <tt>fwdOp</tt> that will allow
+   *                remember some aspect of the matrix <tt>fwdOpSrc</tt> that will allow
    *                for a more efficient initialization next time through
    *                <tt>this->initializePrecOp()</tt>.
-   * \param  fwdOp  [in/out] If <tt>fwdOp!=NULL</tt> on input, then on output this is set to
+   * \param  fwdOpSrc  [in/out] If <tt>fwdOpSrc!=NULL</tt> on input, then on output this is set to
    *                same forward operator passed into <tt>this->initializePrecOp()</tt>.
    * \param  ESupportSolveUse
    *                [in/out] If <tt>precOpType!=NULL</tt> on input, then on output this is set to
@@ -147,10 +148,10 @@ public:
    * <b>Postconditions:</b><ul>
    * <li>If <tt>*precOp</tt> on input was initialized through a call to <tt>this->initializePrecOp()</tt>
    *     then <tt>return.get()!=NULL</tt>.
-   * <li>If <tt>*precOp</tt> was uninitialized on input and <tt>fwdOp!=NULL</tt> then <tt>fwdOp->get()==NULL</tt> on output.
+   * <li>If <tt>*precOp</tt> was uninitialized on input and <tt>fwdOpSrc!=NULL</tt> then <tt>fwdOpSrc->get()==NULL</tt> on output.
    * <li>On output, <tt>*precOp</tt> can be considered to be uninitialized and
-   *     it is safe to modify the forward operator object <tt>*(*fwdOp)</tt> returned in <tt>fwdOp</tt>.
-   *     The default is <tt>fwdOp==NULL</tt> in which case the forward operator will not be returned in <tt>*fwdOp</tt>.
+   *     it is safe to modify the forward operator object <tt>*(*fwdOpSrc)</tt> returned in <tt>fwdOpSrc</tt>.
+   *     The default is <tt>fwdOpSrc==NULL</tt> in which case the forward operator will not be returned in <tt>*fwdOpSrc</tt>.
    * </ul>
    *
    * This function should be called before the forward operator passed in to
@@ -158,9 +159,9 @@ public:
    * could be left in an inconsistent state.  However, this is not required.
    */
   virtual void uninitializePrec(
-    PreconditionerBase<DomainScalar,RangeScalar>                          *prec
-    ,Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >  *fwdOp           = NULL
-    ,ESupportSolveUse                                                     *supportSolveUse = NULL
+    PreconditionerBase<DomainScalar,RangeScalar>                                *prec
+    ,Teuchos::RefCountPtr<const LinearOpSourceBase<RangeScalar,DomainScalar> >  *fwdOpSrc        = NULL
+    ,ESupportSolveUse                                                           *supportSolveUse = NULL
     ) const = 0;
   
   //@}
@@ -185,6 +186,10 @@ public:
   //@}
 
 };
+
+// ////////////////////////////////////
+// Nonmember helper functions
+
 
 // /////////////////////////////////////
 // Implementations

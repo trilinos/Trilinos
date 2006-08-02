@@ -37,7 +37,7 @@
 namespace Thyra {
 
 /** \brief Factory interface for creating <tt>LinearOpWithSolveBase</tt>
- * objects from <tt>LinearOpBase</tt> objects.
+ * objects from compatible <tt>LinearOpBase</tt> objects.
  *
  * \ingroup Thyra_Op_Vec_Interoperability_Extended_Interfaces_grp
  *
@@ -453,7 +453,7 @@ public:
   /** \brief Check that a <tt>LinearOpBase</tt> object is compatible with
    * <tt>*this</tt> factory object.
    */
-  virtual bool isCompatible( const LinearOpBase<RangeScalar,DomainScalar> &fwdOp ) const = 0;
+  virtual bool isCompatible( const LinearOpSourceBase<RangeScalar,DomainScalar> &fwdOpSrc ) const = 0;
 
   /** \brief Create an (uninitialized) <tt>LinearOpWithSolveBase</tt> object
    * to be initialized later in <tt>this->initializeOp()</tt>.
@@ -468,7 +468,7 @@ public:
   /** \brief Initialize a pre-created <tt>LinearOpWithSolveBase</tt> object
    * given a "compatible" <tt>LinearOpBase</tt> object.
    *
-   * \param  fwdOp  [in] The forward linear operator that will be used to create
+   * \param  fwdOpSrc  [in] The forward linear operator that will be used to create
    *                the output <tt>LinearOpWithSolveBase</tt> object.  Note that this object is remembered
    *                by the <tt>*Op</tt> object on output.
    * \param  Op     [in/out] The output <tt>LinearOpWithSolveBase</tt> object.  This object must have
@@ -482,8 +482,8 @@ public:
    *                the <tt>*Op</tt> object.  Default <tt>supportSolveUse=SUPPORT_SOLVE_UNSPECIFIED</tt>
    *
    * <b>Preconditions:</b><ul>
-   * <li><tt>fwdOp.get()!=NULL</tt>
-   * <li><tt>this->isCompatible(*fwdOp)==true</tt>
+   * <li><tt>fwdOpSrc.get()!=NULL</tt>
+   * <li><tt>this->isCompatible(*fwdOpSrc)==true</tt>
    * <li><tt>Op!=NULL</tt>
    * <li><tt>*Op</tt> must have been created by <tt>this->createOp()</tt> prior to calling
    *     this function.
@@ -499,30 +499,30 @@ public:
    * <b>Postconditions:</b><ul>
    * <li>Throws <tt>CatastrophicSolveFailure</tt> if the underlying linear solver could
    *     not be created successfully (e.g. due to a factorization failure or some other cause).
-   * <li><tt>Op->range()->isCompatible(*fwdOp->range())==true</tt>
-   * <li><tt>Op->domain()->isCompatible(*fwdOp->domain())==true</tt>
+   * <li><tt>Op->range()->isCompatible(*fwdOpSrc->range())==true</tt>
+   * <li><tt>Op->domain()->isCompatible(*fwdOpSrc->domain())==true</tt>
    * <li><tt>Op->apply()</tt> and <tt>Op->applyTranspose()</tt> must behave
-   *     exactly the same as <tt>fwdOp->apply()</tt> and <tt>fwdOp->applyTranspose()</tt>
+   *     exactly the same as <tt>fwdOpSrc->apply()</tt> and <tt>fwdOpSrc->applyTranspose()</tt>
    * <li><t>Op->solveSupportsConj(conj)==this->solveSupportsConj(conj)</tt>
    * <li><t>Op->solveTransposeSupportsConj(conj)==this->solveTransposeSupportsConj(conj)</tt>
-   * <li><tt>fwdOp.count()</tt> after output is greater than <tt>fwdOp.count()</tt>
-   *     just before this call and therefore the client can assume that the <tt>*fwdOp</tt> object will 
+   * <li><tt>fwdOpSrc.count()</tt> after output is greater than <tt>fwdOpSrc.count()</tt>
+   *     just before this call and therefore the client can assume that the <tt>*fwdOpSrc</tt> object will 
    *     be remembered by the <tt>*Op</tt> object.  The client must be careful
-   *     not to modify the <tt>*fwdOp</tt> object or else the <tt>*Op</tt> object may also
+   *     not to modify the <tt>*fwdOpSrc</tt> object or else the <tt>*Op</tt> object may also
    *     be modified and become invalid.
    * </ul>
    */
   virtual void initializeOp(
-    const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >    &fwdOp
-    ,LinearOpWithSolveBase<RangeScalar,DomainScalar>                             *Op
-    ,const ESupportSolveUse                                                      supportSolveUse = SUPPORT_SOLVE_UNSPECIFIED
+    const Teuchos::RefCountPtr<const LinearOpSourceBase<RangeScalar,DomainScalar> >    &fwdOpSrc
+    ,LinearOpWithSolveBase<RangeScalar,DomainScalar>                                   *Op
+    ,const ESupportSolveUse                                                            supportSolveUse = SUPPORT_SOLVE_UNSPECIFIED
     ) const = 0;
 
   /** \brief Initialize a pre-created <tt>LinearOpWithSolveBase</tt> object
    * given a "compatible" <tt>LinearOpBase</tt> object but allow for reuse of
    * any preprocessing that is in <tt>*Op</tt>..
    *
-   * \param  fwdOp  [in] The forward linear operator that will be used to create
+   * \param  fwdOpSrc  [in] The forward linear operator that will be used to create
    *                the output <tt>LinearOpWithSolveBase</tt> object.
    * \param  Op     [in/out] The output <tt>LinearOpWithSolveBase</tt> object.  This object must have
    *                be created first by <tt>this->createOp()</tt> and may have already been through
@@ -532,8 +532,8 @@ public:
    *                before attempting to dynamic cast the object.
    *
    * <b>Preconditions:</b><ul>
-   * <li><tt>fwdOp.get()!=NULL</tt>
-   * <li><tt>this->isCompatible(*fwdOp)==true</tt>
+   * <li><tt>fwdOpSrc.get()!=NULL</tt>
+   * <li><tt>this->isCompatible(*fwdOpSrc)==true</tt>
    * <li><tt>Op!=NULL</tt>
    * <li><tt>*Op</tt> must have been created by <tt>this->createOp()</tt> prior to calling
    *     this function.
@@ -542,16 +542,16 @@ public:
    * <b>Postconditions:</b><ul>
    * <li>Throws <tt>CatastrophicSolveFailure</tt> if the underlying linear solver could
    *     not be created successfully (e.g. due to a factorization failure or some other cause).
-   * <li><tt>Op->range()->isCompatible(*fwdOp->range())==true</tt>
-   * <li><tt>Op->domain()->isCompatible(*fwdOp->domain())==true</tt>
+   * <li><tt>Op->range()->isCompatible(*fwdOpSrc->range())==true</tt>
+   * <li><tt>Op->domain()->isCompatible(*fwdOpSrc->domain())==true</tt>
    * <li><tt>Op->apply()</tt> and <tt>Op->applyTranspose()</tt> must behave
-   *     exactly the same as <tt>fwdOp->apply()</tt> and <tt>fwdOp->applyTranspose()</tt>
+   *     exactly the same as <tt>fwdOpSrc->apply()</tt> and <tt>fwdOpSrc->applyTranspose()</tt>
    * <li><t>Op->solveSupportsConj(conj)==this->solveSupportsConj(conj)</tt>
    * <li><t>Op->solveTransposeSupportsConj(conj)==this->solveTransposeSupportsConj(conj)</tt>
-   * <li><tt>fwdOp.count()</tt> after output is greater than <tt>fwdOp.count()</tt>
-   *     just before this call and therefore the client can assume that the <tt>*fwdOp</tt> object will 
+   * <li><tt>fwdOpSrc.count()</tt> after output is greater than <tt>fwdOpSrc.count()</tt>
+   *     just before this call and therefore the client can assume that the <tt>*fwdOpSrc</tt> object will 
    *     be remembered by the <tt>*Op</tt> object.  The client must be careful
-   *     not to modify the <tt>*fwdOp</tt> object or else the <tt>*Op</tt> object may also
+   *     not to modify the <tt>*fwdOpSrc</tt> object or else the <tt>*Op</tt> object may also
    *     be modified.
    * </ul>
    *
@@ -563,12 +563,12 @@ public:
    * <tt>*Op</tt>.
    *
    * The default implementation of this function just calls
-   * <tt>this->initializeOp(fwdOp,Op)</tt> which does the default
+   * <tt>this->initializeOp(fwdOpSrc,Op)</tt> which does the default
    * implementation.
    */
   virtual void initializeAndReuseOp(
-    const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >    &fwdOp
-    ,LinearOpWithSolveBase<RangeScalar,DomainScalar>                             *Op
+    const Teuchos::RefCountPtr<const LinearOpSourceBase<RangeScalar,DomainScalar> >    &fwdOpSrc
+    ,LinearOpWithSolveBase<RangeScalar,DomainScalar>                                   *Op
     ) const;
 
   /** \brief Uninitialize a <tt>LinearOpWithSolveBase</tt> object and return
@@ -578,18 +578,18 @@ public:
    * \param  Op     [in/out] On input, <tt>*Op</tt> is an initialized or uninitialized
    *                object and on output is uninitialized.  Note that "uninitialized"
    *                does not mean that <tt>Op</tt> is completely stateless.  It may still
-   *                remember some aspect of the matrix <tt>fwdOp</tt> that will allow
+   *                remember some aspect of the matrix <tt>fwdOpSrc</tt> that will allow
    *                for a more efficient initialization next time through
    *                <tt>this->initializeOp()</tt>.
-   * \param  fwdOp  [in/out] If <tt>fwdOp!=NULL</tt> on input, then on output this is set to the
+   * \param  fwdOpSrc  [in/out] If <tt>fwdOpSrc!=NULL</tt> on input, then on output this is set to the
    *                same forward operator passed into <tt>this->initializeOp()</tt>.
    * \param  prec   [in/out] If <tt>prep!=NULL</tt> on input, then on output, this this is set to
    *                same preconditioner that was passed into <tt>this->initializePreconditionedOp()</tt>.
-   * \param  approxFwdOp
-   *                [in/out] If <tt>approxFwdOp!=NULL</tt> on input, then on output, this is set to
+   * \param  approxFwdOpSrc
+   *                [in/out] If <tt>approxFwdOpSrc!=NULL</tt> on input, then on output, this is set to
    *                same approximate forward operator that was passed into <tt>this->initializePreconditionedOp()</tt>.
    * \param  ESupportSolveUse
-   *                [in/out] If <tt>fwdOp!=NULL</tt> on input, then on output this is set to
+   *                [in/out] If <tt>fwdOpSrc!=NULL</tt> on input, then on output this is set to
    *                same option value passed to <tt>this->initializeOp()</tt>.
    *
    * <b>Preconditions:</b><ul>
@@ -601,11 +601,11 @@ public:
    *
    * <b>Postconditions:</b><ul>
    * <li>If <tt>*Op</tt> on input was initialized through a call to <tt>this->initializeOp()</tt>
-   *     and if <tt>fwdOp!=NULL</tt> then <tt>(*fwdOp).get()!=NULL</tt>.
-   * <li>If <tt>*Op</tt> was uninitialized on input and <tt>fwdOp!=NULL</tt> then <tt>fwdOp->get()==NULL</tt> out output.
+   *     and if <tt>fwdOpSrc!=NULL</tt> then <tt>(*fwdOpSrc).get()!=NULL</tt>.
+   * <li>If <tt>*Op</tt> was uninitialized on input and <tt>fwdOpSrc!=NULL</tt> then <tt>fwdOpSrc->get()==NULL</tt> out output.
    * <li>On output, <tt>*Op</tt> can be considered to be uninitialized and
-   *     it is safe to modify the forward operator object <tt>*(*fwdOp)</tt> returned in <tt>fwdOp</tt>.
-   *     The default is <tt>fwdOp==NULL</tt> in which case the forward operator will not be returned in <tt>*fwdOp</tt>.
+   *     it is safe to modify the forward operator object <tt>*(*fwdOpSrc)</tt> returned in <tt>fwdOpSrc</tt>.
+   *     The default is <tt>fwdOpSrc==NULL</tt> in which case the forward operator will not be returned in <tt>*fwdOpSrc</tt>.
    * </ul>
    *
    * This function should be called before the forward operator passed in to
@@ -614,9 +614,9 @@ public:
    */
   virtual void uninitializeOp(
     LinearOpWithSolveBase<RangeScalar,DomainScalar>                               *Op
-    ,Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >          *fwdOp           = NULL
+    ,Teuchos::RefCountPtr<const LinearOpSourceBase<RangeScalar,DomainScalar> >    *fwdOpSrc        = NULL
     ,Teuchos::RefCountPtr<const PreconditionerBase<RangeScalar,DomainScalar> >    *prec            = NULL
-    ,Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >          *approxFwdOp     = NULL
+    ,Teuchos::RefCountPtr<const LinearOpSourceBase<RangeScalar,DomainScalar> >    *approxFwdOpSrc  = NULL
     ,ESupportSolveUse                                                             *supportSolveUse = NULL
     ) const = 0;
   
@@ -635,7 +635,7 @@ public:
    * given a "compatible" <tt>LinearOpBase</tt> object and an optional
    * <tt>PreconditionerBase</tt> object.
    *
-   * \param  fwdOp  [in] The forward linear operator that will be used to create
+   * \param  fwdOpSrc  [in] The forward linear operator that will be used to create
    *                the output <tt>LinearOpWithSolveBase</tt> object.
    * \param  prec   [in] The preconditioner that will be used to create
    *                the output <tt>LinearOpWithSolveBase</tt> object if preconditioners are supported.
@@ -650,9 +650,9 @@ public:
    *                the <tt>*Op</tt> object.  Default <tt>supportSolveUse=SUPPORT_SOLVE_UNSPECIFIED</tt>
    *
    * <b>Preconditions:</b><ul>
-   * <li><tt>fwdOp.get()!=NULL</tt>
+   * <li><tt>fwdOpSrc.get()!=NULL</tt>
    * <li><tt>prec.get()!=NULL</tt>
-   * <li><tt>this->isCompatible(*fwdOp)==true</tt>
+   * <li><tt>this->isCompatible(*fwdOpSrc)==true</tt>
    * <li><tt>Op!=NULL</tt>
    * <li><tt>*Op</tt> must have been created by <tt>this->createOp()</tt> prior to calling
    *     this function.
@@ -671,16 +671,16 @@ public:
    * <b>Postconditions:</b><ul>
    * <li>Throws <tt>CatastrophicSolveFailure</tt> if the underlying linear solver could
    *     not be created successfully (e.g. due to a factorization failure or some other cause).
-   * <li><tt>Op->range()->isCompatible(*fwdOp->range())==true</tt>
-   * <li><tt>Op->domain()->isCompatible(*fwdOp->domain())==true</tt>
+   * <li><tt>Op->range()->isCompatible(*fwdOpSrc->range())==true</tt>
+   * <li><tt>Op->domain()->isCompatible(*fwdOpSrc->domain())==true</tt>
    * <li><tt>Op->apply()</tt> and <tt>Op->applyTranspose()</tt> must behave
-   *     exactly the same as <tt>fwdOp->apply()</tt> and <tt>fwdOp->applyTranspose()</tt>
+   *     exactly the same as <tt>fwdOpSrc->apply()</tt> and <tt>fwdOpSrc->applyTranspose()</tt>
    * <li><t>Op->solveSupportsConj(conj)==this->solveSupportsConj(conj)</tt>
    * <li><t>Op->solveTransposeSupportsConj(conj)==this->solveTransposeSupportsConj(conj)</tt>
-   * <li><tt>fwdOp.count()</tt> after output is greater than <tt>fwdOp.count()</tt>
-   *     just before this call and therefore the client can assume that the <tt>*fwdOp</tt> object will 
+   * <li><tt>fwdOpSrc.count()</tt> after output is greater than <tt>fwdOpSrc.count()</tt>
+   *     just before this call and therefore the client can assume that the <tt>*fwdOpSrc</tt> object will 
    *     be remembered by the <tt>*Op</tt> object.  The client must be careful
-   *     not to modify the <tt>*fwdOp</tt> object or else the <tt>*Op</tt> object may also
+   *     not to modify the <tt>*fwdOpSrc</tt> object or else the <tt>*Op</tt> object may also
    *     be modified.
    * <li>If <tt>this->supportsPreconditionerInputType(PRECONDITIONER_INPUT_TYPE_AS_OPERATOR)==true</tt> then
    *     <ul>
@@ -710,7 +710,7 @@ public:
    * that preconditioners can not be supported..
    */
   virtual void initializePreconditionedOp(
-    const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >             &fwdOp
+    const Teuchos::RefCountPtr<const LinearOpSourceBase<RangeScalar,DomainScalar> >       &fwdOpSrc
     ,const Teuchos::RefCountPtr<const PreconditionerBase<RangeScalar,DomainScalar> >      &prec
     ,LinearOpWithSolveBase<RangeScalar,DomainScalar>                                      *Op
     ,const ESupportSolveUse                                                               supportSolveUse = SUPPORT_SOLVE_UNSPECIFIED
@@ -720,10 +720,10 @@ public:
    * given a "compatible" forward <tt>LinearOpBase</tt> object and an
    * approximate forward <tt>LinearOpBase</tt> object.
    *
-   * \param  fwdOp  [in] The forward linear operator that will be used to create
+   * \param  fwdOpSrc  [in] The forward linear operator that will be used to create
    *                the output <tt>LinearOpWithSolveBase</tt> object.
-   * \param  approxFwdOp
-   *                [in] Approximation to <tt>fwdOp</tt> from which a preconditioner will be created for.
+   * \param  approxFwdOpSrc
+   *                [in] Approximation to <tt>fwdOpSrc</tt> from which a preconditioner will be created for.
    * \param  Op     [in/out] The output <tt>LinearOpWithSolveBase</tt> object.  This object must have
    *                be created first by <tt>this->createOp()</tt>.  The object may have also
    *                already been passed through this function several times.  Note that subclasses
@@ -737,8 +737,8 @@ public:
    * ToDo: finish documentation!
    */
   virtual void initializeApproxPreconditionedOp(
-    const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >             &fwdOp
-    ,const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >            &approxFwdOp
+    const Teuchos::RefCountPtr<const LinearOpSourceBase<RangeScalar,DomainScalar> >       &fwdOpSrc
+    ,const Teuchos::RefCountPtr<const LinearOpSourceBase<RangeScalar,DomainScalar> >      &approxFwdOpSrc
     ,LinearOpWithSolveBase<RangeScalar,DomainScalar>                                      *Op
     ,const ESupportSolveUse                                                               supportSolveUse = SUPPORT_SOLVE_UNSPECIFIED
     ) const;
@@ -746,37 +746,6 @@ public:
   //@}
 
 };
-
-//@}
-
-/** \defgroup Thyra_LinearOpWithSolveFactoryBase_helper_grp Non-member LinearOpWithSolveFactoryBase helper functions.
- *
- * These functions provide for simpler use cases for the use of
- * <tt>LinearOpWithSolveFactoryBase</tt> objects. and provide some
- * documentation for the various use cases.
- *
- * \ingroup Thyra_Op_Vec_Interoperability_Extended_Interfaces_grp
- */
-
-/** \brief Create and initialize a <tt>LinearOpWithSolveBase</tt> object from
- * a <tt>LinearOpBase</tt> object using a
- * <tt>LinearOpWithSolveFactoryBase</tt> strategy object.
- *
- * \ingroup Thyra_LinearOpWithSolveFactoryBase_helper_grp
- */
-template<class RangeScalar, class DomainScalar>
-Teuchos::RefCountPtr<LinearOpWithSolveBase<RangeScalar,DomainScalar> >
-createAndInitializeLinearOpWithSolve(
-  const LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar>                  &factory
-  ,const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >    &fwdOp
-  ,const ESupportSolveUse                                                       supportSolveUse = SUPPORT_SOLVE_UNSPECIFIED
-  )
-{
-  Teuchos::RefCountPtr<LinearOpWithSolveBase<RangeScalar,DomainScalar> >
-    Op = factory.createOp();
-  factory.initializeOp(fwdOp,&*Op,supportSolveUse);
-  return Op;
-}
 
 // /////////////////////////
 // Implementations
@@ -819,22 +788,24 @@ void LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar>::unsetPreconditioner
 
 template<class RangeScalar, class DomainScalar>
 void LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar>::initializeAndReuseOp(
-  const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >    &fwdOp
-  ,LinearOpWithSolveBase<RangeScalar,DomainScalar>                             *Op
+  const Teuchos::RefCountPtr<const LinearOpSourceBase<RangeScalar,DomainScalar> >    &fwdOpSrc
+  ,LinearOpWithSolveBase<RangeScalar,DomainScalar>                                   *Op
   ) const
 {
-  this->initializeOp(fwdOp,Op);
+  this->initializeOp(fwdOpSrc,Op);
 }
 
 template<class RangeScalar, class DomainScalar>
-bool LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar>::supportsPreconditionerInputType(const EPreconditionerInputType precOpType) const
+bool LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar>::supportsPreconditionerInputType(
+  const EPreconditionerInputType precOpType
+  ) const
 {
   return false;
 }
 
 template<class RangeScalar, class DomainScalar>
 void LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar>::initializePreconditionedOp(
-  const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >             &fwdOp
+  const Teuchos::RefCountPtr<const LinearOpSourceBase<RangeScalar,DomainScalar> >       &fwdOpSrc
   ,const Teuchos::RefCountPtr<const PreconditionerBase<RangeScalar,DomainScalar> >      &prec
   ,LinearOpWithSolveBase<RangeScalar,DomainScalar>                                      *Op
   ,const ESupportSolveUse                                                               supportSolveUse
@@ -849,8 +820,8 @@ void LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar>::initializePrecondit
 
 template<class RangeScalar, class DomainScalar>
 void LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar>::initializeApproxPreconditionedOp(
-  const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >             &fwdOp
-  ,const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >            &approxFwdOp
+  const Teuchos::RefCountPtr<const LinearOpSourceBase<RangeScalar,DomainScalar> >       &fwdOpSrc
+  ,const Teuchos::RefCountPtr<const LinearOpSourceBase<RangeScalar,DomainScalar> >      &approxFwdOpSrc
   ,LinearOpWithSolveBase<RangeScalar,DomainScalar>                                      *Op
   ,const ESupportSolveUse                                                               supportSolveUse
   ) const
