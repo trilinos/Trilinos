@@ -11,7 +11,6 @@ CC=icc CXX=icpc F77=ifort \
 --enable-didasko \
 --enable-epetra \
 --enable-epetra-abc \
---enable-epetra-thyra \
 --enable-epetraext \
 --enable-epetraext-inout \
 --enable-epetraext-coloring \

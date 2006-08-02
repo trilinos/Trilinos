@@ -21,7 +21,6 @@ MACOSX_DEPLOYMENT_TARGET=10.4 \
 --enable-didasko \
 --enable-epetra \
 --enable-epetra-abc \
---enable-epetra-thyra \
 --enable-epetraext \
 --enable-epetraext-hdf5 \
 --enable-epetraext-inout \
