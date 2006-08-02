@@ -71,4 +71,5 @@ FFLAGS=-O3 \
 --enable-tpetra \
 --enable-triutils \
 --enable-tsfextended \
+--enable-stratimikos \
 --with-gnumake

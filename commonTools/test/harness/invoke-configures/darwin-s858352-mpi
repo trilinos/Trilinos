@@ -62,4 +62,5 @@ CPPFLAGS=-Wno-long-double \
 --enable-thyra \
 --enable-tpetra \
 --enable-triutils \
---enable-tsfextended
+--enable-tsfextended \
+--enable-stratimikos

@@ -56,4 +56,4 @@ MACOSX_DEPLOYMENT_TARGET=10.4 \
 --enable-tpetra \
 --enable-triutils \
 --enable-tsfextended \
---enable-moocho
+--enable-stratimikos

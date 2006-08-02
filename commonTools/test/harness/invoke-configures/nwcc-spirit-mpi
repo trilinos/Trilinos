@@ -56,5 +56,6 @@
 --enable-tpetra \
 --enable-teuchos-complex \
 --enable-tsfextended \
+--enable-stratimikos \
 --disable-default-packages
 

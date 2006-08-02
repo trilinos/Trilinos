@@ -42,7 +42,7 @@ CC=icc CXX=icpc F77=ifort \
 --enable-thyra \
 --enable-tpetra \
 --enable-triutils \
---enable-moocho \
+--enable-stratimikos \
 --with-gnumake \
 --with-incdirs="-I/opt/intel/cc/9.0/include -I/opt/intel/fc/9.0/include" \
 --with-blas="-L/opt/intel/mkl/8.0.2/lib/32 -lmkl_ia32 -lguide -lpthread -lpthread_nonshared" \

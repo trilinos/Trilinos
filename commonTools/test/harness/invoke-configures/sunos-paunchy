@@ -51,4 +51,5 @@ CXXFLAGS="-g -pto" \
 --enable-tpetra \
 --enable-triutils \
 --enable-tsfextended \
+--enable-stratimikos \
 --enable-moocho

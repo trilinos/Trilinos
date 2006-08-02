@@ -47,5 +47,6 @@
 --enable-meros \
 --enable-rythmos \
 --enable-tpetra \
---enable-triutils
+--enable-triutils \
+--enable-stratimikos
 

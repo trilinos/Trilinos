@@ -39,6 +39,7 @@ LDFLAGS=" -64 -L/usr/lib64/mips4/r10000 -L/usr/lib64/mips4 -L/usr/lib64 -LANG:st
 --enable-ml \
 --with-ml-64bit-integer="long long" \
 --enable-moertel \
+--enable-moocho \
 --enable-new_package \
 --enable-new_swahili \
 --enable-nox \
@@ -56,5 +57,5 @@ LDFLAGS=" -64 -L/usr/lib64/mips4/r10000 -L/usr/lib64/mips4 -L/usr/lib64 -LANG:st
 --enable-tpetra \
 --enable-triutils \
 --enable-tsfextended \
---enable-moocho \
+--enable-stratimikos \
 --with-gnumake
