@@ -63,7 +63,8 @@ bool runTests(int n, Teuchos::RefCountPtr<Teuchos::FancyOStream>& out)
   
   TestSpecifier<Scalar> spec(true, epsErr, epsWarn);
   
-  LinearCombinationTester<Scalar> tester(space, out, spec); 
+  LinearCombinationTester<Scalar> tester(DefaultComm<Index>::getComm(),
+                                         space, out, spec); 
   
   return tester.runAllTests();
 }  

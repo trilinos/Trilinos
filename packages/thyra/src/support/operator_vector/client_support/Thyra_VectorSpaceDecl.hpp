@@ -139,6 +139,20 @@ namespace Thyra
   template <class Scalar>
   int numLocalElements(const VectorSpace<Scalar>& s) ;
 
+  /** 
+   * \relates VectorSpace 
+   * Test whether a specified index is local to this processor. 
+   */
+  template <class Scalar>
+  bool indexIsLocal(const VectorSpace<Scalar>& s, Index i);
+
+  /** 
+   * \relates VectorSpace 
+   * Test whether a vector space is SPMD
+   */
+  template <class Scalar>
+  bool isSPMD(const VectorSpace<Scalar>& s);
+
   
 
 }

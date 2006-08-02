@@ -61,7 +61,8 @@ namespace Thyra
   public:
 
     /** */
-    LinearCombinationTester(const VectorSpace<Scalar>& vecSpace, 
+    LinearCombinationTester(const RefCountPtr<const Comm<int> >& comm,
+                            const VectorSpace<Scalar>& vecSpace, 
                             Teuchos::RefCountPtr<Teuchos::FancyOStream>& out,
                             const TestSpecifier<Scalar>& spec);
 
@@ -83,10 +84,11 @@ namespace Thyra
 
   template <class Scalar> 
   inline LinearCombinationTester<Scalar>
-  ::LinearCombinationTester(const VectorSpace<Scalar>& vecSpace,
+  ::LinearCombinationTester(const RefCountPtr<const Comm<int> >& comm,
+                            const VectorSpace<Scalar>& vecSpace,
                             Teuchos::RefCountPtr<Teuchos::FancyOStream>& out,
                             const TestSpecifier<Scalar>& spec)
-    : TesterBase<Scalar>(vecSpace, vecSpace.dim(), out), spec_(spec)
+    : TesterBase<Scalar>(comm, vecSpace, vecSpace.dim(), out), spec_(spec)
   {;}
 
   template <class Scalar> 

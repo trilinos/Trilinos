@@ -104,8 +104,13 @@ SUPPORT_OPERATOR_VECTOR_CLIENT_SUPPORT_H = \
   $(srcdir)/support/operator_vector/client_support/Thyra_DefaultScaledAdjointLinearOpDecl.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_DetachedMultiVectorView.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_DetachedVectorView.hpp\
+  $(srcdir)/support/operator_vector/client_support/Thyra_LinearCombinationDecl.hpp\
+  $(srcdir)/support/operator_vector/client_support/Thyra_LinearCombinationImpl.hpp\
+  $(srcdir)/support/operator_vector/client_support/Thyra_LinearCombinationTester.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_LinearOpDefaultBase.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_LinearOpDefaultBaseDecl.hpp\
+  $(srcdir)/support/operator_vector/client_support/Thyra_LinearOperatorDecl.hpp\
+  $(srcdir)/support/operator_vector/client_support/Thyra_LinearOperatorImpl.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_LinearOpTester.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_LinearOpTesterDecl.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_ListedMultiVectorRandomizer.hpp\
@@ -122,11 +127,15 @@ SUPPORT_OPERATOR_VECTOR_CLIENT_SUPPORT_H = \
   $(srcdir)/support/operator_vector/client_support/Thyra_SingleRhsLinearOpBaseDecl.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_SingleScalarLinearOpBase.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_SingleScalarLinearOpBaseDecl.hpp\
+  $(srcdir)/support/operator_vector/client_support/Thyra_SUNDIALS_Ops.hpp\
+  $(srcdir)/support/operator_vector/client_support/Thyra_TesterBase.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_TestingTools.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_TestingToolsDecl.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_VectorDecl.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_VectorDefaultBase.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_VectorDefaultBaseDecl.hpp\
+  $(srcdir)/support/operator_vector/client_support/Thyra_VectorHandleOpsDecl.hpp\
+  $(srcdir)/support/operator_vector/client_support/Thyra_VectorHandleOpsImpl.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_VectorImpl.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_VectorOpTester.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_VectorSpaceDecl.hpp\

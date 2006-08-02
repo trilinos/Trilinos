@@ -42,7 +42,7 @@ namespace Thyra
 
  
   //========================================================================
-  template <class Scalar>
+  template <class Scalar> inline
   bool VectorSpace<Scalar>::operator==(const VectorSpace<Scalar>& other) const 
   {
     return isCompatible(other);  
@@ -50,7 +50,7 @@ namespace Thyra
 
 
   //========================================================================
-  template <class Scalar>
+  template <class Scalar> inline
   bool VectorSpace<Scalar>::operator!=(const VectorSpace<Scalar>& other) const 
   {
     return !(operator==(other));
@@ -59,14 +59,14 @@ namespace Thyra
 
 
   //========================================================================
-  template <class Scalar>
+  template <class Scalar> inline
   Vector<Scalar> VectorSpace<Scalar>::createMember() const 
   {
     return Thyra::createMember(this->constPtr());
   }
 
   //========================================================================
-  template <class Scalar>
+  template <class Scalar> inline
   RefCountPtr<MultiVectorBase<Scalar> > VectorSpace<Scalar>::createMembers(int n) const 
   {
     return Thyra::createMembers(this->constPtr(), n);
@@ -75,7 +75,7 @@ namespace Thyra
 
 
   //========================================================================
-  template <class Scalar>
+  template <class Scalar> inline
   bool VectorSpace<Scalar>::isCompatible(const VectorSpace<Scalar>& vecSpc) const 
   {
     TEST_FOR_EXCEPTION(vecSpc.constPtr().get() == 0, runtime_error,
@@ -88,7 +88,7 @@ namespace Thyra
 
 
   //========================================================================
-  template <class Scalar>
+  template <class Scalar> inline
   bool VectorSpace<Scalar>::contains(const Vector<Scalar> &vec) const
   {
     return (operator==(vec.space()));
@@ -96,7 +96,7 @@ namespace Thyra
 
 
   //========================================================================
-  template <class Scalar>
+  template <class Scalar> inline
   int VectorSpace<Scalar>::numBlocks() const
   {
     const Thyra::ProductVectorSpaceBase<Scalar>* pvs = 
@@ -111,7 +111,7 @@ namespace Thyra
 
 
   //========================================================================
-  template <class Scalar>
+  template <class Scalar> inline
   VectorSpace<Scalar> VectorSpace<Scalar>::getBlock(const int i) const
   {
     const Thyra::ProductVectorSpaceBase<Scalar>* pvs = 
@@ -143,7 +143,7 @@ namespace Thyra
   // }
 
   //========================================================================
-  template <class Scalar>
+  template <class Scalar> inline
   Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > 
   productSpace(const Teuchos::Array<VectorSpace<Scalar> >& spaces)
   {
@@ -156,7 +156,7 @@ namespace Thyra
   }
 
   //========================================================================
-  template <class Scalar>
+  template <class Scalar> inline
   Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > 
   productSpace(VectorSpace<Scalar>& s1)
   {
@@ -164,7 +164,7 @@ namespace Thyra
   }
 
   //========================================================================
-  template <class Scalar>
+  template <class Scalar> inline
   Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > 
   productSpace(VectorSpace<Scalar>& s1, 
                VectorSpace<Scalar>& s2)
@@ -173,7 +173,7 @@ namespace Thyra
   }
 
   //========================================================================
-  template <class Scalar>
+  template <class Scalar> inline
   Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > 
   productSpace(VectorSpace<Scalar>& s1,VectorSpace<Scalar>& s2,
                VectorSpace<Scalar>& s3)
@@ -183,22 +183,44 @@ namespace Thyra
 
 
   //========================================================================
-  template <class Scalar>
+  template <class Scalar> inline 
   int lowestLocallyOwnedIndex(const VectorSpace<Scalar>& s) 
   {
+    TEST_FOR_EXCEPT(!isSPMD(s));
     RefCountPtr<const SpmdVectorSpaceBase<Scalar> > spmdSpace
       = rcp_dynamic_cast<const SpmdVectorSpaceBase<Scalar> >(s.constPtr());
     return spmdSpace->localOffset();
   }
 
   //========================================================================
-  template <class Scalar>
+  template <class Scalar> inline
   int numLocalElements(const VectorSpace<Scalar>& s) 
   {
+    TEST_FOR_EXCEPT(!isSPMD(s));
     RefCountPtr<const SpmdVectorSpaceBase<Scalar> > spmdSpace
       = rcp_dynamic_cast<const SpmdVectorSpaceBase<Scalar> >(s.constPtr());
     return spmdSpace->localSubDim();
   }
+
+
+
+  //========================================================================
+  template <class Scalar> inline
+  bool isSPMD(const VectorSpace<Scalar>& s) 
+  {
+    return dynamic_cast<const SpmdVectorSpaceBase<Scalar>* >(s.constPtr().get())!=0; 
+  }
+
+  //========================================================================
+  template <class Scalar> inline
+  bool indexIsLocal(const VectorSpace<Scalar>& s, Index i) 
+  {
+    Range1D range(i,i);
+    return s.constPtr()->hasInCoreView(range, VIEW_TYPE_DIRECT, STRIDE_TYPE_UNIT);
+  }
+
+  
+    
 
 
   

@@ -32,7 +32,10 @@
 
 #include "Thyra_LinearOperatorImpl.hpp"
 #include "Thyra_TestSpecifier.hpp"
+#include "Thyra_SUNDIALS_Ops.hpp"
 #include "Teuchos_ScalarTraits.hpp"
+#include "Teuchos_Comm.hpp"
+#include "Teuchos_CommHelpers.hpp"
 
 
 namespace Thyra
@@ -49,9 +52,10 @@ namespace Thyra
     typedef typename ScalarTraits<Scalar>::magnitudeType ScalarMag;
 
     /** */
-    TesterBase(const VectorSpace<Scalar>& space, int nCols,
+    TesterBase(const RefCountPtr<const Comm<int> >& comm,
+               const VectorSpace<Scalar>& space, int nCols,
                Teuchos::RefCountPtr<Teuchos::FancyOStream>& out)
-      : space_(space), nCols_(nCols), out_(out) 
+      : comm_(comm), space_(space), nCols_(nCols), out_(out) 
     {
       *out << "==========================================================================="
           << endl;
@@ -84,8 +88,12 @@ namespace Thyra
 
     /** */
     ostream& out() const {return *out_;}
+
+    /** */
+    const Comm<int>& comm() const {return *comm_;}
     
   private:
+    RefCountPtr<const Comm<int> > comm_;
     VectorSpace<Scalar> space_;
     int nCols_;
     mutable Teuchos::RefCountPtr<Teuchos::FancyOStream> out_;

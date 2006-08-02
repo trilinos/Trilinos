@@ -52,13 +52,16 @@ bool runVectorTests(int n, Teuchos::RefCountPtr<Teuchos::FancyOStream>& out)
   Mag epsErr = 1.0e1 * ST::prec();
   Mag epsWarn = 1.0e2 * epsErr;
 
+  Teuchos::RefCountPtr<const Comm<int> > comm = DefaultComm<Index>::getComm();
+
   /* ------- test on a monolithic space ------------ */
   
   *out << "======= Testing on a monolithic vector space ======" << std::endl;
   VectorSpace<Scalar> space 
-    = new DefaultSpmdVectorSpace<Scalar>(DefaultComm<Index>::getComm(),n,-1);
+    = new DefaultSpmdVectorSpace<Scalar>(comm,n,-1);
   
-  VectorOpTester<Scalar> tester(space, out, TestSpecifier<Scalar>(true, epsErr, epsWarn));
+  VectorOpTester<Scalar> tester(comm, space, out, 
+                                TestSpecifier<Scalar>(true, epsErr, epsWarn));
   
   ok = tester.runAllTests() && ok;
   
@@ -66,7 +69,7 @@ bool runVectorTests(int n, Teuchos::RefCountPtr<Teuchos::FancyOStream>& out)
   *out << "======= Testing on a block vector space ======" << std::endl;
   VectorSpace<Scalar> blockSpace = productSpace(space, space);
   
-  tester = VectorOpTester<Scalar>(blockSpace, out, 
+  tester = VectorOpTester<Scalar>(comm, blockSpace, out, 
                                   TestSpecifier<Scalar>(true, epsErr, epsWarn));
   
   ok = tester.runAllTests() && ok;           
@@ -78,7 +81,7 @@ bool runVectorTests(int n, Teuchos::RefCountPtr<Teuchos::FancyOStream>& out)
   *out << "======= Testing on a recursively blocked vector space ======" << std::endl;
   VectorSpace<Scalar> recSpace = productSpace(space, blockSpace);
   
-  tester = VectorOpTester<Scalar>(recSpace, out,
+  tester = VectorOpTester<Scalar>(comm, recSpace, out,
                                   TestSpecifier<Scalar>(true, epsErr, epsWarn));
   
   ok = tester.runAllTests() && ok;
