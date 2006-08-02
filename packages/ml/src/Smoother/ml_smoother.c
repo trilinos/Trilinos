@@ -1643,6 +1643,8 @@ int ML_Smoother_BlockGS(ML_Smoother *sm,int inlen,double x[],int outlen,
    else AZ_get_MSR_arrays(Amat, &Amat_MsrBindx, &Amat_MsrVal);
 #endif
 
+   allocated_space = Amat->max_nz_per_row+2;
+
 if (Amat_MsrBindx == NULL) {
      if (Amat->getrow->func_ptr == CSR_getrow) {
        ptr   = (struct ML_CSR_MSRdata *) Amat->data;
@@ -1655,7 +1657,6 @@ if (Amat_MsrBindx == NULL) {
      }
    }
 
-   allocated_space = Amat->max_nz_per_row+2;
 #ifdef ML_WITH_EPETRA
    if ((Amat_MsrBindx == NULL) && (Amat_CrsBindx == NULL)){
      Epetra_ML_GetCrsDataptrs(Amat, &Amat_CrsVal, &Amat_CrsBindx,&Amat_CrsRowptr);
