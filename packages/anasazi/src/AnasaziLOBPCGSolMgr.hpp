@@ -365,7 +365,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
       // check convergence first
       if (convtest->getStatus() == Passed || (maxtest != Teuchos::null && maxtest->getStatus() == Passed) ) {
         // we have convergence or not
-        // convtest->whichVecs() tells us which vectors from lockvecs and solver->getEvecs() are the ones we want
+        // convtest->whichVecs() tells us which vectors from lockvecs and solver->getRitzVectors() are the ones we want
         // convtest->howMany() will tell us how many
         break;
       }
@@ -395,9 +395,9 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
         {
           // work in a local scope, to hide the variabes needed for extracting this info
           // get the vectors
-          newvecs = MVT::CloneView(*lobpcg_solver->getEvecs(),indnew);
+          newvecs = MVT::CloneView(*lobpcg_solver->getRitzVectors(),indnew);
           // get the values
-          std::vector<MagnitudeType> allvals = lobpcg_solver->getEigenvalues();
+          std::vector<MagnitudeType> allvals = lobpcg_solver->getRitzValues();
           for (int i=0; i<numnew; i++) {
             newvals[i] = allvals[indnew[i]];
           }
@@ -703,10 +703,10 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
       int lclnum = insolver.size();
       std::vector<int> tosol(lclnum);
       for (int i=0; i<lclnum; i++) tosol[i] = i;
-      Teuchos::RefCountPtr<const MV> v = MVT::CloneView(*lobpcg_solver->getEvecs(),insolver);
+      Teuchos::RefCountPtr<const MV> v = MVT::CloneView(*lobpcg_solver->getRitzVectors(),insolver);
       MVT::SetBlock(*v,tosol,*sol.Evecs);
       // set vals
-      std::vector<MagnitudeType> fromsolver = lobpcg_solver->getEigenvalues();
+      std::vector<MagnitudeType> fromsolver = lobpcg_solver->getRitzValues();
       for (unsigned int i=0; i<insolver.size(); i++) {
         sol.Evals[i] = fromsolver[insolver[i]];
       }

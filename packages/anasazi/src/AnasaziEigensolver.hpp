@@ -45,10 +45,10 @@
 
 /*! \class Anasazi::Eigensolver
   \brief The Anasazi::Eigensolver is a templated virtual base class that defines the
-	basic interface that any eigensolver will support.
+   basic interface that any eigensolver will support.
 
-	The Anasazi::Eigensolver class is responsible for providing the 
-	current solver information to the Anasazi::StatusTest object.
+   This interface is mainly concerned with providing a set of eigensolver status method that
+   can be requested from any eigensolver by an Anasazi::StatusTest object.
 */
 
 namespace Anasazi {
@@ -81,7 +81,7 @@ class Eigensolver {
   //@}
 
 
-    //! @name Solver methods
+  //! @name Solver methods
   //@{ 
   
   /*! \brief This method performs eigensolvers iterations until the status test
@@ -94,23 +94,15 @@ class Eigensolver {
     
     //! @name Status methods
   //@{ 
-  
+
   //! \brief Get the current iteration count.
   virtual int getNumIters() const = 0;
 
   //! \brief Reset the iteration count.
   virtual void resetNumIters() = 0;
 
-  //! \brief Get the current approximate eigenspace
-  virtual Teuchos::RefCountPtr<const MV> getEvecs() = 0;
-
-  //! \brief Get the residual vectors.
-  virtual Teuchos::RefCountPtr<const MV> getResidualVecs() = 0;
-
-  //! \brief Get the current eigenvalue estimates
-  /*! \return A vector of length blockSize containing the eigenvalue estimates associated with the current iterate.
-   */
-  virtual std::vector< typename Teuchos::ScalarTraits<ScalarType>::magnitudeType > getEigenvalues() = 0;
+  //! \brief Get the Ritz vectors from the previous iteration.
+  virtual Teuchos::RefCountPtr<const MV> getRitzVectors() = 0;
 
   //! \brief Get the Ritz values from the previous iteration.
   virtual std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getRitzValues() = 0;

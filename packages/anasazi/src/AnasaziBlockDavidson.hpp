@@ -272,22 +272,12 @@ namespace Anasazi {
     //! \brief Reset the iteration count.
     void resetNumIters() { _iter=0; };
 
-    //! \brief Get the current approximate eigenvectors.
-    Teuchos::RefCountPtr<const MV> getEvecs() {return _X;}
-
-    //! \brief Get the residual vectors.
-    Teuchos::RefCountPtr<const MV> getResidualVecs() {return _R;}
-
-    /*! \brief Get the current eigenvalue estimates.
-     *
-     *  \return A vector of length getBlockSize() containing the eigenvalue
-     *  estimates associated with the current iterate.
+    /*! \brief Get the Ritz vectors from the previous iteration.
+      
+        \return A multivector with getBlockSize() vectors containing 
+        the sorted Ritz vectors corresponding to the most significant Ritz values.
      */
-    std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getEigenvalues() { 
-      std::vector<MagnitudeType> ret = _theta;
-      ret.resize(_blockSize);
-      return ret;
-    }
+    Teuchos::RefCountPtr<const MV> getRitzVectors() {return _X;}
 
     /*! \brief Get the Ritz values for the previous iteration.
      *

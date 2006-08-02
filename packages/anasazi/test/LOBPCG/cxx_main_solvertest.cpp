@@ -96,14 +96,12 @@ void checks( RefCountPtr<LOBPCG<ScalarType,MV,OP> > solver, int blocksize, bool 
   TEST_FOR_EXCEPTION(solver->getBlockSize() != blocksize, get_out,"Solver block size does not match specified block size.");  
   TEST_FOR_EXCEPTION(solver->getFullOrtho() != fullortho, get_out,"Solver full ortho does not match specified state.");
   TEST_FOR_EXCEPTION(&solver->getProblem() != problem.get(),get_out,"getProblem() did not return the submitted problem.");
-  TEST_FOR_EXCEPTION(solver->getResidualVecs() != state.R,get_out,"getResidualVecs() not pointing to state.R");
-  TEST_FOR_EXCEPTION(solver->getEvecs() != state.X,get_out,"getEvecs() not pointing to state.X");
   TEST_FOR_EXCEPTION(solver->getMaxSubspaceDim() != 3*blocksize,get_out,"LOBPCG::getMaxSubspaceDim() should always be 3*blocksize");
 
   if (solver->isInitialized()) 
   {
     // check residuals
-    RefCountPtr<const MV> evecs = solver->getEvecs();
+    RefCountPtr<const MV> evecs = state.X;
     RefCountPtr<MV> Kevecs, Mevecs;
     Kevecs = MVT::Clone(*evecs,blocksize);
     OPT::Apply(*problem->getOperator(),*evecs,*Kevecs);
@@ -114,13 +112,13 @@ void checks( RefCountPtr<LOBPCG<ScalarType,MV,OP> > solver, int blocksize, bool 
       Mevecs = MVT::Clone(*evecs,blocksize);
       OPT::Apply(*problem->getM(),*evecs,*Mevecs);
     }
-    vector<MagnitudeType> theta = solver->getEigenvalues();
-    TEST_FOR_EXCEPTION(theta.size() != (unsigned int)blocksize,get_out,"getEigenvalues() has incorrect size.");
+    vector<MagnitudeType> theta = solver->getRitzValues();
+    TEST_FOR_EXCEPTION(theta.size() != (unsigned int)solver->getCurSubspaceDim(),get_out,"getRitzValues() has incorrect size.");
     SerialDenseMatrix<int,ScalarType> T(blocksize,blocksize);
     for (int i=0; i<blocksize; i++) T(i,i) = theta[i];
     // LOBPCG computes residuals like R = K*X - M*X*T 
     MVT::MvTimesMatAddMv(-1.0,*Mevecs,T,1.0,*Kevecs);
-    MagnitudeType error = msutils.errorEquality(Kevecs.get(),solver->getResidualVecs().get());
+    MagnitudeType error = msutils.errorEquality(Kevecs.get(),state.R.get());
     // residuals from LOBPCG should be exact; we will cut a little slack
     TEST_FOR_EXCEPTION(error > 1e-14,get_out,"Residuals from solver did not match eigenvectors.");
 
@@ -132,14 +130,6 @@ void checks( RefCountPtr<LOBPCG<ScalarType,MV,OP> > solver, int blocksize, bool 
     for (int i=0; i<blocksize; i++) T(i,i) -= theta[i];
     error = T.normFrobenius() / ninf;
     TEST_FOR_EXCEPTION(error > 1e-14,get_out,"Ritz values don't match eigenvectors.");
-
-    // check that eigenvectors match ritz vectors
-    std::vector<MagnitudeType> rvals = solver->getRitzValues();
-    TEST_FOR_EXCEPTION(rvals.size() !=(unsigned int)solver->getCurSubspaceDim(),get_out,"getRitzValues() has incorrect size.");
-    error = 0.0;
-    for (int i=0; i<blocksize; i++) error += SCT::magnitude(theta[i] - rvals[i]);
-    // this should be exact; we will require it
-    TEST_FOR_EXCEPTION(error != 0.0,get_out,"Ritz values don't match eigenvalues.");
 
     if (solver->hasP() && solver->getFullOrtho() == true) {
       // this should be small
@@ -179,7 +169,8 @@ void testsolver( RefCountPtr<BasicEigenproblem<ScalarType,MV,OP> > problem,
 
   // initialize solver and perform checks
   solver->initialize();
-  std::vector<MagnitudeType> vals1 = solver->getEigenvalues();
+  std::vector<MagnitudeType> vals1 = solver->getRitzValues();
+  vals1.resize(blocksize);
   MagnitudeType sum1 = 0.0;
   for (int i=0; i<blocksize; i++) sum1 += vals1[i];
   TEST_FOR_EXCEPTION(solver->isInitialized() != true,get_out,"Solver should be initialized after call to initialize().");  
@@ -191,7 +182,8 @@ void testsolver( RefCountPtr<BasicEigenproblem<ScalarType,MV,OP> > problem,
 
   // call iterate(); solver should perform exactly one iteration and return; status test should be passed
   solver->iterate();
-  std::vector<MagnitudeType> vals2 = solver->getEigenvalues();
+  std::vector<MagnitudeType> vals2 = solver->getRitzValues();
+  vals2.resize(blocksize);
   MagnitudeType sum2 = 0.0;
   for (int i=0; i<blocksize; i++) sum2 += vals2[i];
   TEST_FOR_EXCEPTION(tester->getStatus() != Passed,get_out,"Solver returned from iterate() but getStatus() not Passed.");
@@ -207,7 +199,8 @@ void testsolver( RefCountPtr<BasicEigenproblem<ScalarType,MV,OP> > problem,
   solver->resetNumIters();
   TEST_FOR_EXCEPTION(solver->getNumIters() != 0,get_out,"Number of iterations should be zero after resetNumIters().")
   solver->iterate();
-  std::vector<MagnitudeType> vals3 = solver->getEigenvalues();
+  std::vector<MagnitudeType> vals3 = solver->getRitzValues();
+  vals3.resize(blocksize);
   MagnitudeType sum3 = 0.0;
   for (int i=0; i<blocksize; i++) sum3 += vals3[i];
   TEST_FOR_EXCEPTION(tester->getStatus() != Passed,get_out,"Solver returned from iterate() but getStatus() not Passed.");

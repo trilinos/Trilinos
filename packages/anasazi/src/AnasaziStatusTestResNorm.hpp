@@ -210,7 +210,8 @@ TestStatus StatusTestResNorm<ScalarType,MV,OP>::checkStatus( Eigensolver<ScalarT
 
   // if appropriate, scale the norms by the magnitude of the eigenvalue estimate
   if (_scaled) {
-    std::vector<MagnitudeType> vals = solver->getEigenvalues();
+    std::vector<MagnitudeType> vals = solver->getRitzValues();
+    vals.resize(solver->getBlockSize());
     for (unsigned int i=0; i<res.size(); i++) {
       if ( vals[i] != SCT::zero() ) {
         res[i] /= vals[i];

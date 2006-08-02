@@ -219,7 +219,8 @@ TestStatus StatusTestOrderedResNorm<ScalarType,MV,OP>::checkStatus( Eigensolver<
   std::vector<MagnitudeType> evals;
 
   // get the eigenvalues
-  evals = solver->getEigenvalues();
+  evals = solver->getRitzValues();
+  evals.resize(solver->getBlockSize());
   // put the auxiliary values in the vectors as well
   evals.insert(evals.end(),_vals.begin(),_vals.end());
 

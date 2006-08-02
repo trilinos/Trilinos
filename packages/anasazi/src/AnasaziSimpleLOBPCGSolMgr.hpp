@@ -264,7 +264,7 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::solve() {
       }
 
       // copy the converged eigenvectors
-      Teuchos::RefCountPtr<MV> newvecs = MVT::CloneCopy(*lobpcg_solver->getEvecs(),ind);
+      Teuchos::RefCountPtr<MV> newvecs = MVT::CloneCopy(*lobpcg_solver->getRitzVectors(),ind);
       // store them
       foundvecs.push_back(newvecs);
       // add them as auxiliary vectors
@@ -275,7 +275,7 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::solve() {
 
       // copy the converged eigenvalues
       Teuchos::RefCountPtr<std::vector<MagnitudeType> > newvals = Teuchos::rcp( new std::vector<MagnitudeType>(num) );
-      std::vector<MagnitudeType> all = lobpcg_solver->getEigenvalues();
+      std::vector<MagnitudeType> all = lobpcg_solver->getRitzValues();
       for (int i=0; i<num; i++) {
         (*newvals)[i] = all[ind[i]];
       }
@@ -290,7 +290,7 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::solve() {
       
       if (num > 0) {
         // copy the converged eigenvectors
-        Teuchos::RefCountPtr<MV> newvecs = MVT::CloneCopy(*lobpcg_solver->getEvecs(),ind);
+        Teuchos::RefCountPtr<MV> newvecs = MVT::CloneCopy(*lobpcg_solver->getRitzVectors(),ind);
         // orthornormalize to be safe
         ortho->normalize(*newvecs,Teuchos::null,Teuchos::null);
         // store them
@@ -299,7 +299,7 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::solve() {
         
         // copy the converged eigenvalues
         Teuchos::RefCountPtr<std::vector<MagnitudeType> > newvals = Teuchos::rcp( new std::vector<MagnitudeType>(num) );
-        std::vector<MagnitudeType> all = lobpcg_solver->getEigenvalues();
+        std::vector<MagnitudeType> all = lobpcg_solver->getRitzValues();
         for (int i=0; i<num; i++) {
           (*newvals)[i] = all[ind[i]];
         }

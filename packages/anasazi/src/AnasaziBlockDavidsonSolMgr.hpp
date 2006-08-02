@@ -345,7 +345,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
       // check convergence first
       if (convtest->getStatus() == Passed ) {
         // we have convergence
-        // convtest->whichVecs() tells us which vectors from lockvecs and solver->getEvecs() are the ones we want
+        // convtest->whichVecs() tells us which vectors from lockvecs and solver state are the ones we want
         // convtest->howMany() will tell us how many
         break;
       }
@@ -370,10 +370,8 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
         // these will be pointers into workMV
         Teuchos::RefCountPtr<MV> newV, newKV, newMV;
         { 
-          // we want curstate (and its pointers) to go out of scope and be deleted
-          BlockDavidsonState<ScalarType,MV> curstate = bd_solver->getState();
           newV = MVT::CloneView(*workMV,b1ind);
-          MVT::SetBlock(*curstate.X,b1ind,*newV);
+          MVT::SetBlock(*bd_solver->getRitzVectors(),b1ind,*newV);
         }
 
         if (_problem->getM() != Teuchos::null) {
@@ -479,9 +477,9 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
           for (int i=0; i<numnew; i++) augtmpind[i] = numlocked+i;
           augTmp = MVT::CloneView(*lockvecs,augtmpind);
           // setup newvecs
-          newvecs = MVT::CloneView(*bd_solver->getEvecs(),newind);
+          newvecs = MVT::CloneView(*bd_solver->getRitzVectors(),newind);
           // setup newvals
-          std::vector<MagnitudeType> allvals = bd_solver->getEigenvalues();
+          std::vector<MagnitudeType> allvals = bd_solver->getRitzValues();
           for (int i=0; i<numnew; i++) {
             newvals[i] = allvals[newind[i]];
           }
@@ -697,10 +695,10 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
       int lclnum = insolver.size();
       std::vector<int> tosol(lclnum);
       for (int i=0; i<lclnum; i++) tosol[i] = i;
-      Teuchos::RefCountPtr<const MV> v = MVT::CloneView(*bd_solver->getEvecs(),insolver);
+      Teuchos::RefCountPtr<const MV> v = MVT::CloneView(*bd_solver->getRitzVectors(),insolver);
       MVT::SetBlock(*v,tosol,*sol.Evecs);
       // set vals
-      std::vector<MagnitudeType> fromsolver = bd_solver->getEigenvalues();
+      std::vector<MagnitudeType> fromsolver = bd_solver->getRitzValues();
       for (unsigned int i=0; i<insolver.size(); i++) {
         sol.Evals[i] = fromsolver[insolver[i]];
       }
