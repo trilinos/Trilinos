@@ -110,6 +110,7 @@ REMOVE --enable-tsfcore-aztecoo
 REMOVE --enable-tsfcore-epetra
 REMOVE --enable-tsfextended 
 REMOVE --enable-webtrilinos
+REMOVE --enable-ml_multiple_rhs
 DONE
 
 IF PACKAGE epetra SUBDIRECTORY thyra THEN
