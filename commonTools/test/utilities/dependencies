@@ -301,6 +301,15 @@ REMOVE --enable-meros
 REMOVE --enable-stratimikos
 REMOVE --enable-capo
 REMOVE --enable-rythmos
+REMOVE --enable-amesos-thyra
+REMOVE --enable-anasazi-thyra
+REMOVE --enable-aztecoo-thyra
+REMOVE --enable-belos-thyra
+REMOVE --enable-epetra-thyra
+REMOVE --enable-epetraext-thyra
+REMOVE --enable-ifpack-thyra
+REMOVE --enable-moocho-thyra
+REMOVE --enable-tpetra-thyra
 DONE
 
 # REMOVE --enable-epetra-thyra
