@@ -53,6 +53,7 @@ enum EReductionType {
   REDUCE_SUM     ///< Sum
   ,REDUCE_MIN    ///< Min
   ,REDUCE_MAX    ///< Max
+  ,REDUCE_AND    ///< Logical AND
 };
 
 /** \brief Convert to string representation.
@@ -66,6 +67,7 @@ const char* toString( const EReductionType reductType )
     case REDUCE_SUM: return "REDUCE_SUM";
     case REDUCE_MIN: return "REDUCE_MIN";
     case REDUCE_MAX: return "REDUCE_MAX";
+    case REDUCE_AND: return "REDUCE_AND";
    default: TEST_FOR_EXCEPT(true);
   }
   return 0; // Will never be called
@@ -395,6 +397,23 @@ public:
 
 
 
+/** \brief Standard logical AND operator for booleans
+ *
+ * \relates Comm
+ */
+template<typename Ordinal, typename Packet>
+class ANDValueReductionOp : public ValueTypeReductionOp<Ordinal,Packet>
+{
+public:
+  /** \brief . */
+  void reduce(
+    const Ordinal     count
+    ,const Packet       inBuffer[]
+    ,Packet             inoutBuffer[]
+    ) const;
+};
+
+
 
 
 
@@ -475,6 +494,40 @@ public:
     }
 };
 
+template<bool isComparable, typename Ordinal, typename Packet>
+class AND {};
+
+template<typename Ordinal, typename Packet>
+class AND<true,Ordinal,Packet> {
+public:
+  static void And(
+                   const Ordinal     count
+                   ,const Packet     inBuffer[]
+                   ,Packet           inoutBuffer[]
+                   )
+  {
+    for( int i = 0; i < count; ++i )
+      inoutBuffer[i] = inoutBuffer[i] && inBuffer[i];
+  }
+};
+
+template<typename Ordinal, typename Packet>
+class AND<false,Ordinal,Packet> {
+public:
+  static void And(
+    const Ordinal     count
+    ,const Packet     inBuffer[]
+    ,Packet           inoutBuffer[]
+    )
+    {
+      TEST_FOR_EXCEPTION(
+        true,std::logic_error
+        ,"Error, the type "<<ScalarTraits<Packet>::name()
+        <<" does not support logical AND operations!"
+        );
+    }
+};
+
 } // namespace MixMaxUtilities
 
 template<typename Ordinal, typename Packet>
@@ -514,6 +567,19 @@ void MaxValueReductionOp<Ordinal,Packet>::reduce(
     );
 }
 
+template<typename Ordinal, typename Packet>
+void ANDValueReductionOp<Ordinal,Packet>::reduce(
+  const Ordinal     count
+  ,const Packet     inBuffer[]
+  ,Packet           inoutBuffer[]
+  ) const
+{
+  typedef ScalarTraits<Packet> ST;
+  MixMaxUtilities::AND<ST::isComparable,Ordinal,Packet>::And(
+    count,inBuffer,inoutBuffer
+    );
+}
+
 } // namespace Teuchos
 
 // //////////////////////////
@@ -547,6 +613,10 @@ ValueTypeReductionOp<Ordinal,Packet>* createOp( const EReductionType reductType 
     case REDUCE_MAX: {
       TEST_FOR_EXCEPT(!ST::isComparable);
       return new MaxValueReductionOp<Ordinal,Packet>();
+      break;
+    }
+    case REDUCE_AND: {
+      return new ANDValueReductionOp<Ordinal, Packet>();
       break;
     }
     default:
