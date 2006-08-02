@@ -539,11 +539,11 @@ namespace Anasazi {
     _numAuxVecs(0),
     _iter(0)
   {     
-    TEST_FOR_EXCEPTION(_problem == Teuchos::null,std::logic_error,
+    TEST_FOR_EXCEPTION(_problem == Teuchos::null,std::invalid_argument,
                        "Anasazi::BlockDavidson::constructor: user specified null problem pointer.");
-    TEST_FOR_EXCEPTION(_problem->isProblemSet() == false, std::logic_error,
+    TEST_FOR_EXCEPTION(_problem->isProblemSet() == false, std::invalid_argument,
                        "Anasazi::BlockDavidson::constructor: user specified problem is not set.");
-    TEST_FOR_EXCEPTION(_problem->isHermitian() == false, std::logic_error,
+    TEST_FOR_EXCEPTION(_problem->isHermitian() == false, std::invalid_argument,
                        "Anasazi::BlockDavidson::constructor: user specified problem is not hermitian.");
 
     // set the block size and allocate data
@@ -571,7 +571,7 @@ namespace Anasazi {
     // This routine only allocates space; it doesn't not perform any computation
     // any change in size will invalidate the state of the solver.
 
-    TEST_FOR_EXCEPTION(numBlocks <= 1 || blockSize <= 0, std::logic_error, "Anasazi::BlockDavidson::setSize was passed a non-positive argument.");
+    TEST_FOR_EXCEPTION(numBlocks <= 1 || blockSize <= 0, std::invalid_argument, "Anasazi::BlockDavidson::setSize was passed a non-positive argument.");
     if (blockSize == _blockSize && numBlocks == _numBlocks) {
       // do nothing
       return;
@@ -590,7 +590,7 @@ namespace Anasazi {
     }
     else {
       tmp = _problem->getInitVec();
-      TEST_FOR_EXCEPTION(tmp == Teuchos::null,std::logic_error,
+      TEST_FOR_EXCEPTION(tmp == Teuchos::null,std::invalid_argument,
                          "Anasazi::BlockDavidson::setSize(): Eigenproblem did not specify initial vectors to clone from");
     }
 
@@ -700,11 +700,11 @@ namespace Anasazi {
     // set up V,KK: if the user doesn't specify these, ignore the rest
     if (state.V != Teuchos::null && state.KK != Teuchos::null) {
       TEST_FOR_EXCEPTION( MVT::GetVecLength(*state.V) != MVT::GetVecLength(*_V),
-                          std::logic_error, errstr );
+                          std::invalid_argument, errstr );
       TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*state.V) < _blockSize,
-                          std::logic_error, errstr );
+                          std::invalid_argument, errstr );
       TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*state.V) > _blockSize*_numBlocks,
-                          std::logic_error, errstr );
+                          std::invalid_argument, errstr );
 
       _curDim = MVT::GetNumberVecs(*state.V);
       // pick an integral amount
@@ -713,7 +713,7 @@ namespace Anasazi {
       // this test is equivalent to _curDim == 0, but makes for more helpful output
       TEST_FOR_EXCEPTION( _curDim < _blockSize, BlockDavidsonInitFailure, "Anasazi::BlockDavidson::initialize(): user-specified V must be >= blockSize.");
       // check size of KK
-      TEST_FOR_EXCEPTION(state.KK->numRows() < _curDim || state.KK->numCols() < _curDim, std::logic_error, errstr);
+      TEST_FOR_EXCEPTION(state.KK->numRows() < _curDim || state.KK->numCols() < _curDim, std::invalid_argument, errstr);
 
       std::vector<int> nevind(_curDim);
       for (int i=0; i<_curDim; i++) nevind[i] = i;
@@ -735,11 +735,11 @@ namespace Anasazi {
       // X,theta require Ritz analisys; if we have to generate one of these, we might as well generate both
       if (state.X != Teuchos::null && state.T != Teuchos::null) {
         TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.X) != _blockSize,
-                            std::logic_error, errstr );
+                            std::invalid_argument, errstr );
         TEST_FOR_EXCEPTION(MVT::GetVecLength(*state.X) != MVT::GetVecLength(*_X),
-                            std::logic_error, errstr );
+                            std::invalid_argument, errstr );
         TEST_FOR_EXCEPTION((signed int)(state.T->size()) != _curDim,
-                            std::logic_error, errstr );
+                            std::invalid_argument, errstr );
         MVT::SetBlock(*state.X,bsind,*_X);
         std::copy(state.T->begin(),state.T->end(),_theta.begin());
 
@@ -810,14 +810,14 @@ namespace Anasazi {
       // set up KX,MX
       if ( state.KX != Teuchos::null && (!_hasM || state.MX != Teuchos::null) ) {
         TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.KX) != _blockSize,
-                            std::logic_error, errstr );
+                            std::invalid_argument, errstr );
         TEST_FOR_EXCEPTION(MVT::GetVecLength(*state.KX) != MVT::GetVecLength(*_X),
-                            std::logic_error, errstr );
+                            std::invalid_argument, errstr );
         if (_hasM) {
           TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.MX) != _blockSize,
-                              std::logic_error, errstr );
+                              std::invalid_argument, errstr );
           TEST_FOR_EXCEPTION(MVT::GetVecLength(*state.KX) != MVT::GetVecLength(*_X),
-                              std::logic_error, errstr );
+                              std::invalid_argument, errstr );
         }
         MVT::SetBlock(*state.KX,bsind,*_KX);
         if (_hasM) {
@@ -847,9 +847,9 @@ namespace Anasazi {
       // set up R
       if (state.R != Teuchos::null) {
         TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.R) != _blockSize ,
-                           std::logic_error, errstr );
+                           std::invalid_argument, errstr );
         TEST_FOR_EXCEPTION(MVT::GetVecLength(*state.R) != MVT::GetVecLength(*_X),
-                           std::logic_error, errstr );
+                           std::invalid_argument, errstr );
         MVT::SetBlock(*state.R,bsind,*_R);
       }
       else {
@@ -894,7 +894,7 @@ namespace Anasazi {
       // user did not specify a basis V
       // get vectors from problem or generate something, projectAndNormalize, call initialize() recursively
       Teuchos::RefCountPtr<const MV> ivec = _problem->getInitVec();
-      TEST_FOR_EXCEPTION(ivec == Teuchos::null,std::logic_error,
+      TEST_FOR_EXCEPTION(ivec == Teuchos::null,std::invalid_argument,
                          "Anasazi::BlockDavdison::initialize(): Eigenproblem did not specify initial vectors to clone from");
 
       int lclDim = MVT::GetNumberVecs(*ivec);
