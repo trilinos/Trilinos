@@ -538,6 +538,15 @@ namespace Teuchos {
       return isEquivalent(__pyDict__, *this);
     }
 
+    // -------------------------------------------------------------------------
+    // The synchronize() method is for bringing the ParameterList and
+    // python dictionary back into synchronization.  They can get out
+    // of synch as noted in the comments at the top of the class.
+    // Clearly, this is not a const method, but it is used to
+    // synchronize the PyDictParameterList any time it is accessed,
+    // even by const methods, and so must be const-callable.  Thus,
+    // the method is declared const, and then the (this) pointer has
+    // its const-ness cast away.
     bool synchronize() const
     {
       return synchronizeParameters(__pyDict__, *(const_cast<PyDictParameterList*>(this)));
