@@ -308,6 +308,16 @@ int main(int argc, char *argv[])
     testsolver(probstd,printer,orthostd,sorter,pls);
     pls.set<bool>("Full Ortho",true);
     if (verbose) {
+      printer->stream(Errors) << "Testing solver(nev,true) with standard eigenproblem..." << endl;
+    }
+    testsolver(probstd,printer,orthostd,sorter,pls);
+    pls.set<bool>("Full Ortho",false);
+    if (verbose) {
+      printer->stream(Errors) << "Testing solver(nev,false) with generalized eigenproblem..." << endl;
+    }
+    testsolver(probgen,printer,orthogen,sorter,pls);
+    pls.set<bool>("Full Ortho",true);
+    if (verbose) {
       printer->stream(Errors) << "Testing solver(nev,true) with generalized eigenproblem..." << endl;
     }
     testsolver(probgen,printer,orthogen,sorter,pls);
@@ -320,6 +330,16 @@ int main(int argc, char *argv[])
     testsolver(probstd,printer,orthostd,sorter,pls);
     pls.set<bool>("Full Ortho",true);
     if (verbose) {
+      printer->stream(Errors) << "Testing solver(2*nev,true) with standard eigenproblem..." << endl;
+    }
+    testsolver(probstd,printer,orthostd,sorter,pls);
+    pls.set<bool>("Full Ortho",false);
+    if (verbose) {
+      printer->stream(Errors) << "Testing solver(2*nev,false) with generalized eigenproblem..." << endl;
+    }
+    testsolver(probgen,printer,orthogen,sorter,pls);
+    pls.set<bool>("Full Ortho",true);
+    if (verbose) {
       printer->stream(Errors) << "Testing solver(2*nev,true) with generalized eigenproblem..." << endl;
     }
     testsolver(probgen,printer,orthogen,sorter,pls);
@@ -330,6 +350,16 @@ int main(int argc, char *argv[])
       printer->stream(Errors) << "Testing solver(nev/2,false) with standard eigenproblem..." << endl;
     }
     testsolver(probstd,printer,orthostd,sorter,pls);
+    pls.set<bool>("Full Ortho",true);
+    if (verbose) {
+      printer->stream(Errors) << "Testing solver(nev/2,true) with standard eigenproblem..." << endl;
+    }
+    testsolver(probstd,printer,orthostd,sorter,pls);
+    pls.set<bool>("Full Ortho",false);
+    if (verbose) {
+      printer->stream(Errors) << "Testing solver(nev/2,false) with generalized eigenproblem..." << endl;
+    }
+    testsolver(probgen,printer,orthogen,sorter,pls);
     pls.set<bool>("Full Ortho",true);
     if (verbose) {
       printer->stream(Errors) << "Testing solver(nev/2,true) with generalized eigenproblem..." << endl;
