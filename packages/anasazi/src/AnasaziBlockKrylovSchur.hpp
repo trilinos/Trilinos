@@ -33,7 +33,9 @@
 // TODO: the documentation here needs to be made rigorous
 // in particular, getState() and initialize() need to exactly describe their 
 // input and output
-
+//
+// Finish: remove geteigenvalues(), change geteigenvectors to getritzvectors().
+//
 #ifndef ANASAZI_BLOCK_KRYLOV_SCHUR_HPP
 #define ANASAZI_BLOCK_KRYLOV_SCHUR_HPP
 
@@ -216,7 +218,7 @@ namespace Anasazi {
       state.V = _V;
       state.X = _X;
       state.H = _H;
-      state.T = Teuchos::rcp(new std::vector<MagnitudeType>(_ritzvalues));
+      state.T = Teuchos::rcp(new std::vector<MagnitudeType>(_ritzValues));
       return state;
     }
     
@@ -227,35 +229,21 @@ namespace Anasazi {
     //@{ 
 
     //! \brief Get the current iteration count.
-    int getNumIters() const { return(_iter); };
+    int getNumIters() const { return(_iter); }
 
     //! \brief Reset the iteration count.
-    void resetNumIters() { _iter=0; };
+    void resetNumIters() { _iter=0; }
 
-    //! \brief Get the current approximate eigenvectors.
-    Teuchos::RefCountPtr<const MV> getEvecs();
-
-    //! \brief Get the residual vectors.
-    Teuchos::RefCountPtr<const MV> getResidualVecs() {return Teuchos::null;}
-
-    /*! \brief Get the current eigenvalue estimates.
-     *
-     *  \return A vector of length getBlockSize() containing the eigenvalue
-     *  estimates associated with the current iterate.
-     */
-    std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getEigenvalues() { 
-      std::vector<MagnitudeType> ret = _ritzvalues;
-      ret.resize(_blockSize);
-      return ret;
-    }
+    //! \brief Get the current Ritz vectors.
+    Teuchos::RefCountPtr<const MV> getRitzVectors() { return _X; }
 
     /*! \brief Get the Ritz values for the previous iteration.
      *
      *  \return A vector of length not exceeding the maximum dimension of the subspace 
-     *  containing the Ritz values from the previous projected eigensolve.
+     *  containing the Ritz values from the most recent Schur form update.
      */
     std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getRitzValues() { 
-      std::vector<MagnitudeType> ret = _ritzvalues;
+      std::vector<MagnitudeType> ret = _ritzValues;
       ret.resize(_curDim);
       return ret;
     }
@@ -265,7 +253,7 @@ namespace Anasazi {
      *  \return A vector of length blockSize containing the norms of the
      *  residuals, with respect to the orthogonalization manager norm() method.
      */
-    std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getResNorms()    {return _Rnorms;}
+    std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getResNorms() {return _Rnorms;}
 
 
     /*! \brief Get the current residual 2-norms
@@ -273,14 +261,14 @@ namespace Anasazi {
      *  \return A vector of length blockSize containing the 2-norms of the
      *  residuals. 
      */
-    std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getRes2Norms()   {return _R2norms;}
+    std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getRes2Norms() {return _R2norms;}
 
     /*! \brief Get the current ritz residual 2-norms
      *
      *  \return A vector of length blockSize containing the 2-norms of the
      *  ritz residuals.
      */
-    std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getRitzRes2Norms() {return _ritzresiduals;}
+    std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getRitzRes2Norms() {return _ritzResiduals;}
 
     //! @name Accessor routines
     //@{ 
@@ -350,6 +338,31 @@ namespace Anasazi {
 
     //@}
 
+    //! @name Block-Krylov Schur status routines
+    //@{
+    
+    //! Get the status of the Ritz vectors currently stored in the eigensolver.
+    bool isRitzVecsCurrent() const { return _ritzVecsCurrent; }
+
+    //! Get the status of the Ritz values currently stored in the eigensolver.
+    bool isRitzValsCurrent() const { return _ritzValsCurrent; }
+    
+    //! Get the status of the Schur form currently stored in the eigensolver.
+    bool isSchurCurrent() const { return _schurCurrent; }
+    
+    //@}
+
+    //! @name Block-Krylov Schur compute routines
+    //@{
+    
+    //! Get the status of the Ritz vectors currently stored in the eigensolver.
+    void computeRitzVectors();
+
+    //! Get the status of the Ritz values currently stored in the eigensolver.
+    void computeRitzValues();
+    
+    //@}
+
   private:
     //
     // Convenience typedefs
@@ -378,6 +391,7 @@ namespace Anasazi {
     // Internal methods
     //
     string accuracyCheck(const CheckList &chk, const string &where) const;
+    void computeSchurForm( const bool updateFact );
     //
     // Classes inputed through constructor that define the eigenproblem to be solved.
     //
@@ -433,13 +447,18 @@ namespace Anasazi {
     // NOTE: 0 <= _curDim <= _blockSize*_numBlocks
     // this also tells us how many of the values in _theta are valid Ritz values
     int _curDim;
+    // _ritzDim is the dimension of the basis when the Ritz vectors were last updated.
+    int _ritzDim;
     //
     // State Multivecs
     Teuchos::RefCountPtr<MV> _X, _V;
     //
     // Projected matrices
+    // _H : Projected matrix from the Krylov-Schur factorization AV = VH + FB^T
+    // _Q : Schur vectors of the projected matrix _H (may not always be current)
     //
     Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > _H;
+    Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > _Q;
     // 
     // Auxiliary vectors
     Teuchos::Array<Teuchos::RefCountPtr<const MV> > _auxVecs;
@@ -449,10 +468,10 @@ namespace Anasazi {
     int _iter;
     //
     // State flags
-    bool _evecsCurrent, _schurCurrent;
+    bool _ritzVecsCurrent, _ritzValsCurrent, _schurCurrent;
     // 
     // Current eigenvalues, residual norms
-    std::vector<MagnitudeType> _ritzvalues, _Rnorms, _R2norms, _ritzresiduals;
+    std::vector<MagnitudeType> _ritzValues, _Rnorms, _R2norms, _ritzResiduals;
     //
     // Current Schur Error || Op*V - VR ||.
     MagnitudeType _schurError;
@@ -500,10 +519,12 @@ namespace Anasazi {
     _stepSize(0),
     _initialized(false),
     _curDim(0),
+    _ritzDim(0),
     _auxVecs( Teuchos::Array<Teuchos::RefCountPtr<const MV> >(0) ), 
     _numAuxVecs(0),
     _iter(0),
-    _evecsCurrent(false),
+    _ritzVecsCurrent(false),
+    _ritzValsCurrent(false),
     _schurCurrent(false),
     _schurError(MT_ONE)
   {     
@@ -590,10 +611,11 @@ namespace Anasazi {
     // blockSize*numBlocks dependent
     //
     int newsd = _blockSize*_numBlocks;
-    _ritzvalues.resize(2*newsd,MT_ZERO);
-    _ritzresiduals.resize(2*newsd,MT_ONE);
+    _ritzValues.resize(2*newsd,MT_ZERO);
+    _ritzResiduals.resize(2*newsd,MT_ONE);
     _V = MVT::Clone(*tmp,newsd+_blockSize);
     _H = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(newsd+_blockSize,newsd) );
+    _Q = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(newsd,newsd) );
 
     _initialized = false;
     _curDim = 0;
@@ -627,19 +649,34 @@ namespace Anasazi {
     }
   }
 
-
   //////////////////////////////////////////////////////////////////////////////////////////////////
-  /* Get the current approximate eigenvectors.
+  /* Get the current approximate eigenvalues, i.e. Ritz values.
    * 
    * POST-CONDITIONS:
    *
-   * _ritzvalues contains Ritz w.r.t. V
-   * X is Ritz vectors w.r.t. V
+   * _ritzValues contains Ritz w.r.t. V, H
+   * _Q contains the Schur vectors w.r.t. H
    *
    */
 
   template <class ScalarType, class MV, class OP>  
-  Teuchos::RefCountPtr<const MV> BlockKrylovSchur<ScalarType,MV,OP>::getEvecs()
+  void BlockKrylovSchur<ScalarType,MV,OP>::computeRitzValues()
+  {
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  /* Get the current approximate eigenvectors, i.e. Ritz vectors.
+   * 
+   * POST-CONDITIONS:
+   *
+   * _ritzValues contains Ritz w.r.t. V, H
+   * _X is Ritz vectors w.r.t. V, H
+   * _Q contains the Schur vectors w.r.t. H
+   *
+   */
+
+  template <class ScalarType, class MV, class OP>  
+  void BlockKrylovSchur<ScalarType,MV,OP>::computeRitzVectors()
   {
     Teuchos::TimeMonitor LocalTimer(*_timerCompEvec);
     //const int IntOne=1;
@@ -656,6 +693,10 @@ namespace Anasazi {
     //
     // Get a view into the current Hessenberg matrix.
     Teuchos::SerialDenseMatrix<int,ScalarType> subH(Teuchos::Copy, *_H, _curDim, _curDim);
+   
+    // Compute eigenvectors  
+    _ritzVecsCurrent = true;
+
     return Teuchos::null;
   }
 
@@ -665,9 +706,9 @@ namespace Anasazi {
    * POST-CONDITIONS:
    *
    * _V is orthonormal, orthogonal to _auxVecs, for first _curDim vectors
-   * _ritzvalues contains Ritz w.r.t. V
-   * X is Ritz vectors w.r.t. V
+   *
    */
+
   template <class ScalarType, class MV, class OP>
   void BlockKrylovSchur<ScalarType,MV,OP>::initialize(BlockKrylovSchurState<ScalarType,MV> state)
   {
@@ -850,9 +891,9 @@ namespace Anasazi {
     ////////////////////////////////////////////////////////////////
     // iterate until the status test tells us to stop.
     // also break if our basis is full
-    while (_tester->checkStatus(this) != Passed && _curDim < searchDim && !(++_iter%_stepSize)) {
+    while (_tester->checkStatus(this) != Passed && _curDim < searchDim) {
 
-      //_iter++;
+      _iter++;
 
       // Get the current part of the basis.
       std::vector<int> curind(_blockSize);
@@ -911,9 +952,14 @@ namespace Anasazi {
       // Update basis dim and release all pointers.
       Vnext = Teuchos::null;
       _curDim += _blockSize;
-      // The eigenvectors and Schur form are no longer current.
-      _evecsCurrent = false;
+      // The Ritz vectors/values and Schur form are no longer current.
+      _ritzVecsCurrent = false;
+      _ritzValsCurrent = false;
       _schurCurrent = false;
+      //
+      // Update Ritz values and residuals if needed
+      if (!(_iter%_stepSize)) {
+      }
       
       // When required, monitor some orthogonalities
       if (_om->isVerbosity( Debug ) ) {
@@ -1071,7 +1117,7 @@ namespace Anasazi {
          << endl;
       os <<"--------------------------------------------------------------------------------"<<endl;
       for (int i=0; i<_blockSize; i++) {
-        os << std::setw(20) << _ritzvalues[i] 
+        os << std::setw(20) << _ritzValues[i] 
            << std::setw(20) << _Rnorms[i] 
            << std::setw(20) << _R2norms[i] 
            << endl;

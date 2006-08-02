@@ -81,7 +81,7 @@ void checks( RefCountPtr<BlockKrylovSchur<ScalarType,MV,OP> > solver, int blocks
   TEST_FOR_EXCEPTION(state.T->size() != (unsigned int)solver->getMaxSubspaceDim(),get_out,"getMaxSubspaceDim() does not match returned size of ritz values");
   TEST_FOR_EXCEPTION(solver->getBlockSize() != blocksize, get_out,"Solver block size does not match specified block size.");  
   TEST_FOR_EXCEPTION(&solver->getProblem() != problem.get(),get_out,"getProblem() did not return the submitted problem.");
-  TEST_FOR_EXCEPTION(solver->getEvecs()        != state.X,get_out,"getEvecs() not pointing to state.X");
+  TEST_FOR_EXCEPTION(solver->getRitzVectors()        != state.X,get_out,"getRitzVectors() not pointing to state.X");
   TEST_FOR_EXCEPTION(solver->getMaxSubspaceDim() != blocksize*numblocks+1,get_out,"BlockKrylovSchur::getMaxSubspaceDim() should always be 3*blocksize");
 
   if (solver->isInitialized()) 
