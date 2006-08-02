@@ -40,6 +40,7 @@ namespace Teuchos {
   bool setPythonParameter(ParameterList &, const std::string &, PyObject *);
   PyObject * getPythonParameter(const ParameterList &, const std::string &);
   bool isEquivalent(PyObject *, const ParameterList &);
+  bool synchronizeParameters(PyObject *, ParameterList &);
 
   // The PyDictParameterList class inherits from ParameterList and
   // adds a single new data member: a pointer to a python object.
@@ -54,6 +55,22 @@ namespace Teuchos {
   // much in the same way that a dictionary can.  The exception is
   // with methods that delete values, such as __delitem__() or pop(),
   // since ParameterList does not support parameter deletion.
+
+  // There are two ways that a PyDictParameterList can get out of
+  // synch.  One is if it gets upcast to a ParameterList and its set()
+  // methods are called, which will not update the python dictionary.
+  // This could happen with Trilinos packages that alter a
+  // ParameterList and cannot be prevented because the ParameterList
+  // set() methods are templated and therefore cannot be made virtual.
+  // The second situation is if a python programmer extracts the
+  // dictionary with the dict() method and alters the dictionary
+  // directly.  This could be prevented by eliminating the dict()
+  // method, but it is a useful method for unit testing, and
+  // eliminating it does not eliminate the synch problem.  The
+  // solution implemented here is that most methods call the
+  // synchronize() method before performing their operations, so that
+  // by merely accessing a PyDictParameterList, a programmer usually
+  // synchs it up as a byproduct.
 
   // The class depends on the setPythonParameter() and
   // getPythonParameter() functions in Teuchos_PythonParameter.hpp to
@@ -137,6 +154,8 @@ namespace Teuchos {
     {
       // Copy the python dictionary
       __pyDict__ = PyDict_Copy(source.__pyDict__);
+      // If source was out of whack, then *this needs to be synchronized
+      synchronize();
     }
 
     // -------------------------------------------------------------------------
@@ -194,6 +213,8 @@ namespace Teuchos {
       // source python dictionary
       Py_XDECREF(__pyDict__);
       __pyDict__ = PyDict_Copy(source.__pyDict__);
+      // If source is out of whack, *this should be synchronized
+      synchronize();
       return *this;
     }
 
@@ -204,6 +225,8 @@ namespace Teuchos {
     // -------------------------------------------------------------------------
     void set(const string &name, PyObject * value)
     {
+      // If *this is unsynchronized, fix it
+      synchronize();
       // Set the ParameterList parameter
       TEST_FOR_EXCEPTION(!setPythonParameter(*this,name,value), std::runtime_error, 
 			 "ParameterList value type not supported");
@@ -214,12 +237,19 @@ namespace Teuchos {
     // -------------------------------------------------------------------------
     void set(const string &name, ParameterList & plist)
     {
-      sublist(name) = plist;  // This sets both ParameterList and python dictionary
+      // If *this is unsynchronized, fix it
+      synchronize();
+      // This sets both ParameterList and python dictionary
+      sublist(name) = plist;
     }
 
     // -------------------------------------------------------------------------
     void set(const string &name, PyDictParameterList & pdplist)
     {
+      // If pdplist is unsynchronized, fix it
+      pdplist.synchronize();
+      // If *this is unsynchronized, fix it
+      synchronize();
       // Set the ParameterList sublist
       ParameterList::sublist(name) = ParameterList(pdplist);
       // Set the python dictionary parameter
@@ -229,9 +259,10 @@ namespace Teuchos {
     // -------------------------------------------------------------------------
     ParameterList & setParameters(const PyDictParameterList & source)
     {
+      // If *this is unsynchronized, fix it
+      synchronize();
       // Update the python dictionary
       PyDict_Update(__pyDict__, source.__pyDict__);
-
       // Update the ParameterList
       return ParameterList::setParameters(source);
     }
@@ -239,12 +270,12 @@ namespace Teuchos {
     // -------------------------------------------------------------------------
     ParameterList & setParameters(const ParameterList & source)
     {
+      // If *this is unsynchronized, fix it
+      synchronize();
       // Create a temporary PyDictParameterList
       PyDictParameterList pdSource(source);
-
       // Update the python dictionary
       PyDict_Update(__pyDict__, pdSource.__pyDict__);
-
       // Update the ParameterList
       return ParameterList::setParameters(source);
     }
@@ -252,6 +283,9 @@ namespace Teuchos {
     // -------------------------------------------------------------------------
     ParameterList & setParameters(PyObject * dict)
     {
+      // If *this is unsynchronized, fix it
+      synchronize();
+
       // Input argument must be a python dictionary
       if (!PyDict_Check(dict)) {
 	PyErr_SetString(PyExc_TypeError, "Expecting a dictionary");
@@ -272,6 +306,9 @@ namespace Teuchos {
     // -------------------------------------------------------------------------
     ParameterList & sublist(const string &name)
     {
+      // If *this is unsynchronized, fix it
+      synchronize();
+
       bool needToUpdate = not isParameter(name);
       ParameterList & result = ParameterList::sublist(name);
       if (needToUpdate) {
@@ -288,18 +325,21 @@ namespace Teuchos {
     // -------------------------------------------------------------------------
     int __cmp__(PyObject * ob) const
     {
+      synchronize();
       return PyObject_Compare(__pyDict__, ob);
     }
 
     // -------------------------------------------------------------------------
     int __cmp__(const PyDictParameterList & plist) const
     {
+      synchronize();
       return PyObject_Compare(__pyDict__, plist.__pyDict__);
     }
 
     // -------------------------------------------------------------------------
     int __contains__(const char * key) const
     {
+      synchronize();
       // There is a simpler form in python 2.4, but this should be
       // backward-compatible
       PyObject * keys   = PyDict_Keys(__pyDict__);
@@ -313,18 +353,21 @@ namespace Teuchos {
     // -------------------------------------------------------------------------
     PyObject * __eq__(PyObject * ob) const
     {
+      synchronize();
       return PyObject_RichCompare(__pyDict__, ob, Py_EQ);
     }
 
     // -------------------------------------------------------------------------
     PyObject * __eq__(const ParameterList & plist) const
     {
+      synchronize();
       return PyBool_FromLong((long)isEquivalent(__pyDict__, plist));
     }
 
     // -------------------------------------------------------------------------
     PyObject * __getitem__(const char * key) const
     {
+      synchronize();
       PyObject * result = PyDict_GetItemString(__pyDict__, key);
       if (result == NULL) {
 	PyErr_Format(PyExc_KeyError,"'%s'",key);
@@ -338,60 +381,70 @@ namespace Teuchos {
     // -------------------------------------------------------------------------
     PyObject * __iter__() const
     {
+      synchronize();
       return PyObject_GetIter(PyDict_Keys(__pyDict__));
     }
 
     // -------------------------------------------------------------------------
     int __len__() const
     {
+      synchronize();
       return PyDict_Size(__pyDict__);
     }
 
     // -------------------------------------------------------------------------
     PyObject * __ne__(PyObject * ob) const
     {
+      synchronize();
       return PyObject_RichCompare(__pyDict__, ob, Py_NE);
     }
 
     // -------------------------------------------------------------------------
     PyObject * __ne__(const ParameterList & plist) const
     {
+      synchronize();
       return PyBool_FromLong((long)(not isEquivalent(__pyDict__, plist)));
     }
 
     // -------------------------------------------------------------------------
     PyObject * __repr__() const
     {
+      synchronize();
       return PyObject_Repr(__pyDict__);
     }
 
     // -------------------------------------------------------------------------
     void __setitem__(const string & key, PyObject * value)
     {
+      synchronize();
       set(key, value);
     }
 
     // -------------------------------------------------------------------------
     void __setitem__(const string & key, PyDictParameterList & value)
     {
+      synchronize();
       set(key, value);
     }
 
     // -------------------------------------------------------------------------
     void __setitem__(const string & key, ParameterList & value)
     {
+      synchronize();
       set(key, value);
     }
 
     // -------------------------------------------------------------------------
     PyObject * __str__() const
     {
+      synchronize();
       return PyObject_Str(__pyDict__);
     }
 
     // -------------------------------------------------------------------------
     int has_key(const char * key) const
     {
+      synchronize();
       // There is a simpler form in python 2.4, but this should be
       // backward-compatible
       PyObject * keys   = PyDict_Keys(__pyDict__);
@@ -405,29 +458,34 @@ namespace Teuchos {
     // -------------------------------------------------------------------------
     PyObject * items() const
     {
+      synchronize();
       return PyDict_Items(__pyDict__);
     }
 
     // -------------------------------------------------------------------------
     PyObject * iteritems() const
     {
+      synchronize();
       return PyObject_GetIter(PyDict_Items(__pyDict__));
     }
 
     // -------------------------------------------------------------------------
     PyObject * iterkeys() const
     {
+      synchronize();
       return PyObject_GetIter(PyDict_Keys(__pyDict__));
     }
 
     // -------------------------------------------------------------------------
     PyObject * itervalues() const
     {
+      synchronize();
       return PyObject_GetIter(PyDict_Values(__pyDict__));
     }
 
     // -------------------------------------------------------------------------
     PyObject * keys() const {
+      synchronize();
       return PyDict_Keys(__pyDict__);
     }
 
@@ -437,24 +495,28 @@ namespace Teuchos {
     // -------------------------------------------------------------------------
     void update(const PyDictParameterList & source)
     {
+      synchronize();
       setParameters(source);
     }
 
     // -------------------------------------------------------------------------
     void update(const ParameterList & source)
     {
+      synchronize();
       setParameters(source);
     }
 
     // -------------------------------------------------------------------------
     void update(PyObject * dict)
     {
+      synchronize();
       setParameters(dict);
     }
 
     // -------------------------------------------------------------------------
     PyObject * values() const
     {
+      synchronize();
       return PyDict_Values(__pyDict__);
     }
 
@@ -465,6 +527,7 @@ namespace Teuchos {
     // -------------------------------------------------------------------------
     PyObject * dict() const
     {
+      synchronize();
       Py_INCREF(__pyDict__);
       return __pyDict__;
     }
@@ -473,6 +536,11 @@ namespace Teuchos {
     bool isSynchronized() const
     {
       return isEquivalent(__pyDict__, *this);
+    }
+
+    bool synchronize() const
+    {
+      return synchronizeParameters(__pyDict__, *(const_cast<PyDictParameterList*>(this)));
     }
 
   private:

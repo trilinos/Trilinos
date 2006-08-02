@@ -641,6 +641,25 @@ class PyDictParameterListTestCase(unittest.TestCase):
         d["two"] = 2
         self.assertEqual(self.plist.isSynchronized(), False)
 
+    def testSynchronize1(self):
+        "Test Teuchos.PyDictParameterList synchronize method, extra dict value"
+        self.plist.set("one",1)
+        d = self.plist.dict()
+        d["two"] = 2
+        self.assertEqual(self.plist.isSynchronized(), False)
+        self.assertEqual(self.plist.synchronize(),    True )
+        self.assertEqual(self.plist.isSynchronized(), True )
+
+    def testSynchronize2(self):
+        "Test Teuchos.PyDictParameterList synchronize method, extra ParameterList entries"
+        self.plist.set("one",1)
+        self.plist.set("two",2)
+        d = self.plist.dict()
+        d.clear()
+        self.assertEqual(self.plist.isSynchronized(), False)
+        self.assertEqual(self.plist.synchronize(),    True )
+        self.assertEqual(self.plist.isSynchronized(), True )
+
 ####################################################################
 
 if __name__ == "__main__":
