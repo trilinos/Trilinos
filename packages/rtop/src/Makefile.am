@@ -104,7 +104,8 @@ RTOP_OPS_LIB_H = \
   $(srcdir)/ops_lib/RTOpPack_TOpAddScalar.hpp\
   $(srcdir)/ops_lib/RTOpPack_TOpSetSubVector.hpp\
   $(srcdir)/ops_lib/RTOpPack_ROpMinIndexGreaterThanBound.hpp\
-  $(srcdir)/ops_lib/RTOpPack_TOpAssignScalar.hpp
+  $(srcdir)/ops_lib/RTOpPack_TOpAssignScalar.hpp\
+  $(srcdir)/ops_lib/RTOpPack_SUNDIALS_Ops.hpp
 
 #Specify locations of include files within Trilinos
 

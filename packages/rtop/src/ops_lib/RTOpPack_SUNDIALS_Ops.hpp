@@ -30,7 +30,9 @@
 #ifndef RTOPPACK_SUNDIALS_OPS_HPP
 #define RTOPPACK_SUNDIALS_OPS_HPP
 
-#include "RTOpPack_SUNDIALS_Helpers.hpp"
+#include "RTOpPack_RTOpTHelpers.hpp"
+#include "RTOpPack_RTOpT.hpp"
+#include "RTOpPack_Types.hpp"
 
 
 namespace RTOpPack 
@@ -122,7 +124,7 @@ namespace RTOpPack
                   ReductTarget *reduct_obj) const
     {
       RTOP_APPLY_OP_2_1(num_vecs,sub_vecs,num_targ_vecs,targ_sub_vecs);
-      for( RTOp_index_type i = 0; i < subDim; 
+      for( index_type i = 0; i < subDim; 
            ++i,  v0_val += v0_s,  v1_val += v1_s, z0_val += z0_s ) 
         {
           *z0_val = (*v0_val) * (*v1_val);
@@ -152,7 +154,7 @@ namespace RTOpPack
                   ReductTarget *reduct_obj) const
     {
       RTOP_APPLY_OP_2_1(num_vecs,sub_vecs,num_targ_vecs,targ_sub_vecs);
-      for( RTOp_index_type i = 0; i < subDim; 
+      for( index_type i = 0; i < subDim; 
            ++i,  v0_val += v0_s,  v1_val += v1_s, z0_val += z0_s ) 
         {
           *z0_val = (*v0_val) / (*v1_val);
@@ -188,7 +190,7 @@ namespace RTOpPack
     {
       RTOP_APPLY_OP_1_1(num_vecs,sub_vecs,num_targ_vecs,targ_sub_vecs);
       Scalar a = alpha();
-      for( RTOp_index_type i = 0; i < subDim; 
+      for( index_type i = 0; i < subDim; 
            ++i,  v0_val += v0_s,  z0_val += z0_s ) 
         {
           *z0_val = a * (*v0_val);
@@ -225,7 +227,7 @@ namespace RTOpPack
     {
       RTOP_APPLY_OP_1_1(num_vecs,sub_vecs,num_targ_vecs,targ_sub_vecs);
       Scalar a = alpha();
-      for( RTOp_index_type i = 0; i < subDim; 
+      for( index_type i = 0; i < subDim; 
            ++i,  v0_val += v0_s,  z0_val += z0_s ) 
         {
           *z0_val = (*v0_val) + a;
@@ -278,7 +280,7 @@ namespace RTOpPack
         = Teuchos::dyn_cast<ReductTargetScalar<Scalar> >(*reduct_obj); 
       RTOP_APPLY_OP_2_0(num_vecs,sub_vecs,num_targ_vecs,targ_sub_vecs);
       Scalar sum = this->getRawVal(*reduct_obj);
-      for( RTOp_index_type i = 0; i < subDim; ++i,  
+      for( index_type i = 0; i < subDim; ++i,  
              v0_val += v0_s,  
              v1_val += v1_s) 
         {
@@ -335,7 +337,7 @@ namespace RTOpPack
       RTOP_APPLY_OP_3_0(num_vecs,sub_vecs,num_targ_vecs,targ_sub_vecs);
       Scalar sum = this->getRawVal(*reduct_obj);
       const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
-      for( RTOp_index_type i = 0; i < subDim; ++i,  
+      for( index_type i = 0; i < subDim; ++i,  
              v0_val += v0_s,  
              v1_val += v1_s,  
              v2_val += v2_s) 
@@ -403,7 +405,7 @@ namespace RTOpPack
       RTOP_APPLY_OP_2_1(num_vecs,sub_vecs,num_targ_vecs,targ_sub_vecs);
       const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
       bool feasible = _reduct_obj.get();
-      for( RTOp_index_type i = 0; i < subDim; ++i,  
+      for( index_type i = 0; i < subDim; ++i,  
              v0_val += v0_s,  
              v1_val += v1_s,  
              z0_val += z0_s ) 
@@ -505,7 +507,7 @@ namespace RTOpPack
       RTOP_APPLY_OP_2_0(num_vecs,sub_vecs,num_targ_vecs,targ_sub_vecs);
       Scalar min_ele = this->getRawVal(*reduct_obj);
       const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
-      for( RTOp_index_type i = 0; i < subDim; ++i,  
+      for( index_type i = 0; i < subDim; ++i,  
              v0_val += v0_s,  
              v1_val += v1_s) 
         {
@@ -560,7 +562,7 @@ namespace RTOpPack
       const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
       const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
       bool pass =  _reduct_obj.get();
-      for( RTOp_index_type i = 0; i < subDim; ++i,  
+      for( index_type i = 0; i < subDim; ++i,  
              v0_val += v0_s,  
              z0_val += z0_s ) 
         {
@@ -614,7 +616,7 @@ namespace RTOpPack
       RTOP_APPLY_OP_1_1(num_vecs,sub_vecs,num_targ_vecs,targ_sub_vecs);
       const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
       const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
-      for( RTOp_index_type i = 0; i < subDim; ++i,  v0_val += v0_s,  z0_val += z0_s ) 
+      for( index_type i = 0; i < subDim; ++i,  v0_val += v0_s,  z0_val += z0_s ) 
         {
           if (fabs(*v0_val) >= alpha()) *z0_val = one;
           else *z0_val = zero;

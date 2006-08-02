@@ -338,7 +338,8 @@ RTOP_OPS_LIB_H = \
   $(srcdir)/ops_lib/RTOpPack_TOpAddScalar.hpp\
   $(srcdir)/ops_lib/RTOpPack_TOpSetSubVector.hpp\
   $(srcdir)/ops_lib/RTOpPack_ROpMinIndexGreaterThanBound.hpp\
-  $(srcdir)/ops_lib/RTOpPack_TOpAssignScalar.hpp
+  $(srcdir)/ops_lib/RTOpPack_TOpAssignScalar.hpp\
+  $(srcdir)/ops_lib/RTOpPack_SUNDIALS_Ops.hpp
 
 @USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(RTOP_INCLUDES)
 @USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(RTOP_INCLUDES))

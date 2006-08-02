@@ -601,6 +601,49 @@ protected:
   STANDARD_MEMBER_COMPOSITION_MEMBERS( Scalar, scalarData2 )
 }; // class ROpScalarTransformationBase
 
+
+
+  /**
+   * \brief Do a transformation and reduce to a bool. Needed for the NVector 
+   * adapters for the SUNDIALS interface.
+   * \author K. Long
+   */
+  template<class Scalar>
+  class RTOpBoolReduceAndTransform 
+    : public ROpIndexReductionBase<Scalar>,
+      public ROpScalarTransformationBase<Scalar>
+  {
+
+  public:
+    typedef typename RTOpT<Scalar>::primitive_value_type primitive_value_type;
+    /** */
+    RTOpBoolReduceAndTransform()
+      : RTOpT<Scalar>(""), 
+        ROpIndexReductionBase<Scalar>(1),
+        ROpScalarTransformationBase<Scalar>() 
+    {;}
+
+    /** */
+    virtual ~RTOpBoolReduceAndTransform(){;}
+
+    /** */
+    index_type operator()(const ReductTarget& reduct_obj ) const 
+    { return this->getRawVal(reduct_obj); }
+
+
+    /** \brief Default implementation here is for a logical AND. */
+    void reduce_reduct_objs(const ReductTarget& in_reduct_obj, 
+                            ReductTarget* inout_reduct_obj) const
+    {
+      const index_type in_val    = this->getRawVal(in_reduct_obj);
+      const index_type inout_val = this->getRawVal(*inout_reduct_obj);
+      this->setRawVal( in_val && inout_val, inout_reduct_obj );
+    }
+
+  };
+
+
+
 } // namespace RTOpPack
 
 /** \brief Use within an apply_op(...) function implementation where num_vecs==1, num_targ_vecs==0.
@@ -738,5 +781,39 @@ protected:
   const ptrdiff_t              v1_s    = (SUB_VECS)[1].stride(); \
   Scalar                       *z0_val = (TARG_SUB_VECS)[0].values(); \
   const ptrdiff_t              z0_s    = (TARG_SUB_VECS)[0].stride()
+
+
+/** \brief Use within an apply_op(...) function implementation where num_vecs==3, num_targ_vecs==0.
+ *
+ * \ingroup RTOpPack_RTOpTHelpers_grp
+ */
+#define RTOP_APPLY_OP_3_0( NUM_VECS, SUB_VECS, NUM_TARG_VECS, TARG_SUB_VECS ) \
+  TEST_FOR_EXCEPTION(                                                   \
+                     (NUM_VECS)!=3 || (SUB_VECS)==NULL                  \
+                     ,RTOpPack::InvalidNumVecs                          \
+                     ,"Error, num_vecs="<<(NUM_VECS)<<" not allowed, only num_vecs==3, sub_vecs!=NULL" \
+                     );                                                 \
+  TEST_FOR_EXCEPTION(                                                   \
+                     (NUM_TARG_VECS)!=0 || (TARG_SUB_VECS)!=NULL        \
+                     ,RTOpPack::InvalidNumTargVecs                      \
+                     ,"Error, num_targ_vecs="<<(NUM_TARG_VECS)<<" not allowed, only num_targ_vecs==0, targ_sub_vecs==NULL" \
+                     );                                                 \
+  TEST_FOR_EXCEPTION(                                                   \
+                     (SUB_VECS)[0].subDim() != (SUB_VECS)[1].subDim()   \
+                     || (SUB_VECS)[0].subDim() != (SUB_VECS)[2].subDim() \
+                     ||(SUB_VECS)[0].globalOffset() != (SUB_VECS)[1].globalOffset() \
+                     ||(SUB_VECS)[0].globalOffset() != (SUB_VECS)[1].globalOffset() \
+                     ,IncompatibleVecs                                  \
+                     ,"Error, num_targ_vecs="<<(NUM_TARG_VECS)<<" not allowed, only num_targ_vecs==0, targ_sub_vecs==NULL" \
+                     );                                                 \
+  const RTOpPack::index_type   subDim  = (SUB_VECS)[0].subDim();        \
+  const Scalar                 *v0_val = (SUB_VECS)[0].values();        \
+  const ptrdiff_t              v0_s    = (SUB_VECS)[0].stride();        \
+  const Scalar                 *v1_val = (SUB_VECS)[1].values();        \
+  const ptrdiff_t              v1_s    = (SUB_VECS)[1].stride();        \
+  const Scalar                 *v2_val = (SUB_VECS)[2].values();        \
+  const ptrdiff_t              v2_s    = (SUB_VECS)[2].stride();
+
+
 
 #endif // RTOPPACK_RTOP_NEW_T_HELPERS_HPP
