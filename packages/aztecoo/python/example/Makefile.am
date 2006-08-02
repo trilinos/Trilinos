@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 # 
-#              PyTrilinos.Epetra: Python Interface to Epetra
+#             PyTrilinos.AztecOO: Python Interface to AztecOO
 #                   Copyright (2005) Sandia Corporation
 # 
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
