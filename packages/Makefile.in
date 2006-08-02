@@ -89,11 +89,11 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	uninstall-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = PyTrilinos teuchos rtop thyra kokkos epetra triutils \
-	tpetra epetraext isorropia aztecoo galeri amesos ifpack \
-	komplex claps TSFCoreUtils TSFCore belos anasazi pliris ml \
-	moertel stratimikos TSF meros nox capo rythmos new_package \
-	moocho TSFExtended didasko WebTrilinos external
+DIST_SUBDIRS = teuchos rtop thyra kokkos epetra triutils tpetra \
+	epetraext isorropia aztecoo galeri amesos ifpack komplex claps \
+	TSFCoreUtils TSFCore belos anasazi pliris ml moertel \
+	stratimikos TSF meros nox capo rythmos new_package moocho \
+	TSFExtended PyTrilinos didasko WebTrilinos external
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = aclocal -I config
 AMTAR = @AMTAR@
@@ -340,7 +340,6 @@ AUTOMAKE_OPTIONS = foreign
 
 # Must list the packages in the order that they are built!
 SUBDIRS = \
-	$(PYTRILINOS_SUBDIR)   \
 	$(TEUCHOS_SUBDIR)      \
 	$(RTOP_SUBDIR)         \
 	$(THYRA_SUBDIR)        \
@@ -372,6 +371,7 @@ SUBDIRS = \
 	$(NEW_PACKAGE_SUBDIR)  \
 	$(MOOCHO_SUBDIR)       \
 	$(TSFEXTENDED_SUBDIR)  \
+	$(PYTRILINOS_SUBDIR)   \
 	$(DIDASKO_SUBDIR) \
 	$(WEBTRILINOS_SUBDIR) \
 	$(EXTERNAL_SUBDIR)
@@ -657,7 +657,6 @@ uninstall-info: uninstall-info-recursive
 
 
 libs:
-	$(PYTRILINOS_LIBS_BUILD_CMND)
 	$(TEUCHOS_LIBS_BUILD_CMND)
 	$(RTOP_LIBS_BUILD_CMND)
 	$(THYRA_LIBS_BUILD_CMND)
@@ -689,12 +688,12 @@ libs:
 	$(NEW_PACKAGE_LIBS_BUILD_CMND)
 	$(TSFEXTENDED_LIBS_BUILD_CMND)
 	$(MOOCHO_LIBS_BUILD_CMND)
+	$(PYTRILINOS_LIBS_BUILD_CMND)
 	$(DIDASKO_LIBS_BUILD_CMND)
 	$(WEBTRILINOS_LIBS_BUILD_CMND)
 	$(EXTERNAL_LIBS_BUILD_CMND)
 
 all-libs:
-	$(PYTRILINOS_ALL_LIBS_BUILD_CMND)
 	$(TEUCHOS_ALL_LIBS_BUILD_CMND)
 	$(RTOP_ALL_LIBS_BUILD_CMND)
 	$(THYRA_ALL_LIBS_BUILD_CMND)
@@ -726,6 +725,7 @@ all-libs:
 	$(NEW_PACKAGE_ALL_LIBS_BUILD_CMND)
 	$(TSFEXTENDED_ALL_LIBS_BUILD_CMND)
 	$(MOOCHO_ALL_LIBS_BUILD_CMND)
+	$(PYTRILINOS_ALL_LIBS_BUILD_CMND)
 	$(DIDASKO_ALL_LIBS_BUILD_CMND)
 	$(WEBTRILINOS_ALL_LIBS_BUILD_CMND)
 	$(EXTERNAL_ALL_LIBS_BUILD_CMND)
