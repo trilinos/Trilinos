@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 # 
-#         PyTrilinos.Anasazi: Python Interface to Anasazi
+#             PyTrilinos.Anasazi: Python Interface to Anasazi
 #                   Copyright (2005) Sandia Corporation
 # 
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
