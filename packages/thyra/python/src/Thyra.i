@@ -66,8 +66,11 @@ using namespace Teuchos;
 %feature("autodoc", "1");
 
 // C++ STL support.
-%include "std_string.i"
+%include "stl.i"
 
+namespace std {
+  class logic_error;
+}
 
 // Thyra interface imports and includes
 using namespace std;
@@ -76,6 +79,8 @@ using namespace std;
 %import  "Teuchos_Range1D.hpp"
 %import  "Teuchos_VerbosityLevel.hpp"
 %import  "Teuchos_Describable.hpp"
+%import  "Teuchos_TypeNameTraits.hpp"
+%import  "Teuchos_RefCountPtrDecl.hpp"
 %import  "RTOp_MPI_config.h"
 %import  "Thyra_OperatorVectorTypes.hpp"
 %import  "Thyra_ScalarProdBaseDecl.hpp"
@@ -83,10 +88,10 @@ using namespace std;
 %include "Thyra_LinearOpBaseDecl.hpp"
 %include "Thyra_MultiVectorBaseDecl.hpp"
 %include "Thyra_VectorBaseDecl.hpp"
-%include "Teuchos_RefCountPtrDecl.hpp"
 %include "Thyra_VectorSpaceDefaultBaseDecl.hpp"
 %include "Thyra_ScalarProdVectorSpaceBaseDecl.hpp"
 %include "Thyra_SpmdVectorSpaceBaseDecl.hpp"
+%include "Thyra_SpmdVectorSpaceDefaultBaseDecl.hpp"
 %include "Thyra_DefaultSpmdVectorSpaceDecl.hpp"
 %include "Thyra_VectorStdOpsDecl.hpp"
 
@@ -106,20 +111,24 @@ using namespace std;
 %feature("pythonappend") Teuchos::RefCountPtr<Thyra::VectorBase<type> >::
   RefCountPtr<Thyra::VectorBase<type> > {print "Hello World!"}
 
-%template (RCPVectorBase_ ## type)      Teuchos::RefCountPtr<Thyra::VectorBase<type> >;
-%template (RCPVectorSpaceBase_ ## type) Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<type> >;
+// Teuchos templates
+%template (HandleableVectorSpaceBase_ ## type) Teuchos::Handleable<Thyra::VectorSpaceBase<type> >;
+%template (RCPVectorBase_ ## type)             Teuchos::RefCountPtr<Thyra::VectorBase<type> >;
+%template (RCPVectorSpaceBase_ ## type)        Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<type> >;
 
-%template (VectorSpaceBase_ ## type)           Thyra::VectorSpaceBase<type>;
-%template (LinearOpBase_ ## type)              Thyra::LinearOpBase<type,type>;
-%template (MultiVectorBase_ ## type)           Thyra::MultiVectorBase<type>;
-%template (VectorBase_ ## type)      	       Thyra::VectorBase<type>;
-%template (VectorSpaceDefaultBase_ ## type)    Thyra::VectorSpaceDefaultBase<type>;
-%template (ScalarProdVectorSpaceBase_ ## type) Thyra::ScalarProdVectorSpaceBase<type>;
-%template (SerialVectorSpaceBase_ ## type)     Thyra::SpmdVectorSpaceBase<type>;
-%template (SerialVectorSpaceStd_ ## type)      Thyra::DefaultSpmdVectorSpace<type>;
-%template (createMember_ ## type)              Thyra::createMember<type>;
-%template (V_S_ ## type)                       Thyra::V_S<type>;
-%template (sum_ ## type)                       Thyra::sum<type>;
+// Thyra templates
+%template (VectorSpaceBase_ ## type)           	  Thyra::VectorSpaceBase<type>;
+%template (LinearOpBase_ ## type)              	  Thyra::LinearOpBase<type,type>;
+%template (MultiVectorBase_ ## type)           	  Thyra::MultiVectorBase<type>;
+%template (VectorBase_ ## type)      	       	  Thyra::VectorBase<type>;
+%template (VectorSpaceDefaultBase_ ## type)    	  Thyra::VectorSpaceDefaultBase<type>;
+%template (ScalarProdVectorSpaceBase_ ## type) 	  Thyra::ScalarProdVectorSpaceBase<type>;
+%template (SerialVectorSpaceBase_ ## type)     	  Thyra::SpmdVectorSpaceBase<type>;
+%template (SerialVectorSpaceDefaultBase_ ## type) Thyra::SpmdVectorSpaceDefaultBase<type>;
+%template (SerialVectorSpaceStd_ ## type)      	  Thyra::DefaultSpmdVectorSpace<type>;
+%template (createMember_ ## type)              	  Thyra::createMember<type>;
+%template (V_S_ ## type)                       	  Thyra::V_S<type>;
+%template (sum_ ## type)                       	  Thyra::sum<type>;
 
 %enddef
 
