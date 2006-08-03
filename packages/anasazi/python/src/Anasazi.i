@@ -59,6 +59,8 @@ in-depth information."
 // python technique for output.  The ignore directive is also good for
 // eliminating warnings about methods python cannot wrap, such as
 // operator=.
+%ignore *::operator=;
+%ignore *::print;
 
 // Auto-documentation feature.  This ensures that calling help() on a
 // wrapped method returns an argument list (or lists, in the case of
@@ -67,8 +69,7 @@ in-depth information."
 // this is often enough to greatly increase the wrapper's usability.
 %feature("autodoc", "1");
 
-%ignore *::operator=;
-
+// Rename directives
 %rename (OutputManager_) Anasazi::OutputManager;
 
 // C++ STL support.  If the wrapped class uses standard template

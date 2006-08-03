@@ -34,7 +34,7 @@ include $(top_srcdir)/config/swig.am
 SWIG_CXXFLAGS = $(TRIUTILS_INCLUDES) \
                 -I$(top_srcdir)/../epetra/python/src
 
-EXTRA_DIST = Triutils.i setup.py
+EXTRA_DIST = TriUtils.i setup.py
 
 # Default make target
 all-am: build
@@ -48,7 +48,7 @@ $(tempdir):
 	mkdir -p $@
 
 # Define the SWIG interface files and the resulting wrapper files
-INTERFACES = Triutils.i
+INTERFACES = TriUtils.i
 WRAPPERS   = $(INTERFACES:.i=_wrap.cpp)
 PROXIES    = $(INTERFACES:.i=.py      )
 

@@ -165,6 +165,7 @@ F77 = @F77@
 FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
 GNU_HAVE_SWIG = @GNU_HAVE_SWIG@
+GREP = @GREP@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
 HAVE_PERL = @HAVE_PERL@
@@ -227,8 +228,6 @@ ac_aux_dir = @ac_aux_dir@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@
 ac_ct_F77 = @ac_ct_F77@
-ac_ct_RANLIB = @ac_ct_RANLIB@
-ac_ct_STRIP = @ac_ct_STRIP@
 am__fastdepCC_FALSE = @am__fastdepCC_FALSE@
 am__fastdepCC_TRUE = @am__fastdepCC_TRUE@
 am__fastdepCXX_FALSE = @am__fastdepCXX_FALSE@
@@ -243,23 +242,30 @@ build_cpu = @build_cpu@
 build_os = @build_os@
 build_vendor = @build_vendor@
 datadir = @datadir@
+datarootdir = @datarootdir@
+docdir = @docdir@
+dvidir = @dvidir@
 exec_prefix = @exec_prefix@
 host = @host@
 host_alias = @host_alias@
 host_cpu = @host_cpu@
 host_os = @host_os@
 host_vendor = @host_vendor@
+htmldir = @htmldir@
 includedir = @includedir@
 infodir = @infodir@
 install_sh = @install_sh@
 libdir = @libdir@
 libexecdir = @libexecdir@
+localedir = @localedir@
 localstatedir = @localstatedir@
 mandir = @mandir@
 mkdir_p = @mkdir_p@
 oldincludedir = @oldincludedir@
+pdfdir = @pdfdir@
 prefix = @prefix@
 program_transform_name = @program_transform_name@
+psdir = @psdir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
@@ -282,18 +288,17 @@ CLEANFILES = $(DEPDIR)/*.Pi $(WRAPPERS) $(PROXIES)
 SWIGCOMPILE = $(SWIG) $(SWIG_PYTHON_OPT) $(SWIG_CXXFLAGS)
 
 # Include swig rules
-SWIG_CXXFLAGS = $(TRIUTILS_INCLUDES)   \
-		$(PYTRILINOS_INCLUDES) \
+SWIG_CXXFLAGS = $(TRIUTILS_INCLUDES) \
                 -I$(top_srcdir)/../epetra/python/src
 
-EXTRA_DIST = Triutils.i setup.py
+EXTRA_DIST = TriUtils.i setup.py
 
 # Currently, this temporary directory is required to be present for the
 # setup.py script to work correctly
 tempdir = $(shell $(PYTHON) -c "import sys,os; from distutils.util import get_platform; print os.path.join('build','temp.%s-%s'%(get_platform(),sys.version[0:3]))")
 
 # Define the SWIG interface files and the resulting wrapper files
-INTERFACES = Triutils.i
+INTERFACES = TriUtils.i
 WRAPPERS = $(INTERFACES:.i=_wrap.cpp)
 PROXIES = $(INTERFACES:.i=.py      )
 all: all-am
@@ -454,7 +459,6 @@ uninstall-am: uninstall-info-am
 
 # Include export makefiles
 include $(top_builddir)/Makefile.export.triutils
-include $(top_builddir)/../PyTrilinos/Makefile.export.pytrilinos
 include $(DEPFILES)
 
 # Wrapper and proxy targets

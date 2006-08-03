@@ -57,7 +57,10 @@
 %feature("autodoc", "1");
 
 // Ignore directives
-%ignore *::operator<<;
+#pragma SWIG nowarn=503
+%ignore *::operator<< ;
+%ignore Trilinos_Util::CrsMatrixGallery::operator<<(ostream&,
+						    const Trilinos_Util::CrsMatrixGallery&);
 
 // Rename directives
 %rename (Triutils_Version)            Version;

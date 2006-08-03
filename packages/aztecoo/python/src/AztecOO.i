@@ -109,6 +109,10 @@ Solver.Iterate(1550, 1e-5)
 
 %}
 
+// SWIG does not support wrapping nested classes.  To suppress the
+// swig warning that would otherwise result, we use the following:
+#pragma SWIG nowarn=312
+
 // Auto-documentation feature
 %feature("autodoc", "1");
 
