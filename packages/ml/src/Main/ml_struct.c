@@ -245,6 +245,7 @@ int ML_Destroy(ML **ml_ptr)
       ML_memory_free( (void**) &(ml->LevelID) );
       ML_free( ml->label );
       if (ml->timing != NULL) ML_memory_free( (void**) &(ml->timing) );
+      if (global_comm == ml->comm) global_comm = NULL;
       ML_Comm_Destroy( &(ml->comm) );
       ML_memory_free( (void**) &(ml) );
 

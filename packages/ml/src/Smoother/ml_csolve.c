@@ -84,6 +84,7 @@ int ML_CSolve_Clean(ML_CSolve *ml_cs)
 {
 #ifdef ML_TIMING_DETAILED
    double t1;
+   ML_Comm *comm = NULL;
 #endif
 
    if ( ml_cs->ML_id != ML_ID_CSOLVE ) 
@@ -92,18 +93,22 @@ int ML_CSolve_Clean(ML_CSolve *ml_cs)
       exit(-1);
    }
 #ifdef ML_TIMING_DETAILED
-   if (ml_cs->label != NULL) {
+   if (ml_cs->my_level != NULL && ml_cs->my_level->comm != NULL)
+      comm = ml_cs->my_level->comm;
+   else if (comm != NULL)
+      comm = global_comm;
+   if (ml_cs->label != NULL && comm != NULL) {
       t1 = ML_gsum_double(ml_cs->build_time, global_comm);
-      t1 = t1/((double) global_comm->ML_nprocs);
-      if ( (global_comm->ML_mypid == 0) && (t1 != 0.0) && ML_Get_PrintLevel() >
+      t1 = t1/((double) comm->ML_nprocs);
+      if ( (comm->ML_mypid == 0) && (t1 != 0.0) && ML_Get_PrintLevel() >
 10 )
          printf(" Build time for %s\t= %e\n",ml_cs->label,t1);
    }
 
-   if  (ml_cs->label != NULL) {
-      t1 = ML_gsum_double(ml_cs->apply_time, global_comm);
-      t1 = t1/((double) global_comm->ML_nprocs);
-      if ( (global_comm->ML_mypid == 0) && (t1 != 0.0) && ML_Get_PrintLevel() >
+   if  (ml_cs->label != NULL && comm != NULL) {
+      t1 = ML_gsum_double(ml_cs->apply_time, comm);
+      t1 = t1/((double) comm->ML_nprocs);
+      if ( (comm->ML_mypid == 0) && (t1 != 0.0) && ML_Get_PrintLevel() >
 10 )
          printf(" Apply time for %s\t= %e\n",ml_cs->label,t1);
     }
