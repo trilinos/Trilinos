@@ -37,7 +37,7 @@
 namespace NOX {
   namespace LAPACK {
     class Vector;
-    class Matrix;
+    template <typename T> class Matrix;
   }
 }
 
@@ -63,7 +63,7 @@ namespace NOX {
       virtual bool computeF(NOX::LAPACK::Vector& rhs, const NOX::LAPACK::Vector &x) = 0;
   
       //! Compute Jacobian given the specified input vector x.  Returns true if computation was successful.
-      virtual bool computeJacobian(NOX::LAPACK::Matrix& J, const NOX::LAPACK::Vector & x) = 0;
+      virtual bool computeJacobian(NOX::LAPACK::Matrix<double>& J, const NOX::LAPACK::Vector & x) = 0;
 
     };
   } // namespace LAPACK

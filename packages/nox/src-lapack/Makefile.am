@@ -47,6 +47,7 @@ NOX_LAPACK_H = \
 	$(srcdir)/NOX_LAPACK.H \
 	$(srcdir)/NOX_LAPACK_Matrix.H \
 	$(srcdir)/NOX_LAPACK_Vector.H \
+	$(srcdir)/NOX_LAPACK_LinearSolver.H \
 	$(srcdir)/NOX_LAPACK_Group.H \
 	$(srcdir)/NOX_LAPACK_Interface.H \
 	$(srcdir)/NOX_BLAS_Wrappers.H \
@@ -54,7 +55,6 @@ NOX_LAPACK_H = \
 
 NOX_LAPACK = \
 	$(srcdir)/NOX_LAPACK_Vector.C \
-	$(srcdir)/NOX_LAPACK_Matrix.C \
 	$(srcdir)/NOX_LAPACK_Group.C 
 
 # ------------------------------------------------------------------------

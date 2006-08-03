@@ -37,7 +37,7 @@
 
 #include "NOX_Common.H"             // class data element (string)
 #include "NOX_LAPACK_Vector.H"	    // class data element
-#include "NOX_LAPACK_Matrix.H"	    // class data element
+#include "NOX_LAPACK_LinearSolver.H"	    // class data element
 #include "NOX_LAPACK_Interface.H"   // class data element
 
 // Forward declares
@@ -57,9 +57,6 @@ namespace NOX {
 
       //! Constructor
       Group(Interface& i);
-
-      //! Constructor with used and allocated dimensions of matrices
-      Group(Interface& i, int m, int n);
 
       //! Copy constructor
       Group(const NOX::LAPACK::Group& source, NOX::CopyType type = DeepCopy);
@@ -190,14 +187,8 @@ namespace NOX {
       //@}
 
 
-      //! Jacobian Matrix
-      NOX::LAPACK::Matrix jacobianMatrix;
-
-      //! LU factorization of Jacobian Matrix
-      mutable NOX::LAPACK::Matrix jacobianLUFact;
-
-      //! Pivot array for LU factorization
-      mutable vector<int> pivots;
+      //! Jacobian Matrix & LAPACK solver
+      mutable NOX::LAPACK::LinearSolver<double> jacSolver;
 
       //! Problem interface
       NOX::LAPACK::Interface& problemInterface;
@@ -211,7 +202,6 @@ namespace NOX {
       bool isValidJacobian;
       bool isValidGradient;
       bool isValidNewton;
-      mutable bool isValidJacobianLUFact;
       //@}
   
       //! Norm of F
