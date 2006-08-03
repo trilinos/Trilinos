@@ -3,7 +3,15 @@
 #
 
 (FRAMEWORK, INSTALL) {
-    TESTS = ./test_single_stratimikos_solver_driver.exe;\
+    TESTS = ../example/simple_stratimikos_example.exe;
+    ARGS =  --linear-solver-params-used-file=lowsf.default.used.xml,
+      --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"AztecOO\"/></ParameterList>" --linear-solver-params-used-file=lowsf.aztecoo.used.xml;
+      --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Amesos\"/></ParameterList>" --linear-solver-params-used-file=lowsf.amesos.used.xml;
+    COMM = MPI(1),SERIAL;
+}
+
+(FRAMEWORK, INSTALL) {
+    TESTS = ./test_single_stratimikos_solver_driver.exe;
     ARGS = --input-file=FourByFour.xml,
            --input-file=FourByFour.amesos.xml,
            --input-file=FourByFour.aztecoo.np.xml,

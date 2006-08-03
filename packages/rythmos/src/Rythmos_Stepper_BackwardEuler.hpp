@@ -183,6 +183,7 @@ Scalar BackwardEulerStepper<Scalar>::TakeStep(Scalar dt)
   //
   // Solve the implicit nonlinear system to a tolerance of ???
   //
+  Thyra::assign(&*x_,ST::zero());
   solver_->solve(&*x_); // Note that x in input is x_old and on output is the solved x!
   //
   // Update the step

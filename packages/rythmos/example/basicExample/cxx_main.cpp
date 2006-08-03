@@ -54,17 +54,11 @@
 #include "Thyra_EpetraModelEvaluator.hpp"
 #include "Thyra_LinearNonlinearSolver.hpp"
 #include "Thyra_TimeStepNewtonNonlinearSolver.hpp"
-#include "Thyra_DiagonalEpetraLinearOpWithSolveFactory.hpp"
 #include "Thyra_TestingTools.hpp"
 
-// Includes for Amesos:
-#ifdef HAVE_RYTHMOS_AMESOS
-#  include "Thyra_AmesosLinearOpWithSolveFactory.hpp"
-#endif
-
-// Includes for AztecOO:
-#ifdef HAVE_RYTHMOS_AZTECOO
-#  include "Thyra_AztecOOLinearOpWithSolveFactory.hpp"
+// Includes for Stratimikos:
+#ifdef HAVE_RYTHMOS_STRATIMIKOS
+#  include "Thyra_DefaultRealLinearSolverBuilder.hpp"
 #endif
 
 #include <string>
@@ -74,6 +68,9 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_FancyOStream.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_VerboseObject.hpp"
+#include "Teuchos_StandardCatchMacros.hpp"
 
 enum EMethod { METHOD_FE, METHOD_BE, METHOD_ERK, METHOD_BDF };
 enum EStepMethod { FIXED_STEP, VARIABLE_STEP };
@@ -83,15 +80,15 @@ int main(int argc, char *argv[])
   bool verbose = false; // verbosity level.
   bool result, success = true; // determine if the run was successfull
 
+  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
+
+  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+    out = Teuchos::VerboseObjectBase::getDefaultOStream();
+
   try { // catch exceptions
 
 #ifdef HAVE_MPI
-    MPI_Init(&argc,&argv);
     MPI_Comm mpiComm = MPI_COMM_WORLD;
-    int procRank = 0;
-    int numProc;
-    MPI_Comm_size( mpiComm, &numProc );
-    MPI_Comm_rank( mpiComm, &procRank );
 #endif // HAVE_MPI
 
     double lambda_min = -0.9;   // min ODE coefficient
@@ -120,6 +117,10 @@ int main(int argc, char *argv[])
 
     // Parse the command-line options:
     Teuchos::CommandLineProcessor  clp(false); // Don't throw exceptions
+#ifdef HAVE_RYTHMOS_STRATIMIKOS
+    Thyra::DefaultRealLinearSolverBuilder lowsfCreator;
+    lowsfCreator.setupCLP(&clp);
+#endif
     clp.setOption( "x0", &x0, "Constant ODE initial condition." );
     clp.setOption( "T", &finalTime, "Final time for simulation." );
     clp.setOption( "lambda_min", &lambda_min, "Lower bound for ODE coefficient");
@@ -142,33 +143,39 @@ int main(int argc, char *argv[])
     Teuchos::CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
     if( parse_return != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
 
+#ifdef HAVE_RYTHMOS_STRATIMIKOS
+    lowsfCreator.readParameters(out.get());
+    *out << "\nThe parameter list after being read in:\n";
+    lowsfCreator.getParameterList()->print(*out,2,true,false);
+#endif
+
     if (version) // Display version information and exit.
     {
-      std::cout << Rythmos::Rythmos_Version() << std::endl; 
-      std::cout << "basicExample Version 0.1 - 06/23/05" << std::endl;
+      *out << Rythmos::Rythmos_Version() << std::endl; 
+      *out << "basicExample Version 0.1 - 06/23/05" << std::endl;
       return(0);
     }
 
     if (lambda_min > lambda_max)
     {
-      std::cerr << "lamba_min must be less than lambda_max" << std::endl;
+      *out << "lamba_min must be less than lambda_max" << std::endl;
       return(1);
     }
 
     if (finalTime <= 0.0)
     {
-      std::cerr << "Final simulation time must be > 0.0." << std::endl;
+      *out << "Final simulation time must be > 0.0." << std::endl;
       return(1);
     }
 
 #ifdef Rythmos_DEBUG
-    std::cout.precision(15);
+    *out.precision(15);
 #endif // Rythmos_DEBUG
     
     // Set up the parameter list for the application:
     Teuchos::ParameterList params;
     bool implicitFlag = ((method_val==METHOD_BE) | (method_val==METHOD_BDF));
-    //std::cout << "implicitFlag = " << implicitFlag << std::endl;
+    //*out << "implicitFlag = " << implicitFlag << std::endl;
     params.set( "implicit", implicitFlag );
     params.set( "Lambda_min", lambda_min );
     params.set( "Lambda_max", lambda_max );
@@ -183,11 +190,11 @@ int main(int argc, char *argv[])
     Teuchos::RefCountPtr<Thyra::LinearOpWithSolveFactoryBase<double> >
       W_factory;
     if((method_val == METHOD_BE) | (method_val == METHOD_BDF)) {
-      //W_factory = Teuchos::rcp(new Thyra::DiagonalEpetraLinearOpWithSolveFactory());
-#ifdef HAVE_RYTHMOS_AMESOS
-      W_factory = Teuchos::rcp(new Thyra::AmesosLinearOpWithSolveFactory());
-#elif defined(HAVE_RYTHMOS_AZTECOO)
-      W_factory = Teuchos::rcp(new Thyra::AztecOOLinearOpWithSolveFactory());
+#ifdef HAVE_RYTHMOS_STRATIMIKOS
+      W_factory = lowsfCreator.createLinearSolveStrategy("");
+      *out
+        << "\nCreated a LinearOpWithSolveFactory described as:\n"
+        << Teuchos::describe(*W_factory,Teuchos::VERB_MEDIUM);
 #endif
     }
 
@@ -211,7 +218,6 @@ int main(int argc, char *argv[])
     } else if ((method_val == METHOD_BE) | (method_val == METHOD_BDF)) {
       Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<double> >
         nonlinearSolver;
-//    nonlinearSolver = Teuchos::rcp(new Thyra::LinearNonlinearSolver<double>());
       Teuchos::RefCountPtr<Thyra::TimeStepNewtonNonlinearSolver<double> >
         _nonlinearSolver = Teuchos::rcp(new Thyra::TimeStepNewtonNonlinearSolver<double>());
       _nonlinearSolver->defaultTol(1e-3*maxError);
@@ -224,7 +230,6 @@ int main(int argc, char *argv[])
       } 
       else 
       {
-        //TEST_FOR_EXCEPT(true); // RAB: Above is commented out due to lack of other commits
         Teuchos::ParameterList BDFparams;
         BDFparams.set( "stopTime", finalTime );
         BDFparams.set( "maxOrder", maxOrder );
@@ -289,14 +294,14 @@ int main(int argc, char *argv[])
 #endif // Rythmos_DEBUG
         if (dt_taken < 0)
         {
-          cerr << "Error, stepper failed for some reason with step taken = " << dt_taken << endl;
+          *out << "Error, stepper failed for some reason with step taken = " << dt_taken << endl;
           break;
         }
         time += dt_taken;
-        cout << "Took stepsize of: " << dt_taken << " time = " << time << endl;
+        *out << "Took stepsize of: " << dt_taken << " time = " << time << endl;
       }
     }
-    cout << "Integrated to time = " << time << endl;
+    *out << "Integrated to time = " << time << endl;
 
     // Get solution out of stepper:
     Teuchos::RefCountPtr<const Thyra::VectorBase<double> > x_computed_thyra_ptr = stepper.get_solution();
@@ -342,41 +347,37 @@ int main(int argc, char *argv[])
       // exact bdf solution here?
     }
 
-
     // 06/03/05 tscoffe to get an Epetra_Map associated with an Epetra_Vector:
     // x.Map()
     // to get an Epetra_Comm associated with an Epetra_Vector:
     // x.Comm()
     
-  //  Teuchos::RefCountPtr<const Epetra_Comm> epetra_comm = (*epetraModel).get_epetra_comm();
-    //int MyPID = epetraModel->get_Epetra_Map()->Comm()->MyPID();
     int MyPID = x_computed.Comm().MyPID();
-  //  int MyPID = epetra_comm->MyPID();
     if (MyPID == 0)
     {
-      std::cout << "Integrating \\dot{x}=\\lambda x from t = " << t0 
+      *out << "Integrating \\dot{x}=\\lambda x from t = " << t0 
                 << " to t = " << finalTime << std::endl;
-      std::cout << "using " << method << std::endl;
-      std::cout << "with initial x_0 = " << x0
+      *out << "using " << method << std::endl;
+      *out << "with initial x_0 = " << x0
                 << ", \\Delta t = " << dt  << "." << std::endl;
-      std::cout << "Took " << numSteps << " steps." << std::endl;
+      *out << "Took " << numSteps << " steps." << std::endl;
     }
     int MyLength = x_computed.MyLength();
     if (verbose)
     {
       for (int i=0 ; i<MyLength ; ++i)
       {
-        std::cout.precision(15);
-        std::cout << "lambda[" << MyPID*MyLength+i << "] = " << lambda[i] << std::endl;
+        *out << std::setprecision(15);
+        *out << "lambda[" << MyPID*MyLength+i << "] = " << lambda[i] << std::endl;
       }
       // Print out computed and exact solutions:
       for (int i=0 ; i<MyLength ; ++i)
       {
-        std::cout.precision(15);
-        std::cout << "Computed: x[" << MyPID*MyLength+i << "] = ";
-        std::cout.width(20); std::cout << x_computed[i] << "\t";
-        std::cout << "Exact: x[" << MyPID*MyLength+i << "] = ";
-        std::cout.width(20); std::cout << x_star[i] << std::endl;
+        *out << std::setprecision(15);
+        *out << "Computed: x[" << MyPID*MyLength+i << "] = ";
+        *out << std::setw(20) << x_computed[i] << "\t";
+        *out << "Exact: x[" << MyPID*MyLength+i << "] = ";
+        *out << std::setw(20) << x_star[i] << std::endl;
       }
     }
     
@@ -390,11 +391,11 @@ int main(int argc, char *argv[])
       {
         if (verbose) 
         {
-          std::cout.precision(15);
-          std::cout << "Computed: x[" << MyPID*MyLength+i << "] = ";
-          std::cout.width(20); std::cout << x_computed[i] << "\t";
-          std::cout << "Numerical Exact: x[" << MyPID*MyLength+i << "] = ";
-          std::cout.width(20); std::cout << x_numerical_exact[i] << std::endl;
+          *out << std::setprecision(15);
+          *out << "Computed: x[" << MyPID*MyLength+i << "] = ";
+          *out << std::setw(20) << x_computed[i] << "\t";
+          *out << "Numerical Exact: x[" << MyPID*MyLength+i << "] = ";
+          *out << std::setw(20) << x_numerical_exact[i] << std::endl;
         }
         const double thisError = x_numerical_exact[i]-x_computed[i];
         numerical_error += thisError*thisError;
@@ -405,7 +406,7 @@ int main(int argc, char *argv[])
         "Exact numerical error",numerical_error
         ,"maxError",1.0e-12
         ,"maxWarning",1.0e-11
-        ,&std::cerr,""
+        ,&*out,""
         );
       if(!result) success = false;
     }
@@ -424,27 +425,19 @@ int main(int argc, char *argv[])
       "Exact DE solution error",error
       ,"maxError",maxError
       ,"maxWarning",10.0*maxError
-      ,&std::cerr,""
+      ,&*out,""
       );
     if(!result) success = false;
 
-    
-#ifdef HAVE_MPI
-    MPI_Finalize();
-#endif // HAVE_MPI
+#ifdef HAVE_RYTHMOS_STRATIMIKOS
+    // Write the final parameters to file
+    if(W_factory.get())
+      lowsfCreator.writeParamsFile(*W_factory);
+#endif
 
    } // end try
-   catch( const std::exception &excpt ) {
-    if(verbose)
-      std::cerr << "*** Caught a standard exception : " << excpt.what() << std::endl;
-    success = false;
-  }
-  catch( ... ) {
-    if(verbose)
-      std::cerr << "*** Caught an unknown exception!\n";
-    success = false;
-  }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(true,*out,success)
 
   return success ? 0 : 1;
-} // end main() [Doxygen looks for this!]
 
+} // end main() [Doxygen looks for this!]

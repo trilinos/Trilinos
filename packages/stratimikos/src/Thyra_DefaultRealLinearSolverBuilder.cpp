@@ -48,10 +48,10 @@
 
 namespace {
 
-const std::string LinearSolverTypes_name   = "Linear Solver Types";
 const std::string LinearSolverType_name    = "Linear Solver Type";
-const std::string PreconditionerTypes_name   = "Preconditioner Types";
+const std::string LinearSolverTypes_name   = "Linear Solver Types";
 const std::string PreconditionerType_name    = "Preconditioner Type";
+const std::string PreconditionerTypes_name   = "Preconditioner Types";
 
 } // namespace 
 
@@ -75,6 +75,15 @@ DefaultRealLinearSolverBuilder::DefaultRealLinearSolverBuilder(
    ,paramsUsedXmlOutFileNameOption_(paramsUsedXmlOutFileNameOption)
 {
   this->initializeDefaults();
+}
+
+DefaultRealLinearSolverBuilder::~DefaultRealLinearSolverBuilder()
+{
+#ifdef TEUCHOS_DEBUG
+  // Validate that we read the parameters correctly!
+  if(paramList_.get())
+    paramList_->validateParameters(*this->getValidParameters(),0);
+#endif    
 }
 
 void DefaultRealLinearSolverBuilder::setLinearSolveStrategyFactory(
@@ -147,14 +156,14 @@ std::string
 DefaultRealLinearSolverBuilder::getLinearSolveStrategyName() const
 {
   TEST_FOR_EXCEPT(!paramList_.get());
-  return paramList_->sublist(LinearSolverTypes_name).get(LinearSolverType_name,defaultLOWSF_);
+  return paramList_->get(LinearSolverType_name,defaultLOWSF_);
 }
 
 std::string
 DefaultRealLinearSolverBuilder::getPreconditionerStrategyName() const
 {
   TEST_FOR_EXCEPT(!paramList_.get());
-  return paramList_->sublist(PreconditionerTypes_name).get(PreconditionerType_name,defaultPF_);
+  return paramList_->get(PreconditionerType_name,defaultPF_);
 }
 
 
@@ -276,7 +285,7 @@ DefaultRealLinearSolverBuilder::createLinearSolveStrategy(
   }
   // Now set the parameters for the linear solver (some of which might
   // override some preconditioner factory parameters).
-  lowsf->setParameterList(sublist(paramList_,name));
+  lowsf->setParameterList(sublist(sublist(paramList_,LinearSolverTypes_name),name));
   //
   return lowsf;
 }
@@ -303,7 +312,7 @@ DefaultRealLinearSolverBuilder::createPreconditioningStrategy(
       );
     Teuchos::RefCountPtr<PreconditionerFactoryBase<double> >
       pf = itr->second->create();
-    pf->setParameterList(sublist(paramList_,name));
+    pf->setParameterList(sublist(sublist(paramList_,PreconditionerTypes_name),name));
   }
   return pf;
 }

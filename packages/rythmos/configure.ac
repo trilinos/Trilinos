@@ -232,19 +232,19 @@ AC_CXX_STD_SPRINTF
 # ------------------------------------------------------------------------
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(
-  rythmos, amesos, RYTHMOS_AMESOS, ENABLE_RYTHMOS_AMESOS, yes,
-  [Build the Amesos operator/vector adapater support in Rythmos.],
-  [Build the Amesos operator/vector adapater support in Rythmos.  Can be overridden with --disable-rythmos-amesos.])
-
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(
-  rythmos, aztecoo, RYTHMOS_AZTECOO, ENABLE_RYTHMOS_AZTECOO, yes,
-  [Build the AztecOO operator/vector adapater support in Rythmos.],
-  [Build the AztecOO operator/vector adapater support in Rythmos.  Can be overridden with --disable-rythmos-aztecoo.])
-
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(
   rythmos, nox, RYTHMOS_NOX, ENABLE_RYTHMOS_NOX, yes,
   [Build in NOX support in Rythmos.],
   [Build in NOX support in Rythmos.  Can be overridden with --disable-rythmos-nox.])
+
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(
+  rythmos, stratimikos, RYTHMOS_STRATIMIKOS, ENABLE_RYTHMOS_STRATIMIKOS, yes
+  ,[Build the Stratimikos adapater support in Rythmos.]
+  ,[Build the Stratimikos adapater support in Rythmos.  Can be overridden with --disable-rythmos-stratimikos.])
+
+TAC_ARG_INFORM_SUBPACKAGE_USED(
+  epetraext, thyra, EPETRAEXT_THYRA, ENABLE_EPETRAEXT_THYRA, yes
+  ,[See epetraext/configure --help]
+  ,[See epetraext/configure --help])
 
 # ------------------------------------------------------------------------
 # #np# newp_swahili is an example of a package feature which requires both

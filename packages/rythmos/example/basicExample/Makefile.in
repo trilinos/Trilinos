@@ -85,6 +85,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub_check.m4 \
 	$(top_srcdir)/config/tac_arg_enable_option.m4 \
+	$(top_srcdir)/config/tac_arg_inform_subpackage_used.m4 \
 	$(top_srcdir)/config/tac_arg_with_ar.m4 \
 	$(top_srcdir)/config/tac_arg_with_blaslib.m4 \
 	$(top_srcdir)/config/tac_arg_with_flags.m4 \
@@ -105,9 +106,10 @@ am_basicExample_OBJECTS = cxx_main.$(OBJEXT) \
 	ExampleApplication.$(OBJEXT)
 basicExample_OBJECTS = $(am_basicExample_OBJECTS)
 am__DEPENDENCIES_1 =
+@USING_GNUMAKE_FALSE@am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1)
 @USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
 @USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
-@USING_GNUMAKE_TRUE@	$(RYTHMOS_LIBS))
+@USING_GNUMAKE_TRUE@	$(_EXPORT_LIBS))
 am__DEPENDENCIES_3 = $(am__DEPENDENCIES_2)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -155,12 +157,12 @@ ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
-ENABLE_RYTHMOS_AMESOS_FALSE = @ENABLE_RYTHMOS_AMESOS_FALSE@
-ENABLE_RYTHMOS_AMESOS_TRUE = @ENABLE_RYTHMOS_AMESOS_TRUE@
-ENABLE_RYTHMOS_AZTECOO_FALSE = @ENABLE_RYTHMOS_AZTECOO_FALSE@
-ENABLE_RYTHMOS_AZTECOO_TRUE = @ENABLE_RYTHMOS_AZTECOO_TRUE@
+ENABLE_EPETRAEXT_THYRA_FALSE = @ENABLE_EPETRAEXT_THYRA_FALSE@
+ENABLE_EPETRAEXT_THYRA_TRUE = @ENABLE_EPETRAEXT_THYRA_TRUE@
 ENABLE_RYTHMOS_NOX_FALSE = @ENABLE_RYTHMOS_NOX_FALSE@
 ENABLE_RYTHMOS_NOX_TRUE = @ENABLE_RYTHMOS_NOX_TRUE@
+ENABLE_RYTHMOS_STRATIMIKOS_FALSE = @ENABLE_RYTHMOS_STRATIMIKOS_FALSE@
+ENABLE_RYTHMOS_STRATIMIKOS_TRUE = @ENABLE_RYTHMOS_STRATIMIKOS_TRUE@
 EXEEXT = .exe
 F77 = @F77@
 FFLAGS = @FFLAGS@
@@ -289,10 +291,12 @@ basicExample_LDADD = $(common_ldadd)
 common_dependencies = \
   $(top_builddir)/src/librythmos.a
 
-@USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(RYTHMOS_INCLUDES)
-@USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(RYTHMOS_INCLUDES))
-@USING_GNUMAKE_FALSE@EXPORT_LIBS = $(RYTHMOS_LIBS)
-@USING_GNUMAKE_TRUE@EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(RYTHMOS_LIBS))
+_EXPORT_INCLUDES = $(RYTHMOS_INCLUDES) $(STRATIMIKOS_INCLUDES) $(EPETRAEXT_INCLUDES)
+_EXPORT_LIBS = $(RYTHMOS_LIBS) $(STRATIMIKOS_LIBS) $(EPETRAEXT_LIBS)
+@USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(_EXPORT_INCLUDES)
+@USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(_EXPORT_INCLUDES))
+@USING_GNUMAKE_FALSE@EXPORT_LIBS = $(_EXPORT_LIBS)
+@USING_GNUMAKE_TRUE@EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(_EXPORT_LIBS))
 AM_CPPFLAGS = $(EXPORT_INCLUDES)
 common_ldadd = $(EXPORT_LIBS)
 all: all-am

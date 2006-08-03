@@ -507,6 +507,7 @@ Scalar ImplicitBDFStepper<Scalar>::TakeStep()
     Thyra::SolveCriteria<Scalar> nonlinearSolveCriteria(nonlinear_solve_measure_type, tolerance);
     Thyra::SolveStatus<Scalar> nonlinearSolveStatus = solver->solve( &*xn0, &nonlinearSolveCriteria, &*delta ); 
     */
+    Thyra::assign(&*xn0,ST::zero());
     Thyra::SolveStatus<Scalar> nonlinearSolveStatus = solver->solve( &*xn0, NULL, &*delta ); 
     if (nonlinearSolveStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED) 
       newtonConvergenceStatus = 0;

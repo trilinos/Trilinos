@@ -35,6 +35,9 @@
 /* Define to 1 if you have the <cstdlib> header file. */
 #undef HAVE_CSTDLIB
 
+/* Define if want to build with epetraext enabled */
+#undef HAVE_EPETRAEXT_THYRA
+
 /* Define if want to build examples */
 #undef HAVE_EXAMPLES
 
@@ -83,17 +86,14 @@
 /* define if the compiler accepts the new for scoping rules */
 #undef HAVE_NEW_FOR_SCOPING
 
-/* Define if want to build with rythmos enabled */
-#undef HAVE_RYTHMOS_AMESOS
-
-/* Define if want to build with rythmos enabled */
-#undef HAVE_RYTHMOS_AZTECOO
-
 /* Define if want to build rythmos-examples */
 #undef HAVE_RYTHMOS_EXAMPLES
 
 /* Define if want to build with rythmos enabled */
 #undef HAVE_RYTHMOS_NOX
+
+/* Define if want to build with rythmos enabled */
+#undef HAVE_RYTHMOS_STRATIMIKOS
 
 /* Define if want to build rythmos-tests */
 #undef HAVE_RYTHMOS_TESTS

@@ -33,4 +33,10 @@ all-local:
 	@echo "Trilinos package rythmos subdirectory example built successfully."
 	@echo ""
 
-SUBDIRS = basicExample verySimple refCountPtrExample refCountPtrExample2 constExample epetra
+if ENABLE_RYTHMOS_STRATIMIKOS
+if ENABLE_EPETRAEXT_THYRA
+RYTHMOS_STRATIMIKOS_EXAMPLES = basicExample verySimple refCountPtrExample refCountPtrExample2 constExample epetra
+endif
+endif
+
+SUBDIRS = $(RYTHMOS_STRATIMIKOS_EXAMPLES)

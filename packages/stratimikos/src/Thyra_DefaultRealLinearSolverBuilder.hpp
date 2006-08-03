@@ -77,6 +77,9 @@ public:
     ,const std::string   &extraParamsXmlStringOption       = "extra-linear-solver-params"
     ,const std::string   &paramsUsedXmlOutFileNameOption   = "linear-solver-params-used-file"
     );
+
+  /** \brief . */
+  ~DefaultRealLinearSolverBuilder();
   
   /** \brief The name an XML file that will be read to get XML parameters (if
    * not "").

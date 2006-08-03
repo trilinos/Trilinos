@@ -51,6 +51,34 @@
     COMM = SERIAL;
 }
 
+# Scalar Backward Euler using Amesos
+(FRAMEWORK,INSTALL) {
+    TESTS = ../example/basicExample/basicExample.exe;
+    ARGS = --method=BE --maxerror=1e-1 --numelements=1 --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Amesos\"/></ParameterList>" --linear-solver-params-used-file=lowsf.amesos.used.xml;
+    COMM = SERIAL;
+}
+
+# Scalar Backward Euler using AztecOO
+(FRAMEWORK,INSTALL) {
+    TESTS = ../example/basicExample/basicExample.exe;
+    ARGS = --method=BE --maxerror=1e-1 --numelements=1 --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"AztecOO\"/><ParameterList name =\"Linear Solver Types\"><ParameterList name=\"AztecOO\"><ParameterList name=\"Forward Solve\"><Parameter name=\"Tolerance\" type=\"double\" value=\"1e-12\"/></ParameterList></ParameterList></ParameterList></ParameterList>" --linear-solver-params-used-file=lowsf.aztecoo.used.xml;
+    COMM = SERIAL;
+}
+
+# Vector Backward Euler using Amesos
+(FRAMEWORK,INSTALL) {
+    TESTS = ../example/basicExample/basicExample.exe;
+    ARGS = --method=BE --maxerror=1e-1 --numelements=10 --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Amesos\"/></ParameterList>" --linear-solver-params-used-file=lowsf.amesos.used.xml;
+    COMM = SERIAL;
+}
+
+# Vector Backward Euler using AztecOO
+(FRAMEWORK,INSTALL) {
+    TESTS = ../example/basicExample/basicExample.exe;
+    ARGS = --method=BE --maxerror=1e-1 --numelements=10 --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"AztecOO\"/><ParameterList name =\"Linear Solver Types\"><ParameterList name=\"AztecOO\"><ParameterList name=\"Forward Solve\"><Parameter name=\"Tolerance\" type=\"double\" value=\"1e-12\"/></ParameterList></ParameterList></ParameterList></ParameterList>" --linear-solver-params-used-file=lowsf.aztecoo.used.xml;
+    COMM = SERIAL;
+}
+
 # Vector Forward Euler with same accuracy as ERK
 (FRAMEWORK,INSTALL) {
     TESTS = ../example/basicExample/basicExample.exe;
