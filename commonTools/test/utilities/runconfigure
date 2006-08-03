@@ -328,16 +328,24 @@ exit $exitStatus;
                 # Move aside current, broken invoke-configure.  Serialize
                 # broken invoke-configures so that all are preserved.
                 my $icBrokenNumber = "00";
-                while (stat "$buildDir/invoke-configure-broken-$icBrokenNumber") {
+                while (stat 
+                    "$buildDir/invoke-configure-broken-$icBrokenNumber") {
                     $icBrokenNumber++;
                 }
                 system("cp $buildDir/invoke-configure $buildDir/invoke-configure-broken-$icBrokenNumber") == 0
                     or die "can't copy invoke-configure, died";
             
+                # grab contents of invoke-configure for reporting purposes.
+                my $invokeConfigureString = "";              
+                open (INVOKE_CONFIGURE, "<invoke-configure");
+                undef $/;                   # undefine input record separator
+                $invokeConfigureString=<INVOKE_CONFIGURE>;  # copy entire file
+                $/ = "\n";                  # restore it to default newline
+                close INVOKE_CONFIGURE;
+            
                 # Detect broken package, remove broken package directory, and
                 # remove appropriate configure flags.
                 $brokenPackage = detectBrokenPackage($configureOutput);                                
-            
                 # grab contents of broken package's config.log
                 if ($brokenPackage ne "NONE" && $brokenPackage ne "UNKNOWN") {                
                     open (CONFIG_LOG, "<$buildDir/packages/$brokenPackage/config.log");
@@ -513,11 +521,22 @@ exit $exitStatus;
         
         my $brokenPackage;
         
-        # Find last instance of "Running PACKAGE Configure Script."  Since 
-        # configure failed, it should not have a matching "Finished Running..."
-        # string, and PACKAGE should be the broken package.
+        # Find last instance of "Running PACKAGE Configure Script."  If it 
+        # doesn't have a matching "Finished" banner, assume it's the broken 
+        # package.  If it does have a matching "Finished" banner, then check to
+        # see if there's a "configuring in" after the "Finished" banner.  If
+        # so, then the package in the "configuring in" line is the broken one.
+        # If not, we'll blame it on the one in the "Finished" banner.
         $configureOutput =~ m/.*^Running (.*?) Configure Script/ms;
         if (defined $1) { $brokenPackage = $1; }
+
+        if ($configureOutput =~ 
+            m/(Finished Running $brokenPackage Configure Script)/) {
+            if (defined $1) {
+                $configureOutput =~ m/$1.*^configure: configuring in packages\/(\w+)/ms;
+                if (defined $1) { $brokenPackage = $1; }
+            }
+        }
         
         if (defined $brokenPackage) {
             $brokenPackage =~ s/^\s*//;             # trim leading spaces
