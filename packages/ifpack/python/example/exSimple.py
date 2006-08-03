@@ -41,7 +41,7 @@ options,args = parser.parse_args()
 if options.testharness:
   import setpath
   import Epetra
-  import Triutils
+  import TriUtils
   import Galeri
   import AztecOO
   import IFPACK
@@ -49,17 +49,17 @@ else:
   try:
     import setpath
     import Epetra
-    import Triutils
+    import TriUtils
     import Galeri
     import AztecOO
     import IFPACK
   except ImportError:
     from PyTrilinos import Epetra
-    from PyTrilinos import Triutils
+    from PyTrilinos import TriUtils
     from PyTrilinos import Galeri
     from PyTrilinos import AztecOO
     from PyTrilinos import IFPACK
-    print >>sys.stderr, "Using system-installed Epetra, Triutils, Galeri, AztecOO, IFPACK"
+    print >>sys.stderr, "Using system-installed Epetra, TriUtils, Galeri, AztecOO, IFPACK"
 
 comm    = Epetra.PyComm()
 iAmRoot = comm.MyPID() == 0
@@ -85,7 +85,7 @@ def main():
     LHS.PutScalar(0.0)   # fix starting solution
     Matrix.Multiply(False, Exact, RHS) # fix rhs corresponding to Exact
   else:
-    Map, Matrix, LHS, RHS, Exact = Triutils.ReadHB(args[0], comm)
+    Map, Matrix, LHS, RHS, Exact = TriUtils.ReadHB(args[0], comm)
 
   # Creates the IFPACK preconditioner, in this case an incomplete
   # Cholesky factorization, with fill-in of 5

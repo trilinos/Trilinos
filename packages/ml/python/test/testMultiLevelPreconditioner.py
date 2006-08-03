@@ -42,28 +42,28 @@ if options.testharness:
     import setpath
     import Epetra
     import AztecOO
-    import Triutils
+    import TriUtils
     import ML
 else:
     try:
         import setpath
         import Epetra
         import AztecOO
-        import Triutils
+        import TriUtils
         import ML
     except ImportError:
         from PyTrilinos import Epetra
         from PyTrilinos import AztecOO
-        from PyTrilinos import Triutils
+        from PyTrilinos import TriUtils
         from PyTrilinos import ML
-        print >>sys.stderr, "Using installed versions of ML, Triutils, AztecOO, Epetra"
+        print >>sys.stderr, "Using installed versions of ML, TriUtils, AztecOO, Epetra"
 
 # builds the linear system matrix and sets up starting solution and
 # right-hand side
 nx = 100
 ny = 100
 Comm = Epetra.PyComm()
-Gallery = Triutils.CrsMatrixGallery("laplace_2d", Comm)
+Gallery = TriUtils.CrsMatrixGallery("laplace_2d", Comm)
 Gallery.Set("nx", nx)
 Gallery.Set("ny", ny)
 Matrix = Gallery.GetMatrix()
