@@ -84,7 +84,8 @@ public:
   
   //! Evalues jacobian
   bool
-  computeJacobian(NOX::LAPACK::Matrix& J, const NOX::LAPACK::Vector & x);
+  computeJacobian(NOX::LAPACK::Matrix<double>& J, 
+		  const NOX::LAPACK::Vector & x);
 
   //! Sets parameters
   void setParams(const LOCA::ParameterVector& p);

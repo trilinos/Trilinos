@@ -85,7 +85,7 @@ ChanProblemInterface::computeF(NOX::LAPACK::Vector& f,
 }
 
 bool
-ChanProblemInterface::computeJacobian(NOX::LAPACK::Matrix& J, 
+ChanProblemInterface::computeJacobian(NOX::LAPACK::Matrix<double>& J, 
 				     const NOX::LAPACK::Vector & x)
 {
   J(0,0) = 1.0;
