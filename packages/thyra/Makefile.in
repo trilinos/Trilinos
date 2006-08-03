@@ -461,7 +461,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/. $(distdir)/config $(distdir)/example $(distdir)/python/src $(distdir)/python/src/.deps
+	$(mkdir_p) $(distdir)/. $(distdir)/config $(distdir)/example $(distdir)/example/external $(distdir)/python/src $(distdir)/python/src/.deps
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -767,6 +767,10 @@ all-libs:
 
 libs:
 	cd $(top_builddir)/src ; $(MAKE)
+
+sample-output:
+	cd test ; ../example/generate-sample-output.pl
+	cd example/external ; make sample-makefile
 
 @USING_EXPORT_MAKEFILES_TRUE@install-exec-hook:	
 @USING_EXPORT_MAKEFILES_TRUE@	cp $(top_builddir)/Makefile.export.thyra $(exec_prefix)/include/.

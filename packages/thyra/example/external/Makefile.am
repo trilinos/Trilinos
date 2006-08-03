@@ -26,19 +26,14 @@
 # ************************************************************************
 #@HEADER
 
-EXTRA_DIST = Makefile
-
-if USING_EXPORT_MAKEFILES
+#EXTRA_DIST = Makefile.external.stub.in
 
 install-data-local:
 	$(mkinstalldirs) $(exec_prefix)/example/thyra ; \
-  $(INSTALL_DATA) $(srcdir)/../operator_vector/sillyCgSolve.hpp $(exec_prefix)/example/thyra/. ; \
-  $(INSTALL_DATA) $(srcdir)/../operator_vector/sillyCgSolve_serial.cpp $(exec_prefix)/example/thyra/. ; \
-  $(INSTALL_DATA) $(srcdir)/../operator_vector/ExampleTridiagSerialLinearOp.hpp $(exec_prefix)/example/thyra/. ; \
-  $(INSTALL_DATA) $(srcdir)/Makefile $(exec_prefix)/example/thyra/.
+	$(INSTALL_DATA) $(srcdir)/../operator_vector/sillyCgSolve.hpp $(exec_prefix)/example/thyra/. ; \
+	$(INSTALL_DATA) $(srcdir)/../operator_vector/sillyCgSolve_serial.cpp $(exec_prefix)/example/thyra/. ; \
+	$(INSTALL_DATA) $(srcdir)/../operator_vector/ExampleTridiagSerialLinearOp.hpp $(exec_prefix)/example/thyra/. ; \
+	$(INSTALL_DATA) Makefile.external.stub $(exec_prefix)/example/thyra/Makefile
 
-else
-
-install-data-local:
-
-endif
+sample-makefile:
+	cp Makefile.external.stub $(srcdir)/Makefile.external.sample

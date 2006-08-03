@@ -98,7 +98,7 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	uninstall-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = $(SUBDIRS)
+DIST_SUBDIRS = operator_vector operator_solve external
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALTERNATE_AR = @ALTERNATE_AR@
@@ -241,7 +241,8 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-SUBDIRS = operator_vector operator_solve external
+@USING_EXPORT_MAKEFILES_TRUE@EXTERNAL_MAKEFILE_EXAMPLE = external
+SUBDIRS = operator_vector operator_solve $(EXTERNAL_MAKEFILE_EXAMPLE)
 all: all-recursive
 
 .SUFFIXES:
@@ -421,7 +422,7 @@ distdir: $(DISTFILES)
 	    || exit 1; \
 	  fi; \
 	done
-	list='$(SUBDIRS)'; for subdir in $$list; do \
+	list='$(DIST_SUBDIRS)'; for subdir in $$list; do \
 	  if test "$$subdir" = .; then :; else \
 	    test -d "$(distdir)/$$subdir" \
 	    || mkdir "$(distdir)/$$subdir" \

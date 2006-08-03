@@ -1,0 +1,42 @@
+##
+## Example external makefile that shows how to compile and
+## link against an installed version of Thyra (part of Trilinos)
+##
+
+# Points to where Trilinos is installed
+TRILINOS_INSTALL_DIR = ../..
+
+# Include the makefile fragment that specifies the compile/link commands 
+include $(TRILINOS_INSTALL_DIR)/include/Makefile.export.thyra.macros
+# Include the makefile fragement that defines the include paths and libraries
+include $(TRILINOS_INSTALL_DIR)/include/Makefile.export.thyra
+
+#
+# Get the compile and link flags
+#
+
+LOCAL_CXX = $(THYRA_CXX)
+LOCAL_CXXLD = $(THYRA_CXXLD)
+LOCAL_CXFXLAGS = $(THYRA_CXXFLAGS)
+
+_LOCAL_COMPILE_FLAGS = $(THYRA_CXXFLAGS) $(THYRA_DEFS) $(THYRA_CPPFLAGS) $(THYRA_INCLUDES)
+_LOCAL_LINK_FLAGS = $(THYRA_LIBS)
+# For platforms where perl and GNUMake are used
+@USING_GNUMAKE_TRUE@LOCAL_COMPILE_FLAGS = $(shell perl $(TRILINOS_INSTALL_DIR)/include/strip_dup_incl_paths.pl $(_LOCAL_COMPILE_FLAGS))
+@USING_GNUMAKE_TRUE@LOCAL_LINK_FLAGS = $(shell perl $(TRILINOS_INSTALL_DIR)/include/strip_dup_libs.pl $(_LOCAL_LINK_LIBS))
+# For platforms where perl and/or GNUMake are not available
+@USING_GNUMAKE_FALSE@LOCAL_COMPILE_FLAGS = $(_LOCAL_COMPILE_FLAGS)
+@USING_GNUMAKE_FALSE@LOCAL_LINK_FLAGS = $(_LOCAL_LINK_FLAGS)
+
+#
+# Define the compile and link targets that use the included macros
+#
+
+sillyCgSolve_serial.exe : sillyCgSolve_serial.o
+	$(LOCAL_CXXLD) $(LOCAL_CXXFLAGS) sillyCgSolve_serial.o -o sillyCgSolve_serial.exe $(LOCAL_LINK_FLAGS)
+
+sillyCgSolve_serial.o : sillyCgSolve_serial.cpp
+	$(LOCAL_CXX) $(LOCAL_COMPILE_FLAGS) -c sillyCgSolve_serial.cpp
+
+clean:
+	rm -f *.o *.exe *~

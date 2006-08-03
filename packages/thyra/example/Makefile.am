@@ -33,7 +33,11 @@ all-local: generate-sample-output.pl
 	@echo "Trilinos package thyra subdirectory example built successfully."
 	@echo ""
 
-SUBDIRS = operator_vector operator_solve external
+if USING_EXPORT_MAKEFILES
+EXTERNAL_MAKEFILE_EXAMPLE = external
+endif
+
+SUBDIRS = operator_vector operator_solve $(EXTERNAL_MAKEFILE_EXAMPLE)
 
 generate-sample-output.pl : generate-sample-output.pl.stub
 	cp generate-sample-output.pl.stub generate-sample-output.pl

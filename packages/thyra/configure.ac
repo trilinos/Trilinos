@@ -297,6 +297,7 @@ AC_CONFIG_FILES([
     example/operator_vector/Makefile
     example/operator_solve/Makefile
     example/external/Makefile
+    example/external/Makefile.external.stub
     test/Makefile
     test/operator_vector/Makefile
     python/Makefile

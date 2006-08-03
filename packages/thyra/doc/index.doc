@@ -395,7 +395,7 @@ is created which contains an example of an external project that uses
 that builds an external version the <tt>sillyCgSolve_serial.exe</tt> program
 is shown below:
 
-\verbinclude external/Makefile
+\verbinclude external/Makefile.external.sample
 
 By using the macros starting with <tt>THYRA_</tt> one is guaranteed that the
 same compiler with the same options are used to build the client's code that

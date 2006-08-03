@@ -15,25 +15,28 @@ include $(TRILINOS_INSTALL_DIR)/include/Makefile.export.thyra
 # Get the compile and link flags
 #
 
+LOCAL_CXX = $(THYRA_CXX)
+LOCAL_CXXLD = $(THYRA_CXXLD)
+LOCAL_CXFXLAGS = $(THYRA_CXXFLAGS)
+
+_LOCAL_COMPILE_FLAGS = $(THYRA_CXXFLAGS) $(THYRA_DEFS) $(THYRA_CPPFLAGS) $(THYRA_INCLUDES)
+_LOCAL_LINK_FLAGS = $(THYRA_LIBS)
 # For platforms where perl and GNUMake are used
-#COMPILE_FLAGS = $(shell perl $(TRILINOS_INSTALL_DIR)/include/strip_dup_incl_paths.pl \
-#	$(THYRA_CXXFLAGS) $(THYRA_DEFS) $(THYRA_CPPFLAGS) $(THYRA_INCLUDES))
+LOCAL_COMPILE_FLAGS = $(shell perl $(TRILINOS_INSTALL_DIR)/include/strip_dup_incl_paths.pl $(_LOCAL_COMPILE_FLAGS))
+LOCAL_LINK_FLAGS = $(shell perl $(TRILINOS_INSTALL_DIR)/include/strip_dup_libs.pl $(_LOCAL_LINK_LIBS))
 # For platforms where perl and/or GNUMake are not available
-COMPILE_FLAGS = $(THYRA_CXXFLAGS) $(THYRA_DEFS) $(THYRA_CPPFLAGS) $(THYRA_INCLUDES)
-# For platforms where perl and GNUMake are used
-#LINK_FLAGS = $(shell perl $(TRILINOS_INSTALL_DIR)/include/strip_dup_libs.pl $(THYRA_LIBS))
-# For platforms where perl and/or GNUMake are not available
-LINK_FLAGS = $(THYRA_LIBS)
+#LOCAL_COMPILE_FLAGS = $(_LOCAL_COMPILE_FLAGS)
+#LOCAL_LINK_FLAGS = $(_LOCAL_LINK_FLAGS)
 
 #
 # Define the compile and link targets that use the included macros
 #
 
 sillyCgSolve_serial.exe : sillyCgSolve_serial.o
-	$(THYRA_CXXLD) $(THYRA_CXXFLAGS) sillyCgSolve_serial.o -o sillyCgSolve_serial.exe $(LINK_FLAGS)
+	$(LOCAL_CXXLD) $(LOCAL_CXXFLAGS) sillyCgSolve_serial.o -o sillyCgSolve_serial.exe $(LOCAL_LINK_FLAGS)
 
 sillyCgSolve_serial.o : sillyCgSolve_serial.cpp
-	$(THYRA_CXX) $(COMPILE_FLAGS) -c sillyCgSolve_serial.cpp
+	$(LOCAL_CXX) $(LOCAL_COMPILE_FLAGS) -c sillyCgSolve_serial.cpp
 
 clean:
 	rm -f *.o *.exe *~

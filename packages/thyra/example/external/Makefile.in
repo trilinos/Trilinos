@@ -41,6 +41,8 @@
 # 
 # ************************************************************************
 #@HEADER
+
+#EXTRA_DIST = Makefile.external.stub.in
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
 VPATH = @srcdir@
@@ -63,7 +65,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
 subdir = example/external
-DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
+DIST_COMMON = $(srcdir)/Makefile.am \
+	$(srcdir)/Makefile.external.stub.in $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_pkg_swig.m4 \
 	$(top_srcdir)/config/az_python.m4 \
@@ -84,7 +87,7 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Thyra_Config.h
-CONFIG_CLEAN_FILES =
+CONFIG_CLEAN_FILES = Makefile.external.stub
 SOURCES =
 DIST_SOURCES =
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -229,7 +232,6 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-EXTRA_DIST = Makefile
 all: all-am
 
 .SUFFIXES:
@@ -262,6 +264,8 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
+Makefile.external.stub: $(top_builddir)/config.status $(srcdir)/Makefile.external.stub.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 uninstall-info-am:
 tags: TAGS
 TAGS:
@@ -381,14 +385,15 @@ uninstall-am: uninstall-info-am
 	pdf-am ps ps-am uninstall uninstall-am uninstall-info-am
 
 
-@USING_EXPORT_MAKEFILES_TRUE@install-data-local:
-@USING_EXPORT_MAKEFILES_TRUE@	$(mkinstalldirs) $(exec_prefix)/example/thyra ; \
-@USING_EXPORT_MAKEFILES_TRUE@  $(INSTALL_DATA) $(srcdir)/../operator_vector/sillyCgSolve.hpp $(exec_prefix)/example/thyra/. ; \
-@USING_EXPORT_MAKEFILES_TRUE@  $(INSTALL_DATA) $(srcdir)/../operator_vector/sillyCgSolve_serial.cpp $(exec_prefix)/example/thyra/. ; \
-@USING_EXPORT_MAKEFILES_TRUE@  $(INSTALL_DATA) $(srcdir)/../operator_vector/ExampleTridiagSerialLinearOp.hpp $(exec_prefix)/example/thyra/. ; \
-@USING_EXPORT_MAKEFILES_TRUE@  $(INSTALL_DATA) $(srcdir)/Makefile $(exec_prefix)/example/thyra/.
+install-data-local:
+	$(mkinstalldirs) $(exec_prefix)/example/thyra ; \
+	$(INSTALL_DATA) $(srcdir)/../operator_vector/sillyCgSolve.hpp $(exec_prefix)/example/thyra/. ; \
+	$(INSTALL_DATA) $(srcdir)/../operator_vector/sillyCgSolve_serial.cpp $(exec_prefix)/example/thyra/. ; \
+	$(INSTALL_DATA) $(srcdir)/../operator_vector/ExampleTridiagSerialLinearOp.hpp $(exec_prefix)/example/thyra/. ; \
+	$(INSTALL_DATA) Makefile.external.stub $(exec_prefix)/example/thyra/Makefile
 
-@USING_EXPORT_MAKEFILES_FALSE@install-data-local:
+sample-makefile:
+	cp Makefile.external.stub $(srcdir)/Makefile.external.sample
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

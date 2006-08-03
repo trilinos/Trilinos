@@ -7002,7 +7002,7 @@ fi
 # Output files
 # ------------------------------------------------------------------------
 
-                                                                                                                                                                          ac_config_files="$ac_config_files Makefile Makefile.export.thyra src/Makefile example/Makefile example/generate-sample-output.pl.stub example/operator_vector/Makefile example/operator_solve/Makefile example/external/Makefile test/Makefile test/operator_vector/Makefile python/Makefile python/src/Makefile python/src/TRILINOS_HOME_DIR python/src/__init__.py python/src/.deps/dummy python/test/Makefile python/example/Makefile"
+                                                                                                                                                                                    ac_config_files="$ac_config_files Makefile Makefile.export.thyra src/Makefile example/Makefile example/generate-sample-output.pl.stub example/operator_vector/Makefile example/operator_solve/Makefile example/external/Makefile example/external/Makefile.external.stub test/Makefile test/operator_vector/Makefile python/Makefile python/src/Makefile python/src/TRILINOS_HOME_DIR python/src/__init__.py python/src/.deps/dummy python/test/Makefile python/example/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -7730,6 +7730,7 @@ do
   "example/operator_vector/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/operator_vector/Makefile" ;;
   "example/operator_solve/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/operator_solve/Makefile" ;;
   "example/external/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/external/Makefile" ;;
+  "example/external/Makefile.external.stub" ) CONFIG_FILES="$CONFIG_FILES example/external/Makefile.external.stub" ;;
   "test/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
   "test/operator_vector/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/operator_vector/Makefile" ;;
   "python/Makefile" ) CONFIG_FILES="$CONFIG_FILES python/Makefile" ;;

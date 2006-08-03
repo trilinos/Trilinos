@@ -187,6 +187,10 @@ all-libs:
 libs:
 	cd $(top_builddir)/src ; $(MAKE)
 
+sample-output:
+	cd test ; ../example/generate-sample-output.pl
+	cd example/external ; make sample-makefile
+
 if USING_EXPORT_MAKEFILES
 
 install-exec-hook:	
