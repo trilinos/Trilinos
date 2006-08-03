@@ -37,7 +37,7 @@
   \section introduction Introduction
   
   %NOX is short for <em>Nonlinear Object-Oriented Solutions</em>, and its 
-  objective is to enable the efficient solution of the equation:
+  objective is to enable the robust and efficient solution of the equation:
   \f$
   F(x)=0
   \f$,
@@ -59,16 +59,16 @@
 
   \section announcements Announcements
 
-  11/2/2005: A major refctor of the nox development version has been finished. These changes will be incorporated into the next release of Trilinos: version 7.0.  These changes include:
-
-
-  7/22/2005: IMPORTANT!  Over the next few months, NOX will be undergoing a major refactor.  Some changes that you will see in the development branch and (possibly) in the release of Trilinos 6.0 in September 2005 include:
-<ul>  
-<li> Makefile.export support.  All packages in Trilinos are switching over to supply users with Makefiles that users can include in their own projects to quikly link to NOX/LOCA.
-<li> Non-optional dependence of NOX on another Trilinos package called Teuchos. Teuchos is a very light-weight and portable utility library that supplies reference counted smart pointers and a parameter list among other things.  As a result of this dependency, we ask that from now on, you download and build nox Trilinos instead of just building the nox library separately.  This requirement is further needed since the new testing tools sit at the top Trilinos level.  As we switch to the new tools, users will need Trilinos scripts to run the nox tests.
+  What's new in release 7.0:
+<ul>
+  <li> NOX is now using reference counted smart pointers (RCPs) for memory management.  The existence of an RCP in a method call implies a persisting relationship.  We are sing the Teuchos::RefCountPtr object for the RCP.
+  <li> The NOX::Parameter::List has been removed.  We are now using the Teuchos::ParameterList object.  This has the sasme functinoality with minor changes to the syntax of method calls.
+  <li> NOX now has a non-optional dependency on the Teuchos package (also part of Trilinos).  While it can be built stand-alone, we recomend building NOX as part of Trilinos with the teuchos library enabled to simplify dependencies.
+  <li> NOX now generates Makefiles that users can include in their application's makefiles.  This will get all library dependencies correct.
 <li> Multivector support will be not be an option, but will be a permanent part of the library.
-<li> Build options will change.  please run "configure --help" to see the new options.  
+  <li> Build options will change.  please run "configure --help" to see the new options.  
 </ul>
+
 
 8/29/2005:  There currently is a portability issue with %LOCA to the Solaris platform using the Sun Forte 7 compilers.  %LOCA builds on this platform but does not run correctly.  It appears the problem is compiler related as the virtual table for some %LOCA objects is not setup correctly.  All of the %LOCA examples and any %LOCA tests involving continuation runs fail with a segmentation fault.  It is not known whether %LOCA runs correctly when built with version 10 of the Sun compilers.  See bugzilla bug <a href="http://software.sandia.gov/bugzilla/show_bug.cgi?id=1238"> 1238 </a> for more information on this issue.
 
