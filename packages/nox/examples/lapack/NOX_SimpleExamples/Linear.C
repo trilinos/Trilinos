@@ -234,7 +234,7 @@ public:
     }
 
     int info;
-    NOX::LAPACK::Matrix Acopy(A);
+    NOX::LAPACK::Matrix<double> Acopy(A);
     vector<int> ipiv(n,0);
     solution = b;
     DGESV_F77(&n, &NOX::LAPACK::i_one, &Acopy(0,0), &n, &ipiv[0], &solution(0), &n, &info);
@@ -271,7 +271,8 @@ public:
   };
   
   // Derived
-  bool computeJacobian(NOX::LAPACK::Matrix& J, const NOX::LAPACK::Vector& x)
+  bool computeJacobian(NOX::LAPACK::Matrix<double>& J, 
+		       const NOX::LAPACK::Vector& x)
   {
     J = A;
     return true;
@@ -284,7 +285,7 @@ private:
   //! Correct solution
   NOX::LAPACK::Vector solution;
   //! Matrix for linear problem
-  NOX::LAPACK::Matrix A;
+  NOX::LAPACK::Matrix<double> A;
   //! RHS for linear problem
   NOX::LAPACK::Vector b;
 

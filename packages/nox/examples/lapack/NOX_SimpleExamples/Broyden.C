@@ -115,7 +115,8 @@ public:
     return true;
   };
   
-  bool computeJacobian(NOX::LAPACK::Matrix& J, const NOX::LAPACK::Vector & x)
+  bool computeJacobian(NOX::LAPACK::Matrix<double>& J, 
+		       const NOX::LAPACK::Vector & x)
   {
     double fn;
     double dfndxn;

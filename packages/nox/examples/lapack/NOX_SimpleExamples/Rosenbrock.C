@@ -121,7 +121,8 @@ public:
     return true;
   };
   
-  bool computeJacobian(NOX::LAPACK::Matrix& J, const NOX::LAPACK::Vector & x)
+  bool computeJacobian(NOX::LAPACK::Matrix<double>& J, 
+		       const NOX::LAPACK::Vector & x)
   {
     J(0,0) = -20 * x(0);
     J(0,1) = 10;
