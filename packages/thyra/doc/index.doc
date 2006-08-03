@@ -454,14 +454,14 @@ order, are:
 <li> Roscoe Bartlett (rabartl@sandia.gov): %Thyra lead developer, MOOCHO lead developer
 <li> Paul Boggs (ptboggs@sandia.gov) : Split/O3D lead developer, %Thyra developer
 <li> Todd Coffey (tscoffe@sandia.gov) : Rythmos lead developer, %Thyra developer
-<li> Michael Heroux (maherou@sandia.gov): Trilinos leader, %Thyra developer
+<li> Michael Heroux (maherou@sandia.gov): Trilinos leader, Epetra and AztecOO lead developer, %Thyra developer
 <li> Rob Hoekstra (rjhoeks@sandia.gov) : %EpetraExt lead developer
 <li> Victoria Howle (vehowle@sandia.gov) : %Meros lead developer, %Thyra developer
 <li> Kevin Long (krlong@sandia.gov) : %Sundance lead developer, %Thyra developer
 <li> Roger Pawlowski (rppawlo@sandia.gov) : %NOX lead developer
 <li> Eric Phipps (etphipp@sandia.gov) : %LOCA lead developer, %Thyra developer
 <li> Bill Spotz (wfspotz@sanida.gov) : %PyTrilinos Lead developer, %Thyra/Python adapter developer
-<li> Heidi Thornquist (hkthorn@sandia.gov): %Belos lead developer, %Thyra developer
+<li> Heidi Thornquist (hkthorn@sandia.gov): %Belos and Anasazi lead developer, %Thyra developer
 <li> Allan Williams (william@sandia.gov) : %FEI lead developer, %Thyra developer
 </ul>
 
@@ -471,28 +471,50 @@ Below is a partial list of software related to Thyra.
 
 <ul>
 
-<li><b><a href="../../../epetra/thyra/doc/html/index.html">ANA Operator/Vector
-Adapters for Epetra</a></b>: This software allows the creation of
-<tt>Thyra::VectorSpaceBase</tt>, <tt>Thyra::VectorBase</tt>,
+<li><b><a href="../../../epetra/thyra/doc/html/index.html">Thyra ANA
+Operator/Vector Adapters for Epetra</a></b>: This software allows the creation
+of <tt>Thyra::VectorSpaceBase</tt>, <tt>Thyra::VectorBase</tt>,
 <tt>Thyra::MultiVectorBase</tt>, and <tt>Thyra::LinearOpBase</tt> objects out
 of Epetra objects.
 
-<li><b><a href="../../../amesos/thyra/doc/html/index.html">ANA Linear Solver
-Adapters for Amesos</a></b>: This software defines the implementation of the
-extended interfaces <tt>Thyra::LinearOpWithSolveBase</tt> and
+<li><b><a href="../../../epetraext/thyra/doc/html/index.html">Various Thyra
+Adapters for EpetraExt</a></b>: Included here are adapters and interfaces that
+allow a perspective nonlinear application to specify everything needed to
+define a wide range of nonlinear problems in terms by subclassing an
+Epetra-based version of the <tt>Thyra::ModelEvaluator</tt> interface (called
+<tt>EpetraExt::ModelEvaluator</tt>).  Also included is an example that solves
+a set of nonlinear equations using a Newton method.
+
+<li><b><a href="../../../amesos/thyra/doc/html/index.html">Thyra ANA Linear
+Solver Adapters for Amesos</a></b>: This software defines the implementation
+of the extended interfaces <tt>Thyra::LinearOpWithSolveBase</tt> and
 <tt>Thyra::LinearOpWithSolveFactoryBase</tt> in terms of
 <tt>Amesos_BaseSolver</tt> implementations.  These adapters allow a client to
 take any <tt>Epetra_RowMatrix</tt> object embedded in a
 <tt>Thyra::EpetraLinearOp</tt> object and immediately use to to define a
 direct linear solver.
 
-<li><b><a href="../../../aztecoo/thyra/doc/html/index.html">ANA Linear Solver
-Adapters for AztecOO</a></b>: This software defines the implementation of the
-extended interfaces <tt>Thyra::LinearOpWithSolveBase</tt> and
+<li><b><a href="../../../aztecoo/thyra/doc/html/index.html">Thyra ANA Linear
+Solver Adapters for AztecOO</a></b>: This software defines the implementation
+of the extended interfaces <tt>Thyra::LinearOpWithSolveBase</tt> and
 <tt>Thyra::LinearOpWithSolveFactoryBase</tt> in terms of the <tt>AztecOO</tt>
 class.  These adapters allow a client to take any <tt>Epetra_RowMatrix</tt>
 object embedded in a <tt>Thyra::EpetraLinearOp</tt> object and immediately use
 to to define an iterative linear solver such as GMRES and CG.
+
+<li><b><a href="../../../stratimikos/doc/html/index.html">Stratimikos: Unified
+Wrappers for Thyra Linear Solver and Preconditioner Adapters</a></b>:
+Stratimikos contains neatly packaged access to all of the Thyra linear solver
+and preconditioner wrappers.  Currently, these allow the creation of linear
+solvers for nearly any <tt>Epetra_RowMatrix</tt> object.  However, the Belos
+implementation allows for the arbitrary implemention of the linear operators
+and vector spaces.
+
+<li><b><a href="../../../moocho/thyra/doc/html/index.html">MOOCHO/Thyra:
+Adapters that take Thyra Nonlinear Model Evaluator objects and express them as
+simulation-constrained optimization problems</a></b>: These adapters allow an
+application to access the nonlinear, simulation-constrained optimiztion
+algorithms in MOOCHO through the Thyra::ModelEvaluator interface.
 
 </ul>
 

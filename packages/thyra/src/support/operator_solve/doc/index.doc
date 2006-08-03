@@ -77,6 +77,14 @@ class.  These adapters allow a client to take any <tt>Epetra_RowMatrix</tt>
 object embedded in a <tt>Thyra::EpetraLinearOp</tt> object and immediately use
 to to define an iterative linear solver such as GMRES or CG.
 
+<li><b><a href="../../../../../../stratimikos/doc/html/index.html">Stratimikos: Unified
+Wrappers for Thyra Linear Solver and Preconditioner Adapters</a></b>:
+Stratimikos contains neatly packaged access to all of the Thyra linear solver
+and preconditioner wrappers.  Currently, these allow the creation of linear
+solvers for nearly any <tt>Epetra_RowMatrix</tt> object.  However, the Belos
+implementation allows for the arbitrary implemention of the linear operators
+and vector spaces.
+
 </ul>
 
 */
