@@ -3,7 +3,7 @@
 // @HEADER
 // ***********************************************************************
 //
-//            PyTrilinos.Epetra: Python Interface to Epetra
+//          PyTrilinos.TriUtils: Python Interface to TriUtils
 //                 Copyright (2005) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -28,7 +28,7 @@
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos") Triutils
+%module(package="PyTrilinos") TriUtils
 
 %{
 // System includes
@@ -60,7 +60,8 @@
 %ignore *::operator<<;
 
 // Rename directives
-%rename Trilinos_Util_ReadHb2Epetra ReadHB;
+%rename (Triutils_Version)            Version;
+%rename (Trilinos_Util_ReadHb2Epetra) ReadHB;
 
 // Typemap directives
 %typemap(argout) (Epetra_Map       *& OutMap,

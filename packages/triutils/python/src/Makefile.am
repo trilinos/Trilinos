@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 # 
-#            PyTrilinos.Triutils: Python Interface to Triutils
+#            PyTrilinos.TriUtils: Python Interface to TriUtils
 #                   Copyright (2005) Sandia Corporation
 # 
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive

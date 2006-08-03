@@ -3,7 +3,7 @@
 # @HEADER
 # ************************************************************************
 #
-#         PyTrilinos.Triutils: Python Interface to Triutils
+#            PyTrilinos.TriUtils: Python Interface to TriUtils
 #                   Copyright (2005) Sandia Corporation
 #
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -47,24 +47,24 @@ parser.add_option("-v", "--verbosity", type="int", dest="verbosity", default=2,
 options,args = parser.parse_args()
 if options.testharness:
     import setpath
-    import Epetra, Triutils
+    import Epetra, TriUtils
 else:
     try:
         import setpath
-        import Epetra, Triutils
+        import Epetra, TriUtils
     except ImportError:
-        from PyTrilinos import Epetra, Triutils
-        print >>sys.stderr, "Using system-installed Epetra, Triutils"
+        from PyTrilinos import Epetra, TriUtils
+        print >>sys.stderr, "Using system-installed Epetra, TriUtils"
 
 ####################################################################
 
-class TriutilsTestCase(unittest.TestCase):
-    "TestCase class for Triutils module"
+class TriUtilsTestCase(unittest.TestCase):
+    "TestCase class for TriUtils module"
 
     def setUp(self):
         self.comm    = Epetra.PyComm()
         self.numProc = self.comm.NumProc()
-        self.gallery = Triutils.CrsMatrixGallery("laplace_2d",self.comm)
+        self.gallery = TriUtils.CrsMatrixGallery("laplace_2d",self.comm)
         self.gallery.Set("nx",10*self.numProc)
         self.gallery.Set("ny",10*self.numProc)
         self.comm.Barrier()
@@ -74,13 +74,13 @@ class TriutilsTestCase(unittest.TestCase):
         self.comm.Barrier()
 
     def testVersion(self):
-        "Test Triutils Triutils_Version function"
+        "Test TriUtils Version function"
         front   = "Triutils Version "
-        version = Triutils.Triutils_Version()
+        version = TriUtils.Version()
         self.assertEquals(version[:len(front)], front)
 
     def testGetRHS(self):
-        "Test Triutils.CrsMatrixGallery GetRHS method"
+        "Test TriUtils.CrsMatrixGallery GetRHS method"
         rhs = self.gallery.GetRHS()
         # This is the result if swig version < 1.3.28
         if hasattr(Epetra,'NumPyMultiVectorPtr'):
@@ -97,7 +97,7 @@ if __name__ == "__main__":
     suite = unittest.TestSuite()
 
     # Add the test cases to the test suite
-    suite.addTest(unittest.makeSuite(TriutilsTestCase))
+    suite.addTest(unittest.makeSuite(TriUtilsTestCase))
 
     # Create a communicator
     comm    = Epetra.PyComm()
@@ -105,7 +105,7 @@ if __name__ == "__main__":
 
     # Run the test suite
     if iAmRoot: print >>sys.stderr, \
-       "\n*******************\nTesting Triutils\n*******************\n"
+       "\n*******************\nTesting TriUtils\n*******************\n"
     verbosity = options.verbosity * int(iAmRoot)
     result = unittest.TextTestRunner(verbosity=verbosity).run(suite)
 
