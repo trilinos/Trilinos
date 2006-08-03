@@ -325,7 +325,7 @@ namespace Anasazi {
     }
 
     //! Get the maximum dimension allocated for the search subspace. For %BlockKrylovSchur, this always returns numBlocks*blockSize.
-    int getMaxSubspaceDim() {return _blockSize*_numBlocks;}
+    int getMaxSubspaceDim() {return _blockSize*_numBlocks+1;}
 
 
     /*! \brief Set the auxiliary vectors for the solver.
@@ -468,8 +468,6 @@ namespace Anasazi {
     // NOTE: 0 <= _curDim <= _blockSize*_numBlocks
     // this also tells us how many of the values in _theta are valid Ritz values
     int _curDim;
-    // _ritzDim is the dimension of the basis when the Ritz vectors were last updated.
-    int _ritzDim;
     //
     // State Multivecs
     Teuchos::RefCountPtr<MV> _ritzVectors, _V;
@@ -543,7 +541,6 @@ namespace Anasazi {
     _stepSize(0),
     _initialized(false),
     _curDim(0),
-    _ritzDim(0),
     _auxVecs( Teuchos::Array<Teuchos::RefCountPtr<const MV> >(0) ), 
     _numAuxVecs(0),
     _iter(0),
@@ -628,12 +625,12 @@ namespace Anasazi {
     _R2norms.resize(_blockSize,MT_ONE);
     //
     // clone multivectors off of tmp
-    _ritzVectors = MVT::Clone(*tmp,_blockSize);
+    _ritzVectors = MVT::Clone(*tmp,_blockSize+1);
 
     //////////////////////////////////
     // blockSize*numBlocks dependent
     //
-    int newsd = _blockSize*_numBlocks;
+    int newsd = _blockSize*_numBlocks+1;
     _ritzValues.resize(2*newsd,MT_ZERO);
     _ritzResiduals.resize(newsd,MT_ONE);
     _ritzOrder.resize(newsd);
@@ -781,21 +778,21 @@ namespace Anasazi {
                           std::logic_error, errstr );
       TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*state.V) < _blockSize,
                           std::logic_error, errstr );
-      TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*state.V) > _blockSize*_numBlocks,
+      TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*state.V) > _blockSize*_numBlocks+1,
                           std::logic_error, errstr );
 
       _curDim = state.curDim;
+      int lclDim = MVT::GetNumberVecs(*state.V);
+
       // pick an integral amount
       //_curDim = (int)(_curDim / _blockSize)*_blockSize;
 
-      // this test is equivalent to _curDim == 0, but makes for more helpful output
-      TEST_FOR_EXCEPTION( _curDim < _blockSize, BlockKrylovSchurInitFailure, "Anasazi::BlockKrylovSchur::initialize(): user-specified V must be >= blockSize.");
       // check size of H
       TEST_FOR_EXCEPTION(state.H->numRows() < _curDim || state.H->numCols() < _curDim, std::logic_error, errstr);
-
+      
       // create index vector to copy over current basis vectors
-      std::vector<int> nevind(_curDim);
-      for (int i=0; i<_curDim; i++) nevind[i] = i;
+      std::vector<int> nevind(lclDim);
+      for (int i=0; i<lclDim; i++) nevind[i] = i;
 
       // copy basis vectors from the state into V
       MVT::SetBlock(*state.V,nevind,*_V);
@@ -815,7 +812,8 @@ namespace Anasazi {
 
       _initialized = true;
 
-      if (_om->isVerbosity( Debug ) ) {
+      if ( 1 ) {
+	//if (_om->isVerbosity( Debug ) ) {
         // Check almost everything here
         CheckList chk;
         chk.checkV = true;
@@ -879,30 +877,34 @@ namespace Anasazi {
 
       // alloc newV
       Teuchos::RefCountPtr<MV> newV = MVT::CloneView(*_V,bsind);
-      
+
+      // alloc newH
+      _H->putScalar( ST_ZERO );
+      Teuchos::RefCountPtr< Teuchos::SerialDenseMatrix<int,ScalarType> > newH =
+	Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::View, *_H, _curDim, _curDim ) );
+
       // remove auxVecs from newV and normalize newV
       if (_auxVecs.size() > 0) {
         Teuchos::TimeMonitor lcltimer( *_timerOrtho );
-
+	
         Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > dummy;
         int rank = _orthman->projectAndNormalize(*newV,dummy,Teuchos::null,_auxVecs);
-        TEST_FOR_EXCEPTION(rank != lclDim,BlockKrylovSchurInitFailure,
-                           "Anasazi::BlockKrylovSchur::initialize(): Couldn't generate initial basis of full rank.");
+        TEST_FOR_EXCEPTION( rank != lclDim,BlockKrylovSchurInitFailure,
+			    "Anasazi::BlockKrylovSchur::initialize(): Couldn't generate initial basis of full rank." );
       }
       else {
         Teuchos::TimeMonitor lcltimer( *_timerOrtho );
 
         int rank = _orthman->normalize(*newV,Teuchos::null);
-        TEST_FOR_EXCEPTION(rank != lclDim,BlockKrylovSchurInitFailure,
-                           "Anasazi::BlockKrylovSchur::initialize(): Couldn't generate initial basis of full rank.");
+        TEST_FOR_EXCEPTION( rank != lclDim,BlockKrylovSchurInitFailure,
+			    "Anasazi::BlockKrylovSchur::initialize(): Couldn't generate initial basis of full rank." );
       }
 
       // call myself recursively
-      /*
       BlockKrylovSchurState<ScalarType,MV> newstate;
       newstate.V = newV;
+      newstate.H = newH;
       initialize(newstate);
-      */
     }
   }
 
@@ -1054,6 +1056,8 @@ namespace Anasazi {
   //
   // checkArn: check the Arnoldi factorization
   //
+  // NOTE:  This method needs to check the current dimension of the subspace, since it is possible to
+  //        call this method when _curDim = 0 (after initialization).
   template <class ScalarType, class MV, class OP>
   std::string BlockKrylovSchur<ScalarType,MV,OP>::accuracyCheck( const CheckList &chk, const string &where ) const 
   {
@@ -1065,54 +1069,63 @@ namespace Anasazi {
     os << " Debugging checks: iteration " << _iter << where << endl;
 
     // index vectors for V and F
-    int tmpDim = _curDim-_blockSize;
-    std::vector<int> lclind(tmpDim);
-    for (int i=0; i<tmpDim; i++) lclind[i] = i;
+    std::vector<int> lclind(_curDim);
+    for (int i=0; i<_curDim; i++) lclind[i] = i;
     std::vector<int> bsind(_blockSize);
-    for (int i=0; i<_blockSize; i++) { bsind[i] = tmpDim + i; }
+    for (int i=0; i<_blockSize; i++) { bsind[i] = _curDim + i; }
     
     Teuchos::RefCountPtr<MV> lclV,lclF,lclAV;
-    lclV = MVT::CloneView(*_V,lclind);
+    if (_curDim)
+      lclV = MVT::CloneView(*_V,lclind);
     lclF = MVT::CloneView(*_V,bsind);
 
     if (chk.checkV) {
-      tmp = _orthman->orthonormError(*lclV);
-      os << " >> Error in V^H M V == I  : " << tmp << endl;
+      if (_curDim) {
+	tmp = _orthman->orthonormError(*lclV);
+	os << " >> Error in V^H M V == I  : " << tmp << endl;
+      }
       tmp = _orthman->orthonormError(*lclF);
       os << " >> Error in F^H M F == I  : " << tmp << endl;
-      tmp = _orthman->orthogError(*lclV,*lclF);
-      os << " >> Error in V^H M F == 0  : " << tmp << endl;
+      if (_curDim) {
+	tmp = _orthman->orthogError(*lclV,*lclF);
+	os << " >> Error in V^H M F == 0  : " << tmp << endl;
+      }
       for (unsigned int i=0; i<_auxVecs.size(); i++) {
-        tmp = _orthman->orthogError(*lclV,*_auxVecs[i]);
-        os << " >> Error in V^H M Aux[" << i << "] == 0 : " << tmp << endl;
+	if (_curDim) {
+	  tmp = _orthman->orthogError(*lclV,*_auxVecs[i]);
+	  os << " >> Error in V^H M Aux[" << i << "] == 0 : " << tmp << endl;
+	}
         tmp = _orthman->orthogError(*lclF,*_auxVecs[i]);
         os << " >> Error in F^H M Aux[" << i << "] == 0 : " << tmp << endl;
       }
     }
     
     if (chk.checkArn) {
-      // Compute AV      
-      Teuchos::RefCountPtr<MV> lclAV = MVT::Clone(*_V,tmpDim);
-      {
-        Teuchos::TimeMonitor lcltimer( *_timerOp );
-	OPT::Apply(*_Op,*lclV,*lclAV);
-      }
 
-      // Compute AV - VH
-      Teuchos::SerialDenseMatrix<int,ScalarType> subH(Teuchos::View,*_H,tmpDim,tmpDim);
-      MVT::MvTimesMatAddMv( -ST_ONE, *lclV, subH, ST_ONE, *lclAV );
-      
-      // Compute FE_k^T - (AV-VH)
-      for (int i=0; i<_blockSize; i++) { bsind[i] = tmpDim - _blockSize + i; }
-      Teuchos::RefCountPtr<MV> curF = MVT::CloneView( *lclAV, bsind );
-      MVT::MvAddMv( -ST_ONE, *lclF, ST_ONE, *curF, *curF );
-      
-      // Compute || FE_k^T - (AV-VH) ||
-      std::vector<MagnitudeType> arnNorms( tmpDim );
-      MVT::MvNorm( *lclAV, &arnNorms );
-
-      for (int i=0; i<tmpDim; i++) {	
+      if (_curDim) {
+	// Compute AV      
+	Teuchos::RefCountPtr<MV> lclAV = MVT::Clone(*_V,_curDim);
+	{
+	  Teuchos::TimeMonitor lcltimer( *_timerOp );
+	  OPT::Apply(*_Op,*lclV,*lclAV);
+	}
+	
+	// Compute AV - VH
+	Teuchos::SerialDenseMatrix<int,ScalarType> subH(Teuchos::View,*_H,_curDim,_curDim);
+	MVT::MvTimesMatAddMv( -ST_ONE, *lclV, subH, ST_ONE, *lclAV );
+	
+	// Compute FE_k^T - (AV-VH)
+	for (int i=0; i<_blockSize; i++) { bsind[i] = _curDim + i; }
+	Teuchos::RefCountPtr<MV> curF = MVT::CloneView( *lclAV, bsind );
+	MVT::MvAddMv( -ST_ONE, *lclF, ST_ONE, *curF, *curF );
+	
+	// Compute || FE_k^T - (AV-VH) ||
+	std::vector<MagnitudeType> arnNorms( _curDim );
+	MVT::MvNorm( *lclAV, &arnNorms );
+	
+	for (int i=0; i<_curDim; i++) {	
 	os << " >> Error in Arnoldi relation [" << i << "]  : " << arnNorms[i] << endl;
+	}
       }
     }
 

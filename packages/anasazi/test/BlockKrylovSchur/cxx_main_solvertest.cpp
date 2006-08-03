@@ -75,13 +75,24 @@ void checks( RefCountPtr<BlockKrylovSchur<ScalarType,MV,OP> > solver, int blocks
              RefCountPtr<MatOrthoManager<ScalarType,MV,OP> > ortho,
              ModalSolverUtils<ScalarType,MV,OP> &msutils) {
   BlockKrylovSchurState<ScalarType,MV> state = solver->getState();
-  
-  TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.V)  != solver->getMaxSubspaceDim(),get_out,"getMaxSubspaceDim() does not match allocated size for V");
-  TEST_FOR_EXCEPTION(state.T->size() != (unsigned int)solver->getMaxSubspaceDim(),get_out,"getMaxSubspaceDim() does not match returned size of ritz values");
+	
+  // Remember that block Krylov-Schur needs to keep an extra vector for F, 
+  // the next block of the factorization (AV=VH+FB^T).
+  TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.V)-solver->getBlockSize() != solver->getMaxSubspaceDim(),get_out,"getMaxSubspaceDim() does not match allocated size for V");
+
+  // Remember that block Krylov-Schur is a non-Hermitian eigensolver storing Ritz vectors in a vector of
+  // magnitude type, so it may need to be twice as long as the dimension of the subpace.
+  TEST_FOR_EXCEPTION(state.T->size() != 2*(unsigned int)solver->getMaxSubspaceDim(),get_out,"getMaxSubspaceDim() does not match returned size of Ritz values");
+
   TEST_FOR_EXCEPTION(solver->getBlockSize() != blocksize, get_out,"Solver block size does not match specified block size.");  
+
   TEST_FOR_EXCEPTION(&solver->getProblem() != problem.get(),get_out,"getProblem() did not return the submitted problem.");
-  TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*(solver->getRitzVectors())) != blocksize, get_out,"getRitzVectors() is not of size blocksize.");
-  TEST_FOR_EXCEPTION(solver->getMaxSubspaceDim() != blocksize*numblocks+1,get_out,"BlockKrylovSchur::getMaxSubspaceDim() should always be 3*blocksize");
+
+  // Remember that block Krylov-Schur is a non-Hermitian eigensolver, so we may need to keep an extra
+  // Ritz vector if there is a complex conjugate pair at the end of the block.
+  TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*(solver->getRitzVectors())) != blocksize+1, get_out,"getRitzVectors() is not of size blocksize plus one.");
+
+  TEST_FOR_EXCEPTION(solver->getMaxSubspaceDim() != blocksize*numblocks+1,get_out,"BlockKrylovSchur::getMaxSubspaceDim() should always be one vector more than the blocksize times the number of blocks");
 
   if (solver->isInitialized()) 
   {
@@ -141,6 +152,7 @@ void testsolver( RefCountPtr<BasicEigenproblem<ScalarType,MV,OP> > problem,
 {
   // create a status tester
   RefCountPtr< StatusTest<ScalarType,MV,OP> > tester = rcp( new StatusTestMaxIters<ScalarType,MV,OP>(1) );
+
   // create the solver
   RefCountPtr< BlockKrylovSchur<ScalarType,MV,OP> > solver = rcp( new BlockKrylovSchur<ScalarType,MV,OP>(problem,sorter,printer,tester,ortho,pls) );
 
@@ -160,7 +172,7 @@ void testsolver( RefCountPtr<BasicEigenproblem<ScalarType,MV,OP> > problem,
   TEST_FOR_EXCEPTION(solver->isInitialized() != true,get_out,"Solver should be initialized after call to initialize().");  
   TEST_FOR_EXCEPTION(solver->getNumIters() != 0,get_out,"Number of iterations should be zero.")
   TEST_FOR_EXCEPTION(solver->getAuxVecs().size() != 0,get_out,"getAuxVecs() should return empty.");
-  TEST_FOR_EXCEPTION(solver->getCurSubspaceDim() != blocksize,get_out,"after init, getCurSubspaceDim() should be blocksize.");
+  TEST_FOR_EXCEPTION(solver->getCurSubspaceDim() != 0,get_out,"after init, getCurSubspaceDim() should be zero, only the kernel was generated.");
   checks(solver,blocksize,numblocks,problem,ortho,msutils);
 
   // call iterate(); solver should perform exactly one iteration and return; status test should be passed
@@ -169,7 +181,7 @@ void testsolver( RefCountPtr<BasicEigenproblem<ScalarType,MV,OP> > problem,
   TEST_FOR_EXCEPTION(solver->isInitialized() != true,get_out,"Solver should be initialized after call to initialize().");  
   TEST_FOR_EXCEPTION(solver->getNumIters() != 1,get_out,"Number of iterations should be zero.")
   TEST_FOR_EXCEPTION(solver->getAuxVecs().size() != 0,get_out,"getAuxVecs() should return empty.");
-  TEST_FOR_EXCEPTION(solver->getCurSubspaceDim() != 2*blocksize,get_out,"after one step, getCurSubspaceDim() should be 2*blocksize.");
+  TEST_FOR_EXCEPTION(solver->getCurSubspaceDim() != blocksize,get_out,"after one step, getCurSubspaceDim() should be blocksize.");
   checks(solver,blocksize,numblocks,problem,ortho,msutils);
 
   // reset numiters, call iterate(); solver should perform exactly one iteration and return; status test should be passed
@@ -180,7 +192,7 @@ void testsolver( RefCountPtr<BasicEigenproblem<ScalarType,MV,OP> > problem,
   TEST_FOR_EXCEPTION(solver->isInitialized() != true,get_out,"Solver should be initialized after call to initialize().");  
   TEST_FOR_EXCEPTION(solver->getNumIters() != 1,get_out,"Number of iterations should be zero.")
   TEST_FOR_EXCEPTION(solver->getAuxVecs().size() != 0,get_out,"getAuxVecs() should return empty.");
-  TEST_FOR_EXCEPTION(solver->getCurSubspaceDim() != 3*blocksize,get_out,"after two steps, getCurSubspaceDim() should be 3*blocksize.");
+  TEST_FOR_EXCEPTION(solver->getCurSubspaceDim() != 2*blocksize,get_out,"after two steps, getCurSubspaceDim() should be 2*blocksize.");
   checks(solver,blocksize,numblocks,problem,ortho,msutils);
 }
 
@@ -273,6 +285,7 @@ int main(int argc, char *argv[])
 
     pls.set<int>("Block Size",nev);
     pls.set<int>("Num Blocks",3);
+    pls.set<int>("Step Size", 1);
     if (verbose) {
       printer->stream(Errors) << "Testing solver(nev,3) with standard eigenproblem..." << endl;
     }
