@@ -47,8 +47,7 @@ LOCA::BorderedSolver::LAPACKDirectSolve::LAPACKDirectSolve(
   A(),
   B(),
   C(),
-  augmentedJ(),
-  pivots(),
+  augmentedSolver(),
   n(0),
   m(0),
   N(0),
@@ -115,7 +114,7 @@ LOCA::BorderedSolver::LAPACKDirectSolve::setMatrixBlocks(
 				    "Blocks A and C cannot both be zero");
 
   // Get the Jacobian matrix and size
-  const NOX::LAPACK::Matrix& J = grp->getJacobianMatrix();
+  const NOX::LAPACK::Matrix<double>& J = grp->getJacobianMatrix();
   n = J.numRows();
 
   // Get the number of additional rows/columns
@@ -127,26 +126,29 @@ LOCA::BorderedSolver::LAPACKDirectSolve::setMatrixBlocks(
   // Form a new (n+m) x (n+m) matrix if this is a new size
   if (n+m != N) {
     N = n+m;
-    augmentedJ = Teuchos::rcp(new NOX::LAPACK::Matrix(N,N));
-    pivots.resize(N);
+    augmentedSolver = Teuchos::rcp(new NOX::LAPACK::LinearSolver<double>(N));
   }
+  else {
+    augmentedSolver->reset();
+  }
+  NOX::LAPACK::Matrix<double>& augmentedJ = augmentedSolver->getMatrix();
 
   // Copy Jacobian
   for (int j=0; j<n; j++)
     for (int i=0; i<n; i++)
-      (*augmentedJ)(i,j) = J(i,j);
+      augmentedJ(i,j) = J(i,j);
 
   // Copy A
   if (isZeroA) {
     for (int j=0; j<m; j++) 
       for (int i=0; i<n; i++)
-	(*augmentedJ)(i,j+n) = 0.0;
+	augmentedJ(i,j+n) = 0.0;
   }
   else {
     for (int j=0; j<m; j++) {
       v = dynamic_cast<const NOX::LAPACK::Vector*>(&(*A)[j]);
       for (int i=0; i<n; i++)
-	(*augmentedJ)(i,j+n) = (*v)(i);
+	augmentedJ(i,j+n) = (*v)(i);
     }
   }
 
@@ -154,14 +156,14 @@ LOCA::BorderedSolver::LAPACKDirectSolve::setMatrixBlocks(
   if (isZeroB) {
     for (int i=0; i<m; i++) 
       for (int j=0; j<n; j++)
-	(*augmentedJ)(i+n,j) = 0.0;
+	augmentedJ(i+n,j) = 0.0;
   }
   else {
     BV = B->getDX();
     for (int i=0; i<m; i++) {
       v = dynamic_cast<const NOX::LAPACK::Vector*>(&(*BV)[i]);
       for (int j=0; j<n; j++)
-	(*augmentedJ)(i+n,j) = (*v)(j);
+	augmentedJ(i+n,j) = (*v)(j);
     }
   }
 
@@ -169,22 +171,13 @@ LOCA::BorderedSolver::LAPACKDirectSolve::setMatrixBlocks(
   if (isZeroC) {
     for (int j=0; j<m; j++)
       for (int i=0; i<m; i++)
-	(*augmentedJ)(i+n,j+n) = 0.0;
+	augmentedJ(i+n,j+n) = 0.0;
   }
   else {
     for (int j=0; j<m; j++)
       for (int i=0; i<m; i++)
-	(*augmentedJ)(i+n,j+n) = (*C)(i,j);
+	augmentedJ(i+n,j+n) = (*C)(i,j);
   }
-
-  // Factor augmented Jacobian
-  int info;
-  Teuchos::LAPACK<int,double> dlapack;
-  dlapack.GETRF(N, N, &(*augmentedJ)(0,0), N, &pivots[0], &info);
-  if (info != 0)
-    globalData->locaErrorCheck->throwError(
-		 callingFunction,
-		 "Factorization of augmented Jacobian matrix failed!");
 }
 
 NOX::Abstract::Group::ReturnType 
@@ -293,7 +286,7 @@ LOCA::BorderedSolver::LAPACKDirectSolve::applyInverse(
     numColsRHS = G->numCols();
     
   // Concatenate F & G into a single matrix
-  NOX::LAPACK::Matrix RHS(N,numColsRHS);
+  NOX::LAPACK::Matrix<double> RHS(N,numColsRHS);
   if (isZeroF) {
     for (int j=0; j<numColsRHS; j++)
       for (int i=0; i<n; i++)
@@ -318,10 +311,7 @@ LOCA::BorderedSolver::LAPACKDirectSolve::applyInverse(
   }
 
   // Solve for LHS
-  int info;
-  Teuchos::LAPACK<int,double> dlapack;
-  dlapack.GETRS('N', N, numColsRHS, &(*augmentedJ)(0,0), N, &pivots[0],
-		&RHS(0,0), N, &info);
+  bool res = augmentedSolver->solve(false, numColsRHS, &RHS(0,0));
 
   // Copy result into X and Y
   for (int j=0; j<numColsRHS; j++) {
@@ -332,7 +322,7 @@ LOCA::BorderedSolver::LAPACKDirectSolve::applyInverse(
       Y(i,j) = RHS(n+i,j);
   }
 
-  if (info != 0)
+  if (!res)
     return NOX::Abstract::Group::Failed;
   else
     return NOX::Abstract::Group::Ok;
@@ -367,7 +357,7 @@ LOCA::BorderedSolver::LAPACKDirectSolve::applyInverseTranspose(
     numColsRHS = G->numCols();
     
   // Concatenate F & G into a single matrix
-  NOX::LAPACK::Matrix RHS(N,numColsRHS);
+  NOX::LAPACK::Matrix<double> RHS(N,numColsRHS);
   if (isZeroF) {
     for (int j=0; j<numColsRHS; j++)
       for (int i=0; i<n; i++)
@@ -392,10 +382,7 @@ LOCA::BorderedSolver::LAPACKDirectSolve::applyInverseTranspose(
   }
 
   // Solve for LHS
-  int info;
-  Teuchos::LAPACK<int,double> dlapack;
-  dlapack.GETRS('T', N, numColsRHS, &(*augmentedJ)(0,0), N, &pivots[0],
-		&RHS(0,0), N, &info);
+  bool res = augmentedSolver->solve(true, numColsRHS, &RHS(0,0));
 
   // Copy result into X and Y
   for (int j=0; j<numColsRHS; j++) {
@@ -406,7 +393,7 @@ LOCA::BorderedSolver::LAPACKDirectSolve::applyInverseTranspose(
       Y(i,j) = RHS(n+i,j);
   }
 
-  if (info != 0)
+  if (!res)
     return NOX::Abstract::Group::Failed;
   else
     return NOX::Abstract::Group::Ok;

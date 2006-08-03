@@ -76,7 +76,7 @@ LOCA::Eigensolver::DGGEVStrategy::computeEigenvalues(
   LOCA::LAPACK::Group* grp = 
     dynamic_cast<LOCA::LAPACK::Group*>(&group);
 
-  bool hasMassMatrix = grp->hasMass();
+  bool hasMassMatrix = true;
  
   // Check to make sure we have dggev available if we need generalized 
   // eigenvalues.
@@ -107,11 +107,11 @@ LOCA::Eigensolver::DGGEVStrategy::computeEigenvalues(
   // Make sure Jacobian & mass matrices are fresh
   grp->computeJacobian();
   if (hasMassMatrix) 
-    grp->computeMassMatrix();
+    grp->computeShiftedMatrix(0.0, 1.0);
 
   // Get data out of group
-  NOX::LAPACK::Matrix& jacobianMatrix = grp->getJacobianMatrix();
-  NOX::LAPACK::Matrix& massMatrix = grp->getMassMatrix();
+  NOX::LAPACK::Matrix<double>& jacobianMatrix = grp->getJacobianMatrix();
+  NOX::LAPACK::Matrix<double>& massMatrix = grp->getShiftedMatrix();
   
   // Size of matrix
   int n = jacobianMatrix.numRows();
@@ -139,9 +139,9 @@ LOCA::Eigensolver::DGGEVStrategy::computeEigenvalues(
   int info;
 
   // Copy Jacobian matrix since lapack routines overwrite it
-  NOX::LAPACK::Matrix J(jacobianMatrix);
+  NOX::LAPACK::Matrix<double> J(jacobianMatrix);
 
-  NOX::LAPACK::Matrix M;
+  NOX::LAPACK::Matrix<double> M;
 
   // First do a workspace query
   if (hasMassMatrix) {
@@ -195,19 +195,25 @@ LOCA::Eigensolver::DGGEVStrategy::computeEigenvalues(
   for (int j=0; j<n; j++) {
     
     // Compute eigenvalues
-    evals_r_tmp[j] = alphar[j];
-    if (hasMassMatrix)
+    if (hasMassMatrix) {
+      evals_r_tmp[j] = alphar[j]/beta[j];
       evals_i_tmp[j] = alphai[j]/beta[j];
-    else
+    }
+    else {
+      evals_r_tmp[j] = alphar[j];
       evals_i_tmp[j] = alphai[j];
+    }
 
     // Compute next eigenvalue
     if (!isPrevComplexEval && j < n-1) {
-      rnext = alphar[j+1];
-      if (hasMassMatrix)
+      if (hasMassMatrix) {
+	rnext = alphar[j+1]/beta[j+1];
 	inext = alphai[j+1]/beta[j+1];
-      else
+      }
+      else {
+	rnext = alphar[j+1];
 	inext = alphai[j+1];
+      }
       
       // Determine if this eigenvalue is a complex conjugate pair
       if (fabs(evals_r_tmp[j] - rnext) < 1.0e-14*fabs(1.0+evals_r_tmp[j]) &&

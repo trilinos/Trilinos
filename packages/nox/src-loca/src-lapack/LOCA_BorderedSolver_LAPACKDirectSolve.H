@@ -34,7 +34,7 @@
 #define LOCA_BORDEREDSOLVER_LAPACKDIRECTSOLVE_H
 
 #include "LOCA_BorderedSolver_AbstractStrategy.H"  // base class
-#include "NOX_LAPACK_Matrix.H"                     // class data element
+#include "NOX_LAPACK_LinearSolver.H"                     // class data element
 
 // forward declarations
 namespace LOCA {
@@ -240,11 +240,8 @@ namespace LOCA {
       //! Pointer to C block
       Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix> C;
 
-      //! The augmented Jacobian matrix
-      Teuchos::RefCountPtr<NOX::LAPACK::Matrix> augmentedJ;
-
-      //! Pivots used when factoring augmented Jacobian
-      vector<int> pivots;
+      //! The augmented Jacobian matrix solver
+      Teuchos::RefCountPtr< NOX::LAPACK::LinearSolver<double> > augmentedSolver;
 
       //! Jacobian dimension
       int n;

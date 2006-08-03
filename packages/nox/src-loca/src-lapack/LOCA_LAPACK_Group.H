@@ -73,10 +73,7 @@ namespace LOCA {
       This group has several constructors supplying different information.
       All require a LOCA::LAPACK::Interface object to link to the 
       application code.  Set hasMassMat to true if the system has a mass matrix
-      (only relevant for eigenvalue and Hopf calculations).  Pass a 
-      parameter list to change the algorithm used for singular Jacobian
-      matrix solves (see LOCA::Bifurcation::TPBord::SingularSolveGroup,
-      only relevant for turning point and pitchfork calculations).  Finally,
+      (only relevant for eigenvalue and Hopf calculations).  Finally,
       separate used and allocated row/column dimensions can be specified.  
       This functionality exists primarily to link with Fortran codes which
       preallocate all arrays to a fixed size but only use a portion of that
@@ -91,30 +88,8 @@ namespace LOCA {
     public:
 
       //! Constructor 
-      /*!
-       * Set hasMassMat to true if the system has a mass matrix
-       * (Only relevant for eigenvalue and Hopf calculations).
-       */
       Group(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	    LOCA::LAPACK::Interface& i, bool hasMassMat = false);
-
-      //! Constructor with parameter list 
-      /*!
-       * Pass a parameter for singular matrix solves. (see 
-       * LOCA::Bifurcation::TPBord::SingularSolveGroup)
-       */
-      Group(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	    Teuchos::ParameterList& params,
-	    LOCA::LAPACK::Interface& i, bool hasMassMat = false);
-
-      //! Constructor with used and allocated dimensions of matrices
-      Group(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	    LOCA::LAPACK::Interface& i, int m, int n, bool hasMassMat = false);
-
-      //! Constructor with parameter list and with used, allocated dims
-      Group(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	    Teuchos::ParameterList& params,
-	    LOCA::LAPACK::Interface& i, int m, int n, bool hasMassMat = false);
+	    LOCA::LAPACK::Interface& i);
 
       //! Copy constructor
       Group(const LOCA::LAPACK::Group& source, 
@@ -251,43 +226,70 @@ namespace LOCA {
        */
       //@{
 
-      //! Compute the mass matrix of the system
+      //! Compute the shifted matrix
       virtual NOX::Abstract::Group::ReturnType
-      computeMassMatrix();
+      computeShiftedMatrix(double alpha, double beta);
 
-      //! Multiply the mass matrix by a vector
+      //! Multiply the shifted matrix by a vector.
       virtual NOX::Abstract::Group::ReturnType
-      applyMassMatrix(const NOX::Abstract::Vector& input,
-		      NOX::Abstract::Vector& result) const;
+      applyShiftedMatrix(const NOX::Abstract::Vector& input,
+			 NOX::Abstract::Vector& result) const;
 
-      //! Returns true if mass matrix is valid
-      virtual bool isMassMatrix() const;
+      //! Multiply the shifted matrix by a multi-vector.
+      virtual NOX::Abstract::Group::ReturnType
+      applyShiftedMatrixMultiVector(
+				const NOX::Abstract::MultiVector& input,
+				NOX::Abstract::MultiVector& result) const;
+      
+      /*! 
+       * \brief Apply the inverse of the shifted matrix by a multi-vector, as 
+       * needed by the shift-and-invert and generalized Cayley transformations.
+       */
+      virtual NOX::Abstract::Group::ReturnType
+      applyShiftedMatrixInverseMultiVector(
+			        Teuchos::ParameterList& params, 
+				const NOX::Abstract::MultiVector& input,
+				NOX::Abstract::MultiVector& result) const;
 
       //@}
 
       /*! 
-       * @name Implementation of LOCA::Bifurcation::HopfBord::AbstractGroup virtual methods.
+       * @name Implementation of LOCA::Hopf::MooreSpence::AbstractGroup virtual methods.
        */
       //@{
 
+      //! Is  \f$J+i\omega B\f$ valid
+      virtual bool isComplex() const;
+
+      //! Compute \f$J+i\omega B\f$
+      /*!
+       * The argument \b frequency stores \f$\omega\f$.
+       */
+      virtual NOX::Abstract::Group::ReturnType
+      computeComplex(double frequency);
+
+      //! Compute \f$(J+i\omega B)(y+iz)\f$
+      virtual NOX::Abstract::Group::ReturnType
+      applyComplex(const NOX::Abstract::Vector& input_real,
+		   const NOX::Abstract::Vector& input_imag,
+		   NOX::Abstract::Vector& result_real,
+		   NOX::Abstract::Vector& result_imag) const;
+
+      //! Compute \f$(J+i\omega B)(y+iz)\f$
+      virtual NOX::Abstract::Group::ReturnType
+      applyComplexMultiVector(const NOX::Abstract::MultiVector& input_real,
+			      const NOX::Abstract::MultiVector& input_imag,
+			      NOX::Abstract::MultiVector& result_real,
+			      NOX::Abstract::MultiVector& result_imag) const;
+
       //! Solve \f$(J+i\omega B)(y+iz) = a+ib\f$
       virtual NOX::Abstract::Group::ReturnType
-      applyComplexInverse(Teuchos::ParameterList& params,
-			  const NOX::Abstract::Vector& input_real,
-			  const NOX::Abstract::Vector& input_imag,
-			  double frequency,
-			  NOX::Abstract::Vector& result_real,
-			  NOX::Abstract::Vector& result_imag) const;
-
-      //! applyComplexInverse for multiple right-hand-sides
-      virtual NOX::Abstract::Group::ReturnType
-      applyComplexInverseMulti(Teuchos::ParameterList& params,
-			       const NOX::Abstract::Vector* const* inputs_real,
-			       const NOX::Abstract::Vector* const* inputs_imag,
-			       double frequency,
-			       NOX::Abstract::Vector** results_real,
-			       NOX::Abstract::Vector** results_imag,
-			       int nVecs) const;
+      applyComplexInverseMultiVector(
+			    Teuchos::ParameterList& params,
+			    const NOX::Abstract::MultiVector& input_real,
+			    const NOX::Abstract::MultiVector& input_imag,
+			    NOX::Abstract::MultiVector& result_real,
+			    NOX::Abstract::MultiVector& result_imag) const;
 
       //@}
 
@@ -304,36 +306,24 @@ namespace LOCA {
 
       //@}
 
-      //! Print out a vector and a parameter
-      void printSolution(const NOX::LAPACK::Vector& x_, 
-			 const double conParam) const;
-
-      //! %LAPACK interface to applyMassMatrix
-      virtual NOX::Abstract::Group::ReturnType
-      applyMassMatrix(const NOX::LAPACK::Vector& input,
-		      NOX::LAPACK::Vector& result) const;
-      
-      //! Returns true if system has a mass matrix
-      bool hasMass() const;
-
       //! Return reference to Jacobian matrix
-      NOX::LAPACK::Matrix& getJacobianMatrix() {
-	return jacobianMatrix;
+      NOX::LAPACK::Matrix<double>& getJacobianMatrix() {
+	return jacSolver.getMatrix();
       }
 
       //! Return reference to Jacobian matrix
-      const NOX::LAPACK::Matrix& getJacobianMatrix() const {
-	return jacobianMatrix;
+      const NOX::LAPACK::Matrix<double>& getJacobianMatrix() const {
+	return jacSolver.getMatrix();
       }
 
-      //! Return reference to mass matrix
-      NOX::LAPACK::Matrix& getMassMatrix() {
-	return massMatrix;
+      //! Return reference to shifted matrix
+      NOX::LAPACK::Matrix<double>& getShiftedMatrix() {
+	return shiftedSolver.getMatrix();
       }
 
-      //! Return reference to mass matrix
-      const NOX::LAPACK::Matrix& getMassMatrix() const {
-	return massMatrix;
+      //! Return reference to shifted matrix
+      const NOX::LAPACK::Matrix<double>& getShiftedMatrix() const {
+	return shiftedSolver.getMatrix();
       }
 
     protected:
@@ -342,20 +332,27 @@ namespace LOCA {
       void resetIsValid();
 
     protected:
+
+      //! LOCA Global data object
+      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+
       //! Referece to current problem
       LOCA::LAPACK::Interface& locaProblemInterface;
 
       //! vector of parameters
       ParameterVector params;
 
-      //! Mass matrix
-      NOX::LAPACK::Matrix massMatrix;
+      //! Shifted matrix (alpha*J+beta*M)
+      mutable NOX::LAPACK::LinearSolver<double> shiftedSolver;
 
-      //! Flag indicating whether we have a mass matrix
-      bool hasMassMatrix;
+      //! Frequency for Hopf calculations
+      double freq;
 
-      //! Flag indicating whether mass matrix is valid
-      bool isValidMass;
+      //! Flag indicating whether complex matrix is valid
+      bool isValidComplex;
+
+      //! Complex matrix
+      mutable NOX::LAPACK::LinearSolver< std::complex<double> > complexSolver;
       
     };
 

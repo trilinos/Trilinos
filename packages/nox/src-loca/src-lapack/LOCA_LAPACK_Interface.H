@@ -34,6 +34,7 @@
 #define LOCA_LAPACK_INTERFACE_H
 
 #include "NOX_LAPACK_Vector.H"
+#include "NOX_LAPACK_Matrix.H"
 #include "NOX_LAPACK_Interface.H"
 
 // Forward declarations
@@ -69,9 +70,33 @@ namespace LOCA {
       virtual void printSolution(const NOX::LAPACK::Vector& x_,
                                  const double conParam) {}
 
-      //! Compute mass matrix.  Returns true if computation was successful.
-      virtual bool computeMass(NOX::LAPACK::Matrix& M, 
-			       const NOX::LAPACK::Vector & x) { return false; }
+      /*!
+       * \brief Compute shifted matrix alpha*J + beta*M where J is the 
+       * Jacobian matrix and M is the mass matrix.  Returns true if 
+       * computation was successful.
+       */
+      /*!
+       * The default implementation assumes the mass matrix is the 
+       * identity matrix.
+       */
+      virtual bool computeShiftedMatrix(
+				   double alpha, double beta,
+				   const NOX::LAPACK::Vector& x,
+				   NOX::LAPACK::Matrix<double>& A) 
+      { 
+	bool res = true;
+	if (alpha != 0.0) {
+	  res = computeJacobian(A, x);
+	  A.scale(alpha);
+	}
+	else
+	  A.scale(0.0);
+	if (beta != 0.0)
+	  for (int i=0; i<A.numRows(); i++)
+	    if (i < A.numCols())
+	      A(i,i) += beta;
+	return res;
+      }
 
       //! Projects solution to a few scalars for multiparameter continuation
       /*! Default implementation is the max norm 
