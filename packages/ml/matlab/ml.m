@@ -60,7 +60,7 @@ elseif(nargin>=2 && strcmp(varargin{1},'setup'))
   out=mlmex(0,varargin{2:nargin});
 elseif(nargin>=3 && isnumeric(varargin{1}) && issparse(varargin{2}))
   % Solve mode
-  if(size(varargin{2},1)~=length(varargin{3}), fprintf('ML: Error size mismatch between A + B\n');out=0;
+  if(size(varargin{2},1)~=length(varargin{3})), fprintf('ML: Error size mismatch between A + B\n');out=0;
   else out=mlmex(1,varargin{:}); end
 else
   fprintf('ML: Error! Invalid input, mode unspecified or insufficient parameters\n');
