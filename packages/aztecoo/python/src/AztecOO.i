@@ -61,9 +61,9 @@ defined as a 5-pt Laplacian on a 2D Cartesian grid. The problem has size
 Cholesky preconditioner. This example can be used in serial and parallel
 environments, depending on how Trilinos was configured.
 
-from PyTrilinos import Epetra, AztecOO, Triutils
+from PyTrilinos import Epetra, AztecOO, TriUtils
 Comm = Epetra.PyComm()
-Gallery = Triutils.CrsMatrixGallery(\"laplace_2d\", Comm)
+Gallery = TriUtils.CrsMatrixGallery(\"laplace_2d\", Comm)
 Gallery.Set(\"problem_size\", 100 * 100)
 Matrix = Gallery.GetMatrix()
 LHS = Gallery.GetStartingSolution()
