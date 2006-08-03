@@ -65,7 +65,7 @@ PitchforkProblemInterface::computeF(NOX::LAPACK::Vector& f,
 }
 
 bool
-PitchforkProblemInterface::computeJacobian(NOX::LAPACK::Matrix& J, 
+PitchforkProblemInterface::computeJacobian(NOX::LAPACK::Matrix<double>& J, 
 					   const NOX::LAPACK::Vector & x)
 {
   double h = 2.0 / static_cast<double>(n-1);
