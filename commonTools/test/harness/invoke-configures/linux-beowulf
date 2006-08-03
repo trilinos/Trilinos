@@ -59,4 +59,5 @@ FFLAGS=-O3 \
 --enable-tsfextended \
 --enable-moocho \
 --enable-stratimikos \
+--enable-webtrilinos \
 --with-gnumake
