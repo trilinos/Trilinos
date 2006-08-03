@@ -53,14 +53,14 @@ ConvDiff_PDE::ConvDiff_PDE(
             int NumGlobalUnknowns_       ,
             string name_                   ) :
   GenericEpetraProblem(Comm_, NumGlobalUnknowns_, name_),
-  peclet        (peclet_    )   ,
-  radiation     (radiation_ )   ,
-  kappa         (kappa_     )   ,
-  bcWeight      (bcWeight_  )   ,
   xmin          (xmin_      )   ,
   xmax          (xmax_      )   ,
   Tleft         (Tleft_     )   ,
   Tright        (Tright_    )   ,
+  peclet        (peclet_    )   ,
+  radiation     (radiation_ )   ,
+  kappa         (kappa_     )   ,
+  bcWeight      (bcWeight_  )   ,
   depProbPtr    (NULL       )
 {
   // Create mesh and solution vectors
@@ -228,7 +228,6 @@ ConvDiff_PDE::initializeSolution(double val)
 {
   // Aliases for convenience
   Epetra_Vector& soln = *initialSolution;
-  Epetra_Vector& x = *xptr;
 
   soln.PutScalar(val);
   
@@ -291,7 +290,7 @@ ConvDiff_PDE::evaluate(
   if (MyPID==0) OverlapMinMyNodeGID = StandardMap->MinMyGID();
   else OverlapMinMyNodeGID = StandardMap->MinMyGID()-1;
 
-  int row, column;
+  int row;
 
   double * xx    = new double[2];
   double * uu    = new double[2]; 
@@ -451,7 +450,7 @@ ConvDiff_PDE::computeHeatFlux( const Epetra_Vector * soln )
     u.Import(*soln, *Importer, Insert);
 
   // Declare required variables
-  int row, column;
+  int row;
   double * xx = new double[2];
   double * uu = new double[2]; 
   double * uuold = new double[2];
@@ -617,8 +616,6 @@ void
 ConvDiff_PDE::doTransfer()
 {
   
-  cout << "ConvDiff_PDE::doTransfer called." << endl;
-
   depProbPtr->computeHeatFlux();
 
   return;

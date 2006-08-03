@@ -43,15 +43,41 @@ EXEEXT = .exe
 
 if BUILD_EPETRA_TESTS
 if BUILD_EPETRA_MULTIPHYSICS
-noinst_PROGRAMS = example
+noinst_PROGRAMS = example_hmx example_brusselator example_yeckel
 endif
 endif
 
-example_SOURCES = $(srcdir)/Example.C \
+example_hmx_SOURCES = $(srcdir)/Example_HMX.C \
+	$(srcdir)/HMX_PDE.C $(srcdir)/HMX_PDE.H \
+	$(srcdir)/Basis.C $(srcdir)/Basis.H \
+	$(srcdir)/GenericEpetraProblem.C $(srcdir)/GenericEpetraProblem.H \
+	$(srcdir)/Problem_Interface.C $(srcdir)/Problem_Interface.H \
+	$(srcdir)/Problem_Manager.C $(srcdir)/Problem_Manager.H \
+	$(srcdir)/OffBlock_Manager.C $(srcdir)/OffBlock_Manager.H \
+	$(srcdir)/Xfer_Operator.C $(srcdir)/Xfer_Operator.H
+
+example_hmx_DEPENDENCIES = $(top_builddir)/src/libnox.a \
+        $(top_builddir)/src-epetra/libnoxepetra.a
+
+example_hmx_LDADD = $(TEST_LIBS)
+
+example_brusselator_SOURCES = $(srcdir)/Example_Brusselator.C \
 	$(srcdir)/Equation_A.C $(srcdir)/Equation_A.H \
 	$(srcdir)/Equation_B.C $(srcdir)/Equation_B.H \
 	$(srcdir)/Burgers.C $(srcdir)/Burgers.H \
-	$(srcdir)/HMX_PDE.C $(srcdir)/HMX_PDE.H \
+	$(srcdir)/Basis.C $(srcdir)/Basis.H \
+	$(srcdir)/GenericEpetraProblem.C $(srcdir)/GenericEpetraProblem.H \
+	$(srcdir)/Problem_Interface.C $(srcdir)/Problem_Interface.H \
+	$(srcdir)/Problem_Manager.C $(srcdir)/Problem_Manager.H \
+	$(srcdir)/OffBlock_Manager.C $(srcdir)/OffBlock_Manager.H \
+	$(srcdir)/Xfer_Operator.C $(srcdir)/Xfer_Operator.H
+
+example_brusselator_DEPENDENCIES = $(top_builddir)/src/libnox.a \
+        $(top_builddir)/src-epetra/libnoxepetra.a
+
+example_brusselator_LDADD = $(TEST_LIBS)
+
+example_yeckel_SOURCES = $(srcdir)/Example_Yeckel2006.C \
 	$(srcdir)/ConvDiff_PDE.C $(srcdir)/ConvDiff_PDE.H \
 	$(srcdir)/Basis.C $(srcdir)/Basis.H \
 	$(srcdir)/GenericEpetraProblem.C $(srcdir)/GenericEpetraProblem.H \
@@ -60,7 +86,7 @@ example_SOURCES = $(srcdir)/Example.C \
 	$(srcdir)/OffBlock_Manager.C $(srcdir)/OffBlock_Manager.H \
 	$(srcdir)/Xfer_Operator.C $(srcdir)/Xfer_Operator.H
 
-example_DEPENDENCIES = $(top_builddir)/src/libnox.a \
+example_yeckel_DEPENDENCIES = $(top_builddir)/src/libnox.a \
         $(top_builddir)/src-epetra/libnoxepetra.a
 
-example_LDADD = $(TEST_LIBS)
+example_yeckel_LDADD = $(TEST_LIBS)
