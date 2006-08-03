@@ -31,12 +31,12 @@
    it's MATLAB front-end ml.m.
 
    By: Chris Siefert <csiefer@sandia.gov>
-   Initial Version 05/16/2006
-   Teuchos-friendly version 05/22/2006
+   Version History
+   05/16/2006 - Initial Version 
+   05/22/2006 - Teuchos-friendly version 
+   08/03/2006 - Added functionality to allow ML to have multiple systems ready
+                to be solved at once.  This entailed adding the system handle stuff.
 */
-
-   
-
 
 #include <stdio.h>
 #include <string.h>
@@ -68,6 +68,9 @@ extern void _main();
 #define FLOOR(x) ((int)(x))
 #define ISINT(x) (((x-(int)(x))<1e-15*(x))?true:false)
 
+#define IS_FALSE 0
+#define IS_TRUE  1
+
 /* Mode Info */
 typedef enum {MODE_SETUP=0, MODE_SOLVE, MODE_CLEANUP} MODE_TYPE;
 
@@ -85,12 +88,16 @@ typedef enum {MODE_SETUP=0, MODE_SOLVE, MODE_CLEANUP} MODE_TYPE;
 /**************************************************************/
 /**************************************************************/
 /* The big struct of data */
+struct MLAPI_DATA_PACK;
 struct MLAPI_DATA_PACK{
+  int id;
   Space * FineSpace;
   DistributedMatrix * A;
   Teuchos::ParameterList *List;
   MultiLevelAdaptiveSA *Prec;  
+  struct MLAPI_DATA_PACK *next;
 };
+
 
 /**************************************************************/
 /**************************************************************/
@@ -118,7 +125,6 @@ void csc_print(int n,int *rowind,int* colptr, double* vals){
    colptr  - Column indices of matrix (CSC format) [I]
    vals    - Nonzero values of matrix (CSC format) [I]
 */
-
 void mlapi_data_pack_setup(MLAPI_DATA_PACK *D,int N,int* rowind,int* colptr, double* vals){
 
   int i,j;
@@ -137,8 +143,8 @@ void mlapi_data_pack_setup(MLAPI_DATA_PACK *D,int N,int* rowind,int* colptr, dou
   D->A->FillComplete();
 
   /* Pull key options from Teuchos */
-  int numpdes=D->List->get("mlmex: numpdes",MLMEX_DEFAULT_NUMPDES);
-  int cutoff=D->List->get("mlmex: levels",MLMEX_DEFAULT_LEVELS);
+  int numpdes=D->List->get("PDE equations",MLMEX_DEFAULT_NUMPDES);
+  int cutoff=D->List->get("max levels",MLMEX_DEFAULT_LEVELS);
   int adaptivevecs=D->List->get("additional candidates",MLMEX_DEFAULT_ADAPTIVEVECS);
   bool UseDefaultNullSpace=D->List->get("use default null space", MLMEX_DEFAULT_USEDEFAULTNS);
 
@@ -166,6 +172,122 @@ void mlapi_data_pack_cleanup(MLAPI_DATA_PACK *D){
 }/*end mlapi_data_pack_cleanup*/
 
 
+/**************************************************************/
+/**************************************************************/
+/**************************************************************/
+/* MLAPI data pack list */
+class mlapi_data_pack_list;
+class mlapi_data_pack_list{
+public:
+  mlapi_data_pack_list();
+  ~mlapi_data_pack_list();
+
+  /* add - Adds an MLAPI_DATA_PACK to the list.
+     Parameters:
+     D       - The MLAPI_DATA_PACK. [I]
+     Returns: problem id number of D
+  */
+  int add(struct MLAPI_DATA_PACK *D);
+
+  /* find - Finds problem by id
+     Parameters:
+     id      - ID number [I]
+     Returns: pointer to MLAPI_DATA_PACK matching 'id', if found, NULL if not
+     found.
+  */
+  struct MLAPI_DATA_PACK* find(int id);
+
+  /* remove - Removes problem by id
+     Parameters:
+     id      - ID number [I]
+     Returns: IS_TRUE if remove was succesful, IS_FALSE otherwise
+  */
+  int remove(int id);
+
+  /* size - Number of stored problems
+     Returns: num_probs
+  */
+  int size();  
+  
+protected:
+  int num_probs;
+  /* Note: This list is sorted */
+  struct MLAPI_DATA_PACK *L;
+};
+
+
+mlapi_data_pack_list::mlapi_data_pack_list():num_probs(0),L(NULL){}
+mlapi_data_pack_list::~mlapi_data_pack_list(){
+  struct MLAPI_DATA_PACK *old;
+  while(L!=NULL){
+    old=L;
+    mlapi_data_pack_cleanup(L);L=L->next;
+    delete old;
+  }/*end while*/
+}/*end destructor*/
+
+/* add - Adds an MLAPI_DATA_PACK to the list.
+   Parameters:
+   D       - The MLAPI_DATA_PACK. [I]
+   Returns: problem id number of D
+*/
+int mlapi_data_pack_list::add(struct MLAPI_DATA_PACK *D){
+  int idx_prev=0;
+  struct MLAPI_DATA_PACK *iprev, *icurr;
+  
+  if(!L){L=D;D->next=NULL;D->id=1;}
+  else {
+    /* Find the first numbering gap + add in D appropriately */
+    for(iprev=NULL,icurr=L; icurr && icurr->id-idx_prev==1; iprev=icurr,idx_prev=iprev->id,icurr=icurr->next);
+    if(!iprev) L=D;
+    else iprev->next=D;
+    D->id=idx_prev+1;
+    D->next=icurr;
+    num_probs++;
+  }/*end if*/  
+  return D->id;
+}/*end add*/
+
+
+/* find - Finds problem by id
+   Parameters:
+   id      - ID number [I]
+   Returns: pointer to MLAPI_DATA_PACK matching 'id', if found, NULL if not
+   found.
+*/
+struct MLAPI_DATA_PACK*  mlapi_data_pack_list::find(int id){
+  struct MLAPI_DATA_PACK *rv;
+  for(rv=L;rv && rv->id<id;rv=rv->next);
+  if(rv && rv->id==id) return rv;
+  else return NULL;  
+}/*end find*/
+
+
+/* remove - Removes problem by id
+   Parameters:
+   id      - ID number [I]
+   Returns: IS_TRUE if remove was succesful, IS_FALSE otherwise
+*/
+int mlapi_data_pack_list::remove(int id){
+  struct MLAPI_DATA_PACK *iprev, *icurr;
+  if(!L) return IS_FALSE;
+  for(iprev=NULL,icurr=L; icurr && icurr->id<id; iprev=icurr,icurr=icurr->next);
+
+  if(!icurr || icurr->id!=id) return IS_FALSE;
+  else{
+    if(!iprev) L=icurr->next;
+    else iprev->next=icurr->next;
+    mlapi_data_pack_cleanup(icurr);
+    free(icurr);
+    return IS_TRUE;
+  }/*end else*/    
+}/*end remove*/
+
+
+/* size - Number of stored problems
+   Returns: num_probs
+*/
+int mlapi_data_pack_list::size(){return num_probs;}
 /**************************************************************/
 /**************************************************************/
 /**************************************************************/
@@ -235,11 +357,11 @@ MODE_TYPE sanity_check(int nrhs, const mxArray *prhs[]){
     else mexErrMsgTxt("Error: Invalid input for setup\n");    
     break;
   case MODE_SOLVE:
-    if(nrhs>2&&mxIsSparse(prhs[1])&&mxIsNumeric(prhs[2])) rv=MODE_SOLVE;
+    if(nrhs>3&&mxIsNumeric(prhs[1])&&mxIsSparse(prhs[2])&&mxIsNumeric(prhs[3])) rv=MODE_SOLVE;
     else mexErrMsgTxt("Error: Invalid input for solve\n");
     break;
   case MODE_CLEANUP:
-    if(nrhs==1) rv=MODE_CLEANUP;
+    if(nrhs==1 || nrhs==2) rv=MODE_CLEANUP;
     else mexErrMsgTxt("Error: Extraneous args for cleanup\n");
     break;
   default:
@@ -328,15 +450,19 @@ Teuchos::ParameterList* build_teuchos_list(int nrhs,const mxArray *prhs[]){
     case mxUINT16_CLASS:
     case mxINT32_CLASS:
     case mxUINT32_CLASS:
-    case mxINT64_CLASS:
-    case mxUINT64_CLASS:
+
 #ifdef VERBOSE_OUTPUT
       mexPrintf("[%s] Int Found!\n",option_name);
 #endif
       int *opt_int=(int*)mxGetData(prhs[i+1]);
       if(M==1 && N==1) TPL->set(option_name, opt_int[0]);      
       else TPL->set(option_name, opt_int);      
-      break;      
+      break;
+      // NTS: 64-bit ints will break on a 32-bit machine.  We
+      // should probably detect machine type, or somthing, but that would
+      // involve a non-trivial quantity of autoconf kung fu.
+    case mxINT64_CLASS:
+    case mxUINT64_CLASS:      
     case mxFUNCTION_CLASS:
     case mxUNKNOWN_CLASS:
     case mxCELL_CLASS:
@@ -360,60 +486,38 @@ Teuchos::ParameterList* build_teuchos_list(int nrhs,const mxArray *prhs[]){
 /**************************************************************/
 /**************************************************************/
 /* Calling syntax is done correctly by ml.m, please use that.
-   The first rhs arguement is always the program mode.  The other args are the
+   The first rhs argument is always the program mode.  The other args are the
    ml.m parameter list in order (barring the mode arg).
 */
 
 /* mexFunction is the gateway routine for the MEX-file. */
 void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] ){
-  int *rowind,*colptr;
+  int i,*id,sz,rv,*rowind,*colptr;
   double *b, *x, *vals,*opts_array;
-  int nr, nc,no,iters,numpdes,cutoff,solver,adaptivevecs,ssweeps;
+  int nr, nc,no;
   bool UseDefaultNullSpace;
   double tol,agg_thresh;
   Teuchos::ParameterList* SolveOpts;
   mxClassID outclass;
   MODE_TYPE mode;
-  static MLAPI_DATA_PACK *D;
+  static mlapi_data_pack_list* PROBS=NULL;
+  MLAPI_DATA_PACK *D=NULL;
   
   /* Sanity Check Input */
   mode=sanity_check(nrhs,prhs);
   
   switch(mode){
   case MODE_SETUP:
+    if(!PROBS) PROBS=new mlapi_data_pack_list;
     D=new MLAPI_DATA_PACK;
 
     /* Pull Problem Size */
     nr=mxGetM(prhs[1]);
     nc=mxGetN(prhs[1]);
 
-    if(nrhs>2 && mxIsChar(prhs[2]))
-      /* Teuchos List*/
-      D->List=build_teuchos_list(nrhs-2,&(prhs[2]));
-    else{
-      numpdes=MLMEX_DEFAULT_NUMPDES;
-      cutoff=MLMEX_DEFAULT_LEVELS;
-      adaptivevecs=MLMEX_DEFAULT_ADAPTIVEVECS;
-      UseDefaultNullSpace=MLMEX_DEFAULT_USEDEFAULTNS;
-      agg_thresh=0;
-      ssweeps=3;
-      /* Old-School Options List */
-      if(nrhs==3 && mxIsNumeric(prhs[2])) {
-        opts_array=mxGetPr(prhs[2]);
-        no=MAX(mxGetM(prhs[2]),mxGetN(prhs[2]));
-        numpdes=(int)opts_array[0];
-        if(no>1) cutoff=(int)opts_array[1];
-        if(no>2) adaptivevecs=(int)opts_array[2];
-        if(no>3) agg_thresh=opts_array[3];
-        if(no>4) ssweeps=(int)opts_array[4];
-      }
-      /* Build the teuchos list from old school / default */
-      D->List=new Teuchos::ParameterList;
-      D->List->set("additional candidates", adaptivevecs);
-      D->List->set("smoother: sweeps",ssweeps);
-      D->List->set("use default null space", UseDefaultNullSpace);
-      D->List->set("aggregation: threshold", agg_thresh);
-    }/*end else*/
+    /* Teuchos List*/
+    if(nrhs>2) D->List=build_teuchos_list(nrhs-2,&(prhs[2]));
+    else D->List=new Teuchos::ParameterList;
     
     /* Pull Matrix - CSC Format */
     vals=mxGetPr(prhs[1]);
@@ -422,42 +526,38 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] ){
 
     /* Construct the Heirarchy */
     mlapi_data_pack_setup(D,nr,rowind,colptr,vals);
+
+    /* Add this problem to the list */
+    rv=PROBS->add(D);
+
+    /* Set return value */
+    plhs[0]=mxCreateNumericMatrix(1,1,mxINT32_CLASS,mxREAL);
+    id=(int*)mxGetData(plhs[0]);id[0]=rv;
     
     /* Lock so we can keep the memory for the heirarchy */
     mexLock();
     break;
 
   case MODE_SOLVE:
+    /* Are there problems set up? */
+    if(!PROBS) mexErrMsgTxt("Error: No problems set up, cannot solve.\n");    
+
+    /* Get the Problem Handle */
+    id=(int*)mxGetData(prhs[1]);
+    D=PROBS->find(id[0]);
+    if(!D) mexErrMsgTxt("Error: Problem handle not allocated.\n");    
+        
     /* Pull Problem Size */
-    nr=mxGetM(prhs[1]);
-    nc=mxGetN(prhs[1]);
+    nr=mxGetM(prhs[2]);
+    nc=mxGetN(prhs[2]);
     
     /* Pull RHS */
-    b=mxGetPr(prhs[2]);
-    
-    if(nrhs>3 && mxIsChar(prhs[3]))
-      /* Teuchos List*/
-      SolveOpts=build_teuchos_list(nrhs-3,&(prhs[3]));
-    else{
-      iters=5;tol=1e-13;solver=1;
-      if(nrhs==4 && mxIsNumeric(prhs[3])) {
-        opts_array=mxGetPr(prhs[3]);
-        no=MAX(mxGetM(prhs[3]),mxGetN(prhs[3]));
-        iters=(int)opts_array[0];
-        if(no>1) tol=opts_array[1];
-        if(no>2) solver=(int)opts_array[2];
-      }/*end if*/
-      
-      /* Update the Teuchos List */
-      SolveOpts=new Teuchos::ParameterList;
-      SolveOpts->set("krylov: tolerance", tol);
-      SolveOpts->set("krylov: max iterations", iters);
-      if(solver==1) SolveOpts->set("krylov: type", "fixed point");
-      else if(solver==2) SolveOpts->set("krylov: type", "cg");
-      else if(solver==3) SolveOpts->set("krylov: type", "gmres");
-    }/*end else*/
+    b=mxGetPr(prhs[3]);
 
-       
+    /* Teuchos List*/
+    if(nrhs>4) SolveOpts=build_teuchos_list(nrhs-4,&(prhs[4]));
+    else SolveOpts=new Teuchos::ParameterList;
+    
     /* Allocate Solution Space */
     plhs[0]=mxCreateDoubleMatrix(nr,1,mxREAL);
     x=mxGetPr(plhs[0]);
@@ -474,11 +574,25 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] ){
     break;
     
   case MODE_CLEANUP:
-    /* Cleanup the memory mess */
-    mlapi_data_pack_cleanup(D);
-
-    /* Unlock and let stuff go away */
-    mexUnlock();
+    if(PROBS && nrhs==1){
+      /* Cleanup all problems */
+      sz=PROBS->size();
+      for(i=0;i<sz;i++) mexUnlock();
+      delete PROBS;PROBS=NULL;
+      rv=1;
+    }/*end if*/
+    else if(PROBS && nrhs==2){
+      /* Cleanup one problem */
+      id=(int*)mxGetData(prhs[1]);
+      rv=PROBS->remove(id[0]);
+      if(rv) mexUnlock();
+    }/*end elseif*/
+    else rv=0;
+    
+    /* Set return value */
+    plhs[0]=mxCreateNumericMatrix(1,1,mxINT32_CLASS,mxREAL);
+    id=(int*)mxGetData(plhs[0]);id[0]=rv;
+    
     break;
   default:
     mexErrMsgTxt("Error: Generic\n");
