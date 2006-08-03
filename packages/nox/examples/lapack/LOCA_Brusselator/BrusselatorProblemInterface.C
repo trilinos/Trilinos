@@ -34,12 +34,17 @@
 #include "LOCA_Parameter_Vector.H"
 #include "NOX_LAPACK_Vector.H"
 #include "NOX_LAPACK_Matrix.H"
+#include "LOCA_GlobalData.H"
+#include "NOX_Utils.H"
 
-BrusselatorProblemInterface::BrusselatorProblemInterface(int N, double a, 
-							 double b, 
-							 double d1,
-							 double d2,
-							 ofstream& file)  : 
+BrusselatorProblemInterface::BrusselatorProblemInterface(
+		    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+		    int N, double a, 
+		    double b, 
+		    double d1,
+		    double d2,
+		    ofstream& file)  : 
+  globalData(global_data),
   initialGuess(2*N),
   alpha(a),
   beta(b),
@@ -49,8 +54,6 @@ BrusselatorProblemInterface::BrusselatorProblemInterface(int N, double a,
   outputFile(file)
 {
   for (int i=0; i<n; i++) {
-    //initialGuess(i) = alpha + 0.001;
-    //initialGuess(n+i) = beta/alpha + 0.001;
     initialGuess(i) = alpha;
     initialGuess(n+i) = beta/alpha;
   }
@@ -71,13 +74,13 @@ BrusselatorProblemInterface::computeF(NOX::LAPACK::Vector& f,
 
   f(0) = x(0) - alpha;
   for (int i=1; i<n-1; i++)
-    f(i) = D1*(x(i-1) - 2*x(i) + x(i+1)) / hh
+    f(i) = D1*(x(i-1) - 2.0*x(i) + x(i+1)) / hh
       + alpha - (beta + 1.0)*x(i) + x(i)*x(i)*x(i+n);
   f(n-1) = x(n-1) - alpha;
 
   f(n) = x(n) - beta/alpha;
   for (int i=n+1; i<2*n-1; i++)
-    f(i) = D2*(x(i-1) - 2*x(i) + x(i+1)) / hh
+    f(i) = D2*(x(i-1) - 2.0*x(i) + x(i+1)) / hh
       + beta*x(i-n) - x(i-n)*x(i-n)*x(i);
   f(2*n-1) = x(2*n-1) - beta/alpha;
   
@@ -85,7 +88,7 @@ BrusselatorProblemInterface::computeF(NOX::LAPACK::Vector& f,
 }
 
 bool
-BrusselatorProblemInterface::computeJacobian(NOX::LAPACK::Matrix& J, 
+BrusselatorProblemInterface::computeJacobian(NOX::LAPACK::Matrix<double>& J, 
 					     const NOX::LAPACK::Vector & x)
 {
   double h = 1.0 / double(n-1);
@@ -102,7 +105,7 @@ BrusselatorProblemInterface::computeJacobian(NOX::LAPACK::Matrix& J,
 
   J(n,n) = 1.0;
   for (int i=n+1; i<2*n-1; i++) {
-    J(i,i-n) = beta - 2*x(i-n)*x(i);
+    J(i,i-n) = beta - 2.0*x(i-n)*x(i);
     J(i,i-1) = D2/hh;
     J(i,i) = -2.0*D2/hh - x(i-n)*x(i-n);
     J(i,i+1) = D2/hh;
@@ -110,6 +113,29 @@ BrusselatorProblemInterface::computeJacobian(NOX::LAPACK::Matrix& J,
   J(2*n-1,2*n-1) = 1.0;
 
   return true;
+}
+
+bool
+BrusselatorProblemInterface::computeShiftedMatrix(
+				    double alpha, double beta,
+				    const NOX::LAPACK::Vector& x,
+				    NOX::LAPACK::Matrix<double>& A)
+{
+  bool res = true;
+  if (alpha != 0.0) {
+    res = computeJacobian(A, x);
+    A.scale(alpha);
+  }
+  else
+    A.scale(0.0);
+  if (beta != 0.0) {
+    // Note:  the mass matrix terms for the BCs are zero
+    for (int i=1; i<n-1; i++) {
+      A(i,i) += beta;
+      A(i+n,i+n) += beta;
+    }
+  }
+  return res;
 }
 
 void
@@ -124,42 +150,34 @@ void
 BrusselatorProblemInterface::printSolution(const NOX::LAPACK::Vector &x,
 					   const double conParam)
 {
-
-   cout << "At parameter value: " << conParam << "   the solution vector is\n";
-
-   if (n < 8) {
-     for (int i=0; i<n; i++)  cout << " " << x(i);
+   if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
+     globalData->locaUtils->out() 
+       << "At parameter value: " 
+       << globalData->locaUtils->sciformat(conParam)
+       << "   the solution vector is\n";
+     
+     for (int i=0; i<6; i++) 
+       globalData->locaUtils->out() 
+	 << " " << globalData->locaUtils->sciformat(x(i));
+     globalData->locaUtils->out() << " ...";
+     for (int i=n-2; i<n; i++)  
+       globalData->locaUtils->out() 
+	 << " " << globalData->locaUtils->sciformat(x(i));
+     globalData->locaUtils->out() << std::endl;
+     
+     for (int i=n; i<n+6; i++) 
+       globalData->locaUtils->out() 
+	 << " " << globalData->locaUtils->sciformat(x(i));
+     globalData->locaUtils->out() << " ...";
+     for (int i=2*n-2; i<2*n; i++)  
+       globalData->locaUtils->out() 
+	 << " " << globalData->locaUtils->sciformat(x(i));
+     globalData->locaUtils->out() << std::endl; 
    }
-   else {
-     for (int i=0; i<6; i++)  cout << " " << x(i);
-     cout << " ...";
-     for (int i=n-2; i<n; i++)  cout << " " << x(i);
-   }
-   cout << endl;
-
-   if (n < 8) {
-     for (int i=n; i<2*n; i++)  cout << " " << x(i);
-   }
-   else {
-     for (int i=n; i<n+6; i++)  cout << " " << x(i);
-     cout << " ...";
-     for (int i=2*n-2; i<2*n; i++)  cout << " " << x(i);
-   }
-   cout << endl;
 
    outputFile << conParam << " ";
    for (int i=0; i<2*n; i++)
      outputFile << x(i) << " ";
-   outputFile << endl << endl;
-
+   outputFile << std::endl << std::endl;
 }
 
-bool
-BrusselatorProblemInterface::computeMass(NOX::LAPACK::Matrix& M, 
-					 const NOX::LAPACK::Vector & x)
-{
-  for (int i=0; i<2*n; i++)
-    M(i,i) = 1.0;
-
-  return true;
-}

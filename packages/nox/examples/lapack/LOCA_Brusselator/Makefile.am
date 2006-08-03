@@ -45,36 +45,28 @@ AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
 EXEEXT = .exe
 
 if BUILD_LOCA_LAPACK_EXAMPLES
-#noinst_PROGRAMS = brusselatorContinuation brusselatorHopf brusselatorHopfContinuation
+noinst_PROGRAMS = brusselatorContinuation brusselatorHopfContinuation
 endif
 
-#brusselatorContinuation_SOURCES = $(srcdir)/BrusselatorContinuation.C \
-#		$(srcdir)/BrusselatorProblemInterface.H \
-#		$(srcdir)/BrusselatorProblemInterface.C
+brusselatorContinuation_SOURCES = $(srcdir)/BrusselatorContinuation.C \
+		$(srcdir)/BrusselatorProblemInterface.H \
+		$(srcdir)/BrusselatorProblemInterface.C
 
-#brusselatorHopf_SOURCES = $(srcdir)/BrusselatorHopf.C \
-#		$(srcdir)/BrusselatorProblemInterface.H \
-#		$(srcdir)/BrusselatorProblemInterface.C
+brusselatorContinuation_DEPENDENCIES = \
+        $(top_builddir)/src/libnox.a \
+	$(top_builddir)/src-lapack/libnoxlapack.a \
+	$(top_builddir)/src-loca/src/libloca.a \
+        $(top_builddir)/src-loca/src-lapack/liblocalapack.a
 
-#brusselatorHopfContinuation_SOURCES = $(srcdir)/BrusselatorHopfContinuation.C \
-#		$(srcdir)/BrusselatorProblemInterface.H \
-#		$(srcdir)/BrusselatorProblemInterface.C
+brusselatorContinuation_LDADD = $(EXAMPLE_LIBS)
 
-#brusselatorContinuation_DEPENDENCIES = \
-#        $(top_builddir)/src/libnox.a \
-#	$(top_builddir)/src-lapack/libnoxlapack.a \
-#	$(top_builddir)/src-loca/src/libloca.a \
-#        $(top_builddir)/src-loca/src-lapack/liblocalapack.a
+brusselatorHopfContinuation_SOURCES = $(srcdir)/BrusselatorHopfContinuation.C \
+		$(srcdir)/BrusselatorProblemInterface.H \
+		$(srcdir)/BrusselatorProblemInterface.C
 
-#brusselatorHopf_DEPENDENCIES = $(brusselatorContinuation_DEPENDENCIES)
+brusselatorHopfContinuation_DEPENDENCIES = $(brusselatorContinuation_DEPENDENCIES)
 
-#brusselatorHopfContinuation_DEPENDENCIES = $(brusselatorContinuation_DEPENDENCIES)
-
-#brusselatorContinuation_LDADD = $(EXAMPLE_LIBS)
-
-#brusselatorHopf_LDADD = $(EXAMPLE_LIBS)
-
-#brusselatorHopfContinuation_LDADD = $(EXAMPLE_LIBS)
+brusselatorHopfContinuation_LDADD = $(EXAMPLE_LIBS)
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'

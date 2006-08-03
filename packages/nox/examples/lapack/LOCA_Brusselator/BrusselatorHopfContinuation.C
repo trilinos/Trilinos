@@ -42,7 +42,7 @@ int main()
   double D1 = 1.0/40.0;
   double D2 = 1.0/40.0;
   double beta = 2.0*pi*pi*D1 + 1.0 + alpha*alpha;
-  int maxNewtonIters = 20;
+  int maxNewtonIters = 10;
 
   try {
     // Create output file to save solutions
@@ -52,19 +52,6 @@ int main()
 
     // Save size of discretizations
     outFile << n << endl;
-
-    // Set up the problem interface
-    BrusselatorProblemInterface brus(n, alpha, beta, D1, D2, outFile);
-    LOCA::ParameterVector p;
-    p.addParameter("alpha",alpha);
-    p.addParameter("beta",beta);
-    p.addParameter("D1",D1);
-    p.addParameter("D2",D2);
-
-    // Create a group which uses that problem interface.  For the Hopf
-    // right now we have to set the mass matrix flag as true.
-    LOCA::LAPACK::Group grp(brus, true);
-    grp.setParams(p);
 
     // Create initial guess for the real and imaginary eigenvectors
     NOX::LAPACK::Vector y(2*n), z(2*n);
@@ -92,128 +79,164 @@ int main()
     NOX::LAPACK::Vector phi(2*n);
     phi.init(1.0);
 
+    Teuchos::RefCountPtr<NOX::Abstract::Vector> y_vec =
+      Teuchos::rcp(&y,false);
+    Teuchos::RefCountPtr<NOX::Abstract::Vector> z_vec =
+      Teuchos::rcp(&z,false);
+    Teuchos::RefCountPtr<NOX::Abstract::Vector> phi_vec =
+      Teuchos::rcp(&phi,false);
+
     // Create parameter list
-    NOX::Parameter::List paramList;
+    Teuchos::RefCountPtr<Teuchos::ParameterList> paramList = 
+      Teuchos::rcp(new Teuchos::ParameterList);
 
     // Create LOCA sublist
-    NOX::Parameter::List& locaParamsList = paramList.sublist("LOCA");
+    Teuchos::ParameterList& locaParamsList = paramList->sublist("LOCA");
 
     // Create the stepper sublist and set the stepper parameters
-    NOX::Parameter::List& stepperList = locaParamsList.sublist("Stepper");
-    //stepperList.setParameter("Continuation Method", "Natural");
-    stepperList.setParameter("Continuation Method", "Arc Length");
-    stepperList.setParameter("Continuation Parameter", "alpha");
-    stepperList.setParameter("Initial Value", alpha);
-    stepperList.setParameter("Max Value", 1.0);
-    stepperList.setParameter("Min Value", 0.24);
-    stepperList.setParameter("Max Steps", 2);
-    stepperList.setParameter("Max Nonlinear Iterations", maxNewtonIters);
-    stepperList.setParameter("Enable Arc Length Scaling", true);
-    stepperList.setParameter("Goal Arc Length Parameter Contribution", 0.5);
-    stepperList.setParameter("Max Arc Length Parameter Contribution", 0.7);
-    stepperList.setParameter("Initial Scale Factor", 1.0);
-    stepperList.setParameter("Min Scale Factor", 1.0e-8);
-    stepperList.setParameter("Enable Tangent Factor Step Size Scaling",false);
-    stepperList.setParameter("Min Tangent Factor", -1.0);
-    stepperList.setParameter("Tangent Factor Exponent",1.0);
-    stepperList.setParameter("Compute Eigenvalues",true);
+    Teuchos::ParameterList& stepperList = locaParamsList.sublist("Stepper");
+    //stepperList.set("Continuation Method", "Natural");
+    stepperList.set("Continuation Method", "Arc Length");
+    stepperList.set("Continuation Parameter", "alpha");
+    stepperList.set("Initial Value", alpha);
+    stepperList.set("Max Value", 1.0);
+    stepperList.set("Min Value", 0.24);
+    stepperList.set("Max Steps", 100);
+    stepperList.set("Max Nonlinear Iterations", maxNewtonIters);
+    stepperList.set("Enable Arc Length Scaling", true);
+    stepperList.set("Goal Arc Length Parameter Contribution", 0.5);
+    stepperList.set("Max Arc Length Parameter Contribution", 0.7);
+    stepperList.set("Initial Scale Factor", 1.0);
+    stepperList.set("Min Scale Factor", 1.0e-8);
+    stepperList.set("Enable Tangent Factor Step Size Scaling",false);
+    stepperList.set("Min Tangent Factor", -1.0);
+    stepperList.set("Tangent Factor Exponent",1.0);
+    stepperList.set("Compute Eigenvalues",false);
 
     // Create bifurcation sublist
-    NOX::Parameter::List& bifurcationList = 
+    Teuchos::ParameterList& bifurcationList = 
       locaParamsList.sublist("Bifurcation");
-    bifurcationList.setParameter("Method", "Hopf");
-    bifurcationList.setParameter("Bifurcation Parameter", "beta");
-    bifurcationList.setParameter("Length Normalization Vector", 
-			 dynamic_cast<NOX::Abstract::Vector*>(&phi));
-    bifurcationList.setParameter("Initial Real Eigenvector",
-			 dynamic_cast<NOX::Abstract::Vector*>(&y));
-    bifurcationList.setParameter("Initial Imaginary Eigenvector",
-			 dynamic_cast<NOX::Abstract::Vector*>(&z));
-    bifurcationList.setParameter("Initial Frequency", w);
+    //bifurcationList.set("Type", "None");
+    bifurcationList.set("Type", "Hopf");
+    bifurcationList.set("Formulation", "Moore-Spence");
+    bifurcationList.set("Solver Method", "Salinger Bordering");
+    bifurcationList.set("Bifurcation Parameter", "beta");
+    bifurcationList.set("Length Normalization Vector", phi_vec);
+    bifurcationList.set("Initial Real Eigenvector", y_vec);
+    bifurcationList.set("Initial Imaginary Eigenvector", z_vec);
+    bifurcationList.set("Initial Frequency", w);
 
     // Create predictor sublist
-    NOX::Parameter::List& predictorList = locaParamsList.sublist("Predictor");
-    //predictorList.setParameter("Method", "Constant");
-    predictorList.setParameter("Method", "Secant");
-    //predictorList.setParameter("Method", "Random");
-    //predictorList.setParameter("Epsilon", 1.0e-3);
+    Teuchos::ParameterList& predictorList = locaParamsList.sublist("Predictor");
+    //predictorList.set("Method", "Constant");
+    predictorList.set("Method", "Secant");
+    //predictorList.set("Method", "Random");
+    //predictorList.set("Epsilon", 1.0e-3);
 
-    NOX::Parameter::List& firstStepPredictor 
+    Teuchos::ParameterList& firstStepPredictor 
       = predictorList.sublist("First Step Predictor");
-    firstStepPredictor.setParameter("Method", "Random");
-    firstStepPredictor.setParameter("Epsilon", 1.0e-3);
+    firstStepPredictor.set("Method", "Random");
+    firstStepPredictor.set("Epsilon", 1.0e-3);
 
-    NOX::Parameter::List& lastStepPredictor 
+    Teuchos::ParameterList& lastStepPredictor 
       = predictorList.sublist("Last Step Predictor");
-    lastStepPredictor.setParameter("Method", "Random");
-    lastStepPredictor.setParameter("Epsilon", 1.0e-3);
+    lastStepPredictor.set("Method", "Random");
+    lastStepPredictor.set("Epsilon", 1.0e-3);
 
     // Create step size sublist
-    NOX::Parameter::List& stepSizeList = locaParamsList.sublist("Step Size");
-    stepSizeList.setParameter("Method", "Adaptive");
-    stepSizeList.setParameter("Initial Step Size", 0.02);
-    stepSizeList.setParameter("Min Step Size", 1.0e-3);
-    stepSizeList.setParameter("Max Step Size", 0.02);
-    stepSizeList.setParameter("Aggressiveness", 0.5);
-    stepSizeList.setParameter("Failed Step Reduction Factor", 0.5);
-    stepSizeList.setParameter("Successful Step Increase Factor", 1.26); // for constant
-
-    // Set the LOCA Utilities
-    NOX::Parameter::List& locaUtilsList = locaParamsList.sublist("Utilities");
-    locaUtilsList.setParameter("Output Information", 
-			       LOCA::Utils::Warning +
-			       LOCA::Utils::StepperIteration +
-			       LOCA::Utils::StepperDetails +
-			       LOCA::Utils::Solver +
-			       LOCA::Utils::SolverDetails);
+    Teuchos::ParameterList& stepSizeList = locaParamsList.sublist("Step Size");
+    stepSizeList.set("Method", "Adaptive");
+    stepSizeList.set("Initial Step Size", 0.02);
+    stepSizeList.set("Min Step Size", 1.0e-3);
+    stepSizeList.set("Max Step Size", 0.02);
+    stepSizeList.set("Aggressiveness", 0.5);
+    stepSizeList.set("Failed Step Reduction Factor", 0.5);
+    stepSizeList.set("Successful Step Increase Factor", 1.26); // for constant
 
     // Create the "Solver" parameters sublist to be used with NOX Solvers
-    NOX::Parameter::List& nlParams = paramList.sublist("NOX");
-    nlParams.setParameter("Nonlinear Solver", "Line Search Based");
+    Teuchos::ParameterList& nlParams = paramList->sublist("NOX");
+    nlParams.set("Nonlinear Solver", "Line Search Based");
 
-    NOX::Parameter::List& nlPrintParams = nlParams.sublist("Printing");
-    nlPrintParams.setParameter("Output Information", 
-			       //NOX::Utils::OuterIteration + 
-			       //NOX::Utils::OuterIterationStatusTest + 
-			       //NOX::Utils::InnerIteration +
-			       //NOX::Utils::Parameters +
-			       //NOX::Utils::Details + 
-			       NOX::Utils::Warning);
-
-    // Create a printing control object
-    NOX::Utils utils(nlPrintParams);
+    Teuchos::ParameterList& nlPrintParams = nlParams.sublist("Printing");
+    nlPrintParams.set("Output Information", 
+			       NOX::Utils::OuterIteration + 
+			       NOX::Utils::OuterIterationStatusTest + 
+			       NOX::Utils::InnerIteration +
+			       NOX::Utils::Parameters +
+			       NOX::Utils::Details + 
+			       NOX::Utils::Warning + 
+			       NOX::Utils::StepperIteration +
+			       NOX::Utils::StepperDetails);
 
     // Create the "Line Search" sublist for the "Line Search Based" solver
-    NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
-    searchParams.setParameter("Method", "Full Step");
+    Teuchos::ParameterList& searchParams = nlParams.sublist("Line Search");
+    searchParams.set("Method", "Full Step");
+
+    // Create LAPACK Factory
+    Teuchos::RefCountPtr<LOCA::LAPACK::Factory> lapackFactory = 
+      Teuchos::rcp(new LOCA::LAPACK::Factory);
+
+    // Create global data object
+    Teuchos::RefCountPtr<LOCA::GlobalData> globalData =
+      LOCA::createGlobalData(paramList, lapackFactory);
+
+     // Set up the problem interface
+    BrusselatorProblemInterface brus(globalData, n, alpha, beta, D1, D2, 
+				     outFile);
+    LOCA::ParameterVector p;
+    p.addParameter("alpha",alpha);
+    p.addParameter("beta",beta);
+    p.addParameter("D1",D1);
+    p.addParameter("D2",D2);
+
+    // Create a group which uses that problem interface. The group will
+    // be initialized to contain the default initial guess for the
+    // specified problem.
+    Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup> grp = 
+      Teuchos::rcp(new LOCA::LAPACK::Group(globalData, brus));
+
+    grp->setParams(p);
 
     // Set up the status tests
     Teuchos::RefCountPtr<NOX::StatusTest::NormF> statusTestA = 
-      Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8, 
+      Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-10, 
 					      NOX::StatusTest::NormF::Scaled));
     Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> statusTestB = 
       Teuchos::rcp(new NOX::StatusTest::MaxIters(maxNewtonIters));
-    NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR, statusTestA, statusTestB);
+    Teuchos::RefCountPtr<NOX::StatusTest::Combo> combo = 
+      Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR, 
+					      statusTestA, statusTestB));
 
     // Create the stepper  
-    LOCA::Stepper stepper(grp, combo, paramList);
+    LOCA::NewStepper stepper(globalData, grp, combo, paramList);
 
     // Solve the nonlinear system
     LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
 
-    if (status != LOCA::Abstract::Iterator::Finished)
-      cout << "Stepper failed to converge!" << endl;
+    if (status != LOCA::Abstract::Iterator::Finished) {
+      if (globalData->locaUtils->isPrintType(NOX::Utils::Error))
+	globalData->locaUtils->out() 
+	  << "Stepper failed to converge!" << std::endl;
+    }
 
     // Output the parameter list
-    if (utils.isPrintType(NOX::Utils::Parameters)) {
-      cout << endl << "Final Parameters" << endl
-	   << "****************" << endl;
-      stepper.getParameterList().print(cout);
-      cout << endl;
+    if (globalData->locaUtils->isPrintType(NOX::Utils::Parameters)) {
+      globalData->locaUtils->out() 
+	<< std::endl << "Final Parameters" << std::endl
+	<< "****************" << std::endl;
+      stepper.getList()->print(globalData->locaUtils->out());
+      globalData->locaUtils->out() << std::endl;
     }
+
+    outFile.close();
+
+    destroyGlobalData(globalData);
   }
 
-  catch (char *s) {
+  catch (std::exception& e) {
+    cout << e.what() << endl;
+  }
+  catch (const char *s) {
     cout << s << endl;
   }
   catch (...) {
