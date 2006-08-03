@@ -30,52 +30,66 @@
 // ************************************************************************
 //@HEADER
 
-#include "LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.H"
+#include "LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.H"
 
-LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup::FiniteDifferenceGroup()
+LOCA::Hopf::MooreSpence::FiniteDifferenceGroup::FiniteDifferenceGroup()
 {
 }
 
-LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup::FiniteDifferenceGroup(
-         const LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup& source, 
-	 NOX::CopyType type)
-  : LOCA::MultiContinuation::FiniteDifferenceGroup(source, type)
+LOCA::Hopf::MooreSpence::FiniteDifferenceGroup::FiniteDifferenceGroup(
+            const LOCA::Hopf::MooreSpence::FiniteDifferenceGroup& source, 
+	    NOX::CopyType type)
+  : LOCA::MultiContinuation::FiniteDifferenceGroup(source, type),
+    LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup(source, type)
 {
 }
 
 
-LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup::~FiniteDifferenceGroup() 
+LOCA::Hopf::MooreSpence::FiniteDifferenceGroup::~FiniteDifferenceGroup() 
 {
-}
-
-NOX::Abstract::Group::ReturnType
-LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup::computeDJnDpMulti(
-				      const vector<int>& paramIDs, 
-				      const NOX::Abstract::Vector& nullVector,
-				      NOX::Abstract::MultiVector& result,
-				      bool isValid)
-{
-  return LOCA::MultiContinuation::FiniteDifferenceGroup::derivPtr->
-    computeDJnDp(*this, paramIDs, nullVector, result, isValid);
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup::computeDJnDxaMulti(
-			       const NOX::Abstract::Vector& nullVector,
-			       const NOX::Abstract::MultiVector& aVector,
-			       NOX::Abstract::MultiVector& result)
+LOCA::Hopf::MooreSpence::FiniteDifferenceGroup::computeDCeDp(
+			        const vector<int>& paramIDs,	     
+				const NOX::Abstract::Vector& yVector,
+				const NOX::Abstract::Vector& zVector,
+				double w,
+				NOX::Abstract::MultiVector& result_real,
+				NOX::Abstract::MultiVector& result_imag,
+				bool isValid)
 {
   return LOCA::MultiContinuation::FiniteDifferenceGroup::derivPtr->
-    computeDJnDxa(*this, nullVector, aVector, result);
+    computeDCeDp(*this, paramIDs, yVector, zVector, w, 
+		 result_real, result_imag, isValid);
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup::computeDJnDxaMulti(
-			       const NOX::Abstract::Vector& nullVector,
-			       const NOX::Abstract::Vector& JnVector,
-			       const NOX::Abstract::MultiVector& aVector,
-			       NOX::Abstract::MultiVector& result)
+LOCA::Hopf::MooreSpence::FiniteDifferenceGroup::computeDCeDxa(
+				const NOX::Abstract::Vector& yVector,
+				const NOX::Abstract::Vector& zVector,
+				double w,
+				const NOX::Abstract::MultiVector& aVector,
+				NOX::Abstract::MultiVector& result_real,
+				NOX::Abstract::MultiVector& result_imag)
 {
   return LOCA::MultiContinuation::FiniteDifferenceGroup::derivPtr->
-    computeDJnDxa(*this, nullVector, aVector, JnVector, result);
+    computeDCeDxa(*this, yVector, zVector, w, aVector,
+		  result_real, result_imag);
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::Hopf::MooreSpence::FiniteDifferenceGroup::computeDCeDxa(
+				const NOX::Abstract::Vector& yVector,
+				const NOX::Abstract::Vector& zVector,
+				double w,
+				const NOX::Abstract::MultiVector& aVector,
+				const NOX::Abstract::Vector& Ce_real,
+				const NOX::Abstract::Vector& Ce_imag,
+				NOX::Abstract::MultiVector& result_real,
+				NOX::Abstract::MultiVector& result_imag)
+{
+  return LOCA::MultiContinuation::FiniteDifferenceGroup::derivPtr->
+    computeDCeDxa(*this, yVector, zVector, w, aVector, Ce_real, Ce_imag,
+		  result_real, result_imag);
 }

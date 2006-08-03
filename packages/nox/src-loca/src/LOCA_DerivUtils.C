@@ -34,7 +34,7 @@
 #include "LOCA_DerivUtils.H"
 
 #include "LOCA_MultiContinuation_AbstractGroup.H" 
-//#include "LOCA_Bifurcation_HopfBord_AbstractGroup.H"
+#include "LOCA_Hopf_MooreSpence_AbstractGroup.H"
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_MultiVector.H"
 #include "LOCA_Parameter_Vector.H"
@@ -136,7 +136,7 @@ LOCA::DerivUtils::computeDJnDp(LOCA::MultiContinuation::AbstractGroup& grp,
   NOX::Abstract::Vector *Jn = &result[0];
   NOX::Abstract::Vector *dJndp = NULL;
 
-  // Compute base residual F
+  // Compute base residual
   if (!isValid) {
     finalStatus = grp.computeJacobian();
     globalData->locaErrorCheck->checkReturnType(finalStatus, callingFunction);
@@ -450,323 +450,169 @@ LOCA::DerivUtils::computeDwtJnDx(LOCA::MultiContinuation::AbstractGroup& grp,
   return finalStatus;
 }
 
-// NOX::Abstract::Group::ReturnType 
-// LOCA::DerivUtils::computeDCeDp(
-// 			   LOCA::Bifurcation::HopfBord::AbstractGroup& grp,
-// 			   const NOX::Abstract::Vector& yVector,
-// 			   const NOX::Abstract::Vector& zVector,
-// 			   double w,
-// 			   const int param_id, 
-// 			   NOX::Abstract::Vector& result_real,
-// 			   NOX::Abstract::Vector& result_imag) const
-// {
-//   string callingFunction = 
-//     "LOCA::DerivUtils::computeDCeDp()";
-//   NOX::Abstract::Group::ReturnType status, finalStatus;
+NOX::Abstract::Group::ReturnType 
+LOCA::DerivUtils::computeDCeDp(LOCA::Hopf::MooreSpence::AbstractGroup& grp,
+			       const vector<int>& paramIDs,	     
+			       const NOX::Abstract::Vector& yVector,
+			       const NOX::Abstract::Vector& zVector,
+			       double w,
+			       NOX::Abstract::MultiVector& result_real,
+			       NOX::Abstract::MultiVector& result_imag,
+			       bool isValid) const
+{
+  string callingFunction = 
+    "LOCA::DerivUtils::computeDCeDp()";
+  NOX::Abstract::Group::ReturnType status, finalStatus;
 
-//   // Allocate base Ce vectors and fill with C times e
-//   Teuchos::RefCountPtr<NOX::Abstract::Vector> baseCeRealVectorPtr = 
-//     yVector.clone(NOX::ShapeCopy);
-//   Teuchos::RefCountPtr<NOX::Abstract::Vector> baseCeImagVectorPtr = 
-//     yVector.clone(NOX::ShapeCopy);
+  // Views of Ce, d(Ce)/dp
+  NOX::Abstract::Vector& CeReal = result_real[0];
+  NOX::Abstract::Vector& CeImag = result_imag[0];
+  NOX::Abstract::Vector* dCedpReal;
+  NOX::Abstract::Vector* dCedpImag;
 
-//   if (!grp.isJacobian()) {
-//     finalStatus = grp.computeJacobian();
-//     globalData->locaErrorCheck->checkReturnType(finalStatus, callingFunction);
-//   }
-//   else
-//     finalStatus = NOX::Abstract::Group::Ok;
+  // Compute base residual
+  if (!isValid) {
+    finalStatus = grp.computeComplex(w);
+    globalData->locaErrorCheck->checkReturnType(finalStatus, callingFunction);
 
-//   if (!grp.isMassMatrix()) {
-//     status = grp.computeMassMatrix();
-//     finalStatus = 
-//       globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
-// 						   callingFunction);
-//   }
-//   else
-//     finalStatus = 
-//       globalData->locaErrorCheck->combineAndCheckReturnTypes(NOX::Abstract::Group::Ok, 
-// 						   finalStatus,
-// 						   callingFunction);
+    status = grp.applyComplex(yVector, zVector, CeReal, CeImag);
+    finalStatus = 
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							     finalStatus,
+							     callingFunction);
+  }
+  else
+    finalStatus = NOX::Abstract::Group::Ok;
 
-//   status = grp.applyComplex(yVector, zVector, w, *baseCeRealVectorPtr, 
-// 			    *baseCeImagVectorPtr);
-//   finalStatus = 
-//     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
-// 						 callingFunction);
+  double param;
+  double eps;
 
-//   // Now that Ce is known, call other routine
-//   status = 
-//     computeDCeDp(grp, yVector, zVector, w, param_id, *baseCeRealVectorPtr, 
-// 		 *baseCeImagVectorPtr, result_real, result_imag);
-//   finalStatus = 
-//     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
-// 						 callingFunction);
+  // Loop over each parameter
+  for (unsigned int i=0; i<paramIDs.size(); i++) {
 
-//   return finalStatus;
-// }
+    // Perturb single parameter in this group, and return perturbation, eps
+    eps = perturbParam(grp, param, paramIDs[i]);
 
-// NOX::Abstract::Group::ReturnType 
-// LOCA::DerivUtils::computeDCeDp(
-// 			   LOCA::Bifurcation::HopfBord::AbstractGroup& grp,
-// 			   const NOX::Abstract::Vector& yVector,
-// 			   const NOX::Abstract::Vector& zVector,
-// 			   double w,
-// 			   const int param_id, 
-// 			   const NOX::Abstract::Vector& Ce_real,
-// 			   const NOX::Abstract::Vector& Ce_imag,
-// 			   NOX::Abstract::Vector& result_real,
-// 			   NOX::Abstract::Vector& result_imag) const
-// {
-//   string callingFunction = 
-//     "LOCA::DerivUtils::computeDCeDp()";
-//   NOX::Abstract::Group::ReturnType status, finalStatus;
+    // Fill perturbed Ce vectors
+    status = grp.computeComplex(w);
+    finalStatus = 
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
+							   callingFunction);
 
+    dCedpReal = &(result_real[i+1]);
+    dCedpImag = &(result_imag[i+1]);
+    status = grp.applyComplex(yVector, zVector, *dCedpReal, *dCedpImag);
+    finalStatus = 
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							     finalStatus,
+							     callingFunction);
 
-//   // Perturb single parameter in this group, and return perturbation
-//   double param;
-//   double eps = perturbParam(grp, param, param_id);
+    // Difference perturbed and base vectors
+    dCedpReal->update(-1.0, CeReal, 1.0);
+    dCedpReal->scale(1.0/eps);
+    dCedpImag->update(-1.0, CeImag, 1.0);
+    dCedpImag->scale(1.0/eps);
+    
+    // Restore original parameter value
+    grp.setParam(paramIDs[i], param);
 
-//   // Compute perturbed Ce vectors
-//   finalStatus = grp.computeJacobian();
-//   globalData->locaErrorCheck->checkReturnType(finalStatus, callingFunction);
+  }
 
-//   status = grp.computeMassMatrix();
-//   finalStatus = 
-//     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
-// 						 callingFunction);
+  return finalStatus;
+}
 
-//   status = 
-//     grp.applyComplex(yVector, zVector, w, result_real,
-// 				  result_imag);
-//   finalStatus = 
-//     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
-// 						 callingFunction);
+NOX::Abstract::Group::ReturnType 
+LOCA::DerivUtils::computeDCeDxa(
+			    LOCA::Hopf::MooreSpence::AbstractGroup& grp,
+			    const NOX::Abstract::Vector& yVector,
+			    const NOX::Abstract::Vector& zVector,
+			    double w,
+			    const NOX::Abstract::MultiVector& aVector,
+			    NOX::Abstract::MultiVector& result_real,
+			    NOX::Abstract::MultiVector& result_imag) const
+{
+  string callingFunction = 
+    "LOCA::DerivUtils::computeDCeDxa()";
+  NOX::Abstract::Group::ReturnType status, finalStatus;
 
-//   // Difference perturbed and base vector and return approximate derivative
-//   result_real.update(-1.0, Ce_real, 1.0); result_real.scale(1.0/eps);
-//   result_imag.update(-1.0, Ce_imag, 1.0); result_real.scale(1.0/eps);
+  // Allocate base Ce
+  Teuchos::RefCountPtr<NOX::Abstract::Vector> CeReal = 
+    yVector.clone(NOX::ShapeCopy);
+  Teuchos::RefCountPtr<NOX::Abstract::Vector> CeImag = 
+    zVector.clone(NOX::ShapeCopy);
 
-//   // Restore original parameter value
-//   grp.setParam(param_id, param);
+  // Compute base Ce
+  finalStatus = grp.computeComplex(w);
+  globalData->locaErrorCheck->checkReturnType(finalStatus, callingFunction);
 
-//   return finalStatus;
-// }
+  status = grp.applyComplex(yVector, zVector, *CeReal, *CeImag);
+  finalStatus = 
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							   finalStatus,
+							   callingFunction);
 
-// NOX::Abstract::Group::ReturnType 
-// LOCA::DerivUtils::computeDCeDxa(
-// 			    LOCA::Bifurcation::HopfBord::AbstractGroup& grp,
-// 			    const NOX::Abstract::Vector& yVector,
-// 			    const NOX::Abstract::Vector& zVector,
-// 			    double w,
-// 			    const NOX::Abstract::Vector& aVector,
-// 			    NOX::Abstract::Vector& result_real,
-// 			    NOX::Abstract::Vector& result_imag) const
-// {
-//   string callingFunction = 
-//     "LOCA::DerivUtils::computeDCeDxa()";
-//   NOX::Abstract::Group::ReturnType status, finalStatus;
+  // Now that Ce is known, call other routine
+  status = 
+    computeDCeDxa(grp, yVector, zVector, w, aVector, *CeReal, *CeImag, 
+		  result_real, result_imag);
+  finalStatus = 
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
-//   // Allocate base Ce vectors and fill with C times e
-//   Teuchos::RefCountPtr<NOX::Abstract::Vector> baseCeRealVectorPtr = 
-//     yVector.clone(NOX::ShapeCopy);
-//   Teuchos::RefCountPtr<NOX::Abstract::Vector> baseCeImagVectorPtr = 
-//     yVector.clone(NOX::ShapeCopy);
+  return finalStatus;
+}
 
-//   if (!grp.isJacobian()) {
-//     finalStatus = grp.computeJacobian();
-//     globalData->locaErrorCheck->checkReturnType(finalStatus, callingFunction);
-//   }
-//   else
-//     finalStatus = NOX::Abstract::Group::Ok;
+NOX::Abstract::Group::ReturnType 
+LOCA::DerivUtils::computeDCeDxa(
+			    LOCA::Hopf::MooreSpence::AbstractGroup& grp,
+			    const NOX::Abstract::Vector& yVector,
+			    const NOX::Abstract::Vector& zVector,
+			    double w,
+			    const NOX::Abstract::MultiVector& aVector,
+			    const NOX::Abstract::Vector& Ce_real,
+			    const NOX::Abstract::Vector& Ce_imag,
+			    NOX::Abstract::MultiVector& result_real,
+			    NOX::Abstract::MultiVector& result_imag) const
+{
+  string callingFunction = 
+    "LOCA::DerivUtils::computeDCeDxa()";
+  NOX::Abstract::Group::ReturnType status, finalStatus;
 
-//   if (!grp.isMassMatrix()) {
-//     status = grp.computeMassMatrix();
-//     finalStatus = 
-//       globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
-// 						   callingFunction);
-//   }
-//   else
-//     finalStatus = 
-//       globalData->locaErrorCheck->combineAndCheckReturnTypes(NOX::Abstract::Group::Ok, 
-// 						   finalStatus,
-// 						   callingFunction);
-  
-//   status = grp.applyComplex(yVector, zVector, w, *baseCeRealVectorPtr, 
-// 			    *baseCeImagVectorPtr);
-//   finalStatus = 
-//     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
-// 						 callingFunction);
+  // Copy original solution vector
+  Teuchos::RefCountPtr<NOX::Abstract::Vector> Xvec = 
+    grp.getX().clone(NOX::DeepCopy);
 
-//   // Now that Ce is known, call other routine
-//   status = 
-//     computeDCeDxa(grp, yVector, zVector, w, aVector, *baseCeRealVectorPtr, 
-// 		  *baseCeImagVectorPtr, result_real, result_imag);
-//   finalStatus = 
-//     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
-// 						 callingFunction);
+  // Loop over each column of multivector
+  for (int i=0; i<aVector.numVectors(); i++) {
 
-//   return finalStatus;
-// }
+    // Perturb solution vector in direction of aVector, return perturbation
+    double eps = perturbXVec(grp, *Xvec, aVector[i]);
 
-// NOX::Abstract::Group::ReturnType 
-// LOCA::DerivUtils::computeDCeDxa(
-// 			    LOCA::Bifurcation::HopfBord::AbstractGroup& grp,
-// 			    const NOX::Abstract::Vector& yVector,
-// 			    const NOX::Abstract::Vector& zVector,
-// 			    double w,
-// 			    const NOX::Abstract::Vector& aVector,
-// 			    const NOX::Abstract::Vector& Ce_real,
-// 			    const NOX::Abstract::Vector& Ce_imag,
-// 			    NOX::Abstract::Vector& result_real,
-// 			    NOX::Abstract::Vector& result_imag) const
-// {
-//   string callingFunction = 
-//     "LOCA::DerivUtils::computeDCeDxa()";
-//   NOX::Abstract::Group::ReturnType status, finalStatus;
+    // Compute perturbed Ce vectors
+    finalStatus = grp.computeComplex(w);
+    finalStatus = 
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							     finalStatus,
+							     callingFunction);
 
-//   // Copy original solution vector
-//   Teuchos::RefCountPtr<NOX::Abstract::Vector> Xvec = 
-//     grp.getX().clone(NOX::DeepCopy);
+    status = 
+      grp.applyComplex(yVector, zVector, result_real[i], result_imag[i]);
+    finalStatus = 
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							     finalStatus,
+							     callingFunction);
 
-//   // Perturb solution vector in direction of aVector, return perturbation
-//   double eps = perturbXVec(grp, *Xvec, aVector);
+    // Difference perturbed and base vector and return approximate derivative
+    result_real[i].update(-1.0, Ce_real, 1.0); result_real[i].scale(1.0/eps);
+    result_imag[i].update(-1.0, Ce_imag, 1.0); result_imag[i].scale(1.0/eps);
 
-//   // Compute perturbed Ce vectors
-//   finalStatus = grp.computeJacobian();
-//   globalData->locaErrorCheck->checkReturnType(finalStatus, callingFunction);
+  }
 
-//   status = grp.computeMassMatrix();
-//   finalStatus = 
-//     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
-// 						 callingFunction);
+  // Restore original solution vector
+  grp.setX(*Xvec);
 
-//   status = 
-//     grp.applyComplex(yVector, zVector, w, result_real,
-// 				  result_imag);
-//   finalStatus = 
-//     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
-// 						 callingFunction);
-
-//   // Difference perturbed and base vector and return approximate derivative
-//   result_real.update(-1.0, Ce_real, 1.0); result_real.scale(1.0/eps);
-//   result_imag.update(-1.0, Ce_imag, 1.0); result_imag.scale(1.0/eps);
-
-//   // Restore original solution vector
-//   grp.setX(*Xvec);
-
-//   return finalStatus;
-// }
-
-// NOX::Abstract::Group::ReturnType 
-// LOCA::DerivUtils::computeDCeDxa(
-// 			    LOCA::Bifurcation::HopfBord::AbstractGroup& grp,
-// 			    const NOX::Abstract::Vector& yVector,
-// 			    const NOX::Abstract::Vector& zVector,
-// 			    double w,
-// 			    const NOX::Abstract::MultiVector& aVector,
-// 			    NOX::Abstract::MultiVector& result_real,
-// 			    NOX::Abstract::MultiVector& result_imag) const
-// {
-//   string callingFunction = 
-//     "LOCA::DerivUtils::computeDCeDxa()";
-//   NOX::Abstract::Group::ReturnType status, finalStatus;
-
-//   // Allocate base Ce vectors and fill with C times e
-//   Teuchos::RefCountPtr<NOX::Abstract::Vector> baseCeRealVectorPtr = 
-//     yVector.clone(NOX::ShapeCopy);
-//   Teuchos::RefCountPtr<NOX::Abstract::Vector> baseCeImagVectorPtr = 
-//     yVector.clone(NOX::ShapeCopy);
-
-//   if (!grp.isJacobian()) {
-//     finalStatus = grp.computeJacobian();
-//     globalData->locaErrorCheck->checkReturnType(finalStatus, callingFunction);
-//   }
-//   else
-//     finalStatus = NOX::Abstract::Group::Ok;
-
-//   if (!grp.isMassMatrix()) {
-//     status = grp.computeMassMatrix();
-//     finalStatus = 
-//       globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
-// 						   callingFunction);
-//   }
-//   else
-//     finalStatus = 
-//       globalData->locaErrorCheck->combineAndCheckReturnTypes(NOX::Abstract::Group::Ok, 
-// 						   finalStatus,
-// 						   callingFunction);
-
-//   status = grp.applyComplex(yVector, zVector, w, *baseCeRealVectorPtr, 
-// 			    *baseCeImagVectorPtr);
-//   finalStatus = 
-//     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
-// 						 callingFunction);
-
-//   // Now that Ce is known, call other routine
-//   status = 
-//     computeDCeDxa(grp, yVector, zVector, w, aVector, *baseCeRealVectorPtr, 
-// 		  *baseCeImagVectorPtr, result_real, result_imag);
-//   finalStatus = 
-//     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
-// 						 callingFunction);
-
-//   return finalStatus;
-// }
-
-// NOX::Abstract::Group::ReturnType 
-// LOCA::DerivUtils::computeDCeDxa(
-// 			    LOCA::Bifurcation::HopfBord::AbstractGroup& grp,
-// 			    const NOX::Abstract::Vector& yVector,
-// 			    const NOX::Abstract::Vector& zVector,
-// 			    double w,
-// 			    const NOX::Abstract::MultiVector& aVector,
-// 			    const NOX::Abstract::Vector& Ce_real,
-// 			    const NOX::Abstract::Vector& Ce_imag,
-// 			    NOX::Abstract::MultiVector& result_real,
-// 			    NOX::Abstract::MultiVector& result_imag) const
-// {
-//   string callingFunction = 
-//     "LOCA::DerivUtils::computeDCeDxa()";
-//   NOX::Abstract::Group::ReturnType status, finalStatus;
-
-//   // Copy original solution vector
-//   Teuchos::RefCountPtr<NOX::Abstract::Vector> Xvec = 
-//     grp.getX().clone(NOX::DeepCopy);
-
-//   // Loop over each column of multivector
-//   for (int i=0; i<aVector.numVectors(); i++) {
-
-//     // Perturb solution vector in direction of aVector, return perturbation
-//     double eps = perturbXVec(grp, *Xvec, aVector[i]);
-
-//     // Compute perturbed Ce vectors
-//     finalStatus = grp.computeJacobian();
-//     globalData->locaErrorCheck->checkReturnType(finalStatus, callingFunction);
-
-//     status = grp.computeMassMatrix();
-//     finalStatus = 
-//       globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
-// 						   callingFunction);
-
-//     status = 
-//       grp.applyComplex(yVector, zVector, w, result_real[i],
-// 		       result_imag[i]);
-//     finalStatus = 
-//       globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
-// 						   callingFunction);
-
-//     // Difference perturbed and base vector and return approximate derivative
-//     result_real[i].update(-1.0, Ce_real, 1.0); result_real[i].scale(1.0/eps);
-//     result_imag[i].update(-1.0, Ce_imag, 1.0); result_imag[i].scale(1.0/eps);
-
-//   }
-
-//   // Restore original solution vector
-//   grp.setX(*Xvec);
-
-//   return finalStatus;
-// }
+  return finalStatus;
+}
 
 //
 // Protected methods start here.

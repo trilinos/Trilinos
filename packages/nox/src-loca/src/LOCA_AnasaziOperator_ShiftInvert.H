@@ -153,10 +153,10 @@ namespace LOCA {
       Teuchos::RefCountPtr<LOCA::TimeDependent::AbstractGroup> grp;
 
       //! Stores a temporary vector for computing Rayleigh quotients
-      mutable Teuchos::RefCountPtr<NOX::Abstract::Vector> tmp_r;
+      mutable Teuchos::RefCountPtr<NOX::Abstract::MultiVector> tmp_r;
 
       //! Stores a temporary vector for computing Rayleigh quotients
-      mutable Teuchos::RefCountPtr<NOX::Abstract::Vector> tmp_i;
+      mutable Teuchos::RefCountPtr<NOX::Abstract::MultiVector> tmp_i;
 
       //! Stores shift value
       double shift;

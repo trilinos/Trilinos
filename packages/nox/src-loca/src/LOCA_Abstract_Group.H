@@ -35,12 +35,10 @@
 
 #include "Teuchos_RefCountPtr.hpp"
 
-// #include "LOCA_Bifurcation_HopfBord_FiniteDifferenceGroup.H"  // base class
-// #include "LOCA_Bifurcation_TPBord_SingularSolveGroup.H"       // base class
-#include "LOCA_Homotopy_AbstractGroup.H"                      // base class
-#include "LOCA_TimeDependent_AbstractGroup.H"
-#include "LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.H"// base class
-#include "LOCA_Pitchfork_MooreSpence_AbstractGroup.H"// base class
+#include "LOCA_Homotopy_AbstractGroup.H"
+#include "LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.H"
+#include "LOCA_Pitchfork_MooreSpence_AbstractGroup.H"
+#include "LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.H"
 
 namespace LOCA { 
 
@@ -61,76 +59,26 @@ namespace LOCA {
      * future.
      */
     class Group : 
-//       public LOCA::Bifurcation::HopfBord::FiniteDifferenceGroup,
-//       public LOCA::Bifurcation::TPBord::SingularSolveGroup,
       public virtual LOCA::Homotopy::AbstractGroup,
-      public LOCA::TimeDependent::AbstractGroup,
-      public LOCA::TurningPoint::MinimallyAugmented::FiniteDifferenceGroup,
-      public LOCA::Pitchfork::MooreSpence::AbstractGroup
+      public virtual LOCA::TurningPoint::MinimallyAugmented::FiniteDifferenceGroup,
+      public virtual LOCA::Pitchfork::MooreSpence::AbstractGroup,
+      public virtual LOCA::Hopf::MooreSpence::FiniteDifferenceGroup
     {
 
     public:
 
-      //! Default constructor.
+      //! Constructor
       Group(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data);
 
-      //! Default constructor.
+      //! Constructor
       Group(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	    const Teuchos::RefCountPtr<DerivUtils>& deriv);
-  
-//       /*! 
-//        * \brief Constructor with parameter list 
-//        * (for LOCA::Bifurcation::TPBord::SingularSolveGroup).
-//        */
-//       Group(Teuchos::ParameterList& params,
-// 	    const DerivUtils& deriv = LOCA::DerivUtils());
+	    const Teuchos::RefCountPtr<LOCA::DerivUtils>& deriv);
  
       //! Copy constructor
       Group(const Group& source, NOX::CopyType type = NOX::DeepCopy);
 
       //! Destructor.
       virtual ~Group();
-
-      /*! 
-       * @name Implementation of LOCA::TimeDependent::AbstractGroup virtual methods.
-       */
-      //@{
-
-      /*! 
-       * \brief Apply the inverse of the shifted matrix by a vector, as 
-       * needed by the shift-and-invert and generalized Cayley transformations.
-       */
-      /*!
-       * Implementation here prints an error message and returns 
-       * NOX::Abstract::Group::NotDefined.
-       */
-      virtual NOX::Abstract::Group::ReturnType
-      applyShiftedMatrixInverse(Teuchos::ParameterList& params, 
-				const NOX::Abstract::Vector& input,
-                                NOX::Abstract::Vector& result,
-                                double shift);
-
-      //@}
-
-      /*! 
-       * @name Implementation of LOCA::Bifurcation::HopfBord::AbstractGroup virtual methods.
-       */
-      //@{
-
-      //! Solve \f$(J+i\omega B)(y+iz) = a+ib\f$
-      /*!
-       * Implementation here prints an error message and returns 
-       * NOX::Abstract::Group::NotDefined.
-       */
- //      virtual NOX::Abstract::Group::ReturnType
-//       applyComplexInverse(Teuchos::ParameterList& params,
-// 			  const NOX::Abstract::Vector& input_real,
-// 			  const NOX::Abstract::Vector& input_imag,
-// 			  double frequency,
-// 			  NOX::Abstract::Vector& result_real,
-// 			  NOX::Abstract::Vector& result_imag) const;
-
-      //@}
 
       /*! 
        * @name Implementation of LOCA::Homotopy::AbstractGroup virtual methods.
@@ -147,6 +95,110 @@ namespace LOCA {
        */
       virtual NOX::Abstract::Group::ReturnType 
       augmentJacobianForHomotopy(double conParamValue);
+
+      //@}
+
+      /*! 
+       * @name Implementation of LOCA::TimeDependent::AbstractGroup virtual methods.
+       */
+      //@{
+
+      //! Compute the shifted matrix
+      /*!
+       * Implementation here prints an error message and returns 
+       * NOX::Abstract::Group::NotDefined.
+       */
+      virtual NOX::Abstract::Group::ReturnType
+      computeShiftedMatrix(double alpha, double beta);
+
+      //! Multiply the shifted matrix by a vector.
+      /*!
+       * Implementation here prints an error message and returns 
+       * NOX::Abstract::Group::NotDefined.
+       */
+      virtual NOX::Abstract::Group::ReturnType
+      applyShiftedMatrix(const NOX::Abstract::Vector& input,
+			 NOX::Abstract::Vector& result) const;
+
+      //! Multiply the shifted matrix by a multi-vector.
+      /*!
+       * Implementation here prints an error message and returns 
+       * NOX::Abstract::Group::NotDefined.
+       */
+      virtual NOX::Abstract::Group::ReturnType
+      applyShiftedMatrixMultiVector(
+				const NOX::Abstract::MultiVector& input,
+				NOX::Abstract::MultiVector& result) const;
+      
+      /*! 
+       * \brief Apply the inverse of the shifted matrix by a multi-vector, as 
+       * needed by the shift-and-invert and generalized Cayley transformations.
+       */
+      /*!
+       * Implementation here prints an error message and returns 
+       * NOX::Abstract::Group::NotDefined.
+       */
+      virtual NOX::Abstract::Group::ReturnType
+      applyShiftedMatrixInverseMultiVector(
+			        Teuchos::ParameterList& params, 
+				const NOX::Abstract::MultiVector& input,
+				NOX::Abstract::MultiVector& result) const;
+
+      //@}
+
+      /*! 
+       * @name Implementation of LOCA::Hopf::Moorespence::AbstractGroup virtual methods.
+       */
+      //@{
+
+      //! Is  \f$J+i\omega B\f$ valid
+      /*!
+       * The implementation here always returns false.
+       */
+      virtual bool isComplex() const;
+
+      //! Compute \f$J+i\omega B\f$
+      /*!
+       * Implementation here prints an error message and returns 
+       * NOX::Abstract::Group::NotDefined.
+       */
+      virtual NOX::Abstract::Group::ReturnType
+      computeComplex(double frequency);
+
+      //! Compute \f$(J+i\omega B)(y+iz)\f$
+      /*!
+       * Implementation here prints an error message and returns 
+       * NOX::Abstract::Group::NotDefined.
+       */
+      virtual NOX::Abstract::Group::ReturnType
+      applyComplex(const NOX::Abstract::Vector& input_real,
+		   const NOX::Abstract::Vector& input_imag,
+		   NOX::Abstract::Vector& result_real,
+		   NOX::Abstract::Vector& result_imag) const;
+
+      //! Compute \f$(J+i\omega B)(y+iz)\f$
+      /*!
+       * Implementation here prints an error message and returns 
+       * NOX::Abstract::Group::NotDefined.
+       */
+      virtual NOX::Abstract::Group::ReturnType
+      applyComplexMultiVector(const NOX::Abstract::MultiVector& input_real,
+			      const NOX::Abstract::MultiVector& input_imag,
+			      NOX::Abstract::MultiVector& result_real,
+			      NOX::Abstract::MultiVector& result_imag) const;
+
+      //! Solve \f$(J+i\omega B)(y+iz) = a+ib\f$
+      /*!
+       * Implementation here prints an error message and returns 
+       * NOX::Abstract::Group::NotDefined.
+       */
+      virtual NOX::Abstract::Group::ReturnType
+      applyComplexInverseMultiVector(
+			       Teuchos::ParameterList& params,
+			       const NOX::Abstract::MultiVector& input_real,
+			       const NOX::Abstract::MultiVector& input_imag,
+			       NOX::Abstract::MultiVector& result_real,
+			       NOX::Abstract::MultiVector& result_imag) const;
 
       //@}
 

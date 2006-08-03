@@ -147,3 +147,13 @@ LOCA::Abstract::Factory::createMooreSpencePitchforkSolverStrategy(
 {
   return false;
 }
+
+bool
+LOCA::Abstract::Factory::createMooreSpenceHopfSolverStrategy(
+       const string& strategyName,
+       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+       const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams,
+       Teuchos::RefCountPtr<LOCA::Hopf::MooreSpence::SolverStrategy>& strategy)
+{
+  return false;
+}

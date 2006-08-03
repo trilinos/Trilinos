@@ -60,7 +60,7 @@ namespace LOCA {
     public:
   
       //! Constructor.
-      FiniteDifferenceGroup(const Teuchos::RefCountPtr<DerivUtils>& deriv);
+      FiniteDifferenceGroup();
  
       //! Copy constructor
       FiniteDifferenceGroup(const FiniteDifferenceGroup& source, 
@@ -75,6 +75,10 @@ namespace LOCA {
       //! Assignment
       virtual NOX::Abstract::Group& 
       operator=(const NOX::Abstract::Group& source);
+
+      //! Set the DerivUtils object
+      virtual void setDerivUtils(
+			     const Teuchos::RefCountPtr<DerivUtils>& deriv);
 
       /*! 
        * Compute \f$\partial F/\partial p\f$ for each parameter \f$p\f$ 

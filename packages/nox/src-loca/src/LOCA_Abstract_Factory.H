@@ -81,6 +81,11 @@ namespace LOCA {
       class SolverStrategy;
     }
   }
+  namespace Hopf {
+    namespace MooreSpence {
+      class SolverStrategy;
+    }
+  }
 }
 
 namespace LOCA {
@@ -218,6 +223,14 @@ namespace LOCA {
        const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
        const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams,
        Teuchos::RefCountPtr<LOCA::Pitchfork::MooreSpence::SolverStrategy>& strategy);
+
+      //! Create Moore-Spence Hopf solver strategy
+      virtual bool
+      createMooreSpenceHopfSolverStrategy(
+       const string& strategyName,
+       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+       const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams,
+       Teuchos::RefCountPtr<LOCA::Hopf::MooreSpence::SolverStrategy>& strategy);
 
       //@}
     

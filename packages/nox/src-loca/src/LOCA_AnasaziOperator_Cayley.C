@@ -51,27 +51,8 @@ LOCA::AnasaziOperator::Cayley::Cayley(
     sigma(0.0),
     mu(0.0)
 {
-  string callingFunction = 
-    "LOCA::AnasaziOperator::Cayley::Cayley()";
-
-  NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
-  NOX::Abstract::Group::ReturnType status;
-
-  // Get parameters
   sigma = eigenParams->get("Cayley Pole",0.0);
   mu = eigenParams->get("Cayley Zero",0.0);
-
-  // Compute Jacobian matrix
-  status = grp->computeJacobian();
-  finalStatus = 
-    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
-							   callingFunction);
-
-  // Compute mass matrix
-  status = grp->computeMassMatrix();
-  finalStatus = 
-    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
-							   callingFunction);
 }
 
 LOCA::AnasaziOperator::Cayley::~Cayley()
@@ -93,30 +74,40 @@ LOCA::AnasaziOperator::Cayley::apply(const NOX::Abstract::MultiVector& input,
 
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
+  
+  // Allocate temporary vector
+  if (tmp_r == Teuchos::null || tmp_r->numVectors() != input.numVectors())
+    tmp_r = input.clone(NOX::ShapeCopy);
 
-  for (int i=0; i<input.numVectors(); i++) {
+  // Compute J-mu*M
+  status = grp->computeShiftedMatrix(1.0, -mu);
+  finalStatus = 
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							   finalStatus,
+							   callingFunction);
 
-    // Allocate temporary vector
-    if (tmp_r == Teuchos::null)
-      tmp_r = input[i].clone(NOX::ShapeCopy);
+  // Compute (J-mu*M)*input
+  status = grp->applyShiftedMatrixMultiVector(input, *tmp_r);
+  finalStatus = 
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							   finalStatus,
+							   callingFunction);
 
-    // Compute (J-mu*M)*input
-    status = grp->applyShiftedMatrix(input[i], *tmp_r, -mu);
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
+  // Compute J-sigma*M
+  status = grp->computeShiftedMatrix(1.0, -sigma);
+  finalStatus = 
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							   finalStatus,
+							   callingFunction);
 
-    // Solve (J-sigma*M)*output = (J-mu*M)*input
-    status = grp->applyShiftedMatrixInverse(*solverParams, *tmp_r, output[i], 
-					    -sigma);
+  // Solve (J-sigma*M)*output = (J-mu*M)*input
+  status = grp->applyShiftedMatrixInverseMultiVector(*solverParams, *tmp_r, 
+						     output);
 
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
-
-  }
+  finalStatus = 
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							   finalStatus,
+							   callingFunction);
   
   return finalStatus;
 }
@@ -142,9 +133,9 @@ LOCA::AnasaziOperator::Cayley::rayleighQuotient(
 
   // Allocate temporary vectors
   if (tmp_r == Teuchos::null)
-    tmp_r = evec_r.clone(NOX::ShapeCopy);
+    tmp_r = evec_r.createMultiVector(1, NOX::ShapeCopy);
   if (tmp_i == Teuchos::null)
-    tmp_i = evec_i.clone(NOX::ShapeCopy);
+    tmp_i = evec_i.createMultiVector(1, NOX::ShapeCopy);
 
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
@@ -156,38 +147,40 @@ LOCA::AnasaziOperator::Cayley::rayleighQuotient(
 							   callingFunction);
 
   // Compute z^h J z
-  status = grp->applyJacobian(evec_r, *tmp_r);
+  status = grp->applyJacobian(evec_r, (*tmp_r)[0]);
   finalStatus = 
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
 							   callingFunction);
   
-  status = grp->applyJacobian(evec_i, *tmp_i);
+  status = grp->applyJacobian(evec_i, (*tmp_i)[0]);
   finalStatus = 
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
 							   callingFunction);
 
-  rq_r = evec_r.innerProduct(*tmp_r) + evec_i.innerProduct(*tmp_i);
-  rq_i = evec_r.innerProduct(*tmp_i) - evec_i.innerProduct(*tmp_r);
+  rq_r = evec_r.innerProduct((*tmp_r)[0]) + evec_i.innerProduct((*tmp_i)[0]);
+  rq_i = evec_r.innerProduct((*tmp_i)[0]) - evec_i.innerProduct((*tmp_r)[0]);
 
   // Make sure mass matrix is up-to-date
-  status = grp->computeMassMatrix();
+  status = grp->computeShiftedMatrix(0.0, 1.0);
   finalStatus = 
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
 							   callingFunction);
 
   // Compute z^h M z
-  status = grp->applyMassMatrix(evec_r, *tmp_r);
+  status = grp->applyShiftedMatrix(evec_r, (*tmp_r)[0]);
   finalStatus = 
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
 							   callingFunction);
   
-  status = grp->applyMassMatrix(evec_i, *tmp_i);
+  status = grp->applyShiftedMatrix(evec_i, (*tmp_i)[0]);
   finalStatus = 
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
 							   callingFunction);
 
-  double m_r = evec_r.innerProduct(*tmp_r) + evec_i.innerProduct(*tmp_i);
-  double m_i = evec_r.innerProduct(*tmp_i) - evec_i.innerProduct(*tmp_r);
+  double m_r = 
+    evec_r.innerProduct((*tmp_r)[0]) + evec_i.innerProduct((*tmp_i)[0]);
+  double m_i = 
+    evec_r.innerProduct((*tmp_i)[0]) - evec_i.innerProduct((*tmp_r)[0]);
   double m = m_r*m_r + m_i*m_i;
 
   // Compute z^h J z / z^h M z

@@ -30,22 +30,22 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef LOCA_BIFURCATION_HOPFBORD_FINITEDIFFERENCEGROUP_H
-#define LOCA_BIFURCATION_HOPFBORD_FINITEDIFFERENCEGROUP_H
+#ifndef LOCA_HOPF_MOORESPENCE_FINITEDIFFERENCEGROUP_H
+#define LOCA_HOPF_MOORESPENCE_FINITEDIFFERENCEGROUP_H
 
-#include "LOCA_Bifurcation_HopfBord_AbstractGroup.H"          // base class
-#include "LOCA_Bifurcation_TPBord_FiniteDifferenceGroup.H"    // base class
+#include "LOCA_Hopf_MooreSpence_AbstractGroup.H"                 // base class
+#include "LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.H" // base class
 
 namespace LOCA { 
   
-  namespace Bifurcation { 
+  namespace Hopf { 
 
-    namespace HopfBord {
+    namespace MooreSpence {
 
       /*!  
        * \brief Concrete class that provides concrete implementations of the
        * derivative computation methods of the 
-       * LOCA::Bifurcation::HopfBord::AbstractGroup using first-order finite 
+       * LOCA::Hopf::MooreSpence::AbstractGroup using first-order finite 
        * differencing.
        */
       /*! 
@@ -57,13 +57,13 @@ namespace LOCA {
        * child classes.
        */
       class FiniteDifferenceGroup : 
-	public virtual LOCA::Bifurcation::HopfBord::AbstractGroup,
-	public LOCA::Bifurcation::TPBord::FiniteDifferenceGroup {
+	public virtual LOCA::Hopf::MooreSpence::AbstractGroup,
+	public virtual LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup {
 
       public:
   
 	//! Constructor.
-	FiniteDifferenceGroup(const LOCA::DerivUtils& deriv);
+	FiniteDifferenceGroup();
  
 	//! Copy constructor
 	FiniteDifferenceGroup(const FiniteDifferenceGroup& source, 
@@ -72,14 +72,10 @@ namespace LOCA {
 	//! Destructor
 	virtual ~FiniteDifferenceGroup();
 
-	//! Assignment operator
-	virtual FiniteDifferenceGroup& 
-	operator=(const FiniteDifferenceGroup& source);
-
 	/*! 
 	 * \brief Computes the derivative 
 	 * \f$\frac{\partial (J+i\omega B)(y+iz)}{\partial p}\f$ 
-	 * where \f$p\f$ is the parameter indexed by \b param_id.
+	 * where \f$p\f$ is the parameter indexed by \b paramIDs.
 	 */
 	/*! 
 	 * The calculation is implemented by calling the corresponding
@@ -87,34 +83,13 @@ namespace LOCA {
 	 * LOCA::DerivUtils object.
 	 */
 	virtual NOX::Abstract::Group::ReturnType 
-	computeDCeDp(const NOX::Abstract::Vector& yVector,
+	computeDCeDp(const vector<int>& paramIDs, 
+		     const NOX::Abstract::Vector& yVector,
 		     const NOX::Abstract::Vector& zVector,
 		     double w,
-		     const int param_id, 
-		     NOX::Abstract::Vector& result_real,
-		     NOX::Abstract::Vector& result_imag);
-
-	/*! 
-	 * \brief Computes the derivative 
-	 * \f$\frac{\partial (J+i\omega B)(y+iz)}{\partial p}\f$ 
-	 * where \f$p\f$ is the parameter indexed by \b param_id.  The 
-	 * arguments \b Ce_real and \b Ce_imag hold the real and imaginary
-	 * components of \f$(J+i\omega B)(y+iz)\f$.
-	 */
-	/*! 
-	 * The calculation is implemented by calling the corresponding
-	 * LOCA::DerivUtils::computeDCeDp() method of the passed 
-	 * LOCA::DerivUtils object.
-	 */
-	virtual NOX::Abstract::Group::ReturnType 
-	computeDCeDp(const NOX::Abstract::Vector& yVector,
-		     const NOX::Abstract::Vector& zVector,
-		     double w,
-		     const int param_id, 
-		     const NOX::Abstract::Vector& Ce_real,
-		     const NOX::Abstract::Vector& Ce_imag,
-		     NOX::Abstract::Vector& result_real,
-		     NOX::Abstract::Vector& result_imag);
+		     NOX::Abstract::MultiVector& result_real,
+		     NOX::Abstract::MultiVector& result_imag,
+		     bool isValid);
 
 	/*! 
 	 * \brief Computes the directional derivative 
@@ -130,9 +105,9 @@ namespace LOCA {
 	computeDCeDxa(const NOX::Abstract::Vector& yVector,
 		      const NOX::Abstract::Vector& zVector,
 		      double w,
-		      const NOX::Abstract::Vector& aVector,
-		      NOX::Abstract::Vector& result_real,
-		      NOX::Abstract::Vector& result_imag);
+		      const NOX::Abstract::MultiVector& aVector,
+		      NOX::Abstract::MultiVector& result_real,
+		      NOX::Abstract::MultiVector& result_imag);
   
 	/*! 
 	 * \brief Computes the directional derivative 
@@ -150,11 +125,15 @@ namespace LOCA {
 	computeDCeDxa(const NOX::Abstract::Vector& yVector,
 		      const NOX::Abstract::Vector& zVector,
 		      double w,
-		      const NOX::Abstract::Vector& aVector,
+		      const NOX::Abstract::MultiVector& aVector,
 		      const NOX::Abstract::Vector& Ce_real,
 		      const NOX::Abstract::Vector& Ce_imag,
-		      NOX::Abstract::Vector& result_real,
-		      NOX::Abstract::Vector& result_imag);
+		      NOX::Abstract::MultiVector& result_real,
+		      NOX::Abstract::MultiVector& result_imag);
+
+	//! Bring NOX::Abstract::Group::operator=() into scope
+	using NOX::Abstract::Group::operator=;
+
       };
     } // namespace HopfBord
   } // namespace Bifurcation

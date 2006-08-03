@@ -169,6 +169,14 @@ am__libloca_a_SOURCES_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_SalingerBordering.H \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_PhippsBordering.H \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_SolverFactory.H \
+	$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedVector.H \
+	$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedMultiVector.H \
+	$(srcdir)/LOCA_Hopf_MooreSpence_AbstractGroup.H \
+	$(srcdir)/LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.H \
+	$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedGroup.H \
+	$(srcdir)/LOCA_Hopf_MooreSpence_SolverStrategy.H \
+	$(srcdir)/LOCA_Hopf_MooreSpence_SalingerBordering.H \
+	$(srcdir)/LOCA_Hopf_MooreSpence_SolverFactory.H \
 	$(srcdir)/LOCA_Bifurcation_Factory.H \
 	$(srcdir)/LOCA_Homotopy_AbstractGroup.H \
 	$(srcdir)/LOCA_Homotopy_Group.H $(srcdir)/LOCA_DerivUtils.H \
@@ -230,7 +238,6 @@ am__libloca_a_SOURCES_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_AnasaziOperator_ShiftInvert.C \
 	$(srcdir)/LOCA_AnasaziOperator_Cayley.C \
 	$(srcdir)/LOCA_AnasaziOperator_Factory.C \
-	$(srcdir)/LOCA_TimeDependent_AbstractGroup.C \
 	$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedVector.C \
 	$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.C \
 	$(srcdir)/LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.C \
@@ -248,6 +255,12 @@ am__libloca_a_SOURCES_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_SalingerBordering.C \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_PhippsBordering.C \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_SolverFactory.C \
+	$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedVector.C \
+	$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedMultiVector.C \
+	$(srcdir)/LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.C \
+	$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedGroup.C \
+	$(srcdir)/LOCA_Hopf_MooreSpence_SalingerBordering.C \
+	$(srcdir)/LOCA_Hopf_MooreSpence_SolverFactory.C \
 	$(srcdir)/LOCA_Bifurcation_Factory.C \
 	$(srcdir)/LOCA_Homotopy_Group.C $(srcdir)/LOCA_DerivUtils.C \
 	$(srcdir)/LOCA_ErrorCheck.C $(srcdir)/LOCA_Parameter_Vector.C \
@@ -316,8 +329,7 @@ am__objects_5 =  \
 @BUILD_LOCAANASAZI_TRUE@	libloca_a-LOCA_AnasaziOperator_Factory.$(OBJEXT) \
 @BUILD_LOCAANASAZI_TRUE@	libloca_a-Anasazi_LOCA_Sort.$(OBJEXT) \
 @BUILD_LOCAANASAZI_TRUE@	libloca_a-LOCA_Eigensolver_AnasaziStrategy.$(OBJEXT)
-am__objects_7 = libloca_a-LOCA_TimeDependent_AbstractGroup.$(OBJEXT) \
-	libloca_a-LOCA_TurningPoint_MooreSpence_ExtendedVector.$(OBJEXT) \
+am__objects_7 = libloca_a-LOCA_TurningPoint_MooreSpence_ExtendedVector.$(OBJEXT) \
 	libloca_a-LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.$(OBJEXT) \
 	libloca_a-LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.$(OBJEXT) \
 	libloca_a-LOCA_TurningPoint_MooreSpence_ExtendedGroup.$(OBJEXT) \
@@ -334,6 +346,12 @@ am__objects_7 = libloca_a-LOCA_TimeDependent_AbstractGroup.$(OBJEXT) \
 	libloca_a-LOCA_Pitchfork_MooreSpence_SalingerBordering.$(OBJEXT) \
 	libloca_a-LOCA_Pitchfork_MooreSpence_PhippsBordering.$(OBJEXT) \
 	libloca_a-LOCA_Pitchfork_MooreSpence_SolverFactory.$(OBJEXT) \
+	libloca_a-LOCA_Hopf_MooreSpence_ExtendedVector.$(OBJEXT) \
+	libloca_a-LOCA_Hopf_MooreSpence_ExtendedMultiVector.$(OBJEXT) \
+	libloca_a-LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.$(OBJEXT) \
+	libloca_a-LOCA_Hopf_MooreSpence_ExtendedGroup.$(OBJEXT) \
+	libloca_a-LOCA_Hopf_MooreSpence_SalingerBordering.$(OBJEXT) \
+	libloca_a-LOCA_Hopf_MooreSpence_SolverFactory.$(OBJEXT) \
 	libloca_a-LOCA_Bifurcation_Factory.$(OBJEXT)
 am__objects_8 = libloca_a-LOCA_Homotopy_Group.$(OBJEXT)
 am__objects_9 = libloca_a-LOCA_DerivUtils.$(OBJEXT)
@@ -404,6 +422,12 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Factory.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_GlobalData.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Homotopy_Group.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_ExtendedGroup.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_ExtendedMultiVector.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_ExtendedVector.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_SalingerBordering.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_SolverFactory.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_MultiContinuation_AbstractGroup.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_MultiContinuation_ArcLengthConstraint.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_MultiContinuation_ArcLengthGroup.Po \
@@ -441,7 +465,6 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_StepSize_Adaptive.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_StepSize_Constant.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_StepSize_Factory.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_TimeDependent_AbstractGroup.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_TurningPoint_MinimallyAugmented_Constraint.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_TurningPoint_MinimallyAugmented_ExtendedGroup.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.Po \
@@ -521,6 +544,14 @@ am__include_HEADERS_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_SalingerBordering.H \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_PhippsBordering.H \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_SolverFactory.H \
+	$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedVector.H \
+	$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedMultiVector.H \
+	$(srcdir)/LOCA_Hopf_MooreSpence_AbstractGroup.H \
+	$(srcdir)/LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.H \
+	$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedGroup.H \
+	$(srcdir)/LOCA_Hopf_MooreSpence_SolverStrategy.H \
+	$(srcdir)/LOCA_Hopf_MooreSpence_SalingerBordering.H \
+	$(srcdir)/LOCA_Hopf_MooreSpence_SolverFactory.H \
 	$(srcdir)/LOCA_Bifurcation_Factory.H \
 	$(srcdir)/LOCA_Homotopy_AbstractGroup.H \
 	$(srcdir)/LOCA_Homotopy_Group.H $(srcdir)/LOCA_DerivUtils.H \
@@ -773,10 +804,6 @@ LOCA_OLD_H = \
 	$(srcdir)/LOCA_SingularJacobianSolve_Nic.H \
 	$(srcdir)/LOCA_SingularJacobianSolve_NicDay.H \
 	$(srcdir)/LOCA_SingularJacobianSolve_ItRef.H \
-	$(srcdir)/LOCA_Bifurcation_HopfBord_ExtendedVector.H \
-	$(srcdir)/LOCA_Bifurcation_HopfBord_AbstractGroup.H \
-	$(srcdir)/LOCA_Bifurcation_HopfBord_FiniteDifferenceGroup.H \
-	$(srcdir)/LOCA_Bifurcation_HopfBord_ExtendedGroup.H \
 	$(srcdir)/LOCA_Solver_Wrapper.H \
 	$(srcdir)/LOCA_StatusTest_Wrapper.H \
 	$(srcdir)/LOCA_Continuation_StatusTest_ParameterUpdateNorm.H \
@@ -793,10 +820,6 @@ LOCA_OLD = \
 	$(srcdir)/LOCA_SingularJacobianSolve_Nic.C \
 	$(srcdir)/LOCA_SingularJacobianSolve_NicDay.C \
 	$(srcdir)/LOCA_SingularJacobianSolve_ItRef.C \
-	$(srcdir)/LOCA_Bifurcation_HopfBord_ExtendedVector.C \
-	$(srcdir)/LOCA_Bifurcation_HopfBord_AbstractGroup.C \
-	$(srcdir)/LOCA_Bifurcation_HopfBord_FiniteDifferenceGroup.C \
-	$(srcdir)/LOCA_Bifurcation_HopfBord_ExtendedGroup.C \
 	$(srcdir)/LOCA_Solver_Wrapper.C \
 	$(srcdir)/LOCA_StatusTest_Wrapper.C \
 	$(srcdir)/LOCA_Continuation_StatusTest_ParameterUpdateNorm.C \
@@ -909,10 +932,17 @@ LOCA_BIFURCATION_H = \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_SalingerBordering.H \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_PhippsBordering.H \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_SolverFactory.H \
+	$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedVector.H \
+	$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedMultiVector.H \
+	$(srcdir)/LOCA_Hopf_MooreSpence_AbstractGroup.H \
+	$(srcdir)/LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.H \
+	$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedGroup.H \
+	$(srcdir)/LOCA_Hopf_MooreSpence_SolverStrategy.H \
+	$(srcdir)/LOCA_Hopf_MooreSpence_SalingerBordering.H \
+	$(srcdir)/LOCA_Hopf_MooreSpence_SolverFactory.H \
 	$(srcdir)/LOCA_Bifurcation_Factory.H
 
 LOCA_BIFURCATION = \
-	$(srcdir)/LOCA_TimeDependent_AbstractGroup.C \
 	$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedVector.C \
 	$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.C \
 	$(srcdir)/LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.C \
@@ -930,6 +960,12 @@ LOCA_BIFURCATION = \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_SalingerBordering.C \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_PhippsBordering.C \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_SolverFactory.C \
+	$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedVector.C \
+	$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedMultiVector.C \
+	$(srcdir)/LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.C \
+	$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedGroup.C \
+	$(srcdir)/LOCA_Hopf_MooreSpence_SalingerBordering.C \
+	$(srcdir)/LOCA_Hopf_MooreSpence_SolverFactory.C \
 	$(srcdir)/LOCA_Bifurcation_Factory.C
 
 LOCA_HOMOTOPY_H = \
@@ -1248,6 +1284,12 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Factory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_GlobalData.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Homotopy_Group.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_ExtendedGroup.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_ExtendedMultiVector.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_ExtendedVector.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_SalingerBordering.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_SolverFactory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_MultiContinuation_AbstractGroup.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_MultiContinuation_ArcLengthConstraint.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_MultiContinuation_ArcLengthGroup.Po@am__quote@
@@ -1285,7 +1327,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_StepSize_Adaptive.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_StepSize_Constant.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_StepSize_Factory.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_TimeDependent_AbstractGroup.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_TurningPoint_MinimallyAugmented_Constraint.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_TurningPoint_MinimallyAugmented_ExtendedGroup.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.Po@am__quote@
@@ -1810,22 +1851,6 @@ libloca_a-LOCA_Eigensolver_AnasaziStrategy.obj: $(srcdir)/LOCA_Eigensolver_Anasa
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Eigensolver_AnasaziStrategy.obj `if test -f '$(srcdir)/LOCA_Eigensolver_AnasaziStrategy.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Eigensolver_AnasaziStrategy.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Eigensolver_AnasaziStrategy.C'; fi`
 
-libloca_a-LOCA_TimeDependent_AbstractGroup.o: $(srcdir)/LOCA_TimeDependent_AbstractGroup.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_TimeDependent_AbstractGroup.o -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_TimeDependent_AbstractGroup.Tpo" -c -o libloca_a-LOCA_TimeDependent_AbstractGroup.o `test -f '$(srcdir)/LOCA_TimeDependent_AbstractGroup.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_TimeDependent_AbstractGroup.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_TimeDependent_AbstractGroup.Tpo" "$(DEPDIR)/libloca_a-LOCA_TimeDependent_AbstractGroup.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_TimeDependent_AbstractGroup.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_TimeDependent_AbstractGroup.C' object='libloca_a-LOCA_TimeDependent_AbstractGroup.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_TimeDependent_AbstractGroup.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_TimeDependent_AbstractGroup.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_TimeDependent_AbstractGroup.o `test -f '$(srcdir)/LOCA_TimeDependent_AbstractGroup.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_TimeDependent_AbstractGroup.C
-
-libloca_a-LOCA_TimeDependent_AbstractGroup.obj: $(srcdir)/LOCA_TimeDependent_AbstractGroup.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_TimeDependent_AbstractGroup.obj -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_TimeDependent_AbstractGroup.Tpo" -c -o libloca_a-LOCA_TimeDependent_AbstractGroup.obj `if test -f '$(srcdir)/LOCA_TimeDependent_AbstractGroup.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_TimeDependent_AbstractGroup.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_TimeDependent_AbstractGroup.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_TimeDependent_AbstractGroup.Tpo" "$(DEPDIR)/libloca_a-LOCA_TimeDependent_AbstractGroup.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_TimeDependent_AbstractGroup.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_TimeDependent_AbstractGroup.C' object='libloca_a-LOCA_TimeDependent_AbstractGroup.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_TimeDependent_AbstractGroup.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_TimeDependent_AbstractGroup.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_TimeDependent_AbstractGroup.obj `if test -f '$(srcdir)/LOCA_TimeDependent_AbstractGroup.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_TimeDependent_AbstractGroup.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_TimeDependent_AbstractGroup.C'; fi`
-
 libloca_a-LOCA_TurningPoint_MooreSpence_ExtendedVector.o: $(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedVector.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_TurningPoint_MooreSpence_ExtendedVector.o -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_TurningPoint_MooreSpence_ExtendedVector.Tpo" -c -o libloca_a-LOCA_TurningPoint_MooreSpence_ExtendedVector.o `test -f '$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedVector.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedVector.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_TurningPoint_MooreSpence_ExtendedVector.Tpo" "$(DEPDIR)/libloca_a-LOCA_TurningPoint_MooreSpence_ExtendedVector.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_TurningPoint_MooreSpence_ExtendedVector.Tpo"; exit 1; fi
@@ -2097,6 +2122,102 @@ libloca_a-LOCA_Pitchfork_MooreSpence_SolverFactory.obj: $(srcdir)/LOCA_Pitchfork
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_Pitchfork_MooreSpence_SolverFactory.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Pitchfork_MooreSpence_SolverFactory.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Pitchfork_MooreSpence_SolverFactory.obj `if test -f '$(srcdir)/LOCA_Pitchfork_MooreSpence_SolverFactory.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Pitchfork_MooreSpence_SolverFactory.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Pitchfork_MooreSpence_SolverFactory.C'; fi`
+
+libloca_a-LOCA_Hopf_MooreSpence_ExtendedVector.o: $(srcdir)/LOCA_Hopf_MooreSpence_ExtendedVector.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_Hopf_MooreSpence_ExtendedVector.o -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_ExtendedVector.Tpo" -c -o libloca_a-LOCA_Hopf_MooreSpence_ExtendedVector.o `test -f '$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedVector.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedVector.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_ExtendedVector.Tpo" "$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_ExtendedVector.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_ExtendedVector.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedVector.C' object='libloca_a-LOCA_Hopf_MooreSpence_ExtendedVector.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_ExtendedVector.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_ExtendedVector.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Hopf_MooreSpence_ExtendedVector.o `test -f '$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedVector.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedVector.C
+
+libloca_a-LOCA_Hopf_MooreSpence_ExtendedVector.obj: $(srcdir)/LOCA_Hopf_MooreSpence_ExtendedVector.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_Hopf_MooreSpence_ExtendedVector.obj -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_ExtendedVector.Tpo" -c -o libloca_a-LOCA_Hopf_MooreSpence_ExtendedVector.obj `if test -f '$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedVector.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedVector.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedVector.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_ExtendedVector.Tpo" "$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_ExtendedVector.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_ExtendedVector.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedVector.C' object='libloca_a-LOCA_Hopf_MooreSpence_ExtendedVector.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_ExtendedVector.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_ExtendedVector.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Hopf_MooreSpence_ExtendedVector.obj `if test -f '$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedVector.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedVector.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedVector.C'; fi`
+
+libloca_a-LOCA_Hopf_MooreSpence_ExtendedMultiVector.o: $(srcdir)/LOCA_Hopf_MooreSpence_ExtendedMultiVector.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_Hopf_MooreSpence_ExtendedMultiVector.o -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_ExtendedMultiVector.Tpo" -c -o libloca_a-LOCA_Hopf_MooreSpence_ExtendedMultiVector.o `test -f '$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedMultiVector.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedMultiVector.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_ExtendedMultiVector.Tpo" "$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_ExtendedMultiVector.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_ExtendedMultiVector.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedMultiVector.C' object='libloca_a-LOCA_Hopf_MooreSpence_ExtendedMultiVector.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_ExtendedMultiVector.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_ExtendedMultiVector.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Hopf_MooreSpence_ExtendedMultiVector.o `test -f '$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedMultiVector.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedMultiVector.C
+
+libloca_a-LOCA_Hopf_MooreSpence_ExtendedMultiVector.obj: $(srcdir)/LOCA_Hopf_MooreSpence_ExtendedMultiVector.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_Hopf_MooreSpence_ExtendedMultiVector.obj -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_ExtendedMultiVector.Tpo" -c -o libloca_a-LOCA_Hopf_MooreSpence_ExtendedMultiVector.obj `if test -f '$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedMultiVector.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedMultiVector.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedMultiVector.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_ExtendedMultiVector.Tpo" "$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_ExtendedMultiVector.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_ExtendedMultiVector.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedMultiVector.C' object='libloca_a-LOCA_Hopf_MooreSpence_ExtendedMultiVector.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_ExtendedMultiVector.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_ExtendedMultiVector.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Hopf_MooreSpence_ExtendedMultiVector.obj `if test -f '$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedMultiVector.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedMultiVector.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedMultiVector.C'; fi`
+
+libloca_a-LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.o: $(srcdir)/LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.o -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.Tpo" -c -o libloca_a-LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.o `test -f '$(srcdir)/LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.Tpo" "$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.C' object='libloca_a-LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.o `test -f '$(srcdir)/LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.C
+
+libloca_a-LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.obj: $(srcdir)/LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.obj -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.Tpo" -c -o libloca_a-LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.obj `if test -f '$(srcdir)/LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.Tpo" "$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.C' object='libloca_a-LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.obj `if test -f '$(srcdir)/LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.C'; fi`
+
+libloca_a-LOCA_Hopf_MooreSpence_ExtendedGroup.o: $(srcdir)/LOCA_Hopf_MooreSpence_ExtendedGroup.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_Hopf_MooreSpence_ExtendedGroup.o -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_ExtendedGroup.Tpo" -c -o libloca_a-LOCA_Hopf_MooreSpence_ExtendedGroup.o `test -f '$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedGroup.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedGroup.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_ExtendedGroup.Tpo" "$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_ExtendedGroup.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_ExtendedGroup.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedGroup.C' object='libloca_a-LOCA_Hopf_MooreSpence_ExtendedGroup.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_ExtendedGroup.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_ExtendedGroup.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Hopf_MooreSpence_ExtendedGroup.o `test -f '$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedGroup.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedGroup.C
+
+libloca_a-LOCA_Hopf_MooreSpence_ExtendedGroup.obj: $(srcdir)/LOCA_Hopf_MooreSpence_ExtendedGroup.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_Hopf_MooreSpence_ExtendedGroup.obj -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_ExtendedGroup.Tpo" -c -o libloca_a-LOCA_Hopf_MooreSpence_ExtendedGroup.obj `if test -f '$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedGroup.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedGroup.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedGroup.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_ExtendedGroup.Tpo" "$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_ExtendedGroup.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_ExtendedGroup.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedGroup.C' object='libloca_a-LOCA_Hopf_MooreSpence_ExtendedGroup.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_ExtendedGroup.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_ExtendedGroup.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Hopf_MooreSpence_ExtendedGroup.obj `if test -f '$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedGroup.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedGroup.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedGroup.C'; fi`
+
+libloca_a-LOCA_Hopf_MooreSpence_SalingerBordering.o: $(srcdir)/LOCA_Hopf_MooreSpence_SalingerBordering.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_Hopf_MooreSpence_SalingerBordering.o -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_SalingerBordering.Tpo" -c -o libloca_a-LOCA_Hopf_MooreSpence_SalingerBordering.o `test -f '$(srcdir)/LOCA_Hopf_MooreSpence_SalingerBordering.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Hopf_MooreSpence_SalingerBordering.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_SalingerBordering.Tpo" "$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_SalingerBordering.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_SalingerBordering.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Hopf_MooreSpence_SalingerBordering.C' object='libloca_a-LOCA_Hopf_MooreSpence_SalingerBordering.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_SalingerBordering.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_SalingerBordering.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Hopf_MooreSpence_SalingerBordering.o `test -f '$(srcdir)/LOCA_Hopf_MooreSpence_SalingerBordering.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Hopf_MooreSpence_SalingerBordering.C
+
+libloca_a-LOCA_Hopf_MooreSpence_SalingerBordering.obj: $(srcdir)/LOCA_Hopf_MooreSpence_SalingerBordering.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_Hopf_MooreSpence_SalingerBordering.obj -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_SalingerBordering.Tpo" -c -o libloca_a-LOCA_Hopf_MooreSpence_SalingerBordering.obj `if test -f '$(srcdir)/LOCA_Hopf_MooreSpence_SalingerBordering.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Hopf_MooreSpence_SalingerBordering.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Hopf_MooreSpence_SalingerBordering.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_SalingerBordering.Tpo" "$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_SalingerBordering.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_SalingerBordering.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Hopf_MooreSpence_SalingerBordering.C' object='libloca_a-LOCA_Hopf_MooreSpence_SalingerBordering.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_SalingerBordering.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_SalingerBordering.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Hopf_MooreSpence_SalingerBordering.obj `if test -f '$(srcdir)/LOCA_Hopf_MooreSpence_SalingerBordering.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Hopf_MooreSpence_SalingerBordering.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Hopf_MooreSpence_SalingerBordering.C'; fi`
+
+libloca_a-LOCA_Hopf_MooreSpence_SolverFactory.o: $(srcdir)/LOCA_Hopf_MooreSpence_SolverFactory.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_Hopf_MooreSpence_SolverFactory.o -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_SolverFactory.Tpo" -c -o libloca_a-LOCA_Hopf_MooreSpence_SolverFactory.o `test -f '$(srcdir)/LOCA_Hopf_MooreSpence_SolverFactory.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Hopf_MooreSpence_SolverFactory.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_SolverFactory.Tpo" "$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_SolverFactory.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_SolverFactory.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Hopf_MooreSpence_SolverFactory.C' object='libloca_a-LOCA_Hopf_MooreSpence_SolverFactory.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_SolverFactory.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_SolverFactory.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Hopf_MooreSpence_SolverFactory.o `test -f '$(srcdir)/LOCA_Hopf_MooreSpence_SolverFactory.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Hopf_MooreSpence_SolverFactory.C
+
+libloca_a-LOCA_Hopf_MooreSpence_SolverFactory.obj: $(srcdir)/LOCA_Hopf_MooreSpence_SolverFactory.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_Hopf_MooreSpence_SolverFactory.obj -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_SolverFactory.Tpo" -c -o libloca_a-LOCA_Hopf_MooreSpence_SolverFactory.obj `if test -f '$(srcdir)/LOCA_Hopf_MooreSpence_SolverFactory.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Hopf_MooreSpence_SolverFactory.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Hopf_MooreSpence_SolverFactory.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_SolverFactory.Tpo" "$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_SolverFactory.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_SolverFactory.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Hopf_MooreSpence_SolverFactory.C' object='libloca_a-LOCA_Hopf_MooreSpence_SolverFactory.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_SolverFactory.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_SolverFactory.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Hopf_MooreSpence_SolverFactory.obj `if test -f '$(srcdir)/LOCA_Hopf_MooreSpence_SolverFactory.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Hopf_MooreSpence_SolverFactory.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Hopf_MooreSpence_SolverFactory.C'; fi`
 
 libloca_a-LOCA_Bifurcation_Factory.o: $(srcdir)/LOCA_Bifurcation_Factory.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_Bifurcation_Factory.o -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_Bifurcation_Factory.Tpo" -c -o libloca_a-LOCA_Bifurcation_Factory.o `test -f '$(srcdir)/LOCA_Bifurcation_Factory.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Bifurcation_Factory.C; \

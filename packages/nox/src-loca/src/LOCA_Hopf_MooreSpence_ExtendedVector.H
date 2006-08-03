@@ -30,38 +30,54 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef LOCA_BIFURCATION_HOPFBORD_EXTENDEDVECTOR_H
-#define LOCA_BIFURCATION_HOPFBORD_EXTENDEDVECTOR_H
+#ifndef LOCA_HOPF_MOORESPENCE_EXTENDEDVECTOR_H
+#define LOCA_HOPF_MOORESPENCE_EXTENDEDVECTOR_H
 
 #include "LOCA_Extended_Vector.H"  // Base class
 
+// Forward declarations
+namespace LOCA {
+  namespace Hopf {
+    namespace MooreSpence {
+      class ExtendedMultiVector;
+    }
+  }
+}
+
 namespace LOCA {
 
-  namespace Bifurcation {
+  namespace Hopf {
 
-    namespace HopfBord {
+    namespace MooreSpence {
 
       /*! 
-	\brief %Vector class to hold solution vectors, %Newton vectors, etc.
-	for Hopf equations.
-      */
+       * \brief %Vector class to hold solution vectors, %Newton vectors, etc.
+       * for Moore-Spence Hopf equations.
+       */
       /*! 
-	This class uses the LOCA::Extended::Vector implementation to store the
-	solution, real and imaginary eigenvector, frequency and parameter 
-	components of the Hopf vector and merely provides an interface for 
-	naming which components of the multivector these quantities 
-	correspond to.
-      */
-
+       * This class uses the LOCA::Extended::Vector implementation to store the
+       * solution, real and imaginary eigenvector, frequency and parameter 
+       * components of the Hopf vector and merely provides an interface for 
+       * naming which components of the multivector these quantities 
+       * correspond to.
+       */
       class ExtendedVector : public LOCA::Extended::Vector {
+
+	/*! 
+	 * \brief Declare LOCA::Hopf::MooreSpence::ExtendedMultiVector 
+	 * as a friend class so it can call protected methods.
+	 */
+	friend class ExtendedMultiVector;
 
       public:
   
-	//! %Constructor.
-	ExtendedVector(const NOX::Abstract::Vector& xVec,
-		       const NOX::Abstract::Vector& realEigenVec,
-		       const NOX::Abstract::Vector& imagEigenVec,
-		       double frequency, double bifParam);
+	//! Constructor.
+	ExtendedVector(
+		   const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+		   const NOX::Abstract::Vector& xVec,
+		   const NOX::Abstract::Vector& realEigenVec,
+		   const NOX::Abstract::Vector& imagEigenVec,
+		   double frequency, double bifParam);
 
 	//! Copy constructor.
 	ExtendedVector(const ExtendedVector& source, 
@@ -83,10 +99,10 @@ namespace LOCA {
 	operator=(const ExtendedVector& y);
 
 	//! Cloning function
-	virtual NOX::Abstract::Vector* 
+	virtual Teuchos::RefCountPtr<NOX::Abstract::Vector> 
 	clone(NOX::CopyType type = NOX::DeepCopy) const;
 
-	//! Sets the %HopfBordVector by setting its five components 
+	//! Sets the Hopf vector by setting its five components 
 	virtual void setVec(const NOX::Abstract::Vector& xVec,
 			    const NOX::Abstract::Vector& realEigenVec,
 			    const NOX::Abstract::Vector& imagEigenVec,
@@ -94,38 +110,68 @@ namespace LOCA {
 			    double bifPar);
 
 	//! Returns the solution vector component of extended vector
-	virtual const NOX::Abstract::Vector& getXVec() const;
+	virtual Teuchos::RefCountPtr<const NOX::Abstract::Vector> 
+	getXVec() const;
 
-	//! Returns the real part of the eigenvector component of extended vector
-	virtual const NOX::Abstract::Vector& getRealEigenVec() const;
+	/*! 
+	 * \brief Returns the real part of the eigenvector component of 
+	 * extended vector
+	 */
+	virtual Teuchos::RefCountPtr<const NOX::Abstract::Vector> 
+	getRealEigenVec() const;
 
-	//! Returns the imaginary part of the eigenvector component of extended vector
-	virtual const NOX::Abstract::Vector& getImagEigenVec() const;
+	/*! 
+	 * \brief Returns the imaginary part of the eigenvector component of 
+	 * extended vector
+	 */
+	virtual Teuchos::RefCountPtr<const NOX::Abstract::Vector> 
+	getImagEigenVec() const;
 
 	//! Returns the frequency component of the extended vector
 	virtual double getFrequency() const;
 
-	//! Get %Bifurcation parameter
+	//! Get Bifurcation parameter
 	virtual double getBifParam() const;
 
 	//! Returns the solution vector component of extended vector
-	virtual NOX::Abstract::Vector& getXVec();
+	virtual Teuchos::RefCountPtr<NOX::Abstract::Vector> getXVec();
 
-	//! Returns the real part of the eigenvector component of extended vector
-	virtual NOX::Abstract::Vector& getRealEigenVec();
+	/*! 
+	 * \brief Returns the real part of the eigenvector component of 
+	 * extended vector
+	 */
+	virtual Teuchos::RefCountPtr<NOX::Abstract::Vector> getRealEigenVec();
 
-	//! Returns the imaginary part of the eigenvector component of extended vector
-	virtual NOX::Abstract::Vector& getImagEigenVec();
+	/*! 
+	 * \brief Returns the imaginary part of the eigenvector component of 
+	 * extended vector
+	 */
+	virtual Teuchos::RefCountPtr<NOX::Abstract::Vector> getImagEigenVec();
 
 	//! Returns the frequency component of the extended vector
 	virtual double& getFrequency();
 
-	//! Get %Bifurcation parameter
+	//! Get Bifurcation parameter
 	virtual double& getBifParam();
 
-      }; // class Vector
-    } // namespace HopfBord
-  } // namespace Bifurcation
+      protected:
+
+	//! Default Constructor
+	ExtendedVector(
+		  const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data);
+
+	//! generate an extended multi-vector
+	/*!
+	 * Returns an empty multivector of type 
+	 * LOCA::Hopf::MooreSpence::ExtendedMultiVector
+	 */
+	virtual Teuchos::RefCountPtr<LOCA::Extended::MultiVector>
+	generateMultiVector(int nColumns, int nVectorRows, 
+			    int nScalarRows) const;
+
+      }; // class ExtendedVector
+    } // namespace MooreSpence
+  } // namespace Hopf
 } // namespace LOCA
 
 #endif

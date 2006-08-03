@@ -36,30 +36,27 @@
 #include "LOCA_ErrorCheck.H"
 
 LOCA::Abstract::Group::Group(
-		     const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data)
-  : LOCA::TurningPoint::MinimallyAugmented::FiniteDifferenceGroup(Teuchos::rcp(new LOCA::DerivUtils(global_data))),
-    globalData(global_data)
+	       const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data) :
+  globalData(global_data)
 {
+  setDerivUtils(Teuchos::rcp(new LOCA::DerivUtils(globalData)));
 }
 
 LOCA::Abstract::Group::Group(
-		     const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-		     const Teuchos::RefCountPtr<LOCA::DerivUtils>& d)
-  : LOCA::TurningPoint::MinimallyAugmented::FiniteDifferenceGroup(d),
-    globalData(global_data)
+	       const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+	       const Teuchos::RefCountPtr<LOCA::DerivUtils>& deriv ) :
+  globalData(global_data)
 {
+  setDerivUtils(deriv);
 }
-
-// LOCA::Abstract::Group::Group(Teuchos::ParameterList& params, 
-// 			     const LOCA::DerivUtils& d)
-//   : LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup(d)
-// {
-// }
 
 LOCA::Abstract::Group::Group(const LOCA::Abstract::Group& source, 
 			     NOX::CopyType type) : 
+  LOCA::MultiContinuation::FiniteDifferenceGroup(source, type),
+  LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup(source, type),
   LOCA::TurningPoint::MinimallyAugmented::FiniteDifferenceGroup(source, type),
-    globalData(source.globalData)
+  LOCA::Hopf::MooreSpence::FiniteDifferenceGroup(source, type),
+  globalData(source.globalData)
 {
 }
 
@@ -75,31 +72,99 @@ LOCA::Abstract::Group::augmentJacobianForHomotopy(double conParamValue)
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::Abstract::Group::applyShiftedMatrixInverse(
-					   Teuchos::ParameterList& params, 
-					   const NOX::Abstract::Vector& input,
-					   NOX::Abstract::Vector& result,
-					   double shift)
+LOCA::Abstract::Group::computeShiftedMatrix(double alpha, double beta)
 {
   globalData->locaErrorCheck->throwError(
-			   "LOCA::Abstract::Group::applyShiftedMatrixInverse",
+			   "LOCA::Abstract::Group::computeShiftedMatrix",
+			   "Not implemented for group");
+  return NOX::Abstract::Group::NotDefined;
+} 
+
+NOX::Abstract::Group::ReturnType
+LOCA::Abstract::Group::applyShiftedMatrix(const NOX::Abstract::Vector& input,
+					  NOX::Abstract::Vector& result) const
+{
+  globalData->locaErrorCheck->throwError(
+			   "LOCA::Abstract::Group::applyShiftedMatrix",
 			   "Not implemented for group");
   return NOX::Abstract::Group::NotDefined;
 }
 
-// NOX::Abstract::Group::ReturnType
-// LOCA::Abstract::Group::applyComplexInverse(
-// 			       Teuchos::ParameterList& params,
-// 			       const NOX::Abstract::Vector& input_real,
-// 			       const NOX::Abstract::Vector& input_imag,
-// 			       double frequency,
-// 			       NOX::Abstract::Vector& result_real,
-// 			       NOX::Abstract::Vector& result_imag) const
-// {
-//   globalData->locaErrorCheck->throwError("LOCA::Abstract::Group::applyComplexInverse",
-// 			       "No mass matrix defined for group");
-//   return NOX::Abstract::Group::NotDefined;
-// }
+NOX::Abstract::Group::ReturnType
+LOCA::Abstract::Group::applyShiftedMatrixMultiVector(
+				const NOX::Abstract::MultiVector& input,
+				NOX::Abstract::MultiVector& result) const
+{
+  globalData->locaErrorCheck->throwError(
+			"LOCA::Abstract::Group::applyShiftedMatrixMultiVector",
+			"Not implemented for group");
+  return NOX::Abstract::Group::NotDefined;
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::Abstract::Group::applyShiftedMatrixInverseMultiVector(
+			        Teuchos::ParameterList& params, 
+				const NOX::Abstract::MultiVector& input,
+				NOX::Abstract::MultiVector& result) const
+{
+  globalData->locaErrorCheck->throwError(
+		"LOCA::Abstract::Group::applyShiftedMatrixInverseMultiVector",
+		"Not implemented for group");
+  return NOX::Abstract::Group::NotDefined;
+}
+
+bool
+LOCA::Abstract::Group::isComplex() const
+{
+  return false;
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::Abstract::Group::computeComplex(double frequency)
+{
+  globalData->locaErrorCheck->throwError(
+			       "LOCA::Abstract::Group::computeComplex",
+			       "Method not defined for group");
+  return NOX::Abstract::Group::NotDefined;
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::Abstract::Group::applyComplex(const NOX::Abstract::Vector& input_real,
+				    const NOX::Abstract::Vector& input_imag,
+				    NOX::Abstract::Vector& result_real,
+				    NOX::Abstract::Vector& result_imag) const
+{
+  globalData->locaErrorCheck->throwError("LOCA::Abstract::Group::applyComplex",
+					 "Method not defined for group");
+  return NOX::Abstract::Group::NotDefined;
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::Abstract::Group::applyComplexMultiVector(
+			      const NOX::Abstract::MultiVector& input_real,
+			      const NOX::Abstract::MultiVector& input_imag,
+			      NOX::Abstract::MultiVector& result_real,
+			      NOX::Abstract::MultiVector& result_imag) const
+{
+  globalData->locaErrorCheck->throwError(
+			     "LOCA::Abstract::Group::applyComplexMultiVector",
+			     "Method not defined for group");
+  return NOX::Abstract::Group::NotDefined;
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::Abstract::Group::applyComplexInverseMultiVector(
+			       Teuchos::ParameterList& params,
+			       const NOX::Abstract::MultiVector& input_real,
+			       const NOX::Abstract::MultiVector& input_imag,
+			       NOX::Abstract::MultiVector& result_real,
+			       NOX::Abstract::MultiVector& result_imag) const
+{
+  globalData->locaErrorCheck->throwError(
+			       "LOCA::Abstract::Group::applyComplexInverse",
+			       "Method not defined for group");
+  return NOX::Abstract::Group::NotDefined;
+}
 
 void
 LOCA::Abstract::Group::copy(const NOX::Abstract::Group& src)

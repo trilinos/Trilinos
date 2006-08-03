@@ -32,17 +32,16 @@
 
 #include "LOCA_MultiContinuation_FiniteDifferenceGroup.H"
 
-LOCA::MultiContinuation::FiniteDifferenceGroup::FiniteDifferenceGroup(
-			      const Teuchos::RefCountPtr<LOCA::DerivUtils>& d)
-  : derivPtr(d)
+LOCA::MultiContinuation::FiniteDifferenceGroup::FiniteDifferenceGroup()
 {
 }
 
 LOCA::MultiContinuation::FiniteDifferenceGroup::FiniteDifferenceGroup(
                 const LOCA::MultiContinuation::FiniteDifferenceGroup& source, 
 		NOX::CopyType type)
-  : derivPtr(source.derivPtr->clone(type))
 {
+  if (source.derivPtr != Teuchos::null)
+    derivPtr = source.derivPtr->clone(type);
 }
 
 LOCA::MultiContinuation::FiniteDifferenceGroup::~FiniteDifferenceGroup() 
@@ -56,9 +55,9 @@ LOCA::MultiContinuation::FiniteDifferenceGroup::copy(
   const LOCA::MultiContinuation::FiniteDifferenceGroup& source = 
     dynamic_cast<const LOCA::MultiContinuation::FiniteDifferenceGroup&>(src);
 
-  if (this != &source) {
-    derivPtr = source.derivPtr->clone();
-  }
+  if (this != &source)
+    if (source.derivPtr != Teuchos::null)
+      derivPtr = source.derivPtr->clone();
 }
 
 NOX::Abstract::Group&
@@ -67,6 +66,13 @@ LOCA::MultiContinuation::FiniteDifferenceGroup::operator=(
 {
   copy(source);
   return *this;
+}
+
+void
+LOCA::MultiContinuation::FiniteDifferenceGroup::setDerivUtils(
+			      const Teuchos::RefCountPtr<LOCA::DerivUtils>& d)
+{
+  derivPtr = d;
 }
 
 NOX::Abstract::Group::ReturnType

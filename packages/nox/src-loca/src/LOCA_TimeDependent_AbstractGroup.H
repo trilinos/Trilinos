@@ -45,11 +45,9 @@ namespace LOCA {
     /*!
      * This abstract class provides an interface for time dependent problems,
      * i.e., problems with a mass matrix (typically used in eignvalue or
-     * Hopf calculations).  It provides pure virtual methods for manipulating
-     * the mass matrix and adding the mass and Jacobian matrices.
-     *
-     * Where possible, default implementations are provided assuming the
-     * mass matrix is the identity.
+     * Hopf calculations).  It provides pure virtual methods for computing
+     * and manipulating the shifted matrix \f$\alpha J + \beta M\f$ where
+     * \f$J\f$ is the Jacobian matrix and \f$M\f$ is the mass matrix.
      */
     class AbstractGroup : 
       public virtual LOCA::MultiContinuation::AbstractGroup {
@@ -67,71 +65,32 @@ namespace LOCA {
        * These methods must be defined by any concrete implementation
        */
       //@{
-      
-      /*! 
-       * \brief Apply the inverse of the shifted matrix by a vector, as 
-       * needed by the shift-and-invert and generalized Cayley transformations.
-       */
-      /*!
-       * Note that because of the variety of ways this method can be 
-       * implemented, the interface for this method is different than 
-       * other applyInverse() methods.  Namely, the method is not const,
-       * and there are no computeShiftMatrix(), isShiftedMatrix() methods.
-       * Rather, it is assumed the group will compute the shifted matrix
-       * if necessary, and then apply the solve.  It is up to the 
-       * implementing group to determine if the shifted matrix needs to be
-       * recomputed.
-       */
+
+      //! Compute the shifted matrix
       virtual NOX::Abstract::Group::ReturnType
-      applyShiftedMatrixInverse(Teuchos::ParameterList& params, 
-				const NOX::Abstract::Vector& input,
-                                NOX::Abstract::Vector& result,
-                                double shift) = 0;
+      computeShiftedMatrix(double alpha, double beta) = 0;
 
-
-      //@}
-
-      /*! 
-       * @name Virtual methods with default implementations 
-       * These methods should be overloaded in a concrete implementation
-       * if more appropriate/efficient approaches are available.
-       */
-      //@{
-
-      //! Compute the mass matrix of the system
-      /*!
-       * The default assumes the mass matrix is the identity, and 
-       * therefore merely returns NOX::Abstract::Group::Ok.
-       */
-      virtual NOX::Abstract::Group::ReturnType
-      computeMassMatrix();
-
-      //! Is mass matrix valid
-      /*!
-       * The default assumes the mass matrix is the identity, and 
-       * therefore merely returns true.
-       */
-      virtual bool isMassMatrix() const;
-
-      //! Multiply the mass matrix by a vector.
-      /*!
-       * The default assumes the mass matrix is the identity, and 
-       * therefore merely sets \em result = \em input.
-       */
-      virtual NOX::Abstract::Group::ReturnType
-      applyMassMatrix(const NOX::Abstract::Vector& input,
-		      NOX::Abstract::Vector& result) const;
-
-      //! Multiply the shifted matrix by a vector
-      /*!
-       * The default assumes the mass matrix is the identity, and 
-       * therefore merely sets 
-       * \em result = \em J * \em input + \em shift * \em input.
-       */
+      //! Multiply the shifted matrix by a vector.
       virtual NOX::Abstract::Group::ReturnType
       applyShiftedMatrix(const NOX::Abstract::Vector& input,
-                         NOX::Abstract::Vector& result,
-                         double shift) const;
+			 NOX::Abstract::Vector& result) const = 0;
+
+      //! Multiply the shifted matrix by a multi-vector.
+      virtual NOX::Abstract::Group::ReturnType
+      applyShiftedMatrixMultiVector(
+				const NOX::Abstract::MultiVector& input,
+				NOX::Abstract::MultiVector& result) const = 0;
+      
+      /*! 
+       * \brief Apply the inverse of the shifted matrix by a multi-vector, as 
+       * needed by the shift-and-invert and generalized Cayley transformations.
+       */
+      virtual NOX::Abstract::Group::ReturnType
+      applyShiftedMatrixInverseMultiVector(
+			        Teuchos::ParameterList& params, 
+				const NOX::Abstract::MultiVector& input,
+				NOX::Abstract::MultiVector& result) const = 0;
+
 
       //@}
 

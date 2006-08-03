@@ -30,8 +30,8 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef LOCA_TURNINGPOINT_MOORESPENCE_SOLVERSTRATEGY_H
-#define LOCA_TURNINGPOINT_MOORESPENCE_SOLVERSTRATEGY_H
+#ifndef LOCA_HOPF_MOORESPENCE_SOLVERSTRATEGY_H
+#define LOCA_HOPF_MOORESPENCE_SOLVERSTRATEGY_H
 
 #include "Teuchos_RefCountPtr.hpp" 
 
@@ -39,7 +39,7 @@
 
 // forward declarations
 namespace LOCA {
-  namespace TurningPoint {
+  namespace Hopf {
     namespace MooreSpence {
       class AbstractGroup;
       class ExtendedGroup;
@@ -50,36 +50,42 @@ namespace LOCA {
 
 namespace LOCA {
 
-  namespace TurningPoint {
+  namespace Hopf {
 
     namespace MooreSpence {
  
       /*! 
-       * \brief Abstract strategy for solving the Moore-Spence turning point
+       * \brief Abstract strategy for solving the Moore-Spence Hopf
        * equations.
        */
       /*!
        * This class provides an abstract interface for solver strategies to
-       * solve the Moore-Spence turning point Newton system:
+       * solve the Moore-Spence Hopf Newton system:
        * \f[
        *     \begin{bmatrix}
-       *          J   &    0   &   f_p \\
-       *       (Jv)_x &    J   & (Jv)_p \\
-       *          0   & \phi^T &   0
+       *          J       &    0   &    0   &   0  &    f_p     \\
+       *       (Jy-wBz)_x &    J   &  -wB   & -Bz  & (Jy-wBz)_p \\
+       *       (Jz+wBy)_x &   wB   &    J   &  By  & (Jz+wBy)_p \\
+       *          0       & \phi^T &    0   &   0  &     0      \\
+       *          0       &    0   & \phi^T &   0  &     0      
        *     \end{bmatrix}
        *     \begin{bmatrix}
        *        X \\
        *        Y \\
-       *        z
+       *        Z \\
+       *        \Omega^T \\
+       *        \Lambda^T
        *     \end{bmatrix} = 
        *     \begin{bmatrix}
        *        F \\
        *        G \\
-       *        h
+       *        H \\
+       *        U^T \\
+       *        V^T
        *     \end{bmatrix}.
        *  \f]
        * After instantiating a solver (via
-       * LOCA::TurningPoint::MooreSpence::SolverFactory), the linear
+       * LOCA::Hopf::MooreSpence::SolverFactory), the linear
        * system is set up by setBlocks() and can then be solved by solve().
        */
       class SolverStrategy {
@@ -95,20 +101,29 @@ namespace LOCA {
 	//! Set blocks in extended linear system
 	/*!
 	 * \param group [in] Underlying group representing J
-	 * \param tpGroup [in] Turning point group representing the turning
-	 *        point equations.  
-	 * \param nullVector [in] Vector representing v
-	 * \param JnVector [in] Vector representing Jv
+	 * \param hopfGroup [in] Hopf group representing the Hopf equations.  
+	 * \param yVector [in] Vector representing y
+	 * \param zVector [in] Vector representing z
+	 * \param CeRealVector [in] Vector representing Jy-wBz
+	 * \param CeImagVector [in] Vector representing Jz+wBy
 	 * \param dfdp [in] Vector representing df/dp
-	 * \param dJndp [in] Vector representing d(Jv)/dp
+	 * \param dCedpReal [in] Vector representing d(Jy-wBz)/dp
+	 * \param dCedpImag [in] Vector representing d(Jz+wBy)/dp
+	 * \param w [in] Bifurcation frequency w
 	 */
 	virtual void setBlocks(
-	  const Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::AbstractGroup>& group,
-	  const Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::ExtendedGroup>& tpGroup,
-	  const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& nullVector,
-	  const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& JnVector,
-	  const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& dfdp,
-	  const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& dJndp) = 0;
+	 const Teuchos::RefCountPtr<LOCA::Hopf::MooreSpence::AbstractGroup>& group,
+	 const Teuchos::RefCountPtr<LOCA::Hopf::MooreSpence::ExtendedGroup>& hopfGroup,
+	 const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& yVector,
+	 const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& zVector,
+	 const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& CeRealVector,
+	 const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& CeImagVector,
+	 const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& dfdp,
+	 const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& dCedpReal,
+	 const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& dCedpImag,
+	 const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& ByVector,
+	 const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& mBzVector,
+	 double w) = 0;
 
 	/*! 
 	 * \brief Solves the extended system as defined above
@@ -119,8 +134,8 @@ namespace LOCA {
 	virtual NOX::Abstract::Group::ReturnType 
 	solve(
 	  Teuchos::ParameterList& params,
-	  const LOCA::TurningPoint::MooreSpence::ExtendedMultiVector& input,
-	  LOCA::TurningPoint::MooreSpence::ExtendedMultiVector& result) const = 0;
+	  const LOCA::Hopf::MooreSpence::ExtendedMultiVector& input,
+	  LOCA::Hopf::MooreSpence::ExtendedMultiVector& result) const = 0;
 
       private:
 
@@ -134,8 +149,8 @@ namespace LOCA {
       
     } // Namespace MooreSpence
 
-  } // Namespace TurningPoint
+  } // Namespace Hopf
     
 } // Namespace LOCA
 
-#endif // LOCA_TURNINGPOINT_MOORESPENCE_SOLVERSTRATEGY_H
+#endif // LOCA_HOPF_MOORESPENCE_SOLVERSTRATEGY_H

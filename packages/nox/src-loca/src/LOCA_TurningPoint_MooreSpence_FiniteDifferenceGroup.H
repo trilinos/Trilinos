@@ -58,13 +58,12 @@ namespace LOCA {
        */
       class FiniteDifferenceGroup : 
 	public virtual LOCA::TurningPoint::MooreSpence::AbstractGroup,
-	public LOCA::MultiContinuation::FiniteDifferenceGroup {
+	public virtual LOCA::MultiContinuation::FiniteDifferenceGroup {
 
       public:
   
 	//! Constructor.
-	FiniteDifferenceGroup(
-		        const Teuchos::RefCountPtr<LOCA::DerivUtils>& deriv);
+	FiniteDifferenceGroup();
  
 	//! Copy constructor
 	FiniteDifferenceGroup(const FiniteDifferenceGroup& source, 

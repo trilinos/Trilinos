@@ -186,7 +186,7 @@ namespace LOCA {
       
     } // Namespace MooreSpence
 
-  } // Namespace TurningPont
+  } // Namespace TurningPoint
     
 } // Namespace LOCA
 

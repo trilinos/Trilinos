@@ -33,8 +33,7 @@
 #include "LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.H"
 
 LOCA::TurningPoint::MinimallyAugmented::FiniteDifferenceGroup::
-FiniteDifferenceGroup(const Teuchos::RefCountPtr<LOCA::DerivUtils>& d)
-  : LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup(d)
+FiniteDifferenceGroup()
 {
 }
 
@@ -42,7 +41,8 @@ LOCA::TurningPoint::MinimallyAugmented::FiniteDifferenceGroup::
 FiniteDifferenceGroup(
   const LOCA::TurningPoint::MinimallyAugmented::FiniteDifferenceGroup& source, 
   NOX::CopyType type)
-  : LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup(source, type)
+  :  LOCA::MultiContinuation::FiniteDifferenceGroup(source, type),
+     LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup(source, type)
 {
 }
 
