@@ -3,7 +3,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            PyTrilinos.Triutils: Python Interface to Triutils
+#            PyTrilinos.TriUtils: Python Interface to TriUtils
 #                   Copyright (2005) Sandia Corporation
 #
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -85,7 +85,7 @@ epetraPythonSrcDir = os.path.normpath(os.path.join(top_srcdir,"..","epetra","pyt
 include_dirs.append(epetraPythonSrcDir)
 
 # Define the strings that refer to the required local source files
-triutilsWrap           = "Triutils_wrap.cpp"
+triutilsWrap           = "TriUtils_wrap.cpp"
 epetraNumPyMultiVector = os.path.normpath(os.path.join(epetraPythonSrcDir,
                                                        "Epetra_NumPyMultiVector.cpp"))
 epetraNumPyVector      = os.path.normpath(os.path.join(epetraPythonSrcDir,
@@ -96,8 +96,8 @@ sysconfig.get_config_vars()
 sysconfig._config_vars["CC" ] = CXX
 sysconfig._config_vars["CXX"] = CXX
 
-# _Triutils extension module
-_Triutils = Extension("PyTrilinos._Triutils",
+# _TriUtils extension module
+_TriUtils = Extension("PyTrilinos._TriUtils",
                       [triutilsWrap, epetraNumPyMultiVector, epetraNumPyVector],
                       define_macros      = [("HAVE_CONFIG_H", "1")],
                       include_dirs       = include_dirs,
@@ -107,13 +107,13 @@ _Triutils = Extension("PyTrilinos._Triutils",
                       extra_link_args    = extra_link_args
                       )
 
-# PyTrilinos.Triutils setup
-setup(name         = "PyTrilinos.Triutils",
+# PyTrilinos.TriUtils setup
+setup(name         = "PyTrilinos.TriUtils",
       version      = version,
-      description  = "Python Interface to Trilinos Package Triutils",
+      description  = "Python Interface to Trilinos Package TriUtils",
       author       = "Bill Spotz",
       author_email = "wfspotz@sandia.gov",
       package_dir  = {"PyTrilinos" : "."},
       packages     = ["PyTrilinos"],
-      ext_modules  = [ _Triutils ]
+      ext_modules  = [ _TriUtils ]
       )

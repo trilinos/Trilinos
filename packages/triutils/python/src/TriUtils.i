@@ -63,8 +63,8 @@
 						    const Trilinos_Util::CrsMatrixGallery&);
 
 // Rename directives
-%rename (Triutils_Version)            Version;
-%rename (Trilinos_Util_ReadHb2Epetra) ReadHB;
+%rename (TriUtils_Version) Triutils_Version;
+%rename (ReadHB          ) Trilinos_Util_ReadHb2Epetra;
 
 // Typemap directives
 %typemap(argout) (Epetra_Map       *& OutMap,
@@ -109,25 +109,26 @@
 //   $result = SWIG_NewPointerObj(npmv, ty, 1);
 // }
 
-%inline {
-void Trilinos_Util_ReadHb2Epetra(char               * data_file,
-				 const Epetra_Comm  & comm, 
-				 Epetra_Map        *& OutMap, 
-				 Epetra_CrsMatrix  *& OutMatrix, 
-				 Epetra_Vector     *& OutX, 
-				 Epetra_Vector     *& OutB,
-				 Epetra_Vector     *& OutXexact);
-}
+// %inline {
+// void Trilinos_Util_ReadHb2Epetra(char               * data_file,
+// 				 const Epetra_Comm  & comm, 
+// 				 Epetra_Map        *& OutMap, 
+// 				 Epetra_CrsMatrix  *& OutMatrix, 
+// 				 Epetra_Vector     *& OutX, 
+// 				 Epetra_Vector     *& OutB,
+// 				 Epetra_Vector     *& OutXexact);
+// }
 
 // Epetra interface includes
 using namespace std;
 %import "Epetra.i"
 
 // Triutils interface includes
+%include "Trilinos_Util_ReadHb2Epetra.cpp"
 %include "Trilinos_Util_CrsMatrixGallery.h"
 %include "Trilinos_Util_Version.h"
 
 // Python code
 %pythoncode %{
-__version__ = Triutils_Version().split()[2]
+__version__ = TriUtils_Version().split()[2]
 %}

@@ -74,9 +74,9 @@ class TriUtilsTestCase(unittest.TestCase):
         self.comm.Barrier()
 
     def testVersion(self):
-        "Test TriUtils Version function"
+        "Test TriUtils TriUtils_Version function"
         front   = "Triutils Version "
-        version = TriUtils.Version()
+        version = TriUtils.TriUtils_Version()
         self.assertEquals(version[:len(front)], front)
 
     def testGetRHS(self):
