@@ -13,7 +13,7 @@
 
 This doxygen collection documents a set of interfaces that are derived from or
 extend the <a href="../../../fundamental/doc/html/index.html">Fundamental
-Thyra ANA Operator/Vector Interfaces</a> in simple ways but yet are used to
+Thyra ANA Operator/Vector Interfaces</a> in simple ways, but yet are used to
 define interoperability between objects in many contexts.
 
 \section thyra_src_interfaces_operator_vector_ana_extended_software_sec Software
@@ -23,15 +23,15 @@ define interoperability between objects in many contexts.
   <li> <b>Interfaces to product vector spaces, vectors and multi-vectors</b>
   
     <ul>
-    <li><tt>Thyra::ProductVectorSpaceBase</tt> defines an interface for a composite product vector space composed out of one
+    <li><tt>Thyra::ProductVectorSpaceBase</tt> defines an interface for a composite product vector space composed from one
         or more constituent <tt>Thyra::VectorSpaceBase</tt> objects.
-    <li><tt>Thyra::ProductVectorBase</tt> defines an interface for a composite product vector composed out of one
+    <li><tt>Thyra::ProductVectorBase</tt> defines an interface for a composite product vector composed from one
         or more constituent <tt>Thyra::VectorBase</tt> objects.
-    <li><tt>Thyra::ProductMultiVectorBase</tt>  defines an interface for a composite product multi-vector composed out of one
+    <li><tt>Thyra::ProductMultiVectorBase</tt>  defines an interface for a composite product multi-vector composed from one
         or more constituent <tt>Thyra::MultiVectorBase</tt> objects.
     </ul>
 
-  <li> <b>Composite and other linear operator base classes</b>
+  <li> <b>Composite and other linear operator base classes: Note that below, the term "implicit" denotes the fact that the operators are not actually formed.  For example, the sum of the implicitly added linear operators is never calculated, but the action of these operators on a vector is computed correctly as the sum of the action of each individual operator on that vector. </b>
   
     <ul>
     <li><tt>Thyra::ScaledAdjointLinearOpBase</tt> is the base class for all decorator subclasses that implicitly
@@ -42,7 +42,7 @@ define interoperability between objects in many contexts.
     <li><tt>Thyra::MultipliedLinearOpBase</tt> defines the interface for implicitly added linear operators.
     <li><tt>Thyra::DiagonalLinearOpBase</tt> defines the interface for a basic diagonal linear operator.
     <li><tt>Thyra::BlockedLinearOpBase</tt> is a base class for a logically blocked <tt>LinearOpBase</tt>.
-    <li><tt>Thyra::PhysicallyBlockedLinearOpBase</tt> is a base class for a blocked
+    <li><tt>Thyra::PhysicallyBlockedLinearOpBase</tt> is a base class for a physically
       blocked <tt>LinearOpBase</tt> object where the blocks can be set externally.
     </ul>
 
@@ -62,7 +62,7 @@ define interoperability between objects in many contexts.
   <li> <b>Miscellaneous</b>
   
     <ul>
-    <li><tt>Thyra::MultiVectorRandomizerBase</tt> is an interface for strategy objects that can randomize vectors and multi-vectors.
+    <li><tt>Thyra::MultiVectorRandomizerBase</tt> is an interface for strategy objects that can produce random vectors and multi-vectors.
     <li><tt>Teuchos::PolynomialTraits</tt> is a concrete traits class that is used in the <tt>Thyra::ModelEvaluator</tt> interface.
     </ul>
 
