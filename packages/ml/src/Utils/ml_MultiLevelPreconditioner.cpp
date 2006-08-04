@@ -167,6 +167,12 @@ int ML_Epetra::MultiLevelPreconditioner::DestroyPreconditioner()
     edge_args_ = 0;
   }
 
+  if (MassMatrix_array != 0) {
+    for (int i=0; i<10; i++)   //FIXME JJH
+      ML_Operator_Destroy(MassMatrix_array+LevelID_[i]);
+    delete [] MassMatrix_array;
+  }
+
   if (Label_) { 
     delete [] Label_; 
     Label_ = 0; 
@@ -606,6 +612,7 @@ int ML_Epetra::MultiLevelPreconditioner::Initialize()
   Tmat_trans_array = 0;
   nodal_args_ = 0;
   edge_args_ = 0;
+  MassMatrix_array = 0;
   
   // timing
   NumApplications_ = 0;
@@ -1362,13 +1369,38 @@ ComputePreconditioner(const bool CheckPreconditioner)
 
     profileIterations_ = List_.get("profile: operator iterations", 0);
     ML_Operator_Profile_SetIterations(profileIterations_);
+    printf("\n\nbefore NumLevels_ = %d\n\n\n" ,NumLevels_);
     NumLevels_ = ML_Gen_MGHierarchy_UsingReitzinger(ml_,&ml_nodes_,
                             LevelID_[0], Direction,agg_,
                             TMatrixML_,TMatrixTransposeML_, 
                             &Tmat_array,&Tmat_trans_array, 
                             smooth_flag, ML_DDEFAULT,
                             enrichBeta);
+    printf("\n\nafter NumLevels_ = %d\n\n\n" ,NumLevels_);
 
+  }
+
+
+  printf("MaxLevels_ = %d\n",MaxLevels_);
+
+  MassMatrix_array = new (ML_Operator *)[10]; // FIXME JJH
+  for (int i=0; i< 10; i++) MassMatrix_array[LevelID_[i]] = NULL; //FIXME jjh
+  // If the mass matrix is separate, coarsen it for use in the smoother
+  if (MassMatrix_) {
+    int maxLevel = LevelID_[0];
+    if (LevelID_[NumLevels_-1] > maxLevel) maxLevel = LevelID_[NumLevels_-1];
+    MassMatrix_array[LevelID_[0]] = ML_Operator_Create(ml_->comm);
+    ML_Operator_WrapEpetraMatrix( const_cast<Epetra_RowMatrix*>(MassMatrix_),
+                                  MassMatrix_array[LevelID_[0]] );
+    for (int i=0; i<NumLevels_-1; i++) {
+      int fine = LevelID_[i];
+      int coarse = LevelID_[i+1];
+      ML_Operator *R = ml_->Rmat + fine;
+      ML_Operator *P = ml_->Pmat + coarse;
+      MassMatrix_array[coarse] = ML_Operator_Create(ml_->comm);
+      ML_rap(R, MassMatrix_array[fine], P,
+             MassMatrix_array[coarse] , ML_MSR_MATRIX);
+    }
   }
 
 #ifdef HAVE_ML_EPETRAEXT
@@ -2199,6 +2231,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
                                                                                 
       ML_Gen_Smoother_Hiptmair(ml_, logical_level, ML_BOTH,
                  NumSmootherSteps, Tmat_array, Tmat_trans_array, NULL,
+                 MassMatrix_array,
                  edge_smoother, edge_args_, nodal_smoother, nodal_args_,
                  hiptmair_type);
 

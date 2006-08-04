@@ -617,6 +617,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
         
       ML_Gen_Smoother_Hiptmair(ml_, logical_level, ML_BOTH,
                  num_smoother_steps, Tmat_array, Tmat_trans_array, NULL, 
+                 MassMatrix_array,
                  edge_smoother, edge_args_, nodal_smoother, nodal_args_,
                  hiptmair_type);
 

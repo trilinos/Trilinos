@@ -6054,6 +6054,7 @@ int ML_Gen_Smoother_Hiptmair( ML *ml , int nl, int pre_or_post, int ntimes,
 			      ML_Operator **Tmat_array,
 			      ML_Operator **Tmat_trans_array,
 			      ML_Operator *Tmat_bc,
+			      ML_Operator **MassMatrix_array,
 			      void *edge_smoother, void **edge_args,
 			      void *nodal_smoother, void **nodal_args, int type)
      /*
@@ -6097,10 +6098,10 @@ int ML_Gen_Smoother_Hiptmair( ML *ml , int nl, int pre_or_post, int ntimes,
          if (ML_BdryPts_Check_Dirichlet_Grid(ml_bc))
             ML_BdryPts_Get_Dirichlet_Grid_Info(ml_bc,&BClength,&BClist);
          ML_Smoother_Create_Hiptmair_Data(&data);
-	     ML_Smoother_Gen_Hiptmair_Data(&data, &(ml->Amat[i]),
+	     ML_Smoother_Gen_Hiptmair_Data(&data, ml->Amat+i, MassMatrix_array[i],
 			          Tmat_array[i], Tmat_trans_array[i], Tmat_bc,
                       BClength, BClist,
-edge_smoother, edge_args, nodal_smoother, nodal_args );
+                      edge_smoother, edge_args, nodal_smoother, nodal_args );
 	     data->reduced_smoother = type;
 	     ml->pre_smoother[i].data_destroy = ML_Smoother_Destroy_Hiptmair_Data;
          sprintf(str,"Hiptmair_pre%d",i);
@@ -6122,7 +6123,7 @@ edge_smoother, edge_args, nodal_smoother, nodal_args );
          if (ML_BdryPts_Check_Dirichlet_Grid(ml_bc))
             ML_BdryPts_Get_Dirichlet_Grid_Info(ml_bc,&BClength,&BClist);
          ML_Smoother_Create_Hiptmair_Data(&data);
-	 ML_Smoother_Gen_Hiptmair_Data(&data, &(ml->Amat[i]),
+	 ML_Smoother_Gen_Hiptmair_Data(&data, ml->Amat+i, MassMatrix_array[i],
 				       Tmat_array[i], Tmat_trans_array[i], Tmat_bc,
 				       BClength, BClist,
 				       edge_smoother, edge_args, nodal_smoother, nodal_args );
@@ -6148,7 +6149,7 @@ edge_smoother, edge_args, nodal_smoother, nodal_args );
          if (ML_BdryPts_Check_Dirichlet_Grid(ml_bc))
             ML_BdryPts_Get_Dirichlet_Grid_Info(ml_bc,&BClength,&BClist);
          ML_Smoother_Create_Hiptmair_Data(&data);
-	     ML_Smoother_Gen_Hiptmair_Data(&data, &(ml->Amat[i]),
+	     ML_Smoother_Gen_Hiptmair_Data(&data, ml->Amat+i, MassMatrix_array[i],
 			          Tmat_array[i], Tmat_trans_array[i], Tmat_bc,
 					   BClength, BClist,
 edge_smoother, edge_args, nodal_smoother, nodal_args );

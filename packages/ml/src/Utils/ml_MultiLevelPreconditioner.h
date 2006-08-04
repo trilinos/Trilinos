@@ -776,6 +776,7 @@ private:
   ML_Operator* TMatrixML_;
   ML_Operator* TMatrixTransposeML_;
   ML_Operator** Tmat_array, ** Tmat_trans_array;
+  ML_Operator** MassMatrix_array; // For use if mass is provided separately
   //! Auxiliary ML structure for Maxwell's equations.
   ML* ml_nodes_;
 

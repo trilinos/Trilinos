@@ -291,8 +291,8 @@ extern  int ML_Smoother_Create_Hiptmair_Data(ML_Sm_Hiptmair_Data **data);
 extern  int ML_Smoother_Create_BlockHiptmair_Data(ML_Sm_BlockHiptmair_Data **data);
 extern  int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data**,
                          ML_Operator*, ML_Operator*, ML_Operator*,
-                         ML_Operator*, int, int*, void *, void **,
-					  void *, void **);
+                         ML_Operator*, ML_Operator*,
+                         int, int*, void *, void **, void *, void **);
 extern  int ML_Smoother_Gen_BlockHiptmair_Data(ML_Sm_BlockHiptmair_Data**,
                          ML_Operator*, ML_Operator*, ML_Operator*,
                          ML_Operator*, int, int*, void *, void **,

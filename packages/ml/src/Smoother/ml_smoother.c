@@ -3657,6 +3657,7 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
 /******************************************************************************/
 
 int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
+                                 ML_Operator *Mmat,
                                  ML_Operator *Tmat, ML_Operator *Tmat_trans,
                                  ML_Operator *Tmat_bc, int BClength,
 				  int *BCindices, 
@@ -3742,8 +3743,10 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
 					  dataptr->omega);
 
 
-   /* Triple matrix product T^{*}AT. */
-
+   /*
+      Triple matrix product T^{*}AT. Note that A may either be just
+      the mass matrix or the sum of the curl,curl and mass matrices.
+   */
 
    tmpmat = ML_Operator_Create(Amat->comm);
    if (Tmat_bc != NULL)
@@ -3754,7 +3757,16 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
          Dirichlet b.c. applied to both rows and columns of Ke.  The
          only differences will be the b.c.  rows themselves, which
          will be zero. */
-      ML_2matmult(Amat,Tmat_bc,tmpmat2, ML_CSR_MATRIX);
+      if (Mmat) {
+        if (ML_Get_PrintLevel() > 9 && tmpmat->comm->ML_mypid == 0)
+          printf("ML_Smoother_Gen_Hiptmair_Data: Using mass for T'*M*T.\n");
+        ML_2matmult(Mmat,Tmat_bc,tmpmat2, ML_CSR_MATRIX);
+      }
+      else {
+        if (ML_Get_PrintLevel() > 9 && tmpmat->comm->ML_mypid == 0)
+          printf("ML_Smoother_Gen_Hiptmair_Data: Using curlcurl + mass for T'*M*T.\n");
+        ML_2matmult(Amat,Tmat_bc,tmpmat2, ML_CSR_MATRIX);
+      }
       matdata = (struct ML_CSR_MSRdata *) (tmpmat2->data);
       row_ptr = matdata->rowptr;
       val_ptr = matdata->values;
@@ -3771,22 +3783,35 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
    }
    else
    {
-      ML_rap(Tmat_trans, Amat, Tmat, tmpmat, ML_MSR_MATRIX);
+     if (Mmat) {
+       if (ML_Get_PrintLevel() > 9 && tmpmat->comm->ML_mypid == 0)
+         printf("ML_Smoother_Gen_Hiptmair_Data: Using mass for T'*M*T.\n");
+       ML_rap(Tmat_trans, Mmat, Tmat, tmpmat, ML_MSR_MATRIX);
+     }
+     else
+     {
+       if (ML_Get_PrintLevel() > 9 && tmpmat->comm->ML_mypid == 0)
+         printf("ML_Smoother_Gen_Hiptmair_Data: Using curlcurl + mass for T'*M*T.\n");
+       ML_rap(Tmat_trans, Amat, Tmat, tmpmat, ML_MSR_MATRIX);
 
-      /* Some garbage code to fix up the case when sigma is */
-      /* very small and so tmpmat is very small. Probably   */
-      /* something better should be put in here!!!!         */
+       /* Some garbage code to fix up the case when sigma is */
+       /* very small and so tmpmat is very small. Probably   */
+       /* something better should be put in here!!!!         */
 
-      matdata = (struct ML_CSR_MSRdata *) (tmpmat->data);
-      if (tmpmat->diagonal != NULL) {
-	ML_DVector_GetDataPtr( tmpmat->diagonal, &diagonal);
-	for (i = 0; i < tmpmat->outvec_leng; i++) {
-	  if ( fabs(diagonal[i]) < 1.0e-10)  {
-	    matdata->values[i] = 1.;
-	    diagonal[i] = 1.;
-	  }
-	}
-      }
+       double droptol = 1.0e-10;
+       if (ML_Get_PrintLevel() > 9 && tmpmat->comm->ML_mypid == 0)
+         printf("ML_Smoother_Gen_Hiptmair_Data: dropping all entries smaller than %f from T'*M*T.\n",droptol);
+       matdata = (struct ML_CSR_MSRdata *) (tmpmat->data);
+       if (tmpmat->diagonal != NULL) {
+         ML_DVector_GetDataPtr( tmpmat->diagonal, &diagonal);
+         for (i = 0; i < tmpmat->outvec_leng; i++) {
+           if ( fabs(diagonal[i]) < droptol)  {
+             matdata->values[i] = 1.;
+             diagonal[i] = 1.;
+           }
+         }
+       }
+     }
    }
    ML_Operator_ChangeToSinglePrecision(tmpmat);
    ML_Operator_ImplicitTranspose(Tmat_trans, Tmat, ML_FALSE);
