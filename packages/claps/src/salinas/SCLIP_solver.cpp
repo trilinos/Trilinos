@@ -116,14 +116,14 @@ void SCLIP_solver::construct_H1()
     for (i=0; i<nadj_proc; i++) {
       for (j=H2[i]; j<H2[i+1]; j++) H1[j] = H1_global[j];
       n = H2[i+1] - H2[i];
-      if (n > 1) sort(&H1[H2[i]], &H1[H2[i+1]]);
+      if (n > 1) std::sort(&H1[H2[i]], &H1[H2[i+1]]);
     }
     //
     // sort global node numbers
     //
     int *gnn_sort = new int[nnode];
     for (i=0; i<nnode; i++) gnn_sort[i] = gnn[i];
-    sort(&gnn_sort[0], &gnn_sort[nnode]);
+    std::sort(&gnn_sort[0], &gnn_sort[nnode]);
     int *sort_to_orig = new int[nnode];
     for (i=0; i<nnode; i++) {
       int sorted_loc = CRD_utils::find_index(gnn_sort, nnode, gnn[i]);
@@ -501,14 +501,14 @@ void SCLIP_solver::EPmat_datfile(Epetra_CrsMatrix* A, char fname[])
 {
   int i, j, NumEntries, *Indices;
   double *Values;
-  ofstream fout;
+  std::ofstream fout;
   sprintf(fname, "%s.epetra", fname);
   fout.open(fname);
   for (i=0; i<A->NumMyRows(); i++) {
     A->ExtractMyRowView(i, NumEntries, Values, Indices);
     for (j=0; j<NumEntries; j++) {
-      fout << A->GRID(i)+1 << " " << A->GCID(Indices[j])+1 << setw(22) 
-	   << setprecision(15) << Values[j] << endl;
+      fout << A->GRID(i)+1 << " " << A->GCID(Indices[j])+1 << std::setw(22) 
+	   << std::setprecision(15) << Values[j] << endl;
     }
   }
   fout.close();
