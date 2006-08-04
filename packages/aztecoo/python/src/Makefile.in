@@ -178,6 +178,8 @@ FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
 GNU_HAVE_SWIG = @GNU_HAVE_SWIG@
 GREP = @GREP@
+HAVE_AZTECOO_EPETRAEXT_FALSE = @HAVE_AZTECOO_EPETRAEXT_FALSE@
+HAVE_AZTECOO_EPETRAEXT_TRUE = @HAVE_AZTECOO_EPETRAEXT_TRUE@
 HAVE_AZTECOO_TEUCHOS_FALSE = @HAVE_AZTECOO_TEUCHOS_FALSE@
 HAVE_AZTECOO_TEUCHOS_TRUE = @HAVE_AZTECOO_TEUCHOS_TRUE@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
@@ -238,6 +240,8 @@ USING_PERL_FALSE = @USING_PERL_FALSE@
 USING_PERL_TRUE = @USING_PERL_TRUE@
 VERSION = @VERSION@
 WITH_SWIG = @WITH_SWIG@
+_FALSE = @_FALSE@
+_TRUE = @_TRUE@
 ac_aux_dir = @ac_aux_dir@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@
@@ -289,6 +293,9 @@ target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
 
+# Optional Teuchos support
+@HAVE_AZTECOO_TEUCHOS_TRUE@AZTECOO_TEUCHOS = -DHAVE_AZTECOO_TEUCHOS -I$(top_srcdir)/../teuchos/python/src
+
 # Dependencies.  Obtain the list of dependencies by executing ls.  This could
 # be empty, so when we include the dependency files, we also include 'dummy',
 # an empty file used to trick configure into making the dependency directory.
@@ -303,6 +310,7 @@ SWIGCOMPILE = $(SWIG) $(SWIG_PYTHON_OPT) $(SWIG_CXXFLAGS)
 
 # Include swig rules
 SWIG_CXXFLAGS = $(AZTECOO_INCLUDES) \
+		$(AZTECOO_TEUCHOS)  \
                 -I$(top_srcdir)/../epetra/python/src
 
 EXTRA_DIST = AztecOO.i setup.py
@@ -315,10 +323,6 @@ tempdir = $(shell $(PYTHON) -c "import sys,os; from distutils.util import get_pl
 INTERFACES = AztecOO.i
 WRAPPERS = $(INTERFACES:.i=_wrap.cpp)
 PROXIES = $(INTERFACES:.i=.py      )
-
-# Teuchos support
-@HAVE_AZTECOO_TEUCHOS_TRUE@AZTECOO_TEUCHOS = "True"
-@HAVE_AZTECOO_TEUCHOS_FALSE@AZTECOO_TEUCHOS = "False"
 all: all-am
 
 .SUFFIXES:

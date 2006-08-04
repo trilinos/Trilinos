@@ -29,9 +29,15 @@
 # Include export tMakefiles
 include  $(top_builddir)/Makefile.export.aztecoo
 
+# Optional Teuchos support
+if HAVE_AZTECOO_TEUCHOS
+AZTECOO_TEUCHOS = -DHAVE_AZTECOO_TEUCHOS -I$(top_srcdir)/../teuchos/python/src
+endif
+
 # Include swig rules
 include $(top_srcdir)/config/swig.am
 SWIG_CXXFLAGS = $(AZTECOO_INCLUDES) \
+		$(AZTECOO_TEUCHOS)  \
                 -I$(top_srcdir)/../epetra/python/src
 
 EXTRA_DIST = AztecOO.i setup.py
@@ -51,10 +57,6 @@ $(tempdir):
 INTERFACES = AztecOO.i
 WRAPPERS   = $(INTERFACES:.i=_wrap.cpp)
 PROXIES    = $(INTERFACES:.i=.py      )
-
-# Teuchos support
-@HAVE_AZTECOO_TEUCHOS_TRUE@AZTECOO_TEUCHOS="True"
-@HAVE_AZTECOO_TEUCHOS_FALSE@AZTECOO_TEUCHOS="False"
 
 build: $(WRAPPERS) $(tempdir)
 	$(PYTHON) $(srcdir)/setup.py build

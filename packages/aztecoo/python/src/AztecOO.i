@@ -107,31 +107,74 @@ Solver.Iterate(1550, 1e-5)
 #include "AztecOO.h"
 #include "AztecOO_Version.h"
 
+// Optional Teuchos support
+#ifdef HAVE_AZTECOO_TEUCHOS
+#include "Teuchos_PythonParameter.hpp"
+#endif
+
 %}
 
 // SWIG does not support wrapping nested classes.  To suppress the
 // swig warning that would otherwise result, we use the following:
 #pragma SWIG nowarn=312
 
+// Ignore directives
+// We ignore the following method in favor of a different prototype
+// below in the %extend section
+%ignore AztecOO::AztecOO::SetParameters(Teuchos::ParameterList&,bool);
+
 // Auto-documentation feature
 %feature("autodoc", "1");
 
-// Epetra interface import
+// External Trilinos interface imports
 using namespace std;
 %import "Epetra.i"
+#ifdef HAVE_AZTECOO_TEUCHOS
+%import "Teuchos.i"
+#endif
 
-// Amesos interface includes
+// Exception handling.  Macro is from Epetra interface file
+%define AZTECOO_EXCEPTION_HANDLER(className,methodName)
+%exception className::methodName {
+  $action
+  if (PyErr_Occurred()) SWIG_fail;
+}
+%enddef
+
+AZTECOO_EXCEPTION_HANDLER(AztecOO,SetParameters)
+
+// AztecOO interface includes
 %include "AztecOO.h"
 %include "AztecOO_Version.h"
 %include "az_aztec_defs.h"
 
 // Extend directives
 %extend AztecOO {
+
   double GetStatus(int what)
   {
     const double* status = self->GetAztecStatus();
     return(status[what]);
   }
+
+#ifdef HAVE_AZTECOO_TEUCHOS
+  // This is a more general prototype than the C++ method of the same
+  // name that takes a Teuchos::ParameterList&.  Usually the Teuchos
+  // typemaps can handle this, but the boolean argument with the
+  // default value (as well as overloaded methods) causes swig to add
+  // additional type-checking code that prevents it from working with
+  // a dictionary.  This extension fixes that.
+  int SetParameters(PyObject * list, bool cerr_warning_if_unused=false)
+  {
+    bool isNew = false;
+    Teuchos::PyDictParameterList * pdplist = Teuchos::pyObjectToPyDictParameterList(list, &isNew);
+    if (PyErr_Occurred()) return -1;
+    int result = self->SetParameters(*pdplist, cerr_warning_if_unused);
+    if (isNew) delete pdplist;
+    return result;
+  }
+#endif
+
 }
 
 // Python code
