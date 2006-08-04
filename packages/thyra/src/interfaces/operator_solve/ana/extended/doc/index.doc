@@ -12,7 +12,7 @@
 
 This doxygen collection documents a set of interfaces that are derived from or
 extend the <a href="../../../fundamental/doc/html/index.html">Fundamental
-Thyra ANA Operator/Solve Interfaces</a> in simple ways but yet are used to
+Thyra ANA Operator/Solve Interfaces</a> in simple ways, but yet are used to
 define interoperability between objects in many contexts.
 
 \section thyra_src_interfaces_operator_solve_ana_extended_software_sec Software
@@ -30,7 +30,6 @@ define interoperability between objects in many contexts.
         class for composite <tt>Thyra::BlockedLinearOpBase</tt> objects
         that are built for constituent <tt>Thyra::LinearOpBase</tt> and
         <tt>Thyra::LinearOpWithSolveBase</tt> objects.
-    <li>...
     </ul>
 
 </ul>
