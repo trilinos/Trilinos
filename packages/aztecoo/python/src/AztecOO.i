@@ -160,10 +160,12 @@ AZTECOO_EXCEPTION_HANDLER(AztecOO,SetParameters)
 #ifdef HAVE_AZTECOO_TEUCHOS
   // This is a more general prototype than the C++ method of the same
   // name that takes a Teuchos::ParameterList&.  Usually the Teuchos
-  // typemaps can handle this, but the boolean argument with the
-  // default value (as well as overloaded methods) causes swig to add
-  // additional type-checking code that prevents it from working with
-  // a dictionary.  This extension fixes that.
+  // typemaps properly handle such an argument to accept python
+  // dictionaries also, but the boolean argument with the default
+  // value (as well as overloaded methods) causes swig to add
+  // additional type-checking code that prevents this from working.
+  // This extension fixes that.
+
   int SetParameters(PyObject * list, bool cerr_warning_if_unused=false)
   {
     bool isNew = false;
