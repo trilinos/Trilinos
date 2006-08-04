@@ -549,11 +549,21 @@ LOCA::Epetra::Group::computeShiftedMatrix(double alpha, double beta)
 {
   // We store a real shifted matrix
   if (userInterfaceTime != Teuchos::null) {
+    Teuchos::RefCountPtr<Epetra_Operator> mass = 
+      shiftedSharedLinearSystem->getObject(this)->getJacobianOperator();
+
     bool res = 
-      userInterfaceTime->computeShiftedMatrix(
-	 alpha, beta, 
-	 xVector.getEpetraVector(), 
-	 *(shiftedSharedLinearSystem->getObject(this)->getJacobianOperator()));
+      userInterfaceTime->computeShiftedMatrix(alpha, beta, 
+					      xVector.getEpetraVector(), 
+					      *mass);
+    
+    // Check if Jacobian and mass matrices are the same, in which case
+    // the Jacobian is no longer valid
+    Teuchos::RefCountPtr<Epetra_Operator> jac = 
+      sharedLinearSystem.getObject(this)->getJacobianOperator();
+    if (mass.get() == jac.get())
+      isValidJacobian = false;
+
     if (res)
       return NOX::Abstract::Group::Ok;
     else
@@ -697,41 +707,30 @@ LOCA::Epetra::Group::computeComplex(double frequency)
   NOX::Abstract::Group::ReturnType status;
 
   // Get Jacobian matrix
-  Epetra_RowMatrix& jac = dynamic_cast<Epetra_RowMatrix&>(*(sharedLinearSystem.getObject(this)->getJacobianOperator()));
+  Teuchos::RefCountPtr<Epetra_RowMatrix> jac = Teuchos::rcp_dynamic_cast<Epetra_RowMatrix>(sharedLinearSystem.getObject(this)->getJacobianOperator());
    
   // Create complex matrix
   if (complexMatrix == Teuchos::null) {
     std::vector< std::vector<int> >rowStencil(2);
     std::vector<int> rowIndex;
 
-    rowStencil[0].push_back(-1); rowStencil[0].push_back(0);
-    rowStencil[1].push_back(0);  rowStencil[1].push_back(1);
+    rowStencil[0].push_back(0); rowStencil[0].push_back(1);
+    rowStencil[1].push_back(-1);  rowStencil[1].push_back(0);
     rowIndex.push_back(0); rowIndex.push_back(1);
 
-    complexMatrix = Teuchos::rcp(new EpetraExt::BlockCrsMatrix(jac,
+    complexMatrix = Teuchos::rcp(new EpetraExt::BlockCrsMatrix(*jac,
 							       rowStencil, 
 							       rowIndex, 
-							       jac.Comm()));
+							       jac->Comm()));
 
     // Construct global solution vector, the overlap vector, and importer between them
    complexVec = 
-     Teuchos::rcp(new EpetraExt::BlockVector(jac.RowMatrixRowMap(), 
+     Teuchos::rcp(new EpetraExt::BlockVector(jac->RowMatrixRowMap(), 
 					     complexMatrix->RowMap()));  
   }
 
-  // Compute J
-  status = computeJacobian();
-  finalStatus = 
-    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							   finalStatus,
-							   callingFunction);
-
-  // Load J in complex matrix
-  complexMatrix->LoadBlock(jac, 0, 0);
-  complexMatrix->LoadBlock(jac, 1, 1);
-
   // Get mass matrix M
-  Epetra_RowMatrix& mass = dynamic_cast<Epetra_RowMatrix&>(*(shiftedSharedLinearSystem->getObject(this)->getJacobianOperator()));
+  Teuchos::RefCountPtr<Epetra_RowMatrix> mass = Teuchos::rcp_dynamic_cast<Epetra_RowMatrix>(shiftedSharedLinearSystem->getObject(this)->getJacobianOperator());
 
   // Compute w*M
   status = computeShiftedMatrix(0.0, frequency);
@@ -741,7 +740,7 @@ LOCA::Epetra::Group::computeComplex(double frequency)
 							   callingFunction);
 
   // Load w*M in complex matrix
-  complexMatrix->LoadBlock(mass, 1, 0);
+  complexMatrix->LoadBlock(*mass, 1, 0);
 
   // Compute -w*M
   status = computeShiftedMatrix(0.0, -frequency);
@@ -751,7 +750,18 @@ LOCA::Epetra::Group::computeComplex(double frequency)
 							   callingFunction);
 
   // Load -w*M in complex matrix
-  complexMatrix->LoadBlock(mass, 0, 1);
+  complexMatrix->LoadBlock(*mass, 0, 1);
+
+  // Compute J
+  status = computeJacobian();
+  finalStatus = 
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							   finalStatus,
+							   callingFunction);
+
+  // Load J in complex matrix
+  complexMatrix->LoadBlock(*jac, 0, 0);
+  complexMatrix->LoadBlock(*jac, 1, 1);
 
   if (finalStatus == NOX::Abstract::Group::Ok)
     isValidComplex = true;
