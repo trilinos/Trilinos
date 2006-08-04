@@ -16,8 +16,6 @@
 
   <ul>
   <li>\ref thyra_faq_why_helper_funcs_sec
-  <li>\ref thyra_faq_index_op_sec
-  <li>\ref thyra_faq_op_overload_sec
   <li>\ref thyra_faq_Scalar_sec
   <li>\ref thyra_faq_creating_vecs_multivecs_sec
   </ul>
@@ -55,7 +53,7 @@ C *c_rptr2 = &*c_ptr;     // Checked in debug build and will not return NULL
 You should use <tt>c_ptr.get()</tt> when it is okay for the pointer to be
 <tt>NULL</tt>.  On the other hand, you should use <tt>&*c_ptr</tt> when you
 don't want to allow the raw pointer to be <tt>NULL</tt>.  This is because the
-operator function <tt>Teuchos::RefCountPtr::operator*()</tt> will throw an
+operator function <tt>Teuchos::RefCountPtr::operator*() </tt> will throw an
 exception if <tt>Teuchos::RefCountPtr::get()==NULL</tt> when the code is
 compiled using the macro define <tt>-D_DEBUG</tt>.
 
@@ -77,9 +75,9 @@ http://software.sandia.gov/Trilinos/RefCountPtrBeginnersGuideSAND.pdf
 
 \subsection thyra_faq_why_helper_funcs_sec Q: Why is Thyra written with so many non-member helper functions instead of member functions?
 
-In my C++ class we were told that the beauty of OOP is that functions and data
-can be put together into classes to combine the operations with the data they
-operate on.
+In standard C++ class students were told that the beauty of OOP is that functions and data
+can be put together into classes to combine the operations with the data on which they
+operate.
 
 <b>A:</b> Generally member functions should only be used over non-member
 functions when direct access to private or protected data for functions is
@@ -87,53 +85,10 @@ required.  By minimizing the amount of code that can access non-public data
 you greatly simplify maintenance.  See section 11.3.1 in "The C++ Programming
 Language: Special Edition" for a discussion of this topic.
 
-\subsection thyra_faq_index_op_sec Q: Why don't Thyra vectors support element access using the an overloaded operator[]?
-
-<b>A:</b> Direct element access to vector data through the
-<tt>Thyra::VectorBase</tt> interface can not be allowed in most general
-abstract numerical algorithms except in very specialized cases.  Direct
-element access assumes that all of the the vector data is readily available
-which is not the case in distributed-memory, out-of-core and certainly not
-client/server runtime configurations.  In addition, an overloaded
-<tt>operator[]</tt> function would be extremely inefficient since it would
-have to be a virtual function.
-
-For more information on the philosophy of the design of vector interface
-<tt>Thyra::VectorBase</tt> see the document "Vector Reduction/Transformation
-Operators" at:
-
-http://software.sandia.gov/RTOp/RTOpTOMS.pdf
-
-\subsection thyra_faq_op_overload_sec Q: Why doesn't Thyra support linear algebra operations using overloaded operators for +, -, *, etc?
-
-<b>A:</b> Supporting Matlab-like syntax for linear algebra operations like:
-
-\verbatim
-
-  y = alpha*x + z;
-
-  y = adjoint(A)*x + B*z;
-\endverbatim
-
-for large abstract objects in a near-optimally efficient manner is extremely
-non-trivial.  Such a capability can be supported through the creation of
-handle classes and compile-time expression templates but such an
-implementation is complicated and is difficult for beginners to debug through.
-There are a whole host of other reasons they Matlab-like syntax will not work
-as well as in Matlab.  For a slightly more detailed discussion, see the document
-
-<b><a href="./LinearAlgebraFunctionConvention.pdf">A Simple Convention for
-the Specification of Linear Algebra Function Prototypes in C++ </a></b>
-
-In short, Thyra does not (yet) support operator overloading for Matlab-like
-syntax and will not until the resulting code can be as efficient, compile-time
-safe, and as debuggable as the current lower-level function-call interface.
-However, check back with Thyra in the near future and you might find such
-handle classes with operator overloading.
 
 \subsection thyra_faq_Scalar_sec Q: Where is the Scalar class, and how do I use it to replace my underlying data-type, e.g. double, in my ANA? 
 
-<b>A:</b> The 'Scalar' class in a template argument in all of the core Thyra
+<b>A:</b> The 'Scalar' class is in a template argument in all of the core Thyra
 interface code.  The goal of this template argument is to allow many abstract
 numerical algorithms to be written in a general form to support a number of
 different scalar types (e.g. real, complex, extended precision etc.).  While
