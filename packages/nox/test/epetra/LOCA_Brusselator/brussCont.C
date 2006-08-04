@@ -86,7 +86,7 @@
 int main(int argc, char *argv[])
 {
   int ierr = 0;
-  int MyPID;
+  int MyPID = 0;
   double alpha = 0.25;
   double beta = 0.0;
   double D1 = 1.0/40.0;
