@@ -39,6 +39,7 @@
 #include "LOCA_Parameter_Vector.H"             // class data element
 #include "NOX_Common.H"                        // class data element (string)
 #include "LOCA_Epetra_Interface_TimeDependent.H"
+#include "LOCA_Epetra_Interface_TimeDependentMatrixFree.H"
 
 // Forward declares
 namespace Teuchos {
@@ -53,6 +54,10 @@ namespace LOCA {
       class AbstractStrategy;
     }
   }
+}
+namespace EpetraExt {
+  class BlockCrsMatrix;
+  class BlockVector;
 }
 
 namespace LOCA {
@@ -111,13 +116,24 @@ namespace LOCA {
 	    const Teuchos::RefCountPtr<NOX::Epetra::LinearSystem>& linSys,
 	    const LOCA::ParameterVector& p);
 
-      //! Constructor with time-dependent interface
+      //! Constructor with time-dependent interface and shifted linear system
       Group(
 	const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
 	Teuchos::ParameterList& printingParams,
         const Teuchos::RefCountPtr<LOCA::Epetra::Interface::TimeDependent>& i,
 	NOX::Epetra::Vector& initialGuess,
 	const Teuchos::RefCountPtr<NOX::Epetra::LinearSystem>& linSys,
+	const Teuchos::RefCountPtr<NOX::Epetra::LinearSystem>& shiftedLinSys,
+	const LOCA::ParameterVector& p);
+
+      //! Constructor with time-dependent matrix-free interface and shifted linear system
+      Group(
+	const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+	Teuchos::ParameterList& printingParams,
+        const Teuchos::RefCountPtr<LOCA::Epetra::Interface::TimeDependentMatrixFree>& i,
+	NOX::Epetra::Vector& initialGuess,
+	const Teuchos::RefCountPtr<NOX::Epetra::LinearSystem>& linSys,
+	const Teuchos::RefCountPtr<NOX::Epetra::LinearSystem>& shiftedLinSys,
 	const LOCA::ParameterVector& p);
 
 
@@ -288,38 +304,71 @@ namespace LOCA {
        */
       //@{
 
-      //! Compute the mass matrix for the system.
-      //! (Currently only has matrix-free implementation.)
-      virtual NOX::Abstract::Group::ReturnType 
-      computeMassMatrix();
-
-      //! Multiply the mass matrix by a vector.
-      //! (Currently only has matrix-free implementation.)
-      virtual NOX::Abstract::Group::ReturnType 
-      applyMassMatrix(const NOX::Abstract::Vector& input,
-		      NOX::Abstract::Vector& result) const;
-
-      virtual bool isMassMatrix() const;
+      //! Compute the shifted matrix
+      virtual NOX::Abstract::Group::ReturnType
+      computeShiftedMatrix(double alpha, double beta);
 
       //! Multiply the shifted matrix by a vector.
-      //! (Currently only has matrix-free implementation.)
-      virtual NOX::Abstract::Group::ReturnType 
+      virtual NOX::Abstract::Group::ReturnType
       applyShiftedMatrix(const NOX::Abstract::Vector& input,
-			 NOX::Abstract::Vector& result,
-			 double shift) const;
+			 NOX::Abstract::Vector& result) const;
 
-      virtual NOX::Abstract::Group::ReturnType 
-      applyShiftedMatrix(const NOX::Epetra::Vector& input,
-			 NOX::Epetra::Vector& result,
-			 double shift) const;
+      //! Multiply the shifted matrix by a multi-vector.
+      virtual NOX::Abstract::Group::ReturnType
+      applyShiftedMatrixMultiVector(
+				const NOX::Abstract::MultiVector& input,
+				NOX::Abstract::MultiVector& result) const;
+      
+      /*! 
+       * \brief Apply the inverse of the shifted matrix by a multi-vector, as 
+       * needed by the shift-and-invert and generalized Cayley transformations.
+       */
+      virtual NOX::Abstract::Group::ReturnType
+      applyShiftedMatrixInverseMultiVector(
+			        Teuchos::ParameterList& params, 
+				const NOX::Abstract::MultiVector& input,
+				NOX::Abstract::MultiVector& result) const;
+      //@}
 
-      //! Solve the linear system with the shifted matrix, using the same
-      //! solver and settings as for the Jacobian matrix.
-      virtual NOX::Abstract::Group::ReturnType 
-      applyShiftedMatrixInverse(Teuchos::ParameterList& params,
-				const NOX::Abstract::Vector& input,
-				NOX::Abstract::Vector& result,
-				double shift);
+      /*! 
+       * @name Implementation of LOCA::Hopf::MooreSpence::AbstractGroup virtual methods.
+       */
+      //@{
+
+      //! Is  \f$J+i\omega B\f$ valid
+      virtual bool isComplex() const;
+
+      //! Compute \f$J+i\omega B\f$
+      /*!
+       * The argument \b frequency stores \f$\omega\f$.
+       */
+      virtual NOX::Abstract::Group::ReturnType
+      computeComplex(double frequency);
+      
+      //! Compute \f$(J+i\omega B)(y+iz)\f$
+      virtual NOX::Abstract::Group::ReturnType
+      applyComplex(const NOX::Abstract::Vector& input_real,
+		   const NOX::Abstract::Vector& input_imag,
+		   NOX::Abstract::Vector& result_real,
+		   NOX::Abstract::Vector& result_imag) const;
+
+      //! Compute \f$(J+i\omega B)(y+iz)\f$
+      virtual NOX::Abstract::Group::ReturnType
+      applyComplexMultiVector(
+			    const NOX::Abstract::MultiVector& input_real,
+			    const NOX::Abstract::MultiVector& input_imag,
+			    NOX::Abstract::MultiVector& result_real,
+			    NOX::Abstract::MultiVector& result_imag) const;
+
+      //! Solve \f$(J+i\omega B)(y+iz) = a+ib\f$
+      virtual NOX::Abstract::Group::ReturnType
+      applyComplexInverseMultiVector(
+			    Teuchos::ParameterList& params,
+			    const NOX::Abstract::MultiVector& input_real,
+			    const NOX::Abstract::MultiVector& input_imag,
+			    NOX::Abstract::MultiVector& result_real,
+			    NOX::Abstract::MultiVector& result_imag) const;
+
       //@}
 
       //! Return the userInterface.
@@ -339,14 +388,41 @@ namespace LOCA {
 
     protected:
 
+      //! resets the isValid flags to false
+      virtual void resetIsValid();
+
+    protected:
+
+      //! Global data
+      Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
+
+      //! Printing parameters
+      Teuchos::ParameterList& printParams;
+
       //! Parameter vector
       LOCA::ParameterVector params;
 
       //! Reference to the user supplied interface functions
       Teuchos::RefCountPtr<LOCA::Epetra::Interface::Required> userInterface;
 
-      //! Reference to the user supplied interface functions
+      //! Interface for shifted-matrix
       Teuchos::RefCountPtr<LOCA::Epetra::Interface::TimeDependent> userInterfaceTime;
+
+      //! Interface for matrix-free shifted-matrix
+      Teuchos::RefCountPtr<LOCA::Epetra::Interface::TimeDependentMatrixFree> userInterfaceTimeMF;
+
+      //! Shared shifted linear system
+      Teuchos::RefCountPtr< NOX::SharedObject<NOX::Epetra::LinearSystem, 
+					      LOCA::Epetra::Group> > shiftedSharedLinearSystem;
+
+      //! Is preconditioner for shifted matrix valid
+      mutable bool isValidShiftedPrec;
+
+      //! \f$\alpha\f$ for matrix-free shifted matrix
+      double alpha_;
+
+      //! \f$\beta\f$ for matrix-free shifted matrix
+      double beta_;
 
       //! Extra vector needed for intermediate calculations of LOCA routines.
       /*! NOTE: there already is a tmpVectorPtr in the NOX::Epetra::Group.  
@@ -359,6 +435,21 @@ namespace LOCA {
 
       //! Stores transpose linear solver strategy
       mutable Teuchos::RefCountPtr<LOCA::Epetra::TransposeLinearSystem::AbstractStrategy> tls_strategy;
+
+      //! Shared complex system
+      mutable Teuchos::RefCountPtr< NOX::SharedObject<NOX::Epetra::LinearSystem, LOCA::Epetra::Group> > complexSharedLinearSystem;
+
+      //! Complex matrix
+      Teuchos::RefCountPtr<EpetraExt::BlockCrsMatrix> complexMatrix;
+
+      //! Complex vector
+      Teuchos::RefCountPtr<EpetraExt::BlockVector> complexVec;
+
+      //! Is complex matrix valid
+      bool isValidComplex;
+
+      //! Is complex matrix preconditioner valid
+      mutable bool isValidComplexPrec;
 
     };
 

@@ -30,30 +30,18 @@
 #ifndef LOCA_EPETRA_SHIFTINVERTOPERATOR_H
 #define LOCA_EPETRA_SHIFTINVERTOPERATOR_H
 
+#include "Teuchos_RefCountPtr.hpp"
+
 #include "Epetra_Operator.h"
-#include "LOCA_Epetra_Group.H"
-#include "LOCA_ErrorCheck.H"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_Map.h"
-#include "Epetra_Import.h"
-#include "Epetra_Vector.h"
-#include "Epetra_MultiVector.h"
-#include "Epetra_Comm.h"
-#include "Epetra_Distributor.h"
-#include "NOX_Epetra_Vector.H"
 #include "NOX_Epetra_Interface_Jacobian.H"
 
 // forward declarations
 namespace LOCA {
   class GlobalData;
+  namespace Epetra {
+    class Group;
+  }
 }
-class Epetra_MultiVector;
-class Epetra_CrsMatrix;
-class Epetra_Map;
-class Epetra_Import;
-class Epetra_BlockMap;
-class Epetra_Comm;
-class Epetra_Vector;
 
 namespace LOCA {
 
@@ -83,10 +71,9 @@ namespace LOCA {
       //! Constructor
       ShiftInvertOperator(
 		    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-		    const Teuchos::RefCountPtr<const LOCA::Epetra::Group>& grp,
+		    const Teuchos::RefCountPtr<LOCA::Epetra::Group>& grp,
 		    const Teuchos::RefCountPtr<const Epetra_Operator>& jac, 
-		    const double& shift, 
-		    bool hasMassMatrix);
+		    double shift);
 
       //! Destructor
       virtual ~ShiftInvertOperator();
@@ -152,10 +139,7 @@ namespace LOCA {
       Teuchos::RefCountPtr<const Epetra_Operator> jacOper;
 
       //! Shift value
-      const double& shift_;
-
-      //! Do we have a mass matrix?
-      bool massMatrix;
+      double shift_;
 
       //! Label
       const char * Label_;

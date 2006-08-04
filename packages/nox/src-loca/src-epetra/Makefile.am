@@ -48,6 +48,7 @@ LOCA_EPETRA_H = \
 	$(srcdir)/LOCA_Epetra_Interface_Required.H \
 	$(srcdir)/LOCA_Epetra_Interface_MassMatrix.H \
         $(srcdir)/LOCA_Epetra_Interface_TimeDependent.H \
+	$(srcdir)/LOCA_Epetra_Interface_TimeDependentMatrixFree.H \
 	$(srcdir)/LOCA_Epetra_Group.H \
 	$(srcdir)/LOCA_Epetra_CompactWYOp.H \
 	$(srcdir)/LOCA_Epetra_LowRankUpdateOp.H \

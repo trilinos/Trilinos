@@ -27,23 +27,28 @@
 //@HEADER
 
 #include "LOCA_Epetra_ShiftInvertOperator.H"
+#include "LOCA_Epetra_Group.H"
+#include "NOX_Epetra_MultiVector.H"
 #include "LOCA_GlobalData.H"
 #include "LOCA_ErrorCheck.H"
+#include "Epetra_MultiVector.h"
 
 //=============================================================================
 LOCA::Epetra::ShiftInvertOperator::ShiftInvertOperator(
                    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-		   const Teuchos::RefCountPtr<const LOCA::Epetra::Group>& grp, 
+		   const Teuchos::RefCountPtr<LOCA::Epetra::Group>& grp, 
 		   const Teuchos::RefCountPtr<const Epetra_Operator>& jac, 
-		   const double& shift, bool hasMassMatrix) :
+		   double shift) :
   globalData(global_data),
   locagrp(grp),
   jacOper(jac),
   shift_(shift),
-  massMatrix(hasMassMatrix),
   Label_(0)
 {
   Label_ = "LOCA::Epetra::ShiftInvertOperator";
+
+  // Compute shifted matrix J - shift * M
+  grp->computeShiftedMatrix(1.0, -shift_);
 }
 
 LOCA::Epetra::ShiftInvertOperator::~ShiftInvertOperator()
@@ -57,7 +62,7 @@ LOCA::Epetra::ShiftInvertOperator::SetUseTranspose(bool UseTranspose)
     return 0;
   else {
     globalData->locaErrorCheck->throwError(
-	  "LOCA::Epetra::HouseholderJacOp::SetUseTranspose",
+	  "LOCA::Epetra::ShiftInvert::SetUseTranspose",
 	  "Operator does not support transpose");
     return -1;
   }
@@ -65,19 +70,25 @@ LOCA::Epetra::ShiftInvertOperator::SetUseTranspose(bool UseTranspose)
 
 int 
 LOCA::Epetra::ShiftInvertOperator::Apply(const Epetra_MultiVector& X, 
-					 Epetra_MultiVector&Y) const
+					 Epetra_MultiVector& Y) const
 {
-  double shift = shift_;
-  for (int j=0; j < X.NumVectors(); j++) {
-    const Epetra_Vector xvec(Copy,X,j);
-    Epetra_Vector yvec(View,Y,j);
-    const NOX::Epetra::Vector Xvec(xvec); 
-    NOX::Epetra::Vector Yvec(yvec);
-    locagrp->applyShiftedMatrix(Xvec,Yvec,shift);
-    Epetra_Vector& result = Yvec.getEpetraVector();
-    Y.Update(1.0,result,0.0);
-  }
-  return 0;
+  // Create NOX multivectors out of X and Y (views)
+  NOX::Epetra::MultiVector nox_X(
+		       Teuchos::rcp(&const_cast<Epetra_MultiVector&>(X),false),
+		       NOX::DeepCopy,
+		       NOX::Epetra::MultiVector::CreateView);
+  NOX::Epetra::MultiVector nox_Y(Teuchos::rcp(&Y,false),
+				 NOX::DeepCopy,
+				 NOX::Epetra::MultiVector::CreateView);
+
+  // Apply shifted matrix
+  NOX::Abstract::Group::ReturnType result = 
+    locagrp->applyShiftedMatrixMultiVector(nox_X, nox_Y);
+  
+  if (result == NOX::Abstract::Group::Ok)
+    return 0;
+  else 
+    return -1;
 } 
 
 int 
@@ -87,7 +98,7 @@ LOCA::Epetra::ShiftInvertOperator::ApplyInverse(const Epetra_MultiVector& X,
   globalData->locaErrorCheck->throwError(
 	  "LOCA::Epetra::ShiftInvertOperator::ApplyInverse",
 	  "Operator does not support ApplyInverse");
-    return -1;
+  return -1;
 }
 
 double
@@ -96,7 +107,7 @@ LOCA::Epetra::ShiftInvertOperator::NormInf() const
   globalData->locaErrorCheck->throwError(
 	  "LOCA::Epetra::ShiftInvertOperator::NormInf",
 	  "Operator does not support NormInf");
-    return -1;
+  return -1;
 }
 
 const char*
