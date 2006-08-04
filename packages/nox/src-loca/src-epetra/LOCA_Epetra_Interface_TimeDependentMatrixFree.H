@@ -71,7 +71,7 @@ namespace LOCA {
 	 * \f$\alpha J + \beta M\f$ where \f$J\f$ is the Jacobian matrix
 	 * and \f$M\f$ is the mass matrix.
 	 */
-	virtual NOX::Abstract::Group::ReturnType 
+	virtual bool
         applyShiftedMatrix(double alpha, double beta,
 			   const NOX::Epetra::Vector& input,
 			   NOX::Epetra::Vector& result) const = 0;	   
