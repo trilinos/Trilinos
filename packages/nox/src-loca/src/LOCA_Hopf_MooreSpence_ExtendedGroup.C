@@ -109,6 +109,13 @@ LOCA::Hopf::MooreSpence::ExtendedGroup::ExtendedGroup(
     get<Teuchos::RefCountPtr<NOX::Abstract::Vector> >(
 					       "Initial Imaginary Eigenvector");
 
+  if (!hopfParams->isParameter("Initial Frequency")) {
+    globalData->locaErrorCheck->throwError(func,
+				 "\"Initial Frequency\" is not set!");
+  }
+  xMultiVec.getColumn(0)->getFrequency() = 
+    hopfParams->get("Initial Frequency", 1.0);
+
   bool perturbSoln = hopfParams->get("Perturb Initial Solution", false);
   double perturbSize = hopfParams->get("Relative Perturbation Size", 1.0e-3);
 
