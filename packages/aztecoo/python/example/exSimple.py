@@ -85,7 +85,10 @@ try:
             "Output"          : 16
             }
    Solver.SetParameters(plist,True)
-except NotImplementedError:
+except AttributeError:
+   # If AztecOO and its python wrappers have been compiled without Teuchos
+   # support, then then the SetParameters method will not exist, thus raising an
+   # AttributeError exception
    print "Teuchos ParameterLists not supported"
    Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_cg)
    Solver.SetAztecOption(AztecOO.AZ_precond, AztecOO.AZ_dom_decomp)
