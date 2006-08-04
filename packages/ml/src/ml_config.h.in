@@ -165,6 +165,9 @@
 /* Define if want to build with ml enabled */
 #undef HAVE_ML_TEUCHOS
 
+/* Define if want to build with ml enabled */
+#undef HAVE_ML_THYRA
+
 /* Define if want to build with ml_timing enabled */
 #undef HAVE_ML_TIMING
 

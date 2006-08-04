@@ -481,6 +481,9 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(ml, aztecoo, ML_AZTECOO, ML_USING_AZTECOO, yes, [
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(ml, epetraext, ML_EPETRAEXT, ML_USING_EPETRAEXT, yes, [Enable EpetraExt support. EpetraExt requires --enable-epetra. See notes for --enable-ml_metis.], [Enable EpetraExt support. EpetraExt requires --enable-epetra. See notes for --enable-ml_metis. Can be overridden with --disable-ml-epetraext.])
 #
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(ifpack, galeri, ML_GALERI, ML_USING_GALERI, yes, [Enable Galeri support. Galeri, a Trilinos package, is used in some ML examples to construct the linear system.], [Enable Galeri support.  Galeri, a Trilinos package, is used in some ML examples to construct the linear system.  Can be overridden with --disable-ml-galeri.])
+# Interface to Thyra
+
+TAC_ARG_ENABLE_CAN_USE_PACKAGE( ml, thyra, ML_THYRA, ENABLE_ML_THYRA, yes, [Build the Thyra operator/vector adapter support in ML.], [Build the Thyra operator/vector adapater support in ML.  Can be overridden with --disable-ml-thyra.])
 
 #if we're not using epetra, then build certain ML examples
 #without dependencies on libepetra.a (and use C linker for C files,
@@ -726,6 +729,8 @@ AC_CONFIG_FILES([
                 python/src/.deps/dummy
                 python/example/Makefile
                 python/test/Makefile
+		            thyra/Makefile  
+            		thyra/src/Makefile
 		matlab/Makefile
                 ])
 

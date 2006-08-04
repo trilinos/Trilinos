@@ -17,6 +17,7 @@
 - \ref ml_anasazi
 - \ref ml_mlapi_intro
 - \ref ml_python
+- \ref ml_thyra
 - \ref ml_debug 
 - \ref ml_changes
 - \ref ml_copyright
@@ -299,6 +300,11 @@ interpreter.  Please refer to the PyTrilinos home page
 http://software.sandia.gov/trilinos/packages/pytrilinos/overview.html
 for more details. 
 
+
+\section ml_python ML/Thyra adapters
+
+Adapters are available for using ML with the Thyra solver components.
+See <A HREF="../../thyra/doc/html/index.html"> ML/Thyra adapters. </A>
 
 \section ml_debug Debugging Utilities
 

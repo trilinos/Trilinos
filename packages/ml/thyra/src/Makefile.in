@@ -14,35 +14,11 @@
 
 @SET_MAKE@
 
-#@HEADER
-# ************************************************************************
-# 
-#                 ML
-#                 Copyright (2004) Sandia Corporation
-# 
-# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-# license for use of this work by or on behalf of the U.S. Government.
-# 
-# This library is free software; you can redistribute it and/or modify
-# it under the terms of the GNU Lesser General Public License as
-# published by the Free Software Foundation; either version 2.1 of the
-# License, or (at your option) any later version.
-#  
-# This library is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# Lesser General Public License for more details.
-#  
-# You should have received a copy of the GNU Lesser General Public
-# License along with this library; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-# USA
-# Questions? Contact Jonathan Hu or Ray Tuminaro ({jhu|rstumin}@sandia.gov) 
-# 
-# ************************************************************************
-#@HEADER
+# @HEADER
+# @HEADER
 
-SOURCES = $(2d_Poisson_SOURCES)
+
+SOURCES = $(libmlthyra_a_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -65,9 +41,9 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-noinst_PROGRAMS = 2d_Poisson$(EXEEXT)
-subdir = test/2d_Poisson
-DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in
+subdir = thyra/src
+DIST_COMMON = $(include_HEADERS) $(srcdir)/Makefile.am \
+	$(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/ac_cxx_have_stl.m4 \
@@ -105,22 +81,29 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/ml_config.h
 CONFIG_CLEAN_FILES =
-PROGRAMS = $(noinst_PROGRAMS)
-am_2d_Poisson_OBJECTS = 2d_Poisson-ml_example2d.$(OBJEXT)
-2d_Poisson_OBJECTS = $(am_2d_Poisson_OBJECTS)
+AR = ar
+ARFLAGS = cru
+am__installdirs = $(DESTDIR)$(libdir) $(DESTDIR)$(includedir)
+libLIBRARIES_INSTALL = $(INSTALL_DATA)
+LIBRARIES = $(lib_LIBRARIES)
 am__DEPENDENCIES_1 =
-am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+libmlthyra_a_DEPENDENCIES = $(am__DEPENDENCIES_1)
+am__objects_1 = Thyra_MLPreconditionerFactory.$(OBJEXT)
+am_libmlthyra_a_OBJECTS = $(am__objects_1)
+libmlthyra_a_OBJECTS = $(am_libmlthyra_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/2d_Poisson-ml_example2d.Po
-COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-CCLD = $(CC)
-LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(2d_Poisson_SOURCES)
-DIST_SOURCES = $(2d_Poisson_SOURCES)
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Thyra_MLPreconditionerFactory.Po
+CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
+	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
+CXXLD = $(CXX)
+CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
+	-o $@
+SOURCES = $(libmlthyra_a_SOURCES)
+DIST_SOURCES = $(libmlthyra_a_SOURCES)
+includeHEADERS_INSTALL = $(INSTALL_HEADER)
+HEADERS = $(include_HEADERS)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -161,7 +144,7 @@ ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 ENABLE_ML_THYRA_FALSE = @ENABLE_ML_THYRA_FALSE@
 ENABLE_ML_THYRA_TRUE = @ENABLE_ML_THYRA_TRUE@
-EXEEXT = .exe
+EXEEXT = @EXEEXT@
 F77 = @F77@
 FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
@@ -305,28 +288,72 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-EXTRA_DIST = 2dPoissonEvaluateDefinitions baseline1 baseline2 baseline3 baseline5 baseline6 baseline7 ml_inputfile1 ml_inputfile2 ml_inputfile3 ml_inputfile5 ml_inputfile6 ml_inputfile7
-2d_Poisson_SOURCES = $(top_srcdir)/examples/Other/ml_example2d.c
-2d_Poisson_DEPENDENCIES = \
-    $(top_builddir)/src/libml.a \
-    GetNecessaryFiles
+SOURCE_H = \
+	$(srcdir)/Thyra_MLPreconditionerFactory.hpp 
 
-ml_common_include_locations = $(ML_INCLUDES)
-ml_libs = $(ML_LIBS) \
-          $(LIBS)           \
-          $(LAPACK_LIBS)    \
-          $(BLAS_LIBS)      \
-          $(FLIBS)
+SOURCE = \
+	$(srcdir)/Thyra_MLPreconditionerFactory.cpp 
 
-mllink = $(CXX) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-2d_Poisson_CPPFLAGS = ${ml_common_include_locations} -DML_BENCHMARK
-2d_Poisson_CXXFLAGS = ${ml_common_include_locations} -DML_BENCHMARK
-2d_Poisson_LDADD = ${ml_libs}
-2d_Poisson_LINK = ${mllink}
+@USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(ML_INCLUDES)
+@USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ML_INCLUDES))
+AM_CPPFLAGS = $(EXPORT_INCLUDES)
+
+# --------------------------------------------------------------------
+# Ml Thyra library specifications
+# --------------------------------------------------------------------
+ML_THYRA_LIB = libmlthyra.a
+ML_THYRA_H = \
+	$(top_builddir)/src/ml_config.h \
+	$(SOURCE_H)
+
+libmlthyra_a_SOURCES = \
+	$(SOURCE)
+
+@USE_ALTERNATE_AR_FALSE@libmlthyra_a_AR = $(AR) cru
+
+#We need the following to support separate build directories
+
+# --------------------------------------------------------------------
+# For using a special archiver
+# --------------------------------------------------------------------
+
+# SPECIAL NOTE: Why is the "else" there?  For some reason, automake
+# fails to define <lib>_AR of USE_ALTERNATE_AR is false, so we have to
+# define it manually.
+@USE_ALTERNATE_AR_TRUE@libmlthyra_a_AR = $(ALTERNATE_AR)
+
+# --------------------------------------------------------------------
+# Some C++ compilers create extra .o-files for templates. We need to
+# be sure to include these, and this is the hack to do it.
+# --------------------------------------------------------------------
+
+# I have not been able to find any kind of "or" for Automake
+# conditionals. JW
+libmlthyra_a_LIBADD = $(TRILINOS_TEMPLATE_OBJS) $(XTRALDADD)
+
+# --------------------------------------------------------------------
+# List of all libraries to install in $(libexecdir)
+# --------------------------------------------------------------------
+lib_LIBRARIES = $(ML_THYRA_LIB)
+
+# --------------------------------------------------------------------
+# List of all headers to install in $(includedir)
+# --------------------------------------------------------------------
+include_HEADERS = $(ML_THYRA_H) 
+
+# --------------------------------------------------------------------
+# Special stuff to install in our special $(execincludedir)
+# --------------------------------------------------------------------
+execincludedir = $(exec_prefix)/include
+
+# --------------------------------------------------------------------
+# Files to be deleted by 'make maintainer-clean'
+# --------------------------------------------------------------------
+MAINTAINERCLEANFILES = Makefile.in 
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .c .o .obj
+.SUFFIXES: .cpp .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -336,9 +363,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  test/2d_Poisson/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  thyra/src/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  test/2d_Poisson/Makefile
+	  $(AUTOMAKE) --foreign  thyra/src/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -356,12 +383,39 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
+install-libLIBRARIES: $(lib_LIBRARIES)
+	@$(NORMAL_INSTALL)
+	$(mkdir_p) $(DESTDIR)$(libdir)
+	@list='$(lib_LIBRARIES)'; for p in $$list; do \
+	  if test -f $$p; then \
+	    f="`echo $$p | sed -e 's|^.*/||'`"; \
+	    echo " $(libLIBRARIES_INSTALL) $$p $(DESTDIR)$(libdir)/$$f"; \
+	    $(libLIBRARIES_INSTALL) $$p $(DESTDIR)$(libdir)/$$f; \
+	  else :; fi; \
+	done
+	@$(POST_INSTALL)
+	@list='$(lib_LIBRARIES)'; for p in $$list; do \
+	  if test -f $$p; then \
+	    p="`echo $$p | sed -e 's|^.*/||'`"; \
+	    echo " $(RANLIB) $(DESTDIR)$(libdir)/$$p"; \
+	    $(RANLIB) $(DESTDIR)$(libdir)/$$p; \
+	  else :; fi; \
+	done
 
-clean-noinstPROGRAMS:
-	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-2d_Poisson$(EXEEXT): $(2d_Poisson_OBJECTS) $(2d_Poisson_DEPENDENCIES) 
-	@rm -f 2d_Poisson$(EXEEXT)
-	$(2d_Poisson_LINK) $(2d_Poisson_LDFLAGS) $(2d_Poisson_OBJECTS) $(2d_Poisson_LDADD) $(LIBS)
+uninstall-libLIBRARIES:
+	@$(NORMAL_UNINSTALL)
+	@list='$(lib_LIBRARIES)'; for p in $$list; do \
+	  p="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " rm -f $(DESTDIR)$(libdir)/$$p"; \
+	  rm -f $(DESTDIR)$(libdir)/$$p; \
+	done
+
+clean-libLIBRARIES:
+	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
+libmlthyra.a: $(libmlthyra_a_OBJECTS) $(libmlthyra_a_DEPENDENCIES) 
+	-rm -f libmlthyra.a
+	$(libmlthyra_a_AR) libmlthyra.a $(libmlthyra_a_OBJECTS) $(libmlthyra_a_LIBADD)
+	$(RANLIB) libmlthyra.a
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -369,40 +423,57 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/2d_Poisson-ml_example2d.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thyra_MLPreconditionerFactory.Po@am__quote@
 
-.c.o:
-@am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(COMPILE) -c $<
+.cpp.o:
+@am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ $<
 
-.c.obj:
-@am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ `$(CYGPATH_W) '$<'`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(COMPILE) -c `$(CYGPATH_W) '$<'`
+.cpp.obj:
+@am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ `$(CYGPATH_W) '$<'`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-2d_Poisson-ml_example2d.o: $(top_srcdir)/examples/Other/ml_example2d.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(2d_Poisson_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT 2d_Poisson-ml_example2d.o -MD -MP -MF "$(DEPDIR)/2d_Poisson-ml_example2d.Tpo" -c -o 2d_Poisson-ml_example2d.o `test -f '$(top_srcdir)/examples/Other/ml_example2d.c' || echo '$(srcdir)/'`$(top_srcdir)/examples/Other/ml_example2d.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/2d_Poisson-ml_example2d.Tpo" "$(DEPDIR)/2d_Poisson-ml_example2d.Po"; else rm -f "$(DEPDIR)/2d_Poisson-ml_example2d.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/examples/Other/ml_example2d.c' object='2d_Poisson-ml_example2d.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/2d_Poisson-ml_example2d.Po' tmpdepfile='$(DEPDIR)/2d_Poisson-ml_example2d.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(2d_Poisson_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o 2d_Poisson-ml_example2d.o `test -f '$(top_srcdir)/examples/Other/ml_example2d.c' || echo '$(srcdir)/'`$(top_srcdir)/examples/Other/ml_example2d.c
+Thyra_MLPreconditionerFactory.o: $(srcdir)/Thyra_MLPreconditionerFactory.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Thyra_MLPreconditionerFactory.o -MD -MP -MF "$(DEPDIR)/Thyra_MLPreconditionerFactory.Tpo" -c -o Thyra_MLPreconditionerFactory.o `test -f '$(srcdir)/Thyra_MLPreconditionerFactory.cpp' || echo '$(srcdir)/'`$(srcdir)/Thyra_MLPreconditionerFactory.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Thyra_MLPreconditionerFactory.Tpo" "$(DEPDIR)/Thyra_MLPreconditionerFactory.Po"; else rm -f "$(DEPDIR)/Thyra_MLPreconditionerFactory.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Thyra_MLPreconditionerFactory.cpp' object='Thyra_MLPreconditionerFactory.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Thyra_MLPreconditionerFactory.Po' tmpdepfile='$(DEPDIR)/Thyra_MLPreconditionerFactory.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Thyra_MLPreconditionerFactory.o `test -f '$(srcdir)/Thyra_MLPreconditionerFactory.cpp' || echo '$(srcdir)/'`$(srcdir)/Thyra_MLPreconditionerFactory.cpp
 
-2d_Poisson-ml_example2d.obj: $(top_srcdir)/examples/Other/ml_example2d.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(2d_Poisson_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT 2d_Poisson-ml_example2d.obj -MD -MP -MF "$(DEPDIR)/2d_Poisson-ml_example2d.Tpo" -c -o 2d_Poisson-ml_example2d.obj `if test -f '$(top_srcdir)/examples/Other/ml_example2d.c'; then $(CYGPATH_W) '$(top_srcdir)/examples/Other/ml_example2d.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/examples/Other/ml_example2d.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/2d_Poisson-ml_example2d.Tpo" "$(DEPDIR)/2d_Poisson-ml_example2d.Po"; else rm -f "$(DEPDIR)/2d_Poisson-ml_example2d.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/examples/Other/ml_example2d.c' object='2d_Poisson-ml_example2d.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/2d_Poisson-ml_example2d.Po' tmpdepfile='$(DEPDIR)/2d_Poisson-ml_example2d.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(2d_Poisson_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o 2d_Poisson-ml_example2d.obj `if test -f '$(top_srcdir)/examples/Other/ml_example2d.c'; then $(CYGPATH_W) '$(top_srcdir)/examples/Other/ml_example2d.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/examples/Other/ml_example2d.c'; fi`
+Thyra_MLPreconditionerFactory.obj: $(srcdir)/Thyra_MLPreconditionerFactory.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Thyra_MLPreconditionerFactory.obj -MD -MP -MF "$(DEPDIR)/Thyra_MLPreconditionerFactory.Tpo" -c -o Thyra_MLPreconditionerFactory.obj `if test -f '$(srcdir)/Thyra_MLPreconditionerFactory.cpp'; then $(CYGPATH_W) '$(srcdir)/Thyra_MLPreconditionerFactory.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Thyra_MLPreconditionerFactory.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Thyra_MLPreconditionerFactory.Tpo" "$(DEPDIR)/Thyra_MLPreconditionerFactory.Po"; else rm -f "$(DEPDIR)/Thyra_MLPreconditionerFactory.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Thyra_MLPreconditionerFactory.cpp' object='Thyra_MLPreconditionerFactory.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Thyra_MLPreconditionerFactory.Po' tmpdepfile='$(DEPDIR)/Thyra_MLPreconditionerFactory.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Thyra_MLPreconditionerFactory.obj `if test -f '$(srcdir)/Thyra_MLPreconditionerFactory.cpp'; then $(CYGPATH_W) '$(srcdir)/Thyra_MLPreconditionerFactory.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Thyra_MLPreconditionerFactory.cpp'; fi`
 uninstall-info-am:
+install-includeHEADERS: $(include_HEADERS)
+	@$(NORMAL_INSTALL)
+	$(mkdir_p) $(DESTDIR)$(includedir)
+	@list='$(include_HEADERS)'; for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " $(includeHEADERS_INSTALL) $$d$$p $(DESTDIR)$(includedir)/$$f"; \
+	  $(includeHEADERS_INSTALL) $$d$$p $(DESTDIR)$(includedir)/$$f; \
+	done
+
+uninstall-includeHEADERS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(include_HEADERS)'; for p in $$list; do \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " rm -f $(DESTDIR)$(includedir)/$$f"; \
+	  rm -f $(DESTDIR)$(includedir)/$$f; \
+	done
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
@@ -451,6 +522,7 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
+	$(mkdir_p) $(distdir)/$(top_builddir)/src
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -479,8 +551,9 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(PROGRAMS)
+all-am: Makefile $(LIBRARIES) $(HEADERS)
 installdirs:
+	$(mkdir_p) $(DESTDIR)$(libdir) $(DESTDIR)$(includedir)
 install: install-am
 install-exec: install-exec-am
 install-data: install-data-am
@@ -505,9 +578,10 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
+	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
 clean: clean-am
 
-clean-am: clean-generic clean-noinstPROGRAMS mostlyclean-am
+clean-am: clean-generic clean-libLIBRARIES mostlyclean-am
 
 distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
@@ -525,9 +599,9 @@ info: info-am
 
 info-am:
 
-install-data-am:
+install-data-am: install-includeHEADERS
 
-install-exec-am:
+install-exec-am: install-libLIBRARIES
 
 install-info: install-info-am
 
@@ -552,40 +626,26 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-info-am
+uninstall-am: uninstall-includeHEADERS uninstall-info-am \
+	uninstall-libLIBRARIES
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-noinstPROGRAMS ctags distclean distclean-compile \
+	clean-libLIBRARIES ctags distclean distclean-compile \
 	distclean-generic distclean-tags distdir dvi dvi-am html \
 	html-am info info-am install install-am install-data \
-	install-data-am install-exec install-exec-am install-info \
-	install-info-am install-man install-strip installcheck \
+	install-data-am install-exec install-exec-am \
+	install-includeHEADERS install-info install-info-am \
+	install-libLIBRARIES install-man install-strip installcheck \
 	installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
-	uninstall-am uninstall-info-am
+	uninstall-am uninstall-includeHEADERS uninstall-info-am \
+	uninstall-libLIBRARIES
 
 
-# include definitions of ML_INCLUDES and ML_LIBS
+# Specify locations of include files within Trilinos
+
 include $(top_builddir)/Makefile.export.ml
-
-2d_Poisson$(EXT): $(2d_Poisson_SOURCES)
-
-#copy these files over to the build area
-GetNecessaryFiles: $(EXTRA_DIST)
-	@if test ! -e ./2dPoissonEvaluateDefinitions; then cp -f $(srcdir)/2dPoissonEvaluateDefinitions .; fi
-	@if test ! -e ./baseline1 ; then cp -f $(srcdir)/baseline1 .; fi
-	@if test ! -e ./baseline2 ; then cp -f $(srcdir)/baseline2 .; fi
-	@if test ! -e ./baseline3 ; then cp -f $(srcdir)/baseline3 .; fi
-	@if test ! -e ./baseline5 ; then cp -f $(srcdir)/baseline5 .; fi
-	@if test ! -e ./baseline6 ; then cp -f $(srcdir)/baseline6 .; fi
-	@if test ! -e ./baseline7 ; then cp -f $(srcdir)/baseline7 .; fi
-	@if test ! -e ./ml_inputfile1 ; then cp -f $(srcdir)/ml_inputfile1 .; fi
-	@if test ! -e ./ml_inputfile2 ; then cp -f $(srcdir)/ml_inputfile2 .; fi
-	@if test ! -e ./ml_inputfile3 ; then cp -f $(srcdir)/ml_inputfile3 .; fi
-	@if test ! -e ./ml_inputfile5 ; then cp -f $(srcdir)/ml_inputfile5 .; fi
-	@if test ! -e ./ml_inputfile6 ; then cp -f $(srcdir)/ml_inputfile6 .; fi
-	@if test ! -e ./ml_inputfile7 ; then cp -f $(srcdir)/ml_inputfile7 .; fi
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

@@ -164,6 +164,8 @@ ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
+ENABLE_ML_THYRA_FALSE = @ENABLE_ML_THYRA_FALSE@
+ENABLE_ML_THYRA_TRUE = @ENABLE_ML_THYRA_TRUE@
 
 # The MEXEXT_VALUE is set in AZ_MATLAB_ROOT from the mexext script, the only portable
 # way of figuring out what my mex system extension is.  Of course, this means cross-compiling

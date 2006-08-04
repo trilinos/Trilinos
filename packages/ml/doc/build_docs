@@ -1,3 +1,11 @@
 #!/bin/bash
 
 doxygen DoxyfileWeb
+
+
+echo
+echo "Generating ML/thyra doxygen documentation ..."
+echo
+
+doxygen ../thyra/doc/Doxyfile
+

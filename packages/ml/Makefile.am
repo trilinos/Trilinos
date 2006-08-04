@@ -127,17 +127,32 @@ MATLAB_SUBDIR=matlab
 endif
 
 
-SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) doc $(PYTHON_SUBDIR) $(MATLAB_SUBDIR)
+if ENABLE_ML_THYRA
+THYRA_SUBDIR=thyra
+else
+THYRA_SUBDIR=
+endif
+
+SUBDIRS = src $(THYRA_SUBDIR) $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) doc $(PYTHON_SUBDIR) $(MATLAB_SUBDIR)
 
 
 ## #######################################################################
 ## Target for circular dependencies
 ## #######################################################################
+
+if ENABLE_ML_THYRA
+BUILD_THYRA_SUBLIB=cd $(top_builddir)/thyra/src ; $(MAKE)
+else
+BUILD_THYRA_SUBLIB=
+endif
+
 all-libs:
 	cd src ; $(MAKE) all-libs
+	$(BUILD_THYRA_SUBLIB)
 
 libs:
 	cd src ; $(MAKE)
+	$(BUILD_THYRA_SUBLIB)
 
 ## #######################################################################
 ## Export Makefile Installation
