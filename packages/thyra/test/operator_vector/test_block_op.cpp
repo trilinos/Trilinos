@@ -91,7 +91,10 @@ int main(int argc, char *argv[])
 
       success = runTest<float>(out) && success;
 
+#if defined(HAVE_COMPLEX) && defined(HAVE_TEUCHOS_COMPLEX)
       success = runTest<std::complex<double> >(out) && success;
+#endif
+
     }
 
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true,out.get()?*out:std::cerr,success)

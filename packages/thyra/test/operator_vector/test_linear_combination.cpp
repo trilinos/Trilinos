@@ -93,15 +93,11 @@ int main( int argc, char *argv[] )
 
     if (!verbose) out = rcp(new FancyOStream(rcp(new oblackholestream())));
     
-    /* testing on doubles */ 
     success = runTests<double>(n, out) ;
 
-    /* testing on floats */ 
     success = runTests<float>(n, out) && success;
 
 #if defined(HAVE_COMPLEX) && defined(HAVE_TEUCHOS_COMPLEX)
-
-    /* testing on complex */ 
     success = runTests<std::complex<double> >(n, out) && success;
 #endif
   }

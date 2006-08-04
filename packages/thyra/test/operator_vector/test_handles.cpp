@@ -114,19 +114,14 @@ int main( int argc, char *argv[] )
     if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
     if (!verbose) out = rcp(new FancyOStream(rcp(new oblackholestream())));
     
-    
-    /* testing on doubles */ 
     success = runVectorTests<double>(n, out) ;
 
-    /* testing on floats */ 
     success = runVectorTests<float>(n, out) && success;
 
 #if defined(HAVE_COMPLEX) && defined(HAVE_TEUCHOS_COMPLEX)
-
-    /* testing on complex */ 
     success = runVectorTests<std::complex<double> >(n, out) && success;
-
 #endif
+
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true,out.get()?*out:std::cerr,success)
 
