@@ -96,21 +96,20 @@ void checks( RefCountPtr<BlockKrylovSchur<ScalarType,MV,OP> > solver, int blocks
 
   if (solver->isInitialized()) 
   {
-    /* put these back in later
-    // check residuals
-    RefCountPtr<const MV> evecs = solver->getEvecs();
-    RefCountPtr<MV> Kevecs, Mevecs;
-    Kevecs = MVT::Clone(*evecs,blocksize);
-    OPT::Apply(*problem->getOperator(),*evecs,*Kevecs);
-    if (problem->getM() == null) {
-      Mevecs = MVT::CloneCopy(*evecs);
+    // check Ritz vector
+    if (!solver->isRitzVecsCurrent()) {
+      solver->computeRitzVectors();
     }
-    else {
-      Mevecs = MVT::Clone(*evecs,blocksize);
-      OPT::Apply(*problem->getM(),*evecs,*Mevecs);
+    RefCountPtr<const MV> ritzVectors = solver->getRitzVectors();
+    TEST_FOR_EXCEPTION(MVT::GetNumberVecs( *ritzVectors ) != blocksize+1,get_out,"getRitzVectors() has incorrect size.");
+
+    // check Ritz values
+    if (!solver->isRitzValsCurrent()) {
+      solver->computeRitzValues();
     }
-    vector<MagnitudeType> theta = solver->getEigenvalues();
-    TEST_FOR_EXCEPTION(theta.size() != blocksize,get_out,"getEigenvalues() has incorrect size.");
+    std::vector<MagnitudeType> ritzValues = solver->getRitzValues();
+
+    /*
     SerialDenseMatrix<int,ScalarType> T(blocksize,blocksize);
     for (int i=0; i<blocksize; i++) T(i,i) = theta[i];
     // BlockKrylovSchur computes residuals like R = K*X - M*X*T 
@@ -220,7 +219,8 @@ int main(int argc, char *argv[])
   }
 
   // create the output manager
-  RefCountPtr< OutputManager<ScalarType> > printer = rcp( new BasicOutputManager<ScalarType>() );
+  RefCountPtr< OutputManager<ScalarType> > printer = 
+    rcp( new BasicOutputManager<ScalarType>( Anasazi::Errors + Anasazi::Debug ) );
 
   if (verbose) {
     printer->stream(Errors) << Anasazi_Version() << endl << endl;
@@ -285,7 +285,7 @@ int main(int argc, char *argv[])
 
     pls.set<int>("Block Size",nev);
     pls.set<int>("Num Blocks",3);
-    pls.set<int>("Step Size", 1);
+    pls.set<int>("Step Size", 2);
     if (verbose) {
       printer->stream(Errors) << "Testing solver(nev,3) with standard eigenproblem..." << endl;
     }
