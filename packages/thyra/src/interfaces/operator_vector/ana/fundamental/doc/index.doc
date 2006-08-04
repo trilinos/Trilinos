@@ -23,7 +23,7 @@ The fundamental interface classes shown in the above UML class diagram are
 described below:
 
 <ul>
-<li><tt>Thyra::VectorSpaceFactoryBase</tt> is basic factory interface for creating
+<li><tt>Thyra::VectorSpaceFactoryBase</tt> is the basic factory interface for creating
     <tt>Thyra::VectorSpaceBase</tt> objects given a dimension.
 <li><tt>Thyra::VectorSpaceBase</tt> is the fundamental abstract interface for a vector space that defines
     the scalar product and factory functions for creating <tt>Thyra::VectorBase</tt> and <tt>Thyra::MultiVectorBase</tt> objects.
@@ -40,8 +40,8 @@ in <a
 href="http://software.sandia.gov/trilinos/packages/tsfcore/TSFCoreSAND.pdf">this
 report</a> and in the documentation for each individual C++ class. -->
 
-One important paper describing the RTOp approach which provides the foundation
-for <tt>RTOpPack::RTOpT</tt> can be found in <a
+One important paper describing the RTOp approach, which provides the foundation
+for <tt>RTOpPack::RTOpT</tt>, can be found in <a
 href="http://software.sandia.gov/RTOp/RTOpTOMS.pdf">this paper</a>.  Note that
 <tt>RTOpPack::RTOpT</tt> is a refinement of the C and C++ RTOp interfaces
 described in the aforementioned paper.
