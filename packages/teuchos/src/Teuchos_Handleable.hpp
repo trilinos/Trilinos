@@ -104,7 +104,7 @@ namespace Teuchos
  * \endcode
  */
 #define TEUCHOS_GET_RCP(Base)                                           \
-  virtual Teuchos::RefCountPtr<const Base> getConstRcp() const {return rcp(this);} \
+  virtual Teuchos::RefCountPtr<const Base > getConstRcp() const {return rcp(this);} \
   virtual Teuchos::RefCountPtr<Base > getRcp() {return rcp(this);} 
 
 /** \brief Use this macro as an easy way to implement the ConstHandleable
@@ -119,7 +119,7 @@ namespace Teuchos
  * \endcode
  */
 #define TEUCHOS_GET_CONST_RCP(Base) \
-virtual Teuchos::RefCountPtr<const Base> getConstRcp() const {return rcp(this);}
+virtual Teuchos::RefCountPtr<const Base > getConstRcp() const {return rcp(this);}
 
 
 
