@@ -168,6 +168,10 @@ Brusselator::~Brusselator()
   delete Importer;
   delete OverlapMap;
   delete StandardMap;
+  delete StandardNodeMap;
+  delete OverlapNodeMap;
+  delete nodeImporter;
+  delete A;
 }
 
 // Set initialSolution to desired initial condition
@@ -175,8 +179,12 @@ void Brusselator::initializeSoln()
 {
   Epetra_Vector& soln = *initialSolution;
   Epetra_Vector& x = *xptr;
+  for (int i=0; i<x.MyLength(); i++) {
+    soln[2*i]   = alpha;
+    soln[2*i+1] = beta/alpha;
+  }
 
-  soln.PutScalar(0.0);
+  //soln.PutScalar(0.0);
 }
 
 void Brusselator::setParameters(double alpha_, double beta_, double D1_,
