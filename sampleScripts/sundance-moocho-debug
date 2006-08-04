@@ -27,6 +27,7 @@ CXXFLAGS="-g -Wall" \
 --enable-epetra \
 --enable-epetraext \
 --enable-ml \
+--enable-ml-thyra \
 --enable-prerelease \
 --with-ml_nox \
 --disable-ml-examples \
