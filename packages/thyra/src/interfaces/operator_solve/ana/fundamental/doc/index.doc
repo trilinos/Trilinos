@@ -11,11 +11,13 @@
 
 \section thyra_src_interfaces_operator_solve_ana_fundamental_into_sec Introduction
 
-This doxygen collection documents a set of interfaces for invertible linear
-operators that are derived from or extend the <a
+This doxygen collection documents a set of interfaces for linear
+operators to which a solver can be applied to solve, in some sense, a linear system of equations.  
+These linear operators are derived from or extend the <a
 href="../../../fundamental/doc/html/index.html">Fundamental Thyra ANA
 Operator/Vector Interfaces</a>.  These interfaces comprise the basic interface
-to linear equation solvers.
+to linear equation solvers.  Below we use the term "forward" to denote the original operator 
+to which a solver is associated to distinguish it from the "inverse" operator.
 
 \section thyra_src_interfaces_operator_solve_ana_fundamental_software_sec Software
 
