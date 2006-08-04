@@ -133,7 +133,7 @@ using namespace std;
 %import "Teuchos.i"
 #endif
 
-// Exception handling.  Macro is from Epetra interface file
+// Exception handling
 %define AZTECOO_EXCEPTION_HANDLER(className,methodName)
 %exception className::methodName {
   $action
