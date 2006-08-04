@@ -86,7 +86,7 @@
 int main(int argc, char *argv[])
 {
   int ierr = 0;
-  int MyPID;
+  int MyPID = 0;
   double pi = 4.0*atan(1.0);
   double D1 = 1.0/40.0;
   double D2 = 1.0/40.0;
@@ -140,6 +140,8 @@ int main(int argc, char *argv[])
     // Epetra objects for the problem and allows calls to the 
     // function (F) and Jacobian evaluation routines.
     Brusselator Problem(NumGlobalNodes, Comm);
+    Problem.setParameters(alpha, beta, D1, D2);
+    Problem.initializeSoln();
 
     // Get the vector from the Problem
     Epetra_Vector& soln = Problem.getSolution();
@@ -291,6 +293,7 @@ int main(int argc, char *argv[])
     lsParams.set("Tolerance", 1e-6);
     lsParams.set("Output Frequency", 50);    
     lsParams.set("Preconditioner", "Ifpack"); 
+    //lsParams.set("Preconditioner", "None"); 
     //lsParams.set("Preconditioner", "AztecOO"); 
     //lsParams.set("Aztec Preconditioner", "ilu"); 
     //lsParams.set("Overlap", 2);  
@@ -355,21 +358,12 @@ int main(int argc, char *argv[])
 					   iTime, initialGuess, linSys, 
 					   shiftedLinSys,
 					   pVector));
-
     grp->computeF();
 
     // Create the convergence tests
     Teuchos::RefCountPtr<NOX::StatusTest::NormF> absresid = 
       Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8, 
 					   NOX::StatusTest::NormF::Unscaled));
-    //NOX::StatusTest::NormF relresid(*grp.get(), 1.0e-2);
-    //NOX::StatusTest::NormUpdate update(1.0e-5);
-    //NOX::StatusTest::NormWRMS wrms(1.0e-2, 1.0e-8);
-    //NOX::StatusTest::Combo converged(NOX::StatusTest::Combo::AND);
-    //converged.addStatusTest(absresid);
-    //converged.addStatusTest(relresid);
-    //converged.addStatusTest(wrms);
-    //converged.addStatusTest(update);
     Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> maxiters = 
       Teuchos::rcp(new NOX::StatusTest::MaxIters(maxNewtonIters));
     Teuchos::RefCountPtr<NOX::StatusTest::Combo> combo =
@@ -392,8 +386,6 @@ int main(int argc, char *argv[])
     // Get the final solution from the stepper
     Teuchos::RefCountPtr<const LOCA::Epetra::Group> finalGroup = 
       Teuchos::rcp_dynamic_cast<const LOCA::Epetra::Group>(stepper.getSolutionGroup());
-    const NOX::Epetra::Vector& finalSolution = 
-      dynamic_cast<const NOX::Epetra::Vector&>(finalGroup->getX());
 
     // Output the parameter list
     if (globalData->locaUtils->isPrintType(NOX::Utils::Parameters)) {
@@ -414,37 +406,33 @@ int main(int argc, char *argv[])
 	<< "***** Checking solution statistics *****" 
 	<< std::endl;
 
-//     // Check number of continuation steps
-//     int numSteps = stepper.getStepNumber();
-//     int numSteps_expected = 14;
-//     ierr += testCompare.testValue(numSteps, numSteps_expected, 0.0,
-// 				  "number of continuation steps",
-// 				  NOX::TestCompare::Absolute);
+    // Check number of continuation steps
+    int numSteps = stepper.getStepNumber();
+    int numSteps_expected = 18;
+    ierr += testCompare.testValue(numSteps, numSteps_expected, 0.0,
+				  "number of continuation steps",
+				  NOX::TestCompare::Absolute);
 
-//     // Check number of failed steps
-//     int numFailedSteps = stepper.getNumFailedSteps();
-//     int numFailedSteps_expected = 0;
-//     ierr += testCompare.testValue(numFailedSteps, numFailedSteps_expected, 0.0,
-// 				  "number of failed continuation steps",
-// 				  NOX::TestCompare::Absolute);
+    // Check number of failed steps
+    int numFailedSteps = stepper.getNumFailedSteps();
+    int numFailedSteps_expected = 0;
+    ierr += testCompare.testValue(numFailedSteps, numFailedSteps_expected, 0.0,
+				  "number of failed continuation steps",
+				  NOX::TestCompare::Absolute);
 
-//     // Check final value of continuation parameter
-//     double beta_final = finalGroup->getParam("beta");
-//     double beta_expected = 2.0;
-//     ierr += testCompare.testValue(beta_final, beta_expected, 1.0e-14,
-// 				  "final value of continuation parameter", 
-// 				  NOX::TestCompare::Relative);
+    // Check final value of continuation parameter
+    double alpha_final = finalGroup->getParam("alpha");
+    double alpha_expected = 1.0;
+    ierr += testCompare.testValue(alpha_final, alpha_expected, 1.0e-14,
+				  "final value of continuation parameter", 
+				  NOX::TestCompare::Relative);
 
-//     // Check final of solution
-//     NOX::Epetra::Vector final_x_expected(finalSolution);
-//     int n = final_x_expected.getEpetraVector().MyLength()/2;
-//     for (int i=0; i<n; i++) {
-//       final_x_expected.getEpetraVector()[2*i] = alpha;
-//       final_x_expected.getEpetraVector()[2*i+1] = beta_final/alpha;
-//     }
-//     ierr += testCompare.testVector(finalSolution, final_x_expected, 
-// 				   1.0e-10, 1.0e-10,
-// 				   "value of final solution");
+    // Check final value of bifurcation parameter
+    double beta_final = finalGroup->getParam("beta");
+    double beta_expected = 5.279;
+    ierr += testCompare.testValue(beta_final, beta_expected, 1.0e-3,
+				  "final value of continuation parameter", 
+				  NOX::TestCompare::Relative);
 
     destroyGlobalData(globalData);
   }
