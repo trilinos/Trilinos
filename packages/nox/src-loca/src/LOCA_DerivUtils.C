@@ -298,8 +298,10 @@ LOCA::DerivUtils::computeDwtJnDp(
     base_wtJn = w.innerProduct(*Jn);
     result(0,0) = base_wtJn;
   }
-  else
+  else {
+    base_wtJn = result(0,0);
     finalStatus = NOX::Abstract::Group::Ok;
+  }
 
   double param;
   double eps;
@@ -576,7 +578,8 @@ LOCA::DerivUtils::computeDCeDxa(
 {
   string callingFunction = 
     "LOCA::DerivUtils::computeDCeDxa()";
-  NOX::Abstract::Group::ReturnType status, finalStatus;
+  NOX::Abstract::Group::ReturnType status, finalStatus = 
+    NOX::Abstract::Group::Ok;
 
   // Copy original solution vector
   Teuchos::RefCountPtr<NOX::Abstract::Vector> Xvec = 
@@ -589,7 +592,7 @@ LOCA::DerivUtils::computeDCeDxa(
     double eps = perturbXVec(grp, *Xvec, aVector[i]);
 
     // Compute perturbed Ce vectors
-    finalStatus = grp.computeComplex(w);
+    status = grp.computeComplex(w);
     finalStatus = 
       globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
 							     finalStatus,
