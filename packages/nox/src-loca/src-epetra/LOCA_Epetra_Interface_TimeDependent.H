@@ -58,7 +58,7 @@ namespace LOCA {
        * method for computing the shifted matrix \f$\alpha J + \beta M\f$. 
        * This is needed for linear stability analysis and Hopf tracking.
        */
-      class TimeDependent : public LOCA::Epetra::Interface::Required {
+      class TimeDependent : public virtual LOCA::Epetra::Interface::Required {
 
       public:
  
