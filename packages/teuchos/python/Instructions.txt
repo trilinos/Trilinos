@@ -72,3 +72,13 @@ with the Teuchos wrappers, follow these steps:
 
 After these changes are made, you are ready to bootstrap, configure,
 make and debug the python wrappers for your package.
+
+Note: The Teuchos.i file includes swig typemaps that are intended to
+take C++ methods that expect Teuchos::ParameterList arguments and
+"trick" swig into converting them to python methods that can accept a
+python dictionary, A Teuchos::ParameterList or a
+Teuchos::PyDictParameterList.  This trick works for simple argument
+lists, but swig can get confused by overloaded methods or methods that
+have default arguments.  For how to handle these situations, see the
+AztecOO.i swig interface file and how it handles the AztecOO
+SetParameters() method.

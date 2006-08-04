@@ -343,6 +343,52 @@ namespace Teuchos {
 
   }    // synchronizeParameters
 
+  // **************************************************************** //
+
+  // Helper function for converting from a general PyObject to a
+  // PyDictParameterList.  The input PyObject can be a python
+  // dictionary, a wrapped ParameterList or a wrapped
+  // PyDictParameterList.  If a new object is allocated, *isNew will
+  // be set to true, otherwise false.  If the conversion cannot be
+  // made, a python error will be set and NULL will be returned.
+
+  PyDictParameterList * pyObjectToPyDictParameterList(PyObject * input, bool * isNew) {
+
+    static swig_type_info * PDPL_type = SWIG_TypeQuery("Teuchos::PyDictParameterList *");
+    static swig_type_info * PL_type   = SWIG_TypeQuery("Teuchos::ParameterList *"      );
+    static void           * argp      = NULL;
+    PyDictParameterList   * result    = NULL;
+
+    // Input is a python dictionary
+    if (PyDict_Check(input)) {
+      *isNew = true;
+      result = new PyDictParameterList(input);
+      if (PyErr_Occurred()) {
+	delete result;
+	result = NULL;
+      }
+    }
+    // Input is a PyDictParameterList
+    else if (SWIG_CheckState(SWIG_Python_ConvertPtr(input,&argp,PDPL_type,0))) {
+      *isNew = false;
+      result = reinterpret_cast<PyDictParameterList *>(argp);
+    }
+    // Input is a ParameterList
+    else if (SWIG_CheckState(SWIG_Python_ConvertPtr(input,&argp,PL_type,0))) {
+      *isNew = true;
+      result = new PyDictParameterList(*(reinterpret_cast<ParameterList *>(argp)));
+    }
+    // Unsupported input
+    else {
+      *isNew = false;
+      PyErr_SetString(PyExc_TypeError, "Expected python dictionary, ParameterList "
+		      "or PyDictParameterList");
+    }
+
+    return result;
+
+  }    // pyObjectToPyDictParameterList
+
 }    // namespace Teuchos
 
 #endif TEUCHOS_PYTHONPARAMETER

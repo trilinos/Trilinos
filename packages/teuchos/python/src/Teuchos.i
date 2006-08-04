@@ -305,32 +305,11 @@ using namespace std;
 // PyDictParameterLists.
 %typemap(in) Teuchos::ParameterList & (bool cleanup = false)
 {
-  static swig_type_info * PDPL_type = SWIG_TypeQuery("Teuchos::PyDictParameterList *");
-  static swig_type_info * PL_type   = SWIG_TypeQuery("Teuchos::ParameterList *"      );
-  static void           * argp      = NULL;
-
-  // Input is a python dictionary
-  if (PyDict_Check($input)) {
-    cleanup = true;
-    $1 = new Teuchos::PyDictParameterList($input);
-    if (PyErr_Occurred()) SWIG_fail;
-  }
-  // Input is a Teuchos::PyDictParameterList
-  else if (SWIG_CheckState(SWIG_Python_ConvertPtr($input,&argp,PDPL_type,0))) {
-    $1 = reinterpret_cast<Teuchos::PyDictParameterList *>(argp);
-  }
-  // Input is a Teuchos::ParameterList
-  else if (SWIG_CheckState(SWIG_Python_ConvertPtr($input,&argp,PL_type,0))) {
-    $1 = reinterpret_cast<Teuchos::ParameterList *>(argp);
-  }
-  // Unsupported input
-  else {
-    PyErr_SetString(PyExc_TypeError, "Expected Teuchos.ParameterList or python dictionary");
-    SWIG_fail;
-  }
+  $1 = Teuchos::pyObjectToPyDictParameterList($input,&cleanup);
+  if ($1 == NULL) SWIG_fail;
 }
 
-%typemap(freearg) Teuchos::ParameterList& List
+%typemap(freearg) Teuchos::ParameterList&
 {
   if (cleanup$argnum && $1) delete($1);
 }
