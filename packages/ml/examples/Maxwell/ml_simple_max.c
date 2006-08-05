@@ -313,9 +313,9 @@ int main(int argc, char *argv[])
 
 
   Nlevels=ML_Gen_MGHierarchy_UsingReitzinger(ml_edges, &ml_nodes,MaxMgLevels-1,
-					     ML_DECREASING,ag,Tmat,Tmat_trans, 
+					     ML_DECREASING,ag,NULL,NULL,Tmat,Tmat_trans, 
 					     &Tmat_array,&Tmat_trans_array, 
-					     smoothPe_flag, ML_DDEFAULT, 0);
+					     smoothPe_flag, ML_DDEFAULT, 0.0);
 
   /* Set the Hiptmair subsmoothers */
 
@@ -376,7 +376,7 @@ int main(int argc, char *argv[])
       Nfine_node = Ncoarse_node;
     }
     ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_BOTH, Nits_per_presmooth,
-			     Tmat_array, Tmat_trans_array, NULL, 
+			     Tmat_array, Tmat_trans_array, NULL, NULL,
 			     edge_smoother, edge_args, nodal_smoother,
 			     nodal_args, hiptmair_type);
   }

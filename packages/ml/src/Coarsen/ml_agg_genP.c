@@ -74,7 +74,6 @@ int ML_Gen_MGHierarchy_UsingAggregation(ML *ml, int start,
    int    level, idata, i;
    double dnnz = 0;
    ML_Aggregate *ml_ag;
-   int profile_its;
 #ifdef ML_TIMING
    double t0;
 #endif
@@ -2864,7 +2863,7 @@ int ML_MultiLevel_Gen_Restriction(ML *ml,int level, int next, void *data)
       {
         fprintf(stderr, "Asked for ag->minimizing_energy == -1, but\n");
         fprintf(stderr, "the tentative prolongator has not been saved.\n");
-        fprintf(stderr, "(file %d, line %d)\n", __FILE__, __LINE__);
+        fprintf(stderr, "(file %s, line %d)\n", __FILE__, __LINE__);
         exit(EXIT_FAILURE);
       }
       ML_Gen_Restrictor_TransP(ml, level, next, ag->P_tentative[next]);

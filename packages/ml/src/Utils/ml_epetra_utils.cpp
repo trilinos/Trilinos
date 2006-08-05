@@ -690,6 +690,7 @@ int ML_Operator_WrapEpetraMatrix(Epetra_RowMatrix * A, ML_Operator *newMatrix)
   isize = A->OperatorDomainMap().NumMyElements();
   //  isize = A->NumMyCols();
   int N_ghost = A->RowMatrixColMap().NumMyElements() - isize;
+  newMatrix->N_nonzeros = A->NumGlobalNonzeros();
 
   if (N_ghost < 0) N_ghost = 0;  // A->NumMyCols() = 0 for an empty matrix
 

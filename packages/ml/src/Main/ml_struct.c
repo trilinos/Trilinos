@@ -6069,6 +6069,7 @@ int ML_Gen_Smoother_Hiptmair( ML *ml , int nl, int pre_or_post, int ntimes,
    int *BClist=NULL, BClength=0;
    ML_BdryPts *ml_bc;
    char str[80];
+   ML_Operator *MassMatrix=NULL;
 #ifdef ML_TIMING
    double         t0;
    t0 = GetClock();
@@ -6098,7 +6099,8 @@ int ML_Gen_Smoother_Hiptmair( ML *ml , int nl, int pre_or_post, int ntimes,
          if (ML_BdryPts_Check_Dirichlet_Grid(ml_bc))
             ML_BdryPts_Get_Dirichlet_Grid_Info(ml_bc,&BClength,&BClist);
          ML_Smoother_Create_Hiptmair_Data(&data);
-	     ML_Smoother_Gen_Hiptmair_Data(&data, ml->Amat+i, MassMatrix_array[i],
+         if (MassMatrix_array != NULL) MassMatrix = MassMatrix_array[i];
+	     ML_Smoother_Gen_Hiptmair_Data(&data, ml->Amat+i, MassMatrix,
 			          Tmat_array[i], Tmat_trans_array[i], Tmat_bc,
                       BClength, BClist,
                       edge_smoother, edge_args, nodal_smoother, nodal_args );
@@ -6123,12 +6125,13 @@ int ML_Gen_Smoother_Hiptmair( ML *ml , int nl, int pre_or_post, int ntimes,
          if (ML_BdryPts_Check_Dirichlet_Grid(ml_bc))
             ML_BdryPts_Get_Dirichlet_Grid_Info(ml_bc,&BClength,&BClist);
          ML_Smoother_Create_Hiptmair_Data(&data);
-	 ML_Smoother_Gen_Hiptmair_Data(&data, ml->Amat+i, MassMatrix_array[i],
+         if (MassMatrix_array != NULL) MassMatrix = MassMatrix_array[i];
+	     ML_Smoother_Gen_Hiptmair_Data(&data, ml->Amat+i, MassMatrix,
 				       Tmat_array[i], Tmat_trans_array[i], Tmat_bc,
 				       BClength, BClist,
 				       edge_smoother, edge_args, nodal_smoother, nodal_args );
-	 data->reduced_smoother = type;
-	 ml->post_smoother[i].data_destroy = ML_Smoother_Destroy_Hiptmair_Data;
+	     data->reduced_smoother = type;
+	     ml->post_smoother[i].data_destroy = ML_Smoother_Destroy_Hiptmair_Data;
          sprintf(str,"Hiptmair_post%d",i);
          status = ML_Smoother_Set(&(ml->post_smoother[i]), 
 				      (void *) data, fun, ntimes, 1.0, str);
@@ -6149,7 +6152,8 @@ int ML_Gen_Smoother_Hiptmair( ML *ml , int nl, int pre_or_post, int ntimes,
          if (ML_BdryPts_Check_Dirichlet_Grid(ml_bc))
             ML_BdryPts_Get_Dirichlet_Grid_Info(ml_bc,&BClength,&BClist);
          ML_Smoother_Create_Hiptmair_Data(&data);
-	     ML_Smoother_Gen_Hiptmair_Data(&data, ml->Amat+i, MassMatrix_array[i],
+         if (MassMatrix_array != NULL) MassMatrix = MassMatrix_array[i];
+	     ML_Smoother_Gen_Hiptmair_Data(&data, ml->Amat+i, MassMatrix,
 			          Tmat_array[i], Tmat_trans_array[i], Tmat_bc,
 					   BClength, BClist,
 edge_smoother, edge_args, nodal_smoother, nodal_args );

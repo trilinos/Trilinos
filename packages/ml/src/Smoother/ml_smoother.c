@@ -3672,7 +3672,6 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
    double *val_ptr;
    double *dbl_arg1, *diagonal;
    char   str[80];
-   int num_its;
 #ifdef ML_TIMING_DETAILED
    double t0;
 

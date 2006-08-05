@@ -168,9 +168,17 @@ int ML_Epetra::MultiLevelPreconditioner::DestroyPreconditioner()
   }
 
   if (MassMatrix_array != 0) {
-    for (int i=0; i<10; i++)   //FIXME JJH
+    for (int i=0; i<MaxLevels_; i++)
       ML_Operator_Destroy(MassMatrix_array+LevelID_[i]);
     delete [] MassMatrix_array;
+    MassMatrix_array = 0;
+  }
+
+  if (CurlCurlMatrix_array != 0) {
+    for (int i=0; i<MaxLevels_; i++)
+      ML_Operator_Destroy(CurlCurlMatrix_array+LevelID_[i]);
+    delete [] CurlCurlMatrix_array;
+    CurlCurlMatrix_array = 0;
   }
 
   if (Label_) { 
@@ -388,8 +396,6 @@ MultiLevelPreconditioner(const Epetra_RowMatrix & EdgeMatrix,
     cerr << ErrorMsg_ << "discrete grad RangeMap != edge DomainMap..." <<endl;
     ML_CHK_ERRV(-2); // error on discrete grad
   }
-
-  int mypid = TMatrix.Comm().MyPID();
 
   List_ = List;
 
@@ -613,6 +619,7 @@ int ML_Epetra::MultiLevelPreconditioner::Initialize()
   nodal_args_ = 0;
   edge_args_ = 0;
   MassMatrix_array = 0;
+  CurlCurlMatrix_array = 0;
   
   // timing
   NumApplications_ = 0;
@@ -708,6 +715,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
   PrintMsg_ = List_.get("output prefix",PrintMsg_);
   
   NumLevels_ = List_.get("max levels",10);  
+  MaxLevels_ = NumLevels_;
 
   int OutputLevel = List_.get("output", 10);  
   ML_Set_PrintLevel(OutputLevel);
@@ -1369,38 +1377,34 @@ ComputePreconditioner(const bool CheckPreconditioner)
 
     profileIterations_ = List_.get("profile: operator iterations", 0);
     ML_Operator_Profile_SetIterations(profileIterations_);
-    printf("\n\nbefore NumLevels_ = %d\n\n\n" ,NumLevels_);
+
+    // Set up arrays for holding the curl-curl and mass matrices separately.
+    typedef ML_Operator* pML_Operator;  // to avoid compiler warning
+    CurlCurlMatrix_array = new pML_Operator[NumLevels_];
+    for (int i=0; i< NumLevels_; i++) CurlCurlMatrix_array[i] = NULL;
+    if (CurlCurlMatrix_) {
+      CurlCurlMatrix_array[LevelID_[0]] = ML_Operator_Create(ml_->comm);
+      ML_Operator_WrapEpetraMatrix(
+                            const_cast<Epetra_RowMatrix*>(CurlCurlMatrix_),
+                            CurlCurlMatrix_array[LevelID_[0]] );
+    }
+    MassMatrix_array = new pML_Operator[NumLevels_];
+    for (int i=0; i< NumLevels_; i++) MassMatrix_array[i] = NULL;
+    if (MassMatrix_) {
+      MassMatrix_array[LevelID_[0]] = ML_Operator_Create(ml_->comm);
+      ML_Operator_WrapEpetraMatrix( const_cast<Epetra_RowMatrix*>(MassMatrix_),
+                                  MassMatrix_array[LevelID_[0]] );
+    }
+
     NumLevels_ = ML_Gen_MGHierarchy_UsingReitzinger(ml_,&ml_nodes_,
                             LevelID_[0], Direction,agg_,
+                            CurlCurlMatrix_array,
+                            MassMatrix_array,
                             TMatrixML_,TMatrixTransposeML_, 
                             &Tmat_array,&Tmat_trans_array, 
                             smooth_flag, ML_DDEFAULT,
                             enrichBeta);
-    printf("\n\nafter NumLevels_ = %d\n\n\n" ,NumLevels_);
 
-  }
-
-
-  printf("MaxLevels_ = %d\n",MaxLevels_);
-
-  MassMatrix_array = new (ML_Operator *)[10]; // FIXME JJH
-  for (int i=0; i< 10; i++) MassMatrix_array[LevelID_[i]] = NULL; //FIXME jjh
-  // If the mass matrix is separate, coarsen it for use in the smoother
-  if (MassMatrix_) {
-    int maxLevel = LevelID_[0];
-    if (LevelID_[NumLevels_-1] > maxLevel) maxLevel = LevelID_[NumLevels_-1];
-    MassMatrix_array[LevelID_[0]] = ML_Operator_Create(ml_->comm);
-    ML_Operator_WrapEpetraMatrix( const_cast<Epetra_RowMatrix*>(MassMatrix_),
-                                  MassMatrix_array[LevelID_[0]] );
-    for (int i=0; i<NumLevels_-1; i++) {
-      int fine = LevelID_[i];
-      int coarse = LevelID_[i+1];
-      ML_Operator *R = ml_->Rmat + fine;
-      ML_Operator *P = ml_->Pmat + coarse;
-      MassMatrix_array[coarse] = ML_Operator_Create(ml_->comm);
-      ML_rap(R, MassMatrix_array[fine], P,
-             MassMatrix_array[coarse] , ML_MSR_MATRIX);
-    }
   }
 
 #ifdef HAVE_ML_EPETRAEXT
@@ -3139,7 +3143,6 @@ void ML_Epetra::MultiLevelPreconditioner::Apply_BCsToGradient(
 
   // locate Dirichlet edges
   int *dirichletEdges = new int[EdgeMatrix->NumMyRows()];
-  int mypid = EdgeMatrix->Comm().MyPID();
   int numBCEdges = 0;
   for (int i=0; i<EdgeMatrix->NumMyRows(); i++) {
     int numEntries, *cols;

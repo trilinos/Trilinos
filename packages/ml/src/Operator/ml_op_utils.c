@@ -2038,6 +2038,11 @@ void ML_Operator_ReportStatistics(ML_Operator *mat, char *appendlabel,
                                           proc_active, mat->comm);
     if (mypid == 0)
        printf("Operator %s: number of rows (stdev) \t= %e\n",mat->label,t1);
+    if (mypid == 0) {
+       printf("Operator %s: number of PDES \t = %d\n",mat->label,mat->num_PDEs);
+       printf("Operator %s: lamdba max \t = %e\n",mat->label,mat->lambda_max);
+       printf("Operator %s: lamdba min \t = %e\n",mat->label,mat->lambda_min);
+    }
 
 /*
      if (ag->print_flag < ML_Get_PrintLevel())
@@ -2348,7 +2353,7 @@ int ML_Operator_MisRootPts( ML_Operator *Amatrix,  int num_PDE_eqns,
    */
 
   int Nrows, index, i, j, kk, aggr_count;
-  int *rcvleng= NULL, *sndleng= NULL, *send_list = NULL;
+  int *rcvleng= NULL, *sndleng= NULL;
   char                  *vtype, *state, *bdry;
    int                   nvertices, *vlist, ntotal, Nneigh;
    int                   *neigh = NULL, max_element, Nghost;

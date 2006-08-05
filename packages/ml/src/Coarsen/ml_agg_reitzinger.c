@@ -22,6 +22,8 @@ extern int ML_ScaledKnApply(ML_Operator *Amat, int inlen, double in[],
 int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes, 
                     int fine_level, int incr_or_decrease,
                     ML_Aggregate *ag, 
+                    ML_Operator **CurlCurlMatrix_array,
+                    ML_Operator **MassMatrix_array,
                     ML_Operator *Tmat,
                     ML_Operator *Tmat_trans,
                     ML_Operator ***Tmat_array,
@@ -46,7 +48,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
   ML_Operator *newPe;
   double dtemp;
   struct scaled_nodal widget;
-  FILE *fp;
+  /*FILE *fp; */
   int Nnode, Nedge;
   double *diag, *temp;
   ML_Operator *scaled_Kn_approx;
@@ -1149,7 +1151,56 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
            ML_Aggregate_Set_DampingFactor(ag, 4.0/3.0);
         else
            ML_Aggregate_Set_DampingFactor(ag, smooth_factor);
+
+        /* If (curl,curl) matrix is available, smooth with it. */
+        ML_Operator *tmpmat = NULL;
+        if (CurlCurlMatrix_array != NULL && 
+            CurlCurlMatrix_array[grid_level+1] != NULL) {
+
+           /* just some debugging code to double check S*T=0 */
+/*
+           ML_Operator *S = CurlCurlMatrix_array[grid_level+1];
+           double *vec1 = (double *)
+                          ML_allocate(sizeof(double)*(Tfine->invec_leng+
+                                                      S->outvec_leng + 1));
+           double *vec2 = (double *)
+                          ML_allocate(sizeof(double)*(S->invec_leng+1));
+           ML_random_vec(vec1, Tfine->invec_leng, ml_edges->comm);
+           double d1 = sqrt(ML_gdot(Tfine->invec_leng, vec1, vec1, ml_edges->comm));
+           for (i = 0; i < Tfine->invec_leng; i++) vec1[i] /= d1;
+           ML_Operator_Apply(Tfine,Tfine->invec_leng,vec1,Tfine->outvec_leng,vec2);
+           ML_Operator_Apply(S,S->invec_leng,vec2,S->outvec_leng,vec1);
+           d1 = sqrt(ML_gdot(S->outvec_leng, vec1, vec1, ml_edges->comm));
+           printf("\n\n====>      ||S*T*vrand|| = %20.15e\n\n",d1);
+*/
+
+           if (ML_Get_PrintLevel() > 0 && ml_edges->comm->ML_mypid == 0)
+             printf("(smoothing with curl-curl matrix only)\n");
+
+           tmpmat = ML_Operator_Create(ml_edges->comm);
+           ML_Operator_MoveFromHierarchyAndClean(tmpmat,
+                                                 ml_edges->Amat+grid_level+1 );
+           if (ML_Get_PrintLevel() > 7) {
+            sprintf(str,"CurlCurl%d",grid_level);
+            ML_Operator_ReportStatistics(CurlCurlMatrix_array[grid_level+1],
+                                         str,ML_FALSE);
+           }
+           ML_Operator_Move2HierarchyAndDestroy(
+                                          CurlCurlMatrix_array+grid_level+1,
+                                          ml_edges->Amat+grid_level+1 );
+        }
+
         ML_AGG_Gen_Prolongator(ml_edges,grid_level+1,grid_level,(void*) ag);
+
+        if (tmpmat != NULL) {
+           CurlCurlMatrix_array[grid_level+1] =
+                                          ML_Operator_Create(ml_edges->comm);
+           ML_Operator_MoveFromHierarchyAndClean(
+                                          CurlCurlMatrix_array[grid_level+1],
+                                          ml_edges->Amat+grid_level+1 );
+           ML_Operator_Move2HierarchyAndDestroy(&tmpmat,
+                                                ml_edges->Amat+grid_level+1 );
+        }
         
         /* Weed out small values in Pe. */
         droptol = 1e-4;
@@ -1356,6 +1407,24 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      ML_Operator_ChangeToSinglePrecision(&(ml_edges->Rmat[grid_level+1]));
      ML_memory_check("L%d TransP end",grid_level);
      ML_Gen_AmatrixRAP(ml_edges, grid_level+1, grid_level);
+     /* If mass is separate, coarsen it for later use in smoother.*/
+     if (MassMatrix_array != NULL &&
+         MassMatrix_array[grid_level+1] != NULL) {
+       MassMatrix_array[grid_level] = ML_Operator_Create(ml_edges->comm);
+       ML_rap(ml_edges->Rmat+grid_level+1,
+              MassMatrix_array[grid_level+1], 
+              ml_edges->Pmat+grid_level,
+              MassMatrix_array[grid_level] , ML_MSR_MATRIX);
+     }
+     /* If curlcurl is separate, coarsen it for later use in smoother.*/
+     if (CurlCurlMatrix_array != NULL &&
+         CurlCurlMatrix_array[grid_level+1] != NULL) {
+       CurlCurlMatrix_array[grid_level] = ML_Operator_Create(ml_edges->comm);
+       ML_rap(ml_edges->Rmat+grid_level+1,
+              CurlCurlMatrix_array[grid_level+1], 
+              ml_edges->Pmat+grid_level,
+              CurlCurlMatrix_array[grid_level] , ML_MSR_MATRIX);
+     }
 
      if (grid_info != NULL) {
        /* Project edge coordinates */
@@ -2124,11 +2193,9 @@ void ML_Reitzinger_CheckCommutingProperty(ML *ml_nodes, ML *ml_edges,
                                   int finelevel, int coarselevel)
 {
   int i;
-  int *glob_fine_edge_nums, *glob_fine_node_nums;
-  int *glob_coarse_edge_nums, *glob_coarse_node_nums;
   double d1, *vec, *Pn_vec, *Tfine_Pn_vec;
   char filename[80];
-  ML_Operator *Pn, *Tfine, *Tcoarse, *Pe, *Ke, *Ttrans, *tmpmat;
+  ML_Operator *Pn, *Tfine, *Tcoarse, *Pe, *Ttrans;
 
   /*********************** start of execution *******************************/
 

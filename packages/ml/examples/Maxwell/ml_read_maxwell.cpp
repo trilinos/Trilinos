@@ -24,6 +24,7 @@
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
 // 
 // ************************************************************************
+
 //@HEADER
 /*#############################################################################
 # CVS File Information
@@ -33,33 +34,64 @@
 #    Modified by:      $Author$
 #############################################################################*/
 
-/* Sample driver for Maxwell equation AMG solver in the ML package. 
-   This example reads in the matrices from a file via the local function 
+//#define CurlCurlAndMassAreSeparate
 
-   int MatrixMarketFileToCrsMatrix(const char *filename,
-                                const Epetra_Map & rowMap,
-                                const Epetra_Map& rangeMap,
-                                const Epetra_Map& domainMap,
-				Epetra_CrsMatrix * & A)
+/*
+   Sample driver for Maxwell equation AMG solver in the ML package. This
+   example reads in data from a file.  All data must be in the MatrixMarket
+   format.  (The EpetraExt documentation describes the format for maps.)  This
+   example can be compiled and used in two different ways:
 
-   and the row maps with  EpetraExt::MatrixMarketFileToMap(datafile, Comm, nodeMap);
-   In this function the domainMap is calculated on the fly in order to assure the same
-   number of non zeros independent of the number of processors used.
+   -----------------------------------------------------------------------
+   USAGE CASE 1 (default): curl,curl and mass are provided as one matrix
+   -----------------------------------------------------------------------
 
-   The files are all written in the applicaion (fermaXX) with: 
+   By default, it's assumed that the edge FE input matrix is curl,curl + mass.
+   In this case, invoke the example as follows:
 
-   EpetraExt::RowMatrixToMatrixMarketFile("K.mtx", *K); (K = A - sigma*M)
-
-   EpetraExt::RowMatrixToMatrixMarketFile("Y.mtx", *Y); (Y = gradient matrix)
-
-   EpetraExt::RowMatrixToMatrixMarketFile("H.mtx", *H); (H poisson matrix)
-
-   EpetraExt::BlockMapToMatrixMarketFile("A_rowmap.txt", A->RowMap());
-   EpetraExt::BlockMapToMatrixMarketFile("H_rowmap.txt", H->RowMap());
-
+      ml_read_maxwell.exe Ke T Kn [edge map] [node map]
   
-   Usage: mpirun -np 8 ../ml_read_maxwell K.mtx Y.mtx H.mtx A_rowmap.txt H_rowmap.txt | tee p1.out
+   where
 
+      Ke is the edge FE matrix (curlcurl + mass)
+      T is the topological gradient matrix
+      Kn is the nodal FE matrix
+      edge map (optional)
+      node map (optional)
+
+   -----------------------------------------------------------------------
+   USAGE CASE 2:  curl,curl and mass matrices are separate
+   -----------------------------------------------------------------------
+
+   If the macro CurlCurlAndMassAreSeparate is defined, then the edge FE
+   (curl,curl) and mass matrices are read in separately.  In this case, invoke
+   the example as follows:
+
+      ml_read_maxwell.exe S M T Kn [edge map] [node map]
+  
+   where
+
+      S is the curl curl matrix
+      M is the mass matrix
+      T is the discrete gradient matrix
+      Kn is the nodal FE matrix
+      edge map (optional)
+      node map (optional)
+  
+   Matrices are read from file via the local function 
+
+     int MatrixMarketFileToCrsMatrix(const char *filename,
+                                  const Epetra_Map & rowMap,
+                                  const Epetra_Map& rangeMap,
+                                  const Epetra_Map& domainMap,
+                                  Epetra_CrsMatrix * & A)
+
+   and the row maps with
+
+       EpetraExt::MatrixMarketFileToMap(datafile, Comm, nodeMap).
+
+   In this function the domainMap is calculated on the fly in order to ensure
+   the same number of non zeros independent of the number of processors used.
 
 */
 
@@ -87,15 +119,12 @@
 #include "EpetraExt_CrsMatrixIn.h"
 #include "EpetraExt_VectorIn.h"
 
-/*
-    read in Crs Matrix and calculate domainMap on the fly
-    this functionality is missing in Epetra_Ext!
-*/
+//read in Crs Matrix and calculate domainMap on the fly
 int MatrixMarketFileToCrsMatrix(const char *filename,
                                 const Epetra_Map & rowMap,
                                 const Epetra_Map& rangeMap,
                                 const Epetra_Map& domainMap,
-				Epetra_CrsMatrix * & A)
+                                Epetra_CrsMatrix * & A)
 {
   A = new Epetra_CrsMatrix(Copy, rowMap, 0);
   return(EpetraExt::MatrixMarketFileToCrsMatrixHandle(filename, A->Comm(), A,
@@ -119,9 +148,23 @@ int main(int argc, char *argv[])
 
   char *datafile;
 
+#ifdef CurlCurlAndMassAreSeparate
+  if (argc != 5 && argc != 7) {
+    if (Comm.MyPID() == 0) {
+      cout << "usage: ml_maxwell.exe <S> <M> <T> <Kn> [edge map] [node map]"
+           << endl;
+      cout << "        S = edge stiffness matrix file" << endl;
+      cout << "        M = edge mass matrix file" << endl;
+      cout << "        T = discrete gradient file" << endl;
+      cout << "       Kn = auxiliary nodal FE matrix file" << endl;
+      cout << " edge map = edge distribution over processors" << endl;
+      cout << " node map = node distribution over processors" << endl;
+      cout << argc << endl;
+    }
+#else //ifdef CurlCurlAndMassAreSeparate
   if (argc != 4 && argc != 6) {
     if (Comm.MyPID() == 0) {
-      cout << "usage: ml_maxwell.exe <A> <T> <Kn> [edge map] [node map]" << endl;
+      cout << "usage: ml_maxwell.exe <A> <T> <Kn> [edge map] [node map]" <<endl;
       cout << "        A = edge element matrix file" << endl;
       cout << "        T = discrete gradient file" << endl;
       cout << "       Kn = auxiliary nodal FE matrix file" << endl;
@@ -129,43 +172,71 @@ int main(int argc, char *argv[])
       cout << " node map = node distribution over processors" << endl;
       cout << argc << endl;
     }
+#endif //ifdef CurlCurlAndMassAreSeparate
 #ifdef ML_MPI
     MPI_Finalize();
 #endif
     exit(1);
   }
 
-  Epetra_Map *edgeMap=NULL, *nodeMap=NULL;
-  Epetra_CrsMatrix *CCplusM=NULL, *Mass=NULL, *T=NULL, *Kn=NULL;
+  Epetra_Map *edgeMap, *nodeMap;
+  Epetra_CrsMatrix *CCplusM=NULL, *CurlCurl=NULL, *Mass=NULL, *T=NULL, *Kn=NULL;
 
   // ================================================= //
   // READ IN MAPS FROM FILE                            //
   // ================================================= //
   // every processor reads this in
-  if (argc > 4) {
-    datafile = argv[4];
+#ifdef CurlCurlAndMassAreSeparate
+  if (argc > 5)
+#else
+  if (argc > 4)
+#endif
+  {
+    datafile = argv[5];
     if (Comm.MyPID() == 0) {
       printf("Reading in edge map from %s ...\n",datafile);
       fflush(stdout);
     }
     EpetraExt::MatrixMarketFileToMap(datafile, Comm, edgeMap);
-    datafile = argv[5];
+    datafile = argv[6];
     if (Comm.MyPID() == 0) {
-      printf("Reading in node map from %s\n",datafile);
+      printf("Reading in node map from %s ...\n",datafile);
       fflush(stdout);
     }
     EpetraExt::MatrixMarketFileToMap(datafile, Comm, nodeMap);
   }
-  else { //use linear maps
-
-    edgeMap = new Epetra_Map(2450,0,Comm);
-    nodeMap = new Epetra_Map(873,0,Comm);
+  else { // linear maps
+    // FIXME  we should really read in sizes from file
+    edgeMap = new Epetra_Map(40457,0,Comm);
+    nodeMap = new Epetra_Map(4921,0,Comm);
   }
 
   // ===================================================== //
   // READ IN MATRICES FROM FILE                            //
   // ===================================================== //
+#ifdef CurlCurlAndMassAreSeparate
+  for (int i = 1; i <5; i++) {
+    datafile = argv[i];
+    if (Comm.MyPID() == 0) {
+      printf("reading %s ....\n",datafile); fflush(stdout);
+    }
+    switch (i) {
+    case 1: //Curl
+      MatrixMarketFileToCrsMatrix(datafile,*edgeMap,*edgeMap,*edgeMap,CurlCurl);
+      break;
+    case 2: //Mass
+      MatrixMarketFileToCrsMatrix(datafile, *edgeMap, *edgeMap, *edgeMap, Mass);
+      break;
+    case 3: //Gradient
+      MatrixMarketFileToCrsMatrix(datafile, *edgeMap, *edgeMap,*nodeMap, T);
+      break;
+    case 4: //Auxiliary nodal matrix
+      MatrixMarketFileToCrsMatrix(datafile, *nodeMap,*nodeMap, *nodeMap, Kn);
+      break;
+    } //switch
+  } //for (int i = 1; i <5; i++)
 
+#else
   for (int i = 1; i <4; i++) {
     datafile = argv[i];
     if (Comm.MyPID() == 0) {
@@ -173,7 +244,7 @@ int main(int argc, char *argv[])
     }
     switch (i) {
     case 1: //Edge element matrix
-      MatrixMarketFileToCrsMatrix(datafile, *edgeMap, *edgeMap, *edgeMap, CCplusM);
+      MatrixMarketFileToCrsMatrix(datafile,*edgeMap,*edgeMap,*edgeMap,CCplusM);
       break;
     case 2: //Gradient
       MatrixMarketFileToCrsMatrix(datafile, *edgeMap, *edgeMap, *nodeMap, T);
@@ -182,7 +253,8 @@ int main(int argc, char *argv[])
       MatrixMarketFileToCrsMatrix(datafile, *nodeMap, *nodeMap, *nodeMap, Kn);
       break;
     } //switch
-  } 
+  } //for (int i = 1; i <4; i++)
+#endif //ifdef CurlCurlAndMassAreSeparate
 
   // ==================================================== //
   // S E T U P   O F    M L   P R E C O N D I T I O N E R //
@@ -193,19 +265,42 @@ int main(int argc, char *argv[])
   double *params  = new double[AZ_PARAMS_SIZE];
   ML_Epetra::SetDefaults("maxwell", MLList, options, params);
 
+  MLList.set("output", 0);
   MLList.set("aggregation: type", "Uncoupled");
   MLList.set("coarse: max size", 30);
-  MLList.set("aggregation: damping factor",1.3333);
-  MLList.set("subsmoother: type", "MLS");
-  //MLList.set("subsmoother: type", "symmetric Gauss-Seidel");
-  MLList.set("output",10);
+  MLList.set("aggregation: threshold", 0.0);
+  //MLList.set("negative conductivity",true);
+  //MLList.set("smoother: type", "Jacobi");
+  MLList.set("subsmoother: type", "symmetric Gauss-Seidel");
+  //MLList.set("max levels", 2);
 
-  ML_Set_PrintLevel(10);
+  // coarse level solve
+  MLList.set("coarse: type", "Amesos-KLU");
+  //MLList.set("coarse: type", "Hiptmair");
+  //MLList.set("coarse: type", "Jacobi");
 
+  //MLList.set("dump matrix: enable", true);
+
+#ifdef CurlCurlAndMassAreSeparate
+  //Create the matrix of interest.
+  CCplusM = Epetra_MatrixAdd(CurlCurl,Mass,1.0);
+#endif
+
+#ifdef CurlCurlAndMassAreSeparate
+  ML_Epetra::MultiLevelPreconditioner * MLPrec =
+    new ML_Epetra::MultiLevelPreconditioner(*CurlCurl, *Mass, *T, *Kn, MLList);
+  // Comment out the line above and uncomment the next one if you have
+  // mass and curl separately but want to precondition as if they are added
+  // together.
+/*
   ML_Epetra::MultiLevelPreconditioner * MLPrec =
     new ML_Epetra::MultiLevelPreconditioner(*CCplusM, *T, *Kn, MLList);
+*/
+#else
+  ML_Epetra::MultiLevelPreconditioner * MLPrec =
+    new ML_Epetra::MultiLevelPreconditioner(*CCplusM, *T, *Kn, MLList);
+#endif //ifdef CurlCurlAndMassAreSeparate
 
-  MLPrec->PrintList(0);
   MLPrec->PrintUnused(0);
 
   // ========================================================= //
@@ -226,38 +321,39 @@ int main(int argc, char *argv[])
   CCplusM->Multiply(false,x,rhs);
   x.PutScalar(0.0);
 
-  //EpetraExt::RowMatrixToMatrixMarketFile("checkingA.mm",*CCplusM,"curlcurl plus mass");
+  double vecnorm;
+  rhs.Norm2(&vecnorm);
+  if (Comm.MyPID() == 0) cout << "||rhs|| = " << vecnorm << endl;
+  x.Norm2(&vecnorm);
+  if (Comm.MyPID() == 0) cout << "||x|| = " << vecnorm << endl;
 
   // for AztecOO, we need an Epetra_LinearProblem
-  //Epetra_CrsMatrix *Combined = Epetra_MatrixAdd(CCplusM,Mass,1.0);
-  //EpetraExt::RowMatrixToMatrixMarketFile("CplusM.mm",*Combined,"curlcurl plus mass");
   Epetra_LinearProblem Problem(CCplusM,&x,&rhs);
   // AztecOO Linear problem
   AztecOO solver(Problem);
   // set MLPrec as precondititoning operator for AztecOO linear problem
+  //cout << "no ml preconditioner!!!" << endl;
   solver.SetPrecOperator(MLPrec);
+  //solver.SetAztecOption(AZ_precond, AZ_Jacobi);
 
   // a few options for AztecOO
   solver.SetAztecOption(AZ_solver, AZ_cg);
   solver.SetAztecOption(AZ_output, 1);
 
-  solver.Iterate(150, 1e-10);
+  solver.Iterate(75, 1e-12);
 
   // =============== //
   // C L E A N   U P //
   // =============== //
 
+  delete MLPrec;    // destroy phase prints out some information
+  delete CurlCurl;
   delete CCplusM;
   delete Mass;
   delete T;
   delete Kn;
-  delete edgeMap;
-  delete nodeMap;
-  delete [] options;
-  delete [] params;
-  ML_Comm_Destroy(&mlcomm);
 
-  delete MLPrec;    // destroy phase prints out some information
+  ML_Comm_Destroy(&mlcomm);
 #ifdef ML_MPI
   MPI_Finalize();
 #endif

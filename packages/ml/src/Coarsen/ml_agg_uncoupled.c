@@ -238,7 +238,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
      getrowfunc((ML_Operator *) getrowdata,1,&i,maxnnz_per_row,col_ind,col_val, &m);
      if ( m > maxnnz_per_row ) printf("Aggregation WARNING (1)\n");
 
-     int itmp = nz_cnt;
+     /*int itmp = nz_cnt;*/
      for (j = 0; j < m; j++) 
      {
        jnode = col_ind[j];

@@ -24,7 +24,8 @@ int ML_Smoother_Ifpack(ML_Smoother *sm,int inlen,double x[],int outlen,
   ML_Smoother    *smooth_ptr = (ML_Smoother *) sm;
   void *Ifpack_Handle = smooth_ptr->smoother->data;
   double* x2 = NULL,* rhs2 = NULL;
-  int i, n;
+  /*int i;*/
+  int n;
   int one_int = 1;
   double minus_one_double = -1.0;
 

@@ -1285,7 +1285,7 @@ void ML_exchange_Blocks(double **blockdata, double *ghostblocks,
                         ML_CommInfoOP *comm_info, ML_Comm *comm, int Size)
 {
 
-  double          *send_buf, *tempv;
+  double          *send_buf;
   int              type, N_neighbors, *temp, i, j, k, rtype;
   int             count, kk;
   USR_REQ         *request;
