@@ -383,7 +383,7 @@ int Epetra_FECrsGraph::GlobalAssemble(const Epetra_Map& domain_map,
   //skip most of this function.
   if (sourceMap->NumGlobalElements() < 1) {
     if (callFillComplete) {
-      EPETRA_CHK_ERR( FillComplete() );
+      EPETRA_CHK_ERR( FillComplete(domain_map, range_map) );
     }
     delete sourceMap;
     return(0);

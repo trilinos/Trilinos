@@ -110,7 +110,7 @@ int Drumm1(const Epetra_Map& map, bool verbose)
   EPETRA_TEST_ERR( A.GlobalAssemble(), ierr );
 
   if (verbose) {
-    A.Print(cout);
+    A.Print(std::cout);
   }
 
   delete [] myNodes;
@@ -182,7 +182,7 @@ int Drumm2(const Epetra_Map& map, bool verbose)
   EPETRA_TEST_ERR( A.GlobalAssemble(), ierr );
 
   if (verbose) {
-    A.Print(cout);
+    A.Print(std::cout);
   }
 
   delete [] myNodes;
@@ -193,7 +193,7 @@ int Drumm2(const Epetra_Map& map, bool verbose)
 int four_quads(const Epetra_Comm& Comm, bool preconstruct_graph, bool verbose)
 {
   if (verbose) {
-    cout << "******************* four_quads ***********************"<<endl;
+    std::cout << "******************* four_quads ***********************"<<std::endl;
   }
 
   //This function assembles a matrix representing a finite-element
@@ -264,8 +264,8 @@ int four_quads(const Epetra_Comm& Comm, bool preconstruct_graph, bool verbose)
       err = graph->InsertGlobalIndices(numNodesPerElem, nodes,
                                        numNodesPerElem, nodes);
       if (err < 0) {
-        cerr << "ERROR, FECrsGraph error in InsertGlobalIndices, err="
-          << err << endl;
+        std::cerr << "ERROR, FECrsGraph error in InsertGlobalIndices, err="
+          << err << std::endl;
         return(-1);
       }
     }
@@ -388,7 +388,7 @@ int four_quads(const Epetra_Comm& Comm, bool preconstruct_graph, bool verbose)
   y.Norm2(&ynorm2);
   y2.Norm2(&y2norm2);
   if (ynorm2 != y2norm2) {
-    cerr << "norm2(A*ones) != norm2(Acopy*ones)"<<endl;
+    std::cerr << "norm2(A*ones) != norm2(Acopy*ones)"<<std::endl;
     return(-99);
   }
 
@@ -398,8 +398,8 @@ int four_quads(const Epetra_Comm& Comm, bool preconstruct_graph, bool verbose)
   }
 
   if (verbose) {
-    cout << "A:"<<endl<<*A << endl;
-    cout << "Acopy:"<<endl<<Acopy << endl;
+    std::cout << "A:"<<std::endl<<*A << std::endl;
+    std::cout << "Acopy:"<<std::endl<<Acopy << std::endl;
   }
 
   Epetra_FECrsMatrix Acopy2(Copy, A->RowMap(), A->ColMap(), 1);
@@ -416,7 +416,7 @@ int four_quads(const Epetra_Comm& Comm, bool preconstruct_graph, bool verbose)
   y3.Norm2(&y3norm2);
 
   if (y3norm2 != y2norm2) {
-    cerr << "norm2(Acopy*ones) != norm2(Acopy2*ones)"<<endl;
+    std::cerr << "norm2(Acopy*ones) != norm2(Acopy2*ones)"<<std::endl;
     return(-999);
   }
 
@@ -436,7 +436,7 @@ int four_quads(const Epetra_Comm& Comm, bool preconstruct_graph, bool verbose)
     }
 
     if (values[0] != 1.0*numProcs) {
-      cout << "ERROR: values[0] ("<<values[0]<<") should be "<<numProcs<<endl;
+      std::cout << "ERROR: values[0] ("<<values[0]<<") should be "<<numProcs<<std::endl;
       return(-3);
     }
   }
@@ -453,8 +453,8 @@ int four_quads(const Epetra_Comm& Comm, bool preconstruct_graph, bool verbose)
       return(-5);
     }
     if (values[lcid] != 4.0*numProcs) {
-      cout << "ERROR: values["<<lcid<<"] ("<<values[lcid]<<") should be "
-	   <<4*numProcs<<endl;
+      std::cout << "ERROR: values["<<lcid<<"] ("<<values[lcid]<<") should be "
+	   <<4*numProcs<<std::endl;
       return(-6);
     }
   }
@@ -472,7 +472,7 @@ int four_quads(const Epetra_Comm& Comm, bool preconstruct_graph, bool verbose)
     }
 
     if (values[0] != 1.0*numProcs) {
-      cout << "ERROR: Acopy.values[0] ("<<values[0]<<") should be "<<numProcs<<endl;
+      std::cout << "ERROR: Acopy.values[0] ("<<values[0]<<") should be "<<numProcs<<std::endl;
       return(-3);
     }
   }
@@ -489,8 +489,8 @@ int four_quads(const Epetra_Comm& Comm, bool preconstruct_graph, bool verbose)
       return(-5);
     }
     if (values[lcid] != 4.0*numProcs) {
-      cout << "ERROR: Acopy.values["<<lcid<<"] ("<<values[lcid]<<") should be "
-           <<4*numProcs<<endl;
+      std::cout << "ERROR: Acopy.values["<<lcid<<"] ("<<values[lcid]<<") should be "
+           <<4*numProcs<<std::endl;
       return(-6);
     }
   }
@@ -508,7 +508,7 @@ int four_quads(const Epetra_Comm& Comm, bool preconstruct_graph, bool verbose)
     }
 
     if (values[0] != 1.0*numProcs) {
-      cout << "ERROR: Acopy2.values[0] ("<<values[0]<<") should be "<<numProcs<<endl;
+      std::cout << "ERROR: Acopy2.values[0] ("<<values[0]<<") should be "<<numProcs<<std::endl;
       return(-3);
     }
   }
@@ -525,8 +525,8 @@ int four_quads(const Epetra_Comm& Comm, bool preconstruct_graph, bool verbose)
       return(-5);
     }
     if (values[lcid] != 4.0*numProcs) {
-      cout << "ERROR: Acopy2.values["<<lcid<<"] ("<<values[lcid]<<") should be "
-           <<4*numProcs<<endl;
+      std::cout << "ERROR: Acopy2.values["<<lcid<<"] ("<<values[lcid]<<") should be "
+           <<4*numProcs<<std::endl;
       return(-6);
     }
   }
@@ -540,6 +540,82 @@ int four_quads(const Epetra_Comm& Comm, bool preconstruct_graph, bool verbose)
   delete A;
   delete graph;
 
+  return(0);
+}
+
+int Young1(const Epetra_Comm& Comm, bool verbose)
+{
+  //This is a test case submitted by Joe Young with bug 2421. It runs
+  //only on 2 processors.
+  if (Comm.NumProc() != 2) {
+    return(0);
+  }
+
+  // Give rows 0-2 to proc 0 and 3-5 to proc 1
+  int             RowIndices[3];
+  if (Comm.MyPID() == 0) {
+    RowIndices[0] = 0;
+    RowIndices[1] = 1;
+    RowIndices[2] = 2;
+  } else {
+    RowIndices[0] = 3;
+    RowIndices[1] = 4;
+    RowIndices[2] = 5;
+  }
+  Epetra_Map      RangeMap(-1, 3, RowIndices, 0, Comm);
+  Epetra_Map & RowMap = RangeMap;
+
+  // Define a second map that gives col 0 to proc 0 and col 1 to proc 1 
+  int             ColIndices[1];
+  if (Comm.MyPID() == 0) {
+    ColIndices[0] = 0;
+  }
+  else {
+    ColIndices[0] = 1;
+  }
+  Epetra_Map      DomainMap(-1, 1, ColIndices, 0, Comm);
+
+  // Construct a graph where both processors only insert into local
+  // elements
+  Epetra_FECrsGraph BrokenGraph(Copy, RowMap, 2);
+  for (int i = 0; i < RangeMap.NumMyElements(); i++) {
+    int             ig = RowIndices[i];
+    int             jgs[2] = { 0, 1 };
+    BrokenGraph.InsertGlobalIndices(1, &ig, 2, jgs);
+  }
+  BrokenGraph.GlobalAssemble(DomainMap, RangeMap);
+
+  // Check the size of the matrix that would be created from the graph 
+  int numCols1 = BrokenGraph.NumGlobalCols();
+  if (verbose) {
+    std::cout << "Number of global rows in the graph where only "
+        "local elements were inserted: " << BrokenGraph.NumGlobalRows()
+      << std::endl;
+    std::cout << "Number of global cols in the graph where only "
+        "local elements were inserted: " << BrokenGraph.NumGlobalCols()
+      << std::endl;
+  }
+  // Construct a graph where both processors insert into global elements
+  Epetra_FECrsGraph Graph(Copy, RowMap, 2);
+  for (int i = 0; i < 6; i++) {
+    int             ig = i;
+    int             jgs[2] = { 0, 1 };
+    Graph.InsertGlobalIndices(1, &ig, 2, jgs);
+  }
+  Graph.GlobalAssemble(DomainMap, RangeMap);
+
+  // Check the size of the matrix that would be created from the graph 
+  int numCols2 = Graph.NumGlobalCols();
+  if (verbose) {
+    std::cout << "Number of global rows in the graph where "
+        "global elements were inserted: " << Graph.NumGlobalRows()
+       << std::endl;
+    std::cout << "Number of global cols in the graph where "
+        "global elements were inserted: " << Graph.NumGlobalCols()
+      << std::endl;
+  }
+
+  if (numCols1 != numCols2) return(-1);
   return(0);
 }
 
@@ -574,8 +650,8 @@ int rectangular(const Epetra_Comm& Comm, bool verbose)
   EPETRA_CHK_ERR( fegraph.GlobalAssemble(domainmap, rowmap) );
 
   if (verbose) {
-    cout << "********************** fegraph **********************" << endl;
-    cout << fegraph << endl;
+    std::cout << "********************** fegraph **********************" << std::endl;
+    std::cout << fegraph << std::endl;
   }
 
   delete [] cols;
