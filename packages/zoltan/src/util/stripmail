@@ -1,0 +1,29 @@
+#!/bin/bash
+
+if [ "x$1" == x ]; then
+  echo "Usage: $0 LGPLemails"
+  echo "Creates/overwrites zemail.yes and zemail.no"
+  exit
+fi
+
+/bin/rm -f zemail.yes zemail.no
+
+# one big happy pipeline
+
+grep '^Zoltan' < "$1" | awk -F'|' '{print $2"|"$3}' | sort -t'|' -r +1 +0 | uniq -s2 | awk -F'|' '{ if ($1 == "Y") print $2 > "zemail.yes" ; else print $2 > "zemail.no" }'
+
+exit 0
+
+# Stefan Chakerian schake@sandia.gov
+# Sandia National Labs
+#
+# basically this sorts based on name, then based on the Y or N.  If there
+# is any 'Y' with a particular email address then it'll add it to the
+# .yes file, otherwise it'll add to the .no file.
+# (sometimes people download once, then don't want to be readded on subsquent
+# downloads)
+#
+# Once it has the unique names, it dumps them into the files zemail.yes and
+# zemail.no.  Those files are initially removed because they will not
+# overwrite if nothing fits the category, possibly leaving the old file
+# which could lead to duplicates.
