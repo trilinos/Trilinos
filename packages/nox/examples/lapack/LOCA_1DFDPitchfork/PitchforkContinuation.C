@@ -181,7 +181,7 @@ int main()
 					      statusTestA, statusTestB));
 
     // Create the stepper  
-    LOCA::NewStepper stepper(globalData, grp, combo, paramList);
+    LOCA::Stepper stepper(globalData, grp, combo, paramList);
 
     // Solve the nonlinear system
     LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();

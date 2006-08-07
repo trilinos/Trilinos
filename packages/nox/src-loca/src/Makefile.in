@@ -195,7 +195,7 @@ am__libloca_a_SOURCES_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_StepSize_AbstractStrategy.H \
 	$(srcdir)/LOCA_StepSize_Constant.H \
 	$(srcdir)/LOCA_StepSize_Adaptive.H \
-	$(srcdir)/LOCA_StepSize_Factory.H $(srcdir)/LOCA_NewStepper.H \
+	$(srcdir)/LOCA_StepSize_Factory.H $(srcdir)/LOCA_Stepper.H \
 	$(srcdir)/LOCA_Abstract_Group.H \
 	$(srcdir)/LOCA_Abstract_TransposeSolveGroup.H \
 	$(srcdir)/LOCA_Abstract_Iterator.H \
@@ -275,7 +275,7 @@ am__libloca_a_SOURCES_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_MultiPredictor_Factory.C \
 	$(srcdir)/LOCA_StepSize_Constant.C \
 	$(srcdir)/LOCA_StepSize_Adaptive.C \
-	$(srcdir)/LOCA_StepSize_Factory.C $(srcdir)/LOCA_NewStepper.C \
+	$(srcdir)/LOCA_StepSize_Factory.C $(srcdir)/LOCA_Stepper.C \
 	$(srcdir)/LOCA_Abstract_Group.C \
 	$(srcdir)/LOCA_Abstract_Iterator.C \
 	$(srcdir)/LOCA_Abstract_Factory.C \
@@ -370,7 +370,7 @@ am__objects_12 =  \
 am__objects_13 = libloca_a-LOCA_StepSize_Constant.$(OBJEXT) \
 	libloca_a-LOCA_StepSize_Adaptive.$(OBJEXT) \
 	libloca_a-LOCA_StepSize_Factory.$(OBJEXT)
-am__objects_14 = libloca_a-LOCA_NewStepper.$(OBJEXT)
+am__objects_14 = libloca_a-LOCA_Stepper.$(OBJEXT)
 am__objects_15 = libloca_a-LOCA_Abstract_Group.$(OBJEXT) \
 	libloca_a-LOCA_Abstract_Iterator.$(OBJEXT) \
 	libloca_a-LOCA_Abstract_Factory.$(OBJEXT)
@@ -450,7 +450,6 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_MultiPredictor_Restart.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_MultiPredictor_Secant.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_MultiPredictor_Tangent.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_NewStepper.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Parameter_Library.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Parameter_SublistParser.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Parameter_Vector.Po \
@@ -465,6 +464,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_StepSize_Adaptive.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_StepSize_Constant.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_StepSize_Factory.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Stepper.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_TurningPoint_MinimallyAugmented_Constraint.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_TurningPoint_MinimallyAugmented_ExtendedGroup.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.Po \
@@ -570,7 +570,7 @@ am__include_HEADERS_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_StepSize_AbstractStrategy.H \
 	$(srcdir)/LOCA_StepSize_Constant.H \
 	$(srcdir)/LOCA_StepSize_Adaptive.H \
-	$(srcdir)/LOCA_StepSize_Factory.H $(srcdir)/LOCA_NewStepper.H \
+	$(srcdir)/LOCA_StepSize_Factory.H $(srcdir)/LOCA_Stepper.H \
 	$(srcdir)/LOCA_Abstract_Group.H \
 	$(srcdir)/LOCA_Abstract_TransposeSolveGroup.H \
 	$(srcdir)/LOCA_Abstract_Iterator.H \
@@ -1029,10 +1029,10 @@ LOCA_STEPSIZE = \
 	$(srcdir)/LOCA_StepSize_Factory.C
 
 LOCA_STEPPER_H = \
-	$(srcdir)/LOCA_NewStepper.H
+	$(srcdir)/LOCA_Stepper.H
 
 LOCA_STEPPER = \
-	$(srcdir)/LOCA_NewStepper.C
+	$(srcdir)/LOCA_Stepper.C
 
 LOCA_STATUSTEST_H = 
 LOCA_STATUSTEST = 
@@ -1312,7 +1312,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_MultiPredictor_Restart.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_MultiPredictor_Secant.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_MultiPredictor_Tangent.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_NewStepper.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Parameter_Library.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Parameter_SublistParser.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Parameter_Vector.Po@am__quote@
@@ -1327,6 +1326,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_StepSize_Adaptive.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_StepSize_Constant.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_StepSize_Factory.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Stepper.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_TurningPoint_MinimallyAugmented_Constraint.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_TurningPoint_MinimallyAugmented_ExtendedGroup.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.Po@am__quote@
@@ -2491,21 +2491,21 @@ libloca_a-LOCA_StepSize_Factory.obj: $(srcdir)/LOCA_StepSize_Factory.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_StepSize_Factory.obj `if test -f '$(srcdir)/LOCA_StepSize_Factory.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_StepSize_Factory.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_StepSize_Factory.C'; fi`
 
-libloca_a-LOCA_NewStepper.o: $(srcdir)/LOCA_NewStepper.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_NewStepper.o -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_NewStepper.Tpo" -c -o libloca_a-LOCA_NewStepper.o `test -f '$(srcdir)/LOCA_NewStepper.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_NewStepper.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_NewStepper.Tpo" "$(DEPDIR)/libloca_a-LOCA_NewStepper.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_NewStepper.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_NewStepper.C' object='libloca_a-LOCA_NewStepper.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_NewStepper.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_NewStepper.TPo' @AMDEPBACKSLASH@
+libloca_a-LOCA_Stepper.o: $(srcdir)/LOCA_Stepper.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_Stepper.o -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_Stepper.Tpo" -c -o libloca_a-LOCA_Stepper.o `test -f '$(srcdir)/LOCA_Stepper.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Stepper.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_Stepper.Tpo" "$(DEPDIR)/libloca_a-LOCA_Stepper.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_Stepper.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Stepper.C' object='libloca_a-LOCA_Stepper.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_Stepper.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Stepper.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_NewStepper.o `test -f '$(srcdir)/LOCA_NewStepper.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_NewStepper.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Stepper.o `test -f '$(srcdir)/LOCA_Stepper.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Stepper.C
 
-libloca_a-LOCA_NewStepper.obj: $(srcdir)/LOCA_NewStepper.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_NewStepper.obj -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_NewStepper.Tpo" -c -o libloca_a-LOCA_NewStepper.obj `if test -f '$(srcdir)/LOCA_NewStepper.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_NewStepper.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_NewStepper.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_NewStepper.Tpo" "$(DEPDIR)/libloca_a-LOCA_NewStepper.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_NewStepper.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_NewStepper.C' object='libloca_a-LOCA_NewStepper.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_NewStepper.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_NewStepper.TPo' @AMDEPBACKSLASH@
+libloca_a-LOCA_Stepper.obj: $(srcdir)/LOCA_Stepper.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_Stepper.obj -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_Stepper.Tpo" -c -o libloca_a-LOCA_Stepper.obj `if test -f '$(srcdir)/LOCA_Stepper.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Stepper.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Stepper.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_Stepper.Tpo" "$(DEPDIR)/libloca_a-LOCA_Stepper.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_Stepper.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Stepper.C' object='libloca_a-LOCA_Stepper.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_Stepper.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Stepper.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_NewStepper.obj `if test -f '$(srcdir)/LOCA_NewStepper.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_NewStepper.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_NewStepper.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Stepper.obj `if test -f '$(srcdir)/LOCA_Stepper.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Stepper.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Stepper.C'; fi`
 
 libloca_a-LOCA_Abstract_Group.o: $(srcdir)/LOCA_Abstract_Group.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_Abstract_Group.o -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_Abstract_Group.Tpo" -c -o libloca_a-LOCA_Abstract_Group.o `test -f '$(srcdir)/LOCA_Abstract_Group.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Abstract_Group.C; \

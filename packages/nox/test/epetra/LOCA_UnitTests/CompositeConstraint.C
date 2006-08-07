@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
   int ierr = 0;
   double reltol = 1.0e-14;
   double abstol = 1.0e-14;
-  int MyPID;
+  int MyPID = 0;
 
   try {
 

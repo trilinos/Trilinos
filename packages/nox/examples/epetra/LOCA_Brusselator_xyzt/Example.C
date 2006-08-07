@@ -462,7 +462,7 @@ int main(int argc, char *argv[])
 
   // Create the method
   //NOX::Solver::Manager solver(grp, combo, nlParams);
-  LOCA::NewStepper stepper(globalData, grp, combo, paramList);
+  LOCA::Stepper stepper(globalData, grp, combo, paramList);
 
   // Initialize time integration parameters
 #ifdef DO_XYZT

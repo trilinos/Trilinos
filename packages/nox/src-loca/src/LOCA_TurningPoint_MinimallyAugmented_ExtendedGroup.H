@@ -133,7 +133,7 @@ namespace LOCA {
        * LOCA::Extended::MultiAbstractGroup 
        * methods for this extended set of equations and therefore is a complete
        * group which can be passed to most %NOX solvers to locate a single 
-       * turning point or to the LOCA::NewStepper to compute a family of 
+       * turning point or to the LOCA::Stepper to compute a family of 
        * turning points in a second parameter.
        *
        * The class is intialized via the \c tpParams parameter list argument 

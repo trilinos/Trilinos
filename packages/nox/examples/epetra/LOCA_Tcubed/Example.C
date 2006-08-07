@@ -310,7 +310,7 @@ int main(int argc, char *argv[])
 #endif
 
   // Create the stepper  
-  LOCA::NewStepper stepper(globalData, grp, combo, paramList);
+  LOCA::Stepper stepper(globalData, grp, combo, paramList);
   LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
 
   if (status != LOCA::Abstract::Iterator::Finished) {

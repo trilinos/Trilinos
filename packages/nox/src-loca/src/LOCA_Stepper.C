@@ -29,7 +29,7 @@
 //
 // ************************************************************************
 //@HEADER
-#include "LOCA_NewStepper.H"    // class definition
+#include "LOCA_Stepper.H"    // class definition
 #include "NOX_StatusTest_Generic.H"
 #include "NOX_StatusTest_Combo.H"
 #include "LOCA_StatusTest_Wrapper.H"
@@ -52,7 +52,7 @@
 #include "LOCA_MultiContinuation_ConstrainedGroup.H"
 #include "LOCA_MultiContinuation_ConstraintInterface.H"
 
-LOCA::NewStepper::NewStepper(
+LOCA::Stepper::Stepper(
                      const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
 		     const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& initialGuess,
 		     const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t,
@@ -92,12 +92,12 @@ LOCA::NewStepper::NewStepper(
   reset(global_data, initialGuess, t, p);
 }
 
-LOCA::NewStepper::~NewStepper()
+LOCA::Stepper::~Stepper()
 {
 }
 
 bool
-LOCA::NewStepper::reset(
+LOCA::Stepper::reset(
 		    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
 		    const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& initialGuess,
 		    const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t,
@@ -246,7 +246,7 @@ LOCA::NewStepper::reset(
 }
 
 LOCA::Abstract::Iterator::IteratorStatus
-LOCA::NewStepper::start() {
+LOCA::Stepper::start() {
   NOX::StatusTest::StatusType solverStatus;
   string callingFunction = "LOCA::Stepper::start()";
 
@@ -332,7 +332,7 @@ LOCA::NewStepper::start() {
 }
 
 LOCA::Abstract::Iterator::IteratorStatus
-LOCA::NewStepper::finish(LOCA::Abstract::Iterator::IteratorStatus itStatus)
+LOCA::Stepper::finish(LOCA::Abstract::Iterator::IteratorStatus itStatus)
 {
   string callingFunction = "LOCA::Stepper::finish()";
 
@@ -438,7 +438,7 @@ LOCA::NewStepper::finish(LOCA::Abstract::Iterator::IteratorStatus itStatus)
 }
 
 LOCA::Abstract::Iterator::StepStatus
-LOCA::NewStepper::preprocess(LOCA::Abstract::Iterator::StepStatus stepStatus)
+LOCA::Stepper::preprocess(LOCA::Abstract::Iterator::StepStatus stepStatus)
 {
   if (stepStatus == LOCA::Abstract::Iterator::Unsuccessful) {
 
@@ -478,7 +478,7 @@ LOCA::NewStepper::preprocess(LOCA::Abstract::Iterator::StepStatus stepStatus)
 }
 
 LOCA::Abstract::Iterator::StepStatus
-LOCA::NewStepper::compute(LOCA::Abstract::Iterator::StepStatus stepStatus)
+LOCA::Stepper::compute(LOCA::Abstract::Iterator::StepStatus stepStatus)
 {
   NOX::StatusTest::StatusType solverStatus;
 
@@ -504,7 +504,7 @@ LOCA::NewStepper::compute(LOCA::Abstract::Iterator::StepStatus stepStatus)
 }
 
 LOCA::Abstract::Iterator::StepStatus
-LOCA::NewStepper::postprocess(LOCA::Abstract::Iterator::StepStatus stepStatus)
+LOCA::Stepper::postprocess(LOCA::Abstract::Iterator::StepStatus stepStatus)
 {
   string callingFunction = "LOCA::Stepper::postprocess()";
 
@@ -562,7 +562,7 @@ LOCA::NewStepper::postprocess(LOCA::Abstract::Iterator::StepStatus stepStatus)
 }
 
 LOCA::Abstract::Iterator::IteratorStatus
-LOCA::NewStepper::stop(LOCA::Abstract::Iterator::StepStatus stepStatus)
+LOCA::Stepper::stop(LOCA::Abstract::Iterator::StepStatus stepStatus)
 {
 
   // Check to see if max number of steps has been reached
@@ -624,7 +624,7 @@ LOCA::NewStepper::stop(LOCA::Abstract::Iterator::StepStatus stepStatus)
 }
 
 Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>
-LOCA::NewStepper::buildConstrainedGroup(
+LOCA::Stepper::buildConstrainedGroup(
       const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& grp)
 {
   // Get constraints sublist
@@ -635,7 +635,7 @@ LOCA::NewStepper::buildConstrainedGroup(
   if (!constraintsList->isParameter("Constraint Object"))
     return grp;
 
-  string methodName = "LOCA::NewStepper::buildConstrainedGroup()";
+  string methodName = "LOCA::Stepper::buildConstrainedGroup()";
 
   Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface> constraints;
   Teuchos::RefCountPtr< vector<string> > constraintParamNames;
@@ -676,7 +676,7 @@ LOCA::NewStepper::buildConstrainedGroup(
 }
 
 LOCA::Abstract::Iterator::StepStatus
-LOCA::NewStepper::computeStepSize(LOCA::Abstract::Iterator::StepStatus stepStatus,
+LOCA::Stepper::computeStepSize(LOCA::Abstract::Iterator::StepStatus stepStatus,
 			       double& stepSz)
 {
   NOX::Abstract::Group::ReturnType res =
@@ -717,25 +717,25 @@ LOCA::NewStepper::computeStepSize(LOCA::Abstract::Iterator::StepStatus stepStatu
 }
 
 Teuchos::RefCountPtr<const LOCA::MultiContinuation::AbstractGroup>
-LOCA::NewStepper::getSolutionGroup() const
+LOCA::Stepper::getSolutionGroup() const
 {
   return curGroupPtr->getBaseLevelUnderlyingGroup();
 }
 
 Teuchos::RefCountPtr<const LOCA::MultiContinuation::AbstractGroup>
-LOCA::NewStepper::getBifurcationGroup() const
+LOCA::Stepper::getBifurcationGroup() const
 {
   return curGroupPtr->getUnderlyingGroup();
 }
 
 Teuchos::RefCountPtr<const Teuchos::ParameterList>
-LOCA::NewStepper::getList() const
+LOCA::Stepper::getList() const
 {
   return paramListPtr;
 }
 
 Teuchos::RefCountPtr<const NOX::Solver::Generic>
-LOCA::NewStepper::getSolver() const
+LOCA::Stepper::getSolver() const
 {
   if (solverPtr.get() == NULL) {
     globalData->locaErrorCheck->throwError(
@@ -747,7 +747,7 @@ LOCA::NewStepper::getSolver() const
 }
 
 void
-LOCA::NewStepper::printInitializationInfo()
+LOCA::Stepper::printInitializationInfo()
 {
   if (globalData->locaUtils->isPrintType(NOX::Utils::StepperIteration)) {
     globalData->locaUtils->out() 
@@ -776,7 +776,7 @@ LOCA::NewStepper::printInitializationInfo()
 }
 
 void
-LOCA::NewStepper::printStartStep()
+LOCA::Stepper::printStartStep()
 {
   if (globalData->locaUtils->isPrintType(NOX::Utils::StepperIteration)) {
     globalData->locaUtils->out() 
@@ -819,7 +819,7 @@ LOCA::NewStepper::printStartStep()
 }
 
 void
-LOCA::NewStepper::printEndStep(LOCA::Abstract::Iterator::StepStatus stepStatus)
+LOCA::Stepper::printEndStep(LOCA::Abstract::Iterator::StepStatus stepStatus)
 {
   if (stepStatus == LOCA::Abstract::Iterator::Successful) {
     // Print results of successful continuation step
@@ -867,13 +867,13 @@ LOCA::NewStepper::printEndStep(LOCA::Abstract::Iterator::StepStatus stepStatus)
 }
 
 void
-LOCA::NewStepper::printEndInfo()
+LOCA::Stepper::printEndInfo()
 {
 
 }
 
 bool
-LOCA::NewStepper::withinThreshold()
+LOCA::Stepper::withinThreshold()
 {
   Teuchos::RefCountPtr<Teuchos::ParameterList> stepSizeList = 
     parsedParams->getSublist("Step Size");

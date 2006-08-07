@@ -34,7 +34,7 @@
 #include "NOX_Solver_Generic.H"
 #include "LOCA_MultiContinuation_AbstractStrategy.H"
 #include "LOCA_MultiContinuation_ExtendedVector.H"
-#include "LOCA_NewStepper.H"
+#include "LOCA_Stepper.H"
 #include "LOCA_Parameter_SublistParser.H"
 
 LOCA::StepSize::Adaptive::Adaptive(
@@ -64,7 +64,7 @@ LOCA::StepSize::Adaptive::computeStepSize(
 		     const LOCA::MultiContinuation::ExtendedVector& predictor,
 		     const NOX::Solver::Generic& solver,
 		     const LOCA::Abstract::Iterator::StepStatus& stepStatus,
-		     const LOCA::NewStepper& stepper,
+		     const LOCA::Stepper& stepper,
 		     double& stepSize) 
 {
   // If this is the first step, set step size to initial value

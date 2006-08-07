@@ -121,7 +121,7 @@ int main(int argc, char *argv[])
     stepperList.set("Max Nonlinear Iterations", maxNewtonIters);
 
     // Create the stepper  
-    LOCA::NewStepper stepper(globalData, hGrp, combo, paramList);
+    LOCA::Stepper stepper(globalData, hGrp, combo, paramList);
 
     // Solve the nonlinear system
     LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();

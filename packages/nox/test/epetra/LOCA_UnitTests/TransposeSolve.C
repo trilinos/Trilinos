@@ -261,7 +261,7 @@ int testTransposeSolve(
 int main(int argc, char *argv[])
 {
   int ierr = 0;
-  int MyPID;
+  int MyPID = 0;
 
   int nRHS = 7; 
   double reltol = 1.0e-8;

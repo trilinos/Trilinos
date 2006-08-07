@@ -99,7 +99,7 @@ namespace LOCA {
        * LOCA::Extended::MultiAbstractGroup 
        * methods for this extended set of equations and therefore is a complete
        * group which can be passed to most %NOX solvers to locate a single 
-       * turning point or to the LOCA::NewStepper to compute a family of 
+       * pitchfork point or to the LOCA::Stepper to compute a family of 
        * pitchforks in a second parameter.
        * 
        * However, Jacobian-tranpose operations and gradient calculations 

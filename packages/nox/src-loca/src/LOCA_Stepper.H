@@ -30,8 +30,8 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef LOCA_NEWSTEPPER_H
-#define LOCA_NEWSTEPPER_H
+#ifndef LOCA_STEPPER_H
+#define LOCA_STEPPER_H
 
 #include "Teuchos_RefCountPtr.hpp"
 
@@ -78,18 +78,18 @@ namespace LOCA {
     continuation curve.
   */
 
-  class NewStepper : public LOCA::Abstract::Iterator {
+  class Stepper : public LOCA::Abstract::Iterator {
 
   public:
 
     //! Constructor
-    NewStepper(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	       const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& initialGuess,
-	       const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t,
-	       const Teuchos::RefCountPtr<Teuchos::ParameterList>& p);
+    Stepper(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+	    const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& initialGuess,
+	    const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t,
+	    const Teuchos::RefCountPtr<Teuchos::ParameterList>& p);
 
     //! Destructor
-    virtual ~NewStepper();
+    virtual ~Stepper();
 
     //! Reset the Stepper to start a new continuation run
     virtual bool 
@@ -175,10 +175,10 @@ namespace LOCA {
   private:
     
     //! Private to prohibit copying
-    NewStepper(const NewStepper&);
+    Stepper(const Stepper&);
 
     //! Private to prohibit copying
-    NewStepper& operator = (const NewStepper&);
+    Stepper& operator = (const Stepper&);
 
   protected:
 

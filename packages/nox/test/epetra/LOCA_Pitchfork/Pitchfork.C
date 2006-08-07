@@ -68,7 +68,7 @@ using namespace std;
 int main(int argc, char *argv[])
 {
   int ierr = 0;
-  int MyPID;
+  int MyPID = 0;
 
   try {
 
@@ -300,7 +300,7 @@ int main(int argc, char *argv[])
     combo->addStatusTest(maxiters);
 
     // Create the stepper  
-    LOCA::NewStepper stepper(globalData, grp, combo, paramList);
+    LOCA::Stepper stepper(globalData, grp, combo, paramList);
     LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
 
     if (status != LOCA::Abstract::Iterator::Finished) {

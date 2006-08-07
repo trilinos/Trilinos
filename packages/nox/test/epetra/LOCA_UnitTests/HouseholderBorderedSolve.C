@@ -149,7 +149,7 @@ int main(int argc, char *argv[])
   double abstol = 1.0e-8;
   double lstol = 1.0e-11;
 
-  int MyPID;
+  int MyPID = 0;
 
   try {
 

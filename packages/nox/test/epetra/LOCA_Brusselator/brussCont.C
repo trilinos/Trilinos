@@ -323,7 +323,7 @@ int main(int argc, char *argv[])
     combo->addStatusTest(maxiters);
 
     // Create stepper
-    LOCA::NewStepper stepper(globalData, grp, combo, paramList);
+    LOCA::Stepper stepper(globalData, grp, combo, paramList);
 
     LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
 

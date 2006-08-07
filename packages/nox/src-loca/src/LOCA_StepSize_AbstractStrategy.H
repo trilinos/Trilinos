@@ -47,7 +47,7 @@ namespace LOCA {
     class AbstractStrategy;
     class ExtendedVector;
   }
-  class NewStepper;
+  class Stepper;
 }
 
 namespace LOCA {
@@ -112,7 +112,7 @@ namespace LOCA {
 		      const LOCA::MultiContinuation::ExtendedVector& predictor,
 		      const NOX::Solver::Generic& solver,
 		      const LOCA::Abstract::Iterator::StepStatus& stepStatus,
-		      const LOCA::NewStepper& stepper,
+		      const LOCA::Stepper& stepper,
 		      double& stepSize) = 0;
 
       //! Return the previous step size

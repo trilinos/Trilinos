@@ -271,10 +271,10 @@ LOCA_STEPSIZE = \
 	$(srcdir)/LOCA_StepSize_Factory.C
 
 LOCA_STEPPER_H = \
-	$(srcdir)/LOCA_NewStepper.H
+	$(srcdir)/LOCA_Stepper.H
 
 LOCA_STEPPER = \
-	$(srcdir)/LOCA_NewStepper.C
+	$(srcdir)/LOCA_Stepper.C
 
 LOCA_STATUSTEST_H = 
 
