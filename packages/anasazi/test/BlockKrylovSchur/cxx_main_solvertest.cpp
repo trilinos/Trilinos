@@ -89,53 +89,80 @@ void checks( RefCountPtr<BlockKrylovSchur<ScalarType,MV,OP> > solver, int blocks
   TEST_FOR_EXCEPTION(&solver->getProblem() != problem.get(),get_out,"getProblem() did not return the submitted problem.");
 
   // Remember that block Krylov-Schur is a non-Hermitian eigensolver, so we may need to keep an extra
-  // Ritz vector if there is a complex conjugate pair at the end of the block.
-  TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*(solver->getRitzVectors())) != blocksize+1, get_out,"getRitzVectors() is not of size blocksize plus one.");
+  // Ritz vector if there is a complex conjugate pair at the end of the block.  This will be determined by whether
+  //   the problem reports if it's Hermitian
+  if (problem->isHermitian()) {
+  TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*(solver->getRitzVectors())) != blocksize, get_out,"getRitzVectors() is not of size blocksize.");
+  } else {
+    TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*(solver->getRitzVectors())) != blocksize+1, get_out,"getRitzVectors() is not of size blocksize plus one.");
+  }
 
   TEST_FOR_EXCEPTION(solver->getMaxSubspaceDim() != blocksize*numblocks+1,get_out,"BlockKrylovSchur::getMaxSubspaceDim() should always be one vector more than the blocksize times the number of blocks");
 
   if (solver->isInitialized()) 
   {
-    // check Ritz vector
-    if (!solver->isRitzVecsCurrent()) {
-      solver->computeRitzVectors();
-    }
-    RefCountPtr<const MV> ritzVectors = solver->getRitzVectors();
-    TEST_FOR_EXCEPTION(MVT::GetNumberVecs( *ritzVectors ) != blocksize+1,get_out,"getRitzVectors() has incorrect size.");
-
     // check Ritz values
-    if (!solver->isRitzValsCurrent()) {
-      solver->computeRitzValues();
-    }
+    solver->computeRitzValues();
+    
     std::vector<MagnitudeType> ritzValues = solver->getRitzValues();
+    
+    // check Ritz residuals
+    std::vector<MagnitudeType> ritzResids = solver->getRitzRes2Norms();
+    
+    // get Ritz index
+    std::vector<int> ritzIndex = solver->getRitzIndex();
+    
+    // check Ritz vector
+    solver->computeRitzVectors();
 
-    /*
-    SerialDenseMatrix<int,ScalarType> T(blocksize,blocksize);
-    for (int i=0; i<blocksize; i++) T(i,i) = theta[i];
-    // BlockKrylovSchur computes residuals like R = K*X - M*X*T 
-    MVT::MvTimesMatAddMv(-1.0,*Mevecs,T,1.0,*Kevecs);
-    MagnitudeType error = msutils.errorEquality(Kevecs.get(),solver->getResidualVecs().get());
-    // residuals from BlockKrylovSchur should be exact; we will cut a little slack
-    TEST_FOR_EXCEPTION(error > 1e-14,get_out,"Residuals from solver did not match eigenvectors.");
+    RefCountPtr<const MV> ritzVectors = solver->getRitzVectors();
+    if (problem->isHermitian()) {
+      TEST_FOR_EXCEPTION(MVT::GetNumberVecs( *ritzVectors ) != blocksize,get_out,"getRitzVectors() has incorrect size.");
+    } else {
+      TEST_FOR_EXCEPTION(MVT::GetNumberVecs( *ritzVectors ) != blocksize+1,get_out,"getRitzVectors() has incorrect size.");
+    }
+    
+    if (solver->isRitzValsCurrent() && solver->isRitzVecsCurrent()) {
+      
+      // Compute Ritz residuals like R = OP*X - X*T 
+      bool conjSplit = (ritzIndex[blocksize-1]==1);
+      Teuchos::RefCountPtr<const MV> tmp_ritzVectors;
+      Teuchos::SerialDenseMatrix<int,ScalarType> T(blocksize,blocksize);
+      if (conjSplit) {
+	std::vector<int> curind( blocksize + 1 );
+	for (int i=0; i<blocksize+1; i++) { curind[i] = i; }
+	tmp_ritzVectors = MVT::CloneView( *ritzVectors, curind );
+	T.shape( blocksize+1, blocksize+1 );
+      } else {
+	std::vector<int> curind( blocksize );
+	for (int i=0; i<blocksize; i++) { curind[i] = i; }
+	tmp_ritzVectors = MVT::CloneView( *ritzVectors, curind );
+      }
+      Teuchos::RefCountPtr<MV> ritzResiduals = MVT::Clone( *ritzVectors, MVT::GetNumberVecs( *tmp_ritzVectors ) );
+      for (int i=0; i<T.numRows(); i++) T(i,i) = ritzValues[i];
+      OPT::Apply( *(problem->getOperator()), *tmp_ritzVectors, *ritzResiduals );
+      MVT::MvTimesMatAddMv(-1.0,*tmp_ritzVectors,T,1.0,*ritzResiduals);
+      
+      // Compute the norm of the Ritz residual vectors
+      std::vector<MagnitudeType> ritzVecNrm( MVT::GetNumberVecs( *tmp_ritzVectors ) );
+      MVT::MvNorm( *tmp_ritzVectors, &ritzVecNrm );
+      MagnitudeType error;
+      for (int i=0; i<(int)ritzVecNrm.size(); i++) {
+	error = Teuchos::ScalarTraits<MagnitudeType>::magnitude( ritzVecNrm[i] - 1.0 );
+	TEST_FOR_EXCEPTION(error > 1e-14,get_out,"Ritz vectors are not normalized.");
+      }      
 
-    // check eigenvalues
-    // X should be ritz vectors; they should diagonalize K to produce the current eigenvalues
-    MagnitudeType ninf = T.normInf();
-    OPT::Apply(*problem->getOperator(),*evecs,*Kevecs);
-    MVT::MvTransMv(1.0,*evecs,*Kevecs,T);
-    for (int i=0; i<blocksize; i++) T(i,i) -= theta[i];
-    error = T.normFrobenius() / ninf;
-    TEST_FOR_EXCEPTION(error > 1e-14,get_out,"Ritz values don't match eigenvectors.");
+      /* TO DO: Fix the iteration to compute residuals in the event of a non-euclidean normalization of the basis.
 
-    // check that eigenvectors match ritz vectors
-    std::vector<MagnitudeType> rvals = solver->getRitzValues();
-    TEST_FOR_EXCEPTION(rvals.size() != solver->getCurSubspaceDim(),get_out,"getRitzValues() has incorrect size.");
-    error = 0.0;
-    for (int i=0; i<blocksize; i++) error += SCT::magnitude(theta[i] - rvals[i]);
-    // this should be exact; we will require it
-    TEST_FOR_EXCEPTION(error != 0.0,get_out,"Ritz values don't match eigenvalues.");
-
-    */
+      std::vector<MagnitudeType> ritzResNrm( MVT::GetNumberVecs( *ritzResiduals ) );
+      MVT::MvNorm( *ritzResiduals, &ritzResNrm );
+      for (int i=0; i<(int)ritzResNrm.size(); i++) {
+	error = Teuchos::ScalarTraits<MagnitudeType>::magnitude( ritzResids[i] - ritzResNrm[i] );
+	cout << error/ritzResNrm[i] << endl;
+	TEST_FOR_EXCEPTION(error > 1e-13,get_out,"Ritz residuals from iteration do not compare to those computed.");
+      }
+      */
+    }
   }
   else {
     // not initialized
@@ -287,72 +314,72 @@ int main(int argc, char *argv[])
     pls.set<int>("Num Blocks",3);
     pls.set<int>("Step Size", 2);
     if (verbose) {
-      printer->stream(Errors) << "Testing solver(nev,3) with standard eigenproblem..." << endl;
+      printer->stream(Errors) << "Testing solver(nev,3) with standard eigenproblem..." << endl << endl;
     }
     testsolver(probstd,printer,orthostd,sorter,pls);
     pls.set<int>("Num Blocks",3);
     if (verbose) {
-      printer->stream(Errors) << "Testing solver(nev,3) with generalized eigenproblem..." << endl;
+      printer->stream(Errors) << "Testing solver(nev,3) with generalized eigenproblem..." << endl << endl;
     }
     testsolver(probgen,printer,orthogen,sorter,pls);
 
     pls.set<int>("Block Size",nev);
     pls.set<int>("Num Blocks",4);
     if (verbose) {
-      printer->stream(Errors) << "Testing solver(nev,4) with standard eigenproblem..." << endl;
+      printer->stream(Errors) << "Testing solver(nev,4) with standard eigenproblem..." << endl << endl;
     }
     testsolver(probstd,printer,orthostd,sorter,pls);
     pls.set<int>("Num Blocks",4);
     if (verbose) {
-      printer->stream(Errors) << "Testing solver(nev,4) with generalized eigenproblem..." << endl;
+      printer->stream(Errors) << "Testing solver(nev,4) with generalized eigenproblem..." << endl << endl;
     }
     testsolver(probgen,printer,orthogen,sorter,pls);
 
     pls.set<int>("Block Size",2*nev);
     pls.set<int>("Num Blocks",3);
     if (verbose) {
-      printer->stream(Errors) << "Testing solver(2*nev,3) with standard eigenproblem..." << endl;
+      printer->stream(Errors) << "Testing solver(2*nev,3) with standard eigenproblem..." << endl << endl;
     }
     testsolver(probstd,printer,orthostd,sorter,pls);
     pls.set<int>("Num Blocks",3);
     if (verbose) {
-      printer->stream(Errors) << "Testing solver(2*nev,3) with generalized eigenproblem..." << endl;
+      printer->stream(Errors) << "Testing solver(2*nev,3) with generalized eigenproblem..." << endl << endl;
     }
     testsolver(probgen,printer,orthogen,sorter,pls);
 
     pls.set<int>("Block Size",2*nev);
     pls.set<int>("Num Blocks",4);
     if (verbose) {
-      printer->stream(Errors) << "Testing solver(2*nev,4) with standard eigenproblem..." << endl;
+      printer->stream(Errors) << "Testing solver(2*nev,4) with standard eigenproblem..." << endl << endl;
     }
     testsolver(probstd,printer,orthostd,sorter,pls);
     pls.set<int>("Num Blocks",4);
     if (verbose) {
-      printer->stream(Errors) << "Testing solver(2*nev,4) with generalized eigenproblem..." << endl;
+      printer->stream(Errors) << "Testing solver(2*nev,4) with generalized eigenproblem..." << endl << endl;
     }
     testsolver(probgen,printer,orthogen,sorter,pls);
 
     pls.set<int>("Block Size",nev/2);
     pls.set<int>("Num Blocks",3);
     if (verbose) {
-      printer->stream(Errors) << "Testing solver(nev/2,3) with standard eigenproblem..." << endl;
+      printer->stream(Errors) << "Testing solver(nev/2,3) with standard eigenproblem..." << endl << endl;
     }
     testsolver(probstd,printer,orthostd,sorter,pls);
     pls.set<int>("Num Blocks",3);
     if (verbose) {
-      printer->stream(Errors) << "Testing solver(nev/2,3) with generalized eigenproblem..." << endl;
+      printer->stream(Errors) << "Testing solver(nev/2,3) with generalized eigenproblem..." << endl << endl;
     }
     testsolver(probgen,printer,orthogen,sorter,pls);
 
     pls.set<int>("Block Size",nev/2);
     pls.set<int>("Num Blocks",4);
     if (verbose) {
-      printer->stream(Errors) << "Testing solver(nev/2,4) with standard eigenproblem..." << endl;
+      printer->stream(Errors) << "Testing solver(nev/2,4) with standard eigenproblem..." << endl << endl;
     }
     testsolver(probstd,printer,orthostd,sorter,pls);
     pls.set<int>("Num Blocks",4);
     if (verbose) {
-      printer->stream(Errors) << "Testing solver(nev/2,4) with generalized eigenproblem..." << endl;
+      printer->stream(Errors) << "Testing solver(nev/2,4) with generalized eigenproblem..." << endl << endl;
     }
     testsolver(probgen,printer,orthogen,sorter,pls);
 

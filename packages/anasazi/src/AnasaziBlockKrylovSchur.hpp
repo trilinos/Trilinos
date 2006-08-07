@@ -737,7 +737,6 @@ namespace Anasazi {
 
 	Teuchos::LAPACK<int,ScalarType> lapack;
 	Teuchos::LAPACK<int,MagnitudeType> lapack_mag;
-	Teuchos::BLAS<int,ScalarType> blas;	
 
 	// Compute the Ritz vectors.
 	// --> For a Hermitian problem this is simply the current basis times the first _blockSize Schur vectors
@@ -787,34 +786,49 @@ namespace Anasazi {
 	  TEST_FOR_EXCEPTION(info != 0, std::logic_error,
 			     "Anasazi::BlockKrylovSchur::computeRitzVectors(): TREVC returned info != 0");
 
-	  // Scale the eigenvectors so that their euclidean norms are all one.
-	  ScalarType temp;
-	  ScalarType* q_ptr = copyQ.values();
-	  int i = 0;
-	  while( i < _curDim ) {
-	    if ( _ritzIndex[i]==1 ) {
-	      temp = lapack_mag.LAPY2( blas.NRM2( _curDim, q_ptr+i*_curDim, 1 ), 
-				       blas.NRM2( _curDim, q_ptr+(i+1)*_curDim, 1 ) );
-	      blas.SCAL( _curDim, ST_ONE/temp, q_ptr+i*_curDim, 1 );
-	      blas.SCAL( _curDim, ST_ONE/temp, q_ptr+(i+1)*_curDim, 1 );
-	      i = i+2;
-	    } else {
-	      temp = blas.NRM2( _curDim, q_ptr+i*_curDim, 1 );
-	      blas.SCAL( _curDim, ST_ONE/temp, q_ptr+i*_curDim, 1 );
-	      i++;
-	    }
-	  }
-	  
 	  // Get a view into the eigenvectors of the Schur form
 	  Teuchos::SerialDenseMatrix<int,ScalarType> subCopyQ( Teuchos::View, copyQ, _curDim, (conjSplit?_blockSize+1:_blockSize) );
 	  // Convert back to Ritz vectors of the operator.
-	  // These vectors will have a euclidean norm of one.
 	  std::vector<int> curind( (conjSplit?_blockSize+1:_blockSize) );
-	  for (i=0; i<(int)curind.size(); i++) { curind[i] = i; }
+	  for (int i=0; i<(int)curind.size(); i++) { curind[i] = i; }
 
 	  Teuchos::RefCountPtr<MV> view_ritzVectors = MVT::CloneView( *_ritzVectors, curind );
 	  MVT::MvTimesMatAddMv( ST_ONE, *tmp_ritzVectors, subCopyQ, ST_ZERO, *view_ritzVectors );
 
+	  // Compute the norm of the new Ritz vectors
+	  std::vector<MagnitudeType> ritzNrm( curind.size() );
+	  MVT::MvNorm( *view_ritzVectors, &ritzNrm );
+
+	  // Release memory used to compute Ritz vectors before scaling the current vectors.
+	  tmp_ritzVectors = Teuchos::null;
+	  view_ritzVectors = Teuchos::null;
+	  
+	  // Scale the Ritz vectors to have euclidean norm.
+	  MagnitudeType ritzScale = MT_ONE;
+	  for (int i=0; i<(int)curind.size(); i++) {
+	    
+	    // If this is a conjugate pair then normalize by the real and imaginary parts.
+	    if (_ritzIndex[i] == 1 ) {
+	      ritzScale = ST_ONE/lapack_mag.LAPY2(ritzNrm[i],ritzNrm[i+1]);
+	      std::vector<int> newind(2);
+	      newind[0] = i; newind[1] = i+1;
+	      tmp_ritzVectors = MVT::CloneCopy( *_ritzVectors, newind );
+	      view_ritzVectors = MVT::CloneView( *_ritzVectors, newind );
+	      MVT::MvAddMv( ritzScale, *tmp_ritzVectors, ST_ZERO, *tmp_ritzVectors, *view_ritzVectors );
+
+	      // Increment counter for imaginary part
+	      i++;
+	    } else {
+
+	      // This is a real Ritz value, normalize the vector
+	      std::vector<int> newind(1);
+	      newind[0] = i;
+	      tmp_ritzVectors = MVT::CloneCopy( *_ritzVectors, newind );
+	      view_ritzVectors = MVT::CloneView( *_ritzVectors, newind );
+	      MVT::MvAddMv( ST_ONE/ritzNrm[i], *tmp_ritzVectors, ST_ZERO, *tmp_ritzVectors, *view_ritzVectors );
+	    }	      
+	  }
+	  
 	} // if (_problem->isHermitian()) 
 	
 	// The current Ritz vectors have been computed.
@@ -1014,8 +1028,6 @@ namespace Anasazi {
     // as a data member, this would be redundant and require synchronization with
     // _blockSize and _numBlocks; we'll use a constant here.
     const int searchDim = _blockSize*_numBlocks;
-
-    Teuchos::BLAS<int,ScalarType> blas;
 
     ////////////////////////////////////////////////////////////////
     // iterate until the status test tells us to stop.
@@ -1369,14 +1381,38 @@ namespace Anasazi {
 	    blas.GEMM( Teuchos::NO_TRANS, Teuchos::NO_TRANS, _blockSize, _curDim, _curDim, ST_ONE, 
 		       subB.values(), subB.stride(), S.values(), S.stride(), 
 		       ST_ZERO, ritzRes.values(), ritzRes.stride() );
+
+	    /* TO DO:  There's be an incorrect assumption made in the computation of the Ritz residuals.
+	               This assumption is that the next vector in the Krylov subspace is euclidean orthonormal.
+		       It may not be normalized using euclidean norm.
+	    Teuchos::RefCountPtr<MV> ritzResVecs = MVT::Clone( *_V, _curDim );
+	    std::vector<int> curind(_blockSize);
+	    for (int i=0; i<_blockSize; i++) { curind[i] = _curDim + i; }
+	    Teuchos::RefCountPtr<MV> Vtemp = MVT::CloneView(*_V,curind);     
+	    
+	    MVT::MvTimesMatAddMv( ST_ONE, *Vtemp, ritzRes, ST_ZERO, *ritzResVecs );
+	    std::vector<MagnitudeType> ritzResNrms(_curDim);
+	    MVT::MvNorm( *ritzResVecs, &ritzResNrms );
+	    i = 0;
+	    while( i < _curDim ) {
+	      if ( tmp_ritzValues[_curDim+i] != MT_ZERO ) {
+		_ritzResiduals[i] = lapack_mag.LAPY2( ritzResNrms[i], ritzResNrms[i+1] );
+		_ritzResiduals[i+1] = _ritzResiduals[i];
+		i = i+2;
+	      } else {
+		_ritzResiduals[i] = ritzResNrms[i];
+		i++;
+	      }
+	    }
+	    */
 	    //
 	    // Compute the Ritz residuals for Ritz value 'i' from the 'i'-th column of ritzRes.
 	    // 
 	    ScalarType* rr_ptr = ritzRes.values();
 	    i = 0;
 	    while( i < _curDim ) {
-	      if ( tmp_ritzValues[_curDim+i] != MT_ZERO ) {
-		_ritzResiduals[i] = lapack_mag.LAPY2( blas.NRM2(_blockSize, rr_ptr + i*_blockSize, 1),
+	    if ( tmp_ritzValues[_curDim+i] != MT_ZERO ) {
+	    _ritzResiduals[i] = lapack_mag.LAPY2( blas.NRM2(_blockSize, rr_ptr + i*_blockSize, 1),
 						      blas.NRM2(_blockSize, rr_ptr + (i+1)*_blockSize, 1) );
 		_ritzResiduals[i+1] = _ritzResiduals[i];
 		i = i+2;
@@ -1384,7 +1420,7 @@ namespace Anasazi {
 		_ritzResiduals[i] = blas.NRM2(_blockSize, rr_ptr + i*_blockSize, 1);
 		i++;
 	      }
-	    }
+	    }	  
 	  }
 	  //
 	  // Sort the Ritz values.
