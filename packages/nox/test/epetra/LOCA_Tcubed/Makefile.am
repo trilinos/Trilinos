@@ -44,9 +44,7 @@ AM_CPPFLAGS = $(TEST_INCLUDES)
 EXEEXT = .exe
 
 if BUILD_LOCA_EPETRA_TESTS
-if BUILD_LOCAANASAZI
 noinst_PROGRAMS = tcubed tcubed_constraint
-endif
 endif
 
 tcubed_SOURCES = \

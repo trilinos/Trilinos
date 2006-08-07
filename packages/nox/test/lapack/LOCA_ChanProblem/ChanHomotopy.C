@@ -66,8 +66,6 @@ int main(int argc, char *argv[])
 
     // Create the "Solver" parameters sublist to be used with NOX Solvers
     Teuchos::ParameterList& nlParams = paramList->sublist("NOX");
-    nlParams.set("Nonlinear Solver", "Line Search Based");
-
     Teuchos::ParameterList& nlPrintParams = nlParams.sublist("Printing");
     if (verbose)
        nlPrintParams.set("Output Information", 
@@ -78,7 +76,8 @@ int main(int argc, char *argv[])
 			 NOX::Utils::Warning +
 			 NOX::Utils::TestDetails + 
 			 NOX::Utils::StepperIteration +
-			 NOX::Utils::StepperDetails);
+			 NOX::Utils::StepperDetails +
+			 NOX::Utils::StepperParameters);
      else
        nlPrintParams.set("Output Information", NOX::Utils::Error);
 
@@ -140,7 +139,7 @@ int main(int argc, char *argv[])
       dynamic_cast<const NOX::LAPACK::Vector&>(finalGroup->getX());
 
     // Output the parameter list
-    if (globalData->locaUtils->isPrintType(NOX::Utils::Parameters)) {
+    if (globalData->locaUtils->isPrintType(NOX::Utils::StepperParameters)) {
       globalData->locaUtils->out() 
 	<< std::endl << "Final Parameters" << std::endl
 	<< "****************" << std::endl;

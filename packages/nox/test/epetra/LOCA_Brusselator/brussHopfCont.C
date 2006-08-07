@@ -192,30 +192,17 @@ int main(int argc, char *argv[])
 
     // Create the stepper sublist and set the stepper parameters
     Teuchos::ParameterList& stepperList = locaParamsList.sublist("Stepper");
-    //stepperList.set("Continuation Method", "Natural");
-    stepperList.set("Continuation Method", "Arc Length");
     stepperList.set("Continuation Parameter", "alpha");
     stepperList.set("Initial Value", alpha);
     stepperList.set("Max Value", 1.0);
     stepperList.set("Min Value", 0.24);
     stepperList.set("Max Steps", 100);
     stepperList.set("Max Nonlinear Iterations", maxNewtonIters);
-    stepperList.set("Enable Arc Length Scaling", true);
-    stepperList.set("Goal Arc Length Parameter Contribution", 0.5);
-    stepperList.set("Max Arc Length Parameter Contribution", 0.7);
-    stepperList.set("Initial Scale Factor", 1.0);
-    stepperList.set("Min Scale Factor", 1.0e-8);
-    stepperList.set("Enable Tangent Factor Step Size Scaling",false);
-    stepperList.set("Min Tangent Factor", -1.0);
-    stepperList.set("Tangent Factor Exponent",1.0);
-    stepperList.set("Compute Eigenvalues",false);
 
      // Create bifurcation sublist
     Teuchos::ParameterList& bifurcationList = 
       locaParamsList.sublist("Bifurcation");
     bifurcationList.set("Type", "Hopf");
-    bifurcationList.set("Formulation", "Moore-Spence");
-    bifurcationList.set("Solver Method", "Salinger Bordering");
     bifurcationList.set("Bifurcation Parameter", "beta");
     bifurcationList.set("Length Normalization Vector", phi_vec);
     bifurcationList.set("Initial Real Eigenvector", y_vec);
@@ -225,35 +212,24 @@ int main(int argc, char *argv[])
     // Create predictor sublist
     Teuchos::ParameterList& predictorList = 
       locaParamsList.sublist("Predictor");
-    //predictorList.set("Method", "Constant");
-    //predictorList.set("Method", "Tangent");
-    predictorList.set("Method", "Secant");
-
-    Teuchos::ParameterList& firstStepPredictor 
-      = predictorList.sublist("First Step Predictor");
+    Teuchos::ParameterList& firstStepPredictor = 
+      predictorList.sublist("First Step Predictor");
     firstStepPredictor.set("Method", "Random");
     firstStepPredictor.set("Epsilon", 1.0e-3);
-
-    Teuchos::ParameterList& lastStepPredictor 
-      = predictorList.sublist("Last Step Predictor");
+    Teuchos::ParameterList& lastStepPredictor = 
+      predictorList.sublist("Last Step Predictor");
     lastStepPredictor.set("Method", "Random");
     lastStepPredictor.set("Epsilon", 1.0e-3);
 
     // Create step size sublist
     Teuchos::ParameterList& stepSizeList = locaParamsList.sublist("Step Size");
-    //stepSizeList.set("Method", "Constant");
-    stepSizeList.set("Method", "Adaptive");
     stepSizeList.set("Initial Step Size", 0.02);
     stepSizeList.set("Min Step Size", 1.0e-3);
     stepSizeList.set("Max Step Size", 0.02);
     stepSizeList.set("Aggressiveness", 0.1);
-    stepSizeList.set("Failed Step Reduction Factor", 0.5);
-    stepSizeList.set("Successful Step Increase Factor", 1.26); // for constant
 
     // Create the "Solver" parameters sublist to be used with NOX Solvers
     Teuchos::ParameterList& nlParams = paramList->sublist("NOX");
-    // Set the nonlinear solver method
-    nlParams.set("Nonlinear Solver", "Line Search Based");
 
     // Set the printing parameters in the "Printing" sublist
     Teuchos::ParameterList& printParams = nlParams.sublist("Printing");
@@ -265,45 +241,25 @@ int main(int argc, char *argv[])
 		      NOX::Utils::OuterIteration + 
 		      NOX::Utils::OuterIterationStatusTest + 
 		      NOX::Utils::InnerIteration +
-		      NOX::Utils::Parameters + 
 		      NOX::Utils::Details + 
 		      NOX::Utils::Warning +
 		      NOX::Utils::TestDetails + 
 		      NOX::Utils::Error + 
 		      NOX::Utils::StepperIteration +
-		      NOX::Utils::StepperDetails);
+		      NOX::Utils::StepperDetails +
+		      NOX::Utils::StepperParameters);
      else
        printParams.set("Output Information", NOX::Utils::Error);
 
-    // Sublist for line search 
-    Teuchos::ParameterList& searchParams = nlParams.sublist("Line Search");
-    searchParams.set("Method", "Full Step");
-
-    // Sublist for direction
+    // Sublist for "Linear Solver"
     Teuchos::ParameterList& dirParams = nlParams.sublist("Direction");
-    dirParams.set("Method", "Newton");
     Teuchos::ParameterList& newtonParams = dirParams.sublist("Newton");
-    newtonParams.set("Forcing Term Method", "Constant");
-    
-
-    // Sublist for linear solver for the Newton method
     Teuchos::ParameterList& lsParams = newtonParams.sublist("Linear Solver");
     lsParams.set("Aztec Solver", "GMRES");  
     lsParams.set("Max Iterations", 800);  
     lsParams.set("Tolerance", 1e-6);
     lsParams.set("Output Frequency", 50);    
     lsParams.set("Preconditioner", "Ifpack"); 
-    //lsParams.set("Preconditioner", "None"); 
-    //lsParams.set("Preconditioner", "AztecOO"); 
-    //lsParams.set("Aztec Preconditioner", "ilu"); 
-    //lsParams.set("Overlap", 2);  
-    //lsParams.set("Graph Fill", 2); 
-    //lsParams.set("Aztec Preconditioner", "ilut"); 
-    //lsParams.set("Overlap", 2);   
-    //lsParams.set("Fill Factor", 2);   
-    //lsParams.set("Drop Tolerance", 1.0e-12);   
-    //lsParams.set("Aztec Preconditioner", "Polynomial"); 
-    //lsParams.set("Polynomial Order", 6); 
 
     // Create the interface between the test problem and the nonlinear solver
     Teuchos::RefCountPtr<Problem_Interface> interface = 
@@ -312,7 +268,6 @@ int main(int argc, char *argv[])
     // Create the Epetra_RowMatrixfor the Jacobian/Preconditioner
     Teuchos::RefCountPtr<Epetra_RowMatrix> A = 
       Teuchos::rcp(&Problem.getJacobian(),false);
-
 
     // Use an Epetra Scaling object if desired
     Teuchos::RefCountPtr<Epetra_Vector> scaleVec = 
@@ -388,7 +343,7 @@ int main(int argc, char *argv[])
       Teuchos::rcp_dynamic_cast<const LOCA::Epetra::Group>(stepper.getSolutionGroup());
 
     // Output the parameter list
-    if (globalData->locaUtils->isPrintType(NOX::Utils::Parameters)) {
+    if (globalData->locaUtils->isPrintType(NOX::Utils::StepperParameters)) {
       globalData->locaUtils->out() 
 	<< std::endl << "Final Parameters" << std::endl
 	<< "****************" << std::endl;

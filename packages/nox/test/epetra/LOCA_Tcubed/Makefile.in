@@ -66,8 +66,8 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-@BUILD_LOCAANASAZI_TRUE@@BUILD_LOCA_EPETRA_TESTS_TRUE@noinst_PROGRAMS = tcubed$(EXEEXT) \
-@BUILD_LOCAANASAZI_TRUE@@BUILD_LOCA_EPETRA_TESTS_TRUE@	tcubed_constraint$(EXEEXT)
+@BUILD_LOCA_EPETRA_TESTS_TRUE@noinst_PROGRAMS = tcubed$(EXEEXT) \
+@BUILD_LOCA_EPETRA_TESTS_TRUE@	tcubed_constraint$(EXEEXT)
 subdir = test/epetra/LOCA_Tcubed
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
