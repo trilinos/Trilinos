@@ -695,7 +695,7 @@ int two_proc_test(Epetra_Comm& Comm,
 
 int time_matrix_matrix_multiply(Epetra_Comm& Comm, bool verbose)
 {
-  int localn = 36000/Comm.NumProc();
+  int localn = 30000/Comm.NumProc();
 
   Epetra_CrsMatrix* A = create_epetra_crsmatrix(Comm.NumProc(),
                                                 Comm.MyPID(),
@@ -710,8 +710,19 @@ int time_matrix_matrix_multiply(Epetra_Comm& Comm, bool verbose)
 
   int globaln = localn*Comm.NumProc();
   if (verbose) {
-    std::cout << "size: " << globaln << "x"<<globaln<<", time for A*A: "
-       << timer.WallTime()-start_time << ", err: " << err << std::endl;
+    std::cout << "size: " << globaln << "x"<<globaln<<", C = A*A, time: "
+       << timer.WallTime()-start_time << std::endl;
+  }
+
+  C->FillComplete();
+
+  start_time = timer.WallTime();
+
+  err = EpetraExt::MatrixMatrix::Multiply(*A, false, *A, false, *C);
+
+  if (verbose) {
+    std::cout << "size: " << globaln << "x"<<globaln<<", C = A*A, time: "
+       << timer.WallTime()-start_time << " (C already Filled)\n" <<std::endl;
   }
 
   delete C;
@@ -723,8 +734,19 @@ int time_matrix_matrix_multiply(Epetra_Comm& Comm, bool verbose)
   err = EpetraExt::MatrixMatrix::Multiply(*A, false, *A, true, *C);
 
   if (verbose) {
-    std::cout << "size: " << globaln << "x"<<globaln<<", time for A*A^T: "
-       << timer.WallTime()-start_time << ", err: " << err << std::endl;
+    std::cout << "size: " << globaln << "x"<<globaln<<", C = A*A^T, time: "
+       << timer.WallTime()-start_time << std::endl;
+  }
+
+  C->FillComplete();
+
+  start_time = timer.WallTime();
+
+  err = EpetraExt::MatrixMatrix::Multiply(*A, false, *A, true, *C);
+
+  if (verbose) {
+    std::cout << "size: " << globaln << "x"<<globaln<<", C = A*A^T, time: "
+       << timer.WallTime()-start_time << " (C already Filled)\n" <<std::endl;
   }
 
   delete C;
@@ -736,8 +758,19 @@ int time_matrix_matrix_multiply(Epetra_Comm& Comm, bool verbose)
   err = EpetraExt::MatrixMatrix::Multiply(*A, true, *A, false, *C);
 
   if (verbose) {
-    std::cout << "size: " << globaln << "x"<<globaln<<", time for A^T*A: "
-       << timer.WallTime()-start_time << ", err: " << err << std::endl;
+    std::cout << "size: " << globaln << "x"<<globaln<<", C = A^T*A, time: "
+       << timer.WallTime()-start_time << std::endl;
+  }
+
+  C->FillComplete();
+
+  start_time = timer.WallTime();
+
+  err = EpetraExt::MatrixMatrix::Multiply(*A, true, *A, false, *C);
+
+  if (verbose) {
+    std::cout << "size: " << globaln << "x"<<globaln<<", C = A^T*A, time: "
+       << timer.WallTime()-start_time << " (C already Filled)\n"<<std::endl;
   }
 
   delete C;
@@ -749,8 +782,19 @@ int time_matrix_matrix_multiply(Epetra_Comm& Comm, bool verbose)
   err = EpetraExt::MatrixMatrix::Multiply(*A, true, *A, true, *C);
 
   if (verbose) {
-    std::cout << "size: " << globaln << "x"<<globaln<<", time for A^T*A^T: "
-       << timer.WallTime()-start_time << ", err: " << err << std::endl;
+    std::cout << "size: " << globaln << "x"<<globaln<<", C = A^T*A^T, time: "
+       << timer.WallTime()-start_time << std::endl;
+  }
+
+  C->FillComplete();
+
+  start_time = timer.WallTime();
+
+  err = EpetraExt::MatrixMatrix::Multiply(*A, true, *A, true, *C);
+
+  if (verbose) {
+    std::cout << "size: " << globaln << "x"<<globaln<<", C = A^T*A^T, time: "
+       << timer.WallTime()-start_time << " (C already Filled)\n" <<std::endl;
   }
 
   delete C;
@@ -785,21 +829,26 @@ Epetra_CrsMatrix* create_epetra_crsmatrix(int numProcs,
     int GlobalRow = matrix->GRID(i);
     int RowLess1 = GlobalRow - 1;
     int RowPlus1 = GlobalRow + 1;
-    int RowLess2 = GlobalRow - 2;
-    int RowPlus2 = GlobalRow + 2;
-    int RowLess3 = GlobalRow - 3;
-    int RowPlus3 = GlobalRow + 3;
-    int RowLess4 = GlobalRow - 4;
-    int RowPlus4 = GlobalRow + 4;
+    int RowLess5 = GlobalRow - 5;
+    int RowPlus5 = GlobalRow + 5;
+    int RowLess9 = GlobalRow - 9;
+    int RowPlus9 = GlobalRow + 9;
+    int RowLess24 = GlobalRow - 24;
+    int RowPlus24 = GlobalRow + 24;
+    int RowLess48 = GlobalRow - 48;
+    int RowPlus48 = GlobalRow + 48;
 
-    if (RowLess4>=0) {
-      matrix->InsertGlobalValues(GlobalRow, 1, &negOne, &RowLess4);
+    if (RowLess48>=0) {
+      matrix->InsertGlobalValues(GlobalRow, 1, &negOne, &RowLess48);
     }
-    if (RowLess3>=0) {
-      matrix->InsertGlobalValues(GlobalRow, 1, &negOne, &RowLess3);
+    if (RowLess24>=0) {
+      matrix->InsertGlobalValues(GlobalRow, 1, &negOne, &RowLess24);
     }
-    if (RowLess2>=0) {
-      matrix->InsertGlobalValues(GlobalRow, 1, &negOne, &RowLess2);
+    if (RowLess9>=0) {
+      matrix->InsertGlobalValues(GlobalRow, 1, &negOne, &RowLess9);
+    }
+    if (RowLess5>=0) {
+      matrix->InsertGlobalValues(GlobalRow, 1, &negOne, &RowLess5);
     }
     if (RowLess1>=0) {
       matrix->InsertGlobalValues(GlobalRow, 1, &negOne, &RowLess1);
@@ -807,14 +856,17 @@ Epetra_CrsMatrix* create_epetra_crsmatrix(int numProcs,
     if (RowPlus1<global_num_rows) {
       matrix->InsertGlobalValues(GlobalRow, 1, &negOne, &RowPlus1);
     }
-    if (RowPlus2<global_num_rows) {
-      matrix->InsertGlobalValues(GlobalRow, 1, &negOne, &RowPlus2);
+    if (RowPlus5<global_num_rows) {
+      matrix->InsertGlobalValues(GlobalRow, 1, &negOne, &RowPlus5);
     }
-    if (RowPlus3<global_num_rows) {
-      matrix->InsertGlobalValues(GlobalRow, 1, &negOne, &RowPlus3);
+    if (RowPlus9<global_num_rows) {
+      matrix->InsertGlobalValues(GlobalRow, 1, &negOne, &RowPlus9);
     }
-    if (RowPlus4<global_num_rows) {
-      matrix->InsertGlobalValues(GlobalRow, 1, &negOne, &RowPlus4);
+    if (RowPlus24<global_num_rows) {
+      matrix->InsertGlobalValues(GlobalRow, 1, &negOne, &RowPlus24);
+    }
+    if (RowPlus48<global_num_rows) {
+      matrix->InsertGlobalValues(GlobalRow, 1, &negOne, &RowPlus48);
     }
 
     matrix->InsertGlobalValues(GlobalRow, 1, &posTwo, &GlobalRow);

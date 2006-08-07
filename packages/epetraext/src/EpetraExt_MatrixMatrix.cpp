@@ -149,28 +149,26 @@ int mult_A_B(CrsMatrixStruct& Aview,
   int C_firstCol_import = 0;
   int C_lastCol_import = -1;
 
+  int* bcols = Bview.colMap->MyGlobalElements();
+  int* bcols_import = NULL;
   if (Bview.importColMap != NULL) {
     C_firstCol_import = Bview.importColMap->MinLID();
     C_lastCol_import = Bview.importColMap->MaxLID();
+
+    bcols_import = Bview.importColMap->MyGlobalElements();
   }
 
   int C_numCols = C_lastCol - C_firstCol + 1;
   int C_numCols_import = C_lastCol_import - C_firstCol_import + 1;
 
-  double* dwork = new double[C_numCols+C_numCols_import];
+  if (C_numCols_import > C_numCols) C_numCols = C_numCols_import;
+  double* dwork = new double[C_numCols];
+  int* iwork = new int[C_numCols];
 
   double* C_row_i = dwork;
-  double* C_row_i_import = dwork+C_numCols;
+  int* C_cols = iwork;
 
-  int i, j, k;
-
-  for(j=0; j<C_numCols; ++j) {
-    C_row_i[j] = 0.0;
-  }
-
-  for(j=0; j<C_numCols_import; ++j) {
-    C_row_i_import[j] = 0.0;
-  }
+  int C_row_i_length, i, j, k;
 
   //To form C = A*B we're going to execute this expression:
   //
@@ -179,16 +177,10 @@ int mult_A_B(CrsMatrixStruct& Aview,
   //Our goal, of course, is to navigate the data in A and B once, without
   //performing searches for column-indices, etc.
 
-  std::vector<int> inds_i;
-  inds_i.reserve(C_numCols);
-
-  std::vector<int> inds_i_import;
-  inds_i_import.reserve(C_numCols_import);
+  bool C_filled = C.Filled();
 
   //loop over the rows of A.
   for(i=0; i<Aview.numRows; ++i) {
-    inds_i.resize(0);
-    inds_i_import.resize(0);
 
     //only navigate the local portion of Aview... (It's probable that we
     //imported more of A than we need for A*B, because other cases like A^T*B 
@@ -199,6 +191,8 @@ int mult_A_B(CrsMatrixStruct& Aview,
 
     int* Aindices_i = Aview.indices[i];
     double* Aval_i  = Aview.values[i];
+
+    int global_row = Aview.rowMap->GID(i);
 
     //loop across the i-th row of A and for each corresponding row
     //in B, loop across colums and accumulate product
@@ -213,98 +207,45 @@ int mult_A_B(CrsMatrixStruct& Aview,
       int* Bcol_inds = Bview.indices[Ak];
       double* Bvals_k = Bview.values[Ak];
 
+      C_row_i_length = 0;
+
       if (Bview.remote[Ak]) {
 	for(j=0; j<Bview.numEntriesPerRow[Ak]; ++j) {
-	  int loc = Bcol_inds[j] - C_firstCol_import;
-	  C_row_i_import[loc] += Aval*Bvals_k[j];
-          inds_i_import.push_back(loc);
+	  C_row_i[C_row_i_length] = Aval*Bvals_k[j];
+          C_cols[C_row_i_length++] = bcols_import[Bcol_inds[j]];
 	}
       }
       else {
 	for(j=0; j<Bview.numEntriesPerRow[Ak]; ++j) {
-	  int loc = Bcol_inds[j] - C_firstCol;
-	  C_row_i[loc] += Aval*Bvals_k[j];
-          inds_i.push_back(loc);
+	  C_row_i[C_row_i_length] = Aval*Bvals_k[j];
+          C_cols[C_row_i_length++] = bcols[Bcol_inds[j]];
 	}
       }
-    }
 
-    //
-    //Now loop across the C_row_i values and put the non-zeros into C.
-    //
-
-    int global_row = Aview.rowMap->GID(i);
-
-    std::vector<int>::const_iterator
-      it = inds_i.begin(),
-      it_end = inds_i.end();
-
-    for (; it != it_end; ++it) {
-      j=*it;
-      //If this value is zero, don't put it into the C matrix.
-      if (C_row_i[j] == 0.0) continue;
-
-      int global_col = Bview.colMap->GID(C_firstCol + j);
-
-      //Now put the C_ij quantity into the result C matrix.
       //
-      //Try SumInto first, and if that returns a positive error code (meaning
-      //that the location doesn't exist) then use Insert.
+      //Now put the C_row_i values into C.
+      //
 
-      int err = C.SumIntoGlobalValues(global_row, 1, &(C_row_i[j]), &global_col);
+      int err = C_filled ?
+          C.SumIntoGlobalValues(global_row, C_row_i_length, C_row_i, C_cols)
+          :
+          C.InsertGlobalValues(global_row, C_row_i_length, C_row_i, C_cols);
+ 
       if (err < 0) {
-	return(err);
+        return(err);
       }
       if (err > 0) {
-	err = C.InsertGlobalValues(global_row, 1, &(C_row_i[j]), &global_col);
-	if (err < 0) {
-	  //If we jump out here, it probably means C is Filled, and doesn't
-	  //have all the necessary nonzero locations.
-	  return(err);
-	}
+        if (C_filled) {
+          //C is Filled, and doesn't
+          //have all the necessary nonzero locations.
+          return(err);
+        }
       }
-
-      C_row_i[j] = 0.0;
-    }
-
-    //Now loop across the C_row_i_import values and put the non-zeros into C.
-
-    std::vector<int>::const_iterator
-      iit = inds_i_import.begin(),
-      iit_end = inds_i_import.end();
-
-    for(; iit != iit_end; ++iit) {
-      j=*iit;
-      //If this value is zero, don't put it into the C matrix.
-      if (C_row_i_import[j] == 0.0) continue;
-
-      int global_col = Bview.importColMap->GID(C_firstCol_import + j);
-
-      //Now put the C_ij quantity into the result C matrix.
-      //
-      //Try SumInto first, and if that returns a positive error code (meaning
-      //that the location doesn't exist) then use Insert.
-
-      int err = C.SumIntoGlobalValues(global_row, 1,
-				      &(C_row_i_import[j]), &global_col);
-      if (err < 0) {
-	return(err);
-      }
-      if (err > 0) {
-	err = C.InsertGlobalValues(global_row, 1,
-				   &(C_row_i_import[j]), &global_col);
-	if (err < 0) {
-	  //If we jump out here, it probably means C is Filled, and doesn't
-	  //have all the necessary nonzero locations.
-	  return(err);
-	}
-      }
-
-      C_row_i_import[j] = 0.0;
     }
   }
 
   delete [] dwork;
+  delete [] iwork;
 
   return(0);
 }
@@ -526,28 +467,26 @@ int mult_Atrans_B(CrsMatrixStruct& Aview,
   int C_numCols = C_lastCol - C_firstCol + 1;
   int C_numCols_import = C_lastCol_import - C_firstCol_import + 1;
 
-  double* dwork = new double[C_numCols+C_numCols_import];
+  if (C_numCols_import > C_numCols) C_numCols = C_numCols_import;
 
-  double* C_row_i = dwork;
-  double* C_row_i_import = dwork+C_numCols;
+  double* C_row_i = new double[C_numCols];
+  int* C_colInds = new int[C_numCols];
 
   int i, j, k;
 
   for(j=0; j<C_numCols; ++j) {
     C_row_i[j] = 0.0;
+    C_colInds[j] = 0;
   }
 
-  for(j=0; j<C_numCols_import; ++j) {
-    C_row_i_import[j] = 0.0;
-  }
-
-  //To form C = A^T*B, we're going to execute this expression:
+  //To form C = A^T*B, compute a series of outer-product updates.
   //
-  // C(i,j) = sum_k( A(k,i)*B(k,j) )
+  // for (ith column of A^T) { 
+  //   C_i = outer product of A^T(:,i) and B(i,:)
+  // Where C_i is the ith matrix update,
+  //       A^T(:,i) is the ith column of A^T, and
+  //       B(i,:) is the ith row of B.
   //
-  //Our goal, of course, is to navigate the data in A and B once, without
-  //performing searches for column-indices, etc. In other words, we avoid
-  //column-wise operations like the plague...
 
   //dumpCrsMatrixStruct(Aview);
   //dumpCrsMatrixStruct(Bview);
@@ -555,141 +494,91 @@ int mult_Atrans_B(CrsMatrixStruct& Aview,
 
   int* Arows = Aview.rowMap->MyGlobalElements();
 
-  std::vector<int> inds_i;
-  inds_i.reserve(C_numCols);
+  bool C_filled = C.Filled();
 
-  std::vector<int> inds_i_import;
-  inds_i_import.reserve(C_numCols_import);
+  //loop over the rows of A (which are the columns of A^T).
+  for(i=0; i<Aview.numRows; ++i) {
 
-  //loop over the rows of A.
-  for(k=0; k<Aview.numRows; ++k) {
+    int* Aindices_i = Aview.indices[i];
+    double* Aval_i  = Aview.values[i];
 
-    int* Aindices_k = Aview.indices[k];
-    double* Aval_k  = Aview.values[k];
-
-    int Bk = Bview.rowMap->LID(Arows[k]);
-    if (Bk<0) {
+    //we'll need to get the row of B corresponding to Arows[i],
+    //where Arows[i] is the GID of A's ith row.
+    int Bi = Bview.rowMap->LID(Arows[i]);
+    if (Bi<0) {
       cout << "mult_Atrans_B ERROR, proc "<<localProc<<" needs row "
-	   <<Arows[k]<<" of matrix B, doesn't have it."<<endl;
+	   <<Arows[i]<<" of matrix B, but doesn't have it."<<endl;
       return(-1);
     }
 
-    int* Bcol_inds = Bview.indices[Bk];
-    double* Bvals_k = Bview.values[Bk];
+    int* Bcol_inds = Bview.indices[Bi];
+    double* Bvals_i = Bview.values[Bi];
 
-    //loop across the k-th row of A and for each corresponding row
-    //in B, loop across colums and accumulate product
-    //A(k,i)*B(k,j) into our partial sum quantities C_row_i.
+    //for each column-index Aj in the i-th row of A, we'll update
+    //global-row GID(Aj) of the result matrix C. In that row of C,
+    //we'll update column-indices given by the column-indices in the
+    //ith row of B that we're now holding (Bcol_inds).
 
-    for(i=0; i<Aview.numEntriesPerRow[k]; ++i) {
-      inds_i.resize(0);
-      inds_i_import.resize(0);
+    //First create a list of GIDs for the column-indices
+    //that we'll be updating.
 
-      int Ai = Aindices_k[i];
-      double Aval = Aval_k[i];
+    int Blen = Bview.numEntriesPerRow[Bi];
+    if (Bview.remote[Bi]) {
+      for(j=0; j<Blen; ++j) {
+        C_colInds[j] = Bview.importColMap->GID(Bcol_inds[j]);
+      }
+    }
+    else {
+      for(j=0; j<Blen; ++j) {
+        C_colInds[j] = Bview.colMap->GID(Bcol_inds[j]);
+      }
+    }
+
+    //loop across the i-th row of A (column of A^T)
+    for(j=0; j<Aview.numEntriesPerRow[i]; ++j) {
+
+      int Aj = Aindices_i[j];
+      double Aval = Aval_i[j];
 
       int global_row;
-      if (Aview.remote[k]) {
-	global_row = Aview.importColMap->GID(Ai);
+      if (Aview.remote[i]) {
+	global_row = Aview.importColMap->GID(Aj);
       }
       else {
-	global_row = Aview.colMap->GID(Ai);
+	global_row = Aview.colMap->GID(Aj);
       }
 
       if (!C.RowMap().MyGID(global_row)) {
         continue;
       }
 
-      if (Bview.remote[Bk]) {
-	for(j=0; j<Bview.numEntriesPerRow[Bk]; ++j) {
-	  int loc = Bcol_inds[j] - C_firstCol_import;
-	  C_row_i_import[loc] += Aval*Bvals_k[j];
-          inds_i_import.push_back(loc);
-	}
-      }
-      else {
-	for(j=0; j<Bview.numEntriesPerRow[Bk]; ++j) {
-	  int loc = Bcol_inds[j] - C_firstCol;
-	  C_row_i[loc] += Aval*Bvals_k[j];
-          inds_i.push_back(loc);
-	}
+      for(k=0; k<Blen; ++k) {
+        C_row_i[k] = Aval*Bvals_i[k];
       }
 
       //
-      //Now loop across the C_row_i values and put the non-zeros into C.
+      //Now add this row-update to C.
       //
 
-      std::vector<int>::const_iterator
-        it = inds_i.begin(),
-        it_end = inds_i.end();
+      int err = C_filled ?
+        C.SumIntoGlobalValues(global_row, Blen, C_row_i, C_colInds)
+        :
+        C.InsertGlobalValues(global_row, Blen, C_row_i, C_colInds);
 
-      for(; it != it_end; ++it) {
-        j = *it;
-	//If this value is zero, don't put it into the C matrix.
-	if (C_row_i[j] == 0.0) continue;
-
-	int global_col = Bview.colMap->GID(C_firstCol + j);
-
-	//Now put the C_ij quantity into the result C matrix.
-	//
-	//Try SumInto first, and if that returns a positive error code (meaning
-	//that the location doesn't exist) then use Insert.
-
-	int err = C.SumIntoGlobalValues(global_row, 1, &(C_row_i[j]), &global_col);
-	if (err < 0) {
-	  return(err);
-	}
-	if (err > 0) {
-	  err = C.InsertGlobalValues(global_row, 1, &(C_row_i[j]), &global_col);
-	  if (err < 0) {
-	    //If we jump out here, it probably means C is Filled, and doesn't
-	    //have all the necessary nonzero locations.
-	    return(err);
-	  }
-	}
-
-	C_row_i[j] = 0.0;
+      if (err < 0) {
+        return(err);
       }
-
-      //Now loop across the C_row_i_import values and put the non-zeros into C.
-
-      std::vector<int>::const_iterator
-        iit = inds_i_import.begin(),
-        iit_end = inds_i_import.end();
-
-      for(; iit != iit_end; ++iit) {
-        j = *iit;
-	//If this value is zero, don't put it into the C matrix.
-	if (C_row_i_import[j] == 0.0) continue;
-
-	int global_col = Bview.importColMap->GID(C_firstCol_import + j);
-
-	//Now put the C_ij quantity into the result C matrix.
-	//
-	//Try SumInto first, and if that returns a positive error code (meaning
-	//that the location doesn't exist) then use Insert.
-
-	int err = C.SumIntoGlobalValues(global_row, 1,
-					&(C_row_i_import[j]), &global_col);
-	if (err < 0) {
-	  return(err);
-	}
-	if (err > 0) {
-	  err = C.InsertGlobalValues(global_row, 1,
-				     &(C_row_i_import[j]), &global_col);
-	  if (err < 0) {
-	    //If we jump out here, it probably means C is Filled, and doesn't
-	    //have all the necessary nonzero locations.
-	    return(err);
-	  }
-	}
-
-	C_row_i_import[j] = 0.0;
+      if (err > 0) {
+        if (C_filled) {
+          //C is Filled, and doesn't have all the necessary nonzero locations.
+          return(err);
+        }
       }
     }
   }
 
-  delete [] dwork;
+  delete [] C_row_i;
+  delete [] C_colInds;
 
   return(0);
 }
