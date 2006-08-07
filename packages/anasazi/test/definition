@@ -17,6 +17,7 @@
             LOBPCG/LOBPCG_simple.exe,
             BlockDavidson/BlockDavidson_test.exe,
             BlockDavidson/BlockDavidson_solvertest.exe,
+            BlockKrylovSchur/BlockKrylovSchur_solvertest.exe,
             OrthoManager/OrthoManager_test.exe;
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = --verbose;
