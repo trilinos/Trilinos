@@ -102,6 +102,7 @@ Write(const string& Label, const Epetra_RowMatrix& Matrix)
     if (iproc == Comm_.MyPID())
     {
       std::ofstream of(FileName_.c_str(), std::ios::app);
+      of.precision(15);
 
       for (int i = 0; i < Matrix.NumMyRows(); ++i)
       {
@@ -112,7 +113,7 @@ Write(const string& Label, const Epetra_RowMatrix& Matrix)
 
         for (int j = 0; j < NumMyEntries; ++j)
           of << GRID << " " << Matrix.RowMatrixColMap().GID(Indices[j])
-             << " " << Values[j] << endl;
+             << " " << setiosflags(ios::scientific) << Values[j] << endl;
       }
       of.close();
     }
@@ -147,16 +148,18 @@ Write(const string& Label, const Epetra_MultiVector& MultiVector)
       << " Type=\"double\">" << endl;
   }
 
+
   for (int iproc = 0; iproc < Comm_.NumProc(); iproc++)
   {
     if (iproc == Comm_.MyPID())
     {
       std::ofstream of(FileName_.c_str(), std::ios::app);
 
+      of.precision(15);
       for (int i = 0; i < MultiVector.MyLength(); ++i)
       {
         for (int j = 0; j < NumVectors; ++j)
-          of << MultiVector[j][i] << " ";
+          of << setiosflags(ios::scientific) << MultiVector[j][i] << " ";
         of << endl;
       }
       of.close();

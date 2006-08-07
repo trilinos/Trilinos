@@ -142,7 +142,8 @@ Read(const string& Label, Epetra_CrsMatrix*& matrix)
           double val;
           row = atoi((char*)tokens[0].c_str());
           col = atoi((char*)tokens[1].c_str());
-          val = atof((char*)tokens[2].c_str());
+          sscanf((char*)tokens[2].c_str(), "%lg", &val);
+          //val = atof((char*)tokens[2].c_str());
 
           if (map.LID(row) != -1)
             matrix->InsertGlobalValues(row, 1, &val, &col);
