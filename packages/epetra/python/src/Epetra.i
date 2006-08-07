@@ -94,8 +94,7 @@ IntSerialDenseMatrix classes.
 
 // SWIG library includes
 using namespace std;
-%include "std_string.i"
-%include "std_vector.i"
+%include "stl.i"
 %include "exception.i"
 
 // SWIG NumPy interface file
