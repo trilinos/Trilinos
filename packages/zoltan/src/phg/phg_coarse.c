@@ -344,7 +344,7 @@ if (c_hg->fixed)
             ++c_hg->nVtx;
         }
     
-    for (i = 0; i < hg->nVtx; i++)  {    /* loop over every local vertice */
+    for (i = 0; i < hg->nVtx; i++)  {    /* loop over every local vertices */
       if (match[i] != VTX_LNO_TO_GNO(hg, i))  {
               int gx = match[i], proc = VTX_TO_PROC_X(hg, gx);
                             

@@ -237,7 +237,12 @@ int **exp_to_part )         /* list of partitions to which exported objs
   zoltan_hg->HG.redl = MAX(hgp.redl,p);     /* redl needs to be dynamic */
   /* RTHRTH -- redl may need to be scaled by number of procs */
   /* EBEB -- at least make sure redl > #procs */
- 
+
+  if (hgp.UseFixedVtx)
+      hg->bisec_split = 1; /* this will be used only #parts=2
+                              otherwise rdivide will set to appropriate
+                              value */
+  
   if (do_timing)
     ZOLTAN_TIMER_STOP(zz->ZTime, timer_build, zz->Communicator);
    
@@ -606,6 +611,7 @@ int Zoltan_PHG_Initialize_Params(
   err = Zoltan_Assign_Param_Vals(zz->Params, PHG_params, zz->Debug_Level, 
           zz->Proc, zz->Debug_Proc);
 
+  
   nProc = zz->Num_Proc;
   usePrimeComm = 0;
 
