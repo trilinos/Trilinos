@@ -52,8 +52,7 @@ namespace LOCA {
      * the calculations encapsulated in the DerivUtils class may be 
      * incorporated directly into this class and other finite-differencing
      * child classes.
-    */
-
+     */
     class FiniteDifferenceGroup : 
       public virtual LOCA::MultiContinuation::AbstractGroup {
 
@@ -76,9 +75,9 @@ namespace LOCA {
       virtual NOX::Abstract::Group& 
       operator=(const NOX::Abstract::Group& source);
 
-      //! Set the DerivUtils object
+      //! Set the LOCA::DerivUtils object
       virtual void setDerivUtils(
-			     const Teuchos::RefCountPtr<DerivUtils>& deriv);
+			 const Teuchos::RefCountPtr<LOCA::DerivUtils>& deriv);
 
       /*! 
        * Compute \f$\partial F/\partial p\f$ for each parameter \f$p\f$ 

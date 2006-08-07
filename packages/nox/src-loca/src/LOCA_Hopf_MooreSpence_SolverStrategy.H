@@ -109,6 +109,8 @@ namespace LOCA {
 	 * \param dfdp [in] Vector representing df/dp
 	 * \param dCedpReal [in] Vector representing d(Jy-wBz)/dp
 	 * \param dCedpImag [in] Vector representing d(Jz+wBy)/dp
+	 * \param ByVector [in] Vector representing By
+	 * \param mBzVector [in] Vector representing -Bz
 	 * \param w [in] Bifurcation frequency w
 	 */
 	virtual void setBlocks(

@@ -95,11 +95,11 @@ namespace LOCA {
        *       \begin{bmatrix}
        *          G - (Jy-wBz)_x A & (Jy-wBz)_p - (Jy-wBz)_x b & -Bz \\
        *          H - (Jz+wBy)_x A & (Jz+wBy)_p - (Jy-wBz)_x b &  By
-       *       \end{bmatrix}
+       *       \end{bmatrix} \\
        *       \lambda &= \frac{(\phi^T h)(\phi^T C-u)-(\phi^T g)(\phi^T D-v)}
        *                       {(\phi^T h)(\phi^T e)-(\phi^T g)(\phi^T f)} \\
        *       \omega &= \frac{\phi^T D - v - (\phi^T f)\lambda}{\phi^T h} \\ 
-       *       X &= A - b \lambda^T \\
+       *       X &= A - b \lambda \\
        *       \begin{bmatrix}
        *          Y \\
        *          Z
@@ -111,11 +111,11 @@ namespace LOCA {
        *       \begin{bmatrix}
        *          e \\
        *          f
-       *       \end{bmatrix}\lambda^T - 
+       *       \end{bmatrix}\lambda - 
        *       \begin{bmatrix}
        *          g \\
        *          h
-       *       \end{bmatrix}\omega^T
+       *       \end{bmatrix}\omega
        *    \end{split}
        *   \f]
        */
@@ -150,6 +150,8 @@ namespace LOCA {
 	 * \param dfdp [in] Vector representing df/dp
 	 * \param dCedpReal [in] Vector representing d(Jy-wBz)/dp
 	 * \param dCedpImag [in] Vector representing d(Jz+wBy)/dp
+	 * \param ByVector [in] Vector representing By
+	 * \param mBzVector [in] Vector representing -Bz
 	 * \param w [in] Bifurcation frequency w
 	 */
 	virtual void setBlocks(

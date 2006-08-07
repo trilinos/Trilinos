@@ -123,7 +123,7 @@ namespace LOCA {
        * \f]
        *
        * The group stores an underlying group of type 
-       * LOCA::TurningPoint::MinimallyAugmented AbstractGroup to represent 
+       * LOCA::TurningPoint::MinimallyAugmented::AbstractGroup to represent 
        * the equations \f$F(x,p) = 0\f$ and to manipulate the underlying 
        * Jacobian \f$J\f$.  This interface defines methods for computing
        * the derivatives \f$(w^T J v)_x\f$ and \f$(w^T J v)_p\f$ as well.
@@ -247,7 +247,7 @@ namespace LOCA {
 
 	//! Compute the blocks of the Jacobian derivative of \f$G\f$
 	/*!
-	 * This method computes the \f$J\f$, \f$F_pf$, \f$\sigma_x\f$ and 
+	 * This method computes the \f$J\f$, \f$F_p\f$, \f$\sigma_x\f$ and 
 	 * \f$\sigma_p\f$ blocks of the extended Jacobian:
 	 * \f[
 	 *    D_z G(z) = 

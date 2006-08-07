@@ -88,8 +88,7 @@ namespace Anasazi {
      * \return Returns the status of the sorting routine 
      */
     Anasazi::ReturnType
-    sort(Anasazi::Eigensolver<double,MV,OP>* solver, 
-	 int n, double* evals, std::vector<int>* perm = 0) const;
+    sort(Anasazi::Eigensolver<double,Anasazi::LOCASort::MV,Anasazi::LOCASort::OP>* solver, int n, double* evals, std::vector<int>* perm = 0) const;
       
     /*! 
      * \brief Sort the vectors of eigenpairs with respect to the chosen 
@@ -106,8 +105,7 @@ namespace Anasazi {
      * \return Returns the status of the sorting routine 
      */
     Anasazi::ReturnType 
-    sort(Anasazi::Eigensolver<double,MV,OP>* solver, int n, double* r_evals, 
-	 double* i_evals, std::vector<int>* perm = 0) const;
+    sort(Anasazi::Eigensolver<double,Anasazi::LOCASort::MV,Anasazi::LOCASort::OP>* solver, int n, double* r_evals, double* i_evals, std::vector<int>* perm = 0) const;
       
   protected: 
       

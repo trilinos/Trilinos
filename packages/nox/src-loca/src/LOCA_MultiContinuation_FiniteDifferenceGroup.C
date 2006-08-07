@@ -70,9 +70,9 @@ LOCA::MultiContinuation::FiniteDifferenceGroup::operator=(
 
 void
 LOCA::MultiContinuation::FiniteDifferenceGroup::setDerivUtils(
-			      const Teuchos::RefCountPtr<LOCA::DerivUtils>& d)
+			  const Teuchos::RefCountPtr<LOCA::DerivUtils>& deriv)
 {
-  derivPtr = d;
+  derivPtr = deriv;
 }
 
 NOX::Abstract::Group::ReturnType

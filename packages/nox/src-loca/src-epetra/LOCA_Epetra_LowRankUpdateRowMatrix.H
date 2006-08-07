@@ -71,9 +71,12 @@ namespace LOCA {
       //! Constructor 
       /*!
        * \param global_data [in] The global data object
-       * \param jacOperator [in] Jacobian operator J as a row matrix
+       * \param jacRowMatrix [in] Jacobian operator J as a row matrix
        * \param U_multiVec [in] Multivector representing U
        * \param V_multiVec [in] Multivector representing V
+       * \param include_UV_terms [in] Include \f$U V^T\f$ terms in RowMatrix
+       *        routines ExtractRowCopy(), ExtactDiagonalCopy(), InvRowSums(),
+       *        InvColSums(), NormInf() and NormOne().
        */
       LowRankUpdateRowMatrix(
         const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
