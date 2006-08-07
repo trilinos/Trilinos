@@ -41,8 +41,15 @@ AM_CPPFLAGS = $(TEST_INCLUDES)
 
 EXEEXT = .exe
 
+# The Hopf test requries epetraext
+if BUILD_NOX_EPETRAEXT_SUPPORT
+BRUSSHOPFCONT = brussHopfCont
+else
+BRUSSHOPFCONT = 
+endif
+
 if BUILD_LOCA_EPETRA_TESTS
-noinst_PROGRAMS = brussCont brussHopfCont
+noinst_PROGRAMS = brussCont $(BRUSSHOPFCONT)
 endif
 
 brussCont_SOURCES = \

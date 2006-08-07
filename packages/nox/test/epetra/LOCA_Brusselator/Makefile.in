@@ -67,7 +67,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
 @BUILD_LOCA_EPETRA_TESTS_TRUE@noinst_PROGRAMS = brussCont$(EXEEXT) \
-@BUILD_LOCA_EPETRA_TESTS_TRUE@	brussHopfCont$(EXEEXT)
+@BUILD_LOCA_EPETRA_TESTS_TRUE@	$(am__EXEEXT_1)
 subdir = test/epetra/LOCA_Brusselator
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -99,6 +99,8 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
 CONFIG_CLEAN_FILES =
+@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@am__EXEEXT_1 =  \
+@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@	brussHopfCont$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_brussCont_OBJECTS = Basis.$(OBJEXT) Brusselator.$(OBJEXT) \
 	Problem_Interface.$(OBJEXT) brussCont.$(OBJEXT)
@@ -345,6 +347,10 @@ target_vendor = @target_vendor@
 @USING_GNUMAKE_FALSE@TEST_INCLUDES = $(LOCA_EPETRA_TEST_INCLUDES)
 @USING_GNUMAKE_TRUE@TEST_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(LOCA_EPETRA_TEST_INCLUDES))
 AM_CPPFLAGS = $(TEST_INCLUDES)
+@BUILD_NOX_EPETRAEXT_SUPPORT_FALSE@BRUSSHOPFCONT = 
+
+# The Hopf test requries epetraext
+@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@BRUSSHOPFCONT = brussHopfCont
 brussCont_SOURCES = \
 	$(srcdir)/Basis.C $(srcdir)/Basis.H \
 	$(srcdir)/Brusselator.C $(srcdir)/Brusselator.H \
