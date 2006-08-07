@@ -1,5 +1,5 @@
 function out=ml(varargin)
-% Interface to the ML/MLAPI.  Sets Up/Runs/Cleans up the smoothed
+% Interface to the ML/MLAPI.  Sets Up/Runs/Queries/Cleans up the smoothed
 % aggregation algebraic multigrid solver ML.  In general, options
 % are identical to the Teuchos parameters found in the ML
 % documentation. 
@@ -43,18 +43,30 @@ function out=ml(varargin)
 %  h               - The ML handle for the system to clean up.
 %                   Calling 'cleanup' with no handle cleans up all
 %                   the systems.
-%   
+%
+% (4) ml('status',[h]) - prints out status information
+%  Input:
+%  h               - The ML handle for the system to print status for.
+%                   Calling 'status' with no handle prints status
+%                   for all the systems.
+%
 %
 % by: Chris Siefert <csiefer@sandia.gov>
 % Version History
-% 05/16/2006  - Initial Version 
-% 05/22/2006  - Teuchos-friendly version  
+% 08/07/2006  - Added status checking functionality.
 % 08/03/2006  - Added functionality to allow ML to have multiple systems ready
 %               to be solved at once.  This entailed adding the system handle stuff.
+% 05/22/2006  - Teuchos-friendly version  
+% 05/16/2006  - Initial Version 
+
+%
 
 if(nargin>=1 && strcmp(varargin{1},'cleanup'))  
   % Cleanup mode
   out=mlmex(2,varargin{2:nargin});
+elseif(nargin>=1 && strcmp(varargin{1},'status'))  
+  % Status mode
+  out=mlmex(3,varargin{2:nargin});  
 elseif(nargin>=2 && strcmp(varargin{1},'setup'))
   % Setup mode
   out=mlmex(0,varargin{2:nargin});

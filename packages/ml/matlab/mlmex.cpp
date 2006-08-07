@@ -32,10 +32,11 @@
 
    By: Chris Siefert <csiefer@sandia.gov>
    Version History
-   05/16/2006 - Initial Version 
-   05/22/2006 - Teuchos-friendly version 
+   08/07/2006 - Added status checking functionality.
    08/03/2006 - Added functionality to allow ML to have multiple systems ready
                 to be solved at once.  This entailed adding the system handle stuff.
+   05/22/2006 - Teuchos-friendly version 
+   05/16/2006 - Initial Version 
 */
 
 #include <stdio.h>
@@ -72,7 +73,7 @@ extern void _main();
 #define IS_TRUE  1
 
 /* Mode Info */
-typedef enum {MODE_SETUP=0, MODE_SOLVE, MODE_CLEANUP} MODE_TYPE;
+typedef enum {MODE_SETUP=0, MODE_SOLVE, MODE_CLEANUP, MODE_STATUS} MODE_TYPE;
 
 /* Default values */
 #define MLMEX_DEFAULT_LEVELS 10
@@ -157,6 +158,22 @@ void mlapi_data_pack_setup(MLAPI_DATA_PACK *D,int N,int* rowind,int* colptr, dou
   Finalize();
 }/*end mlapi_data_pack_setup*/
 
+/**************************************************************/
+/**************************************************************/
+/**************************************************************/
+/* mlapi_data_pack_status - This function does a status query on the
+   MLAPI_DATA_PACK passed in.
+   Parameters:
+   D       - The MLAPI_DATA_PACK, with Teuchos list set. [I/O]
+   Returns: IS_TRUE
+*/
+int mlapi_data_pack_status(MLAPI_DATA_PACK *D){
+  mexPrintf("**** Problem ID %d ****\n",D->id);
+  if(D->A) mexPrintf("Matrix: %dx%d w/ %d nnz\n",D->A->NumGlobalRows(),D->A->NumGlobalCols(),D->A->NumGlobalNonzeros()); 
+  if(D->List){mexPrintf("Parameter List:\n");D->List->print(cout,1);}
+  mexPrintf("\n");
+  return IS_TRUE;
+}/*end mlapi_data_pack_status*/
 
 /**************************************************************/
 /**************************************************************/
@@ -208,6 +225,14 @@ public:
      Returns: num_probs
   */
   int size();  
+
+  /* forall - runs the given function on add data objects in the list
+     Parameters:
+     func   - function pointer
+     Returns IS_TRUE
+  */  
+  int forall(int (*func)(struct MLAPI_DATA_PACK *L));
+
   
 protected:
   int num_probs;
@@ -288,6 +313,20 @@ int mlapi_data_pack_list::remove(int id){
    Returns: num_probs
 */
 int mlapi_data_pack_list::size(){return num_probs;}
+
+
+/* forall - runs the given function on add data objects in the list
+   Parameters:
+   func   - function pointer
+   Returns IS_TRUE
+*/  
+int mlapi_data_pack_list::forall(int(*func)(struct MLAPI_DATA_PACK *L)){
+  struct MLAPI_DATA_PACK *curr;
+  for(curr=L;curr;curr=curr->next)
+    (*func)(curr);  
+  return IS_TRUE;
+}/*end
+
 /**************************************************************/
 /**************************************************************/
 /**************************************************************/
@@ -364,6 +403,10 @@ MODE_TYPE sanity_check(int nrhs, const mxArray *prhs[]){
     if(nrhs==1 || nrhs==2) rv=MODE_CLEANUP;
     else mexErrMsgTxt("Error: Extraneous args for cleanup\n");
     break;
+  case MODE_STATUS:
+    if(nrhs==1 || nrhs==2) rv=MODE_STATUS;
+    else mexErrMsgTxt("Error: Extraneous args for status\n");
+    break;    
   default:
     mexErrMsgTxt("Error: Invalid input mode\n");
   };
@@ -594,6 +637,27 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] ){
     id=(int*)mxGetData(plhs[0]);id[0]=rv;
     
     break;
+
+  case MODE_STATUS:
+    if(PROBS && nrhs==1){
+      /* Status check on all problems */
+      rv=PROBS->forall(mlapi_data_pack_status);      
+    }/*end if*/
+    else if(PROBS && nrhs==2){
+      /* Status check one problem */
+      id=(int*)mxGetData(prhs[1]);
+      D=PROBS->find(id[0]);
+      if(!D) mexErrMsgTxt("Error: Problem handle not allocated.\n");      
+      rv=mlapi_data_pack_status(D);      
+    }/*end elseif*/
+    else rv=0;
+    
+    /* Set return value */
+    plhs[0]=mxCreateNumericMatrix(1,1,mxINT32_CLASS,mxREAL);
+    id=(int*)mxGetData(plhs[0]);id[0]=rv;
+    
+    break;
+    
   default:
     mexErrMsgTxt("Error: Generic\n");
   };
