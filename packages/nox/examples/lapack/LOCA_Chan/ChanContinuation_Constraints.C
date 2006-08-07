@@ -183,12 +183,6 @@ int main()
 	  << "Stepper failed to converge!" << std::endl;
     }
 
-    // Get the final solution from the stepper
-    Teuchos::RefCountPtr<const LOCA::LAPACK::Group> finalGroup = 
-      Teuchos::rcp_dynamic_cast<const LOCA::LAPACK::Group>(stepper.getSolutionGroup());
-    const NOX::LAPACK::Vector& finalSolution = 
-      dynamic_cast<const NOX::LAPACK::Vector&>(finalGroup->getX());
-
     // Output the parameter list
     if (globalData->locaUtils->isPrintType(NOX::Utils::Parameters)) {
       globalData->locaUtils->out() 

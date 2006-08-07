@@ -174,6 +174,12 @@ int main()
     const NOX::LAPACK::Vector& finalSolution = 
       dynamic_cast<const NOX::LAPACK::Vector&>(finalGroup->getX());
 
+    // Print final solution
+    globalData->locaUtils->out()
+	            << std::endl << "Final solution is " << std::endl;
+    finalGroup->printSolution(finalSolution,
+		    	      finalGroup->getParam("alpha"));
+
     // Output the parameter list
     if (globalData->locaUtils->isPrintType(NOX::Utils::Parameters)) {
       globalData->locaUtils->out() 
