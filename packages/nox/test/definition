@@ -61,7 +61,8 @@
 (FRAMEWORK,INSTALL) {
     DIRS = epetra/LOCA_UnitTests,
            epetra/LOCA_Tcubed,
-           epetra/LOCA_Pitchfork;
+           epetra/LOCA_Pitchfork,
+	   epetra/LOCA_Brusselator;
     EXIT-STATUS = STRING-COMPARISON(All tests passed);
     ARGS = -v;
     COMM = SERIAL, MPI;
