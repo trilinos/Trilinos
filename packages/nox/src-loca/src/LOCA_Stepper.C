@@ -239,7 +239,7 @@ LOCA::Stepper::reset(
 
   printInitializationInfo();
 
-  if (globalData->locaUtils->isPrintType(NOX::Utils::Parameters))
+  if (globalData->locaUtils->isPrintType(NOX::Utils::StepperParameters))
     paramListPtr->print(globalData->locaUtils->out());
 
   return true;
@@ -366,6 +366,8 @@ LOCA::Stepper::finish(LOCA::Abstract::Iterator::IteratorStatus itStatus)
     // Create predictor strategy
     Teuchos::RefCountPtr<Teuchos::ParameterList> lastStepPredictorParams = 
       parsedParams->getSublist("Last Step Predictor");
+    // change default method to constant to avoid infinite stack recursion
+    lastStepPredictorParams->get("Method", "Constant");  
     predictor = globalData->locaFactory->createPredictorStrategy(
 						     parsedParams,
 						     lastStepPredictorParams);
@@ -757,7 +759,7 @@ LOCA::Stepper::printInitializationInfo()
      globalData->locaUtils->out() 
        << "Beginning Continuation Run \n"
        << "Stepper Method:             " 
-       << stepperList->get("Continuation Method", "None")
+       << stepperList->get("Continuation Method", "Arc Length")
        << "\n"
        << "Initial Parameter Value = " 
        << globalData->locaUtils->sciformat(startValue)
@@ -804,7 +806,7 @@ LOCA::Stepper::printStartStep()
 	<< std::endl;
       globalData->locaUtils->out() 
 	<< "Continuation Method: " 
-	<< stepperList->get("Continuation Method", "None")
+	<< stepperList->get("Continuation Method", "Arc Length")
 	<< std::endl;
       globalData->locaUtils->out() 
 	<< "Current step size  = " 

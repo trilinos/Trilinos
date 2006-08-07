@@ -58,7 +58,7 @@ namespace LOCA {
      * The parameters used by this class supplied in the constructor are 
      * the same as used by the Constant class in addition to:
      * <ul>
-     * <li> "Aggressiveness" - Aggressiveness factor \f$a\f$ (Default 0.0)
+     * <li> "Aggressiveness" - Aggressiveness factor \f$a\f$ (Default 0.5)
      * </ul>
      */
     class Adaptive : public LOCA::StepSize::Constant {

@@ -30,6 +30,8 @@
 // ************************************************************************
 //@HEADER
 
+#include "Teuchos_ParameterList.hpp"
+
 #include "LOCA_MultiPredictor_Secant.H"
 #include "LOCA_GlobalData.H"
 #include "NOX_Utils.H"
@@ -52,6 +54,8 @@ LOCA::MultiPredictor::Secant::Secant(
 {
   Teuchos::RefCountPtr<Teuchos::ParameterList> firstStepList = 
     topParams->getSublist("First Step Predictor");
+  // change default method to constant to avoid infinite stack recursion
+  firstStepList->get("Method", "Constant");
   firstStepPredictor = globalData->locaFactory->createPredictorStrategy(
 							       topParams,
 							       firstStepList);

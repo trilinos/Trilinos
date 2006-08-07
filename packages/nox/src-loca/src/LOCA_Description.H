@@ -118,11 +118,10 @@ The parameter list passed to the Stepper has two sublists, "LOCA" and "NOX".  Th
      <ul>
      <li> "Stepper" sublist -- used by LOCA::Stepper to set parameters relevant for continuation run
           <ul>
-          <li> "Continuation Method" -- [string] (default: "Natural") Type of continuation to use.  Choices are:
+          <li> "Continuation Method" -- [string] (default: "Arc Length") Type of continuation to use.  Choices are:
 	          <ul>
                   <li> "Natural" -- Natural continuation (LOCA::Continuation::NaturalGroup)
                   <li> "Arc Length" -- Pseudo arc-length continuation using bordering (LOCA::Continuation::ArcLengthGroup)
-                  <li> "Householder Arc Length" -- Pseudo arc-length continuation using Householder transformations (LOCA::Continuation::HouseholderGroup)
                   </ul>
 	  <li> "Continuation Parameter" -- [string] (Must be supplied) Name of continuation parameter
 	  <li> "Initial Value" -- [double] (Must be supplied) Initial value of continuation parameter
@@ -132,7 +131,7 @@ The parameter list passed to the Stepper has two sublists, "LOCA" and "NOX".  Th
 	  <li> "Max Nonlinear Iterations" -- [int] (default: 15) Maximum number of nonlinear iterations per continuation step
           <li> "Enable Arc Length Scaling" -- [bool] (default: true) Enable arc-length scaling to equilibrate solution and parameter components to arc-length equations (see LOCA::Continuation::ArcLengthGroup)
 	  <li> "Goal Arc Length Parameter Contribution" -- [double] (default: 0.5) Goal for parameter contribution to arc-length equation
-	  <li> "Max Arc Length Parameter Contribution" -- [double] (default: 0.0) Max for parameter contribution to arc-length equation, triggering rescaling
+	  <li> "Max Arc Length Parameter Contribution" -- [double] (default: 0.8) Max for parameter contribution to arc-length equation, triggering rescaling
 	  <li> "Initial Scale Factor" -- [double] (default: 1.0) Initial scale factor for parameter term of arc-length equation
 	  <li> "Min Scale Factor" -- [double] (default: 1.0e-3) Minimum scale factor for scaling parameter term of arc-length equation
 	  <li> "Enable Tangent Factor Step Size Scaling" -- [bool] (default: false) Enable step size scaling by cosine between two consective tangent vectors \f$v_0\f$ and \f$v_1\f$ to continuation curve:  \f$|v_0\cdot v_1|^{\alpha}\f$ where \f$\alpha\f$ is the tangent factor exponent.
@@ -140,7 +139,7 @@ The parameter list passed to the Stepper has two sublists, "LOCA" and "NOX".  Th
 	  <li> "Tangent Factor Exponent" -- [double] (default: 1.0) Exponent on the cosine between two consecutive tangent vectors, which then modifies the step size
 	  <li> "Compute Eigenvalues" -- [bool] (default: false) Flag for requesting eigenvalue calculation after each continuation step
 	  </ul>
-     <li> "Bifurcation" sublist -- used by LOCA::Bifurcation::Manager to determine what type of bifurcation calculation, if any, to use
+     <li> "Bifurcation" sublist -- used by LOCA::Bifurcation::Factory to determine what type of bifurcation calculation, if any, to use
           <ul>
           <li> "Method" -- [string] (default: "None") Bifurcation method to use.  Choices are
                <ul>
@@ -163,7 +162,7 @@ The parameter list passed to the Stepper has two sublists, "LOCA" and "NOX".  Th
           </ul>
      <li> "Predictor" sublist -- used by LOCA::Predictor::Manager to determine what type of predictor to use for each continuation step
           <ul>
-	  <li> "Method" -- [string] (default: "Constant") Predictor method to use for computing the initial guess for each continuation step.  Choices are 
+	  <li> "Method" -- [string] (default: "Secant") Predictor method to use for computing the initial guess for each continuation step.  Choices are 
                  <ul>
                  <li> "Constant" -- Use previous solution as initial guess for next step (LOCA::Predictor::Constant)
                  <li> "Secant" -- Use secant vector to continuation curve to compute initial guess (LOCA::Predictor::Secant)
@@ -176,7 +175,7 @@ The parameter list passed to the Stepper has two sublists, "LOCA" and "NOX".  Th
 	  </ul>
      <li> "Step Size" sublist -- used by LOCA::StepSize::Manager to determine step size constrol strategies
           <ul>
-	  <li> "Method" -- [string] (default: "Constant") Step size control strategy to use.  Choices are
+	  <li> "Method" -- [string] (default: "Adaptive") Step size control strategy to use.  Choices are
                 <ul>
                 <li> "Constant" -- Use a constant step size in general, reducing the step size after a failure and increasing step size back up to original value after subsequent successes (see LOCA::StepSize::Constant)
                 <li> "Adaptive" -- Use an adaptive step size control strategy that adjusts step size according to the number of Newton iterations per step (see LOCA::StepSize::Adaptive)
@@ -185,7 +184,7 @@ The parameter list passed to the Stepper has two sublists, "LOCA" and "NOX".  Th
 	  <li> "Max Step Size" -- [double] (default: 1.0e+12) Maximum parameter step size
 	  <li> "Failed Step Reduction Factor" -- [double] (default: 0.5) Factor by which step size is reduced after a failed step
 	  <li> "Successful Step Increase Factor" - [double] (default: 1.26) Factor by which step size is increased after a successful step when the step size is smaller than the initial step size (Constant step size method only). 
-	  <li> "Aggressiveness" -- [double] (default: 0.0) Aggressiveness factor in adaptive step size adjustment
+	  <li> "Aggressiveness" -- [double] (default: 0.5) Aggressiveness factor in adaptive step size adjustment
 	  </ul>
      <li> "Utilities" sublist -- used by LOCA::Utils to control screen output
           <ul>

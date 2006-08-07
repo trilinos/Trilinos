@@ -62,9 +62,9 @@ namespace LOCA {
      * <ul>
      * <li> "Method" - Name of the predictor method. Valid choices are
      *   <ul>
-     *   <li> "Constant" (LOCA::MultiPredictor::Constant) [Default]
+     *   <li> "Constant" (LOCA::MultiPredictor::Constant)
      *   <li> "Tangent" (LOCA::MultiPredictor::Tangent) 
-     *   <li> "Secant" (LOCA::MultiPredictor::Secant) 
+     *   <li> "Secant" (LOCA::MultiPredictor::Secant) [Default]
      *   <li> "Random" (LOCA::MultiPredictor::Random)
      *   <li> "Restart" (LOCA::MultiPredictor::Restart)
      *   </ul>

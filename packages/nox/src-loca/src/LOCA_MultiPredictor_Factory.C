@@ -120,5 +120,5 @@ const string&
 LOCA::MultiPredictor::Factory::strategyName(
 				  Teuchos::ParameterList& predictorParams) const
 {
-  return predictorParams.get("Method", "Constant");
+  return predictorParams.get("Method", "Secant");
 }

@@ -73,7 +73,7 @@ namespace LOCA {
      * <li> "Enable Arc Length Scaling" -- [bool] (default: true)
      * <li> "Initial Scale Factor" -- [double] (default: 1.0)
      * <li> "Goal Arc Length Parameter Contribution" -- [double] (default: 0.5)
-     * <li> "Max Arc Length Parameter Contribution" -- [double] (default: 0.0)
+     * <li> "Max Arc Length Parameter Contribution" -- [double] (default: 0.8)
      * <li> "Min Scale Factor" -- [double] (default: 1.0e-3)
      * </ul>
      * Whether this scaling method is used is determined by the

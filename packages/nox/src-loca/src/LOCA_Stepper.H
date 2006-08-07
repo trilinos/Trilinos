@@ -69,14 +69,14 @@ namespace LOCA {
 namespace LOCA {
 
   /*!
-    \brief Implementation of LOCA::Abstract::Iterator for computing points
-    along a continuation curve.
-  */
+   * \brief Implementation of LOCA::Abstract::Iterator for computing points
+   * along a continuation curve.
+   */
   /*!
-    The %Stepper class implements the pure virtual methods of the
-    LOCA::Abstract::Iterator for iteratively computing points along a
-    continuation curve.
-  */
+   * The %Stepper class implements the pure virtual methods of the
+   * LOCA::Abstract::Iterator for iteratively computing points along a
+   * continuation curve.
+   */
 
   class Stepper : public LOCA::Abstract::Iterator {
 

@@ -98,5 +98,5 @@ const string&
 LOCA::StepSize::Factory::strategyName(
 				  Teuchos::ParameterList& stepsizeParams) const
 {
-  return stepsizeParams.get("Method", "Constant");
+  return stepsizeParams.get("Method", "Adaptive");
 }

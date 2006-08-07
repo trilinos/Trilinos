@@ -45,7 +45,7 @@ LOCA::StepSize::Adaptive::Adaptive(
   agrValue(0.0),
   maxNonlinearSteps(0.0)
 {
-  agrValue = stepsizeParams->get("Aggressiveness", 0.0);
+  agrValue = stepsizeParams->get("Aggressiveness", 0.5);
 
   // Get maximum number of nonlinear iterations from stepper parameters
   Teuchos::RefCountPtr<Teuchos::ParameterList> p = 

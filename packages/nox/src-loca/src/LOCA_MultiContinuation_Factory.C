@@ -109,5 +109,5 @@ const string&
 LOCA::MultiContinuation::Factory::strategyName(
 				  Teuchos::ParameterList& stepperParams) const
 {
-  return stepperParams.get("Continuation Method", "Natural");
+  return stepperParams.get("Continuation Method", "Arc Length");
 }

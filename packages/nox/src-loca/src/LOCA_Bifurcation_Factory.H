@@ -85,6 +85,11 @@ namespace LOCA {
      *           <li> "Moore-Spence" [Default]
      *                (LOCA::Pitchfork::MooreSpence::ExtendedGroup)
      *           </ul>
+     *      <li> For Hopf bifurcations:
+     *           <ul>
+     *           <li> "Moore-Spence" [Default]
+     *                (LOCA::Hopf::MooreSpence::ExtendedGroup)
+     *           </ul>
      *      </ul>
      * </ul>
      */

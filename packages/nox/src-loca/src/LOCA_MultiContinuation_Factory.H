@@ -66,8 +66,8 @@ namespace LOCA {
      * <li> "Continuation Method" - Name of the continuation method. Valid 
      *      choices are
      *   <ul>
-     *   <li> "Natural" (LOCA::MultiContinuation::NaturalGroup) [Default]
-     *   <li> "Arc Length" (LOCA::MultiContinuation::ArcLengthGroup)
+     *   <li> "Arc Length" (LOCA::MultiContinuation::ArcLengthGroup) [Default]
+     *   <li> "Natural" (LOCA::MultiContinuation::NaturalGroup)
      *   </ul>
      * </ul>
      */
