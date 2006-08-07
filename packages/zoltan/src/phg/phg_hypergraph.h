@@ -26,7 +26,7 @@ extern "C" {
  ********************************************************************/
     
 typedef struct {
-   int info;    /* primarily for debugging recursive algorithms;initially 0 */
+   int info;    /* depth of V-cycle for this hypergraph; initially 0 */
    int nVtx;    /* number of vertices, |V| */
    int nEdge;   /* Size of neigh array; 2|E| */
    int nDim;    /* Number of dimensions for a vertex's coordinate */
@@ -57,7 +57,7 @@ typedef struct {
  * hypergraph).
  ********************************************************************/
 typedef struct {
-  int info;             /* primarily for debugging recursive algs;initially 0 */
+  int info;             /* depth of recursion in V-cycle; initially 0 */
   int nVtx;             /* number of vertices on this processor */
   int nEdge;            /* number of hyperedges on this processor */
   int nPins;            /* number of pins (nonzeros) on this processor */
