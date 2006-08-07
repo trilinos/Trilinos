@@ -376,7 +376,7 @@ LOCA::LAPACK::Group::isComplex() const
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::LAPACK::Group:: computeComplex(double frequency)
+LOCA::LAPACK::Group::computeComplex(double frequency)
 {
   string callingFunction = 
     "LOCA::LAPACK::computeComplex()";
