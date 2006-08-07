@@ -46,10 +46,6 @@ xyztPrec(EpetraExt::BlockCrsMatrix &jacobian_,
 	 Teuchos::ParameterList &precLSParams_, 
 	 const Teuchos::RefCountPtr<EpetraExt::MultiMpiComm> globalComm_) :  
   jacobian(jacobian_),
-  splitVec(0),
-  splitRes(0),
-  splitVecOld(0),
-  residual(0),
   splitJac(splitJac_),
   splitMass(splitMass_),
   solution(solution_),
@@ -62,7 +58,11 @@ xyztPrec(EpetraExt::BlockCrsMatrix &jacobian_,
   jacobianBlock(std::vector<Teuchos::RefCountPtr<Epetra_CrsMatrix> >(1 + globalComm_->NumTimeStepsOnDomain())),
   massBlock(std::vector<Teuchos::RefCountPtr<Epetra_CrsMatrix> >(1 + globalComm_->NumTimeStepsOnDomain())),
   diagBlockSubdiag(std::vector<Teuchos::RefCountPtr<Epetra_Vector> >(globalComm_->NumTimeStepsOnDomain())),
-    isPeriodic(precLSParams_.get("Periodic",false))
+  residual(0),
+  splitVec(0),
+  splitRes(0),
+  splitVecOld(0), 
+  isPeriodic(precLSParams_.get("Periodic",false))
 {
 
   string prec = lsParams.get("XYZTPreconditioner","None");
@@ -571,6 +571,7 @@ computePreconditioner(const Epetra_Vector& x,
 	}
       }
     }
+    return true;
   }
   else {
     cout << "No Preconditioner" << endl;
