@@ -302,9 +302,10 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(
   [Allows aztecoo/thyra adapters to use ifpack in examples and tests.],
   [Allows aztecoo/thyra adapters to use ifpack in examples and tests.  Can be overridden with --disable-aztecoo-ifpack.])
 
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(epetraext, [Enables EPETRAEXT examples.],
-                      AZTECOO_EPETRAEXT)
-AM_CONDITIONAL(HAVE_AZTECOO_EPETRAEXT, test "X$ac_cv_use_epetraext" = "Xyes")
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(aztecoo, epetraext, AZTECOO_EPETRAEXT, 
+  HAVE_AZTECOO_EPETRAEXT, yes, 
+  [Enables EPETRAEXT examples.],
+  [Enables EPETRAEXT examples.  Can be overridden with --disable-aztecoo-epetraext.])
 
 
 # ------------------------------------------------------------------------

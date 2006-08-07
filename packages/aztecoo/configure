@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP USING_EXPORT_MAKEFILES_TRUE USING_EXPORT_MAKEFILES_FALSE PERL_EXE HAVE_PERL USING_PERL_TRUE USING_PERL_FALSE USING_GNUMAKE_TRUE USING_GNUMAKE_FALSE EGREP LIBOBJS HAVE_AZTECOO_TEUCHOS_TRUE HAVE_AZTECOO_TEUCHOS_FALSE BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE BUILD_AZTECOO_PYTHON_TRUE BUILD_AZTECOO_PYTHON_FALSE PYTHON_USE_TRUE PYTHON_USE_FALSE PYTHON PYTHON_PREFIX PYTHON_EXECPREFIX BUILD_PYTHON_TRUE BUILD_PYTHON_FALSE PYTHON_CSPEC PYTHON_LSPEC WITH_SWIG SWIG SWIG_LIB SWIG_PYTHON_OPT SWIG_PYTHON_CPPFLAGS HAVE_SWIG_TRUE HAVE_SWIG_FALSE GNU_HAVE_SWIG ENABLE_AZTECOO_THYRA_TRUE ENABLE_AZTECOO_THYRA_FALSE ENABLE_EPETRAEXT_THYRA_TRUE ENABLE_EPETRAEXT_THYRA_FALSE ENABLE_AZTECOO_IFPACK_TRUE ENABLE_AZTECOO_IFPACK_FALSE _TRUE _FALSE HAVE_AZTECOO_EPETRAEXT_TRUE HAVE_AZTECOO_EPETRAEXT_FALSE FLIBS BLAS_LIBS LAPACK_LIBS TRILINOS_TEMPLATE_OBJS ac_aux_dir LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP USING_EXPORT_MAKEFILES_TRUE USING_EXPORT_MAKEFILES_FALSE PERL_EXE HAVE_PERL USING_PERL_TRUE USING_PERL_FALSE USING_GNUMAKE_TRUE USING_GNUMAKE_FALSE EGREP LIBOBJS HAVE_AZTECOO_TEUCHOS_TRUE HAVE_AZTECOO_TEUCHOS_FALSE BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE BUILD_AZTECOO_PYTHON_TRUE BUILD_AZTECOO_PYTHON_FALSE PYTHON_USE_TRUE PYTHON_USE_FALSE PYTHON PYTHON_PREFIX PYTHON_EXECPREFIX BUILD_PYTHON_TRUE BUILD_PYTHON_FALSE PYTHON_CSPEC PYTHON_LSPEC WITH_SWIG SWIG SWIG_LIB SWIG_PYTHON_OPT SWIG_PYTHON_CPPFLAGS HAVE_SWIG_TRUE HAVE_SWIG_FALSE GNU_HAVE_SWIG ENABLE_AZTECOO_THYRA_TRUE ENABLE_AZTECOO_THYRA_FALSE ENABLE_EPETRAEXT_THYRA_TRUE ENABLE_EPETRAEXT_THYRA_FALSE ENABLE_AZTECOO_IFPACK_TRUE ENABLE_AZTECOO_IFPACK_FALSE HAVE_AZTECOO_EPETRAEXT_TRUE HAVE_AZTECOO_EPETRAEXT_FALSE FLIBS BLAS_LIBS LAPACK_LIBS TRILINOS_TEMPLATE_OBJS ac_aux_dir LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -927,10 +927,10 @@ Optional Features:
                           --disable-aztecoo-ifpack.
   --enable-aztecoo-ifpack Allows aztecoo/thyra adapters to use ifpack in
                           examples and tests.
-  --enable-Enables EPETRAEXT examples.
-
-  --enable-epetraext-Enables EPETRAEXT examples.
-
+  --enable-epetraext      Enables EPETRAEXT examples. Can be overridden with
+                          --disable-aztecoo-epetraext.
+  --enable-aztecoo-epetraext
+                          Enables EPETRAEXT examples.
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -8877,32 +8877,32 @@ fi
 
 
 
-# Check whether --enable-Enables EPETRAEXT examples. or --disable-Enables EPETRAEXT examples. was given.
-if test "${enable_Enables EPETRAEXT examples.+set}" = set; then
-  enableval="$enable_Enables EPETRAEXT examples."
-  ac_cv_implicit_use_Enables EPETRAEXT examples.=$enableval
+# Check whether --enable-epetraext or --disable-epetraext was given.
+if test "${enable_epetraext+set}" = set; then
+  enableval="$enable_epetraext"
+  ac_cv_implicit_use_epetraext=$enableval
 else
-  ac_cv_implicit_use_Enables EPETRAEXT examples.=no
+  ac_cv_implicit_use_epetraext=no
 fi;
 
-if test "X" != "Xno"; then
-  ac_cv_epetraext_using_Enables EPETRAEXT examples._default=$ac_cv_implicit_use_Enables EPETRAEXT examples.
+if test "Xyes" != "Xno"; then
+  ac_cv_aztecoo_using_epetraext_default=$ac_cv_implicit_use_epetraext
 else
-  ac_cv_epetraext_using_Enables EPETRAEXT examples._default=no
+  ac_cv_aztecoo_using_epetraext_default=no
 fi
 
-# Check whether --enable-epetraext-Enables EPETRAEXT examples. or --disable-epetraext-Enables EPETRAEXT examples. was given.
-if test "${enable_epetraext_Enables EPETRAEXT examples.+set}" = set; then
-  enableval="$enable_epetraext_Enables EPETRAEXT examples."
-  ac_cv_use_Enables EPETRAEXT examples.=$enableval
+# Check whether --enable-aztecoo-epetraext or --disable-aztecoo-epetraext was given.
+if test "${enable_aztecoo_epetraext+set}" = set; then
+  enableval="$enable_aztecoo_epetraext"
+  ac_cv_use_epetraext=$enableval
 else
-  ac_cv_use_Enables EPETRAEXT examples.=$ac_cv_epetraext_using_Enables EPETRAEXT examples._default
+  ac_cv_use_epetraext=$ac_cv_aztecoo_using_epetraext_default
 fi;
 
-echo "$as_me:$LINENO: checking whether to build optional Enables EPETRAEXT examples. dependent code in epetraext" >&5
-echo $ECHO_N "checking whether to build optional Enables EPETRAEXT examples. dependent code in epetraext... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking whether to build optional epetraext dependent code in aztecoo" >&5
+echo $ECHO_N "checking whether to build optional epetraext dependent code in aztecoo... $ECHO_C" >&6
 
-if test "X$ac_cv_use_Enables EPETRAEXT examples." != "Xno"; then
+if test "X$ac_cv_use_epetraext" != "Xno"; then
   echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
 
@@ -8917,18 +8917,6 @@ fi
 
 
 
-if test "X$ac_cv_use_Enables EPETRAEXT examples." = "Xyes"; then
-  _TRUE=
-  _FALSE='#'
-else
-  _TRUE='#'
-  _FALSE=
-fi
-
-
-
-
-
 if test "X$ac_cv_use_epetraext" = "Xyes"; then
   HAVE_AZTECOO_EPETRAEXT_TRUE=
   HAVE_AZTECOO_EPETRAEXT_FALSE='#'
@@ -8936,6 +8924,8 @@ else
   HAVE_AZTECOO_EPETRAEXT_TRUE='#'
   HAVE_AZTECOO_EPETRAEXT_FALSE=
 fi
+
+
 
 
 
@@ -9035,7 +9025,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:9038: \"$ac_link\") >&5
+(eval echo $as_me:9028: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9113,7 +9103,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:9116: \"$ac_link\") >&5
+(eval echo $as_me:9106: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -12085,7 +12075,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:12088: \"$ac_link\") >&5
+(eval echo $as_me:12078: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -12163,7 +12153,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:12166: \"$ac_link\") >&5
+(eval echo $as_me:12156: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -12677,13 +12667,6 @@ if test -z "${ENABLE_AZTECOO_IFPACK_TRUE}" && test -z "${ENABLE_AZTECOO_IFPACK_F
   { { echo "$as_me:$LINENO: error: conditional \"ENABLE_AZTECOO_IFPACK\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"ENABLE_AZTECOO_IFPACK\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${_TRUE}" && test -z "${_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -13377,8 +13360,6 @@ s,@ENABLE_EPETRAEXT_THYRA_TRUE@,$ENABLE_EPETRAEXT_THYRA_TRUE,;t t
 s,@ENABLE_EPETRAEXT_THYRA_FALSE@,$ENABLE_EPETRAEXT_THYRA_FALSE,;t t
 s,@ENABLE_AZTECOO_IFPACK_TRUE@,$ENABLE_AZTECOO_IFPACK_TRUE,;t t
 s,@ENABLE_AZTECOO_IFPACK_FALSE@,$ENABLE_AZTECOO_IFPACK_FALSE,;t t
-s,@_TRUE@,$_TRUE,;t t
-s,@_FALSE@,$_FALSE,;t t
 s,@HAVE_AZTECOO_EPETRAEXT_TRUE@,$HAVE_AZTECOO_EPETRAEXT_TRUE,;t t
 s,@HAVE_AZTECOO_EPETRAEXT_FALSE@,$HAVE_AZTECOO_EPETRAEXT_FALSE,;t t
 s,@FLIBS@,$FLIBS,;t t
