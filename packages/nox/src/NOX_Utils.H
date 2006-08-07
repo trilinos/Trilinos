@@ -125,7 +125,9 @@ public:				// types
     StepperIteration = 0x0100,
     //! 2^9 -- For LOCA
     StepperDetails = 0x0200,
-    //! 2^10
+    //! 2^10 -- For LOCA
+    StepperParameters = 0x0400,
+    //! 2^12
     Debug = 0x01000
   };
 
