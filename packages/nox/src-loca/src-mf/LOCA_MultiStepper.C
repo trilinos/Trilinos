@@ -149,7 +149,7 @@ LOCA::MultiStepper::reset(
 
   printInitializationInfo();
 
-  if (globalData->locaUtils->isPrintType(NOX::Utils::Parameters))
+  if (globalData->locaUtils->isPrintType(NOX::Utils::StepperParameters))
     paramListPtr->print(globalData->locaUtils->out());
   
   return true;
