@@ -29,6 +29,7 @@
 #include "zz_id_const.h"
 #include "zoltan_util.h"
 #include "par_const.h"
+#include "ha_drum.h"
 #include "zoltan_timer.h"
 
 #ifdef __cplusplus
@@ -444,6 +445,32 @@ struct Zoltan_Struct {
   void *Get_Fixed_Obj_List_Data;            /* Ptr to user defined data to be
                                                passed to Get_Fixed_Obj_List()*/
   /***************************************************************************/
+  ZOLTAN_HIER_NUM_LEVELS_FN *Get_Hier_Num_Levels;
+                                       /* Function that returns the number
+                                          of levels for hierarchical 
+                                          partitioning */
+  ZOLTAN_HIER_NUM_LEVELS_FN *Get_Hier_Num_Levels_Fort;
+                                       /* Fortran version             */
+  void *Get_Hier_Num_Levels_Data;      /* Ptr to user defined data to be passed
+                                          to Get_Hier_Num_Levels() */
+  ZOLTAN_HIER_PARTITION_FN *Get_Hier_Partition;
+                                       /* Function that returns the partition
+                                          for process at a given level in
+                                          hierarchical partitioning */
+  ZOLTAN_HIER_PARTITION_FN *Get_Hier_Partition_Fort;
+                                       /* Fortran version             */
+  void *Get_Hier_Partition_Data;       /* Ptr to user defined data to be passed
+                                          to Get_Hier_Partition() */
+  ZOLTAN_HIER_METHOD_FN *Get_Hier_Method;
+                                       /* Function that allows app to set the
+                                          LB method and params for process 
+                                          at a given level in
+                                          hierarchical partitioning */
+  ZOLTAN_HIER_METHOD_FN *Get_Hier_Method_Fort;
+                                       /* Fortran version             */
+  void *Get_Hier_Method_Data;          /* Ptr to user defined data to be passed
+                                          to Get_Hier_Method() */
+  /***************************************************************************/
   ZOLTAN_OBJ_SIZE_FN *Get_Obj_Size;    /* Function that returns the size of
                                           contiguous memory needed to store
                                           the data for a single object for
@@ -503,6 +530,7 @@ struct Zoltan_Struct {
   /***************************************************************************/
   struct Zoltan_LB_Struct LB;          /* Struct with info for load balancing */
   struct Zoltan_Migrate_Struct Migrate;/* Struct with info for migration.     */
+  struct Zoltan_Drum_Struct Drum;      /* Struct with info for DRUM interface */
 };
 
 typedef struct Zoltan_Struct ZZ;

@@ -96,6 +96,8 @@ ZZ *zz;
 
   Zoltan_LB_Init(&(zz->LB), zz->Num_Proc);
   Zoltan_Migrate_Init(&(zz->Migrate));
+  /* Initialize DRUM-related structure field */
+  Zoltan_Drum_Init_Struct(&(zz->Drum));
 
   zz->ZTime = Zoltan_Timer_Create(ZOLTAN_TIMER_DEF);
 
@@ -150,6 +152,8 @@ int Zoltan_Copy_To(ZZ *to, ZZ const *from)
 
   memset(&(to->LB), 0, sizeof(struct Zoltan_LB_Struct));
   Zoltan_LB_Copy_Struct(to, from);
+
+  Zoltan_Drum_Copy_Struct(&(to->Drum), &(from->Drum));
 
   return 0;
 }
@@ -206,6 +210,9 @@ static void Zoltan_Free_Structures(
     zz->LB.Free_Structure(zz);
 
  /* Add calls to additional module-specific free routines here.  */
+
+  /* DRUM/Zoltan interface */
+  Zoltan_Drum_Free_Structure(zz);
 }
 
 /*****************************************************************************/
@@ -327,6 +334,16 @@ static void Zoltan_Init(ZZ* zz)
   zz->Pack_Obj_Data = NULL;
   zz->Unpack_Obj_Data = NULL;
   zz->Get_Obj_Size_Data = NULL;
+
+  zz->Get_Hier_Num_Levels = NULL;
+  zz->Get_Hier_Partition = NULL;
+  zz->Get_Hier_Method = NULL;
+  zz->Get_Hier_Num_Levels_Fort = NULL;
+  zz->Get_Hier_Partition_Fort = NULL;
+  zz->Get_Hier_Method_Fort = NULL;
+  zz->Get_Hier_Num_Levels_Data = NULL;
+  zz->Get_Hier_Partition_Data = NULL;
+  zz->Get_Hier_Method_Data = NULL;
 }
 
 #ifdef __cplusplus

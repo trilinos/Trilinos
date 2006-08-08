@@ -225,6 +225,18 @@ int ierr;
     ierr = Zoltan_Set_Fixed_Obj_List_Fn(zz, 
                   (ZOLTAN_FIXED_OBJ_LIST_FN *) fn, data);
     break;
+  case ZOLTAN_HIER_NUM_LEVELS_FN_TYPE:
+    ierr = Zoltan_Set_Hier_Num_Levels_Fn(zz,
+		  (ZOLTAN_HIER_NUM_LEVELS_FN *) fn, data);
+    break;
+  case ZOLTAN_HIER_PARTITION_FN_TYPE:
+    ierr = Zoltan_Set_Hier_Partition_Fn(zz,
+		  (ZOLTAN_HIER_PARTITION_FN *) fn, data);
+    break;
+  case ZOLTAN_HIER_METHOD_FN_TYPE:
+    ierr = Zoltan_Set_Hier_Method_Fn(zz,
+		  (ZOLTAN_HIER_METHOD_FN *) fn, data);
+    break;
   default:
     sprintf(msg, "ZOLTAN_FN_TYPE %d is invalid.\n"
             "Value must be in range 0 to %d.", fn_type, ZOLTAN_MAX_FN_TYPES);
@@ -737,6 +749,45 @@ int Zoltan_Set_Fixed_Obj_List_Fn(
 {
   zz->Get_Fixed_Obj_List = fn;
   zz->Get_Fixed_Obj_List_Data = data;
+  return ZOLTAN_OK;
+}
+
+/*****************************************************************************/
+
+int Zoltan_Set_Hier_Num_Levels_Fn(
+  ZZ *zz, 
+  ZOLTAN_HIER_NUM_LEVELS_FN *fn, 
+  void *data
+)
+{
+  zz->Get_Hier_Num_Levels = fn;
+  zz->Get_Hier_Num_Levels_Data = data;
+  return ZOLTAN_OK;
+}
+
+/*****************************************************************************/
+
+int Zoltan_Set_Hier_Partition_Fn(
+  ZZ *zz, 
+  ZOLTAN_HIER_PARTITION_FN *fn, 
+  void *data
+)
+{
+  zz->Get_Hier_Partition = fn;
+  zz->Get_Hier_Partition_Data = data;
+  return ZOLTAN_OK;
+}
+
+/*****************************************************************************/
+
+int Zoltan_Set_Hier_Method_Fn(
+  ZZ *zz, 
+  ZOLTAN_HIER_METHOD_FN *fn, 
+  void *data
+)
+{
+  zz->Get_Hier_Method = fn;
+  zz->Get_Hier_Method_Data = data;
   return ZOLTAN_OK;
 }
 
