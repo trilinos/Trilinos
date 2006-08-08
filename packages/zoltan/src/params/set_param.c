@@ -37,6 +37,12 @@ extern "C" {
 #ifdef ZOLTAN_HG
 #include "phg_const.h"    
 #endif
+#ifdef ZOLTAN_HIER
+#include "hier.h"
+#endif
+#ifdef ZOLTAN_DRUM
+#include "ha_drum.h"
+#endif
 #include "coloring_const.h"
 
 static int add_param(ZZ *, char **, char **, int);
@@ -57,6 +63,12 @@ static ZOLTAN_SET_PARAM_FN * Param_func[] = {
        Zoltan_Order_Set_Param,
 #ifdef ZOLTAN_HG
        Zoltan_PHG_Set_Param,
+#endif
+#ifdef ZOLTAN_HIER
+       Zoltan_Hier_Set_Param,
+#endif
+#ifdef ZOLTAN_DRUM
+       Zoltan_Drum_Set_Param,
 #endif
        /* Zoltan_Set_Machine_Param, */
        Zoltan_Color_Set_Param,
