@@ -37,7 +37,7 @@ class SwigFile:
 
     # Define the regular expressions
     moduleRE  = re.compile(r"%module(\(.+\))?\s+(.+)")
-    packageRE = re.compile(r"package\s*=\s*([^,]+)")
+    packageRE = re.compile(r"package\s*=\s*([^,^)]+)")
     includeRE = re.compile(r"%include\s+['\"<](.+)['\">]")
     importRE  = re.compile(r"%import\s+['\"<](.+)['\">]")
 
