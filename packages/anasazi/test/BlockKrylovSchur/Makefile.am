@@ -52,8 +52,8 @@ endif
 endif
 
 #np# List all executable names here
-noinst_PROGRAMS = BlockKrylovSchur_solvertest
-notenabled = BlockKrylovSchur_test $(BKS_COMPLEX_TEST)
+noinst_PROGRAMS = BlockKrylovSchur_solvertest BlockKrylovSchur_test
+notenabled = $(BKS_COMPLEX_TEST)
 
 Dummy$(EXEEXT): $(srcdir)/Dummy
 	cp  $(srcdir)/../MVOPTester/mhd1280b.cua mhd1280b.cua

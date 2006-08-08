@@ -26,74 +26,75 @@
 // ***********************************************************************
 // @HEADER
 //
-//  This test is for the BlockKrylovSchur solver using the Epetra interface
+// This test is for BlockKrylovSchur solving a generalized (Ax=Bxl) real Hermitian
+// eigenvalue problem, using the BlockKrylovSchurSolMgr solver manager.
 //
 #include "AnasaziConfigDefs.hpp"
-#include "AnasaziBlockKrylovSchur.hpp"
-#include "AnasaziBasicEigenproblem.hpp"
-#include "AnasaziBasicSort.hpp"
+#include "AnasaziTypes.hpp"
+
 #include "AnasaziEpetraAdapter.hpp"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Vector.h"
-#include "AnasaziBasicOutputManager.hpp"
 
-#include "ModeLaplace1DQ1.h"
-#include "BlockPCGSolver.h"
-
-#ifdef EPETRA_MPI
+#include "AnasaziBasicEigenproblem.hpp"
+#include "AnasaziBlockKrylovSchurSolMgr.hpp"
+#include "Teuchos_CommandLineProcessor.hpp"
+#ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
 #include <mpi.h>
 #else
 #include "Epetra_SerialComm.h"
 #endif
-#include "Epetra_Map.h"
+
+#include "ModeLaplace1DQ1.h"
+#include "BlockPCGSolver.h"
 
 using namespace Teuchos;
 
 int main(int argc, char *argv[]) 
 {
-  int i;
-  int info = 0;
+  bool boolret;
+  int MyPID;
 
-#ifdef EPETRA_MPI
-
+#ifdef HAVE_MPI
   // Initialize MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
-
 #else
-
   Epetra_SerialComm Comm;
 
 #endif
+  MyPID = Comm.MyPID();
 
-  int MyPID = Comm.MyPID();
+  bool testFailed;
+  bool verbose = false;
+  bool debug = false;
+  std::string filename("mhd1280b.cua");
+  std::string which("LM");
 
-  Anasazi::ReturnType returnCode = Anasazi::Ok;
-
-  bool testFailed = false;
-  bool verbose = 0;
-  std::string which("SM");
-
-  if (argc>1) {
-    if (argv[1][0]=='-' && argv[1][1]=='v') {
-      verbose = true;
-    }
-    else {
-      which = argv[1];
-    }
-  }
-  if (argc>2) {
-    if (argv[2][0]=='-' && argv[2][1]=='v') {
-      verbose = true;
-    }
-    else {
-      which = argv[2];
-    }
+  CommandLineProcessor cmdp(false,true);
+  cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+  cmdp.setOption("debug","nodebug",&debug,"Print debugging information.");
+  cmdp.setOption("sort",&which,"Targetted eigenvalues (SM or LM).");
+  if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
+#ifdef HAVE_MPI
+    MPI_Finalize();
+#endif
+    return -1;
   }
 
-  typedef Epetra_MultiVector MV;
-  typedef Epetra_Operator OP;
+  typedef double ScalarType;
+  typedef ScalarTraits<ScalarType>                   SCT;
+  typedef SCT::magnitudeType               MagnitudeType;
+  typedef Epetra_MultiVector                          MV;
+  typedef Epetra_Operator                             OP;
+  typedef Anasazi::MultiVecTraits<ScalarType,MV>     MVT;
+  typedef Anasazi::OperatorTraits<ScalarType,MV,OP>  OPT;
+  const ScalarType ONE  = SCT::one();
+
+  if (verbose && MyPID == 0) {
+    cout << Anasazi::Anasazi_Version() << endl << endl;
+  }
 
   //  Problem information
   int space_dim = 1;
@@ -103,119 +104,142 @@ int main(int argc, char *argv[])
   elements[0] = 100;
 
   // Create problem
-  Teuchos::RefCountPtr<ModalProblem> testCase = Teuchos::rcp( new ModeLaplace1DQ1(Comm, brick_dim[0], elements[0]) );
-
+  RefCountPtr<ModalProblem> testCase = rcp( new ModeLaplace1DQ1(Comm, brick_dim[0], elements[0]) );
+  //
   // Get the stiffness and mass matrices
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> K = Teuchos::rcp( const_cast<Epetra_CrsMatrix *>(testCase->getStiffness()), false );
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> M = Teuchos::rcp( const_cast<Epetra_CrsMatrix *>(testCase->getMass()), false );
-
-  // Create preconditioner
+  RefCountPtr<Epetra_CrsMatrix> K = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getStiffness()), false );
+  RefCountPtr<Epetra_CrsMatrix> M = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getMass()), false );
+  //
+  // Create solver for mass matrix
   const int maxIterCG = 100;
   const double tolCG = 1e-7;
   
   Teuchos::RefCountPtr<BlockPCGSolver> opStiffness = Teuchos::rcp( new BlockPCGSolver(Comm, M.get(), tolCG, maxIterCG, 0) );
   opStiffness->setPreconditioner( 0 );
   Teuchos::RefCountPtr<Anasazi::EpetraGenOp> InverseOp = Teuchos::rcp( new Anasazi::EpetraGenOp( opStiffness, K ) );
-
-  // Eigensolver parameters
-  const int nev = 4;
-  const int blockSize = 2;
-  const int maxBlocks = 10;
-  const int maxRestarts = 500;
-  const double tol = tolCG * 10.0;
-
-  // create an epetra multivector
-  Teuchos::RefCountPtr<Epetra_MultiVector> ivec = Teuchos::rcp( new Epetra_MultiVector(K->OperatorDomainMap(), blockSize) );
+  
+  // Create the initial vectors
+  int blockSize = 5;
+  RefCountPtr<Epetra_MultiVector> ivec = rcp( new Epetra_MultiVector(K->OperatorDomainMap(), blockSize) );
   ivec->Random();
 
   // Create eigenproblem
-  Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double, MV, OP> > MyProblem =
-    Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>(InverseOp, M, ivec) );
-  
-  // Inform the eigenproblem that the operator A is symmetric
-  MyProblem->SetSymmetric(true);
-
-  // Set the number of eigenvalues requested and the blocksize the solver should use
-  MyProblem->SetNEV( nev );
-
-  // Inform the eigenproblem that you are finishing passing it information
-  info = MyProblem->SetProblem();
-  if (info) {
-    cout << "Anasazi::BasicEigenproblem::SetProblem() returned with code : "<< info << endl;
+  const int nev = 5;
+  RefCountPtr<Anasazi::BasicEigenproblem<ScalarType,MV,OP> > problem =
+    rcp( new Anasazi::BasicEigenproblem<ScalarType,MV,OP>(InverseOp,M,ivec) );
+  //
+  // Inform the eigenproblem that the operator InverseOp is symmetric under an M inner-product
+  problem->setHermitian(true);
+  //
+  // Set the number of eigenvalues requested
+  problem->setNEV( nev );
+  //
+  // Inform the eigenproblem that you are done passing it information
+  boolret = problem->setProblem();
+  if (boolret != true) {
+    if (verbose && MyPID == 0) {
+      cout << "Anasazi::BasicEigenproblem::SetProblem() returned with error." << endl
+           << "End Result: TEST FAILED" << endl;	
+    }
+#ifdef HAVE_MPI
+    MPI_Finalize() ;
+#endif
+    return -1;
   }
 
-  // Create parameter list to pass into solver
-  Teuchos::ParameterList MyPL;
-  MyPL.set( "Block Size", blockSize );
-  MyPL.set( "Max Blocks", maxBlocks );
-  MyPL.set( "Max Restarts", maxRestarts );
-  MyPL.set( "Tol", tol );
 
-  // Create default output manager 
-  RefCountPtr<Anasazi::OutputManager<double> > MyOM = Teuchos::rcp( new Anasazi::BasicOutputManager<double>() );
   // Set verbosity level
+  int verbosity = Anasazi::Errors + Anasazi::Warnings;
   if (verbose) {
-    MyOM->setVerbosity( Anasazi::Warning + Anasazi::FinalSummary + Anasazi::TimingDetails );
+    verbosity += Anasazi::FinalSummary + Anasazi::TimingDetails;
   }
-  MyOM->stream(Anasazi::Warning) << Anasazi::Anasazi_Version() << endl << endl;
+  if (debug) {
+    verbosity += Anasazi::Debug;
+  }
 
-  // Create a sorting manager to handle the sorting of eigenvalues in the solver
-  Teuchos::RefCountPtr<Anasazi::BasicSort<double, MV, OP> > MySM = 
-    Teuchos::rcp( new Anasazi::BasicSort<double, MV, OP>(which) );
 
-  // Create the eigensolver
-  Anasazi::BlockKrylovSchur<double, MV, OP> MySolver(MyProblem, MySM, MyOM, MyPL);
+  // Eigensolver parameters
+  int numBlocks = 10;
+  int maxRestarts = 500;
+  MagnitudeType tol = tolCG * 10.0;
+  //
+  // Create parameter list to pass into the solver manager
+  ParameterList MyPL;
+  MyPL.set( "Verbosity", verbosity );
+  MyPL.set( "Which", which );
+  MyPL.set( "Block Size", blockSize );
+  MyPL.set( "Num Blocks", numBlocks );
+  MyPL.set( "Maximum Restarts", maxRestarts );
+  MyPL.set( "Convergence Tolerance", tol );
+  MyPL.set( "Use Locking", true );
+  MyPL.set( "Locking Tolerance", tol/10 );
+  //
+  // Create the solver manager
+  Anasazi::BlockKrylovSchurSolMgr<ScalarType,MV,OP> MySolverMgr(problem, MyPL);
 
   // Solve the problem to the specified tolerances or length
-  returnCode = MySolver.solve();
-  if (returnCode != Anasazi::Ok) {
-    cout << "The return code for BlockKrylovSchur is : "<< returnCode << endl;
+  Anasazi::ReturnType returnCode = MySolverMgr.solve();
+  testFailed = false;
+  if (returnCode != Anasazi::Converged) {
     testFailed = true;
   }
+
+  // Get the eigenvalues and eigenvectors from the eigenproblem
+  Anasazi::Eigensolution<ScalarType,MV> sol = problem->getSolution();
+  std::vector<MagnitudeType> evals = sol.Evals;
+  RefCountPtr<MV> evecs = sol.Evecs;
+  int numev = sol.numVecs;
+
+  if (numev > 0) {
+
+    /* finish: this code has bugs: it only works properly when which == "SM" or "SR"
+    // Check the problem against the analytical solutions
+    if (verbose && which == "LM") {
+      info = testCase->eigenCheck( *evecs, &evals[0], 0 );
+    }
+    */
+
+    // Compute the direct residual
+    std::vector<ScalarType> normV( numev );
+    SerialDenseMatrix<int,ScalarType> T(numev,numev);
+    for (int i=0; i<numev; i++) {
+      T(i,i) = evals[i];
+    }
+    RefCountPtr<MV> Mvecs = MVT::Clone( *evecs, numev ),
+                    Kvecs = MVT::Clone( *evecs, numev );
+    OPT::Apply( *K, *evecs, *Kvecs );
+    OPT::Apply( *M, *evecs, *Mvecs );
+    MVT::MvTimesMatAddMv( -ONE, *Mvecs, T, ONE, *Kvecs );
+    // compute M-norm of residuals
+    OPT::Apply( *M, *Kvecs, *Mvecs );
+    MVT::MvDot( *Mvecs, *Kvecs, &normV );
   
-  // Obtain results directly
-  Teuchos::RefCountPtr<std::vector<double> > evals = MyProblem->GetEvals();
-  Teuchos::RefCountPtr<Epetra_MultiVector> evecs = MyProblem->GetEvecs();
-  
-  // Check eigenvalues with ModeLaplace
-  if (verbose) {
-    info = testCase->eigenCheck( *evecs, &(*evals)[0], 0 );
+    for (int i=0; i<numev; i++) {
+      normV[i] = SCT::squareroot( normV[i] );
+      if ( SCT::magnitude(normV[i]/evals[i]) > tol ) {
+        testFailed = true;
+      }
+    }
+
   }
 
-  Epetra_MultiVector tempvec(K->OperatorDomainMap(), evecs->NumVectors());	
-  K->Apply( *evecs, tempvec );
-  Epetra_MultiVector Mtempvec(M->OperatorDomainMap(), evecs->NumVectors());	
-  M->Apply( *evecs, Mtempvec );
-
-  Epetra_LocalMap LocalMap(nev, 0, Comm);
-  Epetra_MultiVector dmatr( LocalMap, nev );
-
-  for ( i=0; i<nev; i++ ) {
-    dmatr[i][i] = (*evals)[i];
-  }
-  tempvec.Multiply( 'N', 'N', -1.0, Mtempvec, dmatr, 1.0 );
-  std::vector< double > normvec( nev );
-  tempvec.Norm2( &normvec[0] );
-  
-  for ( i=0; i<nev; i++ ) {
-    if ( Teuchos::ScalarTraits<double>::magnitude(normvec[i]/(*evals)[i]) > 5.0e-5 )
-      testFailed = true;
-  }
-
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
   MPI_Finalize() ;
 #endif
 
   if (testFailed) {
-    if (verbose && MyPID==0)
+    if (verbose && MyPID==0) {
       cout << "End Result: TEST FAILED" << endl;	
+    }
     return -1;
   }
   //
   // Default return value
   //
-  if (verbose && MyPID==0)
+  if (verbose && MyPID==0) {
     cout << "End Result: TEST PASSED" << endl;
+  }
   return 0;
+
 
 }	
