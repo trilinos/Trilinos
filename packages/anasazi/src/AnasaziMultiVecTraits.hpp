@@ -159,7 +159,17 @@ namespace Anasazi {
 #endif
 			) 
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }     
-
+    
+    /*! \brief Scale each element of the vectors in \c *this with \c alpha.
+     */
+    static void MvScale ( MV& mv, const ScalarType alpha )
+    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }     
+    
+    /*! \brief Scale each element of the \c i-th vector in \c *this with \c alpha[i].
+     */
+    static void MvScale ( MV& mv, const std::vector<ScalarType>& alpha )
+    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }     
+    
     //@}
     //! @name Norm method
     //@{ 

@@ -209,6 +209,27 @@ namespace Anasazi {
     }
   }
 
+  //-------------------------------------------------------------
+  //
+  // this[i] = alpha[i] * this[i]
+  // 
+  //-------------------------------------------------------------
+  void EpetraMultiVec::MvScale ( const std::vector<double>& alpha )
+  {
+    // Check to make sure the vector is as long as the multivector has columns.
+    int numvecs = this->NumVectors();
+    assert( (int)alpha.size() == numvecs );
+    
+    int ret = 0;
+    std::vector<int> tmp_index( 1, 0 );
+    for (int i=0; i<numvecs; i++) {
+      Epetra_MultiVector temp_vec(View, *this, &tmp_index[0], 1);
+      ret = temp_vec.Scale( alpha[i] );
+      assert (ret == 0);
+      tmp_index[0]++;
+    }
+  }
+
   ///////////////////////////////////////////////////////////////////////////////
   //
   //--------Anasazi::EpetraOp Implementation-------------------------------------

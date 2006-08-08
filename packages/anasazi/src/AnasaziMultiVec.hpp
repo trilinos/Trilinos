@@ -162,6 +162,16 @@ public:
 
 	virtual void SetBlock ( const MultiVec<ScalarType>& A, const std::vector<int>& index ) = 0;
 	
+	/*! \brief Scale each element of the vectors in \c *this with \c alpha.
+	*/
+
+	virtual void MvScale ( const ScalarType alpha ) = 0;
+
+	/*! \brief Scale each element of the \c i-th vector in \c *this with \c alpha[i].
+	*/
+
+        virtual void MvScale ( const std::vector<ScalarType>& alpha ) = 0;
+
 	/*! \brief Fill the vectors in \c *this with random numbers.
 	*/
 
@@ -299,6 +309,16 @@ public:
 #endif
 		); }
 
+    /*! \brief Scale each element of the vectors in \c *this with \c alpha.
+     */    
+    static void MvScale ( MultiVec<ScalarType>& mv, const ScalarType alpha )
+    { mv.MvScale( alpha ); }
+    
+    /*! \brief Scale each element of the \c i-th vector in \c *this with \c alpha[i].
+     */
+    static void MvScale ( MultiVec<ScalarType>& mv, const std::vector<ScalarType>& alpha )
+    { mv.MvScale( alpha ); }
+    
     //@}
     //! @name Norm method
     //@{ 

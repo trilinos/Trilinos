@@ -174,6 +174,14 @@ namespace Anasazi {
 #endif
 		 ) const;
 
+    /*! \brief Scale each element of the vectors in \c *this with \c alpha.
+     */
+    void MvScale ( const double alpha ) { int ret = this->Scale( alpha ); assert(ret == 0); }
+    
+    /*! \brief Scale each element of the \c i-th vector in \c *this with \c alpha[i].
+     */
+    void MvScale ( const std::vector<double>& alpha );
+
     //@}
     //! @name Norm method
     //@{ 
@@ -622,6 +630,31 @@ namespace Anasazi {
       else {
         int ret = temp_vec.Update( 1.0, A, 0.0, A, 0.0 );
 	assert( ret == 0 );
+      }
+    }
+
+    /*! \brief Scale each element of the vectors in \c *this with \c alpha.
+     */
+    void MvScale ( const double alpha, Epetra_MultiVector& mv ) 
+    { int ret = mv.Scale( alpha ); 
+      assert( ret == 0 );
+    }
+    
+    /*! \brief Scale each element of the \c i-th vector in \c *this with \c alpha[i].
+     */
+    void MvScale ( const std::vector<double>& alpha, Epetra_MultiVector& mv )
+    { 
+      // Check to make sure the vector is as long as the multivector has columns.
+      int numvecs = mv.NumVectors();
+      assert( (int)alpha.size() == numvecs );
+
+      int ret = 0;
+      std::vector<int> tmp_index( 1, 0 );
+      for (int i=0; i<numvecs; i++) {
+	Epetra_MultiVector temp_vec(View, mv, &tmp_index[0], 1);
+        ret = temp_vec.Scale( alpha[i] );
+	assert (ret == 0);
+	tmp_index[0]++;
       }
     }
 

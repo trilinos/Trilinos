@@ -357,8 +357,28 @@ public:
     }
   }
   
+  // Scale the vectors by alpha
+  void MvScale( const ScalarType alpha )
+  {
+    for (int v = 0 ; v < NumberVecs_ ; ++v) {
+      for (int i = 0 ; i < Length_ ; ++i) {
+        (*this)(i, v) *= alpha;
+      }
+    }
+  }
+
+  // Scale the i-th vector by alpha[i]
+  void MvScale( const std::vector<ScalarType>& alpha )
+  {
+    for (int v = 0 ; v < NumberVecs_ ; ++v) {
+      for (int i = 0 ; i < Length_ ; ++i) {
+        (*this)(i, v) *= alpha[v];
+      }
+    }
+  }
+
   // Fill the vectors in *this with random numbers.
-  virtual void  MvRandom ()
+  void  MvRandom ()
   {
     for (int v = 0 ; v < NumberVecs_ ; ++v) {
       for (int i = 0 ; i < Length_ ; ++i) {
@@ -368,7 +388,7 @@ public:
   }
   
   // Replace each element of the vectors in *this with alpha.
-  virtual void  MvInit (const ScalarType alpha)
+  void  MvInit (const ScalarType alpha)
   {
     for (int v = 0 ; v < NumberVecs_ ; ++v) {
       for (int i = 0 ; i < Length_ ; ++i) {
