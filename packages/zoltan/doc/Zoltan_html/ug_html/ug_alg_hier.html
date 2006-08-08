@@ -1,0 +1,233 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="author" CONTENT="Jim Teresco, jdteres@sandia.gov">
+   <TITLE>Zoltan User's Guide:  Hierarchical Partitioning</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<div ALIGN=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp; |&nbsp; <a href="ug_order.html">Next</a>&nbsp; |&nbsp; <a href="ug_alg_jostle.html">Previous</a></i></b></div>
+
+
+<H2>
+<A NAME="Hier"></A>Hierarchical Partitioning (HIER)</H2>
+
+Hierarchical partitioning allows the creation of hybrid partitions,
+computed using combinations of other Zoltan procedures.
+For hierarchical and heterogeneous systems, different choices may be
+appropriate in different parts of the parallel environment.  There are
+tradeoffs in execution time and partition quality (<I>e.g.</I>, surface
+indices/communication volume, interprocess connectivity, strictness of load
+balance) and some may be more important than others
+in some circumstances.  For example, consider a cluster of symmetric
+multiprocessor (SMP) nodes connected by Ethernet.  A more costly graph
+partitioning can be done to partition among the nodes, to minimize
+communication across the slow network interface, possibly at the
+expense of some computational imbalance.  Then, a fast geometric
+algorithm can be used to partition independently within each node.<P>
+
+Zoltan's hierarchical balancing, implemented by Jim Teresco (Williams
+College) during a 2003-04 visit to Sandia, automates the creation of
+hierarchical partitions [<U><A HREF="ug_refs.html#para04">Teresco,
+<I>et al.</I></A></U>].  It can be used directly by an application or
+be guided by the tree representation of the computational environment
+created and maintained by the <A
+HREF="http://www.cs.williams.edu/drum/">Dynamic Resource Utilization
+Model (DRUM)</A> [<U><A HREF="ug_refs.html#adapt03">Devine, <I>et
+al.</I> </A>, <A HREF="ug_refs.html#cluster04">Faik, <I>et
+al.</I></A>, <A HREF="ug_refs.html#cise05">Teresco, <I>et
+al.</I></A></U>]. 
+<!-- DRUM is a software system that supports automatic
+resource-aware partitioning and dynamic load balancing for
+heterogeneous, non-dedicated, and hierarchical computing environments.
+DRUM dynamically models the computing environment using a tree
+structure that encapsulates the capabilities and performance of
+communication and processing resources.  The tree is populated with
+performance data obtained from <I>a priori</I> benchmarks and dynamic
+monitoring agents that run concurrently with the application.  It is
+then used to guide partition-weighted and hierarchical partitioning
+and dynamic load balancing.  Partition-weighted balancing is available
+through <A HREF="ug_drum.html">Zoltan's DRUM interface</A>. --><P>
+
+The hierarchical balancing implementation utilizes a lightweight
+intermediate structure and a set of callback functions that permit an
+automated and efficient hierarchical balancing which can use any of
+the procedures available within Zoltan without modification and in any
+combination.  Hierachical balancing is invoked by an application the
+same way as other Zoltan procedures and interfaces with
+applications through callback functions.  A hierarchical balancing
+step begins by building an intermediate structure using these
+callbacks.  This structure is an augmented version of the graph
+structure that Zoltan builds to make use of the ParMetis and
+Jostle libraries.  The hierarchical balancing
+procedure then provides its own callback functions to allow existing
+Zoltan procedures to be used to query and update the intermediate
+structure at each level of a hierarchical balancing.  After all levels
+of the hierarchical balancing have been completed, Zoltan's usual
+migration arrays are constructed and returned to the application.
+Thus, only lightweight objects are migrated internally between levels,
+not the (larger and more costly) application data.<P>
+
+Hierarchical partitioning requires three callback functions to specify
+the number of levels (<B><A
+HREF="ug_query_lb.html#ZOLTAN_HIER_NUM_LEVELS_FN">ZOLTAN_HIER_NUM_LEVELS_FN</A></B>),
+which partitions each process should compute at each level (<B><A
+HREF="ug_query_lb.html#ZOLTAN_HIER_PARTITION_FN">ZOLTAN_HIER_PARTITION_FN</A></B>),
+and which method and parameters to be used at each level (<B><A
+HREF="ug_query_lb.html#ZOLTAN_HIER_METHOD_FN">ZOLTAN_HIER_METHOD_FN</A></B>).
+These are in addition to the callbacks needed to specify objects,
+coordinates, and graph edges.  This fairly cumbersome interface can be
+avoided by using the separately-available <A
+HREF="http://www.cs.williams.edu/~terescoj/research/zoltanParams/">zoltanParams</A>
+library.  This allows a file-based description to replace these
+callbacks.  A more direct interface with DRUM's hierarchical machine
+model is also planned, allowing hierarchical balancing parameters to
+be set by a graphical configuration tool.<P>
+
+
+<BR>&nbsp;
+<TABLE WIDTH="100%" NOSAVE >
+<TR>
+<TD VALIGN=TOP><B>Method String:</B></TD>
+
+<TD><B>HIER</B></TD>
+</TR>
+
+<TR>
+<TD><B>Parameters:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>HIER_USE_GEOM</I></TD>
+
+<TD>Specifies whether to include object coordinates when constructing
+the intermediate structure.  This should be set to 1 if any method
+used in the hierarchical balancing will use these coordinates.  If
+this is set, geometric callback functions should be provided.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>HIER_USE_GRAPH</I></TD>
+
+<TD>Specifies whether to include graph edges when constructing the
+intermediate structure.  This should be set to 1 if any method used in
+the hierarchical balancing will use graph interconnectivity methods.
+If this is set, graph callback functions should be provided.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; HIER_CHECKS</I></TD>
+
+<TD>If set to 1, forces "sanity checks" to be performed on the
+intermediate structure when it is first created, and after the
+partitioning at each level.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>HIER_DEBUG_LEVEL</I></TD>
+
+<TD>Amount of output the hierarchical partitioning procedures should
+produce.&nbsp;
+<BR>0 = no statistics; 1 = hierarchical balancing lists; 2 = all
+debugging information.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><B>Default:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD><I>HIER_USE_GEOM</I> = 0</TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD><I>HIER_USE_GRAPH</I> = 0</TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD><I>HIER_CHECKS</I> = 0</TD>
+</TR>
+<TR>
+<TD></TD>
+
+<TD><I>HIER_DEBUG_LEVEL</I> = 1</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><B>Required Query Functions:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD><B><A HREF="ug_query_lb.html#ZOLTAN_NUM_OBJ_FN">ZOLTAN_NUM_OBJ_FN</A></B></TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD><B><A HREF="ug_query_lb.html#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</A></B>
+or <B><A HREF="ug_query_lb.html#ZOLTAN_FIRST_OBJ_FN">ZOLTAN_FIRST_OBJ_FN</A></B>/<B><A HREF="ug_query_lb.html#ZOLTAN_NEXT_OBJ_FN">ZOLTAN_NEXT_OBJ_FN</A></B>
+pair</TD>
+</TR>
+
+<TR>
+<TD></TD>
+<TD><B><A
+HREF="ug_query_lb.html#ZOLTAN_HIER_NUM_LEVELS_FN">ZOLTAN_HIER_NUM_LEVELS_FN</A></B>,
+<B><A
+HREF="ug_query_lb.html#ZOLTAN_HIER_PARTITION_FN">ZOLTAN_HIER_PARTITION_FN</A></B>,
+and <B><A
+HREF="ug_query_lb.html#ZOLTAN_HIER_METHOD_FN">ZOLTAN_HIER_METHOD_FN</A></B>.
+</TD>
+</TR>
+
+<tr>
+<td>Only if <I>HIER_USE_GEOM</I> is set:</td>
+
+<td><b><a href="ug_query_lb.html#ZOLTAN_NUM_GEOM_FN">ZOLTAN_NUM_GEOM_FN</a></b></td>
+</tr>
+
+<tr>
+<td></td>
+
+<td>
+<b><a href="ug_query_lb.html#ZOLTAN_GEOM_MULTI_FN">ZOLTAN_GEOM_MULTI_FN</a></b>
+or <b><a href="ug_query_lb.html#ZOLTAN_GEOM_FN">ZOLTAN_GEOM_FN</a></b>
+</td>
+
+</tr>
+
+<tr VALIGN=TOP NOSAVE>
+<td>Only if <I>HIER_USE_GRAPH</I> is set:</td>
+
+<td NOSAVE>
+<b><a href="ug_query_lb.html#ZOLTAN_NUM_EDGES_MULTI_FN">ZOLTAN_NUM_EDGES_MULTI_FN</a></b> or
+<b><a href="ug_query_lb.html#ZOLTAN_NUM_EDGES_FN">ZOLTAN_NUM_EDGES_FN</a></b>
+<br>
+<b><a href="ug_query_lb.html#ZOLTAN_EDGE_LIST_MULTI_FN">ZOLTAN_EDGE_LIST_MULTI_FN</a></b> or
+<b><a href="ug_query_lb.html#ZOLTAN_EDGE_LIST_FN">ZOLTAN_EDGE_LIST_FN</a></b>
+</td>
+</tr>
+
+</TABLE>
+&nbsp;
+
+<P>
+<HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp;
+<A HREF="ug_order.html">Next:&nbsp; Ordering </A>&nbsp;
+|&nbsp; <A HREF="ug_alg_jostle.html">Previous:&nbsp;&nbsp; Jostle</A>]
+</BODY>
+</HTML>
