@@ -25,22 +25,6 @@ import re
 import string
 import sys
 
-# Find out where we are
-localDir = os.path.split(os.getcwd())[1]
-
-# Define list of headers to ignore
-ignoreHeaders = ["Callback.h", "Epetra_NumPyVector.h", "Epetra_VectorHelper.h",
-                 "NumPyArray.h", "NumPyWrapper.h", "PyInterface.h",
-                 "PyTrilinos.h", "numeric_include.h"]
-
-# Define the regular expressions
-includeRE = re.compile(r"%include\s+['\"<](.+)['\">]")
-moduleRE  = re.compile(r"%module(\(.+\))?\s+(.+)")
-singleQuoteString = r"'[^']*'"
-doubleQuoteString = r'"[^"]*"'
-packageRE = re.compile(r"package\s*=\s*(" + singleQuoteString + r"|" +
-                       doubleQuoteString + r")")
-
 ######################################################
 
 class SwigFile:
