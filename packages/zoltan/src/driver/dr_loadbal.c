@@ -34,13 +34,13 @@ double Timer_Callback_Time, Timer_Global_Callback_Time;
 #include "dr_eval_const.h"
 #include "dr_util_const.h"
 #include "ch_init_dist_const.h"
+#include "dr_param_file.h"
 #include "zoltan_id.h"
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
-
 
 static int Num_Global_Parts;
 static int Num_GID = 1, Num_LID = 1;
@@ -146,6 +146,12 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     return 0;
   }
 
+  /* if there is a paramfile specified, read it
+     note: contents of this file may override the parameters set above */
+  if (strcmp(prob->zoltanParams_file, "")) {
+    zoltanParams_read_file(zz, prob->zoltanParams_file, MPI_COMM_WORLD);
+  }
+
   if (Test.Fixed_Objects) {
     /* Register fixed object callback functions */
     if (Zoltan_Set_Fn(zz, ZOLTAN_NUM_FIXED_OBJ_FN_TYPE,
@@ -162,7 +168,6 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
       return 0;
     }
   }
-
 
   if (Test.Local_Partitions == 1) {
     /* Compute Proc partitions for each processor */

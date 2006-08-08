@@ -200,6 +200,9 @@ struct Problem_Description
                                         Zoltan.  Parameters are specified as
                                         pairs of strings:
                                           param_str = value_str              */
+  char zoltanParams_file[FILENAME_MAX]; /* file name to get more
+				       Zoltan parameters from separate
+				       file (for hier support) */
 };
 typedef struct Problem_Description  PROB_INFO;
 typedef struct Problem_Description *PROB_INFO_PTR;

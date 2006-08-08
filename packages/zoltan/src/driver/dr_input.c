@@ -62,9 +62,12 @@ int read_cmd_file (
   }
 
   /* Begin parsing the input file */
+  strcpy(prob->zoltanParams_file, "");
+
   if (undef){
     undef->list_size = 0;
   }
+
   prob->num_params = 0;
   prob->params = (Parameter_Pair*) malloc (sizeof(Parameter_Pair));
   while (fgets (line, MAX_INPUT_STR_LN, file_cmd)) {
@@ -465,6 +468,11 @@ int read_cmd_file (
       }             
     }
 
+    else if (sscanf(line, " zoltanparams file" SKIPEQ "%s", string) == 1) {
+      /* specify zoltanParams-format filename to be read later --
+	 included to support hierarchical balancing tests */
+      strcpy(prob->zoltanParams_file, string);
+    }
     else {
       if (undef){
         if (undef->list_size < UNDEFINED_LIST_MAX){

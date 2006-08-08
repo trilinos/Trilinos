@@ -97,3 +97,9 @@ dr_elem_util_const.h-- Prototypes for functions in dr_elem_util.c.
 dr_chaco_io.c       -- Interface between Chaco input functions and driver
                        data structures.
 
+dr_param_file.c     -- Routines that read a secondary parameter file for
+                       zdrive.  These allow hierarchical balancing parameters
+                       to be specified and provide the callbacks needed 
+                       by hierarchical balancing.
+
+dr_param_file.h     -- Prototypes for functions in dr_param_file.c
