@@ -658,7 +658,7 @@ int Epetra_FECrsMatrix::GlobalAssemble(const Epetra_Map& domain_map,
   //Now we need to call FillComplete on our temp matrix. We need to
   //pass a DomainMap and RangeMap, which are not the same as the RowMap
   //and ColMap that we constructed the matrix with.
-  EPETRA_CHK_ERR(tempMat->FillComplete(DomainMap(), RangeMap()));
+  EPETRA_CHK_ERR(tempMat->FillComplete(domain_map, range_map));
 
   Epetra_Export* exporter = new Epetra_Export(*sourceMap, RowMap());
 
