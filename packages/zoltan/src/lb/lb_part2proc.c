@@ -54,6 +54,7 @@ int proc;
 int *pdist = zz->LB.PartDist;    /* Temporary variable */
 int num_procs_for_part;
 int hash_value;
+char msg[256];
 
   if (zz->LB.PartDist == NULL) {
     /*  number of parts == number of procs, uniformly distributed. 
@@ -83,7 +84,8 @@ int hash_value;
     }
   }
   else {
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid partition number.");
+    sprintf(msg, "Invalid partition number: %d", part);
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
     proc = -1;
   }
   return proc;
