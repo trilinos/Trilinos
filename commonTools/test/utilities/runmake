@@ -580,7 +580,7 @@ exit $exitStatus;
         $/ = "\n";                      # restore it to default newline
         close PACKAGE_MAKEFILE;
         
-        @enabledSubdirs = $file =~ m/^(\w+?)_SUBDIR = \w*$/gm;
+        @enabledSubdirs = $file =~ m/^(\w+?)_SUBDIR = \w+$/gm;
         for (my $i=0; $i<scalar(@enabledSubdirs); $i++) {
             $enabledSubdirs[$i] = lc($enabledSubdirs[$i]);
         }
