@@ -56,17 +56,17 @@ int main()
 
     // Create the stepper sublist and set the stepper parameters
     Teuchos::ParameterList& stepperList = locaParamsList.sublist("Stepper");
-    stepperList.set("Continuation Method", "Arc Length");
-    stepperList.set("Number of Continuation Parameters", 2);
-    stepperList.set("Epsilon", 0.1);
-    stepperList.set("Max Charts", 10000);
-    stepperList.set("Verbosity", 1);
-    stepperList.set("Page Charts", 1);
-    stepperList.set("Dump Polyhedra", true);
-    stepperList.set("Dump Centers", false);
-    stepperList.set("Filename", "MFresults");
+    stepperList.set("Continuation Method", "Arc Length");         // Default
+    stepperList.set("Number of Continuation Parameters", 2);      // Must set
+    stepperList.set("Epsilon", 0.1);                              // Default
+    stepperList.set("Max Charts", 10000);                         // Must set
+    stepperList.set("Verbosity", 1);                              // Default
+    stepperList.set("Page Charts", 1);                            // Default
+    stepperList.set("Dump Polyhedra", true);                      // Default
+    stepperList.set("Dump Centers", false);                       // Default
+    stepperList.set("Filename", "MFresults");                     // Default
     stepperList.set("Enable Arc Length Scaling", false);
-    stepperList.set("Max Nonlinear Iterations", maxNewtonIters);
+    stepperList.set("Max Nonlinear Iterations", maxNewtonIters);  // Should set
     stepperList.set("Aggressiveness", 0.01);
     stepperList.set("Max Solution Component", 30.0);
 
@@ -95,13 +95,13 @@ int main()
     // Create bifurcation sublist
     Teuchos::ParameterList& bifurcationList = 
       locaParamsList.sublist("Bifurcation");
-    bifurcationList.set("Type", "None");
+    bifurcationList.set("Type", "None");                         // Default
 
     // Create predictor sublist
     Teuchos::ParameterList& predictorList = 
       locaParamsList.sublist("Predictor");
     //predictorList.set("Method", "Constant");
-    predictorList.set("Method", "Tangent");
+    predictorList.set("Method", "Tangent");                      // Best choice
     //predictorList.set("Method", "Secant");
 
     // Create the "Solver" parameters sublist to be used with NOX Solvers

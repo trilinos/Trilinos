@@ -93,6 +93,8 @@ int main()
     //bifurcationList.set("Formulation", "Moore-Spence");          // Default
     //bifurcationList.set("Solver Method", "Salinger Bordering");  // Default
     //bifurcationList.set("Solver Method", "Phipps Bordering");
+    //bifurcationList.set("Bordered Solver Method",  
+    //                    "LAPACK Direct Solve");   // For Phipps Bordering
     //bifurcationList.set("Length Normalization Vector", nullVec); // Must set
     //bifurcationList.set("Initial Null Vector", nullVec);         // Must set
 
@@ -116,13 +118,13 @@ int main()
       locaParamsList.sublist("Predictor");
     predictorList.set("Method", "Secant");                         // Default
 
-    // Should use for Moore-Spence formulation w/Bordering
+    // Should use for Moore-Spence w/Salinger Bordering & Secant predictor
     //Teuchos::ParameterList& firstStepPredictor 
     //  = predictorList.sublist("First Step Predictor");
     //firstStepPredictor.set("Method", "Random");
     //firstStepPredictor.set("Epsilon", 1.0e-3);
 
-    // Should use for Moore-Spence formulation w/Bordering
+    // Should use for Moore-Spence w/Salinger Bordering & Secant predictor
     //Teuchos::ParameterList& lastStepPredictor 
     //  = predictorList.sublist("Last Step Predictor");
     //lastStepPredictor.set("Method", "Random");
@@ -142,7 +144,6 @@ int main()
 		      NOX::Utils::OuterIteration + 
 		      NOX::Utils::OuterIterationStatusTest + 
 		      NOX::Utils::InnerIteration +
-		      NOX::Utils::Parameters +
 		      NOX::Utils::Details + 
 		      NOX::Utils::Warning + 
 		      NOX::Utils::StepperIteration +

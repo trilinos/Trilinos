@@ -78,7 +78,7 @@ int main()
 
     // Create the stepper sublist and set the stepper parameters
     Teuchos::ParameterList& stepperList = locaParamsList.sublist("Stepper");
-    stepperList.set("Continuation Method", "Arc Length");
+    stepperList.set("Continuation Method", "Arc Length");   // Default
     stepperList.set("Continuation Parameter", "alpha");
     stepperList.set("Initial Value", alpha);
     stepperList.set("Max Value", 5.0/scale);
@@ -96,16 +96,16 @@ int main()
     // Create bifurcation sublist
     Teuchos::ParameterList& bifurcationList = 
       locaParamsList.sublist("Bifurcation");
-    bifurcationList.set("Type", "None");
+    bifurcationList.set("Type", "None");                    // Default
 
     // Create predictor sublist
     Teuchos::ParameterList& predictorList = 
       locaParamsList.sublist("Predictor");
-    predictorList.set("Method", "Secant");
+    predictorList.set("Method", "Secant");                  // Default
 
     // Create step size sublist
     Teuchos::ParameterList& stepSizeList = locaParamsList.sublist("Step Size");
-    stepSizeList.set("Method", "Adaptive");
+    stepSizeList.set("Method", "Adaptive");                 // Default
     stepSizeList.set("Initial Step Size", 0.1/scale);
     stepSizeList.set("Min Step Size", 1.0e-3/scale);
     stepSizeList.set("Max Step Size", 10.0/scale);

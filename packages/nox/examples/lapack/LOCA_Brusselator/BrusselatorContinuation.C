@@ -62,69 +62,54 @@ int main()
 
     // Create the stepper sublist and set the stepper parameters
     Teuchos::ParameterList& stepperList = locaParamsList.sublist("Stepper");
-    //stepperList.set("Continuation Method", "Natural");
-    stepperList.set("Continuation Method", "Arc Length");
+    stepperList.set("Continuation Method", "Arc Length");    // Default
     stepperList.set("Continuation Parameter", "beta");
     stepperList.set("Initial Value", beta);
     stepperList.set("Max Value", 2.0);
     stepperList.set("Min Value", 0.0);
     stepperList.set("Max Steps", 100);
     stepperList.set("Max Nonlinear Iterations", maxNewtonIters);
-    stepperList.set("Enable Arc Length Scaling", true);
-    stepperList.set("Goal Arc Length Parameter Contribution", 0.5);
-    stepperList.set("Max Arc Length Parameter Contribution", 0.7);
-    stepperList.set("Initial Scale Factor", 1.0);
-    stepperList.set("Min Scale Factor", 1.0e-8);
-    stepperList.set("Enable Tangent Factor Step Size Scaling",false);
-    stepperList.set("Min Tangent Factor", -1.0);
-    stepperList.set("Tangent Factor Exponent",1.0);
-    stepperList.set("Compute Eigenvalues",true);
-    //stepperList.set("Bordered Solver Method", "Bordering");
+    
+    // Use LAPACK solver for arclength bordered solves for efficiency
     stepperList.set("Bordered Solver Method", "LAPACK Direct Solve");
 
-    // Create Eigensolver list
+    // Create Eigensolver list using LAPACK eigensolver
+    stepperList.set("Compute Eigenvalues",true);
     Teuchos::ParameterList& eigenList = stepperList.sublist("Eigensolver");
-    eigenList.set("Method", "DGGEV");
-    eigenList.set("NEV", 10);
-    eigenList.set("Sorting Order", "LR");
+    eigenList.set("Method", "DGGEV");     // LAPACK eigensolver
+    eigenList.set("NEV", 10);             // Show 10 eigenvalues
+    eigenList.set("Sorting Order", "LR"); // Sort by largest real component
 
-    // Create bifurcation sublist
-    Teuchos::ParameterList& bifurcationList = 
-      locaParamsList.sublist("Bifurcation");
-    bifurcationList.set("Method", "None");
-
-    // Create predictor sublist
-    Teuchos::ParameterList& predictorList = locaParamsList.sublist("Predictor");
+    // Create predictor sublist.  We use the constant predictor because the
+    // solution is linear in the continuation parameter.  Using Secant or
+    // Tangent is not very interesting, but are perfectly valid
+    Teuchos::ParameterList& predictorList = 
+      locaParamsList.sublist("Predictor");
     predictorList.set("Method", "Constant");
     //predictorList.set("Method", "Tangent");
     //predictorList.set("Method", "Secant");
 
     // Create step size sublist
     Teuchos::ParameterList& stepSizeList = locaParamsList.sublist("Step Size");
-    //stepSizeList.set("Method", "Constant");
-    stepSizeList.set("Method", "Adaptive");
+    stepSizeList.set("Method", "Adaptive");    // Default
     stepSizeList.set("Initial Step Size", 0.1);
     stepSizeList.set("Min Step Size", 1.0e-3);
     stepSizeList.set("Max Step Size", 10.0);
-    //stepSizeList.set("Max Step Size", 1.0);
     stepSizeList.set("Aggressiveness", 0.1);
-    stepSizeList.set("Failed Step Reduction Factor", 0.5);
-    stepSizeList.set("Successful Step Increase Factor", 1.26); // for constant
 
     // Create the "Solver" parameters sublist to be used with NOX Solvers
     Teuchos::ParameterList& nlParams = paramList->sublist("NOX");
-    nlParams.set("Nonlinear Solver", "Line Search Based");
-
     Teuchos::ParameterList& nlPrintParams = nlParams.sublist("Printing");
     nlPrintParams.set("Output Information", 
-			       NOX::Utils::Details +
-			       NOX::Utils::OuterIteration + 
-			       NOX::Utils::InnerIteration + 
-			       NOX::Utils::Warning + 
-			       NOX::Utils::StepperIteration +
-			       NOX::Utils::StepperDetails);
+		      NOX::Utils::Details +
+		      NOX::Utils::OuterIteration + 
+		      NOX::Utils::InnerIteration + 
+		      NOX::Utils::Warning + 
+		      NOX::Utils::StepperIteration +
+		      NOX::Utils::StepperDetails +
+		      NOX::Utils::StepperParameters);
 
-    // Create LAPACK Factory
+    // Create LAPACK Factory (necessary for LAPACK eigensolver)
     Teuchos::RefCountPtr<LOCA::LAPACK::Factory> lapackFactory = 
       Teuchos::rcp(new LOCA::LAPACK::Factory);
 
@@ -173,7 +158,7 @@ int main()
     }
 
     // Output the parameter list
-    if (globalData->locaUtils->isPrintType(NOX::Utils::Parameters)) {
+    if (globalData->locaUtils->isPrintType(NOX::Utils::StepperParameters)) {
       globalData->locaUtils->out() 
 	<< std::endl << "Final Parameters" << std::endl
 	<< "****************" << std::endl;

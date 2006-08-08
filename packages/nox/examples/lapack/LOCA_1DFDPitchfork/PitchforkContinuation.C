@@ -62,90 +62,64 @@ int main()
 
     // Create the stepper sublist and set the stepper parameters
     Teuchos::ParameterList& stepperList = locaParamsList.sublist("Stepper");
-    //stepperList.set("Continuation Method", "Natural");
-    stepperList.set("Continuation Method", "Arc Length");
+    stepperList.set("Continuation Method", "Arc Length");         // Default
     stepperList.set("Continuation Parameter", "beta");
     stepperList.set("Initial Value", beta);
     stepperList.set("Max Value", 1.0);
     stepperList.set("Min Value", -0.01);
     stepperList.set("Max Steps", 20);
     stepperList.set("Max Nonlinear Iterations", maxNewtonIters);
-    stepperList.set("Enable Arc Length Scaling", true);
-    stepperList.set("Goal Arc Length Parameter Contribution", 0.5);
-    stepperList.set("Max Arc Length Parameter Contribution", 0.7);
-    stepperList.set("Initial Scale Factor", 1.0);
-    stepperList.set("Min Scale Factor", 1.0e-8);
-    stepperList.set("Enable Tangent Factor Step Size Scaling",false);
-    stepperList.set("Min Tangent Factor", -1.0);
-    stepperList.set("Tangent Factor Exponent",1.0);
-    stepperList.set("Compute Eigenvalues",false);
 
     // Create bifurcation sublist
     Teuchos::ParameterList& bifurcationList = 
       locaParamsList.sublist("Bifurcation");
     bifurcationList.set("Type", "Pitchfork");
-    bifurcationList.set("Formulation", "Moore-Spence");
-    bifurcationList.set("Solver Method", "Salinger Bordering");
-    //bifurcationList.set("Solver Method", "Phipps Bordering");
-    //bifurcationList.set("Bordered Solver Method", "LAPACK Direct Solve");
-    bifurcationList.set("Bifurcation Parameter", "lambda");
-    bifurcationList.set("Length Normalization Vector", asymVec);
-    bifurcationList.set("Initial Null Vector", asymVec);
-    bifurcationList.set("Antisymmetric Vector", asymVec);
+    bifurcationList.set("Formulation", "Moore-Spence");           // Default
+    //bifurcationList.set("Solver Method", "Salinger Bordering"); // Default
+    bifurcationList.set("Solver Method", "Phipps Bordering");
+    bifurcationList.set("Bordered Solver Method", 
+			"LAPACK Direct Solve");  // For Phipps Bordering
+    bifurcationList.set("Bifurcation Parameter", "lambda");       // Must set
+    bifurcationList.set("Length Normalization Vector", asymVec);  // Must set
+    bifurcationList.set("Initial Null Vector", asymVec);          // Must set
+    bifurcationList.set("Antisymmetric Vector", asymVec);         // Must set
 
     // Create predictor sublist
-    Teuchos::ParameterList& predictorList = locaParamsList.sublist("Predictor");
-    //predictorList.set("Method", "Constant");
-    predictorList.set("Method", "Secant");
-    //predictorList.set("Method", "Random");
-    //predictorList.set("Epsilon", 1.0e-3);
+    Teuchos::ParameterList& predictorList = 
+      locaParamsList.sublist("Predictor");
+    predictorList.set("Method", "Secant");                       // Default
 
-    Teuchos::ParameterList& firstStepPredictor 
-      = predictorList.sublist("First Step Predictor");
-    firstStepPredictor.set("Method", "Random");
-    firstStepPredictor.set("Epsilon", 1.0e-3);
+    // Should use for Salinger Bordering & Secant predictor
+    //Teuchos::ParameterList& firstStepPredictor 
+    //  = predictorList.sublist("First Step Predictor");
+    //firstStepPredictor.set("Method", "Random");
+    //firstStepPredictor.set("Epsilon", 1.0e-3);
 
-     Teuchos::ParameterList& lastStepPredictor 
-      = predictorList.sublist("Last Step Predictor");
-    lastStepPredictor.set("Method", "Random");
-    lastStepPredictor.set("Epsilon", 1.0e-3);
+    // Should use for Salinger Bordering & Secant predictor
+    //Teuchos::ParameterList& lastStepPredictor 
+    //  = predictorList.sublist("Last Step Predictor");
+    //lastStepPredictor.set("Method", "Random");
+    //lastStepPredictor.set("Epsilon", 1.0e-3);
 
     // Create step size sublist
     Teuchos::ParameterList& stepSizeList = locaParamsList.sublist("Step Size");
-    stepSizeList.set("Method", "Adaptive");
+    stepSizeList.set("Method", "Adaptive");                      // Default
     stepSizeList.set("Initial Step Size", 0.1);
     stepSizeList.set("Min Step Size", 1.0e-3);
     stepSizeList.set("Max Step Size", 1.0);
-    stepSizeList.set("Aggressiveness", 0.5);
-    stepSizeList.set("Failed Step Reduction Factor", 0.5);
-    stepSizeList.set("Successful Step Increase Factor", 1.26); // for constant
 
     // Create the "Solver" parameters sublist to be used with NOX Solvers
     Teuchos::ParameterList& nlParams = paramList->sublist("NOX");
-    nlParams.set("Nonlinear Solver", "Line Search Based");
-
     Teuchos::ParameterList& nlPrintParams = nlParams.sublist("Printing");
     nlPrintParams.set("Output Information", 
-			       NOX::Utils::OuterIteration + 
-			       NOX::Utils::OuterIterationStatusTest + 
-			       NOX::Utils::InnerIteration +
-			       NOX::Utils::Parameters +
-			       NOX::Utils::Details + 
-			       NOX::Utils::Warning + 
-			       NOX::Utils::StepperIteration +
-			       NOX::Utils::StepperDetails);
-
-    // Create the "Line Search" sublist for the "Line Search Based" solver
-    Teuchos::ParameterList& searchParams = nlParams.sublist("Line Search");
-    searchParams.set("Method", "Full Step");
-
-    // Direction sublist
-    Teuchos::ParameterList& dirParams = nlParams.sublist("Direction");
-    dirParams.set("Method", "Newton");
-
-    // Newton sublist
-    Teuchos::ParameterList& newtonParams = dirParams.sublist("Newton");
-    newtonParams.set("Forcing Term Method", "Constant");
+		      NOX::Utils::OuterIteration + 
+		      NOX::Utils::OuterIterationStatusTest + 
+		      NOX::Utils::InnerIteration +
+		      NOX::Utils::Details + 
+		      NOX::Utils::Warning + 
+		      NOX::Utils::StepperIteration +
+		      NOX::Utils::StepperDetails +
+		      NOX::Utils::StepperParameters);
 
     // Create LAPACK Factory
     Teuchos::RefCountPtr<LOCA::LAPACK::Factory> lapackFactory = 
@@ -193,7 +167,7 @@ int main()
     }
 
     // Output the parameter list
-    if (globalData->locaUtils->isPrintType(NOX::Utils::Parameters)) {
+    if (globalData->locaUtils->isPrintType(NOX::Utils::StepperParameters)) {
       globalData->locaUtils->out() 
 	<< std::endl << "Final Parameters" << std::endl
 	<< "****************" << std::endl;

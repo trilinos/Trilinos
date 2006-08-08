@@ -95,49 +95,38 @@ int main()
 
     // Create the stepper sublist and set the stepper parameters
     Teuchos::ParameterList& stepperList = locaParamsList.sublist("Stepper");
-    //stepperList.set("Continuation Method", "Natural");
-    stepperList.set("Continuation Method", "Arc Length");
+    stepperList.set("Continuation Method", "Arc Length");   // Default
     stepperList.set("Continuation Parameter", "alpha");
     stepperList.set("Initial Value", alpha);
     stepperList.set("Max Value", 1.0);
     stepperList.set("Min Value", 0.24);
     stepperList.set("Max Steps", 100);
     stepperList.set("Max Nonlinear Iterations", maxNewtonIters);
-    stepperList.set("Enable Arc Length Scaling", true);
-    stepperList.set("Goal Arc Length Parameter Contribution", 0.5);
-    stepperList.set("Max Arc Length Parameter Contribution", 0.7);
-    stepperList.set("Initial Scale Factor", 1.0);
-    stepperList.set("Min Scale Factor", 1.0e-8);
-    stepperList.set("Enable Tangent Factor Step Size Scaling",false);
-    stepperList.set("Min Tangent Factor", -1.0);
-    stepperList.set("Tangent Factor Exponent",1.0);
-    stepperList.set("Compute Eigenvalues",false);
 
     // Create bifurcation sublist
     Teuchos::ParameterList& bifurcationList = 
       locaParamsList.sublist("Bifurcation");
-    //bifurcationList.set("Type", "None");
     bifurcationList.set("Type", "Hopf");
-    bifurcationList.set("Formulation", "Moore-Spence");
-    bifurcationList.set("Solver Method", "Salinger Bordering");
-    bifurcationList.set("Bifurcation Parameter", "beta");
-    bifurcationList.set("Length Normalization Vector", phi_vec);
-    bifurcationList.set("Initial Real Eigenvector", y_vec);
-    bifurcationList.set("Initial Imaginary Eigenvector", z_vec);
-    bifurcationList.set("Initial Frequency", w);
+    bifurcationList.set("Formulation", "Moore-Spence");          // Default
+    bifurcationList.set("Solver Method", "Salinger Bordering");  // Default
+    bifurcationList.set("Bifurcation Parameter", "beta");        // Must set
+    bifurcationList.set("Length Normalization Vector", phi_vec); // Must set
+    bifurcationList.set("Initial Real Eigenvector", y_vec);      // Must set
+    bifurcationList.set("Initial Imaginary Eigenvector", z_vec); // Must set
+    bifurcationList.set("Initial Frequency", w);                 // Must set
 
     // Create predictor sublist
-    Teuchos::ParameterList& predictorList = locaParamsList.sublist("Predictor");
-    //predictorList.set("Method", "Constant");
-    predictorList.set("Method", "Secant");
-    //predictorList.set("Method", "Random");
-    //predictorList.set("Epsilon", 1.0e-3);
+    Teuchos::ParameterList& predictorList = 
+      locaParamsList.sublist("Predictor");
+    predictorList.set("Method", "Secant");     // Default
 
+    // Should use w/Secant predictor
     Teuchos::ParameterList& firstStepPredictor 
       = predictorList.sublist("First Step Predictor");
     firstStepPredictor.set("Method", "Random");
     firstStepPredictor.set("Epsilon", 1.0e-3);
 
+    // Should use w/Secant predictor
     Teuchos::ParameterList& lastStepPredictor 
       = predictorList.sublist("Last Step Predictor");
     lastStepPredictor.set("Method", "Random");
@@ -145,28 +134,23 @@ int main()
 
     // Create step size sublist
     Teuchos::ParameterList& stepSizeList = locaParamsList.sublist("Step Size");
-    stepSizeList.set("Method", "Adaptive");
+    stepSizeList.set("Method", "Adaptive");      // Default
     stepSizeList.set("Initial Step Size", 0.02);
     stepSizeList.set("Min Step Size", 1.0e-3);
     stepSizeList.set("Max Step Size", 0.02);
-    stepSizeList.set("Aggressiveness", 0.5);
-    stepSizeList.set("Failed Step Reduction Factor", 0.5);
-    stepSizeList.set("Successful Step Increase Factor", 1.26); // for constant
 
     // Create the "Solver" parameters sublist to be used with NOX Solvers
     Teuchos::ParameterList& nlParams = paramList->sublist("NOX");
-    nlParams.set("Nonlinear Solver", "Line Search Based");
-
     Teuchos::ParameterList& nlPrintParams = nlParams.sublist("Printing");
     nlPrintParams.set("Output Information", 
-			       NOX::Utils::OuterIteration + 
-			       NOX::Utils::OuterIterationStatusTest + 
-			       NOX::Utils::InnerIteration +
-			       NOX::Utils::Parameters +
-			       NOX::Utils::Details + 
-			       NOX::Utils::Warning + 
-			       NOX::Utils::StepperIteration +
-			       NOX::Utils::StepperDetails);
+		      NOX::Utils::OuterIteration + 
+		      NOX::Utils::OuterIterationStatusTest + 
+		      NOX::Utils::InnerIteration +
+		      NOX::Utils::Details + 
+		      NOX::Utils::Warning + 
+		      NOX::Utils::StepperIteration +
+		      NOX::Utils::StepperDetails +
+		      NOX::Utils::StepperParameters);
 
     // Create the "Line Search" sublist for the "Line Search Based" solver
     Teuchos::ParameterList& searchParams = nlParams.sublist("Line Search");
@@ -220,7 +204,7 @@ int main()
     }
 
     // Output the parameter list
-    if (globalData->locaUtils->isPrintType(NOX::Utils::Parameters)) {
+    if (globalData->locaUtils->isPrintType(NOX::Utils::StepperParameters)) {
       globalData->locaUtils->out() 
 	<< std::endl << "Final Parameters" << std::endl
 	<< "****************" << std::endl;
