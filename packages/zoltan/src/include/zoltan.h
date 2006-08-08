@@ -88,6 +88,9 @@ enum Zoltan_Fn_Type {
   ZOLTAN_HG_EDGE_WTS_FN_TYPE,
   ZOLTAN_NUM_FIXED_OBJ_FN_TYPE,
   ZOLTAN_FIXED_OBJ_LIST_FN_TYPE,
+  ZOLTAN_HIER_NUM_LEVELS_FN_TYPE,
+  ZOLTAN_HIER_PARTITION_FN_TYPE,
+  ZOLTAN_HIER_METHOD_FN_TYPE,
   ZOLTAN_MAX_FN_TYPES               /*  This entry should always be last. */
 };
 
@@ -2099,6 +2102,68 @@ typedef int ZOLTAN_NEXT_BORDER_OBJ_FORT_FN(
 );
 
 /*****************************************************************************/
+/*******  Functions to set up hierarchical balancing  ************************/
+/*****************************************************************************/
+
+/*****************************************************************************/
+/*
+ *  Function to return, for the calling processor, the number of levels
+ *  of hierarchy for hierarchical load balancing
+ *  Input:  
+ *    data                --  pointer to user defined data structure
+ *  Output:
+ *    ierr                --  error code
+ *  Returned value:       --  the number of levels of balancing hierarchy
+ */
+
+typedef int ZOLTAN_HIER_NUM_LEVELS_FN(
+  void *data,
+  int *ierr
+);
+
+/*****************************************************************************/
+/*
+ *  Function to return, for the calling processor, the partition
+ *  in which the processor is to be computing for hierarchical
+ *  balancing at the given level in the hierarchy
+ *  Input:  
+ *    data                --  pointer to user defined data structure
+ *    level               --  level in the hierarchy being considered
+ *  Output:
+ *    ierr                --  error code
+ *  Returned value:       --  the partition number the processor is to compute
+ */
+
+typedef int ZOLTAN_HIER_PARTITION_FN(
+  void *data,
+  int level,
+  int *ierr
+);
+
+
+/*****************************************************************************/
+/*
+ *  Function to provide to the calling processor the Zoltan_Struct
+ *  to be used to guide the partitioning and load balancing at the
+ *  given level in the hierarchy.  This Zoltan_Struct can be passed to
+ *  Zoltan_Set_Param to set load balancing parameters for this level
+ *  in the hierarchical balancing
+ *  Input:  
+ *    data                --  pointer to user defined data structure
+ *    level               --  level in the hierarchy being considered
+ *    zz                  --  Zoltan_Struct to use to set parameters
+ *  Output:
+ *    ierr                --  error code
+ */
+
+typedef void ZOLTAN_HIER_METHOD_FN(
+  void *data,
+  int level,
+  struct Zoltan_Struct *zz,
+  int *ierr
+);
+
+/*****************************************************************************/
 /*****************************************************************************/
 /*******  Functions to set-up Zoltan load-balancing data structure  **********/
 /*****************************************************************************/
@@ -2474,6 +2539,24 @@ extern int Zoltan_Set_Num_Fixed_Obj_Fn(
 extern int Zoltan_Set_Fixed_Obj_List_Fn(
   struct Zoltan_Struct *zz, 
   ZOLTAN_FIXED_OBJ_LIST_FN *fn_ptr, 
+  void *data_ptr
+);
+
+extern int Zoltan_Set_Hier_Num_Levels_Fn(
+  struct Zoltan_Struct *zz, 
+  ZOLTAN_HIER_NUM_LEVELS_FN *fn_ptr, 
+  void *data_ptr
+);
+
+extern int Zoltan_Set_Hier_Partition_Fn(
+  struct Zoltan_Struct *zz, 
+  ZOLTAN_HIER_PARTITION_FN *fn_ptr, 
+  void *data_ptr
+);
+
+extern int Zoltan_Set_Hier_Method_Fn(
+  struct Zoltan_Struct *zz, 
+  ZOLTAN_HIER_METHOD_FN *fn_ptr, 
   void *data_ptr
 );
 
