@@ -30,7 +30,7 @@
 #define ANASAZI_MULTI_VEC_TRAITS_HPP
 
 /*! \file AnasaziMultiVecTraits.hpp
-  \brief Virtual base class which defines basic traits for the multi-vector type
+    \brief Virtual base class which defines basic traits for the multivector type
 */
 
 #include "AnasaziConfigDefs.hpp"
@@ -40,11 +40,9 @@
 
 namespace Anasazi {
 
-/*! \struct UndefinedMultiVecTraits
-   \brief This is the default struct used by MultiVecTraits<ScalarType, MV> class to produce a
-   compile time error when the specialization does not exist for multivector type <tt>MV</tt>.
-*/
-
+  /*! \brief This is the default struct used by MultiVecTraits<ScalarType, MV> class to produce a
+      compile time error when the specialization does not exist for multivector type <tt>MV</tt>.
+  */
   template< class ScalarType, class MV >
   struct UndefinedMultiVecTraits
   {
@@ -55,17 +53,15 @@ namespace Anasazi {
     */
     static inline ScalarType notDefined() { return MV::this_type_is_missing_a_specialization(); };
   };
-  
-  /*! \class MultiVecTraits
-    \brief Virtual base class which defines basic traits for the multi-vector type.
-    
-    An adapter for this traits class must exist for the <tt>MV</tt> type.
-    If not, this class will produce a compile-time error.
 
-    \ingroup anasazi_opvec_interfaces
 
+  /*! \brief Virtual base class which defines basic traits for the multi-vector type.
+
+      An adapter for this traits class must exist for the <tt>MV</tt> type.
+      If not, this class will produce a compile-time error.
+
+      \ingroup anasazi_opvec_interfaces
   */
-
   template<class ScalarType, class MV>
   class MultiVecTraits 
   {

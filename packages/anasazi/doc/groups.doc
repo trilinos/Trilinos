@@ -1,10 +1,89 @@
 
 /*! \namespace Anasazi
- *  \brief Namespace %Anasazi contains the solvers, structs, enums and utilities used by the %Anasazi package.
+ *  \brief Namespace %Anasazi contains the classes, structs, enums and utilities used by the %Anasazi package.
  */
 
-//! \defgroup anasazi_opvec_interfaces Anasazi Operator/Vector Interfaces
+/*! @defgroup anasazi_opvec_interfaces Anasazi Operator/Vector Interfaces
 
-//! \defgroup anasazi_solvers Anasazi Eigensolvers
+   \brief This module describes the operator and vector interfaces used in the
+   %Anasazi eigensolver package.
 
-//! \defgroup anasazi_solvermanagers Anasazi Eigensolver Managers
+   The %Anasazi eigensolver package utilizes abstract interfaces for operators
+   and multivectors. The goal of this is to leverage existing linear algebra
+   libraries for use in %Anasazi. To this end, the algorithms in %Anasazi are
+   developed at a high-level. The choice in linear algebra is made through
+   templating, and access to the functionality of the underlying objects is
+   provided via the traits classes Anasazi::MultiVecTraits and
+   Anasazi::OperatorTraits.
+
+   Anasazi::MultiVecTraits requires two template arguments: 
+        - a scalar class (\c ScalarType), describing the field over which the multivectors are defined, and
+        - a multivector class (\c MV). 
+
+   Because %Anasazi is a package for block eigensolvers, the underlying
+   primitive is a collection of column vectors (a multivector) instead of a
+   single column vector. Anasazi::MultiVecTraits provides an interface for
+   accessing multivector operations (e.g., multivector \c AXPY). For example,
+   to manipulate an Epetra_Multivector via the Anasazi::MultiVecTraits
+   interface, code would look like:
+
+   \code
+   // build some Epetra_MultiVector objects...
+   Epetra_MultiVector A(...), B(...), C(...);
+   // ...and a Teuchos::SerialDenseMatrix
+   Teuchos::SerialDenseMatrix<int,double> D(...);
+
+   // perform C <- 1.0*A + 0.5*B;
+   Anasazi::MultiVecTraits<double,Epetra_MultiVector>::MvAddMv(1.0, A, 0.5, B, C);
+
+   // perform C <- -2.0*A*D + 1.0*C
+   Anasazi::MultiVecTraits<double,Epetra_MultiVector>::MvTimesMatAddMv(-2.0, A, D, 1.0, C);
+   \endcode
+
+   Similarly, OperatorTraits is used to access the functionality of operators, namely, their effect on multivectors. 
+   In this respect, Anasazi::OperatorTraits requires three template arguments: 
+        - a scalar class (\c ScalarType), describing the field over which the multivectors are defined, 
+        - a multivector class (\c MV), describing the domain and range of the operator, and 
+        - an operator class (\c OP).
+
+   The Anasazi::OperatorTraits interface provides access to a single mechanism: the ability
+   to apply an operator of type \c OP to a multivector of type \c MV to yield
+   another multivector of type \c MV. This is perfomed as follows:
+
+   \code
+   // build some Epetra_MultiVector objects...
+   Epetra_MultiVector A(...), B(...);
+   // ...and an operator
+   Epetra_Operator Op(...);
+
+   // apply the operation B <- Op*A
+   Anasazi::OperatorTraits<double,Epetra_MultiVector,Epetra_Operator>::Apply(Op,A,B);
+   \endcode
+
+   These interfaces are used throughout %Anasazi to manipulate multivectors and apply operators, so that no
+   low-level access to the underlying objects are needed. In such a way, eigensolvers and necessary utilities can be developed at a high level
+   without having to know specifics about the underlying linear algebra (e.g., serial or parallel, real or complex).
+
+   Calling methods of MultiVecTraits<ScalarType,MV> requires that a
+   specialization of MultiVecTraits has been implemented for classes \c
+   ScalarType and \c MV. In the case of Epetra_MultiVector and Epetra_Operator
+   (which are both defined on the field of doubles), this is provided
+   by the %Anasazi adapters to Epetra. Other specialization of these traits classes that are provided by 
+   %Anasazi are:
+        - Epetra_MultiVector and Epetra_Operator (with scalar type \c double)
+        - Thyra::MultiVectorBase and Thyra::LinearOpBase (with arbitrary scalar type)\n
+          This allows %Anasazi to be used with any classes that implement the abstract interfaces provided by the Thyra package.
+        - Anasazi::MultiVec and Anasazi::Operator (with arbitrary scalar type)\n
+          This allows %Anasazi to be used with any classes that implement the abstract base classes Anasazi::MultiVec and Anasazi::Operator.
+
+   For user-specified classes that don't fit one of the above, specializations
+   of Anasazi::MultiVecTraits and Anasazi::OperatorTraits will need to be
+   created by the user for use by %Anasazi.
+
+ */
+
+/*! @defgroup anasazi_solvers Anasazi Eigensolvers
+ */
+
+/*! @defgroup anasazi_solvermanagers Anasazi Eigensolver Managers
+ */

@@ -37,27 +37,17 @@
 #include "AnasaziTypes.hpp"
 
 
-
-
 namespace Anasazi {
 
 
-  //! @name OperatorTraits Exceptions
-    //@{ 
-
-    /** \brief Exceptions thrown to signal error in operator application.
-    */
-    class OperatorError : public AnasaziError
-    {public: OperatorError(const std::string& what_arg) : AnasaziError(what_arg) {}};
-
-    //@}
+  //! \brief Exceptions thrown to signal error in operator application.
+  class OperatorError : public AnasaziError
+  {public: OperatorError(const std::string& what_arg) : AnasaziError(what_arg) {}};
 
 
-/*! \struct UndefinedOperatorTraits
-   \brief This is the default struct used by OperatorTraits<ScalarType, MV, OP> class to produce a
-   compile time error when the specialization does not exist for operator type <tt>OP</tt>.
-*/
-
+  /*! \brief This is the default struct used by OperatorTraits<ScalarType, MV, OP> class to produce a
+      compile time error when the specialization does not exist for operator type <tt>OP</tt>.
+  */
   template< class ScalarType, class MV, class OP >
   struct UndefinedOperatorTraits
   {
@@ -68,16 +58,15 @@ namespace Anasazi {
     */
     static inline void notDefined() { return OP::this_type_is_missing_a_specialization(); };
   };
-  
-  /*! \class OperatorTraits
-    \brief Virtual base class which defines basic traits for the operator type.
 
-    An adapter for this traits class must exist for the <tt>MV</tt> and <tt>OP</tt> types.
-    If not, this class will produce a compile-time error.
 
-    \ingroup anasazi_opvec_interfaces
+  /*!  \brief Virtual base class which defines basic traits for the operator type.
+
+       An adapter for this traits class must exist for the <tt>MV</tt> and <tt>OP</tt> types.
+       If not, this class will produce a compile-time error.
+
+       \ingroup anasazi_opvec_interfaces
   */
-
   template <class ScalarType, class MV, class OP>
   class OperatorTraits 
   {

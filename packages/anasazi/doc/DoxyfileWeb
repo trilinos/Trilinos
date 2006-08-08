@@ -49,6 +49,6 @@ EXCLUDE                = ../src/ModalAnalysisSolvers ../src/AnasaziDenseMatTrait
 
 EXAMPLE_PATH           = ../example/LOBPCG ../example/BlockDavidson ../example/MVOPTester
 
-TAGFILES               = ../../common/tag_files/epetra.tag=../../../epetra/doc/html ../../common/tag_files/teuchos.tag=../../../teuchos/doc/html
+TAGFILES               = ../../common/tag_files/epetra.tag=../../../epetra/doc/html ../../common/tag_files/teuchos.tag=../../../teuchos/doc/html ../../common/tag_files/ThyraInterfacesOperatorVectorANAFundamental.tag=../../../thyra/src/interfaces/operator_vector/ana/fundamental/doc/html
 
 GENERATE_TAGFILE       = ../../common/tag_files/anasazi.tag

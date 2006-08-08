@@ -52,7 +52,7 @@ namespace Anasazi {
   //
   ///////////////////////////////////////////////////////////////
   
-  /*! \class EpetraMultiVec
+  /*! 
     \brief Basic adapter class for Anasazi::MultiVec that uses Epetra_MultiVector.
 
     \note The Epetra package performs double-precision arithmetic, so the use of Epetra with Anasazi will
@@ -232,7 +232,7 @@ namespace Anasazi {
   //
   ///////////////////////////////////////////////////////////////
   
-  /*! \class EpetraOp
+  /*! 
     \brief Basic adapter class for Anasazi::Operator that uses Epetra_Operator.
 
     \note The Epetra package performs double-precision arithmetic, so the use of Epetra with Anasazi will
@@ -270,7 +270,7 @@ namespace Anasazi {
   //
   ///////////////////////////////////////////////////////////////
   
-  /*! \class EpetraGenOp
+  /*! 
     \brief Adapter class for creating an operators often used in solving generalized eigenproblems.
 
     This class will apply the operation \f$A^{-1}M\f$ [default] or \f$AM\f$, for the \c Apply method of the
@@ -347,7 +347,7 @@ namespace Anasazi {
   //
   ///////////////////////////////////////////////////////////////
 
-  /*! \class EpetraSymOp
+  /*! 
     \brief Adapter class for creating a symmetric operator from an Epetra_Operator.
 
     This class will apply the operation \f$A^TA\f$ [default] or \f$AA^T\f$, for the \c Apply method of the
@@ -421,7 +421,7 @@ namespace Anasazi {
   //
   //////////////////////////////////////////////////////////////////
 
-  /*! \class EpetraSymMVOp
+  /*! 
     \brief Adapter class for creating a symmetric operator from an Epetra_MultiVector.
 
     This class will apply the operation \f$A^TA\f$ [default] or \f$AA^T\f$, for the \c Apply method of the

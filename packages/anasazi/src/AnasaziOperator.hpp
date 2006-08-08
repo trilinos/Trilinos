@@ -41,8 +41,7 @@
 
 namespace Anasazi {
   
-/*!	\class Operator
-
+/*!	
 	\brief Anasazi's templated virtual class for constructing an operator that can interface with the 
 	OperatorTraits class used by the eigensolvers.
 	
