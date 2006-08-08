@@ -271,6 +271,10 @@ static int DD_Find_Local (Zoltan_DD_Directory *dd,
          return ZOLTAN_DD_NORMAL_RETURN ;
          }
 
+   /* JDT Added -1 proc return for owner not found,
+      should make this no longer a warning condition */
+   if (owner != NULL) *owner = -1;
+
    if (dd->debug_level > 0) 
       ZOLTAN_PRINT_INFO(dd->my_proc, yo, "GID not found.");
    if (dd->debug_level > 2) 
