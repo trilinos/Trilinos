@@ -98,23 +98,23 @@ int main()
     bifurcationList.set("Type", "None");
 
     // Create predictor sublist
-    Teuchos::ParameterList& predictorList = locaParamsList.sublist("Predictor");
+    Teuchos::ParameterList& predictorList = 
+      locaParamsList.sublist("Predictor");
     //predictorList.set("Method", "Constant");
     predictorList.set("Method", "Tangent");
     //predictorList.set("Method", "Secant");
 
     // Create the "Solver" parameters sublist to be used with NOX Solvers
     Teuchos::ParameterList& nlParams = paramList->sublist("NOX");
-    nlParams.set("Nonlinear Solver", "Line Search Based");
-
     Teuchos::ParameterList& nlPrintParams = nlParams.sublist("Printing");
     nlPrintParams.set("Output Information", 
-			       NOX::Utils::Details +
-			       NOX::Utils::OuterIteration + 
-			       NOX::Utils::InnerIteration + 
-			       NOX::Utils::Warning + 
-			       NOX::Utils::StepperIteration +
-			       NOX::Utils::StepperDetails);
+		      NOX::Utils::Details +
+		      NOX::Utils::OuterIteration + 
+		      NOX::Utils::InnerIteration + 
+		      NOX::Utils::Warning + 
+		      NOX::Utils::StepperIteration +
+		      NOX::Utils::StepperDetails + 
+		      NOX::Utils::StepperParameters);
 
     // Create LAPACK Factory
     Teuchos::RefCountPtr<LOCA::LAPACK::Factory> lapackFactory = 
@@ -162,7 +162,7 @@ int main()
     }
 
     // Output the parameter list
-    if (globalData->locaUtils->isPrintType(NOX::Utils::Parameters)) {
+    if (globalData->locaUtils->isPrintType(NOX::Utils::StepperParameters)) {
       globalData->locaUtils->out() 
 	<< std::endl << "Final Parameters" << std::endl
 	<< "****************" << std::endl;

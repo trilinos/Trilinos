@@ -58,8 +58,6 @@ int main()
 
     // Create the "Solver" parameters sublist to be used with NOX Solvers
     Teuchos::ParameterList& nlParams = paramList->sublist("NOX");
-    nlParams.set("Nonlinear Solver", "Line Search Based");
-
     Teuchos::ParameterList& nlPrintParams = nlParams.sublist("Printing");
     nlPrintParams.set("Output Information", 
 		      NOX::Utils::Details +
@@ -69,7 +67,8 @@ int main()
 		      NOX::Utils::Error + 
 		      NOX::Utils::Parameters +
 		      NOX::Utils::StepperIteration +
-		      NOX::Utils::StepperDetails);
+		      NOX::Utils::StepperDetails +
+		      NOX::Utils::StepperParameters);
 
     // Create LAPACK Factory
     Teuchos::RefCountPtr<LOCA::LAPACK::Factory> lapackFactory = 
@@ -120,7 +119,7 @@ int main()
 				   << std::endl;
 
     // Output the parameter list
-    if (globalData->locaUtils->isPrintType(NOX::Utils::Parameters)) {
+    if (globalData->locaUtils->isPrintType(NOX::Utils::StepperParameters)) {
       globalData->locaUtils->out() 
 	<< std::endl << "Final Parameters" << std::endl
 	<< "****************" << std::endl;
