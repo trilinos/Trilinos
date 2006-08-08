@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP EGREP USING_EXPORT_MAKEFILES_TRUE USING_EXPORT_MAKEFILES_FALSE PERL_EXE HAVE_PERL USING_PERL_TRUE USING_PERL_FALSE USING_GNUMAKE_TRUE USING_GNUMAKE_FALSE ENABLE_TPETRA_THYRA_TRUE ENABLE_TPETRA_THYRA_FALSE BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE _TRUE _FALSE BUILD_PROFILE_EXAMPLE_TRUE BUILD_PROFILE_EXAMPLE_FALSE FLIBS BLAS_LIBS LAPACK_LIBS ac_aux_dir LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP EGREP USING_EXPORT_MAKEFILES_TRUE USING_EXPORT_MAKEFILES_FALSE PERL_EXE HAVE_PERL USING_PERL_TRUE USING_PERL_FALSE USING_GNUMAKE_TRUE USING_GNUMAKE_FALSE ENABLE_TPETRA_THYRA_TRUE ENABLE_TPETRA_THYRA_FALSE BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE HAVE_EPETRA_TRUE HAVE_EPETRA_FALSE HAVE_TRIUTILS_TRUE HAVE_TRIUTILS_FALSE BUILD_PROFILE_EXAMPLE_TRUE BUILD_PROFILE_EXAMPLE_FALSE FLIBS BLAS_LIBS LAPACK_LIBS ac_aux_dir LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -900,14 +900,13 @@ Optional Features:
   --enable-tpetra-examples
                           Build Tpetra examples (default is yes if
                           --disable-examples is not specified)
-  --enable-Enable examples that require Epetra.
-
-  --enable-epetra-Enable examples that require Epetra.
-
-  --enable-Enable examples that require Triutils.
-
-  --enable-triutils-Enable examples that require Triutils.
-
+  --enable-epetra         Enable examples that require Epetra. Can be
+                          overridden with --disable-tpetra-epetra.
+  --enable-tpetra-epetra  Enable examples that require Epetra.
+  --enable-triutils       Enable examples that require Triutils. Can be
+                          overridden with --disable-tpetra-triutils.
+  --enable-tpetra-triutils
+                          Enable examples that require Triutils.
   --enable-libcheck       Check for some third-party libraries including BLAS
                           and LAPACK. (Cannot be disabled unless tests and
                           examples are also disabled.) (default is yes)
@@ -3823,7 +3822,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3826:" \
+echo "$as_me:3825:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -7776,32 +7775,32 @@ fi
 # both Epetra and TriUtils are enabled.
 
 
-# Check whether --enable-Enable examples that require Epetra. or --disable-Enable examples that require Epetra. was given.
-if test "${enable_Enable examples that require Epetra.+set}" = set; then
-  enableval="$enable_Enable examples that require Epetra."
-  ac_cv_implicit_use_Enable examples that require Epetra.=$enableval
+# Check whether --enable-epetra or --disable-epetra was given.
+if test "${enable_epetra+set}" = set; then
+  enableval="$enable_epetra"
+  ac_cv_implicit_use_epetra=$enableval
 else
-  ac_cv_implicit_use_Enable examples that require Epetra.=no
+  ac_cv_implicit_use_epetra=no
 fi;
 
-if test "X" != "Xno"; then
-  ac_cv_epetra_using_Enable examples that require Epetra._default=$ac_cv_implicit_use_Enable examples that require Epetra.
+if test "Xyes" != "Xno"; then
+  ac_cv_tpetra_using_epetra_default=$ac_cv_implicit_use_epetra
 else
-  ac_cv_epetra_using_Enable examples that require Epetra._default=no
+  ac_cv_tpetra_using_epetra_default=no
 fi
 
-# Check whether --enable-epetra-Enable examples that require Epetra. or --disable-epetra-Enable examples that require Epetra. was given.
-if test "${enable_epetra_Enable examples that require Epetra.+set}" = set; then
-  enableval="$enable_epetra_Enable examples that require Epetra."
-  ac_cv_use_Enable examples that require Epetra.=$enableval
+# Check whether --enable-tpetra-epetra or --disable-tpetra-epetra was given.
+if test "${enable_tpetra_epetra+set}" = set; then
+  enableval="$enable_tpetra_epetra"
+  ac_cv_use_epetra=$enableval
 else
-  ac_cv_use_Enable examples that require Epetra.=$ac_cv_epetra_using_Enable examples that require Epetra._default
+  ac_cv_use_epetra=$ac_cv_tpetra_using_epetra_default
 fi;
 
-echo "$as_me:$LINENO: checking whether to build optional Enable examples that require Epetra. dependent code in epetra" >&5
-echo $ECHO_N "checking whether to build optional Enable examples that require Epetra. dependent code in epetra... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking whether to build optional epetra dependent code in tpetra" >&5
+echo $ECHO_N "checking whether to build optional epetra dependent code in tpetra... $ECHO_C" >&6
 
-if test "X$ac_cv_use_Enable examples that require Epetra." != "Xno"; then
+if test "X$ac_cv_use_epetra" != "Xno"; then
   echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
 
@@ -7816,44 +7815,44 @@ fi
 
 
 
-if test "X$ac_cv_use_Enable examples that require Epetra." = "Xyes"; then
-  _TRUE=
-  _FALSE='#'
+if test "X$ac_cv_use_epetra" = "Xyes"; then
+  HAVE_EPETRA_TRUE=
+  HAVE_EPETRA_FALSE='#'
 else
-  _TRUE='#'
-  _FALSE=
+  HAVE_EPETRA_TRUE='#'
+  HAVE_EPETRA_FALSE=
 fi
 
 
 
 
 
-# Check whether --enable-Enable examples that require Triutils. or --disable-Enable examples that require Triutils. was given.
-if test "${enable_Enable examples that require Triutils.+set}" = set; then
-  enableval="$enable_Enable examples that require Triutils."
-  ac_cv_implicit_use_Enable examples that require Triutils.=$enableval
+# Check whether --enable-triutils or --disable-triutils was given.
+if test "${enable_triutils+set}" = set; then
+  enableval="$enable_triutils"
+  ac_cv_implicit_use_triutils=$enableval
 else
-  ac_cv_implicit_use_Enable examples that require Triutils.=no
+  ac_cv_implicit_use_triutils=no
 fi;
 
-if test "X" != "Xno"; then
-  ac_cv_triutils_using_Enable examples that require Triutils._default=$ac_cv_implicit_use_Enable examples that require Triutils.
+if test "Xyes" != "Xno"; then
+  ac_cv_tpetra_using_triutils_default=$ac_cv_implicit_use_triutils
 else
-  ac_cv_triutils_using_Enable examples that require Triutils._default=no
+  ac_cv_tpetra_using_triutils_default=no
 fi
 
-# Check whether --enable-triutils-Enable examples that require Triutils. or --disable-triutils-Enable examples that require Triutils. was given.
-if test "${enable_triutils_Enable examples that require Triutils.+set}" = set; then
-  enableval="$enable_triutils_Enable examples that require Triutils."
-  ac_cv_use_Enable examples that require Triutils.=$enableval
+# Check whether --enable-tpetra-triutils or --disable-tpetra-triutils was given.
+if test "${enable_tpetra_triutils+set}" = set; then
+  enableval="$enable_tpetra_triutils"
+  ac_cv_use_triutils=$enableval
 else
-  ac_cv_use_Enable examples that require Triutils.=$ac_cv_triutils_using_Enable examples that require Triutils._default
+  ac_cv_use_triutils=$ac_cv_tpetra_using_triutils_default
 fi;
 
-echo "$as_me:$LINENO: checking whether to build optional Enable examples that require Triutils. dependent code in triutils" >&5
-echo $ECHO_N "checking whether to build optional Enable examples that require Triutils. dependent code in triutils... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking whether to build optional triutils dependent code in tpetra" >&5
+echo $ECHO_N "checking whether to build optional triutils dependent code in tpetra... $ECHO_C" >&6
 
-if test "X$ac_cv_use_Enable examples that require Triutils." != "Xno"; then
+if test "X$ac_cv_use_triutils" != "Xno"; then
   echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
 
@@ -7868,12 +7867,12 @@ fi
 
 
 
-if test "X$ac_cv_use_Enable examples that require Triutils." = "Xyes"; then
-  _TRUE=
-  _FALSE='#'
+if test "X$ac_cv_use_triutils" = "Xyes"; then
+  HAVE_TRIUTILS_TRUE=
+  HAVE_TRIUTILS_FALSE='#'
 else
-  _TRUE='#'
-  _FALSE=
+  HAVE_TRIUTILS_TRUE='#'
+  HAVE_TRIUTILS_FALSE=
 fi
 
 
@@ -8290,7 +8289,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:8293: \"$ac_link\") >&5
+(eval echo $as_me:8292: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8368,7 +8367,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:8371: \"$ac_link\") >&5
+(eval echo $as_me:8370: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10824,7 +10823,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:10827: \"$ac_link\") >&5
+(eval echo $as_me:10826: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10902,7 +10901,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:10905: \"$ac_link\") >&5
+(eval echo $as_me:10904: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -11280,17 +11279,17 @@ echo "$as_me: error: conditional \"BUILD_EXAMPLES\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
-if test -z "${_TRUE}" && test -z "${_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"\" was never defined.
+if test -z "${HAVE_EPETRA_TRUE}" && test -z "${HAVE_EPETRA_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_EPETRA\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"\" was never defined.
+echo "$as_me: error: conditional \"HAVE_EPETRA\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
-if test -z "${_TRUE}" && test -z "${_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"\" was never defined.
+if test -z "${HAVE_TRIUTILS_TRUE}" && test -z "${HAVE_TRIUTILS_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_TRIUTILS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"\" was never defined.
+echo "$as_me: error: conditional \"HAVE_TRIUTILS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -11941,8 +11940,10 @@ s,@BUILD_TESTS_TRUE@,$BUILD_TESTS_TRUE,;t t
 s,@BUILD_TESTS_FALSE@,$BUILD_TESTS_FALSE,;t t
 s,@BUILD_EXAMPLES_TRUE@,$BUILD_EXAMPLES_TRUE,;t t
 s,@BUILD_EXAMPLES_FALSE@,$BUILD_EXAMPLES_FALSE,;t t
-s,@_TRUE@,$_TRUE,;t t
-s,@_FALSE@,$_FALSE,;t t
+s,@HAVE_EPETRA_TRUE@,$HAVE_EPETRA_TRUE,;t t
+s,@HAVE_EPETRA_FALSE@,$HAVE_EPETRA_FALSE,;t t
+s,@HAVE_TRIUTILS_TRUE@,$HAVE_TRIUTILS_TRUE,;t t
+s,@HAVE_TRIUTILS_FALSE@,$HAVE_TRIUTILS_FALSE,;t t
 s,@BUILD_PROFILE_EXAMPLE_TRUE@,$BUILD_PROFILE_EXAMPLE_TRUE,;t t
 s,@BUILD_PROFILE_EXAMPLE_FALSE@,$BUILD_PROFILE_EXAMPLE_FALSE,;t t
 s,@FLIBS@,$FLIBS,;t t
