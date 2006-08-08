@@ -30,3 +30,8 @@ get_processor_name.c   -- Routine to get the name of the physical processor
 
 divide_machine.c       -- Routine to divide the current machine 
                           (defined by the communicator) into two pieces.
+
+ha_drum.h              -- Header files for RPI/Williams DRUM heterogeneous
+                          load balancing support
+
+ha_drum.c              -- Interface to RPI/Williams DRUM library
