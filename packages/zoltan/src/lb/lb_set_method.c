@@ -166,6 +166,21 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
     goto End;
 #endif
   }
+  else if (strcmp(method_upper, "HIER") == 0) {
+#ifdef ZOLTAN_HIER
+    zz->LB.Method = HIER;
+    zz->LB.LB_Fn = Zoltan_Hier;
+    zz->LB.Free_Structure = Zoltan_Hier_Free_Structure;
+    zz->LB.Point_Assign = NULL;
+    zz->LB.Box_Assign = NULL;
+#else
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
+                       "HIER method selected but not compiled into Zoltan; "
+                       "Compile with ZOLTAN_HIER=1.");
+    error = ZOLTAN_FATAL;
+    goto End;
+#endif
+  }
   else if (strcmp(method_upper, "NONE") == 0) {
     zz->LB.Method = NONE;
     zz->LB.LB_Fn = NULL;
