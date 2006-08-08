@@ -86,6 +86,7 @@ endif
 # Default values for inclusion of methods.
 ZOLTAN_HG=1
 ZOLTAN_OCT=1
+ZOLTAN_HIER=1
 
 GDEFINES	=
 
@@ -153,6 +154,14 @@ ifdef NEMESIS_LIBPATH
   THIRD_PARTY_INCPATH += $(NEMESIS_INCPATH)
 endif
 
+# If DRUM_LIBPATH is defined, set include path and link DRUM into zdrive
+ifdef DRUM_LIBPATH
+  GDEFINES += -DZOLTAN_DRUM
+  THIRD_PARTY_LIBS += $(DRUM_LIBNAME)
+  THIRD_PARTY_LIBPATH += $(DRUM_LIBPATH)
+  THIRD_PARTY_INCPATH += $(DRUM_INCPATH)
+endif
+
 
 ############################################################################
 #                  OBJECT DIRECTORIES
@@ -170,7 +179,7 @@ SUB_VPATH	= ../include ../Utilities/shared \
 		  ../zz ../all ../lb ../par ../rcb ../coloring ../oct ../hsfc \
 		  ../phg  ../util \
 		  ../params ../driver$(ZOLTAN_OLD) ../ch ../parmetis ../timer \
-                  ../order ../ha ../reftree \
+                  ../order ../ha ../reftree ../hier \
 		  ../Utilities/Communication ../Utilities/Memory \
                   ../Utilities/DDirectory ../Utilities/Timer
 SUBINCPATH	= -I../include -I../Utilities/shared \
@@ -179,12 +188,12 @@ SUBINCPATH	= -I../include -I../Utilities/shared \
 		  -I../order -I../hsfc -I../phg  -I../util \
 		  -I../params -I../driver$(ZOLTAN_OLD) -I../ch \
 		  -I../parmetis -I../timer \
-                  -I../ha -I../reftree \
+                  -I../ha -I../hier -I../reftree \
 		  -I../Utilities/Communication -I../Utilities/Memory \
                   -I../Utilities/DDirectory -I../Utilities/Timer
 SUBDIRS		= driver$(ZOLTAN_OLD) ch zz all lb order par rcb \
 		  coloring oct phg util \
-                  hsfc parmetis params \
+                  hsfc parmetis params hier \
 		  timer ha  reftree include
 UTIL_SUBDIRS	= Utilities/shared Utilities/Communication \
 		  Utilities/Memory Utilities/DDirectory Utilities/Timer
@@ -266,12 +275,21 @@ TIMER_CSRC	= timer_params.c
 TIMER_INC	= timer_const.h
 
 HA_CSRC         = divide_machine.c get_processor_name.c \
-                  build_machine_desc.c
-HA_INC          = ha_const.h
+                  build_machine_desc.c ha_drum.c
+HA_INC          = ha_const.h ha_drum.h
 
 REFTREE_CSRC    = reftree_build.c reftree_part.c reftree_hash.c \
                   reftree_coarse_path.c
 REFTREE_INC     = reftree_const.h
+
+ifdef ZOLTAN_HIER
+HIER_CSRC       = hier.c hier_free_struct.c
+HIER_INC        = hier.h
+GDEFINES       += -DZOLTAN_HIER
+else
+HIER_CSRC       = 
+HIER_INC        = 
+endif
 
 # source code and defines for zdrive and zCPPdrive
 DR_BOTH_SRC	= dr_err.c dr_input.c dr_par_util.c \
@@ -281,7 +299,7 @@ DR_BOTH_SRC	= dr_err.c dr_input.c dr_par_util.c \
 		  dr_hg_io.c dr_hg_readfile.c dr_mm_readfile.c dr_mmio.c
 
 DR_C_SRC	= dr_main.c dr_exoII_io.c dr_loadbal.c \
-		  dr_migrate.c dr_maps.c dr_dd.c
+		  dr_migrate.c dr_maps.c dr_dd.c dr_param_file.c
 
 DR_CPP_SRC	= dr_mainCPP.cpp dr_exoII_ioCPP.cpp dr_loadbalCPP.cpp \
 		  dr_migrateCPP.cpp dr_mapsCPP.cpp dr_ddCPP.cpp
@@ -323,7 +341,8 @@ ZOLTAN_CSRC    += $(ZZ_CSRC) $(LB_CSRC) $(ALL_CSRC) $(RCB_CSRC) $(PAR_CSRC) \
 		  $(COLOR_CSRC) \
 		  $(ORDER_CSRC) $(OCT_CSRC) $(HSFC_CSRC) \
 		  $(PARAMS_CSRC) $(PARMETIS_CSRC) $(PHG_CSRC) $(HG_CSRC) \
-		  $(TIMER_CSRC) $(HA_CSRC) $(REFTREE_CSRC) $(THIRD_PARTY_CSRC)
+		  $(TIMER_CSRC) $(HA_CSRC) $(REFTREE_CSRC) \
+		  $(HIER_CSRC) $(THIRD_PARTY_CSRC)
 ZOLTAN_VPATH	= $(SUB_VPATH) $(THIRD_PARTY_VPATH)
 ZOLTAN_OBJ	= $(ZOLTAN_CSRC:.c=.o)
 
@@ -385,7 +404,7 @@ LINT		= lint
 LINT_INC_PATH	= -Iinclude -Idriver$(ZOLTAN_OLD) -Ich -Izz -Iall -Ilb \
 		  -Iorder -Ipar -Ircb -Icoloring -Iparams \
 		  -Ioct -Ihsfc -Iparmetis -Itimer -Iha -Ireftree \
-		  -Iphg \
+		  -Iphg -Ihier \
 		  -IUtilities/shared -IUtilities/Memory \
 		  -IUtilities/Communication -IUtilities/DDirectory \
 		  -IUtilities/Timer \
@@ -643,6 +662,10 @@ zscript:
 	@echo "echo 'Zoltan:  Compiling Zoltan/reftree'" >> zoltan_script
 	@for iii in $(REFTREE_CSRC) ; do \
 	 echo '$$CCOMP' $(SUBINCPATH) -c '$$GDEFINES $$DEFS' ../reftree/$$iii >> zoltan_script; \
+	 done;
+	@echo "echo 'Zoltan:  Compiling Zoltan/hier'" >> zoltan_script
+	@for iii in $(HIER_CSRC) ; do \
+	 echo '$$CCOMP' $(SUBINCPATH) -c '$$GDEFINES $$DEFS' ../hier/$$iii >> zoltan_script; \
 	 done;
 	@echo "echo Zoltan:  Linking $(LIB_NAME)" >> zoltan_script
 	@echo '$$AR' $(LIB_NAME) $(ZOLTAN_OBJ) $(FOBJ_FILES) >> zoltan_script
