@@ -118,6 +118,7 @@ public :: &
    Zoltan_Copy, &
    Zoltan_Copy_To, &
    Zoltan_Destroy, &
+   Zoltan_Get_Struct_Addr, &
    Zoltan_Memory_Stats, &
    Zoltan_Set_Fn, &
    Zoltan_Set_Param, &
@@ -1088,6 +1089,10 @@ interface Zoltan_Destroy
    module procedure Zf90_Destroy
 end interface
 
+interface Zoltan_Get_Struct_Addr
+   module procedure Zf90_Get_Struct_Addr
+end interface
+
 interface Zoltan_Memory_Stats
    module procedure Zf90_Memory_Stats
 end interface
@@ -1410,6 +1415,17 @@ call Zfw_Destroy(zz_addr,nbytes)
 deallocate(zz)
 nullify(zz)
 end subroutine Zf90_Destroy
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+subroutine Zf90_Get_Struct_Addr(zz,zz_addr)
+type(Zoltan_Struct), pointer :: zz
+integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: zz_addr
+integer(Zoltan_INT) :: nbytes, i
+nbytes = Zoltan_PTR_LENGTH
+do i=1,nbytes
+   zz_addr(i) = ichar(zz%addr%addr(i:i))
+end do
+end subroutine Zf90_Get_Struct_Addr
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 subroutine Zf90_Memory_Stats()
