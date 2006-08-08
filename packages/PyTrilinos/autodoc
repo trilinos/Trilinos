@@ -129,7 +129,6 @@ class SwigFile:
         # Assumes self.__dirName and self.__swigIncludes have
         # been properly set
         for includeFile in self.__swigIncludes:
-            print includeFile
             try:
                 iFile = SwigFile(os.path.join(self.__dirName,includeFile))
             except IOError:
@@ -227,7 +226,8 @@ def main():
     # Loop over the arguments
     for interfaceFile in filenames:
         iFile = SwigFile(interfaceFile)
-        wrapperDict[iFile.fullModuleName()] = iFile.headerIncludes()
+        moduleName = iFile.fullModuleName()
+        if moduleName: wrapperDict[moduleName] = iFile.headerIncludes()
 
     # Output the results
     keys = wrapperDict.keys()
