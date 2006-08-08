@@ -40,6 +40,7 @@ namespace Thyra
 
   /** \brief Handle class for <tt>VectorSpaceBase</tt>.
    *
+   * \ingroup Thyra_Op_Vec_ANA_Development_grp
    */
   template <class Scalar>
   class VectorSpace : public Teuchos::ConstHandle<VectorSpaceBase<Scalar> >
@@ -47,113 +48,130 @@ namespace Thyra
   public:
     TEUCHOS_CONST_HANDLE_CTORS(VectorSpace<Scalar>, VectorSpaceBase<Scalar>);
 
-    /** Create a new element of this vector space */
+    /** \brief Create a new element of this vector space. */
     Vector<Scalar>  createMember() const ;
 
-    /** Create a multivector in this vector space */
+    /** \brief Create a multivector in this vector space.
+     *
+     * Note: There is not yet a handle class for multi-vectors yet and
+     * therefore this function returns <tt>Teuchos::RefCountPtr</tt> object to
+     * the created raw <tt>MultiVectorBase</tt> object.  In the future, this
+     * will be replaced to return a true <tt>Thyra::MultiVector</tt> handle
+     * object onces this class is created.
+     */
     Teuchos::RefCountPtr<MultiVectorBase<Scalar> > createMembers(int n) const ;
 
-    /** Return the dimension of the space */
+    /** \brief Return the dimension of the space. */
     int dim() const {return this->constPtr()->dim();}
 
-    /** Check compatibility with another space. Implementation note: 
-     * we don't know if the argument vec space is a handle to another
-     * vector space or the contents of a handle, and we want the operation
-     * to work the same in either case. We can make this work as
-     * follows: have the argument check compatibility with the contents
-     * of this handle. If the argument is a handle, the process 
-     * will be repeated, interchanging places again so that both handles
-     * are dereferenced. If the argument is not a handle, then it
-     * ends up comparing to the concrete contents of this handle, giving the
-     * same results. */
+    /** \brief Check compatibility with another space.
+     *
+     * Implementation note: we don't know if the argument vec space is a
+     * handle to another vector space or the contents of a handle, and we want
+     * the operation to work the same in either case. We can make this work as
+     * follows: have the argument check compatibility with the contents of
+     * this handle. If the argument is a handle, the process will be repeated,
+     * interchanging places again so that both handles are dereferenced. If
+     * the argument is not a handle, then it ends up comparing to the concrete
+     * contents of this handle, giving the same results. */
     bool isCompatible(const VectorSpace<Scalar>& vecSpc) const; 
 
-
-    /** Tell if vectors of this space are in core  */
+    /** \brief Tell if vectors of this space are in core.  */
     bool isInCore() const {return this->constPtr()->isInCore();}
 
-   
-
-    /** test equality between two spaces */
+    /** \brief Test equality between two spaces */
     bool operator==(const VectorSpace<Scalar>& other) const ;
 
-
-    /** test inequality of two spaces */
+    /** \brief Test inequality of two spaces */
     bool operator!=(const VectorSpace<Scalar>& other) const ;
 
-
-    /** test whether the space contains a given vector */
+    /** \brief Test whether the space contains a given vector */
     bool contains(const Vector<Scalar>& vec) const ;
 
-
-    /** return the number of subblocks. */
+    /** \brief Return the number of vector space subblocks. */
     int numBlocks() const ;
 
-    /** get the i-th subblock */
-    VectorSpace<Scalar> getBlock(int i) const ;
+    /** \brief Get the k-th subblock where (<tt>0 <= k < numBlocks()</tt>) */
+    VectorSpace<Scalar> getBlock(int k) const ;
 
-
-    /** set the i-th subblock */
-    void setBlock(int i, const VectorSpace<Scalar>& space);
+    /** \brief Set the k-th subblock where (<tt>0 <= k < numBlocks()</tt>) */
+    void setBlock(int k, const VectorSpace<Scalar>& space);
 
   };
 
-  /** */
+  /** \brief Create a product space given an array of vector spaces blocks.
+   *
+   * \relates VectorSpace
+   */
   template <class Scalar>
   Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > 
   productSpace(const Teuchos::Array<VectorSpace<Scalar> >& spaces);
 
-  /** */
+  /** \brief Create a product space given a single vector space block.
+   *
+   * \relates VectorSpace
+   */
   template <class Scalar>
   Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > 
   productSpace(VectorSpace<Scalar>& s1);
 
-  /** */
+  /** \brief Create a product space given two vector space blocks.
+   *
+   * \relates VectorSpace
+   */
   template <class Scalar>
   Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > 
   productSpace(VectorSpace<Scalar>& s1, 
                VectorSpace<Scalar>& s2);
 
-  /** */
+  /** \brief Create a product space given three vector space blocks.
+   *
+   * \relates VectorSpace
+   */
   template <class Scalar>
   Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > 
   productSpace(VectorSpace<Scalar>& s1,VectorSpace<Scalar>& s2,
                VectorSpace<Scalar>& s3);
 
-
-  /** 
+  /** \brief Returns the lowest global index accessible on this processor.
+   * This function will throw an exception if the space is not a
+   * SpmdVectorSpaceBase.
+   *
+   * <b>Preconditions:</b><ul>
+   * <li><tt>isSPMD(s)==true</tt>
+   * </ul>
+   *
    * \relates VectorSpace 
-   * Returns the lowest global index accessible on this processor.
-   * This function will throw an exception if the space is not
-   * a SpmdVectorSpaceBase. 
    */
   template <class Scalar>
   int lowestLocallyOwnedIndex(const VectorSpace<Scalar>& s) ;
 
-  /** 
+  /** \brief Return the number of elements owned by this processor.  This
+   * function will throw an exception if the space is not a
+   * SpmdVectorSpaceBase.
+   *
+   * <b>Preconditions:</b><ul>
+   * <li><tt>isSPMD(s)==true</tt>
+   * </ul>
+   *
    * \relates VectorSpace 
-   * Return the number of elements owned by this processor.
-   * This function will throw an exception if the space is not
-   * a SpmdVectorSpaceBase. 
    */
   template <class Scalar>
   int numLocalElements(const VectorSpace<Scalar>& s) ;
 
-  /** 
+  /** \brief Test whether a specified index is local to this processor.
+   *
    * \relates VectorSpace 
-   * Test whether a specified index is local to this processor. 
    */
   template <class Scalar>
   bool indexIsLocal(const VectorSpace<Scalar>& s, Index i);
 
-  /** 
+  /** \brief Test whether a vector space is an atomic SPMD object.
+   *
    * \relates VectorSpace 
-   * Test whether a vector space is SPMD
    */
   template <class Scalar>
   bool isSPMD(const VectorSpace<Scalar>& s);
-
-  
 
 }
 

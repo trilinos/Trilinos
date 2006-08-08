@@ -612,7 +612,7 @@ Thyra::block1x2(
 
 template<class Scalar>
 Teuchos::RefCountPtr<Thyra::LinearOpBase<Scalar> >
-Thyra::block2x2(
+Thyra::nonconstBlock2x2(
   const Teuchos::RefCountPtr<LinearOpBase<Scalar> >    &A00
   ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >   &A01
   ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >   &A10
@@ -632,7 +632,7 @@ Thyra::block2x2(
 
 template<class Scalar>
 Teuchos::RefCountPtr<Thyra::LinearOpBase<Scalar> >
-Thyra::block2x1(
+Thyra::nonconstBlock2x1(
   const Teuchos::RefCountPtr<LinearOpBase<Scalar> >    &A00
   ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >   &A10
   )
@@ -648,7 +648,7 @@ Thyra::block2x1(
 
 template<class Scalar>
 Teuchos::RefCountPtr<Thyra::LinearOpBase<Scalar> >
-Thyra::block1x2(
+Thyra::nonconstBlock1x2(
   const Teuchos::RefCountPtr<LinearOpBase<Scalar> >    &A00
   ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >   &A01
   )

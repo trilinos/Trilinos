@@ -284,7 +284,7 @@ bool run_composite_linear_ops_tests(
 
   if(out.get()) *out << "\nCreating a non-const multiplied operator A7 = origA^H*A1 ...\n";
   RefCountPtr<Thyra::LinearOpBase<Scalar> >
-    A7 = multiply(
+    A7 = nonconstMultiply(
       rcp_const_cast<Thyra::LinearOpBase<Scalar> >(adjoint(origA))
       ,rcp_const_cast<Thyra::LinearOpBase<Scalar> >(A1)
       );

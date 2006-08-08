@@ -36,7 +36,6 @@
 #include "Thyra_TesterBase.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 
-
 #define TESTER(form1, form2)\
   {\
     Vector<Scalar> _val1 = form1;\
@@ -46,8 +45,6 @@
     ScalarMag err = norm2(_val1-_val2);\
     if (!checkTest(spec_, err, "[" #form1 "] == [" #form2 "]")) pass = false;\
   }
-    
-
 
 namespace Thyra
 {
@@ -204,7 +201,6 @@ namespace Thyra
     return pass;
   }
 
-
   template <class Scalar> 
   inline bool LinearCombinationTester<Scalar>
   ::selfModifyingOpTests() const
@@ -282,13 +278,13 @@ namespace Thyra
     v = Scalar(2.0)*x + Scalar(3.0)*y;
     err = norm2(v - (Scalar(2.0)*x + Scalar(3.0)*y));
 
-
-    
-
-
     return pass;
   }
-
-  
+ 
 }
+
+// We had better not leave a global macro named TESTSER just lying around
+// awating disaster!
+#undef TESTER
+
 #endif

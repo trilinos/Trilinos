@@ -284,7 +284,7 @@ void DefaultAddedLinearOp<Scalar>::validateOps()
 
 template<class Scalar>
 Teuchos::RefCountPtr<Thyra::LinearOpBase<Scalar> >
-Thyra::add(
+Thyra::nonconstAdd(
   const Teuchos::RefCountPtr<LinearOpBase<Scalar> >    &A
   ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >   &B
   )

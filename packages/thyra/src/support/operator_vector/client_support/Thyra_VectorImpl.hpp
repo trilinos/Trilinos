@@ -39,7 +39,7 @@
 
 namespace Thyra
 {
-  /** */
+
   template <class Scalar> inline
   Scalar ConstVector<Scalar>::operator[](Index globalIndex) const 
   {
@@ -52,7 +52,6 @@ namespace Thyra
   {
     return this->constPtr().get()==vec;
   }
-  
 
   template <class Scalar> inline
   void ConstVector<Scalar>::evalInto(Vector<Scalar>& acceptor) const
@@ -67,8 +66,6 @@ namespace Thyra
     Thyra::axpy(s, *this, acceptor);
   }
 
-
-  /* */
   template <class Scalar> inline
   std::ostream& operator<<(std::ostream& os, const ConstVector<Scalar>& v)
   {
@@ -91,30 +88,20 @@ namespace Thyra
     return *this;
   }
 
-
-  /** 
-   * \relates ConstVector
-   * Return the dimension of the vector 
-   */
   template <class Scalar> inline
   Index dim(const ConstVector<Scalar>& x) 
   {
     return x.constPtr()->space()->dim();
   }
 
-  
-  /** 
-   * \relates ConstVector
-   * Return the vector space in which the vector lives */
   template <class Scalar> inline
   VectorSpace<Scalar> space(const ConstVector<Scalar>& x) 
   {
     return x.constPtr()->space();
   }
 
-  /* copy */
+  /** \brief copy */
   THYRA_UNARY_VECTOR_OP(copy, copyInto, assign, "copy")
-
 
   //===========================================================================
   template <class Scalar> inline
@@ -187,21 +174,6 @@ namespace Thyra
     pv->setNonconstBlock(i, b.ptr());
     
   }
-
-
-
-
-  /** \relates Vector */
-  template <class Scalar> inline  
-  void setElement(const Vector<Scalar>& x, Index i, const Scalar& x_i);
-
-  /** \relates ConstVector */
-  template <class Scalar> inline  
-  const Scalar& getElement(const ConstVector<Scalar>& x, Index i);
-
-  
-  
-
 
 }
 

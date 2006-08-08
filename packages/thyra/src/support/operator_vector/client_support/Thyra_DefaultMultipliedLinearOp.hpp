@@ -309,7 +309,7 @@ void DefaultMultipliedLinearOp<Scalar>::validateOps()
 
 template<class Scalar>
 Teuchos::RefCountPtr<Thyra::LinearOpBase<Scalar> >
-Thyra::multiply(
+Thyra::nonconstMultiply(
   const Teuchos::RefCountPtr<LinearOpBase<Scalar> >    &A
   ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >   &B
   )

@@ -300,7 +300,7 @@ private:
  */
 template<class Scalar>
 Teuchos::RefCountPtr<LinearOpBase<Scalar> >
-multiply(
+nonconstMultiply(
   const Teuchos::RefCountPtr<LinearOpBase<Scalar> >    &A
   ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >   &B
   );

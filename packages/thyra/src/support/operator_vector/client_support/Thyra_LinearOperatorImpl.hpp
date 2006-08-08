@@ -40,14 +40,12 @@
 
 namespace Thyra
 {
-  /* Return the domain */
+
   template <class RangeScalar, class DomainScalar> inline 
   const VectorSpace<DomainScalar> ConstLinearOperator<RangeScalar, DomainScalar>
   ::domain() const 
   {return this->constPtr()->domain();}
     
-  
-  /* Return the range */
   template <class RangeScalar, class DomainScalar> inline 
   const VectorSpace<RangeScalar> ConstLinearOperator<RangeScalar, DomainScalar>
   ::range() const 
@@ -70,7 +68,6 @@ namespace Thyra
                        out.ptr().get(), alpha, beta);
   }
 
-
   template <class RangeScalar, class DomainScalar> inline 
   void ConstLinearOperator<RangeScalar, DomainScalar>
   ::applyTranspose(const ConstVector<RangeScalar>& in,
@@ -90,13 +87,11 @@ namespace Thyra
                                 alpha, beta);
   }
   
-  
   template <class RangeScalar, class DomainScalar> inline 
   int ConstLinearOperator<RangeScalar, DomainScalar>::numBlockRows() const
   {
     return range().numBlocks();
   }
-  
   
   template <class RangeScalar, class DomainScalar> inline 
   int ConstLinearOperator<RangeScalar, DomainScalar>::numBlockCols() const
@@ -123,8 +118,6 @@ namespace Thyra
       }
     return *this;
   }
-  
-
 
   template <class RangeScalar, class DomainScalar> inline 
   LinearOperator<RangeScalar, DomainScalar> 
@@ -145,48 +138,57 @@ namespace Thyra
       }
     return *this;
   }
-  
-  template <class Scalar> inline 
-  LinearOperator<Scalar> operator*(const ConstLinearOperator<Scalar>& A,
-                                   const ConstLinearOperator<Scalar>& B)
-  {
-    Teuchos::Array<Teuchos::RefCountPtr<const LinearOpBase<Scalar> > > AB(2);
-    AB[0] = A.constPtr();
-    AB[1] = B.constPtr();
 
-    Teuchos::RefCountPtr<LinearOpBase<Scalar> > ab 
-      = rcp(new DefaultMultipliedLinearOp<Scalar>(2, &(AB[0])));
-    return ab;
+  //
+  // Nonmember functions
+  //
+
+  template <class Scalar> inline 
+  ConstLinearOperator<Scalar>
+  operator*(const Scalar& a, 
+            const ConstLinearOperator<Scalar>& A)
+  {
+    return Thyra::scale<Scalar>(a,A.constPtr());
   }
 
   template <class Scalar> inline 
-  LinearOperator<Scalar> operator*(const Scalar& a, 
-                                   const ConstLinearOperator<Scalar>& A)
+  LinearOperator<Scalar>
+  operator*(const Scalar& a, 
+            const LinearOperator<Scalar>& A)
   {
-    Teuchos::RefCountPtr<LinearOpBase<Scalar> > s  
-      = rcp(new DefaultScaledAdjointLinearOp<Scalar>(a, NOTRANS, A.constPtr()));
-    return s;
-  }
-
-  
-  template <class Scalar> inline 
-  LinearOperator<Scalar> operator*(const ConstLinearOperator<Scalar>& A,
-                                   const Scalar& a)
-  {
-    return a*A;
+    return Thyra::nonconstScale<Scalar>(a,A.ptr());
   }
   
   template <class Scalar> inline 
-  LinearOperator<Scalar> operator+(const ConstLinearOperator<Scalar>& A,
-                                   const ConstLinearOperator<Scalar>& B)
+  ConstLinearOperator<Scalar>
+  operator*(const ConstLinearOperator<Scalar>& A,
+            const ConstLinearOperator<Scalar>& B)
   {
-    Teuchos::Array<Teuchos::RefCountPtr<const LinearOpBase<Scalar> > > AB(2);
-    AB[0] = A.constPtr();
-    AB[1] = B.constPtr();
-
-    Teuchos::RefCountPtr<LinearOpBase<Scalar> > ab 
-      = rcp(new DefaultAddedLinearOp<Scalar>(2, &(AB[0])));
-    return ab;
+    return Thyra::multiply<Scalar>(A.constPtr(),B.constPtr());
+  }
+  
+  template <class Scalar> inline 
+  LinearOperator<Scalar>
+  operator*(const LinearOperator<Scalar>& A,
+            const LinearOperator<Scalar>& B)
+  {
+    return Thyra::nonconstMultiply<Scalar>(A.ptr(),B.ptr());
+  }
+ 
+  template <class Scalar> inline 
+  ConstLinearOperator<Scalar>
+  operator+(const ConstLinearOperator<Scalar>& A,
+            const ConstLinearOperator<Scalar>& B)
+  {
+    return Thyra::add<Scalar>(A.constPtr(),B.constPtr());
+  }
+  
+  template <class Scalar> inline 
+  LinearOperator<Scalar>
+  operator+(const LinearOperator<Scalar>& A,
+            const LinearOperator<Scalar>& B)
+  {
+    return Thyra::nonconstAdd<Scalar>(A.ptr(),B.ptr());
   }
   
   template <class Scalar> inline 
@@ -196,9 +198,8 @@ namespace Thyra
            const ConstLinearOperator<Scalar>& A10,
            const ConstLinearOperator<Scalar>& A11)
   {
-    return block2x2(A00.constPtr(), A01.constPtr(), A10.constPtr(), A11.constPtr());
+    return block2x2(A00.constPtr(),A01.constPtr(),A10.constPtr(),A11.constPtr());
   }
-  
 
   template <class Scalar> inline 
   ConstLinearOperator<Scalar>
@@ -207,7 +208,6 @@ namespace Thyra
   {
     return block2x1(A00.constPtr(), A10.constPtr());
   }
-  
 
   template <class Scalar> inline 
   ConstLinearOperator<Scalar>
@@ -216,10 +216,6 @@ namespace Thyra
   {
     return block2x1(A00.constPtr(), A01.constPtr());
   }
-  
-
-  
-
 
   template <class Scalar> inline 
   LinearOperator<Scalar>
@@ -228,38 +224,25 @@ namespace Thyra
            const LinearOperator<Scalar>& A10,
            const LinearOperator<Scalar>& A11)
   {
-    return block2x2(A00.ptr(), 
-                    A01.ptr(), 
-                    A10.ptr(), 
-                    A11.ptr());
+    return nonconstBlock2x2(A00.ptr(),A01.ptr(),A10.ptr(),A11.ptr());
   }
-  
 
   template <class Scalar> inline 
   LinearOperator<Scalar>
   block2x1(const LinearOperator<Scalar>& A00,
            const LinearOperator<Scalar>& A10)
   {
-    return block2x1(A00.ptr(), 
-                    A10.ptr());
+    return nonconstBlock2x1(A00.ptr(),A10.ptr());
   }
-  
 
   template <class Scalar> inline 
   LinearOperator<Scalar>
   block1x2(const LinearOperator<Scalar>& A00,
            const LinearOperator<Scalar>& A01)
   {
-    return block2x1(A00.ptr(), 
-                    A01.ptr());
+    return nonconstBlock2x1(A00.ptr(),A01.ptr());
   }
   
-
-  
-
-
-  
-  
-}
+} // namespace Thyra
 
 #endif

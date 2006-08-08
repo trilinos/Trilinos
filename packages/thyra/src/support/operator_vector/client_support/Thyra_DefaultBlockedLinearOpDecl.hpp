@@ -294,7 +294,7 @@ block1x2(
  */
 template<class Scalar>
 Teuchos::RefCountPtr<LinearOpBase<Scalar> >
-block2x2(
+nonconstBlock2x2(
   const Teuchos::RefCountPtr<LinearOpBase<Scalar> >    &A00
   ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >   &A01
   ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >   &A10
@@ -307,7 +307,7 @@ block2x2(
  */
 template<class Scalar>
 Teuchos::RefCountPtr<LinearOpBase<Scalar> >
-block2x1(
+nonconstBlock2x1(
   const Teuchos::RefCountPtr<LinearOpBase<Scalar> >    &A00
   ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >   &A10
   );
@@ -318,7 +318,7 @@ block2x1(
  */
 template<class Scalar>
 Teuchos::RefCountPtr<LinearOpBase<Scalar> >
-block1x2(
+nonconstBlock1x2(
   const Teuchos::RefCountPtr<LinearOpBase<Scalar> >    &A00
   ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >   &A01
   );

@@ -41,23 +41,26 @@
 namespace Thyra
 {
   
+  template <class Scalar> class VectorSpace;
+
   template <class Scalar> class Vector;
 
   template <class Scalar, class Node1, class Node2> class LC2;
   template <class Scalar, class Node> class OpTimesLC; 
   template <class Scalar> class ConvertibleToVector; 
-  
 
-  /** 
-   * LCSign is used to indicate whether a linear combination object represents
-   * addition or subtraction.
+  /** \brief LCSign is used to indicate whether a linear combination object
+   * represents addition or subtraction.
+   *
+   * \ingroup Thyra_Op_Vec_ANA_Development_grp
    */
   enum LCSign {LCAdd = 1, LCSubtract = -1};
 
-  /**
-   * Converter defines the interface for objects that can be converted to vectors.
-   * Obviously, vectors can be converted to vectors, but so can linear combinations
-   * of vectors or operators times vectors. 
+  /** \brief Converter that defines the interface for objects that can be
+   * converted to vectors.
+   *
+   * Obviously, vectors can be converted to vectors, but so can linear
+   * combinations of vectors or operators times vectors.
    *
    * This interface is key to efficient overloaded operators. Operators do not
    * perform vector operations directly; rather, they construct Converter subtypes
@@ -70,6 +73,8 @@ namespace Thyra
    * returning constant-size deferred-evaluation Converter subtypes rather than
    * vectors results in constant-time overhead rather than the \f$O(N)\f$ 
    * overhead that would be incurred with vector return values.
+   *
+   * \ingroup Thyra_Op_Vec_ANA_Development_grp
    */
   template <class Scalar, class TargetType> class Converter
   {
@@ -92,14 +97,17 @@ namespace Thyra
     virtual void addInto(Vector<Scalar>& other, Thyra::LCSign sign) const = 0 ;
   };
 
-  /** 
-   * ConstVector is a read-only representation of a vector. 
+  /** \brief Read-only handle class for wrapping <tt>Thyra::VectorBase</tt>
+   * objects and allowing for operator-overloading linear algebra.
+   *
+   * \ingroup Thyra_Op_Vec_ANA_Development_grp
    */
   template <class Scalar>
   class ConstVector : public virtual Teuchos::ConstHandle<VectorBase<Scalar> >,
                       public virtual Converter<Scalar, ConstVector<Scalar> >
   {
   public:
+
     TEUCHOS_CONST_HANDLE_CTORS(ConstVector<Scalar>, VectorBase<Scalar>);
 
     /** Construct a vector from the result of an overloaded operator  */
@@ -144,36 +152,49 @@ namespace Thyra
     
   };
 
-  /** 
+  /** \brief Return the dimension of the vector.
+   *
    * \relates ConstVector
-   * Return the dimension of the vector 
    */
   template <class Scalar> 
   Index dim(const ConstVector<Scalar>& x) ;
+  
+  /** \brief Return the vector space for a vector.
+   *
+   * \relates ConstVector
+   */
+  template <class Scalar> inline
+  VectorSpace<Scalar> space(const ConstVector<Scalar>& x);
 
-
-  /** \brief \relates Vector Write to a stream. */
+  /** \brief Write to a stream.
+   *
+   * \relates ConstVector
+   */
   template <class Scalar> 
   std::ostream& operator<<(std::ostream& os, const ConstVector<Scalar>& v);
 
-  /* \brief \relates ConstVector. */
+  /* \brief Convert to a ConstVector.
+   *
+   * \relates ConstVector
+   */
   template <class Scalar> inline 
   ConstVector<Scalar> toVector(const Converter<Scalar, ConstVector<Scalar> >& x) 
   {return x.convert();}
 
-  /** 
-   * \brief Vector class with operator overloading support.
+  /** \brief Read-write handle class for wrapping <tt>Thyra::VectorBase</tt>
+   * objects and allowing for operator-overloading linear algebra.
    *
-   * \ingroup thrya_handle_grp
+   * \ingroup Thyra_Op_Vec_ANA_Development_grp
    */
   template <class Scalar>
   class Vector : public Teuchos::Handle<VectorBase<Scalar> >,
                  public ConstVector<Scalar>
   {
   public:
+
     TEUCHOS_HANDLE_CTORS(Vector<Scalar>, VectorBase<Scalar>);
 
-    /** \brief . */
+    /** \brief Allows an element to be changed using <tt>operator=()</tt>. */
     class IndexObject
     {
     public:
@@ -183,7 +204,6 @@ namespace Thyra
         *count_ = 1;
         val_ = valGotten_ = get_ele(*v_,i_);
       }
-      
       IndexObject(const IndexObject& other)
         : v_(other.v_), count_(other.count_), 
           valGotten_(other.valGotten_), val_(other.val_), i_(other.i_)
@@ -192,7 +212,7 @@ namespace Thyra
           << "IO copy ctor" << endl;
         (*count_)++;
       }
-
+      /** \brief Writes back the value if it changed. */
       ~IndexObject()
       {
         if (--(*count_)==0) 
@@ -202,9 +222,9 @@ namespace Thyra
             delete count_;
           }
       }
-
+      /** \brief Implicit conversion to the underlying Scalar. */
       operator Scalar () const {return val_;}
-
+      /** \brief Assignment from a scalar. */
       IndexObject& operator=(const Scalar& value)
       {
         val_ = value;
@@ -222,8 +242,6 @@ namespace Thyra
       IndexObject& operator=(const IndexObject& other);
     };
 
-    
-
     /** \brief Construct a vector from a 2-term LC */
     template<class Node1, class Node2>
     Vector(const Thyra::LC2<Scalar, Node1, Node2>& x);
@@ -240,7 +258,6 @@ namespace Thyra
     template<class Node>
     Vector& operator=(const Thyra::OpTimesLC<Scalar, Node>& x);
 
-
     /** Write the contents of another vector into this vector */
     Vector<Scalar>& acceptCopyOf(const ConstVector<Scalar>& x);
 
@@ -250,11 +267,13 @@ namespace Thyra
         return ConstVector<Scalar>::operator[](globalIndex);
       }
 
-    /** \brief . */
+    /** \brief Index operator that allows changes to the element.
+     *
+     * Note: The object returned is of type <tt>IndexObject</tt> which allows
+     * for the customary operations to be performed.
+     */
     IndexObject operator[](Index globalIndex)
     {
-      //      *Teuchos::VerboseObjectBase::getDefaultOStream()
-      // << "calling non-const [] " << endl;
       return IndexObject(this->ptr(), globalIndex);
     }
 
@@ -268,23 +287,30 @@ namespace Thyra
       
     /**  \brief get modifiable block */
     Vector<Scalar> getBlock(int i);
-      
     //@}
+
   };
 
   /* copy */
   THYRA_UNARY_VECTOR_OP_DECL(copy, copyInto, assign, "copy");
 
-  /** \brief \relates Converter Form a Vector from this object. For Vector, the
-   * operation is simply a pass-through.. */
+  /** \brief Form a Vector from this object.
+   *
+   * For Vector, the operation is simply a pass-through.
+   *
+   * \relates Vector
+   */
   template <class Scalar> inline
   Thyra::Vector<Scalar> formVector(const Thyra::Vector<Scalar>& x) {return x;}
   
-  /** \brief \relates Converter Form a Vector from this object. */
+  /** \brief Form a Vector from this object.
+   *
+   * \relates ConstVector
+   */
   template <class Scalar> inline
   Thyra::Vector<Scalar> formVector(const Thyra::ConstVector<Scalar>& x) 
   {return copy(x);}
-}
 
+} // namespace Thyra
 
 #endif

@@ -39,7 +39,6 @@ namespace Thyra
 {
   using namespace Teuchos;
   using std::ostream;
-
  
   //========================================================================
   template <class Scalar> inline
@@ -48,15 +47,12 @@ namespace Thyra
     return isCompatible(other);  
   }
 
-
   //========================================================================
   template <class Scalar> inline
   bool VectorSpace<Scalar>::operator!=(const VectorSpace<Scalar>& other) const 
   {
     return !(operator==(other));
   }
-    
-
 
   //========================================================================
   template <class Scalar> inline
@@ -72,8 +68,6 @@ namespace Thyra
     return Thyra::createMembers(this->constPtr(), n);
   }
 
-
-
   //========================================================================
   template <class Scalar> inline
   bool VectorSpace<Scalar>::isCompatible(const VectorSpace<Scalar>& vecSpc) const 
@@ -83,17 +77,12 @@ namespace Thyra
     return this->constPtr().get()->isCompatible(*(vecSpc.constPtr().get()));
   }
 
-
-
-
-
   //========================================================================
   template <class Scalar> inline
   bool VectorSpace<Scalar>::contains(const Vector<Scalar> &vec) const
   {
     return (operator==(vec.space()));
   }
-
 
   //========================================================================
   template <class Scalar> inline
@@ -107,8 +96,6 @@ namespace Thyra
       }
     return 1;
   }
-
-
 
   //========================================================================
   template <class Scalar> inline
@@ -124,7 +111,6 @@ namespace Thyra
       }
     return *this;
   }
-
 
   // //========================================================================
   // template <class Scalar>
@@ -181,7 +167,6 @@ namespace Thyra
     return productSpace(Teuchos::tuple(s1, s2, s3));
   }
 
-
   //========================================================================
   template <class Scalar> inline 
   int lowestLocallyOwnedIndex(const VectorSpace<Scalar>& s) 
@@ -202,8 +187,6 @@ namespace Thyra
     return spmdSpace->localSubDim();
   }
 
-
-
   //========================================================================
   template <class Scalar> inline
   bool isSPMD(const VectorSpace<Scalar>& s) 
@@ -219,13 +202,6 @@ namespace Thyra
     return s.constPtr()->hasInCoreView(range, VIEW_TYPE_DIRECT, STRIDE_TYPE_UNIT);
   }
 
-  
-    
-
-
-  
-
 } // namespace Thyra
-
 
 #endif

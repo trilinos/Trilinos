@@ -260,7 +260,7 @@ private:
  */
 template<class Scalar>
 Teuchos::RefCountPtr<LinearOpBase<Scalar> >
-add(
+nonconstAdd(
   const Teuchos::RefCountPtr<LinearOpBase<Scalar> >    &A
   ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >   &B
   );

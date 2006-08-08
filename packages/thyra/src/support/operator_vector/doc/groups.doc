@@ -65,6 +65,37 @@ simplify the use of %Thyra for the development of ANAs.
 
 <ol>
 
+<li> <b>Java-like handle classes supporting efficient operator-overloading for linear algebra</b>
+
+The following Java-like handle classes wrap Thyra base objects and define the
+basic linear algebra operations:
+
+<ul>
+
+<li><tt>Thyra::VectorSpace</tt> wraps <tt>Thyra::VectorSpaceBase</tt> objects.
+
+<li><tt>Thyra::Vector</tt> wraps <tt>Thyra::VectorBase</tt> objects and allows
+developers to write linear algebra experessions like <tt>y = alpha*x + z</tt>.
+The class <tt>Thyra::ConstVector</tt> is a base class of
+<tt>%Thyra::%Vector</tt> that allows for the compile checking of
+<tt>const</tt> protection.
+
+<li><tt>Thyra::LinearOperator</tt> wraps <tt>Thyra::LinearOpBase</tt> objects
+and allows developers to write linear algebra experessions like <tt>D =
+alpha*A + adjoint(B) * C</tt>.  Unlike vectors, however, explicit objects are
+not formed in these types of operations and instead the implicit operators
+defined <a href="thyra_impicit_linear_operators_tag">below</a>.  The class
+<tt>Thyra::ConstLinearOperator</tt> is a base class of
+<tt>%Thyra::%LinearOperator</tt> that allows for the compile checking of
+<tt>const</tt> protection.
+
+</ul>
+
+Hande clases have the same basic semantics as <tt>Thyra::RefCountPtr</tt> for
+copy construction and assignment and infact they all use
+<tt>Thyra::RefCountPtr</tt> internally to point to the underlying Thyra base
+objects.
+
 <li> <b>"Standard" non-member wrapper functions for vector (and multi-vector) reduction/transformation operations</b>
 
 While the use of the <tt>RTOpPack::RTOpT</tt> interface class and the
@@ -148,7 +179,7 @@ functions <tt>Thyra::DefaultProductVectorSpace::createMember()</tt> and
 \ref Thyra_Op_Vec_product_vec_spc_prg_grp "this example"
 of how product vector spaces are used.
 
-<li> <b>Miscellaneous implicit linear operators</b>
+<li> <b>Miscellaneous implicit linear operators</b><a name="thyra_impicit_linear_operators_tag"/>
 
 These are several different types of useful implicit composite/decorator
 <tt>Thyra::LinearOpBase</tt> subclasses.  These concrete subclasses provide
