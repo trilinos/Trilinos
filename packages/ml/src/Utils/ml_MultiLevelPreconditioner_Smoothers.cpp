@@ -377,15 +377,28 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       cerr << "AztecOO smoothers" << endl;
       exit(EXIT_FAILURE);
 #endif
-    } else if( Smoother == "IFPACK" ) {
+    } else if( Smoother == "IFPACK" || Smoother == "ILU" || Smoother == "IC") {
 
       // ====== //
       // IFPACK //
       // ====== //
 
 #ifdef HAVE_ML_IFPACK
-      sprintf(parameter,"smoother: ifpack type (level %d)", LevelID_[level]);
-      IfpackType = List_.get(parameter, IfpackType);
+      int lof = -1;
+      if (Smoother == "IFPACK")
+      {
+        sprintf(parameter,"smoother: ifpack type (level %d)", LevelID_[level]);
+        IfpackType = List_.get(parameter, IfpackType);
+      }
+      else 
+      {
+        // MS // ILU and IC added on 08-Aug-06 for WebTrilinos
+        // MS // Just a shortcut because sublists are not supported by
+        // MS // the web interface.
+        IfpackType = Smoother;
+        lof = List_.get("smoother: ifpack level-of-fill", 0);
+      }
+
       sprintf(parameter,"smoother: ifpack overlap (level %d)", LevelID_[level]);
       IfpackOverlap = List_.get(parameter, IfpackOverlap);
 
@@ -406,6 +419,9 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
         IfpackList.set("partitioner: local parts", NumAggr);
       IfpackList.set("partitioner: map", AggrMap);
 
+      if (lof != -1)
+        IfpackList.set("fact: level-of-fill", lof);
+                       
       ML_Gen_Smoother_Ifpack(ml_, IfpackType.c_str(),
                              IfpackOverlap, LevelID_[level], pre_or_post,
                              IfpackList,*Comm_);
