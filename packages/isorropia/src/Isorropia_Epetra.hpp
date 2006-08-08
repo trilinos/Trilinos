@@ -64,11 +64,14 @@ namespace Epetra {
 #ifdef HAVE_EPETRA
 
 /** Given an input matrix-graph that is to be repartitioned, and a parameter-
-    list (possibly specifying the partitioning package/method etc.),
+    list (possibly specifying things such as the partitioning package/method),
     create an instance of Isorropia::Partitioner. This is a factory
     function, the run-time type of the returned Partitioner is
     Isorropia::EpetraPartitioner.
 
+    If Isorropia has been configured with Zoltan support, then Zoltan will
+    be used as the underlying partitioner by default. Otherwise, the simple
+    linear built-in partitioner will be used.
     To specify that Zoltan be used as the underlying partitioner, create a
     sublist named "Zoltan" in the ParameterList object. Then, in that sublist,
     put any parameters that should be relayed straight to Zoltan.
@@ -87,6 +90,9 @@ create_partitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
     function, the run-time type of the returned Partitioner is
     Isorropia::EpetraPartitioner.
 
+    If Isorropia has been configured with Zoltan support, then Zoltan will
+    be used as the underlying partitioner by default. Otherwise, the simple
+    linear built-in partitioner will be used.
     To specify that Zoltan be used as the underlying partitioner, create a
     sublist named "Zoltan" in the ParameterList object. Then, in that sublist,
     put any parameters that should be relayed straight to Zoltan.
@@ -106,6 +112,9 @@ create_partitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
     function, the run-time type of the returned Partitioner is
     Isorropia::EpetraPartitioner.
 
+    If Isorropia has been configured with Zoltan support, then Zoltan will
+    be used as the underlying partitioner by default. Otherwise, the simple
+    linear built-in partitioner will be used.
     To specify that Zoltan be used as the underlying partitioner, create a
     sublist named "Zoltan" in the ParameterList object. Then, in that sublist,
     put any parameters that should be relayed straight to Zoltan.
@@ -124,6 +133,9 @@ create_partitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
     function, the run-time type of the returned Partitioner is
     Isorropia::EpetraPartitioner.
 
+    If Isorropia has been configured with Zoltan support, then Zoltan will
+    be used as the underlying partitioner by default. Otherwise, the simple
+    linear built-in partitioner will be used.
     To specify that Zoltan be used as the underlying partitioner, create a
     sublist named "Zoltan" in the ParameterList object. Then, in that sublist,
     put any parameters that should be relayed straight to Zoltan.
@@ -151,9 +163,11 @@ create_target_map(const Epetra_Comm& comm, Partitioner& partitioner);
   By default, it uses a self-contained internal implementation
   rather than interfacing to a third-party library such as Zoltan.
 
-  If the ParameterList object contains a sublist named "Zoltan", then
-  the Zoltan library is used to perform the balancing. Also, any
-  parameters in the "Zoltan" sublist will be relayed directly to Zoltan.
+  If Isorropia has been configured with Zoltan support, then Zoltan will
+  be used as the underlying partitioner by default. Otherwise, the simple
+  linear built-in partitioner will be used.
+  Any parameters in a "Zoltan" sublist of the parameter-list will be
+  relayed directly to Zoltan.
   Refer to the Zoltan users guide for specific parameters that Zoltan
   recognizes. A couple of important ones are "LB_METHOD" (valid values
   include "GRAPH", "HYPERGRAPH"), "DEBUG_LEVEL" (valid values are
@@ -217,12 +231,12 @@ Teuchos::RefCountPtr<Epetra_CrsMatrix>
 /** Create a balanced copy of an input Epetra_CrsGraph.
 
   This function represents a basic case, not accepting weights.
-  By default, it uses a self-contained internal implementation
-  rather than interfacing to a third-party library such as Zoltan.
 
-  If the ParameterList object contains a sublist named "Zoltan", then
-  the Zoltan library is used to perform the balancing. Also, any
-  parameters in the "Zoltan" sublist will be relayed directly to Zoltan.
+  If Isorropia was configured with Zoltan support, then Zoltan will be
+  used as the underlying partitioner by default. Otherwise, the simple
+  linear built-in partitioner will be used.
+  Any parameters that are to be relayed through to Zoltan should be placed
+  in a "Zoltan" sublist of the ParameterList.
   Refer to the Zoltan users guide for specific parameters that Zoltan
   recognizes. A couple of important ones are "LB_METHOD" (valid values
   include "GRAPH", "HYPERGRAPH"), "DEBUG_LEVEL" (valid values are
@@ -257,8 +271,9 @@ Teuchos::RefCountPtr<Epetra_CrsGraph>
 /** Create a balanced copy of an input Epetra_LinearProblem.
 
   This function represents the most basic default case, not accepting
-  parameters or weights, and uses a self-contained internal implementation
-  rather than interfacing to a third-party library such as Zoltan.
+  parameters or weights. If Isorropia was configured with Zoltan support,
+  then Zoltan is used as the underlying partitioner by default. Otherwise
+  the simple linear built-in partitioner is used.
 
   The rebalancing is 1-D, row-wise, and attempts to make the number
   of nonzeros in the matrix equal in each partition. I.e., it is equivalent
