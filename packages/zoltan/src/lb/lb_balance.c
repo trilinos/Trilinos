@@ -24,6 +24,7 @@ extern "C" {
 #include "key_params.h"
 #include "ha_const.h"
 #include "all_allo_const.h"
+#include "ha_drum.h"
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -264,6 +265,12 @@ ZOLTAN_ID_PTR gid;
 
   start_time = Zoltan_Time(zz->Timer);
 
+  /* initialize DRUM if needed */
+  Zoltan_Drum_Create_Model(zz);
+
+  /* stop DRUM monitors */
+  Zoltan_Drum_Stop_Monitors(zz);
+
   /* 
    * Compute Max number of array entries per ID over all processors.
    * Compute Max number of return arguments for Zoltan_LB_Balance.
@@ -350,6 +357,10 @@ ZOLTAN_ID_PTR gid;
   /*
    * Generate partitions sizes.
    */
+
+  /* set partition sizes computed by DRUM, if requested */
+  Zoltan_Drum_Set_Part_Sizes(zz);
+
   part_dim = ((zz->Obj_Weight_Dim > 0) ? zz->Obj_Weight_Dim : 1);
 
   part_sizes = (float *) ZOLTAN_MALLOC(sizeof(float) * part_dim 
@@ -390,6 +401,10 @@ ZOLTAN_ID_PTR gid;
   }
 
   ZOLTAN_TRACE_DETAIL(zz, yo, "Done partitioning");
+
+  /* restart DRUM monitors -- should happen later but there are a lot
+     of ways out of Zoltan_LB and we want to make sure they do start */
+  Zoltan_Drum_Start_Monitors(zz);
 
   if (*num_import_objs >= 0)
     MPI_Allreduce(num_import_objs, &gmax, 1, MPI_INT, MPI_MAX, 
