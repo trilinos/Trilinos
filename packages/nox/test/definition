@@ -65,7 +65,7 @@
 	   epetra/LOCA_Brusselator;
     EXIT-STATUS = STRING-COMPARISON(All tests passed);
     ARGS = -v;
-    COMM = SERIAL, MPI;
+    COMM = SERIAL, MPI(1-6);
     X-ARCH = sun4u;
     X-HOST = paunchy;
 }
