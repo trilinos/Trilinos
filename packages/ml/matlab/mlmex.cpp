@@ -32,6 +32,8 @@
 
    By: Chris Siefert <csiefer@sandia.gov>
    Version History
+   08/08/2006 - Moved a few variable declarations to allow sun's less forgiving
+                compiler to compile the code.
    08/07/2006 - Added status checking functionality.
    08/03/2006 - Added functionality to allow ML to have multiple systems ready
                 to be solved at once.  This entailed adding the system handle stuff.
@@ -427,8 +429,9 @@ MODE_TYPE sanity_check(int nrhs, const mxArray *prhs[]){
 Teuchos::ParameterList* build_teuchos_list(int nrhs,const mxArray *prhs[]){
   Teuchos::ParameterList* TPL=new Teuchos::ParameterList;
   mxClassID cid;
-  int i,M,N;
-  char * option_name;
+  int i,M,N, *opt_int;
+  char *option_name,*opt_char;
+  double *opt_float;
   string opt_str;  
   for(i=0;i<nrhs;i+=2){
     if(i==nrhs-1 || !mxIsChar(prhs[i]))
@@ -448,7 +451,7 @@ Teuchos::ParameterList* build_teuchos_list(int nrhs,const mxArray *prhs[]){
     /* Add to the Teuchos list */
     switch(cid){
     case mxCHAR_CLASS:
-      char *opt_char=mxArrayToString(prhs[i+1]);
+      opt_char=mxArrayToString(prhs[i+1]);
       opt_str=opt_char;
 #ifdef VERBOSE_OUTPUT
       mexPrintf("[%s] String Found: %s\n",option_name,opt_char);
@@ -459,7 +462,7 @@ Teuchos::ParameterList* build_teuchos_list(int nrhs,const mxArray *prhs[]){
     case mxDOUBLE_CLASS:
     case mxSINGLE_CLASS:
       //NTS: Does not deal with complex args
-      double *opt_float=mxGetPr(prhs[i+1]);
+      opt_float=mxGetPr(prhs[i+1]);
       if(M==1 && N==1 && ISINT(opt_float[0])) {     
 #ifdef VERBOSE_OUTPUT
         mexPrintf("[%s] Float(Int) Found!\n",option_name);
@@ -497,7 +500,7 @@ Teuchos::ParameterList* build_teuchos_list(int nrhs,const mxArray *prhs[]){
 #ifdef VERBOSE_OUTPUT
       mexPrintf("[%s] Int Found!\n",option_name);
 #endif
-      int *opt_int=(int*)mxGetData(prhs[i+1]);
+      opt_int=(int*)mxGetData(prhs[i+1]);
       if(M==1 && N==1) TPL->set(option_name, opt_int[0]);      
       else TPL->set(option_name, opt_int);      
       break;
