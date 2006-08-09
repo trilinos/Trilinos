@@ -1,4 +1,4 @@
-# Doxyfile 1.3.9.1
+# Doxyfile 1.4.2 
 
 @INCLUDE               = Doxyfile.options
 
@@ -52,3 +52,6 @@ EXAMPLE_PATH           = ../example/LOBPCG ../example/BlockDavidson ../example/M
 TAGFILES               = ../../common/tag_files/epetra.tag=../../../epetra/doc/html ../../common/tag_files/teuchos.tag=../../../teuchos/doc/html ../../common/tag_files/ThyraInterfacesOperatorVectorANAFundamental.tag=../../../thyra/src/interfaces/operator_vector/ana/fundamental/doc/html
 
 GENERATE_TAGFILE       = ../../common/tag_files/anasazi.tag
+# HTML_HEADER            = includes/header.html
+# HTML_FOOTER            = includes/footer.html
+# HTML_STYLESHEET        = includes/stylesheet.css
