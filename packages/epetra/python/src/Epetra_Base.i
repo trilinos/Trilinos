@@ -71,12 +71,6 @@ static PyObject * PyExc_EpetraError = PyErr_NewException("Epetra.Error",NULL,NUL
 %ignore Epetra_MapColoring::ElementColors() const;
 %ignore *::UpdateFlops(int) const;   // Use long int version
 %ignore *::UpdateFlops(float) const; // Use double version
-// These are Import/Export methods that get extended below
-%ignore *::PermuteFromLIDs() const;
-%ignore *::PermuteToLIDs() const;
-%ignore *::RemoteLIDs() const;
-%ignore *::ExportLIDs() const;
-%ignore *::ExportPIDs() const;
 
 // Rename directives
 %rename(Version      ) Epetra_Version;

@@ -41,10 +41,10 @@
 
 // Ignore directives
 // These are replaced with extensions
-%ignore Epetra_BlockMap::Epetra_BlockMap(int,int,int*,int, int,const Epetra_Comm&);
-%ignore Epetra_BlockMap::Epetra_BlockMap(int,int,int*,int*,int,const Epetra_Comm&);
-%ignore Epetra_BlockMap::RemoteIDList(int,const int *,int*,int*) const;
-%ignore Epetra_BlockMap::RemoteIDList(int,const int *,int*,int*,int*) const;
+%ignore Epetra_BlockMap::Epetra_BlockMap(int,int,const int*,int, int,const Epetra_Comm&);
+%ignore Epetra_BlockMap::Epetra_BlockMap(int,int,const int*,const int*,int,const Epetra_Comm&);
+%ignore Epetra_BlockMap::RemoteIDList(int,const int*,int*,int*) const;
+%ignore Epetra_BlockMap::RemoteIDList(int,const int*,int*,int*,int*) const;
 %ignore Epetra_BlockMap::FindLocalElementID(int,int&,int&) const;
 %ignore Epetra_BlockMap::MyGlobalElements(int*) const;
 %ignore Epetra_BlockMap::MyGlobalElements() const;
@@ -54,10 +54,16 @@
 %ignore Epetra_BlockMap::ElementSizeList() const;
 %ignore Epetra_BlockMap::PointToElementList(int*) const;
 %ignore Epetra_BlockMap::PointToElementList() const;
-%ignore Epetra_Map::Epetra_Map(int,int,int*,int,const Epetra_Comm&);
+%ignore Epetra_Map::Epetra_Map(int,int,const int*,int,const Epetra_Comm&);
 // These are expert methods not wrapped
 %ignore Epetra_BlockMap::ReferenceCount() const;
 %ignore Epetra_BlockMap::DataPtr() const;
+// These are Import/Export methods that get extended below
+%ignore *::PermuteFromLIDs() const;
+%ignore *::PermuteToLIDs() const;
+%ignore *::RemoteLIDs() const;
+%ignore *::ExportLIDs() const;
+%ignore *::ExportPIDs() const;
 
 // Rename directives
 %rename(BlockMap      ) Epetra_BlockMap;
