@@ -27,6 +27,16 @@
 // ************************************************************************
 // @HEADER
 
+/*! 
+ * \file Galeri_grid_Segment.h
+ *
+ * \brief Class for grid segment.
+ *
+ * \author Marzio Sala, ETHZ
+ *
+ * \date Last modified on Aug-06
+ */
+
 #ifndef GALERI_GRID_SEGMENT_H
 #define GALERI_GRID_SEGMENT_H
 
@@ -36,6 +46,14 @@
 namespace Galeri {
 namespace grid {
 
+/*!
+ * \class Segment
+ *
+ * \brief Class for grid segments.
+ *
+ * A grid segment is composed by two vertices, and two components are
+ * Galeri::grid::Point's.
+ */ 
 class Segment : public Element
 {
   public:

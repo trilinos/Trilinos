@@ -35,7 +35,7 @@
 #include "Epetra_FEVector.h"
 #include "Epetra_Import.h"
 
-#include "Galeri_core_Constants.h"
+#include "Galeri_core_Workspace.h"
 #include "Galeri_problem_Base.h"
 #include "Galeri_quadrature_Segment.h"
 #include "Galeri_quadrature_Triangle.h"
@@ -56,8 +56,8 @@ class VectorLaplacian // FIXME????? : public Base
   public:
   VectorLaplacian(const int numPDEs,
                   const string& elementType,
-                  const int integrationDegree = Galeri::core::Constants::MIN, 
-                  const int normDegree = Galeri::core::Constants::MAX) :
+                  const int integrationDegree = Galeri::core::Workspace::MIN, 
+                  const int normDegree = Galeri::core::Workspace::MAX) :
     equation_(0),
     numPDEs_(numPDEs)
   {
@@ -149,7 +149,7 @@ class VectorLaplacian // FIXME????? : public Base
 
       // load the element coordinates
       for (int j = 0; j < numVerticesPerElement; ++j)
-        for (int k = 0; k < Galeri::core::Utils::getNumDimensions(); ++k) 
+        for (int k = 0; k < Galeri::core::Workspace::getNumDimensions(); ++k) 
           (*IE_)(j, k) = domain.getGlobalCoordinates(vertexList[j], k);
 
       integrateOverElement(*IE_, elementLHS, elementRHS);
@@ -274,7 +274,7 @@ class VectorLaplacian // FIXME????? : public Base
       for (int i = 0; i < boundary.getNumVerticesPerElement(); ++i)
       {
         int GVID = boundary.getMyConnectivity(LEID, i);
-        for (int j = 0; j < Galeri::core::Utils::getNumDimensions(); ++j)
+        for (int j = 0; j < Galeri::core::Workspace::getNumDimensions(); ++j)
           coord[j] = boundary.getGlobalCoordinates(GVID, j);
 
         for (int ieq = 0; ieq < numPDEs_; ++ieq)
@@ -359,7 +359,7 @@ class VectorLaplacian // FIXME????? : public Base
     int numVerticesPerElement = domain.getNumVerticesPerElement();
 
     Epetra_SerialDenseVector elementSol(numVerticesPerElement);
-    Epetra_SerialDenseVector elementNorm(Galeri::core::Utils::getNumDimensions());
+    Epetra_SerialDenseVector elementNorm(Galeri::core::Workspace::getNumDimensions());
 
     Epetra_IntSerialDenseVector vertexList(numVerticesPerElement);
     Epetra_SerialDenseMatrix elementLHS(numVerticesPerElement, numVerticesPerElement);
@@ -379,7 +379,7 @@ class VectorLaplacian // FIXME????? : public Base
 
       // load the element coordinates
       for (int j = 0; j < numVerticesPerElement; ++j)
-        for (int k = 0; k < Galeri::core::Utils::getNumDimensions(); ++k) 
+        for (int k = 0; k < Galeri::core::Workspace::getNumDimensions(); ++k) 
           (*NE_)(j, k) = domain.getGlobalCoordinates(vertexList[j], k);
 
       computeNormOverElement((*NE_), elementNorm);

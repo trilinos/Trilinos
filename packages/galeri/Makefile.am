@@ -81,7 +81,7 @@ data/VerySimple.grid \
 data/Circle.grid \
 data/SquareInSquare.grid \
 data/TwoSquares.m \
-convert.m
+data/convert.m
 
 
 #

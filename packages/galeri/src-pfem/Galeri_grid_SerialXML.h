@@ -35,7 +35,7 @@
 #include "Teuchos_FileInputSource.hpp"
 #include "Teuchos_StrUtils.hpp"
 
-#include "Galeri_core_Utils.h"
+#include "Galeri_core_Workspace.h"
 #include "Galeri_grid_Loadable.h"
 
 namespace Galeri {
@@ -61,7 +61,7 @@ class SerialXML
       map<string, Galeri::grid::Loadable> patches;
 
       int NumDimensions = fileXML.getRequiredInt("NumDimensions");
-      Galeri::core::Utils::setNumDimensions(NumDimensions);
+      Galeri::core::Workspace::setNumDimensions(NumDimensions);
 
       for (int i = 0; i < fileXML.numChildren(); ++i)
       {

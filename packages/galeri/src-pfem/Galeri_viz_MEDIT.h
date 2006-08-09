@@ -67,7 +67,7 @@ public:
       if (iproc == comm.MyPID())
       {
         medit.open(FileName.c_str(),ios::app);
-        if (Galeri::core::Utils::getNumDimensions() == 2)
+        if (Galeri::core::Workspace::getNumDimensions() == 2)
         {
           for (int i = 0; i < linearCoord.MyLength(); ++i)
           {
@@ -77,7 +77,7 @@ public:
               << setw(12) << "0.0 1" << endl;
           }
         }
-        else if (Galeri::core::Utils::getNumDimensions() == 3)
+        else if (Galeri::core::Workspace::getNumDimensions() == 3)
         {
           for (int i = 0; i < linearCoord.MyLength(); ++i)
           {

@@ -30,7 +30,7 @@
 #ifndef HAVE_QUADRATURE_TRIANGLE_H
 #define HAVE_QUADRATURE_TRIANGLE_H
 
-#include "Galeri_core_Constants.h"
+#include "Galeri_core_Workspace.h"
 #include "Galeri_quadrature_Element.h"
 
 namespace Galeri {
@@ -44,8 +44,8 @@ public:
   Triangle(const int numQuadrNodes)
   {
     numQuadrNodes_ = numQuadrNodes;
-    if (numQuadrNodes_ == Galeri::core::Constants::MIN) numQuadrNodes_ = 1;
-    if (numQuadrNodes_ == Galeri::core::Constants::MAX) numQuadrNodes_ = 7;
+    if (numQuadrNodes_ == Galeri::core::Workspace::MIN) numQuadrNodes_ = 1;
+    if (numQuadrNodes_ == Galeri::core::Workspace::MAX) numQuadrNodes_ = 7;
 
     numLocalNodes_ = 3;
     numBasisFunctions_ = 3;

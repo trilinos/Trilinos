@@ -27,10 +27,18 @@
 // ************************************************************************
 // @HEADER
 
+/*! 
+ * \file Galeri_grid_Triangle.h
+ *
+ * \brief Class for grid triangles.
+ *
+ * \author Marzio Sala, ETHZ
+ *
+ * \date Last modified on Aug-06
+ */
+
 #ifndef GALERI_GRID_TRIANGLE_H
 #define GALERI_GRID_TRIANGLE_H
-
-#include "Teuchos_TestForException.hpp"
 
 #include "Galeri_grid_Element.h"
 #include "Galeri_grid_Segment.h"
@@ -38,6 +46,14 @@
 namespace Galeri {
 namespace grid {
 
+/*!
+ * \class Triangle
+ *
+ * \brief Class for grid triangles.
+ *
+ * A triangle is composed by three vertices, and three components, that are
+ * Galeri::grid::Point's.
+ */ 
 class Triangle : public Element
 {
   public:

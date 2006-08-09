@@ -36,7 +36,7 @@
 #include "Teuchos_Hashtable.hpp"
 
 #include "Galeri_core_Object.h"
-#include "Galeri_core_Utils.h"
+#include "Galeri_core_Workspace.h"
 #include "Galeri_grid_Element.h"
 #include "Galeri_grid_Point.h"
 #include "Galeri_grid_Segment.h"
@@ -312,7 +312,7 @@ class Loadable : public core::Object
       VertexMap_ = rcp(new Epetra_Map(-1, count, &MyGlobalElements[0], 0,  Comm));
 
       COO_ = rcp(new Epetra_MultiVector(*VertexMap_, 
-                                        Galeri::core::Utils::getNumDimensions()));
+                                        Galeri::core::Workspace::getNumDimensions()));
 
       if (numVertexData_ > 0)
         vertexData_ = rcp(new Epetra_MultiVector(*VertexMap_, numVertexData_));
@@ -349,7 +349,7 @@ class Loadable : public core::Object
       {
         Epetra_Map linearVertexMap = getLinearVertexMap();
         linearCOO_ = rcp(new Epetra_MultiVector(linearVertexMap, 
-                                                Galeri::core::Utils::getNumDimensions()));
+                                                Galeri::core::Workspace::getNumDimensions()));
         linearExporter_ = rcp(new Epetra_Export(getVertexMap(), linearVertexMap));
         linearCOO_->Export(*COO_, *linearExporter_, Insert);
       }

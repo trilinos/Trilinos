@@ -27,19 +27,35 @@
 // ************************************************************************
 // @HEADER
 
+/*! 
+ * \file Galeri_grid_Point.h
+ *
+ * \brief Class for grid points.
+ *
+ * \author Marzio Sala, ETHZ
+ *
+ * \date Last modified on Aug-06
+ */
+
 #ifndef GALERI_GRID_POINT_H
 #define GALERI_GRID_POINT_H
-
-#include "Teuchos_TestForException.hpp"
 
 #include "Galeri_grid_Element.h"
 
 namespace Galeri {
 namespace grid {
 
+/*!
+ * \class Point
+ *
+ * \brief Class for grid points.
+ *
+ * This is the simplest geometrical object.
+ */ 
 class Point : public Element
 {
   public:
+    //! default constructor
     Point()
     {
       setLabel("Galeri::grid::Point");

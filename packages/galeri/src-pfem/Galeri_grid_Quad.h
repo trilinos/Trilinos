@@ -27,10 +27,18 @@
 // ************************************************************************
 // @HEADER
 
+/*! 
+ * \file Galeri_grid_Quad.h
+ *
+ * \brief Class for grid points.
+ *
+ * \author Marzio Sala, ETHZ
+ *
+ * \date Last modified on Aug-06
+ */
+
 #ifndef GALERI_GRID_QUAD_H
 #define GALERI_GRID_QUAD_H
-
-#include "Teuchos_TestForException.hpp"
 
 #include "Galeri_grid_Element.h"
 #include "Galeri_grid_Segment.h"
@@ -38,6 +46,14 @@
 namespace Galeri {
 namespace grid {
 
+/*!
+ * \class Quad
+ *
+ * \brief Class for grid quadrilaterals.
+ *
+ * A quad is composed by four vertices, and four components are
+ * Galeri::grid::Segment's.
+ */ 
 class Quad : public Element
 {
   public:

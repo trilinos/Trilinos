@@ -27,7 +27,9 @@
 // ************************************************************************
 // @HEADER
 
-#include "Galeri_core_Constants.h"
+#include "Galeri_core_Workspace.h"
 
-const int Galeri::core::Constants::MIN = -1;
-const int Galeri::core::Constants::MAX = -2;
+int Galeri::core::Workspace::numDimensions_ = 3;
+
+const int Galeri::core::Workspace::MIN = -1;
+const int Galeri::core::Workspace::MAX = -2;

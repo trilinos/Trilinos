@@ -32,7 +32,7 @@
 
 #include "Epetra_Import.h"
 
-#include "Galeri_core_Constants.h"
+#include "Galeri_core_Workspace.h"
 #include "Galeri_problem_Base.h"
 #include "Galeri_quadrature_Segment.h"
 #include "Galeri_quadrature_Triangle.h"
@@ -52,8 +52,8 @@ class ScalarLaplacian : public Base
 {
   public:
   ScalarLaplacian(const string& elementType,
-                  const int integrationDegree = Galeri::core::Constants::MIN, 
-                  const int normDegree = Galeri::core::Constants::MAX) 
+                  const int integrationDegree = Galeri::core::Workspace::MIN, 
+                  const int normDegree = Galeri::core::Workspace::MAX) 
   {
     if (elementType == "Segment")
     {
@@ -108,7 +108,7 @@ class ScalarLaplacian : public Base
 
       // load the element coordinates
       for (int j = 0; j < numVerticesPerElement; ++j)
-        for (int k = 0; k < Galeri::core::Utils::getNumDimensions(); ++k) 
+        for (int k = 0; k < Galeri::core::Workspace::getNumDimensions(); ++k) 
           (*IE_)(j, k) = domain.getGlobalCoordinates(vertexList[j], k);
 
       integrateOverElement(*IE_, elementLHS, elementRHS);
@@ -143,7 +143,7 @@ class ScalarLaplacian : public Base
       for (int i = 0; i < boundary.getNumVerticesPerElement(); ++i)
       {
         int GVID = boundary.getMyConnectivity(LEID, i);
-        for (int j = 0; j < Galeri::core::Utils::getNumDimensions(); ++j)
+        for (int j = 0; j < Galeri::core::Workspace::getNumDimensions(); ++j)
           coord[j] = boundary.getGlobalCoordinates(GVID, j);
 
         if (T::getBoundaryType(boundary.getID(), coord[0], coord[1], coord[2]) == 'd')
@@ -208,7 +208,7 @@ class ScalarLaplacian : public Base
     int numVerticesPerElement = domain.getNumVerticesPerElement();
 
     Epetra_SerialDenseVector elementSol(numVerticesPerElement);
-    Epetra_SerialDenseVector elementNorm(Galeri::core::Utils::getNumDimensions());
+    Epetra_SerialDenseVector elementNorm(Galeri::core::Workspace::getNumDimensions());
 
     Epetra_IntSerialDenseVector vertexList(numVerticesPerElement);
     Epetra_SerialDenseMatrix elementLHS(numVerticesPerElement, numVerticesPerElement);
@@ -228,7 +228,7 @@ class ScalarLaplacian : public Base
 
       // load the element coordinates
       for (int j = 0; j < numVerticesPerElement; ++j)
-        for (int k = 0; k < Galeri::core::Utils::getNumDimensions(); ++k) 
+        for (int k = 0; k < Galeri::core::Workspace::getNumDimensions(); ++k) 
           (*NE_)(j, k) = domain.getGlobalCoordinates(vertexList[j], k);
 
       computeNormOverElement((*NE_), elementNorm);

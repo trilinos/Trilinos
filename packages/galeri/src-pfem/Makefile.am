@@ -34,11 +34,33 @@ all-local:
 	@echo "Trilinos package galeri subdirectory src-pfem built successfully."
 	@echo ""
 
-CORE_H = $(srcdir)/Galeri_problem_ScalarLaplacian.h
+CORE_H = $(srcdir)/Galeri_core_Object.h \
+	     $(srcdir)/Galeri_grid_Triangle.h \
+	     $(srcdir)/Galeri_core_Workspace.h \
+	     $(srcdir)/Galeri_problem_Base.h \
+	     $(srcdir)/Galeri_grid_Element.h \
+	     $(srcdir)/Galeri_problem_ScalarLaplacian.h \
+	     $(srcdir)/Galeri_grid_Generator.h \
+	     $(srcdir)/Galeri_problem_VectorLaplacian.h \
+	     $(srcdir)/Galeri_grid_Hex.h \
+	     $(srcdir)/Galeri_quadrature_Element.h \
+	     $(srcdir)/Galeri_grid_Loadable.h \
+	     $(srcdir)/Galeri_quadrature_Hex.h \
+	     $(srcdir)/Galeri_grid_Point.h \
+	     $(srcdir)/Galeri_quadrature_Quad.h \
+	     $(srcdir)/Galeri_grid_Quad.h \
+	     $(srcdir)/Galeri_quadrature_Segment.h \
+	     $(srcdir)/Galeri_grid_Rebalance.h \
+	     $(srcdir)/Galeri_quadrature_Tet.h \
+	     $(srcdir)/Galeri_grid_Segment.h \
+	     $(srcdir)/Galeri_quadrature_Triangle.h \
+	     $(srcdir)/Galeri_grid_SerialXML.h \
+	     $(srcdir)/Galeri_viz_MEDIT.h \
+	     $(srcdir)/Galeri_grid_Tet.h \
+	     $(srcdir)/Galeri_viz_VTK.h
 
-CORE = $(srcdir)/Galeri_core_Utils.cpp \
-       $(srcdir)/Galeri_core_Constants.cpp \
-       $(srcdir)/Galeri_grid_Generator.cpp
+CORE = $(srcdir)/Galeri_core_Workspace.cpp \
+	   $(srcdir)/Galeri_grid_Generator.cpp
 
 include $(top_builddir)/Makefile.export.galeri
 
