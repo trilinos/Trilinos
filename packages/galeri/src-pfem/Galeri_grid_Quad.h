@@ -30,7 +30,7 @@
 /*! 
  * \file Galeri_grid_Quad.h
  *
- * \brief Class for grid points.
+ * \brief Class for grid quadrilaterals.
  *
  * \author Marzio Sala, ETHZ
  *
@@ -51,7 +51,7 @@ namespace grid {
  *
  * \brief Class for grid quadrilaterals.
  *
- * A quad is composed by four vertices, and four components are
+ * A quad is composed by 4 vertices, and by 4 components, defined as
  * Galeri::grid::Segment's.
  */ 
 class Quad : public Element

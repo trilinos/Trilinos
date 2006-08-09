@@ -27,6 +27,16 @@
 // ************************************************************************
 // @HEADER
 
+/*! 
+ * \file Galeri_grid_Hex.h
+ *
+ * \brief Class for grid hexahedra.
+ *
+ * \author Marzio Sala, ETHZ
+ *
+ * \date Last modified on Aug-06
+ */
+
 #ifndef GALERI_GRID_HEX_H
 #define GALERI_GRID_HEX_H
 
@@ -38,6 +48,14 @@
 namespace Galeri {
 namespace grid {
 
+/*!
+ * \class Hex
+ *
+ * \brief Class for grid hexahedra.
+ *
+ * A hexahedron is composed by 8 vertices, and by 8 components, defined as
+ * Galeri::grid::Quad's.
+ */ 
 class Hex : public Element
 {
   public:

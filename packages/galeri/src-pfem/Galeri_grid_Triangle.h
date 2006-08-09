@@ -51,7 +51,7 @@ namespace grid {
  *
  * \brief Class for grid triangles.
  *
- * A triangle is composed by three vertices, and three components, that are
+ * A triangle is composed by 3 vertices, and by 3 components, defined as
  * Galeri::grid::Point's.
  */ 
 class Triangle : public Element

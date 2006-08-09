@@ -27,6 +27,15 @@
 // ************************************************************************
 // @HEADER
 
+/*! \file Galeri_grid_Loadable.h
+ *
+ * \brief A flexible grid data structure container for distributed problems.
+ *
+ * \author Marzio Sala
+ *
+ * \date Last modified on Aug-06
+ */
+
 #ifndef GALERI_LOADABLE_GRID_H
 #define GALERI_LOADABLE_GRID_H
 
@@ -59,14 +68,60 @@ namespace Galeri {
 
 namespace grid {
 
+/*! \class Loadable
+ *
+ * \brief A flexible grid data structure container for distributed problems.
+ *
+ * Galeri::grid::Loadable is a loadable container for grid data structures. It
+ * allows the allocation, setting and getting of all grid objects.
+ *
+ * A Galeri::grid::Loadable object is defined by the following entities:
+ * - an Epetra_Comm;
+ * - the number of global elements;
+ * - the number of local elements (typically different on each processor).
+ * - the element type;
+ * - the number of global vertices;
+ * - the number of local vertices.
+ *  
+ * Optionally, it is possible to assigned to each grid element and grid
+ * vertex an arbitrary number of (double type) data.
+ *
+ * \warning Only one element type is allowed. If you need more than one
+ * element type in your problem, you can simply create more than one grid
+ * object.
+ *
+ * \warning There is no concept of <i>boundaries</i> in galeri/pfem.
+ * Boundaries are indeed defined by independent grid objects.
+ */
 class Loadable : public core::Object
 {
   public:
     // @{ \name Constructors and destructors.
-    //! Constructor.
+    //! Empty constructor.
     Loadable()
     {}
 
+    //! Constructor with specified Epetra_Comm, number of global elements, etc.
+    /*! @param comm [In] communicator object
+     *
+     *  @param numGlobalElements [In] number of global elements in \c this
+     *                              grid object.
+     *
+     *  @param numMyElements [In] number of local elements in \c this
+     *                          grid object.
+     *
+     *  @param elementType  [In] a string value which defines the element
+     *  type. Valid values are: \c Point, \c Segment, \c Triangle, \c Quad,
+     *  \c Tet and \c Hex.
+     *
+     *  @param numElementData  [In] number of additional double-typed data
+     *  to be stored on each element.
+     *
+     *  @param numVertexData  [In] number of additional double-typed data
+     *  to be stored on each vertex.
+     *
+     *  This is just a shortcut for method initialize().
+     */
     Loadable(const Epetra_Comm& comm,
              const int numGlobalElements,
              const int numMyElements,
@@ -91,6 +146,30 @@ class Loadable : public core::Object
     //! Destructor.
     ~Loadable() {}
 
+    //! Initialization method.
+    /*! @param comm [In] communicator object
+     *
+     *  @param numGlobalElements [In] number of global elements in \c this
+     *                              grid object.
+     *
+     *  @param numMyElements [In] number of local elements in \c this
+     *                          grid object.
+     *
+     *  @param elementType  [In] a string value which defines the element
+     *  type. Valid values are: \c Point, \c Segment, \c Triangle, \c Quad,
+     *  \c Tet and \c Hex.
+     *
+     *  @param myGlobalElements [In] array of integers, of size \c
+     *  numMyElements, which contains the global ID of all local elements.
+     *  By using this array, one can introduce global numbering to grid
+     *  elements.
+     *
+     *  @param numElementData  [In] number of additional double-typed data
+     *  to be stored on each element.
+     *
+     *  @param numVertexData  [In] number of additional double-typed data
+     *  to be stored on each vertex.
+     */
     void initialize(const Epetra_Comm& comm,
                     const int numGlobalElements,
                     const int numMyElements,
@@ -137,27 +216,32 @@ class Loadable : public core::Object
     // @}
     // @{ \name Get methods.
     
+    //! Returns the global number of grid elements in \c this object.
     inline int getNumGlobalElements() const 
     {
       return(ElementMap_->NumGlobalElements());
     }
 
+    //! Returns the local number of grid elements in \c this object.
     inline int getNumMyElements() const 
     {
       return(ElementMap_->NumMyElements());
     }
 
+    //! Returns the global number of grid vertices in \c this object.
     inline int getNumGlobalVertices() const 
     {
       // NOTE: this requires IndexBase == 0
       return(VertexMap_->MaxAllGID() + 1);
     }
 
+    //! Returns the local number of grid vertices in \c this object.
     inline int getNumMyVertices() const 
     {
       return(VertexMap_->NumMyElements());
     }
 
+    //! Returns the number of vertices per element (a constant value).
     inline int getNumVerticesPerElement() const
     {
       return(GridElement_->getNumVertices());
@@ -175,84 +259,101 @@ class Loadable : public core::Object
       return(*VertexMap_);
     }
 
+    //! Returns the global grid element ID for the specified local (and locally owned) grid element ID.
     inline int getGEID(const int LEID) const
     {
       return(ElementMap_->GID(LEID));
     }
 
+    //! Returns the global grid vertex ID for the specified (and locally owned) local grid vertex ID.
     inline int getGVID(const int LVID) const
     {
       return(VertexMap_->GID(LVID));
     }
 
+    //! Returns the local grid element ID for the specified (and locally owned) global grid element ID.
     inline int getLEID(const int GEID) const
     {
       return(ElementMap_->LID(GEID));
     }
 
+    //! Returns the local grid vertex ID for the specified (and locally owned) global grid vertex ID.
     inline int getLVID(const int GVID) const
     {
       return(VertexMap_->LID(GVID));
     }
 
+    //! Returns the Galeri::grid::Element object of \c this object.
     const grid::Element getElement() const
     {
       return(*GridElement_);
     }
 
+    //! Returns the number of optional double-typed data associated to each grid vertex.
     inline int getNumVertexData() const
     {
       return(numVertexData_);
     }
 
+    //! Returns the number of optional double-typed data associated to each grid element.
     inline int getNumElementData() const
     {
       return(numElementData_);
     }
 
-    inline double getVertexData(const int GVID, const int which) const
-    {
-      int LVID = getLVID(GVID);
-      return((*vertexData_)[which][LVID]);
-    }
+    // @}
+    // @{ Optional element and vertex data
 
-    inline void setVertexData(const int GVID, const int which, const double val)
-    {
-      int LVID = getLVID(GVID);
-      (*vertexData_)[which][LVID] = val;
-    }
-
+    //! Returns the optional data associated to the specified (and locally owned) global grid element ID, stored in position \c which in the data array.
     inline double getElementData(const int GEID, const int which) const
     {
       int LEID = getLEID(GEID);
       return((*elementData_)[which][LEID]);
     }
 
+    //! Sets the optional data associated to the specified (and locally owned) global grid element ID, are stores it in position \c which in the data array.
     inline void setElementData(const int GEID, const int which, const double val)
     {
       int LEID = getLEID(GEID);
       (*elementData_)[which][LEID] = val;
     }
+    //! Returns the optional data associated to the specified (and locally owned) global grid vertex ID, stored in position \c which in the data array.
+    inline double getVertexData(const int GVID, const int which) const
+    {
+      int LVID = getLVID(GVID);
+      return((*vertexData_)[which][LVID]);
+    }
+
+    //! Sets the optional data associated to the specified (and locally owned) global grid vertex ID, are stores it in position \c which in the data array.
+    inline void setVertexData(const int GVID, const int which, const double val)
+    {
+      int LVID = getLVID(GVID);
+      (*vertexData_)[which][LVID] = val;
+    }
 
     // @}
     // @{ \name Data access methods
     
+    //! Sets the \c index coordinate of the specified (and locally owned) global grid vertex ID to \c value.
     inline void setGlobalCoordinates(const int GID, const int index, const double value)
     {
       COO_->ReplaceGlobalValue(GID, index, value);
     }
 
+    //! Sets the coordinates of the specified (and locally owned) global grid vertex ID to \c value.
     inline double& getGlobalCoordinates(const int GID, const int index)
     {
       int LID = VertexMap_->LID(GID);
       return((*COO_)[index][LID]);
     }
 
+    //! Sets the \c index coordinate of the specified (and locally owned) local grid vertex ID to \c value.
     inline double& getMyCoordinates(const int LID, const int index)
     {
       return((*COO_)[index][LID]);
     }
 
+    //! Sets the \c index coordinate of the specified (and locally owned) local grid vertex ID to \c value.
     inline void setGlobalConnectivity(const int GID, const int index, const int what)
     {
       int LID = ElementMap_->LID(GID);
@@ -260,6 +361,7 @@ class Loadable : public core::Object
       (*ADJ_)(LID, index) = what;
     }
 
+    //! Sets the \c index-th component of the specified (and locally owned) global grid element ID to \c value.
     inline int& getGlobalConnectivity(const int GID, const int index)
     {
       int LID = ElementMap_->LID(GID);
@@ -267,11 +369,13 @@ class Loadable : public core::Object
     }
 
     // FIXME???
+    //! Sets the \c index-th component of the specified (and locally owned) local grid element ID to \c value.
     inline int& getMyConnectivity(const int LID, const int index)
     {
       return ((*ADJ_)(LID, index));
     }
 
+    // FIXME??
     inline int& ADJ(const int LVID, const int index)
     {
       return((*ADJ_)(LVID, index));
@@ -280,6 +384,7 @@ class Loadable : public core::Object
     // @} 
     // @{ \name 
     
+    //! Freezes the grid connectivity, which cannot be modified any longer.
     virtual void freezeConnectivity()
     {
       const Epetra_Comm& Comm = ADJ_->Comm();
@@ -318,13 +423,16 @@ class Loadable : public core::Object
         vertexData_ = rcp(new Epetra_MultiVector(*VertexMap_, numVertexData_));
     }
 
+    //! Freezes the grid coordinates, which cannot be modified any longer.
     void freezeCoordinates()
     {
       // do-nothing at this point
     }
 
+    //! Prints the grid on \c os.
     virtual void print(ostream & os) const
     {
+      // FIXME: add label, see parallel, add Barrier()??
       cout << *ElementMap_;
 
       cout << *VertexMap_;
@@ -334,6 +442,7 @@ class Loadable : public core::Object
       cout << *COO_;
     }
 
+    //! Returns the Epetra_Map associated with grid vertices.
     Epetra_Map getLinearVertexMap()
     {
       if (linearVertexMap_ == Teuchos::null)
@@ -343,6 +452,7 @@ class Loadable : public core::Object
       return(*linearVertexMap_);
     }
 
+    //! Returns the Epetra_MultiVector containing the grid coordinates.
     const Epetra_MultiVector& getLinearCoordinates()
     {
       if (linearCOO_ == Teuchos::null)
@@ -356,6 +466,7 @@ class Loadable : public core::Object
       return(*linearCOO_);
     }
 
+    // FIXME: delete this?
     string getElementType() const
     {
       return(elementType_);

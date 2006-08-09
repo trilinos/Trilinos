@@ -51,7 +51,7 @@ namespace grid {
  *
  * \brief Class for grid segments.
  *
- * A grid segment is composed by two vertices, and two components are
+ * A grid segment is composed by 2 vertices, and 2 components, defined as
  * Galeri::grid::Point's.
  */ 
 class Segment : public Element

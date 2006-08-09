@@ -42,6 +42,7 @@
 
 #include "Galeri_ConfigDefs.h"
 #include "Galeri_core_Object.h"
+#include "Teuchos_TestForException.hpp"
 #include <vector>
 
 namespace Galeri {

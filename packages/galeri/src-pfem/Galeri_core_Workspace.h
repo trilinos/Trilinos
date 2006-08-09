@@ -118,14 +118,14 @@ class Workspace
       }
     }
 
-  private:
-    //! Number of dimensions in the computations.
-    static int numDimensions_;
     //! Input default value for "min".
     static const int MIN;
     //! Input default value for "max".
     static const int MAX;
 
+  private:
+    //! Number of dimensions in the computations.
+    static int numDimensions_;
 }; // class Workspace
 
 } // namespace core

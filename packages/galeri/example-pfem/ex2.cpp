@@ -1,8 +1,8 @@
 // @HEADER
 // ************************************************************************
 //
-//                  Galeri Matrix Generation Package
-//                 Copyright (2006) Sandia Corporation
+//           Galeri: Finite Element and Matrix Generation Package
+//                 Copyright (2006) ETHZ/Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
@@ -21,7 +21,8 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
+// Questions about Galeri? Contact Marzio Sala (marzio.sala _AT_ gmail.com)
 //
 // ************************************************************************
 // @HEADER
@@ -36,9 +37,8 @@
 #include "Epetra_FEVector.h"
 #include "Epetra_FECrsMatrix.h"
 
-#include "Galeri_core_Constants.h"
 #include "Galeri_core_Object.h"
-#include "Galeri_core_Utils.h"
+#include "Galeri_core_Workspace.h"
 #include "Galeri_grid_Segment.h"
 #include "Galeri_grid_Quad.h"
 #include "Galeri_grid_Loadable.h"
@@ -120,7 +120,7 @@ int main(int argc, char *argv[])
   Epetra_SerialComm comm;
 #endif
 
-  Galeri::core::Utils::setNumDimensions(2);
+  Galeri::core::Workspace::setNumDimensions(2);
 
   Galeri::grid::Loadable domain, boundary;
 
