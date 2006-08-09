@@ -22,4 +22,4 @@ _RYTHMOS_LIBS = \
 
 @ENABLE_EPETRAEXT_THYRA_TRUE@include @abs_top_builddir@/../epetraext/Makefile.export.epetraext
 @ENABLE_RYTHMOS_STRATIMIKOS_TRUE@include @abs_top_builddir@/../stratimikos/Makefile.export.stratimikos
-@ENABLE_RYTHMOS_NOX_TRUE@@ENABLE_RYTHMOS_STRATIMIKOS_TRUE@include @abs_top_builddir@/../stratimikos/Makefile.export.nox
+@ENABLE_RYTHMOS_NOX_TRUE@@ENABLE_RYTHMOS_STRATIMIKOS_TRUE@include @abs_top_builddir@/../nox/Makefile.export.nox
