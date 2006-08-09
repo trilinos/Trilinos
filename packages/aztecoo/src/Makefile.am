@@ -101,7 +101,8 @@ WITH_CPP_H = \
         $(srcdir)/AztecOO_StatusTestCombo.h \
         $(srcdir)/AztecOO_StatusTestMaxIters.h \
         $(srcdir)/AztecOO_StatusTestResNorm.h \
-        $(srcdir)/AztecOO_ConditionNumber.h
+        $(srcdir)/AztecOO_ConditionNumber.h \
+        $(srcdir)/AztecOO_ConfigDefs.h
 
 
 WITH_CPP = \
