@@ -775,15 +775,15 @@ ZOLTAN_ID_PTR fixedGIDs = NULL, fixedLIDs = NULL;        /* RTHRTH */
     }
 
     /* Process to which edge is assigned calculates # of pins in the edge */
+    if (myPins.nHedges && num_lid_entries)  {
+      elids = ZOLTAN_MALLOC_LID_ARRAY(zz, myPins.nHedges);
 
-    elids = ZOLTAN_MALLOC_LID_ARRAY(zz, myPins.nHedges);
-
-    if (myPins.nHedges && !elids) MEMORY_ERROR;
+      if (!elids)  MEMORY_ERROR; 
     
-    for (i=0; i<myPins.nHedges; i++){
-      elids[i*num_lid_entries] = i;
+      for (i=0; i<myPins.nHedges; i++){
+        elids[i*num_lid_entries] = i;
+      }
     }
-
     if (myPins.numE){
       pin_info = (int *)ZOLTAN_MALLOC(sizeof(int) * myPins.numE);
       if (!pin_info) MEMORY_ERROR;
