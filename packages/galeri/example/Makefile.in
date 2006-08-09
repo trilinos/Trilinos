@@ -44,7 +44,7 @@
 
 # The following line helps the test harness recover from build errors.
 
-SOURCES = $(AdvDiff2D_SOURCES) $(CrsMatrix_SOURCES) $(Grid_SOURCES) $(Laplacian3D_SOURCES) $(LinearProblem_SOURCES) $(Map_SOURCES) $(VbrMatrix_SOURCES)
+SOURCES = $(CrsMatrix_SOURCES) $(LinearProblem_SOURCES) $(Map_SOURCES) $(VbrMatrix_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -68,8 +68,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
 noinst_PROGRAMS = Map$(EXEEXT) CrsMatrix$(EXEEXT) VbrMatrix$(EXEEXT) \
-	LinearProblem$(EXEEXT) Grid$(EXEEXT) Laplacian3D$(EXEEXT) \
-	AdvDiff2D$(EXEEXT)
+	LinearProblem$(EXEEXT)
 subdir = example
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -85,6 +84,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/az_python.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
+	$(top_srcdir)/config/tac_arg_enable_can_use_package.m4 \
 	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub.m4 \
@@ -105,14 +105,8 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Galeri_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_AdvDiff2D_OBJECTS = AdvDiff2D-AdvDiff2D.$(OBJEXT)
-AdvDiff2D_OBJECTS = $(am_AdvDiff2D_OBJECTS)
 am_CrsMatrix_OBJECTS = CrsMatrix-CrsMatrix.$(OBJEXT)
 CrsMatrix_OBJECTS = $(am_CrsMatrix_OBJECTS)
-am_Grid_OBJECTS = Grid-Grid.$(OBJEXT)
-Grid_OBJECTS = $(am_Grid_OBJECTS)
-am_Laplacian3D_OBJECTS = Laplacian3D-Laplacian3D.$(OBJEXT)
-Laplacian3D_OBJECTS = $(am_Laplacian3D_OBJECTS)
 am_LinearProblem_OBJECTS = LinearProblem-LinearProblem.$(OBJEXT)
 LinearProblem_OBJECTS = $(am_LinearProblem_OBJECTS)
 am_Map_OBJECTS = Map-Map.$(OBJEXT)
@@ -122,10 +116,7 @@ VbrMatrix_OBJECTS = $(am_VbrMatrix_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/AdvDiff2D-AdvDiff2D.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/CrsMatrix-CrsMatrix.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/Grid-Grid.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/Laplacian3D-Laplacian3D.Po \
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/CrsMatrix-CrsMatrix.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/LinearProblem-LinearProblem.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Map-Map.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/VbrMatrix-VbrMatrix.Po
@@ -134,12 +125,10 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(AdvDiff2D_SOURCES) $(CrsMatrix_SOURCES) $(Grid_SOURCES) \
-	$(Laplacian3D_SOURCES) $(LinearProblem_SOURCES) $(Map_SOURCES) \
+SOURCES = $(CrsMatrix_SOURCES) $(LinearProblem_SOURCES) $(Map_SOURCES) \
 	$(VbrMatrix_SOURCES)
-DIST_SOURCES = $(AdvDiff2D_SOURCES) $(CrsMatrix_SOURCES) \
-	$(Grid_SOURCES) $(Laplacian3D_SOURCES) \
-	$(LinearProblem_SOURCES) $(Map_SOURCES) $(VbrMatrix_SOURCES)
+DIST_SOURCES = $(CrsMatrix_SOURCES) $(LinearProblem_SOURCES) \
+	$(Map_SOURCES) $(VbrMatrix_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -181,6 +170,8 @@ F77 = @F77@
 FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
 GNU_HAVE_SWIG = @GNU_HAVE_SWIG@
+HAVE_GALERI_EPETRAEXT_FALSE = @HAVE_GALERI_EPETRAEXT_FALSE@
+HAVE_GALERI_EPETRAEXT_TRUE = @HAVE_GALERI_EPETRAEXT_TRUE@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
 HAVE_PERL = @HAVE_PERL@
@@ -299,18 +290,6 @@ LinearProblem_SOURCES = $(srcdir)/LinearProblem.cpp
 LinearProblem_DEPENDENCIES = $(top_builddir)/src/libgaleri.a
 LinearProblem_CXXFLAGS = $(GALERI_INCLUDES)
 LinearProblem_LDADD = $(GALERI_LIBS)
-Grid_SOURCES = $(srcdir)/Grid.cpp
-Grid_DEPENDENCIES = $(top_builddir)/src/libgaleri.a
-Grid_CXXFLAGS = $(GALERI_INCLUDES)
-Grid_LDADD = $(GALERI_LIBS)
-Laplacian3D_SOURCES = $(srcdir)/Laplacian3D.cpp
-Laplacian3D_DEPENDENCIES = $(top_builddir)/src/libgaleri.a
-Laplacian3D_CXXFLAGS = $(GALERI_INCLUDES) 
-Laplacian3D_LDADD = $(GALERI_LIBS)
-AdvDiff2D_SOURCES = $(srcdir)/AdvDiff2D.cpp
-AdvDiff2D_DEPENDENCIES = $(top_builddir)/src/libgaleri.a
-AdvDiff2D_CXXFLAGS = $(GALERI_INCLUDES)
-AdvDiff2D_LDADD = $(GALERI_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -347,18 +326,9 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-AdvDiff2D$(EXEEXT): $(AdvDiff2D_OBJECTS) $(AdvDiff2D_DEPENDENCIES) 
-	@rm -f AdvDiff2D$(EXEEXT)
-	$(CXXLINK) $(AdvDiff2D_LDFLAGS) $(AdvDiff2D_OBJECTS) $(AdvDiff2D_LDADD) $(LIBS)
 CrsMatrix$(EXEEXT): $(CrsMatrix_OBJECTS) $(CrsMatrix_DEPENDENCIES) 
 	@rm -f CrsMatrix$(EXEEXT)
 	$(CXXLINK) $(CrsMatrix_LDFLAGS) $(CrsMatrix_OBJECTS) $(CrsMatrix_LDADD) $(LIBS)
-Grid$(EXEEXT): $(Grid_OBJECTS) $(Grid_DEPENDENCIES) 
-	@rm -f Grid$(EXEEXT)
-	$(CXXLINK) $(Grid_LDFLAGS) $(Grid_OBJECTS) $(Grid_LDADD) $(LIBS)
-Laplacian3D$(EXEEXT): $(Laplacian3D_OBJECTS) $(Laplacian3D_DEPENDENCIES) 
-	@rm -f Laplacian3D$(EXEEXT)
-	$(CXXLINK) $(Laplacian3D_LDFLAGS) $(Laplacian3D_OBJECTS) $(Laplacian3D_LDADD) $(LIBS)
 LinearProblem$(EXEEXT): $(LinearProblem_OBJECTS) $(LinearProblem_DEPENDENCIES) 
 	@rm -f LinearProblem$(EXEEXT)
 	$(CXXLINK) $(LinearProblem_LDFLAGS) $(LinearProblem_OBJECTS) $(LinearProblem_LDADD) $(LIBS)
@@ -375,10 +345,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/AdvDiff2D-AdvDiff2D.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CrsMatrix-CrsMatrix.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Grid-Grid.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Laplacian3D-Laplacian3D.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LinearProblem-LinearProblem.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Map-Map.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/VbrMatrix-VbrMatrix.Po@am__quote@
@@ -399,22 +366,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-AdvDiff2D-AdvDiff2D.o: $(srcdir)/AdvDiff2D.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AdvDiff2D_CXXFLAGS) $(CXXFLAGS) -MT AdvDiff2D-AdvDiff2D.o -MD -MP -MF "$(DEPDIR)/AdvDiff2D-AdvDiff2D.Tpo" -c -o AdvDiff2D-AdvDiff2D.o `test -f '$(srcdir)/AdvDiff2D.cpp' || echo '$(srcdir)/'`$(srcdir)/AdvDiff2D.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/AdvDiff2D-AdvDiff2D.Tpo" "$(DEPDIR)/AdvDiff2D-AdvDiff2D.Po"; else rm -f "$(DEPDIR)/AdvDiff2D-AdvDiff2D.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/AdvDiff2D.cpp' object='AdvDiff2D-AdvDiff2D.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/AdvDiff2D-AdvDiff2D.Po' tmpdepfile='$(DEPDIR)/AdvDiff2D-AdvDiff2D.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AdvDiff2D_CXXFLAGS) $(CXXFLAGS) -c -o AdvDiff2D-AdvDiff2D.o `test -f '$(srcdir)/AdvDiff2D.cpp' || echo '$(srcdir)/'`$(srcdir)/AdvDiff2D.cpp
-
-AdvDiff2D-AdvDiff2D.obj: $(srcdir)/AdvDiff2D.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AdvDiff2D_CXXFLAGS) $(CXXFLAGS) -MT AdvDiff2D-AdvDiff2D.obj -MD -MP -MF "$(DEPDIR)/AdvDiff2D-AdvDiff2D.Tpo" -c -o AdvDiff2D-AdvDiff2D.obj `if test -f '$(srcdir)/AdvDiff2D.cpp'; then $(CYGPATH_W) '$(srcdir)/AdvDiff2D.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AdvDiff2D.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/AdvDiff2D-AdvDiff2D.Tpo" "$(DEPDIR)/AdvDiff2D-AdvDiff2D.Po"; else rm -f "$(DEPDIR)/AdvDiff2D-AdvDiff2D.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/AdvDiff2D.cpp' object='AdvDiff2D-AdvDiff2D.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/AdvDiff2D-AdvDiff2D.Po' tmpdepfile='$(DEPDIR)/AdvDiff2D-AdvDiff2D.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AdvDiff2D_CXXFLAGS) $(CXXFLAGS) -c -o AdvDiff2D-AdvDiff2D.obj `if test -f '$(srcdir)/AdvDiff2D.cpp'; then $(CYGPATH_W) '$(srcdir)/AdvDiff2D.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AdvDiff2D.cpp'; fi`
-
 CrsMatrix-CrsMatrix.o: $(srcdir)/CrsMatrix.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(CrsMatrix_CXXFLAGS) $(CXXFLAGS) -MT CrsMatrix-CrsMatrix.o -MD -MP -MF "$(DEPDIR)/CrsMatrix-CrsMatrix.Tpo" -c -o CrsMatrix-CrsMatrix.o `test -f '$(srcdir)/CrsMatrix.cpp' || echo '$(srcdir)/'`$(srcdir)/CrsMatrix.cpp; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/CrsMatrix-CrsMatrix.Tpo" "$(DEPDIR)/CrsMatrix-CrsMatrix.Po"; else rm -f "$(DEPDIR)/CrsMatrix-CrsMatrix.Tpo"; exit 1; fi
@@ -430,38 +381,6 @@ CrsMatrix-CrsMatrix.obj: $(srcdir)/CrsMatrix.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/CrsMatrix-CrsMatrix.Po' tmpdepfile='$(DEPDIR)/CrsMatrix-CrsMatrix.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(CrsMatrix_CXXFLAGS) $(CXXFLAGS) -c -o CrsMatrix-CrsMatrix.obj `if test -f '$(srcdir)/CrsMatrix.cpp'; then $(CYGPATH_W) '$(srcdir)/CrsMatrix.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/CrsMatrix.cpp'; fi`
-
-Grid-Grid.o: $(srcdir)/Grid.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Grid_CXXFLAGS) $(CXXFLAGS) -MT Grid-Grid.o -MD -MP -MF "$(DEPDIR)/Grid-Grid.Tpo" -c -o Grid-Grid.o `test -f '$(srcdir)/Grid.cpp' || echo '$(srcdir)/'`$(srcdir)/Grid.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Grid-Grid.Tpo" "$(DEPDIR)/Grid-Grid.Po"; else rm -f "$(DEPDIR)/Grid-Grid.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Grid.cpp' object='Grid-Grid.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Grid-Grid.Po' tmpdepfile='$(DEPDIR)/Grid-Grid.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Grid_CXXFLAGS) $(CXXFLAGS) -c -o Grid-Grid.o `test -f '$(srcdir)/Grid.cpp' || echo '$(srcdir)/'`$(srcdir)/Grid.cpp
-
-Grid-Grid.obj: $(srcdir)/Grid.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Grid_CXXFLAGS) $(CXXFLAGS) -MT Grid-Grid.obj -MD -MP -MF "$(DEPDIR)/Grid-Grid.Tpo" -c -o Grid-Grid.obj `if test -f '$(srcdir)/Grid.cpp'; then $(CYGPATH_W) '$(srcdir)/Grid.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Grid.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Grid-Grid.Tpo" "$(DEPDIR)/Grid-Grid.Po"; else rm -f "$(DEPDIR)/Grid-Grid.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Grid.cpp' object='Grid-Grid.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Grid-Grid.Po' tmpdepfile='$(DEPDIR)/Grid-Grid.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Grid_CXXFLAGS) $(CXXFLAGS) -c -o Grid-Grid.obj `if test -f '$(srcdir)/Grid.cpp'; then $(CYGPATH_W) '$(srcdir)/Grid.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Grid.cpp'; fi`
-
-Laplacian3D-Laplacian3D.o: $(srcdir)/Laplacian3D.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Laplacian3D_CXXFLAGS) $(CXXFLAGS) -MT Laplacian3D-Laplacian3D.o -MD -MP -MF "$(DEPDIR)/Laplacian3D-Laplacian3D.Tpo" -c -o Laplacian3D-Laplacian3D.o `test -f '$(srcdir)/Laplacian3D.cpp' || echo '$(srcdir)/'`$(srcdir)/Laplacian3D.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Laplacian3D-Laplacian3D.Tpo" "$(DEPDIR)/Laplacian3D-Laplacian3D.Po"; else rm -f "$(DEPDIR)/Laplacian3D-Laplacian3D.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Laplacian3D.cpp' object='Laplacian3D-Laplacian3D.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Laplacian3D-Laplacian3D.Po' tmpdepfile='$(DEPDIR)/Laplacian3D-Laplacian3D.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Laplacian3D_CXXFLAGS) $(CXXFLAGS) -c -o Laplacian3D-Laplacian3D.o `test -f '$(srcdir)/Laplacian3D.cpp' || echo '$(srcdir)/'`$(srcdir)/Laplacian3D.cpp
-
-Laplacian3D-Laplacian3D.obj: $(srcdir)/Laplacian3D.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Laplacian3D_CXXFLAGS) $(CXXFLAGS) -MT Laplacian3D-Laplacian3D.obj -MD -MP -MF "$(DEPDIR)/Laplacian3D-Laplacian3D.Tpo" -c -o Laplacian3D-Laplacian3D.obj `if test -f '$(srcdir)/Laplacian3D.cpp'; then $(CYGPATH_W) '$(srcdir)/Laplacian3D.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Laplacian3D.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Laplacian3D-Laplacian3D.Tpo" "$(DEPDIR)/Laplacian3D-Laplacian3D.Po"; else rm -f "$(DEPDIR)/Laplacian3D-Laplacian3D.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Laplacian3D.cpp' object='Laplacian3D-Laplacian3D.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Laplacian3D-Laplacian3D.Po' tmpdepfile='$(DEPDIR)/Laplacian3D-Laplacian3D.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Laplacian3D_CXXFLAGS) $(CXXFLAGS) -c -o Laplacian3D-Laplacian3D.obj `if test -f '$(srcdir)/Laplacian3D.cpp'; then $(CYGPATH_W) '$(srcdir)/Laplacian3D.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Laplacian3D.cpp'; fi`
 
 LinearProblem-LinearProblem.o: $(srcdir)/LinearProblem.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(LinearProblem_CXXFLAGS) $(CXXFLAGS) -MT LinearProblem-LinearProblem.o -MD -MP -MF "$(DEPDIR)/LinearProblem-LinearProblem.Tpo" -c -o LinearProblem-LinearProblem.o `test -f '$(srcdir)/LinearProblem.cpp' || echo '$(srcdir)/'`$(srcdir)/LinearProblem.cpp; \
@@ -679,7 +598,7 @@ all-local:
 	@echo "Trilinos package galeri subdirectory example built successfully."
 	@echo ""
 
-include $(top_builddir)/Makefile.export
+include $(top_builddir)/Makefile.export.galeri
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

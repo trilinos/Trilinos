@@ -84,6 +84,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/az_python.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
+	$(top_srcdir)/config/tac_arg_enable_can_use_package.m4 \
 	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub.m4 \
@@ -174,6 +175,8 @@ F77 = @F77@
 FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
 GNU_HAVE_SWIG = @GNU_HAVE_SWIG@
+HAVE_GALERI_EPETRAEXT_FALSE = @HAVE_GALERI_EPETRAEXT_FALSE@
+HAVE_GALERI_EPETRAEXT_TRUE = @HAVE_GALERI_EPETRAEXT_TRUE@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
 HAVE_PERL = @HAVE_PERL@

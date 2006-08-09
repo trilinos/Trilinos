@@ -333,6 +333,11 @@ fi
 # Checks for 3-party functions
 # ------------------------------------------------------------------------
 
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(galeri, epetraext, GALERI_EPETRAEXT,
+  HAVE_GALERI_EPETRAEXT, yes, 
+  [Enable EpetraExt support, required by the pfem module.]. 
+  [Enable EpetraExt support, required by the pfem module.])
+#
 # ------------------------------------------------------------------------
 # Perform substitutions in output files
 # ------------------------------------------------------------------------
@@ -348,7 +353,11 @@ AC_CONFIG_FILES([
 		Makefile.export
 		Makefile.export.galeri
 		src/Makefile
+		src-fem/Makefile
+		src-pfem/Makefile
 		example/Makefile
+		example-fem/Makefile
+		example-pfem/Makefile
 		test/Makefile
 		test/VerySimple/Makefile
 		python/Makefile

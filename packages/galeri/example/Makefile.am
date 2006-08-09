@@ -33,12 +33,11 @@ all-local:
 	@echo "Trilinos package galeri subdirectory example built successfully."
 	@echo ""
 
-include $(top_builddir)/Makefile.export
+include $(top_builddir)/Makefile.export.galeri
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = Map CrsMatrix VbrMatrix LinearProblem \
-		  Grid Laplacian3D AdvDiff2D
+noinst_PROGRAMS = Map CrsMatrix VbrMatrix LinearProblem
 
 Map_SOURCES      = $(srcdir)/Map.cpp
 Map_DEPENDENCIES = $(top_builddir)/src/libgaleri.a
@@ -59,18 +58,3 @@ LinearProblem_SOURCES      = $(srcdir)/LinearProblem.cpp
 LinearProblem_DEPENDENCIES = $(top_builddir)/src/libgaleri.a
 LinearProblem_CXXFLAGS     = $(GALERI_INCLUDES)
 LinearProblem_LDADD        = $(GALERI_LIBS)
-
-Grid_SOURCES      = $(srcdir)/Grid.cpp
-Grid_DEPENDENCIES = $(top_builddir)/src/libgaleri.a
-Grid_CXXFLAGS     = $(GALERI_INCLUDES)
-Grid_LDADD        = $(GALERI_LIBS)
-
-Laplacian3D_SOURCES      = $(srcdir)/Laplacian3D.cpp
-Laplacian3D_DEPENDENCIES = $(top_builddir)/src/libgaleri.a
-Laplacian3D_CXXFLAGS     = $(GALERI_INCLUDES) 
-Laplacian3D_LDADD        = $(GALERI_LIBS)
-
-AdvDiff2D_SOURCES      = $(srcdir)/AdvDiff2D.cpp
-AdvDiff2D_DEPENDENCIES = $(top_builddir)/src/libgaleri.a
-AdvDiff2D_CXXFLAGS     = $(GALERI_INCLUDES)
-AdvDiff2D_LDADD        = $(GALERI_LIBS)

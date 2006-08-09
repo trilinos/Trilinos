@@ -44,9 +44,10 @@ PROJECT_NAME           = Galeri
 
 INPUT                  = index.doc maps.doc matrices.doc utils.doc fe.doc
 INPUT                 += ../src ../src/Maps/ ../src/CrsMatrices
-INPUT                 += ../src/FiniteElements
+INPUT                 += ../src-fem
+INPUT                 += ../src-pfem
 
-EXAMPLE_PATH           = ../example ../
+EXAMPLE_PATH           = ../example ../example-fem ../example-pfem
 
 IMAGE_PATH             = ./ 
 

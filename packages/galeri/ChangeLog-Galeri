@@ -9,9 +9,12 @@ report bugs to marzio.sala _AT_ gmail.com.
 
 Aug-06
 
+*) New structure of the finite element modules of Galeri. All files
+   previously contained in src/FiniteElements are now in src-fem, and
+   the corresponding examples in example-fem. The new, fully parallel,
+   finite element module is instead located in src-pfem, and the examples
+   in example-pfem. pfem is the "old" phx project of Galeri.
 *) Finalized Galeri 1.0 for Trilinos 7.0.
-*) Started development of a new finite element code, which will eventually
-   replaced the one now available in src/FiniteElements.
 
 ------------------------------------------------------------------------------
 

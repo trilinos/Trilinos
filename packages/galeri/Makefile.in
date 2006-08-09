@@ -88,6 +88,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/az_python.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
+	$(top_srcdir)/config/tac_arg_enable_can_use_package.m4 \
 	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub.m4 \
@@ -120,7 +121,8 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	uninstall-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = src test example python
+DIST_SUBDIRS = src src-pfem test example example-fem example-pfem \
+	python
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -170,6 +172,8 @@ F77 = @F77@
 FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
 GNU_HAVE_SWIG = @GNU_HAVE_SWIG@
+HAVE_GALERI_EPETRAEXT_FALSE = @HAVE_GALERI_EPETRAEXT_FALSE@
+HAVE_GALERI_EPETRAEXT_TRUE = @HAVE_GALERI_EPETRAEXT_TRUE@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
 HAVE_PERL = @HAVE_PERL@
@@ -304,7 +308,14 @@ config/config.sub                       config/tac_arg_with_package.m4 \
 bootstrap \
 README-Galeri \
 ChangeLog-Galeri \
-TODO-Galeri
+TODO-Galeri \
+data/Square.grid \
+data/TwoSquares.grid \
+data/VerySimple.grid \
+data/Circle.grid \
+data/SquareInSquare.grid \
+data/TwoSquares.m \
+convert.m
 
 
 #
@@ -321,9 +332,9 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 	$(AUX_DIST) 
 
 @BUILD_TESTS_TRUE@TEST_SUBDIR = test
-@BUILD_EXAMPLES_TRUE@EXAMPLE_SUBDIR = example
+@BUILD_EXAMPLES_TRUE@EXAMPLE_SUBDIR = example example-fem example-pfem
 @BUILD_GALERI_PYTHON_TRUE@@BUILD_PYTHON_TRUE@PYTHON_SUBDIR = python
-SUBDIRS = src $(TEST_SUBDIR) $(EXAMPLE_SUBDIR) $(PYTHON_SUBDIR)
+SUBDIRS = src src-pfem $(TEST_SUBDIR) $(EXAMPLE_SUBDIR) $(PYTHON_SUBDIR)
 TRILINOS_HOME_DIR = @abs_top_srcdir@/../..
 TRILINOS_BUILD_DIR = @abs_top_builddir@/../..
 @HAVE_MPI_FALSE@GALERI_CHECK_COMM = serial
@@ -491,7 +502,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/. $(distdir)/config $(distdir)/python/src $(distdir)/python/src/.deps
+	$(mkdir_p) $(distdir)/. $(distdir)/config $(distdir)/data $(distdir)/python/src $(distdir)/python/src/.deps
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -724,13 +735,6 @@ uninstall-info: uninstall-info-recursive
 	pdf-am ps ps-am tags tags-recursive uninstall uninstall-am \
 	uninstall-info-am
 
-data/Square.grid \
-data/TwoSquares.grid \
-data/VerySimple.grid \
-data/Circle.grid \
-data/SquareInSquare.grid \
-data/TwoSquares.m \
-convert.m
 
 #The following line helps the test harness recover from build errors.
 

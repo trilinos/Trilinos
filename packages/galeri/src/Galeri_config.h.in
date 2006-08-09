@@ -41,6 +41,9 @@
 /* Define if you want to build export makefiles. */
 #undef HAVE_EXPORT_MAKEFILES
 
+/* Define if want to build with galeri enabled */
+#undef HAVE_GALERI_EPETRAEXT
+
 /* Define if want to build galeri-examples */
 #undef HAVE_GALERI_EXAMPLES
 

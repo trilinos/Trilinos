@@ -74,7 +74,7 @@ config/config.sub                       config/tac_arg_with_package.m4 \
 bootstrap \
 README-Galeri \
 ChangeLog-Galeri \
-TODO-Galeri
+TODO-Galeri \
 data/Square.grid \
 data/TwoSquares.grid \
 data/VerySimple.grid \
@@ -139,7 +139,7 @@ TEST_SUBDIR=test
 endif
 
 if BUILD_EXAMPLES
-EXAMPLE_SUBDIR=example
+EXAMPLE_SUBDIR=example example-fem example-pfem
 endif
 
 if BUILD_PYTHON
@@ -148,7 +148,7 @@ PYTHON_SUBDIR=python
 endif
 endif
 
-SUBDIRS = src $(TEST_SUBDIR) $(EXAMPLE_SUBDIR) $(PYTHON_SUBDIR)
+SUBDIRS = src src-pfem $(TEST_SUBDIR) $(EXAMPLE_SUBDIR) $(PYTHON_SUBDIR)
 
 TRILINOS_HOME_DIR=@abs_top_srcdir@/../..
 TRILINOS_BUILD_DIR=@abs_top_builddir@/../..
