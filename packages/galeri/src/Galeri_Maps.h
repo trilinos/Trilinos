@@ -41,6 +41,6 @@ namespace Galeri {
 Epetra_Map* CreateMap(string MapType, Epetra_Comm& Comm,
                         Teuchos::ParameterList& List);
 
-}; // namespace Galeri
+} // namespace Galeri
 
 #endif

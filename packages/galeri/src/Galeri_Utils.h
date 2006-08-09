@@ -81,6 +81,6 @@ GetNeighboursCartesian3d(const int i, const int nx, const int ny, const int nz,
 void
 PrintStencil2D(const Epetra_CrsMatrix* Matrix,
                const int nx, const int ny, int GID = -1);
-}; // namespace Galeri
+} // namespace Galeri
 
 #endif

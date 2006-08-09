@@ -43,6 +43,6 @@ Epetra_CrsMatrix* CreateCrsMatrix(string MatrixType,
                                   const Epetra_Map* Map,
                                   Teuchos::ParameterList& List);
 
-}; // namespace Galeri
+} // namespace Galeri
 
 #endif
