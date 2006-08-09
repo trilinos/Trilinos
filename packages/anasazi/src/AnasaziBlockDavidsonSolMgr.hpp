@@ -86,7 +86,7 @@ class BlockDavidsonSolMgr : public SolverManager<ScalarType,MV,OP> {
    * This constructor accepts the Eigenproblem to be solved in addition
    * to a parameter list of options for the solver manager. These options include the following:
    *   - "Which" - a \c string specifying the desired eigenvalues: SM, LM, SR or LR. Default: "SR"
-   *   - "Block Size" - a \c int specifying the block size to be used by the underlying LOBPCG solver. Default: problem->getNEV()
+   *   - "Block Size" - a \c int specifying the block size to be used by the underlying block Davidson solver. Default: problem->getNEV()
    *   - "Num Blocks" - a \c int specifying the number of blocks allocated for the Krylov basis. Default: 2
    *   - "Maximum Restarts" - a \c int specifying the maximum number of restarts the underlying solver is allowed to perform. Default: 20
    *   - "Verbosity" - a sum of MsgType specifying the verbosity. Default: Anasazi::Errors
@@ -261,11 +261,11 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
   //
   // convergence
   Teuchos::RefCountPtr<StatusTestOrderedResNorm<ScalarType,MV,OP> > convtest 
-      = Teuchos::rcp( new StatusTestOrderedResNorm<ScalarType,MV,OP>(sorter,_convtol,nev,false,_relconvtol) );
+      = Teuchos::rcp( new StatusTestOrderedResNorm<ScalarType,MV,OP>(sorter,_convtol,nev,StatusTestOrderedResNorm<ScalarType,MV,OP>::RES_ORTH,_relconvtol) );
   // locking
   Teuchos::RefCountPtr<StatusTestResNorm<ScalarType,MV,OP> > locktest;
   if (_useLocking) {
-    locktest = Teuchos::rcp( new StatusTestResNorm<ScalarType,MV,OP>(_locktol,_lockQuorum,false,_rellocktol) );
+    locktest = Teuchos::rcp( new StatusTestResNorm<ScalarType,MV,OP>(_locktol,_lockQuorum,StatusTestResNorm<ScalarType,MV,OP>::RES_ORTH,_rellocktol) );
   }
   // combo class
   Teuchos::Array<Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > > alltests;

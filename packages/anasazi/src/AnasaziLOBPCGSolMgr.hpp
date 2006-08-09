@@ -279,11 +279,11 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
   }
   // convergence
   Teuchos::RefCountPtr<StatusTestOrderedResNorm<ScalarType,MV,OP> > convtest 
-      = Teuchos::rcp( new StatusTestOrderedResNorm<ScalarType,MV,OP>(sorter,_convtol,nev,false,_relconvtol) );
+      = Teuchos::rcp( new StatusTestOrderedResNorm<ScalarType,MV,OP>(sorter,_convtol,nev,StatusTestOrderedResNorm<ScalarType,MV,OP>::RES_ORTH,_relconvtol) );
   // locking
   Teuchos::RefCountPtr<StatusTestResNorm<ScalarType,MV,OP> > locktest;
   if (_useLocking) {
-    locktest = Teuchos::rcp( new StatusTestResNorm<ScalarType,MV,OP>(_locktol,_lockQuorum,false,_rellocktol) );
+    locktest = Teuchos::rcp( new StatusTestResNorm<ScalarType,MV,OP>(_locktol,_lockQuorum,StatusTestResNorm<ScalarType,MV,OP>::RES_ORTH,_rellocktol) );
   }
   Teuchos::Array<Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > > alltests;
   // for an OR test, the order doesn't matter

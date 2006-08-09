@@ -58,7 +58,7 @@ class Eigensolver {
 
   public:
 
-    //! @name Constructors/Destructor
+  //! @name Constructors/Destructor
   //@{ 
 
   //! Default Constructor.

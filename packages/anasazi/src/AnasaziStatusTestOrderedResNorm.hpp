@@ -54,7 +54,7 @@
     
     In addition to specifying the tolerance, the user may specify:
     <ul>
-      <li> the norm to be used: 2-norm or OrthoManager::norm()
+      <li> the norm to be used: 2-norm or OrthoManager::norm() or getRitzRes2Norms()
       <li> the scale: absolute or relative to magnitude of Ritz value 
       <li> the quorum: the number of vectors required for the test to 
            evaluate as ::Passed.
@@ -76,11 +76,26 @@ class StatusTestOrderedResNorm : public StatusTest<ScalarType,MV,OP> {
   typedef Teuchos::ScalarTraits<ScalarType>    SCT;
 
  public:
+
+  //! @name Enums
+  //@{
+
+  /*! \enum ResType 
+      \brief Enumerated type used to specify which residual norm used by this status test.
+   */
+  enum ResType {
+    RES_ORTH,
+    RES_2NORM,
+    RITZRES_2NORM
+  };
+
+  //@}
+
   //! @name Constructors/destructors
   //@{ 
 
   //! Constructor
-  StatusTestOrderedResNorm(Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > sorter, MagnitudeType tol, int quorum = -1, bool use2Norm = false, bool scaled = true);
+  StatusTestOrderedResNorm(Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > sorter, MagnitudeType tol, int quorum = -1, ResType whichNorm = RES_ORTH, bool scaled = true);
 
   //! Destructor
   virtual ~StatusTestOrderedResNorm() {};
@@ -149,16 +164,17 @@ class StatusTestOrderedResNorm : public StatusTest<ScalarType,MV,OP> {
   //! Get tolerance.
   MagnitudeType getTolerance() {return _tol;}
 
-  /*! \brief Set the norm. If true, the test uses the 2-norm. Otherwise, it uses the norm defined by the OrthoManager.
+  /*! \brief Set the residual norm to be used by the status test.
+   *
    *  This also resets the test status to ::Undefined.
    */
-  void setNorm(bool use2Norm) {
+  void setWhichNorm(ResType whichNorm) {
     _state = Undefined;
-    _use2Norm = use2Norm;
+    _whichNorm = whichNorm;
   }
 
-  //! Returns true if the test is using the 2-norm. Returns false if using the norm defined by the OrthoManager.
-  bool uses2Norm() {return _use2Norm;}
+  //! Return the residual norm used by the status test.
+  ResType getWhichNorm() {return _whichNorm;}
 
   /*! \brief Instruct test to scale norms by eigenvalue estimates (relative scale).
    *  This also resets the test status to ::Undefined.
@@ -195,15 +211,16 @@ class StatusTestOrderedResNorm : public StatusTest<ScalarType,MV,OP> {
     MagnitudeType _tol;
     std::vector<int> _ind;
     int _quorum;
-    bool _use2Norm, _scaled;
+    bool _scaled;
+    ResType _whichNorm;
     std::vector<MagnitudeType> _vals;
     Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > _sorter;
 };
 
 
 template <class ScalarType, class MV, class OP>
-StatusTestOrderedResNorm<ScalarType,MV,OP>::StatusTestOrderedResNorm(Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > sorter, MagnitudeType tol, int quorum, bool use2Norm, bool scaled)
-  : _state(Undefined), _quorum(quorum), _use2Norm(use2Norm), _scaled(scaled), _sorter(sorter) 
+StatusTestOrderedResNorm<ScalarType,MV,OP>::StatusTestOrderedResNorm(Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > sorter, MagnitudeType tol, int quorum, ResType whichNorm, bool scaled)
+  : _state(Undefined), _quorum(quorum), _scaled(scaled), _whichNorm(whichNorm), _sorter(sorter) 
 {
   TEST_FOR_EXCEPTION(_sorter == Teuchos::null, StatusTestError, "StatusTestOrderedResNorm::constructor() was passed null pointer for SortManager.");
   setTolerance(tol); 
@@ -225,12 +242,19 @@ TestStatus StatusTestOrderedResNorm<ScalarType,MV,OP>::checkStatus( Eigensolver<
   evals.insert(evals.end(),_vals.begin(),_vals.end());
 
   // get the eigenvector residuals norms (using the appropriate norm)
-  if (_use2Norm) {
-    res = solver->getRes2Norms();
+  switch (_whichNorm) {
+    case RES_2NORM:
+      res = solver->getRes2Norms();
+      break;
+    case RES_ORTH:
+      res = solver->getResNorms();
+      break;
+    case RITZRES_2NORM:
+      res = solver->getRitzRes2Norms();
+      res.resize(solver->getBlockSize());
+      break;
   }
-  else {
-    res = solver->getResNorms();
-  }
+
   // if appropriate, scale the norms by the magnitude of the eigenvalue estimate
   if (_scaled) {
     for (int i=0; i<bs; i++) {
@@ -291,10 +315,20 @@ ostream& StatusTestOrderedResNorm<ScalarType,MV,OP>::print(ostream& os, int inde
     os << "Undefined" << endl;
     break;
   }
-  os << ind << "(Tolerance,Use2Norm,Scaled,Quorum): " 
-            << "(" << _tol 
-            << "," << (_use2Norm ? "true" : "false") 
-            << "," << (_scaled   ? "true" : "false")
+  os << ind << "(Tolerance,WhichNorm,Scaled,Quorum): " 
+            << "(" << _tol;
+  switch (_whichNorm) {
+  case RES_ORTH:
+    os << ",RES_ORTH";
+    break;
+  case RES_2NORM:
+    os << ",RES_2NORM";
+    break;
+  case RITZRES_2NORM:
+    os << ",RITZRES_2NORM";
+    break;
+  }
+  os        << "," << (_scaled   ? "true" : "false")
             << "," << _quorum 
             << ")" << endl;
   os << ind << "Auxiliary values: ";
