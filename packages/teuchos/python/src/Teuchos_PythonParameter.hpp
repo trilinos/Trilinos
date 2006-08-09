@@ -391,4 +391,4 @@ namespace Teuchos {
 
 }    // namespace Teuchos
 
-#endif TEUCHOS_PYTHONPARAMETER
+#endif // TEUCHOS_PYTHONPARAMETER
