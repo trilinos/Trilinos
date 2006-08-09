@@ -325,7 +325,7 @@ namespace Anasazi {
     }
 
     //! Get the maximum dimension allocated for the search subspace. For %BlockKrylovSchur, this always returns numBlocks*blockSize.
-    int getMaxSubspaceDim() {return _blockSize*_numBlocks+1;}
+    int getMaxSubspaceDim() { return (_problem->isHermitian()?_blockSize*_numBlocks:_blockSize*_numBlocks+1); }
 
 
     /*! \brief Set the auxiliary vectors for the solver.
