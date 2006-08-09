@@ -46,7 +46,6 @@
 #
 # ************************************************************************
 # @HEADER
-
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
 VPATH = @srcdir@
@@ -89,7 +88,6 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/az_python.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
-	$(top_srcdir)/config/tac_arg_enable_can_use_package.m4 \
 	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub.m4 \
@@ -172,10 +170,6 @@ F77 = @F77@
 FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
 GNU_HAVE_SWIG = @GNU_HAVE_SWIG@
-HAVE_GALERI_AZTECOO_FALSE = @HAVE_GALERI_AZTECOO_FALSE@
-HAVE_GALERI_AZTECOO_TRUE = @HAVE_GALERI_AZTECOO_TRUE@
-HAVE_GALERI_EPETRAEXT_FALSE = @HAVE_GALERI_EPETRAEXT_FALSE@
-HAVE_GALERI_EPETRAEXT_TRUE = @HAVE_GALERI_EPETRAEXT_TRUE@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
 HAVE_PERL = @HAVE_PERL@
@@ -307,7 +301,11 @@ config/acx_lapack.m4                    config/tac_arg_with_incdirs.m4 \
 config/acx_pthread.m4                   config/tac_arg_with_lapacklib.m4 \
 config/config.guess                     config/tac_arg_with_libdirs.m4 \
 config/config.sub                       config/tac_arg_with_package.m4 \
-bootstrap 
+bootstrap \
+README-Galeri \
+ChangeLog-Galeri \
+TODO-Galeri
+
 
 #
 #       I believe that by switching to AUX_DIR(../../config) one 
@@ -726,6 +724,13 @@ uninstall-info: uninstall-info-recursive
 	pdf-am ps ps-am tags tags-recursive uninstall uninstall-am \
 	uninstall-info-am
 
+data/Square.grid \
+data/TwoSquares.grid \
+data/VerySimple.grid \
+data/Circle.grid \
+data/SquareInSquare.grid \
+data/TwoSquares.m \
+convert.m
 
 #The following line helps the test harness recover from build errors.
 

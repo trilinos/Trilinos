@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP USING_EXPORT_MAKEFILES_TRUE USING_EXPORT_MAKEFILES_FALSE PERL_EXE HAVE_PERL USING_PERL_TRUE USING_PERL_FALSE USING_GNUMAKE_TRUE USING_GNUMAKE_FALSE EGREP BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE BUILD_GALERI_PYTHON_TRUE BUILD_GALERI_PYTHON_FALSE PYTHON_USE_TRUE PYTHON_USE_FALSE PYTHON PYTHON_PREFIX PYTHON_EXECPREFIX BUILD_PYTHON_TRUE BUILD_PYTHON_FALSE PYTHON_CSPEC PYTHON_LSPEC WITH_SWIG SWIG SWIG_LIB SWIG_PYTHON_OPT SWIG_PYTHON_CPPFLAGS HAVE_SWIG_TRUE HAVE_SWIG_FALSE GNU_HAVE_SWIG FLIBS BLAS_LIBS LAPACK_LIBS HAVE_GALERI_EPETRAEXT_TRUE HAVE_GALERI_EPETRAEXT_FALSE HAVE_GALERI_AZTECOO_TRUE HAVE_GALERI_AZTECOO_FALSE ac_aux_dir LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP USING_EXPORT_MAKEFILES_TRUE USING_EXPORT_MAKEFILES_FALSE PERL_EXE HAVE_PERL USING_PERL_TRUE USING_PERL_FALSE USING_GNUMAKE_TRUE USING_GNUMAKE_FALSE EGREP BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE BUILD_GALERI_PYTHON_TRUE BUILD_GALERI_PYTHON_FALSE PYTHON_USE_TRUE PYTHON_USE_FALSE PYTHON PYTHON_PREFIX PYTHON_EXECPREFIX BUILD_PYTHON_TRUE BUILD_PYTHON_FALSE PYTHON_CSPEC PYTHON_LSPEC WITH_SWIG SWIG SWIG_LIB SWIG_PYTHON_OPT SWIG_PYTHON_CPPFLAGS HAVE_SWIG_TRUE HAVE_SWIG_FALSE GNU_HAVE_SWIG FLIBS BLAS_LIBS LAPACK_LIBS ac_aux_dir LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -907,11 +907,6 @@ Optional Features:
                           (default is yes)
   --enable-python[=PYTHON]
                           absolute path name of Python executable
-  --enable-epetraext
-  --enable-galeri-epetraext
-                          Enable EpetraExt support.
-  --enable-aztecoo
-  --enable-galeri-aztecoo Enable AztecOO support.
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -3848,7 +3843,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3851:" \
+echo "$as_me:3846:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -8092,7 +8087,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:8095: \"$ac_link\") >&5
+(eval echo $as_me:8090: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8170,7 +8165,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:8173: \"$ac_link\") >&5
+(eval echo $as_me:8168: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -11064,7 +11059,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:11067: \"$ac_link\") >&5
+(eval echo $as_me:11062: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -11142,7 +11137,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:11145: \"$ac_link\") >&5
+(eval echo $as_me:11140: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -11347,160 +11342,6 @@ fi
 # Checks for 3-party functions
 # ------------------------------------------------------------------------
 
-
-
-# Check whether --enable-epetraext or --disable-epetraext was given.
-if test "${enable_epetraext+set}" = set; then
-  enableval="$enable_epetraext"
-  ac_cv_implicit_use_epetraext=$enableval
-else
-  ac_cv_implicit_use_epetraext=no
-fi;
-
-if test "Xyes" != "Xno"; then
-  ac_cv_galeri_using_epetraext_default=$ac_cv_implicit_use_epetraext
-else
-  ac_cv_galeri_using_epetraext_default=no
-fi
-
-# Check whether --enable-galeri-epetraext or --disable-galeri-epetraext was given.
-if test "${enable_galeri_epetraext+set}" = set; then
-  enableval="$enable_galeri_epetraext"
-  ac_cv_use_epetraext=$enableval
-else
-  ac_cv_use_epetraext=$ac_cv_galeri_using_epetraext_default
-fi;
-
-echo "$as_me:$LINENO: checking whether to build optional epetraext dependent code in galeri" >&5
-echo $ECHO_N "checking whether to build optional epetraext dependent code in galeri... $ECHO_C" >&6
-
-if test "X$ac_cv_use_epetraext" != "Xno"; then
-  echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_GALERI_EPETRAEXT 1
-_ACEOF
-
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-
-
-if test "X$ac_cv_use_epetraext" = "Xyes"; then
-  HAVE_GALERI_EPETRAEXT_TRUE=
-  HAVE_GALERI_EPETRAEXT_FALSE='#'
-else
-  HAVE_GALERI_EPETRAEXT_TRUE='#'
-  HAVE_GALERI_EPETRAEXT_FALSE=
-fi
-
-
-
-
-if test "X$ac_cv_use_galeri_epetraext" != "Xno" ; then
-
-
-if true ; then
-  HAVE_GALERI_EPETRAEXT_TRUE=
-  HAVE_GALERI_EPETRAEXT_FALSE='#'
-else
-  HAVE_GALERI_EPETRAEXT_TRUE='#'
-  HAVE_GALERI_EPETRAEXT_FALSE=
-fi
-
-else
-
-
-if false ; then
-  HAVE_GALERI_EPETRAEXT_TRUE=
-  HAVE_GALERI_EPETRAEXT_FALSE='#'
-else
-  HAVE_GALERI_EPETRAEXT_TRUE='#'
-  HAVE_GALERI_EPETRAEXT_FALSE=
-fi
-
-fi
-
-
-
-# Check whether --enable-aztecoo or --disable-aztecoo was given.
-if test "${enable_aztecoo+set}" = set; then
-  enableval="$enable_aztecoo"
-  ac_cv_implicit_use_aztecoo=$enableval
-else
-  ac_cv_implicit_use_aztecoo=no
-fi;
-
-if test "Xyes" != "Xno"; then
-  ac_cv_galeri_using_aztecoo_default=$ac_cv_implicit_use_aztecoo
-else
-  ac_cv_galeri_using_aztecoo_default=no
-fi
-
-# Check whether --enable-galeri-aztecoo or --disable-galeri-aztecoo was given.
-if test "${enable_galeri_aztecoo+set}" = set; then
-  enableval="$enable_galeri_aztecoo"
-  ac_cv_use_aztecoo=$enableval
-else
-  ac_cv_use_aztecoo=$ac_cv_galeri_using_aztecoo_default
-fi;
-
-echo "$as_me:$LINENO: checking whether to build optional aztecoo dependent code in galeri" >&5
-echo $ECHO_N "checking whether to build optional aztecoo dependent code in galeri... $ECHO_C" >&6
-
-if test "X$ac_cv_use_aztecoo" != "Xno"; then
-  echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_GALERI_AZTECOO 1
-_ACEOF
-
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-
-
-if test "X$ac_cv_use_aztecoo" = "Xyes"; then
-  HAVE_GALERI_AZTECOO_TRUE=
-  HAVE_GALERI_AZTECOO_FALSE='#'
-else
-  HAVE_GALERI_AZTECOO_TRUE='#'
-  HAVE_GALERI_AZTECOO_FALSE=
-fi
-
-
-
-
-if test "X$ac_cv_use_galeri_aztecoo" != "Xno" ; then
-
-
-if true ; then
-  HAVE_GALERI_AZTECOO_TRUE=
-  HAVE_GALERI_AZTECOO_FALSE='#'
-else
-  HAVE_GALERI_AZTECOO_TRUE='#'
-  HAVE_GALERI_AZTECOO_FALSE=
-fi
-
-else
-
-
-if false ; then
-  HAVE_GALERI_AZTECOO_TRUE=
-  HAVE_GALERI_AZTECOO_FALSE='#'
-else
-  HAVE_GALERI_AZTECOO_TRUE='#'
-  HAVE_GALERI_AZTECOO_FALSE=
-fi
-
-fi
-
 # ------------------------------------------------------------------------
 # Perform substitutions in output files
 # ------------------------------------------------------------------------
@@ -11511,7 +11352,7 @@ fi
 # Output files
 # ------------------------------------------------------------------------
 
-                                                                                                                                                                ac_config_files="$ac_config_files Makefile Makefile.export Makefile.export.galeri src/Makefile src-phoenix/Makefile example/Makefile example-phoenix/Makefile test/Makefile test/VerySimple/Makefile python/Makefile python/src/Makefile python/src/TRILINOS_HOME_DIR python/src/__init__.py python/src/.deps/dummy python/test/Makefile python/example/Makefile"
+                                                                                                                                            ac_config_files="$ac_config_files Makefile Makefile.export Makefile.export.galeri src/Makefile example/Makefile test/Makefile test/VerySimple/Makefile python/Makefile python/src/Makefile python/src/TRILINOS_HOME_DIR python/src/__init__.py python/src/.deps/dummy python/test/Makefile python/example/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -11777,48 +11618,6 @@ if test -z "${HAVE_SWIG_TRUE}" && test -z "${HAVE_SWIG_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"HAVE_SWIG\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"HAVE_SWIG\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${HAVE_GALERI_EPETRAEXT_TRUE}" && test -z "${HAVE_GALERI_EPETRAEXT_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"HAVE_GALERI_EPETRAEXT\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"HAVE_GALERI_EPETRAEXT\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${HAVE_GALERI_EPETRAEXT_TRUE}" && test -z "${HAVE_GALERI_EPETRAEXT_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"HAVE_GALERI_EPETRAEXT\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"HAVE_GALERI_EPETRAEXT\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${HAVE_GALERI_EPETRAEXT_TRUE}" && test -z "${HAVE_GALERI_EPETRAEXT_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"HAVE_GALERI_EPETRAEXT\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"HAVE_GALERI_EPETRAEXT\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${HAVE_GALERI_AZTECOO_TRUE}" && test -z "${HAVE_GALERI_AZTECOO_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"HAVE_GALERI_AZTECOO\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"HAVE_GALERI_AZTECOO\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${HAVE_GALERI_AZTECOO_TRUE}" && test -z "${HAVE_GALERI_AZTECOO_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"HAVE_GALERI_AZTECOO\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"HAVE_GALERI_AZTECOO\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${HAVE_GALERI_AZTECOO_TRUE}" && test -z "${HAVE_GALERI_AZTECOO_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"HAVE_GALERI_AZTECOO\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"HAVE_GALERI_AZTECOO\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -12270,9 +12069,7 @@ do
   "Makefile.export" ) CONFIG_FILES="$CONFIG_FILES Makefile.export" ;;
   "Makefile.export.galeri" ) CONFIG_FILES="$CONFIG_FILES Makefile.export.galeri" ;;
   "src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
-  "src-phoenix/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-phoenix/Makefile" ;;
   "example/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/Makefile" ;;
-  "example-phoenix/Makefile" ) CONFIG_FILES="$CONFIG_FILES example-phoenix/Makefile" ;;
   "test/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
   "test/VerySimple/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/VerySimple/Makefile" ;;
   "python/Makefile" ) CONFIG_FILES="$CONFIG_FILES python/Makefile" ;;
@@ -12477,10 +12274,6 @@ s,@GNU_HAVE_SWIG@,$GNU_HAVE_SWIG,;t t
 s,@FLIBS@,$FLIBS,;t t
 s,@BLAS_LIBS@,$BLAS_LIBS,;t t
 s,@LAPACK_LIBS@,$LAPACK_LIBS,;t t
-s,@HAVE_GALERI_EPETRAEXT_TRUE@,$HAVE_GALERI_EPETRAEXT_TRUE,;t t
-s,@HAVE_GALERI_EPETRAEXT_FALSE@,$HAVE_GALERI_EPETRAEXT_FALSE,;t t
-s,@HAVE_GALERI_AZTECOO_TRUE@,$HAVE_GALERI_AZTECOO_TRUE,;t t
-s,@HAVE_GALERI_AZTECOO_FALSE@,$HAVE_GALERI_AZTECOO_FALSE,;t t
 s,@ac_aux_dir@,$ac_aux_dir,;t t
 s,@LIBOBJS@,$LIBOBJS,;t t
 s,@LTLIBOBJS@,$LTLIBOBJS,;t t

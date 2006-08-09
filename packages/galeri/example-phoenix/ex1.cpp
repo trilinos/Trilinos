@@ -41,6 +41,7 @@
 #include "phx_core_Utils.h"
 #include "phx_grid_Segment.h"
 #include "phx_grid_Loadable.h"
+#include "phx_grid_Rebalance.h"
 #include "phx_quadrature_Segment.h"
 #include "phx_problem_ScalarLaplacian.h"
 
@@ -125,7 +126,6 @@ int main(int argc, char *argv[])
 
   int numMyElements = 4;
   int numGlobalElements = numMyElements * comm.NumProc();
-  int numGlobalVertices = numGlobalElements + 1;
 
   phx::grid::Loadable domain(comm, numGlobalElements, 
                              numMyElements, "Segment");
@@ -203,6 +203,14 @@ int main(int argc, char *argv[])
   phx::problem::ScalarLaplacian<MyScalarLaplacian> problem("Segment", 1, 4);
 
   problem.integrate(domain, A, RHS);
+
+  phx::grid::Rebalance::createMap(A.Graph());
+
+  Epetra_Map* balancedMatrixMap = phx::grid::Rebalance::createMap(A.Graph());
+
+  cout << *balancedMatrixMap;
+  MPI_Finalize();
+  exit(0);
 
   LHS.PutScalar(0.0);
 

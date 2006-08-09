@@ -43,6 +43,7 @@
 #include "phx_grid_Triangle.h"
 #include "phx_grid_Loadable.h"
 #include "phx_grid_Generator.h"
+#include "phx_grid_Rebalance.h"
 #include "phx_quadrature_Segment.h"
 #include "phx_problem_VectorLaplacian.h"
 #include "phx_viz_MEDIT.h"
@@ -176,19 +177,21 @@ int main(int argc, char *argv[])
   // and the right-hand side (RHS).                               //
   // ============================================================ //
   
-  int numPDEs = 2;
+  int numPDEs = 1;
 
   phx::problem::VectorLaplacian<MyVectorLaplacian> problem(numPDEs, "Triangle");
 
-  Epetra_BlockMap matrixMap(domain.getNumGlobalElements() + 1, numPDEs, 0, comm);
+  Epetra_BlockMap linearMatrixMap(domain.getNumGlobalVertices(), numPDEs, 0, comm);
 
-  Epetra_FECrsGraph  Graph(Copy, matrixMap, 0);
+  Epetra_FECrsGraph linearGraph(Copy, linearMatrixMap, 0);
 
-  problem.createGraph(domain, Graph);
+  problem.createGraph(domain, linearGraph);
 
-  Epetra_FEVbrMatrix A(Copy, Graph);
-  Epetra_FEVector    LHS(matrixMap);
-  Epetra_FEVector    RHS(matrixMap);
+  Epetra_FECrsGraph* graph = phx::grid::Rebalance::balanceGraph(linearGraph);
+
+  Epetra_FEVbrMatrix A(Copy, *graph);
+  Epetra_FEVector    LHS(graph->Map());
+  Epetra_FEVector    RHS(graph->Map());
 
   problem.integrate(domain, A, RHS);
 

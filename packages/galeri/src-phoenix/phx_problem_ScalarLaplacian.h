@@ -87,9 +87,11 @@ class ScalarLaplacian : public Base
   ~ScalarLaplacian() {}
 
   virtual void integrate(phx::grid::Loadable& domain,
-                         Epetra_FECrsMatrix& A,
+                         Epetra_RowMatrix& RowA,
                          Epetra_FEVector& RHS)
   {
+    Epetra_FECrsMatrix& A = dynamic_cast<Epetra_FECrsMatrix&>(RowA);
+
     // FIXME: BUILD GRAPH FIRST???
     int numVerticesPerElement = domain.getNumVerticesPerElement();
     Epetra_IntSerialDenseVector vertexList(numVerticesPerElement);

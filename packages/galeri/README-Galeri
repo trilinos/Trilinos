@@ -1,12 +1,9 @@
-To-do list:
-----------
+Welcome to Galeri!
 
-Interfaces to TRIANGLE and TETGEN to fix/delete
+Galeri is a small package, whose aim is to let you generate linear systems.
+You can either produce finite difference matrices, or several other matrices
+of the MATLAB's gallery function, or use the finite element code.
 
-Add a check to verify that the quadrature is compatible with the element!
+The Galeri documentation is maintained on the web page of the package; see
 
-delete FE/Galeri_utils.h
-
-FileGrid is complete for GALERI_TRIANGLE only. The file format is not
-described anywhere. The matrix reading should be parallel as well.
-
+http://software.sandia.gov/trilinos/packages/galeri.

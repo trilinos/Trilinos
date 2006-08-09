@@ -1,13 +1,30 @@
+Galeri -- History of visible changes
+====================================
+
+This file reports (some of) the visible changes to Galeri.
+Please submit Galeri bugs at software.sandia.gov/buzgilla, or
+report bugs to marzio.sala _AT_ gmail.com.
+
+------------------------------------------------------------------------------
+
+Aug-06
+
+*) Finalized Galeri 1.0 for Trilinos 7.0.
+*) Started development of a new finite element code, which will eventually
+   replaced the one now available in src/FiniteElements.
+
+------------------------------------------------------------------------------
+
 Oct-05
-------
 
 *) Now "make dist" successfully creates a tarball of Galeri-1.0
 *) Added a reader, copied from triutils, to read H/B matrices.
 *) Added support for VBR matrices and ReadHB to the Python module.
 *) The web site now contains some FAQs and other information.
 
+------------------------------------------------------------------------------
+
 Sep-05
-------
 
 *) Added doxygen documentation.
 *) Galeri is created. It contains the functionalities of

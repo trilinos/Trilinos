@@ -71,7 +71,19 @@ config/acx_lapack.m4                    config/tac_arg_with_incdirs.m4 \
 config/acx_pthread.m4                   config/tac_arg_with_lapacklib.m4 \
 config/config.guess                     config/tac_arg_with_libdirs.m4 \
 config/config.sub                       config/tac_arg_with_package.m4 \
-bootstrap 
+bootstrap \
+README-Galeri \
+ChangeLog-Galeri \
+TODO-Galeri
+data/Square.grid \
+data/TwoSquares.grid \
+data/VerySimple.grid \
+data/Circle.grid \
+data/SquareInSquare.grid \
+data/TwoSquares.m \
+convert.m
+
+
 #
 #       I believe that by switching to AUX_DIR(../../config) one 
 #       could get rid of these.
