@@ -262,6 +262,11 @@ IF PACKAGE rythmos THEN
 REMOVE --enable-rythmos
 DONE
 
+# Stratimikos------------------------------------------------------------------
+IF PACKAGE stratimikos THEN
+REMOVE --enable-stratimikos
+DONE
+
 # Teuchos ----------------------------------------------------------------------
 IF PACKAGE teuchos THEN
 REMOVE --enable-teuchos
