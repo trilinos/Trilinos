@@ -2701,7 +2701,7 @@ printf("%d KDDKDD vtx_gno %d rEdge_lno %d rVtx_lno %d\n", zz->Proc, vtx_gno, rEd
     rVtx_lno = recvbuf[2*i+1] - firstRepartVtx;
     
     /* Add pin for repartition vertex */
-    tmp_hvertex[tmp_hindex[rEdge_lno]] = rVtx_lno;
+    tmp_hvertex[tmp_hindex[rEdge_lno]] = phg->nVtx + rVtx_lno;
     if (myProc_x == VTX_TO_PROC_X(phg, vtx_gno)) {
       /* Add pin for vertex */
       tmp_hvertex[tmp_hindex[rEdge_lno]+1] = VTX_GNO_TO_LNO(phg, vtx_gno);
