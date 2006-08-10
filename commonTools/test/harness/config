@@ -69,7 +69,7 @@ RUN (herouxsmp-nightly-serial) {
     BUILD-DIR           = SERIAL;
     COMM                = serial;
     INVOKE-CONFIGURE    = linux-herouxsmp;
-    MAKE-COMMAND        = make -j4;
+    MAKE-COMMAND        = make -j2;
     TEST-CATEGORY       = FRAMEWORK;
     TTR-DIR             = /u/TrilinosTestHarness/TrilinosTestResults;
     SSG-USERNAME        = mnpheno;
@@ -88,7 +88,7 @@ RUN (herouxsmp-nightly-mpi) {
     BUILD-DIR           = MPI;
     COMM                = mpi;
     INVOKE-CONFIGURE    = linux-herouxsmp-mpi;
-    MAKE-COMMAND        = make -j4;
+    MAKE-COMMAND        = make -j2;
     TEST-CATEGORY       = FRAMEWORK;
     MAX-PROC            = 4;
     MPI-START           = lamboot;
