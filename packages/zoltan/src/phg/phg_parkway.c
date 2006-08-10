@@ -40,7 +40,6 @@ int Zoltan_PHG_ParKway(
   PHGPartParams *hgp          /* Input: hypergraph parameters */  
 )
 {
-    int ierr = ZOLTAN_OK;
     char *yo = "Zoltan_HG_ParKway";
 
 #ifndef ZOLTAN_PARKWAY
@@ -49,6 +48,7 @@ int Zoltan_PHG_ParKway(
     return ZOLTAN_FATAL;
 #else
 
+    int ierr = ZOLTAN_OK;
     int options[29];                      /* ParKway options */
     int *ivwgts = NULL, *iewgts = NULL;   /* ParKway expects integer weights. */
     int *pvector=NULL;                    /* partvec for "local" vertices */
@@ -174,8 +174,8 @@ End:
 
     Zoltan_Multifree(__FILE__,__LINE__, 5, &ivwgts, &iewgts, &pvector, &disp, &recv_size);
     
+    return ierr;
 #endif
-  return ierr;
 }
 
     
