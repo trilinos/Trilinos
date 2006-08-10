@@ -343,7 +343,6 @@ int max_nProc_xy = MAX(nProc_x, nProc_y);
     /* Gather fixed array, if any  */
     if (hgp->UseFixedVtx){
   
-#define DEBUG_
 #ifdef DEBUG_
       uprintf(phg->comm, "Debug in PHG_gather before gather. phg->fixed =");
       for (i=0; i<phg->nVtx; i++){
