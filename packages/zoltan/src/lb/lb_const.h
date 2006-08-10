@@ -62,6 +62,7 @@ typedef enum Zoltan_LB_Method {
   RIB,
   HSFC,
   PHG,
+  PHG_REPART,
   PATOH,
   PARKWAY,
   HIER,

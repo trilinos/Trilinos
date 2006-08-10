@@ -119,7 +119,8 @@ static int Zoltan_PHG_Redistribute_Hypergraph(
     /* compute prefix sum to find new vertex start numbers; for each processor */
     MPI_Scan(dist_x, vsn, ncomm->nProc_x, MPI_INT, MPI_SUM, ocomm->row_comm);
     /* All reduce to compute how many each processor will have */ 
-    MPI_Allreduce(dist_x, &(nhg->dist_x[1]), ncomm->nProc_x, MPI_INT, MPI_SUM, ocomm->row_comm);
+    MPI_Allreduce(dist_x, &(nhg->dist_x[1]), ncomm->nProc_x, MPI_INT, MPI_SUM, 
+                  ocomm->row_comm);
     nhg->dist_x[0] = 0;    
     for (i=1; i<=ncomm->nProc_x; ++i) 
         nhg->dist_x[i] += nhg->dist_x[i-1];

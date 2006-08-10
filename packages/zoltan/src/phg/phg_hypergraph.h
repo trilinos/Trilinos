@@ -61,6 +61,9 @@ typedef struct {
   int nVtx;             /* number of vertices on this processor */
   int nEdge;            /* number of hyperedges on this processor */
   int nPins;            /* number of pins (nonzeros) on this processor */
+  int nRepartVtx;       /* number of repartition vertices added in PHG_REPART */
+  int nRepartEdge;      /* number of repartition edges added in PHG_REPART. */
+  int nRepartPin;       /* number of repartition pins added in PHG_REPART. */
   
   int VtxWeightDim;     /* number of weight dimensions for a vertex */
   int EdgeWeightDim;    /* number of weight dimensions for a hyperedge */
@@ -157,8 +160,11 @@ typedef struct {
 
 struct Zoltan_HGraph {
   int nObj;                 /* Number of on-processor objects. */
+  int GnObj;                /* Global number of objects over all procs. */
   ZOLTAN_ID_PTR GIDs;       /* Global IDs for on-processor objects.  */
   ZOLTAN_ID_PTR LIDs;       /* Local IDs for on-processor objects.   */
+  int GnInputParts;         /* Global number of input parts == 
+                               max(Input_Parts[i]) + 1 for i=0,...,nProcs-1 */
   int *Input_Parts;         /* Initial partition #s for on-processor objects */
   int *Output_Parts;        /* Final partition #s for on-processor objects */
   int nRemove;              /* # of input hyperedges removed */

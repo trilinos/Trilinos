@@ -335,6 +335,10 @@ int **exp_to_part )         /* list of partitions to which exported objs
 #endif      
     }
   }
+
+  if (zz->LB.Method == PHG_REPART) {
+    Zoltan_PHG_Remove_Repart_Data(zz, zoltan_hg, hg);
+  }
         
   if (do_timing) {
     /* Initialize these timers here so their output is near end of printout */
@@ -618,6 +622,8 @@ int Zoltan_PHG_Initialize_Params(
   /* Reset LB.Method if hgraph_pkg was set using a parameter */
   if (!strcasecmp(hgp->hgraph_pkg, "PHG"))
     zz->LB.Method = PHG;
+  else if (!strcasecmp(hgp->hgraph_pkg, "PHG_REPART"))
+    zz->LB.Method = PHG_REPART;
   else if (!strcasecmp(hgp->hgraph_pkg, "PATOH"))
     zz->LB.Method = PATOH;
   else if (!strcasecmp(hgp->hgraph_pkg, "PARKWAY"))
@@ -685,7 +691,7 @@ int Zoltan_PHG_Initialize_Params(
     hgp->fm_max_neg_move *= hgp->refinement_quality;
   }
 
-  if (zz->LB.Method == PHG) {
+  if (zz->LB.Method == PHG || zz->LB.Method == PHG_REPART) {
     /* Test to determine whether we should change the number of processors
        used for partitioning to make more efficient 2D decomposition */
 
@@ -702,7 +708,8 @@ int Zoltan_PHG_Initialize_Params(
       goto End;
     }
     hgp->nProc_x_req = 1;
-  } else if (zz->LB.Method == PATOH) {
+  } 
+  else if (zz->LB.Method == PATOH) {
     if (zz->Num_Proc>1) {
       err = ZOLTAN_FATAL;
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "PaToH only works with Num_Proc=1.");

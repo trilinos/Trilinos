@@ -57,9 +57,12 @@ void Zoltan_HG_HGraph_Init(
   phg->info  = 0;
   phg->nVtx  = 0;
   phg->nEdge = 0;
-  phg->nPins= 0;
-  phg->nDim  = 0;
-  phg->EdgeWeightDim   = 0;
+  phg->nPins = 0;
+  phg->nRepartVtx = 0;
+  phg->nRepartEdge = 0;
+  phg->nRepartPin = 0;
+  phg->nDim = 0;
+  phg->EdgeWeightDim = 0;
   phg->VtxWeightDim = 0;
   phg->ratio = 0.5;
   phg->bisec_split = -1;  /* EBEB 6/7/06 */
