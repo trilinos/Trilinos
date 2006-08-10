@@ -52,7 +52,6 @@
 
 namespace Anasazi {
 
-
   //! @name LOBPCG Exceptions
   //@{ 
   /** \brief SortManagerError is thrown when the Anasazi::SortManager is unable to sort the numbers,
@@ -81,16 +80,16 @@ namespace Anasazi {
     /**
        @param solver [in] Eigensolver that is calling the sorting routine
 
-       @param n [in] Size of the array
+       @param n [in] Number of values in evals to be sorted.
 
-       @param evals [in/out] Array of length n containing the eigenvalues to be sorted
+       @param evals [in/out] Vector of length n containing the eigenvalues to be sorted
 
-       @param perm [out] Vector of length n to store the permutation (optional)
+       @param perm [out] Vector of length n to store the permutation index (optional)
     */
-    virtual void sort(Eigensolver<ScalarType,MV,OP>* solver, int n, ScalarType *evals, std::vector<int> *perm = 0) const { 
+    virtual void sort(Eigensolver<ScalarType,MV,OP>* solver, const int n, std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> &evals, std::vector<int> *perm = 0) const { 
       TEST_FOR_EXCEPTION(true,SortManagerError,"Anasazi::SortManager::sort() not defined");
     };
-    
+
     /*! \brief Sort the vectors of eigenpairs, optionally returning the permutation vector.
 
        This routine takes two vectors, one for each part of a complex
@@ -99,15 +98,19 @@ namespace Anasazi {
 
        @param solver [in] Eigensolver that is calling the sorting routine
 
-       @param n [in] Size of the array
+       @param n [in] Number of values in r_evals,i_evals to be sorted.
 
-       @param r_evals [in/out] Array of length n containing the real part of the eigenvalues to be sorted 
+       @param r_evals [in/out] Vector of length n containing the real part of the eigenvalues to be sorted 
 
-       @param i_evals [in/out] Array of length n containing the imaginary part of the eigenvalues to be sorted 
+       @param i_evals [in/out] Vector of length n containing the imaginary part of the eigenvalues to be sorted 
 
-       @param perm [out] Vector of length n to store the permutation (optional)
+       @param perm [out] Vector of length n to store the permutation index (optional)
     */
-    virtual void sort(Eigensolver<ScalarType,MV,OP>* solver, int n, ScalarType *r_evals, ScalarType *i_evals, std::vector<int> *perm = 0) const { 
+    virtual void sort(Eigensolver<ScalarType,MV,OP>* solver, 
+                      const int n,
+                      std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> &r_evals, 
+                      std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> &i_evals, 
+                      std::vector<int> *perm = 0) const { 
       TEST_FOR_EXCEPTION(true,SortManagerError,"Anasazi::SortManager::sort() not defined");
     };
     

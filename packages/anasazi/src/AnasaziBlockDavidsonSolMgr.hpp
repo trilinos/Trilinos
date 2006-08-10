@@ -185,9 +185,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::BlockDavidsonSolMgr(
 
   // which values to solve for
   _whch = pl.get("Which",_whch);
-  if (_whch != "SM" && _whch != "LM" && _whch != "SR" && _whch != "LR") {
-    _whch = "SR";
-  }
+  TEST_FOR_EXCEPTION(_whch != "SM" && _whch != "LM" && _whch != "SR" && _whch != "LR",std::invalid_argument, "Invalid sorting string.");
 
   // convergence tolerance
   _convtol = pl.get("Convergence Tolerance",MT::prec());
@@ -514,13 +512,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
           {
             std::vector<int> order(curdim);
             // make a ScalarType copy of theta
-            std::vector<ScalarType> theta_st(curdim);
-            std::copy(theta.begin(),theta.end(),theta_st.begin());
-            sorter->sort(NULL,curdim,&(theta_st[0]),&order);
-            // Put the sorted ritz values back into theta
-            for (int i=0; i<curdim; i++) {
-              theta[i] = SCT::real(theta_st[i]);
-            }
+            sorter->sort(bd_solver.get(),curdim,theta,&order);
             //
             // apply the same ordering to the primitive ritz vectors
             msutils.permuteVectors(order,S);
@@ -725,12 +717,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
     // sort the eigenvalues and permute the eigenvectors appropriately
     {
       std::vector<int> order(sol.numVecs);
-      std::vector<ScalarType> vals_st(sol.numVecs);
-      std::copy(sol.Evals.begin(),sol.Evals.end(),vals_st.begin());
-      sorter->sort( NULL, sol.numVecs, &vals_st[0], &order );
-      for (int i=0; i<sol.numVecs; i++) {
-        sol.Evals[i] = SCT::real( vals_st[i] );
-      }
+      sorter->sort(bd_solver.get(), sol.numVecs, sol.Evals, &order );
       // now permute the eigenvectors according to order
       msutils.permuteVectors(sol.numVecs,order,*sol.Evecs);
     }

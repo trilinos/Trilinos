@@ -4,8 +4,7 @@
 
 (FRAMEWORK,INSTALL,AnasaziTests,AnasaziEpetraTests) {
     TESTS = ModalSolverUtils/ModalSolverUtils_test.exe,
-            MVOPTester/MVOPTester_test.exe,
-            BlockKrylovSchur/BlockKrylovSchur_test.exe;
+            MVOPTester/MVOPTester_test.exe
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = -v;
     COMM = SERIAL, MPI;
@@ -17,6 +16,7 @@
             LOBPCG/LOBPCG_simple.exe,
             BlockDavidson/BlockDavidson_test.exe,
             BlockDavidson/BlockDavidson_solvertest.exe,
+            BlockKrylovSchur/BlockKrylovSchur_test.exe,
             BlockKrylovSchur/BlockKrylovSchur_solvertest.exe,
             OrthoManager/OrthoManager_test.exe;
     EXIT-STATUS = STRING-COMPARISON;

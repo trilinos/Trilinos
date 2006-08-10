@@ -197,9 +197,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::LOBPCGSolMgr(
 
   // which values to solve for
   _whch = pl.get("Which",_whch);
-  if (_whch != "SM" && _whch != "LM" && _whch != "SR" && _whch != "LR") {
-    _whch = "SR";
-  }
+  TEST_FOR_EXCEPTION(_whch != "SM" && _whch != "LM" && _whch != "SR" && _whch != "LR",std::invalid_argument, "Invalid sorting string.");
 
   // convergence tolerance
   _convtol = pl.get("Convergence Tolerance",_convtol);
@@ -637,15 +635,8 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
       {
         Teuchos::BLAS<int,ScalarType> blas;
         std::vector<int> order(rank);
-        // make a ScalarType copy for sorting
-        std::vector<ScalarType> theta_st(theta.size());
-        std::copy(theta.begin(),theta.end(),theta_st.begin());
         // sort
-        sorter->sort( lobpcg_solver.get(), rank, &(theta_st[0]), &order );   // don't catch exception
-        // put back into theta
-        for (int i=0; i<rank; i++) {
-          theta[i] = SCT::real(theta_st[i]);
-        }
+        sorter->sort( lobpcg_solver.get(), rank, theta, &order );   // don't catch exception
         // Sort the primitive ritz vectors
         Teuchos::SerialDenseMatrix<int,ScalarType> curS(Teuchos::View,S,rank,rank);
         msutils.permuteVectors(order,curS);
@@ -727,21 +718,16 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
       }
     }
 
-    // setup sol.index, remembering that all eigenvalues are real so that index = {0,...,0}
-    sol.index.resize(sol.numVecs,0);
-
     // sort the eigenvalues and permute the eigenvectors appropriately
     {
       std::vector<int> order(sol.numVecs);
-      std::vector<ScalarType> vals_st(sol.numVecs);
-      std::copy(sol.Evals.begin(),sol.Evals.end(),vals_st.begin());
-      sorter->sort( NULL, sol.numVecs, &vals_st[0], &order );
-      for (int i=0; i<sol.numVecs; i++) {
-        sol.Evals[i] = SCT::real( vals_st[i] );
-      }
+      sorter->sort( lobpcg_solver.get(), sol.numVecs, sol.Evals, &order );
       // now permute the eigenvectors according to order
       msutils.permuteVectors(sol.numVecs,order,*sol.Evecs);
     }
+
+    // setup sol.index, remembering that all eigenvalues are real so that index = {0,...,0}
+    sol.index.resize(sol.numVecs,0);
   }
 
   // print final summary

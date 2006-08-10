@@ -86,8 +86,8 @@ class BlockKrylovSchurSolMgr : public SolverManager<ScalarType,MV,OP> {
    * This constructor accepts the Eigenproblem to be solved in addition
    * to a parameter list of options for the solver manager. These options include the following:
    *   - "Which" - a \c string specifying the desired eigenvalues: SM, LM, SR or LR. Default: "LM"
-   *   - "Block Size" - a \c int specifying the block size to be used by the underlying LOBPCG solver. Default: problem->getNEV()
-   *   - "Num Blocks" - a \c int specifying the number of blocks allocated for the Krylov basis. Default: 2
+   *   - "Block Size" - a \c int specifying the block size to be used by the underlying block Krylov-Schur solver. Default: 1
+   *   - "Num Blocks" - a \c int specifying the number of blocks allocated for the Krylov basis. Default: 3*nev
    *   - "Maximum Restarts" - a \c int specifying the maximum number of restarts the underlying solver is allowed to perform. Default: 20
    *   - "Verbosity" - a sum of MsgType specifying the verbosity. Default: Anasazi::Errors
    *   - "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide convergence. Default: machine precision.
@@ -152,7 +152,7 @@ class BlockKrylovSchurSolMgr : public SolverManager<ScalarType,MV,OP> {
   MagnitudeType _convtol;
   int _maxRestarts;
   bool _relconvtol,_conjSplit;
-  int _blockSize, _numBlocks, _stepSize;
+  int _blockSize, _numBlocks, _stepSize, _nevBlocks;
   int _verbosity;
 };
 
@@ -171,11 +171,14 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::BlockKrylovSchurSolMgr(
   _blockSize(0),
   _numBlocks(0),
   _stepSize(0),
+  _nevBlocks(0),
   _verbosity(Anasazi::Errors)
 {
   TEST_FOR_EXCEPTION(_problem == Teuchos::null,               std::invalid_argument, "Problem not given to solver manager.");
   TEST_FOR_EXCEPTION(!_problem->isProblemSet(),               std::invalid_argument, "Problem not set.");
   TEST_FOR_EXCEPTION(_problem->getInitVec() == Teuchos::null, std::invalid_argument, "Problem does not contain initial vectors to clone from.");
+
+  const int nev = _problem->getNEV();
 
   // which values to solve for
   _whch = pl.get("Which",_whch);
@@ -190,22 +193,29 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::BlockKrylovSchurSolMgr(
   // maximum number of restarts
   _maxRestarts = pl.get("Maximum Restarts",_maxRestarts);
 
-  // block size: default is nev()
-  _blockSize = pl.get("Block Size",_problem->getNEV());
+  // block size: default is 1
+  _blockSize = pl.get("Block Size",1);
   TEST_FOR_EXCEPTION(_blockSize <= 0, std::invalid_argument,
                      "Anasazi::BlockKrylovSchurSolMgr: \"Block Size\" must be strictly positive.");
-  _numBlocks = pl.get("Num Blocks",2);
-  TEST_FOR_EXCEPTION(_numBlocks <= 1, std::invalid_argument,
+  _numBlocks = pl.get("Num Blocks",3*nev);
+  TEST_FOR_EXCEPTION(_numBlocks < 2, std::invalid_argument,
                      "Anasazi::BlockKrylovSchurSolMgr: \"Num Blocks\" must be strictly positive.");
 
   TEST_FOR_EXCEPTION(_numBlocks*_blockSize > MVT::GetVecLength(*_problem->getInitVec()),
                      std::invalid_argument,
-                     "Anasazi::BlockKrylovSchurSolMgr: Potentially impossible orthogonality requests. Reduce basis size or locking size.");
+                     "Anasazi::BlockKrylovSchurSolMgr: Potentially impossible orthogonality requests. Reduce basis size.");
 
   // step size: the default is _maxRestarts*_numBlocks, so that Ritz values are only computed every restart.
   _stepSize = pl.get("Step Size", _maxRestarts*_numBlocks);
-  TEST_FOR_EXCEPTION(_stepSize <= 1, std::invalid_argument,
+  TEST_FOR_EXCEPTION(_stepSize < 1, std::invalid_argument,
                      "Anasazi::BlockKrylovSchurSolMgr: \"Step Size\" must be strictly positive.");
+
+  // set the number of blocks we need to save to compute the nev eigenvalues of interest.
+  if (nev%_blockSize) {
+    _nevBlocks = nev/_blockSize + 1;
+  } else {
+    _nevBlocks = nev/_blockSize;
+  }
 
   // get the sort manager
   if (pl.isParameter("Sort Manager")) {
@@ -226,6 +236,10 @@ ReturnType
 BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
 
   const int nev = _problem->getNEV();
+  ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
+  ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
+
+  Teuchos::BLAS<int,ScalarType> blas;
 
   //////////////////////////////////////////////////////////////////////////////////////
   // Output manager
@@ -236,11 +250,11 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
   //
   // convergence
   Teuchos::RefCountPtr<StatusTestOrderedResNorm<ScalarType,MV,OP> > convtest 
-      = Teuchos::rcp( new StatusTestOrderedResNorm<ScalarType,MV,OP>(_sort,_convtol,nev,false,_relconvtol) );
+    = Teuchos::rcp( new StatusTestOrderedResNorm<ScalarType,MV,OP>(_sort,_convtol,nev,StatusTestOrderedResNorm<ScalarType,MV,OP>::RITZRES_2NORM,_relconvtol) );
 
   // printing StatusTest
   Teuchos::RefCountPtr<StatusTestOutput<ScalarType,MV,OP> > outputtest
-    = Teuchos::rcp( new StatusTestOutput<ScalarType,MV,OP>( printer,convtest,1,Passed ) );
+    = Teuchos::rcp( new StatusTestOutput<ScalarType,MV,OP>( printer,convtest,1,Passed+Failed+Undefined ) );
 
   //////////////////////////////////////////////////////////////////////////////////////
   // Orthomanager
@@ -267,16 +281,6 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
     bks_solver->setAuxVecs( Teuchos::tuple< Teuchos::RefCountPtr<const MV> >(probauxvecs) );
   }
 
-  //////////////////////////////////////////////////////////////////////////////////////
-  // Storage
-  // workMV will be used when restarting because of 
-  // a) full basis, in which case we need 2*blockSize, for X and KX
-  // b) locking, in which case we will need as many vectors as in the current basis, 
-  //    a number which will be always <= (numblocks-1)*blocksize
-  //    [note: this is because we never lock with curdim == numblocks*blocksize]
-  Teuchos::RefCountPtr<MV> workMV;
-  workMV = MVT::Clone(*_problem->getInitVec(),2*_blockSize);
-
   // go ahead and initialize the solution to nothing in case we throw an exception
   Eigensolution<ScalarType,MV> sol;
   sol.numVecs = 0;
@@ -296,7 +300,7 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
         // convtest->howMany() will tell us how many
         break;
       }
-      // check for restarting before locking: if we need to lock, it will happen after the restart
+      // check for restarting:  this is for the Hermitian case, or non-Hermitian conjugate split situation.
       else if ( bks_solver->getCurSubspaceDim() == bks_solver->getMaxSubspaceDim() ) {
 
         if ( numRestarts >= _maxRestarts ) {
@@ -306,20 +310,79 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
 
         printer->stream(Debug) << " Performing restart number " << numRestarts << " of " << _maxRestarts << endl << endl;
 
-        // the solver has filled its basis. 
-        std::vector<int> b1ind(_blockSize), b2ind(_blockSize);
-        for (int i=0;i<_blockSize;i++) {
-          b1ind[i] = i;
-          b2ind[i] = _blockSize+i;
-        }
+	// Update the Schur form of the projected eigenproblem, then sort it.
+	if (!bks_solver->isSchurCurrent())
+	  bks_solver->computeSchurForm( true );
 
-	if (bks_solver->isSchurCurrent())
-	  cout << "The Schur factorization is current!" << endl;
-	else 
-	  cout << "The Schur factorization is not current!" << endl;
+	BlockKrylovSchurState<ScalarType,MV> oldState = bks_solver->getState();
 
+	// Get the current dimension of the factorization
+	int curDim = oldState.curDim;
+
+	// Determine if the storage for the nev eigenvalues of interest splits a complex conjugate pair.
+	std::vector<int> ritzIndex = bks_solver->getRitzIndex();
+	int cur_nevBlocks;
+	if (ritzIndex[_nevBlocks*_blockSize-1]==1) {
+	  _conjSplit = true;
+	  cur_nevBlocks = _nevBlocks*_blockSize+1;
+	} else {
+	  _conjSplit = false;
+	  cur_nevBlocks = _nevBlocks*_blockSize;
+	}
+	
+	// Update the Krylov-Schur decomposition
+
+	// Get a view of the Schur vectors of interest.
+	Teuchos::SerialDenseMatrix<int,ScalarType> Qnev(Teuchos::View, *(oldState.Q), curDim, cur_nevBlocks);
+
+	// Get a view of the current Krylov basis.
+	std::vector<int> curind( curDim );
+	for (int i=0; i<curDim; i++) { curind[i] = i; }
+	Teuchos::RefCountPtr<const MV> basistemp = MVT::CloneView( *(oldState.V), curind );
+
+	// Create a vector for the new Krylov basis.
+	// Need cur_nevBlocks for the updated factorization and another block for the current factorization residual block (F).
+	Teuchos::RefCountPtr<MV> newV = MVT::Clone( *(oldState.V), cur_nevBlocks + _blockSize );
+	curind.resize(cur_nevBlocks);
+	Teuchos::RefCountPtr<MV> tmp_newV = MVT::CloneView( *newV, curind );
+	
+	// Compute the new Krylov basis.
+	// --> Vnew = V*Qnev
+	MVT::MvTimesMatAddMv( one, *basistemp, Qnev, zero, *tmp_newV );
+
+	// Move the current factorization residual block (F) to the last block of newV.
+	curind.resize(_blockSize);
+	for (int i=0; i<_blockSize; i++) { curind[i] = curDim + i; }
+        Teuchos::RefCountPtr<const MV> oldF = MVT::CloneView( *(oldState.V), curind );
+	for (int i=0; i<_blockSize; i++) { curind[i] = cur_nevBlocks + i; }
+	MVT::SetBlock( *oldF, curind, *newV );
+	
+	// Update the Krylov-Schur quasi-triangular matrix.
+	
+	// Create storage for the new Schur matrix of the Krylov-Schur factorization
+	// Copy over the current quasi-triangular factorization of oldState.H which is stored in oldState.S.
+	Teuchos::SerialDenseMatrix<int,ScalarType> oldS(Teuchos::View, *(oldState.S), cur_nevBlocks+_blockSize, cur_nevBlocks);
+	Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > newH = 
+	  Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( oldS ) );
+
+	// Get a view of the B block of the current factorization
+	Teuchos::SerialDenseMatrix<int,ScalarType> oldB(Teuchos::View, *(oldState.H), _blockSize, _blockSize, curDim, curDim-_blockSize);
+
+	// Get a view of the a block row of the Schur vectors.
+	Teuchos::SerialDenseMatrix<int,ScalarType> subQ(Teuchos::View, *(oldState.Q), _blockSize, cur_nevBlocks, curDim-_blockSize);
+	
+	// Get a view of the new B block of the updated Krylov-Schur factorization
+	Teuchos::SerialDenseMatrix<int,ScalarType> newB(Teuchos::View, *newH,  _blockSize, cur_nevBlocks, cur_nevBlocks);
+
+	// Compute the new B block.
+	blas.GEMM( Teuchos::NO_TRANS, Teuchos::NO_TRANS, _blockSize, cur_nevBlocks, _blockSize, one, 
+		   oldB.values(), oldB.stride(), subQ.values(), subQ.stride(), zero, newB.values(), newB.stride() );
+	
+	// Set the new state and initialize the solver.
         BlockKrylovSchurState<ScalarType,MV> newstate;
-        //newstate.V = newV;
+        newstate.V = newV;
+	newstate.H = newH;
+	newstate.curDim = cur_nevBlocks;
         bks_solver->initialize(newstate);
 
       }
@@ -334,65 +397,25 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
     }
   }
 
-  // clear temp space
-  workMV = Teuchos::null;
-
   sol.numVecs = convtest->howMany();
   if (sol.numVecs > 0) {
-    sol.Evecs = MVT::Clone(*_problem->getInitVec(),sol.numVecs);
+    sol.index = bks_solver->getRitzIndex();
+    sol.Evals = bks_solver->getRitzValues();
+    // Check to see if conjugate pair is on the boundary.
+    if (sol.index[sol.numVecs-1]==1) {
+      sol.numVecs++;
+      sol.Evals.resize(sol.numVecs);
+      sol.index.resize(sol.numVecs);
+      bks_solver->setNumRitzVectors(sol.numVecs);
+    } else {
+      sol.Evals.resize(sol.numVecs);
+      sol.index.resize(sol.numVecs);
+      bks_solver->setNumRitzVectors(sol.numVecs);
+    }
+    bks_solver->computeRitzVectors();
+    sol.Evecs = MVT::CloneCopy( *(bks_solver->getRitzVectors()) );
     sol.Espace = sol.Evecs;
-    sol.Evals.resize(sol.numVecs);
-
-    // copy them into the solution
-    std::vector<int> which = convtest->whichVecs();
-    // indices between [0,blockSize) refer to vectors/values in the solver
-    // indices between [blockSize,blocksize+numlocked) refer to locked vectors/values
-    // everything has already been ordered by the solver; we just have to partition the two references
-    std::vector<int> inlocked(0), insolver(0);
-    for (unsigned int i=0; i<which.size(); i++) {
-      if (which[i] < nev) {
-        insolver.push_back(which[i]);
-      }
-      else {
-        // sanity check
-        TEST_FOR_EXCEPTION(which[i] > nev,std::logic_error,"Anasazi::BlockKrylovSchurSolMgr::solve(): indexing mistake.");
-        inlocked.push_back(which[i] - _blockSize);
-      }
-    }
-
-    TEST_FOR_EXCEPTION(insolver.size() + inlocked.size() != (unsigned int)sol.numVecs,std::logic_error,"Anasazi::BlockKrylovSchurSolMgr::solve(): indexing mistake.");
-
-    // set the vecs,vals in the solution
-    if (insolver.size() > 0) {
-      // set vecs
-      int lclnum = insolver.size();
-      std::vector<int> tosol(lclnum);
-      for (int i=0; i<lclnum; i++) tosol[i] = i;
-      Teuchos::RefCountPtr<const MV> v = MVT::CloneView(*bks_solver->getRitzVectors(),insolver);
-      MVT::SetBlock(*v,tosol,*sol.Evecs);
-      // set vals
-      std::vector<MagnitudeType> fromsolver = bks_solver->getRitzValues();
-      for (unsigned int i=0; i<insolver.size(); i++) {
-        sol.Evals[i] = fromsolver[insolver[i]];
-      }
-    }
-
-    // setup sol.index, remembering that all eigenvalues are real so that index = {0,...,0}
-    sol.index.resize(sol.numVecs,0);
-
-    // sort the eigenvalues and permute the eigenvectors appropriately
-    {
-      std::vector<int> order(sol.numVecs);
-      std::vector<ScalarType> vals_st(sol.numVecs);
-      std::copy(sol.Evals.begin(),sol.Evals.end(),vals_st.begin());
-      _sort->sort( NULL, sol.numVecs, &vals_st[0], &order );
-      for (int i=0; i<sol.numVecs; i++) {
-        sol.Evals[i] = SCT::real( vals_st[i] );
-      }
-      // now permute the eigenvectors according to order
-      msutils.permuteVectors(sol.numVecs,order,*sol.Evecs);
-    }
-  }
+  } 
 
   // print final summary
   bks_solver->currentStatus(printer->stream(FinalSummary));

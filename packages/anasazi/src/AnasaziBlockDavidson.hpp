@@ -168,7 +168,7 @@ namespace Anasazi {
      * test indicates the need to stop or an error occurs (in which case, an
      * exception is thrown).
      *
-     * iterate() will first determine whether the solver is inintialized; if
+     * iterate() will first determine whether the solver is uninitialized; if
      * not, it will call initialize() using default arguments. After
      * initialization, the solver performs %BlockDavidson iterations until the
      * status test evaluates as Passed, at which point the method returns to
@@ -275,7 +275,9 @@ namespace Anasazi {
     /*! \brief Get the Ritz vectors from the previous iteration.
       
         \return A multivector with getBlockSize() vectors containing 
-        the sorted Ritz vectors corresponding to the most significant Ritz values.
+        the sorted Ritz vectors corresponding to the most significant Ritz values. 
+        The i-th vector of the return corresponds to the i-th Ritz vector; there is no need to use
+        getRitzIndex().
      */
     Teuchos::RefCountPtr<const MV> getRitzVectors() {return _X;}
 
@@ -283,12 +285,28 @@ namespace Anasazi {
      *
      *  \return A vector of length getCurSubspaceDim() containing the Ritz values from the
      *  previous projected eigensolve.
+     *  The i-th value of the return corresponds to the i-th Ritz value; there is no need to use
+     *  getRitzIndex().
      */
     std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getRitzValues() { 
       std::vector<MagnitudeType> ret = _theta;
       ret.resize(_curDim);
       return ret;
     }
+
+    /*! \brief Get the index used for extracting Ritz vectors and Ritz values from getRitzVectors() and getRitzValues() 
+     *
+     * Because BlockDavidson is a Hermitian solver, all Ritz values are real and all Ritz vectors can be represented in a 
+     * single column of a multivector. Therefore, getRitzIndex() is not needed when using the output from getRitzVectors() and 
+     * getRitzValues().
+     *
+     * \return An \c int vector of size getCurSubspaceDim() composed of zeros.
+     */
+    std::vector<int> getRitzIndex() {
+      std::vector<int> ret(_curDim,0);
+      return ret;
+    }
+
 
     /*! \brief Get the current residual norms
      *
@@ -328,6 +346,7 @@ namespace Anasazi {
     //! Get the maximum dimension allocated for the search subspace. For %BlockDavidson, this always returns numBlocks*blockSize.
     int getMaxSubspaceDim() {return _blockSize*_numBlocks;}
 
+    //@}
 
 
     //! @name Accessor routines from Eigensolver
@@ -671,7 +690,7 @@ namespace Anasazi {
   template <class ScalarType, class MV, class OP>
   void BlockDavidson<ScalarType,MV,OP>::initialize(BlockDavidsonState<ScalarType,MV> state)
   {
-    // NOTE: memory has been allocated by setBlockSize(). Use SetBlock below; do not Clone
+    // NOTE: memory has been allocated by setBlockSize(). Use setBlock below; do not Clone
 
     std::vector<int> bsind(_blockSize);
     for (int i=0; i<_blockSize; i++) bsind[i] = i;
@@ -731,6 +750,13 @@ namespace Anasazi {
       Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > lclKK;
       lclKK = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*_KK,_curDim,_curDim) );
       lclKK->assign(*state.KK);
+      //
+      // make lclKK symmetric in memory 
+      for (int j=0; j<_curDim; j++) {
+        for (int i=j+1; i<_curDim; i++) {
+          (*lclKK)(i,j) = (*lclKK)(j,i);
+        }
+      }
 
       // X,theta require Ritz analisys; if we have to generate one of these, we might as well generate both
       if (state.X != Teuchos::null && state.T != Teuchos::null) {
@@ -762,15 +788,9 @@ namespace Anasazi {
           Teuchos::TimeMonitor lcltimer( *_timerSortEval );
 
           std::vector<int> order(_curDim);
-          // make a ScalarType copy of theta
-          std::vector<ScalarType> _theta_st(_curDim);
-          std::copy(_theta.begin(),_theta.begin()+_curDim,_theta_st.begin());
-          // sort it
-          _sm->sort( NULL, _curDim, &(_theta_st[0]), &order );   // don't catch exception
-          // Put the sorted ritz values back into _theta
-          for (int i=0; i<_curDim; i++) {
-            _theta[i] = SCT::real(_theta_st[i]);
-          }
+          //
+          // sort the first _curDim values in _theta
+          _sm->sort( this, _curDim, _theta, &order );   // don't catch exception
           //
           // apply the same ordering to the primitive ritz vectors
           _MSUtils.permuteVectors(order,S);
@@ -854,7 +874,7 @@ namespace Anasazi {
       }
       else {
         Teuchos::TimeMonitor lcltimer( *_timerCompRes );
-
+        
         // form R <- KX - MX*T
         MVT::MvAddMv(ZERO,*_KX,ONE,*_KX,*_R);
         Teuchos::SerialDenseMatrix<int,ScalarType> T(_blockSize,_blockSize);
@@ -1104,6 +1124,9 @@ namespace Anasazi {
       // H*K*H
       nextKK = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*_KK,_blockSize,_blockSize,_curDim,_curDim) );
       MVT::MvTransMv(ONE,*_H,*_KH,*nextKK);
+      // 
+      // make sure that _KK is symmetric in memory
+      // FINISH
 
       // V has been extended, and KK has been extended. Update basis dim and release all pointers.
       _curDim += _blockSize;
@@ -1131,18 +1154,9 @@ namespace Anasazi {
         Teuchos::TimeMonitor lcltimer( *_timerSortEval );
 
         std::vector<int> order(_curDim);
-        //
-        // make a copy of type ScalarType
-        std::vector<ScalarType> _theta_st(_theta.size());
-        std::copy(_theta.begin(),_theta.begin()+_curDim,_theta_st.begin());
         // 
-        // sort it
-        _sm->sort( this, _curDim, &(_theta_st[0]), &order );   // don't catch exception
-        //  
-        // put the sorted copy back into _theta
-        for (int i=0; i<_curDim; i++) {
-          _theta[i] = SCT::real(_theta_st[i]);
-        }
+        // sort the first _curDim values in _theta
+        _sm->sort( this, _curDim, _theta, &order );   // don't catch exception
         //
         // apply the same ordering to the primitive ritz vectors
         Teuchos::SerialDenseMatrix<int,ScalarType> curS(Teuchos::View,S,_curDim,_curDim);

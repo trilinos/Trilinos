@@ -64,7 +64,9 @@ namespace Anasazi {
        <li> "SI" - Smallest Imaginary 
        </ul>
     */
-    BasicSort( const string which = "LM" ) { _which = which; };
+    BasicSort( const string which = "LM" ) {
+      setSortType(which);
+    }
 
     //! Destructor
     virtual ~BasicSort() {};
@@ -81,33 +83,47 @@ namespace Anasazi {
        <li> "SI" - Smallest Imaginary 
        </ul>
     */
-    void SetSortType( const string which ) { _which = which; };
+    void setSortType( const string which ) { 
+      _which = which; 
+      TEST_FOR_EXCEPTION(_which.compare("LM") && _which.compare("SM") &&
+                         _which.compare("LR") && _which.compare("SR") &&
+                         _which.compare("LI") && _which.compare("SI"), std::invalid_argument, 
+                         "Anasazi::BasicSort::sort(): sorting order is not valid");
+    };
     
-    //! Sort the vector of eigenvalues with respect to the chosen sorting type, optionally returning the permutation vector.
+    //! Sort the vector of eigenvalues, optionally returning the permutation vector.
     /**
        @param solver [in] Eigensolver that is calling the sorting routine
 
-       @param n [in] Size of the array
+       @param n [in] Number of values in evals to be sorted.
 
-       @param evals [in/out] Array of length n containing the eigenvalues to be sorted
+       @param evals [in/out] Vector of length n containing the eigenvalues to be sorted
 
-       @param perm [out] Vector of length n to store the permutation (optional)
+       @param perm [out] Vector of length n to store the permutation index (optional)
     */
-    void sort(Eigensolver<ScalarType,MV,OP>* solver, int n, ScalarType *evals, std::vector<int> *perm = 0) const;
-    
-    //! Sort the vectors of eigenpairs with respect to the chosen sorting type, optionally returning the permutation vector.
-    /**
+    void sort(Eigensolver<ScalarType,MV,OP>* solver, const int n, std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> &evals, std::vector<int> *perm = 0) const;
+
+    /*! \brief Sort the vectors of eigenpairs, optionally returning the permutation vector.
+
+       This routine takes two vectors, one for each part of a complex
+       eigenvalue. This is helpful for solving real, non-symmetric eigenvalue
+       problems.
+
        @param solver [in] Eigensolver that is calling the sorting routine
 
-       @param n [in] Size of the array
+       @param n [in] Number of values in r_evals,i_evals to be sorted.
 
-       @param r_evals [in/out] Array of length n containing the real part of the eigenvalues to be sorted 
+       @param r_evals [in/out] Vector of length n containing the real part of the eigenvalues to be sorted 
 
-       @param i_evals [in/out] Array of length n containing the imaginary part of the eigenvalues to be sorted 
+       @param i_evals [in/out] Vector of length n containing the imaginary part of the eigenvalues to be sorted 
 
-       @param perm [out] Vector of length n to store the permutation (optional)
+       @param perm [out] Vector of length n to store the permutation index (optional)
     */
-    void sort(Eigensolver<ScalarType,MV,OP>* solver, int n, ScalarType *r_evals, ScalarType *i_evals, std::vector<int> *perm = 0) const;
+    void sort(Eigensolver<ScalarType,MV,OP>* solver, 
+              const int n,
+              std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> &r_evals, 
+              std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> &i_evals, 
+              std::vector<int> *perm = 0) const;
     
   protected: 
     
@@ -127,20 +143,27 @@ namespace Anasazi {
   };
 
   template<class ScalarType, class MV, class OP>
-  void BasicSort<ScalarType,MV,OP>::sort(Eigensolver<ScalarType,MV,OP>* solver, int n, ScalarType *evals, std::vector<int> *perm) const 
+  void BasicSort<ScalarType,MV,OP>::sort(Eigensolver<ScalarType,MV,OP>* solver, const int n, std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> &evals, std::vector<int> *perm) const
   {
-    int i=0, j=0;
+    int i,j;
+
+    TEST_FOR_EXCEPTION(evals.size() < (unsigned int) n,
+                       std::invalid_argument, "Anasazi::BasicSort:sort(): eigenvalue vector size isn't consistent with n.");
+    if (perm) {
+      TEST_FOR_EXCEPTION(perm->size() < (unsigned int) n,
+                         std::invalid_argument, "Anasazi::BasicSort:sort(): permutation vector size isn't consistent with n.");
+    }
 
     // Temp integer for swapping the index of the permutation, used in all sorting types.
     int tempord=0;
 
-    // Temp variable for the magnitude of the ScalarType used in sorting "LM" and "SM".
-    typename Teuchos::ScalarTraits<ScalarType>::magnitudeType temp2;
+    typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
+    typedef Teuchos::ScalarTraits<MagnitudeType> MT;
 
     // Temp variable for swapping the eigenvalue used in all sorting types.
-    ScalarType temp;
+    MagnitudeType temp;
 
-    Teuchos::LAPACK<int,ScalarType> lapack;
+    Teuchos::LAPACK<int,MagnitudeType> lapack;
 
     //
     // Reset the permutation if it is required.
@@ -156,20 +179,22 @@ namespace Anasazi {
     // Sort eigenvalues in increasing order of magnitude
     //---------------------------------------------------------------
     if (!_which.compare("SM")) {
-      for (j=1; j < n; ++j) {
+      for (j=1; j < n; j++) {
         temp = evals[j]; 
         if (perm) {
           tempord = (*perm)[j];
         }
-        temp2 = Teuchos::ScalarTraits<ScalarType>::magnitude(evals[j]);
-        for (i=j-1; i>=0 && Teuchos::ScalarTraits<ScalarType>::magnitude(evals[i])>temp2; --i) {
-          evals[i+1]=evals[i];
-          if (perm)
+        MagnitudeType temp2 = MT::magnitude(evals[j]);
+        for (i=j-1; i >=0 && MT::magnitude(evals[i]) > temp2; i--) {
+          evals[i+1] = evals[i];
+          if (perm) {
             (*perm)[i+1]=(*perm)[i];
+          }
         }
         evals[i+1] = temp; 
-        if (perm) 
+        if (perm) {
           (*perm)[i+1] = tempord;
+        }
       }
       return;
     }
@@ -177,18 +202,21 @@ namespace Anasazi {
     // Sort eigenvalues in increasing order of real part
     //---------------------------------------------------------------
     if (!_which.compare("SR")) {
-      for (j=1; j < n; ++j) {
+      for (j=1; j < n; j++) {
         temp = evals[j]; 
-        if (perm)
+        if (perm) {
           tempord = (*perm)[j];
-        for (i=j-1; i>=0 && evals[i]>temp; --i) {
+        }
+        for (i=j-1; i >= 0 && evals[i] > temp; i--) {
           evals[i+1]=evals[i];
-          if (perm)
+          if (perm) {
             (*perm)[i+1]=(*perm)[i];
+          }
         }
         evals[i+1] = temp; 
-        if (perm)
+        if (perm) {
           (*perm)[i+1] = tempord;
+        }
       }
       return;
     }
@@ -198,43 +226,49 @@ namespace Anasazi {
     // method assumes only real eigenvalues.
     //---------------------------------------------------------------
     TEST_FOR_EXCEPTION(!_which.compare("SI"), SortManagerError, 
-                       "Anasazi::BasicSort::sort() assumes real eigenvalues");
+                       "Anasazi::BasicSort::sort() with one arg assumes real eigenvalues");
     //---------------------------------------------------------------
     // Sort eigenvalues in decreasing order of magnitude
     //---------------------------------------------------------------
     if (!_which.compare("LM")) {
-      for (j=1; j < n; ++j) {
+      for (j=1; j < n; j++) {
         temp = evals[j]; 
-        if (perm)
+        if (perm) {
           tempord = (*perm)[j];
-        temp2 = Teuchos::ScalarTraits<ScalarType>::magnitude(evals[j]);
-        for (i=j-1; i>=0 && Teuchos::ScalarTraits<ScalarType>::magnitude(evals[i])<temp2; --i) {
+        }
+        MagnitudeType temp2 = MT::magnitude(evals[j]);
+        for (i=j-1; i >= 0 && MT::magnitude(evals[i]) < temp2; i--) {
           evals[i+1]=evals[i];
-          if (perm)
+          if (perm) {
             (*perm)[i+1]=(*perm)[i];
+          }
         }
         evals[i+1] = temp; 
-        if (perm)
+        if (perm) {
           (*perm)[i+1] = tempord;
         }
+      }
       return;
     }
     //---------------------------------------------------------------
     // Sort eigenvalues in decreasing order of real part
     //---------------------------------------------------------------
     if (!_which.compare("LR")) {
-      for (j=1; j < n; ++j) {
+      for (j=1; j < n; j++) {
         temp = evals[j]; 
-        if (perm)
-        tempord = (*perm)[j];
-        for (i=j-1; i>=0 && evals[i]<temp; --i) {
+        if (perm) {
+          tempord = (*perm)[j];
+        }
+        for (i=j-1; i >= 0 && evals[i]<temp; i--) {
           evals[i+1]=evals[i];
-          if (perm)
+          if (perm) {
             (*perm)[i+1]=(*perm)[i];
+          }
         }
         evals[i+1] = temp; 
-        if (perm)
+        if (perm) {
           (*perm)[i+1] = tempord;
+        }
       }
       return;
     }
@@ -244,7 +278,7 @@ namespace Anasazi {
     // assumes only real eigenvalues.
     //---------------------------------------------------------------
     TEST_FOR_EXCEPTION(!_which.compare("LI"), SortManagerError, 
-                       "Anasazi::BasicSort::sort() assumes real eigenvalues");
+                       "Anasazi::BasicSort::sort() with one arg assumes real eigenvalues");
     
     // The character string held by this class is not valid.  
     TEST_FOR_EXCEPTION(true, SortManagerError, 
@@ -253,10 +287,26 @@ namespace Anasazi {
 
 
   template<class ScalarType, class MV, class OP>
-  void BasicSort<ScalarType,MV,OP>::sort(Eigensolver<ScalarType,MV,OP>* solver, int n, ScalarType *r_evals, ScalarType *i_evals, std::vector<int> *perm) const {
-    int i=0, j=0, tempord=0;
-    ScalarType temp, tempr, tempi;
-    Teuchos::LAPACK<int,ScalarType> lapack;
+  void BasicSort<ScalarType,MV,OP>::sort(Eigensolver<ScalarType,MV,OP>* solver, 
+                                         const int n,
+                                         std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> &r_evals, 
+                                         std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> &i_evals, 
+                                         std::vector<int> *perm) const 
+  {
+    typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
+    typedef Teuchos::ScalarTraits<MagnitudeType> MT;
+
+    TEST_FOR_EXCEPTION(r_evals.size() < (unsigned int) n || i_evals.size() < (unsigned int) n,
+                       std::invalid_argument, "Anasazi::BasicSort:sort(): real and imaginary vector sizes aren't consistent with n.");
+    if (perm) {
+      TEST_FOR_EXCEPTION(perm->size() < (unsigned int) n,
+                         std::invalid_argument, "Anasazi::BasicSort:sort(): permutation vector size isn't consistent with n.");
+    }
+    int i,j;
+    int tempord=0;
+
+    MagnitudeType temp, tempr, tempi;
+    Teuchos::LAPACK<int,MagnitudeType> lapack;
     //
     // Reset the index
     //
@@ -271,19 +321,22 @@ namespace Anasazi {
     // Sort eigenvalues in increasing order of magnitude
     //---------------------------------------------------------------
     if (!_which.compare("SM")) {
-      for (j=1; j < n; ++j) {
+      for (j=1; j < n; j++) {
         tempr = r_evals[j]; tempi = i_evals[j]; 
-        if (perm)
+        if (perm) {
           tempord = (*perm)[j];
+        }
         temp=lapack.LAPY2(r_evals[j],i_evals[j]);
-        for (i=j-1; i>=0 && lapack.LAPY2(r_evals[i],i_evals[i])>temp; --i) {
+        for (i=j-1; i>=0 && lapack.LAPY2(r_evals[i],i_evals[i]) > temp; i--) {
           r_evals[i+1]=r_evals[i]; i_evals[i+1]=i_evals[i];
-          if (perm)
+          if (perm) {
             (*perm)[i+1]=(*perm)[i];
+          }
         }
         r_evals[i+1] = tempr; i_evals[i+1] = tempi; 
-        if (perm)
+        if (perm) {
           (*perm)[i+1] = tempord;
+        }
       }
       return;
     }
@@ -291,18 +344,21 @@ namespace Anasazi {
     // Sort eigenvalues in increasing order of real part
     //---------------------------------------------------------------
     if (!_which.compare("SR")) {
-      for (j=1; j < n; ++j) {
+      for (j=1; j < n; j++) {
         tempr = r_evals[j]; tempi = i_evals[j]; 
-        if (perm)
+        if (perm) {
           tempord = (*perm)[j];
-        for (i=j-1; i>=0 && r_evals[i]>tempr; --i) {
+        }
+        for (i=j-1; i>=0 && r_evals[i]>tempr; i--) {
           r_evals[i+1]=r_evals[i]; i_evals[i+1]=i_evals[i];
-          if (perm)
+          if (perm) {
             (*perm)[i+1]=(*perm)[i];
+          }
         }
         r_evals[i+1] = tempr; i_evals[i+1] = tempi; 
-        if (perm)
+        if (perm) {
           (*perm)[i+1] = tempord;
+        }
       }
       return;
     }
@@ -310,18 +366,21 @@ namespace Anasazi {
     // Sort eigenvalues in increasing order of imaginary part
     //---------------------------------------------------------------
     if (!_which.compare("SI")) {
-      for (j=1; j < n; ++j) {
+      for (j=1; j < n; j++) {
         tempr = r_evals[j]; tempi = i_evals[j]; 
-        if (perm)
+        if (perm) {
           tempord = (*perm)[j];
-        for (i=j-1; i>=0 && i_evals[i]>tempi; --i) {
+        }
+        for (i=j-1; i>=0 && i_evals[i]>tempi; i--) {
           r_evals[i+1]=r_evals[i]; i_evals[i+1]=i_evals[i];
-          if (perm)
+          if (perm) {
             (*perm)[i+1]=(*perm)[i];
+          }
         }
         r_evals[i+1] = tempr; i_evals[i+1] = tempi; 
-        if (perm)
+        if (perm) {
           (*perm)[i+1] = tempord;
+        }
       }
       return;
     }
@@ -329,19 +388,22 @@ namespace Anasazi {
     // Sort eigenvalues in decreasing order of magnitude
     //---------------------------------------------------------------
     if (!_which.compare("LM")) {
-      for (j=1; j < n; ++j) {
+      for (j=1; j < n; j++) {
         tempr = r_evals[j]; tempi = i_evals[j]; 
-        if (perm)
+        if (perm) {
           tempord = (*perm)[j];
+        }
         temp=lapack.LAPY2(r_evals[j],i_evals[j]);
-        for (i=j-1; i>=0 && lapack.LAPY2(r_evals[i],i_evals[i])<temp; --i) {
+        for (i=j-1; i>=0 && lapack.LAPY2(r_evals[i],i_evals[i])<temp; i--) {
           r_evals[i+1]=r_evals[i]; i_evals[i+1]=i_evals[i];
-          if (perm)
+          if (perm) {
             (*perm)[i+1]=(*perm)[i];
+          }
         }
         r_evals[i+1] = tempr; i_evals[i+1] = tempi; 
-        if (perm)
+        if (perm) {
           (*perm)[i+1] = tempord;
+        }
       }        
       return;
     }
@@ -349,18 +411,21 @@ namespace Anasazi {
     // Sort eigenvalues in decreasing order of real part
     //---------------------------------------------------------------
     if (!_which.compare("LR")) {
-      for (j=1; j < n; ++j) {
+      for (j=1; j < n; j++) {
         tempr = r_evals[j]; tempi = i_evals[j]; 
-        if (perm)
+        if (perm) {
           tempord = (*perm)[j];
-        for (i=j-1; i>=0 && r_evals[i]<tempr; --i) {
+        }
+        for (i=j-1; i>=0 && r_evals[i]<tempr; i--) {
           r_evals[i+1]=r_evals[i]; i_evals[i+1]=i_evals[i];
-          if (perm)
+          if (perm) {
             (*perm)[i+1]=(*perm)[i];
+          }
         }
         r_evals[i+1] = tempr; i_evals[i+1] = tempi; 
-        if (perm)
+        if (perm) {
           (*perm)[i+1] = tempord;
+        }
       }        
       return;
     }
@@ -368,18 +433,21 @@ namespace Anasazi {
     // Sort eigenvalues in decreasing order of imaginary part
     //---------------------------------------------------------------
     if (!_which.compare("LI")) {
-      for (j=1; j < n; ++j) {
+      for (j=1; j < n; j++) {
         tempr = r_evals[j]; tempi = i_evals[j]; 
-        if (perm)
+        if (perm) {
           tempord = (*perm)[j];
-        for (i=j-1; i>=0 && i_evals[i]<tempi; --i) {
+        for (i=j-1; i>=0 && i_evals[i]<tempi; i--) {
+        }
           r_evals[i+1]=r_evals[i]; i_evals[i+1]=i_evals[i];
-          if (perm)
+          if (perm) {
             (*perm)[i+1]=(*perm)[i];
+          }
         }
         r_evals[i+1] = tempr; i_evals[i+1] = tempi; 
-        if (perm)
+        if (perm) {
           (*perm)[i+1] = tempord;
+        }
       }
       return;
     }
@@ -388,408 +456,6 @@ namespace Anasazi {
                        "Anasazi::BasicSort::sort(): sorting order is not valid");
   }
   
-#if ( defined(HAVE_COMPLEX) || defined(HAVE_COMPLEX_H) ) && defined(HAVE_TEUCHOS_COMPLEX)
-
-
-  // Define a macro for which complex class we have available
-  
-#if defined(HAVE_COMPLEX)
-#define ANSZI_CPLX_CLASS std::complex
-#elif  defined(HAVE_COMPLEX_H)
-#define ANSZI_CPLX_CLASS ::complex
-#endif
-
-  // ----------------------------------------------------------------------------
-  //  Template specialization for complex<> scalar types
-  // ----------------------------------------------------------------------------
-  template<class ScalarType, class MV, class OP>
-  class BasicSort<ANSZI_CPLX_CLASS<ScalarType>, MV, OP> : public SortManager<ANSZI_CPLX_CLASS<ScalarType>,MV,OP> {
-    
-  public:
-    
-    //! Constructor
-    /**
-       @param which [in] The eigenvalues of interest for this eigenproblem.
-       <ul>
-       <li> "LM" - Largest Magnitude [ default ]
-       <li> "SM" - Smallest Magnitude
-       <li> "LR" - Largest Real 
-       <li> "SR" - Smallest Real 
-       <li> "LI" - Largest Imaginary 
-       <li> "SI" - Smallest Imaginary 
-       </ul>
-    */
-    BasicSort( const string which = "LM" ) { _which = which; };
-
-    //! Destructor
-    virtual ~BasicSort() {};
-
-    //! Set sort type
-    /**
-       @param which [in] The eigenvalues of interest for this eigenproblem.
-       <ul>
-       <li> "LM" - Largest Magnitude [ default ]
-       <li> "SM" - Smallest Magnitude
-       <li> "LR" - Largest Real 
-       <li> "SR" - Smallest Real 
-       <li> "LI" - Largest Imaginary 
-       <li> "SI" - Smallest Imaginary 
-       </ul>
-    */
-    void SetSortType( const string which ) { _which = which; };
-    
-    //! Sort the vector of eigenvalues with respect to the chosen sorting type, optionally returning the permutation vector.
-    /**
-       @param solver [in] Eigensolver that is calling the sorting routine
-
-       @param n [in] Size of the array
-
-       @param evals [in/out] Array of length n containing the eigenvalues to be sorted
-
-       @param perm [out] Vector of length n to store the permutation (optional)
-    */
-    void sort(Eigensolver<ANSZI_CPLX_CLASS<ScalarType>,MV,OP>* solver, int n, ANSZI_CPLX_CLASS<ScalarType> *evals, std::vector<int> *perm = 0) const;
-    
-    //! Sort the vectors of eigenpairs with respect to the chosen sorting type, optionally returning the permutation vector.
-    /**
-       @param solver [in] Eigensolver that is calling the sorting routine
-
-       @param n [in] Size of the array
-
-       @param r_evals [in/out] Array of length n containing the real part of the eigenvalues to be sorted 
-
-       @param i_evals [in/out] Array of length n containing the imaginary part of the eigenvalues to be sorted 
-
-       @param perm [out] Vector of length n to store the permutation (optional)
-    */
-    void sort(Eigensolver<ANSZI_CPLX_CLASS<ScalarType>,MV,OP>* solver, int n, ANSZI_CPLX_CLASS<ScalarType> *r_evals, 
-		    ANSZI_CPLX_CLASS<ScalarType> *i_evals, std::vector<int> *perm = 0) const;
-    
-  protected: 
-    
-    //! Sorting type
-    /*! \note Sorting choices:
-       <ul>
-       <li> "LM" - Largest Magnitude [ default ]
-       <li> "SM" - Smallest Magnitude
-       <li> "LR" - Largest Real 
-       <li> "SR" - Smallest Real 
-       <li> "LI" - Largest Imaginary 
-       <li> "SI" - Smallest Imaginary 
-       </ul>
-    */
-    string _which;
-
-  };
-
-  // Partial specialization for complex numbers templated on real type ScalarType
-  template<class ScalarType, class MV, class OP>
-  void BasicSort<ANSZI_CPLX_CLASS<ScalarType>,MV,OP>::sort(Eigensolver<ANSZI_CPLX_CLASS<ScalarType>,MV,OP>* solver, 
-								 int n, ANSZI_CPLX_CLASS<ScalarType> *evals, std::vector<int> *perm) const 
-  {
-    int i=0, j=0;
-    
-    // Temp integer for swapping the index of the permutation, used in all sorting types.
-    int tempord=0;
-    
-    // Temp variable for the magnitude of the ScalarType used in sorting "LM" and "SM".
-    typename Teuchos::ScalarTraits<ANSZI_CPLX_CLASS<ScalarType> >::magnitudeType temp2;
-    
-    // Temp variable for swapping the eigenvalue used in all sorting types.
-    ANSZI_CPLX_CLASS<ScalarType> temp;
-
-    Teuchos::LAPACK<int,ANSZI_CPLX_CLASS<ScalarType> > lapack;
-
-    //
-    // Reset the permutation if it is required.
-    //
-    if (perm) {
-      for (i=0; i < n; i++) {
-        (*perm)[i] = i;
-      }
-    }
-    //
-    // These methods use an insertion sort method to circument recursive calls.
-    //---------------------------------------------------------------
-    // Sort eigenvalues in increasing order of magnitude
-    //---------------------------------------------------------------
-    if (!_which.compare("SM")) {
-      for (j=1; j < n; ++j) {
-        temp = evals[j]; 
-        if (perm) {
-          tempord = (*perm)[j];
-        }
-        temp2 = Teuchos::ScalarTraits<complex<ScalarType> >::magnitude(evals[j]);
-        for (i=j-1; i>=0 && Teuchos::ScalarTraits<complex<ScalarType> >::magnitude(evals[i])>temp2; --i) {
-          evals[i+1]=evals[i];
-          if (perm)
-            (*perm)[i+1]=(*perm)[i];
-        }
-        evals[i+1] = temp; 
-        if (perm) 
-          (*perm)[i+1] = tempord;
-      }
-      return;
-    }
-    //---------------------------------------------------------------
-    // Sort eigenvalues in increasing order of real part
-    //---------------------------------------------------------------
-    if (!_which.compare("SR")) {
-      for (j=1; j < n; ++j) {
-        temp = evals[j]; 
-        if (perm)
-          tempord = (*perm)[j];
-        for (i=j-1; i>=0 && evals[i].real()>temp.real(); --i) {
-          evals[i+1]=evals[i];
-          if (perm)
-            (*perm)[i+1]=(*perm)[i];
-        }
-        evals[i+1] = temp; 
-        if (perm)
-          (*perm)[i+1] = tempord;
-      }
-      return;
-    }
-    //---------------------------------------------------------------
-    // Sort eigenvalues in increasing order of imagninary part
-    //---------------------------------------------------------------
-    if (!_which.compare("SI")) {
-      for (j=1; j < n; ++j) {
-        temp = evals[j]; 
-        if (perm)
-          tempord = (*perm)[j];
-        for (i=j-1; i>=0 && evals[i].imag()>temp.imag(); --i) {
-          evals[i+1]=evals[i];
-          if (perm)
-            (*perm)[i+1]=(*perm)[i];
-        }
-        evals[i+1] = temp; 
-        if (perm)
-          (*perm)[i+1] = tempord;
-      }
-      return;
-    }
-    //---------------------------------------------------------------
-    // Sort eigenvalues in decreasing order of magnitude
-    //---------------------------------------------------------------
-    if (!_which.compare("LM")) {
-      for (j=1; j < n; ++j) {
-        temp = evals[j]; 
-        if (perm)
-          tempord = (*perm)[j];
-        temp2 = Teuchos::ScalarTraits<ANSZI_CPLX_CLASS<ScalarType> >::magnitude(evals[j]);
-        for (i=j-1; i>=0 && Teuchos::ScalarTraits<ANSZI_CPLX_CLASS<ScalarType> >::magnitude(evals[i])<temp2; --i) {
-          evals[i+1]=evals[i];
-          if (perm)
-            (*perm)[i+1]=(*perm)[i];
-        }
-        evals[i+1] = temp; 
-        if (perm)
-          (*perm)[i+1] = tempord;
-        }
-      return;
-    }
-    //---------------------------------------------------------------
-    // Sort eigenvalues in decreasing order of real part
-    //---------------------------------------------------------------
-    if (!_which.compare("LR")) {
-      for (j=1; j < n; ++j) {
-        temp = evals[j]; 
-        if (perm)
-        tempord = (*perm)[j];
-        for (i=j-1; i>=0 && evals[i].real()<temp.real(); --i) {
-          evals[i+1]=evals[i];
-          if (perm)
-            (*perm)[i+1]=(*perm)[i];
-        }
-        evals[i+1] = temp; 
-        if (perm)
-          (*perm)[i+1] = tempord;
-      }
-      return;
-    }
-    //---------------------------------------------------------------
-    // Sort eigenvalues in decreasing order of imaginary part
-    //---------------------------------------------------------------
-    if (!_which.compare("LI")) {
-      for (j=1; j < n; ++j) {
-        temp = evals[j]; 
-        if (perm)
-        tempord = (*perm)[j];
-        for (i=j-1; i>=0 && evals[i].real()<temp.real(); --i) {
-          evals[i+1]=evals[i];
-          if (perm)
-            (*perm)[i+1]=(*perm)[i];
-        }
-        evals[i+1] = temp; 
-        if (perm)
-          (*perm)[i+1] = tempord;
-      }
-      return;
-    }
-
-    // The character string held by this class is not valid.  
-    TEST_FOR_EXCEPTION(true, SortManagerError, 
-                       "Anasazi::BasicSort::sort(): sorting order is not valid");
-  }
-
-  // Partial specialization for complex numbers templated on real type ScalarType
-  // NOTE:  This implementation doesn't perform any operations on i_evals because r_evals is a vector of complex 
-  //        scalar type and should hold all the approximate eigenvalues that need to be sorted.
-  template<class ScalarType, class MV, class OP>
-  void BasicSort<ANSZI_CPLX_CLASS<ScalarType>,MV,OP>::sort(Eigensolver<ANSZI_CPLX_CLASS<ScalarType>,MV,OP>* solver, 
-								 int n, ANSZI_CPLX_CLASS<ScalarType> *r_evals, 
-								 ANSZI_CPLX_CLASS<ScalarType> *i_evals,
-								 std::vector<int> *perm) const 
-  {
-    int i=0, j=0;
-    
-    // Temp integer for swapping the index of the permutation, used in all sorting types.
-    int tempord=0;
-    
-    // Temp variable for the magnitude of the ScalarType used in sorting "LM" and "SM".
-    typename Teuchos::ScalarTraits<ANSZI_CPLX_CLASS<ScalarType> >::magnitudeType temp2;
-    
-    // Temp variable for swapping the eigenvalue used in all sorting types.
-    ANSZI_CPLX_CLASS<ScalarType> temp;
-
-    Teuchos::LAPACK<int,ANSZI_CPLX_CLASS<ScalarType> > lapack;
-
-    //
-    // Reset the permutation if it is required.
-    //
-    if (perm) {
-      for (i=0; i < n; i++) {
-        (*perm)[i] = i;
-      }
-    }
-    //
-    // These methods use an insertion sort method to circument recursive calls.
-    //---------------------------------------------------------------
-    // Sort eigenvalues in increasing order of magnitude
-    //---------------------------------------------------------------
-    if (!_which.compare("SM")) {
-      for (j=1; j < n; ++j) {
-        temp = r_evals[j]; 
-        if (perm) {
-          tempord = (*perm)[j];
-        }
-        temp2 = Teuchos::ScalarTraits<complex<ScalarType> >::magnitude(r_evals[j]);
-        for (i=j-1; i>=0 && Teuchos::ScalarTraits<complex<ScalarType> >::magnitude(r_evals[i])>temp2; --i) {
-          r_evals[i+1]=r_evals[i];
-          if (perm)
-            (*perm)[i+1]=(*perm)[i];
-        }
-        r_evals[i+1] = temp; 
-        if (perm) 
-          (*perm)[i+1] = tempord;
-      }
-      return;
-    }
-    //---------------------------------------------------------------
-    // Sort eigenvalues in increasing order of real part
-    //---------------------------------------------------------------
-    if (!_which.compare("SR")) {
-      for (j=1; j < n; ++j) {
-        temp = r_evals[j]; 
-        if (perm)
-          tempord = (*perm)[j];
-        for (i=j-1; i>=0 && r_evals[i].real()>temp.real(); --i) {
-          r_evals[i+1]=r_evals[i];
-          if (perm)
-            (*perm)[i+1]=(*perm)[i];
-        }
-        r_evals[i+1] = temp; 
-        if (perm)
-          (*perm)[i+1] = tempord;
-      }
-      return;
-    }
-    //---------------------------------------------------------------
-    // Sort eigenvalues in increasing order of imagninary part
-    //---------------------------------------------------------------
-    if (!_which.compare("SI")) {
-      for (j=1; j < n; ++j) {
-        temp = r_evals[j]; 
-        if (perm)
-          tempord = (*perm)[j];
-        for (i=j-1; i>=0 && r_evals[i].imag()>temp.imag(); --i) {
-          r_evals[i+1]=r_evals[i];
-          if (perm)
-            (*perm)[i+1]=(*perm)[i];
-        }
-        r_evals[i+1] = temp; 
-        if (perm)
-          (*perm)[i+1] = tempord;
-      }
-      return;
-    }
-    //---------------------------------------------------------------
-    // Sort eigenvalues in decreasing order of magnitude
-    //---------------------------------------------------------------
-    if (!_which.compare("LM")) {
-      for (j=1; j < n; ++j) {
-        temp = r_evals[j]; 
-        if (perm)
-          tempord = (*perm)[j];
-        temp2 = Teuchos::ScalarTraits<ANSZI_CPLX_CLASS<ScalarType> >::magnitude(r_evals[j]);
-        for (i=j-1; i>=0 && Teuchos::ScalarTraits<ANSZI_CPLX_CLASS<ScalarType> >::magnitude(r_evals[i])<temp2; --i) {
-          r_evals[i+1]=r_evals[i];
-          if (perm)
-            (*perm)[i+1]=(*perm)[i];
-        }
-        r_evals[i+1] = temp; 
-        if (perm)
-          (*perm)[i+1] = tempord;
-        }
-      return;
-    }
-    //---------------------------------------------------------------
-    // Sort eigenvalues in decreasing order of real part
-    //---------------------------------------------------------------
-    if (!_which.compare("LR")) {
-      for (j=1; j < n; ++j) {
-        temp = r_evals[j]; 
-        if (perm)
-        tempord = (*perm)[j];
-        for (i=j-1; i>=0 && r_evals[i].real()<temp.real(); --i) {
-          r_evals[i+1]=r_evals[i];
-          if (perm)
-            (*perm)[i+1]=(*perm)[i];
-        }
-        r_evals[i+1] = temp; 
-        if (perm)
-          (*perm)[i+1] = tempord;
-      }
-      return;
-    }
-    //---------------------------------------------------------------
-    // Sort eigenvalues in decreasing order of imaginary part
-    //---------------------------------------------------------------
-    if (!_which.compare("LI")) {
-      for (j=1; j < n; ++j) {
-        temp = r_evals[j]; 
-        if (perm)
-        tempord = (*perm)[j];
-        for (i=j-1; i>=0 && r_evals[i].real()<temp.real(); --i) {
-          r_evals[i+1]=r_evals[i];
-          if (perm)
-            (*perm)[i+1]=(*perm)[i];
-        }
-        r_evals[i+1] = temp; 
-        if (perm)
-          (*perm)[i+1] = tempord;
-      }
-      return;
-    }
-
-    // The character string held by this class is not valid.  
-    TEST_FOR_EXCEPTION(true, SortManagerError, 
-                       "Anasazi::BasicSort::sort(): sorting order is not valid");
-  }
-
-#endif // ( defined(HAVE_COMPLEX) || defined(HAVE_COMPLEX_H) ) && defined(HAVE_TEUCHOS_COMPLEX)
-
   
 } // namespace Anasazi
 

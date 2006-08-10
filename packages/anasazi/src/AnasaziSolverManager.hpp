@@ -60,10 +60,9 @@ class SolverManager {
   SolverManager() {};
 
   //! Basic Constructor.
-  /*! This constructor, implemented by all Anasazi eigensolvers, takes an Anasazi::Eigenproblem,
-    Anasazi::SortManager, Anasazi::OutputManager, and Teuchos::ParameterList as input.  These
-    four arguments are sufficient enough for constructing an Anasazi::Eigensolver object.
-  */
+  /*! This constructor takes an Anasazi::Eigenproblem to be solved along with a Teuchos::ParameterList of 
+   * options.
+   */
   SolverManager( const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem,
                  Teuchos::ParameterList &pl );
 

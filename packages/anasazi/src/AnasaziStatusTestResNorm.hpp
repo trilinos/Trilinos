@@ -214,31 +214,54 @@ StatusTestResNorm<ScalarType,MV,OP>::StatusTestResNorm(MagnitudeType tol, int qu
 
 template <class ScalarType, class MV, class OP>
 TestStatus StatusTestResNorm<ScalarType,MV,OP>::checkStatus( Eigensolver<ScalarType,MV,OP>* solver ) {
-  typedef Teuchos::ScalarTraits<ScalarType> SCT;
+  typedef Teuchos::ScalarTraits<MagnitudeType> MT;
   
   std::vector<MagnitudeType> res;
 
-  // get the eigenvector residuals norms (using the appropriate norm)
+  // get the eigenvector/ritz residuals norms (using the appropriate norm)
+  // get the eigenvalues/ritzvalues and ritz index as well
+  std::vector<MagnitudeType> vals = solver->getRitzValues();
+  std::vector<int> ind = solver->getRitzIndex();
   switch (_whichNorm) {
     case RES_2NORM:
       res = solver->getRes2Norms();
+      // we want only the ritz values corresponding to our eigenvector residuals
+      vals.resize(res.size());
       break;
     case RES_ORTH:
       res = solver->getResNorms();
+      // we want only the ritz values corresponding to our eigenvector residuals
+      vals.resize(res.size());
       break;
     case RITZRES_2NORM:
       res = solver->getRitzRes2Norms();
-      res.resize(solver->getBlockSize());
       break;
   }
 
   // if appropriate, scale the norms by the magnitude of the eigenvalue estimate
   if (_scaled) {
-    std::vector<MagnitudeType> vals = solver->getRitzValues();
-    vals.resize(solver->getBlockSize());
+    Teuchos::LAPACK<int,MagnitudeType> lapack;
+
     for (unsigned int i=0; i<res.size(); i++) {
-      if ( vals[i] != SCT::zero() ) {
-        res[i] /= vals[i];
+      MagnitudeType tmp;
+      if ( ind[i] == 0 ) {
+        // real ritz value
+        tmp = MT::magnitude(vals[i]);
+      }
+      else if ( ind[i] == +1 ) {
+        // positive part of complex ritz value
+        tmp = lapack.LAPY2( vals[i], vals[i+1] );
+      }
+      else if ( ind[i] == -1 ) {
+        // negative part of complex ritz value
+        tmp = lapack.LAPY2( vals[i-1], vals[i] );
+      }
+      else {
+        TEST_FOR_EXCEPTION( true, std::logic_error, "Anasazi::StatusTestOrderedResNorm::checkStatus(): invalid Ritz index returned from solver." );
+      }
+      // scale by the newly computed magnitude of the ritz values
+      if ( tmp != MT::zero() ) {
+        res[i] /= tmp;
       }
     }
   }
@@ -247,7 +270,7 @@ TestStatus StatusTestResNorm<ScalarType,MV,OP>::checkStatus( Eigensolver<ScalarT
   int have = 0;
   _ind.resize(res.size());
   for (unsigned int i=0; i<res.size(); i++) {
-    TEST_FOR_EXCEPTION( SCT::isnaninf(res[i]), StatusTestError, "StatusTestResNorm::checkStatus(): residual norm is nan or inf" );
+    TEST_FOR_EXCEPTION( MT::isnaninf(res[i]), StatusTestError, "StatusTestResNorm::checkStatus(): residual norm is nan or inf" );
     if (res[i] < _tol) {
       _ind[have] = i;
       have++;

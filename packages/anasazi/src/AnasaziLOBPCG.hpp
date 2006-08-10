@@ -346,6 +346,8 @@ namespace Anasazi {
       
         \return A multivector with getBlockSize() vectors containing 
         the sorted Ritz vectors corresponding to the most significant Ritz values.
+        The i-th vector of the return corresponds to the i-th Ritz vector; there is no need to use
+        getRitzIndex().
      */
     Teuchos::RefCountPtr<const MV> getRitzVectors() {return _X;}
 
@@ -353,12 +355,30 @@ namespace Anasazi {
      *
      *  \return A vector of length getCurSubspaceDim() containing the Ritz values from the
      *  previous projected eigensolve.
+     *  The i-th value of the return corresponds to the i-th Ritz value; there is no need to use
+     *  getRitzIndex().
      */
     std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getRitzValues() { 
       std::vector<MagnitudeType> ret = _theta;
       ret.resize(_nevLocal);
       return ret;
     }
+
+    /*! \brief Get the index used for extracting Ritz vectors and Ritz values from getRitzVectors() and getRitzValues() 
+     *
+     * Because BlockDavidson is a Hermitian solver, all Ritz values are real and all Ritz vectors can be represented in a 
+     * single column of a multivector. Therefore, getRitzIndex() is not needed when using the output from getRitzVectors() and 
+     * getRitzValues().
+     *
+     * \return An \c int vector of size getCurSubspaceDim() composed of zeros.
+     */
+    std::vector<int> getRitzIndex() {
+      std::vector<int> ret(_nevLocal,0);
+      return ret;
+    }
+
+
+
 
     /*! \brief Get the current residual norms
      *
@@ -903,20 +923,11 @@ namespace Anasazi {
         // We only have _blockSize ritz pairs, but we still want them in the correct order
         {
           Teuchos::TimeMonitor lcltimer( *_timerSort );
-          // The sort manager is templated on ScalarType
-          // Make a ScalarType copy of _theta for sorting
 
           std::vector<int> order(_blockSize);
-
-          std::vector<ScalarType> _theta_st(_blockSize);
-          std::copy(_theta.begin(),_theta.begin()+_blockSize,_theta_st.begin());
-
-          _sm->sort( this, _blockSize, &(_theta_st[0]), &order );   // don't catch exception
-          
-          // Put the sorted ritz values back into _theta
-          for (int i=0; i<_blockSize; i++) {
-            _theta[i] = SCT::real(_theta_st[i]);
-          }
+          // 
+          // sort the first _blockSize values in _theta
+          _sm->sort( this, _blockSize, _theta, &order );   // don't catch exception
           //
           // apply the same ordering to the primitive ritz vectors
           _MSUtils.permuteVectors(order,S);
@@ -1272,6 +1283,14 @@ namespace Anasazi {
           Teuchos::SerialDenseMatrix<int,ScalarType> MM33( Teuchos::View, MM, _blockSize, _blockSize, twoBlocks, twoBlocks );
           MVT::MvTransMv( ONE, *_P, *_MP, MM33 );
         }
+
+        // make MM and KK symmetric in memory: we need this so we can form ritz residual vectors and use MM for inner product below (with ease)
+        for (int j=0; j<localSize; j++) {
+          for (int i=j+1; i<localSize; i++) {
+            KK(i,j) = KK(j,i);
+            MM(i,j) = MM(j,i);
+          }
+        }
       } // end timing block
 
       // Perform a spectral decomposition
@@ -1295,25 +1314,15 @@ namespace Anasazi {
       //---------------------------------------------------
       // Sort the ritz values using the sort manager
       //---------------------------------------------------
-      // The sort manager is templated on ScalarType
-      // Make a ScalarType copy of _theta for sorting
       {
         Teuchos::TimeMonitor lcltimer( *_timerSort );
 
         std::vector<int> order(_nevLocal);
-
-        std::vector<ScalarType> _theta_st(_nevLocal);
-        std::copy(_theta.begin(),_theta.begin()+_nevLocal,_theta_st.begin());
-
-        _sm->sort( this, _nevLocal, &(_theta_st[0]), &order );   // don't catch exception
-        
-        // Put the sorted ritz values back into _theta
-        for (int i=0; i<_nevLocal; i++) {
-          _theta[i] = SCT::real(_theta_st[i]);
-        }
-
+        // 
+        // sort the first _nevLocal values in _theta
+        _sm->sort( this, _nevLocal, _theta, &order );   // don't catch exception
+        //
         // Sort the primitive ritz vectors
-        // We need the first _blockSize vectors ordered to generate the next iterate below.
         Teuchos::SerialDenseMatrix<int,ScalarType> curS(Teuchos::View,S,_nevLocal,_nevLocal);
         _MSUtils.permuteVectors(order,curS);
       }

@@ -80,22 +80,9 @@ void checks( RefCountPtr<BlockKrylovSchur<ScalarType,MV,OP> > solver, int blocks
   // the next block of the factorization (AV=VH+FB^T).
   TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.V)-solver->getBlockSize() != solver->getMaxSubspaceDim(),get_out,"getMaxSubspaceDim() does not match allocated size for V");
 
-  // Remember that block Krylov-Schur is a non-Hermitian eigensolver storing Ritz vectors in a vector of
-  // magnitude type, so it may need to be twice as long as the dimension of the subpace.
-  TEST_FOR_EXCEPTION(state.T->size() != 2*(unsigned int)solver->getMaxSubspaceDim(),get_out,"getMaxSubspaceDim() does not match returned size of Ritz values");
-
   TEST_FOR_EXCEPTION(solver->getBlockSize() != blocksize, get_out,"Solver block size does not match specified block size.");  
 
   TEST_FOR_EXCEPTION(&solver->getProblem() != problem.get(),get_out,"getProblem() did not return the submitted problem.");
-
-  // Remember that block Krylov-Schur is a non-Hermitian eigensolver, so we may need to keep an extra
-  // Ritz vector if there is a complex conjugate pair at the end of the block.  This will be determined by whether
-  //   the problem reports if it's Hermitian
-  if (problem->isHermitian()) {
-  TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*(solver->getRitzVectors())) != blocksize, get_out,"getRitzVectors() is not of size blocksize.");
-  } else {
-    TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*(solver->getRitzVectors())) != blocksize+1, get_out,"getRitzVectors() is not of size blocksize plus one.");
-  }
 
   TEST_FOR_EXCEPTION(solver->getMaxSubspaceDim() != blocksize*numblocks+1,get_out,"BlockKrylovSchur::getMaxSubspaceDim() should always be one vector more than the blocksize times the number of blocks");
 
@@ -112,42 +99,29 @@ void checks( RefCountPtr<BlockKrylovSchur<ScalarType,MV,OP> > solver, int blocks
     // get Ritz index
     std::vector<int> ritzIndex = solver->getRitzIndex();
     
-    // check Ritz vector
-    solver->computeRitzVectors();
-
+    // get Ritz vector
     RefCountPtr<const MV> ritzVectors = solver->getRitzVectors();
-    if (problem->isHermitian()) {
-      TEST_FOR_EXCEPTION(MVT::GetNumberVecs( *ritzVectors ) != blocksize,get_out,"getRitzVectors() has incorrect size.");
-    } else {
-      TEST_FOR_EXCEPTION(MVT::GetNumberVecs( *ritzVectors ) != blocksize+1,get_out,"getRitzVectors() has incorrect size.");
-    }
     
+    // check Ritz vector
+    const int numRitzVecs = MVT::GetNumberVecs( *ritzVectors );
+    if (solver->getCurSubspaceDim() >= numRitzVecs ) {
+      solver->computeRitzVectors();
+    }
+
     if (solver->isRitzValsCurrent() && solver->isRitzVecsCurrent()) {
       
       // Compute Ritz residuals like R = OP*X - X*T 
-      bool conjSplit = (ritzIndex[blocksize-1]==1);
-      Teuchos::RefCountPtr<const MV> tmp_ritzVectors;
-      Teuchos::SerialDenseMatrix<int,ScalarType> T(blocksize,blocksize);
-      if (conjSplit) {
-	std::vector<int> curind( blocksize + 1 );
-	for (int i=0; i<blocksize+1; i++) { curind[i] = i; }
-	tmp_ritzVectors = MVT::CloneView( *ritzVectors, curind );
-	T.shape( blocksize+1, blocksize+1 );
-      } else {
-	std::vector<int> curind( blocksize );
-	for (int i=0; i<blocksize; i++) { curind[i] = i; }
-	tmp_ritzVectors = MVT::CloneView( *ritzVectors, curind );
-      }
-      Teuchos::RefCountPtr<MV> ritzResiduals = MVT::Clone( *ritzVectors, MVT::GetNumberVecs( *tmp_ritzVectors ) );
+      Teuchos::SerialDenseMatrix<int,ScalarType> T(numRitzVecs,numRitzVecs);
+      Teuchos::RefCountPtr<MV> ritzResiduals = MVT::Clone( *ritzVectors, numRitzVecs );
       for (int i=0; i<T.numRows(); i++) T(i,i) = ritzValues[i];
-      OPT::Apply( *(problem->getOperator()), *tmp_ritzVectors, *ritzResiduals );
-      MVT::MvTimesMatAddMv(-1.0,*tmp_ritzVectors,T,1.0,*ritzResiduals);
+      OPT::Apply( *(problem->getOperator()), *ritzVectors, *ritzResiduals );
+      MVT::MvTimesMatAddMv(-1.0,*ritzVectors,T,1.0,*ritzResiduals);
       
       // Compute the norm of the Ritz residual vectors
-      std::vector<MagnitudeType> ritzVecNrm( MVT::GetNumberVecs( *tmp_ritzVectors ) );
-      MVT::MvNorm( *tmp_ritzVectors, &ritzVecNrm );
+      std::vector<MagnitudeType> ritzVecNrm( numRitzVecs );
+      MVT::MvNorm( *ritzVectors, &ritzVecNrm );
       MagnitudeType error;
-      for (int i=0; i<(int)ritzVecNrm.size(); i++) {
+      for (int i=0; i<numRitzVecs; i++) {
 	error = Teuchos::ScalarTraits<MagnitudeType>::magnitude( ritzVecNrm[i] - 1.0 );
 	TEST_FOR_EXCEPTION(error > 1e-14,get_out,"Ritz vectors are not normalized.");
       }      
@@ -184,6 +158,7 @@ void testsolver( RefCountPtr<BasicEigenproblem<ScalarType,MV,OP> > problem,
 
   const int  blocksize = pls.get<int>("Block Size");
   const int  numblocks = pls.get<int>("Num Blocks");
+  const int  numritzvecs = pls.get<int>("Number of Ritz Vectors");
 
   ModalSolverUtils<ScalarType,MV,OP> msutils(printer);
 
@@ -198,6 +173,7 @@ void testsolver( RefCountPtr<BasicEigenproblem<ScalarType,MV,OP> > problem,
   TEST_FOR_EXCEPTION(solver->isInitialized() != true,get_out,"Solver should be initialized after call to initialize().");  
   TEST_FOR_EXCEPTION(solver->getNumIters() != 0,get_out,"Number of iterations should be zero.")
   TEST_FOR_EXCEPTION(solver->getAuxVecs().size() != 0,get_out,"getAuxVecs() should return empty.");
+  TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*(solver->getRitzVectors())) != numritzvecs,get_out,"Number of Ritz vectors in storage is incorrect.");
   TEST_FOR_EXCEPTION(solver->getCurSubspaceDim() != 0,get_out,"after init, getCurSubspaceDim() should be zero, only the kernel was generated.");
   checks(solver,blocksize,numblocks,problem,ortho,msutils);
 
@@ -207,6 +183,7 @@ void testsolver( RefCountPtr<BasicEigenproblem<ScalarType,MV,OP> > problem,
   TEST_FOR_EXCEPTION(solver->isInitialized() != true,get_out,"Solver should be initialized after call to initialize().");  
   TEST_FOR_EXCEPTION(solver->getNumIters() != 1,get_out,"Number of iterations should be zero.")
   TEST_FOR_EXCEPTION(solver->getAuxVecs().size() != 0,get_out,"getAuxVecs() should return empty.");
+  TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*(solver->getRitzVectors())) != numritzvecs,get_out,"Number of Ritz vectors in storage is incorrect.");
   TEST_FOR_EXCEPTION(solver->getCurSubspaceDim() != blocksize,get_out,"after one step, getCurSubspaceDim() should be blocksize.");
   checks(solver,blocksize,numblocks,problem,ortho,msutils);
 
@@ -218,6 +195,7 @@ void testsolver( RefCountPtr<BasicEigenproblem<ScalarType,MV,OP> > problem,
   TEST_FOR_EXCEPTION(solver->isInitialized() != true,get_out,"Solver should be initialized after call to initialize().");  
   TEST_FOR_EXCEPTION(solver->getNumIters() != 1,get_out,"Number of iterations should be zero.")
   TEST_FOR_EXCEPTION(solver->getAuxVecs().size() != 0,get_out,"getAuxVecs() should return empty.");
+  TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*(solver->getRitzVectors())) != numritzvecs,get_out,"Number of Ritz vectors in storage is incorrect.");
   TEST_FOR_EXCEPTION(solver->getCurSubspaceDim() != 2*blocksize,get_out,"after two steps, getCurSubspaceDim() should be 2*blocksize.");
   checks(solver,blocksize,numblocks,problem,ortho,msutils);
 }
@@ -313,6 +291,7 @@ int main(int argc, char *argv[])
     pls.set<int>("Block Size",nev);
     pls.set<int>("Num Blocks",3);
     pls.set<int>("Step Size", 2);
+    pls.set<int>("Number of Ritz Vectors",nev);
     if (verbose) {
       printer->stream(Errors) << "Testing solver(nev,3) with standard eigenproblem..." << endl << endl;
     }

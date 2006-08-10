@@ -101,11 +101,14 @@ class Eigensolver {
   //! \brief Reset the iteration count.
   virtual void resetNumIters() = 0;
 
-  //! \brief Get the Ritz vectors from the previous iteration.
+  //! \brief Get the Ritz vectors from the previous iteration. These are indexed using getRitzIndex().
   virtual Teuchos::RefCountPtr<const MV> getRitzVectors() = 0;
 
-  //! \brief Get the Ritz values from the previous iteration.
+  //! \brief Get the Ritz values from the previous iteration. These are indexed using getRitzIndex().
   virtual std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getRitzValues() = 0;
+
+  //! \brief Get the index used for extracting Ritz vectors and Ritz values from getRitzVectors() and getRitzValues() 
+  virtual std::vector<int> getRitzIndex() = 0;
 
   //! \brief Get the current residual norms
   /*! \return A vector of length blockSize containing the norms of the residuals, 

@@ -351,12 +351,7 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::solve() {
   // this requires making a ScalarType version of our MagnitudeType eigenvalues
   if (numfound > 0) {
     std::vector<int> order(sol.numVecs);
-    std::vector<ScalarType> vals_st(sol.numVecs);
-    std::copy(sol.Evals.begin(),sol.Evals.end(),vals_st.begin());
-    sorter->sort( lobpcg_solver.get(), sol.numVecs, &vals_st[0], &order );
-    for (int i=0; i<sol.numVecs; i++) {
-      sol.Evals[i] = SCT::real( vals_st[i] );
-    }
+    sorter->sort( lobpcg_solver.get(), sol.numVecs, sol.Evals, &order );
     // now permute the eigenvectors according to order
     ModalSolverUtils<ScalarType,MV,OP> msutils(printer);
     msutils.permuteVectors(sol.numVecs,order,*sol.Evecs);

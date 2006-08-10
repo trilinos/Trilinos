@@ -90,6 +90,9 @@ void checks( RefCountPtr<BlockDavidson<ScalarType,MV,OP> > solver, int blocksize
   TEST_FOR_EXCEPTION(solver->getMaxSubspaceDim()/solver->getBlockSize() != numblocks, get_out, "Solver num blaocks does not match specified num blocks.");
   TEST_FOR_EXCEPTION(&solver->getProblem() != problem.get(),get_out,"getProblem() did not return the submitted problem.");
   TEST_FOR_EXCEPTION(solver->getMaxSubspaceDim() != numblocks*blocksize,get_out,"BlockDavidson::getMaxSubspaceDim() does not match numblocks*blocksize.");
+  // check index
+  std::vector<int> index = solver->getRitzIndex();
+  TEST_FOR_EXCEPTION( index.size() != (unsigned int)solver->getCurSubspaceDim(), get_out, "Ritz index size not consistent with eigenvector size.");
 
   if (solver->isInitialized()) 
   {
@@ -117,12 +120,13 @@ void checks( RefCountPtr<BlockDavidson<ScalarType,MV,OP> > solver, int blocksize
 
     // check eigenvalues
     // X should be ritz vectors; they should diagonalize K to produce the current eigenvalues
+    // this is the largest magnitude ritz value
     MagnitudeType ninf = T.normInf();
     OPT::Apply(*problem->getOperator(),*evecs,*Kevecs);
     MVT::MvTransMv(1.0,*evecs,*Kevecs,T);
     for (int i=0; i<blocksize; i++) T(i,i) -= theta[i];
     error = T.normFrobenius() / ninf;
-    TEST_FOR_EXCEPTION(error > 1e-14,get_out,"Ritz values don't match eigenvectors.");
+    TEST_FOR_EXCEPTION(error > 1e-12,get_out,"Ritz values don't match eigenvectors.");
   }
   else {
     // not initialized

@@ -40,6 +40,7 @@
 
 #include "AnasaziStatusTest.hpp"
 #include "Teuchos_ScalarTraits.hpp"
+#include "Teuchos_LAPACK.hpp"
 
   /*! 
     \class Anasazi::StatusTestOrderedResNorm 
@@ -73,7 +74,6 @@ class StatusTestOrderedResNorm : public StatusTest<ScalarType,MV,OP> {
  private:
   typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
   typedef Teuchos::ScalarTraits<MagnitudeType> MT;
-  typedef Teuchos::ScalarTraits<ScalarType>    SCT;
 
  public:
 
@@ -134,17 +134,24 @@ class StatusTestOrderedResNorm : public StatusTest<ScalarType,MV,OP> {
     _state = Undefined;
   }
 
-  //! Set the auxiliary eigenvalues.
-  /*! This routine also resets the state to ::Undefined.
+  /*! \brief Set the auxiliary eigenvalues.
+   *
+   *  This routine sets only the real part of the auxiliary eigenvalues; the imaginary part is set to zero. This routine also resets the state to ::Undefined.
    */
   void setAuxVals(const std::vector<MagnitudeType> &vals) {
-    _vals = vals;
+    _rvals = vals;
+    _ivals.resize(_rvals.size(),MT::zero());
     _state = Undefined;
   }
 
-  //! Get the auxiliary eigenvalues and their residuals.
-  void getAuxVals(std::vector<MagnitudeType> &vals) const {
-    vals = _vals;
+  /*! \brief Set the auxiliary eigenvalues.
+   *
+   *  This routine sets both the real and imaginary parts of the auxiliary eigenvalues. This routine also resets the state to ::Undefined.
+   */
+  void setAuxVals(const std::vector<MagnitudeType> &rvals, const std::vector<MagnitudeType> &ivals) {
+    _rvals = rvals;
+    _ivals = ivals;
+    _state = Undefined;
   }
 
   //@}
@@ -213,7 +220,7 @@ class StatusTestOrderedResNorm : public StatusTest<ScalarType,MV,OP> {
     int _quorum;
     bool _scaled;
     ResType _whichNorm;
-    std::vector<MagnitudeType> _vals;
+    std::vector<MagnitudeType> _rvals, _ivals;
     Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > _sorter;
 };
 
@@ -229,66 +236,91 @@ StatusTestOrderedResNorm<ScalarType,MV,OP>::StatusTestOrderedResNorm(Teuchos::Re
 template <class ScalarType, class MV, class OP>
 TestStatus StatusTestOrderedResNorm<ScalarType,MV,OP>::checkStatus( Eigensolver<ScalarType,MV,OP>* solver ) {
 
-  int bs = solver->getBlockSize();
-  int numaux = _vals.size();
-  int num = bs + numaux;
+
+  // get the eigenvector/ritz residuals norms (using the appropriate norm)
+  // get the eigenvalues/ritzvalues as well
   std::vector<MagnitudeType> res; 
-  std::vector<MagnitudeType> evals;
-
-  // get the eigenvalues
-  evals = solver->getRitzValues();
-  evals.resize(solver->getBlockSize());
-  // put the auxiliary values in the vectors as well
-  evals.insert(evals.end(),_vals.begin(),_vals.end());
-
-  // get the eigenvector residuals norms (using the appropriate norm)
+  std::vector<MagnitudeType> vals = solver->getRitzValues();
+  std::vector<int> ind = solver->getRitzIndex();
   switch (_whichNorm) {
     case RES_2NORM:
       res = solver->getRes2Norms();
+      vals.resize(res.size());
       break;
     case RES_ORTH:
       res = solver->getResNorms();
+      vals.resize(res.size());
       break;
     case RITZRES_2NORM:
       res = solver->getRitzRes2Norms();
-      res.resize(solver->getBlockSize());
       break;
   }
 
+  int numaux = _rvals.size();
+  int bs = res.size();
+  int num = bs + numaux;
+
+  if (num == 0) {
+    _ind.resize(0);
+    return Failed;
+  }
+
+  // extract the real and imaginary parts from the 
+  std::vector<MagnitudeType> allrvals(bs), allivals(bs);
+  for (int i=0; i<bs; i++) {
+    if (ind[i] == 0) {
+      allrvals[i] = vals[i];
+      allivals[i] = MT::zero();
+    }
+    else if (ind[i] == +1) {
+      allrvals[i] = vals[i];
+      allivals[i] = vals[i+1];
+    }
+    else if (ind[i] == -1) {
+      allrvals[i] =  vals[i-1];
+      allivals[i] = -vals[i];
+    }
+    else {
+      TEST_FOR_EXCEPTION(true,std::logic_error,"Anasazi::StatusTestOrderedResNorm::checkStatus(): invalid index returned from getRitzIndex().");
+    }
+  }
+
+  // put the auxiliary values in the vectors as well
+  allrvals.insert(allrvals.end(),_rvals.begin(),_rvals.end());
+  allivals.insert(allivals.end(),_ivals.begin(),_ivals.end());
+
   // if appropriate, scale the norms by the magnitude of the eigenvalue estimate
+  Teuchos::LAPACK<int,MagnitudeType> lapack;
   if (_scaled) {
-    for (int i=0; i<bs; i++) {
-      if ( SCT::magnitude(evals[i]) != SCT::zero() ) {
-        res[i] /= SCT::magnitude(evals[i]);
+    for (unsigned int i=0; i<res.size(); i++) {
+      MagnitudeType tmp = lapack.LAPY2(allrvals[i],allivals[i]);
+      if ( tmp != MT::zero() ) {
+        res[i] /= tmp;
       }
     }
   }
-  // add -1 residuals for the auxiliary values (-1 < _tol)
+  // add -1 residuals for the auxiliary values (because -1 < _tol)
   res.insert(res.end(),numaux,-MT::one());
 
-  // sort the eigenvalues; SortManager takes a vector of ScalarType, so promote our eigenvalues
   // we don't actually need the sorted eigenvalues; just the permutation vector
-  std::vector<ScalarType> evals_st(evals.size());
-  copy(evals.begin(),evals.end(),evals_st.begin());
   std::vector<int> perm(num,-1);
-  _sorter->sort(solver,num,&evals_st[0],&perm);
-  // we don't need to the eigenvalues anymore, so don't bother moving the sorted values back to the MagnitudeType vector
+  _sorter->sort(solver,num,allrvals,allivals,&perm);
 
-  // sort the residuals
-  std::vector<MagnitudeType> oldres = res;
   // apply the sorting to the residuals and original indices
+  std::vector<MagnitudeType> oldres = res;
   for (int i=0; i<num; i++) {
     res[i] = oldres[perm[i]];
   }
 
-  // indices: [0,bs) are from solver, [bs,bs+numaux) are from _vals
+  // indices: [0,bs) are from solver, [bs,bs+numaux) are from auxiliary values
   _ind.resize(num);
 
   // test the norms: we want res [0,quorum) to be <= tol
   int have = 0;
   int need = (_quorum == -1) ? num : _quorum;
-  for (int i=0; i<need; i++) {
-    TEST_FOR_EXCEPTION( SCT::isnaninf(res[i]), StatusTestError, "StatusTestOrderedResNorm::checkStatus(): residual norm is nan or inf" );
+  int tocheck = need > num ? num : need;
+  for (int i=0; i<tocheck; i++) {
+    TEST_FOR_EXCEPTION( MT::isnaninf(res[i]), StatusTestError, "StatusTestOrderedResNorm::checkStatus(): residual norm is nan or inf" );
     if (res[i] < _tol) {
       _ind[have] = perm[i];
       have++;
@@ -332,9 +364,9 @@ ostream& StatusTestOrderedResNorm<ScalarType,MV,OP>::print(ostream& os, int inde
             << "," << _quorum 
             << ")" << endl;
   os << ind << "Auxiliary values: ";
-  if (_vals.size() > 0) {
-    for (unsigned int i=0; i<_vals.size(); i++) {
-      os << _vals[i] << ", ";
+  if (_rvals.size() > 0) {
+    for (unsigned int i=0; i<_rvals.size(); i++) {
+      os << "(" << _rvals[i] << ", " << _ivals[i] << ")  ";
     }
     os << endl;
   }

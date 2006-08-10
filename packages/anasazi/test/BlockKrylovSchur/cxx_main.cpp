@@ -149,7 +149,7 @@ int main(int argc, char *argv[])
 
 
   // Set verbosity level
-  int verbosity = Anasazi::Errors + Anasazi::Warnings;
+  int verbosity = Anasazi::Errors + Anasazi::Warnings + Anasazi::StatusTestDetails;
   if (verbose) {
     verbosity += Anasazi::FinalSummary + Anasazi::TimingDetails;
   }
@@ -160,7 +160,8 @@ int main(int argc, char *argv[])
 
   // Eigensolver parameters
   int numBlocks = 10;
-  int maxRestarts = 500;
+  int maxRestarts = 50;
+  int stepSize = numBlocks*maxRestarts;
   MagnitudeType tol = tolCG * 10.0;
   //
   // Create parameter list to pass into the solver manager
@@ -170,12 +171,26 @@ int main(int argc, char *argv[])
   MyPL.set( "Block Size", blockSize );
   MyPL.set( "Num Blocks", numBlocks );
   MyPL.set( "Maximum Restarts", maxRestarts );
+  MyPL.set( "Step Size", stepSize );
   MyPL.set( "Convergence Tolerance", tol );
-  MyPL.set( "Use Locking", true );
-  MyPL.set( "Locking Tolerance", tol/10 );
   //
   // Create the solver manager
   Anasazi::BlockKrylovSchurSolMgr<ScalarType,MV,OP> MySolverMgr(problem, MyPL);
+  // 
+  // Check that the parameters were all consumed
+  if (MyPL.getEntryPtr("Verbosity")->isUsed() == false ||
+      MyPL.getEntryPtr("Which")->isUsed() == false ||
+      MyPL.getEntryPtr("Block Size")->isUsed() == false ||
+      MyPL.getEntryPtr("Num Blocks")->isUsed() == false ||
+      MyPL.getEntryPtr("Maximum Restarts")->isUsed() == false ||
+      MyPL.getEntryPtr("Step Size")->isUsed() == false ||
+      MyPL.getEntryPtr("Convergence Tolerance")->isUsed() == false) {
+    if (verbose && MyPID==0) {
+      cout << "Failure! Unused parameters: " << endl;
+      MyPL.unused(cout);
+    }
+  }
+
 
   // Solve the problem to the specified tolerances or length
   Anasazi::ReturnType returnCode = MySolverMgr.solve();
@@ -191,6 +206,10 @@ int main(int argc, char *argv[])
   int numev = sol.numVecs;
 
   if (numev > 0) {
+
+    ostringstream os;
+    os.setf(ios::scientific, ios::floatfield);
+    os.precision(6);
 
     /* finish: this code has bugs: it only works properly when which == "SM" or "SR"
     // Check the problem against the analytical solutions
@@ -214,13 +233,24 @@ int main(int argc, char *argv[])
     OPT::Apply( *M, *Kvecs, *Mvecs );
     MVT::MvDot( *Mvecs, *Kvecs, &normV );
   
+    os << "Direct residual norms computed in BlockDavidson_test.exe" << endl
+       << std::setw(20) << "Eigenvalue" << std::setw(20) << "Residual(M)" << endl
+       << "----------------------------------------" << endl;
     for (int i=0; i<numev; i++) {
-      normV[i] = SCT::squareroot( normV[i] );
-      if ( SCT::magnitude(normV[i]/evals[i]) > tol ) {
+      if ( SCT::magnitude(evals[i]) != SCT::zero() ) {
+        normV[i] = SCT::magnitude( SCT::squareroot( normV[i] ) / evals[i] );
+      }
+      else {
+        normV[i] = SCT::magnitude( SCT::squareroot( normV[i] ) );
+      }
+      os << setw(20) << evals[i] << setw(20) << normV[i] << endl;
+      if ( normV[i] > tol ) {
         testFailed = true;
       }
     }
-
+    if (verbose && MyPID==0) {
+      cout << endl << os.str() << endl;
+    }
   }
 
 #ifdef HAVE_MPI

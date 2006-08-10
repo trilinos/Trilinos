@@ -167,6 +167,21 @@ int main(int argc, char *argv[])
   //
   // Create the solver manager
   Anasazi::BlockDavidsonSolMgr<ScalarType,MV,OP> MySolverMan(problem, MyPL);
+  // 
+  // Check that the parameters were all consumed
+  if (MyPL.getEntryPtr("Verbosity")->isUsed() == false ||
+      MyPL.getEntryPtr("Which")->isUsed() == false ||
+      MyPL.getEntryPtr("Block Size")->isUsed() == false ||
+      MyPL.getEntryPtr("Num Blocks")->isUsed() == false ||
+      MyPL.getEntryPtr("Maximum Restarts")->isUsed() == false ||
+      MyPL.getEntryPtr("Convergence Tolerance")->isUsed() == false ||
+      MyPL.getEntryPtr("Use Locking")->isUsed() == false ||
+      MyPL.getEntryPtr("Locking Tolerance")->isUsed() == false) {
+    if (verbose && MyPID==0) {
+      cout << "Failure! Unused parameters: " << endl;
+      MyPL.unused(cout);
+    }
+  }
 
   // Solve the problem to the specified tolerances or length
   Anasazi::ReturnType returnCode = MySolverMan.solve();
@@ -182,6 +197,10 @@ int main(int argc, char *argv[])
   int numev = sol.numVecs;
 
   if (numev > 0) {
+
+    ostringstream os;
+    os.setf(ios::scientific, ios::floatfield);
+    os.precision(6);
 
     /* finish: this code has bugs: it only works properly when which == "SM" or "SR"
     // Check the problem against the analytical solutions
@@ -204,12 +223,24 @@ int main(int argc, char *argv[])
     // compute M-norm of residuals
     OPT::Apply( *M, *Kvecs, *Mvecs );
     MVT::MvDot( *Mvecs, *Kvecs, &normV );
-  
+
+    os << "Direct residual norms computed in BlockDavidson_test.exe" << endl
+       << std::setw(20) << "Eigenvalue" << std::setw(20) << "Residual(M)" << endl
+       << "----------------------------------------" << endl;
     for (int i=0; i<numev; i++) {
-      normV[i] = SCT::squareroot( normV[i] );
-      if ( SCT::magnitude(normV[i]/evals[i]) > tol ) {
+      if ( SCT::magnitude(evals[i]) != SCT::zero() ) {
+        normV[i] = SCT::magnitude( SCT::squareroot( normV[i] ) / evals[i] );
+      }
+      else {
+        normV[i] = SCT::magnitude( SCT::squareroot( normV[i] ) );
+      }
+      os << setw(20) << evals[i] << setw(20) << normV[i] << endl;
+      if ( normV[i] > tol ) {
         testFailed = true;
       }
+    }
+    if (verbose && MyPID==0) {
+      cout << endl << os.str() << endl;
     }
 
   }
