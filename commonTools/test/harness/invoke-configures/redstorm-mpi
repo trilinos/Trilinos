@@ -35,6 +35,7 @@
 --enable-didasko \
 --enable-epetra \
 --enable-epetraext \
+--enable-galeri \
 --enable-ifpack \
 --enable-isorropia \
 --enable-kokkos \
@@ -42,15 +43,16 @@
 --enable-loca \
 --enable-meros \
 --enable-ml \
+--enable-moertel \
 --enable-moocho \
 --enable-new-package \
 --enable-nox \
 --enable-pliris \
+--enable-rtop \
 --enable-rythmos \
 --enable-thyra \
 --enable-tpetra \
 --enable-teuchos-complex \
---enable-tsfextended \
 --enable-stratimikos \
 --disable-default-packages
 

@@ -34,6 +34,7 @@ CPPFLAGS=-Wno-long-double \
 --enable-epetraext-transform \
 --enable-galeri \
 --enable-ifpack \
+--enable-isorropia \
 --enable-kokkos \
 --enable-komplex \
 --enable-loca \
@@ -53,6 +54,7 @@ CPPFLAGS=-Wno-long-double \
 --enable-nox-tests \
 --enable-pliris \
 --enable-python \
+--enable-rtop \
 --enable-rythmos \
 --enable-teuchos \
 --enable-teuchos-abc \
@@ -62,5 +64,4 @@ CPPFLAGS=-Wno-long-double \
 --enable-thyra \
 --enable-tpetra \
 --enable-triutils \
---enable-tsfextended \
 --enable-stratimikos

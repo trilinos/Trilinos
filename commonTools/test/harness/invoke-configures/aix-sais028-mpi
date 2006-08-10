@@ -5,7 +5,6 @@
     CXX="mpCC -q64 -qlanglvl=redefmac -qrtti=all" \
     CC="mpcc -b64 -q64" \
     F77="mpxlf -b64 -q64" \
-    --enable-claps \
 --cache-file=config.cache \
 --disable-default-packages \
 --enable-amesos \
@@ -21,7 +20,9 @@
 --enable-epetraext-inout \
 --enable-epetraext-coloring \
 --enable-epetraext-transform \
+--enable-galeri \
 --enable-ifpack \
+--enable-isorropia \
 --enable-kokkos \
 --enable-komplex \
 --enable-loca \
@@ -37,6 +38,7 @@
 --enable-nox-lapack \
 --enable-nox-lapack-examples \
 --enable-nox-tests \
+--enable-pliris \
 --enable-teuchos \
 --enable-teuchos-abc \
 --enable-teuchos-complex \
@@ -45,6 +47,9 @@
 --enable-belos \
 --enable-capo \
 --enable-meros \
+--enable-moertel \
+--enable-moocho \
+--enable-rtop \
 --enable-rythmos \
 --enable-tpetra \
 --enable-triutils \

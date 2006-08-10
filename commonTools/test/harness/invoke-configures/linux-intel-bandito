@@ -17,6 +17,7 @@ CC=icc CXX=icpc F77=ifort \
 --enable-epetraext-transform \
 --enable-galeri \
 --enable-ifpack \
+--enable-isorropia \
 --enable-kokkos \
 --enable-komplex \
 --enable-loca \
@@ -34,6 +35,7 @@ CC=icc CXX=icpc F77=ifort \
 --enable-nox-lapack-examples \
 --enable-nox-tests \
 --disable-python \
+--enable-rtop \
 --enable-rythmos \
 --enable-teuchos \
 --enable-teuchos-abc \

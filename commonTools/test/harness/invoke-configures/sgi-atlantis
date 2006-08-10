@@ -48,6 +48,7 @@ LDFLAGS=" -64 -L/usr/lib64/mips4/r10000 -L/usr/lib64/mips4 -L/usr/lib64 -LANG:st
 --enable-nox-lapack \
 --enable-nox-lapack-examples \
 --enable-nox-tests \
+--enable-rtop \
 --enable-rythmos \
 --enable-teuchos \
 --enable-teuchos-abc \
@@ -56,6 +57,5 @@ LDFLAGS=" -64 -L/usr/lib64/mips4/r10000 -L/usr/lib64/mips4 -L/usr/lib64 -LANG:st
 --enable-thyra \
 --enable-tpetra \
 --enable-triutils \
---enable-tsfextended \
 --enable-stratimikos \
 --with-gnumake

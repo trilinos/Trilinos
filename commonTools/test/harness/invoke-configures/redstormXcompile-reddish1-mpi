@@ -48,14 +48,17 @@ FLIBS="-lpgf90 -lpgf90_rpm1 -lpgf902 -lpgf90rtl -lpgftnrtl" \
 --enable-pliris \
 --enable-thyra \
 --enable-teuchos-complex \
+--enable-belos \
 --enable-capo \
 --enable-stratimikos \
 --enable-meros \
+--enable-rtop \
 --enable-rythmos \
 --enable-moocho \
 --enable-tpetra \
 --enable-moertel \
 --enable-galeri \
+--enable-isorropia \
 --disable-amesos-thyra \
 --disable-aztecoo-thyra
 

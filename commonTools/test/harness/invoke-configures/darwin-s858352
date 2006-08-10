@@ -28,6 +28,7 @@ MACOSX_DEPLOYMENT_TARGET=10.4 \
 --enable-epetraext-transform \
 --enable-galeri \
 --enable-ifpack \
+--enable-isorropia \
 --enable-kokkos \
 --enable-komplex \
 --enable-loca \
@@ -46,6 +47,7 @@ MACOSX_DEPLOYMENT_TARGET=10.4 \
 --enable-nox-lapack-examples \
 --enable-nox-tests \
 --enable-python \
+--enable-rtop \
 --enable-rythmos \
 --enable-teuchos \
 --enable-teuchos-abc \

@@ -44,6 +44,7 @@ FFLAGS=-O3 \
 --enable-epetraext-transform \
 --enable-galeri \
 --enable-ifpack \
+--enable-isorropia \
 --enable-kokkos \
 --enable-komplex \
 --enable-loca \
@@ -64,6 +65,7 @@ FFLAGS=-O3 \
 --enable-nox-tests \
 --enable-pliris \
 --enable-python \
+--enable-rtop \
 --enable-rythmos \
 --enable-teuchos \
 --enable-teuchos-abc \
@@ -73,6 +75,5 @@ FFLAGS=-O3 \
 --enable-thyra \
 --enable-tpetra \
 --enable-triutils \
---enable-tsfextended \
 --enable-stratimikos \
 --with-gnumake
