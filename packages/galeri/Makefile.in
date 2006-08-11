@@ -121,8 +121,7 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	uninstall-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = src src-pfem test example example-fem example-pfem \
-	python
+DIST_SUBDIRS = src test example example-fem python
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -332,9 +331,9 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 	$(AUX_DIST) 
 
 @BUILD_TESTS_TRUE@TEST_SUBDIR = test
-@BUILD_EXAMPLES_TRUE@EXAMPLE_SUBDIR = example example-fem example-pfem
+@BUILD_EXAMPLES_TRUE@EXAMPLE_SUBDIR = example example-fem
 @BUILD_GALERI_PYTHON_TRUE@@BUILD_PYTHON_TRUE@PYTHON_SUBDIR = python
-SUBDIRS = src src-pfem $(TEST_SUBDIR) $(EXAMPLE_SUBDIR) $(PYTHON_SUBDIR)
+SUBDIRS = src $(TEST_SUBDIR) $(EXAMPLE_SUBDIR) $(PYTHON_SUBDIR)
 TRILINOS_HOME_DIR = @abs_top_srcdir@/../..
 TRILINOS_BUILD_DIR = @abs_top_builddir@/../..
 @HAVE_MPI_FALSE@GALERI_CHECK_COMM = serial

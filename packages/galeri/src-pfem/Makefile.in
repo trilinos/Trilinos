@@ -112,14 +112,15 @@ libLIBRARIES_INSTALL = $(INSTALL_DATA)
 LIBRARIES = $(lib_LIBRARIES)
 libpfem_a_DEPENDENCIES =
 am__objects_1 = Galeri_core_Workspace.$(OBJEXT) \
-	Galeri_grid_Generator.$(OBJEXT)
+	Galeri_grid_Generator.$(OBJEXT) Galeri_grid_Loadable.$(OBJEXT)
 am_libpfem_a_OBJECTS = $(am__objects_1)
 libpfem_a_OBJECTS = $(am_libpfem_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Galeri_core_Workspace.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/Galeri_grid_Generator.Po
+@AMDEP_TRUE@	./$(DEPDIR)/Galeri_grid_Generator.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Galeri_grid_Loadable.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -275,32 +276,33 @@ target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
 CORE_H = $(srcdir)/Galeri_core_Object.h \
-	     $(srcdir)/Galeri_grid_Triangle.h \
-	     $(srcdir)/Galeri_core_Workspace.h \
-	     $(srcdir)/Galeri_problem_Base.h \
-	     $(srcdir)/Galeri_grid_Element.h \
-	     $(srcdir)/Galeri_problem_ScalarLaplacian.h \
-	     $(srcdir)/Galeri_grid_Generator.h \
-	     $(srcdir)/Galeri_problem_VectorLaplacian.h \
-	     $(srcdir)/Galeri_grid_Hex.h \
-	     $(srcdir)/Galeri_quadrature_Element.h \
-	     $(srcdir)/Galeri_grid_Loadable.h \
-	     $(srcdir)/Galeri_quadrature_Hex.h \
-	     $(srcdir)/Galeri_grid_Point.h \
-	     $(srcdir)/Galeri_quadrature_Quad.h \
-	     $(srcdir)/Galeri_grid_Quad.h \
-	     $(srcdir)/Galeri_quadrature_Segment.h \
-	     $(srcdir)/Galeri_grid_Rebalance.h \
-	     $(srcdir)/Galeri_quadrature_Tet.h \
-	     $(srcdir)/Galeri_grid_Segment.h \
-	     $(srcdir)/Galeri_quadrature_Triangle.h \
-	     $(srcdir)/Galeri_grid_SerialXML.h \
-	     $(srcdir)/Galeri_viz_MEDIT.h \
-	     $(srcdir)/Galeri_grid_Tet.h \
-	     $(srcdir)/Galeri_viz_VTK.h
+	 $(srcdir)/Galeri_grid_Triangle.h \
+	 $(srcdir)/Galeri_core_Workspace.h \
+	 $(srcdir)/Galeri_problem_Base.h \
+	 $(srcdir)/Galeri_grid_Element.h \
+	 $(srcdir)/Galeri_problem_ScalarLaplacian.h \
+	 $(srcdir)/Galeri_grid_Generator.h \
+	 $(srcdir)/Galeri_problem_VectorLaplacian.h \
+	 $(srcdir)/Galeri_grid_Hex.h \
+	 $(srcdir)/Galeri_quadrature_Element.h \
+	 $(srcdir)/Galeri_grid_Loadable.h \
+	 $(srcdir)/Galeri_quadrature_Hex.h \
+	 $(srcdir)/Galeri_grid_Point.h \
+	 $(srcdir)/Galeri_quadrature_Quad.h \
+	 $(srcdir)/Galeri_grid_Quad.h \
+	 $(srcdir)/Galeri_quadrature_Segment.h \
+	 $(srcdir)/Galeri_grid_Rebalance.h \
+	 $(srcdir)/Galeri_quadrature_Tet.h \
+	 $(srcdir)/Galeri_grid_Segment.h \
+	 $(srcdir)/Galeri_quadrature_Triangle.h \
+	 $(srcdir)/Galeri_grid_SerialXML.h \
+	 $(srcdir)/Galeri_viz_MEDIT.h \
+	 $(srcdir)/Galeri_grid_Tet.h \
+	 $(srcdir)/Galeri_viz_VTK.h
 
 CORE = $(srcdir)/Galeri_core_Workspace.cpp \
-	   $(srcdir)/Galeri_grid_Generator.cpp
+	$(srcdir)/Galeri_grid_Generator.cpp \
+	$(srcdir)/Galeri_grid_Loadable.cpp
 
 AM_CPPFLAGS = $(GALERI_INCLUDES)
 
@@ -423,6 +425,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Galeri_core_Workspace.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Galeri_grid_Generator.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Galeri_grid_Loadable.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -471,6 +474,22 @@ Galeri_grid_Generator.obj: $(srcdir)/Galeri_grid_Generator.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Galeri_grid_Generator.Po' tmpdepfile='$(DEPDIR)/Galeri_grid_Generator.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Galeri_grid_Generator.obj `if test -f '$(srcdir)/Galeri_grid_Generator.cpp'; then $(CYGPATH_W) '$(srcdir)/Galeri_grid_Generator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Galeri_grid_Generator.cpp'; fi`
+
+Galeri_grid_Loadable.o: $(srcdir)/Galeri_grid_Loadable.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Galeri_grid_Loadable.o -MD -MP -MF "$(DEPDIR)/Galeri_grid_Loadable.Tpo" -c -o Galeri_grid_Loadable.o `test -f '$(srcdir)/Galeri_grid_Loadable.cpp' || echo '$(srcdir)/'`$(srcdir)/Galeri_grid_Loadable.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Galeri_grid_Loadable.Tpo" "$(DEPDIR)/Galeri_grid_Loadable.Po"; else rm -f "$(DEPDIR)/Galeri_grid_Loadable.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Galeri_grid_Loadable.cpp' object='Galeri_grid_Loadable.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Galeri_grid_Loadable.Po' tmpdepfile='$(DEPDIR)/Galeri_grid_Loadable.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Galeri_grid_Loadable.o `test -f '$(srcdir)/Galeri_grid_Loadable.cpp' || echo '$(srcdir)/'`$(srcdir)/Galeri_grid_Loadable.cpp
+
+Galeri_grid_Loadable.obj: $(srcdir)/Galeri_grid_Loadable.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Galeri_grid_Loadable.obj -MD -MP -MF "$(DEPDIR)/Galeri_grid_Loadable.Tpo" -c -o Galeri_grid_Loadable.obj `if test -f '$(srcdir)/Galeri_grid_Loadable.cpp'; then $(CYGPATH_W) '$(srcdir)/Galeri_grid_Loadable.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Galeri_grid_Loadable.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Galeri_grid_Loadable.Tpo" "$(DEPDIR)/Galeri_grid_Loadable.Po"; else rm -f "$(DEPDIR)/Galeri_grid_Loadable.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Galeri_grid_Loadable.cpp' object='Galeri_grid_Loadable.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Galeri_grid_Loadable.Po' tmpdepfile='$(DEPDIR)/Galeri_grid_Loadable.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Galeri_grid_Loadable.obj `if test -f '$(srcdir)/Galeri_grid_Loadable.cpp'; then $(CYGPATH_W) '$(srcdir)/Galeri_grid_Loadable.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Galeri_grid_Loadable.cpp'; fi`
 uninstall-info-am:
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)

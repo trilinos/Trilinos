@@ -93,7 +93,7 @@ public:
   }
 
   //! operator =
-  Element& operator=(const Element& rhs)
+  virtual Element& operator=(const Element& rhs)
   {
     setNumVertices(rhs.getNumVertices());
     setNumComponents(rhs.getNumComponents());
@@ -108,7 +108,7 @@ public:
   ~Element() {}
 
   // @}
-  // @{ \name Get methods
+  // @{ \name Get/Set methods
 
   //! Sets the number of vertices in \c this object.
   void setNumVertices(const int numVertices)
@@ -145,6 +145,7 @@ public:
 
     components_[which] = what;
   }
+
   //! Gets the element type of the specified component.
   const Element& getComponent(const int which) const
   {

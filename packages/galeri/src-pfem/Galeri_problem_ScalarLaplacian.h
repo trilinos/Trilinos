@@ -42,6 +42,9 @@
 
 #include "Teuchos_RefCountPtr.hpp"
 
+#include "Epetra_Vector.h"
+#include "Epetra_MultiVector.h"
+
 using namespace Teuchos;
 
 namespace Galeri {

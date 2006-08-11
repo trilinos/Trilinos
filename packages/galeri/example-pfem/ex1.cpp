@@ -41,71 +41,22 @@
 #include "Galeri_core_Workspace.h"
 #include "Galeri_grid_Segment.h"
 #include "Galeri_grid_Loadable.h"
-#include "Galeri_grid_Rebalance.h"
-#include "Galeri_quadrature_Segment.h"
-#include "Galeri_problem_ScalarLaplacian.h"
+//#include "Galeri_grid_Rebalance.h"
 
+// ============================================================================ 
+// The goal of this example is to show the basic usage of class
+// Galeri::grid::Loadable. The example builds, step-by-step, a 1D grid,
+// associates some values to elements and vertices, then plots a function
+// defined on the grid vertices in MEDIT format.
+//
+// This example can be run with any numbers of processors.
+//
+// \author Marzio Sala, ETHZ
+//
+// \date Last modified on Aug-06
+// ============================================================================ 
+//
 using namespace Galeri;
-
-class MyScalarLaplacian 
-{
-  public:
-    static inline double 
-    getElementLHS(const double& x, 
-                  const double& y, 
-                  const double& z,
-                  const double& phi_i,
-                  const double& phi_i_derx, 
-                  const double& phi_i_dery,
-                  const double& phi_i_derz,
-                  const double& phi_j,
-                  const double& phi_j_derx,
-                  const double& phi_j_dery,
-                  const double& phi_j_derz)
-    {
-      return(phi_i_derx * phi_j_derx + 
-             phi_i_dery * phi_j_dery + 
-             phi_i_derz * phi_j_derz);
-    }
-
-    static inline double
-    getElementRHS(const double& x,
-                  const double& y,
-                  const double& z,
-                  const double& phi_i)
-
-    {
-      return(2.0 * phi_i);
-    }
-
-    static inline double
-    getBoundaryValue(const double& x, const double& y, const double& z)
-    {
-      return(0.0);
-    }
-
-    static inline char
-    getBoundaryType(const int ID, const double& x, const double& y, const double& z)
-    {
-      return('d');
-    }
-
-    static inline double 
-    getExactSolution(const char& what, const double& x, 
-                     const double& y, const double& z)
-    {
-      if (what == 'f')
-        return(x * (1 - x));
-      else if (what == 'x')
-        return(1.0 - 2.0 * x);
-      else
-        return(0.0);
-    }
-};
-
-// =========== //
-// main driver //
-// =========== //
 
 int main(int argc, char *argv[])
 {
@@ -119,16 +70,25 @@ int main(int argc, char *argv[])
   // ======================================================= //
   // Specifies the dimensionality of the problem: 1, 2, or 3 //
   // Creates a 1D grid on (0, 1) composed by segments. Each  //
-  // processor will have 4 elements.                         //
+  // processor will have 4 elements. We build the grid using //
+  // the constructor that accepts a string to specify the    //
+  // element type. Custom-defined elements can be specified  //
+  // by declaring an empty grid object, then calling method  //
+  // initialize() with an instance of the element.           //
+  //                                                         //
+  // We allocate space to store one additional data per grid //
+  // element, and 1 additional data per grid vertex.         //
   // ======================================================= //
   
-  Galeri::core::Workspace::setNumDimensions(1);
+  core::Workspace::setNumDimensions(1);
 
   int numMyElements = 4;
   int numGlobalElements = numMyElements * comm.NumProc();
+  int numElementData = 1;
+  int numVertexData = 1;
 
-  Galeri::grid::Loadable domain(comm, numGlobalElements, 
-                             numMyElements, "Segment");
+  grid::Loadable domain(comm, numGlobalElements, numMyElements, 
+                        "Segment", numElementData, numVertexData);
 
   // ===================================================== //
   // Each processor inserts locally owned elements, then   //
@@ -144,6 +104,8 @@ int main(int argc, char *argv[])
 
     domain.setGlobalConnectivity(GEID, 0, GEID);
     domain.setGlobalConnectivity(GEID, 1, GEID + 1);
+
+    domain.setElementData(GEID, 0, comm.MyPID()); // element data is proc numbere
   }
 
   domain.freezeConnectivity();
@@ -154,20 +116,40 @@ int main(int argc, char *argv[])
   {
     int GVID = domain.getGVID(LVID);
     domain.setGlobalCoordinates(GVID, 0, h * GVID);
+    domain.setVertexData(GVID, 0, 1.0); // store something on each vertex
   }
 
   domain.freezeCoordinates();
+
+  // prints out the grid data
+  cout << domain;
 
   // ========================================================= //
   // We now create the set of boundary nodes. For simplicity,  //
   // both nodes (the one on the left and the one on the right) //
   // are defined on processor 0. The nodes have coordinates    //
   // (0.0) and (1.0), and they are of Dirichlet type.          //
+  // No data is assigned to elements and vertices.             //
+  //                                                           //
+  // NOTE: boundary data are just another collection of grid   //
+  //       elements! In this case, elements are "points".      //
+  //                                                           //
+  // NOTE: there is no connection between the data layout used //
+  //       for the internal elements, and the one used for the //
+  //       boundary elements. In fact, the two data structures //
+  //       are completely independent. This makes the code     //
+  //       more flexible, and boundary data easier to insert.  //
+  //       One can have as many data structures as required,   //
+  //       for internal or border elements. Mixed elements can //
+  //       be supported by creating a different grid object    //
+  //       for each element type.                              //
+  //       However, the global vertex ID must be maintained    //
+  //       over all grid objects.                              //
   // ========================================================= //
 
   int numMyBoundaryElements = (comm.MyPID() == 0)?2:0; 
 
-  Galeri::grid::Loadable boundary(comm, 2, numMyBoundaryElements, "Point");
+  grid::Loadable boundary(comm, 2, numMyBoundaryElements, "Point");
 
   if (comm.MyPID() == 0)
   {
@@ -180,53 +162,12 @@ int main(int argc, char *argv[])
   if (comm.MyPID() == 0)
   {
     boundary.setGlobalCoordinates(0, 0, 0.0);
-    boundary.setGlobalCoordinates(1, 0, 1.0);
+    boundary.setGlobalCoordinates(domain.getNumGlobalElements(), 0, 1.0);
   }
 
   boundary.freezeCoordinates();
 
-  // ============================================================ //
-  // We are now ready to create the linear problem.               //
-  // First, we need to define the Epetra_Map for the matrix,      //
-  // where each grid vertex is assigned to a different            //
-  // processor. To keep things simple, we use a linear partition. //
-  // Then, we allocate the matrix (A), the solution vector (LHS), //
-  // and the right-hand side (RHS).                               //
-  // ============================================================ //
-  
-  Epetra_Map matrixMap(domain.getNumGlobalElements() + 1, 0, comm);
-
-  Epetra_FECrsMatrix A(Copy, matrixMap, 0);
-  Epetra_FEVector    LHS(matrixMap);
-  Epetra_FEVector    RHS(matrixMap);
-
-  Galeri::problem::ScalarLaplacian<MyScalarLaplacian> problem("Segment", 1, 4);
-
-  problem.integrate(domain, A, RHS);
-
-  LHS.PutScalar(0.0);
-
-  problem.imposeDirichletBoundaryConditions(boundary, A, RHS, LHS);
-
-#if 0
-  // ============================================================ //
-  // Solving the linear system is the next step, quite easy       //
-  // because we just call AztecOO and we wait for the solution... //
-  // ============================================================ //
-  
-  Epetra_LinearProblem linearProblem(&A, &LHS, &RHS);
-  AztecOO solver(linearProblem);
-  solver.SetAztecOption(AZ_solver, AZ_cg);
-  solver.SetAztecOption(AZ_precond, AZ_Jacobi);
-  solver.SetAztecOption(AZ_subdomain_solve, AZ_icc);
-  solver.SetAztecOption(AZ_output, 16);
-
-  solver.Iterate(150, 1e-9);
-#endif
-
-  // now compute the norm of the solution
-  
-  problem.computeNorms(domain, LHS);
+  cout << boundary;
 
 #ifdef HAVE_MPI
   MPI_Finalize();

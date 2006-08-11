@@ -139,7 +139,7 @@ TEST_SUBDIR=test
 endif
 
 if BUILD_EXAMPLES
-EXAMPLE_SUBDIR=example example-fem example-pfem
+EXAMPLE_SUBDIR=example example-fem
 endif
 
 if BUILD_PYTHON
@@ -148,7 +148,7 @@ PYTHON_SUBDIR=python
 endif
 endif
 
-SUBDIRS = src src-pfem $(TEST_SUBDIR) $(EXAMPLE_SUBDIR) $(PYTHON_SUBDIR)
+SUBDIRS = src $(TEST_SUBDIR) $(EXAMPLE_SUBDIR) $(PYTHON_SUBDIR)
 
 TRILINOS_HOME_DIR=@abs_top_srcdir@/../..
 TRILINOS_BUILD_DIR=@abs_top_builddir@/../..

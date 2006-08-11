@@ -48,7 +48,7 @@ CreateCartesianCoordinates(const string CoordType,
                            const Epetra_BlockMap* BlockMap,
                            Teuchos::ParameterList& List);
 
-void  Solve(const Epetra_LinearProblem Problem);
+void Solve(const Epetra_LinearProblem Problem);
 
 void Solve(const Epetra_RowMatrix* Matrix, const Epetra_MultiVector* LHS,
              const Epetra_MultiVector* RHS);
@@ -81,6 +81,7 @@ GetNeighboursCartesian3d(const int i, const int nx, const int ny, const int nz,
 void
 PrintStencil2D(const Epetra_CrsMatrix* Matrix,
                const int nx, const int ny, int GID = -1);
+
 } // namespace Galeri
 
 #endif

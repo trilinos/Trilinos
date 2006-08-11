@@ -40,25 +40,17 @@
 #define GALERI_LOADABLE_GRID_H
 
 #include "../src/Galeri_ConfigDefs.h"
-#include "Teuchos_TestForException.hpp"
-#include "Teuchos_RefCountPtr.hpp"
-#include "Teuchos_Hashtable.hpp"
-
 #include "Galeri_core_Object.h"
 #include "Galeri_core_Workspace.h"
 #include "Galeri_grid_Element.h"
-#include "Galeri_grid_Point.h"
-#include "Galeri_grid_Segment.h"
-#include "Galeri_grid_Triangle.h"
-#include "Galeri_grid_Quad.h"
-#include "Galeri_grid_Tet.h"
-#include "Galeri_grid_Hex.h"
+
+#include "Teuchos_TestForException.hpp"
+#include "Teuchos_RefCountPtr.hpp"
 
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
-#include "Epetra_Vector.h"
-#include "Epetra_IntVector.h"
 #include "Epetra_Export.h"
+#include "Epetra_MultiVector.h"
 
 #include "EpetraExt_DistArray.h"
 
@@ -98,7 +90,8 @@ class Loadable : public core::Object
   public:
     // @{ \name Constructors and destructors.
     //! Empty constructor.
-    Loadable()
+    Loadable() :
+      status_(core::Workspace::UNINITIALIZED)
     {}
 
     //! Constructor with specified Epetra_Comm, number of global elements, etc.
@@ -120,31 +113,21 @@ class Loadable : public core::Object
      *  @param numVertexData  [In] number of additional double-typed data
      *  to be stored on each vertex.
      *
-     *  This is just a shortcut for method initialize().
+     *  This is just a shortcut for method initialize(), which should be used
+     *  for more general initializations.
      */
     Loadable(const Epetra_Comm& comm,
              const int numGlobalElements,
              const int numMyElements,
              const string& elementType,
              const int numElementData = 0,
-             const int numVertexData = 0)
-    { 
-      initialize(comm, numGlobalElements, numMyElements, elementType, 0,
-                 numElementData, numVertexData);
-    }
-
-#if 0
-    Loadable(const Epetra_Map& ElementMap, 
-             const grid::Element& Element) :
-      ElementMap_(new Epetra_Map(ElementMap)),
-      GridElement_(Element)
-    { 
-      ADJ_ = rcp(new EpetraExt::DistArray<int>(*ElementMap_, GridElement_->getNumVertices()));
-    }
-#endif
+             const int numVertexData = 0);
 
     //! Destructor.
-    ~Loadable() {}
+    ~Loadable() 
+    {
+      status_ = core::Workspace::UNINITIALIZED;
+    }
 
     //! Initialization method.
     /*! @param comm [In] communicator object
@@ -155,9 +138,7 @@ class Loadable : public core::Object
      *  @param numMyElements [In] number of local elements in \c this
      *                          grid object.
      *
-     *  @param elementType  [In] a string value which defines the element
-     *  type. Valid values are: \c Point, \c Segment, \c Triangle, \c Quad,
-     *  \c Tet and \c Hex.
+     *  @param element  [In] element to be used.
      *
      *  @param myGlobalElements [In] array of integers, of size \c
      *  numMyElements, which contains the global ID of all local elements.
@@ -169,135 +150,174 @@ class Loadable : public core::Object
      *
      *  @param numVertexData  [In] number of additional double-typed data
      *  to be stored on each vertex.
+     *
+     *  \warning both vertexMap and elementMap are built with a base index of
+     *  0. The code may not work otherwise.
      */
     void initialize(const Epetra_Comm& comm,
                     const int numGlobalElements,
                     const int numMyElements,
-                    const string& elementType,
+                    const Galeri::grid::Element& element,
                     const int* myGlobalElements = 0,
                     const int numElementData = 0,
-                    const int numVertexData = 0)
-    { 
-      if (myGlobalElements != 0)
-        ElementMap_ = rcp(new Epetra_Map(numGlobalElements, numMyElements, 
-                                         myGlobalElements, 0, comm));
-      else if (numMyElements != -1)
-        ElementMap_ = rcp(new Epetra_Map(numGlobalElements, numMyElements, 0, comm));
-      else
-        ElementMap_ = rcp(new Epetra_Map(numGlobalElements, 0, comm));
-
-      elementType_ = elementType;
-
-      if (elementType == "Point")
-        GridElement_ = rcp(new Galeri::grid::Point);
-      else if (elementType == "Segment")
-        GridElement_ = rcp(new Galeri::grid::Segment);
-      else if (elementType == "Triangle")
-        GridElement_ = rcp(new Galeri::grid::Triangle);
-      else if (elementType == "Quad")
-        GridElement_ = rcp(new Galeri::grid::Quad);
-      else if (elementType == "Tet")
-        GridElement_ = rcp(new Galeri::grid::Tet);
-      else if (elementType == "Hex")
-        GridElement_ = rcp(new Galeri::grid::Hex);
-      else
-        TEST_FOR_EXCEPTION(true, std::logic_error,
-                           "input elementType not recognized, " << elementType);
-
-      ADJ_ = rcp(new EpetraExt::DistArray<int>(*ElementMap_, GridElement_->getNumVertices()));
-
-      numElementData_ = numElementData;
-      numVertexData_ = numVertexData;
-
-      if (numElementData_ > 0)
-        elementData_ = rcp(new Epetra_MultiVector(*ElementMap_, numElementData_));
-    }
+                    const int numVertexData = 0);
 
     // @}
-    // @{ \name Get methods.
+    // @{ \name Get/Set Methods.
     
     //! Returns the global number of grid elements in \c this object.
     inline int getNumGlobalElements() const 
     {
-      return(ElementMap_->NumGlobalElements());
+#ifdef GALERI_CHECK
+      TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+                         "method getNumGlobalElements() called, but the object is " <<
+                         "uninitialized");
+#endif
+      return(elementMap_->NumGlobalElements());
     }
 
     //! Returns the local number of grid elements in \c this object.
     inline int getNumMyElements() const 
     {
-      return(ElementMap_->NumMyElements());
+#ifdef GALERI_CHECK
+      TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+                         "method getNumMyElements() called, but the object is " <<
+                         "uninitialized");
+#endif
+      return(elementMap_->NumMyElements());
     }
 
     //! Returns the global number of grid vertices in \c this object.
     inline int getNumGlobalVertices() const 
     {
-      // NOTE: this requires IndexBase == 0
-      return(VertexMap_->MaxAllGID() + 1);
+#ifdef GALERI_CHECK
+      TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+                         "method getNumGlobalVertices() called, but the object is " <<
+                         "uninitialized");
+#endif
+      return(vertexMap_->MaxAllGID() + 1);
     }
 
     //! Returns the local number of grid vertices in \c this object.
     inline int getNumMyVertices() const 
     {
-      return(VertexMap_->NumMyElements());
+#ifdef GALERI_CHECK
+      TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+                         "method getNumMyVertices() called, but the object is " <<
+                         "uninitialized");
+#endif
+      return(vertexMap_->NumMyElements());
     }
 
-    //! Returns the number of vertices per element (a constant value).
+    /*! \brief Returns the number of vertices per element, which is
+     *  constant value across all grid elements.
+     */
     inline int getNumVerticesPerElement() const
     {
-      return(GridElement_->getNumVertices());
+#ifdef GALERI_CHECK
+      TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+                         "method getNumVerticesPerElement() called, but the object is " <<
+                         "uninitialized");
+#endif
+      return(element_.getNumVertices());
     }
 
     //! Returns the Epetra_Map associated to the element distribution.
     inline const Epetra_Map getElementMap() const
     {
-      return(*ElementMap_);
+#ifdef GALERI_CHECK
+      TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+                         "method getElementMap() called, but the object is " <<
+                         "uninitialized");
+#endif
+      return(*elementMap_);
     }
 
     //! Returns the Epetra_Map associated to the vertex distribution.
     inline const Epetra_Map getVertexMap() const
     {
-      return(*VertexMap_);
+#ifdef GALERI_CHECK
+      TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+                         "method getVertexMap() called, but the object is " <<
+                         "uninitialized");
+#endif
+      return(*vertexMap_);
     }
 
     //! Returns the global grid element ID for the specified local (and locally owned) grid element ID.
     inline int getGEID(const int LEID) const
     {
-      return(ElementMap_->GID(LEID));
+#ifdef GALERI_CHECK
+      TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+                         "method getGEID() called, but the object is " <<
+                         "uninitialized");
+#endif
+      return(elementMap_->GID(LEID));
     }
 
     //! Returns the global grid vertex ID for the specified (and locally owned) local grid vertex ID.
     inline int getGVID(const int LVID) const
     {
-      return(VertexMap_->GID(LVID));
+#ifdef GALERI_CHECK
+      TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+                         "method getGVID() called, but the object is " <<
+                         "uninitialized");
+#endif
+      return(vertexMap_->GID(LVID));
     }
 
     //! Returns the local grid element ID for the specified (and locally owned) global grid element ID.
     inline int getLEID(const int GEID) const
     {
-      return(ElementMap_->LID(GEID));
+#ifdef GALERI_CHECK
+      TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+                         "method getLEID() called, but the object is " <<
+                         "uninitialized");
+#endif
+      return(elementMap_->LID(GEID));
     }
 
     //! Returns the local grid vertex ID for the specified (and locally owned) global grid vertex ID.
     inline int getLVID(const int GVID) const
     {
-      return(VertexMap_->LID(GVID));
+#ifdef GALERI_CHECK
+      TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+                         "method getLVID() called, but the object is " <<
+                         "uninitialized");
+#endif
+      return(vertexMap_->LID(GVID));
     }
 
     //! Returns the Galeri::grid::Element object of \c this object.
     const grid::Element getElement() const
     {
-      return(*GridElement_);
+#ifdef GALERI_CHECK
+      TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+                         "method getElement() called, but the object is " <<
+                         "uninitialized");
+#endif
+      return(element_);
     }
 
     //! Returns the number of optional double-typed data associated to each grid vertex.
     inline int getNumVertexData() const
     {
+#ifdef GALERI_CHECK
+      TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+                         "method getNumVertexData() called, but the object is " <<
+                         "uninitialized");
+#endif
       return(numVertexData_);
     }
 
     //! Returns the number of optional double-typed data associated to each grid element.
     inline int getNumElementData() const
     {
+#ifdef GALERI_CHECK
+      TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+                         "method getNumElementData() called, but the object is " <<
+                         "uninitialized");
+#endif
       return(numElementData_);
     }
 
@@ -307,27 +327,51 @@ class Loadable : public core::Object
     //! Returns the optional data associated to the specified (and locally owned) global grid element ID, stored in position \c which in the data array.
     inline double getElementData(const int GEID, const int which) const
     {
+#ifdef GALERI_CHECK
+      TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+                         "method getElementData() called, but the object is " <<
+                         "uninitialized");
+#endif
       int LEID = getLEID(GEID);
+      // FIXME
       return((*elementData_)[which][LEID]);
     }
 
     //! Sets the optional data associated to the specified (and locally owned) global grid element ID, are stores it in position \c which in the data array.
     inline void setElementData(const int GEID, const int which, const double val)
     {
+#ifdef GALERI_CHECK
+      TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+                         "method setElementData() called, but the object is " <<
+                         "uninitialized");
+#endif
       int LEID = getLEID(GEID);
+      // FIXME
       (*elementData_)[which][LEID] = val;
     }
+
     //! Returns the optional data associated to the specified (and locally owned) global grid vertex ID, stored in position \c which in the data array.
     inline double getVertexData(const int GVID, const int which) const
     {
+#ifdef GALERI_CHECK
+      TEST_FOR_EXCEPTION(status_ != core::Workspace::CONNECTIVITY_FREEZED, std::logic_exception,
+                         "method setVertexData() called, but freezeConnectivity() has not been called");
+#endif
       int LVID = getLVID(GVID);
+      // FIXME
       return((*vertexData_)[which][LVID]);
     }
 
     //! Sets the optional data associated to the specified (and locally owned) global grid vertex ID, are stores it in position \c which in the data array.
     inline void setVertexData(const int GVID, const int which, const double val)
     {
+#ifdef GALERI_CHECK
+      TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+                         "method setVertexData() called, but the object is " <<
+                         "uninitialized");
+#endif
       int LVID = getLVID(GVID);
+      // FIXME
       (*vertexData_)[which][LVID] = val;
     }
 
@@ -337,162 +381,164 @@ class Loadable : public core::Object
     //! Sets the \c index coordinate of the specified (and locally owned) global grid vertex ID to \c value.
     inline void setGlobalCoordinates(const int GID, const int index, const double value)
     {
+#ifdef GALERI_CHECK
+      TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+                         "method setGlobalCoordinates() called, but the object is " <<
+                         "uninitialized");
+
+      TEST_FOR_EXCEPTION(status_ == core::Workspace::COORDINATES_FREEZED, std::logic_exception,
+                         "method setGlobalCoordinates() called, but the coordinates are " <<
+                         "already freezed");
+#endif
       COO_->ReplaceGlobalValue(GID, index, value);
     }
 
     //! Sets the coordinates of the specified (and locally owned) global grid vertex ID to \c value.
     inline double& getGlobalCoordinates(const int GID, const int index)
     {
-      int LID = VertexMap_->LID(GID);
+#ifdef GALERI_CHECK
+      TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+                         "method getGlobalCoordinates() called, but the object is " <<
+                         "uninitialized");
+#endif
+      int LID = vertexMap_->LID(GID);
       return((*COO_)[index][LID]);
     }
 
     //! Sets the \c index coordinate of the specified (and locally owned) local grid vertex ID to \c value.
     inline double& getMyCoordinates(const int LID, const int index)
     {
+#ifdef GALERI_CHECK
+      TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+                         "method getMyCoordinates() called, but the object is " <<
+                         "uninitialized");
+#endif
+      return((*COO_)[index][LID]);
+    }
+
+    //! Sets the \c index coordinate of the specified (and locally owned) local grid vertex ID to \c value. (const version)
+    inline const double& getMyCoordinates(const int LID, const int index) const
+    {
+#ifdef GALERI_CHECK
+      TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+                         "method getMyCoordinates() called, but the object is " <<
+                         "uninitialized");
+#endif
       return((*COO_)[index][LID]);
     }
 
     //! Sets the \c index coordinate of the specified (and locally owned) local grid vertex ID to \c value.
     inline void setGlobalConnectivity(const int GID, const int index, const int what)
     {
-      int LID = ElementMap_->LID(GID);
-      assert (LID != -1);
-      (*ADJ_)(LID, index) = what;
+#ifdef GALERI_CHECK
+      TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+                         "method setGlobalConnectivity() called, but the object is " <<
+                         "uninitialized");
+#endif
+      int LID = elementMap_->LID(GID);
+#ifdef GALERI_CHECK
+      TEST_FOR_EXCEPTION(LID == -1, std::logic_exception,
+                         "Requested GID (" << GID << ") is not locally owned");
+#endif
+      (*CON_)(LID, index) = what;
     }
 
     //! Sets the \c index-th component of the specified (and locally owned) global grid element ID to \c value.
     inline int& getGlobalConnectivity(const int GID, const int index)
     {
-      int LID = ElementMap_->LID(GID);
-      return ((*ADJ_)(LID, index));
+#ifdef GALERI_CHECK
+      TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+                         "method getGlobalConnectivity() called, but the object is " <<
+                         "uninitialized");
+#endif
+      int LID = elementMap_->LID(GID);
+#ifdef GALERI_CHECK
+      TEST_FOR_EXCEPTION(LID == -1, std::logic_exception,
+                         "Requested GID (" << GID << ") is not locally owned");
+#endif
+      return ((*CON_)(LID, index));
     }
 
-    // FIXME???
     //! Sets the \c index-th component of the specified (and locally owned) local grid element ID to \c value.
     inline int& getMyConnectivity(const int LID, const int index)
     {
-      return ((*ADJ_)(LID, index));
+#ifdef GALERI_CHECK
+      TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+                         "method getMyConnectivity() called, but the object is " <<
+                         "uninitialized");
+#endif
+      return ((*CON_)(LID, index));
     }
 
-    // FIXME??
-    inline int& ADJ(const int LVID, const int index)
+    //! Sets the \c index-th component of the specified (and locally owned) local grid element ID to \c value. (const version)
+    inline const int& getMyConnectivity(const int LID, const int index) const
     {
-      return((*ADJ_)(LVID, index));
+#ifdef GALERI_CHECK
+      TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+                         "method getMyConnectivity() called, but the object is " <<
+                         "uninitialized");
+#endif
+      return ((*CON_)(LID, index));
     }
 
     // @} 
     // @{ \name 
     
     //! Freezes the grid connectivity, which cannot be modified any longer.
-    virtual void freezeConnectivity()
-    {
-      const Epetra_Comm& Comm = ADJ_->Comm();
-
-      // at this point all the elements have been inserted; we look
-      // for the vertex map (with overlap). Note that the vertices
-      // of all elements are in global numbering.
-
-      int MaxSize = getElementMap().NumMyElements() * getElement().getNumVertices();
-
-      vector<int> MyGlobalElements(MaxSize);
-      int count = 0;
-
-      // insert all elements in a hash table
-      Teuchos::Hashtable<int, short int> hash(MaxSize * 2);
-
-      for (int i = 0; i < getElementMap().NumMyElements(); ++i)
-      {
-        for (int j = 0; j < getElement().getNumVertices(); ++j)
-        {
-          const int& GVID = ADJ(i, j);
-          if (hash.containsKey(GVID) == false)
-          {
-            MyGlobalElements[count++] = GVID;
-            hash.put(GVID, 1);
-          }
-        }
-      }
-
-      VertexMap_ = rcp(new Epetra_Map(-1, count, &MyGlobalElements[0], 0,  Comm));
-
-      COO_ = rcp(new Epetra_MultiVector(*VertexMap_, 
-                                        Galeri::core::Workspace::getNumDimensions()));
-
-      if (numVertexData_ > 0)
-        vertexData_ = rcp(new Epetra_MultiVector(*VertexMap_, numVertexData_));
-    }
+    /*! 
+     * This method constructs the set of locally owned vertices, by looking
+     * over all local elements, and building the vertexMap of the grid.
+     * After having called this method, it is no longer possible to modify the
+     * grid connectivity, because this would change the vertexMap as well.
+     *
+     * \warning Performances to be improved for large problems.
+     */
+    virtual void freezeConnectivity();
 
     //! Freezes the grid coordinates, which cannot be modified any longer.
-    void freezeCoordinates()
-    {
-      // do-nothing at this point
-    }
+    void freezeCoordinates();
 
     //! Prints the grid on \c os.
-    virtual void print(ostream & os) const
-    {
-      // FIXME: add label, see parallel, add Barrier()??
-      cout << *ElementMap_;
-
-      cout << *VertexMap_;
-
-      cout << *ADJ_;
-
-      cout << *COO_;
-    }
+    virtual void print(ostream & os) const;
 
     //! Returns the Epetra_Map associated with grid vertices.
-    Epetra_Map getLinearVertexMap()
-    {
-      if (linearVertexMap_ == Teuchos::null)
-      {
-        linearVertexMap_ = rcp(new Epetra_Map(getNumGlobalVertices(), 0, ElementMap_->Comm()));
-      }
-      return(*linearVertexMap_);
-    }
+    const Epetra_Map& getLinearVertexMap();
 
     //! Returns the Epetra_MultiVector containing the grid coordinates.
-    const Epetra_MultiVector& getLinearCoordinates()
-    {
-      if (linearCOO_ == Teuchos::null)
-      {
-        Epetra_Map linearVertexMap = getLinearVertexMap();
-        linearCOO_ = rcp(new Epetra_MultiVector(linearVertexMap, 
-                                                Galeri::core::Workspace::getNumDimensions()));
-        linearExporter_ = rcp(new Epetra_Export(getVertexMap(), linearVertexMap));
-        linearCOO_->Export(*COO_, *linearExporter_, Insert);
-      }
-      return(*linearCOO_);
-    }
-
-    // FIXME: delete this?
-    string getElementType() const
-    {
-      return(elementType_);
-    }
+    const Epetra_MultiVector& getLinearCoordinates();
 
   private:
 
     // @}
     // @{ \name private methods and data
 
-    RefCountPtr<Epetra_Map> ElementMap_;
-    RefCountPtr<Epetra_Map> VertexMap_;
+    //! Status of the object (UNINITILAZED, INITIALIZED, CONNECTIVITY_FREEZED, COORDINATES_FREEZED).
+    int status_;
+    //! Map for element distribution. A given element is assigned to exactly one processor.
+    RefCountPtr<Epetra_Map> elementMap_;
+    //! Map for vertex distribution. A given vertex may be assigned to more than one processor.
+    RefCountPtr<Epetra_Map> vertexMap_;
+    //! A linear map for vertices. A given vertex is assigned to exactly one processor.
     RefCountPtr<Epetra_Map> linearVertexMap_;
+    //! Exporter to linearVertexMap.
     RefCountPtr<Epetra_Export> linearExporter_;
-    RefCountPtr<grid::Element> GridElement_;
-
+    //! Element used in \c this object.
+    grid::Element element_;
+    //! Container for vertex coordinates, based on vertexMap_.
     RefCountPtr<Epetra_MultiVector> COO_;
+    //! Container for vertex coordinates, based on linearVertexMap_.
     RefCountPtr<Epetra_MultiVector> linearCOO_;
-    RefCountPtr<EpetraExt::DistArray<int> > ADJ_;
-
-    string elementType_;
-
+    //! Container for element connectivity, based on elementMap_.
+    RefCountPtr<EpetraExt::DistArray<int> > CON_;
+    //! Amount of additional data assigned to each grid element.
     int numElementData_;
+    //! Amount of additional data assigned to each grid vertex.
     int numVertexData_;
+    //! Additional data assigned to grid elements.
     RefCountPtr<Epetra_MultiVector> elementData_;
+    //! Additional data assigned to grid vertices.
     RefCountPtr<Epetra_MultiVector> vertexData_;
+
     // @}
 
 }; // class Loadable

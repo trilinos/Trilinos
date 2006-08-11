@@ -112,7 +112,9 @@ getSquare(Epetra_Comm& comm,
   if (what == "Triangle") numMyElements *= 2;
   int numMyVertices = (numMyElementsX + 1) * (numMyElementsY + 1);
 
-  domain.initialize(comm, numGlobalElements, numMyElements, "Triangle");
+  Triangle triangle;
+
+  domain.initialize(comm, numGlobalElements, numMyElements, triangle);
 
   int elementOffset = numMyElements * comm.MyPID();
   int vertexOffset  = px * numMyElementsX + py * numMyElementsY * numGlobalVerticesX;
@@ -219,7 +221,8 @@ getSquare(Epetra_Comm& comm,
                      "internal error in boundary list definition, " 
                      << pos << " vs. " << numMyBoundaries);
 
-  boundary.initialize(comm, -1, numMyBoundaries, "Segment", &list[0]);
+  Segment segment;
+  boundary.initialize(comm, -1, numMyBoundaries, segment, &list[0]);
 
   // now insert the actual vertices in the grid
 
@@ -393,7 +396,8 @@ getCubeWithHexs(Epetra_Comm& comm,
     }
   }
 
-  domain.initialize(comm, numGlobalElements['a'], list.size(), "Hex", &list[0]);
+  Hex hex;
+  domain.initialize(comm, numGlobalElements['a'], list.size(), hex, &list[0]);
 
   for (int iz = 0; iz < numMyElements['z']; ++iz)
   {
@@ -545,7 +549,8 @@ getCubeWithHexs(Epetra_Comm& comm,
     }
   }
 
-  boundary.initialize(comm, -1, list.size(), "Point", &list[0]);
+  Point point;
+  boundary.initialize(comm, -1, list.size(), point, &list[0]);
 
   // ===================== //
   // now insert vertex IDs //

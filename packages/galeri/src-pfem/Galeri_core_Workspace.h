@@ -37,9 +37,11 @@
 #ifndef GALERI_CORE_WORKSPACE_H
 #define GALERI_CORE_WORKSPACE_H
 
-#include "Epetra_BlockMap.h"
-#include "Epetra_Map.h"
-#include "Epetra_MultiVector.h"
+#include "Teuchos_TestForException.hpp"
+
+class Epetra_Comm;
+class Epetra_RowMatrix;
+class Epetra_MultiVector;
 
 #define GALERI_MAX(x,y) (( (x) > (y) ) ? x : y)
 #define GALERI_MIN(x,y) (( (x) < (y) ) ? x : y) 
@@ -75,6 +77,11 @@ class Workspace
       return(numDimensions_);
     }
 
+    //! Solves a serial linear system using LAPACK (WARNING: ONLY SMALL MATRICES)
+    static void solve_LAPACK(Epetra_RowMatrix& matrix,
+                             Epetra_MultiVector& LHS,
+                             Epetra_MultiVector& RHS);
+
     /*! \brief Creates a multivector that can hold a component of the specified 
      * multivector.
      *
@@ -85,19 +92,7 @@ class Workspace
      * componets, and one of them has to be extracted.
      */
     static 
-    Epetra_MultiVector* createMultiVectorComponent(const Epetra_MultiVector& input)
-    {
-      const Epetra_Comm& comm = input.Comm();
-      const Epetra_BlockMap& inputMap = input.Map();
-      const int* myGlobalElements = inputMap.MyGlobalElements();
-      const int numMyElements = inputMap.NumMyElements();
-      const int indexBase = inputMap.IndexBase();
-
-      Epetra_Map extractMap(-1, numMyElements, myGlobalElements, indexBase, comm);
-      Epetra_MultiVector* output = new Epetra_MultiVector(extractMap, input.NumVectors());
-
-      return(output);
-    }
+    Epetra_MultiVector* createMultiVectorComponent(const Epetra_MultiVector& input);
 
     /*! \brief Extracts the component of the specified \c equation from the \c
      * input Epetra_MultiVector, and stores it in \c output.
@@ -105,23 +100,20 @@ class Workspace
     static 
     void extractMultiVectorComponent(const Epetra_MultiVector& input,
                                      const int equation,
-                                     Epetra_MultiVector& output)
-    {
-      const Epetra_BlockMap& inputMap = input.Map();
-      const int numMyElements = inputMap.NumMyElements();
-
-      for (int i = 0; i < numMyElements; ++i)
-      {
-        int j = inputMap.FirstPointInElement(i) + equation;
-        for (int k = 0; k < input.NumVectors(); ++k)
-          output[k][i] = input[k][j];
-      }
-    }
+                                     Epetra_MultiVector& output);
 
     //! Input default value for "min".
     static const int MIN;
     //! Input default value for "max".
     static const int MAX;
+    //! Default value for uninitialized objects.
+    static const int UNINITIALIZED;
+    //! Default value for initialized objects (should be > UNINITIALIZED).
+    static const int INITIALIZED;
+    //! Value for status with freezed connectivity (should be > INITIALIZED).
+    static const int CONNECTIVITY_FREEZED;
+    //! Value for status with freezed coordinates (should be > INITIALIZED).
+    static const int COORDINATES_FREEZED;
 
   private:
     //! Number of dimensions in the computations.
