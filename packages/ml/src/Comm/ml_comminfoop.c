@@ -295,30 +295,33 @@ void ML_CommInfoOP_Destroy(ML_CommInfoOP **comm_info)
    if (c_info != NULL) 
    {
 #ifdef ML_TIMING_DETAILED
-      if ( (ML_mylabel != NULL) && (c_info->comm != NULL)) {
-      comm = c_info->comm;
-      NumActiveProc = c_info->NumActiveProc;
-      proc_active = c_info->proc_active;
-      /*printf("%s:  NumActiveProc = %d, proc_active = * %d\n",ML_mylabel,NumActiveProc,proc_active);*/
-      t1 = ML_gsum_double( (proc_active ? c_info->time : 0.0), comm);
-      /*printf("(%s) %d's apply time = %e (active = %d)\n",ML_mylabel,comm->ML_mypid,c_info->time,proc_active);*/
-      t1 = t1/((double) NumActiveProc);
-      if (comm->ML_mypid == 0 && ML_Get_PrintLevel() > 10 )
-         printf(" Exchange boundary time for %s (average) \t= %e\n",ML_mylabel,t1);
-      t1 = ML_gmax_double( (proc_active ? c_info->time: 0.0), comm);
-      i =ML_gmax_int((t1 == c_info->time ? comm->ML_mypid:0),comm);
-      if (comm->ML_mypid == 0 && ML_Get_PrintLevel() > 10 )
-         printf(" Exchange boundary time for %s (maximum %d) \t= %e\n",ML_mylabel,i,t1);
-      t1 = - c_info->time;
-      t1 = ML_gmax_double( (proc_active ? t1: -1.0e20), comm);
-      t1 = - t1;
-      i =ML_gmax_int((t1 == c_info->time ? comm->ML_mypid:0),comm);
-      if (comm->ML_mypid == 0 && ML_Get_PrintLevel() > 10 )
-         printf(" Exchange boundary time for %s (minimum %d) \t= %e\n",ML_mylabel,i,t1);
-      t1 = ML_Global_Standard_Deviation(c_info->time, NumActiveProc,
-                                            proc_active, comm);
-      if (comm->ML_mypid == 0 && ML_Get_PrintLevel() > 10 )
-         printf(" Exchange boundary time for %s (std dev) \t= %e\n",ML_mylabel,t1);
+      if ( (ML_mylabel != NULL) &&
+           (c_info->comm != NULL) &&
+           (c_info->NumActiveProc > 0) )
+      {
+        comm = c_info->comm;
+        NumActiveProc = c_info->NumActiveProc;
+        proc_active = c_info->proc_active;
+        /*printf("%s:  NumActiveProc = %d, proc_active = * %d\n",ML_mylabel,NumActiveProc,proc_active);*/
+        t1 = ML_gsum_double( (proc_active ? c_info->time : 0.0), comm);
+        /*printf("(%s) %d's apply time = %e (active = %d)\n",ML_mylabel,comm->ML_mypid,c_info->time,proc_active);*/
+        t1 = t1/((double) NumActiveProc);
+        if (comm->ML_mypid == 0 && ML_Get_PrintLevel() > 10 )
+           printf(" Exchange boundary time for %s (average) \t= %e\n",ML_mylabel,t1);
+        t1 = ML_gmax_double( (proc_active ? c_info->time: 0.0), comm);
+        i =ML_gmax_int((t1 == c_info->time ? comm->ML_mypid:0),comm);
+        if (comm->ML_mypid == 0 && ML_Get_PrintLevel() > 10 )
+           printf(" Exchange boundary time for %s (maximum %d) \t= %e\n",ML_mylabel,i,t1);
+        t1 = - c_info->time;
+        t1 = ML_gmax_double( (proc_active ? t1: -1.0e20), comm);
+        t1 = - t1;
+        i =ML_gmax_int((t1 == c_info->time ? comm->ML_mypid:0),comm);
+        if (comm->ML_mypid == 0 && ML_Get_PrintLevel() > 10 )
+           printf(" Exchange boundary time for %s (minimum %d) \t= %e\n",ML_mylabel,i,t1);
+        t1 = ML_Global_Standard_Deviation(c_info->time, NumActiveProc,
+                                              proc_active, comm);
+        if (comm->ML_mypid == 0 && ML_Get_PrintLevel() > 10 )
+           printf(" Exchange boundary time for %s (std dev) \t= %e\n",ML_mylabel,t1);
       }
 #endif
       if (c_info->remap != NULL) ML_free(c_info->remap);
@@ -431,6 +434,8 @@ int ML_CommInfoOP_Clone(ML_CommInfoOP **newone, ML_CommInfoOP *oldone)
                                   oldone->neighbors[i].N_send,
                                   oldone->neighbors[i].send_list);
    }
+   *(newone)->NumActiveProc = oldone->NumActiveProc;
+   *(newone)->proc_active = oldone->proc_active;
    return(1);
 }
 
