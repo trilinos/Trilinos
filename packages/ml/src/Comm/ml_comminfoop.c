@@ -434,8 +434,8 @@ int ML_CommInfoOP_Clone(ML_CommInfoOP **newone, ML_CommInfoOP *oldone)
                                   oldone->neighbors[i].N_send,
                                   oldone->neighbors[i].send_list);
    }
-   *(newone)->NumActiveProc = oldone->NumActiveProc;
-   *(newone)->proc_active = oldone->proc_active;
+   (*newone)->NumActiveProc = oldone->NumActiveProc;
+   (*newone)->proc_active = oldone->proc_active;
    return(1);
 }
 
