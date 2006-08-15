@@ -32,7 +32,7 @@
 /* ************************************************************************ */
 
 /*! 
-  \mainpage %NOX & %LOCA: Object-Oriented Nonlinear Solver and Continuation Packages
+  \mainpage NOX & LOCA: Object-Oriented Nonlinear Solver and Continuation Packages
 
   \section introduction Introduction
   
@@ -42,8 +42,12 @@
   F(x)=0
   \f$,
   where \f$F:\Re^n \rightarrow \Re^n\f$.  
-  %NOX is designed to
-  work with any linear algebra package and to be easily customized.
+  %NOX implements a variety of Newton-based globalization techniques
+  including %Line Search and %Trust Region algorithms.  In additon it
+  provides higher and lower order models using Bryden and Tensor
+  algorithms.  Special algorithms have been developed for use with
+  inexact linear solvers. %NOX is designed to work with any linear
+  algebra package and to be easily customized.
   %NOX is part of Sandia's <A
   HREF="http://software.sandia.gov/trilinos/">Trilinos project</a>.
 
