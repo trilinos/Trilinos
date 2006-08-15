@@ -4,6 +4,9 @@
 #            NOX: An Object-Oriented Nonlinear Solver Package
 #                 Copyright (2002) Sandia Corporation
 # 
+#            LOCA: Library of Continuation Algorithms Package
+#                 Copyright (2005) Sandia Corporation
+# 
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 # license for use of this work by or on behalf of the U.S. Government.
 # 
@@ -16,44 +19,46 @@
 # WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 # Lesser General Public License for more details.
-#                                                                                 
+# 
 # You should have received a copy of the GNU Lesser General Public
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-# USA                                                                                
-# Questions? Contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski
-# (rppawlo@sandia.gov), Sandia National Laboratories.
+# USA
 # 
+# Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+# Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
+# ************************************************************************
+#  CVS Information
+#  $Source$
+#  $Author$
+#  $Date$
+#  $Revision$
 # ************************************************************************
 #@HEADER
 
+The User's Guide and Developer's Guide for NOX and LOCA is combined on
+a single website found at:
 
-1. To unpack NOX, type
+  http://software.sandia.gov/nox
 
-gunzip -c nox-<version>.tgz | tar xvf -
+Alternatively, you can build the documentation as html pages yourself
+from the source code using the doxygen program.  To build the
+documentation type the following:
 
-This will create the directory nox-<version>. 
+1. go to the top level nox directory and type:
 
-2. Go to the newly created directory; type
+   cd Trilinos/packages/nox
 
-cd nox-<version>
+2. Run configure once so that we can automatically create the
+   documentation by typing:
 
-3. Run configure once so that we can automatically create the
-documentation; type
+   configure --enable-teuchos
 
-configure
+3. Create the documentation by typing
 
-4. Create the documentation by typing
+   make dox
 
-make dox
+4. Finally, bring up the following web page in your web browser for the
+   remaining instructions.
 
-5. Finally, bring up the following web page in your browser for the
-remaining instructions.
-
-nox-<version>/doc/html/index.html
-
-
-
-
-
-
+   Trilinos/packages/nox/doc/html/index.html
