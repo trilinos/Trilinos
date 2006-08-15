@@ -311,6 +311,10 @@ reset(Teuchos::ParameterList& linearSolverParams)
 void NOX::Epetra::LinearSystemAztecOO::
 setAztecOptions(Teuchos::ParameterList& p, AztecOO& aztec) const
 {
+  // Set the output and error streams in the aztec solver
+  aztec.SetOutputStream(utils.pout(NOX::Utils::LinearSolverDetails));
+  aztec.SetErrorStream(utils.perr());
+
   // Set the Aztec Solver
   string linearSolver = p.get("Aztec Solver", "GMRES");
   if (linearSolver == "CG")
