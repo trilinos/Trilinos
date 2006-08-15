@@ -1,4 +1,14 @@
-Recommended way to use autoheader:
+To update the header in the source files: 
+
+  1. Edit the header.txt file in the maintenance directory.
+  
+  2. Go to the top level nox source directory:
+     $> cd Trilinos/packages/nox
+
+  3. run the shell script:
+     $> maintenance/update_nox_headers.sh
+
+Old way to use autoheader:
 
 cd nox
 make distclean
