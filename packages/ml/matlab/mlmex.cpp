@@ -32,6 +32,7 @@
 
    By: Chris Siefert <csiefer@sandia.gov>
    Version History
+   08/15/2006 - Added operator complexity handling.
    08/08/2006 - Moved a few variable declarations to allow sun's less forgiving
                 compiler to compile the code.
    08/07/2006 - Added status checking functionality.
@@ -97,7 +98,8 @@ struct MLAPI_DATA_PACK{
   Space * FineSpace;
   DistributedMatrix * A;
   Teuchos::ParameterList *List;
-  MultiLevelAdaptiveSA *Prec;  
+  MultiLevelAdaptiveSA *Prec;
+  double operator_complexity;
   struct MLAPI_DATA_PACK *next;
 };
 
@@ -157,6 +159,10 @@ void mlapi_data_pack_setup(MLAPI_DATA_PACK *D,int N,int* rowind,int* colptr, dou
   /* Build the Heirarchy */
   if(adaptivevecs>0) D->Prec->AdaptCompute(UseDefaultNullSpace,adaptivevecs);    
   else D->Prec->Compute();
+
+  D->operator_complexity=D->Prec->GetComplexity();
+  printf("Smoothed Aggregation: operator complexity = %e\n",D->operator_complexity);
+  
   Finalize();
 }/*end mlapi_data_pack_setup*/
 
@@ -172,6 +178,7 @@ void mlapi_data_pack_setup(MLAPI_DATA_PACK *D,int N,int* rowind,int* colptr, dou
 int mlapi_data_pack_status(MLAPI_DATA_PACK *D){
   mexPrintf("**** Problem ID %d ****\n",D->id);
   if(D->A) mexPrintf("Matrix: %dx%d w/ %d nnz\n",D->A->NumGlobalRows(),D->A->NumGlobalCols(),D->A->NumGlobalNonzeros()); 
+  mexPrintf(" Smoothed Aggregation: operator complexity = %e\n",D->operator_complexity);
   if(D->List){mexPrintf("Parameter List:\n");D->List->print(cout,1);}
   mexPrintf("\n");
   return IS_TRUE;
@@ -576,9 +583,10 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] ){
     /* Add this problem to the list */
     rv=PROBS->add(D);
 
-    /* Set return value */
+    /* Set return value(s) */
     plhs[0]=mxCreateNumericMatrix(1,1,mxINT32_CLASS,mxREAL);
     id=(int*)mxGetData(plhs[0]);id[0]=rv;
+    if(nlhs>1) plhs[1]=mxCreateDoubleScalar(D->operator_complexity);
     
     /* Lock so we can keep the memory for the heirarchy */
     mexLock();

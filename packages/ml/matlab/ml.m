@@ -1,17 +1,18 @@
-function out=ml(varargin)
+function varargout=ml(varargin)
 % Interface to the ML/MLAPI.  Sets Up/Runs/Queries/Cleans up the smoothed
 % aggregation algebraic multigrid solver ML.  In general, options
 % are identical to the Teuchos parameters found in the ML
 % documentation. 
 %
 % Call Syntax:
-% (1) h=ml('setup',A,['parameter',value,...]) - sets up ML
+% (1) [h,oc]=ml('setup',A,['parameter',value,...]) - sets up ML
 %  Input:
 %  A               - Matrix to be solved with [sparse matrix]
 %  parameter       - Teuchos parameter [string]
 %  value           - Value for Teuchos parameter [???]
 %  Output:
 %  h               - The ML handle for the system
+%  [oc]            - Operator complexity of the preconditioner
 %
 %  Some standard MLAPI options include:
 %  PDE equations   - number of PDE equations for each node [int]
@@ -53,6 +54,7 @@ function out=ml(varargin)
 %
 % by: Chris Siefert <csiefer@sandia.gov>
 % Version History
+%   08/15/2006 - Added operator complexity handling.
 % 08/07/2006  - Added status checking functionality.
 % 08/03/2006  - Added functionality to allow ML to have multiple systems ready
 %               to be solved at once.  This entailed adding the system handle stuff.
@@ -63,17 +65,19 @@ function out=ml(varargin)
 
 if(nargin>=1 && strcmp(varargin{1},'cleanup'))  
   % Cleanup mode
-  out=mlmex(2,varargin{2:nargin});
+  varargout{1}=mlmex(2,varargin{2:nargin});
 elseif(nargin>=1 && strcmp(varargin{1},'status'))  
   % Status mode
-  out=mlmex(3,varargin{2:nargin});  
+  varargout{1}=mlmex(3,varargin{2:nargin});  
 elseif(nargin>=2 && strcmp(varargin{1},'setup'))
   % Setup mode
-  out=mlmex(0,varargin{2:nargin});
+  [out,oc]=mlmex(0,varargin{2:nargin});
+  varargout{1}=out;
+  if(nargout==2),varargout{2}=oc;end
 elseif(nargin>=3 && isnumeric(varargin{1}) && issparse(varargin{2}))
   % Solve mode
   if(size(varargin{2},1)~=length(varargin{3})), fprintf('ML: Error size mismatch between A + B\n');out=0;
-  else out=mlmex(1,varargin{:}); end
+  else varargout{1}=mlmex(1,varargin{:}); end
 else
   fprintf('ML: Error! Invalid input, mode unspecified or insufficient parameters\n');
 end
