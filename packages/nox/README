@@ -45,20 +45,22 @@ Alternatively, you can build the documentation as html pages yourself
 from the source code using the doxygen program.  To build the
 documentation type the following:
 
-1. go to the top level nox directory and type:
+1. Go to the top level trilinos build directory and configure a bare
+   bones build of trilinos by typing:
 
-   cd Trilinos/packages/nox
+   configure --enable-teuchos --enable-nox
 
-2. Run configure once so that we can automatically create the
-   documentation by typing:
+2. Change into the top of the nox build directory:
 
-   configure --enable-teuchos
+   cd packages/nox
 
-3. Create the documentation by typing
+3. Create the documentation by typing the following at the top level nox
+   build directory:
 
    make dox
 
 4. Finally, bring up the following web page in your web browser for the
-   remaining instructions.
+   remaining instructions.  The documentation is NOT generated in the
+   build tree but rather in the source tree:
 
    Trilinos/packages/nox/doc/html/index.html
