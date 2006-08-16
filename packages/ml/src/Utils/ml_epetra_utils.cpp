@@ -37,6 +37,8 @@
 #include "Teuchos_ParameterList.hpp"
 #endif
 
+using namespace std;
+
 // ====================================================================== 
 
 typedef struct {
