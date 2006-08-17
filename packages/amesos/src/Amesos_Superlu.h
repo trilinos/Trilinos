@@ -136,7 +136,7 @@ public:
 
   const Epetra_Comm& Comm() const {return(GetProblem()->GetOperator()->Comm());};
 
-  int SetParameters( const Teuchos::ParameterList &ParameterList )  ;
+  int SetParameters( Teuchos::ParameterList &ParameterList )  ;
 
   //! Prints timing information.
   void PrintTiming() const;

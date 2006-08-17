@@ -206,7 +206,7 @@ int Amesos_Umfpack::ConvertToUmfpackCRS()
 }   
 
 //=============================================================================
-int Amesos_Umfpack::SetParameters( const Teuchos::ParameterList &ParameterList ) 
+int Amesos_Umfpack::SetParameters( Teuchos::ParameterList &ParameterList ) 
 {
   // ========================================= //
   // retrive UMFPACK's parameters from list.   //

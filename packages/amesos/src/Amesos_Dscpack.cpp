@@ -73,7 +73,7 @@ Amesos_Dscpack::~Amesos_Dscpack(void)
 }
 
 //=============================================================================
-int Amesos_Dscpack::SetParameters( const Teuchos::ParameterList &ParameterList) 
+int Amesos_Dscpack::SetParameters( Teuchos::ParameterList &ParameterList) 
 {
   // ========================================= //
   // retrive DSCPACK's parameters from list.   //

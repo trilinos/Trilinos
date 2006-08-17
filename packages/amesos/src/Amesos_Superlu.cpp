@@ -117,7 +117,7 @@ Amesos_Superlu::~Amesos_Superlu(void)
 }
 
 // ====================================================================== 
-int Amesos_Superlu::SetParameters( const Teuchos::ParameterList &ParameterList) 
+int Amesos_Superlu::SetParameters( Teuchos::ParameterList &ParameterList) 
 {
   // retrive general parameters
 

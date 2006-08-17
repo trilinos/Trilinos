@@ -59,7 +59,7 @@ Amesos_Lapack::~Amesos_Lapack(void)
 
 //=============================================================================
 // Default values are defined in the constructor.
-int Amesos_Lapack::SetParameters( const Teuchos::ParameterList &ParameterList ) 
+int Amesos_Lapack::SetParameters( Teuchos::ParameterList &ParameterList ) 
 {
   // retrive general parameters
   SetStatusParameters( ParameterList );

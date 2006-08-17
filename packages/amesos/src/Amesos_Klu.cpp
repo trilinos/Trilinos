@@ -411,7 +411,7 @@ int Amesos_Klu::ConvertToKluCRS(bool firsttime)
 }
 
 //=============================================================================
-int Amesos_Klu::SetParameters( const Teuchos::ParameterList &ParameterList ) {
+int Amesos_Klu::SetParameters( Teuchos::ParameterList &ParameterList ) {
 
   // ========================================= //
   // retrive KLU's parameters from list.       //

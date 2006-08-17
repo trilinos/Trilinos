@@ -119,7 +119,7 @@ public:
   bool UseTranspose() const {return(true);};
   //@}
 
-  int SetParameters( const Teuchos::ParameterList &ParameterList ) ;
+  int SetParameters( Teuchos::ParameterList &ParameterList ) ;
 
   //! Print various timig.
   void PrintTiming() const;

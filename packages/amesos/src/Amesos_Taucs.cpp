@@ -221,7 +221,7 @@ int Amesos_Taucs::ConvertToTaucs()
 }
 
 //=============================================================================
-int Amesos_Taucs::SetParameters( const Teuchos::ParameterList &ParameterList) 
+int Amesos_Taucs::SetParameters( Teuchos::ParameterList &ParameterList) 
 {
   // retrive general parameters
 

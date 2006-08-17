@@ -113,7 +113,7 @@ public:
     return(GetProblem()->GetOperator()->Comm());
   }
 
-  int SetParameters( const Teuchos::ParameterList &ParameterList )  ;
+  int SetParameters( Teuchos::ParameterList &ParameterList )  ;
 
   //! Computes the eigenvalues of the linear system matrix using DGEEV.
   /*!

@@ -256,7 +256,7 @@ void Amesos_Mumps::SetICNTLandCNTL()
 }
 
 //=============================================================================
-int Amesos_Mumps::SetParameters( const Teuchos::ParameterList & ParameterList)
+int Amesos_Mumps::SetParameters( Teuchos::ParameterList & ParameterList)
 {
   // ========================================= //
   // retrive MUMPS' parameters from list.      //

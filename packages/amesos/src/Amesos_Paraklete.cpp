@@ -479,7 +479,7 @@ int Amesos_Paraklete::ConvertToParakleteCRS(bool firsttime)
 }
 
 //=============================================================================
-int Amesos_Paraklete::SetParameters( const Teuchos::ParameterList &ParameterList ) {
+int Amesos_Paraklete::SetParameters( Teuchos::ParameterList &ParameterList ) {
 
   // ========================================= //
   // retrive PARAKLETE's parameters from list.       //

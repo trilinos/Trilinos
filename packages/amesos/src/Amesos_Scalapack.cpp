@@ -660,7 +660,7 @@ return 0;
 }   
 
 
-int Amesos_Scalapack::SetParameters( const Teuchos::ParameterList &ParameterList ) {
+int Amesos_Scalapack::SetParameters( Teuchos::ParameterList &ParameterList ) {
 
   if( debug_ == 1 ) cout << "Entering `SetParameters()'" << endl;
 

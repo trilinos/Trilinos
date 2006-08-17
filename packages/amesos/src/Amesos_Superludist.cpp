@@ -163,7 +163,7 @@ Amesos_Superludist::~Amesos_Superludist(void)
 }
 
 // ====================================================================== 
-int Amesos_Superludist::SetParameters( const Teuchos::ParameterList &ParameterList ) 
+int Amesos_Superludist::SetParameters( Teuchos::ParameterList &ParameterList ) 
 {
   // retrive general parameters
 

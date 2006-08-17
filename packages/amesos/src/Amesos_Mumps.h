@@ -146,7 +146,7 @@ public:
   
   bool UseTranspose() const {return(UseTranspose_);};
 
-  int SetParameters( const Teuchos::ParameterList &ParameterList );
+  int SetParameters( Teuchos::ParameterList &ParameterList );
   
   //@}
 

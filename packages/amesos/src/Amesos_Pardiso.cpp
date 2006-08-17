@@ -184,7 +184,7 @@ int Amesos_Pardiso::ConvertToPardiso()
 }
 
 //=============================================================================
-int Amesos_Pardiso::SetParameters( const Teuchos::ParameterList &ParameterList) 
+int Amesos_Pardiso::SetParameters( Teuchos::ParameterList &ParameterList) 
 {
   // retrive general parameters
 
