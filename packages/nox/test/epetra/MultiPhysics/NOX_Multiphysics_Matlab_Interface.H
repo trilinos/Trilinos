@@ -98,7 +98,41 @@ public:
     {
       myCategory = QUERY;
       command     = "problemSummary"              ;
-      description = " - Summarize coupled problems" ;
+      description = " - (Coupling) Summarize coupled problems" ;
+    }
+
+    virtual bool doCommand( std::string );
+  };
+
+  class CMD_showAllValid : public CommandBase
+  {
+
+   public:
+
+    CMD_showAllValid( EpetraExt::EpetraExt_MatlabEngine & engine_,
+             Problem_Manager                 & solver_ ) : 
+      CommandBase( engine_, solver_ )
+    {
+      myCategory = QUERY;
+      command     = "showAllValid"              ;
+      description = " - (Coupling) Show valid status of all groups" ;
+    }
+
+    virtual bool doCommand( std::string );
+  };
+
+  class CMD_compPreconditioner : public CommandBase
+  {
+
+   public:
+
+    CMD_compPreconditioner( EpetraExt::EpetraExt_MatlabEngine & engine_,
+             Problem_Manager                 & solver_ ) : 
+      CommandBase( engine_, solver_ )
+    {
+      myCategory = GROUP_COMPUTE;
+      command     = "compPreconditioner"              ;
+      description = " - (Coupling) Compute the coupling Preconditioner matrix" ;
     }
 
     virtual bool doCommand( std::string );
@@ -115,7 +149,7 @@ public:
     {
       myCategory = GROUP_COMPUTE;
       command     = "compJac["              ;
-      description = " - Compute Block Jacobian (i, j)" ;
+      description = " - (Coupling) Compute Block Jacobian (i, j)" ;
     }
 
     virtual bool doCommand( std::string );
@@ -132,7 +166,7 @@ public:
     {
       myCategory = GROUP_SET;
       command     = "setSoln["              ;
-      description = " - Set a solution vector of problem i" ;
+      description = " - (Coupling) Set a solution vector of problem i" ;
     }
 
     virtual bool doCommand( std::string );
@@ -149,7 +183,24 @@ public:
     {
       myCategory = GROUP_COMPUTE;
       command     = "compRes["              ;
-      description = " - Compute Residual for problem i" ;
+      description = " - (Coupling) Compute Residual for problem i" ;
+    }
+
+    virtual bool doCommand( std::string );
+  };
+
+  class CMD_syncAllGroupX : public CommandBase
+  {
+
+   public:
+
+    CMD_syncAllGroupX( EpetraExt::EpetraExt_MatlabEngine & engine_,
+             Problem_Manager                 & solver_ ) : 
+      CommandBase( engine_, solver_ )
+    {
+      myCategory = GROUP_SET;
+      command     = "syncGroupsX"              ;
+      description = " - (Coupling) Copy pieces of coupling Group solution into each problem's group solution." ;
     }
 
     virtual bool doCommand( std::string );
@@ -166,7 +217,7 @@ public:
     {
       myCategory = CALLBACK_FUN;
       command     = "doXfers"              ;
-      description = " - Do all registered transfers of data" ;
+      description = " - (Coupling) Do all registered transfers of data" ;
     }
 
     virtual bool doCommand( std::string );
@@ -183,7 +234,7 @@ public:
     {
       myCategory = GROUP_GET;
       command     = "getAllX"              ;
-      description = " - Get All Problem Solutions" ;
+      description = " - (Coupling) Get All Problem Solutions" ;
     }
 
     virtual bool doCommand( std::string );
@@ -200,7 +251,7 @@ public:
     {
       myCategory = GROUP_GET;
       command     = "getJac["              ;
-      description = " - Get Block Jacobian [i j]" ;
+      description = " - (Coupling) Get Block Jacobian [i j]" ;
     }
 
     virtual bool doCommand( std::string );
@@ -217,7 +268,7 @@ public:
     {
       myCategory = GROUP_GET;
       command     = "getAllJac"              ;
-      description = " - Get All Block Jacobians" ;
+      description = " - (Coupling) Get All Block Jacobians" ;
     }
 
     virtual bool doCommand( std::string );
@@ -234,7 +285,7 @@ public:
     {
       myCategory = GROUP_GET;
       command     = "getRes["              ;
-      description = " - Get Residual for Problem [i]" ;
+      description = " - (Coupling) Get Residual for Problem [i]" ;
     }
 
     virtual bool doCommand( std::string );
@@ -251,7 +302,24 @@ public:
     {
       myCategory = GROUP_GET;
       command     = "getAllRes"              ;
-      description = " - Get All Problem Residuals" ;
+      description = " - (Coupling) Get All Problem Residuals" ;
+    }
+
+    virtual bool doCommand( std::string );
+  };
+
+  class CMD_getPrecMatrix : public CommandBase
+  {
+
+   public:
+
+    CMD_getPrecMatrix( EpetraExt::EpetraExt_MatlabEngine & engine_,
+             Problem_Manager                 & solver_ ) : 
+      CommandBase( engine_, solver_ )
+    {
+      myCategory = GROUP_GET;
+      command     = "getPrecMatrix"              ;
+      description = " - (Coupling) Get the coupling Preconditioner matrix" ;
     }
 
     virtual bool doCommand( std::string );

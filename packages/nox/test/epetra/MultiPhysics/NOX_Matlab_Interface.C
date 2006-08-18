@@ -465,15 +465,23 @@ Matlab_Interface::CMD_isConditionNumber::doCommand( std::string commandLine )
 bool 
 Matlab_Interface::CMD_showValid::doCommand( std::string commandLine )
 {
-  std::string isValid = (groupPtr->isF() ? "True" : "False" );
+  return showValid( groupPtr );
+}
+
+//-----------------------------------------------------------------------------
+
+bool 
+Matlab_Interface::CMD_showValid::showValid( NOX::Epetra::Group * p_Grp )
+{
+  std::string isValid = (p_Grp->isF() ? "True" : "False" );
   cout << " isF              --> " << isValid << endl;
-  isValid = (groupPtr->isJacobian() ? "True" : "False" );
+  isValid = (p_Grp->isJacobian() ? "True" : "False" );
   cout << " isJacobian       --> " << isValid << endl;
-  isValid = (groupPtr->isGradient() ? "True" : "False" );
+  isValid = (p_Grp->isGradient() ? "True" : "False" );
   cout << " isGradient       --> " << isValid << endl;
-  isValid = (groupPtr->isNewton() ? "True" : "False" );
+  isValid = (p_Grp->isNewton() ? "True" : "False" );
   cout << " isNewton         --> " << isValid << endl;
-  isValid = (groupPtr->isPreconditioner() ? "True" : "False" );
+  isValid = (p_Grp->isPreconditioner() ? "True" : "False" );
   cout << " isPreconditioner --> " << isValid << endl;
   return true;
 }

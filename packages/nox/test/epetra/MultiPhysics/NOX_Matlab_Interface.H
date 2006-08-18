@@ -348,6 +348,9 @@ public:
     }
 
     virtual bool doCommand( std::string );
+
+    // Static member to allow use by others
+    static bool showValid( NOX::Epetra::Group * );
   };
 
   //-----------------------------------------------------------------------------

@@ -196,6 +196,45 @@ GenericEpetraProblem& Problem_Manager::getProblem(string name)
 
 //-----------------------------------------------------------------------------
 
+NOX::Epetra::Group &
+Problem_Manager::getSolutionGroup(int id)
+{
+  // Get a group given its unique id
+  //if( Teuchos::is_null(Solvers[id]->rcpSolver) )
+  if( !(Solvers[id]) )
+  {
+    cout << "Could not get a valid NOX::Solver::Manager object for id = " << id << std::endl;
+    throw "Problem_Manager ERROR";
+  }
+
+  const NOX::Epetra::Group & const_epetraSolnGrp =
+    dynamic_cast<const NOX::Epetra::Group&>(Solvers[id]->getSolutionGroup());
+
+  NOX::Epetra::Group & epetraSolnGrp = const_cast<NOX::Epetra::Group&>(const_epetraSolnGrp);
+
+  return epetraSolnGrp;
+}
+
+//-----------------------------------------------------------------------------
+
+const Epetra_Vector &
+Problem_Manager::getSolutionVec(int id)
+{
+  //if( Teuchos::is_null(noxEpetraSolvers[id]->rcpSolver) )
+  if( !(Solvers[id]) )
+  {
+    cout << "Could not get a valid NOX::Solver::Manager object for id = " << id << std::endl;
+    throw "Problem_Manager ERROR";
+  }
+
+  const Epetra_Vector & epetraSolnVec = dynamic_cast<const NOX::Epetra::Vector&>
+    (Solvers[id]->getSolutionGroup().getX()).getEpetraVector();
+
+  return epetraSolnVec;
+}
+
+//-----------------------------------------------------------------------------
+
 NOX::Epetra::Group & Problem_Manager::getGroup(int id_)
 {
   // Get a group given its unique id

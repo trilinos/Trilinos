@@ -73,6 +73,12 @@ public:
   // Add a problem to the Manager
   void addProblem(GenericEpetraProblem& problem);
 
+  // Get the number of registered problems
+  int getProblemCount() { return problemCount; }
+
+  // Get the problem names container
+  map<int, std::string> & getNames() { return Names; }
+
   // Return my Problems container
   map<int, GenericEpetraProblem*> & getProblems() { return Problems; }
 
@@ -81,6 +87,12 @@ public:
 
   // Get a problem given its name
   GenericEpetraProblem& getProblem(string name);
+
+  // Get a group given its unique id
+  NOX::Epetra::Group& getSolutionGroup(int id);
+
+  // Get the solution (Epetra) vector from a problem (Solv_NOX_Epetra)
+  const Epetra_Vector & getSolutionVec(int id);
 
   // Get a group given its unique id
   NOX::Epetra::Group& getGroup(int id);

@@ -49,16 +49,22 @@ Coupling_Matlab_Interface::Coupling_Matlab_Interface(Problem_Manager &  manager_
   Matlab_Interface( *(manager_.getCompositeSolver()) ),
   problemManager(manager_)
 {
+  cout << "coupling matlab started\n";
+
   commands.push_back( new CMD_problemSummary             ( engine, problemManager ) );
+  commands.push_back( new CMD_showAllValid               ( engine, problemManager ) );
   commands.push_back( new CMD_getAllX                    ( engine, problemManager ) );
   commands.push_back( new CMD_setXvec                    ( engine, problemManager ) );
   commands.push_back( new CMD_compJac                    ( engine, problemManager ) );
+  commands.push_back( new CMD_compPreconditioner         ( engine, problemManager ) );
   commands.push_back( new CMD_compRes                    ( engine, problemManager ) );
+  commands.push_back( new CMD_syncAllGroupX              ( engine, problemManager ) );
   commands.push_back( new CMD_doXfers                    ( engine, problemManager ) );
   commands.push_back( new CMD_getJac                     ( engine, problemManager ) );
   commands.push_back( new CMD_getRes                     ( engine, problemManager ) );
   commands.push_back( new CMD_getAllJac                  ( engine, problemManager ) );
   commands.push_back( new CMD_getAllRes                  ( engine, problemManager ) );
+  commands.push_back( new CMD_getPrecMatrix              ( engine, problemManager ) );
 }
 
 //-----------------------------------------------------------------------------
@@ -82,6 +88,45 @@ Coupling_Matlab_Interface::CMD_problemSummary::doCommand( std::string commandLin
 {
   problemManager.outputStatus(std::cout);
   return true;
+}
+
+//-----------------------------------------------------------------------------
+
+bool 
+Coupling_Matlab_Interface::CMD_showAllValid::doCommand( std::string commandLine )
+{
+
+  cout << endl;
+  cout << "\tCoupling Group status " << endl;
+  cout << "\t--------------------- " << endl;
+  Matlab_Interface::CMD_showValid::showValid( groupPtr );
+  cout << endl;
+
+  for( int probId = 1; probId <= problemManager.getProblemCount(); ++probId )
+  {
+    cout << "\tGroup status for problem \"" << problemManager.getNames()[probId] << "\"" << endl;
+    cout << "\t------------------------ " << endl;
+
+    NOX::Epetra::Group * p_probGrp = &(problemManager.getSolutionGroup(probId));
+
+    Matlab_Interface::CMD_showValid::showValid( p_probGrp );
+    cout << endl;
+  }
+
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+
+bool 
+Coupling_Matlab_Interface::CMD_compPreconditioner::doCommand( std::string commandLine )
+{
+    Epetra_Operator * dummyOp = NULL;
+
+    cout << "Command currently unspupported." << endl;
+    return false;
+    //cout << "Computing coupling matrix preconditioner." << endl;
+    //return problemManager.computeJacobian( *solnPtr, *dummyOp );
 }
 
 //-----------------------------------------------------------------------------
@@ -159,6 +204,32 @@ Coupling_Matlab_Interface::CMD_compRes::doCommand( std::string commandLine )
   cout << "Computing Residual for Problem " << probId << endl;
 
   problemManager.computeGroupF( probId );
+
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+
+bool 
+Coupling_Matlab_Interface::CMD_syncAllGroupX::doCommand( std::string command )
+{
+
+  const Epetra_Vector * compositeSoln = &(dynamic_cast<const NOX::Epetra::Vector&>
+                     (groupPtr->getX()).getEpetraVector());
+
+  for( int probId = 1; probId <= problemManager.getProblemCount(); ++probId )
+  {
+    Epetra_Vector * tempSoln = new Epetra_Vector( problemManager.getSolutionVec(probId) );
+
+    problemManager.copyCompositeToVector( *compositeSoln, probId, *tempSoln );
+
+    NOX::Epetra::Group & grp = problemManager.getSolutionGroup(probId);
+    grp.setX(*tempSoln);
+
+    delete tempSoln; tempSoln = 0;
+
+    cout << "Copied composite solution into problem group # " << probId << endl;
+  }
 
   return true;
 }
@@ -342,4 +413,19 @@ Coupling_Matlab_Interface::CMD_getAllRes::doCommand( std::string command )
   }
   return true;
 }
+
+//-----------------------------------------------------------------------------
+
+bool 
+Coupling_Matlab_Interface::CMD_getPrecMatrix::doCommand( std::string command )
+{
+
+  cout << "Command currently unspupported." << endl;
+  return false;
+  //Epetra_RowMatrix & rowMatrix = *(problemManager.get_matrix());
+  //engine.PutRowMatrix( rowMatrix, "PrecMatrix", false );                                              
+  return true;                                                                                       
+
+}
+
 #endif
