@@ -40,9 +40,11 @@ AM_CPPFLAGS = $(EXPORT_INC_PATH)
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = LOBPCGEpetraEx LOBPCGEpetraExGen
+noinst_PROGRAMS = LOBPCGEpetraEx LOBPCGEpetraExSimple LOBPCGEpetraExGen
 
 LOBPCGEpetraEx_SOURCES = $(srcdir)/LOBPCGEpetraEx.cpp
+
+LOBPCGEpetraExSimple_SOURCES = $(srcdir)/LOBPCGEpetraExSimple.cpp
 
 LOBPCGEpetraExGen_SOURCES = $(srcdir)/LOBPCGEpetraExGen.cpp
 
@@ -58,6 +60,18 @@ LOBPCGEpetraEx_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/util/ModeLaplace
 
 #np# List libraries that np is dependent on.
 LOBPCGEpetraEx_LDADD = $(top_builddir)/util/ModeLaplace/libModeLaplace.a \
+                       $(EXPORT_LIBS) 
+
+LOBPCGEpetraExSimple_DEPENDENCIES = \
+        $(top_builddir)/src/libanasazi.a \
+        $(top_builddir)/util/ModeLaplace/libModeLaplace.a \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a 
+
+LOBPCGEpetraExSimple_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/util/ModeLaplace
+
+#np# List libraries that np is dependent on.
+LOBPCGEpetraExSimple_LDADD = $(top_builddir)/util/ModeLaplace/libModeLaplace.a \
                        $(EXPORT_LIBS) 
 
 LOBPCGEpetraExGen_DEPENDENCIES = \

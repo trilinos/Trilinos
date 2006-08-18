@@ -53,6 +53,10 @@
 #include "AnasaziBasicOutputManager.hpp"
 #include "Teuchos_BLAS.hpp"
 
+/** \example BlockKrylovSchur/BlockKrylovSchurEpetraEx.cpp
+    This is an example of how to use the Anasazi::BlockKrylovSchurSolMgr solver manager.
+*/
+
 /*! \class Anasazi::BlockKrylovSchurSolMgr
  *
  *  \brief The Anasazi::BlockKrylovSchurSolMgr provides a powerful and fully-featured solver manager over the BlockKrylovSchur eigensolver.

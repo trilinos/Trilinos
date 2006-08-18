@@ -35,6 +35,10 @@
 // * I do not assume that an operator is deterministic; I do assume that the
 //   operator, applied to 0, will return 0.
 
+/** \example MVOPTester/MVOPTesterEx.cpp 
+    This is an example of how to use the Anasazi::TestMultiVecTraits() and Anasazi::TestOperatorTraits() methods.
+ */
+
 /*! \file AnasaziMVOPTester.hpp
   \brief Test routines for MultiVecTraits and OperatorTraits conformity.
 */
@@ -47,6 +51,10 @@
 #include "AnasaziOutputManager.hpp"
 
 #include "Teuchos_RefCountPtr.hpp"
+
+/** \example MVOPTester/MVOPTesterEx.cpp
+    This is an example of how to use the Anasazi::TestMultiVecTraits() and Anasazi::TestOperatorTraits() methods.
+*/
 
 namespace Anasazi {
 

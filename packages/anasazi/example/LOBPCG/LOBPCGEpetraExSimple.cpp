@@ -1,6 +1,6 @@
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziBasicEigenproblem.hpp"
-#include "AnasaziLOBPCGSolMgr.hpp"
+#include "AnasaziSimpleLOBPCGSolMgr.hpp"
 #include "AnasaziBasicOutputManager.hpp"
 #include "AnasaziEpetraAdapter.hpp"
 #include "Epetra_CrsMatrix.h"
@@ -282,11 +282,9 @@ int main(int argc, char *argv[]) {
   MyPL.set( "Block Size", blockSize );
   MyPL.set( "Maximum Iterations", maxIters );
   MyPL.set( "Convergence Tolerance", tol );
-  MyPL.set( "Full Ortho", true );
-  MyPL.set( "Use Locking", true );
   //
   // Create the solver manager
-  LOBPCGSolMgr<double, MV, OP> MySolverMan(MyProblem, MyPL);
+  SimpleLOBPCGSolMgr<double, MV, OP> MySolverMan(MyProblem, MyPL);
 
   // Solve the problem
   //

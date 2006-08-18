@@ -156,7 +156,7 @@ class StatusTestMaxIters : public StatusTest<ScalarType,MV,OP> {
       os << "Undefined" << endl;
       break;
     }
-    os << ind << "MaxIters: " << maxIters_;
+    os << ind << "  MaxIters: " << maxIters_ << endl;
     return os;
   }
  

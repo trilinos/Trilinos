@@ -53,6 +53,10 @@
 
 #include "Teuchos_TimeMonitor.hpp"
 
+/** \example LOBPCG/LOBPCGEpetraExSimple.cpp
+    This is an example of how to use the Anasazi::SimpleLOBPCGSolMgr solver manager.
+*/
+
 /*! \class Anasazi::SimpleLOBPCGSolMgr
   \brief The Anasazi::SimpleLOBPCGSolMgr provides a simple solver
   manager over the LOBPCG eigensolver. 

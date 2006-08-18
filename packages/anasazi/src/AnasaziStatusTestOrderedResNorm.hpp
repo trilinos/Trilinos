@@ -333,7 +333,7 @@ ostream& StatusTestOrderedResNorm<ScalarType,MV,OP>::print(ostream& os, int inde
     os << "Undefined" << endl;
     break;
   }
-  os << ind << "(Tolerance,WhichNorm,Scaled,Quorum): " 
+  os << ind << "  (Tolerance,WhichNorm,Scaled,Quorum): " 
             << "(" << tol_;
   switch (whichNorm_) {
   case RES_ORTH:
@@ -349,7 +349,7 @@ ostream& StatusTestOrderedResNorm<ScalarType,MV,OP>::print(ostream& os, int inde
   os        << "," << (scaled_   ? "true" : "false")
             << "," << quorum_ 
             << ")" << endl;
-  os << ind << "Auxiliary values: ";
+  os << ind << "  Auxiliary values: ";
   if (rvals_.size() > 0) {
     for (unsigned int i=0; i<rvals_.size(); i++) {
       os << "(" << rvals_[i] << ", " << ivals_[i] << ")  ";
@@ -361,7 +361,7 @@ ostream& StatusTestOrderedResNorm<ScalarType,MV,OP>::print(ostream& os, int inde
   }
 
   if (state_ != Undefined) {
-    os << ind << "Which vectors: ";
+    os << ind << "  Which vectors: ";
     if (ind_.size() > 0) {
       for (unsigned int i=0; i<ind_.size(); i++) os << ind_[i] << " ";
       os << endl;

@@ -166,7 +166,7 @@ class StatusTestOutput : public StatusTest<ScalarType,MV,OP> {
       os << "Undefined" << endl;
       break;
     }
-    os << ind << "(Num calls,Mod test,State test): " << "(" << numCalls_ << ", " << modTest_ << ",";
+    os << ind << "  (Num calls,Mod test,State test): " << "(" << numCalls_ << ", " << modTest_ << ",";
     if (stateTest_ == 0) {
       os << " none )" << endl;
     }

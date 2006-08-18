@@ -282,7 +282,7 @@ ostream& StatusTestResNorm<ScalarType,MV,OP>::print(ostream& os, int indent) con
     os << "Undefined" << endl;
     break;
   }
-  os << ind << "(Tolerance,WhichNorm,Scaled,Quorum): " 
+  os << ind << "  (Tolerance,WhichNorm,Scaled,Quorum): " 
             << "(" << tol_;
   switch (whichNorm_) {
   case RES_ORTH:
@@ -300,7 +300,7 @@ ostream& StatusTestResNorm<ScalarType,MV,OP>::print(ostream& os, int indent) con
             << ")" << endl;
 
   if (state_ != Undefined) {
-    os << ind << "Which vectors: ";
+    os << ind << "  Which vectors: ";
     if (ind_.size() > 0) {
       for (unsigned int i=0; i<ind_.size(); i++) os << ind_[i] << " ";
       os << endl;

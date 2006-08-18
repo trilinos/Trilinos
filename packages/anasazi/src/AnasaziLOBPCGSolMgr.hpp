@@ -50,6 +50,16 @@
 #include "AnasaziStatusTestOutput.hpp"
 #include "AnasaziBasicOutputManager.hpp"
 
+
+/** \example LOBPCG/LOBPCGEpetraEx.cpp
+    This is an example of how to use the Anasazi::LOBPCGSolMgr solver manager to solve a standard eigenvalue problem.
+*/
+
+/** \example LOBPCG/LOBPCGEpetraExGen.cpp
+    This is an example of how to use the Anasazi::LOBPCGSolMgr solver manager to solve a generalized eigenvalue problem.
+*/
+
+
 /*! \class Anasazi::LOBPCGSolMgr
  *
  *  \brief The Anasazi::LOBPCGSolMgr provides a powerful and fully-featured solver manager over the LOBPCG eigensolver.
@@ -177,7 +187,6 @@ LOBPCGSolMgr<ScalarType,MV,OP>::LOBPCGSolMgr(
   problem_(problem),
   whch_("SR"),
   convtol_(MT::prec()),
-  locktol_(MT::prec()/10),
   maxIters_(100),
   useLocking_(false),
   relconvtol_(true),
@@ -206,6 +215,8 @@ LOBPCGSolMgr<ScalarType,MV,OP>::LOBPCGSolMgr(
   // locking tolerance
   useLocking_ = pl.get("Use Locking",useLocking_);
   rellocktol_ = pl.get("Relative Locking Tolerance",rellocktol_);
+  // default: should be less than convtol_
+  locktol_ = convtol_/10;
   locktol_ = pl.get("Locking Tolerance",locktol_);
 
   // maximum number of iterations

@@ -47,7 +47,14 @@ INPUT                  = groups.doc ../src ../thyra/src index.doc
 
 EXCLUDE                = ../src/ModalAnalysisSolvers ../src/AnasaziDenseMatTraits.hpp ../src/AnasaziDirectSolver.hpp
 
-EXAMPLE_PATH           = ../example/LOBPCG ../example/BlockDavidson ../example/MVOPTester
+EXAMPLE_PATH           = ../example/LOBPCG/LOBPCGEpetraEx.cpp                     \
+                         ../example/LOBPCG/LOBPCGEpetraExSimple.cpp               \
+                         ../example/LOBPCG/LOBPCGEpetraExGen.cpp                  \
+                         ../example/BlockDavidson/BlockDavidsonEpetraEx.cpp       \
+                         ../example/BlockDavidson/BlockDavidsonEpetraExGen.cpp    \
+                         ../example/BlockKrylovSchur/BlockKrylovSchurEpetraEx.cpp \
+                         ../example/MVOPTester/MVOPTesterEx.cpp              
+EXAMPLE_PATTERNS       = *.cpp *.hpp
 
 TAGFILES               = ../../common/tag_files/epetra.tag=../../../epetra/doc/html ../../common/tag_files/teuchos.tag=../../../teuchos/doc/html ../../common/tag_files/ThyraInterfacesOperatorVectorANAFundamental.tag=../../../thyra/src/interfaces/operator_vector/ana/fundamental/doc/html
 

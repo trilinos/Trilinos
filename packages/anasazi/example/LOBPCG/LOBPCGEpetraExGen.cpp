@@ -1,45 +1,12 @@
-// @HEADER
-// ***********************************************************************
-//
-//                 Anasazi: Block Eigensolvers Package
-//                 Copyright (2004) Sandia Corporation
-//
-// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-// license for use of this work by or on behalf of the U.S. Government.
-//
-// This library is free software; you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as
-// published by the Free Software Foundation; either version 2.1 of the
-// License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful, but
-// WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Lesser General Public License for more details.
-//
-// You should have received a copy of the GNU Lesser General Public
-// License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-//
-// ***********************************************************************
-// @HEADER
-//
-// This example computes the smallest eigenvalues of the discretized 2D Laplacian
-// operator using the LOBPCG method.  This problem is discretized using 
-// finite elements, resulting in a generalized eigenvalue problem of the form Ax = Mx\lambda.
-//
-//
 #include "AnasaziConfigDefs.hpp"
-
+#include "AnasaziBasicEigenproblem.hpp"
+#include "AnasaziLOBPCGSolMgr.hpp"
+#include "AnasaziBasicOutputManager.hpp"
 #include "AnasaziEpetraAdapter.hpp"
 #include "Epetra_CrsMatrix.h"
+#include "Teuchos_CommandLineProcessor.hpp"
 
-#include "AnasaziBasicEigenproblem.hpp"
-#include "AnasaziSimpleLOBPCGSolMgr.hpp"
-
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
 #include <mpi.h>
 #else
@@ -49,50 +16,48 @@
 
 #include "ModeLaplace2DQ2.h"
 
-int main(int argc, char *argv[]) {
-  int i;
+using namespace Anasazi;
 
-#ifdef EPETRA_MPI
+int main(int argc, char *argv[]) {
+
+#ifdef HAVE_MPI
   // Initialize MPI
+  //
   MPI_Init(&argc,&argv);
 #endif
 
-#ifdef EPETRA_MPI
+  // Create an Epetra communicator
+  //
+#ifdef HAVE_MPI
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
 #else
   Epetra_SerialComm Comm;
 #endif
 
-  int MyPID = Comm.MyPID();
+  // Create an Anasazi output manager
+  //
+  BasicOutputManager<double> printer;
+  printer.stream(Errors) << Anasazi_Version() << endl << endl;
 
-  Anasazi::ReturnType returnCode;
-  bool verbose = true;
-
-  std::string which;
-  if (argc > 1) {
-    which = argv[1];
-  }
-  else {
-    which = "SM";
-  }
-  if ( which != "SM" && which != "LM" && which != "SR" && which != "LR" ) {
-    if (verbose && MyPID==0) {
-      std::cout << "Usage: " << argv[0] << " [sort string]" << endl
-        << "where:" << endl
-        << "sort string       - SM | LM | SR | LR" << endl << endl;
-    }
-#ifdef EPETRA_MPI
-    MPI_Finalize() ;
+  // Get the sorting string from the command line
+  //
+  std::string which("LM");
+  Teuchos::CommandLineProcessor cmdp(false,true);
+  cmdp.setOption("sort",&which,"Targetted eigenvalues (SM or LM).");
+  if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
+#ifdef HAVE_MPI
+    MPI_Finalize();
 #endif
     return -1;
   }
+
   
   typedef Epetra_MultiVector MV;
   typedef Epetra_Operator OP;
-  typedef Anasazi::MultiVecTraits<double, Epetra_MultiVector> MVT;
+  typedef MultiVecTraits<double, Epetra_MultiVector> MVT;
 
   // Number of dimension of the domain
-  int space_dim = 2;
+  const int space_dim = 2;
 
   // Size of each of the dimensions of the domain
   std::vector<double> brick_dim( space_dim );
@@ -122,8 +87,8 @@ int main(int argc, char *argv[]) {
   ivec->Random();
 
   // Create the eigenproblem.
-  Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double, MV, OP> > MyProblem =
-    Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>(K, M, ivec) );
+  Teuchos::RefCountPtr<BasicEigenproblem<double, MV, OP> > MyProblem =
+    Teuchos::rcp( new BasicEigenproblem<double, MV, OP>(K, M, ivec) );
 
   // Inform the eigenproblem that the operator A is symmetric
   MyProblem->setHermitian(true);
@@ -134,10 +99,13 @@ int main(int argc, char *argv[]) {
   // Inform the eigenproblem that you are finishing passing it information
   bool boolret = MyProblem->setProblem();
   if (boolret != true) {
-    cout << "Anasazi::BasicEigenproblem::setProblem() returned an error." << endl;
+    printer.print(Errors,"Anasazi::BasicEigenproblem::setProblem() returned an error.\n");
+#ifdef HAVE_MPI
+    MPI_Finalize();
+#endif
+    return -1;
   }
 
-  //
   // Create parameter list to pass into the solver manager
   //
   Teuchos::ParameterList MyPL;
@@ -145,26 +113,31 @@ int main(int argc, char *argv[]) {
   MyPL.set( "Block Size", blockSize );
   MyPL.set( "Maximum Iterations", maxIters );
   MyPL.set( "Convergence Tolerance", tol );
+  MyPL.set( "Full Ortho", true );
+  MyPL.set( "Use Locking", true );
   //
   // Create the solver manager
-  Anasazi::SimpleLOBPCGSolMgr<double, MV, OP> MySolverMan(MyProblem, MyPL);
+  LOBPCGSolMgr<double, MV, OP> MySolverMan(MyProblem, MyPL);
 
   // Solve the problem
-  returnCode = MySolverMan.solve();
+  //
+  ReturnType returnCode = MySolverMan.solve();
 
   // Get the eigenvalues and eigenvectors from the eigenproblem
-  Anasazi::Eigensolution<double,MV> sol = MyProblem->getSolution();
-  std::vector<Anasazi::Value<double> > evals = sol.Evals;
+  //
+  Eigensolution<double,MV> sol = MyProblem->getSolution();
+  std::vector<Value<double> > evals = sol.Evals;
   Teuchos::RefCountPtr<MV> evecs = sol.Evecs;
 
   // Compute residuals.
+  //
   std::vector<double> normR(sol.numVecs);
   if (sol.numVecs > 0) {
     Teuchos::SerialDenseMatrix<int,double> T(sol.numVecs, sol.numVecs);
     Epetra_MultiVector Kvec( K->OperatorDomainMap(), evecs->NumVectors() );
     Epetra_MultiVector Mvec( M->OperatorDomainMap(), evecs->NumVectors() );
     T.putScalar(0.0); 
-    for (i=0; i<sol.numVecs; i++) {
+    for (int i=0; i<sol.numVecs; i++) {
       T(i,i) = evals[i].realpart;
     }
     K->Apply( *evecs, Kvec );  
@@ -172,22 +145,28 @@ int main(int argc, char *argv[]) {
     MVT::MvTimesMatAddMv( -1.0, Mvec, T, 1.0, Kvec );
     MVT::MvNorm( Kvec, &normR );
   }
-  
-  if (verbose && MyPID==0) {
-    cout.setf(ios_base::right, ios_base::adjustfield);
-    cout<<"Solver manager returned " << (returnCode == Anasazi::Converged ? "converged." : "unconverged.") << endl;
-    cout<<endl;
-    cout<<"------------------------------------------------------"<<endl;
-    cout<<std::setw(16)<<"Eigenvalue"
-	      <<std::setw(18)<<"Direct Residual"
-	      <<endl;
-    cout<<"------------------------------------------------------"<<endl;
-    for (i=0; i<sol.numVecs; i++) {
-      cout<<std::setw(16)<<evals[i].realpart
-	        <<std::setw(18)<<normR[i]/evals[i].realpart 
-	        <<endl;
-    }
-    cout<<"------------------------------------------------------"<<endl;
+
+  // Print the results
+  //
+  ostringstream os;
+  os.setf(ios_base::right, ios_base::adjustfield);
+  os<<"Solver manager returned " << (returnCode == Converged ? "converged." : "unconverged.") << endl;
+  os<<endl;
+  os<<"------------------------------------------------------"<<endl;
+  os<<std::setw(16)<<"Eigenvalue"
+    <<std::setw(18)<<"Direct Residual"
+    <<endl;
+  os<<"------------------------------------------------------"<<endl;
+  for (int i=0; i<sol.numVecs; i++) {
+    os<<std::setw(16)<<evals[i].realpart
+      <<std::setw(18)<<normR[i]/evals[i].realpart
+      <<endl;
   }
+  os<<"------------------------------------------------------"<<endl;
+  printer.print(Errors,os.str());
+
+#ifdef HAVE_MPI
+  MPI_Finalize();
+#endif
   return 0;
 }

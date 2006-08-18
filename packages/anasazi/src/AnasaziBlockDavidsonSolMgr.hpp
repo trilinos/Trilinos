@@ -52,6 +52,15 @@
 #include "AnasaziBasicOutputManager.hpp"
 #include "Teuchos_BLAS.hpp"
 
+
+/** \example BlockDavidson/BlockDavidsonEpetraEx.cpp
+    This is an example of how to use the Anasazi::BlockDavidsonSolMgr solver manager to solve a standard eigenvalue problem.
+*/
+
+/** \example BlockDavidson/BlockDavidsonEpetraExGen.cpp
+    This is an example of how to use the Anasazi::BlockDavidsonSolMgr solver manager to solve a generalized eigenvalue problem.
+*/
+
 /*! \class Anasazi::BlockDavidsonSolMgr
  *
  *  \brief The Anasazi::BlockDavidsonSolMgr provides a powerful and fully-featured solver manager over the BlockDavidson eigensolver.
