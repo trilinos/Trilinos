@@ -48,6 +48,7 @@ FixedPointBased(const Teuchos::RefCountPtr< vector<NOX::Solver::Manager*> >& sol
 		const Teuchos::RefCountPtr<NOX::Multiphysics::DataExchange::Interface>& i, 
 		const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t, 
 		const Teuchos::RefCountPtr<Teuchos::ParameterList>& p) :
+  solveType( JACOBI ),
   solversVecPtr(solvers),
   dataExInterface(i),
   globalDataPtr(Teuchos::rcp(new NOX::GlobalData(p))),
@@ -75,6 +76,19 @@ NOX::Multiphysics::Solver::FixedPointBased::init()
   // Get the checktype
   checkType = (NOX::StatusTest::CheckType) paramsPtr->
     sublist("Solver Options").get("Status Test Check Type", NOX::StatusTest::Minimal);
+
+  // Get the type of fixed-point solve
+  std::string solveTypeName =  paramsPtr->sublist("Solver Options").get( "Fixed Point Iteration Type", "Seidel" );
+  if( "Jacobi" == solveTypeName )
+    solveType = JACOBI;
+  else if( "Seidel" == solveTypeName )
+    solveType = SEIDEL;
+  else
+  {
+    utilsPtr->out() << "NOX::Multiphysics::Solver::FixedPointBased::step - "
+                    << "Invalid Solver Method " << solveTypeName << endl;
+    throw "NOX Error";
+  }
 
   // Print out parameters
   if (utilsPtr->isPrintType(NOX::Utils::Parameters)) 
@@ -196,8 +210,9 @@ NOX::Multiphysics::Solver::FixedPointBased::step()
   {
     status = NOX::StatusTest::Unconverged;
 
-    // Bring all data needed from other problems to the current one
-    dataExInterface->exchangeDataTo(i);
+    // Conditionally bring all data needed from other problems to the current one
+    if( SEIDEL == solveType )
+      dataExInterface->exchangeDataTo(i);
 
     // Reset the problem's group
     const_cast<NOX::Abstract::Group&>((*iter)->getSolutionGroup()).setX((*iter)->getSolutionGroup().getX());
@@ -295,7 +310,7 @@ NOX::Multiphysics::Solver::FixedPointBased::getList() const
 void NOX::Multiphysics::Solver::FixedPointBased::printUpdate() 
 {
   double normSoln = 0;
-  double normStep = 0;
+  //double normStep = 0;
 
   // Print the status test parameters at each iteration if requested  
   if ((status == NOX::StatusTest::Unconverged) && 

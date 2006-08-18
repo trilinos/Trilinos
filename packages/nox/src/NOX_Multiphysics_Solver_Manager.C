@@ -143,6 +143,12 @@ NOX::Multiphysics::Solver::Manager::reset(
   return cplPtr->reset(grp, tests);
 }
 
+bool 
+NOX::Multiphysics::Solver::Manager::reset( const Teuchos::RefCountPtr<Abstract::Group>& grp )
+{
+  return cplPtr->reset(grp);
+}
+
 // PRIVATE
 void NOX::Multiphysics::Solver::Manager::deprecated(const string& oldName, const string& newName) const
 {

@@ -48,7 +48,7 @@ NOX::Multiphysics::Group::Group(
   // Create our version of the composite solution vector
   vector<const NOX::Abstract::Vector*> vecPtrs;
 
-  for( int i = 0; i < solvers->size(); ++i )
+  for( unsigned int i = 0; i < solvers->size(); ++i )
   {
     cout << " .. .. .. received solver # " << i << endl;
     vecPtrs.push_back( &((*solvers)[i]->getSolutionGroup().getX()) );
@@ -119,7 +119,7 @@ NOX::Multiphysics::Group::computeF()
 {
   NOX::Abstract::Group::ReturnType status;
 
-  for( int i = 0; i < (*solversVecPtr).size(); ++i )
+  for( unsigned int i = 0; i < (*solversVecPtr).size(); ++i )
   {
     status = const_cast<NOX::Abstract::Group&>((*solversVecPtr)[i]->getSolutionGroup()).computeF();
     if( NOX::Abstract::Group::Ok != status )
@@ -131,7 +131,7 @@ NOX::Multiphysics::Group::computeF()
   // Compute the composite normF
   normRHS = 0;
 
-  for( int i = 0; i < (*solversVecPtr).size(); ++i )
+  for( unsigned int i = 0; i < (*solversVecPtr).size(); ++i )
     normRHS += (*solversVecPtr)[i]->getSolutionGroup().getNormF() *
              (*solversVecPtr)[i]->getSolutionGroup().getNormF()  ;
   normRHS = sqrt(normRHS);

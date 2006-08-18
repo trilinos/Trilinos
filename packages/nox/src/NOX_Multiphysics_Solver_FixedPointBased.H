@@ -112,6 +112,9 @@ class FixedPointBased : public NOX::Multiphysics::Solver::Generic {
 
 public:
 
+  enum SOLVE_TYPE { JACOBI, 
+                    SEIDEL };
+
   //! Constructor
   /*!
     See reset(NOX::Abstract::Group&, NOX::StatusTest::Generic&, Teuchos::ParameterList&) for description
@@ -155,6 +158,9 @@ protected:
 
 protected:
   
+  //! Type of fixed-point solve to perform
+  SOLVE_TYPE solveType;
+
   //! Pointer to the container of solvers for each problem to be coupled
   Teuchos::RefCountPtr<vector<NOX::Solver::Manager*> > solversVecPtr;
 
