@@ -216,10 +216,10 @@ public:
   { return doOffBlocks; }
 
   // Return my name
-  string getName() { return GenericEpetraProblem::getName(); };
+  string getName() const { return GenericEpetraProblem::getName(); };
 
   // Return the problem name queries
-  string getName(int id) { return (*(Names.find(id))).second; };
+  string getProblemName(int id) { return (*(Names.find(id))).second; };
 
   // These allow inheritance from GenericEpetraProblem base class
 

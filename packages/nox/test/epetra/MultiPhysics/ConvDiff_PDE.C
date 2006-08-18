@@ -315,7 +315,7 @@ ConvDiff_PDE::evaluate(
   map<string, double*> depVars;
   depVars.insert( pair< string, double*>(getName(), uu) );
   for( int i = 0; i < numDep; ++i )
-    depVars.insert( pair<string, double*>(myManager->getName(depProblems[i]), ddep[i]) );
+    depVars.insert( pair<string, double*>(myManager->getProblemName(depProblems[i]), ddep[i]) );
 
   // Zero out the objects that will be filled
   rhs->PutScalar(0.0);
@@ -474,7 +474,7 @@ ConvDiff_PDE::computeHeatFlux( const Epetra_Vector * soln )
   map<string, double*> depVars;
   depVars.insert( pair< string, double*>(getName(), uu) );
   for( int i = 0; i < numDep; ++i )
-    depVars.insert( pair<string, double*>(myManager->getName(depProblems[i]), ddep[i]) );
+    depVars.insert( pair<string, double*>(myManager->getProblemName(depProblems[i]), ddep[i]) );
 
   myFlux = 0.0;
 

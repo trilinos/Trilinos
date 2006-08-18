@@ -396,7 +396,7 @@ void Equation_B::generateGraph()
 {
   
   // Declare required variables
-  int i,j;
+  int i;
   int row, column;
   int OverlapNumMyNodes = OverlapMap->NumMyElements();
   int OverlapMinMyNodeGID;

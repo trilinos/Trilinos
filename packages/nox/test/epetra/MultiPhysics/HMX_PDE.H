@@ -109,7 +109,7 @@ public:
   void compute_dRdN();
 
   // Accesor function for time step
-  double getdt();
+  double getdt() const;
 
   // Return a reference to the Epetra_Vector with the old solution
   Epetra_Vector& getOldSoln();

@@ -115,7 +115,6 @@ bool Burgers::initializeSoln()
 {
   Epetra_Vector& x = *xptr;
 
-  double pi = 4.0*atan(1.0);
   double arg;
   for( int i = 0; i < NumMyNodes; ++i) 
   {
@@ -351,7 +350,7 @@ void Burgers::generateGraph()
 {
   
   // Declare required variables
-  int i,j;
+  int i;
   int row, column;
   int OverlapNumMyNodes = OverlapMap->NumMyElements();
   int OverlapMinMyGID;

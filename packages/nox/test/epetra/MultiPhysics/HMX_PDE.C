@@ -60,16 +60,16 @@ HMX_PDE::HMX_PDE(Epetra_Comm& comm,
           int numGlobalNodes,
           string name_) :
   GenericEpetraProblem(comm, numGlobalNodes, name_),
+  xmin(0.0),
+  xmax(1.0),
+  dt(2.0e-1),
   diffCoef(diffCoef_),
   Const_R(Const_R_),
   StericCoef(Steric_C_),
   PreExp_A(PreExp_A_),
   ActEnergy(ActEnergy_),
   SrcTermExponent(SrcTermExponent_),
-  SrcTermWeight(SrcTermWeight_),
-  xmin(0.0),
-  xmax(1.0),
-  dt(2.0e-1)
+  SrcTermWeight(SrcTermWeight_)
 {
   // Create mesh and solution vectors
 
@@ -145,7 +145,6 @@ HMX_PDE::initializeSolution(double val)
 {
   // Aliases for convenience
   Epetra_Vector& soln = *initialSolution;
-  Epetra_Vector& x = *xptr;
 
   soln.PutScalar(val);
   
@@ -218,7 +217,6 @@ HMX_PDE::evaluate(
     u.Import(*soln, *Importer, Insert);
 
   // Declare required variables
-  int j,ierr;
   int OverlapNumMyNodes = OverlapMap->NumMyElements();
 
   int OverlapMinMyNodeGID;
@@ -252,9 +250,8 @@ HMX_PDE::evaluate(
   }
   */
 
-  int row, column;
+  int row;
   double alpha = 500.0;
-  double jac;
   double xx[2];
   double uu[2]; 
   double uuold[2];
@@ -270,7 +267,7 @@ HMX_PDE::evaluate(
   depVars.insert( pair<string, double*>(getName(), uu) );
   for( int i = 0; i<numDep; i++ )
     depVars.insert( pair<string, double*>
-                    (myManager->getName(depProblems[i]), ddep[i]) );
+                    (myManager->getProblemName(depProblems[i]), ddep[i]) );
   // Do a check on this fill
 //  map<string, double*>::iterator iter;
 //  for( iter = depVars.begin(); iter != depVars.end(); iter++)
@@ -432,7 +429,7 @@ HMX_PDE::getOldSoln()
 //-----------------------------------------------------------------------------
 
 double 
-HMX_PDE::getdt()
+HMX_PDE::getdt() const
 {
   return dt;
 }

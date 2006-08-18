@@ -121,7 +121,7 @@ Coupling_Matlab_Interface::CMD_showAllValid::doCommand( std::string commandLine 
 bool 
 Coupling_Matlab_Interface::CMD_compPreconditioner::doCommand( std::string commandLine )
 {
-    Epetra_Operator * dummyOp = NULL;
+    //Epetra_Operator * dummyOp = NULL;
 
     cout << "Command currently unspupported." << endl;
     return false;
@@ -255,7 +255,7 @@ Coupling_Matlab_Interface::CMD_getAllX::doCommand( std::string command )
   // Do diagonal blocks
   for( ; problemLast != problemIter; ++problemIter )
   {
-    GenericEpetraProblem & problem = *(*problemIter).second;
+    //GenericEpetraProblem & problem = *(*problemIter).second;
     int                    probId  = (*problemIter).first;
 
     const Epetra_Vector * tempVec = &(dynamic_cast<const NOX::Epetra::Vector&>
@@ -397,7 +397,7 @@ Coupling_Matlab_Interface::CMD_getAllRes::doCommand( std::string command )
   // Do diagonal blocks
   for( ; problemLast != problemIter; ++problemIter )
   {
-    GenericEpetraProblem & problem = *(*problemIter).second;
+    //GenericEpetraProblem & problem = *(*problemIter).second;
     int                    probId  = (*problemIter).first;
 
     const Epetra_Vector * resVec = problemManager.getResidual( probId );

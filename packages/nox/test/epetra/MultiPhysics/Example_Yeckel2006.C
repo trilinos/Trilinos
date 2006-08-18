@@ -105,17 +105,19 @@ int main(int argc, char *argv[])
   Teuchos::CommandLineProcessor clp( false );
 
   // Default run-time options that can be changed from the command line
-  int  NumGlobalNodes = 10    ;
-  bool runMF          = true  ;
-  bool useMatlab      = false ;
-  bool doOffBlocks    = false ;
-  bool libloose       = true  ;
+  int         NumGlobalNodes = 10        ;
+  bool        runMF          = true      ;
+  bool        useMatlab      = false     ;
+  bool        doOffBlocks    = false     ;
+  bool        libloose       = true      ;
+  std::string solvType       = "seidel"  ;
 
   clp.setOption( "n", &NumGlobalNodes, "Number of elements" );
   clp.setOption( "runMF", "loose", &runMF, "Use Matrix-Free strong coupling" );
   clp.setOption( "offblocks", "no-offblocks", &doOffBlocks, "Include off-diagonal blocks in preconditioning matrix" );
   clp.setOption( "matlab", "no-matlab", &useMatlab, "Use Matlab debugging engine" );
   clp.setOption( "noxlib", "no-noxlib", &libloose, "Perform loose coupling using NOX's library (as opposed to hard-coded test driver)." );
+  clp.setOption( "solvType", &solvType, "Solve Type.  Valid choices are: jacobi, seidel" );
 
   Teuchos::CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
 
@@ -197,7 +199,7 @@ int main(int argc, char *argv[])
   converged->addStatusTest(absresid);
   //converged->addStatusTest(update);
   Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> maxiters = 
-    Teuchos::rcp(new NOX::StatusTest::MaxIters(20));
+    Teuchos::rcp(new NOX::StatusTest::MaxIters(1));
   Teuchos::RefCountPtr<NOX::StatusTest::FiniteValue> finiteValue = 
     Teuchos::rcp(new NOX::StatusTest::FiniteValue);
   Teuchos::RefCountPtr<NOX::StatusTest::Combo> combo = 
@@ -318,8 +320,14 @@ int main(int argc, char *argv[])
     // Package the Problem_Manager as the DataExchange::Intreface
     Teuchos::RefCountPtr<NOX::Multiphysics::DataExchange::Interface> dataExInterface =
       Teuchos::rcp( &problemManager, false );
+    
+    Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> fixedPt_maxiters = 
+      Teuchos::rcp(new NOX::StatusTest::MaxIters(20));
 
-    NOX::Multiphysics::Solver::Manager cplSolv( solversVec, dataExInterface, combo, nlParamsPtr );
+    if( "jacobi" == solvType )
+      nlParamsPtr->sublist("Solver Options").set("Fixed Point Iteration Type", "Jacobi");
+
+    NOX::Multiphysics::Solver::Manager cplSolv( solversVec, dataExInterface, fixedPt_maxiters, nlParamsPtr );
 
     cplSolv.solve();
   }

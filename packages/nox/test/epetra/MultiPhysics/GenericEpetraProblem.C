@@ -59,19 +59,18 @@
 GenericEpetraProblem::GenericEpetraProblem(const Epetra_Comm& comm, 
                                            int numGlobalNodes,
                                            string name_) :
-  Comm(&comm),
-  NumGlobalNodes(numGlobalNodes),
   myId(0),
   myName(name_),
-  StandardMap(0),
   OverlapMap(0),
   Importer(0),
   xptr(0),
-  AA(0)
+  AA(0),
+  Comm(&comm),
+  StandardMap(0),
+  NumGlobalNodes(numGlobalNodes)
 {
 
   // Commonly used variables
-  int i;
   MyPID = Comm->MyPID();      // Process ID
   NumProc = Comm->NumProc();  // Total number of processes
 
@@ -203,7 +202,7 @@ GenericEpetraProblem::outputSolutionStatus( ostream & os ) const
   os << "  ----------------------------------" << endl;
   os << *initialSolution << endl;
 
-  for( int i = 0; i < depProblems.size(); ++i) {
+  for( unsigned int i = 0; i < depProblems.size(); ++i) {
     int depId = depProblems[i];
     os << "\tDependent Status for " << myManager->getProblem(depId).getName() << endl;
     os << "\t----------------------------------" << endl;
@@ -301,7 +300,7 @@ GenericEpetraProblem::createDependentVectors()
          << "vector for this problem !!" << endl;
     throw "GenericEpetraProblem ERROR";
   }
-  for( int i = 0; i<depProblems.size(); i++ ) 
+  for( unsigned int i = 0; i<depProblems.size(); i++ ) 
   {
 #ifdef DEBUG
     cout << "For problem : " << myId << "  Creating DepVec for problem : "
@@ -339,7 +338,7 @@ void
 GenericEpetraProblem::doTransfer()
 {
   // Do transfers from each dependent problem to this one
-  for( int i = 0; i < depProblems.size(); ++i)  
+  for( unsigned int i = 0; i < depProblems.size(); ++i)  
   {
     int depId = depProblems[i];
     XferOp* xfer = (*xferOperators.find(depId)).second;

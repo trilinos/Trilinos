@@ -79,7 +79,7 @@ void Basis::getBasis( int gp, double *x, double *u, double *uold, vector<double*
     duu += u[i] * dphide[i];
     uuold += uold[i] * phi[i];
     duuold += uold[i] * dphide[i];
-    for( int j = 0; j < dep.size(); ++j )
+    for( unsigned int j = 0; j < dep.size(); ++j )
       ddep[j] += dep[j][i] * phi[i];
   }
 
