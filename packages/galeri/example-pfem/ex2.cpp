@@ -34,82 +34,45 @@
 #else
 #include "Epetra_SerialComm.h"
 #endif
-#include "Epetra_FEVector.h"
-#include "Epetra_FECrsMatrix.h"
+#include "Epetra_Vector.h"
 
-#include "Galeri_core_Object.h"
 #include "Galeri_core_Workspace.h"
-#include "Galeri_grid_Segment.h"
+#include "Galeri_grid_Triangle.h"
 #include "Galeri_grid_Quad.h"
 #include "Galeri_grid_Loadable.h"
-#include "Galeri_grid_Generator.h"
-#include "Galeri_quadrature_Quad.h"
-#include "Galeri_problem_ScalarLaplacian.h"
 #include "Galeri_viz_MEDIT.h"
 
 using namespace Galeri;
 
-class Laplacian 
-{
-  public:
-    static inline double 
-    getElementLHS(const double& x, 
-                  const double& y, 
-                  const double& z,
-                  const double& phi_i,
-                  const double& phi_i_derx, 
-                  const double& phi_i_dery,
-                  const double& phi_i_derz,
-                  const double& phi_j,
-                  const double& phi_j_derx,
-                  const double& phi_j_dery,
-                  const double& phi_j_derz)
-    {
-      return(phi_i_derx * phi_j_derx + 
-             phi_i_dery * phi_j_dery + 
-             phi_i_derz * phi_j_derz);
-    }
-
-    static inline double
-    getElementRHS(const double& x,
-                  const double& y,
-                  const double& z,
-                  const double& phi_i)
-
-    {
-      return(2.0 * (y * (1 - y) + x * (1 - x)) * phi_i);
-    }
-
-    static inline double
-    getBoundaryValue(const double& x, const double& y, const double& z)
-    {
-      return(0.0);
-    }
-
-    static inline char
-    getBoundaryType(const int ID, const double& x, const double& y, const double& z)
-    {
-      return('d');
-    }
-
-    static inline double 
-    getExactSolution(const char& what, const double& x, 
-                     const double& y, const double& z)
-    {
-      if (what == 'f')
-        return(x * (1 - x) * y * (1 - y));
-      else if (what == 'x')
-        return((1.0 -2.0 * x) * y * (1 - y));
-      else if (what == 'y')
-        return(x * (1 - x) * (1.0 - 2.0 * y));
-      else
-        return(0.0);
-    }
-};
-
-// =========== //
-// main driver //
-// =========== //
+// ============================================================================
+// When run on two processors, the code creates the following grid:
+//
+// [2] -- [5] -- [8]
+//  |    / |    / |
+//  |   /  |   /  |
+//  |  /   |  /   |
+//  | /    | /    |
+// [1] -- [4] -- [7]
+//  |      |      |
+//  |      |      |
+//  |      |      |
+//  |      |      |
+// [0] -- [3] -- [6]
+//
+// which is composed by 2 quadrilateral elements, and 4 triangular elements.
+// The quads have size h x h. h is the minimal length of triangle sides as
+// well. When run with more processors, additional elements are added
+// on the right of the above picture, so that the total number of quads is
+// comm.NumProc(), and that of triangles 2 * comm.NumProc().
+//
+// Then, one each processor we define a vector, living the of grid vertices,
+// and we produce a VTK output file. This file can be visualized, for example,
+// with MaYaVi.
+//
+// \author Marzio Sala, ETH
+//
+// \date Last modified on Aug-06.
+// ============================================================================
 
 int main(int argc, char *argv[])
 {
@@ -122,64 +85,62 @@ int main(int argc, char *argv[])
 
   Galeri::core::Workspace::setNumDimensions(2);
 
-  Galeri::grid::Loadable domain, boundary;
+  // domain1 contains the quads, domain2 the triangles
+  grid::Loadable domain1(comm, -1, 1, "Quad");
+  grid::Loadable domain2(comm, -1, 2, "Triangle");
 
-  int numGlobalElementsX = 4 * comm.NumProc();
-  int numGlobalElementsY = numGlobalElementsX;
+  int vertexOffset = 3 * comm.MyPID();
+  int elementOffset = 3 * comm.MyPID();
+  double h = 1.0;
+  double xOffset = h * comm.MyPID();
 
-  int mx = comm.NumProc();
-  int my = 1;
+  // domain1, start with connectivity.
+  domain1.setGlobalConnectivity(elementOffset, 0, vertexOffset + 0);
+  domain1.setGlobalConnectivity(elementOffset, 1, vertexOffset + 3);
+  domain1.setGlobalConnectivity(elementOffset, 2, vertexOffset + 4);
+  domain1.setGlobalConnectivity(elementOffset, 3, vertexOffset + 1);
 
-#if 1
-  Galeri::grid::Generator::
-  getSquareWithTriangles(comm, numGlobalElementsX, numGlobalElementsY,
-                    mx, my, domain, boundary);
-#else
-  string XMLFileName = "/Users/marzio/test.xml";
+  domain1.freezeConnectivity();
 
+  // x-coordinates
+  domain1.setGlobalCoordinates(vertexOffset + 0, 0, xOffset);
+  domain1.setGlobalCoordinates(vertexOffset + 3, 0, xOffset + h);
+  domain1.setGlobalCoordinates(vertexOffset + 4, 0, xOffset + h);
+  domain1.setGlobalCoordinates(vertexOffset + 1, 0, xOffset);
 
-  Galeri::grid::SerialXML XMLReader;
-  map<string, Galeri::grid::Loadable> patches = XMLReader.read(comm, XMLFileName);
+  // y-coordinates
+  domain1.setGlobalCoordinates(vertexOffset + 0, 1, 0.0);
+  domain1.setGlobalCoordinates(vertexOffset + 3, 1, 0.0);
+  domain1.setGlobalCoordinates(vertexOffset + 4, 1, h);
+  domain1.setGlobalCoordinates(vertexOffset + 1, 1, h);
 
-  domain = patches["domain"];
-  boundary = patches["boundary"];
-#endif
+  // now domain2, start with connectivity
+  domain2.setGlobalConnectivity(elementOffset, 0, vertexOffset + 1);
+  domain2.setGlobalConnectivity(elementOffset, 1, vertexOffset + 4);
+  domain2.setGlobalConnectivity(elementOffset, 2, vertexOffset + 5);
 
-  Epetra_Map matrixMap(domain.getNumGlobalVertices(), 0, comm);
+  domain2.setGlobalConnectivity(elementOffset + 1, 0, vertexOffset + 1);
+  domain2.setGlobalConnectivity(elementOffset + 1, 1, vertexOffset + 5);
+  domain2.setGlobalConnectivity(elementOffset + 1, 2, vertexOffset + 2);
 
-  Epetra_FECrsMatrix A(Copy, matrixMap, 0);
-  Epetra_FEVector    LHS(matrixMap);
-  Epetra_FEVector    RHS(matrixMap);
+  domain2.freezeConnectivity();
 
-  Galeri::problem::ScalarLaplacian<Laplacian> problem("Triangle");
+  // x-coordinates
+  domain2.setGlobalCoordinates(vertexOffset + 1, 0, xOffset);
+  domain2.setGlobalCoordinates(vertexOffset + 4, 0, xOffset + h);
+  domain2.setGlobalCoordinates(vertexOffset + 5, 0, xOffset + h);
+  domain2.setGlobalCoordinates(vertexOffset + 2, 0, xOffset);
 
-  problem.integrate(domain, A, RHS);
+  // y-coordinates
+  domain2.setGlobalCoordinates(vertexOffset + 1, 1, h);
+  domain2.setGlobalCoordinates(vertexOffset + 4, 1, h);
+  domain2.setGlobalCoordinates(vertexOffset + 5, 1, 2 * h);
+  domain2.setGlobalCoordinates(vertexOffset + 2, 1, 2 * h);
 
-  LHS.PutScalar(0.0);
+  Epetra_Vector vector(domain1.getVertexMap());
+  vector.Random();
 
-  problem.imposeDirichletBoundaryConditions(boundary, A, RHS, LHS);
-
-#if 0
-  // ============================================================ //
-  // Solving the linear system is the next step, quite easy       //
-  // because we just call AztecOO and we wait for the solution... //
-  // ============================================================ //
-  
-  Epetra_LinearProblem linearProblem(&A, &LHS, &RHS);
-  AztecOO solver(linearProblem);
-  solver.SetAztecOption(AZ_solver, AZ_gmres);
-  solver.SetAztecOption(AZ_precond, AZ_dom_decomp);
-  solver.SetAztecOption(AZ_subdomain_solve, AZ_ilu);
-  solver.SetAztecOption(AZ_output, 16);
-
-  solver.Iterate(1550, 1e-9);
-#endif
-
-  Galeri::viz::MEDIT::Write(comm, domain, "sol", LHS);
-
-  // now compute the norm of the solution
-  
-  problem.computeNorms(domain, LHS);
+  Galeri::viz::MEDIT::write(domain1, "domain1", vector);
 
 #ifdef HAVE_MPI
   MPI_Finalize();

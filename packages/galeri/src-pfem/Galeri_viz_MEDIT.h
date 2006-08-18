@@ -42,11 +42,12 @@ class MEDIT
 public:
 
   static
-  void Write(const Epetra_Comm& comm,
-             Galeri::grid::Loadable& patch,
+  void write(Galeri::grid::Loadable& patch,
              const string& BaseName,
              const Epetra_MultiVector& vector)
   {
+    const Epetra_Comm& comm = patch.getComm();
+
     std::ofstream medit;
     string FileName = BaseName + ".mesh";
 
@@ -100,11 +101,11 @@ public:
         medit.open(FileName.c_str(),ios::app);
         if (iproc == 0)
         {
-          if (patch.getElementType() == "Triangle")
+          if (patch.getElement().getLabel() == "Galeri::grid::Triangle")
             medit << "Triangles " << patch.getNumGlobalElements() << endl;
-          else if (patch.getElementType() == "Quad")
+          else if (patch.getElement().getLabel() == "Galeri::grid::Quad")
             medit << "Quadrilaterals " << patch.getNumGlobalElements() << endl;
-          else if (patch.getElementType() == "Hex")
+          else if (patch.getElement().getLabel() == "Galeri::grid::Hex")
             medit << "Hexahedra " << patch.getNumGlobalElements() << endl;
           else
           {

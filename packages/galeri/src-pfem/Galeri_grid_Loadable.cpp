@@ -44,6 +44,7 @@
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
 #include "Epetra_IntVector.h"
+#include "Epetra_Import.h"
 #include "Epetra_Export.h"
 
 #include "EpetraExt_DistArray.h"
@@ -293,6 +294,81 @@ void Galeri::grid::Loadable::print(ostream & os) const
 }
 
 // ============================================================================ 
+const Epetra_Map& Galeri::grid::Loadable::getNonOverlappingVertexMap()
+{
+#ifdef GALERI_CHECK
+  TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+                     "method getNonOverlappingVertexMap() called, but the object is " <<
+                     "uninitialized");
+#endif
+
+  if (nonOverlappingVertexMap_ == Teuchos::null)
+  {
+    Epetra_Map map(getNumGlobalVertices(), 0, getComm());
+    Epetra_IntVector nonOverlappingVector(map);
+    Epetra_IntVector vertexVector(getVertexMap());
+
+    for (int i = 0; i < vertexVector.MyLength(); ++i)
+      vertexVector[i] = getComm().MyPID();
+
+    for (int i = 0; i < nonOverlappingVector.MyLength(); ++i)
+      nonOverlappingVector[i] = -1;
+
+    // build a possibly larger map, which can contain all the vertex IDs in
+    // the grid, and define a vector based on this map. Then, we import in
+    // this vector vertexVector, whose entries are defined as MyPID().
+    
+    Epetra_Import importer(map, getVertexMap());
+    nonOverlappingVector.Import(vertexVector, importer, Insert);
+
+    for (int i = 0; i < vertexVector.MyLength(); ++i)
+      vertexVector[i] = -1;
+
+    vertexVector.Export(nonOverlappingVector, importer, Insert);
+
+    // get rid of local elements owned by other processors. The "Insert" above
+    // should make things a bit random -- thus on average the workload should
+    // be well distributed.
+    
+    int NumMyElements = 0;
+    for (int i = 0; i < vertexVector.MyLength(); ++i)
+      if (vertexVector[i] == getComm().MyPID())
+        ++NumMyElements;
+
+    vector<int> MyGlobalElements(NumMyElements);
+
+    NumMyElements = 0;
+    for (int i = 0; i < vertexVector.MyLength(); ++i)
+      if (vertexVector[i] == getComm().MyPID())
+        MyGlobalElements[NumMyElements++] = getGVID(i);
+
+    nonOverlappingVertexMap_ = rcp(new Epetra_Map(-1, NumMyElements, &MyGlobalElements[0], 
+                                          0, getComm()));
+  }
+  return(*nonOverlappingVertexMap_);
+}
+
+// ============================================================================ 
+const Epetra_MultiVector& Galeri::grid::Loadable::getNonOverlappingCoordinates()
+{
+#ifdef GALERI_CHECK
+  TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+                     "method getNonOverlappingCoordinates() called, but the object is " <<
+                     "uninitialized");
+#endif
+
+  if (linearCOO_ == Teuchos::null)
+  {
+    Epetra_Map nonOverlappingVertexMap = getNonOverlappingVertexMap();
+    linearCOO_ = rcp(new Epetra_MultiVector(nonOverlappingVertexMap, 
+                                            Galeri::core::Workspace::getNumDimensions()));
+    nonOverlappingExporter_ = rcp(new Epetra_Export(getVertexMap(), nonOverlappingVertexMap));
+    linearCOO_->Export(*COO_, *nonOverlappingExporter_, Insert);
+  }
+  return(*linearCOO_);
+}
+
+// ============================================================================ 
 const Epetra_Map& Galeri::grid::Loadable::getLinearVertexMap()
 {
 #ifdef GALERI_CHECK
@@ -302,9 +378,8 @@ const Epetra_Map& Galeri::grid::Loadable::getLinearVertexMap()
 #endif
 
   if (linearVertexMap_ == Teuchos::null)
-  {
-    linearVertexMap_ = rcp(new Epetra_Map(getNumGlobalVertices(), 0, elementMap_->Comm()));
-  }
+    linearVertexMap_ = rcp(new Epetra_Map(getNumGlobalVertices(), 0, getComm()));
+
   return(*linearVertexMap_);
 }
 
@@ -313,17 +388,19 @@ const Epetra_MultiVector& Galeri::grid::Loadable::getLinearCoordinates()
 {
 #ifdef GALERI_CHECK
   TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
-                     "method getLinearVertexMap() called, but the object is " <<
+                     "method getLinearCoordinates() called, but the object is " <<
                      "uninitialized");
 #endif
 
   if (linearCOO_ == Teuchos::null)
-  {
+  { 
     Epetra_Map linearVertexMap = getLinearVertexMap();
-    linearCOO_ = rcp(new Epetra_MultiVector(linearVertexMap, 
+    linearCOO_ = rcp(new Epetra_MultiVector(linearVertexMap,   
                                             Galeri::core::Workspace::getNumDimensions()));
-    linearExporter_ = rcp(new Epetra_Export(getVertexMap(), linearVertexMap));
+    
+    linearExporter_ = rcp(new Epetra_Export(getVertexMap(), linearVertexMap));      
     linearCOO_->Export(*COO_, *linearExporter_, Insert);
   }
+
   return(*linearCOO_);
 }

@@ -37,7 +37,6 @@
 #include "Epetra_FECrsMatrix.h"
 #include "Epetra_FEVector.h"
 
-#include "Galeri_core_Object.h"
 #include "Galeri_core_Workspace.h"
 #include "Galeri_grid_Segment.h"
 #include "Galeri_grid_Loadable.h"

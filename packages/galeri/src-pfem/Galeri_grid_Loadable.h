@@ -165,6 +165,17 @@ class Loadable : public core::Object
     // @}
     // @{ \name Get/Set Methods.
     
+    //! Returns the communicator of \c this object.
+    inline const Epetra_Comm& getComm() const
+    {
+#ifdef GALERI_CHECK
+      TEST_FOR_EXCEPTION(status_ == core::Workspace::INITIALIZED, std::logic_exception,
+                         "method getComm() called, but the object is " <<
+                         "uninitialized");
+#endif
+      return(elementMap_->Comm());
+    }
+
     //! Returns the global number of grid elements in \c this object.
     inline int getNumGlobalElements() const 
     {
@@ -501,10 +512,16 @@ class Loadable : public core::Object
     //! Prints the grid on \c os.
     virtual void print(ostream & os) const;
 
-    //! Returns the Epetra_Map associated with grid vertices.
+    //! Returns the Epetra_Map associated with grid vertices; each vertex is owned by exactly one processor.
+    const Epetra_Map& getNonOverlappingVertexMap();
+
+    //! Returns the Epetra_MultiVector containing the coordinates of vertices; each vertex is owned by exactly one processor.
+    const Epetra_MultiVector& getNonOverlappingCoordinates();
+
+    //! Returns a linear Epetra_Map for grid vertices.
     const Epetra_Map& getLinearVertexMap();
 
-    //! Returns the Epetra_MultiVector containing the grid coordinates.
+    //! Returns the coordinates as a vector based on linearVertexMap.
     const Epetra_MultiVector& getLinearCoordinates();
 
   private:
@@ -518,16 +535,26 @@ class Loadable : public core::Object
     RefCountPtr<Epetra_Map> elementMap_;
     //! Map for vertex distribution. A given vertex may be assigned to more than one processor.
     RefCountPtr<Epetra_Map> vertexMap_;
+
+    //! A map for vertices. A given vertex is assigned to exactly one processor.
+    RefCountPtr<Epetra_Map> nonOverlappingVertexMap_;
+    //! Exporter to nonOverlappingVertexMap.
+    RefCountPtr<Epetra_Export> nonOverlappingExporter_;
+
     //! A linear map for vertices. A given vertex is assigned to exactly one processor.
     RefCountPtr<Epetra_Map> linearVertexMap_;
     //! Exporter to linearVertexMap.
     RefCountPtr<Epetra_Export> linearExporter_;
+
     //! Element used in \c this object.
     grid::Element element_;
     //! Container for vertex coordinates, based on vertexMap_.
     RefCountPtr<Epetra_MultiVector> COO_;
+    //! Container for vertex coordinates, based on nonOverlappingVertexMap_.
+    RefCountPtr<Epetra_MultiVector> nonOverlappingCOO_;
     //! Container for vertex coordinates, based on linearVertexMap_.
     RefCountPtr<Epetra_MultiVector> linearCOO_;
+
     //! Container for element connectivity, based on elementMap_.
     RefCountPtr<EpetraExt::DistArray<int> > CON_;
     //! Amount of additional data assigned to each grid element.
