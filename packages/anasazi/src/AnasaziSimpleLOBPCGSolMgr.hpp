@@ -71,7 +71,7 @@
   This solver manager does not verify before quitting that the nev eigenvectors
   that have converged are also the smallest nev eigenvectors that are known.
 
-  \ingroup anasazi_solvermanagers
+  \ingroup anasazi_solver_framework
 
   \author Chris Baker, Ulrich Hetmaniuk, Rich Lehoucq, Heidi Thornquist
 */
@@ -85,6 +85,7 @@ class SimpleLOBPCGSolMgr : public SolverManager<ScalarType,MV,OP> {
     typedef MultiVecTraits<ScalarType,MV> MVT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
+    typedef Teuchos::ScalarTraits<MagnitudeType> MT;
     
   public:
 
@@ -112,7 +113,7 @@ class SimpleLOBPCGSolMgr : public SolverManager<ScalarType,MV,OP> {
   //@{ 
 
   Eigenproblem<ScalarType,MV,OP>& getProblem() const {
-    return *_problem;
+    return *problem_;
   }
 
   //@}
@@ -132,12 +133,12 @@ class SimpleLOBPCGSolMgr : public SolverManager<ScalarType,MV,OP> {
   //@}
 
   private:
-  Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > _problem;
-  string _whch; 
-  MagnitudeType _tol;
-  int _verb;
-  int _blockSize;
-  int _maxIters;
+  Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > problem_;
+  string whch_; 
+  MagnitudeType tol_;
+  int verb_;
+  int blockSize_;
+  int maxIters_;
 };
 
 
@@ -146,36 +147,36 @@ template<class ScalarType, class MV, class OP>
 SimpleLOBPCGSolMgr<ScalarType,MV,OP>::SimpleLOBPCGSolMgr( 
         const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem,
         Teuchos::ParameterList &pl ) : 
-  _problem(problem),
-  _whch("LM"),
-  _tol(1e-6),
-  _verb(Anasazi::Errors),
-  _blockSize(0),
-  _maxIters(100)
+  problem_(problem),
+  whch_("LM"),
+  tol_(1e-6),
+  verb_(Anasazi::Errors),
+  blockSize_(0),
+  maxIters_(100)
 {
-  TEST_FOR_EXCEPTION(_problem == Teuchos::null,              std::invalid_argument, "Problem not given to solver manager.");
-  TEST_FOR_EXCEPTION(!_problem->isProblemSet(),              std::invalid_argument, "Problem not set.");
-  TEST_FOR_EXCEPTION(!_problem->isHermitian(),               std::invalid_argument, "Problem not symmetric.");
-  TEST_FOR_EXCEPTION(_problem->getInitVec() == Teuchos::null,std::invalid_argument, "Problem does not contain initial vectors to clone from.");
+  TEST_FOR_EXCEPTION(problem_ == Teuchos::null,              std::invalid_argument, "Problem not given to solver manager.");
+  TEST_FOR_EXCEPTION(!problem_->isProblemSet(),              std::invalid_argument, "Problem not set.");
+  TEST_FOR_EXCEPTION(!problem_->isHermitian(),               std::invalid_argument, "Problem not symmetric.");
+  TEST_FOR_EXCEPTION(problem_->getInitVec() == Teuchos::null,std::invalid_argument, "Problem does not contain initial vectors to clone from.");
 
-  _whch = pl.get("Which","SR");
-  TEST_FOR_EXCEPTION(_whch != "SM" && _whch != "LM" && _whch != "SR" && _whch != "LR",
+  whch_ = pl.get("Which","SR");
+  TEST_FOR_EXCEPTION(whch_ != "SM" && whch_ != "LM" && whch_ != "SR" && whch_ != "LR",
                      AnasaziError,
                      "SimpleLOBPCGSolMgr: \"Which\" parameter must be SM, LM, SR or LR.");
 
-  _tol = pl.get("Convergence Tolerance",_tol);
-  TEST_FOR_EXCEPTION(_tol <= 0,
+  tol_ = pl.get("Convergence Tolerance",tol_);
+  TEST_FOR_EXCEPTION(tol_ <= 0,
                      AnasaziError,
                      "SimpleLOBPCGSolMgr: \"Tolerance\" parameter must be strictly postiive.");
 
-  _verb = pl.get("Verbosity",_verb);
+  verb_ = pl.get("Verbosity",verb_);
 
-  _blockSize= pl.get("Block Size",_problem->getNEV());
-  TEST_FOR_EXCEPTION(_blockSize <= 0,
+  blockSize_= pl.get("Block Size",problem_->getNEV());
+  TEST_FOR_EXCEPTION(blockSize_ <= 0,
                      AnasaziError,
                      "SimpleLOBPCGSolMgr: \"Block Size\" parameter must be strictly positive.");
 
-  _maxIters = pl.get("Maximum Iterations",_maxIters);
+  maxIters_ = pl.get("Maximum Iterations",maxIters_);
 }
 
 
@@ -186,19 +187,19 @@ ReturnType
 SimpleLOBPCGSolMgr<ScalarType,MV,OP>::solve() {
 
   // sort manager
-  Teuchos::RefCountPtr<BasicSort<ScalarType,MV,OP> > sorter = Teuchos::rcp( new BasicSort<ScalarType,MV,OP>(_whch) );
+  Teuchos::RefCountPtr<BasicSort<ScalarType,MV,OP> > sorter = Teuchos::rcp( new BasicSort<ScalarType,MV,OP>(whch_) );
   // output manager
-  Teuchos::RefCountPtr<BasicOutputManager<ScalarType> > printer = Teuchos::rcp( new BasicOutputManager<ScalarType>(_verb) );
+  Teuchos::RefCountPtr<BasicOutputManager<ScalarType> > printer = Teuchos::rcp( new BasicOutputManager<ScalarType>(verb_) );
   // status tests
   Teuchos::RefCountPtr<StatusTestMaxIters<ScalarType,MV,OP> > max;
-  if (_maxIters > 0) {
-    max = Teuchos::rcp( new StatusTestMaxIters<ScalarType,MV,OP>(_maxIters) );
+  if (maxIters_ > 0) {
+    max = Teuchos::rcp( new StatusTestMaxIters<ScalarType,MV,OP>(maxIters_) );
   }
   else {
     max = Teuchos::null;
   }
   Teuchos::RefCountPtr<StatusTestResNorm<ScalarType,MV,OP> > norm 
-      = Teuchos::rcp( new StatusTestResNorm<ScalarType,MV,OP>(_tol) );
+      = Teuchos::rcp( new StatusTestResNorm<ScalarType,MV,OP>(tol_) );
   Teuchos::Array< Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > > alltests;
   alltests.push_back(norm);
   if (max != Teuchos::null) alltests.push_back(max);
@@ -211,27 +212,27 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::solve() {
     = Teuchos::rcp( new StatusTestOutput<ScalarType,MV,OP>( printer,combo,1,Passed ) );
   // orthomanager
   Teuchos::RefCountPtr<SVQBOrthoManager<ScalarType,MV,OP> > ortho 
-    = Teuchos::rcp( new SVQBOrthoManager<ScalarType,MV,OP>(_problem->getM()) );
+    = Teuchos::rcp( new SVQBOrthoManager<ScalarType,MV,OP>(problem_->getM()) );
   // parameter list
   Teuchos::ParameterList plist;
-  plist.set("Block Size",_blockSize);
+  plist.set("Block Size",blockSize_);
   plist.set("Full Ortho",true);
 
   // create an LOBPCG solver
   Teuchos::RefCountPtr<LOBPCG<ScalarType,MV,OP> > lobpcg_solver 
-    = Teuchos::rcp( new LOBPCG<ScalarType,MV,OP>(_problem,sorter,printer,outputtest,ortho,plist) );
+    = Teuchos::rcp( new LOBPCG<ScalarType,MV,OP>(problem_,sorter,printer,outputtest,ortho,plist) );
   // add the auxillary vecs from the eigenproblem to the solver
-  if (_problem->getAuxVecs() != Teuchos::null) {
-    lobpcg_solver->setAuxVecs( Teuchos::tuple<Teuchos::RefCountPtr<const MV> >(_problem->getAuxVecs()) );
+  if (problem_->getAuxVecs() != Teuchos::null) {
+    lobpcg_solver->setAuxVecs( Teuchos::tuple<Teuchos::RefCountPtr<const MV> >(problem_->getAuxVecs()) );
   }
 
   int numfound = 0;
-  int nev = _problem->getNEV();
+  int nev = problem_->getNEV();
   Teuchos::Array< Teuchos::RefCountPtr<MV> > foundvecs;
   Teuchos::Array< Teuchos::RefCountPtr< std::vector<MagnitudeType> > > foundvals;
   while (numfound < nev) {
     // reduce the strain on norm test, if we are almost done
-    if (nev - numfound < _blockSize) {
+    if (nev - numfound < blockSize_) {
       norm->setQuorum(nev-numfound);
     }
 
@@ -244,7 +245,7 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::solve() {
       printer->stream(Anasazi::Errors) << "Exception: " << e.what() << endl;
       Eigensolution<ScalarType,MV> sol;
       sol.numVecs = 0;
-      _problem->setSolution(sol);
+      problem_->setSolution(sol);
       throw;
     }
 
@@ -252,8 +253,8 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::solve() {
     if (norm->getStatus() == Passed) {
 
       int num = norm->howMany();
-      // if num < _blockSize, it is because we are on the last iteration: num+numfound>=nev
-      TEST_FOR_EXCEPTION(num < _blockSize && num+numfound < nev,
+      // if num < blockSize_, it is because we are on the last iteration: num+numfound>=nev
+      TEST_FOR_EXCEPTION(num < blockSize_ && num+numfound < nev,
                          std::logic_error,
                          "Anasazi::SimpleLOBPCGSolMgr::solve(): logic error.");
       std::vector<int> ind = norm->whichVecs();
@@ -275,9 +276,9 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::solve() {
 
       // copy the converged eigenvalues
       Teuchos::RefCountPtr<std::vector<MagnitudeType> > newvals = Teuchos::rcp( new std::vector<MagnitudeType>(num) );
-      std::vector<MagnitudeType> all = lobpcg_solver->getRitzValues();
+      std::vector<Value<ScalarType> > all = lobpcg_solver->getRitzValues();
       for (int i=0; i<num; i++) {
-        (*newvals)[i] = all[ind[i]];
+        (*newvals)[i] = all[ind[i]].realpart;
       }
       foundvals.push_back(newvals);
 
@@ -299,9 +300,9 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::solve() {
         
         // copy the converged eigenvalues
         Teuchos::RefCountPtr<std::vector<MagnitudeType> > newvals = Teuchos::rcp( new std::vector<MagnitudeType>(num) );
-        std::vector<MagnitudeType> all = lobpcg_solver->getRitzValues();
+        std::vector<Value<ScalarType> > all = lobpcg_solver->getRitzValues();
         for (int i=0; i<num; i++) {
-          (*newvals)[i] = all[ind[i]];
+          (*newvals)[i] = all[ind[i]].realpart;
         }
         foundvals.push_back(newvals);
   
@@ -321,13 +322,14 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::solve() {
   sol.numVecs = numfound;
   if (numfound > 0) {
     // allocate space for eigenvectors
-    sol.Evecs = MVT::Clone(*_problem->getInitVec(),numfound);
+    sol.Evecs = MVT::Clone(*problem_->getInitVec(),numfound);
   }
   else {
     sol.Evecs = Teuchos::null;
   }
   sol.Espace = sol.Evecs;
   // allocate space for eigenvalues
+  std::vector<MagnitudeType> vals(numfound);
   sol.Evals.resize(numfound);
   // all real eigenvalues: set index vectors [0,...,numfound-1]
   sol.index.resize(numfound,0);
@@ -341,17 +343,21 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::solve() {
     // put the eigenvectors
     MVT::SetBlock(*foundvecs[i],lclind,*sol.Evecs);
     // put the eigenvalues
-    copy( foundvals[i]->begin(), foundvals[i]->end(), sol.Evals.begin()+curttl );
+    copy( foundvals[i]->begin(), foundvals[i]->end(), vals.begin()+curttl );
 
     curttl += lclnum;
   }
   TEST_FOR_EXCEPTION( curttl != sol.numVecs, std::logic_error, "Anasazi::SimpleLOBPCGSolMgr::solve(): inconsistent sizes");
 
   // sort the eigenvalues and permute the eigenvectors appropriately
-  // this requires making a ScalarType version of our MagnitudeType eigenvalues
   if (numfound > 0) {
     std::vector<int> order(sol.numVecs);
-    sorter->sort( lobpcg_solver.get(), sol.numVecs, sol.Evals, &order );
+    sorter->sort( lobpcg_solver.get(), sol.numVecs, vals, &order );
+    // store the values in the Eigensolution
+    for (int i=0; i<sol.numVecs; i++) {
+      sol.Evals[i].realpart = vals[i];
+      sol.Evals[i].imagpart = MT::zero();
+    }
     // now permute the eigenvectors according to order
     ModalSolverUtils<ScalarType,MV,OP> msutils(printer);
     msutils.permuteVectors(sol.numVecs,order,*sol.Evecs);
@@ -364,7 +370,7 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::solve() {
   Teuchos::TimeMonitor::summarize(printer->stream(TimingDetails));
 
   // send the solution to the eigenproblem
-  _problem->setSolution(sol);
+  problem_->setSolution(sol);
   printer->stream(Debug) << "Returning " << sol.numVecs << " eigenpairs to eigenproblem." << endl;
 
   // return from SolMgr::solve()

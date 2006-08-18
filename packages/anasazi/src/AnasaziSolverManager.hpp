@@ -56,15 +56,8 @@ class SolverManager {
     //!@name Constructors/Destructor 
   //@{ 
 
-  //! Default Constructor.
+  //! Empty constructor.
   SolverManager() {};
-
-  //! Basic Constructor.
-  /*! This constructor takes an Anasazi::Eigenproblem to be solved along with a Teuchos::ParameterList of 
-   * options.
-   */
-  SolverManager( const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem,
-                 Teuchos::ParameterList &pl );
 
   //! Destructor.
   virtual ~SolverManager() {};

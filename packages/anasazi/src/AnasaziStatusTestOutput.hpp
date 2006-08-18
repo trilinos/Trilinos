@@ -79,7 +79,7 @@ class StatusTestOutput : public StatusTest<ScalarType,MV,OP> {
                    Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > test,
                    int mod = 1,
                    int printStates = Passed)
-    : _printer(printer), _test(test), _state(Undefined), _stateTest(printStates), _modTest(mod), _numCalls(0) {}
+    : printer_(printer), test_(test), state_(Undefined), stateTest_(printStates), modTest_(mod), numCalls_(0) {}
 
   //! Destructor
   virtual ~StatusTestOutput() {};
@@ -103,26 +103,26 @@ class StatusTestOutput : public StatusTest<ScalarType,MV,OP> {
     \return TestStatus indicating whether the underlying test passed or failed.
   */
   TestStatus checkStatus( Eigensolver<ScalarType,MV,OP>* solver ) {
-    _state = _test->checkStatus(solver);
+    state_ = test_->checkStatus(solver);
 
-    if (_numCalls % _modTest == 0) {
-      if (_state & _stateTest == _state) {
-        if ( _printer->isVerbosity(StatusTestDetails) ) {
-          _test->print( _printer->stream(StatusTestDetails), 0 );
+    if (numCalls_ % modTest_ == 0) {
+      if ( (state_ & stateTest_) == state_) {
+        if ( printer_->isVerbosity(StatusTestDetails) ) {
+          test_->print( printer_->stream(StatusTestDetails), 0 );
         }
-        else if ( _printer->isVerbosity(Debug) ) {
-          _test->print( _printer->stream(Debug), 0 );
+        else if ( printer_->isVerbosity(Debug) ) {
+          test_->print( printer_->stream(Debug), 0 );
         }
       }
     }
-    _numCalls++;
+    numCalls_++;
 
-    return _state;
+    return state_;
   }
 
   //! Return the result of the most recent checkStatus call, or undefined if it has not been run.
   TestStatus getStatus() const {
-    return _state;
+    return state_;
   }
   //@}
 
@@ -134,16 +134,16 @@ class StatusTestOutput : public StatusTest<ScalarType,MV,OP> {
    *  resets the counter for the number of calls to checkStatus().
    */
   void reset() { 
-    _state = Undefined;
-    _test->reset();
-    _numCalls = 0;
+    state_ = Undefined;
+    test_->reset();
+    numCalls_ = 0;
   }
 
   //! Clears the results of the last status test.
   //! This resets the cached state to an ::Undefined state and calls clearStatus() on the underlying test.
   void clearStatus() {
-    _state = Undefined;
-    _test->clearStatus();
+    state_ = Undefined;
+    test_->clearStatus();
   }
 
   //@}
@@ -155,7 +155,7 @@ class StatusTestOutput : public StatusTest<ScalarType,MV,OP> {
   ostream& print(ostream& os, int indent = 0) const {
     string ind(indent,' ');
     os << ind << "- StatusTestOutput: ";
-    switch (_state) {
+    switch (state_) {
     case Passed:
       os << "Passed" << endl;
       break;
@@ -166,30 +166,30 @@ class StatusTestOutput : public StatusTest<ScalarType,MV,OP> {
       os << "Undefined" << endl;
       break;
     }
-    os << ind << "(Num calls,Mod test,State test): " << "(" << _numCalls << ", " << _modTest << ",";
-    if (_stateTest == 0) {
+    os << ind << "(Num calls,Mod test,State test): " << "(" << numCalls_ << ", " << modTest_ << ",";
+    if (stateTest_ == 0) {
       os << " none )" << endl;
     }
     else {
-      if ( _stateTest & Passed == Passed ) os << " Passed";
-      if ( _stateTest & Failed == Failed ) os << " Failed";
-      if ( _stateTest & Undefined == Undefined ) os << " Undefined";
+      if ( stateTest_ & Passed == Passed ) os << " Passed";
+      if ( stateTest_ & Failed == Failed ) os << " Failed";
+      if ( stateTest_ & Undefined == Undefined ) os << " Undefined";
       os << " )" << endl;
     }
     // print child, with extra indention
-    _test->print(os,indent+3);
+    test_->print(os,indent+3);
     return os;
   }
  
   //@}
 
   private:
-    Teuchos::RefCountPtr<OutputManager<ScalarType> > _printer;
-    Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > _test;
-    TestStatus _state;
-    int _stateTest;
-    int _modTest;
-    int _numCalls;
+    Teuchos::RefCountPtr<OutputManager<ScalarType> > printer_;
+    Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > test_;
+    TestStatus state_;
+    int stateTest_;
+    int modTest_;
+    int numCalls_;
 };
 
 } // end of Anasazi namespace

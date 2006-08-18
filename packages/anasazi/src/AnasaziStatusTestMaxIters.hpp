@@ -69,7 +69,7 @@ class StatusTestMaxIters : public StatusTest<ScalarType,MV,OP> {
   //@{ 
 
   //! Constructor
-  StatusTestMaxIters(int maxIter, bool negate = false) : _state(Undefined), _negate(negate) {
+  StatusTestMaxIters(int maxIter, bool negate = false) : state_(Undefined), negate_(negate) {
     setMaxIters(maxIter);
   };
 
@@ -84,17 +84,17 @@ class StatusTestMaxIters : public StatusTest<ScalarType,MV,OP> {
     \return TestStatus indicating whether the test passed or failed.
   */
   TestStatus checkStatus( Eigensolver<ScalarType,MV,OP>* solver ) {
-    _state = (solver->getNumIters() >= _maxIters) ? Passed : Failed;
-    if (_negate) {
-      if (_state == Passed) _state = Failed;
-      else _state = Passed;
+    state_ = (solver->getNumIters() >= maxIters_) ? Passed : Failed;
+    if (negate_) {
+      if (state_ == Passed) state_ = Failed;
+      else state_ = Passed;
     }
-    return _state;
+    return state_;
   }
 
   //! \brief Return the result of the most recent checkStatus call.
   TestStatus getStatus() const {
-    return _state;
+    return state_;
   }
   //@}
 
@@ -105,12 +105,12 @@ class StatusTestMaxIters : public StatusTest<ScalarType,MV,OP> {
    *  This also resets the test status to ::Undefined.
    */
   void setMaxIters(int maxIters) {
-    _state = Undefined;
-    _maxIters = maxIters;
+    state_ = Undefined;
+    maxIters_ = maxIters;
   }
 
   //! \brief Get the maximum number of iterations.
-  int getMaxIters() {return _maxIters;}
+  int getMaxIters() {return maxIters_;}
 
   //@}
 
@@ -123,7 +123,7 @@ class StatusTestMaxIters : public StatusTest<ScalarType,MV,OP> {
     that the convergence test uses will remain.
   */
   void reset() {
-    _state = Undefined;
+    state_ = Undefined;
   }
 
   //! \brief Clears the results of the last status test.
@@ -133,7 +133,7 @@ class StatusTestMaxIters : public StatusTest<ScalarType,MV,OP> {
    * in them.
   */
   void clearStatus() {
-    _state = Undefined;
+    state_ = Undefined;
   }
 
   //@}
@@ -145,7 +145,7 @@ class StatusTestMaxIters : public StatusTest<ScalarType,MV,OP> {
   ostream& print(ostream& os, int indent = 0) const {
     string ind(indent,' ');
     os << ind << "- StatusTestMaxIters: ";
-    switch (_state) {
+    switch (state_) {
     case Passed:
       os << "Passed" << endl;
       break;
@@ -156,15 +156,15 @@ class StatusTestMaxIters : public StatusTest<ScalarType,MV,OP> {
       os << "Undefined" << endl;
       break;
     }
-    os << ind << "MaxIters: " << _maxIters;
+    os << ind << "MaxIters: " << maxIters_;
     return os;
   }
  
   //@}
   private:
-  int _maxIters;
-  TestStatus _state;
-  bool _negate;
+  int maxIters_;
+  TestStatus state_;
+  bool negate_;
 
 };
 

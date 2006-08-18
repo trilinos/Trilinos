@@ -56,7 +56,7 @@ class OutputManager {
   //@{ 
 
   //! Default constructor
-  OutputManager( int vb = Anasazi::Errors ) : _vb(vb) {};
+  OutputManager( int vb = Anasazi::Errors ) : vb_(vb) {};
 
   //! Destructor.
   virtual ~OutputManager() {};
@@ -66,10 +66,10 @@ class OutputManager {
   //@{ 
 
   //! Set the message output types for this manager.
-  virtual void setVerbosity( int vb ) { _vb = vb; }
+  virtual void setVerbosity( int vb ) { vb_ = vb; }
 
   //! Get the message output types for this manager.
-  virtual int getVerbosity( ) { return _vb; }
+  virtual int getVerbosity( ) { return vb_; }
 
   //@}
 
@@ -104,7 +104,7 @@ class OutputManager {
   //@}
 
   protected:
-  int _vb;
+  int vb_;
 };
 
 } // end Anasazi namespace

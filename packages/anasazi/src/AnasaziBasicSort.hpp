@@ -84,10 +84,10 @@ namespace Anasazi {
        </ul>
     */
     void setSortType( const string which ) { 
-      _which = which; 
-      TEST_FOR_EXCEPTION(_which.compare("LM") && _which.compare("SM") &&
-                         _which.compare("LR") && _which.compare("SR") &&
-                         _which.compare("LI") && _which.compare("SI"), std::invalid_argument, 
+      which_ = which; 
+      TEST_FOR_EXCEPTION(which_.compare("LM") && which_.compare("SM") &&
+                         which_.compare("LR") && which_.compare("SR") &&
+                         which_.compare("LI") && which_.compare("SI"), std::invalid_argument, 
                          "Anasazi::BasicSort::sort(): sorting order is not valid");
     };
     
@@ -138,14 +138,14 @@ namespace Anasazi {
        <li> "SI" - Smallest Imaginary 
        </ul>
     */
-    string _which;
+    string which_;
 
   };
 
   template<class ScalarType, class MV, class OP>
   void BasicSort<ScalarType,MV,OP>::sort(Eigensolver<ScalarType,MV,OP>* solver, const int n, std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> &evals, std::vector<int> *perm) const
   {
-    int i,j;
+    int i=0,j=0;
 
     TEST_FOR_EXCEPTION(evals.size() < (unsigned int) n,
                        std::invalid_argument, "Anasazi::BasicSort:sort(): eigenvalue vector size isn't consistent with n.");
@@ -178,7 +178,7 @@ namespace Anasazi {
     //---------------------------------------------------------------
     // Sort eigenvalues in increasing order of magnitude
     //---------------------------------------------------------------
-    if (!_which.compare("SM")) {
+    if (!which_.compare("SM")) {
       for (j=1; j < n; j++) {
         temp = evals[j]; 
         if (perm) {
@@ -201,7 +201,7 @@ namespace Anasazi {
     //---------------------------------------------------------------
     // Sort eigenvalues in increasing order of real part
     //---------------------------------------------------------------
-    if (!_which.compare("SR")) {
+    if (!which_.compare("SR")) {
       for (j=1; j < n; j++) {
         temp = evals[j]; 
         if (perm) {
@@ -225,12 +225,12 @@ namespace Anasazi {
     // NOTE:  There is no implementation for this since this sorting
     // method assumes only real eigenvalues.
     //---------------------------------------------------------------
-    TEST_FOR_EXCEPTION(!_which.compare("SI"), SortManagerError, 
+    TEST_FOR_EXCEPTION(!which_.compare("SI"), SortManagerError, 
                        "Anasazi::BasicSort::sort() with one arg assumes real eigenvalues");
     //---------------------------------------------------------------
     // Sort eigenvalues in decreasing order of magnitude
     //---------------------------------------------------------------
-    if (!_which.compare("LM")) {
+    if (!which_.compare("LM")) {
       for (j=1; j < n; j++) {
         temp = evals[j]; 
         if (perm) {
@@ -253,7 +253,7 @@ namespace Anasazi {
     //---------------------------------------------------------------
     // Sort eigenvalues in decreasing order of real part
     //---------------------------------------------------------------
-    if (!_which.compare("LR")) {
+    if (!which_.compare("LR")) {
       for (j=1; j < n; j++) {
         temp = evals[j]; 
         if (perm) {
@@ -277,7 +277,7 @@ namespace Anasazi {
     // NOTE:  There is no implementation for this since this templating
     // assumes only real eigenvalues.
     //---------------------------------------------------------------
-    TEST_FOR_EXCEPTION(!_which.compare("LI"), SortManagerError, 
+    TEST_FOR_EXCEPTION(!which_.compare("LI"), SortManagerError, 
                        "Anasazi::BasicSort::sort() with one arg assumes real eigenvalues");
     
     // The character string held by this class is not valid.  
@@ -302,7 +302,7 @@ namespace Anasazi {
       TEST_FOR_EXCEPTION(perm->size() < (unsigned int) n,
                          std::invalid_argument, "Anasazi::BasicSort:sort(): permutation vector size isn't consistent with n.");
     }
-    int i,j;
+    int i=0,j=0;
     int tempord=0;
 
     MagnitudeType temp, tempr, tempi;
@@ -320,7 +320,7 @@ namespace Anasazi {
     //---------------------------------------------------------------
     // Sort eigenvalues in increasing order of magnitude
     //---------------------------------------------------------------
-    if (!_which.compare("SM")) {
+    if (!which_.compare("SM")) {
       for (j=1; j < n; j++) {
         tempr = r_evals[j]; tempi = i_evals[j]; 
         if (perm) {
@@ -343,7 +343,7 @@ namespace Anasazi {
     //---------------------------------------------------------------
     // Sort eigenvalues in increasing order of real part
     //---------------------------------------------------------------
-    if (!_which.compare("SR")) {
+    if (!which_.compare("SR")) {
       for (j=1; j < n; j++) {
         tempr = r_evals[j]; tempi = i_evals[j]; 
         if (perm) {
@@ -365,7 +365,7 @@ namespace Anasazi {
     //---------------------------------------------------------------
     // Sort eigenvalues in increasing order of imaginary part
     //---------------------------------------------------------------
-    if (!_which.compare("SI")) {
+    if (!which_.compare("SI")) {
       for (j=1; j < n; j++) {
         tempr = r_evals[j]; tempi = i_evals[j]; 
         if (perm) {
@@ -387,7 +387,7 @@ namespace Anasazi {
     //---------------------------------------------------------------
     // Sort eigenvalues in decreasing order of magnitude
     //---------------------------------------------------------------
-    if (!_which.compare("LM")) {
+    if (!which_.compare("LM")) {
       for (j=1; j < n; j++) {
         tempr = r_evals[j]; tempi = i_evals[j]; 
         if (perm) {
@@ -410,7 +410,7 @@ namespace Anasazi {
     //---------------------------------------------------------------
     // Sort eigenvalues in decreasing order of real part
     //---------------------------------------------------------------
-    if (!_which.compare("LR")) {
+    if (!which_.compare("LR")) {
       for (j=1; j < n; j++) {
         tempr = r_evals[j]; tempi = i_evals[j]; 
         if (perm) {
@@ -432,7 +432,7 @@ namespace Anasazi {
     //---------------------------------------------------------------
     // Sort eigenvalues in decreasing order of imaginary part
     //---------------------------------------------------------------
-    if (!_which.compare("LI")) {
+    if (!which_.compare("LI")) {
       for (j=1; j < n; j++) {
         tempr = r_evals[j]; tempi = i_evals[j]; 
         if (perm) {

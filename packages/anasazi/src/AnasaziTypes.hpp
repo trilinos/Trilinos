@@ -54,9 +54,23 @@ namespace Anasazi {
   //! @name Anasazi Structs
   //@{
 
-  /*! \struct Eigensolution
-      \brief Struct for storing an eigenproblem solution.
-   */
+  //!  This struct is used for storing eigenvalues and Ritz values, as a pair of real values.
+  template <class ScalarType>
+  struct Value {
+    //! The real component of the eigenvalue.
+    typename Teuchos::ScalarTraits<ScalarType>::magnitudeType realpart; 
+    //! The imaginary component of the eigenvalue.
+    typename Teuchos::ScalarTraits<ScalarType>::magnitudeType imagpart;
+    void set(const typename Teuchos::ScalarTraits<ScalarType>::magnitudeType &rp, const typename Teuchos::ScalarTraits<ScalarType>::magnitudeType &ip){
+      realpart=rp;imagpart=ip;
+    }
+    Value<ScalarType> &operator=(const Value<ScalarType> &rhs) {
+      realpart=rhs.realpart;imagpart=rhs.imagpart;
+      return *this;
+    }
+  };
+
+  //!  Struct for storing an eigenproblem solution.
   template <class ScalarType, class MV>
   struct Eigensolution {
     //! The computed eigenvectors
@@ -64,8 +78,15 @@ namespace Anasazi {
     //! An orthonormal basis for the computed eigenspace
     Teuchos::RefCountPtr<MV> Espace;
     //! The computed eigenvalues
-    std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>  Evals;
-    //! An index into Evecs and Evals
+    std::vector<Value<ScalarType> >  Evals;
+    /*! \brief An index into Evecs to allow compressed storage of eigenvectors for real, non-Hermitian problems.
+     *
+     *  index has length numVecs, where each entry is 0, +1, or -1. These have the following interpretation:
+     *     - index[i] == 0: signifies that the corresponding eigenvector is stored as the i column of Evecs. This will usually be the 
+     *       case when ScalarType is complex, an eigenproblem is Hermitian, or a real, non-Hermitian eigenproblem has a real eigenvector.
+     *     - index[i] == +1: signifies that the corresponding eigenvector is stored in two vectors: the real part in the i column of Evecs and the <i><b>positive</b></i> imaginary part in the i+1 column of Evecs.
+     *     - index[i] == -1: signifies that the corresponding eigenvector is stored in two vectors: the real part in the i-1 column of Evecs and the <i><b>negative</b></i> imaginary part in the i column of Evecs
+     */
     std::vector<int>         index;
     //! The number of computed eigenpairs
     int numVecs;

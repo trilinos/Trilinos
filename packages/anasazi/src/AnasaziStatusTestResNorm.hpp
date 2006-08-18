@@ -99,7 +99,7 @@ class StatusTestResNorm : public StatusTest<ScalarType,MV,OP> {
   TestStatus checkStatus( Eigensolver<ScalarType,MV,OP>* solver );
 
   //! Return the result of the most recent checkStatus call.
-  TestStatus getStatus() const { return _state; }
+  TestStatus getStatus() const { return state_; }
   //@}
 
   //! @name Reset methods
@@ -111,7 +111,7 @@ class StatusTestResNorm : public StatusTest<ScalarType,MV,OP> {
     that the convergence test uses will remain.
   */
   void reset() { 
-    _state = Undefined;
+    state_ = Undefined;
   }
 
   //! Clears the results of the last status test.
@@ -121,7 +121,7 @@ class StatusTestResNorm : public StatusTest<ScalarType,MV,OP> {
    * in them.
   */
   void clearStatus() {
-    _state = Undefined;
+    state_ = Undefined;
   }
 
   //@}
@@ -135,58 +135,58 @@ class StatusTestResNorm : public StatusTest<ScalarType,MV,OP> {
    *  This also resets the test status to ::Undefined.
    */
   void setQuorum(int quorum) {
-    _state = Undefined;
-    _quorum = quorum;
+    state_ = Undefined;
+    quorum_ = quorum;
   }
 
   /*! \brief Get quorum.
    */
   int getQuorum() {
-    return _quorum;
+    return quorum_;
   }
 
   /*! \brief Set tolerance.
    *  This also resets the test status to ::Undefined.
    */
   void setTolerance(MagnitudeType tol) {
-    _state = Undefined;
-    _tol = tol;
+    state_ = Undefined;
+    tol_ = tol;
   }
 
   //! Get tolerance.
-  MagnitudeType getTolerance() {return _tol;}
+  MagnitudeType getTolerance() {return tol_;}
 
   /*! \brief Set the residual norm to be used by the status test.
    *
    *  This also resets the test status to ::Undefined.
    */
   void setWhichNorm(ResType whichNorm) {
-    _state = Undefined;
-    _whichNorm = whichNorm;
+    state_ = Undefined;
+    whichNorm_ = whichNorm;
   }
 
   //! Return the residual norm used by the status test.
-  ResType getWhichNorm() {return _whichNorm;}
+  ResType getWhichNorm() {return whichNorm_;}
 
   /*! \brief Instruct test to scale norms by eigenvalue estimates (relative scale).
    *  This also resets the test status to ::Undefined.
    */
   void setScale(bool relscale) {
-    _state = Undefined;
-    _scaled = relscale;
+    state_ = Undefined;
+    scaled_ = relscale;
   }
 
   //! Returns true if the test scales the norms by the eigenvalue estimates (relative scale).
-  bool getScale() {return _scaled;}
+  bool getScale() {return scaled_;}
 
   //! Get the indices for the vectors that passed the test.
   std::vector<int> whichVecs() {
-    return _ind;
+    return ind_;
   }
 
   //! Get the number of vectors that passed the test.
   int howMany() {
-    return _ind.size();
+    return ind_.size();
   }
 
   //@}
@@ -199,18 +199,18 @@ class StatusTestResNorm : public StatusTest<ScalarType,MV,OP> {
  
   //@}
   private:
-    TestStatus _state;
-    MagnitudeType _tol;
-    std::vector<int> _ind;
-    int _quorum;
-    bool _scaled;
-    ResType _whichNorm;
+    TestStatus state_;
+    MagnitudeType tol_;
+    std::vector<int> ind_;
+    int quorum_;
+    bool scaled_;
+    ResType whichNorm_;
 };
 
 
 template <class ScalarType, class MV, class OP>
 StatusTestResNorm<ScalarType,MV,OP>::StatusTestResNorm(MagnitudeType tol, int quorum, ResType whichNorm, bool scaled)
-  : _state(Undefined), _tol(tol), _quorum(quorum), _scaled(scaled), _whichNorm(whichNorm) {}
+  : state_(Undefined), tol_(tol), quorum_(quorum), scaled_(scaled), whichNorm_(whichNorm) {}
 
 template <class ScalarType, class MV, class OP>
 TestStatus StatusTestResNorm<ScalarType,MV,OP>::checkStatus( Eigensolver<ScalarType,MV,OP>* solver ) {
@@ -220,9 +220,8 @@ TestStatus StatusTestResNorm<ScalarType,MV,OP>::checkStatus( Eigensolver<ScalarT
 
   // get the eigenvector/ritz residuals norms (using the appropriate norm)
   // get the eigenvalues/ritzvalues and ritz index as well
-  std::vector<MagnitudeType> vals = solver->getRitzValues();
-  std::vector<int> ind = solver->getRitzIndex();
-  switch (_whichNorm) {
+  std::vector<Value<ScalarType> > vals = solver->getRitzValues();
+  switch (whichNorm_) {
     case RES_2NORM:
       res = solver->getRes2Norms();
       // we want only the ritz values corresponding to our eigenvector residuals
@@ -239,26 +238,11 @@ TestStatus StatusTestResNorm<ScalarType,MV,OP>::checkStatus( Eigensolver<ScalarT
   }
 
   // if appropriate, scale the norms by the magnitude of the eigenvalue estimate
-  if (_scaled) {
+  if (scaled_) {
     Teuchos::LAPACK<int,MagnitudeType> lapack;
 
     for (unsigned int i=0; i<res.size(); i++) {
-      MagnitudeType tmp;
-      if ( ind[i] == 0 ) {
-        // real ritz value
-        tmp = MT::magnitude(vals[i]);
-      }
-      else if ( ind[i] == +1 ) {
-        // positive part of complex ritz value
-        tmp = lapack.LAPY2( vals[i], vals[i+1] );
-      }
-      else if ( ind[i] == -1 ) {
-        // negative part of complex ritz value
-        tmp = lapack.LAPY2( vals[i-1], vals[i] );
-      }
-      else {
-        TEST_FOR_EXCEPTION( true, std::logic_error, "Anasazi::StatusTestOrderedResNorm::checkStatus(): invalid Ritz index returned from solver." );
-      }
+      MagnitudeType tmp = lapack.LAPY2(vals[i].realpart,vals[i].imagpart);
       // scale by the newly computed magnitude of the ritz values
       if ( tmp != MT::zero() ) {
         res[i] /= tmp;
@@ -268,18 +252,18 @@ TestStatus StatusTestResNorm<ScalarType,MV,OP>::checkStatus( Eigensolver<ScalarT
 
   // test the norms
   int have = 0;
-  _ind.resize(res.size());
+  ind_.resize(res.size());
   for (unsigned int i=0; i<res.size(); i++) {
     TEST_FOR_EXCEPTION( MT::isnaninf(res[i]), StatusTestError, "StatusTestResNorm::checkStatus(): residual norm is nan or inf" );
-    if (res[i] < _tol) {
-      _ind[have] = i;
+    if (res[i] < tol_) {
+      ind_[have] = i;
       have++;
     }
   }
-  _ind.resize(have);
-  int need = (_quorum == -1) ? res.size() : _quorum;
-  _state = (have >= need) ? Passed : Failed;
-  return _state;
+  ind_.resize(have);
+  int need = (quorum_ == -1) ? res.size() : quorum_;
+  state_ = (have >= need) ? Passed : Failed;
+  return state_;
 }
 
 
@@ -287,7 +271,7 @@ template <class ScalarType, class MV, class OP>
 ostream& StatusTestResNorm<ScalarType,MV,OP>::print(ostream& os, int indent) const {
   string ind(indent,' ');
   os << ind << "- StatusTestResNorm: ";
-  switch (_state) {
+  switch (state_) {
   case Passed:
     os << "Passed" << endl;
     break;
@@ -299,8 +283,8 @@ ostream& StatusTestResNorm<ScalarType,MV,OP>::print(ostream& os, int indent) con
     break;
   }
   os << ind << "(Tolerance,WhichNorm,Scaled,Quorum): " 
-            << "(" << _tol;
-  switch (_whichNorm) {
+            << "(" << tol_;
+  switch (whichNorm_) {
   case RES_ORTH:
     os << ",RES_ORTH";
     break;
@@ -311,14 +295,14 @@ ostream& StatusTestResNorm<ScalarType,MV,OP>::print(ostream& os, int indent) con
     os << ",RITZRES_2NORM";
     break;
   }
-  os        << "," << (_scaled   ? "true" : "false")
-            << "," << _quorum 
+  os        << "," << (scaled_   ? "true" : "false")
+            << "," << quorum_ 
             << ")" << endl;
 
-  if (_state != Undefined) {
+  if (state_ != Undefined) {
     os << ind << "Which vectors: ";
-    if (_ind.size() > 0) {
-      for (unsigned int i=0; i<_ind.size(); i++) os << _ind[i] << " ";
+    if (ind_.size() > 0) {
+      for (unsigned int i=0; i<ind_.size(); i++) os << ind_[i] << " ";
       os << endl;
     }
     else {

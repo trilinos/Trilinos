@@ -39,14 +39,11 @@
 // Include autoconfigured header
 #include "AnasaziConfigDefs.hpp"
 
-// Include header for block Krylov-Schur solver
-#include "AnasaziBlockKrylovSchur.hpp"
+// Include header for block Krylov-Schur solver manager
+#include "AnasaziBlockKrylovSchurSolMgr.hpp"
 
 // Include header to define basic eigenproblem Ax = \lambda*Bx
 #include "AnasaziBasicEigenproblem.hpp"
-
-// Include header to provide basic sorting utility required by block Krylov-Schur method
-#include "AnasaziBasicSort.hpp"
 
 // Include header to provide Anasazi with Epetra adapters
 #include "AnasaziEpetraAdapter.hpp"
@@ -78,7 +75,6 @@
 
 int main(int argc, char *argv[]) {
   int i, info;
-  Anasazi::ReturnType returnCode = Anasazi::Ok;
 
 #ifdef EPETRA_MPI
   // Initialize MPI
@@ -89,30 +85,6 @@ int main(int argc, char *argv[]) {
 #endif
 
   int MyPID = Comm.MyPID();
-
-  // Create an output manager to handle the I/O from the solver
-  Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM =
-    Teuchos::rcp( new Anasazi::OutputManager<double>( MyPID ) );
-  MyOM->SetVerbosity( Anasazi::FinalSummary );  
-
-  std::string which;
-  if (argc > 1) {
-    which = argv[1];
-  }
-  else {
-    which = "LM";
-  }
-  if ( which != "SM" && which != "LM" && which != "SR" && which != "LR" ) {
-    if (MyOM->doPrint()) {
-      std::cout << "Usage: " << argv[0] << " [sort string]" << endl
-        << "where:" << endl
-        << "sort string       - SM | LM | SR | LR" << endl << endl;
-    }
-#ifdef EPETRA_MPI
-    MPI_Finalize() ;
-#endif
-    return -1;
-  }
 
   // Number of dimension of the domain
   int space_dim = 2;
@@ -137,20 +109,20 @@ int main(int argc, char *argv[]) {
   //
   //*****Select the Preconditioner*****
   //
-  if (MyOM->doPrint()) cout << endl << endl;
-  if (MyOM->doPrint()) cout << "Constructing ICT preconditioner" << endl;
+  if (MyPID==0) cout << endl << endl;
+  if (MyPID==0) cout << "Constructing ICT preconditioner" << endl;
   int Lfill = 0;
   if (argc > 2) Lfill = atoi(argv[2]);
-  if (MyOM->doPrint()) cout << "Using Lfill = " << Lfill << endl;
+  if (MyPID==0) cout << "Using Lfill = " << Lfill << endl;
   int Overlap = 0;
   if (argc > 3) Overlap = atoi(argv[3]);
-  if (MyOM->doPrint()) cout << "Using Level Overlap = " << Overlap << endl;
+  if (MyPID==0) cout << "Using Level Overlap = " << Overlap << endl;
   double Athresh = 0.0;
   if (argc > 4) Athresh = atof(argv[4]);
-  if (MyOM->doPrint()) cout << "Using Absolute Threshold Value of " << Athresh << endl;
+  if (MyPID==0) cout << "Using Absolute Threshold Value of " << Athresh << endl;
   double Rthresh = 1.0;
   if (argc >5) Rthresh = atof(argv[5]);
-  if (MyOM->doPrint()) cout << "Using Relative Threshold Value of " << Rthresh << endl;
+  if (MyPID==0) cout << "Using Relative Threshold Value of " << Rthresh << endl;
   double dropTol = 1.0e-6;
   //
   Teuchos::RefCountPtr<Ifpack_CrsIct> ICT;
@@ -168,7 +140,7 @@ int main(int argc, char *argv[]) {
   bool transA = false;
   double Cond_Est;
   ICT->Condest(transA, Cond_Est);
-  if (MyOM->doPrint()) {
+  if (MyPID==0) {
     cout << "Condition number estimate for this preconditoner = " << Cond_Est << endl;
     cout << endl;
   } 
@@ -199,98 +171,105 @@ int main(int argc, char *argv[]) {
   //
   int nev = 10;
   int blockSize = 3;  
-  int maxBlocks = 3*nev/blockSize;
+  int numBlocks = 3*nev/blockSize;
   int maxRestarts = 5;
   //int step = 5;
   double tol = 1.0e-8;
+  std::string which = "LM";
+  int verbosity = Anasazi::Errors + Anasazi::Warnings + Anasazi::FinalSummary;
   //
   // Create parameter list to pass into solver
   //
   Teuchos::ParameterList MyPL;
+  MyPL.set( "Verbosity", verbosity );
+  MyPL.set( "Which", which );
   MyPL.set( "Block Size", blockSize );
-  MyPL.set( "Max Blocks", maxBlocks );
-  MyPL.set( "Max Restarts", maxRestarts );
-  MyPL.set( "Tol", tol );
+  MyPL.set( "Num Blocks", numBlocks );
+  MyPL.set( "Maximum Restarts", maxRestarts );
+  MyPL.set( "Convergence Tolerance", tol );
   //MyPL.set( "Step Size", step );
   
-  typedef Anasazi::MultiVec<double> MV;
-  typedef Anasazi::Operator<double> OP;
+  typedef Epetra_MultiVector MV;
+  typedef Epetra_Operator OP;
+  typedef Anasazi::MultiVecTraits<double, MV> MVT;
+  typedef Anasazi::OperatorTraits<double, MV, OP> OPT;
   
-  // Create an Anasazi::EpetraMultiVec for an initial vector to start the solver.
+  // Create an Epetra_MultiVector for an initial vector to start the solver.
   // Note:  This needs to have the same number of columns as the blocksize.
-  Teuchos::RefCountPtr<Anasazi::EpetraMultiVec> ivec = 
-    Teuchos::rcp( new Anasazi::EpetraMultiVec(K->Map(), blockSize) );
-  ivec->MvRandom();
+  Teuchos::RefCountPtr<Epetra_MultiVector> ivec = Teuchos::rcp( new Epetra_MultiVector(K->Map(), blockSize) );
+  MVT::MvRandom( *ivec );
   
   // Call the ctor that calls the petra ctor for a matrix
-  Teuchos::RefCountPtr<Anasazi::EpetraOp> Kmat = Teuchos::rcp( new Anasazi::EpetraOp(K) );
-  Teuchos::RefCountPtr<Anasazi::EpetraOp> Mmat = Teuchos::rcp( new Anasazi::EpetraOp(M) );
   Teuchos::RefCountPtr<Anasazi::EpetraGenOp> Aop = Teuchos::rcp( new Anasazi::EpetraGenOp(precOperator, M) );	
   
   Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double,MV,OP> > MyProblem = 
-    Teuchos::rcp( new Anasazi::BasicEigenproblem<double,MV,OP>(Aop, Mmat, ivec) );
+    Teuchos::rcp( new Anasazi::BasicEigenproblem<double,MV,OP>(Aop, M, ivec) );
   
   // Inform the eigenproblem that the matrix pencil (K,M) is symmetric
-  MyProblem->SetSymmetric(true);
+  MyProblem->setHermitian(true);
   
   // Set the number of eigenvalues requested 
-  MyProblem->SetNEV( nev );
+  MyProblem->setNEV( nev );
 
-  // Inform the eigenproblem that you are finishing passing it information
-  info = MyProblem->SetProblem();
-  if (info) {
-    cout << "Anasazi::BasicEigenproblem::SetProblem() returned with code : "<< info << endl;
-  }
-
-  // Create a sorting manager to handle the sorting of eigenvalues in the solver
-  Teuchos::RefCountPtr<Anasazi::BasicSort<double,MV,OP> > MySort = 
-    Teuchos::rcp( new Anasazi::BasicSort<double,MV,OP>(which) );
-  
-  // Initialize the Block Arnoldi solver
-  Anasazi::BlockKrylovSchur<double,MV,OP> MySolver(MyProblem, MySort, MyOM, MyPL);
-
-  // Solve the problem to the specified tolerances or length
-  returnCode = MySolver.solve();
-
-  // Check that the solver returned OK, if not exit example
-  if (returnCode != Anasazi::Ok) {
-#ifdef EPETRA_MPI
-        MPI_Finalize();
+  // Inform the eigenproblem that you are finished passing it information
+  bool boolret = MyProblem->setProblem();
+  if (boolret != true) {
+    if (MyPID == 0) {
+      cout << "Anasazi::BasicEigenproblem::setProblem() returned with error." << endl;
+    }
+#ifdef HAVE_MPI
+    MPI_Finalize() ;
 #endif
     return -1;
   }
-  
-  // Obtain eigenvectors directly
-  Teuchos::RefCountPtr<std::vector<double> > evals = MyProblem->GetEvals(); 
 
-  // Retrieve real and imaginary parts of the eigenvectors
-  // The size of the eigenvector storage is nev.
-  // The real part of the eigenvectors is stored in the first nev vectors.
-  // The imaginary part of the eigenvectors is stored in the second nev vectors.
-  Anasazi::EpetraMultiVec* evecr = dynamic_cast<Anasazi::EpetraMultiVec*>(MyProblem->GetEvecs()->CloneCopy());
+  // Initialize the Block Arnoldi solver
+  Anasazi::BlockKrylovSchurSolMgr<double, MV, OP> MySolverMgr(MyProblem, MyPL);
 
-  Teuchos::SerialDenseMatrix<int,double> dmatr(nev,nev);
-  Anasazi::EpetraMultiVec tempvec(K->Map(), evecr->GetNumberVecs());	
-  K->Apply( *evecr, tempvec );
-  tempvec.MvTransMv( 1.0, *evecr, dmatr );
-
-  if (MyOM->doPrint()) {
-    double compeval = 0.0;    
-    cout.setf(ios_base::right, ios_base::adjustfield);
-    cout<<"Actual Eigenvalues (obtained by Rayleigh quotient) : "<<endl;
-    cout<<"------------------------------------------------------"<<endl;
-    cout<<std::setw(16)<<"Real Part" 
-	<<std::setw(16)<<"Rayleigh Error"<<endl;
-    cout<<"------------------------------------------------------"<<endl;
-    for (i=0; i<nev; i++) {
-      compeval = dmatr(i,i);
-      cout<<std::setw(16)<<compeval
-	  <<std::setw(16)<<Teuchos::ScalarTraits<double>::magnitude(compeval-1.0/(*evals)[i])
-	  <<endl;
-    }
-    cout<<"------------------------------------------------------"<<endl;
+  // Solve the problem to the specified tolerances or length
+  Anasazi::ReturnType returnCode = MySolverMgr.solve();
+  if (returnCode != Anasazi::Converged && MyPID==0) {
+    cout << "Anasazi::EigensolverMgr::solve() returned unconverged." << endl;
   }
 
+  // Get the eigenvalues and eigenvectors from the eigenproblem
+  Anasazi::Eigensolution<double,MV> sol = MyProblem->getSolution();
+  std::vector<Anasazi::Value<double> > evals = sol.Evals;
+  Teuchos::RefCountPtr<MV> evecs = sol.Evecs;
+  int numev = sol.numVecs;
+
+  if (numev > 0) {
+
+    // Get the eigenvalues and eigenvectors from the eigenproblem
+    Anasazi::Eigensolution<double,MV> sol = MyProblem->getSolution();
+    std::vector<Anasazi::Value<double> > evals = sol.Evals;
+    Teuchos::RefCountPtr<MV> evecs = sol.Evecs;
+    int numev = sol.numVecs;
+    
+    Teuchos::SerialDenseMatrix<int,double> dmatr(numev,numev);
+    Epetra_MultiVector tempvec(K->Map(), MVT::GetNumberVecs( *evecs ));	
+    OPT::Apply( *K, *evecs, tempvec );
+    MVT::MvTransMv( 1.0, tempvec, *evecs, dmatr );
+    
+    if (MyPID==0) {
+      double compeval = 0.0;
+      cout.setf(ios_base::right, ios_base::adjustfield);
+      cout<<"Actual Eigenvalues (obtained by Rayleigh quotient) : "<<endl;
+      cout<<"------------------------------------------------------"<<endl;
+      cout<<std::setw(16)<<"Real Part"
+	  <<std::setw(16)<<"Rayleigh Error"<<endl;
+      cout<<"------------------------------------------------------"<<endl;
+      for (i=0; i<numev; i++) {
+	compeval = dmatr(i,i);
+	cout<<std::setw(16)<<compeval
+	    <<std::setw(16)<<Teuchos::ScalarTraits<double>::magnitude(compeval-1.0/evals[i].realpart)
+	    <<endl;
+      }
+      cout<<"------------------------------------------------------"<<endl;
+    }
+    
+  }
+  
 #ifdef EPETRA_MPI
   MPI_Finalize();
 #endif

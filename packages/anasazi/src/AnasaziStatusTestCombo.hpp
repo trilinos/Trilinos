@@ -91,13 +91,13 @@ class StatusTestCombo : public StatusTest<ScalarType,MV,OP> {
 
   //! Constructor
   //! \brief Default constructor has no tests and initializes to ComboType OR.
-  StatusTestCombo() : _state(Undefined) {}
+  StatusTestCombo() : state_(Undefined) {}
 
   //! Constructor
   //! \brief Constructor specifying the ComboType and the tests.
   StatusTestCombo(ComboType type, Teuchos::Array< Teuchos::RefCountPtr< StatusTest<ScalarType,MV,OP> > > tests) :
-    _state(Undefined), 
-    _type(type)
+    state_(Undefined), 
+    type_(type)
   {
     setTests(tests);
   };
@@ -116,7 +116,7 @@ class StatusTestCombo : public StatusTest<ScalarType,MV,OP> {
 
   //! Return the result of the most recent checkStatus call.
   TestStatus getStatus() const {
-    return _state;
+    return state_;
   }
   //@}
 
@@ -127,31 +127,31 @@ class StatusTestCombo : public StatusTest<ScalarType,MV,OP> {
    *  This also resets the test status to ::Undefined.
    */
   void setComboType(ComboType type) {
-    _type = type;
-    _state = Undefined;
+    type_ = type;
+    state_ = Undefined;
   }
 
   //! Get the maximum number of iterations.
-  ComboType getComboType() const {return _type;}
+  ComboType getComboType() const {return type_;}
 
   /*! \brief Set the tests
    *  This also resets the test status to ::Undefined.
    */
   void setTests(Teuchos::Array<Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > > tests) {
-    _tests = tests;
-    _state = Undefined;
+    tests_ = tests;
+    state_ = Undefined;
   }
 
   //! Get the tests
-  Teuchos::Array<Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > > getTests() const {return _tests;}
+  Teuchos::Array<Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > > getTests() const {return tests_;}
 
   /*! \brief Add a test to the combination.
    *
    *  This also resets the test status to ::Undefined.
    */
   void addTest(Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > test) {
-    _tests.push_back(test);
-    _state = Undefined;
+    tests_.push_back(test);
+    state_ = Undefined;
   }
 
   /*! \brief Removes a test from the combination, if it exists in the tester.
@@ -194,9 +194,9 @@ class StatusTestCombo : public StatusTest<ScalarType,MV,OP> {
   TestStatus evalSEQOR(Eigensolver<ScalarType,MV,OP>* solver);
   TestStatus evalSEQAND(Eigensolver<ScalarType,MV,OP>* solver);
 
-  TestStatus _state;
-  ComboType _type;
-  STPArray _tests;
+  TestStatus state_;
+  ComboType type_;
+  STPArray tests_;
 
 };
 
@@ -205,10 +205,10 @@ template <class ScalarType, class MV, class OP>
 void StatusTestCombo<ScalarType,MV,OP>::removeTest(const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > &test) 
 {
   typename STPArray::iterator iter1;
-  iter1 = find(_tests.begin(),_tests.end(),test);
-  if (iter1 != _tests.end()) {
-    _tests.erase(iter1);
-    _state = Undefined;
+  iter1 = find(tests_.begin(),tests_.end(),test);
+  if (iter1 != tests_.end()) {
+    tests_.erase(iter1);
+    state_ = Undefined;
   }
 }
 
@@ -216,36 +216,36 @@ void StatusTestCombo<ScalarType,MV,OP>::removeTest(const Teuchos::RefCountPtr<St
 template <class ScalarType, class MV, class OP>
 TestStatus StatusTestCombo<ScalarType,MV,OP>::checkStatus( Eigensolver<ScalarType,MV,OP>* solver ) {
   clearStatus();
-  switch (_type) {
+  switch (type_) {
     case OR:
-      _state = evalOR(solver);
+      state_ = evalOR(solver);
       break;
     case AND:
-      _state = evalAND(solver);
+      state_ = evalAND(solver);
       break;
     case SEQOR:
-      _state = evalSEQOR(solver);
+      state_ = evalSEQOR(solver);
       break;
     case SEQAND:
-      _state = evalSEQAND(solver);
+      state_ = evalSEQAND(solver);
       break;
   }
-  return _state;
+  return state_;
 }
 
 
 template <class ScalarType, class MV, class OP>
 void StatusTestCombo<ScalarType,MV,OP>::reset() {
-  _state = Undefined;
-  for (iterator i=_tests.begin(); i != _tests.end(); i++) {
+  state_ = Undefined;
+  for (iterator i=tests_.begin(); i != tests_.end(); i++) {
     (*i)->reset();
   }
 }
 
 template <class ScalarType, class MV, class OP>
 void StatusTestCombo<ScalarType,MV,OP>::clearStatus() {
-  _state = Undefined;
-  for (iterator i=_tests.begin(); i != _tests.end(); i++) {
+  state_ = Undefined;
+  for (iterator i=tests_.begin(); i != tests_.end(); i++) {
     (*i)->clearStatus();
   }
 }
@@ -254,7 +254,7 @@ template <class ScalarType, class MV, class OP>
 ostream& StatusTestCombo<ScalarType,MV,OP>::print(ostream& os, int indent) const {
   string ind(indent,' ');
   os << ind << "- StatusTestCombo: ";
-  switch (_state) {
+  switch (state_) {
   case Passed:
     os << "Passed" << endl;
     break;
@@ -266,7 +266,7 @@ ostream& StatusTestCombo<ScalarType,MV,OP>::print(ostream& os, int indent) const
     break;
   }
   // print children, with extra indention
-  for (const_iterator i=_tests.begin(); i != _tests.end(); i++) {
+  for (const_iterator i=tests_.begin(); i != tests_.end(); i++) {
     (*i)->print(os,indent+2);
   }
   return os;
@@ -274,27 +274,27 @@ ostream& StatusTestCombo<ScalarType,MV,OP>::print(ostream& os, int indent) const
 
 template <class ScalarType, class MV, class OP>
 TestStatus StatusTestCombo<ScalarType,MV,OP>::evalOR( Eigensolver<ScalarType,MV,OP>* solver ) {
-  _state = Failed;
-  for (iterator i=_tests.begin(); i != _tests.end(); i++) {
+  state_ = Failed;
+  for (iterator i=tests_.begin(); i != tests_.end(); i++) {
     TestStatus r = (*i)->checkStatus(solver);
     if (r == Passed) {
-      _state = Passed;
+      state_ = Passed;
     }
     else if (r != Failed) {
       TEST_FOR_EXCEPTION(true,StatusTestError,
                          "Anasazi::StatusTestCombo::evalOR(): child test gave invalid return");
     }
   }
-  return _state;
+  return state_;
 }
 
 template <class ScalarType, class MV, class OP>
 TestStatus StatusTestCombo<ScalarType,MV,OP>::evalSEQOR( Eigensolver<ScalarType,MV,OP>* solver ) {
-  _state = Failed;
-  for (iterator i=_tests.begin(); i != _tests.end(); i++) {
+  state_ = Failed;
+  for (iterator i=tests_.begin(); i != tests_.end(); i++) {
     TestStatus r = (*i)->checkStatus(solver);
     if (r == Passed) {
-      _state = Passed;
+      state_ = Passed;
       break;
     }
     else if (r != Failed) {
@@ -302,32 +302,32 @@ TestStatus StatusTestCombo<ScalarType,MV,OP>::evalSEQOR( Eigensolver<ScalarType,
                          "Anasazi::StatusTestCombo::evalSEQOR(): child test gave invalid return");
     }
   }
-  return _state;
+  return state_;
 }
 
 template <class ScalarType, class MV, class OP>
 TestStatus StatusTestCombo<ScalarType,MV,OP>::evalAND( Eigensolver<ScalarType,MV,OP>* solver ) {
-  _state = Passed;
-  for (iterator i=_tests.begin(); i != _tests.end(); i++) {
+  state_ = Passed;
+  for (iterator i=tests_.begin(); i != tests_.end(); i++) {
     TestStatus r = (*i)->checkStatus(solver);
     if (r == Failed) {
-      _state = Failed;
+      state_ = Failed;
     }
     else if (r != Passed) {
       TEST_FOR_EXCEPTION(true,StatusTestError,
                          "Anasazi::StatusTestCombo::evalAND(): child test gave invalid return");
     }
   }
-  return _state;
+  return state_;
 }
 
 template <class ScalarType, class MV, class OP>
 TestStatus StatusTestCombo<ScalarType,MV,OP>::evalSEQAND( Eigensolver<ScalarType,MV,OP>* solver ) {
-  _state = Passed;
-  for (iterator i=_tests.begin(); i != _tests.end(); i++) {
+  state_ = Passed;
+  for (iterator i=tests_.begin(); i != tests_.end(); i++) {
     TestStatus r = (*i)->checkStatus(solver);
     if (r == Failed) {
-      _state = Failed;
+      state_ = Failed;
       break;
     }
     else if (r != Passed) {
@@ -335,7 +335,7 @@ TestStatus StatusTestCombo<ScalarType,MV,OP>::evalSEQAND( Eigensolver<ScalarType
                          "Anasazi::StatusTestCombo::evalAND(): child test gave invalid return");
     }
   }
-  return _state;
+  return state_;
 }
 
 

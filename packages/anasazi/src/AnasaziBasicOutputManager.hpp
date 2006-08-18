@@ -70,10 +70,10 @@ class BasicOutputManager : public OutputManager<ScalarType> {
   //@{ 
 
   //! Set the output stream for this manager.
-  void setOStream( Teuchos::RefCountPtr<ostream> os ) { _myOS = os; };
+  void setOStream( Teuchos::RefCountPtr<ostream> os ) { myOS_ = os; };
 
   //! Get the output stream for this manager.
-  Teuchos::RefCountPtr<ostream> getOStream() { return _myOS; };
+  Teuchos::RefCountPtr<ostream> getOStream() { return myOS_; };
 
   //@}
 
@@ -107,14 +107,14 @@ class BasicOutputManager : public OutputManager<ScalarType> {
 
   //@}
 
-  Teuchos::RefCountPtr<ostream> _myOS;
-  Teuchos::oblackholestream _myBHS;
-  bool _iPrint;
+  Teuchos::RefCountPtr<ostream> myOS_;
+  Teuchos::oblackholestream myBHS_;
+  bool iPrint_;
 };
 
 template<class ScalarType>
 BasicOutputManager<ScalarType>::BasicOutputManager(int vb, Teuchos::RefCountPtr<ostream> os)
-    : OutputManager<ScalarType>(vb), _myOS(os) {
+    : OutputManager<ScalarType>(vb), myOS_(os) {
   int MyPID;
   #ifdef HAVE_MPI
     // Initialize MPI
@@ -122,12 +122,12 @@ BasicOutputManager<ScalarType>::BasicOutputManager(int vb, Teuchos::RefCountPtr<
   #else 
     MyPID = 0;
   #endif
-  _iPrint = (MyPID == 0);
+  iPrint_ = (MyPID == 0);
 } 
 
 template<class ScalarType>
 bool BasicOutputManager<ScalarType>::isVerbosity( MsgType type ) {
-  if ( (type & this->_vb) == type ) {
+  if ( (type & this->vb_) == type ) {
     return true;
   }
   return false;
@@ -135,17 +135,17 @@ bool BasicOutputManager<ScalarType>::isVerbosity( MsgType type ) {
 
 template<class ScalarType>
 void BasicOutputManager<ScalarType>::print( MsgType type, const string output ) {
-  if ( (type & this->_vb) == type && _iPrint ) {
-    *_myOS << output;
+  if ( (type & this->vb_) == type && iPrint_ ) {
+    *myOS_ << output;
   }
 }
 
 template<class ScalarType>
 ostream & BasicOutputManager<ScalarType>::stream( MsgType type ) {
-  if ( (type & this->_vb) == type && _iPrint ) {
-    return *_myOS;
+  if ( (type & this->vb_) == type && iPrint_ ) {
+    return *myOS_;
   }
-  return _myBHS;
+  return myBHS_;
 }
 
 } // end Anasazi namespace

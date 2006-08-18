@@ -70,8 +70,8 @@ class Eigensolver {
     four arguments are sufficient enough for constructing any Anasazi::Eigensolver object.
   */
   Eigensolver( const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem, 
-               const Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > &sm,
-               const Teuchos::RefCountPtr<OutputManager<ScalarType> > &om,
+               const Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > &sorter,
+               const Teuchos::RefCountPtr<OutputManager<ScalarType> > &printer,
                const Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > &tester,
                const Teuchos::RefCountPtr<OrthoManager<ScalarType,MV> > &ortho,
                Teuchos::ParameterList &params );
@@ -89,6 +89,11 @@ class Eigensolver {
   */
   virtual void iterate() = 0;
 
+  /*! \brief Initialize the solver with the initial vectors from the eigenproblem
+   *  or random data.
+   */
+  virtual void initialize() = 0;
+
   //@}
 
     
@@ -101,13 +106,23 @@ class Eigensolver {
   //! \brief Reset the iteration count.
   virtual void resetNumIters() = 0;
 
-  //! \brief Get the Ritz vectors from the previous iteration. These are indexed using getRitzIndex().
+  /*! \brief Get the Ritz vectors from the previous iteration. These are indexed using getRitzIndex().
+   *
+   * For a description of the indexing scheme, see getRitzIndex().
+   */
   virtual Teuchos::RefCountPtr<const MV> getRitzVectors() = 0;
 
-  //! \brief Get the Ritz values from the previous iteration. These are indexed using getRitzIndex().
-  virtual std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getRitzValues() = 0;
+  //! \brief Get the Ritz values from the previous iteration.
+  virtual std::vector<Value<ScalarType> > getRitzValues() = 0;
 
-  //! \brief Get the index used for extracting Ritz vectors and Ritz values from getRitzVectors() and getRitzValues() 
+  /*! \brief Get the index used for indexing the compressed storage used for Ritz vectors for real, non-Hermitian problems. 
+   *
+   *  index has length numVecs, where each entry is 0, +1, or -1. These have the following interpretation:
+   *     - index[i] == 0: signifies that the corresponding eigenvector is stored as the i column of Evecs. This will usually be the 
+   *       case when ScalarType is complex, an eigenproblem is Hermitian, or a real, non-Hermitian eigenproblem has a real eigenvector.
+   *     - index[i] == +1: signifies that the corresponding eigenvector is stored in two vectors: the real part in the i column of Evecs and the <i><b>positive</b></i> imaginary part in the i+1 column of Evecs.
+   *     - index[i] == -1: signifies that the corresponding eigenvector is stored in two vectors: the real part in the i-1 column of Evecs and the <i><b>negative</b></i> imaginary part in the i column of Evecs
+   */
   virtual std::vector<int> getRitzIndex() = 0;
 
   //! \brief Get the current residual norms

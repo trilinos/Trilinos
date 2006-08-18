@@ -192,7 +192,6 @@ int main(int argc, char *argv[])
 
   // Get the eigenvalues and eigenvectors from the eigenproblem
   Anasazi::Eigensolution<ScalarType,MV> sol = problem->getSolution();
-  std::vector<MagnitudeType> evals = sol.Evals;
   RefCountPtr<MV> evecs = sol.Evecs;
   int numev = sol.numVecs;
 
@@ -213,7 +212,7 @@ int main(int argc, char *argv[])
     std::vector<ScalarType> normV( numev );
     SerialDenseMatrix<int,ScalarType> T(numev,numev);
     for (int i=0; i<numev; i++) {
-      T(i,i) = evals[i];
+      T(i,i) = sol.Evals[i].realpart;
     }
     RefCountPtr<MV> Mvecs = MVT::Clone( *evecs, numev ),
                     Kvecs = MVT::Clone( *evecs, numev );
@@ -228,13 +227,13 @@ int main(int argc, char *argv[])
        << std::setw(20) << "Eigenvalue" << std::setw(20) << "Residual(M)" << endl
        << "----------------------------------------" << endl;
     for (int i=0; i<numev; i++) {
-      if ( SCT::magnitude(evals[i]) != SCT::zero() ) {
-        normV[i] = SCT::magnitude( SCT::squareroot( normV[i] ) / evals[i] );
+      if ( SCT::magnitude(sol.Evals[i].realpart) != SCT::zero() ) {
+        normV[i] = SCT::magnitude( SCT::squareroot( normV[i] ) / sol.Evals[i].realpart );
       }
       else {
         normV[i] = SCT::magnitude( SCT::squareroot( normV[i] ) );
       }
-      os << setw(20) << evals[i] << setw(20) << normV[i] << endl;
+      os << setw(20) << sol.Evals[i].realpart << setw(20) << normV[i] << endl;
       if ( normV[i] > tol ) {
         testFailed = true;
       }
@@ -262,6 +261,5 @@ int main(int argc, char *argv[])
     cout << "End Result: TEST PASSED" << endl;
   }
   return 0;
-
 
 }	

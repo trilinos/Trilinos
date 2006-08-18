@@ -59,7 +59,7 @@
  * This solver mangaer implements a hard-locking mechanism, whereby eigenpairs designated to be locked are moved from the eigensolver and placed in
  * auxiliary storage. The eigensolver is then restarted and continues to iterate, always orthogonal to the locked eigenvectors.
 
- \ingroup anasazi_solvermanagers
+ \ingroup anasazi_solver_framework
 
  \author Chris Baker, Ulrich Hetmaniuk, Rich Lehoucq, Heidi Thornquist
  */
@@ -109,7 +109,7 @@ class BlockDavidsonSolMgr : public SolverManager<ScalarType,MV,OP> {
   //@{ 
 
   Eigenproblem<ScalarType,MV,OP>& getProblem() const {
-    return *_problem;
+    return *problem_;
   }
 
   //@}
@@ -144,18 +144,18 @@ class BlockDavidsonSolMgr : public SolverManager<ScalarType,MV,OP> {
   //@}
 
   private:
-  Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > _problem;
+  Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > problem_;
 
-  string _whch; 
+  string whch_; 
 
-  MagnitudeType _convtol, _locktol;
-  int _maxRestarts;
-  bool _useLocking;
-  bool _relconvtol, _rellocktol;
-  int _blockSize, _numBlocks;
-  int _maxLocked;
-  int _verbosity;
-  int _lockQuorum;
+  MagnitudeType convtol_, locktol_;
+  int maxRestarts_;
+  bool useLocking_;
+  bool relconvtol_, rellocktol_;
+  int blockSize_, numBlocks_;
+  int maxLocked_;
+  int verbosity_;
+  int lockQuorum_;
 };
 
 
@@ -164,77 +164,77 @@ template<class ScalarType, class MV, class OP>
 BlockDavidsonSolMgr<ScalarType,MV,OP>::BlockDavidsonSolMgr( 
         const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem,
         Teuchos::ParameterList &pl ) : 
-  _problem(problem),
-  _whch("SR"),
-  _convtol(0),
-  _locktol(0),
-  _maxRestarts(20),
-  _useLocking(false),
-  _relconvtol(true),
-  _rellocktol(true),
-  _blockSize(0),
-  _numBlocks(0),
-  _maxLocked(0),
-  _verbosity(Anasazi::Errors),
-  _lockQuorum(1)
+  problem_(problem),
+  whch_("SR"),
+  convtol_(0),
+  locktol_(0),
+  maxRestarts_(20),
+  useLocking_(false),
+  relconvtol_(true),
+  rellocktol_(true),
+  blockSize_(0),
+  numBlocks_(0),
+  maxLocked_(0),
+  verbosity_(Anasazi::Errors),
+  lockQuorum_(1)
 {
-  TEST_FOR_EXCEPTION(_problem == Teuchos::null,               std::invalid_argument, "Problem not given to solver manager.");
-  TEST_FOR_EXCEPTION(!_problem->isProblemSet(),               std::invalid_argument, "Problem not set.");
-  TEST_FOR_EXCEPTION(!_problem->isHermitian(),                std::invalid_argument, "Problem not symmetric.");
-  TEST_FOR_EXCEPTION(_problem->getInitVec() == Teuchos::null, std::invalid_argument, "Problem does not contain initial vectors to clone from.");
+  TEST_FOR_EXCEPTION(problem_ == Teuchos::null,               std::invalid_argument, "Problem not given to solver manager.");
+  TEST_FOR_EXCEPTION(!problem_->isProblemSet(),               std::invalid_argument, "Problem not set.");
+  TEST_FOR_EXCEPTION(!problem_->isHermitian(),                std::invalid_argument, "Problem not symmetric.");
+  TEST_FOR_EXCEPTION(problem_->getInitVec() == Teuchos::null, std::invalid_argument, "Problem does not contain initial vectors to clone from.");
 
   // which values to solve for
-  _whch = pl.get("Which",_whch);
-  TEST_FOR_EXCEPTION(_whch != "SM" && _whch != "LM" && _whch != "SR" && _whch != "LR",std::invalid_argument, "Invalid sorting string.");
+  whch_ = pl.get("Which",whch_);
+  TEST_FOR_EXCEPTION(whch_ != "SM" && whch_ != "LM" && whch_ != "SR" && whch_ != "LR",std::invalid_argument, "Invalid sorting string.");
 
   // convergence tolerance
-  _convtol = pl.get("Convergence Tolerance",MT::prec());
-  _relconvtol = pl.get("Relative Convergence Tolerance",_relconvtol);
+  convtol_ = pl.get("Convergence Tolerance",MT::prec());
+  relconvtol_ = pl.get("Relative Convergence Tolerance",relconvtol_);
   
   // locking tolerance
-  _useLocking = pl.get("Use Locking",_useLocking);
-  _rellocktol = pl.get("Relative Locking Tolerance",_rellocktol);
-  _locktol = pl.get("Locking Tolerance",_convtol/10.0);
+  useLocking_ = pl.get("Use Locking",useLocking_);
+  rellocktol_ = pl.get("Relative Locking Tolerance",rellocktol_);
+  locktol_ = pl.get("Locking Tolerance",convtol_/10.0);
 
   // maximum number of restarts
-  _maxRestarts = pl.get("Maximum Restarts",_maxRestarts);
+  maxRestarts_ = pl.get("Maximum Restarts",maxRestarts_);
 
   // block size: default is nev()
-  _blockSize = pl.get("Block Size",_problem->getNEV());
-  TEST_FOR_EXCEPTION(_blockSize <= 0, std::invalid_argument,
+  blockSize_ = pl.get("Block Size",problem_->getNEV());
+  TEST_FOR_EXCEPTION(blockSize_ <= 0, std::invalid_argument,
                      "Anasazi::BlockDavidsonSolMgr: \"Block Size\" must be strictly positive.");
-  _numBlocks = pl.get("Num Blocks",2);
-  TEST_FOR_EXCEPTION(_numBlocks <= 1, std::invalid_argument,
+  numBlocks_ = pl.get("Num Blocks",2);
+  TEST_FOR_EXCEPTION(numBlocks_ <= 1, std::invalid_argument,
                      "Anasazi::BlockDavidsonSolMgr: \"Num Blocks\" must be strictly positive.");
 
-  // max locked: default is nev(), must satisfy _maxLocked + _blockSize >= nev
-  if (_useLocking) {
-    _maxLocked = pl.get("Max Locked",_problem->getNEV());
+  // max locked: default is nev(), must satisfy maxLocked_ + blockSize_ >= nev
+  if (useLocking_) {
+    maxLocked_ = pl.get("Max Locked",problem_->getNEV());
   }
   else {
-    _maxLocked = 0;
+    maxLocked_ = 0;
   }
-  if (_maxLocked == 0) {
-    _useLocking = false;
+  if (maxLocked_ == 0) {
+    useLocking_ = false;
   }
-  TEST_FOR_EXCEPTION(_maxLocked < 0, std::invalid_argument,
+  TEST_FOR_EXCEPTION(maxLocked_ < 0, std::invalid_argument,
                      "Anasazi::BlockDavidsonSolMgr: \"Max Locked\" must be positive.");
-  TEST_FOR_EXCEPTION(_maxLocked + _blockSize < _problem->getNEV(), 
+  TEST_FOR_EXCEPTION(maxLocked_ + blockSize_ < problem_->getNEV(), 
                      std::invalid_argument,
                      "Anasazi::BlockDavidsonSolMgr: Not enough storage space for requested number of eigenpairs.");
-  TEST_FOR_EXCEPTION(_numBlocks*_blockSize + _maxLocked > MVT::GetVecLength(*_problem->getInitVec()),
+  TEST_FOR_EXCEPTION(numBlocks_*blockSize_ + maxLocked_ > MVT::GetVecLength(*problem_->getInitVec()),
                      std::invalid_argument,
                      "Anasazi::BlockDavidsonSolMgr: Potentially impossible orthogonality requests. Reduce basis size or locking size.");
 
-  if (_useLocking) {
-    _lockQuorum = pl.get("Locking Quorum",_lockQuorum);
-    TEST_FOR_EXCEPTION(_lockQuorum <= 0,
+  if (useLocking_) {
+    lockQuorum_ = pl.get("Locking Quorum",lockQuorum_);
+    TEST_FOR_EXCEPTION(lockQuorum_ <= 0,
                        std::invalid_argument,
                        "Anasazi::BlockDavidsonSolMgr: \"Locking Quorum\" must be strictly positive.");
   }
 
   // verbosity level
-  _verbosity = pl.get("Verbosity", _verbosity);
+  verbosity_ = pl.get("Verbosity", verbosity_);
 
 }
 
@@ -244,26 +244,26 @@ template<class ScalarType, class MV, class OP>
 ReturnType 
 BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
 
-  const int nev = _problem->getNEV();
+  const int nev = problem_->getNEV();
 
   //////////////////////////////////////////////////////////////////////////////////////
   // Sort manager
-  Teuchos::RefCountPtr<BasicSort<ScalarType,MV,OP> > sorter = Teuchos::rcp( new BasicSort<ScalarType,MV,OP>(_whch) );
+  Teuchos::RefCountPtr<BasicSort<ScalarType,MV,OP> > sorter = Teuchos::rcp( new BasicSort<ScalarType,MV,OP>(whch_) );
 
   //////////////////////////////////////////////////////////////////////////////////////
   // Output manager
-  Teuchos::RefCountPtr<BasicOutputManager<ScalarType> > printer = Teuchos::rcp( new BasicOutputManager<ScalarType>(_verbosity) );
+  Teuchos::RefCountPtr<BasicOutputManager<ScalarType> > printer = Teuchos::rcp( new BasicOutputManager<ScalarType>(verbosity_) );
 
   //////////////////////////////////////////////////////////////////////////////////////
   // Status tests
   //
   // convergence
   Teuchos::RefCountPtr<StatusTestOrderedResNorm<ScalarType,MV,OP> > convtest 
-      = Teuchos::rcp( new StatusTestOrderedResNorm<ScalarType,MV,OP>(sorter,_convtol,nev,StatusTestOrderedResNorm<ScalarType,MV,OP>::RES_ORTH,_relconvtol) );
+      = Teuchos::rcp( new StatusTestOrderedResNorm<ScalarType,MV,OP>(sorter,convtol_,nev,StatusTestOrderedResNorm<ScalarType,MV,OP>::RES_ORTH,relconvtol_) );
   // locking
   Teuchos::RefCountPtr<StatusTestResNorm<ScalarType,MV,OP> > locktest;
-  if (_useLocking) {
-    locktest = Teuchos::rcp( new StatusTestResNorm<ScalarType,MV,OP>(_locktol,_lockQuorum,StatusTestResNorm<ScalarType,MV,OP>::RES_ORTH,_rellocktol) );
+  if (useLocking_) {
+    locktest = Teuchos::rcp( new StatusTestResNorm<ScalarType,MV,OP>(locktol_,lockQuorum_,StatusTestResNorm<ScalarType,MV,OP>::RES_ORTH,rellocktol_) );
   }
   // combo class
   Teuchos::Array<Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > > alltests;
@@ -280,7 +280,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
   //////////////////////////////////////////////////////////////////////////////////////
   // Orthomanager
   Teuchos::RefCountPtr<SVQBOrthoManager<ScalarType,MV,OP> > ortho 
-    = Teuchos::rcp( new SVQBOrthoManager<ScalarType,MV,OP>(_problem->getM()) );
+    = Teuchos::rcp( new SVQBOrthoManager<ScalarType,MV,OP>(problem_->getM()) );
 
   // utils
   ModalSolverUtils<ScalarType,MV,OP> msutils(printer);
@@ -288,15 +288,15 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
   //////////////////////////////////////////////////////////////////////////////////////
   // Parameter list
   Teuchos::ParameterList plist;
-  plist.set("Block Size",_blockSize);
-  plist.set("Num Blocks",_numBlocks);
+  plist.set("Block Size",blockSize_);
+  plist.set("Num Blocks",numBlocks_);
 
   //////////////////////////////////////////////////////////////////////////////////////
   // BlockDavidson solver
   Teuchos::RefCountPtr<BlockDavidson<ScalarType,MV,OP> > bd_solver 
-    = Teuchos::rcp( new BlockDavidson<ScalarType,MV,OP>(_problem,sorter,printer,outputtest,ortho,plist) );
+    = Teuchos::rcp( new BlockDavidson<ScalarType,MV,OP>(problem_,sorter,printer,outputtest,ortho,plist) );
   // set any auxiliary vectors defined in the problem
-  Teuchos::RefCountPtr< const MV > probauxvecs = _problem->getAuxVecs();
+  Teuchos::RefCountPtr< const MV > probauxvecs = problem_->getAuxVecs();
   if (probauxvecs != Teuchos::null) {
     bd_solver->setAuxVecs( Teuchos::tuple< Teuchos::RefCountPtr<const MV> >(probauxvecs) );
   }
@@ -311,8 +311,8 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
   // we will allocated numnew random vectors, which will go into workMV (see below)
   // we will also need numnew storage for the image of these random vectors under A and M; 
   // columns [curlocked+1,curlocked+numnew] will be used for this storage
-  if (_maxLocked > 0) {
-    lockvecs = MVT::Clone(*_problem->getInitVec(),_maxLocked);
+  if (maxLocked_ > 0) {
+    lockvecs = MVT::Clone(*problem_->getInitVec(),maxLocked_);
   }
   std::vector<MagnitudeType> lockvals;
   // workMV will be used when restarting because of 
@@ -321,17 +321,17 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
   //    a number which will be always <= (numblocks-1)*blocksize
   //    [note: this is because we never lock with curdim == numblocks*blocksize]
   Teuchos::RefCountPtr<MV> workMV;
-  if (_useLocking) {
-    workMV = MVT::Clone(*_problem->getInitVec(),(_numBlocks-1)*_blockSize);
+  if (useLocking_) {
+    workMV = MVT::Clone(*problem_->getInitVec(),(numBlocks_-1)*blockSize_);
   }
   else {
-    workMV = MVT::Clone(*_problem->getInitVec(),2*_blockSize);
+    workMV = MVT::Clone(*problem_->getInitVec(),2*blockSize_);
   }
 
   // go ahead and initialize the solution to nothing in case we throw an exception
   Eigensolution<ScalarType,MV> sol;
   sol.numVecs = 0;
-  _problem->setSolution(sol);
+  problem_->setSolution(sol);
 
   int numRestarts = 0;
 
@@ -350,19 +350,19 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
       // check for restarting before locking: if we need to lock, it will happen after the restart
       else if ( bd_solver->getCurSubspaceDim() == bd_solver->getMaxSubspaceDim() ) {
 
-        if ( numRestarts >= _maxRestarts ) {
+        if ( numRestarts >= maxRestarts_ ) {
           break; // break from while(1){bd_solver->iterate()}
         }
         numRestarts++;
 
-        printer->stream(Debug) << " Performing restart number " << numRestarts << " of " << _maxRestarts << endl << endl;
+        printer->stream(Debug) << " Performing restart number " << numRestarts << " of " << maxRestarts_ << endl << endl;
 
         // the solver has filled its basis. 
         // the current eigenvectors will be used to restart the basis.
-        std::vector<int> b1ind(_blockSize), b2ind(_blockSize);
-        for (int i=0;i<_blockSize;i++) {
+        std::vector<int> b1ind(blockSize_), b2ind(blockSize_);
+        for (int i=0;i<blockSize_;i++) {
           b1ind[i] = i;
-          b2ind[i] = _blockSize+i;
+          b2ind[i] = blockSize_+i;
         }
 
         // these will be pointers into workMV
@@ -372,9 +372,9 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
           MVT::SetBlock(*bd_solver->getRitzVectors(),b1ind,*newV);
         }
 
-        if (_problem->getM() != Teuchos::null) {
+        if (problem_->getM() != Teuchos::null) {
           newMV = MVT::CloneView(*workMV,b2ind);
-          OPT::Apply(*_problem->getM(),*newV,*newMV);
+          OPT::Apply(*problem_->getM(),*newV,*newMV);
         }
         else {
           newMV = Teuchos::null;
@@ -390,11 +390,11 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
 
         // compute K*newV
         newKV = MVT::CloneView(*workMV,b2ind);
-        OPT::Apply(*_problem->getOperator(),*newV,*newKV);
+        OPT::Apply(*problem_->getOperator(),*newV,*newKV);
 
         // compute projected stiffness matrix
         Teuchos::RefCountPtr< Teuchos::SerialDenseMatrix<int,ScalarType> > 
-            newKK = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(_blockSize,_blockSize) );
+            newKK = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(blockSize_,blockSize_) );
         MVT::MvTransMv(SCT::one(),*newV,*newKV,*newKK);
 
         // initialize() will do the rest
@@ -415,9 +415,9 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
         TEST_FOR_EXCEPTION(numnew <= 0,std::logic_error,"Anasazi::BlockDavidsonSolMgr::solve(): status test mistake.");
         std::vector<int> newind = locktest->whichVecs();
 
-        // don't lock more than _maxLocked; we didn't allocate enough space.
-        if (numlocked + numnew > _maxLocked) {
-          numnew = _maxLocked - numlocked;
+        // don't lock more than maxLocked_; we didn't allocate enough space.
+        if (numlocked + numnew > maxLocked_) {
+          numnew = maxLocked_ - numlocked;
           // just use the first of them
           newind.resize(numnew);
         }
@@ -477,9 +477,9 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
           // setup newvecs
           newvecs = MVT::CloneView(*bd_solver->getRitzVectors(),newind);
           // setup newvals
-          std::vector<MagnitudeType> allvals = bd_solver->getRitzValues();
+          std::vector<Value<ScalarType> > allvals = bd_solver->getRitzValues();
           for (int i=0; i<numnew; i++) {
-            newvals[i] = allvals[newind[i]];
+            newvals[i] = allvals[newind[i]].realpart;
           }
         }
 
@@ -581,7 +581,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
           //
           // project the stiffness matrix on the new part
           {
-            OPT::Apply(*_problem->getOperator(),*augV,*augTmp);
+            OPT::Apply(*problem_->getOperator(),*augV,*augTmp);
             Teuchos::SerialDenseMatrix<int,ScalarType> KK12(Teuchos::View,*newKK,curdim-numnew,numnew,0,curdim-numnew),
                                                        KK22(Teuchos::View,*newKK,numnew,numnew,curdim-numnew,curdim-numnew);
             MVT::MvTransMv(ONE,*genV,*augTmp,KK12);
@@ -637,9 +637,9 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
           bd_solver->initialize(state);
         }
 
-        if (numlocked == _maxLocked) {
+        if (numlocked == maxLocked_) {
           // disabled locking now by setting quorum to unreachable number
-          locktest->setQuorum(_blockSize+1);
+          locktest->setQuorum(blockSize_+1);
         }
       }
       else {
@@ -658,9 +658,10 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
 
   sol.numVecs = convtest->howMany();
   if (sol.numVecs > 0) {
-    sol.Evecs = MVT::Clone(*_problem->getInitVec(),sol.numVecs);
+    sol.Evecs = MVT::Clone(*problem_->getInitVec(),sol.numVecs);
     sol.Espace = sol.Evecs;
     sol.Evals.resize(sol.numVecs);
+    std::vector<MagnitudeType> vals(sol.numVecs);
 
     // copy them into the solution
     std::vector<int> which = convtest->whichVecs();
@@ -669,13 +670,13 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
     // everything has already been ordered by the solver; we just have to partition the two references
     std::vector<int> inlocked(0), insolver(0);
     for (unsigned int i=0; i<which.size(); i++) {
-      if (which[i] < _blockSize) {
+      if (which[i] < blockSize_) {
         insolver.push_back(which[i]);
       }
       else {
         // sanity check
-        TEST_FOR_EXCEPTION(which[i] >= numlocked+_blockSize,std::logic_error,"Anasazi::BlockDavidsonSolMgr::solve(): indexing mistake.");
-        inlocked.push_back(which[i] - _blockSize);
+        TEST_FOR_EXCEPTION(which[i] >= numlocked+blockSize_,std::logic_error,"Anasazi::BlockDavidsonSolMgr::solve(): indexing mistake.");
+        inlocked.push_back(which[i] - blockSize_);
       }
     }
 
@@ -690,9 +691,9 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
       Teuchos::RefCountPtr<const MV> v = MVT::CloneView(*bd_solver->getRitzVectors(),insolver);
       MVT::SetBlock(*v,tosol,*sol.Evecs);
       // set vals
-      std::vector<MagnitudeType> fromsolver = bd_solver->getRitzValues();
+      std::vector<Value<ScalarType> > fromsolver = bd_solver->getRitzValues();
       for (unsigned int i=0; i<insolver.size(); i++) {
-        sol.Evals[i] = fromsolver[insolver[i]];
+        vals[i] = fromsolver[insolver[i]].realpart;
       }
     }
 
@@ -707,20 +708,25 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
       MVT::SetBlock(*v,tosol,*sol.Evecs);
       // set vals
       for (unsigned int i=0; i<inlocked.size(); i++) {
-        sol.Evals[i+solnum] = lockvals[inlocked[i]];
+        vals[i+solnum] = lockvals[inlocked[i]];
       }
     }
-
-    // setup sol.index, remembering that all eigenvalues are real so that index = {0,...,0}
-    sol.index.resize(sol.numVecs,0);
 
     // sort the eigenvalues and permute the eigenvectors appropriately
     {
       std::vector<int> order(sol.numVecs);
-      sorter->sort(bd_solver.get(), sol.numVecs, sol.Evals, &order );
+      sorter->sort(bd_solver.get(), sol.numVecs, vals, &order );
+      // store the values in the Eigensolution
+      for (int i=0; i<sol.numVecs; i++) {
+        sol.Evals[i].realpart = vals[i];
+        sol.Evals[i].imagpart = MT::zero();
+      }
       // now permute the eigenvectors according to order
       msutils.permuteVectors(sol.numVecs,order,*sol.Evecs);
     }
+
+    // setup sol.index, remembering that all eigenvalues are real so that index = {0,...,0}
+    sol.index.resize(sol.numVecs,0);
   }
 
   // print final summary
@@ -729,7 +735,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
   // print timing information
   Teuchos::TimeMonitor::summarize(printer->stream(TimingDetails));
 
-  _problem->setSolution(sol);
+  problem_->setSolution(sol);
   printer->stream(Debug) << "Returning " << sol.numVecs << " eigenpairs to eigenproblem." << endl;
 
   if (sol.numVecs < nev) {

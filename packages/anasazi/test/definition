@@ -18,19 +18,26 @@
             BlockDavidson/BlockDavidson_solvertest.exe,
             BlockKrylovSchur/BlockKrylovSchur_test.exe,
             BlockKrylovSchur/BlockKrylovSchur_solvertest.exe,
-            OrthoManager/OrthoManager_test.exe;
+            OrthoManager/OrthoManager_test.exe,
+            OrthoManager/OrthoManager_basic_test.exe;
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = --verbose;
     COMM = SERIAL, MPI;
 }
 
 (FRAMEWORK,INSTALL,AnasaziTests,AnasaziThyraTests) {
-    TESTS = ../thyra/test/BlockDavidson/BlockDavidsonThyra_test.exe,
-            ../thyra/test/BlockKrylovSchur/BlockKrylovSchurThyra_test.exe,
-            ../thyra/test/LOBPCG/LOBPCGThyra_test.exe,
-            ../thyra/test/MVOPTester/MVOPTesterThyra_test.exe;
+    TESTS = ../thyra/test/MVOPTester/MVOPTesterThyra_test.exe;
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = -v;
+    COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK,INSTALL,AnasaziTests,AnasaziThyraTests) {
+    TESTS = ../thyra/test/BlockDavidson/BlockDavidsonThyra_test.exe,
+            ../thyra/test/BlockKrylovSchur/BlockKrylovSchurThyra_test.exe,
+            ../thyra/test/LOBPCG/LOBPCGThyra_test.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = --verbose;
     COMM = SERIAL, MPI;
 }
 

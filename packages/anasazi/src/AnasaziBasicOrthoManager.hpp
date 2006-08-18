@@ -43,9 +43,10 @@
 
 // #define ORTHO_DEBUG
 
-#include "AnasaziMatOrthoManager.hpp"
+#include "AnasaziConfigDefs.hpp"
 #include "AnasaziMultiVecTraits.hpp"
 #include "AnasaziOperatorTraits.hpp"
+#include "AnasaziMatOrthoManager.hpp"
 
 namespace Anasazi {
 
@@ -64,7 +65,7 @@ namespace Anasazi {
     //@{ 
     //! Constructor specifying re-orthogonalization tolerance.
     BasicOrthoManager( Teuchos::RefCountPtr<const OP> Op = Teuchos::null,
-                       const MagnitudeType kappa = SCT::magnitude(1.5625) ) : MatOrthoManager<ScalarType,MV,OP>(Op), _kappa(kappa) {};
+                       const MagnitudeType kappa = SCT::magnitude(1.5625) ) : MatOrthoManager<ScalarType,MV,OP>(Op), kappa_(kappa) {};
 
     //! Destructor
     ~BasicOrthoManager() {};
@@ -75,16 +76,35 @@ namespace Anasazi {
     //@{ 
 
     //! Set parameter for re-orthogonalization threshhold.
-    void setKappa( const MagnitudeType kappa ) { _kappa = kappa; };
+    void setKappa( const MagnitudeType kappa ) { kappa_ = kappa; };
 
     //! Return parameter for re-orthogonalization threshhold.
-    MagnitudeType getKappa() const { return _kappa; } 
+    MagnitudeType getKappa() const { return kappa_; } 
 
     //@} 
 
 
     //! @name Orthogonalization methods
     //@{ 
+
+    /*! \brief Given a list of (mutually and independently) orthonormal bases \c Q, this method
+     * takes a multivector \c X and projects it onto the space orthogonal to the individual \c Q[i], 
+     * returning optionally the coefficients of \c X in the individual \c Q[i]. All of this is done with respect
+     * to innerProd().
+     *  
+     @param X [in/out] The multivector to be modified.
+       On output, \c X will be orthogonal to \c Q[i] with respect to innerProd().
+
+     @param C [out] The coefficients of \c X in the \c Q[i], with respect to innerProd().
+
+     @param Q [in] A list of multivectors specifying the bases to be orthogonalized against. Each \c Q[i] is assumed to have
+     orthonormal columns, and the \c Q[i] are assumed to be mutually orthogonal.
+    */
+    void project ( MV &X, 
+                   Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
+                   Teuchos::Array<Teuchos::RefCountPtr<const MV> > Q) const {
+      project(X,Teuchos::null,C,Q);
+    }
 
     /*! \brief Given a list of (mutually and independently) orthonormal bases \c Q, this method
      * takes a multivector \c X and projects it onto the space orthogonal to the individual \c Q[i], 
@@ -104,9 +124,21 @@ namespace Anasazi {
      @param Q [in] A list of multivectors specifying the bases to be orthogonalized against. Each \c Q[i] is assumed to have
      orthonormal columns, and the \c Q[i] are assumed to be mutually orthogonal.
     */
-    virtual void project ( MV &X, Teuchos::RefCountPtr<MV> MX, 
-                                  Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
-                                  Teuchos::Array<Teuchos::RefCountPtr<const MV> > Q) const;
+    void project ( MV &X, Teuchos::RefCountPtr<MV> MX, 
+                   Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
+                   Teuchos::Array<Teuchos::RefCountPtr<const MV> > Q) const;
+ 
+    /*! \brief This method takes a multivector and orthonormalizes the columns, with respect to \c innerProd().
+     *  
+     @param X [in/out] The multivector to the modified. 
+       On output, the columns are M-orthonormal.
+    
+     @return Rank of the basis computed by this method.
+    */
+    int normalize ( MV &X, Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > R ) const {
+      return normalize(X,Teuchos::null,R);
+    }
+
 
     /*! \brief This method takes a multivector and orthonormalizes the columns, with respect to \c innerProd().
      *  The method has the option of
@@ -128,6 +160,30 @@ namespace Anasazi {
     /*! \brief This method takes a multivector and projects it onto the space orthogonal to 
      *  another given multivector.  It also orthonormalizes the 
      *  columns of the resulting multivector. Both of these operations are conducted 
+     *  with respect to innerProd().
+     *  
+     @param X [in/out] The multivector to the modified. 
+       On output, \c X will be orthogonal to \c Q and will have orthonormal columns, with respect to innerProd().
+
+     @param C [out] The coefficients of \c X in the \c Q[i], with respect to innerProd().
+
+     @param R [out] The coefficients of the original X with respect to the produced basis.
+
+     @param Q [in] A list of multivectors specifying the bases to be orthogonalized against. Each \c Q[i] is assumed to have
+     orthonormal columns, and the \c Q[i] are assumed to be mutually orthogonal.
+
+     @return Rank of the basis computed by this method.
+    */
+    int projectAndNormalize ( MV &X, 
+                              Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
+                              Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > R, 
+                              Teuchos::Array<Teuchos::RefCountPtr<const MV> > Q ) const {
+      return projectAndNormalize(X,Teuchos::null,C,R,Q);
+    }
+
+    /*! \brief This method takes a multivector and projects it onto the space orthogonal to 
+     *  another given multivector.  It also orthonormalizes the 
+     *  columns of the resulting multivector. Both of these operations are conducted 
      *  with respect to \c innerProd().
      *  The method has the option of
      *  exploiting a caller-provided \c MX, and returning updated information to the caller.
@@ -139,6 +195,10 @@ namespace Anasazi {
        If \f$ MX != 0\f$: On input, this is expected to be consistant with \c X. On output, this is updated consistant with updates to \c X.
        If \f$ MX == 0\f$ or \f$ Op == 0\f$: \c MX is not referenced.
       
+     @param C [out] The coefficients of \c X in the \c Q[i], with respect to innerProd().
+
+     @param R [out] The coefficients of the original X with respect to the produced basis.
+
      @param Q [in] A multivector specifying the space to be orthogonalized against. \c Q is assumed to have orthonormal
      columns with respect to \c innerProd().
       
@@ -154,12 +214,26 @@ namespace Anasazi {
     //! @name Error methods
     //@{ 
 
+    /*! \brief This method computes the error in orthonormality of a multivector.
+     */
+    typename Teuchos::ScalarTraits<ScalarType>::magnitudeType 
+    orthonormError(const MV &X) const {
+      return orthonormError(X,Teuchos::null);
+    }
+
     /*! \brief This method computes the error in orthonormality of a multivector, measured via \f$ \|X^T Op X - I\|_F \f$.
      *  The method has the option of
      *  exploiting a caller-provided \c MX.
      */
     typename Teuchos::ScalarTraits<ScalarType>::magnitudeType 
     orthonormError(const MV &X, Teuchos::RefCountPtr<const MV> MX) const;
+
+    /*! \brief This method computes the error in orthogonality of two multivectors. This method 
+     */
+    typename Teuchos::ScalarTraits<ScalarType>::magnitudeType 
+    orthogError(const MV &X1, const MV &X2) const {
+      return orthogError(X1,Teuchos::null,X2);
+    }
 
     /*! \brief This method computes the error in orthogonality of two multivectors, measured via \f$ \|Q^T Op X \|_F \f$.
      *  The method has the option of
@@ -173,7 +247,7 @@ namespace Anasazi {
   private:
     
     //! Parameter for re-orthogonalization.
-    MagnitudeType _kappa;
+    MagnitudeType kappa_;
   
     // ! Routine to find an orthonormal basis for the 
     int findBasis(MV &X, Teuchos::RefCountPtr<MV> MX, 
@@ -300,7 +374,7 @@ namespace Anasazi {
         }
       }
 
-      if (ret == xc) {
+      if (rank == xc) {
         // we are done
         break;
       }
@@ -386,8 +460,6 @@ namespace Anasazi {
     //
 
     ScalarType    ONE  = SCT::one();
-    MagnitudeType ZERO = SCT::magnitude(SCT::zero());
-    ScalarType    EPS  = SCT::eps();
 
     int xc = MVT::GetNumberVecs( X );
     int xr = MVT::GetVecLength( X );
@@ -481,7 +553,7 @@ namespace Anasazi {
     // determine (individually) whether to do another step of classical Gram-Schmidt
     for (int j = 0; j < xc; ++j) {
       
-      if ( SCT::magnitude(_kappa*newDot[j]) < SCT::magnitude(oldDot[j]) ) {
+      if ( SCT::magnitude(kappa_*newDot[j]) < SCT::magnitude(oldDot[j]) ) {
 
         for (int i=0; i<nq; i++) {
           Teuchos::SerialDenseMatrix<int,ScalarType> C2(*C[i]);
@@ -504,7 +576,7 @@ namespace Anasazi {
           }
         }
         break;
-      } // if (_kappa*newDot[j] < oldDot[j])
+      } // if (kappa_*newDot[j] < oldDot[j])
     } // for (int j = 0; j < xc; ++j)
   }
 
@@ -665,7 +737,7 @@ namespace Anasazi {
           MVT::MvDot( *Xj, *MXj, &newDot );
 
           // Check if a correction is needed.
-          if ( SCT::magnitude(_kappa*newDot[0]) < SCT::magnitude(oldDot[0]) ) {
+          if ( SCT::magnitude(kappa_*newDot[0]) < SCT::magnitude(oldDot[0]) ) {
             // Apply the second step of Gram-Schmidt
             // This is the same as above
             Teuchos::SerialDenseMatrix<int,ScalarType> P2(numX,1);
@@ -676,7 +748,7 @@ namespace Anasazi {
             if ((this->_hasOp)) {
               MVT::MvTimesMatAddMv( -ONE, *prevMX, P2, ONE, *MXj );
             }
-          } // if (_kappa*newDot[0] < oldDot[0])
+          } // if (kappa_*newDot[0] < oldDot[0])
 
         } // if (numX > 0)
 

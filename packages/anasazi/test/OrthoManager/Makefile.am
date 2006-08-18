@@ -50,7 +50,7 @@ endif
 endif
 
 #np# List all executable names here
-noinst_PROGRAMS = OrthoManager_test $(ORTHOMANAGER_COMPLEX_TEST)
+noinst_PROGRAMS = OrthoManager_test OrthoManager_basic_test $(ORTHOMANAGER_COMPLEX_TEST)
 
 Dummy$(EXEEXT): $(srcdir)/Dummy
 	cp  $(srcdir)/../MVOPTester/mhd1280b.cua mhd1280b.cua
@@ -60,6 +60,8 @@ Dummy$(EXEEXT): $(srcdir)/Dummy
 #np# files needed to compile the exe.
 OrthoManager_test_SOURCES = $(srcdir)/cxx_main.cpp
 
+OrthoManager_basic_test_SOURCES = $(srcdir)/cxx_main_basic.cpp
+
 OrthoManagerComplex_test_SOURCES = $(srcdir)/cxx_main_complex.cpp 
 
 Dummy_SOURCES = Dummy
@@ -67,6 +69,12 @@ Dummy_SOURCES = Dummy
 #np# One DEPENDENCIES primary is needed for each exe.  List any libraries that the 
 #np# exe depends on.  (This primary is not absolutely essential.)
 OrthoManager_test_DEPENDENCIES = \
+	$(top_builddir)/src/libanasazi.a \
+	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a
+
+OrthoManager_basic_test_DEPENDENCIES = \
 	$(top_builddir)/src/libanasazi.a \
 	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
@@ -82,11 +90,17 @@ OrthoManagerComplex_test_DEPENDENCIES = \
 #np# building the exe.
 OrthoManager_test_CXXFLAGS = -I$(top_srcdir)/src
 
+OrthoManager_basic_test_CXXFLAGS = -I$(top_srcdir)/src
+
 OrthoManagerComplex_test_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPTester
 
 #np# One LDADD primary can be defined for each exe.  Include any LDFLAGS necessary for 
 #np# building the exe.
 OrthoManager_test_LDADD = \
+	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
+	$(EXPORT_LIBS) 
+
+OrthoManager_basic_test_LDADD = \
 	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
 	$(EXPORT_LIBS) 
 

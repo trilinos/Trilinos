@@ -61,6 +61,7 @@ using namespace Anasazi;
 typedef double                              ScalarType;
 typedef ScalarTraits<ScalarType>                   SCT;
 typedef SCT::magnitudeType               MagnitudeType;
+typedef ScalarTraits<MagnitudeType>                 MT;
 typedef Epetra_MultiVector                 MV;
 typedef Epetra_Operator                    OP;
 typedef MultiVecTraits<ScalarType,MV>     MVT;
@@ -76,26 +77,39 @@ void checks( RefCountPtr<BlockDavidson<ScalarType,MV,OP> > solver, int blocksize
              ModalSolverUtils<ScalarType,MV,OP> &msutils) {
   BlockDavidsonState<ScalarType,MV> state = solver->getState();
   
-  TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.V)  != solver->getMaxSubspaceDim(),get_out,     "getMaxSubspaceDim() does not match allocated size for V");
-  TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.X)  != solver->getBlockSize(),get_out,"blockSize() does not match allocated size for X");
-  TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.KX) != solver->getBlockSize(),get_out,"blockSize() does not match allocated size for KX");
+  TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.V)  != solver->getMaxSubspaceDim(),get_out,     "getMaxSubspaceDim() does not match allocated size for V.");
+  TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.X)  != solver->getBlockSize(),get_out,"blockSize() does not match allocated size for X.");
+  TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.KX) != solver->getBlockSize(),get_out,"blockSize() does not match allocated size for KX.");
+  TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*solver->getRitzVectors()) != solver->getBlockSize(),get_out,"blockSize() does not match getRitzVectors().");
+  TEST_FOR_EXCEPTION(state.T->size() != (unsigned int)solver->getMaxSubspaceDim(),get_out,"state.T->size() does not match getMaxSubspaceDim().");
   if (solver->getProblem().getM() != null) {
-    TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.MX) != solver->getBlockSize(),get_out,"blockSize() does not match allocated size for MX");
+    TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.MX) != solver->getBlockSize(),get_out,"blockSize() does not match allocated size for MX.");
   }
   else {
-    TEST_FOR_EXCEPTION(state.MX != null,get_out,"MX should null; problem has no M matrix");
+    TEST_FOR_EXCEPTION(state.MX != null,get_out,"MX should null; problem has no M matrix.");
   }
-  TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.R)  != solver->getBlockSize(),get_out,"blockSize() does not match allocated size for R");
+  TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.R)  != solver->getBlockSize(),get_out,"blockSize() does not match allocated size for R.");
   TEST_FOR_EXCEPTION(solver->getBlockSize() != blocksize, get_out,"Solver block size does not match specified block size.");  
   TEST_FOR_EXCEPTION(solver->getMaxSubspaceDim()/solver->getBlockSize() != numblocks, get_out, "Solver num blaocks does not match specified num blocks.");
   TEST_FOR_EXCEPTION(&solver->getProblem() != problem.get(),get_out,"getProblem() did not return the submitted problem.");
   TEST_FOR_EXCEPTION(solver->getMaxSubspaceDim() != numblocks*blocksize,get_out,"BlockDavidson::getMaxSubspaceDim() does not match numblocks*blocksize.");
-  // check index
-  std::vector<int> index = solver->getRitzIndex();
-  TEST_FOR_EXCEPTION( index.size() != (unsigned int)solver->getCurSubspaceDim(), get_out, "Ritz index size not consistent with eigenvector size.");
 
   if (solver->isInitialized()) 
   {
+    TEST_FOR_EXCEPTION(solver->getResNorms().size() != (unsigned int)blocksize,get_out,"getResNorms.size() does not match block.");
+    TEST_FOR_EXCEPTION(solver->getRes2Norms().size() != (unsigned int)blocksize,get_out,"getRes2Norms.size() does not match block.");
+    // check ritz values
+    vector<Value<ScalarType> > theta = solver->getRitzValues();
+    TEST_FOR_EXCEPTION(theta.size() != (unsigned int)solver->getCurSubspaceDim(),get_out,"getRitzValues().size() does not match getCurSubspaceDim().");
+    for (unsigned int i=0; i<theta.size(); i++) {
+      TEST_FOR_EXCEPTION(theta[i].imagpart != MT::zero(),get_out,"getRitzValues() returned complex eigenvalues.");
+    }
+    // check ritz index
+    std::vector<int> index = solver->getRitzIndex();
+    TEST_FOR_EXCEPTION( index.size() != (unsigned int)solver->getCurSubspaceDim(), get_out, "Ritz index size not consistent with eigenvector size.");
+    for (unsigned int i=0; i<index.size(); i++) {
+      TEST_FOR_EXCEPTION(index[i] != 0,get_out,"Ritz index contained non-zeros.");
+    }
     // check residuals
     RefCountPtr<const MV> evecs = state.X;
     RefCountPtr<MV> Kevecs, Mevecs;
@@ -108,10 +122,8 @@ void checks( RefCountPtr<BlockDavidson<ScalarType,MV,OP> > solver, int blocksize
       Mevecs = MVT::Clone(*evecs,blocksize);
       OPT::Apply(*problem->getM(),*evecs,*Mevecs);
     }
-    vector<MagnitudeType> theta = solver->getRitzValues();
-    TEST_FOR_EXCEPTION(theta.size() != (unsigned int)solver->getCurSubspaceDim(),get_out,"getRitzValues() has incorrect size.");
     SerialDenseMatrix<int,ScalarType> T(blocksize,blocksize);
-    for (int i=0; i<blocksize; i++) T(i,i) = theta[i];
+    for (int i=0; i<blocksize; i++) T(i,i) = theta[i].realpart;
     // BlockDavidson computes residuals like R = K*X - M*X*T 
     MVT::MvTimesMatAddMv(-1.0,*Mevecs,T,1.0,*Kevecs);
     MagnitudeType error = msutils.errorEquality(Kevecs.get(),state.R.get());
@@ -124,7 +136,7 @@ void checks( RefCountPtr<BlockDavidson<ScalarType,MV,OP> > solver, int blocksize
     MagnitudeType ninf = T.normInf();
     OPT::Apply(*problem->getOperator(),*evecs,*Kevecs);
     MVT::MvTransMv(1.0,*evecs,*Kevecs,T);
-    for (int i=0; i<blocksize; i++) T(i,i) -= theta[i];
+    for (int i=0; i<blocksize; i++) T(i,i) -= theta[i].realpart;
     error = T.normFrobenius() / ninf;
     TEST_FOR_EXCEPTION(error > 1e-12,get_out,"Ritz values don't match eigenvectors.");
   }
@@ -138,7 +150,7 @@ void testsolver( RefCountPtr<BasicEigenproblem<ScalarType,MV,OP> > problem,
                  RefCountPtr< OutputManager<ScalarType> > printer,
                  RefCountPtr< MatOrthoManager<ScalarType,MV,OP> > ortho,
                  RefCountPtr< SortManager<ScalarType,MV,OP> > sorter,
-                 ParameterList &pls)
+                 ParameterList &pls,bool invalid=false)
 {
   // create a status tester to run for two iterations
   RefCountPtr< StatusTest<ScalarType,MV,OP> > tester = rcp( new StatusTestMaxIters<ScalarType,MV,OP>(2) );
@@ -150,10 +162,10 @@ void testsolver( RefCountPtr<BasicEigenproblem<ScalarType,MV,OP> > problem,
   RefCountPtr< BlockDavidson<ScalarType,MV,OP> > solver;
   try {
     solver = rcp( new BlockDavidson<ScalarType,MV,OP>(problem,sorter,printer,tester,ortho,pls) );
-    TEST_FOR_EXCEPTION(numblocks < 2 || blocksize < 1, get_out, "Initializing with invalid parameters failed to throw exception.")
+    TEST_FOR_EXCEPTION(invalid, get_out, "Initializing with invalid parameters failed to throw exception.")
   }
   catch (std::invalid_argument ia) {
-    TEST_FOR_EXCEPTION(numblocks >= 2 && blocksize >= 1, get_out, "Initializing with valid parameters unexpectadly threw exception.");
+    TEST_FOR_EXCEPTION(!invalid, get_out, "Initializing with valid parameters unexpectadly threw exception.");
     // caught expected exception
     return;
   }
@@ -196,6 +208,20 @@ void testsolver( RefCountPtr<BasicEigenproblem<ScalarType,MV,OP> > problem,
     solver->resetNumIters();
     TEST_FOR_EXCEPTION(solver->getNumIters() != 0,get_out,"Number of iterations should be zero after resetNumIters().")
   }
+
+  // change block size and see the difference
+  solver->setBlockSize(blocksize+1);
+  TEST_FOR_EXCEPTION(solver->isInitialized(),get_out,"After setBlockSize(), solver should be uninitialized.");
+  TEST_FOR_EXCEPTION(solver->getCurSubspaceDim(),get_out,"After setBlocksize(): Uninitialized solver should have getCurSubspaceDim() == 0.");
+  TEST_FOR_EXCEPTION(solver->getBlockSize() != blocksize+1,get_out,"After setBlockSize(), new block size was not in effect.");
+  TEST_FOR_EXCEPTION(solver->getMaxSubspaceDim()/solver->getBlockSize() != numblocks,get_out,"After setBlockSize(), num blocks should not have changed.");
+  // call setSize and see the difference
+  solver->initialize();
+  solver->setSize(blocksize,numblocks+1);
+  TEST_FOR_EXCEPTION(solver->isInitialized(),get_out,"After setSize(), solver should be uninitialized.");
+  TEST_FOR_EXCEPTION(solver->getCurSubspaceDim(),get_out,"After setSize(): Uninitialized solver should have getCurSubspaceDim() == 0.");
+  TEST_FOR_EXCEPTION(solver->getBlockSize() != blocksize,get_out,"After setSize(), new block size was not in effect.");
+  TEST_FOR_EXCEPTION(solver->getMaxSubspaceDim()/solver->getBlockSize() != numblocks+1,get_out,"After setSize(), new num blocks was not in effect.");
 }
 
 int main(int argc, char *argv[]) 
@@ -228,12 +254,14 @@ int main(int argc, char *argv[])
     printer->stream(Errors) << Anasazi_Version() << endl << endl;
   }
 
+  const int veclength = 99;
+
   //  Problem information
   int space_dim = 1;
   std::vector<double> brick_dim( space_dim );
   brick_dim[0] = 1.0;
   std::vector<int> elements( space_dim );
-  elements[0] = 100;
+  elements[0] = veclength+1;
 
   // Create problem
   RefCountPtr<ModalProblem> testCase = rcp( new ModeLaplace1DQ1(Comm, brick_dim[0], elements[0]) );
@@ -321,41 +349,41 @@ int main(int argc, char *argv[])
     }
     testsolver(probgen,printer,orthogen,sorter,pls);
 
-    // try with a larger number of blocks
+    // try with a larger number of blocks; leave room for some expansion
     pls.set<int>("Block Size",nev);
-    pls.set<int>("Num Blocks",20);
+    pls.set<int>("Num Blocks",15);
     if (verbose) {
-      printer->stream(Errors) << "Testing solver(nev,20) with standard eigenproblem..." << endl;
+      printer->stream(Errors) << "Testing solver(nev,15) with standard eigenproblem..." << endl;
     }
     testsolver(probstd,printer,orthostd,sorter,pls);
     if (verbose) {
-      printer->stream(Errors) << "Testing solver(nev,20) with generalized eigenproblem..." << endl;
+      printer->stream(Errors) << "Testing solver(nev,15) with generalized eigenproblem..." << endl;
     }
     testsolver(probgen,printer,orthogen,sorter,pls);
 
     // try with a larger number of blocks+1
     pls.set<int>("Block Size",nev);
-    pls.set<int>("Num Blocks",21);
+    pls.set<int>("Num Blocks",16);
     if (verbose) {
-      printer->stream(Errors) << "Testing solver(nev,21) with standard eigenproblem..." << endl;
+      printer->stream(Errors) << "Testing solver(nev,16) with standard eigenproblem..." << endl;
     }
     testsolver(probstd,printer,orthostd,sorter,pls);
     if (verbose) {
-      printer->stream(Errors) << "Testing solver(nev,21) with generalized eigenproblem..." << endl;
+      printer->stream(Errors) << "Testing solver(nev,16) with generalized eigenproblem..." << endl;
     }
     testsolver(probgen,printer,orthogen,sorter,pls);
 
     // try with an invalid blocksize
-    pls.set<int>("Block Size",-1);
+    pls.set<int>("Block Size",0);
     pls.set<int>("Num Blocks",4);
     if (verbose) {
-      printer->stream(Errors) << "Testing solver(-1,4) with standard eigenproblem..." << endl;
+      printer->stream(Errors) << "Testing solver(0,4) with standard eigenproblem..." << endl;
     }
-    testsolver(probstd,printer,orthostd,sorter,pls);
+    testsolver(probstd,printer,orthostd,sorter,pls,true);
     if (verbose) {
-      printer->stream(Errors) << "Testing solver(-1,4) with generalized eigenproblem..." << endl;
+      printer->stream(Errors) << "Testing solver(0,4) with generalized eigenproblem..." << endl;
     }
-    testsolver(probgen,printer,orthogen,sorter,pls);
+    testsolver(probgen,printer,orthogen,sorter,pls,true);
 
     // try with an invalid numblocks
     pls.set<int>("Block Size",4);
@@ -363,11 +391,23 @@ int main(int argc, char *argv[])
     if (verbose) {
       printer->stream(Errors) << "Testing solver(4,1) with standard eigenproblem..." << endl;
     }
-    testsolver(probstd,printer,orthostd,sorter,pls);
+    testsolver(probstd,printer,orthostd,sorter,pls,true);
     if (verbose) {
       printer->stream(Errors) << "Testing solver(4,1) with generalized eigenproblem..." << endl;
     }
-    testsolver(probgen,printer,orthogen,sorter,pls);
+    testsolver(probgen,printer,orthogen,sorter,pls,true);
+
+    // try with a too-large subspace
+    pls.set<int>("Block Size",4);
+    pls.set<int>("Num Blocks",veclength/4+1);
+    if (verbose) {
+      printer->stream(Errors) << "Testing solver(4,toomany) with standard eigenproblem..." << endl;
+    }
+    testsolver(probstd,printer,orthostd,sorter,pls,true);
+    if (verbose) {
+      printer->stream(Errors) << "Testing solver(4,toomany) with generalized eigenproblem..." << endl;
+    }
+    testsolver(probgen,printer,orthogen,sorter,pls,true);
 
   }
   catch (get_out go) {

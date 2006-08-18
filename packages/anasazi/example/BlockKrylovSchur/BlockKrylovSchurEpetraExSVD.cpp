@@ -40,9 +40,8 @@
 //
 //  NOTE:  This example came from the ARPACK SVD driver dsvd.f
 //
-#include "AnasaziBlockKrylovSchur.hpp"
+#include "AnasaziBlockKrylovSchurSolMgr.hpp"
 #include "AnasaziBasicEigenproblem.hpp"
-#include "AnasaziBasicSort.hpp"
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziEpetraAdapter.hpp"
 
@@ -62,7 +61,6 @@ int main(int argc, char *argv[]) {
   const double one = 1.0;
   const double zero = 0.0;
   Teuchos::LAPACK<int,double> lapack;
-  Anasazi::ReturnType returnCode = Anasazi::Ok;
 
 #ifdef EPETRA_MPI
   // Initialize MPI
@@ -73,13 +71,6 @@ int main(int argc, char *argv[]) {
 #endif
 
   int MyPID = Comm.MyPID();
-
-  // Create an output manager to handle the I/O from the solver
-  Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM =
-    Teuchos::rcp( new Anasazi::OutputManager<double>( MyPID ) );
-  MyOM->SetVerbosity( Anasazi::FinalSummary );  
-
-  std::string which = "LM";
 
   //  Dimension of the matrix
   int m = 500;
@@ -146,17 +137,21 @@ int main(int argc, char *argv[]) {
   //
   int nev = 4;
   int blockSize = 1;
-  int maxBlocks = 10;
+  int numBlocks = 10;
   int maxRestarts = 20;
+  int verbosity = Anasazi::Errors + Anasazi::Warnings + Anasazi::FinalSummary;
   double tol = lapack.LAMCH('E');
+  std::string which = "LM";
   //
   // Create parameter list to pass into solver
   //
   Teuchos::ParameterList MyPL;
+  MyPL.set( "Verbosity", verbosity );
+  MyPL.set( "Which", which );
   MyPL.set( "Block Size", blockSize );
-  MyPL.set( "Max Blocks", maxBlocks );
-  MyPL.set( "Max Restarts", maxRestarts );
-  MyPL.set( "Tol", tol );
+  MyPL.set( "Num Blocks", numBlocks );
+  MyPL.set( "Maximum Restarts", maxRestarts );
+  MyPL.set( "Convergence Tolerance", tol );
 
   typedef Anasazi::MultiVec<double> MV;
   typedef Anasazi::Operator<double> OP;
@@ -172,86 +167,82 @@ int main(int argc, char *argv[]) {
     Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>(Amat, ivec) );
 
   // Inform the eigenproblem that the matrix A is symmetric
-  MyProblem->SetSymmetric(true);
+  MyProblem->setHermitian(true);
 
   // Set the number of eigenvalues requested and the blocksize the solver should use
-  MyProblem->SetNEV( nev );
+  MyProblem->setNEV( nev );
 
-  // Inform the eigenproblem that you are finishing passing it information
-  info = MyProblem->SetProblem();
-  if (info) {
-    cout << "Anasazi::BasicEigenproblem::SetProblem() returned with code : "<< info << endl;       
-  }
-
-  // Create a sorting manager to handle the sorting of eigenvalues in the solver
-  Teuchos::RefCountPtr<Anasazi::BasicSort<double, MV, OP> > MySort = 
-    Teuchos::rcp( new Anasazi::BasicSort<double, MV, OP>(which) );
-
-  // Initialize the Block Arnoldi solver
-  Anasazi::BlockKrylovSchur<double, MV, OP> MySolver(MyProblem, MySort, MyOM, MyPL);
-  
-  // Solve the problem to the specified tolerances or length
-  returnCode = MySolver.solve();
-
-  // Check that the solver returned OK, if not exit example
-  if (returnCode != Anasazi::Ok) {
-#ifdef EPETRA_MPI
+  // Inform the eigenproblem that you are finished passing it information
+  bool boolret = MyProblem->setProblem();
+  if (boolret != true) {
+    if (MyPID == 0) {
+      cout << "Anasazi::BasicEigenproblem::setProblem() returned with error." << endl;
+    }
+#ifdef HAVE_MPI
     MPI_Finalize() ;
 #endif
     return -1;
   }
 
-  // Obtain results directly
-  Teuchos::RefCountPtr<std::vector<double> > evals = MyProblem->GetEvals();
-
-  // Retrieve eigenvectors
-  // Anasazi::EpetraMultiVec* evecr = dynamic_cast<Anasazi::EpetraMultiVec*>(&(MyProblem->GetEvecs()));
-
-  // Compute singular values/vectors and direct residuals.
-  //
-  // Compute singular values which are the square root of the eigenvalues
-  if (MyOM->doPrint()) {
-    cout<<"------------------------------------------------------"<<endl;
-    cout<<"Computed Singular Values: "<<endl;
-    cout<<"------------------------------------------------------"<<endl;
+  // Initialize the Block Arnoldi solver
+  Anasazi::BlockKrylovSchurSolMgr<double, MV, OP> MySolverMgr(MyProblem, MyPL);
+  
+  // Solve the problem to the specified tolerances or length
+  Anasazi::ReturnType returnCode = MySolverMgr.solve();
+  if (returnCode != Anasazi::Converged && MyPID==0) {
+    cout << "Anasazi::EigensolverMgr::solve() returned unconverged." << endl;
   }
-  for (i=0; i<nev; i++) { (*evals)[i] = Teuchos::ScalarTraits<double>::squareroot( (*evals)[i] ); }
-  //
-  // Compute left singular vectors :  u = Av/sigma
-  //
-  std::vector<double> tempnrm(nev), directnrm(nev);
-  std::vector<int> index(nev);
-  for (i=0; i<nev; i++) { index[i] = i; }
-  Anasazi::EpetraMultiVec Av(RowMap,nev), u(RowMap,nev);
-  Anasazi::EpetraMultiVec* evecs = dynamic_cast<Anasazi::EpetraMultiVec* >(MyProblem->GetEvecs()->CloneView( index ));
-  Teuchos::SerialDenseMatrix<int,double> S(nev,nev);
-  A->Apply( *evecs, Av );
-  Av.MvNorm( &tempnrm );
-  for (i=0; i<nev; i++) { S(i,i) = one/tempnrm[i]; };
-  u.MvTimesMatAddMv( one, Av, S, zero );
-  //
-  // Compute direct residuals : || Av - sigma*u ||
-  //
-  for (i=0; i<nev; i++) { S(i,i) = (*evals)[i]; }
-  Av.MvTimesMatAddMv( -one, u, S, one );
-  Av.MvNorm( &directnrm );
-  if (MyOM->doPrint()) {
-    cout.setf(ios_base::right, ios_base::adjustfield);
-    cout<<std::setw(16)<<"Singular Value"
-	<<std::setw(16)<<"Direct Residual"
-	<<endl;
-    cout<<"------------------------------------------------------"<<endl;
-    for (i=0; i<nev; i++) {
-      cout<<std::setw(16)<<(*evals)[i]
-	  <<std::setw(16)<<directnrm[i] 
+
+  // Get the eigenvalues and eigenvectors from the eigenproblem
+  Anasazi::Eigensolution<double,MV> sol = MyProblem->getSolution();
+  std::vector<Anasazi::Value<double> > evals = sol.Evals;
+  int numev = sol.numVecs;
+
+  if (numev > 0) {
+    
+    // Compute singular values/vectors and direct residuals.
+    //
+    // Compute singular values which are the square root of the eigenvalues
+    if (MyPID==0) {
+      cout<<"------------------------------------------------------"<<endl;
+      cout<<"Computed Singular Values: "<<endl;
+      cout<<"------------------------------------------------------"<<endl;
+    }
+    for (i=0; i<numev; i++) { evals[i].realpart = Teuchos::ScalarTraits<double>::squareroot( evals[i].realpart ); }
+    //
+    // Compute left singular vectors :  u = Av/sigma
+    //
+    std::vector<double> tempnrm(numev), directnrm(numev);
+    std::vector<int> index(numev);
+    for (i=0; i<numev; i++) { index[i] = i; }
+    Anasazi::EpetraMultiVec Av(RowMap,numev), u(RowMap,numev);
+    Anasazi::EpetraMultiVec* evecs = dynamic_cast<Anasazi::EpetraMultiVec* >(sol.Evecs->CloneView( index ));
+    Teuchos::SerialDenseMatrix<int,double> S(numev,numev);
+    A->Apply( *evecs, Av );
+    Av.MvNorm( &tempnrm );
+    for (i=0; i<numev; i++) { S(i,i) = one/tempnrm[i]; };
+    u.MvTimesMatAddMv( one, Av, S, zero );
+    //
+    // Compute direct residuals : || Av - sigma*u ||
+    //
+    for (i=0; i<numev; i++) { S(i,i) = evals[i].realpart; }
+    Av.MvTimesMatAddMv( -one, u, S, one );
+    Av.MvNorm( &directnrm );
+    if (MyPID==0) {
+      cout.setf(ios_base::right, ios_base::adjustfield);
+      cout<<std::setw(16)<<"Singular Value"
+	  <<std::setw(20)<<"Direct Residual"
 	  <<endl;
-    }  
-    cout<<"------------------------------------------------------"<<endl;
+      cout<<"------------------------------------------------------"<<endl;
+      for (i=0; i<numev; i++) {
+	cout<<std::setw(16)<<evals[i].realpart
+	    <<std::setw(20)<<directnrm[i] 
+	    <<endl;
+      }  
+      cout<<"------------------------------------------------------"<<endl;
+    }
   }
   
-  // Clean up.
-  if (evecs) delete evecs;
-
 #ifdef EPETRA_MPI
     MPI_Finalize() ;
 #endif

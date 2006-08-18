@@ -154,7 +154,7 @@ int main(int argc, char *argv[]) {
 
   // Get the eigenvalues and eigenvectors from the eigenproblem
   Anasazi::Eigensolution<double,MV> sol = MyProblem->getSolution();
-  std::vector<double> evals = sol.Evals;
+  std::vector<Anasazi::Value<double> > evals = sol.Evals;
   Teuchos::RefCountPtr<MV> evecs = sol.Evecs;
 
   // Compute residuals.
@@ -165,7 +165,7 @@ int main(int argc, char *argv[]) {
     Epetra_MultiVector Mvec( M->OperatorDomainMap(), evecs->NumVectors() );
     T.putScalar(0.0); 
     for (i=0; i<sol.numVecs; i++) {
-      T(i,i) = evals[i]; 
+      T(i,i) = evals[i].realpart;
     }
     K->Apply( *evecs, Kvec );  
     M->Apply( *evecs, Mvec );  
@@ -183,8 +183,8 @@ int main(int argc, char *argv[]) {
 	      <<endl;
     cout<<"------------------------------------------------------"<<endl;
     for (i=0; i<sol.numVecs; i++) {
-      cout<<std::setw(16)<<evals[i]
-	        <<std::setw(18)<<normR[i]/evals[i]
+      cout<<std::setw(16)<<evals[i].realpart
+	        <<std::setw(18)<<normR[i]/evals[i].realpart 
 	        <<endl;
     }
     cout<<"------------------------------------------------------"<<endl;

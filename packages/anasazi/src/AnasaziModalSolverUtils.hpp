@@ -180,7 +180,7 @@ namespace Anasazi {
   private:
 
     // Reference counted pointer to output manager used by eigensolver.
-    Teuchos::RefCountPtr<OutputManager<ScalarType> > _om;
+    Teuchos::RefCountPtr<OutputManager<ScalarType> > om_;
 
     //! @name Internal Typedefs
     //@{ 
@@ -199,7 +199,7 @@ namespace Anasazi {
 
   template<class ScalarType, class MV, class OP>
   ModalSolverUtils<ScalarType, MV, OP>::ModalSolverUtils( const Teuchos::RefCountPtr<OutputManager<ScalarType> > &om ) 
-    : _om(om)
+    : om_(om)
   {}
 
   //-----------------------------------------------------------------------------

@@ -109,7 +109,7 @@ class StatusTestOrderedResNorm : public StatusTest<ScalarType,MV,OP> {
   TestStatus checkStatus( Eigensolver<ScalarType,MV,OP>* solver );
 
   //! Return the result of the most recent checkStatus call.
-  TestStatus getStatus() const { return _state; }
+  TestStatus getStatus() const { return state_; }
   //@}
 
   //! @name Reset methods
@@ -121,7 +121,7 @@ class StatusTestOrderedResNorm : public StatusTest<ScalarType,MV,OP> {
     that the convergence test uses will remain.
   */
   void reset() { 
-    _state = Undefined;
+    state_ = Undefined;
   }
 
   //! Clears the results of the last status test.
@@ -131,7 +131,7 @@ class StatusTestOrderedResNorm : public StatusTest<ScalarType,MV,OP> {
    * in them.
   */
   void clearStatus() {
-    _state = Undefined;
+    state_ = Undefined;
   }
 
   /*! \brief Set the auxiliary eigenvalues.
@@ -139,9 +139,9 @@ class StatusTestOrderedResNorm : public StatusTest<ScalarType,MV,OP> {
    *  This routine sets only the real part of the auxiliary eigenvalues; the imaginary part is set to zero. This routine also resets the state to ::Undefined.
    */
   void setAuxVals(const std::vector<MagnitudeType> &vals) {
-    _rvals = vals;
-    _ivals.resize(_rvals.size(),MT::zero());
-    _state = Undefined;
+    rvals_ = vals;
+    ivals_.resize(rvals_.size(),MT::zero());
+    state_ = Undefined;
   }
 
   /*! \brief Set the auxiliary eigenvalues.
@@ -149,9 +149,9 @@ class StatusTestOrderedResNorm : public StatusTest<ScalarType,MV,OP> {
    *  This routine sets both the real and imaginary parts of the auxiliary eigenvalues. This routine also resets the state to ::Undefined.
    */
   void setAuxVals(const std::vector<MagnitudeType> &rvals, const std::vector<MagnitudeType> &ivals) {
-    _rvals = rvals;
-    _ivals = ivals;
-    _state = Undefined;
+    rvals_ = rvals;
+    ivals_ = ivals;
+    state_ = Undefined;
   }
 
   //@}
@@ -164,44 +164,44 @@ class StatusTestOrderedResNorm : public StatusTest<ScalarType,MV,OP> {
    */
   void setTolerance(MagnitudeType tol) {
     TEST_FOR_EXCEPTION(tol <= MT::zero(), StatusTestError, "StatusTestOrderedResNorm: test tolerance must be strictly positive.");
-    _state = Undefined;
-    _tol = tol;
+    state_ = Undefined;
+    tol_ = tol;
   }
 
   //! Get tolerance.
-  MagnitudeType getTolerance() {return _tol;}
+  MagnitudeType getTolerance() {return tol_;}
 
   /*! \brief Set the residual norm to be used by the status test.
    *
    *  This also resets the test status to ::Undefined.
    */
   void setWhichNorm(ResType whichNorm) {
-    _state = Undefined;
-    _whichNorm = whichNorm;
+    state_ = Undefined;
+    whichNorm_ = whichNorm;
   }
 
   //! Return the residual norm used by the status test.
-  ResType getWhichNorm() {return _whichNorm;}
+  ResType getWhichNorm() {return whichNorm_;}
 
   /*! \brief Instruct test to scale norms by eigenvalue estimates (relative scale).
    *  This also resets the test status to ::Undefined.
    */
   void setScale(bool relscale) {
-    _state = Undefined;
-    _scaled = relscale;
+    state_ = Undefined;
+    scaled_ = relscale;
   }
 
   //! Returns true if the test scales the norms by the eigenvalue estimates (relative scale).
-  bool getScale() {return _scaled;}
+  bool getScale() {return scaled_;}
 
   //! Get the indices for the vectors that passed the test.
   std::vector<int> whichVecs() {
-    return _ind;
+    return ind_;
   }
 
   //! Get the number of vectors that passed the test.
   int howMany() {
-    return _ind.size();
+    return ind_.size();
   }
 
   //@}
@@ -214,22 +214,22 @@ class StatusTestOrderedResNorm : public StatusTest<ScalarType,MV,OP> {
  
   //@}
   private:
-    TestStatus _state;
-    MagnitudeType _tol;
-    std::vector<int> _ind;
-    int _quorum;
-    bool _scaled;
-    ResType _whichNorm;
-    std::vector<MagnitudeType> _rvals, _ivals;
-    Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > _sorter;
+    TestStatus state_;
+    MagnitudeType tol_;
+    std::vector<int> ind_;
+    int quorum_;
+    bool scaled_;
+    ResType whichNorm_;
+    std::vector<MagnitudeType> rvals_, ivals_;
+    Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > sorter_;
 };
 
 
 template <class ScalarType, class MV, class OP>
 StatusTestOrderedResNorm<ScalarType,MV,OP>::StatusTestOrderedResNorm(Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > sorter, MagnitudeType tol, int quorum, ResType whichNorm, bool scaled)
-  : _state(Undefined), _quorum(quorum), _scaled(scaled), _whichNorm(whichNorm), _sorter(sorter) 
+  : state_(Undefined), quorum_(quorum), scaled_(scaled), whichNorm_(whichNorm), sorter_(sorter) 
 {
-  TEST_FOR_EXCEPTION(_sorter == Teuchos::null, StatusTestError, "StatusTestOrderedResNorm::constructor() was passed null pointer for SortManager.");
+  TEST_FOR_EXCEPTION(sorter_ == Teuchos::null, StatusTestError, "StatusTestOrderedResNorm::constructor() was passed null pointer for SortManager.");
   setTolerance(tol); 
 }
 
@@ -240,9 +240,8 @@ TestStatus StatusTestOrderedResNorm<ScalarType,MV,OP>::checkStatus( Eigensolver<
   // get the eigenvector/ritz residuals norms (using the appropriate norm)
   // get the eigenvalues/ritzvalues as well
   std::vector<MagnitudeType> res; 
-  std::vector<MagnitudeType> vals = solver->getRitzValues();
-  std::vector<int> ind = solver->getRitzIndex();
-  switch (_whichNorm) {
+  std::vector<Value<ScalarType> > vals = solver->getRitzValues();
+  switch (whichNorm_) {
     case RES_2NORM:
       res = solver->getRes2Norms();
       vals.resize(res.size());
@@ -256,42 +255,29 @@ TestStatus StatusTestOrderedResNorm<ScalarType,MV,OP>::checkStatus( Eigensolver<
       break;
   }
 
-  int numaux = _rvals.size();
+  int numaux = rvals_.size();
   int bs = res.size();
   int num = bs + numaux;
 
   if (num == 0) {
-    _ind.resize(0);
+    ind_.resize(0);
     return Failed;
   }
 
   // extract the real and imaginary parts from the 
   std::vector<MagnitudeType> allrvals(bs), allivals(bs);
   for (int i=0; i<bs; i++) {
-    if (ind[i] == 0) {
-      allrvals[i] = vals[i];
-      allivals[i] = MT::zero();
-    }
-    else if (ind[i] == +1) {
-      allrvals[i] = vals[i];
-      allivals[i] = vals[i+1];
-    }
-    else if (ind[i] == -1) {
-      allrvals[i] =  vals[i-1];
-      allivals[i] = -vals[i];
-    }
-    else {
-      TEST_FOR_EXCEPTION(true,std::logic_error,"Anasazi::StatusTestOrderedResNorm::checkStatus(): invalid index returned from getRitzIndex().");
-    }
+    allrvals[i] = vals[i].realpart;
+    allivals[i] = vals[i].imagpart;
   }
 
   // put the auxiliary values in the vectors as well
-  allrvals.insert(allrvals.end(),_rvals.begin(),_rvals.end());
-  allivals.insert(allivals.end(),_ivals.begin(),_ivals.end());
+  allrvals.insert(allrvals.end(),rvals_.begin(),rvals_.end());
+  allivals.insert(allivals.end(),ivals_.begin(),ivals_.end());
 
   // if appropriate, scale the norms by the magnitude of the eigenvalue estimate
   Teuchos::LAPACK<int,MagnitudeType> lapack;
-  if (_scaled) {
+  if (scaled_) {
     for (unsigned int i=0; i<res.size(); i++) {
       MagnitudeType tmp = lapack.LAPY2(allrvals[i],allivals[i]);
       if ( tmp != MT::zero() ) {
@@ -299,12 +285,12 @@ TestStatus StatusTestOrderedResNorm<ScalarType,MV,OP>::checkStatus( Eigensolver<
       }
     }
   }
-  // add -1 residuals for the auxiliary values (because -1 < _tol)
+  // add -1 residuals for the auxiliary values (because -1 < tol_)
   res.insert(res.end(),numaux,-MT::one());
 
   // we don't actually need the sorted eigenvalues; just the permutation vector
   std::vector<int> perm(num,-1);
-  _sorter->sort(solver,num,allrvals,allivals,&perm);
+  sorter_->sort(solver,num,allrvals,allivals,&perm);
 
   // apply the sorting to the residuals and original indices
   std::vector<MagnitudeType> oldres = res;
@@ -313,22 +299,22 @@ TestStatus StatusTestOrderedResNorm<ScalarType,MV,OP>::checkStatus( Eigensolver<
   }
 
   // indices: [0,bs) are from solver, [bs,bs+numaux) are from auxiliary values
-  _ind.resize(num);
+  ind_.resize(num);
 
   // test the norms: we want res [0,quorum) to be <= tol
   int have = 0;
-  int need = (_quorum == -1) ? num : _quorum;
+  int need = (quorum_ == -1) ? num : quorum_;
   int tocheck = need > num ? num : need;
   for (int i=0; i<tocheck; i++) {
     TEST_FOR_EXCEPTION( MT::isnaninf(res[i]), StatusTestError, "StatusTestOrderedResNorm::checkStatus(): residual norm is nan or inf" );
-    if (res[i] < _tol) {
-      _ind[have] = perm[i];
+    if (res[i] < tol_) {
+      ind_[have] = perm[i];
       have++;
     }
   }
-  _ind.resize(have);
-  _state = (have >= need) ? Passed : Failed;
-  return _state;
+  ind_.resize(have);
+  state_ = (have >= need) ? Passed : Failed;
+  return state_;
 }
 
 
@@ -336,7 +322,7 @@ template <class ScalarType, class MV, class OP>
 ostream& StatusTestOrderedResNorm<ScalarType,MV,OP>::print(ostream& os, int indent) const {
   string ind(indent,' ');
   os << ind << "- StatusTestOrderedResNorm: ";
-  switch (_state) {
+  switch (state_) {
   case Passed:
     os << "Passed" << endl;
     break;
@@ -348,8 +334,8 @@ ostream& StatusTestOrderedResNorm<ScalarType,MV,OP>::print(ostream& os, int inde
     break;
   }
   os << ind << "(Tolerance,WhichNorm,Scaled,Quorum): " 
-            << "(" << _tol;
-  switch (_whichNorm) {
+            << "(" << tol_;
+  switch (whichNorm_) {
   case RES_ORTH:
     os << ",RES_ORTH";
     break;
@@ -360,13 +346,13 @@ ostream& StatusTestOrderedResNorm<ScalarType,MV,OP>::print(ostream& os, int inde
     os << ",RITZRES_2NORM";
     break;
   }
-  os        << "," << (_scaled   ? "true" : "false")
-            << "," << _quorum 
+  os        << "," << (scaled_   ? "true" : "false")
+            << "," << quorum_ 
             << ")" << endl;
   os << ind << "Auxiliary values: ";
-  if (_rvals.size() > 0) {
-    for (unsigned int i=0; i<_rvals.size(); i++) {
-      os << "(" << _rvals[i] << ", " << _ivals[i] << ")  ";
+  if (rvals_.size() > 0) {
+    for (unsigned int i=0; i<rvals_.size(); i++) {
+      os << "(" << rvals_[i] << ", " << ivals_[i] << ")  ";
     }
     os << endl;
   }
@@ -374,10 +360,10 @@ ostream& StatusTestOrderedResNorm<ScalarType,MV,OP>::print(ostream& os, int inde
     os << "[empty]" << endl;
   }
 
-  if (_state != Undefined) {
+  if (state_ != Undefined) {
     os << ind << "Which vectors: ";
-    if (_ind.size() > 0) {
-      for (unsigned int i=0; i<_ind.size(); i++) os << _ind[i] << " ";
+    if (ind_.size() > 0) {
+      for (unsigned int i=0; i<ind_.size(); i++) os << ind_[i] << " ";
       os << endl;
     }
     else {

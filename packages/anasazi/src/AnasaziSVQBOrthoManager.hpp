@@ -77,6 +77,27 @@ namespace Anasazi {
     //! @name Orthogonalization methods
     //@{ 
 
+
+    /*! \brief Given a list of (mutually and independently) orthonormal bases \c Q, this method
+     * takes a multivector \c X and projects it onto the space orthogonal to the individual \c Q[i], 
+     * returning optionally the coefficients of \c X in the individual \c Q[i]. All of this is done with respect
+     * to innerProd().
+     *  
+     @param X [in/out] The multivector to be modified.
+       On output, \c X will be orthogonal to \c Q[i] with respect to innerProd().
+
+     @param C [out] The coefficients of \c X in the \c Q[i], with respect to innerProd().
+
+     @param Q [in] A list of multivectors specifying the bases to be orthogonalized against. Each \c Q[i] is assumed to have
+     orthonormal columns, and the \c Q[i] are assumed to be mutually orthogonal.
+    */
+    void project ( MV &X, 
+                   Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
+                   Teuchos::Array<Teuchos::RefCountPtr<const MV> > Q) const {
+      project(X,Teuchos::null,C,Q);
+    }
+
+
     /*! \brief Given a list of (mutually and independently) orthonormal bases \c Q, this method
      * takes a multivector \c X and projects it onto the space orthogonal to the individual \c Q[i], 
      * returning optionally the coefficients of \c X in the individual \c Q[i]. All of this is done with respect
@@ -95,9 +116,21 @@ namespace Anasazi {
      @param Q [in] A list of multivectors specifying the bases to be orthogonalized against. Each \c Q[i] is assumed to have
      orthonormal columns, and the \c Q[i] are assumed to be mutually orthogonal.
     */
-    virtual void project ( MV &X, Teuchos::RefCountPtr<MV> MX, 
-                           Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
-                           Teuchos::Array<Teuchos::RefCountPtr<const MV> > Q) const;
+    void project ( MV &X, Teuchos::RefCountPtr<MV> MX, 
+                   Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
+                   Teuchos::Array<Teuchos::RefCountPtr<const MV> > Q) const;
+
+
+    /*! \brief This method takes a multivector and orthonormalizes the columns, with respect to \c innerProd().
+     *  
+     @param X [in/out] The multivector to the modified. 
+       On output, the columns are M-orthonormal.
+    
+     @return Rank of the basis computed by this method.
+    */
+    int normalize ( MV &X, Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > R ) const {
+      return normalize(X,Teuchos::null,R);
+    }
 
 
     /*! \brief This method takes a multivector and orthonormalizes the columns, with respect to \c innerProd().
@@ -114,8 +147,32 @@ namespace Anasazi {
      @return Rank of the basis computed by this method.
     */
     int normalize ( MV &X, Teuchos::RefCountPtr<MV> MX, 
-                           Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > R ) const;
+                    Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > R ) const;
 
+
+    /*! \brief This method takes a multivector and projects it onto the space orthogonal to 
+     *  another given multivector.  It also orthonormalizes the 
+     *  columns of the resulting multivector. Both of these operations are conducted 
+     *  with respect to innerProd().
+     *  
+     @param X [in/out] The multivector to the modified. 
+       On output, \c X will be orthogonal to \c Q and will have orthonormal columns, with respect to innerProd().
+
+     @param C [out] The coefficients of \c X in the \c Q[i], with respect to innerProd().
+
+     @param R [out] The coefficients of the original X with respect to the produced basis.
+
+     @param Q [in] A list of multivectors specifying the bases to be orthogonalized against. Each \c Q[i] is assumed to have
+     orthonormal columns, and the \c Q[i] are assumed to be mutually orthogonal.
+
+     @return Rank of the basis computed by this method.
+    */
+    int projectAndNormalize ( MV &X, 
+                              Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
+                              Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > R, 
+                              Teuchos::Array<Teuchos::RefCountPtr<const MV> > Q ) const {
+      return projectAndNormalize(X,Teuchos::null,C,R,Q);
+    }
 
     /*! \brief This method takes a multivector and projects it onto the space orthogonal to 
      *  another given multivector.  It also orthonormalizes the 
@@ -137,14 +194,21 @@ namespace Anasazi {
      @return Rank of the basis computed by this method.
     */
     int projectAndNormalize ( MV &X, Teuchos::RefCountPtr<MV> MX, 
-                                     Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
-                                     Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > R, 
-                                     Teuchos::Array<Teuchos::RefCountPtr<const MV> > Q ) const;
+                              Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
+                              Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > R, 
+                              Teuchos::Array<Teuchos::RefCountPtr<const MV> > Q ) const;
 
     //@}
 
     //! @name Error methods
     //@{ 
+
+    /*! \brief This method computes the error in orthonormality of a multivector.
+     */
+    typename Teuchos::ScalarTraits<ScalarType>::magnitudeType 
+    orthonormError(const MV &X) const {
+      return orthonormError(X,Teuchos::null);
+    }
 
     /*! \brief This method computes the error in orthonormality of a multivector, measured via \f$ \|X^T Op X - I\|_F \f$.
      *  The method has the option of
@@ -152,6 +216,13 @@ namespace Anasazi {
      */
     typename Teuchos::ScalarTraits<ScalarType>::magnitudeType 
     orthonormError(const MV &X, Teuchos::RefCountPtr<const MV> MX) const;
+
+    /*! \brief This method computes the error in orthogonality of two multivectors. This method 
+     */
+    typename Teuchos::ScalarTraits<ScalarType>::magnitudeType 
+    orthogError(const MV &X1, const MV &X2) const {
+      return orthogError(X1,Teuchos::null,X2);
+    }
 
     /*! \brief This method computes the error in orthogonality of two multivectors, measured via \f$ \|Q^T Op X \|_F \f$.
      *  The method has the option of
@@ -164,8 +235,8 @@ namespace Anasazi {
 
   private:
     
-    MagnitudeType _eps;
-    bool _debug;
+    MagnitudeType eps_;
+    bool debug_;
   
     // ! Routine to find an orthogonal/orthonormal basis for the 
     int findBasis( MV &X, Teuchos::RefCountPtr<MV> MX, 
@@ -180,12 +251,12 @@ namespace Anasazi {
   // Constructor
   template<class ScalarType, class MV, class OP>
   SVQBOrthoManager<ScalarType,MV,OP>::SVQBOrthoManager( Teuchos::RefCountPtr<const OP> Op, bool debug) 
-    : MatOrthoManager<ScalarType,MV,OP>(Op), _debug(debug) {
+    : MatOrthoManager<ScalarType,MV,OP>(Op), debug_(debug) {
     
     Teuchos::LAPACK<int,MagnitudeType> lapack;
-    _eps = lapack.LAMCH('E');
-    if (_debug) {
-      std::cout << "_eps == " << _eps << endl;
+    eps_ = lapack.LAMCH('E');
+    if (debug_) {
+      std::cout << "eps_ == " << eps_ << endl;
     }
   }
 
@@ -435,7 +506,7 @@ namespace Anasazi {
     // sentinel to continue the outer loop (perform another projection step)
     bool doGramSchmidt = true;          
     // variable for testing orthonorm/orthog 
-    MagnitudeType tolerance = MONE/SCTM::squareroot(_eps);
+    MagnitudeType tolerance = MONE/SCTM::squareroot(eps_);
 
     // outer loop
     while (doGramSchmidt) {
@@ -464,7 +535,7 @@ namespace Anasazi {
           }
         }
         // check that vectors are normalized now
-        if (_debug) {
+        if (debug_) {
           std::vector<MagnitudeType> nrm2(xc);
           cout << dbgstr << "max post-scale norm: (with/without MX) : ";
           MagnitudeType maxpsnw = ZERO, maxpsnwo = ZERO;
@@ -580,7 +651,7 @@ namespace Anasazi {
           lapack.HEEV('V', 'U', xc, XtMX.values(), XtMX.stride(), &lambda[0], &work[0], work.size(), &rwork[0], &info);
           TEST_FOR_EXCEPTION( info != 0, OrthoError, 
                               "Anasazi::SVQBOrthoManager::findBasis(): Error code from HEEV" );
-          if (_debug) {
+          if (debug_) {
             cout << dbgstr << "eigenvalues of XtMX: (";
             for (int i=0; i<xc-1; i++) {
               cout << lambda[i] << ",";
@@ -594,14 +665,14 @@ namespace Anasazi {
                         minLambda = lambda[0];
           int iZeroMax = -1;
           for (int i=0; i<xc; i++) {
-            if (lambda[i] < 10*_eps*maxLambda) {      // finish: this was _eps*_eps*maxLambda
+            if (lambda[i] < 10*eps_*maxLambda) {      // finish: this was eps_*eps_*maxLambda
               iZeroMax = i;
               lambda[i]  = ZERO;
               lambdahi[i] = ZERO;
             }
             /*
-            else if (lambda[i] < _eps*maxLambda) {
-              lambda[i]  = SCTM::squareroot(_eps*maxLambda);
+            else if (lambda[i] < eps_*maxLambda) {
+              lambda[i]  = SCTM::squareroot(eps_*maxLambda);
               lambdahi[i] = MONE/lambda[i];
             }
             */
@@ -663,7 +734,7 @@ namespace Anasazi {
 
           // check iZeroMax (rank indicator)
           if (iZeroMax >= 0) {
-            if (_debug) {
+            if (debug_) {
               cout << dbgstr << "augmenting multivec with " << iZeroMax+1 << " random directions" << endl;
             }
 
@@ -688,7 +759,7 @@ namespace Anasazi {
           }
 
           condT = SCTM::magnitude(maxLambda / minLambda);
-          if (_debug) {
+          if (debug_) {
             cout << dbgstr << "condT: " << condT << endl;
           }
           
@@ -702,7 +773,7 @@ namespace Anasazi {
        
     } // end while (doGramSchmidt)
 
-    if (_debug) {
+    if (debug_) {
       cout << dbgstr << "(numGS,numSVQB,numRand)                : " 
            << "(" << numGS 
            << "," << numSVQB 

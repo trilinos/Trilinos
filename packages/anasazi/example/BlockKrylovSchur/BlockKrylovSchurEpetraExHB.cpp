@@ -32,14 +32,14 @@
 //  eigensolver and then used to construct the Krylov decomposition.  The specifics of the 
 //  block Arnoldi method can be set by the user.
 
-#include "AnasaziBlockKrylovSchur.hpp"
+#include "AnasaziBlockKrylovSchurSolMgr.hpp"
 #include "AnasaziBasicEigenproblem.hpp"
-#include "AnasaziBasicSort.hpp"
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziEpetraAdapter.hpp"
 
 #include "Epetra_CrsMatrix.h"
 #include "Teuchos_LAPACK.hpp"
+#include "Teuchos_CommandLineProcessor.hpp"
 
 #include "Trilinos_Util.h"
 
@@ -57,8 +57,6 @@ int main(int argc, char *argv[]) {
   int n_nonzeros, N_update;
   int *bindx=0, *update=0;
   double *val=0;
-  double zero = 0.0;
-  Anasazi::ReturnType returnCode = Anasazi::Ok;
 
 #ifdef EPETRA_MPI  
   // Initialize MPI  
@@ -70,18 +68,17 @@ int main(int argc, char *argv[]) {
   
   int MyPID = Comm.MyPID();
 
-  // Create an output manager to handle the I/O from the solver
-  Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM =
-    Teuchos::rcp( new Anasazi::OutputManager<double>( MyPID ) );
-  MyOM->SetVerbosity( Anasazi::FinalSummary );  
-
+  bool verbose=false;
+  std::string filename = "";
   std::string which = "LM";
-  if(argc < 2 && MyOM->doPrint()) {
-    cerr << "Usage: " << argv[0] 
-         << " HB_filename " << endl
-         << "where:" << endl
-         << "HB_filename        - filename and path of a Harwell-Boeing data set" << endl
-         << endl;
+  Teuchos::CommandLineProcessor cmdp(false,true);
+  cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+  cmdp.setOption("sort",&which,"Targetted eigenvalues (SM,LM,SR,or LR).");
+  cmdp.setOption("filename",&filename,"Filename and path of a Harwell-Boeing data set.");
+  if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
+#ifdef HAVE_MPI
+    MPI_Finalize();
+#endif
     return -1;
   }
   //
@@ -93,8 +90,8 @@ int main(int argc, char *argv[]) {
   //
   // *****Read in matrix from HB file******
   //
-  Trilinos_Util_read_hb(argv[1], MyPID, &NumGlobalElements, &n_nonzeros, &val, 
-                        &bindx);
+  Trilinos_Util_read_hb(const_cast<char *>(filename.c_str()), MyPID, &NumGlobalElements, 
+			&n_nonzeros, &val, &bindx);
   //
   // *****Distribute data among processors*****
   //
@@ -145,23 +142,32 @@ int main(int argc, char *argv[]) {
   // 
   int nev = 5;
   int blockSize = 5;
-  int maxBlocks = 10;
+  int numBlocks = 10;
   int maxRestarts = 10;
   int step = 5;
   double tol = 1.0e-8;
+  
+  // Set verbosity level
+  int verbosity = Anasazi::Errors + Anasazi::Warnings;
+  if (verbose) {
+    verbosity += Anasazi::FinalSummary + Anasazi::TimingDetails;
+  }
   //
   // Create parameter list to pass into solver
   //
   Teuchos::ParameterList MyPL;
+  MyPL.set( "Verbosity", verbosity );
+  MyPL.set( "Which", which );
   MyPL.set( "Block Size", blockSize );
-  MyPL.set( "Max Blocks", maxBlocks );
-  MyPL.set( "Max Restarts", maxRestarts );
-  MyPL.set( "Tol", tol );
+  MyPL.set( "Num Blocks", numBlocks );
+  MyPL.set( "Maximum Restarts", maxRestarts );
+  MyPL.set( "Convergence Tolerance", tol );
   MyPL.set( "Step Size", step );
 
   typedef Epetra_MultiVector MV;
   typedef Epetra_Operator OP;
   typedef Anasazi::MultiVecTraits<double, MV> MVT;
+  typedef Anasazi::OperatorTraits<double, MV, OP> OPT;
   //
   // Create the eigenproblem to be solved.
   //
@@ -171,128 +177,159 @@ int main(int argc, char *argv[]) {
   Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double, MV, OP> > MyProblem =
     Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>(A, ivec) );
   
-  // Inform the eigenproblem that the matrix A is symmetric
-  //MyProblem->SetSymmetric(true);
+  // Inform the eigenproblem that the matrix A is Hermitian
+  //MyProblem->setHermitian(true);
 
   // Set the number of eigenvalues requested 
-  MyProblem->SetNEV( nev );
+  MyProblem->setNEV( nev );
 
-  // Inform the eigenproblem that you are finishing passing it information
-  info = MyProblem->SetProblem();
-  if (info) {
-    cout << "Anasazi::BasicEigenproblem::SetProblem() returned with code : "<< info << endl; 
-  }
-
-  // Create a sorting manager to handle the sorting of eigenvalues in the solver
-  Teuchos::RefCountPtr<Anasazi::BasicSort<double, MV, OP> > MySort = 
-    Teuchos::rcp( new Anasazi::BasicSort<double, MV, OP>(which) );
-  
-  //
-  //  Initialize the Block Arnoldi solver
-  //
-  Anasazi::BlockKrylovSchur<double, MV, OP> MySolver(MyProblem, MySort, MyOM, MyPL);
-  
-  // Solve the problem to the specified tolerances or length
-  returnCode = MySolver.solve();
-  
-  // Check that the solver returned OK, if not exit example
-  if (returnCode != Anasazi::Ok) {
-#ifdef EPETRA_MPI
+  // Inform the eigenproblem that you are finished passing it information
+  bool boolret = MyProblem->setProblem();
+  if (boolret != true) {
+    if (verbose && MyPID == 0) {
+      cout << "Anasazi::BasicEigenproblem::setProblem() returned with error." << endl;
+    }
+#ifdef HAVE_MPI
     MPI_Finalize() ;
 #endif
     return -1;
   }
 
-  // Obtain results directly
-  Teuchos::RefCountPtr<std::vector<double> > evals = MyProblem->GetEvals();
+  // Initialize the Block Arnoldi solver
+  Anasazi::BlockKrylovSchurSolMgr<double, MV, OP> MySolverMgr(MyProblem, MyPL);
+    
+  // Solve the problem to the specified tolerances or length
+  Anasazi::ReturnType returnCode = MySolverMgr.solve();
+  if (returnCode != Anasazi::Converged && MyPID==0 && verbose) {
+    cout << "Anasazi::EigensolverMgr::solve() returned unconverged." << endl;
+  }
   
-  // Retrieve eigenvectors
-  // The size of the eigenvector storage is nev + block, but the eigenvectors are stored in the first nev vectors.
-  Teuchos::RefCountPtr<Epetra_MultiVector> evecs = MyProblem->GetEvecs();
-  Teuchos::RefCountPtr<Epetra_MultiVector> evecr, eveci;
-  if (MyProblem->IsSymmetric()) {
-    evecr = evecs;
-  }
-  else {
-    evecr = Teuchos::rcp( new Epetra_MultiVector( View, *evecs, 0, nev ) );
-    eveci = Teuchos::rcp( new Epetra_MultiVector( View, *evecs, nev, nev ) );
-  }                   
+  // Get the eigenvalues and eigenvectors from the eigenproblem
+  Anasazi::Eigensolution<double,MV> sol = MyProblem->getSolution();
+  std::vector<Anasazi::Value<double> > evals = sol.Evals;
+  Teuchos::RefCountPtr<MV> evecs = sol.Evecs;
+  std::vector<int> index = sol.index;
+  int numev = sol.numVecs;
 
-  // Compute residuals.
-  Teuchos::LAPACK<int,double> lapack;
-  Epetra_MultiVector tempevecr(Map,nev), tempAevec(Map,nev);
-  Epetra_MultiVector tempeveci(Map,nev);
-  Teuchos::SerialDenseMatrix<int,double> Breal(nev,nev), Breal2(nev,nev);
-  Teuchos::SerialDenseMatrix<int,double> Bimag(nev,nev), Bimag2(nev,nev);
-  std::vector<double> normA(nev), tempnrm(nev);
-  cout<<endl<< "Actual Residuals"<<endl;
-  cout<<"------------------------------------------------------"<<endl;
-  Breal.putScalar(0.0); 
-  if (!MyProblem->IsSymmetric()) {
-    Bimag.putScalar(0.0);
-  }
-  for (i=0; i<nev; i++) { 
-    normA[i] = 0.0;
-    Breal(i,i) = (*evals)[i]; 
-    if (!MyProblem->IsSymmetric()) {
-      Bimag(i,i) = (*evals)[nev + i]; 
-    }
-  }
-  A->Apply( *evecr, tempAevec );
-  MVT::MvTimesMatAddMv( -1.0, *evecr , Breal, 1.0, tempAevec );
-  if (!MyProblem->IsSymmetric()) {
-    MVT::MvTimesMatAddMv( 1.0, *eveci, Bimag, 1.0, tempAevec );
-    MVT::MvNorm( tempAevec, &normA );
-    A->Apply( *eveci, tempAevec );
-    MVT::MvTimesMatAddMv( -1.0, *evecr, Bimag, 1.0, tempAevec );
-    MVT::MvTimesMatAddMv( -1.0, *eveci, Breal, 1.0, tempAevec );
-  }
-  MVT::MvNorm( tempAevec, &tempnrm );
-  i = 0;
-  while (i < nev) {
-    normA[i] = lapack.LAPY2( normA[i], tempnrm[i] );
-    if (MyProblem->IsSymmetric()) {
-      normA[i] /= Teuchos::ScalarTraits<double>::magnitude((*evals)[i]);
-      i++;
-    } 
-    else {
-      normA[i] /= lapack.LAPY2( (*evals)[i], (*evals)[nev + i] );
-      if ((*evals)[nev + i] != zero) {
-        normA[i+1] = normA[i];
-        i = i+2;
-      } 
-      else {
-        i++;
+  if (numev > 0) {
+    // Compute residuals.
+    Teuchos::LAPACK<int,double> lapack;
+    std::vector<double> normA(numev);
+    
+    if (MyProblem->isHermitian()) {
+      // Get storage
+      Epetra_MultiVector Aevecs(Map,numev);
+      Teuchos::SerialDenseMatrix<int,double> B(numev,numev);
+      B.putScalar(0.0); 
+      for (int i=0; i<numev; i++) {B(i,i) = evals[i].realpart;}
+      
+      // Compute A*evecs
+      OPT::Apply( *A, *evecs, Aevecs );
+      
+      // Compute A*evecs - lambda*evecs and its norm
+      MVT::MvTimesMatAddMv( -1.0, *evecs, B, 1.0, Aevecs );
+      MVT::MvNorm( Aevecs, &normA );
+      
+      // Scale the norms by the eigenvalue
+      for (int i=0; i<numev; i++) {
+	normA[i] /= Teuchos::ScalarTraits<double>::magnitude( evals[i].realpart );
+      }
+    } else {
+      // The problem is non-Hermitian.
+      int i=0;
+      std::vector<int> curind(1);
+      std::vector<double> resnorm(1), tempnrm(1);
+      Teuchos::RefCountPtr<MV> evecr, eveci, tempAevec;
+      Epetra_MultiVector Aevec(Map,numev);
+      
+      // Compute A*evecs
+      OPT::Apply( *A, *evecs, Aevec );
+      
+      Teuchos::SerialDenseMatrix<int,double> Breal(1,1), Bimag(1,1);
+      while (i<numev) {
+	if (index[i]==0) {
+	  // Get a view of the current eigenvector (evecr)
+	  curind[0] = i;
+	  evecr = MVT::CloneView( *evecs, curind );
+	  
+	  // Get a copy of A*evecr
+	  tempAevec = MVT::CloneCopy( Aevec, curind );
+	  
+	  // Compute A*evecr - lambda*evecr
+	  Breal(0,0) = evals[i].realpart;
+	  MVT::MvTimesMatAddMv( -1.0, *evecr, Breal, 1.0, *tempAevec );
+	  
+	  // Compute the norm of the residual and increment counter
+	  MVT::MvNorm( *tempAevec, &resnorm );
+	  normA[i] = resnorm[0]/Teuchos::ScalarTraits<double>::magnitude( evals[i].realpart );
+	  i++;
+	} else {
+	  // Get a view of the real part of the eigenvector (evecr)
+	  curind[0] = i;
+	  evecr = MVT::CloneView( *evecs, curind );
+	  
+	  // Get a copy of A*evecr
+	  tempAevec = MVT::CloneCopy( Aevec, curind );
+	  
+	  // Get a view of the imaginary part of the eigenvector (eveci)
+	  curind[0] = i+1;
+	  eveci = MVT::CloneView( *evecs, curind );
+	  
+	  // Set the eigenvalue into Breal and Bimag
+	  Breal(0,0) = evals[i].realpart;
+	  Bimag(0,0) = evals[i].imagpart;
+	  
+	  // Compute A*evecr - evecr*lambdar + eveci*lambdai
+	  MVT::MvTimesMatAddMv( -1.0, *evecr, Breal, 1.0, *tempAevec );
+	  MVT::MvTimesMatAddMv( 1.0, *eveci, Bimag, 1.0, *tempAevec );
+	  MVT::MvNorm( *tempAevec, &tempnrm );
+	  
+	  // Get a copy of A*eveci
+	  tempAevec = MVT::CloneCopy( Aevec, curind );
+	  
+	  // Compute A*eveci - eveci*lambdar - evecr*lambdai
+	  MVT::MvTimesMatAddMv( -1.0, *evecr, Bimag, 1.0, *tempAevec );
+	  MVT::MvTimesMatAddMv( -1.0, *eveci, Breal, 1.0, *tempAevec );
+	  MVT::MvNorm( *tempAevec, &resnorm );
+	  
+	  // Compute the norms and scale by magnitude of eigenvalue
+	  normA[i] = lapack.LAPY2( tempnrm[i], resnorm[i] ) /
+	    lapack.LAPY2( evals[i].realpart, evals[i].imagpart );
+	  normA[i+1] = normA[i];
+	  
+	  i=i+2;
+	}
       }
     }
+    
+    // Output computed eigenvalues and their direct residuals
+    if (verbose && MyPID==0) {
+      cout.setf(ios_base::right, ios_base::adjustfield);	
+      cout<<endl<< "Actual Residuals"<<endl;
+      if (MyProblem->isHermitian()) {
+	cout<< std::setw(16) << "Real Part"
+	    << std::setw(20) << "Direct Residual"<< endl;
+	cout<<"-----------------------------------------------------------"<<endl;
+	for (int i=0; i<numev; i++) {
+	  cout<< std::setw(16) << evals[i].realpart 
+	      << std::setw(20) << normA[i] << endl;
+	}  
+	cout<<"-----------------------------------------------------------"<<endl;
+      } 
+      else {
+	cout<< std::setw(16) << "Real Part"
+	    << std::setw(16) << "Imag Part"
+	    << std::setw(20) << "Direct Residual"<< endl;
+	cout<<"-----------------------------------------------------------"<<endl;
+	for (int i=0; i<numev; i++) {
+	  cout<< std::setw(16) << evals[i].realpart 
+	      << std::setw(16) << evals[i].imagpart 
+	      << std::setw(20) << normA[i] << endl;
+	}  
+	cout<<"-----------------------------------------------------------"<<endl;
+      }  
+    }
   }
-  cout.setf(ios_base::right, ios_base::adjustfield);
-  if (MyProblem->IsSymmetric()) {
-    cout<<std::setw(16)<<"Real Part"
-	<<std::setw(16)<<"Residual"
-	<<endl;
-    cout<<"------------------------------------------------------"<<endl;
-    for (i=0; i<nev; i++) {
-      cout<<std::setw(16)<< (*evals)[i] 
-	  <<std::setw(16)<<  normA[i] 
-	  << endl;
-    }  
-    cout<<"------------------------------------------------------"<<endl;
-  } 
-  else {
-    cout<<std::setw(16)<<"Real Part"
-	<<std::setw(16)<<"Imag Part"
-	<<std::setw(16)<<"Residual"
-	<<endl;
-    cout<<"------------------------------------------------------"<<endl;
-    for (i=0; i<nev; i++) {
-      cout<<std::setw(16)<< (*evals)[i] 
-	  <<std::setw(16)<< (*evals)[nev + i] 
-	  <<std::setw(16)<< normA[i] 
-	  << endl;
-    }  
-    cout<<"------------------------------------------------------"<<endl;
-  }  
 
   if (bindx) delete [] bindx;
   if (update) delete [] update;

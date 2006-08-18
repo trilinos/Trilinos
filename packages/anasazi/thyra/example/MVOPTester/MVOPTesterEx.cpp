@@ -1,8 +1,9 @@
 //@HEADER
 // ************************************************************************
 // 
-//               Epetra: Linear Algebra Services Package 
-//                 Copyright (2001) Sandia Corporation
+//
+//                 Anasazi: Block Eigensolvers Package
+//                 Copyright (2004) Sandia Corporation
 // 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
@@ -26,8 +27,8 @@
 // ************************************************************************
 //@HEADER
 //
-//  This test uses the MVOPTester.hpp functions to test the Anasazi adapter
-//  to Epetra.
+//  This test uses the MVOPTester.hpp functions to test the Anasazi adapters
+//  to Epetra and Thyra.
 //
 
 #include "Epetra_Map.h"
@@ -43,51 +44,74 @@
 #include "Epetra_SerialComm.h"
 
 #include "AnasaziConfigDefs.hpp"
-#include "AnasaziEpetraAdapter.hpp"
 #include "AnasaziMVOPTester.hpp"
+#include "AnasaziEpetraAdapter.hpp"
+#include "AnasaziBasicOutputManager.hpp"
+
+#ifdef HAVE_EPETRA_THYRA
+#include "AnasaziThyraAdapter.hpp"
+#include "Thyra_EpetraThyraWrappers.hpp"
+#include "Thyra_EpetraLinearOp.hpp"
+#endif
+
+using namespace std;
 
 int main(int argc, char *argv[])
 {
-  int i, ierr;
+  int i;
+  bool ierr, gerr;
+  gerr = true;
 
 #ifdef HAVE_MPI
   // Initialize MPI and setup an Epetra communicator
   MPI_Init(&argc,&argv);
-  Epetra_MpiComm Comm(MPI_COMM_WORLD);
+  Teuchos::RefCountPtr<Epetra_MpiComm> Comm = Teuchos::rcp( new Epetra_MpiComm(MPI_COMM_WORLD) );
 #else
   // If we aren't using MPI, then setup a serial communicator.
-  Epetra_SerialComm Comm;
+  Teuchos::RefCountPtr<Epetra_SerialComm> Comm = Teuchos::rcp( new Epetra_SerialComm() );
 #endif
 
    // number of global elements
-  int dim = 100;
-  int blockSize = 5;
+  const int dim = 100;
+  const int blockSize = 5;
 
-  // PID info
-  int MyPID = Comm.MyPID();
+  bool verbose = false;
+  if (argc>1) {
+    if (argv[1][0]=='-' && argv[1][1]=='v') {
+      verbose = true;
+    }
+  }
+
+  // Create an output manager to handle the I/O from the solver
+  Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM = Teuchos::rcp( new Anasazi::BasicOutputManager<double>() );
+  if (verbose) {
+    MyOM->setVerbosity( Anasazi::Warnings );
+  }
 
 #ifndef HAVE_EPETRA_THYRA
-  if (MyPID == 0) {
-      cout << "Please configure Anasazi with:" << endl;
-      cout << "--enable-epetra-thyra" << endl;
-      cout << "--enable-anasazi-thyra" << endl;
-  }
-  return 0;
+  MyOM->stream(Anasazi::Warnings) 
+    << "Please configure Anasazi with:" << endl
+    << "--enable-epetra-thyra" << endl
+    << "--enable-anasazi-thyra" << endl;
+#ifdef HAVE_MPI
+  MPI_Finalize();
+#endif
+  return -1;
 #endif
 
   // Construct a Map that puts approximately the same number of 
   // equations on each processor.
-  Epetra_Map Map(dim, 0, Comm);
+  Teuchos::RefCountPtr<Epetra_Map> Map = Teuchos::rcp( new Epetra_Map(dim, 0, *Comm) );
   
   // Get update list and number of local equations from newly created Map.
-  int NumMyElements = Map.NumMyElements();
-  int * MyGlobalElements = new int[NumMyElements];
-  Map.MyGlobalElements(MyGlobalElements);
+  int NumMyElements = Map->NumMyElements();
+  std::vector<int> MyGlobalElements(NumMyElements);
+  Map->MyGlobalElements(&MyGlobalElements[0]);
 
   // Create an integer vector NumNz that is used to build the Petra Matrix.
   // NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation 
   // on this processor
-  int * NumNz = new int[NumMyElements];
+  std::vector<int> NumNz(NumMyElements);
 
   // We are building a tridiagonal matrix where each row has (-1 2 -1)
   // So we need 2 off-diagonal terms (except for the first and last equation)
@@ -101,15 +125,14 @@ int main(int argc, char *argv[])
   }
 
   // Create an Epetra_Matrix
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> A 
-    = Teuchos::rcp( new Epetra_CrsMatrix(Copy, Map, NumNz) );
-  
+  Teuchos::RefCountPtr<Epetra_CrsMatrix> A = Teuchos::rcp( new Epetra_CrsMatrix(Copy, *Map, &NumNz[0]) );
+   
   // Add  rows one-at-a-time
   // Need some vectors to help
   // Off diagonal Values will always be -1
-  double *Values = new double[2];
+  std::vector<double> Values(2);
   Values[0] = -1.0; Values[1] = -1.0;
-  int *Indices = new int[2];
+  std::vector<int> Indices(2);
   double two = 2.0;
   int NumEntries;
   for (i=0; i<NumMyElements; i++) {
@@ -126,76 +149,63 @@ int main(int argc, char *argv[])
       Indices[1] = MyGlobalElements[i]+1;
       NumEntries = 2;
     }
-    ierr = A->InsertGlobalValues(MyGlobalElements[i],NumEntries,Values,Indices);
+    ierr = A->InsertGlobalValues(MyGlobalElements[i],NumEntries,&Values[0],&Indices[0]);
     assert(ierr==0);
     // Put in the diagonal entry
-    ierr = A->InsertGlobalValues(MyGlobalElements[i],1,&two,MyGlobalElements+i);
+    ierr = A->InsertGlobalValues(MyGlobalElements[i],1,&two,&MyGlobalElements[i]);
     assert(ierr==0);
   }
-   
+
   // Finish building the epetra matrix A
   ierr = A->FillComplete();
   assert(ierr==0);
 
-  // Issue several useful typedefs;
-  // The MultiVecTraits class is for defining ....
-  typedef Epetra_MultiVector MV;
-  typedef Epetra_Operator OP;
-  typedef Anasazi::OperatorTraits<double, MV, OP> OPT;
+#ifdef HAVE_EPETRA_THYRA
+  typedef Thyra::MultiVectorBase<double> TMVB;
+  typedef Thyra::LinearOpBase<double>    TLOB;
 
-  // Create an Epetra_MultiVector for an initial vector to start the solver.
-  // Note that this needs to have the same number of columns as the blocksize.
-  Teuchos::RefCountPtr<MV> ivec 
-    = Teuchos::rcp( new MV(Map, blockSize) );
-  ivec->Random();
+  // first, create a Thyra::VectorSpaceBase from an Epetra_Map using the Epetra-Thyra wrappers
+  Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<double> > space = Thyra::create_VectorSpace(Map);
 
-  // Create an output manager to handle the I/O from the solver
-  Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM =
-    Teuchos::rcp( new Anasazi::OutputManager<double>( MyPID ) );
-  MyOM->SetVerbosity( Anasazi::Warning );
+  // then, create a Thyra::MultiVectorBase from the Thyra::VectorSpaceBase using Thyra creational functions
+  Teuchos::RefCountPtr<Thyra::MultiVectorBase<double> > thyra_ivec = Thyra::createMembers(space,blockSize);
 
-  // test the multivector class
-  ierr = Anasazi::TestMultiVecTraits<double,MV>(MyOM,ivec);
-  switch (ierr) {
-  case Anasazi::Ok:
-    if ( MyOM->doPrint() ) {
-      cout << "*** PASSED TestMultiVecTraits()" << endl;
-    }
-    break;
-  case Anasazi::Failed:
-    if ( MyOM->doPrint() ) {
-      cout << "*** FAILED TestMultiVecTraits() ***" << endl;
-    }
-    return ierr;
-    break;
+  // then, create a Thyra::LinearOpBase from the Epetra_CrsMatrix using the Epetra-Thyra wrappers
+  Teuchos::RefCountPtr<Thyra::LinearOpBase<double> > thyra_op = Teuchos::rcp( new Thyra::EpetraLinearOp(A) );
+
+  // test the Thyra multivector adapter
+  ierr = Anasazi::TestMultiVecTraits<double,TMVB>(MyOM,thyra_ivec);
+  gerr |= ierr;
+  if (ierr) {
+    MyOM->stream(Anasazi::Warnings) << "*** ThyraAdapter PASSED TestMultiVecTraits()" << endl;
+  }
+  else {
+    MyOM->stream(Anasazi::Warnings) << "*** ThyraAdapter FAILED TestMultiVecTraits() ***" << endl << endl;
   }
 
-
-  // test the operator class
-  ierr = Anasazi::TestOperatorTraits<double,MV,OP>(MyOM,ivec,A);
-  switch (ierr) {
-  case Anasazi::Ok:
-    if ( MyOM->doPrint() ) {
-      cout << "*** PASSED TestOperatorTraits()" << endl;
-    }
-    break;
-  case Anasazi::Failed:
-    if ( MyOM->doPrint() ) {
-      cout << "*** FAILED TestOperatorTraits() ***" << endl;
-    }
-    return ierr;
-    break;
+  // test the Thyra operator adapter
+  ierr = Anasazi::TestOperatorTraits<double,TMVB,TLOB>(MyOM,thyra_ivec,thyra_op);
+  gerr |= ierr;
+  if (ierr) {
+    MyOM->stream(Anasazi::Warnings) << "*** ThyraAdapter PASSED TestOperatorTraits()" << endl;
   }
-
-  // Release all objects
-  delete [] NumNz;
-  delete [] Values;
-  delete [] Indices;
-  delete [] MyGlobalElements;
+  else {
+    MyOM->stream(Anasazi::Warnings) << "*** ThyraAdapter FAILED TestOperatorTraits() ***" << endl << endl;
+  }
+#endif
 
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
 
-  return ierr;
+  if (gerr == false) {
+    MyOM->print(Anasazi::Warnings,"End Result: TEST FAILED\n");
+    return -1;
+  }
+  //
+  // Default return value
+  //
+  MyOM->print(Anasazi::Warnings,"End Result: TEST PASSED\n");
+  return 0;
+
 }

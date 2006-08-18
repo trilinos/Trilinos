@@ -317,14 +317,19 @@ target_vendor = @target_vendor@
 CORE_H = \
 	$(srcdir)/AnasaziBasicEigenproblem.hpp \
 	$(srcdir)/AnasaziBasicOrthoManager.hpp \
+	$(srcdir)/AnasaziBasicOutputManager.hpp \
 	$(srcdir)/AnasaziBasicSort.hpp \
 	$(srcdir)/AnasaziBlockDavidson.hpp \
+	$(srcdir)/AnasaziBlockDavidsonSolMgr.hpp \
 	$(srcdir)/AnasaziBlockKrylovSchur.hpp \
+	$(srcdir)/AnasaziBlockKrylovSchurSolMgr.hpp \
 	$(srcdir)/AnasaziConfigDefs.hpp \
 	$(srcdir)/AnasaziEigenproblem.hpp \
 	$(srcdir)/AnasaziEigensolver.hpp \
 	$(srcdir)/AnasaziEpetraAdapter.hpp \
 	$(srcdir)/AnasaziLOBPCG.hpp \
+	$(srcdir)/AnasaziLOBPCGSolMgr.hpp \
+	$(srcdir)/AnasaziMatOrthoManager.hpp \
 	$(srcdir)/AnasaziModalSolverUtils.hpp \
 	$(srcdir)/AnasaziMultiVec.hpp \
 	$(srcdir)/AnasaziMultiVecTraits.hpp \
@@ -332,8 +337,17 @@ CORE_H = \
 	$(srcdir)/AnasaziOperatorTraits.hpp \
 	$(srcdir)/AnasaziOrthoManager.hpp \
 	$(srcdir)/AnasaziOutputManager.hpp \
-	$(srcdir)/AnasaziTypes.hpp \
-	$(srcdir)/AnasaziSortManager.hpp
+	$(srcdir)/AnasaziSimpleLOBPCGSolMgr.hpp \
+	$(srcdir)/AnasaziSolverManager.hpp \
+	$(srcdir)/AnasaziSortManager.hpp \
+	$(srcdir)/AnasaziStatusTest.hpp \
+	$(srcdir)/AnasaziStatusTestCombo.hpp \
+	$(srcdir)/AnasaziStatusTestMaxIters.hpp \
+	$(srcdir)/AnasaziStatusTestOrderedResNorm.hpp \
+	$(srcdir)/AnasaziStatusTestOutput.hpp \
+	$(srcdir)/AnasaziStatusTestResNorm.hpp \
+	$(srcdir)/AnasaziSVQBOrthoManager.hpp \
+	$(srcdir)/AnasaziTypes.hpp
 
 CORE = \
 	$(srcdir)/AnasaziEpetraAdapter.cpp \
@@ -374,7 +388,11 @@ DIST =
 COMP_H = \
 	$(srcdir)/AnasaziBlockDavidson.hpp \
 	$(srcdir)/AnasaziBlockKrylovSchur.hpp \
-	$(srcdir)/AnasaziLOBPCG.hpp
+	$(srcdir)/AnasaziLOBPCG.hpp \
+	$(srcdir)/AnasaziBlockDavidsonSolMgr.hpp \
+	$(srcdir)/AnasaziBlockKrylovSchurSolMgr.hpp \
+	$(srcdir)/AnasaziLOBPCGSolMgr.hpp \
+	$(srcdir)/AnasaziSimpleLOBPCGSolMgr.hpp
 
 COMP = 
 @USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(ANASAZI_INCLUDES)

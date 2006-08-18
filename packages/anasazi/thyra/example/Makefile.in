@@ -271,8 +271,7 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 
 #SUBDIRS = BlockDavidson BlockKrylovSchur LOBPCG MVOPTester
-DISABLED = MVOPTester
-SUBDIRS = 
+SUBDIRS = MVOPTester
 all: all-recursive
 
 .SUFFIXES:

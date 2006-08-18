@@ -172,7 +172,6 @@ int main(int argc, char *argv[])
 
   // Get the eigenvalues and eigenvectors from the eigenproblem
   Anasazi::Eigensolution<ScalarType,MV> sol = problem->getSolution();
-  std::vector<MagnitudeType> evals = sol.Evals;
   RefCountPtr<MV> evecs = sol.Evecs;
   int numev = sol.numVecs;
 
@@ -189,7 +188,7 @@ int main(int argc, char *argv[])
     std::vector<ScalarType> normV( numev );
     SerialDenseMatrix<int,ScalarType> T(numev,numev);
     for (int i=0; i<numev; i++) {
-      T(i,i) = evals[i];
+      T(i,i) = sol.Evals[i].realpart;
     }
     RefCountPtr<MV> Mvecs = MVT::Clone( *evecs, numev ),
                     Kvecs = MVT::Clone( *evecs, numev );
@@ -202,7 +201,7 @@ int main(int argc, char *argv[])
   
     for (int i=0; i<numev; i++) {
       normV[i] = SCT::squareroot( normV[i] );
-      if ( SCT::magnitude(normV[i]/evals[i]) > tol ) {
+      if ( SCT::magnitude(normV[i]/sol.Evals[i].realpart) > tol ) {
         testFailed = true;
       }
     }

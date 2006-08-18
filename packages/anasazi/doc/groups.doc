@@ -5,9 +5,6 @@
 
 /*! @defgroup anasazi_opvec_interfaces Anasazi Operator/Vector Interfaces
 
-   \brief This module describes the operator and vector interfaces used in the
-   %Anasazi eigensolver package.
-
    The %Anasazi eigensolver package utilizes abstract interfaces for operators
    and multivectors. The goal of this is to leverage existing linear algebra
    libraries for use in %Anasazi. To this end, the algorithms in %Anasazi are
@@ -83,7 +80,6 @@
  */
 
 /*! @defgroup anasazi_solver_framework Anasazi Eigensolver Framework
-    \brief This module describes the eigensolver/solver manager distinction and the motivation for this division.
 
     %Anasazi is a collection of iterative eigensolvers. In shepherding such a
     %collection, the question arises: when are differences 

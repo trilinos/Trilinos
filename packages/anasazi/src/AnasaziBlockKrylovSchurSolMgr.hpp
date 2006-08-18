@@ -44,6 +44,7 @@
 #include "AnasaziBlockKrylovSchur.hpp"
 #include "AnasaziBasicSort.hpp"
 #include "AnasaziSVQBOrthoManager.hpp"
+#include "AnasaziBasicOrthoManager.hpp"
 #include "AnasaziStatusTestMaxIters.hpp"
 #include "AnasaziStatusTestResNorm.hpp"
 #include "AnasaziStatusTestOrderedResNorm.hpp"
@@ -59,7 +60,7 @@
  * This solver manager implements a hard-locking mechanism, whereby eigenpairs designated to be locked are moved from the eigensolver and placed in
  * auxiliary storage. The eigensolver is then restarted and continues to iterate, always orthogonal to the locked eigenvectors.
 
- \ingroup anasazi_solvermanagers
+ \ingroup anasazi_solver_framework
 
  \author Chris Baker, Ulrich Hetmaniuk, Rich Lehoucq, Heidi Thornquist
  */
@@ -88,15 +89,13 @@ class BlockKrylovSchurSolMgr : public SolverManager<ScalarType,MV,OP> {
    *   - "Which" - a \c string specifying the desired eigenvalues: SM, LM, SR or LR. Default: "LM"
    *   - "Block Size" - a \c int specifying the block size to be used by the underlying block Krylov-Schur solver. Default: 1
    *   - "Num Blocks" - a \c int specifying the number of blocks allocated for the Krylov basis. Default: 3*nev
+   *   - "Extra NEV Blocks" - a \c int specifying the number of extra blocks the solver should keep in addition to those
+   *   -  required to compute the number of eigenvalues requested.  Default: 0
    *   - "Maximum Restarts" - a \c int specifying the maximum number of restarts the underlying solver is allowed to perform. Default: 20
+   *   - "Orthogonalization" - a \c string specifying the desired orthogonalization:  DGKS and SVQB. Default: "SVQB"
    *   - "Verbosity" - a sum of MsgType specifying the verbosity. Default: Anasazi::Errors
    *   - "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide convergence. Default: machine precision.
    *   - "Relative Convergence Tolerance" - a \c bool specifying whether residuals norms should be scaled by their eigenvalues for the purposing of deciding convergence. Default: true
-   *   - "Use Locking" - a \c bool specifying whether the algorithm should employ locking of converged eigenpairs. Default: false
-   *   - "Max Locked" - a \c int specifying the maximum number of eigenpairs to be locked. Default: problem->getNEV()
-   *   - "Locking Quorum" - a \c int specifying the number of eigenpairs that must meet the locking criteria before locking actually occurs. Default: 1
-   *   - "Locking Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide locking. Default: 0.1*convergence tolerance
-   *   - "Relative Locking Tolerance" - a \c bool specifying whether residuals norms should be scaled by their eigenvalues for the purposing of deciding locking. Default: true
    */
   BlockKrylovSchurSolMgr( const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem,
                              Teuchos::ParameterList &pl );
@@ -110,6 +109,13 @@ class BlockKrylovSchurSolMgr : public SolverManager<ScalarType,MV,OP> {
 
   Eigenproblem<ScalarType,MV,OP>& getProblem() const {
     return *_problem;
+  }
+
+  /*! \brief Return the Ritz values from the most recent solve.
+   */
+  std::vector<Value<ScalarType> > getRitzValues() const {
+    std::vector<Value<ScalarType> > ret( _ritzValues );
+    return ret;
   }
 
   //@}
@@ -147,13 +153,15 @@ class BlockKrylovSchurSolMgr : public SolverManager<ScalarType,MV,OP> {
   Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > _problem;
   Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > _sort;
 
-  string _whch; 
+  string _whch, _ortho; 
 
   MagnitudeType _convtol;
   int _maxRestarts;
   bool _relconvtol,_conjSplit;
-  int _blockSize, _numBlocks, _stepSize, _nevBlocks;
+  int _blockSize, _numBlocks, _stepSize, _nevBlocks, _xtra_nevBlocks;
   int _verbosity;
+
+  std::vector<Value<ScalarType> > _ritzValues;
 };
 
 
@@ -164,6 +172,7 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::BlockKrylovSchurSolMgr(
         Teuchos::ParameterList &pl ) : 
   _problem(problem),
   _whch("LM"),
+  _ortho("SVQB"),
   _convtol(0),
   _maxRestarts(20),
   _relconvtol(true),
@@ -172,6 +181,7 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::BlockKrylovSchurSolMgr(
   _numBlocks(0),
   _stepSize(0),
   _nevBlocks(0),
+  _xtra_nevBlocks(0),
   _verbosity(Anasazi::Errors)
 {
   TEST_FOR_EXCEPTION(_problem == Teuchos::null,               std::invalid_argument, "Problem not given to solver manager.");
@@ -179,12 +189,6 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::BlockKrylovSchurSolMgr(
   TEST_FOR_EXCEPTION(_problem->getInitVec() == Teuchos::null, std::invalid_argument, "Problem does not contain initial vectors to clone from.");
 
   const int nev = _problem->getNEV();
-
-  // which values to solve for
-  _whch = pl.get("Which",_whch);
-  if (_whch != "SM" && _whch != "LM" && _whch != "SR" && _whch != "LR") {
-    _whch = "LM";
-  }
 
   // convergence tolerance
   _convtol = pl.get("Convergence Tolerance",MT::prec());
@@ -197,31 +201,48 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::BlockKrylovSchurSolMgr(
   _blockSize = pl.get("Block Size",1);
   TEST_FOR_EXCEPTION(_blockSize <= 0, std::invalid_argument,
                      "Anasazi::BlockKrylovSchurSolMgr: \"Block Size\" must be strictly positive.");
-  _numBlocks = pl.get("Num Blocks",3*nev);
-  TEST_FOR_EXCEPTION(_numBlocks < 2, std::invalid_argument,
-                     "Anasazi::BlockKrylovSchurSolMgr: \"Num Blocks\" must be strictly positive.");
+
+  // set the number of blocks we need to save to compute the nev eigenvalues of interest.
+  _xtra_nevBlocks = pl.get("Extra NEV Blocks",0);
+  if (nev%_blockSize) {
+    _nevBlocks = nev/_blockSize + _xtra_nevBlocks + 1;
+  } else {
+    _nevBlocks = nev/_blockSize + _xtra_nevBlocks;
+  }
+
+  _numBlocks = pl.get("Num Blocks",3*_nevBlocks);
+  TEST_FOR_EXCEPTION(_numBlocks <= _nevBlocks, std::invalid_argument,
+                     "Anasazi::BlockKrylovSchurSolMgr: \"Num Blocks\" must be strictly positive and large enough to compute the requested eigenvalues.");
 
   TEST_FOR_EXCEPTION(_numBlocks*_blockSize > MVT::GetVecLength(*_problem->getInitVec()),
                      std::invalid_argument,
                      "Anasazi::BlockKrylovSchurSolMgr: Potentially impossible orthogonality requests. Reduce basis size.");
-
+  
   // step size: the default is _maxRestarts*_numBlocks, so that Ritz values are only computed every restart.
-  _stepSize = pl.get("Step Size", _maxRestarts*_numBlocks);
+  if (_maxRestarts) {
+    _stepSize = pl.get("Step Size", (_maxRestarts+1)*(_numBlocks+1));
+  } else {
+    _stepSize = pl.get("Step Size", _numBlocks+1);
+  }
   TEST_FOR_EXCEPTION(_stepSize < 1, std::invalid_argument,
                      "Anasazi::BlockKrylovSchurSolMgr: \"Step Size\" must be strictly positive.");
 
-  // set the number of blocks we need to save to compute the nev eigenvalues of interest.
-  if (nev%_blockSize) {
-    _nevBlocks = nev/_blockSize + 1;
-  } else {
-    _nevBlocks = nev/_blockSize;
-  }
-
   // get the sort manager
   if (pl.isParameter("Sort Manager")) {
-    _sort = pl.get<Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > >("Sort Manager");
+    _sort = Teuchos::getParameter<Teuchos::RefCountPtr<Anasazi::SortManager<ScalarType,MV,OP> > >(pl,"Sort Manager");
   } else {
+    // which values to solve for
+    _whch = pl.get("Which",_whch);
+    if (_whch != "SM" && _whch != "LM" && _whch != "SR" && _whch != "LR" && _whch != "SI" && _whch != "LI") {
+      _whch = "LM";
+    }
     _sort = Teuchos::rcp( new BasicSort<ScalarType,MV,OP>(_whch) );
+  }
+
+  // which orthogonalization to use
+  _ortho = pl.get("Orthogonalization",_ortho);
+  if (_ortho != "DGKS" && _ortho != "SVQB") {
+    _ortho = "SVQB";
   }
 
   // verbosity level
@@ -254,13 +275,20 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
 
   // printing StatusTest
   Teuchos::RefCountPtr<StatusTestOutput<ScalarType,MV,OP> > outputtest
-    = Teuchos::rcp( new StatusTestOutput<ScalarType,MV,OP>( printer,convtest,1,Passed+Failed+Undefined ) );
+    = Teuchos::rcp( new StatusTestOutput<ScalarType,MV,OP>( printer,convtest,1,Passed ) );
 
   //////////////////////////////////////////////////////////////////////////////////////
   // Orthomanager
-  Teuchos::RefCountPtr<SVQBOrthoManager<ScalarType,MV,OP> > ortho 
-    = Teuchos::rcp( new SVQBOrthoManager<ScalarType,MV,OP>(_problem->getM()) );
-
+  //
+  Teuchos::RefCountPtr<OrthoManager<ScalarType,MV> > ortho; 
+  if (_ortho=="SVQB") {
+    ortho = Teuchos::rcp( new SVQBOrthoManager<ScalarType,MV,OP>(_problem->getM()) );
+  } else if (_ortho=="DGKS") {
+    ortho = Teuchos::rcp( new BasicOrthoManager<ScalarType,MV,OP>(_problem->getM()) );
+  } else {
+    TEST_FOR_EXCEPTION(_ortho!="SVQB"&&_ortho!="DGKS",std::logic_error,"Anasazi::BlockKrylovSchurSolMgr::solve(): Invalid orthogonalization type.");
+  }
+  
   // utils
   ModalSolverUtils<ScalarType,MV,OP> msutils(printer);
 
@@ -270,6 +298,7 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
   plist.set("Block Size",_blockSize);
   plist.set("Num Blocks",_numBlocks);
   plist.set("Step Size",_stepSize);
+  plist.set("Print Number of Ritz Values",_nevBlocks*_blockSize);
 
   //////////////////////////////////////////////////////////////////////////////////////
   // BlockKrylovSchur solver
@@ -287,12 +316,13 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
   _problem->setSolution(sol);
 
   int numRestarts = 0;
+  int cur_nevBlocks = 0;
 
   // tell bks_solver to iterate
   while (1) {
     try {
       bks_solver->iterate();
-
+  
       // check convergence first
       if (convtest->getStatus() == Passed ) {
         // we have convergence
@@ -301,7 +331,14 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
         break;
       }
       // check for restarting:  this is for the Hermitian case, or non-Hermitian conjugate split situation.
-      else if ( bks_solver->getCurSubspaceDim() == bks_solver->getMaxSubspaceDim() ) {
+      // --> for the Hermitian case the current subspace dimension needs to match the maximum subspace dimension
+      // --> for the non-Hermitican case:
+      //     --> if a conjugate pair was detected in the previous restart then the current subspace dimension needs to match the
+      //         maximum subspace dimension (the BKS solver keeps one extra vector if the problem is non-Hermitian).
+      //     --> if a conjugate pair was not detected in the previous restart then the current subspace dimension will be one less
+      //         than the maximum subspace dimension.
+      else if ( (bks_solver->getCurSubspaceDim() == bks_solver->getMaxSubspaceDim()) ||
+		(!_problem->isHermitian() && !_conjSplit && (bks_solver->getCurSubspaceDim()+1 == bks_solver->getMaxSubspaceDim())) ) {
 
         if ( numRestarts >= _maxRestarts ) {
           break; // break from while(1){bks_solver->iterate()}
@@ -313,15 +350,18 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
 	// Update the Schur form of the projected eigenproblem, then sort it.
 	if (!bks_solver->isSchurCurrent())
 	  bks_solver->computeSchurForm( true );
+	
+	// Get the most current Ritz values before we continue.
+	_ritzValues = bks_solver->getRitzValues();
 
+	// Get the state.
 	BlockKrylovSchurState<ScalarType,MV> oldState = bks_solver->getState();
-
+	
 	// Get the current dimension of the factorization
 	int curDim = oldState.curDim;
 
 	// Determine if the storage for the nev eigenvalues of interest splits a complex conjugate pair.
 	std::vector<int> ritzIndex = bks_solver->getRitzIndex();
-	int cur_nevBlocks;
 	if (ritzIndex[_nevBlocks*_blockSize-1]==1) {
 	  _conjSplit = true;
 	  cur_nevBlocks = _nevBlocks*_blockSize+1;
@@ -377,7 +417,7 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
 	// Compute the new B block.
 	blas.GEMM( Teuchos::NO_TRANS, Teuchos::NO_TRANS, _blockSize, cur_nevBlocks, _blockSize, one, 
 		   oldB.values(), oldB.stride(), subQ.values(), subQ.stride(), zero, newB.values(), newB.stride() );
-	
+ 
 	// Set the new state and initialize the solver.
         BlockKrylovSchurState<ScalarType,MV> newstate;
         newstate.V = newV;
@@ -397,6 +437,9 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
     }
   }
 
+  // Get the most current Ritz values before we return
+  _ritzValues = bks_solver->getRitzValues();
+  
   sol.numVecs = convtest->howMany();
   if (sol.numVecs > 0) {
     sol.index = bks_solver->getRitzIndex();

@@ -89,7 +89,7 @@ namespace Anasazi {
 
     /*! \brief Provides the inner product defining the orthogonality concepts, using the provided operator.
      */
-    virtual void innerProd( const MV& X, const MV& Y, 
+    void innerProd( const MV& X, const MV& Y, 
                                   Teuchos::SerialDenseMatrix<int,ScalarType>& Z ) const {
       typedef Teuchos::ScalarTraits<ScalarType> SCT;
       typedef MultiVecTraits<ScalarType,MV>     MVT;
@@ -125,7 +125,7 @@ namespace Anasazi {
      *  The method has the option of
      *  exploiting a caller-provided \c MX, and returning updated information to the caller.
      */
-    virtual void innerProd( const MV& X, const MV& Y, Teuchos::RefCountPtr<const MV> MY, 
+    void innerProd( const MV& X, const MV& Y, Teuchos::RefCountPtr<const MV> MY, 
                             Teuchos::SerialDenseMatrix<int,ScalarType>& Z ) const {
       typedef Teuchos::ScalarTraits<ScalarType> SCT;
       typedef MultiVecTraits<ScalarType,MV>     MVT;
@@ -148,13 +148,13 @@ namespace Anasazi {
 
     /*! \brief Provides the norm induced by innerProd().
      */
-    virtual void norm( const MV& X, std::vector< typename Teuchos::ScalarTraits<ScalarType>::magnitudeType > * normvec ) const {
+    void norm( const MV& X, std::vector< typename Teuchos::ScalarTraits<ScalarType>::magnitudeType > * normvec ) const {
       norm(X,Teuchos::null,normvec);
     }
 
     /*! \brief Provides the norm induced by innerProd().
      */
-    virtual void norm( const MV& X, Teuchos::RefCountPtr<const MV> MX, std::vector< typename Teuchos::ScalarTraits<ScalarType>::magnitudeType > * normvec ) const {
+    void norm( const MV& X, Teuchos::RefCountPtr<const MV> MX, std::vector< typename Teuchos::ScalarTraits<ScalarType>::magnitudeType > * normvec ) const {
 
       typedef Teuchos::ScalarTraits<ScalarType> SCT;
       typedef MultiVecTraits<ScalarType,MV>     MVT;

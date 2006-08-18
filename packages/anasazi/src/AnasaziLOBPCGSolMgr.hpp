@@ -62,7 +62,7 @@
  *
  * These options are all driven by a list of parameters handed to the solver manager at construction. For more information, see Anasazi::LOBPCGSolMgr::LOBPCGSolMgr().
 
- \ingroup anasazi_solvermanagers
+ \ingroup anasazi_solver_framework
 
  \author Chris Baker, Ulrich Hetmaniuk, Rich Lehoucq, Heidi Thornquist
  */
@@ -114,7 +114,7 @@ class LOBPCGSolMgr : public SolverManager<ScalarType,MV,OP> {
   //@{ 
 
   Eigenproblem<ScalarType,MV,OP>& getProblem() const {
-    return *_problem;
+    return *problem_;
   }
 
   //@}
@@ -152,20 +152,20 @@ class LOBPCGSolMgr : public SolverManager<ScalarType,MV,OP> {
   //@}
 
   private:
-  Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > _problem;
+  Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > problem_;
 
-  string _whch; 
+  string whch_; 
 
-  MagnitudeType _convtol, _locktol;
-  int _maxIters;
-  bool _useLocking;
-  bool _relconvtol, _rellocktol;
-  int _blockSize;
-  bool _fullOrtho;
-  int _maxLocked;
-  int _verbosity;
-  int _lockQuorum;
-  bool _recover;
+  MagnitudeType convtol_, locktol_;
+  int maxIters_;
+  bool useLocking_;
+  bool relconvtol_, rellocktol_;
+  int blockSize_;
+  bool fullOrtho_;
+  int maxLocked_;
+  int verbosity_;
+  int lockQuorum_;
+  bool recover_;
 };
 
 
@@ -174,79 +174,79 @@ template<class ScalarType, class MV, class OP>
 LOBPCGSolMgr<ScalarType,MV,OP>::LOBPCGSolMgr( 
         const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem,
         Teuchos::ParameterList &pl ) : 
-  _problem(problem),
-  _whch("SR"),
-  _convtol(MT::prec()),
-  _locktol(MT::prec()/10),
-  _maxIters(100),
-  _useLocking(false),
-  _relconvtol(true),
-  _rellocktol(true),
-  _blockSize(0),
-  _fullOrtho(true),
-  _maxLocked(0),
-  _verbosity(Anasazi::Errors),
-  _lockQuorum(1),
-  _recover(true)
+  problem_(problem),
+  whch_("SR"),
+  convtol_(MT::prec()),
+  locktol_(MT::prec()/10),
+  maxIters_(100),
+  useLocking_(false),
+  relconvtol_(true),
+  rellocktol_(true),
+  blockSize_(0),
+  fullOrtho_(true),
+  maxLocked_(0),
+  verbosity_(Anasazi::Errors),
+  lockQuorum_(1),
+  recover_(true)
 {
-  TEST_FOR_EXCEPTION(_problem == Teuchos::null,              std::invalid_argument, "Problem not given to solver manager.");
-  TEST_FOR_EXCEPTION(!_problem->isProblemSet(),              std::invalid_argument, "Problem not set.");
-  TEST_FOR_EXCEPTION(!_problem->isHermitian(),               std::invalid_argument, "Problem not symmetric.");
-  TEST_FOR_EXCEPTION(_problem->getInitVec() == Teuchos::null,std::invalid_argument, "Problem does not contain initial vectors to clone from.");
+  TEST_FOR_EXCEPTION(problem_ == Teuchos::null,              std::invalid_argument, "Problem not given to solver manager.");
+  TEST_FOR_EXCEPTION(!problem_->isProblemSet(),              std::invalid_argument, "Problem not set.");
+  TEST_FOR_EXCEPTION(!problem_->isHermitian(),               std::invalid_argument, "Problem not symmetric.");
+  TEST_FOR_EXCEPTION(problem_->getInitVec() == Teuchos::null,std::invalid_argument, "Problem does not contain initial vectors to clone from.");
 
 
   // which values to solve for
-  _whch = pl.get("Which",_whch);
-  TEST_FOR_EXCEPTION(_whch != "SM" && _whch != "LM" && _whch != "SR" && _whch != "LR",std::invalid_argument, "Invalid sorting string.");
+  whch_ = pl.get("Which",whch_);
+  TEST_FOR_EXCEPTION(whch_ != "SM" && whch_ != "LM" && whch_ != "SR" && whch_ != "LR",std::invalid_argument, "Invalid sorting string.");
 
   // convergence tolerance
-  _convtol = pl.get("Convergence Tolerance",_convtol);
-  _relconvtol = pl.get("Relative Convergence Tolerance",_relconvtol);
+  convtol_ = pl.get("Convergence Tolerance",convtol_);
+  relconvtol_ = pl.get("Relative Convergence Tolerance",relconvtol_);
   
   // locking tolerance
-  _useLocking = pl.get("Use Locking",_useLocking);
-  _rellocktol = pl.get("Relative Locking Tolerance",_rellocktol);
-  _locktol = pl.get("Locking Tolerance",_locktol);
+  useLocking_ = pl.get("Use Locking",useLocking_);
+  rellocktol_ = pl.get("Relative Locking Tolerance",rellocktol_);
+  locktol_ = pl.get("Locking Tolerance",locktol_);
 
   // maximum number of iterations
-  _maxIters = pl.get("Maximum Iterations",_maxIters);
+  maxIters_ = pl.get("Maximum Iterations",maxIters_);
 
   // block size: default is nev()
-  _blockSize = pl.get("Block Size",_problem->getNEV());
-  TEST_FOR_EXCEPTION(_blockSize <= 0, std::invalid_argument,
+  blockSize_ = pl.get("Block Size",problem_->getNEV());
+  TEST_FOR_EXCEPTION(blockSize_ <= 0, std::invalid_argument,
                      "Anasazi::LOBPCGSolMgr: \"Block Size\" must be strictly positive.");
 
-  // max locked: default is nev(), must satisfy _maxLocked + _blockSize >= nev
-  if (_useLocking) {
-    _maxLocked = pl.get("Max Locked",_problem->getNEV());
+  // max locked: default is nev(), must satisfy maxLocked_ + blockSize_ >= nev
+  if (useLocking_) {
+    maxLocked_ = pl.get("Max Locked",problem_->getNEV());
   }
   else {
-    _maxLocked = 0;
+    maxLocked_ = 0;
   }
-  if (_maxLocked == 0) {
-    _useLocking = false;
+  if (maxLocked_ == 0) {
+    useLocking_ = false;
   }
-  TEST_FOR_EXCEPTION(_maxLocked < 0, std::invalid_argument,
+  TEST_FOR_EXCEPTION(maxLocked_ < 0, std::invalid_argument,
                      "Anasazi::LOBPCGSolMgr: \"Max Locked\" must be positive.");
-  TEST_FOR_EXCEPTION(_maxLocked + _blockSize < _problem->getNEV(), 
+  TEST_FOR_EXCEPTION(maxLocked_ + blockSize_ < problem_->getNEV(), 
                      std::invalid_argument,
                      "Anasazi::LOBPCGSolMgr: Not enough storage space for requested number of eigenpairs.");
 
-  if (_useLocking) {
-    _lockQuorum = pl.get("Locking Quorum",_lockQuorum);
-    TEST_FOR_EXCEPTION(_lockQuorum <= 0,
+  if (useLocking_) {
+    lockQuorum_ = pl.get("Locking Quorum",lockQuorum_);
+    TEST_FOR_EXCEPTION(lockQuorum_ <= 0,
                        std::invalid_argument,
                        "Anasazi::LOBPCGSolMgr: \"Locking Quorum\" must be strictly positive.");
   }
 
   // full orthogonalization: default true
-  _fullOrtho = pl.get("Full Ortho",_fullOrtho);
+  fullOrtho_ = pl.get("Full Ortho",fullOrtho_);
 
   // verbosity level
-  _verbosity = pl.get("Verbosity", _verbosity);
+  verbosity_ = pl.get("Verbosity", verbosity_);
 
   // recover from LOBPCGRitzFailure
-  _recover = pl.get("Recover",_recover);
+  recover_ = pl.get("Recover",recover_);
 }
 
 
@@ -255,33 +255,33 @@ template<class ScalarType, class MV, class OP>
 ReturnType 
 LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
 
-  const int nev = _problem->getNEV();
+  const int nev = problem_->getNEV();
 
 
 
   //////////////////////////////////////////////////////////////////////////////////////
   // Sort manager
-  Teuchos::RefCountPtr<BasicSort<ScalarType,MV,OP> > sorter = Teuchos::rcp( new BasicSort<ScalarType,MV,OP>(_whch) );
+  Teuchos::RefCountPtr<BasicSort<ScalarType,MV,OP> > sorter = Teuchos::rcp( new BasicSort<ScalarType,MV,OP>(whch_) );
 
   //////////////////////////////////////////////////////////////////////////////////////
   // Output manager
-  Teuchos::RefCountPtr<BasicOutputManager<ScalarType> > printer = Teuchos::rcp( new BasicOutputManager<ScalarType>(_verbosity) );
+  Teuchos::RefCountPtr<BasicOutputManager<ScalarType> > printer = Teuchos::rcp( new BasicOutputManager<ScalarType>(verbosity_) );
 
   //////////////////////////////////////////////////////////////////////////////////////
   // Status tests
   //
   // maximum number of iterations: optional test
   Teuchos::RefCountPtr<StatusTestMaxIters<ScalarType,MV,OP> > maxtest;
-  if (_maxIters > 0) {
-    maxtest = Teuchos::rcp( new StatusTestMaxIters<ScalarType,MV,OP>(_maxIters) );
+  if (maxIters_ > 0) {
+    maxtest = Teuchos::rcp( new StatusTestMaxIters<ScalarType,MV,OP>(maxIters_) );
   }
   // convergence
   Teuchos::RefCountPtr<StatusTestOrderedResNorm<ScalarType,MV,OP> > convtest 
-      = Teuchos::rcp( new StatusTestOrderedResNorm<ScalarType,MV,OP>(sorter,_convtol,nev,StatusTestOrderedResNorm<ScalarType,MV,OP>::RES_ORTH,_relconvtol) );
+      = Teuchos::rcp( new StatusTestOrderedResNorm<ScalarType,MV,OP>(sorter,convtol_,nev,StatusTestOrderedResNorm<ScalarType,MV,OP>::RES_ORTH,relconvtol_) );
   // locking
   Teuchos::RefCountPtr<StatusTestResNorm<ScalarType,MV,OP> > locktest;
-  if (_useLocking) {
-    locktest = Teuchos::rcp( new StatusTestResNorm<ScalarType,MV,OP>(_locktol,_lockQuorum,StatusTestResNorm<ScalarType,MV,OP>::RES_ORTH,_rellocktol) );
+  if (useLocking_) {
+    locktest = Teuchos::rcp( new StatusTestResNorm<ScalarType,MV,OP>(locktol_,lockQuorum_,StatusTestResNorm<ScalarType,MV,OP>::RES_ORTH,rellocktol_) );
   }
   Teuchos::Array<Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > > alltests;
   // for an OR test, the order doesn't matter
@@ -298,13 +298,13 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
   //////////////////////////////////////////////////////////////////////////////////////
   // Orthomanager
   Teuchos::RefCountPtr<SVQBOrthoManager<ScalarType,MV,OP> > ortho 
-    = Teuchos::rcp( new SVQBOrthoManager<ScalarType,MV,OP>(_problem->getM()) );
+    = Teuchos::rcp( new SVQBOrthoManager<ScalarType,MV,OP>(problem_->getM()) );
 
   //////////////////////////////////////////////////////////////////////////////////////
   // Parameter list
   Teuchos::ParameterList plist;
-  plist.set("Block Size",_blockSize);
-  plist.set("Full Ortho",_fullOrtho);
+  plist.set("Block Size",blockSize_);
+  plist.set("Full Ortho",fullOrtho_);
 
   // utils
   ModalSolverUtils<ScalarType,MV,OP> msutils(printer);
@@ -312,9 +312,9 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
   //////////////////////////////////////////////////////////////////////////////////////
   // LOBPCG solver
   Teuchos::RefCountPtr<LOBPCG<ScalarType,MV,OP> > lobpcg_solver 
-    = Teuchos::rcp( new LOBPCG<ScalarType,MV,OP>(_problem,sorter,printer,outputtest,ortho,plist) );
+    = Teuchos::rcp( new LOBPCG<ScalarType,MV,OP>(problem_,sorter,printer,outputtest,ortho,plist) );
   // set any auxiliary vectors defined in the problem
-  Teuchos::RefCountPtr< const MV > probauxvecs = _problem->getAuxVecs();
+  Teuchos::RefCountPtr< const MV > probauxvecs = problem_->getAuxVecs();
   if (probauxvecs != Teuchos::null) {
     lobpcg_solver->setAuxVecs( Teuchos::tuple< Teuchos::RefCountPtr<const MV> >(probauxvecs) );
   }
@@ -325,8 +325,8 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
   // lockvecs will contain eigenvectors that have been determined "locked" by the status test
   int numlocked = 0;
   Teuchos::RefCountPtr<MV> lockvecs;
-  if (_useLocking) {
-    lockvecs = MVT::Clone(*_problem->getInitVec(),_maxLocked);
+  if (useLocking_) {
+    lockvecs = MVT::Clone(*problem_->getInitVec(),maxLocked_);
   }
   std::vector<MagnitudeType> lockvals;
   // workMV will be used as work space for LOBPCGRitzFailure recovery and locking
@@ -338,22 +338,22 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
   // workMV = [X P MX MP], with MX,MP needing storage only if hasM==true
   // total size: 2*blocksize or 4*blocksize
   Teuchos::RefCountPtr<MV> workMV;
-  if (_fullOrtho == false && _recover == true) {
-    workMV = MVT::Clone(*_problem->getInitVec(),2*3*_blockSize);
+  if (fullOrtho_ == false && recover_ == true) {
+    workMV = MVT::Clone(*problem_->getInitVec(),2*3*blockSize_);
   }
-  else if (_useLocking) {
-    if (_problem->getM() != Teuchos::null) {
-      workMV = MVT::Clone(*_problem->getInitVec(),4*_blockSize);
+  else if (useLocking_) {
+    if (problem_->getM() != Teuchos::null) {
+      workMV = MVT::Clone(*problem_->getInitVec(),4*blockSize_);
     }
     else {
-      workMV = MVT::Clone(*_problem->getInitVec(),2*_blockSize);
+      workMV = MVT::Clone(*problem_->getInitVec(),2*blockSize_);
     }
   }
 
   // go ahead and initialize the solution to nothing in case we throw an exception
   Eigensolution<ScalarType,MV> sol;
   sol.numVecs = 0;
-  _problem->setSolution(sol);
+  problem_->setSolution(sol);
 
   // tell the lobpcg_solver to iterate
   while (1) {
@@ -376,9 +376,9 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
         // get the indices
         std::vector<int> indnew = locktest->whichVecs();
 
-        // don't lock more than _maxLocked; we didn't allocate enough space.
-        if (numlocked + numnew > _maxLocked) {
-          numnew = _maxLocked - numlocked;
+        // don't lock more than maxLocked_; we didn't allocate enough space.
+        if (numlocked + numnew > maxLocked_) {
+          numnew = maxLocked_ - numlocked;
           indnew.resize(numnew);
         }
 
@@ -395,9 +395,9 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
           // get the vectors
           newvecs = MVT::CloneView(*lobpcg_solver->getRitzVectors(),indnew);
           // get the values
-          std::vector<MagnitudeType> allvals = lobpcg_solver->getRitzValues();
+          std::vector<Value<ScalarType> > allvals = lobpcg_solver->getRitzValues();
           for (int i=0; i<numnew; i++) {
-            newvals[i] = allvals[indnew[i]];
+            newvals[i] = allvals[indnew[i]].realpart;
           }
         }
         // put newvecs into lockvecs
@@ -432,14 +432,14 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
           // workMV will be partitioned as follows: workMV = [X P MX MP], 
           //
           // make a copy of the current X,MX state
-          std::vector<int> bsind(_blockSize); 
-          for (int i=0; i<_blockSize; i++) bsind[i] = i;
+          std::vector<int> bsind(blockSize_); 
+          for (int i=0; i<blockSize_; i++) bsind[i] = i;
           newstateX = MVT::CloneView(*workMV,bsind);
           MVT::SetBlock(*state.X,bsind,*newstateX);
 
           if (state.MX != Teuchos::null) {
-            std::vector<int> block3(_blockSize);
-            for (int i=0; i<_blockSize; i++) block3[i] = 2*_blockSize+i;
+            std::vector<int> block3(blockSize_);
+            for (int i=0; i<blockSize_; i++) block3[i] = 2*blockSize_+i;
             newstateMX = MVT::CloneView(*workMV,block3);
             MVT::SetBlock(*state.MX,bsind,*newstateMX);
           }
@@ -451,7 +451,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
 
             if (newstateMX != Teuchos::null) {
               Teuchos::RefCountPtr<MV> newMX = MVT::CloneView(*newstateMX,indnew);
-              OPT::Apply(*_problem->getM(),*newX,*newMX);
+              OPT::Apply(*problem_->getM(),*newX,*newMX);
             }
           }
 
@@ -463,19 +463,19 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
           if (lobpcg_solver->hasP()) {
             //
             // get P and optionally MP, orthogonalize against X and auxiliary vectors
-            std::vector<int> block2(_blockSize);
-            for (int i=0; i<_blockSize; i++) block2[i] = _blockSize+i;
+            std::vector<int> block2(blockSize_);
+            for (int i=0; i<blockSize_; i++) block2[i] = blockSize_+i;
             newstateP = MVT::CloneView(*workMV,block2);
             MVT::SetBlock(*state.P,bsind,*newstateP);
 
             if (state.MP != Teuchos::null) {
-              std::vector<int> block4(_blockSize);
-              for (int i=0; i<_blockSize; i++) block4[i] = 3*_blockSize+i;
+              std::vector<int> block4(blockSize_);
+              for (int i=0; i<blockSize_; i++) block4[i] = 3*blockSize_+i;
               newstateMP = MVT::CloneView(*workMV,block4);
               MVT::SetBlock(*state.MP,bsind,*newstateMP);
             }
 
-            if (_fullOrtho) {
+            if (fullOrtho_) {
               // ortho P against the new aux vectors and new X
               curauxvecs.push_back(newstateX);
               ortho->projectAndNormalize(*newstateP,newstateMP,dummy,Teuchos::null,curauxvecs);
@@ -494,9 +494,9 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
           lobpcg_solver->initialize(newstate);
         }
 
-        if (numlocked == _maxLocked) {
+        if (numlocked == maxLocked_) {
           // disabled locking now
-          locktest->setQuorum(_blockSize+1);
+          locktest->setQuorum(blockSize_+1);
         }
       }
       else {
@@ -504,7 +504,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
       }
     }
     catch (LOBPCGRitzFailure re) {
-      if (_fullOrtho==true || _recover==false) {
+      if (fullOrtho_==true || recover_==false) {
         // if we are already using full orthogonalization, there isn't much we can do here. 
         // the most recent information in the status tests is still valid, and can be used to extract/return the 
         // eigenpairs that have converged.
@@ -518,8 +518,8 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
       // workMV = [X H P OpX OpH OpP], where OpX OpH OpP will be used for K and M
       LOBPCGState<ScalarType,MV> curstate = lobpcg_solver->getState();
       Teuchos::RefCountPtr<MV> restart, Krestart, Mrestart;
-      int localsize = lobpcg_solver->hasP() ? 3*_blockSize : 2*_blockSize;
-      bool hasM = _problem->getM() != Teuchos::null;
+      int localsize = lobpcg_solver->hasP() ? 3*blockSize_ : 2*blockSize_;
+      bool hasM = problem_->getM() != Teuchos::null;
       {
         std::vector<int> recind(localsize);
         for (int i=0; i<localsize; i++) recind[i] = i;
@@ -541,8 +541,8 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
       //
       // put X into [0 , blockSize)
       {
-        std::vector<int> blk1(_blockSize);
-        for (int i=0; i < _blockSize; i++) blk1[i] = i;
+        std::vector<int> blk1(blockSize_);
+        for (int i=0; i < blockSize_; i++) blk1[i] = i;
         MVT::SetBlock(*curstate.X,blk1,*restart);
 
         // put MX into [0 , blockSize)
@@ -551,10 +551,10 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
         }
       }
       //
-      // put H into [_blockSize , 2*blockSize)
+      // put H into [blockSize_ , 2*blockSize)
       {
-        std::vector<int> blk2(_blockSize);
-        for (int i=0; i < _blockSize; i++) blk2[i] = _blockSize+i;
+        std::vector<int> blk2(blockSize_);
+        for (int i=0; i < blockSize_; i++) blk2[i] = blockSize_+i;
         MVT::SetBlock(*curstate.H,blk2,*restart);
 
         // put MX into [0 , blockSize)
@@ -563,9 +563,9 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
         }
       }
       // optionally, put P into [2*blockSize,3*blockSize)
-      if (localsize == 3*_blockSize) {
-        std::vector<int> blk3(_blockSize);
-        for (int i=0; i < _blockSize; i++) blk3[i] = 2*_blockSize+i;
+      if (localsize == 3*blockSize_) {
+        std::vector<int> blk3(blockSize_);
+        for (int i=0; i < blockSize_; i++) blk3[i] = 2*blockSize_+i;
         MVT::SetBlock(*curstate.P,blk3,*restart);
 
         // put MX into [0 , blockSize)
@@ -588,9 +588,9 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
         }
       }
       int rank = ortho->projectAndNormalize(*restart,Mrestart,dummy,Teuchos::null,Q);
-      if (rank < _blockSize) {
+      if (rank < blockSize_) {
         // quit
-        printer->stream(Errors) << "Error! Recovered basis only rank " << rank << ". Block size is " << _blockSize << ".\n"
+        printer->stream(Errors) << "Error! Recovered basis only rank " << rank << ". Block size is " << blockSize_ << ".\n"
                                 << "Recovery failed." << endl;
         break;
       }
@@ -617,15 +617,15 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
       MVT::MvTransMv(1.0,*restart,*Mrestart,MM);
       // 
       // compute Krestart = K*restart
-      OPT::Apply(*_problem->getOperator(),*restart,*Krestart);
+      OPT::Apply(*problem_->getOperator(),*restart,*Krestart);
       //
       // KK = restart^H K restart
       MVT::MvTransMv(1.0,*restart,*Krestart,KK);
       rank = localsize;
       msutils.directSolver(localsize,KK,&MM,&S,&theta,&rank,1);
-      if (rank < _blockSize) {
+      if (rank < blockSize_) {
         printer->stream(Errors) << "Error! Recovered basis of rank " << rank << " produced only " << rank << "ritz vectors.\n"
-                                << "Block size is " << _blockSize << ".\n"
+                                << "Block size is " << blockSize_ << ".\n"
                                 << "Recovery failed." << endl;
         break;
       }
@@ -642,20 +642,20 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
         msutils.permuteVectors(order,curS);
       }
       //
-      Teuchos::SerialDenseMatrix<int,ScalarType> S1(Teuchos::View,S,localsize,_blockSize);
+      Teuchos::SerialDenseMatrix<int,ScalarType> S1(Teuchos::View,S,localsize,blockSize_);
       //
       // compute the ritz vectors: store them in Krestart
       LOBPCGState<ScalarType,MV> newstate;
       Teuchos::RefCountPtr<MV> newX; 
       {
-        std::vector<int> bsind(_blockSize);
-        for (int i=0; i<_blockSize; i++) bsind[i] = i;
+        std::vector<int> bsind(blockSize_);
+        for (int i=0; i<blockSize_; i++) bsind[i] = i;
         newX = MVT::CloneView(*Krestart,bsind);
       }
       MVT::MvTimesMatAddMv(1.0,*restart,S1,0.0,*newX);
       // send X and theta into the solver
       newstate.X = newX;
-      theta.resize(_blockSize);
+      theta.resize(blockSize_);
       newstate.T = Teuchos::rcp( new std::vector<MagnitudeType>(theta) );
       // initialize
       lobpcg_solver->initialize(newstate);
@@ -665,9 +665,10 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
 
   sol.numVecs = convtest->howMany();
   if (sol.numVecs > 0) {
-    sol.Evecs = MVT::Clone(*_problem->getInitVec(),sol.numVecs);
+    sol.Evecs = MVT::Clone(*problem_->getInitVec(),sol.numVecs);
     sol.Espace = sol.Evecs;
     sol.Evals.resize(sol.numVecs);
+    std::vector<MagnitudeType> vals(sol.numVecs);
 
     // copy them into the solution
     std::vector<int> which = convtest->whichVecs();
@@ -676,13 +677,13 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
     // everything has already been ordered by the solver; we just have to partition the two references
     std::vector<int> inlocked(0), insolver(0);
     for (unsigned int i=0; i<which.size(); i++) {
-      if (which[i] < _blockSize) {
+      if (which[i] < blockSize_) {
         insolver.push_back(which[i]);
       }
       else {
         // sanity check
-        TEST_FOR_EXCEPTION(which[i] >= numlocked+_blockSize,std::logic_error,"Anasazi::LOBPCGSolMgr::solve(): indexing mistake.");
-        inlocked.push_back(which[i] - _blockSize);
+        TEST_FOR_EXCEPTION(which[i] >= numlocked+blockSize_,std::logic_error,"Anasazi::LOBPCGSolMgr::solve(): indexing mistake.");
+        inlocked.push_back(which[i] - blockSize_);
       }
     }
 
@@ -697,9 +698,9 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
       Teuchos::RefCountPtr<const MV> v = MVT::CloneView(*lobpcg_solver->getRitzVectors(),insolver);
       MVT::SetBlock(*v,tosol,*sol.Evecs);
       // set vals
-      std::vector<MagnitudeType> fromsolver = lobpcg_solver->getRitzValues();
+      std::vector<Value<ScalarType> > fromsolver = lobpcg_solver->getRitzValues();
       for (unsigned int i=0; i<insolver.size(); i++) {
-        sol.Evals[i] = fromsolver[insolver[i]];
+        vals[i] = fromsolver[insolver[i]].realpart;
       }
     }
 
@@ -714,14 +715,19 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
       MVT::SetBlock(*v,tosol,*sol.Evecs);
       // set vals
       for (unsigned int i=0; i<inlocked.size(); i++) {
-        sol.Evals[i+solnum] = lockvals[inlocked[i]];
+        vals[i+solnum] = lockvals[inlocked[i]];
       }
     }
 
     // sort the eigenvalues and permute the eigenvectors appropriately
     {
       std::vector<int> order(sol.numVecs);
-      sorter->sort( lobpcg_solver.get(), sol.numVecs, sol.Evals, &order );
+      sorter->sort( lobpcg_solver.get(), sol.numVecs, vals, &order );
+      // store the values in the Eigensolution
+      for (int i=0; i<sol.numVecs; i++) {
+        sol.Evals[i].realpart = vals[i];
+        sol.Evals[i].imagpart = MT::zero();
+      }
       // now permute the eigenvectors according to order
       msutils.permuteVectors(sol.numVecs,order,*sol.Evecs);
     }
@@ -736,7 +742,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
   // print timing information
   Teuchos::TimeMonitor::summarize(printer->stream(TimingDetails));
 
-  _problem->setSolution(sol);
+  problem_->setSolution(sol);
   printer->stream(Debug) << "Returning " << sol.numVecs << " eigenpairs to eigenproblem." << endl;
 
   if (sol.numVecs < nev) return Unconverged; // return from LOBPCGSolMgr::solve() 

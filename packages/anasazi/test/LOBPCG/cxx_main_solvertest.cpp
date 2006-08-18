@@ -112,10 +112,10 @@ void checks( RefCountPtr<LOBPCG<ScalarType,MV,OP> > solver, int blocksize, bool 
       Mevecs = MVT::Clone(*evecs,blocksize);
       OPT::Apply(*problem->getM(),*evecs,*Mevecs);
     }
-    vector<MagnitudeType> theta = solver->getRitzValues();
+    vector<Value<ScalarType> > theta = solver->getRitzValues();
     TEST_FOR_EXCEPTION(theta.size() != (unsigned int)solver->getCurSubspaceDim(),get_out,"getRitzValues() has incorrect size.");
     SerialDenseMatrix<int,ScalarType> T(blocksize,blocksize);
-    for (int i=0; i<blocksize; i++) T(i,i) = theta[i];
+    for (int i=0; i<blocksize; i++) T(i,i) = theta[i].realpart;
     // LOBPCG computes residuals like R = K*X - M*X*T 
     MVT::MvTimesMatAddMv(-1.0,*Mevecs,T,1.0,*Kevecs);
     MagnitudeType error = msutils.errorEquality(Kevecs.get(),state.R.get());
@@ -127,7 +127,7 @@ void checks( RefCountPtr<LOBPCG<ScalarType,MV,OP> > solver, int blocksize, bool 
     MagnitudeType ninf = T.normInf();
     OPT::Apply(*problem->getOperator(),*evecs,*Kevecs);
     MVT::MvTransMv(1.0,*evecs,*Kevecs,T);
-    for (int i=0; i<blocksize; i++) T(i,i) -= theta[i];
+    for (int i=0; i<blocksize; i++) T(i,i) -= theta[i].realpart;
     error = T.normFrobenius() / ninf;
     TEST_FOR_EXCEPTION(error > 1e-14,get_out,"Ritz values don't match eigenvectors.");
 
@@ -169,10 +169,10 @@ void testsolver( RefCountPtr<BasicEigenproblem<ScalarType,MV,OP> > problem,
 
   // initialize solver and perform checks
   solver->initialize();
-  std::vector<MagnitudeType> vals1 = solver->getRitzValues();
+  std::vector<Value<ScalarType> > vals1 = solver->getRitzValues();
   vals1.resize(blocksize);
   MagnitudeType sum1 = 0.0;
-  for (int i=0; i<blocksize; i++) sum1 += vals1[i];
+  for (int i=0; i<blocksize; i++) sum1 += vals1[i].realpart;
   TEST_FOR_EXCEPTION(solver->isInitialized() != true,get_out,"Solver should be initialized after call to initialize().");  
   TEST_FOR_EXCEPTION(solver->getNumIters() != 0,get_out,"Number of iterations should be zero.")
   TEST_FOR_EXCEPTION(solver->hasP() != false,get_out,"Solver should not have valid P.");
@@ -182,10 +182,10 @@ void testsolver( RefCountPtr<BasicEigenproblem<ScalarType,MV,OP> > problem,
 
   // call iterate(); solver should perform exactly one iteration and return; status test should be passed
   solver->iterate();
-  std::vector<MagnitudeType> vals2 = solver->getRitzValues();
+  std::vector<Value<ScalarType> > vals2 = solver->getRitzValues();
   vals2.resize(blocksize);
   MagnitudeType sum2 = 0.0;
-  for (int i=0; i<blocksize; i++) sum2 += vals2[i];
+  for (int i=0; i<blocksize; i++) sum2 += vals2[i].realpart;
   TEST_FOR_EXCEPTION(tester->getStatus() != Passed,get_out,"Solver returned from iterate() but getStatus() not Passed.");
   TEST_FOR_EXCEPTION(sum2 < sum1,get_out,"LOBPCG set to ascent method; sum of eigenvalues should increase.");
   TEST_FOR_EXCEPTION(solver->isInitialized() != true,get_out,"Solver should be initialized after call to initialize().");  
@@ -199,10 +199,10 @@ void testsolver( RefCountPtr<BasicEigenproblem<ScalarType,MV,OP> > problem,
   solver->resetNumIters();
   TEST_FOR_EXCEPTION(solver->getNumIters() != 0,get_out,"Number of iterations should be zero after resetNumIters().")
   solver->iterate();
-  std::vector<MagnitudeType> vals3 = solver->getRitzValues();
+  std::vector<Value<ScalarType> > vals3 = solver->getRitzValues();
   vals3.resize(blocksize);
   MagnitudeType sum3 = 0.0;
-  for (int i=0; i<blocksize; i++) sum3 += vals3[i];
+  for (int i=0; i<blocksize; i++) sum3 += vals3[i].realpart;
   TEST_FOR_EXCEPTION(tester->getStatus() != Passed,get_out,"Solver returned from iterate() but getStatus() not Passed.");
   TEST_FOR_EXCEPTION(sum3 < sum2,get_out,"LOBPCG set to ascent method; sum of eigenvalues should increase.");
   TEST_FOR_EXCEPTION(solver->isInitialized() != true,get_out,"Solver should be initialized after call to initialize().");  

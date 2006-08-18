@@ -91,7 +91,7 @@ void checks( RefCountPtr<BlockKrylovSchur<ScalarType,MV,OP> > solver, int blocks
     // check Ritz values
     solver->computeRitzValues();
     
-    std::vector<MagnitudeType> ritzValues = solver->getRitzValues();
+    std::vector<Anasazi::Value<ScalarType> > ritzValues = solver->getRitzValues();
     
     // check Ritz residuals
     std::vector<MagnitudeType> ritzResids = solver->getRitzRes2Norms();
@@ -113,7 +113,7 @@ void checks( RefCountPtr<BlockKrylovSchur<ScalarType,MV,OP> > solver, int blocks
       // Compute Ritz residuals like R = OP*X - X*T 
       Teuchos::SerialDenseMatrix<int,ScalarType> T(numRitzVecs,numRitzVecs);
       Teuchos::RefCountPtr<MV> ritzResiduals = MVT::Clone( *ritzVectors, numRitzVecs );
-      for (int i=0; i<T.numRows(); i++) T(i,i) = ritzValues[i];
+      for (int i=0; i<T.numRows(); i++) T(i,i) = ritzValues[i].realpart;
       OPT::Apply( *(problem->getOperator()), *ritzVectors, *ritzResiduals );
       MVT::MvTimesMatAddMv(-1.0,*ritzVectors,T,1.0,*ritzResiduals);
       
@@ -213,9 +213,11 @@ int main(int argc, char *argv[])
 
   bool testFailed;
   bool verbose = false;
+  bool debug = false;
 
   CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+  cmdp.setOption("debug","non-debug",&debug,"Print debugging output from iteration.");
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
 #ifdef HAVE_MPI
     MPI_Finalize();
@@ -224,10 +226,14 @@ int main(int argc, char *argv[])
   }
 
   // create the output manager
+  int verbosity = Anasazi::Errors;
+  if (debug) {
+    verbosity += Anasazi::Debug;
+  }
   RefCountPtr< OutputManager<ScalarType> > printer = 
-    rcp( new BasicOutputManager<ScalarType>( Anasazi::Errors + Anasazi::Debug ) );
+    rcp( new BasicOutputManager<ScalarType>( verbosity ) );
 
-  if (verbose) {
+  if (verbose||debug) {
     printer->stream(Errors) << Anasazi_Version() << endl << endl;
   }
 
@@ -292,72 +298,72 @@ int main(int argc, char *argv[])
     pls.set<int>("Num Blocks",3);
     pls.set<int>("Step Size", 2);
     pls.set<int>("Number of Ritz Vectors",nev);
-    if (verbose) {
+    if (verbose||debug) {
       printer->stream(Errors) << "Testing solver(nev,3) with standard eigenproblem..." << endl << endl;
     }
     testsolver(probstd,printer,orthostd,sorter,pls);
     pls.set<int>("Num Blocks",3);
-    if (verbose) {
+    if (verbose||debug) {
       printer->stream(Errors) << "Testing solver(nev,3) with generalized eigenproblem..." << endl << endl;
     }
     testsolver(probgen,printer,orthogen,sorter,pls);
 
     pls.set<int>("Block Size",nev);
     pls.set<int>("Num Blocks",4);
-    if (verbose) {
+    if (verbose||debug) {
       printer->stream(Errors) << "Testing solver(nev,4) with standard eigenproblem..." << endl << endl;
     }
     testsolver(probstd,printer,orthostd,sorter,pls);
     pls.set<int>("Num Blocks",4);
-    if (verbose) {
+    if (verbose||debug) {
       printer->stream(Errors) << "Testing solver(nev,4) with generalized eigenproblem..." << endl << endl;
     }
     testsolver(probgen,printer,orthogen,sorter,pls);
 
     pls.set<int>("Block Size",2*nev);
     pls.set<int>("Num Blocks",3);
-    if (verbose) {
+    if (verbose||debug) {
       printer->stream(Errors) << "Testing solver(2*nev,3) with standard eigenproblem..." << endl << endl;
     }
     testsolver(probstd,printer,orthostd,sorter,pls);
     pls.set<int>("Num Blocks",3);
-    if (verbose) {
+    if (verbose||debug) {
       printer->stream(Errors) << "Testing solver(2*nev,3) with generalized eigenproblem..." << endl << endl;
     }
     testsolver(probgen,printer,orthogen,sorter,pls);
 
     pls.set<int>("Block Size",2*nev);
     pls.set<int>("Num Blocks",4);
-    if (verbose) {
+    if (verbose||debug) {
       printer->stream(Errors) << "Testing solver(2*nev,4) with standard eigenproblem..." << endl << endl;
     }
     testsolver(probstd,printer,orthostd,sorter,pls);
     pls.set<int>("Num Blocks",4);
-    if (verbose) {
+    if (verbose||debug) {
       printer->stream(Errors) << "Testing solver(2*nev,4) with generalized eigenproblem..." << endl << endl;
     }
     testsolver(probgen,printer,orthogen,sorter,pls);
 
     pls.set<int>("Block Size",nev/2);
     pls.set<int>("Num Blocks",3);
-    if (verbose) {
+    if (verbose||debug) {
       printer->stream(Errors) << "Testing solver(nev/2,3) with standard eigenproblem..." << endl << endl;
     }
     testsolver(probstd,printer,orthostd,sorter,pls);
     pls.set<int>("Num Blocks",3);
-    if (verbose) {
+    if (verbose||debug) {
       printer->stream(Errors) << "Testing solver(nev/2,3) with generalized eigenproblem..." << endl << endl;
     }
     testsolver(probgen,printer,orthogen,sorter,pls);
 
     pls.set<int>("Block Size",nev/2);
     pls.set<int>("Num Blocks",4);
-    if (verbose) {
+    if (verbose||debug) {
       printer->stream(Errors) << "Testing solver(nev/2,4) with standard eigenproblem..." << endl << endl;
     }
     testsolver(probstd,printer,orthostd,sorter,pls);
     pls.set<int>("Num Blocks",4);
-    if (verbose) {
+    if (verbose||debug) {
       printer->stream(Errors) << "Testing solver(nev/2,4) with generalized eigenproblem..." << endl << endl;
     }
     testsolver(probgen,printer,orthogen,sorter,pls);

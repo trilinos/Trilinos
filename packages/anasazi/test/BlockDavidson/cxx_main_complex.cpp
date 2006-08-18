@@ -225,17 +225,20 @@ int main(int argc, char *argv[])
 
   // Get the eigenvalues and eigenvectors from the eigenproblem
   Anasazi::Eigensolution<ScalarType,MV> sol = problem->getSolution();
-  std::vector<MagnitudeType> evals = sol.Evals;
   RefCountPtr<MV> evecs = sol.Evecs;
   int numev = sol.numVecs;
 
   if (numev > 0) {
 
+    ostringstream os;
+    os.setf(ios::scientific, ios::floatfield);
+    os.precision(6);
+
     // Compute the direct residual
     std::vector<MagnitudeType> normV( numev );
     SerialDenseMatrix<int,ScalarType> T(numev,numev);
     for (int i=0; i<numev; i++) {
-      T(i,i) = evals[i];
+      T(i,i) = sol.Evals[i].realpart;
     }
     RefCountPtr<MV> Kvecs = MVT::Clone( *evecs, numev );
 
@@ -244,10 +247,20 @@ int main(int argc, char *argv[])
     MVT::MvTimesMatAddMv( -ONE, *evecs, T, ONE, *Kvecs );
     MVT::MvNorm( *Kvecs, &normV );
   
+    os << "Direct residual norms computed in BlockDavidsonComplex_test.exe" << endl
+       << std::setw(20) << "Eigenvalue" << std::setw(20) << "Residual(M)" << endl
+       << "----------------------------------------" << endl;
     for (int i=0; i<numev; i++) {
-      if ( SCT::magnitude(normV[i]/evals[i]) > tol ) {
+      if ( SCT::magnitude(sol.Evals[i].realpart) != SCT::zero() ) {
+        normV[i] = SCT::magnitude(normV[i]/sol.Evals[i].realpart);
+      }
+      os << setw(20) << sol.Evals[i].realpart << setw(20) << normV[i] << endl;
+      if ( normV[i] > tol ) {
         testFailed = true;
       }
+    }
+    if (verbose && MyPID==0) {
+      cout << endl << os.str() << endl;
     }
 
   }

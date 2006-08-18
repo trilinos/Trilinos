@@ -263,6 +263,20 @@ namespace Anasazi {
     static void MvDot( const TMVB& mv, const TMVB& A, std::vector<ScalarType>* b )
     { Thyra::dots(mv,A,&((*b)[0])); }
 
+    /*! \brief Scale each element of the vectors in \c *this with \c alpha.
+     */
+    static void MvScale ( TMVB& mv, const ScalarType alpha )
+    { Thyra::scale(alpha,&mv); }
+    
+    /*! \brief Scale each element of the \c i-th vector in \c *this with \c alpha[i].
+     */
+    static void MvScale ( TMVB& mv, const std::vector<ScalarType>& alpha ) 
+    { 
+      for (unsigned int i=0; i<alpha.size(); i++) {
+        Thyra::scale(alpha[i],mv.col(i).get());
+      }
+    }
+    
     //@}
 
     /** \name Norm method */
@@ -365,10 +379,9 @@ namespace Anasazi {
     /*! \brief This method takes the MultiVectorBase \c x and
       applies the LinearOpBase \c Op to it resulting in the MultiVectorBase \c y.
     */    
-    static ReturnType Apply ( const TLOB& Op, const TMVB& x, TMVB& y )
+    static void Apply ( const TLOB& Op, const TMVB& x, TMVB& y )
     { 
       Op.apply(Thyra::NONCONJ_ELE,x,&y);
-      return Ok; 
     }
     
   };

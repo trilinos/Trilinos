@@ -69,7 +69,6 @@ int main(int argc, char *argv[])
   bool testFailed;
   bool verbose = false;
   bool debug = false;
-  std::string filename("mhd1280b.cua");
   std::string which("LM");
 
   CommandLineProcessor cmdp(false,true);
@@ -119,7 +118,7 @@ int main(int argc, char *argv[])
   Teuchos::RefCountPtr<Anasazi::EpetraGenOp> InverseOp = Teuchos::rcp( new Anasazi::EpetraGenOp( opStiffness, K ) );
   
   // Create the initial vectors
-  int blockSize = 5;
+  int blockSize = 3;
   RefCountPtr<Epetra_MultiVector> ivec = rcp( new Epetra_MultiVector(K->OperatorDomainMap(), blockSize) );
   ivec->Random();
 
@@ -129,7 +128,7 @@ int main(int argc, char *argv[])
     rcp( new Anasazi::BasicEigenproblem<ScalarType,MV,OP>(InverseOp,M,ivec) );
   //
   // Inform the eigenproblem that the operator InverseOp is symmetric under an M inner-product
-  problem->setHermitian(true);
+  //problem->setHermitian(true);
   //
   // Set the number of eigenvalues requested
   problem->setNEV( nev );
@@ -149,7 +148,7 @@ int main(int argc, char *argv[])
 
 
   // Set verbosity level
-  int verbosity = Anasazi::Errors + Anasazi::Warnings + Anasazi::StatusTestDetails;
+  int verbosity = Anasazi::Errors + Anasazi::Warnings;
   if (verbose) {
     verbosity += Anasazi::FinalSummary + Anasazi::TimingDetails;
   }
@@ -201,7 +200,7 @@ int main(int argc, char *argv[])
 
   // Get the eigenvalues and eigenvectors from the eigenproblem
   Anasazi::Eigensolution<ScalarType,MV> sol = problem->getSolution();
-  std::vector<MagnitudeType> evals = sol.Evals;
+  std::vector<Anasazi::Value<ScalarType> > evals = sol.Evals;
   RefCountPtr<MV> evecs = sol.Evecs;
   int numev = sol.numVecs;
 
@@ -211,40 +210,33 @@ int main(int argc, char *argv[])
     os.setf(ios::scientific, ios::floatfield);
     os.precision(6);
 
-    /* finish: this code has bugs: it only works properly when which == "SM" or "SR"
-    // Check the problem against the analytical solutions
-    if (verbose && which == "LM") {
-      info = testCase->eigenCheck( *evecs, &evals[0], 0 );
-    }
-    */
-
     // Compute the direct residual
     std::vector<ScalarType> normV( numev );
     SerialDenseMatrix<int,ScalarType> T(numev,numev);
     for (int i=0; i<numev; i++) {
-      T(i,i) = evals[i];
+      T(i,i) = evals[i].realpart;
     }
     RefCountPtr<MV> Mvecs = MVT::Clone( *evecs, numev ),
                     Kvecs = MVT::Clone( *evecs, numev );
     OPT::Apply( *K, *evecs, *Kvecs );
     OPT::Apply( *M, *evecs, *Mvecs );
     MVT::MvTimesMatAddMv( -ONE, *Mvecs, T, ONE, *Kvecs );
-    // compute M-norm of residuals
-    OPT::Apply( *M, *Kvecs, *Mvecs );
-    MVT::MvDot( *Mvecs, *Kvecs, &normV );
+    // compute 2-norm of residuals
+    std::vector<MagnitudeType> resnorm(numev);
+    MVT::MvNorm( *Kvecs, &resnorm );
   
-    os << "Direct residual norms computed in BlockDavidson_test.exe" << endl
-       << std::setw(20) << "Eigenvalue" << std::setw(20) << "Residual(M)" << endl
+    os << "Direct residual norms computed in BlockKrylovSchur_test.exe" << endl
+       << std::setw(20) << "Eigenvalue" << std::setw(20) << "Residual" << endl
        << "----------------------------------------" << endl;
     for (int i=0; i<numev; i++) {
-      if ( SCT::magnitude(evals[i]) != SCT::zero() ) {
-        normV[i] = SCT::magnitude( SCT::squareroot( normV[i] ) / evals[i] );
+      if ( SCT::magnitude(evals[i].realpart) != SCT::zero() ) {
+        resnorm[i] = SCT::magnitude( SCT::squareroot( resnorm[i] ) / evals[i].realpart );
       }
       else {
-        normV[i] = SCT::magnitude( SCT::squareroot( normV[i] ) );
+        resnorm[i] = SCT::magnitude( SCT::squareroot( resnorm[i] ) );
       }
-      os << setw(20) << evals[i] << setw(20) << normV[i] << endl;
-      if ( normV[i] > tol ) {
+      os << setw(20) << evals[i].realpart << setw(20) << resnorm[i] << endl;
+      if ( resnorm[i] > tol ) {
         testFailed = true;
       }
     }
