@@ -61,6 +61,8 @@ example_hmx_SOURCES = $(srcdir)/Example_HMX.C \
 	$(srcdir)/Basis.C $(srcdir)/Basis.H \
 	$(srcdir)/GenericEpetraProblem.C $(srcdir)/GenericEpetraProblem.H \
 	$(srcdir)/Problem_Interface.C $(srcdir)/Problem_Interface.H \
+	$(srcdir)/NOX_Matlab_Interface.C $(srcdir)/NOX_Matlab_Interface.H \
+	$(srcdir)/NOX_Multiphysics_Matlab_Interface.C $(srcdir)/NOX_Multiphysics_Matlab_Interface.H \
 	$(srcdir)/Problem_Manager.C $(srcdir)/Problem_Manager.H \
 	$(srcdir)/OffBlock_Manager.C $(srcdir)/OffBlock_Manager.H \
 	$(srcdir)/Xfer_Operator.C $(srcdir)/Xfer_Operator.H
@@ -77,6 +79,8 @@ example_brusselator_SOURCES = $(srcdir)/Example_Brusselator.C \
 	$(srcdir)/Basis.C $(srcdir)/Basis.H \
 	$(srcdir)/GenericEpetraProblem.C $(srcdir)/GenericEpetraProblem.H \
 	$(srcdir)/Problem_Interface.C $(srcdir)/Problem_Interface.H \
+	$(srcdir)/NOX_Matlab_Interface.C $(srcdir)/NOX_Matlab_Interface.H \
+	$(srcdir)/NOX_Multiphysics_Matlab_Interface.C $(srcdir)/NOX_Multiphysics_Matlab_Interface.H \
 	$(srcdir)/Problem_Manager.C $(srcdir)/Problem_Manager.H \
 	$(srcdir)/OffBlock_Manager.C $(srcdir)/OffBlock_Manager.H \
 	$(srcdir)/Xfer_Operator.C $(srcdir)/Xfer_Operator.H
@@ -91,6 +95,8 @@ example_yeckel_SOURCES = $(srcdir)/Example_Yeckel2006.C \
 	$(srcdir)/Basis.C $(srcdir)/Basis.H \
 	$(srcdir)/GenericEpetraProblem.C $(srcdir)/GenericEpetraProblem.H \
 	$(srcdir)/Problem_Interface.C $(srcdir)/Problem_Interface.H \
+	$(srcdir)/NOX_Matlab_Interface.C $(srcdir)/NOX_Matlab_Interface.H \
+	$(srcdir)/NOX_Multiphysics_Matlab_Interface.C $(srcdir)/NOX_Multiphysics_Matlab_Interface.H \
 	$(srcdir)/Problem_Manager.C $(srcdir)/Problem_Manager.H \
 	$(srcdir)/OffBlock_Manager.C $(srcdir)/OffBlock_Manager.H \
 	$(srcdir)/Xfer_Operator.C $(srcdir)/Xfer_Operator.H

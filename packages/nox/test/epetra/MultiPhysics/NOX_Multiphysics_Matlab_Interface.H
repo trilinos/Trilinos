@@ -1,0 +1,274 @@
+//@HEADER
+// ************************************************************************
+// 
+//            NOX: An Object-Oriented Nonlinear Solver Package
+//                 Copyright (2002) Sandia Corporation
+// 
+//            LOCA: Library of Continuation Algorithms Package
+//                 Copyright (2005) Sandia Corporation
+// 
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+// 
+// This library is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 2.1 of the
+// License, or (at your option) any later version.
+//  
+// This library is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+// 
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// USA
+// 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
+// ************************************************************************
+//  CVS Information
+//  $Source$
+//  $Author$
+//  $Date$
+//  $Revision$
+// ************************************************************************
+//@HEADER
+                                                                                
+#ifndef NOX_MULTIPHYSICS_MATLAB_INTERFACE_H
+#define NOX_MULTIPHYSICS_MATLAB_INTERFACE_H
+
+#include "NOX_Matlab_Interface.H" //base class
+
+#ifdef HAVE_MATLAB
+
+//-----------------------------------------------------------------------------
+
+// Forward declarations
+class Problem_Manager;
+
+// This is a new class that may evantually get moved into NOX.  For now,
+// this is simply used as a testbed for driving NOX using Matlab
+
+class Coupling_Matlab_Interface : public Matlab_Interface
+{
+public:
+
+  // A base class for Matlab interface commands to NOX
+  class CommandBase : public Matlab_Interface::CommandBase
+  {
+
+   public:
+
+    CommandBase(  EpetraExt::EpetraExt_MatlabEngine & engine_, 
+                  Problem_Manager &                         );
+
+    // methods
+    
+    virtual bool doCommand( std::string ) = 0 ;
+
+
+    // Get the Coupling solver
+    const Problem_Manager & getCoupler() 
+    { return problemManager; }
+
+   protected:
+    
+    // methods
+
+    virtual ~CommandBase() { };
+
+    // data
+   
+    Problem_Manager      & problemManager;
+
+  };
+
+  // Derived classes that represent individual commands
+
+  class CMD_problemSummary : public CommandBase
+  {
+
+    public:
+
+    CMD_problemSummary( EpetraExt::EpetraExt_MatlabEngine & engine_,
+             Problem_Manager              & problemManager_ ) : 
+      CommandBase( engine_, problemManager_ )
+    {
+      myCategory = QUERY;
+      command     = "problemSummary"              ;
+      description = " - Summarize coupled problems" ;
+    }
+
+    virtual bool doCommand( std::string );
+  };
+
+  class CMD_compJac : public CommandBase
+  {
+
+   public:
+
+    CMD_compJac( EpetraExt::EpetraExt_MatlabEngine & engine_,
+             Problem_Manager              & problemManager_ ) : 
+      CommandBase( engine_, problemManager_ )
+    {
+      myCategory = GROUP_COMPUTE;
+      command     = "compJac["              ;
+      description = " - Compute Block Jacobian (i, j)" ;
+    }
+
+    virtual bool doCommand( std::string );
+  };
+
+  class CMD_setXvec : public CommandBase
+  {
+
+   public:
+
+    CMD_setXvec( EpetraExt::EpetraExt_MatlabEngine & engine_,
+             Problem_Manager              & problemManager_ ) : 
+      CommandBase( engine_, problemManager_ )
+    {
+      myCategory = GROUP_SET;
+      command     = "setSoln["              ;
+      description = " - Set a solution vector of problem i" ;
+    }
+
+    virtual bool doCommand( std::string );
+  };
+
+  class CMD_compRes : public CommandBase
+  {
+
+   public:
+
+    CMD_compRes( EpetraExt::EpetraExt_MatlabEngine & engine_,
+             Problem_Manager              & problemManager_ ) : 
+      CommandBase( engine_, problemManager_ )
+    {
+      myCategory = GROUP_COMPUTE;
+      command     = "compRes["              ;
+      description = " - Compute Residual for problem i" ;
+    }
+
+    virtual bool doCommand( std::string );
+  };
+
+  class CMD_doXfers : public CommandBase
+  {
+
+   public:
+
+    CMD_doXfers( EpetraExt::EpetraExt_MatlabEngine & engine_,
+             Problem_Manager              & problemManager_ ) : 
+      CommandBase( engine_, problemManager_ )
+    {
+      myCategory = CALLBACK_FUN;
+      command     = "doXfers"              ;
+      description = " - Do all registered transfers of data" ;
+    }
+
+    virtual bool doCommand( std::string );
+  };
+
+  class CMD_getAllX : public CommandBase
+  {
+
+   public:
+
+    CMD_getAllX( EpetraExt::EpetraExt_MatlabEngine & engine_,
+             Problem_Manager              & problemManager_ ) : 
+      CommandBase( engine_, problemManager_ )
+    {
+      myCategory = GROUP_GET;
+      command     = "getAllX"              ;
+      description = " - Get All Problem Solutions" ;
+    }
+
+    virtual bool doCommand( std::string );
+  };
+
+  class CMD_getJac : public CommandBase
+  {
+
+   public:
+
+    CMD_getJac( EpetraExt::EpetraExt_MatlabEngine & engine_,
+             Problem_Manager              & problemManager_ ) : 
+      CommandBase( engine_, problemManager_ )
+    {
+      myCategory = GROUP_GET;
+      command     = "getJac["              ;
+      description = " - Get Block Jacobian [i j]" ;
+    }
+
+    virtual bool doCommand( std::string );
+  };
+
+  class CMD_getAllJac : public CommandBase
+  {
+
+   public:
+
+    CMD_getAllJac( EpetraExt::EpetraExt_MatlabEngine & engine_,
+             Problem_Manager              & problemManager_ ) : 
+      CommandBase( engine_, problemManager_ )
+    {
+      myCategory = GROUP_GET;
+      command     = "getAllJac"              ;
+      description = " - Get All Block Jacobians" ;
+    }
+
+    virtual bool doCommand( std::string );
+  };
+
+  class CMD_getRes : public CommandBase
+  {
+
+   public:
+
+    CMD_getRes( EpetraExt::EpetraExt_MatlabEngine & engine_,
+             Problem_Manager              & problemManager_ ) : 
+      CommandBase( engine_, problemManager_ )
+    {
+      myCategory = GROUP_GET;
+      command     = "getRes["              ;
+      description = " - Get Residual for Problem [i]" ;
+    }
+
+    virtual bool doCommand( std::string );
+  };
+
+  class CMD_getAllRes : public CommandBase
+  {
+
+   public:
+
+    CMD_getAllRes( EpetraExt::EpetraExt_MatlabEngine & engine_,
+             Problem_Manager              & problemManager_ ) : 
+      CommandBase( engine_, problemManager_ )
+    {
+      myCategory = GROUP_GET;
+      command     = "getAllRes"              ;
+      description = " - Get All Problem Residuals" ;
+    }
+
+    virtual bool doCommand( std::string );
+  };
+
+  Coupling_Matlab_Interface(Problem_Manager & manager);
+
+  virtual ~Coupling_Matlab_Interface() { };
+
+protected:
+
+  // Methods
+
+  // Data 
+
+  Problem_Manager & problemManager;
+};
+
+#endif
+#endif // NOX_MULTIPHYSICS_MATLAB_INTERFACE_H

@@ -109,11 +109,13 @@ int main(int argc, char *argv[])
   bool runMF          = true  ;
   bool useMatlab      = false ;
   bool doOffBlocks    = false ;
+  bool libloose       = true  ;
 
   clp.setOption( "n", &NumGlobalNodes, "Number of elements" );
   clp.setOption( "runMF", "loose", &runMF, "Use Matrix-Free strong coupling" );
   clp.setOption( "offblocks", "no-offblocks", &doOffBlocks, "Include off-diagonal blocks in preconditioning matrix" );
   clp.setOption( "matlab", "no-matlab", &useMatlab, "Use Matlab debugging engine" );
+  clp.setOption( "noxlib", "no-noxlib", &libloose, "Perform loose coupling using NOX's library (as opposed to hard-coded test driver)." );
 
   Teuchos::CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
 
@@ -297,8 +299,30 @@ int main(int argc, char *argv[])
   // Solve the coupled problem
   if( runMF )
     problemManager.solveMF(); // Need a status test check here ....
-  else
-    problemManager.solve(); // Need a status test check here ....
+  else if( !libloose )
+    problemManager.solve(); // Hard-coded loose coupling
+  else // Loose coupling via NOX library
+  {
+    // Create the loose coupling solver manager
+    Teuchos::RefCountPtr<vector<NOX::Solver::Manager*> > solversVec =
+      Teuchos::rcp( new vector<NOX::Solver::Manager*> );
+
+    map<int, NOX::Solver::Manager*>::iterator iter = problemManager.getSolvers().begin(),
+                                          iter_end = problemManager.getSolvers().end()   ;
+    for( ; iter_end != iter; ++iter )
+    {
+      cout << " ........  registered Solver::Manager # " << (*iter).first << endl;
+      solversVec->push_back( (*iter).second );
+    }
+
+    // Package the Problem_Manager as the DataExchange::Intreface
+    Teuchos::RefCountPtr<NOX::Multiphysics::DataExchange::Interface> dataExInterface =
+      Teuchos::rcp( &problemManager, false );
+
+    NOX::Multiphysics::Solver::Manager cplSolv( solversVec, dataExInterface, combo, nlParamsPtr );
+
+    cplSolv.solve();
+  }
   
   problemManager.outputSolutions(1);
 

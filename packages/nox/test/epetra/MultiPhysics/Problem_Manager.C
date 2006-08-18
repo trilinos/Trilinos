@@ -69,6 +69,10 @@
 // Header for Timing info
 #include "Epetra_Time.h"
 
+#ifdef HAVE_MATLAB
+#include "NOX_Multiphysics_Matlab_Interface.H"
+#endif
+
 // Hard-wired switch to turn on/off use of FD Coloring
 #define USE_FD
 //#undef USE_FD
