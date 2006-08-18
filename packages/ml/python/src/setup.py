@@ -85,6 +85,15 @@ for option in options:
 include_dirs.append(os.path.join(top_srcdir,"..","teuchos","python","src"))
 include_dirs.append(os.path.join(top_srcdir,"..","epetra" ,"python","src"))
 
+# Find the include directory for numpy.  Function get_numpy_include is
+# deprecated in favor of get_include, but let's suppress the warning if we can.
+try:
+    from numpy import get_include
+    include_dirs.append(get_include())
+except ImportError:
+    from numpy import get_numpy_include
+    include_dirs.append(get_numpy_include())
+
 # Alter the order of the libraries to ensure proper linking.  This seems to be
 # necessary when SuperLU_DIST is enabled for an MPI build and the g2c library is
 # required.

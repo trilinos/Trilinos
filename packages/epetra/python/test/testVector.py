@@ -79,6 +79,7 @@ class EpetraVectorTestCase(unittest.TestCase):
         self.assertEquals(ev.NumVectors(),1)
         self.assertEquals(ev.MyLength(), self.length)
         self.assertEquals(ev.GlobalLength(), self.length*comm.NumProc())
+        self.assertEquals((ev == 0.0).all(), True)
 
     def testConstructor02(self):
         "Test Epetra.Vector (BlockMap) constructor"

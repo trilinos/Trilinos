@@ -95,6 +95,15 @@ amesosWrap = "Amesos_wrap.cpp"
 include_dirs.append(os.path.join(top_srcdir,"..","teuchos","python","src"))
 include_dirs.append(os.path.join(top_srcdir,"..","epetra", "python","src"))
 
+# Find the include directory for numpy.  Function get_numpy_include is
+# deprecated in favor of get_include, but let's suppress the warning if we can.
+try:
+    from numpy import get_include
+    include_dirs.append(get_include())
+except ImportError:
+    from numpy import get_numpy_include
+    include_dirs.append(get_numpy_include())
+
 # Compiler and linker
 sysconfig.get_config_vars()
 sysconfig._config_vars["CC" ] = CXX

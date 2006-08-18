@@ -80,6 +80,12 @@ double * Epetra_NumPyVector::getArray(const Epetra_BlockMap & blockMap,
 	defaultDims[0] = 0;
 	tmp_array = (PyArrayObject *) PyArray_SimpleNew(1,defaultDims,PyArray_DOUBLE);
       }
+      else {
+	if (pyObject == Py_True) {     // bool zeroOut is True
+	  double * data = (double*) tmp_array->data;
+	  for (int i=0; i<defaultDims[0]; ++i) data[i] = 0.0;
+	}
+      }
 
     // PyObject argument is not an bool ... try to build a contiguous PyArrayObject from it
     } else {

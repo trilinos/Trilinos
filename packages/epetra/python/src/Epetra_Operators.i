@@ -128,16 +128,18 @@ EXCEPTION_HANDLER(Epetra_JadMatrix    ,Epetra_JadMatrix   )
 %include "Epetra_LinearProblem.h"
 
 // Macro code
-%define MANIPULATE_ROW_VALUES(method)
+%define MANIPULATE_GLOBAL_ROW_VALUES(method)
 int method(int row, PyObject * values, PyObject * indices) {
   int numValEntries;
   int numIndEntries;
   int result;
   PyArrayObject * valArray = NULL;
   PyArrayObject * indArray = NULL;
+  // Create the array of values
   valArray = (PyArrayObject*) PyArray_ContiguousFromObject(values,'d',0,0);
   if (valArray == NULL) goto fail;
   numValEntries = (int) PyArray_MultiplyList(valArray->dimensions,valArray->nd);
+  // Create the array of indeces
   indArray = (PyArrayObject*) PyArray_ContiguousFromObject(indices,'i',0,0);
   if (indArray == NULL) goto fail;
   numIndEntries = (int) PyArray_MultiplyList(indArray->dimensions,indArray->nd);
@@ -146,6 +148,46 @@ int method(int row, PyObject * values, PyObject * indices) {
 		 numValEntries, numIndEntries);
     goto fail;
   }
+  // Manipulate the row values
+  result = self->method(row, numValEntries, (double*)valArray->data,
+			(int*)indArray->data);
+  Py_DECREF(valArray);
+  Py_DECREF(indArray);
+  return result;
+ fail:
+  Py_XDECREF(valArray);
+  Py_XDECREF(indArray);
+  return -1;
+}
+%enddef
+
+%define MANIPULATE_MY_ROW_VALUES(method)
+int method(int row, PyObject * values, PyObject * indices) {
+  int numValEntries;
+  int numIndEntries;
+  int result;
+  PyArrayObject * valArray = NULL;
+  PyArrayObject * indArray = NULL;
+  // Check for column map
+  if (!self->HaveColMap()) {
+    PyErr_SetString(PyExc_RuntimeError, "method" " cannot be called on a CrsMatrix"
+		    " that does not have a column map");
+    goto fail;
+  }
+  // Create the array of values
+  valArray = (PyArrayObject*) PyArray_ContiguousFromObject(values,'d',0,0);
+  if (valArray == NULL) goto fail;
+  numValEntries = (int) PyArray_MultiplyList(valArray->dimensions,valArray->nd);
+  // Create the array of indeces
+  indArray = (PyArrayObject*) PyArray_ContiguousFromObject(indices,'i',0,0);
+  if (indArray == NULL) goto fail;
+  numIndEntries = (int) PyArray_MultiplyList(indArray->dimensions,indArray->nd);
+  if (numIndEntries != numValEntries) {
+    PyErr_Format(PyExc_ValueError, "values length of %d not equal to indices length %d", 
+		 numValEntries, numIndEntries);
+    goto fail;
+  }
+  // Manipulate the row values
   result = self->method(row, numValEntries, (double*)valArray->data,
 			(int*)indArray->data);
   Py_DECREF(valArray);
@@ -233,12 +275,12 @@ int method(int row, PyObject * values, PyObject * indices) {
   }
 
   // These macros expand into code for the various methods
-  MANIPULATE_ROW_VALUES(InsertGlobalValues)
-  MANIPULATE_ROW_VALUES(ReplaceGlobalValues)
-  MANIPULATE_ROW_VALUES(SumIntoGlobalValues)
-  MANIPULATE_ROW_VALUES(InsertMyValues)
-  MANIPULATE_ROW_VALUES(ReplaceMyValues)
-  MANIPULATE_ROW_VALUES(SumIntoMyValues)
+  MANIPULATE_GLOBAL_ROW_VALUES(InsertGlobalValues)
+  MANIPULATE_GLOBAL_ROW_VALUES(ReplaceGlobalValues)
+  MANIPULATE_GLOBAL_ROW_VALUES(SumIntoGlobalValues)
+  MANIPULATE_MY_ROW_VALUES(InsertMyValues)
+  MANIPULATE_MY_ROW_VALUES(ReplaceMyValues)
+  MANIPULATE_MY_ROW_VALUES(SumIntoMyValues)
 
   PyObject * ExtractGlobalRowCopy(int globalRow) const {
     int        lrid          = 0;

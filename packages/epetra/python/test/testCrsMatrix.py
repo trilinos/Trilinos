@@ -313,9 +313,14 @@ class EpetraCrsMatrixTestCase(unittest.TestCase):
             else              : numEntries = 3
             self.assertEqual(crsm.NumGlobalEntries(grid), numEntries)
 
+    def testInsertMyValuesBad(self):
+        "Test Epetra.CrsMatrix InsertMyValues method without column map"
+        crsm = Epetra.CrsMatrix(Epetra.Copy, self.rowMap, 3)  # No column map
+        self.assertRaises(RuntimeError, crsm.InsertMyValues, 0, [1], [0])
+
     def testReplaceMyValues(self):
         "Test Epetra.CrsMatrix ReplaceMyValues method"
-        crsm = Epetra.CrsMatrix(Epetra.Copy, self.rowMap, 3)
+        crsm = Epetra.CrsMatrix(Epetra.Copy, self.rowMap, self.colMap, 3)
         self.fillMatrixLocal(crsm,False)
         lrid      = 1
         if self.myPID > 0: o = 1
@@ -327,9 +332,14 @@ class EpetraCrsMatrixTestCase(unittest.TestCase):
         for i in range(len(values)):
             self.assertEqual(values[i], newValues[i])
 
+    def testReplaceMyValuesBad(self):
+        "Test Epetra.CrsMatrix ReplaceMyValues method without column map"
+        crsm = Epetra.CrsMatrix(Epetra.Copy, self.rowMap, 3)  # No column map
+        self.assertRaises(RuntimeError, crsm.ReplaceMyValues, 0, [1], [0])
+
     def testSumIntoMyValues(self):
         "Test Epetra.CrsMatrix SumIntoMyValues method"
-        crsm = Epetra.CrsMatrix(Epetra.Copy, self.rowMap, 3)
+        crsm = Epetra.CrsMatrix(Epetra.Copy, self.rowMap, self.colMap, 3)
         self.fillMatrixLocal(crsm,False)
         lrid = 0
         (values,indices) = crsm.ExtractMyRowCopy(lrid)
@@ -337,6 +347,11 @@ class EpetraCrsMatrixTestCase(unittest.TestCase):
         (newValues,indices) = crsm.ExtractMyRowCopy(lrid)
         for i in range(len(values)):
             self.assertEqual(newValues[i], 2*values[i])
+
+    def testSumIntoMyValuesBad(self):
+        "Test Epetra.CrsMatrix SumIntoMyValues method without column map"
+        crsm = Epetra.CrsMatrix(Epetra.Copy, self.rowMap, 3)  # No column map
+        self.assertRaises(RuntimeError, crsm.SumIntoMyValues, 0, [1], [0])
 
     def testReplaceDiagonalValues(self):
         "Test Epetra.CrsMatrix ReplaceDiagonalValues method"

@@ -65,7 +65,8 @@ endif
 
 
 # Include files outside of this package
-AM_CPPFLAGS = $(PYTHON_CSPEC)
+NUMPY_INC   = $(shell $(PYTHON) -c "from numpy import get_numpy_include; print '-I' + get_numpy_include()")
+AM_CPPFLAGS = $(PYTHON_CSPEC) $(NUMPY_INC)
 
 # ------------------------------------------------------------------------
 # PyTrilinos library specifications

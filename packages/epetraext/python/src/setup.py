@@ -86,6 +86,15 @@ epetraPythonSrcDir  = os.path.normpath(os.path.join(top_srcdir,"..","epetra" ,"p
 include_dirs.append(teuchosPythonSrcDir)
 include_dirs.append(epetraPythonSrcDir )
 
+# Find the include directory for numpy.  Function get_numpy_include is
+# deprecated in favor of get_include, but let's suppress the warning if we can.
+try:
+    from numpy import get_include
+    include_dirs.append(get_include())
+except ImportError:
+    from numpy import get_numpy_include
+    include_dirs.append(get_numpy_include())
+
 # Define the strings that refer to the required local source files
 epetraExtWrap          = "EpetraExt_wrap.cpp"
 epetraNumPyMultiVector = os.path.normpath(os.path.join(epetraPythonSrcDir,
