@@ -277,10 +277,6 @@ int main(int argc, char *argv[])
     problemManager.createDependency(burgers, ProblemA);
   }
 
-  problemManager.registerComplete(); // Trigger setup of groups, solvers, etc.
-
-  problemManager.outputStatus(std::cout);
-
   // Initialize time integration parameters
   int maxTimeSteps = 3;
   int timeStep = 0;
@@ -288,6 +284,10 @@ int main(int argc, char *argv[])
   double dt = 0.100;
   problemManager.setAlldt(dt);
   
+  problemManager.registerComplete(); // Trigger setup of groups, solvers, etc.
+
+  problemManager.outputStatus(std::cout);
+
   // Print initial solution
   char file_name[25];
   FILE *ifp;

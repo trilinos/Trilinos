@@ -1481,6 +1481,8 @@ bool Problem_Manager::solveMF()
     throw "Problem_Manager ERROR";
   }
 
+  compositeGroup->setX( compositeGroup->getX() );
+
   compositeSolver->reset(compositeGroup, statusTest, nlParams);
 
   NOX::StatusTest::StatusType status = compositeSolver->solve();
