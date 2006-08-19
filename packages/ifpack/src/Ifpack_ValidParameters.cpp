@@ -1,5 +1,7 @@
 #include "Ifpack_ValidParameters.h"
 
+#ifdef HAVE_IFPACK_TEUCHOS
+
 Teuchos::ParameterList Ifpack_GetValidParameters()
 {
   Teuchos::ParameterList List; // empty list
@@ -80,3 +82,5 @@ Teuchos::ParameterList Ifpack_GetValidParameters()
 
   return(List);
 }
+
+#endif
