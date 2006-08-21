@@ -36,14 +36,15 @@
 // ************************************************************************
 //@HEADER
                                                                                 
-#include "NOX_Epetra.H"
+#ifndef NOX_MATLAB_INTERFACE_H
+#define NOX_MATLAB_INTERFACE_H
 
-#include "EpetraExt_MatlabEngine.h"
+#include "NOX_Epetra.H"
 
 #ifdef HAVE_MATLAB
 
-#ifndef NOX_MATLAB_INTERFACE_H
-#define NOX_MATLAB_INTERFACE_H
+#include "EpetraExt_MatlabEngine.h"
+
 //-----------------------------------------------------------------------------
 
 #include "EpetraExt_MatlabEngine.h"
