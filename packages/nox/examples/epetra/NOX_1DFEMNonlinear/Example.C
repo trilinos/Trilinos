@@ -69,11 +69,9 @@
 #include "FiniteElementProblem.H"              
 
 // Required for reading and writing parameter lists from xml format
-#ifdef HAVE_TEUCHOS_EXPAT
-#include "Teuchos_XMLObject.hpp"
-#include "Teuchos_XMLParameterListWriter.hpp"
-#include "Teuchos_FileInputSource.hpp"
-#include "Teuchos_XMLParameterListReader.hpp"
+// Configure Trilinos with --enable-teuchos-extended
+#ifdef HAVE_TEUCHOS_EXTENDED
+#include "Teuchos_XMLParameterListHelpers.hpp"
 #endif
 
 using namespace std;
@@ -250,30 +248,16 @@ int main(int argc, char *argv[])
   combo->addStatusTest(converged);
   combo->addStatusTest(maxiters);
   
-#ifdef HAVE_TEUCHOS_EXPAT
-
+#ifdef HAVE_TEUCHOS_EXTENDED
   // Write the parameter list to a file
   cout << "Writing parameter list to \"input.xml\"" << endl;
-  std::string output_filename = "input.xml";
-  Teuchos::XMLParameterListWriter xml_converter;
-  Teuchos::XMLObject xml_pl = xml_converter.toXML(*nlParamsPtr);
-  ofstream of(output_filename.c_str()); 
-  of << xml_pl << endl;
-  of.close();
-  
+  Teuchos::writeParameterListToXmlFile(*nlParamsPtr, "input.xml");
+
   // Read in the parameter list from a file
   cout << "Reading parameter list from \"input.xml\"" << endl;
-  Teuchos::FileInputSource fileSrc(output_filename);
-  // Convert the file data into an xml object
-  Teuchos::XMLObject xml_obj = fileSrc.getObject();
-  // Create a xml to teuchos::parameterlist converter
-  Teuchos::XMLParameterListReader xml_to_pl_converter;
-  // Create a teuchos parameter list
-  Teuchos::RefCountPtr<Teuchos::ParameterList> finalParamsPtr
-    = Teuchos::rcp(new Teuchos::ParameterList);
-  // convert the teuchos xml object to a parameter list
-  (*finalParamsPtr) = xml_to_pl_converter.toParameterList(xml_obj);
-  
+  Teuchos::RefCountPtr<Teuchos::ParameterList> finalParamsPtr = 
+    Teuchos::rcp(new Teuchos::ParameterList);
+  Teuchos::updateParametersFromXmlFile("input.xml", finalParamsPtr.get());
 #else
   Teuchos::RefCountPtr<Teuchos::ParameterList> finalParamsPtr = nlParamsPtr;
 #endif

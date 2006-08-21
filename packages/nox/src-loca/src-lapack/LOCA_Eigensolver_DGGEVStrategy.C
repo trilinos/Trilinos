@@ -64,7 +64,7 @@ LOCA::Eigensolver::DGGEVStrategy::DGGEVStrategy(
   nev(4),
   which("LM")
 {
-  nev = eigenParams->get("NEV", 4);
+  nev = eigenParams->get("Num Eigenvalues", 4);
   which = eigenParams->get("Sorting Order","LM");
 }
 

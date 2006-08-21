@@ -66,29 +66,31 @@ namespace LOCA {
     //! Anasazi eigensolver strategy
     /*!
      * This class implements an eigensolver strategy using the generic
-     * Trilinos eigensolver package Anasazi.  Since Anasazi is a generic
+     * Trilinos eigensolver package Anasazi.  In particular, this strategy
+     * uses the Anasazi::BlockKrylovSchur solver.  Since Anasazi is a generic
      * solver, this strategy will work with any group implementation.  This
      * strategy references the following parameters passed through the
-     * \c eigenParams argument to the constructor:
+     * \c eigenParams argument to the constructor (this list is passed
+     * directly to the Anasazi::BlockKrylovSchulSolMgr solver manager):
      * <ul>
      * <li> "Operator" -- [string] (default: "Jacobian inverse") Operator
      *      to compute eigenvalues of.
      * <li> "Block Size" -- [int] (default: 1) Block size
-     * <li> "Arnoldi Size" -- [int] (default: 30) Maximum length of the 
-     *       Arnoldi factorization
-     * <li> "NEV" -- [int] (default: 4) Number of requested eigenvalues
-     * <li> "Tol" -- [double] (default: 1.0e-7) Tolerance for the converged 
+     * <li> "Num Blocks" -- [int] (default: 30) Maximum number of blocks 
+     *       (equals the maximum length of the Arnoldi factorization
+     * <li> "Num Eigenvalues" -- [int] (default: 4) Number of requested 
      *       eigenvalues
-     * <li> "Convergence Check" -- [int] (default: 1) Checks convergence 
+     * <li> "Convergence Tolerance" -- [double] (default: 1.0e-7) Tolerance 
+     *       for the converged eigenvalues
+     * <li> "Step Size" -- [int] (default: 1) Checks convergence 
      *       every so many steps
-     * <li> "Restarts" -- [int] (default: 1) Number of restarts allowed
-     * <li> "Debug Level" -- [int] (default: 1) Anasazi Debug level
+     * <li> "Maximum Restarts" -- [int] (default: 1) Number of restarts allowed
+     * <li> "Symmetric" -- [bool] (default:  false) Is the operator symmetric
+     * <li> "Verbosity" -- [Anasazi::MsgType] 
+     *       (default: Anasazi::Errors+Anasazi::Warnings+Anasazi::FinalSummary)
+     *       Verbosity level
      * <li> "Sorting Order" -- [string" (default: "LM") Sorting order of 
      *       printed eigenvalues
-     * <li> "Save Eigenvectors" -- [int] (default: 0) How many eigenvectors
-     *      to save
-     * <li> "Cayley Pole" -- [double] (default: 0.0) Cayley transformation pole
-     * <li> "Cayley Zero" -- [double] (default: 0.0) Cayley tranformation zero
      * </ul>
      */
     class AnasaziStrategy : public LOCA::Eigensolver::AbstractStrategy {
@@ -155,44 +157,14 @@ namespace LOCA {
       //! The block size
       int blksz;
 
-      //! The maximum length of the Arnoldi factorization
-      int length;
-
       //! The number of requested eigenvalues
-      int nev;   
-      
-      //! Tolerance for the converged eigenvalues
-      double tol;
-      
-      //! This checks convergence every so many steps
-      int step;    
-      
-      //! This is the number of restarts allowed
-      int restart;
-      
-      //! Anasazi Debug level
-      int debug;
+      int nev;
 
-      //! Which eigenvalues are of interest
-      string which;
-
-      //! How many eigenvectors/eigenvalues to we save
-      int saveEV;
-
-      //! Pole for Cayley transformation
-      double cayleyPole;
-
-      //! Zero for Cayley transformation
-      double cayleyZero;
-
-      //! Parameter list to pass into eigensolver
-      Teuchos::ParameterList LOCA_PL;
-
-      //! Output manager to handle the I/O from the eigensolver
-      Teuchos::RefCountPtr<Anasazi::OutputManager<double> > LOCA_OM;
+      //! Is problem symmetric
+      bool isSymmetric;
 
       //! Sorting manager to handle the sorting of eigenvalues
-      Teuchos::RefCountPtr<Anasazi::LOCASort> LOCASort;
+      Teuchos::RefCountPtr< Anasazi::SortManager<double, MV, OP> > locaSort;
 
     }; // Class AnasaziStrategy
 

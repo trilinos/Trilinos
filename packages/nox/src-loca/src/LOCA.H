@@ -65,6 +65,11 @@
 #include "LOCA_Abstract_Group.H"
 #include "LOCA_Abstract_Factory.H"
 
+// For Anasazi::MsgType
+#ifdef HAVE_LOCA_ANASAZI
+#include "AnasaziTypes.hpp"
+#endif
+
 // Status tests
 // #include "LOCA_StatusTest_Wrapper.H"
 // #include "LOCA_Continuation_StatusTest_ParameterUpdateNorm.H"

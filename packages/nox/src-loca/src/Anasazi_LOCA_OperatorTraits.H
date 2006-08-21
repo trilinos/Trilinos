@@ -83,15 +83,9 @@ namespace Anasazi {
     /*!
      *\return Status of the operation.
      */
-    static ReturnType Apply ( const OP& Op, 
-			      const MV& x, 
-			      MV& y )
+    static void Apply ( const OP& Op, const MV& x, MV& y )
     { 
-      NOX::Abstract::Group::ReturnType status = Op.apply(x,y);
-      if (status != NOX::Abstract::Group::Failed)
-	return Anasazi::Ok;
-      else 
-	return Anasazi::Failed;
+      Op.apply(x,y);
     };
     
     //@}

@@ -70,11 +70,9 @@
 #include "FiniteElementProblem.H"              
 
 // Required for reading and writing parameter lists from xml format
-#ifdef HAVE_TEUCHOS_EXPAT
-#include "Teuchos_XMLObject.hpp"
-#include "Teuchos_XMLParameterListWriter.hpp"
-#include "Teuchos_FileInputSource.hpp"
-#include "Teuchos_XMLParameterListReader.hpp"
+// Configure Trilinos with --enable-teuchos-extended
+#ifdef HAVE_TEUCHOS_EXTENDED
+#include "Teuchos_XMLParameterListHelpers.hpp"
 #endif
 
 using namespace std;
@@ -156,12 +154,15 @@ int main(int argc, char *argv[])
   Teuchos::ParameterList& aList = locaStepperList.sublist("Eigensolver");
   aList.set("Method", "Anasazi");
   aList.set("Block Size", 1);        // Size of blocks
-  aList.set("Arnoldi Size", 10);     // Number of Krylov vectors
-  aList.set("NEV", 3);               // Number of eigenvalues
+  aList.set("Num Blocks", 10);       // Size of Arnoldi factorization
+  aList.set("Num Eigenvalues", 3);   // Number of eigenvalues
   aList.set("Tol", 2.0e-7);          // Tolerance
-  aList.set("Convergence Check", 1); // How often to check convergence
-  aList.set("Restarts",2);           // Maximum number of restarts
-  aList.set("Debug Level",0);        // Debug info
+  aList.set("Step Size", 1);         // How often to check convergence
+  aList.set("Maximum Restarts",2);   // Maximum number of restarts
+  aList.set("Verbosity",  
+	    Anasazi::Errors + 
+	    Anasazi::Warnings +
+	    Anasazi::FinalSummary);        // Verbosity
 #else
     locaStepperList.set("Compute Eigenvalues",false);
 #endif
@@ -262,32 +263,17 @@ int main(int argc, char *argv[])
   combo->addStatusTest(wrms);
   combo->addStatusTest(maxiters);
 
-#ifdef HAVE_TEUCHOS_EXPAT
-
+#ifdef HAVE_TEUCHOS_EXTENDED
   // Write the parameter list to a file
   cout << "Writing parameter list to \"input.xml\"" << endl;
-  std::string output_filename = "input.xml";
-  Teuchos::XMLParameterListWriter xml_converter;
-  Teuchos::XMLObject xml_pl = xml_converter.toXML(*paramList);
-  ofstream of(output_filename.c_str()); 
-  of << xml_pl << endl;
-  of.close();
-  
+  Teuchos::writeParameterListToXmlFile(*paramList, "input.xml");
+
   // Read in the parameter list from a file
   cout << "Reading parameter list from \"input.xml\"" << endl;
-  Teuchos::FileInputSource fileSrc(output_filename);
-  // Convert the file data into an xml object
-  Teuchos::XMLObject xml_obj = fileSrc.getObject();
-  // Create a xml to teuchos::parameterlist converter
-  Teuchos::XMLParameterListReader xml_to_pl_converter;
-  // Create a teuchos parameter list
-  Teuchos::RefCountPtr<Teuchos::ParameterList> paramList2
-    = Teuchos::rcp(new Teuchos::ParameterList);
-  // convert the teuchos xml object to a parameter list
-  (*paramList2) = xml_to_pl_converter.toParameterList(xml_obj);
-  
-#else
-  Teuchos::RefCountPtr<Teuchos::ParameterList> paramList2 = paramList;
+  Teuchos::RefCountPtr<Teuchos::ParameterList> paramList2 = 
+    Teuchos::rcp(new Teuchos::ParameterList);
+  Teuchos::updateParametersFromXmlFile("input.xml", paramList2.get());
+  paramList = paramList2;
 #endif
 
   // Create the stepper  

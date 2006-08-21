@@ -196,6 +196,24 @@ namespace Anasazi {
 	(*b)[i] = A[i].innerProduct(mv[i]);
     }
 
+    /*! 
+     * \brief Scale each element of the vectors in \c *this with \c alpha.
+     */
+    static void MvScale ( MV& mv, const ScalarType alpha )
+    { 
+      mv.scale(alpha); 
+    }     
+    
+    /*! 
+     * \brief Scale each element of the \c i-th vector in \c *this with 
+     * \c alpha[i].
+     */
+    static void MvScale ( MV& mv, const std::vector<ScalarType>& alpha )
+    { 
+      for (unsigned int i=0; i<alpha.size(); i++)
+	mv[i].scale(alpha[i]);
+    } 
+
     //@}
     //@{ \name Norm method
 

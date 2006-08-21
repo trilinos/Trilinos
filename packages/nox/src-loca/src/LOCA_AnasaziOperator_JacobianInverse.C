@@ -81,12 +81,15 @@ LOCA::AnasaziOperator::JacobianInverse::label() const
   return myLabel;
 }
 
-NOX::Abstract::Group::ReturnType 
+void
 LOCA::AnasaziOperator::JacobianInverse::apply(
 				      const NOX::Abstract::MultiVector& input, 
 				      NOX::Abstract::MultiVector& output) const
 {
-  return grp->applyJacobianInverseMultiVector(*solverParams, input, output);
+  NOX::Abstract::Group::ReturnType status = 
+    grp->applyJacobianInverseMultiVector(*solverParams, input, output);
+  globalData->locaErrorCheck->checkReturnType(status, 
+		       "LOCA::AnasaziOperator::JacobianInverse::apply()");
 }
 
 void

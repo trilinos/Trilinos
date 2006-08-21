@@ -84,13 +84,19 @@ int main(int argc, char *argv[])
     aList.set("Method", "Anasazi");
     aList.set("Operator", "Jacobian Inverse");
     aList.set("Block Size", 1);
-    aList.set("Arnoldi Size", narn);
-    aList.set("NEV", nev);
-    aList.set("Tol", arntol);
-    aList.set("Convergence Check", 1);
-    aList.set("Restarts",2);
+    aList.set("Num Blocks", narn);
+    aList.set("Num Eigenvalues", nev);
+    aList.set("Convergence Tolerance", arntol);
+    aList.set("Step Size", 1);
+    aList.set("Maximum Restarts",2);
     aList.set("Sorting Order","LM");
-    aList.set("Debug Level",0);
+    if (verbose)
+      aList.set("Debug Level",
+		Anasazi::Errors + 
+		Anasazi::Warnings +
+		Anasazi::FinalSummary);
+    else
+      aList.set("Debug Level", Anasazi::Errors);
 
     // Create the "Solver" parameters sublist to be used with NOX Solvers
     Teuchos::ParameterList& nlParams = paramList->sublist("NOX");

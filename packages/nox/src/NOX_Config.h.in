@@ -86,7 +86,7 @@
 /* Define if want to build libcheck */
 #undef HAVE_LIBCHECK
 
-/* Define if want to build with neveranasazi enabled */
+/* Define if want to build with anasazi enabled */
 #undef HAVE_LOCA_ANASAZI
 
 /* Define to 1 if you have the <map> header file. */

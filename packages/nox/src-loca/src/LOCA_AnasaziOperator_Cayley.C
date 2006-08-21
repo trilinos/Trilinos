@@ -74,7 +74,7 @@ LOCA::AnasaziOperator::Cayley::label() const
   return myLabel;
 }
 
-NOX::Abstract::Group::ReturnType 
+void
 LOCA::AnasaziOperator::Cayley::apply(const NOX::Abstract::MultiVector& input, 
 				     NOX::Abstract::MultiVector& output) const
 {
@@ -117,8 +117,6 @@ LOCA::AnasaziOperator::Cayley::apply(const NOX::Abstract::MultiVector& input,
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
 							   finalStatus,
 							   callingFunction);
-  
-  return finalStatus;
 }
 
 void

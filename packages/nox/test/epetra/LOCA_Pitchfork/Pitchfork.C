@@ -160,11 +160,8 @@ int main(int argc, char *argv[])
     locaStepperList.set("Compute Eigenvalues",true);
     Teuchos::ParameterList& aList = locaStepperList.sublist("Eigensolver");
     aList.set("Method", "Anasazi");
-    aList.set("Arnoldi Size", 10);
-    aList.set("NEV", 3);
-    aList.set("Tol", 2.0e-7);
-    aList.set("Restarts",2);
-    aList.set("Debug Level",0);
+     if (!verbose)
+      aList.set("Verbosity", Anasazi::Errors);
 #else
     locaStepperList.set("Compute Eigenvalues",false);
 #endif

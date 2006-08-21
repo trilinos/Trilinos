@@ -908,11 +908,10 @@ Optional Features:
                           examples
   --enable-examples       compile examples, will be ignored if
                           "--enable-nox-examples" is specified
-  --enable-neveranasazi   Implicitly build anasazi support into the loca
+  --enable-anasazi        Implicitly build anasazi support into the loca
                           library. Can be overridden with
                           --<en|dis>able-loca-anasazi.
-  --enable-loca-neveranasazi
-                          Build anasazi support into the loca library.
+  --enable-loca-anasazi   Build anasazi support into the loca library.
   --enable-epetraext      Implicitly build epetraext support into the
                           noxepetra library. Can be overridden with
                           --<en|dis>able-nox-epetraext.
@@ -4082,7 +4081,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:4085:" \
+echo "$as_me:4084:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -8667,32 +8666,32 @@ fi
 # CGB: 07/21/2006: disable anasazi during anasazi refactor
 
 
-# Check whether --enable-neveranasazi or --disable-neveranasazi was given.
-if test "${enable_neveranasazi+set}" = set; then
-  enableval="$enable_neveranasazi"
-  ac_cv_implicit_use_neveranasazi=$enableval
+# Check whether --enable-anasazi or --disable-anasazi was given.
+if test "${enable_anasazi+set}" = set; then
+  enableval="$enable_anasazi"
+  ac_cv_implicit_use_anasazi=$enableval
 else
-  ac_cv_implicit_use_neveranasazi=no
+  ac_cv_implicit_use_anasazi=no
 fi;
 
 if test "Xyes" != "Xno"; then
-  ac_cv_loca_using_neveranasazi_default=$ac_cv_implicit_use_neveranasazi
+  ac_cv_loca_using_anasazi_default=$ac_cv_implicit_use_anasazi
 else
-  ac_cv_loca_using_neveranasazi_default=no
+  ac_cv_loca_using_anasazi_default=no
 fi
 
-# Check whether --enable-loca-neveranasazi or --disable-loca-neveranasazi was given.
-if test "${enable_loca_neveranasazi+set}" = set; then
-  enableval="$enable_loca_neveranasazi"
-  ac_cv_use_neveranasazi=$enableval
+# Check whether --enable-loca-anasazi or --disable-loca-anasazi was given.
+if test "${enable_loca_anasazi+set}" = set; then
+  enableval="$enable_loca_anasazi"
+  ac_cv_use_anasazi=$enableval
 else
-  ac_cv_use_neveranasazi=$ac_cv_loca_using_neveranasazi_default
+  ac_cv_use_anasazi=$ac_cv_loca_using_anasazi_default
 fi;
 
-echo "$as_me:$LINENO: checking whether to build optional neveranasazi dependent code in loca" >&5
-echo $ECHO_N "checking whether to build optional neveranasazi dependent code in loca... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking whether to build optional anasazi dependent code in loca" >&5
+echo $ECHO_N "checking whether to build optional anasazi dependent code in loca... $ECHO_C" >&6
 
-if test "X$ac_cv_use_neveranasazi" != "Xno"; then
+if test "X$ac_cv_use_anasazi" != "Xno"; then
   echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
 
@@ -8707,7 +8706,7 @@ fi
 
 
 
-if test "X$ac_cv_use_neveranasazi" = "Xyes"; then
+if test "X$ac_cv_use_anasazi" = "Xyes"; then
   BUILD_LOCAANASAZI_TRUE=
   BUILD_LOCAANASAZI_FALSE='#'
 else
@@ -9124,7 +9123,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:9127: \"$ac_link\") >&5
+(eval echo $as_me:9126: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9202,7 +9201,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:9205: \"$ac_link\") >&5
+(eval echo $as_me:9204: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10204,7 +10203,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:10207: \"$ac_link\") >&5
+(eval echo $as_me:10206: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10282,7 +10281,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:10285: \"$ac_link\") >&5
+(eval echo $as_me:10284: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS

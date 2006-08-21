@@ -105,7 +105,7 @@ namespace LOCA {
       /*! 
        * \brief Apply the operator to \c input with the result in \c output
        */
-      virtual NOX::Abstract::Group::ReturnType 
+      virtual void
       apply(const NOX::Abstract::MultiVector& input,
 	    NOX::Abstract::MultiVector& output) const = 0;
 

@@ -1,7 +1,7 @@
 // $Id$
 // $Source$
 
-// @HEADER
+//@HEADER
 // ************************************************************************
 // 
 //            NOX: An Object-Oriented Nonlinear Solver Package
@@ -37,7 +37,7 @@
 //  $Date$
 //  $Revision$
 // ************************************************************************
-// @HEADER
+//@HEADER
                                                                      
 // 1D Finite Element Test Problem
 /* Solves continuation problem (Parameter c="Right BC")
@@ -160,11 +160,8 @@ int main(int argc, char *argv[])
     locaStepperList.set("Compute Eigenvalues",true);
     Teuchos::ParameterList& aList = locaStepperList.sublist("Eigensolver");
     aList.set("Method", "Anasazi");
-    aList.set("Arnoldi Size", 10);
-    aList.set("NEV", 3);
-    aList.set("Tol", 2.0e-7);
-    aList.set("Restarts",2);
-    aList.set("Debug Level",0);
+    if (!verbose)
+      aList.set("Verbosity", Anasazi::Errors);
 #else
     locaStepperList.set("Compute Eigenvalues",false);
 #endif
@@ -192,7 +189,7 @@ int main(int argc, char *argv[])
 			NOX::Utils::OuterIteration + 
 			NOX::Utils::OuterIterationStatusTest + 
 			NOX::Utils::InnerIteration +
-			NOX::Utils::Details + 
+			//NOX::Utils::Details + 
 			NOX::Utils::Warning +
 			NOX::Utils::TestDetails + 
 			NOX::Utils::Error + 

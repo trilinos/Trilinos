@@ -52,6 +52,7 @@ namespace NOX {
   }
 }
 namespace LOCA {
+  class GlobalData;
   namespace AnasaziOperator {
     class AbstractStrategy;
   }
@@ -81,9 +82,11 @@ namespace Anasazi {
     
     //! Constructor
     /*!
+     * @param global_data [in] Global data object
      * @param strategy_ [in] Ref-count ptr to LOCA sorting strategy
      */
-    LOCASort(const Teuchos::RefCountPtr<LOCA::EigenvalueSort::AbstractStrategy>& strategy_);
+    LOCASort(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+	     const Teuchos::RefCountPtr<LOCA::EigenvalueSort::AbstractStrategy>& strategy_);
       
     //! Destructor
     virtual ~LOCASort();
@@ -96,8 +99,11 @@ namespace Anasazi {
      * \param perm [out] Vector of length n to store the permutation (optional)
      * \return Returns the status of the sorting routine 
      */
-    Anasazi::ReturnType
-    sort(Anasazi::Eigensolver<double,Anasazi::LOCASort::MV,Anasazi::LOCASort::OP>* solver, int n, double* evals, std::vector<int>* perm = 0) const;
+    virtual void
+    sort(Anasazi::Eigensolver<double,Anasazi::LOCASort::MV,
+	                     Anasazi::LOCASort::OP>* solver, 
+	 const int n, std::vector<double>& evals, 
+	 std::vector<int>* perm = 0) const;
       
     /*! 
      * \brief Sort the vectors of eigenpairs with respect to the chosen 
@@ -113,10 +119,16 @@ namespace Anasazi {
      * \param perm [out] Vector of length n to store the permutation (optional)
      * \return Returns the status of the sorting routine 
      */
-    Anasazi::ReturnType 
-    sort(Anasazi::Eigensolver<double,Anasazi::LOCASort::MV,Anasazi::LOCASort::OP>* solver, int n, double* r_evals, double* i_evals, std::vector<int>* perm = 0) const;
+    virtual void
+    sort(Anasazi::Eigensolver<double,Anasazi::LOCASort::MV,
+	                      Anasazi::LOCASort::OP>* solver, 
+	 const int n, std::vector<double>& r_evals, 
+	 std::vector<double>& i_evals, std::vector<int>* perm = 0) const;
       
   protected: 
+
+    //! Global data
+    Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
       
     //! EigenvalueSort strategy
     Teuchos::RefCountPtr<LOCA::EigenvalueSort::AbstractStrategy> strategy;

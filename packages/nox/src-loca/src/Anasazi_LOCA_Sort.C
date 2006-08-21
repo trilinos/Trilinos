@@ -41,10 +41,14 @@
 
 #include "Anasazi_LOCA_Sort.H"
 #include "LOCA_EigenvalueSort_Strategies.H"
+#include "LOCA_GlobalData.H"
+#include "LOCA_ErrorCheck.H"
 
 Anasazi::LOCASort::LOCASort(
+ const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
  const Teuchos::RefCountPtr<LOCA::EigenvalueSort::AbstractStrategy>& strategy_)
-  : strategy(strategy_)
+  : globalData(global_data),
+    strategy(strategy_)
 {
 }
 
@@ -52,34 +56,28 @@ Anasazi::LOCASort::~LOCASort()
 {
 }
 
-Anasazi::ReturnType
+void
 Anasazi::LOCASort::sort(Anasazi::Eigensolver<double,
 			                     Anasazi::LOCASort::MV,
 			                     Anasazi::LOCASort::OP>* solver, 
-			int n, double* evals, std::vector<int>* perm) const
+			int n, std::vector<double>& evals, 
+			std::vector<int>* perm) const
 {
-  NOX::Abstract::Group::ReturnType res = strategy->sort(n, evals, perm);
-  if (res == NOX::Abstract::Group::Ok)
-    return Anasazi::Ok;
-  else if (res == NOX::Abstract::Group::NotDefined)
-    return Anasazi::Undefined;
-  else
-    return Anasazi::Failed;
+  NOX::Abstract::Group::ReturnType res = strategy->sort(n, &evals[0], perm);
+  globalData->locaErrorCheck->checkReturnType(res,
+					      "Anasazi::LOCASort::sort()");
 }
 
-Anasazi::ReturnType
+void
 Anasazi::LOCASort::sort(Anasazi::Eigensolver<double,
 			                     Anasazi::LOCASort::MV,
 			                     Anasazi::LOCASort::OP>* solver, 
-			int n, double* r_evals, double* i_evals, 
+			int n, std::vector<double>& r_evals, 
+			std::vector<double>& i_evals, 
 			std::vector<int>* perm) const
 {
   NOX::Abstract::Group::ReturnType res = 
-    strategy->sort(n, r_evals, i_evals, perm);
-  if (res == NOX::Abstract::Group::Ok)
-    return Anasazi::Ok;
-  else if (res == NOX::Abstract::Group::NotDefined)
-    return Anasazi::Undefined;
-  else
-    return Anasazi::Failed;
+    strategy->sort(n, &r_evals[0], &i_evals[0], perm);
+  globalData->locaErrorCheck->checkReturnType(res,
+					      "Anasazi::LOCASort::sort()");
 }

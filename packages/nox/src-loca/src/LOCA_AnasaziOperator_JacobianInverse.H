@@ -88,7 +88,7 @@ namespace LOCA {
        *
        * Computes \f$\mbox{output} = J^{-1}\mbox{input}\f$.
        */
-      virtual NOX::Abstract::Group::ReturnType 
+      virtual void
       apply(const NOX::Abstract::MultiVector& input, 
 	    NOX::Abstract::MultiVector& output) const;
 

@@ -120,7 +120,7 @@ namespace LOCA {
        * \f]
        * for \f$z\f$, where \f$r = \mbox{input}\f$ and \f$z = \mbox{output}\f$.
        */
-      virtual NOX::Abstract::Group::ReturnType 
+      virtual void
       apply(const NOX::Abstract::MultiVector& input, 
 	    NOX::Abstract::MultiVector& output) const;
 

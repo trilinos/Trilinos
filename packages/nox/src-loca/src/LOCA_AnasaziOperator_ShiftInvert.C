@@ -72,7 +72,7 @@ LOCA::AnasaziOperator::ShiftInvert::label() const
   return myLabel;
 }
 
-NOX::Abstract::Group::ReturnType 
+void
 LOCA::AnasaziOperator::ShiftInvert::apply(
 				     const NOX::Abstract::MultiVector& input, 
 				     NOX::Abstract::MultiVector& output) const
@@ -115,8 +115,6 @@ LOCA::AnasaziOperator::ShiftInvert::apply(
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
 							   finalStatus,
 							   callingFunction);
-
-  return finalStatus;
 }
 
 void

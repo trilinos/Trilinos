@@ -536,7 +536,7 @@ REQUIRE_LIB_CHECK=no
 # ------------------------------------------------------------------------
 
 # CGB: 07/21/2006: disable anasazi during anasazi refactor
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(loca, neveranasazi, LOCA_ANASAZI, BUILD_LOCAANASAZI, yes, [Build anasazi support into the loca library.], [Implicitly build anasazi support into the loca library. Can be overridden with --<en|dis>able-loca-anasazi.])
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(loca, anasazi, LOCA_ANASAZI, BUILD_LOCAANASAZI, yes, [Build anasazi support into the loca library.], [Implicitly build anasazi support into the loca library. Can be overridden with --<en|dis>able-loca-anasazi.])
 
 
 # ------------------------------------------------------------------------
