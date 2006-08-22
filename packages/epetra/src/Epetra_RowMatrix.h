@@ -204,6 +204,12 @@ class Epetra_RowMatrix: public virtual Epetra_Operator, public virtual Epetra_Sr
     virtual double NormOne() const = 0;
 
     //! Returns the number of nonzero entries in the global matrix.
+    /*
+      Note that depending on the matrix implementation, it is sometimes
+      possible to have some nonzeros that appear on multiple processors.
+      In that case, those nonzeros may be counted multiple times (also
+      depending on the matrix implementation).
+    */
     virtual int NumGlobalNonzeros() const = 0;
 
     //! Returns the number of global matrix rows.

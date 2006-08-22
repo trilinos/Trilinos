@@ -165,6 +165,11 @@ class Epetra_JadOperator: public Epetra_CompObject, public Epetra_Object, public
   const Epetra_Export* Exporter() const {return(Exporter_);}
   
   //! Returns the number of nonzero entries in the global matrix.
+  /*
+    Note that if maps are defined such that some nonzeros appear on
+    multiple processors, then those nonzeros will be counted multiple
+    times.
+  */
   inline int NumGlobalNonzeros() const {return(NumGlobalNonzeros_);}
 
   //@}

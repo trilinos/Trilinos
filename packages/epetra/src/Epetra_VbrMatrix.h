@@ -889,6 +889,12 @@ class Epetra_VbrMatrix : public Epetra_DistObject,
     int NumGlobalCols() const {return(Graph_->NumGlobalCols());};
 
     //! Returns the number of nonzero entries in the global matrix.
+    /*
+     Note that if maps are defined such that some nonzeros appear on
+     multiple processors, then those nonzeros will be counted multiple
+     times. If the user wishes to assemble a matrix from overlapping
+     submatrices, they can use Epetra_FEVbrMatrix.
+    */
     int NumGlobalNonzeros() const {return(Graph_->NumGlobalNonzeros());};
 
     //! Returns the number of Block matrix rows owned by the calling processor.

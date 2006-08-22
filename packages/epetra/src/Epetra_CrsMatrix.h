@@ -740,6 +740,12 @@ or if the number of entries in this row exceed the Length parameter.
   double NormFrobenius() const;
 
   //! Returns the number of nonzero entries in the global matrix.
+  /*
+    Note that if maps are defined such that some nonzeros appear on
+    multiple processors, then those nonzeros will be counted multiple times.
+    If the user wishes to assemble a matrix from overlapping submatrices,
+    they can use Epetra_FECrsMatrix.
+  */
   int NumGlobalNonzeros() const {return(Graph_.NumGlobalNonzeros());}
 	
   //! Returns the number of global matrix rows.

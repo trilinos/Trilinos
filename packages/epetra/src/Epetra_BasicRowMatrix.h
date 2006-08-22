@@ -302,6 +302,10 @@ class Epetra_BasicRowMatrix: public Epetra_CompObject, public Epetra_Object, pub
     virtual double NormOne() const{if (!HaveNumericConstants_) ComputeNumericConstants(); return(NormOne_);}
 
     //! Returns the number of nonzero entries in the global matrix.
+    /* Note that if the data decomposition is defined such that some nonzeros
+       appear on multiple processors, then those nonzeros will be counted
+       multiple times.
+    */
     virtual int NumGlobalNonzeros() const{if (!HaveStructureConstants_) ComputeStructureConstants(); return(NumGlobalNonzeros_);}
 
     //! Returns the number of global matrix rows.

@@ -526,7 +526,10 @@ class Epetra_CrsGraph: public Epetra_DistObject {
 	int NumGlobalCols() const {return(CrsGraphData_->NumGlobalCols_);}
 	
 	//! Returns the number of indices in the global graph.
-	/*!
+	/*! Note that if the graph's maps are defined such that some nonzeros
+            appear on more than one processor, then those nonzeros will be
+            counted more than once. If the user wishes to assemble a graph from
+            overlapping data, they can use Epetra_FECrsGraph.
 	  \pre Filled()==true
 	*/
 	int NumGlobalNonzeros() const {return(CrsGraphData_->NumGlobalNonzeros_);}
