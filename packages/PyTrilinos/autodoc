@@ -31,8 +31,10 @@ class SwigFile:
     """
     Upon initialization, a SwigFile object will open and read a SWIG interface
     file, storing various pieces of information about the file: the name of the
-    module it will create, header files that it %includes and %imports, and
-    other SWIG interface files that it %includes and %imports.
+    (package and) module it will create, header files that it %includes and
+    %imports, and other SWIG interface files that it %includes and %imports.
+    SWIG interface files that are %included are processed recursively to update
+    %included header files.
     """
 
     # Define the regular expressions
