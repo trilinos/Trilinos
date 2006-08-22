@@ -281,7 +281,6 @@ REMOVE --enable-belos
 REMOVE --enable-amesos
 REMOVE --with-ml_amesos
 REMOVE --enable-epetraext
-REMOVE --enable-ifpack
 REMOVE --enable-isorropia
 REMOVE --enable-moertel
 REMOVE --enable-meros
