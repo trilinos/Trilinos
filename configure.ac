@@ -7,7 +7,7 @@
 #
 
 # Process this file with autoconf to produce a configure script.
-AC_INIT(Trilinos, 7.0d, maherou@sandia.gov)
+AC_INIT(Trilinos, 8.0d, maherou@sandia.gov)
 AC_CONFIG_SRCDIR([packages/epetra/src/Epetra_Object.h])
 AM_CONFIG_HEADER([Trilinos_config.h:Trilinos_config.h.in])
 
@@ -127,14 +127,6 @@ TAC_ARG_ENABLE_FEATURE(triutils, [Build triutils], TRIUTILS, no)
 
 TAC_ARG_ENABLE_FEATURE(galeri, [Build galeri], GALERI, no)
 
-TAC_ARG_ENABLE_FEATURE(tsf, [Build TSF], TSF, no)
-
-TAC_ARG_ENABLE_FEATURE(tsfcore, [Build TSFCore], TSFCORE, no)
-
-TAC_ARG_ENABLE_FEATURE(tsfcoreutils, [Build TSFCoreUtils], TSFCOREUTILS, no)
-
-TAC_ARG_ENABLE_FEATURE(tsfextended, [Build TSFExtended], TSFEXTENDED, no)
-
 TAC_ARG_ENABLE_FEATURE(webtrilinos, [Build WebTrilinos], WEBTRILINOS, no)
 
 AC_ARG_ENABLE(aztecoo-teuchos,
@@ -145,9 +137,6 @@ if test "X$ac_cv_use_teuchos" != "Xno" ||
 	test "X$ac_cv_use_thyra" != "Xno" ||
 	test "X$ac_cv_use_stratimikos" != "Xno" ||
 	test "X$ac_cv_use_tpetra" != "Xno" ||
-        test "X$ac_cv_use_tsfextended" != "Xno" ||
- 	test "X$ac_cv_use_tsfcore" != "Xno" ||
-	test "X$ac_cv_use_tsfcoreutils" != "Xno" ||
         test "X$ac_cv_use_loca" != "Xno" ||
 	test "X$ac_cv_use_galeri" != "Xno" || 
 	test "X$ac_cv_use_amesos" != "Xno" || 
@@ -157,8 +146,10 @@ if test "X$ac_cv_use_teuchos" != "Xno" ||
 	test "X$ac_cv_use_epetraext" != "Xno" ||
 	test "X$ac_cv_use_meros" != "Xno" ||
 	test "X$ac_cv_use_moocho" != "Xno" ||
+	test "X$ac_cv_use_nox" != "Xno" ||
 	test "X$ac_cv_use_rtop" != "Xno" ||
 	test "X$ac_cv_use_rythmos" != "Xno" ||
+	test "X$ac_cv_use_ifpack" != "Xno" ||
 	test "X$ac_cv_use_isorropia" != "Xno" ||
 	test "X$ac_cv_use_moertel" != "Xno" ||
 	test "X$ac_cv_use_webtrilinos" != "Xno" ||
@@ -231,8 +222,6 @@ AM_CONDITIONAL(BUILD_KOKKOS, test "X$BUILD_KOKKOS" != "Xno")
 if test "X$ac_cv_use_epetra" != "Xno" || test "X$ac_cv_use_ifpack" != "Xno" ||
 	test "X$ac_cv_use_triutils" != "Xno" || 
 	test "X$ac_cv_use_galeri" != "Xno" || 
-	test "X$ac_cv_use_tsf" != "Xno" || 
-        test "X$ac_cv_use_tsfextended" != "Xno" ||
  	test "X$ac_cv_use_amesos" != "Xno" || 
 	test "X$ac_cv_use_aztecoo" != "Xno" || 
 	test "X$ac_cv_use_new_package" != "Xno" || 
@@ -339,51 +328,6 @@ else
   BUILD_KOMPLEX=no
 fi
 AM_CONDITIONAL(BUILD_KOMPLEX, test "X$BUILD_KOMPLEX" != "Xno")
-
-if test "X$ac_cv_use_tsf" != "Xno"; then 
-  AC_CONFIG_SUBDIRS([packages/TSF])
-  BUILD_TSF=yes
-  if test "X$ac_cv_use_tsf_explicit" != "Xyes"; then
-    ac_configure_args="$ac_configure_args --enable-tsf"
-  fi
-else
-  BUILD_TSF=no
-fi
-AM_CONDITIONAL(BUILD_TSF, test "X$BUILD_TSF" != "Xno")
-
-if test "X$ac_cv_use_tsfcore" != "Xno"; then
-  AC_CONFIG_SUBDIRS([packages/TSFCore])
-  BUILD_TSFCORE=yes
-  if test "X$ac_cv_use_tsfcore_explicit" != "Xyes"; then
-    ac_configure_args="$ac_configure_args --enable-tsfcore"
-  fi
-else
-  BUILD_TSFCORE=no
-fi
-AM_CONDITIONAL(BUILD_TSFCORE, test "X$BUILD_TSFCORE" != "Xno")
-
-if test "X$ac_cv_use_tsfextended" != "Xno"; then
-  AC_CONFIG_SUBDIRS([packages/TSFExtended])
-  BUILD_TSEXTENDEDF=yes
-  if test "X$ac_cv_use_tsfextended_explicit" != "Xyes"; then
-    ac_configure_args="$ac_configure_args --enable-tsfextended"
-  fi
-else
-  BUILD_TSFEXTENDED=no
-fi
-AM_CONDITIONAL(BUILD_TSFEXTENDED, test "X$BUILD_TSFEXTENDED" != "Xno")
-
-if test "X$ac_cv_use_tsfcore" != "Xno" || 
-	test "X$ac_cv_use_tsfcoreutils" != "Xno"; then
-  AC_CONFIG_SUBDIRS([packages/TSFCoreUtils])
-  BUILD_TSFCOREUTILS=yes
-  if test "X$ac_cv_use_tsfcoreutils_explicit" != "Xyes"; then
-    ac_configure_args="$ac_configure_args --enable-tsfcoreutils"
-  fi
-else
-  BUILD_TSFCOREUTILS=no
-fi
-AM_CONDITIONAL(BUILD_TSFCOREUTILS, test "X$BUILD_TSFCOREUTILS" != "Xno")
 
 if test "X$ac_cv_use_amesos" != "Xno" ||
 	test "X$ac_cv_use_webtrilinos" != "Xno" ||

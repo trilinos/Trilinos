@@ -99,18 +99,6 @@
 /* Define if want to build triutils */
 #undef HAVE_TRIUTILS
 
-/* Define if want to build tsf */
-#undef HAVE_TSF
-
-/* Define if want to build tsfcore */
-#undef HAVE_TSFCORE
-
-/* Define if want to build tsfcoreutils */
-#undef HAVE_TSFCOREUTILS
-
-/* Define if want to build tsfextended */
-#undef HAVE_TSFEXTENDED
-
 /* Define if want to build webtrilinos */
 #undef HAVE_WEBTRILINOS
 
