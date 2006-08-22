@@ -47,10 +47,12 @@ void Trilinos_Util_ReadHb2Epetra(char *data_file,
   char Ptrfmt[17], Indfmt[17], Valfmt[21], Rhsfmt[21];
   int Ptrcrd, Indcrd, Valcrd, Rhscrd;
   
+  for(int ii=0; ii<73; ++ii) Title[ii] = '\0';
+
   int * bindx, * pntr, * indx1, * pntr1;
   double * val, * val1, * hbx, * hbxexact, * hbb;
 
-  hbb = 0; hbxexact = 0; hbb = 0;
+  hbx = 0; hbb = 0; hbxexact = 0; hbb = 0;
 
   if(comm.MyPID() == 0)  { 
       in_file = fopen( data_file, "r");

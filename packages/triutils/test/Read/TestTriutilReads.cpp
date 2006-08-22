@@ -47,6 +47,7 @@
 //
 
 
+#include <stdio.h>
 #include <string>
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Vector.h"
@@ -63,22 +64,22 @@
 
   if ( Comm.MyPID() != 0 ) verbose = false ; 
 
-  Epetra_Map * readMap;
+  Epetra_Map * readMap = 0;
 
-  Epetra_CrsMatrix * HbA; 
-  Epetra_Vector * Hbx; 
-  Epetra_Vector * Hbb; 
-  Epetra_Vector * Hbxexact;
+  Epetra_CrsMatrix * HbA = 0; 
+  Epetra_Vector * Hbx = 0; 
+  Epetra_Vector * Hbb = 0; 
+  Epetra_Vector * Hbxexact = 0;
    
-  Epetra_CrsMatrix * TriplesA; 
-  Epetra_Vector * Triplesx; 
-  Epetra_Vector * Triplesb;
-  Epetra_Vector * Triplesxexact;
+  Epetra_CrsMatrix * TriplesA = 0; 
+  Epetra_Vector * Triplesx = 0; 
+  Epetra_Vector * Triplesb = 0;
+  Epetra_Vector * Triplesxexact = 0;
    
-  Epetra_CrsMatrix * MatrixMarketA; 
-  Epetra_Vector * MatrixMarketx; 
-  Epetra_Vector * MatrixMarketb;
-  Epetra_Vector * MatrixMarketxexact;
+  Epetra_CrsMatrix * MatrixMarketA = 0; 
+  Epetra_Vector * MatrixMarketx = 0; 
+  Epetra_Vector * MatrixMarketb = 0;
+  Epetra_Vector * MatrixMarketxexact = 0;
    
   int TRI_Size = TRIname.size() ; 
   string LastFiveBytes = TRIname.substr( EPETRA_MAX(0,TRI_Size-5), TRI_Size );
@@ -88,18 +89,21 @@
     EPETRA_CHK_ERR( Trilinos_Util_ReadTriples2Epetra( &TRIname[0], false, Comm, 
 						      readMap, TriplesA, Triplesx, 
 						      Triplesb, Triplesxexact, false, true, true ) );
+    delete readMap;
   } else {
     if ( LastFiveBytes == ".triU" ) { 
     // Call routine to read in unsymmetric Triplet matrix
       EPETRA_CHK_ERR( Trilinos_Util_ReadTriples2Epetra( &TRIname[0], false, Comm, 
 							readMap, TriplesA, Triplesx, 
 							Triplesb, Triplesxexact, false, false ) );
+      delete readMap;
     } else {
       if ( LastFiveBytes == ".triS" ) { 
 	// Call routine to read in symmetric Triplet matrix
 	EPETRA_CHK_ERR( Trilinos_Util_ReadTriples2Epetra( &TRIname[0], true, Comm, 
 							  readMap, TriplesA, Triplesx, 
 							  Triplesb, Triplesxexact, false, false ) );
+        delete readMap;
       } else {
 	assert( false ) ; 
       }
@@ -109,6 +113,7 @@
   EPETRA_CHK_ERR( Trilinos_Util_ReadMatrixMarket2Epetra( &MMname[0], Comm, readMap, 
 							 MatrixMarketA, MatrixMarketx, 
 							 MatrixMarketb, MatrixMarketxexact) );
+  delete readMap;
 
   // Call routine to read in HB problem
   Trilinos_Util_ReadHb2Epetra( &HBname[0], Comm, readMap, HbA, Hbx, 
@@ -175,6 +180,22 @@
     if ( MMerr ) cout << " Error in reading " << HBname << " or " << MMname << endl ; 
   }
 
+  delete HbA; 
+  delete Hbx; 
+  delete Hbb; 
+  delete Hbxexact;
+   
+  delete TriplesA; 
+  delete Triplesx; 
+  delete Triplesb;
+  delete Triplesxexact;
+   
+  delete MatrixMarketA; 
+  delete MatrixMarketx; 
+  delete MatrixMarketb;
+  delete MatrixMarketxexact;
+
+  delete readMap;
 
   return TripleErr+MMerr ; 
   }
@@ -194,12 +215,46 @@ int main( int argc, char *argv[] ) {
   if (verbose && Comm.MyPID()==0)
     cout << Triutils_Version() << endl << endl;
 
-  int ierr = 0;
-  ierr += TestOneMatrix( "bcsstk01.rsa",  "bcsstk01.mtx",  "bcsstk01.triS", Comm, verbose );
-  ierr += TestOneMatrix( "fs_183_4.rua",  "fs_183_4.mtx",  "fs_183_4.triU", Comm, verbose );
-  ierr += TestOneMatrix( "impcol_a.rua",  "impcol_a.mtx",  "impcol_a.triU", Comm, verbose );
-  ierr += TestOneMatrix( "Diagonal.rua",  "Diagonal.mtx",  "Diagonal.TimD", Comm, verbose );
+  std::string path("./");
 
+  FILE* fp = fopen("bcsstk01.rsa", "r");
+  if (fp == NULL) {
+    std::cout << "using Read/ path."<<std::endl;
+    path = "Read/";
+  }
+  else {
+    std::cout << "using ./ path."<<std::endl;
+  }
+
+  if (fp != NULL) {
+    fclose(fp);
+  }
+
+  std::string name1 = path+"bcsstk01.rsa";
+  std::string name2 = path+"bcsstk01.mtx";
+  std::string name3 = path+"bcsstk01.triS";
+
+  int ierr = 0;
+  ierr += TestOneMatrix( name1,  name2,  name3, Comm, verbose );
+
+  name1 = path+"fs_183_4.rua";
+  name2 = path+"fs_183_4.mtx";
+  name3 = path+"fs_183_4.triU";
+
+  ierr += TestOneMatrix( name1,  name2,  name3, Comm, verbose );
+
+  name1 = path+"impcol_a.rua";
+  name2 = path+"impcol_a.mtx";
+  name3 = path+"impcol_a.triU";
+
+  ierr += TestOneMatrix( name1,  name2,  name3, Comm, verbose );
+
+  name1 = path+"Diagonal.rua";
+  name2 = path+"Diagonal.mtx";
+  name3 = path+"Diagonal.TimD";
+
+  ierr += TestOneMatrix( name1,  name2,  name3, Comm, verbose );
 
   return ( ierr ) ; 
 }
+
