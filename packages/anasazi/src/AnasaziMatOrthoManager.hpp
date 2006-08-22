@@ -37,8 +37,12 @@
 /*! \class Anasazi::MatOrthoManager
   
   \brief Anasazi's templated virtual class for providing routines for orthogonalization and 
-  orthonormzalition of multivectors. 
-  
+  orthonormzalition of multivectors using matrix-based inner products.
+
+  This class extends Anasazi::OrthoManager by providing extra calling arguments to orthogonalization
+  routines, to reduce the cost of applying the inner product in cases where the user already
+  has the image of the source multivector under the inner product matrix.
+
   A concrete implementation of this class is necessary. The user can create
   their own implementation if those supplied are not suitable for their needs.
   
@@ -88,6 +92,8 @@ namespace Anasazi {
     //@{ 
 
     /*! \brief Provides the inner product defining the orthogonality concepts, using the provided operator.
+
+    All concepts of orthogonality discussed in this class are with respect to this inner product.
      */
     void innerProd( const MV& X, const MV& Y, 
                                   Teuchos::SerialDenseMatrix<int,ScalarType>& Z ) const {
@@ -122,8 +128,10 @@ namespace Anasazi {
     }
 
     /*! \brief Provides the inner product defining the orthogonality concepts, using the provided operator.
-     *  The method has the option of
-     *  exploiting a caller-provided \c MX, and returning updated information to the caller.
+     *  The method has the options of exploiting a caller-provided \c MX.
+     *
+     *  If pointer \c MY is null, then this routine calls innerProd(X,Y,Z). Otherwise, it forgoes the 
+     *  operator application and uses \c *MY in the computation of the inner product.
      */
     void innerProd( const MV& X, const MV& Y, Teuchos::RefCountPtr<const MV> MY, 
                             Teuchos::SerialDenseMatrix<int,ScalarType>& Z ) const {
@@ -153,6 +161,7 @@ namespace Anasazi {
     }
 
     /*! \brief Provides the norm induced by innerProd().
+     *  The method has the options of exploiting a caller-provided \c MX.
      */
     void norm( const MV& X, Teuchos::RefCountPtr<const MV> MX, std::vector< typename Teuchos::ScalarTraits<ScalarType>::magnitudeType > * normvec ) const {
 
@@ -181,19 +190,35 @@ namespace Anasazi {
       }
     }
 
-    
-    /*! \brief Given a list of (mutually and independently) orthonormal bases \c Q, this method
-     * takes a multivector \c X and projects it onto the space orthogonal to the individual \c Q[i], 
-     * returning optionally the coefficients of \c X in the individual \c Q[i]. All of this is done with respect
-     * to innerProd().
+
+    /*! \brief Given a list of (mutually and internally) orthonormal bases \c Q, this method
+     * takes a multivector \c X and projects it onto the space orthogonal to the individual <tt>Q[i]</tt>, 
+     * optionally returning the coefficients of \c X for the individual <tt>Q[i]</tt>. All of this is done with respect
+     * to the inner product innerProd().
      *  
+     * After calling this routine, \c X will be orthogonal to each of the <tt>Q[i]</tt>.
+     *
      @param X [in/out] The multivector to be modified.
-       On output, \c X will be orthogonal to \c Q[i] with respect to innerProd().
+       On output, \c X will be orthogonal to <tt>Q[i]</tt> with respect to innerProd().
 
-     @param C [out] The coefficients of \c X in the \c Q[i], with respect to innerProd().
+     @param MX [in] The image of the multivector under the specified operator. If \c MX is null, it is not used.
 
-     @param Q [in] A list of multivectors specifying the bases to be orthogonalized against. Each \c Q[i] is assumed to have
-     orthonormal columns, and the \c Q[i] are assumed to be mutually orthogonal.
+     @param C [out] The coefficients of \c X in the \c *Q[i], with respect to innerProd(). If <tt>C[i]</tt> is a non-null pointer 
+       and \c *C[i] matches the dimensions of \c X and \c *Q[i], then the coefficients computed during the orthogonalization
+       routine will be stored in the matrix \c *C[i]. If <tt>C[i]</tt> is a non-null pointer whose size does not match the dimensions of 
+       \c X and \c *Q[i], then a std::invalid_argument exception will be thrown. Otherwise, if <tt>C.size() < i</tt> or <tt>C[i]</tt> is a null
+       pointer, then the orthogonalization manager will declare storage for the coefficients and the user will not have access to them.
+
+     @param Q [in] A list of multivector bases specifying the subspaces to be orthogonalized against. Each <tt>Q[i]</tt> is assumed to have
+     orthonormal columns, and the <tt>Q[i]</tt> are assumed to be mutually orthogonal.
+    */
+    virtual void project ( MV &X, Teuchos::RefCountPtr<MV> MX, 
+                           Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
+                           Teuchos::Array<Teuchos::RefCountPtr<const MV> > Q) const = 0;
+
+
+    
+    /*! \brief This method calls project(X,Teuchos::null,C,Q); see documentation for that function.
     */
     virtual void project ( MV &X, 
                            Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
@@ -201,105 +226,85 @@ namespace Anasazi {
       project(X,Teuchos::null,C,Q);
     }
 
-    /*! \brief Given a list of (mutually and independently) orthonormal bases \c Q, this method
-     * takes a multivector \c X and projects it onto the space orthogonal to the individual \c Q[i], 
-     * returning optionally the coefficients of \c X in the individual \c Q[i]. All of this is done with respect
-     * to innerProd(). The method has the option of
-     * exploiting a caller-provided \c MX, and returning updated information to the caller.
-     *  
-     @param X [in/out] The multivector to be modified.
-       On output, \c X will be orthogonal to \c Q[i] with respect to innerProd().
-     
-     @param MX [in/out] The image of \c X under the operator \c M. 
-       If <tt>MX != 0</tt>: On input, this is expected to be consistent with \c X. On output, this is updated consistent with updates to \c X.
-       If <tt>MX == 0</tt> or <tt>M == 0</tt>: \c MX is not referenced.
-            
-     @param C [out] The coefficients of \c X in the \c Q[i], with respect to innerProd().
-     
-     @param Q [in] A list of multivectors specifying the bases to be orthogonalized against. Each \c Q[i] is assumed to have
-     orthonormal columns, and the \c Q[i] are assumed to be mutually orthogonal.
-    */
-    virtual void project ( MV &X, Teuchos::RefCountPtr<MV> MX, 
-                           Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
-                           Teuchos::Array<Teuchos::RefCountPtr<const MV> > Q) const = 0;
-
-
-    /*! \brief This method takes a multivector and orthonormalizes the columns, with respect to \c innerProd().
+    /*! \brief This method takes a multivector \c X and attempts to compute an orthonormal basis for \f$colspan(X)\f$, with respect to innerProd().
+     *
+     * This routine returns an integer \c rank stating the rank of the computed basis. If \c X does not have full rank and the normalize() routine does 
+     * not attempt to augment the subspace, then \c rank may be smaller than the number of columns in \c X. In this case, only the first \c rank columns of 
+     * output \c X and first \c rank rows of \c B will be valid.
      *  
      @param X [in/out] The multivector to the modified. 
-       On output, the columns are M-orthonormal.
-    
-     @return Rank of the basis computed by this method.
-    */
-    virtual int normalize ( MV &X, Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > R ) const {
-      return normalize(X,Teuchos::null,R);
-    }
+       On output, \c X will have some number of orthonormal columns (with respect to innerProd()).
 
+     @param MX [in/out] The image of the multivector under the specified operator. If \c MX is null, it is not used.
+                        On output, it returns the image of the valid basis vectors under the specified operator.
 
-    /*! \brief This method takes a multivector and orthonormalizes the columns, with respect to \c innerProd().
-     *  The method has the option of
-     *  exploiting a caller-provided \c MX, and returning updated information to the caller.
-     *  
-     @param X [in/out] The multivector to the modified. 
-       On output, the columns are M-orthonormal.
-    
-     @param MX [in/out] The image of \c X under the operator \c M. 
-       If <tt>MX != 0</tt>: On input, this is expected to be consistent with \c X. On output, this is updated consistent with updates to \c X.
-       If <tt>MX == 0</tt> or <tt>M == 0</tt>: \c MX is not referenced.
-      
+     @param B [out] The coefficients of \c X in the computed basis. If \c B is a non-null pointer 
+       and \c *B has appropriate dimensions, then the coefficients computed during the orthogonalization
+       routine will be stored in the matrix \c *B. If \c B is a non-null pointer whose size does not match the dimensions of 
+       \c X, then a std::invalid_argument exception will be thrown. Otherwise, 
+       the orthogonalization manager will declare storage for the coefficients and the user will not have access to them. <b>This matrix may or may not be triangular; see 
+       documentation for individual orthogonalization managers.</b>
+
      @return Rank of the basis computed by this method.
     */
     virtual int normalize ( MV &X, Teuchos::RefCountPtr<MV> MX, 
-                            Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > R ) const = 0;
+                            Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > B ) const = 0;
 
 
-    /*! \brief This method takes a multivector and projects it onto the space orthogonal to 
-     *  another given multivector.  It also orthonormalizes the 
-     *  columns of the resulting multivector. Both of these operations are conducted 
-     *  with respect to innerProd().
-     *  
-     @param X [in/out] The multivector to the modified. 
-       On output, \c X will be orthogonal to \c Q and will have orthonormal columns, with respect to innerProd().
-
-     @param C [out] The coefficients of \c X in the \c Q[i], with respect to innerProd().
-
-     @param R [out] The coefficients of the original X with respect to the produced basis.
-
-     @param Q [in] A list of multivectors specifying the bases to be orthogonalized against. Each \c Q[i] is assumed to have
-     orthonormal columns, and the \c Q[i] are assumed to be mutually orthogonal.
-
-     @return Rank of the basis computed by this method.
+    /*! \brief This method calls normalize(X,Teuchos::null,B); see documentation for that function.
     */
-    virtual int projectAndNormalize ( MV &X, 
-                                      Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
-                                      Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > R, 
-                                      Teuchos::Array<Teuchos::RefCountPtr<const MV> > Q ) const {
-      return projectAndNormalize(X,Teuchos::null,C,R,Q);
+    virtual int normalize ( MV &X, Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > B ) const {
+      return normalize(X,Teuchos::null,B);
     }
 
-    /*! \brief This method takes a multivector and projects it onto the space orthogonal to 
-     *  another given multivector.  It also orthonormalizes the 
-     *  columns of the resulting multivector. Both of these operations are conducted 
-     *  with respect to innerProd().
-     *  The method has the option of
-     *  exploiting a caller-provided \c MX, and returning updated information to the caller.
-     *  
+
+    /*! \brief Given a set of bases <tt>Q[i]</tt> and a multivector \c X, this method computes an orthonormal basis for \f$colspan(X) - \sum_i colspan(Q[i])\f$.
+     *
+     *  This routine returns an integer \c rank stating the rank of the computed basis. If the subspace \f$colspan(X) - \sum_i colspan(Q[i])\f$ does not 
+     *  have dimension as large as the number of columns of \c X and the orthogonalization manager doe not attempt to augment the subspace, then \c rank 
+     *  may be smaller than the number of columns of \c X. In this case, only the first \c rank columns of output \c X and first \c rank rows of \c B will 
+     *  be valid.
+     *
+     * \note This routine guarantees both the orthgonality constraints against the <tt>Q[i]</tt> as well as the orthonormality constraints. Therefore, this method 
+     * is not necessarily equivalent to calling project() followed by a call to normalize(); see the documentation for specific orthogonalization managers.
+     *
      @param X [in/out] The multivector to the modified. 
-       On output, \c X will be orthogonal to \c Q and will have orthonormal columns, with respect to innerProd().
+       On output, the relevant rows of \c X will be orthogonal to the <tt>Q[i]</tt> and will have orthonormal columns (with respect to innerProd()).
 
-     @param C [out] The coefficients of \c X in the \c Q[i], with respect to innerProd().
+     @param MX [in/out] The image of the multivector under the specified operator. If \c MX is null, it is not used.
+                        On output, it returns the image of the valid basis vectors under the specified operator.
 
-     @param R [out] The coefficients of the original X with respect to the produced basis.
+     @param C [out] The coefficients of the original \c X in the \c *Q[i], with respect to innerProd(). If <tt>C[i]</tt> is a non-null pointer 
+       and \c *C[i] matches the dimensions of \c X and \c *Q[i], then the coefficients computed during the orthogonalization
+       routine will be stored in the matrix \c *C[i]. If <tt>C[i]</tt> is a non-null pointer whose size does not match the dimensions of 
+       \c X and \c *Q[i], then a std::invalid_argument exception will be thrown. Otherwise, if <tt>C.size() < i</tt> or <tt>C[i]</tt> is a null
+       pointer, then the orthogonalization manager will declare storage for the coefficients and the user will not have access to them.
 
-     @param Q [in] A list of multivectors specifying the bases to be orthogonalized against. Each \c Q[i] is assumed to have
-     orthonormal columns, and the \c Q[i] are assumed to be mutually orthogonal.
+     @param B [out] The coefficients of \c X in the computed basis. If \c B is a non-null pointer 
+       and \c *B has appropriate dimensions, then the coefficients computed during the orthogonalization
+       routine will be stored in the matrix \c *B. If \c B is a non-null pointer whose size does not match the dimensions of 
+       \c X, then a std::invalid_argument exception will be thrown. Otherwise, 
+       the orthogonalization manager will declare storage for the coefficients and the user will not have access to them. <b>This matrix may or may not be triangular; see 
+       documentation for individual orthogonalization managers.</b>
+
+     @param Q [in] A list of multivector bases specifying the subspaces to be orthogonalized against. Each <tt>Q[i]</tt> is assumed to have
+     orthonormal columns, and the <tt>Q[i]</tt> are assumed to be mutually orthogonal.
 
      @return Rank of the basis computed by this method.
     */
     virtual int projectAndNormalize ( MV &X, Teuchos::RefCountPtr<MV> MX, 
                                       Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
-                                      Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > R, 
+                                      Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > B, 
                                       Teuchos::Array<Teuchos::RefCountPtr<const MV> > Q ) const = 0;
+
+    /*! \brief This method calls projectAndNormalize(X,Teuchos::null,C,B,Q); see documentation for that function.
+    */
+    virtual int projectAndNormalize ( MV &X, 
+                                      Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > C, 
+                                      Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > B, 
+                                      Teuchos::Array<Teuchos::RefCountPtr<const MV> > Q ) const {
+      return projectAndNormalize(X,Teuchos::null,C,B,Q);
+    }
 
     //@}
 
@@ -314,8 +319,7 @@ namespace Anasazi {
     }
 
     /*! \brief This method computes the error in orthonormality of a multivector.
-     *  The method has the option of
-     *  exploiting a caller-provided \c MX.
+     *  The method has the option of exploiting a caller-provided \c MX.
      */
     virtual typename Teuchos::ScalarTraits<ScalarType>::magnitudeType 
     orthonormError(const MV &X, Teuchos::RefCountPtr<const MV> MX) const = 0;
