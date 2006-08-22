@@ -90,7 +90,7 @@
     preconditioner is applied to the current residual vectors, and the
     resulting vectors are used to expand a subspace over which the next
     eigenvector approximations (and their residuals) are computed. However, a
-    cornicopia of decisions abound in implementing this simple iteration: the
+    plethora of decisions abound in implementing this simple iteration: the
     size of the computed basis, the method for restarting the subspace, the
     convergence criterion for the algorithm, the use of locking mechanisms,
     etc.
@@ -105,15 +105,15 @@
         - Anasazi::Eigensolver houses the essence of a particular eigenvalue iteration.\n
           The iteration state is private member data of the solver, and the eigensolver iteration occurs inside the Anasazi::Eigensolver::iterate() method. 
         - Anasazi::StatusTest tell an eigensolver when to stop iterating.\n
-          Inside the Anasazi::Eigensolver::iterate() routine, the eigensolver asks the status test if it cease iterating and return from the iterate() method.
+          Inside the Anasazi::Eigensolver::iterate() routine, the eigensolver asks the status test if it should cease iterating and return from the iterate() method.
         - Anasazi::SolverManager provides a simplified iterface to a particular eigensolver.\n
-          A solver manager can implement specific features that are independent of the eigensolver iteration, such as locking and restarting. Multiple solver manager providing varying features and techniques can exploit the same eigensolver.
+          A solver manager can implement specific features that are independent of the eigensolver iteration, such as locking and restarting. Multiple solver managers providing varying features and techniques can exploit the same eigensolver.
 
     Returning to the block Davidson example, let's examine how these different pieces come into play. The Anasazi::BlockDavidson class contains both the state
     and mechanism of the block Davidson eigensolver iteration. The state consists of the current Krylov basis, the current eigenvectors and eigenvalues, 
     the current residual vectors, and other support data. The eigenvalue iteration is described above, and is contained inside the Anasazi::BlockDavidson::iterate() 
     method. On a call to Anasazi::BlockDavidson::iterate(), the solver 
-    performs block Davidson iteration until one of two things happens: either the basis becomes full or the Anasazi::StatusTest given to the solver 
+    performs block Davidson iterations until one of two things happens: either the basis becomes full or the Anasazi::StatusTest given to the solver 
     dictates that the solver should return from iterate(). This is summarized in the following code snippet:
     
     \code 
@@ -124,8 +124,8 @@
         }
     }
     \endcode
-    
-    The Anasazi::StatusTest::checkStatus() routine takes as an argument an eigensolver. For a status test to examine the status of an arbitrary eigensolver, we must have some abstract interface defining
+
+    The Anasazi::StatusTest::checkStatus() routine takes an Anasazi::Eigensolver object as an argument. For a status test to examine the status of an arbitrary eigensolver, we must have some abstract interface defining
     the status of the eigensolver. This is provided by the Anasazi::Eigensolver class, the class from which all eigensolver in %Anasazi derive. The following are some example of the status method
     provbided by Anasazi::Eigensolver for use by Anasazi::StatusTest objects:
 
@@ -140,7 +140,7 @@
     int getNumIters() const;
     \endcode
 
-    Then a user wishing to limit the number of eigensolver iterations would pass a Anasazi::StatusTestMaxIters object to the eigensolver. A user wishing to halt iterate() when the residual norms
+    Then a user wishing to limit the number of eigensolver iterations would pass a Anasazi::StatusTestMaxIters object to the eigensolver. For example, a user wishing to halt iterate() when the residual norms
     satisfied a certain tolerance would pass a Anasazi::StatusTestResNorm object to the eigensolver. Arbitrary combinations of status tests can be created using a Anasazi::StatusTestCombo class, 
     so that the stopping criterion can now be affected without modifying the eigensolver code.
 
@@ -152,7 +152,7 @@
 
     However, the code for performing restarting and locking and similar features is tedious. Furthermore, much research has been conducted into robust and efficient methods for performing these opertions.
     The Anasazi::SolverManager exists as a way to encapsulate this funcionality in an accessible package, suitable for use in other codes. The goal of a solver manager is to perform all of the communication
-    with a particular eigensolver, providing advanced functionality, in place of the user. Algorithmic parameters of a particular solver manager are set via a Teuchos::ParameterList. The only other 
+    with a particular eigensolver, providing advanced functionality, on behalf of the user. Algorithmic parameters of a particular solver manager are set via a Teuchos::ParameterList. The only other 
     input provided to the solver manager is the Anasazi::Eigenproblem to be solved. Consider the following example:
 
     \code
@@ -170,7 +170,7 @@
 
         // solve the eigenproblem
         Anasazi::ReturnType ret = manager.solve();
-        
+
         // retrieve the answer 
         Anasazi::Eigensolution sltn = prob->getSolution();
     \endcode
@@ -181,8 +181,8 @@
     mechanisms, and putting the computed eigenpairs into the eigenproblem.
 
     The division between eigensolver and solver manager enables the following functionality in %Anasazi:
-        - the division of labor between eigensolver, status test, and solver manager, resulting in simpler code and easier development, debugging, reuse and maintenance.
-        - stratified levels of interaction: either custom, powerful low-level interaction with the eigensolver or convenient and simple interaction with a robust solver manager.
+        - the partitioning of responsibility among the classes, resulting in simpler code and easier development, debugging, reuse and maintenance.
+        - stratified levels of interaction: either custom, powerful low-level interaction with the eigensolver or convenient and simple interaction with a robust and flexible solver manager.
         - the flexibility to choose many implementation details through the choice of 
             - Anasazi::StatusTest 
             - Anasazi::OutputManager
