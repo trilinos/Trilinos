@@ -243,8 +243,13 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::BlockDavidsonSolMgr(
   }
 
   // verbosity level
-  verbosity_ = pl.get("Verbosity", verbosity_);
-
+  if (pl.isParameter("Verbosity")) {
+    if (Teuchos::isParameterType<int>(pl,"Verbosity")) {
+      verbosity_ = pl.get("Verbosity", verbosity_);
+    } else {
+      verbosity_ = (int)Teuchos::getParameter<Anasazi::MsgType>(pl,"Verbosity");
+    }
+  }
 }
 
 

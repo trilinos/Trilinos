@@ -173,7 +173,15 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::SimpleLOBPCGSolMgr(
                      AnasaziError,
                      "SimpleLOBPCGSolMgr: \"Tolerance\" parameter must be strictly postiive.");
 
-  verb_ = pl.get("Verbosity",verb_);
+  // verbosity level
+  if (pl.isParameter("Verbosity")) {
+    if (Teuchos::isParameterType<int>(pl,"Verbosity")) {
+      verb_ = pl.get("Verbosity", verb_);
+    } else {
+      verb_ = (int)Teuchos::getParameter<Anasazi::MsgType>(pl,"Verbosity");
+    }
+  }
+
 
   blockSize_= pl.get("Block Size",problem_->getNEV());
   TEST_FOR_EXCEPTION(blockSize_ <= 0,

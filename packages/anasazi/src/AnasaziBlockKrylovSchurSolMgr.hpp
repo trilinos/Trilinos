@@ -250,8 +250,13 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::BlockKrylovSchurSolMgr(
   }
 
   // verbosity level
-  _verbosity = pl.get("Verbosity", _verbosity);
-
+  if (pl.isParameter("Verbosity")) {
+    if (Teuchos::isParameterType<int>(pl,"Verbosity")) {
+      _verbosity = pl.get("Verbosity", _verbosity);
+    } else {
+      _verbosity = (int)Teuchos::getParameter<Anasazi::MsgType>(pl,"Verbosity");
+    }
+  }
 }
 
 
