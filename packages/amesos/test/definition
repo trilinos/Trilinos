@@ -60,11 +60,11 @@
 }
 
 # TestOptions is hanging on herouxsmp--disabling for now.  Bug #2111
-#(FRAMEWORK ) {   
-#   DIRS = TestOptions;
-#    X-HOST = atlantis;
-#    COMM = SERIAL, MPI(1-4); 
-#}
+(FRAMEWORK ) {   
+   DIRS = TestOptions;
+    X-HOST = atlantis;
+    COMM = SERIAL, MPI(1-4); 
+}
 
 #
 #  Bug 1988 - Test_MultipleSolves fails on s858352
