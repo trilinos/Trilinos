@@ -69,7 +69,7 @@ class CheckingTools {
                              const Epetra_Operator *Msolver) const;
 
     int errorLambda(double *continuous, double *discrete, int numDiscrete, double *lambda,
-                    int nev) const;
+                    int nev, bool ascend=true) const;
 
     int inputArguments(const int &numEigen, const Epetra_Operator *K,
                        const Epetra_Operator *M, const Epetra_Operator *P,

@@ -41,7 +41,7 @@ class ModalProblem {
     virtual const Epetra_CrsMatrix* getMass()      const = 0;
 
     virtual int eigenCheck(const Epetra_MultiVector &Q, double *lambda,
-                           double *normWeight) const { return 0; };
+                           double *normWeight, bool smallest = 0) const { return 0; };
 
     virtual void memoryInfo() const { };
     virtual void problemInfo() const { };

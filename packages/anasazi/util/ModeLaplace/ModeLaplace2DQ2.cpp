@@ -650,7 +650,7 @@ double ModeLaplace2DQ2::getFirstMassEigenValue() const {
 
 
 int ModeLaplace2DQ2::eigenCheck(const Epetra_MultiVector &Q, double *lambda, 
-                                double *normWeight) const { 
+                                double *normWeight, bool smallest) const { 
 
   int info = 0;
   int qc = Q.NumVectors();

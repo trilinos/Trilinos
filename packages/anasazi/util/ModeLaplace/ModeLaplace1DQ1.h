@@ -87,7 +87,7 @@ class ModeLaplace1DQ1 : public ModeLaplace {
 
     double getFirstMassEigenValue() const;
 
-    int eigenCheck(const Epetra_MultiVector &Q, double *lambda, double *normWeight) const;
+    int eigenCheck(const Epetra_MultiVector &Q, double *lambda, double *normWeight, bool smallest = true) const;
 
     void memoryInfo() const;
     void problemInfo() const;

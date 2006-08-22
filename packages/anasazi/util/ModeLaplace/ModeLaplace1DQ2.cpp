@@ -388,7 +388,7 @@ double ModeLaplace1DQ2::getFirstMassEigenValue() const {
 
 
 int ModeLaplace1DQ2::eigenCheck(const Epetra_MultiVector &Q, double *lambda, 
-                                double *normWeight) const { 
+                                double *normWeight, bool smallest) const { 
 
   int info = 0;
   int qc = Q.NumVectors();
@@ -455,11 +455,25 @@ int ModeLaplace1DQ2::eigenCheck(const Epetra_MultiVector &Q, double *lambda,
   }
   delete[] used;
 
-  int nMax = myVerify.errorLambda(continuous, discrete, newSize, lambda, qc);
+  // sort the eigenvalues/vectors in ascending order
+  double *lambdasorted = new (nothrow) double[qc];
+  if (lambdasorted == 0) {
+    delete[] discrete;
+    return -1;
+  }
+  for (i=0; i<qc; i++) {
+    lambdasorted[i] = lambda[i];
+  }
+  mySort.sortScalars(qc, lambdasorted);
+  // compare the discrete eigenvalues with the user eigenvalues
+  int nMax = myVerify.errorLambda(continuous, discrete, newSize, lambdasorted, qc, smallest);
+  // 0 <= nMax < newSize
+  // if smallest == true, nMax is the rightmost value in continuous that we matched against
+  // if smallest == false, nMax is the leftmost value in continuous that we matched against
 
   // Define the exact discrete eigenvectors
   int localSize = Map->NumMyElements();
-  double *vQ = new (nothrow) double[(nMax+1)*localSize + nMax];
+  double *vQ = new (nothrow) double[(nMax+2)*localSize + nMax];
   if (vQ == 0) {
     delete[] discrete;
     delete[] index;
@@ -468,88 +482,162 @@ int ModeLaplace1DQ2::eigenCheck(const Epetra_MultiVector &Q, double *lambda,
   }
 
   double *normL2 = vQ + (nMax+1)*localSize;
-  Epetra_MultiVector Qex(View, *Map, vQ, localSize, nMax);
+  int Qexdim;
+  if (smallest) {
+    Qexdim = nMax+1;
+  }
+  else {
+    Qexdim = numX-nMax-1;
+  }
 
-  if ((myPid == 0) && (nMax > 0)) {
+  Epetra_MultiVector Qex(View, *Map, vQ, localSize, Qexdim);
+
+  if ((myPid == 0) && (Qexdim > 0)) {
     cout << endl;
     cout << " --- Relative discretization errors for exact eigenvectors ---" << endl;
     cout << endl;
     cout << "       Cont. Values   Disc. Values     Error      H^1 norm   L^2 norm\n";
   }
 
-  for (i=1; i < numX; ++i) {
-    if (index[i-1] < nMax) {
-      // Compute the coefficient alphaX
-      double cosi = cos(i*M_PI*hx/2/Lx);
-      double a = cosi*(92.0 - 12.0*cos(i*M_PI*hx/Lx));
-      double b = 48.0 + 32.0*cos(i*M_PI*hx/Lx);
-      double c = -160.0*cosi;
-      double delta = sqrt(b*b - 4*a*c);
-      double alphaX = (-b - delta)*0.5/a;
-      alphaX = (alphaX < 0.0) ? (-b + delta)*0.5/a : alphaX;
-      int ii;
-      for (ii=0; ii<localSize; ++ii) {
-        if (fabs(x[ii] - floor(x[ii]/hx+0.5)*hx) < 0.25*hx) {
-          Qex.ReplaceMyValue(ii, index[i-1], alphaX*sin(i*(M_PI/Lx)*x[ii]));
+  if (smallest) {
+    for (i=1; i < numX; ++i) {
+      if (index[i-1] <= nMax) {
+        // Compute the coefficient alphaX
+        double cosi = cos(i*M_PI*hx/2/Lx);
+        double a = cosi*(92.0 - 12.0*cos(i*M_PI*hx/Lx));
+        double b = 48.0 + 32.0*cos(i*M_PI*hx/Lx);
+        double c = -160.0*cosi;
+        double delta = sqrt(b*b - 4*a*c);
+        double alphaX = (-b - delta)*0.5/a;
+        alphaX = (alphaX < 0.0) ? (-b + delta)*0.5/a : alphaX;
+        int ii;
+        for (ii=0; ii<localSize; ++ii) {
+          if (fabs(x[ii] - floor(x[ii]/hx+0.5)*hx) < 0.25*hx) {
+            Qex.ReplaceMyValue(ii, index[i-1], alphaX*sin(i*(M_PI/Lx)*x[ii]));
+          }
+          else {
+            Qex.ReplaceMyValue(ii, index[i-1], sin(i*(M_PI/Lx)*x[ii]));
+          }
         }
-        else {
-          Qex.ReplaceMyValue(ii, index[i-1], sin(i*(M_PI/Lx)*x[ii]));
+        // Normalize Qex against the mass matrix
+        Epetra_MultiVector MQex(View, *Map, vQ + (nMax+1)*localSize, localSize, 1);
+        Epetra_MultiVector Qi(View, Qex, index[i-1], 1);
+        M->Apply(Qi, MQex);
+        double mnorm = 0.0;
+        Qi.Dot(MQex, &mnorm); 
+        Qi.Scale(1.0/sqrt(mnorm));
+        // Compute the L2 norm
+        Epetra_MultiVector shapeInt(View, *Map, vQ + (nMax+1)*localSize, localSize, 1);
+        for (ii=0; ii<localSize; ++ii) {
+          double iX;
+          if (fabs(x[ii] - floor(x[ii]/hx+0.5)*hx) < 0.25*hx)
+            iX = 2.0*sin(i*(M_PI/Lx)*x[ii])/(hx*hx*i*(M_PI/Lx)*i*(M_PI/Lx)*i*(M_PI/Lx))*
+                 sqrt(2.0/Lx)*( 3*hx*i*(M_PI/Lx) - 4*sin(i*(M_PI/Lx)*hx) +
+                                cos(i*(M_PI/Lx)*hx)*hx*i*(M_PI/Lx) );
+          else
+            iX = 8.0*sin(i*(M_PI/Lx)*x[ii])/(hx*hx*i*(M_PI/Lx)*i*(M_PI/Lx)*i*(M_PI/Lx))*
+                 sqrt(2.0/Lx)*( 2*sin(i*(M_PI/Lx)*0.5*hx) - 
+                                cos(i*(M_PI/Lx)*0.5*hx)*hx*i*(M_PI/Lx));
+          shapeInt.ReplaceMyValue(ii, 0, iX);
         }
-      }
-      // Normalize Qex against the mass matrix
-      Epetra_MultiVector MQex(View, *Map, vQ + nMax*localSize, localSize, 1);
-      Epetra_MultiVector Qi(View, Qex, index[i-1], 1);
-      M->Apply(Qi, MQex);
-      double mnorm = 0.0;
-      Qi.Dot(MQex, &mnorm); 
-      Qi.Scale(1.0/sqrt(mnorm));
-      // Compute the L2 norm
-      Epetra_MultiVector shapeInt(View, *Map, vQ + nMax*localSize, localSize, 1);
-      for (ii=0; ii<localSize; ++ii) {
-        double iX;
-        if (fabs(x[ii] - floor(x[ii]/hx+0.5)*hx) < 0.25*hx)
-          iX = 2.0*sin(i*(M_PI/Lx)*x[ii])/(hx*hx*i*(M_PI/Lx)*i*(M_PI/Lx)*i*(M_PI/Lx))*
-               sqrt(2.0/Lx)*( 3*hx*i*(M_PI/Lx) - 4*sin(i*(M_PI/Lx)*hx) +
-                              cos(i*(M_PI/Lx)*hx)*hx*i*(M_PI/Lx) );
-        else
-          iX = 8.0*sin(i*(M_PI/Lx)*x[ii])/(hx*hx*i*(M_PI/Lx)*i*(M_PI/Lx)*i*(M_PI/Lx))*
-               sqrt(2.0/Lx)*( 2*sin(i*(M_PI/Lx)*0.5*hx) - 
-                              cos(i*(M_PI/Lx)*0.5*hx)*hx*i*(M_PI/Lx));
-        shapeInt.ReplaceMyValue(ii, 0, iX);
-      }
-      Qi.Dot(shapeInt, normL2+index[i-1]);
-    } // if index[i-1] < nMax)
-  } // for (i=1; i < numX; ++i)
+        Qi.Dot(shapeInt, normL2+index[i-1]);
+      } // if index[i-1] <= nMax)
+    } // for (i=1; i < numX; ++i)
+    if (myPid == 0) {
+      for (i = 0; i <= nMax; ++i) {
+        double normH1 = continuous[i]*(1.0 - 2.0*normL2[i]) + discrete[i];
+        normL2[i] = 2.0 - 2.0*normL2[i];
+        normH1+= normL2[i];
+        // Print out the result
+        if (myPid == 0) {
+          cout << " ";
+          cout.width(4);
+          cout << i+1 << ". ";
+          cout.setf(ios::scientific, ios::floatfield);
+          cout.precision(8);
+          cout << continuous[i] << " " << discrete[i] << "  ";
+          cout.precision(3);
+          cout << fabs(discrete[i] - continuous[i])/continuous[i] << "  ";
+          cout << sqrt(fabs(normH1)/(continuous[i]+1.0)) << "  ";
+          cout << sqrt(fabs(normL2[i])) << endl;
+        }
+      } // for (i = 0; i <= nMax; ++i)
+    } // if (myPid == 0)
+  }
+  else {
+    for (i=1; i < numX; ++i) {
+      if (index[i-1] >= nMax) {
+        // Compute the coefficient alphaX
+        double cosi = cos(i*M_PI*hx/2/Lx);
+        double a = cosi*(92.0 - 12.0*cos(i*M_PI*hx/Lx));
+        double b = 48.0 + 32.0*cos(i*M_PI*hx/Lx);
+        double c = -160.0*cosi;
+        double delta = sqrt(b*b - 4*a*c);
+        double alphaX = (-b - delta)*0.5/a;
+        alphaX = (alphaX < 0.0) ? (-b + delta)*0.5/a : alphaX;
+        int ii;
+        for (ii=0; ii<localSize; ++ii) {
+          if (fabs(x[ii] - floor(x[ii]/hx+0.5)*hx) < 0.25*hx) {
+            Qex.ReplaceMyValue(ii, index[i-1]-nMax, alphaX*sin(i*(M_PI/Lx)*x[ii]));
+          }
+          else {
+            Qex.ReplaceMyValue(ii, index[i-1]-nMax, sin(i*(M_PI/Lx)*x[ii]));
+          }
+        }
+        // Normalize Qex against the mass matrix
+        Epetra_MultiVector MQex(View, *Map, vQ + (numX-nMax-1)*localSize, localSize, 1);
+        Epetra_MultiVector Qi(View, Qex, index[i-1]-nMax, 1);
+        M->Apply(Qi, MQex);
+        double mnorm = 0.0;
+        Qi.Dot(MQex, &mnorm); 
+        Qi.Scale(1.0/sqrt(mnorm));
+        // Compute the L2 norm
+        Epetra_MultiVector shapeInt(View, *Map, vQ + (numX-nMax-1)*localSize, localSize, 1);
+        for (ii=0; ii<localSize; ++ii) {
+          double iX;
+          if (fabs(x[ii] - floor(x[ii]/hx+0.5)*hx) < 0.25*hx)
+            iX = 2.0*sin(i*(M_PI/Lx)*x[ii])/(hx*hx*i*(M_PI/Lx)*i*(M_PI/Lx)*i*(M_PI/Lx))*
+                 sqrt(2.0/Lx)*( 3*hx*i*(M_PI/Lx) - 4*sin(i*(M_PI/Lx)*hx) +
+                                cos(i*(M_PI/Lx)*hx)*hx*i*(M_PI/Lx) );
+          else
+            iX = 8.0*sin(i*(M_PI/Lx)*x[ii])/(hx*hx*i*(M_PI/Lx)*i*(M_PI/Lx)*i*(M_PI/Lx))*
+                 sqrt(2.0/Lx)*( 2*sin(i*(M_PI/Lx)*0.5*hx) - 
+                                cos(i*(M_PI/Lx)*0.5*hx)*hx*i*(M_PI/Lx));
+          shapeInt.ReplaceMyValue(ii, 0, iX);
+        }
+        Qi.Dot(shapeInt, normL2+index[i-1]);
+      } // if index[i-1] <= nMax)
+    } // for (i=1; i < numX; ++i)
+    if (myPid == 0) {
+      for (i = nMax; i < numX-1; ++i) {
+        double normH1 = continuous[i]*(1.0 - 2.0*normL2[i]) + discrete[i];
+        normL2[i] = 2.0 - 2.0*normL2[i];
+        normH1+= normL2[i];
+        // Print out the result
+        if (myPid == 0) {
+          cout << " ";
+          cout.width(4);
+          cout << i+1 << ". ";
+          cout.setf(ios::scientific, ios::floatfield);
+          cout.precision(8);
+          cout << continuous[i] << " " << discrete[i] << "  ";
+          cout.precision(3);
+          cout << fabs(discrete[i] - continuous[i])/continuous[i] << "  ";
+          cout << sqrt(fabs(normH1)/(continuous[i]+1.0)) << "  ";
+          cout << sqrt(fabs(normL2[i])) << endl;
+        }
+      } // for (i = nMax; i < numX-1; ++i)
+    } // if (myPid == 0)
+  }
 
-  if (myPid == 0) {
-    for (i = 0; i < nMax; ++i) {
-      double normH1 = continuous[i]*(1.0 - 2.0*normL2[i]) + discrete[i];
-      normL2[i] = 2.0 - 2.0*normL2[i];
-      normH1+= normL2[i];
-      // Print out the result
-      if (myPid == 0) {
-        cout << " ";
-        cout.width(4);
-        cout << i+1 << ". ";
-        cout.setf(ios::scientific, ios::floatfield);
-        cout.precision(8);
-        cout << continuous[i] << " " << discrete[i] << "  ";
-        cout.precision(3);
-        cout << fabs(discrete[i] - continuous[i])/continuous[i] << "  ";
-        cout << sqrt(fabs(normH1)/(continuous[i]+1.0)) << "  ";
-        cout << sqrt(fabs(normL2[i])) << endl;
-      }
-    } // for (i = 0; i < nMax; ++i)
-  } // if (myPid == 0)
-
-  delete[] discrete;
-  delete[] index;
 
   // Check the angles between exact discrete eigenvectors and computed
-
   myVerify.errorSubspaces(Q, Qex, M);
 
   delete[] vQ;
+
+  delete[] discrete;
+  delete[] index;
 
   return info;
 

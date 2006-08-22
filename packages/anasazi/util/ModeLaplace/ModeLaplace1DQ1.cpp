@@ -350,7 +350,7 @@ double ModeLaplace1DQ1::getFirstMassEigenValue() const {
 
 
 int ModeLaplace1DQ1::eigenCheck(const Epetra_MultiVector &Q, double *lambda, 
-                                double *normWeight) const { 
+                                double *normWeight, bool smallest) const { 
 
   int info = 0;
   int qc = Q.NumVectors();
@@ -408,11 +408,25 @@ int ModeLaplace1DQ1::eigenCheck(const Epetra_MultiVector &Q, double *lambda,
   }
   delete[] used;
 
-  int nMax = myVerify.errorLambda(continuous, discrete, newSize, lambda, qc);
+  // sort the eigenvalues/vectors in ascending order
+  double *lambdasorted = new (nothrow) double[qc];
+  if (lambdasorted == 0) {
+    delete[] discrete;
+    return -1;
+  }
+  for (i=0; i<qc; i++) {
+    lambdasorted[i] = lambda[i];
+  }
+  mySort.sortScalars(qc, lambdasorted);
+  // compare the discrete eigenvalues with the user eigenvalues
+  int nMax = myVerify.errorLambda(continuous, discrete, newSize, lambdasorted, qc, smallest);
+  // 0 <= nMax < newSize
+  // if smallest == true, nMax is the rightmost value in continuous that we matched against
+  // if smallest == false, nMax is the leftmost value in continuous that we matched against
 
   // Define the exact discrete eigenvectors
   int localSize = Map->NumMyElements();
-  double *vQ = new (nothrow) double[(nMax+1)*localSize];
+  double *vQ = new (nothrow) double[(nMax+2)*localSize];
   if (vQ == 0) {
     delete[] discrete;
     delete[] index;
@@ -420,61 +434,109 @@ int ModeLaplace1DQ1::eigenCheck(const Epetra_MultiVector &Q, double *lambda,
     return info;
   }
 
-  Epetra_MultiVector Qex(View, *Map, vQ, localSize, nMax);
+  int Qexdim;
+  if (smallest) {
+    Qexdim = nMax+1;
+  }
+  else {
+    Qexdim = numX-nMax-1;
+  }
 
-  if ((myPid == 0) && (nMax > 0)) {
+  Epetra_MultiVector Qex(View, *Map, vQ, localSize, Qexdim);
+
+  if ((myPid == 0) && (Qexdim > 0)) {
     cout << endl;
     cout << " --- Relative discretization errors for exact eigenvectors ---" << endl;
     cout << endl;
     cout << "       Cont. Values   Disc. Values     Error      H^1 norm   L^2 norm\n";
   }
 
-  for (i=1; i < numX; ++i) {
-    if (index[i-1] < nMax) {
-      // Form the exact discrete eigenvector
-      double coeff = (2.0 + cos(i*M_PI/Lx*hx))*Lx/6.0;
-      coeff = 1.0/sqrt(coeff);
-      int ii;
-      for (ii=0; ii<localSize; ++ii) {
-        Qex.ReplaceMyValue(ii, index[i-1], coeff*sin(i*(M_PI/Lx)*x[ii]));
+  if (smallest) {
+    for (i=1; i < numX; ++i) {
+      if (index[i-1] <= nMax) {
+        // Form the exact discrete eigenvector
+        double coeff = (2.0 + cos(i*M_PI/Lx*hx))*Lx/6.0;
+        coeff = 1.0/sqrt(coeff);
+        int ii;
+        for (ii=0; ii<localSize; ++ii) {
+          Qex.ReplaceMyValue(ii, index[i-1], coeff*sin(i*(M_PI/Lx)*x[ii]));
+        }
+        // Compute the L2 norm
+        Epetra_MultiVector shapeInt(View, *Map, vQ + (nMax+1)*localSize, localSize, 1);
+        Epetra_MultiVector Qi(View, Qex, index[i-1], 1);
+        for (ii=0; ii<localSize; ++ii) {
+          double iX = 4.0*sqrt(2.0/Lx)*sin(i*(M_PI/Lx)*x[ii])/hx*
+                      pow(sin(i*(M_PI/Lx)*0.5*hx)/(i*M_PI/Lx), 2.0);
+          shapeInt.ReplaceMyValue(ii, 0, iX);
+        }
+        double normL2 = 0.0;
+        Qi.Dot(shapeInt, &normL2);
+        double normH1 = continuous[i-1]*(1.0 - 2.0*normL2) + discrete[i-1];
+        normL2 = 2.0 - 2.0*normL2;
+        normH1+= normL2;
+        // Print out the result
+        if (myPid == 0) {
+          cout << " ";
+          cout.width(4);
+          cout << index[i-1]+1 << ". ";
+          cout.setf(ios::scientific, ios::floatfield);
+          cout.precision(8);
+          cout << continuous[i-1] << " " << discrete[i-1] << "  ";
+          cout.precision(3);
+          cout << fabs(discrete[i-1] - continuous[i-1])/continuous[i-1] << "  ";
+          cout << sqrt(fabs(normH1)/(continuous[i-1]+1.0)) << "  ";
+          cout << sqrt(fabs(normL2)) << endl;
+        }
       }
-      // Compute the L2 norm
-      Epetra_MultiVector shapeInt(View, *Map, vQ + nMax*localSize, localSize, 1);
-      Epetra_MultiVector Qi(View, Qex, index[i-1], 1);
-      for (ii=0; ii<localSize; ++ii) {
-        double iX = 4.0*sqrt(2.0/Lx)*sin(i*(M_PI/Lx)*x[ii])/hx*
-                    pow(sin(i*(M_PI/Lx)*0.5*hx)/(i*M_PI/Lx), 2.0);
-        shapeInt.ReplaceMyValue(ii, 0, iX);
-      }
-      double normL2 = 0.0;
-      Qi.Dot(shapeInt, &normL2);
-      double normH1 = continuous[i-1]*(1.0 - 2.0*normL2) + discrete[i-1];
-      normL2 = 2.0 - 2.0*normL2;
-      normH1+= normL2;
-      // Print out the result
-      if (myPid == 0) {
-        cout << " ";
-        cout.width(4);
-        cout << index[i-1] << ". ";
-        cout.setf(ios::scientific, ios::floatfield);
-        cout.precision(8);
-        cout << continuous[i-1] << " " << discrete[i-1] << "  ";
-        cout.precision(3);
-        cout << fabs(discrete[i-1] - continuous[i-1])/continuous[i-1] << "  ";
-        cout << sqrt(fabs(normH1)/(continuous[i-1]+1.0)) << "  ";
-        cout << sqrt(fabs(normL2)) << endl;
+    }
+  }
+  else {
+    for (i=1; i < numX; ++i) {
+      if (index[i-1] >= nMax) {
+        // Form the exact discrete eigenvector
+        double coeff = (2.0 + cos(i*M_PI/Lx*hx))*Lx/6.0;
+        coeff = 1.0/sqrt(coeff);
+        int ii;
+        for (ii=0; ii<localSize; ++ii) {
+          Qex.ReplaceMyValue(ii, index[i-1]-nMax, coeff*sin(i*(M_PI/Lx)*x[ii]));
+        }
+        // Compute the L2 norm
+        Epetra_MultiVector shapeInt(View, *Map, vQ + (numX-nMax-1)*localSize, localSize, 1);
+        Epetra_MultiVector Qi(View, Qex, index[i-1]-nMax, 1);
+        for (ii=0; ii<localSize; ++ii) {
+          double iX = 4.0*sqrt(2.0/Lx)*sin(i*(M_PI/Lx)*x[ii])/hx*
+                      pow(sin(i*(M_PI/Lx)*0.5*hx)/(i*M_PI/Lx), 2.0);
+          shapeInt.ReplaceMyValue(ii, 0, iX);
+        }
+        double normL2 = 0.0;
+        Qi.Dot(shapeInt, &normL2);
+        double normH1 = continuous[i-1]*(1.0 - 2.0*normL2) + discrete[i-1];
+        normL2 = 2.0 - 2.0*normL2;
+        normH1+= normL2;
+        // Print out the result
+        if (myPid == 0) {
+          cout << " ";
+          cout.width(4);
+          cout << index[i-1]+1 << ". ";
+          cout.setf(ios::scientific, ios::floatfield);
+          cout.precision(8);
+          cout << continuous[i-1] << " " << discrete[i-1] << "  ";
+          cout.precision(3);
+          cout << fabs(discrete[i-1] - continuous[i-1])/continuous[i-1] << "  ";
+          cout << sqrt(fabs(normH1)/(continuous[i-1]+1.0)) << "  ";
+          cout << sqrt(fabs(normL2)) << endl;
+        }
       }
     }
   }
 
-  delete[] discrete;
-  delete[] index;
-
   // Check the angles between exact discrete eigenvectors and computed
-
   myVerify.errorSubspaces(Q, Qex, M);
 
   delete[] vQ;
+
+  delete[] discrete;
+  delete[] index;
 
   return info;
 

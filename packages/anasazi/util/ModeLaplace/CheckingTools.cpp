@@ -448,7 +448,7 @@ void CheckingTools::errorEigenResiduals(const Epetra_MultiVector &Q, double *lam
 
 
 int CheckingTools::errorLambda(double *continuous, double *discrete, int numDiscrete,
-                               double *lambda, int nev) const {
+                               double *lambda, int nev, bool smallest) const {
 
   int myPid = MyComm.MyPID();
   int nMax = 0;
@@ -458,7 +458,7 @@ int CheckingTools::errorLambda(double *continuous, double *discrete, int numDisc
 
   int *used = new (std::nothrow) int[numDiscrete + nev];
   if (used == 0) {
-    return nMax;
+    return 0;
   }
 
   int *bestMatch = used + numDiscrete;
@@ -521,39 +521,78 @@ int CheckingTools::errorLambda(double *continuous, double *discrete, int numDisc
   }
 
   double lastDiscrete = 0.0;
-  for (i=0; i<numDiscrete; ++i) {
-    if ((iCount == nev) && (discrete[i] > lastDiscrete))
-      break;
-    if (used[i] < 0) {
-      nMax += 1;
-      lastDiscrete = discrete[i];
-      if (myPid == 0) {
-        cout << " ";
-        cout.width(4);
-        cout << i+1 << ". ";
-        cout.precision(8);
-        cout.setf(ios::scientific, ios::floatfield);
-        cout << continuous[i] << " " << discrete[i] << " ";
-        cout << "**************  *********  ";
-        cout.precision(3);
-        cout << fabs(continuous[i]-discrete[i])/continuous[i] << endl;
+  if (smallest) {
+    // print the smallest eigenvalues, up to the ones we've matched
+    for (i=0; i<numDiscrete; ++i) {
+      if ((iCount == nev) && (discrete[i] > lastDiscrete))
+        break;
+      nMax = i;
+      if (used[i] < 0) {
+        lastDiscrete = discrete[i];
+        if (myPid == 0) {
+          cout << " ";
+          cout.width(4);
+          cout << i+1 << ". ";
+          cout.precision(8);
+          cout.setf(ios::scientific, ios::floatfield);
+          cout << continuous[i] << " " << discrete[i] << " ";
+          cout << "**************  *********  ";
+          cout.precision(3);
+          cout << fabs(continuous[i]-discrete[i])/continuous[i] << endl;
+        }
+      }
+      else {
+        lastDiscrete = discrete[i];
+        if (myPid == 0) {
+          cout << " ";
+          cout.width(4);
+          cout << i+1 << ". ";
+          cout.precision(8);
+          cout.setf(ios::scientific, ios::floatfield);
+          cout << continuous[i] << " " << discrete[i] << " " << lambda[used[i]] << "  ";
+          cout.precision(3);
+          cout << fabs(lambda[used[i]]-discrete[i])/discrete[i] << "  ";
+          cout << fabs(continuous[i]-discrete[i])/continuous[i] << endl;
+        }
+        iCount += 1;
       }
     }
-    else {
-      nMax += 1;
-      lastDiscrete = discrete[i];
-      if (myPid == 0) {
-        cout << " ";
-        cout.width(4);
-        cout << i+1 << ". ";
-        cout.precision(8);
-        cout.setf(ios::scientific, ios::floatfield);
-        cout << continuous[i] << " " << discrete[i] << " " << lambda[used[i]] << "  ";
-        cout.precision(3);
-        cout << fabs(lambda[used[i]]-discrete[i])/discrete[i] << "  ";
-        cout << fabs(continuous[i]-discrete[i])/continuous[i] << endl;
+  }
+  else {
+    // print the largest eigenvalues, from the first that we've matched
+    bool started = false;
+    for (i=0; i<numDiscrete; ++i) {
+      if (used[i] >= 0) {
+        if (started == false) {
+          nMax = i;
+        }
+        started = true;
+        if (myPid == 0) {
+          cout << " ";
+          cout.width(4);
+          cout << i+1 << ". ";
+          cout.precision(8);
+          cout.setf(ios::scientific, ios::floatfield);
+          cout << continuous[i] << " " << discrete[i] << " " << lambda[used[i]] << "  ";
+          cout.precision(3);
+          cout << fabs(lambda[used[i]]-discrete[i])/discrete[i] << "  ";
+          cout << fabs(continuous[i]-discrete[i])/continuous[i] << endl;
+        }
+        iCount += 1;
       }
-      iCount += 1;
+      else if (started) {
+        if (myPid == 0) {
+          cout << " ";
+          cout.width(4);
+          cout << i+1 << ". ";
+          cout.precision(8);
+          cout.setf(ios::scientific, ios::floatfield);
+          cout << continuous[i] << " " << discrete[i] << " ";
+          cout << "**************  *********  ";
+          cout.precision(3);
+          cout << fabs(continuous[i]-discrete[i])/continuous[i] << endl;
+        }
+      }
     }
   }
 

@@ -177,12 +177,19 @@ int main(int argc, char *argv[])
 
   if (numev > 0) {
 
-    /* finish: this code has bugs: it only works properly when which == "SM" or "SR"
     // Check the problem against the analytical solutions
-    if (verbose && which == "SM") {
-      info = testCase->eigenCheck( *evecs, &evals[0], 0 );
+    if (verbose) {
+      double *revals = new double[numev];
+      for (int i=0; i<numev; i++) {
+        revals[i] = sol.Evals[i].realpart;
+      }
+      bool smallest = false;
+      if (which == "SM" || which == "SR") {
+        smallest = true;
+      }
+      testCase->eigenCheck( *evecs, revals, 0, smallest );
+      delete [] revals;
     }
-    */
 
     // Compute the direct residual
     std::vector<ScalarType> normV( numev );
