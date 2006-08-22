@@ -120,9 +120,6 @@ TYPEMAP_OUT(Epetra_IntVector,  Epetra_NumPyIntVector  )
 // objects).
 %pythoncode %{
 
-# We need the numpy module and the UserArray module, but these should have
-# already been imported from the %pythoncode in Epetra_SerialDense.i
-
 class MultiVector(UserArray,NumPyMultiVector):
     def __init__(self, *args):
         """

@@ -330,5 +330,16 @@ static PyObject * PyExc_EpetraError = PyErr_NewException("Epetra.Error",NULL,NUL
 
 // Python code.  Here we set the __version__ string
 %pythoncode %{
+
+# Much of the Epetra module is compatible with the numpy module
+from numpy import *
+
+# There is a bug in UserArray from numpy 0.9.8.  If that is what the user is
+# running, then we have our own patched UserArrayFix module
+try:
+    from UserArrayFix import *
+except ImportError:
+    from numpy.lib.UserArray import *
+
 __version__ = Version().split()[2]
 %}

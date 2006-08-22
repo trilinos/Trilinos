@@ -123,7 +123,7 @@ _Epetra = Extension("PyTrilinos._Epetra",
 from numpy import __version__ as numpy_version
 if numpy_version == "0.9.8":
     userArraySrc = os.path.join(srcdir,"UserArray.patch")
-    userArrayTrg = "UserArray.py"
+    userArrayTrg = "UserArrayFix.py"
     if (not os.path.exists(userArrayTrg)):
         print "copying %s -> %s" % (userArraySrc, userArrayTrg)
         open(userArrayTrg,"w").write(open(userArraySrc,"r").read())
