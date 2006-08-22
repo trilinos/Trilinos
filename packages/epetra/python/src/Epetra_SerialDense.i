@@ -142,7 +142,14 @@ METHOD_WITH_OUTPUT_ARRAY1D(Epetra_SerialDenseSolver,C,N      )
 // Python code
 %pythoncode %{
 
-from numpy.lib.UserArray import *
+from numpy import *
+
+# There is a bug in UserArray from numpy 0.9.8.  If that is what the user is
+# running, then we have our own patched UserArray module
+try:
+    from UserArray import *
+except ImportError:
+    from numpy.lib.UserArray import *
 
 class IntSerialDenseMatrix(UserArray,NumPyIntSerialDenseMatrix):
     def __init__(self, *args):

@@ -117,6 +117,17 @@ _Epetra = Extension("PyTrilinos._Epetra",
                     extra_link_args    = extra_link_args
                     )
 
+# UserArray patch.  NumPy version 0.9.8 has a bug in UserArray.  If the user is
+# using this version of NumPy, we need to include our patched version of
+# UserArray.py in the distribution
+from numpy import __version__ as numpy_version
+if numpy_version == "0.9.8":
+    userArraySrc = os.path.join(srcdir,"UserArray.patch")
+    userArrayTrg = "UserArray.py"
+    if (not os.path.exists(userArrayTrg)):
+        print "copying %s -> %s" % (userArraySrc, userArrayTrg)
+        open(userArrayTrg,"w").write(open(userArraySrc,"r").read())
+
 # PyTrilinos.Epetra setup
 setup(name         = "PyTrilinos.Epetra",
       version      = version,
