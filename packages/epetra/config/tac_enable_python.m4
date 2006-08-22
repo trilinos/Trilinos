@@ -31,16 +31,19 @@ if test -n "$PYTHON"; then
   AC_PYTHON_MODULE(numpy,yes)
   AC_PYTHON_MODULE(numpy.lib.UserArray,yes)
 
-  # Check that numpy/arrayobject.h is available
-  save_CPPFLAGS=$CPPFLAGS
-  CPPFLAGS="$save_CPPFLAGS $PYTHON_CSPEC"
-  AC_LANG([C++])
-  AC_CHECK_HEADER(
-  [numpy/arrayobject.h],
-  break,
-  AC_MSG_ERROR([numpy/arrayobject.h not found]),
-  [#include <Python.h>])
-  CPPFLAGS="$save_CPPFLAGS"
+  # No longer check that numpy/arrayobject.h is available.  The
+  # setup.py script does this automatically, and if the numpy python
+  # module exists, that should be good enough.
+  #
+  # save_CPPFLAGS=$CPPFLAGS
+  # CPPFLAGS="$save_CPPFLAGS $PYTHON_CSPEC"
+  # AC_LANG([C++])
+  # AC_CHECK_HEADER(
+  # [numpy/arrayobject.h],
+  # break,
+  # AC_MSG_ERROR([numpy/arrayobject.h not found]),
+  # [#include <Python.h>])
+  # CPPFLAGS="$save_CPPFLAGS"
 
   # If user specifies prefix, use it for the PYTHON_PREFIX
   if test "$prefix" != "$ac_default_prefix"; then
