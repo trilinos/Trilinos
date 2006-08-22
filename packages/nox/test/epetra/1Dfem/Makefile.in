@@ -44,12 +44,6 @@
 # Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
 # Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 # ************************************************************************
-#  CVS Information
-#  $Source$
-#  $Author$
-#  $Date$
-#  $Revision$
-# ************************************************************************
 #@HEADER
 
 SOURCES = $(1Dfem_SOURCES) $(1DfemBelos_SOURCES) $(1DfemMLPreconditioner_SOURCES) $(1DfemScaled_SOURCES) $(1DfemScaledInexactTrustRegion_SOURCES) $(1DfemTransient_SOURCES) $(1DfemWithModelEvaluator_SOURCES)

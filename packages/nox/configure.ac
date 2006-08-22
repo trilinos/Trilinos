@@ -32,12 +32,6 @@
 # Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
 # Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 # ************************************************************************
-#  CVS Information
-#  $Source$
-#  $Author$
-#  $Date$
-#  $Revision$
-# ************************************************************************
 # @HEADER
 
 # ------------------------------------------------------------------------

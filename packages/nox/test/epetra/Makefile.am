@@ -28,12 +28,6 @@
 # Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
 # Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 # ************************************************************************
-#  CVS Information
-#  $Source$
-#  $Author$
-#  $Date$
-#  $Revision$
-# ************************************************************************
 #@HEADER
 
 NOX_SUBDIRS = NOX_NewTest NOX_Vector NOX_Operators NOX_Group 1Dfem DS6.5.1 Brusselator FiniteDifferenceColoring MultiPhysics 
