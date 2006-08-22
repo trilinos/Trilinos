@@ -701,7 +701,10 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
   int NormWeighted   (const Epetra_MultiVector& Weights, double * Result) const;
 
   //! Compute minimum value of each vector in multi-vector.
-  /*!
+  /*! Note that the vector contents must be already initialized for this
+      function to compute a well-defined result. The length of the
+      vector need not be greater than zero on all processors. If length is
+      greater than zero on any processor then a valid result will be computed.
     \param Out
     Result - Result[i] contains minimum value of ith vector.
 
@@ -710,7 +713,10 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
   int MinValue  (double * Result) const;
 
   //! Compute maximum value of each vector in multi-vector.
-  /*!
+  /*! Note that the vector contents must be already initialized for this
+      function to compute a well-defined result. The length of the
+      vector need not be greater than zero on all processors. If length is
+      greater than zero on any processor then a valid result will be computed.
     \param Out
     Result - Result[i] contains maximum value of ith vector.
 
@@ -947,7 +953,10 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
 
   int AllocateForCopy(void);
   int DoCopy(void);
-  inline void UpdateDoubleTemp() const {if (DoubleTemp_==0) DoubleTemp_=new double[NumVectors_]; return;}
+
+  inline void UpdateDoubleTemp() const
+  {if (DoubleTemp_==0) DoubleTemp_=new double[NumVectors_+1]; return;}
+
   inline void UpdateVectors()  const {if (Vectors_==0) { Vectors_ = new Epetra_Vector *[NumVectors_]; 
     for (int i=0; i<NumVectors_; i++) Vectors_[i] = 0;}
     return;

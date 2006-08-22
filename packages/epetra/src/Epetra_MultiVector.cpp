@@ -30,6 +30,9 @@
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
 #include "Epetra_Comm.h"
+#ifdef EPETRA_MPI
+#include "Epetra_MpiComm.h"
+#endif
 #include "Epetra_BlockMap.h"
 #include "Epetra_Map.h"
 #include "Epetra_Import.h"
@@ -1308,7 +1311,6 @@ int  Epetra_MultiVector::MinValue (double* Result) const {
   
   int i, j, ierr = 0;
 
-
   UpdateDoubleTemp();
 
   for (i=0; i < NumVectors_; i++) 
@@ -1318,11 +1320,82 @@ int  Epetra_MultiVector::MinValue (double* Result) const {
       for (j=0; j< MyLength_; j++) MinVal = EPETRA_MIN(MinVal,Pointers_[i][j]); 
       DoubleTemp_[i] = MinVal;
     }
-  Comm_->MinAll(DoubleTemp_, Result, NumVectors_);
 
-  for (i=0; i < NumVectors_; i++) 
-    if (Result[i]==Epetra_MaxDouble) ierr = -1; // Report a problem, numbers are too small
-  
+  if (MyLength_ > 0) {
+    for(i=0; i<NumVectors_; ++i) {
+      Result[i] = DoubleTemp_[i];
+    }
+  }
+
+  //If MyLength_ == 0 and Comm_->NumProc() == 1, then Result has
+  //not been referenced. Also, if vector contents are uninitialized
+  //then Result contents are not well defined...
+
+  if (Comm_->NumProc() == 1) return(ierr);
+
+  //We're going to use MPI_Allgather to gather every proc's local-
+  //min values onto every other proc. We'll use the last position
+  //of the DoubleTemp_ array to indicate whether this proc has
+  //valid data that should be considered by other procs when forming
+  //the global-min results.
+
+  if (MyLength_ == 0) DoubleTemp_[NumVectors_] = 0.0;
+  else DoubleTemp_[NumVectors_] = 1.0;
+
+  //Now proceed to handle the parallel case. We'll gather local-min
+  //values from other procs and form a global-min. If any processor
+  //has MyLength_>0, we'll end up with a valid result.
+
+#ifdef EPETRA_MPI
+  const Epetra_MpiComm* epetrampicomm =
+    dynamic_cast<const Epetra_MpiComm*>(Comm_);
+  if (!epetrampicomm) {
+    return(-2);
+  }
+
+  MPI_Comm mpicomm = epetrampicomm->GetMpiComm();
+  int numProcs = epetrampicomm->NumProc();
+  double* dwork = new double[numProcs*(NumVectors_+1)];
+
+  MPI_Allgather(DoubleTemp_, NumVectors_+1, MPI_DOUBLE,
+                dwork, NumVectors_+1, MPI_DOUBLE, mpicomm);
+
+  //if MyLength_==0, then our Result array currently contains
+  //Epetra_MaxDouble from the local-min calculations above. In this
+  //case we'll overwrite our Result array with values from the first
+  //processor that sent valid data.
+  bool overwrite = MyLength_ == 0 ? true : false;
+
+  int myPID = epetrampicomm->MyPID();
+  double* dwork_ptr = dwork;
+
+  for(j=0; j<numProcs; ++j) {
+
+    //skip data from self, and skip data from
+    //procs with DoubleTemp_[NumVectors_] == 0.0.
+    if (j == myPID || dwork_ptr[NumVectors_] < 0.5) {
+      dwork_ptr += NumVectors_+1;
+      continue;
+    }
+
+    for(i=0; i<NumVectors_; ++i) {
+      double val = dwork_ptr[i];
+
+      //Set val into our Result array if overwrite is true (see above),
+      //or if val is less than our current Result[i].
+      if (overwrite || (Result[i] > val)) Result[i] = val;
+    }
+
+    //Now set overwrite to false so that we'll do the right thing
+    //when processing data from subsequent processors.
+    if (overwrite) overwrite = false;
+
+    dwork_ptr += NumVectors_+1;
+  }
+
+  delete [] dwork;
+#endif
+
   // UpdateFlops(0);  Strictly speaking there are not FLOPS in this routine
   
   return(ierr);
@@ -1339,17 +1412,87 @@ int  Epetra_MultiVector::MaxValue (double* Result) const {
 
   for (i=0; i < NumVectors_; i++) 
     {
-      double MaxVal = - Epetra_MaxDouble;
+      double MaxVal = -Epetra_MaxDouble;
       if (MyLength_>0) MaxVal = Pointers_[i][0];
       for (j=0; j< MyLength_; j++) MaxVal = EPETRA_MAX(MaxVal,Pointers_[i][j]); 
       DoubleTemp_[i] = MaxVal;
     }
-  Comm_->MaxAll(DoubleTemp_, Result, NumVectors_);
 
-  for (i=0; i < NumVectors_; i++) 
-    if (Result[i]==Epetra_MinDouble) ierr = -1; // Report a problem, numbers are too small
-  
-  
+  if (MyLength_ > 0) {
+    for(i=0; i<NumVectors_; ++i) {
+      Result[i] = DoubleTemp_[i];
+    }
+  }
+
+  //If MyLength_ == 0 and Comm_->NumProc() == 1, then Result has
+  //not been referenced. Also, if vector contents are uninitialized
+  //then Result contents are not well defined...
+
+  if (Comm_->NumProc() == 1) return(ierr);
+
+  //We're going to use MPI_Allgather to gather every proc's local-
+  //max values onto every other proc. We'll use the last position
+  //of the DoubleTemp_ array to indicate whether this proc has
+  //valid data that should be considered by other procs when forming
+  //the global-max results.
+
+  if (MyLength_ == 0) DoubleTemp_[NumVectors_] = 0.0;
+  else DoubleTemp_[NumVectors_] = 1.0;
+
+  //Now proceed to handle the parallel case. We'll gather local-max
+  //values from other procs and form a global-max. If any processor
+  //has MyLength_>0, we'll end up with a valid result.
+
+#ifdef EPETRA_MPI
+  const Epetra_MpiComm* epetrampicomm =
+    dynamic_cast<const Epetra_MpiComm*>(Comm_);
+  if (!epetrampicomm) {
+    return(-2);
+  }
+
+  MPI_Comm mpicomm = epetrampicomm->GetMpiComm();
+  int numProcs = epetrampicomm->NumProc();
+  double* dwork = new double[numProcs*(NumVectors_+1)];
+
+  MPI_Allgather(DoubleTemp_, NumVectors_+1, MPI_DOUBLE,
+                dwork, NumVectors_+1, MPI_DOUBLE, mpicomm);
+
+  //if MyLength_==0, then our Result array currently contains
+  //-Epetra_MaxDouble from the local-max calculations above. In this
+  //case we'll overwrite our Result array with values from the first
+  //processor that sent valid data.
+  bool overwrite = MyLength_ == 0 ? true : false;
+
+  int myPID = epetrampicomm->MyPID();
+  double* dwork_ptr = dwork;
+
+  for(j=0; j<numProcs; ++j) {
+
+    //skip data from self, and skip data from
+    //procs with DoubleTemp_[NumVectors_] == 0.0.
+    if (j == myPID || dwork_ptr[NumVectors_] < 0.5) {
+      dwork_ptr += NumVectors_+1;
+      continue;
+    }
+
+    for(i=0; i<NumVectors_; ++i) {
+      double val = dwork_ptr[i];
+
+      //Set val into our Result array if overwrite is true (see above),
+      //or if val is larger than our current Result[i].
+      if (overwrite || (Result[i] < val)) Result[i] = val; 
+    }
+
+    //Now set overwrite to false so that we'll do the right thing
+    //when processing data from subsequent processors.
+    if (overwrite) overwrite = false;
+
+    dwork_ptr += NumVectors_+1;
+  }
+
+  delete [] dwork;
+#endif
+
   // UpdateFlops(0);  Strictly speaking there are not FLOPS in this routine
   
   return(ierr);

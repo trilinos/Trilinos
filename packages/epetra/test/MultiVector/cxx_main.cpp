@@ -123,6 +123,36 @@ int main(int argc, char *argv[]) {
 
   std::cout << "my_vec: " << std::endl << my_vec << std::endl;
 
+  double negvalue = -2.0*Epetra_MaxDouble;
+
+  my_vec.PutScalar(negvalue);
+
+  double maxval = 0.0;
+  int err = my_vec.MaxValue(&maxval);
+
+  if (std::abs(maxval - negvalue) > 1.e-12 ||
+      err < 0) {
+    if (verbose) {
+      std::cerr << "MultiVector::MaxValue test failed." << std::endl;
+    }
+    ierr = -1;
+  }
+
+  double largevalue = 2.0*Epetra_MaxDouble;
+
+  my_vec.PutScalar(largevalue);
+
+  double minval = 0.0;
+  err = my_vec.MinValue(&minval);
+
+  if (std::abs(minval - largevalue) > 1.e-12 ||
+      err < 0) {
+    if (verbose) {
+      std::cerr << "MultiVector::MinValue test failed." << std::endl;
+    }
+    ierr = -1;
+  }
+
 #ifdef EPETRA_MPI
   MPI_Finalize();
 #endif
