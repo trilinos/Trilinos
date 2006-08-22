@@ -374,17 +374,21 @@ End:
    * KDDKDD code.  */
   if ((err == ZOLTAN_OK) && hgp.final_output) {
     static int nRuns=0;
-    static double balsum = 0.0, cutlsum = 0.0, cutnsum = 0.0, movesum = 0.0;
-    static double balmax = 0.0, cutlmax = 0.0, cutnmax = 0.0, movemax = 0.0;
-    static double balmin = 1e100, cutlmin = 1e100, cutnmin=1e100,movemin=1e100;
+    static double balsum = 0.0, cutlsum = 0.0, cutnsum = 0.0;
+    static int movesum = 0;
+    static double balmax = 0.0, cutlmax = 0.0, cutnmax = 0.0;
+    static int movemax = 0;
+    static double balmin = 1e100, cutlmin = 1e100, cutnmin = 1e100;
+    static int movemin = 1000000000;
     double bal = 0.; 
     double cutl = 0.; /* Connnectivity cuts:  sum_over_edges((npart-1)*ewgt) */
     double cutn = 0.; /* Net cuts:  sum_over_edges((nparts>1)*ewgt) */
-    double move = 0.; /* Migrations:  sum_over_vertices((nparts>1)) */
 
-    double rlocal[3];  /* local cut stats for removed edges and move stat */
-    double rglobal[3]; /* global cut stats for removed edges and move stat */
+    double rlocal[2];  /* local cut stats for removed edges */
+    double rglobal[2]; /* global cut stats for removed edges */
     int gnremove, i;
+    int move = 0; /* local migrations */
+    int gmove;    /* global migrations */
 
     if (do_timing) {
       /* Do not include final output time in partitioning time */
@@ -413,17 +417,17 @@ End:
                     zz->Communicator);
       if (gnremove) {
         err = Zoltan_PHG_Removed_Cuts(zz, zoltan_hg, rlocal);
-	rlocal[2] = move;
-        MPI_Allreduce(rlocal, rglobal, 3, MPI_DOUBLE,MPI_SUM,zz->Communicator);
+        MPI_Allreduce(rlocal, rglobal, 2, MPI_DOUBLE,MPI_SUM,zz->Communicator);
         
         cutl += rglobal[0];
         cutn += rglobal[1];
-	move += rglobal[2];
       }
-  
-      movesum += move;
-      if (move > movemax) movemax = move;
-      if (move < movemin) movemin = move;
+
+      MPI_Allreduce(&move, &gmove, 1, MPI_INT, MPI_SUM, zz->Communicator);
+
+      movesum += gmove;
+      if (move > movemax) movemax = gmove;
+      if (move < movemin) movemin = gmove;
       cutlsum += cutl;
       if (cutl > cutlmax) cutlmax = cutl;
       if (cutl < cutlmin) cutlmin = cutl;
@@ -446,8 +450,8 @@ End:
                 "STATS Runs %d  cutn CURRENT %f  MAX %f  MIN %f  AVG %f\n", 
                 nRuns, cutn, cutnmax, cutnmin, cutnsum/nRuns);
 	uprintf(hg->comm,
-		"STATS Runs %d  move CURRENT %f  MAX %f  MIN %f  AVG %f\n",
-		nRuns, move, movemax, movemin, movesum/nRuns);
+		"STATS Runs %d  move CURRENT %d  MAX %d  MIN %d  AVG %d\n",
+		nRuns, gmove, movemax, movemin, movesum/nRuns);
       }
     }
 
