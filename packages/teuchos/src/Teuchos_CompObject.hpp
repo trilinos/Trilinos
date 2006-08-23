@@ -54,7 +54,8 @@ class CompObject
 
   public:
 
-  //@{ \name Constructors/Destructor.
+    //! @name Constructors/Destructor.
+  //@{ 
 
   //! Default constructor
   CompObject();
@@ -66,7 +67,8 @@ class CompObject
   virtual ~CompObject();
   //@}
 
-  //@{ \name Set/Get counter method.
+  //! @name Set/Get counter method.
+  //@{ 
   //! Set the internal Teuchos::Flops() pointer.
   void setFlopCounter(const Flops &FlopCounter) {flopCounter_= (Flops *) &FlopCounter; return;};
   
@@ -80,7 +82,8 @@ class CompObject
   Flops * getFlopCounter() const {return(flopCounter_);};
   //@}
 
-  //@{ \name Set flop count methods.
+  //! @name Set flop count methods.
+  //@{ 
   //! Resets the number of floating point operations to zero for \e this multi-vector.
   void resetFlops() const {if (flopCounter_!=0) flopCounter_->resetFlops(); return;};
 
@@ -88,7 +91,8 @@ class CompObject
   double getFlops() const {if (flopCounter_!=0) return(flopCounter_->flops()); else return(0.0);};
   //@}
 
-  //@{ \name Update flop count methods.
+  //! @name Update flop count methods.
+  //@{ 
   //! Increment Flop count for \e this object
   void updateFlops(int addflops) const { if (flopCounter_!=0) flopCounter_->updateFlops(addflops); return;};
 

@@ -53,7 +53,8 @@ namespace Teuchos
 class Object
 {
   public:
-  //@{ \name Constructors/Destructor.
+  //! @name Constructors/Destructor.
+  //@{ 
   //! Default Constructor.
   /*! Object is the primary base class in Teuchos.  All Teuchos class
       are derived from it, directly or indirectly.  This class is seldom
@@ -78,7 +79,8 @@ class Object
 
   //@}
   
-  //@{ \name Set methods.
+  //! @name Set methods.
+  //@{ 
 
   //! Define object label using a character string.
   /*! Defines the label used to describe \c this object.
@@ -102,7 +104,8 @@ class Object
 
   //@}
 
-  //@{ \name Accessor methods.
+  //! @name Accessor methods.
+  //@{ 
 
   //! Access the object label.
   /*! Returns the string used to define \e this object.
@@ -114,13 +117,15 @@ class Object
 
   //@}
 
-  //@{ \name I/O method.
+  //! @name I/O method.
+  //@{ 
 
   //! Print method for placing the object in an output stream
   virtual void print(ostream& os) const;
   //@}
 
-  //@{ \name Error reporting method.
+  //! @name Error reporting method.
+  //@{ 
 
   //!  Method for reporting errors with Teuchos objects.
   virtual int reportError(const string message, int errorCode) const 

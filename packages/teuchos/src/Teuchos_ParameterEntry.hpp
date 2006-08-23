@@ -52,7 +52,7 @@ class ParameterList; // another parameter type (forward declaration)
 class ParameterEntry {
 public:
 
-  /** \name Constructors/Destructor */
+  //! @name Constructors/Destructor 
   //@{
 
   //! Default Constructor
@@ -70,7 +70,7 @@ public:
 
   //@}
 
-  /** \name Set Methods */
+  //! @name Set Methods 
   //@{
 
   //! Replace the current parameter entry with \c source.
@@ -91,7 +91,7 @@ public:
 
   //@}
 
-  /** \name Get Methods */
+  //! @name Get Methods 
   //@{
    
   /*! \brief Templated get method that uses the input pointer type to determine the type of parameter to return.  
@@ -116,7 +116,7 @@ public:
 
   //@}
 
-  /** \name Attribute/Query Methods */
+  //! @name Attribute/Query Methods 
   //@{
   
   //! Return whether or not the value has been used; i.e., whether or not the value has been retrieved via a get function.
@@ -134,7 +134,7 @@ public:
 
   //@}
 
-  /** \name I/O Methods */
+  //! @name I/O Methods 
 
   /*! \brief Output a non-list parameter to the given output stream.  
 

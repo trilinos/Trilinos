@@ -63,7 +63,7 @@ template<class T>
 class ArrayRefCountPtr {
 public:
 
-  /** \name Public types */
+  //! @name Public types 
   //@{
 
 	/** \brief . */
@@ -85,7 +85,7 @@ public:
 
   //@}
 
-  /** \name Constructors/Initializers */
+  //! @name Constructors/Initializers 
   //@{
 
 	/** \brief Initialize <tt>ArrayRefCountPtr<T></tt> to NULL.
@@ -156,7 +156,7 @@ public:
 
   //@}
 
-  /** \name Object/Pointer Access Functions */
+  //! @name Object/Pointer Access Functions 
   //@{
 
 	/** \brief Pointer (<tt>-></tt>) access to members of underlying object for
@@ -201,7 +201,7 @@ public:
 
   //@}
 
-  /** \name Pointer Arithmetic Functions */
+  //! @name Pointer Arithmetic Functions 
   //@{
 
 	/** \brief Prefix increment of pointer (i.e. ++ptr).
@@ -310,7 +310,7 @@ public:
 
   //@}
 
-  /** \name Views */
+  //! @name Views 
   //@{
 
 	/** \brief Return object for only const access to data.
@@ -338,7 +338,7 @@ public:
 
   //@}
 
-  /** \name General query functions */
+  //! @name General query functions 
   //@{
 
 	/** \brief Return the number of <tt>ArrayRefCountPtr<></tt> objects that have a reference
@@ -371,7 +371,7 @@ public:
 
   //@}
 
-  /** \name Standard Container-Like Functions */
+  //! @name Standard Container-Like Functions 
   //@{
 
   /** \brief Return an iterator to beginning of the array of data.
@@ -404,7 +404,7 @@ public:
 
   //@}
 
-  /** \name Ownership */
+  //! @name Ownership 
   //@{
 
 	/** \brief Release the ownership of the underlying array.
@@ -463,7 +463,7 @@ public:
 
   //@}
 
-  /** \name Assertion Functions. */
+  //! @name Assertion Functions. 
   //@{
 
 	/** \brief Throws <tt>std::logic_error</tt> if <tt>this->get()==NULL</tt>,

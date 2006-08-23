@@ -44,7 +44,7 @@ public:
   /** \brief . */
   virtual ~ParameterListAcceptor();
 
-  /** \name Pure virtual functions that must be overridden in subclasses */
+  //! @name Pure virtual functions that must be overridden in subclasses 
   //@{
 
   /** \brief Set parameters from a parameter list and return with default values.
@@ -88,7 +88,7 @@ public:
 
   //@}
 
-  /** \name Virtual functions with default implementation */
+  //! @name Virtual functions with default implementation 
   //@{
 
   /** \brief Get const version of the parameter list that was set using <tt>setParameterList()</tt>.

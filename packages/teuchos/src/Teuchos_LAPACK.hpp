@@ -104,7 +104,8 @@ namespace Teuchos
 
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
 
-    //@{ \name Constructors/Destructors.
+    //! @name Constructors/Destructors.
+    //@{ 
 
     //! Default Constructor.
     inline LAPACK(void) {};
@@ -116,7 +117,8 @@ namespace Teuchos
     inline virtual ~LAPACK(void) {};
     //@}
 
-    //@{ \name Symmetric Positive Definite Linear System Routines.
+    //! @name Symmetric Positive Definite Linear System Routines.
+    //@{ 
 
     //! Computes the \c L*D*L' factorization of a Hermitian/symmetric positive definite tridiagonal matrix \c A.
     void PTTRF(const OrdinalType n, ScalarType* d, ScalarType* e, OrdinalType* info) const;
@@ -150,7 +152,8 @@ namespace Teuchos
     void POSVX(const char FACT, const char UPLO, const OrdinalType n, const OrdinalType nrhs, ScalarType* A, const OrdinalType lda, ScalarType* AF, const OrdinalType ldaf, char EQUED, ScalarType* S, ScalarType* B, const OrdinalType ldb, ScalarType* X, const OrdinalType ldx, ScalarType* rcond, ScalarType* FERR, ScalarType* BERR, ScalarType* WORK, OrdinalType* IWORK, OrdinalType* info) const;
     //@}
 
-    //@{ \name General Linear System Routines.
+    //! @name General Linear System Routines.
+    //@{ 
 
     //! Solves an over/underdetermined real \c m by \c n linear system \c A using QR or LQ factorization of A.
     void GELS(const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType nrhs, ScalarType* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const;
@@ -201,7 +204,8 @@ namespace Teuchos
     
     //@}
 
-    //@{ \name Symmetric Eigenproblem Routines
+    //! @name Symmetric Eigenproblem Routines
+    //@{ 
     /*! \brief Computes the eigenvalues and, optionally, eigenvectors of a symmetric \c n by \c n matrix \c A in packed storage.
         \note This method is not defined when the ScalarType is \c complex<float> or \c complex<double>.
     */
@@ -231,7 +235,8 @@ namespace Teuchos
     void STEQR(const char COMPZ, const OrdinalType n, ScalarType* D, ScalarType* E, ScalarType* Z, const OrdinalType ldz, ScalarType* WORK, OrdinalType* info) const;
     //@}
 
-    //@{ \name Hessenberg Eigenproblem Routines
+    //! @name Hessenberg Eigenproblem Routines
+    //@{ 
     //! Computes the eigenvalues of a real upper Hessenberg matrix \c H and, optionally, the matrices \c T and \c Z from the Schur decomposition, where T is an upper quasi-triangular matrix and Z contains the Schur vectors. 
     void HSEQR(const char JOB, const char COMPZ, const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, ScalarType* H, const OrdinalType ldh, ScalarType* WR, ScalarType* WI, ScalarType* Z, const OrdinalType ldz, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const;
     
@@ -254,7 +259,8 @@ namespace Teuchos
     void GEEV(const char JOBVL, const char JOBVR, const OrdinalType n, ScalarType* A, const OrdinalType lda, ScalarType* WR, ScalarType* WI, ScalarType* VL, const OrdinalType ldvl, ScalarType* VR, const OrdinalType ldvr, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const;
     //@}
 
-    //@{ \name Orthogonal matrix routines
+    //! @name Orthogonal matrix routines
+    //@{ 
     /*! \brief Overwrites the general real matrix \c m by \c n matrix \c C with the product of \c C and \c Q, which is the product of \c k elementary reflectors, as returned by GEQRF.
     \note This method is not defined when the ScalarType is \c complex<float> or \c complex<double>.
     */
@@ -281,7 +287,8 @@ namespace Teuchos
     void ORMHR(const char SIDE, const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, const ScalarType* A, const OrdinalType lda, const ScalarType* TAU, ScalarType* C, const OrdinalType ldc, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const;
     //@}
 
-    //@{ \name Triangular Matrix Routines
+    //! @name Triangular Matrix Routines
+    //@{ 
 
     /*! Computes some or all of the right and/or left eigenvectors of an upper triangular matrix \c T. If ScalarType is \c float or \c double, then the matrix is quasi-triangular and arugments \c RWORK is ignored.
        \note (This is the version used for \c float and \c double, where \c select requires two arguments to represent a complex eigenvalue.)
@@ -305,7 +312,8 @@ namespace Teuchos
 
     //@}
 
-    //@{ \name Rotation/Reflection generators
+    //! @name Rotation/Reflection generators
+    //@{ 
 
     //! Generates a plane rotation that zeros out the second component of the input vector.
     void LARTG( const ScalarType f, const ScalarType g, MagnitudeType* c, ScalarType* s, ScalarType* r ) const;
@@ -315,7 +323,8 @@ namespace Teuchos
 
     //@}
 
-    //@{ \name Random number generators
+    //! @name Random number generators
+    //@{ 
     //! Returns a random number from a uniform or normal distribution.
     ScalarType LARND( const OrdinalType idist, OrdinalType* seed ) const;
 
@@ -323,7 +332,8 @@ namespace Teuchos
     void LARNV( const OrdinalType idist, OrdinalType* seed, const OrdinalType n, ScalarType* v ) const;    
     //@}
 
-    //@{ \name Machine Characteristics Routines.
+    //! @name Machine Characteristics Routines.
+    //@{ 
     /*! \brief Determines machine parameters for floating point characteristics.
         \note This method is not defined when the ScalarType is \c complex<float> or \c complex<double>. 
     */
@@ -336,7 +346,8 @@ namespace Teuchos
     OrdinalType ILAENV( const OrdinalType ispec, const std::string& NAME, const std::string& OPTS, const OrdinalType N1 = -1, const OrdinalType N2 = -1, const OrdinalType N3 = -1, const OrdinalType N4 = -1 ) const;
     //@}
 
-    //@{ \name Miscellaneous Utilities.
+    //! @name Miscellaneous Utilities.
+    //@{ 
     /*! \brief Computes x^2 + y^2 safely, to avoid overflow.
         \note This method is not defined when the ScalarType is \c complex<float> or \c complex<double>. 
     */

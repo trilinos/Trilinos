@@ -63,7 +63,7 @@ namespace Teuchos {
 class CommandLineProcessor {
 public:
 
-  /** \name Public types */
+  //! @name Public types 
   //@{
 
   /// Thrown if a parse exception occurs and  throwExceptions==true
@@ -89,7 +89,7 @@ public:
   
   //@}
 
-  /** \name Constructors */
+  //! @name Constructors 
   //@{
 
   /** \brief Default Constructor
@@ -112,7 +112,7 @@ public:
 
   //@}
 
-  /** \name Behavior modes */
+  //! @name Behavior modes 
   //@{
 
   /// Set if an exception is thrown, there is a parse error, or help is printed.
@@ -135,7 +135,7 @@ public:
 
   //@}
 
-  /** \name Set up options */
+  //! @name Set up options 
   //@{
   
   /** \brief Set a documentation sting for the entire program printed when
@@ -253,7 +253,7 @@ public:
   
   //@}
 
-  /** \name Parse */
+  //! @name Parse 
   //@{
 
   /** \brief Parse a command line.
@@ -323,7 +323,7 @@ public:
 
   //@}
 
-  /** \name Miscellaneous */
+  //! @name Miscellaneous 
   //@{
 
   /** \brief Print the help message.

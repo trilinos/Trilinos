@@ -68,7 +68,7 @@ public:
 	/** \brief . */
 	virtual ~Describable() {}
 
-	/** \name Public virtual member functions */
+  //! @name Public virtual member functions 
 	//@{
 
 	/** \brief Return a simple description (usually just one line) of this object.

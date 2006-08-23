@@ -53,7 +53,7 @@ class GlobalMPISession
 {
 public:
   
-  /** \name Public constructor and destructor */
+  //! @name Public constructor and destructor 
   //@{
   
   /** \brief Calls <tt>MPI_Init()</tt> if MPI is enabled.
@@ -80,7 +80,7 @@ public:
     
   //@}
     
-  /** \name Static functions */
+  //! @name Static functions 
   //@{
   
   /** \brief Returns the process rank relative to <tt>MPI_COMM_WORLD</tt>

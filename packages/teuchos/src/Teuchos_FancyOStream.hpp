@@ -153,7 +153,7 @@ public:
   
 protected:
   
-  /** \name Protected overridden functions from std::basic_streambuf */
+  //! @name Protected overridden functions from std::basic_streambuf 
   //@{
 
   /** \brief . */
@@ -312,7 +312,7 @@ class basic_FancyOStream : public basic_ostream<CharT, Traits>
 {
 public:
 
-  /** \name Public types */
+  //! @name Public types 
   //@{
 
   /** \brief . */
@@ -334,7 +334,7 @@ public:
 
   //@}
 
-  /** \name Public client functions */
+  //! @name Public client functions 
   //@{
 
   /** \brief . */
@@ -398,7 +398,7 @@ public:
 
   //@}
 
-  /** \name Functions designed to be used by basic_OSTab */
+  //! @name Functions designed to be used by basic_OSTab 
   //@{
 
   /** \brief. */

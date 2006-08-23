@@ -47,7 +47,8 @@ namespace Teuchos {
   class SerialDenseVector : public SerialDenseMatrix<OrdinalType,ScalarType> {
     
   public:
-  //@{ \name Constructor/Destructor methods.
+    //! @name Constructor/Destructor methods.
+  //@{ 
 
     //! Default Constructor
     /*! Creates an empty vector of no length.  The Sizing methods should be used to size this matrix.  Values of this matrix should be set using the [] or the () operators.
@@ -77,7 +78,8 @@ namespace Teuchos {
     virtual ~SerialDenseVector ();
   //@}
 
-  //@{ \name Sizing methods.
+  //! @name Sizing methods.
+  //@{ 
 
     //! Size method for changing the size of a SerialDenseVector, initializing entries to zero.
     /*!
@@ -99,7 +101,8 @@ namespace Teuchos {
     int resize(int length) {return(SerialDenseMatrix<OrdinalType,ScalarType>::reshape(length, 1));};
   //@}
 
-  //@{ \name Comparison methods.
+  //! @name Comparison methods.
+  //@{ 
     //! Equality of two matrices.
     /*! \return True if \e this vector and \c Operand are of the same length and have the same entries, else False will be returned.
     */
@@ -111,7 +114,8 @@ namespace Teuchos {
     bool operator != (const SerialDenseVector<OrdinalType, ScalarType> &Operand);
   //@}
 
-  //@{ \name Set methods.
+  //! @name Set methods.
+  //@{ 
 
     //! Copies values from one vector to another.
     /*!
@@ -123,7 +127,8 @@ namespace Teuchos {
     SerialDenseVector<OrdinalType,ScalarType>& operator = (const SerialDenseVector<OrdinalType,ScalarType>& Source);
   //@}
 
-  //@{ \name Accessor methods.
+  //! @name Accessor methods.
+  //@{ 
     //! Element access method (non-const).
     /*! Returns the ith element if x(i) is specified, the expression x[i] will return the same element.
 	\return (*this)(index)
@@ -154,12 +159,14 @@ namespace Teuchos {
 
   //@}
 
-  //@{ \name Attribute methods.
+  //! @name Attribute methods.
+  //@{ 
     //! Returns the length of this vector.
     int length() const {return(this->numRows_);};
   //@}
 
-  //@{ \name I/O methods.
+  //! @name I/O methods.
+  //@{ 
     //! Print method.  Define the behavior of the ostream << operator inherited from the Object class.
     virtual void print(ostream& os) const;
   //@}

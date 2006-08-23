@@ -80,7 +80,7 @@ template<typename Ordinal>
 class MpiComm : public Comm<Ordinal> {
 public:
 
-  /** \name Constructors */
+  //! @name Constructors 
   //@{
 
   /** \brief Construct given a wrapped MPI_Comm oqaque object.
@@ -98,7 +98,7 @@ public:
 
   //@}
 
-  /** \name Overridden from Comm */
+  //! @name Overridden from Comm 
   //@{
 
   /** \brief . */
@@ -143,7 +143,7 @@ public:
 
   //@}
 
-  /** \name Overridden from Describable */
+  //! @name Overridden from Describable 
   //@{
 
   /** \brief . */

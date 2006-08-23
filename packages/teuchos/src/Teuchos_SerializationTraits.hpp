@@ -49,7 +49,7 @@ template <typename Ordinal, typename T>
 class SerializationTraits {
 public:
   
-  /** \name Seialization type selection */
+  //! @name Seialization type selection 
   //@{
 
   /** \brief Determines if the type supports direct serialization. */
@@ -57,7 +57,7 @@ public:
 
   //@}
 
-  /** \name Direct serialization functions (not defined if supportsDirectSerialization==false) */
+  //! @name Direct serialization functions (not defined if supportsDirectSerialization==false) 
   //@{
 
   /** \brief Return the number of bytes for <tt>count</tt> objects. */
@@ -80,7 +80,7 @@ public:
 
   //@}
 
-  /** \name Indirect serialization functions (always defined and supported) */
+  //! @name Indirect serialization functions (always defined and supported) 
   //@{
 
   /** \brief Return the number of bytes for <tt>count</tt> objects. */

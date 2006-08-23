@@ -47,7 +47,7 @@ namespace Teuchos
 	class XMLParameterListWriter
 		{
 		public:
-			/** \name Constructors */
+      //! @name Constructors 
 			//@{
       /** Construct a writer */
       XMLParameterListWriter();

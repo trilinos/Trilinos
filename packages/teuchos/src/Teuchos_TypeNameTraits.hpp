@@ -29,7 +29,7 @@
 #ifndef _TEUCHOS_TYPE_NAME_TRAITS_HPP_
 #define _TEUCHOS_TYPE_NAME_TRAITS_HPP_
 
-/*! \file Teuchos_TypeNameTratis.hpp
+/*! \file Teuchos_TypeNameTraits.hpp
  \brief Defines basic traits returning the
     name of a type in a portable and readable way.
 */

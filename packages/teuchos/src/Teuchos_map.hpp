@@ -60,7 +60,8 @@ public:
   typedef typename list_t::iterator  iterator;
   typedef typename list_t::const_iterator  const_iterator;
 
-  //@{ \name Constructor/Destructor.
+  //! @name Constructor/Destructor.
+  //@{ 
 
     //! Default Constructor
     map() {}
@@ -72,7 +73,8 @@ public:
     virtual ~map() {}
   //@}
 
-  //@{ \name Accessor methods.
+  //! @name Accessor methods.
+  //@{ 
 
     //! Return an iterator that points to the first pair in the map.  
     iterator begin() { return list_.begin(); }
@@ -100,7 +102,8 @@ public:
     }
   //@}
 
-  //@{ \name Search methods.
+  //! @name Search methods.
+  //@{ 
   
     //! Locate element in the map with key_type \c k. 
     /*! \param k - The key for which an iterator should be returned.

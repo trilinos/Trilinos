@@ -36,7 +36,6 @@
 */
 //@{
 
-/** \brief . */
 namespace Teuchos
 {
   class MPIComm;

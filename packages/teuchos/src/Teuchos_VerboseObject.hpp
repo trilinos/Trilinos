@@ -51,7 +51,7 @@ namespace Teuchos {
 class VerboseObjectBase {
 public:
 
-  /** \name Public static member functions */
+  //! @name Public static member functions 
   //@{
 
   /** \brief Set the default output stream object.
@@ -66,7 +66,7 @@ public:
 
   //@}
 
-  /** \name Constructors/Initializers */
+  //! @name Constructors/Initializers 
   //@{
   
   /** \brief . */
@@ -93,7 +93,7 @@ public:
 
   //@}
 
-  /** \name Query functions */
+  //! @name Query functions 
   //@{
 
   /** \brief Return the output stream to be used.
@@ -107,7 +107,7 @@ public:
 
   //@}
 
-  /** \name Utilities */
+  //! @name Utilities 
   //@{
 
   /** \brief Create a tab object which sets the number of tabs and optionally the line prefix.
@@ -160,7 +160,7 @@ template<class ObjectType>
 class VerboseObject : virtual public VerboseObjectBase {
 public:
 
-  /** \name Public static member functions */
+  //! @name Public static member functions 
   //@{
 
   /** \brief Set the default verbosity level.
@@ -174,7 +174,7 @@ public:
 
   //@}
 
-  /** \name Constructors/Initializers */
+  //! @name Constructors/Initializers 
   //@{
   
   /** \brief Calls <tt>initializeVerboseObject()</tt>.
@@ -197,7 +197,7 @@ public:
 
   //@}
 
-  /** \name Query functions */
+  //! @name Query functions 
   //@{
 
   /** \brief Get the verbosity level */

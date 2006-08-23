@@ -103,7 +103,7 @@ class ParameterList {
   
 public:
 
-  /** \name Public types */
+  //! @name Public types 
   //@{
 
   //! Parameter container const iterator typedef
@@ -111,7 +111,7 @@ public:
 
   //@}
   
-  /** \name Constructors/Destructor. */
+  //! @name Constructors/Destructor. 
   //@{
 
   //! Constructor
@@ -128,7 +128,7 @@ public:
 
   //@}
   
-  /** \name Set Functions */
+  //! @name Set Functions 
   //@{
 
   /** \brief Set the name of <tt>*this</tt> list.
@@ -177,7 +177,7 @@ public:
 
   //@}
   
-  /** \name Get Functions */
+  //! @name Get Functions 
   //@{
   
   /*! \brief Retrieves parameter \c name of type \c T from list, if it exists, else the \c def_value is
@@ -240,7 +240,7 @@ public:
 
   //@}
   
-  /** \name Sublist Functions */
+  //! @name Sublist Functions 
   //@{
 
   /*! \brief Creates an empty sublist and returns a reference to the sublist
@@ -258,7 +258,7 @@ public:
 
   //@}
   
-  /** \name Attribute Functions */
+  //! @name Attribute Functions 
   //@{
 
   /*! \brief Query the name of this parameter list. */
@@ -295,7 +295,7 @@ public:
 
   //@}
   
-  /** \name I/O Functions */
+  //! @name I/O Functions 
   //@{
 
   /*! \brief Printing method for parameter lists.  Indenting is used to indicate
@@ -310,7 +310,7 @@ public:
 
   //@}
 
-  /** \name Read-only access to the iterator */
+  //! @name Read-only access to the iterator 
   //@{
 
   //! An iterator pointing to the first entry
@@ -327,7 +327,7 @@ public:
 
   //@}
 
-  /** \name Validation Functions */
+  //! @name Validation Functions 
   //@{
 
   /** \brief Validate the parameters is this list given valid selections in

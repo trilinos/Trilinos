@@ -51,7 +51,7 @@ class XMLObject
 {
 public:
 
-  /** \name Constructors */
+  //! @name Constructors 
   //@{
 
   //! Empty constructor
@@ -69,14 +69,14 @@ public:
   XMLObject(XMLObjectImplem* ptr);
   //@}	
 
-  /** \name Copy methods */
+  //! @name Copy methods 
   //@{
 
   //! Make a deep copy of this object
   XMLObject deepCopy() const ;
   //@}
 
-  /** \name Data Access methods */
+  //! @name Data Access methods 
   //@{
 
   //! Return the tag of the current node
@@ -146,7 +146,7 @@ public:
   void checkTag(const string& expected) const ;
   //@}
 	
-  /** \name Tree-Assembly methods */
+  //! @name Tree-Assembly methods 
   //@{
 
   //! Add an attribute to the current node's atribute list

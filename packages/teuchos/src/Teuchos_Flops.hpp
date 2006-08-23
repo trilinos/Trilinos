@@ -54,7 +54,8 @@ class Flops
 {    
   public:
 
-  //@{ \name Constructor/Destructor.
+    //! @name Constructor/Destructor.
+  //@{ 
 
   //! Default Constructor.
   /*! Creates a Flops instance. This instance can be queried for
@@ -75,14 +76,16 @@ class Flops
 
   //@}
 
-  //@{ \name Accessor methods.
+  //! @name Accessor methods.
+  //@{ 
 
   //! Returns the number of floating point operations with \e this object and resets the count.
   double flops() const { return flops_; };
 
   //@}
 
-  //@{ \name Reset methods.
+  //! @name Reset methods.
+  //@{ 
 
   //! Resets the number of floating point operations to zero for \e this multi-vector.
   void resetFlops() {flops_ = 0.0;};
@@ -95,7 +98,8 @@ class Flops
 
   mutable double flops_;
 
-  //@{ \name Updating methods.
+  //! @name Updating methods.
+  //@{ 
   //! Increment Flop count for \e this object from an int
   void updateFlops(int addflops) const {flops_ += (double) addflops; };
 

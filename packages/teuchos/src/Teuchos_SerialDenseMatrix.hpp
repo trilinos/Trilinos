@@ -73,7 +73,8 @@ namespace Teuchos {
   {
   public:
 
-  //@{ \name Constructor/Destructor methods.
+    //! @name Constructor/Destructor methods.
+  //@{ 
 
     //! Default Constructor
     /*! Creates a empty matrix of no dimension.  The Shaping methods should be used to size this matrix.
@@ -129,7 +130,8 @@ namespace Teuchos {
     virtual ~SerialDenseMatrix();
   //@}
 
-  //@{ \name Shaping methods.
+  //! @name Shaping methods.
+  //@{ 
     //! Shape method for changing the size of a SerialDenseMatrix, initializing entries to zero.
     /*!
 	\param numRows - The number of rows in this matrix.
@@ -162,7 +164,8 @@ namespace Teuchos {
 
   //@}
 
-  //@{ \name Set methods.
+  //! @name Set methods.
+  //@{ 
 
     //! Copies values from one matrix to another.
     /*!
@@ -193,7 +196,8 @@ namespace Teuchos {
 
   //@}
 
-  //@{ \name Accessor methods.
+  //! @name Accessor methods.
+  //@{ 
 
     //! Element access method (non-const).
     /*! Returns the element in the ith row and jth column if A(i,j) is specified, the
@@ -241,7 +245,8 @@ namespace Teuchos {
 
   //@}
 
-  //@{ \name Mathematical methods.
+  //! @name Mathematical methods.
+  //@{ 
 
     //! Add another matrix to \e this matrix.
     /*! Add \c Source to \e this if the dimension of both matrices are the same.  If not, \e this matrix
@@ -289,7 +294,8 @@ namespace Teuchos {
     int multiply (ETransp transa, ETransp transb, ScalarType alpha, const SerialDenseMatrix<OrdinalType, ScalarType> &A, const SerialDenseMatrix<OrdinalType, ScalarType> &B, ScalarType beta);
   //@}
 
-  //@{ \name Comparison methods.
+  //! @name Comparison methods.
+  //@{ 
 
     //! Equality of two matrices.
     /*! \return True if \e this matrix and \c Operand are of the same shape (rows and columns) and have
@@ -305,7 +311,8 @@ namespace Teuchos {
 
   //@}
 
-  //@{ \name Attribute methods.
+  //! @name Attribute methods.
+  //@{ 
 
     //! Returns the row dimension of this matrix.
     int numRows() const { return(numRows_); };
@@ -317,7 +324,8 @@ namespace Teuchos {
     int stride() const { return(stride_); };
   //@}
 
-  //@{ \name Norm methods.
+  //! @name Norm methods.
+  //@{ 
 
     //! Returns the 1-norm of the matrix.
     typename ScalarTraits<ScalarType>::magnitudeType normOne() const;
@@ -329,7 +337,8 @@ namespace Teuchos {
     typename ScalarTraits<ScalarType>::magnitudeType normFrobenius() const; 
   //@}
 
-  //@{ \name I/O methods.
+  //! @name I/O methods.
+  //@{ 
     //! Print method.  Defines the behavior of the ostream << operator inherited from the Object class.
     virtual void print(ostream& os) const;
 

@@ -47,7 +47,7 @@ namespace Teuchos
 	class XMLParameterListReader
 		{
 		public:
-			/** \name Constructors */
+      //! @name Constructors 
 			//@{
       /** Construct a reader */
       XMLParameterListReader();

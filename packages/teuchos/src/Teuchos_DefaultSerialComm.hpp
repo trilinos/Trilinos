@@ -42,7 +42,7 @@ template<typename Ordinal>
 class SerialComm : public Comm<Ordinal> {
 public:
 
-  /** \name Constructors */
+  //! @name Constructors 
   //@{
 
   /** \brief . */
@@ -50,7 +50,7 @@ public:
 
   //@}
 
-  /** \name Overridden from Comm */
+  //! @name Overridden from Comm 
   //@{
 
   /** \brief . */
@@ -95,7 +95,7 @@ public:
 
   //@}
 
-  /** \name Overridden from Describable */
+  //! @name Overridden from Describable 
   //@{
 
   /** \brief . */

@@ -53,7 +53,7 @@ template<typename Ordinal>
 class Comm : virtual public Describable {
 public:
   
-  /** \name Query functions */
+  //! @name Query functions 
   //@{
 
   /** \brief Returns the rank of this process.
@@ -74,7 +74,7 @@ public:
   
   //@}
 
-	/** \name Collective Operations */
+  //! @name Collective Operations 
   //@{
 
   /** \brief Pause every process in <tt>*this</tt> communicator until all the
@@ -188,7 +188,7 @@ public:
     ,const Ordinal bytes, const char sendBuffer[], char scanReducts[]
     ) const = 0;
 
-  /** \name Point-to-Point Operations */
+  //! @name Point-to-Point Operations 
   //@{
 
   /** \brief Blocking send of data from this process to another process.

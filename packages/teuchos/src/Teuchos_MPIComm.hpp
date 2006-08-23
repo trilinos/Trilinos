@@ -72,7 +72,7 @@ namespace Teuchos
       //! Synchronize all the processors in the communicator
       void synchronize() const ;
 
-      /** \name Collective communications */
+      //! @name Collective communications 
       //@{
 
       //! All-to-all gather-scatter
@@ -116,11 +116,12 @@ namespace Teuchos
       //@}
 
 #ifdef HAVE_MPI
-      //! Get the MPI_Comm communicator handle */
+      //! Get the MPI_Comm communicator handle 
       MPI_Comm getComm() const {return comm_;}
 #endif
 
-      //@{ \name Data types
+      //! @name Data types
+      //@{ 
       //! Integer data type
       const static int INT;
       //! Float data type
@@ -131,7 +132,8 @@ namespace Teuchos
       const static int CHAR;
       //@}
 
-      //@{ \name Operations
+      //! @name Operations
+      //@{ 
       //! Summation operation
       const static int SUM;
       //! Minimize operation
