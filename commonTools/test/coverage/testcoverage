@@ -86,10 +86,15 @@ $runtests = 0;
 $extra_args = ();
 $print_cmd = 0;
 $comm = "serial";
+$category = "FRAMEWORK";
 $gen_report = 0;
 foreach (@ARGV){
     if(/--with-package=(.*)/){
         push @pkg_list, $1;
+    }
+    elsif(/--run-tests=(.*)/){
+        $runtests = 1;
+        $category = $1;
     }
     elsif(/--run-tests/){
         $runtests = 1;
@@ -143,7 +148,8 @@ foreach (@ARGV){
         print "           e.g., --build-dir=LINUX_CODE_COV\n";
         print "\n";
         print "       --run-tests \n";
-        print "           Run the test harness for the configured packages.\n";
+        print "       --run-tests=CATEGORY \n";
+        print "           Run the test harness for the configured packages. This runs tests of category CATEGORY, with a default of FRAMEWORK.\n";
         print "\n";
         print "       --with-comm=[serial|mpi]\n";
         print "           Run test harness in serial or mpi (for use with --run-tests).\n";
@@ -205,7 +211,7 @@ if (!$buildDir) {
 if ($runtests==1){
     print "\nRunning tests...\n";
     $cmd  = "$trilinosDir/commonTools/test/utilities/runtests";
-    $cmd .= " --trilinos-dir=$trilinosDir --comm=$comm --build-dir=$buildDir --category=FRAMEWORK";
+    $cmd .= " --trilinos-dir=$trilinosDir --comm=$comm --build-dir=$buildDir --category=$category";
     if ($print_cmd) {
         print "Command: $cmd\n";
     }
