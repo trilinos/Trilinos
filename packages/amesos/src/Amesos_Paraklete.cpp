@@ -516,7 +516,7 @@ int Amesos_Paraklete::PerformSymbolicFactorization()
 	rcp( paraklete_analyze ( &PrivateParakleteData_->pk_A_, &*PrivateParakleteData_->common_ )
 	     ,deallocFunctorDeleteWithCommon<paraklete_symbolic>(PrivateParakleteData_->common_,
 								 paraklete_free_symbolic)
-	     ,false
+	     ,true
 	     );
 
   AddTime("symbolic", 0);
@@ -544,7 +544,7 @@ int Amesos_Paraklete::PerformNumericFactorization( )
 				     &*PrivateParakleteData_->LUsymbolic_, 
 				     &*PrivateParakleteData_->common_ ) 
 	  ,deallocFunctorDeleteWithCommon<paraklete_numeric>(PrivateParakleteData_->common_,paraklete_free_numeric)
-	  ,false
+	  ,true
 	  );
 
   AddTime("numeric", 0);

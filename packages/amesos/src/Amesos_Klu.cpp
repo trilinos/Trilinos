@@ -42,8 +42,6 @@ extern "C" {
 #endif
 }
 
-#define USE_TEUCHOS_REFCOUNT_PTR
-
 namespace {
 
 using Teuchos::RefCountPtr;
@@ -81,36 +79,20 @@ deallocFunctorDeleteWithCommon(
 
 } // namespace 
 
-class Amesos_Klu_Pimpl {
+class Amesos_Klu_Pimpl 
+{
 public:
-#ifdef USE_TEUCHOS_REFCOUNT_PTR
   Teuchos::RefCountPtr<klu_symbolic> Symbolic_;
   Teuchos::RefCountPtr<klu_numeric> Numeric_;
   Teuchos::RefCountPtr<klu_common> common_;
-#else
-  klu_symbolic* Symbolic_ ;
-  klu_numeric* Numeric_ ;
-  klu_common control ;
-  
-
-  Amesos_Klu_Pimpl():
-    Symbolic_(0),
-    Numeric_(0)
-  {}
-
-  ~Amesos_Klu_Pimpl(void){
-    if ( Symbolic_ ) klu_free_symbolic( &Symbolic_, &control );
-    if ( Numeric_ ) klu_free_numeric( &Numeric_, &control );
-  }
-#endif 
-} ;
+};
 
 //=============================================================================
 Amesos_Klu::Amesos_Klu(const Epetra_LinearProblem &prob ) :
   PrivateKluData_( rcp( new Amesos_Klu_Pimpl() ) ),
   CrsMatrixA_(0),
-  UseTranspose_(false),
   TrustMe_(false),
+  UseTranspose_(false),
   Problem_(&prob)
 {
   // MS // move declaration of Problem_ above because I need it
@@ -452,7 +434,7 @@ int Amesos_Klu::PerformSymbolicFactorization()
       rcp(
 	  klu_analyze (NumGlobalElements_, &Ap[0], Ai,  &*PrivateKluData_->common_ ) 
 	  ,deallocFunctorDeleteWithCommon<klu_symbolic>(PrivateKluData_->common_,klu_free_symbolic)
-	  ,false
+	  ,true
 	  );
 
 	const  bool symbolic_ok =  (PrivateKluData_->Symbolic_.get() != NULL) 
@@ -487,55 +469,54 @@ int Amesos_Klu::PerformNumericFactorization( )
     // set the default parameters
     PrivateKluData_->common_->scale = ScaleMethod_ ;
 
-  const bool NumericNonZero =  PrivateKluData_->Numeric_.get() != 0 ; 
-
+    const bool NumericNonZero =  PrivateKluData_->Numeric_.get() != 0 ; 
+    
     // see if we can "refactorize"
-  if ( refactorize_ && NumericNonZero ) { 
-	// refactorize using the existing Symbolic and Numeric objects, and
-	// using the identical pivot ordering as the prior klu_factor.
-	// No partial pivoting is done.
-	int result = klu_refactor (&Ap[0], Ai, Aval,
-		    &*PrivateKluData_->Symbolic_, 
-		    &*PrivateKluData_->Numeric_, &*PrivateKluData_->common_) ;
-	// Did it work?
-	const  bool refactor_ok = result == 1 && PrivateKluData_->common_->status == KLU_OK ;
-	if ( refactor_ok ) { 
-
-	    double rcond ;
-
-	    klu_rcond (&*PrivateKluData_->Symbolic_,
-		    &*PrivateKluData_->Numeric_,
-		    &rcond, &*PrivateKluData_->common_) ;
-
-	    if ( rcond > rcond_threshold_ ) {
-		// factorizing without pivot worked fine.  We are done.
-		factor_with_pivoting = false ;
-	    }
+    if ( refactorize_ && NumericNonZero ) { 
+      // refactorize using the existing Symbolic and Numeric objects, and
+      // using the identical pivot ordering as the prior klu_factor.
+      // No partial pivoting is done.
+      int result = klu_refactor (&Ap[0], Ai, Aval,
+				 &*PrivateKluData_->Symbolic_, 
+				 &*PrivateKluData_->Numeric_, &*PrivateKluData_->common_) ;
+      // Did it work?
+      const  bool refactor_ok = result == 1 && PrivateKluData_->common_->status == KLU_OK ;
+      if ( refactor_ok ) { 
+	
+	double rcond ;
+	
+	klu_rcond (&*PrivateKluData_->Symbolic_,
+		   &*PrivateKluData_->Numeric_,
+		   &rcond, &*PrivateKluData_->common_) ;
+	
+	if ( rcond > rcond_threshold_ ) {
+	  // factorizing without pivot worked fine.  We are done.
+	  factor_with_pivoting = false ;
 	}
+      }
     }
-
+    
     if ( factor_with_pivoting ) {
-
-	// factor with partial pivoting:
-	// either this is the first time we are factoring the matrix, or the
-	// refactorize parameter is false, or we tried to refactorize and
-	// found it to be too inaccurate.
-
-	// factor the matrix using partial pivoting
-	PrivateKluData_->Numeric_ =
-	    rcp( klu_factor(&Ap[0], Ai, Aval,
-			    &*PrivateKluData_->Symbolic_, &*PrivateKluData_->common_),
-		 deallocFunctorDeleteWithCommon<klu_numeric>(PrivateKluData_->common_,klu_free_numeric)
-		 ,false
-		 );
-
-	const  bool numeric_ok =  PrivateKluData_->Numeric_.get()!=NULL 
-	  && PrivateKluData_->common_->status == KLU_OK ;
-	if ( ! numeric_ok ) AMESOS_CHK_ERR( NumericallySingularMatrixError ) ;
-
-
+      
+      // factor with partial pivoting:
+      // either this is the first time we are factoring the matrix, or the
+      // refactorize parameter is false, or we tried to refactorize and
+      // found it to be too inaccurate.
+      
+      // factor the matrix using partial pivoting
+      PrivateKluData_->Numeric_ =
+	rcp( klu_factor(&Ap[0], Ai, Aval,
+			&*PrivateKluData_->Symbolic_, &*PrivateKluData_->common_),
+	     deallocFunctorDeleteWithCommon<klu_numeric>(PrivateKluData_->common_,klu_free_numeric)
+	     ,true
+	     );
+      
+      const  bool numeric_ok =  PrivateKluData_->Numeric_.get()!=NULL 
+	&& PrivateKluData_->common_->status == KLU_OK ;
+      if ( ! numeric_ok ) AMESOS_CHK_ERR( NumericallySingularMatrixError );  
+      
     }
-
+    
   }
 
   AddTime("numeric", 0);
@@ -654,8 +635,8 @@ int Amesos_Klu::NumericFactorization()
 //=============================================================================
 int Amesos_Klu::Solve() 
 {
-  Epetra_MultiVector* vecX ;
-  Epetra_MultiVector* vecB ;
+  Epetra_MultiVector* vecX = 0 ;
+  Epetra_MultiVector* vecB = 0 ;
 
   if ( !TrustMe_ ) { 
 
