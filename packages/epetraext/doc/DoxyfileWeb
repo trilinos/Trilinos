@@ -44,7 +44,8 @@ PROJECT_NAME           = EpetraExt
 
 INPUT                  = ../src index.doc
 
-EXAMPLE_PATH           = ../example ../example/matlab/cxx_main.cpp matlab.README
+#EXAMPLE_PATH           = ../example ../example/matlab/cxx_main.cpp matlab.README
+EXAMPLE_PATH           = ../../aztecoo/example/AztecOO_MatlabInput/cxx_main.cpp
 
 TAGFILES               = ../../common/tag_files/epetra.tag=../../../epetra/doc/html
 
