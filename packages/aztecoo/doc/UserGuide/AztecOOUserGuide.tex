@@ -1,8 +1,8 @@
  \documentclass[12pt,relax]{AztecOOUserGuide}
  \usepackage{fancyvrb}
 \SANDsubtitle{}
-\title{\AztecOOTM{} User Guide\footnote{For \AztecOOTM{} Version 3.4 in \TrilinosTM{} Release
-6.0}}
+\title{\AztecOOTM{} User Guide\footnote{For \AztecOOTM{} Version 3.5 in \TrilinosTM{} Release
+7.0}}
 
 \author{Michael A. Heroux}
 
@@ -11,8 +11,7 @@
     \date{} % Remove ``\today'' in final version
 
 
-\SANDnum{SAND2004-3796}
-\SANDprintDate{Updated August 2005}
+\SANDnum{SAND2004-3796} \SANDprintDate{Updated August 2006}
 \SANDauthor{Michael A. Heroux \\
     Computational Mathematics and Algorithms Department \\
      Sandia National Laboratories \\
@@ -1183,6 +1182,40 @@ preconditioners for use with AztecOO.  Once an \operator{}-compliant
 preconditioner is constructed, it can be registered with an AztecOO
 object as the preconditioner.  In this situation, the preconditioner
 will never be reset by AztecOO.  Instead, the user has this responsibility.
+
+Here are the rules for what preconditioner gets used:
+\begin{itemize}
+\item If you instantiate an AztecOO instance with "A" as an
+\operator{}, no internal Aztec preconditioners are available to you
+unless you later register (before calling the Iterate() method) an
+\rowmatrix{} using the SetPrecMatrix() method, in which case the
+internal Aztec preconditioner will be used according to the settings
+of the options and params vectors.  Instead of calling
+SetPrecMatrix(), you can instead set use of a user-provided
+preconditioner by registering an \operator{}, which should already
+be fully constructed, using the SetPrecOperator() method.
+
+\item If you instantiate an AztecOO instance with "A" as a matrix,
+the internal Aztec preconditioners will automatically be used in
+accord with the associated options and params lists.
+
+\item If, subsequently you call SetPrecOperator() with an
+\operator{} that is ready to use, then the internal preconditioner
+will be deleted and your operator will be used.
+
+\item It is possible to alternate back and forth between an internal
+Aztec preconditioner and a user-provided preconditioner by calling
+SetPrecMatrix() to get the internal preconditioner and calling
+SetPrecOperator() to get a user-provided preconditioner.
+
+\item It is also possible to call SetPrecOperator() after a previous
+call to SetPrecOperator() in order to change to a new user-defined
+preconditioner. Also, it is possible to call SetPrecMatrix() after a
+previous call to SetPrecMatrix(), or after Iterate() has been
+called, in order to change which internal preconditioner will be
+used.  Of course some change in the options or params vectors must
+be changed in order to actually obtain a different preconditioner.
+\end{itemize}
 
 \section{Accessing AztecOO from Thyra and Python}
 
