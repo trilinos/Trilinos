@@ -77,11 +77,9 @@ class SolverManager {
    * until the problem has been solved (as decided by the solver manager) or the solver manager decides to 
    * quit.
    *
-   * \returns ReturnType specifying:
-   * <ul>
-   *    <li>Ok: the eigenproblem was solved to the specification required by the solver manager.
-   *    <li>Unconverged: the eigenproblem was not solved to the specification desired by the solver manager
-   * </ul>
+   * \returns ::ReturnType specifying:
+   *    - ::Converged: the eigenproblem was solved to the specification required by the solver manager.
+   *    - ::Unconverged: the eigenproblem was not solved to the specification desired by the solver manager
   */
   virtual ReturnType solve() = 0;
   //@}

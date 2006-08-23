@@ -105,17 +105,16 @@ class StatusTestOutput : public StatusTest<ScalarType,MV,OP> {
   TestStatus checkStatus( Eigensolver<ScalarType,MV,OP>* solver ) {
     state_ = test_->checkStatus(solver);
 
-    if (numCalls_ % modTest_ == 0) {
+    if (numCalls_++ % modTest_ == 0) {
       if ( (state_ & stateTest_) == state_) {
         if ( printer_->isVerbosity(StatusTestDetails) ) {
-          test_->print( printer_->stream(StatusTestDetails), 0 );
+          print( printer_->stream(StatusTestDetails) );
         }
         else if ( printer_->isVerbosity(Debug) ) {
-          test_->print( printer_->stream(Debug), 0 );
+          print( printer_->stream(Debug) );
         }
       }
     }
-    numCalls_++;
 
     return state_;
   }

@@ -144,10 +144,8 @@ class BlockDavidsonSolMgr : public SolverManager<ScalarType,MV,OP> {
    *      In this scenario, the solver manager will return ::Converged.
    *
    * \returns ::ReturnType specifying:
-   * <ul>
    *     - ::Converged: the eigenproblem was solved to the specification required by the solver manager.
    *     - ::Unconverged: the eigenproblem was not solved to the specification desired by the solver manager.
-   * </ul>
   */
   ReturnType solve();
   //@}
