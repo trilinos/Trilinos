@@ -416,6 +416,10 @@ int test_azoo_with_ilut(Epetra_CrsMatrix& A,
     return(-1);
   }
 
+  if (verbose) {
+    cout << "azoo0->SolveTime(): " << azoo0->SolveTime() << endl;
+  }
+
   delete azoo0;
 
   return(0);
