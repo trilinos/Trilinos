@@ -67,6 +67,7 @@ int main(int argc, char *argv[])
   bool testFailed;
   bool verbose = false;
   bool debug = false;
+  bool shortrun = false;
   std::string filename("mhd1280b.cua");
   std::string which("LM");
 
@@ -74,12 +75,14 @@ int main(int argc, char *argv[])
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
   cmdp.setOption("debug","nodebug",&debug,"Print debugging information.");
   cmdp.setOption("sort",&which,"Targetted eigenvalues (SM or LM).");
+  cmdp.setOption("shortrun","longrun",&shortrun,"Allow only a small number of iterations.");
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
 #ifdef HAVE_MPI
     MPI_Finalize();
 #endif
     return -1;
   }
+  if (debug) verbose = true;
 
   typedef double ScalarType;
   typedef ScalarTraits<ScalarType>                   SCT;
@@ -149,7 +152,13 @@ int main(int argc, char *argv[])
 
 
   // Eigensolver parameters
-  int maxIters = 450;
+  int maxIters;
+  if (shortrun) {
+    maxIters = 100;
+  }
+  else {
+    maxIters = 450;
+  }
   MagnitudeType tol = 1.0e-6;
   //
   // Create parameter list to pass into the solver manager
@@ -166,7 +175,7 @@ int main(int argc, char *argv[])
   // Solve the problem to the specified tolerances or length
   Anasazi::ReturnType returnCode = MySolverMan.solve();
   testFailed = false;
-  if (returnCode != Anasazi::Converged) {
+  if (returnCode != Anasazi::Converged && shortrun==false) {
     testFailed = true;
   }
 

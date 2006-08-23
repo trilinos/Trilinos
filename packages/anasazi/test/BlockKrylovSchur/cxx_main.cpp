@@ -69,18 +69,21 @@ int main(int argc, char *argv[])
   bool testFailed;
   bool verbose = false;
   bool debug = false;
+  bool shortrun = false;
   std::string which("LM");
 
   CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
   cmdp.setOption("debug","nodebug",&debug,"Print debugging information.");
   cmdp.setOption("sort",&which,"Targetted eigenvalues (SM or LM).");
+  cmdp.setOption("shortrun","longrun",&shortrun,"Allow only a small number of iterations.");
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
 #ifdef HAVE_MPI
     MPI_Finalize();
 #endif
     return -1;
   }
+  if (debug) verbose = true;
 
   typedef double ScalarType;
   typedef ScalarTraits<ScalarType>                   SCT;
@@ -158,8 +161,16 @@ int main(int argc, char *argv[])
 
 
   // Eigensolver parameters
-  int numBlocks = 10;
-  int maxRestarts = 50;
+  int numBlocks;
+  int maxRestarts;
+  if (shortrun) {
+    maxRestarts = 25;
+    numBlocks = 5;
+  }
+  else {
+    maxRestarts = 50;
+    numBlocks = 10;
+  }
   int stepSize = numBlocks*maxRestarts;
   MagnitudeType tol = tolCG * 10.0;
   //
@@ -194,7 +205,7 @@ int main(int argc, char *argv[])
   // Solve the problem to the specified tolerances or length
   Anasazi::ReturnType returnCode = MySolverMgr.solve();
   testFailed = false;
-  if (returnCode != Anasazi::Converged) {
+  if (returnCode != Anasazi::Converged && shortrun==false) {
     testFailed = true;
   }
 

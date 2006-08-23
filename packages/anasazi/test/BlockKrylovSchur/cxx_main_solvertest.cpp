@@ -224,6 +224,7 @@ int main(int argc, char *argv[])
 #endif
     return -1;
   }
+  if (debug) verbose = true;
 
   // create the output manager
   int verbosity = Anasazi::Errors;

@@ -2,7 +2,7 @@
 # FRAMEWORK group
 #
 
-(FRAMEWORK,INSTALL,AnasaziTests,AnasaziEpetraTests) {
+(FRAMEWORK,INSTALL,AnasaziTests,AnasaziEpetraTests,COVERAGE) {
     TESTS = ModalSolverUtils/ModalSolverUtils_test.exe,
             MVOPTester/MVOPTester_test.exe
     EXIT-STATUS = STRING-COMPARISON;
@@ -25,14 +25,14 @@
     COMM = SERIAL, MPI;
 }
 
-(FRAMEWORK,INSTALL,AnasaziTests,AnasaziThyraTests) {
+(FRAMEWORK,INSTALL,AnasaziTests,AnasaziThyraTests,COVERAGE) {
     TESTS = ../thyra/test/MVOPTester/MVOPTesterThyra_test.exe;
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = -v;
     COMM = SERIAL, MPI;
 }
 
-(FRAMEWORK,INSTALL,AnasaziTests,AnasaziThyraTests) {
+(FRAMEWORK,INSTALL,AnasaziTests,AnasaziThyraTests,COVERAGE) {
     TESTS = ../thyra/test/BlockDavidson/BlockDavidsonThyra_test.exe,
             ../thyra/test/BlockKrylovSchur/BlockKrylovSchurThyra_test.exe,
             ../thyra/test/LOBPCG/LOBPCGThyra_test.exe;
@@ -41,7 +41,7 @@
     COMM = SERIAL, MPI;
 }
 
-(FRAMEWORK,INSTALL,AnasaziTests,AnasaziComplexTests) {
+(FRAMEWORK,INSTALL,AnasaziTests,AnasaziComplexTests,COVERAGE) {
     TESTS = MVOPTester/MVOPComplex_test.exe,
             OrthoManager/OrthoManagerComplex_test.exe,
             LOBPCG/LOBPCGComplex_test.exe,
@@ -62,3 +62,29 @@
       DIRS = ../python/example;
       COMM = SERIAL, MPI(1-4);
 }
+
+(COVERAGE) {
+    TESTS = LOBPCG/LOBPCG_test.exe,
+            LOBPCG/LOBPCG_solvertest.exe,
+            LOBPCG/LOBPCG_simple.exe,
+            BlockDavidson/BlockDavidson_test.exe,
+            BlockDavidson/BlockDavidson_solvertest.exe,
+            BlockKrylovSchur/BlockKrylovSchur_test.exe,
+            BlockKrylovSchur/BlockKrylovSchur_solvertest.exe,
+            OrthoManager/OrthoManager_test.exe,
+            OrthoManager/OrthoManager_basic_test.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = --debug;
+    COMM = SERIAL, MPI;
+}
+
+(COVERAGE) {
+    TESTS = LOBPCG/LOBPCG_test.exe,
+            LOBPCG/LOBPCG_simple.exe,
+            BlockDavidson/BlockDavidson_test.exe,
+            BlockKrylovSchur/BlockKrylovSchur_test.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = --debug --shortrun;
+    COMM = SERIAL, MPI;
+}
+
