@@ -123,7 +123,8 @@ namespace Teuchos
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
     
   public:
-    //@{ \name Constructor/Destructor.
+    //! @name Constructor/Destructor.
+    //@{ 
     
     //! Default constructor.
     inline BLAS(void) {};
@@ -135,7 +136,8 @@ namespace Teuchos
     inline virtual ~BLAS(void) {};
     //@}
 
-    //@{ \name Level 1 BLAS Routines.
+    //! @name Level 1 BLAS Routines.
+    //@{ 
 
     //! Computes a Givens plane rotation.
     void ROTG(ScalarType* da, ScalarType* db, MagnitudeType* c, ScalarType* s) const;
@@ -166,7 +168,8 @@ namespace Teuchos
 
     //@}
 
-    //@{ \name Level 2 BLAS Routines.
+    //! @name Level 2 BLAS Routines.
+    //@{ 
 
     //! Performs the matrix-vector operation:  \c y \c <- \c alpha*A*x+beta*y or \c y \c <- \c alpha*A'*x+beta*y where \c A is a general \c m by \c n matrix.
     void GEMV(ETransp trans, const OrdinalType m, const OrdinalType n, const ScalarType alpha, const ScalarType* A, 
@@ -181,7 +184,8 @@ namespace Teuchos
 	     const ScalarType* y, const OrdinalType incy, ScalarType* A, const OrdinalType lda) const;
     //@}
     
-    //@{ \name Level 3 BLAS Routines. 
+    //! @name Level 3 BLAS Routines. 
+    //@{ 
 
     //! Performs the matrix-matrix operation: \c C \c <- \c alpha*op(A)*op(B)+beta*C where \c op(A) is either \c A or \c A', \c op(B) is either \c B or \c B', and C is an \c m by \c k matrix.
     void GEMM(ETransp transa, ETransp transb, const OrdinalType m, const OrdinalType n, const OrdinalType k, const ScalarType alpha, const ScalarType* A, const OrdinalType lda, const ScalarType* B, const OrdinalType ldb, const ScalarType beta, ScalarType* C, const OrdinalType ldc) const;
