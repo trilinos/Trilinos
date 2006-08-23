@@ -322,7 +322,7 @@ namespace Anasazi {
       state.KH = KH_;
       state.R = R_;
       state.T = Teuchos::rcp(new std::vector<MagnitudeType>(theta_));
-      if (_hasM) {
+      if (hasM_) {
         state.MX = MX_;
         state.MP = MP_;
         state.MH = MH_;
@@ -540,7 +540,7 @@ namespace Anasazi {
     Teuchos::RefCountPtr<OP> Op_;
     Teuchos::RefCountPtr<OP> MOp_;
     Teuchos::RefCountPtr<OP> Prec_;
-    bool _hasM;
+    bool hasM_;
     //
     // Internal utilities class required by eigensolver.
     //
@@ -631,10 +631,6 @@ namespace Anasazi {
     om_(printer),
     tester_(tester),
     orthman_(ortho),
-    Op_(problem_->getOperator()),
-    MOp_(problem_->getM()),
-    Prec_(problem_->getPrec()),
-    _hasM(MOp_ != Teuchos::null),
     MSUtils_(om_),
     // timers, counters
     timerOp_(Teuchos::TimeMonitor::getNewTimer("Operation Op*x")),
@@ -651,6 +647,7 @@ namespace Anasazi {
     count_ApplyM_(0),
     count_ApplyPrec_(0),
     // internal data
+    blockSize_(0),
     fullOrtho_(params.get("Full Ortho", true)),
     initialized_(false),
     nevLocal_(0),
@@ -662,14 +659,29 @@ namespace Anasazi {
     R2norms_current_(false)
   {     
     TEST_FOR_EXCEPTION(problem_ == Teuchos::null,std::invalid_argument,
-                       "Anasazi::LOBPCG::constructor: user specified null problem pointer.");
+                       "Anasazi::LOBPCG::constructor: user passed null problem pointer.");
+    TEST_FOR_EXCEPTION(sm_ == Teuchos::null,std::invalid_argument,
+                       "Anasazi::LOBPCG::constructor: user passed null sort manager pointer.");
+    TEST_FOR_EXCEPTION(om_ == Teuchos::null,std::invalid_argument,
+                       "Anasazi::LOBPCG::constructor: user passed null output manager pointer.");
+    TEST_FOR_EXCEPTION(tester_ == Teuchos::null,std::invalid_argument,
+                       "Anasazi::LOBPCG::constructor: user passed null status test pointer.");
+    TEST_FOR_EXCEPTION(orthman_ == Teuchos::null,std::invalid_argument,
+                       "Anasazi::LOBPCG::constructor: user passed null orthogonalization manager pointer.");
     TEST_FOR_EXCEPTION(problem_->isProblemSet() == false, std::invalid_argument,
-                       "Anasazi::LOBPCG::constructor: user specified problem is not set.");
+                       "Anasazi::LOBPCG::constructor: problem is not set.");
     TEST_FOR_EXCEPTION(problem_->isHermitian() == false, std::invalid_argument,
-                       "Anasazi::LOBPCG::constructor: user specified problem is not hermitian.");
+                       "Anasazi::LOBPCG::constructor: problem is not hermitian.");
+
+    // get the problem operators
+    Op_   = problem_->getOperator();
+    TEST_FOR_EXCEPTION(Op_ == Teuchos::null, std::invalid_argument,
+                       "Anasazi::LOBPCG::constructor: problem provides no operator.");
+    MOp_  = problem_->getM();
+    Prec_ = problem_->getPrec();
+    hasM_ = (MOp_ != Teuchos::null);
 
     // set the block size and allocate data
-    blockSize_ = 0;
     int bs = params.get("Block Size", problem_->getNEV());
     setBlockSize(bs);
   }
@@ -710,7 +722,7 @@ namespace Anasazi {
         
         X_  = MVT::CloneCopy(*X_,ind);
         KX_ = MVT::CloneCopy(*KX_,ind);
-        if (_hasM) {
+        if (hasM_) {
           MX_ = MVT::CloneCopy(*MX_,ind);
         }
         else {
@@ -719,7 +731,7 @@ namespace Anasazi {
         R_  = MVT::CloneCopy(*R_,ind);
         P_  = MVT::CloneCopy(*P_,ind);
         KP_ = MVT::CloneCopy(*KP_,ind);
-        if (_hasM) {
+        if (hasM_) {
           MP_ = MVT::CloneCopy(*MP_,ind);
         }
         else {
@@ -730,7 +742,7 @@ namespace Anasazi {
         // shrink multivectors without copying
         X_ = MVT::Clone(*X_,blockSize_);
         KX_ = MVT::Clone(*KX_,blockSize_);
-        if (_hasM) {
+        if (hasM_) {
           MX_ = MVT::Clone(*MX_,blockSize_);
         }
         else {
@@ -739,7 +751,7 @@ namespace Anasazi {
         R_ = MVT::Clone(*R_,blockSize_);
         P_ = MVT::Clone(*P_,blockSize_);
         KP_ = MVT::Clone(*KP_,blockSize_);
-        if (_hasM) {
+        if (hasM_) {
           MP_ = MVT::Clone(*MP_,blockSize_);
         }
         else {
@@ -749,7 +761,7 @@ namespace Anasazi {
       // shrink H
       H_ = MVT::Clone(*H_,blockSize_);
       KH_ = MVT::Clone(*KH_,blockSize_);
-      if (_hasM) {
+      if (hasM_) {
         MH_ = MVT::Clone(*MH_,blockSize_);
       }
       else {
@@ -782,7 +794,7 @@ namespace Anasazi {
       // clone multivectors off of tmp
       X_ = MVT::Clone(*tmp,blockSize);
       KX_ = MVT::Clone(*tmp,blockSize);
-      if (_hasM) {
+      if (hasM_) {
         MX_ = MVT::Clone(*tmp,blockSize);
       }
       else {
@@ -791,7 +803,7 @@ namespace Anasazi {
       R_ = MVT::Clone(*tmp,blockSize);
       H_ = MVT::Clone(*tmp,blockSize);
       KH_ = MVT::Clone(*tmp,blockSize);
-      if (_hasM) {
+      if (hasM_) {
         MH_ = MVT::Clone(*tmp,blockSize);
       }
       else {
@@ -800,7 +812,7 @@ namespace Anasazi {
       hasP_ = false;
       P_ = MVT::Clone(*tmp,blockSize);
       KP_ = MVT::Clone(*tmp,blockSize);
-      if (_hasM) {
+      if (hasM_) {
         MP_ = MVT::Clone(*tmp,blockSize);
       }
       else {
@@ -848,7 +860,7 @@ namespace Anasazi {
    * initialized_ == true
    * X is orthonormal, orthogonal to auxVecs_
    * KX = Op*X
-   * MX = M*X if _hasM
+   * MX = M*X if hasM_
    * theta_ contains Ritz values of X
    * R = KX - MX*diag(theta_)
    * if hasP() == true,
@@ -876,7 +888,7 @@ namespace Anasazi {
 
       // put data in X,MX,KX
       MVT::SetBlock(*newstate.X,bsind,*X_);
-      if (_hasM) {
+      if (hasM_) {
         if (newstate.MX != Teuchos::null && MVT::GetNumberVecs(*newstate.MX) >= blockSize_ && MVT::GetVecLength(*newstate.MX) == MVT::GetVecLength(*MX_) ) {
           MVT::SetBlock(*newstate.MX,bsind,*MX_);
         }
@@ -966,7 +978,7 @@ namespace Anasazi {
           // KX <- KX*S
           MVT::MvAddMv( ONE, *KX_, ZERO, *KX_, *R_ );        
           MVT::MvTimesMatAddMv( ONE, *R_, S, ZERO, *KX_ );
-          if (_hasM) {
+          if (hasM_) {
             // MX <- MX*S
             MVT::MvAddMv( ONE, *MX_, ZERO, *MX_, *R_ );        
             MVT::MvTimesMatAddMv( ONE, *R_, S, ZERO, *MX_ );
@@ -1008,7 +1020,7 @@ namespace Anasazi {
           count_ApplyOp_ += blockSize_;
         }
 
-        if (_hasM) {
+        if (hasM_) {
           if (newstate.MP != Teuchos::null && MVT::GetNumberVecs(*newstate.MP) >= blockSize_ && MVT::GetVecLength(*newstate.MP) == MVT::GetVecLength(*MP_) ) {
             MVT::SetBlock(*newstate.MP,bsind,*MP_);
           }
@@ -1075,8 +1087,8 @@ namespace Anasazi {
           rX = Teuchos::null;
         }
 
-        // compute newMX if _hasM
-        if (_hasM) {
+        // compute newMX if hasM_
+        if (hasM_) {
           newMX = MVT::Clone(*ivec,blockSize_);
           {
             Teuchos::TimeMonitor lcltimer( *timerMOp_ );
@@ -1207,7 +1219,7 @@ namespace Anasazi {
       }
 
       // Apply the mass matrix on H
-      if (_hasM) {
+      if (hasM_) {
         Teuchos::TimeMonitor lcltimer( *timerMOp_ );
         OPT::Apply( *MOp_, *H_, *MH_);    // don't catch the exception
         count_ApplyM_ += blockSize_;
@@ -1541,7 +1553,7 @@ namespace Anasazi {
           // KX <- R*CX1 == KX*CX1 
           MVT::MvAddMv( ONE, *KX_, ZERO, *KX_, *R_ );
           MVT::MvTimesMatAddMv( ONE, *R_, CX1, ZERO, *KX_ );
-          if (_hasM) {
+          if (hasM_) {
             // MX <- R*CX1 == MX*CX1 
             MVT::MvAddMv( ONE, *MX_, ZERO, *MX_, *R_ );
             MVT::MvTimesMatAddMv( ONE, *R_, CX1, ZERO, *MX_ );
@@ -1592,7 +1604,7 @@ namespace Anasazi {
             MVT::MvTimesMatAddMv( ONE, *KH_, CP2, ZERO, *KP_ );
           }
 
-          if (_hasM) {
+          if (hasM_) {
             // R  <- MX
             MVT::MvAddMv( ONE, *MX_, ZERO, *MX_, *R_ );        
             // MX <- R*CX1 + MH*CX2 == MX*CX1 + MH*CX2
@@ -1680,7 +1692,7 @@ namespace Anasazi {
           MVT::MvTimesMatAddMv( ONE, *KH_, CP2,  ONE, *KP_ );
 
 
-          if (_hasM) {
+          if (hasM_) {
             // MX <- MX*CX1 + MP*CX3
             // MP <- MX*CP1 + MP*CP3 (note, CP1 == ZERO if fullOrtho_==false)
             if (fullOrtho_) {
@@ -1830,7 +1842,7 @@ namespace Anasazi {
         os << " >> Error in X^H M Q[" << i << "] == 0 : " << tmp << endl;
       }
     }
-    if (chk.checkMX && _hasM) {
+    if (chk.checkMX && hasM_) {
       tmp = MSUtils_.errorEquality(X_.get(), MX_.get(), MOp_.get());
       os << " >> Error in MX == M*X    : " << tmp << endl;
     }
@@ -1852,7 +1864,7 @@ namespace Anasazi {
         os << " >> Error in P^H M Q[" << i << "] == 0 : " << tmp << endl;
       }
     }
-    if (chk.checkMP && _hasM && hasP_) {
+    if (chk.checkMP && hasM_ && hasP_) {
       tmp = MSUtils_.errorEquality(P_.get(), MP_.get(), MOp_.get());
       os << " >> Error in MP == M*P    : " << tmp << endl;
     }
@@ -1878,7 +1890,7 @@ namespace Anasazi {
         os << " >> Error in H^H M Q[" << i << "] == 0 : " << tmp << endl;
       }
     }
-    if (chk.checkMH && _hasM) {
+    if (chk.checkMH && hasM_) {
       tmp = MSUtils_.errorEquality(H_.get(), MH_.get(), MOp_.get());
       os << " >> Error in MH == M*H    : " << tmp << endl;
     }

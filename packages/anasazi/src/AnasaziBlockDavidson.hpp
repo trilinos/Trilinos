@@ -551,10 +551,6 @@ namespace Anasazi {
     om_(printer),
     tester_(tester),
     orthman_(ortho),
-    Op_(problem_->getOperator()),
-    MOp_(problem_->getM()),
-    Prec_(problem_->getPrec()),
-    hasM_(MOp_ != Teuchos::null),
     MSUtils_(om_),
     // timers, counters
     timerOp_(Teuchos::TimeMonitor::getNewTimer("Operation Op*x")),
@@ -580,11 +576,27 @@ namespace Anasazi {
     R2norms_current_(false)
   {     
     TEST_FOR_EXCEPTION(problem_ == Teuchos::null,std::invalid_argument,
-                       "Anasazi::BlockDavidson::constructor: user specified null problem pointer.");
+                       "Anasazi::BlockDavidson::constructor: user passed null problem pointer.");
+    TEST_FOR_EXCEPTION(sm_ == Teuchos::null,std::invalid_argument,
+                       "Anasazi::BlockDavidson::constructor: user passed null sort manager pointer.");
+    TEST_FOR_EXCEPTION(om_ == Teuchos::null,std::invalid_argument,
+                       "Anasazi::BlockDavidson::constructor: user passed null output manager pointer.");
+    TEST_FOR_EXCEPTION(tester_ == Teuchos::null,std::invalid_argument,
+                       "Anasazi::BlockDavidson::constructor: user passed null status test pointer.");
+    TEST_FOR_EXCEPTION(orthman_ == Teuchos::null,std::invalid_argument,
+                       "Anasazi::BlockDavidson::constructor: user passed null orthogonalization manager pointer.");
     TEST_FOR_EXCEPTION(problem_->isProblemSet() == false, std::invalid_argument,
-                       "Anasazi::BlockDavidson::constructor: user specified problem is not set.");
+                       "Anasazi::BlockDavidson::constructor: problem is not set.");
     TEST_FOR_EXCEPTION(problem_->isHermitian() == false, std::invalid_argument,
-                       "Anasazi::BlockDavidson::constructor: user specified problem is not hermitian.");
+                       "Anasazi::BlockDavidson::constructor: problem is not hermitian.");
+
+    // get the problem operators
+    Op_   = problem_->getOperator();
+    TEST_FOR_EXCEPTION(Op_ == Teuchos::null, std::invalid_argument,
+                       "Anasazi::BlockDavidson::constructor: problem provides no operator.");
+    MOp_  = problem_->getM();
+    Prec_ = problem_->getPrec();
+    hasM_ = (MOp_ != Teuchos::null);
 
     // set the block size and allocate data
     int bs = params.get("Block Size", problem_->getNEV());

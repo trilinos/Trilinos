@@ -148,12 +148,23 @@ void testsolver( RefCountPtr<BasicEigenproblem<ScalarType,MV,OP> > problem,
                  RefCountPtr< OutputManager<ScalarType> > printer,
                  RefCountPtr< MatOrthoManager<ScalarType,MV,OP> > ortho,
                  RefCountPtr< SortManager<ScalarType,MV,OP> > sorter,
-                 ParameterList &pls)
+                 ParameterList &pls,bool invalid=false)
 {
-  // create a status tester
+  // create a status tester to run for one iteration
   RefCountPtr< StatusTest<ScalarType,MV,OP> > tester = rcp( new StatusTestMaxIters<ScalarType,MV,OP>(1) );
+
   // create the solver
-  RefCountPtr< LOBPCG<ScalarType,MV,OP> > solver = rcp( new LOBPCG<ScalarType,MV,OP>(problem,sorter,printer,tester,ortho,pls) );
+  RefCountPtr< LOBPCG<ScalarType,MV,OP> > solver;
+  try {
+    solver = rcp( new LOBPCG<ScalarType,MV,OP>(problem,sorter,printer,tester,ortho,pls) );
+    TEST_FOR_EXCEPTION(invalid, get_out, "Initializing with invalid parameters failed to throw exception.")
+  }
+  catch (std::invalid_argument ia) {
+    TEST_FOR_EXCEPTION(!invalid, get_out, "Initializing with valid parameters unexpectadly threw exception.");
+    // caught expected exception
+    return;
+  }
+
 
   const int  blocksize = pls.get<int>("Block Size");
   const bool fullortho = pls.get<bool>("Full Ortho");
@@ -240,16 +251,16 @@ int main(int argc, char *argv[])
   // create the output manager
   RefCountPtr< OutputManager<ScalarType> > printer = rcp( new BasicOutputManager<ScalarType>() );
 
-  if (verbose) {
-    printer->stream(Errors) << Anasazi_Version() << endl << endl;
-  }
+  if (verbose) printer->stream(Errors) << Anasazi_Version() << endl << endl;
+
+  const int veclength = 99;
 
   //  Problem information
   int space_dim = 1;
   std::vector<double> brick_dim( space_dim );
   brick_dim[0] = 1.0;
   std::vector<int> elements( space_dim );
-  elements[0] = 100;
+  elements[0] = veclength+1;
 
   // Create problem
   RefCountPtr<ModalProblem> testCase = rcp( new ModeLaplace1DQ1(Comm, brick_dim[0], elements[0]) );
@@ -301,72 +312,145 @@ int main(int argc, char *argv[])
   try 
   {
 
+    if (verbose) printer->stream(Errors) << "Testing solver(default,default) with standard eigenproblem..." << endl;
+    testsolver(probstd,printer,orthostd,sorter,pls);
+    if (verbose) printer->stream(Errors) << "Testing solver(default,default) with generalized eigenproblem..." << endl;
+    testsolver(probgen,printer,orthogen,sorter,pls);
+
     pls.set<int>("Block Size",nev);
     pls.set<bool>("Full Ortho",false);
-    if (verbose) {
-      printer->stream(Errors) << "Testing solver(nev,false) with standard eigenproblem..." << endl;
-    }
+    if (verbose) printer->stream(Errors) << "Testing solver(nev,false) with standard eigenproblem..." << endl;
     testsolver(probstd,printer,orthostd,sorter,pls);
+    TEST_FOR_EXCEPTION(pls.getEntryPtr("Block Size")->isUsed() == false, get_out, "Solver did not consume parameter \"Block Size\".");
+    TEST_FOR_EXCEPTION(pls.getEntryPtr("Full Ortho")->isUsed() == false, get_out, "Solver did not consume parameter \"Full Ortho\".");
     pls.set<bool>("Full Ortho",true);
-    if (verbose) {
-      printer->stream(Errors) << "Testing solver(nev,true) with standard eigenproblem..." << endl;
-    }
+    if (verbose) printer->stream(Errors) << "Testing solver(nev,true) with standard eigenproblem..." << endl;
     testsolver(probstd,printer,orthostd,sorter,pls);
     pls.set<bool>("Full Ortho",false);
-    if (verbose) {
-      printer->stream(Errors) << "Testing solver(nev,false) with generalized eigenproblem..." << endl;
-    }
+    if (verbose) printer->stream(Errors) << "Testing solver(nev,false) with generalized eigenproblem..." << endl;
     testsolver(probgen,printer,orthogen,sorter,pls);
     pls.set<bool>("Full Ortho",true);
-    if (verbose) {
-      printer->stream(Errors) << "Testing solver(nev,true) with generalized eigenproblem..." << endl;
-    }
+    if (verbose) printer->stream(Errors) << "Testing solver(nev,true) with generalized eigenproblem..." << endl;
     testsolver(probgen,printer,orthogen,sorter,pls);
 
     pls.set<int>("Block Size",2*nev);
     pls.set<bool>("Full Ortho",false);
-    if (verbose) {
-      printer->stream(Errors) << "Testing solver(2*nev,false) with standard eigenproblem..." << endl;
-    }
+    if (verbose) printer->stream(Errors) << "Testing solver(2*nev,false) with standard eigenproblem..." << endl;
     testsolver(probstd,printer,orthostd,sorter,pls);
     pls.set<bool>("Full Ortho",true);
-    if (verbose) {
-      printer->stream(Errors) << "Testing solver(2*nev,true) with standard eigenproblem..." << endl;
-    }
+    if (verbose) printer->stream(Errors) << "Testing solver(2*nev,true) with standard eigenproblem..." << endl;
     testsolver(probstd,printer,orthostd,sorter,pls);
     pls.set<bool>("Full Ortho",false);
-    if (verbose) {
-      printer->stream(Errors) << "Testing solver(2*nev,false) with generalized eigenproblem..." << endl;
-    }
+    if (verbose) printer->stream(Errors) << "Testing solver(2*nev,false) with generalized eigenproblem..." << endl;
     testsolver(probgen,printer,orthogen,sorter,pls);
     pls.set<bool>("Full Ortho",true);
-    if (verbose) {
-      printer->stream(Errors) << "Testing solver(2*nev,true) with generalized eigenproblem..." << endl;
-    }
+    if (verbose) printer->stream(Errors) << "Testing solver(2*nev,true) with generalized eigenproblem..." << endl;
     testsolver(probgen,printer,orthogen,sorter,pls);
 
     pls.set<int>("Block Size",nev/2);
     pls.set<bool>("Full Ortho",false);
-    if (verbose) {
-      printer->stream(Errors) << "Testing solver(nev/2,false) with standard eigenproblem..." << endl;
-    }
+    if (verbose) printer->stream(Errors) << "Testing solver(nev/2,false) with standard eigenproblem..." << endl;
     testsolver(probstd,printer,orthostd,sorter,pls);
     pls.set<bool>("Full Ortho",true);
-    if (verbose) {
-      printer->stream(Errors) << "Testing solver(nev/2,true) with standard eigenproblem..." << endl;
-    }
+    if (verbose) printer->stream(Errors) << "Testing solver(nev/2,true) with standard eigenproblem..." << endl;
     testsolver(probstd,printer,orthostd,sorter,pls);
     pls.set<bool>("Full Ortho",false);
-    if (verbose) {
-      printer->stream(Errors) << "Testing solver(nev/2,false) with generalized eigenproblem..." << endl;
-    }
+    if (verbose) printer->stream(Errors) << "Testing solver(nev/2,false) with generalized eigenproblem..." << endl;
     testsolver(probgen,printer,orthogen,sorter,pls);
     pls.set<bool>("Full Ortho",true);
-    if (verbose) {
-      printer->stream(Errors) << "Testing solver(nev/2,true) with generalized eigenproblem..." << endl;
-    }
+    if (verbose) printer->stream(Errors) << "Testing solver(nev/2,true) with generalized eigenproblem..." << endl;
     testsolver(probgen,printer,orthogen,sorter,pls);
 
+    // try with an invalid block size
+    pls.set<int>("Block Size",0);
+    if (verbose) printer->stream(Errors) << "Testing solver(0) with standard eigenproblem..." << endl;
+    testsolver(probstd,printer,orthostd,sorter,pls,true);
+
+    // try with a too-large block size
+    pls.set<int>("Num Blocks",veclength+1);
+    if (verbose) printer->stream(Errors) << "Testing solver(toomany) with standard eigenproblem..." << endl;
+    testsolver(probstd,printer,orthostd,sorter,pls,true);
+
+    // try with an unset problem
+    // setHermitian will mark the problem as unset
+    probstd->setHermitian(false);
+    if (verbose) printer->stream(Errors) << "Testing solver with unset eigenproblem..." << endl;
+    testsolver(probstd,printer,orthostd,sorter,pls,true);
+
+    // set the problem, and try with a non-Hermitian problem
+    if ( probstd->setProblem() != true ) {
+      if (verbose) {
+        printer->stream(Errors) << "Anasazi::BasicEigenproblem::SetProblem() returned with error." << endl
+                                << "End Result: TEST FAILED" << endl;	
+      }
+#ifdef HAVE_MPI
+      MPI_Finalize() ;
+#endif
+      return -1;
+    }
+    if (verbose) printer->stream(Errors) << "Testing solver with non-Hermitian eigenproblem..." << endl;
+    testsolver(probstd,printer,orthostd,sorter,pls,true);
+    // fix it now
+    probstd->setHermitian(true);
+    probstd->setProblem();
+
+    // create a dummy status tester
+    RefCountPtr< StatusTest<ScalarType,MV,OP> > dumtester = rcp( new StatusTestMaxIters<ScalarType,MV,OP>(1) );
+
+    // try with a null problem
+    if (verbose) printer->stream(Errors) << "Testing solver with null eigenproblem..." << endl;
+    try {
+      RefCountPtr< LOBPCG<ScalarType,MV,OP> > solver 
+        = rcp( new LOBPCG<ScalarType,MV,OP>(Teuchos::null,sorter,printer,dumtester,orthostd,pls) );
+      TEST_FOR_EXCEPTION(true,get_out,"Initializing with invalid parameters failed to throw exception.");
+    }
+    catch (std::invalid_argument ia) {
+      // caught expected exception
+    }
+
+    // try with a null sortman
+    if (verbose) printer->stream(Errors) << "Testing solver with null sort manager..." << endl;
+    try {
+      RefCountPtr< LOBPCG<ScalarType,MV,OP> > solver 
+        = rcp( new LOBPCG<ScalarType,MV,OP>(probstd,Teuchos::null,printer,dumtester,orthostd,pls) );
+      TEST_FOR_EXCEPTION(true,get_out,"Initializing with invalid parameters failed to throw exception.");
+    }
+    catch (std::invalid_argument ia) {
+      // caught expected exception
+    }
+
+    // try with a output man problem
+    if (verbose) printer->stream(Errors) << "Testing solver with null output manager..." << endl;
+    try {
+      RefCountPtr< LOBPCG<ScalarType,MV,OP> > solver 
+        = rcp( new LOBPCG<ScalarType,MV,OP>(probstd,sorter,Teuchos::null,dumtester,orthostd,pls) );
+      TEST_FOR_EXCEPTION(true,get_out,"Initializing with invalid parameters failed to throw exception.");
+    }
+    catch (std::invalid_argument ia) {
+      // caught expected exception
+    }
+
+    // try with a null status test
+    if (verbose) printer->stream(Errors) << "Testing solver with null status test..." << endl;
+    try {
+      RefCountPtr< LOBPCG<ScalarType,MV,OP> > solver 
+        = rcp( new LOBPCG<ScalarType,MV,OP>(probstd,sorter,printer,Teuchos::null,orthostd,pls) );
+      TEST_FOR_EXCEPTION(true,get_out,"Initializing with invalid parameters failed to throw exception.");
+    }
+    catch (std::invalid_argument ia) {
+      // caught expected exception
+    }
+
+    // try with a null orthoman
+    if (verbose) printer->stream(Errors) << "Testing solver with null ortho manager..." << endl;
+    try {
+      RefCountPtr< LOBPCG<ScalarType,MV,OP> > solver 
+        = rcp( new LOBPCG<ScalarType,MV,OP>(probstd,sorter,printer,dumtester,Teuchos::null,pls) );
+      TEST_FOR_EXCEPTION(true,get_out,"Initializing with invalid parameters failed to throw exception.");
+    }
+    catch (std::invalid_argument ia) {
+      // caught expected exception
+    }
   }
   catch (get_out go) {
     printer->stream(Errors) << "Test failed: " << go.what() << endl;
