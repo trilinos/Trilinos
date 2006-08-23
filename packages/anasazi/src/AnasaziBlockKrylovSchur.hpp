@@ -91,7 +91,7 @@ namespace Anasazi {
     Teuchos::RefCountPtr<const Teuchos::SerialDenseMatrix<int,ScalarType> > Q;
     BlockKrylovSchurState() : curDim(0), V(Teuchos::null),
                               H(Teuchos::null), S(Teuchos::null),
-			      Q(Teuchos::null) {}
+                              Q(Teuchos::null) {}
   };
 
   //@}
@@ -425,8 +425,8 @@ namespace Anasazi {
     //
     string accuracyCheck(const CheckList &chk, const string &where) const;
     void sortSchurForm( Teuchos::SerialDenseMatrix<int,ScalarType>& H,
-			Teuchos::SerialDenseMatrix<int,ScalarType>& Q,
-			std::vector<int>& order );
+                        Teuchos::SerialDenseMatrix<int,ScalarType>& Q,
+                        std::vector<int>& order );
     //
     // Classes inputed through constructor that define the eigenproblem to be solved.
     //
@@ -560,13 +560,13 @@ namespace Anasazi {
     schurCurrent_(false),
     numRitzPrint_(0)
   {     
-    TEST_FOR_EXCEPTION(problem_ == Teuchos::null,std::logic_error,
+    TEST_FOR_EXCEPTION(problem_ == Teuchos::null,std::invalid_argument,
                        "Anasazi::BlockKrylovSchur::constructor: user specified null problem pointer.");
-    TEST_FOR_EXCEPTION(problem_->isProblemSet() == false, std::logic_error,
+    TEST_FOR_EXCEPTION(problem_->isProblemSet() == false, std::invalid_argument,
                        "Anasazi::BlockKrylovSchur::constructor: user specified problem is not set.");
 
     // get the step size
-    TEST_FOR_EXCEPTION(!params.isParameter("Step Size"), std::logic_error,
+    TEST_FOR_EXCEPTION(!params.isParameter("Step Size"), std::invalid_argument,
                        "Anasazi::BlockKrylovSchur::constructor: parameter 'Step Size' is not specified.");
     int ss = params.get("Step Size",numBlocks_);
     setStepSize(ss);
@@ -601,7 +601,7 @@ namespace Anasazi {
   template <class ScalarType, class MV, class OP>
   void BlockKrylovSchur<ScalarType,MV,OP>::setStepSize (int stepSize)
   {
-    TEST_FOR_EXCEPTION(stepSize <= 0, std::logic_error, "Anasazi::BlockKrylovSchur::setStepSize(): new step size must be positive and non-zero.");
+    TEST_FOR_EXCEPTION(stepSize <= 0, std::invalid_argument, "Anasazi::BlockKrylovSchur::setStepSize(): new step size must be positive and non-zero.");
     stepSize_ = stepSize;
   }
 
@@ -613,14 +613,14 @@ namespace Anasazi {
     // This routine only allocates space; it doesn't not perform any computation
     // any change in size will invalidate the state of the solver.
 
-    TEST_FOR_EXCEPTION(numRitzVecs < 0, std::logic_error, "Anasazi::BlockKrylovSchur::setNumRitzVectors(): number of Ritz vectors to compute must be positive.");
+    TEST_FOR_EXCEPTION(numRitzVecs < 0, std::invalid_argument, "Anasazi::BlockKrylovSchur::setNumRitzVectors(): number of Ritz vectors to compute must be positive.");
 
     // Check to see if the number of requested Ritz vectors has changed.
     if (numRitzVecs != numRitzVecs_) {
       if (numRitzVecs) {
-	ritzVectors_ = MVT::Clone(*V_, numRitzVecs);
+        ritzVectors_ = MVT::Clone(*V_, numRitzVecs);
       } else {
-	ritzVectors_ = Teuchos::null;
+        ritzVectors_ = Teuchos::null;
       }
       numRitzVecs_ = numRitzVecs;
       ritzVecsCurrent_ = false;
@@ -635,7 +635,7 @@ namespace Anasazi {
     // This routine only allocates space; it doesn't not perform any computation
     // any change in size will invalidate the state of the solver.
 
-    TEST_FOR_EXCEPTION(numBlocks <= 0 || blockSize <= 0, std::logic_error, "Anasazi::BlockKrylovSchur::setSize was passed a non-positive argument.");
+    TEST_FOR_EXCEPTION(numBlocks <= 0 || blockSize <= 0, std::invalid_argument, "Anasazi::BlockKrylovSchur::setSize was passed a non-positive argument.");
     if (blockSize == blockSize_ && numBlocks == numBlocks_) {
       // do nothing
       return;
@@ -654,7 +654,7 @@ namespace Anasazi {
     }
     else {
       tmp = problem_->getInitVec();
-      TEST_FOR_EXCEPTION(tmp == Teuchos::null,std::logic_error,
+      TEST_FOR_EXCEPTION(tmp == Teuchos::null,std::invalid_argument,
                          "Anasazi::BlockKrylovSchur::setSize(): Eigenproblem did not specify initial vectors to clone from");
     }
 
@@ -736,17 +736,17 @@ namespace Anasazi {
     if (state.V != Teuchos::null && state.H != Teuchos::null) {
 
       TEST_FOR_EXCEPTION( MVT::GetVecLength(*state.V) != MVT::GetVecLength(*V_),
-                          std::logic_error, errstr );
+                          std::invalid_argument, errstr );
       TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*state.V) < blockSize_,
-                          std::logic_error, errstr );
+                          std::invalid_argument, errstr );
       TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*state.V) > blockSize_*numBlocks_+1,
-                          std::logic_error, errstr );
+                          std::invalid_argument, errstr );
 
       curDim_ = state.curDim;
       int lclDim = MVT::GetNumberVecs(*state.V);
 
       // check size of H
-      TEST_FOR_EXCEPTION(state.H->numRows() < curDim_ || state.H->numCols() < curDim_, std::logic_error, errstr);
+      TEST_FOR_EXCEPTION(state.H->numRows() < curDim_ || state.H->numCols() < curDim_, std::invalid_argument, errstr);
       
       // create index vector to copy over current basis vectors
       std::vector<int> nevind(lclDim);
@@ -770,7 +770,7 @@ namespace Anasazi {
         // Check almost everything here
         CheckList chk;
         chk.checkV = true;
-	chk.checkArn = true;
+        chk.checkArn = true;
         chk.checkAux = true;
         om_->print( Debug, accuracyCheck(chk, ": after initialize()") );
       }
@@ -787,7 +787,7 @@ namespace Anasazi {
       // user did not specify a basis V
       // get vectors from problem or generate something, projectAndNormalize, call initialize() recursively
       Teuchos::RefCountPtr<const MV> ivec = problem_->getInitVec();
-      TEST_FOR_EXCEPTION(ivec == Teuchos::null,std::logic_error,
+      TEST_FOR_EXCEPTION(ivec == Teuchos::null,std::invalid_argument,
                          "Anasazi::BlockKrylovSchur::initialize(): Eigenproblem did not specify initial vectors to clone from");
 
       int lclDim = MVT::GetNumberVecs(*ivec);
@@ -797,31 +797,31 @@ namespace Anasazi {
         // use a random multivec
         userand = true;
       }
-      	
+              
       if (userand) {
         // make an index
-	std::vector<int> dimind2(lclDim);
-	for (int i=0; i<lclDim; i++) { dimind2[i] = i; }
+        std::vector<int> dimind2(lclDim);
+        for (int i=0; i<lclDim; i++) { dimind2[i] = i; }
 
         // alloc newV as a view of the first block of V
         Teuchos::RefCountPtr<MV> newV1 = MVT::CloneView(*V_,dimind2);
 
-	// copy the initial vectors into the first lclDim vectors of V
-	MVT::SetBlock(*ivec,dimind2,*newV1);
+        // copy the initial vectors into the first lclDim vectors of V
+        MVT::SetBlock(*ivec,dimind2,*newV1);
 
-  	// resize / reinitialize the index vector	
-	dimind2.resize(blockSize_-lclDim);
-	for (int i=0; i<blockSize_-lclDim; i++) { dimind2[i] = lclDim + i; }
+          // resize / reinitialize the index vector        
+        dimind2.resize(blockSize_-lclDim);
+        for (int i=0; i<blockSize_-lclDim; i++) { dimind2[i] = lclDim + i; }
 
-	// initialize the rest of the vectors with random vectors
-	Teuchos::RefCountPtr<MV> newV2 = MVT::CloneView(*V_,dimind2);
+        // initialize the rest of the vectors with random vectors
+        Teuchos::RefCountPtr<MV> newV2 = MVT::CloneView(*V_,dimind2);
         MVT::MvRandom(*newV2);
       }
       else {
-	// alloc newV as a view of the first block of V
-	Teuchos::RefCountPtr<MV> newV1 = MVT::CloneView(*V_,bsind);
+        // alloc newV as a view of the first block of V
+        Teuchos::RefCountPtr<MV> newV1 = MVT::CloneView(*V_,bsind);
        
-	// get a view of the first block of initial vectors
+        // get a view of the first block of initial vectors
         Teuchos::RefCountPtr<const MV> ivecV = MVT::CloneView(*ivec,bsind);
  
         // assign ivec to first part of newV
@@ -833,23 +833,23 @@ namespace Anasazi {
 
       // alloc newH
       Teuchos::RefCountPtr< Teuchos::SerialDenseMatrix<int,ScalarType> > newH =
-	Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::View, *H_, curDim_, curDim_ ) );
+        Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::View, *H_, curDim_, curDim_ ) );
 
       // remove auxVecs from newV and normalize newV
       if (auxVecs_.size() > 0) {
         Teuchos::TimeMonitor lcltimer( *timerOrtho_ );
-	
+        
         Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > dummy;
         int rank = orthman_->projectAndNormalize(*newV,dummy,Teuchos::null,auxVecs_);
         TEST_FOR_EXCEPTION( rank != blockSize_,BlockKrylovSchurInitFailure,
-			    "Anasazi::BlockKrylovSchur::initialize(): Couldn't generate initial basis of full rank." );
+                            "Anasazi::BlockKrylovSchur::initialize(): Couldn't generate initial basis of full rank." );
       }
       else {
         Teuchos::TimeMonitor lcltimer( *timerOrtho_ );
 
         int rank = orthman_->normalize(*newV,Teuchos::null);
         TEST_FOR_EXCEPTION( rank != blockSize_,BlockKrylovSchurInitFailure,
-			    "Anasazi::BlockKrylovSchur::initialize(): Couldn't generate initial basis of full rank." );
+                            "Anasazi::BlockKrylovSchur::initialize(): Couldn't generate initial basis of full rank." );
       }
 
       // call myself recursively
@@ -917,42 +917,42 @@ namespace Anasazi {
 
       // Compute the next vector in the Krylov basis:  Vnext = Op*Vprev
       {
-	Teuchos::TimeMonitor lcltimer( *timerOp_ );
-	OPT::Apply(*Op_,*Vprev,*Vnext);
-	count_ApplyOp_ += blockSize_;
+        Teuchos::TimeMonitor lcltimer( *timerOp_ );
+        OPT::Apply(*Op_,*Vprev,*Vnext);
+        count_ApplyOp_ += blockSize_;
       }
       Vprev = Teuchos::null;
       
       // Remove all previous Krylov-Schur basis vectors and auxVecs from Vnext
       {
         Teuchos::TimeMonitor lcltimer( *timerOrtho_ );
-	
-	// Get a view of all the previous vectors
-	std::vector<int> prevind(lclDim);
-	for (int i=0; i<lclDim; i++) { prevind[i] = i; }
-	Vprev = MVT::CloneView(*V_,prevind);
-	Teuchos::Array<Teuchos::RefCountPtr<const MV> > AVprev(1, Vprev);
-	
-	// Get a view of the part of the Hessenberg matrix needed to hold the ortho coeffs.
-	Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> >
-	  subH = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>
-			       ( Teuchos::View,*H_,lclDim,blockSize_,0,curDim_ ) );
-	Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > AsubH;
-	AsubH.append( subH );
-	
-	// Add the auxiliary vectors to the current basis vectors if any exist
-	if (auxVecs_.size() > 0) {
-	  for (unsigned int i=0; i<auxVecs_.size(); i++) {
-	    AVprev.append( auxVecs_[i] );
-	    AsubH.append( Teuchos::null );
-	  }
-	}
-	
-	// Get a view of the part of the Hessenberg matrix needed to hold the norm coeffs.
-	Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> >
-	  subR = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>
-			       ( Teuchos::View,*H_,blockSize_,blockSize_,lclDim,curDim_ ) );
-	int rank = orthman_->projectAndNormalize(*Vnext,AsubH,subR,AVprev);
+        
+        // Get a view of all the previous vectors
+        std::vector<int> prevind(lclDim);
+        for (int i=0; i<lclDim; i++) { prevind[i] = i; }
+        Vprev = MVT::CloneView(*V_,prevind);
+        Teuchos::Array<Teuchos::RefCountPtr<const MV> > AVprev(1, Vprev);
+        
+        // Get a view of the part of the Hessenberg matrix needed to hold the ortho coeffs.
+        Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> >
+          subH = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>
+                               ( Teuchos::View,*H_,lclDim,blockSize_,0,curDim_ ) );
+        Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > AsubH;
+        AsubH.append( subH );
+        
+        // Add the auxiliary vectors to the current basis vectors if any exist
+        if (auxVecs_.size() > 0) {
+          for (unsigned int i=0; i<auxVecs_.size(); i++) {
+            AVprev.append( auxVecs_[i] );
+            AsubH.append( Teuchos::null );
+          }
+        }
+        
+        // Get a view of the part of the Hessenberg matrix needed to hold the norm coeffs.
+        Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> >
+          subR = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>
+                               ( Teuchos::View,*H_,blockSize_,blockSize_,lclDim,curDim_ ) );
+        int rank = orthman_->projectAndNormalize(*Vnext,AsubH,subR,AVprev);
         TEST_FOR_EXCEPTION(rank != blockSize_,BlockKrylovSchurInitFailure,
                            "Anasazi::BlockKrylovSchur::iterate(): Couldn't generate basis of full rank.");
       }
@@ -969,7 +969,7 @@ namespace Anasazi {
       //
       // Update Ritz values and residuals if needed
       if (!(iter_%stepSize_)) {
-	computeRitzValues();
+        computeRitzValues();
       }
       
       // When required, monitor some orthogonalities
@@ -977,7 +977,7 @@ namespace Anasazi {
         // Check almost everything here
         CheckList chk;
         chk.checkV = true;
-	chk.checkArn = true;
+        chk.checkArn = true;
         om_->print( Debug, accuracyCheck(chk, ": after local update") );
       }
       else if (om_->isVerbosity( OrthoDetails ) ) {
@@ -1035,20 +1035,20 @@ namespace Anasazi {
 
     if (chk.checkV) {
       if (curDim_) {
-	tmp = orthman_->orthonormError(*lclV);
-	os << " >> Error in V^H M V == I  : " << tmp << endl;
+        tmp = orthman_->orthonormError(*lclV);
+        os << " >> Error in V^H M V == I  : " << tmp << endl;
       }
       tmp = orthman_->orthonormError(*lclF);
       os << " >> Error in F^H M F == I  : " << tmp << endl;
       if (curDim_) {
-	tmp = orthman_->orthogError(*lclV,*lclF);
-	os << " >> Error in V^H M F == 0  : " << tmp << endl;
+        tmp = orthman_->orthogError(*lclV,*lclF);
+        os << " >> Error in V^H M F == 0  : " << tmp << endl;
       }
       for (unsigned int i=0; i<auxVecs_.size(); i++) {
-	if (curDim_) {
-	  tmp = orthman_->orthogError(*lclV,*auxVecs_[i]);
-	  os << " >> Error in V^H M Aux[" << i << "] == 0 : " << tmp << endl;
-	}
+        if (curDim_) {
+          tmp = orthman_->orthogError(*lclV,*auxVecs_[i]);
+          os << " >> Error in V^H M Aux[" << i << "] == 0 : " << tmp << endl;
+        }
         tmp = orthman_->orthogError(*lclF,*auxVecs_[i]);
         os << " >> Error in F^H M Aux[" << i << "] == 0 : " << tmp << endl;
       }
@@ -1057,29 +1057,29 @@ namespace Anasazi {
     if (chk.checkArn) {
 
       if (curDim_) {
-	// Compute AV      
-	Teuchos::RefCountPtr<MV> lclAV = MVT::Clone(*V_,curDim_);
-	{
-	  Teuchos::TimeMonitor lcltimer( *timerOp_ );
-	  OPT::Apply(*Op_,*lclV,*lclAV);
-	}
-	
-	// Compute AV - VH
-	Teuchos::SerialDenseMatrix<int,ScalarType> subH(Teuchos::View,*H_,curDim_,curDim_);
-	MVT::MvTimesMatAddMv( -ST_ONE, *lclV, subH, ST_ONE, *lclAV );
-	
-	// Compute FB_k^T - (AV-VH)
-	Teuchos::SerialDenseMatrix<int,ScalarType> curB(Teuchos::View,*H_,
-							blockSize_,curDim_, curDim_ );
-	MVT::MvTimesMatAddMv( -ST_ONE, *lclF, curB, ST_ONE, *lclAV );
-	
-	// Compute || FE_k^T - (AV-VH) ||
-	std::vector<MagnitudeType> arnNorms( curDim_ );
-	orthman_->norm( *lclAV, &arnNorms );
-	
-	for (int i=0; i<curDim_; i++) {	
-	os << " >> Error in Krylov-Schur factorization (R = AV-VS-FB^H), ||R[" << i << "]|| : " << arnNorms[i] << endl;
-	}
+        // Compute AV      
+        Teuchos::RefCountPtr<MV> lclAV = MVT::Clone(*V_,curDim_);
+        {
+          Teuchos::TimeMonitor lcltimer( *timerOp_ );
+          OPT::Apply(*Op_,*lclV,*lclAV);
+        }
+        
+        // Compute AV - VH
+        Teuchos::SerialDenseMatrix<int,ScalarType> subH(Teuchos::View,*H_,curDim_,curDim_);
+        MVT::MvTimesMatAddMv( -ST_ONE, *lclV, subH, ST_ONE, *lclAV );
+        
+        // Compute FB_k^T - (AV-VH)
+        Teuchos::SerialDenseMatrix<int,ScalarType> curB(Teuchos::View,*H_,
+                                                        blockSize_,curDim_, curDim_ );
+        MVT::MvTimesMatAddMv( -ST_ONE, *lclF, curB, ST_ONE, *lclAV );
+        
+        // Compute || FE_k^T - (AV-VH) ||
+        std::vector<MagnitudeType> arnNorms( curDim_ );
+        orthman_->norm( *lclAV, &arnNorms );
+        
+        for (int i=0; i<curDim_; i++) {        
+        os << " >> Error in Krylov-Schur factorization (R = AV-VS-FB^H), ||R[" << i << "]|| : " << arnNorms[i] << endl;
+        }
       }
     }
 
@@ -1119,9 +1119,9 @@ namespace Anasazi {
       // This just updates the Ritz values and residuals.
       // --> ritzValsCurrent_ will be set to 'true' by this method.
       if (!ritzValsCurrent_) {
-	// Compute the current Ritz values, through computing the Schur form
-	//   without updating the current projection matrix or sorting the Schur form.
-	computeSchurForm( false );
+        // Compute the current Ritz values, through computing the Schur form
+        //   without updating the current projection matrix or sorting the Schur form.
+        computeSchurForm( false );
       }
     }
   }
@@ -1143,10 +1143,10 @@ namespace Anasazi {
   {
     Teuchos::TimeMonitor LocalTimer(*timerCompRitzVec_);
 
-    TEST_FOR_EXCEPTION(numRitzVecs_==0, std::logic_error,
+    TEST_FOR_EXCEPTION(numRitzVecs_==0, std::invalid_argument,
                        "Anasazi::BlockKrylovSchur::computeRitzVectors(): no Ritz vectors were required from this solver.");
 
-    TEST_FOR_EXCEPTION(curDim_ < numRitzVecs_, std::logic_error,
+    TEST_FOR_EXCEPTION(curDim_ < numRitzVecs_, std::invalid_argument,
                        "Anasazi::BlockKrylovSchur::computeRitzVectors(): the current subspace is not large enough to compute the number of requested Ritz vectors.");
 
 
@@ -1155,119 +1155,119 @@ namespace Anasazi {
 
       // Check to see if the Ritz vectors are current.
       if (!ritzVecsCurrent_) {
-	
-	// Check to see if the Schur factorization of H (schurH_, Q) is current and sorted.
-	if (!schurCurrent_) {
-	  // Compute the Schur factorization of the current H, which will not directly change H,
-	  // the factorization will be sorted and placed in (schurH_, Q)
-	  computeSchurForm( true );
-	}
-	
-	// After the Schur form is computed, then the Ritz values are current.
-	// Thus, I can check the Ritz index vector to see if I have enough space for the Ritz vectors requested.
-	TEST_FOR_EXCEPTION(ritzIndex_[numRitzVecs_-1]==1, std::logic_error,
-			   "Anasazi::BlockKrylovSchur::computeRitzVectors(): the number of required Ritz vectors splits a complex conjugate pair.");
+        
+        // Check to see if the Schur factorization of H (schurH_, Q) is current and sorted.
+        if (!schurCurrent_) {
+          // Compute the Schur factorization of the current H, which will not directly change H,
+          // the factorization will be sorted and placed in (schurH_, Q)
+          computeSchurForm( true );
+        }
+        
+        // After the Schur form is computed, then the Ritz values are current.
+        // Thus, I can check the Ritz index vector to see if I have enough space for the Ritz vectors requested.
+        TEST_FOR_EXCEPTION(ritzIndex_[numRitzVecs_-1]==1, std::logic_error,
+                           "Anasazi::BlockKrylovSchur::computeRitzVectors(): the number of required Ritz vectors splits a complex conjugate pair.");
 
-	Teuchos::LAPACK<int,ScalarType> lapack;
-	Teuchos::LAPACK<int,MagnitudeType> lapack_mag;
+        Teuchos::LAPACK<int,ScalarType> lapack;
+        Teuchos::LAPACK<int,MagnitudeType> lapack_mag;
 
-	// Compute the Ritz vectors.
-	// --> For a Hermitian problem this is simply the current basis times the first numRitzVecs_ Schur vectors
-	//     
-	// --> For a non-Hermitian problem, this involves solving the projected eigenproblem, then
-	//     placing the product of the current basis times the first numRitzVecs_ Schur vectors times the
-	//     eigenvectors of interest into the Ritz vectors.
+        // Compute the Ritz vectors.
+        // --> For a Hermitian problem this is simply the current basis times the first numRitzVecs_ Schur vectors
+        //     
+        // --> For a non-Hermitian problem, this involves solving the projected eigenproblem, then
+        //     placing the product of the current basis times the first numRitzVecs_ Schur vectors times the
+        //     eigenvectors of interest into the Ritz vectors.
 
-	// Get a view of the current Krylov-Schur basis vectors and Schur vectors
-	std::vector<int> curind( curDim_ );
-	for (int i=0; i<curDim_; i++) { curind[i] = i; }
-	Teuchos::RefCountPtr<MV> Vtemp = MVT::CloneView( *V_, curind );
-	if (problem_->isHermitian()) {
-	  // Get a view into the current Schur vectors
-	  Teuchos::SerialDenseMatrix<int,ScalarType> subQ( Teuchos::View, *Q_, curDim_, numRitzVecs_ );
+        // Get a view of the current Krylov-Schur basis vectors and Schur vectors
+        std::vector<int> curind( curDim_ );
+        for (int i=0; i<curDim_; i++) { curind[i] = i; }
+        Teuchos::RefCountPtr<MV> Vtemp = MVT::CloneView( *V_, curind );
+        if (problem_->isHermitian()) {
+          // Get a view into the current Schur vectors
+          Teuchos::SerialDenseMatrix<int,ScalarType> subQ( Teuchos::View, *Q_, curDim_, numRitzVecs_ );
 
-	  // Compute the current Ritz vectors      
-	  MVT::MvTimesMatAddMv( ST_ONE, *Vtemp, subQ, ST_ZERO, *ritzVectors_ );
-	  
-	} else {
+          // Compute the current Ritz vectors      
+          MVT::MvTimesMatAddMv( ST_ONE, *Vtemp, subQ, ST_ZERO, *ritzVectors_ );
+          
+        } else {
 
-	  // Get a view into the current Schur vectors.
-	  Teuchos::SerialDenseMatrix<int,ScalarType> subQ( Teuchos::View, *Q_, curDim_, curDim_ );
-	  
-	  // Get a set of work vectors to hold the current Ritz vectors.
-	  Teuchos::RefCountPtr<MV> tmpritzVectors_ = MVT::Clone( *V_, curDim_ );
+          // Get a view into the current Schur vectors.
+          Teuchos::SerialDenseMatrix<int,ScalarType> subQ( Teuchos::View, *Q_, curDim_, curDim_ );
+          
+          // Get a set of work vectors to hold the current Ritz vectors.
+          Teuchos::RefCountPtr<MV> tmpritzVectors_ = MVT::Clone( *V_, curDim_ );
 
-	  // Compute the current Krylov-Schur vectors.
-	  MVT::MvTimesMatAddMv( ST_ONE, *Vtemp, subQ, ST_ZERO, *tmpritzVectors_ );	  
+          // Compute the current Krylov-Schur vectors.
+          MVT::MvTimesMatAddMv( ST_ONE, *Vtemp, subQ, ST_ZERO, *tmpritzVectors_ );          
 
-	  //  Now compute the eigenvectors of the Schur form
-	  //  Reset the dense matrix and compute the eigenvalues of the Schur form.
-	  //
-	  // Allocate the work space. This space will be used below for calls to:
-	  // * TREVC (requires 3*N for real, 2*N for complex) 
+          //  Now compute the eigenvectors of the Schur form
+          //  Reset the dense matrix and compute the eigenvalues of the Schur form.
+          //
+          // Allocate the work space. This space will be used below for calls to:
+          // * TREVC (requires 3*N for real, 2*N for complex) 
 
-	  int lwork = 3*curDim_;
-	  std::vector<ScalarType> work( lwork );
-	  std::vector<MagnitudeType> rwork( curDim_ );
-	  char side = 'R';
-	  int mm, info = 0; 
-	  const int ldvl = 1;
-	  ScalarType vl[ ldvl ];
-	  Teuchos::SerialDenseMatrix<int,ScalarType> copyQ( Teuchos::Copy, *Q_, curDim_, curDim_ );
-	  lapack.TREVC( side, curDim_, schurH_->values(), schurH_->stride(), vl, ldvl,
-			copyQ.values(), copyQ.stride(), curDim_, &mm, &work[0], &rwork[0], &info );
-	  TEST_FOR_EXCEPTION(info != 0, std::logic_error,
-			     "Anasazi::BlockKrylovSchur::computeRitzVectors(): TREVC returned info != 0");
+          int lwork = 3*curDim_;
+          std::vector<ScalarType> work( lwork );
+          std::vector<MagnitudeType> rwork( curDim_ );
+          char side = 'R';
+          int mm, info = 0; 
+          const int ldvl = 1;
+          ScalarType vl[ ldvl ];
+          Teuchos::SerialDenseMatrix<int,ScalarType> copyQ( Teuchos::Copy, *Q_, curDim_, curDim_ );
+          lapack.TREVC( side, curDim_, schurH_->values(), schurH_->stride(), vl, ldvl,
+                        copyQ.values(), copyQ.stride(), curDim_, &mm, &work[0], &rwork[0], &info );
+          TEST_FOR_EXCEPTION(info != 0, std::logic_error,
+                             "Anasazi::BlockKrylovSchur::computeRitzVectors(): TREVC returned info != 0");
 
-	  // Get a view into the eigenvectors of the Schur form
-	  Teuchos::SerialDenseMatrix<int,ScalarType> subCopyQ( Teuchos::View, copyQ, curDim_, numRitzVecs_ );
-	  
-	  // Convert back to Ritz vectors of the operator.
-	  std::vector<int> curind( (numRitzVecs_) );
-	  for (int i=0; i<(int)curind.size(); i++) { curind[i] = i; }
+          // Get a view into the eigenvectors of the Schur form
+          Teuchos::SerialDenseMatrix<int,ScalarType> subCopyQ( Teuchos::View, copyQ, curDim_, numRitzVecs_ );
+          
+          // Convert back to Ritz vectors of the operator.
+          std::vector<int> curind( (numRitzVecs_) );
+          for (int i=0; i<(int)curind.size(); i++) { curind[i] = i; }
 
-	  Teuchos::RefCountPtr<MV> view_ritzVectors = MVT::CloneView( *ritzVectors_, curind );
-	  MVT::MvTimesMatAddMv( ST_ONE, *tmpritzVectors_, subCopyQ, ST_ZERO, *view_ritzVectors );
+          Teuchos::RefCountPtr<MV> view_ritzVectors = MVT::CloneView( *ritzVectors_, curind );
+          MVT::MvTimesMatAddMv( ST_ONE, *tmpritzVectors_, subCopyQ, ST_ZERO, *view_ritzVectors );
 
-	  // Compute the norm of the new Ritz vectors
-	  std::vector<MagnitudeType> ritzNrm( numRitzVecs_ );
-	  MVT::MvNorm( *view_ritzVectors, &ritzNrm );
+          // Compute the norm of the new Ritz vectors
+          std::vector<MagnitudeType> ritzNrm( numRitzVecs_ );
+          MVT::MvNorm( *view_ritzVectors, &ritzNrm );
 
-	  // Release memory used to compute Ritz vectors before scaling the current vectors.
-	  tmpritzVectors_ = Teuchos::null;
-	  view_ritzVectors = Teuchos::null;
-	  
-	  // Scale the Ritz vectors to have euclidean norm.
-	  MagnitudeType ritzScale = MT_ONE;
-	  for (int i=0; i<numRitzVecs_; i++) {
-	    
-	    // If this is a conjugate pair then normalize by the real and imaginary parts.
-	    if (ritzIndex_[i] == 1 ) {
-	      ritzScale = ST_ONE/lapack_mag.LAPY2(ritzNrm[i],ritzNrm[i+1]);
-	      std::vector<int> newind(2);
-	      newind[0] = i; newind[1] = i+1;
-	      tmpritzVectors_ = MVT::CloneCopy( *ritzVectors_, newind );
-	      view_ritzVectors = MVT::CloneView( *ritzVectors_, newind );
-	      MVT::MvAddMv( ritzScale, *tmpritzVectors_, ST_ZERO, *tmpritzVectors_, *view_ritzVectors );
+          // Release memory used to compute Ritz vectors before scaling the current vectors.
+          tmpritzVectors_ = Teuchos::null;
+          view_ritzVectors = Teuchos::null;
+          
+          // Scale the Ritz vectors to have euclidean norm.
+          MagnitudeType ritzScale = MT_ONE;
+          for (int i=0; i<numRitzVecs_; i++) {
+            
+            // If this is a conjugate pair then normalize by the real and imaginary parts.
+            if (ritzIndex_[i] == 1 ) {
+              ritzScale = ST_ONE/lapack_mag.LAPY2(ritzNrm[i],ritzNrm[i+1]);
+              std::vector<int> newind(2);
+              newind[0] = i; newind[1] = i+1;
+              tmpritzVectors_ = MVT::CloneCopy( *ritzVectors_, newind );
+              view_ritzVectors = MVT::CloneView( *ritzVectors_, newind );
+              MVT::MvAddMv( ritzScale, *tmpritzVectors_, ST_ZERO, *tmpritzVectors_, *view_ritzVectors );
 
-	      // Increment counter for imaginary part
-	      i++;
-	    } else {
+              // Increment counter for imaginary part
+              i++;
+            } else {
 
-	      // This is a real Ritz value, normalize the vector
-	      std::vector<int> newind(1);
-	      newind[0] = i;
-	      tmpritzVectors_ = MVT::CloneCopy( *ritzVectors_, newind );
-	      view_ritzVectors = MVT::CloneView( *ritzVectors_, newind );
-	      MVT::MvAddMv( ST_ONE/ritzNrm[i], *tmpritzVectors_, ST_ZERO, *tmpritzVectors_, *view_ritzVectors );
-	    }	      
-	  }
-	  
-	} // if (problem_->isHermitian()) 
-	
-	// The current Ritz vectors have been computed.
-	ritzVecsCurrent_ = true;
-	
+              // This is a real Ritz value, normalize the vector
+              std::vector<int> newind(1);
+              newind[0] = i;
+              tmpritzVectors_ = MVT::CloneCopy( *ritzVectors_, newind );
+              view_ritzVectors = MVT::CloneView( *ritzVectors_, newind );
+              MVT::MvAddMv( ST_ONE/ritzNrm[i], *tmpritzVectors_, ST_ZERO, *tmpritzVectors_, *view_ritzVectors );
+            }              
+          }
+          
+        } // if (problem_->isHermitian()) 
+        
+        // The current Ritz vectors have been computed.
+        ritzVecsCurrent_ = true;
+        
       } // if (!ritzVecsCurrent_)      
     } // if (curDim_)    
   } // computeRitzVectors()
@@ -1296,238 +1296,238 @@ namespace Anasazi {
 
       // Check to see if the Schur factorization is current.
       if (!schurCurrent_) {
-	
-	// Check to see if the Ritz values are current
-	// --> If they are then the Schur factorization is current but not sorted.
-	if (!ritzValsCurrent_) {
-	  Teuchos::LAPACK<int,ScalarType> lapack; 
-	  Teuchos::LAPACK<int,MagnitudeType> lapack_mag;
-	  Teuchos::BLAS<int,ScalarType> blas;
-	  Teuchos::BLAS<int,MagnitudeType> blas_mag;
-	  
-	  // Get a view into Q, the storage for H's Schur vectors.
-	  Teuchos::SerialDenseMatrix<int,ScalarType> subQ( Teuchos::View, *Q_, curDim_, curDim_ );
-	  
-	  // Get a copy of H to compute/sort the Schur form.
-	  schurH_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::Copy, *H_, curDim_, curDim_ ) );
-	  //
-	  //---------------------------------------------------
-	  // Compute the Schur factorization of subH
-	  // ---> Use driver GEES to first reduce to upper Hessenberg 
-	  //         form and then compute Schur form, outputting Ritz values
-	  //---------------------------------------------------
-	  //
-	  // Allocate the work space. This space will be used below for calls to:
-	  // * GEES  (requires 3*N for real, 2*N for complex)
-	  // * TREVC (requires 3*N for real, 2*N for complex) 
-	  // * TREXC (requires N for real, none for complex)
-	  // Furthermore, GEES requires a real array of length curDim_ (for complex datatypes)
-	  //
-	  int lwork = 3*curDim_;
-	  std::vector<ScalarType> work( lwork );
-	  std::vector<MagnitudeType> rwork( curDim_ );
-	  std::vector<MagnitudeType> tmp_rRitzValues( curDim_ );
+        
+        // Check to see if the Ritz values are current
+        // --> If they are then the Schur factorization is current but not sorted.
+        if (!ritzValsCurrent_) {
+          Teuchos::LAPACK<int,ScalarType> lapack; 
+          Teuchos::LAPACK<int,MagnitudeType> lapack_mag;
+          Teuchos::BLAS<int,ScalarType> blas;
+          Teuchos::BLAS<int,MagnitudeType> blas_mag;
+          
+          // Get a view into Q, the storage for H's Schur vectors.
+          Teuchos::SerialDenseMatrix<int,ScalarType> subQ( Teuchos::View, *Q_, curDim_, curDim_ );
+          
+          // Get a copy of H to compute/sort the Schur form.
+          schurH_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::Copy, *H_, curDim_, curDim_ ) );
+          //
+          //---------------------------------------------------
+          // Compute the Schur factorization of subH
+          // ---> Use driver GEES to first reduce to upper Hessenberg 
+          //         form and then compute Schur form, outputting Ritz values
+          //---------------------------------------------------
+          //
+          // Allocate the work space. This space will be used below for calls to:
+          // * GEES  (requires 3*N for real, 2*N for complex)
+          // * TREVC (requires 3*N for real, 2*N for complex) 
+          // * TREXC (requires N for real, none for complex)
+          // Furthermore, GEES requires a real array of length curDim_ (for complex datatypes)
+          //
+          int lwork = 3*curDim_;
+          std::vector<ScalarType> work( lwork );
+          std::vector<MagnitudeType> rwork( curDim_ );
+          std::vector<MagnitudeType> tmp_rRitzValues( curDim_ );
           std::vector<MagnitudeType> tmp_iRitzValues( curDim_ );
-	  std::vector<int> bwork( curDim_ );
-	  int info = 0, sdim = 0; 
-	  char jobvs = 'V';
-	  lapack.GEES( jobvs,curDim_, schurH_->values(), schurH_->stride(), &sdim, &tmp_rRitzValues[0],
-		       &tmp_iRitzValues[0], subQ.values(), subQ.stride(), &work[0], lwork, 
-		       &rwork[0], &bwork[0], &info );
-	  
-	  TEST_FOR_EXCEPTION(info != 0, std::logic_error,
-			     "Anasazi::BlockKrylovSchur::computeSchurForm(): GEES returned info != 0");
-	  //
-	  //---------------------------------------------------
-	  // Use the Krylov-Schur factorization to compute the current Ritz residuals 
-	  // for ALL the eigenvalues estimates (Ritz values)
-	  //           || Ax - x\theta || = || U_m+1*B_m+1^H*Q*s || 
-	  //                              = || B_m+1^H*Q*s ||
-	  //
-	  // where U_m+1 is the current Krylov-Schur basis, Q are the Schur vectors, and x = U_m+1*Q*s
-	  // NOTE: This means that s = e_i if the problem is hermitian, else the eigenvectors
-	  //       of the Schur form need to be computed.
-	  //
-	  // First compute H_{m+1,m}*B_m^T, then determine what 's' is.
-	  //---------------------------------------------------
-	  //
-	  // Get current B_m+1
-	  Teuchos::SerialDenseMatrix<int,ScalarType> curB(Teuchos::View, *H_,
-							  blockSize_, curDim_, curDim_ );
-	  //
-	  // Compute B_m+1^H*Q
-	  Teuchos::SerialDenseMatrix<int,ScalarType> subB( blockSize_, curDim_ );
-	  blas.GEMM( Teuchos::NO_TRANS, Teuchos::NO_TRANS, blockSize_, curDim_, curDim_, ST_ONE, 
-		     curB.values(), curB.stride(), subQ.values(), subQ.stride(), 
-		     ST_ZERO, subB.values(), subB.stride() );
-	  //
-	  // Determine what 's' is and compute Ritz residuals.
-	  //
-	  ScalarType* b_ptr = subB.values();
-	  if (problem_->isHermitian()) {
-	    //
-	    // 's' is the i-th canonical basis vector.
-	    //
-	    for (int i=0; i<curDim_ ; i++) {
-	      ritzResiduals_[i] = blas.NRM2(blockSize_, b_ptr + i*blockSize_, 1);
-	    }   
-	  } else {
-	    //
-	    //  Compute S: the eigenvectors of the block upper triangular, Schur matrix.
-	    //
-	    char side = 'R';
-	    int mm;
-	    const int ldvl = 1;
-	    ScalarType vl[ ldvl ];
-	    Teuchos::SerialDenseMatrix<int,ScalarType> S( curDim_, curDim_ );
-	    lapack.TREVC( side, curDim_, schurH_->values(), schurH_->stride(), vl, ldvl,
-			  S.values(), S.stride(), curDim_, &mm, &work[0], &rwork[0], &info );
-	    
-	    TEST_FOR_EXCEPTION(info != 0, std::logic_error,
-			       "Anasazi::BlockKrylovSchur::computeSchurForm(): TREVC returned info != 0");
-	    //
-	    // Scale the eigenvectors so that their euclidean norms are all one.
-	    // ( conjugate pairs get normalized by the sqrt(2) )
-	    //
-	    ScalarType temp;
-	    ScalarType* s_ptr = S.values();
-	    int i = 0;
-	    while( i < curDim_ ) {
-	      if ( tmp_iRitzValues[i] != MT_ZERO ) {
-		temp = lapack_mag.LAPY2( blas.NRM2( curDim_, s_ptr+i*curDim_, 1 ), 
-					 blas.NRM2( curDim_, s_ptr+(i+1)*curDim_, 1 ) );
-		blas.SCAL( curDim_, ST_ONE/temp, s_ptr+i*curDim_, 1 );
-		blas.SCAL( curDim_, ST_ONE/temp, s_ptr+(i+1)*curDim_, 1 );
-		i = i+2;
-	      } else {
-		temp = blas.NRM2( curDim_, s_ptr+i*curDim_, 1 );
-		blas.SCAL( curDim_, ST_ONE/temp, s_ptr+i*curDim_, 1 );
-		i++;
-	      }
-	    }
-	    //
-	    // Compute ritzRes = *B_m+1^H*Q*S where the i-th column of S is 's' for the i-th Ritz-value
-	    //
-	    Teuchos::SerialDenseMatrix<int,ScalarType> ritzRes( blockSize_, curDim_ );
-	    blas.GEMM( Teuchos::NO_TRANS, Teuchos::NO_TRANS, blockSize_, curDim_, curDim_, ST_ONE, 
-		       subB.values(), subB.stride(), S.values(), S.stride(), 
-		       ST_ZERO, ritzRes.values(), ritzRes.stride() );
+          std::vector<int> bwork( curDim_ );
+          int info = 0, sdim = 0; 
+          char jobvs = 'V';
+          lapack.GEES( jobvs,curDim_, schurH_->values(), schurH_->stride(), &sdim, &tmp_rRitzValues[0],
+                       &tmp_iRitzValues[0], subQ.values(), subQ.stride(), &work[0], lwork, 
+                       &rwork[0], &bwork[0], &info );
+          
+          TEST_FOR_EXCEPTION(info != 0, std::logic_error,
+                             "Anasazi::BlockKrylovSchur::computeSchurForm(): GEES returned info != 0");
+          //
+          //---------------------------------------------------
+          // Use the Krylov-Schur factorization to compute the current Ritz residuals 
+          // for ALL the eigenvalues estimates (Ritz values)
+          //           || Ax - x\theta || = || U_m+1*B_m+1^H*Q*s || 
+          //                              = || B_m+1^H*Q*s ||
+          //
+          // where U_m+1 is the current Krylov-Schur basis, Q are the Schur vectors, and x = U_m+1*Q*s
+          // NOTE: This means that s = e_i if the problem is hermitian, else the eigenvectors
+          //       of the Schur form need to be computed.
+          //
+          // First compute H_{m+1,m}*B_m^T, then determine what 's' is.
+          //---------------------------------------------------
+          //
+          // Get current B_m+1
+          Teuchos::SerialDenseMatrix<int,ScalarType> curB(Teuchos::View, *H_,
+                                                          blockSize_, curDim_, curDim_ );
+          //
+          // Compute B_m+1^H*Q
+          Teuchos::SerialDenseMatrix<int,ScalarType> subB( blockSize_, curDim_ );
+          blas.GEMM( Teuchos::NO_TRANS, Teuchos::NO_TRANS, blockSize_, curDim_, curDim_, ST_ONE, 
+                     curB.values(), curB.stride(), subQ.values(), subQ.stride(), 
+                     ST_ZERO, subB.values(), subB.stride() );
+          //
+          // Determine what 's' is and compute Ritz residuals.
+          //
+          ScalarType* b_ptr = subB.values();
+          if (problem_->isHermitian()) {
+            //
+            // 's' is the i-th canonical basis vector.
+            //
+            for (int i=0; i<curDim_ ; i++) {
+              ritzResiduals_[i] = blas.NRM2(blockSize_, b_ptr + i*blockSize_, 1);
+            }   
+          } else {
+            //
+            //  Compute S: the eigenvectors of the block upper triangular, Schur matrix.
+            //
+            char side = 'R';
+            int mm;
+            const int ldvl = 1;
+            ScalarType vl[ ldvl ];
+            Teuchos::SerialDenseMatrix<int,ScalarType> S( curDim_, curDim_ );
+            lapack.TREVC( side, curDim_, schurH_->values(), schurH_->stride(), vl, ldvl,
+                          S.values(), S.stride(), curDim_, &mm, &work[0], &rwork[0], &info );
+            
+            TEST_FOR_EXCEPTION(info != 0, std::logic_error,
+                               "Anasazi::BlockKrylovSchur::computeSchurForm(): TREVC returned info != 0");
+            //
+            // Scale the eigenvectors so that their euclidean norms are all one.
+            // ( conjugate pairs get normalized by the sqrt(2) )
+            //
+            ScalarType temp;
+            ScalarType* s_ptr = S.values();
+            int i = 0;
+            while( i < curDim_ ) {
+              if ( tmp_iRitzValues[i] != MT_ZERO ) {
+                temp = lapack_mag.LAPY2( blas.NRM2( curDim_, s_ptr+i*curDim_, 1 ), 
+                                         blas.NRM2( curDim_, s_ptr+(i+1)*curDim_, 1 ) );
+                blas.SCAL( curDim_, ST_ONE/temp, s_ptr+i*curDim_, 1 );
+                blas.SCAL( curDim_, ST_ONE/temp, s_ptr+(i+1)*curDim_, 1 );
+                i = i+2;
+              } else {
+                temp = blas.NRM2( curDim_, s_ptr+i*curDim_, 1 );
+                blas.SCAL( curDim_, ST_ONE/temp, s_ptr+i*curDim_, 1 );
+                i++;
+              }
+            }
+            //
+            // Compute ritzRes = *B_m+1^H*Q*S where the i-th column of S is 's' for the i-th Ritz-value
+            //
+            Teuchos::SerialDenseMatrix<int,ScalarType> ritzRes( blockSize_, curDim_ );
+            blas.GEMM( Teuchos::NO_TRANS, Teuchos::NO_TRANS, blockSize_, curDim_, curDim_, ST_ONE, 
+                       subB.values(), subB.stride(), S.values(), S.stride(), 
+                       ST_ZERO, ritzRes.values(), ritzRes.stride() );
 
-	    /* TO DO:  There's be an incorrect assumption made in the computation of the Ritz residuals.
-	               This assumption is that the next vector in the Krylov subspace is euclidean orthonormal.
-		       It may not be normalized using euclidean norm.
-	    Teuchos::RefCountPtr<MV> ritzResVecs = MVT::Clone( *V_, curDim_ );
-	    std::vector<int> curind(blockSize_);
-	    for (int i=0; i<blockSize_; i++) { curind[i] = curDim_ + i; }
-	    Teuchos::RefCountPtr<MV> Vtemp = MVT::CloneView(*V_,curind);     
-	    
-	    MVT::MvTimesMatAddMv( ST_ONE, *Vtemp, ritzRes, ST_ZERO, *ritzResVecs );
-	    std::vector<MagnitudeType> ritzResNrms(curDim_);
-	    MVT::MvNorm( *ritzResVecs, &ritzResNrms );
-	    i = 0;
-	    while( i < curDim_ ) {
-	      if ( tmp_ritzValues[curDim_+i] != MT_ZERO ) {
-		ritzResiduals_[i] = lapack_mag.LAPY2( ritzResNrms[i], ritzResNrms[i+1] );
-		ritzResiduals_[i+1] = ritzResiduals_[i];
-		i = i+2;
-	      } else {
-		ritzResiduals_[i] = ritzResNrms[i];
-		i++;
-	      }
-	    }
-	    */
-	    //
-	    // Compute the Ritz residuals for Ritz value 'i' from the 'i'-th column of ritzRes.
-	    // 
-	    ScalarType* rr_ptr = ritzRes.values();
-	    i = 0;
-	    while( i < curDim_ ) {
-	    if ( tmp_iRitzValues[i] != MT_ZERO ) {
-	    ritzResiduals_[i] = lapack_mag.LAPY2( blas.NRM2(blockSize_, rr_ptr + i*blockSize_, 1),
-						      blas.NRM2(blockSize_, rr_ptr + (i+1)*blockSize_, 1) );
-		ritzResiduals_[i+1] = ritzResiduals_[i];
-		i = i+2;
-	      } else {
-		ritzResiduals_[i] = blas.NRM2(blockSize_, rr_ptr + i*blockSize_, 1);
-		i++;
-	      }
-	    }	  
-	  }
-	  //
-	  // Sort the Ritz values.
-	  //
-	  {
-	    Teuchos::TimeMonitor LocalTimer2(*timerSortRitzVal_);
-	    if (problem_->isHermitian()) {
-	      //
-	      // Sort using just the real part of the Ritz values.
-	      sm_->sort( this, curDim_, tmp_rRitzValues, &ritzOrder_ ); // don't catch exception
-	    }
-	    else {
-	      //
-	      // Sort using both the real and imaginary parts of the Ritz values.
-	      sm_->sort( this, curDim_, tmp_rRitzValues, tmp_iRitzValues, &ritzOrder_ );
-	    }
-	    //
-	    // Store the current Ritz values (tmp_ritzValues) into ritzValues_, creating the index vector
-	    int i = 0;
-	    ritzIndex_.clear();
-	    while( i < curDim_ ) {
-	      if ( tmp_iRitzValues[i] != MT_ZERO ) {
-		//
-		// We will have this situation for non-Hermitian matrices.
-		ritzValues_[i].set(tmp_rRitzValues[i], tmp_iRitzValues[i]);
-		ritzValues_[i+1].set(tmp_rRitzValues[i+1], tmp_iRitzValues[i+1]);
+            /* TO DO:  There's be an incorrect assumption made in the computation of the Ritz residuals.
+                       This assumption is that the next vector in the Krylov subspace is euclidean orthonormal.
+                       It may not be normalized using euclidean norm.
+            Teuchos::RefCountPtr<MV> ritzResVecs = MVT::Clone( *V_, curDim_ );
+            std::vector<int> curind(blockSize_);
+            for (int i=0; i<blockSize_; i++) { curind[i] = curDim_ + i; }
+            Teuchos::RefCountPtr<MV> Vtemp = MVT::CloneView(*V_,curind);     
+            
+            MVT::MvTimesMatAddMv( ST_ONE, *Vtemp, ritzRes, ST_ZERO, *ritzResVecs );
+            std::vector<MagnitudeType> ritzResNrms(curDim_);
+            MVT::MvNorm( *ritzResVecs, &ritzResNrms );
+            i = 0;
+            while( i < curDim_ ) {
+              if ( tmp_ritzValues[curDim_+i] != MT_ZERO ) {
+                ritzResiduals_[i] = lapack_mag.LAPY2( ritzResNrms[i], ritzResNrms[i+1] );
+                ritzResiduals_[i+1] = ritzResiduals_[i];
+                i = i+2;
+              } else {
+                ritzResiduals_[i] = ritzResNrms[i];
+                i++;
+              }
+            }
+            */
+            //
+            // Compute the Ritz residuals for Ritz value 'i' from the 'i'-th column of ritzRes.
+            // 
+            ScalarType* rr_ptr = ritzRes.values();
+            i = 0;
+            while( i < curDim_ ) {
+            if ( tmp_iRitzValues[i] != MT_ZERO ) {
+            ritzResiduals_[i] = lapack_mag.LAPY2( blas.NRM2(blockSize_, rr_ptr + i*blockSize_, 1),
+                                                      blas.NRM2(blockSize_, rr_ptr + (i+1)*blockSize_, 1) );
+                ritzResiduals_[i+1] = ritzResiduals_[i];
+                i = i+2;
+              } else {
+                ritzResiduals_[i] = blas.NRM2(blockSize_, rr_ptr + i*blockSize_, 1);
+                i++;
+              }
+            }          
+          }
+          //
+          // Sort the Ritz values.
+          //
+          {
+            Teuchos::TimeMonitor LocalTimer2(*timerSortRitzVal_);
+            if (problem_->isHermitian()) {
+              //
+              // Sort using just the real part of the Ritz values.
+              sm_->sort( this, curDim_, tmp_rRitzValues, &ritzOrder_ ); // don't catch exception
+            }
+            else {
+              //
+              // Sort using both the real and imaginary parts of the Ritz values.
+              sm_->sort( this, curDim_, tmp_rRitzValues, tmp_iRitzValues, &ritzOrder_ );
+            }
+            //
+            // Store the current Ritz values (tmp_ritzValues) into ritzValues_, creating the index vector
+            int i = 0;
+            ritzIndex_.clear();
+            while( i < curDim_ ) {
+              if ( tmp_iRitzValues[i] != MT_ZERO ) {
+                //
+                // We will have this situation for non-Hermitian matrices.
+                ritzValues_[i].set(tmp_rRitzValues[i], tmp_iRitzValues[i]);
+                ritzValues_[i+1].set(tmp_rRitzValues[i+1], tmp_iRitzValues[i+1]);
 
-		// Make sure that complex conjugate pairs have their positive imaginary part first.
-		if ( ritzValues_[i].imagpart < MT_ZERO ) {
-		  // The negative imaginary part is first, so swap the order of the ritzValues and ritzOrders.
-		  Anasazi::Value<ScalarType> tmp_ritz( ritzValues_[i] );
-		  ritzValues_[i] = ritzValues_[i+1];
-		  ritzValues_[i+1] = tmp_ritz;
+                // Make sure that complex conjugate pairs have their positive imaginary part first.
+                if ( ritzValues_[i].imagpart < MT_ZERO ) {
+                  // The negative imaginary part is first, so swap the order of the ritzValues and ritzOrders.
+                  Anasazi::Value<ScalarType> tmp_ritz( ritzValues_[i] );
+                  ritzValues_[i] = ritzValues_[i+1];
+                  ritzValues_[i+1] = tmp_ritz;
 
-		  int tmp_order = ritzOrder_[i];
-		  ritzOrder_[i] = ritzOrder_[i+1];
-		  ritzOrder_[i+1] = tmp_order;
-		  
-		}
-		ritzIndex_.push_back(1); ritzIndex_.push_back(-1);
-		i = i+2;
-	      } else {
-		//
-		// The Ritz value is not complex.
-		ritzValues_[i].set(tmp_rRitzValues[i], MT_ZERO);
-		ritzIndex_.push_back(0);
-		i++;
-	      }
-	    }
-	    //
-	    // Sort the ritzResiduals_ based on the ordering from the Sort Manager.
-	    std::vector<MagnitudeType> ritz2( curDim_ );
-	    for (int i=0; i<curDim_; i++) { ritz2[i] = ritzResiduals_[ ritzOrder_[i] ]; }
-	    blas_mag.COPY( curDim_, &ritz2[0], 1, &ritzResiduals_[0], 1 );
-	    
-	    // The Ritz values have now been updated.
-	    ritzValsCurrent_ = true;
-	    }
-	} // if (!ritzValsCurrent_) ...
-	// 
-	//---------------------------------------------------
-	// * The Ritz values and residuals have been updated at this point.
-	// 
-	// * The Schur factorization of the projected matrix has been computed,
-	//   and is stored in (schurH_, Q_).
-	//
-	// Now the Schur factorization needs to be sorted.
-	//---------------------------------------------------
-	//
-	// Sort the Schur form using the ordering from the Sort Manager.
-	if (sort) {
-	  sortSchurForm( *schurH_, *Q_, ritzOrder_ );    
-	  //
-	  // Indicate the Schur form in (schurH_, Q_) is current and sorted
-	  schurCurrent_ = true;
-	}
+                  int tmp_order = ritzOrder_[i];
+                  ritzOrder_[i] = ritzOrder_[i+1];
+                  ritzOrder_[i+1] = tmp_order;
+                  
+                }
+                ritzIndex_.push_back(1); ritzIndex_.push_back(-1);
+                i = i+2;
+              } else {
+                //
+                // The Ritz value is not complex.
+                ritzValues_[i].set(tmp_rRitzValues[i], MT_ZERO);
+                ritzIndex_.push_back(0);
+                i++;
+              }
+            }
+            //
+            // Sort the ritzResiduals_ based on the ordering from the Sort Manager.
+            std::vector<MagnitudeType> ritz2( curDim_ );
+            for (int i=0; i<curDim_; i++) { ritz2[i] = ritzResiduals_[ ritzOrder_[i] ]; }
+            blas_mag.COPY( curDim_, &ritz2[0], 1, &ritzResiduals_[0], 1 );
+            
+            // The Ritz values have now been updated.
+            ritzValsCurrent_ = true;
+            }
+        } // if (!ritzValsCurrent_) ...
+        // 
+        //---------------------------------------------------
+        // * The Ritz values and residuals have been updated at this point.
+        // 
+        // * The Schur factorization of the projected matrix has been computed,
+        //   and is stored in (schurH_, Q_).
+        //
+        // Now the Schur factorization needs to be sorted.
+        //---------------------------------------------------
+        //
+        // Sort the Schur form using the ordering from the Sort Manager.
+        if (sort) {
+          sortSchurForm( *schurH_, *Q_, ritzOrder_ );    
+          //
+          // Indicate the Schur form in (schurH_, Q_) is current and sorted
+          schurCurrent_ = true;
+        }
       } // if (!schurCurrent_) ...
   
     } // if (curDim_) ...
@@ -1539,8 +1539,8 @@ namespace Anasazi {
   // Sort the Schur form of H stored in (H,Q) using the ordering vector.
   template <class ScalarType, class MV, class OP>
   void BlockKrylovSchur<ScalarType,MV,OP>::sortSchurForm( Teuchos::SerialDenseMatrix<int,ScalarType>& H,
-							  Teuchos::SerialDenseMatrix<int,ScalarType>& Q,
-							  std::vector<int>& order ) 
+                                                          Teuchos::SerialDenseMatrix<int,ScalarType>& Q,
+                                                          std::vector<int>& order ) 
   {
     // local timer
     Teuchos::TimeMonitor LocalTimer(*timerSortSF_);
@@ -1589,7 +1589,7 @@ namespace Anasazi {
       lapack.TREXC( compq, curDim_, ptr_h, ldh, ptr_q, ldq, order2[i]+1+offset2[i], 
                     1, &work[0], &info );
       TEST_FOR_EXCEPTION(info != 0, std::logic_error,
-			 "Anasazi::BlockKrylovSchur::computeSchurForm(): TREXC returned info != 0");
+                         "Anasazi::BlockKrylovSchur::computeSchurForm(): TREXC returned info != 0");
     }
   }
 
@@ -1618,35 +1618,35 @@ namespace Anasazi {
     if (initialized_) {
       os <<"CURRENT RITZ VALUES             "<<endl;
       if (ritzIndex_.size() != 0) {
-	int numPrint = (curDim_ < numRitzPrint_? curDim_: numRitzPrint_);
-	if (problem_->isHermitian()) {
-	  os << std::setw(20) << "Ritz Value" 
-	     << std::setw(20) << "Ritz Residual"
-	     << endl;
-	  os <<"--------------------------------------------------------------------------------"<<endl;
-	  for (int i=0; i<numPrint; i++) {
-	    os << std::setw(20) << ritzValues_[i].realpart 
-	       << std::setw(20) << ritzResiduals_[i] 
-	       << endl;
-	  }
-	} else {
-	  os << std::setw(24) << "Ritz Value" 
-	     << std::setw(30) << "Ritz Residual"
-	     << endl;
-	  os <<"--------------------------------------------------------------------------------"<<endl;
-	  for (int i=0; i<numPrint; i++) {
-	    // Print out the real eigenvalue.
-	    os << std::setw(15) << ritzValues_[i].realpart;
-	    if (ritzValues_[i].imagpart < MT_ZERO) {
-	      os << " - i" << std::setw(15) << Teuchos::ScalarTraits<MagnitudeType>::magnitude(ritzValues_[i].imagpart);
-	    } else {
-	      os << " + i" << std::setw(15) << ritzValues_[i].imagpart;
-	    }	      
-	    os << std::setw(20) << ritzResiduals_[i] << endl;
-	  }
-	}
+        int numPrint = (curDim_ < numRitzPrint_? curDim_: numRitzPrint_);
+        if (problem_->isHermitian()) {
+          os << std::setw(20) << "Ritz Value" 
+             << std::setw(20) << "Ritz Residual"
+             << endl;
+          os <<"--------------------------------------------------------------------------------"<<endl;
+          for (int i=0; i<numPrint; i++) {
+            os << std::setw(20) << ritzValues_[i].realpart 
+               << std::setw(20) << ritzResiduals_[i] 
+               << endl;
+          }
+        } else {
+          os << std::setw(24) << "Ritz Value" 
+             << std::setw(30) << "Ritz Residual"
+             << endl;
+          os <<"--------------------------------------------------------------------------------"<<endl;
+          for (int i=0; i<numPrint; i++) {
+            // Print out the real eigenvalue.
+            os << std::setw(15) << ritzValues_[i].realpart;
+            if (ritzValues_[i].imagpart < MT_ZERO) {
+              os << " - i" << std::setw(15) << Teuchos::ScalarTraits<MagnitudeType>::magnitude(ritzValues_[i].imagpart);
+            } else {
+              os << " + i" << std::setw(15) << ritzValues_[i].imagpart;
+            }              
+            os << std::setw(20) << ritzResiduals_[i] << endl;
+          }
+        }
       } else {
-	os << std::setw(20) << "[ NONE COMPUTED ]" << endl;
+        os << std::setw(20) << "[ NONE COMPUTED ]" << endl;
       }
     }
     os << endl;
