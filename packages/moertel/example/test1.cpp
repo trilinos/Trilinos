@@ -28,11 +28,15 @@
 #@HEADER
 */
 
+#include "Moertel_config.h"
+
+#ifdef HAVE_MPI
 #include "mpi.h"
 #include <assert.h>
 #include "Epetra_MpiComm.h"
 #include "mrtr_manager.H"
 #include "mrtr_segment_linear1D.H"
+#endif
 
 //
 // two dimensional example (1D interface) run on two processors
@@ -40,6 +44,8 @@
 
 int main(int argc, char *argv[])
 {
+
+#ifdef HAVE_MPI
   int i, MyPID, NumProc, nedge, side=0, nnode, ScanSum;
   bool berr;
   MPI_Init(&argc,&argv);
@@ -173,4 +179,10 @@ int main(int argc, char *argv[])
   cout << constraints;
         
   MPI_Finalize();
+#else
+
+  return -1;
+
+#endif
+
 }
