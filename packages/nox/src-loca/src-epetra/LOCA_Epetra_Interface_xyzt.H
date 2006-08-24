@@ -67,110 +67,202 @@
 #include "EpetraExt_BlockVector.h"
 #include "EpetraExt_BlockCrsMatrix.h"
 
+// Forward declarations
 namespace LOCA {
-namespace Epetra {
+  namespace Epetra {
+    namespace Interface {
+      class Required;
+    }
+  }
+}
+namespace NOX {
+  namespace Epetra {
+    namespace Interface {
+      class Jacobian;
+    }
+  }
+}
 
-namespace Interface {
 
-  /*!
-    \brief Interface for space-time (xyzt) problems.
- 
-    Code that takes a standard NOX/LOCA problem interfaces for spatially-discretized
-    problems, and creates a NOX/LOCA interface for space-time problems.  This
-    interface is called by multiple replicas of the spatially discretized
-    problem for parallelism of the time domain. Each replica can also own on 
-    one or more time steps. This interface assembles a single space-time system
-    including the solution and residual BlockVectors and the Jacobian BlockCrsMatrix.
-    This interface relies heavily on the EpetraExt_Block* classes. For usage,
-    see the example problem:  nox/src-loca/example-epetra/Brusselator_xyzt
-  */
-class xyzt : public LOCA::Epetra::Interface::Required,
-             public NOX::Epetra::Interface::Jacobian
-{
+namespace LOCA {
+  namespace Epetra {
+    namespace Interface {
+      
+      /*!
+       * \brief Used by LOCA::Epetra::Group to provide a link to the
+       * external code for creating and solving space-time formulations 
+       * of the user's problem.
+       *
+       * Code that takes a standard NOX-LOCA problem interface for 
+       * spatially-discretized problems, and creates a NOX-LOCA interface 
+       * for space-time problems.  This interface is called by multiple 
+       * replicas of the spatially discretized problem for parallelism of 
+       * the time domain. Each replica can also own one or more time steps. 
+       * This interface assembles a single space-time system including the 
+       * solution and residual BlockVectors and the Jacobian BlockCrsMatrix.
+       * This interface relies heavily on the EpetraExt_Block* classes. 
+       * 
+       */
+      class xyzt : 
+	public LOCA::Epetra::Interface::Required,
+	public NOX::Epetra::Interface::Jacobian {
+	
+      public:
+	
+	/*! 
+	  \brief Constructor
 
-public:
- 
-  //! Constructor
-  /*! The interface, vector, and matrix arguments are all for the spatially
-   *  decomposed problem. The MultiMpiCOmm communicator gives this
-   *  class the information needed to construct the space-time system. 
-   */
+	  The interface, vector, and matrix arguments are all for the spatially
+	  decomposed problem. The MultiMpiCOmm communicator gives this
+	  class the information needed to construct the space-time system. 
+	*/
+	xyzt(const Teuchos::RefCountPtr<LOCA::Epetra::Interface::Required> &iReq,
+	     const Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> &iJac,
+	     const Teuchos::RefCountPtr<LOCA::Epetra::Interface::MassMatrix> &iMass,
+	     const Epetra_MultiVector &splitMultiVec,
+	     const Teuchos::RefCountPtr<Epetra_RowMatrix> &splitJac,
+	     const Teuchos::RefCountPtr<Epetra_RowMatrix> &splitMass,
+	     const Teuchos::RefCountPtr<EpetraExt::MultiMpiComm> &globalComm,
+	     Teuchos::ParameterList *precPrintParams = 0, 
+	     Teuchos::ParameterList *precLSParams = 0);
+	
+	//! Destructor
+	virtual ~xyzt();
+	
+	/*! 
+	  \brief NOX Interface function for computing the residual.
 
-  xyzt(const Teuchos::RefCountPtr<LOCA::Epetra::Interface::Required> &iReq,
-       const Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> &iJac,
-       const Teuchos::RefCountPtr<LOCA::Epetra::Interface::MassMatrix> &iMass,
-       const Epetra_MultiVector &splitMultiVec,
-       const Teuchos::RefCountPtr<Epetra_RowMatrix> &splitJac,
-       const Teuchos::RefCountPtr<Epetra_RowMatrix> &splitMass,
-       const Teuchos::RefCountPtr<EpetraExt::MultiMpiComm> &globalComm,
-       Teuchos::ParameterList *precPrintParams = 0, 
-       Teuchos::ParameterList *precLSParams = 0);
+	  Computes \em F given the vector \em x. 
+	  Returns true if computation was successful.
+	*/
+	virtual bool computeF(const Epetra_Vector& x, Epetra_Vector& F, 
+			      const FillType fillFlag);
+	
+	/*! 
+	  \brief NOX Interface function for computing the Jacobian matrix. 
 
-  //! Destructor
-  virtual ~xyzt();
+	  Computes \em Jac given the vector \em x.
+	  Returns true if computation was successful.
+	*/
+	virtual bool computeJacobian(const Epetra_Vector& x,
+				     Epetra_Operator& Jac);
+	
+	//! LOCA Interface function for setting the continuation parameter
+	virtual void setParameters(const LOCA::ParameterVector& param);
+	
+	//! LOCA Interface function for printing the solution
+	virtual void printSolution(const Epetra_Vector& x_, double conParam);
+	
+	//! Accessor for the global solution BlockVector
+	virtual EpetraExt::BlockVector& getSolution();
+	
+	//! Accessor for the global BlockCrsMatrix
+	virtual EpetraExt::BlockCrsMatrix& getJacobian();
+	
+	//! Accessor for the xyzt Preconditioner
+	virtual LOCA::Epetra::xyztPrec& getPreconditioner();
+	
+	//! LOCA Interface exception handler
+	virtual void throwError(const string& functionName, 
+				const string& errorMsg) const;
+	
+      private:
+	
+	//! Pointer to required information from split (spatial) problem.
+	Teuchos::RefCountPtr<LOCA::Epetra::Interface::Required> iReq;
+	
+	//! Pointer to Jacobian information from split (spatial) problem.
+	Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> iJac;
+	
+	//! Pointer to mass matrix information from split (spatial) problem.
+	Teuchos::RefCountPtr<LOCA::Epetra::Interface::MassMatrix> iMass;
+	
+	//! Pointer to split (spatial) Jacobian matrix.
+	Teuchos::RefCountPtr<Epetra_RowMatrix> splitJac;
+	
+	/*! 
+	  \brief Pointer to split (spatial) mass matrix.
+	  
+	  This can be same object as splitJac.
+	*/
+	Teuchos::RefCountPtr<Epetra_RowMatrix> splitMass; 
+	
+	//! Pointer to the global (full XYZT) communicator.
+	Teuchos::RefCountPtr<EpetraExt::MultiMpiComm> globalComm;
+	
+	//! Split (spatial) input vector.
+	Epetra_Vector splitVec;
+	
+	//! Split (spatial) residual vector.
+	Epetra_Vector splitRes;
+	
+	//! Split (spatial) input vector from previous step.
+	Epetra_Vector splitVecOld; //tmp space
+	
+	// Pointer to global XYZT Jacobian matrix
+	EpetraExt::BlockCrsMatrix* jacobian;
+	
+	// Pointer to global XYZT solution vector.
+	EpetraExt::BlockVector* solution;
+	
+	// Pointer to global XYZT solution overlap vector.
+	EpetraExt::BlockVector* solutionOverlap;
+		
+	// Pointer to global XYZT solution overlap vector importer.
+	Epetra_Import* overlapImporter;
+	
+	//! Number of time steps computed on each time domain.
+	int timeStepsOnTimeDomain; 
+	
+	//! Total number of time step domains.
+	int numTimeDomains;
+	
+	//! Time domain on current processor.
+	int timeDomain;
+	
+	//!
+	int conStep;
+	
+	/*! 
+	  \brief Stencil for each row of global XYZT Jacobian matrix.
 
-  //! NOX Interface function for computing the function, F, given the vector x.
-  //Returns true if computation was successful.
-  virtual bool computeF(const Epetra_Vector& x, Epetra_Vector& F, 
-                        const FillType fillFlag);
-  
-  //! NOX Interface function for computing the Jacobian matrix
-  //Returns true if computation was successful.
-  virtual bool computeJacobian(const Epetra_Vector& x,
-			       Epetra_Operator& Jac);
+	  Used in creating global XYZT Jacobian matrix for different 
+	  finite difference schemes.
+	*/
+	std::vector< std::vector<int> >* rowStencil;
+	
+	//! Set of indices into global XYZT Jacobian matrix.
+	std::vector<int>* rowIndex;
+	
+	/*! 
+	  \brief Reference to parameter list for controlling output 
+	  of Jacobian matrix right preconditioning steps.
+	*/
+	Teuchos::ParameterList* precPrintParams;
+	
+	/*! 
+	  \brief Reference to parameter list for controlling solution of
+	  linear systems used in Jacobian matrix right preconditioning.
+	*/
+	Teuchos::ParameterList* precLSParams;
+	
+	//! Pointer to XYZT preconditioner operator.
+	LOCA::Epetra::xyztPrec* preconditioner;
+	
+	//! Pointer to split (spatial) Jacobian matrix in CRS matrix form.
+	Epetra_CrsMatrix* splitJacCrs;
+	
+	//! Pointer to split (spatial) mass matrix in CRS matrix form.
+	Epetra_CrsMatrix* splitMassCrs;
+	
+	//! Flag indicating whether XYZT system is periodic
+	bool  isPeriodic;
+	
+      };
 
-  //! LOCA Interface function for setting the continuation parameter
-  virtual void setParameters(const LOCA::ParameterVector& param);
-
-  //! LOCA Interface function for printing the solution
-  virtual void printSolution(const Epetra_Vector& x_, double conParam);
-
-  virtual void throwError(const string& functionName, 
-			  const string& errorMsg) const;
-
-  //! Accessor for the global solution BlockVector
-  virtual EpetraExt::BlockVector& getSolution();
-  //! Accessor for the global BlockCrsMatrix
-  virtual EpetraExt::BlockCrsMatrix& getJacobian();
-  //! Accessor for the xyzt Preconditioner
-  virtual LOCA::Epetra::xyztPrec& getPreconditioner();
-
-private:
-  
-  // Info from split (spatial) problem, passed in to the constructor.
-  Teuchos::RefCountPtr<LOCA::Epetra::Interface::Required> iReq;
-  Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> iJac;
-  Teuchos::RefCountPtr<LOCA::Epetra::Interface::MassMatrix> iMass;
-  Teuchos::RefCountPtr<Epetra_RowMatrix> splitJac;
-  Teuchos::RefCountPtr<Epetra_RowMatrix> splitMass; // can be same object as splitJac
-  Teuchos::RefCountPtr<EpetraExt::MultiMpiComm> globalComm;
-
-  // xyzt objects created in constructor
-  Epetra_Vector splitVec; //tmp space
-  Epetra_Vector splitRes; //tmp space
-  Epetra_Vector splitVecOld; //tmp space
-  EpetraExt::BlockCrsMatrix* jacobian;
-  EpetraExt::BlockVector* solution;
-  EpetraExt::BlockVector* solutionOverlap;
-  Epetra_Import* overlapImporter;
-  int timeStepsOnTimeDomain; 
-  int numTimeDomains;
-  int timeDomain;
-  int conStep;
-  std::vector< std::vector<int> >* rowStencil;
-  std::vector<int>* rowIndex;
-  // xyztPrec object created in constructor
-  Teuchos::ParameterList* precPrintParams;
-  Teuchos::ParameterList* precLSParams;
-  LOCA::Epetra::xyztPrec* preconditioner;
-  Epetra_CrsMatrix* splitJacCrs;
-  Epetra_CrsMatrix* splitMassCrs;
-  bool  isPeriodic;
-
-};
-} // namespace Interface
-} // namespace Epetra
+    } // namespace Interface
+  } // namespace Epetra
 } // namespace LOCA
 
-#endif
-#endif
+#endif // HAVE_NOX_EPETRAEXT
+#endif // LOCA_EPETRA_INTERFACE_XYZT_H

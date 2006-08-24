@@ -55,16 +55,26 @@ namespace LOCA {
 
 namespace LOCA {
   namespace Epetra {
+
+    /*! 
+      \brief Provides a set of interfaces for users to provide information 
+      about the nonlinear problem to LOCA.  
+      
+      Contains interfaces for the user to supply 
+      (1) the evaluation of the nonlinear equations, 
+      (2) the Jacobian, 
+      (3) any preconditioning if required,
+      (4) space-time operators, and
+      (5) shifted operators.
+    */
     namespace Interface {
 
-      /*! \brief 
-       * Used by LOCA::Epetra::Group to provide a link to the
-       * external code for RHS and Jacobian fills if needed. 
-      */
       /*!
-       * This interface is derived from the 
-       * NOX::Epetra::Interface::Required and additionally provides a 
-       * method for setting problem parameters.
+	\brief Used by LOCA::Epetra::Group to provide a link to the
+       * external code for setting problem parameters.
+
+	This interface is derived from the NOX::Epetra::Interface::Required 
+	and additionally provides a method for setting problem parameters.
       */
       class Required : public virtual NOX::Epetra::Interface::Required {
 
@@ -77,24 +87,28 @@ namespace LOCA {
 	virtual ~Required() {};
 
 	/*! 
-	 * \brief Set the parameters in the user's app prior to calling one 
-	 * of the compute functions.
-	 */
+	  \brief Set parameters in the user's application. 
+
+	  Should be called prior to calling one of the compute functions.
+	*/
 	virtual void setParameters(const ParameterVector& p) = 0;
 
 	//! Call user's own print routine for vector-parameter pair
 	virtual void printSolution(const Epetra_Vector& x_, 
 				   double conParam) {}
 
-	//! Projects solution to a few scalars for multiparameter continuation
-	/*! Default implementation is the max norm 
-	 */
+	/*! 
+	  \brief Projects solution to a few scalars for 
+	  multiparameter continuation
+
+	  Default implementation is the max norm. 
+	*/
 	virtual void projectToDraw(const NOX::Epetra::Vector& x,
 				   double *px) const {
 	  px[0] = x.norm(NOX::Abstract::Vector::MaxNorm);
 	}
 	
-	//! Returns the dimension of the project to draw array
+	//! Returns the dimension of the projection to draw array
 	virtual int projectToDrawDimension() const { return 1; }
 
       };

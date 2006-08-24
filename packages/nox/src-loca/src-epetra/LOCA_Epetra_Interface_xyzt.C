@@ -42,9 +42,8 @@
 
 #include "EpetraExt_MatrixMatrix.h"
 
-using namespace  LOCA::Epetra::Interface;
-
-xyzt::xyzt(
+LOCA::Epetra::Interface::xyzt::
+xyzt(
        const Teuchos::RefCountPtr<LOCA::Epetra::Interface::Required> &iReq_,
        const Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> &iJac_,
        const Teuchos::RefCountPtr<LOCA::Epetra::Interface::MassMatrix> &iMass_,
@@ -141,7 +140,8 @@ xyzt::xyzt(
    cout << "Ending xyzt constructor" << endl;
 }
 
-xyzt::~xyzt()
+LOCA::Epetra::Interface::xyzt::
+~xyzt()
 {
   delete solution;
   delete solutionOverlap;
@@ -151,7 +151,8 @@ xyzt::~xyzt()
   delete rowIndex;
 }
 
-bool xyzt::computeF(const Epetra_Vector& x, Epetra_Vector& F, const FillType fillFlag)
+bool LOCA::Epetra::Interface::xyzt::
+computeF(const Epetra_Vector& x, Epetra_Vector& F, const FillType fillFlag)
 {
   bool stat = true;
 
@@ -187,7 +188,8 @@ bool xyzt::computeF(const Epetra_Vector& x, Epetra_Vector& F, const FillType fil
   return stat;
 }
 
-bool xyzt::computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac)
+bool LOCA::Epetra::Interface::xyzt::
+computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac)
 {
   bool stat = true;
   jacobian->PutScalar(0.0);
@@ -225,12 +227,14 @@ bool xyzt::computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac)
   return stat;
 }
 
-void xyzt::setParameters(const LOCA::ParameterVector& params)
+void LOCA::Epetra::Interface::xyzt::
+setParameters(const LOCA::ParameterVector& params)
 {
    iReq->setParameters(params);
 }
 
-void xyzt::printSolution(const Epetra_Vector& x, double conParam)
+void LOCA::Epetra::Interface::xyzt::
+printSolution(const Epetra_Vector& x, double conParam)
 {
   solution->Epetra_Vector::operator=(x);
 
@@ -247,26 +251,30 @@ void xyzt::printSolution(const Epetra_Vector& x, double conParam)
   conStep++; // Counter for continuation step, used for printing
 }
 
-EpetraExt::BlockVector& xyzt::getSolution()
+EpetraExt::BlockVector& LOCA::Epetra::Interface::xyzt::
+getSolution()
 {
   return  *solution; 
 }
 
-EpetraExt::BlockCrsMatrix& xyzt::getJacobian()
+EpetraExt::BlockCrsMatrix& LOCA::Epetra::Interface::xyzt::
+getJacobian()
 {
   return  *jacobian; 
 }
 
-LOCA::Epetra::xyztPrec& xyzt::getPreconditioner()
+LOCA::Epetra::xyztPrec& LOCA::Epetra::Interface::xyzt::
+getPreconditioner()
 {
   return  *preconditioner; 
 }
 
-void xyzt::throwError(const string& functionName, const string& errorMsg) const
+void LOCA::Epetra::Interface::xyzt::
+throwError(const string& functionName, const string& errorMsg) const
 {
   cout << "LOCA::Epetra::Interface::xyzt::" << functionName 
 	 << " - " << errorMsg << endl;
   throw "LOCA Error";
 }
 
-#endif
+#endif // HAVE_NOX_EPETRAEXT
