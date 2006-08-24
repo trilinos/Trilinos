@@ -93,6 +93,7 @@ operator()( OriginalTypeRef orig )
   TransNumNz_ = new int[NumMyCols_];
   TransIndices_ = new int*[NumMyCols_];
   TransValues_ = new double*[NumMyCols_];
+  TransMyGlobalEquations_ = new int[NumMyCols_];
 
   int NumIndices;
 
@@ -165,7 +166,6 @@ operator()( OriginalTypeRef orig )
   const Epetra_Map & TransMap = orig.RowMatrixColMap();
 
   Epetra_CrsMatrix TempTransA1(View, TransMap, TransNumNz_);
-  TransMyGlobalEquations_ = new int[NumMyCols_];
   TransMap.MyGlobalElements(TransMyGlobalEquations_);
   
   for (i=0; i<NumMyCols_; i++)
