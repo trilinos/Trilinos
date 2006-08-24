@@ -1,8 +1,7 @@
 Decomposition Method	= hypergraph
-Zoltan Parameters	= debug_memory=3,debug_level=10,remap=0
 Zoltan Parameters	= obj_weight_dim=1
 Zoltan Parameters	= edge_weight_dim=1
-zoltan parameters       = phg_from_graph_method=neighbors
+Zoltan Parameters	= phg_from_graph_method=pairs
 File Type		= Chaco
-File Name		= onedbug
+File Name		= bug
 Parallel Disk Info	= number=0

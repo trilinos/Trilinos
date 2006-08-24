@@ -1,6 +1,6 @@
 Decomposition Method 	= hypergraph				
 Zoltan Parameters	= num_global_partitions=16
-zoltan parameters       = phg_from_graph_method=neighbors
+zoltan parameters       = phg_from_graph_method=pairs
 File Type		= Chaco
 File Name		= slac
 Parallel Disk Info	= number=0

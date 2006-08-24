@@ -1,7 +1,7 @@
 Decomposition Method 	= hypergraph
 zoltan parameters	= phg_coarsening_limit=2
 zoltan parameters	= final_output=1
-zoltan parameters       = phg_from_graph_method=neighbors
+Zoltan Parameters       = phg_from_graph_method=pairs
 File Type		= Chaco
-File Name		= simple
+File Name		= hammond
 Parallel Disk Info	= number=0
