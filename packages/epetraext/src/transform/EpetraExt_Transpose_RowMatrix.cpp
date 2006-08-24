@@ -231,7 +231,6 @@ bool EpetraExt::RowMatrix_Transpose::fwd()
   const Epetra_Map & TransMap = origObj_->RowMatrixColMap();
 
   Epetra_CrsMatrix TempTransA1(View, TransMap, TransNumNz_);
-  TransMyGlobalEquations_ = new int[NumMyCols_];
   TransMap.MyGlobalElements(TransMyGlobalEquations_);
   
   for (i=0; i<NumMyCols_; i++)
