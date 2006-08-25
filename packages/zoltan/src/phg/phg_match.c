@@ -1338,7 +1338,7 @@ static int pmatching_agg_ipm (ZZ *zz,
         || !(tw     = (float*) ZOLTAN_MALLOC (VtxDim * sizeof(float)))
         || !(maxw   = (float*) ZOLTAN_MALLOC (VtxDim * sizeof(float)))
         || !(visit  = (int*)   ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))
-        || !(aux    = (int*)   ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))     
+        || !(aux    = (int*)   ZOLTAN_MALLOC ((1+hg->nVtx) * sizeof(int)))     
         || !(sums   = (float*) ZOLTAN_CALLOC (hg->nVtx,  sizeof(float))))
       MEMORY_ERROR;
 
