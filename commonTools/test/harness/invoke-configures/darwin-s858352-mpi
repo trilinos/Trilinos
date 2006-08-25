@@ -1,29 +1,23 @@
-#MACOSX_DEPLOYMENT_TARGET=10.4 \
-#--with-ldflags="-L/sw/lib/ -L/usr/local/lib -framework veclib -bind_at_load" \
-#--with-libs="-lsuperlu -lsuperlu_dist -lumfpack -lamd -lg2c" \
-#--enable-amesos-paraklete \
-#--enable-amesos-umfpack \
-#--enable-amesos-superlu \
-#--enable-amesos-superludist \
-
 ../configure \
-CXX=c++-3.3 \
+CXX=c++ \
 F77=g77 \
 RANLIB="ranlib -s" \
 CPPFLAGS=-Wno-long-double \
 --with-incdirs="-I/sw/include" \
---with-ldflags="-framework veclib" \
---with-libs="-lexpat" \
+--with-ldflags="-framework veclib -L/sw/lib/ -L/usr/local/lib -bind_at_load" \
+--with-libs="-lsuperlu -lsuperlu_dist -lumfpack -lamd -lg2c -lexpat" \
 --enable-mpi \
 --with-mpi-compilers \
 --cache-file=config.cache \
 --with-gnumake \
 --disable-default-packages \
 --enable-amesos \
+--enable-amesos-paraklete \
+--enable-amesos-umfpack \
+--enable-amesos-superlu \
+--enable-amesos-superludist \
 --enable-anasazi \
 --enable-aztecoo \
---enable-belos \
---enable-capo \
 --enable-claps \
 --enable-didasko \
 --enable-epetra \
@@ -62,6 +56,5 @@ CPPFLAGS=-Wno-long-double \
 --enable-teuchos-expat \
 --enable-teuchos-extended \
 --enable-thyra \
---enable-tpetra \
 --enable-triutils \
 --enable-stratimikos
