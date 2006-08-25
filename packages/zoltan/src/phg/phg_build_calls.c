@@ -657,7 +657,7 @@ int num_pins, num_hedges, prefix_sum_hedges;
     he_procs = (int *)ZOLTAN_MALLOC(sizeof(int) * tot_nbors*2);
     he_wgts = (float *)ZOLTAN_MALLOC(sizeof(float) * ewgtdim * tot_nbors);
 
-    if (!he_pins || !he_procs || (ewgtdim && !he_wgts)){
+    if (tot_nbors && (!he_pins || !he_procs || (ewgtdim && !he_wgts))){
       ierr = ZOLTAN_MEMERR;
       Zoltan_Multifree(__FILE__,__LINE__,3,&nbor_gids,&nbor_procs,&gewgts);
       Zoltan_Multifree(__FILE__,__LINE__,3,&he_pins,&he_procs,&he_wgts);
@@ -716,7 +716,6 @@ int num_pins, num_hedges, prefix_sum_hedges;
     free_gid_list();
 
     /* We'll assign edge global IDs in order across the processes */
-
     MPI_Scan(&num_hedges, &prefix_sum_hedges, 1, MPI_INT, MPI_SUM, 
              zz->Communicator);
  
@@ -724,16 +723,21 @@ int num_pins, num_hedges, prefix_sum_hedges;
     *egids = ZOLTAN_MALLOC_GID_ARRAY(zz, num_hedges);
     *elids = ZOLTAN_MALLOC_GID_ARRAY(zz, num_hedges);
 
-    if (!*esizes|| !*egids || !*elids){
-      ierr = ZOLTAN_MEMERR;
-      Zoltan_Multifree(__FILE__,__LINE__,3,&nbor_gids,&nbor_procs,&gewgts);
-      Zoltan_Multifree(__FILE__,__LINE__,3,&he_pins,&he_procs,&he_wgts);
-      Zoltan_Multifree(__FILE__,__LINE__,3,esizes,egids,elids);
-      ZOLTAN_FREE(&num_nbors);
-      goto End;
+    gid_ptr = lid_ptr = NULL;
+
+    if (num_hedges){
+      if (!*esizes|| !*egids || !*elids){
+        ierr = ZOLTAN_MEMERR;
+        Zoltan_Multifree(__FILE__,__LINE__,3,&nbor_gids,&nbor_procs,&gewgts);
+        Zoltan_Multifree(__FILE__,__LINE__,3,&he_pins,&he_procs,&he_wgts);
+        Zoltan_Multifree(__FILE__,__LINE__,3,esizes,egids,elids);
+        ZOLTAN_FREE(&num_nbors);
+        goto End;
+      }
+
+      gid_ptr = *egids + (num_gid_entries - 1);
+      lid_ptr = *elids + (num_lid_entries - 1);
     }
-    gid_ptr = *egids + (num_gid_entries - 1);
-    lid_ptr = *elids + (num_lid_entries - 1);
 
     k = prefix_sum_hedges - num_hedges; /* sum on processes prior to me */
 
@@ -779,6 +783,7 @@ End:
     MPI_Barrier(zz->Communicator);
   }
 #endif
+
   
   ZOLTAN_TRACE_EXIT(zz, yo);
   return ierr;
