@@ -59,7 +59,7 @@
     COMM = SERIAL, MPI(1-4); 
 }
 
-# TestOptions is hanging on herouxsmp--disabling for now.  Bug #2111
+# 
 (FRAMEWORK ) {   
    DIRS = TestOptions;
     X-HOST = atlantis;
@@ -68,12 +68,13 @@
 
 #
 #  Bug 1988 - Test_MultipleSolves fails on s858352
+#  Bug 2320 - X-HOST=s858352 fails to disable tests on s858352
 #
-(FRAMEWORK, INSTALL ) {   
-    DIRS = Test_MultipleSolves;
-    X-HOST = s858352;
-    COMM = SERIAL, MPI(1-4); 
-}
+# (FRAMEWORK, INSTALL ) {   
+#     DIRS = Test_MultipleSolves;
+#     X-HOST = s858352;
+#     COMM = SERIAL, MPI(1-4); 
+# }
 
 
 (FRAMEWORK, INSTALL, AmesosPyTests) {
