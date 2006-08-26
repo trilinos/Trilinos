@@ -3,7 +3,6 @@ CXX=c++ \
 F77=g77 \
 RANLIB="ranlib -s" \
 CPPFLAGS=-Wno-long-double \
-MACOSX_DEPLOYMENT_TARGET=10.4 \
 --with-incdirs="-I/sw/include" \
 --with-ldflags="-L/sw/lib/ -framework veclib -bind_at_load" \
 --with-libs="-lsuperlu -lumfpack -lamd -lg2c -lexpat -lhdf5" \
@@ -15,8 +14,6 @@ MACOSX_DEPLOYMENT_TARGET=10.4 \
 --enable-amesos-superlu \
 --enable-anasazi \
 --enable-aztecoo \
---enable-belos \
---enable-capo \
 --enable-claps \
 --enable-didasko \
 --enable-epetra \
@@ -55,7 +52,6 @@ MACOSX_DEPLOYMENT_TARGET=10.4 \
 --enable-teuchos-expat \
 --enable-teuchos-extended \
 --enable-thyra \
---enable-tpetra \
 --enable-triutils \
 --enable-webtrilinos \
 --enable-stratimikos
