@@ -23,7 +23,6 @@ CPPFLAGS=-Wno-long-double \
 --enable-epetra \
 --enable-epetra-abc \
 --enable-epetraext \
---enable-epetraext-hdf5 \
 --enable-epetraext-inout \
 --enable-epetraext-coloring \
 --enable-epetraext-transform \
