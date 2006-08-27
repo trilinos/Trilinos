@@ -44,7 +44,7 @@
 
 # The following line helps the test harness recover from build errors.
 
-SOURCES = $(Ifpack_ex_Amesos_SOURCES) $(Ifpack_ex_BlockRelaxation_SOURCES) $(Ifpack_ex_Factory_SOURCES) $(Ifpack_ex_Filtering_SOURCES) $(Ifpack_ex_ICT_SOURCES) $(Ifpack_ex_Reordering_SOURCES)
+SOURCES = $(Ifpack_ex_Amesos_SOURCES) $(Ifpack_ex_BlockRelaxation_SOURCES) $(Ifpack_ex_Factory_SOURCES) $(Ifpack_ex_Filtering_SOURCES) $(Ifpack_ex_ICT_SOURCES) $(Ifpack_ex_Reordering_SOURCES) $(Ifpack_ex_ScalarLaplacian_FEM_SOURCES) $(Ifpack_ex_VectorLaplacian_FEM_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -109,7 +109,9 @@ am__EXEEXT_1 = Ifpack_ex_Reordering$(EXEEXT) \
 @HAVE_IFPACK_AZTECOO_TRUE@@HAVE_IFPACK_GALERI_TRUE@@HAVE_IFPACK_TEUCHOS_TRUE@am__EXEEXT_2 = Ifpack_ex_Factory$(EXEEXT) \
 @HAVE_IFPACK_AZTECOO_TRUE@@HAVE_IFPACK_GALERI_TRUE@@HAVE_IFPACK_TEUCHOS_TRUE@	Ifpack_ex_Amesos$(EXEEXT) \
 @HAVE_IFPACK_AZTECOO_TRUE@@HAVE_IFPACK_GALERI_TRUE@@HAVE_IFPACK_TEUCHOS_TRUE@	Ifpack_ex_ICT$(EXEEXT) \
-@HAVE_IFPACK_AZTECOO_TRUE@@HAVE_IFPACK_GALERI_TRUE@@HAVE_IFPACK_TEUCHOS_TRUE@	Ifpack_ex_BlockRelaxation$(EXEEXT)
+@HAVE_IFPACK_AZTECOO_TRUE@@HAVE_IFPACK_GALERI_TRUE@@HAVE_IFPACK_TEUCHOS_TRUE@	Ifpack_ex_BlockRelaxation$(EXEEXT) \
+@HAVE_IFPACK_AZTECOO_TRUE@@HAVE_IFPACK_GALERI_TRUE@@HAVE_IFPACK_TEUCHOS_TRUE@	Ifpack_ex_ScalarLaplacian_FEM$(EXEEXT) \
+@HAVE_IFPACK_AZTECOO_TRUE@@HAVE_IFPACK_GALERI_TRUE@@HAVE_IFPACK_TEUCHOS_TRUE@	Ifpack_ex_VectorLaplacian_FEM$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_Ifpack_ex_Amesos_OBJECTS =  \
 	Ifpack_ex_Amesos-Ifpack_ex_Amesos.$(OBJEXT)
@@ -130,6 +132,12 @@ Ifpack_ex_ICT_OBJECTS = $(am_Ifpack_ex_ICT_OBJECTS)
 am_Ifpack_ex_Reordering_OBJECTS =  \
 	Ifpack_ex_Reordering-Ifpack_ex_Reordering.$(OBJEXT)
 Ifpack_ex_Reordering_OBJECTS = $(am_Ifpack_ex_Reordering_OBJECTS)
+am_Ifpack_ex_ScalarLaplacian_FEM_OBJECTS = Ifpack_ex_ScalarLaplacian_FEM-Ifpack_ex_ScalarLaplacian_FEM.$(OBJEXT)
+Ifpack_ex_ScalarLaplacian_FEM_OBJECTS =  \
+	$(am_Ifpack_ex_ScalarLaplacian_FEM_OBJECTS)
+am_Ifpack_ex_VectorLaplacian_FEM_OBJECTS = Ifpack_ex_VectorLaplacian_FEM-Ifpack_ex_VectorLaplacian_FEM.$(OBJEXT)
+Ifpack_ex_VectorLaplacian_FEM_OBJECTS =  \
+	$(am_Ifpack_ex_VectorLaplacian_FEM_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -139,7 +147,9 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/Ifpack_ex_Factory-Ifpack_ex_Factory.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Ifpack_ex_Filtering-Ifpack_ex_Filtering.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Ifpack_ex_ICT-Ifpack_ex_ICT.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/Ifpack_ex_Reordering-Ifpack_ex_Reordering.Po
+@AMDEP_TRUE@	./$(DEPDIR)/Ifpack_ex_Reordering-Ifpack_ex_Reordering.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Ifpack_ex_ScalarLaplacian_FEM-Ifpack_ex_ScalarLaplacian_FEM.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Ifpack_ex_VectorLaplacian_FEM-Ifpack_ex_VectorLaplacian_FEM.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -148,11 +158,15 @@ CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 SOURCES = $(Ifpack_ex_Amesos_SOURCES) \
 	$(Ifpack_ex_BlockRelaxation_SOURCES) \
 	$(Ifpack_ex_Factory_SOURCES) $(Ifpack_ex_Filtering_SOURCES) \
-	$(Ifpack_ex_ICT_SOURCES) $(Ifpack_ex_Reordering_SOURCES)
+	$(Ifpack_ex_ICT_SOURCES) $(Ifpack_ex_Reordering_SOURCES) \
+	$(Ifpack_ex_ScalarLaplacian_FEM_SOURCES) \
+	$(Ifpack_ex_VectorLaplacian_FEM_SOURCES)
 DIST_SOURCES = $(Ifpack_ex_Amesos_SOURCES) \
 	$(Ifpack_ex_BlockRelaxation_SOURCES) \
 	$(Ifpack_ex_Factory_SOURCES) $(Ifpack_ex_Filtering_SOURCES) \
-	$(Ifpack_ex_ICT_SOURCES) $(Ifpack_ex_Reordering_SOURCES)
+	$(Ifpack_ex_ICT_SOURCES) $(Ifpack_ex_Reordering_SOURCES) \
+	$(Ifpack_ex_ScalarLaplacian_FEM_SOURCES) \
+	$(Ifpack_ex_VectorLaplacian_FEM_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -320,7 +334,9 @@ EXAMPLE_CORE = Ifpack_ex_Reordering           \
 @HAVE_IFPACK_AZTECOO_TRUE@@HAVE_IFPACK_GALERI_TRUE@@HAVE_IFPACK_TEUCHOS_TRUE@EXAMPLE_EXT = Ifpack_ex_Factory              \
 @HAVE_IFPACK_AZTECOO_TRUE@@HAVE_IFPACK_GALERI_TRUE@@HAVE_IFPACK_TEUCHOS_TRUE@	      Ifpack_ex_Amesos               \
 @HAVE_IFPACK_AZTECOO_TRUE@@HAVE_IFPACK_GALERI_TRUE@@HAVE_IFPACK_TEUCHOS_TRUE@	      Ifpack_ex_ICT                  \
-@HAVE_IFPACK_AZTECOO_TRUE@@HAVE_IFPACK_GALERI_TRUE@@HAVE_IFPACK_TEUCHOS_TRUE@	      Ifpack_ex_BlockRelaxation
+@HAVE_IFPACK_AZTECOO_TRUE@@HAVE_IFPACK_GALERI_TRUE@@HAVE_IFPACK_TEUCHOS_TRUE@	      Ifpack_ex_BlockRelaxation      \
+@HAVE_IFPACK_AZTECOO_TRUE@@HAVE_IFPACK_GALERI_TRUE@@HAVE_IFPACK_TEUCHOS_TRUE@	      Ifpack_ex_ScalarLaplacian_FEM  \
+@HAVE_IFPACK_AZTECOO_TRUE@@HAVE_IFPACK_GALERI_TRUE@@HAVE_IFPACK_TEUCHOS_TRUE@	      Ifpack_ex_VectorLaplacian_FEM
 
 Ifpack_ex_Factory_SOURCES = $(srcdir)/Ifpack_ex_Factory.cpp
 Ifpack_ex_Factory_DEPENDENCIES = $(top_builddir)/src/libifpack.a 
@@ -346,6 +362,14 @@ Ifpack_ex_Filtering_SOURCES = $(srcdir)/Ifpack_ex_Filtering.cpp
 Ifpack_ex_Filtering_DEPENDENCIES = $(top_builddir)/src/libifpack.a 
 Ifpack_ex_Filtering_CXXFLAGS = $(EXAMPLE_INCLUDES)
 Ifpack_ex_Filtering_LDADD = $(EXAMPLE_LIBS)
+Ifpack_ex_ScalarLaplacian_FEM_SOURCES = $(srcdir)/Ifpack_ex_ScalarLaplacian_FEM.cpp
+Ifpack_ex_ScalarLaplacian_FEM_DEPENDENCIES = $(top_builddir)/src/libifpack.a 
+Ifpack_ex_ScalarLaplacian_FEM_CXXFLAGS = $(EXAMPLE_INCLUDES)
+Ifpack_ex_ScalarLaplacian_FEM_LDADD = $(EXAMPLE_LIBS)
+Ifpack_ex_VectorLaplacian_FEM_SOURCES = $(srcdir)/Ifpack_ex_VectorLaplacian_FEM.cpp
+Ifpack_ex_VectorLaplacian_FEM_DEPENDENCIES = $(top_builddir)/src/libifpack.a 
+Ifpack_ex_VectorLaplacian_FEM_CXXFLAGS = $(EXAMPLE_INCLUDES)
+Ifpack_ex_VectorLaplacian_FEM_LDADD = $(EXAMPLE_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -400,6 +424,12 @@ Ifpack_ex_ICT$(EXEEXT): $(Ifpack_ex_ICT_OBJECTS) $(Ifpack_ex_ICT_DEPENDENCIES)
 Ifpack_ex_Reordering$(EXEEXT): $(Ifpack_ex_Reordering_OBJECTS) $(Ifpack_ex_Reordering_DEPENDENCIES) 
 	@rm -f Ifpack_ex_Reordering$(EXEEXT)
 	$(CXXLINK) $(Ifpack_ex_Reordering_LDFLAGS) $(Ifpack_ex_Reordering_OBJECTS) $(Ifpack_ex_Reordering_LDADD) $(LIBS)
+Ifpack_ex_ScalarLaplacian_FEM$(EXEEXT): $(Ifpack_ex_ScalarLaplacian_FEM_OBJECTS) $(Ifpack_ex_ScalarLaplacian_FEM_DEPENDENCIES) 
+	@rm -f Ifpack_ex_ScalarLaplacian_FEM$(EXEEXT)
+	$(CXXLINK) $(Ifpack_ex_ScalarLaplacian_FEM_LDFLAGS) $(Ifpack_ex_ScalarLaplacian_FEM_OBJECTS) $(Ifpack_ex_ScalarLaplacian_FEM_LDADD) $(LIBS)
+Ifpack_ex_VectorLaplacian_FEM$(EXEEXT): $(Ifpack_ex_VectorLaplacian_FEM_OBJECTS) $(Ifpack_ex_VectorLaplacian_FEM_DEPENDENCIES) 
+	@rm -f Ifpack_ex_VectorLaplacian_FEM$(EXEEXT)
+	$(CXXLINK) $(Ifpack_ex_VectorLaplacian_FEM_LDFLAGS) $(Ifpack_ex_VectorLaplacian_FEM_OBJECTS) $(Ifpack_ex_VectorLaplacian_FEM_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -413,6 +443,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ifpack_ex_Filtering-Ifpack_ex_Filtering.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ifpack_ex_ICT-Ifpack_ex_ICT.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ifpack_ex_Reordering-Ifpack_ex_Reordering.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ifpack_ex_ScalarLaplacian_FEM-Ifpack_ex_ScalarLaplacian_FEM.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ifpack_ex_VectorLaplacian_FEM-Ifpack_ex_VectorLaplacian_FEM.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -525,6 +557,38 @@ Ifpack_ex_Reordering-Ifpack_ex_Reordering.obj: $(srcdir)/Ifpack_ex_Reordering.cp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Ifpack_ex_Reordering-Ifpack_ex_Reordering.Po' tmpdepfile='$(DEPDIR)/Ifpack_ex_Reordering-Ifpack_ex_Reordering.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Ifpack_ex_Reordering_CXXFLAGS) $(CXXFLAGS) -c -o Ifpack_ex_Reordering-Ifpack_ex_Reordering.obj `if test -f '$(srcdir)/Ifpack_ex_Reordering.cpp'; then $(CYGPATH_W) '$(srcdir)/Ifpack_ex_Reordering.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Ifpack_ex_Reordering.cpp'; fi`
+
+Ifpack_ex_ScalarLaplacian_FEM-Ifpack_ex_ScalarLaplacian_FEM.o: $(srcdir)/Ifpack_ex_ScalarLaplacian_FEM.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Ifpack_ex_ScalarLaplacian_FEM_CXXFLAGS) $(CXXFLAGS) -MT Ifpack_ex_ScalarLaplacian_FEM-Ifpack_ex_ScalarLaplacian_FEM.o -MD -MP -MF "$(DEPDIR)/Ifpack_ex_ScalarLaplacian_FEM-Ifpack_ex_ScalarLaplacian_FEM.Tpo" -c -o Ifpack_ex_ScalarLaplacian_FEM-Ifpack_ex_ScalarLaplacian_FEM.o `test -f '$(srcdir)/Ifpack_ex_ScalarLaplacian_FEM.cpp' || echo '$(srcdir)/'`$(srcdir)/Ifpack_ex_ScalarLaplacian_FEM.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Ifpack_ex_ScalarLaplacian_FEM-Ifpack_ex_ScalarLaplacian_FEM.Tpo" "$(DEPDIR)/Ifpack_ex_ScalarLaplacian_FEM-Ifpack_ex_ScalarLaplacian_FEM.Po"; else rm -f "$(DEPDIR)/Ifpack_ex_ScalarLaplacian_FEM-Ifpack_ex_ScalarLaplacian_FEM.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Ifpack_ex_ScalarLaplacian_FEM.cpp' object='Ifpack_ex_ScalarLaplacian_FEM-Ifpack_ex_ScalarLaplacian_FEM.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Ifpack_ex_ScalarLaplacian_FEM-Ifpack_ex_ScalarLaplacian_FEM.Po' tmpdepfile='$(DEPDIR)/Ifpack_ex_ScalarLaplacian_FEM-Ifpack_ex_ScalarLaplacian_FEM.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Ifpack_ex_ScalarLaplacian_FEM_CXXFLAGS) $(CXXFLAGS) -c -o Ifpack_ex_ScalarLaplacian_FEM-Ifpack_ex_ScalarLaplacian_FEM.o `test -f '$(srcdir)/Ifpack_ex_ScalarLaplacian_FEM.cpp' || echo '$(srcdir)/'`$(srcdir)/Ifpack_ex_ScalarLaplacian_FEM.cpp
+
+Ifpack_ex_ScalarLaplacian_FEM-Ifpack_ex_ScalarLaplacian_FEM.obj: $(srcdir)/Ifpack_ex_ScalarLaplacian_FEM.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Ifpack_ex_ScalarLaplacian_FEM_CXXFLAGS) $(CXXFLAGS) -MT Ifpack_ex_ScalarLaplacian_FEM-Ifpack_ex_ScalarLaplacian_FEM.obj -MD -MP -MF "$(DEPDIR)/Ifpack_ex_ScalarLaplacian_FEM-Ifpack_ex_ScalarLaplacian_FEM.Tpo" -c -o Ifpack_ex_ScalarLaplacian_FEM-Ifpack_ex_ScalarLaplacian_FEM.obj `if test -f '$(srcdir)/Ifpack_ex_ScalarLaplacian_FEM.cpp'; then $(CYGPATH_W) '$(srcdir)/Ifpack_ex_ScalarLaplacian_FEM.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Ifpack_ex_ScalarLaplacian_FEM.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Ifpack_ex_ScalarLaplacian_FEM-Ifpack_ex_ScalarLaplacian_FEM.Tpo" "$(DEPDIR)/Ifpack_ex_ScalarLaplacian_FEM-Ifpack_ex_ScalarLaplacian_FEM.Po"; else rm -f "$(DEPDIR)/Ifpack_ex_ScalarLaplacian_FEM-Ifpack_ex_ScalarLaplacian_FEM.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Ifpack_ex_ScalarLaplacian_FEM.cpp' object='Ifpack_ex_ScalarLaplacian_FEM-Ifpack_ex_ScalarLaplacian_FEM.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Ifpack_ex_ScalarLaplacian_FEM-Ifpack_ex_ScalarLaplacian_FEM.Po' tmpdepfile='$(DEPDIR)/Ifpack_ex_ScalarLaplacian_FEM-Ifpack_ex_ScalarLaplacian_FEM.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Ifpack_ex_ScalarLaplacian_FEM_CXXFLAGS) $(CXXFLAGS) -c -o Ifpack_ex_ScalarLaplacian_FEM-Ifpack_ex_ScalarLaplacian_FEM.obj `if test -f '$(srcdir)/Ifpack_ex_ScalarLaplacian_FEM.cpp'; then $(CYGPATH_W) '$(srcdir)/Ifpack_ex_ScalarLaplacian_FEM.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Ifpack_ex_ScalarLaplacian_FEM.cpp'; fi`
+
+Ifpack_ex_VectorLaplacian_FEM-Ifpack_ex_VectorLaplacian_FEM.o: $(srcdir)/Ifpack_ex_VectorLaplacian_FEM.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Ifpack_ex_VectorLaplacian_FEM_CXXFLAGS) $(CXXFLAGS) -MT Ifpack_ex_VectorLaplacian_FEM-Ifpack_ex_VectorLaplacian_FEM.o -MD -MP -MF "$(DEPDIR)/Ifpack_ex_VectorLaplacian_FEM-Ifpack_ex_VectorLaplacian_FEM.Tpo" -c -o Ifpack_ex_VectorLaplacian_FEM-Ifpack_ex_VectorLaplacian_FEM.o `test -f '$(srcdir)/Ifpack_ex_VectorLaplacian_FEM.cpp' || echo '$(srcdir)/'`$(srcdir)/Ifpack_ex_VectorLaplacian_FEM.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Ifpack_ex_VectorLaplacian_FEM-Ifpack_ex_VectorLaplacian_FEM.Tpo" "$(DEPDIR)/Ifpack_ex_VectorLaplacian_FEM-Ifpack_ex_VectorLaplacian_FEM.Po"; else rm -f "$(DEPDIR)/Ifpack_ex_VectorLaplacian_FEM-Ifpack_ex_VectorLaplacian_FEM.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Ifpack_ex_VectorLaplacian_FEM.cpp' object='Ifpack_ex_VectorLaplacian_FEM-Ifpack_ex_VectorLaplacian_FEM.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Ifpack_ex_VectorLaplacian_FEM-Ifpack_ex_VectorLaplacian_FEM.Po' tmpdepfile='$(DEPDIR)/Ifpack_ex_VectorLaplacian_FEM-Ifpack_ex_VectorLaplacian_FEM.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Ifpack_ex_VectorLaplacian_FEM_CXXFLAGS) $(CXXFLAGS) -c -o Ifpack_ex_VectorLaplacian_FEM-Ifpack_ex_VectorLaplacian_FEM.o `test -f '$(srcdir)/Ifpack_ex_VectorLaplacian_FEM.cpp' || echo '$(srcdir)/'`$(srcdir)/Ifpack_ex_VectorLaplacian_FEM.cpp
+
+Ifpack_ex_VectorLaplacian_FEM-Ifpack_ex_VectorLaplacian_FEM.obj: $(srcdir)/Ifpack_ex_VectorLaplacian_FEM.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Ifpack_ex_VectorLaplacian_FEM_CXXFLAGS) $(CXXFLAGS) -MT Ifpack_ex_VectorLaplacian_FEM-Ifpack_ex_VectorLaplacian_FEM.obj -MD -MP -MF "$(DEPDIR)/Ifpack_ex_VectorLaplacian_FEM-Ifpack_ex_VectorLaplacian_FEM.Tpo" -c -o Ifpack_ex_VectorLaplacian_FEM-Ifpack_ex_VectorLaplacian_FEM.obj `if test -f '$(srcdir)/Ifpack_ex_VectorLaplacian_FEM.cpp'; then $(CYGPATH_W) '$(srcdir)/Ifpack_ex_VectorLaplacian_FEM.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Ifpack_ex_VectorLaplacian_FEM.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Ifpack_ex_VectorLaplacian_FEM-Ifpack_ex_VectorLaplacian_FEM.Tpo" "$(DEPDIR)/Ifpack_ex_VectorLaplacian_FEM-Ifpack_ex_VectorLaplacian_FEM.Po"; else rm -f "$(DEPDIR)/Ifpack_ex_VectorLaplacian_FEM-Ifpack_ex_VectorLaplacian_FEM.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Ifpack_ex_VectorLaplacian_FEM.cpp' object='Ifpack_ex_VectorLaplacian_FEM-Ifpack_ex_VectorLaplacian_FEM.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Ifpack_ex_VectorLaplacian_FEM-Ifpack_ex_VectorLaplacian_FEM.Po' tmpdepfile='$(DEPDIR)/Ifpack_ex_VectorLaplacian_FEM-Ifpack_ex_VectorLaplacian_FEM.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Ifpack_ex_VectorLaplacian_FEM_CXXFLAGS) $(CXXFLAGS) -c -o Ifpack_ex_VectorLaplacian_FEM-Ifpack_ex_VectorLaplacian_FEM.obj `if test -f '$(srcdir)/Ifpack_ex_VectorLaplacian_FEM.cpp'; then $(CYGPATH_W) '$(srcdir)/Ifpack_ex_VectorLaplacian_FEM.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Ifpack_ex_VectorLaplacian_FEM.cpp'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)

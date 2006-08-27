@@ -47,3 +47,14 @@ need to hack the IFPACK source code.
 - Ifpack_ex_Reordering.cpp  shows how to reorder a matrix.
 			    Difficulty: for developers.
 
+
+Finally, the following examples should be used by users interested in the
+finite element code of Galeri (PFEM):
+
+- Ifpack_ScalarLaplacian_FEM.cpp  shows the definition of an unstructured
+                                  parallel FE code for a scalar Laplacian.
+
+- Ifpack_VectorLaplacian_FEM.cpp  shows the definition of an unstructured
+                                  parallel FE code for a vector Laplacian.
+
+

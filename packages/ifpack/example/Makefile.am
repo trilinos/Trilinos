@@ -34,9 +34,10 @@ all-local:
 	@echo ""
 
 include $(top_builddir)/Makefile.export
+include $(top_builddir)/../galeri/Makefile.export.galeri
 
-EXAMPLE_LIBS     = $(IFPACK_EXTRA_LIBS)     $(IFPACK_LIBS)
-EXAMPLE_INCLUDES = $(IFPACK_EXTRA_INCLUDES) $(IFPACK_INCLUDES)
+EXAMPLE_LIBS     = $(IFPACK_EXTRA_LIBS)     $(IFPACK_LIBS)      $(GALERI_LIBS)
+EXAMPLE_INCLUDES = $(IFPACK_EXTRA_INCLUDES) $(IFPACK_INCLUDES)  $(GALERI_INCLUDES)
 
 EXEEXT = .exe
 
@@ -49,7 +50,9 @@ if HAVE_IFPACK_GALERI
 EXAMPLE_EXT = Ifpack_ex_Factory              \
 	      Ifpack_ex_Amesos               \
 	      Ifpack_ex_ICT                  \
-	      Ifpack_ex_BlockRelaxation
+	      Ifpack_ex_BlockRelaxation      \
+	      Ifpack_ex_ScalarLaplacian_FEM  \
+	      Ifpack_ex_VectorLaplacian_FEM
 else
 EXAMPLE_EXT =
 endif
@@ -87,3 +90,13 @@ Ifpack_ex_Filtering_SOURCES      = $(srcdir)/Ifpack_ex_Filtering.cpp
 Ifpack_ex_Filtering_DEPENDENCIES = $(top_builddir)/src/libifpack.a 
 Ifpack_ex_Filtering_CXXFLAGS     = $(EXAMPLE_INCLUDES)
 Ifpack_ex_Filtering_LDADD        = $(EXAMPLE_LIBS)
+
+Ifpack_ex_ScalarLaplacian_FEM_SOURCES      = $(srcdir)/Ifpack_ex_ScalarLaplacian_FEM.cpp
+Ifpack_ex_ScalarLaplacian_FEM_DEPENDENCIES = $(top_builddir)/src/libifpack.a 
+Ifpack_ex_ScalarLaplacian_FEM_CXXFLAGS     = $(EXAMPLE_INCLUDES)
+Ifpack_ex_ScalarLaplacian_FEM_LDADD        = $(EXAMPLE_LIBS)
+
+Ifpack_ex_VectorLaplacian_FEM_SOURCES      = $(srcdir)/Ifpack_ex_VectorLaplacian_FEM.cpp
+Ifpack_ex_VectorLaplacian_FEM_DEPENDENCIES = $(top_builddir)/src/libifpack.a 
+Ifpack_ex_VectorLaplacian_FEM_CXXFLAGS     = $(EXAMPLE_INCLUDES)
+Ifpack_ex_VectorLaplacian_FEM_LDADD        = $(EXAMPLE_LIBS)
