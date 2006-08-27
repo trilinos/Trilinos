@@ -46,6 +46,7 @@ CPPFLAGS=-Wno-long-double \
 --enable-python \
 --enable-rtop \
 --enable-rythmos \
+--enable-stratimikos \
 --enable-teuchos \
 --enable-teuchos-abc \
 --enable-teuchos-complex \
@@ -53,5 +54,4 @@ CPPFLAGS=-Wno-long-double \
 --enable-teuchos-extended \
 --enable-thyra \
 --enable-triutils \
---enable-webtrilinos \
---enable-stratimikos
+--enable-webtrilinos
