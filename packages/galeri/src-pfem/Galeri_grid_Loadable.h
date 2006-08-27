@@ -107,19 +107,22 @@ class Loadable : public core::Object
      *  type. Valid values are: \c Point, \c Segment, \c Triangle, \c Quad,
      *  \c Tet and \c Hex.
      *
+     *  @param myGlobalElements [In] array of integers, of size \c
+     *  numMyElements, which contains the global ID of all local elements.
+     *  By using this array, one can introduce global numbering to grid
+     *  elements.
+     *
      *  @param numElementData  [In] number of additional double-typed data
      *  to be stored on each element.
      *
      *  @param numVertexData  [In] number of additional double-typed data
      *  to be stored on each vertex.
-     *
-     *  This is just a shortcut for method initialize(), which should be used
-     *  for more general initializations.
      */
     Loadable(const Epetra_Comm& comm,
              const int numGlobalElements,
              const int numMyElements,
              const string& elementType,
+             const int* myGlobalElements = 0,
              const int numElementData = 0,
              const int numVertexData = 0);
 

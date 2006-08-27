@@ -42,7 +42,7 @@
 # ************************************************************************
 # @HEADER
 
-SOURCES = $(ex1_SOURCES) $(ex2_SOURCES) $(ex3_SOURCES) $(ex4_SOURCES)
+SOURCES = $(ex1_SOURCES) $(ex2_SOURCES) $(ex3_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -65,7 +65,7 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-noinst_PROGRAMS = ex1$(EXEEXT) ex2$(EXEEXT) ex3$(EXEEXT) ex4$(EXEEXT)
+noinst_PROGRAMS = ex1$(EXEEXT) ex2$(EXEEXT) ex3$(EXEEXT)
 subdir = example-pfem
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -108,21 +108,18 @@ am_ex2_OBJECTS = ex2-ex2.$(OBJEXT)
 ex2_OBJECTS = $(am_ex2_OBJECTS)
 am_ex3_OBJECTS = ex3-ex3.$(OBJEXT)
 ex3_OBJECTS = $(am_ex3_OBJECTS)
-am_ex4_OBJECTS = ex4-ex4.$(OBJEXT)
-ex4_OBJECTS = $(am_ex4_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/ex1-ex1.Po ./$(DEPDIR)/ex2-ex2.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ex3-ex3.Po ./$(DEPDIR)/ex4-ex4.Po
+@AMDEP_TRUE@	./$(DEPDIR)/ex3-ex3.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(ex1_SOURCES) $(ex2_SOURCES) $(ex3_SOURCES) $(ex4_SOURCES)
-DIST_SOURCES = $(ex1_SOURCES) $(ex2_SOURCES) $(ex3_SOURCES) \
-	$(ex4_SOURCES)
+SOURCES = $(ex1_SOURCES) $(ex2_SOURCES) $(ex3_SOURCES)
+DIST_SOURCES = $(ex1_SOURCES) $(ex2_SOURCES) $(ex3_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -271,19 +268,15 @@ target_vendor = @target_vendor@
 ex1_SOURCES = $(srcdir)/ex1.cpp
 ex1_DEPENDENCIES = $(top_builddir)/src-pfem/libpfem.a
 ex1_CXXFLAGS = $(GALERI_INCLUDES)
-ex1_LDADD = -L../src-pfem/ -lpfem $(GALERI_LIBS) 
+ex1_LDADD = $(GALERI_LIBS) 
 ex2_SOURCES = $(srcdir)/ex2.cpp
 ex2_DEPENDENCIES = $(top_builddir)/src-pfem/libpfem.a
 ex2_CXXFLAGS = $(GALERI_INCLUDES)
-ex2_LDADD = -L../src-pfem/ -lpfem $(GALERI_LIBS) 
+ex2_LDADD = $(GALERI_LIBS) 
 ex3_SOURCES = $(srcdir)/ex3.cpp
 ex3_DEPENDENCIES = $(top_builddir)/src-pfem/libpfem.a
 ex3_CXXFLAGS = $(GALERI_INCLUDES)
-ex3_LDADD = -L../src-pfem/ -lpfem $(GALERI_LIBS) 
-ex4_SOURCES = $(srcdir)/ex4.cpp
-ex4_DEPENDENCIES = $(top_builddir)/src-pfem/libpfem.a
-ex4_CXXFLAGS = $(GALERI_INCLUDES)
-ex4_LDADD = -L../src-pfem/ -lpfem $(GALERI_LIBS) 
+ex3_LDADD = $(GALERI_LIBS) 
 all: all-am
 
 .SUFFIXES:
@@ -329,9 +322,6 @@ ex2$(EXEEXT): $(ex2_OBJECTS) $(ex2_DEPENDENCIES)
 ex3$(EXEEXT): $(ex3_OBJECTS) $(ex3_DEPENDENCIES) 
 	@rm -f ex3$(EXEEXT)
 	$(CXXLINK) $(ex3_LDFLAGS) $(ex3_OBJECTS) $(ex3_LDADD) $(LIBS)
-ex4$(EXEEXT): $(ex4_OBJECTS) $(ex4_DEPENDENCIES) 
-	@rm -f ex4$(EXEEXT)
-	$(CXXLINK) $(ex4_LDFLAGS) $(ex4_OBJECTS) $(ex4_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -342,7 +332,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ex1-ex1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ex2-ex2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ex3-ex3.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ex4-ex4.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -407,22 +396,6 @@ ex3-ex3.obj: $(srcdir)/ex3.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ex3-ex3.Po' tmpdepfile='$(DEPDIR)/ex3-ex3.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ex3_CXXFLAGS) $(CXXFLAGS) -c -o ex3-ex3.obj `if test -f '$(srcdir)/ex3.cpp'; then $(CYGPATH_W) '$(srcdir)/ex3.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ex3.cpp'; fi`
-
-ex4-ex4.o: $(srcdir)/ex4.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ex4_CXXFLAGS) $(CXXFLAGS) -MT ex4-ex4.o -MD -MP -MF "$(DEPDIR)/ex4-ex4.Tpo" -c -o ex4-ex4.o `test -f '$(srcdir)/ex4.cpp' || echo '$(srcdir)/'`$(srcdir)/ex4.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ex4-ex4.Tpo" "$(DEPDIR)/ex4-ex4.Po"; else rm -f "$(DEPDIR)/ex4-ex4.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ex4.cpp' object='ex4-ex4.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ex4-ex4.Po' tmpdepfile='$(DEPDIR)/ex4-ex4.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ex4_CXXFLAGS) $(CXXFLAGS) -c -o ex4-ex4.o `test -f '$(srcdir)/ex4.cpp' || echo '$(srcdir)/'`$(srcdir)/ex4.cpp
-
-ex4-ex4.obj: $(srcdir)/ex4.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ex4_CXXFLAGS) $(CXXFLAGS) -MT ex4-ex4.obj -MD -MP -MF "$(DEPDIR)/ex4-ex4.Tpo" -c -o ex4-ex4.obj `if test -f '$(srcdir)/ex4.cpp'; then $(CYGPATH_W) '$(srcdir)/ex4.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ex4.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ex4-ex4.Tpo" "$(DEPDIR)/ex4-ex4.Po"; else rm -f "$(DEPDIR)/ex4-ex4.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ex4.cpp' object='ex4-ex4.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ex4-ex4.Po' tmpdepfile='$(DEPDIR)/ex4-ex4.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ex4_CXXFLAGS) $(CXXFLAGS) -c -o ex4-ex4.obj `if test -f '$(srcdir)/ex4.cpp'; then $(CYGPATH_W) '$(srcdir)/ex4.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ex4.cpp'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)

@@ -14,7 +14,7 @@ _GALERI_INCLUDES = \
 	-I@abs_top_srcdir@/src-pfem \
 	-I@abs_top_builddir@/src
 
-_GALERI_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lgaleri $(EPETRAEXT_LIB) $(EPETRA_LIBS) $(TEUCHOS_LIBS) @BLAS_LIBS@ @LIBS@ @FLIBS@ 
+_GALERI_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -L@abs_top_builddir@/src-pfem -lpfem -lgaleri $(EPETRAEXT_LIB) $(EPETRA_LIBS) $(TEUCHOS_LIBS) @BLAS_LIBS@ @LIBS@ @FLIBS@ 
 
 @USING_GNUMAKE_TRUE@GALERI_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_GALERI_INCLUDES))
 @USING_GNUMAKE_TRUE@GALERI_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_GALERI_LIBS))

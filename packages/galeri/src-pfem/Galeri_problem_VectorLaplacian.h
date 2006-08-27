@@ -33,6 +33,7 @@
 #include "Epetra_FECrsGraph.h"
 #include "Epetra_FECrsMatrix.h"
 #include "Epetra_FEVector.h"
+#include "Epetra_Vector.h"
 #include "Epetra_Import.h"
 
 #include "Galeri_core_Workspace.h"

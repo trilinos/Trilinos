@@ -56,6 +56,7 @@ Galeri::grid::Loadable::Loadable(const Epetra_Comm& comm,
                                  const int numGlobalElements,
                                  const int numMyElements,
                                  const string& elementType,
+                                 const int* myGlobalElements,
                                  const int numElementData,
                                  const int numVertexData) :
   status_(core::Workspace::UNINITIALIZED)
@@ -96,7 +97,7 @@ Galeri::grid::Loadable::Loadable(const Epetra_Comm& comm,
     TEST_FOR_EXCEPTION(true, std::logic_error,
                        "input elementType not recognized, " << elementType);
 
-  initialize(comm, numGlobalElements, numMyElements, element, 0,
+  initialize(comm, numGlobalElements, numMyElements, element, myGlobalElements,
              numElementData, numVertexData);
 }
 

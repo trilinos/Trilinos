@@ -105,7 +105,8 @@ void Galeri::core::Workspace::solve_LAPACK(Epetra_RowMatrix& matrix,
 }
 
 // ============================================================================ 
-Epetra_MultiVector* createMultiVectorComponent(const Epetra_MultiVector& input)
+Epetra_MultiVector* 
+Galeri::core::Workspace::createMultiVectorComponent(const Epetra_MultiVector& input)
 {
   const Epetra_Comm& comm = input.Comm();
   const Epetra_BlockMap& inputMap = input.Map();
@@ -120,9 +121,10 @@ Epetra_MultiVector* createMultiVectorComponent(const Epetra_MultiVector& input)
 }
 
 // ============================================================================ 
-void extractMultiVectorComponent(const Epetra_MultiVector& input,
-                                 const int equation,
-                                 Epetra_MultiVector& output)
+void 
+Galeri::core::Workspace::extractMultiVectorComponent(const Epetra_MultiVector& input,
+                                                     const int equation,
+                                                     Epetra_MultiVector& output)
 {
   const Epetra_BlockMap& inputMap = input.Map();
   const int numMyElements = inputMap.NumMyElements();

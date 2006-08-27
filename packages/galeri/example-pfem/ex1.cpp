@@ -87,7 +87,7 @@ int main(int argc, char *argv[])
   int numVertexData = 1;
 
   grid::Loadable domain(comm, numGlobalElements, numMyElements, 
-                        "Segment", numElementData, numVertexData);
+                        "Segment", 0, numElementData, numVertexData);
 
   // ===================================================== //
   // Each processor inserts locally owned elements, then   //

@@ -85,14 +85,14 @@ int main(int argc, char *argv[])
 
   Galeri::core::Workspace::setNumDimensions(2);
 
-  // domain1 contains the quads, domain2 the triangles
-  grid::Loadable domain1(comm, -1, 1, "Quad");
-  grid::Loadable domain2(comm, -1, 2, "Triangle");
-
   int vertexOffset = 3 * comm.MyPID();
   int elementOffset = 3 * comm.MyPID();
   double h = 1.0;
   double xOffset = h * comm.MyPID();
+
+  // domain1 contains the quads, domain2 the triangles
+  grid::Loadable domain1(comm, -1, 1, "Quad", &elementOffset);
+  grid::Loadable domain2(comm, -1, 2, "Triangle");
 
   // domain1, start with connectivity.
   domain1.setGlobalConnectivity(elementOffset, 0, vertexOffset + 0);
@@ -113,6 +113,10 @@ int main(int argc, char *argv[])
   domain1.setGlobalCoordinates(vertexOffset + 3, 1, 0.0);
   domain1.setGlobalCoordinates(vertexOffset + 4, 1, h);
   domain1.setGlobalCoordinates(vertexOffset + 1, 1, h);
+
+  domain1.freezeCoordinates();
+
+  cout << domain1;
 
   // now domain2, start with connectivity
   domain2.setGlobalConnectivity(elementOffset, 0, vertexOffset + 1);
@@ -137,10 +141,15 @@ int main(int argc, char *argv[])
   domain2.setGlobalCoordinates(vertexOffset + 5, 1, 2 * h);
   domain2.setGlobalCoordinates(vertexOffset + 2, 1, 2 * h);
 
-  Epetra_Vector vector(domain1.getVertexMap());
-  vector.Random();
+  domain1.freezeCoordinates();
 
-  Galeri::viz::MEDIT::write(domain1, "domain1", vector);
+  // output random values defined on the grid vertices
+  
+  Epetra_Vector x1(domain1.getVertexMap()), x2(domain2.getVertexMap());
+  x1.Random(), x2.Random();
+
+  Galeri::viz::MEDIT::write(domain1, "domain1", x1);
+  Galeri::viz::MEDIT::write(domain2, "domain2", x2);
 
 #ifdef HAVE_MPI
   MPI_Finalize();
