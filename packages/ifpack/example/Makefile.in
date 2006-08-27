@@ -325,8 +325,8 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-EXAMPLE_LIBS = $(IFPACK_EXTRA_LIBS)     $(IFPACK_LIBS)
-EXAMPLE_INCLUDES = $(IFPACK_EXTRA_INCLUDES) $(IFPACK_INCLUDES)
+EXAMPLE_LIBS = $(IFPACK_EXTRA_LIBS)     $(IFPACK_LIBS)      $(GALERI_LIBS)
+EXAMPLE_INCLUDES = $(IFPACK_EXTRA_INCLUDES) $(IFPACK_INCLUDES)  $(GALERI_INCLUDES)
 EXAMPLE_CORE = Ifpack_ex_Reordering           \
 		Ifpack_ex_Filtering           
 
@@ -759,6 +759,7 @@ all-local:
 	@echo ""
 
 include $(top_builddir)/Makefile.export
+include $(top_builddir)/../galeri/Makefile.export.galeri
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
