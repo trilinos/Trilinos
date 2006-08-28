@@ -50,8 +50,8 @@ static HGraph *HG_Ptr;
        to reduce comm; we will only allow matching if cand is free or
        it matches with other's part */
 #define AGG_MATCH_OK(hgp, hg, candf, fv2) \
-    (((candf) < 0) ||  \
-     (((fv2)>=0) && ((((candf) < (hg)->bisec_split) ? 0 : 1) == (((fv2) < (hg)->bisec_split) ? 0 : 1))))
+    (!((hgp)->UseFixedVtx) || (((candf) < 0) ||  \
+     (((fv2)>=0) && ((((candf) < (hg)->bisec_split) ? 0 : 1) == (((fv2) < (hg)->bisec_split) ? 0 : 1)))))
 
 
 /*****************************************************************************/
@@ -489,12 +489,14 @@ static int communication_by_plan (ZZ* zz, int sendcnt, int* dest, int* size,
 
 #define AGG_INNER_PRODUCT1(ARG)\
   for (i = 0; i < count; r++, i++) {\
+   if ((ARG)>0.0) {\
     for (j = hg->hindex[*r]; j < hg->hindex[*r + 1]; j++) {\
       int v=lhead[hg->hvertex[j]]; \
       if (sums[v] == 0.0)\
           aux[m++] = v;\
       sums[v] += (ARG);\
     } \
+   } \
   }
 
 /* Mostly identical inner product calculation to above for c-ipm variant. Here */
@@ -1244,7 +1246,7 @@ static int pmatching_agg_ipm (ZZ *zz,
     *dest = NULL,    nDest,  
     *size = NULL,    nSize,
     *rec = NULL,     nRec,
-    *aux = NULL,   nAux,
+    *aux = NULL,   
     *edgebuf = NULL, nEdgebuf;  /* holds candidates for processing (ipm)   */
   char *visited = NULL;
   int *visit = NULL,       /* candidate visit order (all candidates) */
@@ -1318,9 +1320,7 @@ static int pmatching_agg_ipm (ZZ *zz,
                  
   /* allocate "complicated" fixed sized array storage */
   msgsize = MAX (total_nCandidates, max_nVtx);
-  nAux = 1 + MAX (msgsize, MAX (hgc->nProc_x, hgc->nProc_y));
-  nDest  = nAux;
-  nSize  = nAux;
+  nSize = nDest = 1 + MAX (msgsize, MAX (hgc->nProc_x, hgc->nProc_y));
 
   max_nPins += total_nCandidates * (1+HEADER_SIZE);
 
@@ -1338,7 +1338,7 @@ static int pmatching_agg_ipm (ZZ *zz,
         || !(tw     = (float*) ZOLTAN_MALLOC (VtxDim * sizeof(float)))
         || !(maxw   = (float*) ZOLTAN_MALLOC (VtxDim * sizeof(float)))
         || !(visit  = (int*)   ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))
-        || !(aux    = (int*)   ZOLTAN_MALLOC ((1+hg->nVtx) * sizeof(int)))     
+        || !(aux    = (int*)   ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))     
         || !(sums   = (float*) ZOLTAN_CALLOC (hg->nVtx,  sizeof(float))))
       MEMORY_ERROR;
 
@@ -1526,27 +1526,26 @@ static int pmatching_agg_ipm (ZZ *zz,
         count           = *r++;          /* count of following hyperedges */
         
         /* now compute the row's nVtx inner products for kth candidate */
-        m = 0; 
+        m = 0;
         if (hg->ewgt != NULL) 
           AGG_INNER_PRODUCT1(hg->ewgt[*r])
         else 
           AGG_INNER_PRODUCT1(1.0)
 
-                /* if local vtx, remove self inner product (useless maximum) */
+           /* if local vtx, remove self inner product (useless maximum) */
         if (VTX_TO_PROC_X(hg, candidate_gno) == hgc->myProc_x)
           sums[VTX_GNO_TO_LNO(hg, candidate_gno)] = 0.0;
         
-        /* if we it is fixedvertex partitioning check if matches are OK */
-        if (hgp->UseFixedVtx) {
-            for (count=0; count<m; ) 
-                if (AGG_MATCH_OK(hgp, hg, fixed, lheadfixed[aux[count]]))
-                    ++count;
-                else {
-                    sums[aux[count]] = 0.0;
-                    aux[count] = aux[--m];
-                }
-        } else
-            count = m;
+        /* if we it is fixedvertex partitioning check if matches are OK
+          also eliminate sending value 0.0*/
+        for (count=0; count<m; ) 
+            if (sums[aux[count]]>PSUM_THRESHOLD
+                && AGG_MATCH_OK(hgp, hg, fixed, lheadfixed[aux[count]]))
+                ++count;
+            else {
+                sums[aux[count]] = 0.0;
+                aux[count] = aux[--m];
+            }
         if (count == 0)
           continue;         /* no partial sums to append to message */       
 
@@ -1627,10 +1626,10 @@ static int pmatching_agg_ipm (ZZ *zz,
             candidate_index = rec [rows[i]++];
             count           = rec [rows[i]++];
             for (j = 0; j < count; j++)  {
-              lno = rec [rows[i]++];                    
-              if (sums[lno] == 0.0)       /* is this first time for this lno? */
-                aux[m++] = lno;           /* then save the lno */
+              lno = rec [rows[i]++];
               f = (float *) (rec + rows[i]++);
+              if (sums[lno] == 0.0)   /* is this first time for this lno? */ 
+                  aux[m++] = lno;     /* then save the lno */
               sums[lno] += *f;    /* sum the psums */
             }
           }
