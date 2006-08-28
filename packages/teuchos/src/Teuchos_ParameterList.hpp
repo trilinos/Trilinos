@@ -163,6 +163,11 @@ public:
   /*! \brief Template specialization for the case when a user sets the parameter with a character
     string in parenthesis.
   */
+  void set(const string& name, char value[]);
+
+  /*! \brief Template specialization for the case when a user sets the parameter with a character
+    string in parenthesis.
+  */
   void set(const string& name, const char value[]);
 
   /*! \brief Template specialization for the case when a user sets the parameter with a ParameterList.
@@ -193,6 +198,11 @@ public:
   template<typename T>
   T& get(const string& name, T def_value);
 
+  /*! \brief Template specialization of get, where the nominal value is a character string in parenthesis.
+    Both char* and string are stored as strings and return string values.
+  */
+  std::string& get(const string& name, char def_value[]);
+  
   /*! \brief Template specialization of get, where the nominal value is a character string in parenthesis.
     Both char* and string are stored as strings and return string values.
   */
@@ -431,6 +441,10 @@ void ParameterList::set(const string& name, T value)
 }
 
 inline
+void ParameterList::set(const string& name, char value[]) 
+{ set( name, std::string(value) ); }
+
+inline
 void ParameterList::set(const string& name, const char value[]) 
 { set( name, std::string(value) ); }
 
@@ -461,6 +475,10 @@ T& ParameterList::get(const string& name, T def_value)
   // Return the value of the parameter
   return getValue<T>(entry(i));
 }
+
+inline
+std::string& ParameterList::get(const string& name, char def_value[])
+{ return get(name, std::string(def_value)); }
 
 inline
 std::string& ParameterList::get(const string& name, const char def_value[])
