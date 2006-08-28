@@ -2417,7 +2417,7 @@ float ewgt;
 
   ierr = ZOLTAN_OK;
   parts = (int *) ZOLTAN_CALLOC(max_parts, sizeof(int));
-  if (!parts) MEMORY_ERROR;
+  if (max_parts && !parts) MEMORY_ERROR;
 
   cnt = 0;
   loccuts[0] = loccuts[1] = 0.;
