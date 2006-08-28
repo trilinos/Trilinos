@@ -72,19 +72,26 @@ Zoltan Parameters	= DEBUG_LEVEL=3
 Zoltan Parameters	= RCB_REUSE=0
 
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-# File Type = <file type><,chaco options>
+# File Type = <file type><,chaco or Matrix Market options>
 #
 # This line is OPTIONAL. If it is not included, then it is assumed that
 # the file type is parallel nemesis.
 #
-# This line contains tells which format the file is in. The current
+# This line indicates which format the file is in. The current
 # file types for this line are:
 #	NemesisI	- parallel ExodusII/NemesisI files (1 per processor)
 #	Chaco		- Chaco graph and/or geometry file(s)
+#       hypergraph      - format documented in driver/dr_hg_readfile.c,
+#                         suffix .hg
+#       matrixmarket    - Matrix Market exchange format, suffix .mtx
+#       matrixmarket+   - our enhanced Matrix Market format, documented in
+#                         driver/dr_hg_io.c, includes vertex and edge weights,
+#                         and process ownership of matrix data for 
+#                         a distributed matrix, suffix .mtxp
 #
 # For NemesisI input, the initial distribution of data is given in the 
 # Nemesis files.  For Chaco input, however, an initial decomposition is
-# imposed by the zdrive.  Two initial distribution methods are provided.
+# imposed by the zdrive.  Four initial distribution methods are provided.
 # The method to be used can be specified in the chaco options:
 #       initial distribution = <option>
 # where <option> is
@@ -116,6 +123,35 @@ Zoltan Parameters	= RCB_REUSE=0
 #     File Type = chaco, initial distribution = cyclic, initial procs = 2
 # will give proc 0 objects 1, 3, 5, ... and proc 1 objects 2, 4, 6, ...
 # while procs 2 and higher get no objects.
+#
+# For hypergraph, matrixmarket and matrixmarket+ files, there are three
+# options that determine how zdrive divides the hypergraph or matrix data
+# across the processes initially.  (The Zoltan library will redistribute
+# these elements yet again before the parallel hypergraph methods begins.)
+#
+#  initial_distribution = {val}     initial vertex (object) distribution
+#
+#    linear (default) - First n/p vertices supplied by first process,
+#      next n/p vertices supplied by next process, and so on.
+#    cyclic - Deal out the vertex ownership in round robin fashion.
+#    file - Use process vertex assignment found in the file (.mtxp only)
+#
+#  initial_pins =  {val}       initial pin (matrix non-zero) distribution
+#
+#    row (default) - Each zdrive process supplies entire rows of the matrix,
+#      in compressed row storage format
+#    column - Each zdrive process supplies entire columns of the matrix, in
+#      compressed column storage format
+#    linear - First n/p pins (matrix non-zeroes) supplied by first process,
+#      next n/p pins supplied by next process, and so on.
+#    cyclic - Deal out the pin ownership in round robin fashion.
+#    file - Use process pin assignment found in the file (.mtxp only)
+#    zero - Process zero initially has all pins
+#
+#  initial_procs = {n}
+#     This has the same meaning that it has for Chaco files.  The initial
+#     vertices, pins and weights are all provided by only {n} processes.
+
 # NOTE:  The Fortran90 driver zfdrive does not read NemesisI files.
 # NOTE:  The Fortran90 driver zfdrive does not accept any Chaco options.
 #-----------------------------------------------------------------------------
