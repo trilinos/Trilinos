@@ -72,6 +72,10 @@ static void print_hypergraph(ZZ *zz, ZHG *zhg, int sumWeight);  /* for debugging
 
 static int Zoltan_PHG_Add_Repart_Data(ZZ *, ZHG *, HGraph *, PHGPartParams *,
                                       Partition);
+static int removed_cuts_local(ZZ *zz, ZHG *zhg, 
+                int max_parts, int *pin_parts, double *loccuts);
+static int removed_cuts_global(ZZ *zz, ZHG *zhg, 
+                int max_parts, int *pin_parts, double *loccuts, int tag);
 
 /*****************************************************************************/
 int Zoltan_PHG_Build_Hypergraph(
@@ -2020,7 +2024,7 @@ int Zoltan_PHG_Removed_Cuts(
  */
 static char *yo = "Zoltan_PHG_Removed_Cuts";
 int ierr = ZOLTAN_OK;
-int i, j, k, cnt, ncnt, nparts, max_parts;
+int i, j, k, cnt, ncnt, max_parts;
 struct Hash_Node *hash_nodes = NULL;  /* Hash table variables for mapping   */
 struct Hash_Node **hash_tab = NULL;   /* GIDs to global numbering system.   */
 int npins = 0;                   /* # of pins in removed hyperedges */
@@ -2039,8 +2043,9 @@ int nObj = zhg->nObj;
 ZOLTAN_ID_PTR gids = zhg->GIDs;
 int num_gid_entries = zz->Num_GID;
 int num_lid_entries = zz->Num_LID;
+int myinfo[2], allinfo[2];
+int missingPins;
 int msg_tag = 23132;
-double ewgt;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -2187,21 +2192,230 @@ double ewgt;
 
   Zoltan_Comm_Destroy(&plan);
 
-  /* Compute the cut metrics using received partition info. */
-  /* TODO: If hypergraph queries were used Remove_Esize[i] may
-   *   not be the entire size of the edge, but only the number
-   *   of pins returned by this process in the query function.
-   *   The global number of pins in edge "i" is in Remove_GEsize[i].
-   *   Does the following calculation need to reflect this?
+  /* Compute the cut metrics using received partition info.
+   *
+   * Get maximum possible partition number.  (It's not always the
+   * value found in the ZZ structure.)
+   *
+   * Determine whether edges are split across processes.  If not,
+   * then each process can count the number of cuts for it's edges.
+   *
+   * If edges are split across processes, then hash each edge GID
+   * to a process, send that process the list of partitions the
+   * edge spans, and let that process report the number of cuts.
    */
 
-  max_parts = zz->LB.Num_Global_Parts;
+  myinfo[0] = myinfo[1] = 0;
   for (cnt=0, i = 0; i < zhg->nRemove; i++) {
     for (j = 0; j < zhg->Remove_Esize[i]; j++) {
-      if (pin_parts[cnt] >= max_parts) max_parts = pin_parts[cnt]+1;
+      if (pin_parts[cnt] >= myinfo[0]) myinfo[0] = pin_parts[cnt]+1;
       cnt++;
     }
+    myinfo[1] += (zhg->Remove_GEsize[i] - zhg->Remove_Esize[i]);
   }
+
+  MPI_Allreduce(myinfo, allinfo, 2, MPI_INT, MPI_MAX, zz->Communicator);
+
+  max_parts = allinfo[0];
+  missingPins = allinfo[1];
+
+  if (missingPins > 0){
+    ierr = removed_cuts_global(zz, zhg, max_parts, pin_parts, loccuts, msg_tag);
+    msg_tag -= 10;
+  }
+  else{
+    ierr = removed_cuts_local(zz, zhg, max_parts, pin_parts, loccuts);
+  }
+
+  localcuts[0] = loccuts[0];
+  localcuts[1] = loccuts[1];
+
+End:
+
+  if (!zhg->Remove_Pin_Procs){
+    ZOLTAN_FREE(&pin_procs);
+  }
+  ZOLTAN_FREE(&parts);
+
+  ZOLTAN_TRACE_EXIT(zz, yo);
+
+  return ierr;
+}
+/*****************************************************************************/
+static int removed_cuts_global(ZZ *zz, ZHG *zhg, 
+                int max_parts, int *pin_parts, double *loccuts, int tag)
+{
+char *yo = "removed_cuts_global";
+int ierr = ZOLTAN_OK;
+int *nextpart;
+int i, j, idx, nparts, nedges, numPartitions;
+float ewgt;
+GID_lookup *lookup=NULL;
+ZOLTAN_COMM_OBJ *plan=NULL;
+ZOLTAN_ID_PTR global_ids=NULL, eGID=NULL;
+int *edgeHash = NULL, *eSizes=NULL, *eParts=NULL;
+char **parts=NULL;
+float *eWgts=NULL, *weights=NULL;
+int numUniqueEdges = 0;
+int wdim = zz->Edge_Weight_Dim;
+int lenGID = zz->Num_GID;
+
+
+  /* Assign each edge GID to a process using a hash function */
+
+  ierr = map_GIDs_to_processes(zz, zhg->Remove_EGIDs, zhg->nRemove,
+               lenGID, &edgeHash, zz->Num_Proc);
+
+  if (ierr != ZOLTAN_OK){
+    goto End;
+  }
+
+  /* Send edge GIDs, sizes, and weights to their assigned processes.  */
+  /* Incoming list of edges is not unique.                            */
+
+  tag--;
+  ierr = Zoltan_Comm_Create(&plan, zhg->nRemove, edgeHash,
+               zz->Communicator, tag, &nedges);
+
+  if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+    goto End;
+  }
+
+  if (nedges > 0){
+    eGID = ZOLTAN_MALLOC_GID_ARRAY(zz, nedges);
+    eSizes = (int *)ZOLTAN_MALLOC(sizeof(int) * nedges);
+    eWgts = (float *)ZOLTAN_MALLOC(sizeof(float) * nedges * wdim);
+
+    if (!eGID || !eSizes) MEMORY_ERROR;
+    if (wdim && !eWgts) MEMORY_ERROR;
+  }
+
+  tag--;
+  ierr = Zoltan_Comm_Do(plan, tag, (char *)zhg->Remove_EGIDs,
+           sizeof(ZOLTAN_ID_TYPE) * lenGID, (char *)eGID);
+
+  if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+    goto End;
+  }
+
+  tag--;
+  ierr = Zoltan_Comm_Do(plan, tag, (char *)zhg->Remove_Esize,
+           sizeof(int), (char *)eSizes);
+
+  if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+    goto End;
+  }
+
+  if (wdim > 0){
+    tag--;
+    ierr = Zoltan_Comm_Do(plan, tag, (char *)zhg->Remove_Ewgt,
+             sizeof(float) * wdim, (char *)eWgts);
+  
+    if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+      goto End;
+    }
+  }
+
+  /* Send the pin partitions to their assigned processes. */
+
+  tag--;
+  ierr = Zoltan_Comm_Resize(plan, zhg->Remove_Esize, tag, &numPartitions);
+
+  eParts = (int *)ZOLTAN_MALLOC(sizeof(int) * numPartitions);
+
+  if (numPartitions && !eParts) MEMORY_ERROR;
+
+  tag--;
+  ierr = Zoltan_Comm_Do(plan, tag, (char *)pin_parts, sizeof(int), 
+                        (char *)eParts);
+
+  if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+    goto End;
+  }
+
+  /* Create unique list of edge GIDs and mapping from GID to
+     index in this list.
+   */
+
+  global_ids = ZOLTAN_MALLOC_GID_ARRAY(zz, nedges);
+  if (nedges && !global_ids) MEMORY_ERROR;
+
+  memcpy(global_ids, eGID, nedges * lenGID * sizeof(ZOLTAN_ID_TYPE));
+
+  lookup = create_GID_lookup_table2(global_ids, nedges, lenGID);
+
+  numUniqueEdges = lookup->numGIDs;
+
+  /* Now count up the cuts in each edge */
+
+  parts = (char **) ZOLTAN_MALLOC(sizeof(char *) * numUniqueEdges);
+  if (numUniqueEdges && !parts) MEMORY_ERROR;
+
+  for (i=0; i<numUniqueEdges; i++){
+    parts[i] = (char *)ZOLTAN_CALLOC(sizeof(char), max_parts);
+    if (!parts[i]) MEMORY_ERROR;
+  }
+
+  weights = (float *) ZOLTAN_MALLOC(sizeof(float) * numUniqueEdges * wdim);
+  if (numUniqueEdges && wdim && !weights) MEMORY_ERROR;
+
+  nextpart = eParts;
+
+  for (i = 0; i < nedges; i++) {
+    idx = lookup_GID(lookup, eGID + (i * lenGID));
+
+    for (j=0; j<eSizes[i]; j++){
+      parts[idx][*nextpart++] = 1;
+    }
+
+    for (j=0; j < wdim; j++){
+      weights[idx*wdim + j] = eWgts[i*wdim + j];
+    }
+  }
+
+  loccuts[0] = loccuts[1] = 0.;
+  for (i = 0; i < numUniqueEdges; i++) {
+    nparts = 0;
+    for (j = 0; j < max_parts; j++) {
+      if (parts[i][j]) nparts++;
+    }
+    ewgt = (wdim ? weights[i*wdim] : 1.);
+    if (nparts > 1) {
+      loccuts[0] += (nparts-1) * ewgt;
+      loccuts[1] += ewgt;
+    }
+  }
+
+End:
+  free_GID_lookup_table(&lookup);
+  ZOLTAN_FREE(&edgeHash);
+  ZOLTAN_FREE(&eGID);
+  ZOLTAN_FREE(&eSizes);
+  ZOLTAN_FREE(&eWgts);
+  ZOLTAN_FREE(&eParts);
+  ZOLTAN_FREE(&global_ids);
+  ZOLTAN_FREE(&weights);
+  Zoltan_Comm_Destroy(&plan);
+
+  if (parts){
+    for (i=0; i<numUniqueEdges; i++){
+     ZOLTAN_FREE(&(parts[i]));
+    }
+    ZOLTAN_FREE(&parts);
+  }
+
+  return ierr;
+}
+/*****************************************************************************/
+static int removed_cuts_local(ZZ *zz, ZHG *zhg, 
+                int max_parts, int *pin_parts, double *loccuts)
+{
+char *yo = "removed_cuts_local";
+int i, cnt, j, ierr, nparts;
+int *parts;
+float ewgt;
+
+  ierr = ZOLTAN_OK;
   parts = (int *) ZOLTAN_CALLOC(max_parts, sizeof(int));
   if (!parts) MEMORY_ERROR;
 
@@ -2222,19 +2436,9 @@ double ewgt;
       loccuts[1] += ewgt;
     }
   }
-  
-  localcuts[0] = loccuts[0];
-  localcuts[1] = loccuts[1];
 
 End:
-
-  if (!zhg->Remove_Pin_Procs){
-    ZOLTAN_FREE(&pin_procs);
-  }
   ZOLTAN_FREE(&parts);
-
-  ZOLTAN_TRACE_EXIT(zz, yo);
-
   return ierr;
 }
 /*****************************************************************************/
