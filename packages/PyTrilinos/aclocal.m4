@@ -1,4 +1,4 @@
-# generated automatically by aclocal 1.8.5 -*- Autoconf -*-
+# generated automatically by aclocal 1.8.2 -*- Autoconf -*-
 
 # Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001, 2002, 2003, 2004
 # Free Software Foundation, Inc.
@@ -40,7 +40,7 @@ AC_DEFUN([AM_AUTOMAKE_VERSION], [am__api_version="1.8"])
 # Call AM_AUTOMAKE_VERSION so it can be traced.
 # This function is AC_REQUIREd by AC_INIT_AUTOMAKE.
 AC_DEFUN([AM_SET_CURRENT_AUTOMAKE_VERSION],
-	 [AM_AUTOMAKE_VERSION([1.8.5])])
+	 [AM_AUTOMAKE_VERSION([1.8.2])])
 
 # AM_AUX_DIR_EXPAND
 
@@ -149,7 +149,7 @@ AC_CONFIG_COMMANDS_PRE(
 Usually this means the macro was only invoked conditionally.])
 fi])])
 
-# serial 7						-*- Autoconf -*-
+# serial 6						-*- Autoconf -*-
 
 # Copyright (C) 1999, 2000, 2001, 2002, 2003, 2004
 # Free Software Foundation, Inc.
@@ -236,9 +236,7 @@ AC_CACHE_CHECK([dependency style of $depcc],
     : > sub/conftest.c
     for i in 1 2 3 4 5 6; do
       echo '#include "conftst'$i'.h"' >> sub/conftest.c
-      # Using `: > sub/conftst$i.h' creates only sub/conftst1.h with
-      # Solaris 8's {/usr,}/bin/sh.
-      touch sub/conftst$i.h
+      : > sub/conftst$i.h
     done
     echo "${am__include} ${am__quote}sub/conftest.Po${am__quote}" > confmf
 
@@ -266,14 +264,9 @@ AC_CACHE_CHECK([dependency style of $depcc],
        grep sub/conftest.${OBJEXT-o} sub/conftest.Po > /dev/null 2>&1 &&
        ${MAKE-make} -s -f confmf > /dev/null 2>&1; then
       # icc doesn't choke on unknown options, it will just issue warnings
-      # or remarks (even with -Werror).  So we grep stderr for any message
-      # that says an option was ignored or not supported.
-      # When given -MP, icc 7.0 and 7.1 complain thusly:
-      #   icc: Command line warning: ignoring option '-M'; no argument required
-      # The diagnosis changed in icc 8.0:
-      #   icc: Command line remark: option '-MP' not supported
-      if (grep 'ignoring option' conftest.err ||
-          grep 'not supported' conftest.err) >/dev/null 2>&1; then :; else
+      # (even with -Werror).  So we grep stderr for any message
+      # that says an option was ignored.
+      if grep 'ignoring option' conftest.err >/dev/null 2>&1; then :; else
         am_cv_$1_dependencies_compiler_type=$depmode
         break
       fi
@@ -319,7 +312,7 @@ AC_SUBST([AMDEPBACKSLASH])
 
 # Generate code to set up dependency tracking.   -*- Autoconf -*-
 
-# Copyright (C) 1999, 2000, 2001, 2002, 2003, 2004 Free Software Foundation, Inc.
+# Copyright (C) 1999, 2000, 2001, 2002, 2003 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -358,14 +351,14 @@ AC_DEFUN([_AM_OUTPUT_DEPENDENCY_COMMANDS],
   grep '^DEP_FILES *= *[[^ @%:@]]' < "$mf" > /dev/null || continue
   # Extract the definition of DEP_FILES from the Makefile without
   # running `make'.
-  DEPDIR=`sed -n 's/^DEPDIR = //p' < "$mf"`
+  DEPDIR=`sed -n -e '/^DEPDIR = / s///p' < "$mf"`
   test -z "$DEPDIR" && continue
   # When using ansi2knr, U may be empty or an underscore; expand it
-  U=`sed -n 's/^U = //p' < "$mf"`
+  U=`sed -n -e '/^U = / s///p' < "$mf"`
   test -d "$dirpart/$DEPDIR" || mkdir "$dirpart/$DEPDIR"
   # We invoke sed twice because it is the simplest approach to
   # changing $(DEPDIR) to its actual value in the expansion.
-  for file in `sed -n '
+  for file in `sed -n -e '
     /^DEP_FILES = .*\\\\$/ {
       s/^DEP_FILES = //
       :loop
@@ -788,16 +781,8 @@ fi
 #
 # Do not use -m 0755 and let people choose whatever they expect by
 # setting umask.
-#
-# We cannot accept any implementation of `mkdir' that recognizes `-p'.
-# Some implementations (such as Solaris 8's) are not thread-safe: if a
-# parallel make tries to run `mkdir -p a/b' and `mkdir -p a/c'
-# concurrently, both version can detect that a/ is missing, but only
-# one can create it and the other will error out.  Consequently we
-# restrict ourselves to GNU make (using the --version option ensures
-# this.)
 AC_DEFUN([AM_PROG_MKDIR_P],
-[if mkdir -p --version . >/dev/null 2>&1 && test ! -d ./--version; then
+[if mkdir -p -- . 2>/dev/null; then
   # Keeping the `.' argument allows $(mkdir_p) to be used without
   # argument.  Indeed, we sometimes output rules like
   #   $(mkdir_p) $(somedir)
@@ -810,7 +795,7 @@ else
   # recognize any option.  It will interpret all options as
   # directories to create, and then abort because `.' already
   # exists.
-  for d in ./-p ./--version;
+  for d in ./-p ./--;
   do
     test -d $d && rmdir $d
   done
@@ -970,25 +955,8 @@ fi
 INSTALL_STRIP_PROGRAM="\${SHELL} \$(install_sh) -c -s"
 AC_SUBST([INSTALL_STRIP_PROGRAM])])
 
-m4_include([config/ac_cxx_bool.m4])
-m4_include([config/ac_cxx_have_stl.m4])
-m4_include([config/ac_cxx_mutable.m4])
-m4_include([config/ac_cxx_namespaces.m4])
-m4_include([config/ac_cxx_new_for_scoping.m4])
-m4_include([config/ac_cxx_std_sprintf.m4])
-m4_include([config/ac_pkg_swig.m4])
 m4_include([config/ac_python_module.m4])
-m4_include([config/acx_blas.m4])
-m4_include([config/acx_lapack.m4])
 m4_include([config/az_python.m4])
 m4_include([config/tac_arg_check_mpi.m4])
 m4_include([config/tac_arg_config_mpi.m4])
-m4_include([config/tac_arg_enable_export-makefiles.m4])
 m4_include([config/tac_arg_enable_feature.m4])
-m4_include([config/tac_arg_with_ar.m4])
-m4_include([config/tac_arg_with_blaslib.m4])
-m4_include([config/tac_arg_with_flags.m4])
-m4_include([config/tac_arg_with_incdirs.m4])
-m4_include([config/tac_arg_with_libdirs.m4])
-m4_include([config/tac_arg_with_libs.m4])
-m4_include([config/tac_arg_with_perl.m4])

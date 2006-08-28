@@ -34,18 +34,18 @@
 # Initialization 
 # ------------------------------------------------------------------------
 
-AC_INIT(pytrilinos, 1.0, wfspotz@sandia.gov)
+AC_INIT(PyTrilinos, 2.0, wfspotz@sandia.gov)
 
 # Hello World!
-echo "----------------------------------------"
+echo "-----------------------------------"
 echo "Running PyTrilinos Configure Script"
-echo "----------------------------------------"
+echo "-----------------------------------"
 
 # This is to protect against accidentally specifying the wrong
 # directory with --srcdir.  Any file in that directory will do,
 # preferably one that is unlikely to be removed or renamed.
 
-AC_CONFIG_SRCDIR(/src/NumPyWrapper.h)
+AC_CONFIG_SRCDIR(/src/setup.py)
 
 # Specify directory for auxillary build tools (e.g., install-sh,
 # config.sub, config.guess) and M4 files.
@@ -59,16 +59,16 @@ AM_CONFIG_HEADER(src/PyTrilinos_config.h:src/PyTrilinos_config.h.in)
 # Allow users to specify their own "install" command.  If none is specified,
 # the default is install-sh found in the config subdirectory.
                                                                                 
-AC_ARG_WITH(install,
- [AC_HELP_STRING([--with-install=INSTALL_PROGRAM],
- [Use the installation program INSTALL_PROGRAM rather the default that is provided.  For example --with-install="/path/install -p"])],
- [
-   INSTALL=$withval
-   INSTALL_PROGRAM=$withval
-   INSTALL_SCRIPT=$withval
-   INSTALL_DATA="$withval -m 644"
- ],)
-                                                                                
+#AC_ARG_WITH(install,
+# [AC_HELP_STRING([--with-install=INSTALL_PROGRAM],
+# [Use the installation program INSTALL_PROGRAM rather the default that is provided.  For example --with-install="/path/install -p"])],
+# [
+#   INSTALL=$withval
+#   INSTALL_PROGRAM=$withval
+#   INSTALL_SCRIPT=$withval
+#   INSTALL_DATA="$withval -m 644"
+# ],)
+
 # AM_MAINTAINER_MODE turns off maintainer-only makefile targets by
 # default, and changes configure to understand a
 # --enable-maintainer-mode option. --enable-maintainer-mode turns the
@@ -108,10 +108,10 @@ TAC_ARG_CONFIG_MPI
 # Checks for programs
 # ------------------------------------------------------------------------
 
-AC_PROG_CC(cc gcc)
-AC_PROG_CXX(CC g++ c++ cxx)
+#AC_PROG_CC(cc gcc)
+#AC_PROG_CXX(CC g++ c++ cxx)
 #AC_PROG_F77(f77 g77 gfortran f90 xlf90 f95)
-AC_PROG_RANLIB
+#AC_PROG_RANLIB
 
 # ------------------------------------------------------------------------
 # Checks for extra flags
@@ -123,18 +123,18 @@ AC_PROG_RANLIB
 # ------------------------------------------------------------------------
 # Check if --with-flags present, prepend any specs to FLAGS
 
-TAC_ARG_WITH_FLAGS(ccflags, CCFLAGS)
-TAC_ARG_WITH_FLAGS(cxxflags, CXXFLAGS)
-TAC_ARG_WITH_FLAGS(cflags, CFLAGS)
-TAC_ARG_WITH_FLAGS(fflags, FFLAGS)
-TAC_ARG_WITH_LIBS
-TAC_ARG_WITH_FLAGS(ldflags, LDFLAGS)
+#TAC_ARG_WITH_FLAGS(ccflags, CCFLAGS)
+#TAC_ARG_WITH_FLAGS(cxxflags, CXXFLAGS)
+#TAC_ARG_WITH_FLAGS(cflags, CFLAGS)
+#TAC_ARG_WITH_FLAGS(fflags, FFLAGS)
+#TAC_ARG_WITH_LIBS
+#TAC_ARG_WITH_FLAGS(ldflags, LDFLAGS)
 
 # ------------------------------------------------------------------------
 # Alternate archiver
 # ------------------------------------------------------------------------
 
-TAC_ARG_WITH_AR
+#TAC_ARG_WITH_AR
 
 # ------------------------------------------------------------------------
 # MPI link check
@@ -148,64 +148,64 @@ TAC_ARG_CHECK_MPI
 # Checks for header files - used in Epetra_ConfigDefs.h 
 # ------------------------------------------------------------------------
 
-AC_CHECK_HEADERS([cstdlib stdlib.h cstdio stdio.h cassert assert.h],,,)
-AC_CHECK_HEADERS([cmath math.h iomanip iomanip.h iostream iostream.h],,,)
-AC_CHECK_HEADERS([string string.h],,,)
+#AC_CHECK_HEADERS([cstdlib stdlib.h cstdio stdio.h cassert assert.h],,,)
+#AC_CHECK_HEADERS([cmath math.h iomanip iomanip.h iostream iostream.h],,,)
+#AC_CHECK_HEADERS([string string.h],,,)
 
-if test "X$ac_cv_header_cstdlib" != "Xyes" && test "X$ac_cv_header_stdlib_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find cstdlib or stdlib.h.  PyTrilinos requires at least one or the other.]])
-fi
+#if test "X$ac_cv_header_cstdlib" != "Xyes" && test "X$ac_cv_header_stdlib_h" != "Xyes"; then
+#  AC_MSG_ERROR([[Cannot find cstdlib or stdlib.h.  PyTrilinos requires at least one or the other.]])
+#fi
 
-if test "X$ac_cv_header_cstdio" != "Xyes" && test "X$ac_cv_header_stdio_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find cstdio or stdio.h.  PyTrilinos requires at least one or the other.]])
-fi
+#if test "X$ac_cv_header_cstdio" != "Xyes" && test "X$ac_cv_header_stdio_h" != "Xyes"; then
+#  AC_MSG_ERROR([[Cannot find cstdio or stdio.h.  PyTrilinos requires at least one or the other.]])
+#fi
 
-if test "X$ac_cv_header_cassert" != "Xyes" && test "X$ac_cv_header_assert_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find cassert or assert.h.  PyTrilinos requires at least one or the other.]])
-fi
+#if test "X$ac_cv_header_cassert" != "Xyes" && test "X$ac_cv_header_assert_h" != "Xyes"; then
+#  AC_MSG_ERROR([[Cannot find cassert or assert.h.  PyTrilinos requires at least one or the other.]])
+#fi
 
-if test "X$ac_cv_header_string" != "Xyes" && test "X$ac_cv_header_string_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find string or string.h.  PyTrilinos requires at least one or the other.]])
-fi
+#if test "X$ac_cv_header_string" != "Xyes" && test "X$ac_cv_header_string_h" != "Xyes"; then
+#  AC_MSG_ERROR([[Cannot find string or string.h.  PyTrilinos requires at least one or the other.]])
+#fi
 
-if test "X$ac_cv_header_iostream" != "Xyes" && test "X$ac_cv_header_iostream_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find iostream or iostream.h.  PyTrilinos requires at least one or the other.]])
-fi
+#if test "X$ac_cv_header_iostream" != "Xyes" && test "X$ac_cv_header_iostream_h" != "Xyes"; then
+#  AC_MSG_ERROR([[Cannot find iostream or iostream.h.  PyTrilinos requires at least one or the other.]])
+#fi
 
-if test "X${host}" != "Xtflop"; then
-  if test "X$ac_cv_header_cmath" != "Xyes" && test "X$ac_cv_header_math_h" != "Xyes"; then
-    AC_MSG_ERROR([[Cannot find cmath or math.h.  PyTrilinos requires at least one or the other.]])
-  fi
-else
+#if test "X${host}" != "Xtflop"; then
+#  if test "X$ac_cv_header_cmath" != "Xyes" && test "X$ac_cv_header_math_h" != "Xyes"; then
+#    AC_MSG_ERROR([[Cannot find cmath or math.h.  PyTrilinos requires at least one or the other.]])
+#  fi
+#else
   # TFLOP
-  if test "X$ac_cv_header_iomanip" != "Xyes" && test "X$ac_cv_header_iomanip_h" != "Xyes"; then
-    AC_MSG_ERROR([[Cannot find iomanip or iomanip.h.  PyTrilinos requires at least one or the other.]])
-  fi
-fi  
+#  if test "X$ac_cv_header_iomanip" != "Xyes" && test "X$ac_cv_header_iomanip_h" != "Xyes"; then
+#    AC_MSG_ERROR([[Cannot find iomanip or iomanip.h.  PyTrilinos requires at least one or the other.]])
+#  fi
+#fi  
 
 # Checks for typedefs, structures, and compiler characteristics.
-AC_C_CONST
-AC_C_INLINE
+#AC_C_CONST
+#AC_C_INLINE
 
 # ------------------------------------------------------------------------
 # Checks for compiler characteristics - Epetra_ConfigDefs.h uses these, 
 # so it makes sense to leave them in - see PORTABILITY in this directory
 # ------------------------------------------------------------------------
-AC_CXX_NAMESPACES
-AC_CXX_HAVE_STL
-AC_CXX_BOOL
-AC_CXX_MUTABLE
+#AC_CXX_NAMESPACES
+#AC_CXX_HAVE_STL
+#AC_CXX_BOOL
+#AC_CXX_MUTABLE
 # ---------------------------------------------------------------------
 # These are pretty obscure
 # ---------------------------------------------------------------------
-AC_CXX_NEW_FOR_SCOPING
+#AC_CXX_NEW_FOR_SCOPING
 #AC_CXX_STD_IOS_BASE_FMTFLAGS
-AC_CXX_STD_SPRINTF
+#AC_CXX_STD_SPRINTF
 
 # ------------------------------------------------------------------------
 # Checks for Makefile.export related systems
 # ------------------------------------------------------------------------
-TAC_ARG_ENABLE_EXPORT_MAKEFILES(yes)
+#TAC_ARG_ENABLE_EXPORT_MAKEFILES(yes)
 
 # ------------------------------------------------------------------------
 # Checks for special package flags
@@ -215,13 +215,13 @@ TAC_ARG_ENABLE_EXPORT_MAKEFILES(yes)
 # Checks if tests and examples should be built
 # ------------------------------------------------------------------------
 
-#TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages (not all packages are sensitive to this option)], TESTS, yes)
+TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages (not all packages are sensitive to this option)], TESTS, yes)
 AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_tests" != "Xno")
 
 TAC_ARG_ENABLE_FEATURE(examples, [Build examples for all Trilinos packages (not all packages are sensitive to this option)], EXAMPLES, yes)
 AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_examples" != "Xno")
 
-TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
+#TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
 
 # ------------------------------------------------------------------------
 # Configure python
@@ -237,8 +237,8 @@ if test -z "$PYTHON"; then
 fi
 AZ_PYTHON_PREFIX( )
 
-# Ensure that we have python version 2.2 or greater (for distutils)
-AZ_PYTHON_VERSION_ENSURE( [2.2] )
+# Ensure that we have python version 2.3 or greater (for bool type)
+AZ_PYTHON_VERSION_ENSURE( [2.3] )
 
 # Python compiler and linker flags
 AZ_PYTHON_CSPEC
@@ -281,47 +281,47 @@ fi
 # ------------------------------------------------------------------------
 
 # Check for --with-swig[=path]
-AC_MSG_CHECKING(for --with-swig)
-AC_ARG_WITH(swig,
-            [AC_HELP_STRING([--with-swig@<:@=SWIG@:>@],
-                            [enable swig and set swig binary])],
-            [AC_MSG_RESULT(yes)
-             WITH_SWIG=yes
-             if test X${withval} != Xyes ; then
-               SWIG=$withval
-             fi],
-            [AC_MSG_RESULT(no)
-             AC_CHECK_PROG(WITH_SWIG,swig,yes,no)])
+#AC_MSG_CHECKING(for --with-swig)
+#AC_ARG_WITH(swig,
+#            [AC_HELP_STRING([--with-swig@<:@=SWIG@:>@],
+#                            [enable swig and set swig binary])],
+#            [AC_MSG_RESULT(yes)
+#             WITH_SWIG=yes
+#             if test X${withval} != Xyes ; then
+#               SWIG=$withval
+#             fi],
+#            [AC_MSG_RESULT(no)
+#             AC_CHECK_PROG(WITH_SWIG,swig,yes,no)])
 
 # Report error if no swig found
-if test ${WITH_SWIG} = no; then
-   AC_MSG_ERROR(
-   [Python wrappers require swig (Simple Wrapper Interface Generator).
-    See http://www.swig.org])
-fi
+#if test ${WITH_SWIG} = no; then
+#   AC_MSG_ERROR(
+#   [Python wrappers require swig (Simple Wrapper Interface Generator).
+#    See http://www.swig.org])
+#fi
 
 # SWIG configuration
-AC_PROG_SWIG(1.3.23)
-SWIG_ENABLE_CXX
-SWIG_MULTI_MODULE_SUPPORT
-SWIG_PYTHON
+#AC_PROG_SWIG(1.3.23)
+#SWIG_ENABLE_CXX
+#SWIG_MULTI_MODULE_SUPPORT
+#SWIG_PYTHON
 
-AM_CONDITIONAL(HAVE_SWIG,test X${WITH_SWIG} = Xyes)
-AC_SUBST(GNU_HAVE_SWIG, ${WITH_SWIG})
+#AM_CONDITIONAL(HAVE_SWIG,test X${WITH_SWIG} = Xyes)
+#AC_SUBST(GNU_HAVE_SWIG, ${WITH_SWIG})
 
 # ------------------------------------------------------------------------
 # Specify other directories 
 # ------------------------------------------------------------------------
 
 # enable use of --with-libdirs="-Llibdir1 -Llibdir2 ..." to prepend to LDFLAGS
-TAC_ARG_WITH_LIBDIRS
+#TAC_ARG_WITH_LIBDIRS
 # enable use of --with-incdirs="-Lincdir1 -Lincdir2 ..." to prepend to CPPFLAGS
-TAC_ARG_WITH_INCDIRS
+#TAC_ARG_WITH_INCDIRS
 
 # #np# - Yet another opportunity to remove code if you aren't
 # using Fortran
 # Define F77_FUNC that will be used to link with Fortran subroutines, e.g., BLAS/LAPACK - trash WORKGXX 
-AC_F77_WRAPPERS
+#AC_F77_WRAPPERS
 
 # ------------------------------------------------------------------------
 # Checks for libraries
@@ -334,7 +334,7 @@ AC_F77_WRAPPERS
 # If a package does not have tests or examples, the corresponding check(s)
 # should be pulled out of the "if" statement below.
 #if test "X$ac_cv_use_tests" != "Xno" || test "X$ac_cv_use_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
-if test "X$ac_cv_use_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
+#if test "X$ac_cv_use_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
 
 # #np# - 
 # To add any libraries that you want to check for, replace pow below 
@@ -342,20 +342,20 @@ if test "X$ac_cv_use_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno";
 # checks for libraries now
 dnl Replace `main' with a function in -lm:
 #  #np# These lines can be removed if the math lib is not needed.
-AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
-AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
+#AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
+#AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
 
 # #np# If Lapack is also needed, see the  
 # configure.ac file for epetra (Trilinos/packages/epetra)
 
 dnl Check for user-specified names for BLAS lib
-TAC_ARG_WITH_BLASLIB
+#TAC_ARG_WITH_BLASLIB
 
-  ACX_BLAS([LIBS="${BLAS_LIBS} ${LIBS}"], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)]])])
+#  ACX_BLAS([LIBS="${BLAS_LIBS} ${LIBS}"], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)]])])
 
-  ACX_LAPACK([LIBS=" ${LAPACK_LIBS} ${LIBS}"], [AC_MSG_ERROR([[Cannot find lapack library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-lapack=DIR/LIB (for example --with-lapack=/usr/path/lib/libcxml.a)]])])
+#  ACX_LAPACK([LIBS=" ${LAPACK_LIBS} ${LIBS}"], [AC_MSG_ERROR([[Cannot find lapack library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-lapack=DIR/LIB (for example --with-lapack=/usr/path/lib/libcxml.a)]])])
 
-fi
+#fi
 # end of the list of libraries that don't need to be checked for if
 # tests and examples are disabled.
 
@@ -368,13 +368,13 @@ fi
 # ------------------------------------------------------------------------
 
 # Determine libraries needed for linking with Fortran
-AC_F77_LIBRARY_LDFLAGS
+#AC_F77_LIBRARY_LDFLAGS
 
 # ------------------------------------------------------------------------
 # Perform substitutions in output files
 # ------------------------------------------------------------------------
 
-AC_SUBST(ac_aux_dir)
+#AC_SUBST(ac_aux_dir)
 
 # ------------------------------------------------------------------------
 # Output files
@@ -382,9 +382,9 @@ AC_SUBST(ac_aux_dir)
 
 AC_CONFIG_FILES([
 		Makefile 
-		Makefile.export.pytrilinos
 		example/Makefile
 		src/Makefile
+		src/TRILINOS_HOME_DIR
 		test/Makefile
 		])
 

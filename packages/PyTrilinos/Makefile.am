@@ -91,7 +91,9 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 #The following line helps the test harness recover from build errors.
 
 all-local:
+	@echo ""
 	@echo "Trilinos package PyTrilinos built successfully"
+	@echo ""
 
 ## #######################################################################
 ## Target for circular dependencies
@@ -101,32 +103,6 @@ all-libs:
 
 libs:
 	cd src ; $(MAKE)
-
-## #######################################################################
-## Export Makefile Installation
-## #######################################################################
-if USING_EXPORT_MAKEFILES
-
-install-exec-hook:
-	cp $(top_builddir)/Makefile.export.pytrilinos $(exec_prefix)/include/.
-	$(PERL_EXE) $(top_srcdir)/config/replace-install-prefix.pl \
-	       --exec-prefix=$(exec_prefix) \
-	       --my-export-makefile=Makefile.export.pytrilinos \
-	       --my-abs-top-srcdir=@abs_top_srcdir@ \
-	       --my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src \
-	       --my-abs-lib-dirs=@abs_top_builddir@/src \
-	       --dep-package-abs-builddirs=
-
-uninstall-hook:
-	rm -f $(exec_prefix)/include/Makefile.export.pytrilinos
-
-else
-
-install-exec-hook:
-
-uninstall-hook:
-
-endif
 
 ## #######################################################################
 ## Subdirectories to be make'd recursively
