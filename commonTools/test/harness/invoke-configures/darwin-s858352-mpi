@@ -5,7 +5,7 @@ RANLIB="ranlib -s" \
 CPPFLAGS=-Wno-long-double \
 --with-incdirs="-I/sw/include" \
 --with-ldflags="-framework veclib -L/sw/lib/ -L/usr/local/lib -bind_at_load" \
---with-libs="-lsuperlu -lsuperludist -lumfpack -lamd -lg2c -lexpat" \
+--with-libs="-lsuperlu -lsuperludist -lumfpack -lamd -lg2c -lexpat -lSystemStubs" \
 --enable-mpi \
 --with-mpi-compilers \
 --cache-file=config.cache \
