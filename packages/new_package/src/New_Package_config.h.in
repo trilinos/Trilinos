@@ -20,9 +20,6 @@
 /* Define if you have a BLAS library. */
 #undef HAVE_BLAS
 
-/* define if bool is a built-in type */
-#undef HAVE_BOOL
-
 /* Define to 1 if you have the <cassert> header file. */
 #undef HAVE_CASSERT
 
@@ -47,12 +44,6 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
-/* Define to 1 if you have the <iomanip> header file. */
-#undef HAVE_IOMANIP
-
-/* Define to 1 if you have the <iomanip.h> header file. */
-#undef HAVE_IOMANIP_H
-
 /* Define to 1 if you have the <iostream> header file. */
 #undef HAVE_IOSTREAM
 
@@ -71,17 +62,8 @@
 /* define if we want to use MPI */
 #undef HAVE_MPI
 
-/* define if the compiler supports the mutable keyword */
-#undef HAVE_MUTABLE
-
-/* define if the compiler implements namespaces */
-#undef HAVE_NAMESPACES
-
 /* Define if want to build with newp_swahili enabled */
 #undef HAVE_NEWP_SWAHILI
-
-/* define if the compiler accepts the new for scoping rules */
-#undef HAVE_NEW_FOR_SCOPING
 
 /* Define if want to build new_package-examples */
 #undef HAVE_NEW_PACKAGE_EXAMPLES
@@ -100,12 +82,6 @@
 
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
-
-/* define if std::sprintf is supported */
-#undef HAVE_STD_SPRINTF
-
-/* define if the compiler supports Standard Template Library */
-#undef HAVE_STL
 
 /* Define to 1 if you have the <string> header file. */
 #undef HAVE_STRING
@@ -151,12 +127,3 @@
 
 /* Version number of package */
 #undef VERSION
-
-/* Define to empty if `const' does not conform to ANSI C. */
-#undef const
-
-/* Define to `__inline__' or `__inline' if that's what the C compiler
-   calls it, or to nothing if 'inline' is not supported under any name.  */
-#ifndef __cplusplus
-#undef inline
-#endif

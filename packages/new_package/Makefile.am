@@ -53,17 +53,14 @@ ACLOCAL	= aclocal -I config
 #np# new package so that the files can be used in creating the 
 #np# configure script for other packages. 
 EXTRA_DIST = \
-config/ac_cxx_bool.m4                     config/depcomp \
+config/depcomp \
 config/ac_cxx_have_std.m4                 config/install-sh \
-config/ac_cxx_have_stl.m4                 config/missing \
-config/ac_cxx_mutable.m4                  config/mkinstalldirs \
-config/ac_cxx_namespaces.m4               config/tac_arg_check_mpi.m4 \
-config/ac_cxx_new_for_scoping.m4          config/tac_arg_config_mpi.m4 \
+config/missing 				  config/mkinstalldirs \
+config/tac_arg_check_mpi.m4 		  config/tac_arg_config_mpi.m4 \
 config/ac_cxx_reinterpret_cast.m4         config/generate-makeoptions.pl \
 config/replace-install-prefix.pl          config/tac_arg_enable_can_use_package.m4 \
 config/tac_arg_enable_compiler_options.m4 config/tac_arg_enable_export-makefiles.m4 \
-config/ac_cxx_std_ios_base_fmtflags.m4    config/tac_arg_enable_feature.m4 \
-config/ac_cxx_std_sprintf.m4              config/tac_arg_enable_option.m4 \
+config/tac_arg_enable_feature.m4  	  config/tac_arg_enable_option.m4 \
 config/ac_prompt_user.m4                  config/tac_arg_with_ar.m4 \
 config/ac_prompt_user_no_define.m4        config/tac_arg_with_blaslib.m4 \
 config/acx_blas.m4                        config/tac_arg_with_compiler.m4 \

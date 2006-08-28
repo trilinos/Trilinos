@@ -167,7 +167,6 @@ AC_CHECK_HEADERS([cstdlib stdlib.h], [break],)
 AC_CHECK_HEADERS([cstdio stdio.h], [break],)
 AC_CHECK_HEADERS([cassert assert.h], [break],)
 AC_CHECK_HEADERS([cmath math.h], [break],)
-AC_CHECK_HEADERS([iomanip iomanip.h], [break],)
 AC_CHECK_HEADERS([iostream iostream.h], [break],)
 AC_CHECK_HEADERS([string string.h], [break],)
 
@@ -191,35 +190,9 @@ if test "X$ac_cv_header_iostream" != "Xyes" && test "X$ac_cv_header_iostream_h" 
   AC_MSG_ERROR([[Cannot find iostream or iostream.h.  New_Package requires at least one or the other.]])
 fi
 
-if test "X${host}" != "Xtflop"; then
-  if test "X$ac_cv_header_cmath" != "Xyes" && test "X$ac_cv_header_math_h" != "Xyes"; then
-    AC_MSG_ERROR([[Cannot find cmath or math.h.  New_Package requires at least one or the other.]])
-  fi
-else
-  # TFLOP
-  if test "X$ac_cv_header_iomanip" != "Xyes" && test "X$ac_cv_header_iomanip_h" != "Xyes"; then
-    AC_MSG_ERROR([[Cannot find iomanip or iomanip.h.  New_Package requires at least one or the other.]])
-  fi
-fi  
-
-# Checks for typedefs, structures, and compiler characteristics.
-AC_C_CONST
-AC_C_INLINE
-
-# ------------------------------------------------------------------------
-# Checks for compiler characteristics - Epetra_ConfigDefs.h uses these, 
-# so it makes sense to leave them in - see PORTABILITY in this directory
-# ------------------------------------------------------------------------
-AC_CXX_NAMESPACES
-AC_CXX_HAVE_STL
-AC_CXX_BOOL
-AC_CXX_MUTABLE
-# ---------------------------------------------------------------------
-# These are pretty obscure
-# ---------------------------------------------------------------------
-AC_CXX_NEW_FOR_SCOPING
-#AC_CXX_STD_IOS_BASE_FMTFLAGS
-AC_CXX_STD_SPRINTF
+if test "X$ac_cv_header_cmath" != "Xyes" && test "X$ac_cv_header_math_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find cmath or math.h.  New_Package requires at least one or the other.]])
+fi
 
 # ------------------------------------------------------------------------
 # Checks for Makefile.export related systems
@@ -341,18 +314,11 @@ AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
 # #np# If Lapack is also needed, see the  
 # configure.ac file for epetra (Trilinos/packages/epetra)
 
-dnl Check for user-specified names for BLAS lib
-TAC_ARG_WITH_BLASLIB
-
   ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)]])])
 
 fi
 # end of the list of libraries that don't need to be checked for if
 # tests and examples are disabled.
-
-# ------------------------------------------------------------------------
-# Checks for compiler characteristics
-# ------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------
 # Checks for linker characteristics
@@ -388,15 +354,6 @@ AC_F77_LIBRARY_LDFLAGS
 #fi
                                                                   
 #AC_SUBST(TRILINOS_TEMPLATE_OBJS)
-
-# ------------------------------------------------------------------------
-# Checks for library functions
-# ------------------------------------------------------------------------
-
-# ------------------------------------------------------------------------
-# Checks for system services
-# ------------------------------------------------------------------------
-
 
 # ------------------------------------------------------------------------
 # Perform substitutions in output files
