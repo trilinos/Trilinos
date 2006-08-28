@@ -1,8 +1,0 @@
-_PYTRILINOS_INCLUDES = -I@abs_top_srcdir@/src -I@abs_top_builddir@/src
-_PYTRILINOS_LIBS     = @LDFLAGS@ -L@abs_top_builddir@/src -lpytrilinos
-
-@USING_GNUMAKE_TRUE@PYTRILINOS_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_PYTRILINOS_INCLUDES))
-@USING_GNUMAKE_TRUE@PYTRILINOS_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_PYTRILINOS_LIBS))
-
-@USING_GNUMAKE_FALSE@PYTRILINOS_INCLUDES = $(_PYTRILINOS_INCLUDES)
-@USING_GNUMAKE_FALSE@PYTRILINOS_LIBS     = $(_PYTRILINOS_LIBS)
