@@ -116,9 +116,12 @@ namespace LOCA {
 	  decomposed problem. The MultiMpiCOmm communicator gives this
 	  class the information needed to construct the space-time system. 
 	*/
-	xyzt(const Teuchos::RefCountPtr<LOCA::Epetra::Interface::Required> &iReq,
-	     const Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> &iJac,
-	     const Teuchos::RefCountPtr<LOCA::Epetra::Interface::MassMatrix> &iMass,
+	xyzt(const Teuchos::RefCountPtr<LOCA::Epetra::Interface::Required> 
+	     &iReq,
+	     const Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> 
+	     &iJac,
+	     const Teuchos::RefCountPtr<LOCA::Epetra::Interface::MassMatrix> 
+	     &iMass,
 	     const Epetra_MultiVector &splitMultiVec,
 	     const Teuchos::RefCountPtr<Epetra_RowMatrix> &splitJac,
 	     const Teuchos::RefCountPtr<Epetra_RowMatrix> &splitMass,
@@ -199,16 +202,16 @@ namespace LOCA {
 	//! Split (spatial) input vector from previous step.
 	Epetra_Vector splitVecOld; //tmp space
 	
-	// Pointer to global XYZT Jacobian matrix
+	//! Pointer to global XYZT Jacobian matrix
 	EpetraExt::BlockCrsMatrix* jacobian;
 	
-	// Pointer to global XYZT solution vector.
+	//! Pointer to global XYZT solution vector.
 	EpetraExt::BlockVector* solution;
 	
-	// Pointer to global XYZT solution overlap vector.
+	//! Pointer to global XYZT solution overlap vector.
 	EpetraExt::BlockVector* solutionOverlap;
 		
-	// Pointer to global XYZT solution overlap vector importer.
+	//! Pointer to global XYZT solution overlap vector importer.
 	Epetra_Import* overlapImporter;
 	
 	//! Number of time steps computed on each time domain.
@@ -220,7 +223,7 @@ namespace LOCA {
 	//! Time domain on current processor.
 	int timeDomain;
 	
-	//!
+	//! Continuation step number (used in printing)
 	int conStep;
 	
 	/*! 

@@ -1,6 +1,3 @@
-// $Id$ 
-// $Source$ 
-
 //@HEADER
 // ************************************************************************
 // 
@@ -62,10 +59,9 @@ namespace LOCA {
       
       Contains interfaces for the user to supply 
       (1) the evaluation of the nonlinear equations, 
-      (2) the Jacobian, 
-      (3) any preconditioning if required,
-      (4) space-time operators, and
-      (5) shifted operators.
+      (2) any preconditioning if required,
+      (3) space-time operators, and
+      (4) shifted operators.
     */
     namespace Interface {
 

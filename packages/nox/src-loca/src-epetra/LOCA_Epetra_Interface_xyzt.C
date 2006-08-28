@@ -94,17 +94,23 @@ xyzt(
    rowStencil = new std::vector< std::vector<int> >(timeStepsOnTimeDomain);
    rowIndex = new std::vector<int>;
    for (int i=0; i < timeStepsOnTimeDomain; i++) {
-     if (timeDomain!=0 || i!=0)  (*rowStencil)[i].push_back(-1);
-     else if (isPeriodic)   (*rowStencil)[i].push_back(globalComm->NumTimeSteps()-1);
+     if (timeDomain!=0 || i!=0)  
+       (*rowStencil)[i].push_back(-1);
+     else if (isPeriodic)   
+       (*rowStencil)[i].push_back(globalComm->NumTimeSteps()-1);
      (*rowStencil)[i].push_back(0);
      (*rowIndex).push_back(i + globalComm->FirstTimeStepOnDomain());
    }
 
-   jacobian = new EpetraExt::BlockCrsMatrix(*splitJac, *rowStencil, *rowIndex, *globalComm);
+   jacobian = new EpetraExt::BlockCrsMatrix(*splitJac, *rowStencil, 
+					    *rowIndex, *globalComm);
 
-   // Construct global solution vector, the overlap vector, and importer between them
-   solution = new EpetraExt::BlockVector(splitJac->RowMatrixRowMap(), jacobian->RowMap());
-   solutionOverlap = new EpetraExt::BlockVector(splitJac->RowMatrixRowMap(), jacobian->ColMap());
+   // Construct global solution vector, the overlap vector, 
+   //and importer between them
+   solution = new EpetraExt::BlockVector(splitJac->RowMatrixRowMap(), 
+					 jacobian->RowMap());
+   solutionOverlap = new EpetraExt::BlockVector(splitJac->RowMatrixRowMap(), 
+						jacobian->ColMap());
   
    overlapImporter = new Epetra_Import(solutionOverlap->Map(), solution->Map());
 
@@ -124,17 +130,21 @@ xyzt(
         std::vector< std::vector<int> > row(1); row[0].push_back(0);
 	std::vector<int> col; col.push_back(0);
         splitJacCrs = (Epetra_CrsMatrix *)
-	   new EpetraExt::BlockCrsMatrix(*splitJac, row, col, splitJac->Comm());
+	   new EpetraExt::BlockCrsMatrix(*splitJac, row, col, 
+					 splitJac->Comm());
         splitMassCrs = (Epetra_CrsMatrix *)
-	   new EpetraExt::BlockCrsMatrix(*splitMass, row, col, splitMass->Comm());
+	   new EpetraExt::BlockCrsMatrix(*splitMass, row, col, 
+					 splitMass->Comm());
      }
      else splitMassCrs = dynamic_cast<Epetra_CrsMatrix *>(splitMass.get());
 
-     preconditioner = new LOCA::Epetra::xyztPrec(*jacobian, *splitJacCrs, *splitMassCrs,
-		                                 *solution, *solutionOverlap, *overlapImporter,
-						 *precPrintParams, *precLSParams, globalComm);
+     preconditioner = 
+       new LOCA::Epetra::xyztPrec(*jacobian, *splitJacCrs, *splitMassCrs, 
+				  *solution, *solutionOverlap, *overlapImporter,
+				  *precPrintParams, *precLSParams, globalComm);
      if (preconditioner != 0) {
-       cout << "LOCA::Epetra::Interface::xyzt - preconditioner created successfully" << endl;
+       cout << "LOCA::Epetra::Interface::xyzt - " 
+	    << "preconditioner created successfully" << endl;
      }
    }
    cout << "Ending xyzt constructor" << endl;
@@ -156,7 +166,8 @@ computeF(const Epetra_Vector& x, Epetra_Vector& F, const FillType fillFlag)
 {
   bool stat = true;
 
-  // Copy owned parts of vector from vector with global map to one with split map
+  // Copy owned parts of vector from vector with global map 
+  // to one with split map
   solution->Epetra_Vector::operator=(x);
   solutionOverlap->Import(*solution, *overlapImporter, Insert);
 
@@ -170,7 +181,8 @@ computeF(const Epetra_Vector& x, Epetra_Vector& F, const FillType fillFlag)
     else {
       int blockRowOld = (*rowIndex)[i] + (*rowStencil)[i][0];
       solutionOverlap->ExtractBlockValues(splitVecOld, blockRowOld);
-      iMass->setOldSolution(splitVecOld, i + globalComm->FirstTimeStepOnDomain());
+      iMass->setOldSolution(splitVecOld, 
+			    i + globalComm->FirstTimeStepOnDomain());
     }
 
     solution->ExtractBlockValues(splitVec, (*rowIndex)[i]);
@@ -181,7 +193,8 @@ computeF(const Epetra_Vector& x, Epetra_Vector& F, const FillType fillFlag)
     residual.LoadBlockValues(splitRes, (*rowIndex)[i]);
   }
 
-  // F does not know it is a clone of a block vector, so must copy values from residual
+  // F does not know it is a clone of a block vector, 
+  // so must copy values from residual
   // -- can be fixed? Maybe make residual a view of F instad of copying.
   F = residual;
 
@@ -194,7 +207,8 @@ computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac)
   bool stat = true;
   jacobian->PutScalar(0.0);
 
-  // Copy owned parts of vector from vector with global map to one with split map
+  // Copy owned parts of vector from vector with global map 
+  // to one with split map
   solution->Epetra_Vector::operator=(x);
   solutionOverlap->Import(*solution, *overlapImporter, Insert);
 
@@ -207,7 +221,8 @@ computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac)
     else {
       int blockRowOld = (*rowIndex)[i] + (*rowStencil)[i][0];
       solutionOverlap->ExtractBlockValues(splitVecOld, blockRowOld);
-      iMass->setOldSolution(splitVecOld, i + globalComm->FirstTimeStepOnDomain());
+      iMass->setOldSolution(splitVecOld, 
+			    i + globalComm->FirstTimeStepOnDomain());
     }
   
     solution->ExtractBlockValues(splitVec, (*rowIndex)[i]);
@@ -242,8 +257,10 @@ printSolution(const Epetra_Vector& x, double conParam)
   for (int j=0; j<timeDomain; j++) globalComm->Barrier();
   for (int i=0; i < timeStepsOnTimeDomain; i++) {
     solution->ExtractBlockValues(splitVec, (*rowIndex)[i]);
-    // Pass indexing data for possible application use in output naming convention
-    iMass->dataForPrintSolution(conStep, (*rowIndex)[i], globalComm->NumTimeSteps());
+    // Pass indexing data for possible application use in 
+    // output naming convention
+    iMass->dataForPrintSolution(conStep, (*rowIndex)[i], 
+				globalComm->NumTimeSteps());
     iReq->printSolution(splitVec, conParam);
   }
   for (int j=timeDomain; j<numTimeDomains-1; j++) globalComm->Barrier();

@@ -111,8 +111,8 @@
 #ifdef HAVE_NOX_EPETRAEXT
 #ifdef HAVE_MPI
 // Comment out following line for usual implicit time stepping on all procs
-//#define DO_XYZT 1
-//#define DO_XYZT_PREC 1
+#define DO_XYZT 1
+#define DO_XYZT_PREC 1
 #include "EpetraExt_MultiMpiComm.h"
 #endif
 #endif
