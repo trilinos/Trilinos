@@ -94,6 +94,7 @@ ZOLTAN_INCLUDE= -I$(ZUTIL)/Communication \
                 -I$(ZUTIL)/Timer \
                 -I$(ZUTIL)/shared \
                 -I$(ZTOP)/zz \
+                -I$(ZTOP)/ha \
                 -I$(ZTOP)/par \
                 -I$(ZTOP)/lb \
                 -I$(ZTOP)/include
