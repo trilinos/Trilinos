@@ -1294,13 +1294,12 @@ static int pmatching_agg_ipm (ZZ *zz,
   MPI_Type_commit (&phasethreetype);
   MPI_Op_create (&phasethreereduce, 1, &phasethreeop);
   
-  /* determine basic working parameters */
-  /*
-    nRounds     = cFLAG ? ROUNDS_CONSTANT : hgc->nProc_x * ROUNDS_CONSTANT;
-    nCandidates = calc_nCandidates (hg->nVtx, cFLAG ? 1 : hgc->nProc_x);
+  /* compute nCandidates per process;
+     unless hypergraph is too small use user given parameter
+     otherwise use nVtx/3 to allow some matching
   */
-  nCandidates = MIN(hgp->nCand, hg->nVtx);
-  if (!(candIdx = (int*) ZOLTAN_MALLOC ((1+hgc->nProc_x) * sizeof(int))))
+  nCandidates = MAX(1, MIN(hgp->nCand, hg->nVtx/3));
+  if (!(candIdx = (int*) ZOLTAN_MALLOC ((1+hgc->nProc_x) * sizeof(int)))) 
     MEMORY_ERROR;
 
     
