@@ -91,7 +91,7 @@ XferOp::XferOp(GenericEpetraProblem& probA, const GenericEpetraProblem& probB)
       }
     }
     if( !dependentNodes.count(i) )
-      cout << "ERROR: Node " << i << " at position " << xlocA 
+      cout << "WARNING: Node " << i << " at position " << xlocA 
            << " not interpolated to transfer mesh !!" << endl;
   }
 

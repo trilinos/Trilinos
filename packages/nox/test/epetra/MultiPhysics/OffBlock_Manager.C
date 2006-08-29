@@ -87,9 +87,7 @@ OffBlock_Manager::OffBlock_Manager(Problem_Manager& problemMan_,
 		Epetra_CrsGraph& graph_, int probEqId, int probVarId) :
   GenericEpetraProblem(graph_.Comm(), 0),
   problemEqId(probEqId),
-  problemVarId(probVarId),
-  blockRowMap(0),
-  blockColMap(0)
+  problemVarId(probVarId)
 {
  
   setManager(&problemMan_);
@@ -103,8 +101,7 @@ OffBlock_Manager::OffBlock_Manager(Problem_Manager& problemMan_,
 
   // Set our graph (held in base class) after converting from incoming
   // global indices to shifted block indices
-  //AA = &graph_;
-  AA = &( createBlockGraphFromComposite(graph_) );
+  AA = Teuchos::rcp( &( createBlockGraphFromComposite(graph_) ) );
 
   // Create a problem interface to the manager
   offBlockInterface = Teuchos::rcp(new Problem_Interface(*this));
@@ -117,24 +114,16 @@ OffBlock_Manager::OffBlock_Manager(Problem_Manager& problemMan_,
 
 }
 
-OffBlock_Manager::~OffBlock_Manager()
-{
-  delete AA            ; AA             = 0;
-
-  delete blockRowMap   ; blockRowMap    = 0;
-  delete blockColMap   ; blockColMap    = 0;
-
-}
-
 // These methods are needed to allow inheritance from GenericEpetraProblem base
 
-bool OffBlock_Manager::evaluate(
-              NOX::Epetra::Interface::Required::FillType flag,
+bool 
+OffBlock_Manager::evaluate( NOX::Epetra::Interface::Required::FillType flag,
               const Epetra_Vector *solnVector,
               Epetra_Vector *rhsVector)
 {
   // Determine if fill call is valid
-  if (rhsVector == 0 || flag != NOX::Epetra::Interface::Required::FD_Res) {
+  if (rhsVector == 0 || flag != NOX::Epetra::Interface::Required::FD_Res) 
+  {
     cout << "ERROR: Either invalid RHS vector or call made from other than "
          << "NOX::Epetra::FiniteDifference to OffBlock fill !!" << endl;
     throw "OffBlock_Manager ERROR";
@@ -146,24 +135,26 @@ bool OffBlock_Manager::evaluate(
   // Copy relevant part of incoming solnVector into solution vector of
   // problemVarId
   Epetra_Vector &probVarSoln = *(problemVar.getSolution());
-  //myManager->copyCompositeToVector(*solnVector, problemVarId, probVarSoln);
   probVarSoln = *solnVector;
+
   problemEq.doTransfer(); // This does all transfers for this problem
-  //problemEq.outputSolutionStatus(cout);
+
   myManager->setGroupX(problemEqId);
   myManager->computeGroupF(problemEqId);
 
   const Epetra_Vector & probEqGrpF = dynamic_cast<const NOX::Epetra::Vector&>
     (myManager->getGroup(problemEqId).getF()).getEpetraVector();
-  //myManager->copyVectorToComposite(*rhsVector, problemEqId, probEqGrpF);
+
   *rhsVector = probEqGrpF;
 
   return true;
 }
 
-Teuchos::RefCountPtr<NOX::Epetra::Group> OffBlock_Manager::getGroup()
+Teuchos::RefCountPtr<NOX::Epetra::Group> 
+OffBlock_Manager::getGroup()
 {
-  if( !group.get() ) {
+  if( Teuchos::is_null(group) ) 
+  {
     cout << "ERROR: Unable to get off-block Group for "
          << "dependence of problem " << problemEqId << " on problem "
          << problemVarId << " !!" << endl;
@@ -173,9 +164,11 @@ Teuchos::RefCountPtr<NOX::Epetra::Group> OffBlock_Manager::getGroup()
   return( group );
 }
 
-Epetra_CrsMatrix& OffBlock_Manager::getMatrix()
+Epetra_CrsMatrix&  
+OffBlock_Manager::getMatrix()
 {
-  if( !matrixOperator.get() ) {
+  if( Teuchos::is_null(matrixOperator) ) 
+  {
     cout << "ERROR: Unable to get FDColoring underlying matrix for "
          << "dependence of problem " << problemEqId << " on problem "
          << problemVarId << " !!" << endl;
@@ -185,9 +178,11 @@ Epetra_CrsMatrix& OffBlock_Manager::getMatrix()
   return( matrixOperator->getUnderlyingMatrix() );
 }
 
-Teuchos::RefCountPtr<Epetra_Vector> OffBlock_Manager::getRowMapVec() const
+Teuchos::RefCountPtr<Epetra_Vector> 
+OffBlock_Manager::getRowMapVec() const
 {
-  if( !rowMapVec.get() ) {
+  if( Teuchos::is_null(rowMapVec) ) 
+  {
     cout << "ERROR: Unable to get Row Map Vector for OffBlock " << getName() << endl;
     throw "Problem_Manager ERROR";
   }
@@ -195,17 +190,20 @@ Teuchos::RefCountPtr<Epetra_Vector> OffBlock_Manager::getRowMapVec() const
   return( rowMapVec );
 }
 
-int OffBlock_Manager::getProblemEqId() const
+int 
+OffBlock_Manager::getProblemEqId() const
 {
   return problemEqId;
 }
 
-int OffBlock_Manager::getProblemVarId() const
+int 
+OffBlock_Manager::getProblemVarId() const
 {
   return problemVarId;
 }
 
-void OffBlock_Manager::convertBlockRowIndicesToComposite(int numIndices, 
+void 
+OffBlock_Manager::convertBlockRowIndicesToComposite(int numIndices, 
                          int * blockIndices, int * compositeIndices)
 { 
   for( int i = 0 ; i < numIndices; ++i )
@@ -215,7 +213,8 @@ void OffBlock_Manager::convertBlockRowIndicesToComposite(int numIndices,
   }
 }
 
-void OffBlock_Manager::convertBlockColIndicesToComposite(int numIndices, 
+void 
+OffBlock_Manager::convertBlockColIndicesToComposite(int numIndices, 
                          int * blockIndices, int * compositeIndices)
 { 
   for( int i = 0 ; i < numIndices; ++i )
@@ -225,10 +224,10 @@ void OffBlock_Manager::convertBlockColIndicesToComposite(int numIndices,
   }
 }
 
-void OffBlock_Manager::createFDobjects( bool useColoring )
+void 
+OffBlock_Manager::createFDobjects( bool useColoring )
 {
-  //Teuchos::RefCountPtr<Epetra_CrsGraph> graph = Teuchos::rcp( AA, false );
-  graph = Teuchos::rcp( AA );
+  graph = AA;
 
   DEBUG_BLOCKGRAPH( cout << "OffBlock_Manager::createFDobjects() : incoming graph --> \n" 
                          << *graph << endl << "\n\tDone." << endl;)
@@ -357,7 +356,8 @@ void OffBlock_Manager::createFDobjects( bool useColoring )
   }
 }
 
-Epetra_CrsGraph & OffBlock_Manager::createBlockGraphFromComposite(Epetra_CrsGraph & globalGraph)
+Epetra_CrsGraph & 
+OffBlock_Manager::createBlockGraphFromComposite(Epetra_CrsGraph & globalGraph)
 {
   // here we simply go through the graph and assign contiguous indices for
   // all unique and meaningful entries
@@ -392,8 +392,8 @@ Epetra_CrsGraph & OffBlock_Manager::createBlockGraphFromComposite(Epetra_CrsGrap
   int numGlobalRows = -1;
   int numGlobalCols = -1;
 
-  blockRowMap = new Epetra_Map ( numGlobalRows, rowBlockToComposite.size(), 0, globalGraph.Comm() );
-  blockColMap = new Epetra_Map ( numGlobalCols, colBlockToComposite.size(), 0, globalGraph.Comm() );
+  blockRowMap = Teuchos::rcp( new Epetra_Map ( numGlobalRows, rowBlockToComposite.size(), 0, globalGraph.Comm()) );
+  blockColMap = Teuchos::rcp( new Epetra_Map ( numGlobalCols, colBlockToComposite.size(), 0, globalGraph.Comm()) );
  
   DEBUG_BLOCKGRAPH( cout << "\n----> Block-sized Row Map : " << *blockRowMap << endl;)
   DEBUG_BLOCKGRAPH( cout << "\n----> Block-sized Col Map : " << *blockColMap << endl;)

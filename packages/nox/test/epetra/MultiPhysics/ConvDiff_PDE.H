@@ -59,6 +59,15 @@ class ConvDiff_PDE : public GenericEpetraProblem
 
 public:
 
+  enum PAPER_SCENARIO {         
+                        RVALUE_0_00     ,
+                        RVALUE_0_30     ,
+                        RVALUE_1_00     ,
+                        RVALUE_2_50     ,
+                        RVALUE_5_67     ,
+                        NONE
+                      };
+
   enum INTERFACE_LOCATION {
                                 LEFT    ,
                                 RIGHT   
@@ -80,6 +89,15 @@ public:
   
   // Destructor
   ~ConvDiff_PDE();
+
+  // Method to compute exact interface temperature
+  static double computeAnalyticInterfaceTemp( 
+                  double Radiation      ,
+                  double T_left  = 0.0  ,
+                  double T_right = 1.0  ,
+                  double kappa   = 0.1  ,
+                  double peclet  = 9.0      );
+                        
 
   // Set initial condition for solution vector
   void initializeSolution(double val = 0.0);
@@ -112,6 +130,10 @@ public:
   // Accessor
   double getInterfaceTemp();
 
+  // Accessor
+  Teuchos::RefCountPtr<Epetra_Vector> getExactSolution()
+  { return exactSolution; }
+
   // Additional status output
   virtual void outputStatus( ostream & os );
 
@@ -134,15 +156,17 @@ protected:
   double radiation                      ;
   double kappa                          ;
 
+  PAPER_SCENARIO     paperScenario      ;
   INTERFACE_LOCATION myInterface        ;
   double dirScale                       ;
   double myFlux                         ;
 
   double bcWeight                       ;
 
-  Epetra_Import * ColumnToOverlapImporter        ;
-  Epetra_Vector * oldSolution                    ;
-  Epetra_Vector * rhs                            ;
+  Teuchos::RefCountPtr<Epetra_Import> ColumnToOverlapImporter        ;
+  Teuchos::RefCountPtr<Epetra_Vector> oldSolution                    ;
+  Teuchos::RefCountPtr<Epetra_Vector> exactSolution                  ;
+  Teuchos::RefCountPtr<Epetra_Vector> dTdx                           ;
 
   int             interface_elem                 ;
   int             local_node                     ;

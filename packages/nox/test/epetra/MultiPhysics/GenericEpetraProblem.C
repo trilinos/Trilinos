@@ -63,8 +63,6 @@ GenericEpetraProblem::GenericEpetraProblem(const Epetra_Comm& comm,
   myName(name_),
   OverlapMap(0),
   Importer(0),
-  xptr(0),
-  AA(0),
   Comm(&comm),
   StandardMap(0),
   NumGlobalNodes(numGlobalNodes)
@@ -86,7 +84,6 @@ GenericEpetraProblem::GenericEpetraProblem(const Epetra_Comm& comm,
 // Destructor
 GenericEpetraProblem::~GenericEpetraProblem()
 {
-  delete AA; AA = 0;
   delete Importer; Importer = 0;
   delete OverlapMap; OverlapMap = 0;
   delete StandardMap; StandardMap = 0;
@@ -233,7 +230,7 @@ GenericEpetraProblem::getdt() const
 Epetra_Vector & 
 GenericEpetraProblem::getMesh()
 {
-  assert( xptr != 0 ); // Mesh vector had better exist
+  assert( !Teuchos::is_null(xptr) ); // Mesh vector had better exist
   return *xptr;
 }
 
@@ -243,20 +240,6 @@ Teuchos::RefCountPtr<Epetra_Vector>
 GenericEpetraProblem::getSolution()
 {
   return initialSolution;
-}
-
-//-----------------------------------------------------------------------------
-
-Epetra_CrsGraph & 
-GenericEpetraProblem::getGraph()
-{
-  if(AA)
-    return *AA;
-  else
-  {
-    cout << "ERROR: No valid Matrix Graph exists for this problem !!" << endl;
-    return *AA;
-  }
 }
 
 //-----------------------------------------------------------------------------

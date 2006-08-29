@@ -73,7 +73,8 @@ public:
                    int probEqId, int probVarsId);
 
   // Destructor
-  virtual ~OffBlock_Manager();
+  virtual ~OffBlock_Manager()
+  { };
 
   // Return the underlying Group 
   Teuchos::RefCountPtr<NOX::Epetra::Group> getGroup();
@@ -127,18 +128,18 @@ private:
 
   // These allow off-diagonal block contributions representing
   // inter-problem coupling computed via FDC
-  Epetra_Map                           * blockRowMap;
-  Epetra_Map                           * blockColMap;
-  Teuchos::RefCountPtr<Epetra_Vector>    rowMapVec;
-  Teuchos::RefCountPtr<Epetra_CrsGraph> graph;
-  Teuchos::RefCountPtr<NOX::Epetra::Vector>  noxVec;
-  Teuchos::RefCountPtr<EpetraExt::CrsGraph_MapColoring>  mapColoring;
-  Teuchos::RefCountPtr<Epetra_MapColoring>  colorMap;
-  Teuchos::RefCountPtr<EpetraExt::CrsGraph_MapColoringIndex> colorMapIndex;
-  Teuchos::RefCountPtr<vector<Epetra_IntVector> > columnSet;
-  Teuchos::RefCountPtr<NOX::Epetra::FiniteDifference>   matrixOperator;
-  Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO> linearSystem;
-  Teuchos::RefCountPtr<NOX::Epetra::Group> group;    
+  Teuchos::RefCountPtr<Epetra_Map>                              blockRowMap     ;
+  Teuchos::RefCountPtr<Epetra_Map>                              blockColMap     ;
+  Teuchos::RefCountPtr<Epetra_Vector>                           rowMapVec       ;
+  Teuchos::RefCountPtr<Epetra_CrsGraph>                         graph           ;
+  Teuchos::RefCountPtr<NOX::Epetra::Vector>                     noxVec          ;
+  Teuchos::RefCountPtr<EpetraExt::CrsGraph_MapColoring>         mapColoring     ;
+  Teuchos::RefCountPtr<Epetra_MapColoring>                      colorMap        ;
+  Teuchos::RefCountPtr<EpetraExt::CrsGraph_MapColoringIndex>    colorMapIndex   ;
+  Teuchos::RefCountPtr<vector<Epetra_IntVector> >               columnSet       ;
+  Teuchos::RefCountPtr<NOX::Epetra::FiniteDifference>           matrixOperator  ;
+  Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO>        linearSystem    ;
+  Teuchos::RefCountPtr<NOX::Epetra::Group>                      group           ;
   
   // These are needed to shift indices for coloring and 
   // block-based condition number estimates

@@ -45,6 +45,7 @@
 // NOX Objects
 #include "NOX.H"
 #include "NOX_Epetra.H"
+#include "NOX_TestCompare.H"
 
 // For parsing command line
 #include "Teuchos_CommandLineProcessor.hpp"
@@ -105,19 +106,30 @@ int main(int argc, char *argv[])
   Teuchos::CommandLineProcessor clp( false );
 
   // Default run-time options that can be changed from the command line
-  int         NumGlobalNodes = 10        ;
-  bool        runMF          = true      ;
-  bool        useMatlab      = false     ;
-  bool        doOffBlocks    = false     ;
-  bool        libloose       = true      ;
-  std::string solvType       = "seidel"  ;
+  bool          verbose         = true          ;
+  int           NumGlobalNodes  = 20            ;
+  bool          runMF           = true          ;
+  bool          useMatlab       = false         ;
+  bool          doOffBlocks     = false         ;
+  bool          libloose        = true          ;
+  std::string   solvType        = "seidel"      ;
+  // Coupling parameters
+  double        alpha           = 0.50          ;
+  double        beta            = 0.40          ;
+  // Physical parameters
+  double        radiation       = 5.67          ;
 
+
+  clp.setOption( "verbose", "no-verbose", &verbose, "Verbosity on or off." );
   clp.setOption( "n", &NumGlobalNodes, "Number of elements" );
   clp.setOption( "runMF", "loose", &runMF, "Use Matrix-Free strong coupling" );
   clp.setOption( "offblocks", "no-offblocks", &doOffBlocks, "Include off-diagonal blocks in preconditioning matrix" );
   clp.setOption( "matlab", "no-matlab", &useMatlab, "Use Matlab debugging engine" );
   clp.setOption( "noxlib", "no-noxlib", &libloose, "Perform loose coupling using NOX's library (as opposed to hard-coded test driver)." );
   clp.setOption( "solvType", &solvType, "Solve Type.  Valid choices are: jacobi, seidel" );
+  clp.setOption( "alpha", &alpha, "Interfacial coupling coefficient, alpha" );
+  clp.setOption( "beta", &beta, "Interfacial coupling coefficient, beta" );
+  clp.setOption( "radiation", &radiation, "Radiation source term coefficient, R" );
 
   Teuchos::CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
 
@@ -162,12 +174,16 @@ int main(int argc, char *argv[])
   printParams.set("Output Precision", 3);
   printParams.set("Output Processor", 0);
   printParams.set("Output Information", 
-			NOX::Utils::OuterIteration + 
+			NOX::Utils::Warning                  +
+			NOX::Utils::OuterIteration           + 
+			NOX::Utils::InnerIteration           +
+			NOX::Utils::Parameters               + 
+			NOX::Utils::Details                  + 
 			NOX::Utils::OuterIterationStatusTest + 
-			NOX::Utils::InnerIteration +
-			NOX::Utils::Parameters + 
-			NOX::Utils::Details + 
-			NOX::Utils::Warning);
+			NOX::Utils::LinearSolverDetails      + 
+			NOX::Utils::TestDetails               );
+
+  NOX::Utils outputUtils(printParams);
 
   // Sublist for line search 
   Teuchos::ParameterList& searchParams = nlParams.sublist("Line Search");
@@ -216,37 +232,28 @@ int main(int argc, char *argv[])
   problemManager.registerParameters(nlParamsPtr);
   problemManager.registerStatusTest(combo);
 
-  // Coupling parameters
-  double alpha		= 0.50          ;
-  double beta 		= 0.40          ;
-
   // Domain boundary temperaures
-  double Tleft  		= 0.98          ;
-  double Tright 		= 1.0           ;
+  double Tleft          = 0.98          ;
+  double Tright         = 1.0           ;
 
   // Distinguish certain parameters needed for T1_analytic
   double peclet_1     	= 9.0           ;
   double peclet_2     	= 0.0           ;
   double kappa_1      	= 1.0           ;
-  double kappa_2		= 0.1           ;
+  double kappa_2	= 0.1           ;
 
-  //double T1_analytic          = ( kappa_2*(1.0-exp(peclet_1))*Tright - Tleft*peclet_1*exp(peclet_1) ) /
-  //                              ( kappa_2*(1.0-exp(peclet_1)) - peclet_1*exp(peclet_1) );
-  //double T1_analytic          = 0.99430092; // 5.67
-  double T1_analytic          = 0.99050495; // 2.50
-  //double T1_analytic          = 0.98247093; // 0.3
-  //double T1_analytic          = 0.98177822; // 0.2
+  double T1_analytic = ConvDiff_PDE::computeAnalyticInterfaceTemp( radiation, Tleft, Tright, kappa_2, peclet_1 );
 
   // Create Region 1 PDE
-  string myName 		= "Region_1"    ;
-  double radiation		= 0.0           ;
+  string myName         = "Region_1"    ;
+  double radiation_reg1 = 0.0           ;
   double xmin  		= 0.0           ;
   double xmax  		= 1.0           ;
 
   ConvDiff_PDE Reg1_PDE (
                   Comm, 
                   peclet_1,
-                  radiation,
+                  radiation_reg1,
                   kappa_1,
                   alpha,
                   xmin,
@@ -264,7 +271,6 @@ int main(int argc, char *argv[])
 
   // Create Region 2 PDE
   myName 		        = "Region_2"    ;
-  radiation		        = 5.67          ;
   xmin  		        = 1.0           ;
   xmax  		        = 2.0           ;
 
@@ -298,6 +304,21 @@ int main(int argc, char *argv[])
   // Print initial solution
   problemManager.outputSolutions(0);
 
+  // Identify the test problem
+  if( outputUtils.isPrintType(NOX::Utils::TestDetails) )
+    outputUtils.out() << "Starting epetra/NOX_NewTest/NOX_NewTest.exe" << endl;
+
+  // Identify processor information
+#ifdef HAVE_MPI
+  outputUtils.out() << "This test is broken in parallel." << endl;
+  outputUtils.out() << "Test failed!" << endl;
+  MPI_Finalize();
+  return -1;
+#else
+  if (outputUtils.isPrintType(NOX::Utils::TestDetails))
+    outputUtils.out() << "Serial Run" << endl;
+#endif
+
   // Solve the coupled problem
   if( runMF )
     problemManager.solveMF(); // Need a status test check here ....
@@ -306,11 +327,11 @@ int main(int argc, char *argv[])
   else // Loose coupling via NOX library
   {
     // Create the loose coupling solver manager
-    Teuchos::RefCountPtr<vector<NOX::Solver::Manager*> > solversVec =
-      Teuchos::rcp( new vector<NOX::Solver::Manager*> );
+    Teuchos::RefCountPtr<vector<Teuchos::RefCountPtr<NOX::Solver::Manager> > > solversVec =
+      Teuchos::rcp( new vector<Teuchos::RefCountPtr<NOX::Solver::Manager> > );
 
-    map<int, NOX::Solver::Manager*>::iterator iter = problemManager.getSolvers().begin(),
-                                          iter_end = problemManager.getSolvers().end()   ;
+    map<int, Teuchos::RefCountPtr<NOX::Solver::Manager> >::iterator iter = problemManager.getSolvers().begin(),
+                                                                iter_end = problemManager.getSolvers().end()   ;
     for( ; iter_end != iter; ++iter )
     {
       cout << " ........  registered Solver::Manager # " << (*iter).first << endl;
@@ -330,28 +351,46 @@ int main(int argc, char *argv[])
     NOX::Multiphysics::Solver::Manager cplSolv( solversVec, dataExInterface, fixedPt_maxiters, nlParamsPtr );
 
     cplSolv.solve();
+
+    // Refresh all problems with solutions from solver
+    problemManager.copyAllGroupXtoProblems();
+
+    // Reset all solver groups to force recomputation of residuals
+    problemManager.resetAllCurrentGroupX();
   }
   
-  problemManager.outputSolutions(1);
-
   // Output timing info
-  if(MyPID==0)
+  if( 0 == MyPID )
     cout << "\nTimings :\n\tWallTime --> " << myTimer.WallTime() - startWallTime << " sec."
          << "\n\tElapsedTime --> " << myTimer.ElapsedTime() << " sec." << endl << endl;
 
-//  if(MyPID==0)
-//    cout << "Test failed!" << endl;
-//
-//#ifdef HAVE_MPI
-//MPI_Finalize() ;
-//#endif
-//
-//  return -1;
+  problemManager.outputSolutions(1);
 
-  // Need to put in a check for convergence
-  // Added the following so test actually passes in parallel
-  if(MyPID==0)
-    cout << "Test passed!" << endl;
+  // Create a TestCompare class
+  int status = 0;
+  NOX::TestCompare tester( outputUtils.out(), outputUtils );
+  double abstol = 1.e-4;
+  double reltol = 1.e-4 ;
+
+  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator iter = problemManager.getProblems().begin(),
+                                                              iter_end = problemManager.getProblems().end()   ;
+  for( ; iter_end != iter; ++iter )
+  {
+    ConvDiff_PDE & problem = dynamic_cast<ConvDiff_PDE &>( *(*iter).second );
+    string msg = "Numerical-to-Exact Solution comparison for problem \"" + problem.getName() + "\"";
+
+    // Need NOX::Epetra::Vectors for tests
+    NOX::Epetra::Vector numerical ( problem.getSolution()     , NOX::Epetra::Vector::CreateView );
+    NOX::Epetra::Vector analytic  ( problem.getExactSolution(), NOX::Epetra::Vector::CreateView );
+
+    status += tester.testVector( numerical, analytic, reltol, abstol, msg );
+  }
+
+  // Summarize test results  
+  if( status == 0 )
+    outputUtils.out() << "Test passed!" << endl;
+  else 
+    outputUtils.out() << "Test failed!" << endl;
 
 #ifdef HAVE_MPI
   MPI_Finalize() ;

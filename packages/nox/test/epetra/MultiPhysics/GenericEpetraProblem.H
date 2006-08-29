@@ -161,7 +161,8 @@ public:
   virtual Teuchos::RefCountPtr<Epetra_CrsMatrix> getJacobian();
 
   // Return a reference to the Epetra_CrsGraph if one is valid
-  virtual Epetra_CrsGraph& getGraph();
+  virtual Teuchos::RefCountPtr<Epetra_CrsGraph> & getGraph()
+  { return AA; }
 
   // Output results 
   virtual void outputResults(NOX::Solver::Manager& solver, Teuchos::ParameterList& printParams);
@@ -186,7 +187,7 @@ public:
 protected:
 
   // inserts the global column indices into the Graph
-  virtual void generateGraph() {};
+  virtual void generateGraph() { };
 
 protected:
 
@@ -195,9 +196,9 @@ protected:
   Problem_Manager *                             myManager       ; // Problem Manager with which this problem interacts
   Epetra_Map *                                  OverlapMap      ;
   Epetra_Import *                               Importer        ;
-  Epetra_Vector *                               xptr            ; // Mesh data
+  Teuchos::RefCountPtr<Epetra_Vector>           xptr            ; // Mesh data
   Teuchos::RefCountPtr<Epetra_Vector>           initialSolution ;
-  Epetra_CrsGraph *                             AA              ;
+  Teuchos::RefCountPtr<Epetra_CrsGraph>         AA              ;
   Teuchos::RefCountPtr<Epetra_CrsMatrix>        A               ;
   vector<int>                                   depProblems     ; // List of problems that this one depends on
   map<string, int>                              nameToMyIndex   ;

@@ -181,7 +181,7 @@ Coupling_Matlab_Interface::CMD_setXvec::doCommand( std::string commandLine )
   Epetra_Vector * p_soln = problemManager.getProblem(probId).getSolution().get();
 
   engine.GetMultiVector( commandLine.c_str(), *p_soln );
-  problemManager.getGroup(probId).setX(*p_soln);
+  const_cast<NOX::Epetra::Group&>(problemManager.getSolutionGroup(probId)).setX(*p_soln);
 
   return true;
 }
@@ -255,11 +255,9 @@ Coupling_Matlab_Interface::CMD_getAllX::doCommand( std::string command )
   // Do diagonal blocks
   for( ; problemLast != problemIter; ++problemIter )
   {
-    //GenericEpetraProblem & problem = *(*problemIter).second;
-    int                    probId  = (*problemIter).first;
+    int probId  = (*problemIter).first;
 
-    const Epetra_Vector * tempVec = &(dynamic_cast<const NOX::Epetra::Vector&>
-                       (problemManager.getGroup(probId).getX()).getEpetraVector());
+    const Epetra_Vector * tempVec = &( problemManager.getSolutionVec(probId) );
 
     if( tempVec )
     {
@@ -292,7 +290,7 @@ Coupling_Matlab_Interface::CMD_getJac::doCommand( std::string commandLine )
   int probId = atoi( arg1.c_str()) ,
       depID =  atoi( arg2.c_str()) ;
 
-  Epetra_RowMatrix * rowMatrix = problemManager.getBlockJacobianMatrix( probId, depID );
+  Epetra_RowMatrix * rowMatrix = problemManager.getBlockJacobianMatrix( probId, depID ).get();
   if( rowMatrix )
   {
     std::string name = "BJac_" + arg1 + "_" + arg2;
@@ -321,7 +319,7 @@ Coupling_Matlab_Interface::CMD_getAllJac::doCommand( std::string commandLine )
     GenericEpetraProblem & problem = *(*problemIter).second;
     int                    probId  = (*problemIter).first;
 
-    Epetra_RowMatrix * rowMatrix = problemManager.getBlockJacobianMatrix( probId );
+    Epetra_RowMatrix * rowMatrix = problemManager.getBlockJacobianMatrix( probId ).get();
 
     if( rowMatrix )
     {
@@ -341,7 +339,7 @@ Coupling_Matlab_Interface::CMD_getAllJac::doCommand( std::string commandLine )
       {
         int depId = problem.getDependentProblems()[k];
 
-        Epetra_RowMatrix * rowMatrix = problemManager.getBlockJacobianMatrix( probId, depId );
+        Epetra_RowMatrix * rowMatrix = problemManager.getBlockJacobianMatrix( probId, depId ).get();
 
         if( rowMatrix )
         {
@@ -375,7 +373,7 @@ Coupling_Matlab_Interface::CMD_getRes::doCommand( std::string commandLine )
   std::string arg1 = commandLine.substr(0, loc);
   int probId = atoi( arg1.c_str()) ;
 
-  const Epetra_Vector * resVec = problemManager.getResidual( probId );
+  const Epetra_Vector * resVec = problemManager.getResidual( probId ).get();
 
   ostringstream sval1;
   sval1 << probId << flush;
@@ -400,7 +398,7 @@ Coupling_Matlab_Interface::CMD_getAllRes::doCommand( std::string command )
     //GenericEpetraProblem & problem = *(*problemIter).second;
     int                    probId  = (*problemIter).first;
 
-    const Epetra_Vector * resVec = problemManager.getResidual( probId );
+    const Epetra_Vector * resVec = problemManager.getResidual( probId ).get();
 
     if( resVec )
     {

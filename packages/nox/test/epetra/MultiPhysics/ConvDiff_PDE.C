@@ -76,21 +76,21 @@ ConvDiff_PDE::ConvDiff_PDE(
 
   // We first initialize the mesh and then the solution since the latter can depend on the mesh.
 
-  xptr = new Epetra_Vector(*StandardMap);
+  xptr = Teuchos::rcp( new Epetra_Vector(*StandardMap) );
   dx   = (xmax - xmin) / ( (double) NumGlobalNodes - 1 );
 
   for( int i = 0; i < NumMyNodes; ++i ) 
     (*xptr)[i]=xmin + dx*((double) StandardMap->MinMyGID()+i);
 
   // Create extra vector needed for transient problem interface
-  oldSolution = new Epetra_Vector(*StandardMap);
+  oldSolution = Teuchos::rcp( new Epetra_Vector(*StandardMap) );
 
   // Create and initialize (using default provided) the solution vector
   initialSolution = Teuchos::rcp(new Epetra_Vector(*StandardMap));
   initializeSolution();
 
   // Allocate the memory for a matrix dynamically (i.e. the graph is dynamic).
-  AA = new Epetra_CrsGraph(Copy, *StandardMap, 0);
+  AA = Teuchos::rcp( new Epetra_CrsGraph(Copy, *StandardMap, 0) );
   generateGraph();
 
 #ifdef DEBUG
@@ -100,11 +100,11 @@ ConvDiff_PDE::ConvDiff_PDE(
   // Create a matrix using the graph just created - this creates a
   // static graph so we can refill the new matirx after FillComplete()
   // is called.
-  A = Teuchos::rcp(new Epetra_CrsMatrix (Copy, *AA));new Epetra_CrsMatrix (Copy, *AA);
+  A = Teuchos::rcp(new Epetra_CrsMatrix (Copy, *AA));
   A->FillComplete();
 
   // Create the Importer needed for FD coloring
-  ColumnToOverlapImporter = new Epetra_Import(A->ColMap(),*OverlapMap);
+  ColumnToOverlapImporter = Teuchos::rcp( new Epetra_Import(A->ColMap(),*OverlapMap) );
 
 }
 
@@ -113,10 +113,6 @@ ConvDiff_PDE::ConvDiff_PDE(
 // Destructor
 ConvDiff_PDE::~ConvDiff_PDE()
 {
-  delete AA; AA = 0;
-  delete xptr; xptr = 0;
-  delete oldSolution; oldSolution = 0;
-  delete ColumnToOverlapImporter; ColumnToOverlapImporter = 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -174,8 +170,8 @@ ConvDiff_PDE::initialize()
   }
 
   // Use this method to compute and output the analytic solution and its first derivative
-  Epetra_Vector * exactSolution = new Epetra_Vector(*initialSolution);
-  Epetra_Vector * dTdx          = new Epetra_Vector(*initialSolution);
+  exactSolution     = Teuchos::rcp( new Epetra_Vector(*initialSolution) );
+  dTdx              = Teuchos::rcp( new Epetra_Vector(*initialSolution) );
   Epetra_Vector & x = *xptr;
 
   if( 1.e-20 < fabs(peclet) )
@@ -224,9 +220,6 @@ ConvDiff_PDE::initialize()
   //       << "\t\t\tRegion \"" << myName << "\", myFlux = " << myFlux << endl
   //       << "    \t\t\t----------------" << endl;
   //}
-
-  delete exactSolution ;
-  delete dTdx          ;
 }
 
 //-----------------------------------------------------------------------------
@@ -511,10 +504,6 @@ ConvDiff_PDE::computeHeatFlux( const Epetra_Vector * soln )
   // Sync up processors to be safe
   Comm->Barrier();
  
-#ifdef DEBUG
-  cout << "For residual fill :" << endl << *rhs << endl;
-#endif
-
   // Cleanup
   for( int i = 0; i < numDep; ++i)
   {
@@ -632,3 +621,49 @@ ConvDiff_PDE::doTransfer()
 
 //-----------------------------------------------------------------------------
 
+double 
+ConvDiff_PDE::computeAnalyticInterfaceTemp(
+                  double radiation      ,
+                  double T_left         ,
+                  double T_right        ,
+                  double kappa          ,
+                  double peclet           )
+{
+  
+  int    nIters         = 0;            // iteration counter
+  double T_int          = 1.0;          // initial guess
+  double tol            = 1.e-12;       // solve tolerance
+  double residual       = radiation*( pow(T_int, 4) - pow(T_right, 4) ) 
+                          + (T_left - T_int)*peclet*exp(peclet)/(1.0 - exp(peclet))
+                          - kappa*(T_right - T_int);
+  double dfdT           = 0.0;
+
+  while( tol < fabs(residual) )
+  {
+    ++nIters;
+
+    dfdT = radiation*4.0*pow(T_int,3)
+           - peclet*exp(peclet)/(1.0 - exp(peclet))
+           + kappa;
+
+    if( 1.e-15 > fabs(dfdT) )
+    {
+      cout << "ConvDiff_PDE::computeAnalyticInterfaceTemp:\n"
+              "Warning: Obtained near-zero derivtative. Aborting calculation." << endl;
+      return(T_int);
+    }
+
+    T_int = T_int - residual/dfdT;
+
+    residual = radiation*( pow(T_int, 4) - pow(T_right, 4) ) 
+               + (T_left - T_int)*peclet*exp(peclet)/(1.0 - exp(peclet))
+               - kappa*(T_right - T_int);
+  }
+
+  cout << "Analytic interfacial temperature = " << setprecision(8) << T_int << endl;
+  cout << "Residual = " << residual << " in " << nIters << " iterations." << endl;
+
+  return T_int;
+}
+
+//-----------------------------------------------------------------------------

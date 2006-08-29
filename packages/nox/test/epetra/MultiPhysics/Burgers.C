@@ -60,7 +60,7 @@ Burgers::Burgers(Epetra_Comm& comm, int numGlobalNodes, string name_) :
 {
 
   // Create the nodal coordinates
-  xptr = new Epetra_Vector(*StandardMap);
+  xptr = Teuchos::rcp( new Epetra_Vector(*StandardMap) );
   double Length= xmax - xmin;
   dx=Length/((double) NumGlobalNodes-1);
   for ( int i = 0; i < NumMyNodes; ++i ) 
@@ -74,7 +74,7 @@ Burgers::Burgers(Epetra_Comm& comm, int numGlobalNodes, string name_) :
   initializeSoln();
   
   // Allocate the memory for a matrix dynamically (i.e. the graph is dynamic).
-  AA = new Epetra_CrsGraph(Copy, *StandardMap, 5);
+  AA = Teuchos::rcp( new Epetra_CrsGraph(Copy, *StandardMap, 5) );
   generateGraph();
 
   // Create a second matrix using graph of first matrix - this creates a 
@@ -91,7 +91,6 @@ Burgers::Burgers(Epetra_Comm& comm, int numGlobalNodes, string name_) :
 // Destructor
 Burgers::~Burgers()
 {
-  delete xptr;
   delete oldSolution;
   delete exactSolution;
   delete ColumnToOverlapImporter;

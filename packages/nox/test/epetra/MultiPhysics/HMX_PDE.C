@@ -75,7 +75,7 @@ HMX_PDE::HMX_PDE(Epetra_Comm& comm,
 
   // We first initialize the mesh and then the solution since the latter
   // can depend on the mesh.
-  xptr = new Epetra_Vector(*StandardMap);
+  xptr = Teuchos::rcp( new Epetra_Vector(*StandardMap) );
   double Length= xmax - xmin;
   dx=Length/((double) NumGlobalNodes-1);
   for (int i=0; i < NumMyNodes; i++) {
@@ -90,7 +90,7 @@ HMX_PDE::HMX_PDE(Epetra_Comm& comm,
   initializeSolution();
 
   // Allocate the memory for a matrix dynamically (i.e. the graph is dynamic).
-  AA = new Epetra_CrsGraph(Copy, *StandardMap, 0);
+  AA = Teuchos::rcp( new Epetra_CrsGraph(Copy, *StandardMap, 0) );
   generateGraph();
 
 #ifdef DEBUG
@@ -100,7 +100,7 @@ HMX_PDE::HMX_PDE(Epetra_Comm& comm,
   // Create a matrix using the graph just created - this creates a
   // static graph so we can refill the new matirx after FillComplete()
   // is called.
-  A = Teuchos::rcp(new Epetra_CrsMatrix (Copy, *AA));new Epetra_CrsMatrix (Copy, *AA);
+  A = Teuchos::rcp(new Epetra_CrsMatrix (Copy, *AA));
   A->FillComplete();
 
   // Create the Importer needed for FD coloring
@@ -112,8 +112,6 @@ HMX_PDE::HMX_PDE(Epetra_Comm& comm,
 // Destructor
 HMX_PDE::~HMX_PDE()
 {
-  delete AA; AA = 0;
-  delete xptr; xptr = 0;
   delete oldSolution; oldSolution = 0;
   delete ColumnToOverlapImporter; ColumnToOverlapImporter = 0;
 }

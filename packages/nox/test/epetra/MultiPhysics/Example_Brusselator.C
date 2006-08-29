@@ -139,13 +139,15 @@ int main(int argc, char *argv[])
   Teuchos::CommandLineProcessor clp( false );
 
   // Default run-time options that can be changed from the command line
-  int  NumGlobalNodes = 10    ;
-  bool runMF          = true  ;
-  bool useMatlab      = false ;
-  bool doOffBlocks    = false ;
-  bool convection     = false ;
-  bool libloose       = true  ;
+  bool          verbose         = true          ;
+  int           NumGlobalNodes  = 10    ;
+  bool          runMF           = true  ;
+  bool          useMatlab       = false ;
+  bool          doOffBlocks     = false ;
+  bool          convection      = false ;
+  bool          libloose        = true  ;
 
+  clp.setOption( "verbose", "no-verbose", &verbose, "Verbosity on or off." );
   clp.setOption( "n", &NumGlobalNodes, "Number of elements" );
   clp.setOption( "runMF", "loose", &runMF, "Use Matrix-Free strong coupling" );
   clp.setOption( "offblocks", "no-offblocks", &doOffBlocks, "Include off-diagonal blocks in preconditioning matrix" );
@@ -196,12 +198,14 @@ int main(int argc, char *argv[])
   printParams.set("Output Precision", 3);
   printParams.set("Output Processor", 0);
   printParams.set("Output Information", 
-			NOX::Utils::OuterIteration + 
+			NOX::Utils::Warning                  +
+			NOX::Utils::OuterIteration           + 
+			NOX::Utils::InnerIteration           +
+			NOX::Utils::Parameters               + 
+			NOX::Utils::Details                  + 
 			NOX::Utils::OuterIterationStatusTest + 
-			NOX::Utils::InnerIteration +
-			NOX::Utils::Parameters + 
-			NOX::Utils::Details + 
-			NOX::Utils::Warning);
+			NOX::Utils::LinearSolverDetails      + 
+			NOX::Utils::TestDetails               );
 
   // Sublist for line search 
   Teuchos::ParameterList& searchParams = nlParams.sublist("Line Search");
@@ -218,7 +222,7 @@ int main(int argc, char *argv[])
   lsParams.set("Aztec Solver", "GMRES");  
   lsParams.set("Max Iterations", 800);  
   lsParams.set("Tolerance", 1e-4);
-  lsParams.set("Output Frequency", 50);    
+  lsParams.set("Output Frequency", 1);    
   lsParams.set("Preconditioner", "AztecOO");   
 
   // Create the convergence tests
@@ -326,11 +330,11 @@ int main(int argc, char *argv[])
     else // Loose coupling via NOX library
     {
       // Create the loose coupling solver manager
-      Teuchos::RefCountPtr<vector<NOX::Solver::Manager*> > solversVec =
-        Teuchos::rcp( new vector<NOX::Solver::Manager*> );
+      Teuchos::RefCountPtr<vector<Teuchos::RefCountPtr<NOX::Solver::Manager> > > solversVec =
+        Teuchos::rcp( new vector<Teuchos::RefCountPtr<NOX::Solver::Manager> > );
 
-      map<int, NOX::Solver::Manager*>::iterator iter = problemManager.getSolvers().begin(),
-                                            iter_end = problemManager.getSolvers().end()   ;
+      map<int, Teuchos::RefCountPtr<NOX::Solver::Manager> >::iterator iter = problemManager.getSolvers().begin(),
+                                                                  iter_end = problemManager.getSolvers().end()   ;
       for( ; iter_end != iter; ++iter )
       {
         cout << " ........  registered Solver::Manager # " << (*iter).first << endl;
@@ -344,6 +348,12 @@ int main(int argc, char *argv[])
       NOX::Multiphysics::Solver::Manager cplSolv( solversVec, dataExInterface, combo, nlParamsPtr );
 
       cplSolv.solve();
+
+      // Refresh all problems with solutions from solver
+      problemManager.copyAllGroupXtoProblems();
+
+      // Reset all solver groups to force recomputation of residuals
+      problemManager.resetAllCurrentGroupX();
     }
 
     problemManager.outputSolutions(timeStep);

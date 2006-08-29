@@ -64,7 +64,7 @@ Equation_A::Equation_A(Epetra_Comm& comm, int numGlobalNodes,
 
   // We first initialize the mesh and then the solution since the latter
   // can depend on the mesh.
-  xptr = new Epetra_Vector(*StandardMap);
+  xptr = Teuchos::rcp( new Epetra_Vector(*StandardMap) );
   double Length= xmax - xmin;
   dx=Length/((double) NumGlobalNodes-1);
   for (int i=0; i < NumMyNodes; i++)
@@ -78,7 +78,7 @@ Equation_A::Equation_A(Epetra_Comm& comm, int numGlobalNodes,
   initializeSolution();
 
   // Allocate the memory for a matrix dynamically (i.e. the graph is dynamic).
-  AA = new Epetra_CrsGraph(Copy, *StandardMap, 0);
+  AA = Teuchos::rcp( new Epetra_CrsGraph(Copy, *StandardMap, 0) );
   generateGraph();
 
 #ifdef DEBUG
@@ -100,8 +100,6 @@ Equation_A::Equation_A(Epetra_Comm& comm, int numGlobalNodes,
 // Destructor
 Equation_A::~Equation_A()
 {
-  delete AA; AA = 0;
-  delete xptr; xptr = 0;
   delete oldSolution; oldSolution = 0;
   delete ColumnToOverlapImporter; ColumnToOverlapImporter = 0;
 }

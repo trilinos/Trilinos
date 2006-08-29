@@ -80,13 +80,23 @@ public:
   map<int, std::string> & getNames() { return Names; }
 
   // Return my Problems container
-  map<int, GenericEpetraProblem*> & getProblems() { return Problems; }
+  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> > & getProblems() 
+  { return Problems; }
 
   // Get a problem given its unique id
-  GenericEpetraProblem& getProblem(int id);
+  GenericEpetraProblem & getProblem(int id);
 
   // Get a problem given its name
-  GenericEpetraProblem& getProblem(string name);
+  GenericEpetraProblem & getProblem(string name);
+
+  // Get a group given its unique id
+  const NOX::Epetra::Group & getSolutionGroup(int id);
+
+  // Get the solution vector from a problem group
+  const Epetra_Vector & getSolutionVec(int id);
+
+  // Get an individual residual vector given an integer problem id
+  const Epetra_Vector & getResidualVec(int i);
 
   // Get a group given its unique id
   NOX::Epetra::Group& getSolutionGroup(int id);
@@ -101,19 +111,18 @@ public:
   Teuchos::RefCountPtr<Epetra_Vector> getCompositeSoln();
 
   // Get the container of solver managers
-  map<int, NOX::Solver::Manager*> & getSolvers()
+  map<int, Teuchos::RefCountPtr<NOX::Solver::Manager> > & getSolvers()
   {  return Solvers; }
 
   // Get the composite NOX solver
-  NOX::Solver::Manager * getCompositeSolver()
+  Teuchos::RefCountPtr<NOX::Solver::Manager> & getCompositeSolver()
   {  return compositeSolver; }
 
   // Create a dependence of Problem A equations on Problem B variables
   void createDependency(string nameA, string nameB, bool interfacialCoupling = false);
 
   // Create a dependence of Problem A equations on Problem B variables
-  void createDependency(GenericEpetraProblem& problemA,
-                        GenericEpetraProblem& problemB, 
+  void createDependency(GenericEpetraProblem& problemA, GenericEpetraProblem& problemB, 
                         bool interfacialCoupling = false);
 
   // Register NLSolver parameter list
@@ -165,12 +174,9 @@ public:
   // the problem variables on which it depends
   void computeBlockJacobian(int i, int j = -1);
 
-  // Get an individual residual vector given an integer problem id
-  const Epetra_Vector * getResidual(int i);
-
   // Get an individual block Jacobian given an integer pairing of problem and
   // the problem variables on which it depends
-  Epetra_CrsMatrix * getBlockJacobianMatrix(int i, int j = -1);
+  Teuchos::RefCountPtr<Epetra_CrsMatrix> getBlockJacobianMatrix(int i, int j = -1);
 
   // Compute sum of norms of each problem residual
   double getNormSum();
@@ -180,6 +186,12 @@ public:
 
   // Copy final solution from NOX solvers into each problem's solution vector
   void copyAllGroupXtoProblems();
+
+  // Reset specified solvers current solution group X vector with itself, thereby resetting all valid flags
+  void resetCurrentGroupX(int probId);
+
+  // Reset each solvers current solution group X vector with itself, thereby resetting all valid flags
+  void resetAllCurrentGroupX();
 
   // Copy a composite problem vector to each problem's vector
   void copyCompositeToProblems(const Epetra_Vector& compositeVec, VectorType);
@@ -216,10 +228,12 @@ public:
   { return doOffBlocks; }
 
   // Return my name
-  string getName() const { return GenericEpetraProblem::getName(); };
+  string getName() const 
+  { return GenericEpetraProblem::getName(); };
 
   // Return the problem name queries
-  string getProblemName(int id) { return (*(Names.find(id))).second; };
+  string getProblemName(int id) 
+  { return Names[id]; };
 
   // These allow inheritance from GenericEpetraProblem base class
 
@@ -249,30 +263,25 @@ private:
 			// off-diagonal composite Jacobian blocks via FDC
   bool useMatlab;	// Flag to specify whether or not to use a Matlab interactive session
 
-  Epetra_Map* compositeMap;	// Composite map for all registered problems
+  Teuchos::RefCountPtr<Epetra_Map> compositeMap;	// Composite map for all registered problems
   Teuchos::RefCountPtr<Epetra_Vector> compositeSoln;	// Composite map for all registered problems
-  NOX::Epetra::Vector * compositeNOXSoln;	// A NOX version of the composite solution vecotr
-
-  map<int, GenericEpetraProblem*> Problems; // Problem container
+  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> > Problems; // Problem container
   map<int, string> Names;                   // Problem names
   map<string, int> NameLookup;              // Needed to lookup problems by name
   map<int, Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO> > LinearSystems;
   					    // Linear Systems container
   map<int, Teuchos::RefCountPtr<NOX::Epetra::Group> >Groups;     // Groups container
   map<int, Teuchos::RefCountPtr<Problem_Interface>  >Interfaces; // Interfaces container
-  map<int, NOX::Solver::Manager*> Solvers;    // Solvers container
-  map<int, Epetra_IntVector*> ProblemToCompositeIndices;
+  map<int, Teuchos::RefCountPtr<NOX::Solver::Manager> > Solvers; // Solvers container
+  map<int, Teuchos::RefCountPtr<Epetra_IntVector> > ProblemToCompositeIndices;
     // Essentially a mapping from a problems indices to the composite indices
-
-  Problem_Interface *compositeProblemInterface; // A problem interface to 
-  // the composite problem manager.  Needed for off-diagonal FDC blocks
 
   Teuchos::RefCountPtr<Epetra_Operator> jacOperator   ; // The composite Jacobian operator
   Teuchos::RefCountPtr<Epetra_Operator> precOperator  ; // The composite Preconditioner operator
   Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> jacInterface;
   Teuchos::RefCountPtr<NOX::Epetra::Interface::Preconditioner> precInterface;
   Teuchos::RefCountPtr<NOX::Epetra::Group> compositeGroup  ; // The composite solution group
-  NOX::Solver::Manager                   * compositeSolver ; // The composite solver
+  Teuchos::RefCountPtr<NOX::Solver::Manager> compositeSolver ; // The composite solver
 
 #ifdef HAVE_NOX_EPETRAEXT
   // Additional containers to allow each problem to use FD Coloring
