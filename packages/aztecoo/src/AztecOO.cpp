@@ -432,8 +432,9 @@ int AztecOO::SetUserOperator(Epetra_Operator * UserOperator) {
 }
 
 //=============================================================================
-int AztecOO::SetUserMatrix(Epetra_RowMatrix * UserMatrix) {
-
+int AztecOO::SetUserMatrix(Epetra_RowMatrix * UserMatrix,
+                           bool call_SetPrecMatrix)
+{
   if (UserMatrix == 0 && inConstructor_ == true) return(0);
   if (UserMatrix == 0) EPETRA_CHK_ERR(-1);
 
@@ -457,7 +458,9 @@ int AztecOO::SetUserMatrix(Epetra_RowMatrix * UserMatrix) {
      AZ_set_matrix_print_string(Amat_,label);
 
   // If preconditioner not defined, set up to possibly use native Aztec precons
-  if (Prec_==0) EPETRA_CHK_ERR(SetPrecMatrix(UserMatrix));
+  if (Prec_==0 || call_SetPrecMatrix) {
+    EPETRA_CHK_ERR(SetPrecMatrix(UserMatrix));
+  }
   return(0);
 }
 

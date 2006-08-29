@@ -85,6 +85,7 @@ class AztecOO {
     non-trivial definition of the NormInf() method and HasNormInf() returns true.
   */
   AztecOO(Epetra_Operator * A, Epetra_MultiVector * X, Epetra_MultiVector * B);
+
   //!  AztecOO Constructor.
   /*! Creates a AztecOO instance, passing in already-defined objects for the linear operator
     (as an Epetra_RowMatrix),
@@ -96,9 +97,10 @@ class AztecOO {
     factorization preconditioners are based on having explicit access to matrix coefficients.
     Polynomial preconditioners are also available.  It is possible to change the matrix used for
     computing incomplete factorization by calling the SetPrecMatrix() method.  It is
-    also possible to provide a user-supplied preconditioner by call SetPrecOperator().
+    also possible to provide a user-supplied preconditioner via SetPrecOperator().
   */
   AztecOO(Epetra_RowMatrix * A, Epetra_MultiVector * X, Epetra_MultiVector * B);
+
   //! AztecOO Constructor.
   /*! Creates a AztecOO instance, using a Epetra_LinearProblem,
     passing in an already-defined Epetra_LinearProblem object. The Epetra_LinearProblem class
@@ -141,11 +143,16 @@ class AztecOO {
   /** \name Post-construction setup methods. */ //@{
 
   //! AztecOO Epetra_LinearProblem Set
-  /*! Associates an already defined Epetra_LinearProblem as the problem that will be solved during
-    iterations.  This method allows the user to change which problem is being solved by an existing
-    AztecOO object.
-    \warning If a preconditioner has been pre-built and associated with this AztecOO object, the
-    Epetra_LinearProblem being passed in to this method \e must have compatible domain and range maps.
+  /*! Associates an already defined Epetra_LinearProblem as the problem that
+     will be solved during iterations.  This method allows the user to change
+     which problem is being solved by an existing AztecOO object.
+
+     Internally calls SetUserMatrix() if the Epetra_LinearProblem's operator
+     can be cast to Epetra_RowMatrix, otherwise calls SetUserOperator().
+
+    \warning If a preconditioner has been pre-built and associated with this
+     AztecOO object, the Epetra_LinearProblem being passed in to this method
+     \e must have compatible domain and range maps.
   */
   int SetProblem(const Epetra_LinearProblem& prob);
 
@@ -161,12 +168,21 @@ class AztecOO {
   int SetUserOperator(Epetra_Operator * UserOperator);
 
   //! AztecOO User Matrix Set
-  /*! Associates an already defined Epetra_Matrix as the matrix that will be used by
-    AztecOO as the linear operator when solving the linear system.
+  /*! Associates an already defined Epetra_Matrix as the matrix that will be
+    used by AztecOO as the linear operator when solving the linear system.
     Epetra_CrsMatrix and Epetra_VbrMatrix objects can be passed in through
-    this method.  This method also sets the preconditioner matrix to the matrix passed in here.
+    this method.
+
+    *** IMPORTANT WARNING ***
+    This method also sets the preconditioner matrix to the matrix passed in
+    here, by internally calling SetPrecMatrix(). Thus, if the user wants to
+    use a different preconditioning matrix, they need to set that *AFTER*
+    this method has been called. This behavior can be overridden by setting
+    the optional bool argument 'call_SetPrecMatrix' to false, which will
+    make this function skip the call to SetPrecMatrix().
   */
-  int SetUserMatrix(Epetra_RowMatrix * UserMatrix);
+  int SetUserMatrix(Epetra_RowMatrix * UserMatrix,
+                    bool call_SetPrecMatrix=true);
 
   //! AztecOO LHS Set
   /*! Associates an already defined Epetra_MultiVector (or Epetra_Vector) as the initial guess

@@ -37,6 +37,7 @@
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
+#include "Epetra_FECrsMatrix.h"
 #include "Epetra_LinearProblem.h"
 #include "Epetra_MsrMatrix.h"
 #include "AztecOO_Scaling.h"
@@ -96,6 +97,8 @@ int test_AZ_iterate_AZ_pre_calc_AZ_reuse(Epetra_Comm& Comm,
                                          bool verbose);
 
 int test_AZ_iterate_then_AZ_scale_f(Epetra_Comm& Comm, bool verbose);
+
+int test_bug2554(Epetra_Comm& Comm, bool verbose);
 
 void destroy_matrix(AZ_MATRIX*& Amat);
 
@@ -251,6 +254,12 @@ int main(int argc, char *argv[])
   }
 
   delete [] options;
+
+  err = test_bug2554(comm, verbose);
+  if (err != 0) {
+    cout << "test_bug2554 err, test FAILED."<<endl;
+    return(err);
+  }
 
   cout << "********* Test passed **********" << endl;
 
@@ -982,3 +991,104 @@ int create_and_transform_simple_matrix(int matrix_type,
 
   return(0);
 }
+
+int test_bug2554(Epetra_Comm& Comm, bool verbose)
+{
+//This function contains code submitted by Joe Young to
+//expose bug 2554. The bug has now been fixed, so this
+//function executes without problem. It will be kept as
+//a regression test.
+
+  // Construct maps that do not have consecutive indices 
+  int             RowIndices[3];
+  if (Comm.MyPID() == 0) {
+    RowIndices[0] = 1;
+    RowIndices[1] = 2;
+    RowIndices[2] = 3;
+
+  } else {
+    RowIndices[0] = 4;
+    RowIndices[1] = 5;
+    RowIndices[2] = 6;
+  }
+  Epetra_Map      RowMap(-1, 3, RowIndices, 0, Comm);
+
+  // Construct a graph with two entries per line 
+  Epetra_CrsGraph Graph(Copy, RowMap, 2);
+  for (int i = 0; i < RowMap.NumMyElements(); i++) {
+    int             ig = RowIndices[i];
+    Graph.InsertGlobalIndices(ig, 1, &ig);
+  }
+  Graph.FillComplete();
+
+  // Make some matrix out of this
+  Epetra_FECrsMatrix *Matrix=new Epetra_FECrsMatrix(Copy, Graph);
+
+  // Fill it up with ones 
+  Matrix->PutScalar(1.0);
+
+  // Create a rhs and lhs
+  Epetra_Vector *rhs=new Epetra_Vector(RowMap);
+  Epetra_Vector *lhs=new Epetra_Vector(RowMap);
+  rhs->PutScalar(2.0);
+  lhs->PutScalar(0.0);
+
+
+  // Create a solver and problem;
+  AztecOO *solver=new AztecOO();
+  Epetra_LinearProblem *problem=new Epetra_LinearProblem();
+
+  // Load the problem into the solver
+  problem->SetOperator(Matrix);
+  problem->SetRHS(rhs);
+  problem->SetLHS(lhs);
+  solver->SetProblem(*problem);
+
+  // Set some options
+  solver->SetAztecOption(AZ_solver,AZ_cg);
+  solver->SetAztecOption(AZ_precond,AZ_ls);
+  solver->SetAztecOption(AZ_poly_ord,9);
+
+  // Solve the problem
+  solver->Iterate(50,1e-12);
+
+  // Delete the matrix, lhs, rhs
+  delete Matrix;
+  delete lhs;
+  delete rhs;
+
+  /* Somehow, C++ reallocates objects in the same location where
+  they were previously allocated.  So, we need to trick it.  If we
+  don't do this, the error will not appear. */
+  int *dummy=new int[1000];
+  double *dummy2=new double[1000];
+
+  // Reallocate all of them
+  Matrix=new Epetra_FECrsMatrix(Copy, Graph);
+  rhs=new Epetra_Vector(RowMap);
+  lhs=new Epetra_Vector(RowMap);
+  Matrix->PutScalar(1.0);
+  rhs->PutScalar(2.0);
+  lhs->PutScalar(0.0);
+
+  // Load the problem into the solver
+  problem->SetOperator(Matrix);
+  problem->SetRHS(rhs);
+  problem->SetLHS(lhs);
+  solver->SetProblem(*problem);
+
+  // Solve the problem
+  solver->Iterate(50,1e-12);
+
+  // Clean up some memory
+  delete problem;
+  delete solver;
+  delete [] dummy;
+  delete [] dummy2;
+  delete Matrix;
+  delete lhs;
+  delete rhs;
+
+  return(0);
+}
+
