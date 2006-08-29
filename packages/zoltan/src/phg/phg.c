@@ -720,7 +720,7 @@ int Zoltan_PHG_Initialize_Params(
          * number of processors. */
         usePrimeComm = 1;
   }
-  else if (zz->LB.Method == PHG_RFINE) {
+  else if (zz->LB.Method == PHG_REFINE) {
     Zoltan_Bind_Param(PHG_params, "PHG_COARSENING_METHOD", "no");
     Zoltan_Bind_Param(PHG_params, "PHG_COARSEPARTITION_METHOD", "no");
     zz->LB.Remap_Flag = 0;

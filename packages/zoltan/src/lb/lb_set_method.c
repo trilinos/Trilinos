@@ -156,7 +156,7 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
     else if (!strcmp(method_upper, "PHG_REPART"))
       zz->LB.Method = PHG_REPART;
     else if (!strcmp(method_upper, "PHG_REFINE"))
-      zz->LP.Method = PHG_REFINE;
+      zz->LB.Method = PHG_REFINE;
     else /* HYPERGRAPH or PHG */
       zz->LB.Method = PHG;
     zz->LB.LB_Fn = Zoltan_PHG;
