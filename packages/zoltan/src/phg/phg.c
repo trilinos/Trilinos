@@ -641,6 +641,8 @@ int Zoltan_PHG_Initialize_Params(
     zz->LB.Method = PHG;
   else if (!strcasecmp(hgp->hgraph_pkg, "PHG_REPART"))
     zz->LB.Method = PHG_REPART;
+  else if (!strcasecmp(hgp->hgraph_pkg, "PHG_REFINE"))
+    zz->LB.Method = PHG_REFINE;
   else if (!strcasecmp(hgp->hgraph_pkg, "PATOH"))
     zz->LB.Method = PATOH;
   else if (!strcasecmp(hgp->hgraph_pkg, "PARKWAY"))
@@ -717,6 +719,11 @@ int Zoltan_PHG_Initialize_Params(
         /* 2D data decomposition is requested but we have a prime 
          * number of processors. */
         usePrimeComm = 1;
+  }
+  else if (zz->LB.Method == PHG_RFINE) {
+    Zoltan_Bind_Param(PHG_params, "PHG_COARSENING_METHOD", "no");
+    Zoltan_Bind_Param(PHG_params, "PHG_COARSEPARTITION_METHOD", "no");
+    zz->LB.Remap_Flag = 0;
   }
   else if (zz->LB.Method == PARKWAY) {
     if (hgp->nProc_x_req>1) {
