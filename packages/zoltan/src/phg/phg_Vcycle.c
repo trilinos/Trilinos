@@ -88,7 +88,7 @@ typedef struct tagVCycle {
 /* Routine to set function pointers corresponding to input-string options. */
 int Zoltan_PHG_Set_Part_Options (ZZ *zz, PHGPartParams *hgp)
 {
-  int err;
+  int err = ZOLTAN_OK;
   char *yo = "Zoltan_PHG_Set_Part_Options";  
 
   if (hgp->bal_tol < 1.0)  {
