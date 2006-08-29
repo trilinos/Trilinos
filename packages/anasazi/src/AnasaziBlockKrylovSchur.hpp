@@ -264,9 +264,6 @@ namespace Anasazi {
     /*! \brief Get the current residual norms.
      *
      *  \note Block Krylov-Schur cannot provide this so a zero length vector will be returned.
-     *
-     *  \return A vector of length blockSize containing the norms of the
-     *  residuals, with respect to the orthogonalization manager norm() method.
      */
     std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getResNorms() {
       std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> ret(0);
@@ -276,8 +273,6 @@ namespace Anasazi {
     /*! \brief Get the current residual 2-norms
      *
      *  \note Block Krylov-Schur cannot provide this so a zero length vector will be returned.
-     *
-     *  \return A vector of length blockSize containing the 2-norms of the residuals. 
      */
     std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getRes2Norms() {
       std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> ret(0);
@@ -318,7 +313,7 @@ namespace Anasazi {
     void setNumRitzVectors(int numRitzVecs);
 
     //! \brief Get the step size. 
-    int getStepSize() { return(stepSize_); }
+    int getStepSize() const { return(stepSize_); }
 
     //! Get the blocksize to be used by the iterative solver in solving this eigenproblem.
     int getBlockSize() const { return(blockSize_); }
@@ -331,13 +326,13 @@ namespace Anasazi {
      *  \return An integer specifying the rank of the Krylov subspace currently in use by the eigensolver. If isInitialized() == \c false, 
      *  the return is 0. Otherwise, it will be some strictly positive multiple of getBlockSize().
      */
-    int getCurSubspaceDim() {
+    int getCurSubspaceDim() const {
       if (!initialized_) return 0;
       return curDim_;
     }
 
     //! Get the maximum dimension allocated for the search subspace. For %BlockKrylovSchur, this always returns numBlocks*blockSize.
-    int getMaxSubspaceDim() { return (problem_->isHermitian()?blockSize_*numBlocks_:blockSize_*numBlocks_+1); }
+    int getMaxSubspaceDim() const { return (problem_->isHermitian()?blockSize_*numBlocks_:blockSize_*numBlocks_+1); }
 
 
     /*! \brief Set the auxiliary vectors for the solver.

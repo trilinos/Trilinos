@@ -345,13 +345,13 @@ namespace Anasazi {
      *  \return An integer specifying the rank of the Krylov subspace currently in use by the eigensolver. If isInitialized() == \c false, 
      *  the return is 0. Otherwise, it will be some strictly positive multiple of getBlockSize().
      */
-    int getCurSubspaceDim() {
+    int getCurSubspaceDim() const {
       if (!initialized_) return 0;
       return curDim_;
     }
 
     //! Get the maximum dimension allocated for the search subspace. For %BlockDavidson, this always returns numBlocks*blockSize.
-    int getMaxSubspaceDim() {return blockSize_*numBlocks_;}
+    int getMaxSubspaceDim() const {return blockSize_*numBlocks_;}
 
     //@}
 

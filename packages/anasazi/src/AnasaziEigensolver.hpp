@@ -140,10 +140,10 @@ class Eigensolver {
   virtual std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getRitzRes2Norms() = 0;
 
   //! Get the dimension of the search subspace used to generate the current eigenvectors and eigenvalues.
-  virtual int getCurSubspaceDim() = 0;
+  virtual int getCurSubspaceDim() const = 0;
 
   //! Get the maximum dimension allocated for the search subspace.
-  virtual int getMaxSubspaceDim() = 0;
+  virtual int getMaxSubspaceDim() const = 0;
 
   //@}
 

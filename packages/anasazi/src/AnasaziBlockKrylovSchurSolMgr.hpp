@@ -111,7 +111,7 @@ class BlockKrylovSchurSolMgr : public SolverManager<ScalarType,MV,OP> {
   //! @name Accessor methods
   //@{ 
 
-  Eigenproblem<ScalarType,MV,OP>& getProblem() const {
+  const Eigenproblem<ScalarType,MV,OP>& getProblem() const {
     return *_problem;
   }
 
