@@ -785,7 +785,7 @@ double Zoltan_PHG_Compute_ConCut(
                         cut +=  ((nparts-1) * (hg->ewgt ? hg->ewgt[i] : 1.0));
                     else if (nparts==0) {
                         char msg[80];
-                        sprintf(msg, "Hyperedge %d has no vertices!\n", i);
+                        sprintf(msg, "Vertices of hyperedge %d has not been assigned to a valid part(s) or it has no vertices!\n", i);
                         ZOLTAN_PRINT_ERROR(hgc->myProc, yo, msg);
                         *ierr = ZOLTAN_FATAL;
                         goto End;
