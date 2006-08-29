@@ -408,6 +408,11 @@ PHGComm *hgc = hg->comm;
 int err=0;
 int rootnpins, rootrank;
 
+  if (CoarsePartition == NULL) { /* auto */
+    /* Select a coarse partitioner from the array of coarse partitioners */
+    CoarsePartition = CoarsePartitionFns[zz->Proc % NUM_COARSEPARTITION_FNS];
+  }
+
   /* The column processor with the most pins will be our root.  */
   Zoltan_PHG_Find_Root(hg->nPins, hgc->myProc_y, hgc->col_comm, 
                        &rootnpins, &rootrank);
