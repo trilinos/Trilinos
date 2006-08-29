@@ -323,8 +323,8 @@ namespace Anasazi {
     //! Get the blocksize to be used by the iterative solver in solving this eigenproblem.
     int getBlockSize() const { return(blockSize_); }
 
-    //! \brief Set the number of Ritz vectors to compute.
-    void getNumRitzVectors(int numRitzVecs) { return(numRitzVecs_); }
+    //! \brief Get the number of Ritz vectors to compute.
+    int getNumRitzVectors() const { return(numRitzVecs_); }
 
     /*! \brief Get the dimension of the search subspace used to generate the current eigenvectors and eigenvalues.
      *
