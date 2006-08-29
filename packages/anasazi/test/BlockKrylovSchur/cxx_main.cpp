@@ -130,8 +130,8 @@ int main(int argc, char *argv[])
   RefCountPtr<Anasazi::BasicEigenproblem<ScalarType,MV,OP> > problem =
     rcp( new Anasazi::BasicEigenproblem<ScalarType,MV,OP>(InverseOp,M,ivec) );
   //
-  // Inform the eigenproblem that the operator InverseOp is symmetric under an M inner-product
-  //problem->setHermitian(true);
+  // Inform the eigenproblem that the operator InverseOp is Hermitian under an M inner-product
+  problem->setHermitian(true);
   //
   // Set the number of eigenvalues requested
   problem->setNEV( nev );
