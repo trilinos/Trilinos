@@ -49,7 +49,6 @@ int main(int argc, char *argv[])
   MPI_Init(&argc, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &me);
   MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
-
   /*
   ** The example library defines a simple hypergraph, and an initial
   ** partioning of vertices across the processes.
@@ -65,15 +64,18 @@ int main(int argc, char *argv[])
 
   phgHandle = 
     exSetHGDivisions(
-      BLOCKS,          /* each process has some rows of hg */
-      ALL_HAVE_EDGE_WEIGHTS,  /* each process has some of the edge weights */ 
-      1,                  /* do edge weights supplied by processes overlap */ 
-      ZOLTAN_COMPRESSED_EDGE); /* compressed pin format for query function */
+      BLOCKS,
+      ONE_HAS_EDGE_WEIGHTS,
+      0,
+      ZOLTAN_COMPRESSED_EDGE);
 
   if (!phgHandle){
     printf("error in initializing example library\n");
     exit(0);
   }
+  /* Display hypergraph as a matrix, with initial partition numbers */
+
+  exShowPartitions(phgHandle);
 
   /*
   ** All applications which use the Zoltan library must call Zoltan_Initialize
@@ -105,7 +107,7 @@ int main(int argc, char *argv[])
   Zoltan_Set_Param(zz, "NUM_LID_ENTRIES", "1");/* local IDs are integers */
   Zoltan_Set_Param(zz, "RETURN_LISTS", "ALL"); /* export AND import lists */
   Zoltan_Set_Param(zz, "OBJ_WEIGHT_DIM", "1"); /* test lib gives 1 vtx weight */
-  Zoltan_Set_Param(zz, "EDGE_WEIGHT_DIM", "1");/* test lib gives 1 edge weight*/ 
+  Zoltan_Set_Param(zz, "EDGE_WEIGHT_DIM", "0");/* test lib gives 1 edge weight*/ 
 
   /* Graph parameters */
 
@@ -163,7 +165,11 @@ int main(int argc, char *argv[])
     goto End;
   }
 
-  /* update list of objects assigned to this process under new partitioning */
+  /* Update list of objects assigned to this process under new partitioning. 
+   * (Zoltan assigns objects to "partitions".  There can be more or fewer
+   * partitions than processes, but in this simple example there is one
+   * partition per process, so we talk about assigning objects to processes.)
+   */
 
   exUpdateDivisions(phgHandle, numExport, numImport, 
                    exportGlobalIds, importGlobalIds);
@@ -172,10 +178,13 @@ int main(int argc, char *argv[])
 
   Zoltan_LB_Eval(zz, 1, NULL, NULL, NULL, NULL, NULL, NULL);
 
-
   /* Print out the partitioning to a text file */
 
   Zoltan_Generate_Files(zz, "example", 0, 0, 0, 1);
+
+  /* Display hypergraph as a matrix, with partition numbers */
+
+  exShowPartitions(phgHandle);
 
 End:
   /*

@@ -21,27 +21,13 @@
 extern "C" {
 #endif
 
-#define DIFFERENT_PROCS_DIFFERENT_EDGE_WEIGHTS 0
-#define EDGE_WEIGHT_EQUALS_GID 0
-#define VTX_WEIGHT_EQUALS_GID 1
-
+/************** sample hypergraphs *******************************************/
+#if 0
+/* felix: non-space is a pin, has vertices (cols) with no hyperedges, 
+ * has dense and non-dense edges, ascii art helps in spotting errors
+ */
 #define NROWS 28
 #define NCOLS 72
-static int nprocs, rank;
-
-struct _division{
- int row0, row1, col0, col1;   /* my pins */
- int ew0, ew1;                 /* my edge weights */
- int format;    /* compressed rows or compressed columns */
- int num_obj;   /* my number of vertices */
- int obj_gid[NCOLS];  /* global ID of my vertices */
-};
-
-static void divide_interval(int from, int to, 
-  int *l, int *r, int nprocs, int rank);
-
-/* Very serious hypergraph, a non-space is a pin */
-
 static char *hg[NROWS]={
 "                        b                         .$                    ",
 "                        4r                       .$$                    ",
@@ -72,6 +58,59 @@ static char *hg[NROWS]={
 "                         -.  ---**---     .=^                           ",
 "                              -  === ---                                "
 };
+#endif
+/* From Zoltan's test directory: the graph ch_simple where hyperedges are
+ * created from each vertex by including the vertex and all it's graph 
+ * neighbors.
+ */
+#define NROWS 25
+#define NCOLS 25
+static char *hg[NROWS]={
+"12   6                   ",
+"123   7                  ",
+" 234   8                 ",
+"  345   9                ",
+"   45    0               ",
+"1    67   1              ",
+" 2   678   2             ",
+"  3   789   3            ",
+"   4   890   4           ",
+"    5   90    5          ",
+"     6    12   6         ",
+"      7   123   7        ", 
+"       8   234   8       ",
+"        9   345   9      ",
+"         0   45    0     ",
+"          1    67   1    ",
+"           2   678   2   ",
+"            3   789   3  ",
+"             4   890   4 ",
+"              5   90    5",
+"               6    12   ", 
+"                7   123  ",
+"                 8   234 ",
+"                  9   345", 
+"                   0   45" 
+};
+/************** sample hypergraphs *******************************************/
+
+#define DIFFERENT_PROCS_DIFFERENT_EDGE_WEIGHTS 0
+#define EDGE_WEIGHT_EQUALS_GID 0
+#define VTX_WEIGHT_EQUALS_GID 0
+
+static int nprocs, rank;
+
+struct _division{
+ int row0, row1, col0, col1;   /* my pins */
+ int ew0, ew1;                 /* my edge weights */
+ int format;    /* compressed rows or compressed columns */
+ int num_obj;   /* my number of vertices */
+ int obj_gid[NCOLS];  /* global ID of my vertices */
+};
+
+static void divide_interval(int from, int to, 
+  int *l, int *r, int nprocs, int rank);
+static void show_partitions(int nrows, int ncols, int *parts);
 
 /*
 ** Set options specifying how the objects (vertices) and
@@ -231,6 +270,51 @@ struct _division *div;
     }
   }
   div->num_obj = n_new_obj;
+}
+
+/*
+** Display the matrix representing the hypergraph, with partition numbers
+*/
+void exShowPartitions(void *data)
+{
+  struct _division *div = (struct _division *)data;
+  int i, j, sendsize;
+  int buf[NCOLS];
+  int partitions[NCOLS];
+  int tag=0x0101;
+  MPI_Status status;
+
+  if (rank == 0){
+     
+    for (j=0; j < NCOLS; j++){
+      partitions[j] = -1;
+    }
+
+    for (i=0; i<div->num_obj; i++){
+      partitions[div->obj_gid[i]] = 0;
+    }
+
+    for (i=1; i < nprocs; i++){
+      MPI_Recv(buf, NCOLS, MPI_INT, i, tag, MPI_COMM_WORLD, &status);
+
+      for (j=0; j < NCOLS; j++){
+        if (buf[j] < 0) break;
+        partitions[buf[j]] = i;
+      }
+    }
+
+    show_partitions(NROWS, NCOLS, partitions);
+  }
+  else{
+    if (div->num_obj < NCOLS){
+      div->obj_gid[div->num_obj] = -1;
+      sendsize = div->num_obj+1;
+    }
+    else{
+      sendsize = div->num_obj;
+    }
+    MPI_Send(div->obj_gid, sendsize, MPI_INT, 0, tag, MPI_COMM_WORLD);
+  }
 }
 
 /*
@@ -475,7 +559,37 @@ static void divide_interval(int from, int to,
   *r += from;
 }
 
+static void show_partitions(int nrows, int ncols, int *parts)
+{
+  char p[128];
+  int r, c, part, ncuts, maxpart, nspaces;
+ 
+  maxpart = -1;
+  for (c=0; c<ncols; c++){
+    if (parts[c] > maxpart) maxpart = parts[c];
+  }
+ 
+  for (r=0; r<nrows; r++){
+     memset(p, 0, 128);
+     ncuts = -1;
+     for (c=0; c<ncols; c++){
+       if (!isspace(hg[r][c])){
+         part = parts[c];
+         if (maxpart > 9) printf("%02d", part);
+         else             printf("%d", part);
+         if (p[part] == 0){
+           ncuts++;
+           p[part] = 1;
+         }
+       }
+       else{
+         printf(" ");
+         if (maxpart > 9) printf(" ");
+       }
+     }
+     printf(" (%d cuts)\n",ncuts);
+  }
+}
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
 #endif
-

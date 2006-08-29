@@ -56,6 +56,8 @@ void exUpdateDivisions(void *data, int nexport, int nimport,
 
 void exFreeDivisions(void *data);
 
+void exShowPartitions(void *data);
+
 /* hypergraph query functions */
 
 int exGetHgNumVertices(void *data, int *ierr);
