@@ -209,7 +209,7 @@ int main(int argc, char *argv[])
 				    NOX::TestCompare::Relative);
     }
 
-    destroyGlobalData(globalData);
+    LOCA::destroyGlobalData(globalData);
 
   }
 

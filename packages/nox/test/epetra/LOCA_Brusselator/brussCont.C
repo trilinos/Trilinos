@@ -360,7 +360,7 @@ int main(int argc, char *argv[])
 				   1.0e-10, 1.0e-10,
 				   "value of final solution");
 
-    destroyGlobalData(globalData);
+    LOCA::destroyGlobalData(globalData);
   }
   catch (std::exception& e) {
     std::cout << e.what() << std::endl;

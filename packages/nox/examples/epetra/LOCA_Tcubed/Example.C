@@ -295,7 +295,7 @@ int main(int argc, char *argv[])
     globalData->locaUtils->out() << std::endl;
   }
 
-  destroyGlobalData(globalData);
+  LOCA::destroyGlobalData(globalData);
 
 #ifdef HAVE_MPI
   MPI_Finalize() ;

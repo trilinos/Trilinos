@@ -328,7 +328,7 @@ int main(int argc, char *argv[])
 			       reltol, abstol, 
 			       "CompositeConstraint::addDX() (Trans)");
 
-    destroyGlobalData(globalData);
+    LOCA::destroyGlobalData(globalData);
   }
 
   catch (std::exception& e) {

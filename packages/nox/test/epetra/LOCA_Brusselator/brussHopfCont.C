@@ -398,7 +398,7 @@ int main(int argc, char *argv[])
 				  "final value of continuation parameter", 
 				  NOX::TestCompare::Relative);
 
-    destroyGlobalData(globalData);
+    LOCA::destroyGlobalData(globalData);
   }
   catch (std::exception& e) {
     std::cout << e.what() << std::endl;

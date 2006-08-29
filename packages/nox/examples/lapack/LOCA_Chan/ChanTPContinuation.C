@@ -215,7 +215,7 @@ int main()
 
     outFile.close();
 
-    destroyGlobalData(globalData);
+    LOCA::destroyGlobalData(globalData);
   }
 
   catch (std::exception& e) {

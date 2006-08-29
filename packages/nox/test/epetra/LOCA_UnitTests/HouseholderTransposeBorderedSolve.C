@@ -478,7 +478,7 @@ int main(int argc, char *argv[])
     ierr += testSolve(true, true, false, true, true,
 		      reltol, abstol, testName);
 
-    destroyGlobalData(globalData);
+    LOCA::destroyGlobalData(globalData);
 
   }
 

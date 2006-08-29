@@ -307,7 +307,7 @@ int main(int argc, char *argv[])
 			       reltol, abstol, 
 			       "CompositeConstraintMVDX::addDX() (Trans)");
 
-    destroyGlobalData(globalData);
+    LOCA::destroyGlobalData(globalData);
 
   }
 

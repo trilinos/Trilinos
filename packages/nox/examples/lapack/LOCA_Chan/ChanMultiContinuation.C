@@ -179,7 +179,7 @@ int main()
       globalData->locaUtils->out() << std::endl;
     }
 
-    destroyGlobalData(globalData);
+    LOCA::destroyGlobalData(globalData);
 
   }
 

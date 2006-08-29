@@ -532,7 +532,7 @@ int main(int argc, char *argv[])
 	      << "\n\tElapsedTime --> " << myTimer.ElapsedTime() 
 	      << " sec." << endl << endl;
 
-  destroyGlobalData(globalData);
+  LOCA::destroyGlobalData(globalData);
 
 #ifdef HAVE_MPI
   MPI_Finalize() ;

@@ -191,6 +191,8 @@ int main(int argc, char *argv[])
     ierr += testCompare.testValue(norm_x, norm_x_expected, 1.0e-7,
 				  "norm of final solution", 
 				  NOX::TestCompare::Relative);
+
+    LOCA::destroyGlobalData(globalData);
   }
 
   catch (std::exception& e) {

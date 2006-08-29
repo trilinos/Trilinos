@@ -135,6 +135,8 @@ int main()
       stepper.getList()->print(globalData->locaUtils->out());
       globalData->locaUtils->out() << std::endl;
     }
+
+    LOCA::destroyGlobalData(globalData);
   }
 
   catch (std::exception& e) {

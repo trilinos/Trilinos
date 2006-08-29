@@ -324,7 +324,7 @@ int main(int argc, char *argv[])
 				  "norm of final solution",
 				  NOX::TestCompare::Relative);
 
-    destroyGlobalData(globalData);
+    LOCA::destroyGlobalData(globalData);
   }
 
   catch (std::exception& e) {

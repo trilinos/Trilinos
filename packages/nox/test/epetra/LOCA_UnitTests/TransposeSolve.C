@@ -387,7 +387,7 @@ int main(int argc, char *argv[])
     ierr += testTransposeSolve(NumGlobalElements, nRHS, reltol, abstol,
 			       Comm, globalData, paramList);
 
-    destroyGlobalData(globalData);
+    LOCA::destroyGlobalData(globalData);
   }
 
   catch (std::exception& e) {
