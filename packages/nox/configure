@@ -8859,7 +8859,7 @@ fi
 # ------------------------------------------------------------------------
 
 
-if false; then
+if true; then
   BUILD_EPETRA_MULTIPHYSICS_TRUE=
   BUILD_EPETRA_MULTIPHYSICS_FALSE='#'
 else
