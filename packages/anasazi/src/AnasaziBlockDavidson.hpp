@@ -689,14 +689,6 @@ namespace Anasazi {
 
     // set new auxiliary vectors
     auxVecs_ = auxvecs;
-    
-    if (om_->isVerbosity( Debug ) ) {
-      // Check almost everything here
-      CheckList chk;
-      chk.checkQ = true;
-      om_->print( Debug, accuracyCheck(chk, ": in setAuxVecs()") );
-    }
-
     numAuxVecs_ = 0;
     for (tarcpmv i=auxVecs_.begin(); i != auxVecs_.end(); i++) {
       numAuxVecs_ += MVT::GetNumberVecs(**i);
@@ -705,6 +697,12 @@ namespace Anasazi {
     // If the solver has been initialized, V is not necessarily orthogonal to new auxiliary vectors
     if (numAuxVecs_ > 0 && initialized_) {
       initialized_ = false;
+    }
+
+    if (om_->isVerbosity( Debug ) ) {
+      CheckList chk;
+      chk.checkQ = true;
+      om_->print( Debug, accuracyCheck(chk, ": in setAuxVecs()") );
     }
   }
 
@@ -1361,8 +1359,10 @@ namespace Anasazi {
     std::vector<int> lclind(curDim_);
     for (int i=0; i<curDim_; i++) lclind[i] = i;
     Teuchos::RefCountPtr<MV> lclV,lclKV;
-    lclV = MVT::CloneView(*V_,lclind);
-    if (chk.checkV) {
+    if (initialized_) {
+      lclV = MVT::CloneView(*V_,lclind);
+    }
+    if (chk.checkV && initialized_) {
       tmp = orthman_->orthonormError(*lclV);
       os << " >> Error in V^H M V == I  : " << tmp << endl;
       for (unsigned int i=0; i<auxVecs_.size(); i++) {
@@ -1385,7 +1385,7 @@ namespace Anasazi {
     }
 
     // X and friends
-    if (chk.checkX) {
+    if (chk.checkX && initialized_) {
       tmp = orthman_->orthonormError(*X_);
       os << " >> Error in X^H M X == I  : " << tmp << endl;
       for (unsigned int i=0; i<auxVecs_.size(); i++) {
@@ -1393,17 +1393,17 @@ namespace Anasazi {
         os << " >> Error in X^H M Q[" << i << "] == 0 : " << tmp << endl;
       }
     }
-    if (chk.checkMX && hasM_) {
+    if (chk.checkMX && hasM_ && initialized_) {
       tmp = MSUtils_.errorEquality(X_.get(), MX_.get(), MOp_.get());
       os << " >> Error in MX == M*X     : " << tmp << endl;
     }
-    if (chk.checkKX) {
+    if (chk.checkKX && initialized_) {
       tmp = MSUtils_.errorEquality(X_.get(), KX_.get(), Op_.get());
       os << " >> Error in KX == K*X     : " << tmp << endl;
     }
 
     // H and friends
-    if (chk.checkH) {
+    if (chk.checkH && initialized_) {
       tmp = orthman_->orthonormError(*H_);
       os << " >> Error in H^H M H == I  : " << tmp << endl;
       tmp = orthman_->orthogError(*H_,*lclV);
@@ -1415,21 +1415,32 @@ namespace Anasazi {
         os << " >> Error in H^H M Q[" << i << "] == 0 : " << tmp << endl;
       }
     }
-    if (chk.checkKH) {
+    if (chk.checkKH && initialized_) {
       tmp = MSUtils_.errorEquality(H_.get(), KH_.get(), Op_.get());
       os << " >> Error in KH == K*H     : " << tmp << endl;
     }
-    if (chk.checkMH && hasM_) {
+    if (chk.checkMH && hasM_ && initialized_) {
       tmp = MSUtils_.errorEquality(H_.get(), MH_.get(), MOp_.get());
       os << " >> Error in MH == M*H     : " << tmp << endl;
     }
 
     // R: this is not M-orthogonality, but standard euclidean orthogonality
-    if (chk.checkR) {
+    if (chk.checkR && initialized_) {
       Teuchos::SerialDenseMatrix<int,ScalarType> xTx(blockSize_,blockSize_);
       MVT::MvTransMv(ONE,*X_,*R_,xTx);
       tmp = xTx.normFrobenius();
       os << " >> Error in X^H R == 0    : " << tmp << endl;
+    }
+
+    // KK
+    if (chk.checkKK && initialized_) {
+      Teuchos::SerialDenseMatrix<int,ScalarType> tmp(curDim_,curDim_), lclKK(Teuchos::View,*KK_,curDim_,curDim_);
+      for (int j=0; j<curDim_; j++) {
+        for (int i=0; i<curDim_; i++) {
+          tmp(i,j) = lclKK(i,j) - SCT::conjugate(lclKK(j,i));
+        }
+      }
+      os << " >> Error in KK - KK^H == 0 : " << tmp.normFrobenius() << endl;
     }
 
     // Q
@@ -1442,17 +1453,6 @@ namespace Anasazi {
           os << " >> Error in Q[" << i << "]^H M Q[" << j << "] == 0 : " << tmp << endl;
         }
       }
-    }
-
-    // KK
-    if (chk.checkKK) {
-      Teuchos::SerialDenseMatrix<int,ScalarType> tmp(curDim_,curDim_), lclKK(Teuchos::View,*KK_,curDim_,curDim_);
-      for (int j=0; j<curDim_; j++) {
-        for (int i=0; i<curDim_; i++) {
-          tmp(i,j) = lclKK(i,j) - SCT::conjugate(lclKK(j,i));
-        }
-      }
-      os << " >> Error in KK - KK^H == 0 : " << tmp.normFrobenius() << endl;
     }
 
     os << endl;

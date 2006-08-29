@@ -832,13 +832,6 @@ namespace Anasazi {
     // set new auxiliary vectors
     auxVecs_ = auxvecs;
     
-    if (om_->isVerbosity( Debug ) ) {
-      // Check almost everything here
-      CheckList chk;
-      chk.checkQ = true;
-      om_->print( Debug, accuracyCheck(chk, ": in setAuxVecs()") );
-    }
-
     numAuxVecs_ = 0;
     for (tarcpmv i=auxVecs_.begin(); i != auxVecs_.end(); i++) {
       numAuxVecs_ += MVT::GetNumberVecs(**i);
@@ -848,6 +841,13 @@ namespace Anasazi {
     if (numAuxVecs_ > 0 && initialized_) {
       initialized_ = false;
       hasP_ = false;
+    }
+
+    if (om_->isVerbosity( Debug ) ) {
+      // Check almost everything here
+      CheckList chk;
+      chk.checkQ = true;
+      om_->print( Debug, accuracyCheck(chk, ": in setAuxVecs()") );
     }
   }
 
@@ -1834,7 +1834,7 @@ namespace Anasazi {
     os << " Debugging checks: iteration " << iter_ << where << endl;
 
     // X and friends
-    if (chk.checkX) {
+    if (chk.checkX && initialized_) {
       tmp = orthman_->orthonormError(*X_);
       os << " >> Error in X^H M X == I : " << tmp << endl;
       for (unsigned int i=0; i<auxVecs_.size(); i++) {
@@ -1842,17 +1842,17 @@ namespace Anasazi {
         os << " >> Error in X^H M Q[" << i << "] == 0 : " << tmp << endl;
       }
     }
-    if (chk.checkMX && hasM_) {
+    if (chk.checkMX && hasM_ && initialized_) {
       tmp = MSUtils_.errorEquality(X_.get(), MX_.get(), MOp_.get());
       os << " >> Error in MX == M*X    : " << tmp << endl;
     }
-    if (chk.checkKX) {
+    if (chk.checkKX && initialized_) {
       tmp = MSUtils_.errorEquality(X_.get(), KX_.get(), Op_.get());
       os << " >> Error in KX == K*X    : " << tmp << endl;
     }
 
     // P and friends
-    if (chk.checkP && hasP_) {
+    if (chk.checkP && hasP_ && initialized_) {
       if (fullOrtho_) {
         tmp = orthman_->orthonormError(*P_);
         os << " >> Error in P^H M P == I : " << tmp << endl;
@@ -1864,17 +1864,17 @@ namespace Anasazi {
         os << " >> Error in P^H M Q[" << i << "] == 0 : " << tmp << endl;
       }
     }
-    if (chk.checkMP && hasM_ && hasP_) {
+    if (chk.checkMP && hasM_ && hasP_ && initialized_) {
       tmp = MSUtils_.errorEquality(P_.get(), MP_.get(), MOp_.get());
       os << " >> Error in MP == M*P    : " << tmp << endl;
     }
-    if (chk.checkKP && hasP_) {
+    if (chk.checkKP && hasP_ && initialized_) {
       tmp = MSUtils_.errorEquality(P_.get(), KP_.get(), Op_.get());
       os << " >> Error in KP == K*P    : " << tmp << endl;
     }
 
     // H and friends
-    if (chk.checkH) {
+    if (chk.checkH && initialized_) {
       if (fullOrtho_) {
         tmp = orthman_->orthonormError(*H_);
         os << " >> Error in H^H M H == I : " << tmp << endl;
@@ -1890,13 +1890,13 @@ namespace Anasazi {
         os << " >> Error in H^H M Q[" << i << "] == 0 : " << tmp << endl;
       }
     }
-    if (chk.checkMH && hasM_) {
+    if (chk.checkMH && hasM_ && initialized_) {
       tmp = MSUtils_.errorEquality(H_.get(), MH_.get(), MOp_.get());
       os << " >> Error in MH == M*H    : " << tmp << endl;
     }
 
     // R: this is not M-orthogonality, but standard euclidean orthogonality
-    if (chk.checkR) {
+    if (chk.checkR && initialized_) {
       Teuchos::SerialDenseMatrix<int,ScalarType> xTx(blockSize_,blockSize_);
       MVT::MvTransMv(ONE,*X_,*R_,xTx);
       tmp = xTx.normFrobenius();
