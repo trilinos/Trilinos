@@ -119,7 +119,7 @@ public:
   /*!
     See reset(NOX::Abstract::Group&, NOX::StatusTest::Generic&, Teuchos::ParameterList&) for description
    */
-  FixedPointBased(const Teuchos::RefCountPtr< vector<NOX::Solver::Manager*> >& solvers,
+  FixedPointBased(const Teuchos::RefCountPtr< vector<Teuchos::RefCountPtr<NOX::Solver::Manager> > >& solvers,
 		  const Teuchos::RefCountPtr<NOX::Multiphysics::DataExchange::Interface>& interface, 
 		  const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests, 
 		  const Teuchos::RefCountPtr<Teuchos::ParameterList>& params);
@@ -130,7 +130,7 @@ public:
   virtual bool reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
 		     const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests, 
 		     const Teuchos::RefCountPtr<Teuchos::ParameterList>& params);
-  virtual bool reset(const Teuchos::RefCountPtr<vector<NOX::Solver::Manager*> >& solvers, 
+  virtual bool reset(const Teuchos::RefCountPtr<vector<Teuchos::RefCountPtr<NOX::Solver::Manager> > >& solvers, 
 		     const Teuchos::RefCountPtr<NOX::Multiphysics::DataExchange::Interface>& interface, 
 		     const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests, 
 		     const Teuchos::RefCountPtr<Teuchos::ParameterList>& params);
@@ -162,7 +162,7 @@ protected:
   SOLVE_TYPE solveType;
 
   //! Pointer to the container of solvers for each problem to be coupled
-  Teuchos::RefCountPtr<vector<NOX::Solver::Manager*> > solversVecPtr;
+  Teuchos::RefCountPtr<vector<Teuchos::RefCountPtr<NOX::Solver::Manager> > > solversVecPtr;
 
   //! Pointer to the callback interface needed to echange data among solvers
   Teuchos::RefCountPtr<NOX::Multiphysics::DataExchange::Interface> dataExInterface;

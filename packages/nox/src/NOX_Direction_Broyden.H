@@ -388,7 +388,7 @@ private:
 
   /*! 
     \brief Counter of how many times the Jacobian associated with
-    #OldJacobianGrpPtr has been used since its last update 
+    #oldJacobianGrpPtr has been used since its last update 
   */
   int cnt;
 

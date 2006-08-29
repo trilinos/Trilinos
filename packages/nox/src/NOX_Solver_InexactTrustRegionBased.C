@@ -56,8 +56,8 @@ using namespace NOX::Solver;
 //**** Constructor
 //*************************************************************************
 NOX::Solver::InexactTrustRegionBased::
-InexactTrustRegionBased(const Teuchos::RefCountPtr<Abstract::Group>& grp, 
-			const Teuchos::RefCountPtr<StatusTest::Generic>& t, 
+InexactTrustRegionBased(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
+			const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t, 
 			const Teuchos::RefCountPtr<Teuchos::ParameterList>& p) :
   globalDataPtr(Teuchos::rcp(new NOX::GlobalData(p))),
   utils(globalDataPtr->getUtils()), 
@@ -240,8 +240,8 @@ void NOX::Solver::InexactTrustRegionBased::throwError(const string& method,
 //**** reset
 //*************************************************************************
 bool NOX::Solver::InexactTrustRegionBased::
-reset(const Teuchos::RefCountPtr<Abstract::Group>& grp, 
-      const Teuchos::RefCountPtr<StatusTest::Generic>& t, 
+reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
+      const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t, 
       const Teuchos::RefCountPtr<Teuchos::ParameterList>& p) 
 {
   globalDataPtr = Teuchos::rcp(new NOX::GlobalData(p));
@@ -259,8 +259,8 @@ reset(const Teuchos::RefCountPtr<Abstract::Group>& grp,
 //**** reset (without reparsing of parameter list)
 //*************************************************************************
 bool NOX::Solver::InexactTrustRegionBased::
-reset(const Teuchos::RefCountPtr<Abstract::Group>& grp, 
-      const Teuchos::RefCountPtr<StatusTest::Generic>& t)
+reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
+      const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t)
 {
   solnPtr = grp;
   testPtr = t;
@@ -298,7 +298,7 @@ reset(const Teuchos::RefCountPtr<Abstract::Group>& grp,
 //**** reset (without reparsing of parameter list or status tests)
 //*************************************************************************
 bool NOX::Solver::InexactTrustRegionBased::
-reset(const Teuchos::RefCountPtr<Abstract::Group>& grp)
+reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp)
 {
   solnPtr = grp;
 

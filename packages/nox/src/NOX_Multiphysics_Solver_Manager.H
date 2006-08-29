@@ -85,7 +85,7 @@ public:
 
     See reset() for a full description.
   */
-  Manager(const Teuchos::RefCountPtr<vector<NOX::Solver::Manager*> >& solvers, 
+  Manager(const Teuchos::RefCountPtr<vector<Teuchos::RefCountPtr<NOX::Solver::Manager> > >& solvers, 
           const Teuchos::RefCountPtr<NOX::Multiphysics::DataExchange::Interface>& i, 
 	  const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t, 
 	  const Teuchos::RefCountPtr<Teuchos::ParameterList>& p);
@@ -102,7 +102,7 @@ public:
   //! Destructor.
   virtual ~Manager();
 
-  virtual bool reset(const Teuchos::RefCountPtr<vector<NOX::Solver::Manager*> >& solvers, 
+  virtual bool reset(const Teuchos::RefCountPtr<vector<Teuchos::RefCountPtr<NOX::Solver::Manager> > >& solvers, 
                      const Teuchos::RefCountPtr<NOX::Multiphysics::DataExchange::Interface>& i, 
 	             const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests, 
 	             const Teuchos::RefCountPtr<Teuchos::ParameterList>& params);

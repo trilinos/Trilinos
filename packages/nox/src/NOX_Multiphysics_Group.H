@@ -86,7 +86,7 @@ namespace Multiphysics {
      \note Constructors for any derived object should always define a default
      x-value so that getX() is always defined.
    */
-   Group( const Teuchos::RefCountPtr< vector<NOX::Solver::Manager*> >& solvers, 
+   Group( const Teuchos::RefCountPtr< vector<Teuchos::RefCountPtr<NOX::Solver::Manager> > >& solvers, 
           const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t, 
           const Teuchos::RefCountPtr<Teuchos::ParameterList>& p);
 
@@ -224,7 +224,7 @@ protected:
 protected:
 
   //! Pointer to the container of solvers for each problem to be coupled
-  Teuchos::RefCountPtr<vector<NOX::Solver::Manager*> > solversVecPtr;
+  Teuchos::RefCountPtr<vector<Teuchos::RefCountPtr<NOX::Solver::Manager> > > solversVecPtr;
 
   /** @name IsValid flags 
    *  

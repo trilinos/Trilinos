@@ -39,7 +39,7 @@
 #include "NOX_Multiphysics_Group.H"
 
 NOX::Multiphysics::Group::Group(
-          const Teuchos::RefCountPtr< vector<NOX::Solver::Manager*> >& solvers, 
+          const Teuchos::RefCountPtr< vector<Teuchos::RefCountPtr<NOX::Solver::Manager> > >& solvers, 
           const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t, 
           const Teuchos::RefCountPtr<Teuchos::ParameterList>& p) :
   solversVecPtr(solvers),

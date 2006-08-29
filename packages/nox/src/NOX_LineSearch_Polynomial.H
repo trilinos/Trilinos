@@ -547,7 +547,7 @@ protected:
     allowIncrease is true); uses "Allowed Relative Increase" parameter */
   double maxRelativeIncrease;
 
-  /*! \brief True if we should use #counterUtil and output the results; uses
+  /*! \brief True if we should use #counter and output the results; uses
     "Use Counters" parameter.*/
   bool useCounter;
 
@@ -556,7 +556,7 @@ protected:
 
   //! Pointer to the input parameter list. 
   /*! We need this to later create an "Output" sublist to store output
-      parameters from #counterUtil. 
+      parameters from #counter. 
   */
   Teuchos::ParameterList* paramsPtr;
 

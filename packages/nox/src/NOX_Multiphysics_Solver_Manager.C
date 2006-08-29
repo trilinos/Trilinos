@@ -48,9 +48,9 @@
 #endif
 
 NOX::Multiphysics::Solver::Manager::Manager(
-        const Teuchos::RefCountPtr<vector<NOX::Solver::Manager*> >& solvers, 
+        const Teuchos::RefCountPtr<vector<Teuchos::RefCountPtr<NOX::Solver::Manager> > >& solvers, 
         const Teuchos::RefCountPtr<NOX::Multiphysics::DataExchange::Interface>& i, 
-	const Teuchos::RefCountPtr<StatusTest::Generic>& t, 
+	const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t, 
 	const Teuchos::RefCountPtr<Teuchos::ParameterList>& p) :
   utils(p->sublist("Printing")),
   method(""),
@@ -60,8 +60,8 @@ NOX::Multiphysics::Solver::Manager::Manager(
 }
 
 NOX::Multiphysics::Solver::Manager::Manager(
-        const Teuchos::RefCountPtr<Abstract::Group>& grp, 
-	const Teuchos::RefCountPtr<StatusTest::Generic>& t, 
+        const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
+	const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t, 
 	const Teuchos::RefCountPtr<Teuchos::ParameterList>& p) :
   utils(p->sublist("Printing")),
   method(""),
@@ -83,16 +83,16 @@ NOX::Multiphysics::Solver::Manager::~Manager()
 
 bool NOX::Multiphysics::Solver::Manager::
 reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
-      const Teuchos::RefCountPtr<StatusTest::Generic>& tests, 
+      const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests, 
       const Teuchos::RefCountPtr<Teuchos::ParameterList>& params)
 {
   return false;
 }
 
 bool NOX::Multiphysics::Solver::Manager::reset(
-      const Teuchos::RefCountPtr<vector<NOX::Solver::Manager*> >& solvers, 
+      const Teuchos::RefCountPtr<vector<Teuchos::RefCountPtr<NOX::Solver::Manager> > >& solvers, 
       const Teuchos::RefCountPtr<NOX::Multiphysics::DataExchange::Interface>& interface, 
-      const Teuchos::RefCountPtr<StatusTest::Generic>& tests, 
+      const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests, 
       const Teuchos::RefCountPtr<Teuchos::ParameterList>& params)
 {
   string newmethod = 
@@ -137,8 +137,8 @@ bool NOX::Multiphysics::Solver::Manager::reset(
 
 bool 
 NOX::Multiphysics::Solver::Manager::reset(
-      const Teuchos::RefCountPtr<Abstract::Group>& grp, 
-      const Teuchos::RefCountPtr<StatusTest::Generic>& tests)
+      const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
+      const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests)
 {
   return cplPtr->reset(grp, tests);
 }

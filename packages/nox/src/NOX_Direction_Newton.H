@@ -173,8 +173,6 @@ Term Method" is "Type 1" or "Type 2".</em>
 
 </ul>
 
-</ul>
-
 \note
 When using a forcing term, it's critically important the the residual
 of the original system is used in the comparison. This can be an issue

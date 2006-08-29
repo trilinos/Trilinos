@@ -49,8 +49,8 @@
 
 NOX::Utils::Utils(int outputInformation, int MyPID, int outputProcess, 
 		  int outputPrecision, 
-		  const Teuchos::RefCountPtr<ostream>& outputStream,
-		  const Teuchos::RefCountPtr<ostream>& errStream) :
+		  const Teuchos::RefCountPtr<std::ostream>& outputStream,
+		  const Teuchos::RefCountPtr<std::ostream>& errStream) :
   precision(outputPrecision),
   myPID(MyPID),
   printTest(outputInformation),

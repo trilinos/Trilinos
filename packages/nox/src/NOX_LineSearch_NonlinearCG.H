@@ -97,7 +97,7 @@ namespace LineSearch {
   \f]
 
   An approximate solution to this equation can be obtained from a 
-  second-order expansion of \f$ \phi(\lambda) \f$,
+  second-order expansion of \f[ \phi(\lambda) \f],
 
   \f[ 
     \phi(\lambda)\approx\phi (0) + \phi ' (0)\lambda + \phi '' (0)
@@ -107,7 +107,7 @@ namespace LineSearch {
   from which it immediately follows
 
   \f[ 
-    \lambda_{min} \approx - \frac{\phi ' (0)}{\phi '' (0)} =
+    \%lambda_{min} \approx - \frac{\phi ' (0)}{\phi '' (0)} =
     - \frac{F(x_{old})^T d}{d^T J(x_{old})d}
   \f]
 

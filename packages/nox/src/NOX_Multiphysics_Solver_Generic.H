@@ -94,9 +94,6 @@ public:
   /*! 
     \brief Reset the nonlinear solver for a new solve
 
-    \param grp On input, contains the intial guess. On output,
-    contains the solution. 
-
     \param tests Status tests to check for convergence or
     failure. These tests will be modified by the solver.
 
@@ -115,7 +112,7 @@ public:
     call reset() again with the modified objects.
   */
   virtual bool 
-  reset(const Teuchos::RefCountPtr<vector<NOX::Solver::Manager*> >& solvers, 
+  reset(const Teuchos::RefCountPtr<vector<Teuchos::RefCountPtr<NOX::Solver::Manager> > >& solvers, 
 	const Teuchos::RefCountPtr<NOX::Multiphysics::DataExchange::Interface>& interface, 
 	const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests, 
 	const Teuchos::RefCountPtr<Teuchos::ParameterList>& params) = 0;

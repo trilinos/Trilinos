@@ -52,8 +52,8 @@ using namespace NOX;
 using namespace NOX::Solver;
 
 TrustRegionBased::
-TrustRegionBased(const Teuchos::RefCountPtr<Abstract::Group>& grp,
-		 const Teuchos::RefCountPtr<StatusTest::Generic>& t,
+TrustRegionBased(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp,
+		 const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t,
 		 const Teuchos::RefCountPtr<Teuchos::ParameterList>& p) :
   globalDataPtr(Teuchos::rcp(new NOX::GlobalData(p))),
   utilsPtr(globalDataPtr->getUtils()), 
@@ -155,8 +155,8 @@ invalid(const string& name, double value) const
 }
 
 bool TrustRegionBased::
-reset(const Teuchos::RefCountPtr<Abstract::Group>& grp, 
-      const Teuchos::RefCountPtr<StatusTest::Generic>& t, 
+reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
+      const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t, 
       const Teuchos::RefCountPtr<Teuchos::ParameterList>& p) 
 {
   globalDataPtr = Teuchos::rcp(new NOX::GlobalData(p));
@@ -170,8 +170,8 @@ reset(const Teuchos::RefCountPtr<Abstract::Group>& grp,
 }
 
 bool TrustRegionBased::
-reset(const Teuchos::RefCountPtr<Abstract::Group>& grp,
-      const Teuchos::RefCountPtr<StatusTest::Generic>& t)
+reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp,
+      const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t)
 {
   // New initial guess and status test
   solnPtr = grp;
@@ -193,7 +193,7 @@ reset(const Teuchos::RefCountPtr<Abstract::Group>& grp,
 }
 
 bool TrustRegionBased::
-reset(const Teuchos::RefCountPtr<Abstract::Group>& grp)
+reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp)
 {
   // New initial guess and status test
   solnPtr = grp;

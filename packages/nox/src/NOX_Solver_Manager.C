@@ -53,8 +53,8 @@
 #endif
 
 NOX::Solver::Manager::
-Manager(const Teuchos::RefCountPtr<Abstract::Group>& grp, 
-	const Teuchos::RefCountPtr<StatusTest::Generic>& t, 
+Manager(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
+	const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t, 
 	const Teuchos::RefCountPtr<Teuchos::ParameterList>& p) :
   utils(p->sublist("Printing")),
   method(""),
@@ -75,8 +75,8 @@ NOX::Solver::Manager::~Manager()
 }
 
 bool NOX::Solver::Manager::
-reset(const Teuchos::RefCountPtr<Abstract::Group>& grp, 
-      const Teuchos::RefCountPtr<StatusTest::Generic>& tests, 
+reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
+      const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests, 
       const Teuchos::RefCountPtr<Teuchos::ParameterList>& params)
 {
   string newmethod = 
@@ -142,14 +142,14 @@ reset(const Teuchos::RefCountPtr<Abstract::Group>& grp,
 }
 
 bool NOX::Solver::Manager::
-reset(const Teuchos::RefCountPtr<Abstract::Group>& grp, 
-      const Teuchos::RefCountPtr<StatusTest::Generic>& tests)
+reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
+      const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests)
 {
   return ptr->reset(grp, tests);
 }
 
 bool NOX::Solver::Manager::
-reset(const Teuchos::RefCountPtr<Abstract::Group>& grp)
+reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp)
 {
   return ptr->reset(grp);
 }

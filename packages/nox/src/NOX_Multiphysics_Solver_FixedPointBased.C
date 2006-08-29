@@ -44,7 +44,7 @@
 #include "NOX_GlobalData.H"
 
 NOX::Multiphysics::Solver::FixedPointBased::
-FixedPointBased(const Teuchos::RefCountPtr< vector<NOX::Solver::Manager*> >& solvers, 
+FixedPointBased(const Teuchos::RefCountPtr< vector<Teuchos::RefCountPtr<NOX::Solver::Manager> > >& solvers, 
 		const Teuchos::RefCountPtr<NOX::Multiphysics::DataExchange::Interface>& i, 
 		const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t, 
 		const Teuchos::RefCountPtr<Teuchos::ParameterList>& p) :
@@ -102,7 +102,7 @@ NOX::Multiphysics::Solver::FixedPointBased::init()
 
 bool 
 NOX::Multiphysics::Solver::FixedPointBased::reset(
-      const Teuchos::RefCountPtr<vector<NOX::Solver::Manager*> >& solvers, 
+      const Teuchos::RefCountPtr<vector<Teuchos::RefCountPtr<NOX::Solver::Manager> > >& solvers, 
       const Teuchos::RefCountPtr<NOX::Multiphysics::DataExchange::Interface>& i, 
       const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t, 
       const Teuchos::RefCountPtr<Teuchos::ParameterList>& p) 
@@ -203,8 +203,8 @@ NOX::Multiphysics::Solver::FixedPointBased::step()
 
   NOX::StatusTest::StatusType status = NOX::StatusTest::Unconverged;
 
-  vector<NOX::Solver::Manager*>::iterator     iter = (*solversVecPtr).begin(),
-                                          iter_end = (*solversVecPtr).end()   ;
+  vector<Teuchos::RefCountPtr<NOX::Solver::Manager> >::iterator iter = (*solversVecPtr).begin(),
+                                                            iter_end = (*solversVecPtr).end()   ;
   
   for( int i = 0; iter_end != iter; ++iter, ++i )
   {
