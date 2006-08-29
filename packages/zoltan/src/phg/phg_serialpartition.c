@@ -408,9 +408,8 @@ PHGComm *hgc = hg->comm;
 int err=0;
 int rootnpins, rootrank;
 
-  if (CoarsePartition == NULL) { /* auto */
-    /* Select a coarse partitioner from the array of coarse partitioners */
-    CoarsePartition = CoarsePartitionFns[zz->Proc % NUM_COARSEPARTITION_FNS];
+  if (CoarsePartition == NULL) { /* PHG_COARSEPARTITION_METHOD = "auto" */
+    CoarsePartition = coarse_part_greedy;
   }
 
   /* The column processor with the most pins will be our root.  */
