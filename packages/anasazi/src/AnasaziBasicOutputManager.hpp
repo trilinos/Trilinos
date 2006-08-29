@@ -70,10 +70,10 @@ class BasicOutputManager : public OutputManager<ScalarType> {
   //@{ 
 
   //! Set the output stream for this manager.
-  void setOStream( Teuchos::RefCountPtr<ostream> os ) { myOS_ = os; };
+  void setOStream( Teuchos::RefCountPtr<ostream> os );
 
   //! Get the output stream for this manager.
-  Teuchos::RefCountPtr<ostream> getOStream() { return myOS_; };
+  Teuchos::RefCountPtr<ostream> getOStream();
 
   //@}
 
@@ -124,6 +124,16 @@ BasicOutputManager<ScalarType>::BasicOutputManager(int vb, Teuchos::RefCountPtr<
   #endif
   iPrint_ = (MyPID == 0);
 } 
+
+template<class ScalarType>
+void BasicOutputManager<ScalarType>::setOStream( Teuchos::RefCountPtr<ostream> os ) { 
+  myOS_ = os; 
+}
+
+template<class ScalarType>
+Teuchos::RefCountPtr<ostream> BasicOutputManager<ScalarType>::getOStream() { 
+  return myOS_; 
+}
 
 template<class ScalarType>
 bool BasicOutputManager<ScalarType>::isVerbosity( MsgType type ) {

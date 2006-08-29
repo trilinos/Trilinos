@@ -17,6 +17,7 @@
             BlockDavidson/BlockDavidson_test.exe,
             BlockDavidson/BlockDavidson_solvertest.exe,
             BlockKrylovSchur/BlockKrylovSchur_test.exe,
+            BlockKrylovSchur/BlockKrylovSchur_nh_test.exe,
             BlockKrylovSchur/BlockKrylovSchur_solvertest.exe,
             OrthoManager/OrthoManager_test.exe,
             OrthoManager/OrthoManager_basic_test.exe;

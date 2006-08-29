@@ -52,7 +52,7 @@ endif
 endif
 
 #np# List all executable names here
-noinst_PROGRAMS = BlockKrylovSchur_solvertest BlockKrylovSchur_test
+noinst_PROGRAMS = BlockKrylovSchur_solvertest BlockKrylovSchur_test BlockKrylovSchur_nh_test
 notenabled = $(BKS_COMPLEX_TEST)
 
 Dummy$(EXEEXT): $(srcdir)/Dummy
@@ -62,6 +62,7 @@ Dummy$(EXEEXT): $(srcdir)/Dummy
 #np# primaries that the pattern is "(Exe_name)_(PRIMARY_NAME) = ").  List all source 
 #np# files needed to compile the exe.
 BlockKrylovSchur_test_SOURCES = $(srcdir)/cxx_main.cpp
+BlockKrylovSchur_nh_test_SOURCES = $(srcdir)/cxx_main_nh.cpp
 BlockKrylovSchur_solvertest_SOURCES = $(srcdir)/cxx_main_solvertest.cpp
 BlockKrylovSchurComplex_test_SOURCES = $(srcdir)/cxx_main_complex.cpp
 
@@ -72,6 +73,11 @@ Dummy_SOURCES = Dummy
 BlockKrylovSchur_test_DEPENDENCIES = \
 	$(top_builddir)/src/libanasazi.a \
 	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a
+
+BlockKrylovSchur_nh_test_DEPENDENCIES = \
+	$(top_builddir)/src/libanasazi.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a
 
@@ -91,6 +97,8 @@ BlockKrylovSchurComplex_test_DEPENDENCIES = \
 #np# building the exe.
 BlockKrylovSchur_test_CXXFLAGS = -I$(top_srcdir)/src
 
+BlockKrylovSchur_nh_test_CXXFLAGS = -I$(top_srcdir)/src
+
 BlockKrylovSchur_solvertest_CXXFLAGS = -I$(top_srcdir)/src
 
 BlockKrylovSchurComplex_test_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPTester
@@ -98,6 +106,10 @@ BlockKrylovSchurComplex_test_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test
 #np# One LDADD primary can be defined for each exe.  Include any LDFLAGS necessary for 
 #np# building the exe.
 BlockKrylovSchur_test_LDADD = \
+	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
+	$(EXPORT_LIBS)
+
+BlockKrylovSchur_nh_test_LDADD = \
 	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
 	$(EXPORT_LIBS)
 

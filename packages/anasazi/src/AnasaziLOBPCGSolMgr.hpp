@@ -399,6 +399,10 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
           indnew.resize(numnew);
         }
 
+        // the call below to lobpcg_solver->setAuxVecs() will reset the solver to unitialized with hasP() == false
+        // store the hasP() state for use below
+        bool hadP = lobpcg_solver->hasP();
+
         {
           // debug printing
           printer->print(Debug,"Locking vectors: ");
@@ -477,7 +481,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
           // ortho X against the aux vectors
           ortho->projectAndNormalize(*newstateX,newstateMX,dummy,Teuchos::null,curauxvecs);
 
-          if (lobpcg_solver->hasP()) {
+          if (hadP) {
             //
             // get P and optionally MP, orthogonalize against X and auxiliary vectors
             std::vector<int> block2(blockSize_);

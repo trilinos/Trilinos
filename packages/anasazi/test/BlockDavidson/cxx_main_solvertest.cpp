@@ -98,6 +98,7 @@ void checks( RefCountPtr<BlockDavidson<ScalarType,MV,OP> > solver, int blocksize
   {
     TEST_FOR_EXCEPTION(solver->getResNorms().size() != (unsigned int)blocksize,get_out,"getResNorms.size() does not match block.");
     TEST_FOR_EXCEPTION(solver->getRes2Norms().size() != (unsigned int)blocksize,get_out,"getRes2Norms.size() does not match block.");
+    TEST_FOR_EXCEPTION(solver->getRitzRes2Norms().size() != (unsigned int)solver->getCurSubspaceDim(),get_out,"getRitzRes2Norms.size() does not match getCurSubpsaceDim().");
     // check ritz values
     vector<Value<ScalarType> > theta = solver->getRitzValues();
     TEST_FOR_EXCEPTION(theta.size() != (unsigned int)solver->getCurSubspaceDim(),get_out,"getRitzValues().size() does not match getCurSubspaceDim().");
@@ -208,6 +209,12 @@ void testsolver( RefCountPtr<BasicEigenproblem<ScalarType,MV,OP> > problem,
     solver->resetNumIters();
     TEST_FOR_EXCEPTION(solver->getNumIters() != 0,get_out,"Number of iterations should be zero after resetNumIters().")
   }
+
+  // call setSize with current blocksize,numblocks and ensure that it wasn't resized and that it is still initialized
+  solver->setSize(blocksize,numblocks);
+  TEST_FOR_EXCEPTION(!solver->isInitialized(),get_out,"After trivial setSize(), solver should still be initialized.");
+  TEST_FOR_EXCEPTION(solver->getBlockSize() != blocksize,get_out,"After trivial setSize(), solver should have same block size.");
+  TEST_FOR_EXCEPTION(solver->getMaxSubspaceDim()/blocksize != numblocks,get_out,"After trivial setSize(), solver should have same num blocks.");
 
   // change block size and see the difference
   solver->setBlockSize(blocksize+1);

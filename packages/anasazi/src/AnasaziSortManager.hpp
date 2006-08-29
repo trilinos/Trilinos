@@ -86,9 +86,7 @@ namespace Anasazi {
 
        @param perm [out] Vector of length n to store the permutation index (optional)
     */
-    virtual void sort(Eigensolver<ScalarType,MV,OP>* solver, const int n, std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> &evals, std::vector<int> *perm = 0) const { 
-      TEST_FOR_EXCEPTION(true,SortManagerError,"Anasazi::SortManager::sort() not defined");
-    };
+    virtual void sort(Eigensolver<ScalarType,MV,OP>* solver, const int n, std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> &evals, std::vector<int> *perm = 0) const = 0;
 
     /*! \brief Sort the vectors of eigenpairs, optionally returning the permutation vector.
 
@@ -110,9 +108,7 @@ namespace Anasazi {
                       const int n,
                       std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> &r_evals, 
                       std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> &i_evals, 
-                      std::vector<int> *perm = 0) const { 
-      TEST_FOR_EXCEPTION(true,SortManagerError,"Anasazi::SortManager::sort() not defined");
-    };
+                      std::vector<int> *perm = 0) const = 0;
     
   };
   
