@@ -112,7 +112,7 @@ int main(int argc, char *argv[])
   RefCountPtr<Epetra_CrsMatrix> M = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getMass()), false );
   //
   // Create the initial vectors
-  const int blockSize = 2;
+  int blockSize = 2;
   RefCountPtr<Anasazi::EpetraMultiVec> ivec = rcp( new Anasazi::EpetraMultiVec(K->OperatorDomainMap(), blockSize) );
   ivec->Random();
   //
@@ -154,7 +154,8 @@ int main(int argc, char *argv[])
   // Eigensolver parameters
   int maxIters;
   if (shortrun) {
-    maxIters = 100;
+    maxIters = 35;
+    blockSize = nev;
   }
   else {
     maxIters = 450;

@@ -1543,23 +1543,8 @@ namespace Anasazi {
       {
         Teuchos::TimeMonitor lcltimer( *timerLocalUpdate_ );
 
-        if (localSize == oneBlock) {
-
-          Teuchos::SerialDenseMatrix<int,ScalarType> CX1( Teuchos::View, CX, blockSize_, blockSize_ );
-
-          // X <- R*CX1 == X*CX1 
-          MVT::MvAddMv( ONE, *X_, ZERO, *X_, *R_ );        
-          MVT::MvTimesMatAddMv( ONE, *R_, CX1, ZERO, *X_ );
-          // KX <- R*CX1 == KX*CX1 
-          MVT::MvAddMv( ONE, *KX_, ZERO, *KX_, *R_ );
-          MVT::MvTimesMatAddMv( ONE, *R_, CX1, ZERO, *KX_ );
-          if (hasM_) {
-            // MX <- R*CX1 == MX*CX1 
-            MVT::MvAddMv( ONE, *MX_, ZERO, *MX_, *R_ );
-            MVT::MvTimesMatAddMv( ONE, *R_, CX1, ZERO, *MX_ );
-          }
-        } // if (localSize == oneBlocks)
-        else if (localSize == twoBlocks) {
+        TEST_FOR_EXCEPTION(localSize==oneBlock,std::logic_error,"Anasazi::LOBPCG::iterate(): Logic error in local update.");
+        if (localSize == twoBlocks) {
           Teuchos::SerialDenseMatrix<int,ScalarType> CX1( Teuchos::View, CX, blockSize_, blockSize_ ),
                                                      CX2( Teuchos::View, CX, blockSize_, blockSize_, oneBlock, 0 ),
                                                      CP1( Teuchos::View, CP, blockSize_, blockSize_ ),
