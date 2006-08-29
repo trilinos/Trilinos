@@ -1,0 +1,10 @@
+Decomposition Method 	= hypergraph				
+Zoltan Parameters	= num_global_partitions=16
+zoltan parameters       = phg_from_graph_method=pairs
+File Type		= Chaco
+File Name		= slac
+Parallel Disk Info	= number=0
+Global element ids assigned to processor 0
+GID	Part	Perm	IPerm
+3	0	-1	-1
+4	0	-1	-1
