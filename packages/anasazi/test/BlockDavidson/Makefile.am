@@ -50,7 +50,7 @@ endif
 endif
 
 #np# List all executable names here
-noinst_PROGRAMS = BlockDavidson_solvertest BlockDavidson_test $(BLOCK_DAVIDSON_COMPLEX_TEST)
+noinst_PROGRAMS = BlockDavidson_solvertest BlockDavidson_test BlockDavidson_auxtest $(BLOCK_DAVIDSON_COMPLEX_TEST)
 
 Dummy$(EXEEXT): $(srcdir)/Dummy
 	cp  $(srcdir)/../MVOPTester/mhd1280b.cua mhd1280b.cua
@@ -61,6 +61,8 @@ Dummy$(EXEEXT): $(srcdir)/Dummy
 BlockDavidson_test_SOURCES = $(srcdir)/cxx_main.cpp
 
 BlockDavidson_solvertest_SOURCES = $(srcdir)/cxx_main_solvertest.cpp
+
+BlockDavidson_auxtest_SOURCES = $(srcdir)/cxx_main_auxtest.cpp
 
 BlockDavidsonComplex_test_SOURCES = $(srcdir)/cxx_main_complex.cpp
 
@@ -80,6 +82,12 @@ BlockDavidson_solvertest_DEPENDENCIES = \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a
 
+BlockDavidson_auxtest_DEPENDENCIES = \
+	$(top_builddir)/src/libanasazi.a \
+	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a
+
 BlockDavidsonComplex_test_DEPENDENCIES = \
 	$(top_builddir)/src/libanasazi.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
@@ -92,6 +100,8 @@ BlockDavidson_test_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/util/ModeLapla
 
 BlockDavidson_solvertest_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/util/ModeLaplace
 
+BlockDavidson_auxtest_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/util/ModeLaplace
+
 BlockDavidsonComplex_test_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPTester
 
 #np# One LDADD primary can be defined for each exe.  Include any LDFLAGS necessary for 
@@ -101,6 +111,10 @@ BlockDavidson_test_LDADD = \
 	$(EXPORT_LIBS) 
 
 BlockDavidson_solvertest_LDADD = \
+	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
+	$(EXPORT_LIBS) 
+
+BlockDavidson_auxtest_LDADD = \
 	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
 	$(EXPORT_LIBS) 
 

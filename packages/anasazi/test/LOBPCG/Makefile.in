@@ -45,7 +45,7 @@
 #np# Specify locations of include files within Trilinos, but outside np
 #np# Add packages that np is dependent on; remove epetra if np does not need it
 
-SOURCES = $(Dummy_SOURCES) $(LOBPCGComplex_test_SOURCES) $(LOBPCG_simple_SOURCES) $(LOBPCG_solvertest_SOURCES) $(LOBPCG_test_SOURCES)
+SOURCES = $(Dummy_SOURCES) $(LOBPCGComplex_test_SOURCES) $(LOBPCG_auxtest_SOURCES) $(LOBPCG_simple_SOURCES) $(LOBPCG_solvertest_SOURCES) $(LOBPCG_test_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -69,7 +69,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
 noinst_PROGRAMS = LOBPCG_test$(EXEEXT) LOBPCG_simple$(EXEEXT) \
-	LOBPCG_solvertest$(EXEEXT) $(am__EXEEXT_1)
+	LOBPCG_solvertest$(EXEEXT) LOBPCG_auxtest$(EXEEXT) \
+	$(am__EXEEXT_1)
 subdir = test/LOBPCG
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -117,6 +118,8 @@ am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
 @USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
 @USING_GNUMAKE_TRUE@	$(ANASAZI_TEST_LIBS))
+am_LOBPCG_auxtest_OBJECTS = LOBPCG_auxtest-cxx_main_auxtest.$(OBJEXT)
+LOBPCG_auxtest_OBJECTS = $(am_LOBPCG_auxtest_OBJECTS)
 am_LOBPCG_simple_OBJECTS = LOBPCG_simple-cxx_simple.$(OBJEXT)
 LOBPCG_simple_OBJECTS = $(am_LOBPCG_simple_OBJECTS)
 LOBPCG_simple_DEPENDENCIES =  \
@@ -131,6 +134,7 @@ DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/LOBPCGComplex_test-cxx_main_complex.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/LOBPCG_auxtest-cxx_main_auxtest.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/LOBPCG_simple-cxx_simple.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/LOBPCG_solvertest-cxx_main_solvertest.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/LOBPCG_test-cxx_main.Po
@@ -144,11 +148,11 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(Dummy_SOURCES) $(LOBPCGComplex_test_SOURCES) \
-	$(LOBPCG_simple_SOURCES) $(LOBPCG_solvertest_SOURCES) \
-	$(LOBPCG_test_SOURCES)
+	$(LOBPCG_auxtest_SOURCES) $(LOBPCG_simple_SOURCES) \
+	$(LOBPCG_solvertest_SOURCES) $(LOBPCG_test_SOURCES)
 DIST_SOURCES = $(Dummy_SOURCES) $(LOBPCGComplex_test_SOURCES) \
-	$(LOBPCG_simple_SOURCES) $(LOBPCG_solvertest_SOURCES) \
-	$(LOBPCG_test_SOURCES)
+	$(LOBPCG_auxtest_SOURCES) $(LOBPCG_simple_SOURCES) \
+	$(LOBPCG_solvertest_SOURCES) $(LOBPCG_test_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -328,6 +332,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/util/ModeLaplace $(EXPORT_INC_PATH)
 LOBPCG_test_SOURCES = $(srcdir)/cxx_main.cpp
 LOBPCG_simple_SOURCES = $(srcdir)/cxx_simple.cpp
 LOBPCG_solvertest_SOURCES = $(srcdir)/cxx_main_solvertest.cpp
+LOBPCG_auxtest_SOURCES = $(srcdir)/cxx_main_auxtest.cpp
 LOBPCGComplex_test_SOURCES = $(srcdir)/cxx_main_complex.cpp 
 Dummy_SOURCES = Dummy
 
@@ -351,6 +356,12 @@ LOBPCG_solvertest_DEPENDENCIES = \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a
 
+LOBPCG_auxtest_DEPENDENCIES = \
+	$(top_builddir)/src/libanasazi.a \
+	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a
+
 LOBPCGComplex_test_DEPENDENCIES = \
 	$(top_builddir)/src/libanasazi.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
@@ -363,6 +374,7 @@ LOBPCGComplex_test_DEPENDENCIES = \
 LOBPCG_test_CXXFLAGS = -I$(top_srcdir)/src
 LOBPCG_simple_CXXFLAGS = -I$(top_srcdir)/src
 LOBPCG_solvertest_CXXFLAGS = -I$(top_srcdir)/src
+LOBPCG_auxtest_CXXFLAGS = -I$(top_srcdir)/src
 LOBPCGComplex_test_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPTester
 
 #np# One LDADD primary can be defined for each exe.  Include any LDFLAGS necessary for 
@@ -376,6 +388,10 @@ LOBPCG_simple_LDADD = \
 	$(EXPORT_LIBS) 
 
 LOBPCG_solvertest_LDADD = \
+	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
+	$(EXPORT_LIBS) 
+
+LOBPCG_auxtest_LDADD = \
 	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
 	$(EXPORT_LIBS) 
 
@@ -421,6 +437,9 @@ clean-noinstPROGRAMS:
 LOBPCGComplex_test$(EXEEXT): $(LOBPCGComplex_test_OBJECTS) $(LOBPCGComplex_test_DEPENDENCIES) 
 	@rm -f LOBPCGComplex_test$(EXEEXT)
 	$(CXXLINK) $(LOBPCGComplex_test_LDFLAGS) $(LOBPCGComplex_test_OBJECTS) $(LOBPCGComplex_test_LDADD) $(LIBS)
+LOBPCG_auxtest$(EXEEXT): $(LOBPCG_auxtest_OBJECTS) $(LOBPCG_auxtest_DEPENDENCIES) 
+	@rm -f LOBPCG_auxtest$(EXEEXT)
+	$(CXXLINK) $(LOBPCG_auxtest_LDFLAGS) $(LOBPCG_auxtest_OBJECTS) $(LOBPCG_auxtest_LDADD) $(LIBS)
 LOBPCG_simple$(EXEEXT): $(LOBPCG_simple_OBJECTS) $(LOBPCG_simple_DEPENDENCIES) 
 	@rm -f LOBPCG_simple$(EXEEXT)
 	$(CXXLINK) $(LOBPCG_simple_LDFLAGS) $(LOBPCG_simple_OBJECTS) $(LOBPCG_simple_LDADD) $(LIBS)
@@ -438,6 +457,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOBPCGComplex_test-cxx_main_complex.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOBPCG_auxtest-cxx_main_auxtest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOBPCG_simple-cxx_simple.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOBPCG_solvertest-cxx_main_solvertest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOBPCG_test-cxx_main.Po@am__quote@
@@ -473,6 +493,22 @@ LOBPCGComplex_test-cxx_main_complex.obj: $(srcdir)/cxx_main_complex.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOBPCGComplex_test-cxx_main_complex.Po' tmpdepfile='$(DEPDIR)/LOBPCGComplex_test-cxx_main_complex.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(LOBPCGComplex_test_CXXFLAGS) $(CXXFLAGS) -c -o LOBPCGComplex_test-cxx_main_complex.obj `if test -f '$(srcdir)/cxx_main_complex.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main_complex.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main_complex.cpp'; fi`
+
+LOBPCG_auxtest-cxx_main_auxtest.o: $(srcdir)/cxx_main_auxtest.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(LOBPCG_auxtest_CXXFLAGS) $(CXXFLAGS) -MT LOBPCG_auxtest-cxx_main_auxtest.o -MD -MP -MF "$(DEPDIR)/LOBPCG_auxtest-cxx_main_auxtest.Tpo" -c -o LOBPCG_auxtest-cxx_main_auxtest.o `test -f '$(srcdir)/cxx_main_auxtest.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main_auxtest.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOBPCG_auxtest-cxx_main_auxtest.Tpo" "$(DEPDIR)/LOBPCG_auxtest-cxx_main_auxtest.Po"; else rm -f "$(DEPDIR)/LOBPCG_auxtest-cxx_main_auxtest.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main_auxtest.cpp' object='LOBPCG_auxtest-cxx_main_auxtest.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOBPCG_auxtest-cxx_main_auxtest.Po' tmpdepfile='$(DEPDIR)/LOBPCG_auxtest-cxx_main_auxtest.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(LOBPCG_auxtest_CXXFLAGS) $(CXXFLAGS) -c -o LOBPCG_auxtest-cxx_main_auxtest.o `test -f '$(srcdir)/cxx_main_auxtest.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main_auxtest.cpp
+
+LOBPCG_auxtest-cxx_main_auxtest.obj: $(srcdir)/cxx_main_auxtest.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(LOBPCG_auxtest_CXXFLAGS) $(CXXFLAGS) -MT LOBPCG_auxtest-cxx_main_auxtest.obj -MD -MP -MF "$(DEPDIR)/LOBPCG_auxtest-cxx_main_auxtest.Tpo" -c -o LOBPCG_auxtest-cxx_main_auxtest.obj `if test -f '$(srcdir)/cxx_main_auxtest.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main_auxtest.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main_auxtest.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOBPCG_auxtest-cxx_main_auxtest.Tpo" "$(DEPDIR)/LOBPCG_auxtest-cxx_main_auxtest.Po"; else rm -f "$(DEPDIR)/LOBPCG_auxtest-cxx_main_auxtest.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main_auxtest.cpp' object='LOBPCG_auxtest-cxx_main_auxtest.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOBPCG_auxtest-cxx_main_auxtest.Po' tmpdepfile='$(DEPDIR)/LOBPCG_auxtest-cxx_main_auxtest.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(LOBPCG_auxtest_CXXFLAGS) $(CXXFLAGS) -c -o LOBPCG_auxtest-cxx_main_auxtest.obj `if test -f '$(srcdir)/cxx_main_auxtest.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main_auxtest.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main_auxtest.cpp'; fi`
 
 LOBPCG_simple-cxx_simple.o: $(srcdir)/cxx_simple.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(LOBPCG_simple_CXXFLAGS) $(CXXFLAGS) -MT LOBPCG_simple-cxx_simple.o -MD -MP -MF "$(DEPDIR)/LOBPCG_simple-cxx_simple.Tpo" -c -o LOBPCG_simple-cxx_simple.o `test -f '$(srcdir)/cxx_simple.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_simple.cpp; \

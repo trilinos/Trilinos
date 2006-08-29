@@ -119,9 +119,8 @@ namespace Anasazi {
     /*! \brief Specify that this eigenproblem is fully defined.
      *
      * This routine serves multiple purpose:
-     * <ul>
-     * <li> sanity check that the eigenproblem has been fully and constently defined
-     * <li> opportunity for the eigenproblem to allocate internal storage for eigenvalues
+     *    - sanity check that the eigenproblem has been fully and constently defined
+     *    - opportunity for the eigenproblem to allocate internal storage for eigenvalues
      * and eigenvectors (to be used by eigensolvers and solver managers)
      * </ul>
      *
@@ -203,21 +202,6 @@ namespace Anasazi {
     //! Reference-counted pointer for the auxiliary vector of the eigenproblem \f$Ax=\lambda Mx\f$
     Teuchos::RefCountPtr<MV> _AuxVecs;
 
-    //! Reference-counted pointer for the computed eigenvectors of \f$Ax=\lambda Mx\f$
-    Teuchos::RefCountPtr<MV> _Evecs;
-
-    //! Reference-counted pointer for an orthonormal basis for the computed eigenspace of \f$Ax=\lambda Mx\f$
-    Teuchos::RefCountPtr<MV> _Espace;
-
-    //! Reference-counted pointer for an index set into the eigenpairs
-    Teuchos::RefCountPtr<std::vector<int> > _index;
-
-    //! Reference-counted pointer for the computed eigenvalues of \f$Ax=\lambda Mx\f$
-    /*! \note If the operator is nonsymmetric, the length of this vector is 2*NEV where the 
-      real part of eigenvalue \c j is entry \c j and the imaginary part is entry \c j+NEV .
-    */
-    Teuchos::RefCountPtr<std::vector<ScalarType> > _Evals;
-
     //! Number of eigenvalues requested
     int _nev;
 
@@ -235,13 +219,14 @@ namespace Anasazi {
     //! Type-definition for the OperatorTraits class corresponding to the \c OP type
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
 
+    //! Solution to problem
     Eigensolution<ScalarType,MV> _sol;
   };
-  
+
+
   //=============================================================================
   //     Implementations (Constructors / Destructors)
   //=============================================================================
-  
   template <class ScalarType, class MV, class OP>
   BasicEigenproblem<ScalarType, MV, OP>::BasicEigenproblem() : 
     _nev(0), 
@@ -249,9 +234,9 @@ namespace Anasazi {
     _isSet(false)
   {
   }
-  
+
+
   //=============================================================================
-  
   template <class ScalarType, class MV, class OP>
   BasicEigenproblem<ScalarType, MV, OP>::BasicEigenproblem( const Teuchos::RefCountPtr<OP>& Op, const Teuchos::RefCountPtr<MV>& InitVec ) :    
     _Op(Op), 
@@ -261,9 +246,9 @@ namespace Anasazi {
     _isSet(false)
   {
   }
-  
+
+
   //=============================================================================
-  
   template <class ScalarType, class MV, class OP>
   BasicEigenproblem<ScalarType, MV, OP>::BasicEigenproblem( const Teuchos::RefCountPtr<OP>& Op, const Teuchos::RefCountPtr<OP>& M,
                                                             const Teuchos::RefCountPtr<MV>& InitVec ) :
@@ -275,9 +260,9 @@ namespace Anasazi {
     _isSet(false)
   {
   }
-  
+
+
   //=============================================================================
-  
   template <class ScalarType, class MV, class OP>
   BasicEigenproblem<ScalarType, MV, OP>::BasicEigenproblem( const BasicEigenproblem<ScalarType,MV,OP>& Problem ) :
     _AOp(Problem._AOp), 
@@ -285,18 +270,17 @@ namespace Anasazi {
     _Op(Problem._Op), 
     _Prec(Problem._Prec), 
     _InitVec(Problem._InitVec), 
-    _Evecs(Problem._Evecs),
-    _Evals(Problem._Evals),
     _nev(Problem._nev), 
+    _sol(Problem._sol),
     _isSym(Problem._isSym),
     _isSet(Problem._isSet)
   {
   }
-  
+
+
   //=============================================================================
   //    SetProblem (sanity check method)
   //=============================================================================
-  
   template <class ScalarType, class MV, class OP>
   bool BasicEigenproblem<ScalarType, MV, OP>::setProblem() 
   {
@@ -311,23 +295,15 @@ namespace Anasazi {
     
     // If we don't need any eigenvalues, we don't need to continue.
     if (_nev == 0) { return false; }
-
+    
     // If there is an A, but no operator, we can set them equal.
     if (_AOp.get() && !_Op.get()) { _Op = _AOp; }
-
-    //----------------------------------------------------------------
-    // Even if this eigenproblem is being reused, reallocate storage for the
-    // eigenvalues / eigenvectors
-    //----------------------------------------------------------------
-    _Evecs = MVT::Clone( *_InitVec, _nev );
-    _Evals = Teuchos::rcp( new std::vector<ScalarType>( _nev ) );
-    _index = Teuchos::rcp( new std::vector<int>( _nev ) );
-    if ( _isSym ) {      
-      _Espace = _Evecs;
-    }
-    else {
-      _Espace = MVT::Clone( *_InitVec, _nev );
-    }
+    
+    // Clear the storage from any previous call to setSolution()
+    Eigensolution<ScalarType,MV> emptysol;
+    _sol = emptysol;
+    
+    // mark the problem as set and return no-error
     _isSet=true;
     return true;
   }        

@@ -13,9 +13,11 @@
 (FRAMEWORK,INSTALL,AnasaziTests,AnasaziEpetraTests) {
     TESTS = LOBPCG/LOBPCG_test.exe,
             LOBPCG/LOBPCG_solvertest.exe,
+            LOBPCG/LOBPCG_auxtest.exe,
             LOBPCG/LOBPCG_simple.exe,
             BlockDavidson/BlockDavidson_test.exe,
             BlockDavidson/BlockDavidson_solvertest.exe,
+            BlockDavidson/BlockDavidson_auxtest.exe,
             BlockKrylovSchur/BlockKrylovSchur_test.exe,
             BlockKrylovSchur/BlockKrylovSchur_nh_test.exe,
             BlockKrylovSchur/BlockKrylovSchur_solvertest.exe,
@@ -67,9 +69,11 @@
 (COVERAGE) {
     TESTS = LOBPCG/LOBPCG_test.exe,
             LOBPCG/LOBPCG_solvertest.exe,
+            LOBPCG/LOBPCG_auxtest.exe,
             LOBPCG/LOBPCG_simple.exe,
             BlockDavidson/BlockDavidson_test.exe,
             BlockDavidson/BlockDavidson_solvertest.exe,
+            BlockDavidson/BlockDavidson_auxtest.exe,
             BlockKrylovSchur/BlockKrylovSchur_test.exe,
             BlockKrylovSchur/BlockKrylovSchur_solvertest.exe,
             OrthoManager/OrthoManager_test.exe,

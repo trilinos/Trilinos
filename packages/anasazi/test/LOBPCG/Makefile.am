@@ -50,7 +50,7 @@ endif
 endif
 
 #np# List all executable names here
-noinst_PROGRAMS = LOBPCG_test LOBPCG_simple LOBPCG_solvertest $(LOBPCG_COMPLEX_TEST)
+noinst_PROGRAMS = LOBPCG_test LOBPCG_simple LOBPCG_solvertest LOBPCG_auxtest $(LOBPCG_COMPLEX_TEST)
 
 Dummy$(EXEEXT): $(srcdir)/Dummy
 	cp  $(srcdir)/../MVOPTester/mhd1280b.cua mhd1280b.cua
@@ -63,6 +63,8 @@ LOBPCG_test_SOURCES = $(srcdir)/cxx_main.cpp
 LOBPCG_simple_SOURCES = $(srcdir)/cxx_simple.cpp
 
 LOBPCG_solvertest_SOURCES = $(srcdir)/cxx_main_solvertest.cpp
+
+LOBPCG_auxtest_SOURCES = $(srcdir)/cxx_main_auxtest.cpp
 
 LOBPCGComplex_test_SOURCES = $(srcdir)/cxx_main_complex.cpp 
 
@@ -88,6 +90,12 @@ LOBPCG_solvertest_DEPENDENCIES = \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a
 
+LOBPCG_auxtest_DEPENDENCIES = \
+	$(top_builddir)/src/libanasazi.a \
+	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a
+
 LOBPCGComplex_test_DEPENDENCIES = \
 	$(top_builddir)/src/libanasazi.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
@@ -102,6 +110,8 @@ LOBPCG_simple_CXXFLAGS = -I$(top_srcdir)/src
 
 LOBPCG_solvertest_CXXFLAGS = -I$(top_srcdir)/src
 
+LOBPCG_auxtest_CXXFLAGS = -I$(top_srcdir)/src
+
 LOBPCGComplex_test_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPTester
 
 #np# One LDADD primary can be defined for each exe.  Include any LDFLAGS necessary for 
@@ -115,6 +125,10 @@ LOBPCG_simple_LDADD = \
 	$(EXPORT_LIBS) 
 
 LOBPCG_solvertest_LDADD = \
+	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
+	$(EXPORT_LIBS) 
+
+LOBPCG_auxtest_LDADD = \
 	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
 	$(EXPORT_LIBS) 
 
