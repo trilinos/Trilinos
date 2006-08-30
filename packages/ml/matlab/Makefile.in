@@ -321,7 +321,7 @@ ML_MLMEX_LIBS = $(ML_LIBS) $(ML_EXTRA_LIBS)
 @MATLAB_USE_TRUE@bin_SCRIPTS = ml.m
 @MATLAB_USE_TRUE@mlmex_SOURCES = mlmex.cpp
 @MATLAB_USE_TRUE@mlmex_DEPENDENCIES = $(top_builddir)/src/libml.a
-@MATLAB_USE_TRUE@mlmex_CXXFLAGS = ${ML_MLMEX_INCLUDES} 
+@MATLAB_USE_TRUE@mlmex_CXXFLAGS = ${ML_MLMEX_INCLUDES} -fPIC
 @MATLAB_USE_TRUE@mlmex_LDADD = ${ML_MLMEX_LIBS} 
 @MATLAB_USE_TRUE@mlmex_LINK = $(MEX) -cxx -o $@
 all: all-am
@@ -337,9 +337,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  matlab/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  matlab/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  matlab/Makefile
+	  $(AUTOMAKE) --gnu  matlab/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \

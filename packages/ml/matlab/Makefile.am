@@ -39,12 +39,16 @@ ML_MLMEX_LIBS     = $(ML_LIBS) $(ML_EXTRA_LIBS)
 EXEEXT = .$(MEXEXT_VALUE)
 
 if MATLAB_USE
-bin_PROGRAMS = mlmex
+bin_PROGRAMS = mlmex 
 bin_SCRIPTS = ml.m
 
 mlmex_SOURCES      = mlmex.cpp
 mlmex_DEPENDENCIES = $(top_builddir)/src/libml.a
-mlmex_CXXFLAGS     = ${ML_MLMEX_INCLUDES} 
+mlmex_CXXFLAGS     = ${ML_MLMEX_INCLUDES} -fPIC
 mlmex_LDADD        = ${ML_MLMEX_LIBS} 
 mlmex_LINK         = $(MEX) -cxx -o $@
+
 endif
+
+
+
