@@ -150,11 +150,20 @@ class AztecOO {
      Internally calls SetUserMatrix() if the Epetra_LinearProblem's operator
      can be cast to Epetra_RowMatrix, otherwise calls SetUserOperator().
 
+    *** IMPORTANT WARNING ***
+    This method calls SetUserMatrix(), which also sets the *preconditioner*
+    matrix to the matrix passed in, by internally calling SetPrecMatrix(),
+    but *ONLY* if SetPrecMatrix() hasn't previously been called.
+    If the user wants to make sure that any pre-existing preconditioner is
+    replaced, they must set the optional bool argument 'call_SetPrecMatrix'
+    to true, which will force this function to call SetPrecMatrix().
+
     \warning If a preconditioner has been pre-built and associated with this
      AztecOO object, the Epetra_LinearProblem being passed in to this method
      \e must have compatible domain and range maps.
   */
-  int SetProblem(const Epetra_LinearProblem& prob);
+  int SetProblem(const Epetra_LinearProblem& prob,
+                 bool call_SetPrecMatrix=false);
 
   //! AztecOO User Operator Set
   /*! Associates an already defined Epetra_Operator as the linear operator for the linear system
@@ -174,15 +183,15 @@ class AztecOO {
     this method.
 
     *** IMPORTANT WARNING ***
-    This method also sets the preconditioner matrix to the matrix passed in
-    here, by internally calling SetPrecMatrix(). Thus, if the user wants to
-    use a different preconditioning matrix, they need to set that *AFTER*
-    this method has been called. This behavior can be overridden by setting
-    the optional bool argument 'call_SetPrecMatrix' to false, which will
-    make this function skip the call to SetPrecMatrix().
+    This method sets the preconditioner matrix to the matrix passed in
+    here, by internally calling SetPrecMatrix(), but *ONLY* if SetPrecMatrix()
+    hasn't previously been called. If the user wants to make sure that any
+    pre-existing preconditioner is replaced, they must set the optional bool
+    argument 'call_SetPrecMatrix' to true, which will
+    force this function to call SetPrecMatrix().
   */
   int SetUserMatrix(Epetra_RowMatrix * UserMatrix,
-                    bool call_SetPrecMatrix=true);
+                    bool call_SetPrecMatrix=false);
 
   //! AztecOO LHS Set
   /*! Associates an already defined Epetra_MultiVector (or Epetra_Vector) as the initial guess

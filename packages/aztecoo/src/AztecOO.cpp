@@ -362,7 +362,8 @@ int AztecOO::SetAztecDefaults() {
 }
 
 //=============================================================================
-int AztecOO::SetProblem(const Epetra_LinearProblem& prob) {
+int AztecOO::SetProblem(const Epetra_LinearProblem& prob,
+                        bool call_SetPrecMatrix) {
 
   inConstructor_ = true;  // Shut down complaints about zero pointers for a while
                           //  Although this routine is not a constructor, we treat it like one
@@ -375,7 +376,7 @@ int AztecOO::SetProblem(const Epetra_LinearProblem& prob) {
   // Try to cast operator to matrix 
   Epetra_RowMatrix * UserMatrix = dynamic_cast<Epetra_RowMatrix *>(prob.GetOperator());
   if (UserMatrix!=0) 
-    SetUserMatrix(UserMatrix);
+    SetUserMatrix(UserMatrix, call_SetPrecMatrix);
   else
     SetUserOperator(prob.GetOperator());
   

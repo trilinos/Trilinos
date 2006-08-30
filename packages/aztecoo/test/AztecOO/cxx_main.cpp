@@ -1042,7 +1042,7 @@ int test_bug2554(Epetra_Comm& Comm, bool verbose)
   problem->SetOperator(Matrix);
   problem->SetRHS(rhs);
   problem->SetLHS(lhs);
-  solver->SetProblem(*problem);
+  solver->SetProblem(*problem, true);
 
   // Set some options
   solver->SetAztecOption(AZ_solver,AZ_cg);
@@ -1075,7 +1075,10 @@ int test_bug2554(Epetra_Comm& Comm, bool verbose)
   problem->SetOperator(Matrix);
   problem->SetRHS(rhs);
   problem->SetLHS(lhs);
-  solver->SetProblem(*problem);
+  //For the following call to SetProblem, we must pass 'true' for
+  //the optional bool argument which would otherwise default to false.
+  //Passing 'true' forces it to internally reset the preconditioner.
+  solver->SetProblem(*problem, true);
 
   // Solve the problem
   solver->Iterate(50,1e-12);
