@@ -57,7 +57,7 @@ namespace LOCA {
 
 namespace LOCA {
 
-  //! %Predictor direction strategies
+  //! Predictor direction strategies
   namespace MultiPredictor {
     
     //! Abstract interface class for predictor strategies

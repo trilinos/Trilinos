@@ -73,7 +73,7 @@ namespace LOCA {
      * The  eigenvalues are computed using a Cayley transformation, i.e.
      * solving
      * \f[
-     *     (J - \sigma M) z = (J - \mu M) z
+     *     (J - \sigma M) z = (J - \mu M) r
      * \f]
      * where \f$\sigma\f$ is the Cayley pole and \f$\mu\f$ is the Cayley
      * zero.  

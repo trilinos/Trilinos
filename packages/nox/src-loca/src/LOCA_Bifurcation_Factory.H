@@ -74,6 +74,7 @@ namespace LOCA {
      *      <li> "None" - No bifurcation [Default]
      *      <li> "Turning Point" Turning point bifurations
      *      <li> "Pitchfork" Pitchfork bifurcations
+     *      <li> "Hopf" Hopf bifurcations
      *      <li> "User-Defined" User defined bifurcation.  Set 
      *           "User-Defined Name" to be the parameter list name containing
      *           user-defined strategy, which must be of type

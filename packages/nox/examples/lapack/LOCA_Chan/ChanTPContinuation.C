@@ -119,7 +119,7 @@ int main()
     stepperList.set("Bordered Solver Method", "Nested");
     Teuchos::ParameterList& nestedList = 
       stepperList.sublist("Nested Bordered Solver");
-    // Direst solve of combined bordered system
+    // Direct solve of combined bordered system
     nestedList.set("Bordered Solver Method", "LAPACK Direct Solve");
     
     // Create predictor sublist

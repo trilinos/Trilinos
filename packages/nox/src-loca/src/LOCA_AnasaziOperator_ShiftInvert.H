@@ -63,7 +63,7 @@ namespace LOCA {
      * using shift-invert.
      */
     /*! 
-     * This class implements the LOCA::AnasaziOperator::AbstractStrategt 
+     * This class implements the LOCA::AnasaziOperator::AbstractStrategy 
      * interface for computing generalized eigenvalues \f$\lambda\f$ and 
      * eigenvectors \f$z\f$ of the system
      *\f[

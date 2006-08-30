@@ -57,7 +57,7 @@ namespace LOCA {
     /*! 
      * The finite-differencing calculations are actually implemented by
      * the LOCA::DerivUtils class, and a custom DerivUtils object can be
-     * passed through the constructor of this class.  However, in the future
+     * set by the setDerivUtils() method.  However, in the future
      * the calculations encapsulated in the DerivUtils class may be 
      * incorporated directly into this class and other finite-differencing
      * child classes.

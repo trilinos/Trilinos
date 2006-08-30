@@ -79,12 +79,12 @@ See \ref loca_continuation_tutorial and \ref loca_tp_continuation_tutorial.
 
 \section continuation Continuation Classes
 
-The lowest level of functionality provided by %LOCA is that for continuation.  The LOCA::Continuation::AbstractGroup provides the interface required for single parameter continuation and is derived from the NOX::Abstract::Group.  The additional methods provided primarily consist of setting/retrieving parameter values and computing the derivative \f$\partial F/\partial p\f$ for a given parameter \f$p\f$.  For application codes that cannot provide this derivative directly, the LOCA::Continuation::FiniteDifferenceGroup provides a generic implementation using finite differencing.
+The lowest level of functionality provided by %LOCA is that for continuation.  The LOCA::MultiContinuation::AbstractGroup provides the interface required for single and multiple parameter continuation and is derived from the NOX::Abstract::Group.  The additional methods provided primarily consist of setting/retrieving parameter values and computing the derivative \f$\partial F/\partial p\f$ for a given parameter \f$p\f$.  For application codes that cannot provide this derivative directly, the LOCA::MultiContinuation::FiniteDifferenceGroup provides a generic implementation using finite differencing.
 
 Multiple continuation algorithms have been implemented, including:
 
-- Natural Continuation (LOCA::Continuation::NaturalGroup)
-- Arc-length Continuation (LOCA::Continuation::ArcLengthGroup)
+- Natural Continuation (LOCA::MultiContinuation::NaturalGroup)
+- Arc-length Continuation (LOCA::MultiContinuation::ArcLengthGroup)
 
 The continuation groups implement the extended set of nonlinear equations to be solved at each continuation step.  
 
@@ -92,20 +92,22 @@ The continuation groups implement the extended set of nonlinear equations to be 
 
 %LOCA can locate and track several codimension 1 bifurcations:
 
-- Turning point (a.k.a. fold) (LOCA::Bifurcation::TPBord::ExtendedGroup)
-- Pitchfork (LOCA::Bifurcation::PitchforkBord::ExtendedGroup)
-- Hopf (LOCA::Bifurcation::HopfBord::ExtendedGroup).
+- Turning point (a.k.a. fold) (LOCA::TurningPoint::MooreSpence::ExtendedGroup or LOCA::TurningPoint::MinimallyAugmented::ExtendedGroup)
+- Pitchfork (LOCA::Pitchfork::MooreSpence::ExtendedGroup)
+- Hopf (LOCA::Hopf::MooreSpence::ExtendedGroup).
 
-For each bifurcation, the ExtendedGroup for that bifurcation implements a set of nonlinear equations representing that bifurcation.  Each of these groups provide a complete implementation of the LOCA::Continuation::AbstractGroup and therefore can be used in continuation to track the bifurcation in a second parameter.  The interfaces for these bifurcation groups are encapsulated in the following abstract groups:
+For each bifurcation, the ExtendedGroup for that bifurcation implements a set of nonlinear equations representing that bifurcation.  Each of these groups provide a complete implementation of the LOCA::MultiContinuation::AbstractGroup and therefore can be used in continuation to track the bifurcation in a second parameter.  The interfaces for these bifurcation groups are encapsulated in the following abstract groups:
 
-- LOCA::Bifurcation::TPBord::AbstractGroup (turning points and pitchforks)
-- LOCA::Bifurcation::HopfBord::AbstractGroup (Hopfs)
+- LOCA::TurningPoint::MooreSpence::AbstractGroup (turning points using the Moore-Spence formulation)
+- LOCA::TurningPoint::MinimallyAugmented::AbstractGroup (turning points using the minimally augmented formulation)
+- LOCA::Pitchfork::MooreSpence::AbstractGroup (pitchfork bifurcations)
+- LOCA::Hopf::MooreSpence::AbstractGroup (Hopf bifurcations)
 
 See the relevant class documentation for more details on the additional interfaces provided by these abstract classes.
 
 \section stepping Parameter Stepping Classes
 
-The final component of %LOCA consists of several parameter stepping classes.  These consist of the LOCA::Stepper which drives a %NOX nonlinear solver at each parameter step, and several support classes that compute predictors (classes belonging to the LOCA::Predictor namespace) and encapsulate various step size control strategies (classes in the LOCA::StepSize namespace).
+The final component of %LOCA consists of several parameter stepping classes.  These consist of the LOCA::Stepper which drives a %NOX nonlinear solver at each parameter step, and several support classes that compute predictors (classes belonging to the LOCA::MultiPredictor namespace) and encapsulate various step size control strategies (classes in the LOCA::StepSize namespace).  These classes use a strategy/factory design concept, allowing users to provide their own predictors, step-size control algorithms, etc...  Please look at the \ref new_loca_framework page for more information on these classes.
 
 */
 
@@ -115,125 +117,258 @@ The final component of %LOCA consists of several parameter stepping classes.  Th
 
 /*! \page loca_parameters LOCA Parameter Reference Page
 
-As in %NOX, all parameters are passed to %LOCA through parameter lists defined by the Teuchos::ParameterList class.  Nearly all parameters are passed to the LOCA::Stepper class during construction, although a few can be passed to the LOCA::Abstract::Group.  Below is a listing of all of the parameters that can be passed to the stepper with links to relevant classes that use those parameters, followed by parameters that can be passed to the LOCA::Abstract::Group constructor.
+As in %NOX, all parameters are passed to %LOCA through parameter lists defined by the Teuchos::ParameterList class.  All parameters are passed to the LOCA::Stepper class during construction.  Below is a listing of all of the parameters that can be passed to the stepper with links to relevant classes that use those parameters.
 
 \section stepper_params Stepper Parameters
 
 The parameter list passed to the Stepper has two sublists, "LOCA" and "NOX".  The "LOCA" sublist contains parameters and sublists for the Stepper and various %LOCA support classes, while the "NOX" sublist contains parameters and sublists specific to %NOX solvers.  The %NOX sublist is passed directly to an instance of the NOX::Solver::Manager class in the Stepper and therefore has the same structure as any %NOX solver parameter list hierarchy.  Please see the <a href="./parameters.html">%NOX Parameter Reference</a> page for more details on the structure of this list.
 
 <ul> 
-<li> "NOX" sublist -- See <a href="./parameters.html">%NOX Parameter Reference</a> for more details
-<li> "LOCA: sublist
+<li> <B>"NOX"</B> sublist -- See <a href="./parameters.html">%NOX Parameter Reference</a> for more details
+<li> <B>"LOCA"</B> sublist
      <ul>
-     <li> "Stepper" sublist -- used by LOCA::Stepper to set parameters relevant for continuation run
+     <li> <B>"Stepper"</B> sublist -- used by LOCA::Stepper to set parameters relevant for continuation run
           <ul>
-          <li> "Continuation Method" -- [string] (default: "Arc Length") Type of continuation to use.  Choices are:
-	          <ul>
-                  <li> "Natural" -- Natural continuation (LOCA::Continuation::NaturalGroup)
-                  <li> "Arc Length" -- Pseudo arc-length continuation using bordering (LOCA::Continuation::ArcLengthGroup)
-                  </ul>
-	  <li> "Continuation Parameter" -- [string] (Must be supplied) Name of continuation parameter
-	  <li> "Initial Value" -- [double] (Must be supplied) Initial value of continuation parameter
-	  <li> "Max Value" -- [double] (Must be supplied) Maximum value of continuation parameter
-	  <li> "Min Value" -- [double] (Must be supplied) Minimum value of continuation parameter
-	  <li> "Max Steps" -- [int] (default: 100) Maximum number of continuation steps (including failed steps)
-	  <li> "Max Nonlinear Iterations" -- [int] (default: 15) Maximum number of nonlinear iterations per continuation step
-          <li> "Enable Arc Length Scaling" -- [bool] (default: true) Enable arc-length scaling to equilibrate solution and parameter components to arc-length equations (see LOCA::Continuation::ArcLengthGroup)
-	  <li> "Goal Arc Length Parameter Contribution" -- [double] (default: 0.5) Goal for parameter contribution to arc-length equation
-	  <li> "Max Arc Length Parameter Contribution" -- [double] (default: 0.8) Max for parameter contribution to arc-length equation, triggering rescaling
-	  <li> "Initial Scale Factor" -- [double] (default: 1.0) Initial scale factor for parameter term of arc-length equation
-	  <li> "Min Scale Factor" -- [double] (default: 1.0e-3) Minimum scale factor for scaling parameter term of arc-length equation
-	  <li> "Enable Tangent Factor Step Size Scaling" -- [bool] (default: false) Enable step size scaling by cosine between two consective tangent vectors \f$v_0\f$ and \f$v_1\f$ to continuation curve:  \f$|v_0\cdot v_1|^{\alpha}\f$ where \f$\alpha\f$ is the tangent factor exponent.
-	  <li> "Min Tangent Factor" -- [double] (default: 0.1) Minumum cosine between two consecutive tangent vectors, below which the continuation step is failed
-	  <li> "Tangent Factor Exponent" -- [double] (default: 1.0) Exponent on the cosine between two consecutive tangent vectors, which then modifies the step size
-	  <li> "Compute Eigenvalues" -- [bool] (default: false) Flag for requesting eigenvalue calculation after each continuation step
+          <li> <B>"Continuation Method"</B> -- [string] (default: "Arc Length") Type of continuation to use.  Choices are:
+	       <ul>
+               <li> "Natural" -- Natural continuation (LOCA::MultiContinuation::NaturalGroup)
+               <li> "Arc Length" -- Pseudo arc-length continuation using bordering (LOCA::MultiContinuation::ArcLengthGroup)
+                </ul>
+	  <li> <B>"Continuation Parameter"</B> -- [string] (Must be supplied) Name of continuation parameter
+	  <li> <B>"Initial Value"</B> -- [double] (Must be supplied) Initial value of continuation parameter
+	  <li> <B>"Max Value"</B> -- [double] (Must be supplied) Maximum value of continuation parameter
+	  <li> <B>"Min Value"</B> -- [double] (Must be supplied) Minimum value of continuation parameter
+	  <li> <B>"Max Steps"</B> -- [int] (default: 100) Maximum number of continuation steps (including failed steps)
+	  <li> <B>"Max Nonlinear Iterations"</B> -- [int] (default: 15) Maximum number of nonlinear iterations per continuation step
+          <li> <B>"Enable Arc Length Scaling"</B> -- [bool] (default: true) Enable arc-length scaling to equilibrate solution and parameter components to arc-length equations (see LOCA::MultiContinuation::ArcLengthGroup)
+	  <li> <B>"Goal Arc Length Parameter Contribution"</B> -- [double] (default: 0.5) Goal for parameter contribution to arc-length equation
+	  <li> <B>"Max Arc Length Parameter Contribution"</B> -- [double] (default: 0.8) Max for parameter contribution to arc-length equation, triggering rescaling
+	  <li> <B>"Initial Scale Factor"</B> -- [double] (default: 1.0) Initial scale factor for parameter term of arc-length equation
+	  <li> <B>"Min Scale Factor"</B> -- [double] (default: 1.0e-3) Minimum scale factor for scaling parameter term of arc-length equation
+	  <li> <B>"Enable Tangent Factor Step Size Scaling"</B> -- [bool] (default: false) Enable step size scaling by cosine between two consective tangent vectors \f$v_0\f$ and \f$v_1\f$ to continuation curve:  \f$|v_0\cdot v_1|^{\alpha}\f$ where \f$\alpha\f$ is the tangent factor exponent.
+	  <li> <B>"Min Tangent Factor"</B> -- [double] (default: 0.1) Minumum cosine between two consecutive tangent vectors, below which the continuation step is failed
+	  <li> <B>"Tangent Factor Exponent"</B> -- [double] (default: 1.0) Exponent on the cosine between two consecutive tangent vectors, which then modifies the step size
+          <li> <B>"Bordered Solver Method"</B> -- [string] (default:  "Bordering") Method for solving bordered system of equations.  Used by LOCA::BorderedSolver::Factory.  Available choices are
+	        <ul>
+		<li> "Bordering" -- Bordering (LOCA::BorderedSolver::Bordering)
+                <li> "Nested" -- Nested for method recursive bordered solves (LOCA::BorderedSolver::Nested).  This method is appropriate when the system is itself bordered, for example, when using the minimally augmented turning point formulation or when the system has constraints.  This method combines the nested bordered rows and columns and forms one large bordered system.  The solver used for the resulting bordered system is specified through the "Nested Bordered Solver" sublist.
+                      <ul>
+		      <li> <B>"Nested Bordered Solver"</B> sublist -- Specifies the solver for the resulting bordered system in a nested bordered system.  Any valid bordered solver parameter may be used here.
+		      </ul>
+                </ul>
+	  <li> <B>"Compute Eigenvalues"</B> -- [bool] (default: false) Flag for requesting eigenvalue calculation after each continuation step
+          <li> <B>"Eigensolver"</B> sublist -- used by LOCA::Eigensolver::Factory to determine eigensolver strategies
+          <ul> 
+          <li> <B>"Method"</B> -- [string] (default "Default") Choices are
+                <ul>
+                <li> "Default" -- No eigenvalues are computed (LOCA::Eigensolver::DefaultStrategy)
+                <li> "Anasazi" -- Eigenvalues/vectors are computed using %Anasazi (LOCA::Eigensolver::AnasaziStrategy).  %Anasazi parameters are
+                    <ul>
+                    <li> <B>"Operator"</B> -- [string] (default: "Jacobian inverse") Operator to compute eigenvalues of.   Used by LOCA::AnasaziOperator::Factory.  Valid choices are:
+                         <ul>
+                         <li> "Jacobian Inverse" -- Eigenvalues of \f$J^{-1}\f$ (LOCA::AnasaziOperator::JacobianInverse).
+                         <li> "Shift-Invert" -- Eigenvalues of \f$(J-\sigma M)^{-1}M\f$ (LOCA::AnasaziOperator::ShiftInvert).
+                             <ul>
+                             <li> <B>"Shift"</B> -- [double] (default 0.0) \f$\sigma\f$ as defined above
+                             </ul>
+                         <li> "Cayley" -- Eigenvalues of \f$(J-\sigma M)^{-1}(J - \mu M)\f$ (LOCA::AnasaziOperator::Cayley).
+                             <ul>
+                             <li> <B>"Cayley Pole"</B> -- [double] (default 0.0) \f$\sigma\f$ as defined above
+                             <li> <B>"Cayley Zero"</B> -- [double] (default 0.0) \f$\mu\f$ as defined above
+                             </ul>
+                         </ul>
+	            <li> <B>"Block Size"</B> -- [int] (default: 1) Block size
+	            <li> <B>"Num Blocks"</B> -- [int] (default: 30) Maximum number of blocks (equals the maximum length of the Arnoldi factorization)
+	            <li> <B>"Num Eigenvalues"</B> -- [int] (default: 4) Number of requested eigenvalues
+	            <li> <B>"Convergence Tolerance"</B> -- [double] (default: 1.0e-7) Tolerance for the converged eigenvalues
+	            <li> <B>"Step Size"</B> -- [int] (default: 1) Checks convergence every so many steps
+	            <li> <B>"Maximum Restarts"</B> -- [int] (default: 1) Number of restarts allowed
+                    <li> <B>"Symmetric"</B> -- [bool] (default:  false) Is the operator symmetric
+	            <li> <B>"Verbosity"</B> -- [Anasazi::MsgType] (default: Anasazi::Errors+Anasazi::Warnings+Anasazi::FinalSummary) Verbosity level
+	            <li> <B>"Sorting Order"</B> -- [string] (default: "LM") Sorting order of printed eigenvalues.  Used by LOCA::EigenvalueSort::Factory.  Valid choices are:
+		         <ul>
+			 <li> "LM" -- Largest magnitude (LOCA::EigenvalueSort::LargestMagnitude)
+			 <li> "LR" -- Largest real component (LOCA::EigenvalueSort::LargestReal)
+			 <li> "LI" -- Largest imaginary component (LOCA::EigenvalueSort::LargestImaginary)
+			 <li> "SM" -- Smallest magnitude (LOCA::EigenvalueSort::SmallestMagnitude)
+			 <li> "SR" -- Smallest real component (LOCA::EigenvalueSort::SmallestReal)
+			 <li> "SI" -- Smallest imaginary component (LOCA::EigenvalueSort::SmallestImaginary)
+			 <li> "CA" -- Largest real part of inverse Cayley transformation (LOCA::EigenvalueSort::LargestRealInverseCayley)
+			 </ul>
+                    </ul>
+	        </ul>
+          </ul>
 	  </ul>
-     <li> "Bifurcation" sublist -- used by LOCA::Bifurcation::Factory to determine what type of bifurcation calculation, if any, to use
+     <li> <B>"Bifurcation"</B> sublist -- used by LOCA::Bifurcation::Factory to determine what type of bifurcation calculation, if any, to use
           <ul>
-          <li> "Method" -- [string] (default: "None") Bifurcation method to use.  Choices are
+	  <li> <B>"Bifurcation Parameter"</B> -- [string] (Must be supplied if <B>"Type"</B> is not <B>"None"</B>) Name of bifurcation parameter
+          <li> <B>"Type"</B> -- [string] (default: "None") Bifurcation method to use.  Choices are
                <ul>
                <li> "None" -- No bifurcation and do equilibrium continuation instead
-               <li> "Turning Point" -- Turning point tracking using bordering (LOCA::Bifurcation::TPBord::ExtendedGroup) 
-               <li> "Modified Turning Point" -- Turning point tracking using modified bordering to avoid singular Jacobian solves (LOCA::Bifurcation::TPBord::ModifiedBorderingGroup) 
-               <li> "Nic-Day Modified Turning Point" -- Turning point tracking using a combination of Nic-Day deflation ideas with the modified turning point approach (LOCA::Bifurcation::TPBord::NicDayModifiedBorderingGroup)
-               <li> "Pitchfork" -- Pitchfork tracking using bordering (LOCA::Bifurcation::PitchforkBord::ExtendedGroup) 
-               <li> "Hopf" -- Hopf point tracking using bordering (LOCA::Bifurcation::HopfBord::ExtendedGroup)
+               <li> "Turning Point" -- Turning point bifurcations
+	            <ul> 
+		    <li> <B>"Formulation"</B> -- Name of the bifurcation formulation. Valid choices are
+		         <ul>
+                         <li> "Moore-Spence" -- [Default] Moore-Spence formulation (LOCA::TurningPoint::MooreSpence::ExtendedGroup)
+			      <ul>
+			      <li> <B>"Length Normalization Vector"</B> -- [Teuchos::RefCountPtr<NOX::Abstract::Vector>] (Must be supplied) Pointer to NOX::Abstract::Vector holding length normalization vector.
+			      <li> <B>"Initial Null Vector"</B> -- [Teuchos::RefCountPtr<NOX::Abstract::Vector>] (Must be supplied) Initial guess for null vector.
+			      <li> <B>"Perturb Initial Solution"</B> -- [bool] (default: false) Flag indicating whether to apply an initial perturbation to the initial guess for the solution vector before starting bifurcation algorithm
+			      <li> <B>"Relative Perturbation Size"</B> -- [double] (default: 1.0e-3) Size of relative perturbation of initial guess for solution vector.
+			      <li> <B>"Solver Method"</B> -- [string] (default:  "Salinger Bordering") Solver method for solving extended turning point equations.  Valid choices are
+			          <ul>
+				  <li> "Salinger Bordering" -- Original bordering algorithm that uses (nearly) singular Jacobian solves (LOCA::TurningPoint::MooreSpence::SalingerBordering).
+				  <li> "Phipps Bordering" -- Bordering algorithm that uses nonsingular bordered matrix solves (LOCA::TurningPoint::MooreSpence::PhippsBordering).
+				       <ul>
+				       <li> <B>"Bordered Solver Method"</B> -- Method for solving bordered systems of equations.  See description in the "Stepper" sublist above.
+				       </ul>
+				  </ul>
+			      </ul>
+                         <li> "Minimally Augmented" -- Minmally augmented formulation (LOCA::TurningPoint::MinimallyAugmented::ExtendedGroup)
+			      <ul>
+			      <li> <B>"Bordered Solver Method"</B> -- Method for solving bordered systems of equations.  See description in the "Stepper" sublist above.
+			      <li> <B>"Symmetric Jacobian"</B>  -- [bool] (default: false) Flag indicating whether Jacobian matrix is symmetric.
+			      <li> <B>"Constraint Method"</B> -- [string] (default: "Default") Type of constraint method to use.  Valid choices are
+			          <ul>
+				  <li> "Default" -- Default method (LOCA::TurningPoint::MinimallyAugmented::Constraint)
+				  <li> "Modified" -- A modified method that computes updates to the null vectors every nonlinear interation, instead of directly solving for them (LOCA::TurningPoint::MinimallyAugmented::ModifiedConstraint)
+				  </ul>
+			      <li> <B>"Initial Null Vector Compuation"</B> -- [string] (default: "User Provided") - Method to compute initial \f$a\f$ and \f$b\f$ vectors.  Valid choices are:
+			           <ul>
+				   <li> "User Provided" - Initial vectors are provided in the parameter list, in which case the following parameters are relevant:
+				        <ul>
+					<li> <B>"Initial A Vector"</B>  -- [Teuchos::RefCountPtr<NOX::Abstract::Vector>] (Must be supplied) Vector storing initial value for \f$a\f$ vector
+					<li> <B>"Initial B Vector"</B>  -- [Teuchos::RefCountPtr<NOX::Abstract::Vector>] (Must be supplied for nonsymmetric Jacobians) Vector storing initial value for \f$b\f$ vector
+					</ul>
+				   <li> "Solve df/dp" -- Compute \f$a = J^{-T}df/dp\f$ and \f$b = J^{-1} df/dp\f$ where \f$p\f$ is the bifurcation parameter.
+				   </ul>
+			      <li> <B>"Update Null Vectors Every Continuation Step"</B>  -- [bool] (default: true) Flag indicating whether to update \f$a\f$ and \f$b\f$ vectors continuation step
+			      <li> <B>"Update Null Vectors Every Nonlinear Iteration"</B>  -- [bool] (default: false) Flag indicating whether to update \f$a\f$ and \f$b\f$ vectors every nonlinear iteration
+			      </ul>
+			 </ul>
+		    </ul>
+               <li> <B>"Pitchfork"</B> -- Pitchfork bifurcations
+	            <ul>
+	            <li> <B>"Formulation"</B> -- Name of the bifurcation formulation. Valid choices are
+		         <ul>
+		         <li> "Moore-Spence" [Default] -- Moore-Spence formulation (LOCA::Pitchfork::MooreSpence::ExtendedGroup)
+			      <ul>
+			      <li> <B>"Length Normalization Vector"</B> -- [Teuchos::RefCountPtr<NOX::Abstract::Vector>] (Must be supplied) Pointer to NOX::Abstract::Vector holding length normalization vector.
+			      <li> <B>"Initial Null Vector"</B> -- [Teuchos::RefCountPtr<NOX::Abstract::Vector>] (Must be supplied) Initial guess for null vector.
+			      <li> <B>"Asymmetric Vector"</B> -- [Teuchos::RefCountPtr<NOX::Abstract::Vector>] (Must be supplied) Pointer to NOX::Abstract::Vector holding asymmetric vector \f$\psi\f$ used in pitchfork algorithm.
+			      <li> <B>"Perturb Initial Solution"</B> -- [bool] (default: false) Flag indicating whether to apply an initial perturbation to the initial guess for the solution vector before starting bifurcation algorithm
+			      <li> <B>"Relative Perturbation Size"</B> -- [double] (default: 1.0e-3) Size of relative perturbation of initial guess for solution vector.
+			      <li> <B>"Solver Method"</B> -- [string] (default:  "Salinger Bordering") Solver method for solving extended turning point equations.  Valid choices are
+			          <ul>
+				  <li> "Salinger Bordering" -- Original bordering algorithm that uses (nearly) singular Jacobian solves (LOCA::Pitchfork::MooreSpence::SalingerBordering).
+				  <li> "Phipps Bordering" -- Bordering algorithm that uses nonsingular bordered matrix solves (LOCA::Pitchfork::MooreSpence::PhippsBordering).
+				       <ul>
+				       <li> <B>"Bordered Solver Method"</B> -- Method for solving bordered systems of equations.  See description in the "Stepper" sublist above.
+				       </ul>
+				  </ul>
+			      </ul>
+                         </ul>
+		    </ul>
+               <li> <B>"Hopf"</B> -- Hopf bifurcations
+	            <ul>
+	            <li> <B>"Formulation"</B> -- Name of the bifurcation formulation. Valid choices are
+		         <ul>
+			 <li> "Moore-Spence" -- [Default] -- Moore-Spence formulation (LOCA::Hopf::MooreSpence::ExtendedGroup)
+			      <ul>
+			      <li> <B>"Length Normalization Vector"</B> -- [Teuchos::RefCountPtr<NOX::Abstract::Vector>] (Must be supplied) Pointer to NOX::Abstract::Vector holding length normalization vector.
+			      <li> <B>"Initial Real Eigenvector"</B> -- [Teuchos::RefCountPtr<NOX::Abstract::Vector>] (Must be supplied) Initial guess for real component of generalized eigenvector in Hopf algorithm
+			      <li> <B>"Initial Imaginary  Eigenvector"</B> -- [Teuchos::RefCountPtr<NOX::Abstract::Vector>] (Must be supplied) Initial guess for imaginary component of generalized eigenvector in Hopf algorithm
+			      <li> <B>"Initial Frequency"</B> -- [double] (Must be supplied) Initial guess for Hopf frequency \f$\omega\f$ in Hopf algorithm
+			      <li> <B>"Perturb Initial Solution"</B> -- [bool] (default: false) Flag indicating whether to apply an initial perturbation to the initial guess for the solution vector before starting bifurcation algorithm
+			      <li> <B>"Relative Perturbation Size"</B> -- [double] (default: 1.0e-3) Size of relative perturbation of initial guess for solution vector.
+			      <li> <B>"Solver Method"</B> -- [string] (default:  "Salinger Bordering") Solver method for solving extended turning point equations.  Valid choices are
+			          <ul>
+				  <li> "Salinger Bordering" -- Original bordering algorithm that uses (nearly) singular matrix solves (LOCA::Hopf::MooreSpence::SalingerBordering).
+				  </ul>
+			      </ul>
+			 </ul>
+		    </ul>
+	       <li> <B>"User-Defined"</B> User defined bifurcation.  Set 
+                   <B>"User-Defined Name"</B> to be the parameter list name containing user-defined strategy, which must be of type Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>.
                </ul>
-          <li> "Bifurcation Parameter" -- [string] (Must be supplied if "Method" is not "None") Name of bifurcation parameter
-          <li> "Length Normalization Vector" -- [NOX::Abstract::Vector*] (Must be supplied if "Method" is not "None) Pointer to NOX::Abstract::Vector holding length normilization vector \f$\phi\f$ used in turning point, pitchfork, and Hopf bifurcation algorithms
-          <li> "Initial Null Vector" -- [NOX::Abstract::Vector*] (Must be supplied for tuning point and pitchfork problems) Initial guess for null vector in turning point and pitchfork algorithms
-          <li> "Asymmetric Vector" -- [NOX::Abstract::Vector*] (Must be supplied for pitchfork problems) Pointer to NOX::Abstract::Vector holding asymmetric vector \f$\psi\f$ used in pitchfork algorithm
-          <li> "Initial Real  Eigenvector" -- [NOX::Abstract::Vector*] (Must be supplied for Hopf problems) Initial guess for real component of generalized eigenvector in Hopf algorithm
-          <li> "Initial Imaginary  Eigenvector" -- [NOX::Abstract::Vector*] (Must be supplied for Hopf problems) Initial guess for imaginary component of generalized eigenvector in Hopf algorithm
-          <li> "Initial Frequency" -- [double] (Must be supplied for Hopf problems) Initial guess for Hopf frequency \f$\omega\f$ in Hopf algorithm
-          <li> "Perturb Initial Solution" -- [bool] (default: false) Flag indicating whether to apply an initial perturbation to the initial guess for the solution vector before starting bifurcation algorithm
-          <li> "Relative Perturbation Size" -- [double] (default: 1.0e-3) Size of relative perturbation of initial guess for solution vector
           </ul>
-     <li> "Predictor" sublist -- used by LOCA::Predictor::Manager to determine what type of predictor to use for each continuation step
+     <li> <B>"Predictor"</B> sublist -- used by LOCA::MultiPredictor::Factory to determine what type of predictor to use for each continuation step
           <ul>
-	  <li> "Method" -- [string] (default: "Secant") Predictor method to use for computing the initial guess for each continuation step.  Choices are 
+	  <li> <B>"Method"</B> -- [string] (default: "Secant") Predictor method to use for computing the initial guess for each continuation step.  Choices are 
                  <ul>
-                 <li> "Constant" -- Use previous solution as initial guess for next step (LOCA::Predictor::Constant)
-                 <li> "Secant" -- Use secant vector to continuation curve to compute initial guess (LOCA::Predictor::Secant)
-                 <li> "Tangent" -- Use tangent vector to continuation curve to compute initial guess (LOCA::Predictor::Tangent)
-                 <li> "Random" -- Use a random perturbation of previous solution to compute initial guess (LOCA::Predictor::Random)
+                 <li> "Constant" -- Use previous solution as initial guess for next step (LOCA::MultiPredictor::Constant)
+                 <li> "Secant" -- Use secant vector to continuation curve to compute initial guess (LOCA::MultiPredictor::Secant)
+                 <li> "Tangent" -- Use tangent vector to continuation curve to compute initial guess (LOCA::MultiPredictor::Tangent)
+                 <li> "Random" -- Use a random perturbation of previous solution to compute initial guess (LOCA::MultiPredictor::Random)
                  </ul> 
-	  <li> "Epsilon" -- [double] (default: 1.0e-3) Relative size of perturbation for random predictor
-	  <li> "First Step Predictor" sublist -- used by the secant predictor to determine which predictor to use for the first continuation step -- Replicates "Predictor" sublist structure
-	  <li> "Last Step Predictor" sublist -- Predictor to use for last step of arc-length continuation to hit target (max or min) value exactly (usually "Constant" or "Random") -- Replicates "Predictor" sublist structure
+	  <li> <B>"Epsilon"</B> -- [double] (default: 1.0e-3) Relative size of perturbation for random predictor
+	  <li> <B>"First Step Predictor"</B> sublist -- used by the secant predictor to determine which predictor to use for the first continuation step -- Replicates <B>"Predictor"</B> sublist structure
+	  <li> <B>"Last Step Predictor"</B> sublist -- Predictor to use for last step of arc-length continuation to hit target (max or min) value exactly (usually "Constant" or "Random") -- Replicates <B>"Predictor"</B> sublist structure
 	  </ul>
-     <li> "Step Size" sublist -- used by LOCA::StepSize::Manager to determine step size constrol strategies
+     <li> <B>"Step Size"</B> sublist -- used by LOCA::StepSize::Factory to determine step size constrol strategies
           <ul>
-	  <li> "Method" -- [string] (default: "Adaptive") Step size control strategy to use.  Choices are
+	  <li> <B>"Method"</B> -- [string] (default: "Adaptive") Step size control strategy to use.  Choices are
                 <ul>
                 <li> "Constant" -- Use a constant step size in general, reducing the step size after a failure and increasing step size back up to original value after subsequent successes (see LOCA::StepSize::Constant)
                 <li> "Adaptive" -- Use an adaptive step size control strategy that adjusts step size according to the number of Newton iterations per step (see LOCA::StepSize::Adaptive)
-	  <li> "Initial Step Size" -- [double] (default: 1.0) Initial parameter step size
-	  <li> "Min Step Size" -- [double] (default: 1.0e-12) Minimum parameter step size
-	  <li> "Max Step Size" -- [double] (default: 1.0e+12) Maximum parameter step size
-	  <li> "Failed Step Reduction Factor" -- [double] (default: 0.5) Factor by which step size is reduced after a failed step
-	  <li> "Successful Step Increase Factor" - [double] (default: 1.26) Factor by which step size is increased after a successful step when the step size is smaller than the initial step size (Constant step size method only). 
-	  <li> "Aggressiveness" -- [double] (default: 0.5) Aggressiveness factor in adaptive step size adjustment
+                </ul>
+	  <li> <B>"Initial Step Size"</B> -- [double] (default: 1.0) Initial parameter step size
+	  <li> <B>"Min Step Size"</B> -- [double] (default: 1.0e-12) Minimum parameter step size
+	  <li> <B>"Max Step Size"</B> -- [double] (default: 1.0e+12) Maximum parameter step size
+	  <li> <B>"Failed Step Reduction Factor"</B> -- [double] (default: 0.5) Factor by which step size is reduced after a failed step
+	  <li> <B>"Successful Step Increase Factor"</B> - [double] (default: 1.26) Factor by which step size is increased after a successful step when the step size is smaller than the initial step size (Constant step size method only). 
+	  <li> <B>"Aggressiveness"</B> -- [double] (default: 0.5) Aggressiveness factor in adaptive step size adjustment
 	  </ul>
-     <li> "Utilities" sublist -- used by LOCA::Utils to control screen output
+      <li> <B>"Constraints"</B> sublist -- Used to provide additional constraint equations.
           <ul>
-	  <li> "Output Information" -- [int] (default: 0xf) Sum of message types (see LOCA::Utils)
-	  <li> "Output Processor" -- [int] (default: 0) ID of printing processor
-	  <li> "MyPID" -- [int] (default: 0) Processor ID
-	  <li> "Output Precision" -- [int] (default: 3) Precision of output
+	  <li> <B>"Constraint Object"</B> -- [Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>] (Must be supplied) Pointer to object implementig constraint interface LOCA::MultiContinuation::ConstraintInterface.
+	  <li> <B>"Constraint Parameter Names"</B> -- [Teuchos::RefCountPtr< std::vector<std::string> >] (Must be supplied) Pointer to vector of string names of parameters that become additional unkowns for solving constrained system.
+	  <li> <B>"Bordered Solver Method"</B> -- Method for solving bordered systems of equations arising from constraints.  See description in the "Stepper" sublist above.
 	  </ul>
-     <li> "Anasazi" sublist -- used by LOCA::Continuation::AnasaziGroup to compute eigenvalues using the Anasazi package
-          <ul>
-	  <li> "Block Size" -- [int] (default: 1) block size
-	  <li> "Arnoldi Size" -- [int] (default: 30) maximum length of the Arnoldi factorization
-	  <li> "NEV" -- [int] (default: 4) number of requested eigenvalues
-	  <li> "Tol" -- [double] (default: 1.0e-7) tolerance for the converged eigenvalues
-	  <li> "Convergence Check" -- [int] (default: 1) checks convergence every so many steps
-	  <li> "Restarts" -- [int] (default: 1) number of restarts allowed
-	  <li> "Frequency" -- [int] (default: 1) how often to recalculate eigenvalues
-	  <li> "Debug Level" -- [int] (default: 1) Anasazi Debug level
-	  <li> "Sorting Order" -- [string" (default: "LM") Sorting order of printed eigenvalues
-	  </ul>
-     </ul>
+      </ul>
 </ul>
 
-\section group_params LOCA::Abstract::Group parameters
+\section user_defined_list User-Defined Strategies Through Parameter Lists
 
-Parameters can also be passed to the LOCA::Abstract::Group constructor.  Currently, the only parameters used by the group are passed to the LOCA::Bifurcation::TPBord::SingularSolveGroup parent class, which provides techniques for approximating the solution to a (nearly) singular set of linear equations.
+Most strategy choices above have another available option that is not listed above for providing user-defined strategies.  To use a user-defined strategy, one must implement the corresponding strategy abstract interface (e.g., LOCA::MultiPredictor::AbstractStrategy) and instantiate an object of the user-defined type.  Then set the corrsponding "Method" (or similar) parameter of the relevant sublist to "User-Defined", set the parameter "User-Defined Name" to the parameter list name of the strategy (e.g., "My Predictor"), and set the parameter with that name to be a ref-count pointer to that object with the type of the abstract strategy interface (e.g., Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy>).  
 
-<ul> 
-<li> "Singular Solve" sublist -- Used by LOCA::Bifurcation::TPBord::SingularSolveGroup to determine which method to use for computing solutions to nearly singular systems
-     <ul> 
-     <li> "Method" -- [string] (default: "Default") Method to use.  Choices are
-           <ul>
-           <li> "Default" -- Use default solution method
-           <li> "Nic" -- Use "Nic" approach (LOCA::SingularJacobianSolve::Nic)
-           <li> "Nic-Day" -- Use "Nic-Day" approach (LOCA::SingularJacobianSolve::NicDay)
-           <li> "Iterative Refinement" -- Use iterative refinement (LOCA::SingularJacobianSolve::ItRef)
-           </ul>
-     </ul>
+\section user_defined_factory User-Defined Strategies Through Factories
+
+Another option is available for providing user-defined strategies by implementing a factory to instantiate these strategies.  This option is most appropriate when multiple user-defined strategies are available, and the user wishes to control which strategy is instantiated through parameter lists.   This is often used when providing strategies that are specific to the underlying %NOX group, for example the %Epetra and %LAPACK factories described below.  In this case one imlements the LOCA::Abstract::Factory by defining the relevant strategy creation methods and then passes a ref-count pointer to this factory in the LOCA::createGlobalData() call.  Then the user can select these strategies just as if they were built in to %LOCA.
+
+\subsection epetra_factory Epetra Factory
+
+The LOCA::Epetra::Factory provides strategies specific to the NOX::Epetra::Group.  It provides the following strategies:
+<ul>
+<li> Methods for solving bordered systems of equations (LOCA::BorderedSolver::Factory)
+    <ul>
+    <li> "Householder" -- Use the QR (a.k.a. Householder) method (LOCA::BorderedSolver::EpetraHouseholder).
+       <ul>
+       <li> <B>"Include UV In Preconditioner"</B> -- [bool] (default: false) Flag indicating whether to use the \f$U\f$ and \f$V\f$ terms in the preconditioner for \f$P\f$
+       <li> <B>"Use P For Preconditioner"</B> -- [bool] (default: false)  Flag indicating whether to use the representation of \f$P\f$ as a LOCA::Epetra::LowRankUpdateRowMatrix for computing the preconditioner.  This is valid only for preconditioners that accept an Epetra_RowMatrix interface.
+       </ul>
+    <li> "Augmented" -- Form an augmented linear problem implemented in a pseudo-matrix free mode (LOCA::BorderedSolver::EpetraAugmented).
+    </ul>
 </ul>
 
+\subsection lapack_factory LAPACK Factory
+
+The LOCA::LAPACK::Factory provides strategies specific to the NOX::LAPACK::Group.  It provides the following strategies:
+<ul>
+<li> Methods for solving bordered systems of equations (LOCA::BorderedSolver::Factory)
+    <ul>
+    <li> "LAPACK Direct Solve" -- Form the bordered system as a %LAPACK matrix and solve via %LAPACK.
+    </ul>
+<li> Eigensolver methods (LOCA::Eigensolver::Factory)
+    <ul>
+    <li> "DGGEV" -- Use LAPACK's generalized eigenvalue solver DGGEV
+       <ul>
+       <li> <B>"Num Eigenvalues"</B> -- [int] (default: 4) Number of eigenvalues to print
+       <li> <B>"Sorting Order"</B> -- [string] (default: "LM") Sorting order of printed eigenvalues.  Used by LOCA::EigenvalueSort::Factory.  See Eigensolver sublist above for a list of available options.
+       </ul>
+    </ul>
+</ul>
+       
 */
 
 /* ************************************************************************ */
@@ -252,15 +387,15 @@ discuss the additional steps required to use %LOCA.
 \section loca_user_info_step_1 Step 1: Download, Configure, Compile, and Install LOCA
 
 %LOCA is part of %NOX, so by downloading %NOX you have %LOCA.  Note that %LOCA 
-is dependent on some Trilinos packages (namely Teuchos), and greatly benefits
-from others (in particular, Anasazi).  Therefore %LOCA can only be configured
+is dependent on some Trilinos packages (namely %Teuchos), and greatly benefits
+from others (in particular, %Anasazi).  Therefore %LOCA can only be configured
 and built inside of Trilinos.  To enable %LOCA 
 during configuration and compilation, supply the --enable-loca configuration 
 option.  %LOCA %LAPACK and %Epetra support and examples are automatically 
 enabled if they are enabled in %NOX (see \ref nox_configuration_options). In
 addition, Trilinos must be configured with --enable-teuchos, and if %LAPACK
 support is enabled, --enable-teuchos-complex.  %LOCA is capable of using the 
-Anasazi eigensolver to compute eigenvalues/eigenvectors at each continuation
+%Anasazi eigensolver to compute eigenvalues/eigenvectors at each continuation
 step, and this can be enabled by adding the --enable-anasazi and 
 --with-loca-anasazi configure flags. See \ref nox_configuration_options for
 other available configure options.  Typing "make" and "make install" in the top-level %NOX directory will then
@@ -300,12 +435,11 @@ bifurcation calculation.
 <li>
 The LOCA::Epetra implementation extends the NOX::Epetra implementation to
 %LOCA.  %Epetra support and examples are automatically enabled if they are
-enabled in %NOX.  All levels of functionality provided by LOCA are supported
-except Hopf calculations and generalized eigenvalue calculations, which require
-a separate mass matrix and complex-valued computations.
+enabled in %NOX.  All levels of functionality provided by LOCA are supported, 
+including recently added Hopf and generalized eigenvalue support.
 
 <li>
-Currently, there is no %LOCA::Petsc support provided, but this will be
+Currently, there is no %LOCA Petsc support provided, but this will be
 added as soon as there is demand.
 </ul>
 
@@ -407,8 +541,88 @@ continuation parameter with the remaining \f$n\f$ consisting of each
 component of the solution vector.
 
 \code
+    // Create parameter list
+    Teuchos::RefCountPtr<Teuchos::ParameterList> paramList = 
+      Teuchos::rcp(new Teuchos::ParameterList);
+
+    // Create LOCA sublist
+    Teuchos::ParameterList& locaParamsList = paramList->sublist("LOCA");
+
+    // Create the stepper sublist and set the stepper parameters
+    Teuchos::ParameterList& stepperList = locaParamsList.sublist("Stepper");
+    stepperList.set("Continuation Method", "Arc Length");// Default
+    //stepperList.set("Continuation Method", "Natural");
+    stepperList.set("Continuation Parameter", "alpha");  // Must set
+    stepperList.set("Initial Value", alpha);             // Must set
+    stepperList.set("Max Value", 5.0/scale);             // Must set
+    stepperList.set("Min Value", 0.0/scale);             // Must set
+    stepperList.set("Max Steps", 50);                    // Should set
+    stepperList.set("Max Nonlinear Iterations", maxNewtonIters); // Should set
+    stepperList.set("Compute Eigenvalues",false);        // Default
+
+    // Create bifurcation sublist
+    Teuchos::ParameterList& bifurcationList = 
+      locaParamsList.sublist("Bifurcation");
+    bifurcationList.set("Type", "None");                 // Default
+
+    // Create predictor sublist
+    Teuchos::ParameterList& predictorList = 
+      locaParamsList.sublist("Predictor");
+    predictorList.set("Method", "Secant");               // Default
+    //predictorList.set("Method", "Constant");
+    //predictorList.set("Method", "Tangent");
+
+    // Create step size sublist
+    Teuchos::ParameterList& stepSizeList = locaParamsList.sublist("Step Size");
+    stepSizeList.set("Method", "Adaptive");             // Default
+    stepSizeList.set("Initial Step Size", 0.1/scale);   // Should set
+    stepSizeList.set("Min Step Size", 1.0e-3/scale);    // Should set
+    stepSizeList.set("Max Step Size", 10.0/scale);      // Should set
+\endcode
+
+Next we set up the %LOCA parameters.  We are setting up the problem to 
+perform arc-length continuation in the parameter "alpha" from 0 to 5 with 
+a maximum of 50 continuation steps and \em maxNewtonIters nonlinear iterations
+per step.  Since we are doing an
+equilibrium continuation, we set the bifurcation method to "None".  We use a secant predictor
+and adaptive step size control with an initial step size of 0.1, maximum of 
+10.0 and minimum of 0.001. 
+
+\code
+    // Create the "Solver" parameters sublist to be used with NOX Solvers
+    Teuchos::ParameterList& nlParams = paramList->sublist("NOX");
+    Teuchos::ParameterList& nlPrintParams = nlParams.sublist("Printing");
+    nlPrintParams.set("Output Information", 
+		      NOX::Utils::Details +
+		      NOX::Utils::OuterIteration + 
+		      NOX::Utils::InnerIteration + 
+		      NOX::Utils::Warning + 
+		      NOX::Utils::StepperIteration +
+		      NOX::Utils::StepperDetails +
+		      NOX::Utils::StepperParameters);  // Should set
+\endcode
+
+Next we set up the %NOX parameters.  We use a simple full-step Newton method 
+for the nonlinear solve at each continuation step (the default), and specify
+what output we want printed to the screen.
+
+\code
+
+    // Create LAPACK Factory
+    Teuchos::RefCountPtr<LOCA::LAPACK::Factory> lapackFactory = 
+      Teuchos::rcp(new LOCA::LAPACK::Factory);
+
+    // Create global data object
+    Teuchos::RefCountPtr<LOCA::GlobalData> globalData =
+      LOCA::createGlobalData(paramList, lapackFactory);
+
+\endcode
+
+We now create the LAPACK factory and the global data object.  The factory is optional, and allows the use of LAPACK-specific strategies (e.g., the LAPACK eigensolver DGGEV).  However the global data object is manditory.  If no factory is provided, the second argument to createGlobalData is empty.
+
+\code
     // Set up the problem interface
-    ChanProblemInterface chan(n, alpha, beta, scale, outFile);
+    ChanProblemInterface chan(globalData, n, alpha, beta, scale, outFile);
     LOCA::ParameterVector p;
     p.addParameter("alpha",alpha);
     p.addParameter("beta",beta);
@@ -425,9 +639,10 @@ supplied.
     // Create a group which uses that problem interface. The group will
     // be initialized to contain the default initial guess for the
     // specified problem.
-    LOCA::LAPACK::Group grp(chan);
+    Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup> grp = 
+      Teuchos::rcp(new LOCA::LAPACK::Group(globalData, chan));
     
-    grp.setParams(p);
+    grp->setParams(p);
 \endcode
 
 Next we instantiate the %LAPACK group with the Chan problem and then set
@@ -436,101 +651,15 @@ via the LOCA::LAPACK::Group, will take care of setting parameters in
 the problem interface.
 
 \code
-   // Create parameter list
-    Teuchos::ParameterList paramList;
-
-    // Create LOCA sublist
-    Teuchos::ParameterList& locaParamsList = paramList.sublist("LOCA");
-
-    // Create the stepper sublist and set the stepper parameters
-    Teuchos::ParameterList& stepperList = locaParamsList.sublist("Stepper");
-    //stepperList.set("Continuation Method", "Natural");
-    stepperList.set("Continuation Method", "Arc Length");
-    stepperList.set("Continuation Parameter", "alpha");
-    stepperList.set("Initial Value", alpha);
-    stepperList.set("Max Value", 5.0/scale);
-    stepperList.set("Min Value", 0.0/scale);
-    stepperList.set("Max Steps", 50);
-    stepperList.set("Max Nonlinear Iterations", maxNewtonIters);
-    stepperList.set("Enable Arc Length Scaling", true);
-    stepperList.set("Goal Arc Length Parameter Contribution", 0.5);
-    stepperList.set("Max Arc Length Parameter Contribution", 0.7);
-    stepperList.set("Initial Scale Factor", 1.0);
-    stepperList.set("Min Scale Factor", 1.0e-8);
-    stepperList.set("Enable Tangent Factor Step Size Scaling",true);
-    stepperList.set("Min Tangent Factor", -1.0);
-    stepperList.set("Tangent Factor Exponent",1.0);
-    stepperList.set("Compute Eigenvalues",false);
-
-    // Create bifurcation sublist
-    Teuchos::ParameterList& bifurcationList = 
-      locaParamsList.sublist("Bifurcation");
-    bifurcationList.set("Method", "None");
-
-    // Create predictor sublist
-    Teuchos::ParameterList& predictorList = locaParamsList.sublist("Predictor");
-    //predictorList.set("Method", "Constant");
-    predictorList.set("Method", "Tangent");
-    //predictorList.set("Method", "Secant");
-
-    // Create step size sublist
-    Teuchos::ParameterList& stepSizeList = locaParamsList.sublist("Step Size");
-    //stepSizeList.set("Method", "Constant");
-    stepSizeList.set("Method", "Adaptive");
-    stepSizeList.set("Initial Step Size", 0.1/scale);
-    stepSizeList.set("Min Step Size", 1.0e-3/scale);
-    stepSizeList.set("Max Step Size", 10.0/scale);
-    stepSizeList.set("Aggressiveness", 0.5);
-
-    // Set the LOCA Utilities
-    Teuchos::ParameterList& locaUtilsList = locaParamsList.sublist("Utilities");
-    locaUtilsList.set("Output Information", 
-			       LOCA::Utils::Warning +
-			       LOCA::Utils::StepperIteration +
-   			       LOCA::Utils::StepperDetails +
-			       LOCA::Utils::Solver +
-			       LOCA::Utils::Parameters +
-			       LOCA::Utils::SolverDetails);
-\endcode
-
-Next we set up the %LOCA parameters.  We are setting up the problem to 
-perform arc-length continuation in the parameter "alpha" from 0 to 5 with 
-a maximum of 50 continuation steps and \em maxNewtonIters nonlinear iterations
-per step.  The "Enable Arc Length Scaling", "Goal/Max Arc Length Parameter Contribution" and "Scale Factor" parameters deal with arc-length
-parameter scaling to equilibrate relative contributions between solution
-and parameter components in the arc-length equations.  The "Tangent Factor" parameters deal with reducing
-the step size when the solution changes by a large amount from step to 
-step (see \ref loca_parameters for more details).  Since we are doing an
-equilibrium continuation, we set the bifurcation method to "None".  We use a tangent predictor
-and adaptive step size control with an initial step size of 0.1, maximum of 
-10.0 and minimum of 0.001.  The "Aggressiveness" parameter determines how
-quickly the step size is increased every successful continuation step.
-Finally, we specify how much information %LOCA should print out during
-the continuation run.
-
-\code
-    // Create the "Solver" parameters sublist to be used with NOX Solvers
-    Teuchos::ParameterList& nlParams = paramList.sublist("NOX");
-    nlParams.set("Nonlinear Solver", "Line Search Based");
-
-    Teuchos::ParameterList& nlPrintParams = nlParams.sublist("Printing");
-    nlPrintParams.set("Output Information", 
-			  NOX::Utils::Details +
-			  NOX::Utils::OuterIteration + 
-			  NOX::Utils::InnerIteration + 
-			  NOX::Utils::Warning);
-\endcode
-
-Next we set up the %NOX parameters.  We use a simple full-step Newton method 
-for the nonlinear solve at each continuation step.
-
-\code
     // Set up the status tests
-    NOX::StatusTest::NormF normF(1.0e-8);
-    NOX::StatusTest::MaxIters maxIters(maxNewtonIters);
-    NOX::StatusTest::Combo comboOR(NOX::StatusTest::Combo::OR, 
-				   normF, 
-				   maxIters);
+    Teuchos::RefCountPtr<NOX::StatusTest::NormF> normF = 
+      Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8));
+    Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> maxIters = 
+      Teuchos::rcp(new NOX::StatusTest::MaxIters(maxNewtonIters));
+    Teuchos::RefCountPtr<NOX::StatusTest::Generic> comboOR = 
+      Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR, 
+					      normF, 
+					      maxIters));
 \endcode
 
 Next we create appropriate status tests for the problem.  For convergence
@@ -540,13 +669,17 @@ iterations be smaller than \em maxNewtonIters.
 
 \code
     // Create the stepper  
-    LOCA::Stepper stepper(grp, comboOR, paramList);
+    LOCA::Stepper stepper(globalData, grp, comboOR, paramList);
 
     // Perform continuation run
     LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
 
-    if (status != LOCA::Abstract::Iterator::Finished)
-      cout << "Stepper failed to converge!" << endl;
+    // Check for convergence
+    if (status != LOCA::Abstract::Iterator::Finished) {
+      if (globalData->locaUtils->isPrintType(NOX::Utils::Error))
+	globalData->locaUtils->out() 
+	  << "Stepper failed to converge!" << std::endl;
+    }
 \endcode
 
 Finally we instantiate the stepper, run the continuation, and check the
@@ -554,26 +687,35 @@ returned status.
 
 \code
     // Get the final solution from the stepper
-    const LOCA::LAPACK::Group& finalGroup = 
-      dynamic_cast<const LOCA::LAPACK::Group&>(stepper.getSolutionGroup());
+    Teuchos::RefCountPtr<const LOCA::LAPACK::Group> finalGroup = 
+      Teuchos::rcp_dynamic_cast<const LOCA::LAPACK::Group>(stepper.getSolutionGroup());
     const NOX::LAPACK::Vector& finalSolution = 
-      dynamic_cast<const NOX::LAPACK::Vector&>(finalGroup.getX());
+      dynamic_cast<const NOX::LAPACK::Vector&>(finalGroup->getX());
+
+    // Print final solution
+    globalData->locaUtils->out()
+	            << std::endl << "Final solution is " << std::endl;
+    finalGroup->printSolution(finalSolution,
+		    	      finalGroup->getParam("alpha"));
 
     // Output the parameter list
-    if (LOCA::Utils::doPrint(LOCA::Utils::Parameters)) {
-      cout << endl << "Final Parameters" << endl
-	   << "****************" << endl;
-      stepper.getList().print(cout);
-      cout << endl;
+    if (globalData->locaUtils->isPrintType(NOX::Utils::StepperParameters)) {
+      globalData->locaUtils->out() 
+	<< std::endl << "Final Parameters" << std::endl
+	<< "****************" << std::endl;
+      stepper.getList()->print(globalData->locaUtils->out());
+      globalData->locaUtils->out() << std::endl;
     }
 
     outFile.close();
+
+    LOCA::destroyGlobalData(globalData);
   }
 
-  catch (string& s) {
-    cout << s << endl;
+  catch (std::exception& e) {
+    cout << e.what() << endl;
   }
-  catch (char *s) {
+  catch (const char *s) {
     cout << s << endl;
   }
   catch (...) {
@@ -585,7 +727,8 @@ returned status.
 \endcode
 
 Lastly we copy the final solution out of the stepper, print out the final
-parameter list, close the output file, and catch any thrown exceptions.
+parameter list, close the output file, destroy the global data object, and 
+catch any thrown exceptions.
 
 After running the example and plotting the maximum of the temperature versus the continuation parameter \f$\alpha\f$ at each step, we  obtain the following continuation curve with two turning points:
 
@@ -593,7 +736,7 @@ After running the example and plotting the maximum of the temperature versus the
 
 \image latex chan.eps
 
-Turning point bifurcations occur near \f$\alpha=4\f$ and \f$\alpha=3\f$.  For a tutorial on locating these turning point bifurcations and tracking them in the second parameter \f$\beta\f$, see \ref loca_tp_continuation_tutorial.
+Turning point bifurcations occur near \f$\alpha=4\f$ and \f$\alpha=3\f$.  For a tutorial on locating these turning point bifurcations and tracking them in the second parameter \f$\beta\f$, see the \ref loca_tp_continuation_tutorial.
 
 The above plot was generated via MATLAB using the output file ChanContinuation.dat specified above.  For those interested, the MATLAB commands used to generate this plot are shown below.
 \code
@@ -640,7 +783,7 @@ title('Arc-length Continuation:  \beta = 0');
 
 \section loca_tp_continuation_tutorial_overview Overview
 
-In \ref loca_continuation_tutorial, two turning point bifurcations were discoved in the Chan problem as the parameter \f$\alpha\f$ was varied from \f$0\f$ to \f$5\f$.  Here we provide a brief tutorial on locating one of these turning points and tracking it in the second parameter \f$\beta\f$.  This example uses the turning point bordering method to formulate and solve the extended set of nonlinear equations specifying a turning point bifurcation.  Please see the documentation for LOCA::Bifurcation::TPBord::ExtendedGroup for a description of the turning point formulation and how it is solved.  The code fragements discussed below can be found in ChanTPContinuation.C in the Chan subdirectory of the %LOCA %LAPACK examples directory.
+In the \ref loca_continuation_tutorial, two turning point bifurcations were discoved in the Chan problem as the parameter \f$\alpha\f$ was varied from \f$0\f$ to \f$5\f$.  Here we provide a brief tutorial on locating one of these turning points and tracking it in the second parameter \f$\beta\f$.  There are several methods in %LOCA for computing turning points.  The example here uses the minimally augmented formulation using the %LAPACK direct solver for solving the augmented linear equations.  See LOCA::TurningPoint::MinimallyAugmented::ExtendedGroup for a description of this algorithm.  Also see LOCA::TurningPoint::MooreSpence::ExtendedGroup for the Moore-Spence turning point formulation.  The code fragements discussed below can be found in ChanTPContinuation.C in the Chan subdirectory of the %LOCA %LAPACK examples directory.
 
 \section loca_tp_continuation_tutorial_code ChanTPContinuation.C
 
@@ -659,7 +802,7 @@ int main()
     double alpha = 4.0;
     double beta = 0.0;
     double scale = 1.0;
-    int maxNewtonIters = 20;
+    int maxNewtonIters = 10;
 
     // Create output file to save solutions
     ofstream outFile("ChanTPContinuation.dat");
@@ -667,14 +810,139 @@ int main()
     outFile.precision(14);
 \endcode
 
-By examining the plot in \ref loca_continuation_tutorial, a turning point bifurcation occurs near \f$\alpha=4\f$ for \f$\beta = 0\f$.  We use these values as an initial set of parameter values near the bifurcation.  We also set up an output file to store the continuation parameter, solution vector, bifurcation parameter, and null vector at each continuation step.  The format is the same as in ChanContinuation.dat, consisting of a series of rows each containing \f$n+1\f$ numbers.  Two rows are written for each continuation step, the first containing the continuation parameter and the \f$n\f$ components of the solution vector, and the second containing the bifurcation parameter and the \f$n\f$ components of the null vector.
+By examining the plot in \ref loca_continuation_tutorial, a turning point bifurcation occurs near \f$\alpha=4\f$ for \f$\beta = 0\f$.  We use these values as an initial set of parameter values near the bifurcation.  We also set up an output file to store the continuation parameter, solution vector, bifurcation parameter, right null vector, measure of singularity of the Jacobian (sigma) and left null vector at each continuation step.  The format is the same as in ChanContinuation.dat, consisting of a series of rows each containing \f$n+1\f$ numbers.  Three rows are written for each continuation step, the first containing the continuation parameter and the \f$n\f$ components of the solution vector, the second containing the bifurcation parameter and the \f$n\f$ components of the right null vector, and the third containing sigma and the \f$n\f$ components of the left null vector.
 
 \code
+    // Create output file to save solutions
+    ofstream outFile("ChanTPContinuation.dat");
+    outFile.setf(ios::scientific, ios::floatfield);
+    outFile.precision(14);
+
     // Save size of discretizations
     outFile << n << endl;
 
+    // Create initial guess for the null vector of jacobian
+    Teuchos::RefCountPtr<NOX::Abstract::Vector> nullVec = 
+      Teuchos::rcp(new NOX::LAPACK::Vector(n));
+    nullVec->init(1.0);               // initial value 1.0
+
+    // Create initial values for a and b for minimally augmented method
+    Teuchos::RefCountPtr<NOX::Abstract::Vector> a_vec = 
+      Teuchos::rcp(new NOX::LAPACK::Vector(n));
+    a_vec->init(1.0);
+
+    Teuchos::RefCountPtr<NOX::Abstract::Vector> b_vec = 
+      Teuchos::rcp(new NOX::LAPACK::Vector(n));
+    b_vec->init(1.0);
+\endcode
+
+The only additional set up required for turning point tracking in this problem is to compute an initial guess for the null vector of the Jacobian (for the Moore-Spence formulation) or the initial values for the \f$a\f$ and \f$b\f$ vectors in the minimally augmented formulation.  Here we use a vector of all one's in all three cases.  
+
+\code
+    // Create parameter list
+    Teuchos::RefCountPtr<Teuchos::ParameterList> paramList = 
+      Teuchos::rcp(new Teuchos::ParameterList);
+
+    // Create LOCA sublist
+    Teuchos::ParameterList& locaParamsList = paramList->sublist("LOCA");
+
+    // Create the stepper sublist and set the stepper parameters
+    Teuchos::ParameterList& stepperList = locaParamsList.sublist("Stepper");
+    stepperList.set("Continuation Method", "Arc Length");  // Default
+    stepperList.set("Continuation Parameter", "beta");     // Must set
+    stepperList.set("Initial Value", beta);                // Must set
+    stepperList.set("Max Value", 1.0);                     // Must set
+    stepperList.set("Min Value", 0.0);                     // Must set
+    stepperList.set("Max Steps", 20);                      // Should set
+    stepperList.set("Max Nonlinear Iterations", maxNewtonIters); // Should set
+
+    // Create bifurcation sublist
+    Teuchos::ParameterList& bifurcationList = 
+      locaParamsList.sublist("Bifurcation");
+    bifurcationList.set("Type", "Turning Point");          // For turning point
+    bifurcationList.set("Bifurcation Parameter", "alpha"); // Must set
+
+    // For Moore-Spence formulation w/bordering
+    //bifurcationList.set("Formulation", "Moore-Spence");          // Default
+    //bifurcationList.set("Solver Method", "Salinger Bordering");  // Default
+    //bifurcationList.set("Solver Method", "Phipps Bordering");
+    //bifurcationList.set("Bordered Solver Method",  
+    //                    "LAPACK Direct Solve");   // For Phipps Bordering
+    //bifurcationList.set("Length Normalization Vector", nullVec); // Must set
+    //bifurcationList.set("Initial Null Vector", nullVec);         // Must set
+
+    // For minimally augmented formulation
+    bifurcationList.set("Formulation", "Minimally Augmented");
+    bifurcationList.set("Initial A Vector", a_vec);                // Must set
+    bifurcationList.set("Initial B Vector", b_vec);                // Must set
+
+    // For minimally augmented method, should set these for good performance
+    // Direct solve of bordered equations
+    bifurcationList.set("Bordered Solver Method",  "LAPACK Direct Solve");
+    // Combine arc-length and turning point bordered rows & columns
+    stepperList.set("Bordered Solver Method", "Nested");
+    Teuchos::ParameterList& nestedList = 
+      stepperList.sublist("Nested Bordered Solver");
+    // Direct solve of combined bordered system
+    nestedList.set("Bordered Solver Method", "LAPACK Direct Solve");
+\endcode
+
+We now set \f$\beta\f$ to be the continuation parameter and \f$\alpha\f$ to be the bifurcation parameter.  We will vary \f$\beta\f$ from \f$0\f$ to \f$1\f$, computing a value of \f$\alpha\f$ for each corresponding value of \f$\beta\f$.  The initial value of \f$\alpha\f$ is set internally by accessing the component "alpha" in the parameter vector \em p set below.  In the bifurcation sublist, we indicate that we would like to do turning point tracking using the minimally augmented formulation, and pass ref-count pointers to the initial guess for the a and b vectors.  Note that these must be casted to NOX::Abstract::Vector ref-count pointers.
+
+Both arc-length continuation and the minimally augmented turning point method add one additional equation to be solved resulting in two nested bordered systems, each adding an additional row and column to the Jacobian matrix.  We tell %LOCA to combine these rows and columns into one bordered system with two augmented rows and columns (by setting the "Bordered Solver Method" of the "Stepper" sublist to "Nested") and instruct %LOCA to use the LAPACK-specific linear solver for solving this 2-bordered system.  Note that we must set the "LAPACK Direct Solve" choice twice , once in the "Bifurcation" sublist and once in the "Nested Bordered Solver" sublist.  The first specifies the solver for the first and last continuation steps which use natural continuation instead of arc-length continuation.  The last specifies the solver for the rest of the continuation steps.
+
+\code
+     // Create predictor sublist
+    Teuchos::ParameterList& predictorList = 
+      locaParamsList.sublist("Predictor");
+    predictorList.set("Method", "Secant");                         // Default
+
+    // Should use for Moore-Spence w/Salinger Bordering & Secant predictor
+    //Teuchos::ParameterList& firstStepPredictor 
+    //  = predictorList.sublist("First Step Predictor");
+    //firstStepPredictor.set("Method", "Random");
+    //firstStepPredictor.set("Epsilon", 1.0e-3);
+
+    // Should use for Moore-Spence w/Salinger Bordering & Secant predictor
+    //Teuchos::ParameterList& lastStepPredictor 
+    //  = predictorList.sublist("Last Step Predictor");
+    //lastStepPredictor.set("Method", "Random");
+    //lastStepPredictor.set("Epsilon", 1.0e-3);
+\endcode
+
+We again use a secant predictor to compute an initial guess at each continuation step.  Because we are using the secant predictor, a different predictor must be used for the first step.  The default is the "Constant" predictor which is fine for the minimally augmented formulation.  However for the Moore-Spence formulation with Salinger bordering, we should use the "Random" predictor because the algorithm is singular.  If the problem Jacobian does not depend on the continuation parameter, we can obtain highly ill-conditioned linear solves when not using the random predictor.  A random predictor can be chosen for the last step for the same reason.
+
+\code
+    // Create step size sublist
+    Teuchos::ParameterList& stepSizeList = locaParamsList.sublist("Step Size");
+    stepSizeList.set("Method", "Adaptive");                      // Default
+    stepSizeList.set("Initial Step Size", 0.1);                  // Should set
+    stepSizeList.set("Min Step Size", 1.0e-3);                   // Should set
+    stepSizeList.set("Max Step Size", 1.0);                      // Should set
+
+    // Create the "Solver" parameters sublist to be used with NOX Solvers
+    Teuchos::ParameterList& nlParams = paramList->sublist("NOX");
+    Teuchos::ParameterList& nlPrintParams = nlParams.sublist("Printing");
+    nlPrintParams.set("Output Information", 
+		      NOX::Utils::OuterIteration + 
+		      NOX::Utils::OuterIterationStatusTest + 
+		      NOX::Utils::InnerIteration +
+		      NOX::Utils::Details + 
+		      NOX::Utils::Warning + 
+		      NOX::Utils::StepperIteration +
+		      NOX::Utils::StepperDetails +
+		      NOX::Utils::StepperParameters);            // Should set
+
+    // Create LAPACK Factory
+    Teuchos::RefCountPtr<LOCA::LAPACK::Factory> lapackFactory = 
+      Teuchos::rcp(new LOCA::LAPACK::Factory);
+
+    // Create global data object
+    Teuchos::RefCountPtr<LOCA::GlobalData> globalData =
+      LOCA::createGlobalData(paramList, lapackFactory);
+
     // Set up the problem interface
-    ChanProblemInterface chan(n, alpha, beta, scale, outFile);
+    ChanProblemInterface chan(globalData, n, alpha, beta, scale, outFile);
     LOCA::ParameterVector p;
     p.addParameter("alpha",alpha);
     p.addParameter("beta",beta);
@@ -683,144 +951,51 @@ By examining the plot in \ref loca_continuation_tutorial, a turning point bifurc
     // Create a group which uses that problem interface. The group will
     // be initialized to contain the default initial guess for the
     // specified problem.
-     LOCA::LAPACK::Group grp(chan);
-    grp.setParams(p);
-
-    // Create initial guess for the null vector of jacobian
-    NOX::LAPACK::Vector nullVec(n);  // length n
-    nullVec.init(1.0);             // initial value 1.0
-\endcode
-
-The only additional set up required for turning point tracking in this problem is to compute an initial guess for the null vector of the Jacobian.  Here we use a vector of all one's.  We will also use this vector as the length scaling vector \f$\phi\f$ in the turning point tracking algorithm.
-
-\code
-    // Create parameter list
-    Teuchos::ParameterList paramList;
-
-    // Create LOCA sublist
-    Teuchos::ParameterList& locaParamsList = paramList.sublist("LOCA");
-
-    // Create the stepper sublist and set the stepper parameters
-    Teuchos::ParameterList& stepperList = locaParamsList.sublist("Stepper");
-    //stepperList.set("Continuation Method", "Natural");
-    stepperList.set("Continuation Method", "Arc Length");
-    stepperList.set("Continuation Parameter", "beta");
-    stepperList.set("Initial Value", beta);
-    stepperList.set("Max Value", 1.0);
-    stepperList.set("Min Value", 0.0);
-    stepperList.set("Max Steps", 20);
-    stepperList.set("Max Nonlinear Iterations", maxNewtonIters);
-    stepperList.set("Enable Arc Length Scaling", true);
-    stepperList.set("Goal Arc Length Parameter Contribution", 0.5);
-    stepperList.set("Max Arc Length Parameter Contribution", 0.7);
-    stepperList.set("Initial Scale Factor", 1.0);
-    stepperList.set("Min Scale Factor", 1.0e-8);
-    stepperList.set("Enable Tangent Factor Step Size Scaling",false);
-    stepperList.set("Min Tangent Factor", -1.0);
-    stepperList.set("Tangent Factor Exponent",1.0);
-
-    // Create bifurcation sublist
-    Teuchos::ParameterList& bifurcationList = 
-      locaParamsList.sublist("Bifurcation");
-    bifurcationList.set("Method", "Turning Point");
-    bifurcationList.set("Bifurcation Parameter", "alpha");
-    bifurcationList.set("Length Normalization Vector", 
-			 dynamic_cast<NOX::Abstract::Vector*>(&nullVec));
-    bifurcationList.set("Initial Null Vector",
-			 dynamic_cast<NOX::Abstract::Vector*>(&nullVec));
-\endcode
-
-We now set \f$\beta\f$ to be the continuation parameter and \f$\alpha\f$ to be the bifurcation parameter.  We will vary \f$\beta\f$ from \f$0\f$ to \f$1\f$, computing a value of \f$\alpha\f$ for each corresponding value of \f$\beta\f$.  The initial value of \f$\alpha\f$ is set internally by accessing the component "alpha" in the parameter vector \em p set above.  In the bifurcation sublist, we indicate that we would like to do turning point tracking using the bordering method (LOCA::Bifurcation::TPBord::ExtendedGroup), and pass pointers to the initial guess for the null vector and length scaling vector.  Note that these must be casted to NOX::Abstract::Vector pointers.
-
-\code
-    // Create predictor sublist
-    Teuchos::ParameterList& predictorList = locaParamsList.sublist("Predictor");
-    //predictorList.set("Method", "Constant");
-    predictorList.set("Method", "Secant");
-    //predictorList.set("Method", "Random");
-    //predictorList.set("Epsilon", 1.0e-3);
-
-    Teuchos::ParameterList& firstStepPredictor 
-      = predictorList.sublist("First Step Predictor");
-    firstStepPredictor.set("Method", "Random");
-    firstStepPredictor.set("Epsilon", 1.0e-3);
-
-    Teuchos::ParameterList& lastStepPredictor 
-      = predictorList.sublist("Last Step Predictor");
-    lastStepPredictor.set("Method", "Random");
-    lastStepPredictor.set("Epsilon", 1.0e-3);
-\endcode
-
-We now use a secant predictor to compute an initial guess at each continuation step.  In general, this is a better choice for bifurcation tracking than the tangent predictor because of the bordering techniques used.  The tangent predictor requires a solve of the underlying Jacobian matrix which is singular at the turning point.  Because we are using the secant predictor, we must supply a predictor to use for the first step.  Here we choose the random predictor.  This ensures that the system is perturbed off of the singularity before computing the first step.  We choose a random predictor for the last step for the same reason.
-
-\code
-    // Create step size sublist
-    Teuchos::ParameterList& stepSizeList = locaParamsList.sublist("Step Size");
-    stepSizeList.set("Method", "Adaptive");
-    stepSizeList.set("Initial Step Size", 0.1);
-    stepSizeList.set("Min Step Size", 1.0e-3);
-    stepSizeList.set("Max Step Size", 1.0);
-    stepSizeList.set("Aggressiveness", 0.5);
-    stepSizeList.set("Failed Step Reduction Factor", 0.5);
-    stepSizeList.set("Successful Step Increase Factor", 1.26); // for constant
-
-    // Set the LOCA Utilities
-    Teuchos::ParameterList& locaUtilsList = locaParamsList.sublist("Utilities");
-    locaUtilsList.set("Output Information", 
-			       LOCA::Utils::Warning +
-			       LOCA::Utils::StepperIteration +
-			       LOCA::Utils::StepperDetails +
-			       LOCA::Utils::Solver +
-			       LOCA::Utils::SolverDetails);
-
-    // Create the "Solver" parameters sublist to be used with NOX Solvers
-    Teuchos::ParameterList& nlParams = paramList.sublist("NOX");
-    nlParams.set("Nonlinear Solver", "Line Search Based");
-
-    Teuchos::ParameterList& nlPrintParams = nlParams.sublist("Printing");
-    nlPrintParams.set("Output Information", 
-			       NOX::Utils::OuterIteration + 
-			       //NOX::Utils::OuterIterationStatusTest + 
-			       //NOX::Utils::InnerIteration +
-			       //NOX::Utils::Parameters +
-			       //NOX::Utils::Details + 
-			       NOX::Utils::Warning);
-
-    // Create the "Line Search" sublist for the "Line Search Based" solver
-    Teuchos::ParameterList& searchParams = nlParams.sublist("Line Search");
-    searchParams.set("Method", "Full Step");
-
-    // Create the newton and  linear solver parameters sublist
-  Teuchos::ParameterList& directionParameters = nlParams.sublist("Direction");
-  Teuchos::ParameterList& newtonParameters = directionParameters.sublist("Newton");
-  Teuchos::ParameterList& linearSolverParameters = newtonParameters.sublist("Linear Solver");
+    Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup> grp = 
+      Teuchos::rcp(new LOCA::LAPACK::Group(globalData, chan));
+    
+    grp->setParams(p);
 
     // Set up the status tests
-    NOX::StatusTest::NormF statusTestA(1.0e-5, NOX::StatusTest::NormF::Scaled);
-    NOX::StatusTest::MaxIters statusTestB(maxNewtonIters);
-    NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR, statusTestA, statusTestB);
+    Teuchos::RefCountPtr<NOX::StatusTest::NormF> statusTestA = 
+      Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-10, 
+					      NOX::StatusTest::NormF::Scaled));
+    Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> statusTestB = 
+      Teuchos::rcp(new NOX::StatusTest::MaxIters(maxNewtonIters));
+    Teuchos::RefCountPtr<NOX::StatusTest::Combo> combo = 
+      Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR, 
+					      statusTestA, statusTestB));
 
     // Create the stepper  
-    LOCA::Stepper stepper(grp, combo, paramList);
+    LOCA::Stepper stepper(globalData, grp, combo, paramList);
 
     // Solve the nonlinear system
     LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
 
-    if (status != LOCA::Abstract::Iterator::Finished)
-      cout << "Stepper failed to converge!" << endl;
+    if (status != LOCA::Abstract::Iterator::Finished) {
+      if (globalData->locaUtils->isPrintType(NOX::Utils::Error))
+	globalData->locaUtils->out() 
+	  << "Stepper failed to converge!" << std::endl;
+    }
 
     // Output the parameter list
-    if (NOX::Utils::doPrint(NOX::Utils::Parameters)) {
-      cout << endl << "Final Parameters" << endl
-	   << "****************" << endl;
-      stepper.getList().print(cout);
-      cout << endl;
+    if (globalData->locaUtils->isPrintType(NOX::Utils::StepperParameters)) {
+      globalData->locaUtils->out() 
+	<< std::endl << "Final Parameters" << std::endl
+	<< "****************" << std::endl;
+      stepper.getList()->print(globalData->locaUtils->out());
+      globalData->locaUtils->out() << std::endl;
     }
 
     outFile.close();
+
+    LOCA::destroyGlobalData(globalData);
   }
 
-  catch (char *s) {
+  catch (std::exception& e) {
+    cout << e.what() << endl;
+  }
+  catch (const char *s) {
     cout << s << endl;
   }
   catch (...) {
@@ -831,7 +1006,7 @@ We now use a secant predictor to compute an initial guess at each continuation s
 }
 \endcode
 
-The rest of the driver setup is very similar to ChanContinuation.C  The only difference being we use a slightly looser nonlinear solver tolerance and suppress some of NOX's screen output.
+The rest of the driver setup is very similar to ChanContinuation.C  We slightly tighten the convergence tolerance to demonstrate the well conditioning of the minimally augmented method.  In this case we must use the LAPACK factory since we are using the LAPACK-specific solver method "LAPACK Direct Solve".
 
 After running the example and reading the data file ChanTPContinuation.dat, we can plot the continuation parameter \f$\beta\f$ versus the bifurcation parameter \f$\alpha\f$ to get a locus of turning point bifurcations in the \f$(\beta,\alpha)\f$ parameter space:
 
@@ -839,7 +1014,7 @@ After running the example and reading the data file ChanTPContinuation.dat, we c
 
 \image latex chan_tp.eps
 
-There are two branches of the bifurcation curve which come together to form a cusp.  Starting at \f$\beta=0\f$ on one branch, traversing the cusp, and moving to \f$\beta=0\f$ on the second branch connects the two turning points shown in \ref loca_continuation_tutorial.
+There are two branches of the bifurcation curve which come together to form a cusp.  Starting at \f$\beta=0\f$ on one branch, traversing the cusp, and moving to \f$\beta=0\f$ on the second branch connects the two turning points shown in the \ref loca_continuation_tutorial.
 
 As in the continuation tutorial, the MATLAB code used to generate this plot is shown below.
 
@@ -852,8 +1027,10 @@ n = fscanf(fid, '%d', 1);
   
 beta = [];     % array of continuation parameter values at each step
 alpha = [];    % array of bifurcation parameter values at each step
+sigma = [];    % array of singular estimates at each step
 x = [];        % array of solution components at each step
-y = [];        % array of null vector components at each step
+y = [];        % array of right null vector components at each step
+z = [];        % array of left null vector components at each step
 
 while ~feof(fid)
   
@@ -868,6 +1045,12 @@ while ~feof(fid)
   
   % read y
   y = [y fscanf(fid, '%g', n)];
+
+  % read sigma
+  sigma = [sigma fscanf(fid, '%g', 1)];
+
+  % read z
+  z = [z fscanf(fid, '%g', n)];
   
 end
 
@@ -891,7 +1074,7 @@ title('Locus of Turning Points');
 
 /*! \page new_loca_framework New LOCA Framework
 
-Most of %LOCA is being rewritten to more fully support multi-parameter continuation, constraint tracking, higher-order predictors and advanced bifurcation algorithms.  The new framework is being developed along side the old framework, so both are currently available.  However the new framework is not complete, but is expected to be so for Trilinos Release 7.0 sometime in 2006.  Once the new framework is complete, the old one will be removed.  However the interfaces for both the new and old frameworks are still very similar, so the conversion between them is fairly simple.  There are three major components to this refactoring:
+Most of %LOCA has been rewritten to more fully support multi-parameter continuation, constraint tracking, higher-order predictors and advanced bifurcation algorithms.  The new framework completely replaces the old framework, with the old one now removed.  However the interfaces for both the new and old frameworks are still very similar, so the conversion between them is fairly simple.  There are three major components to this refactoring:
 <ul>
 <li> Use of Teuchos::RefCountPtr objects instead of raw pointers or references for better C++ memory management.
 <li> Use of strategy interfaces and factories to choose between alternative numerical algorithms.
@@ -902,5 +1085,5 @@ In the new framework, Teuchos::RefCountPtr's are used whenever objects are passe
 
 In the old framework, whenever a numerical continuation or bifurcation algorithm needed the result of a computation that was problem or data structure dependent, a group method was created for that computation which the user could implement in their own concrete group.  The problem with this however is it ties the implementation of this method to the group and makes it difficult for the group to support multiple ways of implementing the computation.  In the new framework, a strategy interface approach is taken instead where an abstract interface class is written the encapsulates the interface for the computation (strategy interface) and strategy objects are written that implement that interface for different strategies.  Then a factory is written that instantiates strategy objects based on a name provided in a parameter list (see for example LOCA::Eigensolver::AbstractStrategy and LOCA::Eigensolver::Factory or LOCA::BorderedSystem::AbstractStrategy and LOCA::BorderedSystem::Factory).  This allows the same group to use multiple strategies for a given computation and separates the interface to parallel linear algebra data structures in the group from the often many ways data structure dependent computations can be written in the strategy objects.  (In many ways this is similar to the Manager concept in %NOX, except it allows users to easily provide their own strategy implementations by implementing their own factory, see LOCA::Factory and LOCA::Abstract::Factory).
 
-Finally, multi-vectors are used where appropriate in the new framework to consolidate single and multi-parameter continuation code by viewing single parameter continuation as a special case of multi-parameter continuation.  This allows all of the same code to be used for both types of continuation, greatly simplifying code maintenance and development.  It also gives %LOCA a natural and efficient interface to block solvers such as Anasazi and Belos.
+Finally, multi-vectors are used where appropriate in the new framework to consolidate single and multi-parameter continuation code by viewing single parameter continuation as a special case of multi-parameter continuation.  This allows all of the same code to be used for both types of continuation, greatly simplifying code maintenance and development.  It also gives %LOCA a natural and efficient interface to block solvers such as %Anasazi and Belos.
 */

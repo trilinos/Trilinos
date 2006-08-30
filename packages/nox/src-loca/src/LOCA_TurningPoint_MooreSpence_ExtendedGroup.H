@@ -97,7 +97,7 @@ namespace LOCA {
        Note that the entire extended Jacobian \f$D_z G\f$ is not stored in
        memory, rather a block-elimination algorithm (bordering algorithm) is
        used to compute linear solves of the extended Jacobian (see 
-       LOCA::TurningPoint::MooreSpence::SolverFactory() for more details).
+       LOCA::TurningPoint::MooreSpence::SolverFactory for more details).
 
        This class implements all of the NOX::Abstract::Group, 
        LOCA::MultiContinuation::AbstractGroup, and 
