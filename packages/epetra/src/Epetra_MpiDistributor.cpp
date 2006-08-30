@@ -321,8 +321,10 @@ int Epetra_MpiDistributor::CreateFromSends( const int & NumExportIDs,
   EPETRA_CHK_ERR( ComputeRecvs_( my_proc, nprocs ) );
 
   if (nrecvs_>0) {
-    request_ = new MPI_Request[ nrecvs_ ];
-    status_ = new MPI_Status[ nrecvs_ ];
+    if( !request_ ) {
+      request_ = new MPI_Request[ nrecvs_ ];
+      status_ = new MPI_Status[ nrecvs_ ];
+    }
   }
 
   NumRemoteIDs = total_recv_length_;
@@ -400,6 +402,8 @@ int Epetra_MpiDistributor::ComputeRecvs_( int my_proc,
       procs_from_[i] = 0;
     }
   }
+
+#ifndef NEW_COMM_PATTERN
   for( i = 0; i < (nsends_+self_msg_); i++ )
     if( procs_to_[i] != my_proc ) {
       MPI_Send( &(lengths_to_[i]), 1, MPI_INT, procs_to_[i], tag_, comm_ );
@@ -418,10 +422,41 @@ int Epetra_MpiDistributor::ComputeRecvs_( int my_proc,
   }
 
   MPI_Barrier( comm_ );
+#else
+  if (nrecvs_>0) {
+    if( !request_ ) {
+      request_ = new MPI_Request[nrecvs_-self_msg_];
+      status_ = new MPI_Status[nrecvs_-self_msg_];
+    }
+  }
+
+  for( i = 0; i < (nrecvs_-self_msg_); i++ )
+    MPI_Irecv( &(lengths_from_[i]), 1, MPI_INT, MPI_ANY_SOURCE, tag_, comm_, &(request_[i]) );
+
+  MPI_Barrier( comm_ );
+
+  for( i = 0; i < (nsends_+self_msg_); i++ )
+    if( procs_to_[i] != my_proc ) {
+      MPI_Rsend( &(lengths_to_[i]), 1, MPI_INT, procs_to_[i], tag_, comm_ );
+    }
+    else
+    {
+      //set self_msg_ to end block of recv arrays
+      lengths_from_[nrecvs_-1] = lengths_to_[i];
+      procs_from_[nrecvs_-1] = my_proc;
+    }
+
+  if( (nrecvs_-self_msg_) > 0 ) MPI_Waitall( (nrecvs_-self_msg_), request_, status_ );
+
+  for( i = 0; i < (nrecvs_-self_msg_); i++ )
+    procs_from_[i] = status_[i].MPI_SOURCE;
+#endif
 
   Sort_ints_( procs_from_, lengths_from_, nrecvs_ );
 
   // Compute indices_from_
+  // Commenting out since it can break some reverse communication
+/* Not necessary, since rvs communication is always blocked by processor
   size_indices_from_ = 0;
   if( nrecvs_ > 0 )
   {
@@ -430,6 +465,7 @@ int Epetra_MpiDistributor::ComputeRecvs_( int my_proc,
 
     for (i=0; i<size_indices_from_; i++) indices_from_[i] = i;
   }
+*/
 
   starts_from_ = new int[nrecvs_];
   int j = 0;
@@ -864,6 +900,10 @@ int Epetra_MpiDistributor::Resize_( int * sizes )
  
   //  Exchange sizes routine inserted here:
   int self_index_to = -1;
+  total_recv_length_ = 0;
+  if( !sizes_from_ && (nrecvs_+self_msg_) ) sizes_from_ = new int [nrecvs_+self_msg_];
+
+#ifndef EPETRA_NEW_COMM_PATTERN
   for (i = 0; i < (nsends_+self_msg_); i++)
   {
     if(procs_to_[i] != my_proc)
@@ -872,9 +912,7 @@ int Epetra_MpiDistributor::Resize_( int * sizes )
       self_index_to = i;
   }
 
-  total_recv_length_ = 0;
   MPI_Status status;
-  if( !sizes_from_ && (nrecvs_+self_msg_) ) sizes_from_ = new int [nrecvs_+self_msg_];
   for (i = 0; i < (nrecvs_+self_msg_); ++i)
   {
     sizes_from_[i] = 0;
@@ -884,6 +922,46 @@ int Epetra_MpiDistributor::Resize_( int * sizes )
       sizes_from_[i] = sizes_to_[self_index_to];
     total_recv_length_ += sizes_from_[i];
   }
+#else
+  if (nrecvs_>0 && !request_) {
+    request_ = new MPI_Request[ nrecvs_-self_msg_ ];
+    status_ = new MPI_Status[ nrecvs_-self_msg_ ];
+  }
+
+  for (i = 0; i < (nsends_+self_msg_); i++)
+  {
+    if(procs_to_[i] == my_proc)
+      self_index_to = i;
+  }
+
+  for (i = 0; i < (nrecvs_+self_msg_); ++i)
+  {
+    sizes_from_[i] = 0;
+    if (procs_from_[i] != my_proc)
+      MPI_Irecv((void *) &(sizes_from_[i]), 1, MPI_INT, procs_from_[i], tag_, comm_, &(request_[i]));
+    else
+    {
+      sizes_from_[i] = sizes_to_[self_index_to];
+      total_recv_length_ += sizes_from_[i];
+    }
+  }
+
+  MPI_Barrier( comm_ );
+
+  for (i = 0; i < (nsends_+self_msg_); i++)
+  {
+    if(procs_to_[i] != my_proc)
+      MPI_Rsend ((void *) &(sizes_to_[i]), 1, MPI_INT, procs_to_[i], tag_, comm_);
+  }
+
+  if( nrecvs_ > 0 ) MPI_Waitall( nrecvs_, request_, status_ );
+
+  for (i = 0; i < (nrecvs_+self_msg_); ++i)
+  {
+    if (procs_from_[i] != my_proc)
+      total_recv_length_ += sizes_from_[i];
+  }
+#endif
   // end of exchanges sizes insert
  
   sum = 0;
