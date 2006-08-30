@@ -45,6 +45,7 @@
 \newcommand{\nox}  {{\sc NOX}}
 \newcommand{\loca}  {{\sc Loca}}
 \newcommand{\paraview}  {{\sc ParaView}}
+\newcommand{\galeri}  {{\sc Galeri}}
 \newcommand{\be}  {\begin{enumerate}}
 \newcommand{\ee}  {\end{enumerate}}
 % Maxwell abbreviations
@@ -344,15 +345,18 @@ libraries: \aztecoo, \epetra, \epetraext, \ifpack, \loca, \ML, \newpackage,
 \item \verb!cd sandbox!.
 \item Configure \trilinos:
   \be
-  \item   {\tt ../configure --enable-teuchos
-  --enable-amesos} if you do not want to use MPI.
+  \item   {\tt ../configure --enable-teuchos --enable-amesos --enable-aztecoo
+--enable-epetra}
+ if you do not want to use MPI.
   \item   {\tt ../configure  --enable-teuchos \\
-  --enable-amesos --with-mpi-compilers=/usr/local/mpich/bin} (or wherever your MPI compilers are
+  --enable-amesos --enable-aztecoo --enable-epetra --with-mpi-compilers=/usr/local/mpich/bin} (or wherever your MPI compilers are
 located) to use MPI.
   \ee
 \item Build \trilinos: \verb!make!.\footnote{If you are using GNU's make on a
 machine with more than one processor, then you can speed up the
-build with {\tt make -j XX}, where {\tt XX} is the number of processors.}
+build with {\tt make -j XX}, where {\tt XX} is the number of processors.  You
+can also reduce the size of the link lines with the option {\tt
+--with-gnumake}.}
 \item If your build finished without errors, you should see the directory\\
 \verb!Trilinos/sandbox/packages/!, with subdirectories below that for
 each individual library.   \ML's subdirectory, \verb!ml!, should contain
@@ -395,13 +399,11 @@ Table~\ref{tab:compilers}).
     \hline
     Operating System & Compilers(s) \\
     \hline
-    Linux  & GNU and Intel  \\
+    Linux  & GNU, Intel, Portland Group  \\
     MAC OS X  & GNU  \\
-    IRIX N32, IRIX 64, HPUX, Solaris, DEC & Native  \\
-    ASCI Red & Native and Portland Group \\
-    CPlant & Native \\
-%    {\bf CPLANT OS -- what's it called?} & Portland Group\\
-    Windows & Microsoft \\
+    IRIX N32, IRIX 64, HPUX, Solaris, DEC & native  \\
+    ASC Red Storm & native and Portland Group \\
+    Windows & Microsoft and Cygwin \\
 %   {\bf any others?????} & \\
    \hline
   \end{tabular}
@@ -527,28 +529,33 @@ packages also enable the interfaces to those packages within \ML.
 \smallskip
 
 \choicebox{\tt --enable-epetra}
-{Enable support for the \epetra\ package.}
+{Enable support for the \epetra\ package. (Recommended)}
 %
 \choicebox{\tt --enable-epetraext}
-{Enable support for the \epetraext\ package.}
+{Enable support for the \epetraext\ package. (Recommended)}
 %
 \choicebox{\tt --enable-aztecoo}
-{Enable support for the \aztecoo\ package.}
+{Enable support for the \aztecoo\ package. (Recommended)}
 %
 \choicebox{\tt --enable-amesos}
 {Enables support for the \amesos~package.
   \amesos~is an interface with several direct solvers.  \ML\ supports
   \umfpack~\cite{umfpack-home-page}, \klu, \superludist~(1.0 and 2.0),
   \mumps~\cite{MUMPS}. This package is necessary to use the \amesos\ 
-    interface to direct solvers.}
+    interface to direct solvers. (Recommended)}
 %
 \choicebox{\tt --enable-teuchos}
 {Enables support for the \teuchos~package.  This package is necessary to 
-  use the ML\_Epetra::MultiLevelPreconditioner class.}
+  use the ML\_Epetra::MultiLevelPreconditioner class. (Recommended)}
 %
 \choicebox{\tt --enable-triutils}
 {Enables support for the \triutils~package.
-  \ML~uses \triutils~only in some examples, to create the linear system
+  \ML~uses \triutils~in some examples and tests to create the linear system
+  matrix.  }
+%
+\choicebox{\tt --enable-galeri}
+{Enables support for the \galeri~package.
+  \ML~uses \galeri~in some examples and tests to create the linear system
   matrix.  }
 %
 \choicebox{\tt --enable-ifpack}
@@ -556,9 +563,9 @@ packages also enable the interfaces to those packages within \ML.
   \ifpack~package~\cite{Ifpack-Ref-Guide}, to use \ifpack\ factorizations as
     smoothers for \ML.}
 %
-\choicebox{\tt --enable-anasazi}
-{Enable support for the
-\anasazi\ package. \anasazi\ can be used by \ML~for eigenvalue computations.}
+%\choicebox{\tt --enable-anasazi}
+%{Enable support for the
+%\anasazi\ package. \anasazi\ can be used by \ML~for eigenvalue computations.}
 
 \medskip
 
@@ -1670,7 +1677,7 @@ Default values are listed in Table~\ref{tab:default}.
     \\
     \hline
     \hline
-{\tt max levels} & \tt int & 16 & 2 & 3 & 10 \\
+{\tt max levels} & \tt int & 10 & 2 & 3 & 10 \\
 \tt output & \tt int & 8 &  8 & 8 & 10 \\
 \tt increasing or decreasing & \tt string & \tt increasing & \tt
 increasing & \tt increasing & \tt decreasing \\
@@ -1694,7 +1701,7 @@ Anorm \\
 \tt smoother: damping factor & \tt double & 0.67  & -- & --  & 1.0 \\
 \tt smoother: pre or post & \tt string & \tt both & \tt both & \tt both
 & \tt both \\
-\tt smoother: type & \tt string & \tt Gauss-Seidel & \tt Aztec & \tt
+\tt smoother: type & \tt string & \tt symmetric Gauss-Seidel & \tt Aztec & \tt
 Aztec & Hiptmair/MLS \\
 \tt smoother: Aztec as solver & \tt bool & -- & \tt false & \tt
 false & false \\
@@ -1704,7 +1711,7 @@ false & false \\
 \hline
 \tt coarse: type & \tt string & \tt Amesos\_KLU & \tt Amesos\_KLU  & \tt
 Amesos\_KLU & \tt Amesos\_KLU \\
-\tt coarse: max size & \tt int & 128 & 128 & 128 & 75 \\
+\tt coarse: max size & \tt int & 16 & 128 & 128 & 75 \\
 \tt coarse: sweeps & \tt int & 1 & 1 & 1 & 1 \\
 \tt coarse: damping factor & \tt double & 1.0 & 1.0 & 1.0 & 1.0 \\
 \tt coarse: max processes & \tt int & 16 & 16 & 16 & -- \\

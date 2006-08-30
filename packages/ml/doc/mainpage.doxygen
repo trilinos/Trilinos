@@ -88,7 +88,7 @@ addition to providing algebraic multilevel methods to engineers, the ML library 
 also used in our research on preconditioners. At present, we are working closely
 with a couple of specific applications in further extending our capabilities. We
 have used ML in the following ways:
-- Parallel: MPI, several different linux clusters, Intel ASCI red machine, IBM
+- Parallel: MPI, several different linux clusters, Intel ASC Red Storm, IBM
   SP2, ...
 - Data-Neutral Interface: Matrices are accessed via getrow() and matvec()
   functions.
@@ -138,19 +138,20 @@ The ML developers are:
 
 \section ml_doc Where to find documentation
 
-ML is a large package. The following documents are suggested to ML users:
-- Sandia report SAND2004-4819 (ML 3.1 Smoothed Aggregation User's Guide, by M.
-  Sala, J. Hu and R. Tuminaro) introduces to the use of ML. The guide is focused
+ML is a large package.  The following documents are suggested for ML users:
+- "ML 5.0 Smoothed Aggregation User's Guide", Sandia report SAND2005-2649,
+  by M.  Gee, J. Hu, M. Sala, C. Siefert and R. Tuminaro.
+  This report introduces how to use ML. The guide is focused
   on smoothed aggregation multilevel methods. (However, ML can also be used for
   geometric multilevel methods.). The guide can be downloaded from the
-  "documentation" page.
-- The doxygen documentation is suggested for an up-to-date overview of the C++
+  <a href="http://software.sandia.gov/Trilinos/packages/ml/documentation.html">documentation</a> page.
+- The doxygen documentation provides an up-to-date overview of the C++
   functionalities of ML. ML has an Epetra interface, and can be used to define
   black-box preconditioners for Epetra_RowMatrix's. The doxygen documentation
-  covers the ML/Epetra interface, and does NOT cover the C source files.
+  covers the ML/Epetra interface, but does NOT cover the C source files.
 - A developers' guide is available in the ml/doc subdirectory (Sandia
   report number SAND2004-4821).
-- Consult also the \ref ml_changelog and \ref ml_readme files.
+- The \ref ml_changelog and \ref ml_readme files.
 
 Probably, the best way to understand ML is to use it. Several examples are
 provided in the Trilinos/packages/ml/examples subdirectories. Users are suggested
@@ -175,7 +176,7 @@ following examples:
 - \ref ml_viz_cpp  describes how to visualize the aggregates;
 - \ref ml_analyze_cpp shows how ML can be used to analyze the performances of a
   the preconditioner on a given linear system;
-- \ref ml_maxwell_cpp outlines the use of ML to solve the Maxwell equations.
+- \ref ml_read_maxwell_cpp outlines the use of ML to solve the Maxwell equations.
 
 
 \section ml_minitutorial Quick introduction to the ML/Epetra interface
@@ -185,9 +186,9 @@ following options:
 - \c --enable-epetra
 - \c --enable-teuchos
 
-It is suggested to enable the Amesos interface (\c --enable-amesos). Amesos is a
+We suggest enabling the Amesos interface (\c --enable-amesos). Amesos is a
 Trilinos package that interfaces with various serial and parallel sparse direct
-solvers. Besides, it contains a simple serial sparse direct solver (KLU), that is
+solvers. Morever, it contains a simple serial sparse direct solver (KLU), that is
 quite good for small matrices.
 
 
@@ -221,7 +222,7 @@ The following structure are used by ML:
   about the aggregates (for smoothed aggregates only)
 - ML_Operator_Struct (aliased as ML_Operator) defined the ML's internal matrix
   format;
-- classes MultiLevelOperator and MultiLevelPreconditioner should be use to
+- classes MultiLevelOperator and MultiLevelPreconditioner should be used to
   define AztecOO preconditioners.
 
  
@@ -291,17 +292,15 @@ access most of the ML capabilites in a very way. Click \ref ml_mlapi for more
 details.
 
 
-\section ml_python ML for Python's Applications
+\section ml_python ML for Python Applications
 
 ML is accessible from Python through the PyTrilinos package. Using PyTrilinos,
 ML can be used to create black-box preconditioners based on smoothed
 aggregation for both serial and parallel runs, using a standard Python
-interpreter.  Please refer to the PyTrilinos home page 
-http://software.sandia.gov/trilinos/packages/pytrilinos/overview.html
-for more details. 
+interpreter.  Please refer to the PyTrilinos <a href="http://software.sandia.gov/Trilinos/packages/pytrilinos/overview.html">homepage</a> for more details.
 
 
-\section ml_python ML/Thyra adapters
+\section ml_thyra ML/Thyra adapters
 
 Adapters are available for using ML with the Thyra solver components.
 See <A HREF="../../thyra/doc/html/index.html"> ML/Thyra adapters. </A>
@@ -328,7 +327,6 @@ If ML is compiled with -DML_MEM_CHECK, the destruction of
 ML_Epetra::MultiLevelPreconditioner() will verify that memory has not been
 corrupted, and that no memory leak occurs. Note that this option may be
 computationally expensive, and it is not recommended for performance evaluations.
-
 
 \section ml_changes (Incomplete) History of visible changes
 
@@ -720,8 +718,8 @@ Trilinos 4.0 tutorial.
 */
 
 /*!
-\page ml_maxwell_cpp ml_maxwell.cpp
-\include ml_maxwell.cpp
+\page ml_read_maxwell_cpp ml_read_maxwell.cpp
+\include ml_read_maxwell.cpp
 */
 
 /*!
