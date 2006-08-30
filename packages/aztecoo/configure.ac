@@ -251,6 +251,21 @@ else
   AC_MSG_RESULT(no)
 fi
 
+#The following section decides whether to enable the AZ_capture_matrix
+#feature.
+AC_ARG_ENABLE(aztecoo-capture-matrix,
+ [AC_HELP_STRING([--enable-aztecoo-capture-matrix], [Enable Aztec's capture-matrix feature. Default is no.])],
+ ac_cv_aztecoo_capture_matrix=$enableval,ac_cv_aztecoo_capture_matrix=no)
+
+AC_MSG_CHECKING(whether to enable aztecoo-capture-matrix)
+
+if test "X$ac_cv_aztecoo_capture_matrix" != "Xno"; then
+  AC_MSG_RESULT(yes)
+  AC_DEFINE([AZ_ENABLE_CAPTURE_MATRIX],,[Define to enable capture-matrix feature])
+else
+  AC_MSG_RESULT(no)
+fi
+
 # ------------------------------------------------------------------------
 # Optional package dependency
 # ------------------------------------------------------------------------

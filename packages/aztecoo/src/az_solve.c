@@ -1585,6 +1585,7 @@ int AZ_oldsolve_setup(double x[], double b[], int options[], double params[],
     return(0);
   }
 
+#ifdef AZ_ENABLE_CAPTURE_MATRIX
   /* Test to see if we should capture matrix, rhs and partitioning info
      in an ASCII data file.  If the file "AZ_write_matrix_now" exists in
      the current working directory, then the files
@@ -1601,6 +1602,7 @@ int AZ_oldsolve_setup(double x[], double b[], int options[], double params[],
   if (options[AZ_output] != AZ_none) {
     AZ_capture_matrix( Amat, proc_config, data_org, b);
   }
+#endif
 
 
   /* If desired, print out the matrix and indexing arrays */

@@ -1,5 +1,8 @@
 /* src/AztecOO_config.h.in.  Generated from configure.ac by autoheader.  */
 
+/* Define to enable capture-matrix feature */
+#undef AZ_ENABLE_CAPTURE_MATRIX
+
 /* Define to dummy `main' function (if any) required to link to the Fortran
    libraries. */
 #undef F77_DUMMY_MAIN

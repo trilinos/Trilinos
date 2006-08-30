@@ -1000,6 +1000,9 @@ void AZ_check_block_sizes(int bindx[], int cpntr[], int Nrows,
    }
    *new_block = N_blks;
 }
+
+#ifdef AZ_ENABLE_CAPTURE_MATRIX
+
 void AZ_capture_matrix(AZ_MATRIX *Amat, int proc_config[],
                       int data_org[], double b[])
 
@@ -1229,6 +1232,8 @@ void AZ_capture_matrix(AZ_MATRIX *Amat, int proc_config[],
   }
 } /* AZ_capture_matrix */
      
+/*endif for 'ifdef AZ_ENABLE_CAPTURE_MATRIX' block */
+#endif
 
    
 struct submat_struct {

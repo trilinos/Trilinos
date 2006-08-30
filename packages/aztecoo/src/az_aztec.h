@@ -1164,8 +1164,10 @@ void PREFIX AZ_SLAIC1_F77(int * , int *, float *, float *, float *, float *,
   extern void AZ_print_header(int options[], int mem_overlapped,
                               int mem_orig, int mem_factor);
 
+#ifdef AZ_ENABLE_CAPTURE_MATRIX
   extern void   AZ_capture_matrix(AZ_MATRIX * Amat,
                                   int proc_config[], int data_org[], double b[]);
+#endif
 
   extern void AZ_print_out(int update_index[], int extern_index[], int update[],
                            int external[],
