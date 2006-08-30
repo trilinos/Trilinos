@@ -28,7 +28,6 @@
 
 # Include export Makefiles
 include  $(top_builddir)/Makefile.export.ml
-include  $(top_builddir)/../PyTrilinos/Makefile.export.pytrilinos
 
 # Include swig rules
 include $(top_srcdir)/config/swig.am
