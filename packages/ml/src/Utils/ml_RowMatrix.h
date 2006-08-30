@@ -30,7 +30,7 @@ namespace ML_Epetra {
 /*! 
  * \class RowMatrix
  *
- * \brief Basic wrappere fromo ML_Operator to Epetra_RowMatrix.
+ * \brief Basic wrapper from ML_Operator to Epetra_RowMatrix.
  *
  * \author Marzio Sala, SNL 9214.
  *

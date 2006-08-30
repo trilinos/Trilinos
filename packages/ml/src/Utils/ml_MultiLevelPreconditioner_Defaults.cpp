@@ -49,7 +49,7 @@ using namespace ML_Epetra;
 // ============================================================================
 
 int ML_Epetra::SetDefaults(string ProblemType, ParameterList & List, 
-			   int * options, double * params)
+			   int * options, double * params, bool OverWrite)
 {
   
   // allocate some memory if the user is not passing the vectors.
@@ -67,22 +67,24 @@ int ML_Epetra::SetDefaults(string ProblemType, ParameterList & List,
 #endif
 
   if( ProblemType == "SA" ) {
-    ML_CHK_ERR( ML_Epetra::SetDefaultsSA(List, options, params) );
+    ML_CHK_ERR( ML_Epetra::SetDefaultsSA(List, options, params, OverWrite) );
   }
   else if( ProblemType == "maxwell" || ProblemType == "Maxwell" ) {
-    ML_CHK_ERR( ML_Epetra::SetDefaultsMaxwell(List, options, params ) );
+    ML_CHK_ERR( ML_Epetra::SetDefaultsMaxwell(List, options, params,OverWrite));
   }
   else if( ProblemType == "DD-ML" ) {
-    ML_CHK_ERR( ML_Epetra::SetDefaultsDD_3Levels(List, options, params ) );
+    ML_CHK_ERR( ML_Epetra::SetDefaultsDD_3Levels(List, options,
+                params,OverWrite) );
   }
   else if( ProblemType == "DD-ML-LU" ) {
-    ML_CHK_ERR( ML_Epetra::SetDefaultsDD_3Levels_LU(List, options, params ) );
+    ML_CHK_ERR( ML_Epetra::SetDefaultsDD_3Levels_LU(List, options, params,
+                OverWrite ) );
   }
   else if( ProblemType == "DD" ) {
-    ML_CHK_ERR( ML_Epetra::SetDefaultsDD(List, options, params ) );
+    ML_CHK_ERR( ML_Epetra::SetDefaultsDD(List, options, params, OverWrite ) );
   }
   else if( ProblemType == "DD-LU" ) {
-    ML_CHK_ERR( ML_Epetra::SetDefaultsDD_LU(List, options, params ) );
+    ML_CHK_ERR( ML_Epetra::SetDefaultsDD_LU(List, options, params, OverWrite ));
   }
   else {
     cerr << "ERROR: Wrong input parameter in `SetDefaults' ("
@@ -119,9 +121,10 @@ int ML_Epetra::SetDefaults(string ProblemType, ParameterList & List,
   - \c "prec type" = MGV"
   - \c "print unused" = -2
  */
-int ML_Epetra::SetDefaultsDD(ParameterList & List, 
-			     int * options, double * params) 
+int ML_Epetra::SetDefaultsDD(ParameterList & inList, 
+			     int * options, double * params, bool OverWrite) 
 {
+  ParameterList List;
 
   List.set("default values","DD");
 
@@ -171,16 +174,21 @@ int ML_Epetra::SetDefaultsDD(ParameterList & List,
 
   List.set("print unused",-2);
 
+  for (ParameterList::ConstIterator param=List.begin(); param!=List.end(); param++)
+    if ( inList.isParameter(inList.name(param)) == false || OverWrite )
+      inList.setEntry( inList.name(param) , inList.entry(param) );
+
   return 0;
 
-}
+} //ML_Epetra::SetDefaultsDD()
 
 // ============================================================================
 /*! As for SetDefaultsDD(), but used exact LU decompositions on each subdomains.
  */
-int ML_Epetra::SetDefaultsDD_LU(ParameterList & List, 
-				int * options, double * params) 
+int ML_Epetra::SetDefaultsDD_LU(ParameterList & inList, 
+				int * options, double * params, bool OverWrite) 
 {
+  ParameterList List;
 
   List.set("default values","DD-LU");
 
@@ -231,9 +239,13 @@ int ML_Epetra::SetDefaultsDD_LU(ParameterList & List,
 
   List.set("print unused",-2);
 
+  for(ParameterList::ConstIterator param=List.begin(); param!=List.end(); param++)
+    if ( inList.isParameter(inList.name(param)) == false || OverWrite )
+      inList.setEntry( inList.name(param) , inList.entry(param) );
+
   return 0;
 
-}
+} //ML_Epetra::SetDefaultsDD_LU()
 
 // ============================================================================
 /*! Sets the following default values for "DD"
@@ -259,9 +271,10 @@ int ML_Epetra::SetDefaultsDD_LU(ParameterList & List,
  - \c "prec type" = "MGV"
  - \c "print unused" = -2
  */
-int ML_Epetra::SetDefaultsDD_3Levels(ParameterList & List, 
-				     int * options, double * params)
+int ML_Epetra::SetDefaultsDD_3Levels(ParameterList & inList, 
+				     int * options, double * params, bool OverWrite)
 {
+  ParameterList List;
 
   List.set("default values","DD-ML");
 
@@ -313,18 +326,23 @@ int ML_Epetra::SetDefaultsDD_3Levels(ParameterList & List,
   List.set("prec type","MGV");
 
   List.set("print unused",-2);
+
+  for (ParameterList::ConstIterator param=List.begin(); param!=List.end(); param++)
+    if ( inList.isParameter(inList.name(param)) == false || OverWrite )
+      inList.setEntry( inList.name(param) , inList.entry(param) );
   
   return 0;
 
-}
+} //ML_Epetra::SetDefaultsDD_3Levels()
 
 // ============================================================================
 /*! As for SetDefaultsDD_3Levels, but with LU factorizations on each subdomain
  * for each level
  */
-int ML_Epetra::SetDefaultsDD_3Levels_LU(ParameterList & List, 
-					int * options, double * params)
+int ML_Epetra::SetDefaultsDD_3Levels_LU(ParameterList & inList, 
+					int * options, double * params, bool OverWrite)
 {
+  ParameterList List;
 
   List.set("default values","DD-ML-LU");
 
@@ -374,40 +392,46 @@ int ML_Epetra::SetDefaultsDD_3Levels_LU(ParameterList & List,
   List.set("prec type","MGV");
 
   List.set("print unused",-2);
+
+  for(ParameterList::ConstIterator param=List.begin(); param!=List.end(); param++)
+    if ( inList.isParameter(inList.name(param)) == false || OverWrite )
+      inList.setEntry( inList.name(param) , inList.entry(param) );
   
   return 0;
 
-}
+} //ML_Epetra::SetDefaultsDD_3Levels_LU()
 
 // ============================================================================
 /*! Set values for Maxwell:
- * - \c "default values" = "maxwell"
+ * - \c "default values" \c = \c "maxwell"
    - General
-       - \c "max levels" = 10
-       - \c "output" = 10
-       - \c "prec type" = "MGV"
-       - \c "PDE equations" = 1
-       - \c "print unused" = -2
+       - \c "max levels" \c = \c 10
+       - \c "output" \c = \c 10
+       - \c "prec type" \c = \c "MGV"
+       - \c "PDE equations" \c = \c 1
+       - \c "print unused" \c = \c -2
    - Coarsening
-       - \c "increasing or decreasing" = "decreasing"
-       - \c "aggregation: type" = "Uncoupled-MIS"
-       - \c "aggregation: damping factor" = 1.3333
-       - \c "coarse: max size" = 75
-       - \c "aggregation: threshold" = 0.0
+       - \c "increasing or decreasing" \c = \c "decreasing"
+       - \c "aggregation: type" \c = \c "Uncoupled-MIS"
+       - \c "aggregation: damping factor" \c =   1.3333
+       - \c "coarse: max size" \c = \c 75
+       - \c "aggregation: threshold" \c = 0.0
    - Smoothing
-       - \c "smoother: type" = "Hiptmair"
-       - \c "smoother: sweeps" = 2
-       - \c "smoother: Hiptmair efficient symmetric" = true
-       - \c "smoother: damping factor" = 1.0
-       - \c "smoother: type" = "MLS"
-       - \c "smoother: MLS polynomial order" = 3
-       - \c "smoother: pre or post" = "both"
+       - \c "smoother: type" \c = \c "Hiptmair"
+       - \c "smoother: sweeps" \c = \c 2
+       - \c "smoother: Hiptmair efficient symmetric" \c = \c true
+       - \c "smoother: damping factor" \c =  1.0
+       - \c "smoother: type" \c = \c "MLS"
+       - \c "smoother: MLS polynomial order" \c = \c 3
+       - \c "smoother: pre or post" \c = \c "both"
    - Coarse Solution
-       - \c "coarse: type" = "Amesos-KLU"
+       - \c "coarse: type" \c = \c "Amesos-KLU"
  */
-int ML_Epetra::SetDefaultsMaxwell(ParameterList & List, 
-				  int * options, double * params)
+int ML_Epetra::SetDefaultsMaxwell(ParameterList & inList, 
+				  int * options, double * params, bool OverWrite)
 {
+  ParameterList List;
+
   List.set("default values","maxwell");
   List.set("max levels",10);
   List.set("output",10);
@@ -454,36 +478,41 @@ int ML_Epetra::SetDefaultsMaxwell(ParameterList & List,
   // print unused on proc 0
   List.set("print unused",-2);
 
+  for(ParameterList::ConstIterator param=List.begin(); param!=List.end(); param++)
+    if ( inList.isParameter(inList.name(param)) == false || OverWrite )
+      inList.setEntry( inList.name(param) , inList.entry(param) );
+
   return 0;
   
-}
+} //ML_Epetra::SetDefaultsMaxwell()
 
 // ============================================================================
 /*! Set default values for classical smoothed aggregation:
-  - \c "default values" = "SA"
+  - \c "default values" \c = \c "SA"
    - General
-        - \c "max levels" = 10
-        - \c "output" = 8
-        - \c "PDE equations" = 1
-        - \c "prec type" = "MGV"
-        - \c "print unused" = -2
+        - \c "max levels" \c = \c 10
+        - \c "output" \c = \c 8
+        - \c "PDE equations" \c = \c 1
+        - \c "prec type" \c = \c "MGV"
+        - \c "print unused" \c = \c -2
    - Coarsening
-        - \c "increasing or decreasing" = "increasing"
-        - \c "aggregation: type" = "Uncoupled-MIS"
-        - \c "aggregation: damping factor" = 1.3333
-        - \c "coarse: max size" = 16
-        - \c "aggregation: threshold" = 0.0
+        - \c "increasing or decreasing" \c = \c "increasing"
+        - \c "aggregation: type" \c = \c "Uncoupled-MIS"
+        - \c "aggregation: damping factor" \c = \f$\frac{4}{3}\f$
+        - \c "coarse: max size" \c = \c 16
+        - \c "aggregation: threshold" \c =  0.0
    - Smoothing
-        - \c "smoother: sweeps" = 2
-        - \c "smoother: damping factor" = 0.67
-        - \c "smoother: type" = "symmetric Gauss-Seidel"
-        - \c "smoother: pre or post" = "both"
+        - \c "smoother: sweeps" \c = \c 2
+        - \c "smoother: damping factor" \c =  \f$\frac{2}{3}\f$
+        - \c "smoother: type" \c = \c "symmetric Gauss-Seidel"
+        - \c "smoother: pre or post" \c = \c "both"
    - Coarse Solution
-        - \c "coarse: type" = "Amesos-KLU"
+        - \c "coarse: type" \c = \c "Amesos-KLU"
  */
-int ML_Epetra::SetDefaultsSA(ParameterList & List, 
-			     int * options, double * params)
+int ML_Epetra::SetDefaultsSA(ParameterList & inList, 
+			     int * options, double * params, bool OverWrite)
 {
+  ParameterList List;
 
   List.set("default values","SA");
 
@@ -523,9 +552,12 @@ int ML_Epetra::SetDefaultsSA(ParameterList & List,
 
   // print unused on proc 0
   List.set("print unused",-2);
-  
+
+  for(ParameterList::ConstIterator param=List.begin(); param!=List.end(); param++)
+    if ( inList.isParameter(inList.name(param)) == false || OverWrite )
+      inList.setEntry( inList.name(param) , inList.entry(param) );
   return 0;
 
-}
+} //ML_Epetra::SetDefaultsSA()
 
 #endif /*ifdef ML_WITH_EPETRA && ML_HAVE_TEUCHOS*/
