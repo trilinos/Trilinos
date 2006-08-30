@@ -64,6 +64,7 @@ typedef enum Zoltan_LB_Method {
   PHG,
   PHG_REPART,
   PHG_REFINE,
+  PHG_MULTILEVEL_REFINE,
   PATOH,
   PARKWAY,
   HIER,

@@ -139,6 +139,7 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
            || (strcmp(method_upper, "PHG") == 0)
            || (strcmp(method_upper, "PHG_REPART") == 0)
 	   || (strcmp(method_upper, "PHG_REFINE") == 0)
+	   || (strcmp(method_upper, "PHG_MULTILEVEL_REFINE") == 0)           
            || (strcmp(method_upper, "PATOH") == 0)
            || (strcmp(method_upper, "PARKWAY") == 0)){
     /* The hypergraph methods have a lot in common. We allow
@@ -157,6 +158,8 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
       zz->LB.Method = PHG_REPART;
     else if (!strcmp(method_upper, "PHG_REFINE"))
       zz->LB.Method = PHG_REFINE;
+    else if (!strcmp(method_upper, "PHG_MULTILEVEL_REFINE"))
+      zz->LB.Method = PHG_MULTILEVEL_REFINE;
     else /* HYPERGRAPH or PHG */
       zz->LB.Method = PHG;
     zz->LB.LB_Fn = Zoltan_PHG;
