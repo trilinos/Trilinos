@@ -74,11 +74,11 @@ def buildInitFile(pyTrilinosModules,filename,depfile):
     else:
         build = True
     if build:
+        print "creating", filename
         print "\nEnabled modules:"
         for module in pyTrilinosModules:
             print "   ", module
         print
-        print "creating", filename
         open(filename,"w").write("__all__ = %s\n" % str(pyTrilinosModules))
 
 # Main script
@@ -123,8 +123,8 @@ if __name__ == "__main__":
         # Install
         print "installing", initFileName, "->", installDir
         try:
-            open(os.path.join(installDir,initFileName),"w").write(open(initFileDir,"r").read())
-        except:
+            open(os.path.join(installDir,initFileName),"w").write(open(initFileName,"r").read())
+        except IOError:
             print "\n***Error*** Cannot write to\n%s\n" % installDir
             sys.exit(1)
 
