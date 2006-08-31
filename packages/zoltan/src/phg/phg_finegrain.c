@@ -38,7 +38,7 @@ extern "C" {
 int Zoltan_PHG_Build_Finegrain(
   ZZ *zz,                      /* In: Zoltan data structure */
   HGraph *hg,                  /* In: Hypergraph */
-  HGraph **fg_hg,              /* Out: fine-grain hypergraph */
+  HGraph **fg_hg,              /* Out: Derived fine-grain hypergraph */
   PHGPartParams *hgp           /* Parameters for PHG partitioning.*/
 )
 {
@@ -53,12 +53,23 @@ char *yo = "Zoltan_PHG_Build_Finegrain";
   /* Allocate new hgraph. Initialize relevant fields. */
   fg = *fg_hg = (HGraph *) ZOLTAN_MALLOC(sizeof(HGraph));
   Zoltan_HG_HGraph_Init(fg);
-  fg->comm = hg->comm;
   fg->nVtx = hg->nPins;
   fg->nEdge = hg->nVtx + hg->nEdge;
   fg->nPins = 2*hg->nPins;
   fg->VtxWeightDim  = 0;
   fg->EdgeWeightDim = 0;
+
+  /* Fine-grain hypergraph will have a 1D layout; 
+     each proc owns the vertices corresponding to local pins in hg. */
+  fg->comm = hg->comm;
+  fg->comm->nProc_x = hg->comm->nProc_x * hg->comm->nProc_y;
+  fg->comm->nProc_y = 1;
+  fg->dist_x = (int *) ZOLTAN_CALLOC(fg->comm->nProc_x+1, sizeof(int));
+  fg->dist_y = (int *) ZOLTAN_CALLOC(fg->comm->nProc_y+1, sizeof(int));
+  /* Initialize dist_x, dist_y. */
+  MPI_Scan(&fg->nVtx, fg->dist_x, 1, MPI_INT, MPI_SUM, fg->comm->row_comm);
+  fg->dist_y[0] = 0;
+  fg->dist_y[1] = 1;
 
   /* Allocate space for vertex-based lookup in new fine grain hgraph.  */
   fg->vindex = (int *) ZOLTAN_MALLOC((fg->nVtx+1)*sizeof(int));
@@ -73,6 +84,7 @@ char *yo = "Zoltan_PHG_Build_Finegrain";
   for (i=0; i<hg->nEdge; i++){
     for (j=hg->hindex[i]; j<hg->hindex[i+1]; j++){
       fg->vindex[k] = 2*k;
+      /* TODO: Local to global mapping. */
       fg->vedge[2*k] = i;
       fg->vedge[2*k+1] = hg->nEdge+hg->hvertex[j]; 
       k++;
@@ -80,6 +92,7 @@ char *yo = "Zoltan_PHG_Build_Finegrain";
   }
   fg->vindex[k] = 2*k; /* k = fg->nVtx */
 
+#define DEBUG
 #ifdef DEBUG
   printf("Debug: fine hgraph (vertex-based). nvtx=%d, nedge=%d, nPins=%d\n", fg->nVtx, fg->nEdge, fg->nPins);
   printf("Debug: vindex: ");
@@ -92,12 +105,14 @@ char *yo = "Zoltan_PHG_Build_Finegrain";
   printf("\n");
 #endif
 
-  /* Mirror hypergraph. This sets up hindex. */
-  ierr = Zoltan_HG_Create_Mirror(zz, fg); 
+  /* Each processor now has formed a part of the fine-grain hg
+     corresponding to pins in the old hg that it owns. */
 
   /* TODO: Combine local partial hgraphs to a global hgraph. */
 
-End:
+  /* Mirror hypergraph. This sets up hindex. */
+  ierr = Zoltan_HG_Create_Mirror(zz, fg); 
+
   ZOLTAN_TRACE_EXIT(zz, yo);
   return ierr;
 }
