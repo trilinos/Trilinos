@@ -146,7 +146,67 @@ End:
 }
 #endif
  
- 
+
+double detailed_balance_info(
+  ZZ *zz,
+  HGraph *hg,
+  float *part_sizes,
+  int p,
+  Partition part
+)
+{
+  int i;
+  double *lsize_w, *size_w, max_imbal, tot_w;
+  char *yo = "Zoltan_PHG_Compute_Balance";
+  PHGComm *hgc=NULL;
+  
+  if (!hg || !hg->comm || !hg->comm->row_comm)  {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Unable to compute balance");
+    return 1.0;
+  }  
+
+  hgc=hg->comm;  
+  if (!(lsize_w = (double*) ZOLTAN_CALLOC (2*p, sizeof(double)))) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+      return ZOLTAN_MEMERR;
+  }
+  size_w = lsize_w + p;
+  
+  if (hg->vwgt)
+    for (i = 0; i < hg->nVtx; i++)
+      lsize_w[part[i]] += hg->vwgt[i];
+  else
+    for (i = 0; i < hg->nVtx; i++)
+      lsize_w[part[i]]++;
+        
+  MPI_Allreduce(lsize_w, size_w, p, MPI_DOUBLE, MPI_SUM, hg->comm->row_comm);
+  
+  max_imbal = tot_w = 0.0;
+  for (i = 0; i < p; i++) 
+      tot_w += size_w[i];
+  if (tot_w) {
+      if (!zz->Proc)
+          uprintf(hgc, "PNO\tActual\tTarget\timbal\n");
+      for (i = 0; i < p; i++)
+          if (part_sizes[i]) {
+              double ib= (size_w[i]-part_sizes[i]*tot_w)/(part_sizes[i]*tot_w);
+              if (!zz->Proc)
+                  uprintf(hgc, "%d\t%.1lf\t%.1lf\t%.3lf\n", i, size_w[i], part_sizes[i]*tot_w, 1.0+ib);
+              if (ib>max_imbal)
+                  max_imbal = ib;
+          } else if (!zz->Proc)
+              uprintf(hgc, "%d\t%.1lf\t%.1lf\tN/A\n", i, size_w[i], part_sizes[i]*tot_w);
+      if (!zz->Proc)
+          uprintf(hgc, "Max Imbal = %.3lf\n", 1.0+max_imbal);
+  }
+
+  ZOLTAN_FREE (&lsize_w);
+
+  return  1.0+max_imbal;
+}
+
+
+    
 /******************************************************************************/
 /* Main routine for Zoltan interface to hypergraph partitioning. Builds input */
 /* data structures, set parameters, calls HG partitioner, builds return lists.*/
@@ -232,7 +292,7 @@ int **exp_to_part )         /* list of partitions to which exported objs
   zz->LB.Data_Structure = zoltan_hg;
   hg = &zoltan_hg->HG;
   p = zz->LB.Num_Global_Parts;  
-  zoltan_hg->HG.redl = MAX(hgp.redl,p);     /* redl needs to be dynamic */
+  zoltan_hg->HG.redl = MAX(hgp.redl, p);     /* redl needs to be dynamic */
   /* RTHRTH -- redl may need to be scaled by number of procs */
   /* EBEB -- at least make sure redl > #procs */
 
@@ -265,11 +325,20 @@ int **exp_to_part )         /* list of partitions to which exported objs
 
   if (do_timing)
     ZOLTAN_TIMER_STOP(zz->ZTime, timer_build, zz->Communicator);
-   
+
+  if (zz->LB.Method == PHG_REFINE) { /* UVCUVC DEBUG PRINT */
+      uprintf(hg->comm, 
+          "UVC AFTERBUILD |V|=%6d |E|=%6d #pins=%6d p=%d bal=%.2f cutl=%.2f\n",
+          hg->nVtx, hg->nEdge, hg->nPins, p,
+          Zoltan_PHG_Compute_Balance(zz, hg, part_sizes, p, parts),
+          Zoltan_PHG_Compute_ConCut(hg->comm, hg, parts, p, &err));
+      detailed_balance_info(zz, hg, part_sizes, p, parts);
+  }
+  
+  
 /*
   uprintf(hg->comm, "Zoltan_PHG kway=%d #parts=%d\n", hgp.kway, zz->LB.Num_Global_Parts);
 */
-
 
   if (zz->LB.Method == PARKWAY) {
     if (do_timing) {
@@ -359,7 +428,19 @@ int **exp_to_part )         /* list of partitions to which exported objs
   if (zz->LB.Method == PHG_REPART) {
     Zoltan_PHG_Remove_Repart_Data(zz, zoltan_hg, hg);
   }
-        
+
+
+  if (zz->LB.Method == PHG_REFINE) { /* UVCUVC DEBUG PRINT */  
+      uprintf(hg->comm, 
+              "UVC ATTHEEND |V|=%6d |E|=%6d #pins=%6d p=%d bal=%.2f cutl=%.2f\n",
+              hg->nVtx, hg->nEdge, hg->nPins, p,
+              Zoltan_PHG_Compute_Balance(zz, hg, part_sizes, p, parts),
+              Zoltan_PHG_Compute_ConCut(hg->comm, hg, parts, p, &err));
+      detailed_balance_info(zz, hg, part_sizes, p, parts);
+  }
+  
+
+  
   if (do_timing) {
     /* Initialize these timers here so their output is near end of printout */
     if (timer_retlist < 0) 
@@ -745,7 +826,7 @@ int Zoltan_PHG_Initialize_Params(
         usePrimeComm = 1;
     
     if (zz->LB.Method == PHG_REFINE) {
-        Zoltan_Bind_Param(PHG_params, "PHG_COARSENING_METHOD", "no");
+        strncpy(hgp->redm_str, "no", MAX_PARAM_STRING_LEN);        
         /*   UVCUVC: just use default coarse partitioner; does better job :)
              Zoltan_Bind_Param(PHG_params, "PHG_COARSEPARTITION_METHOD", "no");
         */
@@ -755,7 +836,7 @@ int Zoltan_PHG_Initialize_Params(
     if (zz->LB.Method == PHG_MULTILEVEL_REFINE) {
         /* UVUVC: as a heuristic we prefer local matching;
            TODO this needs to be evaluated! */
-        Zoltan_Bind_Param(PHG_params, "PHG_COARSENING_METHOD", "l-ipm"); 
+        strncpy(hgp->redm_str, "l-ipm", MAX_PARAM_STRING_LEN);                
         zz->LB.Remap_Flag = 0;
         hgp->UsePrefPart = 1;
     }    
