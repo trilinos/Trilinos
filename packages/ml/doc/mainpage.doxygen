@@ -139,7 +139,7 @@ The ML developers are:
 \section ml_doc Where to find documentation
 
 ML is a large package.  The following documents are suggested for ML users:
-- "ML 5.0 Smoothed Aggregation User's Guide", Sandia report SAND2005-2649,
+- "ML 5.0 Smoothed Aggregation User's Guide", Sandia report SAND2006-2649,
   by M.  Gee, J. Hu, M. Sala, C. Siefert and R. Tuminaro.
   This report introduces how to use ML. The guide is focused
   on smoothed aggregation multilevel methods. (However, ML can also be used for
