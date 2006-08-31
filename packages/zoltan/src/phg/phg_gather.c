@@ -109,7 +109,9 @@ int max_nProc_xy = MAX(nProc_x, nProc_y);
   /* Fixed vertices */
   shg->bisec_split = phg->bisec_split;
   if (hgp->UseFixedVtx)
-    shg->fixed = (int *) ZOLTAN_MALLOC(shg->nVtx * sizeof(int));
+    shg->fixed_part = (int *) ZOLTAN_MALLOC(shg->nVtx * sizeof(int));
+  if (hgp->UsePrefPart)
+    shg->pref_part = (int *) ZOLTAN_MALLOC(shg->nVtx * sizeof(int));
   
   /* Allocate arrays for use in gather operations */
   recv_size = (int *) ZOLTAN_MALLOC(3 * max_nProc_xy * sizeof(int));
@@ -268,7 +270,10 @@ int max_nProc_xy = MAX(nProc_x, nProc_y);
       shg->vwgt[i] = phg->vwgt[i];
     if (hgp->UseFixedVtx)
       for (i = 0; i < shg->nVtx; i++)
-        shg->fixed[i] = phg->fixed[i];
+        shg->fixed_part[i] = phg->fixed_part[i];
+    if (hgp->UsePrefPart)
+      for (i = 0; i < shg->nVtx; i++)
+        shg->pref_part[i] = phg->pref_part[i];
   }
 
   else {
@@ -346,7 +351,7 @@ int max_nProc_xy = MAX(nProc_x, nProc_y);
 #ifdef DEBUG_
       uprintf(phg->comm, "Debug in PHG_gather before gather. phg->fixed =");
       for (i=0; i<phg->nVtx; i++){
-        printf(" %d ", phg->fixed[i]);
+        printf(" %d ", phg->fixed_part[i]);
       }
       printf("\n");
 #endif
@@ -359,18 +364,30 @@ int max_nProc_xy = MAX(nProc_x, nProc_y);
         disp[i] = disp[i-1] + each[i-1];
       }
       
-      MPI_Allgatherv(phg->fixed, phg->nVtx, MPI_FLOAT, 
-                     shg->fixed, each, disp, MPI_FLOAT, phg->comm->row_comm);
+      MPI_Allgatherv(phg->fixed_part, phg->nVtx, MPI_FLOAT, 
+                     shg->fixed_part, each, disp, MPI_FLOAT, phg->comm->row_comm);
 
 #ifdef DEBUG_
       uprintf(phg->comm, "Debug in PHG_gather after gather. shg->fixed =");
       for (i=0; i<shg->nVtx; i++){
-        printf(" %d ", shg->fixed[i]);
+        printf(" %d ", shg->fixed_part[i]);
       }
       printf("\n");
 #endif
     }
-
+    /* Gather pref part array, if any  */
+    if (hgp->UsePrefPart){
+      /* Can use the same each array. */
+      /* Need to compute new disp array. */
+      disp[0] = 0;
+      for (i = 1; i < nProc_x; i++) {
+        disp[i] = disp[i-1] + each[i-1];
+      }
+      
+      MPI_Allgatherv(phg->pref_part, phg->nVtx, MPI_FLOAT, 
+                     shg->pref_part, each, disp, MPI_FLOAT, phg->comm->row_comm);
+    }
+    
     /* Gather vertex weights, if any. */
     if (shg->VtxWeightDim) {
   

@@ -187,7 +187,7 @@ int Zoltan_PHG_Coarsening
 {
   char     *yo = "Zoltan_PHG_Coarsening";
   PHGComm  *hgc = hg->comm;
-  int   ierr=ZOLTAN_OK, i, j, count, size, me=hgc->myProc_x, idx, ni;
+  int   ierr=ZOLTAN_OK, i, j, count, size, me=hgc->myProc_x, idx, ni, header;
   int   *vmark=NULL, *listgno=NULL, *listlno=NULL, *listproc=NULL, *msg_size=NULL, *ip;
   int   *ahindex=NULL, *ahvertex=NULL, *hsize=NULL, *hlsize=NULL, *ids=NULL, *iden;
   int   *extmatchsendcnt=NULL, extmatchrecvcnt=0, *extmatchrecvcounts=NULL;
@@ -240,11 +240,17 @@ int Zoltan_PHG_Coarsening
   c_hg->redl    = hg->redl;  /* to stop coarsening near desired count */
   c_hg->VtxWeightDim  = hg->VtxWeightDim;
   c_hg->bisec_split = hg->bisec_split;
-  c_hg->fixed = (hg->fixed) ? (int*)ZOLTAN_MALLOC(hg->nVtx * sizeof(int)) : NULL;
-  
-if (c_hg->fixed)  
-  for (i = 0; i < hg->nVtx; i++)
-    c_hg->fixed[i] = -2;  
+  c_hg->fixed_part = (hg->fixed_part) ? (int*)ZOLTAN_MALLOC(hg->nVtx * sizeof(int)) : NULL;
+  c_hg->pref_part = (hg->pref_part) ? (int*)ZOLTAN_MALLOC(hg->nVtx * sizeof(int)) : NULL;
+
+#ifdef _DEBUG1  
+  if (c_hg->fixed_part)  
+      for (i = 0; i < hg->nVtx; i++)
+          c_hg->fixed_part[i] = -2;
+  if (c_hg->pref_part)  
+      for (i = 0; i < hg->nVtx; i++)
+          c_hg->pref_part[i] = -2;
+#endif
   
   
   /* (over) estimate number of external matches that we need to send data to */
@@ -316,16 +322,21 @@ if (c_hg->fixed)
               }
           } else if (!vmark[i]) {     /* local matching, packing and groupings */
               int v = i;
-              int fixed = -1; 
+              int fixed = -1, pref = -1; 
               while (!vmark[v])  {
-                  if (hgp->UseFixedVtx && hg->fixed[v] >= 0)
-                      fixed = hg->fixed[v];
+                  if (hgp->UseFixedVtx && hg->fixed_part[v] >= 0)
+                      fixed = hg->fixed_part[v];
+                  if (hgp->UsePrefPart && hg->pref_part[v] >= 0)
+                      pref = hg->pref_part[v];
                   LevelMap[v] = c_hg->nVtx;         /* next available coarse vertex */      
                   vmark[v] = 1;  /* flag this as done already */
                   v = match[v];  
               }
-              if (hgp->UseFixedVtx)
-                  c_hg->fixed[c_hg->nVtx] = fixed;      
+              if (hgp->UseFixedVtx) {
+                  c_hg->fixed_part[c_hg->nVtx] = fixed;
+              }
+              if (hgp->UsePrefPart)
+                  c_hg->pref_part[c_hg->nVtx] = pref;      
               ++c_hg->nVtx;
           }
       }
@@ -338,8 +349,10 @@ if (c_hg->fixed)
     for (i = 0; i < hg->nVtx; ++i)
         if (match[i] == VTX_LNO_TO_GNO(hg, i)) {
             LevelMap[i] = c_hg->nVtx;
-            if (c_hg->fixed)
-                c_hg->fixed[c_hg->nVtx] = hg->fixed[i];
+            if (c_hg->fixed_part)
+                c_hg->fixed_part[c_hg->nVtx] = hg->fixed_part[i];
+            if (c_hg->pref_part)
+                c_hg->pref_part[c_hg->nVtx] = hg->pref_part[i];
 /*            uprintf(hgc, "match[%d (gno=%d)] = %d   new vtxno=%d\n", i, VTX_LNO_TO_GNO(hg, i), match[i], c_hg->nVtx);*/
             ++c_hg->nVtx;
         }
@@ -366,12 +379,11 @@ if (c_hg->fixed)
   }
   
   /* size and allocate the send buffer */
-  { 
-  int header = (hgp->UseFixedVtx ? 4 : 3);
+  header = 3 + (hgp->UseFixedVtx ? 1 : 0) + (hgp->UsePrefPart ? 1 : 0);
   size += ((header + hg->VtxWeightDim) * count);
   if (size > 0 && !(buffer = (char*) ZOLTAN_MALLOC (size * sizeof(int))))
       MEMORY_ERROR;
-  } 
+   
   
   /* Message is list of <gno, vweights, gno's edge count, list of edge lno's> */
   /* We pack ints and floats into same buffer */
@@ -381,8 +393,10 @@ if (c_hg->fixed)
     int *ip_old = ip;
     *ip++ = listlno[i];             /* source lno */
     *ip++ = listgno[i];             /* destination vertex gno */
-    if (hg->fixed)
-      *ip++ = hg->fixed[lno];
+    if (hg->fixed_part)
+      *ip++ = hg->fixed_part[lno];
+    if (hg->pref_part)
+      *ip++ = hg->pref_part[lno];
       
     /* UVC Assumes a float is no larger than an int which true in almost all
        platforms except prehistoric 16-bit platforms. */
@@ -443,7 +457,11 @@ if (c_hg->fixed)
        
     if (hgp->UseFixedVtx)  {
       int fixed = ip[i++];
-      c_hg->fixed [LevelMap[lno]] = (fixed >= 0) ? fixed : hg->fixed[lno];
+      c_hg->fixed_part [LevelMap[lno]] = (fixed >= 0) ? fixed : hg->fixed_part[lno];
+    } 
+    if (hgp->UsePrefPart)  {
+      int pref = ip[i++];
+      c_hg->pref_part [LevelMap[lno]] = (pref >= 0) ? pref : hg->pref_part[lno];
     } 
      
     pw=(float*) &ip[i];
@@ -467,7 +485,8 @@ if (c_hg->fixed)
   for (ip = (int*) rbuffer, i = 0; i < size; )  {
     int j, sz, lno=VTX_GNO_TO_LNO (hg, ip[i+1]);
 
-    i += (hgp->UseFixedVtx ? 3 : 2) + hg->VtxWeightDim;  /* skip header + vtx weights */
+    i += header-1 + hg->VtxWeightDim;  /* skip header (-1 because we want to read size)
+                                          + vtx weights */
     sz = ip[i++];             /* get sz to a diff var, skip size*/
     for (j=0; j<sz; ++j)      /* count extra vertices per edge */
         ahvertex[--ahindex[ip[i+j]]] = lno;
@@ -818,13 +837,18 @@ if (c_hg->fixed)
   MPI_Allgather(c_hg->dist_y, 1, MPI_INT, &(c_hg->dist_y[1]), 1, MPI_INT, hgc->col_comm);
   c_hg->dist_y[0] = 0;  
   
-if (c_hg->fixed)
-  for (i = 0; i < c_hg->nVtx; i++)
-    if (c_hg->fixed[i] == -2)
-      printf ("RTHRTH BAD COARSENING for FIXED VERTICES\n"); 
 
   ierr = Zoltan_HG_Create_Mirror(zz, c_hg);
 #ifdef _DEBUG1
+  if (c_hg->fixed_part)
+      for (i = 0; i < c_hg->nVtx; i++)
+          if (c_hg->fixed_part[i] == -2)
+              printf ("RTHRTH BAD COARSENING for FIXED VERTICES\n"); 
+  if (c_hg->pref_part)
+      for (i = 0; i < c_hg->nVtx; i++)
+          if (c_hg->pref_part[i] == -2)
+              uprintf(hgc, "*******BAD COARSENING for PREF[%d] is unassigned\n", i);
+  
   MPI_Barrier(hgc->Communicator);  
   t_mirror += MPI_Wtime();
 #endif

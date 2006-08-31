@@ -78,7 +78,8 @@ void Zoltan_HG_HGraph_Init(
   phg->dist_x  = NULL;
   phg->dist_y  = NULL;
   phg->vmap    = NULL;
-  phg->fixed   = NULL;
+  phg->fixed_part= NULL;
+  phg->pref_part = NULL;
 }
 
 
@@ -108,7 +109,8 @@ ZOLTAN_FREE(&hg->vedge);
 ZOLTAN_FREE(&hg->dist_x);
 ZOLTAN_FREE(&hg->dist_y); 
 ZOLTAN_FREE(&hg->vmap); 
-ZOLTAN_FREE(&hg->fixed);
+ZOLTAN_FREE(&hg->fixed_part);
+ZOLTAN_FREE(&hg->pref_part); 
   }
   return ZOLTAN_OK;
 }
@@ -866,7 +868,7 @@ void Zoltan_HG_HGraph_Print(
   int i;
   int num_gid = zz->Num_GID;
   int num_lid = zz->Num_LID;
-  char *yo = "Zoltan_PHG_HGraph_Print";
+  char *yo = "Zoltan_HG_HGraph_Print";
 
   if (zoltan_hg != NULL  &&  hg != &zoltan_hg->HG) {
     ZOLTAN_PRINT_WARN(zz->Proc, yo, "Input hg != Zoltan HG");

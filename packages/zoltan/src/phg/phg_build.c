@@ -1648,9 +1648,9 @@ int nRepartEdge = 0, nRepartVtx = 0;
   
   if (GnFixed) {                              /* RTHRTH */
     tmpfixed   = (int*) ZOLTAN_MALLOC(phg->nVtx * sizeof(int));
-    phg->fixed = (int*) ZOLTAN_MALLOC((phg->nVtx + nRepartVtx) * sizeof(int));
+    phg->fixed_part = (int*) ZOLTAN_MALLOC((phg->nVtx + nRepartVtx) * sizeof(int));
 
-    if ((phg->nVtx || nRepartVtx) && (!tmpfixed || !phg->fixed))
+    if ((phg->nVtx || nRepartVtx) && (!tmpfixed || !phg->fixed_part))
       MEMORY_ERROR;
       
     for (i = 0 ; i < phg->nVtx; i++)
@@ -1690,7 +1690,7 @@ int nRepartEdge = 0, nRepartVtx = 0;
     if (GnFixed) {                                  /* RTHRTH */
        msg_tag++;
        ierr = Zoltan_Comm_Do (zhg->VtxPlan, msg_tag, (char*) myObjs.fixed,
-         sizeof(int), (char*) phg->fixed);
+         sizeof(int), (char*) phg->fixed_part);
        if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN))
          goto End;         
     }
@@ -1701,7 +1701,7 @@ int nRepartEdge = 0, nRepartVtx = 0;
       for (j=0; j<dim; j++){
         tmpwgts[idx*dim + j] = phg->vwgt[i*dim + j];  
       if (GnFixed)                                       /* RTHRTH */
-         tmpfixed[idx] = phg->fixed[i];         
+         tmpfixed[idx] = phg->fixed_part[i];         
       }
     }
   }
@@ -1720,7 +1720,7 @@ int nRepartEdge = 0, nRepartVtx = 0;
     CHECK_FOR_MPI_ERROR(rc)
 
     if (GnFixed) {                                          /* RTHRTH */
-       rc = MPI_Allreduce(tmpfixed, phg->fixed, phg->nVtx, MPI_INT, MPI_MAX,
+       rc = MPI_Allreduce(tmpfixed, phg->fixed_part, phg->nVtx, MPI_INT, MPI_MAX,
             phg->comm->col_comm);
        CHECK_FOR_MPI_ERROR(rc);
     }   
@@ -2771,10 +2771,10 @@ int ierr = ZOLTAN_OK;
    * Initialized application vertices' fixed value to -1 (not fixed).
    */
   hgp->UseFixedVtx = 1;
-  if (!phg->fixed && (phg->nVtx + nRepartVtx)) {
-    phg->fixed = (int *) ZOLTAN_MALLOC((phg->nVtx + nRepartVtx) * sizeof(int));
-    if (!phg->fixed) MEMORY_ERROR;
-    for (i = 0; i < phg->nVtx; i++) phg->fixed[i] = -1;
+  if (!phg->fixed_part && (phg->nVtx + nRepartVtx)) {
+    phg->fixed_part = (int *) ZOLTAN_MALLOC((phg->nVtx + nRepartVtx) * sizeof(int));
+    if (!phg->fixed_part) MEMORY_ERROR;
+    for (i = 0; i < phg->nVtx; i++) phg->fixed_part[i] = -1;
   }
 
   /* Assuming phg arrays are allocated large enough to accommodate the
@@ -2785,7 +2785,7 @@ int ierr = ZOLTAN_OK;
   cnt = firstRepartVtx;
   dim = phg->VtxWeightDim;
   for (i = phg->nVtx; i < (phg->nVtx + nRepartVtx); i++) {
-    phg->fixed[i] = cnt;
+    phg->fixed_part[i] = cnt;
     input_parts[i] = cnt++;
     if (phg->vwgt) 
       for (j = 0; j < dim; j++)

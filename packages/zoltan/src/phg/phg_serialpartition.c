@@ -135,16 +135,6 @@ const int num_coarse_iter = 1 + 9/zz->Num_Proc;
     ZOLTAN_TIMER_START(zz->ZTime, timer_cpart, phg->comm->Communicator);
   }
 
-#ifdef DEBUG_FIXED
-  /* TEST: create fixed vtx array */
-  phg->fixed = (int *) ZOLTAN_MALLOC(phg->nVtx*sizeof(int));
-  for (i=0; i<phg->nVtx; i++)
-    phg->fixed[i] = -1;
-  /* TEST: Fix the first two vertices */
-  phg->fixed[0] = 0;
-  phg->fixed[1] = 1;
-#endif
-
 
   /* Force LocalCoarsePartition if large global graph */
 #define LARGE_GRAPH_VTX   32000
@@ -156,30 +146,48 @@ const int num_coarse_iter = 1 + 9/zz->Num_Proc;
 
   /* take care of all special cases first */
 
-  if (!strcasecmp(hgp->coarsepartition_str, "no")) {
+  if (!strcasecmp(hgp->coarsepartition_str, "no")
+      || !strcasecmp(hgp->coarsepartition_str, "none")) {
     /* Do no coarse partitioning. */
     /* Do a sanity test and  mapping to parts [0,...,numPart-1] */
     int first = 1;
-    for (i = 0; i < phg->nVtx; i++)
-      if (part[i] >= numPart) {
-        if (first) {
-          ZOLTAN_PRINT_WARN(zz->Proc, yo, "Initial part number > numParts.");
-          first = 0;
-          ierr = ZOLTAN_WARN;
+    PHGComm *hgc=phg->comm;    
+
+    Zoltan_Srand_Sync (Zoltan_Rand(NULL), &(hgc->RNGState_col), hgc->col_comm);
+    if (hgp->UsePrefPart) {
+        for (i = 0; i < phg->nVtx; i++) {
+            /* Impose fixed vertex/preferred part constraints. */
+            if (phg->pref_part[i] < 0) { /* Free vertex in fixedvertex partitioning or repart */
+                /* randomly assigned to a part */
+                part[i] = Zoltan_Rand_InRange(&(hgc->RNGState_col), numPart);
+            } else {
+                if (phg->bisec_split < 0)
+                    /* direct k-way, use part numbers directly */
+                    part[i] = phg->pref_part[i];
+                else
+                    /* recursive bisection, map to 0-1 part numbers */
+                    part[i] = (phg->pref_part[i] < phg->bisec_split ? 0 : 1);
+            }            
         }
-        /* Impose fixed vertex constraints. */
-        if (hgp->UseFixedVtx && (phg->fixed[i] >= 0))
-          part[i] = phg->fixed[i];
-        else
-          part[i] = part[i] % numPart; /* map to a valid part no. */
-      }
+    } else {
+        for (i = 0; i < phg->nVtx; i++) {
+            if (part[i] >= numPart || part[i]<0) {
+                if (first) {
+                    ZOLTAN_PRINT_WARN(zz->Proc, yo, "Initial part number > numParts.");
+                    first = 0;
+                    ierr = ZOLTAN_WARN;
+                }
+                part[i] = ((part[i]<0) ? -part[i] : part[i]) % numPart;
+            }        
+        }
+    }
   }
   else if (numPart == 1) {            
     /* everything goes in the one partition */
     for (i =  0; i < phg->nVtx; i++)
       part[i] = 0;
   }
-  else if (!hgp->UseFixedVtx && numPart >= phg->dist_x[phg->comm->nProc_x]) { 
+  else if (!hgp->UsePrefPart && numPart >= phg->dist_x[phg->comm->nProc_x]) { 
     /* more partitions than vertices, trivial answer */
     for (i = 0; i < phg->nVtx; i++)
       part[i] = phg->dist_x[phg->comm->myProc_x]+i;
@@ -377,10 +385,6 @@ End:
   if (fine_timing) 
     ZOLTAN_TIMER_STOP(zz->ZTime, timer_cpart, phg->comm->Communicator);
 
-#ifdef DEBUG_FIXED
-  ZOLTAN_FREE(&phg->fixed);
-#endif
-
   ZOLTAN_TRACE_EXIT(zz, yo);
   return ierr;
 }
@@ -444,7 +448,7 @@ int rootnpins, rootrank;
    by Ali Pinar and C. Aykanat, but for our purpose it is 
    probably not worth the effort.
 
-   Adapted for fixed vertices.
+   Adapted for fixed vertices and/or prefered parts.
 
 */
 
@@ -477,37 +481,32 @@ static int seq_part (
     return ZOLTAN_FATAL;
   }
 
-  if (hgp->UseFixedVtx) {
+  if (hgp->UsePrefPart) {
     fixed_wgts = (double *) ZOLTAN_CALLOC(p, sizeof(double));
   }
 
   /* Sum up all the vertex weights. */
   for (i=0; i<hg->nVtx; i++){
     weight_sum += hg->vwgt[i*vwgtdim];
-    if (hgp->UseFixedVtx)
-      if (hg->fixed[i] >= 0){
+    if (hgp->UsePrefPart)
+      if (hg->pref_part[i] >= 0){
 /*
-        uprintf(hg->comm, "bisec_split=%d, i=%d, fixed=%d\n", hg->bisec_split, i, hg->fixed[i]);
+        uprintf(hg->comm, "bisec_split=%d, i=%d, pref_part=%d\n", hg->bisec_split, i, hg->pref_part[i]);
 */
         /* Set partition number for fixed vtx. */
         if (hg->bisec_split < 0){
           /* direct k-way, use part numbers directly */
-          part[i] = hg->fixed[i];
+          part[i] = hg->pref_part[i];
         }
         else{
           /* recursive bisection, map to 0-1 part numbers */
-          part[i] = (hg->fixed[i] < hg->bisec_split ? 0 : 1);
+          part[i] = (hg->pref_part[i] < hg->bisec_split ? 0 : 1);
         }
-        /* Add up weights of fixed vertices for each partition */
+        /* Add up weights of pref_part vertices for each partition */
         fixed_wgts[part[i]] += hg->vwgt[i*vwgtdim];
       }
   }
  
-#if 0
-  if (hgp->UseFixedVtx)
-    printf("fixed[0,1]= %d, %d\n", hg->fixed[0], hg->fixed[1]);
-  printf("part[0,1]= %d, %d\n", part[0], part[1]);
-#endif
 
   /* Sum up all the target partition weights. */
   /* Only use first vweight for now. */
@@ -526,7 +525,7 @@ static int seq_part (
     /* If order==NULL, then use linear order. */
     j = order ? order[i] : i;
     /* for non-fixed vertices */
-    if ((!hgp->UseFixedVtx) || (hg->fixed[j] == -1)){
+    if ((!hgp->UsePrefPart) || (hg->pref_part[j] == -1)){
       part[j] = pnumber;
       old_sum = part_sum;
       part_sum += hg->vwgt[j*vwgtdim];
@@ -681,9 +680,9 @@ static int greedy_grow_part (
   /* Initially put all vertices in part 0, except fixed ones. */
   for (i=0; i<hg->nVtx; i++)
     part[i] = 0;   
-  if (hgp->UseFixedVtx){
+  if (hgp->UsePrefPart){
     for (i=0; i<hg->nVtx; i++)
-      if ((hg->bisec_split >= 0) && (hg->fixed[i] >= hg->bisec_split))
+      if ((hg->bisec_split >= 0) && (hg->pref_part[i] >= hg->bisec_split))
         part[i] = 1;   
   }
  
@@ -727,14 +726,14 @@ static int greedy_grow_part (
     printf("Debug: Starting new greedy growing at vertex %d, part=%2d\n", start_vtx, p);
 
   /* Initialize heap. */
-  if (!hgp->UseFixedVtx) 
+  if (!hgp->UsePrefPart) 
     gain[start_vtx] = 1e10;      /* Make start_vtx max value in heap. */
                                  /* All other values should be negative. */
   Zoltan_Heap_Init(zz, &h[0], hg->nVtx);
   Zoltan_Heap_Init(zz, &h[1], 0);       /* Dummy heap, not used. */
   for (i=0; i<hg->nVtx; i++){
     /* Insert all non-fixed vertices into heap. */
-    if (!hgp->UseFixedVtx || (hg->fixed[i] < 0))
+    if (!hgp->UsePrefPart || (hg->pref_part[i] < 0))
       Zoltan_Heap_Input(h, i, gain[i]);
   }
   Zoltan_Heap_Make(h);

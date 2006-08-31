@@ -123,6 +123,9 @@ int Zoltan_PHG_rdivide(
   bisec_part_sizes[0] = (double) bisec_part_sizes[0] / (double) bisec_part_sizes[1];
   bisec_part_sizes[1] = 1. - bisec_part_sizes[0];
 
+
+/*  uprintf(hgc, "RDIVIDE: [%d, %d] mid=%d  target sizes: [%.3lf, %.3lf]\n", lo, hi, mid, bisec_part_sizes[0], bisec_part_sizes[1]);  */
+  
   if (hgp->bal_tol_adjustment>1.0) {
       float q = (float) ceil(log((double)1+hi-lo) / log(2.0));
       /* uprintf(hgc, "for k=%d q=%.1f\n", 1+hi-lo, q);*/
@@ -138,7 +141,7 @@ int Zoltan_PHG_rdivide(
     ZOLTAN_TIMER_STOP(zz->ZTime, timer_before, hgc->Communicator);
 
   /*uprintf(hgc, "OLD MAxImbal: %.3f   New MaxImbal: %.3f\n", bal_tol, hgp->bal_tol);*/
-  if (hgp->UseFixedVtx)
+  if (hgp->UseFixedVtx || hgp->UsePrefPart)
       hg->bisec_split = mid+1;
   ierr = Zoltan_PHG_Partition (zz, hg, 2, bisec_part_sizes, part, hgp);
 
@@ -577,8 +580,11 @@ static int split_hypergraph (int *pins[2], HGraph *ohg, HGraph *nhg,
       !(nhg->vwgt=(float*)ZOLTAN_MALLOC(nhg->nVtx*sizeof(float)*nhg->VtxWeightDim)))
       MEMORY_ERROR;
   if (nhg->nVtx && hgp->UseFixedVtx &&
-      !(nhg->fixed = (int*)ZOLTAN_MALLOC(nhg->nVtx*sizeof(int))))
+      !(nhg->fixed_part = (int*)ZOLTAN_MALLOC(nhg->nVtx*sizeof(int))))
       MEMORY_ERROR;
+  if (nhg->nVtx && hgp->UsePrefPart &&
+      !(nhg->pref_part = (int*)ZOLTAN_MALLOC(nhg->nVtx*sizeof(int))))
+      MEMORY_ERROR;  
   if (nhg->nVtx && (nhg->vmap = (int*) ZOLTAN_MALLOC (nhg->nVtx * sizeof (int)))==NULL)
       MEMORY_ERROR;
   
@@ -587,7 +593,17 @@ static int split_hypergraph (int *pins[2], HGraph *ohg, HGraph *nhg,
       if (v!=-1) {
           nhg->vmap[v] = ohg->vmap[i];
           if (hgp->UseFixedVtx)
-              nhg->fixed[v] = ohg->fixed[i];
+              nhg->fixed_part[v] = ohg->fixed_part[i];
+          if (hgp->UsePrefPart) {
+              if (ohg->pref_part[i]<0) /* was free */
+                  nhg->pref_part[v] = -1; /* will be free */
+              else { /* if it had a prefered part but moved to
+                        other side of bisection; set it free
+                        otherwise keep the preferred part */
+                  nhg->pref_part[v] = (partid!=((ohg->pref_part[i] < ohg->bisec_split) ? 0 : 1) ) ?
+                      -1 : ohg->pref_part[i];
+              }              
+          }
           if (nhg->VtxWeightDim) {
               /* UVC: TODO CHECK we're only using 1st weight! Right now this will be used
                  to compute balance ratio! Check this code when multiconstraint is added!

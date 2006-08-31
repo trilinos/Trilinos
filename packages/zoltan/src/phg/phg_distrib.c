@@ -260,13 +260,24 @@ static int Zoltan_PHG_Redistribute_Hypergraph(
     /* communicate fixed vertices, if any */
     if (hgp->UseFixedVtx) {
         if (nVtx)
-            nhg->fixed = (int *) ZOLTAN_MALLOC(nVtx*sizeof(int));
+            nhg->fixed_part = (int *) ZOLTAN_MALLOC(nVtx*sizeof(int));
         --msg_tag;
-        Zoltan_Comm_Do(plan, msg_tag, (char *) ohg->fixed,
-                       sizeof(int), (char *) nhg->fixed);
+        Zoltan_Comm_Do(plan, msg_tag, (char *) ohg->fixed_part,
+                       sizeof(int), (char *) nhg->fixed_part);
         if (ncomm->myProc!=-1)  /* ncomm's first row now bcast to other rows */
-            MPI_Bcast(nhg->fixed, nVtx, MPI_INT, 0, ncomm->col_comm);
+            MPI_Bcast(nhg->fixed_part, nVtx, MPI_INT, 0, ncomm->col_comm);
     }    
+    /* communicate pref parts, if any */
+    if (hgp->UsePrefPart) {
+        if (nVtx)
+            nhg->pref_part = (int *) ZOLTAN_MALLOC(nVtx*sizeof(int));
+        --msg_tag;
+        Zoltan_Comm_Do(plan, msg_tag, (char *) ohg->pref_part,
+                       sizeof(int), (char *) nhg->pref_part);
+        if (ncomm->myProc!=-1)  /* ncomm's first row now bcast to other rows */
+            MPI_Bcast(nhg->pref_part, nVtx, MPI_INT, 0, ncomm->col_comm);
+    }    
+
     /* this comm plan is no longer needed. */
     Zoltan_Comm_Destroy(&plan);
 

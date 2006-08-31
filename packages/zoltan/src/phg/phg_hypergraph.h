@@ -89,20 +89,23 @@ typedef struct {
   int *vmap;        /* used when recursively dividing for p > 2 */
   double ratio;     /* split when recursively dividing for p > 2 */
   int redl;         /* working reduction limit */
-
-  int *fixed;       /* an array of size |V| containing part assignments of fixed
+    
+  int *fixed_part;       /* an array of size |V| containing part assignments of fixed
                        vertices. If it is NULL no vertex is fixed in any part; 
                        otherwise 
                          < 0 (negative) : vertex is free,
                          [0,..., p-1]: part that vertex is fixed
                          >= p is invalid. */
+  int *pref_part;   /* parallel to fixed array with size of |V| containing the
+                       preferred parts for each vertex; again -1 is free.
+                       If both a vertex has both prefered and fixed part;
+                       fixed part takes precedence. */ 
   int bisec_split;  /* For fixed vertex partitioning via Recursive Bisection
                        treat vertices fixed in parts < bisec_split as
                        they were in the part 0 and the others in part 1.
                     if bisec_split < 0 
-                       if fixed!=NULL  it is k-way partitioning use fixed
-                                      parts as they apear
-                       if fixed==NULL not fixed vertex partitioning. */ 
+                       it is k-way partitioning use fixed parts as they apear
+                    */ 
     
     
   PHGComm *comm;  /* this is a pointer to storage PHGPartParamsStruct:

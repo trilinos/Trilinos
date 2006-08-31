@@ -171,7 +171,6 @@ int **exp_to_part )         /* list of partitions to which exported objs
 {
   char *yo = "Zoltan_PHG";
   ZHG *zoltan_hg = NULL;
-  int nVtx;                        /* Temporary variable for base graph. */
   PHGPartParams hgp;               /* Hypergraph parameters. */
   HGraph *hg = NULL;               /* Hypergraph itself */
   Partition parts = NULL;          /* Partition assignments in 
@@ -232,7 +231,6 @@ int **exp_to_part )         /* list of partitions to which exported objs
 
   zz->LB.Data_Structure = zoltan_hg;
   hg = &zoltan_hg->HG;
-  nVtx = hg->nVtx;
   p = zz->LB.Num_Global_Parts;  
   zoltan_hg->HG.redl = MAX(hgp.redl,p);     /* redl needs to be dynamic */
   /* RTHRTH -- redl may need to be scaled by number of procs */
@@ -242,7 +240,29 @@ int **exp_to_part )         /* list of partitions to which exported objs
       hg->bisec_split = 1; /* this will be used only #parts=2
                               otherwise rdivide will set to appropriate
                               value */
+
+  if (hgp.UsePrefPart || hgp.UseFixedVtx) { /* allocate memory for pref_part */
+    if (hg->nVtx &&                       
+        !(hg->pref_part = (int*) ZOLTAN_MALLOC (sizeof(int) * hg->nVtx))) {
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error building hypergraph.");
+        goto End;
+    }
+  }
+  if (hgp.UsePrefPart) /* copy input parts as pref_part;
+                          UVCUVC: TODO: this code (and alloc of pref_part)
+                          should go to Build_Hypergraph later */
+      memcpy(hg->pref_part, parts, sizeof(int) * hg->nVtx);
   
+  if (hgp.UseFixedVtx) {
+      int i;
+      for (i=0; i<hg->nVtx; ++i)
+          if (hg->fixed_part[i]>=0)
+              hg->pref_part[i] = hg->fixed_part[i];
+          else if (!hgp.UsePrefPart)
+              hg->pref_part[i] = -1;      
+  }
+  hgp.UsePrefPart |= hgp.UseFixedVtx;
+
   if (do_timing)
     ZOLTAN_TIMER_STOP(zz->ZTime, timer_build, zz->Communicator);
    
@@ -627,6 +647,7 @@ int Zoltan_PHG_Initialize_Params(
   hgp->patoh_alloc_pool0 = 0;
   hgp->patoh_alloc_pool1 = 0;
   hgp->UseFixedVtx = 0;
+  hgp->UsePrefPart = 0;
   
   /* Get application values of parameters. */
   err = Zoltan_Assign_Param_Vals(zz->Params, PHG_params, zz->Debug_Level, 
@@ -643,6 +664,8 @@ int Zoltan_PHG_Initialize_Params(
     zz->LB.Method = PHG_REPART;
   else if (!strcasecmp(hgp->hgraph_pkg, "PHG_REFINE"))
     zz->LB.Method = PHG_REFINE;
+  else if (!strcasecmp(hgp->hgraph_pkg, "PHG_MULTILEVEL_REFINE"))
+    zz->LB.Method = PHG_MULTILEVEL_REFINE;
   else if (!strcasecmp(hgp->hgraph_pkg, "PATOH"))
     zz->LB.Method = PATOH;
   else if (!strcasecmp(hgp->hgraph_pkg, "PARKWAY"))
@@ -710,7 +733,8 @@ int Zoltan_PHG_Initialize_Params(
     hgp->fm_max_neg_move *= hgp->refinement_quality;
   }
 
-  if (zz->LB.Method == PHG || zz->LB.Method == PHG_REPART) {
+  if (zz->LB.Method == PHG || zz->LB.Method == PHG_REPART ||
+      zz->LB.Method == PHG_REFINE || zz->LB.Method == PHG_MULTILEVEL_REFINE) {
     /* Test to determine whether we should change the number of processors
        used for partitioning to make more efficient 2D decomposition */
 
@@ -719,11 +743,22 @@ int Zoltan_PHG_Initialize_Params(
         /* 2D data decomposition is requested but we have a prime 
          * number of processors. */
         usePrimeComm = 1;
-  }
-  else if (zz->LB.Method == PHG_REFINE) {
-    Zoltan_Bind_Param(PHG_params, "PHG_COARSENING_METHOD", "no");
-    Zoltan_Bind_Param(PHG_params, "PHG_COARSEPARTITION_METHOD", "no");
-    zz->LB.Remap_Flag = 0;
+    
+    if (zz->LB.Method == PHG_REFINE) {
+        Zoltan_Bind_Param(PHG_params, "PHG_COARSENING_METHOD", "no");
+        /*   UVCUVC: just use default coarse partitioner; does better job :)
+             Zoltan_Bind_Param(PHG_params, "PHG_COARSEPARTITION_METHOD", "no");
+        */
+        zz->LB.Remap_Flag = 0;
+        hgp->UsePrefPart = 1;
+    }
+    if (zz->LB.Method == PHG_MULTILEVEL_REFINE) {
+        /* UVUVC: as a heuristic we prefer local matching;
+           TODO this needs to be evaluated! */
+        Zoltan_Bind_Param(PHG_params, "PHG_COARSENING_METHOD", "l-ipm"); 
+        zz->LB.Remap_Flag = 0;
+        hgp->UsePrefPart = 1;
+    }    
   }
   else if (zz->LB.Method == PARKWAY) {
     if (hgp->nProc_x_req>1) {
@@ -934,45 +969,6 @@ End:
   return ierr;
 }
 
-/****************************************************************************/
-
-void Zoltan_PHG_HGraph_Print(
-  ZZ *zz,          /* the Zoltan data structure */
-  ZHG *zoltan_hg,
-  HGraph *hg,
-  Partition parts, 
-  FILE *fp
-)
-{
-/* Printing routine. Can be used to print a Zoltan_HGraph or just an HGraph.
- * Set zoltan_hg to NULL if want to print only an HGraph.
- * Lots of output; synchronized across processors, so is a bottleneck.
- */
-  int i;
-  int num_gid = zz->Num_GID;
-  int num_lid = zz->Num_LID;
-  char *yo = "Zoltan_PHG_HGraph_Print";
-
-  if (zoltan_hg != NULL  &&  hg != &zoltan_hg->HG) {
-    ZOLTAN_PRINT_WARN(zz->Proc, yo, "Input hg != Zoltan HG");
-    return;
-  }
-
-  Zoltan_Print_Sync_Start (zz->Communicator, 1);
-
-  /* Print Vertex Info */
-  fprintf (fp, "%s Proc %d\n", yo, zz->Proc);
-  fprintf (fp, "Vertices (GID, LID, index)\n");
-  for (i = 0; i < zoltan_hg->nObj; i++) {
-    fprintf(fp, "(");
-    ZOLTAN_PRINT_GID(zz, &zoltan_hg->GIDs[i * num_gid]);
-    fprintf(fp, ", ");
-    ZOLTAN_PRINT_LID(zz, &zoltan_hg->LIDs [i * num_lid]);
-    fprintf(fp, ", %d)\n", i);
-  }
-  Zoltan_HG_Print(zz, hg, parts, fp, "Build");  
-  Zoltan_Print_Sync_End(zz->Communicator, 1);
-}
 
 /*****************************************************************************/
 

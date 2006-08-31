@@ -389,7 +389,8 @@ int Zoltan_PHG_Partition (
 
 	Zoltan_PHG_Redistribute(zz, hgp, hg, 0, middle, hgc, redistributed->hg,
 				&vcycle->vlno, &vcycle->vdest);
-        if (hgp->UseFixedVtx) redistributed->hg->bisec_split = hg->bisec_split;
+        if (hgp->UseFixedVtx || hgp->UsePrefPart)
+            redistributed->hg->bisec_split = hg->bisec_split;
 
 	if ((err=allocVCycle(redistributed))!= ZOLTAN_OK)
 	  goto End;

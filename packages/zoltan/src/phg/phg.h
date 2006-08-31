@@ -60,6 +60,11 @@ struct PHGPartParamsStruct {
                                     currently only used in agglomerative matching */
   int UseFixedVtx;               /* Flag indicating whether any vertices of
                                     hypergraph are fixed. */
+  int UsePrefPart;               /* Flag indicating that the coarsening
+                                    should be restricted using pref_part and
+                                    coarse partitioning should take the part
+                                    preferences into account. */
+                                    
 
   char convert_str[MAX_PARAM_STRING_LEN];  /* Graph->HG conversion method. */
   char redm_str[MAX_PARAM_STRING_LEN];  /* Reduction method string. */

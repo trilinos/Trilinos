@@ -40,19 +40,21 @@ typedef struct triplet {
     
 static HGraph *HG_Ptr;
 
+
 #define MATCH_OK(hgp, hg, fv1, fv2) \
-        (!((hgp)->UseFixedVtx)   ||     \
+        (!((hgp)->UsePrefPart)   ||     \
          ((fv1) < 0) ||     \
          ((fv2) < 0) ||     \
          ((((fv1) < (hg)->bisec_split) ? 0 : 1) == (((fv2) < (hg)->bisec_split) ? 0 : 1)))
-
-    /* candf: should be candidate's fixedpart
+    
+    /* candf: should be candidate's prefpart
        to reduce comm; we will only allow matching if cand is free or
        it matches with other's part */
 #define AGG_MATCH_OK(hgp, hg, candf, fv2) \
-    (!((hgp)->UseFixedVtx) || (((candf) < 0) ||  \
+    (!((hgp)->UsePrefPart) || (((candf) < 0) ||  \
      (((fv2)>=0) && ((((candf) < (hg)->bisec_split) ? 0 : 1) == (((fv2) < (hg)->bisec_split) ? 0 : 1)))))
 
+    
 
 /*****************************************************************************/
 int Zoltan_PHG_Set_Matching_Fn (PHGPartParams *hgp)
@@ -224,7 +226,7 @@ static int Zoltan_PHG_match_isolated(
                      and match vertices that share a common neighbor */
                   if (v==-1)
                       v = i;
-                  else if (MATCH_OK(hgp, hg, hg->fixed[i], hg->fixed[v])) {
+                  else if (MATCH_OK(hgp, hg, hg->pref_part[i], hg->pref_part[v])) {
                       match[v] = i;
                       match[i] = v;
                       v = -1;
@@ -310,8 +312,7 @@ static int matching_ipm(ZZ *zz, HGraph *hg, PHGPartParams *hgp,
         for (i = 0; i < n; i++) {
             v2 = adj[i];
             if (ips[v2] > maxip && v2 != v1 && match[v2] == v2
-&& MATCH_OK(hgp, hg, hg->fixed[v1], hg->fixed[v2])
-            ) {
+                && MATCH_OK(hgp, hg, hg->pref_part[v1], hg->pref_part[v2])) {
                 maxip = ips[v2];
                 maxindex = v2;
             }
@@ -601,8 +602,7 @@ static int pmatching_ipm (ZZ *zz,
   MPI_Op phasethreeop;
   MPI_Datatype phasethreetype;
   int candidate_index, first_candidate_index;
-int fixed;
-  int num_matches_considered = 0;
+  int pref, num_matches_considered = 0;
   double ipsum = 0.;
   static int timer[7] = {-1, -1, -1, -1, -1, -1, -1};
   char *yo = "pmatching_ipm";
@@ -651,7 +651,7 @@ int fixed;
     }
   }
                  
-  /* allocate "complicated" fixed sized array storage */
+  /* allocate "complicated" fixed-sized array storage */
   msgsize = MAX (total_nCandidates, max_nVtx);
   nIndex = 1 + MAX (msgsize, MAX (hgc->nProc_x, hgc->nProc_y));
   nDest  = nIndex;
@@ -744,8 +744,8 @@ int fixed;
       for (i = 0; i < sendcnt; i++)  {
         lno = select[i];
         if (hg->vindex[lno+1] > hg->vindex[lno])
-          sendsize += hg->vindex[lno+1] - hg->vindex[lno] + HEADER_SIZE 
-+ (hgp->UseFixedVtx ? 1 : 0); 
+            sendsize += hg->vindex[lno+1] - hg->vindex[lno] + HEADER_SIZE 
+                + (hgp->UsePrefPart ? 1 : 0); 
       }
       if (sendsize > nSend)
         MACRO_REALLOC (1.2 * sendsize, nSend, send);    /* resize send buffer */    
@@ -756,8 +756,8 @@ int fixed;
         if (hg->vindex[lno+1] > hg->vindex[lno]) {
           *s++ = VTX_LNO_TO_GNO(hg, lno);                  /* gno of candidate */
           *s++ = i + first_candidate_index;                 /* candidate index */
-if (hgp->UseFixedVtx)          
-*s++ = hg->fixed[lno];       /* fixed partition info */
+          if (hgp->UsePrefPart)          
+              *s++ = hg->pref_part[lno];                /* pref partition info */
           *s++ = hg->vindex[lno+1] - hg->vindex[lno];            /* edge count */
           for (j = hg->vindex[lno]; j < hg->vindex[lno+1]; j++)  
             *s++ = hg->vedge[j];                                   /* edge lno */
@@ -795,8 +795,8 @@ if (hgp->UseFixedVtx)
       for (i = 0 ; i < recsize; i += count)   {
         int indx        = i++;              /* position of next gno in edgebuf */
         candidate_index = edgebuf[i++];
-if (hgp->UseFixedVtx)        
-fixed           = edgebuf[i++];   /* skip over fixed vertex information */
+        if (hgp->UsePrefPart)        
+            pref        = edgebuf[i++];   /* skip over pref vertex information */
         count           = edgebuf[i++];     /* count of edges */      
         permute[candidate_index] = indx ;   /* save position of gno in edgebuf */
       }
@@ -823,15 +823,15 @@ fixed           = edgebuf[i++];   /* skip over fixed vertex information */
           r = &edgebuf[permute[select[k]]];
           candidate_gno   = *r++;          /* gno of candidate vertex */
           candidate_index = *r++;          /* candidate_index of vertex */
-if (hgp->UseFixedVtx)          
-fixed = *r++;     /* fixed vertex information */          
+          if (hgp->UsePrefPart)          
+              pref = *r++;                 /* pref vertex information */          
           count           = *r++;          /* count of following hyperedges */
         }
         else  {
           candidate_index = k;
           candidate_gno   = permute[k];  /* need to use next local vertex */
-if (hgp->UseFixedVtx)          
-fixed = hg->fixed[candidate_gno];          
+          if (hgp->UsePrefPart)          
+              pref = hg->pref_part[candidate_gno];          
         }                          /* here candidate_gno is really a local id */
                   
         /* now compute the row's nVtx inner products for kth candidate */
@@ -867,7 +867,7 @@ fixed = hg->fixed[candidate_gno];
         for (i = 0; i < m; i++)  {
           lno = index[i];
           if (sums[lno] > PSUM_THRESHOLD
-&& MATCH_OK(hgp, hg, hg->fixed[lno], fixed))
+              && MATCH_OK(hgp, hg, hg->pref_part[lno], pref))
             aux[count++] = lno;      /* save lno for significant partial sum */
           else
             sums[lno] = 0.0;         /* clear unwanted entries */  
@@ -1251,7 +1251,7 @@ static int pmatching_agg_ipm (ZZ *zz,
   char *visited = NULL;
   int *visit = NULL,       /* candidate visit order (all candidates) */
     *lhead = NULL,       /* to accumulate ipm values correctly */
-    *lheadfixed = NULL,
+    *lheadpref = NULL,
     *locCandidates = NULL, locCandCnt,      /* current selected candidates (this round) & number */
     *candvisit=NULL,   /* to randomize visit order of candidates*/
     *idxptr = NULL;    /* reorder of candidates after global communication */
@@ -1270,7 +1270,7 @@ static int pmatching_agg_ipm (ZZ *zz,
   MPI_Datatype phasethreetype;
   int candidate_index, *candIdx;
   int VtxDim = (hg->VtxWeightDim>0) ? hg->VtxWeightDim : 1;
-  int fixed;
+  int pref;
   int replycnt;
   static int timer[7] = {-1, -1, -1, -1, -1, -1, -1};
   char *yo = "pmatching_agg_ipm";
@@ -1317,7 +1317,7 @@ static int pmatching_agg_ipm (ZZ *zz,
   candIdx[i] = total_nCandidates;
 
                  
-  /* allocate "complicated" fixed sized array storage */
+  /* allocate "complicated" fixed-sized array storage */
   msgsize = MAX (total_nCandidates, max_nVtx);
   nSize = nDest = 1 + MAX (msgsize, MAX (hgc->nProc_x, hgc->nProc_y));
 
@@ -1331,7 +1331,7 @@ static int pmatching_agg_ipm (ZZ *zz,
     
   if (hg->nVtx)  
     if (!(lhead  = (int*)   ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))
-        || !(lheadfixed = (int*)   ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))
+        || !(lheadpref = (int*)   ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))
         || !(visited= (char*)  ZOLTAN_MALLOC (hg->nVtx * sizeof(char)))
         || !(cw     = (float*) ZOLTAN_MALLOC (VtxDim * hg->nVtx * sizeof(float)))
         || !(tw     = (float*) ZOLTAN_MALLOC (VtxDim * sizeof(float)))
@@ -1389,7 +1389,7 @@ static int pmatching_agg_ipm (ZZ *zz,
   for (i=0; i< hg->nVtx; ++i) {
     visited[i] = 0;
     lhead[i] = i;
-    lheadfixed[i] = hg->fixed[i];
+    lheadpref[i] = hg->pref_part[i];
     match[i] = VTX_LNO_TO_GNO(hg, i);
   }
   for (i=0; i<VtxDim; ++i)
@@ -1439,10 +1439,10 @@ static int pmatching_agg_ipm (ZZ *zz,
       sendsize += hg->vindex[lno+1] - hg->vindex[lno];
     }
     sendsize += locCandCnt * ( hg->VtxWeightDim + HEADER_SIZE 
-                              + (hgp->UseFixedVtx ? 1 : 0) ); 
+                              + (hgp->UsePrefPart ? 1 : 0) ); 
     if (sendsize > nSend)
       MACRO_RESIZE (1.2 * sendsize, nSend, send);    /* resize send buffer */    
-    /* put <candidate_gno, candidate_index, weight(s), [fixed], count, <edge>> into send buffer */
+    /* put <candidate_gno, candidate_index, weight(s), [pref], count, <edge>> into send buffer */
     s = send;
     for (i = 0; i < locCandCnt; i++)   {
       lno = locCandidates[i];
@@ -1451,8 +1451,8 @@ static int pmatching_agg_ipm (ZZ *zz,
         *s++ = candIdx[hgc->myProc_x] + i;               /* candidate index */
         memcpy(s, &cw[lno*VtxDim], sizeof(float) * VtxDim);
         s += VtxDim;
-        if (hgp->UseFixedVtx)          
-          *s++ = hg->fixed[lno];       /* fixed partition info */
+        if (hgp->UsePrefPart)          
+          *s++ = hg->pref_part[lno];       /* pref partition info */
         *s++ = hg->vindex[lno+1] - hg->vindex[lno];            /* edge count */
         for (j = hg->vindex[lno]; j < hg->vindex[lno+1]; j++)  
           *s++ = hg->vedge[j];                                   /* edge lno */
@@ -1493,8 +1493,8 @@ static int pmatching_agg_ipm (ZZ *zz,
       idxptr[candidate_index] = indx ;    /* save position of gno in edgebuf */
       memcpy(&candw[candidate_index*VtxDim], &edgebuf[i], sizeof(float)*VtxDim);
       i += VtxDim;
-      if (hgp->UseFixedVtx)        
-        fixed   = edgebuf[i++];   /* skip over fixed vertex information */
+      if (hgp->UsePrefPart)        
+        pref   = edgebuf[i++];   /* skip over pref vertex information */
       count           = edgebuf[i++];     /* count of edges */      
     }
 
@@ -1520,8 +1520,8 @@ static int pmatching_agg_ipm (ZZ *zz,
         candidate_gno   = *r++;          /* gno of candidate vertex */
         candidate_index = *r++;          /* candidate_index of vertex */
         r += VtxDim;
-        if (hgp->UseFixedVtx)          
-          fixed = *r++;     /* fixed vertex information */          
+        if (hgp->UsePrefPart)          
+          pref = *r++;     /* pref vertex information */          
         count           = *r++;          /* count of following hyperedges */
         
         /* now compute the row's nVtx inner products for kth candidate */
@@ -1535,11 +1535,11 @@ static int pmatching_agg_ipm (ZZ *zz,
         if (VTX_TO_PROC_X(hg, candidate_gno) == hgc->myProc_x)
           sums[VTX_GNO_TO_LNO(hg, candidate_gno)] = 0.0;
         
-        /* if we it is fixedvertex partitioning check if matches are OK
-          also eliminate sending value 0.0*/
+        /* if it is partitioning with preferred parts and/or fixed vertices
+           check if matches are OK also eliminate sending value 0.0*/
         for (count=0; count<m; ) 
             if (sums[aux[count]]>PSUM_THRESHOLD
-                && AGG_MATCH_OK(hgp, hg, fixed, lheadfixed[aux[count]]))
+                && AGG_MATCH_OK(hgp, hg, pref, lheadpref[aux[count]]))
                 ++count;
             else {
                 sums[aux[count]] = 0.0;
@@ -1751,7 +1751,7 @@ static int pmatching_agg_ipm (ZZ *zz,
 
 
 
-      msgsize = total_nCandidates*(2+VtxDim+(hgp->UseFixedVtx ? 1: 0));
+      msgsize = total_nCandidates*(2+VtxDim+(hgp->UsePrefPart ? 1: 0));
       if (msgsize > nSend) 
         MACRO_RESIZE (msgsize, nSend, send);  /* increase buffer size */
       s = send;         
@@ -1776,8 +1776,8 @@ static int pmatching_agg_ipm (ZZ *zz,
           dest[replycnt++] = cproc;
           *s++ = i;
           *s++ = plno;
-          if (hgp->UseFixedVtx)
-              *s++ = lheadfixed[plno];
+          if (hgp->UsePrefPart)
+              *s++ = lheadpref[plno];
           f = (float *) s;
           if (j<VtxDim) { /* reject due to weight constraint*/
             *f = -1.0; /* negative means rejected */
@@ -1790,7 +1790,7 @@ static int pmatching_agg_ipm (ZZ *zz,
             }
             visited[plno] = 1;
 /* this printf only works if all vertices are local
-   uprintf(hgc, "I'm acceptiong (%d [%d], %d[%d])\n", candidate_gno, lheadfixed[candidate_gno], partner_gno, lheadfixed[partner_gno]);
+   uprintf(hgc, "I'm acceptiong (%d [%d], %d[%d])\n", candidate_gno, lheadpref[candidate_gno], partner_gno, lheadpref[partner_gno]);
 */
             /* was partner a candidate ?*/
             if (match[plno]<0) 
@@ -1813,10 +1813,10 @@ static int pmatching_agg_ipm (ZZ *zz,
        set visited array for local partners and also set cw properly */   
     MPI_Bcast (&replycnt, 1, MPI_INT, 0, hgc->col_comm);
     
-    if (hgc->myProc_y!=0 && replycnt*(2+VtxDim+(hgp->UseFixedVtx ? 1: 0))>nSend)
-      MACRO_REALLOC (replycnt*(2+VtxDim+(hgp->UseFixedVtx ? 1: 0)), nSend, send);  /* increase buffer size */
+    if (hgc->myProc_y!=0 && replycnt*(2+VtxDim+(hgp->UsePrefPart ? 1: 0))>nSend)
+      MACRO_REALLOC (replycnt*(2+VtxDim+(hgp->UsePrefPart ? 1: 0)), nSend, send);  /* increase buffer size */
     
-    MPI_Bcast (send, replycnt*(2+VtxDim+(hgp->UseFixedVtx ? 1: 0)), MPI_INT, 0, hgc->col_comm);
+    MPI_Bcast (send, replycnt*(2+VtxDim+(hgp->UsePrefPart ? 1: 0)), MPI_INT, 0, hgc->col_comm);
     if (hgc->myProc_y!=0) {
       int plno;
       
@@ -1836,19 +1836,19 @@ static int pmatching_agg_ipm (ZZ *zz,
 
     if (hgc->myProc_y == 0) {    
       /* send accept/reject message */
-      communication_by_plan(zz, replycnt, dest, NULL, 2+VtxDim+(hgp->UseFixedVtx ? 1: 0), send,
+      communication_by_plan(zz, replycnt, dest, NULL, 2+VtxDim+(hgp->UsePrefPart ? 1: 0), send,
                             &reccnt, &recsize, &nRec, &rec, hgc->row_comm, CONFLICT_TAG);
 
-      if (reccnt*(3+VtxDim+(hgp->UseFixedVtx ? 1: 0)) > nSend) 
-        MACRO_RESIZE (reccnt*(3+VtxDim+(hgp->UseFixedVtx ? 1: 0)), nSend, send);  /* increase buffer size */
+      if (reccnt*(3+VtxDim+(hgp->UsePrefPart ? 1: 0)) > nSend) 
+        MACRO_RESIZE (reccnt*(3+VtxDim+(hgp->UsePrefPart ? 1: 0)), nSend, send);  /* increase buffer size */
       s = send;         
       for (r = rec; r < rec + recsize;) {
         int ci=*r++, lno=VTX_GNO_TO_LNO(hg, global_best[ci].candidate),
-            lheadno, partner=global_best[ci].partner, fixed=-1;
+            lheadno, partner=global_best[ci].partner, pref=-1;
 
         ++r;  /* skip plno */
-        if (hgp->UseFixedVtx)
-            fixed = *r++;
+        if (hgp->UsePrefPart)
+            pref = *r++;
         f = (float *) r;
         if (*f<0.0) { /* rejected */
           f += VtxDim;
@@ -1860,8 +1860,8 @@ static int pmatching_agg_ipm (ZZ *zz,
 
           for (j=0; j<VtxDim; ++j) 
             cw[lheadno*VtxDim+j] = *f++;
-          if (hgp->UseFixedVtx)
-              lheadfixed[lno] = fixed;
+          if (hgp->UsePrefPart)
+              lheadpref[lno] = pref;
           lhead[lno] = lheadno;
           match[lno] = partner;
           
@@ -1871,8 +1871,8 @@ static int pmatching_agg_ipm (ZZ *zz,
         *s++ = lno;
         *s++ = lheadno;
         *s++ = partner;
-        if (hgp->UseFixedVtx)
-            *s++ = fixed;
+        if (hgp->UsePrefPart)
+            *s++ = pref;
         if (lheadno!=-1)
           memcpy(s, &cw[lheadno*VtxDim], sizeof(float)*VtxDim);
         s += VtxDim;
@@ -1890,16 +1890,16 @@ static int pmatching_agg_ipm (ZZ *zz,
       for (s = send; s < send + recsize; ) {
         int lno     = *s++;
         int lheadno = *s++;
-        int partner = *s++, fixed;
+        int partner = *s++, pref;
         
-        if (hgp->UseFixedVtx)
-            fixed = *s++;
+        if (hgp->UsePrefPart)
+            pref = *s++;
         lhead[lno] = lheadno;
         match[lno] = partner;
         if (lheadno!=-1) { 
           memcpy(&cw[lheadno*VtxDim], s, sizeof(float)*VtxDim);
-          if (hgp->UseFixedVtx)
-              lheadfixed[lheadno] = fixed;
+          if (hgp->UsePrefPart)
+              lheadpref[lheadno] = pref;
         }
         s += VtxDim;        
       }
@@ -1923,7 +1923,7 @@ static int pmatching_agg_ipm (ZZ *zz,
   if (hgc->myProc_y==0 && total_nCandidates)
     Zoltan_KVHash_Destroy(&hash);
     
-  Zoltan_Multifree (__FILE__, __LINE__, 22, &candIdx, &cw, &tw, &maxw, &candw, &lhead, &lheadfixed,
+  Zoltan_Multifree (__FILE__, __LINE__, 22, &candIdx, &cw, &tw, &maxw, &candw, &lhead, &lheadpref,
                     &visit, &visited, &sums, &send, &dest, &size, &rec, &aux, &idxptr, &candvisit,
                     &edgebuf, &locCandidates, &rows, &master_data, &master_procs);
   ZOLTAN_TRACE_EXIT(zz, yo);
