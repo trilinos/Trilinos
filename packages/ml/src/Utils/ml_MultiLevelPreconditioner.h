@@ -111,12 +111,14 @@ namespace ML_Epetra
   /*! This function, defined in the namespace ML_Epetra, can be used to set
     default values in a user's defined Teuchos::ParameterList.
     \param ProblemType (In) : a string, whose possible values are:
-       - "DD" : defaults for 2-level domain decomposition preconditioners based
-       on aggregation;
-       - "DD-ML" : 3-level domain decomposition preconditioners, with coarser
-       spaces defined by aggregation;
        - "SA" : classical smoothed aggregation preconditioners;
        - "maxwell" : default values for Maxwell.
+       - "DD" : defaults for 2-level domain decomposition preconditioners based
+       on aggregation;
+       - "DD-LU" : Like "DD", but use exact LU decompositions on each subdomain;
+       - "DD-ML" : 3-level domain decomposition preconditioners, with coarser
+       spaces defined by aggregation;
+      - "DD-ML-LU" : Like "DD-ML", but with LU decompositions on each subdomain.
     \param List (Out) : list which will populated by the default parameters
     \param options (In) : integer array, of size \c AZ_OPTIONS_SIZE, that will be
     populated with suitable values. A pointer to \c options will be stick into
@@ -125,34 +127,40 @@ namespace ML_Epetra
     0, meaning that \c SetDefaults() will allocate the array. It is
     responsibility of the user to free this memory.
     \param params (Out) : double array, of size \c AZ_PARAMS_SIZE. See comments
-    for \c options.    
+    for \c options.
+    \param OverWrite (In) : boolean.  If false, any pre-existing values in the
+    parameter list will be preserved.  Default value is true, i.e., any
+    pre-existing values may be overwritten. 
    */
   int SetDefaults(string ProblemType, Teuchos::ParameterList & List,
-		  int * options = 0, double * params = 0);
+		  int * options = 0, double * params = 0, const bool OverWrite=true);
   
   //! Sets default parameters for aggregation-based 2-level domain decomposition preconditioners.
   int SetDefaultsDD(Teuchos::ParameterList & List, 
-		    int * options = 0, double * params = 0);
+		    int * options = 0, double * params = 0, bool OverWrite=true);
   
   //! Sets default parameters for aggregation-based 2-level domain decomposition preconditioners, using LU on each subdomain
   int SetDefaultsDD_LU(Teuchos::ParameterList & List, 
-		       int * options = 0, double * params = 0);
+		       int * options = 0, double * params = 0, const bool
+OverWrite=true);
   
   //! Sets default parameters for aggregation-based 3-level domain decomposition preconditioners.  
   int SetDefaultsDD_3Levels(Teuchos::ParameterList & List, 
-			    int * options = 0, double * params = 0);
+			    int * options = 0, double * params = 0, const bool
+OverWrite=true);
   
   //! Sets default parameters for aggregation-based 3-level domain decomposition preconditioners with LU.
   int SetDefaultsDD_3Levels_LU(Teuchos::ParameterList & List, 
-			       int * options = 0, double * params = 0);
+			       int * options = 0, double * params = 0, const bool
+OverWrite=true);
 
   //! Sets default parameters for Maxwell's equations.
   int SetDefaultsMaxwell(Teuchos::ParameterList & List, 
-			 int * options = 0, double * params = 0);
+			 int * options = 0, double * params = 0, const bool OverWrite=true);
   
   //! Sets classical smoothed aggregation.
   int SetDefaultsSA(Teuchos::ParameterList & List, 
-		    int * options = 0, double * params = 0);
+		    int * options = 0, double * params = 0, const bool OverWrite=true);
 
 /*!
  
@@ -751,6 +759,8 @@ private:
   const Epetra_RowMatrix* EdgeMatrix_;
   //! stiffness and mass matrices
   const Epetra_RowMatrix* CurlCurlMatrix_;
+  //! true if we summed curl-curl and mass
+  bool CreatedEdgeMatrix_;
   const Epetra_RowMatrix* MassMatrix_;
   //! aux matrix for Maxwell
   const Epetra_RowMatrix* NodeMatrix_;
