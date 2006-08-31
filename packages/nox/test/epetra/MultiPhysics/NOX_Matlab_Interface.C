@@ -471,7 +471,7 @@ Matlab_Interface::CMD_showValid::doCommand( std::string commandLine )
 //-----------------------------------------------------------------------------
 
 bool 
-Matlab_Interface::CMD_showValid::showValid( NOX::Epetra::Group * p_Grp )
+Matlab_Interface::CMD_showValid::showValid( const NOX::Epetra::Group * p_Grp )
 {
   std::string isValid = (p_Grp->isF() ? "True" : "False" );
   cout << " isF              --> " << isValid << endl;

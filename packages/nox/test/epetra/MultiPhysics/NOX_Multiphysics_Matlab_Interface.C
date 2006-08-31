@@ -107,7 +107,7 @@ Coupling_Matlab_Interface::CMD_showAllValid::doCommand( std::string commandLine 
     cout << "\tGroup status for problem \"" << problemManager.getNames()[probId] << "\"" << endl;
     cout << "\t------------------------ " << endl;
 
-    NOX::Epetra::Group * p_probGrp = &(problemManager.getSolutionGroup(probId));
+    const NOX::Epetra::Group * p_probGrp = &(problemManager.getSolutionGroup(probId));
 
     Matlab_Interface::CMD_showValid::showValid( p_probGrp );
     cout << endl;
@@ -223,7 +223,7 @@ Coupling_Matlab_Interface::CMD_syncAllGroupX::doCommand( std::string command )
 
     problemManager.copyCompositeToVector( *compositeSoln, probId, *tempSoln );
 
-    NOX::Epetra::Group & grp = problemManager.getSolutionGroup(probId);
+    NOX::Epetra::Group & grp = const_cast<NOX::Epetra::Group&>( problemManager.getSolutionGroup(probId) );
     grp.setX(*tempSoln);
 
     delete tempSoln; tempSoln = 0;
@@ -249,8 +249,8 @@ Coupling_Matlab_Interface::CMD_doXfers::doCommand( std::string command )
 bool 
 Coupling_Matlab_Interface::CMD_getAllX::doCommand( std::string command )
 {
-  map<int, GenericEpetraProblem*>::iterator problemIter = problemManager.getProblems().begin();
-  map<int, GenericEpetraProblem*>::iterator problemLast = problemManager.getProblems().end();
+  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemIter = problemManager.getProblems().begin();
+  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemLast = problemManager.getProblems().end();
 
   // Do diagonal blocks
   for( ; problemLast != problemIter; ++problemIter )
@@ -309,8 +309,8 @@ Coupling_Matlab_Interface::CMD_getJac::doCommand( std::string commandLine )
 bool 
 Coupling_Matlab_Interface::CMD_getAllJac::doCommand( std::string commandLine )
 {
-  map<int, GenericEpetraProblem*>::iterator problemIter = problemManager.getProblems().begin();
-  map<int, GenericEpetraProblem*>::iterator problemLast = problemManager.getProblems().end();
+  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemIter = problemManager.getProblems().begin();
+  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemLast = problemManager.getProblems().end();
 
   // Do diagonal blocks
   for( ; problemLast != problemIter; ++problemIter )
@@ -373,7 +373,7 @@ Coupling_Matlab_Interface::CMD_getRes::doCommand( std::string commandLine )
   std::string arg1 = commandLine.substr(0, loc);
   int probId = atoi( arg1.c_str()) ;
 
-  const Epetra_Vector * resVec = problemManager.getResidual( probId ).get();
+  const Epetra_Vector * resVec = &(problemManager.getResidualVec( probId ));
 
   ostringstream sval1;
   sval1 << probId << flush;
@@ -389,8 +389,8 @@ Coupling_Matlab_Interface::CMD_getRes::doCommand( std::string commandLine )
 bool 
 Coupling_Matlab_Interface::CMD_getAllRes::doCommand( std::string command )
 {
-  map<int, GenericEpetraProblem*>::iterator problemIter = problemManager.getProblems().begin();
-  map<int, GenericEpetraProblem*>::iterator problemLast = problemManager.getProblems().end();
+  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemIter = problemManager.getProblems().begin();
+  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemLast = problemManager.getProblems().end();
 
   // Do diagonal blocks
   for( ; problemLast != problemIter; ++problemIter )
@@ -398,7 +398,7 @@ Coupling_Matlab_Interface::CMD_getAllRes::doCommand( std::string command )
     //GenericEpetraProblem & problem = *(*problemIter).second;
     int                    probId  = (*problemIter).first;
 
-    const Epetra_Vector * resVec = problemManager.getResidual( probId ).get();
+    const Epetra_Vector * resVec = &(problemManager.getResidualVec( probId ));
 
     if( resVec )
     {
