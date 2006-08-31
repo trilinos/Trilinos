@@ -42,6 +42,8 @@
 
 PROJECT_NAME           = ML
 
+PROJECT_NUMBER         = "Version of the Day"
+
 INPUT                  = mainpage.doxygen 
 INPUT                 += ../src/Operator 
 INPUT                 += ../src/Utils 
