@@ -79,13 +79,14 @@
   <li> NOX now has a non-optional dependency on the Teuchos package (also part of Trilinos).  While it can be built stand-alone, we recomend building NOX as part of Trilinos with the teuchos library enabled to simplify dependencies.
   <li> NOX now generates Makefiles that users can include in their application's makefiles.  This will get all library dependencies correct.
 <li> Multivector support will be not be an option, but will be a permanent part of the library.
-  <li> Build options will change.  please run "configure --help" to see the new options.  
+  <li> Build options will change.  please run "configure --help" to see the new options. 
+  <li> Many of the internals of %LOCA have been rewritten to more fully support multi-parameter continuation, constraint tracking, higher-order predictors and advanced bifurcation algorithms.  The old framework has been completely removed, and therefore all users must upgrade their interface to the new framework.  For a brief description of the new framework, see the \ref new_loca_framework page.  In addition, some of the parameter list entries that control %LOCA have changed.  See the \ref loca_parameters for a description of the new parameter list structure.
+  <li> A minimally augmented turning point formulation has been added to %LOCA.  This method appears to be significantly faster and more robust than the turning point methods based on the Moore-Spence formulation.
+  <li> A modified pitchfork bordering method has been added to %LOCA, which is similar to the modified turning point method already available.  This method avoids the singular matrix solves in the original pitchfork bordering method.
+  <li> Parallel and serial Hopf support has been added to %LOCA.
 </ul>
 
-
 8/29/2005:  There currently is a portability issue with %LOCA to the Solaris platform using the Sun Forte 7 compilers.  %LOCA builds on this platform but does not run correctly.  It appears the problem is compiler related as the virtual table for some %LOCA objects is not setup correctly.  All of the %LOCA examples and any %LOCA tests involving continuation runs fail with a segmentation fault.  It is not known whether %LOCA runs correctly when built with version 10 of the Sun compilers.  See bugzilla bug <a href="http://software.sandia.gov/bugzilla/show_bug.cgi?id=1238"> 1238 </a> for more information on this issue.
-
-8/29/2005:  Many of the internals of %LOCA are being rewritten to more fully support multi-parameter continuation, constraint tracking, higher-order predictors and advanced bifurcation algorithms.  This process is mostly, but not fully complete.  In the future, this new framework will completely replace the old framework, but for now both are available.  Because the new framework is under development, most of the documentation corresponds to the old framework and therefore it is recommended that new users write their interface to the old framework.  For a brief description of the new framework, see the \ref new_loca_framework page.
 
   \section user_information User Information
 
@@ -151,13 +152,13 @@
   Sandia National Labs, 
   tgkolda@sandia.gov (%NOX Project Lead)
   <li> Roger Pawlowski, Sandia National Labs, rppawlo@sandia.gov (%NOX Project Lead)
-  <li> Eric Phipps, Sandia National Labs, etphipp@sandia.gov
-  <li> Andy Salinger, Sandia National Labs, agsalin@sandia.gov (LOCA Project Lead)
+  <li> Eric Phipps, Sandia National Labs, etphipp@sandia.gov (Primary %LOCA developer)
+  <li> Andy Salinger, Sandia National Labs, agsalin@sandia.gov (%LOCA Project Lead)
   </ul>
   
   \section questions For All Other Questions and Comments...
   
-  Please contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski (rppawlo@sandia.gov).
+  Please contact Roger Pawlowski (rppawlo@sandia.gov) or Eric Phipps (etphipp@sandia.gov).
   
 */
 
@@ -1931,7 +1932,7 @@ At present, %NOX supports a concrete implementation of the
 PETSc data structures in the namespace NOX::Petsc.  The current
 implementation has been tested against PETSc 2.1.6.
 
-\subsection build_nox_petsc_library Building the Library
+\section build_nox_petsc_library Building the Library
 
 To compile the %NOX/PETSc library \c libnoxpetsc.a, use the following 
 configuration sequence:
@@ -1957,7 +1958,7 @@ configure --enable-nox-petsc PETSC_DIR=${HOME}/petsc-2.1.6 PETSC_ARCH=linux
 \endverbatim
 
 
-\subsection build_nox_petsc_examples Building the Examples
+\section build_nox_petsc_examples Building the Examples
 
 To compile the examples for %NOX/PETSc, an additional environment variable,
 \c PETSC_BOPT, must be defined and set to the value of BOPT used to build the 
@@ -1969,7 +1970,7 @@ configure --enable-nox-petsc --enable-nox-petsc-examples.
 \endverbatim
 
 
-\subsection additional_nox_petsc_build_information Additional Information
+\section additional_nox_petsc_build_information Additional Information
 
 Depending on the user's PETSc build, dynamically linked libraries may be used.
 If an error occurs when trying to run the example executable, make sure the
