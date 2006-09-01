@@ -29,6 +29,7 @@
 
 #include "Epetra_SerialComm.h"
 #include "Epetra_BasicDirectory.h"
+#include "Epetra_SerialDistributor.h"
 
 //=============================================================================
 Epetra_SerialComm::Epetra_SerialComm()

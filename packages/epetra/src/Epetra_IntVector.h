@@ -34,6 +34,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 
 #include "Epetra_DistObject.h"
 #include "Epetra_BlockMap.h"
+#include "Epetra_Distributor.h"
 class Epetra_Map;
 
 //! Epetra_IntVector: A class for constructing and using dense integer vectors on a parallel computer.

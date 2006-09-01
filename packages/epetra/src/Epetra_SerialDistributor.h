@@ -49,10 +49,10 @@ class Epetra_SerialDistributor: public Epetra_Object, public virtual Epetra_Dist
 
   //@{ \name Constructor/Destructor
 
-  //! Epetra_Comm Default Constructor.
+  //! Constructor.
   Epetra_SerialDistributor(const Epetra_SerialComm & Comm);
 
-  //! Epetra_Comm Copy Constructor.
+  //! Epetra_SerialDistributor Copy Constructor.
   Epetra_SerialDistributor(const Epetra_SerialDistributor & Plan);
 
   //! Clone method

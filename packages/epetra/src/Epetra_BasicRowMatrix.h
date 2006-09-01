@@ -39,10 +39,9 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #include "Epetra_Comm.h"
 #include "Epetra_SerialDenseVector.h"
 #include "Epetra_IntSerialDenseVector.h"
-
+#include "Epetra_MultiVector.h"
 
 class Epetra_Vector;
-class Epetra_MultiVector;
 class Epetra_Import;
 class Epetra_Export;
 

@@ -35,7 +35,6 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #include "Epetra_Object.h"
 #include "Epetra_Comm.h"
 #include "Epetra_SerialCommData.h"
-#include "Epetra_SerialDistributor.h"
 class Epetra_Distributor;
 
 //! Epetra_SerialComm:  The Epetra Serial Communication Class.

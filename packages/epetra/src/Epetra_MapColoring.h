@@ -33,6 +33,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #define EPETRA_MAPCOLORING_H
 #include "Epetra_DistObject.h"
 #include "Epetra_BlockMap.h"
+#include "Epetra_Distributor.h"
 class Epetra_HashTable;
 class Epetra_Map;
 

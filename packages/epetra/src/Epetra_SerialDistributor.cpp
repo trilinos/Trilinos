@@ -28,6 +28,7 @@
 //@HEADER
 
 #include "Epetra_SerialDistributor.h"
+#include "Epetra_SerialComm.h"
 
 
 //==============================================================================
