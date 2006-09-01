@@ -109,6 +109,7 @@ Amesos_Paraklete::Amesos_Paraklete(const Epetra_LinearProblem &prob ) :
 
   // MS // move declaration of Problem_ above because I need it
   // MS // set up before calling Comm()
+  MaxProcesses_ = -3;    // Use all processes unless the user requests otherwise
   Teuchos::ParameterList ParamList ;
   SetParameters( ParamList ) ;
 }
