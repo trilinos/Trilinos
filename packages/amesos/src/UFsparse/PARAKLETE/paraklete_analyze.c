@@ -64,7 +64,7 @@ static int paraklete_bcast_symbolic
     /* broadcast the size of the object, or -1 if a failure occured */
     header [0] = n ;
     header [1] = ncomponents ;
-    MPI_Bcast (&header, 2, MPI_INT, TAG0, MPI_COMM_WORLD) ;
+    MPI_Bcast (&header, 2, MPI_INT, TAG0, Common->mpicomm) ;
     n = header [0] ;
     ncomponents = header [1] ;
     if (n == EMPTY)
@@ -110,7 +110,7 @@ static int paraklete_bcast_symbolic
     ok = (cm->status == CHOLMOD_OK) ;
 
     /* all processes find out if any one process fails to allocate memory */
-    MPI_Allreduce (&ok, &all_ok, 1, MPI_INT, MPI_LAND, MPI_COMM_WORLD) ;
+    MPI_Allreduce (&ok, &all_ok, 1, MPI_INT, MPI_LAND, Common->mpicomm) ;
     if (!all_ok)
     {
 	/* out of memory; inform all processes */
@@ -121,8 +121,8 @@ static int paraklete_bcast_symbolic
     }
 
     /* broadcast the contents of the symbolic object */
-    MPI_Bcast (LUsymbolic->Mem_n, 3*n, MPI_INT, TAG0, MPI_COMM_WORLD) ;
-    MPI_Bcast (LUsymbolic->Mem_c, 7*ncomponents+2, MPI_INT, TAG0, MPI_COMM_WORLD) ;
+    MPI_Bcast (LUsymbolic->Mem_n, 3*n, MPI_INT, TAG0, Common->mpicomm) ;
+    MPI_Bcast (LUsymbolic->Mem_c, 7*ncomponents+2, MPI_INT, TAG0, Common->mpicomm) ;
 
     return (TRUE) ;
 }

@@ -82,7 +82,7 @@ int paraklete_solve
 	    else
 	    {
 		MPI (MPI_Isend (W + k1, k2-k1, MPI_DOUBLE, Sched [c],
-			/* TAG: */ c, MPI_COMM_WORLD, &(LU->LUnode [c]->req))) ;
+			/* TAG: */ c, Common->mpicomm, &(LU->LUnode [c]->req))) ;
 	    }
 	}
 	else
@@ -90,7 +90,7 @@ int paraklete_solve
 	    if (Sched [c] == myid)
 	    {
 		MPI (MPI_Irecv (Blocal, k2-k1, MPI_DOUBLE, 0,
-			/* TAG: */ c, MPI_COMM_WORLD, &(LU->LUnode [c]->req))) ;
+			/* TAG: */ c, Common->mpicomm, &(LU->LUnode [c]->req))) ;
 	    }
 	}
     }
@@ -114,7 +114,7 @@ int paraklete_solve
 		{
 		    MPI (MPI_Irecv (LU->LUnode [child]->X,
 			LU->LUnode [child]->PK_NN, MPI_DOUBLE, Sched [child],
-			TAG0, MPI_COMM_WORLD, &(LU->LUnode [c]->Req [cp]))) ;
+			TAG0, Common->mpicomm, &(LU->LUnode [c]->Req [cp]))) ;
 		}
 		else
 		{
@@ -136,7 +136,7 @@ int paraklete_solve
 	}
     }
 
-    MPI (MPI_Barrier (MPI_COMM_WORLD)) ;
+    MPI (MPI_Barrier (Common->mpicomm)) ;
 
     /* ---------------------------------------------------------------------- */
     /* backsolve: Ux=y */
@@ -150,7 +150,7 @@ int paraklete_solve
 	}
     }
 
-    MPI (MPI_Barrier (MPI_COMM_WORLD)) ;
+    MPI (MPI_Barrier (Common->mpicomm)) ;
 
     /* ---------------------------------------------------------------------- */
     /* get the permuted solution from each node */
@@ -170,7 +170,7 @@ int paraklete_solve
 	    {
 		PR1 ((Common->file, "recv node %d from %d\n", c, Sched [c])) ;
 		MPI (MPI_Recv (W, nfound, MPI_DOUBLE, Sched [c],
-			    TAG0, MPI_COMM_WORLD, &ms)) ;
+			    TAG0, Common->mpicomm, &ms)) ;
 		X2 = W ;
 	    }
 	    else
@@ -194,7 +194,7 @@ int paraklete_solve
 		PR1 ((Common->file,
 		    "send soln, node c = %d, myid %d nfound %d\n",
 		    c, myid, nfound)) ;
-		MPI (MPI_Send (X, nfound, MPI_DOUBLE, 0, TAG0, MPI_COMM_WORLD)) ;
+		MPI (MPI_Send (X, nfound, MPI_DOUBLE, 0, TAG0, Common->mpicomm)) ;
 	    }
 	}
     }

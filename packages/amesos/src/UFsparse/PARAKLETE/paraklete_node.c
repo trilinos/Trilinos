@@ -100,12 +100,12 @@ static void paraklete_send_to_parent
 	PR1 ((Common->file, "proc %d sends header parent proc %d\n",
 		Common->myid, parent_id)) ;
 	MPI (MPI_Send (LUnode->header, PK_HEADER, MPI_INT,
-		    parent_id, TAG0, MPI_COMM_WORLD)) ;
+		    parent_id, TAG0, Common->mpicomm)) ;
 
 	/* wait to see if parent_id is OK */
 	PR1 ((Common->file, "proc %d wait for parent %d\n",
 		Common->myid, parent_id)) ;
-	MPI (MPI_Recv (&ok, 1, MPI_INT, parent_id, TAG0, MPI_COMM_WORLD, &ms)) ;
+	MPI (MPI_Recv (&ok, 1, MPI_INT, parent_id, TAG0, Common->mpicomm, &ms)) ;
 
 	/* if status is not PK_OK, then parent_id will send back ok = FALSE */
 	ASSERT (IMPLIES (status != PK_OK, !ok)) ;
@@ -115,15 +115,15 @@ static void paraklete_send_to_parent
 	    /* both parent_id and myid agree to send the Schur complement */
 	    /* TODO: send this as one or two messages */
 	    MPI (MPI_Rsend (LUnode->sp, LUnode->PK_SN, MPI_INT,
-			parent_id, TAG0, MPI_COMM_WORLD)) ;
+			parent_id, TAG0, Common->mpicomm)) ;
 	    MPI (MPI_Rsend (LUnode->slen, LUnode->PK_SN, MPI_INT,
-			parent_id, TAG0, MPI_COMM_WORLD)) ;
+			parent_id, TAG0, Common->mpicomm)) ;
 	    MPI (MPI_Rsend (LUnode->sx, LUnode->PK_SSIZE, MPI_DOUBLE,
-			parent_id, TAG0, MPI_COMM_WORLD)) ;
+			parent_id, TAG0, Common->mpicomm)) ;
 	    MPI (MPI_Rsend (LUnode->Pglobal, LUnode->PK_NPIV, MPI_INT,
-			parent_id, TAG0, MPI_COMM_WORLD)) ;
+			parent_id, TAG0, Common->mpicomm)) ;
 	    MPI (MPI_Rsend (LUnode->Qglobal, LUnode->PK_NPIV, MPI_INT,
-			parent_id, TAG0, MPI_COMM_WORLD)) ;
+			parent_id, TAG0, Common->mpicomm)) ;
 	}
     }
 
@@ -245,7 +245,7 @@ int paraklete_factorize_node
 	    PR2 ((Common->file, "parent proc %d awaits header from %d\n",
 		    myid, Sched [child])) ;
 	    MPI (MPI_Irecv (LU->LUnode [child]->header, PK_HEADER, MPI_INT,
-		    Sched [child], TAG0, MPI_COMM_WORLD, &(LUnode->Req [cp]))) ;
+		    Sched [child], TAG0, Common->mpicomm, &(LUnode->Req [cp]))) ;
 	    nmessages++ ;
 	}
 	else
@@ -319,15 +319,15 @@ int paraklete_factorize_node
 	    /* both parent and child agree to send the Schur complement */
 	    /* TODO: fold this information into fewer messages */
 	    MPI (MPI_Irecv (LU->LUnode [child]->sp, sn, MPI_INT,
-			Sched [child], TAG0, MPI_COMM_WORLD, &(req [0]))) ;
+			Sched [child], TAG0, Common->mpicomm, &(req [0]))) ;
 	    MPI (MPI_Irecv (LU->LUnode [child]->slen, sn, MPI_INT,
-			Sched [child], TAG0, MPI_COMM_WORLD, &(req [1]))) ;
+			Sched [child], TAG0, Common->mpicomm, &(req [1]))) ;
 	    MPI (MPI_Irecv (LU->LUnode [child]->sx, ssize, MPI_DOUBLE,
-			Sched [child], TAG0, MPI_COMM_WORLD, &(req [2]))) ;
+			Sched [child], TAG0, Common->mpicomm, &(req [2]))) ;
 	    MPI (MPI_Irecv (LU->LUnode [child]->Pglobal, npiv, MPI_INT,
-			Sched [child], TAG0, MPI_COMM_WORLD, &(req [3]))) ;
+			Sched [child], TAG0, Common->mpicomm, &(req [3]))) ;
 	    MPI (MPI_Irecv (LU->LUnode [child]->Qglobal, npiv, MPI_INT,
-			Sched [child], TAG0, MPI_COMM_WORLD, &(req [4]))) ;
+			Sched [child], TAG0, Common->mpicomm, &(req [4]))) ;
 	}
 
 	/* ------------------------------------------------------------------ */
@@ -336,7 +336,7 @@ int paraklete_factorize_node
 
 	PR1 ((Common->file, "parent proc %d replies to proc %d\n",
 		    myid, Sched [child])) ;
-	MPI (MPI_Send (&ok, 1, MPI_INT, Sched [child], TAG0, MPI_COMM_WORLD)) ;
+	MPI (MPI_Send (&ok, 1, MPI_INT, Sched [child], TAG0, Common->mpicomm)) ;
 
 	/* ------------------------------------------------------------------ */
 	/* wait for the Schur complement to be received */

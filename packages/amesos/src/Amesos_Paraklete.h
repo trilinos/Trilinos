@@ -223,6 +223,8 @@ private:
   int PerformNumericFactorization(); 
 
   // @}
+
+  bool IamInGroup_;  // True if this process is involved in the computation.  Set by SymbolicFactorization
   
   int SerialXlda_ ;
   int *Lp, *Li, *Up, *Ui, *P ;	
@@ -235,6 +237,7 @@ private:
   Teuchos::RefCountPtr<Amesos_StandardIndex> StdIndex_; 
   Teuchos::RefCountPtr<Amesos_StandardIndex> StdIndexRange_; 
   Teuchos::RefCountPtr<Amesos_StandardIndex> StdIndexDomain_; 
+  MPI_Comm ParakleteComm_;
 
   //! Ap, Ai, Aval form the compressed row storage used by Paraklete
   //! Ai and Aval can point directly into a matrix if it is StorageOptimized(), hence

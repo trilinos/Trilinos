@@ -445,7 +445,7 @@ paraklete_numeric *paraklete_factorize
     /* ---------------------------------------------------------------------- */
 
     all_ok = ok ;
-    MPI (MPI_Allreduce (&ok, &all_ok, 1, MPI_INT, MPI_LAND, MPI_COMM_WORLD)) ;
+    MPI (MPI_Allreduce (&ok, &all_ok, 1, MPI_INT, MPI_LAND, Common->mpicomm)) ;
     if (!all_ok)
     {
 	/* out of memory; inform all processes */
@@ -562,11 +562,11 @@ paraklete_numeric *paraklete_factorize
 	    {
 		/* send this matrix to the process that owns node c */
 		MPI (MPI_Isend (Cp, cn+1, MPI_INT, Sched [c],
-			    TAG0, MPI_COMM_WORLD, &req)) ;
+			    TAG0, Common->mpicomm, &req)) ;
 		MPI (MPI_Isend (Ci, cnz,  MPI_INT, Sched [c],
-			    TAG0, MPI_COMM_WORLD, &req)) ;
+			    TAG0, Common->mpicomm, &req)) ;
 		MPI (MPI_Isend (Cx, cnz,  MPI_DOUBLE, Sched [c],
-			    TAG0, MPI_COMM_WORLD, &req)) ;
+			    TAG0, Common->mpicomm, &req)) ;
 	    }
 	}
 
@@ -583,11 +583,11 @@ paraklete_numeric *paraklete_factorize
 	    if (Sched [c] == myid)
 	    {
 		MPI (MPI_Recv (LU->LUnode [c]->A->p, Cn [c] +1, MPI_INT, 0,
-			    TAG0, MPI_COMM_WORLD, &ms)) ;
+			    TAG0, Common->mpicomm, &ms)) ;
 		MPI (MPI_Recv (LU->LUnode [c]->A->i, Cnz [c], MPI_INT, 0,
-			    TAG0, MPI_COMM_WORLD, &ms)) ;
+			    TAG0, Common->mpicomm, &ms)) ;
 		MPI (MPI_Recv (LU->LUnode [c]->A->x, Cnz [c], MPI_DOUBLE, 0,
-			    TAG0, MPI_COMM_WORLD, &ms)) ;
+			    TAG0, Common->mpicomm, &ms)) ;
 	    }
 	}
     }
@@ -606,7 +606,7 @@ paraklete_numeric *paraklete_factorize
 
 #if 0
     /* TODO: process 0 should free LUnode [c]->A, but only when recvd by c */
-    MPI (MPI_Barrier (MPI_COMM_WORLD)) ;
+    MPI (MPI_Barrier (Common->mpicomm)) ;
     PR1 ((Common->file, "proc %d everybody OK so far2\n", Common->myid)) ;
     cm->print = 5 ;
     if (myid == 0)
@@ -664,7 +664,7 @@ paraklete_numeric *paraklete_factorize
 	 * This also allows us to determine if the matrix is singular, or if
 	 * any process ran out of memory. */
 	MPI (MPI_Bcast (LU->LUnode [c]->header, PK_HEADER, MPI_INT,
-		    Sched [c], MPI_COMM_WORLD)) ;
+		    Sched [c], Common->mpicomm)) ;
 	kk += LU->LUnode [c]->PK_NFOUND ;
 	Common->status = MIN (Common->status, LU->LUnode [c]->PK_STATUS) ;
     }
@@ -698,7 +698,7 @@ paraklete_numeric *paraklete_factorize
     /* check to see if all processes had space for P and Q */
     PR1 ((Common->file, "proc %d here in PQ: ok %d\n", Common->myid, ok)) ;
     all_ok = ok ;
-    MPI (MPI_Allreduce (&ok, &all_ok, 1, MPI_INT, MPI_LAND, MPI_COMM_WORLD)) ;
+    MPI (MPI_Allreduce (&ok, &all_ok, 1, MPI_INT, MPI_LAND, Common->mpicomm)) ;
     if (!all_ok)
     {
 	/* out of memory */
@@ -715,9 +715,9 @@ paraklete_numeric *paraklete_factorize
 
 	/* give Pglobal and Qglobal to all processors */
 	MPI (MPI_Bcast (LU->LUnode [c]->Pglobal, npiv, MPI_INT, Sched [c],
-		    MPI_COMM_WORLD)) ;
+		    Common->mpicomm)) ;
 	MPI (MPI_Bcast (LU->LUnode [c]->Qglobal, npiv, MPI_INT, Sched [c],
-		    MPI_COMM_WORLD)) ;
+		    Common->mpicomm)) ;
 
 	Pc = LU->LUnode [c]->Pglobal ;
 	Qc = LU->LUnode [c]->Qglobal ;

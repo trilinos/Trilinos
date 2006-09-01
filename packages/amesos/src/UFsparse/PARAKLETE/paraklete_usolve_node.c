@@ -68,7 +68,7 @@ int paraklete_usolve_node
 	PR1 ((Common->file, "Recving usolve from %d, size %d\n", Sched [parent],
 		cn - nfound)) ;
 	MPI (MPI_Irecv (X + nfound, cn-nfound, MPI_DOUBLE, Sched [parent],
-		TAG0, MPI_COMM_WORLD, &req)) ;
+		TAG0, Common->mpicomm, &req)) ;
 	MPI (MPI_Wait (&req, &ms)) ;
     }
 
@@ -187,7 +187,7 @@ int paraklete_usolve_node
 	    PR1 ((Common->file, "Sending to %d, size %d\n", Sched [child], 
 		    cn_child - cn_nfound)) ;
 	    MPI (MPI_Isend (Xchild, cn_child - cn_nfound, MPI_DOUBLE,
-			Sched [child], TAG0, MPI_COMM_WORLD, &req)) ;
+			Sched [child], TAG0, Common->mpicomm, &req)) ;
 	}
     }
 

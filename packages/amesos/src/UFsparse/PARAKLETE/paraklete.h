@@ -46,6 +46,10 @@ typedef struct paraklete_common_struct
     int myid ;
     int dump ;		/* debug print level */
 
+#ifndef NMPI
+    MPI_Comm mpicomm ;
+#endif
+
     FILE *file ;	/* per-process output file, for debugging only */
 
     cholmod_common cm ;	/* workspace for each node */

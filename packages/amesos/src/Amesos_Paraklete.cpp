@@ -103,7 +103,8 @@ Amesos_Paraklete::Amesos_Paraklete(const Epetra_LinearProblem &prob ) :
   CrsMatrixA_(0),
   UseTranspose_(false),
   TrustMe_(false),
-  Problem_(&prob)
+  Problem_(&prob),
+  ParakleteComm_(0)
 {
 
   // MS // move declaration of Problem_ above because I need it
@@ -116,6 +117,10 @@ Amesos_Paraklete::Amesos_Paraklete(const Epetra_LinearProblem &prob ) :
 Amesos_Paraklete::~Amesos_Paraklete(void) {
 
 
+    if(ParakleteComm_)  {
+      MPI_Comm_free(&ParakleteComm_);
+      ParakleteComm_ = 0 ; 
+    }
 
   // print out some information if required by the user
   if( (verbose_ && PrintTiming_) || verbose_ == 2 ) PrintTiming();
@@ -491,6 +496,8 @@ int Amesos_Paraklete::SetParameters( Teuchos::ParameterList &ParameterList ) {
   SetStatusParameters( ParameterList );
   SetControlParameters( ParameterList );
 
+  
+
   if (ParameterList.isParameter("TrustMe") ) 
     TrustMe_ = ParameterList.get<bool>( "TrustMe" );
 
@@ -512,13 +519,14 @@ int Amesos_Paraklete::PerformSymbolicFactorization()
 {
   ResetTime(0);
   
+  if ( IamInGroup_ ) 
     PrivateParakleteData_->LUsymbolic_ =
-	rcp( paraklete_analyze ( &PrivateParakleteData_->pk_A_, &*PrivateParakleteData_->common_ )
-	     ,deallocFunctorDeleteWithCommon<paraklete_symbolic>(PrivateParakleteData_->common_,
-								 paraklete_free_symbolic)
-	     ,true
-	     );
-
+      rcp( paraklete_analyze ( &PrivateParakleteData_->pk_A_, &*PrivateParakleteData_->common_ )
+	   ,deallocFunctorDeleteWithCommon<paraklete_symbolic>(PrivateParakleteData_->common_,
+							       paraklete_free_symbolic)
+	   ,true
+	   );
+  
   AddTime("symbolic", 0);
 
   return 0;
@@ -539,13 +547,14 @@ int Amesos_Paraklete::PerformNumericFactorization( )
 
     bool factor_with_pivoting = true ;
 
-	PrivateParakleteData_->LUnumeric_ =
-	  rcp( paraklete_factorize ( &PrivateParakleteData_->pk_A_,
-				     &*PrivateParakleteData_->LUsymbolic_, 
-				     &*PrivateParakleteData_->common_ ) 
-	  ,deallocFunctorDeleteWithCommon<paraklete_numeric>(PrivateParakleteData_->common_,paraklete_free_numeric)
-	  ,true
-	  );
+    if ( IamInGroup_ ) 
+      PrivateParakleteData_->LUnumeric_ =
+	rcp( paraklete_factorize ( &PrivateParakleteData_->pk_A_,
+				   &*PrivateParakleteData_->LUsymbolic_, 
+				   &*PrivateParakleteData_->common_ ) 
+	     ,deallocFunctorDeleteWithCommon<paraklete_numeric>(PrivateParakleteData_->common_,paraklete_free_numeric)
+	     ,true
+	     );
 
   AddTime("numeric", 0);
 
@@ -591,7 +600,7 @@ int Amesos_Paraklete::SymbolicFactorization()
 
   IsSymbolicFactorizationOK_ = false;
   IsNumericFactorizationOK_ = false;
-  
+
 #ifdef HAVE_AMESOS_EPETRAEXT
   transposer_ = static_cast<Teuchos::ENull>( 0 ); 
 #endif
@@ -604,6 +613,9 @@ int Amesos_Paraklete::SymbolicFactorization()
   AMESOS_CHK_ERR( CreateLocalMatrixAndExporters() ) ;
   assert( NumGlobalElements_ == RowMatrixA_->NumGlobalCols() );
 
+
+  SetMaxProcesses(MaxProcesses_, *RowMatrixA_);
+  
   //
   //  Perform checks in SymbolicFactorization(), but none in 
   //  NumericFactorization() or Solve()
@@ -629,12 +641,42 @@ int Amesos_Paraklete::SymbolicFactorization()
 
   PrivateParakleteData_->common_ = rcp(new paraklete_common());
 
+  const Epetra_MpiComm* MpiComm = dynamic_cast<const Epetra_MpiComm*>(&Comm());
+  assert (MpiComm != 0);
+ 
+  MPI_Comm PK_Comm;
+  //
+  //  Create an MPI group with MaxProcesses_ processes
+  //
+  if ( MaxProcesses_ != Comm().NumProc()) {
+    if(ParakleteComm_)  {
+      MPI_Comm_free(&ParakleteComm_);
+      ParakleteComm_ = 0 ; 
+    }
+    vector<int> ProcsInGroup(MaxProcesses_);
+    IamInGroup_ = false; 
+    for (int i = 0 ; i < MaxProcesses_ ; ++i) {
+      ProcsInGroup[i] = i;
+      if ( Comm().MyPID() == i ) IamInGroup_ = true; 
+    }
+    
+    MPI_Group OrigGroup, ParakleteGroup;
+    MPI_Comm_group(MpiComm->GetMpiComm(), &OrigGroup);
+    MPI_Group_incl(OrigGroup, MaxProcesses_, &ProcsInGroup[0], &ParakleteGroup);
+    MPI_Comm_create(MpiComm->GetMpiComm(), ParakleteGroup, &ParakleteComm_);
+    PK_Comm = ParakleteComm_ ; 
+  } else {
+    IamInGroup_ = true; 
+    PK_Comm = MpiComm->GetMpiComm() ;
+  }
+
   paraklete_common& pk_common =  *PrivateParakleteData_->common_ ;
   cholmod_common *cm = &(pk_common.cm) ;
   cholmod_start (cm) ;
   DEBUG_INIT ("pk") ;
-  pk_common.nproc = Comm().NumProc() ;
+  pk_common.nproc = MaxProcesses_ ;
   pk_common.myid = Comm().MyPID() ; 
+  pk_common.mpicomm = PK_Comm ; 
   cm->print = 1 ;
   cm->precise = TRUE ;
   cm->error_handler = my_handler ;
@@ -791,10 +833,11 @@ int Amesos_Paraklete::Solve()
       SerialX_->Scale(1.0, *SerialB_ ) ;    // X = B (Klu overwrites B with X)
     }
   }
-  for (int i = 0; i < NumVectors_ ; i++ ) { 
-    paraklete_solve(  &*PrivateParakleteData_->LUnumeric_, &*PrivateParakleteData_->LUsymbolic_,
-		      &SerialXBvalues_[i*SerialXlda_],  &*PrivateParakleteData_->common_ );
-  }
+  if ( IamInGroup_ ) 
+    for (int i = 0; i < NumVectors_ ; i++ ) { 
+      paraklete_solve(  &*PrivateParakleteData_->LUnumeric_, &*PrivateParakleteData_->LUsymbolic_,
+			&SerialXBvalues_[i*SerialXlda_],  &*PrivateParakleteData_->common_ );
+    }
   AddTime("solve", 0);
 
   //  Copy X back to the original vector

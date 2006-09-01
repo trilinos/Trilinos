@@ -204,7 +204,7 @@ int paraklete_lsolve_node
     parent = Cparent [c] ;
     if (parent != EMPTY && Sched [parent] != myid)
     {
-	MPI (MPI_Isend (X, cn, MPI_DOUBLE, Sched [parent], TAG0, MPI_COMM_WORLD,
+	MPI (MPI_Isend (X, cn, MPI_DOUBLE, Sched [parent], TAG0, Common->mpicomm,
 	    &req)) ;
     }
 

@@ -291,6 +291,57 @@ int TestOtherClasses( const char* AmesosClass,
 	(transpose?"true":"false") << endl ;  
     }
   }
+
+  //
+  //     5)  MaxProcs = 2 
+  {
+    Teuchos::ParameterList ParamList ;
+    ParamList.set( "NoDestroy", true );    // Only affects Amesos_Mumps
+    ParamList.set( "MaxProcs", 2 );   // Only affects Paraklete (maybe Mumps) also Superludist byt that isn't tested here 
+      
+    double relerror;
+    double relresidual;
+      
+    if (MyVerbose) cout << __FILE__ << "::" << __LINE__ << " AmesosClass= " << AmesosClass 
+		      << " ParamList = " << ParamList 
+		      << " transpose = " << transpose 
+		      << " Levels = " << Levels 
+		      << endl ; 
+
+    int Errors = PerformOneSolveAndTest(AmesosClass,
+					EpetraMatrixType,
+					Comm, 
+					transpose, 
+					MyVerbose,
+					ParamList, 
+					Amat, 
+					Levels,
+					Rcond, 
+					relerror, 
+					relresidual, ExpectedError ) ; 
+      
+    if (MyVerbose  || ( Errors && iam==0 )  ) cout << __FILE__ << "::" << __LINE__ 
+				  << " AmesosClass= " << AmesosClass 
+				  << " Errors = " << Errors 
+				  << endl ; 
+
+    if (Errors < 0 ) {
+      if (MyVerbose ) cout << AmesosClass << " not built in this executable " << endl ; 
+      return 0 ; 
+    } else { 
+      NumErrors += Errors ; 
+	
+      maxrelerror = EPETRA_MAX( relerror, maxrelerror ) ; 
+      maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
+      NumTests++ ; 
+
+    }
+    if (MyVerbose)  cout << " TestOtherClasses " << AmesosClass << "" << "::" << __LINE__ << " NumErrors = " << NumErrors << endl ; 
+    if ( MyVerbose && Errors ) {
+      cout << AmesosClass << " failed with transpose = " << 
+	(transpose?"true":"false") << endl ;  
+    }
+  }
   //
   //  ComputeTrueResidual is, by design, not quiet - it prints out the residual 
   //
