@@ -207,12 +207,12 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(isorropia, epetraext, EPETRAEXT, HAVE_EPETRAEXT, 
 # ------------------------------------------------------------------------
 
 TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages (not all packages are sensitive to this option)], TESTS, yes)
-TAC_ARG_ENABLE_FEATURE_SUB( isorropia, tests, [Build Isorropia tests], ISORROPIA_TESTS, yes)
-AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_isorropia_tests" != "Xno")
+TAC_ARG_ENABLE_FEATURE_SUB( isorropia, tests, [Build Isorropia tests], ISORROPIA_TESTS, no)
+AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_isorropia_tests" != "Xno" || test "X$ac_cv_use_tests" != "Xno")
 
 TAC_ARG_ENABLE_FEATURE(examples, [Build examples for all Trilinos packages (not all packages are sensitive to this option)], EXAMPLES, yes)
-TAC_ARG_ENABLE_FEATURE_SUB( isorropia, examples, [Build Isorropia examples], ISORROPIA_EXAMPLES, yes)
-AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_isorropia_examples" != "Xno")
+TAC_ARG_ENABLE_FEATURE_SUB( isorropia, examples, [Build Isorropia examples], ISORROPIA_EXAMPLES, no)
+AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_isorropia_examples" != "Xno" || test "X$ac_cv_use_examples" != "Xno")
 
 TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
 
