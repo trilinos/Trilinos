@@ -30,6 +30,7 @@
 #include "../epetra_test_err.h"
 #include "Epetra_Time.h"
 #include "Epetra_Util.h"
+#include "Epetra_Distributor.h"
 #include "Epetra_SerialComm.h"
 #include "Epetra_IntSerialDenseVector.h"
 #include "Epetra_Version.h"
