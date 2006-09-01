@@ -45,6 +45,7 @@ DONE
 IF PACKAGE aztecoo THEN
 REMOVE --enable-aztecoo
 REMOVE --enable-komplex
+REMOVE --enable-meros
 REMOVE --enable-ml_aztecoo
 REMOVE --enable-nox-epetra
 REMOVE --enable-nox-epetra-examples
@@ -55,6 +56,7 @@ DONE
 
 IF PACKAGE aztecoo SUBDIRECTORY thyra THEN
 INSERT --disable-aztecoo-thyra
+REMOVE --enable-meros
 DONE
 
 IF PACKAGE aztecoo SUBDIRECTORY python THEN
@@ -115,6 +117,7 @@ DONE
 
 IF PACKAGE epetra SUBDIRECTORY thyra THEN
 INSERT --disable-epetra-thyra
+REMOVE --enable-meros
 DONE
 
 IF PACKAGE epetra SUBDIRECTORY python THEN
@@ -189,6 +192,7 @@ DONE
 # ML ---------------------------------------------------------------------------
 IF PACKAGE ml THEN
 REMOVE --enable-ml
+REMOVE --enable-meros
 REMOVE --enable-moertel
 REMOVE --enable-nox
 REMOVE --enable-loca
@@ -198,6 +202,11 @@ DONE
 
 IF PACKAGE ml SUBDIRECTORY python THEN
 INSERT --disable-ml-python
+DONE
+
+IF PACKAGE ml SUBDIRECTORY thyra THEN
+INSERT --disable-ml-thyra
+REMOVE --enable-meros
 DONE
 
 # Moertel ----------------------------------------------------------------------
@@ -336,6 +345,7 @@ REMOVE --enable-tsfcore-aztecoo
 REMOVE --enable-belos
 REMOVE --enable-amesos
 REMOVE --with-ml_amesos 
+REMOVE --enable-meros
 REMOVE --enable-moertel
 REMOVE --enable-webtrilinos
 DONE

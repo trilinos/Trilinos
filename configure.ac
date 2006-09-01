@@ -229,6 +229,7 @@ if test "X$ac_cv_use_epetra" != "Xno" || test "X$ac_cv_use_ifpack" != "Xno" ||
 	test "X$ac_cv_use_belos" != "Xno" ||
 	test "X$ac_cv_use_anasazi" != "Xno" ||
         test "X$ac_cv_use_claps" != "Xno" ||
+	test "X$ac_cv_use_meros" != "Xno" ||
         test "X$ac_cv_use_moertel" != "Xno" ||
 	test "X$ac_cv_use_webtrilinos" != "Xno" ||
 	test "X$ac_cv_use_komplex" != "Xno"; then
@@ -257,6 +258,7 @@ if test "X$ac_cv_use_triutils" != "Xno" ||
 	test "X$ac_cv_use_moertel" != "Xno" ||
 	test "X$ac_cv_use_komplex" != "Xno" ||
 	test "X$ac_cv_use_webtrilinos" != "Xno" ||
+	test "X$ac_cv_use_meros" != "Xno" ||
 	test "X$ac_cv_use_aztecoo" != "Xno"; then 
   AC_CONFIG_SUBDIRS([packages/triutils])
   BUILD_TRIUTILS=yes
@@ -294,6 +296,7 @@ AM_CONDITIONAL(BUILD_IFPACK, test "X$BUILD_IFPACK" != "Xno")
 
 if test "X$ac_cv_use_aztecoo" != "Xno" || 
 	test "X$ac_cv_use_moertel" != "Xno" ||
+	test "X$ac_cv_use_meros" != "Xno" ||
 	test "X$ac_cv_use_webtrilinos" != "Xno" ||
 	test "X$ac_cv_use_komplex" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/aztecoo])
@@ -390,6 +393,7 @@ AM_CONDITIONAL(BUILD_MEROS, test "X$BUILD_MEROS" != "Xno")
 
 if test "X$ac_cv_use_ml" != "Xno" ||
 	test "X$ac_cv_use_webtrilinos" != "Xno" ||
+	test "X$ac_cv_use_meros" != "Xno" ||
         test "X$ac_cv_use_moertel" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/ml])
   BUILD_ML=yes
