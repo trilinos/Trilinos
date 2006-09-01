@@ -1738,6 +1738,7 @@ int nRepartEdge = 0, nRepartVtx = 0;
       /* Don't need the plan long-term; destroy it now. */
       Zoltan_Comm_Destroy(&(zhg->VtxPlan));
       ZOLTAN_FREE(&(zhg->Recv_GNOs));
+      zhg->nRecv_GNOs = 0;
     }
   }
 
