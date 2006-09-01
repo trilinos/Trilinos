@@ -37,7 +37,7 @@
        \brief An implementation of the Anasazi::SortManager that performs a collection
        of common sorting techniques.
 
-       \author Ulrich Hetmaniuk, Rich Lehoucq, and Heidi Thornquist
+       \author Chris Baker, Ulrich Hetmaniuk, Rich Lehoucq, and Heidi Thornquist
 */
 
 #include "AnasaziConfigDefs.hpp"
@@ -281,7 +281,7 @@ namespace Anasazi {
                        "Anasazi::BasicSort::sort() with one arg assumes real eigenvalues");
     
     // The character string held by this class is not valid.  
-    TEST_FOR_EXCEPTION(true, SortManagerError, 
+    TEST_FOR_EXCEPTION(true, std::logic_error, 
                        "Anasazi::BasicSort::sort(): sorting order is not valid");
   }
 
@@ -437,8 +437,8 @@ namespace Anasazi {
         tempr = r_evals[j]; tempi = i_evals[j]; 
         if (perm) {
           tempord = (*perm)[j];
-        for (i=j-1; i>=0 && i_evals[i]<tempi; i--) {
         }
+        for (i=j-1; i>=0 && i_evals[i]<tempi; i--) {
           r_evals[i+1]=r_evals[i]; i_evals[i+1]=i_evals[i];
           if (perm) {
             (*perm)[i+1]=(*perm)[i];
@@ -452,7 +452,7 @@ namespace Anasazi {
       return;
     }
 
-    TEST_FOR_EXCEPTION(true, SortManagerError, 
+    TEST_FOR_EXCEPTION(true, std::logic_error, 
                        "Anasazi::BasicSort::sort(): sorting order is not valid");
   }
   

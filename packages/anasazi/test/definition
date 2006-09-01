@@ -22,7 +22,9 @@
             BlockKrylovSchur/BlockKrylovSchur_nh_test.exe,
             BlockKrylovSchur/BlockKrylovSchur_solvertest.exe,
             OrthoManager/OrthoManager_test.exe,
-            OrthoManager/OrthoManager_basic_test.exe;
+            OrthoManager/OrthoManager_basic_test.exe,
+            SortManager/SortManager_test.exe,
+            StatusTest/StatusTest_test.exe;
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = --verbose;
     COMM = SERIAL, MPI;
@@ -77,7 +79,9 @@
             BlockKrylovSchur/BlockKrylovSchur_test.exe,
             BlockKrylovSchur/BlockKrylovSchur_solvertest.exe,
             OrthoManager/OrthoManager_test.exe,
-            OrthoManager/OrthoManager_basic_test.exe;
+            OrthoManager/OrthoManager_basic_test.exe,
+            SortManager/SortManager_test.exe,
+            StatusTest/StatusTest_test.exe;
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = --debug;
     COMM = SERIAL, MPI;

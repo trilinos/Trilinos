@@ -44,18 +44,18 @@
 #include "AnasaziStatusTest.hpp"
 
 
-  /*! 
-    \class Anasazi::StatusTestOutput
-    \brief A special Anasazi::StatusTest for printing other status tests. 
-    
-    Anasazi::StatusTestOutput is a wrapper around another Anasazi::StatusTest that calls 
-    Anasazi::StatusTest::print() on the underlying object on calls to Anasazi::StatusTestOutput::checkStatus().
-    The frequency and occasion of the printing can be dictated according to some parameters passed to the 
-    Anasazi::StatusTestOutput class.
-  */
 
 namespace Anasazi {
 
+  /*! 
+    \class StatusTestOutput
+    \brief A special StatusTest for printing other status tests. 
+    
+    StatusTestOutput is a wrapper around another StatusTest that calls 
+    StatusTest::print() on the underlying object on calls to StatusTestOutput::checkStatus().
+    The frequency and occasion of the printing can be dictated according to some parameters passed to 
+    StatusTestOutput::StatusTestOutput().
+  */
 template <class ScalarType, class MV, class OP>
 class StatusTestOutput : public StatusTest<ScalarType,MV,OP> {
 
@@ -68,11 +68,13 @@ class StatusTestOutput : public StatusTest<ScalarType,MV,OP> {
    * The StatusTestOutput requires an OutputManager for printing the underlying StatusTest on
    * calls to checkStatus(), as well as an underlying StatusTest.
    *
-   * The other parameters, in addition to the verbosity level of the OutputManager, control when printing is 
-   * called. 
+   * The last two parameters, described below, in addition to the verbosity level of the OutputManager, control when printing is 
+   * called. When both the \c mod criterion and the \c printStates criterion are satisfied, the status test will be printed to the 
+   * OutputManager with ::MsgType of ::StatusTestDetails.
    *
-   * @param[in] mod A positive number describes how often the output should be printed. Default: 1 (attempt to print on every call to checkStatus())
-   * @param[in] printStates A sum of TestStatus returns for which the output should be printed. Default: ::Passed (attempt to print whenever checkStatus() will return ::Passed)
+   * @param[in] mod A positive number describes how often the output should be printed. On every call to checkStatus(), an internal counter
+   *                is incremented. Printing may only occur when this counter is congruent to zero modulo \c mod. Default: 1 (attempt to print on every call to checkStatus())
+   * @param[in] printStates A combination of ::TestStatus values for which the output may be printed. Default: ::Passed (attempt to print whenever checkStatus() will return ::Passed)
    *
    */
   StatusTestOutput(const Teuchos::RefCountPtr<OutputManager<ScalarType> > &printer, 
@@ -99,10 +101,13 @@ class StatusTestOutput : public StatusTest<ScalarType,MV,OP> {
     initialization or reset() will enable the underlying StatusTest to be
     printed, regardless of the mod parameter, as the current number of calls
     will be zero.
+
+    If the specified Teuchos::RefCountPtr for the child class is Teuchos::null, then calling checkStatus() will result in a StatusTestError exception being thrown.
     
-    \return TestStatus indicating whether the underlying test passed or failed.
+    \return ::TestStatus indicating whether the underlying test passed or failed.
   */
   TestStatus checkStatus( Eigensolver<ScalarType,MV,OP>* solver ) {
+    TEST_FOR_EXCEPTION(test_ == Teuchos::null,StatusTestError,"StatusTestOutput::checkStatus(): child pointer is null.");
     state_ = test_->checkStatus(solver);
 
     if (numCalls_++ % modTest_ == 0) {
@@ -124,6 +129,27 @@ class StatusTestOutput : public StatusTest<ScalarType,MV,OP> {
     return state_;
   }
   //@}
+
+
+  //! @name Accessor methods
+  //@{ 
+
+  /*! \brief Set child test.
+   *
+   *  \note This also resets the test status to ::Undefined.
+   */
+  void setChild(Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > test) {
+    test_ = test;
+    state_ = Undefined;
+  }
+
+  //! \brief Get child test.
+  Teuchos::RefCountPtr<StatusTest<ScalarType,MV,OP> > getChild() const {
+    return test_;
+  }
+
+  //@}
+
 
   //! @name Reset methods
   //@{ 

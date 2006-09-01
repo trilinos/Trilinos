@@ -3,35 +3,21 @@
 
    \section intro Introduction
 
-   %Anasazi is an extensible and interoperable framework for large-scale eigenvalue algorithms.
-The motivation for this framework is to provide a generic interface to a collection of algorithms for 
-solving large-scale eigenvalue problems.
-%Anasazi is interoperable because both the matrix and vectors (defining the
-eigenspace) are considered to be opaque objects---only knowledge of the matrix and
-vectors via elementary operations is necessary. An implementation of %Anasazi
-is accomplished via the use of interfaces. Current interfaces available include
-Epetra and so any libraries that understand Epetra matrices and vectors (such
-as AztecOO) may also be used in conjunction with %Anasazi.
+%Anasazi is an extensible and interoperable framework for the numerical solution of large-scale eigenvalue algorithms implemented in templated ANSI C++. The motivation for this framework is to provide a generic interface to a collection of algorithms for solving large-scale eigenvalue problems. %Anasazi is interoperable because both the matrix and vectors (defining the eigenspace) are considered to be opaque objects---only knowledge of the matrix and vectors via elementary operations is necessary. Hence the user has the flexibility to specify the data representation (existing data structures) for the matrix and vectors and so leverage any existing software investment. This flexibility is accomplished with the software interface \ref anasazi_opvec_interfaces "Anasazi Operator/Vector abstract interface". 
 
-One of the goals of %Anasazi is to allow the user the flexibility to specify the
-data representation for the matrix and vectors and so leverage any existing software
-investment. This is provided by implementing all algorithms at a high level using 
-the \ref anasazi_opvec_interfaces "Anasazi Operator/Vector abstract interface".
+The \ref anasazi_solver_framework "Anasazi eigensolver framework" describes eigensolver and eigensolver managers that allow for efficient, convenient and powerful computational ability.
 
-The other goal of %Anasazi is to enable the users to interact with the
-eigensolver at the lowest level necessary to provide the needed functionality
-and access. The \ref anasazi_solver_framework "Anasazi eigensolver framework"
-describes both low-level eigensolvers as well as high-level eigensolver managers which
-allow for efficient, convenient and powerful computational ability.
+Current interfaces available include Epetra and so any libraries that understand Epetra matrices and vectors (such as other packages in Trilinos) may also be used in conjunction with %Anasazi.
+
 
    \section solvers Current Eigensolvers
 
 The algorithms that are currently available are:
 
    <ul>
-   <li>Block Krylov-Schur method,
-   <li>Block Davidson method,
-   <li>Locally-Optimal Block Preconditioned Conjugate Gradient (LOBPCG) method. 
+   <li>Block Krylov-Schur method, a block extension of <em>A Krylov-Schur Algorithm for Large Eigenproblems</em>, G. W. Stewart, SIAM J. Matrix Anal. Appl., 23, pp. 601-614.
+   <li>Block Davidson method described in <em>A Comparison of Eigensolvers for Large-scale 3D Modal Analysis Using AMG-Preconditioned Iterative Methods</em>, P. Arbenz, U. L. Hetmaniuk, R. B. Lehoucq, R. S. Tuminaro, Internat. J. for Numer. Methods Engrg., 64, pp. 204-236 (2005)
+   <li>LOBPCG, a stable implementation of <em>Toward  the optimal preconditioned eigensolver: Locally optimal block preconditioned conjugate gradient method</em>, SIAM J. Sci. Comput., 23 (2001), pp. 517-541, as described in <em>Basis selection in LOBPCG</em>, U. L. Hetmaniuk and R. B. Lehoucq, accepted for publication in the J.  Comp. Physics.
    </ul>
 
    \section contributors Anasazi Contributors
@@ -39,9 +25,9 @@ The algorithms that are currently available are:
    The following people have contributed to the development of %Anasazi:
 
    <ul>
-	<li> Chris Baker, Florida State University, cgbaker@gmail.com
-	<li> Ulrich Hetmaniuk, Sandia National Labs, ulhetma@sandia.gov
- 	<li> Rich Lehoucq, Sandia National Labs, rblehou@sandia.gov
+	<li> <a href="http://www.scs.fsu.edu/~cbaker">Chris Baker</a>, Florida State University
+	<li> <a href="http://www.sandia.gov/~ulhetma">Ulrich Hetmaniuk</a>, Sandia National Labs
+ 	<li> <a href="http://www.sandia.gov/~rblehou">Rich Lehoucq</a>, Sandia National Labs
 	<li> Heidi Thornquist, Sandia National Labs, hkthorn@sandia.gov
    </ul>
 

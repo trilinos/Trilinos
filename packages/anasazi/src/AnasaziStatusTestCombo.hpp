@@ -280,8 +280,8 @@ TestStatus StatusTestCombo<ScalarType,MV,OP>::evalOR( Eigensolver<ScalarType,MV,
     if (r == Passed) {
       state_ = Passed;
     }
-    else if (r != Failed) {
-      TEST_FOR_EXCEPTION(true,StatusTestError,
+    else {
+      TEST_FOR_EXCEPTION(r != Failed,StatusTestError,
                          "Anasazi::StatusTestCombo::evalOR(): child test gave invalid return");
     }
   }
@@ -297,8 +297,8 @@ TestStatus StatusTestCombo<ScalarType,MV,OP>::evalSEQOR( Eigensolver<ScalarType,
       state_ = Passed;
       break;
     }
-    else if (r != Failed) {
-      TEST_FOR_EXCEPTION(true,StatusTestError,
+    else {
+      TEST_FOR_EXCEPTION(r != Failed,StatusTestError,
                          "Anasazi::StatusTestCombo::evalSEQOR(): child test gave invalid return");
     }
   }
@@ -313,8 +313,8 @@ TestStatus StatusTestCombo<ScalarType,MV,OP>::evalAND( Eigensolver<ScalarType,MV
     if (r == Failed) {
       state_ = Failed;
     }
-    else if (r != Passed) {
-      TEST_FOR_EXCEPTION(true,StatusTestError,
+    else {
+      TEST_FOR_EXCEPTION(r != Passed,StatusTestError,
                          "Anasazi::StatusTestCombo::evalAND(): child test gave invalid return");
     }
   }
@@ -330,8 +330,8 @@ TestStatus StatusTestCombo<ScalarType,MV,OP>::evalSEQAND( Eigensolver<ScalarType
       state_ = Failed;
       break;
     }
-    else if (r != Passed) {
-      TEST_FOR_EXCEPTION(true,StatusTestError,
+    else {
+      TEST_FOR_EXCEPTION(r != Passed,StatusTestError,
                          "Anasazi::StatusTestCombo::evalAND(): child test gave invalid return");
     }
   }

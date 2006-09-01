@@ -46,11 +46,11 @@
     
     Anasazi::StatusTestMaxIters will test true when an eigensolver has reached some number 
     of iterations. Specifically, 
-    <div>
-                     { Passed,   if solver->getNumIters() >= maxIter
+    <pre>
+                     { Passed,  if solver->getNumIters() >= maxIter
     status(solver) = {
                      { Failed,  if solver->getNumIters()  < maxIter
-    </div>
+    </pre>
     where maxIter is the parameter given to the status tester.
     
     This status test also supports negation, so that it negates the need for a 
@@ -65,7 +65,7 @@ template <class ScalarType, class MV, class OP>
 class StatusTestMaxIters : public StatusTest<ScalarType,MV,OP> {
 
  public:
-   //! @name Constructors/destructors
+  //! @name Constructors/destructors
   //@{ 
 
   //! Constructor
@@ -102,7 +102,7 @@ class StatusTestMaxIters : public StatusTest<ScalarType,MV,OP> {
   //@{ 
 
   /*! \brief Set the maximum number of iterations.
-   *  This also resets the test status to ::Undefined.
+   *  \note This also resets the test status to ::Undefined.
    */
   void setMaxIters(int maxIters) {
     state_ = Undefined;
@@ -111,6 +111,19 @@ class StatusTestMaxIters : public StatusTest<ScalarType,MV,OP> {
 
   //! \brief Get the maximum number of iterations.
   int getMaxIters() {return maxIters_;}
+
+  /*! \brief Set the negation policy for the status test.
+   *  \note This also reset the test status to ::Undefined.
+   */
+  void setNegate(bool negate) {
+    state_ = Undefined;
+    negate_ = negate;
+  }
+
+  //! \brief Get the negation policy for the status test.
+  bool getNegate() const {
+    return negate_;
+  }
 
   //@}
 

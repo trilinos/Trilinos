@@ -35,7 +35,7 @@ all-local:
 
 DISABLED = ARPACKExamples 
 
-SUBDIRS = ModalSolverUtils LOBPCG MVOPTester OrthoManager scripts BlockDavidson BlockKrylovSchur 
+SUBDIRS = ModalSolverUtils LOBPCG MVOPTester OrthoManager scripts BlockDavidson BlockKrylovSchur StatusTest SortManager
 
 EXTRA_DIST = definition
  

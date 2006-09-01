@@ -1,4 +1,3 @@
-
 // @HEADER
 // ***********************************************************************
 //
@@ -34,22 +33,20 @@
     \brief Pure virtual base class which describes the basic interface to the iterative eigensolver.
 */
 
+#include "AnasaziConfigDefs.hpp"
+#include "AnasaziTypes.hpp"
+
+#include "AnasaziEigensolverDecl.hpp"
+#include "AnasaziStatusTestDecl.hpp"
+
 #include "AnasaziEigenproblem.hpp"
 #include "AnasaziSortManager.hpp"
 #include "AnasaziOutputManager.hpp"
 #include "AnasaziOrthoManager.hpp"
-#include "AnasaziStatusTest.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_Array.hpp"
 
-/*! \class Anasazi::Eigensolver
-  \brief The Anasazi::Eigensolver is a templated virtual base class that defines the
-   basic interface that any eigensolver will support.
-
-   This interface is mainly concerned with providing a set of eigensolver status method that
-   can be requested from any eigensolver by an Anasazi::StatusTest object.
-*/
 
 namespace Anasazi {
 

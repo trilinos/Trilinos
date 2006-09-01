@@ -170,6 +170,7 @@ AC_CHECK_HEADERS([cassert assert.h], [break],)
 AC_CHECK_HEADERS([cmath math.h], [break],)
 AC_CHECK_HEADERS([iomanip iomanip.h], [break],)
 AC_CHECK_HEADERS([iostream iostream.h], [break],)
+AC_CHECK_HEADERS([iterator iterator.h], [break],)
 AC_CHECK_HEADERS([string string.h], [break],)
 AC_CHECK_HEADERS([vector vector.h], [break],)
 AC_CHECK_HEADERS([complex complex.h], [break],)
@@ -194,6 +195,10 @@ fi
 
 if test "X$ac_cv_header_string" != "Xyes" && test "X$ac_cv_header_string_h" != "Xyes"; then
   AC_MSG_ERROR([[Cannot find string or string.h.  Anasazi requires at least one or the other.]])
+fi
+
+if test "X$ac_cv_header_iterator" != "Xyes" && test "X$ac_cv_header_iterator_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find iterator or iterator.h.  Anasazi requires at least one or the other.]])
 fi
 
 if test "X$ac_cv_header_vector" != "Xyes" && test "X$ac_cv_header_vector_h" != "Xyes"; then
@@ -456,6 +461,8 @@ AC_CONFIG_FILES([
 		test/MVOPTester/Makefile
 		test/LOBPCG/Makefile
 		test/OrthoManager/Makefile
+		test/StatusTest/Makefile
+		test/SortManager/Makefile
 		test/scripts/Makefile
 		test/scripts/daily/Makefile
 		test/scripts/daily/serial/Makefile

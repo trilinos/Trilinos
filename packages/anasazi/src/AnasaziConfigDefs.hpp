@@ -123,6 +123,12 @@
 #include <iostream.h>
 #endif
 
+#ifdef HAVE_ITERATOR
+#include <iterator>
+#else
+#include <iterator.h>
+#endif
+
 #if HAVE_STDEXCEPT
 #include <stdexcept>
 #elif HAVE_STDEXCEPT_H
@@ -143,6 +149,7 @@ using namespace std;
 
 #else /*HAVE_CONFIG_H is not defined*/
 
+#include <iterator>
 #include <iostream>
 #include <string>
 

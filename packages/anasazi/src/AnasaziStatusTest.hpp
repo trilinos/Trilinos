@@ -1,4 +1,3 @@
-
 // @HEADER
 // ***********************************************************************
 //
@@ -39,19 +38,9 @@
 
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziTypes.hpp"
-#include "AnasaziEigensolver.hpp"
 
-
-
-
-  /*! 
-    \class Anasazi::StatusTest
-    \brief A pure virtual class for defining the status tests for the Anasazi iterative solvers
-    
-    Anasazi::StatusTest is an interface that can be implemented to create convergence tests for
-    all Anasazi solvers.  Almost any kind of test can be expressed using this mechanism, 
-    including composite tests (see Anasazi::StatusTestCombo). 
-  */
+#include "AnasaziStatusTestDecl.hpp"
+#include "AnasaziEigensolverDecl.hpp"
 
 namespace Anasazi {
 
@@ -64,6 +53,7 @@ namespace Anasazi {
   {public: StatusTestError(const std::string& what_arg) : AnasaziError(what_arg) {}};
 
   //@}
+
 
 template <class ScalarType, class MV, class OP>
 class StatusTest {

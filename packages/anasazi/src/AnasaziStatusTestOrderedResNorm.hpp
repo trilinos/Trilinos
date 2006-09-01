@@ -112,6 +112,55 @@ class StatusTestOrderedResNorm : public StatusTest<ScalarType,MV,OP> {
   TestStatus getStatus() const { return state_; }
   //@}
 
+  //! @name Accessor methods
+  //@{ 
+
+  /*! \brief Set tolerance.
+   *  This also resets the test status to ::Undefined.
+   */
+  void setTolerance(MagnitudeType tol) {
+    state_ = Undefined;
+    tol_ = tol;
+  }
+
+  //! Get tolerance.
+  MagnitudeType getTolerance() {return tol_;}
+
+  /*! \brief Set the residual norm to be used by the status test.
+   *
+   *  This also resets the test status to ::Undefined.
+   */
+  void setWhichNorm(ResType whichNorm) {
+    state_ = Undefined;
+    whichNorm_ = whichNorm;
+  }
+
+  //! Return the residual norm used by the status test.
+  ResType getWhichNorm() {return whichNorm_;}
+
+  /*! \brief Instruct test to scale norms by eigenvalue estimates (relative scale).
+   *  This also resets the test status to ::Undefined.
+   */
+  void setScale(bool relscale) {
+    state_ = Undefined;
+    scaled_ = relscale;
+  }
+
+  //! Returns true if the test scales the norms by the eigenvalue estimates (relative scale).
+  bool getScale() {return scaled_;}
+
+  //! Get the indices for the vectors that passed the test.
+  std::vector<int> whichVecs() {
+    return ind_;
+  }
+
+  //! Get the number of vectors that passed the test.
+  int howMany() {
+    return ind_.size();
+  }
+
+  //@}
+
   //! @name Reset methods
   //@{ 
   //! Informs the status test that it should reset its internal configuration to the uninitialized state.
@@ -152,56 +201,6 @@ class StatusTestOrderedResNorm : public StatusTest<ScalarType,MV,OP> {
     rvals_ = rvals;
     ivals_ = ivals;
     state_ = Undefined;
-  }
-
-  //@}
-
-  //! @name Accessor methods
-  //@{ 
-
-  /*! \brief Set tolerance.
-   *  This also resets the test status to ::Undefined.
-   */
-  void setTolerance(MagnitudeType tol) {
-    TEST_FOR_EXCEPTION(tol <= MT::zero(), StatusTestError, "StatusTestOrderedResNorm: test tolerance must be strictly positive.");
-    state_ = Undefined;
-    tol_ = tol;
-  }
-
-  //! Get tolerance.
-  MagnitudeType getTolerance() {return tol_;}
-
-  /*! \brief Set the residual norm to be used by the status test.
-   *
-   *  This also resets the test status to ::Undefined.
-   */
-  void setWhichNorm(ResType whichNorm) {
-    state_ = Undefined;
-    whichNorm_ = whichNorm;
-  }
-
-  //! Return the residual norm used by the status test.
-  ResType getWhichNorm() {return whichNorm_;}
-
-  /*! \brief Instruct test to scale norms by eigenvalue estimates (relative scale).
-   *  This also resets the test status to ::Undefined.
-   */
-  void setScale(bool relscale) {
-    state_ = Undefined;
-    scaled_ = relscale;
-  }
-
-  //! Returns true if the test scales the norms by the eigenvalue estimates (relative scale).
-  bool getScale() {return scaled_;}
-
-  //! Get the indices for the vectors that passed the test.
-  std::vector<int> whichVecs() {
-    return ind_;
-  }
-
-  //! Get the number of vectors that passed the test.
-  int howMany() {
-    return ind_.size();
   }
 
   //@}

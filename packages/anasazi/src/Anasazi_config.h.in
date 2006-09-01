@@ -110,6 +110,12 @@
 /* Define to 1 if you have the <iostream.h> header file. */
 #undef HAVE_IOSTREAM_H
 
+/* Define to 1 if you have the <iterator> header file. */
+#undef HAVE_ITERATOR
+
+/* Define to 1 if you have the <iterator.h> header file. */
+#undef HAVE_ITERATOR_H
+
 /* Define if you have LAPACK library. */
 #undef HAVE_LAPACK
 

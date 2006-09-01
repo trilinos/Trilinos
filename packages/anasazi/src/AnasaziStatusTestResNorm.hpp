@@ -102,30 +102,6 @@ class StatusTestResNorm : public StatusTest<ScalarType,MV,OP> {
   TestStatus getStatus() const { return state_; }
   //@}
 
-  //! @name Reset methods
-  //@{ 
-  //! Informs the status test that it should reset its internal configuration to the uninitialized state.
-  /*! This is necessary for the case when the status test is being reused by another solver or for another
-    eigenvalue problem. The status test may have information that pertains to a particular problem or solver 
-    state. The internal information will be reset back to the uninitialized state. The user specified information 
-    that the convergence test uses will remain.
-  */
-  void reset() { 
-    state_ = Undefined;
-  }
-
-  //! Clears the results of the last status test.
-  /*! This should be distinguished from the reset() method, as it only clears the cached result from the last 
-   * status test, so that a call to getStatus() will return ::Undefined. This is necessary for the SEQOR and SEQAND
-   * tests in the StatusTestCombo class, which may short circuit and not evaluate all of the StatusTests contained
-   * in them.
-  */
-  void clearStatus() {
-    state_ = Undefined;
-  }
-
-  //@}
-
   //! @name Accessor methods
   //@{ 
 
@@ -187,6 +163,30 @@ class StatusTestResNorm : public StatusTest<ScalarType,MV,OP> {
   //! Get the number of vectors that passed the test.
   int howMany() {
     return ind_.size();
+  }
+
+  //@}
+
+  //! @name Reset methods
+  //@{ 
+  //! Informs the status test that it should reset its internal configuration to the uninitialized state.
+  /*! This is necessary for the case when the status test is being reused by another solver or for another
+    eigenvalue problem. The status test may have information that pertains to a particular problem or solver 
+    state. The internal information will be reset back to the uninitialized state. The user specified information 
+    that the convergence test uses will remain.
+  */
+  void reset() { 
+    state_ = Undefined;
+  }
+
+  //! Clears the results of the last status test.
+  /*! This should be distinguished from the reset() method, as it only clears the cached result from the last 
+   * status test, so that a call to getStatus() will return ::Undefined. This is necessary for the SEQOR and SEQAND
+   * tests in the StatusTestCombo class, which may short circuit and not evaluate all of the StatusTests contained
+   * in them.
+  */
+  void clearStatus() {
+    state_ = Undefined;
   }
 
   //@}
