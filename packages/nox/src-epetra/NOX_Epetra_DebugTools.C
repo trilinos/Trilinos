@@ -155,35 +155,20 @@ NOX::Epetra::DebugTools::compute_matrix_using_operator( const Epetra_Operator * 
 #ifdef HAVE_NOX_EPETRAEXT
 //----------------------------------------------------------------------------
 
-Teuchos::RefCountPtr<Epetra_Vector>
-NOX::Epetra::DebugTools::readVector( std::string baseName, const Epetra_Comm & comm )
+int
+NOX::Epetra::DebugTools::readVector( std::string baseName, const Epetra_Comm & comm, Epetra_Vector*& vec )
 {
-    Epetra_Map    * tempMap;
-    Epetra_Vector * tempVec;
+    int ierr = 0;
+    Epetra_Map    * tempMap = NULL;
 
     std::string mapFilename = baseName + "_map";
-    EpetraExt::MatrixMarketFileToMap( mapFilename.c_str(), comm, tempMap );
+    ierr = EpetraExt::MatrixMarketFileToMap( mapFilename.c_str(), comm, tempMap );
+    if( ierr != 0 )
+      return ierr;
     std::string vecFilename = baseName + "_vec";
-    EpetraExt::MatrixMarketFileToVector( vecFilename.c_str(), *tempMap, tempVec );
+    ierr = EpetraExt::MatrixMarketFileToVector( vecFilename.c_str(), *tempMap, vec );
 
-    Teuchos::RefCountPtr<Epetra_Vector> inVec = Teuchos::rcp( tempVec );
-
-    return inVec;
-
-  // Create two different views of the same data - needed for various constructors
-//  teuchosParamString = "Initial Guess From File";
-//  if( setupParams && setupParams->isParameter( teuchosParamString) )
-//  {
-//    Epetra_Vector * tempVec;
-//    std::string vecFilename = "";
-//    vecFilename = setupParams->get<std::string>( teuchosParamString );
-//    EpetraExt::MatrixMarketFileToVector( vecFilename.c_str(), snl_epetra_vec->getUnderlyingVector()->Map(), tempVec );
-//    epetra_solnVec = Teuchos::rcp( tempVec );
-//    *epetra_solnVec = *tempVec;
-//    nox_epetra_solnVec = new NOX::Epetra::Vector(*epetra_solnVec, NOX::DeepCopy );
-//    std::cout << "\n\n\tInitial guess read from file \"" << vecFilename << "\", and vector is :"
-//    << std::endl << *epetra_solnVec << std::endl;
-//  }
+    return ierr;
 }
 
 //----------------------------------------------------------------------------

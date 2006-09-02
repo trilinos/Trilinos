@@ -77,7 +77,7 @@ class DebugTools
 
 #ifdef HAVE_NOX_EPETRAEXT
   // I/O methods via EpetraExt 
-  static Teuchos::RefCountPtr<Epetra_Vector> readVector( std::string, const Epetra_Comm &);
+  static int readVector    ( std::string, const Epetra_Comm &, Epetra_Vector*&                    );
   static void writeVector  ( std::string, const Epetra_Vector &    , FORMAT_TYPE outFormat= ASCII, bool writeMap = true );
   static void writeMatrix  ( std::string, const Epetra_RowMatrix & , FORMAT_TYPE outFormat= ASCII );
   static void writeOperator( std::string, const Epetra_Operator &  , FORMAT_TYPE outFormat= ASCII );
