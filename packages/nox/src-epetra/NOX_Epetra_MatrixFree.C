@@ -52,7 +52,7 @@ using namespace NOX;
 using namespace NOX::Epetra;
 
 MatrixFree::MatrixFree(Teuchos::ParameterList& printParams, 
-		       const Teuchos::RefCountPtr<Interface::Required>& i, 
+		       const Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>& i, 
 		       const NOX::Epetra::Vector& x, bool p) :
   label("NOX::Matrix-Free"),
   interface(i),

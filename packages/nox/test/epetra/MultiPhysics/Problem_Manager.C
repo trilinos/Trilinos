@@ -55,6 +55,7 @@
 #include "AztecOO_ConditionNumber.h"
 
 #include "Problem_Manager.H"
+
 #include "GenericEpetraProblem.H"
 #include "Xfer_Operator.H"
 #include "OffBlock_Manager.H"
@@ -1840,6 +1841,22 @@ Problem_Manager::generateGraph()
 
 //-----------------------------------------------------------------------------
 
+string 
+Problem_Manager::createIOname(GenericEpetraProblem & problem, int timeStep)
+{
+
+  int probId = problem.getId();
+
+  char file_name[25];
+  (void) sprintf(file_name, "output.%03d.%03d_%05d", probId, MyPID, timeStep);
+
+  string name(file_name);
+
+  return name;
+}
+
+//-----------------------------------------------------------------------------
+
 void 
 Problem_Manager::outputSolutions(int timeStep)
 {
@@ -1852,19 +1869,24 @@ Problem_Manager::outputSolutions(int timeStep)
   for( ; problemIter != problemLast; problemIter++) 
   {
     GenericEpetraProblem & problem = *(*problemIter).second;
-    int probId = problem.getId();
 
     Epetra_Vector& xMesh = problem.getMesh();
     Epetra_Vector& problemSoln = *problem.getSolution();
-    int numNodes = xMesh.Map().NumMyElements();
 
-    char file_name[25];
+    string fileName = createIOname( problem, timeStep );
+
+#ifdef HAVE_NOX_EPETRAEXT
+    NOX::Epetra::DebugTools::writeVector( fileName, problemSoln, NOX::Epetra::DebugTools::MATRIX_MARKET );
+    fileName += "_mesh";
+    NOX::Epetra::DebugTools::writeVector( fileName, xMesh, NOX::Epetra::DebugTools::MATRIX_MARKET, false );
+#else
+    int numNodes = xMesh.Map().NumMyElements();
     FILE *ifp;
-    (void) sprintf(file_name, "output.%03d.%03d_%05d",probId,MyPID,timeStep);
-    ifp = fopen(file_name, "w");
+    ifp = fopen(fileName.c_str(), "w");
     for (int i = 0; i < numNodes; i++)
       fprintf(ifp, "%d  %E  %E \n", i, xMesh[i], problemSoln[i]);
     fclose(ifp);
+#endif
   }
 
   return;

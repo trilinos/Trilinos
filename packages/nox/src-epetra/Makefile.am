@@ -63,7 +63,8 @@ EPETRA_H = \
         $(srcdir)/NOX_Epetra_FiniteDifference.H \
         $(srcdir)/NOX_Epetra_FiniteDifferenceColoring.H \
 	$(srcdir)/NOX_Epetra_Scaling.H \
-	$(srcdir)/NOX_Epetra_BroydenOperator.H
+	$(srcdir)/NOX_Epetra_BroydenOperator.H \
+	$(srcdir)/NOX_Epetra_DebugTools.H
 
 EPETRA = \
 	$(srcdir)/NOX_Epetra_Vector.C \
@@ -76,7 +77,8 @@ EPETRA = \
         $(srcdir)/NOX_Epetra_FiniteDifference.C \
         $(srcdir)/NOX_Epetra_FiniteDifferenceColoring.C \
 	$(srcdir)/NOX_Epetra_Scaling.C \
-	$(srcdir)/NOX_Epetra_BroydenOperator.C
+	$(srcdir)/NOX_Epetra_BroydenOperator.C \
+	$(srcdir)/NOX_Epetra_DebugTools.C
 
 if BUILD_NOX_EPETRAEXT_SUPPORT
 MODELEVAL = \

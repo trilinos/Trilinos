@@ -92,11 +92,11 @@ public:
   // Get a group given its unique id
   const NOX::Epetra::Group & getSolutionGroup(int id);
 
+  // Get the solution vector from a problem group
+  const Epetra_Vector & getSolutionVec(int id);
+
   // Get an individual residual vector given an integer problem id
   const Epetra_Vector & getResidualVec(int i);
-
-  // Get the solution (Epetra) vector from a problem (Solv_NOX_Epetra)
-  const Epetra_Vector & getSolutionVec(int id);
 
   // Get a group given its unique id
   NOX::Epetra::Group& getGroup(int id);
@@ -213,6 +213,9 @@ public:
 
   // Output summary of copled problems
   void outputStatus( ostream & os );
+
+  // Create a filename for given problem, time-step, etc.
+  string createIOname(GenericEpetraProblem &, int timeStep = 0);
 
   // Solve problems using matrix-free coupling
   void outputSolutions(int timeStep = 0);

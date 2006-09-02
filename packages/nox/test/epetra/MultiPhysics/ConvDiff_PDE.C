@@ -638,6 +638,7 @@ ConvDiff_PDE::computeAnalyticInterfaceTemp(
                           - kappa*(T_right - T_int);
   double dfdT           = 0.0;
 
+  // Simple Newton loop
   while( tol < fabs(residual) )
   {
     ++nIters;

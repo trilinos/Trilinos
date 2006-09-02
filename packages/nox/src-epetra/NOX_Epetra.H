@@ -53,6 +53,7 @@
 #include "NOX_Epetra_FiniteDifference.H"
 #include "NOX_Epetra_FiniteDifferenceColoring.H"
 #include "NOX_Epetra_BroydenOperator.H"
+#include "NOX_Epetra_DebugTools.H"
 
 #ifdef HAVE_NOX_EPETRAEXT
 #include "NOX_Epetra_ModelEvaluatorInterface.H"
