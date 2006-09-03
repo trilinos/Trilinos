@@ -12,7 +12,6 @@ CPPFLAGS=-Wno-long-double \
 --with-gnumake \
 --disable-default-packages \
 --enable-amesos \
---enable-amesos-paraklete \
 --enable-amesos-umfpack \
 --enable-amesos-superlu \
 --enable-amesos-superludist \
