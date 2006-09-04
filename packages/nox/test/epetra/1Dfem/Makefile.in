@@ -46,7 +46,7 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(1Dfem_SOURCES) $(1DfemBelos_SOURCES) $(1DfemMLPreconditioner_SOURCES) $(1DfemScaled_SOURCES) $(1DfemScaledInexactTrustRegion_SOURCES) $(1DfemTransient_SOURCES) $(1DfemWithModelEvaluator_SOURCES)
+SOURCES = $(1Dfem_SOURCES) $(1DfemAztecPrecRebuild_SOURCES) $(1DfemAztecPrecReuse_SOURCES) $(1DfemAztecSolverPrecRebuild_SOURCES) $(1DfemAztecSolverPrecRecompute_SOURCES) $(1DfemAztecSolverPrecReuse_SOURCES) $(1DfemBelos_SOURCES) $(1DfemIfpackRebuild_SOURCES) $(1DfemIfpackRecompute_SOURCES) $(1DfemIfpackReuse_SOURCES) $(1DfemMLPreconditioner_SOURCES) $(1DfemScaled_SOURCES) $(1DfemScaledInexactTrustRegion_SOURCES) $(1DfemTransient_SOURCES) $(1DfemWithModelEvaluator_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -74,6 +74,14 @@ host_triplet = @host@
 @BUILD_EPETRA_TESTS_TRUE@	1DfemScaledInexactTrustRegion$(EXEEXT) \
 @BUILD_EPETRA_TESTS_TRUE@	1DfemTransient$(EXEEXT) \
 @BUILD_EPETRA_TESTS_TRUE@	1DfemMLPreconditioner$(EXEEXT) \
+@BUILD_EPETRA_TESTS_TRUE@	1DfemAztecSolverPrecReuse$(EXEEXT) \
+@BUILD_EPETRA_TESTS_TRUE@	1DfemAztecSolverPrecRebuild$(EXEEXT) \
+@BUILD_EPETRA_TESTS_TRUE@	1DfemAztecSolverPrecRecompute$(EXEEXT) \
+@BUILD_EPETRA_TESTS_TRUE@	1DfemAztecPrecRebuild$(EXEEXT) \
+@BUILD_EPETRA_TESTS_TRUE@	1DfemAztecPrecReuse$(EXEEXT) \
+@BUILD_EPETRA_TESTS_TRUE@	1DfemIfpackReuse$(EXEEXT) \
+@BUILD_EPETRA_TESTS_TRUE@	1DfemIfpackRecompute$(EXEEXT) \
+@BUILD_EPETRA_TESTS_TRUE@	1DfemIfpackRebuild$(EXEEXT) \
 @BUILD_EPETRA_TESTS_TRUE@	$(am__EXEEXT_1) $(am__EXEEXT_2)
 subdir = test/epetra/1Dfem
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
@@ -116,8 +124,35 @@ am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
 @USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
 @USING_GNUMAKE_TRUE@	$(NOX_TEST_LIBS))
+am_1DfemAztecPrecRebuild_OBJECTS = 1DfemInterface.$(OBJEXT) \
+	1DfemAztecPrecRebuild.$(OBJEXT)
+1DfemAztecPrecRebuild_OBJECTS = $(am_1DfemAztecPrecRebuild_OBJECTS)
+am_1DfemAztecPrecReuse_OBJECTS = 1DfemInterface.$(OBJEXT) \
+	1DfemAztecPrecReuse.$(OBJEXT)
+1DfemAztecPrecReuse_OBJECTS = $(am_1DfemAztecPrecReuse_OBJECTS)
+am_1DfemAztecSolverPrecRebuild_OBJECTS = 1DfemInterface.$(OBJEXT) \
+	1DfemAztecSolverPrecRebuild.$(OBJEXT)
+1DfemAztecSolverPrecRebuild_OBJECTS =  \
+	$(am_1DfemAztecSolverPrecRebuild_OBJECTS)
+am_1DfemAztecSolverPrecRecompute_OBJECTS = 1DfemInterface.$(OBJEXT) \
+	1DfemAztecSolverPrecRecompute.$(OBJEXT)
+1DfemAztecSolverPrecRecompute_OBJECTS =  \
+	$(am_1DfemAztecSolverPrecRecompute_OBJECTS)
+am_1DfemAztecSolverPrecReuse_OBJECTS = 1DfemInterface.$(OBJEXT) \
+	1DfemAztecSolverPrecReuse.$(OBJEXT)
+1DfemAztecSolverPrecReuse_OBJECTS =  \
+	$(am_1DfemAztecSolverPrecReuse_OBJECTS)
 am_1DfemBelos_OBJECTS = 1DfemInterface.$(OBJEXT) 1DfemBelos.$(OBJEXT)
 1DfemBelos_OBJECTS = $(am_1DfemBelos_OBJECTS)
+am_1DfemIfpackRebuild_OBJECTS = 1DfemInterface.$(OBJEXT) \
+	1DfemIfpackRebuild.$(OBJEXT)
+1DfemIfpackRebuild_OBJECTS = $(am_1DfemIfpackRebuild_OBJECTS)
+am_1DfemIfpackRecompute_OBJECTS = 1DfemInterface.$(OBJEXT) \
+	1DfemIfpackRecompute.$(OBJEXT)
+1DfemIfpackRecompute_OBJECTS = $(am_1DfemIfpackRecompute_OBJECTS)
+am_1DfemIfpackReuse_OBJECTS = 1DfemInterface.$(OBJEXT) \
+	1DfemIfpackReuse.$(OBJEXT)
+1DfemIfpackReuse_OBJECTS = $(am_1DfemIfpackReuse_OBJECTS)
 am_1DfemMLPreconditioner_OBJECTS = 1DfemInterface.$(OBJEXT) \
 	1DfemMLPreconditioner.$(OBJEXT)
 1DfemMLPreconditioner_OBJECTS = $(am_1DfemMLPreconditioner_OBJECTS)
@@ -140,7 +175,16 @@ am_1DfemWithModelEvaluator_OBJECTS = 1DfemPrePostOperator.$(OBJEXT) \
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/1Dfem.Po ./$(DEPDIR)/1DfemBelos.Po \
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/1Dfem.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/1DfemAztecPrecRebuild.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/1DfemAztecPrecReuse.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/1DfemAztecSolverPrecRebuild.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/1DfemAztecSolverPrecRecompute.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/1DfemAztecSolverPrecReuse.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/1DfemBelos.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/1DfemIfpackRebuild.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/1DfemIfpackRecompute.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/1DfemIfpackReuse.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/1DfemInterface.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/1DfemMLPreconditioner.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/1DfemModelEvaluator.Po \
@@ -158,12 +202,24 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(1Dfem_SOURCES) $(1DfemBelos_SOURCES) \
-	$(1DfemMLPreconditioner_SOURCES) $(1DfemScaled_SOURCES) \
+SOURCES = $(1Dfem_SOURCES) $(1DfemAztecPrecRebuild_SOURCES) \
+	$(1DfemAztecPrecReuse_SOURCES) \
+	$(1DfemAztecSolverPrecRebuild_SOURCES) \
+	$(1DfemAztecSolverPrecRecompute_SOURCES) \
+	$(1DfemAztecSolverPrecReuse_SOURCES) $(1DfemBelos_SOURCES) \
+	$(1DfemIfpackRebuild_SOURCES) $(1DfemIfpackRecompute_SOURCES) \
+	$(1DfemIfpackReuse_SOURCES) $(1DfemMLPreconditioner_SOURCES) \
+	$(1DfemScaled_SOURCES) \
 	$(1DfemScaledInexactTrustRegion_SOURCES) \
 	$(1DfemTransient_SOURCES) $(1DfemWithModelEvaluator_SOURCES)
-DIST_SOURCES = $(1Dfem_SOURCES) $(1DfemBelos_SOURCES) \
-	$(1DfemMLPreconditioner_SOURCES) $(1DfemScaled_SOURCES) \
+DIST_SOURCES = $(1Dfem_SOURCES) $(1DfemAztecPrecRebuild_SOURCES) \
+	$(1DfemAztecPrecReuse_SOURCES) \
+	$(1DfemAztecSolverPrecRebuild_SOURCES) \
+	$(1DfemAztecSolverPrecRecompute_SOURCES) \
+	$(1DfemAztecSolverPrecReuse_SOURCES) $(1DfemBelos_SOURCES) \
+	$(1DfemIfpackRebuild_SOURCES) $(1DfemIfpackRecompute_SOURCES) \
+	$(1DfemIfpackReuse_SOURCES) $(1DfemMLPreconditioner_SOURCES) \
+	$(1DfemScaled_SOURCES) \
 	$(1DfemScaledInexactTrustRegion_SOURCES) \
 	$(1DfemTransient_SOURCES) $(1DfemWithModelEvaluator_SOURCES)
 ETAGS = etags
@@ -463,6 +519,86 @@ AM_CPPFLAGS = $(TEST_INCLUDES)
                               $(top_builddir)/src-epetra/libnoxepetra.a
 
 1DfemWithModelEvaluator_LDADD = $(TEST_LIBS)
+1DfemAztecSolverPrecReuse_SOURCES = \
+                         $(srcdir)/1DfemInterface.H \
+                         $(srcdir)/1DfemInterface.C \
+                         $(srcdir)/1DfemAztecSolverPrecReuse.C
+
+1DfemAztecSolverPrecReuse_DEPENDENCIES = \
+                              $(top_builddir)/src/libnox.a \
+                              $(top_builddir)/src-epetra/libnoxepetra.a
+
+1DfemAztecSolverPrecReuse_LDADD = $(TEST_LIBS)
+1DfemAztecSolverPrecRebuild_SOURCES = \
+                         $(srcdir)/1DfemInterface.H \
+                         $(srcdir)/1DfemInterface.C \
+                         $(srcdir)/1DfemAztecSolverPrecRebuild.C
+
+1DfemAztecSolverPrecRebuild_DEPENDENCIES = \
+                              $(top_builddir)/src/libnox.a \
+                              $(top_builddir)/src-epetra/libnoxepetra.a
+
+1DfemAztecSolverPrecRebuild_LDADD = $(TEST_LIBS)
+1DfemAztecSolverPrecRecompute_SOURCES = \
+                         $(srcdir)/1DfemInterface.H \
+                         $(srcdir)/1DfemInterface.C \
+                         $(srcdir)/1DfemAztecSolverPrecRecompute.C
+
+1DfemAztecSolverPrecRecompute_DEPENDENCIES = \
+                              $(top_builddir)/src/libnox.a \
+                              $(top_builddir)/src-epetra/libnoxepetra.a
+
+1DfemAztecSolverPrecRecompute_LDADD = $(TEST_LIBS)
+1DfemAztecPrecRebuild_SOURCES = \
+                         $(srcdir)/1DfemInterface.H \
+                         $(srcdir)/1DfemInterface.C \
+                         $(srcdir)/1DfemAztecPrecRebuild.C
+
+1DfemAztecPrecRebuild_DEPENDENCIES = \
+                              $(top_builddir)/src/libnox.a \
+                              $(top_builddir)/src-epetra/libnoxepetra.a
+
+1DfemAztecPrecRebuild_LDADD = $(TEST_LIBS)
+1DfemAztecPrecReuse_SOURCES = \
+                         $(srcdir)/1DfemInterface.H \
+                         $(srcdir)/1DfemInterface.C \
+                         $(srcdir)/1DfemAztecPrecReuse.C
+
+1DfemAztecPrecReuse_DEPENDENCIES = \
+                              $(top_builddir)/src/libnox.a \
+                              $(top_builddir)/src-epetra/libnoxepetra.a
+
+1DfemAztecPrecReuse_LDADD = $(TEST_LIBS)
+1DfemIfpackReuse_SOURCES = \
+                         $(srcdir)/1DfemInterface.H \
+                         $(srcdir)/1DfemInterface.C \
+                         $(srcdir)/1DfemIfpackReuse.C
+
+1DfemIfpackReuse_DEPENDENCIES = \
+                              $(top_builddir)/src/libnox.a \
+                              $(top_builddir)/src-epetra/libnoxepetra.a
+
+1DfemIfpackReuse_LDADD = $(TEST_LIBS)
+1DfemIfpackRecompute_SOURCES = \
+                         $(srcdir)/1DfemInterface.H \
+                         $(srcdir)/1DfemInterface.C \
+                         $(srcdir)/1DfemIfpackRecompute.C
+
+1DfemIfpackRecompute_DEPENDENCIES = \
+                              $(top_builddir)/src/libnox.a \
+                              $(top_builddir)/src-epetra/libnoxepetra.a
+
+1DfemIfpackRecompute_LDADD = $(TEST_LIBS)
+1DfemIfpackRebuild_SOURCES = \
+                         $(srcdir)/1DfemInterface.H \
+                         $(srcdir)/1DfemInterface.C \
+                         $(srcdir)/1DfemIfpackRebuild.C
+
+1DfemIfpackRebuild_DEPENDENCIES = \
+                              $(top_builddir)/src/libnox.a \
+                              $(top_builddir)/src-epetra/libnoxepetra.a
+
+1DfemIfpackRebuild_LDADD = $(TEST_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -502,9 +638,33 @@ clean-noinstPROGRAMS:
 1Dfem$(EXEEXT): $(1Dfem_OBJECTS) $(1Dfem_DEPENDENCIES) 
 	@rm -f 1Dfem$(EXEEXT)
 	$(CXXLINK) $(1Dfem_LDFLAGS) $(1Dfem_OBJECTS) $(1Dfem_LDADD) $(LIBS)
+1DfemAztecPrecRebuild$(EXEEXT): $(1DfemAztecPrecRebuild_OBJECTS) $(1DfemAztecPrecRebuild_DEPENDENCIES) 
+	@rm -f 1DfemAztecPrecRebuild$(EXEEXT)
+	$(CXXLINK) $(1DfemAztecPrecRebuild_LDFLAGS) $(1DfemAztecPrecRebuild_OBJECTS) $(1DfemAztecPrecRebuild_LDADD) $(LIBS)
+1DfemAztecPrecReuse$(EXEEXT): $(1DfemAztecPrecReuse_OBJECTS) $(1DfemAztecPrecReuse_DEPENDENCIES) 
+	@rm -f 1DfemAztecPrecReuse$(EXEEXT)
+	$(CXXLINK) $(1DfemAztecPrecReuse_LDFLAGS) $(1DfemAztecPrecReuse_OBJECTS) $(1DfemAztecPrecReuse_LDADD) $(LIBS)
+1DfemAztecSolverPrecRebuild$(EXEEXT): $(1DfemAztecSolverPrecRebuild_OBJECTS) $(1DfemAztecSolverPrecRebuild_DEPENDENCIES) 
+	@rm -f 1DfemAztecSolverPrecRebuild$(EXEEXT)
+	$(CXXLINK) $(1DfemAztecSolverPrecRebuild_LDFLAGS) $(1DfemAztecSolverPrecRebuild_OBJECTS) $(1DfemAztecSolverPrecRebuild_LDADD) $(LIBS)
+1DfemAztecSolverPrecRecompute$(EXEEXT): $(1DfemAztecSolverPrecRecompute_OBJECTS) $(1DfemAztecSolverPrecRecompute_DEPENDENCIES) 
+	@rm -f 1DfemAztecSolverPrecRecompute$(EXEEXT)
+	$(CXXLINK) $(1DfemAztecSolverPrecRecompute_LDFLAGS) $(1DfemAztecSolverPrecRecompute_OBJECTS) $(1DfemAztecSolverPrecRecompute_LDADD) $(LIBS)
+1DfemAztecSolverPrecReuse$(EXEEXT): $(1DfemAztecSolverPrecReuse_OBJECTS) $(1DfemAztecSolverPrecReuse_DEPENDENCIES) 
+	@rm -f 1DfemAztecSolverPrecReuse$(EXEEXT)
+	$(CXXLINK) $(1DfemAztecSolverPrecReuse_LDFLAGS) $(1DfemAztecSolverPrecReuse_OBJECTS) $(1DfemAztecSolverPrecReuse_LDADD) $(LIBS)
 1DfemBelos$(EXEEXT): $(1DfemBelos_OBJECTS) $(1DfemBelos_DEPENDENCIES) 
 	@rm -f 1DfemBelos$(EXEEXT)
 	$(CXXLINK) $(1DfemBelos_LDFLAGS) $(1DfemBelos_OBJECTS) $(1DfemBelos_LDADD) $(LIBS)
+1DfemIfpackRebuild$(EXEEXT): $(1DfemIfpackRebuild_OBJECTS) $(1DfemIfpackRebuild_DEPENDENCIES) 
+	@rm -f 1DfemIfpackRebuild$(EXEEXT)
+	$(CXXLINK) $(1DfemIfpackRebuild_LDFLAGS) $(1DfemIfpackRebuild_OBJECTS) $(1DfemIfpackRebuild_LDADD) $(LIBS)
+1DfemIfpackRecompute$(EXEEXT): $(1DfemIfpackRecompute_OBJECTS) $(1DfemIfpackRecompute_DEPENDENCIES) 
+	@rm -f 1DfemIfpackRecompute$(EXEEXT)
+	$(CXXLINK) $(1DfemIfpackRecompute_LDFLAGS) $(1DfemIfpackRecompute_OBJECTS) $(1DfemIfpackRecompute_LDADD) $(LIBS)
+1DfemIfpackReuse$(EXEEXT): $(1DfemIfpackReuse_OBJECTS) $(1DfemIfpackReuse_DEPENDENCIES) 
+	@rm -f 1DfemIfpackReuse$(EXEEXT)
+	$(CXXLINK) $(1DfemIfpackReuse_LDFLAGS) $(1DfemIfpackReuse_OBJECTS) $(1DfemIfpackReuse_LDADD) $(LIBS)
 1DfemMLPreconditioner$(EXEEXT): $(1DfemMLPreconditioner_OBJECTS) $(1DfemMLPreconditioner_DEPENDENCIES) 
 	@rm -f 1DfemMLPreconditioner$(EXEEXT)
 	$(CXXLINK) $(1DfemMLPreconditioner_LDFLAGS) $(1DfemMLPreconditioner_OBJECTS) $(1DfemMLPreconditioner_LDADD) $(LIBS)
@@ -528,7 +688,15 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/1Dfem.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/1DfemAztecPrecRebuild.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/1DfemAztecPrecReuse.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/1DfemAztecSolverPrecRebuild.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/1DfemAztecSolverPrecRecompute.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/1DfemAztecSolverPrecReuse.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/1DfemBelos.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/1DfemIfpackRebuild.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/1DfemIfpackRecompute.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/1DfemIfpackReuse.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/1DfemInterface.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/1DfemMLPreconditioner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/1DfemModelEvaluator.Po@am__quote@
@@ -602,6 +770,86 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o 1Dfem.obj `if test -f '$(srcdir)/1Dfem.C'; then $(CYGPATH_W) '$(srcdir)/1Dfem.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/1Dfem.C'; fi`
 
+1DfemAztecPrecRebuild.o: $(srcdir)/1DfemAztecPrecRebuild.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT 1DfemAztecPrecRebuild.o -MD -MP -MF "$(DEPDIR)/1DfemAztecPrecRebuild.Tpo" -c -o 1DfemAztecPrecRebuild.o `test -f '$(srcdir)/1DfemAztecPrecRebuild.C' || echo '$(srcdir)/'`$(srcdir)/1DfemAztecPrecRebuild.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/1DfemAztecPrecRebuild.Tpo" "$(DEPDIR)/1DfemAztecPrecRebuild.Po"; else rm -f "$(DEPDIR)/1DfemAztecPrecRebuild.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/1DfemAztecPrecRebuild.C' object='1DfemAztecPrecRebuild.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/1DfemAztecPrecRebuild.Po' tmpdepfile='$(DEPDIR)/1DfemAztecPrecRebuild.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o 1DfemAztecPrecRebuild.o `test -f '$(srcdir)/1DfemAztecPrecRebuild.C' || echo '$(srcdir)/'`$(srcdir)/1DfemAztecPrecRebuild.C
+
+1DfemAztecPrecRebuild.obj: $(srcdir)/1DfemAztecPrecRebuild.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT 1DfemAztecPrecRebuild.obj -MD -MP -MF "$(DEPDIR)/1DfemAztecPrecRebuild.Tpo" -c -o 1DfemAztecPrecRebuild.obj `if test -f '$(srcdir)/1DfemAztecPrecRebuild.C'; then $(CYGPATH_W) '$(srcdir)/1DfemAztecPrecRebuild.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/1DfemAztecPrecRebuild.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/1DfemAztecPrecRebuild.Tpo" "$(DEPDIR)/1DfemAztecPrecRebuild.Po"; else rm -f "$(DEPDIR)/1DfemAztecPrecRebuild.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/1DfemAztecPrecRebuild.C' object='1DfemAztecPrecRebuild.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/1DfemAztecPrecRebuild.Po' tmpdepfile='$(DEPDIR)/1DfemAztecPrecRebuild.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o 1DfemAztecPrecRebuild.obj `if test -f '$(srcdir)/1DfemAztecPrecRebuild.C'; then $(CYGPATH_W) '$(srcdir)/1DfemAztecPrecRebuild.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/1DfemAztecPrecRebuild.C'; fi`
+
+1DfemAztecPrecReuse.o: $(srcdir)/1DfemAztecPrecReuse.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT 1DfemAztecPrecReuse.o -MD -MP -MF "$(DEPDIR)/1DfemAztecPrecReuse.Tpo" -c -o 1DfemAztecPrecReuse.o `test -f '$(srcdir)/1DfemAztecPrecReuse.C' || echo '$(srcdir)/'`$(srcdir)/1DfemAztecPrecReuse.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/1DfemAztecPrecReuse.Tpo" "$(DEPDIR)/1DfemAztecPrecReuse.Po"; else rm -f "$(DEPDIR)/1DfemAztecPrecReuse.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/1DfemAztecPrecReuse.C' object='1DfemAztecPrecReuse.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/1DfemAztecPrecReuse.Po' tmpdepfile='$(DEPDIR)/1DfemAztecPrecReuse.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o 1DfemAztecPrecReuse.o `test -f '$(srcdir)/1DfemAztecPrecReuse.C' || echo '$(srcdir)/'`$(srcdir)/1DfemAztecPrecReuse.C
+
+1DfemAztecPrecReuse.obj: $(srcdir)/1DfemAztecPrecReuse.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT 1DfemAztecPrecReuse.obj -MD -MP -MF "$(DEPDIR)/1DfemAztecPrecReuse.Tpo" -c -o 1DfemAztecPrecReuse.obj `if test -f '$(srcdir)/1DfemAztecPrecReuse.C'; then $(CYGPATH_W) '$(srcdir)/1DfemAztecPrecReuse.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/1DfemAztecPrecReuse.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/1DfemAztecPrecReuse.Tpo" "$(DEPDIR)/1DfemAztecPrecReuse.Po"; else rm -f "$(DEPDIR)/1DfemAztecPrecReuse.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/1DfemAztecPrecReuse.C' object='1DfemAztecPrecReuse.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/1DfemAztecPrecReuse.Po' tmpdepfile='$(DEPDIR)/1DfemAztecPrecReuse.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o 1DfemAztecPrecReuse.obj `if test -f '$(srcdir)/1DfemAztecPrecReuse.C'; then $(CYGPATH_W) '$(srcdir)/1DfemAztecPrecReuse.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/1DfemAztecPrecReuse.C'; fi`
+
+1DfemAztecSolverPrecRebuild.o: $(srcdir)/1DfemAztecSolverPrecRebuild.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT 1DfemAztecSolverPrecRebuild.o -MD -MP -MF "$(DEPDIR)/1DfemAztecSolverPrecRebuild.Tpo" -c -o 1DfemAztecSolverPrecRebuild.o `test -f '$(srcdir)/1DfemAztecSolverPrecRebuild.C' || echo '$(srcdir)/'`$(srcdir)/1DfemAztecSolverPrecRebuild.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/1DfemAztecSolverPrecRebuild.Tpo" "$(DEPDIR)/1DfemAztecSolverPrecRebuild.Po"; else rm -f "$(DEPDIR)/1DfemAztecSolverPrecRebuild.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/1DfemAztecSolverPrecRebuild.C' object='1DfemAztecSolverPrecRebuild.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/1DfemAztecSolverPrecRebuild.Po' tmpdepfile='$(DEPDIR)/1DfemAztecSolverPrecRebuild.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o 1DfemAztecSolverPrecRebuild.o `test -f '$(srcdir)/1DfemAztecSolverPrecRebuild.C' || echo '$(srcdir)/'`$(srcdir)/1DfemAztecSolverPrecRebuild.C
+
+1DfemAztecSolverPrecRebuild.obj: $(srcdir)/1DfemAztecSolverPrecRebuild.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT 1DfemAztecSolverPrecRebuild.obj -MD -MP -MF "$(DEPDIR)/1DfemAztecSolverPrecRebuild.Tpo" -c -o 1DfemAztecSolverPrecRebuild.obj `if test -f '$(srcdir)/1DfemAztecSolverPrecRebuild.C'; then $(CYGPATH_W) '$(srcdir)/1DfemAztecSolverPrecRebuild.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/1DfemAztecSolverPrecRebuild.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/1DfemAztecSolverPrecRebuild.Tpo" "$(DEPDIR)/1DfemAztecSolverPrecRebuild.Po"; else rm -f "$(DEPDIR)/1DfemAztecSolverPrecRebuild.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/1DfemAztecSolverPrecRebuild.C' object='1DfemAztecSolverPrecRebuild.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/1DfemAztecSolverPrecRebuild.Po' tmpdepfile='$(DEPDIR)/1DfemAztecSolverPrecRebuild.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o 1DfemAztecSolverPrecRebuild.obj `if test -f '$(srcdir)/1DfemAztecSolverPrecRebuild.C'; then $(CYGPATH_W) '$(srcdir)/1DfemAztecSolverPrecRebuild.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/1DfemAztecSolverPrecRebuild.C'; fi`
+
+1DfemAztecSolverPrecRecompute.o: $(srcdir)/1DfemAztecSolverPrecRecompute.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT 1DfemAztecSolverPrecRecompute.o -MD -MP -MF "$(DEPDIR)/1DfemAztecSolverPrecRecompute.Tpo" -c -o 1DfemAztecSolverPrecRecompute.o `test -f '$(srcdir)/1DfemAztecSolverPrecRecompute.C' || echo '$(srcdir)/'`$(srcdir)/1DfemAztecSolverPrecRecompute.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/1DfemAztecSolverPrecRecompute.Tpo" "$(DEPDIR)/1DfemAztecSolverPrecRecompute.Po"; else rm -f "$(DEPDIR)/1DfemAztecSolverPrecRecompute.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/1DfemAztecSolverPrecRecompute.C' object='1DfemAztecSolverPrecRecompute.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/1DfemAztecSolverPrecRecompute.Po' tmpdepfile='$(DEPDIR)/1DfemAztecSolverPrecRecompute.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o 1DfemAztecSolverPrecRecompute.o `test -f '$(srcdir)/1DfemAztecSolverPrecRecompute.C' || echo '$(srcdir)/'`$(srcdir)/1DfemAztecSolverPrecRecompute.C
+
+1DfemAztecSolverPrecRecompute.obj: $(srcdir)/1DfemAztecSolverPrecRecompute.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT 1DfemAztecSolverPrecRecompute.obj -MD -MP -MF "$(DEPDIR)/1DfemAztecSolverPrecRecompute.Tpo" -c -o 1DfemAztecSolverPrecRecompute.obj `if test -f '$(srcdir)/1DfemAztecSolverPrecRecompute.C'; then $(CYGPATH_W) '$(srcdir)/1DfemAztecSolverPrecRecompute.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/1DfemAztecSolverPrecRecompute.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/1DfemAztecSolverPrecRecompute.Tpo" "$(DEPDIR)/1DfemAztecSolverPrecRecompute.Po"; else rm -f "$(DEPDIR)/1DfemAztecSolverPrecRecompute.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/1DfemAztecSolverPrecRecompute.C' object='1DfemAztecSolverPrecRecompute.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/1DfemAztecSolverPrecRecompute.Po' tmpdepfile='$(DEPDIR)/1DfemAztecSolverPrecRecompute.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o 1DfemAztecSolverPrecRecompute.obj `if test -f '$(srcdir)/1DfemAztecSolverPrecRecompute.C'; then $(CYGPATH_W) '$(srcdir)/1DfemAztecSolverPrecRecompute.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/1DfemAztecSolverPrecRecompute.C'; fi`
+
+1DfemAztecSolverPrecReuse.o: $(srcdir)/1DfemAztecSolverPrecReuse.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT 1DfemAztecSolverPrecReuse.o -MD -MP -MF "$(DEPDIR)/1DfemAztecSolverPrecReuse.Tpo" -c -o 1DfemAztecSolverPrecReuse.o `test -f '$(srcdir)/1DfemAztecSolverPrecReuse.C' || echo '$(srcdir)/'`$(srcdir)/1DfemAztecSolverPrecReuse.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/1DfemAztecSolverPrecReuse.Tpo" "$(DEPDIR)/1DfemAztecSolverPrecReuse.Po"; else rm -f "$(DEPDIR)/1DfemAztecSolverPrecReuse.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/1DfemAztecSolverPrecReuse.C' object='1DfemAztecSolverPrecReuse.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/1DfemAztecSolverPrecReuse.Po' tmpdepfile='$(DEPDIR)/1DfemAztecSolverPrecReuse.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o 1DfemAztecSolverPrecReuse.o `test -f '$(srcdir)/1DfemAztecSolverPrecReuse.C' || echo '$(srcdir)/'`$(srcdir)/1DfemAztecSolverPrecReuse.C
+
+1DfemAztecSolverPrecReuse.obj: $(srcdir)/1DfemAztecSolverPrecReuse.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT 1DfemAztecSolverPrecReuse.obj -MD -MP -MF "$(DEPDIR)/1DfemAztecSolverPrecReuse.Tpo" -c -o 1DfemAztecSolverPrecReuse.obj `if test -f '$(srcdir)/1DfemAztecSolverPrecReuse.C'; then $(CYGPATH_W) '$(srcdir)/1DfemAztecSolverPrecReuse.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/1DfemAztecSolverPrecReuse.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/1DfemAztecSolverPrecReuse.Tpo" "$(DEPDIR)/1DfemAztecSolverPrecReuse.Po"; else rm -f "$(DEPDIR)/1DfemAztecSolverPrecReuse.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/1DfemAztecSolverPrecReuse.C' object='1DfemAztecSolverPrecReuse.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/1DfemAztecSolverPrecReuse.Po' tmpdepfile='$(DEPDIR)/1DfemAztecSolverPrecReuse.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o 1DfemAztecSolverPrecReuse.obj `if test -f '$(srcdir)/1DfemAztecSolverPrecReuse.C'; then $(CYGPATH_W) '$(srcdir)/1DfemAztecSolverPrecReuse.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/1DfemAztecSolverPrecReuse.C'; fi`
+
 1DfemBelos.o: $(srcdir)/1DfemBelos.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT 1DfemBelos.o -MD -MP -MF "$(DEPDIR)/1DfemBelos.Tpo" -c -o 1DfemBelos.o `test -f '$(srcdir)/1DfemBelos.C' || echo '$(srcdir)/'`$(srcdir)/1DfemBelos.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/1DfemBelos.Tpo" "$(DEPDIR)/1DfemBelos.Po"; else rm -f "$(DEPDIR)/1DfemBelos.Tpo"; exit 1; fi
@@ -617,6 +865,54 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/1DfemBelos.Po' tmpdepfile='$(DEPDIR)/1DfemBelos.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o 1DfemBelos.obj `if test -f '$(srcdir)/1DfemBelos.C'; then $(CYGPATH_W) '$(srcdir)/1DfemBelos.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/1DfemBelos.C'; fi`
+
+1DfemIfpackRebuild.o: $(srcdir)/1DfemIfpackRebuild.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT 1DfemIfpackRebuild.o -MD -MP -MF "$(DEPDIR)/1DfemIfpackRebuild.Tpo" -c -o 1DfemIfpackRebuild.o `test -f '$(srcdir)/1DfemIfpackRebuild.C' || echo '$(srcdir)/'`$(srcdir)/1DfemIfpackRebuild.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/1DfemIfpackRebuild.Tpo" "$(DEPDIR)/1DfemIfpackRebuild.Po"; else rm -f "$(DEPDIR)/1DfemIfpackRebuild.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/1DfemIfpackRebuild.C' object='1DfemIfpackRebuild.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/1DfemIfpackRebuild.Po' tmpdepfile='$(DEPDIR)/1DfemIfpackRebuild.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o 1DfemIfpackRebuild.o `test -f '$(srcdir)/1DfemIfpackRebuild.C' || echo '$(srcdir)/'`$(srcdir)/1DfemIfpackRebuild.C
+
+1DfemIfpackRebuild.obj: $(srcdir)/1DfemIfpackRebuild.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT 1DfemIfpackRebuild.obj -MD -MP -MF "$(DEPDIR)/1DfemIfpackRebuild.Tpo" -c -o 1DfemIfpackRebuild.obj `if test -f '$(srcdir)/1DfemIfpackRebuild.C'; then $(CYGPATH_W) '$(srcdir)/1DfemIfpackRebuild.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/1DfemIfpackRebuild.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/1DfemIfpackRebuild.Tpo" "$(DEPDIR)/1DfemIfpackRebuild.Po"; else rm -f "$(DEPDIR)/1DfemIfpackRebuild.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/1DfemIfpackRebuild.C' object='1DfemIfpackRebuild.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/1DfemIfpackRebuild.Po' tmpdepfile='$(DEPDIR)/1DfemIfpackRebuild.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o 1DfemIfpackRebuild.obj `if test -f '$(srcdir)/1DfemIfpackRebuild.C'; then $(CYGPATH_W) '$(srcdir)/1DfemIfpackRebuild.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/1DfemIfpackRebuild.C'; fi`
+
+1DfemIfpackRecompute.o: $(srcdir)/1DfemIfpackRecompute.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT 1DfemIfpackRecompute.o -MD -MP -MF "$(DEPDIR)/1DfemIfpackRecompute.Tpo" -c -o 1DfemIfpackRecompute.o `test -f '$(srcdir)/1DfemIfpackRecompute.C' || echo '$(srcdir)/'`$(srcdir)/1DfemIfpackRecompute.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/1DfemIfpackRecompute.Tpo" "$(DEPDIR)/1DfemIfpackRecompute.Po"; else rm -f "$(DEPDIR)/1DfemIfpackRecompute.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/1DfemIfpackRecompute.C' object='1DfemIfpackRecompute.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/1DfemIfpackRecompute.Po' tmpdepfile='$(DEPDIR)/1DfemIfpackRecompute.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o 1DfemIfpackRecompute.o `test -f '$(srcdir)/1DfemIfpackRecompute.C' || echo '$(srcdir)/'`$(srcdir)/1DfemIfpackRecompute.C
+
+1DfemIfpackRecompute.obj: $(srcdir)/1DfemIfpackRecompute.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT 1DfemIfpackRecompute.obj -MD -MP -MF "$(DEPDIR)/1DfemIfpackRecompute.Tpo" -c -o 1DfemIfpackRecompute.obj `if test -f '$(srcdir)/1DfemIfpackRecompute.C'; then $(CYGPATH_W) '$(srcdir)/1DfemIfpackRecompute.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/1DfemIfpackRecompute.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/1DfemIfpackRecompute.Tpo" "$(DEPDIR)/1DfemIfpackRecompute.Po"; else rm -f "$(DEPDIR)/1DfemIfpackRecompute.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/1DfemIfpackRecompute.C' object='1DfemIfpackRecompute.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/1DfemIfpackRecompute.Po' tmpdepfile='$(DEPDIR)/1DfemIfpackRecompute.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o 1DfemIfpackRecompute.obj `if test -f '$(srcdir)/1DfemIfpackRecompute.C'; then $(CYGPATH_W) '$(srcdir)/1DfemIfpackRecompute.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/1DfemIfpackRecompute.C'; fi`
+
+1DfemIfpackReuse.o: $(srcdir)/1DfemIfpackReuse.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT 1DfemIfpackReuse.o -MD -MP -MF "$(DEPDIR)/1DfemIfpackReuse.Tpo" -c -o 1DfemIfpackReuse.o `test -f '$(srcdir)/1DfemIfpackReuse.C' || echo '$(srcdir)/'`$(srcdir)/1DfemIfpackReuse.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/1DfemIfpackReuse.Tpo" "$(DEPDIR)/1DfemIfpackReuse.Po"; else rm -f "$(DEPDIR)/1DfemIfpackReuse.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/1DfemIfpackReuse.C' object='1DfemIfpackReuse.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/1DfemIfpackReuse.Po' tmpdepfile='$(DEPDIR)/1DfemIfpackReuse.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o 1DfemIfpackReuse.o `test -f '$(srcdir)/1DfemIfpackReuse.C' || echo '$(srcdir)/'`$(srcdir)/1DfemIfpackReuse.C
+
+1DfemIfpackReuse.obj: $(srcdir)/1DfemIfpackReuse.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT 1DfemIfpackReuse.obj -MD -MP -MF "$(DEPDIR)/1DfemIfpackReuse.Tpo" -c -o 1DfemIfpackReuse.obj `if test -f '$(srcdir)/1DfemIfpackReuse.C'; then $(CYGPATH_W) '$(srcdir)/1DfemIfpackReuse.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/1DfemIfpackReuse.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/1DfemIfpackReuse.Tpo" "$(DEPDIR)/1DfemIfpackReuse.Po"; else rm -f "$(DEPDIR)/1DfemIfpackReuse.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/1DfemIfpackReuse.C' object='1DfemIfpackReuse.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/1DfemIfpackReuse.Po' tmpdepfile='$(DEPDIR)/1DfemIfpackReuse.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o 1DfemIfpackReuse.obj `if test -f '$(srcdir)/1DfemIfpackReuse.C'; then $(CYGPATH_W) '$(srcdir)/1DfemIfpackReuse.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/1DfemIfpackReuse.C'; fi`
 
 1DfemMLPreconditioner.o: $(srcdir)/1DfemMLPreconditioner.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT 1DfemMLPreconditioner.o -MD -MP -MF "$(DEPDIR)/1DfemMLPreconditioner.Tpo" -c -o 1DfemMLPreconditioner.o `test -f '$(srcdir)/1DfemMLPreconditioner.C' || echo '$(srcdir)/'`$(srcdir)/1DfemMLPreconditioner.C; \

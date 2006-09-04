@@ -405,14 +405,24 @@ Abstract::Group::ReturnType Group::applyJacobianInverse (Teuchos::ParameterList 
     isValidSolverJacOp = true;
   }
   
-  bool reusePrec = 
-    sharedLinearSystem.getObject(this)->checkPreconditionerReuse();
+  // Compute the preconditioner
+  NOX::Epetra::LinearSystem::PreconditionerReusePolicyType precPolicy = 
+    sharedLinearSystem.getObject(this)->getPreconditionerPolicy();
 
-  if (!isPreconditioner()  && !reusePrec ) {
-    sharedLinearSystem.getObject(this)->destroyPreconditioner();
-    sharedLinearSystem.getObject(this)->
-      createPreconditioner(xVector, p, false);
-    isValidPreconditioner = true;
+  if (!isPreconditioner()) {
+    if (precPolicy == NOX::Epetra::LinearSystem::PRPT_REBUILD) {
+      sharedLinearSystem.getObject(this)->destroyPreconditioner();
+      sharedLinearSystem.getObject(this)->
+	createPreconditioner(xVector, p, false);
+      isValidPreconditioner = true;
+    }
+    else if (precPolicy == NOX::Epetra::LinearSystem::PRPT_RECOMPUTE) {
+      sharedLinearSystem.getObject(this)->recomputePreconditioner(xVector, p);
+      isValidPreconditioner = true;
+    }
+    else if (precPolicy == NOX::Epetra::LinearSystem::PRPT_REUSE) {
+      // Do Nothing!!!
+    }
   }
 
   bool status = sharedLinearSystem.getObject(this)->applyJacobianInverse(p, input, result);
@@ -461,7 +471,8 @@ Abstract::Group::ReturnType Group::applyRightPreconditioning(
   
   if (!isPreconditioner()) {
     sharedLinearSystem.getObject(this)->destroyPreconditioner();
-    sharedLinearSystem.getObject(this)->createPreconditioner(xVector, linearSolverParams, false);
+    sharedLinearSystem.getObject(this)->
+      createPreconditioner(xVector, linearSolverParams, false);
     isValidPreconditioner = true;
   }
 

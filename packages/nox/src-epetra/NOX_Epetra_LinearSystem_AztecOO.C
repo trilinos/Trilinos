@@ -262,7 +262,7 @@ reset(Teuchos::ParameterList& linearSolverParams)
     precAlgorithm = None_;
   else {
     string errorMessage = "Option for \"Preconditioner\" is invalid!";
-    throwError("LinearSystemAztecOO(J)", errorMessage);
+    throwError("reset()", errorMessage);
   }
     
   // Make sure the correct objects were supplied for the requested
@@ -296,15 +296,28 @@ reset(Teuchos::ParameterList& linearSolverParams)
 //   if ((jacType == EpetraRowMatrix) ||
 //       (jacType == EpetraVbrMatrix) ||
 //       (jacType == EpetraCrsMatrix)) {
-//     aztecSolverPtr->SetUserMatrix(dynamic_cast<Epetra_RowMatrix*>(jacPtr));
+//     aztecSolverPtr->SetUserMatrix(dynamic_cast<Epetra_RowMatrix*>(jacPtr.get()));
 //   }
 //   else
-//     aztecSolverPtr->SetUserOperator(jacPtr);
-
+//     aztecSolverPtr->SetUserOperator(jacPtr.get());
+  
   // Set the major aztec options.  Must be called after the first 
   // SetProblem() call.
   setAztecOptions(linearSolverParams, *aztecSolverPtr);
 
+  // Setup the preconditioner reuse policy
+  std::string preReusePolicyName = 
+    linearSolverParams.get("Preconditioner Reuse Policy", "Rebuild");
+  if (preReusePolicyName == "Rebuild")
+    precReusePolicy = PRPT_REBUILD;
+  else if (preReusePolicyName == "Recompute")
+    precReusePolicy = PRPT_RECOMPUTE;
+  else if (preReusePolicyName == "Reuse")
+    precReusePolicy = PRPT_REUSE;
+  else {
+    string errorMessage = "Option for \"Preconditioner Reuse Policy\" is invalid! \nPossible options are \"Reuse\", \"Rebuild\", and \"Recompute\".";
+    throwError("reset()", errorMessage);
+  }
   maxAgeOfPrec = linearSolverParams.get("Max Age Of Prec", 1);
   precQueryCounter = 0;
 
@@ -451,17 +464,15 @@ setAztecOptions(Teuchos::ParameterList& p, AztecOO& aztec) const
   }
 
   // Some Debugging utilities 
-  if (utils.isPrintType(Utils::Debug)) {
-    //utils.out() << "NOX::Epetra::LinearSystemAztecOO Operator Information" << endl;
-    //utils.out() << "jacType = " << jacType << endl;
-    //utils.out() << "jacPtr = " << jacPtr << endl;
-    //utils.out() << "jacInterfacePtr = " << jacInterfacePtr << endl;
-    //utils.out() << "ownsJacOperator = " << ownsJacOperator << endl;
-    //utils.out() << "precType = " << precType << endl;
-    //utils.out() << "precPtr = " << precPtr << endl;
-    //utils.out() << "precInterfacePtr = " << precInterfacePtr << endl;
-    //utils.out() << "ownsPrecOperator = " << ownsPrecOperator << endl;
-  }
+//   if (utils.isPrintType(Utils::Debug)) {
+//     utils.out() << "NOX::Epetra::LinearSystemAztecOO Operator Information" << endl;
+//     utils.out() << "jacType = " << jacType << endl;
+//     utils.out() << "jacPtr = " << jacPtr << endl;
+//     utils.out() << "jacInterfacePtr = " << jacInterfacePtr << endl;
+//     utils.out() << "precType = " << precType << endl;
+//     utils.out() << "precPtr = " << precPtr << endl;
+//     utils.out() << "precInterfacePtr = " << precInterfacePtr << endl;
+//   }
     
   return;
 }
@@ -573,14 +584,16 @@ applyJacobianInverse(Teuchos::ParameterList &p,
     result.init(0.0);
 
   // Create Epetra linear problem object for the linear solve
-  Epetra_LinearProblem Problem(solveJacOpPtr.get(), 
+  Epetra_LinearProblem Problem(jacPtr.get(), 
   			       &(result.getEpetraVector()), 
 			       &(nonConstInput.getEpetraVector()));
 
-  // RPP: Don't use the SetProblem - it breaks things if you redo the prec
-  // Jacobian operator is set in the constructor
-  //aztecSolverPtr->SetProblem(Problem);
-  
+  // Set objects in aztec solver.
+  // RPP: Don't use "aztecSolverPtr->SetProblem(Problem);", it breaks
+  // things if you rebuild the prec.  Also, you MUST set Jac operator
+  // before Prec Operator in AztecOO object.
+  this->setAztecOOJacobian();
+  this->setAztecOOPreconditioner();
   aztecSolverPtr->SetLHS(&(result.getEpetraVector()));
   aztecSolverPtr->SetRHS(&(nonConstInput.getEpetraVector()));
 
@@ -643,7 +656,7 @@ applyJacobianInverse(Teuchos::ParameterList &p,
 #endif
 #endif
 
-  // Compute and set the Preconditioner in AztecOO if needed
+  // Make sure preconditioner was constructed if requested
   if (!isPrecConstructed && (precAlgorithm != None_)) {
     throwError("applyJacobianInverse", 
        "Preconditioner is not constructed!  Call createPreconditioner() first.");
@@ -653,17 +666,23 @@ applyJacobianInverse(Teuchos::ParameterList &p,
   int maxit = p.get("Max Iterations", 400);
   double tol = p.get("Tolerance", 1.0e-6);
   
-  if ( precAlgorithm == AztecOO_ ) {
-    if ( checkPreconditionerReuse() )
-      aztecSolverPtr->SetAztecOption(AZ_pre_calc, AZ_reuse);
-    else
-      aztecSolverPtr->SetAztecOption(AZ_pre_calc, AZ_calc);
-  }
-
   int aztecStatus = -1;
 
+  // RPP: This is a hack to get aztec to reuse the preconditioner.
+  // There is a bug in AztecOO in how it stores old
+  // preconditioners. The storage bin is based on the aztec options
+  // list.  When we call ConstructPreconditioner, the option for
+  // az_pre_calc is set to AZ_calc, so the preconditioner is stored
+  // with that option.  But then the routine toggles the AZ_pre_calc
+  // flag to AZ_reuse.  When we call iterate, the first solve works,
+  // but subsequent solves fail to find the preconditioner.
+  // Will try get Alan to fix for release 7.0.
+  if (precAlgorithm == AztecOO_ && 
+      precReusePolicy == PRPT_REUSE) 
+    aztecSolverPtr->SetAztecOption(AZ_pre_calc, AZ_calc);
+
   aztecStatus = aztecSolverPtr->Iterate(maxit, tol);
-  
+
   // Unscale the linear system
   if ( !Teuchos::is_null(scaling) )
     scaling->unscaleLinearSystem(Problem);
@@ -821,11 +840,14 @@ createPreconditioner(const NOX::Epetra::Vector& x, Teuchos::ParameterList& p,
 {
   double startTime = timer.WallTime();  
 
+  if (utils.isPrintType(Utils::LinearSolverDetails))
+    utils.out() << "\n       Creating a new preconditioner" << endl;;
+
   if (precAlgorithm == None_) {
     return true;
   }
 
-  // Apply Scaling
+  // If Scaling exists, scale the preconditioner
   Epetra_LinearProblem Problem(jacPtr.get(), 
 			       &(tmpVectorPtr->getEpetraVector()), 
 			       &(tmpVectorPtr->getEpetraVector()));
@@ -837,21 +859,24 @@ createPreconditioner(const NOX::Epetra::Vector& x, Teuchos::ParameterList& p,
   }
 
 
-  if (utils.isPrintType(Utils::LinearSolverDetails))
-    utils.out() << "\n       Computing a new precondtioner" << endl;;
-
   if (precAlgorithm == AztecOO_) {
     
+    // RPP: Aztec internal preconditioners can't be created until a
+    // call to SetUserMatrix or SetUserOperator is made.  So we set
+    // the operator here even though it is reset later.
+
     if (precMatrixSource == UseJacobian) {
       // The Jacobian has already been evaluated at the current solution.
-      // Just set and enforce explicit constuction
+      // Just set and enforce explicit constuction.
+      this->setAztecOOJacobian();
       aztecSolverPtr->SetPrecMatrix(dynamic_cast<Epetra_RowMatrix*>(jacPtr.get()));
       aztecSolverPtr->ConstructPreconditioner(conditionNumberEstimate);
     }
     else if (precMatrixSource == SeparateMatrix) {
       Epetra_RowMatrix& precMatrix = dynamic_cast<Epetra_RowMatrix&>(*precPtr);
       precInterfacePtr->computePreconditioner(x.getEpetraVector(), 
-					      *precPtr, &p);    
+					      *precPtr, &p);
+      this->setAztecOOJacobian();
       aztecSolverPtr->SetPrecMatrix(&precMatrix);
       aztecSolverPtr->ConstructPreconditioner(conditionNumberEstimate);
     }
@@ -861,14 +886,15 @@ createPreconditioner(const NOX::Epetra::Vector& x, Teuchos::ParameterList& p,
     
     if (precMatrixSource == UseJacobian) {
       createIfpackPreconditioner(p);
-      aztecSolverPtr->SetPrecOperator(ifpackPreconditionerPtr.get());
+      solvePrecOpPtr = ifpackPreconditionerPtr;
+      
     }
     else if (precMatrixSource == SeparateMatrix) {
       
       precInterfacePtr->computePreconditioner(x.getEpetraVector(),
 					      *precPtr, &p);
       createIfpackPreconditioner(p);
-      aztecSolverPtr->SetPrecOperator(ifpackPreconditionerPtr.get());
+      solvePrecOpPtr = ifpackPreconditionerPtr;
     }
 
   }
@@ -876,14 +902,14 @@ createPreconditioner(const NOX::Epetra::Vector& x, Teuchos::ParameterList& p,
     
     if (precMatrixSource == UseJacobian) {
       createNewIfpackPreconditioner(p);
-      aztecSolverPtr->SetPrecOperator(newIfpackPreconditionerPtr.get());
+      solvePrecOpPtr = newIfpackPreconditionerPtr;
     }
     else if (precMatrixSource == SeparateMatrix) {
       
       precInterfacePtr->computePreconditioner(x.getEpetraVector(),
 					      *precPtr, &p);
       createNewIfpackPreconditioner(p);
-      aztecSolverPtr->SetPrecOperator(newIfpackPreconditionerPtr.get());
+      solvePrecOpPtr = newIfpackPreconditionerPtr;
     }
 
   }
@@ -892,14 +918,14 @@ createPreconditioner(const NOX::Epetra::Vector& x, Teuchos::ParameterList& p,
     
     if (precMatrixSource == UseJacobian) {
       createMLPreconditioner(p);
-      aztecSolverPtr->SetPrecOperator(MLPreconditionerPtr.get());
+      solvePrecOpPtr = MLPreconditionerPtr;
     }
     else if (precMatrixSource == SeparateMatrix) {
       
       precInterfacePtr->computePreconditioner(x.getEpetraVector(),
 					      *precPtr, &p);
       createMLPreconditioner(p);
-      aztecSolverPtr->SetPrecOperator(MLPreconditionerPtr.get());
+      solvePrecOpPtr = MLPreconditionerPtr;
     }
 
   }
@@ -908,7 +934,7 @@ createPreconditioner(const NOX::Epetra::Vector& x, Teuchos::ParameterList& p,
 
     precInterfacePtr->computePreconditioner(x.getEpetraVector(),
 					    *precPtr, &p);
-    aztecSolverPtr->SetPrecOperator(precPtr.get());
+    solvePrecOpPtr = precPtr;
 
   }
 
@@ -1092,84 +1118,6 @@ createNewIfpackPreconditioner(Teuchos::ParameterList& p) const
     newIfpackPreconditionerPtr->Compute();
     return true;
   }
-
-//   //check to see if it is a VBR matrix
-//   if (precType == EpetraVbrMatrix) {
-
-//     Epetra_VbrMatrix* vbr = 0;
-
-//     if (precMatrixSource == UseJacobian)
-//       vbr = dynamic_cast<Epetra_VbrMatrix*>(jacPtr.get());
-//     else if (precMatrixSource == SeparateMatrix)
-//       vbr = dynamic_cast<Epetra_VbrMatrix*>(precPtr.get());
-
-//     if (vbr == 0)
-//       throwError("createIfpackPreconditioner", 
-// 		 "Dynamic cast to VBR Matrix failed!");
-
-//     newIfpackPreconditionerPtr = Teuchos::rcp(Factory.Create(
-//       p.get("Ifpack Preconditioner", "ILU"), 
-//       vbr, 
-//       p.get("Overlap", 0) ));
-//     newIfpackPreconditionerPtr->SetParameters(*teuchosParams);
-//     newIfpackPreconditionerPtr->Initialize();
-//     newIfpackPreconditionerPtr->Compute();
-//     return true;
-//   }
-
-//   // check to see if it is a Crs matrix
-//   if (precType == EpetraCrsMatrix) {
-
-//     Epetra_CrsMatrix* crs = 0;
-
-//     if (precMatrixSource == UseJacobian)
-//       crs = dynamic_cast<Epetra_CrsMatrix*>(jacPtr.get());
-//     else if (precMatrixSource == SeparateMatrix)
-//       crs = dynamic_cast<Epetra_CrsMatrix*>(precPtr.get());
-
-//     if (crs == 0)
-//       throwError("createNewIfpackPreconditioner", 
-// 		 "Dynamic cast to CRS Matrix failed!");
-
-//     newIfpackPreconditionerPtr = Teuchos::rcp(Factory.Create(
-//       p.get("Ifpack Preconditioner", "ILU"), 
-//       crs, 
-//       p.get("Overlap", 0) ));
-//     newIfpackPreconditionerPtr->SetParameters(*teuchosParams);
-//     newIfpackPreconditionerPtr->Initialize();
-//     newIfpackPreconditionerPtr->Compute();
-//     return true;
-//   }
-  
-//   // check to see if it is an operator that contains a Crs matrix
-//   if (precType == EpetraRowMatrix) {
-
-//     // The following checks only for FiniteDiffernce based operators and
-//     // further that the underlying matrix is in Crs format......
-//     Epetra_CrsMatrix* crs = 0;
-//     NOX::Epetra::FiniteDifference* FDoperator = 0;
-
-//     if (precMatrixSource == UseJacobian)
-//       FDoperator = dynamic_cast<NOX::Epetra::FiniteDifference*>(jacPtr.get());
-//     else if (precMatrixSource == SeparateMatrix)
-//       FDoperator = dynamic_cast<NOX::Epetra::FiniteDifference*>(precPtr.get());
-
-//     if (FDoperator != 0)
-//       crs = &(FDoperator->getUnderlyingMatrix());
-
-//     if (crs == 0)
-//       throwError("createNewIfpackPreconditioner", 
-// 		 "FiniteDifference: Underlying matrix NOT CRS Matrix!");
-
-//     newIfpackPreconditionerPtr = Teuchos::rcp(Factory.Create(
-//       p.get("Ifpack Preconditioner", "ILU"), 
-//       crs, 
-//       p.get("Overlap", 0) ));
-//     newIfpackPreconditionerPtr->SetParameters(*teuchosParams);
-//     newIfpackPreconditionerPtr->Initialize();
-//     newIfpackPreconditionerPtr->Compute();
-//     return true;
-//   }
   
   // If we made it this far, this routine should not have been called
   // in the first place.  An incorrect prec matrix object was supplied and
@@ -1253,6 +1201,60 @@ createMLPreconditioner(Teuchos::ParameterList& p) const
   return false;
 }
 #endif
+
+//***********************************************************************
+bool NOX::Epetra::LinearSystemAztecOO::
+recomputePreconditioner(const NOX::Epetra::Vector& x, 
+			Teuchos::ParameterList& linearSolverParams) const
+{  
+  if (utils.isPrintType(Utils::LinearSolverDetails)) {
+    utils.out() << "\n       Recomputing preconditioner" << endl;
+  }
+
+  if (precAlgorithm == None_) {
+    return true;
+  }
+  else if (precAlgorithm == AztecOO_) {
+
+    if (precMatrixSource == SeparateMatrix)
+      precInterfacePtr->computePreconditioner(x.getEpetraVector(),
+					      *precPtr, &linearSolverParams);
+
+  }
+  else if (precAlgorithm == Ifpack_) {
+    // Original ifpack objects don't have a recompute option
+    throwError("recomputePreconditioner",
+	       "The preconditioner can only be \"Recomputed\" when using the \"NewIfpack\" or \"ML\" Preconditioner types!");
+  }
+  else if (precAlgorithm == NewIfpack_) {
+
+    if (precMatrixSource == SeparateMatrix)
+      precInterfacePtr->computePreconditioner(x.getEpetraVector(),
+					      *precPtr, &linearSolverParams);
+
+    newIfpackPreconditionerPtr->Compute();
+
+  }
+#ifdef HAVE_NOX_ML_EPETRA
+  else if (precAlgorithm == ML_) {
+
+    if (precMatrixSource == SeparateMatrix)
+      precInterfacePtr->computePreconditioner(x.getEpetraVector(),
+					      *precPtr, &linearSolverParams);
+    
+    MLPreconditionerPtr->ReComputePreconditioner();
+  }
+#endif
+  else if (precAlgorithm == UserDefined_) {
+    
+    if (precMatrixSource == SeparateMatrix)
+      precInterfacePtr->computePreconditioner(x.getEpetraVector(),
+					      *precPtr, &linearSolverParams);
+
+  }
+
+  return true;
+}
 
 //***********************************************************************
 bool NOX::Epetra::LinearSystemAztecOO::destroyPreconditioner() const
@@ -1360,12 +1362,14 @@ NOX::Epetra::LinearSystemAztecOO::getPrecInterface() const
   return precInterfacePtr;
 }
 
+//***********************************************************************
 bool
 NOX::Epetra::LinearSystemAztecOO::hasPreconditioner() const
 {
   return (precAlgorithm != None_);
 }
 
+//***********************************************************************
 bool
 NOX::Epetra::LinearSystemAztecOO::isPreconditionerConstructed() const
 {
@@ -1379,6 +1383,7 @@ NOX::Epetra::LinearSystemAztecOO::getJacobianOperator() const
   return jacPtr;
 }
 
+//***********************************************************************
 Teuchos::RefCountPtr<Epetra_Operator>
 NOX::Epetra::LinearSystemAztecOO::getJacobianOperator()
 {
@@ -1396,52 +1401,81 @@ NOX::Epetra::LinearSystemAztecOO::getPrecOperator() const
 Teuchos::RefCountPtr<const Epetra_Operator> 
 NOX::Epetra::LinearSystemAztecOO::getGeneratedPrecOperator() const
 {
-  return Teuchos::rcp(aztecSolverPtr->GetPrecOperator(), false);
+  return solvePrecOpPtr;
 }
 
 //***********************************************************************
 Teuchos::RefCountPtr<Epetra_Operator>
 NOX::Epetra::LinearSystemAztecOO::getGeneratedPrecOperator()
 {
-  return Teuchos::rcp(aztecSolverPtr->GetPrecOperator(), false);
+  return solvePrecOpPtr;
 }
 
 //***********************************************************************
-bool NOX::Epetra::LinearSystemAztecOO::checkPreconditionerReuse()
+NOX::Epetra::LinearSystem::PreconditionerReusePolicyType 
+NOX::Epetra::LinearSystemAztecOO::
+getPreconditionerPolicy(bool advanceReuseCounter)
 {
-  if (!isPrecConstructed) {
-    precQueryCounter++;
-    return false;
+
+  if (precReusePolicy == PRPT_REBUILD) 
+    return PRPT_REBUILD;
+
+  if (precReusePolicy == PRPT_RECOMPUTE) {
+    if (isPrecConstructed) 
+      return PRPT_RECOMPUTE;
+    else
+      return PRPT_REBUILD;
   }
 
-  if (utils.isPrintType(Utils::Details)) 
-    utils.out() << "\n\tLinearSystemAztecOO: Age of Prec --> " 
-         << precQueryCounter << " / " << maxAgeOfPrec << endl;
+  // Below is for Russell's reuse of preconditioner - this toggles
+  // between rebuild and reuse depending on how many times this
+  // function has been called.
 
-  // This allows reuse for the entire nonlinear solve
-  if( maxAgeOfPrec == -2 ) {
-    precQueryCounter++;
-    return true;
-  }
-  
-  // This allows one recompute of the preconditioner followed by reuse 
-  // for the remainder of the nonlinear solve
-  else if( maxAgeOfPrec == -1 ) {
-    precQueryCounter++;
-    maxAgeOfPrec = -2;
-    return false;
-  }
-  
-  // This is the typical use 
-  else
-    if( precQueryCounter == 0 || precQueryCounter >= maxAgeOfPrec ) {
-      precQueryCounter = 1;
-      return false;
+  if (precReusePolicy == PRPT_REUSE) {
+    
+    // If preconditioner is not built at all, you must build it
+    if (!isPrecConstructed) {
+      if (advanceReuseCounter)
+	precQueryCounter++;
+      return PRPT_REBUILD;
     }
+    
+    if (utils.isPrintType(Utils::Details)) 
+      if (advanceReuseCounter)
+	utils.out() << "\n       Preconditioner Reuse: Age of Prec --> " 
+		    << precQueryCounter << " / " << maxAgeOfPrec << endl;
+    
+    // This allows reuse for the entire nonlinear solve
+    if( maxAgeOfPrec == -2 ) {
+      if (advanceReuseCounter)
+	precQueryCounter++;
+      return PRPT_REUSE;
+    }
+    
+    // This allows one recompute of the preconditioner followed by reuse 
+    // for the remainder of the nonlinear solve
+    else if( maxAgeOfPrec == -1 ) {
+      if (advanceReuseCounter)
+	precQueryCounter++;
+      maxAgeOfPrec = -2;
+      return PRPT_REBUILD;
+    }
+    
+    // This is the typical use 
     else {
-      precQueryCounter++;
-      return true;
+      if( precQueryCounter == 0 || precQueryCounter >= maxAgeOfPrec ) {
+	precQueryCounter = 1;
+	return PRPT_REBUILD;
+      }
+      else {
+	if (advanceReuseCounter)
+	  precQueryCounter++;
+	return PRPT_REUSE;
+      }
     }
+  } // if (precReusePolicy == PRPT_REUSE)
+  
+  return PRPT_REBUILD;
 }
 
 //***********************************************************************
@@ -1463,25 +1497,8 @@ void
 NOX::Epetra::LinearSystemAztecOO::setJacobianOperatorForSolve(
 	       const Teuchos::RefCountPtr<const Epetra_Operator>& solveJacOp)
 {
-  // Store existing aztec preconditioner for possible reuse
-  Epetra_Operator* prevPrecOperator = NULL;
-  if( isPrecConstructed && (precAlgorithm != AztecOO_) ) {
-    prevPrecOperator = aztecSolverPtr->GetPrecOperator();
-  }
-
-  solveJacOpPtr = Teuchos::rcp_const_cast<Epetra_Operator>(solveJacOp);
-  jacPtr = solveJacOpPtr;
-  OperatorType solveOpType = getOperatorType(*solveJacOp);
-  if ((solveOpType == EpetraRowMatrix) ||
-      (solveOpType == EpetraVbrMatrix) ||
-      (solveOpType == EpetraCrsMatrix)) {
-    aztecSolverPtr->SetUserMatrix(dynamic_cast<Epetra_RowMatrix*>(solveJacOpPtr.get()));
-  }
-  else
-    aztecSolverPtr->SetUserOperator(solveJacOpPtr.get());
-
-  if( prevPrecOperator )
-    aztecSolverPtr->SetPrecOperator(prevPrecOperator);
+  jacPtr = Teuchos::rcp_const_cast<Epetra_Operator>(solveJacOp);
+  jacType = getOperatorType(*solveJacOp);
 }
 
 //***********************************************************************
@@ -1490,7 +1507,28 @@ NOX::Epetra::LinearSystemAztecOO::setPrecOperatorForSolve(
 	       const Teuchos::RefCountPtr<const Epetra_Operator>& solvePrecOp)
 {
   solvePrecOpPtr = Teuchos::rcp_const_cast<Epetra_Operator>(solvePrecOp);
-  aztecSolverPtr->SetPrecOperator(solvePrecOpPtr.get());
 }
 
+//***********************************************************************
+void
+NOX::Epetra::LinearSystemAztecOO::setAztecOOJacobian() const
+{
+  if ((jacType == EpetraRowMatrix) ||
+      (jacType == EpetraVbrMatrix) ||
+      (jacType == EpetraCrsMatrix)) {
+    aztecSolverPtr->SetUserMatrix(dynamic_cast<Epetra_RowMatrix*>(jacPtr.get()), false);
+  }
+  else
+    aztecSolverPtr->SetUserOperator(jacPtr.get());
+}
+
+//***********************************************************************
+void
+NOX::Epetra::LinearSystemAztecOO::setAztecOOPreconditioner() const
+{
+  if ( !Teuchos::is_null(solvePrecOpPtr) && precAlgorithm != AztecOO_)
+    aztecSolverPtr->SetPrecOperator(solvePrecOpPtr.get());
+}
+
+//***********************************************************************
 

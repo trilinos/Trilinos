@@ -74,12 +74,15 @@
 
   What's new in release 7.0:
 <ul>
-  <li> NOX is now using reference counted smart pointers (RCPs) for memory management.  The existence of an RCP in a method call implies a persisting relationship.  We are sing the Teuchos::RefCountPtr object for the RCP.
-  <li> The NOX::Parameter::List has been removed.  We are now using the Teuchos::ParameterList object.  This has the sasme functinoality with minor changes to the syntax of method calls.
+  <li> NOX is now using reference counted smart pointers (RCPs) for memory management.  The existence of an RCP in a method call implies a persisting relationship.  We are using the Teuchos::RefCountPtr object for the RCP.
+  <li> The NOX::Parameter::List has been removed.  We are now using the Teuchos::ParameterList object.  This has the same functionality with minor changes to the syntax of method calls.
   <li> NOX now has a non-optional dependency on the Teuchos package (also part of Trilinos).  While it can be built stand-alone, we recomend building NOX as part of Trilinos with the teuchos library enabled to simplify dependencies.
   <li> NOX now generates Makefiles that users can include in their application's makefiles.  This will get all library dependencies correct.
-<li> Multivector support will be not be an option, but will be a permanent part of the library.
-  <li> Build options will change.  please run "configure --help" to see the new options. 
+  <li> Multivector support is no longer a configure option, but is automatically built as part of the library.
+  <li> The epetra interfaces have been changed.  They now take an Epetra_Operator as an argument when evaluating the Jacobian and preconditioner objects.  While this is redundant for our base epetra group since it shares the same operator between groups, this allows users to override the eptra group and use separate operators for each group.
+  <li> There are 2 options for creating an Ifpack preconditioner.  The original way "Ifpack" and the new way "New Ifpack".  The original will be removed in the next release (Trilinos 8.0), therefore we recommend switching to the new preconditionerr interface.
+  <li> In the epetra support, the preconditioner options "New Ifpack" and "ML" allow users to recompute the preconditioner using the same graph so that preconditioner memory is not allocated and destroyed each linear solve. 
+  <li> Build options will change.  please run "configure --help" to see the new options.  
   <li> Many of the internals of %LOCA have been rewritten to more fully support multi-parameter continuation, constraint tracking, higher-order predictors and advanced bifurcation algorithms.  The old framework has been completely removed, and therefore all users must upgrade their interface to the new framework.  For a brief description of the new framework, see the \ref new_loca_framework page.  In addition, some of the parameter list entries that control %LOCA have changed.  See the \ref loca_parameters for a description of the new parameter list structure.
   <li> A minimally augmented turning point formulation has been added to %LOCA.  This method appears to be significantly faster and more robust than the turning point methods based on the Moore-Spence formulation.
   <li> A modified pitchfork bordering method has been added to %LOCA, which is similar to the modified turning point method already available.  This method avoids the singular matrix solves in the original pitchfork bordering method.

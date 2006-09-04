@@ -66,6 +66,17 @@ namespace Epetra {
 class LinearSystem {
 
 public:
+  //! Determines handling of the preconditioner between nonlinear iterations.
+  enum PreconditionerReusePolicyType {
+    //! Destroy and recreate the preconditioner between nonlinear iterations.
+    PRPT_REBUILD,
+    //! Recompute using already allocated structures for preconditioner.
+    PRPT_RECOMPUTE,
+    //! Reuse the preconditioner from previous iteration.
+    PRPT_REUSE
+  };  
+
+public:
   //! Constructor.
   LinearSystem(){};
 
@@ -166,13 +177,23 @@ public:
   */
   virtual bool destroyPreconditioner() const = 0;
 
-  /*!
-    \brief Allows reuse of a preconditioner
-
-    The child object will manage setting of this bool flag.  Default implementation is to return false.
+  /*! \brief Recalculates the preconditioner using an already allocated graph.
+    
+    Use this to compute a new preconditioner while using the same
+    graph for the preconditioner.  This avoids deleting and
+    reallocating the memory required for the preconditioner and
+    results in a big speed-up for large-scale jobs.
   */
-  virtual bool checkPreconditionerReuse()
-    { return false; } 
+  virtual bool recomputePreconditioner(const NOX::Epetra::Vector& x, 
+			Teuchos::ParameterList& linearSolverParams) const = 0;
+
+  /*! \brief  Evaluates the preconditioner policy at the current state.
+
+     NOTE: This can change values between nonlienar iterations.  It is
+     not a static value.
+  */
+  virtual PreconditionerReusePolicyType 
+  getPreconditionerPolicy(bool advanceReuseCounter=true) = 0;
 
   //! Indicates whether a preconditioner has been constructed
   virtual bool isPreconditionerConstructed() const = 0;

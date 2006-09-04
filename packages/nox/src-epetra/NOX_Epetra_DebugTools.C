@@ -41,9 +41,10 @@
 #include "Epetra_MapColoring.h" // Needed for FD coloring
 #include "Epetra_Time.h" // for performance metrics
 #include "Epetra_SerialComm.h" // for performance metrics
+#include "Epetra_Vector.h"
+#include "Epetra_Map.h"
 
 // Headers needed for FD coloring
-#include <vector>
 #include "EpetraExt_MapColoring.h"
 #include "EpetraExt_MapColoringIndex.h"
 #include "EpetraExt_BlockMapIn.h"

@@ -656,15 +656,29 @@ LOCA::Epetra::Group::applyShiftedMatrixInverseMultiVector(
 {
 
   if (shiftedSharedLinearSystem != Teuchos::null) {
-    bool reusePrec = 
-      shiftedSharedLinearSystem->getObject(this)->checkPreconditionerReuse();
 
-    if (!isValidShiftedPrec  && !reusePrec ) {
-      shiftedSharedLinearSystem->getObject(this)->destroyPreconditioner();
-      shiftedSharedLinearSystem->getObject(this)->
-	createPreconditioner(xVector, lsParams, false);
-      isValidShiftedPrec = true;
+    NOX::Epetra::LinearSystem::PreconditionerReusePolicyType precPolicy = 
+      sharedLinearSystem.getObject(this)->getPreconditionerPolicy();
+
+    if (!isValidShiftedPrec) {
+
+      if (precPolicy == NOX::Epetra::LinearSystem::PRPT_REBUILD) {
+	shiftedSharedLinearSystem->getObject(this)->destroyPreconditioner();
+	shiftedSharedLinearSystem->getObject(this)->
+	  createPreconditioner(xVector, lsParams, false);
+	isValidShiftedPrec = true;
+      }
+      else if (precPolicy == NOX::Epetra::LinearSystem::PRPT_RECOMPUTE) {
+	sharedLinearSystem.getObject(this)->recomputePreconditioner(xVector, 
+								    lsParams);
+      }
+      else if (precPolicy == NOX::Epetra::LinearSystem::PRPT_REUSE) {
+	// Do Nothing!!!
+      }
+
     }
+
+    
 
     const NOX::Epetra::Vector* epetra_input;
     NOX::Epetra::Vector* epetra_result; 
@@ -891,15 +905,26 @@ LOCA::Epetra::Group::applyComplexInverseMultiVector(
 		                         LOCA::Epetra::Group>(complexLinSys));
   }
 
-  bool reusePrec = 
-      complexSharedLinearSystem->getObject(this)->checkPreconditionerReuse();
+  // Compute the preconditioner
+  NOX::Epetra::LinearSystem::PreconditionerReusePolicyType precPolicy = 
+    complexSharedLinearSystem->getObject(this)->getPreconditionerPolicy();
 
-  if (!isValidComplexPrec  && !reusePrec ) {
-    complexSharedLinearSystem->getObject(this)->destroyPreconditioner();
-    complexSharedLinearSystem->getObject(this)->createPreconditioner(xVector, 
-								    lsParams, 
-								    false);
-    isValidComplexPrec = true;
+  if (!isValidComplexPrec) {
+    if (precPolicy == NOX::Epetra::LinearSystem::PRPT_REBUILD) {
+      complexSharedLinearSystem->getObject(this)->destroyPreconditioner();
+      complexSharedLinearSystem->getObject(this)->
+	createPreconditioner(xVector, 
+			     lsParams, 
+			     false);
+      isValidComplexPrec = true;
+    }
+    else if (precPolicy == NOX::Epetra::LinearSystem::PRPT_RECOMPUTE) {
+      complexSharedLinearSystem->getObject(this)->
+	recomputePreconditioner(xVector, lsParams);
+    }
+    else if (precPolicy == NOX::Epetra::LinearSystem::PRPT_REUSE) {
+      // Do Nothing!!!
+    }
   }
 
   EpetraExt::BlockVector complex_input(*complexVec);

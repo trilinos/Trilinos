@@ -152,16 +152,12 @@ bool Interface::computeJacobian(const Epetra_Vector& x,
   return evaluate(NOX::Epetra::Interface::Required::Jac, &x, 0, 0);
 }
 
-bool Interface::computePrecMatrix(const Epetra_Vector& x)
-{
-  return evaluate(NOX::Epetra::Interface::Required::Prec, &x, 0, 0);
-}
 bool Interface::computePreconditioner(const Epetra_Vector& x,
 				      Epetra_Operator& Prec,
 				      Teuchos::ParameterList* precParams)
 {
   cout << "ERROR: Interface::preconditionVector() - "
-       << "Use Explicit Jaciban only for this test problem!" << endl;
+       << "Use Explicit Jacobian only for this test problem!" << endl;
   throw "Interface Error";
 }
 

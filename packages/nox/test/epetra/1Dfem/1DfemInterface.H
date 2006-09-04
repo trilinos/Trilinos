@@ -87,7 +87,6 @@ public:
   virtual bool computeF(const Epetra_Vector& x, Epetra_Vector& FVec, 
 		FillType fillType = Residual);
   virtual bool computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac);
-  virtual bool computePrecMatrix(const Epetra_Vector& x);
   virtual bool computePreconditioner(const Epetra_Vector& x,
 				     Epetra_Operator& Prec,
 				     Teuchos::ParameterList* precParams = 0);

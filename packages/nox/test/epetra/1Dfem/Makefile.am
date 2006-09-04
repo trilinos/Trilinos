@@ -54,7 +54,7 @@ if BUILD_NOX_EPETRAEXT_SUPPORT
 1DFEM_WITHMODELEVALUATOR = 1DfemWithModelEvaluator
 endif
 
-noinst_PROGRAMS = 1Dfem 1DfemScaled 1DfemScaledInexactTrustRegion 1DfemTransient 1DfemMLPreconditioner $(1DFEM_BELOS) $(1DFEM_WITHMODELEVALUATOR)
+noinst_PROGRAMS = 1Dfem 1DfemScaled 1DfemScaledInexactTrustRegion 1DfemTransient 1DfemMLPreconditioner 1DfemAztecSolverPrecReuse 1DfemAztecSolverPrecRebuild 1DfemAztecSolverPrecRecompute 1DfemAztecPrecRebuild 1DfemAztecPrecReuse 1DfemIfpackReuse 1DfemIfpackRecompute 1DfemIfpackRebuild $(1DFEM_BELOS) $(1DFEM_WITHMODELEVALUATOR) 
 
 endif
 
@@ -143,3 +143,91 @@ endif
                               $(top_builddir)/src-epetra/libnoxepetra.a
 
 1DfemWithModelEvaluator_LDADD = $(TEST_LIBS)
+
+1DfemAztecSolverPrecReuse_SOURCES = \
+                         $(srcdir)/1DfemInterface.H \
+                         $(srcdir)/1DfemInterface.C \
+                         $(srcdir)/1DfemAztecSolverPrecReuse.C
+
+1DfemAztecSolverPrecReuse_DEPENDENCIES = \
+                              $(top_builddir)/src/libnox.a \
+                              $(top_builddir)/src-epetra/libnoxepetra.a
+
+1DfemAztecSolverPrecReuse_LDADD = $(TEST_LIBS)
+
+1DfemAztecSolverPrecRebuild_SOURCES = \
+                         $(srcdir)/1DfemInterface.H \
+                         $(srcdir)/1DfemInterface.C \
+                         $(srcdir)/1DfemAztecSolverPrecRebuild.C
+
+1DfemAztecSolverPrecRebuild_DEPENDENCIES = \
+                              $(top_builddir)/src/libnox.a \
+                              $(top_builddir)/src-epetra/libnoxepetra.a
+
+1DfemAztecSolverPrecRebuild_LDADD = $(TEST_LIBS)
+
+1DfemAztecSolverPrecRecompute_SOURCES = \
+                         $(srcdir)/1DfemInterface.H \
+                         $(srcdir)/1DfemInterface.C \
+                         $(srcdir)/1DfemAztecSolverPrecRecompute.C
+
+1DfemAztecSolverPrecRecompute_DEPENDENCIES = \
+                              $(top_builddir)/src/libnox.a \
+                              $(top_builddir)/src-epetra/libnoxepetra.a
+
+1DfemAztecSolverPrecRecompute_LDADD = $(TEST_LIBS)
+
+1DfemAztecPrecRebuild_SOURCES = \
+                         $(srcdir)/1DfemInterface.H \
+                         $(srcdir)/1DfemInterface.C \
+                         $(srcdir)/1DfemAztecPrecRebuild.C
+
+1DfemAztecPrecRebuild_DEPENDENCIES = \
+                              $(top_builddir)/src/libnox.a \
+                              $(top_builddir)/src-epetra/libnoxepetra.a
+
+1DfemAztecPrecRebuild_LDADD = $(TEST_LIBS)
+
+1DfemAztecPrecReuse_SOURCES = \
+                         $(srcdir)/1DfemInterface.H \
+                         $(srcdir)/1DfemInterface.C \
+                         $(srcdir)/1DfemAztecPrecReuse.C
+
+1DfemAztecPrecReuse_DEPENDENCIES = \
+                              $(top_builddir)/src/libnox.a \
+                              $(top_builddir)/src-epetra/libnoxepetra.a
+
+1DfemAztecPrecReuse_LDADD = $(TEST_LIBS)
+
+1DfemIfpackReuse_SOURCES = \
+                         $(srcdir)/1DfemInterface.H \
+                         $(srcdir)/1DfemInterface.C \
+                         $(srcdir)/1DfemIfpackReuse.C
+
+1DfemIfpackReuse_DEPENDENCIES = \
+                              $(top_builddir)/src/libnox.a \
+                              $(top_builddir)/src-epetra/libnoxepetra.a
+
+1DfemIfpackReuse_LDADD = $(TEST_LIBS)
+
+1DfemIfpackRecompute_SOURCES = \
+                         $(srcdir)/1DfemInterface.H \
+                         $(srcdir)/1DfemInterface.C \
+                         $(srcdir)/1DfemIfpackRecompute.C
+
+1DfemIfpackRecompute_DEPENDENCIES = \
+                              $(top_builddir)/src/libnox.a \
+                              $(top_builddir)/src-epetra/libnoxepetra.a
+
+1DfemIfpackRecompute_LDADD = $(TEST_LIBS)
+
+1DfemIfpackRebuild_SOURCES = \
+                         $(srcdir)/1DfemInterface.H \
+                         $(srcdir)/1DfemInterface.C \
+                         $(srcdir)/1DfemIfpackRebuild.C
+
+1DfemIfpackRebuild_DEPENDENCIES = \
+                              $(top_builddir)/src/libnox.a \
+                              $(top_builddir)/src-epetra/libnoxepetra.a
+
+1DfemIfpackRebuild_LDADD = $(TEST_LIBS)

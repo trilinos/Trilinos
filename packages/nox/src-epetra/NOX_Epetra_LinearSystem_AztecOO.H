@@ -246,9 +246,9 @@ below (See the Aztec 2.1 manual for more information):
 
   </ul>
 
-<li> "New Ifpack Preconditioner" - If the "Preconditioner" flag is set to "New Ifpack" then any of the options supported by the Ifpack Create factory can be specified using a Teuchos::ParameterList containing the Ifpack options and then setting this as a parameter named "IfPack Teuchos Parameter List" in the "Linear Solver" sublist. Note that this requires %NOX to be built with Teuchos::Any support enabled.
+<li> "New Ifpack Preconditioner" - If the "Preconditioner" flag is set to "New Ifpack" then any of the options supported by the Ifpack Create factory can be specified using a Teuchos::ParameterList containing the Ifpack options and then setting this as a parameter named "IfPack Teuchos Parameter List" in the "Linear Solver" sublist.
 
-<li> "Reuse Preconditioner" - (boolean) If set to true, the group/linear solver will not refactor the preconditioner even if the group's solution vector changes.  This flag tells the group an dlinear system to turn off control of preconditioner recalculation.  This is a dangerous condition but can really speed up the computations if the user knows what they are doing.  Toggling this flag is left to the user (ideally it should be done through a status test).  Defaults to false.
+<li> "Reuse Preconditioner" - (boolean) If set to true, the group/linear solver will not refactor the preconditioner even if the group's solution vector changes.  This flag tells the group and linear system to turn off control of preconditioner recalculation.  This is a dangerous condition but can really speed up the computations if the user knows what they are doing.  Toggling this flag is left to the user (ideally it should be done through a status test).  Defaults to false.
 
 <li> "RCM Reordering" - Enables RCM reordering in conjunction with
 domain decomp incomplete factorization preconditioning.  The following
@@ -400,10 +400,23 @@ public:
   */
   virtual bool destroyPreconditioner() const;
 
-  //! Reset the linear solver parameters
+  /*! \brief Recalculates the preconditioner using an already allocated graph.
+    
+    Use this to compute a new preconditioner while using the same
+    graph for the preconditioner.  This avoids deleting and
+    reallocating the memory required for the preconditioner and
+    results in a big speed-up for large-scale jobs.
+  */
+  virtual bool recomputePreconditioner(const NOX::Epetra::Vector& x, 
+			     Teuchos::ParameterList& linearSolverParams) const;
+  // Derived class
+  virtual PreconditionerReusePolicyType 
+  getPreconditionerPolicy(bool advanceReuseCounter=true);
+
+  //! Reset the linear solver parameters.
   virtual void reset(Teuchos::ParameterList& linearSolverParams);
 
-  //! Get the scaling object
+  //! Get the scaling object.
   virtual Teuchos::RefCountPtr<NOX::Epetra::Scaling> getScaling();
 
   //! Sets the diagonal scaling vector(s) used in scaling the linear system.  See NOX::Epetra::Scaling for details on how to specify scaling of the linear system.  
@@ -523,11 +536,22 @@ protected:
   /*! Uses dynamic casting to identify the underlying object type. */
   virtual OperatorType getOperatorType(const Epetra_Operator& o);
 
+  /*! \brief Sets the epetra Jacobian operator in the AztecOO object.
+
+      Makes a call to SetUserMatrix or SetUserOperator to set the Jacobian.
+  */
+  virtual void setAztecOOJacobian() const;
+
+  /*! \brief Sets the epetra Preconditioner operator in the AztecOO object.
+
+      Makes a call to SetUserOperator.  This must be done AFTER the
+      Jacobian matrix/operators is set by setAztecOOJacobian(),
+      otherwise the aztec object may ignore this operation.
+  */
+  virtual void setAztecOOPreconditioner() const;
+
   virtual void throwError(const string& functionName, 
 			  const string& errorMsg) const;
-
-  // Allow reuse of Preconditioner
-  virtual bool checkPreconditionerReuse();
 
 protected:
 
@@ -609,6 +633,9 @@ protected:
   //! Stores the parameter "Compute Scaling Manually".
   bool manualScaling;
 
+  //! Policy for how to handle the preconditioner between nonlineaer iterations.
+  PreconditionerReusePolicyType precReusePolicy;
+
   //! Counter for number of times called since reset or construction
   int precQueryCounter;
   
@@ -624,11 +651,8 @@ protected:
   //! Total time spent in applyJacobianInverse (sec.).
   mutable double timeApplyJacbianInverse;
 
-  //! Override the Jacobian operator that will be used in solves.
-  Teuchos::RefCountPtr<Epetra_Operator> solveJacOpPtr;
-
-  //! Override the Preconditioner operator that will be used in solves.
-  Teuchos::RefCountPtr<Epetra_Operator> solvePrecOpPtr;
+  //! Preconditioner operator that will be used in solves.
+  mutable Teuchos::RefCountPtr<Epetra_Operator> solvePrecOpPtr;
 
 #ifdef HAVE_NOX_DEBUG
 #ifdef HAVE_NOX_EPETRAEXT

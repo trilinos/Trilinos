@@ -198,6 +198,7 @@ int main(int argc, char *argv[])
   // Various Preconditioner options
   //lsParams.set("Preconditioner", "AztecOO");
   lsParams.set("Preconditioner", "Ifpack");
+  lsParams.set("Preconditioner Reuse Policy", "Reuse");
   lsParams.set("Max Age Of Prec", 5);
 
   // Add a user defined pre/post operator object

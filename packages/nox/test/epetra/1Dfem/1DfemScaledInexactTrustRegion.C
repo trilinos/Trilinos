@@ -203,7 +203,7 @@ int main(int argc, char *argv[])
   // Various Preconditioner options
   //lsParams.set("Preconditioner", "AztecOO");
   lsParams.set("Preconditioner", "Ifpack");
-  lsParams.set("Max Age Of Prec", 1);
+  lsParams.set("Preconditioner Reuse Policy", "Rebuild");
 
   // Sublist for Cauchy direction
   Teuchos::ParameterList& cauchyDirParams = nlParams.sublist("Cauchy Direction");

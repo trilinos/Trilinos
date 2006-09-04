@@ -66,7 +66,6 @@
 
 // User's application specific files 
 #include "1DfemInterface.H" 
-#include "1DfemPrePostOperator.H"
 
 #include "Teuchos_ParameterList.hpp"
 
@@ -184,19 +183,8 @@ int main(int argc, char *argv[])
   lsParams.set("Tolerance", 1e-4);
 
   // Various Preconditioner options
-  //lsParams.set("Preconditioner", "None");
-  //lsParams.set("Preconditioner", "AztecOO");
   lsParams.set("Preconditioner", "New Ifpack");
-  lsParams.set("Preconditioner Reuse Policy", "Reuse");
-  //lsParams.set("Preconditioner Reuse Policy", "Recompute");
-  //lsParams.set("Preconditioner Reuse Policy", "Rebuild");
-  lsParams.set("Max Age Of Prec", 5);
-
-  // Add a user defined pre/post operator object
-  Teuchos::RefCountPtr<NOX::Abstract::PrePostOperator> ppo =
-    Teuchos::rcp(new UserPrePostOperator(printing));
-  nlParams.sublist("Solver Options").set("User Defined Pre/Post Operator", 
-					 ppo);
+  lsParams.set("Preconditioner Reuse Policy", "Recompute");
 
   // Let's force all status tests to do a full check
   nlParams.sublist("Solver Options").
@@ -307,27 +295,16 @@ int main(int argc, char *argv[])
 	printing.out() << "Nonlinear solver failed to converge!" << endl;
   }
 #ifndef HAVE_MPI 
-  // 2. Linear solve iterations (53) - SERIAL TEST ONLY!
+  // 2. Linear solve iterations (10) - SERIAL TEST ONLY!
   //    The number of linear iterations changes with # of procs.
-  if (const_cast<Teuchos::ParameterList&>(solver.getList()).sublist("Direction").sublist("Newton").sublist("Linear Solver").sublist("Output").get("Total Number of Linear Iterations",0) != 53) {
+  if (const_cast<Teuchos::ParameterList&>(solver.getList()).sublist("Direction").sublist("Newton").sublist("Linear Solver").sublist("Output").get("Total Number of Linear Iterations",0) != 10) {
     status = 2;
   }
 #endif
   // 3. Nonlinear solve iterations (10)
   if (const_cast<Teuchos::ParameterList&>(solver.getList()).sublist("Output").get("Nonlinear Iterations", 0) != 10)
     status = 3;
-  // 4. Test the pre/post iterate options
-  {
-  UserPrePostOperator* ppoPtr = dynamic_cast<UserPrePostOperator*>(ppo.get());
-  if (ppoPtr->getNumRunPreIterate() != 10)
-    status = 4;
-  if (ppoPtr->getNumRunPostIterate() != 10)
-    status = 4;
-  if (ppoPtr->getNumRunPreSolve() != 1)
-    status = 4;
-  if (ppoPtr->getNumRunPostSolve() != 1)
-    status = 4;
-  }
+
   // Summarize test results 
   if (status == 0)
     printing.out() << "Test passed!" << endl;
