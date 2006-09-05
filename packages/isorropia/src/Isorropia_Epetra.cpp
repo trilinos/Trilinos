@@ -39,6 +39,7 @@ Questions? Contact Alan Williams (william@sandia.gov)
 #include <Epetra_Map.h>
 #include <Epetra_Import.h>
 #include <Epetra_Vector.h>
+#include <Epetra_Comm.h>
 #include <Epetra_IntVector.h>
 #include <Epetra_CrsGraph.h>
 #include <Epetra_CrsMatrix.h>
@@ -236,6 +237,8 @@ repartition(const Epetra_BlockMap& input_map,
   int new_num_local = all_proc_new_offsets[myPID+1]-all_proc_new_offsets[myPID];
   myNewElements.resize(new_num_local);
 
+  const int* old_gids = input_map.MyGlobalElements();
+
 #ifdef HAVE_MPI
   int tag = 1212121;
   const Epetra_MpiComm* mpiComm =
@@ -259,7 +262,6 @@ repartition(const Epetra_BlockMap& input_map,
     i += 3;
   }
 
-  const int* old_gids = input_map.MyGlobalElements();
   i=0;
   while(i<send_info.size()) {
     int proc = send_info[i];

@@ -43,11 +43,17 @@
 #endif
 
 #ifdef HAVE_EPETRA
-#include <Epetra_MpiComm.h>
+#include <Epetra_Comm.h>
 #include <Epetra_Map.h>
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_Vector.h>
 #include <Epetra_LinearProblem.h>
+#endif
+
+#if defined(HAVE_MPI) && defined(HAVE_EPETRA)
+#include <Epetra_MpiComm.h>
+#elif HAVE_EPETRA
+#include <Epetra_SerialComm.h>
 #endif
 
 #ifdef HAVE_EPETRA
@@ -119,12 +125,12 @@ int main(int argc, char** argv) {
     std::cout << "rebalance_1d_default main: tests passed."<<std::endl;
   }
 
+  MPI_Finalize();
+
 #else
   std::cout << "rebalance_1d_default: don't have MPI, can't run test."
             << std::endl;
 #endif
-
-  MPI_Finalize();
 
   return(0);
 }
@@ -561,7 +567,12 @@ Epetra_CrsMatrix* create_epetra_test_matrix_1(int numProcs,
 
   //create an Epetra_CrsMatrix with rows spread un-evenly over
   //processors.
+#ifdef HAVE_MPI
   Epetra_MpiComm comm(MPI_COMM_WORLD);
+#else
+  Epetra_SerialComm comm;
+#endif
+
   int local_num_rows = 360;
   int nnz_per_row = local_num_rows/4+1;
   int global_num_rows = numProcs*local_num_rows;
@@ -614,7 +625,11 @@ Epetra_CrsGraph* create_epetra_test_graph_1(int numProcs,
 
   //create an Epetra_CrsGraph with rows spread un-evenly over
   //processors.
+#ifdef HAVE_MPI
   Epetra_MpiComm comm(MPI_COMM_WORLD);
+#else
+  Epetra_SerialComm comm;
+#endif
   int local_num_rows = 360;
   int nnz_per_row = local_num_rows/4+1;
   int global_num_rows = numProcs*local_num_rows;
