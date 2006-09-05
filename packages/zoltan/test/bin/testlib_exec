@@ -1,0 +1,10 @@
+#!/usr/bin/perl
+#
+# This is a simple stub for the 'runtest' command that is used in TestLib.pm
+#
+# TODO: extend this to recognize parallel execution options
+#
+
+system("(@ARGV) | tr \'<&>\"\' \'+++++\' 2>&1");
+exit 0;
+

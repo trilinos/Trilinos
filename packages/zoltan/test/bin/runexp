@@ -1,0 +1,1119 @@
+#!/usr/local/bin/python
+#
+# runexp - process an XML experiment file
+#
+# TODO: should we assume that experiment names are numerical values?
+# TODO: provide more graceful error handling when inconsistent data types
+#		are provided for a data measurement (e.g. int and strings)
+# TODO: fail gracefully if the doe code is not found on the execution path
+# TODO: when executing commands, write 'F' if an experiment failed to
+# 		execute properly.
+#
+
+import glob
+from os.path import exists, join
+from os import pathsep
+from string import split
+import re
+import os
+import sys
+import string
+import commands
+import difflib
+from xml.dom import minidom, Node
+#import urllib
+
+debug=False
+
+#
+def escape(s):
+  """Replace special characters '&', "'", '<', '>' and '"' by XML entities."""
+  s = s.replace("&", "&amp;") # Must be done first!
+  s = s.replace("'", "&apos;")
+  s = s.replace("<", "&lt;")
+  s = s.replace(">", "&gt;")
+  s = s.replace('"', "&quot;")
+  return s
+
+
+#
+def isint(x):
+  try:
+    int(x)
+    return True
+  except ValueError:
+    return False
+
+#
+def quote_split(re_str, str):
+  mylist = []
+  chars = []
+  state = 1
+  for token in re.split(re_str,str):
+    prev = " "
+    for character in token:
+      if character == "\"" and prev != "\\":
+         if state == 1:
+            chars = chars + [ "\"" ]
+            state = 2
+         else:
+            state = 1
+            chars = chars + [ "\"" ]
+      else:
+         chars = chars + [ character ]
+         prev = character
+    if state == 1:
+       if len(chars) > 0:
+          mylist = mylist + [ string.join(chars,"") ]
+          chars = []
+    else:
+       chars = chars + [ " " ]
+  if state == 2:
+     print "ERROR: unterminated quotation"
+     sys.exit(1)
+
+  return mylist
+
+#
+# Process a set of options, and create variables for the options that
+# start with '_'
+#
+# NOTE: these variables should ONLY be set in this method!  Otherwise,
+# we need to add 'global' declarations, which mess up the semantics of 
+# how these variables are being used (IMHO).
+#
+def create_global_variables(localoptions, globaloptions):
+  global _baseline
+  _baseline=None
+  global _optimum
+  _optimum=None
+  global _opttol
+  _opttol=0.0
+  global _benchmark
+  _benchmark=""
+  global _sense
+  _sense=1
+  global _tolerance
+  _tolerance=0.0
+  global _abstolerance
+  _abstolerance=0.0
+  global _p
+  _p=0.0
+  global _value
+  _value=None
+  global _measurement
+  _measurement='Value'
+
+  if debug:
+     print "LOCAL   " + localoptions
+     print "GLOBAL  " + globaloptions
+  for options in [ localoptions, globaloptions ]:
+    if options != "":
+       tokens = quote_split('[ \t]+',options.strip())    
+       for token in tokens:
+         if (len(token.split("=")) == 2) and( token[0] == "_"):
+	    if debug:
+	       print "OPTION: " + token
+            pyvar = token.split("=")[0]
+            pyval = token.split("=")[1]
+            pyexpression = "global " + pyvar + " ; "
+            if pyvar == "_data" and pyval[0] != "\"":
+               pyexpression= pyexpression + pyvar + "=\"" + pyval + "\"" + " ; "
+            else:
+               pyexpression= pyexpression + token + " ; "
+            exec(pyexpression)
+
+  if _sense == "max":
+     _sense = -1
+  if _value == None:
+     _value = _optimum
+
+#
+# Find the directory of an executable 
+#
+# NOTE: this is not being used, and it hasn't been tested, but this
+# looks too handy to throw away...
+#
+def find_executable_path(executable, path=None):
+    """Try to find 'executable' in the directories listed in 'path' (a
+    string listing directories separated by 'os.pathsep'; defaults to
+    os.environ['PATH']).  Returns the path of the executable or None if not
+    found.
+    """
+    if path is None:
+        path = os.environ['PATH']
+    paths = string.split(path, os.pathsep)
+    (base, ext) = os.path.splitext(executable)
+    if (sys.platform == 'win32') and (ext != '.exe'):
+        executable = executable + '.exe'
+    if os.path.isfile(executable):
+       return os.getcwd()
+    for p in paths:
+      f = os.path.join(p, executable)
+      if os.path.isfile(f):
+         return p
+    return None
+
+#
+# Find a file on a search path
+#
+def search_file(filename, search_path):
+   """Given a search path, find file
+   """
+   file_found = 0
+   paths = string.split(search_path, pathsep)
+   for path in paths:
+      if exists(join(path, filename)):
+          file_found = 1
+          break
+   if file_found:
+      return os.path.abspath(join(path, filename))
+   else:
+      return None
+
+#
+# Function to print help information
+#
+def print_help():
+  print ""
+  print "runexp - a python script for running an XML-defined experiment"
+  print ""
+  print "usage:"
+  print ""
+  print "   runexp [options...] <exp-file> [<factor-1> ... <factor-k>]"
+  print "   runexp [options...] <exp-file> [<exp-file> ... <exp-file>]"
+  print ""
+  print "options:"
+  print ""
+  print "   --tag=<label>\tExecute an experiment only if it has a matching tag"
+  print "                 \telement. If no tag element is specified, then run"
+  print "                 \tan experiment without regard to the experiment's"
+  print "                 \ttag element values."
+  print ""
+  print "   --help\t\tPrint help information."
+  print ""
+  print "   --debug\t\tAdd debugging information."
+  print ""
+  print "   --scenario=<name>\tSpecify the scenario name."
+  print ""
+  print "   --cleanup\t\tCleanup experimental files."
+  print ""
+
+
+def perform_cleanup():
+  files = glob.glob("*.exp.xml")
+  for file in files:
+    prefix = string.join(file.split(".")[:-2],".")
+    os.system("find . -name '" + prefix + "*.out' -exec rm -f '{}' \;")
+    os.system("find . -name '" + prefix + "*.test.xml' -exec rm -f '{}' \;")
+    os.system("find . -name '" + prefix + "*.results.xml' -exec rm -f '{}' \;")
+    os.system("find . -name '" + prefix + "*.exp.doe' -exec rm -f '{}' \;")
+    os.system("find . -name '" + prefix + "*.exp.seeds' -exec rm -f '{}' \;")
+    os.system("find . -name '" + prefix + "*.exp.tmp' -exec rm -f '{}' \;")
+    os.system("find . -name '" + prefix + "*.mod' -exec rm -f '{}' \;")
+    os.system("find . -name '" + prefix + "*.param' -exec rm -f '{}' \;")
+
+def get_attr(node,name):
+  attr_text = ""
+  for (name_,value) in node.attributes.items():
+    if name_ == name:
+       attr_text = value
+  return attr_text
+
+def get_text(node):
+  nodetext = ""
+  for child in node.childNodes:
+    if child.nodeType == Node.TEXT_NODE:
+       nodetext = nodetext + child.nodeValue
+  return nodetext.strip()
+
+def get_child(node,name):
+  for child in node.childNodes:
+    if child.nodeType == Node.ELEMENT_NODE and child.nodeName == name:
+       return child
+  return node
+
+#
+# Read experimental results
+#
+def read_experiment_results(filename,data_filter):
+  if not os.path.exists(filename):
+     print "ERROR: missing file " + filename
+     sys.exit(1)
+  types = {}
+  data = {}
+  params = {}
+  status = {}
+  logfiles = {}
+  key_attr = {}
+  doc = minidom.parse(filename)
+  node = doc.documentElement
+  for child in node.childNodes:
+    if child.nodeType == Node.ELEMENT_NODE and child.nodeName == "Experiment":
+       info = {}
+       expname = ""
+       expparams = ""
+       logfile=get_attr(child,"LogFile")
+       for gchild in child.childNodes:
+         #
+         # Name
+         #
+         if gchild.nodeType == Node.ELEMENT_NODE and gchild.nodeName == "Name":
+            expname = get_text(gchild)
+         #
+         # Description
+         #
+         elif gchild.nodeType == Node.ELEMENT_NODE and gchild.nodeName == "Description":
+	    expparams = get_text(gchild)
+            for factor in  gchild.childNodes:
+              if factor.nodeType == Node.ELEMENT_NODE and \
+                 factor.nodeName == "Factor":
+                 expparams = expparams + " " + get_text(factor)
+	 #
+	 # Key
+	 #
+         elif gchild.nodeType == Node.ELEMENT_NODE and gchild.nodeName == "Key":
+            for (keyname,keyvalue) in gchild.attributes.items():
+              key_attr[keyname] = keyvalue
+	 #
+	 # ExecutionStatus
+	 #
+         elif gchild.nodeType == Node.ELEMENT_NODE and gchild.nodeName == "ExecutionStatus":
+            expstatus = get_text(gchild)
+         #
+         # Trial
+         #
+         elif gchild.nodeType == Node.ELEMENT_NODE and gchild.nodeName == "Trial":
+            if not info.has_key("id"):
+               info["id"] = [ eval(get_attr(gchild,"id")) ]
+            else:
+               info["id"] = info["id"] + [ eval(get_attr(gchild,"id")) ]
+            if not info.has_key("seed"):
+               info["seed"] = [ get_attr(gchild,"seed") ]
+            else:
+               info["seed"] = info["seed"] + [ get_attr(gchild,"seed") ]
+            for value in  gchild.childNodes:
+              if value.nodeType == Node.ELEMENT_NODE and \
+                 value.nodeName == "Value":
+                 name = get_attr(value,"name") 
+                 type = get_attr(value,"type") 
+                 text = get_text(value)
+                 if not info.has_key(name):
+                    info[name] = []
+                 if (type == "numeric/double" or type == "numeric/int") and\
+		    text != "ERROR" and text != "":
+                    info[name] = info[name] + [eval(text)]
+                 else:
+                    info[name] = info[name] + [text]
+                 types[name] = type
+       if expname == "":
+          print "ERROR: missing experiment name"
+       data[expname] = info
+       params[expname] = expparams
+       logfiles[expname] = logfile
+       status[expname] = expstatus
+  return (data,types,status,params,logfiles,key_attr)
+
+#
+# Read a DOE file
+#
+def read_doe(filename):
+  INPUT = open(filename,"r")
+  state = 0
+  nfactors = 0
+  ndoe = 0
+  doe = []
+  ctr = 0
+  for line in INPUT.xreadlines():
+    if line[0] == "#":
+       continue
+    elif state == 0:
+       nfactors = eval(line)
+       state = 1
+    elif state == 1:
+       ctr = ctr + 1
+       if ctr == nfactors:
+          state = 2
+    elif state == 2:
+       ndoe = eval(line)
+       state = 3
+       ctr = 0
+    elif state == 3:
+       exp = line.strip()
+       ids = []
+       for val in exp.split(" "):
+         ids = ids + [eval(val)]
+       doe = doe + [ids]
+       ctr = ctr + 1
+       if ctr == ndoe:
+          state = 4
+    else:
+       print "ERROR: reached state 4 in read_doe()!"
+       sys.exit(1)
+  INPUT.close()
+  return doe
+
+#
+# Print out information about a given node in the XML tree
+#
+def showNode(node, depth):
+    if node.nodeType == Node.ELEMENT_NODE:
+        print '%d Element name:  %s' % (depth,node.nodeName)
+        for (name, value) in node.attributes.items():
+            print '    Attr -- Name: %s  Value: %s' % (name, value)
+        if node.attributes.get('ID') is not None:
+            print '    ID: %s' % node.attributes.get('ID').value
+    if node.nodeType == Node.TEXT_NODE:
+        print '%d TEXT:  :%s:' % (depth,node.nodeValue)
+
+#
+# Process a node to collect a tuple with
+#   (name, attributes, string)
+#
+def process(node):
+  attr = {}
+  for (name,value) in node.attributes.items():
+    attr[name] = value
+  nodetext = ""
+  for child in node.childNodes:
+    if child.nodeType == Node.TEXT_NODE:
+       nodetext = nodetext + child.nodeValue
+  if debug==True:
+     print "PROCESS", node.nodeName, nodetext
+     for name in attr:
+       print "  ATTRIBUTE: " + name
+  return (node.nodeName, attr, nodetext.strip())
+
+#
+# Collect tags from an XML object
+#
+def get_tags(node):
+  ans = []
+  for child in node.childNodes:
+    if child.nodeType == Node.ELEMENT_NODE:
+       nodetext = ""
+       for gchild in child.childNodes:
+         if gchild.nodeType == Node.TEXT_NODE:
+            nodetext = nodetext + gchild.nodeValue
+       ans = ans + [nodetext]
+  return ans
+
+#
+# Read seeds from a file
+#
+def read_seeds(name):
+  info = []
+  INPUT = open(name)
+  for line in INPUT.xreadlines():
+    if line[0] == "#":
+       continue
+    info = info + [ re.split('[ \t]+',line.strip()) ]    
+  INPUT.close()
+  return info
+
+#
+# Collect controls from an XML object
+#
+def get_controls(node):
+  ans = {}
+  for child in node.childNodes:
+    if child.nodeType == Node.ELEMENT_NODE:
+       ans[child.nodeName] = process(child)
+       #
+       # Get replication info
+       # 
+       seeds = []
+       if child.nodeName == "replication":
+          for gchild in child.childNodes:
+             if gchild.nodeType == Node.ELEMENT_NODE and\
+	        gchild.nodeName == "seeds":
+                tmp = process(gchild)
+                if tmp[2] != "":
+                   seeds = re.split('[ \t]+', tmp[2].strip())
+                if tmp[1].has_key("filename"):
+                   seeds = seeds + read_seeds(tmp[1]["filename"])
+  return (ans,seeds)
+
+#
+# Read factor levels from a file
+#
+# Each line contains text that compreses the value of the level
+#
+def read_factor_levels(name):
+  info = []
+  INPUT = open(name)
+  for line in INPUT.xreadlines():
+    if line[0] == "#":
+       continue
+    info = info + [("",{},line.strip())]    
+  INPUT.close()
+  return info
+
+#
+# Collect factors from an XML object
+#
+def get_factors(node):
+  factor_attr = []
+  ans = []
+  for factor in node.childNodes:
+    if factor.nodeType == Node.ELEMENT_NODE:
+       info = []
+       attr = process(factor)
+       if attr[1].has_key("filename"):
+          info = read_factor_levels(attr[1]["filename"])
+       else:
+         for level in factor.childNodes:
+           if level.nodeType == Node.ELEMENT_NODE:
+	      info = info + [ process(level) ]
+       factor_attr = factor_attr + [attr]
+       ans = ans + [info]
+  return (factor_attr,ans)
+
+#
+# Function to read in and process an experiment file
+#
+# TODO: should this simply return a Python class?  If I was doing this
+# in C++ that's the way I would process the experiment.  However, I'm
+# now well-versed in the use of classes in Python.
+#
+def read_experiment(node):
+  if debug:
+     showNode(node,1)
+  factor_attributes = []
+  factor_info = []
+  controls = []
+  seeds = []
+  for child in node.childNodes:
+    if child.nodeType == Node.ELEMENT_NODE and child.nodeName == "factors":
+       (factor_attributes,factor_info) = get_factors(child)
+    elif child.nodeType == Node.ELEMENT_NODE and child.nodeName == "controls":
+       (controls,seeds) = get_controls(child)
+    else:
+       if debug:
+          showNode(child,4)
+  return (get_attr(node,"name"),factor_attributes,factor_info,controls,seeds)
+
+#
+# Read in an experimental test
+#
+def read_test(node):
+  options = ""
+  executable = ""
+  python_code = ""
+  pycondition = ""
+  filter = ""
+  name = get_attr(node,"name")
+  type = get_attr(node,"type")
+  for child in node.childNodes:
+    if child.nodeType == Node.ELEMENT_NODE:
+       if   child.nodeName == "options":
+          options = get_text(child)
+       elif child.nodeName == "executable":
+          executable = get_text(child)
+       elif child.nodeName == "python":
+          python_code = get_text(child)
+       elif child.nodeName == "pycondition":
+          pycondition = get_text(child)
+  return (name,type,options,executable,python_code,filter,pycondition)
+          
+
+
+#
+# Read in an XML analysis block
+#
+def read_analysis(node):
+  tests = []
+  baseline = ""
+  data = ""
+  data_experiment = ""
+  data_filename = ""
+  for child in node.childNodes:
+    if child.nodeType == Node.ELEMENT_NODE:
+       if (child.nodeName == "test" or child.nodeName == "analysis"):
+          tests = tests + [ read_test(child) ]
+       elif child.nodeName == "baseline":
+          baseline = get_text(child)
+       elif child.nodeName == "data":
+          data = get_text(child)
+	  data_experiment = get_attr(child,"experiment")
+	  data_filename = get_attr(child,"filename")
+  return (baseline,data,data_experiment,data_filename,tests)
+
+#
+# Read in an experimental study
+#
+def read_study(filename):
+  if not os.path.exists(filename):
+     print "ERROR: missing file " + filename
+     sys.exit(1)
+  doc = minidom.parse(filename)
+  node = doc.documentElement
+  tags=[]
+  experiments=[]
+  tests=[]
+  nexp=1
+  for child in node.childNodes:
+    if child.nodeType == Node.ELEMENT_NODE and child.nodeName == "tags":
+       tags = get_tags(child)
+    if child.nodeType == Node.ELEMENT_NODE and child.nodeName == "experiment":
+       (name,factor_attributes,factor_info,controls,seeds) = read_experiment(child)
+       if name == "":
+          name = "exp" + `nexp`
+       experiments = experiments + [ (name,factor_attributes,factor_info,controls,seeds)]
+       nexp = nexp + 1
+    if child.nodeType == Node.ELEMENT_NODE and child.nodeName == "analyze":
+       tests = tests + [ read_analysis(child) ]
+  return (tags,experiments,tests)
+
+#
+# Run an experiment
+#
+def run_experiment(experiment,expfile,factors):
+  (name, factor_attr, factor_info, controls, seeds) = experiment
+  if debug:
+     print "Seeds: " + `seeds`
+  #
+  # TEST
+  #
+  if len(factor_attr) == 0:
+     print "ERROR: no factor attributes in experiment file " + expfile
+     sys.exit(1)
+  #
+  # Setup output files
+  #
+  tmp = expfile.split(".")
+  if len(tmp) == 1:
+     expname = expfile + "." + name
+     doe_input = expname + ".exp.test"
+     doe_output = expname + ".exp.doe"
+     exp_output = expname + ".results.xml"
+     seeds_output = expname + ".exp.seeds"
+  else:
+     expname = string.join(tmp[:-2],".") + "." + name
+     doe_input = expname + ".exp.tmp"
+     doe_output = expname + ".exp.doe"
+     exp_output = expname + ".results.xml"
+     seeds_output = expname + ".exp.seeds"
+  commands.getoutput("(rm -f " + expname + ".*.out) > /dev/null 2>&1")
+  print "      Running experiment: " + expname,
+  #
+  # Process experimental design
+  #
+  if len(factors) > 0:
+     #
+     # The experimental design is simply a single experiment specified
+     # by the user.  (Note: factor levels start at level 1).
+     #
+     if len(factors) != len(factor_info):
+        print ""
+        print "ERROR: expected " + `len(factor_info)` + " factors but the user specified " + `len(factors)`
+        sys.exit(1)
+     i = 1
+     for level in factors:
+       if (level < 1) or (level > len(factor_info[i-1])):
+          print ""
+          print "ERROR: invalid level for factor " + `i` + " : " + `level`
+          print "ERROR: Factor Levels: ",
+          for val in factor_info:
+            print `len(val)` + " ",
+          print " "
+          sys.exit(1)
+       i = i + 1
+     doe = [ factors ]
+  elif len(factor_attr) > 1:
+     #
+     # Create the DOE file if this is a nontrivial experiment
+     #
+     # TODO: process continuous factors
+     #
+     if debug:
+        print "Creating DOE file:", doe_input
+     OUTPUT = open(doe_input,"w")   
+     print >>OUTPUT, len(factor_attr)
+     j=0
+     for linfo in factor_info:
+       print >>OUTPUT, len(linfo)
+     OUTPUT.close()
+     #
+     # Launch DOE
+     #
+     if controls.has_key("doe"):
+        doe_log = commands.getoutput(controls["doe"][2] + " " + doe_input + ">" + doe_output)
+        if debug:
+           print "DOE Log: \n", doe_log
+     else:
+        doe_log = commands.getoutput("complete_doe " + doe_input + ">" + doe_output)
+        if debug:
+           print "DOE Log: \n", doe_log
+     if not os.path.exists(doe_output):
+        print "ERROR: missing file " + doe_output
+        print "ERROR: the DOE code has failed to execute properly"
+        sys.exit(1)
+     doe = read_doe(doe_output)      
+  else:
+     #
+     # Create a simple doe
+     #
+     doe = []
+     for j in range(len(factor_info[0])):
+       doe = doe + [ [j+1] ]
+  if debug:
+     print "Using the following DOE"
+     for val in doe:
+       print val
+  #
+  # Setup control options
+  #
+  if controls.has_key("replication") and controls["replication"][2] != "":
+     replications = eval(controls["replication"][2])
+  elif len(seeds) > 0:
+     replications = len(seeds)
+  else:
+     replications = 1
+  if replications < 1:
+     replications = 1
+  if len(seeds) > 0  and  replications > len(seeds):
+     print "ERROR: more replications requested than the number of seeds specified"
+     sys.exit(1)
+  #
+  # Write seed file, or remove it if it's not needed
+  #
+  if len(seeds) > 0:
+     OUTPUT = open(seeds_output,"w")
+     i = 0
+     while i < replications:
+       print >>OUTPUT, seeds[i]
+       i = i + 1
+     OUTPUT.close()
+  elif os.path.isfile(seeds_output):
+     os.remove(seeds_output)
+  #
+  # Perform the tests in this experiment
+  #
+  # TODO: allow for filtering
+  # TODO: allow for per-factor level tests
+  #
+  OUTPUT = open(exp_output,"w")
+  print >>OUTPUT, "<Results expfile=\"" + expfile +"\">"
+  id=1
+  for exp in doe:
+    cmd = controls["executable"][2]
+    if debug:
+       cmd = cmd + " --debug"
+    cmd = cmd + " " + expname + " " + `id` + " " + `replications`
+    i=1
+    for val in exp:
+      if factor_attr[i-1][1].has_key("name"):
+         cmd = cmd + " \"" + factor_attr[i-1][1]["name"] + "\""
+      else:
+         cmd = cmd + " \"" + `i` + "\""
+      cmd = cmd + " \"" + `val` + "\""
+      finfo = factor_info[i-1][val-1][2]
+      cmd = cmd + " \"" + finfo.replace('\"','\\\"') + "\""
+      i = i+1
+    if debug:
+       print "Executing command:", cmd
+    sys.stdout.write(".")
+    sys.stdout.flush()
+    log = commands.getoutput(cmd)
+    print >>OUTPUT, log
+    id = id + 1
+  print ""
+  print >>OUTPUT, "</Results>"
+  OUTPUT.close()
+
+#
+# Compute the difference between a regression file, and a trial output
+#
+def diff_test(benchmark,trialfile):
+  INPUT = open(benchmark.strip(),"r")
+  benchmark_text = ""
+  for line in INPUT.xreadlines():
+    benchmark_text = benchmark_text + line.strip() + "\n";
+  INPUT.close()
+  #print "TRIALFILE: " + trialfile
+  #
+  # Note: the trial file may not be a valid XML file, so we parse it
+  # directly
+  #
+  trial_text=""
+  status=False
+  INPUT = open(trialfile.strip(),"r")
+  for line in INPUT.xreadlines():
+    if (line.strip()).split(" ")[0] == "Seed:":
+       status = False
+    elif (line.strip()).split(" ")[0] == "</Output>":
+       status = False
+    if status:
+       trial_text = trial_text + line.strip() + "\n";
+    if line.strip() == "<Output>":
+       status = True
+  #print benchmark_text
+  #print trial_text
+  #print list(difflib.unified_diff(benchmark_text,trial_text))
+  if benchmark_text == trial_text:
+     return ""
+  d = difflib.Differ()
+  ans=""
+  for val in list(difflib.unified_diff(benchmark_text.splitlines(),trial_text.splitlines())):
+    ans = ans + val + "\n"
+  return ans
+
+#
+# Compute the differences between a regression test and trial output.
+# This comparison of a baseline does an exhaustive comparison across all
+# trials
+#
+def baseline_test(baseline, info):
+  if len(baseline) != len(info):
+     return "Baseline and new experiment do not have the same number of trials!"
+  for i in range(len(baseline)):
+    if abs(baseline[i] - info[i]) > _tolerance:
+       return "Difference with baseline: info=" + `info[i]` + " baseline=" + `baseline[i]` + " trial=" + `i` + " tolerance=" + `_tolerance`
+  return "" 
+
+#
+# Run an test or analysis
+#
+def run_test(test,expfile,factors):
+  (baseline,data_filter,data_experiment,data_filename,tests) = test
+  measurement="Value"
+  #
+  # Get data
+  #
+  if data_experiment != "":
+     #
+     # Get data from experiment defined in the current study
+     #
+     tmp = expfile.split(".")
+     if len(tmp) == 1:
+        expname = expfile + "." + data_experiment
+     else:
+        expname = string.join(tmp[:-2],".") + "." + data_experiment
+  elif data_filename != "":
+     #
+     # Get data from this file
+     #
+     expname = data_filename
+  else:
+     #
+     # Assume a default name
+     #
+     tmp = expfile.split(".")
+     if len(tmp) == 1:
+        expname = expfile + "." + "exp1"
+     else:
+        expname = string.join(tmp[:-2],".") + "." + "exp1"
+  #
+  # Read in the data
+  #
+  (experiments,types,expstatus,expparams,logfiles,key_attr) = read_experiment_results(expname + ".results.xml",data_filter)
+  if baseline != "":
+     baselines = read_experiment_results(baseline,"")
+  else:
+     baselines = {}
+  #
+  # Run analyses
+  #
+  analyses = {}
+  for analysis in tests:
+    (name,type,options,executable,python_code,filter,pycondition) = analysis
+    if analyses.has_key(name):
+       print "ERROR: already performed test " + name
+       sys.exit(1)
+    else:
+       analyses[name] = name
+    print "        Test: " + name + " ",
+    #create_global_variables("",options)
+    #
+    # Start the output file
+    #
+    tmp = expfile.split(".")
+    if len(tmp) == 1:
+       outname = expfile
+    else:
+       outname = string.join(tmp[:-2],".")
+    OUTPUT = open(outname + "." + name + ".test.xml","w")
+    print >>OUTPUT, "<Tests expfile=\"" + expfile + "\">"
+    print >>OUTPUT, "  <Data filename=\"" + expname + "\">"
+    print >>OUTPUT, "    <Filter>" + escape(data_filter) + "</Filter>"
+    print >>OUTPUT, "    <Key"
+    for attr in key_attr:
+      print >>OUTPUT, "      " + attr + "=\"" + escape(key_attr[attr]) + "\""
+    print >>OUTPUT, "    />"
+    print >>OUTPUT, "  </Data>"
+    #
+    # Exec python code
+    #
+    if python_code != "":
+       exec(python_code)
+    #
+    # Launch an external executable
+    #
+    if executable != "":
+       print "ERROR: do not currently support external executables"
+       sys.exit(1)
+    #
+    # Write header info
+    #
+    print >>OUTPUT, "  <TestInfo>"
+    if python_code != "":
+       print >>OUTPUT, "    <PythonCode>" + escape(python_code) + "</PythonCode>"
+    if options != "":
+       print >>OUTPUT, "    <Options>" + escape(options) + "</Options>"
+    print >>OUTPUT, "  </TestInfo>"
+    #
+    # Perform different types of tests
+    #
+    for info in experiments.keys():
+      print >>OUTPUT, "  <Test name=\"" + info + "\">"
+      if expstatus[info] == "Fail":
+         print >>OUTPUT, "    <Status>Fail</Status>"
+         print >>OUTPUT, "    <Explanation>Failed experimental results"
+         print >>OUTPUT, "       Test Options: " + escape(options)
+         print >>OUTPUT, "       Experimental Parameters: " + escape(expparams[info])
+	 print >>OUTPUT, "    </Explanation>"
+         print >>OUTPUT, "  </Test>"
+         sys.stdout.write("F")
+	 continue
+      #
+      # Process experiment
+      #
+      create_global_variables(expparams[info],options)
+      data = experiments[info]
+      #
+      # TESTS
+      #
+      #
+      # Evaluate a regression
+      #
+      if type=="diff":
+        if _benchmark=="":
+           benchmark_file=expparams[info] + ".qa"
+        else:
+           benchmark_file=_benchmark
+        status=True
+        if (pycondition != "") and not eval(pycondition):
+           status=False
+           explanation="Bad Python Condition Expression"
+        elif benchmark_file=="":
+           status=False
+           explanation="No benchmark file specified"
+        else:
+           trialfile = logfiles[info] + ".1.out"
+           explanation=diff_test(benchmark_file,trialfile)
+           #print explanation
+           if explanation != "":
+              status=False
+        #
+        # Print status information
+        #
+        if status==False:
+           print >>OUTPUT, "    <Status>Fail</Status>"
+           print >>OUTPUT, "    <Explanation>"
+           print >>OUTPUT, "       " + escape(explanation)
+           print >>OUTPUT, "       Test Options: " + escape(options)
+           print >>OUTPUT, "       Experimental Parameters: " + escape(expparams[info])
+           print >>OUTPUT, "    </Explanation>"
+           sys.stdout.write("F")
+        else:
+           print >>OUTPUT, "    <Status>Pass</Status>"
+           sys.stdout.write(".")
+      #
+      # Perform a baseline comparison of one experiment against another
+      #
+      elif type=="baseline":
+        if _measurement not in data.keys():
+           status = False
+           explanation="Value " + _measurement + " is not included in this experiment"
+        else:
+           explanation=baseline_test(baselines[0][info][_measurement],
+							data[_measurement])
+	   if (explanation != ""):
+              status = False
+           else:
+              status = True
+        #
+        # Print status information
+        #
+        if status==False:
+           print >>OUTPUT, "    <Status>Fail</Status>"
+           print >>OUTPUT, "    <Explanation>"
+           print >>OUTPUT, "       " + escape(explanation)
+           print >>OUTPUT, "       Test Options: " + escape(options)
+           print >>OUTPUT, "       Experimental Parameters: " + escape(expparams[info])
+           print >>OUTPUT, "    </Explanation>"
+           sys.stdout.write("F")
+        else:
+           print >>OUTPUT, "    <Status>Pass</Status>"
+           sys.stdout.write(".")
+      #
+      # Evaluate a single distribution
+      #
+      elif (type=="validate" or\
+            type=="percentage" or\
+            type=="expected_success") and (_measurement not in data.keys()):
+        print >>OUTPUT, "    <Status>Fail</Status>"
+        print >>OUTPUT, "    <Explanation>"
+        print >>OUTPUT, "       Missing measurement value: " + escape(_measurement)
+        print >>OUTPUT, "       Test Options: " + escape(options)
+        print >>OUTPUT, "       Experimental Parameters: " + escape(expparams[info])
+        print >>OUTPUT, "    </Explanation>"
+        sys.stdout.write("F")
+      elif type=="validate" or\
+           type=="percentage" or\
+           type=="expected_success":
+        i = 0
+        nfail = 0
+        failures = []
+        while i < len(data[_measurement]):
+	  # print "DEBUG " + `data[_measurement][i]` + " " + `_value` + ";"
+          if ((pycondition != "") and not eval(pycondition)) or \
+             (data[_measurement][i] == "ERROR") or \
+             (data[_measurement][i] == "") or \
+             ((types[_measurement] == "numeric/double" or types[_measurement] == "numeric/int") and (_sense*(data[_measurement][i] - _value) > _tolerance)) or \
+             (types[_measurement]=="" and data[_measurement][i] != _value):
+             nfail = nfail + 1
+             failures = failures + [ "experiment: " + info + " data: " + _data + " trial: " + `i` + " trial_value: " + `data[_measurement][i]` + " _value: " + `_value` + " _tolerance: " + `_tolerance` ]
+          #print `i` + " " + `types[_measurement]` + " " + data[_measurement][i] + " " + _value + " " + `nfail`
+          i = i + 1
+        #
+        # Check the status for an experiment
+        #
+        status=True;
+        if (type=="validate" and nfail > 0):
+           status=False
+        elif (type=="percentage" and ((1.0*nfail)/(1.0*len(data[_measurement]))) > _p):
+           status=False
+        elif (type=="expected_success" and abs(nfail/(1.0*len(data[_measurement])) - 1 + _p) > _abstolerance):
+           #print "HERE" + `_p`
+           #print `nfail`
+           #print `abs((1.0*nfail)/(1.0*len(data[_measurement])) - 1 + _p)`
+           status=False
+        #
+        # Print status information
+        #
+        if status==False:
+           print >>OUTPUT, "    <Status>Fail</Status>"
+           print >>OUTPUT, "    <Explanation>"
+           print >>OUTPUT, "       NFailures: " + `nfail` + " NTrials: " + `len(data[_measurement])` + " P(success): " + `1 -nfail/(1.0*len(data[_measurement]))`
+           for failure in failures:
+              print >>OUTPUT, "       " + escape(failure)
+           print >>OUTPUT, "       Test Options: " + escape(options)
+           print >>OUTPUT, "       Experimental Parameters: " + escape(expparams[info])
+           print >>OUTPUT, "    </Explanation>"
+           sys.stdout.write("F")
+        else:
+           print >>OUTPUT, "    <Status>Pass</Status>"
+           sys.stdout.write(".")
+      else:
+        print "ERROR: unknown test type: " + type
+        sys.exit(1)
+      print >>OUTPUT, "  </Test>"
+    print ""
+    print >>OUTPUT, "</Tests>"
+    OUTPUT.close()
+
+
+#
+# The 'main' function
+#
+def main():
+  global debug
+  if (len(sys.argv) < 2):
+     print_help()
+     sys.exit(1)
+  #
+  # Get the path where this executable is located
+  #
+  pathname = os.path.dirname(sys.argv[0])
+  fullpath = os.path.abspath(pathname)
+  os.environ["TESTLIBDIR"] = fullpath + " " + fullpath + "/../packages/exact/src/testing"
+  os.environ["PATH"] = os.environ["PATH"] + ":" + fullpath + ":" + fullpath + "/../packages/exact/src/testing"
+  #
+  # Process the command line
+  #
+  taglist = []
+  expfiles = []
+  factors = []
+  i=1
+  while (i < len(sys.argv)):
+    if (sys.argv[i]).startswith("--") == False:
+       expfiles = expfiles + [sys.argv[i]]
+       i = i + 1
+       break
+    else:
+       tmp = (sys.argv[i].replace("--","")).split("=")
+       #
+       # Process options
+       #
+       if tmp[0] == "help":
+	  print_help()
+	  sys.exit(1)
+
+       if tmp[0] == "debug":
+	  debug=True
+
+       if tmp[0] == "cleanup":
+	  perform_cleanup()
+
+       if tmp[0] == "tag":
+	  taglist = taglist + [tmp[1]]
+
+       if tmp[0] == "scenario":
+          os.putenv("RUNEXP_SCENARIO",tmp[1])
+
+    i = i + 1
+  if (i<len(sys.argv)):
+     if isint(sys.argv[i]):
+        while (i < len(sys.argv)):
+          factors =  factors + [ eval(sys.argv[i]) ]
+          i = i + 1
+     else:
+        while (i < len(sys.argv)):
+          if isint(sys.argv[i]):
+             print "ERROR: It looks like factors have been specified after two or"
+             print "ERROR: more experiments have been given"
+             sys.exit(1)
+          expfiles = expfiles + [sys.argv[i]]
+          i = i + 1
+  for expfile in expfiles:
+    if expfile == "unknown":
+       print "ERROR: an experiment file has not been specified."
+       sys.exit(1)
+    if debug and len(factors) > 0:
+       print "Factors: " + factors
+    #
+    # Read experimental study file
+    #
+    if debug==True:
+       print "      Reading experimental study: " + expfile
+    (tags, experiments, tests) = read_study(expfile)
+    #
+    # Stop if this study does not have the right tags
+    #
+    if len(taglist) > 0:
+       flag=False
+       if len(tags) > 0:
+          for tag in taglist:
+            if tag in tags:
+               flag=True
+               continue
+       if flag==False:
+          continue
+    #
+    # Launch each experiment
+    #
+    for experiment in experiments:
+      run_experiment(experiment,expfile,factors)
+    #
+    # Launch each test
+    #
+    for test in tests:
+      run_test(test,expfile,factors)
+    
+##
+## Launch 'main' if in interactive mode
+##
+if __name__ == '__main__':
+    main()
