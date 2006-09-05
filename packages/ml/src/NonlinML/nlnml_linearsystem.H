@@ -98,6 +98,18 @@ public:
   // Because of reuse features I prefer to do this myself
   bool destroyPreconditioner() const { return true; } 
   
+  // To be consistent with preventing preconditioner re-use, we flag this option
+  // as invalid for now.  RWH
+    
+  bool recomputePreconditioner(const NOX::Epetra::Vector& x, 
+			Teuchos::ParameterList& linearSolverParams) const
+  { return false; }
+
+  // For now, we do not support reuse of the preconditioner.  This could change in th future. RWH
+  PreconditionerReusePolicyType 
+  getPreconditionerPolicy(bool advanceReuseCounter)
+  { return PRPT_REBUILD; }
+
   // Because of reuse features I prefer to do this myself
   bool checkPreconditionerReuse() { return true; }
 
