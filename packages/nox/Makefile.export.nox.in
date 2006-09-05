@@ -51,7 +51,6 @@
 @BUILD_NOX_EPETRA_ML_SUPPORT_TRUE@include @abs_top_builddir@/../ml/Makefile.export.ml
 @BUILD_LIBNOXBELOS_TRUE@include @abs_top_builddir@/../belos/Makefile.export.belos
 @BUILD_LOCAANASAZI_TRUE@include @abs_top_builddir@/../anasazi/Makefile.export.anasazi
-#@BUILD_LIBNOXTSF_TRUE@include @abs_top_builddir@/../TSFExtended/Makefile.export.TSFExtended
 
 ###################################################
 ### NOX/LOCA Optional Libraries
@@ -60,7 +59,6 @@
 @BUILD_LIBNOXLAPACK_TRUE@NOX_LAPACK_LIB = -L@abs_top_builddir@/src-lapack  -lnoxlapack
 @BUILD_LIBNOXEPETRA_TRUE@NOX_EPETRA_LIB = -L@abs_top_builddir@/src-epetra  -lnoxepetra
 @BUILD_LIBNOXPETSC_TRUE@NOX_PETSC_LIB = -L@abs_top_builddir@/src-petsc  -lnoxpetsc
-#@BUILD_LIBNOXTSF_TRUE@NOX_TSF_LIB = -L@abs_top_builddir@/src-tsf  -lnoxtsf
 @BUILD_LIBNOXBELOS_TRUE@NOX_BELOS_LIB = -L@abs_top_builddir@/src-belos  -lnoxbelos
 
 @BUILD_LIBLOCALAPACK_TRUE@LOCA_LAPACK_LIB = -L@abs_top_builddir@/src-loca/src-lapack  -llocalapack
@@ -108,14 +106,14 @@ LOCA_INCLUDES_BASE = \
 @USING_GNUMAKE_TRUE@LOCA_INCLUDES = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(LOCA_INCLUDES_BASE))
 @USING_GNUMAKE_FALSE@LOCA_INCLUDES = $(LOCA_INCLUDES_BASE)
 
-LOCA_LIBS_BASE = @LDFLAGS@ $(LOCA_LAPACK_LIB) $(LOCA_EPETRA_LIB) $(LOCA_MF_LIB) -L@abs_top_builddir@/src-loca/src -lloca $(NOX_LAPACK_LIB) $(NOX_EPETRA_LIB) $(NOX_PETSC_LIB) $(NOX_BELOS_LIB) $(NOX_TSF_LIB) -L@abs_top_builddir@/src -lnox $(ANASAZI_LIBS) $(BELOS_LIBS) $(ML_LIBS) $(EPETRAEXT_LIBS) $(IFPACK_LIBS) $(AZTECOO_LIBS) $(EPETRA_LIBS) $(TEUCHOS_LIBS) $(MF_LIB) @LIBS@ @LAPACK_LIBS@ @BLAS_LIBS@ @FLIBS@
+LOCA_LIBS_BASE = @LDFLAGS@ $(LOCA_LAPACK_LIB) $(LOCA_EPETRA_LIB) $(LOCA_MF_LIB) -L@abs_top_builddir@/src-loca/src -lloca $(NOX_LAPACK_LIB) $(NOX_EPETRA_LIB) $(NOX_PETSC_LIB) $(NOX_BELOS_LIB) -L@abs_top_builddir@/src -lnox $(ANASAZI_LIBS) $(BELOS_LIBS) $(ML_LIBS) $(EPETRAEXT_LIBS) $(IFPACK_LIBS) $(AZTECOO_LIBS) $(EPETRA_LIBS) $(TEUCHOS_LIBS) $(MF_LIB) @LIBS@ @LAPACK_LIBS@ @BLAS_LIBS@ @FLIBS@
 @USING_GNUMAKE_TRUE@LOCA_LIBS = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(LOCA_LIBS_BASE))
 @USING_GNUMAKE_FALSE@LOCA_LIBS     = $(LOCA_LIBS_BASE)
 
 ##################################################################
 # NOX/LOCA TEST defines - TO BE USED ONLY BY DEVELOPERS FOR 
 # INTERNAL TESTS!
-# NOX/LOCA users should not use the floowing targets!!!
+# NOX/LOCA users should not use the follwing targets!!!
 ##################################################################
 NOX_TEST_INCLUDES_BASE = -I@abs_top_srcdir@/test/utils $(NOX_INCLUDES) 
 @USING_GNUMAKE_TRUE@NOX_TEST_INCLUDES = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(NOX_TEST_INCLUDES_BASE))

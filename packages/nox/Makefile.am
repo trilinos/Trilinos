@@ -64,7 +64,7 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 	$(AUX_DIST) 
 
 #The following line helps the test harness recover from build errors.
-                                                                                
+
 all-local:
 	@echo "Trilinos package nox built successfully"
 
@@ -118,10 +118,10 @@ install-exec-hook:
 		--exec-prefix=$(exec_prefix) \
 		--my-export-makefile=Makefile.export.nox \
 		--my-abs-top-srcdir=@abs_top_srcdir@ \
-		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src:@abs_top_srcdir@/src-epetra:@abs_top_srcdir@/src-lapack:@abs_top_srcdir@/src-petsc:@abs_top_srcdir@/src-belos:@abs_top_srcdir@/src-loca/src:@abs_top_srcdir@/src-loca/src-lapack:@abs_top_srcdir@/src-loca/src-epetra:@abs_top_srcdir@/src-loca/src-mf \
-		--my-abs-lib-dirs=@abs_top_builddir@/src:@abs_top_builddir@/src-epetra:@abs_top_builddir@/src-lapack:@abs_top_builddir@/src-petsc:@abs_top_builddir@/src-belos:@abs_top_builddir@/src-loca/src:@abs_top_builddir@/src-loca/src-epetra:@abs_top_builddir@/src-loca/src-lapack:@abs_top_builddir@/src-loca/src-mf \
+		--my-abs-incl-dirs=@abs_top_srcdir@/src-epetra:@abs_top_srcdir@/src-lapack:@abs_top_srcdir@/src-petsc:@abs_top_srcdir@/src-belos:@abs_top_srcdir@/src-loca/src-lapack:@abs_top_srcdir@/src-loca/src-epetra:@abs_top_srcdir@/src-loca/src-mf:@abs_top_srcdir@/src-loca/src:@abs_top_builddir@/src:@abs_top_srcdir@/src \
+		--my-abs-lib-dirs=@abs_top_builddir@/src-epetra:@abs_top_builddir@/src-lapack:@abs_top_builddir@/src-petsc:@abs_top_builddir@/src-belos:@abs_top_builddir@/src-loca/src-epetra:@abs_top_builddir@/src-loca/src-lapack:@abs_top_builddir@/src-loca/src-mf:@abs_top_builddir@/src-loca/src:@abs_top_builddir@/src \
 		--dep-package-abs-builddirs=@abs_top_builddir@/../epetraext:@abs_top_builddir@/../aztecoo:@abs_top_builddir@/../teuchos:@abs_top_builddir@/../ifpack:@abs_top_builddir@/../epetra:@abs_top_builddir@/../ml:@abs_top_builddir@/../belos:@abs_top_builddir@/../anasazi:@abs_top_builddir@/../TSFExtended
-	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile nox > $(exec_prefix)/include/Makefile.export.nox.macros
+	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile NOX > $(exec_prefix)/include/Makefile.export.nox.macros
 
 uninstall-hook:
 	rm -f $(exec_prefix)/include/Makefile.export.nox

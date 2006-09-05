@@ -45,19 +45,16 @@
 
   \section introduction Introduction
   
-  %NOX is short for <em>Nonlinear Object-Oriented Solutions</em>, and its 
-  objective is to enable the robust and efficient solution of the equation:
-  \f$
-  F(x)=0
-  \f$,
-  where \f$F:\Re^n \rightarrow \Re^n\f$.  
+  %NOX is short for <em>Nonlinear Object-Oriented Solutions</em>, and
+  its objective is to enable the robust and efficient solution of the
+  equation: \f$ F(x)=0 \f$, where \f$F:\Re^n \rightarrow \Re^n\f$.
   %NOX implements a variety of Newton-based globalization techniques
   including %Line Search and %Trust Region algorithms.  In additon it
-  provides higher and lower order models using Bryden and Tensor
+  provides higher and lower order models using Broyden and Tensor
   algorithms.  Special algorithms have been developed for use with
-  inexact linear solvers. %NOX is designed to work with any linear
-  algebra package and to be easily customized.
-  %NOX is part of Sandia's <A
+  inexact linear solvers such as Krylov subspace techniques. %NOX is
+  designed to work with any linear algebra package and to be easily
+  customized.  %NOX is part of Sandia's <A
   HREF="http://software.sandia.gov/trilinos/">Trilinos project</a>.
 
   %LOCA, distributed as part of %NOX,
@@ -72,36 +69,17 @@
 
   \section announcements Announcements
 
-  What's new in release 7.0:
-<ul>
-  <li> NOX is now using reference counted smart pointers (RCPs) for memory management.  The existence of an RCP in a method call implies a persisting relationship.  We are using the Teuchos::RefCountPtr object for the RCP.
-  <li> The NOX::Parameter::List has been removed.  We are now using the Teuchos::ParameterList object.  This has the same functionality with minor changes to the syntax of method calls.
-  <li> NOX now has a non-optional dependency on the Teuchos package (also part of Trilinos).  While it can be built stand-alone, we recomend building NOX as part of Trilinos with the teuchos library enabled to simplify dependencies.
-  <li> NOX now generates Makefiles that users can include in their application's makefiles.  This will get all library dependencies correct.
-  <li> Multivector support is no longer a configure option, but is automatically built as part of the library.
-  <li> The epetra interfaces have been changed.  They now take an Epetra_Operator as an argument when evaluating the Jacobian and preconditioner objects.  While this is redundant for our base epetra group since it shares the same operator between groups, this allows users to override the eptra group and use separate operators for each group.
-  <li> There are 2 options for creating an Ifpack preconditioner.  The original way "Ifpack" and the new way "New Ifpack".  The original will be removed in the next release (Trilinos 8.0), therefore we recommend switching to the new preconditionerr interface.
-  <li> In the epetra support, the preconditioner options "New Ifpack" and "ML" allow users to recompute the preconditioner using the same graph so that preconditioner memory is not allocated and destroyed each linear solve. 
-  <li> Build options will change.  please run "configure --help" to see the new options.  
-  <li> Many of the internals of %LOCA have been rewritten to more fully support multi-parameter continuation, constraint tracking, higher-order predictors and advanced bifurcation algorithms.  The old framework has been completely removed, and therefore all users must upgrade their interface to the new framework.  For a brief description of the new framework, see the \ref new_loca_framework page.  In addition, some of the parameter list entries that control %LOCA have changed.  See the \ref loca_parameters for a description of the new parameter list structure.
-  <li> A minimally augmented turning point formulation has been added to %LOCA.  This method appears to be significantly faster and more robust than the turning point methods based on the Moore-Spence formulation.
-  <li> A modified pitchfork bordering method has been added to %LOCA, which is similar to the modified turning point method already available.  This method avoids the singular matrix solves in the original pitchfork bordering method.
-  <li> Parallel and serial Hopf support has been added to %LOCA.
-</ul>
+  NOX/LOCA version 5.0 will be release as part of Trilinos 7.0 in September 2006.  the libraries have undergone extensive changes.  Please read the \ref nox_release_information page for more details on these changes.
 
 8/29/2005:  There currently is a portability issue with %LOCA to the Solaris platform using the Sun Forte 7 compilers.  %LOCA builds on this platform but does not run correctly.  It appears the problem is compiler related as the virtual table for some %LOCA objects is not setup correctly.  All of the %LOCA examples and any %LOCA tests involving continuation runs fail with a segmentation fault.  It is not known whether %LOCA runs correctly when built with version 10 of the Sun compilers.  See bugzilla bug <a href="http://software.sandia.gov/bugzilla/show_bug.cgi?id=1238"> 1238 </a> for more information on this issue.
 
-  \section user_information User Information
+  \section technical_information Technical Information
 
-  See \ref nox_user_information
-
-  \section developer_information Developer Information
-
-  See \ref nox_developer_information
-
-  \section release_information Release Information
-
-  See \ref nox_release_information
+  <ul>
+  <li> \ref nox_user_information - Instructions for building and linking NOX and LOCA to your appplication.
+  <li> \ref nox_release_information - Latest news and notes on released software.
+  <li> \ref nox_developer_information - Developer reference pages.
+  </ul>
 
   \section license License
 
@@ -111,18 +89,13 @@
 
   \section downloads Downloads
 
-  NOX is packaged and released as part of the Trilinos Solver Framework.  You may download %NOX (which includes %LOCA) by downloading a copy of Trilinos.  Click on the Downloads reference in the left sidebar from the Trilinos Home page:
+  NOX and LOCA are packaged and released as part of the <a href="http://software.sandia.gov/trilinos">Trilinos Solver Framework</a>.  You may download %NOX (which includes %LOCA) by downloading a copy of Trilinos.  Please see the <a href="http://software.sandia.gov/trilinos/downloads/index.html">Trilinos downloads page</a> for the latest releases. <br />
 
-  <ul>
-  <li> <a href="http://software.sandia.gov/trilinos">Trilinos Home Page</a>
-  </ul>
-
+If you are a Sandia employee you can download the development branch of Trilinos (either without repository information at the <a href="http://software.sandia.gov/trilinos/downloads/index.html">Trilinos downloads page</a>, or directly checked-out of the repository--read about it in the <a href="http://software.sandia.gov/trilinos/developer/TrilinosDevGuide.pdf" target="_blank">Trilinos Developer Guide</a>, the <a href="http://software.sandia.gov/trilinos/developer/cvs.html">CVS page</a>, or <a href="http://software.sandia.gov/trilinos/developer/faq.html">developer FAQ</a>).  (If you are not a Sandia employee, to gain access to either option, send a request to <a href="mailto:trilinos-help@software.sandia.gov" target="_blank">trilinos-help@software.sandia.gov</a>.)
 
   \section bugs Reporting Bugs and Making Enhancement Requests
 
-  To reports bugs or make enhancement requests, visit 
-  <A HREF="http://software.sandia.gov/bugzilla/">NOX's Bugzilla (Bug Tracking) Database</A>,
-  and use the following instructions.
+  To reports bugs or make enhancement requests, visit the <A HREF="http://software.sandia.gov/bugzilla/">Trilinos Bugzilla (Bug Tracking) Database</A>, and use the following instructions.
       <UL>
       <LI>Click on "Enter a new bug report"
       <LI>Choose "NOX"
@@ -188,11 +161,11 @@ The documentation is available online at
 
 To generate a local copy of the documentation, you'll need to have doxygen installed. 
 Then follow the instructions in \c nox/doc/README.
-If you've already successfully run configure, type 
+If you've already successfully run configure, type the following in the main nox directory of your build tree to generate the documentation. 
 \verbatim
 make dox
 \endverbatim
-to generate the documentation. The main page is \c nox/doc/html/index.html.
+The documentation is generated in the source directory tree.  The main page is \c nox/doc/html/index.html.
 
 \section Quicklinks
 
@@ -212,71 +185,60 @@ to generate the documentation. The main page is \c nox/doc/html/index.html.
 
 \section step1_download Downloading and Unpacking NOX
 
-If you have not already done so, you'll need to download %NOX; see
-\ref downloads. You can download %NOX as a standalone package or as
-part of Trilinos. 
+NOX is a package in the <a href="http://software.sandia.gov/trilinos">Trilinos Solver Framework</a>.  You will have to <a href="http://software.sandia.gov/trilinos/downloads/index.html">download</a> the Trilinos software, configure for your machine, build the libraries, and install them into your working directories.
 
-\note If you download it as part of Trilinos, you should
-follow the Trilinos instructions for configuring, compiling and
-installing.
+The <a href="http://software.sandia.gov/trilinos/getting_started.html">Getting Started With Trilinos</a> page is an excellent resource for configuring and building Trilinos. Two links of importance on this page are:
+<ul>
+<li> <a href="http://software.sandia.gov/trilinos/installation_manual.html">Installation Manual</a> - Instructions on how to download, unpack, and configure Trilinos.
+<li> <a href="http://software.sandia.gov/trilinos/configuration_manual.html">Configuration Manual"</a> - General options when invoking the configure script. 
+</ul>
 
-To unpack %NOX, type
+The configure command creates machine specific Makefiles for each Trilinos package including %NOX and %LOCA.  The configure script also enables specific options in each code.  There are many options that can be passed to the configure script.  The above link for the <a href="http://software.sandia.gov/trilinos/configuration_manual.html">Trilinos Configuration Manual"</a> gives the general links that are recognized by the top-level of Trilinos and most packages.  %NOX and %LOCA specific configuration flags are given on the \ref nox_configuration_options page.
 
-\verbatim
-gunzip -c nox-\<version\>.tar.gz | tar -xzvf -
-\endverbatim
+A typical configure script file for building nox and loca with epetra support enabled (for debian linux) is:
+<pre>
+../configure \
+--prefix=/home/rppawlo/trilinos_local \
+--disable-tests \
+--disable-examples \
+--enable-nox --enable-nox-tests --enable-nox-examples --enable-prerelease \
+--enable-nox-lapack --enable-nox-epetra \
+--with-nox-epetraext \
+--enable-loca \
+--enable-epetra \
+--enable-epetraext \
+--enable-ifpack \
+--enable-aztecoo \
+--enable-triutils \
+--enable-anasazi \
+--enable-teuchos --enable-teuchos-complex \
+--disable-default-packages \
+--disable-python \
+--with-lapack=/usr/lib/liblapack.a \
+--with-blas=/usr/lib/libblas.a \
+CXXFLAGS="-DMPICH_SKIP_MPICXX -g -ansi -Wall" \
+CFLAGS="-g -ansi -Wall" FFLAGS="-g -ansi -Wall" \
+--with-gnumake \
+--enable-mpi \
+--with-mpi-compilers \
+--cache-file=config.cache
+</pre>
 
-This will create a directory named nox-\<version\> containing the source
-code for %NOX. Rename this direction to nox; i.e.,
-
-\verbatim
-mv nox-\<version\> nox
-\endverbatim
-
-\section step1_configure Configuring NOX
-
-Change directories to the nox directory:
-
-\verbatim
-cd nox
-\endverbatim
-
-Run the configure script, which will create a Makefile customized to
-your machine.
-
-\verbatim
-./configure
-\endverbatim
-
-There are many options that can be passed to the configure script, and
-they will be discussed as appropriate. For a full listing, see \ref
-nox_configuration_options.
-
-\note If you have previously run the configure script and compiled the
-code, be sure to type "make clean" before re-running the configure
-script.
-
-\section step1_compile Compiling NOX
-
-To compile %NOX, simply type:
-\verbatim
-make
-\endverbatim
-
-\section step1_install Installing NOX
-
-To install %NOX, type
+After Trilinos is configured and built, the headers and libraries must be installed into a working directory.  This is done by typing in the top level build directory:
 \verbatim
 make install
 \endverbatim
 
-By default, %NOX will be installed in /usr/local. If you prefer that
-it be installed in a different directory, that can be specified using
-the --prefix=PREFIX configuration option.
+By default, %Trilinos will be installed in /usr/local. Headers are put
+into /usr/local/include and libraries are put into /usr/local/lib.  If
+you prefer that it be installed in a different directory (which we
+strongly recommend), the directory can be specified using the
+--prefix=PREFIX configuration option, where PREFIX is the preferred
+directory.
 
 \section step1_problems If you have problems...
 
-If you have problems configuring and compiling %NOX, please report
+If you have problems configuring and compiling %Trilinos, please report
 them using
 <A HREF="http://software.sandia.gov/bugzilla/">Bugzilla</A>; see \ref bugs for more information.
 
@@ -296,38 +258,37 @@ Go on to \ref step2.
 \section step2_abstract NOX abstract classes
 
   %NOX's flexibility is based on the fact that it does not depend on
-  any particular linear algebra package. In order to interface to %NOX,
-  the user needs to supply methods that derive from the following
-  abstract classes:
+  any particular linear algebra package. Interfacing to %NOX requires
+  concrete implementations or instatiations that derive from the
+  following abstract classes:
 
   - NOX::Abstract::Vector
   - NOX::Abstract::Group
 
   The \b Vector supports basic vector operations such as dot products
   and so on. The \b Group supports the linear algebra functionality as
-  well as the interface to evaluate the function and,
-  optionally, the Jacobian. Complete details are provided in
-  the class descriptions.
+  well as the interface to evaluate the function (nonlinear equations)
+  and, optionally, the Jacobian. Complete details are provided in the
+  class descriptions.
 
-  In order to link your code to NOX, you have to write your own
-  instantiation of the NOX::Abstract::Vector and NOX::Abstract::Group
-  classes (see \ref step2_writing) or use one of the predefined
-  implementations (see \ref step2_instantiations).
+  Users have two choices on how to supply the concrete implementations
+  of the above classes: (1) write your own implementation of the
+  NOX::Abstract::Vector and NOX::Abstract::Group classes (see \ref
+  step2_writing) or (2) use one of the predefined implementations (see
+  \ref step2_instantiations).
 
 \section step2_writing Writing your own instantiation
 
-  We recommend using the NOX::LAPACK framework as a guide.  In this
-  case, the underlying vectors of C++ STL vector<double> objects, and
-  the matrices are stored in our own NOX::LAPACK::Matrix class.  Both
-  the vectors and matrices are manipulated using LAPACK.  The
-  NOX::LAPACK::Vector is straightforward; see NOX_LAPACK_Vector.H and
-  NOX_LAPACK_Vector.C.  The NOX::LAPACK::Group uses the
-  NOX::LAPACK::Vector and NOX::LAPACK::Matrix objects. The interface
-  with the application is handled in a separate class
-  (NOX::LAPACK::Interface) that is passed to the NOX::LAPACK::Group
-  when it is constructed.
-
-  \note The NOX header files should be installed in /usr/local/include/nox.
+  We recommend using the NOX::LAPACK concrete implementation as a
+  guide.  In this case, the underlying vectors are C++ STL
+  vector<double> objects, and the matrices are stored in our own
+  NOX::LAPACK::Matrix class.  Both the vectors and matrices are
+  manipulated using LAPACK.  The NOX::LAPACK::Vector is
+  straightforward; see NOX_LAPACK_Vector.H and NOX_LAPACK_Vector.C.
+  The NOX::LAPACK::Group uses the NOX::LAPACK::Vector and
+  NOX::LAPACK::Matrix objects. The interface with the application is
+  handled in a separate class (NOX::LAPACK::Interface) that is passed
+  to the NOX::LAPACK::Group when it is constructed.
 
 \section step2_instantiations Instantiations provided with NOX
 
@@ -342,19 +303,18 @@ Go on to \ref step2.
   --enable-nox-lapack and --enable-nox-lapack-examples options to
   configure; see \ref nox_configuration_options.  For instructions on 
   interfacing your code to the lapack implementation see \ref lapack_interface.
-  
+  \note The NOX::LAPACK instatiation is serial only.  
   <li>
   The NOX::Epetra instantiation is an interface to the Trilinos/Epetra
-  library developed by 
-  <a href="http://www.sandia.gov">Sandia National Labs</a>; 
-  for more information see the 
-  <a href="http://software.sandia.gov/trilinos">Trilinos Home Page</a>. 
-  If you download %NOX with Trilinos (see \ref downloads),
-  then Epetra is included in the distribution.
-  To compile the NOX::Epetra library and examples, use the
-  --enable-nox-epetra and --enable-nox-epetra-examples options to
-  configure; see \ref nox_configuration_options.  For instructions on 
-  interfacing your code to the epetra implementation see \ref epetra_interface.
+  linear algebra library.  It is Sandia's workhorse code for parallel
+  applications.  For more information see the <a
+  href="http://software.sandia.gov/trilinos/epetra">Epetra Home
+  Page</a>. When you download %NOX as part of Trilinos (see \ref downloads),
+  Epetra is included in the distribution.  To compile the
+  NOX::Epetra library and examples, use the --enable-nox-epetra and
+  --enable-nox-epetra-examples options to configure; see \ref
+  nox_configuration_options.  For instructions on interfacing your
+  code to the epetra implementation see \ref epetra_interface.
 
   <li>
   The NOX::PETSc instantiation is an interface with the PETSc library. PETSc
@@ -371,9 +331,7 @@ Go on to \ref step2.
 
 \section step2_problems If you have problems...
 
-If you have problems configuring and compiling %NOX, please report
-them using
-<A HREF="http://software.sandia.gov/bugzilla/">Bugzilla</A>; see \ref bugs for more information.
+Please report any issues regarding %NOX and %LOCA to <A HREF="http://software.sandia.gov/bugzilla/">Bugzilla</A>; see \ref bugs for more information.
 
 \section step2_moving_on Moving on...
 
@@ -389,27 +347,31 @@ Go on to \ref step3.
 \page step3 Step 3: Call NOX from your code
 
 A small example based on the NOX::LAPACK Vector and Group is included
-with %NOX; see Rosenbrock.C.
+with %NOX; see the file
+Trilinos/packages/nox/examples/lapack/NOX_SimpleExamples/Rosenbrock.C.
 
 There are four steps to calling the solver.
 
-\section step3_stepa Step A: Set up a Group object containing the initial guess.
+\section step3_stepa Step A: Instantiate a Group object containing the initial guess.
 
 The first step is to somehow construct an object deriving from the
 Abstract::Group which contains the initial guess as its x-vector. See
-\ref step2 for more details.
+\ref step2 for more details.  For example:
 
 \code
 
 // Construct an object that derives from the abstract Group object. Here
 // we call it the ExampleGroup. It should contain the initial guess.
-ExampleGroup grp;
-
+Teuchos::RefCountPtr<UserConcreteGroup> grp = 
+  Teuchos::rcp(new UserConcreteGroup);
 \endcode
+
+Note that the group is not handled as a raw pointer, but is wrapped in a reference counter smart pointer (RCP).  RCPs enforce strict memory management in %NOX and %LOCA and can prevent many errors that users have encountered with objects going out of scope.  We use the RCP implementation in the %Trilinos package <a href="http://software.sandia.gov/Trilinos/packages/teuchos">Teuchos</a>.  For information on the use of smart pointers, see <a href="http://software.sandia.gov/Trilinos/RefCountPtrBeginnersGuideSAND.pdf">Teuchos Reference Counted Pointer Beginners Guide</a>.
 
 \section step3_stepb Step B: Construct the status tests
 
-The NOX::StatusTest objects are used to test for convergence or
+The NOX::StatusTest objects are used to determine when NOX should
+terminate the iterative process due to either convergence or
 failure. For example...
 
 - The NOX::StatusTest::MaxIters test is used to control the maximum
@@ -422,7 +384,7 @@ failure. For example...
 
 These and other status tests can be combined using the
 NOX::StatusTest::Combo object. It takes an arbitrary number of status
-tests and either AND's or OR's them together. 
+tests and either AND's or OR's them together.  
 
 Finally, the user can create their own status tests, so long as they
 derive from NOX::StatusTest::Generic.
@@ -430,11 +392,18 @@ derive from NOX::StatusTest::Generic.
 Here is some sample code.
 
 \code
-  // Set up the status tests
-  NOX::StatusTest::NormF statusTestA(grp, 1.0e-4);
-  NOX::StatusTest::MaxIters statusTestB(20);
-  NOX::StatusTest::Combo statusTestsCombo(NOX::StatusTest::Combo::OR, statusTestA, statusTestB);
+// Set up the status tests
+Teuchos::RefCountPtr<NOX::StatusTest::NormF> statusTestNormF =
+  Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-4));
+Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> statusTestMaxIters =
+  Teuchos::rcp(new NOX::StatusTest::MaxIters(20));
+Teuchos::RefCountPtr<NOX::StatusTest::Combo> statusTestsCombo =
+  Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR,
+                                          statusTestNormF, 
+                                          statusTestMaxIters));
 \endcode
+
+This test uses an OR combination, meaning that either test registered with the Combo test can trigger termination.  The first test requires that the norm of the residual is less that 1.0e-4.  If met, NOX will terminate returning a "Converged" result.  The second test will trigger NOX to terminate if a maximum number of iterations is reached and return a "Failed" result.
 
 \section step3_stepc Step C: Set the solver parameters
 
@@ -443,13 +412,14 @@ types of solvers and so forth should be used.
 
 \code
 // Create the list of solver parameters
-Teuchos::ParameterList solverParameters;
+Teuchos::RefCountPtr<Teuchos::ParameterList> solverParametersPtr =
+  Teuchos::rcp(new Teuchos::ParameterList);
 
-// Set the solver (this is the default)
-solverParameters.set("Nonlinear Solver", "Line Search Based");
+// Select the solver (this is the default)
+solverParametersPtr->set("Nonlinear Solver", "Line Search Based");
 
 // Create the line search parameters sublist
-Teuchos::ParameterList& lineSearchParameters = solverParameters.sublist("Line Search");
+Teuchos::ParameterList& lineSearchParameters = solverParametersPtr->sublist("Line Search");
 
 // Set the line search method
 lineSearchParameters.set("Method","More'-Thuente");
@@ -464,12 +434,12 @@ initial guess, the status tests, and the solver parameters.
 
 \code
 // Create the solver
-NOX::Solver::Manager solver(grp, statusTestsCombo, solverParameters);
+NOX::Solver::Manager solver(grp, statusTestsCombo, solverParametersPtr);
 
 // Solve the nonlinear system
 NOX::StatusTest::StatusType status = solver.solve();
 
-// Print the answer
+// Print the parameter list
 cout << "\n" << "-- Parameter List From Solver --" << "\n";
 solver.getList().print(cout);
 
@@ -478,14 +448,12 @@ grp = solver.getSolutionGroup();
 
 // Print the answer
 cout << "\n" << "-- Final Solution From Solver --" << "\n";
-grp.print();
+grp.printSolution();
 \endcode
 
 \section step3_problems If you have problems...
 
-If you have problems configuring and compiling %NOX, please report
-them using
-<A HREF="http://software.sandia.gov/bugzilla/">Bugzilla</A>; see \ref bugs for more information.
+Please report any issues regarding %NOX and %LOCA to <A HREF="http://software.sandia.gov/bugzilla/">Bugzilla</A>; see \ref bugs for more information.
 
 \section step3_moving_on Moving on...
 
@@ -534,9 +502,7 @@ CXXFLAGS = -I$(NOX_PREFIX)/include/
 
 \section step4_problems If you have problems...
 
-If you have problems configuring and compiling %NOX, please report
-them using
-<A HREF="http://software.sandia.gov/bugzilla/">Bugzilla</A>; see \ref bugs for more information.
+If you have problems linking %NOX and/or %LOCA, please report them using <A HREF="http://software.sandia.gov/bugzilla/">Bugzilla</A>; see \ref bugs for more information.
 
 */
 
@@ -546,8 +512,7 @@ them using
 
 /*! \page nox_developer_information NOX Developer Information
 
-To become a %NOX developer, contact Tammy Kolda (tgkolda@sandia.gov) or
-Roger Pawlowski (rppawlo@sandia.gov).
+To become a %NOX developer, contact Roger Pawlowski (rppawlo@sandia.gov).
 
 The following pages are relevant to developers.
 <ul> 
@@ -564,6 +529,24 @@ The following pages are relevant to developers.
 /* ************************************************************************ */
 
 /*! \page nox_release_information NOX and LOCA Release Information
+
+ NOX/LOCA version 5.0 will be release as part of Trilinos 7.0 in early September 2006.  NOX and LOCA have undergone many important changes between the 6.0 and 7.0 release:
+
+<ul>
+  <li> NOX is now using reference counted smart pointers (RCPs) for memory management.  Passing an RCP wrapped object through a method call implies a persisting relationship.  We are using the Teuchos::RefCountPtr object for the RCP.
+  <li> The NOX::Parameter::List has been removed.  We are now using the Teuchos::ParameterList object.  This has the same functionality with minor changes to the syntax of method calls.
+  <li> NOX now has a non-optional dependency on the Teuchos package (also part of Trilinos).  While it can be built stand-alone, we recomend building NOX as part of Trilinos with the teuchos library enabled to simplify dependencies.
+  <li> NOX and LOCA now generate Makefiles that users can include in their own makefiles to get all dependencies correct.  For example if NOX is built with Epetra support enabled, nox depends on epetra, aztecoo and ifpack headers and libraries.  To keep the user from having to learn about those packages so they can link nox into their codes, just include the NOX file Makefile.export.nox file to get variables that have all sub package dependencies correct. In the installation directory, look at the files include/Makefiles.export.nox and include/Makefiles.export.nox.macros.  The important flags in Makefile.export.nox are NOX_INCLUDES, NOX_LIBS, LOCA_INCLUDES, and LOCA_LIBS flags.  The Makefile.export.nmox.macros file contains the compiler flags that were used to build the NOX and LOCA packages.  It is very important to use consistent flags when linking your application against Trilinos.
+  <li> Multivector support is no longer a configure option, but is automatically built as part of the library.
+  <li> The epetra interfaces (NOX::Epetra::Interface namespace) have been changed.  They now take an Epetra_Operator as an argument when evaluating the Jacobian and preconditioner objects.  While this is redundant for our base epetra group (since it shares the same operator between groups), this allows users to override the eptra group and use separate operators for each group if desired.
+  <li> There are 2 options for creating an Ifpack preconditioners.  The original code where the "Preconditioner" option in the "Linear Solver" sublist was set to "Ifpack" and the new ifpack code "New Ifpack".  The original option explicitly constructs an ifpack ilu object that has since been deprecated and will most likely be removed in the next release (Trilinos 8.0).  The option "New Ifpack" uses the new ifpack factory object.  You can now create a parameter list that directly uses the ifpack factory arguments and can create any ifpack preconditioner (not limited to ILU).  We recommend switching to the "New Ifpack" preconditionerr interface asap.
+  <li> In the epetra support, the preconditioner options "AztecOO", "New Ifpack", and "ML" allow users to recompute the preconditioner using the same graph so that preconditioner memory is not allocated and destroyed each linear solve.  The new "Linear Solver" sublist key is "Preconditioner Reuse Policy" with the possible values "Rebuild", "Reuse", and "Recompute".  If you choose "Rebuild", this is what nox has done in previous releases - destroy, reallocate and recompute the preconditioner for each linear solve.   "Reuse" wil use the same preconditioner for every linear solve.  "Recompute" will recompute the preconditioner, but will try to efficiently reuse any objects that don't need to be destroyed.  How efficient the "Recompute" option is depends on the type of preconditioner.  For example if we are using ILU in Ifpack, the graph that is allocated does not need to be destroyed and recomputed even though the computation will recompute the factorization when the matrix changes.  These changes support native Aztec, Ifpack and ML preconditioners.
+  <li> Build options have changed.  please run "configure --help" to see the new options.  
+  <li> Many of the internals of %LOCA have been rewritten to more fully support multi-parameter continuation, constraint tracking, higher-order predictors and advanced bifurcation algorithms.  The old framework has been completely removed, and therefore all users must upgrade their interface to the new framework.  For a brief description of the new framework, see the \ref new_loca_framework page.  In addition, some of the parameter list entries that control %LOCA have changed.  See the \ref loca_parameters for a description of the new parameter list structure.
+  <li> A minimally augmented turning point formulation has been added to %LOCA.  This method appears to be significantly faster and more robust than the turning point methods based on the Moore-Spence formulation.
+  <li> A modified pitchfork bordering method has been added to %LOCA, which is similar to the modified turning point method already available.  This method avoids the singular matrix solves in the original pitchfork bordering method.
+  <li> Parallel and serial Hopf support has been added to %LOCA.
+</ul>
 
 NOX/LOCA 4.1 is being released as part of Trilinos 6.0 on September 1st 2005.
 
