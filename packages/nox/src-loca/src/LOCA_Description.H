@@ -346,6 +346,12 @@ The LOCA::Epetra::Factory provides strategies specific to the NOX::Epetra::Group
        <ul>
        <li> <B>"Include UV In Preconditioner"</B> -- [bool] (default: false) Flag indicating whether to use the \f$U\f$ and \f$V\f$ terms in the preconditioner for \f$P\f$
        <li> <B>"Use P For Preconditioner"</B> -- [bool] (default: false)  Flag indicating whether to use the representation of \f$P\f$ as a LOCA::Epetra::LowRankUpdateRowMatrix for computing the preconditioner.  This is valid only for preconditioners that accept an Epetra_RowMatrix interface.
+       <li> <B>"Transpose Solver Method"</B> -- [string] (default: "Transpose Preconditioner") Method for preconditioning the transpose linear system (LOCA::Epetra::TransposeLinearSystem::Factory).  Available choices are:
+          <ul>
+	  <li> "Transpose Preconditioner" -- Use the transpose of the preconditioner for the original system.
+	  <li> "Left Preconditioning" -- Use the transpose of the preconditioner, and apply using left preconditioning.
+	  <li> "Explicit Transpose" -- Form the transpose of the matrix and compute the preconditioner.  This method is available only if Trilinos is configured with %EpetraExt support (--enable-epetraext).
+	  </ul>
        </ul>
     <li> "Augmented" -- Form an augmented linear problem implemented in a pseudo-matrix free mode (LOCA::BorderedSolver::EpetraAugmented).
     </ul>

@@ -992,6 +992,8 @@ createIfpackPreconditioner(Teuchos::ParameterList& p) const
     ifpackPreconditionerPtr = 
       Teuchos::rcp(new Ifpack_CrsRiluk(*ifpackGraphPtr));
     ifpackPreconditionerPtr->InitValues(*vbr);
+    ifpackPreconditionerPtr->SetAbsoluteThreshold(p.get("Absolute Threshold", 0.0));
+    ifpackPreconditionerPtr->SetRelativeThreshold(p.get("Relative Threshold", 1.0));
     ifpackPreconditionerPtr->Factor();
   }
 
@@ -1017,6 +1019,8 @@ createIfpackPreconditioner(Teuchos::ParameterList& p) const
     ifpackPreconditionerPtr = 
       Teuchos::rcp(new Ifpack_CrsRiluk(*ifpackGraphPtr));
     ifpackPreconditionerPtr->InitValues(*crs);
+    ifpackPreconditionerPtr->SetAbsoluteThreshold(p.get("Absolute Threshold", 0.0));
+    ifpackPreconditionerPtr->SetRelativeThreshold(p.get("Relative Threshold", 1.0));
     ifpackPreconditionerPtr->Factor();
   }
   
@@ -1048,6 +1052,8 @@ createIfpackPreconditioner(Teuchos::ParameterList& p) const
     ifpackPreconditionerPtr = 
       Teuchos::rcp(new Ifpack_CrsRiluk(*ifpackGraphPtr));
     ifpackPreconditionerPtr->InitValues(*crs);
+    ifpackPreconditionerPtr->SetAbsoluteThreshold(p.get("Absolute Threshold", 0.0));
+    ifpackPreconditionerPtr->SetRelativeThreshold(p.get("Relative Threshold", 1.0));
     ifpackPreconditionerPtr->Factor();
   }
 
@@ -1499,6 +1505,7 @@ NOX::Epetra::LinearSystemAztecOO::setJacobianOperatorForSolve(
 {
   jacPtr = Teuchos::rcp_const_cast<Epetra_Operator>(solveJacOp);
   jacType = getOperatorType(*solveJacOp);
+  this->setAztecOOJacobian();
 }
 
 //***********************************************************************
@@ -1507,6 +1514,7 @@ NOX::Epetra::LinearSystemAztecOO::setPrecOperatorForSolve(
 	       const Teuchos::RefCountPtr<const Epetra_Operator>& solvePrecOp)
 {
   solvePrecOpPtr = Teuchos::rcp_const_cast<Epetra_Operator>(solvePrecOp);
+  this->setAztecOOPreconditioner();
 }
 
 //***********************************************************************

@@ -47,7 +47,7 @@ AM_CPPFLAGS = $(TEST_INCLUDES)
 EXEEXT = .exe
 
 if BUILD_LOCA_EPETRA_TESTS
-noinst_PROGRAMS = tcubed tcubed_constraint
+noinst_PROGRAMS = tcubed tcubedTP tcubed_constraint
 endif
 
 tcubed_SOURCES = \
@@ -62,6 +62,14 @@ tcubed_DEPENDENCIES = \
 	$(top_builddir)/test/epetra/LOCA_TestProblems/liblocatestproblems.a
 
 tcubed_LDADD = $(TEST_LIBS)
+
+tcubedTP_SOURCES = \
+	$(srcdir)/TcubedTP.C 
+
+tcubedTP_DEPENDENCIES = \
+        $(tcubed_DEPENDENCIES)
+
+tcubedTP_LDADD = $(TEST_LIBS)
 
 tcubed_constraint_SOURCES = \
 	$(srcdir)/Tcubed_constraint.C 

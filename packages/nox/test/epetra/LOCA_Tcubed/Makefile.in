@@ -46,7 +46,7 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(tcubed_SOURCES) $(tcubed_constraint_SOURCES)
+SOURCES = $(tcubed_SOURCES) $(tcubedTP_SOURCES) $(tcubed_constraint_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -70,6 +70,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
 @BUILD_LOCA_EPETRA_TESTS_TRUE@noinst_PROGRAMS = tcubed$(EXEEXT) \
+@BUILD_LOCA_EPETRA_TESTS_TRUE@	tcubedTP$(EXEEXT) \
 @BUILD_LOCA_EPETRA_TESTS_TRUE@	tcubed_constraint$(EXEEXT)
 subdir = test/epetra/LOCA_Tcubed
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
@@ -109,20 +110,24 @@ am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
 @USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
 @USING_GNUMAKE_TRUE@	$(LOCA_EPETRA_TEST_LIBS))
+am_tcubedTP_OBJECTS = TcubedTP.$(OBJEXT)
+tcubedTP_OBJECTS = $(am_tcubedTP_OBJECTS)
 am_tcubed_constraint_OBJECTS = Tcubed_constraint.$(OBJEXT)
 tcubed_constraint_OBJECTS = $(am_tcubed_constraint_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Tcubed.Po \
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Tcubed.Po ./$(DEPDIR)/TcubedTP.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Tcubed_constraint.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(tcubed_SOURCES) $(tcubed_constraint_SOURCES)
-DIST_SOURCES = $(tcubed_SOURCES) $(tcubed_constraint_SOURCES)
+SOURCES = $(tcubed_SOURCES) $(tcubedTP_SOURCES) \
+	$(tcubed_constraint_SOURCES)
+DIST_SOURCES = $(tcubed_SOURCES) $(tcubedTP_SOURCES) \
+	$(tcubed_constraint_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -351,6 +356,13 @@ tcubed_DEPENDENCIES = \
 	$(top_builddir)/test/epetra/LOCA_TestProblems/liblocatestproblems.a
 
 tcubed_LDADD = $(TEST_LIBS)
+tcubedTP_SOURCES = \
+	$(srcdir)/TcubedTP.C 
+
+tcubedTP_DEPENDENCIES = \
+        $(tcubed_DEPENDENCIES)
+
+tcubedTP_LDADD = $(TEST_LIBS)
 tcubed_constraint_SOURCES = \
 	$(srcdir)/Tcubed_constraint.C 
 
@@ -407,6 +419,9 @@ clean-noinstPROGRAMS:
 tcubed$(EXEEXT): $(tcubed_OBJECTS) $(tcubed_DEPENDENCIES) 
 	@rm -f tcubed$(EXEEXT)
 	$(CXXLINK) $(tcubed_LDFLAGS) $(tcubed_OBJECTS) $(tcubed_LDADD) $(LIBS)
+tcubedTP$(EXEEXT): $(tcubedTP_OBJECTS) $(tcubedTP_DEPENDENCIES) 
+	@rm -f tcubedTP$(EXEEXT)
+	$(CXXLINK) $(tcubedTP_LDFLAGS) $(tcubedTP_OBJECTS) $(tcubedTP_LDADD) $(LIBS)
 tcubed_constraint$(EXEEXT): $(tcubed_constraint_OBJECTS) $(tcubed_constraint_DEPENDENCIES) 
 	@rm -f tcubed_constraint$(EXEEXT)
 	$(CXXLINK) $(tcubed_constraint_LDFLAGS) $(tcubed_constraint_OBJECTS) $(tcubed_constraint_LDADD) $(LIBS)
@@ -418,6 +433,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Tcubed.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TcubedTP.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Tcubed_constraint.Po@am__quote@
 
 .C.o:
@@ -451,6 +467,22 @@ Tcubed.obj: $(srcdir)/Tcubed.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Tcubed.Po' tmpdepfile='$(DEPDIR)/Tcubed.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Tcubed.obj `if test -f '$(srcdir)/Tcubed.C'; then $(CYGPATH_W) '$(srcdir)/Tcubed.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Tcubed.C'; fi`
+
+TcubedTP.o: $(srcdir)/TcubedTP.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TcubedTP.o -MD -MP -MF "$(DEPDIR)/TcubedTP.Tpo" -c -o TcubedTP.o `test -f '$(srcdir)/TcubedTP.C' || echo '$(srcdir)/'`$(srcdir)/TcubedTP.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TcubedTP.Tpo" "$(DEPDIR)/TcubedTP.Po"; else rm -f "$(DEPDIR)/TcubedTP.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TcubedTP.C' object='TcubedTP.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TcubedTP.Po' tmpdepfile='$(DEPDIR)/TcubedTP.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TcubedTP.o `test -f '$(srcdir)/TcubedTP.C' || echo '$(srcdir)/'`$(srcdir)/TcubedTP.C
+
+TcubedTP.obj: $(srcdir)/TcubedTP.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TcubedTP.obj -MD -MP -MF "$(DEPDIR)/TcubedTP.Tpo" -c -o TcubedTP.obj `if test -f '$(srcdir)/TcubedTP.C'; then $(CYGPATH_W) '$(srcdir)/TcubedTP.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TcubedTP.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TcubedTP.Tpo" "$(DEPDIR)/TcubedTP.Po"; else rm -f "$(DEPDIR)/TcubedTP.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TcubedTP.C' object='TcubedTP.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TcubedTP.Po' tmpdepfile='$(DEPDIR)/TcubedTP.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TcubedTP.obj `if test -f '$(srcdir)/TcubedTP.C'; then $(CYGPATH_W) '$(srcdir)/TcubedTP.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TcubedTP.C'; fi`
 
 Tcubed_constraint.o: $(srcdir)/Tcubed_constraint.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Tcubed_constraint.o -MD -MP -MF "$(DEPDIR)/Tcubed_constraint.Tpo" -c -o Tcubed_constraint.o `test -f '$(srcdir)/Tcubed_constraint.C' || echo '$(srcdir)/'`$(srcdir)/Tcubed_constraint.C; \

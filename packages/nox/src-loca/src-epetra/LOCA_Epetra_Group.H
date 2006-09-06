@@ -74,39 +74,40 @@ namespace LOCA {
   //! %LOCA %Epetra support
   namespace Epetra {
 
-    //! Extension of the NOX::Epetra:New:Group to %LOCA.  
+    //! Extension of the NOX::Epetra::Group to %LOCA.  
     /*!
-      This class is derived both from the NOX::Epetra::Group and
-      LOCA::Abstract::Group classes and therefore inherits the implementation
-      of the NOX::Abstract::Group interface provided by NOX::Epetra::Group.
-      
-      This class provides implementations of %LOCA AbstractGroup virtual 
-      methods specific to the %Epetra group.  It stores a parameter vector
-      for setting/retrieving parameter values 
-      (LOCA::Continuation::AbstractGroup), provides a facility for computing
-      eigenvalues (LOCA::Continuation::AbstractGroup) using the Anasazi 
-      package, and augements the Jacobian matrix for homotopy
-      (LOCA::Homotopy::AbstractGroup), It currently has no support for
-      storing a mass matrix and therefore cannot be used in Hopf or 
-      generalized eigenvalue computations.  Since it is
-      derived from the LOCA::Abstract::Group (which is in-turn derived
-      from all FiniteDifference groups), this group implicitly uses the
-      finite-difference implementations of parameter and second derivatives
-      provided by the FiniteDifference groups.  
+     * This class extends the NOX::Epetra::Group to %LOCA enabling continuation
+     * and bifurcation capabilities using %Epetra.  It is derived from
+     * the NOX::Epetra::Group (basic %Epetra support), the
+     * LOCA::Abstract::Group (brings in all %LOCA abstract base classes),
+     * and the LOCA::Abstract::TransposeSolveGroup (for 
+     * applyJacobianTransposeInverse() methods).  It stores a parameter vector
+     * for setting/retrieving parameter values and overloads the computeF() 
+     * and computeJacobian() methods of the NOX::Epetra::Group
+     * parent class to set the entire contents
+     * of the parameter vector in the problem interface before calling the
+     * NOX::Epetra::Group computeF() and computeJacobian().  
 
-      The computeF() and computeJacobian() methods of the NOX::Epetra::Group
-      parent class are overloaded here.  They both set the entire contents
-      of the parameter vector in the problem interface before calling the
-      NOX::Epetra::Group computeF() and computeJacobian().
-    */
-
+     * Since it is derived from the LOCA::Abstract::Group (which is in turn 
+     * derived from all FiniteDifference groups), it uses the finite-difference
+     * implementations for all parameter derivatives and second derivatives.
+     * However this behavior can be modified by calling the setDerivUtils()
+     * method of the LOCA::MultiContinuation::FiniteDifferenceGroup parent
+     * class.
+     *
+     * This class provides complete support for all continuation and 
+     * bifurcation methods including shift-invert and Cayley methods
+     * for computing eigenvalues and Hopf bifurcations.  However this support
+     * is only enabled by calling the appropriate constructor described below.
+     */
     class Group : public virtual NOX::Epetra::Group, 
 		  public virtual LOCA::Abstract::Group,
 		  public virtual LOCA::Abstract::TransposeSolveGroup {
 
     public:
       //! Constructor with NO linear system (VERY LIMITED).
-      /*! WARNING: If this constructor is used, then methods that require
+      /*! 
+       * WARNING: If this constructor is used, then methods that require
        * a Jacobian or preconditioning will not be available.  You will be
        * limited to simple algorithms like nonlinear-CG with no
        * preconditioning.
@@ -117,7 +118,12 @@ namespace LOCA {
 	    NOX::Epetra::Vector& initialGuess,
 	    const LOCA::ParameterVector& p);
 
-      //! Standard Constructor.
+      //! Standard Constructor enabling most %LOCA support
+      /*! 
+       * This is the most commonly used constructor and provides support for
+       * all %LOCA algorithms except shift-invert and Cayley transformations
+       * and Hopf bifurcations.
+       */
       Group(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
 	    Teuchos::ParameterList& printingParams, 
 	    const Teuchos::RefCountPtr<LOCA::Epetra::Interface::Required>& i, 
@@ -126,6 +132,16 @@ namespace LOCA {
 	    const LOCA::ParameterVector& p);
 
       //! Constructor with time-dependent interface and shifted linear system
+      /*!
+       * Use this constructor to enable shift-invert and Cayley transformations
+       * or Hopf bifurcations.  It requires another interface to compute the
+       * shifted matrix \f$\alpha J + \beta M\f$ where \f$J\f$ is the 
+       * Jacobian matrix and \f$M\f$ is the mass matrix, and a linear
+       * system object to solve this system.  Setting linSys = shiftedLinSys
+       * is a valid option for passing the shifted solver, but this will cause
+       * the shifted matrix to overwrite the Jacobian possibly resulting in
+       * more matrix fills.
+       */
       Group(
 	const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
 	Teuchos::ParameterList& printingParams,
@@ -135,7 +151,15 @@ namespace LOCA {
 	const Teuchos::RefCountPtr<NOX::Epetra::LinearSystem>& shiftedLinSys,
 	const LOCA::ParameterVector& p);
 
-      //! Constructor with time-dependent matrix-free interface and shifted linear system
+      /*!
+       * \brief Constructor with time-dependent matrix-free interface and 
+       * shifted linear system
+       */
+      /*!
+       * This constructor may also be used for shift-invert and Cayley
+       * transformations, but should be only be used for a matrix-free
+       * method for solving the shifted system.
+       */
       Group(
 	const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
 	Teuchos::ParameterList& printingParams,
@@ -197,12 +221,54 @@ namespace LOCA {
       //@{
 
       //! Solve Jacobian-tranpose system 
+      /*!
+       * In addition to all regular linear solver parameters, this method
+       * references the following additional parameters:
+       * <ul>
+       * <li> "Transpose Solver Method" -- [string] 
+       *      (default: "Transpose Preconditioner") Method for preconditioning 
+       *      the transpose linear system 
+       *      (LOCA::Epetra::TransposeLinearSystem::Factory).  Available 
+       *      choices are:
+       *   <ul>
+       *   <li> "Transpose Preconditioner" -- Use the transpose of the 
+       *        preconditioner for the original system.
+       *   <li> "Left Preconditioning" -- Use the transpose of the 
+       *        preconditioner, and apply using left preconditioning.
+       *   <li> "Explicit Transpose" -- Form the transpose of the matrix and 
+       *        compute the preconditioner.  This method is available only if 
+       *        Trilinos is configured with %EpetraExt support 
+       *        (--enable-epetraext).
+       *   </ul>
+       * </ul>
+       */
       virtual NOX::Abstract::Group::ReturnType 
       applyJacobianTransposeInverse(Teuchos::ParameterList& params, 
 				    const NOX::Abstract::Vector& input, 
 				    NOX::Abstract::Vector& result) const;
 
       //! Solve Jacobian-tranpose system with multiple right-hand sides
+      /*!
+       * In addition to all regular linear solver parameters, this method
+       * references the following additional parameters:
+       * <ul>
+       * <li> "Transpose Solver Method" -- [string] 
+       *      (default: "Transpose Preconditioner") Method for preconditioning 
+       *      the transpose linear system 
+       *      (LOCA::Epetra::TransposeLinearSystem::Factory).  Available 
+       *      choices are:
+       *   <ul>
+       *   <li> "Transpose Preconditioner" -- Use the transpose of the 
+       *        preconditioner for the original system.
+       *   <li> "Left Preconditioning" -- Use the transpose of the 
+       *        preconditioner, and apply using left preconditioning.
+       *   <li> "Explicit Transpose" -- Form the transpose of the matrix and 
+       *        compute the preconditioner.  This method is available only if 
+       *        Trilinos is configured with %EpetraExt support 
+       *        (--enable-epetraext).
+       *   </ul>
+       * </ul>
+       */
       virtual NOX::Abstract::Group::ReturnType 
       applyJacobianTransposeInverseMultiVector(
 				    Teuchos::ParameterList& params, 

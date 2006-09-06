@@ -156,7 +156,7 @@ int main(int argc, char *argv[])
   aList.set("Block Size", 1);        // Size of blocks
   aList.set("Num Blocks", 10);       // Size of Arnoldi factorization
   aList.set("Num Eigenvalues", 3);   // Number of eigenvalues
-  aList.set("Tol", 2.0e-7);          // Tolerance
+  aList.set("Convergence Tolerance", 2.0e-7);          // Tolerance
   aList.set("Step Size", 1);         // How often to check convergence
   aList.set("Maximum Restarts",2);   // Maximum number of restarts
   aList.set("Verbosity",  

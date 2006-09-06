@@ -225,6 +225,10 @@ namespace LOCA {
      *      a LOCA::Epetra::LowRankUpdateRowMatrix for computing the 
      *      preconditioner.  This is valid only for preconditioners that
      *      accept an Epetra_RowMatrix interface.
+     * <li> "Transpose Solver Method" -- [string] 
+     *      (default: "Transpose Preconditioner") Method for preconditioning
+     *      the transpose linear system.  See 
+     *      LOCA::Epetra::TransposeLinearSystem::Factory for available choices.
      * </ul>
      */
     class EpetraHouseholder : public LOCA::BorderedSolver::AbstractStrategy {
