@@ -56,8 +56,10 @@ The Anasazi::OperatorTraits interface provides access to a single mechanism: the
         - Epetra_MultiVector and Epetra_Operator (with scalar type \c double)
         - Thyra::MultiVectorBase and Thyra::LinearOpBase (with arbitrary scalar type)\n
           This allows %Anasazi to be used with any classes that implement the abstract interfaces provided by the Thyra package.
+        - Anasazi::MultiVec and Anasazi::Operator (with arbitrary scalar type)\n
+          This allows %Anasazi to be used with any classes that implement the abstract base classes Anasazi::MultiVec and Anasazi::Operator.
  
-Additional specializations of Anasazi::MultiVecTraits and Anasazi::OperatorTraits are created by the user .
+Additional specializations of Anasazi::MultiVecTraits and Anasazi::OperatorTraits are created by the user.
 
  */
 
@@ -70,7 +72,7 @@ Additional specializations of Anasazi::MultiVecTraits and Anasazi::OperatorTrait
     iteration. Extracting the essential nature of an eigensolver iteration
     results in a simpler piece of code to develop, debug and
     maintain. The %Anasazi iterative eigensolver framework encourages this by
-    providing three disctinct entities to fulfill the roles needed by an eigensolver: Anasazi::Eigensolver,
+    providing three distinct entities to fulfill the roles needed by an eigensolver: Anasazi::Eigensolver,
     Anasazi::StatusTest and Anasazi::SolverManager:
         - Anasazi::Eigensolver implements the minimal features associated with an eigenvalue iteration.\n
           The iteration state is private member data of the solver, and the eigensolver iteration occurs inside the Anasazi::Eigensolver::iterate() method. 
