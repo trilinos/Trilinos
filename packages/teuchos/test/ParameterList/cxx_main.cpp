@@ -35,8 +35,6 @@
 
 #ifdef HAVE_TEUCHOS_EXTENDED
 #include "Teuchos_XMLParameterListHelpers.hpp"
-//#include "Teuchos_XMLParameterListWriter.hpp"
-//#include "Teuchos_XMLParameterListReader.hpp"
 #endif
 
 #ifdef HAVE_MPI
@@ -183,8 +181,12 @@ int main( int argc, char *argv[] )
     int ARI = 0, default_step = 0, max_iter_inc = 0, rec_step = 0;
     double alpha_factor = 0.0, min_bnds_factor = 0.0, max_bnds_factor = 0.0;
     bool force_interp = true, use_cntrs = false;
+    string ls_method = "Polynomial";
+    // This is to force a char* to be passed into the get method to see if the template
+    // specialization for char* is working.
+    char* ls_method_char = const_cast<char *>(ls_method.c_str());
     ParameterList PL_My_LineSearch("PL_My_LineSearch");
-    string ls_method = PL_My_LineSearch.get("Method", "Polynomial");
+    ls_method = PL_My_LineSearch.get("Method", ls_method_char);
     ParameterList& PL_Polynomial = PL_My_LineSearch.sublist("Polynomial");
     ARI = PL_Polynomial.get("Allowed Relative Increase", 100 );
     alpha_factor = PL_Polynomial.get("Alpha Factor", 0.0001 );
