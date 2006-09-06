@@ -7,7 +7,7 @@
 ##
 ## Set the Trilinos install directory 
 ##
-TRILINOS_INSTALL_DIR = /home/rppawlo/junk
+TRILINOS_INSTALL_DIR = /home/rppawlo/trilinos_local
 
 ##
 ## Include any direct Trilinos library dependencies - in this case only nox

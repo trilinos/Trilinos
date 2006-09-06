@@ -56,7 +56,7 @@ namespace NOX {
 /*!
   \brief Provides printing utilities.
 
-  The following parameters are used by this class and should be
+  The following parameters are valid for this class and should be
   defined in the "Printing" sublist of the solver parameter list.
 
   - "Output Information" - An integer which is a sum of MsgType's to
@@ -70,6 +70,12 @@ namespace NOX {
 
   - "Output Precision" - Specifis the default number of decimal places
     to be used when printing floating point numbers. The default is 4.
+
+  - "Output Stream" - A Teuchos::RefCountPtr<std::ostream> object that 
+    will be used for standard output. 
+
+  - "Error Stream" - A Teuchos::RefCountPtr<std::ostream> object that 
+    will be used for output of error information. 
 
   The public variables should never be modified directly.
 */
@@ -107,7 +113,7 @@ public:				// types
   /*!
     \brief Message types for printing.
 
-    Note that each message type if a power of two - this is \b very
+    Note that each message type is a power of two - this is \b very
     important. They can be added together to specify which messages
     you wish to receive.
   */
@@ -159,12 +165,12 @@ public:
 public:
 
   //! Constructor.  
-  /*!The final argument is a reference counted pointer to an ostream.
-    This defaults to std::cout if not supplied.  Users should only
-    supply this argument if they want output directed to a
-    std::ostream other than std::cout.  If so, they must wrap the
-    pointer in a reference counted pointer for safe memory
-    management. */
+  /*!The final two arguments are a reference counted pointers to
+    ostreams.  This defaults to std::cout and std::cerr if not
+    supplied.  Users should only supply this argument if they want
+    output directed to a std::ostream other than the defaults.  If so,
+    they must wrap the ostream in a reference counted pointer for safe
+    memory management. */
   Utils(int outputInformation=0xf, int MyPID=0, int outputProcess=0, 
 	int outputPrecision=3, 
 	const Teuchos::RefCountPtr<std::ostream>& outputStream=
