@@ -112,6 +112,7 @@ class LOBPCGSolMgr : public SolverManager<ScalarType,MV,OP> {
    *   - \c "Locking Quorum" - a \c int specifying the number of eigenpairs that must meet the locking criteria before locking actually occurs. Default: 1
    *   - \c "Locking Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide locking. Default: 0.1*convergence tolerance
    *   - \c "Relative Locking Tolerance" - a \c bool specifying whether residuals norms should be scaled by their eigenvalues for the purposing of deciding locking. Default: true
+   *   - \c "Init" - a LOBPCGState<ScalarType,MV> struct used to initialize the LOBPCG eigensolver.
    */
   LOBPCGSolMgr( const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem,
                              Teuchos::ParameterList &pl );
@@ -120,7 +121,7 @@ class LOBPCGSolMgr : public SolverManager<ScalarType,MV,OP> {
   virtual ~LOBPCGSolMgr() {};
   //@}
   
-    //! @name Accessor methods
+  //! @name Accessor methods
   //@{ 
 
   const Eigenproblem<ScalarType,MV,OP>& getProblem() const {
@@ -129,7 +130,7 @@ class LOBPCGSolMgr : public SolverManager<ScalarType,MV,OP> {
 
   //@}
 
-    //! @name Solver application methods
+  //! @name Solver application methods
   //@{ 
     
   /*! \brief This method performs possibly repeated calls to the underlying eigensolver's iterate() routine
@@ -176,6 +177,7 @@ class LOBPCGSolMgr : public SolverManager<ScalarType,MV,OP> {
   int verbosity_;
   int lockQuorum_;
   bool recover_;
+  Teuchos::RefCountPtr<LOBPCGState<ScalarType,MV> > state_;
 };
 
 
@@ -264,6 +266,11 @@ LOBPCGSolMgr<ScalarType,MV,OP>::LOBPCGSolMgr(
 
   // recover from LOBPCGRitzFailure
   recover_ = pl.get("Recover",recover_);
+
+  // get (optionally) an initial state
+  if (pl.isParameter("Init")) {
+    state_ = Teuchos::getParameter<Teuchos::RefCountPtr<Anasazi::LOBPCGState<ScalarType,MV> > >(pl,"Init");
+  }
 }
 
 
@@ -309,8 +316,13 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
   Teuchos::RefCountPtr<StatusTestCombo<ScalarType,MV,OP> > combotest
     = Teuchos::rcp( new StatusTestCombo<ScalarType,MV,OP>( StatusTestCombo<ScalarType,MV,OP>::OR, alltests) );
   // printing StatusTest
-  Teuchos::RefCountPtr<StatusTestOutput<ScalarType,MV,OP> > outputtest
-    = Teuchos::rcp( new StatusTestOutput<ScalarType,MV,OP>( printer,combotest,1,Passed ) );
+  Teuchos::RefCountPtr<StatusTestOutput<ScalarType,MV,OP> > outputtest;
+  if ( printer->isVerbosity(Debug) ) {
+    outputtest = Teuchos::rcp( new StatusTestOutput<ScalarType,MV,OP>( printer,combotest,1,Passed+Failed+Undefined ) );
+  }
+  else {
+    outputtest = Teuchos::rcp( new StatusTestOutput<ScalarType,MV,OP>( printer,combotest,1,Passed ) );
+  }
 
   //////////////////////////////////////////////////////////////////////////////////////
   // Orthomanager
@@ -367,10 +379,15 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
     }
   }
 
-  // go ahead and initialize the solution to nothing in case we throw an exception
+  // initialize the solution to nothing in case we throw an exception
   Eigensolution<ScalarType,MV> sol;
   sol.numVecs = 0;
   problem_->setSolution(sol);
+
+  // initialize the solver if the user specified a state
+  if (state_ != Teuchos::null) {
+    lobpcg_solver->initialize(*state_);
+  }
 
   // tell the lobpcg_solver to iterate
   while (1) {
@@ -529,11 +546,13 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
         // if we are already using full orthogonalization, there isn't much we can do here. 
         // the most recent information in the status tests is still valid, and can be used to extract/return the 
         // eigenpairs that have converged.
+        printer->stream(Warnings) << "Error! Caught LOBPCGRitzFailure at iteration " << lobpcg_solver->getNumIters() << endl
+                                << "Will not try to recover." << endl;
         break; // while(1)
       }
-      printer->stream(Errors) << "Error! Caught LOBPCGRitzFailure at iteration " << lobpcg_solver->getNumIters() << endl
+      printer->stream(Warnings) << "Error! Caught LOBPCGRitzFailure at iteration " << lobpcg_solver->getNumIters() << endl
                               << "Full orthogonalization is off; will try to recover." << endl;
-      // otherwise, get the current "basis" from the solver, orthonormalize it, do a rayleigh-ritz, and restart with the ritz vectors
+      // get the current "basis" from the solver, orthonormalize it, do a rayleigh-ritz, and restart with the ritz vectors
       // if there aren't enough, break and quit with what we have
       //
       // workMV = [X H P OpX OpH OpP], where OpX OpH OpP will be used for K and M
@@ -578,7 +597,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
         for (int i=0; i < blockSize_; i++) blk2[i] = blockSize_+i;
         MVT::SetBlock(*curstate.H,blk2,*restart);
 
-        // put MX into [0 , blockSize)
+        // put MH into [blockSize_ , 2*blockSize)
         if (hasM) {
           MVT::SetBlock(*curstate.MH,blk2,*Mrestart);
         }
@@ -589,7 +608,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
         for (int i=0; i < blockSize_; i++) blk3[i] = 2*blockSize_+i;
         MVT::SetBlock(*curstate.P,blk3,*restart);
 
-        // put MX into [0 , blockSize)
+        // put MP into [2*blockSize,3*blockSize)
         if (hasM) {
           MVT::SetBlock(*curstate.MP,blk3,*Mrestart);
         }
@@ -677,7 +696,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
       // send X and theta into the solver
       newstate.X = newX;
       theta.resize(blockSize_);
-      newstate.T = Teuchos::rcp( new std::vector<MagnitudeType>(theta) );
+      newstate.T = Teuchos::rcp( &theta, false );
       // initialize
       lobpcg_solver->initialize(newstate);
     }

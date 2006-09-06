@@ -35,6 +35,7 @@
 #include "AnasaziEpetraAdapter.hpp"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Vector.h"
+#include "AnasaziSVQBOrthoManager.hpp"
 
 #include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziLOBPCGSolMgr.hpp"
@@ -68,6 +69,8 @@ int main(int argc, char *argv[])
   bool verbose = false;
   bool debug = false;
   bool shortrun = false;
+  bool fullOrtho = true;
+  bool testRecovery = false;
   std::string filename("mhd1280b.cua");
   std::string which("LM");
 
@@ -76,6 +79,8 @@ int main(int argc, char *argv[])
   cmdp.setOption("debug","nodebug",&debug,"Print debugging information.");
   cmdp.setOption("sort",&which,"Targetted eigenvalues (SM or LM).");
   cmdp.setOption("shortrun","longrun",&shortrun,"Allow only a small number of iterations.");
+  cmdp.setOption("testrecovery","notestrecovery",&testRecovery,"Test the LOBPCGRitzError recovery code in LOBPCGSolMgr.");
+  cmdp.setOption("fullortho","nofullortho",&fullOrtho,"Use full orthogonalization.");
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
 #ifdef HAVE_MPI
     MPI_Finalize();
@@ -170,7 +175,18 @@ int main(int argc, char *argv[])
   MyPL.set( "Convergence Tolerance", tol );
   MyPL.set( "Use Locking", true );
   MyPL.set( "Locking Tolerance", tol/10 );
-  MyPL.set( "Full Ortho", true );
+  MyPL.set( "Full Ortho", fullOrtho );
+  if (testRecovery) {
+    // initialize with bad P
+    RefCountPtr<Anasazi::LOBPCGState<ScalarType,MV> > badstate = rcp( new Anasazi::LOBPCGState<ScalarType,MV>() );
+    Anasazi::SVQBOrthoManager<ScalarType,MV,OP> ortho(M);
+    ortho.normalize(*ivec,null);
+    badstate->X = ivec;
+    RefCountPtr<MV> P  = rcp( new Epetra_MultiVector(K->OperatorDomainMap(), blockSize) );
+    MVT::MvInit(*P,0.0);
+    badstate->P = P;
+    MyPL.set( "Init", badstate );
+  }
   //
   // Create the solver manager
   Anasazi::LOBPCGSolMgr<ScalarType,MV,OP> MySolverMan(problem, MyPL);
@@ -194,8 +210,10 @@ int main(int argc, char *argv[])
   // Solve the problem to the specified tolerances or length
   Anasazi::ReturnType returnCode = MySolverMan.solve();
   testFailed = false;
-  if (returnCode != Anasazi::Converged && shortrun==false) {
-    testFailed = true;
+  if (returnCode != Anasazi::Converged) {
+    if ( shortrun==false && (testRecovery==false || fullOrtho==false) ) {
+      testFailed = true;
+    }
   }
 
   // Get the eigenvalues and eigenvectors from the eigenproblem
@@ -278,4 +296,4 @@ int main(int argc, char *argv[])
   }
   return 0;
 
-}	
+}

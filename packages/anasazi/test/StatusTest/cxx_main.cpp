@@ -233,9 +233,9 @@ int main(int argc, char *argv[])
       TEST_FOR_EXCEPTION( stoutput.getStatus()          != Passed, get_out, "StatusTestOutput::getStatus() unexpected return.");
       TEST_FOR_EXCEPTION( stresnorm.getStatus()          != Passed, get_out, "StatusTestResNorm::getStatus() unexpected return.");
       TEST_FOR_EXCEPTION( stresnorm.howMany() != blockSize, get_out, "StatusTestResNorm::howMany() should have returned blockSize.");
-      TEST_FOR_EXCEPTION( stresnorm.whichVecs().size() != blockSize, get_out, "StatusTestResNorm::whichVecs() should have had length blockSize.");
+      TEST_FOR_EXCEPTION( (int)stresnorm.whichVecs().size() != blockSize, get_out, "StatusTestResNorm::whichVecs() should have had length blockSize.");
       std::vector<int> whch(stresnorm.whichVecs());
-      for (unsigned int i=0; i<whch.size(); i++) {
+      for (int i=0; i<(int)whch.size(); i++) {
         TEST_FOR_EXCEPTION( whch[i] != i, get_out, "StatusTestResNorm::howMany() should have contained {0,blockSize-1}.");
       }
       stoutput.clearStatus();

@@ -117,10 +117,10 @@ int main(int argc, char *argv[])
   const int maxIterCG = 100;
   const double tolCG = 1e-7;
   
-  Teuchos::RefCountPtr<BlockPCGSolver> opStiffness = Teuchos::rcp( new BlockPCGSolver(Comm, M.get(), tolCG, maxIterCG, 0) );
+  RefCountPtr<BlockPCGSolver> opStiffness = rcp( new BlockPCGSolver(Comm, M.get(), tolCG, maxIterCG, 0) );
   opStiffness->setPreconditioner( 0 );
-  Teuchos::RefCountPtr<Anasazi::EpetraGenOp> InverseOp = Teuchos::rcp( new Anasazi::EpetraGenOp( opStiffness, K ) );
-  
+  RefCountPtr<Anasazi::EpetraGenOp> InverseOp = rcp( new Anasazi::EpetraGenOp( opStiffness, K ) );
+
   // Create the initial vectors
   int blockSize = 3;
   RefCountPtr<Epetra_MultiVector> ivec = rcp( new Epetra_MultiVector(K->OperatorDomainMap(), blockSize) );
@@ -178,8 +178,8 @@ int main(int argc, char *argv[])
   // -->  Make sure the reference-counted pointer is of type Anasazi::SortManager<>
   // -->  The block Krylov-Schur solver manager uses Anasazi::BasicSort<> by default,
   //      so you can also pass in the parameter "Which", instead of a sort manager.
-  Teuchos::RefCountPtr<Anasazi::SortManager<ScalarType,MV,OP> > MySort =     
-    Teuchos::rcp( new Anasazi::BasicSort<ScalarType,MV,OP>( which ) );
+  RefCountPtr<Anasazi::SortManager<ScalarType,MV,OP> > MySort =     
+    rcp( new Anasazi::BasicSort<ScalarType,MV,OP>( which ) );
   //
   // Create parameter list to pass into the solver manager
   ParameterList MyPL;
@@ -207,6 +207,7 @@ int main(int argc, char *argv[])
       MyPL.unused(cout);
     }
   }
+
 
   // Solve the problem to the specified tolerances or length
   Anasazi::ReturnType returnCode = MySolverMgr.solve();
@@ -241,7 +242,7 @@ int main(int argc, char *argv[])
     // compute 2-norm of residuals
     std::vector<MagnitudeType> resnorm(numev);
     MVT::MvNorm( *Kvecs, &resnorm );
-  
+
     os << "Direct residual norms computed in BlockKrylovSchur_test.exe" << endl
        << std::setw(20) << "Eigenvalue" << std::setw(20) << "Residual" << endl
        << "----------------------------------------" << endl;

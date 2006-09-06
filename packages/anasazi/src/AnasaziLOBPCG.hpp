@@ -83,7 +83,6 @@
         
         These modifcation are referred to as full orthogonalization, and consist of also conducting
         the local optimization using an orthonormal basis.
-        
 
         \ingroup anasazi_solver_framework
 
@@ -1335,7 +1334,7 @@ namespace Anasazi {
         // we will not tolerate this ill-conditioning, and will throw an exception.
       }
       om_->stream(Debug) << " After directSolve: localSize == " << localSize << " \tnevLocal == " << nevLocal_ << endl;
-      TEST_FOR_EXCEPTION(nevLocal_ != localSize, LOBPCGRitzFailure, "Ill-conditioning detected in projecteded mass matrix." );
+      TEST_FOR_EXCEPTION(nevLocal_ != localSize, LOBPCGRitzFailure, "Indefiniteness detected in projecteded mass matrix." );
 
       Teuchos::LAPACK<int,ScalarType> lapack;
       Teuchos::BLAS<int,ScalarType> blas;

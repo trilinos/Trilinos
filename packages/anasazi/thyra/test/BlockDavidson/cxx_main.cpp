@@ -180,9 +180,6 @@ int main(int argc, char *argv[])
     return -1;
   }
 
-  // Create default output manager 
-  RefCountPtr<Anasazi::OutputManager<double> > MyOM = rcp( new Anasazi::BasicOutputManager<double>( MyPID ) );
-
 
   // Set verbosity level
   int verbosity = Anasazi::Errors + Anasazi::Warnings;
@@ -246,13 +243,6 @@ int main(int argc, char *argv[])
     ostringstream os;
     os.setf(ios::scientific, ios::floatfield);
     os.precision(6);
-
-    /* finish: this code has bugs: it only works properly when which == "SM" or "SR"
-    // Check the problem against the analytical solutions
-    if (verbose && which == "SM") {
-      info = testCase->eigenCheck( *evecs, &evals[0], 0 );
-    }
-    */
 
     // Compute the direct residual
     std::vector<ScalarType> normV( numev );

@@ -97,3 +97,16 @@
     COMM = SERIAL, MPI;
 }
 
+(COVERAGE) {
+    TESTS = LOBPCG/LOBPCG_test.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = --debug --testrecovery --nofullortho;
+    COMM = SERIAL, MPI;
+}
+
+(COVERAGE) {
+    TESTS = LOBPCG/LOBPCG_test.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = --debug --testrecovery --fullortho;
+    COMM = SERIAL, MPI;
+}

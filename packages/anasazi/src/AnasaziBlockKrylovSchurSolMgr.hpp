@@ -235,9 +235,8 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::BlockKrylovSchurSolMgr(
   } else {
     // which values to solve for
     _whch = pl.get("Which",_whch);
-    if (_whch != "SM" && _whch != "LM" && _whch != "SR" && _whch != "LR" && _whch != "SI" && _whch != "LI") {
-      _whch = "LM";
-    }
+    TEST_FOR_EXCEPTION(_whch != "SM" && _whch != "LM" && _whch != "SR" && _whch != "LR" && _whch != "SI" && _whch != "LI",
+                       std::invalid_argument, "Invalid sorting string.");
     _sort = Teuchos::rcp( new BasicSort<ScalarType,MV,OP>(_whch) );
   }
 
