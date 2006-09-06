@@ -870,8 +870,8 @@ namespace Teuchos {
   void SerialDenseMatrix<OrdinalType, ScalarType>::copyMat(ScalarType* inputMatrix, int strideInput, int numRows, int numCols, ScalarType* outputMatrix, int strideOutput, int startRow, int startCol, ScalarType alpha)
   {
     int i, j;
-    ScalarType* ptr1;
-    ScalarType* ptr2;
+    ScalarType* ptr1 = 0;
+    ScalarType* ptr2 = 0;
     for(j = 0; j < numCols; j++) {
 	ptr1 = outputMatrix + (j * strideOutput);
 	ptr2 = inputMatrix + (j + startCol) * strideInput + startRow;
