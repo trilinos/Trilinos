@@ -991,9 +991,9 @@ createIfpackPreconditioner(Teuchos::ParameterList& p) const
     ifpackGraphPtr->ConstructFilledGraph();
     ifpackPreconditionerPtr = 
       Teuchos::rcp(new Ifpack_CrsRiluk(*ifpackGraphPtr));
-    ifpackPreconditionerPtr->InitValues(*vbr);
     ifpackPreconditionerPtr->SetAbsoluteThreshold(p.get("Absolute Threshold", 0.0));
     ifpackPreconditionerPtr->SetRelativeThreshold(p.get("Relative Threshold", 1.0));
+    ifpackPreconditionerPtr->InitValues(*vbr);
     ifpackPreconditionerPtr->Factor();
   }
 
@@ -1018,9 +1018,9 @@ createIfpackPreconditioner(Teuchos::ParameterList& p) const
     ifpackGraphPtr->ConstructFilledGraph();
     ifpackPreconditionerPtr = 
       Teuchos::rcp(new Ifpack_CrsRiluk(*ifpackGraphPtr));
-    ifpackPreconditionerPtr->InitValues(*crs);
     ifpackPreconditionerPtr->SetAbsoluteThreshold(p.get("Absolute Threshold", 0.0));
     ifpackPreconditionerPtr->SetRelativeThreshold(p.get("Relative Threshold", 1.0));
+    ifpackPreconditionerPtr->InitValues(*crs);
     ifpackPreconditionerPtr->Factor();
   }
   
@@ -1051,9 +1051,9 @@ createIfpackPreconditioner(Teuchos::ParameterList& p) const
     ifpackGraphPtr->ConstructFilledGraph();
     ifpackPreconditionerPtr = 
       Teuchos::rcp(new Ifpack_CrsRiluk(*ifpackGraphPtr));
-    ifpackPreconditionerPtr->InitValues(*crs);
     ifpackPreconditionerPtr->SetAbsoluteThreshold(p.get("Absolute Threshold", 0.0));
     ifpackPreconditionerPtr->SetRelativeThreshold(p.get("Relative Threshold", 1.0));
+    ifpackPreconditionerPtr->InitValues(*crs);
     ifpackPreconditionerPtr->Factor();
   }
 
