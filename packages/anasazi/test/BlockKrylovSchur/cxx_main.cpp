@@ -36,6 +36,7 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Vector.h"
 
+#include "AnasaziBasicSort.hpp"
 #include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziBlockKrylovSchurSolMgr.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
@@ -173,11 +174,18 @@ int main(int argc, char *argv[])
   }
   int stepSize = numBlocks*maxRestarts;
   MagnitudeType tol = tolCG * 10.0;
+  // Create a sort manager to pass into the block Krylov-Schur solver manager
+  // -->  Make sure the reference-counted pointer is of type Anasazi::SortManager<>
+  // -->  The block Krylov-Schur solver manager uses Anasazi::BasicSort<> by default,
+  //      so you can also pass in the parameter "Which", instead of a sort manager.
+  Teuchos::RefCountPtr<Anasazi::SortManager<ScalarType,MV,OP> > MySort =     
+    Teuchos::rcp( new Anasazi::BasicSort<ScalarType,MV,OP>( which ) );
   //
   // Create parameter list to pass into the solver manager
   ParameterList MyPL;
   MyPL.set( "Verbosity", verbosity );
-  MyPL.set( "Which", which );
+  MyPL.set( "Sort Manager", MySort );
+  //MyPL.set( "Which", which );
   MyPL.set( "Block Size", blockSize );
   MyPL.set( "Num Blocks", numBlocks );
   MyPL.set( "Maximum Restarts", maxRestarts );
@@ -189,7 +197,6 @@ int main(int argc, char *argv[])
   // 
   // Check that the parameters were all consumed
   if (MyPL.getEntryPtr("Verbosity")->isUsed() == false ||
-      MyPL.getEntryPtr("Which")->isUsed() == false ||
       MyPL.getEntryPtr("Block Size")->isUsed() == false ||
       MyPL.getEntryPtr("Num Blocks")->isUsed() == false ||
       MyPL.getEntryPtr("Maximum Restarts")->isUsed() == false ||
@@ -200,7 +207,6 @@ int main(int argc, char *argv[])
       MyPL.unused(cout);
     }
   }
-
 
   // Solve the problem to the specified tolerances or length
   Anasazi::ReturnType returnCode = MySolverMgr.solve();
