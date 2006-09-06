@@ -134,7 +134,6 @@ int main(int argc, char *argv[])
   int dim,dim2,nnz;
   double *dvals;
   int *colptr,*rowind;
-  ScalarType *cvals;
   nnz = -1;
   info = readHB_newmat_double(filename.c_str(),&dim,&dim2,&nnz,
                               &colptr,&rowind,&dvals);
@@ -149,13 +148,13 @@ int main(int argc, char *argv[])
     return -1;
   }
   // Convert interleaved doubles to complex values
-  cvals = new ScalarType[nnz];
+  std::vector<ScalarType> cvals(nnz);
   for (int ii=0; ii<nnz; ii++) {
     cvals[ii] = ScalarType(dvals[ii*2],dvals[ii*2+1]);
   }
   // Build the problem matrix
   RefCountPtr< MyBetterOperator<ScalarType> > K 
-    = rcp( new MyBetterOperator<ScalarType>(dim,colptr,nnz,rowind,cvals) );
+    = rcp( new MyBetterOperator<ScalarType>(dim,colptr,nnz,rowind,&cvals[0]) );
 
   // Create initial vectors
   int blockSize = 5;
@@ -253,6 +252,11 @@ int main(int argc, char *argv[])
 #ifdef HAVE_MPI
   MPI_Finalize() ;
 #endif
+
+  // Clean up.
+  free( dvals );
+  free( colptr );
+  free( rowind );
 
   if (testFailed) {
     if (verbose && MyPID==0) {

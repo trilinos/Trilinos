@@ -134,7 +134,6 @@ int main(int argc, char *argv[])
   int dim,dim2,nnz;
   double *dvals;
   int *colptr,*rowind;
-  ST *cvals;
   nnz = -1;
   info = readHB_newmat_double(filename.c_str(),&dim,&dim2,&nnz,&colptr,&rowind,&dvals);
   if (info == 0 || nnz < 0) {
@@ -147,13 +146,13 @@ int main(int argc, char *argv[])
     return -1;
   }
   // Convert interleaved doubles to complex values
-  cvals = new ST[nnz];
+  std::vector<ST> cvals(nnz);
   for (int ii=0; ii<nnz; ii++) {
     cvals[ii] = ST(dvals[ii*2],dvals[ii*2+1]);
   }
   // Build the problem matrix
   RefCountPtr< MyBetterOperator<ST> > A1
-    = rcp( new MyBetterOperator<ST>(dim,colptr,nnz,rowind,cvals) );
+    = rcp( new MyBetterOperator<ST>(dim,colptr,nnz,rowind,&cvals[0]) );
 
 
   // Create a MyMultiVec for cloning
@@ -197,6 +196,11 @@ int main(int argc, char *argv[])
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
+
+  // Clean up.
+  free( dvals );
+  free( colptr );
+  free( rowind );
 
   if (gerr == false) {
     MyOM->print(Anasazi::Warnings,"End Result: TEST FAILED\n");
