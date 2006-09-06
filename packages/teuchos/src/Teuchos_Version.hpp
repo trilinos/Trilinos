@@ -34,7 +34,7 @@
 namespace Teuchos {
 
 	string Teuchos_Version() { 
-		return("Teuchos Version 1.3d - 8/1/2005"); 
+		return("Teuchos Version 1.4d - 8/8/2006"); 
 	}
 
 } // namespace Teuchos
