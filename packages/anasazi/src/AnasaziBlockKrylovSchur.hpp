@@ -30,10 +30,6 @@
   \brief Implementation of a block Krylov-Schur eigensolver.
 */
 
-// TODO: the documentation here needs to be made rigorous
-// in particular, getState() and initialize() need to exactly describe their 
-// input and output
-//
 #ifndef ANASAZI_BLOCK_KRYLOV_SCHUR_HPP
 #define ANASAZI_BLOCK_KRYLOV_SCHUR_HPP
 
@@ -84,10 +80,22 @@ namespace Anasazi {
    */
   template <class ScalarType, class MulVec>
   struct BlockKrylovSchurState {
+    /*! \brief The current dimension of the solver's Krylov basis.
+     *
+     * This should always be equal to BlockKrylovSchur::getCurSubspaceDim()
+     */
     int curDim;
+    /*! \brief The current Krylov basis. 
+     *
+     *  Only the first \c curDim are valid. */
     Teuchos::RefCountPtr<const MulVec> V;
+    /*! \brief The current Hessenberg matrix. 
+     *
+     * Only the first <tt>curDim+blockSize</tt> by <tt>curDim</tt> part is valid. */
     Teuchos::RefCountPtr<const Teuchos::SerialDenseMatrix<int,ScalarType> > H;
+    /*! \brief The current Schur form reduction of H. */
     Teuchos::RefCountPtr<const Teuchos::SerialDenseMatrix<int,ScalarType> > S;
+    /*! \brief The current Schur vectors of H. */
     Teuchos::RefCountPtr<const Teuchos::SerialDenseMatrix<int,ScalarType> > Q;
     BlockKrylovSchurState() : curDim(0), V(Teuchos::null),
                               H(Teuchos::null), S(Teuchos::null),
@@ -116,8 +124,7 @@ namespace Anasazi {
     {}};
 
   /** \brief BlockKrylovSchurOrthoFailure is thrown when the orthogonalization manager is
-   * unable to orthogonalize the preconditioned residual against (a.k.a. \c H)
-   * the current basis (a.k.a. \c V).
+   * unable to generate orthonormal columns from the new basis vectors.
    *
    * This exception is thrown from the BlockKrylovSchur::iterate() method.
    *
@@ -135,7 +142,17 @@ namespace Anasazi {
     //! @name Constructor/Destructor
     //@{ 
     
-    //! %Anasazi::BlockKrylovSchur constructor.
+    /*! \brief %BlockKrylovSchur constructor with eigenproblem, solver utilities, and parameter list of solver options.
+     *
+     * This constructor takes pointers required by the eigensolver, in addition
+     * to a parameter list of options for the eigensolver. These options include the following:
+     *   - "Block Size" - an \c int specifying the block size used by the algorithm. This can also be specified using the setBlockSize() method. Default: 1
+     *   - "Num Blocks" - an \c int specifying the maximum number of blocks allocated for the solver basis. Default: 3*problem->getNEV()
+     *   - "Step Size"  - an \c int specifying how many iterations are performed between computations of eigenvalues and eigenvectors.\n
+     *     Note: This parameter is mandatory.
+     *   - "Number of Ritz Vectors" - an \c int specifying how many Ritz vectors are computed on calls to getRitzVectors(). Default: 0
+     *   - "Print Number of Ritz Values" - an \c int specifying how many Ritz values are printed on calls to currentStatus(). Default: "Block Size"
+     */
     BlockKrylovSchur( const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem, 
                    const Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > &sorter,
                    const Teuchos::RefCountPtr<OutputManager<ScalarType> > &printer,
@@ -144,7 +161,7 @@ namespace Anasazi {
                    Teuchos::ParameterList &params 
                  );
     
-    //! %Anasazi::BlockKrylovSchur destructor.
+    //! %BlockKrylovSchur destructor.
     virtual ~BlockKrylovSchur() {};
     //@}
 
@@ -152,25 +169,33 @@ namespace Anasazi {
     //! @name Solver methods
     //@{ 
     
-    /*! \brief This method performs %BlockKrylovSchur iterations until the status
+    /*! \brief This method performs Block Krylov-Schur iterations until the status
      * test indicates the need to stop or an error occurs (in which case, an
      * exception is thrown).
      *
      * iterate() will first determine whether the solver is inintialized; if
      * not, it will call initialize() using default arguments. After
-     * initialization, the solver performs %BlockKrylovSchur iterations until the
-     * status test evaluates as Passed, at which point the method returns to
+     * initialization, the solver performs Block Krylov-Schur iterations until the
+     * status test evaluates as ::Passed, at which point the method returns to
      * the caller. 
+     *
+     * The Block Krylov-Schur iteration proceeds as follows:
+     * -# The operator problem->getOperator() is applied to the newest \c blockSize vectors in the Krylov basis.
+     * -# The resulting vectors are orthogonalized against the auxiliary vectors and the previous basis vectors, and made orthonormal.
+     * -# The Hessenberg matrix is updated.
+     * -# If we have performed \c stepSize iterations since the last update, update the Ritz values and Ritz residuals.
+     *
+     * The status test is queried at the beginning of the iteration.
+     *
+     * Possible exceptions thrown include the BlockKrylovSchurOrthoFailure.
      *
      */
     void iterate();
 
-    /*! \brief Initialize the solver to an iterate, optionally providing the
-     * Ritz values, residual, and search direction.
+    /*! \brief Initialize the solver to an iterate, providing a Krylov basis and Hessenberg matrix.
      *
-     * The %BlockKrylovSchur eigensolver contains a certain amount of state
-     * relating to the current eigenvectors, including the current residual,
-     * the current Krylov basis, and the images of these under the operators.
+     * The %BlockKrylovSchur eigensolver contains a certain amount of state,
+     * consisting of the current Krylov basis and the associated Hessenberg matrix.
      *
      * initialize() gives the user the opportunity to manually set these,
      * although this must be done with caution, abiding by the rules given
@@ -178,12 +203,12 @@ namespace Anasazi {
      * the inner product specified by the orthogonalization manager.
      *
      * \post 
-     * <li>isInitialized() == true (see post-conditions of isInitialize())
+     * <li>isInitialized() == \c true (see post-conditions of isInitialize())
      *
      * The user has the option of specifying any component of the state using
      * initialize(). However, these arguments are assumed to match the
-     * post-conditions specified under isInitialized(). Any component of the
-     * state (i.e., KX) not given to initialize() will be generated.
+     * post-conditions specified under isInitialized(). Any necessary component of the
+     * state not given to initialize() will be generated.
      *
      */
     void initialize(BlockKrylovSchurState<ScalarType,MV> state);
@@ -193,19 +218,16 @@ namespace Anasazi {
      *
      * \return bool indicating the state of the solver.
      * \post
-     * <ul>
-     * <li> finish
-     * </ul>
+     * If isInitialized() == \c true:
+     *    - getCurSubspaceDim() > 0 
+     *    - the first getCurSubspaceDim() vectors of V are orthogonal to auxiliary vectors and have orthonormal columns
+     *    - the principal Hessenberg submatrix of of H contains the Hessenberg matrix associated with V
      */
     bool isInitialized() { return initialized_; }
 
     /*! \brief Get the current state of the eigensolver.
      * 
      * The data is only valid if isInitialized() == \c true. 
-     *
-     * The data for the preconditioned residual is only meaningful in the
-     * scenario that the solver throws an ::BlockKrylovSchurRitzFailure exception
-     * during iterate().
      *
      * \returns A BlockKrylovSchurState object containing const pointers to the current
      * solver state.
@@ -235,7 +257,7 @@ namespace Anasazi {
     /*! \brief Get the Ritz vectors.
      *
      *  \return A multivector of columns not exceeding the maximum dimension of the subspace
-     *  containing the Ritz vectors from the most recent call to computeRitzVectors.
+     *  containing the Ritz vectors from the most recent call to computeRitzVectors().
      *
      *  \note To see if the returned Ritz vectors are current, call isRitzVecsCurrent().
      */
@@ -326,29 +348,28 @@ namespace Anasazi {
     /*! \brief Get the dimension of the search subspace used to generate the current eigenvectors and eigenvalues.
      *
      *  \return An integer specifying the rank of the Krylov subspace currently in use by the eigensolver. If isInitialized() == \c false, 
-     *  the return is 0. Otherwise, it will be some strictly positive multiple of getBlockSize().
+     *  the return is 0.
      */
     int getCurSubspaceDim() const {
       if (!initialized_) return 0;
       return curDim_;
     }
 
-    //! Get the maximum dimension allocated for the search subspace. For %BlockKrylovSchur, this always returns numBlocks*blockSize.
+    //! Get the maximum dimension allocated for the search subspace. 
     int getMaxSubspaceDim() const { return (problem_->isHermitian()?blockSize_*numBlocks_:blockSize_*numBlocks_+1); }
 
 
     /*! \brief Set the auxiliary vectors for the solver.
      *
-     *  Because the current iterate X and search direction P cannot be assumed
-     *  orthogonal to the new auxiliary vectors, a call to setAuxVecs() may
+     *  Because the current Krylov subspace cannot be assumed
+     *  orthogonal to the new auxiliary vectors, a call to setAuxVecs() will
      *  reset the solver to the uninitialized state. This happens only in the
-     *  case where the user requests full orthogonalization when the solver is
-     *  in an initialized state with full orthogonalization disabled.
+     *  case where the new auxiliary vectors have a combined dimension of 
+     *  greater than zero.
      *
-     *  In order to preserve the current iterate, the user will need to extract
-     *  it from the solver using getEvecs(), orthogonalize it against the new
-     *  auxiliary vectors, and manually reinitialize the solver using
-     *  initialize().
+     *  In order to preserve the current state, the user will need to extract
+     *  it from the solver using getState(), orthogonalize it against the
+     *  new auxiliary vectors, and reinitialize using initialize().
      */
     void setAuxVecs(const Teuchos::Array<Teuchos::RefCountPtr<const MV> > &auxvecs);
 
@@ -1002,7 +1023,7 @@ namespace Anasazi {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Perform BlockKrylovSchur iterations until the StatusTest tells us to stop.
   template <class ScalarType, class MV, class OP>
-  void BlockKrylovSchur<ScalarType,MV,OP>::iterate ()
+  void BlockKrylovSchur<ScalarType,MV,OP>::iterate()
   {
     //
     // Allocate/initialize data structures
@@ -1076,7 +1097,7 @@ namespace Anasazi {
           subR = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>
                                ( Teuchos::View,*H_,blockSize_,blockSize_,lclDim,curDim_ ) );
         int rank = orthman_->projectAndNormalize(*Vnext,AsubH,subR,AVprev);
-        TEST_FOR_EXCEPTION(rank != blockSize_,BlockKrylovSchurInitFailure,
+        TEST_FOR_EXCEPTION(rank != blockSize_,BlockKrylovSchurOrthoFailure,
                            "Anasazi::BlockKrylovSchur::iterate(): Couldn't generate basis of full rank.");
       }
       //

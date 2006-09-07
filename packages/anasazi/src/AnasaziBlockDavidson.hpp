@@ -148,7 +148,13 @@ namespace Anasazi {
     //! @name Constructor/Destructor
     //@{ 
     
-    //! %Anasazi::BlockDavidson constructor.
+    /*! \brief %BlockDavidson constructor with eigenproblem, solver utilities, and parameter list of solver options.
+     *
+     * This constructor takes pointers required by the eigensolver, in addition
+     * to a parameter list of options for the eigensolver. These options include the following:
+     *   - "Block Size" - an \c int specifying the block size used by the algorithm. This can also be specified using the setBlockSize() method.
+     *   - "Num Blocks" - an \c int specifying the maximum number of blocks allocated for the solver basis.
+     */
     BlockDavidson( const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem, 
                    const Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > &sorter,
                    const Teuchos::RefCountPtr<OutputManager<ScalarType> > &printer,
@@ -172,7 +178,7 @@ namespace Anasazi {
      * iterate() will first determine whether the solver is uninitialized; if
      * not, it will call initialize(). After
      * initialization, the solver performs block Davidson iterations until the
-     * status test evaluates as Passed, at which point the method returns to
+     * status test evaluates as ::Passed, at which point the method returns to
      * the caller. 
      *
      * The block Davidson iteration proceeds as follows:
@@ -203,7 +209,7 @@ namespace Anasazi {
      * user input will not be checked.
      *
      * \post 
-     * <li>isInitialized() == true (see post-conditions of isInitialize())
+     * <li>isInitialized() == \c true (see post-conditions of isInitialize())
      *
      * The user has the option of specifying any component of the state using
      * initialize(). However, these arguments are assumed to match the

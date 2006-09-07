@@ -199,7 +199,7 @@ namespace Anasazi {
     //! @name Constructor/Destructor
     //@{ 
     
-    /*! \brief LOBPCG constructor with eigenproblem, solver utilities, and parameter list of solver options.
+    /*! \brief %LOBPCG constructor with eigenproblem, solver utilities, and parameter list of solver options.
      *
      * This constructor takes pointers required by the eigensolver, in addition
      * to a parameter list of options for the eigensolver. These options include the following:
