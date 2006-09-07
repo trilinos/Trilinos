@@ -883,7 +883,7 @@ int Ifpack_PrintSparsity(const Epetra_RowMatrix& A, const char* InputFileName,
   if (strlen(A.Label()) != 0)
     strcpy(title, A.Label());
   else
-    sprintf(title, "matrix");
+    sprintf(title, "%s", "matrix");
 
   if (InputFileName == 0)
     sprintf(FileName, "%s.ps", title);

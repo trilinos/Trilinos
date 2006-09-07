@@ -18,7 +18,7 @@ Ifpack_LocalFilter::Ifpack_LocalFilter(const Epetra_RowMatrix* Matrix) :
   MaxNumEntriesA_(0),
   Diagonal_(0)
 {
-  sprintf(Label_,"Ifpack_LocalFilter");
+  sprintf(Label_,"%s","Ifpack_LocalFilter");
 
 #ifdef HAVE_MPI
   SerialComm_ = new Epetra_MpiComm(MPI_COMM_SELF);
