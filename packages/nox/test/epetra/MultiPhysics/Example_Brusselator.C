@@ -147,6 +147,8 @@ int main(int argc, char *argv[])
   bool          doOffBlocks     = false ;
   bool          convection      = true  ;
   bool          libloose        = true  ;
+  string        outputDir       = "."   ;
+  string        goldDir         = "."   ;
 
   clp.setOption( "verbose", "no-verbose", &verbose, "Verbosity on or off." );
   clp.setOption( "n", &NumGlobalNodes, "Number of elements" );
@@ -155,11 +157,16 @@ int main(int argc, char *argv[])
   clp.setOption( "burgers", "no-burgers", &convection, "Include Burgers equation coupling" );
   clp.setOption( "matlab", "no-matlab", &useMatlab, "Use Matlab debugging engine" );
   clp.setOption( "noxlib", "no-noxlib", &libloose, "Perform loose coupling using NOX's library (as opposed to hard-coded test driver)." );
+  clp.setOption( "outputdir", &outputDir, "Directory to output mesh and results into. Default is \"./\"" );
+  clp.setOption( "golddir", &goldDir, "Directory to read gold test from. Default is \"./\"" );
 
   Teuchos::CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
 
   if( parse_return != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL ) 
     return parse_return;
+
+  outputDir += "/";
+  goldDir   += "/";
 
   // Create and reset the Timer
   Epetra_Time myTimer(Comm);
@@ -296,7 +303,8 @@ int main(int argc, char *argv[])
   problemManager.outputStatus(std::cout);
 
   // Print initial solution
-  problemManager.outputSolutions(timeStep);
+  if( verbose )
+    problemManager.outputSolutions( outputDir );
   
   // Identify the test problem
   if( outputUtils.isPrintType(NOX::Utils::TestDetails) )
@@ -361,7 +369,8 @@ int main(int argc, char *argv[])
       problemManager.resetAllCurrentGroupX();
     }
 
-    problemManager.outputSolutions(timeStep);
+    if( verbose )
+      problemManager.outputSolutions( outputDir, timeStep);
 
     map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator iter = problemManager.getProblems().begin(),
                                                                 iter_end = problemManager.getProblems().end()   ;
@@ -372,13 +381,13 @@ int main(int argc, char *argv[])
 
       // Get the gold copy to comapre against current solution
       string baseFileame = problemManager.createIOname( problem, timeStep );
-      string goldFileame = "brusselator_goldtests/" + baseFileame;
+      string goldFileame = goldDir + "gold_brusselator/" + baseFileame;
 
       Epetra_Vector * tmpVec = NULL;
       int ierr = NOX::Epetra::DebugTools::readVector( goldFileame, Comm, tmpVec );
       if( ierr != 0 )
       {
-        outputUtils.out() << "ERROR opening gold copy files." << endl;
+        outputUtils.out() << "ERROR opening gold copy file \"" << goldFileame << "\"." << endl;
         status = ierr;
         break;
       }
@@ -410,7 +419,7 @@ int main(int argc, char *argv[])
     cout << "\nTimings :\n\tWallTime --> " << myTimer.WallTime() - startWallTime << " sec."
          << "\n\tElapsedTime --> " << myTimer.ElapsedTime() << " sec." << endl << endl;
 
-  if( 0 ) // this will be turned on later
+  if( 1 ) // this will be turned on later
   {
     // Summarize test results  
     if( status == 0 )

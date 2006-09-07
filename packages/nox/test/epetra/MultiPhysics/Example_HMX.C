@@ -45,6 +45,7 @@
 // NOX Objects
 #include "NOX.H"
 #include "NOX_Epetra.H"
+#include "NOX_TestCompare.H"
 
 // For parsing command line
 #include "Teuchos_CommandLineProcessor.hpp"
@@ -109,8 +110,10 @@ int main(int argc, char *argv[])
   int           NumGlobalNodes  = 10    ;
   bool          runMF           = true  ;
   bool          useMatlab       = false ;
-  bool          doOffBlocks     = false ;
+  bool          doOffBlocks     = true  ;
   bool          libloose        = true  ;
+  string        outputDir       = "."   ;
+  string        goldDir         = "."   ;
 
   clp.setOption( "verbose", "no-verbose", &verbose, "Verbosity on or off." );
   clp.setOption( "n", &NumGlobalNodes, "Number of elements" );
@@ -118,11 +121,16 @@ int main(int argc, char *argv[])
   clp.setOption( "offblocks", "no-offblocks", &doOffBlocks, "Include off-diagonal blocks in preconditioning matrix" );
   clp.setOption( "matlab", "no-matlab", &useMatlab, "Use Matlab debugging engine" );
   clp.setOption( "noxlib", "no-noxlib", &libloose, "Perform loose coupling using NOX's library (as opposed to hard-coded test driver)." );
+  clp.setOption( "outputdir", &outputDir, "Directory to output mesh and results into. Default is \"./\"" );
+  clp.setOption( "golddir", &goldDir, "Directory to read gold test from. Default is \"./\"" );
 
   Teuchos::CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
 
   if( parse_return != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL ) 
     return parse_return;
+
+  outputDir += "/";
+  goldDir   += "/";
 
   // Create and reset the Timer
   Epetra_Time myTimer(Comm);
@@ -171,6 +179,8 @@ int main(int argc, char *argv[])
 			NOX::Utils::OuterIterationStatusTest + 
 			NOX::Utils::LinearSolverDetails      + 
 			NOX::Utils::TestDetails               );
+
+  NOX::Utils outputUtils(printParams);
 
   // Sublist for line search 
   Teuchos::ParameterList& searchParams = nlParams.sublist("Line Search");
@@ -353,30 +363,42 @@ int main(int argc, char *argv[])
   problemManager.createDependency(HMX_RxnC, HMX_TempEq);
   problemManager.createDependency(HMX_RxnC, HMX_RxnB);
 
-  problemManager.registerComplete();
-
-  problemManager.outputStatus(std::cout);
-
   // Initialize time integration parameters
-  int maxTimeSteps = 5;
+  int maxTimeSteps = 3;
   int timeStep = 0;
   double time = 0.;
   //double dt = HMX_TempEq.getdt();
   double dt = 10.0 * HMX_TempEq.getdt();
   
+  problemManager.registerComplete();
+
+  problemManager.outputStatus(std::cout);
+
   // Print initial solution
-  char file_name[25];
-  FILE *ifp;
-  Epetra_Vector& xMesh = HMX_TempEq.getMesh();
-  int NumMyNodes = xMesh.Map().NumMyElements();
-  (void) sprintf(file_name, "output.%d_%d",MyPID,timeStep);
-  ifp = fopen(file_name, "w");
-  for (int i=0; i<NumMyNodes; i++)
-    fprintf(ifp, "%d  %E  %E  %E\n", xMesh.Map().MinMyGID()+i, 
-                                 xMesh[i], (*HMX_TempEq.getSolution())[i], 
-                                 (*HMX_RxnA.getSolution())[i]);
-  fclose(ifp);
-  
+  if( verbose )
+    problemManager.outputSolutions( outputDir);
+
+  // Identify the test problem
+  if( outputUtils.isPrintType(NOX::Utils::TestDetails) )
+    outputUtils.out() << "Starting epetra/MultiPhysics/example_hmx.exe" << endl;
+
+  // Identify processor information
+#ifdef HAVE_MPI
+  outputUtils.out() << "This test is broken in parallel." << endl;
+  outputUtils.out() << "Test failed!" << endl;
+  MPI_Finalize();
+  return -1;
+#else
+  if (outputUtils.isPrintType(NOX::Utils::TestDetails))
+    outputUtils.out() << "Serial Run" << endl;
+#endif
+
+  // Create a TestCompare class
+  int status = 0;
+  NOX::TestCompare tester( outputUtils.out(), outputUtils );
+  double abstol = 1.e-4;
+  double reltol = 1.e-4 ;
+
   // Time integration loop
   while(timeStep < maxTimeSteps) {
 
@@ -419,7 +441,45 @@ int main(int argc, char *argv[])
       problemManager.resetAllCurrentGroupX();
     }
   
-    problemManager.outputSolutions(timeStep);
+  if( verbose )
+    problemManager.outputSolutions( outputDir, timeStep );
+
+    map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator iter = problemManager.getProblems().begin(),
+                                                                iter_end = problemManager.getProblems().end()   ;
+    for( ; iter_end != iter; ++iter )
+    {
+      GenericEpetraProblem & problem = *(*iter).second;
+      string msg = "Numerical-to-Gold Solution comparison for problem \"" + problem.getName() + "\"";
+
+      // Get the gold copy to comapre against current solution
+      string baseFileame = problemManager.createIOname( problem, timeStep );
+      string goldFileame = goldDir + "gold_hmx/" + baseFileame;
+
+      Epetra_Vector * tmpVec = NULL;
+      int ierr = NOX::Epetra::DebugTools::readVector( goldFileame, Comm, tmpVec );
+      if( ierr != 0 )
+      {
+        outputUtils.out() << "ERROR opening gold copy file \"" << goldFileame << "\"." << endl;
+        status = ierr;
+        break;
+      }
+
+      Teuchos::RefCountPtr<Epetra_Vector> goldSoln = Teuchos::rcp( tmpVec );
+
+      // Need NOX::Epetra::Vectors for tests
+      NOX::Epetra::Vector numerical ( problem.getSolution() , NOX::Epetra::Vector::CreateView );
+      NOX::Epetra::Vector goldVec   ( goldSoln       , NOX::Epetra::Vector::CreateView );
+
+      status += tester.testVector( numerical, goldVec, reltol, abstol, msg );
+       
+      // Quit if test fails
+      if( status != 0 )
+        break;
+    }
+
+    // Quit if test fails
+    if( status != 0 )
+      break;
 
     // Reset problems by copying solution into old solution
     problemManager.resetProblems();
@@ -428,25 +488,28 @@ int main(int argc, char *argv[])
 
   // Output timing info
   if(MyPID==0)
-    cout << "\nTimings :\n\tWallTime --> " << 
-          myTimer.WallTime() - startWallTime << " sec."
-         << "\n\tElapsedTime --> " << myTimer.ElapsedTime() 
-         << " sec." << endl << endl;
-//  {
-//    if(MyPID==0)
-//      cout << "Test failed!" << endl;
-//
-//#ifdef HAVE_MPI
-//  MPI_Finalize() ;
-//#endif
-//
-//    return -1;
-//  }
+    cout << "\nTimings :\n\tWallTime --> " << myTimer.WallTime() - startWallTime << " sec."
+         << "\n\tElapsedTime --> " << myTimer.ElapsedTime() << " sec." << endl << endl;
 
-  // Need to put in a check for convergence
-  // Added the following so test actually passes in parallel
-  if(MyPID==0)
-    cout << "Test passed!" << endl;
+  if( 1 ) // this will be turned on later
+  {
+    // Summarize test results  
+    if( status == 0 )
+      outputUtils.out() << "Test passed!" << endl;
+    else 
+      outputUtils.out() << "Test failed!" << endl;
+  }
+  else // force this test to pass for now, but at least warn of failure
+  {
+    // Summarize test results  
+    if( status == 0 )
+      outputUtils.out() << "Test passed!" << endl;
+    else 
+    {
+      outputUtils.out() << "This test actually F-A-I-L-E-D." << endl;
+      outputUtils.out() << "Test passed!" << endl;
+    }
+  }
 
 #ifdef HAVE_MPI
   MPI_Finalize() ;

@@ -760,14 +760,12 @@ Problem_Manager::setAllGroupX()
 void 
 Problem_Manager::setAllOffBlockGroupX(const Epetra_Vector &inVec)
 {
-  map<int, vector<OffBlock_Manager*> >::iterator offBlockIter = 
-                                                   OffBlock_Managers.begin();
-  map<int, vector<OffBlock_Manager*> >::iterator offBlockLast = 
-                                                   OffBlock_Managers.end();
+  map<int, vector<OffBlock_Manager*> >::iterator offBlockIter = OffBlock_Managers.begin();
+  map<int, vector<OffBlock_Manager*> >::iterator offBlockLast = OffBlock_Managers.end();
 
   // Loop over each off-block manager and set the contained groups X-vector
   // with the incoming vector
-  for( ; offBlockIter != offBlockLast; offBlockIter++) 
+  for( ; offBlockIter != offBlockLast; ++offBlockIter) 
   {
     vector<OffBlock_Manager*> managerVec = (*offBlockIter).second;
 
@@ -1858,7 +1856,7 @@ Problem_Manager::createIOname(GenericEpetraProblem & problem, int timeStep)
 //-----------------------------------------------------------------------------
 
 void 
-Problem_Manager::outputSolutions(int timeStep)
+Problem_Manager::outputSolutions( const string outputDir, int timeStep )
 {
 
   map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemIter = Problems.begin();
@@ -1873,12 +1871,13 @@ Problem_Manager::outputSolutions(int timeStep)
     Epetra_Vector& xMesh = problem.getMesh();
     Epetra_Vector& problemSoln = *problem.getSolution();
 
-    string fileName = createIOname( problem, timeStep );
+    string baseName = createIOname( problem, timeStep );
+    string fileName = outputDir + baseName;
 
 #ifdef HAVE_NOX_EPETRAEXT
     NOX::Epetra::DebugTools::writeVector( fileName, problemSoln, NOX::Epetra::DebugTools::MATRIX_MARKET );
-    fileName += "_mesh";
-    NOX::Epetra::DebugTools::writeVector( fileName, xMesh, NOX::Epetra::DebugTools::MATRIX_MARKET, false );
+    fileName = outputDir + baseName + "_mesh";
+    NOX::Epetra::DebugTools::writeVector( fileName, xMesh, NOX::Epetra::DebugTools::MATRIX_MARKET );
 #else
     int numNodes = xMesh.Map().NumMyElements();
     FILE *ifp;

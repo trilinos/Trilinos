@@ -57,7 +57,7 @@
 // elements)
 
 void
-Laplace2D::get_neighbours( const int i, const int nx, const int ny,
+Laplace2D::get_myNeighbours( const int i, const int nx, const int ny,
 			     int & left, int & right, 
 			     int & lower, int & upper) 
 {
@@ -129,7 +129,7 @@ Laplace2D::CreateLaplacian( const int nx, const int ny, const Epetra_Comm * Comm
   for( int i = 0; i < NumMyElements; ++i ) 
   {
     int NumEntries=0;
-    get_neighbours(  MyGlobalElements[i], nx, ny, left, right, lower, upper );
+    get_myNeighbours(  MyGlobalElements[i], nx, ny, left, right, lower, upper );
     if( left != -1 ) 
     {
       Indices[NumEntries] = left;

@@ -70,7 +70,7 @@ namespace Laplace2D {
 // elements)
 
 static void
-get_neighbours( const int i, const int nx, const int ny,
+get_myNeighbours( const int i, const int nx, const int ny,
 			     int & left, int & right, 
 			     int & lower, int & upper);
 

@@ -118,6 +118,8 @@ int main(int argc, char *argv[])
   double        beta            = 0.40          ;
   // Physical parameters
   double        radiation       = 5.67          ;
+  string        outputDir       = "."           ;
+  string        goldDir         = "."           ;
 
 
   clp.setOption( "verbose", "no-verbose", &verbose, "Verbosity on or off." );
@@ -130,11 +132,16 @@ int main(int argc, char *argv[])
   clp.setOption( "alpha", &alpha, "Interfacial coupling coefficient, alpha" );
   clp.setOption( "beta", &beta, "Interfacial coupling coefficient, beta" );
   clp.setOption( "radiation", &radiation, "Radiation source term coefficient, R" );
+  clp.setOption( "outputdir", &outputDir, "Directory to output mesh and results into. Default is \"./\"" );
+  clp.setOption( "golddir", &goldDir, "Directory to read gold test from. Default is \"./\"" );
 
   Teuchos::CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
 
   if( parse_return != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL ) 
     return parse_return;
+
+  outputDir += "/";
+  goldDir   += "/";
 
   // Create and reset the Timer
   Epetra_Time myTimer(Comm);
@@ -302,7 +309,23 @@ int main(int argc, char *argv[])
   cout << "\n\tAnalytic solution, T_1 = " << T1_analytic << "\n" << endl;
 
   // Print initial solution
-  problemManager.outputSolutions(0);
+  if( verbose )
+    problemManager.outputSolutions( outputDir, 0 );
+
+  // Identify the test problem
+  if( outputUtils.isPrintType(NOX::Utils::TestDetails) )
+    outputUtils.out() << "Starting epetra/MultiPhysics/example_yeckel.exe" << endl;
+
+  // Identify processor information
+#ifdef HAVE_MPI
+  outputUtils.out() << "This test is broken in parallel." << endl;
+  outputUtils.out() << "Test failed!" << endl;
+  MPI_Finalize();
+  return -1;
+#else
+  if (outputUtils.isPrintType(NOX::Utils::TestDetails))
+    outputUtils.out() << "Serial Run" << endl;
+#endif
 
   // Identify the test problem
   if( outputUtils.isPrintType(NOX::Utils::TestDetails) )
@@ -364,7 +387,8 @@ int main(int argc, char *argv[])
     cout << "\nTimings :\n\tWallTime --> " << myTimer.WallTime() - startWallTime << " sec."
          << "\n\tElapsedTime --> " << myTimer.ElapsedTime() << " sec." << endl << endl;
 
-  problemManager.outputSolutions(1);
+  if( verbose )
+    problemManager.outputSolutions( outputDir, 1 );
 
   // Create a TestCompare class
   int status = 0;

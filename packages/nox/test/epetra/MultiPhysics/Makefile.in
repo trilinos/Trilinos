@@ -46,7 +46,7 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(example_brusselator_SOURCES) $(example_hmx_SOURCES) $(example_yeckel_SOURCES)
+SOURCES = $(Dummy_SOURCES) $(example_brusselator_SOURCES) $(example_hmx_SOURCES) $(example_yeckel_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -71,7 +71,8 @@ POST_UNINSTALL = :
 host_triplet = @host@
 @BUILD_EPETRA_MULTIPHYSICS_TRUE@@BUILD_EPETRA_TESTS_TRUE@noinst_PROGRAMS = example_hmx$(EXEEXT) \
 @BUILD_EPETRA_MULTIPHYSICS_TRUE@@BUILD_EPETRA_TESTS_TRUE@	example_brusselator$(EXEEXT) \
-@BUILD_EPETRA_MULTIPHYSICS_TRUE@@BUILD_EPETRA_TESTS_TRUE@	example_yeckel$(EXEEXT)
+@BUILD_EPETRA_MULTIPHYSICS_TRUE@@BUILD_EPETRA_TESTS_TRUE@	example_yeckel$(EXEEXT) \
+@BUILD_EPETRA_MULTIPHYSICS_TRUE@@BUILD_EPETRA_TESTS_TRUE@	Dummy$(EXEEXT)
 subdir = test/epetra/MultiPhysics
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -104,6 +105,9 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
+am_Dummy_OBJECTS =
+Dummy_OBJECTS = $(am_Dummy_OBJECTS)
+Dummy_LDADD = $(LDADD)
 am_example_brusselator_OBJECTS = Example_Brusselator.$(OBJEXT) \
 	Equation_A.$(OBJEXT) Equation_B.$(OBJEXT) Burgers.$(OBJEXT) \
 	Basis.$(OBJEXT) GenericEpetraProblem.$(OBJEXT) \
@@ -158,10 +162,10 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(example_brusselator_SOURCES) $(example_hmx_SOURCES) \
-	$(example_yeckel_SOURCES)
-DIST_SOURCES = $(example_brusselator_SOURCES) $(example_hmx_SOURCES) \
-	$(example_yeckel_SOURCES)
+SOURCES = $(Dummy_SOURCES) $(example_brusselator_SOURCES) \
+	$(example_hmx_SOURCES) $(example_yeckel_SOURCES)
+DIST_SOURCES = $(Dummy_SOURCES) $(example_brusselator_SOURCES) \
+	$(example_hmx_SOURCES) $(example_yeckel_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -378,6 +382,7 @@ target_vendor = @target_vendor@
 @USING_GNUMAKE_FALSE@TEST_INCLUDES = $(NOX_TEST_INCLUDES)
 @USING_GNUMAKE_TRUE@TEST_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(NOX_TEST_INCLUDES))
 AM_CPPFLAGS = $(TEST_INCLUDES)
+Dummy_SOURCES = Dummy
 example_hmx_SOURCES = $(srcdir)/Example_HMX.C \
 	$(srcdir)/HMX_PDE.C $(srcdir)/HMX_PDE.H \
 	$(srcdir)/Basis.C $(srcdir)/Basis.H \
@@ -930,6 +935,10 @@ uninstall-am: uninstall-info-am
 
 
 include $(top_builddir)/Makefile.export.nox
+
+Dummy$(EXEEXT): $(srcdir)/Dummy
+	cp  -r $(srcdir)/gold_brusselator gold_brusselator
+	cp  -r $(srcdir)/gold_hmx gold_hmx
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

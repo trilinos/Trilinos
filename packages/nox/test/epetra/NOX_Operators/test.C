@@ -80,7 +80,9 @@ int main(int argc, char *argv[])
 
   // Get the process ID and the total number of processors
   int MyPID = Comm.MyPID();
+#ifdef HAVE_MPI
   int NumProc = Comm.NumProc();
+#endif
 
   // define the parameters of the nonlinear PDE problem
   int nx = 5;
@@ -192,7 +194,7 @@ int main(int argc, char *argv[])
   NOX::TestCompare tester( printing.out(), printing);
   double abstol = 1.e-4;
   double reltol = 1.e-4 ;
-  NOX::TestCompare::CompareType aComp = NOX::TestCompare::Absolute;
+  //NOX::TestCompare::CompareType aComp = NOX::TestCompare::Absolute;
 
   //cout << "Direction vec :\n" << directionVec << endl;
   //cout << "A_resultVec vec :\n" << A_resultVec << endl;

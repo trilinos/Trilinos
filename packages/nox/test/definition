@@ -42,6 +42,14 @@
     COMM = SERIAL, MPI(2);
 }
 
+# NOX Epetra Multiphysics tests
+(FRAMEWORK,INSTALL, MULTIPHYSICS) {
+    DIRS = epetra/MultiPhysics;
+    EXIT-STATUS = STRING-COMPARISON(Test passed!);
+    ARGS = --verbose --golddir="./epetra/MultiPhysics";
+    COMM = SERIAL;
+}
+
 # NOX Python tests
 (FRAMEWORK,INSTALL,NOXPyTests) {
     DIRS = ../python/test;

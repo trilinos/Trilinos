@@ -46,9 +46,15 @@ EXEEXT = .exe
 
 if BUILD_EPETRA_TESTS
 if BUILD_EPETRA_MULTIPHYSICS
-noinst_PROGRAMS = example_hmx example_brusselator example_yeckel
+noinst_PROGRAMS = example_hmx example_brusselator example_yeckel Dummy
 endif
 endif
+
+Dummy$(EXEEXT): $(srcdir)/Dummy
+	cp  -r $(srcdir)/gold_brusselator gold_brusselator
+	cp  -r $(srcdir)/gold_hmx gold_hmx
+
+Dummy_SOURCES = Dummy
 
 example_hmx_SOURCES = $(srcdir)/Example_HMX.C \
 	$(srcdir)/HMX_PDE.C $(srcdir)/HMX_PDE.H \

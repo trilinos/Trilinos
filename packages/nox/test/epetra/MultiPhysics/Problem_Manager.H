@@ -218,7 +218,7 @@ public:
   string createIOname(GenericEpetraProblem &, int timeStep = 0);
 
   // Solve problems using matrix-free coupling
-  void outputSolutions(int timeStep = 0);
+  void outputSolutions( const string outputDir, int timeStep = 0 );
 
   // Query whether or not offBlocks ar used
   bool useOffBlocks()

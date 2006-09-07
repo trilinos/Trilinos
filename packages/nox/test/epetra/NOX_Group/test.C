@@ -76,7 +76,9 @@ int main(int argc, char *argv[]) {
 
   // Get the process ID and the total number of processors
   int MyPID = Comm.MyPID();
+#ifdef HAVE_MPI
   int NumProc = Comm.NumProc();
+#endif
 
   // Set up the printing utilities
   Teuchos::RefCountPtr<Teuchos::ParameterList> noxParamsPtr =
