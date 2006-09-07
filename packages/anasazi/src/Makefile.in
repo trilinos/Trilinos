@@ -326,6 +326,7 @@ CORE_H = \
 	$(srcdir)/AnasaziConfigDefs.hpp \
 	$(srcdir)/AnasaziEigenproblem.hpp \
 	$(srcdir)/AnasaziEigensolver.hpp \
+	$(srcdir)/AnasaziEigensolverDecl.hpp \
 	$(srcdir)/AnasaziEpetraAdapter.hpp \
 	$(srcdir)/AnasaziLOBPCG.hpp \
 	$(srcdir)/AnasaziLOBPCGSolMgr.hpp \
@@ -341,6 +342,7 @@ CORE_H = \
 	$(srcdir)/AnasaziSolverManager.hpp \
 	$(srcdir)/AnasaziSortManager.hpp \
 	$(srcdir)/AnasaziStatusTest.hpp \
+	$(srcdir)/AnasaziStatusTestDecl.hpp \
 	$(srcdir)/AnasaziStatusTestCombo.hpp \
 	$(srcdir)/AnasaziStatusTestMaxIters.hpp \
 	$(srcdir)/AnasaziStatusTestOrderedResNorm.hpp \
