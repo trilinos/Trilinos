@@ -36,7 +36,8 @@ MapColoring_example_SOURCES = \
 
 MapColoring_example_DEPENDENCIES = \
   $(top_builddir)/src/libepetraext.a \
-  $(top_builddir)/../epetra/src/libepetra.a
+  $(top_builddir)/../epetra/src/libepetra.a \
+  $(top_builddir)/../teuchos/src/libteuchos.a
 
 MapColoring_example_CXXFLAGS = -I$(top_srcdir)/src/transform \
                             -I$(top_srcdir)/src/coloring \
@@ -49,6 +50,7 @@ MapColoring_example_CXXFLAGS = -I$(top_srcdir)/src/transform \
 MapColoring_example_LDADD = \
   $(top_builddir)/src/libepetraext.a \
   $(top_builddir)/../epetra/src/libepetra.a \
+  $(top_builddir)/../teuchos/src/libteuchos.a \
   $(LIBS) \
   $(BLAS_LIBS) \
   $(FLIBS)

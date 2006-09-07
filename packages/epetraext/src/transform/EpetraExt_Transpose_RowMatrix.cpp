@@ -69,7 +69,7 @@ operator()( OriginalTypeRef orig )
 {
   origObj_ = &orig;
 
-  int i, j;
+  int i, j, err;
 
   if( !TransposeRowMap_ )
   {
@@ -104,7 +104,8 @@ operator()( OriginalTypeRef orig )
     for (i=0;i<NumMyCols_; i++) TransNumNz_[i] = 0;
     for (i=0; i<NumMyRows_; i++)
     {
-      assert(OrigGraph.ExtractMyRowView(i, NumIndices, Indices_)==0); // Get view of ith row
+      err = OrigGraph.ExtractMyRowView(i, NumIndices, Indices_); // Get view of ith row
+      if (err != 0) throw OrigGraph.ReportError("ExtractMyRowView failed",err);
       for (j=0; j<NumIndices; j++) ++TransNumNz_[Indices_[j]];
     }
   }
@@ -123,7 +124,11 @@ operator()( OriginalTypeRef orig )
     for (i=0;i<NumMyCols_; i++) TransNumNz_[i] = 0;
     for (i=0; i<NumMyRows_; i++)
     {
-      assert(orig.ExtractMyRowCopy(i, MaxNumEntries_, NumIndices, Values_, Indices_)==0); 
+      err = orig.ExtractMyRowCopy(i, MaxNumEntries_, NumIndices, Values_, Indices_); 
+      if (err != 0) {
+        std::cerr << "ExtractMyRowCopy failed."<<std::endl;
+        throw err;
+      }
       for (j=0; j<NumIndices; j++) ++TransNumNz_[Indices_[j]];
     }
   }
@@ -145,9 +150,13 @@ operator()( OriginalTypeRef orig )
   for (i=0; i<NumMyRows_; i++)
   {
     if (OrigMatrixIsCrsMatrix_)
-      assert(OrigCrsMatrix->ExtractMyRowView(i, NumIndices, Values_, Indices_)==0);
+      err = OrigCrsMatrix->ExtractMyRowView(i, NumIndices, Values_, Indices_);
     else
-      assert(orig.ExtractMyRowCopy(i, MaxNumEntries_, NumIndices, Values_, Indices_)==0);
+      err = orig.ExtractMyRowCopy(i, MaxNumEntries_, NumIndices, Values_, Indices_);
+    if (err != 0) {
+      std::cerr << "ExtractMyRowCopy failed."<<std::endl;
+      throw err;
+    }
 
     int ii = orig.RowMatrixRowMap().GID(i);
     for (j=0; j<NumIndices; j++)
@@ -168,13 +177,18 @@ operator()( OriginalTypeRef orig )
   Epetra_CrsMatrix TempTransA1(View, TransMap, TransNumNz_);
   TransMap.MyGlobalElements(TransMyGlobalEquations_);
   
-  for (i=0; i<NumMyCols_; i++)
-      assert(TempTransA1.InsertGlobalValues(TransMyGlobalEquations_[i], 
-                     TransNumNz_[i], TransValues_[i], TransIndices_[i])>=0);
+  for (i=0; i<NumMyCols_; i++) {
+    err = TempTransA1.InsertGlobalValues(TransMyGlobalEquations_[i], 
+                     TransNumNz_[i], TransValues_[i], TransIndices_[i]);
+    if (err < 0) throw TempTransA1.ReportError("InsertGlobalValues failed.",err);
+  }
  
   // Note: The following call to FillComplete is currently necessary because
   //      some global constants that are needed by the Export () are computed in this routine
-  assert(TempTransA1.FillComplete(orig.OperatorRangeMap(),*TransposeRowMap_)==0);
+  err = TempTransA1.FillComplete(orig.OperatorRangeMap(),*TransposeRowMap_);
+  if (err != 0) {
+    throw TempTransA1.ReportError("FillComplete failed.",err);
+  }
 
   // Now that transpose matrix with shared rows is entered, create a new matrix that will
   // get the transpose with uniquely owned rows (using the same row distribution as A).
@@ -186,12 +200,16 @@ operator()( OriginalTypeRef orig )
   // Create an Export object that will move TempTransA around
   TransposeExporter_ = new Epetra_Export(TransMap, *TransposeRowMap_);
 
-  assert(TransposeMatrix_->Export(TempTransA1, *TransposeExporter_, Add)==0);
+  err = TransposeMatrix_->Export(TempTransA1, *TransposeExporter_, Add);
+  if (err != 0) throw TransposeMatrix_->ReportError("Export failed.",err);
   
-  assert(TransposeMatrix_->FillComplete(orig.OperatorRangeMap(),*TransposeRowMap_)==0);
+  err = TransposeMatrix_->FillComplete(orig.OperatorRangeMap(),*TransposeRowMap_);
+  if (err != 0) throw TransposeMatrix_->ReportError("FillComplete failed.",err);
 
-  if (MakeDataContiguous_)
-    assert(TransposeMatrix_->MakeDataContiguous()==0);
+  if (MakeDataContiguous_) {
+    err = TransposeMatrix_->MakeDataContiguous();
+    if (err != 0) throw TransposeMatrix_->ReportError("MakeDataContiguous failed.",err);
+  }
 
   newObj_ = TransposeMatrix_;
 
@@ -201,7 +219,7 @@ operator()( OriginalTypeRef orig )
 //=========================================================================
 bool EpetraExt::RowMatrix_Transpose::fwd()
 {
-  int i, j, NumIndices;
+  int i, j, NumIndices, err;
 
   Epetra_CrsMatrix * OrigCrsMatrix = dynamic_cast<Epetra_CrsMatrix*>(origObj_);
 
@@ -211,9 +229,13 @@ bool EpetraExt::RowMatrix_Transpose::fwd()
   for (i=0; i<NumMyRows_; i++)
   {
     if(OrigMatrixIsCrsMatrix_)
-      assert(OrigCrsMatrix->ExtractMyRowView(i, NumIndices, Values_, Indices_)==0);
+      err = OrigCrsMatrix->ExtractMyRowView(i, NumIndices, Values_, Indices_);
     else
-      assert(origObj_->ExtractMyRowCopy(i, MaxNumEntries_, NumIndices, Values_, Indices_)==0);
+      err = origObj_->ExtractMyRowCopy(i, MaxNumEntries_, NumIndices, Values_, Indices_);
+    if (err != 0) {
+      std::cerr << "ExtractMyRowCopy/View failed."<<std::endl;
+      throw err;
+    }
 
     int ii = origObj_->RowMatrixRowMap().GID(i);
     for (j=0; j<NumIndices; j++)

@@ -35,7 +35,8 @@ matlab_example_SOURCES = \
 
 matlab_example_DEPENDENCIES = \
   $(top_builddir)/src/libepetraext.a \
-  $(top_builddir)/../epetra/src/libepetra.a
+  $(top_builddir)/../epetra/src/libepetra.a \
+  $(top_builddir)/../teuchos/src/libteuchos.a
 
 matlab_example_CXXFLAGS = -I$(top_srcdir)/src/matlab \
                          -I$(top_builddir)/src \
@@ -46,6 +47,7 @@ matlab_example_CXXFLAGS = -I$(top_srcdir)/src/matlab \
 matlab_example_LDADD = \
   $(top_builddir)/src/libepetraext.a \
   $(top_builddir)/../epetra/src/libepetra.a \
+  $(top_builddir)/../teuchos/src/libteuchos.a \
   $(LIBS) \
   $(BLAS_LIBS) \
   $(FLIBS)

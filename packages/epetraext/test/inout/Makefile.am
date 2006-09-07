@@ -38,7 +38,8 @@ inout_test_SOURCES = \
 
 inout_test_DEPENDENCIES = \
   $(top_builddir)/src/libepetraext.a \
-  $(top_builddir)/../epetra/src/libepetra.a
+  $(top_builddir)/../epetra/src/libepetra.a \
+  $(top_builddir)/../teuchos/src/libteuchos.a
 
 inout_test_CXXFLAGS = -I$(top_srcdir)/src/inout \
                       -I$(top_srcdir)/src \
@@ -52,6 +53,7 @@ inout_test_LDADD = \
   $(top_builddir)/src/libepetraext.a \
   $(top_builddir)/../epetra/src/libepetra.a \
   $(top_builddir)/../triutils/src/libtriutils.a \
+  $(top_builddir)/../teuchos/src/libteuchos.a \
   $(LIBS) \
   $(BLAS_LIBS) \
   $(FLIBS)

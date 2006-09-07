@@ -36,7 +36,8 @@ zoltan_example_SOURCES = \
 zoltan_example_DEPENDENCIES = \
   $(top_builddir)/src/libepetraext.a \
   $(top_builddir)/../epetra/src/libepetra.a \
-  $(top_builddir)/../triutils/src/libtriutils.a
+  $(top_builddir)/../triutils/src/libtriutils.a \
+  $(top_builddir)/../teuchos/src/libteuchos.a
 
 zoltan_example_CXXFLAGS = -I$(top_srcdir)/src/transform \
                          -I$(top_srcdir)/src/zoltan \
@@ -51,6 +52,7 @@ zoltan_example_LDADD = \
   $(top_builddir)/src/libepetraext.a \
   $(top_builddir)/../epetra/src/libepetra.a \
   $(top_builddir)/../triutils/src/libtriutils.a \
+  $(top_builddir)/../teuchos/src/libteuchos.a \
   $(LIBS) \
   $(BLAS_LIBS) \
   $(FLIBS)

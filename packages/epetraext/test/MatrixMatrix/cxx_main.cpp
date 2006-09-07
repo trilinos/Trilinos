@@ -122,7 +122,7 @@ int main(int argc, char** argv) {
 
   if (!path_specified) {
     path = new char[32];
-    sprintf(path, ".");
+    sprintf(path, "%s", ".");
   }
 
   int err = two_proc_test(Comm, verbose);
@@ -133,7 +133,7 @@ int main(int argc, char** argv) {
 
   if (!input_file_specified) {
     input_file = new char[64];
-    sprintf(input_file, "infiles");
+    sprintf(input_file, "%s", "infiles");
   }
 
   const char** filenames = NULL;
@@ -144,7 +144,7 @@ int main(int argc, char** argv) {
                         filenames, numfiles, numfilenames_allocated);
   if (err != 0) {
     if (path_specified) path_specified = false;
-    sprintf(path, "./MatrixMatrix");
+    sprintf(path, "%s", "./MatrixMatrix");
     read_input_file(Comm, input_file,
                     filenames, numfiles, numfilenames_allocated);
   }
@@ -293,7 +293,7 @@ int read_input_file(Epetra_Comm& Comm,
       sprintf(full_name, "%s/%s",path,input_file_name);
     }
     else {
-      sprintf(full_name, input_file_name);
+      sprintf(full_name, "%s", input_file_name);
     }
 
     infile = new ifstream(full_name);

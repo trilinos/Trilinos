@@ -36,7 +36,8 @@ BTF_test_SOURCES = \
 
 BTF_test_DEPENDENCIES = \
   $(top_builddir)/src/libepetraext.a \
-  $(top_builddir)/../epetra/src/libepetra.a
+  $(top_builddir)/../epetra/src/libepetra.a \
+  $(top_builddir)/../teuchos/src/libteuchos.a
 
 BTF_test_CXXFLAGS = -I$(top_builddir)/src \
                     -I$(top_srcdir)/src \
@@ -48,6 +49,7 @@ BTF_test_CXXFLAGS = -I$(top_builddir)/src \
 BTF_test_LDADD = \
   $(top_builddir)/src/libepetraext.a \
   $(top_builddir)/../epetra/src/libepetra.a \
+  $(top_builddir)/../teuchos/src/libteuchos.a \
   $(LIBS) \
   $(BLAS_LIBS) \
   $(FLIBS)

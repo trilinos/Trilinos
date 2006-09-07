@@ -329,6 +329,8 @@ int mult_A_Btrans(CrsMatrixStruct& Aview,
   int* Aind = iwork;
   int* Bind = iwork+maxlen;
 
+  bool C_filled = C.Filled();
+
   //To form C = A*B^T, we're going to execute this expression:
   //
   // C(i,j) = sum_k( A(i,k)*B(j,k) )
@@ -417,26 +419,26 @@ int mult_A_Btrans(CrsMatrixStruct& Aview,
       }
       int global_col = Bview.rowMap->GID(j);
 
-      int err = C.SumIntoGlobalValues(global_row, 1, &C_ij, &global_col);
+      int err = C_filled ?
+        C.SumIntoGlobalValues(global_row, 1, &C_ij, &global_col)
+        :
+        C.InsertGlobalValues(global_row, 1, &C_ij, &global_col);
+
       if (err < 0) {
 	return(err);
       }
       if (err > 0) {
-	err = C.InsertGlobalValues(global_row, 1, &C_ij, &global_col);
-	if (err < 0) {
-	  //If we jump out here, it means C.Filled()==true, and C doesn't
-	  //have all the necessary nonzero locations, or that global_row
-	  //or global_col is out of range (less than 0 or non local).
+	if (C_filled) {
+	  //C.Filled()==true, and C doesn't have all the necessary nonzero
+          //locations, or global_row or global_col is out of range (less
+          //than 0 or non local).
+          std::cerr << "EpetraExt::MatrixMatrix::Multiply Warning: failed "
+              << "to insert value in result matrix at position "<<global_row
+             <<"," <<global_col<<", possibly because result matrix has a "
+             << "column-map that doesn't include column "<<global_col
+             <<" on this proc." <<std::endl;
 	  return(err);
 	}
-        if (err == 2) {
-          cerr << "EpetraExt::MatrixMatrix::Multiply Warning: failed to insert"
-              << " value in result matrix at position "<<global_row<<","
-              <<global_col<<", possibly because result matrix has a column-map"
-              <<" that doesn't include column "<<global_col<<" on this proc."
-              <<endl;
-          returnValue = err;
-        }
       }
     }
   }
@@ -602,11 +604,13 @@ int mult_Atrans_Btrans(CrsMatrixStruct& Aview,
   int C_numCols = C_lastCol - C_firstCol + 1;
   int C_numCols_import = C_lastCol_import - C_firstCol_import + 1;
 
-  double* dwork = new double[C_numCols+C_numCols_import];
+  if (C_numCols_import > C_numCols) C_numCols = C_numCols_import;
+
+  double* dwork = new double[C_numCols];
+  int* iwork = new int[C_numCols];
 
   double* C_col_j = dwork;
-
-  double* C_col_j_import = dwork+C_numCols;
+  int* C_inds = iwork;
 
   //cout << "Aview: " << endl;
   //dumpCrsMatrixStruct(Aview);
@@ -619,13 +623,16 @@ int mult_Atrans_Btrans(CrsMatrixStruct& Aview,
 
   for(j=0; j<C_numCols; ++j) {
     C_col_j[j] = 0.0;
+    C_inds[j] = -1;
   }
 
-  for(j=0; j<C_numCols_import; ++j) {
-    C_col_j_import[j] = 0.0;
-  }
+  int* A_col_inds = Aview.colMap->MyGlobalElements();
+  int* A_col_inds_import = Aview.importColMap ?
+    Aview.importColMap->MyGlobalElements() : 0;
 
   const Epetra_Map* Crowmap = &(C.RowMap());
+
+  bool C_filled = C.Filled();
 
   //To form C = A^T*B^T, we're going to execute this expression:
   //
@@ -637,13 +644,7 @@ int mult_Atrans_Btrans(CrsMatrixStruct& Aview,
 
   int* Brows = Bview.rowMap->MyGlobalElements();
 
-  std::vector<int> inds_i;
-  inds_i.reserve(C_numCols);
-
-  std::vector<int> inds_i_import;
-  inds_i_import.reserve(C_numCols_import);
-
-  //loop across the rows of B
+  //loop over the rows of B
   for(j=0; j<Bview.numRows; ++j) {
     int* Bindices_j = Bview.indices[j];
     double* Bvals_j = Bview.values[j];
@@ -657,8 +658,6 @@ int mult_Atrans_Btrans(CrsMatrixStruct& Aview,
     //calculate updates for column j of the result matrix C.
 
     for(k=0; k<Bview.numEntriesPerRow[j]; ++k) {
-      inds_i.resize(0);
-      inds_i_import.resize(0);
 
       int bk = Bindices_j[k];
       double Bval = Bvals_j[k];
@@ -680,84 +679,51 @@ int mult_Atrans_Btrans(CrsMatrixStruct& Aview,
       int* Aindices_k = Aview.indices[ak];
       double* Avals_k = Aview.values[ak];
 
+      int C_len = 0;
+
       if (Aview.remote[ak]) {
 	for(i=0; i<Aview.numEntriesPerRow[ak]; ++i) {
-	  int loc = Aindices_k[i] - C_firstCol_import;
-	  C_col_j_import[loc] += Avals_k[i]*Bval;
-          inds_i_import.push_back(loc);
+	  C_col_j[C_len] = Avals_k[i]*Bval;
+          C_inds[C_len++] = A_col_inds_import[Aindices_k[i]];
 	}
       }
       else {
 	for(i=0; i<Aview.numEntriesPerRow[ak]; ++i) {
-	  int loc = Aindices_k[i] - C_firstCol;
-	  C_col_j[loc] += Avals_k[i]*Bval;
-          inds_i.push_back(loc);
+	  C_col_j[C_len] = Avals_k[i]*Bval;
+          C_inds[C_len++] = A_col_inds[Aindices_k[i]];
 	}
       }
 
       //Now loop across the C_col_j values and put non-zeros into C.
 
-      std::vector<int>::const_iterator
-        it = inds_i.begin(),
-        it_end = inds_i.end();
-
-      for(; it != it_end; ++it) {
-        i = *it;
+      for(i=0; i < C_len ; ++i) {
 	if (C_col_j[i] == 0.0) continue;
 
-	int global_row = Aview.colMap->GID(C_firstCol+i);
+	int global_row = C_inds[i];
 	if (!Crowmap->MyGID(global_row)) {
 	  continue;
 	}
 
-	int err = C.SumIntoGlobalValues(global_row, 1, &(C_col_j[i]),
-					&global_col);
+	int err = C.SumIntoGlobalValues(global_row, 1, &(C_col_j[i]), &global_col);
+
 	if (err < 0) {
 	  return(err);
 	}
-	if (err > 0) {
-	  err = C.InsertGlobalValues(global_row, 1, &(C_col_j[i]),
-				     &global_col);
-	  if (err < 0) {
-	    return(err);
+	else {
+          if (err > 0) {
+	    err = C.InsertGlobalValues(global_row, 1, &(C_col_j[i]), &global_col);
+	    if (err < 0) {
+              return(err);
+            }
 	  }
 	}
-
-	C_col_j[i] = 0.0;
       }
 
-      std::vector<int>::const_iterator
-        iit = inds_i_import.begin(),
-        iit_end = inds_i_import.end();
-
-      for(; iit != iit_end; ++iit) {
-        i = *iit;
-	if (C_col_j_import[i] == 0.0) continue;
-
-	int global_row = Aview.importColMap->GID(C_firstCol_import + i);
-	if (!Crowmap->MyGID(global_row)) {
-	  continue;
-	}
-
-	int err = C.SumIntoGlobalValues(global_row, 1, &(C_col_j_import[i]),
-					&global_col);
-	if (err < 0) {
-	  return(err);
-	}
-	if (err > 0) {
-	  err = C.InsertGlobalValues(global_row, 1, &(C_col_j_import[i]),
-				     &global_col);
-	  if (err < 0) {
-	    return(err);
-	  }
-	}
-
-	C_col_j_import[i] = 0.0;
-      }
     }
   }
 
   delete [] dwork;
+  delete [] iwork;
 
   return(0);
 }

@@ -36,7 +36,8 @@ MapColoring_test_SOURCES = \
 
 MapColoring_test_DEPENDENCIES = \
   $(top_builddir)/src/libepetraext.a \
-  $(top_builddir)/../epetra/src/libepetra.a
+  $(top_builddir)/../epetra/src/libepetra.a \
+  $(top_builddir)/../teuchos/src/libteuchos.a
 
 include $(top_builddir)/Makefile.export.epetraext
 

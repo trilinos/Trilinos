@@ -36,7 +36,8 @@ SingletonFilter_test_SOURCES = \
 
 SingletonFilter_test_DEPENDENCIES = \
   $(top_builddir)/src/libepetraext.a \
-  $(top_builddir)/../epetra/src/libepetra.a
+  $(top_builddir)/../epetra/src/libepetra.a \
+  $(top_builddir)/../teuchos/src/libteuchos.a
 
 SingletonFilter_test_CXXFLAGS = -I$(top_srcdir)/src/transform \
                                 -I$(top_srcdir)/src \
@@ -44,11 +45,15 @@ SingletonFilter_test_CXXFLAGS = -I$(top_srcdir)/src/transform \
                                 -I$(top_srcdir)/../epetra/src \
                                 -I$(top_builddir)/../epetra/src
 
-SingletonFilter_test_LDADD = \
-  $(top_builddir)/src/libepetraext.a \
-  $(top_builddir)/../epetra/src/libepetra.a \
-  $(LIBS) \
-  $(BLAS_LIBS) \
-  $(FLIBS)
+include $(top_builddir)/Makefile.export.epetraext
 
+if USING_GNUMAKE
+EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(EPETRAEXT_LIBS))
+EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(EPETRAEXT_INCLUDES))
+else
+EXPORT_LIBS = $(EPETRAEXT_LIBS)
+EXPORT_INC_PATH = $(EPETRAEXT_INCLUDES)
+endif
+
+SingletonFilter_test_LDADD = $(EXPORT_LIBS)
 
