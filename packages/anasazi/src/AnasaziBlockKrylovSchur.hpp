@@ -80,22 +80,22 @@ namespace Anasazi {
    */
   template <class ScalarType, class MulVec>
   struct BlockKrylovSchurState {
-    /*! \brief The current dimension of the solver's Krylov basis.
+    /*! \brief The current dimension of the reduction.
      *
      * This should always be equal to BlockKrylovSchur::getCurSubspaceDim()
      */
     int curDim;
-    /*! \brief The current Krylov basis. 
-     *
-     *  Only the first \c curDim are valid. */
+    /*! \brief The current Krylov basis. */
     Teuchos::RefCountPtr<const MulVec> V;
     /*! \brief The current Hessenberg matrix. 
      *
-     * Only the first <tt>curDim+blockSize</tt> by <tt>curDim</tt> part is valid. */
+     * The \c curDim by \c curDim leading submatrix of H is the 
+     * projection of problem->getOperator() by the first \c curDim vectors in V. 
+     */
     Teuchos::RefCountPtr<const Teuchos::SerialDenseMatrix<int,ScalarType> > H;
-    /*! \brief The current Schur form reduction of H. */
+    /*! \brief The current Schur form reduction of the valid part of H. */
     Teuchos::RefCountPtr<const Teuchos::SerialDenseMatrix<int,ScalarType> > S;
-    /*! \brief The current Schur vectors of H. */
+    /*! \brief The current Schur vectors of the valid part of H. */
     Teuchos::RefCountPtr<const Teuchos::SerialDenseMatrix<int,ScalarType> > Q;
     BlockKrylovSchurState() : curDim(0), V(Teuchos::null),
                               H(Teuchos::null), S(Teuchos::null),
@@ -219,7 +219,6 @@ namespace Anasazi {
      * \return bool indicating the state of the solver.
      * \post
      * If isInitialized() == \c true:
-     *    - getCurSubspaceDim() > 0 
      *    - the first getCurSubspaceDim() vectors of V are orthogonal to auxiliary vectors and have orthonormal columns
      *    - the principal Hessenberg submatrix of of H contains the Hessenberg matrix associated with V
      */
@@ -892,6 +891,12 @@ namespace Anasazi {
       // check size of H
       TEST_FOR_EXCEPTION(state.H->numRows() < curDim_ || state.H->numCols() < curDim_, std::invalid_argument, errstr);
       
+      if (curDim_ == 0 && lclDim > blockSize_) {
+        om_->stream(Warnings) << "Anasazi::BlockKrylovSchur::initialize(): the solver was initialized with a kernel of " << lclDim << endl
+                                  << "The block size however is only " << blockSize_ << endl
+                                  << "The last " << lclDim - blockSize_ << " vectors of the kernel will be overwritten on the first call to iterate()." << endl;
+      }
+
       // create index vector to copy over current basis vectors
       std::vector<int> nevind(lclDim);
       for (int i=0; i<lclDim; i++) nevind[i] = i;
@@ -977,7 +982,7 @@ namespace Anasazi {
 
       // alloc newH
       Teuchos::RefCountPtr< Teuchos::SerialDenseMatrix<int,ScalarType> > newH =
-        Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::View, *H_, curDim_, curDim_ ) );
+        Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::View, *H_, blockSize_, blockSize_ ) );
 
       // remove auxVecs from newV and normalize newV
       if (auxVecs_.size() > 0) {
@@ -998,6 +1003,7 @@ namespace Anasazi {
 
       // call myself recursively
       BlockKrylovSchurState<ScalarType,MV> newstate;
+      newstate.curDim = 0;
       newstate.V = newV;
       newstate.H = newH;
       initialize(newstate);
@@ -1042,6 +1048,11 @@ namespace Anasazi {
     ////////////////////////////////////////////////////////////////
     // iterate until the status test tells us to stop.
     // also break if our basis is full
+    //
+    // NOTE: this is assuming that curDim_+blockSize_ <= searchDim
+    // this is satisfied by the interaction in BlockKrylovSchurSolMgr
+    // furthermore, the absence of this assumption should be caught in MVT::CloneView() below
+    //
     while (tester_->checkStatus(this) != Passed && curDim_ < searchDim) {
 
       iter_++;
