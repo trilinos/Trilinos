@@ -28,6 +28,9 @@
 
 # Include export Makefiles
 include  $(top_builddir)/Makefile.export.ml
+include  $(top_builddir)/../galeri/Makefile.export.galeri
+
+ML_PYTHON_LIBS = $(ML_LIBS) $(GALERI_LIBS)
 
 # Include swig rules
 include $(top_srcdir)/config/swig.am

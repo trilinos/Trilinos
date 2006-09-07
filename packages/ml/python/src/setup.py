@@ -65,8 +65,8 @@ uniquifyList(extra_compile_args)
 # Get the relevant Makefile export variable values, split them into lists of
 # strings, add them together to obtain a big list of option strings, and then
 # remove any duplicate entries
-options = ML_INCLUDES.split()   + \
-          ML_LIBS.split()       + \
+options = ML_INCLUDES.split()    + \
+          ML_PYTHON_LIBS.split() + \
           ML_EXTRA_LIBS.split()
 uniquifyList(options)
 
