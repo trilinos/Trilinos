@@ -45,7 +45,7 @@
 #np# Specify locations of include files within Trilinos, but outside np
 #np# Add packages that np is dependent on; remove epetra if np does not need it
 
-SOURCES = $(BlockKrylovSchur_nh_test_SOURCES) $(BlockKrylovSchur_solvertest_SOURCES) $(BlockKrylovSchur_test_SOURCES)
+SOURCES = $(BlockKrylovSchurComplex_test_SOURCES) $(BlockKrylovSchur_nh_test_SOURCES) $(BlockKrylovSchur_solvertest_SOURCES) $(BlockKrylovSchur_test_SOURCES) $(Dummy_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -70,7 +70,7 @@ POST_UNINSTALL = :
 host_triplet = @host@
 noinst_PROGRAMS = BlockKrylovSchur_solvertest$(EXEEXT) \
 	BlockKrylovSchur_test$(EXEEXT) \
-	BlockKrylovSchur_nh_test$(EXEEXT)
+	BlockKrylovSchur_nh_test$(EXEEXT) $(am__EXEEXT_1)
 subdir = test/BlockKrylovSchur
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -105,15 +105,21 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Anasazi_config.h
 CONFIG_CLEAN_FILES =
+@BUILD_TEUCHOS_COMPLEX_TRUE@@BUILD_TRIUTILS_TRUE@am__EXEEXT_1 = BlockKrylovSchurComplex_test$(EXEEXT) \
+@BUILD_TEUCHOS_COMPLEX_TRUE@@BUILD_TRIUTILS_TRUE@	Dummy$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
-am_BlockKrylovSchur_nh_test_OBJECTS =  \
-	BlockKrylovSchur_nh_test-cxx_main_nh.$(OBJEXT)
-BlockKrylovSchur_nh_test_OBJECTS =  \
-	$(am_BlockKrylovSchur_nh_test_OBJECTS)
+am_BlockKrylovSchurComplex_test_OBJECTS =  \
+	BlockKrylovSchurComplex_test-cxx_main_complex.$(OBJEXT)
+BlockKrylovSchurComplex_test_OBJECTS =  \
+	$(am_BlockKrylovSchurComplex_test_OBJECTS)
 am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
 @USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
 @USING_GNUMAKE_TRUE@	$(ANASAZI_TEST_LIBS))
+am_BlockKrylovSchur_nh_test_OBJECTS =  \
+	BlockKrylovSchur_nh_test-cxx_main_nh.$(OBJEXT)
+BlockKrylovSchur_nh_test_OBJECTS =  \
+	$(am_BlockKrylovSchur_nh_test_OBJECTS)
 am_BlockKrylovSchur_solvertest_OBJECTS =  \
 	BlockKrylovSchur_solvertest-cxx_main_solvertest.$(OBJEXT)
 BlockKrylovSchur_solvertest_OBJECTS =  \
@@ -121,10 +127,14 @@ BlockKrylovSchur_solvertest_OBJECTS =  \
 am_BlockKrylovSchur_test_OBJECTS =  \
 	BlockKrylovSchur_test-cxx_main.$(OBJEXT)
 BlockKrylovSchur_test_OBJECTS = $(am_BlockKrylovSchur_test_OBJECTS)
+am_Dummy_OBJECTS =
+Dummy_OBJECTS = $(am_Dummy_OBJECTS)
+Dummy_LDADD = $(LDADD)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/BlockKrylovSchur_nh_test-cxx_main_nh.Po \
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/BlockKrylovSchurComplex_test-cxx_main_complex.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/BlockKrylovSchur_nh_test-cxx_main_nh.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/BlockKrylovSchur_solvertest-cxx_main_solvertest.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/BlockKrylovSchur_test-cxx_main.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
@@ -132,12 +142,18 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(BlockKrylovSchur_nh_test_SOURCES) \
+COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+CCLD = $(CC)
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+SOURCES = $(BlockKrylovSchurComplex_test_SOURCES) \
+	$(BlockKrylovSchur_nh_test_SOURCES) \
 	$(BlockKrylovSchur_solvertest_SOURCES) \
-	$(BlockKrylovSchur_test_SOURCES)
-DIST_SOURCES = $(BlockKrylovSchur_nh_test_SOURCES) \
+	$(BlockKrylovSchur_test_SOURCES) $(Dummy_SOURCES)
+DIST_SOURCES = $(BlockKrylovSchurComplex_test_SOURCES) \
+	$(BlockKrylovSchur_nh_test_SOURCES) \
 	$(BlockKrylovSchur_solvertest_SOURCES) \
-	$(BlockKrylovSchur_test_SOURCES)
+	$(BlockKrylovSchur_test_SOURCES) $(Dummy_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -313,7 +329,6 @@ AM_CPPFLAGS = \
 	$(EXPORT_INC_PATH)
 
 @BUILD_TEUCHOS_COMPLEX_TRUE@@BUILD_TRIUTILS_TRUE@BKS_COMPLEX_TEST = BlockKrylovSchurComplex_test Dummy
-notenabled = $(BKS_COMPLEX_TEST)
 
 #np# One SOURCES primary is needed for EACH exe.  (Notice for all of the following 
 #np# primaries that the pattern is "(Exe_name)_(PRIMARY_NAME) = ").  List all source 
@@ -410,6 +425,9 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
+BlockKrylovSchurComplex_test$(EXEEXT): $(BlockKrylovSchurComplex_test_OBJECTS) $(BlockKrylovSchurComplex_test_DEPENDENCIES) 
+	@rm -f BlockKrylovSchurComplex_test$(EXEEXT)
+	$(CXXLINK) $(BlockKrylovSchurComplex_test_LDFLAGS) $(BlockKrylovSchurComplex_test_OBJECTS) $(BlockKrylovSchurComplex_test_LDADD) $(LIBS)
 BlockKrylovSchur_nh_test$(EXEEXT): $(BlockKrylovSchur_nh_test_OBJECTS) $(BlockKrylovSchur_nh_test_DEPENDENCIES) 
 	@rm -f BlockKrylovSchur_nh_test$(EXEEXT)
 	$(CXXLINK) $(BlockKrylovSchur_nh_test_LDFLAGS) $(BlockKrylovSchur_nh_test_OBJECTS) $(BlockKrylovSchur_nh_test_LDADD) $(LIBS)
@@ -426,6 +444,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BlockKrylovSchurComplex_test-cxx_main_complex.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BlockKrylovSchur_nh_test-cxx_main_nh.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BlockKrylovSchur_solvertest-cxx_main_solvertest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BlockKrylovSchur_test-cxx_main.Po@am__quote@
@@ -445,6 +464,22 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+BlockKrylovSchurComplex_test-cxx_main_complex.o: $(srcdir)/cxx_main_complex.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(BlockKrylovSchurComplex_test_CXXFLAGS) $(CXXFLAGS) -MT BlockKrylovSchurComplex_test-cxx_main_complex.o -MD -MP -MF "$(DEPDIR)/BlockKrylovSchurComplex_test-cxx_main_complex.Tpo" -c -o BlockKrylovSchurComplex_test-cxx_main_complex.o `test -f '$(srcdir)/cxx_main_complex.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main_complex.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/BlockKrylovSchurComplex_test-cxx_main_complex.Tpo" "$(DEPDIR)/BlockKrylovSchurComplex_test-cxx_main_complex.Po"; else rm -f "$(DEPDIR)/BlockKrylovSchurComplex_test-cxx_main_complex.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main_complex.cpp' object='BlockKrylovSchurComplex_test-cxx_main_complex.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/BlockKrylovSchurComplex_test-cxx_main_complex.Po' tmpdepfile='$(DEPDIR)/BlockKrylovSchurComplex_test-cxx_main_complex.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(BlockKrylovSchurComplex_test_CXXFLAGS) $(CXXFLAGS) -c -o BlockKrylovSchurComplex_test-cxx_main_complex.o `test -f '$(srcdir)/cxx_main_complex.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main_complex.cpp
+
+BlockKrylovSchurComplex_test-cxx_main_complex.obj: $(srcdir)/cxx_main_complex.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(BlockKrylovSchurComplex_test_CXXFLAGS) $(CXXFLAGS) -MT BlockKrylovSchurComplex_test-cxx_main_complex.obj -MD -MP -MF "$(DEPDIR)/BlockKrylovSchurComplex_test-cxx_main_complex.Tpo" -c -o BlockKrylovSchurComplex_test-cxx_main_complex.obj `if test -f '$(srcdir)/cxx_main_complex.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main_complex.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main_complex.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/BlockKrylovSchurComplex_test-cxx_main_complex.Tpo" "$(DEPDIR)/BlockKrylovSchurComplex_test-cxx_main_complex.Po"; else rm -f "$(DEPDIR)/BlockKrylovSchurComplex_test-cxx_main_complex.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main_complex.cpp' object='BlockKrylovSchurComplex_test-cxx_main_complex.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/BlockKrylovSchurComplex_test-cxx_main_complex.Po' tmpdepfile='$(DEPDIR)/BlockKrylovSchurComplex_test-cxx_main_complex.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(BlockKrylovSchurComplex_test_CXXFLAGS) $(CXXFLAGS) -c -o BlockKrylovSchurComplex_test-cxx_main_complex.obj `if test -f '$(srcdir)/cxx_main_complex.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main_complex.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main_complex.cpp'; fi`
 
 BlockKrylovSchur_nh_test-cxx_main_nh.o: $(srcdir)/cxx_main_nh.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(BlockKrylovSchur_nh_test_CXXFLAGS) $(CXXFLAGS) -MT BlockKrylovSchur_nh_test-cxx_main_nh.o -MD -MP -MF "$(DEPDIR)/BlockKrylovSchur_nh_test-cxx_main_nh.Tpo" -c -o BlockKrylovSchur_nh_test-cxx_main_nh.o `test -f '$(srcdir)/cxx_main_nh.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main_nh.cpp; \

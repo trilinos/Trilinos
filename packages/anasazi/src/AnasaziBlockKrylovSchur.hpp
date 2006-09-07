@@ -289,6 +289,8 @@ namespace Anasazi {
       return ret;
     }
 
+    //@}
+
     //! @name Accessor routines
     //@{ 
 
@@ -510,6 +512,132 @@ namespace Anasazi {
 
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Helper function for correctly storing the Ritz values when the eigenproblem is non-Hermitian
+  // This allows us to use template specialization to compute the right index vector and correctly
+  // handle complex-conjugate pairs.
+  template<class ScalarType>
+  void sortRitzValues( const std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>& rRV,
+                       const std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>& iRV,
+                       std::vector<Value<ScalarType> >* RV, std::vector<int>* RO, std::vector<int>* RI )
+  {
+    typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
+    MagnitudeType MT_ZERO = Teuchos::ScalarTraits<MagnitudeType>::zero();
+
+    int curDim = (int)rRV.size();
+    int i = 0;
+
+    // Clear the current index.
+    RI->clear();
+
+    // Place the Ritz values from rRV and iRV into the RV container.
+    while( i < curDim ) {
+      if ( iRV[i] != MT_ZERO ) {
+        //
+        // We will have this situation for real-valued, non-Hermitian matrices.
+        (*RV)[i].set(rRV[i], iRV[i]);
+        (*RV)[i+1].set(rRV[i+1], iRV[i+1]);
+        
+        // Make sure that complex conjugate pairs have their positive imaginary part first.
+        if ( (*RV)[i].imagpart < MT_ZERO ) {
+          // The negative imaginary part is first, so swap the order of the ritzValues and ritzOrders.
+          Anasazi::Value<ScalarType> tmp_ritz( (*RV)[i] );
+          (*RV)[i] = (*RV)[i+1];
+          (*RV)[i+1] = tmp_ritz;
+          
+          int tmp_order = (*RO)[i];
+          (*RO)[i] = (*RO)[i+1];
+          (*RO)[i+1] = tmp_order;
+          
+        }
+        RI->push_back(1); RI->push_back(-1);
+        i = i+2;
+      } else {
+        //
+        // The Ritz value is not complex.
+        (*RV)[i].set(rRV[i], MT_ZERO);
+        RI->push_back(0);
+        i++;
+      }
+    }
+  }
+  
+  // Template specialization for the complex scalar type.
+  template<>
+  void sortRitzValues( const std::vector<double>& rRV, 
+                       const std::vector<double>& iRV,
+                       std::vector<Value<ANSZI_CPLX_CLASS<double> > >* RV, 
+                       std::vector<int>* RO, std::vector<int>* RI )
+  {
+    int curDim = (int)rRV.size();
+    int i = 0;
+
+    // Clear the current index.
+    RI->clear();
+
+    // Place the Ritz values from rRV and iRV into the RV container.
+    while( i < curDim ) {
+      (*RV)[i].set(rRV[i], iRV[i]);
+      RI->push_back(0);
+      i++;
+    }    
+  }
+  
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Helper function for correctly scaling the eigenvectors of the projected eigenproblem.
+  // This allows us to use template specialization to compute the right scaling so the
+  // Ritz residuals are correct.
+  template<class ScalarType>
+  void scaleRitzVectors( const std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>& iRV,
+                         Teuchos::SerialDenseMatrix<int, ScalarType>* S )
+  {
+    ScalarType ST_ONE = Teuchos::ScalarTraits<ScalarType>::one();
+    
+    typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
+    MagnitudeType MT_ZERO = Teuchos::ScalarTraits<MagnitudeType>::zero();
+
+    Teuchos::LAPACK<int,MagnitudeType> lapack_mag;
+    Teuchos::BLAS<int,ScalarType> blas;
+    
+    int i = 0, curDim = S->numRows();
+    ScalarType temp;
+    ScalarType* s_ptr = S->values();
+    while( i < curDim ) {
+      if ( iRV[i] != MT_ZERO ) {
+        temp = lapack_mag.LAPY2( blas.NRM2( curDim, s_ptr+i*curDim, 1 ), 
+                                 blas.NRM2( curDim, s_ptr+(i+1)*curDim, 1 ) );
+        blas.SCAL( curDim, ST_ONE/temp, s_ptr+i*curDim, 1 );
+        blas.SCAL( curDim, ST_ONE/temp, s_ptr+(i+1)*curDim, 1 );
+        i = i+2;
+      } else {
+        temp = blas.NRM2( curDim, s_ptr+i*curDim, 1 );
+        blas.SCAL( curDim, ST_ONE/temp, s_ptr+i*curDim, 1 );
+        i++;
+      }
+    }
+  }
+
+  // Template specialization for the complex scalar type.
+  template<>
+  void scaleRitzVectors( const std::vector<double>& iRV,
+                         Teuchos::SerialDenseMatrix<int, ANSZI_CPLX_CLASS<double> >* S )
+  {
+    typedef ANSZI_CPLX_CLASS<double> ST;
+    ST ST_ONE = Teuchos::ScalarTraits<ST>::one();
+    
+    Teuchos::BLAS<int,ST> blas;
+    
+    int i = 0, curDim = S->numRows();
+    ST temp;
+    ST* s_ptr = S->values();
+    while( i < curDim ) {
+      temp = blas.NRM2( curDim, s_ptr+i*curDim, 1 );
+      blas.SCAL( curDim, ST_ONE/temp, s_ptr+i*curDim, 1 );
+      i++;
+    }
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
   // Constructor
   template <class ScalarType, class MV, class OP>
   BlockKrylovSchur<ScalarType,MV,OP>::BlockKrylovSchur(
@@ -522,7 +650,7 @@ namespace Anasazi {
         ) :
     MT_ONE(Teuchos::ScalarTraits<MagnitudeType>::one()),
     MT_ZERO(Teuchos::ScalarTraits<MagnitudeType>::zero()),
-    NANVAL(Teuchos::ScalarTraits<ScalarType>::nan()),
+    NANVAL(Teuchos::ScalarTraits<MagnitudeType>::nan()),
     ST_ONE(Teuchos::ScalarTraits<ScalarType>::one()),
     ST_ZERO(Teuchos::ScalarTraits<ScalarType>::zero()),
     // problem, tools
@@ -1233,7 +1361,7 @@ namespace Anasazi {
           view_ritzVectors = Teuchos::null;
           
           // Scale the Ritz vectors to have euclidean norm.
-          MagnitudeType ritzScale = MT_ONE;
+          ScalarType ritzScale = ST_ONE;
           for (int i=0; i<numRitzVecs_; i++) {
             
             // If this is a conjugate pair then normalize by the real and imaginary parts.
@@ -1382,24 +1510,8 @@ namespace Anasazi {
                                "Anasazi::BlockKrylovSchur::computeSchurForm(): TREVC returned info != 0");
             //
             // Scale the eigenvectors so that their euclidean norms are all one.
-            // ( conjugate pairs get normalized by the sqrt(2) )
             //
-            ScalarType temp;
-            ScalarType* s_ptr = S.values();
-            int i = 0;
-            while( i < curDim_ ) {
-              if ( tmp_iRitzValues[i] != MT_ZERO ) {
-                temp = lapack_mag.LAPY2( blas.NRM2( curDim_, s_ptr+i*curDim_, 1 ), 
-                                         blas.NRM2( curDim_, s_ptr+(i+1)*curDim_, 1 ) );
-                blas.SCAL( curDim_, ST_ONE/temp, s_ptr+i*curDim_, 1 );
-                blas.SCAL( curDim_, ST_ONE/temp, s_ptr+(i+1)*curDim_, 1 );
-                i = i+2;
-              } else {
-                temp = blas.NRM2( curDim_, s_ptr+i*curDim_, 1 );
-                blas.SCAL( curDim_, ST_ONE/temp, s_ptr+i*curDim_, 1 );
-                i++;
-              }
-            }
+            scaleRitzVectors( tmp_iRitzValues, &S );
             //
             // Compute ritzRes = *B_m+1^H*Q*S where the i-th column of S is 's' for the i-th Ritz-value
             //
@@ -1435,7 +1547,7 @@ namespace Anasazi {
             // Compute the Ritz residuals for Ritz value 'i' from the 'i'-th column of ritzRes.
             // 
             ScalarType* rr_ptr = ritzRes.values();
-            i = 0;
+            int i = 0;
             while( i < curDim_ ) {
             if ( tmp_iRitzValues[i] != MT_ZERO ) {
             ritzResiduals_[i] = lapack_mag.LAPY2( blas.NRM2(blockSize_, rr_ptr + i*blockSize_, 1),
@@ -1453,48 +1565,24 @@ namespace Anasazi {
           //
           {
             Teuchos::TimeMonitor LocalTimer2(*timerSortRitzVal_);
+            int i=0;
             if (problem_->isHermitian()) {
               //
               // Sort using just the real part of the Ritz values.
               sm_->sort( this, curDim_, tmp_rRitzValues, &ritzOrder_ ); // don't catch exception
-            }
-            else {
-              //
-              // Sort using both the real and imaginary parts of the Ritz values.
-              sm_->sort( this, curDim_, tmp_rRitzValues, tmp_iRitzValues, &ritzOrder_ );
-            }
-            //
-            // Store the current Ritz values (tmp_ritzValues) into ritzValues_, creating the index vector
-            int i = 0;
-            ritzIndex_.clear();
-            while( i < curDim_ ) {
-              if ( tmp_iRitzValues[i] != MT_ZERO ) {
-                //
-                // We will have this situation for non-Hermitian matrices.
-                ritzValues_[i].set(tmp_rRitzValues[i], tmp_iRitzValues[i]);
-                ritzValues_[i+1].set(tmp_rRitzValues[i+1], tmp_iRitzValues[i+1]);
-
-                // Make sure that complex conjugate pairs have their positive imaginary part first.
-                if ( ritzValues_[i].imagpart < MT_ZERO ) {
-                  // The negative imaginary part is first, so swap the order of the ritzValues and ritzOrders.
-                  Anasazi::Value<ScalarType> tmp_ritz( ritzValues_[i] );
-                  ritzValues_[i] = ritzValues_[i+1];
-                  ritzValues_[i+1] = tmp_ritz;
-
-                  int tmp_order = ritzOrder_[i];
-                  ritzOrder_[i] = ritzOrder_[i+1];
-                  ritzOrder_[i+1] = tmp_order;
-                  
-                }
-                ritzIndex_.push_back(1); ritzIndex_.push_back(-1);
-                i = i+2;
-              } else {
-                //
+              ritzIndex_.clear();
+              while ( i < curDim_ ) {
                 // The Ritz value is not complex.
                 ritzValues_[i].set(tmp_rRitzValues[i], MT_ZERO);
                 ritzIndex_.push_back(0);
                 i++;
               }
+            }
+            else {
+              //
+              // Sort using both the real and imaginary parts of the Ritz values.
+              sm_->sort( this, curDim_, tmp_rRitzValues, tmp_iRitzValues, &ritzOrder_ );
+              sortRitzValues<ScalarType>( tmp_rRitzValues, tmp_iRitzValues, &ritzValues_, &ritzOrder_, &ritzIndex_ );
             }
             //
             // Sort the ritzResiduals_ based on the ordering from the Sort Manager.
@@ -1504,7 +1592,8 @@ namespace Anasazi {
             
             // The Ritz values have now been updated.
             ritzValsCurrent_ = true;
-            }
+          }
+
         } // if (!ritzValsCurrent_) ...
         // 
         //---------------------------------------------------

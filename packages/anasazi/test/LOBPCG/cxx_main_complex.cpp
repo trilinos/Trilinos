@@ -228,6 +228,10 @@ int main(int argc, char *argv[])
 
   if (numev > 0) {
 
+    ostringstream os;
+    os.setf(ios::scientific, ios::floatfield);
+    os.precision(6);
+
     // Compute the direct residual
     std::vector<MagnitudeType> normV( numev );
     SerialDenseMatrix<int,ScalarType> T(numev,numev);
@@ -241,10 +245,20 @@ int main(int argc, char *argv[])
     MVT::MvTimesMatAddMv( -ONE, *evecs, T, ONE, *Kvecs );
     MVT::MvNorm( *Kvecs, &normV );
   
+os << "Direct residual norms computed in LOBPCGComplex_test.exe" << endl
+       << std::setw(20) << "Eigenvalue" << std::setw(20) << "Residual(M)" << endl
+       << "----------------------------------------" << endl;
     for (int i=0; i<numev; i++) {
-      if ( SCT::magnitude(normV[i]/sol.Evals[i].realpart) > tol ) {
+      if ( SCT::magnitude(sol.Evals[i].realpart) != SCT::zero() ) {
+        normV[i] = SCT::magnitude(normV[i]/sol.Evals[i].realpart);
+      }
+      os << setw(20) << sol.Evals[i].realpart << setw(20) << normV[i] << endl;
+      if ( normV[i] > tol ) {
         testFailed = true;
       }
+    }
+    if (verbose && MyPID==0) {
+      cout << endl << os.str() << endl;
     }
 
   }

@@ -38,13 +38,11 @@
 // NNZ: 22778 entries
 
 #include "AnasaziConfigDefs.hpp"
+#include "AnasaziTypes.hpp"
+
 #include "AnasaziBasicEigenproblem.hpp"
-#include "AnasaziBlockKrylovSchur.hpp"
-#include "AnasaziBasicSort.hpp"
-#include "AnasaziMVOPTester.hpp"
+#include "AnasaziBlockKrylovSchurSolMgr.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
-#include "Teuchos_ParameterList.hpp"
-#include "AnasaziBasicOutputManager.hpp"
 
 #ifdef HAVE_MPI
 #include <mpi.h>
@@ -65,6 +63,7 @@ int main(int argc, char *argv[])
 {
   int info = 0;
   int MyPID = 0;
+  bool boolret;
 
 #ifdef HAVE_MPI
   // Initialize MPI
@@ -74,20 +73,33 @@ int main(int argc, char *argv[])
 
 
   bool testFailed;
-  bool verbose = 0;
+  bool verbose = false;
+  bool debug = false;
   std::string filename("mhd1280b.cua");
-  std::string which("LR");
+  std::string which("LM");
 
   CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+  cmdp.setOption("debug","nodebug",&debug,"Print debugging information.");
   cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
-  cmdp.setOption("sort",&which,"Targetted eigenvalues (SR or LR).");
+  cmdp.setOption("sort",&which,"Targetted eigenvalues (SM or LM).");
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
 #ifdef HAVE_MPI
     MPI_Finalize();
 #endif
     return -1;
   }
+
+#ifndef HAVE_ANASAZI_TRIUTILS
+  cout << "This test requires Triutils. Please configure with --enable-triutils." << endl;
+#ifdef HAVE_MPI
+  MPI_Finalize() ;
+#endif
+  if (verbose && MyPID == 0) {
+    cout << "End Result: TEST FAILED" << endl;	
+  }
+  return -1;
+#endif
 
 #ifdef HAVE_COMPLEX
   typedef std::complex<double> ST;
@@ -113,30 +125,10 @@ int main(int argc, char *argv[])
   typedef Anasazi::OperatorTraits<ST,MV,OP>  OPT;
   ST ONE  = SCT::one();
 
-  // Create default output manager 
-  RefCountPtr<Anasazi::OutputManager<ST> > MyOM = Teuchos::rcp( new Anasazi::BasicOutputManager<ST>() );
-  // Set verbosity level
-  if (verbose) {
-    MyOM->setVerbosity( Anasazi::Warning + Anasazi::FinalSummary + Anasazi::TimingDetails );
+  if (verbose && MyPID == 0) {
+    cout << Anasazi::Anasazi_Version() << endl << endl;
   }
-  MyOM->stream(Anasazi::Warning) << Anasazi::Anasazi_Version() << endl << endl;
-
-
-#ifndef HAVE_ANASAZI_TRIUTILS
-  cout << "This test requires Triutils. Please configure with --enable-triutils." << endl;
-#ifdef HAVE_MPI
-  MPI_Finalize() ;
-#endif
-  MyOM->print(Anasazi::Warning, "End Result: TEST FAILED\n" );
-  return -1;
-#endif
-
-  Anasazi::ReturnType returnCode = Anasazi::Ok;  
-
-  // Create the sort manager
-  RefCountPtr<Anasazi::BasicSort<ST,MV,OP> > MySM = 
-     rcp( new Anasazi::BasicSort<ST,MV,OP>(which) );
-
+  
   // Get the data from the HB file
   int dim,dim2,nnz;
   double *dvals;
@@ -145,9 +137,10 @@ int main(int argc, char *argv[])
   info = readHB_newmat_double(filename.c_str(),&dim,&dim2,&nnz,
                               &colptr,&rowind,&dvals);
   if (info == 0 || nnz < 0) {
-    MyOM->stream(Anasazi::Warning) 
-        << "Error reading '" << filename << "'" << endl
-        << "End Result: TEST FAILED" << endl;
+    if (verbose && MyPID == 0) {
+      cout << "Error reading '" << filename << "'" << endl
+           << "End Result: TEST FAILED" << endl;
+    }
 #ifdef HAVE_MPI
     MPI_Finalize();
 #endif
@@ -159,84 +152,115 @@ int main(int argc, char *argv[])
     cvals[ii] = ST(dvals[ii*2],dvals[ii*2+1]);
   }
   // Build the problem matrix
-  RefCountPtr< MyBetterOperator<ST> > A 
+  RefCountPtr< MyBetterOperator<ST> > K 
     = rcp( new MyBetterOperator<ST>(dim,colptr,nnz,rowind,&cvals[0]) );
 
-  // Eigensolver parameters
-  int nev = 4;
-  int blockSize = 5;
-  int maxBlocks = 4;
-  int maxRestarts = 500;
-  MT tol = 1.0e-6;
-
-  // Create parameter list to pass into solver
-  ParameterList MyPL;
-  MyPL.set( "Block Size", blockSize );
-  MyPL.set( "Max Blocks", maxBlocks );
-  MyPL.set( "Max Restarts", maxRestarts );
-  MyPL.set( "Tol", tol );
-
   // Create initial vectors
+  int blockSize = 5;
   RefCountPtr<MyMultiVec<ST> > ivec = rcp( new MyMultiVec<ST>(dim,blockSize) );
   ivec->MvRandom();
 
   // Create eigenproblem
-  RefCountPtr<Anasazi::BasicEigenproblem<ST,MV,OP> > MyProblem =
-    rcp( new Anasazi::BasicEigenproblem<ST,MV,OP>(A, ivec) );
-
-  // Inform the eigenproblem that the operator A is symmetric
-  // Note:  Block Krylov-Schur does not do the right thing right now if A is set symmetric.
-  // (Should be SetHermitian????)
-  //MyProblem->SetSymmetric(true);
-
-  // Set the number of eigenvalues requested and the blocksize the solver should use
-  MyProblem->SetNEV( nev );
-
+  const int nev = 4;
+  RefCountPtr<Anasazi::BasicEigenproblem<ST,MV,OP> > problem =
+    rcp( new Anasazi::BasicEigenproblem<ST,MV,OP>(K,ivec) );
+  //
+  // Inform the eigenproblem that the operator K is symmetric
+  problem->setHermitian(true);
+  //
+  // Set the number of eigenvalues requested
+  problem->setNEV( nev );
+  //
   // Inform the eigenproblem that you are done passing it information
-  info = MyProblem->SetProblem();
-  if (info) {
-    MyOM->stream(Anasazi::Warning)
-           << "Anasazi::BasicEigenproblem::SetProblem() returned with code : "<< info << endl
+  boolret = problem->setProblem();
+  if (boolret != true) {
+    if (verbose && MyPID == 0) {
+      cout << "Anasazi::BasicEigenproblem::SetProblem() returned with error." << endl
            << "End Result: TEST FAILED" << endl;	
+    }
 #ifdef HAVE_MPI
     MPI_Finalize() ;
 #endif
     return -1;
   }
 
-  // Create the eigensolver 
-  Anasazi::BlockKrylovSchur<ST,MV,OP> MySolver(MyProblem, MySM, MyOM, MyPL);
+
+  // Set verbosity level
+  int verbosity = Anasazi::Errors + Anasazi::Warnings;
+  if (verbose) {
+    verbosity += Anasazi::FinalSummary + Anasazi::TimingDetails;
+  }
+  if (debug) {
+    verbosity += Anasazi::Debug;
+  }
+
+
+  // Eigensolver parameters
+  int numBlocks = 8;
+  int maxRestarts = 100;
+  MT tol = 1.0e-6;
+  //
+  // Create parameter list to pass into the solver manager
+  ParameterList MyPL;
+  MyPL.set( "Verbosity", verbosity );
+  MyPL.set( "Which", which );
+  MyPL.set( "Block Size", blockSize );
+  MyPL.set( "Num Blocks", numBlocks );
+  MyPL.set( "Maximum Restarts", maxRestarts );
+  MyPL.set( "Convergence Tolerance", tol );
+  //
+  // Create the solver manager
+  Anasazi::BlockKrylovSchurSolMgr<ST,MV,OP> MySolverMgr(problem, MyPL);
 
   // Solve the problem to the specified tolerances or length
-  returnCode = MySolver.solve();
+  Anasazi::ReturnType returnCode = MySolverMgr.solve();
   testFailed = false;
-  if (returnCode != Anasazi::Ok) {
-    testFailed = true; 
+  if (returnCode != Anasazi::Converged) {
+    testFailed = true;
   }
 
   // Get the eigenvalues and eigenvectors from the eigenproblem
-  RefCountPtr<std::vector<ST> > evals = MyProblem->GetEvals();
-  RefCountPtr<MV> evecs = MyProblem->GetEvecs();
-  int nevecs = MVT::GetNumberVecs(*evecs);
+  Anasazi::Eigensolution<ST,MV> sol = problem->getSolution();
+  RefCountPtr<MV> evecs = sol.Evecs;
+  int numev = sol.numVecs;
 
-  // Compute the direct residual
-  std::vector<MT> normV( nevecs );
-  SerialDenseMatrix<int,ST> T(nevecs,nevecs);
-  for (int i=0; i<nevecs; i++) {
-    T(i,i) = (*evals)[i];
-  }
-  RefCountPtr<MV > Avecs = MVT::Clone( *evecs, nevecs );
-  OPT::Apply( *A, *evecs, *Avecs );
-  MVT::MvTimesMatAddMv( -ONE, *evecs, T, ONE, *Avecs );
-  MVT::MvNorm( *Avecs, &normV );
+  if (numev > 0) {
 
-  for (int i=0; i<nevecs; i++) {
-    if ( SCT::magnitude(normV[i]/(*evals)[i]) > 5.0e-5 ) {
-      testFailed = true;
+    ostringstream os;
+    os.setf(ios::scientific, ios::floatfield);
+    os.precision(6);
+
+    // Compute the direct residual
+    std::vector<MT> normV( numev );
+    SerialDenseMatrix<int,ST> T(numev,numev);
+    for (int i=0; i<numev; i++) {
+      T(i,i) = sol.Evals[i].realpart;
     }
-  }
+    RefCountPtr<MV> Kvecs = MVT::Clone( *evecs, numev );
 
-  // Exit
+    OPT::Apply( *K, *evecs, *Kvecs );
+
+    MVT::MvTimesMatAddMv( -ONE, *evecs, T, ONE, *Kvecs );
+    MVT::MvNorm( *Kvecs, &normV );
+  
+    os << "Direct residual norms computed in BlockKrylovSchurComplex_test.exe" << endl
+       << std::setw(20) << "Eigenvalue" << std::setw(20) << "Residual  " << endl
+       << "----------------------------------------" << endl;
+    for (int i=0; i<numev; i++) {
+      if ( SCT::magnitude(sol.Evals[i].realpart) != SCT::zero() ) {
+        normV[i] = SCT::magnitude(normV[i]/sol.Evals[i].realpart);
+      }
+      os << setw(20) << sol.Evals[i].realpart << setw(20) << normV[i] << endl;
+      if ( normV[i] > tol ) {
+        testFailed = true;
+      }
+    }
+    if (verbose && MyPID==0) {
+      cout << endl << os.str() << endl;
+    }
+
+  }
+  
 #ifdef HAVE_MPI
   MPI_Finalize() ;
 #endif
@@ -247,13 +271,17 @@ int main(int argc, char *argv[])
   free( rowind );
 
   if (testFailed) {
-    MyOM->print(Anasazi::Warning, "End Result: TEST FAILED\n" );
+    if (verbose && MyPID==0) {
+      cout << "End Result: TEST FAILED" << endl;	
+    }
     return -1;
   }
   //
   // Default return value
   //
-  MyOM->print(Anasazi::Warning, "End Result: TEST PASSED\n" );
+  if (verbose && MyPID==0) {
+    cout << "End Result: TEST PASSED" << endl;	
+  } 
   return 0;
 
 }	
