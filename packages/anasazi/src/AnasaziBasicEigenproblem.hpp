@@ -271,9 +271,9 @@ namespace Anasazi {
     _Prec(Problem._Prec), 
     _InitVec(Problem._InitVec), 
     _nev(Problem._nev), 
-    _sol(Problem._sol),
     _isSym(Problem._isSym),
-    _isSet(Problem._isSet)
+    _isSet(Problem._isSet),
+    _sol(Problem._sol)
   {
   }
 

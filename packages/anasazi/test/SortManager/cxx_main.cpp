@@ -108,6 +108,8 @@ class MyPairSWO {
     if ( !which_.compare("LI") ) {
       return p1.second > p2.second;
     }
+    throw std::logic_error("logic error");
+    return false;
   }
   private: 
   string which_;
@@ -350,7 +352,7 @@ int main(int argc, char *argv[])
       MySWO<MT> myswo(which);   // StrictWeakOrdering for use with std::sort
       vector<MT> valsorig(10);      // values to be sorted
       vector<int> perm(8);      // permutation vector
-      for (int i=0; i<valsorig.size(); i++) valsorig[i] = SCT::random();
+      for (unsigned int i=0; i<valsorig.size(); i++) valsorig[i] = SCT::random();
       printer->print(Debug,">> Original vals                       : ");
       copy(valsorig.begin(), valsorig.end(), ostream_iterator<MT>(printer->stream(Debug), " "));
       printer->print(Debug,"\n");
@@ -381,7 +383,7 @@ int main(int argc, char *argv[])
       MySWO<MT> myswo(which);   // StrictWeakOrdering for use with std::sort
       vector<MT> valsorig(10);      // values to be sorted
       vector<int> perm(8);      // permutation vector
-      for (int i=0; i<valsorig.size(); i++) valsorig[i] = SCT::random();
+      for (unsigned int i=0; i<valsorig.size(); i++) valsorig[i] = SCT::random();
       printer->print(Debug,">> Original vals                       : ");
       copy(valsorig.begin(), valsorig.end(), ostream_iterator<MT>(printer->stream(Debug), " "));
       printer->print(Debug,"\n");
@@ -412,7 +414,7 @@ int main(int argc, char *argv[])
       MySWO<MT> myswo(which);   // StrictWeakOrdering for use with std::sort
       vector<MT> valsorig(10);      // values to be sorted
       vector<int> perm(8);      // permutation vector
-      for (int i=0; i<valsorig.size(); i++) valsorig[i] = SCT::random();
+      for (unsigned int i=0; i<valsorig.size(); i++) valsorig[i] = SCT::random();
       printer->print(Debug,">> Original vals                       : ");
       copy(valsorig.begin(), valsorig.end(), ostream_iterator<MT>(printer->stream(Debug), " "));
       printer->print(Debug,"\n");
@@ -443,7 +445,7 @@ int main(int argc, char *argv[])
       MySWO<MT> myswo(which);   // StrictWeakOrdering for use with std::sort
       vector<MT> valsorig(10);      // values to be sorted
       vector<int> perm(8);      // permutation vector
-      for (int i=0; i<valsorig.size(); i++) valsorig[i] = SCT::random();
+      for (unsigned int i=0; i<valsorig.size(); i++) valsorig[i] = SCT::random();
       printer->print(Debug,">> Original vals                       : ");
       copy(valsorig.begin(), valsorig.end(), ostream_iterator<MT>(printer->stream(Debug), " "));
       printer->print(Debug,"\n");
@@ -474,7 +476,7 @@ int main(int argc, char *argv[])
       MyPairSWO<MT> myswo(which);   // StrictWeakOrdering for use with std::sort
       vector<pair<MT,MT> > valsorig(10);      // values to be sorted
       vector<int> perm(8);      // permutation vector
-      for (int i=0; i<valsorig.size(); i++) { valsorig[i].first = SCT::random(); valsorig[i].second = SCT::random(); }
+      for (unsigned int i=0; i<valsorig.size(); i++) { valsorig[i].first = SCT::random(); valsorig[i].second = SCT::random(); }
       printer->print(Debug,">> Original vals                       : ");
       copy(valsorig.begin(), valsorig.end(), ostream_iterator<pair<MT,MT> >(printer->stream(Debug), " "));
       printer->print(Debug,"\n");
@@ -486,9 +488,9 @@ int main(int argc, char *argv[])
       vector<pair<MT,MT> > valsbsm(valsorig);
       {
         vector<MT> bsm_indr(valsbsm.size()), bsm_indi(valsbsm.size());
-        for (int i=0; i<valsbsm.size(); i++) { bsm_indr[i] = valsbsm[i].first; bsm_indi[i] = valsbsm[i].second; }
+        for (unsigned int i=0; i<valsbsm.size(); i++) { bsm_indr[i] = valsbsm[i].first; bsm_indi[i] = valsbsm[i].second; }
         sorter.sort(NULL,5,bsm_indr,bsm_indi,&perm);
-        for (int i=0; i<valsbsm.size(); i++) { valsbsm[i].first = bsm_indr[i]; valsbsm[i].second = bsm_indi[i]; }
+        for (unsigned int i=0; i<valsbsm.size(); i++) { valsbsm[i].first = bsm_indr[i]; valsbsm[i].second = bsm_indi[i]; }
       }
       printer->print(Debug,">> After BasicSort::sort of first five : ");
       copy(valsbsm.begin(), valsbsm.end(), ostream_iterator<pair<MT,MT> >(printer->stream(Debug), " "));
@@ -510,7 +512,7 @@ int main(int argc, char *argv[])
       MyPairSWO<MT> myswo(which);   // StrictWeakOrdering for use with std::sort
       vector<pair<MT,MT> > valsorig(10);      // values to be sorted
       vector<int> perm(8);      // permutation vector
-      for (int i=0; i<valsorig.size(); i++) { valsorig[i].first = SCT::random(); valsorig[i].second = SCT::random(); }
+      for (unsigned int i=0; i<valsorig.size(); i++) { valsorig[i].first = SCT::random(); valsorig[i].second = SCT::random(); }
       printer->print(Debug,">> Original vals                       : ");
       copy(valsorig.begin(), valsorig.end(), ostream_iterator<pair<MT,MT> >(printer->stream(Debug), " "));
       printer->print(Debug,"\n");
@@ -522,9 +524,9 @@ int main(int argc, char *argv[])
       vector<pair<MT,MT> > valsbsm(valsorig);
       {
         vector<MT> bsm_indr(valsbsm.size()), bsm_indi(valsbsm.size());
-        for (int i=0; i<valsbsm.size(); i++) { bsm_indr[i] = valsbsm[i].first; bsm_indi[i] = valsbsm[i].second; }
+        for (unsigned int i=0; i<valsbsm.size(); i++) { bsm_indr[i] = valsbsm[i].first; bsm_indi[i] = valsbsm[i].second; }
         sorter.sort(NULL,5,bsm_indr,bsm_indi,&perm);
-        for (int i=0; i<valsbsm.size(); i++) { valsbsm[i].first = bsm_indr[i]; valsbsm[i].second = bsm_indi[i]; }
+        for (unsigned int i=0; i<valsbsm.size(); i++) { valsbsm[i].first = bsm_indr[i]; valsbsm[i].second = bsm_indi[i]; }
       }
       printer->print(Debug,">> After BasicSort::sort of first five : ");
       copy(valsbsm.begin(), valsbsm.end(), ostream_iterator<pair<MT,MT> >(printer->stream(Debug), " "));
@@ -546,7 +548,7 @@ int main(int argc, char *argv[])
       MyPairSWO<MT> myswo(which);   // StrictWeakOrdering for use with std::sort
       vector<pair<MT,MT> > valsorig(10);      // values to be sorted
       vector<int> perm(8);      // permutation vector
-      for (int i=0; i<valsorig.size(); i++) { valsorig[i].first = SCT::random(); valsorig[i].second = SCT::random(); }
+      for (unsigned int i=0; i<valsorig.size(); i++) { valsorig[i].first = SCT::random(); valsorig[i].second = SCT::random(); }
       printer->print(Debug,">> Original vals                       : ");
       copy(valsorig.begin(), valsorig.end(), ostream_iterator<pair<MT,MT> >(printer->stream(Debug), " "));
       printer->print(Debug,"\n");
@@ -558,9 +560,9 @@ int main(int argc, char *argv[])
       vector<pair<MT,MT> > valsbsm(valsorig);
       {
         vector<MT> bsm_indr(valsbsm.size()), bsm_indi(valsbsm.size());
-        for (int i=0; i<valsbsm.size(); i++) { bsm_indr[i] = valsbsm[i].first; bsm_indi[i] = valsbsm[i].second; }
+        for (unsigned int i=0; i<valsbsm.size(); i++) { bsm_indr[i] = valsbsm[i].first; bsm_indi[i] = valsbsm[i].second; }
         sorter.sort(NULL,5,bsm_indr,bsm_indi,&perm);
-        for (int i=0; i<valsbsm.size(); i++) { valsbsm[i].first = bsm_indr[i]; valsbsm[i].second = bsm_indi[i]; }
+        for (unsigned int i=0; i<valsbsm.size(); i++) { valsbsm[i].first = bsm_indr[i]; valsbsm[i].second = bsm_indi[i]; }
       }
       printer->print(Debug,">> After BasicSort::sort of first five : ");
       copy(valsbsm.begin(), valsbsm.end(), ostream_iterator<pair<MT,MT> >(printer->stream(Debug), " "));
@@ -582,7 +584,7 @@ int main(int argc, char *argv[])
       MyPairSWO<MT> myswo(which);   // StrictWeakOrdering for use with std::sort
       vector<pair<MT,MT> > valsorig(10);      // values to be sorted
       vector<int> perm(8);      // permutation vector
-      for (int i=0; i<valsorig.size(); i++) { valsorig[i].first = SCT::random(); valsorig[i].second = SCT::random(); }
+      for (unsigned int i=0; i<valsorig.size(); i++) { valsorig[i].first = SCT::random(); valsorig[i].second = SCT::random(); }
       printer->print(Debug,">> Original vals                       : ");
       copy(valsorig.begin(), valsorig.end(), ostream_iterator<pair<MT,MT> >(printer->stream(Debug), " "));
       printer->print(Debug,"\n");
@@ -594,9 +596,9 @@ int main(int argc, char *argv[])
       vector<pair<MT,MT> > valsbsm(valsorig);
       {
         vector<MT> bsm_indr(valsbsm.size()), bsm_indi(valsbsm.size());
-        for (int i=0; i<valsbsm.size(); i++) { bsm_indr[i] = valsbsm[i].first; bsm_indi[i] = valsbsm[i].second; }
+        for (unsigned int i=0; i<valsbsm.size(); i++) { bsm_indr[i] = valsbsm[i].first; bsm_indi[i] = valsbsm[i].second; }
         sorter.sort(NULL,5,bsm_indr,bsm_indi,&perm);
-        for (int i=0; i<valsbsm.size(); i++) { valsbsm[i].first = bsm_indr[i]; valsbsm[i].second = bsm_indi[i]; }
+        for (unsigned int i=0; i<valsbsm.size(); i++) { valsbsm[i].first = bsm_indr[i]; valsbsm[i].second = bsm_indi[i]; }
       }
       printer->print(Debug,">> After BasicSort::sort of first five : ");
       copy(valsbsm.begin(), valsbsm.end(), ostream_iterator<pair<MT,MT> >(printer->stream(Debug), " "));
@@ -618,7 +620,7 @@ int main(int argc, char *argv[])
       MyPairSWO<MT> myswo(which);   // StrictWeakOrdering for use with std::sort
       vector<pair<MT,MT> > valsorig(10);      // values to be sorted
       vector<int> perm(8);      // permutation vector
-      for (int i=0; i<valsorig.size(); i++) { valsorig[i].first = SCT::random(); valsorig[i].second = SCT::random(); }
+      for (unsigned int i=0; i<valsorig.size(); i++) { valsorig[i].first = SCT::random(); valsorig[i].second = SCT::random(); }
       printer->print(Debug,">> Original vals                       : ");
       copy(valsorig.begin(), valsorig.end(), ostream_iterator<pair<MT,MT> >(printer->stream(Debug), " "));
       printer->print(Debug,"\n");
@@ -630,9 +632,9 @@ int main(int argc, char *argv[])
       vector<pair<MT,MT> > valsbsm(valsorig);
       {
         vector<MT> bsm_indr(valsbsm.size()), bsm_indi(valsbsm.size());
-        for (int i=0; i<valsbsm.size(); i++) { bsm_indr[i] = valsbsm[i].first; bsm_indi[i] = valsbsm[i].second; }
+        for (unsigned int i=0; i<valsbsm.size(); i++) { bsm_indr[i] = valsbsm[i].first; bsm_indi[i] = valsbsm[i].second; }
         sorter.sort(NULL,5,bsm_indr,bsm_indi,&perm);
-        for (int i=0; i<valsbsm.size(); i++) { valsbsm[i].first = bsm_indr[i]; valsbsm[i].second = bsm_indi[i]; }
+        for (unsigned int i=0; i<valsbsm.size(); i++) { valsbsm[i].first = bsm_indr[i]; valsbsm[i].second = bsm_indi[i]; }
       }
       printer->print(Debug,">> After BasicSort::sort of first five : ");
       copy(valsbsm.begin(), valsbsm.end(), ostream_iterator<pair<MT,MT> >(printer->stream(Debug), " "));
@@ -654,7 +656,7 @@ int main(int argc, char *argv[])
       MyPairSWO<MT> myswo(which);   // StrictWeakOrdering for use with std::sort
       vector<pair<MT,MT> > valsorig(10);      // values to be sorted
       vector<int> perm(8);      // permutation vector
-      for (int i=0; i<valsorig.size(); i++) { valsorig[i].first = SCT::random(); valsorig[i].second = SCT::random(); }
+      for (unsigned int i=0; i<valsorig.size(); i++) { valsorig[i].first = SCT::random(); valsorig[i].second = SCT::random(); }
       printer->print(Debug,">> Original vals                       : ");
       copy(valsorig.begin(), valsorig.end(), ostream_iterator<pair<MT,MT> >(printer->stream(Debug), " "));
       printer->print(Debug,"\n");
@@ -666,9 +668,9 @@ int main(int argc, char *argv[])
       vector<pair<MT,MT> > valsbsm(valsorig);
       {
         vector<MT> bsm_indr(valsbsm.size()), bsm_indi(valsbsm.size());
-        for (int i=0; i<valsbsm.size(); i++) { bsm_indr[i] = valsbsm[i].first; bsm_indi[i] = valsbsm[i].second; }
+        for (unsigned int i=0; i<valsbsm.size(); i++) { bsm_indr[i] = valsbsm[i].first; bsm_indi[i] = valsbsm[i].second; }
         sorter.sort(NULL,5,bsm_indr,bsm_indi,&perm);
-        for (int i=0; i<valsbsm.size(); i++) { valsbsm[i].first = bsm_indr[i]; valsbsm[i].second = bsm_indi[i]; }
+        for (unsigned int i=0; i<valsbsm.size(); i++) { valsbsm[i].first = bsm_indr[i]; valsbsm[i].second = bsm_indi[i]; }
       }
       printer->print(Debug,">> After BasicSort::sort of first five : ");
       copy(valsbsm.begin(), valsbsm.end(), ostream_iterator<pair<MT,MT> >(printer->stream(Debug), " "));
