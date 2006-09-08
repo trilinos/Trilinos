@@ -104,17 +104,17 @@ following:
      # ------------------------------------------------------------------------
      # Enable optional python wrappers
      # ------------------------------------------------------------------------
-
-     TAC_ARG_ENABLE_FEATURE_SUB( teuchos, python,
-     [Build Teuchos Python wrappers (requires --enable-python, which is NOT  set by default)],
-     TEUCHOS_PYTHON, yes)
-
-     AM_CONDITIONAL(BUILD_TEUCHOS_PYTHON, test "X$ac_cv_use_teuchos_python" != "Xno")
-
+     TAC_ARG_ENABLE_FEATURE_SUB( your_package, python,
+     [Build Your_Package Python wrappers (requires --enable-python, which is NOT  set
+ by default)],
+     YOUR_PACKAGE_PYTHON, yes)                                                       
+                                                                                
+     AM_CONDITIONAL(BUILD_YOUR_PACKAGE_PYTHON, test "X$ac_cv_use_your_package_python" != "Xno")
      TAC_ENABLE_PYTHON
 
-   Be sure to replace every instance of TEUCHOS and teuchos with the 
-   name of your package, in uppercase or lowercase letters as shown.
+   Be sure to replace every instance of YOUR_PACKAGE and your_package
+   with the name of your package, in uppercase or lowercase letters as
+   shown.
 
    The location you paste it is probably not crucial, but I have been
    putting it just before the "Specify other directories" section
@@ -139,13 +139,14 @@ following:
 3. Edit YOUR_PACKAGE/Makefile.am to contain the following:
 
      if PYTHON_USE
-     if BUILD_TEUCHOS_PYTHON
+     if BUILD_YOUR_PACKAGE_PYTHON
      PYTHON_SUBDIR=python
      endif
      endif
 
-   Again, replace TEUCHOS with the uppercase name of your package.
-   Also make sure the SUBDIRS definition includes $(PYTHON_SUBDIR).
+   Again, replace YOUR_PACKAGE with the uppercase name of your
+   package.  Also make sure the SUBDIRS definition includes
+   $(PYTHON_SUBDIR).
 
 4. Create the python directory structure for your package.  There is
    a script in the new_package directory, CreatePythonDir.py, to help
