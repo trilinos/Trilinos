@@ -48,8 +48,6 @@
 #include "AnasaziMatOrthoManager.hpp"
 #include "Teuchos_LAPACK.hpp"
 
-std::string dbgstr("                    *** ");
-
 namespace Anasazi {
 
   template<class ScalarType, class MV, class OP>
@@ -61,6 +59,8 @@ namespace Anasazi {
     typedef Teuchos::ScalarTraits<MagnitudeType>  SCTM;
     typedef MultiVecTraits<ScalarType,MV>      MVT;
     typedef OperatorTraits<ScalarType,MV,OP>   OPT;
+    std::string dbgstr;
+
 
   public:
     
@@ -257,7 +257,7 @@ namespace Anasazi {
   // Constructor
   template<class ScalarType, class MV, class OP>
   SVQBOrthoManager<ScalarType,MV,OP>::SVQBOrthoManager( Teuchos::RefCountPtr<const OP> Op, bool debug) 
-    : MatOrthoManager<ScalarType,MV,OP>(Op), debug_(debug) {
+    : MatOrthoManager<ScalarType,MV,OP>(Op), dbgstr("                    *** "), debug_(debug) {
     
     Teuchos::LAPACK<int,MagnitudeType> lapack;
     eps_ = lapack.LAMCH('E');
@@ -388,7 +388,7 @@ namespace Anasazi {
       qsize += qcs[i];
     }
 
-    if (normalize == true && qsize + xc >= xr) {
+    if (normalize == true && qsize + xc > xr) {
       // not well-posed
       TEST_FOR_EXCEPTION( true, std::invalid_argument, 
                           "Anasazi::SVQBOrthoManager::findBasis(): Orthogonalization constraints not feasible" );

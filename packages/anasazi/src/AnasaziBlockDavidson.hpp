@@ -1070,6 +1070,14 @@ namespace Anasazi {
     // also break if our basis is full
     while (tester_->checkStatus(this) != Passed && curDim_ < searchDim) {
 
+      // Print information on current iteration
+      if (om_->isVerbosity(Debug)) {
+        currentStatus( om_->stream(Debug) );
+      }
+      else if (om_->isVerbosity(IterationDetails)) {
+        currentStatus( om_->stream(IterationDetails) );
+      }
+
       iter_++;
 
       // get the current part of the basis
@@ -1282,15 +1290,6 @@ namespace Anasazi {
         chk.checkR = true;
         om_->print( OrthoDetails, accuracyCheck(chk, ": after local update") );
       }
-
-      // Print information on current iteration
-      if (om_->isVerbosity(Debug)) {
-        currentStatus( om_->stream(Debug) );
-      }
-      else if (om_->isVerbosity(IterationDetails)) {
-        currentStatus( om_->stream(IterationDetails) );
-      }
-
     } // end while (statusTest == false)
 
   } // end of iterate()
