@@ -1,3 +1,4 @@
+
 // $Id$ 
 // $Source$ 
 
@@ -1154,48 +1155,25 @@ createMLPreconditioner(Teuchos::ParameterList& p) const
     teuchosParams.print(utils.out());
   } 
 
-  // check to see if it is a Crs matrix
-  if (precType == EpetraCrsMatrix) {
+  //check to see if it is a row matrix
+  if (precType == EpetraVbrMatrix || precType == EpetraCrsMatrix ||
+      precType == EpetraRowMatrix) {
 
-    Epetra_CrsMatrix* crs = 0;
-
-    if (precMatrixSource == UseJacobian)
-      crs = dynamic_cast<Epetra_CrsMatrix*>(jacPtr.get());
-    else if (precMatrixSource == SeparateMatrix)
-      crs = dynamic_cast<Epetra_CrsMatrix*>(precPtr.get());
-
-    if (crs == 0)
-      throwError("createMLPreconditioner", 
-		 "Dynamic cast to CRS Matrix failed!");
-
-    MLPreconditionerPtr = Teuchos::rcp( new ML_Epetra::MultiLevelPreconditioner(
-                                  *crs, teuchosParams, true) );
-    return true;
-  }
-
-  // check to see if it is an operator that contains a Crs matrix
-  if (precType == EpetraRowMatrix) {
-
-    // The following checks only for FiniteDiffernce based operators and
-    // further that the underlying matrix is in Crs format......
-    Epetra_CrsMatrix* crs = 0;
-    NOX::Epetra::FiniteDifference* FDoperator = 0;
+    Epetra_RowMatrix* rowMatrix = 0;
 
     if (precMatrixSource == UseJacobian)
-      FDoperator = dynamic_cast<NOX::Epetra::FiniteDifference*>(jacPtr.get());
+      rowMatrix = dynamic_cast<Epetra_RowMatrix*>(jacPtr.get());
     else if (precMatrixSource == SeparateMatrix)
-      FDoperator = dynamic_cast<NOX::Epetra::FiniteDifference*>(precPtr.get());
+      rowMatrix = dynamic_cast<Epetra_RowMatrix*>(precPtr.get());
 
-    if (FDoperator != 0)
-      crs = &(FDoperator->getUnderlyingMatrix());
-
-    if (crs == 0)
+    if (rowMatrix == 0)
       throwError("createMLPreconditioner", 
-		 "FiniteDifference: Underlying matrix NOT CRS Matrix!");
+		 "Dynamic cast to Epetra_RowMatrix failed!");
 
     MLPreconditionerPtr = Teuchos::rcp( new ML_Epetra::MultiLevelPreconditioner(
-                                  *crs, teuchosParams, true) );
+                                  *rowMatrix, teuchosParams, true) );
     return true;
+
   }
   
   // If we made it this far, this routine should not have been called
