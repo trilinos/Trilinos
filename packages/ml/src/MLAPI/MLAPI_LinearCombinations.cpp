@@ -1,4 +1,5 @@
 #include "ml_common.h"
+#ifdef HAVE_ML_MLAPI
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS)
 
 #include "MLAPI_MultiVector.h"
