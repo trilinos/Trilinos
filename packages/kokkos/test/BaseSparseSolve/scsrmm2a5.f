@@ -12,12 +12,12 @@
 *     ----------------------------
       implicit none
       integer m, n, nrhs, indx(*), profile(m)
-      real*8 val(*), x(0:n), y(m), yj
+      real*8 val(*), x(0:n), y(m)
 *
 *     ----------------------------------
 *     Specifications for local variables
 *     ----------------------------------
-      integer i,j,jbgn, jend, indxi, rem, chunk, k, incx, incy
+      integer i,j,jbgn, jend, indxi, incx, incy
       real*8 vali, yj1, yj2, yj3, yj4, yj5
 
 *

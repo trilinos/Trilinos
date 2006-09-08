@@ -17,7 +17,7 @@
 *     ----------------------------------
 *     Specifications for local variables
 *     ----------------------------------
-      integer i,j,jbgn, jend, indxi, rem, chunk, k, incn
+      integer i,j,jbgn, jend, indxi, k, incn
       real*8 vali
 
 *
