@@ -717,7 +717,7 @@ libs:
 @USING_EXPORT_MAKEFILES_TRUE@		--my-abs-lib-dirs=@abs_top_builddir@/src \
 @USING_EXPORT_MAKEFILES_TRUE@		--dep-package-abs-builddirs=@abs_top_builddir@/../epetra:@abs_top_builddir@/../teuchos:@abs_top_builddir@/../epetraext:@abs_top_builddir@/../ml:@abs_top_builddir@/../amesos
 @USING_EXPORT_MAKEFILES_TRUE@	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile \
-@USING_EXPORT_MAKEFILES_TRUE@		moertel > $(exec_prefix)/include/Makefile.export.moertel.macros
+@USING_EXPORT_MAKEFILES_TRUE@		MOERTEL > $(exec_prefix)/include/Makefile.export.moertel.macros
 
 @USING_EXPORT_MAKEFILES_TRUE@uninstall-hook:
 @USING_EXPORT_MAKEFILES_TRUE@	rm -f $(exec_prefix)/include/Makefile.export.moertel

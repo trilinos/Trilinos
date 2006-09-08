@@ -216,7 +216,7 @@ install-exec-hook:
 		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src \
 		--my-abs-lib-dirs=@abs_top_builddir@/src \
 		--dep-package-abs-builddirs=@abs_top_builddir@/../epetra:@abs_top_builddir@/../teuchos
-	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile anasazi > $(exec_prefix)/include/Makefile.export.anasazi.macros
+	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile ANASAZI > $(exec_prefix)/include/Makefile.export.anasazi.macros
 
 uninstall-hook:
 	rm -f $(exec_prefix)/include/Makefile.export.anasazi

@@ -121,7 +121,7 @@ install-exec-hook:
 		--my-abs-lib-dirs=@abs_top_builddir@/src \
 		--dep-package-abs-builddirs=@abs_top_builddir@/../epetra
 	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile \
-		new_package > $(exec_prefix)/include/Makefile.export.new_package.macros
+		NEW_PACKAGE > $(exec_prefix)/include/Makefile.export.new_package.macros
 
 uninstall-hook:
 	rm -f $(exec_prefix)/include/Makefile.export.new_package

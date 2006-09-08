@@ -741,7 +741,7 @@ libs:
 @USING_EXPORT_MAKEFILES_TRUE@		--my-abs-lib-dirs=@abs_top_builddir@/src \
 @USING_EXPORT_MAKEFILES_TRUE@		--dep-package-abs-builddirs=@abs_top_builddir@/../epetra
 @USING_EXPORT_MAKEFILES_TRUE@	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile \
-@USING_EXPORT_MAKEFILES_TRUE@		new_package > $(exec_prefix)/include/Makefile.export.new_package.macros
+@USING_EXPORT_MAKEFILES_TRUE@		NEW_PACKAGE > $(exec_prefix)/include/Makefile.export.new_package.macros
 
 @USING_EXPORT_MAKEFILES_TRUE@uninstall-hook:
 @USING_EXPORT_MAKEFILES_TRUE@	rm -f $(exec_prefix)/include/Makefile.export.new_package

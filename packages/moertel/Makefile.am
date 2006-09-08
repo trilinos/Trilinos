@@ -120,7 +120,7 @@ install-exec-hook:
 		--my-abs-lib-dirs=@abs_top_builddir@/src \
 		--dep-package-abs-builddirs=@abs_top_builddir@/../epetra:@abs_top_builddir@/../teuchos:@abs_top_builddir@/../epetraext:@abs_top_builddir@/../ml:@abs_top_builddir@/../amesos
 	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile \
-		moertel > $(exec_prefix)/include/Makefile.export.moertel.macros
+		MOERTEL > $(exec_prefix)/include/Makefile.export.moertel.macros
 
 uninstall-hook:
 	rm -f $(exec_prefix)/include/Makefile.export.moertel

@@ -135,7 +135,7 @@ install-exec-hook:
 		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src \
 		--my-abs-lib-dirs=@abs_top_builddir@/src \
 		--dep-package-abs-builddirs=@abs_top_builddir@/../epetraext:@abs_top_builddir@/../aztecoo:@abs_top_builddir@/../teuchos:@abs_top_builddir@/../amesos:@abs_top_builddir@/../epetra:@abs_top_builddir@/../triutils
-	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile ifpack > $(exec_prefix)/include/Makefile.export.ifpack.macros
+	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile IFPACK > $(exec_prefix)/include/Makefile.export.ifpack.macros
 
 uninstall-hook:
 	rm -f $(exec_prefix)/include/Makefile.export.ifpack

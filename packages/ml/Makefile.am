@@ -168,7 +168,7 @@ install-exec-hook:
 		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src:@abs_top_srcdir@/Comm:abs_top_srcdir@/Operator:abs_top_srcdir@/Smoother:@abs_top_srcdir@/Coarsen:@abs_top_srcdir@/Krylov:@abs_top_srcdir@/Main:@abs_top_srcdir@/FEGrid:@abs_top_srcdir@/Utils:@abs_top_srcdir@/MLAPI:@abs_top_srcdir@/Include \
 		--my-abs-lib-dirs=@abs_top_builddir@/src \
 		--dep-package-abs-builddirs=@abs_top_builddir@/../epetraext:@abs_top_builddir@/../epetra:@abs_top_builddir@/../triutils:@abs_top_builddir@/../amesos:@abs_top_builddir@/../ifpack:@abs_top_builddir@/../teuchos:@abs_top_builddir@/../anasazi:@abs_top_builddir@/../aztecoo
-	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile ml > $(exec_prefix)/include/Makefile.export.ml.macros
+	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile ML > $(exec_prefix)/include/Makefile.export.ml.macros
 
 uninstall-hook:
 	rm -f $(exec_prefix)/include/Makefile.export.ml
