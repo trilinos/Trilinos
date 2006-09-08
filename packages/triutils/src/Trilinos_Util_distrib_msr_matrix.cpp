@@ -225,7 +225,7 @@ void Trilinos_Util_distrib_msr_matrix(const Epetra_Comm & Comm, int *N_global,
 
 {
   int i, n_global_nonzeros;
-  int j, row, have_xexact = 0 ;
+  int j, row;
   int *bindx1;
   double *val1;
 
@@ -322,9 +322,6 @@ void Trilinos_Util_distrib_msr_matrix(const Epetra_Comm & Comm, int *N_global,
       
       free ((void *) (*val));
       free ((void *) (*bindx));
-      //free ((void *) (*b));
-      //free ((void *) (*x));
-      //if (have_xexact) free((void *) *xexact);
 
       /* Return local matrix through same pointers. */
       

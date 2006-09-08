@@ -146,9 +146,9 @@ void Trilinos_Util_create_vbr(const Epetra_Comm & Comm, char *partition_file,
       while (n_vbr_nonzeros >= *n_nonzeros && (*val) == NULL)
 	{
 	  printf("Error: Unable to allocate %d bytes to create VBR matrix.\n",
-		 n_vbr_nonzeros*sizeof(double));
+		 (int) (n_vbr_nonzeros*sizeof(double)));
 	  printf("       Trying to allocate %d bytes.\n",
-		 n_vbr_nonzeros*sizeof(double)/2);
+		 (int) (n_vbr_nonzeros*sizeof(double)/2));
 	  n_vbr_nonzeros /= 2;
 	  *val = (double *) calloc(n_vbr_nonzeros+1,  sizeof(double)) ;
 	}

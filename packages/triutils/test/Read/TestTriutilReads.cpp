@@ -59,6 +59,7 @@
 #include "Trilinos_Util_ReadMatrixMarket2Epetra.h"
 #include "Trilinos_Util.h"
 #include "Trilinos_Util_Version.h"
+#include "Epetra_Map.h"
 
   int TestOneMatrix( string HBname, string MMname, string TRIname, Epetra_Comm &Comm, bool verbose ) { 
 
