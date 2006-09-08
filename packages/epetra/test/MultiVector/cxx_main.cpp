@@ -52,14 +52,14 @@ int main(int argc, char *argv[]) {
   // Initialize MPI
 
   MPI_Init(&argc,&argv);
-  int rank; // My process ID
+  //int rank; // My process ID
 
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  //MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
 
 #else
 
-  int rank = 0;
+  //int rank = 0;
   Epetra_SerialComm Comm;
 
 #endif
