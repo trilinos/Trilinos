@@ -297,6 +297,12 @@ void Epetra_JadMatrix::GeneralMM(bool TransA, double ** X, int LDX, double ** Y,
 //=======================================================================================================
 void Epetra_JadMatrix::GeneralMM3RHS(bool TransA, double ** X, int ldx, double ** Y, int ldy, int NumVectors) const {
 
+#ifdef _CRAY 
+#define Pragma(S) _Pragma(S) 
+#else 
+#define Pragma(S) 
+#endif
+
   // Routine for 3 or more RHS
 
   const double * Values = Values_.Values();
@@ -326,7 +332,7 @@ void Epetra_JadMatrix::GeneralMM3RHS(bool TransA, double ** X, int ldx, double *
       case 1:
 	{
 	  if (!TransA) {
-#pragma _CRI ivdep
+Pragma("_CRI ivdep")
 	    for (int i=0; i<jaggedDiagonalLength; i++) {
 	      int ix = curIndices[i];
 	      int iy = RowPerm[i];
@@ -335,7 +341,7 @@ void Epetra_JadMatrix::GeneralMM3RHS(bool TransA, double ** X, int ldx, double *
 	    }
 	  }
 	  else {
-#pragma _CRI ivdep
+Pragma("_CRI ivdep")
 	    for (int i=0; i<jaggedDiagonalLength; i++) {
 	      int iy = curIndices[i];
 	      int ix = RowPerm[i];
@@ -348,7 +354,7 @@ void Epetra_JadMatrix::GeneralMM3RHS(bool TransA, double ** X, int ldx, double *
       case 2:
 	{
 	  if (!TransA) {
-#pragma _CRI ivdep
+Pragma("_CRI ivdep")
 	    for (int i=0; i<jaggedDiagonalLength; i++) {
 	      int ix = curIndices[i];
 	      int iy = RowPerm[i];
@@ -359,7 +365,7 @@ void Epetra_JadMatrix::GeneralMM3RHS(bool TransA, double ** X, int ldx, double *
 	    }
 	  }
 	  else {
-#pragma _CRI ivdep
+Pragma("_CRI ivdep")
 	    for (int i=0; i<jaggedDiagonalLength; i++) {
 	      int iy = curIndices[i];
 	      int ix = RowPerm[i];
@@ -374,7 +380,7 @@ void Epetra_JadMatrix::GeneralMM3RHS(bool TransA, double ** X, int ldx, double *
       case 3:
 	{
 	  if (!TransA) {
-#pragma _CRI ivdep
+Pragma("_CRI ivdep")
 	    for (int i=0; i<jaggedDiagonalLength; i++) {
 	      int ix = curIndices[i];
 	      int iy = RowPerm[i];
@@ -387,7 +393,7 @@ void Epetra_JadMatrix::GeneralMM3RHS(bool TransA, double ** X, int ldx, double *
 	    }
 	  }
 	  else {
-#pragma _CRI ivdep
+Pragma("_CRI ivdep")
 	    for (int i=0; i<jaggedDiagonalLength; i++) {
 	      int iy = curIndices[i];
 	      int ix = RowPerm[i];
@@ -404,7 +410,7 @@ void Epetra_JadMatrix::GeneralMM3RHS(bool TransA, double ** X, int ldx, double *
       case 4:
 	{
 	  if (!TransA) {
-#pragma _CRI ivdep
+Pragma("_CRI ivdep")
 	    for (int i=0; i<jaggedDiagonalLength; i++) {
 	      int ix = curIndices[i];
 	      int iy = RowPerm[i];
@@ -419,7 +425,7 @@ void Epetra_JadMatrix::GeneralMM3RHS(bool TransA, double ** X, int ldx, double *
 	    }
 	  }
 	  else {
-#pragma _CRI ivdep
+Pragma("_CRI ivdep")
 	    for (int i=0; i<jaggedDiagonalLength; i++) {
 	      int iy = curIndices[i];
 	      int ix = RowPerm[i];
@@ -438,7 +444,7 @@ void Epetra_JadMatrix::GeneralMM3RHS(bool TransA, double ** X, int ldx, double *
       case 5:
 	{
 	  if (!TransA) {
-#pragma _CRI ivdep
+Pragma("_CRI ivdep")
 	    for (int i=0; i<jaggedDiagonalLength; i++) {
 	      int ix = curIndices[i];
 	      int iy = RowPerm[i];
@@ -455,7 +461,7 @@ void Epetra_JadMatrix::GeneralMM3RHS(bool TransA, double ** X, int ldx, double *
 	    }
 	  }
 	  else {
-#pragma _CRI ivdep
+Pragma("_CRI ivdep")
 	    for (int i=0; i<jaggedDiagonalLength; i++) {
 	      int iy = curIndices[i];
 	      int ix = RowPerm[i];
@@ -519,7 +525,7 @@ void Epetra_JadMatrix::GeneralMM2RHS(bool TransA, double * x, int ldx, double * 
 	const int * curIndices = Indices+IndexOffset[j0];
 	const double * curValues = Values+IndexOffset[j0];
 	if (!TransA) {
-#pragma _CRI ivdep
+Pragma("_CRI ivdep")
 	  for (int i=0; i<jaggedDiagonalLength; i++) {
 	    int ix = curIndices[i];
 	    int iy = RowPerm[i];
@@ -529,7 +535,7 @@ void Epetra_JadMatrix::GeneralMM2RHS(bool TransA, double * x, int ldx, double * 
 	  }
 	}
 	else {
-#pragma _CRI ivdep
+Pragma("_CRI ivdep")
 	  for (int i=0; i<jaggedDiagonalLength; i++){
 	    int iy = curIndices[i];
 	    int ix = RowPerm[i];
@@ -547,7 +553,7 @@ void Epetra_JadMatrix::GeneralMM2RHS(bool TransA, double * x, int ldx, double * 
 	const int * curIndices1 = Indices+IndexOffset[j0];
 	const double * curValues1 = Values+IndexOffset[j0];
 	if (!TransA) {
-#pragma _CRI ivdep
+Pragma("_CRI ivdep")
 	  for (int i=0; i<jaggedDiagonalLength; i++) {
 	    int ix0 = curIndices0[i];
 	    int ix1 = curIndices1[i];
@@ -562,7 +568,7 @@ void Epetra_JadMatrix::GeneralMM2RHS(bool TransA, double * x, int ldx, double * 
 	  }
 	}
 	else {
-#pragma _CRI ivdep
+Pragma("_CRI ivdep")
 	  for (int i=0; i<jaggedDiagonalLength; i++) {
 	    int iy0 = curIndices0[i];
 	    int iy1 = curIndices1[i];
@@ -612,12 +618,12 @@ void Epetra_JadMatrix::GeneralMV(bool TransA, double * x, double * y)  const {
 	const int * curIndices = Indices+IndexOffset[j0];
 	const double * curValues = Values+IndexOffset[j0];
 	if (!TransA) {
-#pragma _CRI ivdep
+Pragma("_CRI ivdep")
 	  for (int i=0; i<jaggedDiagonalLength; i++)
 	    y[RowPerm[i]] += curValues[i]*x[curIndices[i]];
 	}
 	else {
-#pragma _CRI ivdep
+Pragma("_CRI ivdep")
 	  for (int i=0; i<jaggedDiagonalLength; i++)
 	    y[curIndices[i]] += curValues[i]*x[RowPerm[i]];
 	}
@@ -630,7 +636,7 @@ void Epetra_JadMatrix::GeneralMV(bool TransA, double * x, double * y)  const {
 	const int * curIndices1 = Indices+IndexOffset[j0];
 	const double * curValues1 = Values+IndexOffset[j0];
 	if (!TransA) {
-#pragma _CRI ivdep
+Pragma("_CRI ivdep")
 	  for (int i=0; i<jaggedDiagonalLength; i++) {
 	    y[RowPerm[i]] += 
 	      curValues0[i]*x[curIndices0[i]] +
@@ -638,7 +644,7 @@ void Epetra_JadMatrix::GeneralMV(bool TransA, double * x, double * y)  const {
 	  }
 	}
 	else {
-	  //#pragma _CRI ivdep  (Collisions possible)
+	  //Pragma("_CRI ivdep")  (Collisions possible)
 	  for (int i=0; i<jaggedDiagonalLength; i++) {
 	    double xval = x[RowPerm[i]];
 	    y[curIndices0[i]] += curValues0[i]*xval;
@@ -656,7 +662,7 @@ void Epetra_JadMatrix::GeneralMV(bool TransA, double * x, double * y)  const {
 	const int * curIndices2 = Indices+IndexOffset[j0];
 	const double * curValues2 = Values+IndexOffset[j0];
 	if (!TransA) {
-#pragma _CRI ivdep
+Pragma("_CRI ivdep")
 	  for (int i=0; i<jaggedDiagonalLength; i++) {
 	    y[RowPerm[i]] += 
 	      curValues0[i]*x[curIndices0[i]] +
@@ -665,7 +671,7 @@ void Epetra_JadMatrix::GeneralMV(bool TransA, double * x, double * y)  const {
 	  }
 	}
 	else {
-	  //#pragma _CRI ivdep  (Collisions possible)
+	  //Pragma("_CRI ivdep")  (Collisions possible)
 	  for (int i=0; i<jaggedDiagonalLength; i++) {
 	    double xval = x[RowPerm[i]];
 	    y[curIndices0[i]] += curValues0[i]*xval;
@@ -686,7 +692,7 @@ void Epetra_JadMatrix::GeneralMV(bool TransA, double * x, double * y)  const {
 	const int * curIndices3 = Indices+IndexOffset[j0];
 	const double * curValues3 = Values+IndexOffset[j0];
 	if (!TransA) {
-#pragma _CRI ivdep
+Pragma("_CRI ivdep")
 	  for (int i=0; i<jaggedDiagonalLength; i++) {
 	    y[RowPerm[i]] += 
 	      curValues0[i]*x[curIndices0[i]] +
@@ -696,7 +702,7 @@ void Epetra_JadMatrix::GeneralMV(bool TransA, double * x, double * y)  const {
 	  }
 	}
 	else {
-	  //#pragma _CRI ivdep  (Collisions possible)
+	  //Pragma("_CRI ivdep")  (Collisions possible)
 	  for (int i=0; i<jaggedDiagonalLength; i++) {
 	    double xval = x[RowPerm[i]];
 	    y[curIndices0[i]] += curValues0[i]*xval;
@@ -720,7 +726,7 @@ void Epetra_JadMatrix::GeneralMV(bool TransA, double * x, double * y)  const {
 	const int * curIndices4 = Indices+IndexOffset[j0];
 	const double * curValues4 = Values+IndexOffset[j0];
 	if (!TransA) {
-#pragma _CRI ivdep
+Pragma("_CRI ivdep")
 	  for (int i=0; i<jaggedDiagonalLength; i++) {
 	    y[RowPerm[i]] += 
 	      curValues0[i]*x[curIndices0[i]] +
@@ -731,7 +737,7 @@ void Epetra_JadMatrix::GeneralMV(bool TransA, double * x, double * y)  const {
 	  }
 	}
 	else {
-	  // #pragma _CRI ivdep (Collisions possible)
+	  // Pragma("_CRI ivdep") (Collisions possible)
 	  for (int i=0; i<jaggedDiagonalLength; i++) {
 	    double xval = x[RowPerm[i]];
 	    y[curIndices0[i]] += curValues0[i]*xval;
