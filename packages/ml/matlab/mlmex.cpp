@@ -33,6 +33,7 @@
 
    By: Chris Siefert <csiefer@sandia.gov>
    Version History
+   09/08/2006 - Memory leak fixed.
    08/30/2006 - Added ML_epetra interface functionality.
    08/15/2006 - Added operator complexity handling.
    08/08/2006 - Moved a few variable declarations to allow sun's less forgiving
@@ -487,7 +488,10 @@ int ml_epetra_data_pack::setup(int N,int* rowind,int* colptr, double* vals){
 
   /* Pull Operator Complexity */
   operator_complexity = Prec->GetML_Aggregate()->operator_complexity / Prec->GetML_Aggregate()->fine_complexity;
-       
+
+  /* Cleanup */
+  delete rnz;
+  
   return IS_TRUE;
 }/*end setup*/
 
