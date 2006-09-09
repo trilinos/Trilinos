@@ -1731,9 +1731,10 @@ nx = nx--; /* rst dirichlet */
 #endif /* ifdef HierarchyCheck */
   if (Tmat_transbc != NULL)
      coarsest_level = ML_Gen_MGHierarchy_UsingReitzinger(ml_edges, &ml_nodes,
-						         N_levels-1, ML_DECREASING, ag, Tmatbc,
-                                 Tmat_transbc, &Tmat_array, &Tmat_trans_array,
-							 ML_NO, 1.5);
+						         N_levels-1, ML_DECREASING, ag, NULL, NULL,
+                                 Tmatbc, Tmat_transbc,
+                                 &Tmat_array, &Tmat_trans_array,
+							     ML_NO, 1.5, ML_DDEFAULT);
   else
      coarsest_level = ML_Gen_MGHierarchy_UsingReitzinger(ml_edges, &ml_nodes,
 						         N_levels-1, ML_DECREASING, ag, Tmat,
