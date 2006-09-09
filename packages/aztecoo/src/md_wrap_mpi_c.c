@@ -42,11 +42,6 @@
  *
  * $Name$
  *====================================================================*/
-#ifndef lint
-static char *cvs_wrapmpi_id =
-  "$Id$";
-#endif
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <mpi.h>

@@ -42,10 +42,6 @@
  *
  * $Name$
  *====================================================================*/
-#ifndef lint
-static char *cvs_wrapint_id =
-  "$Id$";
-#endif
 
 #include <stdio.h>
 #include <signal.h>

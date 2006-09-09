@@ -42,11 +42,6 @@
  *
  * $Name$
  *====================================================================*/
-#ifndef lint
-static char *cvs_wrapsp2_id =
-  "$Id$";
-#endif
-
 
 #include <stdio.h>
 #if defined (MPL)

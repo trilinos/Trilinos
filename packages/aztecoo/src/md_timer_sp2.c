@@ -42,10 +42,6 @@
  *
  * $Name$
  *====================================================================*/
-#ifndef lint
-static char *cvs_timersp2_id =
-  "$Id$";
-#endif
 
 #include <sys/time.h>
 

@@ -42,10 +42,6 @@
  *
  * $Name$
  *====================================================================*/
-#ifndef lint
-static char *cvs_timersol_id =
-  "$Id$";
-#endif
 
 #include <sys/time.h>
 #include <sys/resource.h>

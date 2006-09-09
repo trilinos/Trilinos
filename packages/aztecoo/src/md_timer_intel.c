@@ -42,10 +42,6 @@
  *
  * $Name$
  *====================================================================*/
-#ifndef lint
-static char *cvs_timerint_id =
-  "$Id$";
-#endif
 
 /* INTEL timer */
 extern double dclock(void);

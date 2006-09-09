@@ -42,10 +42,6 @@
  *
  * $Name$
  *====================================================================*/
-#ifndef lint
-static char *cvs_timerncube_id =
-  "$Id$";
-#endif
 
 /* nCUBE timer */
 
