@@ -62,7 +62,7 @@ Ifpack_CrsIct::Ifpack_CrsIct(const Epetra_CrsMatrix & A, double Droptol, int Lfi
     Lict_(0),
     Ldiag_(0)
 {
-  int ierr = Allocate();
+  Allocate();
 }
 
 //==============================================================================
@@ -167,8 +167,8 @@ int Ifpack_CrsIct::InitValues(const Epetra_CrsMatrix & A) {
 
   int ierr = 0;
   int i, j;
-  int * InI=0, * LI=0, * UI = 0;
-  double * InV=0, * LV=0, * UV = 0;
+  int * InI=0, * UI = 0;
+  double * InV=0, * UV = 0;
   int NumIn, NumL, NumU;
   bool DiagFound;
   int NumNonzeroDiags = 0;

@@ -56,8 +56,10 @@ int Ifpack_METISReordering::Compute(const Ifpack_Graph& Graph)
   vector<int> options;
   options.resize(8);
   options[0] = 0; // default values
-  
+
+#ifdef HAVE_IFPACK_METIS  
   int numflag = 0; // C style
+#endif
 
   if (UseSymmetricGraph_) {
 

@@ -44,9 +44,9 @@ Ifpack_Chebyshev(const Epetra_Operator* Operator) :
   NumMyNonzeros_(0),
   NumGlobalRows_(0),
   NumGlobalNonzeros_(0),
-  InvDiagonal_(0),
   Operator_(Operator),
   Matrix_(0),
+  InvDiagonal_(0),
   IsRowMatrix_(false), 
   Time_(0),
   ZeroStartingSolution_(true)
@@ -87,9 +87,9 @@ Ifpack_Chebyshev(const Epetra_RowMatrix* Operator) :
   NumMyNonzeros_(0),
   NumGlobalRows_(0),
   NumGlobalNonzeros_(0),
-  InvDiagonal_(0),
   Operator_(Operator),
   Matrix_(Operator),
+  InvDiagonal_(0),
   IsRowMatrix_(true), 
   Time_(0),
   ZeroStartingSolution_(true)

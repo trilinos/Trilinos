@@ -347,10 +347,10 @@ private:
   const Epetra_Operator* Operator_;
   //! Pointers to the matrix to be preconditioned as an Epetra_RowMatrix.
   const Epetra_RowMatrix* Matrix_;
-  //! If \c true, the Operator_ is an Epetra_RowMatrix.
-  bool IsRowMatrix_;
   //! Contains the inverse of diagonal elements of \c Matrix.
   mutable Epetra_Vector* InvDiagonal_;
+  //! If \c true, the Operator_ is an Epetra_RowMatrix.
+  bool IsRowMatrix_;
   //! Time object to track timing.
   Epetra_Time* Time_;
   //! If \c true, the starting solution is always the zero vector.

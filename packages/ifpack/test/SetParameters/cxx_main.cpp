@@ -51,13 +51,12 @@
 #endif
 
 int main(int argc, char* argv[]) {
-  bool verbose = false;  // used to set verbose false on non-root processors
+  //bool verbose = false;  // used to set verbose false on non-root processors
   bool verbose1 = false; // user's command-line argument
 
-  int err;
   int returnierr = 0;
-  int size = 1;
-  int rank = 0;
+  //int size = 1;
+  //int rank = 0;
 
 #ifdef HAVE_MPI
   MPI_Init(&argc, &argv);
