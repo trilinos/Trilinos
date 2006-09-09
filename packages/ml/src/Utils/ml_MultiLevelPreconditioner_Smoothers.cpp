@@ -127,15 +127,10 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
   string SubSmootherType;
   int nodal_its, edge_its;
   if (SolvingMaxwell_ == true) {
-    sprintf(parameter,"subsmoother: type");
-    SubSmootherType = List_.get(parameter,"MLS");
-    sprintf(parameter,"subsmoother: node sweeps");
-    nodal_its = List_.get(parameter, 1);
-    sprintf(parameter,"subsmoother: edge sweeps");
-    edge_its = List_.get(parameter, 1);
+    SubSmootherType = List_.get("subsmoother: type","MLS");
+    nodal_its = List_.get("subsmoother: node sweeps", 1);
+    edge_its = List_.get("subsmoother: edge sweeps", 1);
   }
-
-  ML_Smoother *userSmoother;
 
   // ===================== //
   // cycle over all levels //
@@ -563,10 +558,8 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       double node_coarsening_rate=0.0;
       double edge_coarsening_rate=0.0;
 
-      sprintf(parameter,"subsmoother: node sweeps");
-      nodal_its = List_.get(parameter, nodal_its);
-      sprintf(parameter,"subsmoother: edge sweeps");
-      edge_its = List_.get(parameter, edge_its);
+      nodal_its = List_.get("subsmoother: node sweeps", nodal_its);
+      edge_its = List_.get("subsmoother: edge sweeps", edge_its);
 
       // only MLS and SGS are currently supported
       if (SubSmootherType == "MLS")
@@ -628,8 +621,8 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       else if (Comm().MyPID() == 0)
         cerr << ErrorMsg_ << "Only MLS and SGS are supported as Hiptmair subsmoothers." << endl;
     
-      sprintf(parameter,"smoother: Hiptmair efficient symmetric");
-      int hiptmair_type = (int) List_.get(parameter, true);
+      int hiptmair_type = (int)
+                  List_.get("smoother: Hiptmair efficient symmetric", true);
         
       ML_Gen_Smoother_Hiptmair(ml_, logical_level, ML_BOTH,
                  num_smoother_steps, Tmat_array, Tmat_trans_array, NULL, 

@@ -467,7 +467,7 @@ TestSmoothers(Teuchos::ParameterList& InputList,
 
     solver.Iterate(MaxIters,Tol);
     solver.GetAllAztecStatus(status);
-    sprintf(smoother,"default");
+    sprintf(smoother,"%s","default");
     ReqTime = Time.ElapsedTime();
     if (ReqTime < BestTime) {
       BestTime = ReqTime;
@@ -626,7 +626,7 @@ TestSmoothers(Teuchos::ParameterList& InputList,
 
     solver.Iterate(MaxIters,Tol);
     solver.GetAllAztecStatus(status);
-    sprintf(smoother,"ML self, DD-ML");
+    sprintf(smoother,"%s","ML self, DD-ML");
     ReqTime = Time.ElapsedTime();
     if (ReqTime < BestTime) {
       BestTime = ReqTime;

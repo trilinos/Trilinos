@@ -200,6 +200,11 @@ int ML_Epetra::MultiLevelPreconditioner::DestroyPreconditioner()
     delete NodeMatrix_;
     NodeMatrix_ = NULL;
   }
+
+  if (CreatedEdgeMatrix_) {
+    delete RowMatrix_;
+    RowMatrix_ = NULL;
+  }
   
   // stick data in OutputList. Note that ApplicationTime_ does not include the
   // time for the first application.
@@ -590,7 +595,7 @@ int ML_Epetra::MultiLevelPreconditioner::Initialize()
   ml_ = 0;
   agg_ = 0;
   
-  sprintf(ErrorMsg_,"*ML*ERR* : ");
+  sprintf(ErrorMsg_,"%s","*ML*ERR* : ");
   PrintMsg_ = "";
   
 #ifdef HAVE_ML_AZTECOO
@@ -608,6 +613,7 @@ int ML_Epetra::MultiLevelPreconditioner::Initialize()
   CreatedML_Kn_ = false;
   EdgeMatrix_ = 0;
   CurlCurlMatrix_ = 0;
+  CreatedEdgeMatrix_ = false;
   MassMatrix_ = 0;
   TMatrix_ = 0;
   ml_nodes_ = 0;
@@ -726,7 +732,8 @@ ComputePreconditioner(const bool CheckPreconditioner)
     ML_print_line("-",78);
   
   // check for an XML input file
-  ReadXML("ml_ParameterList.xml");
+  string XMLFileName = List_.get("xml input file","ml_ParameterList.xml");
+  ReadXML(XMLFileName);
 
   FirstApplication_ = true;
 
@@ -1070,6 +1077,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
       Epetra_RowMatrix *cc = const_cast<Epetra_RowMatrix*>(CurlCurlMatrix_);
       Epetra_RowMatrix *mm = const_cast<Epetra_RowMatrix*>(MassMatrix_);
       RowMatrix_ = Epetra_MatrixAdd(cc,mm,1.0);
+      CreatedEdgeMatrix_ = true;
     }
 
 #ifdef HAVE_ML_EPETRAEXT
@@ -1370,10 +1378,10 @@ ComputePreconditioner(const bool CheckPreconditioner)
     TMatrixTransposeML_ = ML_Operator_Create(ml_->comm);
     ML_Operator_Transpose_byrow(TMatrixML_,TMatrixTransposeML_);
 
-    int smooth_flag = ML_YES;
-    string DampingType = List_.get("R and P smoothing: damping", "default");
-    if (DampingType == "non-smoothed") smooth_flag = ML_NO;
-    double enrichBeta = List_.get("R and P smoothing: enrich beta",0.0);
+    double EdgeDampingFactor =
+              List_.get("aggregation: damping factor",ML_DDEFAULT);
+    double enrichBeta = List_.get("aggregation: enrich beta",0.0);
+    double PeDropThreshold = List_.get("aggregation: edge prolongator drop threshold",ML_DDEFAULT);
 
     profileIterations_ = List_.get("profile: operator iterations", 0);
     ML_Operator_Profile_SetIterations(profileIterations_);
@@ -1402,8 +1410,8 @@ ComputePreconditioner(const bool CheckPreconditioner)
                             MassMatrix_array,
                             TMatrixML_,TMatrixTransposeML_, 
                             &Tmat_array,&Tmat_trans_array, 
-                            smooth_flag, ML_DDEFAULT,
-                            enrichBeta);
+                            EdgeDampingFactor,
+                            enrichBeta, PeDropThreshold);
 
   }
 
@@ -1941,9 +1949,9 @@ int ML_Epetra::MultiLevelPreconditioner::CreateLabel()
      
   if (ml_->pre_smoother[i].smoother->func_ptr != NULL) {
     label = ml_->pre_smoother[i].label;
-    if( strncmp(label,"PreS_",4) == 0 ) sprintf(finest, "~");
+    if( strncmp(label,"PreS_",4) == 0 ) sprintf(finest, "%s", "~");
     else                                sprintf(finest, "%s", label);
-  } else                                sprintf(finest, "~"); 
+  } else                                sprintf(finest, "%s", "~"); 
 
   if (ml_->post_smoother[i].smoother->func_ptr != NULL) {
     label = ml_->post_smoother[i].label;
@@ -1960,9 +1968,9 @@ int ML_Epetra::MultiLevelPreconditioner::CreateLabel()
     else {
       if (ml_->pre_smoother[i].smoother->func_ptr != NULL) {
     label = ml_->pre_smoother[i].label;
-    if( strncmp(label,"PreS_",4) == 0 ) sprintf(coarsest, "~");
+    if( strncmp(label,"PreS_",4) == 0 ) sprintf(coarsest, "%s", "~");
     else                                sprintf(coarsest, "%s", label);
-      } else                                sprintf(coarsest, "~"); 
+      } else                                sprintf(coarsest, "%s", "~"); 
       if (ml_->post_smoother[i].smoother->func_ptr != NULL) {
     label = ml_->post_smoother[i].label;
     if( strncmp(label,"PostS_", 5) == 0 ) sprintf(coarsest, "%s/~", coarsest); 
@@ -1972,10 +1980,10 @@ int ML_Epetra::MultiLevelPreconditioner::CreateLabel()
   }
 
   if( SolvingMaxwell_ == false ) 
-    sprintf(Label_,"ML (L=%d, %s, %s)", 
+    sprintf(Label_, "ML (L=%d, %s, %s)", 
      ml_->ML_num_actual_levels, finest, coarsest);
   else
-    sprintf(Label_,"ML (Maxwell, L=%d, %s, %s)", 
+    sprintf(Label_, "ML (Maxwell, L=%d, %s, %s)", 
      ml_->ML_num_actual_levels, finest, coarsest);
   
   return 0;
@@ -2165,7 +2173,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
   int MLSPolynomialOrder = List_.get("coarse: MLS polynomial order",3);
 
   char msg[80];
-  sprintf(msg,"Coarse solve (level %d) : ", LevelID_[NumLevels_-1]);
+  sprintf(msg, "Coarse solve (level %d) : ", LevelID_[NumLevels_-1]);
     
   int MaxProcs = List_.get("coarse: max processes", -1);
 
@@ -2196,8 +2204,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
       int nodal_its = List_.get("coarse: node sweeps", 1);
       int edge_its = List_.get("coarse: edge sweeps", 1);
                                                                                 
-      int SmootherLevels = (NumLevels_>1)?(NumLevels_-1):1;
-      int logical_level = LevelID_[SmootherLevels-1];
+      int logical_level = LevelID_[NumLevels_-1];
       void *edge_smoother = 0, *nodal_smoother = 0;
                                                                                 
       double omega;
@@ -2361,7 +2368,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetAggregation()
   else {
      for( int level=0 ; level<NumLevels_-1 ; ++level ) {  
    
-       sprintf(parameter,"aggregation: type (level %d)",
+       sprintf(parameter, "aggregation: type (level %d)",
            LevelID_[level]);
        CoarsenScheme = List_.get(parameter,CoarsenScheme);
 
@@ -2422,7 +2429,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetAggregation()
 
          // first look for parameters without any level specification
 
-         sprintf(parameter,"aggregation: global aggregates"); 
+         sprintf(parameter, "%s","aggregation: global aggregates"); 
          if( List_.isParameter(parameter) ){
            value = -777; // simply means not set
            value = List_.get(parameter,value);
@@ -2432,7 +2439,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetAggregation()
            }
          }
 
-         sprintf(parameter,"aggregation: local aggregates");
+         sprintf(parameter, "%s","aggregation: local aggregates");
          if( List_.isParameter(parameter) ){
            value = -777;
            value = List_.get(parameter,value);
@@ -2442,7 +2449,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetAggregation()
            }
              }
 
-         sprintf(parameter,"aggregation: nodes per aggregate");
+         sprintf(parameter, "%s","aggregation: nodes per aggregate");
          if( List_.isParameter(parameter) ){
            value = -777;
            value = List_.get(parameter,value);
@@ -2454,7 +2461,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetAggregation()
 
          // now for level-specific data
 
-         sprintf(parameter,"aggregation: global aggregates (level %d)", 
+         sprintf(parameter, "aggregation: global aggregates (level %d)", 
                  LevelID_[level]);
          if( List_.isParameter(parameter) ){
            value = -777; // simply means not set
@@ -2465,7 +2472,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetAggregation()
            }
          }
 
-         sprintf(parameter,"aggregation: local aggregates (level %d)", 
+         sprintf(parameter, "aggregation: local aggregates (level %d)", 
                  LevelID_[level]);
          if( List_.isParameter(parameter) ){
            value = -777;
@@ -2476,7 +2483,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetAggregation()
            }
          }
 
-         sprintf(parameter,"aggregation: nodes per aggregate (level %d)", 
+         sprintf(parameter, "aggregation: nodes per aggregate (level %d)", 
                  LevelID_[level]);
          if( List_.isParameter(parameter) ){
            value = -777;
@@ -2489,7 +2496,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetAggregation()
 
          if( isSet == false ) {
            // put default values
-           sprintf(parameter,"aggregation: local aggregates (level %d)", 
+           sprintf(parameter, "aggregation: local aggregates (level %d)", 
                    LevelID_[level]);
            value = List_.get(parameter,1);
            ML_Aggregate_Set_LocalNumber(ml_,agg_,LevelID_[level],value);
@@ -2512,12 +2519,12 @@ int ML_Epetra::MultiLevelPreconditioner::SetPreconditioner()
 
   if( str == "one-level-postsmoothing" ) {
     
-    sprintf(Label_, "1-level postsmoothing only");
+    sprintf(Label_,  "%s","1-level postsmoothing only");
     ml_->ML_scheme = ML_ONE_LEVEL_DD;
 
   } else if( str == "two-level-additive" ) {
 
-    sprintf(Label_, "two-level additive DD");
+    sprintf(Label_,  "%s","two-level additive DD");
     ml_->ML_scheme = ML_TWO_LEVEL_DD_ADD;
     if( NumLevels_ != 2 ) {
       if( Comm().MyPID() == 0 ) {
@@ -2528,7 +2535,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetPreconditioner()
 
   } else if( str == "two-level-hybrid") {
 
-    sprintf(Label_, "two-level hybrid DD");
+    sprintf(Label_,  "%s","two-level hybrid DD");
     ml_->ML_scheme = ML_TWO_LEVEL_DD_HYBRID;
     if( NumLevels_ != 2 ) {
       if( Comm().MyPID() == 0 ) {
@@ -2539,7 +2546,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetPreconditioner()
 
   } else if( str == "two-level-hybrid2") {
 
-    sprintf(Label_, "two-level hybrid DD (2)");
+    sprintf(Label_,  "%s","two-level hybrid DD (2)");
     ml_->ML_scheme = ML_TWO_LEVEL_DD_HYBRID_2;
     if( NumLevels_ != 2 ) {
       if( Comm().MyPID() == 0 ) {
@@ -2555,7 +2562,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetPreconditioner()
     ml_->ML_scheme = ML_MGW;
 
   } else if( str == "projected MGV" ) {
-    sprintf(Label_, "projected MGV");
+    sprintf(Label_,  "%s","projected MGV");
     ml_->ML_scheme = ML_PAMGV;
 
     int numModes = List_.get("number of projected modes",0);
@@ -3119,6 +3126,65 @@ void ML_Epetra::MultiLevelPreconditioner::Apply_BCsToGradient(
              const Epetra_RowMatrix & iEdgeMatrix,
              const Epetra_RowMatrix & iGrad)
 {
+  /* This function zeros out *rows* of T that correspond to Dirichlet rows in
+     the curl-curl matrix.  It mimics what was done previously in
+     ML_Tmat_applyDirichletBC().
+     Input:
+         EdgeMatrix         curl-curl matrix
+         Grad               gradient matrix
+     Output:
+         Grad               gradient matrix with *rows* zeroed out
+
+     Comments: The graph of Grad is unchanged.
+  */
+
+  const Epetra_CrsMatrix *EdgeMatrix = dynamic_cast<const Epetra_CrsMatrix*>
+                                           (&iEdgeMatrix );
+  const Epetra_CrsMatrix *Grad = dynamic_cast<const Epetra_CrsMatrix*>(&iGrad );
+
+  if (EdgeMatrix == 0 || Grad == 0) {
+    if (verbose_)
+      cout << "Not applying Dirichlet boundary conditions to gradient "
+           << "because cast failed." << endl;
+    return;
+  }
+
+  // locate Dirichlet edges
+  int *dirichletEdges = new int[EdgeMatrix->NumMyRows()];
+  int numBCEdges = 0;
+  for (int i=0; i<EdgeMatrix->NumMyRows(); i++) {
+    int numEntries, *cols;
+    double *vals;
+    int ierr = EdgeMatrix->ExtractMyRowView(i,numEntries,vals,cols);
+    if (ierr == 0) {
+      int nz=0;
+      for (int j=0; j<numEntries; j++) if (vals[j] != 0.0) nz++;
+      if (nz == 1) {
+        dirichletEdges[numBCEdges++] = i;
+      }
+    }
+  }
+  // -------------------------
+  // now zero out the rows
+  // -------------------------
+  for (int i=0; i < numBCEdges; i++) {
+    int numEntries;
+    double *vals;
+    int *cols;
+    Grad->ExtractMyRowView(dirichletEdges[i],numEntries,vals,cols);
+    for (int j=0; j < numEntries; j++)
+      vals[j] = 0.0;
+  }
+  delete [] dirichletEdges;
+} //Apply_BCsToGradient
+
+#ifdef ML_VERSION_THAT_ZEROS_COLUMNS
+// ============================================================================
+
+void ML_Epetra::MultiLevelPreconditioner::Apply_BCsToGradient(
+             const Epetra_RowMatrix & iEdgeMatrix,
+             const Epetra_RowMatrix & iGrad)
+{
   /* This function zeros out columns of T that are no longer in the null space
      of the curl-curl matrix because of Dirichlet boundary conditions.
      Input:
@@ -3202,6 +3268,7 @@ void ML_Epetra::MultiLevelPreconditioner::Apply_BCsToGradient(
   }
   delete [] dirichletEdges;
 } //Apply_BCsToGradient
+#endif //ifdef ML_VERSION_THAT_ZEROS_COLUMNS
 
 // ============================================================================
 
@@ -3220,17 +3287,19 @@ CheckNullSpace()
   CurlCurlMatrix_->Multiply(false,YYY,ZZZ);
   ZZZ.Norm2(&norm);
   int mypid = CurlCurlMatrix_->Comm().MyPID();
-  if (mypid ==0)
+  if (mypid ==0 && ML_Get_PrintLevel() > 0)
     cout << "Checking curl/gradient relationship" << endl;
   double norminf = CurlCurlMatrix_->NormInf();
-  if (mypid == 0) {
+  if (mypid ==0 && ML_Get_PrintLevel() > 0) {
     if (norm > (1e-12 * norminf))
       cout << endl
-           << "**WARNING** ||curlcurl * grad * vrand|| = " << norm << endl
+           << "**WARNING** ||curlcurl * grad * vrand||_2 = " << norm << endl
            << "**WARNING** Either the curl-curl or the null space may be wrong."
            << endl << endl;
-    else
-      cout << "||curlcurl * grad * vrand|| = " << norm << endl;
+    else {
+      cout << "||curlcurl||_inf              = " << norminf << endl;
+      cout << "||curlcurl * grad * vrand||_2 = " << norm << endl;
+    }
   }
 } //CheckNullSpace()
 

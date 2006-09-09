@@ -468,9 +468,10 @@ char str [80];
 
   /*  setup_agg_MIS_dump(&(ml_nodes->Amat[MaxMgLevels-1]), Nghost_node);*/
   Nlevels=ML_Gen_MGHierarchy_UsingReitzinger(ml_edges, ml_nodes,MaxMgLevels-1,
-                                             ML_DECREASING,ag,Tmat,Tmat_trans, 
+                                             ML_DECREASING,ag,NULL,NULL<
+                                             Tmat,Tmat_trans, 
                                              &Tmat_array,&Tmat_trans_array, 
-                                             smoothPe_flag, 1.5);
+                                             smoothPe_flag, 1.5, ML_DDEFAULT);
   ML_Gen_Hierarchy_ComplexMaxwell(ml_edges, &ml_ERF, M_mat);
   /* ray_matvec( &(ml_ERF->Amat[MaxMgLevels-1]), ERF_x, ERF_y); */
   global_dude = &(ml_ERF->Amat[MaxMgLevels-1]);

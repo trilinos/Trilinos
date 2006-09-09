@@ -51,7 +51,7 @@ ML_Epetra::RowMatrix::RowMatrix(ML_Operator* Op,
   Op_ = Op;
 
   Label_ = new char[80];
-  sprintf(Label_,"ML_Epetra::RowMatrix");
+  sprintf(Label_,"%s","ML_Epetra::RowMatrix");
 
   NumMyRows_ = Op->outvec_leng; 
   NumMyCols_ = Op->invec_leng;  // this is fixed at the end of this method 

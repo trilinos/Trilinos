@@ -28,8 +28,9 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
                     ML_Operator *Tmat_trans,
                     ML_Operator ***Tmat_array,
                     ML_Operator ***Tmat_trans_array,
-                    int smooth_flag, double smooth_factor,
-                    double beta)
+                    double smooth_factor,
+                    double beta,
+                    double droptolPeEntries)
 {
   int coarsest_level, counter, Nghost, i, *Tcoarse_bindx = NULL;
   int *Tcoarse_rowptr, nz_ptr, row_length, j, *temp_bindx = NULL;
@@ -1108,7 +1109,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      Pe->matvec->ML_id = ML_NONEMPTY;
 
      if (Pe->comm->ML_mypid==0 && 3 < ML_Get_PrintLevel()) {
-       if (smooth_flag == ML_YES)
+       if (smooth_factor != 0.0)
          printf("Checking commuting before smoothing...\n");
        else
          printf("Checking commuting...\n");
@@ -1138,8 +1139,10 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
   VT_begin(ml_vt_smooth_Pe_state);
 #endif
      ML_memory_check("L%d Pe not smoothed",grid_level);
-     if (smooth_flag == ML_YES)
+     if (smooth_factor != 0)
      {
+        int SmoothingWithCurlOnly = 0;
+        int numDropped = 0;
         if (Tmat->comm->ML_mypid == 0)
         if (Tfine->comm->ML_mypid==0 && 3 < ML_Get_PrintLevel())
            printf("Smoothing edge prolongator...\n");
@@ -1157,6 +1160,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
         if (CurlCurlMatrix_array != NULL && 
             CurlCurlMatrix_array[grid_level+1] != NULL) {
 
+           SmoothingWithCurlOnly = 1;
            /* just some debugging code to double check S*T=0 */
 /*
            ML_Operator *S = CurlCurlMatrix_array[grid_level+1];
@@ -1203,14 +1207,15 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
         }
         
         /* Weed out small values in Pe. */
-        droptol = 1e-4;
+        if (droptolPeEntries == ML_DDEFAULT && !SmoothingWithCurlOnly)
+          droptol = 1e-4;
+        else if (droptolPeEntries == ML_DDEFAULT && SmoothingWithCurlOnly)
+          droptol = 0.0;
+        else
+          droptol = droptolPeEntries;
 #ifdef GREG
         droptol = 1e-24;
 #endif
-        if (Tfine->comm->ML_mypid==0 && ag->print_flag < ML_Get_PrintLevel()) {
-           printf("Dropping Pe entries with absolute value smaller than %e\n",
-                  droptol);
-        }
         Pe = &(ml_edges->Pmat[grid_level]);
         csr_data = (struct ML_CSR_MSRdata *) Pe->data;
         lower = csr_data->rowptr[0];
@@ -1222,12 +1227,17 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
               csr_data->columns[nz_ptr] = csr_data->columns[j];
               nz_ptr++;
             }
+            else
+              numDropped++;
           }
           lower = csr_data->rowptr[i+1];
           csr_data->rowptr[i+1] = nz_ptr;
         }
 
         Pe->N_nonzeros = nz_ptr;
+        ML_gsum_scalar_int(&numDropped,&i,ml_edges->comm);
+        if (Tfine->comm->ML_mypid==0 && ag->print_flag < ML_Get_PrintLevel())
+           printf("Dropped %d entries from Pe with absolute value smaller than %e\n", numDropped,droptol);
      }
      ML_memory_check("L%d Pe smoothed",grid_level);
 
@@ -1264,8 +1274,8 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
          Mdiag_est = (double *) ML_allocate(sizeof(double)*(Nedge+1));
          for (i = 0; i < Nedge; i++) one_vec[i] = 1.;
          M_ml = ML_Operator_Create(Pe->comm);
-         ML_2matmult(ml_edges->Amat+grid_level+1,(*Tmat_array)[grid_level+1],
-                     M_ml, ML_CSR_MATRIX );
+            ML_2matmult(ml_edges->Amat+grid_level+1,(*Tmat_array)[grid_level+1],
+                        M_ml, ML_CSR_MATRIX );
          if (M_ml != NULL) 
            ML_Operator_Apply(M_ml, Nedge, one_vec, Nedge, Mdiag_est);
          else
@@ -1483,7 +1493,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
 
      if (Pe->comm->ML_mypid==0
          && 3 < ML_Get_PrintLevel()
-         && smooth_flag == ML_YES)
+         && smooth_factor != 0.0)
        printf("Checking commuting after smoothing...\n");
      fflush(stdout);
      ML_Reitzinger_CheckCommutingProperty(ml_nodes, ml_edges, *Tmat_array,
