@@ -358,6 +358,7 @@ TRILINOS_HOME_DIR = @abs_top_srcdir@/../..
 TRILINOS_BUILD_DIR = @abs_top_builddir@/../..
 @HAVE_MPI_FALSE@ML_CHECK_COMM = serial
 @HAVE_MPI_TRUE@ML_CHECK_COMM = mpi
+TRILINOS_TEST_CATEGORY = FRAMEWORK
 all: all-recursive
 
 .SUFFIXES:
@@ -830,10 +831,13 @@ run-examples:
 
 run-tests:
 	@echo
-	@echo "======================="
-	@echo "Running the ML tests..."
-	@echo "======================="
+	@echo "====================================================="
+	@echo "Running the ML tests in category ${TRILINOS_TEST_CATEGORY}"
+	@echo "====================================================="
 	@echo
+	@echo "To change categories, type"
+	@echo "  make run-tests TRILINOS_TEST_CATEGORY=some_test_category"
+	@echo "See ml/test/definition for your choices."
 	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
 	@echo
 	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \

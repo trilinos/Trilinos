@@ -196,6 +196,8 @@ else
 ML_CHECK_COMM=serial
 endif
 
+TRILINOS_TEST_CATEGORY=FRAMEWORK
+
 run-examples:
 	@echo
 	@echo "=========================="
@@ -216,10 +218,13 @@ run-examples:
 
 run-tests:
 	@echo
-	@echo "======================="
-	@echo "Running the ML tests..."
-	@echo "======================="
+	@echo "====================================================="
+	@echo "Running the ML tests in category ${TRILINOS_TEST_CATEGORY}"
+	@echo "====================================================="
 	@echo
+	@echo "To change categories, type"
+	@echo "  make run-tests TRILINOS_TEST_CATEGORY=some_test_category"
+	@echo "See ml/test/definition for your choices."
 	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
 	@echo
 	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
