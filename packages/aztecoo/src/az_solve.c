@@ -430,22 +430,26 @@ void AZ_oldsolve(double x[], double b[], int options[], double params[],
 
   /* local variables */
 
-  int     i, itemp2, itemp3, j;
-  int     nonzeros;
-  int     N, N_Blk;
+  int     i, j;
+  int t1, NNN;
+  double *newparams, largest, dtemp;
   int     *data_org;
-  struct  context context;
-  struct aztec_choices aztec_choices;
-  int    nz_used;
-  int bandwidth, extra_factor_nonzeros;
-  AZ_MATRIX Amat2;
-  int *bindx2, N_nz_factors, t1, NNN;
-  double *val2, *newparams, largest, dtemp;
   char tag[80];
   int   save_old_values[7], changed = 0;
   char  tstr[15];
   struct AZ_CONVERGE_STRUCT *conv_info;
   int size1;
+#ifdef HAVE_AZLU
+  int     itemp2, itemp3, nonzeros;
+  int     N, N_Blk;
+  struct  context context;
+  struct aztec_choices aztec_choices;
+  int    nz_used;
+  int bandwidth, extra_factor_nonzeros;
+  AZ_MATRIX Amat2;
+  int *bindx2, N_nz_factors;
+  double *val2;
+#endif
 #ifdef ML
   int largest_index;
   double global_largest;

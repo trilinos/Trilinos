@@ -107,13 +107,15 @@ void AZ_factor_subdomain(struct context *context, int N, int N_nz,
 
 *******************************************************************************/
 
-	int i, j, *bindx, *bpntr, *iw, ifail;
+#ifdef HAVE_AZLU
+	int ifail, N_nz_matrix, *rnr;
         double *fake_rhs, *aflag;
+#endif
+        int i, j, *bindx, *bpntr, *iw;
         double *cr, *unorm, *a, *val;
-        int    *ind, *jnz, *ja, *rnr, ifill;
+        int    *ind, *jnz, *ja, ifill;
         double dtemp = (context->aztec_choices->params)[AZ_omega];
-        int    N_blk_rows, name = context->A_overlapped->data_org[AZ_name], 
-               N_nz_matrix;
+        int    N_blk_rows, name = context->A_overlapped->data_org[AZ_name];
         char   str[80];
 
 /* Begin Aztec 2.1 mheroux mod */
@@ -633,7 +635,9 @@ void AZ_solve_subdomain(double x[],int N, struct context *context)
 double *val2;
 int    *bindx2;
 int N_blk_rows;
+#ifdef HAVE_AZLU
 int ifail;
+#endif
 int *sub_options, sub_proc_config[AZ_PROC_SIZE], *hold_data_org, *new_data_org;
 double *sub_params, *sub_status;
 AZ_MATRIX *sub_matrix;

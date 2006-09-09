@@ -42,9 +42,6 @@
  *
  * $Name$
  *====================================================================*/
-#ifndef lint
-static char rcsid[] = "$Id$";
-#endif
 
 #include <stdio.h>
 #include <stdlib.h>

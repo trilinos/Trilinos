@@ -42,10 +42,6 @@
  *
  * $Name$
  *====================================================================*/
-#ifndef lint
-static char rcsid[] = "$Id$"
-;
-#endif
 
 /*******************************************************************************
  * Sample driver for AZTEC package.  The software is tested by setting up a

@@ -526,7 +526,6 @@ static void compute_condnum_tridiag_sym( int N, double *diag, double *offdiag,
   double double_dummy;
   char char_A = 'A';
   char char_E = 'E';
-  int i;
   double smallest, largest;
 
   eigenvalues = (double *) malloc( sizeof(double) * N);

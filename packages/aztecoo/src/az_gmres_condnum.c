@@ -608,7 +608,7 @@ static void dgeev_interface(double **H, int n,
   int i,j;
   char jobvl, jobvr;
   int lda,  ldvl, ldvr, lwork, info;
-  double *a, *a2, *vl, *vr, *work, **Evecs;
+  double *a, *a2, *vl, *vr, *work;
   int *ipiv;
   double *b;
   double *Er, *Ei;
@@ -618,8 +618,9 @@ static void dgeev_interface(double **H, int n,
   double smallest_A = DBL_MAX, largest_A = DBL_MIN;
   double largest_A2 = 0.0, largest_inv_A2 = 0.0;
   double module;
+#ifdef AZ_MATLAB_OUTPUT
   FILE *fp;
-    
+#endif    
   jobvl = 'N'; /* V/N to calculate/not calculate left eigenvectors
 		  of matrix H.*/
 
