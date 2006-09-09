@@ -2659,7 +2659,7 @@ void ML_use_param(void *data, int junk)
 /*****************************************************************************/
 /*****************************************************************************/
 
-void ML_print_line (char *charstr, int ntimes)
+void ML_print_line (const char *charstr, int ntimes)
 
 {
   int i;

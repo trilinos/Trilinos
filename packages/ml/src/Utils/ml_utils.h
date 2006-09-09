@@ -147,7 +147,7 @@ std::cout << "--- Leaving:
    void   ML_use_param(void *data, int junk);
    void   ML_PauseForDebugger(ML_Comm *comm);
    void ML_Pause(ML_Comm *comm);
-   void ML_print_line (char *charstr, int ntimes);
+   void ML_print_line (const char *charstr, int ntimes);
 
    /*MS*/
    int ML_gsum_int(int val, ML_Comm *comm);
