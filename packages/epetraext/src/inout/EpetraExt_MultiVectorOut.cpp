@@ -134,7 +134,6 @@ int MultiVectorToHandle(FILE * handle, const Epetra_MultiVector & A, bool mmForm
     int curStart = 0;
     int curStripSize = 0;
     Epetra_IntSerialDenseVector importGidList;
-    int numImportGids = 0;
     if (comm.MyPID()==0) 
       importGidList.Size(stripSize+1); // Set size of vector to max needed
     for (int i=0; i<numChunks; i++) {

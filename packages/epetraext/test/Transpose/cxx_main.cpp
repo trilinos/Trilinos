@@ -67,7 +67,6 @@ int main(int argc, char *argv[])
   // Uncomment to debug in parallel int tmp; if (comm.MyPID()==0) cin >> tmp; comm.Barrier();
 
   bool verbose = false;
-  bool veryVerbose = false;
 
   // Check if we should print results to standard out
   if (argc>1) if (argv[1][0]=='-' && argv[1][1]=='v') verbose = true;
@@ -76,7 +75,6 @@ int main(int argc, char *argv[])
 
   if (verbose) cout << comm << endl << flush;
 
-  bool verbose1 = verbose;
   if (verbose) verbose = (comm.MyPID()==0);
 
   if (verbose)
@@ -114,7 +112,7 @@ int main(int argc, char *argv[])
 
   double start = timer.ElapsedTime();
 
-  bool IgnoreNonLocalCols = false;
+  //bool IgnoreNonLocalCols = false;
   bool MakeDataContiguous = true;
   EpetraExt::RowMatrix_Transpose transposer( MakeDataContiguous );
 

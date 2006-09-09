@@ -60,8 +60,6 @@ operator()( OriginalTypeRef orig  )
 
   origObj_ = &orig;
 
-  int err;
-
   const Epetra_BlockMap & RowMap = orig.RowMap();
   int nRows = RowMap.NumMyElements();
   const Epetra_BlockMap & ColMap = orig.ColMap();
@@ -376,7 +374,6 @@ operator()( OriginalTypeRef orig  )
     }
 
     int LocalBoundarySize = boundaryGIDs.size();
-    int LocalInteriorSize = interiorGIDs.size();
 
     Epetra_Map BoundaryMap( -1, boundaryGIDs.size(), &boundaryGIDs[0], 0, RowMap.Comm() );
     if( verbosity_ > 1 ) cout << "BoundaryMap:\n" << BoundaryMap;
@@ -496,13 +493,15 @@ operator()( OriginalTypeRef orig  )
 	if( verbosity_ > 1 )
         {
           cout << MyPID << " Level Indices: ";
-	  for( int i = 0; i < LevelIndices.size(); ++i ) cout << LevelIndices[i] << " ";
+	  int Lsize = (int) LevelIndices.size();
+	  for( int i = 0; i < Lsize; ++i ) cout << LevelIndices[i] << " ";
 	  cout << endl;
         }
 
         //Greedy coloring of current level
 	set<int> levelColors;
-        for( int i = 0; i < LevelIndices.size(); ++i )
+	int Lsize = (int) LevelIndices.size();
+        for( int i = 0; i < Lsize; ++i )
         {
           BoundaryGraph.ExtractMyRowView( LevelIndices[i], NumIndices, Indices );
 

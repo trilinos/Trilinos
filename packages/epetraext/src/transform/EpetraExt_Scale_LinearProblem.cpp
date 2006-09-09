@@ -37,9 +37,11 @@ namespace EpetraExt {
 LinearProblem_Scale::
 ~LinearProblem_Scale()
 {
-  for( int i = 0; i < lScaleVecs_.size(); ++i )
+  int lsize = (int) lScaleVecs_.size();
+  for( int i = 0; i < lsize; ++i )
     delete lScaleVecs_[i];
-  for( int i = 0; i < rScaleVecs_.size(); ++i )
+  int rsize = (int) rScaleVecs_.size();
+  for( int i = 0; i < rsize; ++i )
     delete rScaleVecs_[i];
 }
 

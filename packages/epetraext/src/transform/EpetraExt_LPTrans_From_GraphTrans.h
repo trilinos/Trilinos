@@ -74,6 +74,9 @@ class LinearProblem_GraphTrans : public SameTypeTransform<Epetra_LinearProblem>
  */
   LinearProblem_GraphTrans( StructuralSameTypeTransform<Epetra_CrsGraph> & graph_trans )
   : graphTrans_(graph_trans),
+    Importer_(0),
+    MatExporter_(0),
+    VecExporter_(0),
     OldProblem_(0),
     OldGraph_(0),
     OldMatrix_(0),
@@ -83,10 +86,7 @@ class LinearProblem_GraphTrans : public SameTypeTransform<Epetra_LinearProblem>
     NewProblem_(0),
     NewMatrix_(0),
     NewLHS_(0),
-    NewRHS_(0),
-    Importer_(0),
-    MatExporter_(0),
-    VecExporter_(0)
+    NewRHS_(0)
   {}
 
   //! Constructs an Epetra_LinearProblem from the original using the same row transformation given by the Epetra_CrsGraph Transform

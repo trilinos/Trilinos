@@ -39,7 +39,6 @@ int MatrixMarketFileToMultiVector( const char *filename, const Epetra_BlockMap &
   const int lineLength = 1025;
   const int tokenLength = 35;
   char line[lineLength];
-  char token[tokenLength];
   char token1[tokenLength];
   char token2[tokenLength];
   char token3[tokenLength];

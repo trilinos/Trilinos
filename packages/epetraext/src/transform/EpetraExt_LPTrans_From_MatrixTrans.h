@@ -68,6 +68,8 @@ class LinearProblem_MatrixTrans : public SameTypeTransform<Epetra_LinearProblem>
   //! Constructor
   LinearProblem_MatrixTrans( SameTypeTransform<Epetra_CrsMatrix> & matrix_trans )
   : matrixTrans_(matrix_trans),
+    Importer_(0),
+    Exporter_(0),
     OldProblem_(0),
     OldMatrix_(0),
     OldLHS_(0),
@@ -76,9 +78,7 @@ class LinearProblem_MatrixTrans : public SameTypeTransform<Epetra_LinearProblem>
     NewProblem_(0),
     NewMatrix_(0),
     NewLHS_(0),
-    NewRHS_(0),
-    Importer_(0),
-    Exporter_(0)
+    NewRHS_(0)
   {}
 
   //! Transform Operator

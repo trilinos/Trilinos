@@ -64,7 +64,6 @@ operator()( OriginalTypeRef orig )
 
   int ierr = 0;
 
-  const Epetra_Comm & CommObj = OldRowMap_->Comm();
 
   if( !OldMatrix_ ) ierr = -2;
   if( !OldRHS_ )    ierr = -3;

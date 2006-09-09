@@ -77,10 +77,12 @@ Read(const string& Label, Epetra_CrsGraph*& Graph)
     {
       if (child.hasAttribute("Label") && child.getRequired("Label") == Label)
       {
+	bool debug = false;
         int NumGlobalRows = child.getRequiredInt("Rows");
         int NumGlobalCols = child.getRequiredInt("Columns");
         int NumGlobalEntries = child.getRequiredInt("Entries");
         int Offset = child.getRequiredInt("StartingIndex");
+	if (debug) std::cout << NumGlobalCols << NumGlobalEntries << Offset << endl;
 
         Epetra_Map map(NumGlobalRows, 0, Comm_);
         Graph = new Epetra_CrsGraph(Copy, map, 0);
@@ -123,10 +125,12 @@ Read(const string& Label, Epetra_CrsMatrix*& matrix)
     {
       if (child.hasAttribute("Label") && child.getRequired("Label") == Label)
       {
+	bool debug = false;
         int NumGlobalRows = child.getRequiredInt("Rows");
         int NumGlobalCols = child.getRequiredInt("Columns");
         int NumGlobalNonzeros = child.getRequiredInt("Nonzeros");
         int Offset = child.getRequiredInt("StartingIndex");
+	if (debug) std::cout << NumGlobalCols << NumGlobalNonzeros << Offset << endl;
 
         Epetra_Map map(NumGlobalRows, 0, Comm_);
         matrix = new Epetra_CrsMatrix(Copy, map, 0);
@@ -180,7 +184,6 @@ Read(const string& Label, Epetra_MultiVector*& MultiVector)
         MultiVector = new Epetra_MultiVector(Map, NumVectors);
 
         int count = 0;
-        int v = 0;
         double val;
         for (int j = 0; j < child.numContentLines(); ++j)
         {
@@ -192,12 +195,12 @@ Read(const string& Label, Epetra_MultiVector*& MultiVector)
 
           if (tokens.size() == 0) continue;
 
-          TEST_FOR_EXCEPTION(tokens.size() != NumVectors, std::logic_error,
+          TEST_FOR_EXCEPTION(tokens.size() != (unsigned) NumVectors, std::logic_error,
                              "wrong number of tokens in line; "
                              << "tokens.size() = " << tokens.size() 
                              << ", NumVectors = " << NumVectors);
-
-          for (int k = 0; k < tokens.size(); ++k)
+	  int tsize = (int) tokens.size();
+          for (int k = 0; k < tsize; ++k)
           {
             if (Map.LID(count) != -1)
             {
@@ -264,8 +267,8 @@ Read(const string& Label, Epetra_Map*& Map)
               const string& line = newChild.getContentLine(j);
 
               Tokenize(line, tokens, " \n\r\t");
-
-              for (int k = 0; k < tokens.size(); ++k)
+	      int tsize = (int) tokens.size();
+              for (int k = 0; k < tsize; ++k)
               {
                 MyGlobalElements[count++] = atoi((char*)tokens[k].c_str());
               }

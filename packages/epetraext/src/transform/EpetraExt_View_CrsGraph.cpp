@@ -54,8 +54,6 @@ operator()( OriginalTypeRef orig )
   const Epetra_BlockMap & oRowMap = orig.RowMap();
   const Epetra_BlockMap & oColMap = orig.ColMap();
 
-  int oNumRows = oRowMap.NumMyElements();
-  int oNumCols = oRowMap.NumMyElements();
   int nNumRows = NewRowMap_->NumMyElements();
   int nNumCols = 0;
   if( NewColMap_ ) nNumCols = NewColMap_->NumMyElements();

@@ -46,22 +46,20 @@
 
 int main(int argc, char *argv[]) {
 
-  int i, ierr=0, returnierr=0;
-
 #ifdef EPETRA_MPI
 
   // Initialize MPI
 
   MPI_Init(&argc,&argv);
-  int size, rank; // Number of MPI processes, My process ID
+  //int size, rank; // Number of MPI processes, My process ID
 
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  //MPI_Comm_size(MPI_COMM_WORLD, &size);
+  //MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
 #else
 
-  int size = 1; // Serial case (not using MPI)
-  int rank = 0;
+  //int size = 1; // Serial case (not using MPI)
+  //int rank = 0;
 
 #endif
 
@@ -79,7 +77,7 @@ int main(int argc, char *argv[]) {
   if (!verbose) Comm.SetTracebackMode(0); // This should shut down any error traceback reporting
 
   int MyPID = Comm.MyPID();
-  int NumProc = Comm.NumProc();
+  //int NumProc = Comm.NumProc();
 
   bool verbose1 = verbose;
 
@@ -94,14 +92,14 @@ int main(int argc, char *argv[]) {
                                                                                 
   Comm.Barrier();
 
-  int NumMyElements = 10000;
-  int NumGlobalElements = NumMyElements*NumProc+EPETRA_MIN(NumProc,3);
-  if (MyPID < 3) NumMyElements++;
-  int IndexBase = 0;
-  int ElementSize = 7;
-  bool DistributedGlobal = (NumGlobalElements>NumMyElements);
+  //int NumMyElements = 10000;
+  //int NumGlobalElements = NumMyElements*NumProc+EPETRA_MIN(NumProc,3);
+  //if (MyPID < 3) NumMyElements++;
+  //int IndexBase = 0;
+  //int ElementSize = 7;
+  //bool DistributedGlobal = (NumGlobalElements>NumMyElements);
   
-  Epetra_BlockMap * Map;
+  //Epetra_BlockMap * Map;
 
   cout << "NOT IMPLEMENTED YET!!!\n";
 
@@ -109,6 +107,6 @@ int main(int argc, char *argv[]) {
   MPI_Finalize();
 #endif
 
-  return returnierr;
+  return 0;
 }
 

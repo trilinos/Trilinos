@@ -111,7 +111,6 @@ int OperatorToHandle(FILE * handle, const Epetra_Operator & A) {
   int numchunks = N/chunksize;
   int rem = N%chunksize;
 
-  int lnz = 0;
   if (rem>0) {
     Epetra_MultiVector xrem(domainMap, rem);
     Epetra_MultiVector yrem(rangeMap, rem);
@@ -161,7 +160,6 @@ int OperatorToHandle(FILE * handle, const Epetra_Operator & A) {
 }
 int writeOperatorStrip(FILE * handle, const Epetra_MultiVector & y, const Epetra_Map & rootDomainMap, const Epetra_Map & rootRangeMap, int startColumn) {
 
-  int ierr = 0;
   int numRows = y.GlobalLength();
   int numCols = y.NumVectors();
   int ioffset = 1 - rootRangeMap.IndexBase(); // Matlab indices start at 1
@@ -172,7 +170,7 @@ int writeOperatorStrip(FILE * handle, const Epetra_MultiVector & y, const Epetra
   else {
     if (numRows!=y.MyLength()) {EPETRA_CHK_ERR(-1);}
     for (int j=0; j<numCols; j++) {
-      int J = rootDomainMap.GID(j + startColumn) + ioffset;
+      int J = rootDomainMap.GID(j + startColumn) + joffset;
       for (int i=0; i<numRows; i++) {
 	double val = y[j][i];
 	if (val!=0.0) {

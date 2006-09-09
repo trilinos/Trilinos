@@ -63,8 +63,8 @@ Write(const string& Label, const vector<string>& Content)
   std::ofstream of(FileName_.c_str(), std::ios::app);
 
   of << "<Text Label=\"" << Label << "\">" << endl;
-
-  for (int i = 0; i < Content.size(); ++i)
+  int Csize = (int) Content.size();
+  for (int i = 0; i < Csize; ++i)
     of << Content[i] << endl;
 
   of << "</Text>" << endl;

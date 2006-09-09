@@ -56,7 +56,6 @@ operator()( OriginalTypeRef orig )
   Epetra_Map & OldRowMap = const_cast<Epetra_Map&>(orig.RowMap());
   Epetra_Map & OldColMap = const_cast<Epetra_Map&>(orig.ColMap());
   int NumMyElements = OldRowMap.NumMyElements();
-  int NumGlobalElements = OldRowMap.NumGlobalElements();
   assert( OldRowMap.NumMyElements() == NewRowMap_.NumMyElements() );
 
   //Construct new Column Map

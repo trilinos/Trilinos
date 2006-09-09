@@ -47,8 +47,6 @@ operator()( OriginalTypeRef orig )
 {
   origObj_ = &orig;
 
-  int err;
-
   const Epetra_BlockMap & RowMap = orig.RowMap();
   int nRows = RowMap.NumMyElements();
 

@@ -48,8 +48,6 @@ operator()( OriginalTypeRef orig )
 {
   origObj_ = &orig;
 
-  int err;
-
   //check that this is a distributed graph and overlap level is not zero
   if( orig.DomainMap().DistributedGlobal() && levelOverlap_ )
   {

@@ -66,10 +66,10 @@ class LinearProblem_Reindex : public ViewTransform<Epetra_LinearProblem>
   /** Constructor
    */
   LinearProblem_Reindex( Epetra_Map * NewRowMap )
-  : NewRowMap_(NewRowMap),
-    MatTrans_(0),
+  : MatTrans_(0),
     LHSTrans_(0),
     RHSTrans_(0),
+    NewRowMap_(NewRowMap),
     NewRowMapOwned_(false)
   {}
 

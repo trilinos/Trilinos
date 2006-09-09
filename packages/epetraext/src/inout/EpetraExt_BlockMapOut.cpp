@@ -83,7 +83,7 @@ int BlockMapToMatrixMarketFile( const char *filename, const Epetra_BlockMap & ma
     if (v2.Import(v1, lengthImporter, Insert)) return(-1);
     if (map.Comm().MyPID()==0) { 
       fprintf(handle, "%%Format Version:\n");
-      int version = 1; // We may change the format scheme at a later date.
+      //int version = 1; // We may change the format scheme at a later date.
       fprintf(handle, "%% %d \n", map.Comm().NumProc());
      fprintf(handle, "%%NumProc: Number of processors:\n");
       fprintf(handle, "%% %d \n", map.Comm().NumProc());
@@ -139,7 +139,6 @@ int BlockMapToHandle(FILE * handle, const Epetra_BlockMap & map) {
   int curStripSize = 0;
   Epetra_IntSerialDenseVector importGidList;
   Epetra_IntSerialDenseVector importSizeList;
-  int numImportGids = 0;
   if (comm.MyPID()==0) {
     importGidList.Size(stripSize+1); // Set size of vector to max needed
     if (doSizes) importSizeList.Size(stripSize+1); // Set size of vector to max needed

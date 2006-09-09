@@ -48,8 +48,6 @@ operator()( OriginalTypeRef orig )
 {
   origObj_ = &orig;
 
-  int err;
-
   int nRows = orig.NumMyRows();
   int nCols = orig.NumMyCols();
 

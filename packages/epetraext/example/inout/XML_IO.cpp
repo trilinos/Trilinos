@@ -102,7 +102,8 @@ int main (int argc, char **argv)
   cout << *MyRHS;
   if (Comm.MyPID() == 0)
   {
-    for (int i = 0; i < MyContent.size(); ++i)
+    int Msize = (int) MyContent.size();
+    for (int i = 0; i < Msize; ++i)
       cout << MyContent[i] << endl;
 
     cout << MyParameters;

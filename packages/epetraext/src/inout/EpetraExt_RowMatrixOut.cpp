@@ -106,7 +106,6 @@ int RowMatrixToHandle(FILE * handle, const Epetra_RowMatrix & A) {
     int curStart = 0;
     int curStripSize = 0;
     Epetra_IntSerialDenseVector importGidList;
-    int numImportGids = 0;
     if (comm.MyPID()==0) 
       importGidList.Size(stripSize+1); // Set size of vector to max needed
     for (int i=0; i<numChunks; i++) {
@@ -141,7 +140,6 @@ int RowMatrixToHandle(FILE * handle, const Epetra_RowMatrix & A) {
 }
 int writeRowMatrix(FILE * handle, const Epetra_RowMatrix & A) {
 
-  int ierr = 0;
   int numRows = A.NumGlobalRows();
   Epetra_Map rowMap = A.RowMatrixRowMap();
   Epetra_Map colMap = A.RowMatrixColMap();
@@ -162,14 +160,12 @@ int writeRowMatrix(FILE * handle, const Epetra_RowMatrix & A) {
       if (A.ExtractMyRowCopy(i, values.Length(), numEntries, 
 			     values.Values(), indices.Values())!=0) {EPETRA_CHK_ERR(-1);}
       for (int j=0; j<numEntries; j++) {
-	int J = colMap.GID(indices[j]) + ioffset;
+	int J = colMap.GID(indices[j]) + joffset;
 	double val = values[j];
 	fprintf(handle, "%d %d %22.16e\n", I, J, val);
       }
     }
   }
-  int ierrGlobal;
-  comm.MinAll(&ierr, &ierrGlobal, 1); // If any processor has -1, all return -1
-  return(ierrGlobal);
+  return(0);
 }
 } // namespace EpetraExt

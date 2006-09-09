@@ -50,9 +50,11 @@
 
 #include <vector>
 
+//prototype
+void printColoring (const Epetra_MapColoring & ColorMap, Epetra_CrsGraph *A, bool verbose);
+
 int main(int argc, char *argv[]) {
 
-  int returnierr=0;
 
 #ifdef EPETRA_MPI
   // Initialize MPI
@@ -128,31 +130,37 @@ int main(int argc, char *argv[]) {
     Greedy0MapColoringTransform( EpetraExt::CrsGraph_MapColoring::GREEDY,
 		                0, false, verbose );
   Epetra_MapColoring & Greedy0ColorMap = Greedy0MapColoringTransform( A );
+  printColoring(Greedy0ColorMap, &A,verbose);
 
   EpetraExt::CrsGraph_MapColoring
     Greedy1MapColoringTransform( EpetraExt::CrsGraph_MapColoring::GREEDY,
 		                1, false, verbose );
   Epetra_MapColoring & Greedy1ColorMap = Greedy1MapColoringTransform( A );
+  printColoring(Greedy1ColorMap, &A,verbose);
 
   EpetraExt::CrsGraph_MapColoring
     Greedy2MapColoringTransform( EpetraExt::CrsGraph_MapColoring::GREEDY,
 		                2, false, verbose );
   Epetra_MapColoring & Greedy2ColorMap = Greedy2MapColoringTransform( A );
+  printColoring(Greedy2ColorMap, &A,verbose);
 
   EpetraExt::CrsGraph_MapColoring
     Lubi0MapColoringTransform( EpetraExt::CrsGraph_MapColoring::LUBY,
 		               0, false, verbose );
   Epetra_MapColoring & Lubi0ColorMap = Lubi0MapColoringTransform( A );
+  printColoring(Lubi0ColorMap, &A,verbose);
 
   EpetraExt::CrsGraph_MapColoring
     Lubi1MapColoringTransform( EpetraExt::CrsGraph_MapColoring::LUBY,
 		               1, false, verbose );
   Epetra_MapColoring & Lubi1ColorMap = Lubi1MapColoringTransform( A );
+  printColoring(Lubi1ColorMap, &A,verbose);
 
   EpetraExt::CrsGraph_MapColoring
     Lubi2MapColoringTransform( EpetraExt::CrsGraph_MapColoring::LUBY,
 		               2, false, verbose );
   Epetra_MapColoring & Lubi2ColorMap = Lubi2MapColoringTransform( A );
+  printColoring(Lubi2ColorMap, &A,verbose);
 
 #ifdef EPETRA_MPI
   if( verbose ) cout << "Parallel Map Coloring 1!\n";
@@ -160,19 +168,30 @@ int main(int argc, char *argv[]) {
     Parallel1MapColoringTransform( EpetraExt::CrsGraph_MapColoring::PSEUDO_PARALLEL,
 		                   0, false, verbose );
   Epetra_MapColoring & Parallel1ColorMap = Parallel1MapColoringTransform( A );
+  printColoring(Parallel1ColorMap, &A,verbose);
 
   if( verbose ) cout << "Parallel Map Coloring 2!\n";
   EpetraExt::CrsGraph_MapColoring
     Parallel2MapColoringTransform( EpetraExt::CrsGraph_MapColoring::JONES_PLASSMAN,
 		                   0, false, verbose );
   Epetra_MapColoring & Parallel2ColorMap = Parallel2MapColoringTransform( A );
+  printColoring(Parallel2ColorMap, &A,verbose);
 #endif
 
-  int NumColors = Greedy0ColorMap.NumColors();
-  int * ListOfColors = Greedy0ColorMap.ListOfColors();
+#ifdef EPETRA_MPI
+  MPI_Finalize();
+#endif
 
-  EpetraExt::CrsGraph_MapColoringIndex MapColoringIndexTransform( Greedy0ColorMap );
-  vector<Epetra_IntVector> & ColIndices = MapColoringIndexTransform( A );
+  return 0;
+}
+
+void printColoring (const Epetra_MapColoring & ColorMap, Epetra_CrsGraph * A, bool verbose) {
+
+  int NumColors = ColorMap.NumColors();
+  int * ListOfColors = ColorMap.ListOfColors();
+
+  EpetraExt::CrsGraph_MapColoringIndex MapColoringIndexTransform( ColorMap );
+  vector<Epetra_IntVector> & ColIndices = MapColoringIndexTransform( *A );
 
   if( verbose )
   {
@@ -190,10 +209,5 @@ int main(int argc, char *argv[]) {
     cout << endl;
   }
 
-#ifdef EPETRA_MPI
-  MPI_Finalize();
-#endif
-
-  return returnierr;
+  return;
 }
-
