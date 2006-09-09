@@ -96,6 +96,7 @@ class Epetra_VbrMatrix;
 #include "Epetra_Operator.h"
 #include "Epetra_RowMatrix.h"
 #ifdef HAVE_ML_AZTECOO
+#include "Epetra_MultiVector.h"                                                 
 #include "Epetra_MsrMatrix.h"
 #endif
 #include "Teuchos_ParameterList.hpp"
