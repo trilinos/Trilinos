@@ -29,11 +29,13 @@
 #ifndef NUMPY_INCLUDE_H
 #define NUMPY_INCLUDE_H
 
-// This include file takes care of three of the four things necessary
+// This include file takes care of four of the five things necessary
 // when including the numpy header file arrayobject.h.  First, the
 // Python.h header file is included.  Second, the
-// PY_ARRAY_UNIQUE_SYMBOL is defined.  Third, the
-// numpy/arrayobject.h header file is included.
+// PY_ARRAY_UNIQUE_SYMBOL is defined.  Third, the numpy/arrayobject.h
+// header file is included.  Finally, the numpy/noprefix.h header file
+// is included if the NUMPY_NOPREFIX macro is defined, which the user
+// should make sure is the case for numpy version 1.0 or greater.
 
 // The user is responsible for defining the macro NO_IMPORT_ARRAY in
 // those source files that do not call the numpy routine
@@ -42,5 +44,10 @@
 #include <Python.h>
 #define PY_ARRAY_UNIQUE_SYMBOL PyTrilinos
 #include <numpy/arrayobject.h>
+
+#ifdef NUMPY_NOPREFIX
+#include <numpy/noprefix.h>
+#define PyArray_SBYTE PyArray_BYTE
+#endif
 
 #endif // NUMPY_INCLUDE_H
