@@ -83,10 +83,10 @@ public:
   //! Add "Row Sum" scaling to the scaling object.  The supplied vector is used to store the current row sum vector.
   virtual void addRowSumScaling(ScaleType type, const Teuchos::RefCountPtr<Epetra_Vector>& D);
 
-  //! Add "Col Sum" scaling to the scaling object.  The supplied vector is used to store the current row sum vector.
+  //! Add "Col Sum" scaling to the scaling object.  The supplied vector is used to store the current column sum vector.
   virtual void addColSumScaling(ScaleType type, const Teuchos::RefCountPtr<Epetra_Vector>& D);
 
-  //! Computes Row Sum scaling diagonal vectors.  Only needs to be called if a row sum scaling has been requested.
+  //! Computes Row Sum scaling diagonal vectors.  Only needs to be called if a row or column sum scaling has been requested.
   virtual void computeScaling(const Epetra_LinearProblem& problem);
 
   //! Scales the linear system.

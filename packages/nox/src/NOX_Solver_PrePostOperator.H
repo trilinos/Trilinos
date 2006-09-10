@@ -67,12 +67,15 @@ namespace Solver {
 /*!
   @brief Functor to process the pre/post operator object in the parameter list.
 
-  This class searches the "Solver Options" parameter list, if found,
-  clones the user supplied NOX::Abstract::PrePostOperator derived
-  object, and returns a pointer to the new object.
+  This is a wrapper class for a user derived
+  NOX::Abstract::PrePostOperator (ppo) object.  All solvers use this
+  class so we don't have to repeat all parsing code in each
+  NOX::Solver.  This class searches the "Solver Options" parameter
+  list passed into the ctor and if a ppo is found will wrap the
+  object.
 
   For instructions on how to implement a PrePostOperator, see
-  NOX::Parameter::PrePostOperator.
+  NOX::Abstract::PrePostOperator.
 
 */
 class PrePostOperator {
