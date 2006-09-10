@@ -54,6 +54,7 @@ except KeyError:
     version = makeVars.get("VERSION","??")
 
 # Initialize arguments that will be needed by the Extension class
+define_macros      = [      ]
 include_dirs       = [srcdir]
 library_dirs       = [      ]
 libraries          = [      ]
@@ -61,6 +62,13 @@ extra_compile_args = [      ]
 extra_link_args    = [      ]
 extra_compile_args = CPPFLAGS.split() + CXXFLAGS.split()
 uniquifyList(extra_compile_args)
+
+# Set all of the define macros
+define_macros.append(("HAVE_CONFIG_H", "1"))
+from numpy import __version__ as numpyVersion
+majorVersion = int(numpyVersion.split(".")[0])
+if majorVersion > 0:
+    define_macros.append(("NUMPY_NOPREFIX","1"))
 
 # Get the relevant Makefile export variable values, split them into lists of
 # strings, add them together to obtain a big list of option strings, and then
@@ -110,7 +118,7 @@ sysconfig._config_vars["CXX"] = CXX
 # _Galeri extension module
 _Galeri = Extension("PyTrilinos._Galeri",
                          [galeriWrap, epetraNumPyMultiVector, epetraNumPyVector],
-                         define_macros      = [("HAVE_CONFIG_H", "1")],
+                         define_macros      = define_macros,
                          include_dirs       = include_dirs,
                          library_dirs       = library_dirs,
                          libraries          = libraries,
