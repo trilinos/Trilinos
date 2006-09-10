@@ -213,4 +213,5 @@ void Residual::Set(MultiVector& v) const
 }
 
 } // namespace MLAPI
-#endif //if defined(HAVE_ML_EPETRA)
+#endif // defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS)
+#endif // ifdef HAVE_ML_MLAPI
