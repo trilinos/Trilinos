@@ -103,7 +103,8 @@ void NOX::Utils::reset(Teuchos::ParameterList& p)
   // Basic info
 
   // "Output Information" may be stored as an int or as NOX::Utils::MsgType
-  if (p.isType<NOX::Utils::MsgType>("Output Information"))
+  if (p.INVALID_TEMPLATE_QUALIFIER
+      isType<NOX::Utils::MsgType>("Output Information"))
     printTest = p.INVALID_TEMPLATE_QUALIFIER
       get<NOX::Utils::MsgType>("Output Information");
   else
@@ -126,7 +127,8 @@ void NOX::Utils::reset(Teuchos::ParameterList& p)
   // Output streams
   blackholeStream = Teuchos::rcp(new Teuchos::oblackholestream);
 
-  if (p.isType< Teuchos::RefCountPtr<std::ostream> >("Output Stream"))
+  if (p.INVALID_TEMPLATE_QUALIFIER
+      isType< Teuchos::RefCountPtr<std::ostream> >("Output Stream"))
     printStream =
       (p).INVALID_TEMPLATE_QUALIFIER
       get< Teuchos::RefCountPtr<std::ostream> >("Output Stream");
@@ -134,7 +136,8 @@ void NOX::Utils::reset(Teuchos::ParameterList& p)
     printStream = Teuchos::rcp(&(std::cout), false);
   myStream = (myPID == printProc) ? printStream : blackholeStream;
   
-  if (p.isType< Teuchos::RefCountPtr<std::ostream> >("Error Stream"))
+  if (p.INVALID_TEMPLATE_QUALIFIER 
+      isType< Teuchos::RefCountPtr<std::ostream> >("Error Stream"))
     errorStream =
       (p).INVALID_TEMPLATE_QUALIFIER
       get< Teuchos::RefCountPtr<std::ostream> >("Error Stream");

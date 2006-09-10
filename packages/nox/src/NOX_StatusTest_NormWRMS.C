@@ -196,7 +196,7 @@ checkStatus(const Solver::Generic& problem,
       if (p.sublist("Direction").isSublist("Newton")) {
 	if (p.sublist("Direction").sublist("Newton").isSublist("Linear Solver")) {
 	  if (p.sublist("Direction").sublist("Newton").sublist("Linear Solver").isSublist("Output")) {
-	    if (p.sublist("Direction").sublist("Newton").sublist("Linear Solver").sublist("Output").isType<double>("Achieved Tolerance")) {
+	    if (p.sublist("Direction").sublist("Newton").sublist("Linear Solver").sublist("Output").INVALID_TEMPLATE_QUALIFIER isType<double>("Achieved Tolerance")) {
 	      printCriteria3Info = true;
 	    }
 	  }
