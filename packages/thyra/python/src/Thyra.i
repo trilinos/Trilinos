@@ -75,25 +75,25 @@ namespace std {
 // Thyra interface imports and includes
 using namespace std;
 #define TEMPLATE_FRIENDS_NOT_SUPPORTED
-%import  "Teuchos_ConfigDefs.hpp"
-%import  "Teuchos_Range1D.hpp"
-%import  "Teuchos_VerbosityLevel.hpp"
-%import  "Teuchos_Describable.hpp"
-%import  "Teuchos_TypeNameTraits.hpp"
-%import  "Teuchos_RefCountPtrDecl.hpp"
-%import  "RTOp_MPI_config.h"
-%import  "Thyra_OperatorVectorTypes.hpp"
-%import  "Thyra_ScalarProdBaseDecl.hpp"
-%include "Thyra_VectorSpaceBaseDecl.hpp"
-%include "Thyra_LinearOpBaseDecl.hpp"
-%include "Thyra_MultiVectorBaseDecl.hpp"
-%include "Thyra_VectorBaseDecl.hpp"
-%include "Thyra_VectorSpaceDefaultBaseDecl.hpp"
-%include "Thyra_ScalarProdVectorSpaceBaseDecl.hpp"
-%include "Thyra_SpmdVectorSpaceBaseDecl.hpp"
-%include "Thyra_SpmdVectorSpaceDefaultBaseDecl.hpp"
-%include "Thyra_DefaultSpmdVectorSpaceDecl.hpp"
-%include "Thyra_VectorStdOpsDecl.hpp"
+// %import  "Teuchos_ConfigDefs.hpp"
+// %import  "Teuchos_Range1D.hpp"
+// %import  "Teuchos_VerbosityLevel.hpp"
+// %import  "Teuchos_Describable.hpp"
+// %import  "Teuchos_TypeNameTraits.hpp"
+// %import  "Teuchos_RefCountPtrDecl.hpp"
+// %import  "RTOp_MPI_config.h"
+// %import  "Thyra_OperatorVectorTypes.hpp"
+// %import  "Thyra_ScalarProdBaseDecl.hpp"
+// %include "Thyra_VectorSpaceBaseDecl.hpp"
+// %include "Thyra_LinearOpBaseDecl.hpp"
+// %include "Thyra_MultiVectorBaseDecl.hpp"
+// %include "Thyra_VectorBaseDecl.hpp"
+// %include "Thyra_VectorSpaceDefaultBaseDecl.hpp"
+// %include "Thyra_ScalarProdVectorSpaceBaseDecl.hpp"
+// %include "Thyra_SpmdVectorSpaceBaseDecl.hpp"
+// %include "Thyra_SpmdVectorSpaceDefaultBaseDecl.hpp"
+// %include "Thyra_DefaultSpmdVectorSpaceDecl.hpp"
+// %include "Thyra_VectorStdOpsDecl.hpp"
 
 // Macro for an interface, templated on type
 %define INTERFACE(type)
@@ -133,7 +133,7 @@ using namespace std;
 %enddef
 
 // Instantiations of interfaces
-INTERFACE(double)
+// INTERFACE(double)
 
 // Extensions.
 
