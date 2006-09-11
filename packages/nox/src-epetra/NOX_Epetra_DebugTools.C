@@ -110,7 +110,7 @@ NOX::Epetra::DebugTools::compute_matrix_using_operator( const Epetra_Operator * 
   {
     std::cout << "****************  CREATING MATRIX FROM OPERATOR ************************ "
 	      << std::endl;
-    cout << NOX::Utils::fill(72) << endl;
+    cout << NOX::Utils::fill(72) << std::endl;
   }
   int totalPerturbations = tempVec->GlobalLength();
   int outFreq = totalPerturbations / 71;
@@ -143,7 +143,7 @@ NOX::Epetra::DebugTools::compute_matrix_using_operator( const Epetra_Operator * 
       cout << "-" << flush;
   }
   if( 0 == op->Comm().MyPID() )
-    cout << "*" << endl;
+    cout << "*" << std::endl;
 
   p_mat->FillComplete();
 
@@ -294,4 +294,128 @@ NOX::Epetra::DebugTools::writeOperator( std::string baseName, const Epetra_Opera
   return;
 }
 #endif
+
+
+//----------------------------------------------------------------------------//
+//----------------- TestCompare Class ----------------------------------------//
+//----------------------------------------------------------------------------//
+
+
+NOX::Epetra::TestCompare::TestCompare(std::ostream& os, const NOX::Utils& utils) :
+  NOX::TestCompare( os, utils )
+{
+}
+
+//----------------------------------------------------------------------------
+
+int 
+NOX::Epetra::TestCompare::testCrsMatrices(
+		 const Epetra_CrsMatrix& mat, 
+		 const Epetra_CrsMatrix& mat_expected, 
+		 double rtol, double atol, 
+		 const std::string& name)
+{
+  int      passed = 0                 ;
+  int      numEntries1,   numEntries2 ;
+  int    * columns1   , * columns2    ;
+  double * values1    , * values2     ;
+
+  if (utils.isPrintType(NOX::Utils::TestDetails)) 
+    os << std::endl << "\tChecking " << name << ":  ";
+  
+  int    chkSize = 0   ;
+  double maxVal  = 0.0 ;
+  double infNorm = 0.0 ;
+
+  for( int row = 0; row < mat_expected.NumMyRows(); ++row )
+  {
+    mat_expected.ExtractMyRowView(row, numEntries1, values1, columns1);
+    mat.ExtractMyRowView         (row, numEntries2, values2, columns2);
+    
+    if( numEntries1 != numEntries2 )
+    {
+      os << std::endl << "\t\tMatrix size is incompatible for local row " << row
+         << "\n\t\t\t expected " << numEntries1 << " columns, found " << numEntries2
+         << std::endl;
+
+      chkSize = 1;
+    }
+
+    mat.Comm().SumAll( &chkSize, &passed, 1 );
+
+    if( 0 != passed )
+    {
+      os << "Failed." << std::endl;
+      return passed;
+    }
+
+
+    // Comapre column indices and values
+    int    baseCol = 0   ;
+    int    testCol = 0   ;
+    int    chkCol  = 0   ;
+    double baseVal = 0.0 ;
+    double testVal = 0.0 ;
+    double chkVal  = 0.0 ;
+
+    for( int col = 0; col < numEntries1; ++col )
+    {
+      baseCol   = columns1[col];
+      testCol   = columns2[col];
+      baseVal = values1 [col];
+      testVal = values2 [col];
+  
+      if( baseCol != testCol )
+      {
+        os << std::endl << "\t\tColumn index for row " << row << " is incompatible."
+           << "\n\t\t\t expected " << baseCol << " index, found " << testCol
+           << std::endl;
+
+        chkCol = 1;
+      }
+
+      mat.Comm().SumAll( &chkCol, &passed, 1 );
+
+      if( 0 != passed )
+      {
+        os << "Failed." << std::endl;
+        return passed;
+      }
+
+      chkVal = fabs( testVal - baseVal ) / (atol + rtol * fabs(baseVal));
+
+      mat.Comm().MaxAll( &chkVal, &maxVal, 1 );
+      if( maxVal > infNorm )
+        infNorm = maxVal;
+
+      if( 1 < maxVal )
+        break;
+    }
+
+    if( 1 < maxVal )
+      break;
+  }
+
+  if( 1 < maxVal )
+    passed = 1; // false by convention in NOX::TestCompare
+  else
+    passed = 0; // true by convention in NOX::TestCompare
+
+  if (utils.isPrintType(NOX::Utils::TestDetails)) 
+  {
+    if( 0 == passed)
+      os << "Passed." << std::endl;
+    else
+      os << "Failed." << std::endl;
+
+    os << "\t\tComputed norm:        " << utils.sciformat(infNorm) 
+       << std::endl
+       << "\t\tRelative Tolerance:   " << utils.sciformat(rtol) 
+       << std::endl
+       << "\t\tAbsolute Tolerance:   " << utils.sciformat(rtol) 
+       << std::endl;
+  }
+
+  return passed;
+}
 

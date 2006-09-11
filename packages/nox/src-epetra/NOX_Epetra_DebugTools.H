@@ -41,6 +41,7 @@
 
 #include "NOX.H"
 #include "NOX_Epetra.H"
+#include "../test/utils/NOX_TestCompare.H"
 
 //----------------------------------------------------------------------------//
 //----------------- DebugTools::ObjectOutput ----------------------------------//
@@ -83,6 +84,37 @@ class DebugTools
   static void writeOperator( std::string, const Epetra_Operator &  , FORMAT_TYPE outFormat= ASCII );
   static void readMatrix   ( std::string,       Epetra_CrsMatrix*&                                );
 #endif
+
+}; 
+
+class TestCompare : public NOX::TestCompare 
+{
+
+ public:
+
+  TestCompare(std::ostream& outputStream, const NOX::Utils& utilities);
+
+  virtual ~TestCompare()
+  { };
+
+  // Method to compute a matrix from an operator acting on unit Cartesian vect// spanning the space of problem dofs
+
+    //! Compare two Epetra_CrsMatrix's
+    /*!
+     * @param \c mat [in] Computed vector
+     * @param \c mat_expected [in] Vector to be compared to
+     * @param \c rtol [in] Relative tolerance \f$\epsilon_r\f$
+     * @param \c atol [in] Absolute tolerance \f$\epsilon_a\f$
+     * @param \c name [in] Name for this test when printing details
+     * @return Returns 0 if
+     * \f[
+     *     \frac{|mat_ij - mat_expected_ij|}{\epsilon_a + \epsilon_r|mat_expected_ij|} < 1
+     * \f]
+     * for each $i$, $i$, and 1 otherwise.
+     */
+    virtual int testCrsMatrices(const Epetra_CrsMatrix & mat, 
+                                const Epetra_CrsMatrix & mat_expected, 
+                                double rtol, double atol, const std::string& name);
 
 }; 
 

@@ -93,7 +93,8 @@ namespace Epetra {
  */
 class BroydenOperator : public NOX::Abstract::PrePostOperator,
                         public NOX::Epetra::Interface::Jacobian,
-                        public NOX::Epetra::Interface::Preconditioner {
+                        public NOX::Epetra::Interface::Preconditioner 
+{
 
  public:
 
@@ -127,11 +128,29 @@ class BroydenOperator : public NOX::Abstract::PrePostOperator,
   //! Destructor
   virtual ~BroydenOperator();
 
+  //! Set the current step vector, \f[ y_k = x_{k+1} - x_k \f]
+  void setStepVector ( Epetra_Vector & vec );
+
+  //! Set the current step vector, \f[ y_k = x_{k+1} - x_k \f]
+  void setStepVector ( NOX::Epetra::Vector & vec );
+
+  //! Set the current yield vector, \f[ y_k = F_{k+1} - F_k \f]
+  void setYieldVector( Epetra_Vector & vec );
+
+  //! Set the current yield vector, \f[ y_k = F_{k+1} - F_k \f]
+  void setYieldVector( NOX::Epetra::Vector & vec );
+
+  //! Compute the sparse Broyden update
+  bool computeSparseBroydenUpdate();
+
   //! Return a reference to the %Broyden matrix.  The matrix is not owned but is obtained from the client at construction.
   Epetra_CrsMatrix & getBroydenMatrix()
   { return *crsMatrix; };
 
  protected:
+
+  //! Initialize operator and data
+  virtual bool initialize( Teuchos::ParameterList & nlParams, const Epetra_Vector & x );
 
   //! Allow for fill of Jacobian matrix whose values will replace corresponding entries in the %Broyden matrix.
   virtual bool computeJacobian( const Epetra_Vector & x, Epetra_Operator& Jac);
@@ -153,6 +172,12 @@ class BroydenOperator : public NOX::Abstract::PrePostOperator,
  protected:
 
   bool verbose;
+
+  Teuchos::RefCountPtr<NOX::Epetra::Vector> stepVec;
+
+  Teuchos::RefCountPtr<NOX::Epetra::Vector> yieldVec;
+
+  Teuchos::RefCountPtr<NOX::Epetra::Vector> workVec;
 
   Teuchos::RefCountPtr<NOX::Epetra::Vector> updateVectorPtr;
   NOX::Epetra::Vector & updateVector;

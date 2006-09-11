@@ -152,8 +152,6 @@ int main(int argc, char *argv[])
     printing.out() << "Serial Run" << endl;
 #endif
 
-  // *** Insert your testing here! ***
-
   int status = 0;
 
   Teuchos::RefCountPtr<NOX::Epetra::Interface::Required> iReq = interface;
@@ -191,15 +189,10 @@ int main(int argc, char *argv[])
   NOX::Epetra::Vector noxMFvec( MF_resultVec, NOX::DeepCopy );
 
   // Create a TestCompare class
-  NOX::TestCompare tester( printing.out(), printing);
+  NOX::Epetra::TestCompare tester( printing.out(), printing);
   double abstol = 1.e-4;
   double reltol = 1.e-4 ;
   //NOX::TestCompare::CompareType aComp = NOX::TestCompare::Absolute;
-
-  //cout << "Direction vec :\n" << directionVec << endl;
-  //cout << "A_resultVec vec :\n" << A_resultVec << endl;
-  //cout << "FD_resultVec vec :\n" << FD_resultVec << endl;
-  //cout << "MF_resultVec vec :\n" << MF_resultVec << endl;
 
   status += tester.testVector( noxFDvec, noxAvec, reltol, abstol,
                               "Finite-Difference Operator Apply Test" );

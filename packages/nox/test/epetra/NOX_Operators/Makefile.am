@@ -45,7 +45,7 @@ AM_CPPFLAGS = $(TEST_INCLUDES)
 EXEEXT = .exe
 
 if BUILD_EPETRA_TESTS
-noinst_PROGRAMS = NOX_Operators
+noinst_PROGRAMS = NOX_Operators NOX_BroydenOp
 endif
 
 NOX_Operators_SOURCES = $(srcdir)/test.C $(srcdir)/Laplace2D.C
@@ -57,4 +57,13 @@ NOX_Operators_DEPENDENCIES = \
 #Unsure why this test need to link to the BLAS on an IBM.
 NOX_Operators_LDADD = $(TEST_LIBS)
 
+
+NOX_BroydenOp_SOURCES = $(srcdir)/test_BroydenOp.C 
+
+NOX_BroydenOp_DEPENDENCIES = \
+                         $(top_builddir)/src/libnox.a \
+                         $(top_builddir)/src-epetra/libnoxepetra.a
+
+#Unsure why this test need to link to the BLAS on an IBM.
+NOX_BroydenOp_LDADD = $(TEST_LIBS)
 

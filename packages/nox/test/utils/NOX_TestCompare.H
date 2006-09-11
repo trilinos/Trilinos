@@ -74,7 +74,7 @@ namespace NOX {
     TestCompare(std::ostream& outputStream, const NOX::Utils& utilities);
 
     //! Destructor
-    ~TestCompare();
+    virtual ~TestCompare();
     
     //! Compare two values
     /*!
@@ -85,9 +85,9 @@ namespace NOX {
      * @param \c compareType [in] Type of comparison (Absolute or Relative)
      * @return Returns 0 for is values are within tolerance, 1 otherwise.
      */
-    int testValue(double value, double value_expected, 
-		  double tolerance, const std::string& name, 
-		  NOX::TestCompare::CompareType compareType);
+    virtual int testValue(double value, double value_expected, 
+                          double tolerance, const std::string& name, 
+                          NOX::TestCompare::CompareType compareType);
 
     //! Compare two vectors
     /*!
@@ -102,9 +102,9 @@ namespace NOX {
      * \f]
      * for each $i$, and 1 otherwise.
      */
-    int testVector(const NOX::Abstract::Vector& vec, 
-		   const NOX::Abstract::Vector& vec_expected, 
-		   double rtol, double atol, const std::string& name);
+    virtual int testVector(const NOX::Abstract::Vector& vec, 
+                           const NOX::Abstract::Vector& vec_expected, 
+                           double rtol, double atol, const std::string& name);
 
     //! Compare two matrices
     /*!
@@ -119,9 +119,9 @@ namespace NOX {
      * \f]
      * for each $i$, $j$, and 1 otherwise.
      */
-    int testMatrix(const NOX::Abstract::MultiVector::DenseMatrix& mat, 
-		   const NOX::Abstract::MultiVector::DenseMatrix& mat_expected,
-		   double rtol, double atol, const std::string& name);
+    virtual int testMatrix(const NOX::Abstract::MultiVector::DenseMatrix& mat, 
+                           const NOX::Abstract::MultiVector::DenseMatrix& mat_expected,
+                           double rtol, double atol, const std::string& name);
 
     //! Compare two multi-vectors
     /*!
@@ -136,9 +136,9 @@ namespace NOX {
      * \f]
      * for each $i$, $j$, and 1 otherwise.
      */
-    int testMultiVector(const NOX::Abstract::MultiVector& mvec, 
-			const NOX::Abstract::MultiVector& mvec_expected, 
-			double rtol, double atol, const std::string& name);
+    virtual int testMultiVector(const NOX::Abstract::MultiVector& mvec, 
+                                const NOX::Abstract::MultiVector& mvec_expected, 
+                                double rtol, double atol, const std::string& name);
 
   protected:
     
@@ -148,9 +148,9 @@ namespace NOX {
      *     \max_i \frac{|vec_i - vec_expected_i|}{\epsilon_a + \epsilon_r|vec_expected_i|}
      * \f]
      */
-    double computeVectorNorm(const NOX::Abstract::Vector& vec, 
-			     const NOX::Abstract::Vector& vec_expected, 
-			     double rtol, double atol);
+    virtual double computeVectorNorm(const NOX::Abstract::Vector& vec, 
+                                     const NOX::Abstract::Vector& vec_expected, 
+                                     double rtol, double atol);
 
   protected:
 

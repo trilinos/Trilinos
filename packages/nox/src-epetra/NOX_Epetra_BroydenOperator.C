@@ -55,17 +55,10 @@ BroydenOperator::BroydenOperator(
   crsMatrix(mat),
   myType("Broyden Operator")
 {
-  // Set ourself as the Pre/Post Operator so we can update our data during
-  // runPostIterate.  Note: we need to make provision for storing and calling 
-  // any existing Pre/Post Operator.
-
-  // RPP 9/20/2005: This is a very bad idea!  It breaks the rcp and
-  // user's expectations.  For now we will have to create rcp without
-  // ownership.  What happens if a user write their own PPO?
-  Teuchos::RefCountPtr<NOX::Abstract::PrePostOperator> me = 
-    Teuchos::rcp(this, false);
-  nlParams.sublist("Solver Options").set("User Defined Pre/Post Operator", me);
+  initialize( nlParams, solnVec );
 }
+
+//-----------------------------------------------------------------------------
 
 BroydenOperator::BroydenOperator(
       Teuchos::ParameterList & nlParams, 
@@ -89,10 +82,13 @@ BroydenOperator::BroydenOperator(
   // RPP 9/20/2005: This is a very bad idea!  It breaks the rcp and
   // user's expectations.  For now we will have to create rcp without
   // ownership.  What happens if a user write their own PPO?
-  Teuchos::RefCountPtr<NOX::Abstract::PrePostOperator> me = 
-    Teuchos::rcp(this, false);
+  Teuchos::RefCountPtr<NOX::Abstract::PrePostOperator> me = Teuchos::rcp(this, false);
   nlParams.sublist("Solver Options").set("User Defined Pre/Post Operator", me);
+
+  // Create out working vectors
 }
+
+//-----------------------------------------------------------------------------
 
 BroydenOperator::BroydenOperator(
  Teuchos::ParameterList & nlParams, 
@@ -116,10 +112,11 @@ BroydenOperator::BroydenOperator(
   // RPP 9/20/2005: This is a very bad idea!  It breaks the rcp and
   // user's expectations.  For now we will have to create rcp without
   // ownership.  What happens if a user write their own PPO?
-  Teuchos::RefCountPtr<NOX::Abstract::PrePostOperator> me = 
-    Teuchos::rcp(this, false);
+  Teuchos::RefCountPtr<NOX::Abstract::PrePostOperator> me = Teuchos::rcp(this, false);
   nlParams.sublist("Solver Options").set("User Defined Pre/Post Operator", me);
 }
+
+//-----------------------------------------------------------------------------
 
 BroydenOperator::BroydenOperator(const BroydenOperator & bOp) :
   verbose(bOp.verbose),
@@ -133,25 +130,48 @@ BroydenOperator::BroydenOperator(const BroydenOperator & bOp) :
   myType("Broyden Operator")
 { 
   if( !Teuchos::is_null(bOp.broydenVecPtr) )
-    broydenVecPtr = 
-      Teuchos::rcp(new NOX::Epetra::Vector(*bOp.broydenVecPtr));
+    broydenVecPtr = Teuchos::rcp(new NOX::Epetra::Vector(*bOp.broydenVecPtr));
   if( !Teuchos::is_null(bOp.residualVecPtr) )
-    residualVecPtr = 
-      Teuchos::rcp(new NOX::Epetra::Vector(*bOp.residualVecPtr));
+    residualVecPtr = Teuchos::rcp(new NOX::Epetra::Vector(*bOp.residualVecPtr));
   if( !Teuchos::is_null(bOp.tempVecPtr) )
-    tempVecPtr = 
-      Teuchos::rcp(new NOX::Epetra::Vector(*bOp.tempVecPtr));
+    tempVecPtr = Teuchos::rcp(new NOX::Epetra::Vector(*bOp.tempVecPtr));
 }
+
+//-----------------------------------------------------------------------------
+
+bool
+BroydenOperator::initialize( Teuchos::ParameterList & nlParams, const Epetra_Vector & vec )
+{
+  stepVec  = Teuchos::rcp( new NOX::Epetra::Vector(vec) );
+  yieldVec = Teuchos::rcp( new NOX::Epetra::Vector(vec) );
+  workVec  = Teuchos::rcp( new NOX::Epetra::Vector(vec) );
+
+  // Set ourself as the Pre/Post Operator so we can update our data during
+  // runPostIterate.  Note: we need to make provision for storing and calling 
+  // any existing Pre/Post Operator.
+
+  // RPP 9/20/2005: This is a very bad idea!  It breaks the rcp and
+  // user's expectations.  For now we will have to create rcp without
+  // ownership.  What happens if a user write their own PPO?
+  Teuchos::RefCountPtr<NOX::Abstract::PrePostOperator> me = Teuchos::rcp(this, false);
+  nlParams.sublist("Solver Options").set("User Defined Pre/Post Operator", me);
+
+  return true;
+}
+
+//-----------------------------------------------------------------------------
 
 BroydenOperator::~BroydenOperator()
 {
-
 }
 
-bool BroydenOperator::computeJacobian(const Epetra_Vector & x,
-				      Epetra_Operator& Jac)
+//-----------------------------------------------------------------------------
+
+bool 
+BroydenOperator::computeJacobian( const Epetra_Vector & x, Epetra_Operator& Jac )
 {
-  if( !Teuchos::is_null(jacIntPtr) ) {
+  if( !Teuchos::is_null(jacIntPtr) ) 
+  {
     jacIntPtr->computeJacobian(x, Jac);
     replaceBroydenMatrixValues(*jacMatrixPtr);
   }
@@ -159,11 +179,15 @@ bool BroydenOperator::computeJacobian(const Epetra_Vector & x,
   return true;
 }
 
-bool BroydenOperator::computePreconditioner(const Epetra_Vector & x,
-					    Epetra_Operator& Prec,
-           Teuchos::ParameterList * pList)
+//-----------------------------------------------------------------------------
+
+bool 
+BroydenOperator::computePreconditioner( const Epetra_Vector & x,
+					     Epetra_Operator& Prec,
+                                             Teuchos::ParameterList * pList )
 {
-  if( !Teuchos::is_null(precIntPtr) ) {
+  if( !Teuchos::is_null(precIntPtr) ) 
+  {
     precIntPtr->computePreconditioner(x, Prec, pList);
     replaceBroydenMatrixValues(*precMatrixPtr);
   }
@@ -171,7 +195,10 @@ bool BroydenOperator::computePreconditioner(const Epetra_Vector & x,
   return true;
 }
 
-void BroydenOperator::runPostIterate( const NOX::Solver::Generic & solver)
+//-----------------------------------------------------------------------------
+
+void 
+BroydenOperator::runPostIterate( const NOX::Solver::Generic & solver)
 { 
   // Get and update using the solver object.
 
@@ -197,7 +224,8 @@ void BroydenOperator::runPostIterate( const NOX::Solver::Generic & solver)
       throw "NOX Error: Broyden Update Failed";
     }
     updateVector.update(1.0, oldSolnGrp.getNewton(), 0.0);
-    if( verbose ) {
+    if( verbose ) 
+    {
       oldSolnGrp.applyJacobian(updateVector, *tempVecPtr);
        cout << "Js vector : " << endl << tempVecPtr->getEpetraVector()
             << "\nOld residual vector : " << endl 
@@ -214,6 +242,7 @@ void BroydenOperator::runPostIterate( const NOX::Solver::Generic & solver)
            << "- crsMatrix->Multiply() failed!!!" << endl;
       throw "NOX Error: Broyden Update Failed";
     }
+
     status = oldSolnGrp.applyJacobian(updateVector, *broydenVecPtr);
     if( status != NOX::Abstract::Group::Ok )
     {
@@ -250,8 +279,8 @@ void BroydenOperator::runPostIterate( const NOX::Solver::Generic & solver)
 
     // Our %Broyden matrix has been updated and is now ready to use as a 
     // preconditioning matrix or as the Jacobian.
- 
-    if( verbose ) {
+    if( verbose ) 
+    {
       NOX::Epetra::Vector * tempVecPtr2 = new NOX::Epetra::Vector(*tempVecPtr);
       ierr = crsMatrix->Multiply( false, updateVector.getEpetraVector(), 
                                  tempVecPtr2->getEpetraVector() );
@@ -269,12 +298,106 @@ void BroydenOperator::runPostIterate( const NOX::Solver::Generic & solver)
 
 }
 
-const string & BroydenOperator::getType() const
+//-----------------------------------------------------------------------------
+
+const string & 
+BroydenOperator::getType() const
 {
   return myType;
 }
 
-void BroydenOperator::replaceBroydenMatrixValues( const Epetra_CrsMatrix & mat)
+//-----------------------------------------------------------------------------
+
+void
+BroydenOperator::setStepVector( Epetra_Vector & vec )
+{
+  stepVec->getEpetraVector() = vec;
+}
+
+//-----------------------------------------------------------------------------
+
+void
+BroydenOperator::setStepVector( NOX::Epetra::Vector & vec )
+{
+  *stepVec = vec;
+}
+
+//-----------------------------------------------------------------------------
+
+void
+BroydenOperator::setYieldVector( NOX::Epetra::Vector & vec )
+{
+  *yieldVec = vec;
+}
+
+//-----------------------------------------------------------------------------
+
+void
+BroydenOperator::setYieldVector( Epetra_Vector & vec )
+{
+  yieldVec->getEpetraVector() = vec;
+}
+
+//-----------------------------------------------------------------------------
+
+bool 
+BroydenOperator::computeSparseBroydenUpdate()
+{
+  //NOX::Abstract::Group::ReturnType status;
+  //int ierr;
+
+  //if( Teuchos::is_null(broydenVecPtr) )
+  //  broydenVecPtr = Teuchos::rcp(new NOX::Epetra::Vector(*updateVectorPtr));
+  //if( Teuchos::is_null(residualVecPtr) )
+  //  residualVecPtr = Teuchos::rcp(new NOX::Epetra::Vector(*updateVectorPtr));
+  //if( verbose )
+  //  if( Teuchos::is_null(tempVecPtr) )
+  //    tempVecPtr = Teuchos::rcp(new NOX::Epetra::Vector(*updateVectorPtr));
+    
+  // Do the Broyden update to our matrix
+  int ierr = crsMatrix->Multiply( false, stepVec->getEpetraVector(), workVec->getEpetraVector() );
+  if( ierr )
+  {
+    cout << "ERROR: NOX::Epetra::BroydenOperator::runPostIterate(...) "
+         << "- crsMatrix->Multiply() failed!!!" << endl;
+    throw "NOX Error: Broyden Update Failed";
+  }
+
+  double * values  = 0 ;
+  int    * indices = 0 ;
+  int      numEntries  ;
+
+  for( int row = 0; row < crsMatrix->NumMyRows(); ++row )
+  {
+    ierr = crsMatrix->ExtractMyRowView( row, numEntries, values, indices );
+    if( ierr )
+    {
+      cout << "ERROR (" << ierr << ") : NOX::Epetra::BroydenOperator::computeSparseBroydenUdate() "
+           << "- crsMatrix->ExtractGlobalRowView(...) failed for row --> " << row << endl;
+      throw "NOX Error: Broyden Update Failed";
+    }
+
+    double diffVal = yieldVec->getEpetraVector()[row] - workVec->getEpetraVector()[row];
+
+    double rowStepInnerProduct = 0.0;
+
+    for( int col = 0; col < numEntries; ++col )
+      rowStepInnerProduct += stepVec->getEpetraVector()[indices[col]] * stepVec->getEpetraVector()[indices[col]];
+
+    for( int col = 0; col < numEntries; ++col )
+      (*values++) += diffVal * stepVec->getEpetraVector()[(*indices++)] / rowStepInnerProduct;
+  }
+
+  // Our %Broyden matrix has been updated and is now ready to use as a 
+  // preconditioning matrix or as the Jacobian.
+
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+
+void 
+BroydenOperator::replaceBroydenMatrixValues( const Epetra_CrsMatrix & mat)
 {
   double * values = 0;
   int * indices = 0;
@@ -293,3 +416,5 @@ void BroydenOperator::replaceBroydenMatrixValues( const Epetra_CrsMatrix & mat)
     }
   }
 }
+
+//-----------------------------------------------------------------------------
