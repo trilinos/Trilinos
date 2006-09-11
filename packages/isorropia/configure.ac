@@ -38,7 +38,7 @@
 # This must be the first line in configure.ac.
 # Optional 3rd argument is email address for bugs.
 
-AC_INIT(isorropia, 1.0d, william@sandia.gov)
+AC_INIT(isorropia, 2.0d, william@sandia.gov)
 
 echo "----------------------------------------"
 echo "Running Isorropia Configure Script"
