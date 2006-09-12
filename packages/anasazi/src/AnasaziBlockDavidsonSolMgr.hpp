@@ -367,7 +367,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
         }
         numRestarts++;
 
-        printer->stream(Debug) << " Performing restart number " << numRestarts << " of " << maxRestarts_ << endl << endl;
+        printer->stream(IterationDetails) << " Performing restart number " << numRestarts << " of " << maxRestarts_ << endl << endl;
 
         // the solver has filled its basis. 
         // the current eigenvectors will be used to restart the basis.
