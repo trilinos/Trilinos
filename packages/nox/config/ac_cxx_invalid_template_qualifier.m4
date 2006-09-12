@@ -26,9 +26,9 @@ class DummyClass {
 [  
    DummyClass my_dummy;
    DummyClass *my_dummy_ptr = &my_dummy;
-   double temp = my_dummy_ptr->template get<double>(); 
+   double temp = (*my_dummy_ptr).get<double>(); 
 ],
- ac_cv_cxx_invalid_template_qualifier=yes, ac_cv_cxx_invalid_template_qualifier=no)
+ ac_cv_cxx_invalid_template_qualifier=no, ac_cv_cxx_invalid_template_qualifier=yes)
  AC_LANG_RESTORE
 ])
 if test "$ac_cv_cxx_invalid_template_qualifier" = yes; then
