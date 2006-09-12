@@ -47,7 +47,11 @@
 #endif
 
 #ifdef HAVE_EPETRA
+#ifdef HAVE_MPI
 #include <Epetra_MpiComm.h>
+#else
+#include <Epetra_SerialComm.h>
+#endif
 #include <Epetra_Map.h>
 #include <Epetra_Vector.h>
 #include <Epetra_CrsMatrix.h>
