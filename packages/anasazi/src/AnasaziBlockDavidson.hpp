@@ -655,6 +655,7 @@ namespace Anasazi {
 
     TEST_FOR_EXCEPTION(numAuxVecs_+blockSize*numBlocks > MVT::GetVecLength(*tmp),std::invalid_argument,"Anasazi::BlockDavidson::setSize(): impossible subspace requirements.");
 
+
     //////////////////////////////////
     // blockSize dependent
     //
@@ -663,14 +664,18 @@ namespace Anasazi {
     R2norms_.resize(blockSize_,NANVAL);
     //
     // clone multivectors off of tmp
+    om_->print(Debug," >> Allocating X_\n");
     X_ = MVT::Clone(*tmp,blockSize_);
+    om_->print(Debug," >> Allocating KX_\n");
     KX_ = MVT::Clone(*tmp,blockSize_);
     if (hasM_) {
+      om_->print(Debug," >> Allocating MX_\n");
       MX_ = MVT::Clone(*tmp,blockSize_);
     }
     else {
       MX_ = X_;
     }
+    om_->print(Debug," >> Allocating R_\n");
     R_ = MVT::Clone(*tmp,blockSize_);
 
     //////////////////////////////////
@@ -679,8 +684,11 @@ namespace Anasazi {
     int newsd = blockSize_*numBlocks_;
     theta_.resize(blockSize_*numBlocks_,NANVAL);
     ritz2norms_.resize(blockSize_*numBlocks_,NANVAL);
+    om_->print(Debug," >> Allocating V_\n");
     V_ = MVT::Clone(*tmp,newsd);
     KK_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(newsd,newsd) );
+
+    om_->print(Debug," >> done allocating.");
 
     initialized_ = false;
     curDim_ = 0;
