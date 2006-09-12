@@ -81,7 +81,7 @@ namespace LOCA {
      *     \begin{aligned}
      *        X_1 &= J^{-1} F \\
      *        X_2 &= J^{-1} A \\
-     *        Y   &= (C-B^T X_2)^{-1}(G-B^T X_1)
+     *        Y   &= (C-B^T X_2)^{-1}(G-B^T X_1) \\
      *        X   &= X_1 - X_2 Y
      *     \end{aligned}
      * \f]
