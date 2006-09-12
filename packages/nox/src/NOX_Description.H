@@ -125,7 +125,7 @@ If you are a Sandia employee you can download the development branch of Trilinos
   <li> Russ Hooper, Sandia National Labs, rhoope@sandia.gov
   <li> <a href="http://csmr.ca.sandia.gov/~tgkolda/">Tammy Kolda</a>,  
   Sandia National Labs, 
-  tgkolda@sandia.gov (%NOX Project Lead)
+  tgkolda@sandia.gov
   <li> Roger Pawlowski, Sandia National Labs, rppawlo@sandia.gov (%NOX Project Lead)
   <li> Eric Phipps, Sandia National Labs, etphipp@sandia.gov (Primary %LOCA developer)
   <li> Andy Salinger, Sandia National Labs, agsalin@sandia.gov (%LOCA Project Lead)
@@ -1025,11 +1025,17 @@ on. Currently, we have the following system headers:
 <li><code>fstream</code>
 <br>&nbsp;
 </ul>
+<li>Do not use relative or absolute paths when including header files.  The autotools will set the paths correctly for you.  This is especially important since installing the headers and libraries moves the headers into a flat directory structure.
+<ul>
+<li> DO NOT do this:<br>  
+     <code>#include "../test/utils/NOX_TestCompare.H"</code>
+<li> Do this: <br> 
+     <code>#include "NOX_TestCompare.H"</code>
+</ul><br>&nbsp;
 <li>Definitions of classes that are only accessed via pointers
 (<CODE>*</CODE>) or references (<CODE>&amp;</CODE>) should be declared
 using forward declarations, and <EM>not</EM> by including the header files.
 <br>&nbsp;
-
 <li>These are the cases when header files should be included in the
 header file:
 <br>&nbsp;
