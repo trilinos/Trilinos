@@ -41,7 +41,7 @@
 
 #include "NOX.H"
 #include "NOX_Epetra.H"
-#include "../test/utils/NOX_TestCompare.H"
+#include "NOX_TestCompare.H"
 
 //----------------------------------------------------------------------------//
 //----------------- DebugTools::ObjectOutput ----------------------------------//

@@ -40,6 +40,7 @@
 #include "NOX.H"  // Required headers
 #include "NOX_Epetra.H" // Epetra Interface headers
 #include "NOX_TestCompare.H" // Test Suite headers
+#include "NOX_Epetra_DebugTools.H"
 
 // Trilinos headers
 #ifdef HAVE_MPI

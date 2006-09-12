@@ -30,8 +30,7 @@
 # ************************************************************************
 #@HEADER
 
-# Needed so this is installed with distributions
-include_HEADERS = \
+NOX_TEST_UTILS_H = \
         $(srcdir)/NOX_TestError.H \
         $(srcdir)/NOX_TestUtils.H \
 	$(srcdir)/NOX_TestCompare.H
@@ -40,15 +39,21 @@ NOX_TEST_UTILS = \
 	$(srcdir)/NOX_TestUtils.C \
 	$(srcdir)/NOX_TestCompare.C
 
-if BUILD_TESTUTILS
-lib_LIBRARIES = libnoxtestutils.a
+if BUILD_LIBNOXEPETRA
+
+NOX_EPETRA_DEBUGTOOLS_H = \
+        $(srcdir)/NOX_Epetra_DebugTools.H
+
+NOX_EPETRA_DEBUGTOOLS = \
+	$(srcdir)/NOX_Epetra_DebugTools.C
+
 endif
 
 # ------------------------------------------------------------------------
 # Noxtestutils library specifications
 # ------------------------------------------------------------------------
 
-libnoxtestutils_a_SOURCES = $(NOX_TEST_UTILS) $(include_HEADERS) 
+libnoxtestutils_a_SOURCES = $(NOX_TEST_UTILS) $(NOX_TEST_UTILS_H) $(NOX_EPETRA_DEBUGTOOLS) $(NOX_EPETRA_DEBUGTOOLS_H) 
 
 libnoxtestutils_a_CXXFLAGS = \
 	-I$(top_srcdir)/src-loca/src \
@@ -67,6 +72,22 @@ EXPORT_INCLUDES = $(NOX_INCLUDES)
 endif
 
 AM_CPPFLAGS = $(EXPORT_INCLUDES)
+
+# ------------------------------------------------------------------------
+# When to turn it on
+# ------------------------------------------------------------------------
+
+if BUILD_TESTUTILS
+
+# List of all libraries to install in $(libexecdir)
+
+lib_LIBRARIES = libnoxtestutils.a
+
+# List of all headers to install in $(includedir)
+
+include_HEADERS = $(NOX_TEST_UTILS_H) $(NOX_EPETRA_DEBUGTOOLS_H)
+
+endif
 
 # ------------------------------------------------------------------------
 # For using a special archiver

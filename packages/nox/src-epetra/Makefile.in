@@ -120,8 +120,7 @@ am__libnoxepetra_a_SOURCES_DIST = $(srcdir)/NOX_Epetra_Vector.C \
 	$(srcdir)/NOX_Epetra_FiniteDifference.C \
 	$(srcdir)/NOX_Epetra_FiniteDifferenceColoring.C \
 	$(srcdir)/NOX_Epetra_Scaling.C \
-	$(srcdir)/NOX_Epetra_BroydenOperator.C \
-	$(srcdir)/NOX_Epetra_DebugTools.C $(srcdir)/NOX_Epetra.H \
+	$(srcdir)/NOX_Epetra_BroydenOperator.C $(srcdir)/NOX_Epetra.H \
 	$(srcdir)/NOX_Epetra_Vector.H \
 	$(srcdir)/NOX_Epetra_VectorSpace.H \
 	$(srcdir)/NOX_Epetra_VectorSpace_L2.H \
@@ -138,7 +137,6 @@ am__libnoxepetra_a_SOURCES_DIST = $(srcdir)/NOX_Epetra_Vector.C \
 	$(srcdir)/NOX_Epetra_FiniteDifferenceColoring.H \
 	$(srcdir)/NOX_Epetra_Scaling.H \
 	$(srcdir)/NOX_Epetra_BroydenOperator.H \
-	$(srcdir)/NOX_Epetra_DebugTools.H \
 	$(srcdir)/NOX_Epetra_ModelEvaluatorInterface.C \
 	$(srcdir)/NOX_Epetra_ModelEvaluatorInterface.H
 am__objects_1 = NOX_Epetra_Vector.$(OBJEXT) \
@@ -150,8 +148,7 @@ am__objects_1 = NOX_Epetra_Vector.$(OBJEXT) \
 	NOX_Epetra_FiniteDifference.$(OBJEXT) \
 	NOX_Epetra_FiniteDifferenceColoring.$(OBJEXT) \
 	NOX_Epetra_Scaling.$(OBJEXT) \
-	NOX_Epetra_BroydenOperator.$(OBJEXT) \
-	NOX_Epetra_DebugTools.$(OBJEXT)
+	NOX_Epetra_BroydenOperator.$(OBJEXT)
 am__objects_2 =
 @BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@am__objects_3 = NOX_Epetra_ModelEvaluatorInterface.$(OBJEXT)
 am_libnoxepetra_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
@@ -161,7 +158,6 @@ DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/NOX_Epetra_BroydenOperator.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/NOX_Epetra_DebugTools.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/NOX_Epetra_FiniteDifference.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/NOX_Epetra_FiniteDifferenceColoring.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/NOX_Epetra_Group.Po \
@@ -201,7 +197,6 @@ am__include_HEADERS_DIST = $(srcdir)/NOX_Epetra.H \
 	$(srcdir)/NOX_Epetra_FiniteDifferenceColoring.H \
 	$(srcdir)/NOX_Epetra_Scaling.H \
 	$(srcdir)/NOX_Epetra_BroydenOperator.H \
-	$(srcdir)/NOX_Epetra_DebugTools.H \
 	$(srcdir)/NOX_Epetra_ModelEvaluatorInterface.H
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS)
@@ -440,8 +435,7 @@ EPETRA_H = \
         $(srcdir)/NOX_Epetra_FiniteDifference.H \
         $(srcdir)/NOX_Epetra_FiniteDifferenceColoring.H \
 	$(srcdir)/NOX_Epetra_Scaling.H \
-	$(srcdir)/NOX_Epetra_BroydenOperator.H \
-	$(srcdir)/NOX_Epetra_DebugTools.H
+	$(srcdir)/NOX_Epetra_BroydenOperator.H
 
 EPETRA = \
 	$(srcdir)/NOX_Epetra_Vector.C \
@@ -454,8 +448,7 @@ EPETRA = \
         $(srcdir)/NOX_Epetra_FiniteDifference.C \
         $(srcdir)/NOX_Epetra_FiniteDifferenceColoring.C \
 	$(srcdir)/NOX_Epetra_Scaling.C \
-	$(srcdir)/NOX_Epetra_BroydenOperator.C \
-	$(srcdir)/NOX_Epetra_DebugTools.C
+	$(srcdir)/NOX_Epetra_BroydenOperator.C
 
 @BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@MODELEVAL = \
 @BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@        $(srcdir)/NOX_Epetra_ModelEvaluatorInterface.C
@@ -581,7 +574,6 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_Epetra_BroydenOperator.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_Epetra_DebugTools.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_Epetra_FiniteDifference.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_Epetra_FiniteDifferenceColoring.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_Epetra_Group.Po@am__quote@
@@ -785,22 +777,6 @@ NOX_Epetra_BroydenOperator.obj: $(srcdir)/NOX_Epetra_BroydenOperator.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/NOX_Epetra_BroydenOperator.Po' tmpdepfile='$(DEPDIR)/NOX_Epetra_BroydenOperator.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Epetra_BroydenOperator.obj `if test -f '$(srcdir)/NOX_Epetra_BroydenOperator.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Epetra_BroydenOperator.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Epetra_BroydenOperator.C'; fi`
-
-NOX_Epetra_DebugTools.o: $(srcdir)/NOX_Epetra_DebugTools.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NOX_Epetra_DebugTools.o -MD -MP -MF "$(DEPDIR)/NOX_Epetra_DebugTools.Tpo" -c -o NOX_Epetra_DebugTools.o `test -f '$(srcdir)/NOX_Epetra_DebugTools.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Epetra_DebugTools.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NOX_Epetra_DebugTools.Tpo" "$(DEPDIR)/NOX_Epetra_DebugTools.Po"; else rm -f "$(DEPDIR)/NOX_Epetra_DebugTools.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Epetra_DebugTools.C' object='NOX_Epetra_DebugTools.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/NOX_Epetra_DebugTools.Po' tmpdepfile='$(DEPDIR)/NOX_Epetra_DebugTools.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Epetra_DebugTools.o `test -f '$(srcdir)/NOX_Epetra_DebugTools.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Epetra_DebugTools.C
-
-NOX_Epetra_DebugTools.obj: $(srcdir)/NOX_Epetra_DebugTools.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NOX_Epetra_DebugTools.obj -MD -MP -MF "$(DEPDIR)/NOX_Epetra_DebugTools.Tpo" -c -o NOX_Epetra_DebugTools.obj `if test -f '$(srcdir)/NOX_Epetra_DebugTools.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Epetra_DebugTools.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Epetra_DebugTools.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NOX_Epetra_DebugTools.Tpo" "$(DEPDIR)/NOX_Epetra_DebugTools.Po"; else rm -f "$(DEPDIR)/NOX_Epetra_DebugTools.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Epetra_DebugTools.C' object='NOX_Epetra_DebugTools.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/NOX_Epetra_DebugTools.Po' tmpdepfile='$(DEPDIR)/NOX_Epetra_DebugTools.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Epetra_DebugTools.obj `if test -f '$(srcdir)/NOX_Epetra_DebugTools.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Epetra_DebugTools.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Epetra_DebugTools.C'; fi`
 
 NOX_Epetra_ModelEvaluatorInterface.o: $(srcdir)/NOX_Epetra_ModelEvaluatorInterface.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NOX_Epetra_ModelEvaluatorInterface.o -MD -MP -MF "$(DEPDIR)/NOX_Epetra_ModelEvaluatorInterface.Tpo" -c -o NOX_Epetra_ModelEvaluatorInterface.o `test -f '$(srcdir)/NOX_Epetra_ModelEvaluatorInterface.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Epetra_ModelEvaluatorInterface.C; \

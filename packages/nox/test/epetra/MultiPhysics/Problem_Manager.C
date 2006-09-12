@@ -38,6 +38,7 @@
                                                                                 
 #include "NOX.H"
 #include "NOX_Epetra.H"
+#include "NOX_Epetra_DebugTools.H"
 // Trilinos Objects
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"

@@ -71,7 +71,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
 subdir = test/utils
-DIST_COMMON = $(include_HEADERS) $(srcdir)/Makefile.am \
+DIST_COMMON = $(am__include_HEADERS_DIST) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps =  \
@@ -108,15 +108,22 @@ libLIBRARIES_INSTALL = $(INSTALL_DATA)
 LIBRARIES = $(lib_LIBRARIES)
 am__DEPENDENCIES_1 =
 libnoxtestutils_a_DEPENDENCIES = $(am__DEPENDENCIES_1)
+am__libnoxtestutils_a_SOURCES_DIST = $(srcdir)/NOX_TestUtils.C \
+	$(srcdir)/NOX_TestCompare.C $(srcdir)/NOX_TestError.H \
+	$(srcdir)/NOX_TestUtils.H $(srcdir)/NOX_TestCompare.H \
+	$(srcdir)/NOX_Epetra_DebugTools.C \
+	$(srcdir)/NOX_Epetra_DebugTools.H
 am__objects_1 = libnoxtestutils_a-NOX_TestUtils.$(OBJEXT) \
 	libnoxtestutils_a-NOX_TestCompare.$(OBJEXT)
 am__objects_2 =
-am_libnoxtestutils_a_OBJECTS = $(am__objects_1) $(am__objects_2)
+@BUILD_LIBNOXEPETRA_TRUE@am__objects_3 = libnoxtestutils_a-NOX_Epetra_DebugTools.$(OBJEXT)
+am_libnoxtestutils_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
+	$(am__objects_3) $(am__objects_2)
 libnoxtestutils_a_OBJECTS = $(am_libnoxtestutils_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES =  \
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/libnoxtestutils_a-NOX_Epetra_DebugTools.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libnoxtestutils_a-NOX_TestCompare.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libnoxtestutils_a-NOX_TestUtils.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
@@ -129,7 +136,10 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(libnoxtestutils_a_SOURCES)
-DIST_SOURCES = $(libnoxtestutils_a_SOURCES)
+DIST_SOURCES = $(am__libnoxtestutils_a_SOURCES_DIST)
+am__include_HEADERS_DIST = $(srcdir)/NOX_TestError.H \
+	$(srcdir)/NOX_TestUtils.H $(srcdir)/NOX_TestCompare.H \
+	$(srcdir)/NOX_Epetra_DebugTools.H
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS)
 ETAGS = etags
@@ -343,9 +353,7 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-
-# Needed so this is installed with distributions
-include_HEADERS = \
+NOX_TEST_UTILS_H = \
         $(srcdir)/NOX_TestError.H \
         $(srcdir)/NOX_TestUtils.H \
 	$(srcdir)/NOX_TestCompare.H
@@ -354,12 +362,17 @@ NOX_TEST_UTILS = \
 	$(srcdir)/NOX_TestUtils.C \
 	$(srcdir)/NOX_TestCompare.C
 
-@BUILD_TESTUTILS_TRUE@lib_LIBRARIES = libnoxtestutils.a
+@BUILD_LIBNOXEPETRA_TRUE@NOX_EPETRA_DEBUGTOOLS_H = \
+@BUILD_LIBNOXEPETRA_TRUE@        $(srcdir)/NOX_Epetra_DebugTools.H
+
+@BUILD_LIBNOXEPETRA_TRUE@NOX_EPETRA_DEBUGTOOLS = \
+@BUILD_LIBNOXEPETRA_TRUE@	$(srcdir)/NOX_Epetra_DebugTools.C
+
 
 # ------------------------------------------------------------------------
 # Noxtestutils library specifications
 # ------------------------------------------------------------------------
-libnoxtestutils_a_SOURCES = $(NOX_TEST_UTILS) $(include_HEADERS) 
+libnoxtestutils_a_SOURCES = $(NOX_TEST_UTILS) $(NOX_TEST_UTILS_H) $(NOX_EPETRA_DEBUGTOOLS) $(NOX_EPETRA_DEBUGTOOLS_H) 
 libnoxtestutils_a_CXXFLAGS = \
 	-I$(top_srcdir)/src-loca/src \
 	-I$(top_srcdir)/src \
@@ -368,6 +381,16 @@ libnoxtestutils_a_CXXFLAGS = \
 @USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(NOX_INCLUDES)
 @USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(NOX_INCLUDES))
 AM_CPPFLAGS = $(EXPORT_INCLUDES)
+
+# ------------------------------------------------------------------------
+# When to turn it on
+# ------------------------------------------------------------------------
+
+# List of all libraries to install in $(libexecdir)
+@BUILD_TESTUTILS_TRUE@lib_LIBRARIES = libnoxtestutils.a
+
+# List of all headers to install in $(includedir)
+@BUILD_TESTUTILS_TRUE@include_HEADERS = $(NOX_TEST_UTILS_H) $(NOX_EPETRA_DEBUGTOOLS_H)
 @USE_ALTERNATE_AR_FALSE@libnoxtestutils_a_AR = $(AR) cru
 
 # ------------------------------------------------------------------------
@@ -467,6 +490,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnoxtestutils_a-NOX_Epetra_DebugTools.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnoxtestutils_a-NOX_TestCompare.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libnoxtestutils_a-NOX_TestUtils.Po@am__quote@
 
@@ -517,6 +541,22 @@ libnoxtestutils_a-NOX_TestCompare.obj: $(srcdir)/NOX_TestCompare.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libnoxtestutils_a-NOX_TestCompare.Po' tmpdepfile='$(DEPDIR)/libnoxtestutils_a-NOX_TestCompare.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxtestutils_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxtestutils_a-NOX_TestCompare.obj `if test -f '$(srcdir)/NOX_TestCompare.C'; then $(CYGPATH_W) '$(srcdir)/NOX_TestCompare.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_TestCompare.C'; fi`
+
+libnoxtestutils_a-NOX_Epetra_DebugTools.o: $(srcdir)/NOX_Epetra_DebugTools.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxtestutils_a_CXXFLAGS) $(CXXFLAGS) -MT libnoxtestutils_a-NOX_Epetra_DebugTools.o -MD -MP -MF "$(DEPDIR)/libnoxtestutils_a-NOX_Epetra_DebugTools.Tpo" -c -o libnoxtestutils_a-NOX_Epetra_DebugTools.o `test -f '$(srcdir)/NOX_Epetra_DebugTools.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Epetra_DebugTools.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libnoxtestutils_a-NOX_Epetra_DebugTools.Tpo" "$(DEPDIR)/libnoxtestutils_a-NOX_Epetra_DebugTools.Po"; else rm -f "$(DEPDIR)/libnoxtestutils_a-NOX_Epetra_DebugTools.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Epetra_DebugTools.C' object='libnoxtestutils_a-NOX_Epetra_DebugTools.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libnoxtestutils_a-NOX_Epetra_DebugTools.Po' tmpdepfile='$(DEPDIR)/libnoxtestutils_a-NOX_Epetra_DebugTools.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxtestutils_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxtestutils_a-NOX_Epetra_DebugTools.o `test -f '$(srcdir)/NOX_Epetra_DebugTools.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Epetra_DebugTools.C
+
+libnoxtestutils_a-NOX_Epetra_DebugTools.obj: $(srcdir)/NOX_Epetra_DebugTools.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxtestutils_a_CXXFLAGS) $(CXXFLAGS) -MT libnoxtestutils_a-NOX_Epetra_DebugTools.obj -MD -MP -MF "$(DEPDIR)/libnoxtestutils_a-NOX_Epetra_DebugTools.Tpo" -c -o libnoxtestutils_a-NOX_Epetra_DebugTools.obj `if test -f '$(srcdir)/NOX_Epetra_DebugTools.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Epetra_DebugTools.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Epetra_DebugTools.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libnoxtestutils_a-NOX_Epetra_DebugTools.Tpo" "$(DEPDIR)/libnoxtestutils_a-NOX_Epetra_DebugTools.Po"; else rm -f "$(DEPDIR)/libnoxtestutils_a-NOX_Epetra_DebugTools.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Epetra_DebugTools.C' object='libnoxtestutils_a-NOX_Epetra_DebugTools.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libnoxtestutils_a-NOX_Epetra_DebugTools.Po' tmpdepfile='$(DEPDIR)/libnoxtestutils_a-NOX_Epetra_DebugTools.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxtestutils_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxtestutils_a-NOX_Epetra_DebugTools.obj `if test -f '$(srcdir)/NOX_Epetra_DebugTools.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Epetra_DebugTools.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Epetra_DebugTools.C'; fi`
 uninstall-info-am:
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)

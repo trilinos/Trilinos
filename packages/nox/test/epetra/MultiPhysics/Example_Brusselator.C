@@ -78,6 +78,7 @@
 #include "NOX.H"
 #include "NOX_Epetra.H"
 #include "NOX_TestCompare.H"
+#include "NOX_Epetra_DebugTools.H"
 
 // For parsing command line
 #include "Teuchos_CommandLineProcessor.hpp"
