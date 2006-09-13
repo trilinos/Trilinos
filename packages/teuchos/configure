@@ -8287,7 +8287,7 @@ main ()
 
    DummyClass my_dummy;
    DummyClass *my_dummy_ptr = &my_dummy;
-   double temp = my_dummy_ptr->template get<double>();
+   double temp = (*my_dummy_ptr).get<double>();
 
   ;
   return 0;
@@ -8315,12 +8315,12 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  ac_cv_cxx_invalid_template_qualifier=yes
+  ac_cv_cxx_invalid_template_qualifier=no
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-ac_cv_cxx_invalid_template_qualifier=no
+ac_cv_cxx_invalid_template_qualifier=yes
 fi
 rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
  ac_ext=cc
