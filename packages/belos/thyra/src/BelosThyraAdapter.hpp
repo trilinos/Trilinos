@@ -49,8 +49,7 @@ namespace Belos {
   //
   ////////////////////////////////////////////////////////////////////////////
 
-  /*! \class MultiVecTraits< ScalarType, Thyra::MultiVectorBase<ScalarType> >
-    \brief Template specialization of Belos::MultiVecTraits class using the
+  /*!  \brief Template specialization of Belos::MultiVecTraits class using the
     Thyra::MultiVectorBase class.
 
     This interface will ensure that any implementation of MultiVectorBaseClass 
@@ -348,10 +347,7 @@ namespace Belos {
   //
   ///////////////////////////////////////////////////////////////////////// 
 
-  /*! \class OperatorTraits< ScalarType ,
-                             Thyra::MultiVectorBase<ScalarType> ,  
-                             Thyra::LinearOpBase<ScalarType> >
-    \brief Template specialization of Belos::OperatorTraits class using the
+  /*!  \brief Template specialization of Belos::OperatorTraits class using the
     Thyra::LinearOpBase virtual base class and Thyra::MultiVectorBase class.
 
     This interface will ensure that any LinearOpBase and MultiVectorBase

@@ -58,7 +58,8 @@ namespace Belos {
    
   public:
     
-    //@{ \name Constructors/Destructor.
+    //! @name Constructors/Destructor
+    //@{ 
     //!  Default Constructor.
     /*! Creates an empty Belos::LinearProblem instance. The operator A, left-hand-side X
       and right-hand-side B must be set using the SetOperator(), SetLHS() and SetRHS()
@@ -88,7 +89,8 @@ namespace Belos {
     virtual ~LinearProblem(void);
     //@}
     
-    //@{ \name Set methods
+    //! @name Set methods
+    //@{ 
     
     //! Set Operator A of linear problem AX = B.
     /*! Sets a pointer to an Operator.  No copy of the operator is made.
@@ -146,7 +148,8 @@ namespace Belos {
     
     //@}
     
-    //@{ \name Reset method
+    //! @name Reset method
+    //@{ 
     
     //! Reset the linear problem manager.
     /*! This is useful for solving the linear system with another right-hand side.  
@@ -155,7 +158,8 @@ namespace Belos {
     void Reset( const RefCountPtr<MV> &newX = null, const RefCountPtr<const MV> &newB = null );
     //@}
     
-    //@{ \name Accessor methods
+    //! @name Accessor methods
+    //@{ 
     
     //! Get a pointer to the operator A.
     RefCountPtr<const OP> GetOperator() const { return(A_); };
@@ -260,7 +264,8 @@ namespace Belos {
     
     //@}
     
-    //@{ \name Apply / Compute methods
+    //! @name Apply / Compute methods
+    //@{ 
     
     //! Apply the composite operator of this linear problem to \c x, returning \c y.
     /*! This application is the composition of the left/right preconditioner and operator.

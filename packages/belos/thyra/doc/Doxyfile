@@ -2,7 +2,7 @@
 # Note: all relative paths are relative to package/doc!
 #
 @INCLUDE = Doxyfile.options
-@INCLUDE = epetra/doc/TagFiles # Requires @INCLUDE_PATH=$(TRILINOS_HOME)/packages
+#@INCLUDE = epetra/doc/TagFiles # Requires @INCLUDE_PATH=$(TRILINOS_HOME)/packages
 #
 # Package options
 #
@@ -27,7 +27,8 @@ IGNORE_PREFIX          =
 #
 # Links to other packages
 #
-TAGFILES               += ../../common/tag_files/amesos.tag=../../../doc/html
-GENERATE_TAGFILE       = ../../common/tag_files/AmesosThyra.tag
+TAGFILES               += ../../common/tag_files/amesos.tag=../../../doc/html ../../common/tag_files/teuchos.tag=../../../teuchos/doc/html ../../common/tag_files/amesos.tag=../../../epetra/doc/html 
+# TAGFILES               = 
+GENERATE_TAGFILE       = ../../common/tag_files/BelosThyra.tag
 ALLEXTERNALS           = NO
 EXTERNAL_GROUPS        = NO

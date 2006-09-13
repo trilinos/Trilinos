@@ -94,7 +94,7 @@ namespace Belos {
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename SCT::magnitudeType MagnitudeType;
     
-    /** \name Constructor/Destructor. */
+    /** @name Constructor/Destructor */
     //@{
     //! %Belos::BlockGmres constructor.
     BlockGmres(const RefCountPtr<LinearProblem<ScalarType,MV,OP> > &lp, 
@@ -107,7 +107,7 @@ namespace Belos {
     virtual ~BlockGmres() {};
     //@}
     
-    /** \name Accessor methods */
+    /** @name Accessor methods */
     //@{
     
     //! Get the iteration count for the current block of linear systems.

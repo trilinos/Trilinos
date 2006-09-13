@@ -1,6 +1,6 @@
-# Doxyfile 1.3.5
+# Doxyfile 1.4.2
 
-@INCLUDE               = ../../../../Trilinos/packages/common/Doxyfile
+@INCLUDE               = ../../../packages/common/Doxyfile
 
 ############################################################################
 # TRILINOS PACKAGE DEVELOPERS:
@@ -24,11 +24,11 @@
 #   up to Trilinos' parent and back down to your resource (see the @INCLUDE
 #   above for an example). This should ALWAYS be:
 #
-#       ../../../../Trilinos/YOUR_RESOURCE...
+#       ../../../YOUR_RESOURCE...
 #
 #   and will usually be:
 #
-#       ../../../../Trilinos/packages/YOUR_PACKAGE/YOUR_RESOURCE...
+#       ../../../packages/YOUR_PACKAGE/YOUR_RESOURCE...
 #
 #   IF YOU DON'T DO THIS, DOXYGEN WILL NOT BE ABLE TO LOCATE YOUR RESOURCES!
 #
@@ -95,8 +95,8 @@ QUIET                  = NO
 WARNINGS               = YES
 WARN_IF_UNDOCUMENTED   = YES
 WARN_FORMAT            = "$file:$line: $text"
-INPUT                  = ../../../../Trilinos/packages/belos/src \
-                         ../../../../Trilinos/packages/belos/doc/index.doc
+INPUT                  = ../../../packages/belos/src \
+                         ../../../packages/belos/doc/index.doc
 FILE_PATTERNS          = *.h *.hpp *.cpp
 RECURSIVE              = YES
 EXCLUDE                = 
@@ -125,18 +125,14 @@ EXPAND_ONLY_PREDEF     = YES
 SEARCH_INCLUDES        = YES
 INCLUDE_FILE_PATTERNS  = 
 PREDEFINED             = DOXYGEN_COMPILE DOXYGEN_SHOULD_SKIP_THIS EPETRA_MPI
-INCLUDE_PATH           = ../../../../Trilinos/packages/teuchos/src \
-                         ../../../../Trilinos/packages/TSFCoreUtils/src/MoochoUtilities
+INCLUDE_PATH           = ../../teuchos/src
 EXPAND_AS_DEFINED      = STANDARD_COMPOSITION_MEMBERS STANDARD_NONCONST_COMPOSITION_MEMBERS \
                          STANDARD_CONST_COMPOSITION_MEMBERS STANDARD_MEMBER_COMPOSITION_MEMBERS
 #
 # Links to other packages
 #
-TAGFILES               = ../../../../Trilinos/packages/teuchos/doc/teuchos.tag=../../../../../Trilinos/packages/teuchos/doc/html \
-                         ../../../../Trilinos/packages/TSFCoreUtils/doc/TSFCoreUtils.tag=../../../../../Trilinos/packages/TSFCoreUtils/doc/html \
-                         ../../../../Trilinos/packages/TSFCore/doc/TSFCore.tag=../../../../../Trilinos/packages/TSFCore/doc/html \
-                         ../../../../Trilinos/packages/epetra/doc/epetra.tag=../../../../../Trilinos/packages/epetra/doc/html
-GENERATE_TAGFILE       = belos.tag
+TAGFILES               = ../../common/tag_files/epetra.tag=../../../epetra/doc/html ../../common/tag_files/teuchos.tag=../../../teuchos/doc/html 
+GENERATE_TAGFILE       = ../../common/tag_files/belos.tag
 ALLEXTERNALS           = NO
 EXTERNAL_GROUPS        = NO
 #

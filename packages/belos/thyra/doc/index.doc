@@ -57,7 +57,7 @@ the %Belos to %Thyra linear solver adapters:
 
 */
 
-/** \defgroup single_belos_thyra_adapters_testing_prg_grp Testing Program for the Belos/Thyra Linear Solver Adapters.
+/** \defgroup single_belos_thyra_adapters_testing_prg_grp Testing Program for the Belos/Thyra Linear Solver Adapters
 
 \ingroup Belos_Thyra_examples_grp
 

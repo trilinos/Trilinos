@@ -49,7 +49,8 @@ namespace Belos {
 template <class ScalarType>
 class MultiVec {
 public:
-	//@{ \name Constructor/Destructor.
+  //! @name Constructor/Destructor
+	//@{ 
 	//! %Belos::MultiVec constructor.
 	MultiVec() {};
 
@@ -57,7 +58,8 @@ public:
 	virtual ~MultiVec () {};
 
 	//@}
-	//@{ \name Creation methods for new multivectors.
+  //! @name Creation methods for new multivectors
+	//@{ 
 
 	/*! \brief Creates a new empty %Belos::MultiVec containing \c numvecs columns.
 
@@ -93,7 +95,8 @@ public:
 	virtual MultiVec<ScalarType> * CloneView ( const std::vector<int>& index ) = 0;
 	//@}
 
-	//@{ \name Dimension information methods.	
+  //! @name Dimension information methods	
+	//@{ 
 	//! Obtain the vector length of *this multivector block.
 
 	virtual int GetVecLength () const = 0;
@@ -103,7 +106,8 @@ public:
 	virtual int GetNumberVecs () const = 0;
 
 	//@}
-	//@{ \name Update methods.
+  //! @name Update methods
+	//@{ 
 	/*! \brief Update \c *this with \c alpha * \c A * \c B + \c beta * (\c *this).
 	*/
 
@@ -127,7 +131,8 @@ public:
 	virtual void MvDot ( const MultiVec<ScalarType>& A, std::vector<ScalarType>* b ) const = 0;
 
 	//@}
-	//@{ \name Norm method.
+  //! @name Norm method
+	//@{ 
 
 	/*! \brief Compute the 2-norm of each individual vector of \c *this.  
 	   Upon return, \c normvec[i] holds the 2-norm of the \c i-th vector of \c *this
@@ -136,7 +141,8 @@ public:
         virtual void MvNorm ( std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>* normvec, NormType type = TwoNorm ) const = 0;
 
 	//@}
-	//@{ \name Initialization methods.
+  //! @name Initialization methods
+	//@{ 
 	/*! \brief Copy the vectors in \c A to a set of vectors in \c *this.  The \c 
   	    numvecs vectors in \c A are copied to a subset of vectors in \c *this
 	    indicated by the indices given in \c index.
@@ -155,7 +161,8 @@ public:
 	virtual void MvInit ( const ScalarType alpha ) = 0;
 
 	//@}
-	//@{ \name Print method.
+  //! @name Print method
+	//@{ 
 	/*! \brief Print the \c *this multivector.
 	*/
 	virtual void MvPrint ( ostream& os ) const = 0;

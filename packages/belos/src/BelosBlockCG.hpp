@@ -89,7 +89,8 @@ public:
   typedef Teuchos::ScalarTraits<ScalarType> SCT;
   typedef typename SCT::magnitudeType MagnitudeType;
 
-  //@{ \name Constructor/Destructor.
+  //! @name Constructor/Destructor
+  //@{ 
 
   //! %Belos::BlockCG constructor.
   BlockCG(const RefCountPtr<LinearProblem<ScalarType,MV,OP> > &lp,
@@ -102,7 +103,8 @@ public:
   virtual ~BlockCG() {};
   //@}
   
-  //@{ \name Accessor methods
+  //! @name Accessor methods
+  //@{ 
   
   //! Get the iteration count for the current block of linear systems.
   int GetNumIters() const { return( _iter ); }
@@ -133,7 +135,8 @@ public:
 
   //@} 
   
-  //@{ \name Solver application method.
+  //! @name Solver application method
+  //@{ 
   
   /*! \brief This method uses the iterative method to compute approximate solutions
     to the original problem.  This method can return unconverged if the maximum number
@@ -142,7 +145,7 @@ public:
   void Solve();
   //@}
  
-  /** \name Overridden from Teuchos::Describable */
+  //! @name Overridden from Teuchos::Describable
   //@{
 
   /** \brief Method to return description of the block GMRES solver */

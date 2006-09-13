@@ -85,7 +85,8 @@ class StatusTestCombo: public StatusTest<ScalarType,MV,OP> {
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS
   
-  //@{ \name Enums.
+  //! @name Enums
+  //@{ 
   /*! 
     \brief The test can be either the AND of all the component tests,
     or the OR of all the component tests, or a sequential AND (SEQ).
@@ -97,7 +98,8 @@ class StatusTestCombo: public StatusTest<ScalarType,MV,OP> {
   };
   //@}
 
-  //@{ \name Constructors / Destructor.
+  //! @name Constructors / Destructor
+  //@{ 
 
   //! Constructor
   StatusTestCombo(ComboType t);
@@ -115,7 +117,8 @@ class StatusTestCombo: public StatusTest<ScalarType,MV,OP> {
   virtual ~StatusTestCombo() {};
   //@}
 
-  //@{ \name Status methods
+  //! @name Status methods
+  //@{ 
   
   //! Check convergence status of the iterative solver: Unconverged, Converged, Failed.
   /*! This method checks to see if the convergence criteria are met using the current information from the 
@@ -128,7 +131,8 @@ class StatusTestCombo: public StatusTest<ScalarType,MV,OP> {
 
   //@}
 
-  //@{ \name Reset methods
+  //! @name Reset methods
+  //@{ 
 
   //! Resets all the status tests in this combination to their initial internal state.
   /*! This should be done when the status test is being reused with another solver or linear problem.
@@ -137,14 +141,16 @@ class StatusTestCombo: public StatusTest<ScalarType,MV,OP> {
 
   //@}
 
-  //@{ \name Accessor methods
+  //! @name Accessor methods
+  //@{ 
 
   //! Returns the maximum number of iterations set in the constructor.
   ComboType GetComboType() const {return(type_);};
 
   //@}
 
-  //@{ \name Attribute methods
+  //! @name Attribute methods
+  //@{ 
 
   //! Indicates if residual vector is required by this convergence test.
   /*! If this method returns true, then one or more of the StatusTest objects that make up this combined
@@ -153,7 +159,8 @@ class StatusTestCombo: public StatusTest<ScalarType,MV,OP> {
   bool ResidualVectorRequired() const;
 
   //@}
-  //@{ \name Print methods
+  //! @name Print methods
+  //@{ 
   
   //! Output formatted description of stopping test to output stream
   ostream& Print(ostream& os, int indent = 0) const;
@@ -162,7 +169,8 @@ class StatusTestCombo: public StatusTest<ScalarType,MV,OP> {
 
 protected:
 
-  //@{ \name Internal methods.
+  //! @name Internal methods.
+  //@{ 
   //! Use this for checkStatus when this is an OR type combo. Updates status.
   void OrOp( IterativeSolver<ScalarType,MV,OP>* iSolver );
 
@@ -179,7 +187,8 @@ protected:
 
  private:
 
-  //@{ \name Private data members.
+  //! @name Private data members.
+  //@{ 
   //! Type of test
   ComboType type_;
 

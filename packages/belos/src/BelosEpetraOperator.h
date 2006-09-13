@@ -68,7 +68,8 @@ namespace Belos {
 
 class EpetraOperator : public virtual Epetra_Operator {
 public:
-  //@{ \name Constructor / Destructor
+  //! @name Constructor / Destructor
+  //@{ 
   
   //! Constructor
   EpetraOperator( const RefCountPtr<LinearProblem<double,Epetra_MultiVector,Epetra_Operator> >& lp, 
@@ -80,13 +81,15 @@ public:
   virtual ~EpetraOperator() {}
   //@}
   
-  //@{ \name Attribute methods
+  //! @name Attribute methods
+  //@{ 
   
   //! Set whether the operator or its inverse should be applied. [ This option is not implemented ]
   int SetUseTranspose( bool UseTranspose ) { return(-1); };
   //@}
   
-  //@{ \name Operator application methods
+  //! @name Operator application methods
+  //@{ 
   
   //! Apply the operator.
   int Apply( const Epetra_MultiVector &X, Epetra_MultiVector &Y ) const;
@@ -95,13 +98,15 @@ public:
   int ApplyInverse( const Epetra_MultiVector &X, Epetra_MultiVector &Y ) const;
   //@}
   
-  //@{ \name Norm methods
+  //! @name Norm methods
+  //@{ 
   
   //! Compute the infinity norm of the operator. [ This option is not implemented ]
   double NormInf() const { return(0.0); };
   //@}
   
-  //@{ \name Attribute access functions
+  //! @name Attribute access functions
+  //@{ 
   
   //! Return the label of the operator.
   const char* Label() const { return(&Solver[0]); };

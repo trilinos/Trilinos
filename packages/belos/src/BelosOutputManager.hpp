@@ -55,7 +55,8 @@ namespace Belos {
     
   public:
     
-    //@{ \name Constructors/Destructor.
+    //! @name Constructors/Destructor
+    //@{ 
     
     //! Default constructor
     OutputManager();
@@ -67,7 +68,8 @@ namespace Belos {
     virtual ~OutputManager() {};
     //@}
     
-    //@{ \name Set methods.
+    //! @name Set methods
+    //@{ 
     
     //! Set the output stream for this manager.
     void SetOStream( const Teuchos::RefCountPtr<ostream> &os ) { myOS_ = os; };
@@ -77,14 +79,16 @@ namespace Belos {
     
     //@}
     
-    //@{ \name Get methods.
+    //! @name Get methods
+    //@{ 
     
     //! Get the output stream for this manager.
     Teuchos::RefCountPtr<ostream> GetOStream() { return myOS_; };
     
     //@}
     
-    //@{ \name Query methods.
+    //! @name Query methods
+    //@{ 
     
     //! Find out whether we need to print out information for this message type.
     /*! This method is used by the solver to determine whether computations are
@@ -105,7 +109,8 @@ namespace Belos {
     
   private:
     
-    //@{ \name Undefined methods.
+    //! @name Undefined methods
+    //@{ 
     
     //! Copy constructor.
     OutputManager( const OutputManager<ScalarType>& OM );

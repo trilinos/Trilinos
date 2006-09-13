@@ -52,7 +52,8 @@ class StatusTestMaxRestarts: public StatusTest<ScalarType,MV,OP> {
 
  public:
 
-  //@{ \name Constructor/Destructor.
+   //! @name Constructor/Destructor.
+  //@{ 
 
   //! Constructor
   StatusTestMaxRestarts(int maxIters);
@@ -61,7 +62,8 @@ class StatusTestMaxRestarts: public StatusTest<ScalarType,MV,OP> {
   virtual ~StatusTestMaxRestarts() {};
   //@}
 
-  //@{ \name Status methods
+  //! @name Status methods
+  //@{ 
 
   //! Check convergence status of the iterative solver: Unconverged, Converged, Failed.
   /*! This method checks to see if the convergence criteria are met using the current information from the 
@@ -74,14 +76,16 @@ class StatusTestMaxRestarts: public StatusTest<ScalarType,MV,OP> {
 
   //@}
 
-  //@{ \name Reset methods
+  //! @name Reset methods
+  //@{ 
   
   //! Resets the internal configuration to the initial state
   void Reset();
 
   //@}
 
-  //@{ \name Accessor methods
+  //! @name Accessor methods
+  //@{ 
 
   //! Returns the maximum number of restarts set in the constructor.
   int GetMaxRestarts() const { return(maxRestarts_); };
@@ -91,13 +95,15 @@ class StatusTestMaxRestarts: public StatusTest<ScalarType,MV,OP> {
 
   //@}
 
-  //@{ \name Attribute methods
+  //! @name Attribute methods
+  //@{ 
 
   //! Indicates if residual vector is required by this convergence test: returns false for this class.
   bool ResidualVectorRequired() const { return(false); } ;
   //@}
 
-  //@{ \name Print methods
+  //! @name Print methods
+  //@{ 
 
   //! Output formatted description of stopping test to output stream
   ostream& Print(ostream& os, int indent = 0) const;
@@ -107,7 +113,8 @@ class StatusTestMaxRestarts: public StatusTest<ScalarType,MV,OP> {
 
 private:
 
-  //@{ \name Private data members.
+  //! @name Private data members.
+  //@{ 
   //! Maximum number of restarts allowed
   int maxRestarts_;
 

@@ -30,8 +30,8 @@
 #define BELOS_STATUS_TEST_OUTPUTTER_HPP
 
 /*!
-  \file BelosStatusTestResNorm.hpp
-  \brief Belos::StatusTest for specifying a residual norm stopping criteria.
+  \file BelosStatusTestOutputter.hpp
+  \brief Belos::StatusTest for affecting printing of Belos::StatusTest objects.
 */
 
 #include "BelosStatusTestResNorm.hpp"

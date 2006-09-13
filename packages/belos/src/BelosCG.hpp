@@ -77,7 +77,8 @@ namespace Belos {
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename SCT::magnitudeType MagnitudeType;
     
-    //@{ \name Constructor/Destructor.
+    //! @name Constructor/Destructor.
+    //@{ 
 
     //! %Belos::CG constructor.
     CG(const RefCountPtr<LinearProblem<ScalarType,MV,OP> > &lp, 
@@ -90,7 +91,8 @@ namespace Belos {
     virtual ~CG() {};
     //@}
     
-    //@{ \name Accessor methods
+    //! @name Accessor methods
+    //@{ 
     
     //! Get the iteration count for the current linear system.
     int GetNumIters() const { return( _iter ); }
@@ -120,7 +122,8 @@ namespace Belos {
 
     //@} 
     
-    //@{ \name Solver application method.
+    //! @name Solver application method.
+    //@{ 
     
     /*! \brief This method uses the iterative method to compute approximate solutions
       to the original problem.  This method can return unconverged if the maximum number
@@ -129,7 +132,7 @@ namespace Belos {
     void Solve();
     //@}
 
-    /** \name Overridden from Teuchos::Describable */
+    /** @name Overridden from Teuchos::Describable */
     //@{
     
     /** \brief Method to return description of the block GMRES solver */

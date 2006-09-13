@@ -72,7 +72,8 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
   typedef typename SCT::magnitudeType MagnitudeType;
   typedef MultiVecTraits<ScalarType,MV>  MVT;
 
-  //@{ \name Enums.
+  //! @name Enums.
+  //@{ 
   /*! 
     \brief Select how the residual vector is produced.
   */
@@ -93,7 +94,8 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
   };
   //@}
 
-  //@{ \name Constructors/destructors.
+  //! @name Constructors/destructors.
+  //@{ 
   //! Constructor
   /*! The constructor takes a single argument specifying the tolerance (\f$\tau\f$).  
     If none of the form definition methods are called, we use \f$\|r\|_2/\|r^{(0)}\|_2 \le \tau\f$ 
@@ -111,7 +113,8 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
   virtual ~StatusTestResNorm();
   //@}
 
-  //@{ \name Form and parameter definition methods.
+  //! @name Form and parameter definition methods.
+  //@{ 
 
   //! Define form of the residual, its norm and optional weighting vector.
   /*! This method defines the form of \f$\|r\|\f$.  We specify:
@@ -154,7 +157,8 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
 
   //@}
 
-  //@{ \name Status methods
+  //! @name Status methods
+  //@{ 
   //! Check convergence status: Unconverged, Converged, Failed.
   /*! This method checks to see if the convergence criteria are met.  
     Depending on how the residual test is constructed this method will return 
@@ -168,14 +172,16 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
   StatusType GetStatus() const {return(status_);};
   //@}
 
-  //@{ \name Reset methods
+  //! @name Reset methods
+  //@{ 
  
   //! Resets the internal configuration to the initial state.
   void Reset();
 
   //@}
 
-  //@{ \name Attribute methods
+  //! @name Attribute methods
+  //@{ 
 
   //! Indicates if residual vector is required by this convergence test.
   /*! The value returned by this method will depend on several factors.  
@@ -190,13 +196,15 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
 
   //@}
 
-  //@{ \name Print methods
+  //! @name Print methods
+  //@{ 
 
   //! Output formatted description of stopping test to output stream.
   ostream& Print(ostream& os, int indent = 0) const;
   //@}
 
-  //@{ \name Methods to access data members.
+  //! @name Methods to access data members.
+  //@{ 
 
   //! Returns the value of the tolerance, \f$ \tau \f$, set in the constructor.
   MagnitudeType GetTolerance() const {return(tolerance_);};
@@ -213,7 +221,7 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
   //@}
 
 
-  /** \name Misc. */
+  /** @name Misc. */
   //@{
 
   /** \brief Call to setup initial scaling vector.
@@ -227,7 +235,8 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
 
  private:
 
-  //@{ \name Private data members.
+  //! @name Private data members.
+  //@{ 
   
   //! Tolerance used to determine convergence
   MagnitudeType tolerance_;
