@@ -634,10 +634,11 @@ cleanUp();
         # Is this file in a 'test' directory?
         # Is this file named 'definition'?
         if ($File::Find::dir =~ m/test$/ && $File::Find::name =~ m/definition$/) {
-            
+
             # Figure out package name for reporting's sake.
-            (my $package = $File::Find::dir) =~ m/\.\/(.*?)\/.*test/;
-            $package = $1;
+            (my $package = $File::Find::dir) =~ m/\.\/((external\/)?(.*?)\/test)/;
+            $package = $3;
+	    my $packageTestPath = $1;
             
             # If the user supplies a list of packages to test (to the exclusion
             # of all others), return if this package isn't on that list.
@@ -765,12 +766,12 @@ cleanUp();
                         # constructing that path is bullet-proof.  It may be
                         # making assumptions about the precise contents of
                         # $package and $dir.
-                        my $builtTestDirPath = "$buildDir/packages/$package/test/$dir";
+                        my $builtTestDirPath = "$buildDir/packages/$packageTestPath/$dir";
                     
                         if (opendir(DIR, $builtTestDirPath)) {
                             while (defined (my $file = readdir(DIR))) {
-                                my $absFile = "$buildDir/packages/$package/test/$dir/$file";
-                                if ( isValidTestExec("$buildDir/packages/$package/test/$dir",$file) ) {
+                                my $absFile = "$buildDir/packages/$packageTestPath/$dir/$file";
+                                if ( isValidTestExec("$buildDir/packages/$packageTestPath/$dir",$file) ) {
                                   push( @{ $definitionAoHoA[$i]{'TESTS'} }, "$dir/$file");
                                 }
                             }
@@ -780,13 +781,14 @@ cleanUp();
                     
                     # Add a complete hash entry for each test listed in TESTS.
                     foreach my $test (@{ $definitionAoHoA[$i]{'TESTS'} }) {
-                    
+
                         # Check the build directory to make sure that every test
                         # is actually there and executable.  It is done above
                         # for tests specified with "DIRS = ", but this is needed
                         # here to make sure tests specified with "TESTS = " are
                         # actually built too.
-                        if (-x "$buildDir/packages/$package/test/$test") {
+
+                        if (-x "$buildDir/packages/$packageTestPath/$test") {
                         
                             # Each argument specified gets its own test run.
                             foreach my $argOrig (@{ $definitionAoHoA[$i]{'ARGS'} }) {
@@ -842,7 +844,7 @@ cleanUp();
                                         $masterFile =~ s/^.*?:::(.*?):::$/$1/;
                                         $testEntry{'masterFile'} = "$testDir/$masterFile";
                                         $arg =~ s/:::.*?::://;
-                                        if (-f "$buildDir/packages/$package/test/$testDir/$arg") {
+                                        if (-f "$buildDir/packages/$packageTestPath/$testDir/$arg") {
                                             $arg = "./$testDir/$arg";
                                         }
                                         
@@ -936,9 +938,9 @@ cleanUp();
                                                         }
                                                         if ($host =~ m/atlantis/) {                                                            
                                                             if ($testEntry{'descendDirs'} eq "YES") {
-                                                                $testEntry{'command'} = "$mpiGo"."$numProc $buildDir/packages/$package/test/".$testEntry{'directory'}."/".$testEntry{'name'}." ".$arg;
+                                                                $testEntry{'command'} = "$mpiGo"."$numProc $buildDir/packages/$packageTestPath/".$testEntry{'directory'}."/".$testEntry{'name'}." ".$arg;
                                                             } else { 
-                                                                $testEntry{'command'} = "$mpiGo"."$numProc $buildDir/packages/$package/test/".$testEntry{'directory'}."/".$testEntry{'name'}." ".$arg;
+                                                                $testEntry{'command'} = "$mpiGo"."$numProc $buildDir/packages/$packageTestPath/".$testEntry{'directory'}."/".$testEntry{'name'}." ".$arg;
                                                             }
                                                         } else {
                                                             if ($testEntry{'descendDirs'} eq "YES") {
@@ -955,9 +957,9 @@ cleanUp();
                                                     if ($numProc <= $maxProc) { 
                                                         if ($host =~ m/atlantis/) {
                                                             if ($testEntry{'descendDirs'} eq "YES") {
-                                                                $testEntry{'command'} = "$mpiGo"."$numProc $buildDir/packages/$package/test/".$testEntry{'directory'}."/".$testEntry{'name'}." ".$arg;
+                                                                $testEntry{'command'} = "$mpiGo"."$numProc $buildDir/packages/$packageTestPath/".$testEntry{'directory'}."/".$testEntry{'name'}." ".$arg;
                                                             } else { 
-                                                                $testEntry{'command'} = "$mpiGo"."$numProc $buildDir/packages/$package/test/".$testEntry{'directory'}."/".$testEntry{'name'}." ".$arg;
+                                                                $testEntry{'command'} = "$mpiGo"."$numProc $buildDir/packages/$packageTestPath/".$testEntry{'directory'}."/".$testEntry{'name'}." ".$arg;
                                                             }
                                                         } else {
                                                             if ($testEntry{'descendDirs'} eq "YES") {
@@ -977,9 +979,9 @@ cleanUp();
                                             my $numProc = $maxProc;
                                             if ($host =~ m/atlantis/) {
                                                 if ($testEntry{'descendDirs'} eq "YES") {
-                                                    $testEntry{'command'} = "$mpiGo"."$numProc $buildDir/packages/$package/test/".$testEntry{'directory'}."/".$testEntry{'name'}." ".$arg;
+                                                    $testEntry{'command'} = "$mpiGo"."$numProc $buildDir/packages/$packageTestPath/".$testEntry{'directory'}."/".$testEntry{'name'}." ".$arg;
                                                 } else { 
-                                                    $testEntry{'command'} = "$mpiGo"."$numProc $buildDir/packages/$package/test/".$testEntry{'directory'}."/".$testEntry{'name'}." ".$arg;
+                                                    $testEntry{'command'} = "$mpiGo"."$numProc $buildDir/packages/$packageTestPath/".$testEntry{'directory'}."/".$testEntry{'name'}." ".$arg;
                                                 }
                                             } else {
                                                 if ($testEntry{'descendDirs'} eq "YES") {
@@ -1037,7 +1039,7 @@ cleanUp();
             $status++;
             $errorString .= "! Can't open definition file.\n";
         }
-            
+
         # Read definition file into one string.
         undef $/;               # undefine input record separator
         my $file=<DEFINITION>;  # copy entire file
@@ -1051,7 +1053,7 @@ cleanUp();
         $file =~ s/\s*$//mg;        # remove trailing spaces
         $file =~ s/\n//g;           # remove all newlines (force ourselves
                                     # to avoid making assumptions about formatting)
-                                    
+        
         # Escape key characters
         $file =~ s/\\\{/\[\[\[ESCAPED_LEFT_BRACE\]\]\]/g;
         $file =~ s/\\\}/\[\[\[ESCAPED_RIGHT_BRACE\]\]\]/g;
