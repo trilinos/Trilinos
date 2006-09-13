@@ -565,7 +565,7 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
     for (int AID = 0; AID < NumAggregates; ++AID)
     {
       double dtemp = 0.0;
-      for (int j = 0; j < NodesOfAggregate[AID].size(); j++)
+      for (int j = 0; j < (int) (NodesOfAggregate[AID].size()); j++)
         for (int m = 0; m < NumPDEEqns_; ++m)
         {
           const int& pos = NodesOfAggregate[AID][j] * NumPDEEqns_ + m;
@@ -577,7 +577,7 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
 
       dtemp = 1.0 / dtemp;
 
-      for (int j = 0; j < NodesOfAggregate[AID].size(); j++)
+      for (int j = 0; j < (int) (NodesOfAggregate[AID].size()); j++)
         for (int m = 0; m < NumPDEEqns_; ++m)
           ns_ptr[NodesOfAggregate[AID][j] * NumPDEEqns_ + m] *= dtemp;
     }
@@ -685,7 +685,6 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
       ML_CHK_ERR(-1);
     }
 
-    int ColoredP_LDA = FineMap.NumMyPoints();
     int ColoredAP_LDA = NodeListMap->NumMyPoints();
 
     ColoredP->PutScalar(0.0);
@@ -703,7 +702,6 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
 
       assert (NumEntries == 1); // this is the block P
       const int& Color = (*Colors)[Indices] - 1;
-      const int& MyLength = ColoredP->MyLength();
       for (int k = 0; k < NumPDEEqns_; ++k)
         for (int j = 0; j < NullSpaceDim; ++j)
           (*ColoredP)[(Color * NullSpaceDim + j)][i * NumPDEEqns_ + k] = 
@@ -745,7 +743,7 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
 
     for (int i = 0; i < NumAggregates; ++i)
     {
-      for (int j = 0; j < aggregates[i].size(); ++j)
+      for (int j = 0; j < (int) (aggregates[i].size()); ++j)
       {
         int GRID = aggregates[i][j];
         int LRID = BlockNodeListMap->LID(GRID); // this is the block ID
@@ -832,8 +830,6 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
         if (Color != ic)
           continue; // skip this color for this cycle
 
-        const int& MyLength = ColoredP.MyLength();
-
         for (int k = 0; k < NumPDEEqns_; ++k)
           for (int j = 0; j < NullSpaceDim; ++j)
             ColoredP[j][i * NumPDEEqns_ + k] = 
@@ -852,7 +848,7 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
 
       for (int i = 0; i < NumAggregates; ++i)
       {
-        for (int j = 0; j < aggregates[i].size(); ++j)
+        for (int j = 0; j < (int) (aggregates[i].size()); ++j)
         {
           int GRID = aggregates[i][j];
           int LRID = BlockNodeListMap->LID(GRID); // this is the block ID
@@ -982,7 +978,6 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
   C_ = rcp(new ML_Epetra::RowMatrix(C_ML_, &Comm(), false));
   assert (R_->OperatorRangeMap().SameAs(C_->OperatorDomainMap()));
 
-  double SetupTime = TotalTime.ElapsedTime();
   TotalTime.ResetStartTime();
 
   AddAndResetStartTime("computation of C", true); 
@@ -1036,11 +1031,6 @@ TotalCPUTime() const
 int ML_Epetra::MatrixFreePreconditioner::
 GetBlockDiagonal(const Epetra_CrsGraph& Graph, string DiagonalColoringType)
 {
-  int OperatorDomainPoints = Operator_.OperatorDomainMap().NumGlobalPoints();
-  int OperatorRangePoints =  Operator_.OperatorRangeMap().NumGlobalPoints();
-  int GraphBlockRows = Graph.NumGlobalBlockRows();
-  int GraphNnz = Graph.NumGlobalNonzeros();
-
   CrsGraph_MapColoring MapColoringTransform(CrsGraph_MapColoring::JONES_PLASSMAN,
                                             0, true, 0);
 
@@ -1114,7 +1104,6 @@ ApplyInvBlockDiag(const double alpha, Epetra_MultiVector& X,
                   const double beta, const Epetra_MultiVector& B) const
 {
   assert (X.NumVectors() == 1);
-  int OperatorRangePoints =  Operator_.OperatorRangeMap().NumGlobalPoints();
   int NumPDEEqns2 = NumPDEEqns_ * NumPDEEqns_;
 
   char trans = 'N';
