@@ -59,7 +59,8 @@ class Epetra_MsrMatrix: public Epetra_Object, public Epetra_CompObject, public v
       
  public:
 
-  //@{ \name Constructors/Destructor.
+   //! @name Constructors/Destructor
+  //@{ 
   //! Epetra_MsrMatrix constuctor using existing Aztec DMSR matrix.
   /*! Creates a Epetra_MsrMatrix object by encapsulating an existing Aztec DMSR matrix. The
       Aztec matrix must come in as an AZ_MATRIX pointer, and AZ_transform must have called.  
@@ -77,7 +78,8 @@ class Epetra_MsrMatrix: public Epetra_Object, public Epetra_CompObject, public v
   virtual ~Epetra_MsrMatrix();
   //@}
   
-  //@{ \name Extraction methods.
+  //! @name Extraction methods
+  //@{ 
 
     //! Returns a copy of the specified local row in user-provided arrays.
     /*! 
@@ -106,7 +108,8 @@ class Epetra_MsrMatrix: public Epetra_Object, public Epetra_CompObject, public v
     int ExtractDiagonalCopy(Epetra_Vector & Diagonal) const;
     //@}
 
-  //@{ \name Computational methods.
+    //! @name Computational methods
+  //@{ 
 
     //! Returns the result of a Epetra_MsrMatrix multiplied by a Epetra_MultiVector X in Y.
     /*! 
@@ -185,7 +188,8 @@ class Epetra_MsrMatrix: public Epetra_Object, public Epetra_CompObject, public v
     int RightScale(const Epetra_Vector& x);
   //@}
 
-  //@{ \name Matrix Properties Query Methods.
+  //! @name Matrix Properties Query Methods
+  //@{ 
 
 
     //! If FillComplete() has been called, this query returns true, otherwise it returns false.
@@ -199,7 +203,8 @@ class Epetra_MsrMatrix: public Epetra_Object, public Epetra_CompObject, public v
 
   //@}
   
-  //@{ \name Atribute access functions
+  //! @name Atribute access functions
+  //@{ 
 
     //! Returns a pointer to the Aztec Msr matrix used to create this object.
     AZ_MATRIX *  Amat() const {return(Amat_);};
@@ -263,13 +268,15 @@ class Epetra_MsrMatrix: public Epetra_Object, public Epetra_CompObject, public v
   //@}
   
   
-  //@{ \name I/O Methods.
+  //! @name I/O Methods
+  //@{ 
 
   //! Print method
   virtual void Print(ostream & os) const;
   //@}
 
-  //@{ \name Additional methods required to support the Epetra_Operator interface.
+  //! @name Additional methods required to support the Epetra_Operator interface
+  //@{ 
 
     //! Returns a character string describing the operator
     const char * Label() const {return(Epetra_Object::Label());};
@@ -324,7 +331,8 @@ class Epetra_MsrMatrix: public Epetra_Object, public Epetra_CompObject, public v
     virtual bool UseTranspose() const {return(false);}
 
   //@}
-  //@{ \name Additional methods required to implement RowMatrix interface.
+  //! @name Additional methods required to implement RowMatrix interface
+  //@{ 
 
     //! Return the current number of values stored for the specified local row.
     /*! Similar to NumMyEntries() except NumEntries is returned as an argument
