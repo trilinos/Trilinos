@@ -1,6 +1,6 @@
 #!/bin/sh
 # This is the crontab script that runs benchmarks on puffin on a regular basis.
 # mail on puffin doesn't work, use mail on iterative instead
-#MAILTO=jhu@ca.sandia.gov,tuminaro@ca.sandia.gov
+#MAILTO=jhu@ca.sandia.gov,rstumin@sandia.gov
 # run at 22:30, Sunday through Thursday
 30 22 * * 0-4    cd /home/jhu/ml/etc; ./run_benchmarks >& /home/jhu/BENCHRESULTS; ./mailresults >& /dev/null
