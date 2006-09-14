@@ -102,6 +102,11 @@ if g2c in libraries:
     libraries.remove(g2c)
     libraries.append(g2c)        
 
+# Add the PyTrilinos build directory to the library directories
+pyTrilinosBuildDir = os.path.normpath(os.path.join(os.getcwd(), "..", "..",
+                                                   "..", "PyTrilinos", "src"))
+library_dirs.insert(0,pyTrilinosBuildDir)
+
 # Define the strings that refer to the required local source files
 mlWrap = "ML_wrap.cpp"
 
