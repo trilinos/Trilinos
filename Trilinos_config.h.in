@@ -84,6 +84,9 @@
 /* Define if want to build rythmos */
 #undef HAVE_RYTHMOS
 
+/* Define if want to build sacado */
+#undef HAVE_SACADO
+
 /* Define if want to build stratimikos */
 #undef HAVE_STRATIMIKOS
 
