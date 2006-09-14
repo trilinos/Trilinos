@@ -281,9 +281,6 @@ RUN (s858352-nightly-serial) {
     COMM                = serial;
     INVOKE-CONFIGURE    = darwin-s858352;
     TEST-CATEGORY       = FRAMEWORK;
-    MPI-START           = lamboot;
-    MPI-PING            = mpitask;
-    MPI-STOP            = lamhalt;
     TTR-DIR             = /Users/mnpheno/TrilinosTestHarness/TrilinosTestResults;
     SSG-USERNAME        = mnpheno;
 
@@ -302,8 +299,9 @@ RUN (s858352-nightly-mpi) {
     COMM                = mpi;
     INVOKE-CONFIGURE    = darwin-s858352-mpi;
     TEST-CATEGORY       = FRAMEWORK;
-    MAX-PROC            = 2;
+    MAX-PROC            = 4;
     MPI-START           = lamboot;
+    MPI-GO              = mpirun -x DYLD_LIBRARY_PATH -np ;
     MPI-PING            = mpitask;
     MPI-STOP            = lamhalt;
     TTR-DIR             = /Users/mnpheno/TrilinosTestHarness/TrilinosTestResults;
