@@ -79,6 +79,8 @@ class MySWO {
     if ( !which_.compare("LR") ) {
       return p1 > p2;
     }
+    throw std::logic_error("logic error");
+    return false;
   }
   private: 
   string which_;
