@@ -903,9 +903,9 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
   //need to use a fairly large tolerance when comparing the frobenius
   //norm from a vbr-matrix and a crs-matrix, because the point-entries
   //are visited in different orders during the norm calculation, causing
-  //round-off differences to accumulate. That's why we choose 1.e-6
+  //round-off differences to accumulate. That's why we choose 5.e-5
   //instead of a smaller number like 1.e-13 or so.
-  if (fabs(B_norm_frob-CrsB_norm_frob) > 1.e-6) {
+  if (fabs(B_norm_frob-CrsB_norm_frob) > 5.e-5) {
     std::cout << "fabs(B_norm_frob-CrsB_norm_frob): "
       << fabs(B_norm_frob-CrsB_norm_frob) << std::endl;
     std::cout << "VbrMatrix::NormFrobenius test FAILED."<<std::endl;

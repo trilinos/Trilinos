@@ -685,7 +685,7 @@ int main(int argc, char *argv[])
   EPETRA_TEST_ERR(A2.LeftScale(xRow),ierr);
   float A2infNormFloat = A2.NormInf();
   if (verbose1) cout << A2 << endl;
-  if (1.0!=A2infNormFloat) {
+  if (fabs(1.0-A2infNormFloat) > 1.e-5) {
     EPETRA_TEST_ERR(-41,ierr);
     InvSumsBroke = true;
   }
@@ -698,7 +698,7 @@ int main(int argc, char *argv[])
   EPETRA_TEST_ERR(A2.RightScale(xDomain),ierr);
   float A2oneNormFloat2 = A2.NormOne();
   if (verbose1) cout << A2;
-  if (1.0!=A2oneNormFloat2) {
+  if (fabs(1.0-A2oneNormFloat2)>1.e-5) {
     EPETRA_TEST_ERR(-42,ierr)
     InvSumsBroke = true;
   }
@@ -711,7 +711,7 @@ int main(int argc, char *argv[])
   float A2infNormFloat2 = A2.NormInf(); // We use a float so that rounding error
 	// will not prevent the sum from being 1.0.
   if (verbose1) cout << A2;
-  if (1.0!=A2infNormFloat2) {
+  if (fabs(1.0-A2infNormFloat2)>1.e-5) {
     cout << "InfNorm should be = 1, but InfNorm = " << A2infNormFloat2 << endl;
     EPETRA_TEST_ERR(-43,ierr);
     InvSumsBroke = true;
@@ -723,7 +723,7 @@ cout << xCol;
   EPETRA_TEST_ERR(A2.RightScale(xCol),ierr);
   float A2oneNormFloat = A2.NormOne();
 cout << A2;
-  if (1.0!=A2oneNormFloat) {
+  if (fabs(1.0-A2oneNormFloat)>1.e-5) {
     EPETRA_TEST_ERR(-44,ierr);
     InvSumsBroke = true;
   }
@@ -889,7 +889,7 @@ cout << A2;
   double frobnorm = A3cm.NormFrobenius();
 
   bool frobnorm_test_failed = false;
-  if (fabs(check_frobnorm-frobnorm) > 1.e-13) {
+  if (fabs(check_frobnorm-frobnorm) > 5.e-5) {
     frobnorm_test_failed = true;
   }
 
