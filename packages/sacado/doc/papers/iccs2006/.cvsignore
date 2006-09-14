@@ -1,0 +1,9 @@
+*.aux
+*.log
+*.bbl
+*.blg
+*.idx
+*.toc
+*.dvi
+paper.ps
+auto
