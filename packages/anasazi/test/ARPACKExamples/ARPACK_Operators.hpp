@@ -104,27 +104,25 @@ public:
   OPA()  {}
   ~OPA() {}
   
-  Anasazi::ReturnType Apply(const Anasazi::MultiVec<ScalarType>& X, 
-                                  Anasazi::MultiVec<ScalarType>& Y ) const
+  void Apply(const Anasazi::MultiVec<ScalarType>& X, 
+        Anasazi::MultiVec<ScalarType>& Y ) const
   {
     const ScalarType ONE = ScalarTraits<ScalarType>::one();
     const ScalarType ZERO = ScalarTraits<ScalarType>::zero();
   
     const MyMultiVec<ScalarType>* MyX;
     MyX = dynamic_cast<const MyMultiVec<ScalarType>*>(&X); 
-    if (MyX == 0) return Anasazi::Failed;
+    TEST_FOR_EXCEPTION(MyX == 0,Anasazi::OperatorError,"Casting failure.");
       
     MyMultiVec<ScalarType>* MyY;
     MyY = dynamic_cast<MyMultiVec<ScalarType>*>(&Y); 
-    if (MyY == 0) return Anasazi::Failed;
+    TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
       
-    if (X.GetNumberVecs() != Y.GetNumberVecs()) return Anasazi::Failed;
-    if (X.GetVecLength() != Y.GetVecLength()) return Anasazi::Failed;
+    TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
     
     // MyY = ONE*MyX
     MyY->MvAddMv( ONE, *MyX, ZERO, *MyX );
-    
-    return(Anasazi::Ok);
   }
 };
 
@@ -144,7 +142,7 @@ class OPB : public Anasazi::Operator<ScalarType>
 {
 private:
   ScalarType _rho;
-  void tv(int nx, const ScalarType *x, ScalarType *y) const {
+  inline void tv(int nx, const ScalarType *x, ScalarType *y) const {
     const ScalarType ONE = ScalarTraits<ScalarType>::one();
     ScalarType h = ONE / (ScalarType)(nx+1),
                h2 = h*h,
@@ -176,8 +174,8 @@ public:
   OPB(const ScalarType rho) : _rho(rho) {}
   ~OPB() {}
   
-  Anasazi::ReturnType Apply(const Anasazi::MultiVec<ScalarType>& X, 
-                                  Anasazi::MultiVec<ScalarType>& Y ) const
+  void Apply(const Anasazi::MultiVec<ScalarType>& X, 
+        Anasazi::MultiVec<ScalarType>& Y ) const
   {
     const ScalarType ONE = ScalarTraits<ScalarType>::one();
     BLAS<int,ScalarType> blas;
@@ -185,14 +183,14 @@ public:
     
     const MyMultiVec<ScalarType>* MyX;
     MyX = dynamic_cast<const MyMultiVec<ScalarType>*>(&X); 
-    if (MyX == 0) return Anasazi::Failed;
+    TEST_FOR_EXCEPTION(MyX == 0,Anasazi::OperatorError,"Casting failure.");
       
     MyMultiVec<ScalarType>* MyY;
     MyY = dynamic_cast<MyMultiVec<ScalarType>*>(&Y); 
-    if (MyY == 0) return Anasazi::Failed;
+    TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
       
-    if (X.GetNumberVecs() != Y.GetNumberVecs()) return Anasazi::Failed;
-    if (X.GetVecLength() != Y.GetVecLength()) return Anasazi::Failed;
+    TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
     
     int nvecs = X.GetNumberVecs();
     
@@ -200,8 +198,7 @@ public:
     n = X.GetVecLength();
     // ... and the number of interior points in the discretization from that
     nx = ScalarTraits<int>::squareroot(n);
-    // return an error if the vector length isn't a square number
-    if (nx*nx != n) return(Anasazi::Failed);
+    TEST_FOR_EXCEPTION(nx*nx != n,Anasazi::OperatorError,"Invalid input.");
     
     // The rest is stolen from the ARPACK codes (see notice above)
     //
@@ -247,7 +244,6 @@ public:
       blas.AXPY(nx,-ONE/h2,&(*MyX)[p][lo-nx],1,&(*MyY)[p][lo],1);
     }
     
-    return(Anasazi::Ok);
   }
 };
 
@@ -271,19 +267,19 @@ public:
   OPC(const ScalarType rho) : _rho(rho) {}
   ~OPC() {}
   
-  Anasazi::ReturnType Apply(const Anasazi::MultiVec<ScalarType>& X, 
-                                  Anasazi::MultiVec<ScalarType>& Y ) const
+  void Apply(const Anasazi::MultiVec<ScalarType>& X, 
+        Anasazi::MultiVec<ScalarType>& Y ) const
   {
     const MyMultiVec<ScalarType>* MyX;
     MyX = dynamic_cast<const MyMultiVec<ScalarType>*>(&X); 
-    if (MyX == 0) return Anasazi::Failed;
+    TEST_FOR_EXCEPTION(MyX == 0,Anasazi::OperatorError,"Casting failure.");
       
     MyMultiVec<ScalarType>* MyY;
     MyY = dynamic_cast<MyMultiVec<ScalarType>*>(&Y); 
-    if (MyY == 0) return Anasazi::Failed;
+    TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
       
-    if (X.GetNumberVecs() != Y.GetNumberVecs()) return Anasazi::Failed;
-    if (X.GetVecLength() != Y.GetVecLength()) return Anasazi::Failed;
+    TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
     
     int nvecs = X.GetNumberVecs();
     int n = X.GetVecLength();
@@ -310,7 +306,6 @@ public:
       y[j] = dl*x[j-1] + dd*x[j];
     }
     
-    return(Anasazi::Ok);
   }
 };
 
@@ -347,7 +342,6 @@ public:
     LAPACK<int,ScalarType> lapack;
     
     _nx = ScalarTraits<int>::squareroot(n);
-    // return an error if the vector length isn't a square number
     if (_nx*_nx != n) {
       cout << "Argument 1 to OPD() was not a square number." << endl;
       _n = 100;
@@ -376,14 +370,12 @@ public:
     _ipiv.resize(_n);
   
     lapack.GTTRF(_n,&_dl[0],&_dd[0],&_du[0],&_du2[0],&_ipiv[0],&_ferror);
-    if (_ferror != 0) {
-      cout << "Error in GTTRF in OPD()" << endl;
-    }
+    TEST_FOR_EXCEPTION(_ferror != 0,Anasazi::OperatorError,"LAPACK error");
   }
   ~OPD() {}
   
-  Anasazi::ReturnType Apply(const Anasazi::MultiVec<ScalarType>& X, 
-                                  Anasazi::MultiVec<ScalarType>& Y ) const
+  void Apply(const Anasazi::MultiVec<ScalarType>& X, 
+        Anasazi::MultiVec<ScalarType>& Y ) const
   {
     const ScalarType ONE = ScalarTraits<ScalarType>::one();
     const ScalarType ZERO = ScalarTraits<ScalarType>::zero();
@@ -391,21 +383,19 @@ public:
     LAPACK<int,ScalarType> lapack;
     
     // if there were problems with the factorization, quit now
-    if (_ferror) {
-      return Anasazi::Failed;
-    }
+    TEST_FOR_EXCEPTION(_ferror,Anasazi::OperatorError,"LAPACK error");
     
     const MyMultiVec<ScalarType>* MyX;
     MyX = dynamic_cast<const MyMultiVec<ScalarType>*>(&X); 
-    if (MyX == 0) return Anasazi::Failed;
+    TEST_FOR_EXCEPTION(MyX == 0,Anasazi::OperatorError,"Casting failure.");
       
     MyMultiVec<ScalarType>* MyY;
     MyY = dynamic_cast<MyMultiVec<ScalarType>*>(&Y); 
-    if (MyY == 0) return Anasazi::Failed;
+    TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
       
-    if (X.GetNumberVecs() != Y.GetNumberVecs()) return Anasazi::Failed;
-    if (X.GetVecLength() != Y.GetVecLength()) return Anasazi::Failed;
-    if (X.GetVecLength() != _n) return Anasazi::Failed;
+    TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEST_FOR_EXCEPTION(X.GetVecLength() != _n,Anasazi::OperatorError,"Invalid input multivector.");
     
     int nvecs = X.GetNumberVecs();
     
@@ -418,10 +408,9 @@ public:
     int ierr;
     for (p=0; p<nvecs; p++) {
       lapack.GTTRS('N',_n,1,&_dl[0],&_dd[0],&_du[0],&_du2[0],&_ipiv[0],(*MyY)[p],_n,&ierr);
-      if (ierr != 0) return Anasazi::Failed;
+      TEST_FOR_EXCEPTION(ierr != 0,Anasazi::OperatorError,"LAPACK error.");
     }
     
-    return(Anasazi::Ok);
   }
 };
 
@@ -448,8 +437,8 @@ public:
   OPE( const ScalarType rho) : _rho(rho) {}
   ~OPE() {}
   
-  Anasazi::ReturnType Apply(const Anasazi::MultiVec<ScalarType>& X, 
-                                  Anasazi::MultiVec<ScalarType>& Y ) const
+  void Apply(const Anasazi::MultiVec<ScalarType>& X, 
+        Anasazi::MultiVec<ScalarType>& Y ) const
   {
     const ScalarType ONE = ScalarTraits<ScalarType>::one();
     const ScalarType TWO = (ScalarType)(2.0);
@@ -457,14 +446,14 @@ public:
     
     const MyMultiVec<ScalarType>* MyX;
     MyX = dynamic_cast<const MyMultiVec<ScalarType>*>(&X); 
-    if (MyX == 0) return Anasazi::Failed;
+    TEST_FOR_EXCEPTION(MyX == 0,Anasazi::OperatorError,"Casting failure.");
       
     MyMultiVec<ScalarType>* MyY;
     MyY = dynamic_cast<MyMultiVec<ScalarType>*>(&Y); 
-    if (MyY == 0) return Anasazi::Failed;
+    TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
       
-    if (X.GetNumberVecs() != Y.GetNumberVecs()) return Anasazi::Failed;
-    if (X.GetVecLength() != Y.GetVecLength()) return Anasazi::Failed;
+    TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
     
     int n = X.GetVecLength();
     int nvecs = X.GetNumberVecs();
@@ -488,7 +477,6 @@ public:
       y[j] = dl*x[j-1] + dd*x[j];
     }
     
-    return(Anasazi::Ok);
   }
 };
 
@@ -512,8 +500,8 @@ public:
   OPF() {}
   ~OPF() {}
   
-  Anasazi::ReturnType Apply(const Anasazi::MultiVec<ScalarType>& X, 
-                                  Anasazi::MultiVec<ScalarType>& Y ) const
+  void Apply(const Anasazi::MultiVec<ScalarType>& X, 
+        Anasazi::MultiVec<ScalarType>& Y ) const
   {
     const ScalarType ONE = ScalarTraits<ScalarType>::one();
     const ScalarType FOUR = (ScalarType)(4.0);
@@ -521,14 +509,14 @@ public:
     
     const MyMultiVec<ScalarType>* MyX;
     MyX = dynamic_cast<const MyMultiVec<ScalarType>*>(&X); 
-    if (MyX == 0) return Anasazi::Failed;
+    TEST_FOR_EXCEPTION(MyX == 0,Anasazi::OperatorError,"Casting failure.");
       
     MyMultiVec<ScalarType>* MyY;
     MyY = dynamic_cast<MyMultiVec<ScalarType>*>(&Y); 
-    if (MyY == 0) return Anasazi::Failed;
+    TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
       
-    if (X.GetNumberVecs() != Y.GetNumberVecs()) return Anasazi::Failed;
-    if (X.GetVecLength() != Y.GetVecLength()) return Anasazi::Failed;
+    TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
     
     int n = X.GetVecLength();
     int nvecs = X.GetNumberVecs();
@@ -549,7 +537,6 @@ public:
       blas.SCAL(n,h,&(*MyY)[p][0],1);
     }
     
-    return(Anasazi::Ok);
   }
 };
 
@@ -601,51 +588,46 @@ public:
     _e.resize(_n-1, ONE*h);
   
     lapack.PTTRF(_n,&_d[0],&_e[0],&_ferror);
-    if (_ferror != 0) {
-      cout << "Error in PTTRF in OPG()" << endl;
-    }
+    TEST_FOR_EXCEPTION(_ferror != 0,Anasazi::OperatorError,"LAPACK error");
   }
   ~OPG() {}
   
-  Anasazi::ReturnType Apply(const Anasazi::MultiVec<ScalarType>& X, 
-                                  Anasazi::MultiVec<ScalarType>& Y ) const
+  void Apply(const Anasazi::MultiVec<ScalarType>& X, 
+        Anasazi::MultiVec<ScalarType>& Y ) const
   {
     BLAS<int,ScalarType> blas;
     LAPACK<int,ScalarType> lapack;
     
     // if there were problems with the factorization, quit now
-    if (_ferror) {
-      return Anasazi::Failed;
-    }
+    TEST_FOR_EXCEPTION(_ferror,Anasazi::OperatorError,"LAPACK error");
     
     const MyMultiVec<ScalarType>* MyX;
     MyX = dynamic_cast<const MyMultiVec<ScalarType>*>(&X); 
-    if (MyX == 0) return Anasazi::Failed;
+    TEST_FOR_EXCEPTION(MyX == 0,Anasazi::OperatorError,"Casting failure.");
       
     MyMultiVec<ScalarType>* MyY;
     MyY = dynamic_cast<MyMultiVec<ScalarType>*>(&Y); 
-    if (MyY == 0) return Anasazi::Failed;
+    TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
       
-    if (X.GetNumberVecs() != Y.GetNumberVecs()) return Anasazi::Failed;
-    if (X.GetVecLength() != Y.GetVecLength()) return Anasazi::Failed;
-    if (X.GetVecLength() != _n) return Anasazi::Failed;
+    TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEST_FOR_EXCEPTION(X.GetVecLength() != _n,Anasazi::OperatorError,"Invalid input multivector.");
     
     int nvecs = X.GetNumberVecs();
     
     // Perform  Y <--- OP*X = inv[A-SIGMA*I]*X using GTTRS
     int p;
     // set Y = A*X, as GTTRS operates in situ
-    if ( _Aop->Apply(*MyX,*MyY) != Anasazi::Ok ) return Anasazi::Failed;
+    _Aop->Apply(*MyX,*MyY);
     // now, perform inv[M]*Y = inv[M]*X
     // call PTTRS multiple times (it takes multiple RHS, but MyMultiVec doesn't
     // use block storage)
     int ierr;
     for (p=0; p<nvecs; p++) {
       lapack.PTTRS(_n,1,&_d[0],&_e[0],(*MyY)[p],_n,&ierr);
-      if (ierr != 0) return Anasazi::Failed;
+      TEST_FOR_EXCEPTION(ierr != 0,Anasazi::OperatorError,"LAPACK error.");
     }
     
-    return(Anasazi::Ok);
   }
 };
 
@@ -705,34 +687,30 @@ public:
     _ipiv.resize(_n);
   
     lapack.GTTRF(_n,&_dl[0],&_dd[0],&_du[0],&_du2[0],&_ipiv[0],&_ferror);
-    if (_ferror != 0) {
-      cout << "Error in GTTRF in OPH()" << endl;
-    }
+    TEST_FOR_EXCEPTION(_ferror != 0,Anasazi::OperatorError,"LAPACK error");
   }
   ~OPH() {}
   
-  Anasazi::ReturnType Apply(const Anasazi::MultiVec<ScalarType>& X, 
-                                  Anasazi::MultiVec<ScalarType>& Y ) const
+  void Apply(const Anasazi::MultiVec<ScalarType>& X, 
+        Anasazi::MultiVec<ScalarType>& Y ) const
   {
     BLAS<int,ScalarType> blas;
     LAPACK<int,ScalarType> lapack;
     
     // if there were problems with the factorization, quit now
-    if (_ferror) {
-      return Anasazi::Failed;
-    }
+    TEST_FOR_EXCEPTION(_ferror,Anasazi::OperatorError,"LAPACK error");
     
     const MyMultiVec<ScalarType>* MyX;
     MyX = dynamic_cast<const MyMultiVec<ScalarType>*>(&X); 
-    if (MyX == 0) return Anasazi::Failed;
+    TEST_FOR_EXCEPTION(MyX == 0,Anasazi::OperatorError,"Casting failure.");
       
     MyMultiVec<ScalarType>* MyY;
     MyY = dynamic_cast<MyMultiVec<ScalarType>*>(&Y); 
-    if (MyY == 0) return Anasazi::Failed;
+    TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
       
-    if (X.GetNumberVecs() != Y.GetNumberVecs()) return Anasazi::Failed;
-    if (X.GetVecLength() != Y.GetVecLength()) return Anasazi::Failed;
-    if (X.GetVecLength() != _n) return Anasazi::Failed;
+    TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEST_FOR_EXCEPTION(X.GetVecLength() != _n,Anasazi::OperatorError,"Invalid input multivector.");
     
     int nvecs = X.GetNumberVecs();
     
@@ -746,10 +724,9 @@ public:
     int ierr;
     for (p=0; p<nvecs; p++) {
       lapack.GTTRS('N',_n,1,&_dl[0],&_dd[0],&_du[0],&_du2[0],&_ipiv[0],(*MyY)[p],_n,&ierr);
-      if (ierr != 0) return Anasazi::Failed;
+      TEST_FOR_EXCEPTION(ierr != 0,Anasazi::OperatorError,"LAPACK error.");
     }
     
-    return(Anasazi::Ok);
   }
 };
 
@@ -786,8 +763,8 @@ public:
   OPM()  {}
   ~OPM() {}
   
-  Anasazi::ReturnType Apply(const Anasazi::MultiVec<ScalarType>& X, 
-                                  Anasazi::MultiVec<ScalarType>& Y ) const
+  void Apply(const Anasazi::MultiVec<ScalarType>& X, 
+        Anasazi::MultiVec<ScalarType>& Y ) const
   {
     const ScalarType ONE = ScalarTraits<ScalarType>::one();
     BLAS<int,ScalarType> blas;
@@ -795,14 +772,14 @@ public:
   
     const MyMultiVec<ScalarType>* MyX;
     MyX = dynamic_cast<const MyMultiVec<ScalarType>*>(&X); 
-    if (MyX == 0) return Anasazi::Failed;
+    TEST_FOR_EXCEPTION(MyX == 0,Anasazi::OperatorError,"Casting failure.");
       
     MyMultiVec<ScalarType>* MyY;
     MyY = dynamic_cast<MyMultiVec<ScalarType>*>(&Y); 
-    if (MyY == 0) return Anasazi::Failed;
+    TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
       
-    if (X.GetNumberVecs() != Y.GetNumberVecs()) return Anasazi::Failed;
-    if (X.GetVecLength() != Y.GetVecLength()) return Anasazi::Failed;
+    TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
     
     int nvecs = X.GetNumberVecs();
     
@@ -810,8 +787,7 @@ public:
     n = X.GetVecLength();
     // ... and the number of interior points in the discretization from that
     nx = ScalarTraits<int>::squareroot(n);
-    // return an error if the vector length isn't a square number
-    if (nx*nx != n) return(Anasazi::Failed);
+    TEST_FOR_EXCEPTION(nx*nx != n,Anasazi::OperatorError,"Invalid input.");
     
     // The rest is stolen from the ARPACK codes (see notice above)
     //
@@ -856,7 +832,6 @@ public:
       blas.SCAL(n,ONE/h2,&(*MyY)[p][0],1);
     }
     
-    return(Anasazi::Ok);
   }
   
 };
@@ -877,8 +852,8 @@ public:
   OPN() {}
   ~OPN() {}
   
-  Anasazi::ReturnType Apply(const Anasazi::MultiVec<ScalarType>& X, 
-                                  Anasazi::MultiVec<ScalarType>& Y ) const
+  void Apply(const Anasazi::MultiVec<ScalarType>& X, 
+        Anasazi::MultiVec<ScalarType>& Y ) const
   {
     const ScalarType ONE = ScalarTraits<ScalarType>::one();
     const ScalarType TWO = (ScalarType)(2.0);
@@ -886,14 +861,14 @@ public:
     
     const MyMultiVec<ScalarType>* MyX;
     MyX = dynamic_cast<const MyMultiVec<ScalarType>*>(&X); 
-    if (MyX == 0) return Anasazi::Failed;
+    TEST_FOR_EXCEPTION(MyX == 0,Anasazi::OperatorError,"Casting failure.");
       
     MyMultiVec<ScalarType>* MyY;
     MyY = dynamic_cast<MyMultiVec<ScalarType>*>(&Y); 
-    if (MyY == 0) return Anasazi::Failed;
+    TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
       
-    if (X.GetNumberVecs() != Y.GetNumberVecs()) return Anasazi::Failed;
-    if (X.GetVecLength() != Y.GetVecLength()) return Anasazi::Failed;
+    TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
     
     int n = X.GetVecLength();
     int nvecs = X.GetNumberVecs();
@@ -917,7 +892,6 @@ public:
       blas.SCAL(n, ONE/h2, y, 1);
     }
     
-    return(Anasazi::Ok);
   }
 };
 
@@ -953,7 +927,6 @@ public:
     LAPACK<int,ScalarType> lapack;
     
     _nx = ScalarTraits<int>::squareroot(n);
-    // return an error if the vector length isn't a square number
     if (_nx*_nx != n) {
       cout << "Argument 1 to OPO() was not a square number." << endl;
       _n = 100;
@@ -975,14 +948,12 @@ public:
     _ipiv.resize(_n);
   
     lapack.GTTRF(_n,&_dl[0],&_dd[0],&_du[0],&_du2[0],&_ipiv[0],&_ferror);
-    if (_ferror != 0) {
-      cout << "Error in GTTRF in OPO()" << endl;
-    }
+    TEST_FOR_EXCEPTION(_ferror != 0,Anasazi::OperatorError,"LAPACK error");
   }
   ~OPO() {}
   
-  Anasazi::ReturnType Apply(const Anasazi::MultiVec<ScalarType>& X, 
-                                  Anasazi::MultiVec<ScalarType>& Y ) const
+  void Apply(const Anasazi::MultiVec<ScalarType>& X, 
+        Anasazi::MultiVec<ScalarType>& Y ) const
   {
     const ScalarType ONE = ScalarTraits<ScalarType>::one();
     const ScalarType ZERO = ScalarTraits<ScalarType>::zero();
@@ -990,21 +961,19 @@ public:
     LAPACK<int,ScalarType> lapack;
     
     // if there were problems with the factorization, quit now
-    if (_ferror) {
-      return Anasazi::Failed;
-    }
+    TEST_FOR_EXCEPTION(_ferror,Anasazi::OperatorError,"LAPACK error");
     
     const MyMultiVec<ScalarType>* MyX;
     MyX = dynamic_cast<const MyMultiVec<ScalarType>*>(&X); 
-    if (MyX == 0) return Anasazi::Failed;
+    TEST_FOR_EXCEPTION(MyX == 0,Anasazi::OperatorError,"Casting failure.");
       
     MyMultiVec<ScalarType>* MyY;
     MyY = dynamic_cast<MyMultiVec<ScalarType>*>(&Y); 
-    if (MyY == 0) return Anasazi::Failed;
+    TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
       
-    if (X.GetNumberVecs() != Y.GetNumberVecs()) return Anasazi::Failed;
-    if (X.GetVecLength() != Y.GetVecLength()) return Anasazi::Failed;
-    if (X.GetVecLength() != _n) return Anasazi::Failed;
+    TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEST_FOR_EXCEPTION(X.GetVecLength() != _n,Anasazi::OperatorError,"Invalid input multivector.");
     
     int nvecs = X.GetNumberVecs();
     
@@ -1017,10 +986,9 @@ public:
     int ierr;
     for (p=0; p<nvecs; p++) {
       lapack.GTTRS('N',_n,1,&_dl[0],&_dd[0],&_du[0],&_du2[0],&_ipiv[0],(*MyY)[p],_n,&ierr);
-      if (ierr != 0) return Anasazi::Failed;
+      TEST_FOR_EXCEPTION(ierr != 0,Anasazi::OperatorError,"LAPACK error.");
     }
     
-    return(Anasazi::Ok);
   }
 };
 
@@ -1041,8 +1009,8 @@ public:
   OPP() {}
   ~OPP() {}
   
-  Anasazi::ReturnType Apply(const Anasazi::MultiVec<ScalarType>& X, 
-                                  Anasazi::MultiVec<ScalarType>& Y ) const
+  void Apply(const Anasazi::MultiVec<ScalarType>& X, 
+        Anasazi::MultiVec<ScalarType>& Y ) const
   {
     const ScalarType ONE = ScalarTraits<ScalarType>::one();
     const ScalarType TWO = (ScalarType)(2.0);
@@ -1050,14 +1018,14 @@ public:
     
     const MyMultiVec<ScalarType>* MyX;
     MyX = dynamic_cast<const MyMultiVec<ScalarType>*>(&X); 
-    if (MyX == 0) return Anasazi::Failed;
+    TEST_FOR_EXCEPTION(MyX == 0,Anasazi::OperatorError,"Casting failure.");
       
     MyMultiVec<ScalarType>* MyY;
     MyY = dynamic_cast<MyMultiVec<ScalarType>*>(&Y); 
-    if (MyY == 0) return Anasazi::Failed;
+    TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
       
-    if (X.GetNumberVecs() != Y.GetNumberVecs()) return Anasazi::Failed;
-    if (X.GetVecLength() != Y.GetVecLength()) return Anasazi::Failed;
+    TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
     
     int n = X.GetVecLength();
     int nvecs = X.GetNumberVecs();
@@ -1081,7 +1049,6 @@ public:
       blas.SCAL(n, ONE/h, y, 1);
     }
     
-    return(Anasazi::Ok);
   }
 };
 
@@ -1102,8 +1069,8 @@ public:
   OPQ() {}
   ~OPQ() {}
   
-  Anasazi::ReturnType Apply(const Anasazi::MultiVec<ScalarType>& X, 
-                                  Anasazi::MultiVec<ScalarType>& Y ) const
+  void Apply(const Anasazi::MultiVec<ScalarType>& X, 
+        Anasazi::MultiVec<ScalarType>& Y ) const
   {
     const ScalarType ONE = ScalarTraits<ScalarType>::one();
     const ScalarType FOUR = (ScalarType)(4.0);
@@ -1112,14 +1079,14 @@ public:
     
     const MyMultiVec<ScalarType>* MyX;
     MyX = dynamic_cast<const MyMultiVec<ScalarType>*>(&X); 
-    if (MyX == 0) return Anasazi::Failed;
+    TEST_FOR_EXCEPTION(MyX == 0,Anasazi::OperatorError,"Casting failure.");
       
     MyMultiVec<ScalarType>* MyY;
     MyY = dynamic_cast<MyMultiVec<ScalarType>*>(&Y); 
-    if (MyY == 0) return Anasazi::Failed;
+    TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
       
-    if (X.GetNumberVecs() != Y.GetNumberVecs()) return Anasazi::Failed;
-    if (X.GetVecLength() != Y.GetVecLength()) return Anasazi::Failed;
+    TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
     
     int n = X.GetVecLength();
     int nvecs = X.GetNumberVecs();
@@ -1143,7 +1110,6 @@ public:
       blas.SCAL(n, h, y, 1);
     }
     
-    return(Anasazi::Ok);
   }
 };
 
@@ -1183,7 +1149,6 @@ public:
     _Aop = rcp( new OPP<ScalarType>() );
     
     _nx = ScalarTraits<int>::squareroot(n);
-    // return an error if the vector length isn't a square number
     if (_nx*_nx != n) {
       cout << "Argument 1 to OPR() was not a square number." << endl;
       _n = 100;
@@ -1207,51 +1172,46 @@ public:
     _ipiv.resize(_n);
   
     lapack.GTTRF(_n,&_dl[0],&_dd[0],&_du[0],&_du2[0],&_ipiv[0],&_ferror);
-    if (_ferror != 0) {
-      cout << "Error in GTTRF in OPR()" << endl;
-    }
+    TEST_FOR_EXCEPTION(_ferror != 0,Anasazi::OperatorError,"LAPACK error");
   }
   ~OPR() {}
   
-  Anasazi::ReturnType Apply(const Anasazi::MultiVec<ScalarType>& X, 
-                                  Anasazi::MultiVec<ScalarType>& Y ) const
+  void Apply(const Anasazi::MultiVec<ScalarType>& X, 
+        Anasazi::MultiVec<ScalarType>& Y ) const
   {
     BLAS<int,ScalarType> blas;
     LAPACK<int,ScalarType> lapack;
     
     // if there were problems with the factorization, quit now
-    if (_ferror) {
-      return Anasazi::Failed;
-    }
+    TEST_FOR_EXCEPTION(_ferror,Anasazi::OperatorError,"LAPACK error");
     
     const MyMultiVec<ScalarType>* MyX;
     MyX = dynamic_cast<const MyMultiVec<ScalarType>*>(&X); 
-    if (MyX == 0) return Anasazi::Failed;
+    TEST_FOR_EXCEPTION(MyX == 0,Anasazi::OperatorError,"Casting failure.");
       
     MyMultiVec<ScalarType>* MyY;
     MyY = dynamic_cast<MyMultiVec<ScalarType>*>(&Y); 
-    if (MyY == 0) return Anasazi::Failed;
+    TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
       
-    if (X.GetNumberVecs() != Y.GetNumberVecs()) return Anasazi::Failed;
-    if (X.GetVecLength() != Y.GetVecLength()) return Anasazi::Failed;
-    if (X.GetVecLength() != _n) return Anasazi::Failed;
+    TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEST_FOR_EXCEPTION(X.GetVecLength() != _n,Anasazi::OperatorError,"Invalid input multivector.");
     
     int nvecs = X.GetNumberVecs();
     
     // Perform  Y <--- OP*X = inv[A-SIGMA*I]*X using GTTRS
     int p;
     // set Y = A*X, as GTTRS operates in situ
-    if ( _Aop->Apply(*MyX,*MyY) != Anasazi::Ok ) return Anasazi::Failed;
+    _Aop->Apply(*MyX,*MyY);
     // now, perform inv[M]*Y = inv[M]*X
     // call GTTRS multiple times (it takes multiple RHS, but MyMultiVec doesn't
     // use block storage)
     int ierr;
     for (p=0; p<nvecs; p++) {
       lapack.GTTRS('N',_n,1,&_dl[0],&_dd[0],&_du[0],&_du2[0],&_ipiv[0],(*MyY)[p],_n,&ierr);
-      if (ierr != 0) return Anasazi::Failed;
+      TEST_FOR_EXCEPTION(ierr != 0,Anasazi::OperatorError,"LAPACK error.");
     }
     
-    return(Anasazi::Ok);
   }
 };
 
@@ -1292,7 +1252,6 @@ public:
     _Mop = rcp( new OPQ<ScalarType>() );
     
     _nx = ScalarTraits<int>::squareroot(n);
-    // return an error if the vector length isn't a square number
     if (_nx*_nx != n) {
       cout << "Argument 1 to OPS() was not a square number." << endl;
       _n = 100;
@@ -1315,34 +1274,30 @@ public:
     _ipiv.resize(_n);
   
     lapack.GTTRF(_n,&_dl[0],&_dd[0],&_du[0],&_du2[0],&_ipiv[0],&_ferror);
-    if (_ferror != 0) {
-      cout << "Error in GTTRF in OPS()" << endl;
-    }
+    TEST_FOR_EXCEPTION(_ferror != 0,Anasazi::OperatorError,"LAPACK error");
   }
   ~OPS() {}
   
-  Anasazi::ReturnType Apply(const Anasazi::MultiVec<ScalarType>& X, 
-                                  Anasazi::MultiVec<ScalarType>& Y ) const
+  void Apply(const Anasazi::MultiVec<ScalarType>& X, 
+        Anasazi::MultiVec<ScalarType>& Y ) const
   {
     BLAS<int,ScalarType> blas;
     LAPACK<int,ScalarType> lapack;
     
     // if there were problems with the factorization, quit now
-    if (_ferror) {
-      return Anasazi::Failed;
-    }
+    TEST_FOR_EXCEPTION(_ferror,Anasazi::OperatorError,"LAPACK error");
     
     const MyMultiVec<ScalarType>* MyX;
     MyX = dynamic_cast<const MyMultiVec<ScalarType>*>(&X); 
-    if (MyX == 0) return Anasazi::Failed;
+    TEST_FOR_EXCEPTION(MyX == 0,Anasazi::OperatorError,"Casting failure.");
       
     MyMultiVec<ScalarType>* MyY;
     MyY = dynamic_cast<MyMultiVec<ScalarType>*>(&Y); 
-    if (MyY == 0) return Anasazi::Failed;
+    TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
       
-    if (X.GetNumberVecs() != Y.GetNumberVecs()) return Anasazi::Failed;
-    if (X.GetVecLength() != Y.GetVecLength()) return Anasazi::Failed;
-    if (X.GetVecLength() != _n) return Anasazi::Failed;
+    TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEST_FOR_EXCEPTION(X.GetVecLength() != _n,Anasazi::OperatorError,"Invalid input multivector.");
     
     int nvecs = X.GetNumberVecs();
     
@@ -1356,10 +1311,9 @@ public:
     int ierr;
     for (p=0; p<nvecs; p++) {
       lapack.GTTRS('N',_n,1,&_dl[0],&_dd[0],&_du[0],&_du2[0],&_ipiv[0],(*MyY)[p],_n,&ierr);
-      if (ierr != 0) return Anasazi::Failed;
+      TEST_FOR_EXCEPTION(ierr != 0,Anasazi::OperatorError,"LAPACK error.");
     }
     
-    return(Anasazi::Ok);
   }
 };
 
@@ -1400,7 +1354,6 @@ public:
     _Aop = rcp( new OPP<ScalarType>() );
     
     _nx = ScalarTraits<int>::squareroot(n);
-    // return an error if the vector length isn't a square number
     if (_nx*_nx != n) {
       cout << "Argument 1 to OPT() was not a square number." << endl;
       _n = 100;
@@ -1423,34 +1376,30 @@ public:
     _ipiv.resize(_n);
   
     lapack.GTTRF(_n,&_dl[0],&_dd[0],&_du[0],&_du2[0],&_ipiv[0],&_ferror);
-    if (_ferror != 0) {
-      cout << "Error in GTTRF in OPT()" << endl;
-    }
+    TEST_FOR_EXCEPTION(_ferror != 0,Anasazi::OperatorError,"LAPACK error");
   }
   ~OPT() {}
   
-  Anasazi::ReturnType Apply(const Anasazi::MultiVec<ScalarType>& X, 
-                                  Anasazi::MultiVec<ScalarType>& Y ) const
+  void Apply(const Anasazi::MultiVec<ScalarType>& X, 
+        Anasazi::MultiVec<ScalarType>& Y ) const
   {
     BLAS<int,ScalarType> blas;
     LAPACK<int,ScalarType> lapack;
     
     // if there were problems with the factorization, quit now
-    if (_ferror) {
-      return Anasazi::Failed;
-    }
+    TEST_FOR_EXCEPTION(_ferror,Anasazi::OperatorError,"LAPACK error");
     
     const MyMultiVec<ScalarType>* MyX;
     MyX = dynamic_cast<const MyMultiVec<ScalarType>*>(&X); 
-    if (MyX == 0) return Anasazi::Failed;
+    TEST_FOR_EXCEPTION(MyX == 0,Anasazi::OperatorError,"Casting failure.");
       
     MyMultiVec<ScalarType>* MyY;
     MyY = dynamic_cast<MyMultiVec<ScalarType>*>(&Y); 
-    if (MyY == 0) return Anasazi::Failed;
+    TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
       
-    if (X.GetNumberVecs() != Y.GetNumberVecs()) return Anasazi::Failed;
-    if (X.GetVecLength() != Y.GetVecLength()) return Anasazi::Failed;
-    if (X.GetVecLength() != _n) return Anasazi::Failed;
+    TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEST_FOR_EXCEPTION(X.GetVecLength() != _n,Anasazi::OperatorError,"Invalid input multivector.");
     
     int nvecs = X.GetNumberVecs();
     
@@ -1464,10 +1413,9 @@ public:
     int ierr;
     for (p=0; p<nvecs; p++) {
       lapack.GTTRS('N',_n,1,&_dl[0],&_dd[0],&_du[0],&_du2[0],&_ipiv[0],(*MyY)[p],_n,&ierr);
-      if (ierr != 0) return Anasazi::Failed;
+      TEST_FOR_EXCEPTION(ierr != 0,Anasazi::OperatorError,"LAPACK error.");
     }
     
-    return(Anasazi::Ok);
   }
 };
 
@@ -1509,7 +1457,6 @@ public:
     _Mop = rcp( new OPQ<ScalarType>() );
     
     _nx = ScalarTraits<int>::squareroot(n);
-    // return an error if the vector length isn't a square number
     if (_nx*_nx != n) {
       cout << "Argument 1 to OPU() was not a square number." << endl;
       _n = 100;
@@ -1532,35 +1479,31 @@ public:
     _ipiv.resize(_n);
   
     lapack.GTTRF(_n,&_dl[0],&_dd[0],&_du[0],&_du2[0],&_ipiv[0],&_ferror);
-    if (_ferror != 0) {
-      cout << "Error in GTTRF in OPU()" << endl;
-    }
+    TEST_FOR_EXCEPTION(_ferror != 0,Anasazi::OperatorError,"LAPACK error");
   }
   ~OPU() {}
   
-  Anasazi::ReturnType Apply(const Anasazi::MultiVec<ScalarType>& X, 
-                                  Anasazi::MultiVec<ScalarType>& Y ) const
+  void Apply(const Anasazi::MultiVec<ScalarType>& X, 
+        Anasazi::MultiVec<ScalarType>& Y ) const
   {
     const ScalarType ONE = ScalarTraits<ScalarType>::one();
     BLAS<int,ScalarType> blas;
     LAPACK<int,ScalarType> lapack;
     
     // if there were problems with the factorization, quit now
-    if (_ferror) {
-      return Anasazi::Failed;
-    }
+    TEST_FOR_EXCEPTION(_ferror,Anasazi::OperatorError,"LAPACK error");
     
     const MyMultiVec<ScalarType>* MyX;
     MyX = dynamic_cast<const MyMultiVec<ScalarType>*>(&X); 
-    if (MyX == 0) return Anasazi::Failed;
+    TEST_FOR_EXCEPTION(MyX == 0,Anasazi::OperatorError,"Casting failure.");
       
     MyMultiVec<ScalarType>* MyY;
     MyY = dynamic_cast<MyMultiVec<ScalarType>*>(&Y); 
-    if (MyY == 0) return Anasazi::Failed;
+    TEST_FOR_EXCEPTION(MyY == 0,Anasazi::OperatorError,"Casting failure.");
       
-    if (X.GetNumberVecs() != Y.GetNumberVecs()) return Anasazi::Failed;
-    if (X.GetVecLength() != Y.GetVecLength()) return Anasazi::Failed;
-    if (X.GetVecLength() != _n) return Anasazi::Failed;
+    TEST_FOR_EXCEPTION(X.GetNumberVecs() != Y.GetNumberVecs(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEST_FOR_EXCEPTION(X.GetVecLength() != Y.GetVecLength(),Anasazi::OperatorError,"Invalid input multivectors.");
+    TEST_FOR_EXCEPTION(X.GetVecLength() != _n,Anasazi::OperatorError,"Invalid input multivector.");
     
     int nvecs = X.GetNumberVecs();
     
@@ -1581,10 +1524,9 @@ public:
     int ierr;
     for (p=0; p<nvecs; p++) {
       lapack.GTTRS('N',_n,1,&_dl[0],&_dd[0],&_du[0],&_du2[0],&_ipiv[0],(*MyY)[p],_n,&ierr);
-      if (ierr != 0) return Anasazi::Failed;
+      TEST_FOR_EXCEPTION(ierr != 0,Anasazi::OperatorError,"LAPACK error.");
     }
     
-    return(Anasazi::Ok);
   }
 };
 
@@ -1603,14 +1545,14 @@ private:
 public:
   GenOp(RefCountPtr< Anasazi::Operator<ScalarType> > op1, 
         RefCountPtr< Anasazi::Operator<ScalarType> > op2) : _op1(op1), _op2(op2) {}
-  Anasazi::ReturnType Apply(const Anasazi::MultiVec<ScalarType>& X, 
-                                  Anasazi::MultiVec<ScalarType>& Y ) const
+  void Apply(const Anasazi::MultiVec<ScalarType>& X, 
+        Anasazi::MultiVec<ScalarType>& Y ) const
   {
     typedef Anasazi::MultiVec<ScalarType> MV;
     typedef Anasazi::MultiVecTraits<ScalarType,MV> MVT;
     RefCountPtr<MV> W = MVT::Clone(X,MVT::GetNumberVecs(X));
-    if ( _op1->Apply(X,*W) != Anasazi::Ok ) return Anasazi::Failed;
-    return _op2->Apply(*W,Y);
+    _op1->Apply(X,*W);
+    _op2->Apply(*W,Y);
   }
 };
 
@@ -1618,6 +1560,7 @@ public:
 template <class ScalarType>
 class ARPACK_Example {
   public:
+    virtual ~ARPACK_Example() {};
     virtual void xformeval(std::vector<ScalarType> &) const = 0;
     virtual RefCountPtr< Anasazi::Operator<ScalarType> > getA()  const = 0;
     virtual RefCountPtr< Anasazi::Operator<ScalarType> > getB()  const = 0;

@@ -48,7 +48,7 @@ COMPLEX_ARPACK_TESTS = ARPACKEx_cdriver ARPACKEx_zdriver
 endif
 
 #np# List all executable names here
-noinst_PROGRAMS = ARPACKEx_sdriver ARPACKEx_ddriver $(COMPLEX_ARPACK_TESTS)
+noinst_PROGRAMS = ARPACKEx_ddriver #ARPACKEx_sdriver $(COMPLEX_ARPACK_TESTS)
 
 #np# One SOURCES primary is needed for EACH exe.  (Notice for all of the following 
 #np# primaries that the pattern is "(Exe_name)_(PRIMARY_NAME) = ").  List all source 

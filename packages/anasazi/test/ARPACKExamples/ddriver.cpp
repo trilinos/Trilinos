@@ -32,13 +32,12 @@
 
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziBasicEigenproblem.hpp"
-#include "AnasaziLOBPCG.hpp"
-#include "AnasaziBlockDavidson.hpp"
-#include "AnasaziBlockKrylovSchur.hpp"
 #include "AnasaziBasicSort.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "AnasaziMVOPTester.hpp"
 #include "AnasaziBasicOutputManager.hpp"
+
+#include "AnasaziBlockKrylovSchurSolMgr.hpp"
 
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
@@ -56,8 +55,6 @@ using namespace Teuchos;
 
 int main(int argc, char *argv[]) 
 {
-  int info = 0;
-
 #ifdef EPETRA_MPI
   // Initialize MPI
   MPI_Init(&argc,&argv);
@@ -65,29 +62,6 @@ int main(int argc, char *argv[])
 #else
   Epetra_SerialComm Comm;
 #endif
-
-  int MyPID = Comm.MyPID();
-
-  bool testFailed;
-  bool verbose = 0;
-  std::string which("auto");
-  int nx = 10;
-  std::string problem("SDRV1");
-  bool isherm;
-  std::string solver("auto");
-
-  CommandLineProcessor cmdp(false,true);
-  cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
-  cmdp.setOption("sort",&which,"Targetted eigenvalues (auto, SR, LR, SI, LI, SM, LM).");
-  cmdp.setOption("nx",&nx,"Number of interior elements.");
-  cmdp.setOption("problem",&problem,"Problem to solve.");
-  cmdp.setOption("solver",&solver,"Eigensolver to use (LOBPCG, BKS, BD, auto)");
-  if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
-#ifdef HAVE_MPI
-    MPI_Finalize();
-#endif
-    return -1;
-  }
 
   typedef double ST;
   typedef ScalarTraits<ST>                   SCT;
@@ -99,37 +73,49 @@ int main(int argc, char *argv[])
   ST ONE  = SCT::one();
 
 
-  // Create default output manager 
-  RefCountPtr<Anasazi::OutputManager<ST> > MyOM 
-    = rcp( new Anasazi::BasicOutputManager<ST>() );
-  // Set verbosity level
-  if (verbose) {
-    MyOM->setVerbosity( Anasazi::Warning + Anasazi::FinalSummary );
+  bool testFailed;
+  bool verbose = false;
+  std::string which("auto");
+  int nx = 10;
+  std::string problem("SDRV1");
+  int ncv = 10;
+  int nev = 5;
+  MT tol = 1.0e-10;
+
+  CommandLineProcessor cmdp(false,true);
+  cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+  cmdp.setOption("sort",&which,"Targetted eigenvalues (auto, SR, LR, SI, LI, SM, LM).");
+  cmdp.setOption("problem",&problem,"Problem to solve.");
+  cmdp.setOption("nx",&nx,"Number of interior elements.");
+  cmdp.setOption("ncv",&ncv,"Number of Arnoldi basis vectors.");
+  cmdp.setOption("nev",&nev,"Number of Ritz values requested.");
+  cmdp.setOption("tol",&tol,"Convergence tolerance.");
+  if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
+#ifdef HAVE_MPI
+    MPI_Finalize();
+#endif
+    return -1;
   }
 
-  // print greeting
-  MyOM->stream(Anasazi::Warning) << Anasazi::Anasazi_Version() << endl << endl;
 
-  Anasazi::ReturnType returnCode = Anasazi::Ok;  
+  // Create default output manager 
+  RefCountPtr<Anasazi::OutputManager<ST> > MyOM = rcp( new Anasazi::BasicOutputManager<ST>() );
+  // Set verbosity level
+  int verbosity = Anasazi::Errors;
+  if (verbose) {
+    verbosity = Anasazi::Warnings + Anasazi::FinalSummary + Anasazi::TimingDetails;
+  }
+  MyOM->setVerbosity(verbosity);
+
+  // print greeting
+  MyOM->stream(Anasazi::Warnings) << Anasazi::Anasazi_Version() << endl << endl;
 
   // Eigensolver parameters
   int dim = nx*nx;
-  int nev = 4;
-  int blockSize = 4;
-  int maxIters = 500;
-  int maxBlocks = 5;
-  MT tol = 1.0e-10;
-
-  // Create parameter list to pass into solver
-  ParameterList MyPL;
-  MyPL.set( "Block Size", blockSize );
-  MyPL.set( "Max Iters", maxIters );
-  MyPL.set( "Tol", tol );
-  MyPL.set( "Max Blocks", maxBlocks );
-  MyPL.set( "Max Restarts", maxIters );
+  int maxRestarts = 500;
 
   // Create initial vectors
-  RefCountPtr<MV> ivec = rcp( new MyMultiVec<ST>(dim,blockSize) );
+  RefCountPtr<MV> ivec = rcp( new MyMultiVec<ST>(dim,1) );
   ivec->MvRandom();
 
   // Create matrices
@@ -138,7 +124,7 @@ int main(int argc, char *argv[])
 
   prob = GetARPACKExample<ST>(problem,dim);
   if (!prob.get()) {
-    MyOM->stream(Anasazi::Warning)
+    MyOM->stream(Anasazi::Warnings)
       << "Invalid driver name. Try something like ""ndrv3"" or ""sdrv2""." << endl
       << "End Result: TEST FAILED" << endl;	
 #ifdef HAVE_MPI
@@ -150,76 +136,47 @@ int main(int argc, char *argv[])
   B = prob->getB();
   M = prob->getM();
   Op = prob->getOp();
-  isherm = prob->isHerm();
-
-  // determine solver
-  if (solver == "auto") {
-    if (isherm) {
-      // solver = "LOBPCG";
-      solver = "BKS";
-    }
-    else {
-      solver = "BKS";
-    }
-  }
 
   // determine sort
-  if (which == "auto") {
-    if (solver == "LOBPCG" || solver == "BD") {
-      which = "SM";
-    }
-    else {
-      which = prob->getSort();
-    }
-  }
+  which = prob->getSort();
 
   // test multivector and operators
-  int ierr;
+  bool ierr;
   ierr = Anasazi::TestMultiVecTraits<ST,MV>(MyOM,ivec);
-  MyOM->print(Anasazi::Warning,"Testing MultiVector... ");
-  if (ierr == Anasazi::Ok) {      
-    MyOM->print(Anasazi::Warning,"PASSED TestMultiVecTraits()\n");
+  MyOM->print(Anasazi::Warnings,"Testing MultiVector... ");
+  if (ierr == true) {
+    MyOM->print(Anasazi::Warnings,"PASSED TestMultiVecTraits()\n");
   } else {
-    MyOM->print(Anasazi::Warning,"FAILED TestMultiVecTraits()\n");
+    MyOM->print(Anasazi::Warnings,"FAILED TestMultiVecTraits()\n");
   }
   ierr = Anasazi::TestOperatorTraits<ST,MV,OP>(MyOM,ivec,A);
-  MyOM->print(Anasazi::Warning,"Testing OP... ");
-  if (ierr == Anasazi::Ok) {
-    MyOM->print(Anasazi::Warning,"PASSED TestOperatorTraits()\n");
+  MyOM->print(Anasazi::Warnings,"Testing OP... ");
+  if (ierr == true) {
+    MyOM->print(Anasazi::Warnings,"PASSED TestOperatorTraits()\n");
   } else {
-    MyOM->print(Anasazi::Warning,"FAILED TestOperatorTraits()\n");
+    MyOM->print(Anasazi::Warnings,"FAILED TestOperatorTraits()\n");
   }
   ierr = Anasazi::TestOperatorTraits<ST,MV,OP>(MyOM,ivec,M);
-  MyOM->print(Anasazi::Warning,"Testing M... ");
-  if (ierr == Anasazi::Ok) {
-    MyOM->print(Anasazi::Warning,"PASSED TestOperatorTraits()\n");
+  MyOM->print(Anasazi::Warnings,"Testing M... ");
+  if (ierr == true) {
+    MyOM->print(Anasazi::Warnings,"PASSED TestOperatorTraits()\n");
   } else {
-    MyOM->print(Anasazi::Warning,"FAILED TestOperatorTraits()\n");
+    MyOM->print(Anasazi::Warnings,"FAILED TestOperatorTraits()\n");
   }
-
-  // Create the sort manager
-  RefCountPtr<Anasazi::BasicSort<ST,MV,OP> > MySM = 
-     rcp( new Anasazi::BasicSort<ST,MV,OP>(which) );
 
   // Create eigenproblem
-  RefCountPtr<Anasazi::BasicEigenproblem<ST,MV,OP> > MyProblem;
-  if (solver == "LOBPCG" || solver == "BD") {
-    MyProblem = rcp( new Anasazi::BasicEigenproblem<ST,MV,OP>(A, M, ivec) );
-  }
-  else {
-    MyProblem = rcp( new Anasazi::BasicEigenproblem<ST,MV,OP>(Op, B, ivec) );
-  }
+  RefCountPtr<Anasazi::Eigenproblem<ST,MV,OP> > MyProblem = rcp( new Anasazi::BasicEigenproblem<ST,MV,OP>(Op, B, ivec) );
+  //
   // Inform the eigenproblem if the operator is symmetric
-  MyProblem->SetSymmetric(isherm);
-
-  // Set the number of eigenvalues requested and the blocksize the solver should use
-  MyProblem->SetNEV( nev );
-
+  MyProblem->setHermitian(prob->isHerm());
+  //
+  // set the number of eigenvalues requested
+  MyProblem->setNEV( nev );
+  //
   // Inform the eigenproblem that you are done passing it information
-  info = MyProblem->SetProblem();
-  if (info) {
-    MyOM->stream(Anasazi::Warning)
-      << "Anasazi::BasicEigenproblem::SetProblem() returned with code : "<< info << endl
+  if (MyProblem->setProblem() != true) {
+    MyOM->stream(Anasazi::Warnings)
+      << "Anasazi::BasicEigenproblem::setProblem() had an error." << endl
       << "End Result: TEST FAILED" << endl;	
 #ifdef EPETRA_MPI
     MPI_Finalize() ;
@@ -227,48 +184,36 @@ int main(int argc, char *argv[])
     return -1;
   }
 
-  // Create the eigensolver 
-  RefCountPtr< Anasazi::Eigensolver<ST,MV,OP> > MySolver;
-  if (solver == "LOBPCG") {
-    MySolver = rcp( new Anasazi::LOBPCG<ST,MV,OP>(MyProblem, MySM, MyOM, MyPL));
-  }
-  else if (solver == "BKS") {
-    MyPL.set( "Block Size", 1 );
-    MyPL.set( "Max Blocks", 20 );
-    MySolver = rcp( new Anasazi::BlockKrylovSchur<ST,MV,OP>(MyProblem, MySM, MyOM, MyPL));
-  }
-  else if (solver == "BD") {
-    MySolver = rcp( new Anasazi::BlockDavidson<ST,MV,OP>(MyProblem, MySM, MyOM, MyPL));
-  }
-  else {
-    MyOM->stream(Anasazi::Warning)
-      << "Invalid solver: " << solver << endl
-      << "End Result: TEST FAILED" << endl;	
-#ifdef HAVE_MPI
-    MPI_Finalize();
-#endif
-    return -1;
-  }
-  MyOM->stream(Anasazi::Warning) << "Using solver: " << solver << endl;
+  // Create the solver manager
+  Teuchos::ParameterList MyPL;
+  MyPL.set( "Which", which );
+  MyPL.set( "Block Size", 1 );
+  MyPL.set( "Num Blocks", ncv );
+  MyPL.set( "Maximum Restarts", maxRestarts );
+  MyPL.set( "Orthogonalization", "DGKS" );
+  MyPL.set( "Verbosity", verbosity );
+  MyPL.set( "Convergence Tolerance", tol );
+  Anasazi::BlockKrylovSchurSolMgr<ST,MV,OP> BKS(MyProblem, MyPL);
 
   // Solve the problem to the specified tolerances or length
-  returnCode = MySolver->solve();
+  Anasazi::ReturnType ret = BKS.solve();
   testFailed = false;
-  if (returnCode != Anasazi::Ok) {
+  if (ret != Anasazi::Converged) {
     testFailed = true; 
   }
 
   // Get the eigenvalues and eigenvectors from the eigenproblem
-  RefCountPtr<std::vector<ST> > evals = MyProblem->GetEvals();
-  RefCountPtr<MV > evecs = MyProblem->GetEvecs();
-  int nevecs = MVT::GetNumberVecs(*evecs);
+  Anasazi::Eigensolution<ST,MV> sol = MyProblem->getSolution();
+  RefCountPtr<MV> evecs = sol.Evecs;
+  std::vector<Anasazi::Value<ST> > evals = sol.Evals;
+  std::vector<int> index = sol.index;
+  int nevecs = sol.numVecs;
 
   // Perform spectral transform on eigenvalues, if we used the 
   // spectral xformed operator (Op)
-  if (solver == "BKS") {
-    prob->xformeval(*evals);
-  }
+  // prob->xformeval(evals);
 
+  /*
   // Compute the direct residual
   std::vector<MT> normV( nevecs );
   SerialDenseMatrix<int,ST> L(nevecs,nevecs);
@@ -307,8 +252,9 @@ int main(int argc, char *argv[])
          << std::setw(22) << std::right << normV[i] 
          << endl;
     }
-    MyOM->print(Anasazi::Warning,os.str());
+    MyOM->print(Anasazi::Warnings,os.str());
   }
+  */
 
   // Exit
 #ifdef EPETRA_MPI
@@ -316,13 +262,12 @@ int main(int argc, char *argv[])
 #endif
 
   if (testFailed) {
-    MyOM->print(Anasazi::Warning,"End Result: TEST FAILED\n");
+    MyOM->print(Anasazi::Warnings,"End Result: TEST FAILED\n");
     return -1;
   }
   //
   // Default return value
   //
-  MyOM->print(Anasazi::Warning,"End Result: TEST PASSED\n");
+  MyOM->print(Anasazi::Warnings,"End Result: TEST PASSED\n");
   return 0;
-
 }	

@@ -45,7 +45,7 @@
 #np# Specify locations of include files within Trilinos, but outside np
 #np# Add packages that np is dependent on; remove epetra if np does not need it
 
-SOURCES = $(ARPACKEx_cdriver_SOURCES) $(ARPACKEx_ddriver_SOURCES) $(ARPACKEx_sdriver_SOURCES) $(ARPACKEx_zdriver_SOURCES)
+SOURCES = $(ARPACKEx_ddriver_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -68,8 +68,7 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-noinst_PROGRAMS = ARPACKEx_sdriver$(EXEEXT) ARPACKEx_ddriver$(EXEEXT) \
-	$(am__EXEEXT_1)
+noinst_PROGRAMS = ARPACKEx_ddriver$(EXEEXT)
 subdir = test/ARPACKExamples
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -104,28 +103,17 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Anasazi_config.h
 CONFIG_CLEAN_FILES =
-@BUILD_TEUCHOS_COMPLEX_TRUE@am__EXEEXT_1 = ARPACKEx_cdriver$(EXEEXT) \
-@BUILD_TEUCHOS_COMPLEX_TRUE@	ARPACKEx_zdriver$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
-am_ARPACKEx_cdriver_OBJECTS = ARPACKEx_cdriver-cdriver.$(OBJEXT)
-ARPACKEx_cdriver_OBJECTS = $(am_ARPACKEx_cdriver_OBJECTS)
+am_ARPACKEx_ddriver_OBJECTS = ARPACKEx_ddriver-ddriver.$(OBJEXT)
+ARPACKEx_ddriver_OBJECTS = $(am_ARPACKEx_ddriver_OBJECTS)
 am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
 @USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
 @USING_GNUMAKE_TRUE@	$(ANASAZI_TEST_LIBS))
-am_ARPACKEx_ddriver_OBJECTS = ARPACKEx_ddriver-ddriver.$(OBJEXT)
-ARPACKEx_ddriver_OBJECTS = $(am_ARPACKEx_ddriver_OBJECTS)
-am_ARPACKEx_sdriver_OBJECTS = ARPACKEx_sdriver-sdriver.$(OBJEXT)
-ARPACKEx_sdriver_OBJECTS = $(am_ARPACKEx_sdriver_OBJECTS)
-am_ARPACKEx_zdriver_OBJECTS = ARPACKEx_zdriver-zdriver.$(OBJEXT)
-ARPACKEx_zdriver_OBJECTS = $(am_ARPACKEx_zdriver_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/ARPACKEx_cdriver-cdriver.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ARPACKEx_ddriver-ddriver.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ARPACKEx_sdriver-sdriver.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ARPACKEx_zdriver-zdriver.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/ARPACKEx_ddriver-ddriver.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -135,10 +123,8 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(ARPACKEx_cdriver_SOURCES) $(ARPACKEx_ddriver_SOURCES) \
-	$(ARPACKEx_sdriver_SOURCES) $(ARPACKEx_zdriver_SOURCES)
-DIST_SOURCES = $(ARPACKEx_cdriver_SOURCES) $(ARPACKEx_ddriver_SOURCES) \
-	$(ARPACKEx_sdriver_SOURCES) $(ARPACKEx_zdriver_SOURCES)
+SOURCES = $(ARPACKEx_ddriver_SOURCES)
+DIST_SOURCES = $(ARPACKEx_ddriver_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -392,18 +378,9 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-ARPACKEx_cdriver$(EXEEXT): $(ARPACKEx_cdriver_OBJECTS) $(ARPACKEx_cdriver_DEPENDENCIES) 
-	@rm -f ARPACKEx_cdriver$(EXEEXT)
-	$(CXXLINK) $(ARPACKEx_cdriver_LDFLAGS) $(ARPACKEx_cdriver_OBJECTS) $(ARPACKEx_cdriver_LDADD) $(LIBS)
 ARPACKEx_ddriver$(EXEEXT): $(ARPACKEx_ddriver_OBJECTS) $(ARPACKEx_ddriver_DEPENDENCIES) 
 	@rm -f ARPACKEx_ddriver$(EXEEXT)
 	$(CXXLINK) $(ARPACKEx_ddriver_LDFLAGS) $(ARPACKEx_ddriver_OBJECTS) $(ARPACKEx_ddriver_LDADD) $(LIBS)
-ARPACKEx_sdriver$(EXEEXT): $(ARPACKEx_sdriver_OBJECTS) $(ARPACKEx_sdriver_DEPENDENCIES) 
-	@rm -f ARPACKEx_sdriver$(EXEEXT)
-	$(CXXLINK) $(ARPACKEx_sdriver_LDFLAGS) $(ARPACKEx_sdriver_OBJECTS) $(ARPACKEx_sdriver_LDADD) $(LIBS)
-ARPACKEx_zdriver$(EXEEXT): $(ARPACKEx_zdriver_OBJECTS) $(ARPACKEx_zdriver_DEPENDENCIES) 
-	@rm -f ARPACKEx_zdriver$(EXEEXT)
-	$(CXXLINK) $(ARPACKEx_zdriver_LDFLAGS) $(ARPACKEx_zdriver_OBJECTS) $(ARPACKEx_zdriver_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -411,10 +388,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ARPACKEx_cdriver-cdriver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ARPACKEx_ddriver-ddriver.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ARPACKEx_sdriver-sdriver.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ARPACKEx_zdriver-zdriver.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -432,22 +406,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-ARPACKEx_cdriver-cdriver.o: $(srcdir)/cdriver.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ARPACKEx_cdriver_CXXFLAGS) $(CXXFLAGS) -MT ARPACKEx_cdriver-cdriver.o -MD -MP -MF "$(DEPDIR)/ARPACKEx_cdriver-cdriver.Tpo" -c -o ARPACKEx_cdriver-cdriver.o `test -f '$(srcdir)/cdriver.cpp' || echo '$(srcdir)/'`$(srcdir)/cdriver.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ARPACKEx_cdriver-cdriver.Tpo" "$(DEPDIR)/ARPACKEx_cdriver-cdriver.Po"; else rm -f "$(DEPDIR)/ARPACKEx_cdriver-cdriver.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cdriver.cpp' object='ARPACKEx_cdriver-cdriver.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ARPACKEx_cdriver-cdriver.Po' tmpdepfile='$(DEPDIR)/ARPACKEx_cdriver-cdriver.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ARPACKEx_cdriver_CXXFLAGS) $(CXXFLAGS) -c -o ARPACKEx_cdriver-cdriver.o `test -f '$(srcdir)/cdriver.cpp' || echo '$(srcdir)/'`$(srcdir)/cdriver.cpp
-
-ARPACKEx_cdriver-cdriver.obj: $(srcdir)/cdriver.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ARPACKEx_cdriver_CXXFLAGS) $(CXXFLAGS) -MT ARPACKEx_cdriver-cdriver.obj -MD -MP -MF "$(DEPDIR)/ARPACKEx_cdriver-cdriver.Tpo" -c -o ARPACKEx_cdriver-cdriver.obj `if test -f '$(srcdir)/cdriver.cpp'; then $(CYGPATH_W) '$(srcdir)/cdriver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cdriver.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ARPACKEx_cdriver-cdriver.Tpo" "$(DEPDIR)/ARPACKEx_cdriver-cdriver.Po"; else rm -f "$(DEPDIR)/ARPACKEx_cdriver-cdriver.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cdriver.cpp' object='ARPACKEx_cdriver-cdriver.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ARPACKEx_cdriver-cdriver.Po' tmpdepfile='$(DEPDIR)/ARPACKEx_cdriver-cdriver.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ARPACKEx_cdriver_CXXFLAGS) $(CXXFLAGS) -c -o ARPACKEx_cdriver-cdriver.obj `if test -f '$(srcdir)/cdriver.cpp'; then $(CYGPATH_W) '$(srcdir)/cdriver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cdriver.cpp'; fi`
-
 ARPACKEx_ddriver-ddriver.o: $(srcdir)/ddriver.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ARPACKEx_ddriver_CXXFLAGS) $(CXXFLAGS) -MT ARPACKEx_ddriver-ddriver.o -MD -MP -MF "$(DEPDIR)/ARPACKEx_ddriver-ddriver.Tpo" -c -o ARPACKEx_ddriver-ddriver.o `test -f '$(srcdir)/ddriver.cpp' || echo '$(srcdir)/'`$(srcdir)/ddriver.cpp; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ARPACKEx_ddriver-ddriver.Tpo" "$(DEPDIR)/ARPACKEx_ddriver-ddriver.Po"; else rm -f "$(DEPDIR)/ARPACKEx_ddriver-ddriver.Tpo"; exit 1; fi
@@ -463,38 +421,6 @@ ARPACKEx_ddriver-ddriver.obj: $(srcdir)/ddriver.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ARPACKEx_ddriver-ddriver.Po' tmpdepfile='$(DEPDIR)/ARPACKEx_ddriver-ddriver.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ARPACKEx_ddriver_CXXFLAGS) $(CXXFLAGS) -c -o ARPACKEx_ddriver-ddriver.obj `if test -f '$(srcdir)/ddriver.cpp'; then $(CYGPATH_W) '$(srcdir)/ddriver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ddriver.cpp'; fi`
-
-ARPACKEx_sdriver-sdriver.o: $(srcdir)/sdriver.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ARPACKEx_sdriver_CXXFLAGS) $(CXXFLAGS) -MT ARPACKEx_sdriver-sdriver.o -MD -MP -MF "$(DEPDIR)/ARPACKEx_sdriver-sdriver.Tpo" -c -o ARPACKEx_sdriver-sdriver.o `test -f '$(srcdir)/sdriver.cpp' || echo '$(srcdir)/'`$(srcdir)/sdriver.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ARPACKEx_sdriver-sdriver.Tpo" "$(DEPDIR)/ARPACKEx_sdriver-sdriver.Po"; else rm -f "$(DEPDIR)/ARPACKEx_sdriver-sdriver.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/sdriver.cpp' object='ARPACKEx_sdriver-sdriver.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ARPACKEx_sdriver-sdriver.Po' tmpdepfile='$(DEPDIR)/ARPACKEx_sdriver-sdriver.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ARPACKEx_sdriver_CXXFLAGS) $(CXXFLAGS) -c -o ARPACKEx_sdriver-sdriver.o `test -f '$(srcdir)/sdriver.cpp' || echo '$(srcdir)/'`$(srcdir)/sdriver.cpp
-
-ARPACKEx_sdriver-sdriver.obj: $(srcdir)/sdriver.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ARPACKEx_sdriver_CXXFLAGS) $(CXXFLAGS) -MT ARPACKEx_sdriver-sdriver.obj -MD -MP -MF "$(DEPDIR)/ARPACKEx_sdriver-sdriver.Tpo" -c -o ARPACKEx_sdriver-sdriver.obj `if test -f '$(srcdir)/sdriver.cpp'; then $(CYGPATH_W) '$(srcdir)/sdriver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/sdriver.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ARPACKEx_sdriver-sdriver.Tpo" "$(DEPDIR)/ARPACKEx_sdriver-sdriver.Po"; else rm -f "$(DEPDIR)/ARPACKEx_sdriver-sdriver.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/sdriver.cpp' object='ARPACKEx_sdriver-sdriver.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ARPACKEx_sdriver-sdriver.Po' tmpdepfile='$(DEPDIR)/ARPACKEx_sdriver-sdriver.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ARPACKEx_sdriver_CXXFLAGS) $(CXXFLAGS) -c -o ARPACKEx_sdriver-sdriver.obj `if test -f '$(srcdir)/sdriver.cpp'; then $(CYGPATH_W) '$(srcdir)/sdriver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/sdriver.cpp'; fi`
-
-ARPACKEx_zdriver-zdriver.o: $(srcdir)/zdriver.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ARPACKEx_zdriver_CXXFLAGS) $(CXXFLAGS) -MT ARPACKEx_zdriver-zdriver.o -MD -MP -MF "$(DEPDIR)/ARPACKEx_zdriver-zdriver.Tpo" -c -o ARPACKEx_zdriver-zdriver.o `test -f '$(srcdir)/zdriver.cpp' || echo '$(srcdir)/'`$(srcdir)/zdriver.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ARPACKEx_zdriver-zdriver.Tpo" "$(DEPDIR)/ARPACKEx_zdriver-zdriver.Po"; else rm -f "$(DEPDIR)/ARPACKEx_zdriver-zdriver.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/zdriver.cpp' object='ARPACKEx_zdriver-zdriver.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ARPACKEx_zdriver-zdriver.Po' tmpdepfile='$(DEPDIR)/ARPACKEx_zdriver-zdriver.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ARPACKEx_zdriver_CXXFLAGS) $(CXXFLAGS) -c -o ARPACKEx_zdriver-zdriver.o `test -f '$(srcdir)/zdriver.cpp' || echo '$(srcdir)/'`$(srcdir)/zdriver.cpp
-
-ARPACKEx_zdriver-zdriver.obj: $(srcdir)/zdriver.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ARPACKEx_zdriver_CXXFLAGS) $(CXXFLAGS) -MT ARPACKEx_zdriver-zdriver.obj -MD -MP -MF "$(DEPDIR)/ARPACKEx_zdriver-zdriver.Tpo" -c -o ARPACKEx_zdriver-zdriver.obj `if test -f '$(srcdir)/zdriver.cpp'; then $(CYGPATH_W) '$(srcdir)/zdriver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/zdriver.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ARPACKEx_zdriver-zdriver.Tpo" "$(DEPDIR)/ARPACKEx_zdriver-zdriver.Po"; else rm -f "$(DEPDIR)/ARPACKEx_zdriver-zdriver.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/zdriver.cpp' object='ARPACKEx_zdriver-zdriver.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ARPACKEx_zdriver-zdriver.Po' tmpdepfile='$(DEPDIR)/ARPACKEx_zdriver-zdriver.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ARPACKEx_zdriver_CXXFLAGS) $(CXXFLAGS) -c -o ARPACKEx_zdriver-zdriver.obj `if test -f '$(srcdir)/zdriver.cpp'; then $(CYGPATH_W) '$(srcdir)/zdriver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/zdriver.cpp'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
