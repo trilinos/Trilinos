@@ -101,6 +101,11 @@ except ImportError:
     from numpy import get_numpy_include
     include_dirs.append(get_numpy_include())
 
+# Add the PyTrilinos build directory to the library directories
+pyTrilinosBuildDir = os.path.normpath(os.path.join(os.getcwd(), "..", "..",
+                                                   "..", "PyTrilinos", "src"))
+library_dirs.insert(0,pyTrilinosBuildDir)
+
 # Define the strings that refer to the required local source files
 triutilsWrap           = "TriUtils_wrap.cpp"
 epetraNumPyMultiVector = os.path.normpath(os.path.join(epetraPythonSrcDir,

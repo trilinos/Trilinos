@@ -34,7 +34,7 @@ from   distutils      import sysconfig
 import os
 import sys
 
-# Trilinos import
+# Trilinos imports
 TRILINOS_HOME_DIR = os.path.normpath(open("TRILINOS_HOME_DIR").read()[:-1])
 sys.path.insert(0,os.path.join(TRILINOS_HOME_DIR,"commonTools","buildTools"))
 from MakefileVariables import *
@@ -73,7 +73,7 @@ if majorVersion > 0:
 # Get the relevant Makefile export variable values, split them into lists of
 # strings, add them together to obtain a big list of option strings, and then
 # remove any duplicate entries
-options = AZTECOO_INCLUDES.split()    + \
+options = AZTECOO_INCLUDES.split() + \
           AZTECOO_LIBS.split()
 uniquifyList(options)
 
@@ -102,6 +102,11 @@ try:
 except ImportError:
     from numpy import get_numpy_include
     include_dirs.append(get_numpy_include())
+
+# Add the PyTrilinos build directory to the library directories
+pyTrilinosBuildDir = os.path.normpath(os.path.join(os.getcwd(), "..", "..",
+                                                   "..", "PyTrilinos", "src"))
+library_dirs.insert(0,pyTrilinosBuildDir)
 
 # Define the strings that refer to the required local source files
 aztecooWrap            = "AztecOO_wrap.cpp"

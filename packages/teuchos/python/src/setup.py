@@ -81,6 +81,11 @@ for option in options:
     else:
         extra_link_args.append(option)
 
+# Add the PyTrilinos build directory to the library directories
+pyTrilinosBuildDir = os.path.normpath(os.path.join(os.getcwd(), "..", "..",
+                                                   "..", "PyTrilinos", "src"))
+library_dirs.insert(0,pyTrilinosBuildDir)
+
 # Define the strings that refer to the required local source files
 srcFiles = ["Teuchos_wrap.cpp"]
 

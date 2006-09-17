@@ -85,6 +85,11 @@ for option in options:
 if NEWP_SWAHILI:
     extra_compile_args.append("-DNEWP_SWAHILI")
 
+# Add the PyTrilinos build directory to the library directories
+pyTrilinosBuildDir = os.path.normpath(os.path.join(os.getcwd(), "..", "..",
+                                                   "..", "PyTrilinos", "src"))
+library_dirs.insert(0,pyTrilinosBuildDir)
+
 # Define the strings that refer to the required local source files
 new_packageWrap = "New_Package_wrap.cpp"
 
