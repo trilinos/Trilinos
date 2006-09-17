@@ -8,7 +8,7 @@ Galeri contains:
 - utilities to generate Epetra_Map's, Epetra_CrsMatrix's and
   Epetra_VbrMatrix's;
 - two finite element codes: one in src-fem, and a newer version in src-pfem.
-  src-fem containes the code previously hosted in ml/examples/FiniteElements.
+  src-fem contains the code previously hosted in ml/examples/FiniteElements.
   This code is extended by the newer version src-pfem, which is under
   development. pfem is a fully parallel, extensible FEM solver.
 
