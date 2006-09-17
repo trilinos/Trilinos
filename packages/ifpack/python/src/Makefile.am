@@ -28,8 +28,9 @@
 
 # Include the export Makefiles
 include $(top_builddir)/Makefile.export
+include $(top_builddir)/../triutils/Makefile.export.triutils
 
-IFPACK_PYTHON_LIBS = $(IFPACK_LIBS) 
+IFPACK_PYTHON_LIBS = $(IFPACK_LIBS) $(TRIUTILS_LIBS)
 
 # Include swig rules
 include $(top_srcdir)/config/swig.am
