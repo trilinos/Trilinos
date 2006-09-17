@@ -123,7 +123,7 @@ class EpetraImportTestCase(unittest.TestCase):
         if self.myPID == 0:
             permuteFromGIDs = permuteFromGIDs[1:,:]
         if self.numProc == 1:
-            permuteFromGIDs = zeros((0,))
+            permuteFromGIDs = zeros((0,),"i")
         permuteFromGIDs = ravel(permuteFromGIDs)
         lists           = self.srcMap.RemoteIDList(permuteFromGIDs)
         permuteFromLIDs = lists[1]
@@ -138,7 +138,7 @@ class EpetraImportTestCase(unittest.TestCase):
         if self.myPID == 0:
             permuteToGIDs = permuteToGIDs[1:,:]
         if self.numProc == 1:
-            permuteToGIDs = zeros((0,))
+            permuteToGIDs = zeros((0,),"i")
         permuteToGIDs = ravel(permuteToGIDs)
         lists         = self.trgMap.RemoteIDList(permuteToGIDs)
         permuteToLIDs = lists[1]
@@ -311,7 +311,7 @@ class EpetraExportTestCase(unittest.TestCase):
         if self.myPID == 0:
             permuteFromGIDs = permuteFromGIDs[1:,:]
         if self.numProc == 1:
-            permuteFromGIDs = zeros((0,))
+            permuteFromGIDs = zeros((0,),"i")
         permuteFromGIDs = ravel(permuteFromGIDs)
         lists           = self.srcMap.RemoteIDList(permuteFromGIDs)
         permuteFromLIDs = lists[1]
@@ -326,7 +326,7 @@ class EpetraExportTestCase(unittest.TestCase):
         if self.myPID == 0:
             permuteToGIDs = permuteToGIDs[1:,:]
         if self.numProc == 1:
-            permuteToGIDs = zeros((0,))
+            permuteToGIDs = zeros((0,),"i")
         permuteToGIDs = ravel(permuteToGIDs)
         lists         = self.trgMap.RemoteIDList(permuteToGIDs)
         permuteToLIDs = lists[1]

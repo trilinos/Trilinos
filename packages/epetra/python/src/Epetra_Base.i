@@ -328,18 +328,36 @@ static PyObject * PyExc_EpetraError = PyErr_NewException("Epetra.Error",NULL,NUL
   }
 }
 
-// Python code.  Here we set the __version__ string
+// Python code.  Here we import what we need from numpy and set the
+// __version__ string
 %pythoncode %{
 
 # Much of the Epetra module is compatible with the numpy module
 from numpy import *
 
-# There is a bug in UserArray from numpy 0.9.8.  If that is what the user is
-# running, then we have our own patched UserArrayFix module
+# From numpy version 1.0 forward, we want to use the following import syntax for
+# user_array.container.  We rename it UserArray for backward compatibility with
+# 0.9.x versions of numpy:
 try:
-    from UserArrayFix import *
+    from numpy.lib.user_array import container as UserArray
+
 except ImportError:
-    from numpy.lib.UserArray import *
+
+    # If the previous import failed, it is because we are using a numpy version
+    # prior to 1.0.  However, there is a bug in UserArray from numpy 0.9.8.  If
+    # that is what the user is running, then we have our own patched
+    # UserArrayFix module:
+
+    try:
+        from UserArrayFix import UserArray
+        
+    except ImportError:
+
+        # If the previous import failed, it is because we are using a version of
+        # numpy prior to 0.9.8, such as 0.9.6, which has no bug and therefore
+        # has no local patch.  Now we can import using the original syntax:
+
+        from numpy.lib.UserArray import UserArray
 
 __version__ = Version().split()[2]
 %}

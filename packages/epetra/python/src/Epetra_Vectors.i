@@ -135,6 +135,18 @@ class MultiVector(UserArray,NumPyMultiVector):
         UserArray.__init__(self, self.ExtractView(), dtype="d", copy=False)
     def __str__(self):
         return str(self.array)
+    def __lt__(self,other):
+        return less(self.array,other)
+    def __le__(self,other):
+        return less_equal(self.array,other)
+    def __eq__(self,other):
+        return equal(self.array,other)
+    def __ne__(self,other):
+        return not_equal(self.array,other)
+    def __gt__(self,other):
+        return greater(self.array,other)
+    def __ge__(self,other):
+        return greater_equal(self.array,other)
     def __getattr__(self, key):
         # This should get called when the MultiVector is accessed after not
         # properly being initialized
@@ -175,6 +187,18 @@ class Vector(UserArray,NumPyVector):
         UserArray.__init__(self, self.ExtractView(), dtype="d", copy=False)
     def __str__(self):
         return str(self.array)
+    def __lt__(self,other):
+        return less(self.array,other)
+    def __le__(self,other):
+        return less_equal(self.array,other)
+    def __eq__(self,other):
+        return equal(self.array,other)
+    def __ne__(self,other):
+        return not_equal(self.array,other)
+    def __gt__(self,other):
+        return greater(self.array,other)
+    def __ge__(self,other):
+        return greater_equal(self.array,other)
     def __getattr__(self, key):
         # This should get called when the Vector is accessed after not properly
         # being initialized
@@ -209,6 +233,18 @@ class IntVector(UserArray,NumPyIntVector):
         UserArray.__init__(self, self.ExtractView(), dtype="i", copy=False)
     def __str__(self):
         return str(self.array)
+    def __lt__(self,other):
+        return less(self.array,other)
+    def __le__(self,other):
+        return less_equal(self.array,other)
+    def __eq__(self,other):
+        return equal(self.array,other)
+    def __ne__(self,other):
+        return not_equal(self.array,other)
+    def __gt__(self,other):
+        return greater(self.array,other)
+    def __ge__(self,other):
+        return greater_equal(self.array,other)
     def __getattr__(self, key):
         # This should get called when the IntVector is accessed after not
         # properly being initialized

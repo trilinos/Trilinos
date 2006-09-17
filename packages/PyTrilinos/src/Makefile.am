@@ -28,6 +28,9 @@
 
 EXTRA_DIST = setup.py
 
+@HAVE_MPI_TRUE@HAVE_MPI = 1
+@HAVE_MPI_FALSE@HAVE_MPI =
+
 # Default make target
 all-local: build
 
@@ -41,7 +44,10 @@ build:
 	$(PYTHON) $(srcdir)/setup.py build
 
 install: build
-	$(PYTHON) $(srcdir)/setup.py install --prefix=$(PYTHON_PREFIX)
+	$(PYTHON) $(srcdir)/setup.py install
+
+uninstall:
+	$(PYTHON) $(srcdir)/setup.py uninstall
 
 clean-local:
 	$(PYTHON) $(srcdir)/setup.py clean

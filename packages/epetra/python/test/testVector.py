@@ -223,7 +223,7 @@ class EpetraVectorTestCase(unittest.TestCase):
         self.assertEquals(ev.GlobalLength(), 3*3*len(list[0][0]))
         for i in range(ev.shape[0]):
             for j in range(len(list[i])):
-                self.assertEquals(ev[i,j], list[i][j])
+                self.failUnless((ev[i,j] == list[i][j]).all())
 
     def testConstructor15(self):
         "Test Epetra.Vector (bad-list) constructor"
@@ -494,8 +494,8 @@ class EpetraVectorTestCase(unittest.TestCase):
         a     = [self.numPyArray1] * 4
         ev    = Epetra.Vector(self.map,a)
         array = ev.ExtractCopy()
-        self.assertEquals(type(array), ArrayType)
-        self.assertEquals(ev[:], array[:])
+        self.assertEquals(type(array), ndarray)
+        self.failUnless((ev[:] == array[:]).all())
         self.assertEquals(ev.array is array, False)
 
     def testExtractView(self):
@@ -503,8 +503,8 @@ class EpetraVectorTestCase(unittest.TestCase):
         a     = [self.numPyArray1] * 4
         ev    = Epetra.Vector(self.map,a)
         array = ev.ExtractView()
-        self.assertEquals(type(array), ArrayType)
-        self.assertEquals(ev[:], array[:])
+        self.assertEquals(type(array), ndarray)
+        self.failUnless((ev[:] == array[:]).all())
         self.assertEquals(ev.array is array, True)
 
     def testNumVectors(self):
@@ -608,36 +608,38 @@ class EpetraVectorTestCase(unittest.TestCase):
         a[0] = 1.0  # Don't want to invert zero
         ev1  = Epetra.Vector(self.map,a)
         ev2  = Epetra.Vector(self.map)
-        self.assertEquals(ev2[:],0.0)
+        self.failUnless((ev2[:] == 0.0).all())
         result = ev2.Reciprocal(ev1)
         self.assertEquals(result,0)
-        self.assertEquals(ev2[:],1.0/a)
+        self.failUnless((ev2[:] == 1.0/a).all())
 
     def testScale1(self):
         "Test Epetra.Vector Scale method in-place"
-        a  = self.numPyArray2
-        ev = Epetra.Vector(self.map,a)
+        a  = self.numPyArray2.copy()
+        ev = Epetra.Vector(self.map,self.numPyArray2)
         result = ev.Scale(2.0)
         self.assertEquals(result,0)
-        self.assertEquals(ev[:],2.0*a)
+        self.failUnless((abs(ev[:] - 2.0*a) < 1e-10).all())
 
     def testScale2(self):
         "Test Epetra.Vector Scale method with replace"
         a   = self.numPyArray1
         ev1 = Epetra.Vector(self.map,a)
         ev2 = Epetra.Vector(self.map)
-        self.assertEquals(ev2[:],0.0)
+        self.failUnless((ev2[:] == 0.0).all())
         result = ev2.Scale(pi,ev1)
         self.assertEquals(result,0)
-        self.assertEquals(ev2[:],pi*a)
+        self.failUnless((ev2[:] == pi*a).all())
 
     def testUpdate1(self):
         "Test Epetra.Vector Update method with one Vector"
+        a   = self.numPyArray1.copy()
+        b   = self.numPyArray2.copy()
         ev1 = Epetra.Vector(self.map,self.numPyArray1)
         ev2 = Epetra.Vector(self.map,self.numPyArray2)
         result = ev2.Update(2.0,ev1,3.0)
         self.assertEquals(result,0)
-        self.assertEquals(ev2[:],2.0*self.numPyArray1 + 3.0*self.numPyArray2)
+        self.failUnless((abs(ev2[:] - (2.0*a + 3.0*b)) < 1e-10).all())
 
     def testUpdate2(self):
         "Test Epetra.Vector Update method with two Vectors"
@@ -646,7 +648,7 @@ class EpetraVectorTestCase(unittest.TestCase):
         ev2 = Epetra.Vector(self.map,self.numPyArray2)
         result = ev0.Update(2.0,ev1,3.0,ev2,pi)
         self.assertEquals(result,0)
-        self.assertEquals(ev0[:],2.0*self.numPyArray1 + 3.0*self.numPyArray2)
+        self.failUnless((ev0[:] == 2.0*self.numPyArray1 + 3.0*self.numPyArray2).all())
 
     def testNorm1(self):
         "Test Epetra.Vector Norm1 method"

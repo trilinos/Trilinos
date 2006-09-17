@@ -134,7 +134,7 @@ class EpetraSerialDenseMatrixTestCase(unittest.TestCase):
         self.assertEqual(sdm.CV(), Epetra.View       )
         self.assertEqual(sdm.M() , len(self.array)   )
         self.assertEqual(sdm.N() , len(self.array[0]))
-        testing.assert_array_equal(sdm, self.array)
+        self.failUnless((sdm == self.array).all())
 
     def testConstructor08(self):
         "Test Epetra.SerialDenseMatrix (2D-list,bool) constructor"
@@ -142,7 +142,7 @@ class EpetraSerialDenseMatrixTestCase(unittest.TestCase):
         self.assertEqual(sdm.CV(), Epetra.View       )
         self.assertEqual(sdm.M() , len(self.array)   )
         self.assertEqual(sdm.N() , len(self.array[0]))
-        testing.assert_array_equal(sdm, self.array)
+        self.failUnless((sdm == self.array).all())
 
     def testConstructor09(self):
         "Test Epetra.SerialDenseMatrix (3D-list) constructor"
@@ -279,12 +279,12 @@ class EpetraSerialDenseMatrixTestCase(unittest.TestCase):
         "Test Epetra.SerialDenseMatrix __getitem__ method for int and slice"
         sdm = Epetra.SerialDenseMatrix(self.array)
         for i in range(sdm.M()):
-            testing.assert_array_equal(sdm[i,:], self.array[i])
+            self.failUnless((sdm[i,:] == self.array[i]).all())
 
     def testGetItem3(self):
         "Test Epetra.SerialDenseMatrix __getitem__ method for two slices"
         sdm = Epetra.SerialDenseMatrix(self.array)
-        testing.assert_array_equal(sdm[:,:], self.array)
+        self.failUnless((sdm[:,:] == self.array).all())
 
     def testGetItem4(self):
         "Test Epetra.SerialDenseMatrix __getitem__ method for three ints"
@@ -304,7 +304,7 @@ class EpetraSerialDenseMatrixTestCase(unittest.TestCase):
     def testSetItem1(self):
         "Test Epetra.SerialDenseMatrix __setitem__ method for two ints"
         sdm = Epetra.SerialDenseMatrix(self.rows,self.cols)
-        testing.assert_array_equal(sdm, zeros((self.rows,self.cols),'d'))
+        self.failUnless((sdm == zeros((self.rows,self.cols),'d')).all())
         for i in range(sdm.M()):
             for j in range(sdm.N()):
                 value = i * sdm.N() + j
@@ -314,17 +314,17 @@ class EpetraSerialDenseMatrixTestCase(unittest.TestCase):
     def testSetItem2(self):
         "Test Epetra.SerialDenseMatrix __setitem__ method for int and slice"
         sdm = Epetra.SerialDenseMatrix(self.rows,self.cols)
-        testing.assert_array_equal(sdm, zeros((self.rows,self.cols),'d'))
+        self.failUnless((sdm == zeros((self.rows,self.cols),'d')).all())
         for i in range(sdm.M()):
             sdm[i,:] = self.array[i]
-            testing.assert_array_equal(sdm[i,:], self.array[i])
+            self.failUnless((sdm[i,:] == self.array[i]).all())
 
     def testSetItem3(self):
         "Test Epetra.SerialDenseMatrix __setitem__ method for two slices"
         sdm = Epetra.SerialDenseMatrix(self.rows,self.cols)
-        testing.assert_array_equal(sdm, zeros((self.rows,self.cols),'d'))
+        self.failUnless((sdm == zeros((self.rows,self.cols),'d')).all())
         sdm[:,:] = self.array
-        testing.assert_array_equal(sdm, self.array)
+        self.failUnless((sdm == self.array).all())
 
     def testSetItem4(self):
         "Test Epetra.SerialDenseMatrix __setitem__ method for three ints"
@@ -405,18 +405,18 @@ class EpetraSerialDenseMatrixTestCase(unittest.TestCase):
     def testA1(self):
         "Test Epetra.SerialDenseMatrix A method for default"
         sdm = Epetra.SerialDenseMatrix()
-        testing.assert_array_equal(sdm.A(), sdm.array)
+        self.failUnless((sdm.A() == sdm.array).all())
 
     def testA2(self):
         "Test Epetra.SerialDenseMatrix A method for (int,int)"
         sdm = Epetra.SerialDenseMatrix(self.rows,self.cols)
         result = sdm.Random()
-        testing.assert_array_equal(sdm.A(), sdm.array)
+        self.failUnless((sdm.A() == sdm.array).all())
 
     def testA3(self):
         "Test Epetra.SerialDenseMatrix A method for (2D-array)"
         sdm = Epetra.SerialDenseMatrix(self.array)
-        testing.assert_array_equal(sdm.A(), sdm.array)
+        self.failUnless((sdm.A() == sdm.array).all())
 
     def testArray(self):
         "Test Epetra.SerialDenseMatrix array attribute"
@@ -475,7 +475,7 @@ class EpetraSerialDenseMatrixTestCase(unittest.TestCase):
                                          [20, 38, 56,  74]])
         result = this.Multiply("N","N",1.0,a,b,1.0)
         self.assertEqual(result, 0)
-        testing.assert_array_equal(this, c)
+        self.failUnless((this == c).all())
 
     def testMultiply2(self):
         "Test Epetra.SerialDenseMatrix Multiply method with addition"
@@ -490,7 +490,7 @@ class EpetraSerialDenseMatrixTestCase(unittest.TestCase):
         d = Epetra.SerialDenseMatrix(c) * 2
         result = c.Multiply("N","N",1.0,a,b,1.0)
         self.assertEqual(result, 0)
-        testing.assert_array_equal(c, d)
+        self.failUnless((c == d).all())
 
     def testMultiply3(self):
         "Test Epetra.SerialDenseMatrix Multiply method with no addition"
@@ -505,7 +505,7 @@ class EpetraSerialDenseMatrixTestCase(unittest.TestCase):
                                       [20, 38, 56,  74]])
         result = a.Multiply(False,x,y)
         self.assertEqual(result, 0)
-        testing.assert_array_equal(y, ans)
+        self.failUnless((y == ans).all())
 
     def testApply(self):
         "Test Epetra.SerialDenseMatrix Apply method"
@@ -520,7 +520,7 @@ class EpetraSerialDenseMatrixTestCase(unittest.TestCase):
                                         [20, 38, 56,  74]])
         result = a.Apply(x,y)
         self.assertEqual(result, 0)
-        testing.assert_array_equal(y, ans)
+        self.failUnless((y == ans).all())
 
     def testApplyInverse(self):
         "Test Epetra.SerialDenseMatrix ApplyInverse method"
@@ -818,7 +818,7 @@ class EpetraSerialDenseSolverTestCase(unittest.TestCase):
         result = sds.SetMatrix(self.A)
         self.assertEqual(result, 0)
         self.failUnless(isinstance(sds.Matrix(),Epetra.SerialDenseMatrix))
-        testing.assert_array_equal(self.A, sds.Matrix())
+        self.failUnless((self.A == sds.Matrix()).all())
 
     def testSetVectors(self):
         "Test Epetra.SerialDenseSolver SetVectors method"
@@ -827,8 +827,8 @@ class EpetraSerialDenseSolverTestCase(unittest.TestCase):
         self.assertEqual(result, 0)
         self.failUnless(isinstance(sds.LHS(),Epetra.SerialDenseMatrix))
         self.failUnless(isinstance(sds.RHS(),Epetra.SerialDenseMatrix))
-        testing.assert_array_equal(self.x, sds.LHS()[:,0])
-        testing.assert_array_equal(self.b, sds.RHS()[:,0])
+        self.failUnless((self.x == sds.LHS()[:,0]).all())
+        self.failUnless((self.b == sds.RHS()[:,0]).all())
 
     def testMisMatch(self):
         "Test Epetra.SerialDenseSolver with mismatched dimensions"
@@ -909,19 +909,22 @@ class EpetraSerialDenseSolverTestCase(unittest.TestCase):
         self.assertEqual(sds.R(), None)
         result = sds.ComputeEquilibrateScaling()
         self.assertEqual(result, 0)
-        testing.assert_array_equal(sds.C(), 1.0)
-        testing.assert_array_equal(sds.R(), 1/diagonal(self.A))
+        self.failUnless((sds.C() == 1.0).all())
+        self.failUnless((sds.R() == 1/diagonal(self.A)).all())
 
     def testEquilibrateMatrix(self):
         "Test Epetra.SerialDenseSolver EquilibrateMatrix method"
         sds = Epetra.SerialDenseSolver()
-        A0  = mat(self.A,copy=True)
+        try:
+            A0  = mat(self.A,copy=True)
+        except TypeError:
+            A0 = matrix(self.A,copy=True)
         self.buildProblem(sds)
         result = sds.EquilibrateMatrix()
         self.assertEqual(result,0)
         self.assertEqual(sds.A_Equilibrated(), True)
         S = mat(identity(self.size,'d') / diagonal(A0))
-        testing.assert_array_equal(sds.Matrix(), S*A0)
+        self.failUnless((sds.Matrix() == S*A0).all())
 
     def testEquilibrateRHS(self):
         "Test Epetra.SerialDenseSolver EquilibrateRHS method"
@@ -946,10 +949,10 @@ class EpetraSerialDenseSolverTestCase(unittest.TestCase):
         self.buildProblem(sds)
         sds.FactorWithEquilibration(True)
         self.solveProblem(sds)
-        testing.assert_array_almost_equal(sds.LHS()[:,0], self.soln)
+        self.failUnless((abs(sds.LHS()[:,0] - self.soln) < 1e-10).all())
         result = sds.UnequilibrateLHS()
         self.assertEqual(result,0)
-        testing.assert_array_almost_equal(sds.LHS()[:,0], self.soln)
+        self.failUnless((abs(sds.LHS()[:,0] - self.soln) < 1e-10).all())
 
     def testReciprocalConditionEstimate(self):
         "Test Epetra.SerialDenseSolver ReciprocalConditionEstimate method"
@@ -994,7 +997,7 @@ class EpetraSerialDenseSolverTestCase(unittest.TestCase):
         self.buildProblem(sds)
         matrix = sds.Matrix()
         self.assertEqual(isinstance(matrix,Epetra.SerialDenseMatrix), True)
-        testing.assert_array_equal(matrix, self.A)
+        self.failUnless((matrix == self.A).all())
 
     def testMatrixBad(self):
         "Test Epetra.SerialDenseSolver Matrix method, called before problem defined"
@@ -1007,7 +1010,7 @@ class EpetraSerialDenseSolverTestCase(unittest.TestCase):
         self.buildProblem(sds)
         matrix = sds.FactoredMatrix()
         self.assertEqual(isinstance(matrix,Epetra.SerialDenseMatrix), True)
-        testing.assert_array_equal(matrix, self.A)
+        self.failUnless((matrix == self.A).all())
         result = sds.Factor()
         self.assertEqual(result,0)
         matrix = sds.FactoredMatrix()
@@ -1024,7 +1027,7 @@ class EpetraSerialDenseSolverTestCase(unittest.TestCase):
         self.buildProblem(sds)
         vectors = sds.LHS()
         self.assertEqual(isinstance(vectors,Epetra.SerialDenseMatrix), True)
-        testing.assert_array_equal(vectors[:,0], self.x)
+        self.failUnless((vectors[:,0] == self.x).all())
 
     def testLHSBad(self):
         "Test Epetra.SerialDenseSolver LHS method, called before problem defined"
@@ -1037,7 +1040,7 @@ class EpetraSerialDenseSolverTestCase(unittest.TestCase):
         self.buildProblem(sds)
         vectors = sds.RHS()
         self.assertEqual(isinstance(vectors,Epetra.SerialDenseMatrix), True)
-        testing.assert_array_equal(vectors[:,0], self.b)
+        self.failUnless((vectors[:,0] == self.b).all())
 
     def testRHSBad(self):
         "Test Epetra.SerialDenseSolver RHS method, called before problem defined"
@@ -1062,7 +1065,7 @@ class EpetraSerialDenseSolverTestCase(unittest.TestCase):
         self.buildProblem(sds)
         A = sds.A()
         self.failUnless(isinstance(A,ndarray))
-        testing.assert_array_equal(A, self.A)
+        self.failUnless((A == self.A).all())
 
     def testABad(self):
         "Test Epetra.SerialDenseSolver A method, called before problem defined"
@@ -1081,7 +1084,7 @@ class EpetraSerialDenseSolverTestCase(unittest.TestCase):
         self.buildProblem(sds)
         B = sds.B()
         self.failUnless(isinstance(B,ndarray))
-        testing.assert_array_equal(B[:,0], self.b)
+        self.failUnless((B[:,0] == self.b).all())
 
     def testBBad(self):
         "Test Epetra.SerialDenseSolver B method, called before problem defined"
@@ -1106,7 +1109,7 @@ class EpetraSerialDenseSolverTestCase(unittest.TestCase):
         self.buildProblem(sds)
         X = sds.X()
         self.failUnless(isinstance(X,ndarray))
-        testing.assert_array_equal(X[:,0], self.x)
+        self.failUnless((X[:,0] == self.x).all())
 
     def testXBad(self):
         "Test Epetra.SerialDenseSolver X method, called before problem defined"
@@ -1125,7 +1128,7 @@ class EpetraSerialDenseSolverTestCase(unittest.TestCase):
         self.buildProblem(sds)
         AF = sds.AF()
         self.failUnless(isinstance(AF,ndarray))
-        testing.assert_array_equal(AF, self.A)
+        self.failUnless((AF == self.A).all())
 
     def testAFBad(self):
         "Test Epetra.SerialDenseSolver AF method, called before problem defined"
@@ -1144,7 +1147,7 @@ class EpetraSerialDenseSolverTestCase(unittest.TestCase):
         self.buildProblem(sds)
         result = sds.Factor()
         self.assertEqual(result,0)
-        testing.assert_array_equal(sds.IPIV(), arange(self.size)+1)
+        self.failUnless((sds.IPIV() == arange(self.size)+1).all())
 
     def testIPIVBad(self):
         "Test Epetra.SerialDenseSolver IPIV method, called before problem defined"

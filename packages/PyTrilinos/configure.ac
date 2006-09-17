@@ -34,7 +34,7 @@
 # Initialization 
 # ------------------------------------------------------------------------
 
-AC_INIT(PyTrilinos, 2.0, wfspotz@sandia.gov)
+AC_INIT(PyTrilinos, 3.0, wfspotz@sandia.gov)
 
 # Hello World!
 echo "-----------------------------------"
@@ -58,16 +58,16 @@ AM_CONFIG_HEADER(src/PyTrilinos_config.h:src/PyTrilinos_config.h.in)
 
 # Allow users to specify their own "install" command.  If none is specified,
 # the default is install-sh found in the config subdirectory.
-                                                                                
-#AC_ARG_WITH(install,
-# [AC_HELP_STRING([--with-install=INSTALL_PROGRAM],
-# [Use the installation program INSTALL_PROGRAM rather the default that is provided.  For example --with-install="/path/install -p"])],
-# [
-#   INSTALL=$withval
-#   INSTALL_PROGRAM=$withval
-#   INSTALL_SCRIPT=$withval
-#   INSTALL_DATA="$withval -m 644"
-# ],)
+
+AC_ARG_WITH(install,
+ [AC_HELP_STRING([--with-install=INSTALL_PROGRAM],
+ [Use the installation program INSTALL_PROGRAM rather the default that is provided.  For example --with-install="/path/install -p"])],
+ [
+   INSTALL=$withval
+   INSTALL_PROGRAM=$withval
+   INSTALL_SCRIPT=$withval
+   INSTALL_DATA="$withval -m 644"
+ ],)
 
 # AM_MAINTAINER_MODE turns off maintainer-only makefile targets by
 # default, and changes configure to understand a
@@ -98,118 +98,10 @@ AC_PREREQ(2.59)
 
 TAC_ARG_CONFIG_MPI
 
-#  #np# - can eliminate compiler checks below if your package does not use the
-#         language corresponding to the check.  Please note that if you use
-#	  F77_FUNC to determine Fortran name mangling, you should not remove
-#	  the Fortran compiler check or the check for Fortran flags.  Doing
-#	  so will prevent the detection of the proper name mangling in some
-#	  cases.
-# ------------------------------------------------------------------------
-# Checks for programs
-# ------------------------------------------------------------------------
-
-#AC_PROG_CC(cc gcc)
-#AC_PROG_CXX(CC g++ c++ cxx)
-#AC_PROG_F77(f77 g77 gfortran f90 xlf90 f95)
-#AC_PROG_RANLIB
-
-# ------------------------------------------------------------------------
-# Checks for extra flags
-# #np# - You can pull flag checks for languages not used in package.  Please 
-#	  note that if you use F77_FUNC to determine Fortran name mangling, 
-#	  you should not remove the Fortran compiler check or the check for 
-#	  Fortran flags.  Doing so will prevent the detection of the proper 
-#	  name mangling in some cases.
-# ------------------------------------------------------------------------
-# Check if --with-flags present, prepend any specs to FLAGS
-
-#TAC_ARG_WITH_FLAGS(ccflags, CCFLAGS)
-#TAC_ARG_WITH_FLAGS(cxxflags, CXXFLAGS)
-#TAC_ARG_WITH_FLAGS(cflags, CFLAGS)
-#TAC_ARG_WITH_FLAGS(fflags, FFLAGS)
-#TAC_ARG_WITH_LIBS
-#TAC_ARG_WITH_FLAGS(ldflags, LDFLAGS)
-
-# ------------------------------------------------------------------------
-# Alternate archiver
-# ------------------------------------------------------------------------
-
-#TAC_ARG_WITH_AR
-
 # ------------------------------------------------------------------------
 # MPI link check
 # ------------------------------------------------------------------------
 TAC_ARG_CHECK_MPI
-
-#  #np# - Customize the checks for headers needed in package being added.
-# NOTE: This section still needs to be updated for pytrilinos, it is still 
-# code from Epetra
-# ------------------------------------------------------------------------
-# Checks for header files - used in Epetra_ConfigDefs.h 
-# ------------------------------------------------------------------------
-
-#AC_CHECK_HEADERS([cstdlib stdlib.h cstdio stdio.h cassert assert.h],,,)
-#AC_CHECK_HEADERS([cmath math.h iomanip iomanip.h iostream iostream.h],,,)
-#AC_CHECK_HEADERS([string string.h],,,)
-
-#if test "X$ac_cv_header_cstdlib" != "Xyes" && test "X$ac_cv_header_stdlib_h" != "Xyes"; then
-#  AC_MSG_ERROR([[Cannot find cstdlib or stdlib.h.  PyTrilinos requires at least one or the other.]])
-#fi
-
-#if test "X$ac_cv_header_cstdio" != "Xyes" && test "X$ac_cv_header_stdio_h" != "Xyes"; then
-#  AC_MSG_ERROR([[Cannot find cstdio or stdio.h.  PyTrilinos requires at least one or the other.]])
-#fi
-
-#if test "X$ac_cv_header_cassert" != "Xyes" && test "X$ac_cv_header_assert_h" != "Xyes"; then
-#  AC_MSG_ERROR([[Cannot find cassert or assert.h.  PyTrilinos requires at least one or the other.]])
-#fi
-
-#if test "X$ac_cv_header_string" != "Xyes" && test "X$ac_cv_header_string_h" != "Xyes"; then
-#  AC_MSG_ERROR([[Cannot find string or string.h.  PyTrilinos requires at least one or the other.]])
-#fi
-
-#if test "X$ac_cv_header_iostream" != "Xyes" && test "X$ac_cv_header_iostream_h" != "Xyes"; then
-#  AC_MSG_ERROR([[Cannot find iostream or iostream.h.  PyTrilinos requires at least one or the other.]])
-#fi
-
-#if test "X${host}" != "Xtflop"; then
-#  if test "X$ac_cv_header_cmath" != "Xyes" && test "X$ac_cv_header_math_h" != "Xyes"; then
-#    AC_MSG_ERROR([[Cannot find cmath or math.h.  PyTrilinos requires at least one or the other.]])
-#  fi
-#else
-  # TFLOP
-#  if test "X$ac_cv_header_iomanip" != "Xyes" && test "X$ac_cv_header_iomanip_h" != "Xyes"; then
-#    AC_MSG_ERROR([[Cannot find iomanip or iomanip.h.  PyTrilinos requires at least one or the other.]])
-#  fi
-#fi  
-
-# Checks for typedefs, structures, and compiler characteristics.
-#AC_C_CONST
-#AC_C_INLINE
-
-# ------------------------------------------------------------------------
-# Checks for compiler characteristics - Epetra_ConfigDefs.h uses these, 
-# so it makes sense to leave them in - see PORTABILITY in this directory
-# ------------------------------------------------------------------------
-#AC_CXX_NAMESPACES
-#AC_CXX_HAVE_STL
-#AC_CXX_BOOL
-#AC_CXX_MUTABLE
-# ---------------------------------------------------------------------
-# These are pretty obscure
-# ---------------------------------------------------------------------
-#AC_CXX_NEW_FOR_SCOPING
-#AC_CXX_STD_IOS_BASE_FMTFLAGS
-#AC_CXX_STD_SPRINTF
-
-# ------------------------------------------------------------------------
-# Checks for Makefile.export related systems
-# ------------------------------------------------------------------------
-#TAC_ARG_ENABLE_EXPORT_MAKEFILES(yes)
-
-# ------------------------------------------------------------------------
-# Checks for special package flags
-# ------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------
 # Checks if tests and examples should be built
@@ -226,6 +118,7 @@ AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_examples" != "Xno")
 # ------------------------------------------------------------------------
 # Configure python
 # ------------------------------------------------------------------------
+
 AZ_PYTHON_WITH( )     # Check for --with-python, --without-python
 az_python_use=true
 AM_CONDITIONAL(PYTHON_USE, test x"$az_python_use" = x"true")
@@ -257,17 +150,6 @@ CPPFLAGS="$save_CPPFLAGS"
 # Check for numpy python module
 AC_PYTHON_MODULE(numpy,yes)
 
-# Check that numpy/arrayobject.h is available
-# save_CPPFLAGS=$CPPFLAGS
-# CPPFLAGS="$save_CPPFLAGS $PYTHON_CSPEC"
-# AC_LANG([C++])
-# AC_CHECK_HEADER(
-# [numpy/arrayobject.h],
-# break,
-# AC_MSG_ERROR([numpy/arrayobject.h not found]),
-# [#include <Python.h>])
-# CPPFLAGS="$save_CPPFLAGS"
-
 # If user specifies prefix, use it for the PYTHON_PREFIX
 if test "$prefix" != $ac_default_prefix; then
     PYTHON_PREFIX=$prefix
@@ -275,106 +157,6 @@ fi
 if test "$exec_prefix" != $ac_default_prefix; then
     PYTHON_EXECPREFIX=$exec_prefix
 fi
-
-# ------------------------------------------------------------------------
-# Configure SWIG
-# ------------------------------------------------------------------------
-
-# Check for --with-swig[=path]
-#AC_MSG_CHECKING(for --with-swig)
-#AC_ARG_WITH(swig,
-#            [AC_HELP_STRING([--with-swig@<:@=SWIG@:>@],
-#                            [enable swig and set swig binary])],
-#            [AC_MSG_RESULT(yes)
-#             WITH_SWIG=yes
-#             if test X${withval} != Xyes ; then
-#               SWIG=$withval
-#             fi],
-#            [AC_MSG_RESULT(no)
-#             AC_CHECK_PROG(WITH_SWIG,swig,yes,no)])
-
-# Report error if no swig found
-#if test ${WITH_SWIG} = no; then
-#   AC_MSG_ERROR(
-#   [Python wrappers require swig (Simple Wrapper Interface Generator).
-#    See http://www.swig.org])
-#fi
-
-# SWIG configuration
-#AC_PROG_SWIG(1.3.23)
-#SWIG_ENABLE_CXX
-#SWIG_MULTI_MODULE_SUPPORT
-#SWIG_PYTHON
-
-#AM_CONDITIONAL(HAVE_SWIG,test X${WITH_SWIG} = Xyes)
-#AC_SUBST(GNU_HAVE_SWIG, ${WITH_SWIG})
-
-# ------------------------------------------------------------------------
-# Specify other directories 
-# ------------------------------------------------------------------------
-
-# enable use of --with-libdirs="-Llibdir1 -Llibdir2 ..." to prepend to LDFLAGS
-#TAC_ARG_WITH_LIBDIRS
-# enable use of --with-incdirs="-Lincdir1 -Lincdir2 ..." to prepend to CPPFLAGS
-#TAC_ARG_WITH_INCDIRS
-
-# #np# - Yet another opportunity to remove code if you aren't
-# using Fortran
-# Define F77_FUNC that will be used to link with Fortran subroutines, e.g., BLAS/LAPACK - trash WORKGXX 
-#AC_F77_WRAPPERS
-
-# ------------------------------------------------------------------------
-# Checks for libraries
-# ------------------------------------------------------------------------
-
-# If tests, examples and libcheck are disabled, we don't have to check
-# for these libraries.
-
-# #np# -
-# If a package does not have tests or examples, the corresponding check(s)
-# should be pulled out of the "if" statement below.
-#if test "X$ac_cv_use_tests" != "Xno" || test "X$ac_cv_use_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
-#if test "X$ac_cv_use_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
-
-# #np# - 
-# To add any libraries that you want to check for, replace pow below 
-# with the name of an entry point in that library.
-# checks for libraries now
-dnl Replace `main' with a function in -lm:
-#  #np# These lines can be removed if the math lib is not needed.
-#AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
-#AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
-
-# #np# If Lapack is also needed, see the  
-# configure.ac file for epetra (Trilinos/packages/epetra)
-
-dnl Check for user-specified names for BLAS lib
-#TAC_ARG_WITH_BLASLIB
-
-#  ACX_BLAS([LIBS="${BLAS_LIBS} ${LIBS}"], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)]])])
-
-#  ACX_LAPACK([LIBS=" ${LAPACK_LIBS} ${LIBS}"], [AC_MSG_ERROR([[Cannot find lapack library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-lapack=DIR/LIB (for example --with-lapack=/usr/path/lib/libcxml.a)]])])
-
-#fi
-# end of the list of libraries that don't need to be checked for if
-# tests and examples are disabled.
-
-# ------------------------------------------------------------------------
-# Checks for compiler characteristics
-# ------------------------------------------------------------------------
-
-# ------------------------------------------------------------------------
-# Checks for linker characteristics
-# ------------------------------------------------------------------------
-
-# Determine libraries needed for linking with Fortran
-#AC_F77_LIBRARY_LDFLAGS
-
-# ------------------------------------------------------------------------
-# Perform substitutions in output files
-# ------------------------------------------------------------------------
-
-#AC_SUBST(ac_aux_dir)
 
 # ------------------------------------------------------------------------
 # Output files

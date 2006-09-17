@@ -222,7 +222,7 @@ class EpetraIntVectorTestCase(unittest.TestCase):
         self.assertEquals(eiv.GlobalLength(), 3*3*len(list[0][0]))
         for i in range(eiv.shape[0]):
             for j in range(len(list[i])):
-                self.assertEquals(eiv[i,j], list[i][j])
+                self.failUnless((eiv[i,j] == list[i][j]).all())
 
     def testConstructor15(self):
         "Test Epetra.IntVector (bad-list) constructor"
@@ -257,8 +257,8 @@ class EpetraIntVectorTestCase(unittest.TestCase):
         a     = [self.numPyArray1] * 4
         eiv   = Epetra.IntVector(self.map,a)
         array = eiv.ExtractCopy()
-        self.assertEquals(type(array), ArrayType)
-        self.assertEquals(eiv[:], array[:])
+        self.assertEquals(type(array), ndarray)
+        self.failUnless((eiv[:] == array[:]).all())
         self.assertEquals(eiv.array is array, False)
 
     def testExtractView(self):
@@ -266,7 +266,7 @@ class EpetraIntVectorTestCase(unittest.TestCase):
         a     = [self.numPyArray1] * 4
         eiv   = Epetra.IntVector(self.map,a)
         array = eiv.ExtractView()
-        self.assertEquals(type(array), ArrayType)
+        self.assertEquals(type(array), ndarray)
         for i in range(self.map.NumMyPoints()):
             self.assertEquals(eiv[i], array[i])
         # This will fail as long as we still use UserArray
@@ -313,8 +313,8 @@ class EpetraIntVectorTestCase(unittest.TestCase):
         a     = [self.numPyArray1] * 4
         eiv   = Epetra.IntVector(self.map,a)
         array = eiv.Values()
-        self.assertEquals(type(array), ArrayType)
-        self.assertEquals(eiv[:], array[:])
+        self.assertEquals(type(array), ndarray)
+        self.failUnless((eiv[:] == array[:]).all())
         # This will fail as long as we use UserArray
         #self.assertEquals(eiv.array is array, True)
 

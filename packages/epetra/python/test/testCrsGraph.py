@@ -75,7 +75,7 @@ class EpetraCrsGraphTestCase(unittest.TestCase):
         if self.size-1    not in mge: mge.append(max(mge)+1)
         mge.sort()
         self.colMap    = Epetra.Map(-1, mge, self.indexBase, self.comm)
-        self.nipr      = ones(self.mySize)
+        self.nipr      = ones(self.mySize,"i")
         self.nipr[1:-1] += 1
         self.nipr[2:-2] += 1
 

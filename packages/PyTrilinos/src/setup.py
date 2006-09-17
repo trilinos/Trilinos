@@ -28,29 +28,32 @@
 # ************************************************************************
 # @HEADER
 
-# This is not a standard setup.py script, in that it does not depend on the
-# distutils module to build python extension modules, because the other Trilinos
-# packages should have taken care of that already.  It does, however, emulate
-# setup.py scripts by accepting 'build', 'install' and 'clean' command-line
-# commands and the '--prefix=...' option for 'install'.  The first purpose of
-# this script is to provide a __init__.py file that specifies all of the
-# PyTrilinos modules.
+# This is not a standard setup.py script that imports distutils, defines
+# Extension objects and then calls the setup() function, because the other
+# Trilinos packages should have taken care of these steps already.  It does,
+# however, emulate setup.py scripts by accepting 'build', 'install', 'clean' and
+# 'uninstall' command-line commands.  The first purpose of this script is to
+# provide a __init__.py file that specifies all of the PyTrilinos modules.  The
+# second purpose is to create shared versions of static Trilinos libraries and
+# re-link the Trilinos python extension modules to them.
 
 # Module names: define the names of the modules that could be configured to be a
-# part of the PyTrilinos package.
-modules = ["Amesos",
-           "Anasazi",
-           "AztecOO",
-           "Epetra",
-           "EpetraExt",
-           "Galeri",
-           "IFPACK",
-           "ML",
-           "New_Package",
-           "NOX",
+# part of the PyTrilinos package.  These should be put in dependency order.
+modules = [
            "Teuchos",
-           "Thyra",
+           #"Thyra",
+           "Epetra",
            "TriUtils",
+           "EpetraExt",
+           "AztecOO",
+           "Galeri",
+           "Amesos",
+           "IFPACK",
+           #"Anasazi",
+           "ML",
+           #"NOX",
+           #"LOCA",
+           "New_Package",
            ]
 
 # System imports
@@ -64,6 +67,9 @@ import sys
 TRILINOS_HOME_DIR = os.path.normpath(open("TRILINOS_HOME_DIR").read()[:-1])
 sys.path.insert(0,os.path.join(TRILINOS_HOME_DIR,"commonTools","buildTools"))
 from MakefileVariables import *
+
+# Local import
+import SharedUtils
 
 # Build the __init__.py file
 def buildInitFile(pyTrilinosModules,filename,depfile):
@@ -89,7 +95,7 @@ if __name__ == "__main__":
 
     # Command-line arguments
     command = sys.argv[1]
-    if command not in ("build","install","clean"):
+    if command not in ("build","install","clean","uninstall"):
         raise RuntimeError, "Command '%s' not supported" % command
 
     # Determine what packages are enabled
@@ -98,26 +104,34 @@ if __name__ == "__main__":
     enabledModules     = [module for module in modules
                           if trilinosExport.has_key("ENABLE_" + module.upper())]
 
-    # Determine the build directories to copy from
-    prefixDir = os.path.abspath(os.path.join("..", "..", "..", "packages"))
-    libDir    = "lib.%s-%s" % (get_platform(), sys.version[:3])
-    suffixDir = os.path.join("python", "src", "build", libDir, "PyTrilinos")
-    copyDirs  = [os.path.join(prefixDir, module.lower(), suffixDir)
-                 for module in enabledModules]
+    # Determine the installation prefix
+    makeMacros = processMakefile("Makefile")
+    prefix     = makeMacros["PYTHON_PREFIX"]
+    pyVersion  = "python%d.%d" % sys.version_info[:2]
+    installDir = os.path.join(prefix, "lib", pyVersion, "site-packages",
+                              "PyTrilinos")
+
+    # Create the shared library builders
+    builders = [ ]
+    for module in enabledModules:
+        builders.append(SharedUtils.SharedTrilinosBuilder(module))
 
     # Build command
     if command == "build":
+        # Convert package libraries to shared
+        for builder in builders:
+            builder.buildShared()
+        # Linke extension modules to dynamic libraries
+        for builder in builders:
+            builder.reLinkExtension()
+        # Build the init file
         buildInitFile(enabledModules,initFileName,trilinosExportFile)
 
     # Install command
     elif command == "install":
-        # Build the install directory name
-        if len(sys.argv) > 2 and sys.argv[2].startswith("--prefix="):
-            prefix = sys.argv[2].split("=")[1]
-        else:
-            prefix = sys.prefix
-        installDir = os.path.join(prefix,"lib", "python" + sys.version[:3],
-                                  "site-packages", "PyTrilinos")
+        # Install the shared libraries and extension modules
+        for builder in builders:
+            builder.install()
         # Build the init file, if needed
         buildInitFile(enabledModules,initFileName,trilinosExportFile)
         # Install
@@ -130,6 +144,22 @@ if __name__ == "__main__":
 
     # Clean command
     elif command == "clean":
+        # Remove any dynamic libraries
+        for builder in builders:
+            builder.clean()
+        # Remove the __init__.py file
         if os.path.isfile(initFileName):
             print "removing", initFileName
             os.remove(initFileName)
+
+    # Uninstall command
+    elif command == "uninstall":
+        # Uninstall the dynamic libraries
+        for builder in builders:
+            builder.uninstall()
+        # Remove the PyTrilinos package
+        print "\nUninstalling PyTrilinos package"
+        if os.path.isdir(installDir):
+            SharedUtils.runCommand("rm -rf " + installDir)
+        else:
+            print "nothing needs to be done for", installDir

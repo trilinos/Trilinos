@@ -1,0 +1,266 @@
+# System imports
+import commands
+import glob
+import os
+import sys
+
+# Trilinos import
+TRILINOS_HOME_DIR = os.path.normpath(open("TRILINOS_HOME_DIR").read()[:-1])
+sys.path.insert(0,os.path.join(TRILINOS_HOME_DIR,"commonTools","buildTools"))
+from MakefileVariables import *
+
+######################################################################
+
+def needsToBeBuilt(target,dependencies):
+    """
+    Return True if a target file does not exist or is older than any of the
+    files in the list of dependencies.
+    """
+    if not os.path.isfile(target): return True
+    targetTime = os.path.getmtime(target)
+    for dep in dependencies:
+        if os.path.getmtime(dep) > targetTime: return True
+    return False
+
+######################################################################
+
+def changeDirectory(path):
+    """
+    Change directory verbosely
+    """
+    print "changing directory to", path
+    os.chdir(path)
+
+######################################################################
+
+def runCommand(cmd):
+    """
+    Print a Unix command, run it, print its output and raise an exception if its
+    return status is non-zero.
+    """
+    print cmd
+    status, output = commands.getstatusoutput(cmd)
+    if output: print output
+    if status: raise RuntimeError, "Exit status = %d" % status
+
+######################################################################
+
+def deleteFile(path):
+    """
+    If a file exists, delete it verbosely; if not, do nothing verbosely.
+    """
+    if os.path.isfile(path):
+        print "deleting", path
+        os.remove(path)
+    else:
+        print "nothing needs to be done for", path
+
+######################################################################
+
+def removeExtensionModules(path):
+    """
+    Remove every file whose name matches the pattern _*.so under the given
+    path.
+    """
+    print "removing extension modules"
+    runCommand("find %s -name _*.so -print -delete" % path)
+
+######################################################################
+
+class SharedTrilinosBuilder:
+    """
+    Class for performing various build processes (build, install, clean) related
+    to converting a Trilinos library from static to dynamic.
+    """
+
+    def __init__(self,package):
+        """
+        Initialize a SharedTrilinosBuilder object for the specified Trilinos
+        package.  The package name should be in its capitalized form.
+        """
+        self.__package      = package
+        self.__packageLower = package.lower()
+        self.__packageUpper = package.upper()
+        self.__sysName      = os.uname()[0]
+        self.__libPathVar   = self.getLibPathVarName()
+        self.__libOption    = "-l"  + self.__packageLower
+        self.__dylibName    = self.getDylibName()
+        self.__topBuildDir  = os.path.join("..", "..", self.__packageLower)
+        self.__buildDir     = os.path.join(self.__topBuildDir, "src")
+        self.__pythonDir    = os.path.join(self.__topBuildDir, "python", "src")
+        self.__thisDir      = os.getcwd()
+        self.__absDylibName = os.path.join(self.__thisDir, self.__dylibName)
+        self.__makeMacros   = self.getMakeMacros()
+        self.__linkCmd      = self.getLinkCmd()
+        self.__supported    = self.__sysName in ("Darwin", "Linux") and \
+                              self.__makeMacros["HAVE_MPI"]
+
+    ######################################################################
+
+    def getLibPathVarName(self):
+        """
+        Determine the name of environment variable used to specify the (dynamic)
+        library load path.
+        """
+        if self.__sysName in ("Darwin",):
+            return "DYLD_LIBRARY_PATH"
+        else:
+            return "LD_LIBRARY_PATH"
+
+    ######################################################################
+
+    def getDylibName(self):
+        """
+        Determine what the dynamic library name should be, based on the type of
+        system we are on.
+        """
+        if self.__sysName in ("Darwin",):
+            return "lib" + self.__packageLower + ".dylib"
+        elif self.__sysName in ("Linux",):
+            return "lib" + self.__packageLower + ".so"
+        else:
+            return "lib" + self.__packageLower + ".?"
+
+    ######################################################################
+
+    def getMakeMacros(self):
+        """
+        Obtain the dictionary of Makefile macros appropriate for this Trilinos
+        package.
+        """
+        makeMacros   = processMakefile("Makefile")
+        makefileName = os.path.join(self.__topBuildDir, "python", "src",
+                                    "Makefile")
+        makeMacros.update(processMakefile(makefileName))
+        return makeMacros
+
+    ######################################################################
+
+    def getLinkCmd(self):
+        """
+        Determine the appropriate dynamic link command for this Trilinos
+        package.
+        """
+        cxx     = self.__makeMacros["CXX"]
+        default = self.__makeMacros[self.__packageUpper + "_LIBS"]
+        ldFlags = self.__makeMacros.get(self.__packageUpper + "_PYTHON_LIBS",
+                                        default)
+        ldFlags = ldFlags.replace(self.__libOption+" ", "")  # Remove -lpackage
+        ldFlags = "-L" + self.__thisDir + " " + ldFlags
+        if self.__sysName == "Darwin":
+            linkCmd = "%s -dynamiclib -o %s *.o -single_module %s" % (cxx,
+                                                                      self.__dylibName,
+                                                                      ldFlags)
+        elif self.__sysName == "Linux":
+            linkCmd = "%s -shared -Wl,-soname,%s -o %s *.o %s" % (cxx,
+                                                                  self.__dylibName,
+                                                                  self.__dylibName,
+                                                                  ldFlags)
+        else:
+            linkCmd = "echo %s not supported" % self.__sysName
+        return linkCmd
+
+    ######################################################################
+
+    def buildShared(self):
+        """
+        Change directory to the Trilinos package and, if necessary, re-link the
+        package library as a dynamic/shared library.
+        """
+
+        if not self.__supported: return
+
+        # Build a new shared library
+        print "\nConverting", self.__package, "to a shared library"
+        changeDirectory(self.__buildDir)
+        if needsToBeBuilt(self.__absDylibName, glob.glob("*.o")):
+            runCommand(self.__linkCmd)
+            print "Moving", self.__dylibName, "to", self.__absDylibName
+            os.rename(self.__dylibName, self.__absDylibName)
+        else:
+            print "nothing needs to be done for", self.__absDylibName
+
+    ######################################################################
+
+    def reLinkExtension(self):
+        """
+        Change directory to the Trilinos package python build directory and
+        re-link the extension module to the new dynamic libraries.
+        """
+
+        if not self.__supported: return
+
+        # Remove all outdated extension modules and run make
+        print "\nLinking", self.__package, "extension module to shared libraries"
+        changeDirectory(self.__pythonDir)
+        targets = commands.getoutput("find build -name _*.so -print").split()
+        depend  = [self.__absDylibName]
+        for target in targets:
+            if needsToBeBuilt(target,depend):
+                deleteFile(target)
+        runCommand("make")
+
+        # Restore the current working directory
+        changeDirectory(self.__thisDir)
+
+    ######################################################################
+
+    def clean(self):
+        """
+        Remove all files created by the buildShared() and reLinkExtension()
+        methods.
+        """
+
+        if not self.__supported: return
+
+        # Remove the shared library
+        print "\nRemoving", self.__package, "dynamic library"
+        deleteFile(self.__absDylibName)
+
+        # Clean the python directory
+        changeDirectory(os.path.join(self.__buildDir,"..", "python", "src"))
+        removeExtensionModules("build")
+
+        # Restore the current working directory
+        changeDirectory(self.__thisDir)
+
+    ######################################################################
+
+    def install(self):
+        """
+        Install the new shared Trilinos library and the newly linked python
+        extension module in the appropriate directories.
+        """
+
+        if not self.__supported: return
+
+        # Initialize
+        install    = self.__makeMacros["INSTALL"]
+        prefix     = self.__makeMacros["prefix" ]
+        installDir = os.path.join(prefix, "lib")
+        print "\nInstalling", self.__package, "module"
+
+        # Install the shared library and python module
+        runCommand(" ".join([install, self.__dylibName, installDir]))
+        changeDirectory(os.path.join(self.__buildDir, "..", "python", "src"))
+        runCommand("make install")
+        
+        # Restore the current working directory
+        changeDirectory(self.__thisDir)
+
+    ######################################################################
+
+    def uninstall(self):
+        """
+        Uninstall the shared Trilinos library.
+        """
+
+        if not self.__supported: return
+
+        # Initialize
+        prefix     = self.__makeMacros["prefix"]
+        installDir = os.path.join(prefix, "lib")
+        print "\nUninstalling", self.__package, "module"
+
+        # Uninstall the shared library and python module
+        deleteFile(os.path.join(installDir, self.__dylibName))
