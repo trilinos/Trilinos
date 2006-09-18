@@ -503,7 +503,7 @@ namespace Anasazi {
     static Teuchos::RefCountPtr<Epetra_MultiVector> CloneCopy( const Epetra_MultiVector& mv, const std::vector<int>& index )
     { 
       std::vector<int>& tmp_index = const_cast<std::vector<int> &>( index );
-      return Teuchos::rcp( new Epetra_MultiVector(Copy, mv, &tmp_index[0], index.size()) ); 
+      return Teuchos::rcp( new Epetra_MultiVector(::Copy, mv, &tmp_index[0], index.size()) ); 
     }
 
     /*! \brief Creates a new Epetra_MultiVector that shares the selected contents of \c mv (shallow copy).
@@ -514,7 +514,7 @@ namespace Anasazi {
     static Teuchos::RefCountPtr<Epetra_MultiVector> CloneView( Epetra_MultiVector& mv, const std::vector<int>& index )
     { 
       std::vector<int>& tmp_index = const_cast<std::vector<int> &>( index );
-      return Teuchos::rcp( new Epetra_MultiVector(View, mv, &tmp_index[0], index.size()) ); 
+      return Teuchos::rcp( new Epetra_MultiVector(::View, mv, &tmp_index[0], index.size()) ); 
     }
 
     /*! \brief Creates a new const Epetra_MultiVector that shares the selected contents of \c mv (shallow copy).
@@ -525,7 +525,7 @@ namespace Anasazi {
     static Teuchos::RefCountPtr<const Epetra_MultiVector> CloneView( const Epetra_MultiVector& mv, const std::vector<int>& index )
     { 
       std::vector<int>& tmp_index = const_cast<std::vector<int> &>( index );
-      return Teuchos::rcp( new Epetra_MultiVector(View, mv, &tmp_index[0], index.size()) ); 
+      return Teuchos::rcp( new Epetra_MultiVector(::View, mv, &tmp_index[0], index.size()) ); 
     }
 
     //@}
@@ -552,7 +552,7 @@ namespace Anasazi {
 				 const double beta, Epetra_MultiVector& mv )
     { 
       Epetra_LocalMap LocalMap(B.numRows(), 0, mv.Map().Comm());
-      Epetra_MultiVector B_Pvec(Copy, LocalMap, B.values(), B.stride(), B.numCols());
+      Epetra_MultiVector B_Pvec(::Copy, LocalMap, B.values(), B.stride(), B.numCols());
 
       int ret = mv.Multiply( 'N', 'N', alpha, A, B_Pvec, beta );
       assert( ret == 0 );   
@@ -575,7 +575,7 @@ namespace Anasazi {
 			   )
     { 
       Epetra_LocalMap LocalMap(B.numRows(), 0, mv.Map().Comm());
-      Epetra_MultiVector B_Pvec(View, LocalMap, B.values(), B.stride(), B.numCols());
+      Epetra_MultiVector B_Pvec(::View, LocalMap, B.values(), B.stride(), B.numCols());
       
       int ret = B_Pvec.Multiply( 'T', 'N', alpha, A, mv, 0.0 );
       assert( ret == 0 );
@@ -617,13 +617,13 @@ namespace Anasazi {
       // Extract the "numvecs" columns of mv indicated by the index vector.
       int numvecs = index.size();
       std::vector<int>& tmp_index = const_cast<std::vector<int> &>( index );
-      Epetra_MultiVector temp_vec(View, mv, &tmp_index[0], numvecs);
+      Epetra_MultiVector temp_vec(::View, mv, &tmp_index[0], numvecs);
 
       if ( A.NumVectors() != numvecs ) {
         std::vector<int> index2( numvecs );
         for(int i=0; i<numvecs; i++)
 	  index2[i] = i;
-        Epetra_MultiVector A_vec(View, A, &index2[0], numvecs);      
+        Epetra_MultiVector A_vec(::View, A, &index2[0], numvecs);      
         int ret = temp_vec.Update( 1.0, A_vec, 0.0, A_vec, 0.0 );
 	assert( ret == 0 );
       }
@@ -651,7 +651,7 @@ namespace Anasazi {
       int ret = 0;
       std::vector<int> tmp_index( 1, 0 );
       for (int i=0; i<numvecs; i++) {
-	Epetra_MultiVector temp_vec(View, mv, &tmp_index[0], 1);
+	Epetra_MultiVector temp_vec(::View, mv, &tmp_index[0], 1);
         ret = temp_vec.Scale( alpha[i] );
 	assert (ret == 0);
 	tmp_index[0]++;
