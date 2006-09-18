@@ -114,7 +114,18 @@ void NOX::Utils::reset(Teuchos::ParameterList& p)
   if (p.isParameter("MyPID"))
     myPID = p.get("MyPID", 0);
   else {
-    MPI_Comm_rank(MPI_COMM_WORLD, &myPID);
+    // We have to check to ensure MPI has been initialized before calling
+    // MPI_Comm_rank. Relates to bug 2566. - KL, 17 Sept 2006.
+    int mpiIsRunning = 0;
+    MPI_Initialized(&mpiIsRunning);
+    if (mpiIsRunning)
+      {
+        MPI_Comm_rank(MPI_COMM_WORLD, &myPID);
+      }
+    else
+      {
+        myPID=0;
+      }
     // Set the default in the parameter list
     p.get("MyPID", myPID);
   }
