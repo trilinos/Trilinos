@@ -573,7 +573,7 @@ Problem_Manager::registerComplete()
   // Setup appropriate operators and their use
 
   Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO> composite_linearSystem;
-  if( 0 )
+  if( 1 )
   {
     // Use Matrix-Free Jacobian Operator with FDC block preconditioner
     jacOperator = Teuchos::rcp( new NOX::Epetra::MatrixFree( printParams, interface, *compositeSoln) );
@@ -590,7 +590,7 @@ Problem_Manager::registerComplete()
         compositeSoln) );
   }
 
-  if( 1 )
+  if( 0 )
   {
     // Use FDC Jacobian and itself as its own preconditioner
 

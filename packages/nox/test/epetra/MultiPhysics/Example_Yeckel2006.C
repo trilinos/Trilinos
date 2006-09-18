@@ -222,7 +222,7 @@ int main(int argc, char *argv[])
   converged->addStatusTest(absresid);
   //converged->addStatusTest(update);
   Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> maxiters = 
-    Teuchos::rcp(new NOX::StatusTest::MaxIters(1));
+    Teuchos::rcp(new NOX::StatusTest::MaxIters(20));
   Teuchos::RefCountPtr<NOX::StatusTest::FiniteValue> finiteValue = 
     Teuchos::rcp(new NOX::StatusTest::FiniteValue);
   Teuchos::RefCountPtr<NOX::StatusTest::Combo> combo = 
