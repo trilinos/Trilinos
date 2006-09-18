@@ -165,6 +165,9 @@ namespace Teuchos
 
       /** common initialization function, called by all ctors */
       void init();
+
+      /** Indicate whether MPI is currently running */
+      int mpiIsRunning() const ;
     };
 }
 #endif
