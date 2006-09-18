@@ -38,7 +38,7 @@ Fad_demo()
 	// first try n == 2
 	a = 1.;
 	b = 2.;
-	// indicate the independent variables, and initialize their partials to 0:
+	// indicate the independent variables, and initialize their partials to 1:
 	a.diff(0,2);	// 0 ==> this is the first independent var., of 2
 	b.diff(1,2);	// 1 ==> this is the second ind. var.
 	
@@ -80,7 +80,7 @@ Fad2_demo()
 
 	a = 1.;
 	b = 2.;
-	// indicate the independent variables, and initialize their partials to 0:
+	// indicate the independent variables, and initialize their partials to 1:
 	a.diff(0,2);	// 0 ==> this is the first independent var., of 2
 	b.diff(1,2);	// 1 ==> this is the second ind. var.
 	
