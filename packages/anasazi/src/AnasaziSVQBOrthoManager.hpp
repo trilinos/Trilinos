@@ -1,4 +1,4 @@
-//ScalarType @HEADER
+// @HEADER
 // ***********************************************************************
 //
 //                 Anasazi: Block Eigensolvers Package
