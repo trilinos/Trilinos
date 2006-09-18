@@ -1749,7 +1749,7 @@ namespace Teuchos
     std::vector< complex<float> > W(n);
     const char sort = 'N';
     CGEES_F77(CHAR_MACRO(JOBVS), CHAR_MACRO(sort), nullfptr, &n, A, &lda, sdim, &W[0], VS, &ldvs, WORK, &lwork, RWORK, BWORK, info);
-    for (int i; i<n; i++) {
+    for (int i=0; i<n; i++) {
       WR[i] = W[i].real();
       WI[i] = W[i].imag();
     }
@@ -2079,7 +2079,7 @@ namespace Teuchos
     std::vector< complex<double> > W(n);
     const char sort = 'N';
     ZGEES_F77(CHAR_MACRO(JOBVS), CHAR_MACRO(sort), nullfptr, &n, A, &lda, sdim, &W[0], VS, &ldvs, WORK, &lwork, RWORK, BWORK, info);
-    for (int i; i<n; i++) {
+    for (int i=0; i<n; i++) {
       WR[i] = W[i].real();
       WI[i] = W[i].imag();
     }
