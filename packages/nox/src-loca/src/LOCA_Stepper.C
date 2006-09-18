@@ -40,8 +40,6 @@
 //@HEADER
 #include "LOCA_Stepper.H"    // class definition
 #include "NOX_StatusTest_Generic.H"
-#include "NOX_StatusTest_Combo.H"
-#include "LOCA_StatusTest_Wrapper.H"
 
 // LOCA Includes
 #include "NOX_Utils.H"
