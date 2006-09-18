@@ -135,7 +135,7 @@ int main(int argc, char *argv[])
 
   // Identify the test problem
   if (printing.isPrintType(NOX::Utils::TestDetails))
-    printing.out() << "Starting epetra/NOX_NewTest/NOX_NewTest.exe" << endl;
+    printing.out() << "Starting epetra/NOX_Operators/NOX_Operators.exe" << endl;
 
   // Identify processor information
 #ifdef HAVE_MPI
