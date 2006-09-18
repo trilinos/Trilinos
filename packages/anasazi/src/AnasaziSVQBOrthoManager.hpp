@@ -63,6 +63,8 @@ namespace Anasazi {
 
 
   public:
+
+    using MatOrthoManager<ScalarType,MV,OP>::norm;
     
     //! @name Constructor/Destructor
     //@{ 
