@@ -46,7 +46,14 @@ EXEEXT = .exe
 
 if BUILD_EPETRA_TESTS
 if BUILD_EPETRA_MULTIPHYSICS
+
+## Disabling mpi
+if HAVE_MPI
+##
+else
 noinst_PROGRAMS = example_hmx example_brusselator example_yeckel Dummy
+endif
+
 endif
 endif
 
