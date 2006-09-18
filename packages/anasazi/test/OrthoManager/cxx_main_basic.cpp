@@ -66,7 +66,8 @@ const MT ZERO = SCT::magnitude(SCT::zero());
 const MT TOL = 1.0e-13;
 const MT ATOL = 100;
 
-bool verbose = false;
+// declare an output manager for handling local output
+RefCountPtr< Anasazi::BasicOutputManager<ST> > MyOM;
 
 // some forward declarations
 int testProjectAndNormalize(RefCountPtr<MatOrthoManager<ST,MV,OP> > OM, 
@@ -86,8 +87,8 @@ int main(int argc, char *argv[])
 #else
   Epetra_SerialComm Comm;
 #endif
-  int MyPID = Comm.MyPID();
 
+  bool verbose = false;
   int numFailed = 0;
   bool debug = false;
 
@@ -100,11 +101,16 @@ int main(int argc, char *argv[])
 #endif
     return -1;
   }
-  verbose = verbose && (MyPID==0);
 
+  // instantiate the output manager
+  MyOM = rcp( new BasicOutputManager<ST>() );
   if (verbose) {
-    cout << Anasazi_Version() << endl << endl;
+    // output in this driver will be sent to Anasazi::Warnings
+    MyOM->setVerbosity(Anasazi::Warnings);
   }
+
+  // Output Anasazi version
+  MyOM->stream(Anasazi::Warnings) << Anasazi_Version() << endl << endl;
 
   // Problem information
   const int space_dim = 1;
@@ -129,67 +135,67 @@ int main(int argc, char *argv[])
   // multivector to spawn off of
   RefCountPtr<MV> X = rcp( new Epetra_MultiVector(M->OperatorDomainMap(), sizeX) );
 
-  cout << " Generating Q1 for project() : testing... " << endl;
+  MyOM->stream(Errors) << " Generating Q1 for project() : testing... " << endl;
   RefCountPtr<MV> Q1  = MVT::Clone(*X,sizeQ);
   MVT::MvRandom(*Q1);
   int dummy = 0;
   dummy = OM_M->normalize(*Q1,null);
   tfail = false;
   if ( dummy != sizeQ ) {
-    cout << "   vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         FAILED!!! normalize() returned " << dummy << " . Further tests will not be valid." << endl;
+    MyOM->stream(Errors) << "   vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         FAILED!!! normalize() returned " << dummy << " . Further tests will not be valid." << endl;
     numFailed += 1;
     tfail = true;
   }
   err = OM_M->orthonormError(*Q1);
   if (err > TOL) {
-    cout << "   vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         FAILED!!! Further tests will not be valid." << endl;
+    MyOM->stream(Errors) << "   vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         FAILED!!! Further tests will not be valid." << endl;
     numFailed += 1;
     tfail = true;
   }
-  if (verbose || tfail) {
-    cout << "   || Q1^T M Q1 - I ||_F        : " << err << endl << endl;
+  if (tfail) {
+    MyOM->stream(Warnings) << "   || Q1^T M Q1 - I ||_F        : " << err << endl << endl;
   }
 
-  cout << " Generating Q2 for project() : testing... " << endl;
+  MyOM->stream(Errors) << " Generating Q2 for project() : testing... " << endl;
   RefCountPtr<MV> Q2 = MVT::Clone(*X,sizeQ);
   MVT::MvRandom(*Q2);
   tfail = false;
   dummy = OM->normalize(*Q2,null);
   if ( dummy != sizeQ ) {
-    cout << "   vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         FAILED!!! normalize() returned " << dummy << " . Further tests will not be valid." << endl;
+    MyOM->stream(Errors) << "   vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         FAILED!!! normalize() returned " << dummy << " . Further tests will not be valid." << endl;
     numFailed += 1;
     tfail = true;
   }
   err = OM->orthonormError(*Q2);
   if (err > TOL) {
-    cout << "   vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         FAILED!!! Further tests will not be valid." << endl;
+    MyOM->stream(Errors) << "   vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         FAILED!!! Further tests will not be valid." << endl;
     numFailed += 1;
     tfail = true;
   }
-  if (verbose || tfail) {
-    cout << "   || Q2^T Q2 - I ||_F          : " << err << endl << endl;
+  if (tfail) {
+    MyOM->stream(Warnings) << "   || Q2^T Q2 - I ||_F          : " << err << endl << endl;
   }
 
   {
-    cout << " project() with M    : testing on random multivector " << endl;
+    MyOM->stream(Errors) << " project() with M    : testing on random multivector " << endl;
     
     MVT::MvRandom(*X);
     numFailed += testProject(OM_M,X,Q1);
   }
   {
-    cout << " project() without M : testing on random multivector " << endl;
+    MyOM->stream(Errors) << " project() without M : testing on random multivector " << endl;
     
     MVT::MvRandom(*X);
     numFailed += testProject(OM,X,Q2);
   }
 
   {
-    cout << " normalize() with M    : testing on random multivector " << endl;
+    MyOM->stream(Errors) << " normalize() with M    : testing on random multivector " << endl;
     MVT::MvRandom(*X);
     numFailed += testNormalize(OM_M,X);
   }
   {
-    cout << " normalize() without M : testing on random multivector " << endl;
+    MyOM->stream(Errors) << " normalize() without M : testing on random multivector " << endl;
     MVT::MvRandom(*X);
     numFailed += testNormalize(OM,X);
   }
@@ -197,7 +203,7 @@ int main(int argc, char *argv[])
 
   /*
   {
-    cout << " normalize() with M    : testing on rank-deficient multivector " << endl;
+    MyOM->stream(Errors) << " normalize() with M    : testing on rank-deficient multivector " << endl;
     std::vector<int> ind(1); 
     // Assuming here that sizeX == 4
     MVT::MvRandom(*X);
@@ -209,7 +215,7 @@ int main(int argc, char *argv[])
     numFailed += testNormalize(OM_M,X);
   }
   {
-    cout << " normalize() without M : testing on rank-deficient multivector " << endl;
+    MyOM->stream(Errors) << " normalize() without M : testing on rank-deficient multivector " << endl;
     std::vector<int> ind(1); 
     // Assuming here that sizeX == 4
     MVT::MvRandom(*X);
@@ -223,7 +229,7 @@ int main(int argc, char *argv[])
 
 
   {
-    cout << " normalize() with M    : testing on rank-1 multivector " << endl;
+    MyOM->stream(Errors) << " normalize() with M    : testing on rank-1 multivector " << endl;
     std::vector<int> ind(1); 
     MVT::MvRandom(*X);
     // get column 0
@@ -238,7 +244,7 @@ int main(int argc, char *argv[])
     numFailed += testNormalize(OM_M,X);
   }
   {
-    cout << " normalize() without M : testing on rank-1 multivector " << endl;
+    MyOM->stream(Errors) << " normalize() without M : testing on rank-1 multivector " << endl;
     std::vector<int> ind(1); 
     MVT::MvRandom(*X);
     // get column 0
@@ -255,14 +261,14 @@ int main(int argc, char *argv[])
   */
 
   {
-    cout << " projectAndNormalize() with M    : testing on random multivector " << endl;
+    MyOM->stream(Errors) << " projectAndNormalize() with M    : testing on random multivector " << endl;
     std::vector<int> ind(1); 
     MVT::MvRandom(*X);
     
     numFailed += testProjectAndNormalize(OM_M,X,Q1);
   }
   {
-    cout << " projectAndNormalize() without M : testing on random multivector " << endl;
+    MyOM->stream(Errors) << " projectAndNormalize() without M : testing on random multivector " << endl;
     std::vector<int> ind(1); 
     MVT::MvRandom(*X);
     
@@ -270,7 +276,7 @@ int main(int argc, char *argv[])
   }
 
   {
-    cout << " projectAndNormalize() with M    : testing on Q-range multivector " << endl;
+    MyOM->stream(Errors) << " projectAndNormalize() with M    : testing on Q-range multivector " << endl;
     SerialDenseMatrix<int,ST> B(sizeQ,sizeX);
     B.random();
     MVT::MvTimesMatAddMv(ONE,*Q1,B,ZERO,*X);
@@ -278,7 +284,7 @@ int main(int argc, char *argv[])
     numFailed += testProjectAndNormalize(OM_M,X,Q1);
   }
   {
-    cout << " projectAndNormalize() without M : testing on Q-range multivector " << endl;
+    MyOM->stream(Errors) << " projectAndNormalize() without M : testing on Q-range multivector " << endl;
     SerialDenseMatrix<int,ST> B(sizeQ,sizeX);
     B.random();
     MVT::MvTimesMatAddMv(ONE,*Q2,B,ZERO,*X);
@@ -288,7 +294,7 @@ int main(int argc, char *argv[])
 
   /*
   {
-    cout << " projectAndNormalize() with M    : testing on rank-deficient multivector " << endl;
+    MyOM->stream(Errors) << " projectAndNormalize() with M    : testing on rank-deficient multivector " << endl;
     std::vector<int> ind(1); 
     MVT::MvRandom(*X);
     // Assuming here that sizeX == 4
@@ -300,7 +306,7 @@ int main(int argc, char *argv[])
     numFailed += testProjectAndNormalize(OM_M,X,Q1);
   }
   {
-    cout << " projectAndNormalize() without M : testing on rank-deficient multivector " << endl;
+    MyOM->stream(Errors) << " projectAndNormalize() without M : testing on rank-deficient multivector " << endl;
     std::vector<int> ind(1); 
     MVT::MvRandom(*X);
     // Assuming here that sizeX == 4
@@ -313,7 +319,7 @@ int main(int argc, char *argv[])
   }
 
   {
-    cout << " projectAndNormalize() with M    : testing on rank-1 multivector " << endl;
+    MyOM->stream(Errors) << " projectAndNormalize() with M    : testing on rank-1 multivector " << endl;
     MVT::MvRandom(*X);
     std::vector<int> ind(1); 
     // get column 0
@@ -328,7 +334,7 @@ int main(int argc, char *argv[])
     numFailed += testProjectAndNormalize(OM_M,X,Q1);
   }
   {
-    cout << " projectAndNormalize() without M : testing on rank-1 multivector " << endl;
+    MyOM->stream(Errors) << " projectAndNormalize() without M : testing on rank-1 multivector " << endl;
     MVT::MvRandom(*X);
     std::vector<int> ind(1); 
     // get column 0
@@ -349,14 +355,14 @@ int main(int argc, char *argv[])
 #endif
 
   if (numFailed) {
-    cout << numFailed << " errors." << endl;
-    cout << "End Result: TEST FAILED" << endl;	
+    MyOM->stream(Errors) << numFailed << " errors." << endl;
+    MyOM->stream(Errors) << "End Result: TEST FAILED" << endl;	
     return -1;
   }
   //
   // Default return value
   //
-  cout << "End Result: TEST PASSED" << endl;
+  MyOM->stream(Errors) << "End Result: TEST PASSED" << endl;
   return 0;
 }	
 
@@ -513,10 +519,10 @@ int testProjectAndNormalize(RefCountPtr<MatOrthoManager<ST,MV,OP> > OM,
 
   } // test for
 
-  if (verbose || numerr>0 || warning) {
-    cout << sout.str();
-    cout << endl;
-  }
+  MsgType type = Warnings;
+  if (numerr>0 || warning) type = Errors;
+  MyOM->stream(type) << sout.str();
+  MyOM->stream(type) << endl;
 
   return numerr;
 }
@@ -622,10 +628,10 @@ int testProject(RefCountPtr<MatOrthoManager<ST,MV,OP> > OM,
 
   } // for test
 
-  if (verbose || numerr>0 || warning) {
-    cout << sout.str();
-    cout << endl;
-  }
+  MsgType type = Warnings;
+  if (numerr>0 || warning) type = Errors;
+  MyOM->stream(type) << sout.str();
+  MyOM->stream(type) << endl;
 
   return numerr;
 }
@@ -749,10 +755,10 @@ int testNormalize(RefCountPtr<MatOrthoManager<ST,MV,OP> > OM, RefCountPtr<MV> X)
 
   } // for test
 
-  if (verbose || numerr>0 || warning) {
-    cout << sout.str();
-    cout << endl;
-  }
+  MsgType type = Warnings;
+  if (numerr>0 || warning) type = Errors;
+  MyOM->stream(type) << sout.str();
+  MyOM->stream(type) << endl;
 
   return numerr;
 }
