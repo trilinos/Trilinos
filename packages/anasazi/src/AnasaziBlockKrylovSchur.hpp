@@ -637,6 +637,7 @@ namespace Anasazi {
     }
   }
 
+#ifdef HAVE_TEUCHOS_COMPLEX	
   // Template specialization for the complex scalar type.
   template<>
   void scaleRitzVectors( const std::vector<double>& iRV,
@@ -656,6 +657,7 @@ namespace Anasazi {
       i++;
     }
   }
+#endif
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Constructor
