@@ -91,7 +91,8 @@ namespace Epetra {
   the %Broyden matrix, e.g. a block diagonal matrix.
 
  */
-class BroydenOperator : public NOX::Abstract::PrePostOperator,
+class BroydenOperator : public Epetra_RowMatrix,
+                        public NOX::Abstract::PrePostOperator,
                         public NOX::Epetra::Interface::Jacobian,
                         public NOX::Epetra::Interface::Preconditioner 
 {
@@ -128,6 +129,114 @@ class BroydenOperator : public NOX::Abstract::PrePostOperator,
   //! Destructor
   virtual ~BroydenOperator();
 
+  //! Returns a character string describing the name of the operator
+  virtual const char* Label () const;
+
+  //! If set true, the transpose of this operator will be applied
+  virtual int SetUseTranspose(bool UseTranspose);
+
+  //! Return the result on an Epetra_Operator applied to an Epetra_MultiVector X in Y.
+  virtual int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
+
+  //! Return the result on an Epetra_Operator inverse applied to an Epetra_MultiVector X in Y.
+  virtual int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
+
+  //! Returns the current use transpose setting
+  virtual bool UseTranspose() const;
+
+  //! Returns true if the this object can provide an approximate Inf-norm, false otherwise.
+  virtual bool HasNormInf() const;
+
+  //!Returns the Epetra_BlockMap object associated with the domain of this matrix operator.
+  virtual const Epetra_Map & OperatorDomainMap() const;
+
+  //!Returns the Epetra_BlockMap object associated with the range of this matrix operator.
+  virtual const Epetra_Map & OperatorRangeMap() const;
+
+  //! See Epetra_RowMatrix documentation.
+  virtual bool Filled() const;
+
+  //! See Epetra_RowMatrix documentation.
+  virtual int NumMyRowEntries(int MyRow, int & NumEntries) const;
+
+  //! See Epetra_RowMatrix documentation.
+  virtual int MaxNumEntries() const;
+
+  //! See Epetra_RowMatrix documentation.
+  virtual int ExtractMyRowCopy(int MyRow, int Length, int & NumEntries, double *Values, int * Indices) const;
+
+  //! See Epetra_RowMatrix documentation.
+  virtual int ExtractDiagonalCopy(Epetra_Vector & Diagonal) const;
+
+  //! See Epetra_RowMatrix documentation.
+  virtual int Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
+
+  //! See Epetra_RowMatrix documentation.
+  virtual int Solve(bool Upper, bool Trans, bool UnitDiagonal, const Epetra_MultiVector& X,  Epetra_MultiVector& Y) const;
+
+  //! See Epetra_RowMatrix documentation.
+  virtual int InvRowSums(Epetra_Vector& x) const;
+
+  //! See Epetra_RowMatrix documentation.
+  virtual int LeftScale(const Epetra_Vector& x);
+
+  //! See Epetra_RowMatrix documentation.
+  virtual int InvColSums(Epetra_Vector& x) const;
+
+  //! See Epetra_RowMatrix documentation.
+  virtual int RightScale(const Epetra_Vector& x);
+
+  //! See Epetra_RowMatrix documentation.
+  virtual double NormInf() const;
+
+  //! See Epetra_RowMatrix documentation.
+  virtual double NormOne() const;
+
+  //! See Epetra_RowMatrix documentation.
+  virtual int NumGlobalNonzeros() const;
+
+  //! See Epetra_RowMatrix documentation.
+  virtual int NumGlobalRows() const;
+
+  //! See Epetra_RowMatrix documentation.
+  virtual int NumGlobalCols() const;
+
+  //! See Epetra_RowMatrix documentation.
+  virtual int NumGlobalDiagonals() const;
+
+  //! See Epetra_RowMatrix documentation.
+  virtual int NumMyNonzeros() const;
+
+  //! See Epetra_RowMatrix documentation.
+  virtual int NumMyRows() const;
+
+  //! See Epetra_RowMatrix documentation.
+  virtual int NumMyCols() const;
+
+  //! See Epetra_RowMatrix documentation.
+  virtual int NumMyDiagonals() const;
+
+  //! See Epetra_RowMatrix documentation.
+  virtual bool LowerTriangular() const;
+
+  //! See Epetra_RowMatrix documentation.
+  virtual bool UpperTriangular() const;
+
+  //! See Epetra_RowMatrix documentation.
+  virtual const Epetra_Comm & Comm() const;
+
+  //! See Epetra_RowMatrix documentation.
+  virtual const Epetra_Map & RowMatrixRowMap() const;
+
+  //! See Epetra_RowMatrix documentation.
+  virtual const Epetra_Map & RowMatrixColMap() const;
+
+  //! See Epetra_RowMatrix documentation.
+  virtual const Epetra_Import * RowMatrixImporter() const;
+
+  //! See Epetra_SrcDistObj documentation.
+  virtual const Epetra_BlockMap& Map() const;
+
   //! Set the current step vector, \f[ y_k = x_{k+1} - x_k \f]
   void setStepVector ( Epetra_Vector & vec );
 
@@ -160,11 +269,14 @@ class BroydenOperator : public NOX::Abstract::PrePostOperator,
 				      Epetra_Operator& Prec,
                                       Teuchos::ParameterList * params = 0 );
 
+  //! Old Update method
+  virtual void old_runPostIterate( const NOX::Solver::Generic & solver);
+
+  //! Set a flag to skip the first call to computeSparseBroydenUpdate as no valid step vector or residual vector is available 
+  virtual void runPreSolve( const NOX::Solver::Generic & solver);
+
   //! Update the %Broyden matrix using changes in residuals the solution vector from the most recent nnlinear iteration.
   virtual void runPostIterate( const NOX::Solver::Generic & solver);
-
-  //! A dummy method needed for inheritance.
-  virtual const string & getType() const; 
 
   //! Replace values in %Broyden matrix with either Jacobian or preconditioning matrix entries.
   void replaceBroydenMatrixValues( const Epetra_CrsMatrix & mat);
@@ -172,6 +284,8 @@ class BroydenOperator : public NOX::Abstract::PrePostOperator,
  protected:
 
   bool verbose;
+
+  bool firstIteration;
 
   Teuchos::RefCountPtr<NOX::Epetra::Vector> stepVec;
 
@@ -195,7 +309,8 @@ class BroydenOperator : public NOX::Abstract::PrePostOperator,
   Teuchos::RefCountPtr<NOX::Epetra::Interface::Preconditioner> precIntPtr;
   Teuchos::RefCountPtr<Epetra_CrsMatrix> precMatrixPtr;
 
-  std::string myType;
+  //! label for the Epetra_RowMatrix
+  string label;
 };
 } // namespace Epetra
 } // namespace NOX

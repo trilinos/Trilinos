@@ -50,10 +50,11 @@ BroydenOperator::BroydenOperator(
        const Teuchos::RefCountPtr<Epetra_CrsMatrix>& mat,
        bool verbose_ ) :
   verbose(verbose_),
+  firstIteration(true),
   updateVectorPtr( Teuchos::rcp(new NOX::Epetra::Vector(solnVec)) ),
   updateVector(*updateVectorPtr),
   crsMatrix(mat),
-  myType("Broyden Operator")
+  label("NOX::Epetra::BroydenOperator")
 {
   initialize( nlParams, solnVec );
 }
@@ -68,12 +69,13 @@ BroydenOperator::BroydenOperator(
       const Teuchos::RefCountPtr<Epetra_CrsMatrix>& jacMatrix, 
       bool verbose_ ) :
   verbose(verbose_),
+  firstIteration(true),
   updateVectorPtr( Teuchos::rcp(new NOX::Epetra::Vector(solnVec)) ),
   updateVector(*updateVectorPtr),
   crsMatrix(mat),
   jacIntPtr(jacInt),
   jacMatrixPtr(jacMatrix),
-  myType("Broyden Operator")
+  label("NOX::Epetra::BroydenOperator")
 {
   // Set ourself as the Pre/Post Operator so we can update our data during
   // runPostIterate.  Note: we need to make provision for storing and calling 
@@ -98,12 +100,13 @@ BroydenOperator::BroydenOperator(
  const Teuchos::RefCountPtr<Epetra_CrsMatrix>& precMatrix, 
  bool verbose_ ) :
   verbose(verbose_),
+  firstIteration(true),
   updateVectorPtr( Teuchos::rcp(new NOX::Epetra::Vector(solnVec)) ),
   updateVector(*updateVectorPtr),
   crsMatrix(mat),
   precIntPtr(precInt),
   precMatrixPtr(precMatrix),
-  myType("Broyden Operator")
+  label("NOX::Epetra::BroydenOperator")
 {
   // Set ourself as the Pre/Post Operator so we can update our data during
   // runPostIterate.  Note: we need to make provision for storing and calling 
@@ -120,6 +123,7 @@ BroydenOperator::BroydenOperator(
 
 BroydenOperator::BroydenOperator(const BroydenOperator & bOp) :
   verbose(bOp.verbose),
+  firstIteration(bOp.firstIteration),
   updateVectorPtr(Teuchos::rcp(new NOX::Epetra::Vector(*bOp.updateVectorPtr))),
   updateVector(*updateVectorPtr),
   crsMatrix(bOp.crsMatrix),
@@ -127,7 +131,7 @@ BroydenOperator::BroydenOperator(const BroydenOperator & bOp) :
   jacMatrixPtr(bOp.jacMatrixPtr),
   precIntPtr(bOp.precIntPtr),
   precMatrixPtr(bOp.precMatrixPtr),
-  myType("Broyden Operator")
+  label("NOX::Epetra::BroydenOperator")
 { 
   if( !Teuchos::is_null(bOp.broydenVecPtr) )
     broydenVecPtr = Teuchos::rcp(new NOX::Epetra::Vector(*bOp.broydenVecPtr));
@@ -156,6 +160,9 @@ BroydenOperator::initialize( Teuchos::ParameterList & nlParams, const Epetra_Vec
   Teuchos::RefCountPtr<NOX::Abstract::PrePostOperator> me = Teuchos::rcp(this, false);
   nlParams.sublist("Solver Options").set("User Defined Pre/Post Operator", me);
 
+  if( verbose )
+    cout << *crsMatrix << endl;
+
   return true;
 }
 
@@ -165,41 +172,209 @@ BroydenOperator::~BroydenOperator()
 {
 }
 
+const char* BroydenOperator::Label () const
+{
+  return label.c_str();
+}
+
+int BroydenOperator::SetUseTranspose(bool UseTranspose)
+{
+  return crsMatrix->SetUseTranspose(UseTranspose);
+}
+
+int BroydenOperator::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
+{
+  return crsMatrix->Apply(X, Y);
+}
+
+int BroydenOperator::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
+{
+  return crsMatrix->ApplyInverse(X, Y);
+}
+
+bool BroydenOperator::UseTranspose() const
+{
+  return crsMatrix->UseTranspose();
+}
+
+bool BroydenOperator::HasNormInf() const
+{
+  return crsMatrix->HasNormInf();
+}
+
+const Epetra_Map& BroydenOperator::OperatorDomainMap() const
+{
+  return crsMatrix->OperatorDomainMap();
+}
+
+const Epetra_Map& BroydenOperator::OperatorRangeMap() const
+{
+  return crsMatrix->OperatorRangeMap();
+}
+
+bool BroydenOperator::Filled() const
+{
+  return crsMatrix->Filled();
+}
+
+int BroydenOperator::NumMyRowEntries(int MyRow, int & NumEntries) const
+{
+  return crsMatrix->NumMyRowEntries(MyRow, NumEntries);
+}
+
+int BroydenOperator::MaxNumEntries() const
+{
+  return crsMatrix->MaxNumEntries();
+}
+
+int BroydenOperator::ExtractMyRowCopy(int MyRow, int Length, int & NumEntries, double *Values, int * Indices) const
+{
+  return crsMatrix->ExtractMyRowCopy(MyRow, Length, NumEntries, Values, Indices);
+}
+
+int BroydenOperator::ExtractDiagonalCopy(Epetra_Vector & Diagonal) const
+{
+  return crsMatrix->ExtractDiagonalCopy(Diagonal);
+}
+
+int BroydenOperator::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
+{
+  return crsMatrix->Multiply(TransA, X, Y);
+}
+
+int BroydenOperator::Solve(bool Upper, bool Trans, bool UnitDiagonal, const Epetra_MultiVector& X,  Epetra_MultiVector& Y) const
+{
+  return crsMatrix->Solve(Upper, Trans, UnitDiagonal, X, Y);
+}
+
+int BroydenOperator::InvRowSums(Epetra_Vector& x) const
+{
+  return crsMatrix->InvRowSums(x);
+}
+
+int BroydenOperator::LeftScale(const Epetra_Vector& x)
+{
+  return crsMatrix->LeftScale(x);
+}
+
+int BroydenOperator::InvColSums(Epetra_Vector& x) const
+{
+  return crsMatrix->InvColSums(x);
+}
+
+int BroydenOperator::RightScale(const Epetra_Vector& x)
+{
+  return crsMatrix->RightScale(x);
+}
+
+double BroydenOperator::NormInf() const
+{
+  return crsMatrix->NormInf();
+}
+
+double BroydenOperator::NormOne() const
+{
+  return crsMatrix->NormOne();
+}
+
+int BroydenOperator::NumGlobalNonzeros() const
+{
+  return crsMatrix->NumGlobalNonzeros();
+}
+
+int BroydenOperator::NumGlobalRows() const
+{
+  return crsMatrix->NumGlobalRows();
+}
+
+int BroydenOperator::NumGlobalCols() const
+{
+  return crsMatrix->NumGlobalCols();
+}
+
+int BroydenOperator::NumGlobalDiagonals() const
+{
+  return crsMatrix->NumGlobalDiagonals();
+}
+
+int BroydenOperator::NumMyNonzeros() const
+{
+  return crsMatrix->NumMyNonzeros();
+}
+
+int BroydenOperator::NumMyRows() const
+{
+  return crsMatrix->NumMyRows();
+}
+
+int BroydenOperator::NumMyCols() const
+{
+  return crsMatrix->NumMyCols();
+}
+
+int BroydenOperator::NumMyDiagonals() const
+{
+  return crsMatrix->NumMyDiagonals();
+}
+
+bool BroydenOperator::LowerTriangular() const
+{
+  return crsMatrix->LowerTriangular();
+}
+
+bool BroydenOperator::UpperTriangular() const
+{
+  return crsMatrix->UpperTriangular();
+}
+
+const Epetra_Comm& BroydenOperator::Comm() const
+{
+  return crsMatrix->Comm();
+}
+
+const Epetra_Map& BroydenOperator::RowMatrixRowMap() const
+{
+  return crsMatrix->RowMatrixRowMap();
+}
+
+const Epetra_Map& BroydenOperator::RowMatrixColMap() const
+{
+  return crsMatrix->RowMatrixColMap();
+}
+
+const Epetra_Import* BroydenOperator::RowMatrixImporter() const
+{
+  return crsMatrix->RowMatrixImporter();
+}
+
+const Epetra_BlockMap& BroydenOperator::Map() const
+{
+  return crsMatrix->Map();
+}
+
 //-----------------------------------------------------------------------------
 
 bool 
 BroydenOperator::computeJacobian( const Epetra_Vector & x, Epetra_Operator& Jac )
 {
-  if( !Teuchos::is_null(jacIntPtr) ) 
-  {
-    jacIntPtr->computeJacobian(x, Jac);
-    replaceBroydenMatrixValues(*jacMatrixPtr);
-  }
-
-  return true;
+  return computeSparseBroydenUpdate();
 }
 
 //-----------------------------------------------------------------------------
 
 bool 
 BroydenOperator::computePreconditioner( const Epetra_Vector & x,
-					     Epetra_Operator& Prec,
-                                             Teuchos::ParameterList * pList )
+					Epetra_Operator& Prec,
+                                        Teuchos::ParameterList * pList )
 {
-  if( !Teuchos::is_null(precIntPtr) ) 
-  {
-    precIntPtr->computePreconditioner(x, Prec, pList);
-    replaceBroydenMatrixValues(*precMatrixPtr);
-  }
-
-  return true;
+  return computeJacobian( x, Prec );
 }
 
 //-----------------------------------------------------------------------------
 
 void 
-BroydenOperator::runPostIterate( const NOX::Solver::Generic & solver)
-{ 
+BroydenOperator::old_runPostIterate( const NOX::Solver::Generic & solver)
+{
   // Get and update using the solver object.
 
   NOX::Abstract::Group::ReturnType status;
@@ -300,10 +475,47 @@ BroydenOperator::runPostIterate( const NOX::Solver::Generic & solver)
 
 //-----------------------------------------------------------------------------
 
-const string & 
-BroydenOperator::getType() const
+void 
+BroydenOperator::runPreSolve( const NOX::Solver::Generic & solver)
 {
-  return myType;
+  // Set the firstIteration flag 
+  firstIteration = true;
+}
+
+//-----------------------------------------------------------------------------
+
+void 
+BroydenOperator::runPostIterate( const NOX::Solver::Generic & solver)
+{
+  // Get and update using the solver object.
+
+  if( solver.getNumIterations() > 0 )
+  {
+    // To consistently compute changes to the step and the yield, eg effects of
+    // linesearch or other globalizations, we need to get and subtract the old and
+    // new solution states and corresponding residuals 
+
+    const Abstract::Group & oldSolnGrp = solver.getPreviousSolutionGroup();
+    const Abstract::Group & solnGrp    = solver.getSolutionGroup();
+
+    // Set the Step vector
+    *workVec = solnGrp.getX();
+    workVec->update(-1.0, oldSolnGrp.getX(), 1.0);
+
+    setStepVector( *workVec );
+
+    // Set the Yield vector
+    *workVec = solnGrp.getF();
+    workVec->update(-1.0, oldSolnGrp.getF(), 1.0);
+
+    setYieldVector( *workVec );
+
+    // Use of these updated vectors occurs when computeJacobian or computePreconditioner 
+    // gets called
+
+    firstIteration = false;
+  }
+
 }
 
 //-----------------------------------------------------------------------------
@@ -343,53 +555,50 @@ BroydenOperator::setYieldVector( Epetra_Vector & vec )
 bool 
 BroydenOperator::computeSparseBroydenUpdate()
 {
-  //NOX::Abstract::Group::ReturnType status;
-  //int ierr;
 
-  //if( Teuchos::is_null(broydenVecPtr) )
-  //  broydenVecPtr = Teuchos::rcp(new NOX::Epetra::Vector(*updateVectorPtr));
-  //if( Teuchos::is_null(residualVecPtr) )
-  //  residualVecPtr = Teuchos::rcp(new NOX::Epetra::Vector(*updateVectorPtr));
-  //if( verbose )
-  //  if( Teuchos::is_null(tempVecPtr) )
-  //    tempVecPtr = Teuchos::rcp(new NOX::Epetra::Vector(*updateVectorPtr));
-    
-  // Do the Broyden update to our matrix
-  int ierr = crsMatrix->Multiply( false, stepVec->getEpetraVector(), workVec->getEpetraVector() );
-  if( ierr )
+  if( !firstIteration )
   {
-    cout << "ERROR: NOX::Epetra::BroydenOperator::runPostIterate(...) "
-         << "- crsMatrix->Multiply() failed!!!" << endl;
-    throw "NOX Error: Broyden Update Failed";
-  }
-
-  double * values  = 0 ;
-  int    * indices = 0 ;
-  int      numEntries  ;
-
-  for( int row = 0; row < crsMatrix->NumMyRows(); ++row )
-  {
-    ierr = crsMatrix->ExtractMyRowView( row, numEntries, values, indices );
+    // Do the Broyden update to our matrix
+    int ierr = crsMatrix->Multiply( false, stepVec->getEpetraVector(), workVec->getEpetraVector() );
     if( ierr )
     {
-      cout << "ERROR (" << ierr << ") : NOX::Epetra::BroydenOperator::computeSparseBroydenUdate() "
-           << "- crsMatrix->ExtractGlobalRowView(...) failed for row --> " << row << endl;
+      cout << "ERROR: NOX::Epetra::BroydenOperator::computeSparseBroydenUpdate(...) "
+           << "- crsMatrix->Multiply() failed!!!" << endl;
       throw "NOX Error: Broyden Update Failed";
     }
 
-    double diffVal = yieldVec->getEpetraVector()[row] - workVec->getEpetraVector()[row];
+    double * values  = 0 ;
+    int    * indices = 0 ;
+    int      numEntries  ;
 
-    double rowStepInnerProduct = 0.0;
+    for( int row = 0; row < crsMatrix->NumMyRows(); ++row )
+    {
+      ierr = crsMatrix->ExtractMyRowView( row, numEntries, values, indices );
+      if( ierr )
+      {
+        cout << "ERROR (" << ierr << ") : NOX::Epetra::BroydenOperator::computeSparseBroydenUpdate() "
+             << "- crsMatrix->ExtractGlobalRowView(...) failed for row --> " << row << endl;
+        throw "NOX Error: Broyden Update Failed";
+      }
 
-    for( int col = 0; col < numEntries; ++col )
-      rowStepInnerProduct += stepVec->getEpetraVector()[indices[col]] * stepVec->getEpetraVector()[indices[col]];
+      double diffVal = yieldVec->getEpetraVector()[row] - workVec->getEpetraVector()[row];
 
-    for( int col = 0; col < numEntries; ++col )
-      (*values++) += diffVal * stepVec->getEpetraVector()[(*indices++)] / rowStepInnerProduct;
+      double rowStepInnerProduct = 0.0;
+
+      for( int col = 0; col < numEntries; ++col )
+        rowStepInnerProduct += stepVec->getEpetraVector()[indices[col]] * stepVec->getEpetraVector()[indices[col]];
+
+      for( int col = 0; col < numEntries; ++col )
+        (*values++) += diffVal * stepVec->getEpetraVector()[(*indices++)] / rowStepInnerProduct;
+    }
+
+    // Our %Broyden matrix has been updated and is now ready to use as a 
+    // preconditioning matrix or as the Jacobian.
+
+    if( verbose )
+      cout << *crsMatrix << endl;
+
   }
-
-  // Our %Broyden matrix has been updated and is now ready to use as a 
-  // preconditioning matrix or as the Jacobian.
 
   return true;
 }
@@ -403,7 +612,8 @@ BroydenOperator::replaceBroydenMatrixValues( const Epetra_CrsMatrix & mat)
   int * indices = 0;
   int numEntries;
   int ierr;
-  for( int row = 0; row < mat.NumMyRows(); ++row) {
+  for( int row = 0; row < mat.NumMyRows(); ++row) 
+  {
     ierr = mat.ExtractMyRowView(row, numEntries, values, indices);
     ierr += crsMatrix->ReplaceGlobalValues(row, numEntries, values, indices);
     if( ierr )
