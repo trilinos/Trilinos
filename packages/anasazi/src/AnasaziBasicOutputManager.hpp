@@ -116,12 +116,15 @@ template<class ScalarType>
 BasicOutputManager<ScalarType>::BasicOutputManager(int vb, Teuchos::RefCountPtr<ostream> os)
     : OutputManager<ScalarType>(vb), myOS_(os) {
   int MyPID;
-  #ifdef HAVE_MPI
-    // Initialize MPI
-    MPI_Comm_rank(MPI_COMM_WORLD, &MyPID);
-  #else 
-    MyPID = 0;
-  #endif
+#ifdef HAVE_MPI
+  // Initialize MPI
+  int mpiStarted = 0;
+  MPI_Initialized(&mpiStarted);
+  if (mpiStarted) MPI_Comm_rank(MPI_COMM_WORLD, &MyPID);
+  else MyPID=0;
+#else 
+  MyPID = 0;
+#endif
   iPrint_ = (MyPID == 0);
 } 
 
