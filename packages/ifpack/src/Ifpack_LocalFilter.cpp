@@ -57,11 +57,6 @@ Ifpack_LocalFilter::Ifpack_LocalFilter(const Epetra_RowMatrix* Matrix) :
   // - the total number of nonzeros
   // - the diagonal entries
 
-  // ExtractMyRowCopy() uses Indices_ and Values_ for
-  // its internal operators, here I need two other vectors
-  vector<int> Ind(MaxNumEntries_);
-  vector<double> Val(MaxNumEntries_);
-
   // compute nonzeros (total and per-row), and store the
   // diagonal entries (already modified)
   int ActualMaxNumEntries = 0;
@@ -69,19 +64,22 @@ Ifpack_LocalFilter::Ifpack_LocalFilter(const Epetra_RowMatrix* Matrix) :
   for (int i = 0 ; i < NumRows_ ; ++i) {
     
     NumEntries_[i] = 0;
-    int Nnz;
-    IFPACK_CHK_ERRV(ExtractMyRowCopy(i,MaxNumEntries_,Nnz,&Val[0],&Ind[0]));
-
-    if (Nnz > ActualMaxNumEntries)
-      ActualMaxNumEntries = Nnz;
-
-    NumNonzeros_ += Nnz;
-    NumEntries_[i] = Nnz;
+    int Nnz, NewNnz = 0;
+    IFPACK_CHK_ERRV(ExtractMyRowCopy(i,MaxNumEntries_,Nnz,&Values_[0],&Indices_[0]));
 
     for (int j = 0 ; j < Nnz ; ++j) {
+      if (Indices_[j] < NumRows_ ) ++NewNnz;
+
       if (Indices_[j] == i)
 	(*Diagonal_)[i] = Values_[j];
     }
+
+    if (NewNnz > ActualMaxNumEntries)
+      ActualMaxNumEntries = NewNnz;
+
+    NumNonzeros_ += NewNnz;
+    NumEntries_[i] = NewNnz;
+
   }
  
   MaxNumEntries_ = ActualMaxNumEntries;

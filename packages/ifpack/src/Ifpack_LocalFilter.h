@@ -78,7 +78,8 @@ public:
     */
   virtual int NumMyRowEntries(int MyRow, int & NumEntries) const
   {
-    return(NumEntries_[MyRow]);
+    NumEntries = NumEntries_[MyRow];
+    return(0);
   }
 
   //! Returns the maximum of NumMyRowEntries() over all rows.
