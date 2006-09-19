@@ -37,5 +37,6 @@
 #include "Sacado_CacheFad_DFad.hpp"
 #include "Sacado_Fad_SFad.hpp"
 #include "Sacado_Taylor_DTaylor.hpp"
+#include "Sacado_trad.hpp"
 
 #endif // SACADO_HPP 

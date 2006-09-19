@@ -1,7 +1,6 @@
 // Brief demo of Fad and Rad for computing first derivatives
 
-#include <Sacado.hpp>		/* for FAD */
-#include <Sacado_trad.hpp>	/* for RAD */
+#include <Sacado.hpp>		/* for FAD and RAD */
 #include <stdio.h>		/* nicer than streams in some respects */
 
 // Typedefs reduce gobbledygook below
