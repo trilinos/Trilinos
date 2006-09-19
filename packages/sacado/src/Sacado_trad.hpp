@@ -245,6 +245,7 @@ T1(tanh)
 T1(fabs)
 
 T F copy(AI);
+T F copy(Ai);
 
 #undef F
 #undef T2
@@ -304,7 +305,6 @@ ADvari {	// implementation of an ADvar
 		}
 	void operator delete(void*) {} /*Should never be called.*/
 	inline ADvari(Double t): Val(t), aval(0.) {}
-	inline ADvari(Double t, Double ta): Val(t), aval(ta) {}
 	inline ADvari(): Val(0.), aval(0.) {}
 #ifdef RAD_AUTO_AD_Const
 	friend class ADcontext<Double>;
@@ -371,6 +371,7 @@ F r f <>(Ai,int);
 	T1(R,tan)
 	T1(R,tanh)
 	T1(R,fabs)
+	T1(R,copy)
 	T2(int,operator<)
 	T2(int,operator<=)
 	T2(int,operator==)
@@ -851,49 +852,49 @@ ADvarn: public ADvari<Double> { // n-ary ops with partials "a"
 	};
 
 template<typename Double>
- inline ADvari<Double>& operator+(ADvari<Double> &T) { return T; }
+ inline ADvari<Double>& operator+(const ADvari<Double> &T) { return *(ADvari<Double>*)&T; }
 
 template<typename Double>
- inline int operator<(ADvari<Double> &L, ADvari<Double> &R) { return L.Val < R.Val; }
+ inline int operator<(const ADvari<Double> &L, const ADvari<Double> &R) { return L.Val < R.Val; }
 template<typename Double>
- inline int operator<(ADvari<Double> &L, Double R) { return L.Val < R; }
+ inline int operator<(const ADvari<Double> &L, Double R) { return L.Val < R; }
 template<typename Double>
- inline int operator<(Double L, ADvari<Double> &R) { return L < R.Val; }
+ inline int operator<(Double L, const ADvari<Double> &R) { return L < R.Val; }
 
 template<typename Double>
- inline int operator<=(ADvari<Double> &L, ADvari<Double> &R) { return L.Val <= R.Val; }
+ inline int operator<=(const ADvari<Double> &L, const ADvari<Double> &R) { return L.Val <= R.Val; }
 template<typename Double>
- inline int operator<=(ADvari<Double> &L, Double R) { return L.Val <= R; }
+ inline int operator<=(const ADvari<Double> &L, Double R) { return L.Val <= R; }
 template<typename Double>
- inline int operator<=(Double L, ADvari<Double> &R) { return L <= R.Val; }
+ inline int operator<=(Double L, const ADvari<Double> &R) { return L <= R.Val; }
 
 template<typename Double>
- inline int operator==(ADvari<Double> &L, ADvari<Double> &R) { return L.Val == R.Val; }
+ inline int operator==(const ADvari<Double> &L, const ADvari<Double> &R) { return L.Val == R.Val; }
 template<typename Double>
- inline int operator==(ADvari<Double> &L, Double R) { return L.Val == R; }
+ inline int operator==(const ADvari<Double> &L, Double R) { return L.Val == R; }
 template<typename Double>
- inline int operator==(Double L, ADvari<Double> &R) { return L == R.Val; }
+ inline int operator==(Double L, const ADvari<Double> &R) { return L == R.Val; }
 
 template<typename Double>
- inline int operator!=(ADvari<Double> &L, ADvari<Double> &R) { return L.Val != R.Val; }
+ inline int operator!=(const ADvari<Double> &L, const ADvari<Double> &R) { return L.Val != R.Val; }
 template<typename Double>
- inline int operator!=(ADvari<Double> &L, Double R) { return L.Val != R; }
+ inline int operator!=(const ADvari<Double> &L, Double R) { return L.Val != R; }
 template<typename Double>
- inline int operator!=(Double L, ADvari<Double> &R) { return L != R.Val; }
+ inline int operator!=(Double L, const ADvari<Double> &R) { return L != R.Val; }
 
 template<typename Double>
- inline int operator>=(ADvari<Double> &L, ADvari<Double> &R) { return L.Val >= R.Val; }
+ inline int operator>=(const ADvari<Double> &L, const ADvari<Double> &R) { return L.Val >= R.Val; }
 template<typename Double>
- inline int operator>=(ADvari<Double> &L, Double R) { return L.Val >= R; }
+ inline int operator>=(const ADvari<Double> &L, Double R) { return L.Val >= R; }
 template<typename Double>
- inline int operator>=(Double L, ADvari<Double> &R) { return L >= R.Val; }
+ inline int operator>=(Double L, const ADvari<Double> &R) { return L >= R.Val; }
 
 template<typename Double>
- inline int operator>(ADvari<Double> &L, ADvari<Double> &R) { return L.Val > R.Val; }
+ inline int operator>(const ADvari<Double> &L, const ADvari<Double> &R) { return L.Val > R.Val; }
 template<typename Double>
- inline int operator>(ADvari<Double> &L, Double R) { return L.Val > R; }
+ inline int operator>(const ADvari<Double> &L, Double R) { return L.Val > R; }
 template<typename Double>
- inline int operator>(Double L, ADvari<Double> &R) { return L > R.Val; }
+ inline int operator>(Double L, const ADvari<Double> &R) { return L > R.Val; }
 
 template<typename Double>
  inline void *ADcontext<Double>::Memalloc(size_t len) {
@@ -1790,6 +1791,9 @@ T1(fabs)
 
 T F copy(AI x)
 { return *(new ADvar1<Double>(x.cv->Val, &ADcontext<Double>::One, (ADvari<Double>*)x.cv)); }
+
+T F copy(Ai x)
+{ return *(new ADvar1<Double>(x.Val, &ADcontext<Double>::One, (ADvari<Double>*)&x)); }
 
 #undef T1
 #undef AI
