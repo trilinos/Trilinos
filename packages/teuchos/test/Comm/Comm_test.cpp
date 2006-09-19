@@ -397,6 +397,40 @@ bool masterTestComm(
 
   RefCountPtr<const Teuchos::Comm<Ordinal> >
     comm = Teuchos::DefaultComm<Ordinal>::getComm();
+	
+#ifdef HAVE_MPI
+
+  // Test that the DefaultComm is really a DefaultMpiComm.
+  RefCountPtr<const Teuchos::MpiComm<Ordinal> > 
+    mpiComm = Teuchos::rcp_dynamic_cast<const Teuchos::MpiComm<Ordinal> >( comm, false );
+
+  if (mpiComm == Teuchos::null) {
+    success = false;
+    *out << "\n*** FAILED to cast the Teuchos::DefaultComm<"<< OT::name() << "> to a Teuchos::MpiComm<" << OT::name() << ">!\n";
+  } 
+  else {
+    *out
+      << "\n***"
+      << "\n*** Successfully casted the Teuchos::DefaultComm<"<< OT::name() << "> to a Teuchos::MpiComm<" << OT::name() << ">!"
+      << "\n***\n";
+    
+    // Now get the raw pointer to the MPI_Comm object
+    RefCountPtr<const Teuchos::OpaqueWrapper<MPI_Comm> > 
+      rawMpiComm = mpiComm->getRawMpiComm();
+
+    if (static_cast<MPI_Comm>(*rawMpiComm) == 0) {
+      success = false;
+      *out << "\n*** FAILED to get the raw MPI_Comm pointer from the Teuchos::MpiComm<" << OT::name() << ">!\n";
+    }
+    else {
+      *out
+	<< "\n***"
+	<< "\n*** Successfully got the raw MPI_Comm pointer from the Teuchos::MpiComm<" << OT::name() << ">!"
+	<< "\n***\n";
+    }
+  }
+  
+#endif
 
   *out
     << "\n***"
