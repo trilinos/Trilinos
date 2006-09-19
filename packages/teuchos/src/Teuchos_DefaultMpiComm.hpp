@@ -94,7 +94,8 @@ public:
     );
 
   /** \brief Return the embedded wrapped opaque <tt>MPI_Comm</tt> object. */
-  RefCountPtr<const OpaqueWrapper<MPI_Comm> > getRawMpiComm() const;
+  RefCountPtr<const OpaqueWrapper<MPI_Comm> > getRawMpiComm() const
+  {return rawMpiComm_;}
 
   //@}
 
