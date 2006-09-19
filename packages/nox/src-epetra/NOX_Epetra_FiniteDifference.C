@@ -216,7 +216,7 @@ int FiniteDifference::MaxNumEntries() const
   return jacobian->MaxNumEntries();
 }
 
-int FiniteDifference::ExtractMyRowCopy(int MyRow, int Length, int & NumEntries, double *Values, int * Indices) const
+inline int FiniteDifference::ExtractMyRowCopy(int MyRow, int Length, int & NumEntries, double *Values, int * Indices) const
 {
   return jacobian->ExtractMyRowCopy(MyRow, Length, NumEntries, Values, Indices);
 }

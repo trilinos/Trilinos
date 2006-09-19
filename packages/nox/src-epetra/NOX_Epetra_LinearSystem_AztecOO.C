@@ -634,7 +634,7 @@ applyJacobianInverse(Teuchos::ParameterList &p,
     std::string lhsFileName = prefixName + "_RHS_" + postfixName;
 
     Epetra_RowMatrix* printMatrix = NULL;
-    printMatrix = dynamic_cast<Epetra_RowMatrix*>(solveJacOpPtr.get()); 
+    printMatrix = dynamic_cast<Epetra_RowMatrix*>(jacPtr.get()); 
 
     if (printMatrix == NULL) {
       cout << "Error: NOX::Epetra::LinearSystemAztecOO::applyJacobianInverse() - "
@@ -1448,7 +1448,8 @@ getPreconditionerPolicy(bool advanceReuseCounter)
     // This is the typical use 
     else {
       if( precQueryCounter == 0 || precQueryCounter >= maxAgeOfPrec ) {
-	precQueryCounter = 1;
+        if (advanceReuseCounter)
+          precQueryCounter = 1;
 	return PRPT_REBUILD;
       }
       else {

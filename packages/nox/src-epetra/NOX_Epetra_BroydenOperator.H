@@ -43,6 +43,7 @@
 #include "NOX_Common.H"
 #include "NOX_Epetra.H"
 #include "Teuchos_ParameterList.hpp"
+#include "NOX_Solver_PrePostOperator.H"
 #include "NOX_Abstract_PrePostOperator.H"
 
 #include "Epetra_Vector.h"
@@ -101,27 +102,10 @@ class BroydenOperator : public Epetra_RowMatrix,
 
   //! Constructor taking an initial matrix to be updated
   BroydenOperator(Teuchos::ParameterList & nlParams, 
+                  const Teuchos::RefCountPtr<NOX::Utils>& utils, 
 		  Epetra_Vector & solnVec,
                   const Teuchos::RefCountPtr<Epetra_CrsMatrix>& broydMat0, 
 		  bool verbose = false);
-
-  //! Constructor taking an initial matrix to be updated along with a Jacobian matrix whose values replace those of the %Broyden update.
-  BroydenOperator(
-       Teuchos::ParameterList & nlParams, 
-       Epetra_Vector & solnVec,
-       const Teuchos::RefCountPtr<Epetra_CrsMatrix>& broydMat0, 
-       const Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian>& jacInt,
-       const Teuchos::RefCountPtr<Epetra_CrsMatrix>& jacMatrix, 
-       bool verbose = false);
-
-  //! Constructor taking an initial matrix to be updated along with a preconditioning matrix whose values replace those of the %Broyden update.
-  BroydenOperator(
-   Teuchos::ParameterList & nlParams, 
-   Epetra_Vector & solnVec,
-   const Teuchos::RefCountPtr<Epetra_CrsMatrix>& broydMat0,
-   const Teuchos::RefCountPtr<NOX::Epetra::Interface::Preconditioner>& precInt,
-   const Teuchos::RefCountPtr<Epetra_CrsMatrix>& precMatrix, 
-   bool verbose = false);
 
   //! Copy Constructor
   BroydenOperator(const BroydenOperator &);
@@ -256,6 +240,21 @@ class BroydenOperator : public Epetra_RowMatrix,
   Epetra_CrsMatrix & getBroydenMatrix()
   { return *crsMatrix; };
 
+  /** @name "Is" functions
+   *
+   * Checks to see if various objects have been computed. Returns true
+   * if the corresponding "compute" function has been called since the
+   * last update to the solution vector (via instantiation or
+   * computeX). */
+  //@{
+
+  virtual bool isStep() const;
+  virtual bool isYield() const;
+  virtual bool isBroyden() const;
+
+  //@}
+
+
  protected:
 
   //! Initialize operator and data
@@ -269,14 +268,17 @@ class BroydenOperator : public Epetra_RowMatrix,
 				      Epetra_Operator& Prec,
                                       Teuchos::ParameterList * params = 0 );
 
-  //! Old Update method
-  virtual void old_runPostIterate( const NOX::Solver::Generic & solver);
-
   //! Set a flag to skip the first call to computeSparseBroydenUpdate as no valid step vector or residual vector is available 
   virtual void runPreSolve( const NOX::Solver::Generic & solver);
 
+  //! Needed to preserve any existing call through to a user-defined Pre/Preost Operator
+  virtual void runPreIterate( const NOX::Solver::Generic & solver);
+
   //! Update the %Broyden matrix using changes in residuals the solution vector from the most recent nnlinear iteration.
   virtual void runPostIterate( const NOX::Solver::Generic & solver);
+
+  //! Needed to preserve any existing call through to a user-defined Pre/Preost Operator
+  virtual void runPostSolve( const NOX::Solver::Generic & solver);
 
   //! Replace values in %Broyden matrix with either Jacobian or preconditioning matrix entries.
   void replaceBroydenMatrixValues( const Epetra_CrsMatrix & mat);
@@ -285,21 +287,15 @@ class BroydenOperator : public Epetra_RowMatrix,
 
   bool verbose;
 
-  bool firstIteration;
+  Teuchos::RefCountPtr<NOX::Epetra::Vector> stepVec  ;
 
-  Teuchos::RefCountPtr<NOX::Epetra::Vector> stepVec;
+  Teuchos::RefCountPtr<NOX::Epetra::Vector> yieldVec ;
 
-  Teuchos::RefCountPtr<NOX::Epetra::Vector> yieldVec;
+  Teuchos::RefCountPtr<NOX::Epetra::Vector> workVec  ;
 
-  Teuchos::RefCountPtr<NOX::Epetra::Vector> workVec;
+  Teuchos::RefCountPtr<NOX::Epetra::Vector> oldX     ;
 
-  Teuchos::RefCountPtr<NOX::Epetra::Vector> updateVectorPtr;
-  NOX::Epetra::Vector & updateVector;
-
-  Teuchos::RefCountPtr<NOX::Epetra::Vector> broydenVecPtr;
-  Teuchos::RefCountPtr<NOX::Epetra::Vector> residualVecPtr;
-
-  Teuchos::RefCountPtr<NOX::Epetra::Vector> tempVecPtr;
+  Teuchos::RefCountPtr<NOX::Epetra::Vector> oldF     ;
 
   Teuchos::RefCountPtr<Epetra_CrsMatrix> crsMatrix;
 
@@ -309,8 +305,27 @@ class BroydenOperator : public Epetra_RowMatrix,
   Teuchos::RefCountPtr<NOX::Epetra::Interface::Preconditioner> precIntPtr;
   Teuchos::RefCountPtr<Epetra_CrsMatrix> precMatrixPtr;
 
+  //! Reference to top-level nonlinear solver parameters list
+  Teuchos::ParameterList & nlParams; 
+
+  //! Reference to NOX::Utils object
+  const Teuchos::RefCountPtr<NOX::Utils>& utils;
+
+  //! Pointer to a user defined NOX::Abstract::PrePostOperator object.
+  NOX::Solver::PrePostOperator prePostOperator;
+
   //! label for the Epetra_RowMatrix
   string label;
+
+  /** @name IsValid flags 
+   *  
+   * True if objects are current with respect to the currect stepVec. */
+  //@{
+  bool isValidStep;
+  bool isValidYield;
+  bool isValidBroyden;
+  //@}
+
 };
 } // namespace Epetra
 } // namespace NOX
