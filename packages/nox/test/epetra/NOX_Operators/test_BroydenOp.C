@@ -104,33 +104,33 @@ int main(int argc, char *argv[])
     printParams.set("Output Information", NOX::Utils::Error +
 		NOX::Utils::TestDetails);
 
-  NOX::Utils printing(printParams);
+  Teuchos::RefCountPtr<NOX::Utils> printing = Teuchos::rcp( new NOX::Utils(printParams) );
 
   // Identify the test problem
-  if (printing.isPrintType(NOX::Utils::TestDetails))
-    printing.out() << "Starting epetra/NOX_Operators/NOX_BroydenOp.exe" << endl;
+  if (printing->isPrintType(NOX::Utils::TestDetails))
+    printing->out() << "Starting epetra/NOX_Operators/NOX_BroydenOp.exe" << endl;
 
   // Identify processor information
 #ifdef HAVE_MPI
-  if (printing.isPrintType(NOX::Utils::TestDetails)) 
+  if (printing->isPrintType(NOX::Utils::TestDetails)) 
   {
-    printing.out() << "Parallel Run" << endl;
-    printing.out() << "Number of processors = " << NumProc << endl;
-    printing.out() << "Print Process = " << MyPID << endl;
+    printing->out() << "Parallel Run" << endl;
+    printing->out() << "Number of processors = " << NumProc << endl;
+    printing->out() << "Print Process = " << MyPID << endl;
   }
   Comm.Barrier();
-  if (printing.isPrintType(NOX::Utils::TestDetails))
-    printing.out() << "Process " << MyPID << " is alive!" << endl;
+  if (printing->isPrintType(NOX::Utils::TestDetails))
+    printing->out() << "Process " << MyPID << " is alive!" << endl;
   Comm.Barrier();
 #else
-  if (printing.isPrintType(NOX::Utils::TestDetails))
-    printing.out() << "Serial Run" << endl;
+  if (printing->isPrintType(NOX::Utils::TestDetails))
+    printing->out() << "Serial Run" << endl;
 #endif
 
   int status = 0;
 
   // Create a TestCompare class
-  NOX::Epetra::TestCompare tester( printing.out(), printing);
+  NOX::Epetra::TestCompare tester( printing->out(), *printing);
   double abstol = 1.e-4;
   double reltol = 1.e-4 ;
 
@@ -167,7 +167,7 @@ int main(int argc, char *argv[])
   broydenWorkVec.PutScalar(1.0);
   broydenWorkMatrix->ReplaceDiagonalValues(broydenWorkVec);
 
-  NOX::Epetra::BroydenOperator broydenOp( noxParams, broydenWorkVec, broydenWorkMatrix, true );
+  NOX::Epetra::BroydenOperator broydenOp( noxParams, printing, broydenWorkVec, broydenWorkMatrix, true );
 
   broydenWorkVec[0] =  1.0;
   broydenWorkVec[1] = -1.0;
@@ -229,7 +229,7 @@ int main(int argc, char *argv[])
 
   cout << *broydenWorkMatrix2 << endl;
 
-  NOX::Epetra::BroydenOperator broydenOp2( noxParams, broydenWorkVec, broydenWorkMatrix2, true );
+  NOX::Epetra::BroydenOperator broydenOp2( noxParams, printing, broydenWorkVec, broydenWorkMatrix2, true );
 
   broydenWorkVec[0] =  1.0;
   broydenWorkVec[1] = -1.0;
@@ -273,9 +273,9 @@ int main(int argc, char *argv[])
 
   // Summarize test results  
   if( status == 0 )
-    printing.out() << "Test passed!" << endl;
+    printing->out() << "Test passed!" << endl;
   else 
-    printing.out() << "Test failed!" << endl;
+    printing->out() << "Test failed!" << endl;
 
 #ifdef HAVE_MPI
   MPI_Finalize();
