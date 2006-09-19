@@ -60,6 +60,9 @@ namespace Sacado {
       //! Return if expression has fast access
       bool hasFastAccess() const { return expr_.hasFastAccess();}
 
+      //! Return if expression is constant
+      bool isPassive() const { return expr_.isPassive();}
+
       //! Return value of expression
       value_type val() const { return expr_.val();}
 
@@ -98,7 +101,10 @@ namespace Sacado {
       int size() const { return 0; }
       
       //! Return if operation has fast access
-      bool hasFastAccess() const { return 1; }
+      bool hasFastAccess() const { return true; }
+
+      //! Return if operation is constant
+      bool isPassive() const { return true; }
 
       //! Return value of operation
       value_type val() const { return constant_; }
@@ -139,6 +145,9 @@ namespace Sacado {
       
       //! Return if operation has fast access
       bool hasFastAccess() const { return expr_.hasFastAccess(); }
+
+      //! Return if expression is constant
+      bool isPassive() const { return expr_.isPassive();}
 
       //! Return value of operation
       value_type val() const { return op_.computeValue(expr_); }
@@ -198,6 +207,10 @@ namespace Sacado {
       bool hasFastAccess() const { 
 	return expr1_.hasFastAccess() && expr2_.hasFastAccess();}
 
+      //! Return if expression is constant
+      bool isPassive() const { 
+	return expr1_.isPassive() && expr2_.isPassive();}
+
       //! Return value of operation
       value_type val() const { 
 	return op_.computeValue(expr1_,expr2_); }
@@ -256,6 +269,9 @@ namespace Sacado {
       bool hasFastAccess() const { 
 	return expr2_.hasFastAccess();}
 
+      //! Return if expression is constant
+      bool isPassive() const { return expr2_.isPassive();}
+
       //! Return value of operation
       value_type val() const { 
 	return op_.computeValue(expr1_,expr2_); }
@@ -313,6 +329,9 @@ namespace Sacado {
       //! Return if operation has fast access
       bool hasFastAccess() const { 
 	return expr1_.hasFastAccess();}
+
+      //! Return if expression is constant
+      bool isPassive() const { return expr1_.isPassive();}
 
       //! Return value of operation
       value_type val() const { 

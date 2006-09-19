@@ -29,8 +29,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef SACADO_FAD_DFADTRAITS_HPP
-#define SACADO_FAD_DFADTRAITS_HPP
+#ifndef SACADO_FAD_GENERALFADTRAITS_HPP
+#define SACADO_FAD_GENERALFADTRAITS_HPP
 
 #include "Sacado_ConfigDefs.h"
 #include "Sacado_ADTraits.hpp"
@@ -39,44 +39,44 @@
 // Forward declarations
 namespace Sacado {
   namespace Fad {
-    template <typename T, int Num> class SFad;
+    template <typename T, typename S> class GeneralFad;
   }
 }
 
 namespace Sacado {
 
-  //! Specialization of ADTraits to SFad types
-  template <typename T, int Num>
-  class ADTraits< Fad::SFad<T,Num>, Fad::SFad<T,Num> > {
+  //! Specialization of ADTraits to GeneralFad types
+  template <typename T, typename S>
+  class ADTraits< Fad::GeneralFad<T,S>, Fad::GeneralFad<T,S> > {
   public:
 
-    typedef Fad::SFad<T,Num> promote;
+    typedef Fad::GeneralFad<T,S> promote;
   };
 
-  //! Specialization of ADTraits to SFad types
-  template <typename L, typename R, int Num>
-  class ADTraits< Fad::SFad<L,Num>, R > {
+  //! Specialization of ADTraits to GeneralFad types
+  template <typename L, typename R, typename S>
+  class ADTraits< Fad::GeneralFad<L,S>, R > {
   public:
 
-    typedef typename Fad::SFad<L,Num>::value_type value_type_l;
+    typedef typename Fad::GeneralFad<L,S>::value_type value_type_l;
     typedef typename Promote<R>::value_type value_type_r;
     typedef typename ADTraits<value_type_l,value_type_r>::promote value_type;
 
-    typedef Fad::SFad<value_type,Num> promote;
+    typedef Fad::GeneralFad<value_type,S> promote;
   };
 
-  //! Specialization of ADTraits to SFad types
-  template <typename L, typename R, int Num>
-  class ADTraits< L, Fad::SFad<R,Num> > {
+  //! Specialization of ADTraits to GeneralFad types
+  template <typename L, typename R, typename S>
+  class ADTraits< L, Fad::GeneralFad<R,S> > {
   public:
 
     typedef typename Promote<L>::value_type value_type_l;
-    typedef typename Fad::SFad<R,Num>::value_type value_type_r;
+    typedef typename Fad::GeneralFad<R,S>::value_type value_type_r;
     typedef typename ADTraits<value_type_l,value_type_r>::promote value_type;
 
-    typedef Fad::SFad<value_type,Num> promote;
+    typedef Fad::GeneralFad<value_type,S> promote;
   };
 
 } // namespace Sacado
 
-#endif // SACADO_FAD_SFADTRAITS_HPP
+#endif // SACADO_FAD_GENERALFADTRAITS_HPP

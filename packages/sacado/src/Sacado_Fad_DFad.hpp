@@ -33,172 +33,26 @@
 #define SACADO_FAD_DFAD_HPP
 
 #include <valarray>
-
-#include "Sacado_ConfigDefs.h"
-#include "Sacado_Fad_Expression.hpp"
-
-// forward decalarations
-namespace Sacado {
-  namespace Fad {
-    template <class ExprT> class UnaryPlusOp;
-    template <class ExprT> class UnaryMinusOp;
-  }
-}
+#include "Sacado_Fad_GeneralFad.hpp"
 
 namespace Sacado {
 
-  //! Namespace for forward-mode AD classes
   namespace Fad {
 
-    //! Forward-mode AD class using dynamic memory allocation
-    /*!
-     * This class provides the implementation of the Fad object required
-     * for expression templating.  Class DFad provides the complete
-     * user inteface.
-     */
+    // Forward declaration
     template <typename T> 
-    class DFadImplementation {
-
-    public:
-
-      //! Typename of values
-      typedef T value_type;
-
-      //! Default constructor
-      DFadImplementation() : val_( T(0)), dx_() {}
-
-      //! Constructor with supplied value \c x
-      /*!
-       * Initializes value to \c x and derivative array is empty
-       */
-      DFadImplementation(const T & x) : val_(x), dx_() {}
-
-      //! Constructor with size \c sz and value \c x
-      /*!
-       * Initializes value to \c x and derivative array 0 of length \c sz
-       */
-      DFadImplementation(const int sz, const T & x) : val_(x), dx_(T(0),sz) {}
-
-      //! Constructor with size \c sz, index \c i, and value \c x
-      /*!
-       * Initializes value to \c x and derivative array of length \c sz
-       * as row \c i of the identity matrix, i.e., sets derivative component
-       * \c i to 1 and all other's to zero.
-       */
-      DFadImplementation(const int sz, const int i, const T & x) : 
-	val_(x), dx_(T(0),sz) { 
-	dx_[i]=1.; 
-      }
-
-      //! Copy constructor
-      DFadImplementation(const DFadImplementation& x) : 
-	val_(x.val_), dx_(x.dx_) {}
-
-      //! Destructor
-      ~DFadImplementation() {}
-
-      /*!
-       * @name Value accessor methods
-       */
-      //@{
-
-      //! Returns value
-      const T& val() const { return val_;}
-
-      //! Returns value
-      T& val() { return val_;}
-
-      //@}
-
-      /*!
-       * @name Derivative accessor methods
-       */
-      //@{
-
-      //! Returns number of derivative components
-      int size() const { return dx_.size();}
-
-      //! Returns true if derivative array is not empty
-      bool hasFastAccess() const { return dx_.size()!=0;}
-
-      //! Returns derivative array
-      const std::valarray<T>& dx() const { return dx_;}
-
-      //! Returns derivative component \c i with bounds checking
-      const T dx(int i) const { T tmp= dx_.size()? dx_[i]:T(0); return tmp;}
-
-      //! Returns derivative component \c i with bounds checking
-      T dx(int i) { T tmp= dx_.size()? dx_[i]:T(0); return tmp;}
-    
-      //! Returns derivative component \c i without bounds checking
-      T& fastAccessDx(int i) { return dx_[i];}
-
-      //! Returns derivative component \c i without bounds checking
-      T fastAccessDx(int i) const { return dx_[i];}
-    
-      //@}
-
-    protected:
-
-      //! Value
-      T val_;
-
-      //! Derivative array
-      std::valarray<T> dx_;
-
-    }; // class DFadImplementation
-
-    //! DFad expression template specialization
-    /*!
-     * This template class represents a simple DFad expression.
-     */
-    template <typename T> 
-    class Expr< DFadImplementation<T> > : 
-      public DFadImplementation<T> {
-
-    public:
-
-      //! Default constructor
-      Expr() : DFadImplementation<T>() {}
-
-      //! Constructor with supplied value \c x
-      /*!
-       * Initializes value to \c x and derivative array is empty
-       */
-      Expr(const T & x) : DFadImplementation<T>(x) {}
-
-      //! Constructor with size \c sz and value \c x
-      /*!
-       * Initializes value to \c x and derivative array 0 of length \c sz
-       */
-      Expr(const int sz, const T & x) : DFadImplementation<T>(sz,x) {}
-
-      //! Constructor with size \c sz, index \c i, and value \c x
-      /*!
-       * Initializes value to \c x and derivative array of length \c sz
-       * as row \c i of the identity matrix, i.e., sets derivative component
-       * \c i to 1 and all other's to zero.
-       */
-      Expr(const int sz, const int i, const T & x) : 
-	DFadImplementation<T>(sz,i,x) {}
-
-      //! Copy constructor
-      Expr(const Expr& x) : DFadImplementation<T>(x) {}
-
-    }; // class Expr< DFadImplementation<T> >
+    class DynamicStorage;
 
     //! Forward-mode AD class using dynamic memory allocation
     /*!
-     * This class provides the user interface of the Fad object.  Class
-     * DFadImplementation provides the implementation.
-     *
-     * We might want to get rid of the throws since they may be slowing
-     * down performance.  Also, we should probably do more checking on
-     * derivative array dimensions.  We might want to allow the user
-     * to provide a custom allocator.
+     * This is the user-level class for forward mode AD with dynamic
+     * memory allocation, and is appropriate for whenever the number
+     * of derivative components is not known at compile time.  The user
+     * interface is split between the Sacado::Fad::GeneralFad and 
+     * and Sacado::Fad::Implementation classes.
      */
     template <typename T>
-    class DFad : public Expr< DFadImplementation<T> > {
+    class DFad : public GeneralFad<T,DynamicStorage<T> > {
 
     public:
 
@@ -211,20 +65,20 @@ namespace Sacado {
       /*!
        * Initializes value to 0 and derivative array is empty
        */
-      DFad() : Expr< DFadImplementation<T> >() {}
+      DFad() :  GeneralFad<T,DynamicStorage<T> >() {}
 
       //! Constructor with supplied value \c x
       /*!
        * Initializes value to \c x and derivative array is empty
        */
-      DFad(const T & x) : Expr< DFadImplementation<T> >(x) {}
+      DFad(const T & x) : GeneralFad<T,DynamicStorage<T> >(x) {}
 
       //! Constructor with size \c sz and value \c x
       /*!
        * Initializes value to \c x and derivative array 0 of length \c sz
        */
       DFad(const int sz, const T & x) : 
-	Expr< DFadImplementation<T> >(sz,x) {}
+	GeneralFad<T,DynamicStorage<T> >(sz,x) {}
 
       //! Constructor with size \c sz, index \c i, and value \c x
       /*!
@@ -233,97 +87,76 @@ namespace Sacado {
        * \c i to 1 and all other's to zero.
        */
       DFad(const int sz, const int i, const T & x) : 
-	Expr< DFadImplementation<T> >(sz,i,x) {}
+	GeneralFad<T,DynamicStorage<T> >(sz,i,x) {}
 
       //! Copy constructor
-      DFad(const DFad& x) : Expr< DFadImplementation<T> >(x) {}
+      DFad(const DFad& x) : GeneralFad<T,DynamicStorage<T> >(x) {}
 
       //! Copy constructor from any Expression object
-      template <typename S> DFad(const Expr<S>& x);
-
-      //! Set %DFad object as the \c ith independent variable
-      /*!
-       * Sets the derivative array of length \c n to the \c ith row of the
-       * identity matrix and has the same affect as the 
-       * DFadImplementation(const int sz, const int i, const T & x) 
-       * constructor.
-       */
-      void diff(const int ith, const int n);
+      template <typename S> DFad(const Expr<S>& x) : 
+	GeneralFad<T,DynamicStorage<T> >(x) {}
 
       //@}
 
       //! Destructor
       ~DFad() {}
 
-      /*!
-       * @name Assignment operators
-       */
-      //@{
-
-      //! Assignment operator with constant right-hand-side
-      DFad<T>& operator=(const T& val);
-
-      //! Assignment with DFad right-hand-side
-      DFad<T>& operator=(const DFad<T>& x);
-
-      //! Assignment operator with any expression right-hand-side
-      template <typename S> DFad<T>& operator=(const Expr<S>& x); 
-
-      //@}
-
-      /*!
-       * @name Unary operators
-       */
-      //@{
-
-      //! Unary-plus operator
-      inline Expr< UnaryExpr< DFad<T>, UnaryPlusOp > >
-      operator + () const {
-	typedef UnaryExpr< DFad<T>, UnaryPlusOp > expr_t;
-	return Expr<expr_t>(expr_t(*this));
-      }
-
-      //! Unary-minus operator
-      inline Expr< UnaryExpr< DFad<T>, UnaryMinusOp > >
-      operator - () const {
-	typedef UnaryExpr< DFad<T>, UnaryMinusOp > expr_t;
-	return Expr<expr_t>(expr_t(*this));
-      }
-
-      //! Addition-assignment operator with constant right-hand-side
-      DFad<T>& operator += (const T& x);
-
-      //! Subtraction-assignment operator with constant right-hand-side
-      DFad<T>& operator -= (const T& x);
-
-      //! Multiplication-assignment operator with constant right-hand-side
-      DFad<T>& operator *= (const T& x);
-
-      //! Division-assignment operator with constant right-hand-side
-      DFad<T>& operator /= (const T& x);
-
-      //! Addition-assignment operator with Fad right-hand-side
-      template <typename S> DFad<T>& operator += (const S& x);
-
-      //! Subtraction-assignment operator with Fad right-hand-side
-      template <typename S> DFad<T>& operator -= (const S& x);
-  
-      //! Multiplication-assignment operator with Fad right-hand-side
-      template <typename S> DFad<T>& operator *= (const S& x);
-
-      //! Division-assignment operator with Fad right-hand-side
-      template <typename S> DFad<T>& operator /= (const S& x);
-
-      //@}
-
     }; // class DFad<T>
+
+    //! Derivative array storage class using dynamic memory allocation
+    /*!
+     * This class dynamically allocates the derivative array using
+     * std::valarray.
+     *
+     * We might want to allow the user to provide a custom allocator.
+     */
+    template <typename T> 
+    class DynamicStorage {
+
+    public:
+
+      //! Default constructor
+      DynamicStorage() : dx_() {}
+
+      //! Constructor with size \c sz
+      /*!
+       * Initializes derivative array 0 of length \c sz
+       */
+      DynamicStorage(const int sz) : dx_(T(0),sz) {}
+
+      //! Copy constructor
+      DynamicStorage(const DynamicStorage& x) : 
+	dx_(x.dx_) {}
+
+      //! Destructor
+      ~DynamicStorage() {}
+
+      //! Assignment
+      DynamicStorage& operator=(const DynamicStorage& x) { 
+	if (dx_.size() != x.dx_.size())
+	  dx_.resize(x.dx_.size());
+	dx_ = x.dx_; 
+	return *this; 
+      } 
+
+      //! Returns number of derivative components
+      int size() const { return dx_.size();}
+
+      //! Resize the derivative array to sz
+      void resize(int sz) { dx_.resize(sz); }
+
+      //! Zero out derivative array
+      void zero() { dx_ = T(0.); }
+
+    protected:
+
+      //! Derivative array
+      std::valarray<T> dx_;
+
+    }; // class DynamicStorage
 
   } // namespace Fad
 
 } // namespace Sacado
-
-#include "Sacado_Fad_DFadTraits.hpp"
-#include "Sacado_Fad_DFadImp.hpp"
-#include "Sacado_Fad_Ops.hpp"
 
 #endif // SACADO_FAD_DFAD_HPP

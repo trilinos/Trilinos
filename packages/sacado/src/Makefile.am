@@ -37,14 +37,13 @@
 # ------------------------------------------------------------------------
 
 SACADO_FAD_H = \
-	$(srcdir)/Sacado_Fad_DFadTraits.hpp \
-	$(srcdir)/Sacado_Fad_DFad.hpp \
-	$(srcdir)/Sacado_Fad_DFadImp.hpp \
-	$(srcdir)/Sacado_Fad_SFadTraits.hpp \
-	$(srcdir)/Sacado_Fad_SFad.hpp \
-	$(srcdir)/Sacado_Fad_SFadImp.hpp \
+	$(srcdir)/Sacado_Fad_GeneralFadTraits.hpp \
+	$(srcdir)/Sacado_Fad_GeneralFad.hpp \
+	$(srcdir)/Sacado_Fad_GeneralFadImp.hpp \
 	$(srcdir)/Sacado_Fad_Expression.hpp \
-	$(srcdir)/Sacado_Fad_Ops.hpp 
+	$(srcdir)/Sacado_Fad_Ops.hpp \
+	$(srcdir)/Sacado_Fad_DFad.hpp \
+	$(srcdir)/Sacado_Fad_SFad.hpp
 
 SACADO_CACHEFAD_H = \
 	$(srcdir)/Sacado_CacheFad_DFadTraits.hpp \
