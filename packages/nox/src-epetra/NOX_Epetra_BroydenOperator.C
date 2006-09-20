@@ -50,15 +50,15 @@ BroydenOperator::BroydenOperator(
        Epetra_Vector & solnVec                           ,
        const Teuchos::RefCountPtr<Epetra_CrsMatrix>& mat ,
        bool verbose_ ) :
-  verbose(verbose_),
-  crsMatrix(mat),
-  nlParams(nlParams_),
-  utils(utils_),
-  prePostOperator( utils, nlParams.sublist("Solver Options") ),
-  label("NOX::Epetra::BroydenOperator"),
-  isValidStep(false),
-  isValidYield(false),
-  isValidBroyden(false)
+  verbose        ( verbose_           ) ,
+  crsMatrix      ( mat                ) ,
+  nlParams       ( nlParams_          ) ,
+  utils          ( utils_             ) ,
+  prePostOperator(  utils, nlParams.sublist("Solver Options") ),
+  label          ( "NOX::Epetra::BroydenOperator"),
+  isValidStep    ( false              ) ,
+  isValidYield   ( false              ) ,
+  isValidBroyden ( false              )
 {
   initialize( nlParams, solnVec );
 }
@@ -335,23 +335,6 @@ BroydenOperator::runPreSolve( const NOX::Solver::Generic & solver)
 void 
 BroydenOperator::runPreIterate( const NOX::Solver::Generic & solver)
 {
-  // We need to store the "old" solution and corresponding residual vectors here
-  // in a manner consistent with infrequent updates of the preconditioner
-  const NOX::Epetra::Group & grp = 
-    dynamic_cast<const NOX::Epetra::Group &>(solver.getSolutionGroup());
-
-  NOX::Epetra::LinearSystem::PreconditionerReusePolicyType reuse = 
-    Teuchos::rcp_const_cast<NOX::Epetra::LinearSystem>(grp.getLinearSystem())->getPreconditionerPolicy(false);
-
-  if( NOX::Epetra::LinearSystem::PRPT_REBUILD   == reuse ||
-      NOX::Epetra::LinearSystem::PRPT_RECOMPUTE == reuse    )
-  {
-    *oldX = solver.getSolutionGroup().getX();
-    *oldF = solver.getSolutionGroup().getF();
-    if( verbose )
-      cout << "\t...Updated oldX and oldF..." << endl;
-  }
-
   prePostOperator.runPreIterate( solver );
 
   return;
@@ -374,34 +357,14 @@ BroydenOperator::runPostIterate( const NOX::Solver::Generic & solver)
     const Abstract::Group & solnGrp    = solver.getSolutionGroup();
 
     // Set the Step vector
-#ifdef HAVE_NOX_DEBUG
-    if( verbose )
-    {
-      *workVec = *oldX;
-      workVec->update(-1.0, oldSolnGrp.getX(), 1.0);
-      double norm = workVec->norm();
-      cout << "BroydenOperator::runPostIterate(...) : oldX diff norm = " << norm << endl;
-    }
-#endif
     *workVec = solnGrp.getX();
     workVec->update(-1.0, oldSolnGrp.getX(), 1.0);
-    //workVec->update(-1.0, *oldX, 1.0);
 
     setStepVector( *workVec );
 
     // Set the Yield vector
-#ifdef HAVE_NOX_DEBUG
-    if( verbose )
-    {
-      *workVec = *oldF;
-      workVec->update(-1.0, oldSolnGrp.getF(), 1.0);
-      double norm = workVec->norm();
-      cout << "BroydenOperator::runPostIterate(...) : oldF diff norm = " << norm << endl;
-    }
-#endif
     *workVec = solnGrp.getF();
     workVec->update(-1.0, oldSolnGrp.getF(), 1.0);
-    //workVec->update(-1.0, *oldF, 1.0);
 
     setYieldVector( *workVec );
 
