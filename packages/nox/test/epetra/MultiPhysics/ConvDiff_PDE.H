@@ -111,6 +111,23 @@ public:
                 const Epetra_Vector *solnVector, 
 		Epetra_Vector *rhsVector);
 
+  // Inherited method that allows us to explcitly provide off-block structural info
+  // in the form of global composite equation indices
+  bool suppliesOffBlockStructure()
+  { return expandJacobian; }
+
+  // Inherited method that allows us to explcitly provide off-block structural info
+  // in the form of global composite equation indices
+  bool suppliesOffBlockStructure(int depID)
+  { return expandJacobian; }
+
+  // Method to toggle expanded Jacobian option
+  void setExpandJacobian( bool setting )
+  { expandJacobian = setting; }
+
+  // Method that allows us to provide off-block structural info
+  void getOffBlockIndices( map<int, vector<int> > & );
+
   // Inherited method that allows us to compute fluxes before transferring data
   void prepare_data_for_transfer();
 
@@ -168,11 +185,15 @@ protected:
   Teuchos::RefCountPtr<Epetra_Vector> exactSolution                  ;
   Teuchos::RefCountPtr<Epetra_Vector> dTdx                           ;
 
-  int             interface_elem                 ;
-  int             local_node                     ;
-  int             interface_node                 ;
-  int             opposite_node                  ;
+  int             interface_elem        ;
+  int             local_node            ;
+  int             interface_node        ;
+  int             opposite_node         ;
 
-  ConvDiff_PDE *  depProbPtr                     ;
+  // Flag to enable off-block structure in compositeJacobian
+  bool expandJacobian                   ;
+
+  // Pointer to the other (assumed only one) problem
+  ConvDiff_PDE *  depProbPtr            ;
 };
 #endif

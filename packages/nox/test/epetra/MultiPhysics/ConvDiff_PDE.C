@@ -62,15 +62,16 @@ ConvDiff_PDE::ConvDiff_PDE(
             int NumGlobalUnknowns_       ,
             string name_                   ) :
   GenericEpetraProblem(Comm_, NumGlobalUnknowns_, name_),
-  xmin          (xmin_      )   ,
-  xmax          (xmax_      )   ,
-  Tleft         (Tleft_     )   ,
-  Tright        (Tright_    )   ,
-  peclet        (peclet_    )   ,
-  radiation     (radiation_ )   ,
-  kappa         (kappa_     )   ,
-  bcWeight      (bcWeight_  )   ,
-  depProbPtr    (NULL       )
+  xmin            ( xmin_      )   ,
+  xmax            ( xmax_      )   ,
+  Tleft           ( Tleft_     )   ,
+  Tright          ( Tright_    )   ,
+  peclet          ( peclet_    )   ,
+  radiation       ( radiation_ )   ,
+  kappa           ( kappa_     )   ,
+  bcWeight        ( bcWeight_  )   ,
+  expandJacobian  ( true      )    ,
+  depProbPtr      ( NULL       )
 {
   // Create mesh and solution vectors
 
@@ -402,6 +403,36 @@ ConvDiff_PDE::evaluate(
   delete [] uuold ;
 
   return true;
+}
+
+//-----------------------------------------------------------------------------
+
+// Initialize method
+void 
+ConvDiff_PDE::getOffBlockIndices( map<int, vector<int> > & indices )
+{
+
+  // Get the equation map from the other problem
+  Epetra_Map & otherMap = *(depProbPtr->StandardMap);
+  int otherMinEqID = otherMap.MinAllGID();
+  int otherMaxEqID = otherMap.MaxAllGID();
+
+  vector<int> offBlockColumns(2);
+
+  if( LEFT == myInterface )
+  {
+    offBlockColumns[0]      = otherMaxEqID - 1 ;
+    offBlockColumns[1]      = otherMaxEqID     ;
+    indices[interface_node] = offBlockColumns  ;
+  }
+  else
+  {
+    offBlockColumns[0]      = otherMinEqID     ;
+    offBlockColumns[1]      = otherMinEqID + 1 ;
+    indices[interface_node] = offBlockColumns  ;
+  }
+
+  return;
 }
 
 //-----------------------------------------------------------------------------

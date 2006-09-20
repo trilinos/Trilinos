@@ -524,6 +524,8 @@ Problem_Manager::registerComplete()
   AA = Teuchos::rcp( new Epetra_CrsGraph(Copy, *compositeMap, 0) );
   generateGraph();
 
+  cout << *AA << endl;
+
 /* --------------  Block for Coloring Preconditioner Operator ------
 
   // NOT YET WORKING
@@ -569,10 +571,12 @@ Problem_Manager::registerComplete()
 
   Teuchos::ParameterList & printParams = nlParams->sublist("Printing");
   Teuchos::ParameterList & lsParams    = nlParams->sublist("Direction").sublist("Newton").sublist("Linear Solver");
+  Teuchos::RefCountPtr<NOX::Utils> utilsPtr = Teuchos::rcp( new NOX::Utils(printParams) );
 
   // Setup appropriate operators and their use
 
   Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO> composite_linearSystem;
+
   if( 1 )
   {
     // Use Matrix-Free Jacobian Operator with FDC block preconditioner
@@ -587,6 +591,42 @@ Problem_Manager::registerComplete()
         lsParams,
         jacInterface, jacOperator,
         precInterface, precOperator,
+        compositeSoln) );
+  }
+
+  if( 0 ) // Matrix-Free Jacobian and Broyden preconditioner
+  {
+    evaluate( NOX::Epetra::Interface::Required::Jac, &(*compositeSoln), NULL );
+    jacOperator = Teuchos::rcp( new NOX::Epetra::MatrixFree( printParams, interface, *compositeSoln) );
+    NOX::Epetra::Interface::Jacobian * p_jacInt = dynamic_cast<NOX::Epetra::MatrixFree*>(jacOperator.get());
+    jacInterface = Teuchos::rcp(p_jacInt, false);
+
+    Teuchos::RefCountPtr<NOX::Epetra::BroydenOperator> broydenOp = 
+      Teuchos::rcp(new NOX::Epetra::BroydenOperator( *nlParams, utilsPtr, *compositeSoln, A, true) );
+    precOperator = broydenOp;
+    precInterface = broydenOp;
+
+    composite_linearSystem = Teuchos::rcp( new NOX::Epetra::LinearSystemAztecOO(
+        nlParams->sublist("Printing"),
+        lsParams,
+        jacInterface, jacOperator,
+        precInterface, precOperator,
+        compositeSoln) );
+  }
+
+  if( 0 ) // Broyden Jacobian and preconditioner
+  {
+    evaluate( NOX::Epetra::Interface::Required::Jac, &(*compositeSoln), NULL );
+    Teuchos::RefCountPtr<NOX::Epetra::BroydenOperator> broydenOp = 
+      Teuchos::rcp(new NOX::Epetra::BroydenOperator( *nlParams, utilsPtr, *compositeSoln, A, true) );
+    jacOperator = broydenOp;
+    jacInterface = broydenOp;
+
+    composite_linearSystem = Teuchos::rcp( new NOX::Epetra::LinearSystemAztecOO(
+        nlParams->sublist("Printing"),
+        lsParams,
+        interface,
+        jacInterface, jacOperator,
         compositeSoln) );
   }
 
@@ -1641,18 +1681,16 @@ Problem_Manager::evaluate(
 
   if (fillMatrix) 
   {
-    Epetra_CrsMatrix* Matrix = dynamic_cast<Epetra_CrsMatrix*>(A.get());
-
-    Matrix->PutScalar(0.0);
+    A->PutScalar(0.0);
     
     computeAllJacobian();
 
     copyProblemJacobiansToComposite();
 
-    Matrix->FillComplete();
+    A->FillComplete();
 
 #ifdef DEBUG_PROBLEM_MANAGER
-    Matrix->Print(cout);
+    A->Print(cout);
 #endif
   }
 
@@ -1671,8 +1709,8 @@ Problem_Manager::generateGraph()
 
   // Loop over each problem being managed and ascertain its graph as well
   // as its graph from its dependencies
-  for( ; problemIter != problemLast; problemIter++) {
-
+  for( ; problemIter != problemLast; ++problemIter ) 
+  {
     GenericEpetraProblem & problem = *(*problemIter).second;
     int probId = problem.getId();
 
@@ -1710,6 +1748,37 @@ Problem_Manager::generateGraph()
       }
     }
     delete [] columnIndices; columnIndices = 0;
+
+    // Now allow the problem to explicitly create known dependencies on other
+    // problems
+    for( unsigned int k = 0; k < problem.depProblems.size(); ++k) 
+    {
+      // Get the needed objects for the depend problem
+      GenericEpetraProblem & dependProblem = *(Problems[problem.depProblems[k]]);
+      int dependId                         =  dependProblem.getId();
+      Epetra_IntVector & dependIndices     = *(ProblemToCompositeIndices[dependId]);
+
+      if( problem.suppliesOffBlockStructure(k) )
+      {
+        map<int, vector<int> > offBlockIndices;
+        problem.getOffBlockIndices( offBlockIndices );
+
+        map<int, vector<int> >::iterator indIter     = offBlockIndices.begin(),
+                                         indIter_end = offBlockIndices.end()   ;
+
+        for( ; indIter != indIter_end; ++indIter )
+        {
+          int compositeRow = problemIndices[(*indIter).first];
+          vector<int> & colIndices = (*indIter).second;
+
+          // Convert column indices to composite values
+          for( unsigned int cols = 0; cols < colIndices.size(); ++cols )
+            colIndices[cols] = dependIndices[ colIndices[cols] ];
+
+          AA->InsertGlobalIndices( compositeRow, colIndices.size(), &colIndices[0] );
+        }
+      }
+    }
   }
 
   // Next create inter-problem block graph contributions if desired;

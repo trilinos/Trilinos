@@ -232,7 +232,7 @@ int main(int argc, char *argv[])
   combo->addStatusTest(finiteValue);
 
   // Create the Problem Manager
-  Problem_Manager problemManager(Comm, doOffBlocks, 0, useMatlab);
+  Problem_Manager problemManager(Comm, false, 0, useMatlab);
 
   // Note that each problem could contain its own nlParams list as well as
   // its own convergence test(s). 
@@ -293,6 +293,13 @@ int main(int argc, char *argv[])
                   Tright,
                   1*NumGlobalNodes, 
                   myName  );
+
+  // For this problem involving interfacial coupling, the problems are given control
+  // over whether or not and how to construct off-block contributions to the
+  // Jacobian/Preconditioner matrix.  We explicitly told the problem manager to omit
+  // off-blocks via the OffBlock_Manager class.  Here, we inform each problem.
+  Reg1_PDE.setExpandJacobian( doOffBlocks );
+  Reg2_PDE.setExpandJacobian( doOffBlocks );
 
   // Override default initialization with values we want
   Reg2_PDE.initializeSolution(0.995);

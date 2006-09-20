@@ -119,6 +119,20 @@ public:
   // Add a transfer operator to get fields from another problem
   virtual void addTransferOp(const GenericEpetraProblem& problemB); 
 
+  // Signal whether the problem directly provides off-block structural info, 
+  // ie global composite indices
+  virtual bool suppliesOffBlockStructure()
+  { return false; }
+
+  // Signal whether the problem directly provides off-block structural info for a
+  // particular dependent problem
+  virtual bool suppliesOffBlockStructure(int depID)
+  { return false; }
+
+  // Default no-op method that allows a child to provide off-block structural info,
+  virtual void getOffBlockIndices( map<int, vector<int> > & )
+  { return; }
+
   // Do pre-transfer stuff, eg compute fluxes
   virtual void prepare_data_for_transfer()
   { /* default no-op */ }; 
