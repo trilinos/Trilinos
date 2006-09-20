@@ -180,8 +180,9 @@ exit $exitStatus;
 
     sub run {
             
-        use File::Basename;
-        my $resultsDirNameOrig = basename($resultsDir);
+        my $resultsDirNameOrig = $resultsDir;
+        $resultsDirNameOrig =~ s/\/$//;
+        $resultsDirNameOrig =~ s/^.*\///;
         my $resultsDirNameNew = $resultsDirNameOrig;
         
         my $machine = "";
@@ -202,7 +203,7 @@ exit $exitStatus;
         $result = $?;
         
         chdir "$ttrDir" or die "cannot cd to $ttrDir, died";
-        
+
         $output = `mv $resultsDirNameOrig $resultsDirNameNew`;
         $result = $?;
         
