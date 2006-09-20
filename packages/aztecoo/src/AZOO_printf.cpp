@@ -153,9 +153,11 @@ int AZOO_printf_err(const char* format, va_list aptr)
 /** The following function-pointers are declared/owned in the file
   az_printf.c
 */
-extern int (*azoo_printf_out)(const char* format, va_list aptr);
-extern void (*azoo_flush_out)();
-extern int (*azoo_printf_err)(const char* format, va_list aptr);
+extern "C" {
+  extern int (*azoo_printf_out)(const char* format, va_list aptr);
+  extern void (*azoo_flush_out)();
+  extern int (*azoo_printf_err)(const char* format, va_list aptr);
+}
 
 /** AZOO_set_stream_out sets the specified ostrm as the target for the
   AZOO_printf_out function, and then sets the above function-pointer
