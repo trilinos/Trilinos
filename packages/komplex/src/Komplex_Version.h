@@ -32,7 +32,7 @@
 #include "Epetra_ConfigDefs.h"
 
 	string Komplex_Version() { 
-		return("Komplex Version 2.1d - 05/26/2004"); 
+		return("Komplex Version 1.2d - 09/21/2006"); 
 	};
 
 #endif /* KOMPLEX_VERSION_H */
