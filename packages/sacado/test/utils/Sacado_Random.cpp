@@ -70,11 +70,12 @@ Sacado::Random::number() {
 }
 
 int
-Sacado::Random::checkSeed(const string& func, int s) {
+Sacado::Random::checkSeed(const std::string& func, int s) {
   if ((s < 1) || (s > 2147483646)) {
-    cerr << "Error in Sacado::Random::" << s << "():  " << "supplied seed " 
-	 << s << " is not an integer between 1 and 2147483646." << endl
-	 << "Using a seed of 1 instead." << endl;
+    std::cerr << "Error in Sacado::Random::" << s << "():  " 
+	      << "supplied seed " 
+	      << s << " is not an integer between 1 and 2147483646." 
+	      << std::endl << "Using a seed of 1 instead." << std::endl;
     return 1;
   }
   else

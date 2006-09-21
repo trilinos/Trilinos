@@ -29,41 +29,79 @@
 // ***********************************************************************
 // @HEADER
 
-// sacado_test
+// dfad_example
 //
 //  usage: 
-//     sacado_test
+//     dfad_example
 //
 //  output:  
-//     prints a summary line and one line "Hello" for each process to standard out
+//     prints the results of differentiating a simple function with forward
+//     mode AD using the Sacado::Fad::DFad class (uses dynamic memory
+//     allocation for number of derivative components).
 
 #include "Sacado.hpp"
-#include "Fad/fad.h"
 
-void FAD::error(char *msg) {
-  std::cout << msg << endl;
+// The function to differentiate
+template <typename ScalarT>
+ScalarT func(const ScalarT& a, const ScalarT& b, const ScalarT& c) {
+  ScalarT r = c*std::log(b+1.)/std::sin(a);
+
+  return r;
 }
 
-template <typename ScalarT>
-void func(const ScalarT& a, const ScalarT& b) {
-  ScalarT t1 = a*(b-1.);
-
-  std::cout << t1 << endl;
+// The analytic derivative of func(a,b,c) with respect to a and b
+void func_deriv(double a, double b, double c, double& drda, double& drdb)
+{
+  drda = -(c*std::log(b+1.)/std::pow(std::sin(a),2))*std::cos(a);
+  drdb = c / ((b+1.)*std::sin(a));
 }
 
 int main(int argc, char **argv)
 {
+  double pi = std::atan(1.0)*4.0;
 
-  Sacado::CacheFad::DFad<double> a_dfad(2, 0, 2.0);
-  Sacado::CacheFad::DFad<double> b_dfad(2, 1, 3.0);
-  func(a_dfad, b_dfad);
-  
-  FAD::Fad<double> a_fad(2, 0, 2.0);
-  FAD::Fad<double> b_fad(2, 1, 3.0);
-  func(a_fad, b_fad);
+  // Values of function arguments
+  double a = pi/4;
+  double b = 2.0;
+  double c = 3.0;
+
+  // Number of independent variables
+  int num_deriv = 2;
+
+  // Fad objects
+  Sacado::Fad::DFad<double> afad(num_deriv, 0, a); // First (0) indep. var
+  Sacado::Fad::DFad<double> bfad(num_deriv, 1, b); // Second (1) indep. var
+  Sacado::Fad::DFad<double> cfad(c);               // Passive variable
+  Sacado::Fad::DFad<double> rfad;                  // Result
+
+  // Compute function
+  double r = func(a, b, c);
+
+  // Compute derivative analytically
+  double drda, drdb;
+  func_deriv(a, b, c, drda, drdb);
+
+  // Compute function and derivative with AD
+  rfad = func(afad, bfad, cfad);
+
+  // Extract value and derivatives
+  double r_ad = rfad.val();     // r
+  double drda_ad = rfad.dx(0);  // dr/da
+  double drdb_ad = rfad.dx(1);  // dr/db
+
+  // Print the results
+  int p = 4;
+  int w = p+7;
+  std::cout.setf(std::ios::scientific);
+  std::cout.precision(p);
+  std::cout << "    r =  " << r << " (original) == " << std::setw(w) << r_ad
+	    << " (AD) Error = " << std::setw(w) << r - r_ad << std::endl
+	    << "dr/da = " << std::setw(w) << drda << " (analytic) == " 
+	    << std::setw(w) << drda_ad << " (AD) Error = " << std::setw(w) 
+	    << drda - drda_ad << std::endl
+	    << "dr/db = " << std::setw(w) << drdb << " (analytic) == " 
+	    << std::setw(w) << drdb_ad << " (AD) Error = " << std::setw(w) 
+	    << drdb - drdb_ad << std::endl;
 
   return 0;
 }
-
-  
-

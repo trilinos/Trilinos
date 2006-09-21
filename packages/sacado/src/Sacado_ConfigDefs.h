@@ -91,6 +91,12 @@ Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
 #include <assert.h>
 #endif
 
+#ifdef HAVE_CMATH
+#include <cmath>
+#else
+#include <math.h>
+#endif
+
 #ifdef HAVE_STRING
 #include <string>
 #else
@@ -103,33 +109,10 @@ Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
 #include <iostream.h>
 #endif
 
-/* Every line that begins with 'using' should eventually be dependent
-   on some check within the configure script */
-
-
-#ifndef TFLOP
-#ifdef HAVE_CMATH
-#include <cmath>
-#else
-#include <math.h>
-#endif
-using namespace std;
-#else /* TFLOP defined */
 #ifdef HAVE_IOMANIP
 #include <iomanip>
 #else
 #include <iomanip.h>
-#endif
-#ifdef HAVE_STRING
-using std::string;
-#endif
-#ifdef HAVE_IOSTREAM
-using std::istream;
-using std::ostream;
-using std::cerr;
-using std::cout;
-using std::endl;
-#endif
 #endif
 
 #endif /* SACADO_CONFIGDEFS_H */

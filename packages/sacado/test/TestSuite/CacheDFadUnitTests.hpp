@@ -29,14 +29,14 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef DFADUNITTESTS_HPP
-#define DFADUNITTESTS_HPP
+#ifndef CACHEDFADUNITTESTS_HPP
+#define CACHEDFADUNITTESTS_HPP
 
 // Sacado includes
 #include "Sacado.hpp"
 #include "Sacado_Random.hpp"
 
-typedef Sacado::Fad::DFad<double> DFadType;
+typedef Sacado::CacheFad::DFad<double> DFadType;
 
 // Fad includes
 #include "Fad/fad.h"
@@ -103,9 +103,9 @@ typedef Sacado::Fad::DFad<double> DFadType;
   }
 
 // A class for testing each DFad operation
-class DFadOpsUnitTest : public CppUnit::TestFixture {
+class CacheDFadOpsUnitTest : public CppUnit::TestFixture {
 
-  CPPUNIT_TEST_SUITE( DFadOpsUnitTest );
+  CPPUNIT_TEST_SUITE( CacheDFadOpsUnitTest );
   
   CPPUNIT_TEST(testAddition);
   CPPUNIT_TEST(testSubtraction);
@@ -144,10 +144,10 @@ class DFadOpsUnitTest : public CppUnit::TestFixture {
 
 public:
 
-  DFadOpsUnitTest();
+  CacheDFadOpsUnitTest();
 
-  DFadOpsUnitTest(int numComponents, double absolute_tolerance, 
-		  double relative_tolerance);
+  CacheDFadOpsUnitTest(int numComponents, double absolute_tolerance, 
+		       double relative_tolerance);
 
   void setUp();
 
@@ -228,6 +228,6 @@ protected:
   // Tolerances to which fad objects should be the same
   double tol_a, tol_r;
 
-}; // class DFadOpsUnitTest
+}; // class CacheDFadOpsUnitTest
 
-#endif // DFADUNITTESTS_HPP
+#endif // CACHEDFADUNITTESTS_HPP

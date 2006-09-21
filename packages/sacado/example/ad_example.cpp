@@ -3,6 +3,8 @@
 #include <Sacado.hpp>		/* for FAD and RAD */
 #include <stdio.h>		/* nicer than streams in some respects */
 
+using namespace std;
+
 // Typedefs reduce gobbledygook below
 
 typedef Sacado::Fad::DFad<double>	F;	// FAD with # of ind. vars given later

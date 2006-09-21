@@ -43,7 +43,7 @@ template <typename ScalarT>
 void func(const ScalarT& a, const ScalarT& b) {
   ScalarT t1 = a*(b-1.);
 
-  std::cout << t1 << endl;
+  std::cout << t1 << std::endl;
 }
 
 int main(int argc, char **argv)

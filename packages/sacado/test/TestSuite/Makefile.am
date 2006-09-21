@@ -54,6 +54,8 @@ endif
 TestSuite_exe_SOURCES = \
 	$(srcdir)/DFadUnitTests.hpp \
 	$(srcdir)/DFadUnitTests.cpp \
+	$(srcdir)/CacheDFadUnitTests.hpp \
+	$(srcdir)/CacheDFadUnitTests.cpp \
 	$(srcdir)/SFadUnitTests.hpp \
 	$(srcdir)/SFadUnitTests.cpp \
 	$(TAYLOR_SOURCES) \

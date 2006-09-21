@@ -34,6 +34,28 @@
 
 #include "Sacado_Fad_Expression.hpp"
 
+// Import the standard math functions into the Sacado::Fad namespace
+namespace Sacado {
+  namespace Fad {
+    using std::exp;
+    using std::log;
+    using std::log10;
+    using std::sqrt;
+    using std::cos;
+    using std::sin;
+    using std::tan;
+    using std::acos;
+    using std::asin;
+    using std::atan;
+    using std::cosh;
+    using std::sinh;
+    using std::tanh;
+    using std::abs;
+    using std::fabs;
+    using std::pow;
+  }
+}
+
 #define FAD_UNARYOP_MACRO(OPNAME,OP,VALUE,DX,FASTACCESSDX)		\
 namespace Sacado {							\
   namespace Fad {							\
@@ -68,6 +90,10 @@ namespace Sacado {							\
       return Expr<expr_t>(expr_t(expr));				\
     }									\
   }									\
+}                                                                       \
+                                                                        \
+namespace std {                                                         \
+  using Sacado::Fad::OPNAME;                                            \
 }
 
 FAD_UNARYOP_MACRO(operator+,
@@ -82,102 +108,102 @@ FAD_UNARYOP_MACRO(operator-,
 		  -expr.fastAccessDx(i))
 FAD_UNARYOP_MACRO(exp,
 		  ExpOp, 
-		  std::exp(expr.val()),
-		  std::exp(expr.val())*expr.dx(i),
-		  std::exp(expr.val())*expr.fastAccessDx(i))
+		  exp(expr.val()),
+		  exp(expr.val())*expr.dx(i),
+		  exp(expr.val())*expr.fastAccessDx(i))
 FAD_UNARYOP_MACRO(log,
 		  LogOp, 
-		  std::log(expr.val()),
+		  log(expr.val()),
 		  expr.dx(i)/expr.val(),
 		  expr.fastAccessDx(i)/expr.val())
 FAD_UNARYOP_MACRO(log10,
 		  Log10Op, 
-		  std::log10(expr.val()),
-		  expr.dx(i)/(std::log(value_type(10))*expr.val()),
-		  expr.fastAccessDx(i) / (std::log(value_type(10))*expr.val()))
+		  log10(expr.val()),
+		  expr.dx(i)/(log(value_type(10))*expr.val()),
+		  expr.fastAccessDx(i) / (log(value_type(10))*expr.val()))
 FAD_UNARYOP_MACRO(sqrt,
 		  SqrtOp, 
-		  std::sqrt(expr.val()),
-		  expr.dx(i)/(value_type(2)*std::sqrt(expr.val())),
-		  expr.fastAccessDx(i)/(value_type(2)*std::sqrt(expr.val())))
+		  sqrt(expr.val()),
+		  expr.dx(i)/(value_type(2)*sqrt(expr.val())),
+		  expr.fastAccessDx(i)/(value_type(2)*sqrt(expr.val())))
 FAD_UNARYOP_MACRO(cos,
 		  CosOp, 
-		  std::cos(expr.val()),
-		  -expr.dx(i)*std::sin(expr.val()),
-		  -expr.fastAccessDx(i)*std::sin(expr.val()))
+		  cos(expr.val()),
+		  -expr.dx(i)*sin(expr.val()),
+		  -expr.fastAccessDx(i)*sin(expr.val()))
 FAD_UNARYOP_MACRO(sin,
 		  SinOp, 
-		  std::sin(expr.val()),
-		  expr.dx(i)*std::cos(expr.val()),
-		  expr.fastAccessDx(i)*std::cos(expr.val()))
+		  sin(expr.val()),
+		  expr.dx(i)*cos(expr.val()),
+		  expr.fastAccessDx(i)*cos(expr.val()))
 FAD_UNARYOP_MACRO(tan,
 		  TanOp, 
-		  std::tan(expr.val()),
+		  tan(expr.val()),
 		  expr.dx(i)*
-		    (value_type(1)+std::tan(expr.val())*std::tan(expr.val())),
+		    (value_type(1)+tan(expr.val())*tan(expr.val())),
 		  expr.fastAccessDx(i)*
-		    (value_type(1)+std::tan(expr.val())*std::tan(expr.val())))
+		    (value_type(1)+tan(expr.val())*tan(expr.val())))
 FAD_UNARYOP_MACRO(acos,
 		  ACosOp, 
-		  std::acos(expr.val()),
-		  -expr.dx(i)/std::sqrt(value_type(1)-expr.val()*expr.val()),
+		  acos(expr.val()),
+		  -expr.dx(i)/sqrt(value_type(1)-expr.val()*expr.val()),
 		  -expr.fastAccessDx(i) /
-		    std::sqrt(value_type(1)-expr.val()*expr.val()))
+		    sqrt(value_type(1)-expr.val()*expr.val()))
 FAD_UNARYOP_MACRO(asin,
 		  ASinOp, 
-		  std::asin(expr.val()),
-		  expr.dx(i)/std::sqrt(value_type(1)-expr.val()*expr.val()),
+		  asin(expr.val()),
+		  expr.dx(i)/sqrt(value_type(1)-expr.val()*expr.val()),
 		  expr.fastAccessDx(i) /
-		    std::sqrt(value_type(1)-expr.val()*expr.val()))
+		    sqrt(value_type(1)-expr.val()*expr.val()))
 FAD_UNARYOP_MACRO(atan,
 		  ATanOp, 
-		  std::atan(expr.val()),
+		  atan(expr.val()),
 		  expr.dx(i)/(value_type(1)+expr.val()*expr.val()),
 		  expr.fastAccessDx(i)/(value_type(1)+expr.val()*expr.val()))
 FAD_UNARYOP_MACRO(cosh,
 		  CoshOp, 
-		  std::cosh(expr.val()),
-		  expr.dx(i)*std::sinh(expr.val()),
-		  expr.fastAccessDx(i)*std::sinh(expr.val()))
+		  cosh(expr.val()),
+		  expr.dx(i)*sinh(expr.val()),
+		  expr.fastAccessDx(i)*sinh(expr.val()))
 FAD_UNARYOP_MACRO(sinh,
 		  SinhOp, 
-		  std::sinh(expr.val()),
-		  expr.dx(i)*std::cosh(expr.val()),
-		  expr.fastAccessDx(i)*std::cosh(expr.val()))
+		  sinh(expr.val()),
+		  expr.dx(i)*cosh(expr.val()),
+		  expr.fastAccessDx(i)*cosh(expr.val()))
 FAD_UNARYOP_MACRO(tanh,
 		  TanhOp, 
-		  std::tanh(expr.val()),
-		  expr.dx(i)/(std::cosh(expr.val())*std::cosh(expr.val())),
+		  tanh(expr.val()),
+		  expr.dx(i)/(cosh(expr.val())*cosh(expr.val())),
 		  expr.fastAccessDx(i) / 
-		    (std::cosh(expr.val())*std::cosh(expr.val())))
+		    (cosh(expr.val())*cosh(expr.val())))
 FAD_UNARYOP_MACRO(acosh,
 		  ACoshOp, 
 		  acosh(expr.val()),
-		  expr.dx(i)/std::sqrt((expr.val()-value_type(1)) / 
+		  expr.dx(i)/sqrt((expr.val()-value_type(1)) / 
 				       (expr.val()+value_type(1))),
-		  expr.fastAccessDx(i)/std::sqrt((expr.val()-value_type(1)) / 
+		  expr.fastAccessDx(i)/sqrt((expr.val()-value_type(1)) / 
 						 (expr.val()+value_type(1))))
 FAD_UNARYOP_MACRO(asinh,
 		  ASinhOp, 
 		  asinh(expr.val()),
-		  expr.dx(i)/std::sqrt(value_type(1)+expr.val()*expr.val()),
-		  expr.fastAccessDx(i)/std::sqrt(value_type(1)+
+		  expr.dx(i)/sqrt(value_type(1)+expr.val()*expr.val()),
+		  expr.fastAccessDx(i)/sqrt(value_type(1)+
 						 expr.val()*expr.val()))
 FAD_UNARYOP_MACRO(atanh,
 		  ATanhOp, 
 		  atanh(expr.val()),
-		  expr.dx(i)/std::sqrt(value_type(1)-expr.val()*expr.val()),
-		  expr.fastAccessDx(i)/std::sqrt(value_type(1)-
+		  expr.dx(i)/sqrt(value_type(1)-expr.val()*expr.val()),
+		  expr.fastAccessDx(i)/sqrt(value_type(1)-
 						 expr.val()*expr.val()))
 FAD_UNARYOP_MACRO(abs,
 		  AbsOp, 
-		  std::abs(expr.val()),
+		  abs(expr.val()),
 		  expr.val() >= 0 ? expr.dx(i) : -expr.dx(i),
 		  expr.val() >= 0 ? expr.fastAccessDx(i) : 
 		    -expr.fastAccessDx(i))
 FAD_UNARYOP_MACRO(fabs,
 		  FAbsOp, 
-		  std::fabs(expr.val()),
+		  fabs(expr.val()),
 		  expr.val() >= 0 ? expr.dx(i) : -expr.dx(i),
 		  expr.val() >= 0 ? expr.fastAccessDx(i) : 
 		    -expr.fastAccessDx(i))
@@ -308,6 +334,10 @@ namespace Sacado {							\
       return Expr<expr_t>(expr_t(expr, ConstT(c)));			\
     }									\
   }									\
+}                                                                       \
+                                                                        \
+namespace std {                                                         \
+  using Sacado::Fad::OPNAME;                                            \
 }
 
 FAD_BINARYOP_MACRO(operator+,
@@ -353,20 +383,20 @@ FAD_BINARYOP_MACRO(operator/,
 		   expr1.fastAccessDx(i)/expr2.val())
 FAD_BINARYOP_MACRO(pow,
 		   PowerOp,
-		   std::pow(expr1.val(), expr2.val()),
-		   (expr2.dx(i)*std::log(expr1.val())+expr2.val()*expr1.dx(i)/
-		    expr1.val())*std::pow(expr1.val(),expr2.val()),
-		   (expr2.fastAccessDx(i)*std::log(expr1.val())+
+		   pow(expr1.val(), expr2.val()),
+		   (expr2.dx(i)*log(expr1.val())+expr2.val()*expr1.dx(i)/
+		    expr1.val())*pow(expr1.val(),expr2.val()),
+		   (expr2.fastAccessDx(i)*log(expr1.val())+
 		    expr2.val()*expr1.fastAccessDx(i)/
-		    expr1.val())*std::pow(expr1.val(),expr2.val()),
-		   expr2.dx(i)*std::log(expr1.val()) *
-		     std::pow(expr1.val(),expr2.val()),
+		    expr1.val())*pow(expr1.val(),expr2.val()),
+		   expr2.dx(i)*log(expr1.val()) *
+		     pow(expr1.val(),expr2.val()),
 		   expr2.val()*expr1.dx(i)/
-		   expr1.val()*std::pow(expr1.val(),expr2.val()),
-		   expr2.fastAccessDx(i)*std::log(expr1.val()) *
-		     std::pow(expr1.val(),expr2.val()),
+		   expr1.val()*pow(expr1.val(),expr2.val()),
+		   expr2.fastAccessDx(i)*log(expr1.val()) *
+		     pow(expr1.val(),expr2.val()),
 		   expr2.val()*expr1.fastAccessDx(i)/
-		     expr1.val()*std::pow(expr1.val(),expr2.val()))
+		     expr1.val()*pow(expr1.val(),expr2.val()))
 
 #undef FAD_BINARYOP_MACRO
 
@@ -435,7 +465,7 @@ namespace Sacado {
   namespace Fad {
 
     template <typename ExprT>
-    ostream& operator << (ostream& os, const Expr<ExprT>& x) {
+    std::ostream& operator << (std::ostream& os, const Expr<ExprT>& x) {
       os << x.val() << "  [";
       
       for (int i=0; i< x.size(); i++) {

@@ -34,6 +34,28 @@
 
 #include "Sacado_Taylor_Expression.hpp"
 
+// Import the standard math functions into the Sacado::Taylor namespace
+namespace Sacado {
+  namespace Taylor {
+    using std::exp;
+    using std::log;
+    using std::log10;
+    using std::sqrt;
+    using std::cos;
+    using std::sin;
+    using std::tan;
+    using std::acos;
+    using std::asin;
+    using std::atan;
+    using std::cosh;
+    using std::sinh;
+    using std::tanh;
+    using std::abs;
+    using std::fabs;
+    using std::pow;
+  }
+}
+
 namespace Sacado {
 
   namespace Taylor {
@@ -580,6 +602,10 @@ namespace Sacado {							\
       return Expr<expr_t>(expr_t(expr));				\
     }									\
   }									\
+}                                                                       \
+                                                                        \
+namespace std {                                                         \
+  using Sacado::Taylor::OPNAME;                                         \
 }
 
 TAYLOR_UNARYOP_MACRO(operator+, UnaryPlusOp)
@@ -1463,6 +1489,16 @@ namespace Sacado {
 
 } // namespace Sacado
 
+namespace std {
+  using Sacado::Taylor::pow;
+  using Sacado::Taylor::log10;
+  using Sacado::Taylor::tan;
+  using Sacado::Taylor::asin;
+  using Sacado::Taylor::acos;
+  using Sacado::Taylor::atan;
+  using Sacado::Taylor::tanh;
+}
+
 //-------------------------- Relational Operators -----------------------
 
 #define TAYLOR_RELOP_MACRO(OP)						\
@@ -1530,8 +1566,8 @@ namespace Sacado {
   namespace Taylor {
 
     template <typename ExprT>
-    ostream& operator << (ostream& os, const Expr<ExprT>& x) {
-      os.setf(ios::fixed,ios::floatfield);
+    std::ostream& operator << (std::ostream& os, const Expr<ExprT>& x) {
+      os.setf(std::ios::fixed, std::ios::floatfield);
       os.width(12);
       os << "[";
       

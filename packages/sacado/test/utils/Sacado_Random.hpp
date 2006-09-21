@@ -61,7 +61,7 @@ namespace Sacado {
   protected:
 
     // Check seed is valid
-    int checkSeed(const string& func, int s);
+    int checkSeed(const std::string& func, int s);
   
   protected:
 
