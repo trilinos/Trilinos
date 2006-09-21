@@ -44,7 +44,6 @@
 template <typename ScalarT>
 ScalarT func(const ScalarT& a, const ScalarT& b, const ScalarT& c) {
   ScalarT r = c*std::log(b+1.)/std::sin(a);
-
   return r;
 }
 
@@ -132,7 +131,7 @@ int main(int argc, char **argv)
 	    << std::setw(w) << d2rdadb_ad << " (AD) Error = " << std::setw(w) 
 	    << d2rdadb - d2rdadb_ad << std::endl
 	    << "d^2r/dbda = " << std::setw(w) << d2rdadb << " (analytic) == " 
-	    << d2rdbda_ad << " (AD) Error = " << std::setw(w) 
+	    << std::setw(w) << d2rdbda_ad << " (AD) Error = " << std::setw(w) 
 	    << d2rdadb - d2rdbda_ad << std::endl;
 
   return 0;
