@@ -35,9 +35,8 @@
 //     dfad_dfad_example
 //
 //  output:  
-//     prints the results of differentiating a simple function with forward
-//     mode AD using the Sacado::Fad::DFad class (uses dynamic memory
-//     allocation for number of derivative components).
+//     prints the results of computing the second derivative a simple function //     with forward nested forward mode AD using the Sacado::Fad::DFad class 
+//     (uses dynamic memory allocation for number of derivative components).
 
 #include "Sacado.hpp"
 
