@@ -31,16 +31,21 @@
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = dfad_example dfad_dfad_example sfad_example dtaylor_example RunValgrind \
-	ad_example
+noinst_PROGRAMS = \
+	dfad_example \
+	dfad_dfad_example \
+	sfad_example \
+	trad_example \
+	dtaylor_example \
+	ad_example \
+	RunValgrind
 
 dfad_example_SOURCES = $(srcdir)/dfad_example.cpp
 
 dfad_example_DEPENDENCIES =  
 
 dfad_example_CXXFLAGS = \
-	-I$(top_srcdir)/src \
-	-I$(top_srcdir)/Fad
+	-I$(top_srcdir)/src 
 
 dfad_example_LDADD =
 
@@ -49,8 +54,7 @@ dfad_dfad_example_SOURCES = $(srcdir)/dfad_dfad_example.cpp
 dfad_dfad_example_DEPENDENCIES =  
 
 dfad_dfad_example_CXXFLAGS = \
-	-I$(top_srcdir)/src \
-	-I$(top_srcdir)/Fad
+	-I$(top_srcdir)/src 
 
 dfad_dfad_example_LDADD =
 
@@ -59,10 +63,18 @@ sfad_example_SOURCES = $(srcdir)/sfad_example.cpp
 sfad_example_DEPENDENCIES =  
 
 sfad_example_CXXFLAGS = \
-	-I$(top_srcdir)/src \
-	-I$(top_srcdir)/Fad
+	-I$(top_srcdir)/src 
 
 sfad_example_LDADD =
+
+trad_example_SOURCES = $(srcdir)/trad_example.cpp
+
+trad_example_DEPENDENCIES =  
+
+trad_example_CXXFLAGS = \
+	-I$(top_srcdir)/src 
+
+trad_example_LDADD =
 
 dtaylor_example_SOURCES = $(srcdir)/dtaylor_example.cpp
 

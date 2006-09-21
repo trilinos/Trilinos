@@ -26,6 +26,25 @@ namespace Sacado {
 namespace Rad {
 #endif
 
+  // Bring math functions into scope
+  using std::exp;
+  using std::log;
+  using std::log10;
+  using std::sqrt;
+  using std::cos;
+  using std::sin;
+  using std::tan;
+  using std::acos;
+  using std::asin;
+  using std::atan;
+  using std::cosh;
+  using std::sinh;
+  using std::tanh;
+  using std::abs;
+  using std::fabs;
+  using std::atan2;
+  using std::pow;
+
 #ifdef RAD_AUTO_AD_Const
 #undef RAD_DEBUG_BLOCKKEEP
 #else /*!RAD_AUTO_AD_Const*/
@@ -1807,4 +1826,27 @@ T F copy(Ai x)
 } /* namespace Rad */
 } /* namespace Sacado */
 #endif
+
+#ifdef SACADO_NAMESPACE
+namespace std {
+  using Sacado::Rad::exp;
+  using Sacado::Rad::log;
+  using Sacado::Rad::log10;
+  using Sacado::Rad::sqrt;
+  using Sacado::Rad::cos;
+  using Sacado::Rad::sin;
+  using Sacado::Rad::tan;
+  using Sacado::Rad::acos;
+  using Sacado::Rad::asin;
+  using Sacado::Rad::atan;
+  using Sacado::Rad::cosh;
+  using Sacado::Rad::sinh;
+  using Sacado::Rad::tanh;
+  using Sacado::Rad::abs;
+  using Sacado::Rad::fabs;
+  using Sacado::Rad::atan2;
+  using Sacado::Rad::pow;
+}
+#endif
+
 #endif /* SACADO_TRAD_H */
