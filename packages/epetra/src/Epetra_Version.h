@@ -29,5 +29,5 @@
 #include "Epetra_ConfigDefs.h"
 
 string Epetra_Version() { 
-  return("Epetra Version 3.4 - 09/01/2005"); 
+  return("Epetra Version 3.6d - 09/21/2006"); 
 }
