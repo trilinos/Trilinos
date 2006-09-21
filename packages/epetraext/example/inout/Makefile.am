@@ -38,7 +38,8 @@ noinst_PROGRAMS = MatrixMarket_IO XML_IO $(HDF5Files)
 
 MatrixMarket_IO_SOURCES = $(srcdir)/MatrixMarket_IO.cpp
 MatrixMarket_IO_DEPENDENCIES = $(top_builddir)/src/libepetraext.a \
-				  $(top_builddir)/../epetra/src/libepetra.a
+				  $(top_builddir)/../epetra/src/libepetra.a \
+				  $(top_builddir)/../teuchos/src/libteuchos.a
 MatrixMarket_IO_CXXFLAGS = $(EPETRAEXT_INCLUDES)
 MatrixMarket_IO_LDADD = $(EPETRAEXT_LIBS)
 
