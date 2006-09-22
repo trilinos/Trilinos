@@ -74,9 +74,14 @@ xyzt(
   rowIndex(0), 
   precPrintParams(precPrintParams_), 
   precLSParams(precLSParams_),
-  isPeriodic(precLSParams_->get("Periodic",false))
 {
+   if (precLSParams)
+     isPeriodic = precLSParams_->get("Periodic",false);
+   else
+     isPeriodic = false;
+
    if (globalComm->MyPID()==0) {
+     // TODO: pass in globalData and use output stream
      cout  << "--------------XYZT Partition Info---------------"
            << "\n\tNumProcs               = " << globalComm->NumProc()
            << "\n\tSpatial Decomposition  = " << splitMultiVec_.Comm().NumProc()
@@ -143,11 +148,13 @@ xyzt(
 				  *solution, *solutionOverlap, *overlapImporter,
 				  *precPrintParams, *precLSParams, globalComm);
      if (preconditioner != 0) {
-       cout << "LOCA::Epetra::Interface::xyzt - " 
-	    << "preconditioner created successfully" << endl;
+       // TODO: pass in globalData and use output stream
+       //cout << "LOCA::Epetra::Interface::xyzt - " 
+       //    << "preconditioner created successfully" << endl;
      }
    }
-   cout << "Ending xyzt constructor" << endl;
+   // TODO: pass in globalData and use output stream
+   //cout << "Ending xyzt constructor" << endl;
 }
 
 LOCA::Epetra::Interface::xyzt::

@@ -83,7 +83,8 @@ xyztPrec(EpetraExt::BlockCrsMatrix &jacobian_,
 
   if (prec == "Global") {
     label = "LOCA::Epetra::xyztPrec::Global";
-    cout << "LOCA::Epetra::xyztPrec = Global" << endl;
+    // TODO: pass in globalData and use output stream
+    //cout << "LOCA::Epetra::xyztPrec = Global" << endl;
 
     // Create the Linear System
     linSys[0] = new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams, 
@@ -95,23 +96,28 @@ xyztPrec(EpetraExt::BlockCrsMatrix &jacobian_,
             prec == "BlockDiagonal" || prec == "Parareal" || prec == "BDSDT") {
     if (prec == "Sequential") {
       label = "LOCA::Epetra::xyztPrec::Sequential";
-      cout << "LOCA::Epetra::xyztPrec = Sequential" << endl;
+      // TODO: pass in globalData and use output stream
+      //cout << "LOCA::Epetra::xyztPrec = Sequential" << endl;
     }
     else if (prec == "Parallel") {
       label = "LOCA::Epetra::xyztPrec::Parallel";
-      cout << "LOCA::Epetra::xyztPrec = Parallel" << endl;
+      // TODO: pass in globalData and use output stream
+      //cout << "LOCA::Epetra::xyztPrec = Parallel" << endl;
     }
     else if (prec == "BlockDiagonal") {
       label = "LOCA::Epetra::xyztPrec::BlockDiagonal";
-      cout << "LOCA::Epetra::xyztPrec = BlockDiagonal" << endl;
+      // TODO: pass in globalData and use output stream
+      //cout << "LOCA::Epetra::xyztPrec = BlockDiagonal" << endl;
     }
     else if (prec == "BDSDT") {
       label = "LOCA::Epetra::xyztPrec::BDSDT";
-      cout << "LOCA::Epetra::xyztPrec = BDSDT" << endl;
+      // TODO: pass in globalData and use output stream
+      //cout << "LOCA::Epetra::xyztPrec = BDSDT" << endl;
     }
     else if (prec == "Parareal") {
       label = "LOCA::Epetra::xyztPrec::Parareal";
-      cout << "LOCA::Epetra::xyztPrec = Parareal" << endl;
+      // TODO: pass in globalData and use output stream
+      //cout << "LOCA::Epetra::xyztPrec = Parareal" << endl;
     }
     
     // Create temporary space for Epetra vectors and NOX vies of same space
@@ -145,14 +151,15 @@ xyztPrec(EpetraExt::BlockCrsMatrix &jacobian_,
   }
   else if (prec == "None") {
     label = "LOCA::Epetra::xyztPrec::None";
-    cout << "LOCA::Epetra::xyztPrec = None" << endl;
+    // TODO: pass in globalData and use output stream
+    //cout << "LOCA::Epetra::xyztPrec = None" << endl;
   }
   else {
     string errorMessage = "Option for \"Preconditioner\" is invalid!";
     throwError("LOCA::Epetra::xyztPrec::xyztPrec", errorMessage);
   }
-
-  cout << "LOCA::Epetra::xyztPrec constructor completed." << endl;
+  // TODO: pass in globalData and use output stream
+  //cout << "LOCA::Epetra::xyztPrec constructor completed." << endl;
 }
 
 LOCA::Epetra::xyztPrec::
@@ -518,14 +525,14 @@ bool LOCA::Epetra::xyztPrec::
 computeF(const Epetra_Vector&, Epetra_Vector&, 
 	 NOX::Epetra::Interface::Required::FillType)
 {
-  cout << "LOCA::Epetra::xyztPrec::computeF called." << endl;
+  //cout << "LOCA::Epetra::xyztPrec::computeF called." << endl;
   return false;
 }
 
 bool LOCA::Epetra::xyztPrec::
 computeJacobian(const Epetra_Vector&, Epetra_Operator&)
 {
-  cout << "LOCA::Epetra::xyztPrec::computeJacobian called." << endl;
+  //cout << "LOCA::Epetra::xyztPrec::computeJacobian called." << endl;
   return false;
 }
 
@@ -534,10 +541,10 @@ computePreconditioner(const Epetra_Vector& x,
 		      Epetra_Operator& Prec,
 		      Teuchos::ParameterList* p)
 {
-  cout << "LOCA::Epetra::xyztPrec::computePreconditioner called - ";
+  //cout << "LOCA::Epetra::xyztPrec::computePreconditioner called - ";
   string prec = lsParams.get("XYZTPreconditioner","None");
   if (prec == "Global") {
-    cout << "Global Preconditioner" << endl;
+    //cout << "Global Preconditioner" << endl;
     linSys[0]->destroyPreconditioner();
     linSys[0]->createPreconditioner(x, lsParams, false);
     return true;
@@ -583,7 +590,7 @@ computePreconditioner(const Epetra_Vector& x,
     return true;
   }
   else {
-    cout << "No Preconditioner" << endl;
+    //cout << "No Preconditioner" << endl;
     return true;
   }
 }
