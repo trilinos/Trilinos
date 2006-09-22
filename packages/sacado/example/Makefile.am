@@ -37,6 +37,7 @@ noinst_PROGRAMS = \
 	dfad_dfad_example \
 	sfad_example \
 	trad_example \
+	trad_dfad_example \
 	dtaylor_example \
 	RunValgrind
 
@@ -66,6 +67,11 @@ trad_example_SOURCES = $(srcdir)/trad_example.cpp
 trad_example_CXXFLAGS = $(dfad_example_CXXFLAGS)
 trad_example_DEPENDENCIES = $(dfad_example_DEPENDENCIES)
 trad_example_LDADD = $(dfad_example_LDADD)
+
+trad_dfad_example_SOURCES = $(srcdir)/trad_dfad_example.cpp
+trad_dfad_example_CXXFLAGS = $(dfad_example_CXXFLAGS)
+trad_dfad_example_DEPENDENCIES = $(dfad_example_DEPENDENCIES)
+trad_dfad_example_LDADD = $(dfad_example_LDADD)
 
 dtaylor_example_SOURCES = $(srcdir)/dtaylor_example.cpp
 dtaylor_example_CXXFLAGS = $(dfad_example_CXXFLAGS)
