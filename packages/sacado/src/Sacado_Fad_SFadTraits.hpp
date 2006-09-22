@@ -29,86 +29,87 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef SACADO_FAD_DFADTRAITS_HPP
-#define SACADO_FAD_DFADTRAITS_HPP
+#ifndef SACADO_FAD_SFADTRAITS_HPP
+#define SACADO_FAD_SFADTRAITS_HPP
 
 #include "Sacado_Traits.hpp"
 
 // Forward declarations
 namespace Sacado {
   namespace Fad {
-    template <typename T1, typename T2> class SFad;
+    template <typename T1, int Num, typename T2> class SFad;
   }
 }
 
 namespace Sacado {
 
   //! Specialization of %Promote to SFad types
-  template <typename ValueT, typename ScalarT>
-  struct Promote< Fad::SFad<ValueT,ScalarT>, Fad::SFad<ValueTT,ScalarT> > {
-    typedef Fad::SFad<ValueT,ScalarT> type;
+  template <typename ValueT, int Num, typename ScalarT>
+  struct Promote< Fad::SFad<ValueT,Num,ScalarT>, 
+		  Fad::SFad<ValueT,Num,ScalarT> > {
+    typedef Fad::SFad<ValueT,Num,ScalarT> type;
   };
 
   //! Specialization of %Promote to SFad types
-  template <typename ValueT, typename ScalarT, typename R>
-  struct Promote< Fad::SFad<ValueT,ScalarT>, R > {
-    typedef typename ValueType< Fad::SFad<ValueT,ScalarT> >::type value_type_l;
+  template <typename ValueT, int Num, typename ScalarT, typename R>
+  struct Promote< Fad::SFad<ValueT,Num,ScalarT>, R > {
+    typedef typename ValueType< Fad::SFad<ValueT,Num,ScalarT> >::type value_type_l;
     typedef typename Promote<R,R>::type value_type_r;
     typedef typename Promote<value_type_l,value_type_r>::type value_type;
 
-    typedef Fad::SFad<value_type,ScalarT> type;
+    typedef Fad::SFad<value_type,Num,ScalarT> type;
   };
 
   //! Specialization of %Promote to SFad types
-  template <typename L, typename ValueT, typename ScalarT>
-  struct Promote< L, Fad::SFad<ValueT, ScalarT> > {
+  template <typename L, typename ValueT, int Num, typename ScalarT>
+  struct Promote< L, Fad::SFad<ValueT, Num, ScalarT> > {
   public:
 
     typedef typename Promote<L,L>::type value_type_l;
-    typedef typename ValueType< Fad::SFad<ValueT,ScalarT> >::type value_type_r;
+    typedef typename ValueType< Fad::SFad<ValueT,Num,ScalarT> >::type value_type_r;
     typedef typename Promote<value_type_l,value_type_r>::type value_type;
 
-    typedef Fad::SFad<value_type,ScalarT> type;
+    typedef Fad::SFad<value_type,Num,ScalarT> type;
   };
 
   //! Specialization of %ScalarType to SFad types
-  template <typename ValueT, typename ScalarT>
-  struct ScalarType< Fad::SFad<ValueT,ScalarT> > {
+  template <typename ValueT, int Num, typename ScalarT>
+  struct ScalarType< Fad::SFad<ValueT,Num,ScalarT> > {
     typedef ScalarT type;
   };
 
   //! Specialization of %ValueType to SFad types
-  template <typename ValueT, typename ScalarT>
-  struct ValueType< Fad::SFad<ValueT,ScalarT> > {
+  template <typename ValueT, int Num, typename ScalarT>
+  struct ValueType< Fad::SFad<ValueT,Num,ScalarT> > {
     typedef ValueT type;
   };
 
    //! Specialization of %ScalarValueType to SFad types
-  template <typename ValueT, typename ScalarT>
-  struct ScalarValueType< Fad::SFad<ValueT,ScalarT> > {
+  template <typename ValueT, int Num, typename ScalarT>
+  struct ScalarValueType< Fad::SFad<ValueT,Num,ScalarT> > {
     typedef typename ScalarValueType< ValueT >::type type;
   };
 
   //! Specialization of %IsADType to SFad types
-  template <typename ValueT, typename ScalarT>
-  struct IsADType< Fad::SFad<ValueT,ScalarT> > {
+  template <typename ValueT, int Num, typename ScalarT>
+  struct IsADType< Fad::SFad<ValueT,Num,ScalarT> > {
     static const bool value = true;
   };
 
   //! Specialization of %IsADType to SFad types
-  template <typename ValueT, typename ScalarT>
-  struct IsScalarType< Fad::SFad<ValueT,ScalarT> > {
+  template <typename ValueT, int Num, typename ScalarT>
+  struct IsScalarType< Fad::SFad<ValueT,Num,ScalarT> > {
     static const bool value = false;
   };
 
   //! Specialization of %Value to SFad types
-  template <typename ValueT, typename ScalarT>
-  struct Value< Fad::SFad<ValueT,ScalarT> > {
-    typedef typename ValueType< Fad::SFad<ValueT,ScalarT> >::type value_type;
-    static const value_type& eval(const Fad::SFad<ValueT,ScalarT>& x) { 
+  template <typename ValueT, int Num, typename ScalarT>
+  struct Value< Fad::SFad<ValueT,Num,ScalarT> > {
+    typedef typename ValueType< Fad::SFad<ValueT,Num,ScalarT> >::type value_type;
+    static const value_type& eval(const Fad::SFad<ValueT,Num,ScalarT>& x) { 
       return x.val(); }
   };
 
 } // namespace Sacado
 
-#endif // SACADO_FAD_DFADTRAITS_HPP
+#endif // SACADO_FAD_SFADTRAITS_HPP
