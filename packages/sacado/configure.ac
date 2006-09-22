@@ -104,6 +104,7 @@ AC_PROG_CC(cc gcc)
 AC_PROG_CXX(CC g++ gcc c++ cxx)
 AC_PROG_F77(f77 g77 f90 xlf90)
 AC_PROG_RANLIB
+AC_PROG_AWK
 
 # ------------------------------------------------------------------------
 # Checks for extra flags
@@ -200,6 +201,9 @@ TAC_ARG_ENABLE_EXPORT_MAKEFILES(yes)
 TAC_ARG_ENABLE_FEATURE(tests, [Build Sacado tests], TESTS, no)
 TAC_ARG_ENABLE_FEATURE_SUB_CHECK(sacado, tests, [Build Sacado tests], SACADO_TESTS)
 AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_sacado_tests" != "Xno")
+
+TAC_ARG_ENABLE_FEATURE_SUB(sacado, alltests, [Build all Sacado tests (including very slow ones)], SACADO_ALLTESTS, no)
+AM_CONDITIONAL(BUILD_ALLTESTS, test "X$ac_cv_use_sacado_alltests" != "Xno")
 
 TAC_ARG_ENABLE_FEATURE(examples, [Build Sacado examples], EXAMPLES, yes)
 TAC_ARG_ENABLE_FEATURE_SUB_CHECK(sacado, examples, [Build Sacado examples], SACADO_EXAMPLES)
@@ -367,6 +371,8 @@ AC_CONFIG_FILES([
 		test/Makefile
 		test/utils/Makefile
 		test/TestSuite/Makefile
+		test/tradoptest/Makefile
+		test/tradoptest/testgen.as
 		])
 
 AC_OUTPUT()

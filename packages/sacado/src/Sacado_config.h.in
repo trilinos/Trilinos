@@ -51,6 +51,9 @@
 /* define if we want to use MPI */
 #undef HAVE_MPI
 
+/* Define if want to build sacado-alltests */
+#undef HAVE_SACADO_ALLTESTS
+
 /* Define if want to build sacado-examples */
 #undef HAVE_SACADO_EXAMPLES
 

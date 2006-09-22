@@ -1,0 +1,114 @@
+#!/bin/sh
+@AWK@ '
+BEGIN {
+suf[0] = "AI"
+suf[1] = "A"
+suf[2] = "C"
+suf[3] = "Ai"
+suf[4] = "d"
+suf[5] = "L"
+suf[6] = "i"
+cast[0] = cast[1] = cast[2] = cast[3] = cast[4] = ""
+cast[5] = "(long)"
+cast[6] = "(int)"
+adj[0] = adj[1] = adj[2] = "adj()"
+adj[3] = "aval"
+}
+function crunch(op,i,j,cL,cR)
+{
+	L = suf[i]
+	R = suf[j]
+	newcontext = 0
+	if (cL + cR || i ==3 || j == 3) {
+		newcontext = 1
+		printf "\t{\n"
+		if (cL + cR) printf "\tA::aval_reset();\n"
+		}
+	if (cL) {
+		x = "xc" L
+		printf "\tc%s %s(xd);\n", L, x
+		}
+	else {
+		x = "x" L
+		if (i == 3) printf "\t%s %s(xd);\n", L, x
+		else if (i != 4) printf "\t%s = %sxd;\n", x, cast[i]
+		}
+	if (cR) {
+		y = "yc" R
+		printf "\tc%s %s(yd);\n", R, y
+		}
+	else {
+		y = "y" R
+		if (j == 3) printf "\t%s %s(yd);\n", R, y
+		else if (j != 4) printf "\t%s = %syd;\n", y, cast[j]
+		}
+	if (infix) opname = sprintf("%s %s %s", x, op, y)
+	else	   opname = sprintf("%s(%s,%s)", op, x, y)
+	printf "\tfA = %s;\n\tA::Gradcomp();\n", opname
+	printf "\tif (fA.val() != f) botch(\"fA = %s\", f, fA.val());\n",opname
+	if (i < 4)
+	 printf "\telse if (%s.%s != dx) botch(\"d %s/dx\", dx, %s.%s);\n",x,adj[i],opname,x,adj[i]
+	if (j < 4)
+	 printf "\telse if (%s.%s != dy) botch(\"d %s/dy\", dy, %s.%s);\n",y,adj[j],opname,y,adj[j]
+	if (newcontext) printf "\t}\n"
+	printf "\n"
+	}
+
+function crunch1(op, i, cL)
+{
+	L = suf[i]
+	newcontext = 0
+	if (cL || i == 3) {
+		newcontext = 1
+		printf "\t{\n"
+		if (cL) printf "\tA::aval_reset();\n"
+		x = "xc" L
+		printf "\tc%s %s(xd);\n", L, x
+		}
+	else {
+		x = "x" L
+		if (i == 3) printf "\t%s %s(xd);\n", L, x
+		else if (i != 4) printf "\t%s = %sxd;\n", x, cast[i]
+		}
+	xx = x
+	if (copy) xx = sprintf("copy(%s)", x)
+	if (infix) opname = sprintf("%s%s", op, xx)
+	else	   opname = sprintf("%s(%s)", op, xx)
+	printf "\tfA = %s;\n\tA::Gradcomp();\n", opname
+	printf "\tif (fA.val() != f) botch(\"fA = %s\", f, fA.val());\n",opname
+	printf "\telse if (%s.%s != dx) botch(\"d %s/dx\", dx, %s.%s);\n",x,adj[i],opname,x,adj[i]
+	if (newcontext) printf "\t}\n"
+	printf "\n"
+	}
+	
+/^BINTEST/ {
+	op = $2
+	infix = $8 + 0
+	printf "\n\t/**** Test of %s ****/\n\n", op
+	printf "\txd = %s; yd = %s; f = %s; dx = %s; dy = %s;\n",$3,$4,$5,$6,$7
+	for(i = 0; i < 7; i++) {
+		jx = 7; if (i > 3) jx = 4
+		for(j = 0; j < jx; j++) {
+			crunch(op,i,j,0,0)
+			if (i < 4) crunch(op,i,j,1,0)
+			if (j < 4) {
+				crunch(op,i,j,0,1)
+				if (i < 3) crunch(op,i,j,1,1)
+				}
+			}
+		}
+	next
+	}
+/^UNOPTEST/ {
+	op = $2
+	infix = $6 + 0
+	copy = $7 + 0
+	printf "\n\t/**** Test of %s ****/\n\n", op
+	printf "\txd = %s; f = %s; dx = %s;\n",$3,$4,$5
+	for(i = 0; i < 4; i++) {
+		crunch1(op,i,0)
+		crunch1(op,i,1)
+		}
+	next
+	}
+{print}' "$*"

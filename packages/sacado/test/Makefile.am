@@ -29,5 +29,11 @@
 # ************************************************************************
 # @HEADER
 
-SUBDIRS = utils TestSuite
+if BUILD_ALLTESTS
+SLOWTESTDIRS = tradoptest
+else
+SLOWTESTDIRS = 
+endif
+
+SUBDIRS = utils TestSuite $(SLOWTESTDIRS)
 

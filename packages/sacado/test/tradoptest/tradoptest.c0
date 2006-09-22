@@ -1,0 +1,113 @@
+/* Try to test all combinations of types and operations */
+
+#ifdef SACADO_NAMESPACE
+#define ADT_RAD Sacado::Rad::
+#else
+#define ADT_RAD /*nothing*/
+#endif
+
+#include "Sacado_trad.hpp"
+#include <stdio.h>
+
+typedef ADT_RAD IndepADvar<double> AI;
+typedef ADT_RAD ADvar<double> A;
+typedef ADT_RAD ConstADvar<double> C;
+typedef ADT_RAD ADvari<double> Ai;
+typedef const ADT_RAD IndepADvar<double> cAI;
+typedef const ADT_RAD ADvar<double> cA;
+typedef const ADT_RAD ConstADvar<double> cC;
+typedef const ADT_RAD ADvari<double> cAi;
+static int rc;
+
+/* This is to be run through an awk program that changes lines */
+/* with "BINTEST" or "UNOPTEST" at the beginning of the line into */
+/* a the desired C++ (which we can then inspect). */
+
+ void
+botch(const char *what, double wanted, double got)
+{
+	printf("%s: expected %g, got %g, diff = %.2g\n", what, wanted, got, wanted-got);
+	rc = 1;
+	}
+
+#ifdef RAD_NO_EQ_ALIAS
+#define Plus_dx 1.
+#else
+#ifdef RAD_AUTO_AD_Const
+#define Plus_dx 1.
+#else
+#define Plus_dx 0.
+#endif
+#endif
+
+ int
+main(void)
+{
+	AI xAI, yAI;
+	A fA, xA, yA;
+	C xC, yC;
+	double dx, dy, f, xd, yd;
+	long xL, yL;
+	int xi, yi;
+
+	rc = 0;
+BINTEST operator+  1.  2.  3.   1.   1.
+BINTEST operator-  7.  4   3.   1.  -1.
+BINTEST operator*  6.  7. 42.   7.   6.
+BINTEST operator/ 24. 6.  4.  1/6. -2./3.
+BINTEST atan2	   3.  4. atan2(3.,4.) 0.16 -0.12
+BINTEST pow	   2.  3.  8.   12.  8.*log(2.)
+BINTEST operator<  2. 3.  1.    0.   0.
+BINTEST operator<  3. 3.  0.    0.   0.
+BINTEST operator<= 2. 3.  1.    0.   0.
+BINTEST operator<= 4. 3.  0.    0.   0.
+BINTEST operator== 2. 3.  0.    0.   0.
+BINTEST operator== 4. 4.  1.    0.   0.
+BINTEST operator!= 2. 3.  1.    0.   0.
+BINTEST operator!= 4. 4.  0.    0.   0.
+BINTEST operator>= 2. 3.  0.    0.   0.
+BINTEST operator>= 4. 3.  1.    0.   0.
+BINTEST operator>  2. 2.  0.    0.   0.
+BINTEST operator>  4. 3.  1.    0.   0.
+BINTEST +  1.  2.  3.   1.   1.		1
+BINTEST -  7.  4   3.   1.  -1.		1
+BINTEST *  6.  7. 42.   7.   6.		1
+BINTEST / 24. 6.  4.  1/6. -2./3.	1
+BINTEST <  2. 3.  1.    0.   0.		1
+BINTEST <  3. 3.  0.    0.   0.		1
+BINTEST <= 2. 3.  1.    0.   0.		1
+BINTEST <= 4. 3.  0.    0.   0.		1
+BINTEST == 2. 3.  0.    0.   0.		1
+BINTEST == 4. 4.  1.    0.   0.		1
+BINTEST != 2. 3.  1.    0.   0.		1
+BINTEST != 4. 4.  0.    0.   0.		1
+BINTEST >= 2. 3.  0.    0.   0.		1
+BINTEST >= 4. 3.  1.    0.   0.		1
+BINTEST >  2. 2.  0.    0.   0.		1
+BINTEST >  4. 3.  1.    0.   0.		1
+UNOPTEST operator+	28.    28.		 Plus_dx
+UNOPTEST operator+	28.    28. 		 1.		0	1
+UNOPTEST operator-	42.   -42.		-1.
+UNOPTEST acos		.7    acos(.7)		-1.4002800840280099
+UNOPTEST acosh		1.25  acosh(1.25)	1.3333333333333333
+UNOPTEST asin		.7    asin(.7)		1.4002800840280099
+UNOPTEST asinh		-2.   asinh(-2.)	0.4472135954999579
+UNOPTEST atan		2.    atan(2.)		0.2
+UNOPTEST atanh		.6    atanh(.6)		1.5625
+UNOPTEST cos		3.    cos(3.)		-sin(3.)
+UNOPTEST cosh		2.    cosh(2.)		sinh(2.)
+UNOPTEST exp		2.    exp(2.)		exp(2.)
+UNOPTEST log		4.    log(4.)		0.25
+UNOPTEST sin		5.    sin(5.)		cos(5.)
+UNOPTEST sinh		3.    sinh(3.)		cosh(3.)
+UNOPTEST sqrt		25.   5.		0.1
+UNOPTEST tan		3.    tan(3.)		1./(cos(3.)*cos(3.))
+UNOPTEST tanh		1.    tanh(1.)		(1./cosh(1.))*(1./cosh(1.))
+UNOPTEST fabs		-12.  12.		-1.
+UNOPTEST fabs		37.   37.		 1.
+UNOPTEST +		17.   17.		 Plus_dx	1
+UNOPTEST +		17.   17.		 1.		1	1
+UNOPTEST -		19.  -19.		-1.		1
+
+	return rc;
+	}

@@ -32,43 +32,52 @@
 EXEEXT = .exe
 
 noinst_PROGRAMS = \
-	ad_example \
-	dfad_example \
-	dfad_dfad_example \
-	sfad_example \
-	trad_example \
-	dtaylor_example \
-	RunValgrind
+	tradoptest1 \
+	tradoptest2 \
+	tradoptest3 \
+	tradoptest4 \
+	tradoptest5 \
+	tradoptest6
 
-dfad_example_SOURCES = $(srcdir)/dfad_example.cpp
-dfad_example_CXXFLAGS = \
+testall : $(noinst_PROGRAMS)
+	./tradoptest1$(EXEEXT)
+	./tradoptest2$(EXEEXT)
+	./tradoptest3$(EXEEXT)	
+	./tradoptest4$(EXEEXT)
+	./tradoptest5$(EXEEXT)
+	./tradoptest6$(EXEEXT)
+
+tradoptest1_SOURCES = tradoptest.cpp 
+tradoptest1_CXXFLAGS = -USACADO_NAMESPACE \
 	-I$(top_srcdir)/src \
 	-I$(top_builddir)/src
-dfad_example_DEPENDENCIES =  
-dfad_example_LDADD =
 
-ad_example_SOURCES = $(srcdir)/ad_example.cpp
-ad_example_CXXFLAGS = $(dfad_example_CXXFLAGS)
+tradoptest2_SOURCES = tradoptest.cpp 
+tradoptest2_CXXFLAGS = -USACADO_NAMESPACE -DRAD_AUTO_AD_Const \
+	-I$(top_srcdir)/src \
+	-I$(top_builddir)/src
 
-dfad_dfad_example_SOURCES = $(srcdir)/dfad_dfad_example.cpp
-dfad_dfad_example_CXXFLAGS = $(dfad_example_CXXFLAGS)
+tradoptest3_SOURCES = tradoptest.cpp 
+tradoptest3_CXXFLAGS = -USACADO_NAMESPACE -DRAD_NO_EQ_ALIAS \
+	-I$(top_srcdir)/src \
+	-I$(top_builddir)/src
 
-sfad_example_SOURCES = $(srcdir)/sfad_example.cpp
-sfad_example_CXXFLAGS =  $(dfad_example_CXXFLAGS)
+tradoptest4_SOURCES = tradoptest.cpp 
+tradoptest4_CXXFLAGS = -DSACADO_NAMESPACE \
+	-I$(top_srcdir)/src \
+	-I$(top_builddir)/src
 
-trad_example_SOURCES = $(srcdir)/trad_example.cpp
-trad_example_CXXFLAGS = $(dfad_example_CXXFLAGS)
+tradoptest5_SOURCES = tradoptest.cpp 
+tradoptest5_CXXFLAGS = -DSACADO_NAMESPACE -DRAD_AUTO_AD_Const \
+	-I$(top_srcdir)/src \
+	-I$(top_builddir)/src
 
-dtaylor_example_SOURCES = $(srcdir)/dtaylor_example.cpp
-dtaylor_example_CXXFLAGS = $(dfad_example_CXXFLAGS)
+tradoptest6_SOURCES = tradoptest.cpp 
+tradoptest6_CXXFLAGS = -DSACADO_NAMESPACE -DRAD_NO_EQ_ALIAS \
+	-I$(top_srcdir)/src \
+	-I$(top_builddir)/src
 
-RunValgrind_SOURCES = \
-	$(srcdir)/RunValgrind \
-	$(srcdir)/In_Suppressions
+tradoptest.cpp : testgen.as tradoptest.c0
+	$(SHELL) testgen.as $(srcdir)/tradoptest.c0 > tradoptest.cpp
 
-RunValgrind$(EXEEXT): $(srcdir)/RunValgrind
-	cp  $(srcdir)/RunValgrind  RunValgrind$(EXEEXT)
-	chmod +x RunValgrind$(EXEEXT)
-	cp  $(srcdir)/In_Suppressions Suppressions
-
-SUBDIRS = 
+CLEANFILES = tradoptest.cpp
