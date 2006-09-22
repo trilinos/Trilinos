@@ -97,22 +97,18 @@ CONFIG_CLEAN_FILES = testgen.as
 PROGRAMS = $(noinst_PROGRAMS)
 am_tradoptest1_OBJECTS = tradoptest1-tradoptest.$(OBJEXT)
 tradoptest1_OBJECTS = $(am_tradoptest1_OBJECTS)
-tradoptest1_LDADD = $(LDADD)
+am__DEPENDENCIES_1 =
 am_tradoptest2_OBJECTS = tradoptest2-tradoptest.$(OBJEXT)
 tradoptest2_OBJECTS = $(am_tradoptest2_OBJECTS)
-tradoptest2_LDADD = $(LDADD)
+am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1)
 am_tradoptest3_OBJECTS = tradoptest3-tradoptest.$(OBJEXT)
 tradoptest3_OBJECTS = $(am_tradoptest3_OBJECTS)
-tradoptest3_LDADD = $(LDADD)
 am_tradoptest4_OBJECTS = tradoptest4-tradoptest.$(OBJEXT)
 tradoptest4_OBJECTS = $(am_tradoptest4_OBJECTS)
-tradoptest4_LDADD = $(LDADD)
 am_tradoptest5_OBJECTS = tradoptest5-tradoptest.$(OBJEXT)
 tradoptest5_OBJECTS = $(am_tradoptest5_OBJECTS)
-tradoptest5_LDADD = $(LDADD)
 am_tradoptest6_OBJECTS = tradoptest6-tradoptest.$(OBJEXT)
 tradoptest6_OBJECTS = $(am_tradoptest6_OBJECTS)
-tradoptest6_LDADD = $(LDADD)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -271,31 +267,43 @@ tradoptest1_CXXFLAGS = -USACADO_NAMESPACE \
 	-I$(top_srcdir)/src \
 	-I$(top_builddir)/src
 
+tradoptest1_DEPENDENCIES = $(top_builddir)/src/libsacado.a
+tradoptest1_LDADD = -L$(top_builddir)/src -lsacado $(LIBS) $(FLIBS)
 tradoptest2_SOURCES = tradoptest.cpp 
 tradoptest2_CXXFLAGS = -USACADO_NAMESPACE -DRAD_AUTO_AD_Const \
 	-I$(top_srcdir)/src \
 	-I$(top_builddir)/src
 
+tradoptest2_DEPENDENCIES = $(tradoptest1_DEPENDENCIES)
+tradoptest2_LDADD = $(tradoptest1_LDADD)
 tradoptest3_SOURCES = tradoptest.cpp 
 tradoptest3_CXXFLAGS = -USACADO_NAMESPACE -DRAD_NO_EQ_ALIAS \
 	-I$(top_srcdir)/src \
 	-I$(top_builddir)/src
 
+tradoptest3_DEPENDENCIES = $(tradoptest1_DEPENDENCIES)
+tradoptest3_LDADD = $(tradoptest1_LDADD)
 tradoptest4_SOURCES = tradoptest.cpp 
 tradoptest4_CXXFLAGS = -DSACADO_NAMESPACE \
 	-I$(top_srcdir)/src \
 	-I$(top_builddir)/src
 
+tradoptest4_DEPENDENCIES = $(tradoptest1_DEPENDENCIES)
+tradoptest4_LDADD = $(tradoptest1_LDADD)
 tradoptest5_SOURCES = tradoptest.cpp 
 tradoptest5_CXXFLAGS = -DSACADO_NAMESPACE -DRAD_AUTO_AD_Const \
 	-I$(top_srcdir)/src \
 	-I$(top_builddir)/src
 
+tradoptest5_DEPENDENCIES = $(tradoptest1_DEPENDENCIES)
+tradoptest5_LDADD = $(tradoptest1_LDADD)
 tradoptest6_SOURCES = tradoptest.cpp 
 tradoptest6_CXXFLAGS = -DSACADO_NAMESPACE -DRAD_NO_EQ_ALIAS \
 	-I$(top_srcdir)/src \
 	-I$(top_builddir)/src
 
+tradoptest6_DEPENDENCIES = $(tradoptest1_DEPENDENCIES)
+tradoptest6_LDADD = $(tradoptest1_LDADD)
 CLEANFILES = tradoptest.cpp
 all: all-am
 

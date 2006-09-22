@@ -51,31 +51,43 @@ tradoptest1_SOURCES = tradoptest.cpp
 tradoptest1_CXXFLAGS = -USACADO_NAMESPACE \
 	-I$(top_srcdir)/src \
 	-I$(top_builddir)/src
+tradoptest1_DEPENDENCIES = $(top_builddir)/src/libsacado.a
+tradoptest1_LDADD = -L$(top_builddir)/src -lsacado $(LIBS) $(FLIBS)
 
 tradoptest2_SOURCES = tradoptest.cpp 
 tradoptest2_CXXFLAGS = -USACADO_NAMESPACE -DRAD_AUTO_AD_Const \
 	-I$(top_srcdir)/src \
 	-I$(top_builddir)/src
+tradoptest2_DEPENDENCIES = $(tradoptest1_DEPENDENCIES)
+tradoptest2_LDADD = $(tradoptest1_LDADD)
 
 tradoptest3_SOURCES = tradoptest.cpp 
 tradoptest3_CXXFLAGS = -USACADO_NAMESPACE -DRAD_NO_EQ_ALIAS \
 	-I$(top_srcdir)/src \
 	-I$(top_builddir)/src
+tradoptest3_DEPENDENCIES = $(tradoptest1_DEPENDENCIES)
+tradoptest3_LDADD = $(tradoptest1_LDADD)
 
 tradoptest4_SOURCES = tradoptest.cpp 
 tradoptest4_CXXFLAGS = -DSACADO_NAMESPACE \
 	-I$(top_srcdir)/src \
 	-I$(top_builddir)/src
+tradoptest4_DEPENDENCIES = $(tradoptest1_DEPENDENCIES)
+tradoptest4_LDADD = $(tradoptest1_LDADD)
 
 tradoptest5_SOURCES = tradoptest.cpp 
 tradoptest5_CXXFLAGS = -DSACADO_NAMESPACE -DRAD_AUTO_AD_Const \
 	-I$(top_srcdir)/src \
 	-I$(top_builddir)/src
+tradoptest5_DEPENDENCIES = $(tradoptest1_DEPENDENCIES)
+tradoptest5_LDADD = $(tradoptest1_LDADD)
 
 tradoptest6_SOURCES = tradoptest.cpp 
 tradoptest6_CXXFLAGS = -DSACADO_NAMESPACE -DRAD_NO_EQ_ALIAS \
 	-I$(top_srcdir)/src \
 	-I$(top_builddir)/src
+tradoptest6_DEPENDENCIES = $(tradoptest1_DEPENDENCIES)
+tradoptest6_LDADD = $(tradoptest1_LDADD)
 
 tradoptest.cpp : testgen.as tradoptest.c0
 	$(SHELL) testgen.as $(srcdir)/tradoptest.c0 > tradoptest.cpp
