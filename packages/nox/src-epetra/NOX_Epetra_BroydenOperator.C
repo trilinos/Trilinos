@@ -39,6 +39,15 @@
 #include "NOX_Common.H"
 #include "NOX_Epetra_BroydenOperator.H"
 
+// EpetraExt includes for dumping Epetra objects
+#ifdef HAVE_NOX_DEBUG
+#ifdef HAVE_NOX_EPETRAEXT
+#include "EpetraExt_BlockMapOut.h"
+#include "EpetraExt_MultiVectorOut.h"
+#include "EpetraExt_RowMatrixOut.h"
+#endif
+#endif
+
 #include "Epetra_Map.h"
 
 using namespace NOX;
@@ -50,15 +59,16 @@ BroydenOperator::BroydenOperator(
        Epetra_Vector & solnVec                           ,
        const Teuchos::RefCountPtr<Epetra_CrsMatrix>& mat ,
        bool verbose_ ) :
-  verbose        ( verbose_           ) ,
-  crsMatrix      ( mat                ) ,
-  nlParams       ( nlParams_          ) ,
-  utils          ( utils_             ) ,
-  prePostOperator(  utils, nlParams.sublist("Solver Options") ),
-  label          ( "NOX::Epetra::BroydenOperator"),
-  isValidStep    ( false              ) ,
-  isValidYield   ( false              ) ,
-  isValidBroyden ( false              )
+  verbose        ( verbose_                                  ) ,
+  crsMatrix      ( Teuchos::rcp( new Epetra_CrsMatrix(*mat)) ) ,
+  nlParams       ( nlParams_                                 ) ,
+  utils          ( utils_                                    ) ,
+  prePostOperator( utils, nlParams.sublist("Solver Options") ) ,
+  label          ( "NOX::Epetra::BroydenOperator"            ) ,
+  isValidStep    ( false                                     ) ,
+  isValidYield   ( false                                     ) ,
+  isValidBroyden ( false                                     ) ,
+  entriesRemoved ( mat->NumMyRows(), false                   )
 {
   initialize( nlParams, solnVec );
 }
@@ -83,7 +93,8 @@ BroydenOperator::BroydenOperator(const BroydenOperator & bOp) :
   label          ( "NOX::Epetra::BroydenOperator" ),
   isValidStep    ( bOp.isValidStep    ) ,
   isValidYield   ( bOp.isValidYield   ) ,
-  isValidBroyden ( bOp.isValidBroyden )
+  isValidBroyden ( bOp.isValidBroyden ) ,
+  entriesRemoved ( bOp.entriesRemoved )
 { 
 }
 
@@ -454,9 +465,9 @@ BroydenOperator::computeSparseBroydenUpdate()
       throw "NOX Error: Broyden Update Failed";
     }
 
-    double * values  = 0 ;
-    int    * indices = 0 ;
-    int      numEntries  ;
+    int      numEntries  = crsMatrix->NumMyCols();
+    int    * indices ;
+    double * values  ;
 
     for( int row = 0; row < crsMatrix->NumMyRows(); ++row )
     {
@@ -472,11 +483,27 @@ BroydenOperator::computeSparseBroydenUpdate()
 
       double rowStepInnerProduct = 0.0;
 
-      for( int col = 0; col < numEntries; ++col )
-        rowStepInnerProduct += stepVec->getEpetraVector()[indices[col]] * stepVec->getEpetraVector()[indices[col]];
+      if( entriesRemoved[row] )
+      {
+        list<int>::iterator     iter = retainedEntries[row].begin() ,
+                            iter_end = retainedEntries[row].end()    ;
 
-      for( int col = 0; col < numEntries; ++col )
-        (*values++) += diffVal * stepVec->getEpetraVector()[(*indices++)] / rowStepInnerProduct;
+        for( ; iter_end != iter; ++iter )
+          rowStepInnerProduct += 
+            stepVec->getEpetraVector()[indices[*iter]] * stepVec->getEpetraVector()[indices[*iter]];
+
+        for( iter = retainedEntries[row].begin(); iter_end != iter; ++iter )
+          values[*iter] += diffVal * stepVec->getEpetraVector()[indices[*iter]] / rowStepInnerProduct;
+      }
+      else
+      {
+        for( int col = 0; col < numEntries; ++col )
+          rowStepInnerProduct += 
+            stepVec->getEpetraVector()[indices[col]] * stepVec->getEpetraVector()[indices[col]];
+
+        for( int col = 0; col < numEntries; ++col )
+          (*values++) += diffVal * stepVec->getEpetraVector()[(*indices++)] / rowStepInnerProduct;
+      }
     }
 
     // Our %Broyden matrix has been updated and is now ready to use as a 
@@ -493,7 +520,64 @@ BroydenOperator::computeSparseBroydenUpdate()
     cout <<  "Leaving existing matrix unchanged." << endl;
   }
 
+  // Use EpetraExt to dump linear system if debuggging
+#ifdef HAVE_NOX_DEBUG
+#ifdef HAVE_NOX_EPETRAEXT
+
+  static int broydenOutputCount;
+
+  Teuchos::ParameterList & broydenParamas = 
+    nlParams.sublist("Direction").sublist("Newton").sublist("Broyden Op");
+
+  if( broydenParamas.get("Write Broyden Info", false) ) 
+  {
+    std::ostringstream outputNumber;
+    outputNumber << broydenOutputCount++ ;
+    
+    std::string prefixName = broydenParamas.get("Write Broyden Info File Prefix", "BroydenOp");
+    std::string postfixName = outputNumber.str();
+    postfixName += ".mm";
+
+    std::string mapFileName = prefixName + "_Map_"      + postfixName;
+    std::string matFileName = prefixName + "_Matrix_"   + postfixName;    
+    std::string dxFileName  = prefixName + "_dX_"       + postfixName;
+    std::string dfFileName  = prefixName + "_dF_"       + postfixName;
+
+    Epetra_RowMatrix * printMatrix = NULL;
+    printMatrix = dynamic_cast<Epetra_RowMatrix*>(crsMatrix.get()); 
+
+    if( NULL == printMatrix ) 
+    {
+      cout << "Error: NOX::Epetra::BroydenOperator::computeSparseBroydenUpdate() - "
+	   << "Could not get a valid crsMatrix!\n"
+	   << "Please set the \"Write Linear System\" parameter to false." << endl;
+      throw "NOX Error";
+    }
+
+    EpetraExt::BlockMapToMatrixMarketFile(mapFileName.c_str(), 
+					  printMatrix->RowMatrixRowMap()); 
+    EpetraExt::RowMatrixToMatrixMarketFile(matFileName.c_str(), *printMatrix, 
+					   "test matrix", "Broyden Matrix XXX");
+    EpetraExt::MultiVectorToMatrixMarketFile(dxFileName.c_str(), 
+					     stepVec->getEpetraVector());
+    EpetraExt::MultiVectorToMatrixMarketFile(dfFileName.c_str(), 
+					     yieldVec->getEpetraVector());
+
+  }
+#endif
+#endif
+
   return true;
+}
+
+//-----------------------------------------------------------------------------
+
+void 
+BroydenOperator::resetBroydenMatrix( const Epetra_CrsMatrix & mat )
+{
+  *crsMatrix = mat;
+
+  return;
 }
 
 //-----------------------------------------------------------------------------
@@ -523,6 +607,85 @@ BroydenOperator::isBroyden() const
 //-----------------------------------------------------------------------------
 
 void 
+BroydenOperator::removeEntriesFromBroydenUpdate( const Epetra_CrsGraph & graph )
+{
+
+  int maxRemoveColDim  = graph.NumMyCols();
+  int numRemoveIndices ;
+  int ierr             ;
+
+  vector<int> removeIndices(maxRemoveColDim);
+
+  for( int row = 0; row < graph.NumMyRows(); ++row) 
+  {
+    ierr = graph.ExtractMyRowCopy( row, maxRemoveColDim, numRemoveIndices, &removeIndices[0] );
+    if( ierr )
+    {
+      cout << "ERROR (" << ierr << ") : "
+           << "NOX::Epetra::BroydenOperator::removeEntriesFromBroydenUpdate(...)"
+           << " - Extract indices error for row --> " << row << endl;
+      throw "NOX Broyden Operator Error";
+    }
+
+    if( 0 != numRemoveIndices )
+    {
+      removeIndices.resize(numRemoveIndices);
+
+      // Create a map for quick queries
+      map<int, bool> removeIndTable;
+      for( int k = 0; k < numRemoveIndices; ++k )
+        removeIndTable[ removeIndices[k] ] = true;
+
+      // Get our matrix column indices for the current row
+      int numOrigIndices = 0;
+      int * indPtr;
+
+      ierr = crsMatrix->Graph().ExtractMyRowView( row, numOrigIndices, indPtr );
+      if( ierr )
+      {
+        cout << "ERROR (" << ierr << ") : "
+             << "NOX::Epetra::BroydenOperator::removeEntriesFromBroydenUpdate(...)"
+             << " - Extract indices error for row --> " << row << endl;
+        throw "NOX Broyden Operator Error";
+      }
+
+      // Remove appropriate active entities
+      if( retainedEntries.end() == retainedEntries.find(row) )
+      {
+        list<int> inds;
+
+        for( int k = 0; k < numOrigIndices; ++k )
+        {
+          if( removeIndTable.end() == removeIndTable.find( indPtr[k] ) )
+            inds.push_back(k);
+        }
+
+        retainedEntries[row] = inds;
+      }
+      else
+      {
+        list<int> & inds = retainedEntries[row];
+
+        list<int>::iterator iter     = inds.begin() ,
+                            iter_end = inds.end()    ;
+
+        for( ; iter_end != iter; ++iter )
+        {
+          if( !removeIndTable[ *iter ] )
+            inds.remove( *iter );
+        }
+      }
+
+      entriesRemoved[row] = true;
+    }
+  }
+
+  return;
+}
+
+//-----------------------------------------------------------------------------
+
+void 
 BroydenOperator::replaceBroydenMatrixValues( const Epetra_CrsMatrix & mat)
 {
   double * values = 0;
@@ -545,3 +708,50 @@ BroydenOperator::replaceBroydenMatrixValues( const Epetra_CrsMatrix & mat)
 }
 
 //-----------------------------------------------------------------------------
+
+#ifdef HAVE_NOX_DEBUG
+
+void 
+BroydenOperator::outputActiveEntries()
+{
+
+  const Epetra_Comm & comm = stepVec->getEpetraVector().Comm();
+  int numProcs = comm.NumProc();
+  int myPID = nlParams.sublist("Printing").get("MyPID", 0);
+
+  map<int, list<int> >::iterator iter     = retainedEntries.begin(),
+                                 iter_end = retainedEntries.end()    ;
+
+  for( int pid = 0; pid < numProcs; ++pid )
+  {
+    if( pid == myPID )
+    {
+      for( ; iter_end != iter; ++iter )
+      {
+        int row = (*iter).first;
+
+        // Get our matrix column indices for the current row
+        int numIndices ;
+        int * indPtr   ;
+
+        crsMatrix->Graph().ExtractMyRowView( row, numIndices, indPtr );
+
+        list<int> & entries = (*iter).second;
+
+        list<int>::iterator colIter     = entries.begin() ,
+                            colIter_end = entries.end()    ;
+
+        for( ; colIter_end != colIter; ++colIter )
+          cout << "[" << pid << "] \t " << row << " \t " << *colIter << " ("
+               << indPtr[*colIter] << ")" << endl;
+      }
+    }
+    comm.Barrier();
+  }
+
+  return;
+}
+
+//-----------------------------------------------------------------------------
+
+#endif

@@ -71,6 +71,9 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
  
+  int * testInt = new int[100];
+  delete [] testInt;
+
   bool verbose = false;
 
   if (argc > 1)
@@ -227,8 +230,6 @@ int main(int argc, char *argv[])
   broydenWorkVec.PutScalar(1.0);
   broydenWorkMatrix2->ReplaceDiagonalValues(broydenWorkVec);
 
-  cout << *broydenWorkMatrix2 << endl;
-
   NOX::Epetra::BroydenOperator broydenOp2( noxParams, printing, broydenWorkVec, broydenWorkMatrix2, true );
 
   broydenWorkVec[0] =  1.0;
@@ -268,8 +269,37 @@ int main(int argc, char *argv[])
   status += tester.testCrsMatrices( broydenOp2.getBroydenMatrix(), *goldMatrix2, reltol, abstol,
                               "Broyden Sparse Operator Update Test (Dense)" );
 
+  // Now test the ability to remove active entries in the Broyden update
+  Epetra_CrsGraph inactiveGraph( Copy, broydenRowMap, 0 );
+
+  // Row 1 structure
+  inactiveGraph.InsertGlobalIndices( globalIndices[0], 1, &myGlobalIndices[1] );
+  // Row 2 structure
+  inactiveGraph.InsertGlobalIndices( globalIndices[1], 1, &myGlobalIndices[2] );
+  // Row 3 structure
+  inactiveGraph.InsertGlobalIndices( globalIndices[2], 1, &myGlobalIndices[0] );
+
+  inactiveGraph.FillComplete();
+
+  // Inactivate entries in dense matrix to arrive again at the original sparse structure
+  broydenOp2.removeEntriesFromBroydenUpdate( inactiveGraph );
+
+#ifdef HAVE_NOX_DEBUG
+  broydenOp2.outputActiveEntries();
+#endif
+
+  // Reset to the identity matrix
+  broydenOp2.resetBroydenMatrix( *broydenWorkMatrix2 );
+
+  // Step and Yield vectors are already set
+  broydenOp2.computeSparseBroydenUpdate();
+
+
+  status += tester.testCrsMatrices( broydenOp2.getBroydenMatrix(), *goldMatrix, reltol, abstol,
+                              "Broyden Sparse Operator Update Test (Entry Removal)", false );
+
   cout << broydenOp2.getBroydenMatrix() << endl;
-  cout << *goldMatrix2                  << endl;
+  cout << *goldMatrix << endl;
 
   // Summarize test results  
   if( status == 0 )

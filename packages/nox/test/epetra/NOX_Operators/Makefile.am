@@ -52,7 +52,8 @@ NOX_Operators_SOURCES = $(srcdir)/test.C $(srcdir)/Laplace2D.C
 
 NOX_Operators_DEPENDENCIES = \
                          $(top_builddir)/src/libnox.a \
-                         $(top_builddir)/src-epetra/libnoxepetra.a
+                         $(top_builddir)/src-epetra/libnoxepetra.a \
+                         $(top_builddir)/test/utils/libnoxtestutils.a
 
 #Unsure why this test need to link to the BLAS on an IBM.
 NOX_Operators_LDADD = $(TEST_LIBS)
@@ -62,7 +63,8 @@ NOX_BroydenOp_SOURCES = $(srcdir)/test_BroydenOp.C
 
 NOX_BroydenOp_DEPENDENCIES = \
                          $(top_builddir)/src/libnox.a \
-                         $(top_builddir)/src-epetra/libnoxepetra.a
+                         $(top_builddir)/src-epetra/libnoxepetra.a \
+                         $(top_builddir)/test/utils/libnoxtestutils.a
 
 #Unsure why this test need to link to the BLAS on an IBM.
 NOX_BroydenOp_LDADD = $(TEST_LIBS)

@@ -114,7 +114,8 @@ class TestCompare : public NOX::TestCompare
      */
     virtual int testCrsMatrices(const Epetra_CrsMatrix & mat, 
                                 const Epetra_CrsMatrix & mat_expected, 
-                                double rtol, double atol, const std::string& name);
+                                double rtol, double atol, const std::string& name,
+                                bool enforceStructure = true );
 
 }; 
 

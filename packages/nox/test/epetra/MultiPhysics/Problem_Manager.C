@@ -577,7 +577,7 @@ Problem_Manager::registerComplete()
 
   Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO> composite_linearSystem;
 
-  if( 1 )
+  if( 0 )
   {
     // Use Matrix-Free Jacobian Operator with FDC block preconditioner
     jacOperator = Teuchos::rcp( new NOX::Epetra::MatrixFree( printParams, interface, *compositeSoln) );
@@ -614,8 +614,13 @@ Problem_Manager::registerComplete()
         compositeSoln) );
   }
 
-  if( 0 ) // Broyden Jacobian and preconditioner
+  if( 1 ) // Broyden Jacobian and preconditioner
   {
+    // Turn on some debugging
+    Teuchos::ParameterList & broydenParams = 
+      nlParams->sublist("Direction").sublist("Newton").sublist("Broyden Op");
+    broydenParams.set("Write Broyden Info", true);
+
     evaluate( NOX::Epetra::Interface::Required::Jac, &(*compositeSoln), NULL );
     Teuchos::RefCountPtr<NOX::Epetra::BroydenOperator> broydenOp = 
       Teuchos::rcp(new NOX::Epetra::BroydenOperator( *nlParams, utilsPtr, *compositeSoln, A, true) );

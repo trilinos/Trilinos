@@ -236,9 +236,15 @@ class BroydenOperator : public Epetra_RowMatrix,
   //! Compute the sparse Broyden update
   bool computeSparseBroydenUpdate();
 
-  //! Return a reference to the %Broyden matrix.  The matrix is not owned but is obtained from the client at construction.
-  Epetra_CrsMatrix & getBroydenMatrix()
+  //! Remove entries from being involved in Broyden updates
+  void removeEntriesFromBroydenUpdate( const Epetra_CrsGraph & graph);
+
+  //! Return a const reference to the %Broyden matrix.  The matrix is not owned but is obtained from the client at construction.
+  const Epetra_CrsMatrix & getBroydenMatrix()
   { return *crsMatrix; };
+
+  //! Reset the values of our matrix
+  void resetBroydenMatrix( const Epetra_CrsMatrix & mat );
 
   /** @name "Is" functions
    *
@@ -253,6 +259,11 @@ class BroydenOperator : public Epetra_RowMatrix,
   virtual bool isBroyden() const;
 
   //@}
+
+#ifdef HAVE_NOX_DEBUG
+  // Wrapped debug methods
+  void outputActiveEntries();
+#endif
 
 
  protected:
@@ -325,6 +336,12 @@ class BroydenOperator : public Epetra_RowMatrix,
   bool isValidYield;
   bool isValidBroyden;
   //@}
+
+  //! Flag to signal removal of some entries
+  vector<bool> entriesRemoved;
+
+  //! Container of entries to omit from Broyden updates
+  map< int, list<int> > retainedEntries;
 
 };
 } // namespace Epetra

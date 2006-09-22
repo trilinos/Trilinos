@@ -310,19 +310,31 @@ NOX::Epetra::TestCompare::TestCompare(std::ostream& os, const NOX::Utils& utils)
 
 int 
 NOX::Epetra::TestCompare::testCrsMatrices(
-		 const Epetra_CrsMatrix& mat, 
-		 const Epetra_CrsMatrix& mat_expected, 
-		 double rtol, double atol, 
-		 const std::string& name)
+		 const Epetra_CrsMatrix& mat          , 
+		 const Epetra_CrsMatrix& mat_expected , 
+		 double rtol, double atol             ,
+		 const std::string& name              ,
+                 bool enforceStructure                  )
 {
-  int      passed = 0                 ;
+  if (utils.isPrintType(NOX::Utils::TestDetails)) 
+    os << std::endl << "\tChecking " << name << ":  ";
+  
+  int passed = 0;
+
+  if( !mat_expected.RowMap().SameAs( mat.RowMap() ) )
+  {
+    passed = 1;
+
+    os << "Failed." << std::endl;
+    os << std::endl << "\t\tRow maps are not compatible." << std::endl;
+
+    return passed;
+  }
+
   int      numEntries1,   numEntries2 ;
   int    * columns1   , * columns2    ;
   double * values1    , * values2     ;
 
-  if (utils.isPrintType(NOX::Utils::TestDetails)) 
-    os << std::endl << "\tChecking " << name << ":  ";
-  
   int    chkSize = 0   ;
   double maxVal  = 0.0 ;
   double infNorm = 0.0 ;
@@ -334,8 +346,15 @@ NOX::Epetra::TestCompare::testCrsMatrices(
     
     if( numEntries1 != numEntries2 )
     {
-      os << std::endl << "\t\tMatrix size is incompatible for local row " << row
-         << "\n\t\t\t expected " << numEntries1 << " columns, found " << numEntries2
+      if( enforceStructure )
+      {
+        os << std::endl << "\t\t\t";
+      }
+      else
+        os << std::endl << "\t\tWARNING: ";
+
+      os << "Matrix size is incompatible for Local Row " << row
+         << "\n\t\t\t..... expected " << numEntries1 << " columns, found " << numEntries2
          << std::endl;
 
       chkSize = 1;
@@ -345,8 +364,16 @@ NOX::Epetra::TestCompare::testCrsMatrices(
 
     if( 0 != passed )
     {
-      os << "Failed." << std::endl;
-      return passed;
+      if( enforceStructure )
+      {
+        os << "Failed." << std::endl;
+        return passed;
+      }
+      else
+      {
+        chkSize = 0;
+        passed  = 0;
+      }
     }
 
 
@@ -360,16 +387,22 @@ NOX::Epetra::TestCompare::testCrsMatrices(
 
     for( int col = 0; col < numEntries1; ++col )
     {
-      baseCol   = columns1[col];
-      testCol   = columns2[col];
+      baseCol = columns1[col];
+      testCol = columns2[col];
       baseVal = values1 [col];
       testVal = values2 [col];
   
       if( baseCol != testCol )
       {
-        os << std::endl << "\t\tColumn index for row " << row << " is incompatible."
-           << "\n\t\t\t expected " << baseCol << " index, found " << testCol
-           << std::endl;
+        if( enforceStructure )
+        {
+          os << std::endl << "\t\t\t";
+        }
+        else
+          os << std::endl << "\t\tWARNING: ";
+
+        os << "Column index for Local Row " << row << " is incompatible."
+           << "\n\t\t\t..... expected " << baseCol << " , found " << testCol << std::endl;
 
         chkCol = 1;
       }
@@ -378,8 +411,17 @@ NOX::Epetra::TestCompare::testCrsMatrices(
 
       if( 0 != passed )
       {
-        os << "Failed." << std::endl;
-        return passed;
+        if( enforceStructure )
+        {
+          os << "Failed." << std::endl;
+          return passed;
+        }
+        else
+        {
+          chkCol = 0;
+          passed = 0;
+          continue; // skip pvalue check
+        }
       }
 
       chkVal = fabs( testVal - baseVal ) / (atol + rtol * fabs(baseVal));
