@@ -6,6 +6,8 @@
 #ifndef SACADO_TRAD_H
 #define SACADO_TRAD_H
 
+#include "Sacado_trad_Traits.hpp"
+
 #include <stddef.h>
 #include <cmath>
 #include <math.h>
@@ -54,28 +56,22 @@ namespace Rad {
 #else
 extern "C" void _uninit_f2c(void *x, int type, long len);
 
-template <class A>
-class ValueType {
- public:
-  typedef typename A::value_type value_type;
+template <typename T>
+struct UninitType {};
+
+template <> 
+struct UninitType<float> {
+  static const int utype = 4;
 };
 
-template <> class ValueType<double> {
-public:
-  typedef double value_type;
-  enum { utype = 5 };
+template <> 
+struct UninitType<double> {
+  static const int utype = 5;
 };
 
-template <> class ValueType<float> {
-public:
-  typedef float value_type;
-  enum { utype = 4 };
-};
-
-template <typename T> class ValueType<std::complex<T> > {
-public:
-  typedef typename ValueType<T>::value_type value_type;
-  enum { utype = ValueType<T>::utype };
+template <typename T>
+struct UninitType< std::complex<T> > {
+  static const int utype = UninitType<T>::utype + 2;
 };
 
 #endif /*RAD_DEBUG_BLOCKKEEP > 0*/
@@ -1012,17 +1008,17 @@ ADcontext<Double>::new_ADmemblock(size_t len)
 		Mleft = rad_mleft_save;
 		if (Mleft < sizeof(First->memblk))
 			_uninit_f2c(Mbase + Mleft,
-				ValueType<Double>::utype,
+				UninitType<Double>::utype,
 			 	(sizeof(First->memblk) - Mleft)
-				/sizeof(typename ValueType<Double>::value_type));
+				/sizeof(typename Sacado::ValueType<Double>::type));
 		if (mb = Busy->next) {
 			if (!(mb0 = rad_Oldcurmb))
 				mb0 = (ADMemblock*)First0;
 			for(;; mb = mb->next) {
 				_uninit_f2c(mb->memblk,
-					ValueType<Double>::utype,
+					UninitType<Double>::utype,
 					sizeof(First->memblk)
-					/sizeof(typename ValueType<Double>::value_type));
+					/sizeof(typename Sacado::ValueType<Double>::type));
 				if (mb == mb0)
 					break;
 				}
@@ -1828,25 +1824,29 @@ T F copy(Ai x)
 #endif
 
 #ifdef SACADO_NAMESPACE
-namespace std {
-  using Sacado::Rad::exp;
-  using Sacado::Rad::log;
-  using Sacado::Rad::log10;
-  using Sacado::Rad::sqrt;
-  using Sacado::Rad::cos;
-  using Sacado::Rad::sin;
-  using Sacado::Rad::tan;
-  using Sacado::Rad::acos;
-  using Sacado::Rad::asin;
-  using Sacado::Rad::atan;
-  using Sacado::Rad::cosh;
-  using Sacado::Rad::sinh;
-  using Sacado::Rad::tanh;
-  using Sacado::Rad::abs;
-  using Sacado::Rad::fabs;
-  using Sacado::Rad::atan2;
-  using Sacado::Rad::pow;
-}
+#define SNS Sacado::Rad
+#else
+#define SNS // nothing
 #endif
+namespace std {
+  using SNS::exp;
+  using SNS::log;
+  using SNS::log10;
+  using SNS::sqrt;
+  using SNS::cos;
+  using SNS::sin;
+  using SNS::tan;
+  using SNS::acos;
+  using SNS::asin;
+  using SNS::atan;
+  using SNS::cosh;
+  using SNS::sinh;
+  using SNS::tanh;
+  using SNS::abs;
+  using SNS::fabs;
+  using SNS::atan2;
+  using SNS::pow;
+}
+#undef SNS
 
 #endif /* SACADO_TRAD_H */

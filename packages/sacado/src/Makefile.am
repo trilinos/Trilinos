@@ -62,6 +62,7 @@ SACADO_TAYLOR_H = \
 	$(srcdir)/Sacado_Taylor_Ops.hpp 
 
 SACADO_RAD_H = \
+	$(srcdir)/Sacado_trad_Traits.hpp \
 	$(srcdir)/Sacado_trad.hpp \
 	$(srcdir)/Sacado_rad.hpp
 
