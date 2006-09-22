@@ -32,9 +32,7 @@
 #ifndef SACADO_FAD_GENERALFADTRAITS_HPP
 #define SACADO_FAD_GENERALFADTRAITS_HPP
 
-#include "Sacado_ConfigDefs.h"
-#include "Sacado_ADTraits.hpp"
-#include "Sacado_Promote.hpp"
+#include "Sacado_Traits.hpp"
 
 // Forward declarations
 namespace Sacado {
@@ -45,36 +43,70 @@ namespace Sacado {
 
 namespace Sacado {
 
-  //! Specialization of ADTraits to GeneralFad types
+  //! Specialization of %Promote to GeneralFad types
   template <typename T, typename S>
-  class ADTraits< Fad::GeneralFad<T,S>, Fad::GeneralFad<T,S> > {
-  public:
-
-    typedef Fad::GeneralFad<T,S> promote;
+  struct Promote< Fad::GeneralFad<T,S>, Fad::GeneralFad<T,S> > {
+    typedef Fad::GeneralFad<T,S> type;
   };
 
-  //! Specialization of ADTraits to GeneralFad types
+  //! Specialization of %Promote to GeneralFad types
   template <typename L, typename R, typename S>
-  class ADTraits< Fad::GeneralFad<L,S>, R > {
-  public:
+  struct Promote< Fad::GeneralFad<L,S>, R > {
+    typedef typename ValueType< Fad::GeneralFad<L,S> >::type value_type_l;
+    typedef typename Promote<R,R>::type value_type_r;
+    typedef typename Promote<value_type_l,value_type_r>::type value_type;
 
-    typedef typename Fad::GeneralFad<L,S>::value_type value_type_l;
-    typedef typename Promote<R>::value_type value_type_r;
-    typedef typename ADTraits<value_type_l,value_type_r>::promote value_type;
-
-    typedef Fad::GeneralFad<value_type,S> promote;
+    typedef Fad::GeneralFad<value_type,S> type;
   };
 
-  //! Specialization of ADTraits to GeneralFad types
+  //! Specialization of %Promote to GeneralFad types
   template <typename L, typename R, typename S>
-  class ADTraits< L, Fad::GeneralFad<R,S> > {
+  struct Promote< L, Fad::GeneralFad<R,S> > {
   public:
 
-    typedef typename Promote<L>::value_type value_type_l;
-    typedef typename Fad::GeneralFad<R,S>::value_type value_type_r;
-    typedef typename ADTraits<value_type_l,value_type_r>::promote value_type;
+    typedef typename Promote<L,L>::type value_type_l;
+    typedef typename ValueType< Fad::GeneralFad<R,S> >::type value_type_r;
+    typedef typename Promote<value_type_l,value_type_r>::type value_type;
 
-    typedef Fad::GeneralFad<value_type,S> promote;
+    typedef Fad::GeneralFad<value_type,S> type;
+  };
+
+  //! Specialization of %ScalarType to GeneralFad types
+  template <typename T, typename S>
+  struct ScalarType< Fad::GeneralFad<T,S> > {
+    typedef T type;
+  };
+
+  //! Specialization of %ValueType to GeneralFad types
+  template <typename T, typename S>
+  struct ValueType< Fad::GeneralFad<T,S> > {
+    typedef T type;
+  };
+
+  //! Specialization of %ValueType to GeneralFad types
+  template <typename T, typename S>
+  struct ScalarValueType< Fad::GeneralFad<T,S> > {
+    typedef typename ScalarValueType<T>::type type;
+  };
+
+  //! Specialization of %IsADType to GeneralFad types
+  template <typename T, typename S>
+  struct IsADType< Fad::GeneralFad<T,S> > {
+    static const bool value = true;
+  };
+
+  //! Specialization of %IsADType to GeneralFad types
+  template <typename T, typename S>
+  struct IsScalarType< Fad::GeneralFad<T,S> > {
+    static const bool value = false;
+  };
+
+  //! Specialization of %Value to GeneralFad types
+  template <typename T, typename S>
+  struct Value< Fad::GeneralFad<T,S> > {
+    typedef typename ValueType< Fad::GeneralFad<T,S> >::type value_type;
+    static const value_type& eval(const Fad::GeneralFad<T,S>& x) { 
+      return x.val(); }
   };
 
 } // namespace Sacado

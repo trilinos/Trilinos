@@ -33,6 +33,7 @@
 #define SACADO_FAD_IMPLEMENTATION_HPP
 
 #include "Sacado_ConfigDefs.h"
+#include "Sacado_Fad_GeneralFadTraits.hpp"
 #include "Sacado_Fad_Expression.hpp"
 
 // forward decalarations
@@ -302,16 +303,20 @@ namespace Sacado {
       GeneralFad<T,Storage>& operator /= (const T& x);
 
       //! Addition-assignment operator with GeneralFad right-hand-side
-      template <typename S> GeneralFad<T,Storage>& operator += (const S& x);
+      template <typename S> 
+      GeneralFad<T,Storage>& operator += (const Expr<S>& x);
 
       //! Subtraction-assignment operator with GeneralFad right-hand-side
-      template <typename S> GeneralFad<T,Storage>& operator -= (const S& x);
+      template <typename S> 
+      GeneralFad<T,Storage>& operator -= (const Expr<S>& x);
   
       //! Multiplication-assignment operator with GeneralFad right-hand-side
-      template <typename S> GeneralFad<T,Storage>& operator *= (const S& x);
+      template <typename S> 
+      GeneralFad<T,Storage>& operator *= (const Expr<S>& x);
 
       //! Division-assignment operator with GeneralFad right-hand-side
-      template <typename S> GeneralFad<T,Storage>& operator /= (const S& x);
+      template <typename S> 
+      GeneralFad<T,Storage>& operator /= (const Expr<S>& x);
 
       //@}
 
@@ -321,7 +326,6 @@ namespace Sacado {
 
 } // namespace Sacado
 
-#include "Sacado_Fad_GeneralFadTraits.hpp"
 #include "Sacado_Fad_GeneralFadImp.hpp"
 #include "Sacado_Fad_Ops.hpp"
 

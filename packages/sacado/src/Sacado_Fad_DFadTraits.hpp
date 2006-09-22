@@ -29,90 +29,86 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef SACADO_CACHEFAD_DFADTRAITS_HPP
-#define SACADO_CACHEFAD_DFADTRAITS_HPP
+#ifndef SACADO_FAD_DFADTRAITS_HPP
+#define SACADO_FAD_DFADTRAITS_HPP
 
 #include "Sacado_Traits.hpp"
 
 // Forward declarations
 namespace Sacado {
-  namespace CacheFad {
-    template <typename T> class DFad;
+  namespace Fad {
+    template <typename T1, typename T2> class DFad;
   }
 }
 
 namespace Sacado {
 
   //! Specialization of %Promote to DFad types
-  template <typename T>
-  class Promote< CacheFad::DFad<T>, CacheFad::DFad<T> > {
-  public:
-
-    typedef CacheFad::DFad<T> type;
+  template <typename ValueT, typename ScalarT>
+  struct Promote< Fad::DFad<ValueT,ScalarT>, Fad::DFad<ValueT,ScalarT> > {
+    typedef Fad::DFad<ValueT,ScalarT> type;
   };
 
   //! Specialization of %Promote to DFad types
-  template <typename L, typename R>
-  class Promote< CacheFad::DFad<L>, R > {
-  public:
-
-    typedef typename ValueType< CacheFad::DFad<L> >::type value_type_l;
+  template <typename ValueT, typename ScalarT, typename R>
+  struct Promote< Fad::DFad<ValueT,ScalarT>, R > {
+    typedef typename ValueType< Fad::DFad<ValueT,ScalarT> >::type value_type_l;
     typedef typename Promote<R,R>::type value_type_r;
     typedef typename Promote<value_type_l,value_type_r>::type value_type;
 
-    typedef CacheFad::DFad<value_type> type;
+    typedef Fad::DFad<value_type,ScalarT> type;
   };
 
   //! Specialization of %Promote to DFad types
-  template <typename L, typename R>
-  class Promote< L, CacheFad::DFad<R> > {
+  template <typename L, typename ValueT, typename ScalarT>
+  struct Promote< L, Fad::DFad<ValueT, ScalarT> > {
   public:
 
     typedef typename Promote<L,L>::type value_type_l;
-    typedef typename ValueType< CacheFad::DFad<R> >::type value_type_r;
+    typedef typename ValueType< Fad::DFad<ValueT,ScalarT> >::type value_type_r;
     typedef typename Promote<value_type_l,value_type_r>::type value_type;
 
-    typedef CacheFad::DFad<value_type> type;
+    typedef Fad::DFad<value_type,ScalarT> type;
   };
 
   //! Specialization of %ScalarType to DFad types
-  template <typename T>
-  struct ScalarType< CacheFad::DFad<T> > {
-    typedef T type;
+  template <typename ValueT, typename ScalarT>
+  struct ScalarType< Fad::DFad<ValueT,ScalarT> > {
+    typedef ScalarT type;
   };
 
   //! Specialization of %ValueType to DFad types
-  template <typename T>
-  struct ValueType< CacheFad::DFad<T> > {
-    typedef T type;
+  template <typename ValueT, typename ScalarT>
+  struct ValueType< Fad::DFad<ValueT,ScalarT> > {
+    typedef ValueT type;
   };
 
    //! Specialization of %ScalarValueType to DFad types
-  template <typename T>
-  struct ScalarValueType< CacheFad::DFad<T> > {
-    typedef typename ScalarValueType< T >::type type;
+  template <typename ValueT, typename ScalarT>
+  struct ScalarValueType< Fad::DFad<ValueT,ScalarT> > {
+    typedef typename ScalarValueType< ValueT >::type type;
   };
 
   //! Specialization of %IsADType to DFad types
-  template <typename T>
-  struct IsADType< CacheFad::DFad<T> > {
+  template <typename ValueT, typename ScalarT>
+  struct IsADType< Fad::DFad<ValueT,ScalarT> > {
     static const bool value = true;
   };
 
   //! Specialization of %IsADType to DFad types
-  template <typename T>
-  struct IsScalarType< CacheFad::DFad<T> > {
+  template <typename ValueT, typename ScalarT>
+  struct IsScalarType< Fad::DFad<ValueT,ScalarT> > {
     static const bool value = false;
   };
 
   //! Specialization of %Value to DFad types
-  template <typename T>
-  struct Value< CacheFad::DFad<T> > {
-    typedef typename ValueType< CacheFad::DFad<T> >::type value_type;
-    static const value_type& eval(const CacheFad::DFad<T>& x) { 
+  template <typename ValueT, typename ScalarT>
+  struct Value< Fad::DFad<ValueT,ScalarT> > {
+    typedef typename ValueType< Fad::DFad<ValueT,ScalarT> >::type value_type;
+    static const value_type& eval(const Fad::DFad<ValueT,ScalarT>& x) { 
       return x.val(); }
   };
 
 } // namespace Sacado
 
-#endif // SACADO_CACHEFAD_DFADTRAITS_HPP
+#endif // SACADO_FAD_DFADTRAITS_HPP

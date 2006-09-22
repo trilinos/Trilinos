@@ -32,9 +32,7 @@
 #ifndef SACADO_TAYLOR_DTAYLORTRAITS_HPP
 #define SACADO_TAYLOR_DTAYLORTRAITS_HPP
 
-#include "Sacado_ConfigDefs.h"
-#include "Sacado_ADTraits.hpp"
-#include "Sacado_Promote.hpp"
+#include "Sacado_Traits.hpp"
 
 // Forward declarations
 namespace Sacado {
@@ -45,36 +43,74 @@ namespace Sacado {
 
 namespace Sacado {
 
-  //! Specialization of ADTraits to DTaylor types
+  //! Specialization of %Promote to DTaylor types
   template <typename T>
-  class ADTraits< Taylor::DTaylor<T>, Taylor::DTaylor<T> > {
+  class Promote< Taylor::DTaylor<T>, Taylor::DTaylor<T> > {
   public:
 
-    typedef Taylor::DTaylor<T> promote;
+    typedef Taylor::DTaylor<T> type;
   };
 
-  //! Specialization of ADTraits to DTaylor types
+  //! Specialization of %Promote to DTaylor types
   template <typename L, typename R>
-  class ADTraits< Taylor::DTaylor<L>, R > {
+  class Promote< Taylor::DTaylor<L>, R > {
   public:
 
-    typedef typename Taylor::DTaylor<L>::value_type value_type_l;
-    typedef typename Promote<R>::value_type value_type_r;
-    typedef typename ADTraits<value_type_l,value_type_r>::promote value_type;
+    typedef typename ValueType< Taylor::DTaylor<L> >::type value_type_l;
+    typedef typename Promote<R,R>::type value_type_r;
+    typedef typename Promote<value_type_l,value_type_r>::type value_type;
 
-    typedef Taylor::DTaylor<value_type> promote;
+    typedef Taylor::DTaylor<value_type> type;
   };
 
-  //! Specialization of ADTraits to DTaylor types
+  //! Specialization of %Promote to DTaylor types
   template <typename L, typename R>
-  class ADTraits< L, Taylor::DTaylor<R> > {
+  class Promote< L, Taylor::DTaylor<R> > {
   public:
 
-    typedef typename Promote<L>::value_type value_type_l;
-    typedef typename Taylor::DTaylor<R>::value_type value_type_r;
-    typedef typename ADTraits<value_type_l,value_type_r>::promote value_type;
+    typedef typename Promote<L,L>::value_type value_type_l;
+    typedef typename ValueType< Taylor::DTaylor<R> >::type value_type_r;
+    typedef typename Promote<value_type_l,value_type_r>::type value_type;
 
-    typedef Taylor::DTaylor<value_type> promote;
+    typedef Taylor::DTaylor<value_type> type;
+  };
+
+  //! Specialization of %ScalarType to DFad types
+  template <typename T>
+  struct ScalarType< Taylor::DTaylor<T> > {
+    typedef T type;
+  };
+
+  //! Specialization of %ValueType to DFad types
+  template <typename T>
+  struct ValueType< Taylor::DTaylor<T> > {
+    typedef T type;
+  };
+
+   //! Specialization of %ScalarValueType to DFad types
+  template <typename T>
+  struct ScalarValueType< Taylor::DTaylor<T> > {
+    typedef typename ScalarValueType< T >::type type;
+  };
+
+  //! Specialization of %IsADType to DFad types
+  template <typename T>
+  struct IsADType< Taylor::DTaylor<T> > {
+    static const bool value = true;
+  };
+
+  //! Specialization of %IsADType to DFad types
+  template <typename T>
+  struct IsScalarType< Taylor::DTaylor<T> > {
+    static const bool value = false;
+  };
+
+  //! Specialization of %Value to DFad types
+  template <typename T>
+  struct Value< Taylor::DTaylor<T> > {
+    typedef typename ValueType< Taylor::DTaylor<T> >::type value_type;
+    static const value_type& eval(const Taylor::DTaylor<T>& x) { 
+      return x.val(); }
   };
 
 } // namespace Sacado

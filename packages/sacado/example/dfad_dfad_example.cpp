@@ -78,7 +78,7 @@ int main(int argc, char **argv)
   // Fad objects
   Sacado::Fad::DFad< Sacado::Fad::DFad<double> > afad(num_deriv, 0, a);
   Sacado::Fad::DFad< Sacado::Fad::DFad<double> > bfad(num_deriv, 1, b);
-  Sacado::Fad::DFad< Sacado::Fad::DFad<double> > cfad(c);
+  Sacado::Fad::DFad< Sacado::Fad::DFad<double> > cfad = c;
   Sacado::Fad::DFad< Sacado::Fad::DFad<double> > rfad;
 
   afad.val() = Sacado::Fad::DFad<double>(num_deriv, 0, a);

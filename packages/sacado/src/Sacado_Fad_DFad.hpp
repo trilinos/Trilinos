@@ -34,6 +34,7 @@
 
 #include <valarray>
 #include "Sacado_Fad_GeneralFad.hpp"
+#include "Sacado_Fad_DFadTraits.hpp"
 
 namespace Sacado {
 
@@ -50,9 +51,20 @@ namespace Sacado {
      * of derivative components is not known at compile time.  The user
      * interface is split between the Sacado::Fad::GeneralFad and 
      * and Sacado::Fad::Implementation classes.
+     *
+     * The class is templated on two types, \c ValueT and \c ScalarT.  Type
+     * \c ValueT is the type for values the derivative class holds, while
+     * type \c ScalarT is the type of basic scalars in the code being
+     * differentiated (usually \c doubles).  When computing first derivatives, 
+     * these two types are generally the same,  However when computing
+     * higher derivatives, \c ValueT may be DFad<double> while \c ScalarT will
+     * still be \c double.  Usually \c ScalarT does not need to be explicitly
+     * specified since it can be deduced from \c ValueT through the template
+     * metafunction ScalarValueType.
      */
-    template <typename T>
-    class DFad : public GeneralFad<T,DynamicStorage<T> > {
+    template <typename ValueT, 
+	      typename ScalarT = typename ScalarValueType<ValueT>::type >
+    class DFad : public GeneralFad<ValueT,DynamicStorage<ValueT> > {
 
     public:
 
@@ -65,20 +77,27 @@ namespace Sacado {
       /*!
        * Initializes value to 0 and derivative array is empty
        */
-      DFad() :  GeneralFad<T,DynamicStorage<T> >() {}
+      DFad() : GeneralFad< ValueT,DynamicStorage<ValueT> >() {}
 
-      //! Constructor with supplied value \c x
+      //! Constructor with supplied value \c x of type ValueT
       /*!
        * Initializes value to \c x and derivative array is empty
        */
-      DFad(const T & x) : GeneralFad<T,DynamicStorage<T> >(x) {}
+      DFad(const ValueT& x) : GeneralFad< ValueT,DynamicStorage<ValueT> >(x) {}
+
+      //! Constructor with supplied value \c x of type ScalarT
+      /*!
+       * Initializes value to \c ValueT(x) and derivative array is empty
+       */
+      DFad(const ScalarT& x) : 
+	GeneralFad< ValueT,DynamicStorage<ValueT> >(ValueT(x)) {}
 
       //! Constructor with size \c sz and value \c x
       /*!
        * Initializes value to \c x and derivative array 0 of length \c sz
        */
-      DFad(const int sz, const T & x) : 
-	GeneralFad<T,DynamicStorage<T> >(sz,x) {}
+      DFad(const int sz, const ValueT& x) : 
+	GeneralFad< ValueT,DynamicStorage<ValueT> >(sz,x) {}
 
       //! Constructor with size \c sz, index \c i, and value \c x
       /*!
@@ -86,22 +105,81 @@ namespace Sacado {
        * as row \c i of the identity matrix, i.e., sets derivative component
        * \c i to 1 and all other's to zero.
        */
-      DFad(const int sz, const int i, const T & x) : 
-	GeneralFad<T,DynamicStorage<T> >(sz,i,x) {}
+      DFad(const int sz, const int i, const ValueT & x) : 
+	GeneralFad< ValueT,DynamicStorage<ValueT> >(sz,i,x) {}
 
       //! Copy constructor
-      DFad(const DFad& x) : GeneralFad<T,DynamicStorage<T> >(x) {}
+      DFad(const DFad& x) : GeneralFad< ValueT,DynamicStorage<ValueT> >(x) {}
 
       //! Copy constructor from any Expression object
       template <typename S> DFad(const Expr<S>& x) : 
-	GeneralFad<T,DynamicStorage<T> >(x) {}
+	GeneralFad< ValueT,DynamicStorage<ValueT> >(x) {}
 
       //@}
 
       //! Destructor
       ~DFad() {}
 
-    }; // class DFad<T>
+    }; // class DFad<ScalarT,ValueT>
+
+    //! Forward-mode AD class using dynamic memory allocation
+    /*!
+     * This is the specialization of DFad<ValueT,ScalarT> for when
+     * \c ValueT and \c ScalarT are the same type.  It removes an extra
+     * constructor that would be duplicated in this case.
+     */
+    template <typename ValueT>
+    class DFad<ValueT,ValueT> : 
+      public GeneralFad<ValueT,DynamicStorage<ValueT> > {
+
+    public:
+
+      /*!
+       * @name Initialization methods
+       */
+      //@{
+
+      //! Default constructor.
+      /*!
+       * Initializes value to 0 and derivative array is empty
+       */
+      DFad() : GeneralFad< ValueT,DynamicStorage<ValueT> >() {}
+
+      //! Constructor with supplied value \c x of type ValueT
+      /*!
+       * Initializes value to \c x and derivative array is empty
+       */
+      DFad(const ValueT& x) : GeneralFad< ValueT,DynamicStorage<ValueT> >(x) {}
+
+      //! Constructor with size \c sz and value \c x
+      /*!
+       * Initializes value to \c x and derivative array 0 of length \c sz
+       */
+      DFad(const int sz, const ValueT& x) : 
+	GeneralFad< ValueT,DynamicStorage<ValueT> >(sz,x) {}
+
+      //! Constructor with size \c sz, index \c i, and value \c x
+      /*!
+       * Initializes value to \c x and derivative array of length \c sz
+       * as row \c i of the identity matrix, i.e., sets derivative component
+       * \c i to 1 and all other's to zero.
+       */
+      DFad(const int sz, const int i, const ValueT& x) : 
+	GeneralFad< ValueT,DynamicStorage<ValueT> >(sz,i,x) {}
+
+      //! Copy constructor
+      DFad(const DFad& x) : GeneralFad< ValueT,DynamicStorage<ValueT> >(x) {}
+
+      //! Copy constructor from any Expression object
+      template <typename S> DFad(const Expr<S>& x) : 
+	GeneralFad< ValueT,DynamicStorage<ValueT> >(x) {}
+
+      //@}
+
+      //! Destructor
+      ~DFad() {}
+
+    }; // class DFad<ValueT>
 
     //! Derivative array storage class using dynamic memory allocation
     /*!

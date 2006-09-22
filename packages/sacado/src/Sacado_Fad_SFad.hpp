@@ -33,6 +33,7 @@
 #define SACADO_FAD_SFAD_HPP
 
 #include "Sacado_Fad_GeneralFad.hpp"
+#include "Sacado_Fad_SFadTraits.hpp"
 
 namespace Sacado {
 
@@ -52,9 +53,20 @@ namespace Sacado {
      * constructor or the \c n argument to diff().  The user
      * interface is split between the Sacado::Fad::GeneralFad and 
      * and Sacado::Fad::Implementation classes.
+     *
+     * The class is templated on two types, \c ValueT and \c ScalarT.  Type
+     * \c ValueT is the type for values the derivative class holds, while
+     * type \c ScalarT is the type of basic scalars in the code being
+     * differentiated (usually \c doubles).  When computing first derivatives, 
+     * these two types are generally the same,  However when computing
+     * higher derivatives, \c ValueT may be SFad<double> while \c ScalarT will
+     * still be \c double.  Usually \c ScalarT does not need to be explicitly
+     * specified since it can be deduced from \c ValueT through the template
+     * metafunction ScalarValueType.
      */
-    template <typename T, int Num>
-    class SFad : public GeneralFad<T,StaticStorage<T,Num> > {
+    template <typename ValueT, int Num,
+	      typename ScalarT = typename ScalarValueType<ValueT>::type >
+    class SFad : public GeneralFad<ValueT,StaticStorage<ValueT,Num> > {
 
     public:
 
@@ -67,20 +79,28 @@ namespace Sacado {
       /*!
        * Initializes value to 0 and derivative array is empty
        */
-      SFad() : GeneralFad<T,StaticStorage<T,Num> >() {}
+      SFad() : GeneralFad< ValueT,StaticStorage<ValueT,Num> >() {}
 
       //! Constructor with supplied value \c x
       /*!
        * Initializes value to \c x and derivative array is empty
        */
-      SFad(const T & x) : GeneralFad<T,StaticStorage<T,Num> >(x) {}
+      SFad(const ValueT & x) : 
+	GeneralFad< ValueT,StaticStorage<ValueT,Num> >(x) {}
+
+      //! Constructor with supplied value \c x of type ScalarT
+      /*!
+       * Initializes value to \c ValueT(x) and derivative array is empty
+       */
+      SFad(const ScalarT& x) : 
+	GeneralFad< ValueT,StaticStorage<ValueT,Num> >(ValueT(x)) {}
 
       //! Constructor with size \c sz and value \c x
       /*!
        * Initializes value to \c x and derivative array 0 of length \c sz
        */
-      SFad(const int sz, const T & x) : 
-	GeneralFad<T,StaticStorage<T,Num> >(sz,x) {}
+      SFad(const int sz, const ValueT & x) : 
+	GeneralFad< ValueT,StaticStorage<ValueT,Num> >(sz,x) {}
 
       //! Constructor with size \c sz, index \c i, and value \c x
       /*!
@@ -88,22 +108,84 @@ namespace Sacado {
        * as row \c i of the identity matrix, i.e., sets derivative component
        * \c i to 1 and all other's to zero.
        */
-      SFad(const int sz, const int i, const T & x) : 
-	GeneralFad<T,StaticStorage<T,Num> >(sz,i,x) {}
+      SFad(const int sz, const int i, const ValueT & x) : 
+	GeneralFad< ValueT,StaticStorage<ValueT,Num> >(sz,i,x) {}
 
       //! Copy constructor
-      SFad(const SFad& x) : GeneralFad<T,StaticStorage<T,Num> >(x) {}
+      SFad(const SFad& x) : 
+	GeneralFad< ValueT,StaticStorage<ValueT,Num> >(x) {}
 
       //! Copy constructor from any Expression object
       template <typename S> SFad(const Expr<S>& x) : 
-	GeneralFad<T,StaticStorage<T,Num> >(x) {}
+	GeneralFad< ValueT,StaticStorage<ValueT,Num> >(x) {}
 
       //@}
 
       //! Destructor
       ~SFad() {}
 
-    }; // class SFad<T>
+    }; // class SFad<ValueT,Num,ScalarT>
+
+    //! Forward-mode AD class using static memory allocation
+    /*!
+     * This is the specialization of SFad<ValueT,ScalarT> for when
+     * \c ValueT and \c ScalarT are the same type.  It removes an extra
+     * constructor that would be duplicated in this case.
+     */
+    template <typename ValueT, int Num>
+    class SFad<ValueT,Num,ValueT> : 
+      public GeneralFad<ValueT,StaticStorage<ValueT,Num> > {
+
+    public:
+
+      /*!
+       * @name Initialization methods
+       */
+      //@{
+
+      //! Default constructor.
+      /*!
+       * Initializes value to 0 and derivative array is empty
+       */
+      SFad() : GeneralFad< ValueT,StaticStorage<ValueT,Num> >() {}
+
+      //! Constructor with supplied value \c x
+      /*!
+       * Initializes value to \c x and derivative array is empty
+       */
+      SFad(const ValueT & x) : 
+	GeneralFad< ValueT,StaticStorage<ValueT,Num> >(x) {}
+
+      //! Constructor with size \c sz and value \c x
+      /*!
+       * Initializes value to \c x and derivative array 0 of length \c sz
+       */
+      SFad(const int sz, const ValueT & x) : 
+	GeneralFad< ValueT,StaticStorage<ValueT,Num> >(sz,x) {}
+
+      //! Constructor with size \c sz, index \c i, and value \c x
+      /*!
+       * Initializes value to \c x and derivative array of length \c sz
+       * as row \c i of the identity matrix, i.e., sets derivative component
+       * \c i to 1 and all other's to zero.
+       */
+      SFad(const int sz, const int i, const ValueT & x) : 
+	GeneralFad< ValueT,StaticStorage<ValueT,Num> >(sz,i,x) {}
+
+      //! Copy constructor
+      SFad(const SFad& x) : 
+	GeneralFad< ValueT,StaticStorage<ValueT,Num> >(x) {}
+
+      //! Copy constructor from any Expression object
+      template <typename S> SFad(const Expr<S>& x) : 
+	GeneralFad< ValueT,StaticStorage<ValueT,Num> >(x) {}
+
+      //@}
+
+      //! Destructor
+      ~SFad() {}
+
+    }; // class SFad<ValueT,Num>
 
     //! Derivative array storage class using static memory allocation
     /*!

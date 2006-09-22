@@ -43,7 +43,9 @@ SACADO_FAD_H = \
 	$(srcdir)/Sacado_Fad_Expression.hpp \
 	$(srcdir)/Sacado_Fad_Ops.hpp \
 	$(srcdir)/Sacado_Fad_DFad.hpp \
-	$(srcdir)/Sacado_Fad_SFad.hpp
+	$(srcdir)/Sacado_Fad_DFadTraits.hpp \
+	$(srcdir)/Sacado_Fad_SFad.hpp \
+	$(srcdir)/Sacado_Fad_SFadTraits.hpp
 
 SACADO_CACHEFAD_H = \
 	$(srcdir)/Sacado_CacheFad_DFadTraits.hpp \
@@ -70,8 +72,7 @@ SACADO_RAD = \
 SACADO_H = \
 	$(srcdir)/Sacado_ConfigDefs.h \
 	$(srcdir)/Sacado_Version.hpp \
-	$(srcdir)/Sacado_ADTraits.hpp \
-	$(srcdir)/Sacado_Promote.hpp \
+	$(srcdir)/Sacado_Traits.hpp \
 	$(srcdir)/Sacado.hpp \
 	$(SACADO_FAD_H) \
 	$(SACADO_CACHEFAD_H) \

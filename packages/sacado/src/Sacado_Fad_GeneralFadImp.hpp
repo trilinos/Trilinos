@@ -159,7 +159,7 @@ Sacado::Fad::GeneralFad<T,Storage>::operator /= (const T& val)
 template <typename T, typename Storage> 
 template <typename S> 
 inline Sacado::Fad::GeneralFad<T,Storage>& 
-Sacado::Fad::GeneralFad<T,Storage>::operator += (const S& x)
+Sacado::Fad::GeneralFad<T,Storage>::operator += (const Sacado::Fad::Expr<S>& x)
 {
   int xsz = x.size(), sz = Storage::size();
 
@@ -196,7 +196,7 @@ Sacado::Fad::GeneralFad<T,Storage>::operator += (const S& x)
 template <typename T, typename Storage> 
 template <typename S> 
 inline Sacado::Fad::GeneralFad<T,Storage>& 
-Sacado::Fad::GeneralFad<T,Storage>::operator -= (const S& x)
+Sacado::Fad::GeneralFad<T,Storage>::operator -= (const Sacado::Fad::Expr<S>& x)
 {
   int xsz = x.size(), sz = Storage::size();
 
@@ -234,7 +234,7 @@ Sacado::Fad::GeneralFad<T,Storage>::operator -= (const S& x)
 template <typename T, typename Storage> 
 template <typename S> 
 inline Sacado::Fad::GeneralFad<T,Storage>& 
-Sacado::Fad::GeneralFad<T,Storage>::operator *= (const S& x)
+Sacado::Fad::GeneralFad<T,Storage>::operator *= (const Sacado::Fad::Expr<S>& x)
 {
   int xsz = x.size(), sz = Storage::size();
   T xval = x.val();
@@ -278,7 +278,7 @@ Sacado::Fad::GeneralFad<T,Storage>::operator *= (const S& x)
 template <typename T, typename Storage>
 template <typename S> 
 inline Sacado::Fad::GeneralFad<T,Storage>& 
-Sacado::Fad::GeneralFad<T,Storage>::operator /= (const S& x)
+Sacado::Fad::GeneralFad<T,Storage>::operator /= (const Sacado::Fad::Expr<S>& x)
 {
   int xsz = x.size(), sz = Storage::size();
   T xval = x.val();

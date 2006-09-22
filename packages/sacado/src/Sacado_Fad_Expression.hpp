@@ -32,7 +32,7 @@
 #ifndef SACADO_FAD_EXPRESSION_HPP
 #define SACADO_FAD_EXPRESSION_HPP
 
-#include "Sacado_ADTraits.hpp"
+#include "Sacado_Traits.hpp"
 
 namespace Sacado {
 
@@ -190,8 +190,8 @@ namespace Sacado {
       typedef typename ExprT2::value_type value_type_2;
 
       //! Typename of the expression values
-      typedef typename Sacado::ADTraits<value_type_1,
-					 value_type_2>::promote value_type;
+      typedef typename Sacado::Promote<value_type_1,
+				       value_type_2>::type value_type;
 
       //! Constructor
       BinaryExpr(const ExprT1& expr1, const ExprT2& expr2) : 
