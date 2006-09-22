@@ -44,23 +44,33 @@ dfad_example_SOURCES = $(srcdir)/dfad_example.cpp
 dfad_example_CXXFLAGS = \
 	-I$(top_srcdir)/src \
 	-I$(top_builddir)/src
-dfad_example_DEPENDENCIES =  
-dfad_example_LDADD =
+dfad_example_DEPENDENCIES = $(top_builddir)/src/libsacado.a
+dfad_example_LDADD = -L$(top_builddir)/src -lsacado $(LIBS) $(FLIBS)
 
 ad_example_SOURCES = $(srcdir)/ad_example.cpp
 ad_example_CXXFLAGS = $(dfad_example_CXXFLAGS)
+ad_example_DEPENDENCIES = $(dfad_example_DEPENDENCIES)
+ad_example_LDADD = $(dfad_example_LDADD)
 
 dfad_dfad_example_SOURCES = $(srcdir)/dfad_dfad_example.cpp
 dfad_dfad_example_CXXFLAGS = $(dfad_example_CXXFLAGS)
+dfad_dfad_example_DEPENDENCIES = $(dfad_example_DEPENDENCIES)
+dfad_dfad_example_LDADD = $(dfad_example_LDADD)
 
 sfad_example_SOURCES = $(srcdir)/sfad_example.cpp
 sfad_example_CXXFLAGS =  $(dfad_example_CXXFLAGS)
+sfad_example_DEPENDENCIES = $(dfad_example_DEPENDENCIES)
+sfad_example_LDADD = $(dfad_example_LDADD)
 
 trad_example_SOURCES = $(srcdir)/trad_example.cpp
 trad_example_CXXFLAGS = $(dfad_example_CXXFLAGS)
+trad_example_DEPENDENCIES = $(dfad_example_DEPENDENCIES)
+trad_example_LDADD = $(dfad_example_LDADD)
 
 dtaylor_example_SOURCES = $(srcdir)/dtaylor_example.cpp
 dtaylor_example_CXXFLAGS = $(dfad_example_CXXFLAGS)
+dtaylor_example_DEPENDENCIES = $(dfad_example_DEPENDENCIES)
+dtaylor_example_LDADD = $(dfad_example_LDADD)
 
 RunValgrind_SOURCES = \
 	$(srcdir)/RunValgrind \
