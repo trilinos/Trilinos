@@ -112,6 +112,14 @@ public:
   Teuchos::RefCountPtr<NOX::Solver::Manager> & getCompositeSolver()
   {  return compositeSolver; }
 
+  // Get mapping of problem indices to composite
+  map<int, Teuchos::RefCountPtr<Epetra_IntVector> > & getProblemToCompositeIndices()
+  {  return ProblemToCompositeIndices; }
+
+  // Get jacobian operator
+  Teuchos::RefCountPtr<Epetra_Operator> & getJacobianOperator()
+  {  return jacOperator; }
+
   // Create a dependence of Problem A equations on Problem B variables
   void createDependency(string nameA, string nameB, bool interfacialCoupling = false);
 

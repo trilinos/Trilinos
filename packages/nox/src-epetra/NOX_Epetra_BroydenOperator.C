@@ -610,15 +610,15 @@ void
 BroydenOperator::removeEntriesFromBroydenUpdate( const Epetra_CrsGraph & graph )
 {
 
-  int maxRemoveColDim  = graph.NumMyCols();
   int numRemoveIndices ;
+  int * removeIndPtr   ;
   int ierr             ;
 
-  vector<int> removeIndices(maxRemoveColDim);
+  cout << graph << endl;
 
   for( int row = 0; row < graph.NumMyRows(); ++row) 
   {
-    ierr = graph.ExtractMyRowCopy( row, maxRemoveColDim, numRemoveIndices, &removeIndices[0] );
+    ierr = graph.ExtractMyRowView( row, numRemoveIndices, removeIndPtr );
     if( ierr )
     {
       cout << "ERROR (" << ierr << ") : "
@@ -629,12 +629,10 @@ BroydenOperator::removeEntriesFromBroydenUpdate( const Epetra_CrsGraph & graph )
 
     if( 0 != numRemoveIndices )
     {
-      removeIndices.resize(numRemoveIndices);
-
       // Create a map for quick queries
       map<int, bool> removeIndTable;
       for( int k = 0; k < numRemoveIndices; ++k )
-        removeIndTable[ removeIndices[k] ] = true;
+        removeIndTable[ graph.ColMap().GID(removeIndPtr[k]) ] = true;
 
       // Get our matrix column indices for the current row
       int numOrigIndices = 0;

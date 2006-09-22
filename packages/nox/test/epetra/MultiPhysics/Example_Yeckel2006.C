@@ -86,6 +86,9 @@
 // Added to allow timings
 #include "Epetra_Time.h"
 
+// Added temporarily
+#include "Epetra_IntVector.h"
+
 using namespace std;
 
 int main(int argc, char *argv[])
@@ -310,6 +313,65 @@ int main(int argc, char *argv[])
   problemManager.createDependency(Reg2_PDE, Reg1_PDE);
 
   problemManager.registerComplete();
+
+  // A consistencyy check
+  if( 1 )
+  {
+    Epetra_CrsGraph maskGraph(Copy, problemManager.getCompositeSoln()->Map(), 0);
+
+    map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemIter = problemManager.getProblems().begin();
+    map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemLast = problemManager.getProblems().end();
+
+    // Loop over each problem being managed and ascertain its graph as well
+    // as its graph from its dependencies
+    for( ; problemIter != problemLast; ++problemIter ) 
+    {
+      GenericEpetraProblem & problem = *(*problemIter).second;
+      int probId = problem.getId();
+
+      // Get the indices map for copying data from this problem into 
+      // the composite problem
+      map<int, Teuchos::RefCountPtr<Epetra_IntVector> > & problemToCmpositeIndices = 
+        problemManager.getProblemToCompositeIndices();
+      Epetra_IntVector & problemIndices = *(problemToCmpositeIndices[probId]);
+
+      // Get known dependencies on the other problem
+      for( unsigned int k = 0; k < problem.getDependentProblems().size(); ++k) 
+      {
+        // Get the needed objects for the depend problem
+        GenericEpetraProblem & dependProblem = *(problemManager.getProblems()[problem.getDependentProblems()[k]]);
+        int dependId                         =  dependProblem.getId();
+        Epetra_IntVector & dependIndices     = *(problemManager.getProblemToCompositeIndices()[dependId]);
+
+        map<int, vector<int> > offBlockIndices;
+        problem.getOffBlockIndices( offBlockIndices );
+
+        map<int, vector<int> >::iterator indIter     = offBlockIndices.begin(),
+                                         indIter_end = offBlockIndices.end()   ;
+
+        for( ; indIter != indIter_end; ++indIter )
+        {
+          int compositeRow = problemIndices[(*indIter).first];
+          vector<int> & colIndices = (*indIter).second;
+
+          // Convert column indices to composite values
+          for( unsigned int cols = 0; cols < colIndices.size(); ++cols )
+            colIndices[cols] = dependIndices[ colIndices[cols] ];
+
+          maskGraph.InsertGlobalIndices( compositeRow, colIndices.size(), &colIndices[0] );
+        }
+      }
+    }
+     maskGraph.FillComplete();
+
+     cout << maskGraph << endl;
+
+     NOX::Epetra::BroydenOperator * broydenOp = dynamic_cast<NOX::Epetra::BroydenOperator*>(
+       problemManager.getJacobianOperator().get() );
+
+    broydenOp->removeEntriesFromBroydenUpdate( maskGraph );
+    broydenOp->outputActiveEntries();
+  }
 
   problemManager.outputStatus(std::cout);
 
