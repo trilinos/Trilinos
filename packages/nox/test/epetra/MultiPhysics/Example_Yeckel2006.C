@@ -370,7 +370,9 @@ int main(int argc, char *argv[])
        problemManager.getJacobianOperator().get() );
 
     broydenOp->removeEntriesFromBroydenUpdate( maskGraph );
+#ifdef HAVE_NOX_DEBUG
     broydenOp->outputActiveEntries();
+#endif
   }
 
   problemManager.outputStatus(std::cout);
