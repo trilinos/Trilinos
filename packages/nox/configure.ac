@@ -970,6 +970,7 @@ AC_CONFIG_FILES([
 		test/epetra/LOCA_Tcubed/Makefile
 		test/epetra/LOCA_Pitchfork/Makefile
 		test/epetra/LOCA_Brusselator/Makefile
+		test/epetra/LOCA_Brusselator_xyzt/Makefile
                 test/epetra/1Dfem/Makefile
                 test/epetra/MultiPhysics/Makefile
                 test/epetra/DS6.5.1/Makefile

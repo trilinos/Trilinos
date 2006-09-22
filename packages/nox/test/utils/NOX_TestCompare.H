@@ -140,8 +140,6 @@ namespace NOX {
                                 const NOX::Abstract::MultiVector& mvec_expected, 
                                 double rtol, double atol, const std::string& name);
 
-  protected:
-    
     /*!
      * Computes the vector norm
      * \f[
