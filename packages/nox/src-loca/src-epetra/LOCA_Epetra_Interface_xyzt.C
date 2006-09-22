@@ -73,7 +73,7 @@ xyzt(
   rowStencil(0),
   rowIndex(0), 
   precPrintParams(precPrintParams_), 
-  precLSParams(precLSParams_),
+  precLSParams(precLSParams_)
 {
    if (precLSParams)
      isPeriodic = precLSParams_->get("Periodic",false);
