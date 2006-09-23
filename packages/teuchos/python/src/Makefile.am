@@ -53,7 +53,10 @@ INTERFACES = Teuchos.i
 WRAPPERS   = $(INTERFACES:.i=_wrap.cpp)
 PROXIES    = $(INTERFACES:.i=.py      )
 
-EXTRA_DIST = Teuchos.i setup.py
+EXTRA_DIST = Teuchos_PythonParameter.hpp \
+	     Teuchos_PyDictParameterList.hpp \
+	     Teuchos.i \
+	     setup.py
 
 build: $(WRAPPERS) $(tempdir)
 	$(PYTHON) $(srcdir)/setup.py build

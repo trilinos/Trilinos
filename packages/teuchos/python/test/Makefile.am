@@ -29,8 +29,10 @@
 ## #######################################################################
 ## Additional files to be included in distribution for 'make dist'
 ## #######################################################################
-EXTRA_DIST = \
-	setpath.py testTeuchos.py
+EXTRA_DIST = setpath.py \
+	     testParameterList.py \
+	     testPyDictParameterList.py \
+	     testTeuchos.py
 
 ## #######################################################################
 ## Files to be deleted by 'make maintainer-clean'

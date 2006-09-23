@@ -74,8 +74,10 @@ in-depth information."
 %ignore *::operator=;
 %ignore *::print;
 %ignore Teuchos::ParameterList::set(const string &, ParameterList);
+%ignore Teuchos::ParameterList::set(const string &, char[ ]);
 %ignore Teuchos::ParameterList::set(const string &, const char[ ]);
 %ignore Teuchos::ParameterList::setEntry(const string &, const ParameterEntry &);
+%ignore Teuchos::ParameterList::get(const string &, char[ ]);
 %ignore Teuchos::ParameterList::get(const string &, const char[ ]);
 %ignore Teuchos::ParameterList::getPtr(const string &);
 %ignore Teuchos::ParameterList::getPtr(const string &) const;
@@ -297,19 +299,31 @@ using namespace std;
 
 %}
 
-// Typemaps.  These are intended for other packages that import this
-// interface file.  They allow C++ methods that expect ParameterList&
+// Typemaps.  These are generally intended for other packages that
+// import this interface file.
+
+// These typemaps allow C++ methods that expect ParameterList&
 // arguments to have python wrappers that accept ParameterList,
 // PyDictParameterList, or python dictionary arguments.  C++ methods
 // that output ParameterLists will have python wrappers that output
 // PyDictParameterLists.
+
 %typemap(in) Teuchos::ParameterList & (bool cleanup = false)
 {
   $1 = Teuchos::pyObjectToPyDictParameterList($input,&cleanup);
   if ($1 == NULL) SWIG_fail;
 }
 
-%typemap(freearg) Teuchos::ParameterList&
+%typecheck(200) Teuchos::ParameterList &
+{
+  // Accept PyDicts, ParameterLists or PyDictParameterLists
+  void * tmp = NULL;
+  $1 = PyDict_Check($input) ? 1 : 0;
+  if (!$1) if (SWIG_CheckState(SWIG_Python_ConvertPtr($input, &tmp,
+						      $1_descriptor, 0))) $1 = 1;
+}
+
+%typemap(freearg) Teuchos::ParameterList &
 {
   if (cleanup$argnum && $1) delete($1);
 }
@@ -320,3 +334,39 @@ using namespace std;
   Teuchos::PyDictParameterList * pdpl = new Teuchos::PyDictParameterList(*$1);
   $result = SWIG_NewPointerObj(pdpl, PDPL_type, 1);
 }
+
+// These typemap macros allow developers to generate typemaps for any
+// classes that are wrapped in RefCountPtr as function or method
+// arguments.
+%define TEUCHOS_RCP_TYPEMAPS(TypeName)
+
+%typemap(in) Teuchos::RefCountPtr< TypeName > &
+            (Teuchos::RefCountPtr< TypeName > arg)
+{
+  static void           * arg_ptr  = NULL;
+  if (SWIG_CheckState(SWIG_Python_ConvertPtr($input,&arg_ptr,
+					     $descriptor(TypeName*),0))) {
+    arg = Teuchos::rcp(reinterpret_cast<TypeName*>(arg_ptr),false);
+    $1 = &arg;
+  }
+  else {
+    PyErr_SetString(PyExc_TypeError,"in method '" "$symname" "', argument " "$argnum"
+		    " of type 'TypeName'");
+    SWIG_fail;
+  }
+}
+
+%typecheck(300) Teuchos::RefCountPtr< TypeName > &
+{
+  void * tmp = NULL;
+  $1 = SWIG_CheckState(SWIG_Python_ConvertPtr($input, &tmp,
+					      $descriptor(TypeName*), 0)) ? 1 : 0;
+}
+
+%typemap(out) Teuchos::RefCountPtr< TypeName > &
+{
+  TypeName * out_ptr = $result->get();
+  $result = SWIG_NewPointerObj(out_ptr,$descriptor(TypeName*),0);
+}
+
+%enddef

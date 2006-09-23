@@ -254,8 +254,10 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-EXTRA_DIST = \
-	setpath.py testTeuchos.py
+EXTRA_DIST = setpath.py \
+	     testParameterList.py \
+	     testPyDictParameterList.py \
+	     testTeuchos.py
 
 MAINTAINERCLEANFILES = Makefile.in
 
