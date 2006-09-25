@@ -1,0 +1,224 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="filename" content="tutorial.html">
+   <meta name="review" content="xx/xx/xx">
+   <meta name="subject" content="Zoltan Tutorial Guide">
+   <meta name="sandia.approval_type" content="formal">
+   <meta name="sandia.approved" content="SANDxx-xxxx">
+   <meta name="sandia.create_date" content="05/30/06">
+   <meta name="keywords" content="Zoltan, Zoltan tutorial, Zoltan dynamic load balancing library, Zoltan parallel computing">
+   <meta name="description" content="Zoltan:  Tutorial">
+   <title>Zoltan Tutorial</title>
+<!-----------------------------------------------------------------------------
+ ! Zoltan Library for Parallel Applications            !
+ ! Copyright (c) 2006 Sandia National Laboratories.                !
+ ! This document is released under the GNU Lesser General Public License.     !
+ ! For more info, see the README file in the top-level Zoltan directory.      !
+ !----------------------------------------------------------------------------!
+-->
+<!-- CVS File Information
+     $RCSfile$
+     $Author$
+     $Date$
+     $Revision$
+-->
+
+<!----CHANGE INFORMATION IN AREAS WITH THIS HEADER---->
+<!----SCROLL DOWN TO FIND OTHER AREAS TO BE CHANGED---->
+<!--------CHANGE THE NAME AFTER THE DASH-------->
+<!--------CHANGE THE FILENAME-------->
+<!--------CHANGE THE REVIEW DATE-------->
+<!--------CHANGE THE SUBJECT-------->
+<link rel="schema.sandia" href="http://www.sandia.gov/html_schema.htm">
+<!--------CHANGE THE SAND NUMBER INFO-------->
+<!--------INSERT THE DATE DOCUMENT CREATED-------->
+<link rev="owns" title="name of contact" href="mailto:kddevin@cs.sandia.gov">
+<!--------CHANGE THE PAGE OWNER AND EMAIL ADDRESS-------->
+<link rev="made" title="name of contact" href="mailto:kddevin@cs.sandia.gov">
+<!--------CHANGE THE PAGE MAKER AND EMAIL ADDRESS-------->
+<!--------PLACE FIVE KEY WORDS WITHIN THE QUOTES-------->
+<!---------------END OF THIS CHANGE AREA--------------->
+</head>
+<body text="#000000" background="http://www.sandia.gov/images/bkgrnd.gif">
+<!-- KDD Turned off alternative link colors in template; the ><! following line was part of the above body command. ><! link="#003366" vlink="#cc0033" alink="#000000">-->
+<a NAME="TOP"></a><!---TOP BANNER AREA STARTS HERE--->
+<table BORDER=0 valign="top" >
+<tr VALIGN=TOP>
+<td VALIGN=TOP WIDTH="140" >
+<table BORDER=0 WIDTH="130" valign="top" >
+<tr VALIGN=TOP>
+<td VALIGN=TOP WIDTH="128"><!--SANDIA LOGO AT TOP LEFT--><a href="http://www.sandia.gov/Main.html"><img SRC="http://www.sandia.gov/images/snlstkdc.gif" ALT="[Sandia National Laboratories]" BORDER=0 valign="top" height=49 width=126></a>
+<p><img ISMAP SRC="http://www.sandia.gov/images/labelNEW.gif" ALT="[navigation panel]" HSPACE=2 BORDER=0 usemap="#shortMap" height=119 width=111></td>
+
+<td><img SRC="http://www.sandia.gov/images/1pixel.gif" BORDER=0 height=1 width=10></td>
+</tr>
+</table>
+
+<table BORDER=0 WIDTH="140" valign="top" >
+<tr ALIGN=LEFT VALIGN=TOP>
+<td VALIGN=TOP WIDTH="114"><!----------- 1st little turquoise bevel button ------------>
+<table BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="114" BGCOLOR="#00CCFF" >
+<tr VALIGN=TOP BGCOLOR="#99FFFF">
+<td ALIGN=LEFT><img SRC="http://www.sandia.gov/images/1pixel.gif" height=1 width=1></td>
+
+<td ALIGN=RIGHT><img SRC="http://www.sandia.gov/images/1pixel.gif" height=1 width=1></td>
+</tr>
+
+<tr ALIGN=CENTER VALIGN=CENTER>
+<td COLSPAN="2"><b><font face="Verdana, Arial, Helvetica"><a href="http://www.cs.sandia.gov/~kddevin/Zoltan_pdf/tutorial.pdf">
+PDF Version of Tutorial</a></font></b></td>
+</tr>
+
+<tr VALIGN=BOTTOM BGCOLOR="#006699">
+<td ALIGN=LEFT><img SRC="http://www.sandia.gov/images/1pixel.gif" height=1 width=1></td>
+
+<td ALIGN=RIGHT><img SRC="http://www.sandia.gov/images/1pixel.gif" height=1 width=1></td>
+</tr>
+</table>
+&nbsp;</td>
+
+<td VALIGN=TOP WIDTH="20"></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td COLSPAN="2"></td>
+</tr>
+
+<tr ALIGN=LEFT VALIGN=TOP>
+<td VALIGN=TOP WIDTH="114"><!----------- 2nd little turquoise bevel button ------------>
+<table BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="114" BGCOLOR="#00CCFF" >
+<tr VALIGN=TOP BGCOLOR="#99FFFF">
+<td ALIGN=LEFT><img SRC="http://www.sandia.gov/images/1pixel.gif" height=1 width=1></td>
+
+<td ALIGN=RIGHT><img SRC="http://www.sandia.gov/images/1pixel.gif" height=1 width=1></td>
+</tr>
+
+<tr ALIGN=CENTER VALIGN=CENTER>
+<td COLSPAN="2"><b><font face="Verdana, Arial, Helvetica"><a href="contents/contents.html">
+Open Tutorial in a new page</a></font></b></td>
+</tr>
+
+<tr VALIGN=BOTTOM BGCOLOR="#006699">
+<td ALIGN=LEFT><img SRC="http://www.sandia.gov/images/1pixel.gif" height=1 width=1></td>
+
+<td ALIGN=RIGHT><img SRC="http://www.sandia.gov/images/1pixel.gif" height=1 width=1></td>
+</tr>
+</table>
+&nbsp;</td>
+
+<td VALIGN=TOP WIDTH="20"></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td COLSPAN="2"></td>
+</tr>
+
+<tr ALIGN=LEFT VALIGN=TOP>
+<td VALIGN=TOP WIDTH="114"><!----------- 3rd little turquoise bevel button ------------>
+<table BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="114" BGCOLOR="#00CCFF" >
+<tr VALIGN=TOP BGCOLOR="#99FFFF">
+<td ALIGN=LEFT><img SRC="http://www.sandia.gov/images/1pixel.gif" height=1 width=1></td>
+
+<td ALIGN=RIGHT><img SRC="http://www.sandia.gov/images/1pixel.gif" height=1 width=1></td>
+</tr>
+
+<tr ALIGN=CENTER VALIGN=CENTER>
+<td COLSPAN="2"><b><font face="Verdana, Arial, Helvetica"><a href="../ug_html/ug.html">
+Zoltan User's Guide</a></font></b></td>
+</tr>
+
+<tr VALIGN=BOTTOM BGCOLOR="#006699">
+<td ALIGN=LEFT><img SRC="http://www.sandia.gov/images/1pixel.gif" height=1 width=1></td>
+
+<td ALIGN=RIGHT><img SRC="http://www.sandia.gov/images/1pixel.gif" height=1 width=1></td>
+</tr>
+</table>
+&nbsp;</td>
+
+<td VALIGN=TOP WIDTH="20"></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td COLSPAN="2"></td>
+</tr>
+
+<tr ALIGN=LEFT VALIGN=TOP>
+<td VALIGN=TOP WIDTH="114"><!----------- 4Ath little turquoise bevel button ----
+-------->
+<table BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="114" BGCOLOR="#00CCFF" >
+<tr VALIGN=TOP BGCOLOR="#99FFFF">
+<td ALIGN=LEFT><img SRC="http://www.sandia.gov/images/1pixel.gif" height=1 width
+=1></td>
+
+<td ALIGN=RIGHT><img SRC="http://www.sandia.gov/images/1pixel.gif" height=1 widt
+h=1></td>
+</tr>
+
+<tr ALIGN=CENTER VALIGN=CENTER>
+<td COLSPAN="2"><b><font face="Verdana, Arial, Helvetica"><a href="../Zoltan.html">
+Zoltan home page</a></font></b></td>
+</tr>
+
+<tr VALIGN=BOTTOM BGCOLOR="#006699">
+<td ALIGN=LEFT><img SRC="http://www.sandia.gov/images/1pixel.gif" height=1 width
+=1></td>
+
+<td ALIGN=RIGHT><img SRC="http://www.sandia.gov/images/1pixel.gif" height=1 widt
+h=1></td>
+</tr>
+</table>
+</td>
+
+<td VALIGN=TOP WIDTH="20"></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td COLSPAN="2"></td>
+</tr>
+
+</table>
+&nbsp;</td>
+
+<td VALIGN=TOP><!--MAIN CONTENT AREA STARTS HERE--><!----------------THIS IS A CHANGE AREA----------------><!------HEADER TEXT SHOULD BE REPLACE THIS TEXT------><b><font face="Verdana, Arial, Helvetica"><font size=+2>Zoltan:&nbsp;</font></font></b>
+<br><b><font face="Verdana, Arial, Helvetica"><font size=+2>Data-Management Services
+for Parallel Applications</font></font></b>
+<p><b><font face="Verdana, Arial, Helvetica"><font size=+2>Tutorial&nbsp;</font></font></b>
+<p><!---------------END OF THIS CHANGE AREA---------------><!----------------THIS IS A CHANGE AREA----------------><!--MAIN CONTENT SHOULD BE PLACED IN THE AREA BELOW-->
+<!---------------------------------------------------------------------------->
+<!---------------------------------------------------------------------------->
+<!---------------------------------------------------------------------------->
+<!---------------------------------------------------------------------------->
+<hr WIDTH="100%">
+<p>
+<b> The Zoltan Team </b><br>
+<b> Sandia National Laboratories: </b><br>
+<a href="http://www-sccm.stanford.edu/~boman/">Erik Boman</a> <br>
+<a href="http://www.cs.sandia.gov/~kddevin">Karen Devine</a><br>
+Lee Ann Fisk<br>
+Robert Heaphy<br>
+<a href="http://www.cs.sandia.gov/~bahendr">Bruce Hendrickson</a></b><br>
+Courtenay Vaughan<br>
+<br>
+<b> Ohio State University</b><br>
+<a href="http://bmi.osu.edu/personnel/detail.cfm?id=29">Umit Catalyurek</a><br>
+Doruk Bozdag<br>
+<br>
+<b>National Institute of Standards and Technology</b><br>
+<a href="http://math.nist.gov/~mitchell">William F. Mitchell</a><br>
+<p>
+<p>
+<!---------------------------------------------------------------------------->
+<!---------------------------------------------------------------------------->
+<!---------------------------------------------------------------------------->
+<hr WIDTH="100%">
+<div align=right><b><i>Zoltan Tutorial, Version 2.01</i></b></div>
+
+<iframe src=contents/contents.html width=100% height=100%>
+<!-----for browsers that don't support frames----------->
+<h4> <a href="contents/contents.html">Go to Tutorial</a></h4>
+</iframe>
+
+</body>
+</html>
