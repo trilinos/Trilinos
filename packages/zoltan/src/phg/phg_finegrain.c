@@ -46,6 +46,8 @@ int Zoltan_PHG_Build_Finegrain(
 int ierr = ZOLTAN_OK;
 int i, j, k;
 HGraph *fg;
+int gnVtx  = hg->dist_x[hg->comm->nProc_x];
+int gnEdge = hg->dist_y[hg->comm->nProc_y];
 char *yo = "Zoltan_PHG_Build_Finegrain";
 
   ZOLTAN_TRACE_ENTER(zz, yo);
@@ -54,7 +56,8 @@ char *yo = "Zoltan_PHG_Build_Finegrain";
   fg = *fg_hg = (HGraph *) ZOLTAN_MALLOC(sizeof(HGraph));
   Zoltan_HG_HGraph_Init(fg);
   fg->nVtx = hg->nPins;
-  fg->nEdge = hg->nVtx + hg->nEdge;
+  /* fg->nEdge = hg->nVtx + hg->nEdge; */
+  fg->nEdge = gnVtx + gnEdge;
   fg->nPins = 2*hg->nPins;
   fg->VtxWeightDim  = 0;
   fg->EdgeWeightDim = 0;
@@ -83,16 +86,17 @@ char *yo = "Zoltan_PHG_Build_Finegrain";
   k = 0;
   for (i=0; i<hg->nEdge; i++){
     for (j=hg->hindex[i]; j<hg->hindex[i+1]; j++){
+      /* Local number for vindex */
       fg->vindex[k] = 2*k;
-      /* TODO: Local to global mapping. */
-      fg->vedge[2*k] = i;
-      fg->vedge[2*k+1] = hg->nEdge+hg->hvertex[j]; 
+      /* Global numbers for vedge data */
+      fg->vedge[2*k] = EDGE_LNO_TO_GNO(hg, i);
+      fg->vedge[2*k+1] = gnEdge + VTX_LNO_TO_GNO(hg, hg->hvertex[j]); 
       k++;
     }
   }
   fg->vindex[k] = 2*k; /* k = fg->nVtx */
 
-#define DEBUG
+// #define DEBUG
 #ifdef DEBUG
   printf("Debug: fine hgraph (vertex-based). nvtx=%d, nedge=%d, nPins=%d\n", fg->nVtx, fg->nEdge, fg->nPins);
   printf("Debug: vindex: ");
