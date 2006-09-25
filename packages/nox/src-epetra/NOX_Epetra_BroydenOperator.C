@@ -654,7 +654,7 @@ BroydenOperator::removeEntriesFromBroydenUpdate( const Epetra_CrsGraph & graph )
 
         for( int k = 0; k < numOrigIndices; ++k )
         {
-          if( removeIndTable.end() == removeIndTable.find( indPtr[k] ) )
+          if( removeIndTable.end() == removeIndTable.find( crsMatrix->Graph().ColMap().GID(indPtr[k]) ) )
             inds.push_back(k);
         }
 

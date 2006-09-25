@@ -315,7 +315,7 @@ int main(int argc, char *argv[])
   problemManager.registerComplete();
 
   // A consistencyy check
-  if( 1 )
+  if( 0 )
   {
     Epetra_CrsGraph maskGraph(Copy, problemManager.getCompositeSoln()->Map(), 0);
 

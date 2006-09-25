@@ -285,7 +285,8 @@ int main(int argc, char *argv[])
   broydenOp2.removeEntriesFromBroydenUpdate( inactiveGraph );
 
 #ifdef HAVE_NOX_DEBUG
-  broydenOp2.outputActiveEntries();
+  if( verbose )
+    broydenOp2.outputActiveEntries();
 #endif
 
   // Reset to the identity matrix
@@ -298,8 +299,6 @@ int main(int argc, char *argv[])
   status += tester.testCrsMatrices( broydenOp2.getBroydenMatrix(), *goldMatrix, reltol, abstol,
                               "Broyden Sparse Operator Update Test (Entry Removal)", false );
 
-  cout << broydenOp2.getBroydenMatrix() << endl;
-  cout << *goldMatrix << endl;
 
   // Summarize test results  
   if( status == 0 )
