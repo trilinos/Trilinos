@@ -69,8 +69,9 @@ static PARAM_VARS PHG_params[] = {
   {"PHG_EDGE_WEIGHT_OPERATION",       NULL,  "STRING", 0},
   {"PHG_RANDOMIZE_INPUT",             NULL,  "INT",    0},    
   {"PHG_PROCESSOR_REDUCTION_LIMIT",   NULL,  "FLOAT",  0},
-  { "PATOH_ALLOC_POOL0",              NULL,  "INT",    0},
-  { "PATOH_ALLOC_POOL1",              NULL,  "INT",    0},   
+  {"PHG_REPART_MULTIPLIER",           NULL,  "FLOAT",  0},
+  {"PATOH_ALLOC_POOL0",               NULL,  "INT",    0},
+  {"PATOH_ALLOC_POOL1",               NULL,  "INT",    0},   
   {NULL,                              NULL,  NULL,     0}     
 };
 
@@ -426,7 +427,7 @@ int **exp_to_part )         /* list of partitions to which exported objs
   }
 
   if (zz->LB.Method == PHG_REPART) {
-    Zoltan_PHG_Remove_Repart_Data(zz, zoltan_hg, hg);
+    Zoltan_PHG_Remove_Repart_Data(zz, zoltan_hg, hg, &hgp);
   }
 
 
@@ -527,8 +528,8 @@ End:
       MPI_Allreduce(&move, &gmove, 1, MPI_INT, MPI_SUM, zz->Communicator);
 
       movesum += gmove;
-      if (move > movemax) movemax = gmove;
-      if (move < movemin) movemin = gmove;
+      if (gmove > movemax) movemax = gmove;
+      if (gmove < movemin) movemin = gmove;
       cutlsum += cutl;
       if (cutl > cutlmax) cutlmax = cutl;
       if (cutl < cutlmin) cutlmin = cutl;
@@ -678,6 +679,8 @@ int Zoltan_PHG_Initialize_Params(
                                  (void*) &hgp->RandomizeInitDist);  
   Zoltan_Bind_Param(PHG_params, "PHG_PROCESSOR_REDUCTION_LIMIT",
 		                 (void*) &hgp->ProRedL);
+  Zoltan_Bind_Param(PHG_params, "PHG_REPART_MULTIPLIER",
+		                 (void*) &hgp->RepartMultiplier);
   Zoltan_Bind_Param(PHG_params, "PATOH_ALLOC_POOL0",
                                  (void*) &hgp->patoh_alloc_pool0);
   Zoltan_Bind_Param(PHG_params, "PATOH_ALLOC_POOL1",
@@ -725,6 +728,7 @@ int Zoltan_PHG_Initialize_Params(
   hgp->EdgeSizeThreshold = 0.25;  
   hgp->hybrid_keep_factor = 0.;
   hgp->ProRedL = 0.5;
+  hgp->RepartMultiplier = 1.;
   hgp->patoh_alloc_pool0 = 0;
   hgp->patoh_alloc_pool1 = 0;
   hgp->UseFixedVtx = 0;

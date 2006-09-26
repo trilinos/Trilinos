@@ -70,8 +70,8 @@ static int hash_lookup(ZZ*, ZOLTAN_ID_PTR, int, struct Hash_Node**, struct Hash_
 static void print_hypergraph(ZZ *zz, ZHG *zhg, int sumWeight);  /* for debugging */
 #endif
 
-static int Zoltan_PHG_Add_Repart_Data(ZZ *, ZHG *, HGraph *, PHGPartParams *,
-                                      Partition);
+static int Zoltan_PHG_Add_Repart_Data(ZZ *, ZHG *, HGraph *, int *,
+                                      PHGPartParams *, Partition);
 static int removed_cuts_local(ZZ *zz, ZHG *zhg, 
                 int max_parts, int *pin_parts, double *loccuts);
 static int removed_cuts_global(ZZ *zz, ZHG *zhg, 
@@ -1744,95 +1744,105 @@ int nRepartEdge = 0, nRepartVtx = 0;
 
   /*  Send edge weights, if any */
 
-  dim = phg->EdgeWeightDim = zz->Edge_Weight_Dim;
+  dim = zz->Edge_Weight_Dim;
+  if (zz->LB.Method == PHG_REPART && !dim)
+    dim = 1;  /* Need edge weights for PHG_REPART; force malloc of ewgt array */
+  phg->EdgeWeightDim = dim;
   nwgt = (phg->nEdge + nRepartEdge) * dim;
 
-  if (zz->Edge_Weight_Dim) {
-    tmpwgts   = (float *) ZOLTAN_CALLOC(nwgt , sizeof(float));
+  if (dim) {
+    tmpwgts   = (float *) ZOLTAN_CALLOC(nwgt, sizeof(float));
     phg->ewgt = (float *) ZOLTAN_CALLOC(nwgt, sizeof(float));
 
     if (nwgt && (!phg->ewgt || !tmpwgts)) MEMORY_ERROR;
 
-    if (phg->comm->nProc_y == 1) {
-      for (i = 0; i < myPins.nHedges; i++) {
-        idx = myPins.edgeGNO[i];
-        for (j = 0; j < dim; j++)
-          tmpwgts[idx * dim + j] = myPins.ewgt[i*dim + j];
+    if (zz->Edge_Weight_Dim) {  /* Edge weights provided by application */
+      if (phg->comm->nProc_y == 1) {
+        for (i = 0; i < myPins.nHedges; i++) {
+          idx = myPins.edgeGNO[i];
+          for (j = 0; j < dim; j++)
+            tmpwgts[idx * dim + j] = myPins.ewgt[i*dim + j];
+        }
       }
-    }
-    else {
-      /* 
-       * Since for 2D decomposition and prime nProc we exclude a processor,
-       * we cannot use col_comm for this operation.  We'll simulate it,
-       * allowing the excluded processor to send its data to col 0.
+      else {
+        /* 
+         * Since for 2D decomposition and prime nProc we exclude a processor,
+         * we cannot use col_comm for this operation.  We'll simulate it,
+         * allowing the excluded processor to send its data to col 0.
+         */
+        proc_offset = (myProc_x >= 0 ? myProc_x : 0);
+        for (i = 0; i < myPins.nHedges; i++)
+          proclist[i] = proc_offset 
+                      + EDGE_TO_PROC_Y(phg, myPins.edgeGNO[i]) * nProc_x;
+        
+        msg_tag++;
+  
+        ierr = Zoltan_Comm_Create(&plan, myPins.nHedges, proclist, 
+                                  zz->Communicator, msg_tag, &nrecv); 
+  
+        if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+          goto End;
+        }
+  
+        /* Multiple processes may have weights for the same edge */
+  
+        recv_gno = (int *) ZOLTAN_MALLOC(nrecv * sizeof(int));
+  
+        gid_weights = (float *) ZOLTAN_CALLOC(nrecv*dim, sizeof(float));
+  
+        have_wgt = (char *)ZOLTAN_CALLOC(phg->nEdge, sizeof(char));
+  
+        if ((nrecv && (!recv_gno || !gid_weights)) ||
+            (phg->nEdge && !have_wgt)){
+  
+          ZOLTAN_FREE(&recv_gno);
+          MEMORY_ERROR;
+        }
+  
+        msg_tag++;
+        ierr = Zoltan_Comm_Do(plan, msg_tag, (char *) myPins.edgeGNO,
+                              sizeof(int), (char *) recv_gno);
+  
+        if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+          goto End;
+        }
+  
+        msg_tag++;
+        ierr = Zoltan_Comm_Do(plan, msg_tag, (char *) myPins.ewgt, 
+                              dim*sizeof(float), (char *) gid_weights);
+  
+        if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+          goto End;
+        }
+  
+        Zoltan_Comm_Destroy(&plan);
+  
+        for (i = 0; i < nrecv; i++) {
+          idx = EDGE_GNO_TO_LNO(phg, recv_gno[i]);
+          if (have_wgt[idx]) continue;
+          for (j = 0; j < dim; j++) 
+            tmpwgts[idx * dim + j] = gid_weights[i * dim + j];
+          have_wgt[idx] = 1;
+        }
+        ZOLTAN_FREE(&recv_gno); 
+        ZOLTAN_FREE(&have_wgt); 
+        ZOLTAN_FREE(&gid_weights); 
+      }
+
+      /* Need to gather weights for all edges within row 
+       * to all processors within row.
        */
-      proc_offset = (myProc_x >= 0 ? myProc_x : 0);
-      for (i = 0; i < myPins.nHedges; i++)
-        proclist[i] = proc_offset 
-                    + EDGE_TO_PROC_Y(phg, myPins.edgeGNO[i]) * nProc_x;
-      
-      msg_tag++;
-
-      ierr = Zoltan_Comm_Create(&plan, myPins.nHedges, proclist, 
-                                zz->Communicator, msg_tag, &nrecv); 
-
-      if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
-        goto End;
+  
+      if (phg->comm->row_comm != MPI_COMM_NULL){
+        rc = MPI_Allreduce(tmpwgts, phg->ewgt, nwgt, MPI_FLOAT, MPI_MAX, 
+                      phg->comm->row_comm);
+        CHECK_FOR_MPI_ERROR(rc)
       }
-
-      /* Multiple processes may have weights for the same edge */
-
-      recv_gno = (int *) ZOLTAN_MALLOC(nrecv * sizeof(int));
-
-      gid_weights = (float *) ZOLTAN_CALLOC(nrecv*dim, sizeof(float));
-
-      have_wgt = (char *)ZOLTAN_CALLOC(phg->nEdge, sizeof(char));
-
-      if ((nrecv && (!recv_gno || !gid_weights)) ||
-          (phg->nEdge && !have_wgt)){
-
-        ZOLTAN_FREE(&recv_gno);
-        MEMORY_ERROR;
-      }
-
-      msg_tag++;
-      ierr = Zoltan_Comm_Do(plan, msg_tag, (char *) myPins.edgeGNO,
-                            sizeof(int), (char *) recv_gno);
-
-      if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
-        goto End;
-      }
-
-      msg_tag++;
-      ierr = Zoltan_Comm_Do(plan, msg_tag, (char *) myPins.ewgt, 
-                            dim*sizeof(float), (char *) gid_weights);
-
-      if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
-        goto End;
-      }
-
-      Zoltan_Comm_Destroy(&plan);
-
-      for (i = 0; i < nrecv; i++) {
-        idx = EDGE_GNO_TO_LNO(phg, recv_gno[i]);
-        if (have_wgt[idx]) continue;
-        for (j = 0; j < dim; j++) 
-          tmpwgts[idx * dim + j] = gid_weights[i * dim + j];
-        have_wgt[idx] = 1;
-      }
-      ZOLTAN_FREE(&recv_gno); 
-      ZOLTAN_FREE(&have_wgt); 
-      ZOLTAN_FREE(&gid_weights); 
     }
-
-    /* Need to gather weights for all edges within row 
-     * to all processors within row.
-     */
-
-    if (phg->comm->row_comm != MPI_COMM_NULL){
-      rc = MPI_Allreduce(tmpwgts, phg->ewgt, nwgt, MPI_FLOAT, MPI_MAX, 
-                    phg->comm->row_comm);
-      CHECK_FOR_MPI_ERROR(rc)
+    else { /* dim > 0 but zz->Edge_Weight_Dim == 0 */
+      /* Edge weights are needed for PHG_REPART but are not provided by app */
+      /* Set the edge weights for input vertices to 1. */
+      for (i = 0; i < phg->nEdge; i++) phg->ewgt[i] = 1.;
     }
   }
   else {
@@ -1844,7 +1854,8 @@ int nRepartEdge = 0, nRepartVtx = 0;
 
   if (zz->LB.Method == PHG_REPART) {
     if (myProc_x >= 0 && myProc_y >= 0) {
-      ierr = Zoltan_PHG_Add_Repart_Data(zz, zhg, phg, hgp, *input_parts);
+      ierr = Zoltan_PHG_Add_Repart_Data(zz, zhg, phg, myObjs.vtx_gno,
+                                        hgp, *input_parts);
       if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
         ZOLTAN_PRINT_ERROR(zz->Proc, yo,
                            "Error from Zoltan_PHG_Add_Repart_Data");
@@ -2712,6 +2723,8 @@ static int Zoltan_PHG_Add_Repart_Data(
   HGraph *phg,              /* Input/Output:  Input hypergraph in 2D layout;
                                changed by this routine to include repartition 
                                vertices and repartition edges.  */
+  int *vtxgno,              /* global vertex numbers for input vertices;
+                               size is zhg->nObj. */
   PHGPartParams *hgp,       /* Input/Output:  Partitioning parameters; need
                                to turn on UseFixedVtx. */
   Partition input_parts     /* Input/Output:  Input partition assignments for 
@@ -2755,9 +2768,14 @@ int nrecv = 0;
 int *tmp_hindex, *tmp_hvertex;       /* Pointers into phg->hindex and 
                                         phg->hvertex; set to start of entries
                                         for repartition edges. */
-int i, j;
+float *tmp_ewgt;                     /* Edge weights for local repartion
+                                        edges */
+int i, j, idx;
 int cnt, dim, sum, prev;
 int ierr = ZOLTAN_OK;
+int *appobjsize = NULL;              /* Arrays for obj sizes, used to set */
+int *objsize = NULL;                 /* repartition edge weights. */
+int *tmpobjsize = NULL;
 
   /* Compute number of repartition vertices to add to this processor column */
   phg->nRepartVtx = nRepartVtx = NumRepart(myProc_x, nProc_x, GnParts);
@@ -2773,7 +2791,8 @@ int ierr = ZOLTAN_OK;
    */
   hgp->UseFixedVtx = 1;
   if (!phg->fixed_part && (phg->nVtx + nRepartVtx)) {
-    phg->fixed_part = (int *) ZOLTAN_MALLOC((phg->nVtx + nRepartVtx) * sizeof(int));
+    phg->fixed_part = (int *) ZOLTAN_MALLOC((phg->nVtx + nRepartVtx)
+                                             * sizeof(int));
     if (!phg->fixed_part) MEMORY_ERROR;
     for (i = 0; i < phg->nVtx; i++) phg->fixed_part[i] = -1;
   }
@@ -2798,15 +2817,90 @@ int ierr = ZOLTAN_OK;
   dim = phg->EdgeWeightDim;
   for (i = phg->nEdge; i < (phg->nEdge + nRepartEdge); i++) {
     phg->hindex[i] = 0;
-    if (phg->ewgt) 
-      for (j = 0; j < dim; j++)
-        phg->ewgt[i*dim+j] = 1.;
+    for (j = 0; j < dim; j++)
+      phg->ewgt[i*dim+j] = 0.;
   }
+
+  /***** Get object sizes to weight the repartition edges    *****/
+  /***** with migration costs.                               *****/
+
+  if (zz->Get_Obj_Size_Multi || zz->Get_Obj_Size) {
+    if (zhg->nObj) {
+      if (!(appobjsize = (int *) ZOLTAN_MALLOC(zhg->nObj * sizeof(int)))) {
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
+        ierr = ZOLTAN_MEMERR;
+        goto End;
+      }
+      if (zz->Get_Obj_Size_Multi) {
+        zz->Get_Obj_Size_Multi(zz->Get_Obj_Size_Multi_Data,
+                               zz->Num_GID, zz->Num_LID, zhg->nObj,
+                               zhg->GIDs, zhg->LIDs, appobjsize, &ierr);
+        if (ierr < 0) {
+          ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from "
+                          "ZOLTAN_OBJ_SIZE_MULTI function.");
+          goto End;
+        }
+      }
+      else if (zz->Get_Obj_Size) {
+        for (i = 0; i < zhg->nObj; i++) {
+          ZOLTAN_ID_PTR lid = (zz->Num_LID ? &(zhg->LIDs[i*zz->Num_LID]):NULL);
+          appobjsize[i] = zz->Get_Obj_Size(zz->Get_Obj_Size_Data,
+                                           zz->Num_GID, zz->Num_LID,
+                                           &(zhg->GIDs[i*zz->Num_GID]),
+                                           lid, &ierr);
+          if (ierr < 0) {
+            ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from "
+                            "ZOLTAN_OBJ_SIZE function.");
+            goto End;
+          }
+        }
+      }
+    }
+
+    objsize = (int *) ZOLTAN_CALLOC(2*phg->nVtx, sizeof(int));
+    if (phg->nVtx && !objsize) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
+      ierr = ZOLTAN_MEMERR;
+      goto End;
+    }
+    tmpobjsize = objsize + phg->nVtx;
+
+    if (phg->comm->nProc_x > 1) {
+      /* Send obj_size data to the 2D distribution */
+      /* Use zhg->VtxPlan */
+      ierr = Zoltan_Comm_Do(zhg->VtxPlan, 25232, (char *) appobjsize, 
+                            sizeof(int), (char *) objsize);
+      if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from Zoltan_Comm_Do.");
+        goto End;
+      }
+      for (i = 0; i < zhg->nRecv_GNOs; i++) {
+        idx = VTX_GNO_TO_LNO(phg, zhg->Recv_GNOs[i]);
+        tmpobjsize[idx] = objsize[i];
+      }
+    }
+    else {
+      /* nProc_x == 1; have all the size data we need. */
+      for (i = 0; i < zhg->nObj; i++)
+        tmpobjsize[vtxgno[i]] = appobjsize[i];
+    }
+
+    /* Accrue each row's contribution to objsize */
+    MPI_Allreduce(tmpobjsize, objsize, phg->nVtx, MPI_INT, MPI_SUM,
+                  phg->comm->col_comm);
+
+    ZOLTAN_FREE(&appobjsize);
+  }
+  else {
+    /* Use uniform object sizes. */
+    objsize = NULL;
+  }
+
 
   /***** Create repartition edges in this processor row. *****/
   
   /* Send objects' input partitions to processor owning corresponding
-   * edge and repartition vertex. 
+   * repartition edge and repartition vertex. 
    * Each proc in column sends data for a subset of the column's 
    * vertices.
    */
@@ -2815,9 +2909,10 @@ int ierr = ZOLTAN_OK;
   nextStart_vtx = ((myProc_y+1) * phg->nVtx) / nProc_y;
   cnt = nextStart_vtx - myStart_vtx;
   
+#define NSEND 3  /* number of fields to be sent for each vertex */
   if (cnt) {
     proclist = (int *) ZOLTAN_MALLOC(cnt * sizeof(int));
-    sendbuf = (int *) ZOLTAN_MALLOC(2 * cnt * sizeof(int));
+    sendbuf = (int *) ZOLTAN_MALLOC(NSEND * cnt * sizeof(int));
     if (!proclist || !sendbuf) MEMORY_ERROR;
 
     for (i = 0; i < cnt; i++){
@@ -2835,23 +2930,24 @@ int ierr = ZOLTAN_OK;
       /* Determine proc row for repartition edge associated with vtx i */
       proc_y = ProcForRepart(vgno, nProc_y, GnVtx);
  
-printf("%d KDDKDD PROCX %d PROCY %d v %d myStart_vtx %d\n", zz->Proc, proc_x, proc_y, vgno, myStart_vtx);
       /* Fill message buffers */
       proclist[i] = proc_y * nProc_x + proc_x;
-      sendbuf[2*i] = vgno;                   /* GNO of vertex */
-      sendbuf[2*i+1] = k;                    /* Vertex's input partition */
-printf("%d KDDKDD SEND vgno %d with part %d to %d\n", zz->Proc, sendbuf[2*i], sendbuf[2*i+1], proclist[i]);
+      sendbuf[NSEND*i] = vgno;                   /* GNO of vertex */
+      sendbuf[NSEND*i+1] = k;                    /* Vertex's input partition */
+      sendbuf[NSEND*i+2] = (objsize ? objsize[v] : 1);
     }
   }
+
+  ZOLTAN_FREE(&objsize);
 
   /* Create plan and send info. */
 
   ierr = Zoltan_Comm_Create(&plan, cnt, proclist, hgc->Communicator,
                             24555, &nrecv);
 
-  recvbuf = (int *) ZOLTAN_MALLOC(2 * nrecv * sizeof(int));
+  recvbuf = (int *) ZOLTAN_MALLOC(NSEND * nrecv * sizeof(int));
   
-  ierr = Zoltan_Comm_Do(plan, 24556, (char *) sendbuf, 2 * sizeof(int),
+  ierr = Zoltan_Comm_Do(plan, 24556, (char *) sendbuf, NSEND * sizeof(int),
                        (char *) recvbuf);
 
   ierr = Zoltan_Comm_Destroy(&plan);
@@ -2864,17 +2960,16 @@ printf("%d KDDKDD SEND vgno %d with part %d to %d\n", zz->Proc, sendbuf[2*i], se
   tmp_hindex = &(phg->hindex[phg->nEdge]);
   tmp_hvertex = &(phg->hvertex[tmp_hindex[0]]);
 
-printf("%d KDDKDD nRv %d nRe %d fRv %d fRe %d\n", zz->Proc, nRepartVtx, nRepartEdge, firstRepartVtx, firstRepartEdge);
+  /* Loop to build hindex array */
   for (i = 0; i < nrecv; i++) {
     int vtx_gno;     /* Global vtx number of vtx in received repartition edge.*/
     int rEdge_lno;   /* local index of repartition edge */
     int rVtx_lno;    /* local index of repartition vertex */
 
-    vtx_gno = recvbuf[2*i];
+    vtx_gno = recvbuf[NSEND*i];
     rEdge_lno = vtx_gno - firstRepartEdge;
-    rVtx_lno = recvbuf[2*i+1] - firstRepartVtx;
+    rVtx_lno = recvbuf[NSEND*i+1] - firstRepartVtx;
 
-printf("%d KDDKDD vtx_gno %d rEdge_lno %d rVtx_lno %d\n", zz->Proc, vtx_gno, rEdge_lno, rVtx_lno);
     /* Add pin for repartition vertex */
     tmp_hindex[rEdge_lno]++;
     nRepartPin++;
@@ -2896,14 +2991,17 @@ printf("%d KDDKDD vtx_gno %d rEdge_lno %d rVtx_lno %d\n", zz->Proc, vtx_gno, rEd
     prev = cnt;
   }
    
+  /* Loop to build hvertex array and set edge weights */
+  tmp_ewgt = (float *) ZOLTAN_CALLOC(nRepartEdge * phg->EdgeWeightDim,
+                                     sizeof(float));
   for (i = 0; i < nrecv; i++) {
     int vtx_gno;     /* Global vtx number of vtx in received repartition edge.*/
     int rEdge_lno;   /* local index of repartition edge */
     int rVtx_lno;    /* local index of repartition vertex */
 
-    vtx_gno = recvbuf[2*i];
+    vtx_gno = recvbuf[NSEND*i];
     rEdge_lno = vtx_gno - firstRepartEdge;
-    rVtx_lno = recvbuf[2*i+1] - firstRepartVtx;
+    rVtx_lno = recvbuf[NSEND*i+1] - firstRepartVtx;
     
     /* Add pin for repartition vertex */
     tmp_hvertex[tmp_hindex[rEdge_lno]] = phg->nVtx + rVtx_lno;
@@ -2911,7 +3009,24 @@ printf("%d KDDKDD vtx_gno %d rEdge_lno %d rVtx_lno %d\n", zz->Proc, vtx_gno, rEd
       /* Add pin for vertex */
       tmp_hvertex[tmp_hindex[rEdge_lno]+1] = VTX_GNO_TO_LNO(phg, vtx_gno);
     }
+
+    for (j = 0; j < phg->EdgeWeightDim; j++) 
+      tmp_ewgt[rEdge_lno*phg->EdgeWeightDim + j] = (float) recvbuf[NSEND*i+2];
   }
+#undef NSEND
+
+  /* Accrue edge weights across processor rows */
+  MPI_Allreduce(tmp_ewgt, &phg->ewgt[phg->nEdge*phg->EdgeWeightDim],
+                nRepartEdge*phg->EdgeWeightDim, MPI_FLOAT, MPI_SUM,
+                phg->comm->row_comm);
+  ZOLTAN_FREE(&tmp_ewgt);
+
+  /* Modify hypergraph edge weights to account for the number of 
+   * communications done between migrations (the RepartMultiplier).
+   * Do not apply the multiplier to the repartition edges.
+   */
+  for (i = 0; i < phg->nEdge; i++)
+    phg->ewgt[i] *= hgp->RepartMultiplier;
 
   /* Now update hypergraph info to include the repartition vtx & edges. */
   /* We'll subtract these back out after we finish partitioning and before
@@ -2919,7 +3034,6 @@ printf("%d KDDKDD vtx_gno %d rEdge_lno %d rVtx_lno %d\n", zz->Proc, vtx_gno, rEd
 
   phg->nVtx += nRepartVtx;
   phg->nEdge += nRepartEdge;
-printf("%d KDDKDD OUCH %d+%d= %d or %d\n", zz->Proc, phg->nPins, nRepartPin, phg->nPins+nRepartPin, phg->hindex[phg->nEdge]);
   phg->nPins += nRepartPin;
 
 /* SANITY CHECK */
@@ -2952,7 +3066,8 @@ End:
 int Zoltan_PHG_Remove_Repart_Data(
   ZZ *zz,
   ZHG *zhg,
-  HGraph *phg
+  HGraph *phg,
+  PHGPartParams *hgp
 )
 {
 /* Routine to remove repartition vertices, repartition edges, and 
@@ -2969,6 +3084,17 @@ int i;
   phg->nVtx  -= phg->nRepartVtx;
   phg->nEdge -= phg->nRepartEdge;
   phg->nPins -= phg->nRepartPin;
+
+  if (zz->Edge_Weight_Dim) {
+    /* Remove the RepartMultiplier from edge weights */
+    for (i = 0; i < phg->nEdge; i++)
+      phg->ewgt[i] /= hgp->RepartMultiplier;
+  }
+  else {
+    /* Application didn't provide edge weights; we should remove them */
+    ZOLTAN_FREE(&phg->ewgt);
+    phg->EdgeWeightDim = 0;
+  }
 
   /* Update distx and disty to remove the repartition vtx & edges. */
   for (sum = 0, i = 0; i < nProc_x; i++) {

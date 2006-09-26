@@ -136,7 +136,14 @@ struct PHGPartParamsStruct {
   int RandomizeInitDist;  /* Flag indicating whether to randomly distribute
                              vertices and edges passed as input to PHG. */
   float ProRedL;           /* V-cycle processor reduction limit in % of pins */
-  int patoh_alloc_pool0,    /* to adjust patoh's memory pre-allocation amount */
+  float RepartMultiplier;  /* In PHG_REPART, multiply input edge weights by
+                              RepartMultiplier, a parameter that should be 
+                              proportional to the number of times the 
+                              communication described by the hypergraph 
+                              will be done before the next repartitioning.  
+                              This cost allows us to consider migration cost
+                              compared to application communication cost. */
+  int patoh_alloc_pool0,   /* to adjust patoh's memory pre-allocation amount */
       patoh_alloc_pool1;    
 };
 
@@ -202,7 +209,7 @@ extern int Zoltan_PHG_Initialize_Params(ZZ*, float *, PHGPartParams*);
 extern void Zoltan_PHG_Free_Hypergraph_Data(ZHG *zoltan_hg);
 
 extern int Zoltan_PHG_Fill_Hypergraph(ZZ*, ZHG*, PHGPartParams *, Partition*);
-extern int Zoltan_PHG_Remove_Repart_Data(ZZ*, ZHG*, HGraph*);
+extern int Zoltan_PHG_Remove_Repart_Data(ZZ*, ZHG*, HGraph*, PHGPartParams*);
 
 extern int Zoltan_PHG_rdivide (int,  int, Partition, ZZ *, HGraph *,
                                PHGPartParams *, int);
