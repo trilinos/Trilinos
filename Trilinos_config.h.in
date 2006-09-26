@@ -78,6 +78,9 @@
 /* Define if want to build pytrilinos */
 #undef HAVE_PYTRILINOS
 
+/* Define if want to build rbgen */
+#undef HAVE_RBGEN
+
 /* Define if want to build rtop */
 #undef HAVE_RTOP
 

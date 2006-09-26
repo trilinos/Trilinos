@@ -91,8 +91,8 @@ ETAGS = etags
 CTAGS = ctags
 DIST_SUBDIRS = teuchos rtop thyra kokkos epetra triutils tpetra \
 	epetraext isorropia aztecoo galeri amesos ifpack komplex claps \
-	belos anasazi pliris ml moertel stratimikos meros nox capo \
-	rythmos new_package moocho sacado PyTrilinos didasko \
+	belos anasazi rbgen pliris ml moertel stratimikos meros nox \
+	capo rythmos new_package moocho sacado PyTrilinos didasko \
 	WebTrilinos external
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = aclocal -I config
@@ -147,6 +147,8 @@ BUILD_PLIRIS_FALSE = @BUILD_PLIRIS_FALSE@
 BUILD_PLIRIS_TRUE = @BUILD_PLIRIS_TRUE@
 BUILD_PYTRILINOS_FALSE = @BUILD_PYTRILINOS_FALSE@
 BUILD_PYTRILINOS_TRUE = @BUILD_PYTRILINOS_TRUE@
+BUILD_RBGEN_FALSE = @BUILD_RBGEN_FALSE@
+BUILD_RBGEN_TRUE = @BUILD_RBGEN_TRUE@
 BUILD_RTOP_FALSE = @BUILD_RTOP_FALSE@
 BUILD_RTOP_TRUE = @BUILD_RTOP_TRUE@
 BUILD_RYTHMOS_FALSE = @BUILD_RYTHMOS_FALSE@
@@ -295,6 +297,9 @@ AUTOMAKE_OPTIONS = foreign
 @BUILD_PYTRILINOS_TRUE@PYTRILINOS_SUBDIR = PyTrilinos 
 @BUILD_PYTRILINOS_TRUE@PYTRILINOS_LIBS_BUILD_CMND = cd PyTrilinos ; $(MAKE) libs ;
 @BUILD_PYTRILINOS_TRUE@PYTRILINOS_ALL_LIBS_BUILD_CMND = cd PyTrilinos ; $(MAKE) all-libs ;
+@BUILD_RBGEN_TRUE@RBGEN_SUBDIR = rbgen
+@BUILD_RBGEN_TRUE@RBGEN_LIBS_BUILD_CMND = cd rbgen ; $(MAKE) libs ;
+@BUILD_RBGEN_TRUE@RBGEN_ALL_LIBS_BUILD_CMND = cd rbgen ; $(MAKE) all-libs ;
 @BUILD_RYTHMOS_TRUE@RYTHMOS_SUBDIR = rythmos
 @BUILD_RYTHMOS_TRUE@RYTHMOS_LIBS_BUILD_CMND = cd rythmos ; $(MAKE) libs ;
 @BUILD_RYTHMOS_TRUE@RYTHMOS_ALL_LIBS_BUILD_CMND = cd rythmos ; $(MAKE) all-libs ;
@@ -342,6 +347,7 @@ SUBDIRS = \
 	$(CLAPS_SUBDIR)        \
 	$(BELOS_SUBDIR)        \
 	$(ANASAZI_SUBDIR)      \
+        $(RBGEN_SUBDIR)        \
 	$(PLIRIS_SUBDIR)       \
 	$(ML_SUBDIR)           \
 	$(MOERTEL_SUBDIR)      \
@@ -656,6 +662,7 @@ libs:
 	$(CLAPS_LIBS_BUILD_CMND)
 	$(BELOS_LIBS_BUILD_CMND)
 	$(ANASAZI_LIBS_BUILD_CMND)
+	$(RBGEN_LIBS_BUILD_CMND)
 	$(PLIRIS_LIBS_BUILD_CMND)
 	$(ML_LIBS_BUILD_CMND)
 	$(MOERTEL_LIBS_BUILD_CMND)
@@ -690,6 +697,7 @@ all-libs:
 	$(CLAPS_ALL_LIBS_BUILD_CMND)
 	$(BELOS_ALL_LIBS_BUILD_CMND)
 	$(ANASAZI_ALL_LIBS_BUILD_CMND)
+	$(RBGEN_ALL_LIBS_BUILD_CMND)
 	$(PLIRIS_ALL_LIBS_BUILD_CMND)
 	$(ML_ALL_LIBS_BUILD_CMND)
 	$(STRATIMIKOS_ALL_LIBS_BUILD_CMND)

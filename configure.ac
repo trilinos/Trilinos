@@ -109,6 +109,8 @@ else
   ac_cv_use_python="yes"
 fi
 
+TAC_ARG_ENABLE_FEATURE(rbgen, [Build rbgen], RBGEN, no)
+
 TAC_ARG_ENABLE_FEATURE(rythmos, [Build rythmos], RYTHMOS, no)
 
 TAC_ARG_ENABLE_FEATURE(sacado, [Build sacado], SACADO, no)
@@ -149,6 +151,7 @@ if test "X$ac_cv_use_teuchos" != "Xno" ||
 	test "X$ac_cv_use_meros" != "Xno" ||
 	test "X$ac_cv_use_moocho" != "Xno" ||
 	test "X$ac_cv_use_nox" != "Xno" ||
+	test "X$ac_cv_use_rbgen" != "Xno" ||
 	test "X$ac_cv_use_rtop" != "Xno" ||
 	test "X$ac_cv_use_rythmos" != "Xno" ||
 	test "X$ac_cv_use_isorropia" != "Xno" ||
@@ -381,6 +384,17 @@ else
   BUILD_ANASAZI=no
 fi
 AM_CONDITIONAL(BUILD_ANASAZI, test "X$BUILD_ANASAZI" != "Xno")
+
+if test "X$ac_cv_use_rbgen" != "Xno"; then
+  AC_CONFIG_SUBDIRS([packages/rbgen])
+  BUILD_RBGEN=yes
+  if test "X$ac_cv_use_rbgen_explicit" != "Xyes"; then
+    ac_configure_args="$ac_configure_args --enable-rbgen"
+  fi
+else
+  BUILD_RBGEN=no
+fi
+AM_CONDITIONAL(BUILD_RBGEN, test "X$BUILD_RBGEN" != "Xno")
 
 if test "X$ac_cv_use_meros" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/meros])
