@@ -129,3 +129,7 @@ tsfcoreutils = \
 
 tsfextended = \
 --enable-tsfextended
+
+sacado = \
+--enable-sacado \
+--enable-sacado-alltests
