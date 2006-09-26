@@ -395,10 +395,13 @@ int read_cmd_file (
 
     else if (sscanf(line, " test fixed objects" SKIPEQ "%d%n",
                     &Test.Fixed_Objects, &n) == 1)
-      continue;                /* Unusual Partition generation testing flag */
+      continue;                /* Fixed objects test flag */
     else if (sscanf(line, " test fixed object" SKIPEQ "%d%n",
                     &Test.Fixed_Objects, &n) == 1)
-      continue;                /* Unusual Partition generation testing flag */
+      continue;                /* Fixed objects test flag */
+    else if (sscanf(line, " test dynamic hypergraph" SKIPEQ "%f%n",
+                    &Test.Dynamic_Hgraph, &n) == 1)
+      continue;                /* Dynamic hypergraph changes between iter. */
 
     else if (sscanf(line, " test multi callbacks" SKIPEQ "%d%n",
                     &Test.Multi_Callbacks, &n) == 1)

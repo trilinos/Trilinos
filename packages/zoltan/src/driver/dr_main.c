@@ -112,6 +112,7 @@ int main(int argc, char *argv[])
   Test.Multi_Callbacks = 0;
   Test.Gen_Files = 0;
   Test.Null_Lists = NONE;
+  Test.Dynamic_Hgraph = .0;
 
   Output.Text = 1;
   Output.Gnuplot = 0;
@@ -289,7 +290,7 @@ int main(int argc, char *argv[])
       float twiddle = 0.01;
       char str[4];
       /* Perturb coordinates of mesh */
-      if (mesh.data_type == ZOLTAN_GRAPH)
+      if (mesh.data_type == ZOLTAN_GRAPH){
         for (i = 0; i < mesh.num_elems; i++) {
           for (j = 0; j < mesh.num_dims; j++) {
             /* tmp = ((float) rand())/RAND_MAX; *//* Equiv. to sjplimp's test */
@@ -298,8 +299,21 @@ int main(int argc, char *argv[])
             mesh.elements[i].avg_coord[j] = mesh.elements[i].coord[0][j];
           }
         }
+      }
+      else if (mesh.data_type == HYPERGRAPH) {
+        printf("Debug: dynamic hgraph pertubation=%f\n", Test.Dynamic_Hgraph);
+        /* Randomly perturb pins. */
+        for (i = 0; i < mesh.hindex[mesh.nhedges]; i++) {
+          tmp = ((float) rand())/RAND_MAX; /* random in [0,1) */
+          if (tmp < Test.Dynamic_Hgraph){
+            mesh.hvertex[i] += tmp * mesh.num_elems;
+            if (mesh.hvertex[i] > mesh.num_elems)
+              mesh.hvertex[i] -= mesh.num_elems;
+          }
+        }
+      }
       /* change the ParMETIS Seed */
-      sprintf(str, "%d", iteration%10000);
+      sprintf(str, "%d", iteration);
       Zoltan_Set_Param(zz, "PARMETIS_SEED", str);
     }
 
