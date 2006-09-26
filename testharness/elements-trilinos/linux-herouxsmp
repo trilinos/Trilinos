@@ -40,6 +40,8 @@
 --disable-python
 --enable-thyra
 --enable-epetra-thyra
+--enable-sacado
+--enable-sacado-alltests
 --disable-default-packages
 --disable-amesos-pardiso
 --enable-amesos-taucs

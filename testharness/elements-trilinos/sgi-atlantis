@@ -30,4 +30,6 @@
 --enable-kokkos
 --enable-new_package
 --enable-new_swahili
+--enable-sacado
+--enable-sacado-alltests
 --disable-default-packages

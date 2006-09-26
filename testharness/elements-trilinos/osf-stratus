@@ -29,6 +29,8 @@
 --enable-kokkos
 --enable-komplex
 --enable-triutils
+--enable-sacado
+--enable-sacado-alltests
 --enable-shared
 --disable-static
 --disable-default-packages
