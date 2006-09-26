@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP EGREP USING_EXPORT_MAKEFILES_TRUE USING_EXPORT_MAKEFILES_FALSE PERL_EXE HAVE_PERL USING_PERL_TRUE USING_PERL_FALSE USING_GNUMAKE_TRUE USING_GNUMAKE_FALSE BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_ALLTESTS_TRUE BUILD_ALLTESTS_FALSE BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE execincludedir CPPUNIT_CONFIG CPPUNIT_CFLAGS CPPUNIT_LIBS ENABLE_ADOLC_TRUE ENABLE_ADOLC_FALSE ADOLC_INCDIR ADOLC_LIBDIR ADOLC_LIBS TRILINOS_TEMPLATE_OBJS ac_aux_dir LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP EGREP USING_EXPORT_MAKEFILES_TRUE USING_EXPORT_MAKEFILES_FALSE PERL_EXE HAVE_PERL USING_PERL_TRUE USING_PERL_FALSE USING_GNUMAKE_TRUE USING_GNUMAKE_FALSE BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_ALLTESTS_TRUE BUILD_ALLTESTS_FALSE BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE BUILD_FEMEX_TRUE BUILD_FEMEX_FALSE execincludedir CPPUNIT_CONFIG CPPUNIT_CFLAGS CPPUNIT_LIBS ENABLE_ADOLC_TRUE ENABLE_ADOLC_FALSE ADOLC_INCDIR ADOLC_LIBDIR ADOLC_LIBS TRILINOS_TEMPLATE_OBJS ac_aux_dir LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -894,6 +894,8 @@ Optional Features:
   --enable-sacado-examples
                           Build Sacado examples (default is yes if
                           --disable-examples is not specified)
+  --enable-sacado-fem-example
+
   --enable-libcheck       Check for some third-party libraries including BLAS
                           and LAPACK. (Cannot be disabled unless tests and
                           examples are also disabled.) (default is yes)
@@ -3812,7 +3814,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3815:" \
+echo "$as_me:3817:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -6381,6 +6383,33 @@ else
 fi
 
 
+# Check whether --enable-sacado-fem-example or --disable-sacado-fem-example was given.
+if test "${enable_sacado_fem_example+set}" = set; then
+  enableval="$enable_sacado_fem_example"
+  ac_cv_use_fem_example=$enableval
+else
+  ac_cv_use_fem_example=no
+fi;
+echo "$as_me:$LINENO: checking whether we should enable 1DFEM example" >&5
+echo $ECHO_N "checking whether we should enable 1DFEM example... $ECHO_C" >&6
+if test "X$ac_cv_use_fem_example" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+if test "X$ac_cv_use_fem_example" = "Xyes"; then
+  BUILD_FEMEX_TRUE=
+  BUILD_FEMEX_FALSE='#'
+else
+  BUILD_FEMEX_TRUE='#'
+  BUILD_FEMEX_FALSE=
+fi
+
+
 
 # Check whether --enable-libcheck or --disable-libcheck was given.
 if test "${enable_libcheck+set}" = set; then
@@ -7022,7 +7051,7 @@ fi
 # ------------------------------------------------------------------------
 # Output files
 # ------------------------------------------------------------------------
-                                                                                ac_config_files="$ac_config_files Makefile src/Makefile example/Makefile test/Makefile test/utils/Makefile test/TestSuite/Makefile test/tradoptest/Makefile test/tradoptest/testgen.as"
+                                                                                                              ac_config_files="$ac_config_files Makefile src/Makefile example/Makefile example/1DFEM/Makefile example/1DFEM/Source/Makefile example/1DFEM/Drivers/Makefile test/Makefile test/utils/Makefile test/TestSuite/Makefile test/tradoptest/Makefile test/tradoptest/testgen.as"
 
 
 cat >confcache <<\_ACEOF
@@ -7204,6 +7233,13 @@ if test -z "${BUILD_EXAMPLES_TRUE}" && test -z "${BUILD_EXAMPLES_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_EXAMPLES\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"BUILD_EXAMPLES\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_FEMEX_TRUE}" && test -z "${BUILD_FEMEX_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_FEMEX\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_FEMEX\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -7661,6 +7697,9 @@ do
   "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
   "src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
   "example/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/Makefile" ;;
+  "example/1DFEM/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/1DFEM/Makefile" ;;
+  "example/1DFEM/Source/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/1DFEM/Source/Makefile" ;;
+  "example/1DFEM/Drivers/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/1DFEM/Drivers/Makefile" ;;
   "test/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
   "test/utils/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/utils/Makefile" ;;
   "test/TestSuite/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/TestSuite/Makefile" ;;
@@ -7841,6 +7880,8 @@ s,@BUILD_ALLTESTS_TRUE@,$BUILD_ALLTESTS_TRUE,;t t
 s,@BUILD_ALLTESTS_FALSE@,$BUILD_ALLTESTS_FALSE,;t t
 s,@BUILD_EXAMPLES_TRUE@,$BUILD_EXAMPLES_TRUE,;t t
 s,@BUILD_EXAMPLES_FALSE@,$BUILD_EXAMPLES_FALSE,;t t
+s,@BUILD_FEMEX_TRUE@,$BUILD_FEMEX_TRUE,;t t
+s,@BUILD_FEMEX_FALSE@,$BUILD_FEMEX_FALSE,;t t
 s,@execincludedir@,$execincludedir,;t t
 s,@CPPUNIT_CONFIG@,$CPPUNIT_CONFIG,;t t
 s,@CPPUNIT_CFLAGS@,$CPPUNIT_CFLAGS,;t t

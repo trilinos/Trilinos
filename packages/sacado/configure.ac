@@ -209,6 +209,17 @@ TAC_ARG_ENABLE_FEATURE(examples, [Build Sacado examples], EXAMPLES, yes)
 TAC_ARG_ENABLE_FEATURE_SUB_CHECK(sacado, examples, [Build Sacado examples], SACADO_EXAMPLES)
 AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_sacado_examples" != "Xno")
 
+AC_ARG_ENABLE([sacado-fem-example],
+AC_HELP_STRING([--enable-sacado-fem-example, Enable building of the 1D FEM example.]),
+ac_cv_use_fem_example=$enableval, ac_cv_use_fem_example=no)
+AC_MSG_CHECKING(whether we should enable 1DFEM example)
+if test "X$ac_cv_use_fem_example" != "Xno"; then
+  AC_MSG_RESULT(yes)
+else
+  AC_MSG_RESULT(no)
+fi
+AM_CONDITIONAL(BUILD_FEMEX, test "X$ac_cv_use_fem_example" = "Xyes")
+
 TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
 
 # ------------------------------------------------------------------------
@@ -368,6 +379,9 @@ AC_CONFIG_FILES([
 		Makefile 
 		src/Makefile
 		example/Makefile
+	        example/1DFEM/Makefile
+                example/1DFEM/Source/Makefile
+		example/1DFEM/Drivers/Makefile
 		test/Makefile
 		test/utils/Makefile
 		test/TestSuite/Makefile
