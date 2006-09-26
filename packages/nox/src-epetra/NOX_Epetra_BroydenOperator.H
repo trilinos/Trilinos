@@ -100,6 +100,21 @@ class BroydenOperator : public Epetra_RowMatrix,
 
  public:
 
+  class ReplacementInterface
+  {
+   public:
+
+    enum FILL_TYPE {    JACOBIAN      ,
+                        PRECONDITIONER  
+                   };
+
+    virtual ~ReplacementInterface()
+    { }
+
+    virtual Teuchos::RefCountPtr<const Epetra_CrsMatrix> getReplacementValuesMatrix( const Epetra_Vector & x, FILL_TYPE ) = 0;
+
+  };
+
   //! Constructor taking an initial matrix to be updated
   BroydenOperator(Teuchos::ParameterList & nlParams, 
                   const Teuchos::RefCountPtr<NOX::Utils>& utils, 
@@ -246,6 +261,10 @@ class BroydenOperator : public Epetra_RowMatrix,
   //! Reset the values of our matrix
   void resetBroydenMatrix( const Epetra_CrsMatrix & mat );
 
+  //! Register replacement interface
+  void addReplacementInterface(ReplacementInterface * i )
+  { replacementInterfaces.push_back(i); }
+
   /** @name "Is" functions
    *
    * Checks to see if various objects have been computed. Returns true
@@ -342,6 +361,9 @@ class BroydenOperator : public Epetra_RowMatrix,
 
   //! Container of entries to omit from Broyden updates
   map< int, list<int> > retainedEntries;
+
+  //! Container of entries to omit from Broyden updates
+  vector<ReplacementInterface *> replacementInterfaces;
 
 };
 } // namespace Epetra

@@ -225,7 +225,7 @@ int main(int argc, char *argv[])
   converged->addStatusTest(absresid);
   //converged->addStatusTest(update);
   Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> maxiters = 
-    Teuchos::rcp(new NOX::StatusTest::MaxIters(20));
+    Teuchos::rcp(new NOX::StatusTest::MaxIters(500));
   Teuchos::RefCountPtr<NOX::StatusTest::FiniteValue> finiteValue = 
     Teuchos::rcp(new NOX::StatusTest::FiniteValue);
   Teuchos::RefCountPtr<NOX::StatusTest::Combo> combo = 
@@ -314,7 +314,7 @@ int main(int argc, char *argv[])
 
   problemManager.registerComplete();
 
-  // A consistencyy check
+  // A consistencyy check associated with using BroydenOperator
   if( 0 )
   {
     Epetra_CrsGraph maskGraph(Copy, problemManager.getCompositeSoln()->Map(), 0);

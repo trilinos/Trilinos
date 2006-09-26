@@ -524,8 +524,6 @@ Problem_Manager::registerComplete()
   AA = Teuchos::rcp( new Epetra_CrsGraph(Copy, *compositeMap, 0) );
   generateGraph();
 
-  cout << *AA << endl;
-
 /* --------------  Block for Coloring Preconditioner Operator ------
 
   // NOT YET WORKING
@@ -621,6 +619,11 @@ Problem_Manager::registerComplete()
       nlParams->sublist("Direction").sublist("Newton").sublist("Broyden Op");
     broydenParams.set("Write Broyden Info", true);
 
+    // Create some temp objects needed for construction
+    Teuchos::RefCountPtr<Epetra_CrsGraph>  blockAA = generateBlockDiagonalGraph( *compositeMap, false );             ;
+    blockAA->FillComplete();
+    Teuchos::RefCountPtr<Epetra_CrsMatrix> blockA = Teuchos::rcp( new Epetra_CrsMatrix(Copy, *blockAA) ); 
+    blockA->FillComplete();
     evaluate( NOX::Epetra::Interface::Required::Jac, &(*compositeSoln), NULL );
     Teuchos::RefCountPtr<NOX::Epetra::BroydenOperator> broydenOp = 
       Teuchos::rcp(new NOX::Epetra::BroydenOperator( *nlParams, utilsPtr, *compositeSoln, A, true) );
@@ -633,6 +636,10 @@ Problem_Manager::registerComplete()
         interface,
         jacInterface, jacOperator,
         compositeSoln) );
+
+    // To allow replacement of diagonal block values, register ourself as the
+    // needed interface
+    //broydenOp->addReplacementInterface( this );
   }
 
   if( 0 )
@@ -1704,9 +1711,11 @@ Problem_Manager::evaluate(
 
 //-----------------------------------------------------------------------------
 
-void 
-Problem_Manager::generateGraph()
+Teuchos::RefCountPtr<Epetra_CrsGraph> 
+Problem_Manager::generateBlockDiagonalGraph( const Epetra_Map & rowMap, bool includeProblemOffContribs )
 { 
+  Teuchos::RefCountPtr<Epetra_CrsGraph> graphPtr = 
+    Teuchos::rcp( new Epetra_CrsGraph(Copy, rowMap, 0) );
 
   // First construct a graph for each problem's self-dependence
   map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemIter = Problems.begin();
@@ -1744,11 +1753,11 @@ Problem_Manager::generateGraph()
       compositeRow = problemIndices[problemRow];
       for (int j = 0; j<numCols; j++)
         columnIndices[j] = problemIndices[columnIndices[j]];
-      int ierr = AA->InsertGlobalIndices(compositeRow, numCols, columnIndices);
+      int ierr = graphPtr->InsertGlobalIndices(compositeRow, numCols, columnIndices);
       if( ierr )
       {
         if (MyPID==0)
-          cout << "ERROR: AA->InsertGlobalIndices(...)" << endl;
+          cout << "ERROR: graphPtr->InsertGlobalIndices(...)" << endl;
         throw "Problem_Manager ERROR";
       }
     }
@@ -1756,158 +1765,259 @@ Problem_Manager::generateGraph()
 
     // Now allow the problem to explicitly create known dependencies on other
     // problems
-    for( unsigned int k = 0; k < problem.depProblems.size(); ++k) 
+    if( includeProblemOffContribs )
     {
-      // Get the needed objects for the depend problem
-      GenericEpetraProblem & dependProblem = *(Problems[problem.depProblems[k]]);
-      int dependId                         =  dependProblem.getId();
-      Epetra_IntVector & dependIndices     = *(ProblemToCompositeIndices[dependId]);
-
-      if( problem.suppliesOffBlockStructure(k) )
+      for( unsigned int k = 0; k < problem.depProblems.size(); ++k) 
       {
-        map<int, vector<int> > offBlockIndices;
-        problem.getOffBlockIndices( offBlockIndices );
+        // Get the needed objects for the depend problem
+        GenericEpetraProblem & dependProblem = *(Problems[problem.depProblems[k]]);
+        int dependId                         =  dependProblem.getId();
+        Epetra_IntVector & dependIndices     = *(ProblemToCompositeIndices[dependId]);
 
-        map<int, vector<int> >::iterator indIter     = offBlockIndices.begin(),
-                                         indIter_end = offBlockIndices.end()   ;
-
-        for( ; indIter != indIter_end; ++indIter )
+        if( problem.suppliesOffBlockStructure(k) )
         {
-          int compositeRow = problemIndices[(*indIter).first];
-          vector<int> & colIndices = (*indIter).second;
+          map<int, vector<int> > offBlockIndices;
+          problem.getOffBlockIndices( offBlockIndices );
 
-          // Convert column indices to composite values
-          for( unsigned int cols = 0; cols < colIndices.size(); ++cols )
-            colIndices[cols] = dependIndices[ colIndices[cols] ];
+          map<int, vector<int> >::iterator indIter     = offBlockIndices.begin(),
+                                           indIter_end = offBlockIndices.end()   ;
 
-          AA->InsertGlobalIndices( compositeRow, colIndices.size(), &colIndices[0] );
+          for( ; indIter != indIter_end; ++indIter )
+          {
+            int compositeRow = problemIndices[(*indIter).first];
+            vector<int> & colIndices = (*indIter).second;
+
+            // Convert column indices to composite values
+            for( unsigned int cols = 0; cols < colIndices.size(); ++cols )
+              colIndices[cols] = dependIndices[ colIndices[cols] ];
+
+            graphPtr->InsertGlobalIndices( compositeRow, colIndices.size(), &colIndices[0] );
+          }
         }
       }
     }
   }
 
-  // Next create inter-problem block graph contributions if desired;
-  // default is false
+  return graphPtr;
+}
+
+//-----------------------------------------------------------------------------
+
+Teuchos::RefCountPtr<Epetra_CrsGraph> 
+Problem_Manager::generateOffDiagonalBlockGraph( const Epetra_Map & rowMap )
+{ 
+  Teuchos::RefCountPtr<Epetra_CrsGraph> graphPtr = 
+    Teuchos::rcp( new Epetra_CrsGraph(Copy, rowMap, 0) );
 
   // Two things are achieved here: 1) The composite Graph is augmented to
   // accommodate off-diagonal blocks and 2) these blocks are packaged as
   // individual NOX::EpetreNew::Group's owned by the manager.
 
-  if( doOffBlocks ) 
-  {
 #ifdef HAVE_NOX_EPETRAEXT
 
-    problemIter = Problems.begin();
+  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemIter = Problems.begin();
+  map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemLast = Problems.end();
 
-    // Loop over each problem being managed and ascertain its graph as well
-    // as its graph from its dependencies
-    for( ; problemIter != problemLast; problemIter++) 
+  problemIter = Problems.begin();
+
+  // Loop over each problem being managed and ascertain its graph as well
+  // as its graph from its dependencies
+  for( ; problemIter != problemLast; problemIter++) 
+  {
+    GenericEpetraProblem & problem = *(*problemIter).second;
+    int probId = problem.getId();
+
+    Epetra_CrsGraph & problemGraph = *problem.getGraph();
+
+    // Get the indices map for copying data from this problem into 
+    // the composite problem
+    Epetra_IntVector& problemIndices = *(ProblemToCompositeIndices[probId]);
+
+    // Create containers for the off-block objects
+    vector<OffBlock_Manager*> OffBlock_ManagersVec;
+
+    int problemMaxNodes = problemGraph.Map().NumGlobalElements();
+
+    int problemRow, compositeRow, numCols, numDepCols;
+
+    // Loop over each problem on which this one depends
+    for( unsigned int k = 0; k < problem.depProblems.size(); ++k) 
     {
-      GenericEpetraProblem & problem = *(*problemIter).second;
-      int probId = problem.getId();
-  
-      Epetra_CrsGraph & problemGraph = *problem.getGraph();
+      // Create the off-block graph to be constructed for this 
+      // problem-problem coupling
+      // NOTE: the map used for the off-block graph is the composite Map
+      // to allow valid global indexing
+      Epetra_CrsGraph* offGraphPtr = new Epetra_CrsGraph(Copy, *compositeMap, 0);
 
-      // Get the indices map for copying data from this problem into 
-      // the composite problem
-      Epetra_IntVector& problemIndices = *(ProblemToCompositeIndices[probId]);
-  
-      // Create containers for the off-block objects
-      vector<OffBlock_Manager*> OffBlock_ManagersVec;
+      Epetra_CrsGraph &offGraph = *offGraphPtr;
 
-      int problemMaxNodes = problemGraph.Map().NumGlobalElements();
+      // Get the needed objects for the depend problem
+      GenericEpetraProblem & dependProblem = *(Problems[problem.depProblems[k]]);
 
-      int problemRow, compositeRow, numCols, numDepCols;
-  
-      // Loop over each problem on which this one depends
-      for( unsigned int k = 0; k < problem.depProblems.size(); ++k) 
+      int dependId = dependProblem.getId();
+
+      XferOp * xferOpPtr = problem.xferOperators[dependId];
+
+      if( !xferOpPtr ) 
       {
-        // Create the off-block graph to be constructed for this 
-        // problem-problem coupling
-        // NOTE: the map used for the off-block graph is the composite Map
-        // to allow valid global indexing
-        Epetra_CrsGraph* offGraphPtr = new Epetra_CrsGraph(Copy, *compositeMap, 0);
-
-	Epetra_CrsGraph &offGraph = *offGraphPtr;
-
-        // Get the needed objects for the depend problem
-        GenericEpetraProblem & dependProblem = *(Problems[problem.depProblems[k]]);
-
-        int dependId = dependProblem.getId();
-
-        XferOp * xferOpPtr = problem.xferOperators[dependId];
-
-	if( !xferOpPtr ) 
-        {
-          cout << "ERROR: Unable to get Xfer_Operator for dependence of "
-               << "problem \"" << problem.getName() << "\" on problem "
-               << "\"" << dependProblem.getName() << "\" !!" << endl;
-          throw "Problem_Manager ERROR";
-        }
-        XferOp &xferOp = *xferOpPtr;
-        multimap<int,int>& depNodesMap = xferOp.getDependentNodesMap();
-
-        // Get the indices map for copying data from the dependent problem into 
-        // the composite problem
-        Epetra_IntVector& dependIndices = *(ProblemToCompositeIndices[dependId]);
-
-        // Dimension nonzero columns index array with upper bound which is
-	// the previous definition * 2 since each node in problem could
-	// depend at most on 2 nodes in dependProblem
-        int* columnIndices = new int[problemMaxNodes];
-        int maxDepNodes = 2 * problemGraph.Map().MaxAllGID();
-        int* dependentColIndices = new int[maxDepNodes];
-
-        // We must loop over each dependent node of problem and then determine 
-	// the dependence of each on the nodes of dependProblem
-
-        // Loop over each row in problem and ascertain all dependencies on
-	// dependProblem as determined by the xferOp map
-        for (int i = 0; i<problemGraph.NumMyRows(); i++) 
-        {
-          problemRow = problemGraph.Map().GID(i);
-
-          problemGraph.ExtractGlobalRowCopy(problemRow, problemMaxNodes, 
-                               numCols, columnIndices);
-  
-          // Convert row/column indices to composite problem
-          compositeRow = problemIndices[problemRow];
-          numDepCols = 0;
-          for (int j = 0; j<numCols; j++) 
-          {
-            pair< multimap<int, int>::iterator,
-                  multimap<int, int>::iterator > rangeN
-                = depNodesMap.equal_range(columnIndices[j]);
-            multimap<int, int>::iterator iterN;
-            for( iterN = rangeN.first; iterN != rangeN.second; iterN++)
-              dependentColIndices[numDepCols++] = dependIndices[(*iterN).second];
-          }
-          AA->InsertGlobalIndices(compositeRow, numDepCols, dependentColIndices);
-          offGraph.InsertGlobalIndices(compositeRow, numDepCols, dependentColIndices);
-        }
-        delete [] columnIndices; columnIndices = 0;
-        delete [] dependentColIndices; dependentColIndices = 0;
-
-	offGraph.FillComplete();
-#ifdef DEBUG_PROBLEM_MANAGER
-	offGraph.Print(cout);
-#endif
-        // A new graph is created within the OffBlock_Manager; so we delete our temporary 
-        OffBlock_ManagersVec.push_back( new OffBlock_Manager(*this, offGraph,
-                                                        probId, dependId) );
-        delete offGraphPtr;
+        cout << "ERROR: Unable to get Xfer_Operator for dependence of "
+             << "problem \"" << problem.getName() << "\" on problem "
+             << "\"" << dependProblem.getName() << "\" !!" << endl;
+        throw "Problem_Manager ERROR";
       }
+      XferOp &xferOp = *xferOpPtr;
+      multimap<int,int>& depNodesMap = xferOp.getDependentNodesMap();
 
-      OffBlock_Managers[probId] = OffBlock_ManagersVec;
-    }
+      // Get the indices map for copying data from the dependent problem into 
+      // the composite problem
+      Epetra_IntVector& dependIndices = *(ProblemToCompositeIndices[dependId]);
+
+      // Dimension nonzero columns index array with upper bound which is
+      // the previous definition * 2 since each node in problem could
+      // depend at most on 2 nodes in dependProblem
+      int* columnIndices = new int[problemMaxNodes];
+      int maxDepNodes = 2 * problemGraph.Map().MaxAllGID();
+      int* dependentColIndices = new int[maxDepNodes];
+
+      // We must loop over each dependent node of problem and then determine 
+      // the dependence of each on the nodes of dependProblem
+
+      // Loop over each row in problem and ascertain all dependencies on
+      // dependProblem as determined by the xferOp map
+      for (int i = 0; i<problemGraph.NumMyRows(); i++) 
+      {
+        problemRow = problemGraph.Map().GID(i);
+
+        problemGraph.ExtractGlobalRowCopy(problemRow, problemMaxNodes, 
+                             numCols, columnIndices);
+
+        // Convert row/column indices to composite problem
+        compositeRow = problemIndices[problemRow];
+        numDepCols = 0;
+        for (int j = 0; j<numCols; j++) 
+        {
+          pair< multimap<int, int>::iterator,
+                multimap<int, int>::iterator > rangeN
+              = depNodesMap.equal_range(columnIndices[j]);
+          multimap<int, int>::iterator iterN;
+          for( iterN = rangeN.first; iterN != rangeN.second; iterN++)
+            dependentColIndices[numDepCols++] = dependIndices[(*iterN).second];
+        }
+        graphPtr->InsertGlobalIndices(compositeRow, numDepCols, dependentColIndices);
+        offGraph.InsertGlobalIndices(compositeRow, numDepCols, dependentColIndices);
+      }
+      delete [] columnIndices; columnIndices = 0;
+      delete [] dependentColIndices; dependentColIndices = 0;
+
+      offGraph.FillComplete();
+#ifdef DEBUG_PROBLEM_MANAGER
+      offGraph.Print(cout);
 #endif
-  } // end doOffBlocks
+      // A new graph is created within the OffBlock_Manager; so we delete our temporary 
+      OffBlock_ManagersVec.push_back( new OffBlock_Manager(*this, offGraph,
+                                                      probId, dependId) );
+      delete offGraphPtr;
+    }
+
+    OffBlock_Managers[probId] = OffBlock_ManagersVec;
+  }
+#endif
+
+  return graphPtr;
+}
+
+//-----------------------------------------------------------------------------
+
+Teuchos::RefCountPtr<Epetra_CrsGraph> 
+Problem_Manager::composeGraphs( const Epetra_CrsGraph & graph1, const Epetra_CrsGraph & graph2 )
+{ 
+  Teuchos::RefCountPtr<Epetra_CrsGraph> graphPtr = 
+    Teuchos::rcp( new Epetra_CrsGraph(Copy, graph1.RowMap(), 0) );
+
+  if( !graph1.Filled() || !graph2.Filled() )
+  {
+    cout << "ERROR: Problem_Manager::composeGraphs(...) One or both incoming graphs have not "
+         << "been transformed to local index space by calling FillComplete()." << endl;
+    throw "Problem_Manager ERROR";
+  }
+
+  if( !graph1.RowMap().SameAs( graph2.RowMap() ) )
+  {
+    cout << "ERROR: Problem_Manager::composeGraphs(...) Incoming graphs do not have "
+         << "the same row maps." << endl;
+    throw "Problem_Manager ERROR";
+  }
+
+  int * indices1   ;
+  int * indices2   ;
+  int * newIndices ;
+  int   numInd1    ;
+  int   numInd2    ;
+  int   numNewInds ;
+  list<int> list1  ;
+  list<int> list2  ;
+
+
+  for( int row = 0; row < graph1.NumMyRows(); ++row )
+  {
+    list1.clear();
+    list2.clear();
+
+    graph1.ExtractMyRowView( row, numInd1, indices1 );
+    graph2.ExtractMyRowView( row, numInd2, indices2 );
+
+    for( int col = 0; col < numInd1; ++col )
+      list1.push_back(graph1.ColMap().GID(indices1[col]));
+
+    for( int col = 0; col < numInd2; ++col )
+      list2.push_back(graph2.ColMap().GID(indices2[col]));
+
+    list1.sort();
+    list2.sort();
+
+    list1.merge(list2);
+
+    numNewInds = list1.size();
+    newIndices = new int[ numNewInds ];
+
+    list<int>::iterator iter = list1.begin();
+    for( int col = 0; col < numNewInds; )
+      newIndices[col++] = *(iter++);
+
+    graphPtr->InsertGlobalIndices( graph1.RowMap().GID(row), numNewInds, newIndices );
+
+    delete [] newIndices; 
+  }
+
+  return graphPtr;
+}
+
+//-----------------------------------------------------------------------------
+
+void
+Problem_Manager::generateGraph() 
+{ 
+
+  // First construct a graph for each problem's self-dependence
+  Teuchos::RefCountPtr<Epetra_CrsGraph> diagBlkGraph = generateBlockDiagonalGraph( *compositeMap, true );
+  diagBlkGraph->FillComplete();
+
+  //// Next create inter-problem block graph contributions if desired;
+  //// default is false
+  if( doOffBlocks ) 
+  {
+    Teuchos::RefCountPtr<Epetra_CrsGraph> offBlkGraph = 
+      generateOffDiagonalBlockGraph( *compositeMap );
+    offBlkGraph->FillComplete();
+
+    AA = composeGraphs( *diagBlkGraph, *offBlkGraph );
+  }
+  else
+  {
+    AA = diagBlkGraph;
+  }
 
   AA->FillComplete();
-
-#ifdef DEBUG_PROBLEM_MANAGER
-  AA->Print(cout);
-#endif
 
   return;
 }
@@ -2054,6 +2164,26 @@ Problem_Manager::exchangeDataTo(int solverId)
   Problems[solverId]->doTransfer();
 
   return false;
+} 
+
+//-----------------------------------------------------------------------------
+
+Teuchos::RefCountPtr<const Epetra_CrsMatrix> 
+Problem_Manager::getReplacementValuesMatrix( const Epetra_Vector & x, FILL_TYPE )
+{ 
+  cout << "Problem_Manager::getReplacementValuesMatrix(...) called." << endl;
+
+  bool ok = evaluate( NOX::Epetra::Interface::Required::Jac, &x, NULL );
+
+  if( !ok )
+  {
+    cout << "ERROR: Problem_Manager::getReplacementValuesMatrix call to evaluate failed."
+         << endl;
+
+    throw "Problem_Manager ERROR";
+  }
+ 
+  return A;
 } 
 
 //-----------------------------------------------------------------------------

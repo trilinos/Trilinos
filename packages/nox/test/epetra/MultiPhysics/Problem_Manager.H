@@ -42,6 +42,7 @@
 #include "NOX.H"
 #include "NOX_Multiphysics_DataExchange_Interface.H"
 #include "NOX_Epetra.H"
+#include "NOX_Epetra_BroydenOperator.H"
 
 #include "Problem_Interface.H"
 #include "GenericEpetraProblem.H"
@@ -56,7 +57,8 @@ class OffBlock_Manager;
 #include <vector>
 
 class Problem_Manager : public GenericEpetraProblem ,
-                        public NOX::Multiphysics::DataExchange::Interface
+                        public NOX::Multiphysics::DataExchange::Interface,
+                        public NOX::Epetra::BroydenOperator::ReplacementInterface
 {
 
 public:
@@ -250,6 +252,22 @@ public:
   virtual bool exchangeAllData();
 
   virtual bool exchangeDataTo(int solverId);
+
+  // Inherited method to allow matrix replacement with BroydenOperator
+  virtual Teuchos::RefCountPtr<const Epetra_CrsMatrix> 
+  getReplacementValuesMatrix( const Epetra_Vector & x, NOX::Epetra::BroydenOperator::ReplacementInterface::FILL_TYPE );
+
+  // method to generate only a diagonal block composite graph
+  virtual Teuchos::RefCountPtr<Epetra_CrsGraph> 
+  generateBlockDiagonalGraph( const Epetra_Map &, bool includeProblemOffContribs = false );
+
+  // method to generate only off-diagonal block composite graph
+  virtual Teuchos::RefCountPtr<Epetra_CrsGraph> 
+  generateOffDiagonalBlockGraph( const Epetra_Map & );
+
+  // method to combine (compose) two composite graphs into a new one
+  virtual Teuchos::RefCountPtr<Epetra_CrsGraph> 
+  composeGraphs( const Epetra_CrsGraph &, const Epetra_CrsGraph & );
 
 private:
 

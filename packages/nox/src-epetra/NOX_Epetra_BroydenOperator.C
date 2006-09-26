@@ -313,7 +313,21 @@ const Epetra_BlockMap& BroydenOperator::Map() const
 bool 
 BroydenOperator::computeJacobian( const Epetra_Vector & x, Epetra_Operator& Jac )
 {
-  return computeSparseBroydenUpdate();
+  bool ok = false;
+
+  ok = computeSparseBroydenUpdate();
+
+  vector<ReplacementInterface *>::iterator iter = replacementInterfaces.begin() ,
+                                      iter_end  = replacementInterfaces.end()     ;
+
+  for( ; iter_end != iter; ++iter )
+  {
+    Teuchos::RefCountPtr<const Epetra_CrsMatrix> pMat = (*iter)->getReplacementValuesMatrix(x, ReplacementInterface::JACOBIAN );
+    replaceBroydenMatrixValues( *pMat );
+  }
+
+  return ok;
+
 }
 
 //-----------------------------------------------------------------------------
@@ -323,7 +337,21 @@ BroydenOperator::computePreconditioner( const Epetra_Vector & x,
 					Epetra_Operator& Prec,
                                         Teuchos::ParameterList * pList )
 {
-  return computeJacobian( x, Prec );
+  bool ok = false;
+
+  ok = computeSparseBroydenUpdate();
+
+  vector<ReplacementInterface *>::iterator iter = replacementInterfaces.begin() ,
+                                      iter_end  = replacementInterfaces.end()     ;
+
+  for( ; iter_end != iter; ++iter )
+  {
+    Teuchos::RefCountPtr<const Epetra_CrsMatrix> pMat = (*iter)->getReplacementValuesMatrix(x, ReplacementInterface::PRECONDITIONER );
+    replaceBroydenMatrixValues( *pMat );
+  }
+
+  return ok;
+
 }
 
 //-----------------------------------------------------------------------------
@@ -686,10 +714,11 @@ BroydenOperator::removeEntriesFromBroydenUpdate( const Epetra_CrsGraph & graph )
 void 
 BroydenOperator::replaceBroydenMatrixValues( const Epetra_CrsMatrix & mat)
 {
-  double * values = 0;
-  int * indices = 0;
-  int numEntries;
-  int ierr;
+  double * values    ;
+  int    * indices   ;
+  int     numEntries ;
+  int     ierr       ;
+
   for( int row = 0; row < mat.NumMyRows(); ++row) 
   {
     ierr = mat.ExtractMyRowView(row, numEntries, values, indices);
