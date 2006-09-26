@@ -8,14 +8,17 @@ usage: autodoc [options] filename1 ...
 
 options: -h | --help      Print this message
          -H | --html      Output in HTML
+         -p | --python    Output in python
+         -r | --restruct  Output in reStructuredText
+         -t | --text      Output in standard text (default)
          -v | --version   Print the version number
 
 filename1 ...             A list of SWIG interface files
 """
 
-__version__ = "1.2"
+__version__ = "1.3"
 __author__  = "Bill Spotz"
-__date__    = "Aug 7 2006"
+__date__    = "Sep 22 2006"
 
 # System imports
 from   getopt   import *
@@ -176,9 +179,9 @@ def main():
 
     # Initialization
     (progDir,progName) = os.path.split(sys.argv[0])
-    options      = "hHv"
-    long_options = ["help", "html", "version"]
-    html         = False
+    options      = "hHprtv"
+    long_options = ["help", "html", "python", "restruct", "text", "version"]
+    format       = "text"
 
     # Get the options and arguments from the command line
     (opts,args) = getopt(sys.argv[1:], options, long_options)
@@ -189,7 +192,13 @@ def main():
             print __doc__
             sys.exit()
         elif flag[0] in ("-H", "--html"):
-            html = True
+            format = "html"
+        elif flag[0] in ("-p", "--python"):
+            format = "python"
+        elif flag[0] in ("-r", "--restruct"):
+            format = "restruct"
+        elif flag[0] in ("-t", "--text"):
+            format = "text"
         elif flag[0] in ("-v", "--version"):
             print progName, __version__, __date__
             sys.exit()
@@ -218,22 +227,36 @@ def main():
     # Output the results
     keys = wrapperDict.keys()
     keys.sort()
-    if html:
+
+    # Standard text output
+    if format == "text":
+        for key in keys:
+            print key + ":"
+            for header in wrapperDict[key]:
+                print "    " + header
+
+    # HTML output
+    elif format == "html":
         print "  <ul>"
-    for key in keys:
-        if html:
+        for key in keys:
             print "    <li> %s:\n    <ul>" % key
-        else:
-            print "%s:" % key
-        for header in wrapperDict[key]:
-            if html:
+            for header in wrapperDict[key]:
                 print "      <li> %s" % header
-            else:
-                print "    %s" % header
-        if html:
             print "    </ul>"
-    if html:
         print "  </ul>"
+
+    # python output
+    elif format == "python":
+        print wrapperDict
+
+    # reStructuredText output
+    elif format == "restruct":
+        for key in keys:
+            print "*", key
+            print
+            for header in wrapperDict[key]:
+                print "  -", header
+            print
 
 ######################################################
 
