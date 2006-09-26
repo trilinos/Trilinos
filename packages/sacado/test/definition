@@ -1,0 +1,10 @@
+#
+# FRAMEWORK group
+#
+
+# Sacado unit tests
+(FRAMEWORK,INSTALL) {
+    DIRS = TestSuite;
+    EXIT-STATUS = STRING-COMPARISON(OK);
+    COMM = SERIAL, MPI;
+}
