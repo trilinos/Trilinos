@@ -399,6 +399,9 @@ int read_cmd_file (
     else if (sscanf(line, " test fixed object" SKIPEQ "%d%n",
                     &Test.Fixed_Objects, &n) == 1)
       continue;                /* Fixed objects test flag */
+    else if (sscanf(line, " test dynamic weights" SKIPEQ "%f%n",
+                    &Test.Dynamic_Weights, &n) == 1)
+      continue;                /* Dynamic weights; changes between iter. */
     else if (sscanf(line, " test dynamic hypergraph" SKIPEQ "%f%n",
                     &Test.Dynamic_Hgraph, &n) == 1)
       continue;                /* Dynamic hypergraph changes between iter. */

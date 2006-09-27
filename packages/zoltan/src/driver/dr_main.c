@@ -112,6 +112,7 @@ int main(int argc, char *argv[])
   Test.Multi_Callbacks = 0;
   Test.Gen_Files = 0;
   Test.Null_Lists = NONE;
+  Test.Dynamic_Weights = .0;
   Test.Dynamic_Hgraph = .0;
 
   Output.Text = 1;
@@ -297,6 +298,16 @@ int main(int argc, char *argv[])
             tmp = (float) (i % 10) / 10.;
             mesh.elements[i].coord[0][j] += twiddle * (2.0*tmp-1.0);
             mesh.elements[i].avg_coord[j] = mesh.elements[i].coord[0][j];
+          }
+        }
+        /* Increase weights in some partitions */
+        if (Test.Dynamic_Weights){
+          /* Randomly pick 10% of partitions to "refine" */
+          /* Increase vertex weight, and also edge weights? TODO */
+          j = (int) ((10.0*rand())/RAND_MAX + .5);
+          for (i = 0; i < mesh.num_elems; i++) {
+            if ((mesh.elements[i].my_part%10) == j)
+              mesh.elements[i].cpu_wgt[0] *= Test.Dynamic_Weights;
           }
         }
       }

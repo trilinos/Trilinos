@@ -222,6 +222,7 @@ struct Test_Flags {
   int Gen_Files;            /* Exercise output file generation. */
   int Null_Lists;           /* Exercises null import or export lists to
                                Zoltan_Migrate. */
+  float Dynamic_Weights;    /* Perturb weights between iterations. */
   float Dynamic_Hgraph;     /* Hypergraph pertubation between iterations. */
 };
 
