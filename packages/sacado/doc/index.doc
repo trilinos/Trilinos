@@ -1,28 +1,41 @@
-/*! \mainpage Trilinos/packages/new_package
+/*! \mainpage Sacado:  Automatic Differentation Tools for C++ Applications
 \htmlonly
 \endhtmlonly
 
-\section intro Introduction 
-The Trilinos/packages/new_package package was created as a tool for developers
-wishing to utilize the Autotools configure/build process for a new or existing
-package.  Before beginning this process, approval must be obtained from the
-Trilinos Project Leader.
+\section sacado_outline Outline
 
-See packages/new_package/README for more details
+<ul>
+<li>\ref sacado_intro
+<li>\ref sacado_startup
+<li>\ref sacado_browser
+</ul>
 
-\section startup Overview of new_package
+\section sacado_intro Introduction 
+Sacado is a set of automatic differentiation tools for C++ applications.  It
+provides templated classes for forward, reverse and Taylor mode automatic 
+differentiation.
 
-new_package contains two classes:
+\section sacado_startup Overview of sacado
+
+Sacado contains several basic AD classes:
 
 <ul> 
 
-<li> Newp_Hello 
-<li> Newp_Jambo (only if configured with --enable-newp_swahili)
+<li> Forward mode AD with the number of derivative components chosen at run-time:  Sacado::Fad::DFad 
+<li>  Forward mode AD with the number of derivative components chosen at compile-time:  Sacado::Fad::SFad
+<li> Reverse mode:  Sacado::Rad::ADvar
+<li> High-order univariate Taylor polynomials:  Sacado::Taylor::DTaylor
 
 
 </ul>
 
-This documentations should not be taken as a guide.  I made it work
-with doxygen and illustrated one or two features.  Nothing more.
+\section sacado_browser Browse all of sacado as a single doxygen collection
+
+You can browse all of Sacado as a <A HREF="../../browser/doc/html/index.html">single
+doxygen collection</A>. Warning, this is not the recommended way to learn
+about Sacado software.  However, this is a good way to browse the <a
+href="../../browser/doc/html/dirs.html">directory structure of sacado</a>, to <a
+href="../../browser/doc/html/files.html">locate files</a>, etc.
+
 
 */
