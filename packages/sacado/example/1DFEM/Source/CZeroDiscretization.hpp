@@ -88,9 +88,6 @@ private:
 
 protected:
 
-  //! Total number of elements
-  unsigned int n_elem;
-
   //! Coordinates of mesh nodes
   std::vector<double> x;
 
@@ -100,10 +97,13 @@ protected:
   //! Element mesh
   Teuchos::RefCountPtr<Mesh> mesh;
 
-  //! Map
+  //! Element map
+  Teuchos::RefCountPtr<Epetra_Map> elem_map;
+
+  //! Unknown Map
   Teuchos::RefCountPtr<Epetra_Map> map;
 
-  //! Overlapped map
+  //! Overlapped unknown map
   Teuchos::RefCountPtr<Epetra_Map> overlap_map;
 
   //! Jacobian matrix graph
@@ -112,14 +112,8 @@ protected:
   //! Overlapped Jacobian matrix graph
   Teuchos::RefCountPtr<Epetra_CrsGraph> overlap_graph;
 
-  //! Number of processors
-  unsigned int num_proc;
-
   //! Processor ID
   unsigned int myPID;
-
-  //! Number of elements per processor
-  unsigned int elem_per_proc;
 
   //! Number of elements on this processor
   unsigned int numMyElements;
@@ -129,9 +123,6 @@ protected:
 
   //! Number of equations per node
   unsigned int neq;
-
-  //! Global ID of first node
-  unsigned int node_GID_base;
 
 };
 

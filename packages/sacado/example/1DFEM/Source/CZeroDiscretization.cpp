@@ -37,24 +37,22 @@ CZeroDiscretization::CZeroDiscretization(
 		      const std::vector<double>& coords,
 		      unsigned int num_equations,
 		      Teuchos::RefCountPtr<const Epetra_Comm> epetra_comm) :
-  n_elem(coords.size()-1),
   x(coords),
   comm(epetra_comm),
   mesh(),
+  elem_map(),
   map(),
   overlap_map(),
   graph(),
   overlap_graph(),
-  num_proc(comm->NumProc()),
   myPID(comm->MyPID()),
-  elem_per_proc(n_elem / num_proc),
-  numMyElements(elem_per_proc),
+  numMyElements(0),
   nodes_per_element(0),
-  neq(num_equations),
-  node_GID_base(elem_per_proc*(nodes_per_element-1)*myPID)
+  neq(num_equations)
 {
-  if (myPID == num_proc - 1)
-    numMyElements = n_elem - elem_per_proc * (num_proc - 1);
+  // Distribute the elements equally among processors
+  elem_map = Teuchos::rcp(new Epetra_Map(x.size()-1, 0, *comm));
+  numMyElements = elem_map->NumMyElements();
 
   AbstractElement *base_element = new LinearElement();  // replace w/factory
   nodes_per_element = base_element->numNodes();
@@ -74,10 +72,9 @@ CZeroDiscretization::createMesh()
   Teuchos::RefCountPtr<AbstractElement> e;
   unsigned int elem_GID;
   for (unsigned int i=0; i<numMyElements; i++) {
-    elem_GID = elem_per_proc*myPID + i;
+    elem_GID = elem_map->GID(i);
     e = Teuchos::rcp(new LinearElement); // replace w/factory
-    e->createNodes(x[elem_GID], x[elem_GID+1], 
-		   node_GID_base + i*(nodes_per_element-1));
+    e->createNodes(x[elem_GID], x[elem_GID+1], elem_GID*(nodes_per_element-1));
     mesh->addElement(e);
   }
 }
@@ -88,7 +85,8 @@ CZeroDiscretization::createMaps()
   // Create overlap DOF map
   unsigned int overlapNumMyNodes = numMyElements*(nodes_per_element-1) + 1;
   unsigned int overlapNumMyDOF = overlapNumMyNodes*neq;
-  unsigned int overlap_dof_GID_base = node_GID_base*neq;
+  unsigned int overlap_dof_GID_base = 
+    elem_map->MinMyGID()*(nodes_per_element-1)*neq;
   std::vector<int> overlap_dof_GID(overlapNumMyDOF);
   for (unsigned int i=0; i<overlapNumMyDOF; i++)
     overlap_dof_GID[i] = overlap_dof_GID_base + i;
@@ -97,20 +95,18 @@ CZeroDiscretization::createMaps()
 				0, *comm));
   
   // Create non-overlap DOF map
-  unsigned int numMyNodes = overlapNumMyNodes - 1;
-  if (myPID == 0)
-    numMyNodes = overlapNumMyNodes;
-  unsigned int numMyDOF = numMyNodes*neq;
-  unsigned int dof_GID_base;
-  if (myPID == 0)
-    dof_GID_base = overlap_dof_GID_base;
-  else
-    dof_GID_base = overlap_dof_GID_base + 1;
-  std::vector<int> dof_GID(numMyDOF);
-  for (unsigned int i=0; i<numMyDOF; i++)
-    dof_GID[i] = dof_GID_base + i;
-  map = 
-    Teuchos::rcp(new Epetra_Map(-1, numMyDOF, &(dof_GID[0]), 0, *comm));
+  if (myPID == 0) {
+    int numMyDOF = overlapNumMyNodes*neq;
+    map = 
+      Teuchos::rcp(new Epetra_Map(-1, numMyDOF, &(overlap_dof_GID[0]), 
+				  0, *comm));
+  }
+  else {
+    int numMyDOF = (overlapNumMyNodes - 1)*neq;
+    map = 
+      Teuchos::rcp(new Epetra_Map(-1, numMyDOF, &(overlap_dof_GID[neq]), 
+				  0, *comm));
+  }
 }
 
 void
