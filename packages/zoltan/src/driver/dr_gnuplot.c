@@ -70,7 +70,7 @@ int output_gnu(const char *cmd_file,
   ELEM_INFO *current_elem, *nbor_elem;
   int    nbor, num_nodes;
   const char  *datastyle;
-  int    i, j;
+  int    i, j, nelems;
   int    prev_part = -1;
   int    max_part = -1;
   int    gmax_part = Num_Proc-1;
@@ -102,13 +102,18 @@ int output_gnu(const char *cmd_file,
    * will be used even when plotting by processor numbers (for generality), 
    * so build it regardless. 
    */
-  if (mesh->num_elems > 0) {
-    parts = (int *) malloc(3 * mesh->num_elems * sizeof(int));
-    index = parts + mesh->num_elems;
-    elem_index = index + mesh->num_elems;
+  nelems = mesh->num_elems - mesh->blank_count;
+
+  if (nelems > 0) {
+    parts = (int *) malloc(3 * nelems * sizeof(int));
+    index = parts + nelems;
+    elem_index = index + nelems;
     for (j = 0, i = 0; i < mesh->elem_array_len; i++) {
       current_elem = &(mesh->elements[i]);
       if (current_elem->globalID >= 0) {
+
+        if (mesh->blank_count && (mesh->blank[i] == 1)) continue;
+        
         if (current_elem->my_part > max_part) max_part = current_elem->my_part;
         parts[j] = (Output.Plot_Partitions ? current_elem->my_part : Proc);
         index[j] = j;
@@ -119,7 +124,8 @@ int output_gnu(const char *cmd_file,
   }
   if (Output.Plot_Partitions) {
     /* Sort by partition numbers.  Assumes # parts >= # proc. */
-    if (mesh->num_elems > 0) sort_index(mesh->num_elems, parts, index);
+    if (nelems > 0) 
+      sort_index(nelems, parts, index);
     MPI_Allreduce(&max_part, &gmax_part, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
     gnum_part = gmax_part + 1;
   }
@@ -140,7 +146,7 @@ int output_gnu(const char *cmd_file,
      * coordinates.
      */
     datastyle = "linespoints";
-    for (i = 0; i < mesh->num_elems; i++) {
+    for (i = 0; i < nelems; i++) {
       current_elem = &(mesh->elements[elem_index[index[i]]]);
       if (parts[index[i]] != prev_part) {
         if (fp != NULL) fclose(fp);
@@ -156,6 +162,8 @@ int output_gnu(const char *cmd_file,
               current_elem->coord[0][0], current_elem->coord[0][1]);
       for (j = 0; j < current_elem->nadj; j++) {
         if (current_elem->adj_proc[j] == Proc) {  /* Nbor is on same proc */
+          if (mesh->blank_count && (mesh->blank[current_elem->adj[j]] == 1))
+            continue;
           if (!Output.Plot_Partitions || 
               mesh->elements[current_elem->adj[j]].my_part == 
                              current_elem->my_part) {  
@@ -180,7 +188,7 @@ int output_gnu(const char *cmd_file,
      */
     double sum[2];
     datastyle = "lines";
-    for (i = 0; i < mesh->num_elems; i++) {
+    for (i = 0; i < nelems; i++) {
       current_elem = &(mesh->elements[elem_index[index[i]]]);
       if (parts[index[i]] != prev_part) {
         if (fp != NULL) fclose(fp);
@@ -210,7 +218,7 @@ int output_gnu(const char *cmd_file,
     }
   }
   
-  if (mesh->num_elems == 0 && !Output.Plot_Partitions) { 
+  if (nelems == 0 && !Output.Plot_Partitions) { 
     /* Open a file just so one exists; satisfies the gnuload file. */
     gen_par_filename(ctemp, par_out_fname, pio_info, Proc, Num_Proc);
     fp = fopen(par_out_fname, "w");

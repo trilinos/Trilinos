@@ -150,6 +150,8 @@ struct Mesh_Description
 				   allocated for. Need to know this when array
 				   is not completely filled during migration */
   ELEM_INFO_PTR elements;       /* array of elements that are in the mesh.   */
+  int     *blank;               /* 1 if element is blanked, 0 if not         */
+  int     blank_count;          /* number of elements that are blanked       */
   int     gnhedges;             /* for hypergraphs, the number of global
                                    hyperedges.*/
   int     hewgt_dim;            /* for hypergraphs, the number of weights per
@@ -179,6 +181,7 @@ struct Mesh_Description
                                     if NULL it's the same as hgid            */
   float  *hewgts;               /* for hypergraphs, an array of hyperedge
                                    weights; size = hewgt_dim * heNumWgts;  */
+  int    proc;        /* my rank, want to know if adj elements are on my proc */
 };
 typedef struct Mesh_Description  MESH_INFO;
 typedef struct Mesh_Description *MESH_INFO_PTR;
@@ -223,7 +226,7 @@ struct Test_Flags {
   int Null_Lists;           /* Exercises null import or export lists to
                                Zoltan_Migrate. */
   float Dynamic_Weights;    /* Perturb weights between iterations. */
-  float Dynamic_Hgraph;     /* Hypergraph pertubation between iterations. */
+  float Dynamic_Graph;     /* Graph pertubation between iterations. */
 };
 
 /* Structure for output flags for various types of output. */

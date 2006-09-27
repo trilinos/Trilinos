@@ -402,10 +402,9 @@ int read_cmd_file (
     else if (sscanf(line, " test dynamic weights" SKIPEQ "%f%n",
                     &Test.Dynamic_Weights, &n) == 1)
       continue;                /* Dynamic weights; changes between iter. */
-    else if (sscanf(line, " test dynamic hypergraph" SKIPEQ "%f%n",
-                    &Test.Dynamic_Hgraph, &n) == 1)
-      continue;                /* Dynamic hypergraph changes between iter. */
-
+    else if (sscanf(line, " test dynamic graph" SKIPEQ "%f%n",
+                    &Test.Dynamic_Graph, &n) == 1)
+      continue;                /* Dynamic graph; edges/verts change between iter. */
     else if (sscanf(line, " test multi callbacks" SKIPEQ "%d%n",
                     &Test.Multi_Callbacks, &n) == 1)
       continue;             /* List-based (MULTI) callback function testing */
@@ -582,11 +581,22 @@ void brdcst_cmd_info (
   MESH_INFO_PTR mesh
 )
 {
-  int ctrl_id;
+  int ctrl_id, j, k;
   int size;
   int int_params[16];  /* Make sure this array is large enough */
+  float float_params[2];  /* Make sure this array is large enough */
 
-  int j = 0;
+  k = 0;
+  float_params[k++] = Test.Dynamic_Weights;
+  float_params[k++] = Test.Dynamic_Graph;
+
+  MPI_Bcast (float_params, k, MPI_FLOAT, 0, MPI_COMM_WORLD);
+
+  k = 0;
+  Test.Dynamic_Weights = float_params[k++];
+  Test.Dynamic_Graph = float_params[k++];
+
+  j = 0;
   int_params[j++] = Debug_Driver;
   int_params[j++] = Test.DDirectory;
   int_params[j++] = Test.Local_Partitions;

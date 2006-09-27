@@ -57,7 +57,8 @@ double Total_Partition_Time = 0.0;  /* Total over Number_Iterations */
 
 static int read_mesh(int, int, PROB_INFO_PTR, PARIO_INFO_PTR, MESH_INFO_PTR);
 static void print_input_info(FILE *, int, PROB_INFO_PTR, PARIO_INFO_PTR, float );
-static void initialize_mesh(MESH_INFO_PTR);
+static void initialize_mesh(MESH_INFO_PTR, int proc);
+static void remove_random_vertices(MESH_INFO_PTR mesh, int iter, float factor);
 #ifdef DEBUG_READ_MESH
 static void print_mesh(MESH_INFO_PTR m, int *tp, int *the, int *tv);
 #endif
@@ -113,7 +114,7 @@ int main(int argc, char *argv[])
   Test.Gen_Files = 0;
   Test.Null_Lists = NONE;
   Test.Dynamic_Weights = .0;
-  Test.Dynamic_Hgraph = .0;
+  Test.Dynamic_Graph = .0;
 
   Output.Text = 1;
   Output.Gnuplot = 0;
@@ -153,7 +154,7 @@ int main(int argc, char *argv[])
   }
 
   /* initialize some variables */
-  initialize_mesh(&mesh);
+  initialize_mesh(&mesh, Proc);
 
   pio_info.dsk_list_cnt		= -1;
   pio_info.num_dsk_ctrlrs	= -1;
@@ -273,6 +274,10 @@ int main(int argc, char *argv[])
           }
       }
 
+    if (Test.Dynamic_Graph > 0.0){
+      remove_random_vertices(&mesh, iteration, Test.Dynamic_Graph); 
+    }
+
     /*
      * now run Zoltan to get a new load balance and perform
      * the migration
@@ -308,18 +313,6 @@ int main(int argc, char *argv[])
           for (i = 0; i < mesh.num_elems; i++) {
             if ((mesh.elements[i].my_part%10) == j)
               mesh.elements[i].cpu_wgt[0] *= Test.Dynamic_Weights;
-          }
-        }
-      }
-      else if (mesh.data_type == HYPERGRAPH) {
-        printf("Debug: dynamic hgraph pertubation=%f\n", Test.Dynamic_Hgraph);
-        /* Randomly perturb pins. */
-        for (i = 0; i < mesh.hindex[mesh.nhedges]; i++) {
-          tmp = ((float) rand())/RAND_MAX; /* random in [0,1) */
-          if (tmp < Test.Dynamic_Hgraph){
-            mesh.hvertex[i] += tmp * mesh.num_elems;
-            if (mesh.hvertex[i] > mesh.num_elems)
-              mesh.hvertex[i] -= mesh.num_elems;
           }
         }
       }
@@ -526,7 +519,7 @@ int i;
 }
 /*****************************************************************************/
 /*****************************************************************************/
-static void initialize_mesh(MESH_INFO_PTR mesh)
+static void initialize_mesh(MESH_INFO_PTR mesh, int proc)
 {
 /* Initializes mesh variables */
 
@@ -544,6 +537,7 @@ static void initialize_mesh(MESH_INFO_PTR mesh)
                   = mesh->vwgt_dim
                   = mesh->ewgt_dim
                   = mesh->hewgt_dim
+                  = mesh->blank_count
                   = 0;
   mesh->eb_names       = NULL;
   mesh->eb_ids         = NULL;
@@ -556,6 +550,7 @@ static void initialize_mesh(MESH_INFO_PTR mesh)
   mesh->ecmap_sideids  = NULL;
   mesh->ecmap_neighids = NULL;
   mesh->elements       = NULL;
+  mesh->blank          = NULL;
   mesh->format         = ZOLTAN_COMPRESSED_EDGE;
   mesh->hgid           = NULL;
   mesh->hindex         = NULL;
@@ -563,6 +558,74 @@ static void initialize_mesh(MESH_INFO_PTR mesh)
   mesh->hvertex_proc   = NULL;
   mesh->heWgtId        = NULL;
   mesh->hewgts         = NULL;
+  mesh->proc           = proc;
+}
+static void remove_random_vertices(MESH_INFO_PTR mesh, int iteration, 
+                                   float blank_factor) 
+{
+int i, j, alllocal;
+ELEM_INFO *elem;
+
+  /*
+   * Mark some portion of vertices as blanked (but only if all of
+   * their adjacencies are in the local process).  The graph callbacks
+   * will not report blanked vertices.  
+   */
+
+
+  if ((mesh->num_elems < 2) || (blank_factor <= 0.0) || (blank_factor >= 1.0)){
+    ZOLTAN_FREE(&mesh->blank);
+    mesh->blank_count = 0;
+    return;
+  }
+
+  if (!mesh->blank){
+    mesh->blank = (int *)calloc(sizeof(int) , mesh->num_elems);
+    if (!mesh->blank){
+      Gen_Error(0, "memory allocation in remove_random_vertices");
+      error_report(mesh->proc);
+      return;
+    }
+  }
+
+  mesh->blank_count = 0;
+  alllocal = 0;
+ 
+  srand((unsigned int)(iteration + 1));
+
+  for (i=0; i < mesh->num_elems; i++){
+  
+    /* If all of my adjacencies are local, I have a probability given
+     * by blank_factor of being blanked.  The blanked vertices should
+     * vary somewhat in each iteration.
+     */
+    elem = mesh->elements + i;
+
+    for (j=0; j < elem->nadj; j++){
+      if (elem->adj_proc[j] != mesh->proc){
+        break;
+      } 
+    }
+
+    if (j != elem->nadj) continue;
+
+    if (((float)rand() / RAND_MAX) <= blank_factor){
+      mesh->blank[i] = 1.0;
+      mesh->blank_count++;
+    }
+    alllocal++;
+  }
+  if (Debug_Driver > 0) {
+    if (mesh->proc == 0){
+      printf("Test dynamic graph factor is %0.4f\n",blank_factor);
+    }
+    printf("Proc %d: %d vertices, %d with all local edges, %d blanked (%0.2f%% of all, %0.2f%% of local)\n",
+            mesh->proc, mesh->num_elems,  alllocal, mesh->blank_count,
+            ((float)mesh->blank_count*100.0/mesh->num_elems),
+            ((float)mesh->blank_count*100.0/alllocal));
+    fflush(stdout);
+    MPI_Barrier(MPI_COMM_WORLD);
+  }
 }
 
 #ifdef DEBUG_READ_MESH

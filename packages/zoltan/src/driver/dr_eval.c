@@ -41,7 +41,7 @@ int i;
 int proc;
 int cuts = 0;
 float load = 0.;
-int gsumcuts, gmaxcuts, gmincuts;
+int gsumcuts, gmaxcuts, gmincuts, elemcount;
 int gsumelems, gmaxelems, gminelems;
 float gsumload, gmaxload, gminload;
 
@@ -52,6 +52,7 @@ float gsumload, gmaxload, gminload;
   }
   
   for (i = 0; i < mesh->num_elems; i++) {
+    if (mesh->blank_count && (mesh->blank[i] == 1)) continue;
     load += mesh->elements[i].cpu_wgt[0];
   }
 
@@ -59,11 +60,13 @@ float gsumload, gmaxload, gminload;
   MPI_Allreduce(&cuts, &gmaxcuts, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
   MPI_Allreduce(&cuts, &gmincuts, 1, MPI_INT, MPI_MIN, MPI_COMM_WORLD);
 
-  MPI_Allreduce(&(mesh->num_elems), &gsumelems, 1, MPI_INT, MPI_SUM, 
+  elemcount = mesh->num_elems - mesh->blank_count;
+
+  MPI_Allreduce(&elemcount, &gsumelems, 1, MPI_INT, MPI_SUM, 
                 MPI_COMM_WORLD);
-  MPI_Allreduce(&(mesh->num_elems), &gmaxelems, 1, MPI_INT, MPI_MAX, 
+  MPI_Allreduce(&elemcount, &gmaxelems, 1, MPI_INT, MPI_MAX, 
                 MPI_COMM_WORLD);
-  MPI_Allreduce(&(mesh->num_elems), &gminelems, 1, MPI_INT, MPI_MIN, 
+  MPI_Allreduce(&elemcount, &gminelems, 1, MPI_INT, MPI_MIN, 
                 MPI_COMM_WORLD);
 
   MPI_Allreduce(&load, &gsumload, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);

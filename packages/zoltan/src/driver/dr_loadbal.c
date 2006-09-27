@@ -609,12 +609,20 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     stime = MPI_Wtime();
     if (new_decomp && (num_exported != -1 || num_imported != -1)){ // EBEB  6/8/06
       /* Migrate if new decomposition and RETURN_LISTS != NONE */
-      if (!migrate_elements(Proc, mesh, zz, num_gid_entries, num_lid_entries,
-          num_imported, import_gids, import_lids, import_procs, import_to_part,
-          num_exported, export_gids, export_lids, export_procs, export_to_part))
-      {
-        Gen_Error(0, "fatal:  error returned from migrate_elements()\n");
-        return 0;
+      if (!Test.Dynamic_Graph){
+        if (!migrate_elements(Proc, mesh, zz, num_gid_entries, num_lid_entries,
+            num_imported, import_gids, import_lids, import_procs, import_to_part,
+            num_exported, export_gids, export_lids, export_procs, export_to_part)){
+          Gen_Error(0, "fatal:  error returned from migrate_elements()\n");
+          return 0;
+        }
+      }
+      else {
+        /* If you want to do migration with blanked vertices, you need to
+         * do some work in dr_migrate.c, dr_maps.c.
+         */
+        if (Proc == 0) 
+          printf("OMITTING MIGRATION, INCOMPATIBLE WITH TEST DYNAMIC GRAPH\n");
       }
     }
     mytime = MPI_Wtime() - stime;
@@ -626,6 +634,7 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     if (Test.Fixed_Objects) {
       for (errcnt=0, i = 0; i < mesh->num_elems; i++) {
         current_elem = &(mesh->elements[i]);
+        if (mesh->blank_count && (mesh->blank[i] == 1)) continue;
         if (current_elem->fixed_part != -1 &&
             current_elem->fixed_part != current_elem->my_part) {
           errcnt++;
@@ -699,6 +708,13 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
 
   if (Driver_Action & 2){
       /* Only do ordering if this was specified in the driver input file */
+      /* NOTE: This part of the code is not modified to recognize
+               blanked vertices. */
+
+      if (Test.Dynamic_Graph && !Proc){
+        printf("ORDERING DOES NOT WITH WITH DYNAMIC GRAPHS.\n");
+        printf("Turn off \"test dynamic graph\".\n");
+      }
       
       int *order = NULL;		/* Ordering vector(s) */
       ZOLTAN_ID_PTR order_gids = NULL;  /* List of all gids for ordering */
@@ -753,6 +769,12 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
 
   if (Driver_Action & 4) {
       int *color = NULL;          /* Color vector */
+
+      if (Test.Dynamic_Graph && !Proc){
+        printf("COLORING DOES NOT WITH WITH DYNAMIC GRAPHS.\n");
+        printf("Turn off \"test dynamic graph\".\n");
+      }
+
       ZOLTAN_ID_PTR gids = NULL;  /* List of all gids for ordering */
       ZOLTAN_ID_PTR lids = NULL;  /* List of all lids for ordering */
 
@@ -829,7 +851,7 @@ MESH_INFO_PTR mesh;
 
   STOP_CALLBACK_TIMER;
 
-  return(mesh->num_elems);
+  return(mesh->num_elems - mesh->blank_count);
 }
 
 /*****************************************************************************/
@@ -859,6 +881,9 @@ void get_elements(void *data, int num_gid_entries, int num_lid_entries,
   mesh = (MESH_INFO_PTR) data;
   elem = mesh->elements;
   for (i = 0; i < mesh->num_elems; i++) {
+
+    if (mesh->blank && mesh->blank[i]) continue;
+
     current_elem = &elem[i];
     for (j = 0; j < gid; j++) global_id[i*num_gid_entries+j]=0;
     global_id[i*num_gid_entries+gid] = (ZOLTAN_ID_TYPE) current_elem->globalID;
@@ -887,7 +912,7 @@ int get_first_element(void *data, int num_gid_entries, int num_lid_entries,
   MESH_INFO_PTR mesh;
   ELEM_INFO *elem;
   ELEM_INFO *current_elem;
-  int i, j;
+  int i, j, first;
   int gid = num_gid_entries-1;
   int lid = num_lid_entries-1;
 
@@ -901,13 +926,22 @@ int get_first_element(void *data, int num_gid_entries, int num_lid_entries,
   }
   
   mesh = (MESH_INFO_PTR) data;
-  if (mesh->num_elems == 0) {
+  if (mesh->num_elems == mesh->blank_count) {
     /* No elements on this processor */
     return 0;
   }
 
   elem = mesh->elements;
-  current_elem = &elem[0];
+  first = 0;
+  if (mesh->blank_count){
+    for (i=0; i<mesh->num_elems; i++){
+      if (mesh->blank[i] == 0){
+        first = i;
+        break;
+      }
+    }
+  }
+  current_elem = &elem[first];
   if (num_lid_entries) {
     for (j = 0; j < lid; j++) local_id[j]=0;
     local_id[lid] = 0;
@@ -940,7 +974,7 @@ int get_next_element(void *data, int num_gid_entries, int num_lid_entries,
   ELEM_INFO *elem;
   ELEM_INFO *next_elem;
   MESH_INFO_PTR mesh;
-  int i, j, idx;
+  int i, j, idx, next;
   int gid = num_gid_entries-1;
   int lid = num_lid_entries-1;
 
@@ -962,13 +996,24 @@ int get_next_element(void *data, int num_gid_entries, int num_lid_entries,
     (void) search_by_global_id(mesh, global_id[gid], &idx);
   }
 
-  if (idx+1 < mesh->num_elems) { 
+  if (mesh->blank_count > 0){
+    for (next=idx+1; next<mesh->num_elems; next++){
+      if (mesh->blank[next] == 0){
+        break;    
+      }
+    }
+  }
+  else{
+    next = idx+1;
+  }
+
+  if (next < mesh->num_elems) { 
     found = 1;
     if (num_lid_entries) {
       for (j = 0; j < lid; j++) next_local_id[j]=0;
-      next_local_id[lid] = idx + 1;
+      next_local_id[lid] = next;
     }
-    next_elem = &elem[idx+1];
+    next_elem = &elem[next];
     for (j = 0; j < gid; j++) next_global_id[j]=0;
     next_global_id[gid] = next_elem->globalID;
 
@@ -1110,7 +1155,7 @@ int get_num_edges(void *data, int num_gid_entries, int num_lid_entries,
   ELEM_INFO *elem, *current_elem;
   int gid = num_gid_entries-1;
   int lid = num_lid_entries-1;
-  int idx;
+  int i, idx, nedges, ncount;
 
   START_CALLBACK_TIMER;
 
@@ -1126,9 +1171,23 @@ int get_num_edges(void *data, int num_gid_entries, int num_lid_entries,
   current_elem = (num_lid_entries 
                     ? &elem[local_id[lid]] 
                     : search_by_global_id(mesh, global_id[gid], &idx));
+
+  nedges = current_elem->nadj;
+
+  if (mesh->blank_count > 0){
+    ncount = 0;
+    for (i=0; i<nedges; i++){
+      if ((current_elem->adj_proc[i] != mesh->proc) || 
+          (mesh->blank[current_elem->adj[i]] == 0)){
+        ncount++;
+      }
+    }
+    nedges = ncount;
+  }
+
   STOP_CALLBACK_TIMER;
 
-  return(current_elem->nadj);
+  return(nedges);
 }
 
 /*****************************************************************************/
@@ -1143,7 +1202,7 @@ void get_num_edges_multi(
   ELEM_INFO *elem, *current_elem;
   int gid = num_gid_entries-1;
   int lid = num_lid_entries-1;
-  int i, idx;
+  int i, j, idx, nedges, ncount;
 
   START_CALLBACK_TIMER;
 
@@ -1162,7 +1221,19 @@ void get_num_edges_multi(
                     : search_by_global_id(mesh, 
                                           global_id[i*num_gid_entries + gid],
                                           &idx));
-    edges_per_obj[i] = current_elem->nadj;
+    nedges = current_elem->nadj;
+
+    if (mesh->blank_count > 0){
+      ncount = 0;
+      for (j=0; j<nedges; j++){
+        if ((current_elem->adj_proc[j] != mesh->proc) || 
+            (mesh->blank[current_elem->adj[j]] == 0)){
+          ncount++;
+        }
+      }
+      nedges = ncount;
+    }
+    edges_per_obj[i] = nedges;
   }
   STOP_CALLBACK_TIMER;
 }
@@ -1178,7 +1249,7 @@ void get_edge_list_multi (void *data, int num_gid_entries, int num_lid_entries,
   MESH_INFO_PTR mesh;
   ELEM_INFO *elem;
   ELEM_INFO *current_elem;
-  int i, j, k, cnt, proc, local_elem, idx;
+  int i, j, k, cnt, local_elem, idx;
   int gid = num_gid_entries-1;
   int lid = num_lid_entries-1;
 
@@ -1198,9 +1269,6 @@ void get_edge_list_multi (void *data, int num_gid_entries, int num_lid_entries,
   mesh = (MESH_INFO_PTR) data;
   elem = mesh->elements;
 
-  /* get the processor number */
-  MPI_Comm_rank(MPI_COMM_WORLD, &proc);
-
   j = 0;
   for (cnt = 0; cnt < num_obj; cnt++) {
     current_elem = (num_lid_entries
@@ -1213,9 +1281,19 @@ void get_edge_list_multi (void *data, int num_gid_entries, int num_lid_entries,
       /* Skip NULL adjacencies (sides that are not adjacent to another elem). */
       if (current_elem->adj[i] == -1) continue;
 
-      for (k = 0; k < gid; k++) nbor_global_id[k+j*num_gid_entries] = 0;
-      if (current_elem->adj_proc[i] == proc) {
+      if (current_elem->adj_proc[i] == mesh->proc) {
         local_elem = current_elem->adj[i];
+      }
+      else{
+        local_elem = -1;
+      }
+
+      /* Skip blanked vertices */
+      if ((mesh->blank_count > 0) && (local_elem >= 0) &&
+          (mesh->blank[local_elem] == 1))  continue;
+
+      for (k = 0; k < gid; k++) nbor_global_id[k+j*num_gid_entries] = 0;
+      if (local_elem >= 0){
         nbor_global_id[gid+j*num_gid_entries] = elem[local_elem].globalID;
       }
       else { /* adjacent element on another processor */
@@ -1247,7 +1325,7 @@ void get_edge_list (void *data, int num_gid_entries, int num_lid_entries,
   MESH_INFO_PTR mesh;
   ELEM_INFO *elem;
   ELEM_INFO *current_elem;
-  int i, j, k, proc, local_elem, idx;
+  int i, j, k, local_elem, idx;
   int gid = num_gid_entries-1;
   int lid = num_lid_entries-1;
 
@@ -1264,18 +1342,25 @@ void get_edge_list (void *data, int num_gid_entries, int num_lid_entries,
                    ? &elem[local_id[lid]] 
                    : search_by_global_id(mesh, global_id[gid], &idx));
 
-  /* get the processor number */
-  MPI_Comm_rank(MPI_COMM_WORLD, &proc);
-
   j = 0;
   for (i = 0; i < current_elem->adj_len; i++) {
 
     /* Skip NULL adjacencies (sides that are not adjacent to another elem). */
     if (current_elem->adj[i] == -1) continue;
 
-    for (k = 0; k < gid; k++) nbor_global_id[k+j*num_gid_entries] = 0;
-    if (current_elem->adj_proc[i] == proc) {
+    if (current_elem->adj_proc[i] == mesh->proc) {
       local_elem = current_elem->adj[i];
+    }
+    else{
+      local_elem = -1;
+    }
+
+    /* Skip blanked vertices */
+    if ((mesh->blank_count > 0) && (local_elem >= 0) &&
+        (mesh->blank[local_elem] == 1))  continue;
+
+    for (k = 0; k < gid; k++) nbor_global_id[k+j*num_gid_entries] = 0;
+    if (local_elem >= 0){
       nbor_global_id[gid+j*num_gid_entries] = elem[local_elem].globalID;
     }
     else { /* adjacent element on another processor */
@@ -1706,9 +1791,11 @@ int i, cnt;
   }
   mesh = (MESH_INFO_PTR) data;
 
-  for (cnt=0, i = 0; i < mesh->num_elems; i++)
+  for (cnt=0, i = 0; i < mesh->num_elems; i++){
+    if (mesh->blank && mesh->blank[i]) continue;
     if (mesh->elements[i].fixed_part != -1) 
       cnt++;
+  }
 
   *ierr = ZOLTAN_OK; /* set error code */
 
@@ -1740,7 +1827,8 @@ int nlid = num_lid_entries-1;
   mesh = (MESH_INFO_PTR) data;
 
   cnt = 0;
-  for (i = 0; i < mesh->num_elems; i++)
+  for (i = 0; i < mesh->num_elems; i++){
+    if (mesh->blank && mesh->blank[i]) continue;
     if (mesh->elements[i].fixed_part != -1) {
       fixed_gids[cnt*num_gid_entries+ngid] =
                  (ZOLTAN_ID_TYPE) mesh->elements[i].globalID;
@@ -1749,6 +1837,7 @@ int nlid = num_lid_entries-1;
       fixed_part[cnt] = mesh->elements[i].fixed_part;
       cnt++;
     }
+  }
 
   if (cnt == num_fixed_obj)
     *ierr = ZOLTAN_OK; /* set error code */
