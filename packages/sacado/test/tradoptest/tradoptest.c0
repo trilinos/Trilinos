@@ -98,6 +98,7 @@ UNOPTEST cos		3.    cos(3.)		-sin(3.)
 UNOPTEST cosh		2.    cosh(2.)		sinh(2.)
 UNOPTEST exp		2.    exp(2.)		exp(2.)
 UNOPTEST log		4.    log(4.)		0.25
+UNOPTEST log10		100.  2.		.01/log(10.)
 UNOPTEST sin		5.    sin(5.)		cos(5.)
 UNOPTEST sinh		3.    sinh(3.)		cosh(3.)
 UNOPTEST sqrt		25.   5.		0.1
@@ -105,9 +106,13 @@ UNOPTEST tan		3.    tan(3.)		1./(cos(3.)*cos(3.))
 UNOPTEST tanh		1.    tanh(1.)		(1./cosh(1.))*(1./cosh(1.))
 UNOPTEST fabs		-12.  12.		-1.
 UNOPTEST fabs		37.   37.		 1.
+UNOPTEST abs		-12.  12.		-1.
+UNOPTEST abs		37.   37.		 1.
 UNOPTEST +		17.   17.		 Plus_dx	1
 UNOPTEST +		17.   17.		 1.		1	1
 UNOPTEST -		19.  -19.		-1.		1
 
+	if (!rc) // chatter for badly-designed cppunit test that cannot tolerate silence
+		printf("OK\n");
 	return rc;
 	}
