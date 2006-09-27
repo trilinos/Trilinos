@@ -59,12 +59,12 @@ extern "C" void _uninit_f2c(void *x, int type, long len);
 template <typename T>
 struct UninitType {};
 
-template <> 
+template <>
 struct UninitType<float> {
   static const int utype = 4;
 };
 
-template <> 
+template <>
 struct UninitType<double> {
   static const int utype = 5;
 };
@@ -77,6 +77,24 @@ struct UninitType< std::complex<T> > {
 #endif /*RAD_DEBUG_BLOCKKEEP > 0*/
 #endif /*RAD_DEBUG_BLOCKKEEP*/
 #endif /*RAD_AUTO_AD_Const*/
+
+ class RAD_DoubleIgnore {};
+
+ template<typename T> class
+DoubleAvoid {
+ public:
+	typedef double	dtype;
+	typedef T	ttype;
+	};
+ template<> class
+DoubleAvoid<double> {
+ public:
+	typedef RAD_DoubleIgnore &dtype;
+	typedef RAD_DoubleIgnore &ttype;
+	};
+
+#define Dtype typename DoubleAvoid<Double>::dtype
+#define Ttype typename DoubleAvoid<Double>::ttype
 
  template<typename Double> class IndepADvar;
  template<typename Double> class ConstADvar;
@@ -185,47 +203,27 @@ Derp {		// one derivative-propagation operation
 #define T1(f) \
 T F f (AI); \
 T F f (Ai);
-#ifdef RAD_double_ops
 #define T2(r,f) \
  T r f(Ai,Ai); \
  T r f(Ai,D); \
- T r f(Ai,double); \
+ T r f(Ai,Dtype); \
  T r f(Ai,long); \
  T r f(Ai,int); \
  T r f(D,Ai); \
- T r f(double,Ai); \
+ T r f(Dtype,Ai); \
  T r f(long,Ai); \
  T r f(int,Ai); \
  T r f(AI,D); \
- T r f(AI,double); \
+ T r f(AI,Dtype); \
  T r f(AI,long); \
  T r f(AI,int); \
  T r f(D,AI); \
- T r f(double,AI); \
+ T r f(Dtype,AI); \
  T r f(long,AI); \
  T r f(int,AI); \
  T r f(Ai,AI);\
  T r f(AI,Ai);\
  T r f(AI,AI);
-#else /* !RAD_double_ops */
-#define T2(r,f) \
- T r f(Ai,Ai); \
- T r f(Ai,D); \
- T r f(Ai,long); \
- T r f(Ai,int); \
- T r f(D,Ai); \
- T r f(long,Ai); \
- T r f(int,Ai); \
- T r f(AI,D); \
- T r f(AI,long); \
- T r f(AI,int); \
- T r f(D,AI); \
- T r f(long,AI); \
- T r f(int,AI); \
- T r f(Ai,AI);\
- T r f(AI,Ai);\
- T r f(AI,AI);
-#endif /* RAD_double_ops */
 
 #define F ADvari<Double>&
 T2(F, operator+)
@@ -242,6 +240,7 @@ T2(int, operator>=)
 T2(int, operator>)
 T1(operator+)
 T1(operator-)
+T1(abs)
 T1(acos)
 T1(acosh)
 T1(asin)
@@ -252,6 +251,7 @@ T1(cos)
 T1(cosh)
 T1(exp)
 T1(log)
+T1(log10)
 T1(sin)
 T1(sinh)
 T1(sqrt)
@@ -341,33 +341,23 @@ ADvari {	// implementation of an ADvar
 #define R ADvari&
 #define Ai const ADvari&
 #define T1(r,f) F r f <>(Ai);
-#ifdef RAD_double_ops
 #define T2(r,f) \
 F r f <>(Ai,Ai); \
-F r f <>(Double,Ai); \
-F r f <>(Ai,Double); \
+F r f <>(Ttype,Ai); \
+F r f <>(Ai,Ttype); \
 F r f <>(double,Ai); \
 F r f <>(Ai,double); \
 F r f <>(long,Ai); \
 F r f <>(Ai,long); \
 F r f <>(int,Ai); \
 F r f <>(Ai,int);
-#else /* !RAD_double_ops */
-#define T2(r,f) \
-F r f <>(Ai,Ai); \
-F r f <>(Double,Ai); \
-F r f <>(Ai,Double); \
-F r f <>(long,Ai); \
-F r f <>(Ai,long); \
-F r f <>(int,Ai); \
-F r f <>(Ai,int);
-#endif /* RAD_double_ops */
 	T1(R,operator+)
 	T2(R,operator+)
 	T1(R,operator-)
 	T2(R,operator-)
 	T2(R,operator*)
 	T2(R,operator/)
+	T1(R,abs)
 	T1(R,acos)
 	T1(R,acosh)
 	T1(R,asin)
@@ -379,6 +369,7 @@ F r f <>(Ai,int);
 	T1(R,cosh)
 	T1(R,exp)
 	T1(R,log)
+	T1(R,log10)
 	T2(R,pow)
 	T1(R,sin)
 	T1(R,sinh)
@@ -482,10 +473,8 @@ IndepADvar {		// an independent ADvar
 	friend class ADvarn<Double>;
 	typedef ADvari<Double> ADVari;
 	typedef ADvar<Double> ADVar;
-	IndepADvar(Double);
-#ifdef RAD_double_ops
+	IndepADvar(Ttype);
 	IndepADvar(double);
-#endif
 	IndepADvar(int);
 	IndepADvar(long);
 	IndepADvar& operator= (Double);
@@ -506,8 +495,8 @@ IndepADvar {		// an independent ADvar
 	friend IndepADvar& ADvar_operatoreq<>(IndepADvar*, const ADVari&);
 #endif
 
-	inline operator ADVari&() const { return *((ADVar*)this)->cv; }
-	inline operator ADVari*() const { return ((ADVar*)this)->cv; }
+	inline operator ADVari&() const { return *this->cv; }
+	inline operator ADVari*() const { return this->cv; }
 
 	Double val() const { return cv->Val; }
 	Double adj() const { return cv->aval; }
@@ -531,31 +520,18 @@ IndepADvar {		// an independent ADvar
 #define Ai const ADVari&
 #define AI const IndepADvar&
 #define D Double
-#ifdef RAD_double_ops
 #define T2(r,f) \
  r f <>(AI,AI);\
  r f <>(Ai,AI);\
  r f <>(AI,Ai);\
- r f <>(D,AI);\
+ r f <>(Ttype,AI);\
  r f <>(double,AI);\
  r f <>(long,AI);\
  r f <>(int,AI);\
- r f <>(AI,D);\
+ r f <>(AI,Ttype);\
  r f <>(AI,double);\
  r f <>(AI,long);\
  r f <>(AI,int);
-#else /* !RAD_double_ops */
-#define T2(r,f) \
- r f <>(AI,AI);\
- r f <>(Ai,AI);\
- r f <>(AI,Ai);\
- r f <>(D,AI);\
- r f <>(long,AI);\
- r f <>(int,AI);\
- r f <>(AI,D);\
- r f <>(AI,long);\
- r f <>(AI,int);
-#endif /* RAD_double_ops */
 #define T1(f) friend ADVari& f<> (AI);
 
 #define F friend ADVari&
@@ -576,6 +552,7 @@ T2(F, operator>)
 
 T1(operator+)
 T1(operator-)
+T1(abs)
 T1(acos)
 T1(acosh)
 T1(asin)
@@ -586,6 +563,7 @@ T1(cos)
 T1(cosh)
 T1(exp)
 T1(log)
+T1(log10)
 T1(sin)
 T1(sinh)
 T1(sqrt)
@@ -624,10 +602,8 @@ ADvar: public IndepADvar<Double> {	// an "active" variable
 	friend class ADvar1<Double>;
 	typedef ADvar1<Double> ADVar1;
 	ADvar() { /* cv = 0; */ }
-	ADvar(Double d) { ADvar_ctr(d); }
-#ifdef RAD_double_ops
+	ADvar(Ttype d)  { ADvar_ctr(d); }
 	ADvar(double i) { ADvar_ctr(Double(i)); }
-#endif
 	ADvar(int i)	{ ADvar_ctr(Double(i)); }
 	ADvar(long i)	{ ADvar_ctr(Double(i)); }
 	inline ~ADvar() {}
@@ -655,13 +631,13 @@ ADvar: public IndepADvar<Double> {	// an "active" variable
 	ADvar(IndepADVar &x) { this->cv = x.cv ? new ADVar1(x.cv->Val, &this->cv->adc.One, x.cv) : 0; }
 	ADvar(const ADvar&x) { this->cv = x.cv ? new ADVar1(x.cv->Val, &this->cv->adc.One, (ADVari*)x.cv) : 0; }
 	ADvar(ADVari &x) { this->cv = new ADVar1(x.Val, &this->cv->adc.One, &x); }
-	inline ADvar& operator=(const IndepADVar &x) { return ADvar_operatoreq(this,*x.cv); };
+	inline ADvar& operator=(IndepADVar &x) { return ADvar_operatoreq(this,*x.cv); };
 	inline ADvar& operator=(const ADVari &x) { return ADvar_operatoreq(this,x); };
 #else /*!RAD_NO_EQ_ALIAS*/
 	/* allow aliasing v and w after "v = w;" */
 	inline ADvar(const IndepADVar &x) { this->cv = (ADVari*)x.cv; }
 	inline ADvar(const ADVari &x) { this->cv = (ADVari*)&x; }
-	inline ADvar& operator=(const IndepADVar &x) { this->cv = (ADVari*)x.cv; return *this; }
+	inline ADvar& operator=(IndepADVar &x) { this->cv = (ADVari*)x.cv; return *this; }
 	inline ADvar& operator=(const ADVari &x) { this->cv = (ADVari*)&x; return *this; }
 #endif /* RAD_NO_EQ_ALIAS */
 #endif /* RAD_AUTO_AD_Const */
@@ -725,10 +701,8 @@ ConstADvar: public ADvar<Double> {
 	ConstADvar& operator/=(Double);
 	void ConstADvar_ctr(Double);
  public:
-	ConstADvar(Double d)	{ ConstADvar_ctr(d); }
-#ifdef RAD_double_ops
+	ConstADvar(Ttype d)	{ ConstADvar_ctr(d); }
 	ConstADvar(double i)	{ ConstADvar_ctr(Double(i)); }
-#endif
 	ConstADvar(int i)	{ ConstADvar_ctr(Double(i)); }
 	ConstADvar(long i)	{ ConstADvar_ctr(Double(i)); }
 	ConstADvar(const IndepADVar&);
@@ -1179,7 +1153,7 @@ IndepADvar<Double>::AD_Indep(IndepADvar<Double> &v)
 	}
 
  template<typename Double>
-IndepADvar<Double>::IndepADvar(Double d)
+IndepADvar<Double>::IndepADvar(Ttype d)
 {
 
 	ADVari *x = new ADVari(d);
@@ -1187,7 +1161,6 @@ IndepADvar<Double>::IndepADvar(Double d)
 	AD_Indep(*(ADVar*)this);
 	}
 
-#ifdef RAD_double_ops
  template<typename Double>
 IndepADvar<Double>::IndepADvar(double i)
 {
@@ -1196,7 +1169,6 @@ IndepADvar<Double>::IndepADvar(double i)
 	cv = x;
 	AD_Indep(*(ADVar*)this);
 	}
-#endif /* RAD_double_ops */
 
  template<typename Double>
 IndepADvar<Double>::IndepADvar(int i)
@@ -1501,7 +1473,7 @@ ADvar<Double>::operator/=(Double R) {
 	return *this;
 	}
 
-#ifdef NO_STDCC
+#if 1 /*def NO_STDCC*/
 #define STDCC /*nothing*/
 #else
 #define STDCC std::
@@ -1604,6 +1576,14 @@ log(const ADvari<Double> &v) {
 
  template<typename Double>
  ADvari<Double>&
+log10(const ADvari<Double> &v) {
+	static double num = 1. / log(10.);
+	Double x = v.Val;
+	return *(new ADvar1s<Double>(STDCC log10(x), num / x, &v));
+	}
+
+ template<typename Double>
+ ADvari<Double>&
 pow(const ADvari<Double> &L, const ADvari<Double> &R) {
 	Double x = L.Val, y = R.Val, t = STDCC pow(x,y);
 	return *(new ADvar2q<Double>(t, y*t/x, t*STDCC log(x), &L, &R));
@@ -1658,8 +1638,21 @@ tanh(const ADvari<Double> &v) {
 
  template<typename Double>
  ADvari<Double>&
-fabs(const ADvari<Double> &v) {	// "fabs" is not the best choice of name,
-					// but this name is used at Sandia.
+abs(const ADvari<Double> &v) {
+	Double t, p;
+	p = 1;
+	if ((t = v.Val) < 0) {
+		t = -t;
+		p = -p;
+		}
+	return *(new ADvar1s<Double>(t, p, &v));
+	}
+
+ template<typename Double>
+ ADvari<Double>&
+fabs(const ADvari<Double> &v) {	// Synonym for "abs"
+				// "fabs" is not the best choice of name,
+				// but this name is used at Sandia.
 	Double t, p;
 	p = 1;
 	if ((t = v.Val) < 0) {
@@ -1730,41 +1723,24 @@ val(const ADvari<Double> &x) {
 #define Ai const ADvari<Double>&
 #define AI const IndepADvar<Double>&
 #define D Double
-#ifdef RAD_double_ops
 #define T2(r,f) \
  T r f(Ai L, AI R) { return f(L, *A R.cv); }\
  T r f(AI L, Ai R) { return f(*A L.cv, R); }\
  T r f(AI L, AI R) { return f(*A L.cv, *A R.cv); }\
  T r f(AI L, D R) { return f(*A L.cv, R); }\
- T r f(Ai L, double R) { return f(L, (D)R); }\
- T r f(AI L, double R) { return f(*A L.cv, (D)R); }\
+ T r f(Ai L, Dtype R) { return f(L, (D)R); }\
+ T r f(AI L, Dtype R) { return f(*A L.cv, (D)R); }\
  T r f(Ai L, long R) { return f(L, (D)R); }\
  T r f(AI L, long R) { return f(*A L.cv, (D)R); }\
  T r f(Ai L, int R) { return f(L, (D)R); }\
  T r f(AI L, int R) { return f(*A L.cv, (D)R); }\
  T r f(D L, AI R) { return f(L, *A R.cv); }\
- T r f(double L, Ai R) { return f((D)L, R); }\
- T r f(double L, AI R) { return f((D)L, *A R.cv); }\
+ T r f(Dtype L, Ai R) { return f((D)L, R); }\
+ T r f(Dtype L, AI R) { return f((D)L, *A R.cv); }\
  T r f(long L, Ai R) { return f((D)L, R); }\
  T r f(long L, AI R) { return f((D)L, *A R.cv); }\
  T r f(int L, Ai R) { return f((D)L, R); }\
  T r f(int L, AI R) { return f((D)L, *A R.cv); }
-#else /* !RAD_double_ops */
-#define T2(r,f) \
- T r f(Ai L, AI R) { return f(L, *A R.cv); }\
- T r f(AI L, Ai R) { return f(*A L.cv, R); }\
- T r f(AI L, AI R) { return f(*A L.cv, *A R.cv); }\
- T r f(AI L, D R) { return f(*A L.cv, R); }\
- T r f(Ai L, long R) { return f(L, (D)R); }\
- T r f(AI L, long R) { return f(*A L.cv, (D)R); }\
- T r f(Ai L, int R) { return f(L, (D)R); }\
- T r f(AI L, int R) { return f(*A L.cv, (D)R); }\
- T r f(D L, AI R) { return f(L, *A R.cv); }\
- T r f(long L, Ai R) { return f((D)L, R); }\
- T r f(long L, AI R) { return f((D)L, *A R.cv); }\
- T r f(int L, Ai R) { return f((D)L, R); }\
- T r f(int L, AI R) { return f((D)L, *A R.cv); }
-#endif /* RAD_double_ops */
 
 T2(F, operator+)
 T2(F, operator-)
@@ -1787,6 +1763,7 @@ T2(int, operator>)
 
 T1(operator+)
 T1(operator-)
+T1(abs)
 T1(acos)
 T1(acosh)
 T1(asin)
@@ -1797,6 +1774,7 @@ T1(cos)
 T1(cosh)
 T1(exp)
 T1(log)
+T1(log10)
 T1(sin)
 T1(sinh)
 T1(sqrt)
@@ -1817,13 +1795,12 @@ T F copy(Ai x)
 #undef T
 #undef A
 #undef STDCC
+#undef Ttype
+#undef Dtype
 
 #ifdef SACADO_NAMESPACE
 } /* namespace Rad */
 } /* namespace Sacado */
-#endif
-
-#ifdef SACADO_NAMESPACE
 #define SNS Sacado::Rad
 #else
 #define SNS // nothing
