@@ -41,3 +41,5 @@ XmlToParameterList_LDADD = $(top_builddir)/src/libteuchos.a $(LIBS) $(FLIBS)
 Example1.xml:
 	cp $(srcdir)/_Example1.xml  Example1.xml
 	cp $(srcdir)/_Example2.xml  Example2.xml
+
+EXTRA_DIST = _Example1.xml _Example2.xml

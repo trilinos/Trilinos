@@ -36,7 +36,6 @@
 int main( int argc, char* argv[] )
 {
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
-  const int procRank = Teuchos::GlobalMPISession::getRank();
 
   std::cout << std::endl << Teuchos::Teuchos_Version() << std::endl;
 

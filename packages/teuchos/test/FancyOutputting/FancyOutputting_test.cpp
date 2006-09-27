@@ -163,7 +163,6 @@ int main(int argc, char* argv[])
   bool success = true;
 
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
-  const int procRank = Teuchos::GlobalMPISession::getRank();
   const int numProcs = Teuchos::GlobalMPISession::getNProc();
 
   try {
