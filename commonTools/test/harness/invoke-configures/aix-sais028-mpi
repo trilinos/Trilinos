@@ -54,5 +54,6 @@
 --enable-tpetra \
 --enable-triutils \
 --enable-sacado \
+--enable-sacado-alltests \
 --enable-stratimikos
 

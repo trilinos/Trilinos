@@ -58,6 +58,7 @@
 --enable-tpetra \
 --enable-teuchos-complex \
 --enable-sacado \
+--enable-sacado-alltests \
 --enable-stratimikos \
 --disable-default-packages
 

@@ -58,5 +58,6 @@ LDFLAGS=" -64 -L/usr/lib64/mips4/r10000 -L/usr/lib64/mips4 -L/usr/lib64 -LANG:st
 --enable-tpetra \
 --enable-triutils \
 --enable-sacado \
+--enable-sacado-alltests \
 --enable-stratimikos \
 --with-gnumake

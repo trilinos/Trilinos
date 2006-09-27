@@ -51,6 +51,7 @@ FLIBS="-lpgf90 -lpgf90_rpm1 -lpgf902 -lpgf90rtl -lpgftnrtl" \
 --enable-belos \
 --enable-capo \
 --enable-sacado \
+--enable-sacado-alltests \
 --enable-stratimikos \
 --enable-meros \
 --enable-rtop \
