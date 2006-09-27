@@ -1,2 +1,0 @@
---with-blas=/space/Trilinos3PL/libblas.a
---with-lapack=/space/Trilinos3PL/liblapack.a

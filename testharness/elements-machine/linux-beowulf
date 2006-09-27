@@ -1,8 +1,0 @@
-CXXFLAGS=-O3
-CFLAGS=-O3
-FFLAGS=-O3
---enable-valgrind
---with-libs="/common/TrilinosTestHarness/Trilinos3PL/UMFPACKv4.1/UMFPACK/Lib/libumfpack.a
-/common/TrilinosTestHarness/Trilinos3PL/UMFPACKv4.1/AMD/Lib/libamd.a"
---with-incdirs="-I/common/TrilinosTestHarness/Trilinos3PL/UMFPACKv4.1/UMFPACK/Include
--I/common/TrilinosTestHarness/Trilinos3PL/UMFPACKv4.1/AMD/Include"

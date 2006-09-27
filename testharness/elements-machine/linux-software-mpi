@@ -1,4 +1,0 @@
---with-cxxflags=-DLAM_BUILDING
---enable-mpi
---with-mpi-compilers
---enable-amesos-superludist

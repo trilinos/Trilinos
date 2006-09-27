@@ -1,8 +1,0 @@
-# List the names of all of the build directories that should be configured,
-# compiled and tested for the test harness.  Each build directory must be a 
-# subdirectory of 'Trilinos/'.  One subdirectory per line.  Each directory 
-# listed must contain an "invoke-configure" file that contains the options
-# that should be passed to configure.
-MPI
-SERIAL
-
