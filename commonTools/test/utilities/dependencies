@@ -271,7 +271,12 @@ IF PACKAGE rythmos THEN
 REMOVE --enable-rythmos
 DONE
 
-# Stratimikos------------------------------------------------------------------
+# Sacado -----------------------------------------------------------------------
+IF PACKAGE sacado THEN
+REMOVE --enable-sacado
+DONE
+
+# Stratimikos ------------------------------------------------------------------
 IF PACKAGE stratimikos THEN
 REMOVE --enable-stratimikos
 DONE

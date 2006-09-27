@@ -49,6 +49,7 @@ CPPFLAGS=-Wno-long-double \
 --enable-python \
 --enable-rtop \
 --enable-rythmos \
+--enable-sacado \
 --enable-stratimikos \
 --enable-teuchos \
 --enable-teuchos-abc \

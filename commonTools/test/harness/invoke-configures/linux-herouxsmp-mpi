@@ -71,5 +71,6 @@ FFLAGS=-O3 \
 --enable-thyra \
 --enable-tpetra \
 --enable-triutils \
+--enable-sacado \
 --enable-stratimikos \
 --with-gnumake

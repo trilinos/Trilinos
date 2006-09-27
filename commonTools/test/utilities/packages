@@ -32,8 +32,11 @@ STD_NAME: new_package, DIR_NAME: new_package
 STD_NAME: nox, DIR_NAME: nox
 STD_NAME: pliris, DIR_NAME: pliris
 STD_NAME: pytrilinos, DIR_NAME: PyTrilinos
+STD_NAME: rbgen, DIR_NAME: rbgen 
 STD_NAME: rtop, DIR_NAME: rtop
 STD_NAME: rythmos, DIR_NAME: rythmos
+STD_NAME: sacado, DIR_NAME: sacado 
+STD_NAME: stratimikos, DIR_NAME: stratimikos 
 STD_NAME: teuchos, DIR_NAME: teuchos
 STD_NAME: thyra, DIR_NAME: thyra
 STD_NAME: tpetra, DIR_NAME: tpetra
@@ -42,3 +45,4 @@ STD_NAME: tsf, DIR_NAME: TSF
 STD_NAME: tsfcore, DIR_NAME: TSFCore
 STD_NAME: tsfcoreutils, DIR_NAME: TSFCoreUtils
 STD_NAME: tsfextended, DIR_NAME: TSFExtended
+STD_NAME: webtrilinos, DIR_NAME: WebTrilinos 
