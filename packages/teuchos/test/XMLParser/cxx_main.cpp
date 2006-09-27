@@ -46,6 +46,7 @@ int main(int argc, void** argv)
   cout << Teuchos::Teuchos_Version() << endl << endl;
 
   bool testfailed = false;
+  double tmp;
 
   try
     {
@@ -72,7 +73,7 @@ int main(int argc, void** argv)
       solver.set("special3","\"&\'");     // test the XML outputting and parsing for correctness
       solver.set("tol", 1.0e-10);         // set some of these to isUsed for completeness
       {
-        double tmp = solver.get<double>("tol");
+        tmp = solver.get<double>("tol");
       }
       problem.set("Solver",solver);
 
