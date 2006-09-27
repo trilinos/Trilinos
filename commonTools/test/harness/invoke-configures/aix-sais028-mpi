@@ -53,5 +53,6 @@
 --enable-rythmos \
 --enable-tpetra \
 --enable-triutils \
+--enable-sacado \
 --enable-stratimikos
 

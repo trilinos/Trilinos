@@ -55,6 +55,7 @@
 --enable-pliris \
 --enable-rtop \
 --enable-rythmos \
+--enable-sacado \
 --enable-stratimikos \
 --enable-thyra \
 --enable-tpetra \

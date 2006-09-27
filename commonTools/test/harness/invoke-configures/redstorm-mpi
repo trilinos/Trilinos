@@ -53,6 +53,7 @@
 --enable-thyra \
 --enable-tpetra \
 --enable-teuchos-complex \
+--enable-sacado \
 --enable-stratimikos \
 --disable-default-packages
 

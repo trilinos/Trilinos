@@ -44,6 +44,7 @@ CC=icc CXX=icpc F77=ifort \
 --enable-thyra \
 --enable-tpetra \
 --enable-triutils \
+--enable-sacado \
 --enable-stratimikos \
 --with-gnumake \
 --with-ldflags="-lunwind -lcprts" \
