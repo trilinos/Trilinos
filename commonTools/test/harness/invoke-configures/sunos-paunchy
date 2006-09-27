@@ -52,5 +52,6 @@ CXXFLAGS="-g -pto" \
 --enable-tpetra \
 --enable-triutils \
 --enable-sacado \
+--enable-sacado-alltests \
 --enable-stratimikos \
 --enable-moocho

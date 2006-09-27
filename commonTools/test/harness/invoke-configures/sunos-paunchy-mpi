@@ -57,6 +57,7 @@ CPPFLAGS="-I/local/arch/sun/sunos/mpi/mpich/lib/sun4/ch_p4 \
 --enable-rtop \
 --enable-rythmos \
 --enable-sacado \
+--enable-sacado-alltests \
 --enable-stratimikos \
 --enable-teuchos \
 --enable-teuchos-abc \

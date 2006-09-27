@@ -60,6 +60,7 @@ FFLAGS=-O3 \
 --enable-moocho \
 --enable-rtop \
 --enable-sacado \
+--enable-sacado-alltests \
 --enable-stratimikos \
 --enable-webtrilinos \
 --with-gnumake

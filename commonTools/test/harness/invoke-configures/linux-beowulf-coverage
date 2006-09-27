@@ -46,6 +46,7 @@ F77=g77 \
 --enable-rtop \
 --enable-rythmos \
 --enable-sacado \
+--enable-sacado-alltests \
 --enable-stratimikos \
 --enable-teuchos \
 --enable-teuchos-abc \

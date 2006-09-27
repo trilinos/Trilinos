@@ -274,6 +274,7 @@ DONE
 # Sacado -----------------------------------------------------------------------
 IF PACKAGE sacado THEN
 REMOVE --enable-sacado
+REMOVE --enable-sacado-alltests
 DONE
 
 # Stratimikos ------------------------------------------------------------------
