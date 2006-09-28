@@ -88,6 +88,12 @@ static int New_Elem_Index_Size = 0;   /* Number of integers allocated in
                                          New_Elem_Index.                     */
 static int Use_Edge_Wgts = 0;         /* Flag indicating whether elements
                                          store edge weights.                 */
+static int Vertex_Blanking = 0;       /* We're dynamically altering the graph
+                                         in each iteration by blanking portions
+                                         of it, so we must migrate flags 
+                                         indicating whether adjacent vertices
+                                         of migrated elements were blanked on
+                                         the originating process.             */
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -275,6 +281,19 @@ char msg[256];
     k = 0;
   /* Make sure all procs have the same value */
   MPI_Allreduce(&k, &Use_Edge_Wgts, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+
+  /* NOT IMPLEMENTED: blanking information is not sent along.  Subsequent
+     lb_eval may be incorrect, since imported elements may have blanked
+     adjacencies.
+
+  if (mesh->blank_count > 0)
+    k = 1;
+  else
+    k = 0;
+ 
+  MPI_Allreduce(&k, &Vertex_Blanking, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+
+  */
 
   /*
    *  For all elements, update adjacent elements' processor information.
