@@ -65,7 +65,7 @@
  *
  *  \brief The Anasazi::BlockDavidsonSolMgr provides a powerful and fully-featured solver manager over the BlockDavidson eigensolver.
  *
- * This solver mangaer implements a hard-locking mechanism, whereby eigenpairs designated to be locked are moved from the eigensolver and placed in
+ * This solver manager implements a hard-locking mechanism, whereby eigenpairs designated to be locked are moved from the eigensolver and placed in
  * auxiliary storage. The eigensolver is then restarted and continues to iterate, always orthogonal to the locked eigenvectors.
 
  \ingroup anasazi_solver_framework
