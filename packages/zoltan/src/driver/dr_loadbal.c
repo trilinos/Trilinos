@@ -633,8 +633,8 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     /* Test whether Fixed Object assignments are correct */
     if (Test.Fixed_Objects) {
       for (errcnt=0, i = 0; i < mesh->num_elems; i++) {
-        current_elem = &(mesh->elements[i]);
         if (mesh->blank_count && (mesh->blank[i] == 1)) continue;
+        current_elem = &(mesh->elements[i]);
         if (current_elem->fixed_part != -1 &&
             current_elem->fixed_part != current_elem->my_part) {
           errcnt++;
@@ -927,7 +927,8 @@ int get_first_element(void *data, int num_gid_entries, int num_lid_entries,
   
   mesh = (MESH_INFO_PTR) data;
   if (mesh->num_elems == mesh->blank_count) {
-    /* No elements on this processor */
+    printf("%d: all elements are blanked, A\n",mesh->proc);
+    *ierr = ZOLTAN_FATAL;
     return 0;
   }
 
@@ -941,6 +942,13 @@ int get_first_element(void *data, int num_gid_entries, int num_lid_entries,
       }
     }
   }
+
+  if (i == mesh->num_elems){
+    printf("%d: all elements are blanked, B\n",mesh->proc);
+    *ierr = ZOLTAN_FATAL;
+    return 0;
+  }
+
   current_elem = &elem[first];
   if (num_lid_entries) {
     for (j = 0; j < lid; j++) local_id[j]=0;
@@ -1174,12 +1182,16 @@ int get_num_edges(void *data, int num_gid_entries, int num_lid_entries,
 
   nedges = current_elem->nadj;
 
-  if (mesh->blank_count > 0){
+  if (mesh->blank_count || current_elem->tmp_blank){
     ncount = 0;
     for (i=0; i<nedges; i++){
-      if ((current_elem->adj_proc[i] != mesh->proc) || 
-          (mesh->blank[current_elem->adj[i]] == 0)){
-        ncount++;
+      if (current_elem->adj_proc[i] == mesh->proc){
+        /* Did I blank this vertex of mine */
+        if (!mesh->blank || !mesh->blank[current_elem->adj[i]]) ncount++;
+      }
+      else{
+        /* Post migration, was this blanked in former process */
+        if (!current_elem->tmp_blank || !current_elem->tmp_blank[i]) ncount++;
       }
     }
     nedges = ncount;
@@ -1223,12 +1235,16 @@ void get_num_edges_multi(
                                           &idx));
     nedges = current_elem->nadj;
 
-    if (mesh->blank_count > 0){
+    if (mesh->blank_count || current_elem->tmp_blank){
       ncount = 0;
       for (j=0; j<nedges; j++){
-        if ((current_elem->adj_proc[j] != mesh->proc) || 
-            (mesh->blank[current_elem->adj[j]] == 0)){
-          ncount++;
+        if (current_elem->adj_proc[j] == mesh->proc){
+          /* Did I blank this vertex of mine */
+          if (!mesh->blank || !mesh->blank[current_elem->adj[j]]) ncount++;
+        }
+        else{
+          /* Post migration, was this blanked in former process */
+          if (!current_elem->tmp_blank || !current_elem->tmp_blank[j]) ncount++;
         }
       }
       nedges = ncount;
@@ -1289,8 +1305,14 @@ void get_edge_list_multi (void *data, int num_gid_entries, int num_lid_entries,
       }
 
       /* Skip blanked vertices */
-      if ((mesh->blank_count > 0) && (local_elem >= 0) &&
-          (mesh->blank[local_elem] == 1))  continue;
+      if (local_elem >= 0){
+        /* Did I blank this vertex of mine */
+        if (mesh->blank && mesh->blank[local_elem]) continue;
+      }
+      else{
+        /* Post migration, was this blanked in former process */
+        if (current_elem->tmp_blank && current_elem->tmp_blank[i]) continue;
+      }
 
       for (k = 0; k < gid; k++) nbor_global_id[k+j*num_gid_entries] = 0;
       if (local_elem >= 0){
@@ -1356,8 +1378,15 @@ void get_edge_list (void *data, int num_gid_entries, int num_lid_entries,
     }
 
     /* Skip blanked vertices */
-    if ((mesh->blank_count > 0) && (local_elem >= 0) &&
-        (mesh->blank[local_elem] == 1))  continue;
+
+    if (local_elem >= 0){
+      /* Did I blank this vertex of mine */
+      if (mesh->blank && mesh->blank[local_elem]) continue;
+    }
+    else{
+      /* Post migration, was this blanked in former process */
+      if (current_elem->tmp_blank && current_elem->tmp_blank[i]) continue;
+    }
 
     for (k = 0; k < gid; k++) nbor_global_id[k+j*num_gid_entries] = 0;
     if (local_elem >= 0){

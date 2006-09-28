@@ -566,29 +566,34 @@ static void remove_random_vertices(MESH_INFO_PTR mesh, int iteration,
 int i, j, alllocal;
 ELEM_INFO *elem;
 
+  for (i=0; i < mesh->num_elems; i++){
+    /* Array that may have been created after migration to
+     * flag vertices that had been blanked in the previous
+     * process.  
+     */
+    safe_free(&(mesh->elements[i].tmp_blank));
+  }
+
+  safe_free(&mesh->blank);
+  mesh->blank_count = 0;
+
   /*
    * Mark some portion of vertices as blanked (but only if all of
    * their adjacencies are in the local process).  The graph callbacks
    * will not report blanked vertices.  
    */
 
-
   if ((mesh->num_elems < 2) || (blank_factor <= 0.0) || (blank_factor >= 1.0)){
-    ZOLTAN_FREE(&mesh->blank);
-    mesh->blank_count = 0;
     return;
   }
 
+  mesh->blank = (int *)calloc(sizeof(int) , mesh->elem_array_len);
   if (!mesh->blank){
-    mesh->blank = (int *)calloc(sizeof(int) , mesh->num_elems);
-    if (!mesh->blank){
-      Gen_Error(0, "memory allocation in remove_random_vertices");
-      error_report(mesh->proc);
-      return;
-    }
+    Gen_Error(0, "memory allocation in remove_random_vertices");
+    error_report(mesh->proc);
+    return;
   }
 
-  mesh->blank_count = 0;
   alllocal = 0;
  
   srand((unsigned int)(iteration + 1));

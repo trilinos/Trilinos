@@ -97,6 +97,8 @@ struct Element_Description
                            boundaries).  Chaco doesn't have "sides," so the 
                            ordering is irrelevent for Chaco input. */
   int     *adj_proc;	/* list of processors for adjacent elements */
+  char    *tmp_blank;   /* after migration, some off-process adjs may be blank
+                           (not part of graph) 1/0 if blank/not-blank */
   float   *edge_wgt;	/* edge weights for adjacent elements */
   int      nadj;	/* number of entries in adj */
   int      adj_len;	/* allocated length of adj/adj_proc/edge_wgt arrays */
