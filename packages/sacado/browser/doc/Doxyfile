@@ -13,7 +13,7 @@ EXTRACT_LOCAL_CLASSES  = YES
 #
 # Package options
 #
-PROJECT_NAME           = "New_Package Package Browser (Single Doxygen Collection)"
+PROJECT_NAME           = "Sacado Package Browser (Single Doxygen Collection)"
 OUTPUT_DIRECTORY       = ../browser/doc
 #
 # What and how documentation is extracted
