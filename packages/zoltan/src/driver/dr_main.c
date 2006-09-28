@@ -223,7 +223,8 @@ int main(int argc, char *argv[])
     goto End;
   }
 
-  srand(Proc);
+  /* srand(Proc); Different seeds on different procs. */
+  srand(1);  /* Same seed everywhere. */
 
   /* Loop over read and balance for a number of iterations */
   /* (Useful for testing REUSE parameters in Zoltan.) */
@@ -313,8 +314,9 @@ int main(int argc, char *argv[])
           /* Increase vertex weight, and also edge weights? TODO */
           j = (int) ((10.0*rand())/RAND_MAX + .5);
           for (i = 0; i < mesh.num_elems; i++) {
-            if ((mesh.elements[i].my_part%10) == j)
+            if ((mesh.elements[i].my_part%10) == j){
               mesh.elements[i].cpu_wgt[0] *= Test.Dynamic_Weights;
+            }
           }
         }
       }

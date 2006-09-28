@@ -678,6 +678,12 @@ int idx;
   size = Zoltan_Align(size);
   size += num_nodes * mesh->num_dims * sizeof(float);
   
+  /* For dynamic weights test, multiply size by vertex weight. */
+  /* This simulates mesh refinement. */
+  if (Test.Dynamic_Weights){
+    size *= current_elem->cpu_wgt[0];
+  }
+
   return (size);
 }
 
