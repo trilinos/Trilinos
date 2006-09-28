@@ -504,12 +504,10 @@ static int Zoltan_ParMetis_Jostle(
   ZOLTAN_ID_PTR local_ids;
   ZOLTAN_ID_PTR global_ids;    
   static int timer_pj = -1;
-#ifdef PARMETIS_V3_1_MEMORY_ERROR_FIXED
 #if (PARMETIS_MAJOR_VERSION >= 3) 
   ZOLTAN_ID_PTR lid;        /* Temporary pointer to a local id; used to pass
                                NULL to query fns when NUM_LID_ENTRIES == 0. */
 #endif
-#endif /* PARMETIS_V3_1_MEMORY_ERROR_FIXED */
   int *input_parts;         /* Initial partitions for objects. */
   int *newproc;             /* New processor for each object. */
   ZOLTAN_COMM_OBJ *comm_plan;
@@ -877,7 +875,6 @@ static int Zoltan_ParMetis_Jostle(
     }
   }
 
-#ifdef PARMETIS_V3_1_MEMORY_ERROR_FIXED
 #if (PARMETIS_MAJOR_VERSION >= 3) 
   /* Get object sizes if requested */ 
   if (options[PMV3_OPT_USE_OBJ_SIZE] && 
@@ -903,7 +900,6 @@ static int Zoltan_ParMetis_Jostle(
     }
   }
 #endif
-#endif /* PARMETIS_V3_1_MEMORY_ERROR_FIXED */
 
   if (get_geom_data){
     /* ParMETIS will crash if geometric method and some procs have no nodes. */
@@ -1222,7 +1218,10 @@ static int Zoltan_ParMetis_Jostle(
 
   /* Also free temp arrays for ParMetis 3.0 */
   ZOLTAN_FREE(&imb_tols);
+#define PARMETIS31_ALWAYS_FREES_VSIZE   /* Bug in ParMetis 3.1 */
+#ifndef PARMETIS31_ALWAYS_FREES_VSIZE
   if (vsize) ZOLTAN_FREE(&vsize);
+#endif
 
   /* If we have been using a scattered graph, convert partition result back to 
    * original distribution 
@@ -1465,7 +1464,9 @@ End:
   if (float_vwgt)ZOLTAN_FREE(&float_vwgt); 
   if (ewgts)     ZOLTAN_FREE(&ewgts); 
   if (imb_tols)  ZOLTAN_FREE(&imb_tols);
+#ifndef PARMETIS31_ALWAYS_FREES_VSIZE
   if (vsize)     ZOLTAN_FREE(&vsize); 
+#endif
   if (sep_sizes) ZOLTAN_FREE(&sep_sizes);
   if (newproc)   ZOLTAN_FREE(&newproc);
   if (part_orig) ZOLTAN_FREE(&part_orig);

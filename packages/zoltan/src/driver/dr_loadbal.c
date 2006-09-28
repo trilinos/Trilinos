@@ -348,15 +348,13 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
       Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
       return 0;
     }
-#ifdef PARMETIS_V3_1_MEMORY_ERROR_FIXED
-    /* Used in ParMETIS to reduce data movement */
+    /* Sizes used in repartitioning to reduce migration cost */
     if (Zoltan_Set_Fn(zz, ZOLTAN_OBJ_SIZE_MULTI_FN_TYPE,
                       (void (*)()) migrate_elem_size_multi,
                       (void *) mesh) == ZOLTAN_FATAL) {
       Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
       return 0;
     }
-#endif /* PARMETIS_V3_1_MEMORY_ERROR_FIXED */
   }
   else {
     if (Zoltan_Set_Fn(zz, ZOLTAN_NUM_EDGES_FN_TYPE, (void (*)()) get_num_edges,
@@ -369,15 +367,12 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
       Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
       return 0;
     }
-#ifdef PARMETIS_V3_1_MEMORY_ERROR_FIXED
-    /* Used in ParMETIS to reduce data movement */
     if (Zoltan_Set_Fn(zz, ZOLTAN_OBJ_SIZE_FN_TYPE,
                       (void (*)()) migrate_elem_size,
                       (void *) mesh) == ZOLTAN_FATAL) {
       Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
       return 0;
     }
-#endif /* PARMETIS_V3_1_MEMORY_ERROR_FIXED */
   }
 
 
