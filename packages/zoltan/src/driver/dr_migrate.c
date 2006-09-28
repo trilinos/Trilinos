@@ -88,7 +88,7 @@ static int New_Elem_Index_Size = 0;   /* Number of integers allocated in
                                          New_Elem_Index.                     */
 static int Use_Edge_Wgts = 0;         /* Flag indicating whether elements
                                          store edge weights.                 */
-static int Vertex_Blanking = 0;       /* We're dynamically altering the graph
+/*static int Vertex_Blanking = 0;        We're dynamically altering the graph
                                          in each iteration by blanking portions
                                          of it, so we must migrate flags 
                                          indicating whether adjacent vertices
