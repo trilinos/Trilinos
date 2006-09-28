@@ -609,20 +609,11 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     stime = MPI_Wtime();
     if (new_decomp && (num_exported != -1 || num_imported != -1)){ // EBEB  6/8/06
       /* Migrate if new decomposition and RETURN_LISTS != NONE */
-      if (!Test.Dynamic_Graph){
-        if (!migrate_elements(Proc, mesh, zz, num_gid_entries, num_lid_entries,
-            num_imported, import_gids, import_lids, import_procs, import_to_part,
-            num_exported, export_gids, export_lids, export_procs, export_to_part)){
-          Gen_Error(0, "fatal:  error returned from migrate_elements()\n");
-          return 0;
-        }
-      }
-      else {
-        /* If you want to do migration with blanked vertices, you need to
-         * do some work in dr_migrate.c, dr_maps.c.
-         */
-        if (Proc == 0) 
-          printf("OMITTING MIGRATION, INCOMPATIBLE WITH TEST DYNAMIC GRAPH\n");
+      if (!migrate_elements(Proc, mesh, zz, num_gid_entries, num_lid_entries,
+          num_imported, import_gids, import_lids, import_procs, import_to_part,
+          num_exported, export_gids, export_lids, export_procs, export_to_part)){
+        Gen_Error(0, "fatal:  error returned from migrate_elements()\n");
+        return 0;
       }
     }
     mytime = MPI_Wtime() - stime;
@@ -673,10 +664,20 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
   
     /* Evaluate the new balance */
     if (Debug_Driver > 0) {
-      if (Proc == 0) printf("\nAFTER load balancing\n");
-      driver_eval(mesh);
-      i = Zoltan_LB_Eval(zz, 1, NULL, NULL, NULL, NULL, NULL, NULL);
-      if (i) printf("Warning: Zoltan_LB_Eval returned code %d\n", i);
+      if (!Test.Dynamic_Graph){
+        if (Proc == 0) printf("\nAFTER load balancing\n");
+        driver_eval(mesh);
+        i = Zoltan_LB_Eval(zz, 1, NULL, NULL, NULL, NULL, NULL, NULL);
+        if (i) printf("Warning: Zoltan_LB_Eval returned code %d\n", i);
+      }
+      else{
+        if (Proc == 0){
+          printf("\nAFTER load balancing\n");
+          printf("  Omitting load balance evaluation because vertex blanking\n");
+          printf("  may cause result to be incorrect.\n\n");
+        }
+        
+      }
     }
     if (Test.Gen_Files) {
       /* Write output files. */
@@ -952,7 +953,7 @@ int get_first_element(void *data, int num_gid_entries, int num_lid_entries,
   current_elem = &elem[first];
   if (num_lid_entries) {
     for (j = 0; j < lid; j++) local_id[j]=0;
-    local_id[lid] = 0;
+    local_id[lid] = first;
   }
   for (j = 0; j < gid; j++) global_id[j]=0;
   global_id[gid] = (ZOLTAN_ID_TYPE) current_elem->globalID;
