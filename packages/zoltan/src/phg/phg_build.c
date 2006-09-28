@@ -104,6 +104,8 @@ char *yo = "Zoltan_PHG_Build_Hypergraph";
   zhg->LIDs = NULL;
   zhg->Input_Parts = NULL;
   zhg->Output_Parts = NULL;
+  zhg->GnRepartVtx = 0;
+  zhg->GnRepartEdge = 0;
   zhg->nRemove = 0;
   zhg->Remove_EGIDs = NULL;
   zhg->Remove_ELIDs = NULL;
@@ -1489,16 +1491,23 @@ int nRepartEdge = 0, nRepartVtx = 0;
      * this extra data.
      */
 
-    int maxp=0;
-    /* Find number of repartition vertices to add. */
+    /* Find number of repartition vertices and repartition edges to add. */
+    nRepartVtx = 0;
+    nRepartEdge = 0;
     for (i = 0; i < zhg->nObj; i++)
-      if (zhg->Input_Parts[i] > maxp) maxp = zhg->Input_Parts[i];
-    MPI_Allreduce(&maxp, &(zhg->GnInputParts), 1, MPI_INT, MPI_MAX,
+      if (zhg->Input_Parts[i] < zz->LB.Num_Global_Parts) {
+        /* Add repartition vertices & edges only for parts < requested parts. */
+        nRepartEdge++;  /* Will need a repartition edge for this object */
+        if (zhg->Input_Parts[i] > nRepartVtx) nRepartVtx = zhg->Input_Parts[i];
+      }
+    nRepartVtx++;  /* # of repartition vtx == max partition + 1 */
+    MPI_Allreduce(&nRepartVtx, &(zhg->GnRepartVtx), 1, MPI_INT, MPI_MAX,
                   zz->Communicator);
-    (zhg->GnInputParts)++;  /* # parts = max part + 1 */
+    MPI_Allreduce(&nRepartEdge, &(zhg->GnRepartEdge), 1, MPI_INT, MPI_SUM,
+                  zz->Communicator);
 
-    nRepartVtx = NumRepart(myProc_x, nProc_x, zhg->GnInputParts);
-    nRepartEdge = NumRepart(myProc_y, nProc_y, zhg->GnObj);
+    nRepartVtx = NumRepart(myProc_x, nProc_x, zhg->GnRepartVtx);
+    nRepartEdge = NumRepart(myProc_y, nProc_y, zhg->GnRepartEdge);
   }
 
   /*
@@ -1854,8 +1863,8 @@ int nRepartEdge = 0, nRepartVtx = 0;
 
   if (zz->LB.Method == PHG_REPART) {
     if (myProc_x >= 0 && myProc_y >= 0) {
-      ierr = Zoltan_PHG_Add_Repart_Data(zz, zhg, phg, myObjs.vtx_gno,
-                                        hgp, *input_parts);
+      ierr = Zoltan_PHG_Add_Repart_Data(zz, zhg, phg,
+                                        myObjs.vtx_gno, hgp, *input_parts);
       if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
         ZOLTAN_PRINT_ERROR(zz->Proc, yo,
                            "Error from Zoltan_PHG_Add_Repart_Data");
@@ -2734,8 +2743,8 @@ static int Zoltan_PHG_Add_Repart_Data(
 {
 char *yo = "Zoltan_PHG_Add_Repart_Data";
 PHGComm *hgc = phg->comm;
-int GnParts = zhg->GnInputParts;
-int GnVtx = phg->dist_x[hgc->nProc_x];
+int gnRepartVtx = zhg->GnRepartVtx;
+int gnRepartEdge = zhg->GnRepartEdge;
 int myProc_x = hgc->myProc_x;
 int myProc_y = hgc->myProc_y;
 int nProc_x = hgc->nProc_x;
@@ -2771,19 +2780,19 @@ int *tmp_hindex, *tmp_hvertex;       /* Pointers into phg->hindex and
 float *tmp_ewgt;                     /* Edge weights for local repartion
                                         edges */
 int i, j, idx;
-int cnt, dim, sum, prev;
+int cnt, tmp, dim, sum, prev;
 int ierr = ZOLTAN_OK;
 int *appobjsize = NULL;              /* Arrays for obj sizes, used to set */
 int *objsize = NULL;                 /* repartition edge weights. */
 int *tmpobjsize = NULL;
 
   /* Compute number of repartition vertices to add to this processor column */
-  phg->nRepartVtx = nRepartVtx = NumRepart(myProc_x, nProc_x, GnParts);
-  firstRepartVtx = FirstRepart(myProc_x, nProc_x, GnParts);
+  phg->nRepartVtx = nRepartVtx = NumRepart(myProc_x, nProc_x, gnRepartVtx);
+  firstRepartVtx = FirstRepart(myProc_x, nProc_x, gnRepartVtx);
 
   /* Compute number of repartition edges to add to this processor row */
-  phg->nRepartEdge = nRepartEdge = NumRepart(myProc_y, nProc_y, GnVtx);
-  firstRepartEdge = FirstRepart(myProc_y, nProc_y, GnVtx);
+  phg->nRepartEdge = nRepartEdge = NumRepart(myProc_y, nProc_y, gnRepartEdge);
+  firstRepartEdge = FirstRepart(myProc_y, nProc_y, gnRepartEdge);
 
   /* If application did not fix any vertices, allocate fixed array for 
    * repartition vertices. 
@@ -2915,26 +2924,29 @@ int *tmpobjsize = NULL;
     sendbuf = (int *) ZOLTAN_MALLOC(NSEND * cnt * sizeof(int));
     if (!proclist || !sendbuf) MEMORY_ERROR;
 
-    for (i = 0; i < cnt; i++){
+    for (tmp = 0, i = 0; i < cnt; i++){
       int proc_x;               /* Processor column for repartition vtx. */
       int proc_y;               /* Processor row for repartition edge. */
       int v = i + myStart_vtx;  /* Index of vertex being processed. */
       int vgno;                 /* Gno for vertex v. */
       int k = input_parts[v];   /* Repartition vtx global number */
 
-      vgno = VTX_LNO_TO_GNO(phg,v);  /* Gno of vertex */
+      if (k < gnRepartVtx) {
+        vgno = VTX_LNO_TO_GNO(phg,v);  /* Gno of vertex */
 
-      /* Determine proc col for repartition vtx associated with part k */
-      proc_x = ProcForRepart(k, nProc_x, GnParts);
+        /* Determine proc col for repartition vtx associated with part k */
+        proc_x = ProcForRepart(k, nProc_x, gnRepartVtx);
 
-      /* Determine proc row for repartition edge associated with vtx i */
-      proc_y = ProcForRepart(vgno, nProc_y, GnVtx);
+        /* Determine proc row for repartition edge associated with vtx i */
+        proc_y = ProcForRepart(vgno, nProc_y, gnRepartEdge);
  
-      /* Fill message buffers */
-      proclist[i] = proc_y * nProc_x + proc_x;
-      sendbuf[NSEND*i] = vgno;                   /* GNO of vertex */
-      sendbuf[NSEND*i+1] = k;                    /* Vertex's input partition */
-      sendbuf[NSEND*i+2] = (objsize ? objsize[v] : 1);
+        /* Fill message buffers */
+        proclist[tmp] = proc_y * nProc_x + proc_x;
+        sendbuf[NSEND*tmp] = vgno;                   /* GNO of vertex */
+        sendbuf[NSEND*tmp+1] = k;                    /* Vertex's input partition */
+        sendbuf[NSEND*tmp+2] = (objsize ? objsize[v] : 1);
+        tmp++;
+      }
     }
   }
 
@@ -2942,7 +2954,7 @@ int *tmpobjsize = NULL;
 
   /* Create plan and send info. */
 
-  ierr = Zoltan_Comm_Create(&plan, cnt, proclist, hgc->Communicator,
+  ierr = Zoltan_Comm_Create(&plan, tmp, proclist, hgc->Communicator,
                             24555, &nrecv);
 
   recvbuf = (int *) ZOLTAN_MALLOC(NSEND * nrecv * sizeof(int));
@@ -3045,13 +3057,13 @@ int *tmpobjsize = NULL;
   /* Update distx and disty to include the repartition vtx & edges. */
   for (sum = 0, i = 0; i < nProc_x; i++) {
     phg->dist_x[i] += sum;
-    sum += NumRepart(i, nProc_x, GnParts);
+    sum += NumRepart(i, nProc_x, gnRepartVtx);
   }
   phg->dist_x[nProc_x] += sum;
 
   for (sum = 0, i = 0; i < nProc_y; i++) {
     phg->dist_y[i] += sum;
-    sum += NumRepart(i, nProc_y, GnVtx);
+    sum += NumRepart(i, nProc_y, gnRepartEdge);
   }
   phg->dist_y[nProc_y] += sum;
 
@@ -3099,13 +3111,13 @@ int i;
   /* Update distx and disty to remove the repartition vtx & edges. */
   for (sum = 0, i = 0; i < nProc_x; i++) {
     phg->dist_x[i] -= sum;
-    sum += NumRepart(i, nProc_x, zhg->GnInputParts);
+    sum += NumRepart(i, nProc_x, zhg->GnRepartVtx);
   }
   phg->dist_x[nProc_x] -= sum;
 
   for (sum = 0, i = 0; i < nProc_y; i++) {
     phg->dist_y[i] -= sum;
-    sum += NumRepart(i, nProc_y, zhg->GnObj);
+    sum += NumRepart(i, nProc_y, zhg->GnRepartEdge);
   }
   phg->dist_y[nProc_y] -= sum;
 

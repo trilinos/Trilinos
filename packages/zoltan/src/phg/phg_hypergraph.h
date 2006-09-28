@@ -166,8 +166,10 @@ struct Zoltan_HGraph {
   int GnObj;                /* Global number of objects over all procs. */
   ZOLTAN_ID_PTR GIDs;       /* Global IDs for on-processor objects.  */
   ZOLTAN_ID_PTR LIDs;       /* Local IDs for on-processor objects.   */
-  int GnInputParts;         /* Global number of input parts == 
-                               max(Input_Parts[i]) + 1 for i=0,...,nProcs-1 */
+  int GnRepartVtx;          /* Global number of repartition vtxs added for
+                               PHG_REPART. */
+  int GnRepartEdge;         /* Global number of repartition edges added for
+                               PHG_REPART. */
   int *Input_Parts;         /* Initial partition #s for on-processor objects */
   int *Output_Parts;        /* Final partition #s for on-processor objects */
   int nRemove;              /* # of input hyperedges removed */
