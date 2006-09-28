@@ -63,6 +63,8 @@ static void remove_random_vertices(MESH_INFO_PTR mesh, int iter, float factor);
 static void print_mesh(MESH_INFO_PTR m, int *tp, int *the, int *tv);
 #endif
 
+extern void safe_free(void **ptr);
+
 #include <unistd.h>
 
 #ifdef VAMPIR
@@ -571,10 +573,10 @@ ELEM_INFO *elem;
      * flag vertices that had been blanked in the previous
      * process.  
      */
-    safe_free(&(mesh->elements[i].tmp_blank));
+    safe_free((void **)&(mesh->elements[i].tmp_blank));
   }
 
-  safe_free(&mesh->blank);
+  safe_free((void **)&mesh->blank);
   mesh->blank_count = 0;
 
   /*
