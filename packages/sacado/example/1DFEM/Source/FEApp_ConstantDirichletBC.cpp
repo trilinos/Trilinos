@@ -29,76 +29,60 @@
 // ***********************************************************************
 // @HEADER
 
-#include "LinearElement.hpp"
+#include "FEApp_ConstantDirichletBC.hpp"
 
-LinearElement::LinearElement() :
-  xl(0.0),
-  xr(0.0),
-  left_GID(0),
-  right_GID(0)
+FEApp::ConstantDirichletBC::ConstantDirichletBC(unsigned int dof_GID, 
+						double value) :
+  dof(dof_GID),
+  val(value)
 {
 }
 
-LinearElement::~LinearElement()
+FEApp::ConstantDirichletBC::~ConstantDirichletBC()
 {
-}
-
-unsigned int
-LinearElement::numNodes() const
-{
-  return 2;
 }
 
 void
-LinearElement::createNodes(double x_left, double x_right,
-			   unsigned int first_node_gid)
+FEApp::ConstantDirichletBC::applyResidual(const Epetra_Vector& x, 
+					  Epetra_Vector& f) const
 {
-  xl = x_left;
-  xr = x_right;
-  left_GID = first_node_gid;
-  right_GID = first_node_gid+1;
-}
+  // Get map
+  const Epetra_BlockMap& map = x.Map();
 
-unsigned int
-LinearElement::nodeGID(unsigned int i) const 
-{
-  if (i == 0)
-    return left_GID;
-  else
-    return right_GID;
-}
+  if (map.MyGID(dof)) {
+    int lid = map.LID(dof);
 
-void
-LinearElement::evaluateShapes(const std::vector<double>& xi,
-			      std::vector< std::vector<double> >& phi) const
-{
-  for (unsigned int i=0; i<xi.size(); i++) {
-    if (phi[i].size() < 2)
-      phi[i].resize(2);
-
-    phi[i][0] = 0.5 * (1.0 - xi[i]);
-    phi[i][1] = 0.5 * (1.0 + xi[i]);
+    // Set residual to f = x - a
+    f[lid] = x[lid] - val;
   }
 }
 
 void
-LinearElement::evaluateShapeDerivs(const std::vector<double>& xi,
-				   std::vector< std::vector<double> >& dphidxi) const
+FEApp::ConstantDirichletBC::applyJacobian(const Epetra_Vector& x, 
+					  Epetra_Vector& f,
+					  Epetra_CrsMatrix& jac) const
 {
-  for (unsigned int i=0; i<xi.size(); i++) {
-    if (dphidxi[i].size() < 2)
-      dphidxi[i].resize(2);
+  // Get map
+  const Epetra_BlockMap& map = x.Map();
 
-    dphidxi[i][0] = -0.5;
-    dphidxi[i][1] =  0.5;
+  if (map.MyGID(dof)) {
+    int lid = map.LID(dof);
+
+    // Set residual to f = x - a
+    f[lid] = x[lid] - val;
+
+    // Get view of row
+    double *row_view;
+    double done = 1.0;
+    int num_entries;
+    jac.ExtractGlobalRowView(dof, num_entries, row_view);
+
+    // Set all entries to zero
+    for (int k=0; k<num_entries; k++)
+      row_view[k] = 0.0;
+
+    // Set diagonal element to 1
+    int idof = dof;  // remove const
+    jac.ReplaceGlobalValues(idof, 1, &done, &idof);
   }
-}
-
-void
-LinearElement::evaluateJacobian(const std::vector<double>& xi,
-				std::vector<double>& jac) const
-{
-  double j = 0.5 * (xr-xl);
-  for (unsigned int i=0; i<xi.size(); i++)
-    jac[i] = j;
 }

@@ -29,41 +29,41 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef ABSTRACTQUADRATURE_HPP
-#define ABSTRACTQUADRATURE_HPP
+#ifndef FEAPP_ABSTRACTSOURCEFUNCTION_HPP
+#define FEAPP_ABSTRACTSOURCEFUNCTION_HPP
 
 #include <vector>
 
-/*!
- * \brief A simple abstract quadrature class for integrating functions over the
- * interval \f$(-1,1)\f$.
- */
-class AbstractQuadrature {
-public:
+namespace FEApp {
 
-  //! Default constructor
-  AbstractQuadrature() {};
+  /*!
+   * \brief Abstract interface for representing a PDE source function
+   */
+  template <typename ScalarT>
+  class AbstractSourceFunction {
+  public:
+  
+    //! Default constructor
+    AbstractSourceFunction() {};
 
-  //! Destructor
-  virtual ~AbstractQuadrature() {}
+    //! Destructor
+    virtual ~AbstractSourceFunction() {};
 
-  //! Return the number of quadrature points
-  virtual unsigned int numPoints() const = 0;
+    //! Evaluate source function
+    virtual void
+    evaluate(const std::vector<ScalarT>& solution,
+	     std::vector<ScalarT>& value) const = 0;
 
-  //! Return the quadrature points
-  virtual const std::vector<double>& quadPoints() const = 0;
+  private:
+    
+    //! Private to prohibit copying
+    AbstractSourceFunction(const AbstractSourceFunction&);
 
-  //! Return the weights
-  virtual const std::vector<double>& weights() const = 0;
+    //! Private to prohibit copying
+    AbstractSourceFunction& operator=(const AbstractSourceFunction&);
 
-private:
+  };
 
-  //! Private to prohibit copying
-  AbstractQuadrature(const AbstractQuadrature&);
+}
 
-  //! Private to prohibit copying
-  AbstractQuadrature& operator=(const AbstractQuadrature&);
-
-};
-
-#endif // ABSTRACTQUADRATURE_HPP
+#endif // FEAPP_ABSTRACTSOURCEFUNCTION_HPP

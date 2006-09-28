@@ -29,45 +29,48 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef QUADRATICSOURCEFUNCTION_HPP
-#define QUADRATICSOURCEFUNCTION_HPP
+#ifndef FEAPP_ABSTRACTINITPOSTOP_HPP
+#define FEAPP_ABSTRACTINITPOSTOP_HPP
 
-#include "AbstractSourceFunction.hpp"
+#include <vector>
 
-/*!
- * \brief A quadratic PDE source function
- */
-template <typename ScalarT>
-class QuadraticSourceFunction : public AbstractSourceFunction<ScalarT> {
-public:
-  
-  //! Default constructor
-  QuadraticSourceFunction(double factor) : alpha(factor) {};
+#include "FEApp_AbstractElement.hpp"
 
-  //! Destructor
-  virtual ~QuadraticSourceFunction() {};
+namespace FEApp {
 
-  //! Evaluate source function
-  virtual void
-  evaluate(const std::vector<ScalarT>& solution,
-	   std::vector<ScalarT>& value) const {
-    for (unsigned int i=0; i<solution.size(); i++)
-      value[i] = alpha*solution[i]*solution[i];
-  }
+  template <typename ScalarT>
+  class AbstractInitPostOp {
+  public:
+    
+    //! Fill type
+    typedef ScalarT fill_type;
 
-private:
+    //! Constructor
+    AbstractInitPostOp() {};
 
-  //! Private to prohibit copying
-  QuadraticSourceFunction(const QuadraticSourceFunction&);
+    //! Destructor
+    virtual ~AbstractInitPostOp() {};
 
-  //! Private to prohibit copying
-  QuadraticSourceFunction& operator=(const QuadraticSourceFunction&);
+    //! Evaulate init operator
+    virtual void evalInit(const FEApp::AbstractElement& e,
+			  unsigned int neqn,
+			  std::vector<ScalarT>& elem_x) = 0;
 
-protected:
-  
-  //! Factor
-  double alpha;
+    //! Evaluate post operator
+    virtual void evalPost(const FEApp::AbstractElement& e,
+			  unsigned int neqn,
+			  std::vector<ScalarT>& elem_f) = 0;
 
-};
+  private:
+    
+    //! Private to prohibit copying
+    AbstractInitPostOp(const AbstractInitPostOp&);
 
-#endif // QUADRATICSOURCEFUNCTION_HPP
+    //! Private to prohibit copying
+    AbstractInitPostOp& operator=(const AbstractInitPostOp&);
+
+  };
+
+}
+
+#endif // FEAPP_ABSTRACTINITPOSTOP_HPP

@@ -29,37 +29,48 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef ABSTRACTSOURCEFUNCTION_HPP
-#define ABSTRACTSOURCEFUNCTION_HPP
+#ifndef FEAPP_CONSTANTDIRICHLETBC_HPP
+#define FEAPP_CONSTANTDIRICHLETBC_HPP
 
-#include <vector>
+#include "FEApp_AbstractBC.hpp"
 
-/*!
- * \brief Abstract interface for representing a PDE source function
- */
-template <typename ScalarT>
-class AbstractSourceFunction {
-public:
-  
-  //! Default constructor
-  AbstractSourceFunction() {};
+namespace FEApp {
 
-  //! Destructor
-  virtual ~AbstractSourceFunction() {};
+  class ConstantDirichletBC : public FEApp::AbstractBC {
+  public:
 
-  //! Evaluate source function
-  virtual void
-  evaluate(const std::vector<ScalarT>& solution,
-	   std::vector<ScalarT>& value) const = 0;
+    //! Constructor
+    ConstantDirichletBC(unsigned int dof_GID, double value);
 
-private:
+    //! Destructor
+    virtual ~ConstantDirichletBC();
 
-  //! Private to prohibit copying
-  AbstractSourceFunction(const AbstractSourceFunction&);
+    //! Apply boundary condition to residual
+    virtual void applyResidual(const Epetra_Vector& x, 
+			       Epetra_Vector& f) const;
 
-  //! Private to prohibit copying
-  AbstractSourceFunction& operator=(const AbstractSourceFunction&);
+    //! Apply boundary condition to Jacobian
+    virtual void applyJacobian(const Epetra_Vector& x, Epetra_Vector& f,
+			       Epetra_CrsMatrix& jac) const;
 
-};
+  private:
+    
+    //! Private to prohibit copying
+    ConstantDirichletBC(const ConstantDirichletBC&);
 
-#endif // ABSTRACTSOURCEFUNCTION_HPP
+    //! Private to prohibit copying
+    ConstantDirichletBC& operator=(const ConstantDirichletBC&);
+
+  protected:
+    
+    //! GID of DOF
+    unsigned int dof;
+
+    //! Value of BC
+    double val;
+
+  };
+
+}
+
+#endif // FEAPP_CONSTANTDIRICHLETBC_HPP

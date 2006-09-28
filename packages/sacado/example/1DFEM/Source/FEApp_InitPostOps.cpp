@@ -29,11 +29,11 @@
 // ***********************************************************************
 // @HEADER
 
-#include "InitPostOps.hpp"
+#include "FEApp_InitPostOps.hpp"
 
 #include "Epetra_Map.h"
 
-ResidualOp::ResidualOp(
+FEApp::ResidualOp::ResidualOp(
 	      const Teuchos::RefCountPtr<const Epetra_Vector>& overlapped_x,
 	      const Teuchos::RefCountPtr<Epetra_Vector>& overlapped_f) :
   x(overlapped_x),
@@ -41,14 +41,14 @@ ResidualOp::ResidualOp(
 {
 }
 
-ResidualOp::~ResidualOp()
+FEApp::ResidualOp::~ResidualOp()
 {
 }
 
 void
-ResidualOp::evalInit(const AbstractElement& e,
-		     unsigned int neqn,
-		     std::vector<double>& elem_x)
+FEApp::ResidualOp::evalInit(const FEApp::AbstractElement& e,
+			    unsigned int neqn,
+			    std::vector<double>& elem_x)
 {
   // Global node ID
   unsigned int node_GID;
@@ -67,9 +67,9 @@ ResidualOp::evalInit(const AbstractElement& e,
 }
 
 void
-ResidualOp::evalPost(const AbstractElement& e,
-		     unsigned int neqn,
-		     std::vector<double>& elem_f)
+FEApp::ResidualOp::evalPost(const FEApp::AbstractElement& e,
+			    unsigned int neqn,
+			    std::vector<double>& elem_f)
 {
   // Global node ID
   unsigned int node_GID;
@@ -87,7 +87,7 @@ ResidualOp::evalPost(const AbstractElement& e,
   }
 }
 
-JacobianOp::JacobianOp(
+FEApp::JacobianOp::JacobianOp(
 	     const Teuchos::RefCountPtr<const Epetra_Vector>& overlapped_x,
 	     const Teuchos::RefCountPtr<Epetra_Vector>& overlapped_f,
 	     const Teuchos::RefCountPtr<Epetra_CrsMatrix>& overlapped_jac) :
@@ -97,14 +97,14 @@ JacobianOp::JacobianOp(
 {
 }
 
-JacobianOp::~JacobianOp()
+FEApp::JacobianOp::~JacobianOp()
 {
 }
 
 void
-JacobianOp::evalInit(const AbstractElement& e,
-		     unsigned int neqn,
-		     std::vector< Sacado::Fad::DFad<double> >& elem_x)
+FEApp::JacobianOp::evalInit(const FEApp::AbstractElement& e,
+			    unsigned int neqn,
+			    std::vector< Sacado::Fad::DFad<double> >& elem_x)
 {
   // Global node ID
   unsigned int node_GID;
@@ -130,9 +130,9 @@ JacobianOp::evalInit(const AbstractElement& e,
 }
 
 void
-JacobianOp::evalPost(const AbstractElement& e,
-		     unsigned int neqn,
-		     std::vector< Sacado::Fad::DFad<double> >& elem_f)
+FEApp::JacobianOp::evalPost(const FEApp::AbstractElement& e,
+			    unsigned int neqn,
+			    std::vector< Sacado::Fad::DFad<double> >& elem_f)
 {
   // Global node ID
   unsigned int node_GID;

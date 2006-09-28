@@ -29,37 +29,41 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef ABSTRACTBC_HPP
-#define ABSTRACTBC_HPP
+#ifndef FEAPP_ABSTRACTBC_HPP
+#define FEAPP_ABSTRACTBC_HPP
 
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
 
-class AbstractBC {
-public:
+namespace FEApp {
 
-  //! Constructor
-  AbstractBC() {};
+  class AbstractBC {
+  public:
 
-  //! Destructor
-  virtual ~AbstractBC() {};
+    //! Constructor
+    AbstractBC() {};
 
-  //! Apply boundary condition to residual
-  virtual void applyResidual(const Epetra_Vector& x, 
-			     Epetra_Vector& f) const = 0;
+    //! Destructor
+    virtual ~AbstractBC() {};
 
-  //! Apply boundary condition to Jacobian
-  virtual void applyJacobian(const Epetra_Vector& x, Epetra_Vector& f,
-			     Epetra_CrsMatrix& jac) const = 0;
+    //! Apply boundary condition to residual
+    virtual void applyResidual(const Epetra_Vector& x, 
+			       Epetra_Vector& f) const = 0;
 
-private:
+    //! Apply boundary condition to Jacobian
+    virtual void applyJacobian(const Epetra_Vector& x, Epetra_Vector& f,
+			       Epetra_CrsMatrix& jac) const = 0;
 
-  //! Private to prohibit copying
-  AbstractBC(const AbstractBC&);
+  private:
 
-  //! Private to prohibit copying
-  AbstractBC& operator=(const AbstractBC&);
+    //! Private to prohibit copying
+    AbstractBC(const AbstractBC&);
 
-};
+    //! Private to prohibit copying
+    AbstractBC& operator=(const AbstractBC&);
 
-#endif // ABSTRACTBC_HPP
+  };
+
+}
+
+#endif // FEAPP_ABSTRACTBC_HPP

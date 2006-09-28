@@ -29,11 +29,11 @@
 // ***********************************************************************
 // @HEADER
 
-#include "CZeroDiscretization.hpp"
-#include "BrusselatorPDE.hpp"
-#include "ConstantDirichletBC.hpp"
-#include "GaussianQuadrature2.hpp"
-#include "Application.hpp"
+#include "FEApp_CZeroDiscretization.hpp"
+#include "FEApp_BrusselatorPDE.hpp"
+#include "FEApp_ConstantDirichletBC.hpp"
+#include "FEApp_GaussianQuadrature2.hpp"
+#include "FEApp_Application.hpp"
 
 #include <iostream>
 
@@ -71,14 +71,14 @@ int main(int argc, char *argv[]) {
     Comm = Teuchos::rcp(new Epetra_SerialComm);
 #endif
 
-    Teuchos::RefCountPtr< AbstractPDE<double> > real_pde = 
-      Teuchos::rcp(new BrusselatorPDE<double>(alpha, beta, D1, D2));
+    Teuchos::RefCountPtr< FEApp::AbstractPDE<double> > real_pde = 
+      Teuchos::rcp(new FEApp::BrusselatorPDE<double>(alpha, beta, D1, D2));
 
-    Teuchos::RefCountPtr< AbstractPDE<FadType> > fad_pde = 
-      Teuchos::rcp(new BrusselatorPDE<FadType>(alpha, beta, D1, D2));
+    Teuchos::RefCountPtr< FEApp::AbstractPDE<FadType> > fad_pde = 
+      Teuchos::rcp(new FEApp::BrusselatorPDE<FadType>(alpha, beta, D1, D2));
 
-    Teuchos::RefCountPtr<AbstractQuadrature> quad = 
-      Teuchos::rcp(new GaussianQuadrature2);
+    Teuchos::RefCountPtr<FEApp::AbstractQuadrature> quad = 
+      Teuchos::rcp(new FEApp::GaussianQuadrature2);
 
     real_pde->init(quad->numPoints(), 2);
     fad_pde->init(quad->numPoints(), 2);
@@ -87,24 +87,24 @@ int main(int argc, char *argv[]) {
     for (unsigned int i=0; i<=nelem; i++)
       x[i] = h*i;
 
-    CZeroDiscretization disc(x, real_pde->numEquations(), Comm);
+    FEApp::CZeroDiscretization disc(x, real_pde->numEquations(), Comm);
     disc.createMesh();
     disc.createMaps();
     disc.createJacobianGraphs();
 
     Teuchos::RefCountPtr<Epetra_Map> map = disc.getMap();
 
-    std::vector< Teuchos::RefCountPtr<const AbstractBC> > bc(4);
-    bc[0] = Teuchos::rcp(new ConstantDirichletBC(map->MinAllGID(),
-						 alpha));
-    bc[1] = Teuchos::rcp(new ConstantDirichletBC(map->MinAllGID()+1,
-						 beta/alpha));
-    bc[2] = Teuchos::rcp(new ConstantDirichletBC(map->MaxAllGID()-1,
-						 alpha));
-    bc[3] = Teuchos::rcp(new ConstantDirichletBC(map->MaxAllGID(),
-						 beta/alpha));
+    std::vector< Teuchos::RefCountPtr<const FEApp::AbstractBC> > bc(4);
+    bc[0] = Teuchos::rcp(new FEApp::ConstantDirichletBC(map->MinAllGID(),
+							alpha));
+    bc[1] = Teuchos::rcp(new FEApp::ConstantDirichletBC(map->MinAllGID()+1,
+							beta/alpha));
+    bc[2] = Teuchos::rcp(new FEApp::ConstantDirichletBC(map->MaxAllGID()-1,
+							alpha));
+    bc[3] = Teuchos::rcp(new FEApp::ConstantDirichletBC(map->MaxAllGID(),
+							beta/alpha));
 
-    Application app(Teuchos::rcp(&disc, false), bc, quad);
+    FEApp::Application app(Teuchos::rcp(&disc, false), bc, quad);
 
     Epetra_Vector u(*map);
     u.PutScalar(1.0);

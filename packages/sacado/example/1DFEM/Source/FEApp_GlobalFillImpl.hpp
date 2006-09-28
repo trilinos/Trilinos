@@ -29,48 +29,57 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef ABSTRACTPDE_HPP
-#define ABSTRACTPDE_HPP
-
-#include <vector>
-
-#include "AbstractElement.hpp"
-#include "AbstractQuadrature.hpp"
-
-/*!
- * \brief Abstract interface for representing a discretized 1-D PDE.
- */
 template <typename ScalarT>
-class AbstractPDE {
-public:
-  
-  //! Default constructor
-  AbstractPDE() {};
+FEApp::GlobalFill<ScalarT>::
+GlobalFill(
+      const Teuchos::RefCountPtr<const FEApp::Mesh>& elementMesh,
+      const Teuchos::RefCountPtr<const FEApp::AbstractQuadrature>& quadRule,
+      const Teuchos::RefCountPtr< FEApp::AbstractPDE<ScalarT> >& pdeEquations):
+  mesh(elementMesh),
+  quad(quadRule),
+  pde(pdeEquations),
+  nnode(0),
+  neqn(pde->numEquations()),
+  ndof(0),
+  elem_x(),
+  elem_f()
+{
+  Teuchos::RefCountPtr<const FEApp::AbstractElement> e0 = *(mesh->begin());
+  nnode = e0->numNodes();
+  ndof = nnode*neqn;
+  elem_x.resize(ndof);
+  elem_f.resize(ndof);
+}
 
-  //! Destructor
-  virtual ~AbstractPDE() {};
+template <typename ScalarT>
+FEApp::GlobalFill<ScalarT>::
+~GlobalFill()
+{
+}
 
-  //! Number of discretized equations
-  virtual unsigned int numEquations() const = 0;
+template <typename ScalarT>
+void
+FEApp::GlobalFill<ScalarT>::
+computeGlobalFill(FEApp::AbstractInitPostOp<ScalarT>& initPostOp)
+{
+  // Loop over elements
+  Teuchos::RefCountPtr<const FEApp::AbstractElement> e;
+  for (FEApp::Mesh::const_iterator eit=mesh->begin(); eit!=mesh->end(); ++eit){
+    e = *eit;
 
-  //! Initialize PDE
-  virtual void init(unsigned int numQuadPoints, unsigned int numNodes) = 0;
+    // Zero out element residual
+    for (unsigned int i=0; i<ndof; i++)
+      elem_f[i] = 0.0;
 
-  //! Evaluate discretized PDE element-level residual
-  virtual void
-  evaluateElementResidual(const AbstractQuadrature& quadRule,
-			  const AbstractElement& element,
-			  const std::vector<ScalarT>& solution,
-			  std::vector<ScalarT>& residual) = 0;
+    // Initialize element solution
+    initPostOp.evalInit(*e, neqn, elem_x);
 
-private:
+    // Compute element residual
+    pde->evaluateElementResidual(*quad, *e, elem_x, elem_f);
 
-  //! Private to prohibit copying
-  AbstractPDE(const AbstractPDE&);
+    // Post-process element residual
+    initPostOp.evalPost(*e, neqn, elem_f);
 
-  //! Private to prohibit copying
-  AbstractPDE& operator=(const AbstractPDE&);
+  }
 
-};
-
-#endif // ABSTRACTPDE_HPP
+}

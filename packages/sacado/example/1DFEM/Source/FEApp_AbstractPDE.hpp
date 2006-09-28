@@ -29,36 +29,52 @@
 // ***********************************************************************
 // @HEADER
 
-#include "GaussianQuadrature2.hpp"
-#include "Sacado_ConfigDefs.h" // for sqrt
+#ifndef FEAPP_ABSTRACTPDE_HPP
+#define FEAPP_ABSTRACTPDE_HPP
 
-GaussianQuadrature2::GaussianQuadrature2() :
-  qp(2),
-  w(2)
-{
-  qp[0] = -1.0 / std::sqrt(3.0);
-  qp[1] = -qp[0];
+#include <vector>
 
-  w[0] = 1.0;
-  w[1] = 1.0;
+#include "FEApp_AbstractElement.hpp"
+#include "FEApp_AbstractQuadrature.hpp"
+
+namespace FEApp {
+
+  /*!
+   * \brief Abstract interface for representing a discretized 1-D PDE.
+   */
+  template <typename ScalarT>
+  class AbstractPDE {
+  public:
+  
+    //! Default constructor
+    AbstractPDE() {};
+
+    //! Destructor
+    virtual ~AbstractPDE() {};
+
+    //! Number of discretized equations
+    virtual unsigned int numEquations() const = 0;
+
+    //! Initialize PDE
+    virtual void init(unsigned int numQuadPoints, unsigned int numNodes) = 0;
+
+    //! Evaluate discretized PDE element-level residual
+    virtual void
+    evaluateElementResidual(const FEApp::AbstractQuadrature& quadRule,
+			    const FEApp::AbstractElement& element,
+			    const std::vector<ScalarT>& solution,
+			    std::vector<ScalarT>& residual) = 0;
+
+  private:
+    
+    //! Private to prohibit copying
+    AbstractPDE(const AbstractPDE&);
+
+    //! Private to prohibit copying
+    AbstractPDE& operator=(const AbstractPDE&);
+
+  };
+
 }
 
-GaussianQuadrature2::~GaussianQuadrature2() 
-{
-}
-
-unsigned int
-GaussianQuadrature2::numPoints() const
-{
-  return 2;
-}
-
-const std::vector<double>& GaussianQuadrature2::quadPoints() const
-{
-  return qp;
-}
-
-const std::vector<double>& GaussianQuadrature2::weights() const
-{
-  return w;
-}
+#endif // FEAPP_ABSTRACTPDE_HPP

@@ -29,61 +29,53 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef MESH_HPP
-#define MESH_HPP
+#ifndef FEAPP_GAUSSIANQUADRATURE2_HPP
+#define FEAPP_GAUSSIANQUADRATURE2_HPP
 
-#include <list>
+#include "FEApp_AbstractQuadrature.hpp"
 
-#include "Teuchos_RefCountPtr.hpp"
+namespace FEApp {
 
-#include "AbstractElement.hpp"
+  /*!
+   * \brief Two point Gaussian quadrature for integrating functions over the
+   * interval \f$(-1,1)\f$.
+   */
+  class GaussianQuadrature2 : public FEApp::AbstractQuadrature {
+  public:
 
-class Mesh {
-public:
+    //! Default constructor
+    GaussianQuadrature2();
 
-  typedef std::list< Teuchos::RefCountPtr<AbstractElement> > MeshList;
+    //! Destructor
+    virtual ~GaussianQuadrature2();
 
-  typedef MeshList::const_iterator const_iterator;
+    //! Return the number of quadrature points
+    virtual unsigned int numPoints() const;
 
-  typedef MeshList::iterator iterator;
+    //! Return the quadrature points
+    virtual const std::vector<double>& quadPoints() const;
 
-  //! Constructor 
-  Mesh();
+    //! Return the weights
+    virtual const std::vector<double>& weights() const;
 
-  //! Destructor
-  ~Mesh();
+  private:
 
-  //! Add a new element
-  void addElement(const Teuchos::RefCountPtr<AbstractElement>& element);
+    //! Private to prohibit copying
+    GaussianQuadrature2(const GaussianQuadrature2&);
 
-  //! Return number of elements
-  unsigned int numElements() const;
+    //! Private to prohibit copying
+    GaussianQuadrature2& operator=(const GaussianQuadrature2&);
 
-  //! First element
-  iterator begin();
+  protected:
 
-  //! First element
-  const_iterator begin() const;
+    //! Quad points
+    std::vector<double> qp;
 
-   //! Last element
-  iterator end();
+    //! Weights
+    std::vector<double> w;
 
-  //! Last element
-  const_iterator end() const;
+  };
 
-private:
+}
 
-  //! Private to prohibit copying
-  Mesh(const Mesh&);
-
-  //! Private to prohibit copying
-  Mesh& operator=(const Mesh&);
-
-protected:
-
-  //! List of elements
-  MeshList elements;
-
-};
-
-#endif // MESH_HPP
+#endif // FEAPP_GAUSSIANQUADRATURE2_HPP

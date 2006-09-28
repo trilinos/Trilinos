@@ -29,11 +29,11 @@
 // ***********************************************************************
 // @HEADER
 
-#include "CZeroDiscretization.hpp"
+#include "FEApp_CZeroDiscretization.hpp"
 
-#include "LinearElement.hpp"
+#include "FEApp_LinearElement.hpp"
 
-CZeroDiscretization::CZeroDiscretization(
+FEApp::CZeroDiscretization::CZeroDiscretization(
 		      const std::vector<double>& coords,
 		      unsigned int num_equations,
 		      Teuchos::RefCountPtr<const Epetra_Comm> epetra_comm) :
@@ -59,17 +59,17 @@ CZeroDiscretization::CZeroDiscretization(
   delete base_element;
 }
 
-CZeroDiscretization::~CZeroDiscretization()
+FEApp::CZeroDiscretization::~CZeroDiscretization()
 {
 }
 
 void
-CZeroDiscretization::createMesh()
+FEApp::CZeroDiscretization::createMesh()
 {
-  mesh = Teuchos::rcp(new Mesh);
+  mesh = Teuchos::rcp(new FEApp::Mesh);
 
   // Create elements and node IDs
-  Teuchos::RefCountPtr<AbstractElement> e;
+  Teuchos::RefCountPtr<FEApp::AbstractElement> e;
   unsigned int elem_GID;
   for (unsigned int i=0; i<numMyElements; i++) {
     elem_GID = elem_map->GID(i);
@@ -80,7 +80,7 @@ CZeroDiscretization::createMesh()
 }
 
 void
-CZeroDiscretization::createMaps()
+FEApp::CZeroDiscretization::createMaps()
 {
   // Create overlap DOF map
   unsigned int overlapNumMyNodes = numMyElements*(nodes_per_element-1) + 1;
@@ -110,7 +110,7 @@ CZeroDiscretization::createMaps()
 }
 
 void
-CZeroDiscretization::createJacobianGraphs()
+FEApp::CZeroDiscretization::createJacobianGraphs()
 {
   // Generate matrix graphs
   graph = 
@@ -122,8 +122,8 @@ CZeroDiscretization::createJacobianGraphs()
   int row, col;
   
   // Loop over elements
-  Teuchos::RefCountPtr<AbstractElement> e;
-  for (Mesh::iterator eit=mesh->begin(); eit!=mesh->end(); ++eit) {
+  Teuchos::RefCountPtr<FEApp::AbstractElement> e;
+  for (FEApp::Mesh::iterator eit=mesh->begin(); eit!=mesh->end(); ++eit) {
     e = *eit;
 
     // Loop over nodes in element
@@ -164,32 +164,32 @@ CZeroDiscretization::createJacobianGraphs()
   overlap_graph->FillComplete();
 }
 	    
-Teuchos::RefCountPtr<Mesh>
-CZeroDiscretization::getMesh() 
+Teuchos::RefCountPtr<FEApp::Mesh>
+FEApp::CZeroDiscretization::getMesh() 
 {
   return mesh;
 }
 
 Teuchos::RefCountPtr<Epetra_Map>
-CZeroDiscretization::getMap()
+FEApp::CZeroDiscretization::getMap()
 {
   return map;
 }
 
 Teuchos::RefCountPtr<Epetra_Map>
-CZeroDiscretization::getOverlapMap()
+FEApp::CZeroDiscretization::getOverlapMap()
 {
   return overlap_map;
 }
 
 Teuchos::RefCountPtr<Epetra_CrsGraph>
-CZeroDiscretization::getJacobianGraph()
+FEApp::CZeroDiscretization::getJacobianGraph()
 {
   return graph;
 }
 
 Teuchos::RefCountPtr<Epetra_CrsGraph>
-CZeroDiscretization::getOverlapJacobianGraph()
+FEApp::CZeroDiscretization::getOverlapJacobianGraph()
 {
   return overlap_graph;
 }

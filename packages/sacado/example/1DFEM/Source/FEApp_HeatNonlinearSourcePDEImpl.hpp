@@ -30,8 +30,8 @@
 // @HEADER
 
 template <typename ScalarT>
-HeatNonlinearSourcePDE<ScalarT>::
-HeatNonlinearSourcePDE(const Teuchos::RefCountPtr< const AbstractSourceFunction<ScalarT> >& src_func) : 
+FEApp::HeatNonlinearSourcePDE<ScalarT>::
+HeatNonlinearSourcePDE(const Teuchos::RefCountPtr< const FEApp::AbstractSourceFunction<ScalarT> >& src_func) : 
   source(src_func),
   num_qp(0),
   num_nodes(0),
@@ -44,14 +44,14 @@ HeatNonlinearSourcePDE(const Teuchos::RefCountPtr< const AbstractSourceFunction<
 }
 
 template <typename ScalarT>
-HeatNonlinearSourcePDE<ScalarT>::
+FEApp::HeatNonlinearSourcePDE<ScalarT>::
 ~HeatNonlinearSourcePDE()
 {
 }
 
 template <typename ScalarT>
 unsigned int 
-HeatNonlinearSourcePDE<ScalarT>::
+FEApp::HeatNonlinearSourcePDE<ScalarT>::
 numEquations() const
 {
   return 1;
@@ -59,7 +59,7 @@ numEquations() const
 
 template <typename ScalarT>
 void
-HeatNonlinearSourcePDE<ScalarT>::
+FEApp::HeatNonlinearSourcePDE<ScalarT>::
 init(unsigned int numQuadPoints, unsigned int numNodes)
 {
   num_qp = numQuadPoints;
@@ -79,9 +79,9 @@ init(unsigned int numQuadPoints, unsigned int numNodes)
 
 template <typename ScalarT>
 void
-HeatNonlinearSourcePDE<ScalarT>::
-evaluateElementResidual(const AbstractQuadrature& quadRule,
-			const AbstractElement& element,
+FEApp::HeatNonlinearSourcePDE<ScalarT>::
+evaluateElementResidual(const FEApp::AbstractQuadrature& quadRule,
+			const FEApp::AbstractElement& element,
 			const std::vector<ScalarT>& solution,
 			std::vector<ScalarT>& residual)
  {

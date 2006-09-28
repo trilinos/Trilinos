@@ -29,49 +29,50 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef GAUSSIANQUADRATURE2_HPP
-#define GAUSSIANQUADRATURE2_HPP
+#include "FEApp_Mesh.hpp"
 
-#include "AbstractQuadrature.hpp"
+FEApp::Mesh::Mesh() :
+  elements()
+{
+}
 
-/*!
- * \brief Two point Gaussian quadrature for integrating functions over the
- * interval \f$(-1,1)\f$.
- */
-class GaussianQuadrature2 : public AbstractQuadrature {
-public:
+FEApp::Mesh::~Mesh()
+{
+}
 
-  //! Default constructor
-  GaussianQuadrature2();
+void
+FEApp::Mesh::addElement(
+		   const Teuchos::RefCountPtr<FEApp::AbstractElement>& element)
+{
+  elements.push_back(element);
+}
 
-  //! Destructor
-  virtual ~GaussianQuadrature2();
+unsigned int
+FEApp::Mesh::numElements() const
+{
+  return elements.size();
+}
 
-  //! Return the number of quadrature points
-  virtual unsigned int numPoints() const;
+FEApp::Mesh::iterator
+FEApp::Mesh::begin()
+{
+  return elements.begin();
+}
 
-  //! Return the quadrature points
-  virtual const std::vector<double>& quadPoints() const;
+FEApp::Mesh::const_iterator
+FEApp::Mesh::begin() const
+{
+  return elements.begin();
+}
 
-  //! Return the weights
-  virtual const std::vector<double>& weights() const;
+FEApp::Mesh::iterator
+FEApp::Mesh::end()
+{
+  return elements.end();
+}
 
-private:
-
-  //! Private to prohibit copying
-  GaussianQuadrature2(const GaussianQuadrature2&);
-
-  //! Private to prohibit copying
-  GaussianQuadrature2& operator=(const GaussianQuadrature2&);
-
-protected:
-
-  //! Quad points
-  std::vector<double> qp;
-
-  //! Weights
-  std::vector<double> w;
-
-};
-
-#endif // GAUSSIANQUADRATURE2_HPP
+FEApp::Mesh::const_iterator
+FEApp::Mesh::end() const
+{
+  return elements.end();
+}

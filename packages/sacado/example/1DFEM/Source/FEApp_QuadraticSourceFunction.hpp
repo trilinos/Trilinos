@@ -29,44 +29,50 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef ABSTRACTINITPOSTOP_HPP
-#define ABSTRACTINITPOSTOP_HPP
+#ifndef FEAPP_QUADRATICSOURCEFUNCTION_HPP
+#define FEAPP_QUADRATICSOURCEFUNCTION_HPP
 
-#include <vector>
+#include "FEApp_AbstractSourceFunction.hpp"
 
-#include "AbstractElement.hpp"
+namespace FEApp {
 
-template <typename ScalarT>
-class AbstractInitPostOp {
-public:
+  /*!
+   * \brief A quadratic PDE source function
+   */
+  template <typename ScalarT>
+  class QuadraticSourceFunction : 
+    public FEApp::AbstractSourceFunction<ScalarT> {
+  public:
+  
+    //! Default constructor
+    QuadraticSourceFunction(double factor) : alpha(factor) {};
 
-  //! Fill type
-  typedef ScalarT fill_type;
+    //! Destructor
+    virtual ~QuadraticSourceFunction() {};
 
-  //! Constructor
-  AbstractInitPostOp() {};
+    //! Evaluate source function
+    virtual void
+    evaluate(const std::vector<ScalarT>& solution,
+	     std::vector<ScalarT>& value) const {
+      for (unsigned int i=0; i<solution.size(); i++)
+	value[i] = alpha*solution[i]*solution[i];
+    }
 
-  //! Destructor
-  virtual ~AbstractInitPostOp() {};
+  private:
 
-  //! Evaulate init operator
-  virtual void evalInit(const AbstractElement& e,
-			unsigned int neqn,
-			std::vector<ScalarT>& elem_x) = 0;
+    //! Private to prohibit copying
+    QuadraticSourceFunction(const QuadraticSourceFunction&);
 
-  //! Evaluate post operator
-  virtual void evalPost(const AbstractElement& e,
-			unsigned int neqn,
-			std::vector<ScalarT>& elem_f) = 0;
+    //! Private to prohibit copying
+    QuadraticSourceFunction& operator=(const QuadraticSourceFunction&);
 
-private:
+  protected:
+  
+    //! Factor
+    double alpha;
 
-  //! Private to prohibit copying
-  AbstractInitPostOp(const AbstractInitPostOp&);
+  };
 
-  //! Private to prohibit copying
-  AbstractInitPostOp& operator=(const AbstractInitPostOp&);
+}
 
-};
-
-#endif // ABSTRACTINITPOSTOP_HPP
+#endif // FEAPP_QUADRATICSOURCEFUNCTION_HPP

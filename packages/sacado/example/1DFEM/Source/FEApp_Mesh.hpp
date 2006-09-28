@@ -29,70 +29,66 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef GLOBALFILL_HPP
-#define GLOBALFILL_HPP
+#ifndef FEAPP_MESH_HPP
+#define FEAPP_MESH_HPP
 
-#include <vector>
+#include <list>
 
 #include "Teuchos_RefCountPtr.hpp"
 
-#include "AbstractPDE.hpp"
-#include "AbstractQuadrature.hpp"
-#include "Mesh.hpp"
-#include "AbstractInitPostOp.hpp"
+#include "FEApp_AbstractElement.hpp"
 
-template <typename ScalarT>
-class GlobalFill {
-public:
+namespace FEApp {
 
-  //! Constructor
-  GlobalFill(
-	  const Teuchos::RefCountPtr<const Mesh>& elementMesh,
-	  const Teuchos::RefCountPtr<const AbstractQuadrature>& quadRule,
-	  const Teuchos::RefCountPtr< AbstractPDE<ScalarT> >& pdeEquations);
-  
-  //! Destructor
-  ~GlobalFill();
+  class Mesh {
+  public:
 
-  //! Compute global fill
-  void computeGlobalFill(AbstractInitPostOp<ScalarT>& initPostOp);
+    typedef std::list< Teuchos::RefCountPtr<FEApp::AbstractElement> > MeshList;
+    
+    typedef MeshList::const_iterator const_iterator;
 
-private:
+    typedef MeshList::iterator iterator;
 
-  //! Private to prohibit copying
-  GlobalFill(const GlobalFill&);
+    //! Constructor 
+    Mesh();
 
-  //! Private to prohibit copying
-  GlobalFill& operator=(const GlobalFill&);
+    //! Destructor
+    ~Mesh();
 
-protected:
+    //! Add a new element
+    void addElement(
+		 const Teuchos::RefCountPtr<FEApp::AbstractElement>& element);
 
-  //! Element mesh
-  Teuchos::RefCountPtr<const Mesh> mesh;
+    //! Return number of elements
+    unsigned int numElements() const;
 
-  //! Quadrature rule
-  Teuchos::RefCountPtr<const AbstractQuadrature> quad;
+    //! First element
+    iterator begin();
 
-  //! PDE Equations
-  Teuchos::RefCountPtr< AbstractPDE<ScalarT> > pde;
+    //! First element
+    const_iterator begin() const;
 
-  //! Number of nodes per element
-  unsigned int nnode;
+    //! Last element
+    iterator end();
 
-  //! Number of PDE equations
-  unsigned int neqn;
+    //! Last element
+    const_iterator end() const;
 
-  //! Number of element-level DOF
-  unsigned int ndof;
+  private:
 
-  //! Element solution variables
-  std::vector<ScalarT> elem_x;
+    //! Private to prohibit copying
+    Mesh(const Mesh&);
 
-  //! Element residual variables
-  std::vector<ScalarT> elem_f;
+    //! Private to prohibit copying
+    Mesh& operator=(const Mesh&);
 
-};
+  protected:
 
-#include "GlobalFillImpl.hpp"
+    //! List of elements
+    MeshList elements;
 
-#endif // GLOBALFILL_HPP
+  };
+
+}
+
+#endif // FEAPP_MESH_HPP

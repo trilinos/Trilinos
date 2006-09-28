@@ -29,44 +29,38 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef CONSTANTDIRICHLETBC_HPP
-#define CONSTANTDIRICHLETBC_HPP
+#include "FEApp_GaussianQuadrature2.hpp"
+#include "Sacado_ConfigDefs.h" // for sqrt
 
-#include "AbstractBC.hpp"
+FEApp::GaussianQuadrature2::GaussianQuadrature2() :
+  qp(2),
+  w(2)
+{
+  qp[0] = -1.0 / std::sqrt(3.0);
+  qp[1] = -qp[0];
 
-class ConstantDirichletBC : public AbstractBC {
-public:
+  w[0] = 1.0;
+  w[1] = 1.0;
+}
 
-  //! Constructor
-  ConstantDirichletBC(unsigned int dof_GID, double value);
+FEApp::GaussianQuadrature2::~GaussianQuadrature2() 
+{
+}
 
-  //! Destructor
-  virtual ~ConstantDirichletBC();
+unsigned int
+FEApp::GaussianQuadrature2::numPoints() const
+{
+  return 2;
+}
 
-    //! Apply boundary condition to residual
-  virtual void applyResidual(const Epetra_Vector& x, 
-			     Epetra_Vector& f) const;
+const std::vector<double>& 
+FEApp::GaussianQuadrature2::quadPoints() const
+{
+  return qp;
+}
 
-  //! Apply boundary condition to Jacobian
-  virtual void applyJacobian(const Epetra_Vector& x, Epetra_Vector& f,
-			     Epetra_CrsMatrix& jac) const;
-
-private:
-
-  //! Private to prohibit copying
-  ConstantDirichletBC(const ConstantDirichletBC&);
-
-  //! Private to prohibit copying
-  ConstantDirichletBC& operator=(const ConstantDirichletBC&);
-
-protected:
-
-  //! GID of DOF
-  unsigned int dof;
-
-  //! Value of BC
-  double val;
-
-};
-
-#endif // CONSTANTDIRICHLETBC_HPP
+const std::vector<double>& 
+FEApp::GaussianQuadrature2::weights() const
+{
+  return w;
+}

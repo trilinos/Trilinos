@@ -29,54 +29,45 @@
 // ***********************************************************************
 // @HEADER
 
-template <typename ScalarT>
-GlobalFill<ScalarT>::GlobalFill(
-	  const Teuchos::RefCountPtr<const Mesh>& elementMesh,
-	  const Teuchos::RefCountPtr<const AbstractQuadrature>& quadRule,
-	  const Teuchos::RefCountPtr< AbstractPDE<ScalarT> >& pdeEquations):
-  mesh(elementMesh),
-  quad(quadRule),
-  pde(pdeEquations),
-  nnode(0),
-  neqn(pde->numEquations()),
-  ndof(0),
-  elem_x(),
-  elem_f()
-{
-  Teuchos::RefCountPtr<const AbstractElement> e0 = *(mesh->begin());
-  nnode = e0->numNodes();
-  ndof = nnode*neqn;
-  elem_x.resize(ndof);
-  elem_f.resize(ndof);
-}
+#ifndef FEAPP_ABSTRACTQUADRATURE_HPP
+#define FEAPP_ABSTRACTQUADRATURE_HPP
 
-template <typename ScalarT>
-GlobalFill<ScalarT>::~GlobalFill()
-{
-}
+#include <vector>
 
-template <typename ScalarT>
-void
-GlobalFill<ScalarT>::computeGlobalFill(AbstractInitPostOp<ScalarT>& initPostOp)
-{
-  // Loop over elements
-  Teuchos::RefCountPtr<const AbstractElement> e;
-  for (Mesh::const_iterator eit=mesh->begin(); eit!=mesh->end(); ++eit) {
-    e = *eit;
+namespace FEApp {
 
-    // Zero out element residual
-    for (unsigned int i=0; i<ndof; i++)
-      elem_f[i] = 0.0;
+  /*!
+   * \brief A simple abstract quadrature class for integrating functions 
+   over the interval \f$(-1,1)\f$.
+   */
+  class AbstractQuadrature {
+  public:
 
-    // Initialize element solution
-    initPostOp.evalInit(*e, neqn, elem_x);
+    //! Default constructor
+    AbstractQuadrature() {};
 
-    // Compute element residual
-    pde->evaluateElementResidual(*quad, *e, elem_x, elem_f);
+    //! Destructor
+    virtual ~AbstractQuadrature() {}
 
-    // Post-process element residual
-    initPostOp.evalPost(*e, neqn, elem_f);
+    //! Return the number of quadrature points
+    virtual unsigned int numPoints() const = 0;
 
-  }
+    //! Return the quadrature points
+    virtual const std::vector<double>& quadPoints() const = 0;
+
+    //! Return the weights
+    virtual const std::vector<double>& weights() const = 0;
+
+  private:
+
+    //! Private to prohibit copying
+    AbstractQuadrature(const AbstractQuadrature&);
+
+    //! Private to prohibit copying
+    AbstractQuadrature& operator=(const AbstractQuadrature&);
+
+  };
 
 }
+
+#endif // FEAPP_ABSTRACTQUADRATURE_HPP

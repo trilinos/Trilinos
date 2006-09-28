@@ -29,12 +29,12 @@
 // ***********************************************************************
 // @HEADER
 
-#include "CZeroDiscretization.hpp"
-#include "HeatNonlinearSourcePDE.hpp"
-#include "QuadraticSourceFunction.hpp"
-#include "ConstantDirichletBC.hpp"
-#include "GaussianQuadrature2.hpp"
-#include "Application.hpp"
+#include "FEApp_CZeroDiscretization.hpp"
+#include "FEApp_HeatNonlinearSourcePDE.hpp"
+#include "FEApp_QuadraticSourceFunction.hpp"
+#include "FEApp_ConstantDirichletBC.hpp"
+#include "FEApp_GaussianQuadrature2.hpp"
+#include "FEApp_Application.hpp"
 
 #include <iostream>
 
@@ -71,20 +71,20 @@ int main(int argc, char *argv[]) {
     Comm = Teuchos::rcp(new Epetra_SerialComm);
 #endif
 
-    Teuchos::RefCountPtr< AbstractSourceFunction<double> > real_source = 
-      Teuchos::rcp(new QuadraticSourceFunction<double>(factor));
+    Teuchos::RefCountPtr< FEApp::AbstractSourceFunction<double> > real_source =
+      Teuchos::rcp(new FEApp::QuadraticSourceFunction<double>(factor));
 
-    Teuchos::RefCountPtr< AbstractPDE<double> > real_pde = 
-      Teuchos::rcp(new HeatNonlinearSourcePDE<double>(real_source));
+    Teuchos::RefCountPtr< FEApp::AbstractPDE<double> > real_pde = 
+      Teuchos::rcp(new FEApp::HeatNonlinearSourcePDE<double>(real_source));
 
-    Teuchos::RefCountPtr< AbstractSourceFunction<FadType> > fad_source = 
-      Teuchos::rcp(new QuadraticSourceFunction<FadType>(factor));
+    Teuchos::RefCountPtr< FEApp::AbstractSourceFunction<FadType> > fad_source =
+      Teuchos::rcp(new FEApp::QuadraticSourceFunction<FadType>(factor));
 
-    Teuchos::RefCountPtr< AbstractPDE<FadType> > fad_pde = 
-      Teuchos::rcp(new HeatNonlinearSourcePDE<FadType>(fad_source));
+    Teuchos::RefCountPtr< FEApp::AbstractPDE<FadType> > fad_pde = 
+      Teuchos::rcp(new FEApp::HeatNonlinearSourcePDE<FadType>(fad_source));
 
-    Teuchos::RefCountPtr<AbstractQuadrature> quad = 
-      Teuchos::rcp(new GaussianQuadrature2);
+    Teuchos::RefCountPtr<FEApp::AbstractQuadrature> quad = 
+      Teuchos::rcp(new FEApp::GaussianQuadrature2);
 
     real_pde->init(quad->numPoints(), 2);
     fad_pde->init(quad->numPoints(), 2);
@@ -93,20 +93,20 @@ int main(int argc, char *argv[]) {
     for (unsigned int i=0; i<=nelem; i++)
       x[i] = h*i;
 
-    CZeroDiscretization disc(x, real_pde->numEquations(), Comm);
+    FEApp::CZeroDiscretization disc(x, real_pde->numEquations(), Comm);
     disc.createMesh();
     disc.createMaps();
     disc.createJacobianGraphs();
 
     Teuchos::RefCountPtr<Epetra_Map> map = disc.getMap();
 
-    std::vector< Teuchos::RefCountPtr<const AbstractBC> > bc(2);
-    bc[0] = Teuchos::rcp(new ConstantDirichletBC(map->MinAllGID(),
-						 left_bc));
-    bc[1] = Teuchos::rcp(new ConstantDirichletBC(map->MaxAllGID(),
-						 right_bc));
+    std::vector< Teuchos::RefCountPtr<const FEApp::AbstractBC> > bc(2);
+    bc[0] = Teuchos::rcp(new FEApp::ConstantDirichletBC(map->MinAllGID(),
+							left_bc));
+    bc[1] = Teuchos::rcp(new FEApp::ConstantDirichletBC(map->MaxAllGID(),
+							right_bc));
 
-    Application app(Teuchos::rcp(&disc, false), bc, quad);
+    FEApp::Application app(Teuchos::rcp(&disc, false), bc, quad);
 
     Epetra_Vector u(*map);
     u.PutScalar(1.0);

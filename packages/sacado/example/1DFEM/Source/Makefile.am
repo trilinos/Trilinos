@@ -34,33 +34,33 @@
 # ------------------------------------------------------------------------
 
 ONEDFEM_H = \
-	$(srcdir)/AbstractElement.hpp \
-	$(srcdir)/LinearElement.hpp \
-	$(srcdir)/AbstractQuadrature.hpp \
-	$(srcdir)/GaussianQuadrature2.hpp \
-	$(srcdir)/AbstractSourceFunction.hpp \
-	$(srcdir)/QuadraticSourceFunction.hpp \
-	$(srcdir)/AbstractPDE.hpp \
-	$(srcdir)/HeatNonlinearSourcePDE.hpp \
-	$(srcdir)/HeatNonlinearSourcePDEImpl.hpp \
-	$(srcdir)/AbstractBC.hpp \
-	$(srcdir)/ConstantDirichletBC.hpp \
-	$(srcdir)/Mesh.hpp \
-	$(srcdir)/AbstractInitPostOp.hpp \
-	$(srcdir)/InitPostOps.hpp \
-	$(srcdir)/GlobalFill.hpp \
-	$(srcdir)/GlobalFillImpl.hpp \
-	$(srcdir)/CZeroDiscretization.hpp \
-	$(srcdir)/Application.hpp
+	$(srcdir)/FEApp_AbstractElement.hpp \
+	$(srcdir)/FEApp_LinearElement.hpp \
+	$(srcdir)/FEApp_AbstractQuadrature.hpp \
+	$(srcdir)/FEApp_GaussianQuadrature2.hpp \
+	$(srcdir)/FEApp_AbstractSourceFunction.hpp \
+	$(srcdir)/FEApp_QuadraticSourceFunction.hpp \
+	$(srcdir)/FEApp_AbstractPDE.hpp \
+	$(srcdir)/FEApp_HeatNonlinearSourcePDE.hpp \
+	$(srcdir)/FEApp_HeatNonlinearSourcePDEImpl.hpp \
+	$(srcdir)/FEApp_AbstractBC.hpp \
+	$(srcdir)/FEApp_ConstantDirichletBC.hpp \
+	$(srcdir)/FEApp_Mesh.hpp \
+	$(srcdir)/FEApp_AbstractInitPostOp.hpp \
+	$(srcdir)/FEApp_InitPostOps.hpp \
+	$(srcdir)/FEApp_GlobalFill.hpp \
+	$(srcdir)/FEApp_GlobalFillImpl.hpp \
+	$(srcdir)/FEApp_CZeroDiscretization.hpp \
+	$(srcdir)/FEApp_Application.hpp
 
 ONEDFEM = \
-	$(srcdir)/LinearElement.cpp \
-	$(srcdir)/GaussianQuadrature2.cpp \
-	$(srcdir)/ConstantDirichletBC.cpp \
-	$(srcdir)/Mesh.cpp \
-	$(srcdir)/InitPostOps.cpp \
-	$(srcdir)/CZeroDiscretization.cpp \
-	$(srcdir)/Application.cpp
+	$(srcdir)/FEApp_LinearElement.cpp \
+	$(srcdir)/FEApp_GaussianQuadrature2.cpp \
+	$(srcdir)/FEApp_ConstantDirichletBC.cpp \
+	$(srcdir)/FEApp_Mesh.cpp \
+	$(srcdir)/FEApp_InitPostOps.cpp \
+	$(srcdir)/FEApp_CZeroDiscretization.cpp \
+	$(srcdir)/FEApp_Application.cpp
 
 # ------------------------------------------------------------------------
 # 1DFEM library specifications

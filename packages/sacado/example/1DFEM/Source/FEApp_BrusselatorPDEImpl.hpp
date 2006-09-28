@@ -30,7 +30,7 @@
 // @HEADER
 
 template <typename ScalarT>
-BrusselatorPDE<ScalarT>::
+FEApp::BrusselatorPDE<ScalarT>::
 BrusselatorPDE(double alpha_, double beta_, double D1_, double D2_) : 
   num_qp(0),
   num_nodes(0),
@@ -49,14 +49,14 @@ BrusselatorPDE(double alpha_, double beta_, double D1_, double D2_) :
 }
 
 template <typename ScalarT>
-BrusselatorPDE<ScalarT>::
+FEApp::BrusselatorPDE<ScalarT>::
 ~BrusselatorPDE()
 {
 }
 
 template <typename ScalarT>
 unsigned int 
-BrusselatorPDE<ScalarT>::
+FEApp::BrusselatorPDE<ScalarT>::
 numEquations() const
 {
   return 2;
@@ -64,7 +64,7 @@ numEquations() const
 
 template <typename ScalarT>
 void
-BrusselatorPDE<ScalarT>::
+FEApp::BrusselatorPDE<ScalarT>::
 init(unsigned int numQuadPoints, unsigned int numNodes)
 {
   num_qp = numQuadPoints;
@@ -86,9 +86,9 @@ init(unsigned int numQuadPoints, unsigned int numNodes)
 
 template <typename ScalarT>
 void
-BrusselatorPDE<ScalarT>::
-evaluateElementResidual(const AbstractQuadrature& quadRule,
-			const AbstractElement& element,
+FEApp::BrusselatorPDE<ScalarT>::
+evaluateElementResidual(const FEApp::AbstractQuadrature& quadRule,
+			const FEApp::AbstractElement& element,
 			const std::vector<ScalarT>& solution,
 			std::vector<ScalarT>& residual)
  {
@@ -132,7 +132,8 @@ evaluateElementResidual(const AbstractQuadrature& quadRule,
     for (unsigned int qp=0; qp<num_qp; qp++) {
       residual[2*node] += 
 	w[qp]*jac[qp]*((1.0/(jac[qp]*jac[qp]))*D1*dT[qp]*dphi[qp][node] + 
-		       phi[qp][node]*(-alpha + (beta+1.0)*T[qp] - T[qp]*T[qp]*C[qp]));
+		       phi[qp][node]*(-alpha + (beta+1.0)*T[qp] - 
+				      T[qp]*T[qp]*C[qp]));
       residual[2*node+1] += 
 	w[qp]*jac[qp]*((1.0/(jac[qp]*jac[qp]))*D2*dC[qp]*dphi[qp][node] + 
 		       phi[qp][node]*(-beta*T[qp] + T[qp]*T[qp]*C[qp]));
