@@ -29,47 +29,39 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef FEAPP_ABSTRACTPDE_HPP
-#define FEAPP_ABSTRACTPDE_HPP
-
-#include <vector>
-
-#include "FEApp_AbstractPDE_NTBase.hpp"
-#include "FEApp_AbstractElement.hpp"
-#include "FEApp_AbstractQuadrature.hpp"
+#ifndef FEAPP_ABSTRACTPDE_NTBASE_HPP
+#define FEAPP_ABSTRACTPDE_NTBASE_HPP
 
 namespace FEApp {
 
   /*!
    * \brief Abstract interface for representing a discretized 1-D PDE.
    */
-  template <typename ScalarT>
-  class AbstractPDE : public FEApp::AbstractPDE_NTBase {
+  class AbstractPDE_NTBase {
   public:
   
     //! Default constructor
-    AbstractPDE() {};
+    AbstractPDE_NTBase() {};
 
     //! Destructor
-    virtual ~AbstractPDE() {};
+    virtual ~AbstractPDE_NTBase() {};
 
-    //! Evaluate discretized PDE element-level residual
-    virtual void
-    evaluateElementResidual(const FEApp::AbstractQuadrature& quadRule,
-			    const FEApp::AbstractElement& element,
-			    const std::vector<ScalarT>& solution,
-			    std::vector<ScalarT>& residual) = 0;
+    //! Number of discretized equations
+    virtual unsigned int numEquations() const = 0;
+
+    //! Initialize PDE
+    virtual void init(unsigned int numQuadPoints, unsigned int numNodes) = 0;
 
   private:
     
     //! Private to prohibit copying
-    AbstractPDE(const AbstractPDE&);
+    AbstractPDE_NTBase(const AbstractPDE_NTBase&);
 
     //! Private to prohibit copying
-    AbstractPDE& operator=(const AbstractPDE&);
+    AbstractPDE_NTBase& operator=(const AbstractPDE_NTBase&);
 
   };
 
 }
 
-#endif // FEAPP_ABSTRACTPDE_HPP
+#endif // FEAPP_ABSTRACTPDE_NTBASE_HPP

@@ -70,6 +70,13 @@ SACADO_RAD = \
 	$(srcdir)/Sacado_radops.cpp \
 	$(srcdir)/uninit.c
 
+SACADO_TEMPLATE_H = \
+	$(srcdir)/Sacado_MPL_vector.hpp \
+	$(srcdir)/Sacado_TemplateManager.hpp \
+	$(srcdir)/Sacado_TemplateManagerImp.hpp \
+	$(srcdir)/Sacado_TemplateIterator.hpp \
+	$(srcdir)/Sacado_TemplateInstantiations.hpp
+
 SACADO_H = \
 	$(srcdir)/Sacado_ConfigDefs.h \
 	$(srcdir)/Sacado_Version.hpp \
@@ -78,7 +85,8 @@ SACADO_H = \
 	$(SACADO_FAD_H) \
 	$(SACADO_CACHEFAD_H) \
 	$(SACADO_TAYLOR_H) \
-	$(SACADO_RAD_H)
+	$(SACADO_RAD_H) \
+	$(SACADO_TEMPLATE_H)
 
 SACADO = \
 	$(SACADO_RAD)

@@ -38,6 +38,8 @@
 #include <iostream>
 
 #include "Sacado_Fad_DFad.hpp"
+#include "Sacado_TemplateManager.hpp"
+#include "Sacado_MPL_vector.hpp"
 
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
@@ -45,7 +47,9 @@
 #include "Epetra_SerialComm.h"
 #endif
 
+typedef double RealType;
 typedef Sacado::Fad::DFad<double> FadType;
+typedef Sacado::mpl::vector<RealType, FadType> ValidTypes;
 
 int main(int argc, char *argv[]) {
   unsigned int nelem = 100;
@@ -71,23 +75,22 @@ int main(int argc, char *argv[]) {
     Comm = Teuchos::rcp(new Epetra_SerialComm);
 #endif
 
-    Teuchos::RefCountPtr< FEApp::AbstractPDE<double> > real_pde = 
-      Teuchos::rcp(new FEApp::BrusselatorPDE<double>(alpha, beta, D1, D2));
-
-    Teuchos::RefCountPtr< FEApp::AbstractPDE<FadType> > fad_pde = 
-      Teuchos::rcp(new FEApp::BrusselatorPDE<FadType>(alpha, beta, D1, D2));
+    FEApp::BrusselatorPDE_TemplateManager<ValidTypes> brussTM;
+    FEApp::BrusselatorPDE_TemplateBuilder brussBuilder(alpha, beta, D1, D2);
+    brussTM.buildObjects(brussBuilder);
 
     Teuchos::RefCountPtr<FEApp::AbstractQuadrature> quad = 
       Teuchos::rcp(new FEApp::GaussianQuadrature2);
 
-    real_pde->init(quad->numPoints(), 2);
-    fad_pde->init(quad->numPoints(), 2);
-
+    for (FEApp::BrusselatorPDE_TemplateManager<ValidTypes>::iterator it = brussTM.begin();
+	 it != brussTM.end(); ++it)
+      it->init(quad->numPoints(), 2);
+    
     vector<double> x(nelem+1);
     for (unsigned int i=0; i<=nelem; i++)
       x[i] = h*i;
 
-    FEApp::CZeroDiscretization disc(x, real_pde->numEquations(), Comm);
+    FEApp::CZeroDiscretization disc(x, brussTM.getAsBase<RealType>().numEquations(), Comm);
     disc.createMesh();
     disc.createMaps();
     disc.createJacobianGraphs();
@@ -111,7 +114,7 @@ int main(int argc, char *argv[]) {
     Epetra_Vector f(*map);
     Epetra_CrsMatrix jac(Copy, (*disc.getJacobianGraph()));
 
-    app.computeGlobalJacobian(*fad_pde, u, f, jac);
+    app.computeGlobalJacobian(brussTM.getAsObject<FadType>(), u, f, jac);
 
     f.Print(std::cout);
     jac.Print(std::cout);

@@ -29,47 +29,40 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef FEAPP_ABSTRACTPDE_HPP
-#define FEAPP_ABSTRACTPDE_HPP
+#ifndef SACADO_TEMPLATEINSTANTIATIONS_HPP
+#define SACADO_TEMPLATEINSTANTIATIONS_HPP
 
-#include <vector>
+/*
+#include "Sacado_TemplateTypes.hpp"
 
-#include "FEApp_AbstractPDE_NTBase.hpp"
-#include "FEApp_AbstractElement.hpp"
-#include "FEApp_AbstractQuadrature.hpp"
+#define INSTANTIATE_TEMPLATE_CLASS_REAL(name) template class name<double>;
 
-namespace FEApp {
+#if FAD_ACTIVE
+#define INSTANTIATE_TEMPLATE_CLASS_FAD(name) template class name<FadType>;
+#else
+#define INSTANTIATE_TEMPLATE_CLASS_FAD(name)
+#endif
 
-  /*!
-   * \brief Abstract interface for representing a discretized 1-D PDE.
-   */
-  template <typename ScalarT>
-  class AbstractPDE : public FEApp::AbstractPDE_NTBase {
-  public:
-  
-    //! Default constructor
-    AbstractPDE() {};
+#if TFAD_ACTIVE
+#define INSTANTIATE_TEMPLATE_CLASS_TFAD(name) template class name<TFadType>;
+#else
+#define INSTANTIATE_TEMPLATE_CLASS_TFAD(name)
+#endif
 
-    //! Destructor
-    virtual ~AbstractPDE() {};
+#if REVAD_ACTIVE
+#define INSTANTIATE_TEMPLATE_CLASS_REVAD(name) template class name<RadType>;
+#else
+#define INSTANTIATE_TEMPLATE_CLASS_REVAD(name)
+#endif
 
-    //! Evaluate discretized PDE element-level residual
-    virtual void
-    evaluateElementResidual(const FEApp::AbstractQuadrature& quadRule,
-			    const FEApp::AbstractElement& element,
-			    const std::vector<ScalarT>& solution,
-			    std::vector<ScalarT>& residual) = 0;
+// A macro to explicitly instantiate template classes on the scalar type
+#define INSTANTIATE_TEMPLATE_CLASS(name) \
+  INSTANTIATE_TEMPLATE_CLASS_REAL(name)	 \
+  INSTANTIATE_TEMPLATE_CLASS_FAD(name)   \
+  INSTANTIATE_TEMPLATE_CLASS_TFAD(name) \
+  INSTANTIATE_TEMPLATE_CLASS_REVAD(name)
 
-  private:
-    
-    //! Private to prohibit copying
-    AbstractPDE(const AbstractPDE&);
+*/
 
-    //! Private to prohibit copying
-    AbstractPDE& operator=(const AbstractPDE&);
 
-  };
-
-}
-
-#endif // FEAPP_ABSTRACTPDE_HPP
+#endif

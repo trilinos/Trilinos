@@ -37,6 +37,8 @@
 #include "FEApp_AbstractPDE.hpp"
 #include "FEApp_AbstractSourceFunction.hpp"
 
+#include "Sacado_TemplateManager.hpp"
+
 namespace FEApp {
 
   template <typename ScalarT>
@@ -102,6 +104,28 @@ namespace FEApp {
     //! Model parameters
     double alpha, beta, D1, D2;
 
+  };
+
+  template <typename TypeSeq>
+  class BrusselatorPDE_TemplateManager : 
+    public Sacado::TemplateManager<TypeSeq, FEApp::AbstractPDE_NTBase,
+				   BrusselatorPDE> {
+  public:
+    BrusselatorPDE_TemplateManager() {}
+    ~BrusselatorPDE_TemplateManager() {}
+  };
+
+  class BrusselatorPDE_TemplateBuilder {
+  public:
+    BrusselatorPDE_TemplateBuilder(double alpha_, double beta_, double D1_, 
+				   double D2_) :
+      alpha(alpha_), beta(beta_), D1(D1_), D2(D2_) {}
+    template <typename T>
+    Teuchos::RefCountPtr<FEApp::AbstractPDE_NTBase> build() const {
+      return Teuchos::rcp( new BrusselatorPDE<T>(alpha, beta, D1, D2));
+    }
+  protected:
+    double alpha, beta, D1, D2;
   };
 
 }

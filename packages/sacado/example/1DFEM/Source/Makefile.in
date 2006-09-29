@@ -276,6 +276,7 @@ ONEDFEM_H = \
 	$(srcdir)/FEApp_GaussianQuadrature2.hpp \
 	$(srcdir)/FEApp_AbstractSourceFunction.hpp \
 	$(srcdir)/FEApp_QuadraticSourceFunction.hpp \
+	$(srcdir)/FEApp_AbstractPDE_NTBase.hpp \
 	$(srcdir)/FEApp_AbstractPDE.hpp \
 	$(srcdir)/FEApp_HeatNonlinearSourcePDE.hpp \
 	$(srcdir)/FEApp_HeatNonlinearSourcePDEImpl.hpp \
