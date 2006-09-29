@@ -48,7 +48,7 @@ static int mpi_err_len;
 /* Macro returning the global number of the first repartition vertex or 
  * repartition edge to be added to a processor row or column, respectively. */
 #define FirstRepart(myProc, nProc, Gn) \
-        ((int)(((myProc) * (Gn)) / (nProc)) + MIN((myProc), (Gn) % (nProc)))
+        ((myProc) * (int)((Gn) / (nProc)) + MIN((myProc), (Gn) % (nProc)))
 
 /* Macro returning the number of repartition vertices or repartition edges 
  * to be added to a processor row or column, respectively. */
@@ -2948,7 +2948,6 @@ int *tmpobjsize = NULL;
         sendbuf[NSEND*tmp] = vgno;            /* GNO of vertex */
         sendbuf[NSEND*tmp+1] = k;             /* Vertex's input partition */
         sendbuf[NSEND*tmp+2] = (objsize ? objsize[v] : 1);
-//printf("%d SEND1 to %d GID %d RVTX %d\n", zz->Proc, proclist[tmp], vgno, k);
         tmp++;
 
         /* Send message to proc owning actual vertex and repartition edge */
@@ -2958,7 +2957,6 @@ int *tmpobjsize = NULL;
           sendbuf[NSEND*tmp] = vgno;            /* GNO of vertex */
           sendbuf[NSEND*tmp+1] = k;             /* Vertex's input partition */
           sendbuf[NSEND*tmp+2] = (objsize ? objsize[v] : 1);
-//printf("%d SEND2 to %d GID %d RVTX %d\n", zz->Proc, proclist[tmp], vgno, k);
           tmp++;
         }
       }
@@ -3000,17 +2998,14 @@ int *tmpobjsize = NULL;
     rVtx_gno = recvbuf[NSEND*i+1];
     rVtx_lno = rVtx_gno - firstRepartVtx;
 
-//printf("%d CNT0  GID %d RVTX %d REDGE %d FIRSTRVTX %d FIRSTREDGE %d nRVTX %d\n", zz->Proc, vtx_gno, rVtx_lno+firstRepartVtx, rEdge_lno+firstRepartEdge, firstRepartVtx, firstRepartEdge, nRepartVtx);
 
     if (rVtx_gno >= firstRepartVtx && rVtx_gno < firstRepartVtx + nRepartVtx) {
       /* Add pin for repartition vertex */
-//printf("%d CNT1  GID %d RVTX %d REDGE %d\n", zz->Proc, vtx_gno, rVtx_lno+firstRepartVtx, rEdge_lno+firstRepartEdge);
       tmp_hindex[rEdge_lno]++;
       nRepartPin++;
     }
     
     if (myProc_x == VTX_TO_PROC_X(phg, vtx_gno)) {
-//printf("%d CNT2  GID %d RVTX %d REDGE %d\n", zz->Proc, vtx_gno, rVtx_lno+firstRepartVtx, rEdge_lno+firstRepartEdge);
       /* Add pin for application vertex */
       tmp_hindex[rEdge_lno]++;
       nRepartPin++;
@@ -3055,12 +3050,12 @@ int *tmpobjsize = NULL;
       /* Add pin for repartition vertex */
       tmp_hvertex[tmp_hindex[rEdge_lno]] = phg->nVtx + rVtx_lno;
       cnt++;
+      for (j = 0; j < phg->EdgeWeightDim; j++) 
+        tmp_ewgt[rEdge_lno*phg->EdgeWeightDim + j] = (float) recvbuf[NSEND*i+2];
     }
     if (myProc_x == VTX_TO_PROC_X(phg, vtx_gno)) {
       /* Add pin for vertex */
       tmp_hvertex[tmp_hindex[rEdge_lno]+cnt] = VTX_GNO_TO_LNO(phg, vtx_gno);
-      for (j = 0; j < phg->EdgeWeightDim; j++) 
-        tmp_ewgt[rEdge_lno*phg->EdgeWeightDim + j] = (float) recvbuf[NSEND*i+2];
     }
   }
 #undef NSEND
