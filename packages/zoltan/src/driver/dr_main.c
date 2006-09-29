@@ -278,7 +278,15 @@ int main(int argc, char *argv[])
       }
 
     if (Test.Dynamic_Graph > 0.0){
-      remove_random_vertices(&mesh, iteration, Test.Dynamic_Graph); 
+      if (mesh.data_type == ZOLTAN_GRAPH) {
+        remove_random_vertices(&mesh, iteration, Test.Dynamic_Graph); 
+      }
+      else{
+        Gen_Error(0, "fatal: \"test dynamic graph\" only works on graphs, not hypergraphs\n");
+        error_report(Proc);
+        print_output = 0;
+        goto End;
+      }
     }
 
     /*
