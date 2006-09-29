@@ -860,7 +860,7 @@ void get_elements(void *data, int num_gid_entries, int num_lid_entries,
   MESH_INFO_PTR mesh;
   ELEM_INFO *elem;
   ELEM_INFO *current_elem;
-  int i, j;
+  int i, j, idx;
   int gid = num_gid_entries-1;
   int lid = num_lid_entries-1;
 
@@ -876,23 +876,24 @@ void get_elements(void *data, int num_gid_entries, int num_lid_entries,
   
   mesh = (MESH_INFO_PTR) data;
   elem = mesh->elements;
-  for (i = 0; i < mesh->num_elems; i++) {
+  for (i = 0, idx = 0; i < mesh->num_elems; i++) {
 
     if (mesh->blank && mesh->blank[i]) continue;
 
     current_elem = &elem[i];
-    for (j = 0; j < gid; j++) global_id[i*num_gid_entries+j]=0;
-    global_id[i*num_gid_entries+gid] = (ZOLTAN_ID_TYPE) current_elem->globalID;
+    for (j = 0; j < gid; j++) global_id[idx*num_gid_entries+j]=0;
+    global_id[idx*num_gid_entries+gid] = (ZOLTAN_ID_TYPE) current_elem->globalID;
     if (num_lid_entries) {
-      for (j = 0; j < lid; j++) local_id[i*num_lid_entries+j]=0;
-      local_id[i*num_lid_entries+lid] = i;
+      for (j = 0; j < lid; j++) local_id[idx*num_lid_entries+j]=0;
+      local_id[idx*num_lid_entries+lid] = i;
     }
 
     if (wdim>0) {
       for (j=0; j<wdim; j++) {
-        wgt[i*wdim+j] = current_elem->cpu_wgt[j];
+        wgt[idx*wdim+j] = current_elem->cpu_wgt[j];
       }
     }
+    idx++;
   }
 
   STOP_CALLBACK_TIMER;
