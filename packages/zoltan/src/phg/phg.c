@@ -476,12 +476,9 @@ End:
    * KDDKDD code.  */
   if ((err == ZOLTAN_OK) && hgp.final_output) {
     static int nRuns=0;
-    static double balsum = 0.0, cutlsum = 0.0, cutnsum = 0.0;
-    static int movesum = 0;
-    static double balmax = 0.0, cutlmax = 0.0, cutnmax = 0.0;
-    static int movemax = 0;
-    static double balmin = 1e100, cutlmin = 1e100, cutnmin = 1e100;
-    static int movemin = 1000000000;
+    static double balsum = 0.0, cutlsum = 0.0, cutnsum = 0.0, movesum = 0.0, repartsum = 0.0;
+    static double balmax = 0.0, cutlmax = 0.0, cutnmax = 0.0, movemax = 0.0, repartmax = 0.0;
+    static double balmin = 1e100, cutlmin = 1e100, cutnmin = 1e100, movemin = 1e100, repartmin = 1e100;
     double bal = 0.; 
     double cutl = 0.; /* Connnectivity cuts:  sum_over_edges((npart-1)*ewgt) */
     double cutn = 0.; /* Net cuts:  sum_over_edges((nparts>1)*ewgt) */
@@ -489,8 +486,8 @@ End:
     double rlocal[2];  /* local cut stats for removed edges */
     double rglobal[2]; /* global cut stats for removed edges */
     int gnremove, i;
-    int move = 0; /* local migrations */
-    int gmove;    /* global migrations */
+    double move=0.0, gmove;  /* local and global migration costs */
+    double repart=0.0;   /* total repartitioning cost: comcost x multiplier + migration_cost */
 
     if (do_timing) {
       /* Do not include final output time in partitioning time */
@@ -509,7 +506,7 @@ End:
 
       for (i = 0; i < zoltan_hg->nObj; ++i)
 	if (zoltan_hg->Input_Parts[i] != zoltan_hg->Output_Parts[i])
-	  ++move;
+	  move += (double) zoltan_hg->AppObjSizes[i];;
     }
 
     if (!err) {
@@ -525,8 +522,12 @@ End:
         cutn += rglobal[1];
       }
 
-      MPI_Allreduce(&move, &gmove, 1, MPI_INT, MPI_SUM, zz->Communicator);
+      MPI_Allreduce(&move, &gmove, 1, MPI_DOUBLE, MPI_SUM, zz->Communicator);
 
+      repart = cutl*hgp.RepartMultiplier + gmove;
+      repartsum += repart;
+      if (repart > repartmax) repartmax = repart;
+      if (repart < repartmin) repartmin = repart;
       movesum += gmove;
       if (gmove > movemax) movemax = gmove;
       if (gmove < movemin) movemin = gmove;
@@ -552,8 +553,11 @@ End:
                 "STATS Runs %d  cutn CURRENT %f  MAX %f  MIN %f  AVG %f\n", 
                 nRuns, cutn, cutnmax, cutnmin, cutnsum/nRuns);
 	uprintf(hg->comm,
-		"STATS Runs %d  move CURRENT %d  MAX %d  MIN %d  AVG %d\n",
+		"STATS Runs %d  move CURRENT %f  MAX %f  MIN %f  AVG %f\n",
 		nRuns, gmove, movemax, movemin, movesum/nRuns);
+	uprintf(hg->comm,
+		"STATS Runs %d  repart CURRENT %f  MAX %f  MIN %f  AVG %f\n",
+		nRuns, repart, repartmax, repartmin, repartsum/nRuns);        
       }
     }
 
@@ -584,10 +588,11 @@ End:
 void Zoltan_PHG_Free_Hypergraph_Data(ZHG *zoltan_hg)
 {
   if (zoltan_hg != NULL) {
-    Zoltan_Multifree(__FILE__, __LINE__, 11, &zoltan_hg->GIDs,
+    Zoltan_Multifree(__FILE__, __LINE__, 12, &zoltan_hg->GIDs,
                                             &zoltan_hg->LIDs,
                                             &zoltan_hg->Input_Parts,
                                             &zoltan_hg->Output_Parts,
+                                            &zoltan_hg->AppObjSizes,
                                             &zoltan_hg->Remove_EGIDs,
                                             &zoltan_hg->Remove_ELIDs,
                                             &zoltan_hg->Remove_Esize,

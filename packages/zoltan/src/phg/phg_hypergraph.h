@@ -170,6 +170,7 @@ struct Zoltan_HGraph {
                                PHG_REPART. */
   int *Input_Parts;         /* Initial partition #s for on-processor objects */
   int *Output_Parts;        /* Final partition #s for on-processor objects */
+  int *AppObjSizes;         /* Object sizes for on-processor objects */
   int nRemove;              /* # of input hyperedges removed */
   ZOLTAN_ID_PTR Remove_EGIDs;/* GIDs of removed hyperedges */
   ZOLTAN_ID_PTR Remove_ELIDs;/* LIDs of removed hyperedges */

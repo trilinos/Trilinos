@@ -104,6 +104,7 @@ char *yo = "Zoltan_PHG_Build_Hypergraph";
   zhg->LIDs = NULL;
   zhg->Input_Parts = NULL;
   zhg->Output_Parts = NULL;
+  zhg->AppObjSizes = NULL;
   zhg->GnRepartVtx = 0;
   zhg->GnObj = 0;
   zhg->nRemove = 0;
@@ -2785,7 +2786,6 @@ int *pins_per_edge = NULL;           /* # of pins in each repartition edge. */
 int i, j, idx;
 int cnt, tmp, dim, sum, prev;
 int ierr = ZOLTAN_OK;
-int *appobjsize = NULL;              /* Arrays for obj sizes, used to set */
 int *objsize = NULL;                 /* repartition edge weights. */
 int *tmpobjsize = NULL;
 
@@ -2838,12 +2838,12 @@ int *tmpobjsize = NULL;
 
   if (zz->Get_Obj_Size_Multi || zz->Get_Obj_Size) {
     if (zhg->nObj) {
-      if (!(appobjsize = (int *) ZOLTAN_MALLOC(zhg->nObj * sizeof(int)))) 
+      if (!(zhg->AppObjSizes = (int *) ZOLTAN_MALLOC(zhg->nObj * sizeof(int)))) 
         MEMORY_ERROR;
       if (zz->Get_Obj_Size_Multi) {
         zz->Get_Obj_Size_Multi(zz->Get_Obj_Size_Multi_Data,
                                zz->Num_GID, zz->Num_LID, zhg->nObj,
-                               zhg->GIDs, zhg->LIDs, appobjsize, &ierr);
+                               zhg->GIDs, zhg->LIDs, zhg->AppObjSizes, &ierr);
         if (ierr < 0) {
           ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from "
                           "ZOLTAN_OBJ_SIZE_MULTI function.");
@@ -2853,7 +2853,7 @@ int *tmpobjsize = NULL;
       else if (zz->Get_Obj_Size) {
         for (i = 0; i < zhg->nObj; i++) {
           ZOLTAN_ID_PTR lid = (zz->Num_LID ? &(zhg->LIDs[i*zz->Num_LID]):NULL);
-          appobjsize[i] = zz->Get_Obj_Size(zz->Get_Obj_Size_Data,
+          zhg->AppObjSizes[i] = zz->Get_Obj_Size(zz->Get_Obj_Size_Data,
                                            zz->Num_GID, zz->Num_LID,
                                            &(zhg->GIDs[i*zz->Num_GID]),
                                            lid, &ierr);
@@ -2877,7 +2877,7 @@ int *tmpobjsize = NULL;
     if (phg->comm->nProc_x > 1) {
       /* Send obj_size data to the 2D distribution */
       /* Use zhg->VtxPlan */
-      ierr = Zoltan_Comm_Do(zhg->VtxPlan, 25232, (char *) appobjsize, 
+      ierr = Zoltan_Comm_Do(zhg->VtxPlan, 25232, (char *) zhg->AppObjSizes, 
                             sizeof(int), (char *) objsize);
       if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from Zoltan_Comm_Do.");
@@ -2891,14 +2891,14 @@ int *tmpobjsize = NULL;
     else {
       /* nProc_x == 1; have all the size data we need. */
       for (i = 0; i < zhg->nObj; i++)
-        tmpobjsize[vtxgno[i]] = appobjsize[i];
+        tmpobjsize[vtxgno[i]] = zhg->AppObjSizes[i];
     }
 
     /* Accrue each row's contribution to objsize */
     MPI_Allreduce(tmpobjsize, objsize, phg->nVtx, MPI_INT, MPI_SUM,
                   phg->comm->col_comm);
 
-    ZOLTAN_FREE(&appobjsize);
+/*    ZOLTAN_FREE(&appobjsize);*/
   }
   else {
     /* Use uniform object sizes. */
