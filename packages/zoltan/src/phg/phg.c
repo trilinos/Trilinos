@@ -833,6 +833,11 @@ int Zoltan_PHG_Initialize_Params(
         /* 2D data decomposition is requested but we have a prime 
          * number of processors. */
         usePrimeComm = 1;
+
+    if (zz->LB.Method == PHG_REPART) {
+        /* as a heuristic we prefer local matching */
+        strncpy(hgp->redm_str, "l-ipm", MAX_PARAM_STRING_LEN);                
+    }    
     
     if (zz->LB.Method == PHG_REFINE) {
         strncpy(hgp->redm_str, "no", MAX_PARAM_STRING_LEN);        
@@ -843,7 +848,7 @@ int Zoltan_PHG_Initialize_Params(
         hgp->UsePrefPart = 1;
     }
     if (zz->LB.Method == PHG_MULTILEVEL_REFINE) {
-        /* UVUVC: as a heuristic we prefer local matching;
+        /* UVCUVC: as a heuristic we prefer local matching;
            TODO this needs to be evaluated! */
         strncpy(hgp->redm_str, "l-ipm", MAX_PARAM_STRING_LEN);                
         zz->LB.Remap_Flag = 0;
