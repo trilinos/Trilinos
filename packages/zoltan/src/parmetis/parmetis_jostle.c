@@ -57,13 +57,6 @@ static PARAM_VARS Graph_params[] = {
         { "ADD_OBJ_WEIGHT",  NULL,  "STRING", 0},
         { NULL, NULL, NULL, 0 } };
 
-/***************  prototypes for internal functions ********************/
-
-static int Compute_Bal(ZZ *, int, float *, int *, double *);
-static int Compute_EdgeCut(ZZ *, int, int *, float *, int *, int *, double *);
-static int Compute_NetCut(ZZ *, int, int *, int *, int *);
-static int Compute_ConCut(ZZ *, int, int *, int *, int *);
-static int Compute_Adjpart(ZZ *, int, int *, int *, int *, int *, int *, int *);
 
 /* Zoltan_ParMetis_Shared should be compiled even when ZOLTAN_PARMETIS 
    is not defined so it can return an error.
@@ -88,6 +81,14 @@ static int Zoltan_ParMetis_Shared(
 );
 
 #if (defined(ZOLTAN_JOSTLE) || defined(ZOLTAN_PARMETIS))
+
+  /***************  prototypes for internal functions ********************/
+
+static int Compute_Bal(ZZ *, int, float *, int *, double *);
+static int Compute_EdgeCut(ZZ *, int, int *, float *, int *, int *, double *);
+static int Compute_NetCut(ZZ *, int, int *, int *, int *);
+static int Compute_ConCut(ZZ *, int, int *, int *, int *);
+static int Compute_Adjpart(ZZ *, int, int *, int *, int *, int *, int *, int *);
 
 static int Zoltan_ParMetis_Jostle(ZZ *zz, float *part_sizes,
   int *num_imp, ZOLTAN_ID_PTR *imp_gids,
@@ -1218,10 +1219,6 @@ static int Zoltan_ParMetis_Jostle(
 
   /* Also free temp arrays for ParMetis 3.0 */
   ZOLTAN_FREE(&imb_tols);
-#define PARMETIS31_ALWAYS_FREES_VSIZE   /* Bug in ParMetis 3.1 */
-#ifndef PARMETIS31_ALWAYS_FREES_VSIZE
-  if (vsize) ZOLTAN_FREE(&vsize);
-#endif
 
   /* If we have been using a scattered graph, convert partition result back to 
    * original distribution 
@@ -1286,7 +1283,7 @@ static int Zoltan_ParMetis_Jostle(
       /* Not enough memory */
       ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory. ");
     }
-    for (i=0; i<num_obj; i++){
+    for (i=0; i<num_obj; i++){ 
       newproc[i] = Zoltan_LB_Part_To_Proc(zz, part[i],
                                           &(global_ids[i*num_gid_entries]));
       if (newproc[i]<0){
@@ -1387,13 +1384,18 @@ End:
     static double balsum[FOMAXDIM], cutesum[FOMAXDIM];
     static double balmax[FOMAXDIM], cutemax[FOMAXDIM];
     static double balmin[FOMAXDIM], cutemin[FOMAXDIM];
-    static int cutlsum = 0, cutnsum = 0;
+     /* following variables are defined double to avoid overflow */
+    static double cutlsum = 0.0, cutnsum = 0.0, movesum = 0.0, repartsum = 0.0;  
     static int cutlmax = 0, cutnmax = 0;
+    static double movemax = 0, repartmax = 0;
     static int cutlmin = INT_MAX, cutnmin = INT_MAX;
+    static double movemin = 1e100, repartmin = 1e100;
     double bal[FOMAXDIM];    /* Balance:  max / avg */
     double cute[FOMAXDIM];   /* Traditional weighted graph edge cuts */
     int cutl;   /* Connnectivity cuts:  sum_over_edges((npart-1)) */
     int cutn;   /* Net cuts:  sum_over_edges((nparts>1)) */
+    double move = 0.0, gmove;   /* migration cost */
+    double repart; /* total repartitioning cost; cutl x multiplier + move */
     int *adjpart = NULL;
     int vdim = MAX(zz->Obj_Weight_Dim,1);
     int edim = MAX(zz->Edge_Weight_Dim,1);
@@ -1417,7 +1419,28 @@ End:
       Compute_EdgeCut(zz, num_obj, xadj, ewgts, part, adjpart, cute);
       cutl= Compute_ConCut(zz, num_obj, xadj, part, adjpart);
       cutn = Compute_NetCut(zz, num_obj, xadj, part, adjpart);
-  
+      for (i=0; i<num_obj; i++) {
+        /*printf("obj[%d] = %d\n", i, vsize[i]);*/
+        if (part[i] != input_parts[i])
+#if (PARMETIS_MAJOR_VERSION >= 3)          
+          move += (double) vsize[i];
+#else
+          move += 1.0;
+#endif        
+      }
+
+
+
+
+      MPI_Allreduce(&move, &gmove, 1, MPI_DOUBLE, MPI_SUM, zz->Communicator);
+
+      repart = (double) (*itr) * (double) cutl + gmove;
+      repartsum += repart;
+      if (repart > repartmax) repartmax = repart;
+      if (repart < repartmin) repartmin = repart;
+      movesum += gmove;
+      if (gmove > movemax) movemax = gmove;
+      if (gmove < movemin) movemin = gmove;     
       cutlsum += cutl;
       if (cutl > cutlmax) cutlmax = cutl;
       if (cutl < cutlmin) cutlmin = cutl;
@@ -1441,20 +1464,30 @@ End:
           printf("STATS Runs %d  bal[%d]  CURRENT %f  MAX %f  MIN %f  AVG %f\n",
                   nRuns, i, bal[i], balmax[i], balmin[i], balsum[i]/nRuns);
         }
-        printf("STATS Runs %d  cutl CURRENT %d  MAX %d  MIN %d  AVG %d\n",
+        printf("STATS Runs %d  cutl CURRENT %d  MAX %d  MIN %d  AVG %f\n",
                 nRuns, cutl, cutlmax, cutlmin, cutlsum/nRuns);
-        printf("STATS Runs %d  cutn CURRENT %d  MAX %d  MIN %d  AVG %d\n",
+        printf("STATS Runs %d  cutn CURRENT %d  MAX %d  MIN %d  AVG %f\n",
                 nRuns, cutn, cutnmax, cutnmin, cutnsum/nRuns);
+	printf("STATS Runs %d  move CURRENT %f  MAX %f  MIN %f  AVG %f\n",
+		nRuns, gmove, movemax, movemin, movesum/nRuns);
+	printf("STATS Runs %d  repart CURRENT %f  MAX %f  MIN %f  AVG %f\n",
+               nRuns, repart, repartmax, repartmin, repartsum/nRuns);        
+        
         for (i = 0; i < edim; i++) {
           printf("STATS Runs %d  cute[%d] CURRENT %f  MAX %f  MIN %f  AVG %f\n",
                   nRuns, i, cute[i], cutemax[i], cutemin[i], cutesum[i]/nRuns);
         }
       }
       ZOLTAN_FREE(&adjpart);
-    }
+      }
 #undef FOMAXDIM
-  }
+    }
 
+#define PARMETIS31_ALWAYS_FREES_VSIZE   /* Bug in ParMetis 3.1 */
+#ifndef PARMETIS31_ALWAYS_FREES_VSIZE
+  if (vsize) ZOLTAN_FREE(&vsize);
+#endif
+    
   if (use_timers)
     Zoltan_Timer_PrintAll(zz->ZTime, 0, zz->Communicator, stdout);
 
@@ -1699,6 +1732,7 @@ char *val)                      /* value of variable */
     return(status);
 }
 
+#if (defined(ZOLTAN_JOSTLE) || defined(ZOLTAN_PARMETIS))
 /****************************************************************************/
 static int Compute_Bal(
   ZZ *zz,
@@ -1884,7 +1918,7 @@ int tag = 24542;
 
   return ZOLTAN_OK;
 }
-
+#endif
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
