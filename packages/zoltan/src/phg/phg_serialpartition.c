@@ -659,7 +659,7 @@ static int greedy_grow_part (
   PHGPartParams *hgp    /* Partitioning parameters. */
 )
 {
-  int i, j, vtx, edge;
+  int i, j, vtx, edge, edgesize;
   int *cut[2];
   double *gain = NULL;
   int vwgtdim = hg->VtxWeightDim;
@@ -703,9 +703,12 @@ static int greedy_grow_part (
   for (i=0; i<hg->nVtx; i++){
     for (j=hg->vindex[i]; j<hg->vindex[i+1]; j++) {
       edge = hg->vedge[j];
+      edgesize = cut[0][edge]+cut[1][edge];
       /* if edge is not cut by fixed vertices, update gain value */
       if (MIN(cut[0][edge],cut[1][edge])==0)
         gain[i] -= (hg->ewgt ? (hg->ewgt[edge]) : 1.0);
+      if (edgesize>1 && cut[part[i]][edge]==1)
+        gain[i] += (hg->ewgt ? (hg->ewgt[edge]) : 1.0);
     }
   }
 
@@ -726,14 +729,14 @@ static int greedy_grow_part (
     printf("Debug: Starting new greedy growing at vertex %d, part=%2d\n", start_vtx, p);
 
   /* Initialize heap. */
-  if (!hgp->UsePrefPart) 
+  if (!hgp->UseFixedVtx) 
     gain[start_vtx] = 1e10;      /* Make start_vtx max value in heap. */
                                  /* All other values should be negative. */
   Zoltan_Heap_Init(zz, &h[0], hg->nVtx);
   Zoltan_Heap_Init(zz, &h[1], 0);       /* Dummy heap, not used. */
   for (i=0; i<hg->nVtx; i++){
     /* Insert all non-fixed vertices into heap. */
-    if (!hgp->UsePrefPart || (hg->pref_part[i] < 0))
+    if (!hgp->UseFixedVtx || (hg->fixed_part[i] < 0))
       Zoltan_Heap_Input(h, i, gain[i]);
   }
   Zoltan_Heap_Make(h);
