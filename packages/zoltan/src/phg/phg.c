@@ -733,7 +733,7 @@ int Zoltan_PHG_Initialize_Params(
   hgp->EdgeSizeThreshold = 0.25;  
   hgp->hybrid_keep_factor = 0.;
   hgp->ProRedL = 0.5;
-  hgp->RepartMultiplier = 1.;
+  hgp->RepartMultiplier = 100.;
   hgp->patoh_alloc_pool0 = 0;
   hgp->patoh_alloc_pool1 = 0;
   hgp->UseFixedVtx = 0;
