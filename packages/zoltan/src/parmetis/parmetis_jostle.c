@@ -1422,8 +1422,8 @@ End:
       for (i=0; i<num_obj; i++) {
         /*printf("obj[%d] = %d\n", i, vsize[i]);*/
         if (part[i] != input_parts[i])
-#if (PARMETIS_MAJOR_VERSION >= 3)          
-          move += (double) vsize[i];
+#if (PARMETIS_MAJOR_VERSION >= 3)
+            move += (double) (!strcmp(alg, "ADAPTIVEREPART") ? vsize[i] : 1.0);
 #else
           move += 1.0;
 #endif        
@@ -1468,10 +1468,11 @@ End:
                 nRuns, cutl, cutlmax, cutlmin, cutlsum/nRuns);
         printf("STATS Runs %d  cutn CURRENT %d  MAX %d  MIN %d  AVG %f\n",
                 nRuns, cutn, cutnmax, cutnmin, cutnsum/nRuns);
-	printf("STATS Runs %d  move CURRENT %f  MAX %f  MIN %f  AVG %f\n",
-		nRuns, gmove, movemax, movemin, movesum/nRuns);
-	printf("STATS Runs %d  repart CURRENT %f  MAX %f  MIN %f  AVG %f\n",
-               nRuns, repart, repartmax, repartmin, repartsum/nRuns);        
+	printf("STATS Runs %d  %s CURRENT %f  MAX %f  MIN %f  AVG %f\n",
+		nRuns, !strcmp(alg, "ADAPTIVEREPART") ? "moveVol" : "moveCnt", gmove, movemax, movemin, movesum/nRuns);
+        if (!strcmp(alg, "ADAPTIVEREPART"))
+            printf("STATS Runs %d  repart CURRENT %f  MAX %f  MIN %f  AVG %f\n",
+                   nRuns, repart, repartmax, repartmin, repartsum/nRuns);        
         
         for (i = 0; i < edim; i++) {
           printf("STATS Runs %d  cute[%d] CURRENT %f  MAX %f  MIN %f  AVG %f\n",
