@@ -294,6 +294,7 @@ int **exp_to_part )         /* list of partitions to which exported objs
   hg = &zoltan_hg->HG;
   p = zz->LB.Num_Global_Parts;  
   zoltan_hg->HG.redl = MAX(hgp.redl, p);     /* redl needs to be dynamic */
+
   /* RTHRTH -- redl may need to be scaled by number of procs */
   /* EBEB -- at least make sure redl > #procs */
 
@@ -504,9 +505,11 @@ End:
       cutn = Zoltan_PHG_Compute_NetCut(hg->comm, hg, parts,
                                        zz->LB.Num_Global_Parts);
 
-      for (i = 0; i < zoltan_hg->nObj; ++i)
+      for (i = 0; i < zoltan_hg->nObj; ++i) {
+        /* uprintf(hg->comm, " obj[%d] = %d  in=%d out=%d\n", i, zoltan_hg->AppObjSizes[i], zoltan_hg->Input_Parts[i], zoltan_hg->Output_Parts[i]); */
 	if (zoltan_hg->Input_Parts[i] != zoltan_hg->Output_Parts[i])
-	  move += (double) zoltan_hg->AppObjSizes[i];;
+            move += (double) ((zz->LB.Method == PHG_REPART) ? zoltan_hg->AppObjSizes[i] : 1.0); 
+      }
     }
 
     if (!err) {
@@ -553,9 +556,10 @@ End:
                 "STATS Runs %d  cutn CURRENT %f  MAX %f  MIN %f  AVG %f\n", 
                 nRuns, cutn, cutnmax, cutnmin, cutnsum/nRuns);
 	uprintf(hg->comm,
-		"STATS Runs %d  move CURRENT %f  MAX %f  MIN %f  AVG %f\n",
-		nRuns, gmove, movemax, movemin, movesum/nRuns);
-	uprintf(hg->comm,
+		"STATS Runs %d  %s CURRENT %f  MAX %f  MIN %f  AVG %f\n",
+		nRuns, (zz->LB.Method == PHG_REPART) ? "moveVol" : "moveCnt", gmove, movemax, movemin, movesum/nRuns);
+        if (zz->LB.Method == PHG_REPART) 
+            uprintf(hg->comm,
 		"STATS Runs %d  repart CURRENT %f  MAX %f  MIN %f  AVG %f\n",
 		nRuns, repart, repartmax, repartmin, repartsum/nRuns);        
       }
@@ -732,7 +736,7 @@ int Zoltan_PHG_Initialize_Params(
   hgp->RandomizeInitDist = 0;
   hgp->EdgeSizeThreshold = 0.25;  
   hgp->hybrid_keep_factor = 0.;
-  hgp->ProRedL = 0.5;
+  hgp->ProRedL = 0.0; /* UVCUVC: CHECK default set to 0 until we run more experiments */
   hgp->RepartMultiplier = 100.;
   hgp->patoh_alloc_pool0 = 0;
   hgp->patoh_alloc_pool1 = 0;
@@ -836,7 +840,7 @@ int Zoltan_PHG_Initialize_Params(
 
     if (zz->LB.Method == PHG_REPART) {
         /* as a heuristic we prefer local matching */
-        strncpy(hgp->redm_str, "l-ipm", MAX_PARAM_STRING_LEN);                
+        strncpy(hgp->redm_str, "l-ipm", MAX_PARAM_STRING_LEN);
     }    
     
     if (zz->LB.Method == PHG_REFINE) {
