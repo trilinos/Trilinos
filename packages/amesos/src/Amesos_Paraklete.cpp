@@ -577,6 +577,7 @@ bool Amesos_Paraklete::MatrixShapeOK() const {
 }
 
 
+extern "C" {
 void my_handler (int status, char *file, int line, char *msg)
 {
     printf ("Error handler: %s %d %d: %s\n", file, line, status, msg) ;
@@ -590,8 +591,7 @@ void my_handler (int status, char *file, int line, char *msg)
 	fflush (stdout) ;
     }
 }
-
-
+}
 
 //=============================================================================
 int Amesos_Paraklete::SymbolicFactorization() 
