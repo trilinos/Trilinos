@@ -599,7 +599,7 @@ static int Zoltan_ParMetis_Jostle(
 
   /* Get parameter options shared by ParMetis and Jostle */
   check_graph = 1;          /* default */
-  scatter = 0;              /* default */
+  scatter = 1;              /* default */
   final_output = 0;         /* default */
   use_timers = 0;           /* default */
   strcpy(add_obj, "NONE");  /* default */
@@ -1484,12 +1484,6 @@ End:
 #undef FOMAXDIM
     }
 
-#define PARMETIS31_ALWAYS_FREES_VSIZE   /* Bug in ParMetis 3.1 */
-#ifndef PARMETIS31_ALWAYS_FREES_VSIZE
-  if (vsize) ZOLTAN_FREE(&vsize);
-#endif
-  if (vsizeBACKUP) ZOLTAN_FREE(&vsizeBACKUP);  
-    
   if (use_timers)
     Zoltan_Timer_PrintAll(zz->ZTime, 0, zz->Communicator, stdout);
 
@@ -1499,9 +1493,11 @@ End:
   if (float_vwgt)ZOLTAN_FREE(&float_vwgt); 
   if (ewgts)     ZOLTAN_FREE(&ewgts); 
   if (imb_tols)  ZOLTAN_FREE(&imb_tols);
+#define PARMETIS31_ALWAYS_FREES_VSIZE   /* Bug in ParMetis 3.1 */  
 #ifndef PARMETIS31_ALWAYS_FREES_VSIZE
   if (vsize)     ZOLTAN_FREE(&vsize); 
 #endif
+  if (vsizeBACKUP) ZOLTAN_FREE(&vsizeBACKUP);    
   if (sep_sizes) ZOLTAN_FREE(&sep_sizes);
   if (newproc)   ZOLTAN_FREE(&newproc);
   if (part_orig) ZOLTAN_FREE(&part_orig);
