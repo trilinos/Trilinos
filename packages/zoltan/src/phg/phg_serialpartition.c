@@ -701,15 +701,17 @@ static int greedy_grow_part (
 
   /* Initialize gain values. */
   for (i=0; i<hg->nVtx; i++){
-    for (j=hg->vindex[i]; j<hg->vindex[i+1]; j++) {
-      edge = hg->vedge[j];
-      edgesize = cut[0][edge]+cut[1][edge];
-      /* if edge is not cut by fixed vertices, update gain value */
-      if (MIN(cut[0][edge],cut[1][edge])==0)
-        gain[i] -= (hg->ewgt ? (hg->ewgt[edge]) : 1.0);
-      if (edgesize>1 && cut[part[i]][edge]==1)
-        gain[i] += (hg->ewgt ? (hg->ewgt[edge]) : 1.0);
-    }
+    /* compute gain only if vertex is free */
+    if (!hgp->UseFixedVtx || (hg->fixed_part[i] < 0)) 
+      for (j=hg->vindex[i]; j<hg->vindex[i+1]; j++) {
+        edge = hg->vedge[j];
+        edgesize = cut[0][edge]+cut[1][edge];
+        /* if edge is not cut by fixed vertices, update gain value */
+        if (MIN(cut[0][edge],cut[1][edge])==0)
+          gain[i] -= (hg->ewgt ? (hg->ewgt[edge]) : 1.0);
+        if (edgesize>1 && cut[part[i]][edge]==1)
+          gain[i] += (hg->ewgt ? (hg->ewgt[edge]) : 1.0);
+      }
   }
 
   /* Sum total weights. (No multi-weights yet) */
