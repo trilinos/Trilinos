@@ -496,7 +496,7 @@ static int Zoltan_ParMetis_Jostle(
   int nsend, wgtflag, numflag, graph_type; 
   int get_graph_data, get_geom_data, get_times; 
   int compute_only_part_changes=0; /* TODO: Read parameter when implemented. */
-  idxtype *vtxdist, *xadj, *adjncy, *vwgt, *vwgt_new, *adjwgt, *part, *vsize;
+  idxtype *vtxdist, *xadj, *adjncy, *vwgt, *vwgt_new, *adjwgt, *part, *vsize, *vsizeBACKUP=NULL;
   int *adjproc;
   idxtype *sep_sizes, *part_orig;
   int num_obj_orig, ncon, start_index, compute_order=0;
@@ -599,7 +599,7 @@ static int Zoltan_ParMetis_Jostle(
 
   /* Get parameter options shared by ParMetis and Jostle */
   check_graph = 1;          /* default */
-  scatter = 1;              /* default */
+  scatter = 0;              /* default */
   final_output = 0;         /* default */
   use_timers = 0;           /* default */
   strcpy(add_obj, "NONE");  /* default */
@@ -881,6 +881,7 @@ static int Zoltan_ParMetis_Jostle(
   if (options[PMV3_OPT_USE_OBJ_SIZE] && 
       (zz->Get_Obj_Size || zz->Get_Obj_Size_Multi)) {
     vsize = (idxtype *) ZOLTAN_MALLOC(num_obj*sizeof(idxtype));
+    vsizeBACKUP = (idxtype *) ZOLTAN_MALLOC(num_obj*sizeof(idxtype));    
     if (num_obj && !vsize){
       /* Not enough space */
       ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
@@ -899,6 +900,7 @@ static int Zoltan_ParMetis_Jostle(
                        lid, &ierr);
       }
     }
+    memcpy(vsizeBACKUP, vsize, sizeof(idxtype)*num_obj);
   }
 #endif
 
@@ -1394,7 +1396,7 @@ End:
     double cute[FOMAXDIM];   /* Traditional weighted graph edge cuts */
     int cutl;   /* Connnectivity cuts:  sum_over_edges((npart-1)) */
     int cutn;   /* Net cuts:  sum_over_edges((nparts>1)) */
-    double move = 0.0, gmove;   /* migration cost */
+    double move = 0.0, gmove =0.0;   /* migration cost */
     double repart; /* total repartitioning cost; cutl x multiplier + move */
     int *adjpart = NULL;
     int vdim = MAX(zz->Obj_Weight_Dim,1);
@@ -1421,16 +1423,14 @@ End:
       cutn = Compute_NetCut(zz, num_obj, xadj, part, adjpart);
       for (i=0; i<num_obj; i++) {
         /*printf("obj[%d] = %d\n", i, vsize[i]);*/
-        if (part[i] != input_parts[i])
+          if (part[i] != input_parts[i]) {
 #if (PARMETIS_MAJOR_VERSION >= 3)
-            move += (double) (!strcmp(alg, "ADAPTIVEREPART") ? vsize[i] : 1.0);
+            move += (double) (!strcmp(alg, "ADAPTIVEREPART") ? vsizeBACKUP[i] : 1.0);
 #else
           move += 1.0;
-#endif        
+#endif
+          }
       }
-
-
-
 
       MPI_Allreduce(&move, &gmove, 1, MPI_DOUBLE, MPI_SUM, zz->Communicator);
 
@@ -1488,6 +1488,7 @@ End:
 #ifndef PARMETIS31_ALWAYS_FREES_VSIZE
   if (vsize) ZOLTAN_FREE(&vsize);
 #endif
+  if (vsizeBACKUP) ZOLTAN_FREE(&vsizeBACKUP);  
     
   if (use_timers)
     Zoltan_Timer_PrintAll(zz->ZTime, 0, zz->Communicator, stdout);
