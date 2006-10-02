@@ -5,6 +5,38 @@
 # TODO: extend this to recognize parallel execution options
 #
 
-system("(@ARGV) | tr \'<&>\"\' \'+++++\' 2>&1");
+use Sys::Hostname;
+my $host = hostname();
+
+if ($host eq "qed.sandia.gov") {
+
+# runqsub.qed 6 'csh /home/schake/Zoltan/test/test_zoltan -arch qed -no_nemesis -no_chaco'
+# mpiexec -comm mpich-p4 -n 
+  my $p = 1;
+  for (my $i=0; $i < $#ARGV; $i++) {
+    if ($ARGV[$i] eq "-n") {
+      $p = $ARGV[$i+1];
+      break;
+    }
+  }
+  my $out = "qsub.$$.out";
+  my $job = `(./runqsub.qed $p \"@ARGV >& $out\")`;
+  chomp $job;
+
+  print "job=$job proc=$p out=$out\n";
+
+# poll on the job
+# qstat 7445.qed >& /dev/null || echo done
+# qstat 7445.qed >& /dev/null && echo running
+
+  while (`qstat $job >& /dev/null && echo 1`) {
+    sleep 10;
+  }
+
+  system("cat $out");
+
+} else {
+  system("(@ARGV) | tr \'<&>\"\' \'+++++\' 2>&1");
+}
 exit 0;
 
