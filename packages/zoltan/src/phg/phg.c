@@ -838,6 +838,12 @@ int Zoltan_PHG_Initialize_Params(
          * number of processors. */
         usePrimeComm = 1;
 
+
+    if (zz->LB.Method == PHG_REPART ||
+        zz->LB.Method == PHG_REFINE || zz->LB.Method == PHG_MULTILEVEL_REFINE) {
+      hgp->fm_loop_limit = 4; /* UVC: should be enough; I hope :) */
+    }
+    
     if (zz->LB.Method == PHG_REPART) {
         /* as a heuristic we prefer local matching */
         strncpy(hgp->redm_str, "l-ipm", MAX_PARAM_STRING_LEN);
