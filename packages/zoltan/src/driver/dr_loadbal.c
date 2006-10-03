@@ -909,7 +909,7 @@ int get_first_element(void *data, int num_gid_entries, int num_lid_entries,
   MESH_INFO_PTR mesh;
   ELEM_INFO *elem;
   ELEM_INFO *current_elem;
-  int i, j, first;
+  int i, j, first, allblank;
   int gid = num_gid_entries-1;
   int lid = num_lid_entries-1;
 
@@ -923,6 +923,13 @@ int get_first_element(void *data, int num_gid_entries, int num_lid_entries,
   }
   
   mesh = (MESH_INFO_PTR) data;
+
+  if (mesh->num_elems <= 0) {
+    printf("%d: no elements in mesh\n",mesh->proc);
+    *ierr = ZOLTAN_WARN;
+    return 0;
+  }
+
   if (mesh->num_elems == mesh->blank_count) {
     printf("%d: all elements are blanked, A\n",mesh->proc);
     *ierr = ZOLTAN_FATAL;
@@ -931,19 +938,21 @@ int get_first_element(void *data, int num_gid_entries, int num_lid_entries,
 
   elem = mesh->elements;
   first = 0;
+
   if (mesh->blank_count){
+    allblank = 1;
     for (i=0; i<mesh->num_elems; i++){
       if (mesh->blank[i] == 0){
+        allblank = 0;
         first = i;
         break;
       }
     }
-  }
-
-  if (i == mesh->num_elems){
-    printf("%d: all elements are blanked, B\n",mesh->proc);
-    *ierr = ZOLTAN_FATAL;
-    return 0;
+    if (allblank){
+      printf("%d: all elements are blanked, B\n",mesh->proc);
+      *ierr = ZOLTAN_FATAL;
+      return 0;
+    }
   }
 
   current_elem = &elem[first];
