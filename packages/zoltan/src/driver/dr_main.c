@@ -632,7 +632,7 @@ ELEM_INFO *elem;
     }
     alllocal++;
   }
-  if (Debug_Driver > 0) {
+  /*if (Debug_Driver > 0) {*/
     if (mesh->proc == 0){
       printf("Test dynamic graph factor is %0.4f\n",blank_factor);
     }
@@ -642,7 +642,7 @@ ELEM_INFO *elem;
             ((float)mesh->blank_count*100.0/alllocal));
     fflush(stdout);
     MPI_Barrier(MPI_COMM_WORLD);
-  }
+  /*}*/
 }
 
 #ifdef DEBUG_READ_MESH
