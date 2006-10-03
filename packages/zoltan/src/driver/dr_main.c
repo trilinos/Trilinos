@@ -636,10 +636,16 @@ ELEM_INFO *elem;
     if (mesh->proc == 0){
       printf("Test dynamic graph factor is %0.4f\n",blank_factor);
     }
-    printf("Proc %d: %d vertices, %d with all local edges, %d blanked (%0.2f%% of all, %0.2f%% of local)\n",
+    if (alllocal > 0){
+      printf("Proc %d: %d vertices, %d with all local edges, %d blanked (%0.2f%% of all, %0.2f%% of local)\n",
             mesh->proc, mesh->num_elems,  alllocal, mesh->blank_count,
             ((float)mesh->blank_count*100.0/mesh->num_elems),
             ((float)mesh->blank_count*100.0/alllocal));
+    }
+    else{
+      printf("Proc %d: %d vertices, %d with all local edges, %d blanked\n",
+            mesh->proc, mesh->num_elems,  alllocal, mesh->blank_count);
+    }
     fflush(stdout);
     MPI_Barrier(MPI_COMM_WORLD);
   /*}*/
