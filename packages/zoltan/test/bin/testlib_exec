@@ -10,20 +10,25 @@ my $host = hostname();
 
 if ($host eq "qed.sandia.gov") {
 
-# runqsub.qed 6 'csh /home/schake/Zoltan/test/test_zoltan -arch qed -no_nemesis -no_chaco'
-# mpiexec -comm mpich-p4 -n 
+# this takes an mpiexec command, and strips out number of processors
+# there must be a space after the -n, e.g.: mpiexec -n 32, or mpiexec -np 32
+# assume 2 processors per node
   my $p = 1;
   for (my $i=0; $i < $#ARGV; $i++) {
-    if ($ARGV[$i] eq "-n") {
+    if ($ARGV[$i] eq "-n" || $ARGV[$i] eq "-np") {
       $p = $ARGV[$i+1];
       break;
     }
   }
+  $p = int(($p + 1) / 2);	# 2 ppn
+  $p = 1 if ($p < 1);
   my $out = "qsub.$$.out";
-  my $job = `(./runqsub.qed $p \"@ARGV >& $out\")`;
+  my $job = `(./runqsub.qed $p 00:05:00 \"( @ARGV ) >& $out\")`;
   chomp $job;
 
   print "job=$job proc=$p out=$out\n";
+
+  die if ($job eq '');
 
 # poll on the job
 # qstat 7445.qed >& /dev/null || echo done
