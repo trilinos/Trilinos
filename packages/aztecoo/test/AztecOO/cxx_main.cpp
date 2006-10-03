@@ -100,6 +100,8 @@ int test_AZ_iterate_then_AZ_scale_f(Epetra_Comm& Comm, bool verbose);
 
 int test_bug2554(Epetra_Comm& Comm, bool verbose);
 
+Epetra_CrsMatrix* create_and_fill_crs_matrix(const Epetra_Map& emap);
+
 void destroy_matrix(AZ_MATRIX*& Amat);
 
 int main(int argc, char *argv[])
@@ -130,69 +132,40 @@ int main(int argc, char *argv[])
 
   Epetra_Map emap(global_n, 0, comm);
 
-  Epetra_CrsMatrix A(Copy, emap, 3);
+  Epetra_CrsMatrix* A = create_and_fill_crs_matrix(emap);
+
   Epetra_Vector x(emap), b(emap);
 
   x.PutScalar(1.0);
 
-  int myFirstGlobalRow = localproc*local_n;
-  int globalCols[3];
-  double values[3];
-
-  for(int i=0; i<local_n; ++i) {
-    int globalRow = myFirstGlobalRow +i;
-
-    int numcols = 0;
-    if (globalRow > 0) {
-      globalCols[numcols] = globalRow-1;
-      values[numcols++] = -1.0;
-    }
-
-    globalCols[numcols] = globalRow;
-    values[numcols++] = 4.0;
-
-    if (globalRow < global_n-1) {
-      globalCols[numcols] = globalRow+1;
-      values[numcols++] = -1.0;
-    }
-
-    A.InsertGlobalValues(globalRow, numcols, values, globalCols);
-  }
-
-  A.FillComplete();
-
-  A.Multiply(false, x, b);
+  A->Multiply(false, x, b);
   x.PutScalar(0.0);
 
-//  AztecOO azoo(&A, &x, &b);
-//  azoo.PrintLinearSystem("test");
-
-  double initial_norm = resid2norm(A, x, b);
+  double initial_norm = resid2norm(*A, x, b);
 
   if (verbose) {
     cout << "Initial 2-norm of b-A*x: "<<initial_norm<<endl;
   }
 
-//  AZ_manage_memory(0, -43, 0, 0, 0);
-
-  int err = test_azoo_as_precond_op(A, x, b, verbose);
+  int err = test_azoo_as_precond_op(*A, x, b, verbose);
   if (err != 0) {
     cout << "test_azoo_as_precond_op err, test FAILED."<<endl;
     return(err);
   }
 
-//  AZ_manage_memory(0, -43, 0, 0, 0);
-
-  err = test_azoo_with_ilut(A, x, b, verbose);
+  err = test_azoo_with_ilut(*A, x, b, verbose);
   if (err != 0) {
     cout << "test_azoo_with_ilut err, test FAILED."<<endl;
     return(err);
   }
 
-  err = test_azoo_scaling(A, x, b, verbose);
+  err = test_azoo_scaling(*A, x, b, verbose);
   if (err != 0) {
     cout << "test_azoo_scaling err="<<err<<", test FAILED."<<endl;
+    return(err);
   }
+
+  delete A;
 
   int* options = new int[AZ_OPTIONS_SIZE];
   options[AZ_solver] = AZ_cg;
@@ -202,7 +175,6 @@ int main(int argc, char *argv[])
   if (verbose)
     std::cout << "about to call test_AZ_iterate_AZ_pre_calc_AZ_reuse"
        <<std::endl;
-//  AZ_manage_memory(0, -43, 0, 0, 0);
 
   err = test_AZ_iterate_AZ_pre_calc_AZ_reuse(comm, options, verbose);
   if (err != 0) {
@@ -297,6 +269,41 @@ double resid2norm(Epetra_CrsMatrix& A,
   r.Norm2(&nrm2);
 
   return(nrm2);
+}
+
+Epetra_CrsMatrix* create_and_fill_crs_matrix(const Epetra_Map& emap)
+{
+  int localproc = emap.Comm().MyPID();
+  int local_n = emap.NumMyElements();
+  int global_n = emap.NumGlobalElements();
+  int myFirstGlobalRow = localproc*local_n;
+  int globalCols[3];
+  double values[3];
+  Epetra_CrsMatrix* A = new Epetra_CrsMatrix(Copy, emap, 3);
+
+  for(int i=0; i<local_n; ++i) {
+    int globalRow = myFirstGlobalRow +i;
+
+    int numcols = 0;
+    if (globalRow > 0) {
+      globalCols[numcols] = globalRow-1;
+      values[numcols++] = -1.0;
+    }
+
+    globalCols[numcols] = globalRow;
+    values[numcols++] = 4.0;
+
+    if (globalRow < global_n-1) {
+      globalCols[numcols] = globalRow+1;
+      values[numcols++] = -1.0;
+    }
+
+    A->InsertGlobalValues(globalRow, numcols, values, globalCols);
+  }
+
+  A->FillComplete();
+
+  return A;
 }
 
 int test_azoo_as_precond_op(Epetra_CrsMatrix& A,
@@ -439,21 +446,22 @@ int test_azoo_scaling(Epetra_CrsMatrix& A,
                       Epetra_Vector& b,
                       bool verbose)
 {
-  Epetra_CrsMatrix Atmp(A);
   Epetra_Vector vec1(x);
   Epetra_Vector vec2(x);
   Epetra_Vector diag(x);
   Epetra_Vector vec3(x);
   Epetra_Vector vec4(x);
   Epetra_Vector rhs(x);
+  Epetra_Vector soln_none(x);
+  Epetra_Vector soln_jacobi(x);
   Epetra_Vector soln_rowsum(x);
   Epetra_Vector soln_symdiag(x);
 
   vec1.PutScalar(1.0);
 
-  Atmp.Multiply(false, vec1, vec2);
+  A.Multiply(false, vec1, vec2);
 
-  Atmp.ExtractDiagonalCopy(diag);
+  A.ExtractDiagonalCopy(diag);
 
   double* diag_vals = NULL;
   diag.ExtractView(&diag_vals);
@@ -465,7 +473,7 @@ int test_azoo_scaling(Epetra_CrsMatrix& A,
   options[AZ_output] = verbose ? 1 : AZ_none;
 
   options[AZ_scaling] = AZ_Jacobi;
-  AztecOO::MatrixData mdata(&Atmp);
+  AztecOO::MatrixData mdata(&A);
   AZ_MATRIX* Amat = AZ_matrix_create(vec1.Map().NumMyElements());
   AZ_set_MATFREE(Amat, (void*)(&mdata), Epetra_Aztec_matvec);
 
@@ -484,7 +492,10 @@ int test_azoo_scaling(Epetra_CrsMatrix& A,
     return(err);
   }
 
-  Atmp.Multiply(false, vec1, vec3);
+  AztecOO_scale_epetra(AZ_DESTROY_SCALING_DATA, Amat, options,
+                       bvals, xvals, NULL, scaling);
+
+  A.Multiply(false, vec1, vec3);
 
   vec4.Multiply(1.0, diag, vec3, 0.0);
 
@@ -493,13 +504,14 @@ int test_azoo_scaling(Epetra_CrsMatrix& A,
   vec2.Norm2(&vec2nrm);
   vec4.Norm2(&vec4nrm);
 
-  if (vec2nrm != vec4nrm) {
+  if (fabs(vec2nrm - vec4nrm) > 1.e-6) {
     return(-1);
   }
 
   x.PutScalar(1.0);
 
-  Atmp.Multiply(false, x, rhs);
+  Epetra_CrsMatrix* Atmp = create_and_fill_crs_matrix(A.RowMap());
+  Atmp->Multiply(false, x, rhs);
 
   x.PutScalar(0.0);
 
@@ -515,48 +527,121 @@ int test_azoo_scaling(Epetra_CrsMatrix& A,
 
   azoo.Iterate(100, 1.e-6);
 
-  Epetra_CrsMatrix Atmp1(A);
+  delete Atmp;
+
+  Epetra_CrsMatrix* Atmp1 = create_and_fill_crs_matrix(A.RowMap());
 
   x.PutScalar(1.0);
 
-  Atmp1.Multiply(false, x, rhs);
+  Atmp1->Multiply(false, x, rhs);
 
   soln_rowsum.PutScalar(0.0);
 
-  AztecOO azoo1(&Atmp1, &soln_rowsum, &rhs);
+  AztecOO azoo1(Atmp1, &soln_rowsum, &rhs);
 
   azoo1.SetAztecOption(AZ_scaling, AZ_row_sum);
 
   azoo1.Iterate(100, 1.e-8);
 
-  Epetra_CrsMatrix Atmp2(A);
+  delete Atmp1;
+
+  Epetra_CrsMatrix* Atmp2 = create_and_fill_crs_matrix(A.RowMap());
 
   x.PutScalar(1.0);
 
-  Atmp2.Multiply(false, x, rhs);
+  Atmp2->Multiply(false, x, rhs);
 
   soln_symdiag.PutScalar(0.0);
 
-  AztecOO azoo2(&Atmp2, &soln_symdiag, &rhs);
+  AztecOO azoo2(Atmp2, &soln_symdiag, &rhs);
 
   azoo2.SetAztecOption(AZ_scaling, AZ_sym_diag);
 
   azoo2.Iterate(100, 1.e-8);
 
-  //at this point, soln_rowsum and soln_symdiag should be the same
-  //or at least very close to the same.
+  delete Atmp2;
+
+  Epetra_CrsMatrix* Atmp3 = create_and_fill_crs_matrix(A.RowMap());
+
+  x.PutScalar(1.0);
+
+  Atmp3->Multiply(false, x, rhs);
+
+  soln_none.PutScalar(0.0);
+
+  AztecOO azoo3(Atmp3, &soln_none, &rhs);
+
+  azoo3.SetAztecOption(AZ_scaling, AZ_none);
+
+  azoo3.Iterate(100, 1.e-8);
+
+  delete Atmp3;
+
+
+  Epetra_CrsMatrix* Atmp4 = create_and_fill_crs_matrix(A.RowMap());
+
+  x.PutScalar(1.0);
+
+  Atmp4->Multiply(false, x, rhs);
+
+  soln_jacobi.PutScalar(0.0);
+
+  AztecOO azoo4(Atmp4, &soln_jacobi, &rhs);
+
+  azoo4.SetAztecOption(AZ_scaling, AZ_Jacobi);
+
+  azoo4.Iterate(100, 1.e-8);
+
+  delete Atmp4;
+
+  //at this point, soln_none, soln_jacobi, soln_rowsum and soln_symdiag
+  //should be the same or at least close to the same, since the
+  //matrix used in the solution has well-behaved coefficients.
   
-  //form vec1 = soln_symdiag - soln_rowsum
+  //form vec1 = soln_none - soln_rowsum
   vec1.PutScalar(0.0);
-  vec1.Update(1.0, soln_symdiag, 0.0);
+  vec1.Update(1.0, soln_none, 0.0);
   vec1.Update(-1.0, soln_rowsum, 1.0);
 
-  double norm_check = 0.0;
-  vec1.Norm2(&norm_check);
+  double norm_check1= 0.0;
+  vec1.Norm2(&norm_check1);
 
-  if (std::abs(norm_check) > 1.e-6) {
+  //form vec2 = soln_none - soln_symdiag
+  vec2.PutScalar(0.0);
+  vec2.Update(1.0, soln_none, 0.0);
+  vec2.Update(-1.0, soln_symdiag, 1.0);
+
+  double norm_check2= 0.0;
+  vec2.Norm2(&norm_check2);
+
+  //form vec3 = soln_none - soln_jacobi
+  vec3.PutScalar(0.0);
+  vec3.Update(1.0, soln_none, 0.0);
+  vec3.Update(-1.0, soln_jacobi, 1.0);
+
+  double norm_check3= 0.0;
+  vec3.Norm2(&norm_check3);
+
+
+  if (std::abs(norm_check1) > 1.e-6) {
     if (verbose) {
-      cerr << "AZ_row_sum and AZ_sym_diag produced different solns"
+      cerr << "AZ_row_sum scaling produced bad soln"
+      << endl;
+    }
+    return(-1);
+  }
+
+  if (std::abs(norm_check2) > 1.e-6) {
+    if (verbose) {
+      cerr << "AZ_sym_diag scaling produced bad soln"
+      << endl;
+    }
+    return(-1);
+  }
+
+  if (std::abs(norm_check3) > 1.e-6) {
+    if (verbose) {
+      cerr << "AZ_Jacobi scaling produced bad soln"
       << endl;
     }
     return(-1);

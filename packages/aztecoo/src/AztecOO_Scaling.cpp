@@ -100,13 +100,18 @@ int AZOO_Scale(int action,
   //functions AZ_block_diagonal_scaling, AZ_row_sum_scaling and
   //AZ_sym_diagonal_scaling in the file az_scaling.c.
 
-  if (action == AZ_INVSCALE_SOL || action == AZ_SCALE_SOL) return(0);
-
   if (action == AZ_DESTROY_SCALING_DATA) {
     if (scaling->scaling_data != 0) {
       Epetra_Vector* vec = (Epetra_Vector*)(scaling->scaling_data);
       delete vec;
       scaling->scaling_data = 0;
+    }
+    return(0);
+  }
+
+  if (options[AZ_scaling] != AZ_sym_diag) {
+    if (action == AZ_INVSCALE_SOL || action == AZ_SCALE_SOL) {
+      return(0);
     }
   }
 
@@ -118,12 +123,12 @@ int AZOO_Scale(int action,
 
   //Either get the data stored in scaling->scaling_data, or
   //create a new scaling vector, depending on the value of
-  //options[AZ_pre_calc].
+  //options[AZ_pre_calc] and action.
 
   if (options[AZ_pre_calc] == AZ_reuse) {
     if (scaling->scaling_data == NULL) {
       if (options[AZ_output] != AZ_none) {
-        cerr << "AZOO_Scale_Jacobi ERROR, AZ_reuse requested, but"
+        cerr << "AZOO_Scale ERROR, AZ_reuse requested, but"
            << " scaling->scaling_data==NULL"<<endl;
       }
       return(-1);
@@ -132,12 +137,28 @@ int AZOO_Scale(int action,
     vec = (Epetra_Vector*)(scaling->scaling_data);
   }
   else {
-    vec = AZOO_create_scaling_vector(A, options[AZ_scaling]);
-    if (vec == NULL) {
-      if (options[AZ_output] != AZ_none) {
-        cerr << "AZOO_create_scaling_vector ERROR"<<endl;
+    if (action == AZ_SCALE_MAT_RHS_SOL) {
+      vec = AZOO_create_scaling_vector(A, options[AZ_scaling]);
+      if (vec == NULL) {
+        if (options[AZ_output] != AZ_none) {
+          cerr << "AZOO_create_scaling_vector ERROR"<<endl;
+        }
+        return(-1);
       }
-      return(-1);
+      scaling->scaling_data = (void*)vec;
+    }
+    else {
+      if (scaling->scaling_data != NULL) {
+        vec = (Epetra_Vector*)(scaling->scaling_data);
+      }
+
+      if (scaling->scaling_data == NULL || vec == NULL) {
+        if (options[AZ_output] != AZ_none) {
+          cerr << "AZOO_Scale ERROR, vec == NULL or"
+             << " scaling->scaling_data==NULL"<<endl;
+        }
+        return(-1);
+      }
     }
   }
 
@@ -150,11 +171,29 @@ int AZOO_Scale(int action,
     if (options[AZ_scaling] == AZ_sym_diag) {
       A->RightScale(*vec);
     }
+
+    if (options[AZ_scaling] == AZ_sym_diag) {
+      for(int i=0; i<numMyRows; ++i) {
+        b[i] *= vec_vals[i];
+        x[i] /= vec_vals[i];
+      }
+    }
+    else {
+      for(int i=0; i<numMyRows; ++i) {
+        b[i] *= vec_vals[i];
+      }
+    }
   }
 
-  if (action == AZ_SCALE_MAT_RHS_SOL || action == AZ_SCALE_RHS) {
+  if (action == AZ_SCALE_SOL) {
     for(int i=0; i<numMyRows; ++i) {
-      b[i] *= vec_vals[i];
+      x[i] /= vec_vals[i];
+    }
+  }
+
+  if (action == AZ_INVSCALE_SOL) {
+    for(int i=0; i<numMyRows; ++i) {
+      x[i] *= vec_vals[i];
     }
   }
 
@@ -164,21 +203,10 @@ int AZOO_Scale(int action,
     }
   }
 
-  //if options[AZ_keep_info]==1, store the scaling vector
-  //in the scaling->scaling_data pointer for later reuse.
-  //
-  //(What should we do if AZ_keep_info==1 and the
-  //scaling->scaling_data pointer already contains data?
-  //For now we'll assume that if that's the case, then the
-  //scaling vector we're about to store is the same one that's
-  //already there...)
-
-  if (options[AZ_keep_info] == 1) {
-    scaling->scaling_data = (void*)vec;
-  }
-  else {
-    delete vec;
-    scaling->scaling_data = 0;
+  if (action == AZ_SCALE_RHS) {
+    for(int i=0; i<numMyRows; ++i) {
+      b[i] *= vec_vals[i];
+    }
   }
 
   return(0);
@@ -205,8 +233,10 @@ Epetra_Vector* AZOO_create_scaling_vector(Epetra_RowMatrix* A,
 
     //now invert each entry of the diagonal vector
     for(int i=0; i<A->RowMatrixRowMap().NumMyElements(); ++i) {
-      if (fabs(vec_vals[i]) > Epetra_MinDouble) {
-        vec_vals[i] = 1.0/vec_vals[i];
+      double sval = fabs(vec_vals[i]);
+      if (sval > Epetra_MinDouble) {
+        vec_vals[i] = scaling_type == AZ_sym_diag ?
+                    1.0/sqrt(sval) : 1.0/sval;
       }
       else {
         vec_vals[i] = 1.0;
