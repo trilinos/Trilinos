@@ -52,6 +52,8 @@ FLIBS="-lpgf90 -lpgf90_rpm1 -lpgf902 -lpgf90rtl -lpgftnrtl" \
 --enable-capo \
 --enable-sacado \
 --enable-sacado-alltests \
+--with-cppunit-prefix=/home/etphipp/cppunit-1.10.2/build_redstorm/install \
+--with-adolc=/home/etphipp/adolc-1.10.1/build_redstorm/install \
 --enable-stratimikos \
 --enable-meros \
 --enable-rtop \
