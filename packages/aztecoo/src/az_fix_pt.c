@@ -220,6 +220,7 @@ void AZ_fix_pt(double b[], double x[], double weight[], int options[],
   iter--;
   if ( (iter%print_freq != 0) && (proc == 0) && (options[AZ_output] != AZ_none)
        && (options[AZ_output] != AZ_warnings) ) {
+    AZ_compute_residual(b, x, res, proc_config, Amat);
     AZ_compute_global_scalars(Amat, x, b,
                               res, weight, &rec_residual, &scaled_r_norm, options,
                               data_org, proc_config, &r_avail, dummy, dummy, 
