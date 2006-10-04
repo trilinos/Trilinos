@@ -80,6 +80,7 @@ EXTRA_DIST = \
 	sampleScripts/linux_mpi_marzio \
 	sampleScripts/kythira_serial_marzio \
 	sampleScripts/dec_mpi_marzio \
+	sampleScripts/cray_xt3_marzio \
 	sampleScripts/scyld_mpi_beowulf sampleScripts/sgi64_mpi_atlantis \
 	sampleScripts/sgi64_serial_atlantis \
 	sampleScripts/solaris_mpi_conejo sampleScripts/solaris_serial_paul \
