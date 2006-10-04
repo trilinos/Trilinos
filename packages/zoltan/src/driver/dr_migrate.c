@@ -270,6 +270,11 @@ char msg[256];
   mesh = (MESH_INFO_PTR) data;
   elements = mesh->elements;
 
+  for (i=0; i < mesh->num_elems; i++){
+    /* don't migrate a pointer created on this process */
+    safe_free((void **)&(elements[i].adj_blank));
+  }
+
   /*
    *  Set some flags. Assume if true for one element, true for all elements.
    *  Note that some procs may have no elements. 
