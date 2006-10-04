@@ -75,6 +75,7 @@ function varargout=ml(varargin)
 % by: Chris Siefert <csiefer@sandia.gov>
 
 % Version History
+% 10/04/2006 - Finally added the aggregation interface
 % 08/30/2006 - Added ML_epetra interface functionality.
 % 08/15/2006 - Added operator complexity handling.
 % 08/07/2006 - Added status checking functionality.
@@ -100,6 +101,9 @@ elseif(nargin>=3 && isnumeric(varargin{1}) && issparse(varargin{2}))
   % Solve mode
   if(size(varargin{2},1)~=length(varargin{3})), fprintf('ML: Error size mismatch between A + B\n');out=0;
   else varargout{1}=mlmex(1,varargin{:}); end
+elseif(nargin>=2 && isnumeric(varargin{2}) && issparse(varargin{2}) && strcmp(varargin{1},'aggregate'))
+  % Aggregate mode
+  varargout{1}=mlmex(4,varargin{:});
 else
   fprintf('ML: Error! Invalid input, mode unspecified or insufficient parameters\n');
 end
