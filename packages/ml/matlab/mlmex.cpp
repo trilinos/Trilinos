@@ -33,6 +33,7 @@
 
    By: Chris Siefert <csiefer@sandia.gov>
    Version History
+   10/04/2006 - Added aggregate mode, patches for Matlab R2006b + mwArray.
    09/08/2006 - Memory leak fixed.
    08/30/2006 - Added ML_epetra interface functionality.
    08/15/2006 - Added operator complexity handling.
@@ -73,7 +74,6 @@
 #include "Teuchos_ParameterList.hpp"
 #include "AztecOO.h"
 
-
 #ifdef HAVE_ML_MATLAB
 /* Needed for MEX */
 #include "mex.h"
@@ -107,6 +107,12 @@ typedef enum {MODE_SETUP=0, MODE_SOLVE, MODE_CLEANUP, MODE_STATUS, MODE_AGGREGAT
 
 /* Debugging */
 //#define VERBOSE_OUTPUT
+
+/* Stuff for MATLAB R2006b vs. previous versions */
+#if(defined(MX_API_VER) && MX_API_VER >= 0x07030000)
+#else
+typedef int mwIndex;
+#endif
 
 
 /**************************************************************/
@@ -236,6 +242,10 @@ public:
   */
   int solve(Teuchos::ParameterList* TPL, int N, double*b, double*x);  
 
+  /* GetPreconditioner - returns a pointer to the preconditioner */     
+  MultiLevelPreconditioner* GetPreconditioner(){return Prec;}
+  
+  
 private:
   Epetra_Comm *Comm;
   Epetra_Map *Map;
@@ -578,8 +588,6 @@ ml_data_pack_list::~ml_data_pack_list(){
   while(L!=NULL){
     old=L; L=L->next;
     delete old;
-    /*NTS: Let's hope inheritance works and the correct destructor is called.  I
-      have my doubts.*/
   }/*end while*/
 }/*end destructor*/
 
@@ -636,8 +644,6 @@ int ml_data_pack_list::remove(int id){
     if(!iprev) L=icurr->next;
     else iprev->next=icurr->next;
     delete icurr;
-    /*NTS: Hope that inheritance does its magic and that the right destructor is
-      called */
     return IS_TRUE;
   }/*end else*/    
 }/*end remove*/
@@ -659,6 +665,41 @@ int ml_data_pack_list::status_all(){
   return IS_TRUE;
 }/*end status_all */
 
+
+/**************************************************************/
+/**************************************************************/
+/******************* Aggregation Functions ********************/
+/**************************************************************/
+/**************************************************************/
+/* mlmex_aggregate -interface to ML's aggregation routines.
+   Parameters:
+   N       - Number of unknowns [I]
+   rowind  - Row indices of matrix (CSC format) [I]
+   colptr  - Column indices of matrix (CSC format) [I]
+   vals    - Nonzero values of matrix (CSC format) [I]
+   List    - Teuchos parameter list [I]
+   agg     - allocated vector which will hold aggregates on return [O]
+*/
+void mlmex_aggregate(int N,int *colptr, int* rowind, double*vals, Teuchos::ParameterList* List, int* agg){
+  ml_epetra_data_pack DPK;
+  MultiLevelPreconditioner *Prec;
+  
+  /* Minimize work*/
+  List->set("max levels",2);
+  
+  /* Setup a datapack */
+  DPK.List=List;
+  DPK.setup(N,rowind,colptr,vals);
+  
+  /* Pull the aggregates (by reference) */
+  Prec=DPK.GetPreconditioner();
+
+  /* Copy aggregate info over */
+  memcpy(agg,Prec->GetML_Aggregate()->aggr_info[0],N*sizeof(int));
+
+  /* Prevent the destructor from eating List */
+  DPK.List=NULL;
+}/*end mlmex_aggregate*/
 
 
 /**************************************************************/
@@ -700,8 +741,13 @@ MODE_TYPE sanity_check(int nrhs, const mxArray *prhs[]){
   case MODE_STATUS:
     if(nrhs==1 || nrhs==2) rv=MODE_STATUS;
     else mexErrMsgTxt("Error: Extraneous args for status\n");
-    break;    
+    break;
+  case MODE_AGGREGATE:
+    if(nrhs>1&&mxIsSparse(prhs[1])) rv=MODE_AGGREGATE; 
+    else mexErrMsgTxt("Error: Invalid input for aggregate\n");      
+    break;
   default:
+    printf("Mode number = %d\n",(int)modes[0]);
     mexErrMsgTxt("Error: Invalid input mode\n");
   };
   return rv;
@@ -830,7 +876,7 @@ Teuchos::ParameterList* build_teuchos_list(int nrhs,const mxArray *prhs[]){
 
 /* mexFunction is the gateway routine for the MEX-file. */
 void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] ){
-  int i,*id,sz,rv,*rowind,*colptr;
+  int i,*id,sz,rv,*rowind,*colptr, *agg;
   double *b, *x, *vals,*opts_array;
   int nr, nc,no;
   bool UseDefaultNullSpace;
@@ -844,6 +890,10 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] ){
   
   /* Sanity Check Input */
   mode=sanity_check(nrhs,prhs);
+
+  /* Sanity check the int mwIndex mismatch for R2006b+ */
+  if(sizeof(int) < sizeof(mwIndex))
+    mexErrMsgTxt("Error: int and mwIndex are of different sizes on this architecture.  MLMEX can't handle that.\n");
   
   switch(mode){
   case MODE_SETUP:
@@ -865,8 +915,8 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] ){
     
     /* Pull Matrix - CSC Format */
     vals=mxGetPr(prhs[1]);
-    rowind=mxGetIr(prhs[1]);
-    colptr=mxGetJc(prhs[1]);
+    rowind=(int*)mxGetIr(prhs[1]);
+    colptr=(int*)mxGetJc(prhs[1]);
 
     /* Construct the Heirarchy */
     D->setup(nr,rowind,colptr,vals);
@@ -957,7 +1007,32 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] ){
     plhs[0]=mxCreateNumericMatrix(1,1,mxINT32_CLASS,mxREAL);
     id=(int*)mxGetData(plhs[0]);id[0]=rv;    
     break;
+
+  case MODE_AGGREGATE:
+    /* Pull Problem Size */
+    nr=mxGetM(prhs[1]);
+    nc=mxGetN(prhs[1]);
+
+    /* Teuchos List */
+    if(nrhs>2) List=build_teuchos_list(nrhs-2,&(prhs[2]));
+    else List=new Teuchos::ParameterList;
+
+    /* Pull Matrix - CSC Format */
+    vals=mxGetPr(prhs[1]);
+    rowind=(int*)mxGetIr(prhs[1]);
+    colptr=(int*)mxGetJc(prhs[1]);
+
+    /* Allocate space for aggregate / return value */
+    plhs[0]=mxCreateNumericMatrix(nr,1,mxINT32_CLASS,mxREAL);
+    agg=(int*)mxGetData(plhs[0]);
     
+    /* Do aggregation only */   
+    mlmex_aggregate(nr,colptr,rowind,vals,List,agg);
+
+    /* Cleanup */
+    delete List;
+    
+    break;    
   default:
     mexErrMsgTxt("Error: Generic\n");
   };  

@@ -85,14 +85,7 @@ function varargout=ml(varargin)
 % 05/16/2006 - Initial Version.
 
 
-
-if(nargin>=1 && strcmp(varargin{1},'cleanup'))  
-  % Cleanup mode
-  varargout{1}=mlmex(2,varargin{2:nargin});
-elseif(nargin>=1 && strcmp(varargin{1},'status'))  
-  % Status mode
-  varargout{1}=mlmex(3,varargin{2:nargin});  
-elseif(nargin>=2 && strcmp(varargin{1},'setup'))
+if(nargin>=2 && strcmp(varargin{1},'setup'))
   % Setup mode
   [out,oc]=mlmex(0,varargin{2:nargin});
   varargout{1}=out;
@@ -101,9 +94,15 @@ elseif(nargin>=3 && isnumeric(varargin{1}) && issparse(varargin{2}))
   % Solve mode
   if(size(varargin{2},1)~=length(varargin{3})), fprintf('ML: Error size mismatch between A + B\n');out=0;
   else varargout{1}=mlmex(1,varargin{:}); end
-elseif(nargin>=2 && isnumeric(varargin{2}) && issparse(varargin{2}) && strcmp(varargin{1},'aggregate'))
+elseif(nargin>=1 && strcmp(varargin{1},'cleanup'))  
+  % Cleanup mode
+  varargout{1}=mlmex(2,varargin{2:nargin});
+elseif(nargin>=1 && strcmp(varargin{1},'status'))  
+  % Status mode
+  varargout{1}=mlmex(3,varargin{2:nargin});  
+elseif(nargin>=2 && issparse(varargin{2}) && strcmp(varargin{1},'aggregate'))
   % Aggregate mode
-  varargout{1}=mlmex(4,varargin{:});
+  varargout{1}=mlmex(4,varargin{2:nargin});
 else
   fprintf('ML: Error! Invalid input, mode unspecified or insufficient parameters\n');
 end
