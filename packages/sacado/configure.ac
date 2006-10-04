@@ -293,7 +293,7 @@ AC_ARG_WITH(adolc-incdir,
             [ADOLC_INCDIR=${withval}],
             [
               if test "X${ADOLC_PATH}" != "X"; then
-                ADOLC_INCDIR="${ADOLC_PATH}/SRC"
+                ADOLC_INCDIR="${ADOLC_PATH}/include/adolc"
               else
                 ADOLC_INCDIR=
               fi
@@ -305,7 +305,7 @@ AC_ARG_WITH(adolc-libdir,
             [ADOLC_LIBDIR=${withval}],
             [
               if test "X${ADOLC_PATH}" != "X"; then
-                ADOLC_LIBDIR="${ADOLC_PATH}/SRC"
+                ADOLC_LIBDIR="${ADOLC_PATH}/lib"
               else
                 ADOLC_LIBDIR=
               fi
@@ -313,9 +313,9 @@ AC_ARG_WITH(adolc-libdir,
 
 AC_ARG_WITH(adolc-libs,
             [AC_HELP_STRING([--with-adolc-libs=LIBS],
-            [ADOL-C libraries (e.g., "-lad")])],
+            [ADOL-C libraries (e.g., "-ladaolc")])],
             [ADOLC_LIBS=${withval}],
-            [ADOLC_LIBS="-lad"])
+            [ADOLC_LIBS="-ladolc"])
 
 AC_SUBST(ADOLC_INCDIR)
 AC_SUBST(ADOLC_LIBDIR)
