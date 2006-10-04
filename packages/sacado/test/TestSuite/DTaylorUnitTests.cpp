@@ -117,7 +117,7 @@ void DTaylorOpsUnitTest::compareDoubles(double a, double b) {
 }
 
 void DTaylorOpsUnitTest::print_poly(double *x) {
-  std::cout.setf(ios::fixed,ios::floatfield);
+  std::cout.setf(std::ios::fixed,std::ios::floatfield);
   std::cout.width(12);
   std::cout << "[";
       
@@ -131,7 +131,7 @@ void DTaylorOpsUnitTest::print_poly(double *x) {
 
 void DTaylorOpsUnitTest::print_diff(const DTaylorType& x_dtay,
 				    double *x) {
-  std::cout.setf(ios::scientific,ios::floatfield);
+  std::cout.setf(std::ios::scientific,std::ios::floatfield);
   //std::cout.width(12);
   std::cout << "[";
       
