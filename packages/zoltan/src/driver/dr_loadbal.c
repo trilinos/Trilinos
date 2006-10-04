@@ -1188,16 +1188,14 @@ int get_num_edges(void *data, int num_gid_entries, int num_lid_entries,
 
   nedges = current_elem->nadj;
 
-  if (mesh->blank_count || current_elem->tmp_blank){
+  if (mesh->blank_count || current_elem->adj_blank){
     ncount = 0;
     for (i=0; i<nedges; i++){
       if (current_elem->adj_proc[i] == mesh->proc){
-        /* Did I blank this vertex of mine */
         if (!mesh->blank || !mesh->blank[current_elem->adj[i]]) ncount++;
       }
       else{
-        /* Post migration, was this blanked in former process */
-        if (!current_elem->tmp_blank || !current_elem->tmp_blank[i]) ncount++;
+        if (!current_elem->adj_blank || !current_elem->adj_blank[i]) ncount++;
       }
     }
     nedges = ncount;
@@ -1241,7 +1239,7 @@ void get_num_edges_multi(
                                           &idx));
     nedges = current_elem->nadj;
 
-    if (mesh->blank_count || current_elem->tmp_blank){
+    if (mesh->blank_count || current_elem->adj_blank){
       ncount = 0;
       for (j=0; j<nedges; j++){
         if (current_elem->adj_proc[j] == mesh->proc){
@@ -1249,8 +1247,7 @@ void get_num_edges_multi(
           if (!mesh->blank || !mesh->blank[current_elem->adj[j]]) ncount++;
         }
         else{
-          /* Post migration, was this blanked in former process */
-          if (!current_elem->tmp_blank || !current_elem->tmp_blank[j]) ncount++;
+          if (!current_elem->adj_blank || !current_elem->adj_blank[j]) ncount++;
         }
       }
       nedges = ncount;
@@ -1316,8 +1313,7 @@ void get_edge_list_multi (void *data, int num_gid_entries, int num_lid_entries,
         if (mesh->blank && mesh->blank[local_elem]) continue;
       }
       else{
-        /* Post migration, was this blanked in former process */
-        if (current_elem->tmp_blank && current_elem->tmp_blank[i]) continue;
+        if (current_elem->adj_blank && current_elem->adj_blank[i]) continue;
       }
 
       for (k = 0; k < gid; k++) nbor_global_id[k+j*num_gid_entries] = 0;
@@ -1390,8 +1386,7 @@ void get_edge_list (void *data, int num_gid_entries, int num_lid_entries,
       if (mesh->blank && mesh->blank[local_elem]) continue;
     }
     else{
-      /* Post migration, was this blanked in former process */
-      if (current_elem->tmp_blank && current_elem->tmp_blank[i]) continue;
+      if (current_elem->adj_blank && current_elem->adj_blank[i]) continue;
     }
 
     for (k = 0; k < gid; k++) nbor_global_id[k+j*num_gid_entries] = 0;

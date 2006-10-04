@@ -54,7 +54,7 @@ void initialize_element(ELEM_INFO *elem)
   elem->connect = NULL;
   elem->adj = NULL;
   elem->adj_proc = NULL;
-  elem->tmp_blank = NULL;
+  elem->adj_blank = NULL;
   elem->edge_wgt = NULL;
 }
 
@@ -77,7 +77,7 @@ int j;
   safe_free((void **) &(elem->connect));
   safe_free((void **) &(elem->adj));
   safe_free((void **) &(elem->adj_proc));
-  safe_free((void **) &(elem->tmp_blank));
+  safe_free((void **) &(elem->adj_blank));
   safe_free((void **) &(elem->edge_wgt));
   elem->avg_coord[0] = elem->avg_coord[1] = elem->avg_coord[2] = 0.;
   elem->globalID = -1;

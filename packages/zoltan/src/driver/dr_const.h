@@ -97,8 +97,7 @@ struct Element_Description
                            boundaries).  Chaco doesn't have "sides," so the 
                            ordering is irrelevent for Chaco input. */
   int     *adj_proc;	/* list of processors for adjacent elements */
-  char    *tmp_blank;   /* after migration, some off-process adjs may be blank
-                           (not part of graph) 1/0 if blank/not-blank */
+  int     *adj_blank;   /* NULL if not blanking, else 1/0 for blanked/not */
   float   *edge_wgt;	/* edge weights for adjacent elements */
   int      nadj;	/* number of entries in adj */
   int      adj_len;	/* allocated length of adj/adj_proc/edge_wgt arrays */
@@ -152,8 +151,9 @@ struct Mesh_Description
 				   allocated for. Need to know this when array
 				   is not completely filled during migration */
   ELEM_INFO_PTR elements;       /* array of elements that are in the mesh.   */
-  int     *blank;               /* 1 if element is blanked, 0 if not         */
-  int     blank_count;          /* number of elements that are blanked       */
+  int     *blank;               /* 1 if my element is blanked, 0 if not      */
+  int     blank_count;          /* number of my elements that are blanked    */
+  int     global_blank_count;   /* number of all elements that are blanked   */
   int     gnhedges;             /* for hypergraphs, the number of global
                                    hyperedges.*/
   int     hewgt_dim;            /* for hypergraphs, the number of weights per

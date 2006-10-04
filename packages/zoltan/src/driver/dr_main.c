@@ -550,6 +550,7 @@ static void initialize_mesh(MESH_INFO_PTR mesh, int proc)
                   = mesh->ewgt_dim
                   = mesh->hewgt_dim
                   = mesh->blank_count
+                  = mesh->global_blank_count
                   = 0;
   mesh->eb_names       = NULL;
   mesh->eb_ids         = NULL;
@@ -575,80 +576,93 @@ static void initialize_mesh(MESH_INFO_PTR mesh, int proc)
 static void remove_random_vertices(MESH_INFO_PTR mesh, int iteration, 
                                    float blank_factor) 
 {
-int i, j, alllocal;
+int i, j, total_vertices;
 ELEM_INFO *elem;
 
   for (i=0; i < mesh->num_elems; i++){
-    /* Array that may have been created after migration to
-     * flag vertices that had been blanked in the previous
-     * process.  
-     */
-    safe_free((void **)&(mesh->elements[i].tmp_blank));
+    safe_free((void **)&(mesh->elements[i].adj_blank));
   }
 
   safe_free((void **)&mesh->blank);
   mesh->blank_count = 0;
+  mesh->global_blank_count = 0;
 
   /*
-   * Mark some portion of vertices as blanked (but only if all of
-   * their adjacencies are in the local process).  The graph callbacks
+   * Mark some portion of vertices as blanked.  The graph callbacks
    * will not report blanked vertices.  
    */
 
-  if ((mesh->num_elems < 2) || (blank_factor <= 0.0) || (blank_factor >= 1.0)){
+  if ((blank_factor <= 0.0) || (blank_factor >= 1.0)){
     return;
   }
 
   mesh->blank = (int *)calloc(sizeof(int) , mesh->elem_array_len);
-  if (!mesh->blank){
+  if (mesh->elem_array_len && !mesh->blank){
     Gen_Error(0, "memory allocation in remove_random_vertices");
     error_report(mesh->proc);
     return;
   }
-
-  alllocal = 0;
  
-  srand((unsigned int)(iteration + 1));
-
   for (i=0; i < mesh->num_elems; i++){
   
-    /* If all of my adjacencies are local, I have a probability given
+    /* Each vertex (element) has probability given by
      * by blank_factor of being blanked.  The blanked vertices should
      * vary somewhat in each iteration.
      */
     elem = mesh->elements + i;
 
-    for (j=0; j < elem->nadj; j++){
-      if (elem->adj_proc[j] != mesh->proc){
-        break;
-      } 
-    }
+    srand48((long int)(elem->globalID * iteration));
 
-    if (j != elem->nadj) continue;
-
-    if (((float)rand() / RAND_MAX) <= blank_factor){
+    if (drand48() <= (double)blank_factor){
       mesh->blank[i] = 1.0;
       mesh->blank_count++;
     }
-    alllocal++;
+
+    /* adj_blank marks each off processor adjacent vertex as
+     * either blanked (1) or not blanked (0).
+     */
+    elem->adj_blank = (int *)calloc(sizeof(int), elem->nadj);
+
+    if (elem->nadj){
+      if (!elem->adj_blank){
+        Gen_Error(0, "memory allocation in remove_random_vertices");
+        error_report(mesh->proc);
+        return;
+      }
+      for (j=0; j<elem->nadj; j++){
+        if (elem->adj_proc[j] != mesh->proc){
+          srand48((long int)(elem->adj[j] * iteration));
+          if (drand48() <= (double)blank_factor){
+            elem->adj_blank[j] = 1.0;
+          }
+        }
+      }
+    }
   }
-  /*if (Debug_Driver > 0) {*/
-    if (mesh->proc == 0){
-      printf("Test dynamic graph factor is %0.4f\n",blank_factor);
-    }
-    if (alllocal > 0){
-      printf("Proc %d: %d vertices, %d with all local edges, %d blanked (%0.2f%% of all, %0.2f%% of local)\n",
-            mesh->proc, mesh->num_elems,  alllocal, mesh->blank_count,
-            ((float)mesh->blank_count*100.0/mesh->num_elems),
-            ((float)mesh->blank_count*100.0/alllocal));
-    }
-    else{
-      printf("Proc %d: %d vertices, %d with all local edges, %d blanked\n",
-            mesh->proc, mesh->num_elems,  alllocal, mesh->blank_count);
-    }
-    fflush(stdout);
-    MPI_Barrier(MPI_COMM_WORLD);
-  /*}*/
+
+  MPI_Allreduce(&mesh->blank_count, &mesh->global_blank_count, 
+             1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+
+  MPI_Reduce(&mesh->num_elems, &total_vertices, 
+             1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+
+  if (mesh->proc == 0){
+    printf("Dynamic graph factor %0.4f, %d vertices, %d blanked (%0.2f%%)\n",
+            blank_factor, total_vertices, mesh->global_blank_count,
+            ((float)mesh->global_blank_count*100.0/total_vertices));
+  }
+  fflush(stdout);
+  MPI_Barrier(MPI_COMM_WORLD);
+  if (mesh->num_elems){
+    printf("Proc %d: %d vertices, %d blanked (%0.2f%%)\n",
+          mesh->proc, mesh->num_elems,  mesh->blank_count,
+          ((float)mesh->blank_count*100.0/mesh->num_elems));
+  }
+  else{
+    printf("Proc %d: 0 vertices\n", mesh->proc);
+  }
+  fflush(stdout);
+  MPI_Barrier(MPI_COMM_WORLD);
 }
 
 #ifdef DEBUG_READ_MESH
