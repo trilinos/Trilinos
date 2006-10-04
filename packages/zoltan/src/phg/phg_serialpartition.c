@@ -794,6 +794,7 @@ static int coarse_part_greedy (
   int err = ZOLTAN_OK;
   char *yo = "coarse_part_greedy";
 
+#if 0 /* Disable edge scaling for now since collective comm causes hang. TODO */
   /* Scale the edge weights */
   if (hg->nEdge) {
     if (!(new_ewgt = (float*) ZOLTAN_MALLOC(hg->nEdge * sizeof(float))))
@@ -810,6 +811,7 @@ static int coarse_part_greedy (
       hg->ewgt = new_ewgt;
     }
   }
+#endif
 
   /* Start at random vertex */
   start = Zoltan_Rand(NULL) % (hg->nVtx);
