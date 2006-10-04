@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP EGREP USING_EXPORT_MAKEFILES_TRUE USING_EXPORT_MAKEFILES_FALSE PERL_EXE HAVE_PERL USING_PERL_TRUE USING_PERL_FALSE USING_GNUMAKE_TRUE USING_GNUMAKE_FALSE BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_ALLTESTS_TRUE BUILD_ALLTESTS_FALSE BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE BUILD_FEMEX_TRUE BUILD_FEMEX_FALSE execincludedir CPPUNIT_CONFIG CPPUNIT_CFLAGS CPPUNIT_LIBS ENABLE_ADOLC_TRUE ENABLE_ADOLC_FALSE ADOLC_INCDIR ADOLC_LIBDIR ADOLC_LIBS TRILINOS_TEMPLATE_OBJS ac_aux_dir LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP EGREP USING_EXPORT_MAKEFILES_TRUE USING_EXPORT_MAKEFILES_FALSE PERL_EXE HAVE_PERL USING_PERL_TRUE USING_PERL_FALSE USING_GNUMAKE_TRUE USING_GNUMAKE_FALSE BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_ALLTESTS_TRUE BUILD_ALLTESTS_FALSE BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE BUILD_FEMEX_TRUE BUILD_FEMEX_FALSE execincludedir CPPUNIT_CONFIG CPPUNIT_CFLAGS CPPUNIT_LIBS HAVE_CPPUNIT_TRUE HAVE_CPPUNIT_FALSE ENABLE_ADOLC_TRUE ENABLE_ADOLC_FALSE ADOLC_INCDIR ADOLC_LIBDIR ADOLC_LIBS TRILINOS_TEMPLATE_OBJS ac_aux_dir LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -6905,17 +6905,29 @@ echo "${ECHO_T}no" >&6
   fi
 
   if test "x$no_cppunit" = x ; then
-     :
+     ac_cv_have_cppunit=yes
   else
      CPPUNIT_CFLAGS=""
      CPPUNIT_LIBS=""
-     { { echo "$as_me:$LINENO: error: Cannot find cppunit and tests are enabled.  Either disable tests via --disable-sacado-tests or configure with --with-cppunit-prefix=PATH to specify location of cppunit installation." >&5
-echo "$as_me: error: Cannot find cppunit and tests are enabled.  Either disable tests via --disable-sacado-tests or configure with --with-cppunit-prefix=PATH to specify location of cppunit installation." >&2;}
-   { (exit 1); exit 1; }; }
+     ac_cv_have_cppunit=no
   fi
 
 
 
+
+  if test X${ac_cv_have_cppunit} = Xno; then
+    { echo "$as_me:$LINENO: WARNING: Cannot find cppunit and tests are enabled.  Disabling unit tests.  Configure with --with-cppunit-prefix=PATH to specify location of cppunit installation to enable unit tests" >&5
+echo "$as_me: WARNING: Cannot find cppunit and tests are enabled.  Disabling unit tests.  Configure with --with-cppunit-prefix=PATH to specify location of cppunit installation to enable unit tests" >&2;}
+  fi
+
+
+if test X${ac_cv_have_cppunit} = Xyes; then
+  HAVE_CPPUNIT_TRUE=
+  HAVE_CPPUNIT_FALSE='#'
+else
+  HAVE_CPPUNIT_TRUE='#'
+  HAVE_CPPUNIT_FALSE=
+fi
 
 fi
 
@@ -7240,6 +7252,13 @@ if test -z "${BUILD_FEMEX_TRUE}" && test -z "${BUILD_FEMEX_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_FEMEX\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"BUILD_FEMEX\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${HAVE_CPPUNIT_TRUE}" && test -z "${HAVE_CPPUNIT_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_CPPUNIT\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"HAVE_CPPUNIT\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -7886,6 +7905,8 @@ s,@execincludedir@,$execincludedir,;t t
 s,@CPPUNIT_CONFIG@,$CPPUNIT_CONFIG,;t t
 s,@CPPUNIT_CFLAGS@,$CPPUNIT_CFLAGS,;t t
 s,@CPPUNIT_LIBS@,$CPPUNIT_LIBS,;t t
+s,@HAVE_CPPUNIT_TRUE@,$HAVE_CPPUNIT_TRUE,;t t
+s,@HAVE_CPPUNIT_FALSE@,$HAVE_CPPUNIT_FALSE,;t t
 s,@ENABLE_ADOLC_TRUE@,$ENABLE_ADOLC_TRUE,;t t
 s,@ENABLE_ADOLC_FALSE@,$ENABLE_ADOLC_FALSE,;t t
 s,@ADOLC_INCDIR@,$ADOLC_INCDIR,;t t
