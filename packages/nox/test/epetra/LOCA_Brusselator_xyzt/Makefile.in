@@ -69,7 +69,8 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-@BUILD_LOCA_EPETRA_TESTS_TRUE@noinst_PROGRAMS = $(am__EXEEXT_1)
+@BUILD_LOCA_EPETRA_TESTS_TRUE@@HAVE_MPI_TRUE@noinst_PROGRAMS =  \
+@BUILD_LOCA_EPETRA_TESTS_TRUE@@HAVE_MPI_TRUE@	$(am__EXEEXT_1)
 subdir = test/epetra/LOCA_Brusselator_xyzt
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4

@@ -52,7 +52,9 @@ BRUSSXYZT =
 endif
 
 if BUILD_LOCA_EPETRA_TESTS
+if HAVE_MPI
 noinst_PROGRAMS = $(BRUSSXYZT)
+endif
 endif
 
 brussXYZT_ifpack_SOURCES = \
