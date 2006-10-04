@@ -180,7 +180,6 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
   }
 
   Epetra_RowMatrix * passA = 0; 
-  Epetra_RowMatrix * multiplyA = 0; 
   Epetra_Vector * passx = 0; 
   Epetra_Vector * passb = 0;
   Epetra_Vector * passxexact = 0;
@@ -240,28 +239,9 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
     A.Export(*serialA, exporter, Add);
     assert(A.FillComplete()==0);    
     
-    //
-    //  Add 0.0 to each diagonal entry to avoid multiplying a matrix with 
-    //  empty diagonal entries
-    //  This has no effect on the matrix passed to Amesos
-    //  This is a workaround for Bug #614 
-    //
-    double zero = 0.0;
-
-    AwithDiag.Export(*serialA, exporter2, Add);
-
-    AwithDiag.SetTracebackMode(0);
-    for ( int i = 0 ; i < map_->NumGlobalElements(); i++ ) 
-      if ( AwithDiag.LRID(i) >= 0 ) 
-	AwithDiag.InsertGlobalValues( i, 1, &zero, &i ) ;
-    AwithDiag.SetTracebackMode(1);
-
-    assert(AwithDiag.FillComplete()==0);    
-    
     Comm.Barrier();
 
     passA = &A; 
-    multiplyA = &AwithDiag; 
 
     passx = &x; 
     passb = &b;
@@ -272,7 +252,6 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
   } else { 
 
     passA = serialA; 
-    multiplyA = serialA; 
     passx = readx; 
     passb = readb;
     passxexact = readxexact;
@@ -509,7 +488,7 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
   //
   double residual ; 
 
-  multiplyA->Multiply( transpose, *passx, *passtmp);
+  passA->Multiply( transpose, *passx, *passtmp);
   passresid->Update(1.0, *passtmp, -1.0, *passb, 0.0); 
   //  passresid->Update(1.0, *passtmp, -1.0, CopyB, 0.0); 
   passresid->Norm2(&residual);
