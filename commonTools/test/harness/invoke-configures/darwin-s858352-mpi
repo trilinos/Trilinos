@@ -3,7 +3,7 @@ CXX=c++ \
 F77=g77 \
 RANLIB="ranlib -s" \
 CPPFLAGS=-Wno-long-double \
---with-incdirs="-I/sw/include" \
+--with-incdirs="-I/sw/include -I/usr/include/malloc" \
 --with-ldflags="-framework veclib -L/sw/lib/ -L/usr/local/lib" \
 --with-libs="-lsuperlu -lsuperludist -lumfpack -lamd -lg2c -lexpat -lSystemStubs" \
 --enable-mpi \
@@ -52,7 +52,7 @@ CPPFLAGS=-Wno-long-double \
 --enable-sacado \
 --enable-sacado-alltests \
 --with-cppunit-prefix=/Users/etphipp/cppunit-1.10.2/build_osx/install \
---with-adolc=/Users/etphipp/ADOLC18 \
+--with-adolc=/Users/etphipp/adolc-1.10.1/build_osx/install \
 --enable-stratimikos \
 --enable-teuchos \
 --enable-teuchos-abc \
