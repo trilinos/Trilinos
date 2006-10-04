@@ -3,7 +3,7 @@
 //  valgrind --suppressions=../Test_Basic/Suppressions --gen-suppressions=yes --leak-check=yes --show-reachable=yes ./TestOptions.exe -v
 //
 //  To run this with valgrind under mpirun, 
-//  mpirun -np 2 valgrind --logfile=TestOpt.logfile --suppressions=../Test_Basic/Suppressions --gen-suppressions=yes --leak-check=yes --show-reachable=yes ./TestOptions.exe -v
+//  mpirun -np 2 valgrind --log-file=TestOpt.logfile --suppressions=../Test_Basic/Suppressions --gen-suppressions=yes --leak-check=yes --show-reachable=yes ./TestOptions.exe -v
 //
 //  test/scripts/daily/serial/TestMemoryLeaks[.exe] performs an automated test for memory leaks
 //  using valgrind and this code.  To run TestMemoryLeaks, cd to test/TestOptions in the
