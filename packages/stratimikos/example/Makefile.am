@@ -49,14 +49,33 @@ SIMPLE_STRATIMIKOS_EXAMPLE = simple_stratimikos_example
 noinst_PROGRAMS = $(SIMPLE_STRATIMIKOS_EXAMPLE)
 
 simple_stratimikos_example_SOURCES = $(srcdir)/simple_stratimikos_example.cpp
-simple_stratimikos_example_DEPENDENCIES = $(common_dependencies)
+simple_stratimikos_example_DEPENDENCIES = $(common_dependencies) amesos.klu.xml
 simple_stratimikos_example_LDADD = $(common_ldadd)
+
+amesos.klu.xml:
+	cp $(srcdir)/_amesos.klu.xml amesos.klu.xml
+	cp $(srcdir)/_aztecoo.ifpack.xml aztecoo.ifpack.xml
+	cp $(srcdir)/_aztecoo.ifpack.xml aztecoo.ml.xml
+	cp $(srcdir)/_belos.ifpack.xml belos.ifpack.xml
+	cp $(srcdir)/_belos.ifpack.xml belos.ml.xml
+	cp $(top_srcdir)/../amesos/test/Test_Basic/In_FourByFour.mtx FourByFour.mtx
 
 #
 # Common stuff
 #
 
-common_dependencies = $(top_builddir)/src/libstratimikos.a
+if ENABLE_STRATIMIKOS_ML_THYRA
+if ENABLE_STRATIMIKOS_ML_NOX
+
+NOX_LIBS = $(top_builddir)/../nox/src/libnox.a
+
+$(top_builddir)/../nox/src/libnox.a:
+	cd $(top_builddir)/../nox; make all-libs
+
+endif
+endif
+
+common_dependencies = $(top_builddir)/src/libstratimikos.a $(NOX_LIBS)
 
 include $(top_builddir)/Makefile.export.stratimikos
 
@@ -64,7 +83,10 @@ AM_CPPFLAGS =  $(STRATIMIKOS_INCLUDES)
 
 common_ldadd = $(STRATIMIKOS_LIBS)
 
-EXTRA_DIST = $(srcdir)/simple_stratimikos_example.cpp
+EXTRA_DIST = $(srcdir)/simple_stratimikos_example.cpp \
+	$(srcdir)/_amesos.klu.xml \
+	$(srcdir)/_aztecoo.ifpack.xml \
+	$(srcdir)/_belos.ifpack.xml
 
 # This is already added part of STRATIMIKOS_LIBS and therefore automake does not need to add this again!
 LIBS =

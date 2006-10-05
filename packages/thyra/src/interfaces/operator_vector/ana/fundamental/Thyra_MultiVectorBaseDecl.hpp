@@ -182,10 +182,12 @@ namespace Thyra {
  * \subsection Thyra_MVB_view_behavior_sec Common behavior of vector and multi-vector views
  *
  * When a view is created it may become a largely separate object from the
- * parent multi-vector and the relationship between the two in undefined by
- * this interface.  This is true whether we are talking about individual
+ * parent multi-vector and the exact relationship between the two in undefined
+ * by this interface.  This is true whether we are talking about individual
  * column vector views or contiguous or non-contiguous multiple-column
- * multi-vector views which are described above.
+ * multi-vector views which are described above.  These views and the parent
+ * multivector follow the state behavior outlined \ref
+ * Thyra_Op_Vec_Behavior_Of_Views_grp "here".
  *
  * If <tt>X_view</tt> is some view of a parent multi-vector <tt>X</tt> the
  * following restrictions apply:
@@ -196,8 +198,8 @@ namespace Thyra {
  *
  * The client should not attempt to change the parent multi-vector <tt>X</tt>
  * while any view is active.  The behavior of doing so is undefined.  For
- * example, the value returned from the following function and the value of
- * the parent multi-vector <tt>*X</tt> are undefined:
+ * example, the value returned from the following function and the final state
+ * of the parent multi-vector <tt>*X</tt> are undefined:
 
  \code
 
@@ -212,7 +214,7 @@ namespace Thyra {
     // Change the parent while the view is still active
     Teuchos::assign( X, Teuchos::ScalarTraits<Scalar>::one() );
     // Above, changing the parent multi-vector may or may not change the subview
-    return Teuchos::norm_1(*X_view); // The value returned is is undefined
+    return Teuchos::norm_1(*X_view); // The value returned is undefined
     // When the RCP X_view goes out of scope here, the state of the 
     // parent multi-vector *X is undefined!
   } 
@@ -242,7 +244,7 @@ namespace Thyra {
     // Above, changing the view may or may not immediately update the parent multi-vector
     return Teuchos::norm_1(*X); // The value returned from the parent is undefined at this point
     // When the RCP X_view goes out of scope here, the parent multi-vector
-    // *X is guaranteed to updated 
+    // *X is guaranteed to be updated 
   } 
 
  \endcode
@@ -267,8 +269,10 @@ namespace Thyra {
       X_view2 = X->subView(Teuchos::Range1D(0,0));
     // Change one of the views but not the other
     Teuchos::assign( *&X_view2, Teuchos::ScalarTraits<Scalar>::one() );
-    // When the RCPs X_view1 and X_view2 go out of scope here,
-    // the state of the parent multi-vector *X is undefined!
+    // Once the RCPs X_view1 and X_view2 go out of scope here,
+    // the state of the parent multi-vector *X is undefined!  In some cases,
+    // the intial view in X_view1 will be relected in X and in other
+    // cases the view in X_view2 will be written to the parent X.
   } 
 
  \endcode
@@ -322,11 +326,11 @@ namespace Thyra {
  * <tt>LinearOpBase</tt> interface and therefore every
  * <tt>%MultiVectorBase</tt> object can be used as a linear operator which has
  * some interesting implications.  Since a linear operator can apply itself to
- * vectors ans multi-vectors and a multi-vector is a linear operator, this
+ * vectors and multi-vectors and a multi-vector is a linear operator, this
  * means that a multi-vector can apply itself to other vectors and
  * multi-vectors.  There are several different use cases that this
- * functionality provides functionality for.  Two of the more important use
- * cases are block updates and block inner products.
+ * functionality is useful.  Two of the more important use cases are block
+ * updates and block inner products.
  *
  * \subsection Thyra_MVB_block_update_sec Multi-vector block updates
  *
@@ -384,7 +388,7 @@ namespace Thyra {
  * where <tt>V</tt> and <tt>X</tt> are tall, thin multi-vectors and <tt>B</tt>
  * is a small multi-vector.  In an SPMD environment, <tt>V</tt> and <tt>X</tt>
  * would be distributed-memory objects while <tt>B</tt> would be locally
- * replicated on each processor.  The following function shows how block inner
+ * replicated in each process.  The following function shows how block inner
  * product would be performed:
 
  \code
@@ -409,27 +413,28 @@ namespace Thyra {
 
  * In an SPMD program, the above block inner product will use level-3 BLAS to
  * multiply the local elements of <tt>V</tt> and <tt>X</tt> and will then do a
- * single global reduction to assemble the product <tt>B</tt> on all of the
- * processors.
+ * single global reduction to assemble the product <tt>B</tt> in all of the
+ * processes.
  *
  * \section Thyra_MVB_RTOp_sec Support for reduction/transformation operations
  * 
  * Another powerful feature of this interface is the ability to apply
  * reduction/transformation operators over a sub-set of rows and columns in a
- * set of multi-vector objects.  The behavior is identical to the client
- * extracting each column in a set of multi-vectors and calling
- * <tt>VectorBase::applyOp()</tt> individually on these columns.  However, the
- * advantage of using the multi-vector apply functions is that there may be
- * greater opportunities for increased performance in a number of respects.
- * Also, the intermediate reduction objects over a set of columns can be
- * reduced by a secondary reduction object.
+ * set of multi-vector objects using the <tt>applyOp()</tt> functions.  The
+ * behavior is identical to the client extracting each column in a set of
+ * multi-vectors and calling <tt>VectorBase::applyOp()</tt> individually on
+ * these columns.  However, the advantage of using the multi-vector apply
+ * functions is that there may be greater opportunities for increased
+ * performance in a number of respects.  Also, the intermediate reduction
+ * objects over a set of columns can be reduced by a secondary reduction
+ * object.
  * 
  * \section Thyra_MVB_rtop_collection_sec Collection of pre-written RTOps and wrapper functions
  *
  * There already exists RTOp-based implementations of several standard vector
  * operations and some convenience functions that wrap these operators and
- * call <tt>applyOp()</tt>.  These wrapper functions can be found \ref
- * Thyra_Op_Vec_MultiVectorStdOps_grp "here".
+ * call <tt>applyOp()</tt>.  See the Operator/Vector Support Software
+ * collection for these.
  * 
  * \section Thyra_MVB_expl_access_sec Explicit multi-vector coefficient access
  * 
@@ -451,29 +456,19 @@ namespace Thyra {
  * Client code in general should not directly call the above described
  * explicit sub-multi-vector access functions but should instead use the
  * utility classes <tt>ConstDetachedMultiVectorView</tt> and
- * <tt>DetachedMultiVectorView</tt> since these are easier to use and
- * safer in the event that an exception is thrown.
+ * <tt>DetachedMultiVectorView</tt> since these are easier to use and safer in
+ * the event that an exception is thrown.  These classes are documented in the
+ * Operator/Vector Support Software collection.
  * 
  * \section Thyra_MVB_dev_notes_sec Notes for subclass developers
  * 
  * This is a fairly bare-bones interface class without much in the way of
  * default function implementations.  The subclass
- * <tt>MultiVectorDefaultBase</tt> uses a default multi-vector implementation
- * to provide overrides of many of the functions and should the the first
- * choice for subclasses implementations.
- * 
- * Note that through the magic of the <tt>applyOp()</tt> functions that this
- * interface is able to implement the pure virtual <tt>apply()</tt> function
- * from the <tt>LinearOpBase</tt> interface.  This implementation is not
- * optimal, but will be sufficient in many different contexts.
- * 
- * The <tt>applyOp()</tt> functions should only be overridden if the subclass
- * can do something more efficient than simply applying the
- * reduction/transformation operators one column at a time.
- * 
- * Functions that subclasses should almost never need (or want) to override
- * are the const version of <tt>col()</tt> or the the const versions of
- * <tt>subView()</tt>.
+ * <tt>MultiVectorDefaultBase</tt> (contined in the Operator/Vector Support
+ * Software collection) uses a default multi-vector implementation to provide
+ * overrides of many of the functions and should be the first choice for
+ * subclasses implementations to derive their implementations from rather than
+ * starting from scratch.
  * 
  * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
  */

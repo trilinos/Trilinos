@@ -25,7 +25,7 @@ Creating a Thyra::DefaultRealLinearSolverBuilder object ...
 
 Valid parameters for DefaultRealLinearSolverBuilder ...
  Linear Solver Type : string = Amesos
- Preconditioner Type : string = Ifpack
+ Preconditioner Type : string = ML
  Linear Solver Types -> 
    Amesos -> 
      Refactorization Policy : string = RepivotOnRefactorization
@@ -96,19 +96,6 @@ Valid parameters for DefaultRealLinearSolverBuilder ...
          RCM Reordering : string = Disabled
          Size of Krylov Subspace : int = 300
          Steps : int = 3
-   Belos -> 
-     Adjustable Block Size : bool = 1
-     Block Size : int = 1
-     Default Rel Res Norm : double = 1e-06
-     Max Iters : int = 400
-     Max Restarts : int = 25
-     Solver Type : string = GMRES
-     GMRES -> 
-       Max Number of Krylov Vectors : int = 300
-       Variant : string = Standard
-     Outputter -> 
-       Output Frequency : int = 10
-       Output Max Res Only : bool = 1
  Preconditioner Types -> 
    Ifpack -> 
      Overlap : int = 0
@@ -137,55 +124,35 @@ Valid parameters for DefaultRealLinearSolverBuilder ...
        relaxation: damping factor : double = 1
        relaxation: min diagonal value : double = 1
        relaxation: sweeps : int = 1
-       relaxation: type : string = Jacobi
+       relaxation: typ*** Caught standard exception : /home/rabartl/PROJECTS/Trilinos.release-7-0-branch/Trilinos/packages/stratimikos/src/Thyra_DefaultRealLinearSolverBuilder.cpp:277: itr == lowsf_map_.end(): Error, the value "Linear Solver Type"="Belos" is not a valid linear solver type.  Valid linear solve strategy names include {"AztecOO","Amesos"}!
+e : string = Jacobi
        relaxation: zero starting solution : bool = 1
        schwarz: combine mode : string = Zero
        schwarz: compute condest : bool = 1
        schwarz: filter singletons : bool = 0
        schwarz: reordering type : string = none
+   ML -> 
+     PDE equations : int = 1
+     aggregation: damping factor : double = 1.333
+     aggregation: local aggregates : int = 128
+     aggregation: threshold : double = 0
+     aggregation: type : string = METIS
+     coarse: max size : int = 128
+     coarse: type : string = Amesos-KLU
+     default values : string = DD
+     increasing or decreasing : string = increasing
+     max levels : int = 2
+     output : int = 8
+     prec type : string = MGV
+     print unused : int = -2
+     smoother: Aztec as solver : bool = 0
+     smoother: Aztec options : int* = 0x8506c18
+     smoother: Aztec params : double* = 0x8506cd8
+     smoother: damping factor : double = 0.67
+     smoother: pre or post : string = both
+     smoother: sweeps : int = 2
+     smoother: type : string = Aztec
 
 Creating the LinearOpWithSolveFactoryBase object lowsFactory ...
 
-lowsFactory described as:
-  Thyra::AmesosLinearOpWithSolveFactory{solverType=Klu}
-
-
-Running example use cases ...
-  
-  Running example use cases for a LinearOpWithSolveFactoryBase object ...
-    
-    Performing a single linear solve ...
-    
-    Solve status:
-      solveStatus = SOLVE_STATUS_UNKNOWN
-      achievedTol = unknownTolerance()
-      message: "Solver: 10Amesos_Klu"
-      extraParameters: NONE
-    
-    Performing a solve, changing the operator, then performing another solve ...
-    
-    Performing a solve, changing the operator in a very small way, then performing another solve ...
-    
-    Performing a solve, changing the operator in a major way, then performing another solve ...
-
-Printing the parameter list (showing what was used) ...
- Matrix File : string = FourByFour.mtx
- Linear Solver Builder -> 
-   Linear Solver Type : string = Belos   [unused]
-   Preconditioner Type : string = Ifpack   [unused]
-   Amesos -> 
-     Refactorization Policy : string = RepivotOnRefactorization   [default]
-     Solver Type : string = Klu   [default]
-     Throw on Preconditioner Input : bool = 1   [default]
-     AMESOS -> 
-       [empty list]
-     Amesos Settings -> 
-       [empty list]
-   Linear Solver Types -> 
-     Linear Solver Type : string = Amesos   [default]
- LinearOpTester -> 
-   [empty list]
- LinearOpWithSolveTester -> 
-   [empty list]
-
-Congratulations! All of the tests checked out!
+Oh no! At least one of the tests failed!

@@ -29,7 +29,6 @@
 #ifndef THYRA_LINEARCOMBINATION_IMPL_HPP
 #define THYRA_LINEARCOMBINATION_IMPL_HPP
 
-
 #include "Thyra_ConfigDefs.hpp"
 #include "Thyra_LinearCombinationDecl.hpp"
 #include "Thyra_LinearOperatorImpl.hpp"
@@ -532,7 +531,15 @@ namespace Thyra
     return *this;
   }
 
- 
+  /* definition of add and assign from 1-term linear combination to a vector */
+  template <class Scalar> 
+  template <class Node> inline
+  Thyra::Vector<Scalar>& Thyra::Vector<Scalar>::operator+=(const Thyra::OpTimesLC<Scalar, Node>& x)
+  {
+    *this = *this + x; // ToDo: Make this more efficient to avoid a copy!
+    return *this;
+  }
+
   /* definition of assignment from N-term linear combination to a vector */
   template <class Scalar>
   template <class Node1, class Node2> inline
@@ -554,7 +561,14 @@ namespace Thyra
     return *this;
   }
 
- 
+  /* definition of add and assign from N-term linear combination to a vector */
+  template <class Scalar>
+  template <class Node1, class Node2> inline
+  Thyra::Vector<Scalar>& Thyra::Vector<Scalar>::operator+=(const Thyra::LC2<Scalar, Node1, Node2>& x)
+  {
+    *this = *this + x; // ToDo: Make this more efficient to avoid a temp copy!
+    return *this;
+  }
 
   /*======================================================================
    *
@@ -597,6 +611,7 @@ namespace Thyra
 
 
 #ifdef EXTENDED_OPS_ARE_READY
+
   /*======================================================================
    *
    *    formation of scaled operator 
@@ -622,8 +637,9 @@ namespace Thyra
   {
     return new ComposedOperator<Scalar>(A, B);
   }
-#endif
+
+#endif // EXTENDED_OPS_ARE_READY
 
 }
 
-#endif
+#endif // THYRA_LINEARCOMBINATION_IMPL_HPP

@@ -28,6 +28,7 @@
 
 #include "ExampleTridiagSerialLinearOp.hpp"
 #include "sillyCgSolve.hpp"
+#include "sillierCgSolve.hpp"
 #include "Thyra_DefaultScaledAdjointLinearOp.hpp"
 #include "Thyra_DefaultMultipliedLinearOp.hpp"
 #include "Thyra_VectorStdOps.hpp"
@@ -55,6 +56,7 @@ bool runCgSolveExample(
   ,const bool                                                    verbose
   ,const typename Teuchos::ScalarTraits<Scalar>::magnitudeType   tolerance
   ,const int                                                     maxNumIters
+  ,const bool                                                    useSillierCg
   )
 {
   using Teuchos::RefCountPtr; using Teuchos::rcp; using Teuchos::null;
@@ -126,7 +128,10 @@ bool runCgSolveExample(
   // (B) Solve the linear system with the silly CG solver
   //
   if(verbose) *out << "\nSolving the linear system with sillyCgSolve(...) ...\n";
-  result = sillyCgSolve(*A,*b,maxNumIters,tolerance,&*x,OSTab(out).getOStream().get());
+  if(useSillierCg)
+    result = sillierCgSolve(*A,*b,maxNumIters,tolerance,&*x,OSTab(out).getOStream().get());
+  else
+    result = sillyCgSolve(*A,*b,maxNumIters,tolerance,&*x,OSTab(out).getOStream().get());
   if(!result) success = false;
   //
   // (C) Check that the linear system was solved to the specified tolerance
@@ -158,7 +163,7 @@ bool runCgSolveExample(
 //
 int main(int argc, char *argv[])
 {
-
+  
   using Teuchos::CommandLineProcessor;
 
   bool success = true;
@@ -176,10 +181,11 @@ int main(int argc, char *argv[])
 
     int    dim          = 500;
     double diagScale    = 1.001;
-    double tolerance    = 1e-4;
     bool   symOp        = true;
     bool   showAllTests = false;
+    double tolerance    = 1e-4;
     int    maxNumIters  = 300;
+    bool   useSillierCg = false;
 
     CommandLineProcessor  clp;
     clp.throwExceptions(false);
@@ -192,6 +198,8 @@ int main(int argc, char *argv[])
     clp.setOption( "show-all-tests", "show-summary-only", &showAllTests, "Show all LinearOpTester tests or not" );
     clp.setOption( "tol", &tolerance, "Relative tolerance for linear system solve." );
     clp.setOption( "max-num-iters", &maxNumIters, "Maximum of CG iterations." );
+    clp.setOption( "use-sillier-cg", "use-silly-cg", &useSillierCg,
+                   "Use the handle-based sillerCgSolve() function or the nonhandle-based sillyCgSolve() function");
 
     CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
     if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
@@ -199,21 +207,21 @@ int main(int argc, char *argv[])
     TEST_FOR_EXCEPTION( dim < 2, std::logic_error, "Error, dim=" << dim << " < 2 is not allowed!" );
 
     // Run using float
-    result = runCgSolveExample<float>(dim,diagScale,symOp,showAllTests,verbose,tolerance,maxNumIters);
+    result = runCgSolveExample<float>(dim,diagScale,symOp,showAllTests,verbose,tolerance,maxNumIters,useSillierCg);
     if(!result) success = false;
 
     // Run using double
-    result = runCgSolveExample<double>(dim,diagScale,symOp,showAllTests,verbose,tolerance,maxNumIters);
+    result = runCgSolveExample<double>(dim,diagScale,symOp,showAllTests,verbose,tolerance,maxNumIters,useSillierCg);
     if(!result) success = false;
 
 #if defined(HAVE_COMPLEX) && defined(HAVE_TEUCHOS_COMPLEX)
 
     // Run using std::complex<float>
-    result = runCgSolveExample<std::complex<float> >(dim,diagScale,symOp,showAllTests,verbose,tolerance,maxNumIters);
+    result = runCgSolveExample<std::complex<float> >(dim,diagScale,symOp,showAllTests,verbose,tolerance,maxNumIters,useSillierCg);
     if(!result) success = false;
 
     // Run using std::complex<double>
-    result = runCgSolveExample<std::complex<double> >(dim,diagScale,symOp,showAllTests,verbose,tolerance,maxNumIters);
+    result = runCgSolveExample<std::complex<double> >(dim,diagScale,symOp,showAllTests,verbose,tolerance,maxNumIters,useSillierCg);
     if(!result) success = false;
 
 #endif
@@ -221,7 +229,7 @@ int main(int argc, char *argv[])
 #ifdef HAVE_TEUCHOS_GNU_MP
 
     // Run using mpf_class
-    result = runCgSolveExample<mpf_class>(dim,diagScale,symOp,showAllTests,verbose,tolerance,maxNumIters);
+    result = runCgSolveExample<mpf_class>(dim,diagScale,symOp,showAllTests,verbose,tolerance,maxNumIters,useSillierCg);
     if(!result) success = false;
 
 #if defined(HAVE_COMPLEX) && defined(HAVE_TEUCHOS_COMPLEX)

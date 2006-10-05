@@ -26,7 +26,6 @@ AM_CPPFLAGS = $(EXPORT_INCLUDES)
 ML_THYRA_LIB = libmlthyra.a
 
 ML_THYRA_H = \
-	$(top_builddir)/src/ml_config.h \
 	$(SOURCE_H)
 
 libmlthyra_a_SOURCES = \

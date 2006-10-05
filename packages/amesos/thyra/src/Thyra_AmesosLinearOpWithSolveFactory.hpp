@@ -86,6 +86,9 @@ public:
   /** \name Constructors/initializers/accessors */
   //@{
 
+  /** \brief . */
+  ~AmesosLinearOpWithSolveFactory();
+
   /** \brief Constructor which sets the defaults.
    */
   AmesosLinearOpWithSolveFactory(

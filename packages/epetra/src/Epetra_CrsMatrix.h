@@ -152,7 +152,8 @@ numbers.  The ResetFlops() function resets the floating point counter.
 class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, public Epetra_BLAS, public virtual Epetra_RowMatrix {
  public:
 
-  //@{ \name Constructors/Destructor.
+   //! @name Constructors/Destructor
+  //@{ 
   //! Epetra_CrsMatrix constructor with variable number of indices per row.
   /*! Creates a Epetra_CrsMatrix object and allocates storage.  
     
@@ -231,7 +232,8 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
   virtual ~Epetra_CrsMatrix();
   //@}
   
-  //@{ \name Insertion/Replace/SumInto methods.
+  //! @name Insertion/Replace/SumInto methods
+  //@{ 
 
   //! Assignment operator
   Epetra_CrsMatrix& operator=(const Epetra_CrsMatrix& src);
@@ -366,7 +368,8 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
 	
   //@}
 
-  //@{ \name Transformation methods
+  //! @name Transformation methods
+  //@{ 
   
 
   //! Signal that data entry is complete.  Perform transformations to local index space.
@@ -426,7 +429,8 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
   int MakeDataContiguous() {EPETRA_CHK_ERR(OptimizeStorage()); return(0);}
 	//@}
 	
-  //@{ \name Extraction methods.
+  //! @name Extraction methods
+  //@{ 
 	
   //! Returns a copy of the specified global row in user-provided arrays.
   /*! 
@@ -536,7 +540,8 @@ or if the number of entries in this row exceed the Length parameter.
   int ExtractMyRowView(int MyRow, int& NumEntries, double*& Values) const;
   //@}
 	
-  //@{ \name Computational methods.
+  //! @name Computational methods
+  //@{ 
 	
   //! Returns the result of a Epetra_CrsMatrix multiplied by a Epetra_Vector x in y.
   /*! 
@@ -685,7 +690,8 @@ or if the number of entries in this row exceed the Length parameter.
   int RightScale(const Epetra_Vector& x);
   //@}
 	
-  //@{ \name Matrix Properties Query Methods.
+  //! @name Matrix Properties Query Methods
+  //@{ 
 	
 	
   //! If FillComplete() has been called, this query returns true, otherwise it returns false.
@@ -714,7 +720,8 @@ or if the number of entries in this row exceed the Length parameter.
 	
   //@}
   
-  //@{ \name Atribute access functions
+  //! @name Atribute access functions
+  //@{ 
 	
   //! Returns the infinity norm of the global matrix.
   /* Returns the quantity \f$ \| A \|_\infty\f$ such that
@@ -873,7 +880,8 @@ or if the number of entries in this row exceed the Length parameter.
   const Epetra_Comm& Comm() const {return(Epetra_DistObject::Comm());}
   //@}
   
-  //@{ \name Local/Global ID methods
+  //! @name Local/Global ID methods
+  //@{ 
 	//! Returns the local row index for given global row index, returns -1 if no local row for this global row.
 	int LRID( int GRID) const {return(Graph_.LRID(GRID));}
 	
@@ -915,13 +923,15 @@ or if the number of entries in this row exceed the Length parameter.
   //@}
   
   
-  //@{ \name I/O Methods.
+  //! @name I/O Methods
+  //@{ 
 
   //! Print method
   virtual void Print(ostream& os) const;
   //@}
 
-  //@{ \name Additional methods required to support the Epetra_Operator interface.
+  //! @name Additional methods required to support the Epetra_Operator interface
+  //@{ 
 
   //! Returns a character string describing the operator
   const char* Label() const {return(Epetra_Object::Label());}
@@ -987,7 +997,8 @@ or if the number of entries in this row exceed the Length parameter.
         }
 
   //@}
-  //@{ \name Additional methods required to implement Epetra_RowMatrix interface.
+  //! @name Additional methods required to implement Epetra_RowMatrix interface
+  //@{ 
 
 	//! Return the current number of values stored for the specified local row.
 	/*! Similar to NumMyEntries() except NumEntries is returned as an argument
@@ -1012,7 +1023,8 @@ or if the number of entries in this row exceed the Length parameter.
 	
   //@}
 	
-  //@{ \name Inlined Operator Methods.
+  //! @name Inlined Operator Methods
+  //@{ 
 	
 	//! Inlined bracket operator for fast access to data. (Const and Non-const versions)
 	/*! No error checking and dangerous for optimization purposes.
@@ -1028,7 +1040,8 @@ or if the number of entries in this row exceed the Length parameter.
 	  else return Values_[Loc];}
   //@}
 	
-  //@{ \name Expert-only methods:  These methods are intended for experts only and have some risk of changing in the future, since they rely on underlying data structure assumptions.
+  //! @name Expert-only methods:  These methods are intended for experts only and have some risk of changing in the future, since they rely on underlying data structure assumptions
+  //@{ 
   //! Returns internal data pointers associated with Crs matrix format.
   /*! Returns data pointers to facilitate optimized code within external packages.
  
@@ -1054,7 +1067,8 @@ or if the number of entries in this row exceed the Length parameter.
 	
   //@}
 	
-  //@{ \name Deprecated methods:  These methods still work, but will be removed in a future version.
+  //! @name Deprecated methods:  These methods still work, but will be removed in a future version
+  //@{ 
 	
 	//! Use ColMap() instead. 
 	const Epetra_Map& ImportMap() const {return((Epetra_Map&) Graph_.ImportMap());}

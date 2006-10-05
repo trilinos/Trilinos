@@ -24,7 +24,7 @@ Creating a Thyra::DefaultRealLinearSolverBuilder object ...
 
 Valid parameters for DefaultRealLinearSolverBuilder ...
  Linear Solver Type : string = Amesos
- Preconditioner Type : string = Ifpack
+ Preconditioner Type : string = ML
  Linear Solver Types -> 
    Amesos -> 
      Refactorization Policy : string = RepivotOnRefactorization
@@ -95,19 +95,6 @@ Valid parameters for DefaultRealLinearSolverBuilder ...
          RCM Reordering : string = Disabled
          Size of Krylov Subspace : int = 300
          Steps : int = 3
-   Belos -> 
-     Adjustable Block Size : bool = 1
-     Block Size : int = 1
-     Default Rel Res Norm : double = 1e-06
-     Max Iters : int = 400
-     Max Restarts : int = 25
-     Solver Type : string = GMRES
-     GMRES -> 
-       Max Number of Krylov Vectors : int = 300
-       Variant : string = Standard
-     Outputter -> 
-       Output Frequency : int = 10
-       Output Max Res Only : bool = 1
  Preconditioner Types -> 
    Ifpack -> 
      Overlap : int = 0
@@ -142,6 +129,27 @@ Valid parameters for DefaultRealLinearSolverBuilder ...
        schwarz: compute condest : bool = 1
        schwarz: filter singletons : bool = 0
        schwarz: reordering type : string = none
+   ML -> 
+     PDE equations : int = 1
+     aggregation: damping factor : double = 1.333
+     aggregation: local aggregates : int = 128
+     aggregation: threshold : double = 0
+     aggregation: type : string = METIS
+     coarse: max size : int = 128
+     coarse: type : string = Amesos-KLU
+     default values : string = DD
+     increasing or decreasing : string = increasing
+     max levels : int = 2
+     output : int = 8
+     prec type : string = MGV
+     print unused : int = -2
+     smoother: Aztec as solver : bool = 0
+     smoother: Aztec options : int* = 0x8506b28
+     smoother: Aztec params : double* = 0x8506be8
+     smoother: damping factor : double = 0.67
+     smoother: pre or post : string = both
+     smoother: sweeps : int = 2
+     smoother: type : string = Aztec
 
 Creating the LinearOpWithSolveFactoryBase object lowsFactory ...
 
@@ -156,9 +164,9 @@ Running example use cases ...
     Performing a single linear solve ...
     
     Solve status:
-      solveStatus = SOLVE_STATUS_UNKNOWN
+      solveStatus = SOLVE_STATUS_CONVERGED
       achievedTol = unknownTolerance()
-      message: "Solver: 10Amesos_Klu"
+      message: "Solver 10Amesos_Klu converged!"
       extraParameters: NONE
     
     Performing a solve, changing the operator, then performing another solve ...
@@ -170,16 +178,14 @@ Running example use cases ...
 Printing the parameter list (showing what was used) ...
  Matrix File : string = FourByFour.mtx
  Linear Solver Builder -> 
-   Amesos -> 
-     Refactorization Policy : string = RepivotOnRefactorization   [default]
-     Solver Type : string = Klu   [default]
-     Throw on Preconditioner Input : bool = 1   [default]
-     AMESOS -> 
-       [empty list]
-     Amesos Settings -> 
-       [empty list]
+   Linear Solver Type : string = Amesos   [default]
    Linear Solver Types -> 
-     Linear Solver Type : string = Amesos   [default]
+     Amesos -> 
+       Refactorization Policy : string = RepivotOnRefactorization   [default]
+       Solver Type : string = Klu   [default]
+       Throw on Preconditioner Input : bool = 1   [default]
+       Amesos Settings -> 
+         [empty list]
  LinearOpTester -> 
    [empty list]
  LinearOpWithSolveTester -> 

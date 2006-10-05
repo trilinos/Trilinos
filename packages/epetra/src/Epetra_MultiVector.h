@@ -172,7 +172,8 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
 
  public:
 
-  //@{ \name Constructors/destructors.
+   //! @name Constructors/destructors
+  //@{ 
   //! Basic Epetra_MultiVector constuctor.
   /*! Creates a Epetra_MultiVector object and, by default, fills with zero values.  
 
@@ -280,7 +281,8 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
   virtual ~Epetra_MultiVector();
   //@}
 
-  //@{ \name Post-construction modification routines.
+  //! @name Post-construction modification routines
+  //@{ 
 
   //! Replace current value  at the specified (GlobalRow, VectorIndex) location with ScalarValue.
   /*!
@@ -485,7 +487,8 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
 
   //@}
 
-  //@{ \name Extraction methods
+  //! @name Extraction methods
+  //@{ 
 
   //! Put multi-vector values into user-provided two-dimensional array.
   /*!
@@ -552,7 +555,8 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
 
   //@}
 
-  //@{ \name Mathematical methods.
+  //! @name Mathematical methods
+  //@{ 
 
   //! Computes dot product of each corresponding pair of vectors.
   /*!
@@ -815,7 +819,8 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
 
   //@}
 
-  //@{ \name Random number utilities
+  //! @name Random number utilities
+  //@{ 
 
 
   //! Set seed for Random function.
@@ -835,7 +840,8 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
 
   //@}
 
-  //@{ \name Overloaded operators
+  //! @name Overloaded operators
+  //@{ 
 
   //! = Operator.
   /*!
@@ -875,7 +881,8 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
 
   //@}
 
-  //@{ \name Attribute access functions
+  //! @name Attribute access functions
+  //@{ 
   
   //! Returns the number of vectors in the multi-vector.
   int NumVectors() const {return(NumVectors_);};
@@ -898,13 +905,15 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
    */
   int ReplaceMap(const Epetra_BlockMap& map);
 
-  //@{ \name I/O methods
+  //! @name I/O methods
+  //@{ 
 
   //! Print method
   virtual void Print(ostream & os) const;
   //@}
 
-  //@{ \name Expert-only unsupported methods
+  //! @name Expert-only unsupported methods
+  //@{ 
 
   //! Reset the view of an existing multivector to point to new user data.
   /*! Allows the (very) light-weight replacement of multivector values for an

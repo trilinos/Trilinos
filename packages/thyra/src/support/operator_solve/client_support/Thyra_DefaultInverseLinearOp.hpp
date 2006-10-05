@@ -30,6 +30,7 @@
 #define THYRA_DEFAULT_INVERSE_LINEAR_OP_HPP
 
 #include "Thyra_DefaultInverseLinearOpDecl.hpp"
+#include "Thyra_VectorStdOps.hpp"
 #include "Thyra_AssertOp.hpp"
 #include "Teuchos_Utils.hpp"
 
@@ -262,11 +263,19 @@ void DefaultInverseLinearOp<Scalar>::apply(
     T;
   if(beta==ST::zero()) {
     T = Teuchos::rcp(Y,false);
+    // Fill T with 0.0, because Aztec will crash if it
+    // is left uninitialized - KL 10 Sept, 2006
+    assign(T.get(), beta);
   }
   else {
     T = createMembers(Y->range(),Y->domain()->dim());
+    // Fill T with 0.0, because Aztec will crash if it
+    // is left uninitialized - KL 10 Sept, 2006
+    assign(T.get(), ST::zero());
     scale(beta,Y);
   }
+
+
   //
   const SolveCriteria<Scalar>
     *solveCriteria
@@ -281,6 +290,7 @@ void DefaultInverseLinearOp<Scalar>::apply(
       ,X,&*T
       ,solveCriteria
       );
+
   TEST_FOR_EXCEPTION(
     solveCriteria && solveStatus.solveStatus!=SOLVE_STATUS_CONVERGED
     && ( real_trans(M_trans)==NOTRANS

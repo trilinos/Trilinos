@@ -48,12 +48,14 @@ class Epetra_Operator {
       
  public:
 
-  //@{ \name Destructor.
+   //! @name Destructor
+  //@{ 
     //! Destructor
     virtual ~Epetra_Operator() {};
   //@}
   
-  //@{ \name Atribute set methods.
+  //! @name Atribute set methods
+  //@{ 
 
     //! If set true, transpose of this operator will be applied.
     /*! This flag allows the transpose of the given operator to be used implicitly.  Setting this flag
@@ -68,7 +70,8 @@ class Epetra_Operator {
     virtual int SetUseTranspose(bool UseTranspose) = 0;
   //@}
   
-  //@{ \name Mathematical functions.
+  //! @name Mathematical functions
+  //@{ 
 
     //! Returns the result of a Epetra_Operator applied to a Epetra_MultiVector X in Y.
     /*! 
@@ -104,7 +107,8 @@ class Epetra_Operator {
     virtual double NormInf() const = 0;
   //@}
   
-  //@{ \name Atribute access functions
+  //! @name Atribute access functions
+  //@{ 
 
     //! Returns a character string describing the operator
     virtual const char * Label() const = 0;

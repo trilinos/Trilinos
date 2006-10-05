@@ -135,7 +135,8 @@ Examples using Epetra_SerialSpdDenseSolver can be found in the Epetra test direc
 class Epetra_SerialSpdDenseSolver : public Epetra_SerialDenseSolver {
 
  public:
-  //@{ \name Constructor/Destructor Methods
+   //! @name Constructor/Destructor Methods
+  //@{ 
   //! Default constructor; matrix should be set using SetMatrix(), LHS and RHS set with SetVectors().
   Epetra_SerialSpdDenseSolver();
   
@@ -144,7 +145,8 @@ class Epetra_SerialSpdDenseSolver : public Epetra_SerialDenseSolver {
   virtual ~Epetra_SerialSpdDenseSolver();
   //@}
 
-  //@{ \name Set Methods
+  //! @name Set Methods
+  //@{ 
 
   //Let the compiler know we intend to overload the SetMatrix function,
   //rather than hide it.
@@ -154,7 +156,8 @@ class Epetra_SerialSpdDenseSolver : public Epetra_SerialDenseSolver {
   int SetMatrix(Epetra_SerialSymDenseMatrix & A);
   //@}
   
-  //@{ \name Factor/Solve/Invert Methods
+  //! @name Factor/Solve/Invert Methods
+  //@{ 
 
   //! Computes the in-place Cholesky factorization of the matrix using the LAPACK routine \e DPOTRF.
   /*!
@@ -217,14 +220,16 @@ class Epetra_SerialSpdDenseSolver : public Epetra_SerialDenseSolver {
   int ReciprocalConditionEstimate(double & Value);
   //@}
 
-  //@{ \name Query methods
+  //! @name Query methods
+  //@{ 
 
 
   //! Returns true if the LAPACK general rules for equilibration suggest you should equilibrate the system.
   bool ShouldEquilibrate() {ComputeEquilibrateScaling(); return(ShouldEquilibrate_);};
   //@}
 
-  //@{ \name Data Accessor methods
+  //! @name Data Accessor methods
+  //@{ 
     
   //! Returns pointer to current matrix.
   Epetra_SerialSymDenseMatrix * SymMatrix()  const {return(SymMatrix_);};

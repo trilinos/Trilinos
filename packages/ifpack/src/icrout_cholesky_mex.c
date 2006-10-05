@@ -60,6 +60,8 @@ typedef struct {
     int    *ptr;  /* also known as IA; with ptr[0] = 0 */
 } Matrix;
 
+void quicksort (int *const pbase, double *const daux, size_t total_elems);
+
 #define SHORTCUT(p, a, ja, ia) \
         (a)  = (p)->val; \
         (ja) = (p)->col; \
@@ -298,10 +300,8 @@ void crout_ict(
     double **pdiag)
 {
     int k, j, i, index;
-    int pos;
     int count_l;
     double norm_l;
-    double norm_al;
 
     /* work arrays; work_l is list of nonzero values */
     double *work_l = (double *) malloc(n * sizeof(double));

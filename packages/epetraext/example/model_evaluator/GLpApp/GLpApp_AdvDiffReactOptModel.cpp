@@ -5,10 +5,13 @@
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
+#ifdef HAVE_EPETRAEXT_THYRA
 // For orthogonalization of the basis B_bar
 #include "sillyModifiedGramSchmidt.hpp" // This is just an example!
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
+#include "Thyra_SpmdVectorSpaceBase.hpp"
+#endif // HAVE_EPETRAEXT_THYRA
 
 //#define GLPAPP_ADVDIFFREACT_OPTMODEL_DUMP_STUFF
 
@@ -119,6 +122,7 @@ AdvDiffReactOptModel::AdvDiffReactOptModel(
         }
       }
       if(normalizeBasis) {
+#ifdef HAVE_EPETRAEXT_THYRA
         //
         // Use modified Gram-Schmidt to create an orthonormal version of B_bar!
         //
@@ -131,7 +135,13 @@ AdvDiffReactOptModel::AdvDiffReactOptModel(
           thyra_fact_R;
         sillyModifiedGramSchmidt(&*thyra_B_bar,&thyra_fact_R);
         Thyra::scale(double(numBndyNodes)/double(np_),&*thyra_B_bar); // Each row should sum to around one!
-        // We just discard the "R" factory thyra_fact_R
+        // We just discard the "R" factory thyra_fact_R ...
+#else // HAVE_EPETRAEXT_THYRA
+        TEST_FOR_EXCEPTION(
+          true,std::logic_error
+          ,"Error, can not normalize basis since we do not have Thyra support enabled!"
+          );
+#endif // HAVE_EPETRAEXT_THYRA
       }
     }
 #ifdef GLPAPP_ADVDIFFREACT_OPTMODEL_DUMP_STUFF
@@ -256,7 +266,7 @@ Teuchos::RefCountPtr<const Epetra_Vector>
 AdvDiffReactOptModel::get_p_upper_bounds(int l) const
 {
   TEST_FOR_EXCEPT(!(0<=l<=Np_));
-  return pL_[l];
+  return pU_[l];
 }
 
 Teuchos::RefCountPtr<Epetra_Operator>

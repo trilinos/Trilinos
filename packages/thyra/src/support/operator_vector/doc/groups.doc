@@ -16,8 +16,6 @@ non-member functions.
 
 <li> \ref Thyra_Op_Vec_Adapters_grp
 
-<li> \ref thyra_handle_grp
-
 </ol>
 
 */
@@ -65,7 +63,7 @@ simplify the use of %Thyra for the development of ANAs.
 
 <ol>
 
-<li> <b>Java-like handle classes supporting efficient operator-overloading for linear algebra</b>
+<li> <b>Java-like handle classes supporting efficient operator-overloading for linear algebra operations</b>
 
 The following Java-like handle classes wrap Thyra base objects and define the
 basic linear algebra operations:
@@ -94,7 +92,8 @@ defined <a href="thyra_impicit_linear_operators_tag">below</a>.  The class
 Hande clases have the same basic semantics as <tt>Thyra::RefCountPtr</tt> for
 copy construction and assignment and infact they all use
 <tt>Thyra::RefCountPtr</tt> internally to point to the underlying Thyra base
-objects.
+objects.  For an example of their use, see the function
+<tt>sillierCgSolve()</tt> which calls <tt>silliestCgSolve()</tt>.
 
 <li> <b>"Standard" non-member wrapper functions for vector (and multi-vector) reduction/transformation operations</b>
 
@@ -384,6 +383,13 @@ of a linear operator.
 implements the conjugate gradient method for solving a symmetric
 positive definite linear system.
 
+<li><tt>sillierCgSolve()</tt> calls the function <tt>silliestCgSolve()</tt> to
+implement CG using handle classes.
+
+<li><tt>silliestCgSolve()</tt> is a simple example ANA that also implements
+the conjugate gradient method for solving a symmetric positive definite linear
+system but it uses the handle layer with operator overloading.
+
 <li><tt>Thyra::LinearOpTester::check()</tt> shows how to access a
 <tt>Thyra::LinearOpBase</tt> objects domain and range spaces, how to use
 these spaces to create vectors and multi-vectors and how to perform
@@ -408,13 +414,6 @@ linear operators.
  *
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
-
-/** \defgroup thyra_handle_grp User interface with overloaded operators
- *
- * \ingroup Thyra_Op_Vec_ANA_Development_support_code_grp
- */
-
-
 
 /** \defgroup Thyra_Op_Vec_ANA_Development_support_code_utils_grp General ANA support code utilities
  *
@@ -993,11 +992,16 @@ The CG ANA is implemented in the function <tt>sillyCgSolve()</tt> and
 its implementation is shown below:
 
 \dontinclude sillyCgSolve.hpp
-
 \skip template
 \until end sillyCgSolve
 
-This above templated function is used in the following various example
+Another version of this CG algorithm is demonstrated in the below function:
+
+\dontinclude silliestCgSolve.hpp
+\skip template
+\until end silliestCgSolve
+
+This above templated functions are used in the following various example
 implementations which use several different scalar types:
 
 <ol>
@@ -1016,6 +1020,21 @@ Click \ref Thyra_Op_Vec_examples_cg_grp "here" for a more
 detailed discussion of this example function.
 
 */
+
+/** \example sillierCgSolve.hpp
+
+Click \ref Thyra_Op_Vec_examples_cg_grp "here" for a more
+detailed discussion of this example function.
+
+*/
+
+/** \example silliestCgSolve.hpp
+
+Click \ref Thyra_Op_Vec_examples_cg_grp "here" for a more
+detailed discussion of this example function.
+
+*/
+
 
 /** \defgroup Thyra_Op_Vec_examples_cg_serial_grp Templated Serial Implementation of the CG Method
 
@@ -1036,9 +1055,9 @@ its complete implementation looks like:
 \dontinclude sillyCgSolve_serial.cpp
 
 The above serial matrix class is used in an example program (see
-<tt>runCgSolveExample()</tt> below) that calls <tt>%sillyCgSolve()</tt>.
-In this example program, the matrix constructed and used is the following
-tridiagonal matrix
+<tt>runCgSolveExample()</tt> below) that calls <tt>%sillyCgSolve()</tt> or
+<tt>%sillierCgSolve()</tt>.  In this example program, the matrix constructed
+and used is the following tridiagonal matrix
 
 \f[
 
@@ -1152,7 +1171,8 @@ detailed discussion of this example program.
 
 \brief Here is an example program that shows the use of the example SPMD
 templated matrix class <tt>ExampleTridiagSpmdLinearOp</tt> with the example
-linear ANA implementation <tt>sillyCgSolve()</tt>.
+linear ANA implementation <tt>sillyCgSolve()</tt> or
+<tt>silliestCgSolve()</tt>.
 
 The class <tt>ExampleTridiagSpmdLinearOp</tt> that derives from the base class
 <tt>Thyra::SpmdLinearOpBase</tt> is quite simple and its implementation (minus
@@ -1165,9 +1185,9 @@ the <tt>communication()</tt> function) looks like:
 \dontinclude sillyCgSolve_mpi.cpp
 
 The above SPMD matrix class is used in an example program (see
-<tt>runCgSolveExample()</tt> below) that calls <tt>%sillyCgSolve()</tt>.  In
-this example program, the matrix constructed and used is the well-known
-tridiagonal matrix
+<tt>runCgSolveExample()</tt> below) that calls <tt>%sillyCgSolve()</tt> or
+<tt>%silliestCgSolve()</tt>.  In this example program, the matrix constructed
+and used is the well-known tridiagonal matrix
 
 \f[
 

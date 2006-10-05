@@ -33,6 +33,16 @@ sub run_cmnd {
 #
 
 run_cmnd(
+  "../example/simple_stratimikos_example.exe --echo-command-line --help"
+  ,"$abs_top_srcdir/example/simple_stratimikos_example.help.out"
+  );
+
+run_cmnd(
+  "../example/simple_stratimikos_example.exe --echo-command-line --matrix-file=../example/FourByFour.mtx --linear-solver-params-file=../example/amesos.klu.xml"
+  ,"$abs_top_srcdir/example/simple_stratimikos_example.amesos.klu.out"
+  );
+
+run_cmnd(
   "../example/simple_stratimikos_example.exe --teuchos-suppress-startup-banner --only-print-options --print-xml-format"
   ,"$abs_top_srcdir/example/simple_stratimikos_example.options.xml.out"
   );
@@ -68,6 +78,11 @@ run_cmnd(
   );
 
 run_cmnd(
+  "./test_single_stratimikos_solver_driver.exe --echo-command-line --input-file=FourByFour.aztecoo.ml.xml"
+  ,"$abs_top_srcdir/example/test_single_stratimikos_solver_driver.FourByFour.aztecoo.ml.out"
+  );
+
+run_cmnd(
   "./test_single_stratimikos_solver_driver.exe --echo-command-line --input-file=FourByFour.belos.np.xml"
   ,"$abs_top_srcdir/example/test_single_stratimikos_solver_driver.FourByFour.belos.np.out"
   );
@@ -75,4 +90,9 @@ run_cmnd(
 run_cmnd(
   "./test_single_stratimikos_solver_driver.exe --echo-command-line --input-file=FourByFour.belos.ifpack.xml"
   ,"$abs_top_srcdir/example/test_single_stratimikos_solver_driver.FourByFour.belos.ifpack.out"
+  );
+
+run_cmnd(
+  "./test_single_stratimikos_solver_driver.exe --echo-command-line --input-file=FourByFour.belos.ml.xml"
+  ,"$abs_top_srcdir/example/test_single_stratimikos_solver_driver.FourByFour.belos.ml.out"
   );

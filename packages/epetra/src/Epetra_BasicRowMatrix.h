@@ -90,7 +90,8 @@ class Epetra_BasicRowMatrix: public Epetra_CompObject, public Epetra_Object, pub
       
  public:
 
-  //@{ \name Constructor/Destructor.
+   //! @name Constructor/Destructor
+  //@{ 
   //! Epetra_BasicRowMatrix constuctor.
   /* This constructor requires a valid Epetra_Comm object as its only argument.  The constructor will use Comm to build
      Epetra_Maps objects: RowMap, ColMap, DomainMap and RangeMap.  However, these will be zero-length (trivial) maps that
@@ -103,7 +104,8 @@ class Epetra_BasicRowMatrix: public Epetra_CompObject, public Epetra_Object, pub
   virtual ~Epetra_BasicRowMatrix();
   //@}
   
-  //@{ \name Setup functions.
+  //! @name Setup functions
+  //@{ 
   //! Set maps (Version 1); call this function or the next, but not both.
   /* This method takes a row and column map.  On each processor these maps describe the global rows and columns, resp, 
      that the processor will care about.  Note that the ColMap does not have to be one-to-one.  In other words, a column ID can appear
@@ -134,7 +136,8 @@ class Epetra_BasicRowMatrix: public Epetra_CompObject, public Epetra_Object, pub
   //@}
 
   
-  //@{ \name User-required implementation methods.
+  //! @name User-required implementation methods
+  //@{ 
 
     //! Returns a copy of the specified local row in user-provided arrays.
     /*! 
@@ -181,7 +184,8 @@ class Epetra_BasicRowMatrix: public Epetra_CompObject, public Epetra_Object, pub
     virtual int NumMyRowEntries(int MyRow, int & NumEntries) const = 0;
     //@}
 
-  //@{ \name Computational methods.
+    //! @name Computational methods
+  //@{ 
 
     //! Returns the result of a Epetra_BasicRowMatrix multiplied by a Epetra_MultiVector X in Y.
     /*! 
@@ -266,7 +270,8 @@ class Epetra_BasicRowMatrix: public Epetra_CompObject, public Epetra_Object, pub
     virtual int RightScale(const Epetra_Vector& x);
   //@}
 
-  //@{ \name Matrix Properties Query Methods.
+  //! @name Matrix Properties Query Methods
+  //@{ 
 
 
     //! If FillComplete() has been called, this query returns true, otherwise it returns false, presently always returns true.
@@ -280,7 +285,8 @@ class Epetra_BasicRowMatrix: public Epetra_CompObject, public Epetra_Object, pub
 
   //@}
   
-  //@{ \name Atribute access functions
+  //! @name Atribute access functions
+  //@{ 
 
     //! Returns the infinity norm of the global matrix.
     /* Returns the quantity \f$ \| A \|_\infty\f$ such that
@@ -354,13 +360,15 @@ class Epetra_BasicRowMatrix: public Epetra_CompObject, public Epetra_Object, pub
   //@}
   
   
-  //@{ \name I/O Methods.
+  //! @name I/O Methods
+  //@{ 
 
   //! Print method
   virtual void Print(ostream & os) const;
   //@}
 
-  //@{ \name Additional methods required to support the Epetra_RowMatrix interface.
+  //! @name Additional methods required to support the Epetra_RowMatrix interface
+  //@{ 
     
     //! If set true, transpose of this operator will be applied.
     /*! This flag allows the transpose of the given operator to be used implicitly.  Setting this flag
@@ -411,7 +419,8 @@ class Epetra_BasicRowMatrix: public Epetra_CompObject, public Epetra_Object, pub
 
   //@}
   
-  //@{ \name Additional accessor methods.
+  //! @name Additional accessor methods
+  //@{ 
 
   //! Returns the Epetra_Import object that contains the import operations for distributed operations, returns zero if none.
     /*! If RowMatrixColMap!=OperatorDomainMap, then this method returns a pointer to an Epetra_Import object that imports objects
@@ -440,7 +449,8 @@ class Epetra_BasicRowMatrix: public Epetra_CompObject, public Epetra_Object, pub
 
  protected:
 
-  //@{ \name Post-construction modifications.
+  //! @name Post-construction modifications
+  //@{ 
   //! Update the constants associated with the structure of the matrix: Call only if structure changes from the initial RowMatrix.
   /* Several constants are pre-computed to save excess computations.  However, if the structure of the
      problem changes, specifically if the nonzero count in any given row changes, then this function should be called

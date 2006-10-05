@@ -51,7 +51,7 @@ bool Thyra::test_single_stratimikos_solver(
   using Teuchos::OSTab;
   using Teuchos::ParameterList;
   using Teuchos::getParameter;
-  bool result, success = true;
+  bool success = true;
 
   try {
 

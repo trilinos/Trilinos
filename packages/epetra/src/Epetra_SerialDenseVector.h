@@ -84,7 +84,8 @@ class Epetra_SerialDenseVector : public Epetra_SerialDenseMatrix{
 
   public:
   
-  //@{ \name Constructors/destructors.
+    //! @name Constructors/destructors
+  //@{ 
   //! Default constructor; defines a zero size object.
   /*!
     Epetra_SerialDenseVector objects defined by the default constructor should be sized with the 
@@ -127,7 +128,8 @@ class Epetra_SerialDenseVector : public Epetra_SerialDenseMatrix{
   virtual ~Epetra_SerialDenseVector ();
   //@}
 
-  //@{ \name Post-construction modification routines.
+  //! @name Post-construction modification routines
+  //@{ 
 
   //! Set length of a Epetra_SerialDenseVector object; init values to zero.
   /*!
@@ -158,7 +160,8 @@ class Epetra_SerialDenseVector : public Epetra_SerialDenseMatrix{
 
   //@}
 
-  //@{ \name Element access methods.
+  //! @name Element access methods
+  //@{ 
   //! Value copy from one vector to another.
   /*!
     The operator= allows one to copy the values from one existing SerialDenseVector to another, as
@@ -210,7 +213,8 @@ class Epetra_SerialDenseVector : public Epetra_SerialDenseMatrix{
 
   //@}
 
-  //@{ \name Mathematical methods.
+  //! @name Mathematical methods
+  //@{ 
   //! Set vector values to random numbers.
   /*! 
 		SerialDenseVector uses the random number generator provided by Epetra_Util.
@@ -249,7 +253,8 @@ class Epetra_SerialDenseVector : public Epetra_SerialDenseMatrix{
 
   //@}
 
-  //@{ \name Attribute access methods.
+  //! @name Attribute access methods
+  //@{ 
   //! Returns length of vector.
   int Length() const {return(M_);};
 
@@ -261,7 +266,8 @@ class Epetra_SerialDenseVector : public Epetra_SerialDenseMatrix{
 
   //@}
 
-  //@{ \name I/O methods
+  //! @name I/O methods
+  //@{ 
   //! Print service methods; defines behavior of ostream << operator.
   virtual void Print(ostream& os) const;
   //@}

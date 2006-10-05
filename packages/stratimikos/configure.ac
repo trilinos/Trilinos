@@ -37,7 +37,7 @@
 # This must be the first line in configure.ac.
 # Optional 3rd argument is email address for bugs.
 
-AC_INIT(stratimikos, version of the day, rabartl@sandia.gov)
+AC_INIT(stratimikos, version 1.0 in Trilinos 7.0, rabartl@sandia.gov)
 
 echo "----------------------------------------"
 echo "Running stratimikos Configure Script"
@@ -187,6 +187,16 @@ TAC_ARG_INFORM_SUBPACKAGE_USED(
    ifpack, thyra, STRATIMIKOS_IFPACK_THYRA, ENABLE_STRATIMIKOS_IFPACK_THYRA, yes,
   [See ifpack/configure --help],
   [See ifpack/configure --help])
+
+TAC_ARG_INFORM_SUBPACKAGE_USED(
+   ml, thyra, STRATIMIKOS_ML_THYRA, ENABLE_STRATIMIKOS_ML_THYRA, yes,
+  [See ml/configure --help],
+  [See ml/configure --help])
+
+TAC_ARG_INFORM_SUBPACKAGE_USED(
+   ml, nox, STRATIMIKOS_ML_NOX, ENABLE_STRATIMIKOS_ML_NOX, yes,
+  [See ml/configure --help],
+  [See ml/configure --help])
 
 # ------------------------------------------------------------------------
 # Checks if examples should be built

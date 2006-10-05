@@ -50,7 +50,8 @@ class Epetra_BlockMapData : public Epetra_Data {
 
  private:
 
-  //@{ \name Constructor/Destructor Methods
+  //! @name Constructor/Destructor Methods
+  //@{ 
 
   //! Epetra_BlockMapData Default Constructor.
   Epetra_BlockMapData(int NumGlobalElements, int ElementSize, int IndexBase, const Epetra_Comm & Comm);

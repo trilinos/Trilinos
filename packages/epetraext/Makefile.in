@@ -305,7 +305,8 @@ target_vendor = @target_vendor@
 AUTOMAKE_OPTIONS = foreign
 EXTRA_DIST = config/generate-makeoptions.pl \
        config/strip_dup_incl_paths.pl config/strip_dup_libs.pl \
-       config/replace-install-prefix.pl config/string-replace.pl
+       config/replace-install-prefix.pl config/string-replace.pl \
+       example/inout/matlab.h5
 
 AUX_DIST = config/install-sh config/missing config/mkinstalldirs 
 MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
@@ -488,7 +489,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/. $(distdir)/config $(distdir)/python/src $(distdir)/python/src/.deps
+	$(mkdir_p) $(distdir)/. $(distdir)/config $(distdir)/example/inout $(distdir)/python/src $(distdir)/python/src/.deps
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -750,8 +751,8 @@ libs:
 @USING_EXPORT_MAKEFILES_TRUE@		--my-export-makefile=Makefile.export.epetraext \
 @USING_EXPORT_MAKEFILES_TRUE@		--my-abs-top-srcdir=@abs_top_srcdir@ \
 @USING_EXPORT_MAKEFILES_TRUE@		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src:@abs_top_srcdir@/src/block:@abs_top_srcdir@/src/btf:@abs_top_srcdir@/src/coloring:@abs_top_srcdir@/src/distdir:@abs_top_srcdir@/src/inout:@abs_top_srcdir@/src/matlab:@abs_top_srcdir@/src/transform:@abs_top_srcdir@/src/zoltan \
-@USING_EXPORT_MAKEFILES_TRUE@		--my-abs-lib-dirs=@abs_top_builddir@/src \
-@USING_EXPORT_MAKEFILES_TRUE@		--dep-package-abs-builddirs=@abs_top_builddir@/../epetra:@abs_top_builddir@/../triutils
+@USING_EXPORT_MAKEFILES_TRUE@		--my-abs-lib-dirs=@abs_top_builddir@/src:@abs_top_builddir@/thyra/src \
+@USING_EXPORT_MAKEFILES_TRUE@		--dep-package-abs-builddirs=@abs_top_builddir@/../epetra:@abs_top_builddir@/../triutils:@abs_top_builddir@/../thyra:@abs_top_builddir@/../teuchos
 @USING_EXPORT_MAKEFILES_TRUE@	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile EPETRAEXT > $(exec_prefix)/include/Makefile.export.epetraext.macros
 
 @USING_EXPORT_MAKEFILES_TRUE@uninstall-hook:

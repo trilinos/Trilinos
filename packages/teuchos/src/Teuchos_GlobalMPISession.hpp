@@ -82,6 +82,12 @@ public:
     
   //! @name Static functions 
   //@{
+
+  /** \breif Return if MPI is initialized or not. */
+  static bool mpiIsInitialized();
+
+  /** \breif Return if MPI has already been finalized. */
+  static bool mpiIsFinalized();
   
   /** \brief Returns the process rank relative to <tt>MPI_COMM_WORLD</tt>
    *
@@ -91,7 +97,7 @@ public:
    * called so it is safe to use no matter how <tt>MPI_Init()</tt> got called
    * (but it must have been called somewhere).
    */
-  static int getRank() { initialize(&std::cerr); return rank_;}
+  static int getRank();
 
   /** \brief Returns the number of processors relative to
    * <tt>MPI_COMM_WORLD</tt>
@@ -102,13 +108,14 @@ public:
    * called so it is safe to use no matter how <tt>MPI_Init()</tt> got called
    * (but it must have been called somewhere).
    */
-  static int getNProc() {initialize(&std::cerr); return nProc_;}
+  static int getNProc();
   
   //@}
   
 private:
   
   static bool haveMPIState_;
+  static bool mpiIsFinalized_;
   static int rank_;
   static int nProc_;
 

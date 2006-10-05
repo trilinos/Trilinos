@@ -19,6 +19,8 @@ INPUT                  = ../src/support/operator_vector/doc/index.doc \
                          ../example/operator_vector/ExampleTridiagSerialLinearOp.hpp \
                          ../example/operator_vector/ExampleTridiagSpmdLinearOp.hpp \
                          ../example/operator_vector/sillyCgSolve.hpp \
+                         ../example/operator_vector/sillierCgSolve.hpp \
+                         ../example/operator_vector/silliestCgSolve.hpp \
                          ../example/operator_vector/sillyPowerMethod.hpp
 FILE_PATTERNS          = *.h *c *.hpp *.cpp
 RECURSIVE              = YES

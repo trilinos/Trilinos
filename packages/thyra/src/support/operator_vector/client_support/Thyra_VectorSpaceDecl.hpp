@@ -99,6 +99,14 @@ namespace Thyra
 
   };
 
+  /** \brief Create a member.
+   *
+   * \relates VectorSpace
+   */
+  template <class Scalar>
+  Vector<Scalar> createMember( const VectorSpace<Scalar> &space )
+  { return space.createMember(); }
+
   /** \brief Create a product space given an array of vector spaces blocks.
    *
    * \relates VectorSpace

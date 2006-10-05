@@ -89,11 +89,15 @@ public:
   static std::string name() { return "std::vector<"+TypeNameTraits<T>::name()+">"; }
 };
 
+#if defined(HAVE_COMPLEX) && defined(HAVE_TEUCHOS_COMPLEX)
+
 template<typename T>
 class TypeNameTraits<std::complex<T> > {
 public:
   static std::string name() { return "std::complex<"+TypeNameTraits<T>::name()+">"; }
 };
+
+#endif // defined(HAVE_COMPLEX) && defined(HAVE_TEUCHOS_COMPLEX)
  
 } // namespace Teuchos
 

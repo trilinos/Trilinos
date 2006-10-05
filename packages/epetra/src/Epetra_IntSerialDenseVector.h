@@ -213,12 +213,14 @@ class Epetra_IntSerialDenseVector : public Epetra_IntSerialDenseMatrix{
   */
     Epetra_IntSerialDenseVector& operator = (const Epetra_IntSerialDenseVector& Source);
 
-  //@{ \name I/O methods
+    //! @name I/O methods
+  //@{ 
   //! Print service methods; defines behavior of ostream << operator.
   virtual void Print(ostream& os) const;
   //@}
 
-  //@{ \name Expert-only unsupported methods
+  //! @name Expert-only unsupported methods
+  //@{ 
 
   //Bring the base-class MakeViewOf method into the current scope so that the
   //compiler knows we intend to overload it, rather than hide it.

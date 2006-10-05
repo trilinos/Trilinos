@@ -95,7 +95,8 @@ class Epetra_SerialDenseMatrix : public Epetra_CompObject, public Epetra_Object,
 
   public:
   
-  //@{ \name Constructor/Destructor Methods
+    //! @name Constructor/Destructor Methods
+  //@{ 
   //! Default constructor; defines a zero size object.
   /*!
     Epetra_SerialDenseMatrix objects defined by the default constructor should be sized with the 
@@ -145,7 +146,8 @@ class Epetra_SerialDenseMatrix : public Epetra_CompObject, public Epetra_Object,
   virtual ~Epetra_SerialDenseMatrix ();
   //@}
 
-  //@{ \name Shaping/sizing Methods
+  //! @name Shaping/sizing Methods
+  //@{ 
   //! Set dimensions of a Epetra_SerialDenseMatrix object; init values to zero.
   /*!
     \param In 
@@ -178,7 +180,8 @@ class Epetra_SerialDenseMatrix : public Epetra_CompObject, public Epetra_Object,
   int Reshape(int NumRows, int NumCols);
   //@}
 
-  //@{ \name Mathematical methods
+  //! @name Mathematical methods
+  //@{ 
 
   //! Matrix-Matrix multiplication, \e this = ScalarThis*\e this + ScalarAB*A*B.
   /*! This function performs a variety of matrix-matrix multiply operations.
@@ -264,7 +267,8 @@ This function performs a variety of matrix-matrix multiply operations.
 
   //@}
 
-  //@{ \name Data Accessor methods
+  //! @name Data Accessor methods
+  //@{ 
 
   //! Value copy from one matrix to another.
   /*!
@@ -363,12 +367,14 @@ This function performs a variety of matrix-matrix multiply operations.
 	Epetra_DataAccess CV() const {return(CV_);};
   //@}
   
-  //@{ \name I/O methods
+  //! @name I/O methods
+  //@{ 
   //! Print service methods; defines behavior of ostream << operator.
   virtual void Print(ostream& os) const;
   //@}
 
-  //@{ \name Deprecated methods (will be removed in later versions of this class).
+  //! @name Deprecated methods (will be removed in later versions of this class)
+  //@{ 
 
   //! Computes the 1-Norm of the \e this matrix (identical to NormOne() method).
   /*!
@@ -380,7 +386,8 @@ This function performs a variety of matrix-matrix multiply operations.
   virtual double InfNorm() const {return(NormInf());};
   //@}
 
-  //@{ \name Additional methods to support Epetra_SerialDenseOperator interface
+  //! @name Additional methods to support Epetra_SerialDenseOperator interface
+  //@{ 
  
     //! If set true, transpose of this operator will be applied.
     /*! This flag allows the transpose of the given operator to be used implicitly.  Setting this flag

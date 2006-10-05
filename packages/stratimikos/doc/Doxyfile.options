@@ -7,7 +7,7 @@
 # Package options
 #
 OUTPUT_LANGUAGE        = English
-PROJECT_NUMBER         = "Version of the Day"
+PROJECT_NUMBER         = "Stratimikos 1.0 in Trilinos 7.0"
 #
 # What and how documentation is extracted
 #

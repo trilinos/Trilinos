@@ -30,5 +30,5 @@
 
 std::string Thyra::Thyra_Version()
 { 
-  return("Thyra Version 2.0d - (version of the day)"); 
+  return("Thyra Version of the Day"); 
 }

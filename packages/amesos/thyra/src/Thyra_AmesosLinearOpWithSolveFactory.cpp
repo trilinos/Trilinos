@@ -98,6 +98,16 @@ const std::string AmesosLinearOpWithSolveFactory::Amesos_Settings_name = "Amesos
 
 // Constructors/initializers/accessors
 
+AmesosLinearOpWithSolveFactory::~AmesosLinearOpWithSolveFactory()
+{
+#ifdef TEUCHOS_DEBUG
+  if(paramList_.get())
+    paramList_->validateParameters(
+      *this->getValidParameters(),0  // Only validate this level for now!
+      );
+#endif
+}
+
 AmesosLinearOpWithSolveFactory::AmesosLinearOpWithSolveFactory(
   const Amesos::ESolverType                            solverType
   ,const Amesos::ERefactorizationPolicy                refactorizationPolicy
@@ -265,7 +275,7 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
       }
     }
     // Set the parameters
-    if(paramList_.get()) amesosSolver->SetParameters(paramList_->sublist("AMESOS"));
+    if(paramList_.get()) amesosSolver->SetParameters(paramList_->sublist("Amesos Settings"));
     // Do the initial factorization
     if(1) {
       Teuchos::TimeMonitor symbolicTimeMonitor(*symbolicTimer);
@@ -307,6 +317,8 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
     // possibly new transpose and scaling factors back in)
     amesosOp->initialize(fwdOp,fwdOpSrc,epetraLP,amesosSolver,epetraFwdOpTransp,epetraFwdOpScalar);
   }
+  amesosOp->setOStream(this->getOStream());
+  amesosOp->setVerbLevel(this->getVerbLevel());
 }
 
 bool AmesosLinearOpWithSolveFactory::supportsPreconditionerInputType(const EPreconditionerInputType precOpType) const

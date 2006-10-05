@@ -157,8 +157,8 @@ SolveStatus<Scalar> TimeStepNewtonNonlinearSolver<Scalar>::solve(
   Teuchos::RefCountPtr<VectorBase<Scalar> >     dx = createMember(model_->get_x_space());
   Teuchos::RefCountPtr<VectorBase<Scalar> >     dx_last = createMember(model_->get_x_space());
   Teuchos::RefCountPtr<VectorBase<Scalar> >     x_curr = createMember(model_->get_x_space());
-  Teuchos::RefCountPtr<VectorBase<Scalar> >     ee = createMember(model_->get_x_space());
-  Thyra::V_S(&*ee,ST::zero()); // ee stores the cumulative update to x over the whole Newton solve.
+  if (delta != NULL)
+    Thyra::V_S(delta,ST::zero()); // delta stores the cumulative update to x over the whole Newton solve.
   Thyra::assign(&*x_curr,*x);
   // Initialize convergence criteria
   ScalarMag R = SMT::one();
@@ -174,6 +174,8 @@ SolveStatus<Scalar> TimeStepNewtonNonlinearSolver<Scalar>::solve(
   for( ; iter <= maxIters; ++iter ) {
     // Evaluate f and W
     eval_f_W( *model_, *x_curr, ST::one(), &*f, &*J_ );
+    // Zero out dx to deal with iterative linear solvers
+    Thyra::V_S(&*dx,ST::zero());
     // Solve the system: J*dx = -f
     SolveCriteria<Scalar>
       linearSolveCriteria(
@@ -185,7 +187,8 @@ SolveStatus<Scalar> TimeStepNewtonNonlinearSolver<Scalar>::solve(
     SolveStatus<Scalar>
       linearSolveStatus = Thyra::solve( *J_, NOTRANS, *f, &*dx, &linearSolveCriteria );
     Thyra::Vt_S(&*dx,Scalar(-ST::one()));
-    Thyra::Vp_V(&*ee,*dx); 
+    if (delta != NULL)
+      Thyra::Vp_V(delta,*dx); 
     // Check the linear solve
     if(linearSolveStatus.solveStatus != SOLVE_STATUS_CONVERGED) {
       warningOut()
@@ -213,7 +216,6 @@ SolveStatus<Scalar> TimeStepNewtonNonlinearSolver<Scalar>::solve(
   }
   // Set the solution
   Thyra::assign(x,*x_curr);
-  if (delta != NULL) Thyra::assign(delta,*ee);
   // Check the status
   SolveStatus<Scalar> solveStatus;
   std::ostringstream oss;

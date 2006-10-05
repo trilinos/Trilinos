@@ -45,7 +45,8 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 class Epetra_FEVbrMatrix: public Epetra_VbrMatrix {
  public:
 
-  //@{ \name Constructors/Destructor.
+   //! @name Constructors/Destructor
+  //@{ 
   //! Epetra_FEVbrMatrix constuctor with variable number of indices per row.
   /*! Creates a Epetra_FEVbrMatrix object and allocates storage.  
     
@@ -141,7 +142,8 @@ class Epetra_FEVbrMatrix: public Epetra_VbrMatrix {
   virtual ~Epetra_FEVbrMatrix();
   //@}
   
-  //@{ \name Insertion/Replace/SumInto methods.
+  //! @name Insertion/Replace/SumInto methods
+  //@{ 
 
   Epetra_FEVbrMatrix& operator=(const Epetra_FEVbrMatrix& src);
 

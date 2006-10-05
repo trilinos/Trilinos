@@ -1352,62 +1352,55 @@ int Epetra_CrsMatrix::InvColSums(Epetra_Vector& x) const {
 //=============================================================================
 int Epetra_CrsMatrix::InvColMaxs(Epetra_Vector& x) const {
   //
-  // Put inverse of the sum of absolute values of the jth column of A in x[j].
+  // Put inverse of the max of absolute values of the jth column of A in x[j].
   //
 
-  if(!Filled()) 
-    EPETRA_CHK_ERR(-1); // Matrix must be filled.
-
+  if(!Filled())  EPETRA_CHK_ERR(-1); // Matrix must be filled.
   int ierr = 0;
   int i, j;
-  bool needExport = false;
+  int MapNumMyElements = x.Map().NumMyElements();
+  x.PutScalar(0.0); // Make sure we sum into a vector of zeros.
   double* xp = (double*)x.Values();
-  Epetra_Vector* x_tmp = 0;
-  int NumCols = NumMyCols();
-
-  if(Graph().DomainMap().SameAs(x.Map())) {
-  
-    // If we have a non-trivial importer, we must export elements that are permuted or belong to other processors
-    if(Importer() != 0) {
-      needExport = true; //This information avoids a .SameAs later
-      x_tmp = new Epetra_Vector(ColMap()); // Create import vector if needed
-      xp = (double*)x_tmp->Values();
+  if(Graph().DomainMap().SameAs(x.Map()) && Importer() != 0) {
+    Epetra_Vector x_tmp(ColMap());
+    x_tmp.PutScalar(0.0);
+    double * x_tmp_p = (double*)x_tmp.Values();
+    for(i = 0; i < NumMyRows_; i++) {
+      int     NumEntries = NumMyEntries(i);
+      int*    ColIndices = Graph().Indices(i);
+      double* RowValues  = Values(i);
+      for(j = 0; j < NumEntries; j++) 
+        x_tmp_p[ColIndices[j]] = EPETRA_MAX(std::abs(RowValues[j]),x_tmp_p[ColIndices[j]]);
+    }
+    EPETRA_CHK_ERR(x.Export(x_tmp, *Importer(), AbsMax)); // Fill x with partial column sums
+  }
+  else if(Graph().ColMap().SameAs(x.Map())) {
+    for(i = 0; i < NumMyRows_; i++) {
+      int     NumEntries = NumMyEntries(i);
+      int*    ColIndices = Graph().Indices(i);
+      double* RowValues  = Values(i);
+      for(j = 0; j < NumEntries; j++) 
+        xp[ColIndices[j]] = EPETRA_MAX(std::abs(RowValues[j]),xp[ColIndices[j]]);
     }
   }
-  else if (!Graph().ColMap().SameAs(x.Map())) {
-    EPETRA_CHK_ERR(-2); // The map of x must be the ColMap or DomainMap of A.
-  }
-  for(i = 0; i < NumCols; i++) 
-    xp[i] = 0.0;
-
-  for(i = 0; i < NumMyRows_; i++) {
-    int     NumEntries = NumMyEntries(i);
-    int*    ColIndices = Graph().Indices(i);
-    double* RowValues  = Values(i);
-    for(j = 0; j < NumEntries; j++) 
-      xp[ColIndices[j]] = EPETRA_MAX(std::abs(RowValues[j]),xp[ColIndices[j]]);
+  else { //x.Map different than both Graph().ColMap() and Graph().DomainMap()
+    EPETRA_CHK_ERR(-2); // x must have the same distribution as the domain of A
   }
 
-  if(needExport) {
-    //x.PutScalar(0.0);
-    EPETRA_CHK_ERR(x.Export(*x_tmp, *Importer(), AbsMax)); // Fill x with Values from import vector
-    delete x_tmp;
-    xp = (double*) x.Values();
-  }
   // Invert values, don't allow them to get too large
-  int myLength = x.MyLength();
-  for(i = 0; i < myLength; i++) {
+  for(i = 0; i < MapNumMyElements; i++) {
     double scale = xp[i];
     if(scale < Epetra_MinDouble) {
       if(scale == 0.0) 
 	ierr = 1; // Set error to 1 to signal that zero rowsum found (supercedes ierr = 2)
       else if(ierr != 1) 
-      	ierr = 2;
+	ierr = 2;
       xp[i] = Epetra_MaxDouble;
     }
     else
       xp[i] = 1.0 / scale;
   }
+
   UpdateFlops(NumGlobalNonzeros());
   EPETRA_CHK_ERR(ierr);
   return(0);

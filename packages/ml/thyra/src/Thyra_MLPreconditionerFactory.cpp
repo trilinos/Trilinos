@@ -44,6 +44,12 @@ using namespace Thyra ;
 // Constructors/initializers/accessors
   
 MLPreconditionerFactory
+::MLPreconditionerFactory()
+  :epetraFwdOpViewExtractor_(Teuchos::rcp(new EpetraOperatorViewExtractorStd())),
+   paramList_(defaultParameters(ML_DomainDecomposition))
+{}
+  
+MLPreconditionerFactory
 ::MLPreconditionerFactory(const RefCountPtr<ParameterList>& params)
   :epetraFwdOpViewExtractor_(Teuchos::rcp(new EpetraOperatorViewExtractorStd())),
    paramList_(params)
@@ -321,6 +327,16 @@ MLPreconditionerFactory::getParameterList() const
   return paramList_;
 }
 
+Teuchos::RefCountPtr<const Teuchos::ParameterList>
+MLPreconditionerFactory::getValidParameters() const
+{
+  if(!validPL_.get()) {
+    validPL_ = defaultParameters(ML_DomainDecomposition);
+    // Todo: the above is not really all of the valid parameters.  We need to
+    // get ML to generate the entire list!
+  }
+  return validPL_;
+}
 
 // Public functions overridden from Teuchos::Describable
 

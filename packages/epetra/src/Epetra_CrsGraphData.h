@@ -50,7 +50,8 @@ class Epetra_CrsGraphData : public Epetra_Data {
 
  private:
 
-  //@{ \name Constructor/Destructor Methods
+  //! @name Constructor/Destructor Methods
+  //@{ 
 
   //! Epetra_CrsGraphData Default Constructor.
   Epetra_CrsGraphData(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap, bool StaticProfile);
@@ -78,7 +79,8 @@ class Epetra_CrsGraphData : public Epetra_Data {
   //! Epetra_CrsGraphData assignment operator (not defined)
   Epetra_CrsGraphData& operator=(const Epetra_CrsGraphData& CrsGraphData);
   
-  //@{ \name Helper methods called in CrsGraph. Mainly memory allocations and deallocations.
+  //! @name Helper methods called in CrsGraph. Mainly memory allocations and deallocations.
+  //@{ 
   
   //! called by FillComplete (and TransformToLocal)
   int MakeImportExport();

@@ -150,7 +150,8 @@ class Epetra_VbrMatrix : public Epetra_DistObject,
 		      public virtual Epetra_RowMatrix {
  public:
 
-  //@{ \name Constructors/Destructor.
+   //! @name Constructors/Destructor
+  //@{ 
   //! Epetra_VbrMatrix constuctor with variable number of indices per row.
   /*! Creates a Epetra_VbrMatrix object and allocates storage.  
     
@@ -228,7 +229,8 @@ class Epetra_VbrMatrix : public Epetra_DistObject,
   virtual ~Epetra_VbrMatrix();
   //@}
   
-  //@{ \name Insertion/Replace/SumInto methods.
+  //! @name Insertion/Replace/SumInto methods
+  //@{ 
 
   Epetra_VbrMatrix& operator=(const Epetra_VbrMatrix& src);
 
@@ -434,7 +436,8 @@ class Epetra_VbrMatrix : public Epetra_DistObject,
     bool Filled() const {return(Graph_->Filled());};
     //@}
 
-  //@{ \name Extraction methods.
+    //! @name Extraction methods
+  //@{ 
 
     //! Copy the block indices into user-provided array, set pointers for rest of data for specified global block row.
     /*! 
@@ -699,7 +702,8 @@ class Epetra_VbrMatrix : public Epetra_DistObject,
     int ExtractBlockDiagonalEntryView(double * & Values, int & LDA) const;
     //@}
 
-  //@{ \name Computational methods.
+    //! @name Computational methods
+  //@{ 
 
 
     //! Returns the result of a Epetra_VbrMatrix multiplied by a Epetra_Vector x in y.
@@ -810,7 +814,8 @@ class Epetra_VbrMatrix : public Epetra_DistObject,
     int RightScale(const Epetra_Vector& x);
   //@}
 
-  //@{ \name Matrix Properties Query Methods.
+  //! @name Matrix Properties Query Methods
+  //@{ 
 
     //! Eliminates memory that is used for construction.  Make consecutive row index sections contiguous.
     int OptimizeStorage();
@@ -838,7 +843,8 @@ class Epetra_VbrMatrix : public Epetra_DistObject,
 
   //@}
   
-  //@{ \name Atribute access functions
+  //! @name Atribute access functions
+  //@{ 
 
     //! Returns the infinity norm of the global matrix.
     /* Returns the quantity \f$ \| A \|_\infty\f$ such that
@@ -988,7 +994,8 @@ class Epetra_VbrMatrix : public Epetra_DistObject,
 
   //@}
   
-  //@{ \name Local/Global ID methods
+  //! @name Local/Global ID methods
+  //@{ 
     //! Returns the local row index for given global row index, returns -1 if no local row for this global row.
     int LRID( int GRID) const {return(Graph_->LRID(GRID));};
 
@@ -1017,13 +1024,15 @@ class Epetra_VbrMatrix : public Epetra_DistObject,
     bool MyGlobalBlockRow(int GID) const {return(Graph_->MyGlobalRow(GID));};
   //@}
   
-  //@{ \name I/O Methods.
+  //! @name I/O Methods
+  //@{ 
 
   //! Print method
   virtual void Print(ostream & os) const;
   //@}
 
-  //@{ \name Additional methods required to support the Epetra_Operator interface.
+  //! @name Additional methods required to support the Epetra_Operator interface
+  //@{ 
 
     //! Returns a character string describing the operator
     const char * Label() const {return(Epetra_Object::Label());};
@@ -1090,7 +1099,8 @@ class Epetra_VbrMatrix : public Epetra_DistObject,
     }
 
   //@}
-  //@{ \name Additional methods required to implement RowMatrix interface.
+  //! @name Additional methods required to implement RowMatrix interface
+  //@{ 
 
     //! Returns a copy of the specified global row in user-provided arrays.
     /*! 
@@ -1154,7 +1164,8 @@ class Epetra_VbrMatrix : public Epetra_DistObject,
 
   //@}
 
-  //@{ \name Deprecated methods:  These methods still work, but will be removed in a future version.
+  //! @name Deprecated methods:  These methods still work, but will be removed in a future version
+  //@{ 
 
     //! Use BlockColMap() instead. 
     const Epetra_BlockMap & BlockImportMap() const {return(Graph_->ImportMap());};

@@ -112,7 +112,8 @@ class Epetra_IntVector : public Epetra_DistObject {
 
   public:
 
-  //@{ \name Constructors/destructors.
+    //! @name Constructors/destructors
+  //@{ 
   //! Basic Epetra_IntVector constuctor.
   /*! Creates a Epetra_IntVector object and, by default, fills with zero values.  
 
@@ -156,13 +157,15 @@ class Epetra_IntVector : public Epetra_DistObject {
   //@}
   
 
-  //@{ \name Post-construction modification methods
+  //! @name Post-construction modification methods
+  //@{ 
   //! Set all elements of the vector to Value
   int PutValue(int Value);
   //@}
   
 
-  //@{ \name Extraction methods
+  //! @name Extraction methods
+  //@{ 
 
 
   //! Put vector values into user-provided array.
@@ -184,7 +187,8 @@ class Epetra_IntVector : public Epetra_DistObject {
   int ExtractView(int **V) const;
   //@}
 
-  //@{ \name Mathematical methods
+  //! @name Mathematical methods
+  //@{ 
   //! Find maximum value
   /*!
     \return Maximum value across all processors.
@@ -199,7 +203,8 @@ class Epetra_IntVector : public Epetra_DistObject {
 
   //@}
   
-  //@{ \name Overloaded operators
+  //! @name Overloaded operators
+  //@{ 
 
   //! = Operator.
   /*!
@@ -222,7 +227,8 @@ class Epetra_IntVector : public Epetra_DistObject {
     const int& operator [] (int index) const { return Values_[index]; }
     //@}
     
-  //@{ \name Attribute access functions
+    //! @name Attribute access functions
+  //@{ 
 
   //! Returns a pointer to an array containing the values of this vector.
   int * Values() const {return(Values_);};
@@ -234,7 +240,8 @@ class Epetra_IntVector : public Epetra_DistObject {
   int GlobalLength() const {return(Map().NumGlobalPoints());};
   //@}
 
-  //@{ \name I/O methods
+  //! @name I/O methods
+  //@{ 
 
   //! Print method
   virtual void Print(ostream & os) const;

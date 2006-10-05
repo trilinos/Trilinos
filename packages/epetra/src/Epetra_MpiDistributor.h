@@ -47,7 +47,8 @@ class Epetra_MpiDistributor: public Epetra_Object, public virtual Epetra_Distrib
     
   public:
 
-  //@{ \name Constructors/Destructor
+    //! @name Constructors/Destructor
+  //@{ 
 
   //! Epetra_Comm Default Constructor.
   Epetra_MpiDistributor(const Epetra_MpiComm & Comm);
@@ -63,7 +64,8 @@ class Epetra_MpiDistributor: public Epetra_Object, public virtual Epetra_Distrib
   //@}
 
   
-  //@{ \name Gather/Scatter Constructors
+  //! @name Gather/Scatter Constructors
+  //@{ 
   //! Create Distributor object using list of process IDs to which we export
   /*! Take a list of Process IDs and construct a plan for efficiently scattering to these processes.
       Return the number of IDs being sent to me.
@@ -108,7 +110,8 @@ class Epetra_MpiDistributor: public Epetra_Object, public virtual Epetra_Distrib
                        int *& ExportPIDs);
   //@}
 
-  //@{ \name Execute Gather/Scatter Operations
+  //! @name Execute Gather/Scatter Operations
+  //@{ 
 
   //! Execute plan on buffer of export objects in a single step
   int Do( char * export_objs,
@@ -140,7 +143,8 @@ class Epetra_MpiDistributor: public Epetra_Object, public virtual Epetra_Distrib
   int DoReverseWaits();
   //@}
 
-  //@{ \name Execute Gather/Scatter Operations (Non-constant size objects)
+  //! @name Execute Gather/Scatter Operations (Non-constant size objects)
+  //@{ 
 
   //! Execute plan on buffer of export objects in a single step (object size may vary)
   int Do( char * export_objs,
@@ -171,7 +175,8 @@ class Epetra_MpiDistributor: public Epetra_Object, public virtual Epetra_Distrib
                       char *& import_objs );
   //@}
   
-  //@{ \name Print object to an output stream
+  //! @name Print object to an output stream
+  //@{ 
   void Print(ostream & os) const;
   //@}
   private:

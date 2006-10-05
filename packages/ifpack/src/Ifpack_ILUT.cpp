@@ -168,7 +168,7 @@ int Ifpack_ILUT::Compute()
   Time_.ResetStartTime();
   IsComputed_ = false;
 
-  int NumMyRows_ = A_.NumMyRows();
+  NumMyRows_ = A_.NumMyRows();
   int Length = A_.MaxNumEntries();
   vector<int>    RowIndicesL(Length);
   vector<double> RowValuesL(Length);

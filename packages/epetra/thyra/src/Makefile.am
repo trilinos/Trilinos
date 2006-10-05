@@ -48,6 +48,7 @@ SOURCE_H = \
 	$(srcdir)/Thyra_EpetraLinearOp.hpp \
 	$(srcdir)/Thyra_EpetraOperatorViewExtractorBase.hpp \
 	$(srcdir)/Thyra_EpetraOperatorViewExtractorStd.hpp \
+	$(srcdir)/Thyra_EpetraOperatorWrapper.hpp \
 	$(srcdir)/Thyra_EpetraThyraWrappers.hpp \
 	$(srcdir)/Thyra_get_Epetra_Operator.hpp
 
@@ -55,6 +56,7 @@ SOURCE = \
 	$(srcdir)/Thyra_DiagonalEpetraLinearOpWithSolveFactory.cpp \
 	$(srcdir)/Thyra_EpetraLinearOp.cpp \
 	$(srcdir)/Thyra_EpetraOperatorViewExtractorStd.cpp \
+	$(srcdir)/Thyra_EpetraOperatorWrapper.cpp \
 	$(srcdir)/Thyra_EpetraThyraWrappers.cpp \
 	$(srcdir)/Thyra_get_Epetra_Operator.cpp
 

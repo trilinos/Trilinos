@@ -16,7 +16,7 @@
 class EpetraModelEval4DOpt : public EpetraExt::ModelEvaluator {
 public:
 
-  // Constructor
+  /** \brief . */
   EpetraModelEval4DOpt(
 		const double         xt0         = 1.0
 		,const double        xt1         = 1.0
@@ -28,6 +28,12 @@ public:
 		,const double        p00         = 2.0
 		,const double        p01         = 0.0
     );
+
+  /** \brief . */
+  void set_p_bounds( double pL0, double pL1, double pU0, double pU1 );
+
+  /** \brief . */
+  void set_x_bounds( double xL0, double xL1, double xU0, double xU1 );
 
   /** \name Overridden from EpetraExt::ModelEvaluator . */
   //@{

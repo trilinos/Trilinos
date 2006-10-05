@@ -263,7 +263,8 @@ in the above example to do an export operation to y, adding the contributions th
 
   Epetra_Distributor & Distributor() const {return(*Distor_);};
 
-  //@{ \name Print object to an output stream
+  //! @name Print object to an output stream
+  //@{ 
   virtual void Print(ostream & os) const;
   //@}
  protected:

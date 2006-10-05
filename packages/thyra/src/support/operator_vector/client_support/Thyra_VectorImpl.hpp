@@ -36,9 +36,12 @@
 #include "Thyra_ProductVectorBase.hpp"
 #include "Thyra_DetachedVectorView.hpp"
 
-
 namespace Thyra
 {
+
+//
+// ConstVector
+//
 
   template <class Scalar> inline
   Scalar ConstVector<Scalar>::operator[](Index globalIndex) const 
@@ -71,6 +74,16 @@ namespace Thyra
   {
     os << v.description() ;
     return os;
+  }
+
+//
+// Vector
+//
+
+  template <class Scalar> inline
+  Vector<Scalar>::Vector( const VectorSpace<Scalar> &space )
+  {
+    *this = createMember(space);
   }
 
   template <class Scalar> inline
@@ -177,4 +190,4 @@ namespace Thyra
 
 }
 
-#endif
+#endif // THYRA_VECTOR_IMPL_HPP

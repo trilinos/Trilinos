@@ -7,6 +7,8 @@ which which mean "strategy" and "linear in English.  The word "stratimikos"
 itself has not real meaning itself.  The Stratimikos package is also a place
 where unified testing of linear solvers and preconditioners can be performed.
 
+\section stratimikos_software_sec Stratimikos software
+
 <ul>
 
 <li><tt>Thyra::DefaultRealLinearSolverBuilder</tt>: A utility class that
@@ -15,10 +17,22 @@ Ifpack, and ML for Epetra-based linear operators.
 
 </ul>
 
+\section stratimikos_examples_sec Stratimikos examples
+
+<ul>
+
+<li><tt><a href="simple__stratimikos__example_8cpp-example.html">simple_stratimikos_example.cpp</a></tt>:
+Shows how to use the <tt>Thyra::DefaultRealLinearSolverBuilder</tt> to solve
+linear systems based on Epetra objects.
+
+</ul>
+
+\section stratimikos_browser_sec Stratimikos browser
+
 You can browse all of Stratimikos as a <A HREF="../../browser/doc/html/index.html">single
 doxygen collection</A>. Warning, this is not the recommended way to learn
 about Stratimikos software.  However, this is a good way to browse the <a
-href="../../browser/doc/html/dirs.html">directory structure of rtop</a>, to <a
+href="../../browser/doc/html/dirs.html">directory structure of stratimikos</a>, to <a
 href="../../browser/doc/html/files.html">locate files</a>, etc.
 
 */

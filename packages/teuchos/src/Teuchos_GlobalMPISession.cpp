@@ -32,6 +32,7 @@
 namespace Teuchos {
 
 bool GlobalMPISession::haveMPIState_ = false;
+bool GlobalMPISession::mpiIsFinalized_ = false;
 int GlobalMPISession::rank_ = 0 ;
 int GlobalMPISession::nProc_ = 1 ;
 
@@ -98,14 +99,40 @@ GlobalMPISession::GlobalMPISession( int* argc, char*** argv, std::ostream *out )
 
 GlobalMPISession::~GlobalMPISession()
 {
+  haveMPIState_ = false;
+  mpiIsFinalized_ = true;
 #ifdef HAVE_MPI
-	int mpierr = ::MPI_Finalize();
-	TEST_FOR_EXCEPTION_PRINT(
+  int mpierr = ::MPI_Finalize();
+  TEST_FOR_EXCEPTION_PRINT(
     mpierr != 0, runtime_error
     ,"Error code=" << mpierr << " detected in MPI_Finalize()"
     ,&std::cerr
     );
 #endif
+}
+
+bool GlobalMPISession::mpiIsInitialized() {
+  if(!haveMPIState_)
+    initialize(&std::cerr);
+  return haveMPIState_;
+}
+
+bool GlobalMPISession::mpiIsFinalized()
+{
+  return mpiIsFinalized_;
+}
+  
+int GlobalMPISession::getRank()
+{
+  if(!haveMPIState_)
+    initialize(&std::cerr);
+  return rank_;
+}
+
+int GlobalMPISession::getNProc() {
+  if(!haveMPIState_)
+    initialize(&std::cerr);
+  return nProc_;
 }
 
 // private
@@ -114,6 +141,13 @@ void GlobalMPISession::initialize( std::ostream *out )
 {
 #ifdef HAVE_MPI
 
+  if(mpiIsFinalized_) {
+    // MPI has aleady been finalized so we have a serial machine again!
+    rank_ = 0;
+    nProc_ = 1;
+    return;
+  }
+
   if(haveMPIState_)
     return; // We already have what we need!
 
@@ -121,12 +155,12 @@ void GlobalMPISession::initialize( std::ostream *out )
   // have been called.  However, if MPI has been called in another way we
   // can still get the state of MPI_COMM_WORLD here.
 
-	int mpiHasBeenStarted = 0, mpierr = 0;
-	MPI_Initialized(&mpiHasBeenStarted);
+  int mpiHasBeenStarted = 0, mpierr = 0;
+  MPI_Initialized(&mpiHasBeenStarted);
   
   if(!mpiHasBeenStarted)
     return;  // We have to give up and just leave NProc_ and rank_ at the default values.
-
+  
   // Get the state of MPI
 	
   mpierr = ::MPI_Comm_rank( MPI_COMM_WORLD, &rank_ );
@@ -144,6 +178,7 @@ void GlobalMPISession::initialize( std::ostream *out )
     );
 
   haveMPIState_ = true;
+  mpiIsFinalized_ = false;
 
 #endif // HAVE_MPI
   

@@ -29,6 +29,7 @@
 #ifndef EPETRA_EXT_MODEL_EVALUATOR_HPP
 #define EPETRA_EXT_MODEL_EVALUATOR_HPP
 
+#include "EpetraExt_ConfigDefs.h"
 #include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_Describable.hpp"
 #include "Teuchos_Polynomial.hpp"

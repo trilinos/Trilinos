@@ -59,6 +59,7 @@ RTOP_SUPPORT_H = \
   $(srcdir)/support/RTOpPack_RTOpServer.hpp\
   $(srcdir)/support/RTOpPack_RTOpServerDecl.hpp\
   $(srcdir)/support/RTOpPack_RTOpTHelpers.hpp\
+  $(srcdir)/support/RTOpPack_SPMD_apply_op.hpp\
   $(srcdir)/support/RTOpPack_SPMD_apply_op_decl.hpp\
   $(srcdir)/support/RTOpPack_TOpUnaryFuncPtrDecl.hpp\
   $(srcdir)/support/RTOpPack_MPI_apply_op_decl.hpp\
@@ -126,13 +127,14 @@ AM_CPPFLAGS = $(EXPORT_INCLUDES)
 RTOP_LIB = librtop.a
 
 RTOP_H = \
-  $(srcdir)/RTOp_ConfigDefs.hpp \
+  $(srcdir)/RTOp_ConfigDefs.hpp $(srcdir)/RTOpPack_version.hpp \
   $(RTOP_INTERFACES_H) \
   $(RTOP_SUPPORT_H) \
   $(RTOP_SUPPORT_C_H) \
   $(RTOP_OPS_LIB_H)
 
 librtop_a_SOURCES = \
+  $(srcdir)/RTOpPack_version.cpp \
   $(RTOP_SUPPORT_C) \
   $(RTOP_SUPPORT)
 

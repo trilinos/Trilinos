@@ -110,7 +110,7 @@ namespace Thyra
 
     TEUCHOS_CONST_HANDLE_CTORS(ConstVector<Scalar>, VectorBase<Scalar>);
 
-    /** Construct a vector from the result of an overloaded operator  */
+    /** \brief Construct a vector from the result of an overloaded operator.  */
     ConstVector(const Thyra::ConvertibleToVector<Scalar>& x);
 
     /** \brief . */
@@ -129,7 +129,6 @@ namespace Thyra
 
     /** \brief . */
     void addInto(Vector<Scalar>& other, Thyra::LCSign sign) const ;
-
     //@}
 
     /** Element access */
@@ -194,6 +193,9 @@ namespace Thyra
 
     TEUCHOS_HANDLE_CTORS(Vector<Scalar>, VectorBase<Scalar>);
 
+    /** \brief Construct from a vector space . */
+    Vector( const VectorSpace<Scalar> &space );
+
     /** \brief Allows an element to be changed using <tt>operator=()</tt>. */
     class IndexObject
     {
@@ -254,9 +256,17 @@ namespace Thyra
     template<class Node1, class Node2>
     Vector& operator=(const Thyra::LC2<Scalar, Node1, Node2>& x);
 
+    /**  \brief Add and assign a linear combination of vectors to this vector */
+    template<class Node1, class Node2>
+    Vector& operator+=(const Thyra::LC2<Scalar, Node1, Node2>& x);
+
     /**  \brief Assign a scaled linear combination to this vector */
     template<class Node>
     Vector& operator=(const Thyra::OpTimesLC<Scalar, Node>& x);
+
+    /**  \brief Add and assign a scaled linear combination to this vector */
+    template<class Node>
+    Vector& operator+=(const Thyra::OpTimesLC<Scalar, Node>& x);
 
     /** Write the contents of another vector into this vector */
     Vector<Scalar>& acceptCopyOf(const ConstVector<Scalar>& x);

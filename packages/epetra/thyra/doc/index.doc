@@ -1,4 +1,4 @@
-/*! \mainpage Epetra to %Thyra Operator/Vector Adapters
+/*! \mainpage Epetra to Thyra Operator/Vector Adapters
 
 This doxygen collection documents a small amount of code that wraps Epetra
 objects to create adapter objects which implement the <a

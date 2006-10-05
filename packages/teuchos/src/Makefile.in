@@ -264,6 +264,8 @@ DIST_SOURCES = $(am__libteuchos_a_SOURCES_DIST) \
 am__include_HEADERS_DIST = $(srcdir)/Teuchos_AbstractFactory.hpp \
 	$(srcdir)/Teuchos_AbstractFactoryStd.hpp \
 	$(srcdir)/Teuchos_any.hpp $(srcdir)/Teuchos_Array.hpp \
+	$(srcdir)/Teuchos_ArrayRefCountPtr.hpp \
+	$(srcdir)/Teuchos_ArrayRefCountPtrDecl.hpp \
 	$(srcdir)/Teuchos_arrayArg.hpp \
 	$(srcdir)/Teuchos_basic_oblackholestream.hpp \
 	$(srcdir)/Teuchos_BLAS.hpp $(srcdir)/Teuchos_BLAS_wrappers.hpp \
@@ -333,7 +335,8 @@ am__include_HEADERS_DIST = $(srcdir)/Teuchos_AbstractFactory.hpp \
 	$(srcdir)/Teuchos_Utils.hpp \
 	$(srcdir)/Teuchos_VerboseObject.hpp \
 	$(srcdir)/Teuchos_VerbosityLevel.hpp \
-	$(srcdir)/Teuchos_Workspace.hpp $(srcdir)/Teuchos_Version.hpp \
+	$(srcdir)/Teuchos_Workspace.hpp \
+	$(srcdir)/Teuchos_FILEstream.hpp $(srcdir)/Teuchos_Version.hpp \
 	$(srcdir)/Teuchos_DefaultMpiComm.hpp \
 	$(srcdir)/Teuchos_MpiReductionOpSetter.hpp \
 	$(srcdir)/Teuchos_ExpatHandlerAdapter.hpp \
@@ -536,6 +539,8 @@ CORE_H = \
 	$(srcdir)/Teuchos_AbstractFactoryStd.hpp \
 	$(srcdir)/Teuchos_any.hpp \
 	$(srcdir)/Teuchos_Array.hpp \
+	$(srcdir)/Teuchos_ArrayRefCountPtr.hpp \
+	$(srcdir)/Teuchos_ArrayRefCountPtrDecl.hpp \
 	$(srcdir)/Teuchos_arrayArg.hpp \
 	$(srcdir)/Teuchos_basic_oblackholestream.hpp \
 	$(srcdir)/Teuchos_BLAS.hpp \
@@ -690,6 +695,7 @@ EXTRA_EXTENDED = \
 	$(srcdir)/Teuchos_XMLParser.cpp 
 
 UTIL_H = \
+	$(srcdir)/Teuchos_FILEstream.hpp \
 	$(srcdir)/Teuchos_Version.hpp
 
 UTIL = 

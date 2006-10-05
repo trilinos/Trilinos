@@ -85,11 +85,13 @@ namespace Thyra {
  * coefficients in an explicit form as non-mutable
  * <tt>RTOpPack::ConstSubVectorView</tt> or mutable
  * <tt>RTOpPack::SubVectorView</tt> objects using the
- * <tt>acquireDetachedView()</tt> functions.  In general, this is a very inefficient
- * thing to do and should be avoided.  However, there are some situations
- * where getting explicit access to the coefficients of a vector is a very
- * reasonable and efficient thing to do (i.e. for vectors in the domain of a
- * multi-vector for instance) and therefore this functionality is supported.
+ * <tt>acquireDetachedView()</tt> functions.  In general, this is a very
+ * inefficient thing to do and should be avoided.  However, there are some
+ * situations where getting explicit access to the coefficients of a vector is
+ * a very reasonable and efficient thing to do (i.e. for vectors in the domain
+ * of a multi-vector for instance) and therefore this functionality is
+ * supported.  These views and the parent vector follow the state behavior
+ * outlined \ref Thyra_Op_Vec_Behavior_Of_Views_grp "here".
  *
  * \section Thyra_VB_expl_access_utils_sec Explicit vector coefficient access utilities
  *

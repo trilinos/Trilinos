@@ -1,0 +1,29 @@
+<ParameterList>
+  <Parameter name="Linear Solver Type" type="string" value="Belos"/>
+  <ParameterList name="Linear Solver Types">
+    <ParameterList name="Belos">
+      <Parameter name="Block Size" type="int" value="1"/>
+      <Parameter name="Default Rel Res Norm" type="double" value="1e-13"/>
+      <Parameter name="Solver Type" type="string" value="GMRES"/>
+      <ParameterList name="GMRES">
+        <Parameter name="Max Number of Krylov Vectors" type="int" value="300"/>
+      </ParameterList>
+      <Parameter name="Max Iters" type="int" value="400"/>
+      <ParameterList name="Outputter">
+        <Parameter name="Output Frequency" type="int" value="1"/>
+        <Parameter name="Output Max Res Only" type="bool" value="1"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+  <Parameter name="Preconditioner Type" type="string" value="Ifpack"/>
+  <ParameterList name="Preconditioner Types">
+    <ParameterList name="Ifpack">
+      <Parameter name="Prec Type" type="string" value="ILU"/>
+      <Parameter name="Overlap" type="int" value="1"/>
+      <ParameterList name="Ifpack Settings">
+        <Parameter name="fact: level-of-fill" type="int" value="2"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+</ParameterList>
+

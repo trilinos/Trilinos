@@ -13,11 +13,7 @@ OUTPUT_DIRECTORY       = ../thyra/doc
 # What and how documentation is extracted
 #
 INPUT                  = ../thyra/doc/index.doc \
-                         ../thyra/src \
-                         ../example/model_evaluator/EpetraModelEval2DSim.cpp \
-                         ../example/model_evaluator/EpetraModelEval2DSim.hpp \
-                         ../example/model_evaluator/EpetraModelEval4DOpt.cpp \
-                         ../example/model_evaluator/EpetraModelEval4DOpt.hpp
+                         ../thyra/src
 FILE_PATTERNS          = *.h *c *.hpp *.cpp
 RECURSIVE              = YES
 EXCLUDE                = 

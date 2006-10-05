@@ -39,12 +39,14 @@ class Epetra_SerialDenseOperator {
       
  public:
 
-  //@{ \name Destructor.
+   //! @name Destructor
+  //@{ 
     //! Destructor
     virtual ~Epetra_SerialDenseOperator() {};
   //@}
   
-  //@{ \name Atribute set methods.
+  //! @name Atribute set methods
+  //@{ 
 
     //! If set true, transpose of this operator will be applied.
     /*! This flag allows the transpose of the given operator to be used implicitly.  Setting this flag
@@ -59,7 +61,8 @@ class Epetra_SerialDenseOperator {
     virtual int SetUseTranspose(bool UseTranspose) = 0;
   //@}
   
-  //@{ \name Mathematical functions.
+  //! @name Mathematical functions
+  //@{ 
 
     //! Returns the result of a Epetra_SerialDenseOperator applied to a Epetra_SerialDenseMatrix X in Y.
     /*! 
@@ -93,7 +96,8 @@ class Epetra_SerialDenseOperator {
     virtual double NormInf() const = 0;
   //@}
   
-  //@{ \name Atribute access functions
+  //! @name Atribute access functions
+  //@{ 
 
     //! Returns a character string describing the operator
     virtual const char * Label() const = 0;

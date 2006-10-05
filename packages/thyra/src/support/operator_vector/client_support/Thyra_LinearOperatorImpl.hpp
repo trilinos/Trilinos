@@ -29,9 +29,9 @@
 #ifndef THYRA_LINEAROPERATOR_IMPL_HPP
 #define THYRA_LINEAROPERATOR_IMPL_HPP
 
-#include "Teuchos_Handle.hpp"
-#include "Thyra_ConfigDefs.hpp"
 #include "Thyra_LinearOperatorDecl.hpp"
+#include "Thyra_ConfigDefs.hpp"
+#include "Thyra_VectorSpaceImpl.hpp"
 #include "Thyra_BlockedLinearOpBase.hpp"
 #include "Thyra_DefaultBlockedLinearOp.hpp"
 #include "Thyra_DefaultMultipliedLinearOp.hpp"

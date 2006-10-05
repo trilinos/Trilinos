@@ -26,23 +26,42 @@
 // ***********************************************************************
 // @HEADER
 
+#include "Thyra_DefaultRealLinearSolverBuilder.hpp"
+#include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
+#include "Thyra_EpetraThyraWrappers.hpp"
+#include "Thyra_EpetraLinearOp.hpp"
+#include "EpetraExt_readEpetraLinearSystem.h"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_VerboseObject.hpp"
-#include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
-#include "Thyra_DefaultRealLinearSolverBuilder.hpp"
+#include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
+#ifdef HAVE_MPI
+#  include "Epetra_MpiComm.h"
+#else
+#  include "Epetra_SerialComm.h"
+#endif
+
+namespace {
+
+// Helper function to compute a single norm for a vector
+double epetraNorm2( const Epetra_Vector &v )
+{
+  double norm[1] = { -1.0 };
+  v.Norm2(&norm[0]);
+  return norm[0];
+}
+
+} // namespace
 
 int main(int argc, char* argv[])
 {
+
   using Teuchos::rcp;
   using Teuchos::RefCountPtr;
-  using Teuchos::OSTab;
-  using Teuchos::ParameterList;
-  using Teuchos::getParameter;
   using Teuchos::CommandLineProcessor;
 
-  bool result, success = true;
+  bool success = true;
   bool verbose = true;
 
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
@@ -51,13 +70,17 @@ int main(int argc, char* argv[])
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
   try {
+    
+    //
+    // A) Program setup code
+    //
 
     //
     // Read options from command-line
     //
     
-    std::string     inputFile              = "";
-    std::string     extraParams            = "";
+    std::string     matrixFile             = "";
+    double          tol                    = 1e-5;
     bool            onlyPrintOptions       = false;
     bool            printXmlFormat         = false;
 
@@ -65,25 +88,32 @@ int main(int argc, char* argv[])
 
     CommandLineProcessor  clp(false); // Don't throw exceptions
 
+    // Set up command-line options for the linear solver that will be used!
     linearSolverBuilder.setupCLP(&clp);
 
+    clp.setOption( "matrix-file", &matrixFile
+                   ,"Defines the matrix and perhaps the RHS and LHS for a linear system to be solved." );
+    clp.setOption( "tol", &tol, "Tolerance to check against the scaled residual norm." );
     clp.setOption( "only-print-options", "continue-after-printing-options", &onlyPrintOptions
                    ,"Only print options and stop or continue on" );
     clp.setOption( "print-xml-format", "print-readable-format", &printXmlFormat
                    ,"Print the valid options in XML format or in readable format." );
-                   
+    
     clp.setDocString(
-      "Simple example for the use of Stratimikos software.  Right now this only prints"
-      " out valid options and then stops.\n\n"
-      "To print out just the valid options use --input-file=\"\" --only-print-options with --print-xml-format"
-      " or --print-readable-format."
+      "Simple example for the use of the Stratimikos facade Thyra::DefaultRealLinearSolverBuilder.\n"
+      "\n"
+      "To print out just the valid options use --matrix-file=\"\" --only-print-options with --print-xml-format"
+      " or --print-readable-format.\n"
+      "\n"
+      "To solve a linear system from a system read from a file use --matrix-file=\"SomeFile.mtx\""
+      " with options read from an XML file using --linear-solver-params-file=\"SomeFile.xml\"\n"
       );
 
     CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
     if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
 
     //
-    // Print out the valid options if asked to
+    // Print out the valid options and stop if asked
     //
 
     if(onlyPrintOptions) {
@@ -96,27 +126,149 @@ int main(int argc, char* argv[])
         linearSolverBuilder.getValidParameters()->print(*out,1,true,false);
       return 0;
     }
-
-    //
-    // Reading in the solver parameters
-    //
-
-    linearSolverBuilder.readParameters(out.get());
-
-    //
-    // Solve a linear system or something ...
-    //
-
-    Teuchos::RefCountPtr<Thyra::LinearOpWithSolveFactoryBase<double> >
-      lowsFactory = linearSolverBuilder.createLinearSolveStrategy("");
-
-    // ToDo: Solve a linear system or something!
-
-    //
-    // Write the linear solver parameter after they where read
-    //
     
+    //
+    // B) Epetra-specific code that sets up the linear system to be solved
+    //
+    // While the below code reads in the Epetra objects from a file, you can
+    // setup the Epetra objects any way you would like.  Note that this next
+    // set of code as nothing to do with Thyra at all, and it should not.
+    //
+
+    *out << "\nReading linear system in Epetra format from the file \'"<<matrixFile<<"\' ...\n";
+    
+#ifdef HAVE_MPI
+    Epetra_MpiComm comm(MPI_COMM_WORLD);
+#else
+    Epetra_SerialComm comm;
+#endif
+    RefCountPtr<Epetra_CrsMatrix> epetra_A;
+    RefCountPtr<Epetra_Vector> epetra_x, epetra_b;
+    EpetraExt::readEpetraLinearSystem( matrixFile, comm, &epetra_A, NULL, &epetra_x, &epetra_b );
+
+    if(!epetra_b.get()) {
+      *out << "\nThe RHS b was not read in so generate a new random vector ...\n";
+      epetra_b = rcp(new Epetra_Vector(epetra_A->OperatorRangeMap()));
+      epetra_b->Random();
+    }
+
+    if(!epetra_x.get()) {
+      *out << "\nThe LHS x was not read in so generate a new zero vector ...\n";
+      epetra_x = rcp(new Epetra_Vector(epetra_A->OperatorDomainMap()));
+      epetra_x->PutScalar(0.0); // Initial guess is critical!
+    }
+
+    *out << "\nPrinting statistics of the Epetra linear system ...\n";
+
+    *out
+      << "\n  Epetra_CrsMatrix epetra_A of dimension "
+      << epetra_A->OperatorRangeMap().NumGlobalElements()
+      << " x " << epetra_A->OperatorDomainMap().NumGlobalElements()
+      << "\n  ||epetraA||inf = " << epetra_A->NormInf()
+      << "\n  ||epetra_b||2 = " << epetraNorm2(*epetra_b)
+      << "\n  ||epetra_x||2 = " << epetraNorm2(*epetra_x)
+      << "\n";
+
+    //
+    // C) The "Glue" code that takes Epetra objects and wraps them as Thyra
+    // objects
+    //
+    // This next set of code wraps the Epetra objects that define the linear
+    // system to be solved as Thyra objects so that they can be passed to the
+    // linear solver.
+    //
+
+    // Create RCPs that will be used to hold the Thyra wrappers
+    RefCountPtr<const Thyra::LinearOpBase<double> >    A;
+    RefCountPtr<Thyra::VectorBase<double> >            x;
+    RefCountPtr<const Thyra::VectorBase<double> >      b;
+
+    // Create the Thyra wrappers
+    if(1) {
+      // Create an RCP directly to the EpetraLinearOp so that we can access the
+      // right range and domains spaces to use to create the wrappers for the
+      // vector objects.
+      RefCountPtr<const Thyra::EpetraLinearOp>
+        _A = rcp(new Thyra::EpetraLinearOp(epetra_A));
+      // Create Thyra wrappers for the vector objects that will automatically
+      // update the Epetra objects.
+      b = Thyra::create_Vector(epetra_b,_A->spmdRange());
+      x = Thyra::create_Vector(epetra_x,_A->spmdDomain());
+      // Set the RCP to the base linear operator interface
+      A = _A;
+    }
+
+    // Note that above Thyra is only interacted with in the most trival of
+    // ways.  For most users, Thyra will only be seen as a thin wrapper that
+    // they need know little about in order to wrap their objects in order to
+    // pass them to Thyra-enabled solvers.
+      
+    //
+    // D) Thyra-specific code for solving the linear system
+    //
+    // Note that this code has no mention of any concrete implementation and
+    // therefore can be used in any use case.
+    //
+
+    // Reading in the solver parameters from the parameters file and/or from
+    // the command line.  This was setup by the command-line options
+    // set by the setupCLP(...) function above.
+    linearSolverBuilder.readParameters(out.get());
+    // Create a linear solver factory given information read from the
+    // parameter list.
+    RefCountPtr<Thyra::LinearOpWithSolveFactoryBase<double> >
+      lowsFactory = linearSolverBuilder.createLinearSolveStrategy("");
+    // Setup output stream and the verbosity level
+    lowsFactory->setOStream(out);
+    lowsFactory->setVerbLevel(Teuchos::VERB_LOW);
+    // Create a linear solver based on the forward operator A
+    RefCountPtr<Thyra::LinearOpWithSolveBase<double> >
+      lows = Thyra::linearOpWithSolve(*lowsFactory,A);
+    // Solve the linear system (note: the initial guess in 'x' is critical)
+    Thyra::SolveStatus<double>
+      status = Thyra::solve(*lows,Thyra::NOTRANS,*b,&*x);
+    *out << "\nSolve status:\n" << status;
+    // Write the linear solver parameters after they were read
     linearSolverBuilder.writeParamsFile(*lowsFactory);
+
+    //
+    // E) Post process the solution and check the error
+    //
+    // Note that the below code is based only on the Epetra objects themselves
+    // and does not in any way depend or interact with any Thyra-based
+    // objects.  The point is that most users of Thyra can largely gloss over
+    // the fact that Thyra is really being used for anything.
+    //
+
+    // Wipe out the Thyra wrapper for x to guarantee that the solution will be
+    // written back to epetra_x!
+    x = Teuchos::null;
+
+    *out
+      << "\nSolution ||epetra_x||2 = " << epetraNorm2(*epetra_x) << "\n";
+
+    *out << "\nTesting the solution error ||b-A*x||/||b|| computed through the Epetra objects ...\n";
+
+    // r = b - A*x
+    Epetra_Vector epetra_r(*epetra_b);
+    if(1) {
+      Epetra_Vector epetra_A_x(epetra_A->OperatorRangeMap());
+      epetra_A->Apply(*epetra_x,epetra_A_x);
+      epetra_r.Update(-1.0,epetra_A_x,1.0);
+    }
+      
+    const double
+      nrm_r = epetraNorm2(epetra_r),
+      nrm_b = epetraNorm2(*epetra_b),
+      rel_err = ( nrm_r / nrm_b );
+    const bool
+      passed = (rel_err <= tol);
+
+    *out
+      << "||b-A*x||/||b|| = " << nrm_r << "/" << nrm_b << " = " << rel_err
+      << " < tol = " << tol << " ? " << ( passed ? "passed" : "failed" ) << "\n";
+
+    if(!passed) success = false;
     
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose,std::cerr,success)

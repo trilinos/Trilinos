@@ -42,7 +42,7 @@
 # ************************************************************************
 # @HEADER
 
-SOURCES = $(test_aztecoo_thyra_driver_SOURCES) $(test_single_aztecoo_thyra_solver_driver_SOURCES)
+SOURCES = $(testEpetraOperatorWrapper_SOURCES) $(test_aztecoo_thyra_driver_SOURCES) $(test_single_aztecoo_thyra_solver_driver_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -65,7 +65,7 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2)
+noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3)
 @ENABLE_AZTECOO_IFPACK_TRUE@am__append_1 = $(top_builddir)/../ifpack/thyra/src/libifpackthyra.a 
 subdir = thyra/test
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
@@ -106,18 +106,23 @@ CONFIG_HEADER = $(top_builddir)/src/AztecOO_config.h
 CONFIG_CLEAN_FILES =
 am__EXEEXT_1 = test_single_aztecoo_thyra_solver_driver$(EXEEXT)
 am__EXEEXT_2 = test_aztecoo_thyra_driver$(EXEEXT)
+am__EXEEXT_3 = testEpetraOperatorWrapper$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am__objects_1 = test_single_aztecoo_thyra_solver.$(OBJEXT)
-am_test_aztecoo_thyra_driver_OBJECTS =  \
-	test_aztecoo_thyra_driver.$(OBJEXT) $(am__objects_1)
-test_aztecoo_thyra_driver_OBJECTS =  \
-	$(am_test_aztecoo_thyra_driver_OBJECTS)
+am_testEpetraOperatorWrapper_OBJECTS =  \
+	testEpetraOperatorWrapper.$(OBJEXT) $(am__objects_1)
+testEpetraOperatorWrapper_OBJECTS =  \
+	$(am_testEpetraOperatorWrapper_OBJECTS)
 am__DEPENDENCIES_1 =
 @USING_GNUMAKE_FALSE@am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1)
 @USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
 @USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
 @USING_GNUMAKE_TRUE@	$(_EXPORT_LIBS))
 am__DEPENDENCIES_3 = $(am__DEPENDENCIES_2)
+am_test_aztecoo_thyra_driver_OBJECTS =  \
+	test_aztecoo_thyra_driver.$(OBJEXT) $(am__objects_1)
+test_aztecoo_thyra_driver_OBJECTS =  \
+	$(am_test_aztecoo_thyra_driver_OBJECTS)
 am_test_single_aztecoo_thyra_solver_driver_OBJECTS =  \
 	test_single_aztecoo_thyra_solver_driver.$(OBJEXT) \
 	$(am__objects_1)
@@ -126,7 +131,8 @@ test_single_aztecoo_thyra_solver_driver_OBJECTS =  \
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/test_aztecoo_thyra_driver.Po \
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/testEpetraOperatorWrapper.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/test_aztecoo_thyra_driver.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/test_single_aztecoo_thyra_solver.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/test_single_aztecoo_thyra_solver_driver.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
@@ -134,9 +140,11 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(test_aztecoo_thyra_driver_SOURCES) \
+SOURCES = $(testEpetraOperatorWrapper_SOURCES) \
+	$(test_aztecoo_thyra_driver_SOURCES) \
 	$(test_single_aztecoo_thyra_solver_driver_SOURCES)
-DIST_SOURCES = $(test_aztecoo_thyra_driver_SOURCES) \
+DIST_SOURCES = $(testEpetraOperatorWrapper_SOURCES) \
+	$(test_aztecoo_thyra_driver_SOURCES) \
 	$(test_single_aztecoo_thyra_solver_driver_SOURCES)
 ETAGS = etags
 CTAGS = ctags
@@ -300,12 +308,16 @@ target_vendor = @target_vendor@
 #
 TEST_SINGLE_AZTECOO_THYRA_SOLVER_DRIVER = test_single_aztecoo_thyra_solver_driver
 TEST_AZTECOO_THYRA_DRIVER = test_aztecoo_thyra_driver
+TEST_EPETRA_OP_WRAPPER = testEpetraOperatorWrapper
 test_single_aztecoo_thyra_solver_driver_SOURCES = $(srcdir)/test_single_aztecoo_thyra_solver_driver.cpp $(common_sources)
 test_single_aztecoo_thyra_solver_driver_DEPENDENCIES = $(common_dependencies)
 test_single_aztecoo_thyra_solver_driver_LDADD = $(common_ldadd)
 test_aztecoo_thyra_driver_SOURCES = $(srcdir)/test_aztecoo_thyra_driver.cpp $(common_sources)
 test_aztecoo_thyra_driver_DEPENDENCIES = $(common_dependencies) FourByFour.mtx
 test_aztecoo_thyra_driver_LDADD = $(common_ldadd)
+testEpetraOperatorWrapper_SOURCES = $(srcdir)/testEpetraOperatorWrapper.cpp $(common_sources)
+testEpetraOperatorWrapper_DEPENDENCIES = $(common_dependencies) FourByFour.mtx
+testEpetraOperatorWrapper_LDADD = $(common_ldadd)
 
 #
 # Common stuff
@@ -360,6 +372,9 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
+testEpetraOperatorWrapper$(EXEEXT): $(testEpetraOperatorWrapper_OBJECTS) $(testEpetraOperatorWrapper_DEPENDENCIES) 
+	@rm -f testEpetraOperatorWrapper$(EXEEXT)
+	$(CXXLINK) $(testEpetraOperatorWrapper_LDFLAGS) $(testEpetraOperatorWrapper_OBJECTS) $(testEpetraOperatorWrapper_LDADD) $(LIBS)
 test_aztecoo_thyra_driver$(EXEEXT): $(test_aztecoo_thyra_driver_OBJECTS) $(test_aztecoo_thyra_driver_DEPENDENCIES) 
 	@rm -f test_aztecoo_thyra_driver$(EXEEXT)
 	$(CXXLINK) $(test_aztecoo_thyra_driver_LDFLAGS) $(test_aztecoo_thyra_driver_OBJECTS) $(test_aztecoo_thyra_driver_LDADD) $(LIBS)
@@ -373,6 +388,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testEpetraOperatorWrapper.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_aztecoo_thyra_driver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_single_aztecoo_thyra_solver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_single_aztecoo_thyra_solver_driver.Po@am__quote@
@@ -393,21 +409,21 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-test_aztecoo_thyra_driver.o: $(srcdir)/test_aztecoo_thyra_driver.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT test_aztecoo_thyra_driver.o -MD -MP -MF "$(DEPDIR)/test_aztecoo_thyra_driver.Tpo" -c -o test_aztecoo_thyra_driver.o `test -f '$(srcdir)/test_aztecoo_thyra_driver.cpp' || echo '$(srcdir)/'`$(srcdir)/test_aztecoo_thyra_driver.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/test_aztecoo_thyra_driver.Tpo" "$(DEPDIR)/test_aztecoo_thyra_driver.Po"; else rm -f "$(DEPDIR)/test_aztecoo_thyra_driver.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_aztecoo_thyra_driver.cpp' object='test_aztecoo_thyra_driver.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/test_aztecoo_thyra_driver.Po' tmpdepfile='$(DEPDIR)/test_aztecoo_thyra_driver.TPo' @AMDEPBACKSLASH@
+testEpetraOperatorWrapper.o: $(srcdir)/testEpetraOperatorWrapper.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT testEpetraOperatorWrapper.o -MD -MP -MF "$(DEPDIR)/testEpetraOperatorWrapper.Tpo" -c -o testEpetraOperatorWrapper.o `test -f '$(srcdir)/testEpetraOperatorWrapper.cpp' || echo '$(srcdir)/'`$(srcdir)/testEpetraOperatorWrapper.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/testEpetraOperatorWrapper.Tpo" "$(DEPDIR)/testEpetraOperatorWrapper.Po"; else rm -f "$(DEPDIR)/testEpetraOperatorWrapper.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/testEpetraOperatorWrapper.cpp' object='testEpetraOperatorWrapper.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/testEpetraOperatorWrapper.Po' tmpdepfile='$(DEPDIR)/testEpetraOperatorWrapper.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o test_aztecoo_thyra_driver.o `test -f '$(srcdir)/test_aztecoo_thyra_driver.cpp' || echo '$(srcdir)/'`$(srcdir)/test_aztecoo_thyra_driver.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o testEpetraOperatorWrapper.o `test -f '$(srcdir)/testEpetraOperatorWrapper.cpp' || echo '$(srcdir)/'`$(srcdir)/testEpetraOperatorWrapper.cpp
 
-test_aztecoo_thyra_driver.obj: $(srcdir)/test_aztecoo_thyra_driver.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT test_aztecoo_thyra_driver.obj -MD -MP -MF "$(DEPDIR)/test_aztecoo_thyra_driver.Tpo" -c -o test_aztecoo_thyra_driver.obj `if test -f '$(srcdir)/test_aztecoo_thyra_driver.cpp'; then $(CYGPATH_W) '$(srcdir)/test_aztecoo_thyra_driver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_aztecoo_thyra_driver.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/test_aztecoo_thyra_driver.Tpo" "$(DEPDIR)/test_aztecoo_thyra_driver.Po"; else rm -f "$(DEPDIR)/test_aztecoo_thyra_driver.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_aztecoo_thyra_driver.cpp' object='test_aztecoo_thyra_driver.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/test_aztecoo_thyra_driver.Po' tmpdepfile='$(DEPDIR)/test_aztecoo_thyra_driver.TPo' @AMDEPBACKSLASH@
+testEpetraOperatorWrapper.obj: $(srcdir)/testEpetraOperatorWrapper.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT testEpetraOperatorWrapper.obj -MD -MP -MF "$(DEPDIR)/testEpetraOperatorWrapper.Tpo" -c -o testEpetraOperatorWrapper.obj `if test -f '$(srcdir)/testEpetraOperatorWrapper.cpp'; then $(CYGPATH_W) '$(srcdir)/testEpetraOperatorWrapper.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/testEpetraOperatorWrapper.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/testEpetraOperatorWrapper.Tpo" "$(DEPDIR)/testEpetraOperatorWrapper.Po"; else rm -f "$(DEPDIR)/testEpetraOperatorWrapper.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/testEpetraOperatorWrapper.cpp' object='testEpetraOperatorWrapper.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/testEpetraOperatorWrapper.Po' tmpdepfile='$(DEPDIR)/testEpetraOperatorWrapper.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o test_aztecoo_thyra_driver.obj `if test -f '$(srcdir)/test_aztecoo_thyra_driver.cpp'; then $(CYGPATH_W) '$(srcdir)/test_aztecoo_thyra_driver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_aztecoo_thyra_driver.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o testEpetraOperatorWrapper.obj `if test -f '$(srcdir)/testEpetraOperatorWrapper.cpp'; then $(CYGPATH_W) '$(srcdir)/testEpetraOperatorWrapper.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/testEpetraOperatorWrapper.cpp'; fi`
 
 test_single_aztecoo_thyra_solver.o: $(srcdir)/test_single_aztecoo_thyra_solver.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT test_single_aztecoo_thyra_solver.o -MD -MP -MF "$(DEPDIR)/test_single_aztecoo_thyra_solver.Tpo" -c -o test_single_aztecoo_thyra_solver.o `test -f '$(srcdir)/test_single_aztecoo_thyra_solver.cpp' || echo '$(srcdir)/'`$(srcdir)/test_single_aztecoo_thyra_solver.cpp; \
@@ -424,6 +440,22 @@ test_single_aztecoo_thyra_solver.obj: $(srcdir)/test_single_aztecoo_thyra_solver
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/test_single_aztecoo_thyra_solver.Po' tmpdepfile='$(DEPDIR)/test_single_aztecoo_thyra_solver.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o test_single_aztecoo_thyra_solver.obj `if test -f '$(srcdir)/test_single_aztecoo_thyra_solver.cpp'; then $(CYGPATH_W) '$(srcdir)/test_single_aztecoo_thyra_solver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_single_aztecoo_thyra_solver.cpp'; fi`
+
+test_aztecoo_thyra_driver.o: $(srcdir)/test_aztecoo_thyra_driver.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT test_aztecoo_thyra_driver.o -MD -MP -MF "$(DEPDIR)/test_aztecoo_thyra_driver.Tpo" -c -o test_aztecoo_thyra_driver.o `test -f '$(srcdir)/test_aztecoo_thyra_driver.cpp' || echo '$(srcdir)/'`$(srcdir)/test_aztecoo_thyra_driver.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/test_aztecoo_thyra_driver.Tpo" "$(DEPDIR)/test_aztecoo_thyra_driver.Po"; else rm -f "$(DEPDIR)/test_aztecoo_thyra_driver.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_aztecoo_thyra_driver.cpp' object='test_aztecoo_thyra_driver.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/test_aztecoo_thyra_driver.Po' tmpdepfile='$(DEPDIR)/test_aztecoo_thyra_driver.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o test_aztecoo_thyra_driver.o `test -f '$(srcdir)/test_aztecoo_thyra_driver.cpp' || echo '$(srcdir)/'`$(srcdir)/test_aztecoo_thyra_driver.cpp
+
+test_aztecoo_thyra_driver.obj: $(srcdir)/test_aztecoo_thyra_driver.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT test_aztecoo_thyra_driver.obj -MD -MP -MF "$(DEPDIR)/test_aztecoo_thyra_driver.Tpo" -c -o test_aztecoo_thyra_driver.obj `if test -f '$(srcdir)/test_aztecoo_thyra_driver.cpp'; then $(CYGPATH_W) '$(srcdir)/test_aztecoo_thyra_driver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_aztecoo_thyra_driver.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/test_aztecoo_thyra_driver.Tpo" "$(DEPDIR)/test_aztecoo_thyra_driver.Po"; else rm -f "$(DEPDIR)/test_aztecoo_thyra_driver.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_aztecoo_thyra_driver.cpp' object='test_aztecoo_thyra_driver.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/test_aztecoo_thyra_driver.Po' tmpdepfile='$(DEPDIR)/test_aztecoo_thyra_driver.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o test_aztecoo_thyra_driver.obj `if test -f '$(srcdir)/test_aztecoo_thyra_driver.cpp'; then $(CYGPATH_W) '$(srcdir)/test_aztecoo_thyra_driver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_aztecoo_thyra_driver.cpp'; fi`
 
 test_single_aztecoo_thyra_solver_driver.o: $(srcdir)/test_single_aztecoo_thyra_solver_driver.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT test_single_aztecoo_thyra_solver_driver.o -MD -MP -MF "$(DEPDIR)/test_single_aztecoo_thyra_solver_driver.Tpo" -c -o test_single_aztecoo_thyra_solver_driver.o `test -f '$(srcdir)/test_single_aztecoo_thyra_solver_driver.cpp' || echo '$(srcdir)/'`$(srcdir)/test_single_aztecoo_thyra_solver_driver.cpp; \

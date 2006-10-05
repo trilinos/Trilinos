@@ -109,9 +109,6 @@ PROGRAMS = $(noinst_PROGRAMS)
 am_Permutation_test_OBJECTS = Permutation_test-cxx_main.$(OBJEXT)
 Permutation_test_OBJECTS = $(am_Permutation_test_OBJECTS)
 am__DEPENDENCIES_1 =
-@USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
-@USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
-@USING_GNUMAKE_TRUE@	$(EPETRAEXT_LIBS))
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -308,8 +305,7 @@ Permutation_test_SOURCES = \
 
 Permutation_test_DEPENDENCIES = \
   $(top_builddir)/src/libepetraext.a \
-  $(top_builddir)/../epetra/src/libepetra.a \
-  $(top_builddir)/../teuchos/src/libteuchos.a
+  $(top_builddir)/../epetra/src/libepetra.a
 
 Permutation_test_CXXFLAGS = -I$(top_srcdir)/src/transform \
                             -I$(top_srcdir)/src \
@@ -317,11 +313,14 @@ Permutation_test_CXXFLAGS = -I$(top_srcdir)/src/transform \
                             -I$(top_srcdir)/../epetra/src \
                             -I$(top_builddir)/../epetra/src
 
-@USING_GNUMAKE_FALSE@EXPORT_LIBS = $(EPETRAEXT_LIBS)
-@USING_GNUMAKE_TRUE@EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(EPETRAEXT_LIBS))
-@USING_GNUMAKE_FALSE@EXPORT_INC_PATH = $(EPETRAEXT_INCLUDES)
-@USING_GNUMAKE_TRUE@EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(EPETRAEXT_INCLUDES))
-Permutation_test_LDADD = $(EXPORT_LIBS)
+Permutation_test_LDADD = \
+  $(top_builddir)/src/libepetraext.a \
+  $(top_builddir)/../epetra/src/libepetra.a \
+  $(top_builddir)/../teuchos/src/libteuchos.a \
+  $(LIBS) \
+  $(BLAS_LIBS) \
+  $(FLIBS)
+
 all: all-am
 
 .SUFFIXES:
@@ -564,8 +563,6 @@ uninstall-am: uninstall-info-am
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am uninstall-info-am
 
-
-include $(top_builddir)/Makefile.export.epetraext
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

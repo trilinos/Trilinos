@@ -35,6 +35,7 @@
 #include "Thyra_EpetraOperatorViewExtractorStd.hpp"
 #include "Thyra_ScaledAdjointLinearOpBase.hpp"
 #include "Thyra_EpetraLinearOpBase.hpp"
+#include "Thyra_EpetraOperatorWrapper.hpp"
 #include "EpetraExt_ProductOperator.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_dyn_cast.hpp"
@@ -357,13 +358,38 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
   TEST_FOR_EXCEPT(fwdOpSrc->getOp().get()==NULL);
 #endif
   Teuchos::RefCountPtr<const LinearOpBase<double> >
-    fwdOp = fwdOpSrc->getOp(),
-    approxFwdOp = ( approxFwdOpSrc.get() ? approxFwdOpSrc->getOp() : Teuchos::null );
+    tmpFwdOp = fwdOpSrc->getOp(),
+    tmpApproxFwdOp = ( approxFwdOpSrc.get() ? approxFwdOpSrc->getOp() : Teuchos::null );
+  Teuchos::RefCountPtr<const LinearOpBase<double> > fwdOp;
+  Teuchos::RefCountPtr<const LinearOpBase<double> > approxFwdOp;
+
+  // 
+  // Determine whether the operator is an Epetra operator. If so, we're good to go.
+  // If not, we need to wrap it. 
+  //
+  const EpetraLinearOpBase* epFwdOp 
+    = dynamic_cast<const EpetraLinearOpBase*>(tmpFwdOp.get());
+
+  const EpetraLinearOpBase* epApproxFwdOp 
+    = dynamic_cast<const EpetraLinearOpBase*>(tmpApproxFwdOp.get());
+  
+  if (epFwdOp!=0)
+    {
+      fwdOp = tmpFwdOp;
+      approxFwdOp = tmpApproxFwdOp;
+    }
+  else
+    {
+      fwdOp = makeEpetraWrapper(ConstLinearOperator<double>(tmpFwdOp));
+      if (tmpApproxFwdOp.get()) approxFwdOp = makeEpetraWrapper(ConstLinearOperator<double>(tmpApproxFwdOp));
+    }
+  
   //
   // Get the AztecOOLinearOpWithSolve object
   //
   AztecOOLinearOpWithSolve
     *aztecOp = &Teuchos::dyn_cast<AztecOOLinearOpWithSolve>(*Op);
+
   //
   // Unwrap and get the forward operator or matrix
   //

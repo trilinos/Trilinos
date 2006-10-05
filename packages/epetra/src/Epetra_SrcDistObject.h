@@ -48,13 +48,15 @@ class Epetra_BlockMap;
 class Epetra_SrcDistObject {
 
   public:
-  //@{ \name Destructor.
+    //! @name Destructor
+  //@{ 
   //! Epetra_SrcDistObject destructor.  
   virtual ~Epetra_SrcDistObject() {};
   //@}
 
   
-  //@{ \name Attribute accessor methods.
+  //! @name Attribute accessor methods
+  //@{ 
   //! Returns a reference to the Epetra_BlockMap for this object.
   virtual const Epetra_BlockMap & Map() const = 0;
 };

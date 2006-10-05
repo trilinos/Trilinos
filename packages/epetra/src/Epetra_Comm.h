@@ -60,7 +60,8 @@ class Epetra_BlockMap;
 class Epetra_Comm {
     
   public:
-  //@{ \name Constructor / Destructor
+    //! @name Constructor / Destructor
+  //@{ 
 	//! Epetra_Comm clone constructor.
 	/*! The clone function will return a new heap-allocated Comm instance.
             It is the responsibility of the caller to ensure that this new instance
@@ -71,14 +72,16 @@ class Epetra_Comm {
   virtual ~Epetra_Comm() {};
   //@}
 
-  //@{ \name Barrier Methods
+  //! @name Barrier Methods
+  //@{ 
   //! Epetra_Comm Barrier function.
   /*! Each processor must wait at the point the barrier is called until all processors have arrived.
   */
   virtual void Barrier() const = 0;
   //@}
 
-  //@{ \name Broadcast Methods
+  //! @name Broadcast Methods
+  //@{ 
   //! Epetra_Comm Broadcast function.
   /*! Take list of input values from the root processor and sends to all other processors.
     \param MyVals InOut
@@ -122,7 +125,8 @@ class Epetra_Comm {
   virtual int Broadcast(long * MyVals, int Count, int Root) const = 0;
   //@}
 
-  //@{ \name Gather Methods
+  //! @name Gather Methods
+  //@{ 
   //! Epetra_Comm All Gather function.
   /*! Take list of input values from all processors in the communicator and creates an ordered contiguous list of
 		  those values on each processor.
@@ -163,7 +167,8 @@ class Epetra_Comm {
   virtual int GatherAll(long * MyVals, long * AllVals, int Count) const = 0;
   //@}
 
-  //@{ \name Sum Methods
+  //! @name Sum Methods
+  //@{ 
   //! Epetra_Comm Global Sum function.
   /*! Take list of input values from all processors in the communicator, computes the sum and returns the
 		  sum to all processors.
@@ -205,7 +210,8 @@ class Epetra_Comm {
   virtual int SumAll(long * PartialSums, long * GlobalSums, int Count) const = 0;
   //@}
 
-  //@{ \name Max/Min Methods
+  //! @name Max/Min Methods
+  //@{ 
   //! Epetra_Comm Global Max function.
   /*! Take list of input values from all processors in the communicator, computes the max and returns the
       max to all processors.
@@ -285,7 +291,8 @@ class Epetra_Comm {
   virtual int MinAll(long * PartialMins, long * GlobalMins, int Count) const = 0;
   //@}
 
-  //@{ \name Parallel Prefix Methods
+  //! @name Parallel Prefix Methods
+  //@{ 
   //! Epetra_Comm Scan Sum function.
   /*! Take list of input values from all processors in the communicator, computes the scan sum and returns it 
       to all processors such that processor i contains the sum of values from processor 0 up to and including
@@ -326,7 +333,8 @@ class Epetra_Comm {
   virtual int ScanSum(long * MyVals, long * ScanSums, int Count) const = 0;
   //@}
 
-  //@{ \name Attribute Accessor Methods
+  //! @name Attribute Accessor Methods
+  //@{ 
     
   //! Return my process ID. 
   /*! In MPI mode returns the rank of the calling process.  In serial mode
@@ -341,14 +349,16 @@ class Epetra_Comm {
   virtual int NumProc() const = 0;
   //@}
 
-  //@{ \name Gather/Scatter and Directory Constructors
+  //! @name Gather/Scatter and Directory Constructors
+  //@{ 
   //! Create a distributor object.
   virtual Epetra_Distributor * CreateDistributor() const = 0;
   //! Create a directory object for the given Epetra_BlockMap.
   virtual Epetra_Directory * CreateDirectory(const Epetra_BlockMap & Map) const = 0;
   //@}
 
-  //@{ \name I/O methods
+  //! @name I/O methods
+  //@{ 
   //! Print object to an output stream
   virtual void PrintInfo(ostream & os) const = 0;
   //@}

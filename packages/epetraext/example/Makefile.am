@@ -63,3 +63,16 @@ SUBDIRS = $(INOUT_SUBDIRS) $(ZOLTAN_SUBDIRS) $(MATLAB_SUBDIRS) \
 	$(MAPCOLORING_SUBDIRS)
 
 endif
+
+EXTRA_DIST = model_evaluator/GLpApp/data/square/square.1.000 \
+	model_evaluator/GLpApp/data/square/square.2.000 \
+	model_evaluator/GLpApp/data/square/square.9x9.2.000 \
+	model_evaluator/GLpApp/data/square/square.9x9.2.001 \
+	model_evaluator/GLpApp/GenSQP_DataPool.hpp \
+	model_evaluator/GLpApp/GenSQP_Vector.hpp \
+	model_evaluator/GLpApp/GenSQP_YUEpetraVector.hpp \
+	model_evaluator/GLpApp/GLpApp_AdvDiffReactOptModel.hpp \
+	model_evaluator/GLpApp/GLpApp_AdvDiffReactOptModelCreator.hpp \
+	model_evaluator/GLpApp/GLpApp_GLpYUEpetraDataPool.hpp \
+	model_evaluator/GLpApp/rect2DMeshGenerator.hpp
+

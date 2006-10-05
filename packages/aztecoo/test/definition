@@ -16,6 +16,12 @@
     COMM = MPI(1), SERIAL;
 }
 
+(FRAMEWORK, INSTALL, AztecOOThyraTests) {
+    TESTS = ../thyra/test/testEpetraOperatorWrapper.exe;
+    X-HOST = paunchy;
+    COMM = MPI(1), SERIAL;
+}
+
 (FRAMEWORK, AztecOOTests) {
     DIRS = AztecOO, AztecOO_StatusTest, AztecOO_SetParameters;
     ARGS = -v;

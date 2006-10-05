@@ -225,6 +225,8 @@ namespace Thyra
     Vector<Scalar> b = copy(y);
     Vector<Scalar> c = copy(z);
     
+    TestSpecifier<Scalar>
+      specLooser(spec_.doTest(),1e+1*spec_.warningTol(),1e+2*spec_.errorTol());
 
     this->out() << "starting linear combination tests" << endl;
 
@@ -255,12 +257,12 @@ namespace Thyra
     a = copy(x);
     x = A*x + (B*y + C*x);
     err = norm2(x - (A*a + (B*y + C*a)));
-    if (!checkTest(spec_, err, "x=A*x + (B*y + C*x)")) pass = false;
+    if (!checkTest(specLooser, err, "x=A*x + (B*y + C*x)")) pass = false;
 
     a = copy(x);
     x = (A*x + B*y) + C*x;
     err = norm2(x - ((A*a + B*y) + C*a));
-    if (!checkTest(spec_, err, "x=(A*x + B*y) + C*x")) pass = false;
+    if (!checkTest(specLooser, err, "x=(A*x + B*y) + C*x")) pass = false;
 
     /* test assignment of OpTimesLC into empty and non-empty vectors */
     Vector<Scalar> u;

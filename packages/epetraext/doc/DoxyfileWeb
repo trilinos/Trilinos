@@ -42,7 +42,7 @@
 
 PROJECT_NAME           = EpetraExt
 
-INPUT                  = ../src index.doc
+INPUT                  =  index.doc ../src ../example/model_evaluator
 
 #EXAMPLE_PATH           = ../example ../example/matlab/cxx_main.cpp matlab.README
 EXAMPLE_PATH           = ../../aztecoo/example/AztecOO_MatlabInput/cxx_main.cpp

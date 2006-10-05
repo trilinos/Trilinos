@@ -201,7 +201,8 @@ class Epetra_CrsGraph: public Epetra_DistObject {
       
  public:
 
-  //@{ \name Constructors/Destructor.
+   //! @name Constructors/Destructor
+  //@{ 
   //! Epetra_CrsGraph constuctor with variable number of indices per row.
   /*! Creates a Epetra_CrsGraph object and allocates storage.  
     
@@ -281,7 +282,8 @@ class Epetra_CrsGraph: public Epetra_DistObject {
   virtual ~Epetra_CrsGraph();
   //@}
   
-  //@{ \name Insertion/Removal methods.
+  //! @name Insertion/Removal methods
+  //@{ 
   //! Enter a list of elements in a specified global row of the graph.
   /*!
     \param Row - (In) Global row number of indices.
@@ -363,7 +365,8 @@ class Epetra_CrsGraph: public Epetra_DistObject {
   int RemoveMyIndices(int Row);
   //@}
 
-  //@{ \name Transformation methods
+  //! @name Transformation methods
+  //@{ 
   
   //! Tranform to local index space.  Perform other operations to allow optimal matrix operations.
   /*! This overloading of the FillComplete method assumes that the domain-map and range-map both equal
@@ -409,7 +412,8 @@ class Epetra_CrsGraph: public Epetra_DistObject {
 
   //@}
 
-  //@{ \name Extraction methods.
+  //! @name Extraction methods
+  //@{ 
 
   //! Extract a list of elements in a specified global row of the graph. Put into storage allocated by calling routine.
   /*!
@@ -462,7 +466,8 @@ class Epetra_CrsGraph: public Epetra_DistObject {
   int ExtractMyRowView(int LocalRow, int& NumIndices, int*& Indices) const;
   //@}
 
-  //@{ \name Graph Properties Query Methods.
+  //! @name Graph Properties Query Methods
+  //@{ 
   //! If FillComplete() has been called, this query returns true, otherwise it returns false.
 	bool Filled() const {return(CrsGraphData_->Filled_);}
 	
@@ -504,7 +509,8 @@ class Epetra_CrsGraph: public Epetra_DistObject {
 	bool HaveColMap() const {return(CrsGraphData_->HaveColMap_);}
   //@}
   
-  //@{ \name Atribute access functions
+  //! @name Atribute access functions
+  //@{ 
     
 	//! Returns the number of matrix rows on this processor.
 	int NumMyRows() const {return(CrsGraphData_->NumMyRows_);}
@@ -714,7 +720,8 @@ class Epetra_CrsGraph: public Epetra_DistObject {
 	const Epetra_Comm& Comm() const {return(Epetra_DistObject::Comm());}
   //@}
   
-  //@{ \name Local/Global ID methods
+  //! @name Local/Global ID methods
+  //@{ 
 
 	//! Returns the local row index for given global row index, returns -1 if no local row for this global row.
 	int LRID(int GRID) const {return(RowMap().LID(GRID));}
@@ -759,7 +766,8 @@ class Epetra_CrsGraph: public Epetra_DistObject {
 	bool MyLCID(int LCID) const {return(GCID(LCID) != IndexBase() - 1);}
   //@}
   
-  //@{ \name Inlined Operator Methods.
+  //! @name Inlined Operator Methods
+  //@{ 
 	
 	//! Inlined bracket operator for fast access to data. (Const and Non-const versions)
 	/*! No error checking and dangerous for optimization purposes.
@@ -784,7 +792,8 @@ class Epetra_CrsGraph: public Epetra_DistObject {
 	*/
 	Epetra_CrsGraph& operator = (const Epetra_CrsGraph& Source);
 
-  //@{ \name I/O Methods.
+  //! @name I/O Methods
+  //@{ 
 
   //! Print method
   virtual void Print(ostream& os) const;
@@ -793,7 +802,8 @@ class Epetra_CrsGraph: public Epetra_DistObject {
 	void PrintGraphData(ostream& os, int level) const {CrsGraphData_->Print(os, level);}
   //@}
 
-  //@{ \name Deprecated methods:  These methods still work, but will be removed in a future version.
+  //! @name Deprecated methods:  These methods still work, but will be removed in a future version
+  //@{ 
 
 	//! Use ColMap() instead. 
 	const Epetra_BlockMap& ImportMap() const {return(CrsGraphData_->ColMap_);}
@@ -806,7 +816,8 @@ class Epetra_CrsGraph: public Epetra_DistObject {
 	
   //@}
 
-  //@{ \name Expert Users and Developers Only
+  //! @name Expert Users and Developers Only
+  //@{ 
 
 	//! Returns the reference count of CrsGraphData.
 	/*! (Intended for testing purposes.) */

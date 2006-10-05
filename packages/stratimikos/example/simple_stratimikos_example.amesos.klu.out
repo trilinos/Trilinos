@@ -1,0 +1,35 @@
+
+Echoing the command-line:
+
+../example/simple_stratimikos_example.exe --echo-command-line --matrix-file=../example/FourByFour.mtx --linear-solver-params-file=../example/amesos.klu.xml 
+
+Teuchos::GlobalMPISession::GlobalMPISession(): started serial run
+
+Reading linear system in Epetra format from the file '../example/FourByFour.mtx' ...
+
+Printing statistics of the Epetra linear system ...
+
+  Epetra_CrsMatrix epetra_A of dimension 4 x 4
+  ||epetraA||inf = 1.643
+  ||epetra_b||2 = 1.52593
+  ||epetra_x||2 = 0
+
+Reading parameters from XML file "../example/amesos.klu.xml" ...
+  
+  Solving block system using Amesos solver 10Amesos_Klu ...
+  
+  
+  Total solve time = 0 sec
+
+Solve status:
+  solveStatus = SOLVE_STATUS_CONVERGED
+  achievedTol = unknownTolerance()
+  message: "Solver 10Amesos_Klu converged!"
+  extraParameters: NONE
+
+Solution ||epetra_x||2 = 1.24984
+
+Testing the solution error ||b-A*x||/||b|| computed through the Epetra objects ...
+||b-A*x||/||b|| = 0/1.52593 = 0 < tol = 1e-05 ? passed
+
+Congratulations! All of the tests checked out!

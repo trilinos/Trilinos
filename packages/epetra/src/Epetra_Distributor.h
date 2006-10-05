@@ -49,7 +49,8 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 class Epetra_Distributor {
     
   public:
-  //@{ \name Constructor and Destructor
+    //! @name Constructor and Destructor
+  //@{ 
   //! Epetra_Distributor clone constructor.
   virtual Epetra_Distributor * Clone() = 0;
   //! Epetra_Distributor Destructor.
@@ -57,7 +58,8 @@ class Epetra_Distributor {
   //@}
 
   
-  //@{ \name Gather/Scatter Constructors
+  //! @name Gather/Scatter Constructors
+  //@{ 
   //! Create Distributor object using list of process IDs to which we export
   /*! Take a list of Process IDs and construct a plan for efficiently scattering to these processes.
       Return the number of IDs being sent to me.
@@ -100,7 +102,8 @@ class Epetra_Distributor {
 			       int *& ExportPIDs) = 0;
   //@}
 
-  //@{ \name Execute Gather/Scatter Operations (Constant size objects)
+  //! @name Execute Gather/Scatter Operations (Constant size objects)
+  //@{ 
 
   //! Execute plan on buffer of export objects in a single step
   virtual int Do( char * export_objs,
@@ -133,7 +136,8 @@ class Epetra_Distributor {
   virtual int DoReverseWaits() = 0;
   //@}
 
-  //@{ \name Execute Gather/Scatter Operations (Non-constant size objects)
+  //! @name Execute Gather/Scatter Operations (Non-constant size objects)
+  //@{ 
 
   //! Execute plan on buffer of export objects in a single step (object size may vary)
   virtual int Do( char * export_objs,
@@ -165,7 +169,8 @@ class Epetra_Distributor {
 
   //@}
 
-  //@{ \name Print object to an output stream
+  //! @name Print object to an output stream
+  //@{ 
   virtual void Print(ostream & os) const = 0;
   //@}
 };

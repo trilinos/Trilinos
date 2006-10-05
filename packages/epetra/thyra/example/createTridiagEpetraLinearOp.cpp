@@ -36,7 +36,8 @@
 # include "Epetra_SerialComm.h"
 #endif
 
-Teuchos::RefCountPtr<Thyra::LinearOpBase<double> > createTridiagEpetraLinearOp(
+Teuchos::RefCountPtr<Epetra_Operator>
+createTridiagEpetraLinearOp(
   const int      globalDim
 #ifdef HAVE_MPI
   ,MPI_Comm      mpiComm
@@ -113,24 +114,13 @@ Teuchos::RefCountPtr<Thyra::LinearOpBase<double> > createTridiagEpetraLinearOp(
   // (B.4) Finish the construction of the Epetra_CrsMatrix
   TEST_FOR_EXCEPT( 0!=A_epetra->FillComplete() );
 
-  //
-  // (C) Wrap the above created (Epetra_CrsMatrix) Epetra_Operator object created above
-  // into a Thyra::EpetraLinearOp object to turn it into a Thyra::LinearOpBase object
-  //
+  // Return the Epetra_Operator object
+  return A_epetra;
 
-  RefCountPtr<Thyra::LinearOpBase<double> > A = rcp(new Thyra::EpetraLinearOp(A_epetra));
-
-  //
-  // (D) Finally return the Thyra-wrapped Epetra matrix object
-  //
-  
-  return A;
-
-  // Note that when this function returns the returned
-  // RefCountPtr-wrapped Thyra::LinearOpBase object will own all of the
-  // Epetra objects that went into its construction and these objects
-  // will stay around until all of the RefCountPtr objects to the
-  // allocated Thyra::LinearOpBase object are removed and destruction
-  // occurs!
+  // Note that when this function returns the returned RefCountPtr-wrapped
+  // Epetra_Operator object will own all of the Epetra objects that went into
+  // its construction and these objects will stay around until all of the
+  // RefCountPtr objects to the allocated Epetra_Operator object are removed
+  // and destruction occurs!
 
 } // end createTridiagLinearOp()

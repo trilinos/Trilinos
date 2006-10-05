@@ -41,7 +41,8 @@ ACLOCAL	= aclocal -I config
 ## #######################################################################
 EXTRA_DIST = config/generate-makeoptions.pl \
        config/strip_dup_incl_paths.pl config/strip_dup_libs.pl \
-       config/replace-install-prefix.pl config/string-replace.pl
+       config/replace-install-prefix.pl config/string-replace.pl \
+       example/inout/matlab.h5
 
 ## #######################################################################
 ## Tools in the auxillary directory 
@@ -123,8 +124,8 @@ install-exec-hook:
 		--my-export-makefile=Makefile.export.epetraext \
 		--my-abs-top-srcdir=@abs_top_srcdir@ \
 		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src:@abs_top_srcdir@/src/block:@abs_top_srcdir@/src/btf:@abs_top_srcdir@/src/coloring:@abs_top_srcdir@/src/distdir:@abs_top_srcdir@/src/inout:@abs_top_srcdir@/src/matlab:@abs_top_srcdir@/src/transform:@abs_top_srcdir@/src/zoltan \
-		--my-abs-lib-dirs=@abs_top_builddir@/src \
-		--dep-package-abs-builddirs=@abs_top_builddir@/../epetra:@abs_top_builddir@/../triutils
+		--my-abs-lib-dirs=@abs_top_builddir@/src:@abs_top_builddir@/thyra/src \
+		--dep-package-abs-builddirs=@abs_top_builddir@/../epetra:@abs_top_builddir@/../triutils:@abs_top_builddir@/../thyra:@abs_top_builddir@/../teuchos
 	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile EPETRAEXT > $(exec_prefix)/include/Makefile.export.epetraext.macros
 
 uninstall-hook:

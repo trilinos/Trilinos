@@ -620,7 +620,6 @@ int Ifpack_PointRelaxation::
 ApplyInverseSGS_CrsMatrix(const Epetra_CrsMatrix* A, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
   int NumVectors = X.NumVectors();
-  int Length = Matrix().MaxNumEntries();
 
   int* Indices;
   double* Values;

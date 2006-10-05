@@ -45,7 +45,8 @@ class Epetra_Distributor;
 class Epetra_SerialComm: public Epetra_Object, public virtual Epetra_Comm {
     
   public:
-  //@{ \name Constructor/Destructor Methods
+    //! @name Constructor/Destructor Methods
+  //@{ 
 
   //! Epetra_SerialComm Serial Constructor.
   /*! Builds an instance of a serial communicator.  Even
@@ -75,14 +76,16 @@ class Epetra_SerialComm: public Epetra_Object, public virtual Epetra_Comm {
   virtual ~Epetra_SerialComm();
   //@}
 
-  //@{ \name Barrier Methods
+  //! @name Barrier Methods
+  //@{ 
   //! Epetra_SerialComm Barrier function.
   /*! A no-op for a serial communicator.
   */
   void Barrier() const;
   //@}
 
-  //@{ \name Broadcast Methods
+  //! @name Broadcast Methods
+  //@{ 
   //! Epetra_SerialComm Broadcast function.
   /*! A no-op for a serial communicator.
     \param MyVals InOut
@@ -126,7 +129,8 @@ class Epetra_SerialComm: public Epetra_Object, public virtual Epetra_Comm {
   int Broadcast(long * MyVals, int Count, int Root) const;
   //@}
 
-  //@{ \name Gather Methods
+  //! @name Gather Methods
+  //@{ 
   //! Epetra_SerialComm All Gather function.
   /*! A copy for a serial communicator.
     \param MyVals In
@@ -164,7 +168,8 @@ class Epetra_SerialComm: public Epetra_Object, public virtual Epetra_Comm {
   int GatherAll(long * MyVals, long * AllVals, int Count) const;
   //@}
 
-  //@{ \name Sum Methods
+  //! @name Sum Methods
+  //@{ 
   //! Epetra_SerialComm Global Sum function.
   /*! A copy for a serial communicator.
     \param PartialSums In
@@ -203,7 +208,8 @@ class Epetra_SerialComm: public Epetra_Object, public virtual Epetra_Comm {
   int SumAll(long * PartialSums, long * GlobalSums, int Count) const;
   //@}
 
-  //@{ \name Max/Min Methods
+  //! @name Max/Min Methods
+  //@{ 
   //! Epetra_SerialComm Global Max function.
   /*! A copy for a serial communicator.
     \param PartialMaxs In
@@ -277,7 +283,8 @@ class Epetra_SerialComm: public Epetra_Object, public virtual Epetra_Comm {
   int MinAll(long * PartialMins, long * GlobalMins, int Count) const;
   //@}
 
-  //@{ \name Parallel Prefix Methods
+  //! @name Parallel Prefix Methods
+  //@{ 
   //! Epetra_SerialComm Scan Sum function.
   /*! A copy for a serial communicator.
     \param MyVals In
@@ -312,7 +319,8 @@ class Epetra_SerialComm: public Epetra_Object, public virtual Epetra_Comm {
   int ScanSum(long * MyVals, long * ScanSums, int Count) const;
   //@}
 
-  //@{ \name Attribute Accessor Methods
+  //! @name Attribute Accessor Methods
+  //@{ 
   
   //! Return my process ID. 
   /*! In MPI mode returns the rank of the calling process.  In serial mode
@@ -325,14 +333,16 @@ class Epetra_SerialComm: public Epetra_Object, public virtual Epetra_Comm {
 
   //@}
 
-  //@{ \name Gather/Scatter and Directory Constructors
+  //! @name Gather/Scatter and Directory Constructors
+  //@{ 
   //! Create a distributor object.
   Epetra_Distributor * CreateDistributor() const;
   //! Create a directory object for the given Epetra_BlockMap.
   Epetra_Directory * CreateDirectory(const Epetra_BlockMap & Map) const;
   //@}
 
-  //@{ \name Print object to an output stream
+  //! @name Print object to an output stream
+  //@{ 
   //! Print method that implements Epetra_Object virtual Print method
   inline void Print(ostream & os) const {
 		os << "::Processor "<< MyPID()<<" of " << NumProc() << " total processors."; 
@@ -345,7 +355,8 @@ class Epetra_SerialComm: public Epetra_Object, public virtual Epetra_Comm {
 	};
   //@}
 
-  //@{ \name Expert Users and Developers Only
+  //! @name Expert Users and Developers Only
+  //@{ 
 
 	//! Returns the reference count of SerialCommData.
 	/*! (Intended for testing purposes.) */

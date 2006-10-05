@@ -39,7 +39,9 @@ silly1DFFT_serial.cpp </a>
 
 */
 
+/** \defgroup thyra_operator_solve_support_LOWSF_helpers_grp Non-member helper functions for Thyra::LinearOpWithSolveFactoryBase
 
+*/
 
 /** \example Thyra_LinearOpWithSolveFactoryExamples.hpp
 

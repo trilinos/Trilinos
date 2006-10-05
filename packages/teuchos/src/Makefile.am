@@ -54,6 +54,8 @@ CORE_H = \
 	$(srcdir)/Teuchos_AbstractFactoryStd.hpp \
 	$(srcdir)/Teuchos_any.hpp \
 	$(srcdir)/Teuchos_Array.hpp \
+	$(srcdir)/Teuchos_ArrayRefCountPtr.hpp \
+	$(srcdir)/Teuchos_ArrayRefCountPtrDecl.hpp \
 	$(srcdir)/Teuchos_arrayArg.hpp \
 	$(srcdir)/Teuchos_basic_oblackholestream.hpp \
 	$(srcdir)/Teuchos_BLAS.hpp \
@@ -208,6 +210,7 @@ EXTRA_EXTENDED = \
 	$(srcdir)/Teuchos_XMLParser.cpp 
 
 UTIL_H = \
+	$(srcdir)/Teuchos_FILEstream.hpp \
 	$(srcdir)/Teuchos_Version.hpp
 
 UTIL =

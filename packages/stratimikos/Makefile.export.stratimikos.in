@@ -4,10 +4,15 @@ include @abs_top_builddir@/../thyra/Makefile.export.thyra
 @ENABLE_STRATIMIKOS_AZTECOO_THYRA_TRUE@include @abs_top_builddir@/../aztecoo/Makefile.export.aztecoo
 @ENABLE_STRATIMIKOS_BELOS_THYRA_TRUE@include @abs_top_builddir@/../belos/Makefile.export.belos
 @ENABLE_STRATIMIKOS_IFPACK_THYRA_TRUE@include @abs_top_builddir@/../ifpack/Makefile.export.ifpack
+@ENABLE_STRATIMIKOS_ML_THYRA_TRUE@@ENABLE_STRATIMIKOS_ML_NOX_FALSE@include @abs_top_builddir@/../ml/Makefile.export.ml
+@ENABLE_STRATIMIKOS_ML_THYRA_TRUE@@ENABLE_STRATIMIKOS_ML_NOX_TRUE@include @abs_top_builddir@/../nox/Makefile.export.nox
+# Note that we must expliclty include the NOX export makefile if nox support is enabled in ML!
 
 _STRATIMIKOS_INCLUDES = \
   -I@abs_top_srcdir@/src \
   -I@abs_top_builddir@/src \
+  $(NOX_INCLUDES) \
+  $(ML_INCLUDES) \
   $(BELOS_INCLUDES) \
   $(AZTECOO_INCLUDES) \
   $(IFPACK_INCLUDES) \
@@ -15,6 +20,8 @@ _STRATIMIKOS_INCLUDES = \
   $(THYRA_INCLUDES)
 
 _STRATIMIKOS_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lstratimikos \
+ $(NOX_LIBS) \
+ $(ML_LIBS) \
  $(BELOS_LIBS) \
  $(AZTECOO_LIBS) \
  $(IFPACK_LIBS) \

@@ -55,7 +55,8 @@ class Epetra_LinearProblemRedistor {
     
   public:
 
-  //@{ \name Constructors/destructors.
+    //! @name Constructors/destructors
+  //@{ 
   //! Epetra_LinearProblemRedistor constructor using pre-defined layout.
   /*!
     \param Problem (In) An existing Epetra_LinearProblem object.  The Epetra_RowMatrix, the LHS and RHS pointers
@@ -90,7 +91,8 @@ class Epetra_LinearProblemRedistor {
   virtual ~Epetra_LinearProblemRedistor();
   //@}
   
-  //@{ \name Forward transformation methods.
+  //! @name Forward transformation methods
+  //@{ 
   
   //! Generate a new Epetra_LinearProblem as a redistribution of the one passed into the constructor.
   /*! Constructs a new Epetra_LinearProblem that is a copy of the one passed in to the constructor.
@@ -157,7 +159,8 @@ class Epetra_LinearProblemRedistor {
   int UpdateRedistRHS(Epetra_MultiVector * RHSWithNewValues);
   //@}
   
-  //@{ \name Reverse transformation methods.
+  //! @name Reverse transformation methods
+  //@{ 
   //! Update LHS of original Linear Problem object.
   /*! Copies the values from the LHS of the RedistProblem Object into the LHS passed in to the method.  If the
 		  RedistProblem is replicated, the LHS will be computed as an average from all processor.  
@@ -172,7 +175,8 @@ class Epetra_LinearProblemRedistor {
 	int UpdateOriginalLHS(Epetra_MultiVector * LHS);
   //@}
   
-  //@{ \name Attribute accessor methods.
+  //! @name Attribute accessor methods
+  //@{ 
   //! Returns const reference to the Epetra_Map that describes the layout of the RedistLinearProblem.
   /*! The RedistMap object can be used to construct other Epetra_DistObject objects whose maps are compatible with
 		  the redistributed linear problem map.
@@ -188,7 +192,8 @@ class Epetra_LinearProblemRedistor {
   const Epetra_Export & RedistExporter()  const {return(*RedistExporter_);};
   //@}
   
-  //@{ \name Utility methods
+  //! @name Utility methods
+  //@{ 
 
 	//! Extract the redistributed problem data in a form usable for other codes that require Harwell-Boeing format.
 	/*! This method extract data from the linear problem for use with other packages, such as SuperLU, that require
@@ -200,7 +205,8 @@ class Epetra_LinearProblemRedistor {
 																								double * & lhs, int & ldlhs) const;
   //@}
   
-  //@{ \name I/O methods
+  //! @name I/O methods
+  //@{ 
   
   //! Print method
   virtual void Print(ostream & os) const;

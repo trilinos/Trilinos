@@ -72,10 +72,13 @@ AM_CPPFLAGS = $(EXPORT_INCLUDES)
 common_ldadd = $(EXPORT_LIBS)
 
 # We don't need to install these headers, but we need the files in the tarball.
-EXTRA_DIST = $(srcdir)/sillyCgSolve.hpp \
-	     $(srcdir)/sillyPowerMethod.hpp \
-	     $(srcdir)/SerialTridiagLinearOp.hpp \
-	     $(srcdir)/MPITridiagLinearOp.hpp
+EXTRA_DIST = $(srcdir)/ExampleTridiagSerialLinearOp.hpp \
+	     $(srcdir)/ExampleTridiagSpmdLinearOp.hpp \
+	     $(srcdir)/sillierCgSolve.hpp \
+	     $(srcdir)/silliestCgSolve.hpp \
+	     $(srcdir)/sillyCgSolve.hpp \
+	     $(srcdir)/sillyModifiedGramSchmidt.hpp \
+	     $(srcdir)/sillyPowerMethod.hpp
 
 # This is already added part of THYRA_LIBS and therefore automake does not need to add this again!
 LIBS =

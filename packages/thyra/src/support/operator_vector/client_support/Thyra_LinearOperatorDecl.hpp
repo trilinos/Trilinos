@@ -30,6 +30,7 @@
 #define THYRA_LINEAROPERATOR_DECL_HPP
 
 #include "Teuchos_Handle.hpp"
+#include "Thyra_VectorSpaceDecl.hpp"
 #include "Thyra_ConfigDefs.hpp"
 #include "Thyra_LinearOpBaseDecl.hpp"
 

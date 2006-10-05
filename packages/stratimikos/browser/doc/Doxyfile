@@ -19,7 +19,7 @@ OUTPUT_DIRECTORY       = ../browser/doc
 # What and how documentation is extracted
 #
 INPUT                  = ../browser/doc/index.doc \
-                         ../src ./groups.doc
+                         ../src ../example ../test ./groups.doc
 FILE_PATTERNS          = *.h *c *.hpp *.cpp
 RECURSIVE              = YES
 EXCLUDE                = 

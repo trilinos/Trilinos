@@ -29,7 +29,7 @@
 #ifndef THYRA_DEFAULT_REAL_LINEAR_SOLVER_BUILDING_BASE
 #define THYRA_DEFAULT_REAL_LINEAR_SOLVER_BUILDING_BASE
 
-#include "Stratimikos_Config.h"
+#include "Stratimikos_ConfigDefs.hpp"
 #include "Thyra_LinearSolverBuilderBase.hpp"
 #include "Teuchos_AbstractFactory.hpp"
 #include "Teuchos_StandardMemberCompositionMacros.hpp"
@@ -53,6 +53,9 @@ namespace Thyra {
  * <b>XML format for valid parameters (with default values) accepted by this class</b>
  *
  * \verbinclude simple_stratimikos_example.options.xml.out
+ *
+ * For an example of how to use this class see
+  <a href="simple__stratimikos__example_8cpp-example.html">simple_stratimikos_example.cpp</a></tt>.
  * 
  */
 class DefaultRealLinearSolverBuilder : public LinearSolverBuilderBase<double>

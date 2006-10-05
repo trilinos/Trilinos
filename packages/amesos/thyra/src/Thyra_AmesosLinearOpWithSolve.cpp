@@ -198,13 +198,22 @@ void AmesosLinearOpWithSolve::solve(
   ,SolveStatus<double>                       blockSolveStatus[]
   ) const
 {
+  using Teuchos::OSTab;
   typedef SolveCriteria<double>  SC;
   typedef SolveStatus<double>    SS;
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(X==NULL);
   TEST_FOR_EXCEPT(blockSolveCriteria==NULL && blockSolveStatus!=NULL);
 #endif
+  Teuchos::Time totalTimer("");
+  totalTimer.start(true);
   Teuchos::TimeMonitor timeMonitor(*overallSolveTimer);
+  //
+  Teuchos::RefCountPtr<Teuchos::FancyOStream>  out = this->getOStream();
+  Teuchos::EVerbosityLevel                     verbLevel = this->getVerbLevel();
+  OSTab tab = this->getOSTab();
+  if(out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE))
+    *out << "\nSolving block system using Amesos solver " << typeid(*amesosSolver_).name() << " ...\n\n";
   //
   // Get the op(...) range and domain maps
   //
@@ -252,13 +261,18 @@ void AmesosLinearOpWithSolve::solve(
   //
   if(numBlocks && blockSolveStatus) {
     for( int i = 0; i < numBlocks; ++i ) {
-      blockSolveStatus[i].solveStatus
-        = (blockSolveCriteria[i].solveCriteria.solveMeasureType.useDefault()
-           ? SOLVE_STATUS_UNKNOWN : SOLVE_STATUS_CONVERGED );
+      blockSolveStatus[i].solveStatus = SOLVE_STATUS_CONVERGED;
       blockSolveStatus[i].achievedTol = SS::unknownTolerance();
-      blockSolveStatus[i].message = std::string("Solver: ")+typeid(*amesosSolver_).name();
+      blockSolveStatus[i].message
+        = std::string("Solver ")+typeid(*amesosSolver_).name()+std::string(" converged!");
     }
   }
+  //
+  // Report the overall time
+  //
+  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
+    *out
+      << "\nTotal solve time = "<<totalTimer.totalElapsedTime()<<" sec\n";
 }
 
 // private

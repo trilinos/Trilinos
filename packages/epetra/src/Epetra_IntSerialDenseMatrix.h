@@ -106,7 +106,8 @@ class Epetra_IntSerialDenseMatrix : public Epetra_Object {
 
   public:
   
-  //@{ \name Constructor/Destructor Methods
+    //! @name Constructor/Destructor Methods
+  //@{ 
   //! Default constructor; defines a zero size object.
   /*!
     Epetra_IntSerialDenseMatrix objects defined by the default constructor should be sized with the 
@@ -157,7 +158,8 @@ class Epetra_IntSerialDenseMatrix : public Epetra_Object {
   virtual ~Epetra_IntSerialDenseMatrix ();
   //@}
 
-  //@{ \name Shaping/sizing Methods
+  //! @name Shaping/sizing Methods
+  //@{ 
   //! Set dimensions of a Epetra_IntSerialDenseMatrix object; init values to zero.
   /*!
     \param In 
@@ -190,7 +192,8 @@ class Epetra_IntSerialDenseMatrix : public Epetra_Object {
   int Reshape(int NumRows, int NumCols);
   //@}
   
-  //@{ \name Data Accessor methods
+  //! @name Data Accessor methods
+  //@{ 
 
   //! Computes the 1-Norm of the \e this matrix.
   /*!
@@ -288,12 +291,14 @@ class Epetra_IntSerialDenseMatrix : public Epetra_Object {
 	Epetra_DataAccess CV() const {return(CV_);};
   //@}
   
-  //@{ \name I/O methods
+  //! @name I/O methods
+  //@{ 
   //! Print service methods; defines behavior of ostream << operator.
   virtual void Print(ostream& os) const;
   //@}
 
-  //@{ \name Expert-only unsupported methods
+  //! @name Expert-only unsupported methods
+  //@{ 
 
   //! Reset an existing IntSerialDenseMatrix to point to another Matrix.
 	/*! Allows an existing IntSerialDenseMatrix to become a View of another

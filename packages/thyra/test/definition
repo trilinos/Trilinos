@@ -10,9 +10,14 @@
 }
 
 (FRAMEWORK, INSTALL) {
-    TESTS = ../example/operator_vector/sillyCgSolve_serial.exe,
-	    ../example/operator_vector/sillyPowerMethod_serial.exe;
+    TESTS = ../example/operator_vector/sillyPowerMethod_serial.exe;
     ARGS = --verbose;
+    COMM = SERIAL;
+}
+
+(FRAMEWORK, INSTALL) {
+    TESTS = ../example/operator_vector/sillyCgSolve_serial.exe;
+    ARGS = --verbose --use-silly-cg, --verbose --use-sillier-cg;
     COMM = SERIAL;
 }
 

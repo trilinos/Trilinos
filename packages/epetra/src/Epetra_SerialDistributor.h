@@ -47,7 +47,8 @@ class Epetra_SerialDistributor: public Epetra_Object, public virtual Epetra_Dist
     
   public:
 
-  //@{ \name Constructor/Destructor
+    //! @name Constructor/Destructor
+  //@{ 
 
   //! Constructor.
   Epetra_SerialDistributor(const Epetra_SerialComm & Comm);

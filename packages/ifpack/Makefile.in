@@ -304,6 +304,10 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 @ENABLE_IFPACK_THYRA_FALSE@THYRA_SUBDIR = 
 @ENABLE_IFPACK_THYRA_TRUE@THYRA_SUBDIR = thyra
 SUBDIRS = src $(THYRA_SUBDIR) $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) doc $(PYTHON_SUBDIR)
+@ENABLE_IFPACK_THYRA_FALSE@BUILD_THYRA_SUBLIB = 
+# Note, thyra/src must be built before the examples and tests because -lifpackthyra.a
+# needs to be found!
+@ENABLE_IFPACK_THYRA_TRUE@BUILD_THYRA_SUBLIB = cd $(top_builddir)/thyra/src ; $(MAKE)
 TRILINOS_HOME_DIR = @abs_top_srcdir@/../..
 TRILINOS_BUILD_DIR = @abs_top_builddir@/../..
 TRILINOS_MPI_MAX_PROC = 4
@@ -734,16 +738,14 @@ all-local:
 	@echo "        | Have fun!                                          |"
 	@echo "        +----------------------------------------------------+"
 	@echo 
-# Note, thyra/src must be built before the examples and tests because -lifpackthyra.a
-# needs to be found!
 
 all-libs:
 	cd src ; $(MAKE) all-libs
-	cd thyra/src ; $(MAKE) all-libs
+	$(BUILD_THYRA_SUBLIB)
 
 libs:
 	cd src ; $(MAKE)
-	cd thyra/src ; $(MAKE)
+	$(BUILD_THYRA_SUBLIB)
 
 @USING_EXPORT_MAKEFILES_TRUE@install-exec-hook:	
 @USING_EXPORT_MAKEFILES_TRUE@	cp $(top_builddir)/Makefile.export.ifpack $(exec_prefix)/include/.
@@ -752,8 +754,8 @@ libs:
 @USING_EXPORT_MAKEFILES_TRUE@		--my-export-makefile=Makefile.export.ifpack \
 @USING_EXPORT_MAKEFILES_TRUE@		--my-abs-top-srcdir=@abs_top_srcdir@ \
 @USING_EXPORT_MAKEFILES_TRUE@		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src \
-@USING_EXPORT_MAKEFILES_TRUE@		--my-abs-lib-dirs=@abs_top_builddir@/src \
-@USING_EXPORT_MAKEFILES_TRUE@		--dep-package-abs-builddirs=@abs_top_builddir@/../epetraext:@abs_top_builddir@/../aztecoo:@abs_top_builddir@/../teuchos:@abs_top_builddir@/../amesos:@abs_top_builddir@/../epetra:@abs_top_builddir@/../triutils
+@USING_EXPORT_MAKEFILES_TRUE@		--my-abs-lib-dirs=@abs_top_builddir@/src:@abs_top_builddir@/thyra/src \
+@USING_EXPORT_MAKEFILES_TRUE@		--dep-package-abs-builddirs=@abs_top_builddir@/../epetraext:@abs_top_builddir@/../aztecoo:@abs_top_builddir@/../teuchos:@abs_top_builddir@/../amesos:@abs_top_builddir@/../epetra:@abs_top_builddir@/../triutils:@abs_top_builddir@/../thyra
 @USING_EXPORT_MAKEFILES_TRUE@	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile IFPACK > $(exec_prefix)/include/Makefile.export.ifpack.macros
 
 @USING_EXPORT_MAKEFILES_TRUE@uninstall-hook:

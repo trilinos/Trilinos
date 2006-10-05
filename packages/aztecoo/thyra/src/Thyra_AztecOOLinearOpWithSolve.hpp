@@ -181,6 +181,7 @@ public:
    */
   bool isExternalPrec() const;
 
+
   /** \brief Extract the approximate forward <tt>LinearOpBase<double></tt> object used to build the preconditioner.
    */
   Teuchos::RefCountPtr<const LinearOpSourceBase<double> > extract_approxFwdOpSrc();

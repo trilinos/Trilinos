@@ -182,7 +182,8 @@ class Epetra_BlockMap: public Epetra_Object {
   friend class Epetra_Directory;
   friend class Epetra_LocalMap;
  public:
-  //@{ \name Constructors/destructors.
+  //! @name Constructors/destructors
+  //@{ 
   //! Epetra_BlockMap constructor for a Epetra-defined uniform linear distribution of constant size elements.
   /*! Creates a map that distributes NumGlobalElements elements evenly across all processors in the
       Epetra_Comm communicator. If NumGlobalElements does not divide exactly into the number of processors,
@@ -333,7 +334,8 @@ class Epetra_BlockMap: public Epetra_Object {
   virtual ~Epetra_BlockMap(void);
   //@}
   
-  //@{ \name Local/Global ID accessor methods.
+  //! @name Local/Global ID accessor methods
+  //@{ 
   //! Returns the processor IDs and corresponding local index value for a given list of global indices
   /*! For each element (GID) of a given list of global element numbers (stored in GIDList) of length NumIDs,
       this function returns (in PIDList) the with processor that owns the GID for this map and returns the
@@ -385,7 +387,8 @@ class Epetra_BlockMap: public Epetra_Object {
   int  MaxLID() const {return(BlockMapData_->MaxLID_);};
   //@}
 
-  //@{ \name Size and dimension accessor functions
+  //! @name Size and dimension accessor functions
+  //@{ 
   //! Number of elements across all processors.
   int  NumGlobalElements() const {return(BlockMapData_->NumGlobalElements_);};
   
@@ -429,7 +432,8 @@ class Epetra_BlockMap: public Epetra_Object {
   int  MaxElementSize() const {return(BlockMapData_->MaxElementSize_);};
   //@}
 
-  //@{ \name Miscellaneous boolean tests
+  //! @name Miscellaneous boolean tests
+  //@{ 
   //! Returns true if map GIDs are 1-to-1.
   /*! Certain operations involving Epetra_BlockMap and Epetra_Map objects are well-defined only if
       the map GIDs are uniquely present in the map.  In other words, if a GID occurs in the map, it occurs
@@ -457,7 +461,8 @@ class Epetra_BlockMap: public Epetra_Object {
   bool  DistributedGlobal() const {return(BlockMapData_->DistributedGlobal_);};
   //@}
 
-  //@{ \name Array accessor functions
+  //! @name Array accessor functions
+  //@{ 
 
   //! Pointer to internal array containing list of global IDs assigned to the calling processor.
   int * MyGlobalElements() const;
@@ -485,7 +490,8 @@ class Epetra_BlockMap: public Epetra_Object {
 
   //@}
 
-  //@{ \name Miscellaneous
+  //! @name Miscellaneous
+  //@{ 
 
   //! Print object to an output stream
   virtual void Print(ostream & os) const;
@@ -500,7 +506,8 @@ class Epetra_BlockMap: public Epetra_Object {
 
   //@}
 
-  //@{ \name Expert Users and Developers Only
+  //! @name Expert Users and Developers Only
+  //@{ 
 
   //! Returns the reference count of BlockMapData.
   /*! (Intended for testing purposes.) */

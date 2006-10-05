@@ -40,7 +40,7 @@
 # Optional 3rd argument is email address for bugs.
 
 #  #np# - package name, version number, and e-mail address below
-AC_INIT(thyra, version of the day, rabartl@sandia.gov)
+AC_INIT(thyra, version 2.0 in Trilinos 7.0, rabartl@sandia.gov)
 
 # Hello World!
 #  #np# - package name below
@@ -190,8 +190,12 @@ AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_thyra_examples" != "Xno")
 # ------------------------------------------------------------------------
 # Enable optional python wrappers
 # ------------------------------------------------------------------------
-TAC_ARG_ENABLE_FEATURE_SUB( thyra, python, [Build Thyra Python wrappers (requires --enable-python, which is NOT set by default)], THYRA_PYTHON, yes)
-AM_CONDITIONAL(BUILD_THYRA_PYTHON, test "X$ac_cv_use_thyra_python" != "Xno")
+# Python wrappers are currently disabled for release 7.0.  When we are ready
+# to re-enable them, reverse the comments on the following four lines:
+#TAC_ARG_ENABLE_FEATURE_SUB( thyra, python, [Build Thyra Python wrappers (requires --enable-python, which is NOT set by default)], THYRA_PYTHON, yes)
+TAC_ARG_ENABLE_FEATURE_SUB( thyra, python, [Build Thyra Python wrappers (requires --enable-python, which is NOT set by default)], THYRA_PYTHON, no)
+#AM_CONDITIONAL(BUILD_THYRA_PYTHON, test "X$ac_cv_use_thyra_python" != "Xno")
+AM_CONDITIONAL(BUILD_THYRA_PYTHON, test "X$ac_cv_use_thyra_python" == "Xdisabled")
 TAC_ENABLE_PYTHON
 
 # ------------------------------------------------------------------------

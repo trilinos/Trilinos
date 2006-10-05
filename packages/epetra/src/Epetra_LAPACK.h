@@ -54,7 +54,8 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 class Epetra_LAPACK {
     
   public:
-  //@{ \name Constructors/destructors.
+    //! @name Constructors/destructors
+  //@{ 
   //! Epetra_LAPACK Constructor.
   /*! Builds an instance of a serial LAPACK object.
    */
@@ -71,7 +72,8 @@ class Epetra_LAPACK {
   //@}
 
 
-  //@{ \name Symmetric Positive Definite linear system routines.
+  //! @name Symmetric Positive Definite linear system routines
+  //@{ 
   
   //! Epetra_LAPACK factorization for positive definite matrix (SPOTRF)
   void POTRF( const char UPLO, const int N, float * A, const int LDA, int * INFO) const;
@@ -124,7 +126,8 @@ class Epetra_LAPACK {
 	     double * FERR, double * BERR, double * WORK, int * IWORK, int * INFO) const;
   //@}
 
-  //@{ \name General linear system routines.
+  //! @name General linear system routines
+  //@{ 
 
   //! Epetra_LAPACK simple driver to solve least-squares systems
   void GELS( const char TRANS, const int M, const int N, const int NRHS, double* A, const int LDA, 
@@ -186,7 +189,8 @@ class Epetra_LAPACK {
   void GEHRD(const int N, const int ILO, const int IHI, double * A, const int LDA, double * TAU, double * WORK, const int LWORK, int * INFO) const;
   //@}
 
-  //@{ \name Hessenberg routines
+  //! @name Hessenberg routines
+  //@{ 
   //! Epetra_LAPACK wrapper for computing the eigenvalues of a real upper Hessenberg matrix (SHSEQR)
   void HSEQR( const char JOB, const char COMPZ, const int N, const int ILO, const int IHI, float * H, const int LDH, float * WR, float * WI,
 	      float * Z, const int LDZ, float * WORK, const int LWORK, int * INFO) const;
@@ -195,7 +199,8 @@ class Epetra_LAPACK {
 	      double * Z, const int LDZ, double * WORK, const int LWORK, int * INFO) const;
   //@}
 
-  //@{ \name Orthogonal matrix routines
+  //! @name Orthogonal matrix routines
+  //@{ 
   //! Epetra_LAPACK wrapper for generating a real orthogonal matrix Q defined by elementary reflectors. (SORGHR)
   void ORGHR( const int N, const int ILO, const int IHI, float * A, const int LDA, float * TAU, float * WORK, const int LWORK, int * INFO) const;
   //! Epetra_LAPACK wrapper for generating a real orthogonal matrix Q defined by elementary reflectors. (DORGHR)
@@ -211,7 +216,8 @@ class Epetra_LAPACK {
 	      const int LDC, double * WORK, const int LWORK, int * INFO) const;
   //@}
 
-  //@{ \name Triangular matrix routines
+  //! @name Triangular matrix routines
+  //@{ 
 
   //! Epetra_LAPACK wrapper for computing eigenvectors of a quasi-triangular/triagnular matrix (STREVC)
   /*! \warning HOWMNY = 'S" is not supported.
@@ -232,7 +238,8 @@ class Epetra_LAPACK {
 	      double * WORK, int * INFO) const;
   //@}
 
-  //@{ \name Singular Value Decomposition matrix routines
+  //! @name Singular Value Decomposition matrix routines
+  //@{ 
 
   //! Epetra_LAPACK wrapper for computing the singular value decomposition (SGESVD)
   void GESVD( const char JOBU, const char JOBVT, const int M, const int N, float * A, const int LDA, float * S, float * U,
@@ -251,7 +258,8 @@ class Epetra_LAPACK {
                           int* INFO) const;
    //@}
 
-  //@{ \name Eigenvalue/Eigenvector routines
+   //! @name Eigenvalue/Eigenvector routines
+  //@{ 
   //! Epetra_LAPACK wrapper to compute for an N-by-N real nonsymmetric matrix A, the eigenvalues and, optionally, the left and/or right eigenvectors
   void GEEV(const char JOBVL, const char JOBVR, const int N, double* A, const int LDA, double* WR, double* WI, 
 			double* VL, const int LDVL, double* VR, const int LDVR, double* WORK, const int LWORK, int* INFO) const;
@@ -350,7 +358,8 @@ class Epetra_LAPACK {
 
     //@}
 
-  //@{ \name Linear Least Squares.
+    //! @name Linear Least Squares
+  //@{ 
   //! Epetra_LAPACK wrapper to solve the linear equality-constrained least squares (LSE) problem
   void GGLSE(const int M, const int N, const int P, double* A, const int LDA, double* B, const int LDB, 
 	     double* C, double* D, double* X, double* WORK, const int LWORK, int* INFO) const;
@@ -359,7 +368,8 @@ class Epetra_LAPACK {
 	     float* C, float* D, float* X, float* WORK, const int LWORK, int* INFO) const;
     //@}
 
-  //@{ \name Machine characteristics routines.
+    //! @name Machine characteristics routines
+  //@{ 
   //! Epetra_LAPACK wrapper for DLAMCH routine.  On out, T holds machine double precision floating point characteristics.  This information is returned by the Lapack routine.
   void LAMCH ( const char CMACH, float & T) const;
   //! Epetra_LAPACK wrapper for SLAMCH routine.  On out, T holds machine single precision floating point characteristics.  This information is returned by the Lapack routine.

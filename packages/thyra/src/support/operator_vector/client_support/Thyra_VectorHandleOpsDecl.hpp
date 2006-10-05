@@ -50,6 +50,9 @@ namespace Thyra
   THYRA_UNARY_VECTOR_OP_DECL(reciprocal, reciprocalInto, reciprocal, "reciprocal");
 
   /* */
+  THYRA_UNARY_VECTOR_ROP_MAG_DECL(norm, norm, "natural norm");
+
+  /* */
   THYRA_UNARY_VECTOR_ROP_MAG_DECL(norm1, norm_1, "1-norm");
 
   /* */
@@ -64,12 +67,16 @@ namespace Thyra
   THYRA_UNARY_VECTOR_ROP_DECL(sum, sum, "sum of the elements");
 
   /* */ 
+  THYRA_BINARY_VECTOR_ROP_DECL(inner, scalarProd, "Inner or scalar product");
+
+  /* */ 
   THYRA_UNARY_VECTOR_ROP_MAG_DECL(max, max, "max element");
 
   /* */ 
   THYRA_UNARY_VECTOR_ROP_MAG_DECL(min, min, "min element");
 
-  /** 
+  /** \brief return[i] = x[i] * y[i].
+   * 
    * \relates Vector
    */
   template <class Scalar>   
@@ -77,72 +84,69 @@ namespace Thyra
                          const Converter<Scalar, ConstVector<Scalar> >& y);
 
 
-  /** 
+  /** \brief return[i] = x[i] / y[i].
+   *
    * \relates Vector
    */
   template <class Scalar>   
   Vector<Scalar> dotSlash(const Converter<Scalar, ConstVector<Scalar> >& x, 
                           const Converter<Scalar, ConstVector<Scalar> >& y);
 
-  /**
+  /** \brief Return the max of a vector and its location
+   *
    * \relates Vector
    * 
-   * Return the max of a vector and its location
    */
   template <class Scalar>  
   Scalar maxloc(const Converter<Scalar, ConstVector<Scalar> >& x, Index& index) ;
 
-  /**
+  /** \brief Return the min of a vector and its location.
+   *
    * \relates Vector
-   * \brief.
-   * Return the min of a vector and its location
    */
   template <class Scalar>  
   Scalar minloc(const Converter<Scalar, ConstVector<Scalar> >& x, Index& index) ;
 
-  /** 
-   * \relates Vector<Scalar>
-   * \brief.
+  /** \brief Return the minimum element and its location (lowest index).
    *
+   * \relates Vector<Scalar>
    */
   template <class Scalar>   
   Scalar minloc(const Converter<Scalar, ConstVector<Scalar> >& x, 
              const Scalar& bound, Index& index) ;
 
 
-  /** 
+  /** \brief Return the maxium element and its location (lowest index).
+   *
    * \relates Vector
-   * \brief.
-   * 
    */
   template <class Scalar>   
   Scalar maxloc(const Converter<Scalar, ConstVector<Scalar> >& x, 
                 const Scalar& bound, Index& index);
 
-
-  /**  
+  /** \brief result = alpha*x.  
+   *
    * \relates Vector
-   * \brief.
-   * */
+   */
   template <class Scalar>   
   void scaleInto(const Converter<Scalar, ConstVector<Scalar> >& x,
                  const Scalar& alpha, Vector<Scalar>& result);
 
-  /**  
+  /** \brief x = alpha*x.
+   *
    * \relates Vector
-   * \brief.
-   * */
+   */
   template <class Scalar>   
   void scale(Vector<Scalar>& x, const Scalar& alpha);
 
-  /** 
+  /** \brief y = alpha*x + y.
+   *
    * \relates Vector
-   * \brief.
-   *  */
+   */
   template <class Scalar>   
-  void axpy(const Scalar& a, const Converter<Scalar, ConstVector<Scalar> >& x, 
+  void axpy(const Scalar& alpha, const Converter<Scalar, ConstVector<Scalar> >& x, 
             Vector<Scalar>& y);
   
 }
 
-#endif
+#endif // THYRA_VECTOR_HANDLE_OPS_DECL_HPP

@@ -28,6 +28,7 @@
 
 #include "Teuchos_MpiReductionOpSetter.hpp"
 #include "Teuchos_OpaqueWrapper.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 
 //
 // This implementation of handling the reduction operator
@@ -47,6 +48,14 @@ void Teuchos_MPI_reduction_op(
   ,int              *len
   ,MPI_Datatype     *datatype
   );
+
+void Teuchos_MPI_Op_free( MPI_Op *op )
+{
+  if(Teuchos::GlobalMPISession::mpiIsInitialized())
+    MPI_Op_free(op);
+  else
+    *op = MPI_OP_NULL;
+}
 
 } // extern "C"
 
@@ -78,7 +87,7 @@ void set_reduct_op( const Teuchos::RefCountPtr<const Teuchos::MpiReductionOpBase
     TEST_FOR_EXCEPT(
       0!=MPI_Op_create( &Teuchos_MPI_reduction_op ,1 ,&mpi_op ) // Assume op is commutative?
       );
-    the_mpi_op = Teuchos::opaqueWrapper(mpi_op,MPI_Op_free);
+    the_mpi_op = Teuchos::opaqueWrapper(mpi_op,Teuchos_MPI_Op_free);
   }
   the_reduct_op = reduct_op;
 }

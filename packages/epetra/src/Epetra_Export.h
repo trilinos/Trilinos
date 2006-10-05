@@ -264,7 +264,8 @@ and entries 5 and 6 on PEs 1 and 2.
 
   Epetra_Distributor & Distributor() const {return(*Distor_);};
 
-  //@{ \name Print object to an output stream
+  //! @name Print object to an output stream
+  //@{ 
   virtual void Print(ostream & os) const;
   //@}
  protected:

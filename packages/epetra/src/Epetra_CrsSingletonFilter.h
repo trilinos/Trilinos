@@ -104,14 +104,16 @@ class Epetra_CrsSingletonFilter {
       
  public:
 
-  //@{ \name Constructors/Destructor.
+   //! @name Constructors/Destructor
+  //@{ 
   //! Epetra_CrsSingletonFilter default constructor.
   Epetra_CrsSingletonFilter();
 
   //! Epetra_CrsSingletonFilter Destructor
   virtual ~Epetra_CrsSingletonFilter();
   //@}
-  //@{ \name Analyze methods.
+  //! @name Analyze methods
+  //@{ 
   //! Analyze the input matrix, removing row/column pairs that have singletons.
   /*! Analyzes the user's input matrix to determine rows and columns that should be explicitly
       eliminated to create the reduced system.  Look for rows and columns that have single entries.  
@@ -128,7 +130,8 @@ class Epetra_CrsSingletonFilter {
   bool SingletonsDetected() const {if (!AnalysisDone_) return(false); else return(RowMapColors_->MaxNumColors()>1);};
   //@}
 
-  //@{ \name Reduce methods.
+  //! @name Reduce methods
+  //@{ 
   //! Return a reduced linear problem based on results of Analyze().
   /*! Creates a new Epetra_LinearProblem object based on the results of the Analyze phase.  A pointer
       to the reduced problem is obtained via a call to ReducedProblem().  
@@ -146,7 +149,8 @@ class Epetra_CrsSingletonFilter {
   int UpdateReducedProblem(Epetra_LinearProblem * Problem);
 
   //@}
-  //@{ \name Methods to construct Full System Solution.
+  //! @name Methods to construct Full System Solution
+  //@{ 
   //! Compute a solution for the full problem using the solution of the reduced problem, put in LHS of FullProblem().
   /*! After solving the reduced linear system, this method can be called to compute the
       solution to the original problem, assuming the solution for the reduced system is valid. The solution of the 
@@ -155,7 +159,8 @@ class Epetra_CrsSingletonFilter {
   */
   int ComputeFullSolution();
   //@}
-  //@{ \name Filter Statistics.
+  //! @name Filter Statistics
+  //@{ 
   //! Return number of rows that contain a single entry, returns -1 if Analysis not performed yet.
   int NumRowSingletons() const {return(NumGlobalRowSingletons_);};
 
@@ -177,7 +182,8 @@ class Epetra_CrsSingletonFilter {
   double RatioOfNonzeros() const {return(RatioOfNonzeros_);};
 
   //@}
-  //@{ \name Attribute Access Methods.
+  //! @name Attribute Access Methods
+  //@{ 
 
   //! Returns pointer to the original unreduced Epetra_LinearProblem.
   Epetra_LinearProblem * FullProblem() const {return(FullProblem_);};

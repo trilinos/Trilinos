@@ -439,7 +439,15 @@ libepetraext_a_SOURCES = \
 
 #If these are not listed, the files will not be included in
 #the distribution tarball.
-EXTRA_libepetraext_a_SOURCES = 
+EXTRA_libepetraext_a_SOURCES = \
+     $(EXTRA_TRANSFORM_EXPERIMENTAL) \
+     $(EXTRA_TRIUTILS_INOUT)
+
+#Because of the way that these EXTRA categories are handled, we need
+#to manually add them to the tarball. 
+EXTRA_DIST = \
+     $(EXTRA_TRANSFORM_EXPERIMENTAL_H) \
+     $(EXTRA_TRIUTILS_INOUT_H)
 
 # libraries to be installed in $(libexecdir)
 EPETRAEXT_LIB = libepetraext.a

@@ -50,7 +50,8 @@ enum ProblemDifficultyLevel {easy, moderate, hard, unsure};
 class Epetra_LinearProblem {
     
   public:
-  //@{ \name Constructors/Destructor.
+    //! @name Constructors/Destructor
+  //@{ 
   //!  Epetra_LinearProblem Default Constructor.
   /*! Creates an empty Epetra_LinearProblem instance. The operator A, left-hand-side X
       and right-hand-side B must be set use the SetOperator(), SetLHS() and SetRHS()
@@ -80,7 +81,8 @@ class Epetra_LinearProblem {
   virtual ~Epetra_LinearProblem(void);
   //@}
   
-  //@{ \name Integrity check method
+  //! @name Integrity check method
+  //@{ 
 
   //! Check input parameters for existence and size consistency.
   /*! Returns 0 if all input parameters are valid.  Returns +1 if operator is not a matrix. 
@@ -90,7 +92,8 @@ class Epetra_LinearProblem {
   int CheckInput() const;
   //@}
   
-  //@{ \name Set methods
+  //! @name Set methods
+  //@{ 
 
   void AssertSymmetric(){OperatorSymmetric_ = true;};
 #ifdef DOXYGEN_SHOULD_SKIP_THIS
@@ -126,7 +129,8 @@ class Epetra_LinearProblem {
   void SetRHS(Epetra_MultiVector * B) {B_ = B;}
   //@}
   
-  //@{ \name Computational methods.
+  //! @name Computational methods
+  //@{ 
   //! Perform left scaling of a linear problem.
   /*! Applies the scaling vector D to the left side of the matrix A() and
     to the right hand side B().  Note that the operator must be an Epetra_RowMatrix,
@@ -151,7 +155,8 @@ class Epetra_LinearProblem {
   int RightScale(const Epetra_Vector & D);
   //@}
 
-  //@{ \name Accessor methods
+  //! @name Accessor methods
+  //@{ 
   //! Get a pointer to the operator A.
   Epetra_Operator * GetOperator() const {return(Operator_);};
   //! Get a pointer to the matrix A.

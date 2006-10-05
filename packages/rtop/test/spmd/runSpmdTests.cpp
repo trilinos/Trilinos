@@ -26,6 +26,8 @@
 // 
 // ***********************************************************************
 // @HEADER
+
+#include "RTOpPack_version.hpp"
 #include "RTOpPack_SPMD_apply_op.hpp"
 #include "RTOpPack_ROpSum.hpp"
 #include "Teuchos_CommHelpers.hpp"
@@ -55,6 +57,8 @@ bool testRTOp(
   typedef Teuchos::ScalarTraits<Scalar> ST;
 
   bool success = true, result;
+
+  *out << "\n" << RTOpPack::version() << "\n";
 
   *out
     << "\n***"

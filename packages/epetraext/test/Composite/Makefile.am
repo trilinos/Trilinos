@@ -36,8 +36,7 @@ Composite_test_SOURCES = \
 
 Composite_test_DEPENDENCIES = \
   $(top_builddir)/src/libepetraext.a \
-  $(top_builddir)/../epetra/src/libepetra.a \
-  $(top_builddir)/../teuchos/src/libteuchos.a
+  $(top_builddir)/../epetra/src/libepetra.a
 
 Composite_test_CXXFLAGS = -I$(top_srcdir)/src/transform \
                           -I$(top_srcdir)/src \
@@ -48,7 +47,6 @@ Composite_test_CXXFLAGS = -I$(top_srcdir)/src/transform \
 Composite_test_LDADD = \
   $(top_builddir)/src/libepetraext.a \
   $(top_builddir)/../epetra/src/libepetra.a \
-  $(top_builddir)/../teuchos/src/libteuchos.a \
   $(LIBS) \
   $(BLAS_LIBS) \
   $(FLIBS)

@@ -96,7 +96,8 @@ Examples using Epetra_SerialDenseSVD can be found in the Epetra test directories
 class Epetra_SerialDenseSVD : public virtual Epetra_SerialDenseOperator, public Epetra_CompObject, public virtual Epetra_Object, public Epetra_BLAS, public Epetra_LAPACK{
   public:
   
-  //@{ \name Constructor/Destructor Methods
+    //! @name Constructor/Destructor Methods
+  //@{ 
   //! Default constructor; matrix should be set using SetMatrix(), LHS and RHS set with SetVectors().
   Epetra_SerialDenseSVD();
   
@@ -104,7 +105,8 @@ class Epetra_SerialDenseSVD : public virtual Epetra_SerialDenseOperator, public 
   virtual ~Epetra_SerialDenseSVD();
   //@}
 
-  //@{ \name Set Methods
+  //! @name Set Methods
+  //@{ 
 
   //! Sets the pointers for coefficient matrix
   int SetMatrix(Epetra_SerialDenseMatrix & A);
@@ -116,7 +118,8 @@ class Epetra_SerialDenseSVD : public virtual Epetra_SerialDenseOperator, public 
   int SetVectors(Epetra_SerialDenseMatrix & X, Epetra_SerialDenseMatrix & B);
   //@}
 
-  //@{ \name Strategy modifying Methods
+  //! @name Strategy modifying Methods
+  //@{ 
 
   //! Causes equilibration to be called just before the matrix factorization as part of the call to Factor.
   /*! This function must be called before the factorization is performed. 
@@ -129,17 +132,20 @@ class Epetra_SerialDenseSVD : public virtual Epetra_SerialDenseOperator, public 
   //! Causes all solves to compute solution to best ability using iterative refinement.
 //  void SolveToRefinedSolution(bool Flag) {RefineSolution_ = Flag; return;};
 
-  //! Causes all solves to estimate the forward and backward solution error. 
-  /*! Error estimates will be in the arrays FERR and BERR, resp, after the solve step is complete.
+  // NOTE: doxygen-style documentation needs to be re-enabled if this function is re-enabled
+  // Causes all solves to estimate the forward and backward solution error. 
+  /* Error estimates will be in the arrays FERR and BERR, resp, after the solve step is complete.
       These arrays are accessible via the FERR() and BERR() access functions.
   */
 //  void EstimateSolutionErrors(bool Flag) {EstimateSolutionErrors_ = Flag; return;};
   //@}
 
-  //@{ \name Factor/Solve/Invert Methods
+  //! @name Factor/Solve/Invert Methods
+  //@{ 
 
-  //! Computes the SVD factorization of the matrix using the LAPACK routine \e DGESVD.
-  /*! 
+  // NOTE: doxygen-style documentation needs to be re-enabled if this function is re-enabled
+  // Computes the SVD factorization of the matrix using the LAPACK routine \e DGESVD.
+  /* 
     \return Integer error code, set to 0 if successful.
   */
 //  virtual int Factor(void);
@@ -157,39 +163,45 @@ class Epetra_SerialDenseSVD : public virtual Epetra_SerialDenseOperator, public 
   */
   virtual int Invert( double rthresh = 0.0, double athresh = 0.0 );
 
-  //! Computes the scaling vector S(i) = 1/sqrt(A(i,i) of the \e this matrix.
-  /*! 
+  // NOTE: doxygen-style documentation needs to be re-enabled if this function is re-enabled
+  // Computes the scaling vector S(i) = 1/sqrt(A(i,i) of the \e this matrix.
+  /* 
     \return Integer error code, set to 0 if successful. Otherwise returns the LAPACK error code INFO.
   */
 //  virtual int ComputeEquilibrateScaling(void);
 
-  //! Equilibrates the \e this matrix.
-  /*! 
+  // NOTE: doxygen-style documentation needs to be re-enabled if this function is re-enabled
+  // Equilibrates the \e this matrix.
+  /* 
     \return Integer error code, set to 0 if successful. Otherwise returns the LAPACK error code INFO.
   */
 //  virtual int EquilibrateMatrix(void);
 
-  //! Equilibrates the current RHS.
-  /*! 
+  // NOTE: doxygen-style documentation needs to be re-enabled if this function is re-enabled
+  // Equilibrates the current RHS.
+  /* 
     \return Integer error code, set to 0 if successful. Otherwise returns the LAPACK error code INFO.
   */
 //  int EquilibrateRHS(void);
 
 
-  //! Apply Iterative Refinement.
-  /*! 
+  // NOTE: doxygen-style documentation needs to be re-enabled if this function is re-enabled
+  // Apply Iterative Refinement.
+  /* 
     \return Integer error code, set to 0 if successful. Otherwise returns the LAPACK error code INFO.
   */
 //  virtual int ApplyRefinement(void);
 
-  //! Unscales the solution vectors if equilibration was used to solve the system.
-  /*! 
+  // NOTE: doxygen-style documentation needs to be re-enabled if this function is re-enabled
+  // Unscales the solution vectors if equilibration was used to solve the system.
+  /* 
     \return Integer error code, set to 0 if successful. Otherwise returns the LAPACK error code INFO.
   */
 //  int UnequilibrateLHS(void);
 
-  //! Returns the reciprocal of the 1-norm condition number of the \e this matrix.
-  /*! 
+  // NOTE: doxygen-style documentation needs to be re-enabled if this function is re-enabled
+  // Returns the reciprocal of the 1-norm condition number of the \e this matrix.
+  /* 
     \param Value Out
            On return contains the reciprocal of the 1-norm condition number of the \e this matrix.
     
@@ -198,7 +210,8 @@ class Epetra_SerialDenseSVD : public virtual Epetra_SerialDenseOperator, public 
 //  virtual int ReciprocalConditionEstimate(double & Value);
   //@}
 
-  //@{ \name Query methods
+  //! @name Query methods
+  //@{ 
 
   //! Returns true if transpose of \e this matrix has and will be used.
   bool Transpose() {return(Transpose_);};
@@ -206,37 +219,45 @@ class Epetra_SerialDenseSVD : public virtual Epetra_SerialDenseOperator, public 
   //! Returns true if matrix is factored (factor available via AF() and LDAF()).
   bool Factored() {return(Factored_);};
 
-  //! Returns true if factor is equilibrated (factor available via AF() and LDAF()).
+  // NOTE: doxygen-style documentation needs to be re-enabled if this function is re-enabled
+  // Returns true if factor is equilibrated (factor available via AF() and LDAF()).
 //  bool A_Equilibrated() {return(A_Equilibrated_);};
 
-  //! Returns true if RHS is equilibrated (RHS available via B() and LDB()).
+  // NOTE: doxygen-style documentation needs to be re-enabled if this function is re-enabled
+  // Returns true if RHS is equilibrated (RHS available via B() and LDB()).
 //  bool B_Equilibrated() {return(B_Equilibrated_);};
 
-  //! Returns true if the LAPACK general rules for equilibration suggest you should equilibrate the system.
+  // NOTE: doxygen-style documentation needs to be re-enabled if this function is re-enabled
+  // Returns true if the LAPACK general rules for equilibration suggest you should equilibrate the system.
 //  virtual bool ShouldEquilibrate() {ComputeEquilibrateScaling(); return(ShouldEquilibrate_);};
 
-  //! Returns true if forward and backward error estimated have been computed (available via FERR() and BERR()).
+  // NOTE: doxygen-style documentation needs to be re-enabled if this function is re-enabled
+  // Returns true if forward and backward error estimated have been computed (available via FERR() and BERR()).
 //  bool SolutionErrorsEstimated() {return(SolutionErrorsEstimated_);};
 
   //! Returns true if matrix inverse has been computed (inverse available via AF() and LDAF()).
   bool Inverted() {return(Inverted_);};
 
-  //! Returns true if the condition number of the \e this matrix has been computed (value available via ReciprocalConditionEstimate()).
+  // NOTE: doxygen-style documentation needs to be re-enabled if this function is re-enabled
+  // Returns true if the condition number of the \e this matrix has been computed (value available via ReciprocalConditionEstimate()).
 //  bool ReciprocalConditionEstimated() {return(ReciprocalConditionEstimated_);};
 
   //! Returns true if the current set of vectors has been solved.
   bool Solved() {return(Solved_);};
 
-  //! Returns true if the current set of vectors has been refined.
+  // NOTE: doxygen-style documentation needs to be re-enabled if this function is re-enabled
+  // Returns true if the current set of vectors has been refined.
 //  bool SolutionRefined() {return(SolutionRefined_);};
   //@}
 
-  //@{ \name Data Accessor methods
+  //! @name Data Accessor methods
+  //@{ 
     
   //! Returns pointer to current matrix.
    Epetra_SerialDenseMatrix * Matrix()  const {return(Matrix_);};
        
-  //! Returns pointer to factored matrix (assuming factorization has been performed).
+  // NOTE: doxygen-style documentation needs to be re-enabled if this function is re-enabled
+  // Returns pointer to factored matrix (assuming factorization has been performed).
 //   Epetra_SerialDenseMatrix * FactoredMatrix()  const {return(Factor_);};
 
   //! Returns pointer to inverted matrix (assuming inverse has been performed).
@@ -277,10 +298,12 @@ class Epetra_SerialDenseSVD : public virtual Epetra_SerialDenseOperator, public 
 
   double * S() const {return(S_);};
 
-  //! Returns pointer to the factored matrix (may be the same as A() if factorization done in place).
+  // NOTE: doxygen-style documentation needs to be re-enabled if this function is re-enabled
+  // Returns pointer to the factored matrix (may be the same as A() if factorization done in place).
 //  double * AF()  const {return(AF_);};
 
-  //! Returns the leading dimension of the factored matrix.
+  // NOTE: doxygen-style documentation needs to be re-enabled if this function is re-enabled
+  // Returns the leading dimension of the factored matrix.
 //  int LDAF()  const {return(LDAF_);};
 
   //! Returns pointer to the inverted matrix (may be the same as A() if factorization done in place).
@@ -289,47 +312,58 @@ class Epetra_SerialDenseSVD : public virtual Epetra_SerialDenseOperator, public 
   //! Returns the leading dimension of the inverted matrix.
   int LDAI()  const {return(LDAI_);};
 
-  //! Returns pointer to pivot vector (if factorization has been computed), zero otherwise.
+  // NOTE: doxygen-style documentation needs to be re-enabled if this function is re-enabled
+  // Returns pointer to pivot vector (if factorization has been computed), zero otherwise.
 //  int * IPIV()  const {return(IPIV_);};
 
   //! Returns the 1-Norm of the \e this matrix (returns -1 if not yet computed).
   double ANORM()  const {return(ANORM_);};
 
-  //! Returns the reciprocal of the condition number of the \e this matrix (returns -1 if not yet computed).
+  // NOTE: doxygen-style documentation needs to be re-enabled if this function is re-enabled
+  // Returns the reciprocal of the condition number of the \e this matrix (returns -1 if not yet computed).
 //  double RCOND()  const {return(RCOND_);};
 
-  //! Ratio of smallest to largest row scale factors for the \e this matrix (returns -1 if not yet computed).
-  /*! If ROWCND() is >= 0.1 and AMAX() is not close to overflow or underflow, then equilibration is not needed.
+  // NOTE: doxygen-style documentation needs to be re-enabled if this function is re-enabled
+  // Ratio of smallest to largest row scale factors for the \e this matrix (returns -1 if not yet computed).
+  /* If ROWCND() is >= 0.1 and AMAX() is not close to overflow or underflow, then equilibration is not needed.
    */
 //  double ROWCND()  const {return(ROWCND_);};
 
-  //! Ratio of smallest to largest column scale factors for the \e this matrix (returns -1 if not yet computed).
-  /*! If COLCND() is >= 0.1 then equilibration is not needed.
+  // NOTE: doxygen-style documentation needs to be re-enabled if this function is re-enabled
+  // Ratio of smallest to largest column scale factors for the \e this matrix (returns -1 if not yet computed).
+  /* If COLCND() is >= 0.1 then equilibration is not needed.
    */
 //  double COLCND()  const {return(COLCND_);};
 
-  //! Returns the absolute value of the largest entry of the \e this matrix (returns -1 if not yet computed).
+  // NOTE: doxygen-style documentation needs to be re-enabled if this function is re-enabled
+  // Returns the absolute value of the largest entry of the \e this matrix (returns -1 if not yet computed).
 //  double AMAX()  const {return(AMAX_);};
 
-  //! Returns a pointer to the forward error estimates computed by LAPACK.
+  // NOTE: doxygen-style documentation needs to be re-enabled if this function is re-enabled
+  // Returns a pointer to the forward error estimates computed by LAPACK.
 //  double * FERR()  const {return(FERR_);};
 
-  //! Returns a pointer to the backward error estimates computed by LAPACK.
+  // NOTE: doxygen-style documentation needs to be re-enabled if this function is re-enabled
+  // Returns a pointer to the backward error estimates computed by LAPACK.
 //  double * BERR()  const {return(BERR_);};
 
-  //! Returns a pointer to the row scaling vector used for equilibration.
+  // NOTE: doxygen-style documentation needs to be re-enabled if this function is re-enabled
+  // Returns a pointer to the row scaling vector used for equilibration.
 //  double * R()  const {return(R_);};
 
-  //! Returns a pointer to the column scale vector used for equilibration.
+  // NOTE: doxygen-style documentation needs to be re-enabled if this function is re-enabled
+  // Returns a pointer to the column scale vector used for equilibration.
 //  double * C()  const {return(C_);};
   //@}
 
-  //@{ \name I/O methods
+  //! @name I/O methods
+  //@{ 
   //! Print service methods; defines behavior of ostream << operator.
   virtual void Print(ostream& os) const;
   //@}
 
-  //@{ \name Additional methods for support of Epetra_SerialDenseOperator interface
+  //! @name Additional methods for support of Epetra_SerialDenseOperator interface
+  //@{ 
 
     //! If set true, transpose of this operator will be applied.
     /*! This flag allows the transpose of the given operator to be used implicitly.  Setting this flag

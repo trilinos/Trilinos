@@ -48,7 +48,8 @@ class Epetra_FastCrsOperator: public Epetra_CompObject, public virtual Epetra_Op
       
  public:
 
-  //@{ \name Constructors/Destructor.
+   //! @name Constructors/Destructor
+  //@{ 
   //! Epetra_FastCrsOperator constuctor.
   Epetra_FastCrsOperator(const Epetra_CrsMatrix & Matrix, bool UseFloats = false);
 
@@ -56,7 +57,8 @@ class Epetra_FastCrsOperator: public Epetra_CompObject, public virtual Epetra_Op
   virtual ~Epetra_FastCrsOperator();
   //@}
   
-  //@{ \name Post-construction modifications.
+  //! @name Post-construction modifications
+  //@{ 
   //! Update values using a matrix with identical structure.
   /* Updates the values only using a matrix that has exactly the same structure as
      the matrix used to construct this Epetra_FastCrsOperator object.
@@ -64,7 +66,8 @@ class Epetra_FastCrsOperator: public Epetra_CompObject, public virtual Epetra_Op
   int UpdateValues(const Epetra_CrsMatrix & Matrix);
   //@}
   
-  //@{ \name Additional methods required to support the Epetra_Operator interface.
+  //! @name Additional methods required to support the Epetra_Operator interface
+  //@{ 
 
     //! Returns a character string describing the operator
     char * Label() const {return(CrsMatrix_.Label());};

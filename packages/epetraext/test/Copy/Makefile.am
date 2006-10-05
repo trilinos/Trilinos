@@ -36,8 +36,7 @@ View_test_SOURCES = \
 
 View_test_DEPENDENCIES = \
   $(top_builddir)/src/libepetraext.a \
-  $(top_builddir)/../epetra/src/libepetra.a \
-  $(top_builddir)/../teuchos/src/libteuchos.a
+  $(top_builddir)/../epetra/src/libepetra.a
 
 View_test_CXXFLAGS = -I$(top_srcdir)/src/transform \
                      -I$(top_srcdir)/src \
@@ -48,7 +47,6 @@ View_test_CXXFLAGS = -I$(top_srcdir)/src/transform \
 View_test_LDADD = \
   $(top_builddir)/src/libepetraext.a \
   $(top_builddir)/../epetra/src/libepetra.a \
-  $(top_builddir)/../teuchos/src/libteuchos.a \
   $(LIBS) \
   $(BLAS_LIBS) \
   $(FLIBS)

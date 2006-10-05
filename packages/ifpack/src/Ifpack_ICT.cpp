@@ -150,7 +150,7 @@ int Ifpack_ICT::Compute()
   Time_.ResetStartTime();
   IsComputed_ = false;
 
-  int NumMyRows_ = A_.NumMyRows();
+  NumMyRows_ = A_.NumMyRows();
   int Length = A_.MaxNumEntries();
   vector<int>    RowIndices(Length);
   vector<double> RowValues(Length);

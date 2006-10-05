@@ -57,10 +57,6 @@ run_cmnd(
   "../example/operator_vector/sillyCgSolve_mpi.exe --echo-command-line --help"
   ,"$abs_top_srcdir/example/operator_vector/sillyCgSolve_mpi.help.out"
   );
-run_cmnd(
-  "../example/operator_vector/sillyCgSolve_mpi.exe --echo-command-line --unsym-op"
-  ,"$abs_top_srcdir/example/operator_vector/sillyCgSolve_mpi.unsym-op.out"
-  );
 
 # sillyPowerMethod_serial.cpp
 

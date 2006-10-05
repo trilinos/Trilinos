@@ -17,6 +17,11 @@ useful as a developer's reference and should only be used as such.
 <li> \ref Thyra_Op_Vec_intro_sec
 <li> \ref Thyra_Op_Vec_fundamental_interfaces_sec
 <li> \ref thyra_operator_vector_use_cases_sec
+  <ol>
+  <li> \ref Thyra_Op_Vec_ANA_Interoperability_grp
+  <li> \ref Thyra_Op_Vec_ANA_Development_grp
+  <li> \ref Thyra_Op_Vec_Adapters_grp
+  </ol>
 <li> \ref thyra_operator_vector_examples_sec
 <li> \ref Thyra_Op_Vec_links_to_other_documentation_sec
 </ul>

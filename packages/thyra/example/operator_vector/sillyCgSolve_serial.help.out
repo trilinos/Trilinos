@@ -32,3 +32,5 @@ Usage: ../example/operator_vector/sillyCgSolve_serial.exe [options]
                                         (default: --tol=0.0001)
   --max-num-iters               int     Maximum of CG iterations.
                                         (default: --max-num-iters=300)
+  --use-sillier-cg              bool    Use the handle-based sillerCgSolve() function or the nonhandle-based sillyCgSolve() function
+  --use-silly-cg                        (default: --use-silly-cg)

@@ -113,13 +113,20 @@ SUBDIRS = src $(THYRA_SUBDIR) $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) doc $(PYTHON_SUBD
 ## #######################################################################
 ## Target for circular dependencies
 ## #######################################################################
+
+if ENABLE_IFPACK_THYRA
+BUILD_THYRA_SUBLIB=cd $(top_builddir)/thyra/src ; $(MAKE)
+else
+BUILD_THYRA_SUBLIB=
+endif
+
 all-libs:
 	cd src ; $(MAKE) all-libs
-	cd thyra/src ; $(MAKE) all-libs
+	$(BUILD_THYRA_SUBLIB)
 
 libs:
 	cd src ; $(MAKE)
-	cd thyra/src ; $(MAKE)
+	$(BUILD_THYRA_SUBLIB)
 
 ## #######################################################################
 ## Export Makefile Installation
@@ -133,8 +140,8 @@ install-exec-hook:
 		--my-export-makefile=Makefile.export.ifpack \
 		--my-abs-top-srcdir=@abs_top_srcdir@ \
 		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src \
-		--my-abs-lib-dirs=@abs_top_builddir@/src \
-		--dep-package-abs-builddirs=@abs_top_builddir@/../epetraext:@abs_top_builddir@/../aztecoo:@abs_top_builddir@/../teuchos:@abs_top_builddir@/../amesos:@abs_top_builddir@/../epetra:@abs_top_builddir@/../triutils
+		--my-abs-lib-dirs=@abs_top_builddir@/src:@abs_top_builddir@/thyra/src \
+		--dep-package-abs-builddirs=@abs_top_builddir@/../epetraext:@abs_top_builddir@/../aztecoo:@abs_top_builddir@/../teuchos:@abs_top_builddir@/../amesos:@abs_top_builddir@/../epetra:@abs_top_builddir@/../triutils:@abs_top_builddir@/../thyra
 	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile IFPACK > $(exec_prefix)/include/Makefile.export.ifpack.macros
 
 uninstall-hook:

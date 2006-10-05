@@ -158,6 +158,7 @@ PrintActiveRefCountPtrNodes::~PrintActiveRefCountPtrNodes()
 void PrintActiveRefCountPtrNodes::foo()
 {
   int dummy = count_;
+  ++dummy; // Avoid unused variable warning (bug 2664)
 }
 
 int PrintActiveRefCountPtrNodes::count_ = 0;

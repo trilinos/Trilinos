@@ -47,7 +47,8 @@ class Epetra_RowMatrixTransposer {
     
   public:
 
-  //@{ \name Constructors/destructors.
+    //! @name Constructors/destructors
+  //@{ 
   //! Primary Epetra_RowMatrixTransposer constructor.
   /*!
     \param Matrix (In) An existing Epetra_RowMatrix object.  The Epetra_RowMatrix, the LHS and RHS pointers
@@ -67,7 +68,8 @@ class Epetra_RowMatrixTransposer {
   virtual ~Epetra_RowMatrixTransposer();
   //@}
   
-  //@{ \name Forward transformation methods.
+  //! @name Forward transformation methods
+  //@{ 
   
   //! Generate a new Epetra_CrsMatrix as the transpose of an Epetra_RowMatrix passed into the constructor.
   /*! Constructs a new Epetra_CrsMatrix that is a copy of the Epetra_RowMatrix passed in to the constructor.
@@ -103,12 +105,14 @@ class Epetra_RowMatrixTransposer {
   int UpdateTransposeValues(Epetra_RowMatrix * MatrixWithNewValues);
   //@}
   
-  //@{ \name Reverse transformation methods.
+  //! @name Reverse transformation methods
+  //@{ 
   //! Update values of original matrix (Not implemented and not sure if we will implement this).
    int UpdateOriginalMatrixValues();
   //@}
   
-  //@{ \name Attribute accessor methods.
+  //! @name Attribute accessor methods
+  //@{ 
 
   //! Returns const reference to the Epetra_Map object describing the row distribution of the transpose matrix.
   /*! The RedistExporter object can be used to redistribute other Epetra_DistObject objects whose maps are compatible with

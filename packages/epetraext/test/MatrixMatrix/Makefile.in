@@ -109,9 +109,6 @@ PROGRAMS = $(noinst_PROGRAMS)
 am_MatrixMatrix_test_OBJECTS = MatrixMatrix_test-cxx_main.$(OBJEXT)
 MatrixMatrix_test_OBJECTS = $(am_MatrixMatrix_test_OBJECTS)
 am__DEPENDENCIES_1 =
-@USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
-@USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
-@USING_GNUMAKE_TRUE@	$(EPETRAEXT_LIBS))
 am_copyfiles_OBJECTS =
 copyfiles_OBJECTS = $(am_copyfiles_OBJECTS)
 copyfiles_LDADD = $(LDADD)
@@ -312,8 +309,7 @@ MatrixMatrix_test_SOURCES = \
 
 MatrixMatrix_test_DEPENDENCIES = \
   $(top_builddir)/src/libepetraext.a \
-  $(top_builddir)/../epetra/src/libepetra.a \
-  $(top_builddir)/../teuchos/src/libteuchos.a
+  $(top_builddir)/../epetra/src/libepetra.a
 
 MatrixMatrix_test_CXXFLAGS = -I$(top_srcdir)/src \
 		 	     -I$(top_srcdir)/src/inout \
@@ -321,11 +317,14 @@ MatrixMatrix_test_CXXFLAGS = -I$(top_srcdir)/src \
                              -I$(top_srcdir)/../epetra/src \
                              -I$(top_builddir)/../epetra/src
 
-@USING_GNUMAKE_FALSE@EXPORT_LIBS = $(EPETRAEXT_LIBS)
-@USING_GNUMAKE_TRUE@EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(EPETRAEXT_LIBS))
-@USING_GNUMAKE_FALSE@EXPORT_INC_PATH = $(EPETRAEXT_INCLUDES)
-@USING_GNUMAKE_TRUE@EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(EPETRAEXT_INCLUDES))
-MatrixMatrix_test_LDADD = $(EXPORT_LIBS)
+MatrixMatrix_test_LDADD = \
+  $(top_builddir)/src/libepetraext.a \
+  $(top_builddir)/../epetra/src/libepetra.a \
+  $(top_builddir)/../teuchos/src/libteuchos.a \
+  $(LIBS) \
+  $(BLAS_LIBS) \
+  $(FLIBS)
+
 EXTRA_DIST = \
 	src_infileAB \
 	src_infileATBT \
@@ -602,8 +601,6 @@ uninstall-am: uninstall-info-am
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am uninstall-info-am
 
-
-include $(top_builddir)/Makefile.export.epetraext
 
 copyfiles$(EXEEXT): $(copyfiles_SOURCES)
 	cp $(top_srcdir)/test/MatrixMatrix/src_infileAB $(top_builddir)/test/MatrixMatrix/infileAB

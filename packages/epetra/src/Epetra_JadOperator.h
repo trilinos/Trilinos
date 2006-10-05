@@ -60,7 +60,8 @@ class Epetra_JadOperator: public Epetra_CompObject, public Epetra_Object, public
       
  public:
 
-  //@{ \name Constructors/Destructor.
+   //! @name Constructors/Destructor
+  //@{ 
   //! Epetra_JadOperator constuctor.
   /* The constructor for this class requires a fully constructed instance of an Epetra_RowMatrix
      object.
@@ -78,7 +79,8 @@ class Epetra_JadOperator: public Epetra_CompObject, public Epetra_Object, public
   virtual ~Epetra_JadOperator();
   //@}
   
-  //@{ \name Post-construction modifications.
+  //! @name Post-construction modifications
+  //@{ 
   //! Update values using a matrix with identical structure.
   /* Updates the values only using a matrix that has exactly the same structure as
      the matrix used to construct this Epetra_JadOperator object.  Once the constructor
@@ -94,7 +96,8 @@ class Epetra_JadOperator: public Epetra_CompObject, public Epetra_Object, public
   int UpdateValues(const Epetra_RowMatrix & Matrix, bool CheckStructure = false);
   //@}
   
-  //@{ \name Additional methods required to support the Epetra_Operator interface.
+  //! @name Additional methods required to support the Epetra_Operator interface
+  //@{ 
     
     //! If set true, transpose of this operator will be applied.
     /*! This flag allows the transpose of the given operator to be used implicitly.  Setting this flag
@@ -156,7 +159,8 @@ class Epetra_JadOperator: public Epetra_CompObject, public Epetra_Object, public
 
   //@}
   
-  //@{ \name Additional accessor methods.
+  //! @name Additional accessor methods
+  //@{ 
 
   //! Returns the Epetra_Import object that contains the import operations for distributed operations.
   const Epetra_Import* Importer() const {return(Importer_);}
@@ -174,7 +178,8 @@ class Epetra_JadOperator: public Epetra_CompObject, public Epetra_Object, public
 
   //@}
 
-  //@{ \name I/O Methods.
+  //! @name I/O Methods
+  //@{ 
 
   //! Print method
   virtual void Print(ostream& os) const;

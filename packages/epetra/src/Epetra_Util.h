@@ -78,7 +78,8 @@ class Epetra_Util {
   //! Epetra_Util Destructor.
   virtual ~Epetra_Util();
 
-  //@{ \name Random number utilities
+  //! @name Random number utilities
+  //@{ 
 
   //! Returns a random integer on the interval (0, 2^31-1)
   unsigned int RandomInt();

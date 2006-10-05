@@ -38,7 +38,7 @@ Transpose_test_DEPENDENCIES = \
   $(top_builddir)/src/libepetraext.a \
   $(top_builddir)/../triutils/src/libtriutils.a \
   $(top_builddir)/../epetra/src/libepetra.a \
-  $(top_builddir)/../teuchos/src/libteuchos.a
+  $(top_builddir)/../epetra/src/libepetra.a
 
 Transpose_test_CXXFLAGS = \
   -I$(top_srcdir)/src/transform \
@@ -49,15 +49,13 @@ Transpose_test_CXXFLAGS = \
   -I$(top_srcdir)/../epetra/src \
   -I$(top_builddir)/../epetra/src
 
-include $(top_builddir)/Makefile.export.epetraext
+Transpose_test_LDADD = \
+  $(top_builddir)/src/libepetraext.a \
+  $(top_builddir)/../triutils/src/libtriutils.a \
+  $(top_builddir)/../epetra/src/libepetra.a \
+  $(top_builddir)/../teuchos/src/libteuchos.a \
+  $(LIBS) \
+  $(BLAS_LIBS) \
+  $(FLIBS)
 
-if USING_GNUMAKE
-EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(EPETRAEXT_LIBS))
-EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(EPETRAEXT_INCLUDES))
-else
-EXPORT_LIBS = $(EPETRAEXT_LIBS)
-EXPORT_INC_PATH = $(EPETRAEXT_INCLUDES)
-endif
-
-Transpose_test_LDADD = $(EXPORT_LIBS)
 

@@ -43,7 +43,8 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 class Epetra_SerialCommData : public Epetra_Data {
 	friend class Epetra_SerialComm;
  private:
-  //@{ \name Constructor/Destructor Methods
+  //! @name Constructor/Destructor Methods
+  //@{ 
 
   //! Epetra_SerialCommData Default Constructor.
   Epetra_SerialCommData();

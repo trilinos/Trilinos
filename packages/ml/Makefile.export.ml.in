@@ -5,6 +5,7 @@
 ###########################################################################
 
 # Optional ML dependencies 
+@ML_USING_GALERI_TRUE@include @abs_top_builddir@/../galeri/Makefile.export.galeri
 @ML_USING_EPETRA_TRUE@include @abs_top_builddir@/../epetra/Makefile.export.epetra 
 @ML_USING_AMESOS_TRUE@include @abs_top_builddir@/../amesos/Makefile.export.amesos
 @ML_USING_IFPACK_TRUE@include @abs_top_builddir@/../ifpack/Makefile.export.ifpack
@@ -35,6 +36,7 @@ _ML_BUILD_LIB_INCLUDES = \
 	    -I@abs_top_srcdir@/src/MLAPI \
 	    -I@abs_top_srcdir@/src/MatrixFree \
 	    -I@abs_top_srcdir@/src/Include \
+	    $(GALERI_INCLUDES) \
 	    $(EPETRA_INCLUDES) \
 	    $(AMESOS_INCLUDES) \
 	    $(IFPACK_INCLUDES) \
@@ -59,6 +61,7 @@ _ML_INCLUDES = \
 	    -I@abs_top_srcdir@/src/MLAPI \
 	    -I@abs_top_srcdir@/src/MatrixFree \
 	    -I@abs_top_srcdir@/src/Include \
+	    $(GALERI_INCLUDES) \
 	    $(EPETRA_INCLUDES) \
 	    $(AMESOS_INCLUDES) \
 	    $(IFPACK_INCLUDES) \
@@ -67,7 +70,7 @@ _ML_INCLUDES = \
 	    $(EPETRAEXT_INCLUDES) \
       $(ML_THYRA_INCLUDES)   
 
-_ML_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src $(ML_THYRA_LIBS) -lml $(EPETRA_LIBS) $(AMESOS_LIBS) $(IFPACK_LIBS) $(TEUCHOS_LIBS) $(AZTECOO_LIBS) $(EPETRAEXT_LIBS) @LAPACK_LIBS@ @BLAS_LIBS@ @LIBS@ @FLIBS@ 
+_ML_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src $(ML_THYRA_LIBS) -lml $(GALERI_LIBS) $(EPETRA_LIBS) $(AMESOS_LIBS) $(IFPACK_LIBS) $(TEUCHOS_LIBS) $(AZTECOO_LIBS) $(EPETRAEXT_LIBS) @LAPACK_LIBS@ @BLAS_LIBS@ @LIBS@ @FLIBS@ 
 
 @USING_GNUMAKE_TRUE@ML_BUILD_LIB_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_ML_BUILD_LIB_INCLUDES))
 @USING_GNUMAKE_TRUE@ML_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_ML_INCLUDES))
@@ -82,11 +85,14 @@ _ML_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src $(ML_THYRA_LIBS) -lml $(EPETRA_LIB
 # ML itself.
 ###########################################################################
 
-@ML_USING_GALERI_TRUE@include @abs_top_builddir@/../galeri/Makefile.export.galeri
+#Currently no packages are listed in this area.  Galeri is now used in
+# ml/src.
 
-_ML_EXTRA_INCLUDES = $(GALERI_INCLUDES)
+#@ML_USING_GALERI_TRUE@include @abs_top_builddir@/../galeri/Makefile.export.galeri
 
-_ML_EXTRA_LIBS = $(GALERI_LIBS)
+_ML_EXTRA_INCLUDES =
+
+_ML_EXTRA_LIBS =
 
 @USING_GNUMAKE_TRUE@ML_EXTRA_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_ML_EXTRA_INCLUDES))
 @USING_GNUMAKE_TRUE@ML_EXTRA_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_ML_EXTRA_LIBS))

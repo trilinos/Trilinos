@@ -47,7 +47,8 @@ class Epetra_InvOperator: public virtual Epetra_Operator {
       
  public:
 
-  //@{ \name Constructor.
+   //! @name Constructor
+  //@{ 
     //! Uses an Epetra_Operator instance to implement the Epetra_Operator interface.
   /*! Facilitates the use of an Epetra_Operator instance as an inverse operator.  
     \param In - A fully-constructed Epetra_Operator object.
@@ -61,7 +62,8 @@ class Epetra_InvOperator: public virtual Epetra_Operator {
   virtual ~Epetra_InvOperator(){}
   //@}
   
-  //@{ \name Atribute set methods.
+  //! @name Atribute set methods
+  //@{ 
 
     //! If set true, transpose of this operator will be applied.
     /*! This flag allows the transpose of the given operator to be used implicitly.  Setting this flag
@@ -76,7 +78,8 @@ class Epetra_InvOperator: public virtual Epetra_Operator {
   int SetUseTranspose(bool UseTranspose){EPETRA_CHK_ERR(operator_->SetUseTranspose(UseTranspose)); return(0);}
   //@}
   
-  //@{ \name Mathematical functions.
+  //! @name Mathematical functions
+  //@{ 
 
     //! Returns the result of a Epetra_InvOperator applied to a Epetra_MultiVector X in Y.
     /*! 
@@ -108,7 +111,8 @@ class Epetra_InvOperator: public virtual Epetra_Operator {
   */ 
   double NormInf() const {return(operator_->NormInf());}
   
-  //@{ \name Atribute access functions
+  //! @name Atribute access functions
+  //@{ 
 
   //! Returns a character string describing the operator
   const char * Label() const {return(Label_.c_str());}

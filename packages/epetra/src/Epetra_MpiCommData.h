@@ -44,7 +44,8 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 class Epetra_MpiCommData : public Epetra_Data {
 	friend class Epetra_MpiComm;
  private:
-  //@{ \name Constructor/Destructor Methods
+  //! @name Constructor/Destructor Methods
+  //@{ 
 
   //! Epetra_MpiCommData Default Constructor.
   Epetra_MpiCommData(MPI_Comm & Comm);

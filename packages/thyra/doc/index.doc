@@ -3,8 +3,8 @@
 \section thyra_outline_sec Outline
 
 <ul>
-<li> \ref thyra_intro_sec
-<li> \ref thyra_software_sec
+<li>\ref thyra_intro_sec
+<li>\ref thyra_software_sec
   <ul>
   <li>\ref thyra_interfaces_sec
     <ul>
@@ -24,7 +24,7 @@
       <li><a href="index.html#interfaces_nonlinear_solvers_ana_fundamental">Fundamental ANA Nonlinear Solver Interfaces</a>
       </ul>
     </ul>
-  <li>\ref thyra_handle_sec
+  <li>\ref thyra_user_interface_sec
   <li>\ref thyra_support_sec
     <ul>
     <li><a href="index.html#support_operator_vector">Operator/Vector Support</a>
@@ -116,18 +116,20 @@ structure of thyra</a>.
     [<a href="../../src/interfaces/operator_solve/ana/fundamental/doc/html/index.html">
     doxygen collection</a>]</b><a name="interfaces_operator_solve_ana_fundamental"></a>
 
+    \image html PreconditionerFactory75.jpg
+
     \image html LinearOpWithSolveAndFactory75.jpg
 
     These are interfaces that provide a high-level
     interface to preconditioners, linear solvers
-    (<tt>Thyra::LinearOpWithSolveBase</tt>) and factories for these (i.e.
-    <tt>Thyra::LinearOpWithSolveBase</tt> and <tt>Thyra::PreconditionerFactoryBase</tt>)
+    (<tt>Thyra::LinearOpWithSolveBase</tt>), and factories for these (i.e.
+    <tt>Thyra::LinearOpWithSolveFactoryBase</tt> and <tt>Thyra::PreconditionerFactoryBase</tt>).
 
   <li> <b>Extended ANA Operator Solve Interfaces
     [<a href="../../src/interfaces/operator_solve/ana/extended/doc/html/index.html">
     doxygen collection</a>]</b><a name="interfaces_operator_solve_ana_extended"></a>
 
-    Included here are a variety extended interfaces that build on the fundamental operator/solve
+    Included here is a variety of extended interfaces that build on the fundamental operator/solve
     interfaces.  Examples include <tt>Thyra::BlockedLinearOpWithSolveBase.</tt> and
     <tt>Thyra::PhysicallyBlockedLinearOpWithSolveBase</tt>.
 
@@ -159,10 +161,13 @@ structure of thyra</a>.
 
 </ul>
 
-\subsection thyra_handle_sec Thyra user interface with overloaded operators
-
+\subsection thyra_user_interface_sec Thyra user interface with overloaded operators
+ 
 <ul>
-<li> The \ref thyra_handle_grp is described here
+<li> <b> Support for overloaded operators
+      [<a href="???">
+  doxygen collection</a>]</b><a name="handle_support_with_overloaded_operators"></a>
+
 </ul>
 
 \subsection thyra_support_sec Thyra support software and examples
@@ -175,14 +180,18 @@ structure of thyra</a>.
 
   Described here is a fairly large collection of ANA or client support and
   adapter support software based on the operator/vector
-  interfaces.  For example, you will find things as unit testing classes
+  interfaces.  For example, you will find things such as unit testing classes
   (e.g. <tt>Thyra::LinearOpTester</tt>), and concrete product spaces/vectors/multi-vectors
   (e.g. <tt>Thyra::DefaultProductVectorSpace</tt>).  Also included is adapter support
-  and concrete implementations for serial and SPMD space/vector/multi-vector implementations
-  (e.g. <tt>Thyra::DefaultSpmdVectorSpace</tt>).  Several examples are also
-  included including once for CG and the Power Method .  This collection
-  of software is really too vast to give a full sense of what it contains
-  in this short description.
+  and concrete implementations for serial and SPMD (Single Program Multiple Data) space/vector/multi-vector
+  implementations (e.g. <tt>Thyra::DefaultSpmdVectorSpace</tt>).  Another
+  category of software is efficient Java-like handle/wrapper classes
+  (e.g. <tt>Thyra::VectorSpace</tt>, <tt>Thyra::Vector</tt>, and
+  <tt>Thyra::LinearOperator</tt>) that defines a convenient API for the
+  development of ANAs using MATLAB-like operator overloading.  Some
+  examples are also provided, including several for the Conjugate Gradient method and the Power Method.  This
+  collection of software is really too vast to give a full sense of what it
+  contains in this short description.
 
 <li> <b>Operator Solve Support
   [<a href="../../src/support/operator_solve/doc/html/index.html">
@@ -204,7 +213,7 @@ structure of thyra</a>.
   [<a href="../../src/support/nonlinear/solvers/doc/html/index.html">
   doxygen collection</a>]</b><a name="support_nonlinear_solvers"></a>
 
-  Contained here in is support software for the nonlinear solver interfaces
+  Contained here is support software for the nonlinear solver interfaces
   and some simple concrete implementations.  Simple concrete nonlinear
   equation solver implementations include examples
   <tt>Thyra::LinearNonlinearSolver</tt>
@@ -215,7 +224,7 @@ structure of thyra</a>.
 \subsection thyra_browse_sec Browse all of Thyra as a single doxygen collection
 
 You can browse all of Thyra as a <A HREF="../../browser/doc/html/index.html">single
-doxygen collection</A>. Warning, this is not the recommended way to learn
+doxygen collection</A>. Warning: This is not the recommended way to learn
 about Thyra software.  However, this is a good way to browse the <a
 href="../../browser/doc/html/dirs.html">directory structure of thyra</a>, to <a
 href="../../browser/doc/html/files.html">locate files</a>, etc.
@@ -238,8 +247,8 @@ automatic differentiation types, interval types and extended precision types
 constructor, copy constructor, assignment operators) and define the basic
 overloaded operators <tt>operator+(...)</tt>, <tt>operator-(...)</tt>,
 <tt>operator*(...)</tt> and <tt>operator/(...)</tt>.  The traits class
-<tt>Teuchos::ScalarTraits</tt> provides a means to write <em>type
-independent</em> code and all of the %Thyra software uses this traits class.
+<tt>Teuchos::ScalarTraits</tt> provides a means to write <em>type-independent</em> 
+code and all of the %Thyra software uses this traits class.
 Any scalar type that is to be used as a <tt>Scalar</tt> must provide a
 specialization of this traits class (see source code for
 <tt>Teuchos_ScalarTraits.hpp</tt> for examples of how to do this).  In
@@ -249,11 +258,12 @@ also be provided.
 
 The %Thyra interfaces and related software are not templated on an index
 (i.e. ordinal) type.  Instead, the type <tt>Thyra::Index</tt> is used which is
-just a typedef that is defined at configure time to be an integral type of
+just a typedef that is defined at configure time to be an integer type of
 sufficient size.  This type must be able to hold the value of the largest
 dimension of a vector space that will be used by an executable.  For most
-platforms and use cases, <b><tt>int</tt></b> is sufficient but in other cases
-<b><tt>long int</tt></b> may be necessary on some 64 bit platforms.  Not
+platforms and use cases, <b><tt>int</tt></b> is sufficient, but in other cases, 
+for example on some 64 bit platforms,
+<b><tt>long int</tt></b> may be necessary.  Not
 templating on the index (ordinal) type does not result in any degradation in
 usability, runtime speed, or storage usage for any use case.  However, certain
 types of subclasses of the %Thyra interfaces, such as sparse matrix
@@ -278,7 +288,7 @@ software is performed using the built-in C++ exception handling mechanisms
 exceptions should inherit from the standard base class
 <tt>std::exception</tt>.  All exceptions in %Thyra software are thrown using
 the macros <tt>TEST_FOR_EXCEPTION()</tt> or <tt>TEST_FOR_EXCEPT()</tt>.  By
-consistently using these macros is is easy to set a breakpoint in a debugger
+consistently using these macros it is easy to set a breakpoint in a debugger
 just before an exception is thrown by setting a breakpoint on the function
 <tt>TestForException_break()</tt>.  If Trilinos is configured with
 <tt>--enable-teuchos-debug</tt> then a lot of runtime error checking is
@@ -299,7 +309,7 @@ The %Thyra code described here is dependent on the following Trilinos packages:
 <ul>
 <li><b><a href="../../../teuchos/doc/html/index.html">teuchos</a></b>: This
 package supplies basic utility classes such as <tt>Teuchos::RefCountPtr</tt>
-and <tt>Teuchos::BLAS</tt> that %Thyra software is dependent on.
+and <tt>Teuchos::BLAS</tt> on which %Thyra software depends.
 <li><b><a href="../../../rtop/doc/html/index.html">rtop</a></b>: This package
 supplies the basic interfaces for vector reduction/transformation operators as
 well as support code and a library of pre-written RTOp subclasses.
@@ -317,7 +327,7 @@ Some of the more important configuration options are:
 <li><b><tt>--enable-thyra</tt></b>: Causes the %Thyra package and all of
 its dependent packages to be enabled and built.  Without this option,
 there will be no %Thyra header files or libraries included in the
-installation of Trilinos (i.e. using <tt>make install</tt>).
+installation of Trilinos, i.e., when one runs <tt>make install</tt>.
 <li><b><tt>--enable-export-makefiles</tt></b>: Causes the installation of
 the %Thyra package (an other Trilinos packages) to have the makefile
 fragments <tt>Makefile.export.thyra</tt> and <tt>Makefile.export.thyra.macros</tt>
@@ -330,7 +340,7 @@ source directory for the <tt>thyra</tt> package) for a complete listing of all
 of the configure options that Thyra responds to.
 
 The %Thyra package is also affected by configure options passed to
-other packages and some of these options are:
+other packages; some of these options are:
 
 <ul>
 <li><b><tt>--enable-teuchos-debug</tt></b>: Causes a great deal
@@ -355,9 +365,17 @@ rest of Trilinos and then compile and link against the installed headers and
 libraries (see the <a
 href="../../../../doc/UserGuide/TrilinosUserGuide.pdf">Trilinos Users
 Guide</a> for a discussion of installing Trilinos).  Remember that in order to
-install the contents of the <tt>thyra</tt> packages that one must enable it
+install the contents of the <tt>thyra</tt> package, one must enable it
 (see the <tt>--enable-thyra</tt> and other <tt>configure</tt> options
 described \ref thyra_configuration_sec "above") before installation.
+
+When  <tt>make install</tt> is run, %Thyra will be installed with the rest of 
+Trilinos in the directory specified by the configure
+option <tt>--prefix=$TRILINOS_INSTALL_DIR</tt>. It is
+important that a client's external makefile system be consistent with the
+environment used to build %Thyra.  To do this, if the option
+<tt>--enable-export-makefiles</tt> was enabled at configure time, then a set
+of makefile fragments is installed in the directory 
 
 Once %Thyra software is installed in the location specified by the configure
 option <tt>--prefix=$TRILINOS_INSTALL_DIR</tt> with the rest of Trilinos
@@ -510,7 +528,7 @@ solvers for nearly any <tt>Epetra_RowMatrix</tt> object.  However, the Belos
 implementation allows for the arbitrary implemention of the linear operators
 and vector spaces.
 
-<li><b><a href="../../../moocho/thyra/doc/html/index.html">MOOCHO/Thyra:
+<li><b><a href="../../../moocho/doc/html/index.html">MOOCHO/Thyra:
 Adapters that take Thyra Nonlinear Model Evaluator objects and express them as
 simulation-constrained optimization problems</a></b>: These adapters allow an
 application to access the nonlinear, simulation-constrained optimiztion

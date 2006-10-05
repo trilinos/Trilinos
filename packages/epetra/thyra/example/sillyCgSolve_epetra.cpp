@@ -29,6 +29,7 @@
 #include "createTridiagEpetraLinearOp.hpp"
 #include "sillyCgSolve.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
+#include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_DefaultSpmdVectorSpace.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
@@ -102,24 +103,27 @@ int main(int argc, char *argv[])
     //       [            -1  a*2    -1 ]
     //       [                 -1   a*2 ]
     //
-    // (D.1) Create the tridagonal matrix operator
-    if(verbose) *out << "\n(1) Constructing tridagonal Epetra matrix A of global dimension = " << globalDim << " ...\n";
-    RefCountPtr<Thyra::LinearOpBase<double> >
-      A = createTridiagEpetraLinearOp(
+    // (D.1) Create the tridagonal Epetra matrix operator
+    if(verbose) *out << "\n(1) Constructing tridagonal Epetra matrix A_epetra of global dimension = " << globalDim << " ...\n";
+    RefCountPtr<Epetra_Operator>
+      A_epetra = createTridiagEpetraLinearOp(
         globalDim
 #ifdef HAVE_MPI
         ,mpiComm
 #endif
         ,diagScale,verbose,*out
         );
-    // (D.2) Create RHS vector b and set to a random value
+    // (D.2) Wrap the Epetra_Opertor in a Thyra::EpetraLinearOp object
+    RefCountPtr<Thyra::LinearOpBase<double> >
+      A = rcp(new Thyra::EpetraLinearOp(A_epetra));
+    // (D.3) Create RHS vector b and set to a random value
     RefCountPtr<const Thyra::VectorSpaceBase<double> >
       b_space = A->range();
-    // (D.3) Create the RHS vector b and initialize it to a random vector
+    // (D.4) Create the RHS vector b and initialize it to a random vector
     RefCountPtr<Thyra::VectorBase<double> > b = createMember(b_space);
     Thyra::seed_randomize<double>(0);
     Thyra::randomize( -1.0, +1.0, &*b );
-    // (D.4) Create LHS vector x and set to zero
+    // (D.5) Create LHS vector x and set to zero
     RefCountPtr<Thyra::VectorBase<double> > x = createMember(A->domain());
     Thyra::assign( &*x, 0.0 );
     //

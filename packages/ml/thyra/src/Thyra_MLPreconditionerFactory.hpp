@@ -57,12 +57,16 @@ public:
   //@{
 
   /** \brief . */
+  MLPreconditionerFactory();
+
+  /** \brief . */
   MLPreconditionerFactory(const RefCountPtr<ParameterList>& params);
+
   /** \brief . */
   MLPreconditionerFactory(const EMLProblemType& probType,
                           const ParameterList& revisions=ParameterList());
 
-  /** */
+  /** \brief . */
   MLPreconditionerFactory(const std::string& probType,
                           const ParameterList& revisions=ParameterList());
     
@@ -115,6 +119,8 @@ public:
   RefCountPtr<ParameterList> unsetParameterList();
   /** \brief . */
   RefCountPtr<const ParameterList> getParameterList() const;
+  /** \brief . */
+  RefCountPtr<const Teuchos::ParameterList> getValidParameters() const;
   //@}
 
   /** \name Public functions overridden from Describable. */
@@ -139,7 +145,8 @@ private:
   // ////////////////////////////////
   // Private data members
 
-  RefCountPtr<ParameterList>       paramList_;
+  mutable RefCountPtr<ParameterList>  validPL_;
+  RefCountPtr<ParameterList>          paramList_;
 
 
   // ////////////////////////////////

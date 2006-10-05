@@ -118,7 +118,8 @@ method in the Epetra_CompObject base class.
 class Epetra_SerialSymDenseMatrix : public Epetra_SerialDenseMatrix {
 
  public:
-  //@{ \name Constructor/Destructor Methods
+   //! @name Constructor/Destructor Methods
+  //@{ 
   //! Default constructor; defines a zero size object.
   /*!
     Epetra_SerialSymDenseMatrix objects defined by the default constructor 
@@ -158,7 +159,8 @@ class Epetra_SerialSymDenseMatrix : public Epetra_SerialDenseMatrix {
   virtual ~Epetra_SerialSymDenseMatrix ();
   //@}
 
-  //@{ \name Set Methods
+  //! @name Set Methods
+  //@{ 
 
   //let the compiler know we intend to overload the base-class Shape function,
   //rather than hide it.  
@@ -204,7 +206,8 @@ class Epetra_SerialSymDenseMatrix : public Epetra_SerialDenseMatrix {
   void SetUpper() {Upper_ = true; UPLO_ = 'U';};
   //@}
 
-  //@{ \name Query methods
+  //! @name Query methods
+  //@{ 
 
   //! Returns true if upper triangle of \e this matrix has and will be used.
   bool Upper() const {return(Upper_);};
@@ -213,7 +216,8 @@ class Epetra_SerialSymDenseMatrix : public Epetra_SerialDenseMatrix {
   char UPLO() const {return(UPLO_);};
   //@}
 
-  //@{ \name Mathematical Methods
+  //! @name Mathematical Methods
+  //@{ 
 
   //! Inplace scalar-matrix product A = \e a A.
   /*! Scale a matrix, entry-by-entry using the value ScalarA.  This method is sensitive to 
@@ -241,7 +245,8 @@ class Epetra_SerialSymDenseMatrix : public Epetra_SerialDenseMatrix {
 
   void CopyUPLOMat(bool Upper, double * A, int LDA, int NumRows);
 
-  //@{ \name Deprecated methods (will be removed in later versions of this class).
+  //! @name Deprecated methods (will be removed in later versions of this class)
+  //@{ 
 
   //! Computes the 1-Norm of the \e this matrix (identical to NormOne() method).
   /*!

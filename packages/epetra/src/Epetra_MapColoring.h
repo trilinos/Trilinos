@@ -91,7 +91,8 @@ class Epetra_MapColoring: public Epetra_DistObject {
     
   public:
 
-  //@{ \name Constructors/destructors.
+    //! @name Constructors/destructors
+  //@{ 
   //! Epetra_MapColoring basic constructor.
   /*!
     \param In
@@ -136,7 +137,8 @@ class Epetra_MapColoring: public Epetra_DistObject {
   virtual ~Epetra_MapColoring();
   //@}
   
-  //@{ \name Set Color methods.
+  //! @name Set Color methods
+  //@{ 
   
   //! LID element color assignment method.
   /*! Allows color assignment of ith LID: colormap[i] = color
@@ -153,7 +155,8 @@ class Epetra_MapColoring: public Epetra_DistObject {
   int& operator () (int GID) {ListsAreValid_ = false; return ElementColors_[Map().LID(GID)];};
   //@}
   
-  //@{ \name Local/Global color accessor methods.
+  //! @name Local/Global color accessor methods
+  //@{ 
   //! LID element color access method.
   /*! Returns color  of ith LID: colormap[i] = color
     \return MapColor[LID].
@@ -169,7 +172,8 @@ class Epetra_MapColoring: public Epetra_DistObject {
   const int& operator () (int GID) const {return ElementColors_[Map().LID(GID)];};
   //@}
   
-  //@{ \name Color Information Access Methods.
+  //! @name Color Information Access Methods
+  //@{ 
   //! Returns number of colors on the calling processor.
   int NumColors() const {if (!ListsAreValid_) GenerateLists(); return(NumColors_);};
   
@@ -203,7 +207,8 @@ class Epetra_MapColoring: public Epetra_DistObject {
   int * ElementColors() const{if (!ListsAreValid_) GenerateLists(); return(ElementColors_);};
   
   //@}
-  //@{ \name Epetra_Map and Epetra_BlockMap generators.
+  //! @name Epetra_Map and Epetra_BlockMap generators
+  //@{ 
   //! Generates an Epetra_Map of the GIDs associated with the specified color.
   /*! This method will create an Epetra_Map such that on each processor the GIDs associated with
     the specified color will be part of the map on that processor.  Note that this
@@ -224,7 +229,8 @@ class Epetra_MapColoring: public Epetra_DistObject {
   Epetra_BlockMap * GenerateBlockMap(int Color) const;
   //@}
   
-  //@{ \name I/O methods
+  //! @name I/O methods
+  //@{ 
   
   //! Print method
   virtual void Print(ostream & os) const;

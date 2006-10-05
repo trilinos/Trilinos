@@ -130,7 +130,8 @@ class Epetra_Vector : public Epetra_MultiVector {
 
   public:
 
-  //@{ \name Constructors/destructors.
+    //! @name Constructors/destructors
+  //@{ 
   //! Basic Epetra_Vector constuctor.
   /*! Creates a Epetra_Vector object and fills with zero values.  
 
@@ -190,7 +191,8 @@ class Epetra_Vector : public Epetra_MultiVector {
     virtual ~Epetra_Vector ();
   //@}
   
-  //@{ \name Post-construction modification routines.
+  //! @name Post-construction modification routines
+  //@{ 
 
   //! Replace values in a vector with a given indexed list of values, indices are in global index space.
   /*!
@@ -343,7 +345,8 @@ class Epetra_Vector : public Epetra_MultiVector {
   int SumIntoMyValues(int NumEntries, int BlockOffset, double * Values, int * Indices);
   //@}
 
-  //@{ \name Extraction methods
+  //! @name Extraction methods
+  //@{ 
 
   //Let the compiler know we intend to overload the base-class ExtractCopy
   //function, rather than hide it.
@@ -372,7 +375,8 @@ class Epetra_Vector : public Epetra_MultiVector {
   int ExtractView(double **V) const;
   //@}
 
-  //@{ \name Overloaded operators
+  //! @name Overloaded operators
+  //@{ 
 
   //! Element access function.
   /*!
@@ -386,7 +390,8 @@ class Epetra_Vector : public Epetra_MultiVector {
     const double& operator [] (int index) const { return Values_[index]; }
     //@}
     
-  //@{ \name Expert-only unsupported methods
+    //! @name Expert-only unsupported methods
+  //@{ 
 
   //Let the compiler know we intend to overload the base-class ResetView
   //function, rather than hide it.

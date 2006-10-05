@@ -31,6 +31,16 @@
 
 #include "Thyra_ConfigDefs.hpp"
 #include "Teuchos_ScalarTraits.hpp"
+      
+/** \brief Boilerplate code for declaring unary vector transformation
+ * operations.
+ */                                                         
+#define THYRA_UNARY_VECTOR_OP_DECL(opName, intoOpName, thyraOpName, descr) \
+  template <class Scalar>                                               \
+  Vector<Scalar> opName(const Converter<Scalar, ConstVector<Scalar> >& x);      \
+  template <class Scalar>                                               \
+  void intoOpName(const Converter<Scalar, ConstVector<Scalar> >& donor,         \
+                  Vector<Scalar>& acceptor)
 
 /** \brief Boilerplate code for defining unary vector transformation
  * operations.
@@ -58,16 +68,12 @@
     Thyra::thyraOpName(p, *px);                                         \
   }      
 
-      
-/** \brief Boilerplate code for declaring unary vector transformation
- * operations.
- */                                                         
-#define THYRA_UNARY_VECTOR_OP_DECL(opName, intoOpName, thyraOpName, descr) \
-  template <class Scalar>                                               \
-  Vector<Scalar> opName(const Converter<Scalar, ConstVector<Scalar> >& x);      \
-  template <class Scalar>                                               \
-  void intoOpName(const Converter<Scalar, ConstVector<Scalar> >& donor,         \
-                  Vector<Scalar>& acceptor)
+/** \brief Boilerplate code for declaring unary vector reduction operation sthat
+ * return a magnitude type.
+ */ 
+#define THYRA_UNARY_VECTOR_ROP_MAG_DECL(funcName, ROpName, descr) \
+  template <class Scalar>                                     \
+  typename Teuchos::ScalarTraits<Scalar>::magnitudeType funcName(const Converter<Scalar, ConstVector<Scalar> >& x)           
 
 /** \brief Boilerplate code for defining unary vector reduction operations that
  * return a magnitude type.
@@ -80,13 +86,12 @@
     return Thyra::ROpName(*(y.constPtr()));                      \
   }                                                                    
 
-/** \brief Boilerplate code for declaring unary vector reduction operation sthat
- * return a magnitude type.
+/** \brief Boilerplate code for declaring unary vector reduction operations
+ * that return a scalar.
  */ 
-#define THYRA_UNARY_VECTOR_ROP_MAG_DECL(funcName, ROpName, descr) \
+#define THYRA_UNARY_VECTOR_ROP_DECL(funcName, ROpName, descr) \
   template <class Scalar>                                     \
-  typename Teuchos::ScalarTraits<Scalar>::magnitudeType funcName(const Converter<Scalar, ConstVector<Scalar> >& x)           
-
+  Scalar funcName(const Converter<Scalar, ConstVector<Scalar> >& x)           
 
 /** \brief Boilerplate code for defining unary vector reduction operations that
  * return a scalar.
@@ -99,11 +104,22 @@
     return Thyra::ROpName(*(y.constPtr()));                      \
   }                                                                    
 
-/** \brief Boilerplate code for declaring unary vector reduction operations
+/** \brief Boilerplate code for declaring binary vector reduction operations
  * that return a scalar.
  */ 
-#define THYRA_UNARY_VECTOR_ROP_DECL(funcName, ROpName, descr) \
+#define THYRA_BINARY_VECTOR_ROP_DECL(funcName, ROpName, descr) \
   template <class Scalar>                                     \
-  Scalar funcName(const Converter<Scalar, ConstVector<Scalar> >& x)           
+  Scalar funcName(const Converter<Scalar,ConstVector<Scalar> >& x, const Converter<Scalar,ConstVector<Scalar> >& y)           
+
+/** \brief Boilerplate code for defining binary vector reduction operations that
+ * return a scalar.
+ */ 
+#define THYRA_BINARY_VECTOR_ROP(funcName, ROpName, descr) \
+  template <class Scalar> inline \
+  Scalar funcName(const Converter<Scalar,ConstVector<Scalar> >& x, const Converter<Scalar,ConstVector<Scalar> >& y) \
+  { \
+    Thyra::ConstVector<Scalar> _x = Thyra::toVector(x), _y = Thyra::toVector(y); \
+    return Thyra::ROpName(*(_x.constPtr()),*(_y.constPtr())); \
+  }                                                                    
 
 #endif

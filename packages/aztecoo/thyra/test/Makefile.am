@@ -34,8 +34,9 @@ EXEEXT = .exe
 
 TEST_SINGLE_AZTECOO_THYRA_SOLVER_DRIVER = test_single_aztecoo_thyra_solver_driver
 TEST_AZTECOO_THYRA_DRIVER = test_aztecoo_thyra_driver
+TEST_EPETRA_OP_WRAPPER = testEpetraOperatorWrapper
 
-noinst_PROGRAMS = $(TEST_SINGLE_AZTECOO_THYRA_SOLVER_DRIVER) $(TEST_AZTECOO_THYRA_DRIVER)
+noinst_PROGRAMS = $(TEST_SINGLE_AZTECOO_THYRA_SOLVER_DRIVER) $(TEST_AZTECOO_THYRA_DRIVER) $(TEST_EPETRA_OP_WRAPPER)
 
 test_single_aztecoo_thyra_solver_driver_SOURCES = $(srcdir)/test_single_aztecoo_thyra_solver_driver.cpp $(common_sources)
 test_single_aztecoo_thyra_solver_driver_DEPENDENCIES = $(common_dependencies)
@@ -44,6 +45,11 @@ test_single_aztecoo_thyra_solver_driver_LDADD = $(common_ldadd)
 test_aztecoo_thyra_driver_SOURCES = $(srcdir)/test_aztecoo_thyra_driver.cpp $(common_sources)
 test_aztecoo_thyra_driver_DEPENDENCIES = $(common_dependencies) FourByFour.mtx
 test_aztecoo_thyra_driver_LDADD = $(common_ldadd)
+
+
+testEpetraOperatorWrapper_SOURCES = $(srcdir)/testEpetraOperatorWrapper.cpp $(common_sources)
+testEpetraOperatorWrapper_DEPENDENCIES = $(common_dependencies) FourByFour.mtx
+testEpetraOperatorWrapper_LDADD = $(common_ldadd)
 
 FourByFour.mtx:
 	cp  $(top_srcdir)/../amesos/test/Test_Basic/In_bcsstk01.mtx bcsstk01.mtx                              

@@ -455,8 +455,8 @@ int Epetra_MpiDistributor::ComputeRecvs_( int my_proc,
   Sort_ints_( procs_from_, lengths_from_, nrecvs_ );
 
   // Compute indices_from_
-  // Commenting out since it can break some reverse communication
-/* Not necessary, since rvs communication is always blocked by processor
+  // Seems to break some rvs communication
+/* Not necessary since rvs communication is always blocked
   size_indices_from_ = 0;
   if( nrecvs_ > 0 )
   {
@@ -467,7 +467,7 @@ int Epetra_MpiDistributor::ComputeRecvs_( int my_proc,
   }
 */
 
-  starts_from_ = new int[nrecvs_];
+  if (nrecvs_>0) starts_from_ = new int[nrecvs_];
   int j = 0;
   for( i=0; i<nrecvs_; ++i )
   {
@@ -595,9 +595,9 @@ int Epetra_MpiDistributor::DoPosts( char * export_objs,
 
   if( len_import_objs < (total_recv_length_*obj_size) )
   {
-    if( len_import_objs ) delete [] import_objs;
+    if( import_objs!=0 ) {delete [] import_objs; import_objs = 0;}
     len_import_objs = total_recv_length_*obj_size;
-    import_objs = new char[len_import_objs];
+    if (len_import_objs>0) import_objs = new char[len_import_objs];
     for( i=0; i<len_import_objs; ++i ) import_objs[i]=0;
   }
 
@@ -661,9 +661,9 @@ int Epetra_MpiDistributor::DoPosts( char * export_objs,
   {
     if( send_array_size_ < (max_send_length_*obj_size) )
     {
-      if( send_array_size_ ) delete [] send_array_;
+      if( send_array_!=0 ) {delete [] send_array_; send_array_ = 0;}
       send_array_size_ = max_send_length_*obj_size;
-      send_array_ = new char[send_array_size_];
+      if (send_array_size_>0) send_array_ = new char[send_array_size_];
     }
 
     j = 0;
@@ -835,9 +835,13 @@ int Epetra_MpiDistributor::Resize_( int * sizes )
 
   if( !indices_to_ ) //blocked sends
   {
-    int * index = new int[nsends_+self_msg_];
-    int * sort_val = new int[nsends_+self_msg_];
-
+    
+    int * index = 0;
+    int * sort_val = 0;
+    if (nsends_+self_msg_>0) {
+      index = new int[nsends_+self_msg_];
+      sort_val = new int[nsends_+self_msg_];
+    }
     for( i = 0; i < (nsends_+self_msg_); ++i )
     {
       j = starts_to_[i];
@@ -863,8 +867,8 @@ int Epetra_MpiDistributor::Resize_( int * sizes )
       sum += sizes_to_[ index[i] ];
     }
 
-    delete [] index;
-    delete [] sort_val;
+    if (index!=0) {delete [] index; index = 0;}
+    if (sort_val!=0) {delete [] sort_val; sort_val = 0;}
   }
   else //Sends not blocked, so have to do more work
   {
@@ -895,7 +899,7 @@ int Epetra_MpiDistributor::Resize_( int * sizes )
       sum += sizes_to_[i];
     }
  
-    delete [] offset;
+    if (offset!=0) {delete [] offset; offset = 0;}
   }
  
   //  Exchange sizes routine inserted here:
@@ -1032,9 +1036,9 @@ int Epetra_MpiDistributor::DoPosts( char * export_objs,
 
   if( len_import_objs < (total_recv_length_*obj_size) )
   {
-    if( len_import_objs ) delete [] import_objs;
+    if( import_objs!=0 ) {delete [] import_objs; import_objs = 0;}
     len_import_objs = total_recv_length_*obj_size;
-    import_objs = new char[len_import_objs];
+    if (len_import_objs>0) import_objs = new char[len_import_objs];
   }
 
   k = 0;
@@ -1092,13 +1096,14 @@ int Epetra_MpiDistributor::DoPosts( char * export_objs,
   {
     if( send_array_size_ && send_array_size_ < (max_send_length_*obj_size) )
     {
-      delete [] send_array_;
+      if (send_array_!=0) {delete [] send_array_; send_array_ = 0;}
+      send_array_ = 0;
       send_array_size_ = 0;
     }
     if( !send_array_size_ )
     {
       send_array_size_ = max_send_length_*obj_size;
-      send_array_ = new char[send_array_size_];
+      if (send_array_size_>0) send_array_ = new char[send_array_size_];
     }
 
     for( i=0; i<nblocks; ++i )

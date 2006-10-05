@@ -21,7 +21,8 @@ EXCLUDE                =
 EXCLUDE_PATTERNS       = *.x *.o *.out
 EXAMPLE_PATH           =
 EXAMPLE_PATTERNS       =
-IMAGE_PATH             = ../src/interfaces/operator_vector/ana/fundamental/doc/images
+IMAGE_PATH             = ../src/interfaces/operator_vector/ana/fundamental/doc/images \
+                         ./images
 INPUT_FILTER           = 
 ALPHABETICAL_INDEX     = YES
 IGNORE_PREFIX          = 

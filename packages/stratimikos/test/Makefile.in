@@ -147,6 +147,10 @@ ENABLE_STRATIMIKOS_EPETRAEXT_THYRA_FALSE = @ENABLE_STRATIMIKOS_EPETRAEXT_THYRA_F
 ENABLE_STRATIMIKOS_EPETRAEXT_THYRA_TRUE = @ENABLE_STRATIMIKOS_EPETRAEXT_THYRA_TRUE@
 ENABLE_STRATIMIKOS_IFPACK_THYRA_FALSE = @ENABLE_STRATIMIKOS_IFPACK_THYRA_FALSE@
 ENABLE_STRATIMIKOS_IFPACK_THYRA_TRUE = @ENABLE_STRATIMIKOS_IFPACK_THYRA_TRUE@
+ENABLE_STRATIMIKOS_ML_NOX_FALSE = @ENABLE_STRATIMIKOS_ML_NOX_FALSE@
+ENABLE_STRATIMIKOS_ML_NOX_TRUE = @ENABLE_STRATIMIKOS_ML_NOX_TRUE@
+ENABLE_STRATIMIKOS_ML_THYRA_FALSE = @ENABLE_STRATIMIKOS_ML_THYRA_FALSE@
+ENABLE_STRATIMIKOS_ML_THYRA_TRUE = @ENABLE_STRATIMIKOS_ML_THYRA_TRUE@
 EXEEXT = .exe
 F77 = @F77@
 FFLAGS = @FFLAGS@
@@ -249,25 +253,25 @@ TEST_SINGLE_STRATIMIKOS_SOLVER_DRIVER = test_single_stratimikos_solver_driver
 test_single_stratimikos_solver_driver_SOURCES = $(srcdir)/test_single_stratimikos_solver_driver.cpp $(common_sources)
 test_single_stratimikos_solver_driver_DEPENDENCIES = $(common_dependencies)  FourByFour.xml
 test_single_stratimikos_solver_driver_LDADD = $(common_ldadd)
-#	cp  $(top_srcdir)/../amesos/test/Test_Basic/In_bcsstk01.mtx bcsstk01.mtx                              
-#	cp  $(top_srcdir)/../amesos/test/Test_Basic/In_bcsstk02.mtx bcsstk02.mtx                              
-#	cp  $(top_srcdir)/../amesos/test/Test_Basic/In_bcsstk04.mtx bcsstk04.mtx                              
-#	cp  $(top_srcdir)/../amesos/test/Test_Basic/In_nos1.mtx nos1.mtx                                      
-#	cp  $(top_srcdir)/../amesos/test/Test_Basic/In_nos5.mtx nos5.mtx                                      
-#	cp  $(top_srcdir)/../amesos/test/Test_Basic/In_Diagonal.mtx Diagonal.mtx                              
-#	cp  $(top_srcdir)/../amesos/test/Test_Basic/In_MissingADiagonal.mtx MissingADiagonal.mtx                              
-#	cp  $(top_srcdir)/../amesos/test/Test_Basic/In_KheadK.mtx KheadK.mtx                                  
-#	cp  $(top_srcdir)/../amesos/test/Test_Basic/In_KheadSorted.mtx  KheadSorted.mtx
-#	cp  $(top_srcdir)/../amesos/test/Test_Basic/In_Khead.triS Khead.triS  
 
 #
 # Common stuff
 #
+@ENABLE_STRATIMIKOS_ML_NOX_TRUE@@ENABLE_STRATIMIKOS_ML_THYRA_TRUE@NOX_LIBS = $(top_builddir)/../nox/src/libnox.a
+common_dependencies = $(top_builddir)/src/libstratimikos.a $(NOX_LIBS)
 common_sources = $(srcdir)/test_single_stratimikos_solver.cpp
-common_dependencies = $(top_builddir)/src/libstratimikos.a
 AM_CPPFLAGS = -I$(top_srcdir)/../thyra/example/operator_solve $(STRATIMIKOS_INCLUDES)
 common_ldadd = $(STRATIMIKOS_LIBS)
-EXTRA_DIST = $(srcdir)/test_single_stratimikos_solver.hpp
+EXTRA_DIST = $(srcdir)/test_single_stratimikos_solver.hpp \
+	$(srcdir)/_FourByFour.xml \
+	$(srcdir)/_FourByFour.amesos.xml \
+	$(srcdir)/_FourByFour.aztecoo.ifpack.xml \
+	$(srcdir)/_FourByFour.aztecoo.ml.xml \
+	$(srcdir)/_FourByFour.aztecoo.np.xml \
+	$(srcdir)/_FourByFour.belos.ifpack.xml \
+	$(srcdir)/_FourByFour.belos.ml.xml \
+	$(srcdir)/_FourByFour.belos.np.xml
+
 all: all-am
 
 .SUFFIXES:
@@ -539,8 +543,13 @@ FourByFour.xml:
 	cp  $(srcdir)/_FourByFour.amesos.xml FourByFour.amesos.xml
 	cp  $(srcdir)/_FourByFour.aztecoo.np.xml FourByFour.aztecoo.np.xml
 	cp  $(srcdir)/_FourByFour.aztecoo.ifpack.xml FourByFour.aztecoo.ifpack.xml
+	cp  $(srcdir)/_FourByFour.aztecoo.ml.xml FourByFour.aztecoo.ml.xml
 	cp  $(srcdir)/_FourByFour.belos.np.xml FourByFour.belos.np.xml
 	cp  $(srcdir)/_FourByFour.belos.ifpack.xml FourByFour.belos.ifpack.xml
+	cp  $(srcdir)/_FourByFour.belos.ml.xml FourByFour.belos.ml.xml
+
+@ENABLE_STRATIMIKOS_ML_NOX_TRUE@@ENABLE_STRATIMIKOS_ML_THYRA_TRUE@$(top_builddir)/../nox/src/libnox.a:
+@ENABLE_STRATIMIKOS_ML_NOX_TRUE@@ENABLE_STRATIMIKOS_ML_THYRA_TRUE@	cd $(top_builddir)/../nox; make all-libs
 
 include $(top_builddir)/Makefile.export.stratimikos
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

@@ -46,12 +46,14 @@ class Epetra_Directory {
     
   public:
 
-  //@{ \name Constructors/Destructor.
+    //! @name Constructors/Destructor
+  //@{ 
   //! Epetra_Directory destructor.
   virtual ~Epetra_Directory(){};
   //@}
   
-  //@{ \name Query method.
+  //! @name Query method
+  //@{ 
   //! GetDirectoryEntries : Returns proc and local id info for non-local map entries
   /*! Given a list of Global Entry IDs, this function returns the list of
       processor IDs and local IDs on the owning processor that correspond

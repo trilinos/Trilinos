@@ -32,6 +32,7 @@
 #include "Teuchos_AbstractFactoryStd.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 
 #ifdef HAVE_STRATIMIKOS_AMESOS_THYRA
 #  include "Thyra_AmesosLinearOpWithSolveFactory.hpp"
@@ -44,6 +45,9 @@
 #endif
 #ifdef HAVE_STRATIMIKOS_IFPACK_THYRA
 #  include "Thyra_IfpackPreconditionerFactory.hpp"
+#endif
+#ifdef HAVE_STRATIMIKOS_ML_THYRA
+#  include "Thyra_MLPreconditionerFactory.hpp"
 #endif
 
 namespace {
@@ -332,6 +336,12 @@ void DefaultRealLinearSolverBuilder::initializeDefaults()
     ,"Belos"
     );
 #endif
+#ifdef HAVE_STRATIMIKOS_AMESOS_THYRA
+  setLinearSolveStrategyFactory(
+    rcp(new AbstractFactoryStd<LinearOpWithSolveFactoryBase<double>,AmesosLinearOpWithSolveFactory>())
+    ,"Amesos"
+    );
+#endif
 #ifdef HAVE_STRATIMIKOS_AZTECOO_THYRA
   setLinearSolveStrategyFactory(
     rcp(new AbstractFactoryStd<LinearOpWithSolveFactoryBase<double>,AztecOOLinearOpWithSolveFactory>())
@@ -339,16 +349,21 @@ void DefaultRealLinearSolverBuilder::initializeDefaults()
     );
 #endif
 #ifdef HAVE_STRATIMIKOS_AMESOS_THYRA
-  setLinearSolveStrategyFactory(
-    rcp(new AbstractFactoryStd<LinearOpWithSolveFactoryBase<double>,AmesosLinearOpWithSolveFactory>())
-    ,"Amesos"
-    );
+  if( Teuchos::GlobalMPISession::getNProc() == 1 ) {
+    defaultLOWSF_ = "Amesos";
+  }
 #endif
   // Preconditioners
 #ifdef HAVE_STRATIMIKOS_IFPACK_THYRA
   setPreconditioningStrategyFactory(
     rcp(new AbstractFactoryStd<PreconditionerFactoryBase<double>,IfpackPreconditionerFactory>())
     ,"Ifpack"
+    );
+#endif
+#ifdef HAVE_STRATIMIKOS_ML_THYRA
+  setPreconditioningStrategyFactory(
+    rcp(new AbstractFactoryStd<PreconditionerFactoryBase<double>,MLPreconditionerFactory>())
+    ,"ML"
     );
 #endif
 }

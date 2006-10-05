@@ -23,6 +23,8 @@ INPUT                  = ../browser/doc/index.doc \
                          ../example \
                          ../test \
                          ../thyra
+#INPUT                  = ../browser/doc/index.doc \
+#                         ../example/model_evaluator
 FILE_PATTERNS          = *.h *c *.hpp *.cpp
 RECURSIVE              = YES
 EXCLUDE                = 

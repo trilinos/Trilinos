@@ -50,7 +50,8 @@ class Epetra_MpiComm: public Epetra_Object, public virtual Epetra_Comm {
     
   public:
 
-  //@{ \name Constructor/Destructor Methods
+    //! @name Constructor/Destructor Methods
+  //@{ 
   //! Epetra_MpiComm MPI Constructor.
   /*! Creates a Epetra_MpiComm instance for use with MPI.  If no specialized
     MPI communicator is needed, this constuctor can be called with the
@@ -79,7 +80,8 @@ class Epetra_MpiComm: public Epetra_Object, public virtual Epetra_Comm {
   virtual ~Epetra_MpiComm();
   //@}
 
-  //@{ \name Barrier Methods
+  //! @name Barrier Methods
+  //@{ 
   //! Epetra_MpiComm Barrier function.
   /*!Causes each processor in the communicator to wait until all processors
     have arrived.
@@ -87,7 +89,8 @@ class Epetra_MpiComm: public Epetra_Object, public virtual Epetra_Comm {
   void Barrier() const;
   //@}
 
-  //@{ \name Broadcast Methods
+  //! @name Broadcast Methods
+  //@{ 
   //! Epetra_MpiComm Broadcast function.
   /*!Takes list of input values from the root processor and sends to all other processors.
     \param Values InOut
@@ -131,7 +134,8 @@ class Epetra_MpiComm: public Epetra_Object, public virtual Epetra_Comm {
   int Broadcast(long * MyVals, int Count, int Root) const;
   //@}
 
-  //@{ \name Gather Methods
+  //! @name Gather Methods
+  //@{ 
   //! Epetra_MpiComm All Gather function.
   /*! Take list of input values from all processors in the communicator and creates an ordered contiguous list of
     those values on each processor.
@@ -172,7 +176,8 @@ class Epetra_MpiComm: public Epetra_Object, public virtual Epetra_Comm {
   int GatherAll(long * MyVals, long * AllVals, int Count) const;
   //@}
 
-  //@{ \name Sum Methods
+  //! @name Sum Methods
+  //@{ 
   //! Epetra_MpiComm Global Sum function.
   /*! Take list of input values from all processors in the communicator, computes the sum and returns the
     sum to all processors.
@@ -214,7 +219,8 @@ class Epetra_MpiComm: public Epetra_Object, public virtual Epetra_Comm {
   int SumAll(long * PartialSums, long * GlobalSums, int Count) const;
   //@}
 
-  //@{ \name Max/Min Methods
+  //! @name Max/Min Methods
+  //@{ 
   //! Epetra_MpiComm Global Max function.
   /*! Take list of input values from all processors in the communicator, computes the max and returns the
     max to all processors.
@@ -294,7 +300,8 @@ class Epetra_MpiComm: public Epetra_Object, public virtual Epetra_Comm {
   int MinAll(long * PartialMins, long * GlobalMins, int Count) const;
   //@}
 
-  //@{ \name Parallel Prefix Methods
+  //! @name Parallel Prefix Methods
+  //@{ 
   //! Epetra_MpiComm Scan Sum function.
   /*! Take list of input values from all processors in the communicator, computes the scan sum and returns it 
     to all processors such that processor i contains the sum of values from processor 0 up to and including
@@ -335,7 +342,8 @@ class Epetra_MpiComm: public Epetra_Object, public virtual Epetra_Comm {
   int ScanSum(long * MyVals, long * ScanSums, int Count) const;
   //@}
 
-  //@{ \name Attribute Accessor Methods
+  //! @name Attribute Accessor Methods
+  //@{ 
   
   //! Extract MPI Communicator from a Epetra_MpiComm object.
   MPI_Comm Comm() const {return(MpiCommData_->Comm_);};
@@ -353,21 +361,24 @@ class Epetra_MpiComm: public Epetra_Object, public virtual Epetra_Comm {
   int NumProc() const {return(MpiCommData_->size_);};
   //@}
 
-  //@{ \name Gather/Scatter and Directory Constructors
+  //! @name Gather/Scatter and Directory Constructors
+  //@{ 
   //! Create a distributor object.
   Epetra_Distributor * CreateDistributor() const;
   //! Create a directory object for the given Epetra_BlockMap.
   Epetra_Directory * CreateDirectory(const Epetra_BlockMap & Map) const;
   //@}
 
-  //@{ \name MPI-specific Methods
+  //! @name MPI-specific Methods
+  //@{ 
   //! Acquire an MPI tag from the Epetra range of 24050-24099, increment tag. 
   int GetMpiTag() const {int tag = MpiCommData_->curTag_++; if (tag > MpiCommData_->maxTag_) tag = MpiCommData_->minTag_; return(tag);};
 
   //! Get the MPI Communicator (identical to Comm() method; used when we know we are MPI. 
   MPI_Comm GetMpiComm() const {return(MpiCommData_->Comm_);};
   //@}
-  //@{ \name Print object to an output stream
+  //! @name Print object to an output stream
+  //@{ 
   //! Print method that implements Epetra_Object virtual Print method
   inline void Print(ostream & os) const {
   os << "  Processor "<< MyPID()<<" of " << NumProc() << " total processors"; 
@@ -376,7 +387,8 @@ class Epetra_MpiComm: public Epetra_Object, public virtual Epetra_Comm {
   void PrintInfo(ostream & os) const {Epetra_MpiComm::Print(os);return;};
   //@}
 
-  //@{ \name Expert Users and Developers Only
+  //! @name Expert Users and Developers Only
+  //@{ 
 
 	//! Returns the reference count of MpiCommData.
 	/*! (Intended for testing purposes.) */

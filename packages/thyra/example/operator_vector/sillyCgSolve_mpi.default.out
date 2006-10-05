@@ -1,4 +1,4 @@
-Teuchos::GlobalMPISession::GlobalMPISession(): started processor with name sahp6556.sandia.gov and rank 0!
+Teuchos::GlobalMPISession::GlobalMPISession(): started serial run
 
 ***
 *** Running silly CG solver using scalar type = 'float' ...
@@ -55,7 +55,7 @@ Checking the residual ourselves ...
   
   ||b-A*x||/||b|| = 1.318619e-03/1.270762e+01 = 1.037660e-04 <= 10.0*tolerance = 9.999999e-04: passed
 
-Total time = 3.228300e-02 sec
+Total time = 7.228700e-02 sec
 
 ***
 *** Running silly CG solver using scalar type = 'double' ...
@@ -112,7 +112,7 @@ Checking the residual ourselves ...
   
   ||b-A*x||/||b|| = 1.215596e-03/1.270762e+01 = 9.565884e-05 <= 10.0*tolerance = 1.000000e-03: passed
 
-Total time = 3.250400e-02 sec
+Total time = 7.735100e-02 sec
 
 ***
 *** Running silly CG solver using scalar type = 'std::complex<float>' ...
@@ -169,7 +169,7 @@ Checking the residual ourselves ...
   
   ||b-A*x||/||b|| = 1.914953e-03/1.818107e+01 = 1.053268e-04 <= 10.0*tolerance = 9.999999e-04: passed
 
-Total time = 7.199600e-02 sec
+Total time = 1.590560e-01 sec
 
 ***
 *** Running silly CG solver using scalar type = 'std::complex<double>' ...
@@ -226,6 +226,6 @@ Checking the residual ourselves ...
   
   ||b-A*x||/||b|| = 1.780089e-03/1.818107e+01 = 9.790892e-05 <= 10.0*tolerance = 1.000000e-03: passed
 
-Total time = 8.510500e-02 sec
+Total time = 1.790050e-01 sec
 
 All of the tests seem to have run successfully!

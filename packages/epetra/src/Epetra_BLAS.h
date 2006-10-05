@@ -57,7 +57,8 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 class Epetra_BLAS {
     
   public:
-  //@{ \name Constructors/Destructor.
+    //! @name Constructors/Destructor
+  //@{ 
    //! Epetra_BLAS Constructor.
   /*! Builds an instance of a serial BLAS object.
    */
@@ -73,7 +74,8 @@ class Epetra_BLAS {
   virtual ~Epetra_BLAS(void);
   //@}
   
-  //@{ \name Level 1 BLAS
+  //! @name Level 1 BLAS
+  //@{ 
   //! Epetra_BLAS one norm function (SASUM).
   float ASUM(const int N, const float * X, const int INCX = 1) const;
   //! Epetra_BLAS one norm function (DASUM).
@@ -110,7 +112,8 @@ class Epetra_BLAS {
   void AXPY( const int N, const double ALPHA, const double * X, double * Y, const int INCX = 1, const int INCY = 1) const;
   //@}
 
-  //@{ \name Level 2 BLAS
+  //! @name Level 2 BLAS
+  //@{ 
   //! Epetra_BLAS matrix-vector multiply function (SGEMV)
   void GEMV(const char TRANS, const int M, const int N,
          const float ALPHA, const float * A, const int LDA, const float * X,
@@ -122,7 +125,8 @@ class Epetra_BLAS {
   //@}
 
 
-  //@{ \name Level 3 BLAS
+  //! @name Level 3 BLAS
+  //@{ 
   //! Epetra_BLAS matrix-matrix multiply function (SGEMM)
   void GEMM(const char TRANSA, const char TRANSB, const int M, const int N, const int K,
 	    const float ALPHA, const float * A, const int LDA, const float * B,

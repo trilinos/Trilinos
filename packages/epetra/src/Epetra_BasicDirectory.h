@@ -51,7 +51,8 @@ class Epetra_BasicDirectory: public virtual Epetra_Directory {
     
   public:
 
-  //@{ \name Constructors/Destructor.
+    //! @name Constructors/Destructor
+  //@{ 
   //! Epetra_BasicDirectory constructor
   Epetra_BasicDirectory(const Epetra_BlockMap & Map );
   
@@ -64,7 +65,8 @@ class Epetra_BasicDirectory: public virtual Epetra_Directory {
   virtual ~Epetra_BasicDirectory(void);
   //@}
   
-  //@{ \name Query method.
+  //! @name Query method
+  //@{ 
   //! GetDirectoryEntries : Returns proc and local id info for non-local map entries
   /*! Given a list of Global Entry IDs, this function returns the list of
       processor IDs and local IDs on the owning processor that correspond
@@ -108,7 +110,8 @@ class Epetra_BasicDirectory: public virtual Epetra_Directory {
   bool GIDsAllUniquelyOwned() const;
   //@}
 
-  //@{ \name I/O Methods.
+  //! @name I/O Methods
+  //@{ 
   //! Print method
   virtual void Print(ostream & os) const;
   //@}

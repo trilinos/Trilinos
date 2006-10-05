@@ -45,7 +45,8 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 class Epetra_Object {
     
   public:
-  //@{ \name Constructors/destructor.
+    //! @name Constructors/destructor
+  //@{ 
   //! Epetra_Object Constructor.
   /*! Epetra_Object is the primary base class in Epetra.  All Epetra class
       are derived from it, directly or indirectly.  This class is seldom
@@ -69,7 +70,8 @@ class Epetra_Object {
   virtual ~Epetra_Object();
   //@}
   
-  //@{ \name Attribute set/get methods.
+  //! @name Attribute set/get methods
+  //@{ 
 
   //! Epetra_Object Label definition using char *.
   /*! Defines the label used to describe the \e this object.  
@@ -100,7 +102,8 @@ class Epetra_Object {
   static int GetTracebackMode();
   //@}
 
-  //@{ \name Miscellaneous
+  //! @name Miscellaneous
+  //@{ 
 
   //! Print object to an output stream
   //! Print method

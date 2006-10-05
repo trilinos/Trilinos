@@ -52,27 +52,29 @@ FourByFour.xml:
 	cp  $(srcdir)/_FourByFour.amesos.xml FourByFour.amesos.xml
 	cp  $(srcdir)/_FourByFour.aztecoo.np.xml FourByFour.aztecoo.np.xml
 	cp  $(srcdir)/_FourByFour.aztecoo.ifpack.xml FourByFour.aztecoo.ifpack.xml
+	cp  $(srcdir)/_FourByFour.aztecoo.ml.xml FourByFour.aztecoo.ml.xml
 	cp  $(srcdir)/_FourByFour.belos.np.xml FourByFour.belos.np.xml
 	cp  $(srcdir)/_FourByFour.belos.ifpack.xml FourByFour.belos.ifpack.xml
-#	cp  $(top_srcdir)/../amesos/test/Test_Basic/In_bcsstk01.mtx bcsstk01.mtx                              
-#	cp  $(top_srcdir)/../amesos/test/Test_Basic/In_bcsstk02.mtx bcsstk02.mtx                              
-#	cp  $(top_srcdir)/../amesos/test/Test_Basic/In_bcsstk04.mtx bcsstk04.mtx                              
-#	cp  $(top_srcdir)/../amesos/test/Test_Basic/In_nos1.mtx nos1.mtx                                      
-#	cp  $(top_srcdir)/../amesos/test/Test_Basic/In_nos5.mtx nos5.mtx                                      
-#	cp  $(top_srcdir)/../amesos/test/Test_Basic/In_Diagonal.mtx Diagonal.mtx                              
-#	cp  $(top_srcdir)/../amesos/test/Test_Basic/In_MissingADiagonal.mtx MissingADiagonal.mtx                              
-#	cp  $(top_srcdir)/../amesos/test/Test_Basic/In_KheadK.mtx KheadK.mtx                                  
-#	cp  $(top_srcdir)/../amesos/test/Test_Basic/In_KheadSorted.mtx  KheadSorted.mtx
-#	cp  $(top_srcdir)/../amesos/test/Test_Basic/In_Khead.triS Khead.triS  
-
+	cp  $(srcdir)/_FourByFour.belos.ml.xml FourByFour.belos.ml.xml
 
 #
 # Common stuff
 #
 
-common_sources = $(srcdir)/test_single_stratimikos_solver.cpp
+if ENABLE_STRATIMIKOS_ML_THYRA
+if ENABLE_STRATIMIKOS_ML_NOX
 
-common_dependencies = $(top_builddir)/src/libstratimikos.a
+NOX_LIBS = $(top_builddir)/../nox/src/libnox.a
+
+$(top_builddir)/../nox/src/libnox.a:
+	cd $(top_builddir)/../nox; make all-libs
+
+endif
+endif
+
+common_dependencies = $(top_builddir)/src/libstratimikos.a $(NOX_LIBS)
+
+common_sources = $(srcdir)/test_single_stratimikos_solver.cpp
 
 include $(top_builddir)/Makefile.export.stratimikos
 
@@ -80,7 +82,15 @@ AM_CPPFLAGS =  -I$(top_srcdir)/../thyra/example/operator_solve $(STRATIMIKOS_INC
 
 common_ldadd = $(STRATIMIKOS_LIBS)
 
-EXTRA_DIST = $(srcdir)/test_single_stratimikos_solver.hpp
+EXTRA_DIST = $(srcdir)/test_single_stratimikos_solver.hpp \
+	$(srcdir)/_FourByFour.xml \
+	$(srcdir)/_FourByFour.amesos.xml \
+	$(srcdir)/_FourByFour.aztecoo.ifpack.xml \
+	$(srcdir)/_FourByFour.aztecoo.ml.xml \
+	$(srcdir)/_FourByFour.aztecoo.np.xml \
+	$(srcdir)/_FourByFour.belos.ifpack.xml \
+	$(srcdir)/_FourByFour.belos.ml.xml \
+	$(srcdir)/_FourByFour.belos.np.xml
 
 # This is already added part of STRATIMIKOS_LIBS and therefore automake does not need to add this again!
 LIBS =

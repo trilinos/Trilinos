@@ -31,6 +31,7 @@
 
 #include "Thyra_AztecOOLinearOpWithSolve.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
+#include "Thyra_EpetraOperatorWrapper.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_Time.hpp"
 
@@ -338,10 +339,19 @@ void AztecOOLinearOpWithSolve::solve(
   //
   // Get Epetra_MultiVector views of B and X
   //
-  Teuchos::RefCountPtr<const Epetra_MultiVector>
-    epetra_B = get_Epetra_MultiVector(opRangeMap,Teuchos::rcp(&B,false));
-  Teuchos::RefCountPtr<Epetra_MultiVector>
-    epetra_X = get_Epetra_MultiVector(opDomainMap,Teuchos::rcp(X,false));
+  Teuchos::RefCountPtr<const Epetra_MultiVector> epetra_B;
+  Teuchos::RefCountPtr<Epetra_MultiVector> epetra_X;
+
+  const EpetraOperatorWrapper* opWrapper 
+    = dynamic_cast<const EpetraOperatorWrapper*>(aztecOp);
+
+  if (opWrapper == 0)
+    {
+      epetra_B = get_Epetra_MultiVector(opRangeMap,Teuchos::rcp(&B,false));
+      epetra_X = get_Epetra_MultiVector(opDomainMap,Teuchos::rcp(X,false));
+    }
+
+
   //
   // Use AztecOO to solve each RHS one at a time (which is all that I can do anyway)
   //
@@ -349,20 +359,49 @@ void AztecOOLinearOpWithSolve::solve(
   SolveStatus<double> solveStatus;
   solveStatus.solveStatus = SOLVE_STATUS_CONVERGED;
   solveStatus.achievedTol = -1.0;
-  const int m = epetra_B->NumVectors();
+
+  /* Get the number of columns in the multivector. We use Thyra
+   * functions rather than Epetra functions to do this, as we
+   * might not yet have created an Epetra multivector. - KL */
+  //const int m = epetra_B->NumVectors();
+  const int m = B.domain()->dim();
+
   for( int j = 0; j < m; ++j ) {
     Teuchos::TimeMonitor timeMonitor(*individualSolveTimer);
     //
     // Get Epetra_Vector views of B(:,j) and X(:,j)
+    // How this is done will depend on whether we have a true Epetra operator
+    // or we are wrapping a general Thyra operator in an Epetra operator.
     //
-    const Epetra_Vector   *epetra_b_j = (*epetra_B)(j);
-    Epetra_Vector         *epetra_x_j = (*epetra_X)(j);
+
+    // We need to declare epetra_x_j as non-const because when we have a phony
+    // Epetra operator we'll have to copy a thyra vector into it.
+    Epetra_Vector   *epetra_b_j;
+    Epetra_Vector   *epetra_x_j;
+
+    if (opWrapper == 0)
+      {
+        epetra_b_j = const_cast<Epetra_Vector*>((*epetra_B)(j));
+        epetra_x_j = (*epetra_X)(j);
+      }
+    else
+      {
+        RefCountPtr<VectorBase<double> > colX = X->col(j);
+        RefCountPtr<const VectorBase<double> > colB = B.col(j);
+        ConstVector<double> vB = colB;
+        Vector<double> vX = colX;
+        epetra_b_j = new Epetra_Vector(opRangeMap);
+        epetra_x_j = new Epetra_Vector(opDomainMap);
+        opWrapper->copyThyraIntoEpetra(vB, *epetra_b_j);
+        opWrapper->copyThyraIntoEpetra(vX, *epetra_x_j);
+      }
+
     TEST_FOR_EXCEPT(!epetra_b_j);
     TEST_FOR_EXCEPT(!epetra_x_j);
     //
     // Set the RHS and LHS
     //
-    aztecSolver->SetRHS( const_cast<Epetra_Vector*>(epetra_b_j) ); // Should be okay?
+    aztecSolver->SetRHS( epetra_b_j ); // Should be okay?
     aztecSolver->SetLHS( epetra_x_j );
     //
     // Solve the linear system
@@ -370,6 +409,25 @@ void AztecOOLinearOpWithSolve::solve(
     timer.start(true);
     aztecSolver->Iterate( maxIterations, tol ); // We ignore the returned status but get it below
     timer.stop();
+    //
+    // Scale the solution 
+    // (Originally, this was at the end of the loop after all columns had been
+    // processed. It's moved here because we need to do it before copying the
+    // solution back into a Thyra vector. - KL
+    //
+    if(aztecSolverScalar_ != 1.0)
+      epetra_x_j->Scale(1.0/aztecSolverScalar_);
+
+    /* If necessary, convert the solution back to a non-epetra vector */
+    if (opWrapper != 0)
+      {
+        Vector<double> colX = X->col(j);
+        opWrapper->copyEpetraIntoThyra(*epetra_x_j, colX);
+        // clean up the temporary vectors we created.
+        delete epetra_b_j;
+        delete epetra_x_j;
+      }
+
     //
     // Set the return solve status
     //
@@ -411,11 +469,7 @@ void AztecOOLinearOpWithSolve::solve(
       }
     }
   }
-  //
-  // Scale the solution
-  //
-  if(aztecSolverScalar_ != 1.0)
-    epetra_X->Scale(1.0/aztecSolverScalar_);
+  
   //
   // Release the Epetra_MultiVector views of X and B
   //

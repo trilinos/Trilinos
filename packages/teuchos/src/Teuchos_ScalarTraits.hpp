@@ -156,7 +156,7 @@ namespace Teuchos {
 		static const bool isComparable = true;
 		static const bool hasMachineParameters = false;
     // Not defined: eps(), sfmin(), base(), prec(), t(), rnd(), emin(), rmin(), emax(), rmax()
-    static inline magnitudeType magnitude(char a) { return ::abs(a); };
+    static inline magnitudeType magnitude(char a) { return static_cast<char>(::fabs(static_cast<double>(a))); };
     static inline char zero()  { return 0; };
     static inline char one()   { return 1; };
     static inline char conjugate(char x) { return x; };
@@ -177,7 +177,7 @@ namespace Teuchos {
 		static const bool isComparable = true;
 		static const bool hasMachineParameters = false;
     // Not defined: eps(), sfmin(), base(), prec(), t(), rnd(), emin(), rmin(), emax(), rmax()
-    static inline magnitudeType magnitude(int a) { return ::abs(a); };
+    static inline magnitudeType magnitude(int a) { return static_cast<int>(::fabs(static_cast<double>(a))); };
     static inline int zero()  { return 0; };
     static inline int one()   { return 1; };
     static inline int conjugate(int x) { return x; };

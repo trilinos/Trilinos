@@ -67,7 +67,8 @@ class Epetra_OffsetIndex;
 class Epetra_DistObject: public Epetra_Object, public virtual Epetra_SrcDistObject {
 
   public:
-  //@{ \name Constructors/Destructor.
+    //! @name Constructors/Destructor
+  //@{ 
   //! Basic Epetra_DistObject constuctor.
   /*! Creates a Epetra_DistObject object.  
 
@@ -108,7 +109,8 @@ class Epetra_DistObject: public Epetra_Object, public virtual Epetra_SrcDistObje
   virtual ~Epetra_DistObject();
   //@}
 
-  //@{ \name Import/Export Methods.
+  //! @name Import/Export Methods
+  //@{ 
 
   //! Imports an Epetra_DistObject using the Epetra_Import object.
   /*!
@@ -171,7 +173,8 @@ class Epetra_DistObject: public Epetra_Object, public virtual Epetra_SrcDistObje
   int Export(const Epetra_SrcDistObject& A, const Epetra_Export& Exporter, Epetra_CombineMode CombineMode, const Epetra_OffsetIndex * Indexor = 0);
   //@}
   
-  //@{ \name Attribute accessor methods.
+  //! @name Attribute accessor methods
+  //@{ 
   //! Returns the address of the Epetra_BlockMap for this multi-vector.
   const Epetra_BlockMap& Map() const {return(Map_);};
 
@@ -182,7 +185,8 @@ class Epetra_DistObject: public Epetra_Object, public virtual Epetra_SrcDistObje
   bool DistributedGlobal() const {return(DistributedGlobal_);};
   //@}
 
-  //@{ \name Miscellaneous
+  //! @name Miscellaneous
+  //@{ 
   //! Print method
   virtual void Print(ostream& os) const;
   //@}
@@ -190,7 +194,8 @@ class Epetra_DistObject: public Epetra_Object, public virtual Epetra_SrcDistObje
  protected:
 
 
-  //@{ \name Internal utilities  
+  //! @name Internal utilities  
+  //@{ 
   //! Perform actual transfer (redistribution) of data across memory images, using Epetra_Distributor object.
   virtual int DoTransfer(const Epetra_SrcDistObject& A,
                          Epetra_CombineMode CombineMode,
@@ -213,7 +218,8 @@ class Epetra_DistObject: public Epetra_Object, public virtual Epetra_SrcDistObje
 
   // These methods must be implemented by derived class
 
-  //@{ \name Virtual methods to be implemented by derived class.
+  //! @name Virtual methods to be implemented by derived class
+  //@{ 
   //! Allows the source and target (\e this) objects to be compared for compatibility, return nonzero if not.
   virtual int CheckSizes(const Epetra_SrcDistObject& Source) = 0;
   //! Perform ID copies and permutations that are on processor.

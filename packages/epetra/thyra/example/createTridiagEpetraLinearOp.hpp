@@ -34,6 +34,8 @@
 #include "mpi.h"
 #endif
 
+class Epetra_Operator;
+
 /** \brief \brief This function generates a tridiagonal linear operator using Epetra.
  *
  * Specifically, this function returns a smart pointer to the matrix:
@@ -52,7 +54,7 @@ A=
  * where <tt>diagScale</tt> is \f$a\f$ and <tt>globalDim</tt> is the
  * glboal dimension of the matrix.
  */
-Teuchos::RefCountPtr<Thyra::LinearOpBase<double> >
+Teuchos::RefCountPtr<Epetra_Operator>
 createTridiagEpetraLinearOp(
   const int      globalDim
 #ifdef HAVE_MPI

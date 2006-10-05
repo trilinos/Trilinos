@@ -64,7 +64,8 @@ class Epetra_OffsetIndex: public Epetra_Object {
   //! Epetra_OffsetIndex destructor.
   virtual ~Epetra_OffsetIndex(void);
 
-  //@{ \name Print object to an output stream
+  //! @name Print object to an output stream
+  //@{ 
   virtual void Print(ostream & os) const;
   //@}
 

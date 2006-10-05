@@ -109,6 +109,7 @@ PROGRAMS = $(noinst_PROGRAMS)
 am_MapColoring_test_OBJECTS = cxx_main.$(OBJEXT)
 MapColoring_test_OBJECTS = $(am_MapColoring_test_OBJECTS)
 am__DEPENDENCIES_1 =
+@USING_GNUMAKE_FALSE@am__DEPENDENCIES_2 = $(top_builddir)/../teuchos/src/libteuchos.a
 @USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
 @USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
 @USING_GNUMAKE_TRUE@	$(EPETRAEXT_LIBS))
@@ -311,12 +312,16 @@ MapColoring_test_DEPENDENCIES = \
   $(top_builddir)/../epetra/src/libepetra.a \
   $(top_builddir)/../teuchos/src/libteuchos.a
 
-@USING_GNUMAKE_FALSE@EXPORT_LIBS = $(EPETRAEXT_LIBS)
+@USING_GNUMAKE_FALSE@EXPORT_LIBS = $(EPETRAEXT_LIBS) \
+@USING_GNUMAKE_FALSE@  $(top_builddir)/../teuchos/src/libteuchos.a
+
 @USING_GNUMAKE_TRUE@EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(EPETRAEXT_LIBS))
 @USING_GNUMAKE_FALSE@EXPORT_INC_PATH = $(EPETRAEXT_INCLUDES)
 @USING_GNUMAKE_TRUE@EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(EPETRAEXT_INCLUDES))
 AM_CPPFLAGS = $(EXPORT_INC_PATH)
-MapColoring_test_LDADD = $(EXPORT_LIBS)
+MapColoring_test_LDADD = $(EXPORT_LIBS) \
+  $(top_builddir)/../teuchos/src/libteuchos.a
+
 all: all-am
 
 .SUFFIXES:

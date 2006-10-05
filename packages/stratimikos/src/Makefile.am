@@ -114,7 +114,7 @@ lib_LIBRARIES = $(STRATIMIKOS_LIB)
 # List of all headers to install in $(includedir)
 # ------------------------------------------------------------------------
 
-include_HEADERS = $(STRATIMIKOS_H) 
+include_HEADERS = $(srcdir)/Stratimikos_ConfigDefs.hpp $(STRATIMIKOS_H) 
 
 # ------------------------------------------------------------------------
 # Special stuff to install in our special $(execincludedir)

@@ -63,6 +63,26 @@ EpetraModelEval4DOpt::EpetraModelEval4DOpt(
 
 }
 
+void EpetraModelEval4DOpt::set_p_bounds(
+  double pL0, double pL1, double pU0, double pU1
+  )
+{
+  (*pL_)[0] = pL0;
+  (*pL_)[1] = pL1;
+  (*pU_)[0] = pU0;
+  (*pU_)[1] = pU1;
+}
+
+void EpetraModelEval4DOpt::set_x_bounds(
+  double xL0, double xL1, double xU0, double xU1
+  )
+{
+  (*xL_)[0] = xL0;
+  (*xL_)[1] = xL1;
+  (*xU_)[0] = xU0;
+  (*xU_)[1] = xU1;
+}
+
 // Overridden from EpetraExt::ModelEvaluator
 
 Teuchos::RefCountPtr<const Epetra_Map>

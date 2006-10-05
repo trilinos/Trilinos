@@ -318,6 +318,10 @@ AM_CPPFLAGS = $(AMESOS_INCLUDES) \
   -I$(top_srcdir)/example/model_evaluator/4dopt
 
 common_ldadd = $(AMESOS_LIBS)
+EXTRA_DIST = \
+   $(top_srcdir)/example/model_evaluator/2dsim/EpetraModelEval2DSim.hpp \
+   $(top_srcdir)/example/model_evaluator/4dopt/EpetraModelEval4DOpt.hpp
+
 all: all-am
 
 .SUFFIXES:
@@ -480,6 +484,7 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
+	$(mkdir_p) $(distdir)/$(top_srcdir)/example/model_evaluator/2dsim $(distdir)/$(top_srcdir)/example/model_evaluator/4dopt
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \

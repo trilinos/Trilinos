@@ -150,7 +150,7 @@ install-exec-hook:
 		--my-abs-top-srcdir=@abs_top_srcdir@ \
 		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src \
 		--my-abs-lib-dirs=@abs_top_builddir@/src \
-		--dep-package-abs-builddirs=@abs_top_builddir@/../teuchos
+		--dep-package-abs-builddirs=@abs_top_builddir@/../thyra:@abs_top_builddir@/../amesos:@abs_top_builddir@/../aztecoo:@abs_top_builddir@/../belos:@abs_top_builddir@/../ifpack:@abs_top_builddir@/../ml:@abs_top_builddir@/../nox
 	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile STRATIMIKOS > $(exec_prefix)/include/Makefile.export.stratimikos.macros
 
 uninstall-hook:

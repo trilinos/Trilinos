@@ -55,13 +55,15 @@ class Epetra_MultiVector;
 class Epetra_RowMatrix: public virtual Epetra_Operator, public virtual Epetra_SrcDistObject {
       
  public:
-  //@{ \name Destructor.
+   //! @name Destructor
+  //@{ 
     //! Destructor
     virtual ~Epetra_RowMatrix() {};
 
   //@}
   
-  //@{ \name Matrix data extraction routines
+  //! @name Matrix data extraction routines
+  //@{ 
 
     //! Returns the number of nonzero entries in MyRow.
     /*! 
@@ -105,7 +107,8 @@ class Epetra_RowMatrix: public virtual Epetra_Operator, public virtual Epetra_Sr
     virtual int ExtractDiagonalCopy(Epetra_Vector & Diagonal) const = 0;
   //@}
   
-  //@{ \name Mathematical functions.
+  //! @name Mathematical functions
+  //@{ 
 
     //! Returns the result of a Epetra_RowMatrix multiplied by a Epetra_MultiVector X in Y.
     /*! 
@@ -186,7 +189,8 @@ class Epetra_RowMatrix: public virtual Epetra_Operator, public virtual Epetra_Sr
     virtual int RightScale(const Epetra_Vector& x) = 0;
   //@}
   
-  //@{ \name Atribute access functions
+  //! @name Atribute access functions
+  //@{ 
 
     //! If FillComplete() has been called, this query returns true, otherwise it returns false.
     virtual bool Filled() const = 0;

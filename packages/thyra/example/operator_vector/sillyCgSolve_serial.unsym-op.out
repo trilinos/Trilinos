@@ -87,7 +87,7 @@ Checking the residual ourselves ...
   
   ||b-A*x||/||b|| = 2.678777e-03/2.966171e+01 = 9.031095e-05 <= 10.0*tolerance = 9.999999e-04: passed
 
-Total time = 2.000000e-02 sec
+Total time = 5.998500e-02 sec
 
 ***
 *** Running silly CG solver using scalar type = 'double' ...
@@ -171,7 +171,7 @@ Checking the residual ourselves ...
   
   ||b-A*x||/||b|| = 2.768365e-03/2.917586e+01 = 9.488548e-05 <= 10.0*tolerance = 1.000000e-03: passed
 
-Total time = 1.000000e-02 sec
+Total time = 5.385100e-02 sec
 
 ***
 *** Running silly CG solver using scalar type = 'std::complex<float>' ...
@@ -255,7 +255,7 @@ Checking the residual ourselves ...
   
   ||b-A*x||/||b|| = 3.515154e-03/4.188961e+01 = 8.391472e-05 <= 10.0*tolerance = 9.999999e-04: passed
 
-Total time = 3.000000e-02 sec
+Total time = 6.419600e-02 sec
 
 ***
 *** Running silly CG solver using scalar type = 'std::complex<double>' ...
@@ -339,6 +339,6 @@ Checking the residual ourselves ...
   
   ||b-A*x||/||b|| = 3.299063e-03/4.622546e+01 = 7.136897e-05 <= 10.0*tolerance = 1.000000e-03: passed
 
-Total time = 2.000000e-02 sec
+Total time = 5.536900e-02 sec
 
 Congratulations! All of the tests checked out!

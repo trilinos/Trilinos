@@ -58,7 +58,8 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 
 class Epetra_Data {
  protected:
-  //@{ \name Constructor/Destructor Methods
+   //! @name Constructor/Destructor Methods
+  //@{ 
 
   //! Epetra_Data Serial Constructor.
   Epetra_Data();
@@ -72,7 +73,8 @@ class Epetra_Data {
 
   //@}
 
-	//@{ \name Reference-Counting Methods
+  //! @name Reference-Counting Methods
+	//@{ 
 
 	//! Increment reference count
 	void IncrementReferenceCount();

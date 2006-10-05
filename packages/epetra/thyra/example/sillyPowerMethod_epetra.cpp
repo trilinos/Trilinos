@@ -29,6 +29,7 @@
 #include "sillyPowerMethod.hpp"
 #include "createTridiagEpetraLinearOp.hpp"
 #include "Thyra_TestingTools.hpp"
+#include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_get_Epetra_Operator.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
@@ -133,14 +134,18 @@ int main(int argc, char *argv[])
     //       [             -1   2 ]
     //
     if(verbose) *out << "\n(1) Constructing tridagonal Epetra matrix A of global dimension = " << globalDim << " ...\n";
-    RefCountPtr<Thyra::LinearOpBase<double> >
-      A = createTridiagEpetraLinearOp(
+    RefCountPtr<Epetra_Operator>
+      A_epetra = createTridiagEpetraLinearOp(
         globalDim
 #ifdef HAVE_MPI
         ,mpiComm
 #endif
         ,1.0,verbose,*out
         );
+    // Wrap in an Thyra::EpetraLinearOp object
+    RefCountPtr<Thyra::LinearOpBase<double> >
+      A = rcp(new Thyra::EpetraLinearOp(A_epetra));
+    //
     if( verbose && dumpAll ) *out << "\nA =\n" << *A; // This works even in parallel!
     
     //

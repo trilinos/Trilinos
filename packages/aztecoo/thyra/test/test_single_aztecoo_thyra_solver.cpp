@@ -173,10 +173,10 @@ bool Thyra::test_single_aztecoo_thyra_solver(
     }
     linearOpWithSolveTester.set_all_solve_tol(maxResid);
     linearOpWithSolveTester.set_all_slack_error_tol(maxResid);
-    linearOpWithSolveTester.set_all_slack_warning_tol(1e+1*maxResid);
-    linearOpWithSolveTester.forward_default_residual_error_tol(2*maxResid);
+    linearOpWithSolveTester.set_all_slack_warning_tol(10.0*maxResid);
+    linearOpWithSolveTester.forward_default_residual_error_tol(2.5*maxResid);
     linearOpWithSolveTester.forward_default_solution_error_error_tol(maxSolutionError);
-    linearOpWithSolveTester.adjoint_default_residual_error_tol(2*maxResid);
+    linearOpWithSolveTester.adjoint_default_residual_error_tol(2.5*maxResid);
     linearOpWithSolveTester.adjoint_default_solution_error_error_tol(maxSolutionError);
     linearOpWithSolveTester.show_all_tests(showAllTests);
     linearOpWithSolveTester.dump_all(dumpAll);

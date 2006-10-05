@@ -45,7 +45,8 @@ class Epetra_CompObject {
 
   public:
 
-  //@{ \name Constructors/Destructor.
+    //! @name Constructors/Destructor
+  //@{ 
   //! Basic Epetra_CompObject constuctor.
   Epetra_CompObject();
 
@@ -58,7 +59,8 @@ class Epetra_CompObject {
   virtual ~Epetra_CompObject();
   //@}
 
-  //@{ \name Set/Get counter method.
+  //! @name Set/Get counter method
+  //@{ 
   //! Set the internal Epetra_Flops() pointer.
   void SetFlopCounter(const Epetra_Flops & FlopCounter) {FlopCounter_= (Epetra_Flops *) &FlopCounter; return;}
   //! Set the internal Epetra_Flops() pointer to the flop counter of another Epetra_CompObject.
@@ -69,7 +71,8 @@ class Epetra_CompObject {
   Epetra_Flops * GetFlopCounter() const {return(FlopCounter_);}
   //@}
 
-  //@{ \name Set flop count methods.
+  //! @name Set flop count methods
+  //@{ 
   //! Resets the number of floating point operations to zero for \e this multi-vector.
   void ResetFlops() const {if (FlopCounter_!=0) FlopCounter_->ResetFlops(); return;}
 
@@ -77,7 +80,8 @@ class Epetra_CompObject {
   double Flops() const {if (FlopCounter_!=0) return(FlopCounter_->Flops()); else return(0.0);}
   //@}
 
-  //@{ \name Update flop count methods.
+  //! @name Update flop count methods
+  //@{ 
   //! Increment Flop count for \e this object
   void UpdateFlops(int Flops) const {if (FlopCounter_!=0) FlopCounter_->UpdateFlops(Flops); return;}
 

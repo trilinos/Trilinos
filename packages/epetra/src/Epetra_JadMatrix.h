@@ -57,7 +57,8 @@ class Epetra_JadMatrix: public Epetra_BasicRowMatrix {
       
  public:
 
-  //@{ \name Constructors/Destructor.
+   //! @name Constructors/Destructor
+  //@{ 
   //! Epetra_JadMatrix constuctor.
   /* The constructor for this class requires a fully constructed instance of an Epetra_RowMatrix
      object.
@@ -70,7 +71,8 @@ class Epetra_JadMatrix: public Epetra_BasicRowMatrix {
   virtual ~Epetra_JadMatrix();
   //@}
   
-  //@{ \name Post-construction modifications.
+  //! @name Post-construction modifications
+  //@{ 
   //! Update values using a matrix with identical structure.
   /* Updates the values only using a matrix that has exactly the same structure as
      the matrix used to construct this Epetra_JadMatrix object.  Once the constructor
@@ -86,7 +88,8 @@ class Epetra_JadMatrix: public Epetra_BasicRowMatrix {
   int UpdateValues(const Epetra_RowMatrix & Matrix, bool CheckStructure = false);
   //@}
   
-  //@{ \name Methods required for implementing Epetra_BasicRowMatrix.
+  //! @name Methods required for implementing Epetra_BasicRowMatrix
+  //@{ 
 
     //! Returns a copy of the specified local row in user-provided arrays.
     /*! 
@@ -148,7 +151,8 @@ class Epetra_JadMatrix: public Epetra_BasicRowMatrix {
 
     //@}
 
-  //@{ \name Computational methods.
+    //! @name Computational methods
+  //@{ 
 
     //! Returns the result of a Epetra_JadMatrix multiplied by a Epetra_MultiVector X in Y.
     /*! 

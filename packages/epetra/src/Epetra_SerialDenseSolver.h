@@ -121,7 +121,8 @@ class Epetra_SerialDenseSolver : public Epetra_CompObject, public Epetra_BLAS,
 				 public Epetra_LAPACK, public Epetra_Object    {
   public:
   
-  //@{ \name Constructor/Destructor Methods
+    //! @name Constructor/Destructor Methods
+  //@{ 
   //! Default constructor; matrix should be set using SetMatrix(), LHS and RHS set with SetVectors().
   Epetra_SerialDenseSolver();
   
@@ -130,7 +131,8 @@ class Epetra_SerialDenseSolver : public Epetra_CompObject, public Epetra_BLAS,
   virtual ~Epetra_SerialDenseSolver();
   //@}
 
-  //@{ \name Set Methods
+  //! @name Set Methods
+  //@{ 
 
   //! Sets the pointers for coefficient matrix
   int SetMatrix(Epetra_SerialDenseMatrix & A);
@@ -142,7 +144,8 @@ class Epetra_SerialDenseSolver : public Epetra_CompObject, public Epetra_BLAS,
   int SetVectors(Epetra_SerialDenseMatrix & X, Epetra_SerialDenseMatrix & B);
   //@}
 
-  //@{ \name Strategy modifying Methods
+  //! @name Strategy modifying Methods
+  //@{ 
 
   //! Causes equilibration to be called just before the matrix factorization as part of the call to Factor.
   /*! This function must be called before the factorization is performed. 
@@ -162,7 +165,8 @@ class Epetra_SerialDenseSolver : public Epetra_CompObject, public Epetra_BLAS,
   void EstimateSolutionErrors(bool Flag) ;
   //@}
 
-  //@{ \name Factor/Solve/Invert Methods
+  //! @name Factor/Solve/Invert Methods
+  //@{ 
 
   //! Computes the in-place LU factorization of the matrix using the LAPACK routine \e DGETRF.
   /*!
@@ -223,7 +227,8 @@ class Epetra_SerialDenseSolver : public Epetra_CompObject, public Epetra_BLAS,
   virtual int ReciprocalConditionEstimate(double & Value);
   //@}
 
-  //@{ \name Query methods
+  //! @name Query methods
+  //@{ 
 
   //! Returns true if transpose of \e this matrix has and will be used.
   bool Transpose() {return(Transpose_);};
@@ -256,7 +261,8 @@ class Epetra_SerialDenseSolver : public Epetra_CompObject, public Epetra_BLAS,
   bool SolutionRefined() {return(SolutionRefined_);};
   //@}
 
-  //@{ \name Data Accessor methods
+  //! @name Data Accessor methods
+  //@{ 
     
   //! Returns pointer to current matrix.
    Epetra_SerialDenseMatrix * Matrix()  const {return(Matrix_);};
@@ -338,7 +344,8 @@ class Epetra_SerialDenseSolver : public Epetra_CompObject, public Epetra_BLAS,
   double * C()  const {return(C_);};
   //@}
 
-  //@{ \name I/O methods
+  //! @name I/O methods
+  //@{ 
   //! Print service methods; defines behavior of ostream << operator.
   virtual void Print(ostream& os) const;
   //@}

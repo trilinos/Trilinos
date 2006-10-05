@@ -69,7 +69,8 @@ common_ldadd = $(EXPORT_LIBS)
 EXTRA_DIST = \
 	     $(srcdir)/serial_1D_FFT.hpp \
 	     $(srcdir)/RealComplexFFTLinearOp.hpp \
-	     $(srcdir)/ComplexFFTLinearOp.hpp
+	     $(srcdir)/ComplexFFTLinearOp.hpp \
+	     $(srcdir)/Thyra_LinearOpWithSolveFactoryExamples.hpp
 
 # This is already added part of THYRA_LIBS and therefore automake does not need to add this again!
 LIBS =

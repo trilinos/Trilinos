@@ -145,6 +145,10 @@ ENABLE_STRATIMIKOS_EPETRAEXT_THYRA_FALSE = @ENABLE_STRATIMIKOS_EPETRAEXT_THYRA_F
 ENABLE_STRATIMIKOS_EPETRAEXT_THYRA_TRUE = @ENABLE_STRATIMIKOS_EPETRAEXT_THYRA_TRUE@
 ENABLE_STRATIMIKOS_IFPACK_THYRA_FALSE = @ENABLE_STRATIMIKOS_IFPACK_THYRA_FALSE@
 ENABLE_STRATIMIKOS_IFPACK_THYRA_TRUE = @ENABLE_STRATIMIKOS_IFPACK_THYRA_TRUE@
+ENABLE_STRATIMIKOS_ML_NOX_FALSE = @ENABLE_STRATIMIKOS_ML_NOX_FALSE@
+ENABLE_STRATIMIKOS_ML_NOX_TRUE = @ENABLE_STRATIMIKOS_ML_NOX_TRUE@
+ENABLE_STRATIMIKOS_ML_THYRA_FALSE = @ENABLE_STRATIMIKOS_ML_THYRA_FALSE@
+ENABLE_STRATIMIKOS_ML_THYRA_TRUE = @ENABLE_STRATIMIKOS_ML_THYRA_TRUE@
 EXEEXT = .exe
 F77 = @F77@
 FFLAGS = @FFLAGS@
@@ -245,16 +249,21 @@ target_vendor = @target_vendor@
 #
 SIMPLE_STRATIMIKOS_EXAMPLE = simple_stratimikos_example
 simple_stratimikos_example_SOURCES = $(srcdir)/simple_stratimikos_example.cpp
-simple_stratimikos_example_DEPENDENCIES = $(common_dependencies)
+simple_stratimikos_example_DEPENDENCIES = $(common_dependencies) amesos.klu.xml
 simple_stratimikos_example_LDADD = $(common_ldadd)
 
 #
 # Common stuff
 #
-common_dependencies = $(top_builddir)/src/libstratimikos.a
+@ENABLE_STRATIMIKOS_ML_NOX_TRUE@@ENABLE_STRATIMIKOS_ML_THYRA_TRUE@NOX_LIBS = $(top_builddir)/../nox/src/libnox.a
+common_dependencies = $(top_builddir)/src/libstratimikos.a $(NOX_LIBS)
 AM_CPPFLAGS = $(STRATIMIKOS_INCLUDES)
 common_ldadd = $(STRATIMIKOS_LIBS)
-EXTRA_DIST = $(srcdir)/simple_stratimikos_example.cpp
+EXTRA_DIST = $(srcdir)/simple_stratimikos_example.cpp \
+	$(srcdir)/_amesos.klu.xml \
+	$(srcdir)/_aztecoo.ifpack.xml \
+	$(srcdir)/_belos.ifpack.xml
+
 all: all-am
 
 .SUFFIXES:
@@ -511,6 +520,17 @@ all-local: generate-sample-output.pl
 generate-sample-output.pl : generate-sample-output.pl.stub
 	cp generate-sample-output.pl.stub generate-sample-output.pl
 	chmod a+x generate-sample-output.pl
+
+amesos.klu.xml:
+	cp $(srcdir)/_amesos.klu.xml amesos.klu.xml
+	cp $(srcdir)/_aztecoo.ifpack.xml aztecoo.ifpack.xml
+	cp $(srcdir)/_aztecoo.ifpack.xml aztecoo.ml.xml
+	cp $(srcdir)/_belos.ifpack.xml belos.ifpack.xml
+	cp $(srcdir)/_belos.ifpack.xml belos.ml.xml
+	cp $(top_srcdir)/../amesos/test/Test_Basic/In_FourByFour.mtx FourByFour.mtx
+
+@ENABLE_STRATIMIKOS_ML_NOX_TRUE@@ENABLE_STRATIMIKOS_ML_THYRA_TRUE@$(top_builddir)/../nox/src/libnox.a:
+@ENABLE_STRATIMIKOS_ML_NOX_TRUE@@ENABLE_STRATIMIKOS_ML_THYRA_TRUE@	cd $(top_builddir)/../nox; make all-libs
 
 include $(top_builddir)/Makefile.export.stratimikos
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

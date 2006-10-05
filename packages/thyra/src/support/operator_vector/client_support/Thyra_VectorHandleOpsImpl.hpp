@@ -35,52 +35,39 @@
 namespace Thyra
 {
   
-  /* */
   template <class Scalar> inline  
   void setToConstant(Vector<Scalar>& x, const Scalar& a)
   {
     put_scalar(a, x.ptr().get());
   }
 
-  /* */
   template <class Scalar> inline  
   void zeroOut(Vector<Scalar>& x)
   {
     setToConstant(x, Teuchos::ScalarTraits<Scalar>::zero());
   }
 
-  
-
-  /* abs */
   THYRA_UNARY_VECTOR_OP(abs, absInto, abs, "absolute value")
     
-  /* reciprocal */
-    THYRA_UNARY_VECTOR_OP(reciprocal, reciprocalInto, reciprocal, "reciprocal")
+  THYRA_UNARY_VECTOR_OP(reciprocal, reciprocalInto, reciprocal, "reciprocal")
+
+  THYRA_UNARY_VECTOR_ROP_MAG(norm, norm, "natural norm")
     
-  /* */
-    THYRA_UNARY_VECTOR_ROP_MAG(norm1, norm_1, "1-norm")
+  THYRA_UNARY_VECTOR_ROP_MAG(norm1, norm_1, "1-norm")
 
-  /* */
-    THYRA_UNARY_VECTOR_ROP_MAG(norm2, norm_2, "2-norm")
+  THYRA_UNARY_VECTOR_ROP_MAG(norm2, norm_2, "2-norm")
 
-  /* */
-    THYRA_UNARY_VECTOR_ROP_MAG(normInf, norm_inf, "inf-norm")
+  THYRA_UNARY_VECTOR_ROP_MAG(normInf, norm_inf, "inf-norm")
 
-  /* */ 
-    THYRA_UNARY_VECTOR_ROP(sum, sum, "sum of the elements")
+  THYRA_UNARY_VECTOR_ROP(sum, sum, "sum of the elements")
 
-  /* */ 
-    THYRA_UNARY_VECTOR_ROP_MAG(max, max, "max element")
+  THYRA_BINARY_VECTOR_ROP(inner, scalarProd, "Inner or scalar product")
 
-  /* */ 
-    THYRA_UNARY_VECTOR_ROP_MAG(min, min, "min element")
+  THYRA_UNARY_VECTOR_ROP_MAG(max, max, "max element")
 
-  /**
-   * \relates ConstVector
-   * 
-   * Return the max of a vector and its location
-   */
-    template <class Scalar> inline 
+  THYRA_UNARY_VECTOR_ROP_MAG(min, min, "min element")
+
+  template <class Scalar> inline 
   Scalar maxloc(const Converter<Scalar, ConstVector<Scalar> >& x, Index& index) 
   {
     Scalar maxEl;
@@ -90,9 +77,6 @@ namespace Thyra
     return maxEl;
   }
 
-  /*
-   * Return the min of a vector and its location
-   */
   template <class Scalar> inline 
   Scalar minloc(const Converter<Scalar, ConstVector<Scalar> >& x, Index& index) 
   {
@@ -103,9 +87,6 @@ namespace Thyra
     return minEl;
   }
 
-  /*
-   *
-   */
   template <class Scalar> inline  
   Scalar minloc(const Converter<Scalar, ConstVector<Scalar> >& x, 
              const Scalar& bound, Index& index)
@@ -117,10 +98,6 @@ namespace Thyra
     return minEl;
   }
 
-
-  /* 
-   * 
-   */
   template <class Scalar> inline  
   Scalar maxloc(const Converter<Scalar, ConstVector<Scalar> >& x, 
              const Scalar& bound, Index& index)
@@ -132,9 +109,6 @@ namespace Thyra
     return maxEl;
   }
 
-  /*
-   * 
-   */
   template <class Scalar> inline  
   void dotStarInto(const Converter<Scalar, ConstVector<Scalar> >& x, 
                    const Converter<Scalar, ConstVector<Scalar> >& y,
@@ -146,9 +120,6 @@ namespace Thyra
                            result.ptr().get());
     }
 
-  /*
-   * 
-   */
   template <class Scalar> inline  
   Vector<Scalar> dotStar(const Converter<Scalar, ConstVector<Scalar> >& xIn, 
                          const Converter<Scalar, ConstVector<Scalar> >& y)
@@ -159,11 +130,6 @@ namespace Thyra
       return result;
     }
 
-
-
-  /*
-   * 
-   */
   template <class Scalar> inline  
   void dotSlashInto(const Converter<Scalar, ConstVector<Scalar> >& x, 
                    const Converter<Scalar, ConstVector<Scalar> >& y,
@@ -175,9 +141,6 @@ namespace Thyra
                              result.ptr().get());
     }
 
-  /*
-   * 
-   */
   template <class Scalar> inline  
   Vector<Scalar> dotSlash(const Converter<Scalar, ConstVector<Scalar> >& xIn, 
                           const Converter<Scalar, ConstVector<Scalar> >& y)
@@ -188,10 +151,6 @@ namespace Thyra
       return result;
     }
 
-  
-  /*
-   * 
-   */
   template <class Scalar> inline  
   void axpy(const Scalar& a, const Converter<Scalar, ConstVector<Scalar> >& xIn, 
             Vector<Scalar>& y)
@@ -203,9 +162,6 @@ namespace Thyra
     Vp_StV(p, a, *px);
   }
 
-  /*
-   * 
-   */
   template <class Scalar> inline  
   void scale(Vector<Scalar>& x, const Scalar& a)
   {
@@ -214,9 +170,6 @@ namespace Thyra
     Thyra::scale(a, p);
   }
 
-  /*
-   * 
-   */
   template <class Scalar> inline     
   void scaleInto(const Converter<Scalar, ConstVector<Scalar> >& x,
                  const Scalar& alpha, Vector<Scalar>& result)
@@ -224,10 +177,7 @@ namespace Thyra
     x.evalInto(result);
     result.scale(alpha);
   }
-
-
-  
  
 }
 
-#endif
+#endif // THYRA_VECTOR_HANDLE_OPS_IMPL_HPP
