@@ -1406,7 +1406,7 @@ End:
 #ifdef UVC_DORUK_COMP_OBJSIZE    
     double minD, maxD, gminD, gmaxD;
 #endif
-    
+
     if (nRuns == 0) { 
       for (i = 0; i < FOMAXDIM; i++) {
         /* Initialize first time */
@@ -1438,7 +1438,7 @@ End:
         /*printf("obj[%d] = %d\n", i, vsize[i]);*/
           if (part[i] != input_parts[i]) {
 #if (PARMETIS_MAJOR_VERSION >= 3)
-            move += (double) (!strcmp(alg, "ADAPTIVEREPART") ? vsizeBACKUP[i] : 1.0);
+            move += (double) ((vsizeBACKUP) ? vsizeBACKUP[i] : 1.0);
 #else
           move += 1.0;
 #endif
@@ -1500,8 +1500,8 @@ End:
         printf("STATS Runs %d  cutn CURRENT %d  MAX %d  MIN %d  AVG %f\n",
                 nRuns, cutn, cutnmax, cutnmin, cutnsum/nRuns);
 	printf("STATS Runs %d  %s CURRENT %f  MAX %f  MIN %f  AVG %f\n",
-		nRuns, !strcmp(alg, "ADAPTIVEREPART") ? "moveVol" : "moveCnt", gmove, movemax, movemin, movesum/nRuns);
-        if (!strcmp(alg, "ADAPTIVEREPART"))
+		nRuns, vsizeBACKUP ? "moveVol" : "moveCnt", gmove, movemax, movemin, movesum/nRuns);
+        if (vsizeBACKUP)
             printf("STATS Runs %d  repart CURRENT %f  MAX %f  MIN %f  AVG %f\n",
                    nRuns, repart, repartmax, repartmin, repartsum/nRuns);        
         
