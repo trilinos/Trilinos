@@ -87,13 +87,11 @@
 }
 
 # Vector Backward Euler using Belos
-# Belos is not part of the Trilinos 7.0 release
-# So I'm removing testing from the release branch 
-#(FRAMEWORK,INSTALL) {
-#    TESTS = ../example/basicExample/basicExample.exe;
-#    ARGS = --method=BE --maxerror=1e-1 --numelements=10 --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Belos\"/><ParameterList name=\"Linear Solver Types\"><ParameterList name=\"Belos\"><Parameter name=\"Default Rel Res Norm\" type=\"double\" value=\"1e-12\"/></ParameterList></ParameterList></ParameterList>" --linear-solver-params-used-file=lowsf.belos.used.xml;
-#    COMM = SERIAL,MPI;
-#}
+(FRAMEWORK,INSTALL) {
+    TESTS = ../example/basicExample/basicExample.exe;
+    ARGS = --method=BE --maxerror=1e-1 --numelements=10 --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Belos\"/><ParameterList name=\"Linear Solver Types\"><ParameterList name=\"Belos\"><Parameter name=\"Default Rel Res Norm\" type=\"double\" value=\"1e-12\"/></ParameterList></ParameterList></ParameterList>" --linear-solver-params-used-file=lowsf.belos.used.xml;
+    COMM = SERIAL,MPI;
+}
 
 # Vector Forward Euler with same accuracy as ERK
 (FRAMEWORK,INSTALL) {
@@ -131,13 +129,11 @@
 }
 
 # Vector Implicit BDF with Belos
-# Belos is not part of the Trilinos 7.0 release
-# So I'm removing testing from the release branch 
-#(FRAMEWORK,INSTALL) {
-#    TESTS = ../example/basicExample/basicExample.exe;
-#    ARGS = --numelements=10 --method=BDF --stepmethod=variable --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Belos\"/><ParameterList name=\"Linear Solver Types\"><ParameterList name=\"Belos\"><Parameter name=\"Default Rel Res Norm\" type=\"double\" value=\"1e-12\"/></ParameterList></ParameterList></ParameterList>" --linear-solver-params-used-file=lowsf.belos.used.xml;
-#    COMM = SERIAL,MPI;
-#}
+(FRAMEWORK,INSTALL) {
+    TESTS = ../example/basicExample/basicExample.exe;
+    ARGS = --numelements=10 --method=BDF --stepmethod=variable --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Belos\"/><ParameterList name=\"Linear Solver Types\"><ParameterList name=\"Belos\"><Parameter name=\"Default Rel Res Norm\" type=\"double\" value=\"1e-12\"/></ParameterList></ParameterList></ParameterList>" --linear-solver-params-used-file=lowsf.belos.used.xml;
+    COMM = SERIAL,MPI;
+}
 
 # Vector 1DfemTransient with Backward Euler 
 (FRAMEWORK,INSTALL) {
@@ -154,13 +150,11 @@
 }
 
 # Vector 1DfemTransient with Backward Euler using Belos
-# Belos is not part of the Trilinos 7.0 release
-# So I'm removing testing from the release branch 
-#(FRAMEWORK,INSTALL) {
-#    TESTS = ../example/epetra/1Dfem/1DfemTransient.exe;
-#    ARGS = --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Belos\"/><ParameterList name=\"Linear Solver Types\"><ParameterList name=\"Belos\"><Parameter name=\"Default Rel Res Norm\" type=\"double\" value=\"1e-12\"/></ParameterList></ParameterList></ParameterList>" --linear-solver-params-used-file=lowsf.belos.used.xml;
-#    COMM = SERIAL,MPI;
-#}
+(FRAMEWORK,INSTALL) {
+    TESTS = ../example/epetra/1Dfem/1DfemTransient.exe;
+    ARGS = --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Belos\"/><ParameterList name=\"Linear Solver Types\"><ParameterList name=\"Belos\"><Parameter name=\"Default Rel Res Norm\" type=\"double\" value=\"1e-12\"/></ParameterList></ParameterList></ParameterList>" --linear-solver-params-used-file=lowsf.belos.used.xml;
+    COMM = SERIAL,MPI;
+}
 
 # Vector 1DfemTransient with ImplicitBDF
 (FRAMEWORK,INSTALL) {
@@ -177,11 +171,9 @@
 }
 
 # Vector 1DfemTransient with ImplicitBDF with Belos
-# Belos is not part of the Trilinos 7.0 release
-# So I'm removing testing from the release branch 
-#(FRAMEWORK,INSTALL) {
-#    TESTS = ../example/epetra/1Dfem/1DfemTransient.exe;
-#    ARGS = --verbose --method=BDF --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Belos\"/><ParameterList name=\"Linear Solver Types\"><ParameterList name=\"Belos\"><Parameter name=\"Default Rel Res Norm\" type=\"double\" value=\"1e-12\"/></ParameterList></ParameterList></ParameterList>" --linear-solver-params-used-file=lowsf.belos.used.xml;
-#    COMM = SERIAL,MPI;
-#}
+(FRAMEWORK,INSTALL) {
+    TESTS = ../example/epetra/1Dfem/1DfemTransient.exe;
+    ARGS = --verbose --method=BDF --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Belos\"/><ParameterList name=\"Linear Solver Types\"><ParameterList name=\"Belos\"><Parameter name=\"Default Rel Res Norm\" type=\"double\" value=\"1e-12\"/></ParameterList></ParameterList></ParameterList>" --linear-solver-params-used-file=lowsf.belos.used.xml;
+    COMM = SERIAL,MPI;
+}
 
