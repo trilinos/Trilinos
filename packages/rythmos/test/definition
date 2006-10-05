@@ -89,7 +89,7 @@
 # Vector Backward Euler using Belos
 (FRAMEWORK,INSTALL) {
     TESTS = ../example/basicExample/basicExample.exe;
-    ARGS = --method=BE --maxerror=1e-1 --numelements=10 --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Belos\"/><ParameterList name=\"Linear Solver Types\"><ParameterList name=\"Belos\"><Parameter name=\"Default Rel Res Norm\" type=\"double\" value=\"1e-12\"/></ParameterList></ParameterList></ParameterList>" --linear-solver-params-used-file=lowsf.belos.used.xml;
+    ARGS = --method=BE --maxerror=1e-1 --numelements=100 --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Belos\"/><ParameterList name=\"Linear Solver Types\"><ParameterList name=\"Belos\"><Parameter name=\"Default Rel Res Norm\" type=\"double\" value=\"1e-12\"/></ParameterList></ParameterList></ParameterList>" --linear-solver-params-used-file=lowsf.belos.used.xml;
     COMM = SERIAL,MPI;
 }
 
@@ -131,7 +131,7 @@
 # Vector Implicit BDF with Belos
 (FRAMEWORK,INSTALL) {
     TESTS = ../example/basicExample/basicExample.exe;
-    ARGS = --numelements=10 --method=BDF --stepmethod=variable --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Belos\"/><ParameterList name=\"Linear Solver Types\"><ParameterList name=\"Belos\"><Parameter name=\"Default Rel Res Norm\" type=\"double\" value=\"1e-12\"/></ParameterList></ParameterList></ParameterList>" --linear-solver-params-used-file=lowsf.belos.used.xml;
+    ARGS = --numelements=100 --method=BDF --stepmethod=variable --reltol=1e-6 --abstol=1e-6 --T=0.1 --maxerror=1e-4 --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Belos\"/><ParameterList name=\"Linear Solver Types\"><ParameterList name=\"Belos\"><Parameter name=\"Default Rel Res Norm\" type=\"double\" value=\"1e-12\"/></ParameterList></ParameterList></ParameterList>" --linear-solver-params-used-file=lowsf.belos.used.xml;
     COMM = SERIAL,MPI;
 }
 
