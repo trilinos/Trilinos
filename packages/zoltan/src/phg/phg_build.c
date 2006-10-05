@@ -76,7 +76,8 @@ static int removed_cuts_local(ZZ *zz, ZHG *zhg,
                 int max_parts, int *pin_parts, double *loccuts);
 static int removed_cuts_global(ZZ *zz, ZHG *zhg, 
                 int max_parts, int *pin_parts, double *loccuts, int tag);
-
+static int getObjectSizes(ZZ *zz, ZHG *zhg);
+    
 /*****************************************************************************/
 int Zoltan_PHG_Build_Hypergraph(
   ZZ *zz,                            /* Zoltan data structure */
@@ -1864,6 +1865,7 @@ int nRepartEdge = 0, nRepartVtx = 0;
     phg->EdgeWeightDim = 0;
   }
 
+  
   if (zz->LB.Method == PHG_REPART) {
     if (myProc_x >= 0 && myProc_y >= 0) {
       ierr = Zoltan_PHG_Add_Repart_Data(zz, zhg, phg,
@@ -1874,6 +1876,12 @@ int nRepartEdge = 0, nRepartVtx = 0;
         goto End;
       }
     }
+  } else {
+      /* UVCUVC: CHECK later; we may not need this for all cases */
+      if (hgp->final_output) {
+          if ((ierr = getObjectSizes(zz, zhg))!=ZOLTAN_OK)
+              goto End;
+      }
   }
     
   ierr = Zoltan_HG_Create_Mirror(zz, phg);
@@ -2728,6 +2736,43 @@ static int lookup_GID(GID_lookup *lu, ZOLTAN_ID_PTR gid)
   return -1;
 }
 
+static int getObjectSizes(ZZ *zz, ZHG *zhg)
+{
+    int i, ierr=ZOLTAN_OK;
+    char *yo="getObjectSizes";
+    
+    if (zhg->nObj) {
+      if (!(zhg->AppObjSizes = (int *) ZOLTAN_MALLOC(zhg->nObj * sizeof(int)))) 
+        MEMORY_ERROR;
+      if (zz->Get_Obj_Size_Multi) {
+        zz->Get_Obj_Size_Multi(zz->Get_Obj_Size_Multi_Data,
+                               zz->Num_GID, zz->Num_LID, zhg->nObj,
+                               zhg->GIDs, zhg->LIDs, zhg->AppObjSizes, &ierr);
+        if (ierr < 0) {
+          ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from "
+                          "ZOLTAN_OBJ_SIZE_MULTI function.");
+          goto End;
+        }
+      }
+      else if (zz->Get_Obj_Size) {
+        for (i = 0; i < zhg->nObj; i++) {
+          ZOLTAN_ID_PTR lid = (zz->Num_LID ? &(zhg->LIDs[i*zz->Num_LID]):NULL);
+          zhg->AppObjSizes[i] = zz->Get_Obj_Size(zz->Get_Obj_Size_Data,
+                                           zz->Num_GID, zz->Num_LID,
+                                           &(zhg->GIDs[i*zz->Num_GID]),
+                                           lid, &ierr);
+          if (ierr < 0) {
+            ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from "
+                            "ZOLTAN_OBJ_SIZE function.");
+            goto End;
+          }
+        }
+      }
+    }
+ End:
+    return ierr;
+}
+
 /****************************************************************************/
 static int Zoltan_PHG_Add_Repart_Data(
   ZZ *zz,
@@ -2837,34 +2882,9 @@ int *tmpobjsize = NULL;
   /***** with migration costs.                               *****/
 
   if (zz->Get_Obj_Size_Multi || zz->Get_Obj_Size) {
-    if (zhg->nObj) {
-      if (!(zhg->AppObjSizes = (int *) ZOLTAN_MALLOC(zhg->nObj * sizeof(int)))) 
-        MEMORY_ERROR;
-      if (zz->Get_Obj_Size_Multi) {
-        zz->Get_Obj_Size_Multi(zz->Get_Obj_Size_Multi_Data,
-                               zz->Num_GID, zz->Num_LID, zhg->nObj,
-                               zhg->GIDs, zhg->LIDs, zhg->AppObjSizes, &ierr);
-        if (ierr < 0) {
-          ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from "
-                          "ZOLTAN_OBJ_SIZE_MULTI function.");
-          goto End;
-        }
-      }
-      else if (zz->Get_Obj_Size) {
-        for (i = 0; i < zhg->nObj; i++) {
-          ZOLTAN_ID_PTR lid = (zz->Num_LID ? &(zhg->LIDs[i*zz->Num_LID]):NULL);
-          zhg->AppObjSizes[i] = zz->Get_Obj_Size(zz->Get_Obj_Size_Data,
-                                           zz->Num_GID, zz->Num_LID,
-                                           &(zhg->GIDs[i*zz->Num_GID]),
-                                           lid, &ierr);
-          if (ierr < 0) {
-            ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from "
-                            "ZOLTAN_OBJ_SIZE function.");
-            goto End;
-          }
-        }
-      }
-    }
+    if ((ierr = getObjectSizes(zz, zhg))!=ZOLTAN_OK)
+        goto End;
+          
 
     objsize = (int *) ZOLTAN_CALLOC(2*phg->nVtx, sizeof(int));
     if (phg->nVtx && !objsize) {

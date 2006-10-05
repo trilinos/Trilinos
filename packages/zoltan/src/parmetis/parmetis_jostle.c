@@ -1402,6 +1402,11 @@ End:
     int vdim = MAX(zz->Obj_Weight_Dim,1);
     int edim = MAX(zz->Edge_Weight_Dim,1);
 
+/* #define UVC_DORUK_COMP_OBJSIZE */
+#ifdef UVC_DORUK_COMP_OBJSIZE    
+    double minD, maxD, gminD, gmaxD;
+#endif
+    
     if (nRuns == 0) { 
       for (i = 0; i < FOMAXDIM; i++) {
         /* Initialize first time */
@@ -1421,6 +1426,14 @@ End:
       Compute_EdgeCut(zz, num_obj, xadj, ewgts, part, adjpart, cute);
       cutl= Compute_ConCut(zz, num_obj, xadj, part, adjpart);
       cutn = Compute_NetCut(zz, num_obj, xadj, part, adjpart);
+
+#ifdef UVC_DORUK_COMP_OBJSIZE
+      if (vsizeBACKUP) {
+          minD = vsizeBACKUP[0];
+          maxD = vsizeBACKUP[0];
+      }
+#endif
+      
       for (i=0; i<num_obj; i++) {
         /*printf("obj[%d] = %d\n", i, vsize[i]);*/
           if (part[i] != input_parts[i]) {
@@ -1429,9 +1442,27 @@ End:
 #else
           move += 1.0;
 #endif
+
+#ifdef UVC_DORUK_COMP_OBJSIZE
+          if (vsizeBACKUP) {          
+              minD = minD < vsizeBACKUP[i] ? minD : vsizeBACKUP[i];
+              maxD = maxD > vsizeBACKUP[i] ? maxD : vsizeBACKUP[i];
+          }
+#endif
+          
           }
       }
 
+#ifdef UVC_DORUK_COMP_OBJSIZE
+      if (vsizeBACKUP) {      
+          MPI_Allreduce(&minD, &gminD, 1, MPI_DOUBLE, MPI_MIN, zz->Communicator);
+          MPI_Allreduce(&maxD, &gmaxD, 1, MPI_DOUBLE, MPI_MAX, zz->Communicator);
+          
+          if (zz->Proc == 0)
+              printf("minD: %f, maxD: %f, gminD: %f, gmaxD: %f\n", minD, maxD, gminD, gmaxD);
+      }
+#endif
+      
       MPI_Allreduce(&move, &gmove, 1, MPI_DOUBLE, MPI_SUM, zz->Communicator);
 
       repart = (double) (*itr) * (double) cutl + gmove;

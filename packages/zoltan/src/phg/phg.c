@@ -490,6 +490,12 @@ End:
     double move=0.0, gmove;  /* local and global migration costs */
     double repart=0.0;   /* total repartitioning cost: comcost x multiplier + migration_cost */
 
+/* #define UVC_DORUK_COMP_OBJSIZE */
+#ifdef UVC_DORUK_COMP_OBJSIZE
+    double minD, maxD, gminD, gmaxD;
+#endif
+
+    
     if (do_timing) {
       /* Do not include final output time in partitioning time */
       ZOLTAN_TIMER_STOP(zz->ZTime, timer_all, zz->Communicator);
@@ -504,14 +510,37 @@ End:
                                       zz->LB.Num_Global_Parts, &err);
       cutn = Zoltan_PHG_Compute_NetCut(hg->comm, hg, parts,
                                        zz->LB.Num_Global_Parts);
-
+      
+#ifdef UVC_DORUK_COMP_OBJSIZE      
+      if (zoltan_hg->AppObjSizes) {
+          minD = zoltan_hg->AppObjSizes[0];
+          maxD = zoltan_hg->AppObjSizes[0];
+          }
+#endif
       for (i = 0; i < zoltan_hg->nObj; ++i) {
         /* uprintf(hg->comm, " obj[%d] = %d  in=%d out=%d\n", i, zoltan_hg->AppObjSizes[i], zoltan_hg->Input_Parts[i], zoltan_hg->Output_Parts[i]); */
 	if (zoltan_hg->Input_Parts[i] != zoltan_hg->Output_Parts[i])
-            move += (double) ((zz->LB.Method == PHG_REPART) ? zoltan_hg->AppObjSizes[i] : 1.0); 
+            move += (double) ((zoltan_hg->AppObjSizes) ? zoltan_hg->AppObjSizes[i] : 1.0);
+
+#ifdef UVC_DORUK_COMP_OBJSIZE        
+        if (zoltan_hg->AppObjSizes) {        
+            minD = minD < zoltan_hg->AppObjSizes[i] ? minD : zoltan_hg->AppObjSizes[i];
+            maxD = maxD > zoltan_hg->AppObjSizes[i] ? maxD : zoltan_hg->AppObjSizes[i];
+        }
+#endif
       }
     }
 
+#ifdef UVC_DORUK_COMP_OBJSIZE    
+    if (zoltan_hg->AppObjSizes) {
+        MPI_Allreduce(&minD, &gminD, 1, MPI_DOUBLE, MPI_MIN, zz->Communicator);
+        MPI_Allreduce(&maxD, &gmaxD, 1, MPI_DOUBLE, MPI_MAX, zz->Communicator);
+    
+        if (zz->Proc == 0)
+            printf("minD: %f, maxD: %f, gminD: %f, gmaxD: %f\n", minD, maxD, gminD, gmaxD);
+    }
+#endif
+    
     if (!err) {
      
       /* Add in cut contributions from removed edges */
@@ -557,8 +586,8 @@ End:
                 nRuns, cutn, cutnmax, cutnmin, cutnsum/nRuns);
 	uprintf(hg->comm,
 		"STATS Runs %d  %s CURRENT %f  MAX %f  MIN %f  AVG %f\n",
-		nRuns, (zz->LB.Method == PHG_REPART) ? "moveVol" : "moveCnt", gmove, movemax, movemin, movesum/nRuns);
-        if (zz->LB.Method == PHG_REPART) 
+		nRuns, (zoltan_hg->AppObjSizes) ? "moveVol" : "moveCnt", gmove, movemax, movemin, movesum/nRuns);
+        if (zoltan_hg->AppObjSizes) 
             uprintf(hg->comm,
 		"STATS Runs %d  repart CURRENT %f  MAX %f  MIN %f  AVG %f\n",
 		nRuns, repart, repartmax, repartmin, repartsum/nRuns);        
