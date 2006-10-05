@@ -5,7 +5,7 @@ AZ_MATLAB_EXEC( )     # Check for --with-matlab-exec
 AZ_MATLAB_ROOT( )     # Check for --with-matlab-root
 
 AC_MSG_CHECKING(whether we should build the matlab wrappers)
-if test -n "$MATLAB_EXE" -a -n "$MATLAB_ROOT_USE" -a -n "MATLAB_USE"; then
+if test -n "$MATLAB_EXE" -a -n "$MATLAB_ROOT_USE_FALSE" -a -n "$MATLAB_USE_FALSE"; then
   BUILD_MATLAB=yes
   AC_MSG_RESULT(yes)
   AM_CONDITIONAL(BUILD_MATLAB, true)

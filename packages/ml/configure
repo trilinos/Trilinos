@@ -13314,7 +13314,7 @@ fi;
 
 echo "$as_me:$LINENO: checking whether we should build the matlab wrappers" >&5
 echo $ECHO_N "checking whether we should build the matlab wrappers... $ECHO_C" >&6
-if test -n "$MATLAB_EXE" -a -n "$MATLAB_ROOT_USE" -a -n "MATLAB_USE"; then
+if test -n "$MATLAB_EXE" -a -n "$MATLAB_ROOT_USE_FALSE" -a -n "$MATLAB_USE_FALSE"; then
   BUILD_MATLAB=yes
   echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
