@@ -66,7 +66,7 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-@MATLAB_USE_TRUE@bin_PROGRAMS = mlmex$(EXEEXT)
+@BUILD_ML_MATLAB_TRUE@bin_PROGRAMS = mlmex$(EXEEXT)
 subdir = matlab
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -110,7 +110,7 @@ am__installdirs = $(DESTDIR)$(bindir) $(DESTDIR)$(bindir)
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
 am__mlmex_SOURCES_DIST = mlmex.cpp
-@MATLAB_USE_TRUE@am_mlmex_OBJECTS = mlmex-mlmex.$(OBJEXT)
+@BUILD_ML_MATLAB_TRUE@am_mlmex_OBJECTS = mlmex-mlmex.$(OBJEXT)
 mlmex_OBJECTS = $(am_mlmex_OBJECTS)
 am__DEPENDENCIES_1 =
 binSCRIPT_INSTALL = $(INSTALL_SCRIPT)
@@ -318,12 +318,12 @@ target_vendor = @target_vendor@
 # I need extra_libs because of MLAPI::Gallery, which calls Galeri.
 ML_MLMEX_INCLUDES = $(ML_INCLUDES) $(ML_EXTRA_INCLUDES) $(ML_MATLAB_INCLUDES)
 ML_MLMEX_LIBS = $(ML_LIBS) $(ML_EXTRA_LIBS)
-@MATLAB_USE_TRUE@bin_SCRIPTS = ml.m
-@MATLAB_USE_TRUE@mlmex_SOURCES = mlmex.cpp
-@MATLAB_USE_TRUE@mlmex_DEPENDENCIES = $(top_builddir)/src/libml.a
-@MATLAB_USE_TRUE@mlmex_CXXFLAGS = ${ML_MLMEX_INCLUDES} -fPIC
-@MATLAB_USE_TRUE@mlmex_LDADD = ${ML_MLMEX_LIBS} 
-@MATLAB_USE_TRUE@mlmex_LINK = $(MEX) -cxx -o $@
+@BUILD_ML_MATLAB_TRUE@bin_SCRIPTS = ml.m
+@BUILD_ML_MATLAB_TRUE@mlmex_SOURCES = mlmex.cpp
+@BUILD_ML_MATLAB_TRUE@mlmex_DEPENDENCIES = $(top_builddir)/src/libml.a
+@BUILD_ML_MATLAB_TRUE@mlmex_CXXFLAGS = ${ML_MLMEX_INCLUDES} -fPIC
+@BUILD_ML_MATLAB_TRUE@mlmex_LDADD = ${ML_MLMEX_LIBS} 
+@BUILD_ML_MATLAB_TRUE@mlmex_LINK = $(MEX) -cxx -o $@
 all: all-am
 
 .SUFFIXES:
