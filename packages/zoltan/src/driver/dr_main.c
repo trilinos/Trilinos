@@ -226,6 +226,11 @@ int main(int argc, char *argv[])
   /* srand(Proc); Different seeds on different procs. */
   srand(1);  /* Same seed everywhere. */
 
+  if (Test.Dynamic_Weights){
+    /* Set obj weight dim to 1; can be overridden by user parameter */
+    Zoltan_Set_Param(zz, "OBJ_WEIGHT_DIM", "1");
+  }
+
   /* Loop over read and balance for a number of iterations */
   /* (Useful for testing REUSE parameters in Zoltan.) */
   for (iteration = 1; iteration <= Number_Iterations; iteration++) {
