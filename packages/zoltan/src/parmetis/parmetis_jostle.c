@@ -1443,6 +1443,7 @@ End:
           move += 1.0;
 #endif
 
+          }
 #ifdef UVC_DORUK_COMP_OBJSIZE
           if (vsizeBACKUP) {          
               minD = minD < vsizeBACKUP[i] ? minD : vsizeBACKUP[i];
@@ -1450,7 +1451,6 @@ End:
           }
 #endif
           
-          }
       }
 
 #ifdef UVC_DORUK_COMP_OBJSIZE
