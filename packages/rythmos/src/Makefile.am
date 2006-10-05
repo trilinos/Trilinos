@@ -52,10 +52,12 @@ all-local:
 CORE_H = \
 	$(srcdir)/Rythmos_ConfigDefs.h \
 	$(srcdir)/Rythmos_Stepper.hpp \
-	$(srcdir)/Rythmos_Stepper_BackwardEuler.hpp \
-	$(srcdir)/Rythmos_Stepper_ForwardEuler.hpp \
-	$(srcdir)/Rythmos_Stepper_ExplicitRK.hpp \
-	$(srcdir)/Rythmos_Stepper_ExplicitTaylorPolynomial.hpp
+	$(srcdir)/Rythmos_BackwardEulerStepper.hpp \
+	$(srcdir)/Rythmos_ForwardEulerStepper.hpp \
+	$(srcdir)/Rythmos_ExplicitRKStepper.hpp \
+	$(srcdir)/Rythmos_ExplicitTaylorPolynomialStepper.hpp \
+	$(srcdir)/Rythmos_ImplicitBDFStepper.hpp \
+	$(srcdir)/Rythmos_InterpolationBuffer.hpp
 
 CORE = \
 	$(srcdir)/Rythmos_Version.cpp

@@ -38,7 +38,8 @@ noinst_PROGRAMS = $(EXAMPLE)
 
 basicExample_SOURCES = \
 	 $(srcdir)/cxx_main.cpp \
-	 $(srcdir)/ExampleApplication.cpp 
+	 $(srcdir)/ExampleApplication.cpp \
+	 $(srcdir)/ExampleApplication.hpp
 
 basicExample_DEPENDENCIES = $(common_dependencies)
 
@@ -53,8 +54,8 @@ common_dependencies = \
 
 include $(top_builddir)/Makefile.export.rythmos
 
-_EXPORT_INCLUDES = $(RYTHMOS_INCLUDES) $(STRATIMIKOS_INCLUDES) $(EPETRAEXT_INCLUDES)
-_EXPORT_LIBS = $(RYTHMOS_LIBS) $(STRATIMIKOS_LIBS) $(EPETRAEXT_LIBS)
+_EXPORT_INCLUDES = $(RYTHMOS_INCLUDES) $(STRATIMIKOS_INCLUDES) $(EPETRA_INCLUDES) $(EPETRAEXT_INCLUDES)
+_EXPORT_LIBS = $(RYTHMOS_LIBS) $(STRATIMIKOS_LIBS) $(EPETRA_LIBS) $(EPETRAEXT_LIBS)
 
 
 if USING_GNUMAKE

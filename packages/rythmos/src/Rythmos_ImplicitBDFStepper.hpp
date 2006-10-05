@@ -26,8 +26,8 @@
 // ***********************************************************************
 //@HEADER
 
-#ifndef Rythmos_STEPPER_IMPLICITBDF_H
-#define Rythmos_STEPPER_IMPLICITBDF_H
+#ifndef Rythmos_IMPLICITBDF_STEPPER_H
+#define Rythmos_IMPLICITBDF_STEPPER_H
 
 #include "Rythmos_Stepper.hpp"
 #include "Teuchos_RefCountPtr.hpp"
@@ -160,6 +160,7 @@ class ImplicitBDFStepper : virtual public Stepper<Scalar>
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xpn0;
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x_dot_base;
     std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > xHistory;
+    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > ee;
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > delta;
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > residual;
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > errWtVec;
@@ -222,7 +223,6 @@ class ImplicitBDFStepper : virtual public Stepper<Scalar>
     Scalar minTimeStep;
     Scalar maxTimeStep;
 
-    bool stepAttemptStatus;
     int newtonConvergenceStatus;
 
 #ifdef Rythmos_DEBUG
@@ -244,6 +244,7 @@ void ImplicitBDFStepper<Scalar>::InitializeStepper(
   typedef Teuchos::ScalarTraits<Scalar> ST;
   // Initialize algorithm coefficients
   maxOrder = implicitBDFParameters.get("maxOrder",int(5)); // maximum order
+  maxOrder = max(1,min(maxOrder,5)); // 1 <= maxOrder <= 5
   currentOrder=1; // Current order of integration
   oldOrder=1; // previous order of integration
   usedOrder=1;  // order used in current step (used after currentOrder is updated)
@@ -266,6 +267,7 @@ void ImplicitBDFStepper<Scalar>::InitializeStepper(
   alpha_0=ST::zero();   // $-\sum_{j=1}^k \alpha_j(n)$ coefficient used in local error test
   cj=ST::zero();      // $-\alpha_s/h_n$ coefficient used in local error test
   ck=ST::zero();      // local error coefficient gamma_[0] = 0; // $\gamma_j(n)=\sum_{l=1}^{j-1}1/\psi_l(n)$ coefficient used to
+  hh=ST::zero();
   numberOfSteps=0;   // number of total time integration steps taken
   nef=0;
   usedStep=ST::zero();
@@ -301,11 +303,9 @@ void ImplicitBDFStepper<Scalar>::InitializeStepper(
   setDefaultMagicNumbers(implicitBDFParameters.sublist("magicNumbers"));
 
 #ifdef Rythmos_DEBUG
+  Teuchos::OSTab ostab(debug_out,1,"InitializeStepper");
   if (debugLevel > 1)
   {
-    debug_out->pushLinePrefix("InitializeStepper");
-    *debug_out << "{" << endl;
-    debug_out->pushTab();
     *debug_out << "maxOrder = " << maxOrder << endl;
     *debug_out << "currentOrder = " << currentOrder << endl;
     *debug_out << "oldOrder = " << oldOrder << endl;
@@ -341,9 +341,6 @@ void ImplicitBDFStepper<Scalar>::InitializeStepper(
     *debug_out << "absErrTol  = " << absErrTol  << endl;
     *debug_out << "constantStepSize  = " << constantStepSize  << endl;
     *debug_out << "stopTime  = " << stopTime  << endl;
-    debug_out->popTab();
-    *debug_out << "}" << endl;
-    debug_out->popLinePrefix();
   }
 #endif // Rythmos_DEBUG
 }
@@ -399,11 +396,9 @@ void ImplicitBDFStepper<Scalar>::setDefaultMagicNumbers(
   maxTimeStep    = magicNumberList.get( "maxTimeStep",    Scalar(10.0)    ); 
 
 #ifdef Rythmos_DEBUG
+  Teuchos::OSTab ostab(debug_out,1,"setDefaultMagicNumbers");
   if (debugLevel > 1)
   {
-    debug_out->pushLinePrefix("setDefaultMagicNumbers");
-    *debug_out << "{" << endl;
-    debug_out->pushTab();
     *debug_out << "h0_safety = " << h0_safety << endl;
     *debug_out << "h0_max_factor = " << h0_max_factor << endl;
     *debug_out << "h_phase0_incr = " << h_phase0_incr << endl;
@@ -420,9 +415,6 @@ void ImplicitBDFStepper<Scalar>::setDefaultMagicNumbers(
     *debug_out << "max_LET_fail = " << max_LET_fail << endl;
     *debug_out << "minTimeStep = " << minTimeStep << endl;
     *debug_out << "maxTimeStep = " << maxTimeStep << endl;
-    debug_out->popTab();
-    *debug_out << "}" << endl;
-    debug_out->popLinePrefix();
   }
 #endif // Rythmos_DEBUG
 }
@@ -436,13 +428,14 @@ void ImplicitBDFStepper<Scalar>::setModel(const Teuchos::RefCountPtr<const Thyra
   xn0 = model->getNominalValues().get_x()->clone_v();
   xpn0 = model->getNominalValues().get_x_dot()->clone_v(); 
   x_dot_base = model->getNominalValues().get_x_dot()->clone_v();
+  ee = model->getNominalValues().get_x()->clone_v();
   delta = model->getNominalValues().get_x()->clone_v();
   residual = Thyra::createMember(model->get_f_space());
   errWtVec = xn0->clone_v();
   ErrWtVecSet(&*errWtVec,*xn0);
   xHistory.push_back(xn0->clone_v());
   xHistory.push_back(xpn0->clone_v());
-  for (int i=2 ; i<maxOrder ; ++i)
+  for (int i=2 ; i<=maxOrder ; ++i) // Store maxOrder+1 vectors
   {
     xHistory.push_back(xn0->clone_v()); 
     V_S(&*xHistory[i],ST::zero());
@@ -462,12 +455,7 @@ Scalar ImplicitBDFStepper<Scalar>::TakeStep()
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef typename Thyra::ModelEvaluatorBase::InArgs<Scalar>::ScalarMag ScalarMag;
 #ifdef Rythmos_DEBUG
-  if (debugLevel > 1)
-  {
-    debug_out->pushLinePrefix("TakeStep()");
-    *debug_out << "{" << endl;
-    debug_out->pushTab();
-  }
+  Teuchos::OSTab ostab(debug_out,1,"TakeStep");
 #endif // Rythmos_DEBUG
   BDFstatusFlag status;
   while (1)
@@ -507,21 +495,23 @@ Scalar ImplicitBDFStepper<Scalar>::TakeStep()
     Thyra::SolveCriteria<Scalar> nonlinearSolveCriteria(nonlinear_solve_measure_type, tolerance);
     Thyra::SolveStatus<Scalar> nonlinearSolveStatus = solver->solve( &*xn0, &nonlinearSolveCriteria, &*delta ); 
     */
-    Thyra::assign(&*xn0,ST::zero());
-    Thyra::SolveStatus<Scalar> nonlinearSolveStatus = solver->solve( &*xn0, NULL, &*delta ); 
+    //Thyra::assign(&*xn0,ST::zero()); // 08/10/06 tscoffe:  what is this doing here?  It hoses the solve.
+    Thyra::SolveStatus<Scalar> nonlinearSolveStatus = solver->solve( &*xn0, NULL, &*ee ); 
     if (nonlinearSolveStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED) 
       newtonConvergenceStatus = 0;
     else 
       newtonConvergenceStatus = -1;
 
     // check error and evaluate LTE
-    Scalar dnorm = checkReduceOrder();
+    Scalar enorm = checkReduceOrder();
     
 #ifdef Rythmos_DEBUG
     if (debugLevel > 1)
     {
       *debug_out << "xn0 = " << std::endl;
       xn0->describe(*debug_out,Teuchos::VERB_EXTREME);
+      *debug_out << "ee = " << std::endl;
+      ee->describe(*debug_out,Teuchos::VERB_EXTREME);
       *debug_out << "delta = " << std::endl;
       delta->describe(*debug_out,Teuchos::VERB_EXTREME);
       for (int i=0; i<max(2,maxOrder); ++i)
@@ -530,12 +520,12 @@ Scalar ImplicitBDFStepper<Scalar>::TakeStep()
         xHistory[i]->describe(*debug_out,Teuchos::VERB_EXTREME);
       }
       *debug_out << "ck = " << ck << endl;
-      *debug_out << "dnorm = " << dnorm << endl;
-      *debug_out << "Local Truncation Error Check: (ck*dnorm) < 1:  (" << ck*dnorm << ") <?= 1" << endl;
+      *debug_out << "enorm = " << enorm << endl;
+      *debug_out << "Local Truncation Error Check: (ck*enorm) < 1:  (" << ck*enorm << ") <?= 1" << endl;
     }
 #endif // Rythmos_DEBUG
     // Check LTE here:
-    if ((ck*dnorm) > ST::one())
+    if ((ck*enorm) > ST::one())
       status = rejectStep(); 
     else 
       break;
@@ -546,14 +536,6 @@ Scalar ImplicitBDFStepper<Scalar>::TakeStep()
   }
 
   completeStep();  
-#ifdef Rythmos_DEBUG
-  if (debugLevel > 1)
-  {
-    debug_out->popTab();
-    *debug_out << "}" << endl;
-    debug_out->popLinePrefix();
-  }
-#endif // Rythmos_DEBUG
   return(usedStep);
 }
 
@@ -610,6 +592,8 @@ void ImplicitBDFStepper<Scalar>::describe(
       out << "xHistory[" << i << "] = " << std::endl;
       xHistory[i]->describe(out,verbLevel);
     }
+    out << "ee = " << std::endl;
+    ee->describe(out,verbLevel);
     out << "delta = " << std::endl;
     delta->describe(out,verbLevel);
     out << "residual = " << std::endl;
@@ -618,6 +602,7 @@ void ImplicitBDFStepper<Scalar>::describe(
     errWtVec->describe(out,verbLevel);
     out << "time = " << time << std::endl;
     out << "hh = " << hh << std::endl;
+    out << "currentOrder = " << currentOrder << std::endl;
     out << "neModel = " << std::endl;
     neModel.describe(out,verbLevel);
   }
@@ -629,11 +614,9 @@ void ImplicitBDFStepper<Scalar>::obtainPredictor()
   typedef Teuchos::ScalarTraits<Scalar> ST;
 
 #ifdef Rythmos_DEBUG
+  Teuchos::OSTab ostab(debug_out,1,"obtainPredictor");
   if (debugLevel > 1)
   {
-    debug_out->pushLinePrefix("obtainPredictor");
-    *debug_out << "{" << endl;
-    debug_out->pushTab();
     *debug_out << "currentOrder = " << currentOrder << std::endl;
   }
 #endif // Rythmos_DEBUG
@@ -659,9 +642,6 @@ void ImplicitBDFStepper<Scalar>::obtainPredictor()
     xn0->describe(*debug_out,Teuchos::VERB_EXTREME);
     *debug_out << "xpn0 = " << std::endl;
     xpn0->describe(*debug_out,Teuchos::VERB_EXTREME);
-    debug_out->popTab();
-    *debug_out << "}" << endl;
-    debug_out->popLinePrefix();
   }
 #endif // Rythmos_DEBUG
 }
@@ -718,28 +698,23 @@ void ImplicitBDFStepper<Scalar>::updateHistory()
   // Save Newton correction for potential order increase on next step.
   if (usedOrder < maxOrder)  
   {
-    assign( &*xHistory[usedOrder+1], *delta );
+    assign( &*xHistory[usedOrder+1], *ee );
   }
   // Update history arrays
-  Vp_V( &*xHistory[usedOrder], *delta );
+  Vp_V( &*xHistory[usedOrder], *ee );
   for (int j=usedOrder-1;j>=0;j--) 
   {
     Vp_V( &*xHistory[j], *xHistory[j+1] );
   }
 #ifdef Rythmos_DEBUG
+  Teuchos::OSTab ostab(debug_out,1,"updateHistory");
   if (debugLevel > 1)
   {
-    debug_out->pushLinePrefix("updateHistory");
-    *debug_out << "{" << endl;
-    debug_out->pushTab();
     for (int i=0;i<max(2,maxOrder);++i)
     {
       *debug_out << "xHistory[" << i << "] = " << endl;
       xHistory[i]->describe(*debug_out,Teuchos::VERB_EXTREME);
     }
-    debug_out->popTab();
-    *debug_out << "}" << endl;
-    debug_out->popLinePrefix();
   }
 #endif // Rythmos_DEBUG
 
@@ -760,11 +735,9 @@ void ImplicitBDFStepper<Scalar>::restoreHistory()
     psi[i-1] = psi[i] - hh;
   }
 #ifdef Rythmos_DEBUG
+  Teuchos::OSTab ostab(debug_out,1,"restoreHistory");
   if (debugLevel > 1)
   {
-    debug_out->pushLinePrefix("restorHistory");
-    *debug_out << "{" << endl;
-    debug_out->pushTab();
     for (int i=0;i<maxOrder;++i)
       *debug_out << "psi[" << i << "] = " << psi[i] << endl;
     for (int i=0;i<maxOrder;++i)
@@ -772,9 +745,6 @@ void ImplicitBDFStepper<Scalar>::restoreHistory()
       *debug_out << "xHistory[" << i << "] = " << endl;
       xHistory[i]->describe(*debug_out,Teuchos::VERB_EXTREME);
     }
-    debug_out->popTab();
-    *debug_out << "}" << endl;
-    debug_out->popLinePrefix();
   }
 #endif // Rythmos_DEBUG
 } 
@@ -821,11 +791,9 @@ void ImplicitBDFStepper<Scalar>::updateCoeffs()
     ck = max(ck,alpha[currentOrder]);
   }
 #ifdef Rythmos_DEBUG
+  Teuchos::OSTab ostab(debug_out,1,"updateCoeffs");
   if (debugLevel > 1)
   {
-    debug_out->pushLinePrefix("updateCoeffs");
-    *debug_out << "{" << endl;
-    debug_out->pushTab();
     for (int i=0;i<=maxOrder;++i)
     {
       *debug_out << "alpha[" << i << "] = " << alpha[i] << endl;
@@ -838,9 +806,6 @@ void ImplicitBDFStepper<Scalar>::updateCoeffs()
       *debug_out << "cj = " << cj << endl;
       *debug_out << "ck = " << ck << endl;
     }
-    debug_out->popTab();
-    *debug_out << "}" << endl;
-    debug_out->popLinePrefix();
   }
 #endif // Rythmos_DEBUG
 
@@ -881,15 +846,10 @@ void ImplicitBDFStepper<Scalar>::initialize()
   }
   hh = currentTimeStep;
 #ifdef Rythmos_DEBUG
+  Teuchos::OSTab ostab(debug_out,1,"initialize");
   if (debugLevel > 1)
   {
-    debug_out->pushLinePrefix("initialize");
-    *debug_out << "{" << endl;
-    debug_out->pushTab();
     *debug_out << "hh = " << hh << endl;
-    debug_out->popTab();
-    *debug_out << "}" << endl;
-    debug_out->popLinePrefix();
   }
 #endif // Rythmos_DEBUG
 
@@ -919,27 +879,25 @@ Scalar ImplicitBDFStepper<Scalar>::checkReduceOrder()
 //    currentOrder, sigma, dsDae.newtonCorrectionPtr, dsDae.qNewtonCorrectionPtr,
 //    dsDae.errWtVecPtr, dsDae.qErrWtVecPtr, dsDae.xHistory, dsDae.qHistory
 
-  Scalar dnorm = WRMSNorm(*errWtVec,*delta);
-  Ek = sigma[currentOrder]*dnorm;
+  Scalar enorm = WRMSNorm(*errWtVec,*ee);
+  Ek = sigma[currentOrder]*enorm;
   Tk = Scalar(currentOrder+1)*Ek;
   Est = Ek;
   newOrder = currentOrder;
 #ifdef Rythmos_DEBUG
+  Teuchos::OSTab ostab(debug_out,1,"checkReduceOrder");
   if (debugLevel > 1)
   {
-    debug_out->pushLinePrefix("checkReduceOrder");
-    *debug_out << "{" << endl;
-    debug_out->pushTab();
-    *debug_out << "currentOrder = " << currentOrder << endl;
-    *debug_out << "Ek = " << Ek << endl;
-    *debug_out << "Tk = " << Tk << endl;
+    *debug_out << "currentOrder = " << currentOrder << std::endl;
+    *debug_out << "Ek = " << Ek << std::endl;
+    *debug_out << "Tk = " << Tk << std::endl;
+    *debug_out << "enorm = " << enorm << std::endl;
   }
 #endif // Rythmos_DEBUG
   if (currentOrder>1)
   {
-    V_VpV(&*delta,*xHistory[currentOrder],*delta);
-    dnorm = WRMSNorm(*errWtVec,*delta);
-    Ekm1 = sigma[currentOrder-1]*dnorm;
+    V_VpV(&*delta,*xHistory[currentOrder],*ee);
+    Ekm1 = sigma[currentOrder-1]*WRMSNorm(*errWtVec,*delta);
     Tkm1 = currentOrder*Ekm1;
 #ifdef Rythmos_DEBUG
     if (debugLevel > 1)
@@ -951,8 +909,7 @@ Scalar ImplicitBDFStepper<Scalar>::checkReduceOrder()
     if (currentOrder>2)
     {
       Vp_V(&*delta,*xHistory[currentOrder-1]);
-      dnorm = WRMSNorm(*errWtVec,*delta);
-      Ekm2 = sigma[currentOrder-2]*dnorm;
+      Ekm2 = sigma[currentOrder-2]*WRMSNorm(*errWtVec,*delta);
       Tkm2 = (currentOrder-1)*Ekm2;
 #ifdef Rythmos_DEBUG
       if (debugLevel > 1)
@@ -978,12 +935,9 @@ Scalar ImplicitBDFStepper<Scalar>::checkReduceOrder()
   {
     *debug_out << "Est = " << Est << endl;
     *debug_out << "newOrder= " << newOrder << endl;
-    debug_out->popTab();
-    *debug_out << "}" << endl;
-    debug_out->popLinePrefix();
   }
 #endif // Rythmos_DEBUG
-  return(dnorm);
+  return(enorm);
 }
 
 template<class Scalar>
@@ -999,7 +953,7 @@ BDFstatusFlag ImplicitBDFStepper<Scalar>::rejectStep()
 //    currentTimeStepSum, nextTimePt
 
 // This routine reads but does not change the following variables:
-//    stepAttemptStatus, r_factor, r_safety, Est, r_fudge, r_min, r_max,
+//    r_factor, r_safety, Est, r_fudge, r_min, r_max,
 //    minTimeStep, maxTimeStep, time, stopTime 
 
   // Only update the time step if we are NOT running constant stepsize.
@@ -1009,11 +963,9 @@ BDFstatusFlag ImplicitBDFStepper<Scalar>::rejectStep()
   Scalar rr = 1.0; // step size ratio = new step / old step
   nef++;
 #ifdef Rythmos_DEBUG
+  Teuchos::OSTab ostab(debug_out,1,"rejectStep");
   if (debugLevel > 1)
   {
-    debug_out->pushLinePrefix("rejectStep");
-    *debug_out << "{" << endl;
-    debug_out->pushTab();
     *debug_out << "adjustStep = " << adjustStep << endl;
     *debug_out << "nef = " << nef << endl;
   }
@@ -1022,17 +974,9 @@ BDFstatusFlag ImplicitBDFStepper<Scalar>::rejectStep()
   {
     cerr << "Rythmos_Stepper_ImplicitBDF::rejectStep:  " 
           << "  Maximum number of local error test failures.  " << endl;
-#ifdef Rythmos_DEBUG
-    if (debugLevel > 1)
-    {
-      debug_out->popTab();
-      *debug_out << "}" << endl;
-      debug_out->popLinePrefix();
-    }
-#endif // Rythmos_DEBUG
     return(REP_ERR_FAIL);
   }
-  if ((stepAttemptStatus == false) && (adjustStep))
+  if (adjustStep)
   {
     initialPhase = false;
 #ifdef Rythmos_DEBUG
@@ -1101,7 +1045,7 @@ BDFstatusFlag ImplicitBDFStepper<Scalar>::rejectStep()
 #endif // Rythmos_DEBUG
     }
   }
-  else if ((stepAttemptStatus == false) & (!adjustStep))
+  else if (!adjustStep)
   {
     cerr << "Rythmos_Stepper_ImplicitBDF::rejectStep:  "
          << "Warning: Local error test failed with constant step-size." << endl;
@@ -1140,9 +1084,6 @@ BDFstatusFlag ImplicitBDFStepper<Scalar>::rejectStep()
   if (debugLevel > 1)
   {
     *debug_out << "hh = " << hh << endl;
-    debug_out->popTab();
-    *debug_out << "}" << endl;
-    debug_out->popLinePrefix();
   }
 #endif // Rythmos_DEBUG
   return(return_status);
@@ -1157,13 +1098,11 @@ void ImplicitBDFStepper<Scalar>::completeStep()
   nef = 0;
   time += hh;
 #ifdef Rythmos_DEBUG
+  Teuchos::OSTab ostab(debug_out,1,"completeStep");
   if (debugLevel > 1)
   {
-    debug_out->pushLinePrefix("completeStep");
-    *debug_out << "{" << endl;
-    debug_out->pushTab();
     *debug_out << "numberOfSteps = " << numberOfSteps << endl;
-    *debug_out << "nef = " << numberOfSteps << endl;
+    *debug_out << "nef = " << nef << endl;
     *debug_out << "time = " << time << endl;
   }
 #endif // Rythmos_DEBUG
@@ -1218,16 +1157,15 @@ void ImplicitBDFStepper<Scalar>::completeStep()
     }
     else // consider changing the order 
     {
-      V_StVpStV(&*delta,ST::one(),*delta,Scalar(-ST::one()),*xHistory[currentOrder+1]);
-      Scalar dnorm = WRMSNorm(*errWtVec,*delta);
-      Tkp1 = dnorm;
+      V_StVpStV(&*delta,ST::one(),*ee,Scalar(-ST::one()),*xHistory[currentOrder+1]);
+      Tkp1 = WRMSNorm(*errWtVec,*delta);
       Ekp1 = Tkp1/(currentOrder+2);
 #ifdef Rythmos_DEBUG
       if (debugLevel > 1)
       {
         *debug_out << "delta = " << endl;
         delta->describe(*debug_out,Teuchos::VERB_EXTREME);
-        *debug_out << "Tkp1 = ||delta||_WRMS = " << dnorm << endl;
+        *debug_out << "Tkp1 = ||delta||_WRMS = " << Tkp1 << endl;
         *debug_out << "Ekp1 = " << Ekp1 << endl;
       }
 #endif // Rythmos_DEBUG
@@ -1322,9 +1260,6 @@ void ImplicitBDFStepper<Scalar>::completeStep()
   if (debugLevel > 1)
   {
     *debug_out << "hh = " << hh << endl;
-    debug_out->popTab();
-    *debug_out << "}" << endl;
-    debug_out->popLinePrefix();
   }
 #endif // Rythmos_DEBUG
 }
@@ -1402,4 +1337,4 @@ int ImplicitBDFStepper<Scalar>::GetOrder() const
 
 } // namespace Rythmos
 
-#endif //Rythmos_STEPPER_IMPLICITBDF_H
+#endif //Rythmos_IMPLICITBDF_STEPPER_H

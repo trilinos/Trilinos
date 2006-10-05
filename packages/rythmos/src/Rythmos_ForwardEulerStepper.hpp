@@ -26,8 +26,8 @@
 // ***********************************************************************
 //@HEADER
 
-#ifndef Rythmos_STEPPER_FORWARDEULER_H
-#define Rythmos_STEPPER_FORWARDEULER_H
+#ifndef Rythmos_FORWARDEULER_STEPPER_H
+#define Rythmos_FORWARDEULER_STEPPER_H
 
 #include "Rythmos_Stepper.hpp"
 #include "Teuchos_RefCountPtr.hpp"
@@ -255,4 +255,4 @@ int ForwardEulerStepper<Scalar>::GetOrder() const
 
 } // namespace Rythmos
 
-#endif //Rythmos_STEPPER_FORWARDEULER_H
+#endif //Rythmos_FORWARDEULER_STEPPER_H

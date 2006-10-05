@@ -43,14 +43,14 @@
  *
  * ToDo: Finish Documentation!
  */
-class ExampleApplication : public EpetraExt::ModelEvaluator {
+class ExampleApplication1Dfem : public EpetraExt::ModelEvaluator {
 public:
 
   // Constructor
-  ExampleApplication(Teuchos::ParameterList &params);
+  ExampleApplication1Dfem(Teuchos::RefCountPtr<Epetra_Comm> &epetra_comm_ptr, Teuchos::ParameterList &params);
 
   // Initialization
-  void initialize(Teuchos::ParameterList &params);
+  void initialize(Teuchos::RefCountPtr<Epetra_Comm> &epetra_comm_ptr, Teuchos::ParameterList &params);
 
   /** \name Overridden from EpetraExt::ModelEvaluator . */
   //@{

@@ -12,98 +12,176 @@
 # Default run, Explicit Runge-Kutta 4 stage
 (FRAMEWORK,INSTALL) {
     TESTS = ../example/basicExample/basicExample.exe;
-    ARGS = --verbose;
+    ARGS = --verbose --echo-command-line;
     COMM = SERIAL;
 }
 
 # Scalar Forward Euler
 (FRAMEWORK,INSTALL) {
     TESTS = ../example/basicExample/basicExample.exe;
-    ARGS = --method=FE --maxerror=1e-1 --verbose;
+    ARGS = --method=FE --maxerror=1e-1 --verbose --echo-command-line;
     COMM = SERIAL;
 }
 
 # Scalar Backward Euler
 (FRAMEWORK,INSTALL) {
     TESTS = ../example/basicExample/basicExample.exe;
-    ARGS = --method=BE --maxerror=1e-1 --verbose;
+    ARGS = --method=BE --maxerror=1e-1 --verbose --echo-command-line;
+    COMM = SERIAL;
+}
+
+# Scalar ImplicitBDF with forcing term
+(FRAMEWORK,INSTALL) {
+    TESTS = ../example/basicExample/basicExample.exe;
+    ARGS = --method=BDF --numelements=1 --x0=1 --lambda_fit=linear --lambda_min=-0.3 --lambda_max=-0.3 --stepmethod=variable --T=1 --force_coeff=31.4159 --maxorder=1 --reltol=1e-6 --abstol=1e-6 --maxerror=1e-3  --verbose --echo-command-line;
     COMM = SERIAL;
 }
 
 # Vector Explicit Runge-Kutta 4 stage
 (FRAMEWORK,INSTALL) {
     TESTS = ../example/basicExample/basicExample.exe;
-    ARGS = --numelements=10 --verbose;
+    ARGS = --numelements=10 --verbose --echo-command-line;
     COMM = SERIAL;
 }
 
 # Vector Forward Euler
 (FRAMEWORK,INSTALL) {
     TESTS = ../example/basicExample/basicExample.exe;
-    ARGS = --method=FE --maxerror=1e-1 --numelements=10 --verbose;
+    ARGS = --method=FE --maxerror=1e-1 --numelements=10 --verbose --echo-command-line;
     COMM = SERIAL;
 }
 
 # Vector Backward Euler
 (FRAMEWORK,INSTALL) {
     TESTS = ../example/basicExample/basicExample.exe;
-    ARGS = --method=BE --maxerror=1e-1 --numelements=10 --verbose;
+    ARGS = --method=BE --maxerror=1e-1 --numelements=10 --verbose --echo-command-line;
     COMM = SERIAL;
 }
 
 # Scalar Backward Euler using Amesos
 (FRAMEWORK,INSTALL) {
     TESTS = ../example/basicExample/basicExample.exe;
-    ARGS = --method=BE --maxerror=1e-1 --numelements=1 --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Amesos\"/></ParameterList>" --linear-solver-params-used-file=lowsf.amesos.used.xml;
+    ARGS = --method=BE --maxerror=1e-1 --numelements=1 --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Amesos\"/></ParameterList>" --linear-solver-params-used-file=lowsf.amesos.used.xml --echo-command-line;
     COMM = SERIAL;
 }
 
 # Scalar Backward Euler using AztecOO
 (FRAMEWORK,INSTALL) {
     TESTS = ../example/basicExample/basicExample.exe;
-    ARGS = --method=BE --maxerror=1e-1 --numelements=1 --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"AztecOO\"/><ParameterList name =\"Linear Solver Types\"><ParameterList name=\"AztecOO\"><ParameterList name=\"Forward Solve\"><Parameter name=\"Tolerance\" type=\"double\" value=\"1e-12\"/></ParameterList></ParameterList></ParameterList></ParameterList>" --linear-solver-params-used-file=lowsf.aztecoo.used.xml;
+    ARGS = --method=BE --maxerror=1e-1 --numelements=1 --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"AztecOO\"/><ParameterList name =\"Linear Solver Types\"><ParameterList name=\"AztecOO\"><ParameterList name=\"Forward Solve\"><Parameter name=\"Tolerance\" type=\"double\" value=\"1e-12\"/></ParameterList></ParameterList></ParameterList></ParameterList>" --linear-solver-params-used-file=lowsf.aztecoo.used.xml --echo-command-line;
     COMM = SERIAL;
 }
 
 # Vector Backward Euler using Amesos
 (FRAMEWORK,INSTALL) {
     TESTS = ../example/basicExample/basicExample.exe;
-    ARGS = --method=BE --maxerror=1e-1 --numelements=10 --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Amesos\"/></ParameterList>" --linear-solver-params-used-file=lowsf.amesos.used.xml;
+    ARGS = --method=BE --maxerror=1e-1 --numelements=10 --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Amesos\"/></ParameterList>" --linear-solver-params-used-file=lowsf.amesos.used.xml --echo-command-line;
     COMM = SERIAL;
 }
 
 # Vector Backward Euler using AztecOO
 (FRAMEWORK,INSTALL) {
     TESTS = ../example/basicExample/basicExample.exe;
-    ARGS = --method=BE --maxerror=1e-1 --numelements=10 --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"AztecOO\"/><ParameterList name =\"Linear Solver Types\"><ParameterList name=\"AztecOO\"><ParameterList name=\"Forward Solve\"><Parameter name=\"Tolerance\" type=\"double\" value=\"1e-12\"/></ParameterList></ParameterList></ParameterList></ParameterList>" --linear-solver-params-used-file=lowsf.aztecoo.used.xml;
-    COMM = SERIAL;
+    ARGS = --method=BE --maxerror=1e-1 --numelements=100 --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"AztecOO\"/><ParameterList name =\"Linear Solver Types\"><ParameterList name=\"AztecOO\"><ParameterList name=\"Forward Solve\"><Parameter name=\"Tolerance\" type=\"double\" value=\"1e-12\"/></ParameterList></ParameterList></ParameterList></ParameterList>" --linear-solver-params-used-file=lowsf.aztecoo.used.xml --echo-command-line;
+    COMM = SERIAL,MPI;
 }
+
+# Vector Backward Euler using Belos
+# Belos is not part of the Trilinos 7.0 release
+# So I'm removing testing from the release branch 
+#(FRAMEWORK,INSTALL) {
+#    TESTS = ../example/basicExample/basicExample.exe;
+#    ARGS = --method=BE --maxerror=1e-1 --numelements=10 --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Belos\"/><ParameterList name=\"Linear Solver Types\"><ParameterList name=\"Belos\"><Parameter name=\"Default Rel Res Norm\" type=\"double\" value=\"1e-12\"/></ParameterList></ParameterList></ParameterList>" --linear-solver-params-used-file=lowsf.belos.used.xml;
+#    COMM = SERIAL,MPI;
+#}
 
 # Vector Forward Euler with same accuracy as ERK
 (FRAMEWORK,INSTALL) {
     TESTS = ../example/basicExample/basicExample.exe;
-    ARGS = --numelements=10 --method=FE --T=0.1 --numsteps=5000 --verbose;
-    COMM = SERIAL;
+    ARGS = --numelements=100 --method=FE --T=0.1 --numsteps=5000 --verbose --echo-command-line;
+    COMM = SERIAL,MPI;
 }
 
 # Vector Backward Euler with same accuracy as ERK
 (FRAMEWORK,INSTALL) {
     TESTS = ../example/basicExample/basicExample.exe;
-    ARGS = --numelements=10 --method=BE --T=0.1 --numsteps=5000 --verbose;
+    ARGS = --numelements=10 --method=BE --T=0.1 --numsteps=5000 --verbose --echo-command-line;
     COMM = SERIAL;
 }
+
+# Vector Implicit BDF
+(FRAMEWORK,INSTALL) {
+    TESTS = ../example/basicExample/basicExample.exe;
+    ARGS = --numelements=10 --method=BDF --stepmethod=variable --reltol=1e-6 --abstol=1e-6 --T=0.1 --maxerror=1e-4 --verbose --echo-command-line;
+    COMM = SERIAL;
+}
+
+# Vector Backward Euler
+(FRAMEWORK,INSTALL) {
+    TESTS = ../example/basicExample/basicExample.exe;
+    ARGS = --method=BDF --maxorder=1 --maxerror=1e-1 --numelements=10 --verbose --echo-command-line;
+    COMM = SERIAL;
+}
+
+# Vector Implicit BDF with AztecOO
+(FRAMEWORK,INSTALL) {
+    TESTS = ../example/basicExample/basicExample.exe;
+    ARGS = --numelements=100 --method=BDF --stepmethod=variable --reltol=1e-6 --abstol=1e-6 --T=0.1 --maxerror=1e-4 --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"AztecOO\"/><ParameterList name =\"Linear Solver Types\"><ParameterList name=\"AztecOO\"><ParameterList name=\"Forward Solve\"><Parameter name=\"Tolerance\" type=\"double\" value=\"1e-12\"/></ParameterList></ParameterList></ParameterList></ParameterList>" --linear-solver-params-used-file=lowsf.aztecoo.used.xml --echo-command-line;
+    COMM = SERIAL,MPI;
+}
+
+# Vector Implicit BDF with Belos
+# Belos is not part of the Trilinos 7.0 release
+# So I'm removing testing from the release branch 
+#(FRAMEWORK,INSTALL) {
+#    TESTS = ../example/basicExample/basicExample.exe;
+#    ARGS = --numelements=10 --method=BDF --stepmethod=variable --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Belos\"/><ParameterList name=\"Linear Solver Types\"><ParameterList name=\"Belos\"><Parameter name=\"Default Rel Res Norm\" type=\"double\" value=\"1e-12\"/></ParameterList></ParameterList></ParameterList>" --linear-solver-params-used-file=lowsf.belos.used.xml;
+#    COMM = SERIAL,MPI;
+#}
 
 # Vector 1DfemTransient with Backward Euler 
 (FRAMEWORK,INSTALL) {
     TESTS = ../example/epetra/1Dfem/1DfemTransient.exe;
-    ARGS = --verbose;
+    ARGS = --verbose --echo-command-line;
     COMM = SERIAL;
 }
+
+# Vector 1DfemTransient with Backward Euler using AztecOO
+(FRAMEWORK,INSTALL) {
+    TESTS = ../example/epetra/1Dfem/1DfemTransient.exe;
+    ARGS = --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"AztecOO\"/><ParameterList name =\"Linear Solver Types\"><ParameterList name=\"AztecOO\"><ParameterList name=\"Forward Solve\"><Parameter name=\"Tolerance\" type=\"double\" value=\"1e-12\"/></ParameterList></ParameterList></ParameterList></ParameterList>" --linear-solver-params-used-file=lowsf.aztecoo.used.xml --echo-command-line;
+    COMM = SERIAL,MPI;
+}
+
+# Vector 1DfemTransient with Backward Euler using Belos
+# Belos is not part of the Trilinos 7.0 release
+# So I'm removing testing from the release branch 
+#(FRAMEWORK,INSTALL) {
+#    TESTS = ../example/epetra/1Dfem/1DfemTransient.exe;
+#    ARGS = --verbose --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Belos\"/><ParameterList name=\"Linear Solver Types\"><ParameterList name=\"Belos\"><Parameter name=\"Default Rel Res Norm\" type=\"double\" value=\"1e-12\"/></ParameterList></ParameterList></ParameterList>" --linear-solver-params-used-file=lowsf.belos.used.xml;
+#    COMM = SERIAL,MPI;
+#}
 
 # Vector 1DfemTransient with ImplicitBDF
 (FRAMEWORK,INSTALL) {
     TESTS = ../example/epetra/1Dfem/1DfemTransient.exe;
-    ARGS = --verbose --method=BDF;
+    ARGS = --verbose --method=BDF --echo-command-line;
     COMM = SERIAL;
 }
+
+# Vector 1DfemTransient with ImplicitBDF with AztecOO
+(FRAMEWORK,INSTALL) {
+    TESTS = ../example/epetra/1Dfem/1DfemTransient.exe;
+    ARGS = --verbose --method=BDF --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"AztecOO\"/><ParameterList name =\"Linear Solver Types\"><ParameterList name=\"AztecOO\"><ParameterList name=\"Forward Solve\"><Parameter name=\"Tolerance\" type=\"double\" value=\"1e-12\"/></ParameterList></ParameterList></ParameterList></ParameterList>" --linear-solver-params-used-file=lowsf.aztecoo.used.xml --echo-command-line;
+    COMM = SERIAL,MPI;
+}
+
+# Vector 1DfemTransient with ImplicitBDF with Belos
+# Belos is not part of the Trilinos 7.0 release
+# So I'm removing testing from the release branch 
+#(FRAMEWORK,INSTALL) {
+#    TESTS = ../example/epetra/1Dfem/1DfemTransient.exe;
+#    ARGS = --verbose --method=BDF --extra-linear-solver-params="<ParameterList><Parameter name=\"Linear Solver Type\" type=\"string\" value=\"Belos\"/><ParameterList name=\"Linear Solver Types\"><ParameterList name=\"Belos\"><Parameter name=\"Default Rel Res Norm\" type=\"double\" value=\"1e-12\"/></ParameterList></ParameterList></ParameterList>" --linear-solver-params-used-file=lowsf.belos.used.xml;
+#    COMM = SERIAL,MPI;
+#}
 

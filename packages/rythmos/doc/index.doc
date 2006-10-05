@@ -1,18 +1,134 @@
-/*! \mainpage Rythmos : Time integration and sensitivities
+/** \mainpage Rythmos : Transient Integration of Differential Equations
 
-<b>Warning!</b> This is package is majorly under construction.  Do not even
-consider using Rythmos unless you talk with Todd Coffey (tscoffe@sandia.gov).
 
-*/
+%Rythmos is a transient integrator for ordinary differential equations and
+differential-algebraic equations with support for explicit, implicit, one-step
+and multi-step algorithms.  The fundamental design of %Rythmos is aimed at
+supporting operator-split algorithms, multi-physics applications, block linear
+algebra, and adjoint integration. 
 
-/** \example cxx_main.cpp
+\section rythmos_software Time integration software
 
-*/
+<ul>
 
-/** \example ExampleApplication.hpp
+<li> <tt>Rythmos::ImplicitBDFStepper</tt> provides a re-implementation of the
+algorithms in the <a href="http://www.llnl.gov/casc/sundials/">LLNL
+Sundials</a> code 
+<a href="http://www.llnl.gov/casc/sundials/description/description.html#descr_ida">IDA</a>.
+This is an implicit BDF integrator for DAEs which uses variable step-sizes and
+variable-orders first through fifth.
 
-*/
+<li> <tt>Rythmos::ExplicitRKStepper</tt> provides a four stage fourth order
+explicit RK stepper with fixed step-sizes provided by the application.
 
-/** \example ExampleApplication.cpp
+<li> <tt>Rythmos::ForwardEulerStepper</tt> provides the explicit forward Euler
+algorithm with fixed step-sizes provided by the application.
+
+<li> <tt>Rythmos::BackwardEulerStepper</tt> provides the implicit backward
+Euler algorithm with fixed step-sizes provided by the application.  This class
+supports ODEs and DAEs.
+
+</ul>
+
+\section rythmos_examples_sec Rythmos Examples
+
+<ul>
+
+<li> <tt>ExampleApplication</tt>: This is the classic
+linear differential equation \f$\frac{dx}{dt} = \lambda x\f$.
+
+<li> <tt>ExampleApplication1Dfem</tt>: This is a one
+dimensional finite element problem from NOX that solves: \f$\frac{\partial
+u^2}{\partial x^2} -ku^2=0\f$.
+
+</ul>
+
+\section rythmos_dependencies_sec Other Trilinos packages that Rythmos depends on
+
+%Rythmos is dependent on the following Trilinos packages:
+
+<ul>
+
+<li> <b><a href="../../../thyra/doc/html/index.html">Thyra</a></b>: This
+package provides interfaces and support code which includes the linear algebra
+operations, linear solve operations, nonlinear solve operations and the
+ModelEvaluator interface for applications.  %Rythmos is basically build
+directly on top of %Thyra.
+
+<li> <b><a href="../../../rtop/doc/html/index.html">RTOp</a></b>: This package
+supplies the basic interfaces for vector reduction/transformation operators
+used by %Thyra.
+
+<li> <b><a href="../../../teuchos/doc/html/index.html">Teuchos</a></b>: This
+package provides basic utility classes such as <tt>Teuchos::RefCountPtr</tt>
+and <tt>Teuchos::ParameterList</tt>.
+
+</ul>
+
+\section rythmos_configuration_sec Configuration of Rythmos
+
+%Rythmos' configure script responds to several top level Trilinos options.
+
+The most important configuration option is:
+
+<ul>
+
+<li> <b><tt>--enable-rythmos</tt></b>: This causes %Rythmos and all of its
+dependent packages to be built.
+
+</ul>
+
+If you want to build the examples, you need to enable several other packages
+including: <a href="../../../epetraext/doc/html/index.html">EpetraExt</a>, 
+<a href="../../../nox/doc/html/index.html">NOX</a>,
+<a href="../../../amesos/doc/html/index.html">Amesos</a>, 
+<a href="../../../aztecoo/doc/html/index.html">AztecOO</a>, 
+<a href="../../../ifpack/doc/html/index.html">IFPACK</a>, and 
+<a href="../../../stratimikos/doc/html/index.html">Stratimikos</a>:
+
+<ul>
+
+<li><b><tt>--enable-epetraext</tt></b>: For the 
+<tt>EpetraExt::ModelEvaluator</tt> interface.  This also pulls in 
+<a href="../../../epetra/doc/html/index.html">Epetra</a>.
+
+<li><b><tt>--enable-epetraext-thyra</tt></b>: For the %Thyra adaptor <tt>Thyra::EpetraModelEvaluator</tt> between the 
+<tt>Thyra::ModelEvaluator</tt> and <tt>EpetraExt::ModelEvaluator</tt>.
+
+<li><b><tt>--enable-nox</tt></b>: This is for the 1DfemTransient example which
+comes from %NOX.
+
+<li><b><tt>--enable-nox-epetra</tt></b>: This enables the Epetra interface in %NOX.
+
+<li><b><tt>--enable-amesos</tt></b>: This enables direct sparse linear solvers for
+implicit methods.
+
+<li><b><tt>--enable-aztecoo</tt></b>: This enables iterative linear solvers for implicit
+methods.
+
+<li><b><tt>--enable-ifpack</tt></b>: This enables preconditioners for %AztecOO.
+
+<li><b><tt>--enable-stratimikos</tt></b>: This is the interface the examples
+use to talk to %Amesos and %AztecOO.
+
+</ul>
+
+\section rythmos_contributors_sec Contributors to the Rythmos Package
+
+The authors of the %Rythmos package, are:
+
+<ul>
+<li> Todd Coffey (tscoffe@sandia.gov): %Rythmos lead developer, %Thyra developer, <a href="http://www.cs.sandia.gov/Xyce/">Xyce</a> developer
+<li> Roscoe Bartlett (rabartl@sandia.gov): %Thyra and <a href="../../../moocho/doc/html/index.html">MOOCHO</a> lead developer
+</ul>
+
+And grateful acknowledgement of very helpful insight at just the right times go to:
+
+<ul>
+<li> Heidi Thornquist (hkthorn@sandia.gov): Belos, <a href="../../../anasazi/doc/html/index.html">Anasazi</a>, and %Teuchos lead developer, %Thyra developer
+<li> Eric Phipps (etphipp@sandia.gov) : <a href="../../../nox/doc/html/index.html">LOCA</a> lead developer, %Thyra developer
+<li> Chris Baker (cgbaker@sandia.gov): %Belos and <a href="../../../anasazi/doc/html/index.html">Anasazi</a> developer
+
+</ul>
 
 */

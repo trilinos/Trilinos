@@ -46,7 +46,7 @@ class ExampleApplication : public EpetraExt::ModelEvaluator {
 public:
 
   // Constructor
-  ExampleApplication(Teuchos::ParameterList &params);
+  ExampleApplication(Teuchos::RefCountPtr<Epetra_Comm> &epetra_comm_ptr, Teuchos::ParameterList &params);
   // return ODE decay coefficient
   Teuchos::RefCountPtr<const Epetra_Vector> get_coeff() const;
   //
@@ -71,6 +71,8 @@ public:
   OutArgs createOutArgs() const;
   /** \brief . */
   void evalModel( const InArgs& inArgs, const OutArgs& outArgs ) const;
+  /** \brief . */
+  double evalR(const double& t, const double& lambda, const double& s) const;
 
   //@}
 
@@ -88,6 +90,7 @@ private:
     // Coefficients for ODE
     double lambda_min_;
     double lambda_max_;
+    double coeff_s_; // Coefficient for forcing term
     std::string lambda_fit_;
     Teuchos::RefCountPtr<Epetra_Vector> lambda_ptr_;
     // Constant initial condition for the problem:

@@ -1,4 +1,5 @@
 
+## Required dependency on thyra and teuchos (teuchos is included by thyra)
 include @abs_top_builddir@/../thyra/Makefile.export.thyra
 
 # Note: the order of the includes here _should_ not be important, unless something is messed up.
@@ -7,7 +8,7 @@ _RYTHMOS_INCLUDES = \
   -I@abs_top_builddir@/src \
   $(THYRA_INCLUDES)
 
-# Note, the order of the library depandancies is critical (higher level libraries from left to right)
+# Note, the order of the library dependencies is critical (higher level libraries from left to right)
 _RYTHMOS_LIBS = \
   @LDFLAGS@ -L@abs_top_builddir@/src -lrythmos $(THYRA_LIBS) @LIBS@ @FLIBS@ 
 
@@ -21,5 +22,9 @@ _RYTHMOS_LIBS = \
 #
 
 @ENABLE_EPETRAEXT_THYRA_TRUE@include @abs_top_builddir@/../epetraext/Makefile.export.epetraext
-@ENABLE_RYTHMOS_STRATIMIKOS_TRUE@include @abs_top_builddir@/../stratimikos/Makefile.export.stratimikos
-@ENABLE_RYTHMOS_NOX_TRUE@@ENABLE_RYTHMOS_STRATIMIKOS_TRUE@include @abs_top_builddir@/../nox/Makefile.export.nox
+#@ENABLE_RYTHMOS_STRATIMIKOS_TRUE@include @abs_top_builddir@/../stratimikos/Makefile.export.stratimikos
+#@ENABLE_RYTHMOS_NOX_TRUE@@ENABLE_RYTHMOS_STRATIMIKOS_TRUE@include @abs_top_builddir@/../nox/Makefile.export.nox
+
+@BUILD_EXAMPLES_TRUE@include @abs_top_builddir@/../epetraext/Makefile.export.epetraext
+@BUILD_EXAMPLES_TRUE@@ENABLE_RYTHMOS_NOX_TRUE@@ENABLE_NOX_EPETRA_TRUE@include @abs_top_builddir@/../nox/Makefile.export.nox
+@BUILD_EXAMPLES_TRUE@include @abs_top_builddir@/../stratimikos/Makefile.export.stratimikos

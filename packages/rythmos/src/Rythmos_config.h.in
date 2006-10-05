@@ -38,9 +38,6 @@
 /* Define if want to build with epetraext enabled */
 #undef HAVE_EPETRAEXT_THYRA
 
-/* Define if want to build examples */
-#undef HAVE_EXAMPLES
-
 /* Define if you want to build export makefiles. */
 #undef HAVE_EXPORT_MAKEFILES
 
@@ -80,11 +77,20 @@
 /* define if the compiler implements namespaces */
 #undef HAVE_NAMESPACES
 
-/* Define if want to build with newp_swahili enabled */
-#undef HAVE_NEWP_SWAHILI
-
 /* define if the compiler accepts the new for scoping rules */
 #undef HAVE_NEW_FOR_SCOPING
+
+/* Define if want to build with nox enabled */
+#undef HAVE_NOX_EPETRA
+
+/* Define if want to build with rythmos enabled */
+#undef HAVE_RYTHMOS_AMESOS
+
+/* Define if want to build with rythmos enabled */
+#undef HAVE_RYTHMOS_AZTECOO
+
+/* Define if want to build with rythmos enabled */
+#undef HAVE_RYTHMOS_EPETRAEXT
 
 /* Define if want to build rythmos-examples */
 #undef HAVE_RYTHMOS_EXAMPLES
@@ -127,9 +133,6 @@
 
 /* Define to 1 if you have the <sys/types.h> header file. */
 #undef HAVE_SYS_TYPES_H
-
-/* Define if want to build tests */
-#undef HAVE_TESTS
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H

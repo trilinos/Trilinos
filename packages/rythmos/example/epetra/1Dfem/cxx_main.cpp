@@ -31,7 +31,7 @@
 #include "mpi.h"
 #else
 #include "Epetra_SerialComm.h"
-#endif
+#endif // HAVE_MPI
 
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
@@ -42,10 +42,10 @@
 // Includes for Rythmos:
 #include "Rythmos_ConfigDefs.h"
 //#include "ExampleApplicationRythmosInterface.hpp"
-#include "Rythmos_Stepper_ForwardEuler.hpp"
-#include "Rythmos_Stepper_BackwardEuler.hpp"
-#include "Rythmos_Stepper_ExplicitRK.hpp"
-#include "Rythmos_Stepper_ImplicitBDF.hpp"
+#include "Rythmos_ForwardEulerStepper.hpp"
+#include "Rythmos_BackwardEulerStepper.hpp"
+#include "Rythmos_ExplicitRKStepper.hpp"
+#include "Rythmos_ImplicitBDFStepper.hpp"
 
 // Includes for Thyra:
 #include "Thyra_EpetraThyraWrappers.hpp"
@@ -55,8 +55,10 @@
 #include "Thyra_DiagonalEpetraLinearOpWithSolveFactory.hpp"
 #include "Thyra_TestingTools.hpp"
 
-// Includes for Amesos:
-#include "Thyra_AmesosLinearOpWithSolveFactory.hpp"
+// Includes for Stratimikos:
+#ifdef HAVE_RYTHMOS_STRATIMIKOS
+#  include "Thyra_DefaultRealLinearSolverBuilder.hpp"
+#endif
 
 #include <string>
 
@@ -64,6 +66,10 @@
 #include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_FancyOStream.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_VerboseObject.hpp"
+#include "Teuchos_StandardCatchMacros.hpp"
 
 enum EMethod { METHOD_FE, METHOD_BE, METHOD_ERK, METHOD_BDF };
 enum STEP_METHOD { STEP_METHOD_FIXED, STEP_METHOD_VARIABLE };
@@ -72,6 +78,9 @@ int main(int argc, char *argv[])
 {
   bool verbose = true; // verbosity level.
   bool result, success = true; // determine if the run was successfull
+
+  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+    out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
   try { // catch exceptions
 
@@ -103,6 +112,12 @@ int main(int argc, char *argv[])
 
     // Parse the command-line options:
     Teuchos::CommandLineProcessor  clp(false); // Don't throw exceptions
+    clp.addOutputSetupOptions(true);
+#ifdef HAVE_RYTHMOS_STRATIMIKOS
+    Thyra::DefaultRealLinearSolverBuilder lowsfCreator;
+    lowsfCreator.setupCLP(&clp);
+#endif
+
     clp.setOption( "T", &finalTime, "Final time for simulation." );
     clp.setOption( "numelements", &numElements, "Problem size");
     clp.setOption( "method", &method_val, num_methods, method_values, method_names, "Integration method" );
@@ -121,10 +136,17 @@ int main(int argc, char *argv[])
     Teuchos::CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
     if( parse_return != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
 
+#ifdef HAVE_RYTHMOS_STRATIMIKOS
+    lowsfCreator.readParameters(out.get());
+    *out << "\nThe parameter list after being read in:\n";
+    lowsfCreator.getParameterList()->print(*out,2,true,false);
+#endif
+
+
     if (version) // Display version information and exit.
     {
-      std::cout << Rythmos::Rythmos_Version() << std::endl; 
-      std::cout << "basicExample Version 0.1 - 06/23/05" << std::endl;
+      *out << Rythmos::Rythmos_Version() << std::endl; 
+      *out << "basicExample Version 0.1 - 06/23/05" << std::endl;
       return(0);
     }
 
@@ -139,7 +161,9 @@ int main(int argc, char *argv[])
     Teuchos::ParameterList params;
     params.set( "NumElements", numElements );
 #ifdef HAVE_MPI
-    params.set( "MPIComm", mpiComm );
+    Teuchos::RefCountPtr<Epetra_Comm> epetra_comm_ptr_ = Teuchos::rcp( new Epetra_MpiComm(mpiComm) );
+#else
+    Teuchos::RefCountPtr<Epetra_Comm> epetra_comm_ptr_ = Teuchos::rcp( new Epetra_SerialComm  );
 #endif // HAVE_MPI
 
     // Create the factory for the LinearOpWithSolveBase object
@@ -148,12 +172,19 @@ int main(int argc, char *argv[])
     if((method_val == METHOD_BE) or (method_val == METHOD_BDF))
     {
       //W_factory = Teuchos::rcp(new Thyra::DiagonalEpetraLinearOpWithSolveFactory());
-      W_factory = Teuchos::rcp(new Thyra::AmesosLinearOpWithSolveFactory());
+      //W_factory = Teuchos::rcp(new Thyra::AmesosLinearOpWithSolveFactory());
+#ifdef HAVE_RYTHMOS_STRATIMIKOS
+      W_factory = lowsfCreator.createLinearSolveStrategy("");
+      *out
+        << "\nCreated a LinearOpWithSolveFactory described as:\n"
+        << Teuchos::describe(*W_factory,Teuchos::VERB_MEDIUM);
+#endif
+
     }
 
     // create interface to problem
-    Teuchos::RefCountPtr<ExampleApplication>
-      epetraModel = Teuchos::rcp(new ExampleApplication(params));
+    Teuchos::RefCountPtr<ExampleApplication1Dfem>
+      epetraModel = Teuchos::rcp(new ExampleApplication1Dfem(epetra_comm_ptr_,params));
     Teuchos::RefCountPtr<Thyra::ModelEvaluator<double> >
       model = Teuchos::rcp(new Thyra::EpetraModelEvaluator(epetraModel,W_factory));
 
@@ -245,10 +276,10 @@ int main(int argc, char *argv[])
           break;
         }
         time += dt_taken;
-        cout << "Took stepsize of: " << dt_taken << " time = " << time << endl;
+        *out << "Took stepsize of: " << dt_taken << " time = " << time << endl;
       }
     }
-    cout << "Integrated to time = " << time << endl;
+    *out << "Integrated to time = " << time << endl;
     // Get solution out of stepper:
     Teuchos::RefCountPtr<const Thyra::VectorBase<double> > x_computed_thyra_ptr = stepper.get_solution();
     // Convert Thyra::VectorBase to Epetra_Vector
@@ -263,10 +294,10 @@ int main(int argc, char *argv[])
     int MyPID = x_computed.Comm().MyPID();
     if (MyPID == 0)
     {
-      std::cout << "Integrating 1DfemTransient t = " << t0 
+      *out << "Integrating 1DfemTransient t = " << t0 
                 << " to t = " << t1 << std::endl;
-      std::cout << "using " << method << "." << std::endl;
-      std::cout << "Took " << numSteps << " steps." << std::endl;
+      *out << "using " << method << "." << std::endl;
+      *out << "Took " << numSteps << " steps." << std::endl;
     }
     int MyLength = x_computed.MyLength();
     double error = 0;
@@ -275,11 +306,11 @@ int main(int argc, char *argv[])
     {
       if(verbose)
       {
-        std::cout.precision(15);
-        std::cout << "Computed: x[" << MyPID*MyLength+i << "] = ";
-        std::cout.width(20); std::cout << x_computed[i] << "\t";
-        std::cout << "Exact: x[" << MyPID*MyLength+i << "] = ";
-        std::cout.width(20); std::cout << x_star[i] << std::endl;
+        *out << std::setprecision(15);
+        *out << "Computed: x[" << MyPID*MyLength+i << "] = ";
+        *out << std::setw(20); *out << x_computed[i] << "\t";
+        *out << "Exact: x[" << MyPID*MyLength+i << "] = ";
+        *out << std::setw(20); *out << x_star[i] << std::endl;
       }
       //const double thisError = Thyra::relErr(x_computed[i],x_star[i]);
       const double thisError = x_computed[i]-x_star[i];
@@ -294,22 +325,19 @@ int main(int argc, char *argv[])
       ,&std::cerr,""
       );
     if(!result) success = false;
+
+#ifdef HAVE_RYTHMOS_STRATIMIKOS
+    // Write the final parameters to file
+    if(W_factory.get())
+      lowsfCreator.writeParamsFile(*W_factory);
+#endif
     
 #ifdef HAVE_MPI
     MPI_Finalize();
 #endif // HAVE_MPI
 
    } // end try
-   catch( const std::exception &excpt ) {
-    if(verbose)
-      std::cerr << "*** Caught a standard exception : " << excpt.what() << std::endl;
-    success = false;
-  }
-  catch( ... ) {
-    if(verbose)
-      std::cerr << "*** Caught an unknown exception!\n";
-    success = false;
-  }
+   TEUCHOS_STANDARD_CATCH_STATEMENTS(true,*out,success)
 
   return success ? 0 : 1;
 } // end main() [Doxygen looks for this!]

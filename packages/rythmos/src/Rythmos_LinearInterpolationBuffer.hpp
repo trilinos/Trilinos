@@ -26,8 +26,8 @@
 // ***********************************************************************
 //@HEADER
 
-#ifndef Rythmos_INTERPOLATION_BUFFER_LINEAR_H
-#define Rythmos_INTERPOLATION_BUFFER_LINEAR_H
+#ifndef Rythmos_LINEAR_INTERPOLATION_BUFFER_H
+#define Rythmos_LINEAR_INTERPOLATION_BUFFER_H
 
 #include "Rythmos_InterpolationBuffer.hpp"
 #include "Thyra_VectorBase.hpp"
@@ -224,6 +224,53 @@ bool LinearInterpolationBuffer<Scalar>::SetRange(
     ,const Scalar& time_upper
     ,const InterpolationBuffer<Scalar>& IB )
 {
+  std::vector<ScalarMag> input_nodes;
+  bool status = IB.GetNodes(&input_nodes);
+  if (status == false) return(status);
+  std::sort(input_nodes.begin(),input_nodes.end());
+  // Remove nodes outside the range [time_lower,time_upper]
+  std::vector<ScalarMag>::iterator input_it = input_nodes.begin();
+  for (; input_it != input_nodes.end() ; input_it++)
+  {
+    if (*input_it >= time_lower)
+    {
+      input_it--;
+      break;
+    }
+  }
+  input_nodes.erase(input_nodes.begin(),input_it);
+  input_it = input_nodes.end();
+  for (; input_it != input_nodes.begin() ; input_it--)
+  {
+    if (*input_it <= time_upper)
+    {
+      input_it++;
+      break;
+    }
+  }
+  input_nodes.erase(input_it,input_nodes.end());
+
+  // Ask IB to interpolate more points if IB's order is higher than ours
+  ScalarMag h_safety = ScalarMag(2*ST::one());
+  int IBOrder = IB.GetOrder();
+  if (IBOrder >= order)
+  {
+    input_it = input_nodes.begin();
+    for (; input_it != input_nodes.end() ; input_it++)
+    {
+      std::vector<ScalarMag>::iterator input_it_next = input_it++;
+      if (input_it_next == input_nodes.end())
+        break;
+      ScalarMag h_0 = *input_it_next - *input_it;
+      ScalarMag h = h_0^(IBOrder/order)/h_safety;
+      int N = ceil(h_0/h);
+      h = ScalarMag(h_0/N);
+      for (int i=1 ; i<N ; ++i)
+      {
+        input_nodes.insert(input_it_next,*input_it+i*h);
+      }
+    }
+  }
   // If IB's order is lower than ours, then simply grab the node values and continue.
   // If IB's order is higher than ours, then grab the node values and ask IB to
   // interpolate extra values so that our order of accuracy is approximately
@@ -239,7 +286,15 @@ bool LinearInterpolationBuffer<Scalar>::SetRange(
 
   // Don't forget to check the interval [time_lower,time_upper].
   // Use SetPoints and check return value to make sure we observe storage_limit.
-  return(false);
+
+  std::vector<Teuchos::RefCountPtr<Scalar> > input_x;
+  std::vector<Teuchos::RefCountPtr<Scalar> > input_xdot;
+  std::vector<ScalarMag> input_accuracy;
+  status = IB.GetPoints( input_nodes, &input_x, &input_xdot &input_accuracy );
+  if (status == false) return(status);
+  // We could check that the accuracy meets our criteria here.
+  status = SetPoints( input_nodes, input_x, input_xdot );
+  return(status);
 }
 
 template<class Scalar>
@@ -326,4 +381,4 @@ void LinearInterpolationBuffer<Scalar>::DataStoreListToVector(
 
 } // namespace Rythmos
 
-#endif //Rythmos_INTERPOLATION_BUFFER_LINEAR_H
+#endif // Rythmos_LINEAR_INTERPOLATION_BUFFER_H

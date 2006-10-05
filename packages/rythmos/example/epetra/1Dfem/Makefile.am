@@ -33,12 +33,16 @@
 include $(top_builddir)/Makefile.export.rythmos
 include $(top_builddir)/../nox/Makefile.export.nox
 
+_EXPORT_INCLUDES = $(RYTHMOS_INCLUDES) $(STRATIMIKOS_INCLUDES) $(EPETRAEXT_INCLUDES) $(NOX_INCLUDES)
+_EXPORT_LIBS = $(RYTHMOS_LIBS) $(STRATIMIKOS_LIBS) $(EPETRAEXT_LIBS) $(NOX_LIBS)
+
+
 if USING_GNUMAKE
-EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(RYTHMOS_INCLUDES) $(NOX_INCLUDES))
-EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(RYTHMOS_LIBS) $(NOX_LIBS))
+EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(_EXPORT_INCLUDES))
+EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(_EXPORT_LIBS))
 else
-EXPORT_INCLUDES = $(RYTHMOS_INCLUDES) $(NOX_INCLUDES)
-EXPORT_LIBS = $(RYTHMOS_LIBS) $(NOX_LIBS)
+EXPORT_INCLUDES = $(_EXPORT_INCLUDES)
+EXPORT_LIBS = $(_EXPORT_LIBS)
 endif
 
 AM_CPPFLAGS = $(EXPORT_INCLUDES)

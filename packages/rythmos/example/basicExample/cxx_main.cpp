@@ -25,28 +25,27 @@
 // Questions? Contact Todd S. Coffey (tscoffe@sandia.gov)
 //
 // ***********************************************************************
-//@HEADER
+//@HEADER 
 
+#include "Epetra_Map.h"
+#include "Epetra_Vector.h"
+#include "Epetra_Version.h"
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
 #include "mpi.h"
 #else
 #include "Epetra_SerialComm.h"
-#endif
-
-#include "Epetra_Map.h"
-#include "Epetra_Vector.h"
-#include "Epetra_Version.h"
+#endif // HAVE_MPI
 
 #include "ExampleApplication.hpp"
 
 // Includes for Rythmos:
 #include "Rythmos_ConfigDefs.h"
 //#include "ExampleApplicationRythmosInterface.hpp"
-#include "Rythmos_Stepper_ForwardEuler.hpp"
-#include "Rythmos_Stepper_BackwardEuler.hpp"
-#include "Rythmos_Stepper_ExplicitRK.hpp"
-#include "Rythmos_Stepper_ImplicitBDF.hpp"
+#include "Rythmos_ForwardEulerStepper.hpp"
+#include "Rythmos_BackwardEulerStepper.hpp"
+#include "Rythmos_ExplicitRKStepper.hpp"
+#include "Rythmos_ImplicitBDFStepper.hpp"
 
 // Includes for Thyra:
 #include "Thyra_EpetraThyraWrappers.hpp"
@@ -85,14 +84,15 @@ int main(int argc, char *argv[])
   Teuchos::RefCountPtr<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
-  try { // catch exceptions
-
 #ifdef HAVE_MPI
-    MPI_Comm mpiComm = MPI_COMM_WORLD;
+  MPI_Comm mpiComm = MPI_COMM_WORLD;
 #endif // HAVE_MPI
+
+  try { // catch exceptions
 
     double lambda_min = -0.9;   // min ODE coefficient
     double lambda_max = -0.01;  // max ODE coefficient
+    double coeff_s = 0.0;  // Default is no forcing term
     std::string lambda_fit = "linear"; // Lambda model
     int numElements = 1; // number of elements in vector
     double x0 = 10.0; // ODE initial condition
@@ -117,6 +117,7 @@ int main(int argc, char *argv[])
 
     // Parse the command-line options:
     Teuchos::CommandLineProcessor  clp(false); // Don't throw exceptions
+    clp.addOutputSetupOptions(true);
 #ifdef HAVE_RYTHMOS_STRATIMIKOS
     Thyra::DefaultRealLinearSolverBuilder lowsfCreator;
     lowsfCreator.setupCLP(&clp);
@@ -126,6 +127,7 @@ int main(int argc, char *argv[])
     clp.setOption( "lambda_min", &lambda_min, "Lower bound for ODE coefficient");
     clp.setOption( "lambda_max", &lambda_max, "Upper bound for ODE coefficient");
     clp.setOption( "lambda_fit", &lambda_fit, "Lambda model:  random, linear");
+    clp.setOption( "force_coeff", &coeff_s, "Forcing term coefficient");
     clp.setOption( "numelements", &numElements, "Problem size");
     clp.setOption( "method", &method_val, num_methods, method_values, method_names, "Integration method" );
     clp.setOption( "stepmethod", &step_method_val, num_step_methods, step_method_values, step_method_names, "Stepping method" );
@@ -169,7 +171,7 @@ int main(int argc, char *argv[])
     }
 
 #ifdef Rythmos_DEBUG
-    *out.precision(15);
+    *out << std::setprecision(15);
 #endif // Rythmos_DEBUG
     
     // Set up the parameter list for the application:
@@ -182,8 +184,11 @@ int main(int argc, char *argv[])
     params.set( "Lambda_fit", lambda_fit );
     params.set( "NumElements", numElements );
     params.set( "x0", x0 );
+    params.set( "Coeff_s", coeff_s );
 #ifdef HAVE_MPI
-    params.set( "MPIComm", mpiComm );
+    Teuchos::RefCountPtr<Epetra_Comm> epetra_comm_ptr_ = Teuchos::rcp( new Epetra_MpiComm(mpiComm) );
+#else
+    Teuchos::RefCountPtr<Epetra_Comm> epetra_comm_ptr_ = Teuchos::rcp( new Epetra_SerialComm  );
 #endif // HAVE_MPI
 
     // Create the factory for the LinearOpWithSolveBase object
@@ -200,7 +205,7 @@ int main(int argc, char *argv[])
 
     // create interface to problem
     Teuchos::RefCountPtr<ExampleApplication>
-      epetraModel = Teuchos::rcp(new ExampleApplication(params));
+      epetraModel = Teuchos::rcp(new ExampleApplication(epetra_comm_ptr_, params));
     Teuchos::RefCountPtr<Thyra::ModelEvaluator<double> >
       model = Teuchos::rcp(new Thyra::EpetraModelEvaluator(epetraModel,W_factory));
 
@@ -266,6 +271,7 @@ int main(int argc, char *argv[])
       for (int i=1 ; i<=N ; ++i)
       {
         double dt_taken = stepper.TakeStep(dt);
+        time += dt_taken;
         numSteps++;
 #ifdef Rythmos_DEBUG
         if (debugLevel > 1)
@@ -282,6 +288,21 @@ int main(int argc, char *argv[])
     }
     else // (step_method_val == VARIABLE_STEP)
     {
+#ifdef Rythmos_DEBUG
+      // Create a place to store the computed solutions
+      Teuchos::RefCountPtr<const Thyra::VectorBase<double> > x_computed_thyra_ptr = stepper.get_solution();
+      // Convert Thyra::VectorBase to Epetra_Vector
+      Teuchos::RefCountPtr<const Epetra_Vector> x_computed_ptr = Thyra::get_Epetra_Vector(*(epetraModel->get_x_map()),x_computed_thyra_ptr);
+      // Create a place to store the exact numerical solution
+      Teuchos::RefCountPtr<Epetra_Vector> x_numerical_exact_ptr = Teuchos::rcp(new Epetra_Vector(x_computed_ptr->Map()));
+      Epetra_Vector& x_numerical_exact = *x_numerical_exact_ptr;
+      // Create a place to store the relative difference:
+      Teuchos::RefCountPtr<Epetra_Vector> x_rel_diff_ptr = Teuchos::rcp(new Epetra_Vector(x_computed_ptr->Map()));
+      Epetra_Vector& x_rel_diff = *x_rel_diff_ptr;
+      // get lambda from the problem:
+      Teuchos::RefCountPtr<const Epetra_Vector> lambda_ptr = epetraModel->get_coeff();
+      const Epetra_Vector &lambda = *lambda_ptr;
+#endif // Rythmos_DEBUG
       while (time < finalTime)
       {
         double dt_taken = stepper.TakeStep();
@@ -297,6 +318,59 @@ int main(int argc, char *argv[])
           *out << "Error, stepper failed for some reason with step taken = " << dt_taken << endl;
           break;
         }
+#ifdef Rythmos_DEBUG
+        // Get solution out of stepper:
+        x_computed_thyra_ptr = stepper.get_solution();
+        // Convert Thyra::VectorBase to Epetra_Vector
+        x_computed_ptr = Thyra::get_Epetra_Vector(*(epetraModel->get_x_map()),x_computed_thyra_ptr);
+        if ((method_val == METHOD_BDF) && (maxOrder == 1))
+        {
+          int myN = x_numerical_exact.MyLength();
+          if (numSteps == 1) // First step
+          {
+            for (int i=0 ; i<myN ; ++i)
+              x_numerical_exact[i] = x0;
+          }
+          for (int i=0 ; i<myN ; ++i)
+            x_numerical_exact[i] = ( x_numerical_exact[i]
+                 +dt_taken*epetraModel->evalR(time+dt_taken,lambda[i],coeff_s))
+                 /(1-lambda[i]*dt_taken);
+          for (int i=0 ; i<myN ; ++i)
+            x_rel_diff[i] = (x_numerical_exact[i]-(*x_computed_ptr)[i])/x_numerical_exact[i];
+          if (myN == 1)
+            *out << "Computed x(" << time+dt_taken << ") = " << (*x_computed_ptr)[0] 
+                 << "  Numerical Exact = " << x_numerical_exact[0] 
+                 << "  Rel Diff = " << x_rel_diff[0] << std::endl;
+          else
+          {
+            for (int i=0 ; i<myN ; ++i)
+              *out << "Computed x_" << i << "(" << time+dt_taken << ") = " << (*x_computed_ptr)[i] 
+                   << "  Numerical Exact = " << x_numerical_exact[i] 
+                   << "  Rel Diff = " << x_rel_diff[i] <<  std::endl;
+          }
+        }
+        else
+        {
+          // compute exact answer
+          Teuchos::RefCountPtr<const Epetra_Vector> x_star_ptr = epetraModel->get_exact_solution(time);
+          const Epetra_Vector& x_star = *x_star_ptr;
+          int myN = x_computed_ptr->MyLength();
+          for (int i=0 ; i<myN ; ++i)
+            x_rel_diff[i] = (x_star[i]-(*x_computed_ptr)[i])/x_star[i];
+          if (myN == 1)
+            *out << "Computed x(" << time+dt_taken << ") = " << (*x_computed_ptr)[0] 
+                 << "  Exact = " << x_star[0] 
+                 << "  Rel Diff = " << x_rel_diff[0] << std::endl;
+          else
+          {
+            for (int i=0 ; i<myN ; ++i)
+              *out << "Computed x_" << i << "(" << time+dt_taken << ") = " << (*x_computed_ptr)[i] 
+                   << "  Exact = " << x_star[i] 
+                   << "  Rel Diff = " << x_rel_diff[i] << std::endl;
+          }
+        }
+
+#endif // Rythmos_DEBUG
         time += dt_taken;
         *out << "Took stepsize of: " << dt_taken << " time = " << time << endl;
       }
@@ -327,7 +401,12 @@ int main(int argc, char *argv[])
       int myN = x_exact.MyLength();
       for ( int i=0 ; i<myN ; ++i)
       {
-        x_exact[i] = x0*pow(1+lambda[i]*dt,N);
+        x_exact[i] = x0;
+        for (int j=1 ; j<=N ; ++j)
+        {
+          x_exact[i] = (1+lambda[i]*dt)*x_exact[i]+dt*epetraModel->evalR(0+j*dt,lambda[i],coeff_s);
+        }
+        //x_exact[i] = x0*pow(1+lambda[i]*dt,N);
       }
       x_numerical_exact_ptr = x_exact_ptr;
     } 
@@ -338,7 +417,12 @@ int main(int argc, char *argv[])
       int myN = x_exact.MyLength();
       for ( int i=0 ; i<myN ; ++i)
       {
-        x_exact[i] = x0*pow(1/(1-lambda[i]*dt),N);
+        x_exact[i] = x0;
+        for (int j=1 ; j<=N ; ++j)
+        {
+          x_exact[i] = (x_exact[i]+dt*epetraModel->evalR(0+j*dt,lambda[i],coeff_s))/(1-lambda[i]*dt);
+        }
+        //x_exact[i] = x0*pow(1/(1-lambda[i]*dt),N);
       }
       x_numerical_exact_ptr = x_exact_ptr;
     }
@@ -404,8 +488,8 @@ int main(int argc, char *argv[])
       numerical_error = sqrt(numerical_error)/sqrt(numerical_error_mag);
       result = Thyra::testMaxErr(
         "Exact numerical error",numerical_error
-        ,"maxError",1.0e-12
-        ,"maxWarning",1.0e-11
+        ,"maxError",1.0e-10
+        ,"maxWarning",1.0e-9
         ,&*out,""
         );
       if(!result) success = false;

@@ -26,8 +26,8 @@
 // ***********************************************************************
 //@HEADER
 
-#ifndef Rythmos_STEPPER_ExplicitRK_H
-#define Rythmos_STEPPER_ExplicitRK_H
+#ifndef Rythmos_ExplicitRK_STEPPER_H
+#define Rythmos_ExplicitRK_STEPPER_H
 
 #include "Rythmos_Stepper.hpp"
 #include "Teuchos_RefCountPtr.hpp"
@@ -403,4 +403,4 @@ int ExplicitRKStepper<Scalar>::GetOrder() const
 
 } // namespace Rythmos
 
-#endif //Rythmos_STEPPER_ExplicitRK_H
+#endif //Rythmos_ExplicitRK_STEPPER_H

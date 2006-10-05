@@ -40,7 +40,7 @@
 # Optional 3rd argument is email address for bugs.
 
 #  #rythmos# - package name, version number, and e-mail address below
-AC_INIT(rythmos, 0.1, tscoffe@sandia.gov)
+AC_INIT(rythmos, 1.0, tscoffe@sandia.gov)
 
 # Hello World!
 #  #rythmos# - package name below
@@ -156,6 +156,11 @@ TAC_ARG_WITH_AR
 # ------------------------------------------------------------------------
 TAC_ARG_CHECK_MPI
 
+# ------------------------------------------------------------------------
+# Checks for Makefile.export related systems
+# ------------------------------------------------------------------------
+TAC_ARG_ENABLE_EXPORT_MAKEFILES(yes)
+
 #  #np# - Customize the checks for headers needed in package being added.
 #NOTE: This section still needs to be updated for new_package, it is still 
 # code from Epetra
@@ -241,10 +246,51 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(
   ,[Build the Stratimikos adapater support in Rythmos.]
   ,[Build the Stratimikos adapater support in Rythmos.  Can be overridden with --disable-rythmos-stratimikos.])
 
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(
+  rythmos, amesos, RYTHMOS_AMESOS, ENABLE_RYTHMOS_AMESOS, yes
+  ,[Build the Amesos adapater support in Rythmos.]
+  ,[Build the Amesos adapater support in Rythmos.  Can be overridden with --disable-rythmos-amesos.])
+
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(
+  rythmos, aztecoo, RYTHMOS_AZTECOO, ENABLE_RYTHMOS_AZTECOO, yes
+  ,[Build the AztecOO adapater support in Rythmos.]
+  ,[Build the AztecOO adapater support in Rythmos.  Can be overridden with --disable-rythmos-aztecoo.])
+
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(
+  rythmos, epetraext, RYTHMOS_EPETRAEXT, ENABLE_RYTHMOS_EPETRAEXT, yes
+  ,[Build the EpetraExt adapater support in Rythmos.]
+  ,[Build the EpetraExt adapater support in Rythmos.  Can be overridden with --disable-rythmos-epetraext.])
+
+#TAC_ARG_ENABLE_CAN_USE_PACKAGE(
+#  rythmos, belos, RYTHMOS_BELOS, ENABLE_RYTHMOS_BELOS, yes
+#  ,[Build the Belos adapater support in Rythmos.]
+#  ,[Build the Belos adapater support in Rythmos.  Can be overridden with --disable-rythmos-belos.])
+
 TAC_ARG_INFORM_SUBPACKAGE_USED(
   epetraext, thyra, EPETRAEXT_THYRA, ENABLE_EPETRAEXT_THYRA, yes
   ,[See epetraext/configure --help]
   ,[See epetraext/configure --help])
+
+TAC_ARG_INFORM_SUBPACKAGE_USED(
+  nox, epetra, NOX_EPETRA, ENABLE_NOX_EPETRA, no
+  ,[See nox/configure --help]
+  ,[See nox/configure --help])
+
+# ------------------------------------------------------------------------
+# RYTHMOS interface libraries (uses config/tac_arg_enable_rythmos_interface.m4)
+# ------------------------------------------------------------------------
+#RYTHMOS_INTERFACE(nox, LIBRYTHMOSNOX, rythmos)
+#RYTHMOS_INTERFACE(stratimikos, LIBRYTHMOSSTRATIMIKOS, rythmos)
+#RYTHMOS_INTERFACE(amesos, LIBRYTHMOSAMESOS, rythmos)
+#RYTHMOS_INTERFACE(aztecoo, LIBRYTHMOSAZTECOO, rythmos)
+#RYTHMOS_INTERFACE(epetraext, LIBRYTHMOSEPETRAEXT, rythmos)
+#RYTHMOS_INTERFACE(belos, LIBRYTHMOSBELOS, rythmos)
+
+# 09/14/06 tscoffe:  I need nox-epetra to get the examples to work.
+
+#AM_CONDITIONAL(ENABLE_RYTHMOS_STRATIMIKOS, test "X${ADDON_stratimikos}" != "Xno")
+#AM_CONDITIONAL(HAVE_RYTHMOS_STRATIMIKOS, test "X${ADDON_stratimikos}" != "Xno")
+#AM_CONDITIONAL(ENABLE_RYTHMOS_NOX, test "X${ADDON_nox}" != "Xno")
 
 # ------------------------------------------------------------------------
 # #np# newp_swahili is an example of a package feature which requires both
@@ -266,8 +312,8 @@ TAC_ARG_INFORM_SUBPACKAGE_USED(
 # AM_CONDITIONAL makes HAVE_NEWP_SWAHILI available for use in Makefile.am
 # ------------------------------------------------------------------------
 #
-TAC_ARG_ENABLE_OPTION(newp_swahili, [enable swahili support], NEWP_SWAHILI, no)
-AM_CONDITIONAL(HAVE_NEWP_SWAHILI, [test "X$ac_cv_use_newp_swahili" != "Xno"])
+#TAC_ARG_ENABLE_OPTION(newp_swahili, [enable swahili support], NEWP_SWAHILI, no)
+#AM_CONDITIONAL(HAVE_NEWP_SWAHILI, [test "X$ac_cv_use_newp_swahili" != "Xno"])
 
 # ------------------------------------------------------------------------
 # Checks for special package flags
@@ -301,13 +347,52 @@ AM_CONDITIONAL(HAVE_NEWP_SWAHILI, [test "X$ac_cv_use_newp_swahili" != "Xno"])
 #  #np# - Packages that do not have tests or examples should #-out the 
 #  #np# - option(s) that does (do) not apply.
 
-TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages (not all packages are sensitive to this option)], TESTS, yes)
-TAC_ARG_ENABLE_FEATURE_SUB_CHECK( rythmos, tests, [Build Rythmos tests], RYTHMOS_TESTS)
-AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_rythmos_tests" != "Xno")
+# 09/19/06 tscoffe:  --enable-tests is checked by TAC_ARG_ENABLE_FEATURE_SUB_CHECK
+#TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages (not all packages are sensitive to this option)], TESTS, yes)
 
-TAC_ARG_ENABLE_FEATURE(examples, [Build examples for all Trilinos packages (not all packages are sensitive to this option)], EXAMPLES, yes)
-TAC_ARG_ENABLE_FEATURE_SUB_CHECK( rythmos, examples, [Build Rythmos examples], RYTHMOS_EXAMPLES)
-AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_rythmos_examples" != "Xno")
+# 09/20/06 tscoffe:  The examples are handled the same as tests below.
+AC_ARG_ENABLE([examples],, ac_cv_use_examples=$enableval, ac_cv_use_examples=yes)
+AC_ARG_ENABLE([rythmos-examples],
+    AC_HELP_STRING([--enable-rythmos-examples],[Build Rythmos Examples (default is yes if --disable-examples is not specified), note:  the examples will not be built unless the following packages are also enabled:  epetraext, amesos, aztecoo, stratimikos, and epetraext-thyra]),ac_cv_use_rythmos_examples=$enableval, ac_cv_use_rythmos_examples=${ac_cv_use_examples})
+AC_MSG_CHECKING(whether to build [rythmos-examples])
+
+if test "X$ac_cv_use_rythmos_examples" != "Xno" &&
+   test "X$ac_cv_use_epetraext" != "Xno" &&
+   test "X$ac_cv_use_amesos" != "Xno" &&
+   test "X$ac_cv_use_aztecoo" != "Xno" &&
+   test "X$ac_cv_use_stratimikos" != "Xno" &&
+   test "X$ac_cv_use_epetraext_thyra" != "Xno" ; then
+  AC_MSG_RESULT(yes)
+  AC_DEFINE([HAVE_RYTHMOS_EXAMPLES],,[Define if want to build rythmos-examples])
+  AM_CONDITIONAL(BUILD_EXAMPLES, true)
+else
+  AC_MSG_RESULT(no)
+  AM_CONDITIONAL(BUILD_EXAMPLES, false)
+fi
+
+# 09/20/06 tscoffe:  This is basically what TAC_ARG_ENABLE_FEATURE does but it
+# checks all of my dependencies at the same time which is important for
+# printing the correct message at configure time.
+AC_ARG_ENABLE([tests],, ac_cv_use_tests=$enableval, ac_cv_use_tests=yes)
+AC_ARG_ENABLE([rythmos-tests],
+    AC_HELP_STRING([--enable-rythmos-tests],[Build Rythmos Tests (default is yes if --disable-tests is not specified), note:  all of the tests come from the examples, so if tests are enabled, the examples will be built (assuming all the dependencies are enabled)]),ac_cv_use_rythmos_tests=$enableval, ac_cv_use_rythmos_tests=${ac_cv_use_tests})
+AC_MSG_CHECKING(whether to build [rythmos-tests])
+
+if test "X$ac_cv_use_rythmos_tests" != "Xno" &&
+   test "X$ac_cv_use_epetraext" != "Xno" &&
+   test "X$ac_cv_use_amesos" != "Xno" &&
+   test "X$ac_cv_use_aztecoo" != "Xno" &&
+   test "X$ac_cv_use_stratimikos" != "Xno" &&
+   test "X$ac_cv_use_epetraext_thyra" != "Xno" ; then
+  AC_MSG_RESULT(yes)
+  AC_DEFINE([HAVE_RYTHMOS_TESTS],,[Define if want to build rythmos-tests])
+  AM_CONDITIONAL(BUILD_TESTS, true)
+# 09/20/06 tscoffe:  The tests all come from the examples:
+  AM_CONDITIONAL(BUILD_EXAMPLES, true)
+else
+  AC_MSG_RESULT(no)
+  AM_CONDITIONAL(BUILD_TESTS, false)
+fi
 
 TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
 
@@ -320,8 +405,10 @@ TAC_ENABLE_PYTHON
 # Specify other directories 
 # ------------------------------------------------------------------------
 
+# 02/21/06 tscoffe:  LIBDIRS is OBSOLETE, use LDFLAGS instead.
 # enable use of --with-libdirs="-Llibdir1 -Llibdir2 ..." to prepend to LDFLAGS
-TAC_ARG_WITH_LIBDIRS
+#TAC_ARG_WITH_LIBDIRS
+
 # enable use of --with-incdirs="-Lincdir1 -Lincdir2 ..." to prepend to CPPFLAGS
 TAC_ARG_WITH_INCDIRS
 
@@ -434,13 +521,7 @@ AC_CONFIG_FILES([
 		example/basicExample/Makefile
 		example/epetra/Makefile
 		example/epetra/1Dfem/Makefile
-		example/verySimple/Makefile
-		example/refCountPtrExample/Makefile
-		example/refCountPtrExample2/Makefile
-		example/constExample/Makefile
-		example/classExample/Makefile
 		test/Makefile
-		test/unitTests/Makefile
 		])
 
 AC_OUTPUT()

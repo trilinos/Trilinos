@@ -1,12 +1,29 @@
 #
-# Include the global look and feel options
+# Note: all relative paths are relative to package/doc!
 #
-@INCLUDE               = ../../common/Doxyfile
+@INCLUDE_PATH          = $(TRILINOS_HOME)/packages
+@INCLUDE=common/Doxyfile
+@INCLUDE=thyra/doc/TagFiles # Requires @INCLUDE_PAH=$(TRILINOS_HOME)/packages
+TAGFILES += \
+  $(TRILINOS_HOME)/packages/common/tag_files/epetra.tag=$(TRILINOS_HOME)/packages/epetra/doc/html \
+  $(TRILINOS_HOME)/packages/common/tag_files/EpetraThyra.tag=$(TRILINOS_HOME)/packages/epetra/thyra/doc/html \
+  $(TRILINOS_HOME)/packages/common/tag_files/epetraext.tag=$(TRILINOS_HOME)/packages/epetraext/doc/html \
+  $(TRILINOS_HOME)/packages/common/tag_files/EpetraExtThyra.tag=$(TRILINOS_HOME)/packages/epetraext/thyra/doc/html \
+  $(TRILINOS_HOME)/packages/common/tag_files/stratimikos.tag=$(TRILINOS_HOME)/packages/stratimikos/doc/html \
+  $(TRILINOS_HOME)/packages/common/tag_files/nox.tag=$(TRILINOS_HOME)/packages/nox/doc/html \
+  $(TRILINOS_HOME)/packages/common/tag_files/MoochoUtilities.tag=$(TRILINOS_HOME)/packages/moocho/src/MoochoUtilities/doc/html \
+  $(TRILINOS_HOME)/packages/common/tag_files/IterationPack.tag=$(TRILINOS_HOME)/packages/moocho/src/IterationPack/doc/html \
+  $(TRILINOS_HOME)/packages/common/tag_files/RTOpPack.tag=$(TRILINOS_HOME)/packages/moocho/src/RTOpPack/doc/html \
+  $(TRILINOS_HOME)/packages/common/tag_files/DenseLinAlgPack.tag=$(TRILINOS_HOME)/packages/moocho/src/DenseLinAlgPack/doc/html \
+  $(TRILINOS_HOME)/packages/common/tag_files/AbstractLinAlgPack.tag=$(TRILINOS_HOME)/packages/moocho/src/AbstractLinAlgPack/doc/html \
+  $(TRILINOS_HOME)/packages/common/tag_files/NLPInterfacePack.tag=$(TRILINOS_HOME)/packages/moocho/src/NLPInterfacePack/doc/html \
+  $(TRILINOS_HOME)/packages/common/tag_files/ConstrainedOptPack.tag=$(TRILINOS_HOME)/packages/moocho/src/ConstrainedOptPack/doc/html \
+  $(TRILINOS_HOME)/packages/common/tag_files/MoochoPack.tag=$(TRILINOS_HOME)/packages/moocho/src/MoochoPack/doc/html
 #
 # Package options
 #
-PROJECT_NAME           = "Rythmos - Time integration and sensitivities"
-PROJECT_NUMBER         = "Version of the Day"
+PROJECT_NAME           = "Rythmos - Transient Integration for Differential Equations"
+PROJECT_NUMBER         = "Version 1.0 in Trilinos 7.0"
 OUTPUT_DIRECTORY       = .
 OUTPUT_LANGUAGE        = English
 #
@@ -49,7 +66,14 @@ WARN_FORMAT            = "$file:$line: $text"
 INPUT                  = index.doc \
                          ../src \
                          ../example/basicExample/ExampleApplication.hpp \
-                         ../example/basicExample/ExampleApplication.cpp
+                        ../example/basicExample/ExampleApplication.cpp \
+                         ../example/basicExample/cxx_main.cpp \
+                         ../example/epetra/1Dfem/ExampleApplication.hpp \
+                         ../example/epetra/1Dfem/ExampleApplication.cpp \
+                         ../example/epetra/1Dfem/1DfemInterface.H \
+                         ../example/epetra/1Dfem/1DfemInterface.C \
+                         ../example/epetra/1Dfem/1DfemTransient.H \
+                         ../example/epetra/1Dfem/cxx_main.cpp 
 FILE_PATTERNS          = *.hpp *.cpp
 RECURSIVE              = YES
 EXCLUDE                = 
@@ -81,19 +105,6 @@ PREDEFINED             = DOXYGEN_COMPILE DOXYGEN_SHOULD_SKIP_THIS EPETRA_MPI
 INCLUDE_PATH           = ../../teuchos/src
 EXPAND_AS_DEFINED      = STANDARD_MEMBER_COMPOSITION_MEMBERS
 #
-# Links to other packages
-#
-TAGFILES               = ../../common/tag_files/teuchos.tag=../../../teuchos/doc/html \
-                         ../../common/tag_files/ThyraUtils.tag=../../../thyra/src/utils/doc/html \
-                         ../../common/tag_files/ThyraRTOp.tag=../../../thyra/src/ana/rtop/doc/html \
-                         ../../common/tag_files/ThyraOperatorVector.tag=../../../thyra/src/ana/operator_vector/doc/html \
-                         ../../common/tag_files/ThyraNonlinear.tag=../../../thyra/src/ana/nonlinear/doc/html \
-                         ../../common/tag_files/epetra.tag=../../../epetra/doc/html \
-                         ../../common/tag_files/EpetraThyra.tag=../../../epetra/thyra/doc/html \
-                         ../../common/tag_files/amesos.tag=../../../amesos/doc/html \
-                         ../../common/tag_files/AmesosThyra.tag=../../../amesos/thyra/doc/html \
-                         ../../common/tag_files/epetraext.tag=../../../epetraext/doc/html \
-                         ../../common/tag_files/EpetraExtThyra.tag=../../../epetraext/thyra/doc/html
 GENERATE_TAGFILE       = ../../common/tag_files/rythmos.tag
 ALLEXTERNALS           = NO
 EXTERNAL_GROUPS        = NO

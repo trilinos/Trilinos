@@ -88,14 +88,11 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/tac_arg_enable_can_use_package.m4 \
 	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
-	$(top_srcdir)/config/tac_arg_enable_feature_sub_check.m4 \
-	$(top_srcdir)/config/tac_arg_enable_option.m4 \
 	$(top_srcdir)/config/tac_arg_inform_subpackage_used.m4 \
 	$(top_srcdir)/config/tac_arg_with_ar.m4 \
 	$(top_srcdir)/config/tac_arg_with_blaslib.m4 \
 	$(top_srcdir)/config/tac_arg_with_flags.m4 \
 	$(top_srcdir)/config/tac_arg_with_incdirs.m4 \
-	$(top_srcdir)/config/tac_arg_with_libdirs.m4 \
 	$(top_srcdir)/config/tac_arg_with_libs.m4 \
 	$(top_srcdir)/config/tac_arg_with_perl.m4 \
 	$(top_srcdir)/config/tac_enable_python.m4 \
@@ -162,6 +159,14 @@ ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 ENABLE_EPETRAEXT_THYRA_FALSE = @ENABLE_EPETRAEXT_THYRA_FALSE@
 ENABLE_EPETRAEXT_THYRA_TRUE = @ENABLE_EPETRAEXT_THYRA_TRUE@
+ENABLE_NOX_EPETRA_FALSE = @ENABLE_NOX_EPETRA_FALSE@
+ENABLE_NOX_EPETRA_TRUE = @ENABLE_NOX_EPETRA_TRUE@
+ENABLE_RYTHMOS_AMESOS_FALSE = @ENABLE_RYTHMOS_AMESOS_FALSE@
+ENABLE_RYTHMOS_AMESOS_TRUE = @ENABLE_RYTHMOS_AMESOS_TRUE@
+ENABLE_RYTHMOS_AZTECOO_FALSE = @ENABLE_RYTHMOS_AZTECOO_FALSE@
+ENABLE_RYTHMOS_AZTECOO_TRUE = @ENABLE_RYTHMOS_AZTECOO_TRUE@
+ENABLE_RYTHMOS_EPETRAEXT_FALSE = @ENABLE_RYTHMOS_EPETRAEXT_FALSE@
+ENABLE_RYTHMOS_EPETRAEXT_TRUE = @ENABLE_RYTHMOS_EPETRAEXT_TRUE@
 ENABLE_RYTHMOS_NOX_FALSE = @ENABLE_RYTHMOS_NOX_FALSE@
 ENABLE_RYTHMOS_NOX_TRUE = @ENABLE_RYTHMOS_NOX_TRUE@
 ENABLE_RYTHMOS_STRATIMIKOS_FALSE = @ENABLE_RYTHMOS_STRATIMIKOS_FALSE@
@@ -173,8 +178,6 @@ FLIBS = @FLIBS@
 GNU_HAVE_SWIG = @GNU_HAVE_SWIG@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
-HAVE_NEWP_SWAHILI_FALSE = @HAVE_NEWP_SWAHILI_FALSE@
-HAVE_NEWP_SWAHILI_TRUE = @HAVE_NEWP_SWAHILI_TRUE@
 HAVE_PERL = @HAVE_PERL@
 HAVE_SWIG_FALSE = @HAVE_SWIG_FALSE@
 HAVE_SWIG_TRUE = @HAVE_SWIG_TRUE@
@@ -303,7 +306,10 @@ config/acx_lapack.m4                    config/tac_arg_with_incdirs.m4 \
 config/acx_pthread.m4                   config/tac_arg_with_lapacklib.m4 \
 config/config.guess                     config/tac_arg_with_libdirs.m4 \
 config/config.sub                       config/tac_arg_with_package.m4 \
-bootstrap 
+config/strip_dup_incl_paths.pl		config/strip_dup_libs.pl \
+config/replace-install-prefix.pl        config/string-replace.pl \
+config/generate-makeoptions.pl		bootstrap 
+
 
 #
 #       I believe that by switching to AUX_DIR(../../config) one 
@@ -747,7 +753,7 @@ libs:
 @USING_EXPORT_MAKEFILES_TRUE@		--my-abs-top-srcdir=@abs_top_srcdir@ \
 @USING_EXPORT_MAKEFILES_TRUE@		--my-abs-incl-dirs=@abs_top_builddir@/src:@abs_top_srcdir@/src \
 @USING_EXPORT_MAKEFILES_TRUE@		--my-abs-lib-dirs=@abs_top_builddir@/src \
-@USING_EXPORT_MAKEFILES_TRUE@		--dep-package-abs-builddirs=@abs_top_builddir@/../thyra
+@USING_EXPORT_MAKEFILES_TRUE@		--dep-package-abs-builddirs=@abs_top_builddir@/../thyra:@abs_top_builddir@/../epetraext:@abs_top_builddir@/../stratimikos:@abs_top_builddir@/../nox
 @USING_EXPORT_MAKEFILES_TRUE@	$(PERL_EXE) $(top_srcdir)/config/generate-makeoptions.pl $(top_builddir)/src/Makefile RYTHMOS > $(exec_prefix)/include/Makefile.export.rythmos.macros
 
 @USING_EXPORT_MAKEFILES_TRUE@uninstall-hook:

@@ -29,19 +29,21 @@
 
 #include "ExampleApplication.hpp"
 #include "Teuchos_ScalarTraits.hpp"
+
 #ifdef HAVE_MPI
-#  include "Epetra_MpiComm.h"
-#  include "mpi.h"
+#include "Epetra_MpiComm.h"
+#include "mpi.h"
 #else
-#  include "Epetra_SerialComm.h"
+#include "Epetra_SerialComm.h"
 #endif // HAVE_MPI
+
 #include "Epetra_CrsMatrix.h"
 
 #ifdef EXAMPLEAPPLICATION_DEBUG
 #include <iostream>
 #endif
 
-ExampleApplication::ExampleApplication(Teuchos::ParameterList &params)
+ExampleApplication::ExampleApplication(Teuchos::RefCountPtr<Epetra_Comm> &epetra_comm_ptr_, Teuchos::ParameterList &params)
 {
   implicit_ = params.get<bool>( "implicit" );
   lambda_min_ = params.get<double>( "Lambda_min" );
@@ -49,12 +51,7 @@ ExampleApplication::ExampleApplication(Teuchos::ParameterList &params)
   lambda_fit_ = params.get<std::string>( "Lambda_fit" );
   numElements_ = params.get<int>( "NumElements" );
   x0_ = params.get<double>( "x0" );
-#ifdef HAVE_MPI
-  MPI_Comm mpiComm = params.get<MPI_Comm>( "MPIComm" );
-  epetra_comm_ptr_ = Teuchos::rcp( new Epetra_MpiComm(mpiComm) );
-#else
-  epetra_comm_ptr_ = Teuchos::rcp( new Epetra_SerialComm  );
-#endif // HAVE_MPI
+  coeff_s_ = params.get<double>( "Coeff_s" );
 
   // Construct a Map with NumElements and index base of 0
   epetra_map_ptr_ = Teuchos::rcp( new Epetra_Map(numElements_, 0, *epetra_comm_ptr_) );
@@ -124,11 +121,16 @@ Teuchos::RefCountPtr<const Epetra_Vector> ExampleApplication::get_exact_solution
   x_star.PutScalar(0.0);
   x_star.Scale(t,lambda);
   int myN = x_star.MyLength();
-  for ( int i=0 ; i<myN ; ++i )
+  if (coeff_s_ == 0.0)
   {
-    x_star[i] = exp(x_star[i]);
+    for ( int i=0 ; i<myN ; ++i )
+      x_star[i] = x0_*exp(x_star[i]);
   }
-  x_star.Scale(x0_);
+  else
+  {
+    for ( int i=0 ; i<myN ; ++i )
+      x_star[i] = (x0_+(1.0/coeff_s_))*exp(x_star[i]) - exp(x_star[i])*cos(t*coeff_s_)/coeff_s_;
+  }
   return(x_star_ptr);
 }
 
@@ -174,6 +176,7 @@ EpetraExt::ModelEvaluator::InArgs
 ExampleApplication::createInArgs() const
 {
   InArgsSetup inArgs;
+  inArgs.setSupports(IN_ARG_t,true);
   inArgs.setSupports(IN_ARG_x,true);
   if(implicit_) {
     inArgs.setSupports(IN_ARG_x_dot,true);
@@ -196,7 +199,8 @@ ExampleApplication::createOutArgs() const
 
 void ExampleApplication::evalModel( const InArgs& inArgs, const OutArgs& outArgs ) const
 {
-  const Epetra_Vector &x = *inArgs.get_x();
+  const Epetra_Vector &x = *(inArgs.get_x());
+  const double t = inArgs.get_t();
   const Epetra_Vector &lambda = *lambda_ptr_;
 #ifdef EXAMPLEAPPLICATION_DEBUG
       std::cout << "----------------------------------------------------------------------" << std::endl;
@@ -209,11 +213,12 @@ void ExampleApplication::evalModel( const InArgs& inArgs, const OutArgs& outArgs
   if(implicit_) 
   {
     const Epetra_Vector &x_dot = *inArgs.get_x_dot();
-    if(outArgs.get_f().get()) {
+    if(outArgs.get_f().get()) 
+    {
       Epetra_Vector &f = *outArgs.get_f();
       for (int i=0 ; i<localNumElements ; ++i)
       {
-        f[i] = x_dot[i] - lambda[i]*x[i];
+        f[i] = x_dot[i] - lambda[i]*x[i] - evalR(t,lambda[i],coeff_s_);
       }
 #ifdef EXAMPLEAPPLICATION_DEBUG
       std::cout << "ExampleApplication::evalModel (implicit) x_dot = " << std::endl;
@@ -255,7 +260,7 @@ void ExampleApplication::evalModel( const InArgs& inArgs, const OutArgs& outArgs
     int localNumElements = x.MyLength();
     for (int i=0 ; i<localNumElements ; ++i)
     {
-      f[i] = lambda[i]*x[i];
+      f[i] = lambda[i]*x[i]+evalR(t,lambda[i],coeff_s_);
     }
 #ifdef EXAMPLEAPPLICATION_DEBUG
     std::cout << "ExampleApplication::evalModel (explicit) f = " << std::endl;
@@ -266,3 +271,9 @@ void ExampleApplication::evalModel( const InArgs& inArgs, const OutArgs& outArgs
   std::cout << "----------------------------------------------------------------------" << std::endl;
 #endif
 }
+
+double ExampleApplication::evalR(const double& t, const double& lambda, const double& s) const
+{
+  return(exp(lambda*t)*sin(s*t));
+}
+

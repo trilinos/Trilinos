@@ -39,12 +39,15 @@ int main(int argc, char *argv[])
 {
   cout << Epetra_Version() << endl << endl;
 
+  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
+
   int NumElements = 1000;
 
   typedef double Scalar;
 
   Teuchos::RefCountPtr<const Epetra_Comm> epetra_comm;
   epetra_comm = Teuchos::rcp(new Epetra_SerialComm);
+
   // Construct a Map with NumElements and index base of 0
   Teuchos::RefCountPtr<const Epetra_Map> epetra_map;
   epetra_map = Teuchos::rcp(new Epetra_Map(NumElements, 0, *epetra_comm));

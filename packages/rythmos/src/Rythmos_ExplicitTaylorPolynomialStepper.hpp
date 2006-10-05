@@ -26,8 +26,8 @@
 // ***********************************************************************
 //@HEADER
 
-#ifndef RYTHMOS_STEPPER_EXPLICIT_TAYLOR_POLYNOMIAL_H
-#define RYTHMOS_STEPPER_EXPLICIT_TAYLOR_POLYNOMIAL_H
+#ifndef RYTHMOS_EXPLICIT_TAYLOR_POLYNOMIAL_STEPPER_H
+#define RYTHMOS_EXPLICIT_TAYLOR_POLYNOMIAL_STEPPER_H
 
 #include "Rythmos_Stepper.hpp"
 #include "Teuchos_RefCountPtr.hpp"
@@ -627,4 +627,4 @@ int ExplicitTaylorPolynomialStepper<Scalar>::GetOrder() const
 
 } // namespace Rythmos
 
-#endif // RYTHMOS_STEPPER_EXPLICIT_TAYLOR_POLYNOMIAL_H
+#endif // RYTHMOS_EXPLICIT_TAYLOR_POLYNOMIAL_STEPPER_H

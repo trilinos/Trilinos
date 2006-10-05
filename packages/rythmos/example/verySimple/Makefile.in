@@ -83,8 +83,6 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/tac_arg_enable_can_use_package.m4 \
 	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
-	$(top_srcdir)/config/tac_arg_enable_feature_sub_check.m4 \
-	$(top_srcdir)/config/tac_arg_enable_option.m4 \
 	$(top_srcdir)/config/tac_arg_inform_subpackage_used.m4 \
 	$(top_srcdir)/config/tac_arg_with_ar.m4 \
 	$(top_srcdir)/config/tac_arg_with_blaslib.m4 \
@@ -107,7 +105,7 @@ example_OBJECTS = $(am_example_OBJECTS)
 am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
 @USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
-@USING_GNUMAKE_TRUE@	$(RYTHMOS_LIBS))
+@USING_GNUMAKE_TRUE@	$(_EXPORT_LIBS))
 am__DEPENDENCIES_3 = $(am__DEPENDENCIES_2)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -156,6 +154,14 @@ ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 ENABLE_EPETRAEXT_THYRA_FALSE = @ENABLE_EPETRAEXT_THYRA_FALSE@
 ENABLE_EPETRAEXT_THYRA_TRUE = @ENABLE_EPETRAEXT_THYRA_TRUE@
+ENABLE_NOX_EPETRA_FALSE = @ENABLE_NOX_EPETRA_FALSE@
+ENABLE_NOX_EPETRA_TRUE = @ENABLE_NOX_EPETRA_TRUE@
+ENABLE_RYTHMOS_AMESOS_FALSE = @ENABLE_RYTHMOS_AMESOS_FALSE@
+ENABLE_RYTHMOS_AMESOS_TRUE = @ENABLE_RYTHMOS_AMESOS_TRUE@
+ENABLE_RYTHMOS_AZTECOO_FALSE = @ENABLE_RYTHMOS_AZTECOO_FALSE@
+ENABLE_RYTHMOS_AZTECOO_TRUE = @ENABLE_RYTHMOS_AZTECOO_TRUE@
+ENABLE_RYTHMOS_EPETRAEXT_FALSE = @ENABLE_RYTHMOS_EPETRAEXT_FALSE@
+ENABLE_RYTHMOS_EPETRAEXT_TRUE = @ENABLE_RYTHMOS_EPETRAEXT_TRUE@
 ENABLE_RYTHMOS_NOX_FALSE = @ENABLE_RYTHMOS_NOX_FALSE@
 ENABLE_RYTHMOS_NOX_TRUE = @ENABLE_RYTHMOS_NOX_TRUE@
 ENABLE_RYTHMOS_STRATIMIKOS_FALSE = @ENABLE_RYTHMOS_STRATIMIKOS_FALSE@
@@ -167,8 +173,6 @@ FLIBS = @FLIBS@
 GNU_HAVE_SWIG = @GNU_HAVE_SWIG@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
-HAVE_NEWP_SWAHILI_FALSE = @HAVE_NEWP_SWAHILI_FALSE@
-HAVE_NEWP_SWAHILI_TRUE = @HAVE_NEWP_SWAHILI_TRUE@
 HAVE_PERL = @HAVE_PERL@
 HAVE_SWIG_FALSE = @HAVE_SWIG_FALSE@
 HAVE_SWIG_TRUE = @HAVE_SWIG_TRUE@
@@ -287,10 +291,12 @@ example_LDADD = \
 common_dependecies = $(top_builddir)/src/librythmos.a \
 	$(top_builddir)/../epetra/src/libepetra.a
 
+_EXPORT_INCLUDES = $(RYTHMOS_INCLUDES) $(EPETRAEXT_INCLUDES)
+_EXPORT_LIBS = $(RYTHMOS_LIBS) $(EPETRAEXT_LIBS)
 @USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(RYTHMOS_INCLUDES)
-@USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(RYTHMOS_INCLUDES))
+@USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(_EXPORT_INCLUDES))
 @USING_GNUMAKE_FALSE@EXPORT_LIBS = $(RYTHMOS_LIBS)
-@USING_GNUMAKE_TRUE@EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(RYTHMOS_LIBS))
+@USING_GNUMAKE_TRUE@EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(_EXPORT_LIBS))
 AM_CPPFLAGS = $(EXPORT_INCLUDES)
 common_ldadd = $(EXPORT_LIBS)
 all: all-am

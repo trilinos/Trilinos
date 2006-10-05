@@ -41,20 +41,15 @@
 
 #include "Teuchos_dyn_cast.hpp"
 
-ExampleApplication::ExampleApplication(Teuchos::ParameterList &params)
+ExampleApplication1Dfem::ExampleApplication1Dfem(Teuchos::RefCountPtr<Epetra_Comm> &epetra_comm_ptr, Teuchos::ParameterList &params)
 {
-  initialize(params);
+  initialize(epetra_comm_ptr, params);
 }
 
-void ExampleApplication::initialize(Teuchos::ParameterList &params)
+void ExampleApplication1Dfem::initialize(Teuchos::RefCountPtr<Epetra_Comm> &epetra_comm_ptr, Teuchos::ParameterList &params)
 {
+  epetra_comm_ptr_ = epetra_comm_ptr;
   numElements_ = params.get<int>( "NumElements" );
-#ifdef HAVE_MPI
-  MPI_Comm mpiComm = params.get<MPI_Comm>( "MPIComm" );
-  epetra_comm_ptr_ = Teuchos::rcp( new Epetra_MpiComm(mpiComm) );
-#else
-  epetra_comm_ptr_ = Teuchos::rcp( new Epetra_SerialComm  );
-#endif // HAVE_MPI
   
   // This object is derived from NOX::Epetra::Interface
   problemInterfacePtr_ = Teuchos::rcp(new TransientInterface(numElements_, *epetra_comm_ptr_, -20.0, 20.0));
@@ -80,19 +75,19 @@ void ExampleApplication::initialize(Teuchos::ParameterList &params)
 // Overridden from EpetraExt::ModelEvaluator
 
 Teuchos::RefCountPtr<const Epetra_Map>
-ExampleApplication::get_x_map() const
+ExampleApplication1Dfem::get_x_map() const
 {
   return epetra_map_ptr_;
 }
 
 Teuchos::RefCountPtr<const Epetra_Map>
-ExampleApplication::get_f_map() const
+ExampleApplication1Dfem::get_f_map() const
 {
   return epetra_map_ptr_;
 }
 
 Teuchos::RefCountPtr<const Epetra_Vector>
-ExampleApplication::get_x_init() const
+ExampleApplication1Dfem::get_x_init() const
 {
   Epetra_Vector& soln = problemInterfacePtr_->getSolution();
   Teuchos::RefCountPtr<Epetra_Vector> x_init = Teuchos::rcp(new Epetra_Vector(soln));
@@ -100,7 +95,7 @@ ExampleApplication::get_x_init() const
 }
 
 Teuchos::RefCountPtr<const Epetra_Vector>
-ExampleApplication::get_x_dot_init() const
+ExampleApplication1Dfem::get_x_dot_init() const
 {
   Epetra_Vector& soln = problemInterfacePtr_->getSolution();
   Teuchos::RefCountPtr<Epetra_Vector> x_dot_init = Teuchos::rcp(new Epetra_Vector(soln));
@@ -109,14 +104,14 @@ ExampleApplication::get_x_dot_init() const
 }
 
 Teuchos::RefCountPtr<Epetra_Operator>
-ExampleApplication::create_W() const
+ExampleApplication1Dfem::create_W() const
 {
   Teuchos::RefCountPtr<Epetra_Operator> W = Teuchos::rcp(new Epetra_CrsMatrix(::Copy,*W_graph_));
   return W;
 }
 
 EpetraExt::ModelEvaluator::InArgs
-ExampleApplication::createInArgs() const
+ExampleApplication1Dfem::createInArgs() const
 {
   InArgsSetup inArgs;
   inArgs.setSupports(IN_ARG_x,true);
@@ -127,7 +122,7 @@ ExampleApplication::createInArgs() const
 }
 
 EpetraExt::ModelEvaluator::OutArgs
-ExampleApplication::createOutArgs() const
+ExampleApplication1Dfem::createOutArgs() const
 {
   OutArgsSetup outArgs;
   outArgs.setSupports(OUT_ARG_f,true);
@@ -135,12 +130,12 @@ ExampleApplication::createOutArgs() const
   return outArgs;
 }
 
-void ExampleApplication::evalModel( const InArgs& inArgs, const OutArgs& outArgs ) const
+void ExampleApplication1Dfem::evalModel( const InArgs& inArgs, const OutArgs& outArgs ) const
 {
   Teuchos::RefCountPtr<const Epetra_Vector> x = inArgs.get_x();
   Teuchos::RefCountPtr<const Epetra_Vector> xdot = inArgs.get_x_dot();
 #ifdef EXAMPLEAPPLICATION_DEBUG
-  std::cout << "ExampleApplication::evalModel ---------------------------{" << std::endl;
+  std::cout << "ExampleApplication1Dfem::evalModel ---------------------------{" << std::endl;
   std::cout << "x = " << std::endl;
   x->Print(std::cout);
   std::cout << "xdot = " << std::endl;
@@ -171,11 +166,11 @@ void ExampleApplication::evalModel( const InArgs& inArgs, const OutArgs& outArgs
 #endif // EXAMPLEAPPLICATION_DEBUG
   }
 #ifdef EXAMPLEAPPLICATION_DEBUG
-  std::cout << "ExampleApplication::evalModel ---------------------------}" << std::endl;
+  std::cout << "ExampleApplication1Dfem::evalModel ---------------------------}" << std::endl;
 #endif // EXAMPLEAPPLICATION_DEBUG
 }
 
-Teuchos::RefCountPtr<Epetra_Vector> ExampleApplication::get_exact_solution( double t ) const
+Teuchos::RefCountPtr<Epetra_Vector> ExampleApplication1Dfem::get_exact_solution( double t ) const
 {
   Epetra_Vector& x_exact = problemInterfacePtr_->getExactSoln(t);
   Teuchos::RefCountPtr<Epetra_Vector> x_exact_ptr = Teuchos::rcp(&x_exact,false);
