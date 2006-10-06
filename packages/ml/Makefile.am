@@ -235,7 +235,7 @@ run-tests:
 	--comm=$(ML_CHECK_COMM) \
 	--mpi-go="$(TRILINOS_MPI_GO)" \
 	--build-dir=$(TRILINOS_BUILD_DIR) \
-	--category=FRAMEWORK \
+	--category=$(TRILINOS_TEST_CATEGORY) \
 	--output-dir=@abs_top_builddir@/test/runtests-results \
 	--verbosity=1 \
 	--packages=ml
