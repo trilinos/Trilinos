@@ -52,7 +52,7 @@ namespace Teuchos
       FileInputStream(const string& filename);
 
       /** \brief Destructor */
-      virtual ~FileInputStream() {;}
+      virtual ~FileInputStream() { if( file_ ) { fclose(file_); } }
 
       /** \brief Read up to maxToRead bytes */
       virtual unsigned int readBytes(unsigned char* const toFill,
