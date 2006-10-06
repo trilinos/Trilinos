@@ -328,7 +328,7 @@ int main(int argc, char *argv[])
           j = (int) ((10.0*rand())/RAND_MAX + .5);
           for (i = 0; i < mesh.num_elems; i++) {
             if ((mesh.elements[i].my_part%10) == j){
-              mesh.elements[i].cpu_wgt[0] *= Test.Dynamic_Weights;
+              mesh.elements[i].cpu_wgt[0] = Test.Dynamic_Weights * (rand()%5);
             }
           }
         }
