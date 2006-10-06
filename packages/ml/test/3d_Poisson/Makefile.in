@@ -42,7 +42,7 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(3d_Poisson_SOURCES)
+SOURCES = $(3d_Poisson_SOURCES) $(GetNecessaryFiles_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -65,7 +65,7 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-noinst_PROGRAMS = 3d_Poisson$(EXEEXT)
+noinst_PROGRAMS = 3d_Poisson$(EXEEXT) GetNecessaryFiles$(EXEEXT)
 subdir = test/3d_Poisson
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -111,6 +111,9 @@ am_3d_Poisson_OBJECTS = 3d_Poisson-ml_example3d.$(OBJEXT)
 am__DEPENDENCIES_1 =
 am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
+am_GetNecessaryFiles_OBJECTS =
+GetNecessaryFiles_OBJECTS = $(am_GetNecessaryFiles_OBJECTS)
+GetNecessaryFiles_LDADD = $(LDADD)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -119,8 +122,8 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(3d_Poisson_SOURCES)
-DIST_SOURCES = $(3d_Poisson_SOURCES)
+SOURCES = $(3d_Poisson_SOURCES) $(GetNecessaryFiles_SOURCES)
+DIST_SOURCES = $(3d_Poisson_SOURCES) $(GetNecessaryFiles_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -307,9 +310,9 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 EXTRA_DIST = 3dPoissonEvaluateDefinitions baseline1 baseline2 baseline3 baseline5 baseline6 baseline7 ml_inputfile1 ml_inputfile2 ml_inputfile3 ml_inputfile5 ml_inputfile6 ml_inputfile7
 3d_Poisson_SOURCES = $(top_srcdir)/examples/Other/ml_example3d.c
+GetNecessaryFiles_SOURCES = $(top_srcdir)/test/3d_Poisson
 3d_Poisson_DEPENDENCIES = \
-    $(top_builddir)/src/libml.a \
-    GetNecessaryFiles
+    $(top_builddir)/src/libml.a
 
 ml_common_include_locations = $(ML_INCLUDES)
 ml_libs = $(ML_LIBS) \
@@ -570,9 +573,8 @@ uninstall-am: uninstall-info-am
 include $(top_builddir)/Makefile.export.ml
 
 3d_Poisson$(EXT): $(3d_Poisson_SOURCES)
-
 #copy these files over to the build area
-GetNecessaryFiles: $(EXTRA_DIST)
+GetNecessaryFiles$(EXEEXT): $(GetNecessaryFiles_SOURCES)
 	@if test ! -e ./3dPoissonEvaluateDefinitions; then cp -f $(srcdir)/3dPoissonEvaluateDefinitions .; fi
 	@if test ! -e ./baseline1 ; then cp -f $(srcdir)/baseline1 .; fi
 	@if test ! -e ./baseline2 ; then cp -f $(srcdir)/baseline2 .; fi

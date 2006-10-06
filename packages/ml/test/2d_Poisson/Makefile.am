@@ -33,14 +33,16 @@ include $(top_builddir)/Makefile.export.ml
 
 EXTRA_DIST= 2dPoissonEvaluateDefinitions baseline1 baseline2 baseline3 baseline5 baseline6 baseline7 ml_inputfile1 ml_inputfile2 ml_inputfile3 ml_inputfile5 ml_inputfile6 ml_inputfile7
 
-noinst_PROGRAMS = 2d_Poisson
+noinst_PROGRAMS = 2d_Poisson GetNecessaryFiles
 
 2d_Poisson_SOURCES = $(top_srcdir)/examples/Other/ml_example2d.c
 
 2d_Poisson$(EXT): $(2d_Poisson_SOURCES)
 
+GetNecessaryFiles_SOURCES= $(top_srcdir)/test/2d_Poisson
+
 #copy these files over to the build area
-GetNecessaryFiles: $(EXTRA_DIST)
+GetNecessaryFiles$(EXEEXT): $(GetNecessaryFiles_SOURCES)
 	@if test ! -e ./2dPoissonEvaluateDefinitions; then cp -f $(srcdir)/2dPoissonEvaluateDefinitions .; fi
 	@if test ! -e ./baseline1 ; then cp -f $(srcdir)/baseline1 .; fi
 	@if test ! -e ./baseline2 ; then cp -f $(srcdir)/baseline2 .; fi
@@ -56,8 +58,7 @@ GetNecessaryFiles: $(EXTRA_DIST)
 	@if test ! -e ./ml_inputfile7 ; then cp -f $(srcdir)/ml_inputfile7 .; fi
 
 2d_Poisson_DEPENDENCIES = \
-    $(top_builddir)/src/libml.a \
-    GetNecessaryFiles
+    $(top_builddir)/src/libml.a
 
 ml_common_include_locations = $(ML_INCLUDES)
 

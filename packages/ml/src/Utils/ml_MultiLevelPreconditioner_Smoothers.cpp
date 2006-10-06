@@ -73,14 +73,6 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
   int num_smoother_steps = List_.get("smoother: sweeps", 1);
 
   double omega = List_.get("smoother: damping factor",1.0);
-  // rst: There is a capability within some of the Gauss-Seidel
-  //      routines to estimate an automatic omega based on
-  //      looking at the spectral radius of L^{inv} A.
-  //      However the line below prevents us from turning this
-  //      on. We can either get rid of this or set the default omega
-  //      to 1 in another spot or add some new string (e.g. "compute omega").
-  //
-  //MS//if (omega == ML_DDEFAULT) omega = 1.0;
 
   int pre_or_post = 0;
   string PreOrPostSmoother = List_.get("smoother: pre or post","both");
@@ -550,6 +542,11 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
         ML_EXIT(EXIT_FAILURE);
       }
 
+      double subsmOmega;
+      if (Comm().NumProc() == 1) subsmOmega = 1.0;
+      else                       subsmOmega = ML_DDEFAULT;
+      subsmOmega = List_.get("subsmoother: damping factor",subsmOmega);
+
       sprintf(parameter,"subsmoother: type (level %d)", level);
       SubSmootherType = List_.get(parameter,SubSmootherType);
 
@@ -610,13 +607,13 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       else if (SubSmootherType == "symmetric Gauss-Seidel") {
         sprintf(parameter,"subsmoother: damping factor (level %d)",
                 logical_level);
-        omega = List_.get(parameter,ML_DDEFAULT);
+        subsmOmega = List_.get(parameter,subsmOmega);
         nodal_smoother=(void *) ML_Gen_Smoother_SymGaussSeidel;
         ML_Smoother_Arglist_Set(nodal_args_, 0, &nodal_its);
-        ML_Smoother_Arglist_Set(nodal_args_, 1, &omega);
+        ML_Smoother_Arglist_Set(nodal_args_, 1, &subsmOmega);
         edge_smoother=(void *) ML_Gen_Smoother_SymGaussSeidel;
         ML_Smoother_Arglist_Set(edge_args_, 0, &edge_its);
-        ML_Smoother_Arglist_Set(edge_args_, 1, &omega);
+        ML_Smoother_Arglist_Set(edge_args_, 1, &subsmOmega);
       }
       else if (Comm().MyPID() == 0)
         cerr << ErrorMsg_ << "Only MLS and SGS are supported as Hiptmair subsmoothers." << endl;

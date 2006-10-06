@@ -42,7 +42,7 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(METISCoarsening_SOURCES)
+SOURCES = $(GetNecessaryFiles_SOURCES) $(METISCoarsening_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -65,7 +65,7 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-noinst_PROGRAMS = METISCoarsening$(EXEEXT)
+noinst_PROGRAMS = METISCoarsening$(EXEEXT) GetNecessaryFiles$(EXEEXT)
 subdir = test/METISCoarsening
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -106,6 +106,9 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/ml_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
+am_GetNecessaryFiles_OBJECTS =
+GetNecessaryFiles_OBJECTS = $(am_GetNecessaryFiles_OBJECTS)
+GetNecessaryFiles_LDADD = $(LDADD)
 am_METISCoarsening_OBJECTS = METISCoarsening-cxx_main.$(OBJEXT)
 METISCoarsening_OBJECTS = $(am_METISCoarsening_OBJECTS)
 am__DEPENDENCIES_1 =
@@ -118,8 +121,12 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(METISCoarsening_SOURCES)
-DIST_SOURCES = $(METISCoarsening_SOURCES)
+COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+CCLD = $(CC)
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+SOURCES = $(GetNecessaryFiles_SOURCES) $(METISCoarsening_SOURCES)
+DIST_SOURCES = $(GetNecessaryFiles_SOURCES) $(METISCoarsening_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -307,8 +314,9 @@ target_vendor = @target_vendor@
 TEST_LIBS = $(ML_EXTRA_LIBS)     $(ML_LIBS)
 TEST_INCLUDES = $(ML_EXTRA_INCLUDES) $(ML_INCLUDES)
 EXTRA_DIST = EvaluateDefinitions baseline1
+GetNecessaryFiles_SOURCES = $(top_srcdir)/test/METISCoarsening
 METISCoarsening_SOURCES = $(srcdir)/cxx_main.cpp
-METISCoarsening_DEPENDENCIES = $(top_builddir)/src/libml.a GetNecessaryFiles
+METISCoarsening_DEPENDENCIES = $(top_builddir)/src/libml.a
 METISCoarsening_CXXFLAGS = $(TEST_INCLUDES)
 METISCoarsening_LDADD = ${TEST_LIBS}
 all: all-am
@@ -555,9 +563,8 @@ uninstall-am: uninstall-info-am
 
 
 include $(top_builddir)/Makefile.export.ml
-
 #copy these files over to the build area
-GetNecessaryFiles: $(EXTRA_DIST)
+GetNecessaryFiles$(EXEEXT): $(GetNecessaryFiles_SOURCES)
 	@if test ! -e ./EvaluateDefinitions; then cp -f $(srcdir)/EvaluateDefinitions .; fi
 	@if test ! -e ./baseline1 ; then cp -f $(srcdir)/baseline1 .; fi
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
