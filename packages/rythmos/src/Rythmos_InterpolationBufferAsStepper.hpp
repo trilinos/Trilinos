@@ -160,12 +160,22 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
   {
     if ( ( node_begin < time_list_[i] ) && ( time_list_[i] < node_end ) )
     {
-      status = IB->GetPoints(time_list_[i], x_list_[i], xdot_list_[i], accuracy_list_[i]); 
+      std::vector<Scalar> tmp_time_list = time_list_[i];
+      std::vector<Scalar> tmp_x_list, tmp_xdot_list, tmp_accuracy_list;
+      status = IB->GetPoints(tmp_time_list, &tmp_x_list, &tmp_xdot_list, &tmp_accuracy_list); 
+      x_list_[i] = tmp_x_list[0];
+      xdot_list_[i] = tmp_xdot_list[0];
+      accuracy_list_[i] = tmp_accuracy_list[0];
       if (!status) return(status);
     }
     else if ( ( stepper_begin < time_list_[i] ) && ( time_list_[i] < stepper_end ) )
     {
-      status = stepper->GetPoints(time_list_[i], x_list_[i], xdot_list_[i], accuracy_list_[i]); 
+      std::vector<Scalar> tmp_time_list = time_list_[i];
+      std::vector<Scalar> tmp_x_list, tmp_xdot_list, tmp_accuracy_list;
+      status = stepper->GetPoints(tmp_time_list, &tmp_x_list, &tmp_xdot_list, &tmp_accuracy_list); 
+      x_list_[i] = tmp_x_list[0];
+      xdot_list_[i] = tmp_xdot_list[0];
+      accuracy_list_[i] = tmp_accuracy_list[0];
       if (!status) return(status);
     }
     else
@@ -180,7 +190,12 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
         // Check to see if we're past the current requested time_list_[i] point:
         if (time_list_[i] <= stepper_end+step_taken)
         {
-          status = stepper->GetPoints(time_list_[i], x_list_[i], xdot_list_[i], accuracy_list_[i]); 
+          std::vector<Scalar> tmp_time_list = time_list_[i];
+          std::vector<Scalar> tmp_x_list, tmp_xdot_list, tmp_accuracy_list;
+          status = stepper->GetPoints(tmp_time_list, &tmp_x_list, &tmp_xdot_list, &tmp_accuracy_list); 
+          x_list_[i] = tmp_x_list[0];
+          xdot_list_[i] = tmp_xdot_list[0];
+          accuracy_list_[i] = tmp_accuracy_list[0];
           if (!status) return(status);
         }
         // Update end-points:
