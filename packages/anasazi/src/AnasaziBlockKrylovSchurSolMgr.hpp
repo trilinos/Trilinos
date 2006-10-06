@@ -271,8 +271,6 @@ template<class ScalarType, class MV, class OP>
 ReturnType 
 BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
 
-  Teuchos::TimeMonitor slvtimer(*_timerSolve);
-
   const int nev = _problem->getNEV();
   ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
   ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
@@ -335,149 +333,155 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
   int numRestarts = 0;
   int cur_nevBlocks = 0;
 
-  // tell bks_solver to iterate
-  while (1) {
-    try {
-      bks_solver->iterate();
+  // enter solve() iterations
+  {
+    Teuchos::TimeMonitor slvtimer(*_timerSolve);
   
-      // check convergence first
-      if (convtest->getStatus() == Passed ) {
-        // we have convergence
-        // convtest->whichVecs() tells us which vectors from solver state are the ones we want
-        // convtest->howMany() will tell us how many
-        break;
-      }
-      // check for restarting:  this is for the Hermitian case, or non-Hermitian conjugate split situation.
-      // --> for the Hermitian case the current subspace dimension needs to match the maximum subspace dimension
-      // --> for the non-Hermitican case:
-      //     --> if a conjugate pair was detected in the previous restart then the current subspace dimension needs to match the
-      //         maximum subspace dimension (the BKS solver keeps one extra vector if the problem is non-Hermitian).
-      //     --> if a conjugate pair was not detected in the previous restart then the current subspace dimension will be one less
-      //         than the maximum subspace dimension.
-      else if ( (bks_solver->getCurSubspaceDim() == bks_solver->getMaxSubspaceDim()) ||
-                (!_problem->isHermitian() && !_conjSplit && (bks_solver->getCurSubspaceDim()+1 == bks_solver->getMaxSubspaceDim())) ) {
-
-        Teuchos::TimeMonitor restimer(*_timerRestarting);
-
-        if ( numRestarts >= _maxRestarts ) {
-          break; // break from while(1){bks_solver->iterate()}
+  
+    // tell bks_solver to iterate
+    while (1) {
+      try {
+        bks_solver->iterate();
+    
+        // check convergence first
+        if (convtest->getStatus() == Passed ) {
+          // we have convergence
+          // convtest->whichVecs() tells us which vectors from solver state are the ones we want
+          // convtest->howMany() will tell us how many
+          break;
         }
-        numRestarts++;
-
-        printer->stream(Debug) << " Performing restart number " << numRestarts << " of " << _maxRestarts << endl << endl;
-
-        // Update the Schur form of the projected eigenproblem, then sort it.
-        if (!bks_solver->isSchurCurrent())
-          bks_solver->computeSchurForm( true );
-        
-        // Get the most current Ritz values before we continue.
-        _ritzValues = bks_solver->getRitzValues();
-
-        // Get the state.
-        BlockKrylovSchurState<ScalarType,MV> oldState = bks_solver->getState();
-        
-        // Get the current dimension of the factorization
-        int curDim = oldState.curDim;
-
-        // Determine if the storage for the nev eigenvalues of interest splits a complex conjugate pair.
-        std::vector<int> ritzIndex = bks_solver->getRitzIndex();
-        if (ritzIndex[_nevBlocks*_blockSize-1]==1) {
-          _conjSplit = true;
-          cur_nevBlocks = _nevBlocks*_blockSize+1;
-        } else {
-          _conjSplit = false;
-          cur_nevBlocks = _nevBlocks*_blockSize;
+        // check for restarting:  this is for the Hermitian case, or non-Hermitian conjugate split situation.
+        // --> for the Hermitian case the current subspace dimension needs to match the maximum subspace dimension
+        // --> for the non-Hermitican case:
+        //     --> if a conjugate pair was detected in the previous restart then the current subspace dimension needs to match the
+        //         maximum subspace dimension (the BKS solver keeps one extra vector if the problem is non-Hermitian).
+        //     --> if a conjugate pair was not detected in the previous restart then the current subspace dimension will be one less
+        //         than the maximum subspace dimension.
+        else if ( (bks_solver->getCurSubspaceDim() == bks_solver->getMaxSubspaceDim()) ||
+                  (!_problem->isHermitian() && !_conjSplit && (bks_solver->getCurSubspaceDim()+1 == bks_solver->getMaxSubspaceDim())) ) {
+  
+          Teuchos::TimeMonitor restimer(*_timerRestarting);
+  
+          if ( numRestarts >= _maxRestarts ) {
+            break; // break from while(1){bks_solver->iterate()}
+          }
+          numRestarts++;
+  
+          printer->stream(Debug) << " Performing restart number " << numRestarts << " of " << _maxRestarts << endl << endl;
+  
+          // Update the Schur form of the projected eigenproblem, then sort it.
+          if (!bks_solver->isSchurCurrent())
+            bks_solver->computeSchurForm( true );
+          
+          // Get the most current Ritz values before we continue.
+          _ritzValues = bks_solver->getRitzValues();
+  
+          // Get the state.
+          BlockKrylovSchurState<ScalarType,MV> oldState = bks_solver->getState();
+          
+          // Get the current dimension of the factorization
+          int curDim = oldState.curDim;
+  
+          // Determine if the storage for the nev eigenvalues of interest splits a complex conjugate pair.
+          std::vector<int> ritzIndex = bks_solver->getRitzIndex();
+          if (ritzIndex[_nevBlocks*_blockSize-1]==1) {
+            _conjSplit = true;
+            cur_nevBlocks = _nevBlocks*_blockSize+1;
+          } else {
+            _conjSplit = false;
+            cur_nevBlocks = _nevBlocks*_blockSize;
+          }
+          
+          // Update the Krylov-Schur decomposition
+  
+          // Get a view of the Schur vectors of interest.
+          Teuchos::SerialDenseMatrix<int,ScalarType> Qnev(Teuchos::View, *(oldState.Q), curDim, cur_nevBlocks);
+  
+          // Get a view of the current Krylov basis.
+          std::vector<int> curind( curDim );
+          for (int i=0; i<curDim; i++) { curind[i] = i; }
+          Teuchos::RefCountPtr<const MV> basistemp = MVT::CloneView( *(oldState.V), curind );
+  
+          // Create a vector for the new Krylov basis.
+          // Need cur_nevBlocks for the updated factorization and another block for the current factorization residual block (F).
+          Teuchos::RefCountPtr<MV> newV = MVT::Clone( *(oldState.V), cur_nevBlocks + _blockSize );
+          curind.resize(cur_nevBlocks);
+          Teuchos::RefCountPtr<MV> tmp_newV = MVT::CloneView( *newV, curind );
+          
+          // Compute the new Krylov basis.
+          // --> Vnew = V*Qnev
+          MVT::MvTimesMatAddMv( one, *basistemp, Qnev, zero, *tmp_newV );
+  
+          // Move the current factorization residual block (F) to the last block of newV.
+          curind.resize(_blockSize);
+          for (int i=0; i<_blockSize; i++) { curind[i] = curDim + i; }
+          Teuchos::RefCountPtr<const MV> oldF = MVT::CloneView( *(oldState.V), curind );
+          for (int i=0; i<_blockSize; i++) { curind[i] = cur_nevBlocks + i; }
+          MVT::SetBlock( *oldF, curind, *newV );
+          
+          // Update the Krylov-Schur quasi-triangular matrix.
+          
+          // Create storage for the new Schur matrix of the Krylov-Schur factorization
+          // Copy over the current quasi-triangular factorization of oldState.H which is stored in oldState.S.
+          Teuchos::SerialDenseMatrix<int,ScalarType> oldS(Teuchos::View, *(oldState.S), cur_nevBlocks+_blockSize, cur_nevBlocks);
+          Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > newH = 
+            Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( oldS ) );
+  
+          // Get a view of the B block of the current factorization
+          Teuchos::SerialDenseMatrix<int,ScalarType> oldB(Teuchos::View, *(oldState.H), _blockSize, _blockSize, curDim, curDim-_blockSize);
+  
+          // Get a view of the a block row of the Schur vectors.
+          Teuchos::SerialDenseMatrix<int,ScalarType> subQ(Teuchos::View, *(oldState.Q), _blockSize, cur_nevBlocks, curDim-_blockSize);
+          
+          // Get a view of the new B block of the updated Krylov-Schur factorization
+          Teuchos::SerialDenseMatrix<int,ScalarType> newB(Teuchos::View, *newH,  _blockSize, cur_nevBlocks, cur_nevBlocks);
+  
+          // Compute the new B block.
+          blas.GEMM( Teuchos::NO_TRANS, Teuchos::NO_TRANS, _blockSize, cur_nevBlocks, _blockSize, one, 
+                     oldB.values(), oldB.stride(), subQ.values(), subQ.stride(), zero, newB.values(), newB.stride() );
+   
+          // Set the new state and initialize the solver.
+          BlockKrylovSchurState<ScalarType,MV> newstate;
+          newstate.V = newV;
+          newstate.H = newH;
+          newstate.curDim = cur_nevBlocks;
+          bks_solver->initialize(newstate);
+  
         }
-        
-        // Update the Krylov-Schur decomposition
-
-        // Get a view of the Schur vectors of interest.
-        Teuchos::SerialDenseMatrix<int,ScalarType> Qnev(Teuchos::View, *(oldState.Q), curDim, cur_nevBlocks);
-
-        // Get a view of the current Krylov basis.
-        std::vector<int> curind( curDim );
-        for (int i=0; i<curDim; i++) { curind[i] = i; }
-        Teuchos::RefCountPtr<const MV> basistemp = MVT::CloneView( *(oldState.V), curind );
-
-        // Create a vector for the new Krylov basis.
-        // Need cur_nevBlocks for the updated factorization and another block for the current factorization residual block (F).
-        Teuchos::RefCountPtr<MV> newV = MVT::Clone( *(oldState.V), cur_nevBlocks + _blockSize );
-        curind.resize(cur_nevBlocks);
-        Teuchos::RefCountPtr<MV> tmp_newV = MVT::CloneView( *newV, curind );
-        
-        // Compute the new Krylov basis.
-        // --> Vnew = V*Qnev
-        MVT::MvTimesMatAddMv( one, *basistemp, Qnev, zero, *tmp_newV );
-
-        // Move the current factorization residual block (F) to the last block of newV.
-        curind.resize(_blockSize);
-        for (int i=0; i<_blockSize; i++) { curind[i] = curDim + i; }
-        Teuchos::RefCountPtr<const MV> oldF = MVT::CloneView( *(oldState.V), curind );
-        for (int i=0; i<_blockSize; i++) { curind[i] = cur_nevBlocks + i; }
-        MVT::SetBlock( *oldF, curind, *newV );
-        
-        // Update the Krylov-Schur quasi-triangular matrix.
-        
-        // Create storage for the new Schur matrix of the Krylov-Schur factorization
-        // Copy over the current quasi-triangular factorization of oldState.H which is stored in oldState.S.
-        Teuchos::SerialDenseMatrix<int,ScalarType> oldS(Teuchos::View, *(oldState.S), cur_nevBlocks+_blockSize, cur_nevBlocks);
-        Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > newH = 
-          Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( oldS ) );
-
-        // Get a view of the B block of the current factorization
-        Teuchos::SerialDenseMatrix<int,ScalarType> oldB(Teuchos::View, *(oldState.H), _blockSize, _blockSize, curDim, curDim-_blockSize);
-
-        // Get a view of the a block row of the Schur vectors.
-        Teuchos::SerialDenseMatrix<int,ScalarType> subQ(Teuchos::View, *(oldState.Q), _blockSize, cur_nevBlocks, curDim-_blockSize);
-        
-        // Get a view of the new B block of the updated Krylov-Schur factorization
-        Teuchos::SerialDenseMatrix<int,ScalarType> newB(Teuchos::View, *newH,  _blockSize, cur_nevBlocks, cur_nevBlocks);
-
-        // Compute the new B block.
-        blas.GEMM( Teuchos::NO_TRANS, Teuchos::NO_TRANS, _blockSize, cur_nevBlocks, _blockSize, one, 
-                   oldB.values(), oldB.stride(), subQ.values(), subQ.stride(), zero, newB.values(), newB.stride() );
- 
-        // Set the new state and initialize the solver.
-        BlockKrylovSchurState<ScalarType,MV> newstate;
-        newstate.V = newV;
-        newstate.H = newH;
-        newstate.curDim = cur_nevBlocks;
-        bks_solver->initialize(newstate);
-
+        else {
+          TEST_FOR_EXCEPTION(true,std::logic_error,"Anasazi::BlockKrylovSchurSolMgr::solve(): Invalid return from bks_solver::iterate().");
+        }
       }
-      else {
-        TEST_FOR_EXCEPTION(true,std::logic_error,"Anasazi::BlockKrylovSchurSolMgr::solve(): Invalid return from bks_solver::iterate().");
+      catch (std::exception e) {
+        printer->stream(Errors) << "Error! Caught exception in BlockKrylovSchur::iterate() at iteration " << bks_solver->getNumIters() << endl 
+                                << e.what() << endl;
+        throw;
       }
     }
-    catch (std::exception e) {
-      printer->stream(Errors) << "Error! Caught exception in BlockKrylovSchur::iterate() at iteration " << bks_solver->getNumIters() << endl 
-                              << e.what() << endl;
-      throw;
-    }
+  
+    // Get the most current Ritz values before we return
+    _ritzValues = bks_solver->getRitzValues();
+    
+    sol.numVecs = convtest->howMany();
+    if (sol.numVecs > 0) {
+      sol.index = bks_solver->getRitzIndex();
+      sol.Evals = bks_solver->getRitzValues();
+      // Check to see if conjugate pair is on the boundary.
+      if (sol.index[sol.numVecs-1]==1) {
+        sol.numVecs++;
+        sol.Evals.resize(sol.numVecs);
+        sol.index.resize(sol.numVecs);
+        bks_solver->setNumRitzVectors(sol.numVecs);
+      } else {
+        sol.Evals.resize(sol.numVecs);
+        sol.index.resize(sol.numVecs);
+        bks_solver->setNumRitzVectors(sol.numVecs);
+      }
+      bks_solver->computeRitzVectors();
+      sol.Evecs = MVT::CloneCopy( *(bks_solver->getRitzVectors()) );
+      sol.Espace = sol.Evecs;
+    } 
   }
-
-  // Get the most current Ritz values before we return
-  _ritzValues = bks_solver->getRitzValues();
-  
-  sol.numVecs = convtest->howMany();
-  if (sol.numVecs > 0) {
-    sol.index = bks_solver->getRitzIndex();
-    sol.Evals = bks_solver->getRitzValues();
-    // Check to see if conjugate pair is on the boundary.
-    if (sol.index[sol.numVecs-1]==1) {
-      sol.numVecs++;
-      sol.Evals.resize(sol.numVecs);
-      sol.index.resize(sol.numVecs);
-      bks_solver->setNumRitzVectors(sol.numVecs);
-    } else {
-      sol.Evals.resize(sol.numVecs);
-      sol.index.resize(sol.numVecs);
-      bks_solver->setNumRitzVectors(sol.numVecs);
-    }
-    bks_solver->computeRitzVectors();
-    sol.Evecs = MVT::CloneCopy( *(bks_solver->getRitzVectors()) );
-    sol.Espace = sol.Evecs;
-  } 
 
   // print final summary
   bks_solver->currentStatus(printer->stream(FinalSummary));
