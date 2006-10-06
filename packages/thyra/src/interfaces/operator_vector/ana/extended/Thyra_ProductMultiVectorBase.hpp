@@ -33,6 +33,8 @@
 
 namespace Thyra {
 
+template<class Scalar> class ProductVectorSpaceBase;
+
 /** \brief Base interface for product multi-vectors.
  *
  * This class defines an abstract interface for a multi-vector that is built
