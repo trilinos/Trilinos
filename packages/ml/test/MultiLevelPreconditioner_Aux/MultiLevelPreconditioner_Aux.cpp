@@ -79,8 +79,9 @@ int main(int argc, char *argv[])
   int NumPDEs = 5;
   Epetra_VbrMatrix* VbrA = CreateVbrMatrix(CrsA, NumPDEs);
 
-  Epetra_MultiVector LHS(VbrA->Map(), 2);
-  Epetra_MultiVector RHS(VbrA->Map(), 2);
+  int NumVectors = 1;
+  Epetra_MultiVector LHS(VbrA->Map(), NumVectors);
+  Epetra_MultiVector RHS(VbrA->Map(), NumVectors);
   Epetra_LinearProblem Problem(VbrA, &LHS, &RHS);
 
   Epetra_MultiVector* Coord = CreateCartesianCoordinates("2D", &(CrsA->Map()), 
@@ -175,14 +176,21 @@ int main(int argc, char *argv[])
 
   delete MLPrec;
 
-  double norm;
-  solver.GetLHS()->Norm2(&norm);
+  double norm[NumVectors];
+  solver.GetLHS()->Norm2(norm);
 
   if (Comm.MyPID() == 0)
-    cout << "Error = " << norm << endl;
+    for (int i=0; i<NumVectors; i++)
+      printf("Error[%d] = %e\n",i,norm[i]);
 
-  if (norm > 1e-5)
+  double maxNorm=0.0;
+  for (int i=0; i<NumVectors; i++)
+    if (norm[i] > maxNorm) maxNorm = norm[i];
+    
+  if (maxNorm > 1e-5) {
+    if (Comm.MyPID() == 0) printf("Test failed.\n"); 
     exit(EXIT_FAILURE);
+  }
 
   delete Coord;
   delete VbrA;

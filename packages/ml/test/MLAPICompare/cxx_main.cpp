@@ -97,8 +97,8 @@ int main(int argc, char *argv[])
 
   Epetra_Map* Map = CreateMap("Cartesian2D", Comm, GalerList);
   Epetra_CrsMatrix* A_Epetra = CreateCrsMatrix("Laplace2D", Map, GalerList);
-  Epetra_MultiVector X_Epetra(*Map, 2);
-  Epetra_MultiVector B_Epetra(*Map, 2);
+  Epetra_MultiVector X_Epetra(*Map, 1);
+  Epetra_MultiVector B_Epetra(*Map, 1);
   Epetra_MultiVector R_Epetra(X_Epetra);
   R_Epetra.PutScalar(0.0);
 
