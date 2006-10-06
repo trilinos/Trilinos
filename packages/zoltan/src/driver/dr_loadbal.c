@@ -602,7 +602,7 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
      */
     MPI_Barrier(MPI_COMM_WORLD);   /* For timings only */
     stime = MPI_Wtime();
-    if (new_decomp && (num_exported != -1 || num_imported != -1)){ // EBEB  6/8/06
+    if (new_decomp && (num_exported != -1 || num_imported != -1)){/*EBEB6/8/06*/
       /* Migrate if new decomposition and RETURN_LISTS != NONE */
       if (!migrate_elements(Proc, mesh, zz, num_gid_entries, num_lid_entries,
           num_imported, import_gids, import_lids, import_procs, import_to_part,
