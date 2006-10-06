@@ -46,9 +46,6 @@ namespace Sacado {
   template <typename TypeSeq, typename BaseT, template<typename> class ObjectT>
   class TemplateIterator;
 
-  template <typename ScalarT> struct TypeIndex {};
-
-
   //! Container class to manager template instantiations of a template class
   /*!
    * This class provides a generic container class for managing multiple
@@ -87,8 +84,7 @@ namespace Sacado {
       BuildObject(std::vector< Teuchos::RefCountPtr<BaseT> >& objects_,
 		  const BuilderOpT& builder_) :
 	objects(objects_), builder(builder_) {}
-      template <typename T>
-      void operator()(T) const {
+      template <typename T> void operator()(T) const {
 	int idx = mpl::find<TypeSeq,T>::value;
 	objects[idx] = builder.template build<T>();
       }
