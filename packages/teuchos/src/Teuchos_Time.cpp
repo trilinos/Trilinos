@@ -44,11 +44,12 @@ LARGE_INTEGER start_count, count_freq;	// counts per sec.
 
 inline void seconds_initialize() {
   if( seconds_initialized ) return;
+  std::cout << "\nCalling Win32 version of Teuchos::seconds_initialize()!\n";
   // Figure out how often the performance counter increments
   ::QueryPerformanceFrequency( &count_freq );
   // Set this thread's priority as high as reasonably possible to prevent
-    // timeslice interruptions
-    ::SetThreadPriority( ::GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL );
+  // timeslice interruptions
+  ::SetThreadPriority( ::GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL );
   // Get the first count.
   assert( QueryPerformanceCounter( &start_count ) );
   seconds_initialized = true;
@@ -97,6 +98,7 @@ double Time::wallTime()
   /* KL: warning: this code is probably not portable! */
   /* HT: have added some preprocessing to address problem compilers */
 	/* RAB: I modifed so that timer will work if MPI support is compiled in but not initialized */
+
 #ifdef HAVE_MPI
 
 	int mpiInitialized;
@@ -116,13 +118,6 @@ double Time::wallTime()
 
 	}
 
-#elif ICL
-
-  clock_t start;
-
-  start = clock();
-  return( (double)( start ) / CLOCKS_PER_SEC );
-
 #elif defined(__INTEL_COMPILER) && defined(_WIN32)
 
   seconds_initialize();
@@ -133,6 +128,13 @@ double Time::wallTime()
     sec = (double)( count.QuadPart - start_count.QuadPart ) / count_freq.QuadPart;
   //std::cout << "ticks = " << ticks << ", sec = " << sec << std::endl;
   return sec;
+
+#elif ICL
+
+  clock_t start;
+
+  start = clock();
+  return( (double)( start ) / CLOCKS_PER_SEC );
 
 #else
 
@@ -148,9 +150,9 @@ double Time::wallTime()
   }
   gettimeofday(&tp, NULL);
   return( ((double) (tp.tv_sec - start)) + (tp.tv_usec-startu)/1000000.0 );
-#  else
+#  else // MINGW
   return( (double) clock() / CLOCKS_PER_SEC );
-#  endif
+#  endif // MINGW
 
 #endif
 
