@@ -33,35 +33,98 @@
 # 1DFEM Sources
 # ------------------------------------------------------------------------
 
-ONEDFEM_H = \
+ELEMENT_H = \
 	$(srcdir)/FEApp_AbstractElement.hpp \
 	$(srcdir)/FEApp_LinearElement.hpp \
+	$(srcdir)/FEApp_ElementFactory.hpp
+
+ELEMENT = \
+	$(srcdir)/FEApp_LinearElement.cpp \
+	$(srcdir)/FEApp_ElementFactory.cpp
+
+QUADRATURE_H = \
 	$(srcdir)/FEApp_AbstractQuadrature.hpp \
 	$(srcdir)/FEApp_GaussianQuadrature2.hpp \
+	$(srcdir)/FEApp_QuadratureFactory.hpp
+
+QUADRATURE = \
+	$(srcdir)/FEApp_GaussianQuadrature2.cpp \
+	$(srcdir)/FEApp_QuadratureFactory.cpp
+
+SOURCE_H = \
 	$(srcdir)/FEApp_AbstractSourceFunction.hpp \
-	$(srcdir)/FEApp_QuadraticSourceFunction.hpp \
+	$(srcdir)/FEApp_QuadraticSourceFunction.hpp
+
+SOURCE = 
+
+PDE_H = \
 	$(srcdir)/FEApp_AbstractPDE_NTBase.hpp \
 	$(srcdir)/FEApp_AbstractPDE.hpp \
 	$(srcdir)/FEApp_HeatNonlinearSourcePDE.hpp \
 	$(srcdir)/FEApp_HeatNonlinearSourcePDEImpl.hpp \
+	$(srcdir)/FEApp_BrusselatorPDE.hpp \
+	$(srcdir)/FEApp_BrusselatorPDEImpl.hpp
+
+PDE = 
+
+BC_H = \
 	$(srcdir)/FEApp_AbstractBC.hpp \
-	$(srcdir)/FEApp_ConstantDirichletBC.hpp \
-	$(srcdir)/FEApp_Mesh.hpp \
+	$(srcdir)/FEApp_ConstantDirichletBC.hpp
+
+BC = \
+	$(srcdir)/FEApp_ConstantDirichletBC.cpp
+
+MESH_H = \
+	$(srcdir)/FEApp_Mesh.hpp
+
+MESH = \
+	$(srcdir)/FEApp_Mesh.cpp
+
+FILL_H = \
 	$(srcdir)/FEApp_AbstractInitPostOp.hpp \
 	$(srcdir)/FEApp_InitPostOps.hpp \
 	$(srcdir)/FEApp_GlobalFill.hpp \
-	$(srcdir)/FEApp_GlobalFillImpl.hpp \
+	$(srcdir)/FEApp_GlobalFillImpl.hpp
+
+FILL = \
+	$(srcdir)/FEApp_InitPostOps.cpp
+
+DISC_H = \
+	$(srcdir)/FEApp_AbstractDiscretization.hpp \
 	$(srcdir)/FEApp_CZeroDiscretization.hpp \
+	$(srcdir)/FEApp_DiscretizationFactory.hpp
+
+DISC = \
+	$(srcdir)/FEApp_CZeroDiscretization.cpp \
+	$(srcdir)/FEApp_DiscretizationFactory.cpp
+
+APP_H = \
 	$(srcdir)/FEApp_Application.hpp
 
-ONEDFEM = \
-	$(srcdir)/FEApp_LinearElement.cpp \
-	$(srcdir)/FEApp_GaussianQuadrature2.cpp \
-	$(srcdir)/FEApp_ConstantDirichletBC.cpp \
-	$(srcdir)/FEApp_Mesh.cpp \
-	$(srcdir)/FEApp_InitPostOps.cpp \
-	$(srcdir)/FEApp_CZeroDiscretization.cpp \
+APP = \
 	$(srcdir)/FEApp_Application.cpp
+
+ONEDFEM_H = \
+	$(ELEMENT_H) \
+	$(QUADRATURE_H) \
+	$(SOURCE_H) \
+	$(PDE_H) \
+	$(BC_H) \
+	$(MESH_H) \
+	$(FILL_H) \
+	$(DISC_H) \
+	$(APP_H)
+
+ONEDFEM = \
+	$(ELEMENT) \
+	$(QUADRATURE) \
+	$(SOURCE) \
+	$(PDE) \
+	$(BC) \
+	$(MESH) \
+	$(FILL) \
+	$(DISC) \
+	$(APP)
 
 # ------------------------------------------------------------------------
 # 1DFEM library specifications

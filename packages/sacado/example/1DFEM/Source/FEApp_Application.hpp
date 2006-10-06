@@ -35,17 +35,24 @@
 #include <vector>
 
 #include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_ParameterList.hpp"
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Import.h"
 #include "Epetra_Export.h"
 
-#include "FEApp_CZeroDiscretization.hpp"
 #include "FEApp_AbstractBC.hpp"
-#include "FEApp_AbstractQuadrature.hpp"
-
 #include "FEApp_AbstractPDE.hpp"
+#include "FEApp_QuadratureFactory.hpp"
+#include "FEApp_DiscretizationFactory.hpp"
+
 #include "Sacado_Fad_DFad.hpp"
+#include "Sacado_TemplateManager.hpp"
+#include "Sacado_MPL_vector.hpp"
+
+typedef double RealType;
+typedef Sacado::Fad::DFad<double> FadType;
+typedef Sacado::mpl::vector<RealType, FadType> ValidTypes;
 
 namespace FEApp {
 
@@ -53,22 +60,33 @@ namespace FEApp {
   public:
 
     //! Constructor 
+    template <typename BuilderT>
     Application(
-       const Teuchos::RefCountPtr<FEApp::CZeroDiscretization> c0_disc,
-       const std::vector< Teuchos::RefCountPtr<const FEApp::AbstractBC> > bcs,
-       const Teuchos::RefCountPtr<const FEApp::AbstractQuadrature>& quadRule);
+		const BuilderT& pdeBuilder,
+		const std::vector<double>& coords,
+		unsigned int num_equations,
+		const Teuchos::RefCountPtr<const Epetra_Comm>& comm,
+		const Teuchos::RefCountPtr<Teuchos::ParameterList>& params);
 
     //! Destructor
     ~Application();
 
+    //! Get DOF map
+    Teuchos::RefCountPtr<Epetra_Map> getMap();
+
+    //! Get Jacobian graph
+    Teuchos::RefCountPtr<Epetra_CrsGraph> getJacobianGraph();
+
+    //! Set boundary conditions
+    void setBCs(
+       const std::vector< Teuchos::RefCountPtr<const FEApp::AbstractBC> > bcs);
+
     //! Compute global residual
-    void computeGlobalResidual(AbstractPDE<double>& pde,
-			     const Epetra_Vector& x,
+    void computeGlobalResidual(const Epetra_Vector& x,
 			       Epetra_Vector& f);
 
     //! Compute global Jacobian
-    void computeGlobalJacobian(AbstractPDE< Sacado::Fad::DFad<double> >& pde,
-			       const Epetra_Vector& x,
+    void computeGlobalJacobian(const Epetra_Vector& x,
 			       Epetra_Vector& f,
 			       Epetra_CrsMatrix& jac);
 
@@ -83,7 +101,7 @@ namespace FEApp {
   protected:
     
     //! Element discretization
-    Teuchos::RefCountPtr<FEApp::CZeroDiscretization> disc;
+    Teuchos::RefCountPtr<FEApp::AbstractDiscretization> disc;
 
     //! Boundary conditions
     std::vector< Teuchos::RefCountPtr<const FEApp::AbstractBC> > bc;
@@ -91,23 +109,69 @@ namespace FEApp {
     //! Quadrature rule
     Teuchos::RefCountPtr<const FEApp::AbstractQuadrature> quad;
 
+    //! PDE equations
+    FEApp::AbstractPDE_TemplateManager<ValidTypes> pdeTM;
+
     //! Importer for overlapped data
-    Epetra_Import importer;
+    Teuchos::RefCountPtr<Epetra_Import> importer;
 
     //! Exporter for overlapped data
-    Epetra_Export exporter;
+    Teuchos::RefCountPtr<Epetra_Export> exporter;
 
     //! Overlapped solution vector
-    Epetra_Vector overlapped_x;
+    Teuchos::RefCountPtr<Epetra_Vector> overlapped_x;
 
     //! Overlapped residual vector
-    Epetra_Vector overlapped_f;
+    Teuchos::RefCountPtr<Epetra_Vector> overlapped_f;
 
     //! Overlapped Jacobian matrix
-    Epetra_CrsMatrix overlapped_jac;
+    Teuchos::RefCountPtr<Epetra_CrsMatrix> overlapped_jac;
 
   };
 
+}
+
+template <typename BuilderT>
+FEApp::Application::Application(
+		   const BuilderT& pdeBuilder,
+		   const std::vector<double>& coords,
+		   unsigned int num_equations,
+		   const Teuchos::RefCountPtr<const Epetra_Comm>& comm,
+		   const Teuchos::RefCountPtr<Teuchos::ParameterList>& params) 
+{
+  // Create quadrature object
+  Teuchos::RefCountPtr<Teuchos::ParameterList> quadParams = 
+    Teuchos::rcp(&(params->sublist("Quadrature")),false);
+  FEApp::QuadratureFactory quadFactory(quadParams);
+  quad = quadFactory.create();
+
+  // Create discretization object
+  Teuchos::RefCountPtr<Teuchos::ParameterList> discParams = 
+    Teuchos::rcp(&(params->sublist("Discretization")),false);
+  FEApp::DiscretizationFactory discFactory(discParams);
+  disc = discFactory.create(coords, num_equations, comm);
+  disc->createMesh();
+  disc->createMaps();
+  disc->createJacobianGraphs();
+
+  // Create Epetra objects
+  importer = Teuchos::rcp(new Epetra_Import(*(disc->getOverlapMap()), 
+					    *(disc->getMap())));
+  exporter = Teuchos::rcp(new Epetra_Export(*(disc->getOverlapMap()), 
+					    *(disc->getMap())));
+  overlapped_x = Teuchos::rcp(new Epetra_Vector(*(disc->getOverlapMap())));
+  overlapped_f = Teuchos::rcp(new Epetra_Vector(*(disc->getOverlapMap())));
+  overlapped_jac = 
+    Teuchos::rcp(new Epetra_CrsMatrix(Copy, 
+				      *(disc->getOverlapJacobianGraph())));
+
+  // Initialize PDEs
+  typedef FEApp::AbstractPDE_TemplateManager<ValidTypes>::iterator iterator;
+  pdeTM.buildObjects(pdeBuilder);
+  int nqp = quad->numPoints();
+  int nn = disc->getNumNodesPerElement();
+  for (iterator it = pdeTM.begin(); it != pdeTM.end(); ++it)
+    it->init(nqp, nn);
 }
 
 #endif // FEAPP_APPLICATION_HPP

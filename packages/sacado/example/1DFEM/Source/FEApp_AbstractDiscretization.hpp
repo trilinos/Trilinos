@@ -29,58 +29,67 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef FEAPP_ABSTRACTPDE_HPP
-#define FEAPP_ABSTRACTPDE_HPP
+#ifndef FEAPP_ABSTRACTDISCRETIZATION_HPP
+#define FEAPP_ABSTRACTDISCRETIZATION_HPP
 
 #include <vector>
 
-#include "FEApp_AbstractPDE_NTBase.hpp"
-#include "FEApp_AbstractElement.hpp"
-#include "FEApp_AbstractQuadrature.hpp"
+#include "Teuchos_RefCountPtr.hpp"
 
-#include "Sacado_TemplateManager.hpp"
+#include "Epetra_Map.h"
+#include "Epetra_CrsGraph.h"
+
+#include "FEApp_Mesh.hpp"
 
 namespace FEApp {
 
-  /*!
-   * \brief Abstract interface for representing a discretized 1-D PDE.
-   */
-  template <typename ScalarT>
-  class AbstractPDE : public FEApp::AbstractPDE_NTBase {
+  class AbstractDiscretization {
   public:
-  
-    //! Default constructor
-    AbstractPDE() {};
+
+    //! Constructor
+    AbstractDiscretization() {}
 
     //! Destructor
-    virtual ~AbstractPDE() {};
+    virtual ~AbstractDiscretization() {}
 
-    //! Evaluate discretized PDE element-level residual
-    virtual void
-    evaluateElementResidual(const FEApp::AbstractQuadrature& quadRule,
-			    const FEApp::AbstractElement& element,
-			    const std::vector<ScalarT>& solution,
-			    std::vector<ScalarT>& residual) = 0;
+    //! Create element mesh
+    virtual void createMesh() = 0;
+
+    //! Create DOF maps
+    virtual void createMaps() = 0;
+
+    //! Create Jacobian graph
+    virtual void createJacobianGraphs() = 0;
+
+    //! Get element mesh
+    virtual Teuchos::RefCountPtr<FEApp::Mesh> getMesh() = 0; 
+
+    //! Get DOF map
+    virtual Teuchos::RefCountPtr<Epetra_Map> getMap() = 0;
+
+    //! Get overlapped DOF map
+    virtual Teuchos::RefCountPtr<Epetra_Map> getOverlapMap() = 0;
+
+    //! Get Jacobian graph
+    virtual Teuchos::RefCountPtr<Epetra_CrsGraph> getJacobianGraph() = 0;
+
+    //! Get overlap Jacobian graph
+    virtual Teuchos::RefCountPtr<Epetra_CrsGraph> getOverlapJacobianGraph() = 0;
+
+    //! Get number of nodes per element
+    virtual int getNumNodesPerElement() const = 0;
+
 
   private:
-    
-    //! Private to prohibit copying
-    AbstractPDE(const AbstractPDE&);
 
     //! Private to prohibit copying
-    AbstractPDE& operator=(const AbstractPDE&);
+    AbstractDiscretization(const AbstractDiscretization&);
 
-  };
+    //! Private to prohibit copying
+    AbstractDiscretization& operator=(const AbstractDiscretization&);
 
-  template <typename TypeSeq>
-  class AbstractPDE_TemplateManager : 
-    public Sacado::TemplateManager<TypeSeq, FEApp::AbstractPDE_NTBase,
-				   AbstractPDE> {
-  public:
-    AbstractPDE_TemplateManager() {}
-    ~AbstractPDE_TemplateManager() {}
   };
 
 }
 
-#endif // FEAPP_ABSTRACTPDE_HPP
+#endif // FEAPP_ABSTRACTDISCRETIZATION_HPP

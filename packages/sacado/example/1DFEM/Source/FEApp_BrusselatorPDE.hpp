@@ -35,9 +35,6 @@
 #include "Teuchos_RefCountPtr.hpp"
 
 #include "FEApp_AbstractPDE.hpp"
-#include "FEApp_AbstractSourceFunction.hpp"
-
-#include "Sacado_TemplateManager.hpp"
 
 namespace FEApp {
 
@@ -104,15 +101,6 @@ namespace FEApp {
     //! Model parameters
     double alpha, beta, D1, D2;
 
-  };
-
-  template <typename TypeSeq>
-  class BrusselatorPDE_TemplateManager : 
-    public Sacado::TemplateManager<TypeSeq, FEApp::AbstractPDE_NTBase,
-				   BrusselatorPDE> {
-  public:
-    BrusselatorPDE_TemplateManager() {}
-    ~BrusselatorPDE_TemplateManager() {}
   };
 
   class BrusselatorPDE_TemplateBuilder {

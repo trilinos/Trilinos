@@ -28,59 +28,46 @@
 // 
 // ***********************************************************************
 // @HEADER
+#include "Teuchos_TestForException.hpp"
+#include "Sacado_ConfigDefs.h"
+#include "FEApp_QuadratureFactory.hpp"
+#include "FEApp_GaussianQuadrature2.hpp"
 
-#ifndef FEAPP_ABSTRACTPDE_HPP
-#define FEAPP_ABSTRACTPDE_HPP
-
-#include <vector>
-
-#include "FEApp_AbstractPDE_NTBase.hpp"
-#include "FEApp_AbstractElement.hpp"
-#include "FEApp_AbstractQuadrature.hpp"
-
-#include "Sacado_TemplateManager.hpp"
-
-namespace FEApp {
-
-  /*!
-   * \brief Abstract interface for representing a discretized 1-D PDE.
-   */
-  template <typename ScalarT>
-  class AbstractPDE : public FEApp::AbstractPDE_NTBase {
-  public:
-  
-    //! Default constructor
-    AbstractPDE() {};
-
-    //! Destructor
-    virtual ~AbstractPDE() {};
-
-    //! Evaluate discretized PDE element-level residual
-    virtual void
-    evaluateElementResidual(const FEApp::AbstractQuadrature& quadRule,
-			    const FEApp::AbstractElement& element,
-			    const std::vector<ScalarT>& solution,
-			    std::vector<ScalarT>& residual) = 0;
-
-  private:
-    
-    //! Private to prohibit copying
-    AbstractPDE(const AbstractPDE&);
-
-    //! Private to prohibit copying
-    AbstractPDE& operator=(const AbstractPDE&);
-
-  };
-
-  template <typename TypeSeq>
-  class AbstractPDE_TemplateManager : 
-    public Sacado::TemplateManager<TypeSeq, FEApp::AbstractPDE_NTBase,
-				   AbstractPDE> {
-  public:
-    AbstractPDE_TemplateManager() {}
-    ~AbstractPDE_TemplateManager() {}
-  };
-
+FEApp::QuadratureFactory::QuadratureFactory(
+	    const Teuchos::RefCountPtr<Teuchos::ParameterList>& quadParams_) :
+  quadParams(quadParams_)
+{
 }
 
-#endif // FEAPP_ABSTRACTPDE_HPP
+Teuchos::RefCountPtr<FEApp::AbstractQuadrature>
+FEApp::QuadratureFactory::create()
+{
+  Teuchos::RefCountPtr<FEApp::AbstractQuadrature> strategy;
+
+  std::string& method = quadParams->get("Method", "Gaussian");
+  if (method == "Gaussian") {
+    int num_points = quadParams->get("Num Points", 2);
+
+    if (num_points == 2) {
+      strategy = Teuchos::rcp(new FEApp::GaussianQuadrature2);
+    }
+    else {
+      TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
+			 std::endl << 
+			 "Error!  Number of quadrature points = " << 
+			 num_points << 
+			 " is not supported for Gaussian quadrature!" << 
+			 std::endl << "Supplied parameter list is " << 
+			 std::endl << *quadParams);
+    }
+  }
+  else {
+    TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
+		       std::endl << 
+		       "Error!  Unknown quadrature method " << method << 
+		       "!" << std::endl << "Supplied parameter list is " << 
+		       std::endl << *quadParams);
+  }
+
+  return strategy;
+}

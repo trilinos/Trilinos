@@ -34,23 +34,23 @@
 
 #include <vector>
 
-#include "Teuchos_RefCountPtr.hpp"
-
+#include "Teuchos_ParameterList.hpp"
 #include "Epetra_Comm.h"
-#include "Epetra_Map.h"
-#include "Epetra_CrsGraph.h"
 
-#include "FEApp_Mesh.hpp"
+#include "FEApp_AbstractDiscretization.hpp"
+#include "FEApp_ElementFactory.hpp"
 
 namespace FEApp {
 
-  class CZeroDiscretization {
+  class CZeroDiscretization : public FEApp::AbstractDiscretization {
   public:
 
     //! Constructor
-    CZeroDiscretization(const std::vector<double>& coords,
-			unsigned int num_equations,
-			Teuchos::RefCountPtr<const Epetra_Comm> epetra_comm);
+    CZeroDiscretization(
+		 const std::vector<double>& coords,
+		 unsigned int num_equations,
+		 const Teuchos::RefCountPtr<const Epetra_Comm>& epetra_comm,
+		 const Teuchos::RefCountPtr<Teuchos::ParameterList>& params);
 
     //! Destructor
     virtual ~CZeroDiscretization();
@@ -79,6 +79,9 @@ namespace FEApp {
     //! Get overlap Jacobian graph
     virtual Teuchos::RefCountPtr<Epetra_CrsGraph> getOverlapJacobianGraph();
 
+    //! Get number of nodes per element
+    virtual int getNumNodesPerElement() const;
+
 
   private:
 
@@ -95,6 +98,9 @@ namespace FEApp {
 
     //! Epetra communicator
     Teuchos::RefCountPtr<const Epetra_Comm> comm;
+
+    //! Element factory
+    FEApp::ElementFactory elemFactory;
 
     //! Element mesh
     Teuchos::RefCountPtr<FEApp::Mesh> mesh;

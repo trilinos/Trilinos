@@ -28,59 +28,33 @@
 // 
 // ***********************************************************************
 // @HEADER
+#include "Teuchos_TestForException.hpp"
+#include "Sacado_ConfigDefs.h"
+#include "FEApp_ElementFactory.hpp"
+#include "FEApp_LinearElement.hpp"
 
-#ifndef FEAPP_ABSTRACTPDE_HPP
-#define FEAPP_ABSTRACTPDE_HPP
-
-#include <vector>
-
-#include "FEApp_AbstractPDE_NTBase.hpp"
-#include "FEApp_AbstractElement.hpp"
-#include "FEApp_AbstractQuadrature.hpp"
-
-#include "Sacado_TemplateManager.hpp"
-
-namespace FEApp {
-
-  /*!
-   * \brief Abstract interface for representing a discretized 1-D PDE.
-   */
-  template <typename ScalarT>
-  class AbstractPDE : public FEApp::AbstractPDE_NTBase {
-  public:
-  
-    //! Default constructor
-    AbstractPDE() {};
-
-    //! Destructor
-    virtual ~AbstractPDE() {};
-
-    //! Evaluate discretized PDE element-level residual
-    virtual void
-    evaluateElementResidual(const FEApp::AbstractQuadrature& quadRule,
-			    const FEApp::AbstractElement& element,
-			    const std::vector<ScalarT>& solution,
-			    std::vector<ScalarT>& residual) = 0;
-
-  private:
-    
-    //! Private to prohibit copying
-    AbstractPDE(const AbstractPDE&);
-
-    //! Private to prohibit copying
-    AbstractPDE& operator=(const AbstractPDE&);
-
-  };
-
-  template <typename TypeSeq>
-  class AbstractPDE_TemplateManager : 
-    public Sacado::TemplateManager<TypeSeq, FEApp::AbstractPDE_NTBase,
-				   AbstractPDE> {
-  public:
-    AbstractPDE_TemplateManager() {}
-    ~AbstractPDE_TemplateManager() {}
-  };
-
+FEApp::ElementFactory::ElementFactory(
+	    const Teuchos::RefCountPtr<Teuchos::ParameterList>& elemParams_) :
+  elemParams(elemParams_)
+{
 }
 
-#endif // FEAPP_ABSTRACTPDE_HPP
+Teuchos::RefCountPtr<FEApp::AbstractElement>
+FEApp::ElementFactory::create()
+{
+  Teuchos::RefCountPtr<FEApp::AbstractElement> strategy;
+
+  std::string& method = elemParams->get("Method", "Linear");
+  if (method == "Linear") {
+    strategy = Teuchos::rcp(new FEApp::LinearElement);
+  }
+  else {
+    TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
+		       std::endl << 
+		       "Error!  Unknown element method " << method << 
+		       "!" << std::endl << "Supplied parameter list is " << 
+		       std::endl << *elemParams);
+  }
+
+  return strategy;
+}

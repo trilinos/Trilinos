@@ -28,59 +28,39 @@
 // 
 // ***********************************************************************
 // @HEADER
+#include "Teuchos_TestForException.hpp"
+#include "Sacado_ConfigDefs.h"
+#include "FEApp_DiscretizationFactory.hpp"
+#include "FEApp_CZeroDiscretization.hpp"
 
-#ifndef FEAPP_ABSTRACTPDE_HPP
-#define FEAPP_ABSTRACTPDE_HPP
-
-#include <vector>
-
-#include "FEApp_AbstractPDE_NTBase.hpp"
-#include "FEApp_AbstractElement.hpp"
-#include "FEApp_AbstractQuadrature.hpp"
-
-#include "Sacado_TemplateManager.hpp"
-
-namespace FEApp {
-
-  /*!
-   * \brief Abstract interface for representing a discretized 1-D PDE.
-   */
-  template <typename ScalarT>
-  class AbstractPDE : public FEApp::AbstractPDE_NTBase {
-  public:
-  
-    //! Default constructor
-    AbstractPDE() {};
-
-    //! Destructor
-    virtual ~AbstractPDE() {};
-
-    //! Evaluate discretized PDE element-level residual
-    virtual void
-    evaluateElementResidual(const FEApp::AbstractQuadrature& quadRule,
-			    const FEApp::AbstractElement& element,
-			    const std::vector<ScalarT>& solution,
-			    std::vector<ScalarT>& residual) = 0;
-
-  private:
-    
-    //! Private to prohibit copying
-    AbstractPDE(const AbstractPDE&);
-
-    //! Private to prohibit copying
-    AbstractPDE& operator=(const AbstractPDE&);
-
-  };
-
-  template <typename TypeSeq>
-  class AbstractPDE_TemplateManager : 
-    public Sacado::TemplateManager<TypeSeq, FEApp::AbstractPDE_NTBase,
-				   AbstractPDE> {
-  public:
-    AbstractPDE_TemplateManager() {}
-    ~AbstractPDE_TemplateManager() {}
-  };
-
+FEApp::DiscretizationFactory::DiscretizationFactory(
+	    const Teuchos::RefCountPtr<Teuchos::ParameterList>& discParams_) :
+  discParams(discParams_)
+{
 }
 
-#endif // FEAPP_ABSTRACTPDE_HPP
+Teuchos::RefCountPtr<FEApp::AbstractDiscretization>
+FEApp::DiscretizationFactory::create(
+		  const std::vector<double>& coords,
+		  unsigned int num_equations,
+	          const Teuchos::RefCountPtr<const Epetra_Comm>& epetra_comm)
+{
+  Teuchos::RefCountPtr<FEApp::AbstractDiscretization> strategy;
+
+  std::string& method = discParams->get("Method", "C Zero");
+  if (method == "C Zero") {
+    strategy = Teuchos::rcp(new FEApp::CZeroDiscretization(coords, 
+							   num_equations, 
+							   epetra_comm,
+							   discParams));
+  }
+  else {
+    TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
+		       std::endl << 
+		       "Error!  Unknown discretization method " << method << 
+		       "!" << std::endl << "Supplied parameter list is " << 
+		       std::endl << *discParams);
+  }
+
+  return strategy;
+}

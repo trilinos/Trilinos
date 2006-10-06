@@ -29,58 +29,47 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef FEAPP_ABSTRACTPDE_HPP
-#define FEAPP_ABSTRACTPDE_HPP
+#ifndef FEAPP_ELEMENTFACTORY_HPP
+#define FEAPP_ELEMENTFACTORY_HPP
 
-#include <vector>
+#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_RefCountPtr.hpp"
 
-#include "FEApp_AbstractPDE_NTBase.hpp"
 #include "FEApp_AbstractElement.hpp"
-#include "FEApp_AbstractQuadrature.hpp"
-
-#include "Sacado_TemplateManager.hpp"
 
 namespace FEApp {
 
   /*!
-   * \brief Abstract interface for representing a discretized 1-D PDE.
+   * \brief A factory class to instantiate AbstractElement objects
    */
-  template <typename ScalarT>
-  class AbstractPDE : public FEApp::AbstractPDE_NTBase {
+  class ElementFactory {
   public:
-  
+
     //! Default constructor
-    AbstractPDE() {};
+    ElementFactory(
+	      const Teuchos::RefCountPtr<Teuchos::ParameterList>& elemParams);
 
     //! Destructor
-    virtual ~AbstractPDE() {};
+    virtual ~ElementFactory() {}
 
-    //! Evaluate discretized PDE element-level residual
-    virtual void
-    evaluateElementResidual(const FEApp::AbstractQuadrature& quadRule,
-			    const FEApp::AbstractElement& element,
-			    const std::vector<ScalarT>& solution,
-			    std::vector<ScalarT>& residual) = 0;
+    virtual Teuchos::RefCountPtr<FEApp::AbstractElement>
+    create();
 
   private:
-    
-    //! Private to prohibit copying
-    AbstractPDE(const AbstractPDE&);
 
     //! Private to prohibit copying
-    AbstractPDE& operator=(const AbstractPDE&);
+    ElementFactory(const ElementFactory&);
 
-  };
+    //! Private to prohibit copying
+    ElementFactory& operator=(const ElementFactory&);
 
-  template <typename TypeSeq>
-  class AbstractPDE_TemplateManager : 
-    public Sacado::TemplateManager<TypeSeq, FEApp::AbstractPDE_NTBase,
-				   AbstractPDE> {
-  public:
-    AbstractPDE_TemplateManager() {}
-    ~AbstractPDE_TemplateManager() {}
+  protected:
+
+    //! Parameter list specifying what element to create
+    Teuchos::RefCountPtr<Teuchos::ParameterList> elemParams;
+
   };
 
 }
 
-#endif // FEAPP_ABSTRACTPDE_HPP
+#endif // FEAPP_ELEMENTFACTORY_HPP

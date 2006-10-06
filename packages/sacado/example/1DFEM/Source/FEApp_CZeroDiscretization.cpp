@@ -31,14 +31,14 @@
 
 #include "FEApp_CZeroDiscretization.hpp"
 
-#include "FEApp_LinearElement.hpp"
-
 FEApp::CZeroDiscretization::CZeroDiscretization(
-		      const std::vector<double>& coords,
-		      unsigned int num_equations,
-		      Teuchos::RefCountPtr<const Epetra_Comm> epetra_comm) :
+		  const std::vector<double>& coords,
+		  unsigned int num_equations,
+		  const Teuchos::RefCountPtr<const Epetra_Comm>& epetra_comm,
+		  const Teuchos::RefCountPtr<Teuchos::ParameterList>& params) :
   x(coords),
   comm(epetra_comm),
+  elemFactory(Teuchos::rcp(&(params->sublist("Element")),false)),
   mesh(),
   elem_map(),
   map(),
@@ -54,9 +54,9 @@ FEApp::CZeroDiscretization::CZeroDiscretization(
   elem_map = Teuchos::rcp(new Epetra_Map(x.size()-1, 0, *comm));
   numMyElements = elem_map->NumMyElements();
 
-  AbstractElement *base_element = new LinearElement();  // replace w/factory
+  Teuchos::RefCountPtr<AbstractElement> base_element = 
+    elemFactory.create();
   nodes_per_element = base_element->numNodes();
-  delete base_element;
 }
 
 FEApp::CZeroDiscretization::~CZeroDiscretization()
@@ -73,7 +73,7 @@ FEApp::CZeroDiscretization::createMesh()
   unsigned int elem_GID;
   for (unsigned int i=0; i<numMyElements; i++) {
     elem_GID = elem_map->GID(i);
-    e = Teuchos::rcp(new LinearElement); // replace w/factory
+    e = elemFactory.create();
     e->createNodes(x[elem_GID], x[elem_GID+1], elem_GID*(nodes_per_element-1));
     mesh->addElement(e);
   }
@@ -192,4 +192,10 @@ Teuchos::RefCountPtr<Epetra_CrsGraph>
 FEApp::CZeroDiscretization::getOverlapJacobianGraph()
 {
   return overlap_graph;
+}
+
+int
+FEApp::CZeroDiscretization::getNumNodesPerElement() const
+{
+  return nodes_per_element;
 }

@@ -29,58 +29,52 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef FEAPP_ABSTRACTPDE_HPP
-#define FEAPP_ABSTRACTPDE_HPP
+#ifndef FEAPP_DISCRETIZATIONFACTORY_HPP
+#define FEAPP_DISCRETIZATIONFACTORY_HPP
 
 #include <vector>
 
-#include "FEApp_AbstractPDE_NTBase.hpp"
-#include "FEApp_AbstractElement.hpp"
-#include "FEApp_AbstractQuadrature.hpp"
+#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_RefCountPtr.hpp"
+#include "Epetra_Comm.h"
 
-#include "Sacado_TemplateManager.hpp"
+#include "FEApp_AbstractDiscretization.hpp"
 
 namespace FEApp {
 
   /*!
-   * \brief Abstract interface for representing a discretized 1-D PDE.
+   * \brief A factory class to instantiate AbstractDiscretization objects
    */
-  template <typename ScalarT>
-  class AbstractPDE : public FEApp::AbstractPDE_NTBase {
+  class DiscretizationFactory {
   public:
-  
+
     //! Default constructor
-    AbstractPDE() {};
+    DiscretizationFactory(
+	      const Teuchos::RefCountPtr<Teuchos::ParameterList>& discParams);
 
     //! Destructor
-    virtual ~AbstractPDE() {};
+    virtual ~DiscretizationFactory() {}
 
-    //! Evaluate discretized PDE element-level residual
-    virtual void
-    evaluateElementResidual(const FEApp::AbstractQuadrature& quadRule,
-			    const FEApp::AbstractElement& element,
-			    const std::vector<ScalarT>& solution,
-			    std::vector<ScalarT>& residual) = 0;
+    virtual Teuchos::RefCountPtr<FEApp::AbstractDiscretization>
+    create(const std::vector<double>& coords,
+	   unsigned int num_equations,
+	   const Teuchos::RefCountPtr<const Epetra_Comm>& epetra_comm);
 
   private:
-    
-    //! Private to prohibit copying
-    AbstractPDE(const AbstractPDE&);
 
     //! Private to prohibit copying
-    AbstractPDE& operator=(const AbstractPDE&);
+    DiscretizationFactory(const DiscretizationFactory&);
 
-  };
+    //! Private to prohibit copying
+    DiscretizationFactory& operator=(const DiscretizationFactory&);
 
-  template <typename TypeSeq>
-  class AbstractPDE_TemplateManager : 
-    public Sacado::TemplateManager<TypeSeq, FEApp::AbstractPDE_NTBase,
-				   AbstractPDE> {
-  public:
-    AbstractPDE_TemplateManager() {}
-    ~AbstractPDE_TemplateManager() {}
+  protected:
+
+    //! Parameter list specifying what element to create
+    Teuchos::RefCountPtr<Teuchos::ParameterList> discParams;
+
   };
 
 }
 
-#endif // FEAPP_ABSTRACTPDE_HPP
+#endif // FEAPP_DISCRETIZATIONFACTORY_HPP

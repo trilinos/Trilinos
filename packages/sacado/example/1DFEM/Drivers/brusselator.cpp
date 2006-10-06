@@ -29,27 +29,17 @@
 // ***********************************************************************
 // @HEADER
 
-#include "FEApp_CZeroDiscretization.hpp"
-#include "FEApp_BrusselatorPDE.hpp"
-#include "FEApp_ConstantDirichletBC.hpp"
-#include "FEApp_GaussianQuadrature2.hpp"
-#include "FEApp_Application.hpp"
-
 #include <iostream>
 
-#include "Sacado_Fad_DFad.hpp"
-#include "Sacado_TemplateManager.hpp"
-#include "Sacado_MPL_vector.hpp"
+#include "FEApp_BrusselatorPDE.hpp"
+#include "FEApp_ConstantDirichletBC.hpp"
+#include "FEApp_Application.hpp"
 
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
 #else
 #include "Epetra_SerialComm.h"
 #endif
-
-typedef double RealType;
-typedef Sacado::Fad::DFad<double> FadType;
-typedef Sacado::mpl::vector<RealType, FadType> ValidTypes;
 
 int main(int argc, char *argv[]) {
   unsigned int nelem = 100;
@@ -75,27 +65,20 @@ int main(int argc, char *argv[]) {
     Comm = Teuchos::rcp(new Epetra_SerialComm);
 #endif
 
-    FEApp::BrusselatorPDE_TemplateManager<ValidTypes> brussTM;
-    FEApp::BrusselatorPDE_TemplateBuilder brussBuilder(alpha, beta, D1, D2);
-    brussTM.buildObjects(brussBuilder);
-
-    Teuchos::RefCountPtr<FEApp::AbstractQuadrature> quad = 
-      Teuchos::rcp(new FEApp::GaussianQuadrature2);
-
-    for (FEApp::BrusselatorPDE_TemplateManager<ValidTypes>::iterator it = brussTM.begin();
-	 it != brussTM.end(); ++it)
-      it->init(quad->numPoints(), 2);
+    FEApp::BrusselatorPDE_TemplateBuilder pdeBuilder(alpha, beta, D1, D2);
     
     vector<double> x(nelem+1);
     for (unsigned int i=0; i<=nelem; i++)
       x[i] = h*i;
 
-    FEApp::CZeroDiscretization disc(x, brussTM.getAsBase<RealType>().numEquations(), Comm);
-    disc.createMesh();
-    disc.createMaps();
-    disc.createJacobianGraphs();
+    Teuchos::RefCountPtr<Teuchos::ParameterList> appParams = 
+      Teuchos::rcp(new Teuchos::ParameterList);
+    Teuchos::ParameterList& quadParams = appParams->sublist("Quadrature");
+    quadParams.set("Method", "Gaussian");
+    quadParams.set("Num Points", 2);
 
-    Teuchos::RefCountPtr<Epetra_Map> map = disc.getMap();
+    FEApp::Application app(pdeBuilder, x, 2, Comm, appParams);
+    Teuchos::RefCountPtr<Epetra_Map> map = app.getMap();
 
     std::vector< Teuchos::RefCountPtr<const FEApp::AbstractBC> > bc(4);
     bc[0] = Teuchos::rcp(new FEApp::ConstantDirichletBC(map->MinAllGID(),
@@ -106,15 +89,14 @@ int main(int argc, char *argv[]) {
 							alpha));
     bc[3] = Teuchos::rcp(new FEApp::ConstantDirichletBC(map->MaxAllGID(),
 							beta/alpha));
-
-    FEApp::Application app(Teuchos::rcp(&disc, false), bc, quad);
-
+    app.setBCs(bc);
+    
     Epetra_Vector u(*map);
     u.PutScalar(1.0);
     Epetra_Vector f(*map);
-    Epetra_CrsMatrix jac(Copy, (*disc.getJacobianGraph()));
+    Epetra_CrsMatrix jac(Copy, *(app.getJacobianGraph()));
 
-    app.computeGlobalJacobian(brussTM.getAsObject<FadType>(), u, f, jac);
+    app.computeGlobalJacobian(u, f, jac);
 
     f.Print(std::cout);
     jac.Print(std::cout);

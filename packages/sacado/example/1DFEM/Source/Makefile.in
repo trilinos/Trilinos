@@ -103,13 +103,23 @@ libLIBRARIES_INSTALL = $(INSTALL_DATA)
 LIBRARIES = $(lib_LIBRARIES)
 lib1DFEM_a_DEPENDENCIES =
 am__objects_1 = FEApp_LinearElement.$(OBJEXT) \
-	FEApp_GaussianQuadrature2.$(OBJEXT) \
-	FEApp_ConstantDirichletBC.$(OBJEXT) FEApp_Mesh.$(OBJEXT) \
-	FEApp_InitPostOps.$(OBJEXT) \
-	FEApp_CZeroDiscretization.$(OBJEXT) \
-	FEApp_Application.$(OBJEXT)
-am__objects_2 =
-am_lib1DFEM_a_OBJECTS = $(am__objects_1) $(am__objects_2)
+	FEApp_ElementFactory.$(OBJEXT)
+am__objects_2 = FEApp_GaussianQuadrature2.$(OBJEXT) \
+	FEApp_QuadratureFactory.$(OBJEXT)
+am__objects_3 =
+am__objects_4 = FEApp_ConstantDirichletBC.$(OBJEXT)
+am__objects_5 = FEApp_Mesh.$(OBJEXT)
+am__objects_6 = FEApp_InitPostOps.$(OBJEXT)
+am__objects_7 = FEApp_CZeroDiscretization.$(OBJEXT) \
+	FEApp_DiscretizationFactory.$(OBJEXT)
+am__objects_8 = FEApp_Application.$(OBJEXT)
+am__objects_9 = $(am__objects_1) $(am__objects_2) $(am__objects_3) \
+	$(am__objects_3) $(am__objects_4) $(am__objects_5) \
+	$(am__objects_6) $(am__objects_7) $(am__objects_8)
+am__objects_10 = $(am__objects_3) $(am__objects_3) $(am__objects_3) \
+	$(am__objects_3) $(am__objects_3) $(am__objects_3) \
+	$(am__objects_3) $(am__objects_3) $(am__objects_3)
+am_lib1DFEM_a_OBJECTS = $(am__objects_9) $(am__objects_10)
 lib1DFEM_a_OBJECTS = $(am_lib1DFEM_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -117,10 +127,13 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/FEApp_Application.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/FEApp_CZeroDiscretization.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/FEApp_ConstantDirichletBC.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/FEApp_DiscretizationFactory.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/FEApp_ElementFactory.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/FEApp_GaussianQuadrature2.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/FEApp_InitPostOps.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/FEApp_LinearElement.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/FEApp_Mesh.Po
+@AMDEP_TRUE@	./$(DEPDIR)/FEApp_Mesh.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/FEApp_QuadratureFactory.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -271,35 +284,96 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-ONEDFEM_H = \
+ELEMENT_H = \
 	$(srcdir)/FEApp_AbstractElement.hpp \
 	$(srcdir)/FEApp_LinearElement.hpp \
+	$(srcdir)/FEApp_ElementFactory.hpp
+
+ELEMENT = \
+	$(srcdir)/FEApp_LinearElement.cpp \
+	$(srcdir)/FEApp_ElementFactory.cpp
+
+QUADRATURE_H = \
 	$(srcdir)/FEApp_AbstractQuadrature.hpp \
 	$(srcdir)/FEApp_GaussianQuadrature2.hpp \
+	$(srcdir)/FEApp_QuadratureFactory.hpp
+
+QUADRATURE = \
+	$(srcdir)/FEApp_GaussianQuadrature2.cpp \
+	$(srcdir)/FEApp_QuadratureFactory.cpp
+
+SOURCE_H = \
 	$(srcdir)/FEApp_AbstractSourceFunction.hpp \
-	$(srcdir)/FEApp_QuadraticSourceFunction.hpp \
+	$(srcdir)/FEApp_QuadraticSourceFunction.hpp
+
+SOURCE = 
+PDE_H = \
 	$(srcdir)/FEApp_AbstractPDE_NTBase.hpp \
 	$(srcdir)/FEApp_AbstractPDE.hpp \
 	$(srcdir)/FEApp_HeatNonlinearSourcePDE.hpp \
 	$(srcdir)/FEApp_HeatNonlinearSourcePDEImpl.hpp \
+	$(srcdir)/FEApp_BrusselatorPDE.hpp \
+	$(srcdir)/FEApp_BrusselatorPDEImpl.hpp
+
+PDE = 
+BC_H = \
 	$(srcdir)/FEApp_AbstractBC.hpp \
-	$(srcdir)/FEApp_ConstantDirichletBC.hpp \
-	$(srcdir)/FEApp_Mesh.hpp \
+	$(srcdir)/FEApp_ConstantDirichletBC.hpp
+
+BC = \
+	$(srcdir)/FEApp_ConstantDirichletBC.cpp
+
+MESH_H = \
+	$(srcdir)/FEApp_Mesh.hpp
+
+MESH = \
+	$(srcdir)/FEApp_Mesh.cpp
+
+FILL_H = \
 	$(srcdir)/FEApp_AbstractInitPostOp.hpp \
 	$(srcdir)/FEApp_InitPostOps.hpp \
 	$(srcdir)/FEApp_GlobalFill.hpp \
-	$(srcdir)/FEApp_GlobalFillImpl.hpp \
+	$(srcdir)/FEApp_GlobalFillImpl.hpp
+
+FILL = \
+	$(srcdir)/FEApp_InitPostOps.cpp
+
+DISC_H = \
+	$(srcdir)/FEApp_AbstractDiscretization.hpp \
 	$(srcdir)/FEApp_CZeroDiscretization.hpp \
+	$(srcdir)/FEApp_DiscretizationFactory.hpp
+
+DISC = \
+	$(srcdir)/FEApp_CZeroDiscretization.cpp \
+	$(srcdir)/FEApp_DiscretizationFactory.cpp
+
+APP_H = \
 	$(srcdir)/FEApp_Application.hpp
 
-ONEDFEM = \
-	$(srcdir)/FEApp_LinearElement.cpp \
-	$(srcdir)/FEApp_GaussianQuadrature2.cpp \
-	$(srcdir)/FEApp_ConstantDirichletBC.cpp \
-	$(srcdir)/FEApp_Mesh.cpp \
-	$(srcdir)/FEApp_InitPostOps.cpp \
-	$(srcdir)/FEApp_CZeroDiscretization.cpp \
+APP = \
 	$(srcdir)/FEApp_Application.cpp
+
+ONEDFEM_H = \
+	$(ELEMENT_H) \
+	$(QUADRATURE_H) \
+	$(SOURCE_H) \
+	$(PDE_H) \
+	$(BC_H) \
+	$(MESH_H) \
+	$(FILL_H) \
+	$(DISC_H) \
+	$(APP_H)
+
+ONEDFEM = \
+	$(ELEMENT) \
+	$(QUADRATURE) \
+	$(SOURCE) \
+	$(PDE) \
+	$(BC) \
+	$(MESH) \
+	$(FILL) \
+	$(DISC) \
+	$(APP)
 
 
 # ------------------------------------------------------------------------
@@ -412,10 +486,13 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_Application.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_CZeroDiscretization.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_ConstantDirichletBC.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_DiscretizationFactory.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_ElementFactory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_GaussianQuadrature2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_InitPostOps.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_LinearElement.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_Mesh.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_QuadratureFactory.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -449,6 +526,22 @@ FEApp_LinearElement.obj: $(srcdir)/FEApp_LinearElement.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_LinearElement.obj `if test -f '$(srcdir)/FEApp_LinearElement.cpp'; then $(CYGPATH_W) '$(srcdir)/FEApp_LinearElement.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/FEApp_LinearElement.cpp'; fi`
 
+FEApp_ElementFactory.o: $(srcdir)/FEApp_ElementFactory.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_ElementFactory.o -MD -MP -MF "$(DEPDIR)/FEApp_ElementFactory.Tpo" -c -o FEApp_ElementFactory.o `test -f '$(srcdir)/FEApp_ElementFactory.cpp' || echo '$(srcdir)/'`$(srcdir)/FEApp_ElementFactory.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/FEApp_ElementFactory.Tpo" "$(DEPDIR)/FEApp_ElementFactory.Po"; else rm -f "$(DEPDIR)/FEApp_ElementFactory.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/FEApp_ElementFactory.cpp' object='FEApp_ElementFactory.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/FEApp_ElementFactory.Po' tmpdepfile='$(DEPDIR)/FEApp_ElementFactory.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_ElementFactory.o `test -f '$(srcdir)/FEApp_ElementFactory.cpp' || echo '$(srcdir)/'`$(srcdir)/FEApp_ElementFactory.cpp
+
+FEApp_ElementFactory.obj: $(srcdir)/FEApp_ElementFactory.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_ElementFactory.obj -MD -MP -MF "$(DEPDIR)/FEApp_ElementFactory.Tpo" -c -o FEApp_ElementFactory.obj `if test -f '$(srcdir)/FEApp_ElementFactory.cpp'; then $(CYGPATH_W) '$(srcdir)/FEApp_ElementFactory.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/FEApp_ElementFactory.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/FEApp_ElementFactory.Tpo" "$(DEPDIR)/FEApp_ElementFactory.Po"; else rm -f "$(DEPDIR)/FEApp_ElementFactory.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/FEApp_ElementFactory.cpp' object='FEApp_ElementFactory.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/FEApp_ElementFactory.Po' tmpdepfile='$(DEPDIR)/FEApp_ElementFactory.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_ElementFactory.obj `if test -f '$(srcdir)/FEApp_ElementFactory.cpp'; then $(CYGPATH_W) '$(srcdir)/FEApp_ElementFactory.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/FEApp_ElementFactory.cpp'; fi`
+
 FEApp_GaussianQuadrature2.o: $(srcdir)/FEApp_GaussianQuadrature2.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_GaussianQuadrature2.o -MD -MP -MF "$(DEPDIR)/FEApp_GaussianQuadrature2.Tpo" -c -o FEApp_GaussianQuadrature2.o `test -f '$(srcdir)/FEApp_GaussianQuadrature2.cpp' || echo '$(srcdir)/'`$(srcdir)/FEApp_GaussianQuadrature2.cpp; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/FEApp_GaussianQuadrature2.Tpo" "$(DEPDIR)/FEApp_GaussianQuadrature2.Po"; else rm -f "$(DEPDIR)/FEApp_GaussianQuadrature2.Tpo"; exit 1; fi
@@ -464,6 +557,22 @@ FEApp_GaussianQuadrature2.obj: $(srcdir)/FEApp_GaussianQuadrature2.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/FEApp_GaussianQuadrature2.Po' tmpdepfile='$(DEPDIR)/FEApp_GaussianQuadrature2.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_GaussianQuadrature2.obj `if test -f '$(srcdir)/FEApp_GaussianQuadrature2.cpp'; then $(CYGPATH_W) '$(srcdir)/FEApp_GaussianQuadrature2.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/FEApp_GaussianQuadrature2.cpp'; fi`
+
+FEApp_QuadratureFactory.o: $(srcdir)/FEApp_QuadratureFactory.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_QuadratureFactory.o -MD -MP -MF "$(DEPDIR)/FEApp_QuadratureFactory.Tpo" -c -o FEApp_QuadratureFactory.o `test -f '$(srcdir)/FEApp_QuadratureFactory.cpp' || echo '$(srcdir)/'`$(srcdir)/FEApp_QuadratureFactory.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/FEApp_QuadratureFactory.Tpo" "$(DEPDIR)/FEApp_QuadratureFactory.Po"; else rm -f "$(DEPDIR)/FEApp_QuadratureFactory.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/FEApp_QuadratureFactory.cpp' object='FEApp_QuadratureFactory.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/FEApp_QuadratureFactory.Po' tmpdepfile='$(DEPDIR)/FEApp_QuadratureFactory.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_QuadratureFactory.o `test -f '$(srcdir)/FEApp_QuadratureFactory.cpp' || echo '$(srcdir)/'`$(srcdir)/FEApp_QuadratureFactory.cpp
+
+FEApp_QuadratureFactory.obj: $(srcdir)/FEApp_QuadratureFactory.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_QuadratureFactory.obj -MD -MP -MF "$(DEPDIR)/FEApp_QuadratureFactory.Tpo" -c -o FEApp_QuadratureFactory.obj `if test -f '$(srcdir)/FEApp_QuadratureFactory.cpp'; then $(CYGPATH_W) '$(srcdir)/FEApp_QuadratureFactory.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/FEApp_QuadratureFactory.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/FEApp_QuadratureFactory.Tpo" "$(DEPDIR)/FEApp_QuadratureFactory.Po"; else rm -f "$(DEPDIR)/FEApp_QuadratureFactory.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/FEApp_QuadratureFactory.cpp' object='FEApp_QuadratureFactory.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/FEApp_QuadratureFactory.Po' tmpdepfile='$(DEPDIR)/FEApp_QuadratureFactory.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_QuadratureFactory.obj `if test -f '$(srcdir)/FEApp_QuadratureFactory.cpp'; then $(CYGPATH_W) '$(srcdir)/FEApp_QuadratureFactory.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/FEApp_QuadratureFactory.cpp'; fi`
 
 FEApp_ConstantDirichletBC.o: $(srcdir)/FEApp_ConstantDirichletBC.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_ConstantDirichletBC.o -MD -MP -MF "$(DEPDIR)/FEApp_ConstantDirichletBC.Tpo" -c -o FEApp_ConstantDirichletBC.o `test -f '$(srcdir)/FEApp_ConstantDirichletBC.cpp' || echo '$(srcdir)/'`$(srcdir)/FEApp_ConstantDirichletBC.cpp; \
@@ -528,6 +637,22 @@ FEApp_CZeroDiscretization.obj: $(srcdir)/FEApp_CZeroDiscretization.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/FEApp_CZeroDiscretization.Po' tmpdepfile='$(DEPDIR)/FEApp_CZeroDiscretization.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_CZeroDiscretization.obj `if test -f '$(srcdir)/FEApp_CZeroDiscretization.cpp'; then $(CYGPATH_W) '$(srcdir)/FEApp_CZeroDiscretization.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/FEApp_CZeroDiscretization.cpp'; fi`
+
+FEApp_DiscretizationFactory.o: $(srcdir)/FEApp_DiscretizationFactory.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_DiscretizationFactory.o -MD -MP -MF "$(DEPDIR)/FEApp_DiscretizationFactory.Tpo" -c -o FEApp_DiscretizationFactory.o `test -f '$(srcdir)/FEApp_DiscretizationFactory.cpp' || echo '$(srcdir)/'`$(srcdir)/FEApp_DiscretizationFactory.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/FEApp_DiscretizationFactory.Tpo" "$(DEPDIR)/FEApp_DiscretizationFactory.Po"; else rm -f "$(DEPDIR)/FEApp_DiscretizationFactory.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/FEApp_DiscretizationFactory.cpp' object='FEApp_DiscretizationFactory.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/FEApp_DiscretizationFactory.Po' tmpdepfile='$(DEPDIR)/FEApp_DiscretizationFactory.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_DiscretizationFactory.o `test -f '$(srcdir)/FEApp_DiscretizationFactory.cpp' || echo '$(srcdir)/'`$(srcdir)/FEApp_DiscretizationFactory.cpp
+
+FEApp_DiscretizationFactory.obj: $(srcdir)/FEApp_DiscretizationFactory.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_DiscretizationFactory.obj -MD -MP -MF "$(DEPDIR)/FEApp_DiscretizationFactory.Tpo" -c -o FEApp_DiscretizationFactory.obj `if test -f '$(srcdir)/FEApp_DiscretizationFactory.cpp'; then $(CYGPATH_W) '$(srcdir)/FEApp_DiscretizationFactory.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/FEApp_DiscretizationFactory.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/FEApp_DiscretizationFactory.Tpo" "$(DEPDIR)/FEApp_DiscretizationFactory.Po"; else rm -f "$(DEPDIR)/FEApp_DiscretizationFactory.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/FEApp_DiscretizationFactory.cpp' object='FEApp_DiscretizationFactory.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/FEApp_DiscretizationFactory.Po' tmpdepfile='$(DEPDIR)/FEApp_DiscretizationFactory.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_DiscretizationFactory.obj `if test -f '$(srcdir)/FEApp_DiscretizationFactory.cpp'; then $(CYGPATH_W) '$(srcdir)/FEApp_DiscretizationFactory.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/FEApp_DiscretizationFactory.cpp'; fi`
 
 FEApp_Application.o: $(srcdir)/FEApp_Application.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_Application.o -MD -MP -MF "$(DEPDIR)/FEApp_Application.Tpo" -c -o FEApp_Application.o `test -f '$(srcdir)/FEApp_Application.cpp' || echo '$(srcdir)/'`$(srcdir)/FEApp_Application.cpp; \
