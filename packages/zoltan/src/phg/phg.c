@@ -874,8 +874,11 @@ int Zoltan_PHG_Initialize_Params(
     }
     
     if (zz->LB.Method == PHG_REPART) {
-        /* as a heuristic we prefer local matching */
+        /* UVC: well it looks like l-ipm performs really bad :(
+           so we'll use default coarsening: ipm, or whatever is selected
+           via Zoltan Parameters...
         strncpy(hgp->redm_str, "l-ipm", MAX_PARAM_STRING_LEN);
+        */
     }    
     
     if (zz->LB.Method == PHG_REFINE) {
