@@ -30,8 +30,8 @@
 
 void TestForException_break()
 {
-	int break_on_me;
-	break_on_me = 0;
+  int break_on_me;
+  break_on_me = 0;
   // Above is just some statement for the debugger to break on!  Note: now is
   // a good time to examine the stack trace.  In GDB just type 'where' or you
   // can go up by typing 'up' and moving up in the stack trace to see where
