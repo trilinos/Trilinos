@@ -581,7 +581,7 @@ static void initialize_mesh(MESH_INFO_PTR mesh, int proc)
 static void remove_random_vertices(MESH_INFO_PTR mesh, int iteration, 
                                    float blank_factor) 
 {
-int i, j, total_vertices;
+int i, j, total_vertices, blankmine = (mesh->proc % 2) == (iteration % 2);
 ELEM_INFO *elem;
 
   for (i=0; i < mesh->num_elems; i++){
@@ -618,7 +618,7 @@ ELEM_INFO *elem;
 
     srand48((long int)(elem->globalID * iteration));
 
-    if (drand48() <= (double)blank_factor){
+    if (blankmine && (drand48() <= (double)blank_factor)){
       mesh->blank[i] = 1.0;
       mesh->blank_count++;
     }
@@ -637,7 +637,7 @@ ELEM_INFO *elem;
       for (j=0; j<elem->nadj; j++){
         if (elem->adj_proc[j] != mesh->proc){
           srand48((long int)(elem->adj[j] * iteration));
-          if (drand48() <= (double)blank_factor){
+          if (((elem->adj_proc[j] % 2) == (iteration % 2) ) && (drand48() <= (double)blank_factor)){
             elem->adj_blank[j] = 1.0;
           }
         }
