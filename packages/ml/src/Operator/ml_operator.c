@@ -345,7 +345,7 @@ int ML_Operator_halfClone_Init(ML_Operator *mat,
    mat->lambda_max = original->lambda_max;
    mat->lambda_min = original->lambda_min;
    mat->subspace            = original->subspace;
-   ML_Aux_Data_Destroy(&(mat->aux_data));
+   if (mat->aux_data != NULL) ML_Aux_Data_Destroy(&(mat->aux_data));
    mat->aux_data = ML_Aux_Data_Clone(original->aux_data);
 
    return 1;
@@ -2120,6 +2120,7 @@ int ML_Operator_MoveFromHierarchyAndClean(ML_Operator *newmat,
   hier->diagonal = NULL;
   hier->sub_matrix = NULL;
   hier->subspace = NULL;
+  hier->aux_data = NULL;
   ML_Operator_Clean(hier);
   ML_Operator_Init(hier,newmat->comm);
   hier->from = newmat->from;

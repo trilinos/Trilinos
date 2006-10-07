@@ -3672,6 +3672,7 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
    double *val_ptr;
    double *dbl_arg1, *diagonal;
    char   str[80];
+   double droptol;
 #ifdef ML_TIMING_DETAILED
    double t0;
 
@@ -3797,7 +3798,7 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
        /* very small and so tmpmat is very small. Probably   */
        /* something better should be put in here!!!!         */
 
-       double droptol = 1.0e-10;
+       droptol = 1.0e-10;
        if (ML_Get_PrintLevel() > 9 && tmpmat->comm->ML_mypid == 0)
          printf("ML_Smoother_Gen_Hiptmair_Data: dropping all entries smaller than %f from T'*M*T.\n",droptol);
        matdata = (struct ML_CSR_MSRdata *) (tmpmat->data);

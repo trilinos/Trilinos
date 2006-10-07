@@ -502,6 +502,9 @@ int ML_DecomposeGraph_with_Zoltan(ML_Operator *Amatrix,
    * Run Zoltan to compute a new load balance.
    * Data migration may also happen here.
    */
+  /* Uncomment the next line to produce debugging information.*/
+
+  /*Zoltan_Generate_Files(zz, "ZoltanDebugging", 1, 1, 0, 0);*/
   if (!run_zoltan(N_parts, zz, Amatrix, Nrows, graph_decomposition,
                   comm->ML_mypid)) {
     printf("fatal(13) Error returned from run_zoltan\n");

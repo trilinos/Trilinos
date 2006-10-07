@@ -1973,6 +1973,7 @@ after:
   return(ierr);
 }
 
+#define ML_FUNCTION_NAME "ML_Project_Coordinates"
 void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
                             ML_Operator* Cmat)
 {
@@ -2021,8 +2022,12 @@ void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
             __FILE__, __LINE__);
   
   Rmat = ML_Operator_Create(Pmat->comm);
-#if 0
+#ifdef ML_TESTING_ONLY
   ML_Operator_Transpose(Pmat,Rmat);
+  matvec = Rmat->matvec->func_ptr;
+  /* Comment out the next line to check whether ML catches dividing by zero
+    sized aggregate. */
+  Rmat->matvec->func_ptr = CSR_ones_matvec;
 #else
   ML_CommInfoOP_TransComm(Pmat->getrow->pre_comm,&(Rmat->getrow->post_comm),
 			    Pmat->invec_leng);
@@ -2033,7 +2038,7 @@ void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
 
   Rmat->getrow->func_ptr = NULL;
   Rmat->data_destroy = NULL;
-#endif
+#endif /*ifdef ML_TESTING_ONLY */
 
   if (Cmat->getrow->pre_comm == NULL)
     Nghost = 0;
@@ -2047,6 +2052,7 @@ void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
   size_new = Rmat->outvec_leng + Nghost;
   tmp_old = (double*) ML_allocate(sizeof(double) * (size_old + 1));
   tmp_new = (double*) ML_allocate(sizeof(double) * (size_new + 1));
+  for (i=0; i<size_new+1; i++) tmp_new[i] = 0.0;
   aggr_sizes = (double*) ML_allocate(sizeof(double) * (size_new + 1));
 
   /* computes how many nodes are included in each aggregate */
@@ -2077,8 +2083,21 @@ void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
     ML_exchange_bdry(tmp_new,Cmat->getrow->pre_comm,Cmat->outvec_leng,
                      Cmat->comm, ML_OVERWRITE,NULL);
 
-    for (i = 0 ; i < size_new ; i+=PDEs)
-      new_x_coord[i / PDEs] = tmp_new[i] / aggr_sizes[i];
+    for (i = 0 ; i < size_new ; i+=PDEs) {
+      if (aggr_sizes[i] != 0.0)
+        new_x_coord[i / PDEs] = tmp_new[i] / aggr_sizes[i];
+      else {
+        if (tmp_new[i] == 0.0)
+          new_x_coord[i / PDEs] = 0.0;
+        else {
+          char msg[240];
+          sprintf(msg,"(pid %d) agg %d size = %f but nonzero coordinate = %f",
+                  Cmat->comm->ML_mypid, i, aggr_sizes[i],tmp_new[i]);
+          pr_error("*ML_ERR* %s\n*ML_ERR* function %s\n*ML_ERR* file %s\n*ML_ERR* line %d\n",
+                    msg,ML_FUNCTION_NAME,__FILE__, __LINE__);
+        }
+      }
+    }
 
     Cgrid_info->x = new_x_coord;
   }
@@ -2095,8 +2114,21 @@ void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
     ML_exchange_bdry(tmp_new,Cmat->getrow->pre_comm,Cmat->outvec_leng,
                      Cmat->comm, ML_OVERWRITE,NULL);
 
-    for (i = 0 ; i < size_new ; i+=PDEs)
-      new_y_coord[i / PDEs] = tmp_new[i] / aggr_sizes[i];
+    for (i = 0 ; i < size_new ; i+=PDEs) {
+      if (aggr_sizes[i] != 0.0)
+        new_y_coord[i / PDEs] = tmp_new[i] / aggr_sizes[i];
+      else {
+        if (tmp_new[i] == 0.0)
+          new_y_coord[i / PDEs] = 0.0;
+        else {
+          char msg[240];
+          sprintf(msg,"(pid %d) agg %d size = %f but nonzero coordinate = %f",
+                  Cmat->comm->ML_mypid, i, aggr_sizes[i],tmp_new[i]);
+          pr_error("*ML_ERR* %s\n*ML_ERR* function %s\n*ML_ERR* file %s\n*ML_ERR* line %d\n",
+                    msg,ML_FUNCTION_NAME,__FILE__, __LINE__);
+        }
+      }
+    }
 
     Cgrid_info->y = new_y_coord;
   }
@@ -2113,8 +2145,21 @@ void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
     ML_exchange_bdry(tmp_new,Cmat->getrow->pre_comm,Cmat->outvec_leng,
                      Cmat->comm, ML_OVERWRITE,NULL);
 
-    for (i = 0 ; i < size_new ; i+=PDEs)
-      new_z_coord[i / PDEs] = tmp_new[i] / aggr_sizes[i];
+    for (i = 0 ; i < size_new ; i+=PDEs) {
+      if (aggr_sizes[i] != 0.0)
+        new_z_coord[i / PDEs] = tmp_new[i] / aggr_sizes[i];
+      else {
+        if (tmp_new[i] == 0.0)
+          new_z_coord[i / PDEs] = 0.0;
+        else {
+          char msg[240];
+          sprintf(msg,"(pid %d) agg %d size = %f but nonzero coordinate = %f",
+                  Cmat->comm->ML_mypid, i, aggr_sizes[i],tmp_new[i]);
+          pr_error("*ML_ERR* %s\n*ML_ERR* function %s\n*ML_ERR* file %s\n*ML_ERR* line %d\n",
+                    msg,ML_FUNCTION_NAME,__FILE__, __LINE__);
+        }
+      }
+    }
 
     Cgrid_info->z = new_z_coord;
   }
@@ -2132,8 +2177,15 @@ void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
     Pmat->matvec->func_ptr = matvec;
   }
 
+#ifdef ML_TESTING_ONLY
+  Rmat->matvec->func_ptr = matvec;
+#endif
+
   ML_Operator_Destroy(&Rmat);
 }
+#ifdef ML_FUNCTION_NAME
+#undef ML_FUNCTION_NAME
+#endif
 
 /*
  * This function allocates the filter field of the aux_data

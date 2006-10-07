@@ -166,6 +166,10 @@ std::cout << "--- Leaving:
    double ML_Global_Standard_Deviation(double sample, int n,
                                        int activeflag, ML_Comm *comm);
 
+   int ML_SetupCoordinates(ML *ml_ptr, int level, int NumPDEEqns,
+                        double *in_x_coord, double *in_y_coord,
+                        double *in_z_coord);
+
 #ifndef ML_CPP
 #ifdef __cplusplus
 }

@@ -1143,6 +1143,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      {
         int SmoothingWithCurlOnly = 0;
         int numDropped = 0;
+        ML_Operator *tmpmat = NULL;
         if (Tmat->comm->ML_mypid == 0)
         if (Tfine->comm->ML_mypid==0 && 3 < ML_Get_PrintLevel())
            printf("Smoothing edge prolongator...\n");
@@ -1156,7 +1157,6 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
            ML_Aggregate_Set_DampingFactor(ag, smooth_factor);
 
         /* If (curl,curl) matrix is available, smooth with it. */
-        ML_Operator *tmpmat = NULL;
         if (CurlCurlMatrix_array != NULL && 
             CurlCurlMatrix_array[grid_level+1] != NULL) {
 

@@ -16,6 +16,7 @@
 #include "ml_comm.h"
 #include "ml_lapack.h"
 #include <time.h>
+#include "ml_viz_stats.h"
 
 /* ******************************************************************** */
 /* Timer subroutine                                                     */
@@ -3047,3 +3048,97 @@ double ML_Global_Standard_Deviation(double sample, int n,
  
   return sqrt(sum / (n-1));
 }
+
+/* ************************************************************************ * */
+
+int ML_SetupCoordinates(ML *ml_ptr, int level, int NumPDEEqns,
+                        double *in_x_coord, double *in_y_coord,
+                        double *in_z_coord)
+{
+  int    NumDimensions, n, i, Nghost;
+  double *x_coord, *y_coord, *z_coord, *tmp;
+  ML_Operator* AAA;
+  ML_Aggregate_Viz_Stats *grid_info;
+  
+  NumDimensions  = 0;
+
+  if (!(in_x_coord == 0 && in_y_coord == 0 && in_z_coord == 0))
+  {
+    grid_info = (ML_Aggregate_Viz_Stats *) ml_ptr->Grid[level].Grid;
+    AAA = &(ml_ptr->Amat[level]);
+
+    n = AAA->invec_leng;
+    Nghost = 0;
+
+    if (AAA->getrow->pre_comm) 
+    {
+      if (AAA->getrow->pre_comm->total_rcv_length <= 0)
+        ML_CommInfoOP_Compute_TotalRcvLength(AAA->getrow->pre_comm);
+      Nghost = AAA->getrow->pre_comm->total_rcv_length;
+    }
+
+    tmp = (double *) ML_allocate(sizeof(double) * (Nghost+n));
+    for (i = 0 ; i < Nghost + n ; ++i)
+      tmp[i] = 0.0;
+
+    n /= NumPDEEqns;
+    Nghost /= NumPDEEqns;
+
+    if (in_x_coord) 
+    {
+      NumDimensions++;
+      x_coord = (double *) ML_allocate(sizeof(double) * (Nghost+n));
+
+      for (i = 0 ; i < n ; ++i)
+        tmp[i * NumPDEEqns] = in_x_coord[i];
+
+      ML_exchange_bdry(&tmp[0],AAA->getrow->pre_comm, NumPDEEqns * n, 
+                       AAA->comm, ML_OVERWRITE,NULL);
+
+      for (i = 0 ; i < n + Nghost ; ++i)
+        x_coord[i] = tmp[i * NumPDEEqns];
+
+      grid_info->x = x_coord;
+    } /* if (in_x_coord) */
+
+    if (in_y_coord) 
+    {
+      NumDimensions++;
+      y_coord = (double *) ML_allocate(sizeof(double) * (Nghost+n));
+
+      for (i = 0 ; i < n ; ++i)
+        tmp[i * NumPDEEqns] = in_y_coord[i];
+
+      ML_exchange_bdry(&tmp[0],AAA->getrow->pre_comm, NumPDEEqns * n, 
+                       AAA->comm, ML_OVERWRITE,NULL);
+
+      for (i = 0 ; i < n + Nghost ; ++i)
+        y_coord[i] = tmp[i * NumPDEEqns];
+
+      grid_info->y = y_coord;
+    } /* if (in_y_coord) */
+
+    if (in_z_coord) 
+    {
+      NumDimensions++;
+      z_coord = (double *) ML_allocate(sizeof(double) * (Nghost+n));
+
+      for (i = 0 ; i < n ; ++i)
+        tmp[i * NumPDEEqns] = in_z_coord[i];
+
+      ML_exchange_bdry(&tmp[0],AAA->getrow->pre_comm, NumPDEEqns * n, 
+                       AAA->comm, ML_OVERWRITE,NULL);
+
+      for (i = 0 ; i < n + Nghost ; ++i)
+        z_coord[i] = tmp[i * NumPDEEqns];
+
+      grid_info->z = z_coord;
+    } /* if (in_z_coord) */
+
+    grid_info->Ndim = NumDimensions;
+    ML_free(tmp);
+
+  } /* if (!(in_x_coord == 0 && in_y_coord == 0 && in_z_coord == 0)) */
+
+  return(0);
+} /* ML_SetupCoordinates() */

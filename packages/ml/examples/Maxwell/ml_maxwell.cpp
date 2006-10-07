@@ -35,7 +35,7 @@
 // This file shows how to use the class
 // ML_Epetra::MultiLevelPreconditioner to solve this formulation of the
 // Maxwell equations. The class takes care of building the node and edge
-// hierarchy, definining the Hiptmair smoother, and setting the coarse
+// hierarchy, defining the Hiptmair smoother, and setting the coarse
 // solver. More information about MultiLevelPreconditioner can be found in
 // the ML User's Guide.
 
@@ -292,10 +292,10 @@ int main(int argc, char *argv[])
   MLList.set("repartition: Zoltan dimensions",2);
 
   // coordinates for repartitioning, visualization, & detecting grid stretching
-  MLList.set("x-coordinates", nodal_coordinates);
-  MLList.set("y-coordinates", nodal_coordinates + Node_Partition.Nlocal);
-  MLList.set("edge: y-coordinates", edge_coordinates + ML_Tmat->outvec_leng);
-  MLList.set("edge: x-coordinates", edge_coordinates);
+  MLList.set("node: x-coordinates", nodal_coordinates);
+  MLList.set("node: y-coordinates", nodal_coordinates + Node_Partition.Nlocal);
+  MLList.set("y-coordinates", edge_coordinates + ML_Tmat->outvec_leng);
+  MLList.set("x-coordinates", edge_coordinates);
   
   MLList.set("aggregation: type", "Uncoupled");
   MLList.set("coarse: max size", 30);

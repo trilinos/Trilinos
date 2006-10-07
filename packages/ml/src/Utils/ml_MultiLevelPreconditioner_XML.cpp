@@ -157,7 +157,7 @@ int ML_Epetra::MultiLevelPreconditioner::ReadXML(const string& FileName)
   return(0);
 #else
   cerr << PrintMsg_ << "Sorry, method ReadXML() requires Teuchos to be configured" << endl;
-  cerr << PrintMsg_ << "With support for XML reader." << endl;
+  cerr << PrintMsg_ << "With support for XML reader (--enable-teuchos-expat)." << endl;
   ML_RETURN(-1);
 #endif
 }

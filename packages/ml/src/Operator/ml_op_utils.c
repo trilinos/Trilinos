@@ -9,6 +9,9 @@
 #include "ml_agg_genP.h"
 #include "ml_memory.h"
 #include "ml_agg_Zoltan.h"
+#if defined(HAVE_ML_ZOLTAN) && defined(HAVE_MPI)
+#include "zoltan.h"
+#endif
 
 /* ******************************************************************** */
 /* Blow away any inter-mixing between boundary and interior points in   */
@@ -472,6 +475,9 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int n, int *nblks,
   int     options[5]={0,3,1,1,0};
   int     weightflag = 0;
 #endif
+#ifdef HAVE_ML_ZOLTAN
+  float ZoltanVersion;
+#endif
 
   nprocs = matrix->comm->ML_nprocs;
   myid   = matrix->comm->ML_mypid;
@@ -679,9 +685,10 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int n, int *nblks,
   switch(which_partitioner) {
   case ML_USEZOLTAN:
 #ifdef HAVE_ML_ZOLTAN
-    if (matrix->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 4) {
-      printf("Repartitioning using Zoltan\n");
-    }
+    if (Zoltan_Initialize(0, NULL, &ZoltanVersion) == ZOLTAN_OK)
+      if (matrix->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 4) {
+        printf("Repartitioning using Zoltan %3.2f\n",ZoltanVersion);
+      }
     if (ML_DecomposeGraph_with_Zoltan(matrix, *nblks, pnode_part, NULL,
 				      x_coord, y_coord, z_coord, matrix->to->levelnum) < 0)
       for (ii = 0; ii < n; ii++) pnode_part[ii] = myid;
@@ -1965,20 +1972,24 @@ void ML_Operator_ReportStatistics(ML_Operator *mat, char *appendlabel,
   int total_rcv_leng = 0;
   char *origlabel = NULL, *modlabel = NULL;
   ML_CommInfoOP *c_info;
-  int reset_label = 0;
   int minnzs,maxnzs;
 
   modlabel = (char *) ML_allocate(80 * sizeof(char));
-
-  if (mat->label != NULL)
-    reset_label = 1;
-  else ML_Operator_Set_Label(mat,"unlabeled_operator");
-
-  if (appendlabel != NULL) {
-     origlabel = mat->label;
-     sprintf(modlabel,"%s_%s",mat->label,appendlabel);
-     mat->label = modlabel;
+  origlabel = mat->label;
+  if (mat->label == NULL) {
+    if (appendlabel != NULL)
+      sprintf(modlabel,"unlabeled_operator_%s",appendlabel);
+    else
+      sprintf(modlabel,"unlabeled_operator");
   }
+  else {
+    if (appendlabel != NULL)
+      sprintf(modlabel,"%s_%s",mat->label,appendlabel);
+    else
+      sprintf(modlabel,"%s",mat->label);
+  }
+
+  mat->label = modlabel;
 
   if (mat->invec_leng > 0 || mat->outvec_leng > 0)
     proc_active = 1;
@@ -2217,11 +2228,8 @@ void ML_Operator_ReportStatistics(ML_Operator *mat, char *appendlabel,
        fflush(stdout);
     }
   }
-  if (reset_label == 1 && appendlabel != NULL)
-    mat->label = origlabel;
-  else if (reset_label == 0)
-    ML_free(mat->label);
 
+  mat->label = origlabel;
   ML_free(modlabel);
 }
 #ifdef ML_FUNCTION_NAME

@@ -95,10 +95,10 @@ int ML_CSolve_Clean(ML_CSolve *ml_cs)
 #ifdef ML_TIMING_DETAILED
    if (ml_cs->my_level != NULL && ml_cs->my_level->comm != NULL)
       comm = ml_cs->my_level->comm;
-   else if (comm != NULL)
+   else
       comm = global_comm;
    if (ml_cs->label != NULL && comm != NULL) {
-      t1 = ML_gsum_double(ml_cs->build_time, global_comm);
+      t1 = ML_gsum_double(ml_cs->build_time, comm);
       t1 = t1/((double) comm->ML_nprocs);
       if ( (comm->ML_mypid == 0) && (t1 != 0.0) && ML_Get_PrintLevel() >
 10 )
