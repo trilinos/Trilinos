@@ -78,9 +78,7 @@ int gen_geom, int gen_graph, int gen_hg)
   FILE *fp;
   char full_fname[256];
   int *vtxdist, *xadj, *adjncy, *part, *adjproc, *edgeSize;
-  int *heprocs, *hindex;
-  ZOLTAN_ID_PTR hevtxs;
-  float *float_vwgt, *ewgts, *hewgts, *eWgts, *wptr;
+  float *float_vwgt, *ewgts, *eWgts, *wptr;
   double *xyz;
   int i, j, k, num_obj, num_geom, num_edges, reduce;
   int glob_nvtxs, glob_edges, glob_hedges, glob_pins, glob_ewgts;
@@ -101,10 +99,8 @@ int gen_geom, int gen_graph, int gen_hg)
    */
   vtxdist = xadj = adjncy = part = edgeSize = NULL;
   adjproc = NULL;
-  float_vwgt = ewgts = hewgts = eWgts = NULL;
+  float_vwgt = ewgts = eWgts = NULL;
   xyz = NULL;
-  heprocs = hindex = NULL;
-  hevtxs = NULL;
   edgeIds = vtxIds = eWgtIds = NULL;
 
   /* Assign default file name if none was given. */

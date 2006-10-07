@@ -727,7 +727,7 @@ char  *yo = "Zoltan_HG_HGraph_to_Graph";
 
 End:
   ZOLTAN_TRACE_EXIT(zz, yo);
-  return ZOLTAN_OK;
+  return err;
 }
 
 /****************************************************************************/

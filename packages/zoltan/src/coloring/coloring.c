@@ -118,7 +118,6 @@ int Zoltan_Color(
   int *input_parts;                 /* Initial partitions for objects. */
   int nvtx = num_obj;               /* number of vertices */
   int gvtx;                         /* number of global vertices */
-  idxtype *vwgt, *adjwgt;           /* weights - not used */
   float *ewgts, *float_vwgt;        /* weights - not used */
   int obj_wgt_dim, edge_wgt_dim;    /* weight dimensions - not used */
   int *color;                       /* array to store colors of local and D1
@@ -202,7 +201,7 @@ int Zoltan_Color(
   
   /* Initialize all local pointers to NULL. This is necessary
      because we free all non-NULL pointers upon errors. */
-  vtxdist = xadj = adjncy = vwgt = adjwgt = adjproc = NULL;
+  vtxdist = xadj = adjncy = adjproc = NULL;
   ewgts = float_vwgt = NULL;
   input_parts = NULL;
   

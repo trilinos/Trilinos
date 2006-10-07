@@ -179,6 +179,7 @@ int Zoltan_Get_Coordinates(
                      (void *)&reduce_dimensions);
     Zoltan_Bind_Param(Reduce_Dim_Params, "DEGENERATE_RATIO", (void *)&deg_ratio);
 
+    i = 0;
     reduce_dimensions = 0;
     deg_ratio = 10.0;
 

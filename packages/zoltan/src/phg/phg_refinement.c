@@ -1043,7 +1043,7 @@ static int refine_fm2 (ZZ *zz,
     
     
     ZOLTAN_TRACE_EXIT(zz, yo);
-    return ZOLTAN_OK;
+    return ierr;
 }
 
 

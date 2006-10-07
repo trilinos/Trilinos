@@ -45,8 +45,12 @@ extern "C" {
 #define NUM_STATS_PART 3 /* Number of graph stats for partitions. */
 
 static int eval_edge_list(ZZ *, int, int, ZOLTAN_ID_PTR, int *, ZOLTAN_ID_PTR,
-  int *, float *, int, int, int, int *, int *, int *, int *, float *,
+  int *, int *, float *, int, int, int, int *, int *, int *, int *, float *,
   int *, float *, int *, int *);
+
+static int get_nbor_parts(ZZ *, int, ZOLTAN_ID_PTR, ZOLTAN_ID_PTR,
+  int *, int, ZOLTAN_ID_PTR, int *);
+
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -89,7 +93,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
   int nparts, nonempty_nparts, max_nparts, req_nparts, obj_wgt_dim;
   int stats[4*NUM_STATS];
   int imin, imax, isum, iimbal;
-  int *proc_count=NULL, *part_count=NULL, *nbors_proc=NULL;
+  int *proc_count=NULL, *nbors_proc=NULL, *nbors_part = NULL;
   float imbal[NUM_STATS];
   float *tmp_vwgt=NULL, *vwgts=NULL, *ewgts=NULL, *tmp_cutwgt=NULL; 
   float *part_sizes, temp;
@@ -104,7 +108,6 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
   int gid_off, lid_off;
   int have_graph_callbacks;
   int have_pin_callbacks;
-  int edge_list_size;
   int sum;
   char msg[256];
   /* Arrays for partition data. */
@@ -129,7 +132,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
   tmp_vwgt = tmp_cutwgt = NULL;
   vwgts = ewgts = NULL;
   nbors_global = NULL;
-  nbors_proc = proc_count = part_count = NULL;
+  nbors_proc = proc_count = nbors_part = NULL;
   vwgt_arr = vwgt_arr_glob = cutwgt_arr = cutwgt_arr_glob = NULL;
   max_arr = nobj_arr = cut_arr = bndry_arr = all_arr = all_arr_glob = NULL;
   edges_per_obj = NULL;
@@ -348,26 +351,26 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
     Zoltan_Get_Num_Edges_Per_Obj(zz, num_obj, global_ids, local_ids, 
                                  &edges_per_obj, &max_edges, &num_edges);
 
-    if (zz->Get_Edge_List_Multi) 
-      edge_list_size = num_edges;  /* Get all edge info at once */
-    else
-      edge_list_size = max_edges;  /* Get edge info one obj at a time */
-
     /* Allocate edge list space */
-    nbors_global = ZOLTAN_MALLOC_GID_ARRAY(zz, edge_list_size);
-    nbors_proc = (int *)ZOLTAN_MALLOC(edge_list_size * sizeof(int));
+    nbors_global = ZOLTAN_MALLOC_GID_ARRAY(zz, num_edges);
+    nbors_proc = (int *)ZOLTAN_MALLOC(num_edges * sizeof(int));
+    if (compute_part) 
+      nbors_part = (int *)ZOLTAN_MALLOC(num_edges * sizeof(int));
+    else
+      nbors_part = nbors_proc;
     /* Allocate a proc list for computing nadjacent */
     proc_count = (int *)ZOLTAN_MALLOC((zz->Num_Proc)* sizeof(int));
     /* Allocate space for edge weights if needed */
     if (zz->Edge_Weight_Dim){
-      ewgts = (float *)ZOLTAN_MALLOC((zz->Edge_Weight_Dim) * edge_list_size 
+      ewgts = (float *)ZOLTAN_MALLOC((zz->Edge_Weight_Dim) * num_edges 
                                                            * sizeof(float));
       tmp_cutwgt = (float *) ZOLTAN_MALLOC(4 * (zz->Edge_Weight_Dim) 
                                              * sizeof(float));
     }
 
-    if ((edge_list_size && ((!nbors_global) || (!nbors_proc) || (zz->Edge_Weight_Dim && !ewgts))) || 
-        (zz->Edge_Weight_Dim && (!tmp_cutwgt)) || (!proc_count)){
+    if ((num_edges &&
+       (!nbors_global || !nbors_proc || !nbors_part || (zz->Edge_Weight_Dim && !ewgts))) || 
+        (zz->Edge_Weight_Dim && !tmp_cutwgt) || !proc_count){
       ierr = ZOLTAN_MEMERR;
       goto End;
     }
@@ -386,24 +389,9 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
       if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
         goto End;
       }
-      sum = 0;
-      for (k = 0; k < num_obj; k++) {
-        ierr = eval_edge_list(zz, k, num_gid_entries, global_ids, part, 
-                              &(nbors_global[sum]), &(nbors_proc[sum]), 
-                              &(ewgts[sum*zz->Edge_Weight_Dim]), 
-                              edges_per_obj[k],
-                              num_obj, compute_part, proc_count,
-                              &cuts, &num_boundary, &comm_vol,
-                              tmp_cutwgt, cut_arr, cutwgt_arr, 
-                              bndry_arr, commvol_arr);
-        if (ierr) {
-          ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error in eval_edge_list");
-          goto End;
-        }
-        sum += edges_per_obj[k];
-      }
     }
     else {
+      sum = 0;
       for (k=0; k<num_obj; k++){
         gid_off = k * num_gid_entries;
         lid_off = k * num_lid_entries;
@@ -414,23 +402,39 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
         zz->Get_Edge_List(zz->Get_Edge_List_Data, 
                           num_gid_entries, num_lid_entries,
                           &(global_ids[gid_off]), lid,
-                          nbors_global, nbors_proc, 
-                          zz->Edge_Weight_Dim, ewgts, &ierr);
+                          &(nbors_global[sum*num_gid_entries]),
+                          &(nbors_proc[sum]), 
+                          zz->Edge_Weight_Dim,
+                          &(ewgts[sum*zz->Edge_Weight_Dim]), &ierr);
         if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
           goto End;
         }
-  
-        ierr = eval_edge_list(zz, k, num_gid_entries, global_ids, part, 
-                              nbors_global, nbors_proc, ewgts, edges_per_obj[k],
-                              num_obj, compute_part, proc_count,
-                              &cuts, &num_boundary, &comm_vol, 
-                              tmp_cutwgt, cut_arr, cutwgt_arr, 
-                              bndry_arr, commvol_arr);
-        if (ierr) {
-          ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error in eval_edge_list");
-          goto End;
-        }
+        sum += edges_per_obj[k];
       }
+    }
+
+    if (compute_part) {
+      /* Compute the partition number for neighboring objects */
+      get_nbor_parts(zz, num_obj, global_ids, local_ids, part,
+                     num_edges, nbors_global, nbors_part);
+    }
+
+    sum = 0;
+    for (k = 0; k < num_obj; k++) {
+      ierr = eval_edge_list(zz, k, num_gid_entries, global_ids, part, 
+                            &(nbors_global[sum]), &(nbors_proc[sum]), 
+                            &(nbors_part[sum]),
+                            &(ewgts[sum*zz->Edge_Weight_Dim]), 
+                            edges_per_obj[k],
+                            num_obj, compute_part, proc_count,
+                            &cuts, &num_boundary, &comm_vol,
+                            tmp_cutwgt, cut_arr, cutwgt_arr, 
+                            bndry_arr, commvol_arr);
+      if (ierr) {
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error in eval_edge_list");
+        goto End;
+      }
+      sum += edges_per_obj[k];
     }
     /* Compute the number of adjacent procs */
     for (j=0; j<zz->Num_Proc; j++)
@@ -741,6 +745,7 @@ End:
   }
   ZOLTAN_FREE(&nbors_global);
   ZOLTAN_FREE(&nbors_proc);
+  if (compute_part) ZOLTAN_FREE(&nbors_part);
   ZOLTAN_FREE(&ewgts);
   ZOLTAN_FREE(&tmp_cutwgt);
   ZOLTAN_FREE(&proc_count);
@@ -764,6 +769,7 @@ static int eval_edge_list(
   int *part,                  /* Partition numbers of GIDs on this proc */
   ZOLTAN_ID_PTR nbors_global, /* GIDs of this obj's neighboring objs. */
   int *nbors_proc,            /* Procs owning the neighboring objs. */
+  int *nbors_part,            /* Parts owning the neighboring objs. */
   float *ewgts,               /* Edge weights for each of obj's edges */
   int nedges,                 /* # of edges for this object */
   int num_obj,                /* # of objs on this proc */
@@ -781,8 +787,7 @@ static int eval_edge_list(
 )
 {
 /* Function to evaluate edge cuts, etc., for an object's edge list. */
-char *yo = "eval_edge_list";
-int i, j, p, found;
+int i, j;
 int ierr = ZOLTAN_OK;
 int proc_flag, part_flag;
 
@@ -804,38 +809,7 @@ int proc_flag, part_flag;
                                          current object number */
     }
     if (compute_part){
-      if (nbors_proc[j] == zz->Proc){
-        /* Need to find the nbors_global ID in global_ids
-         * in order to determine the partition numbers.
-         * For now, look through the global_id list and compare
-         * every time. This is quite slow, O(n1*n2) where
-         * n1, n2 are the length of the lists, so
-         * in the future we should use a hash table
-         * or the Ddirectory.
-         */
-        found = -1;
-        for (i=0; i<num_obj; i++){
-          if (ZOLTAN_EQ_GID(zz, &(global_ids[i*num_gid_entries]),
-                            &(nbors_global[j*num_gid_entries]))){
-            found = i;
-            break;
-          }
-        }
-        if (found<0){
-          /* This should never happen. */
-          ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Sanity check failed!");
-          ierr = ZOLTAN_FATAL;
-          goto End;
-        }
-        p = part[found];
-      }
-      else
-        p = -1; /* Assume remote data belong to different partition. */
-                /* TODO: This is not necessarily true! */
-                /* Answers may be incorrect. We need to get */
-                /* the remote partition numbers, perhaps via DDirectory */
-
-      if (p != part[k]){
+      if (nbors_part[j] != part[k]){
         cut_arr[part[k]]++;
         for (i=0; i<zz->Edge_Weight_Dim; i++)
           cutwgt_arr[part[k]*zz->Edge_Weight_Dim+i] 
@@ -852,9 +826,53 @@ int proc_flag, part_flag;
     if (proc_count[i]==k) (*comm_vol)++;
   }
   /* TODO: also compute comm_vol wrt partitions here */
-End:
   return ierr;
 }
+
+/****************************************************************************/
+#define TEST_DD_ERROR(ierr, yo, proc, fn) \
+  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) { \
+    char msg[64];  \
+    sprintf(msg, "Error in %s\n", fn); \
+    ZOLTAN_PRINT_ERROR(proc, yo, msg); \
+    goto End;\
+  }
+
+static int get_nbor_parts(
+  ZZ *zz, 
+  int nobj,                     /* Input:  number of local objs */
+  ZOLTAN_ID_PTR global_ids,     /* Input:  GIDs of local objs */
+  ZOLTAN_ID_PTR local_ids,      /* Input:  LIDs of local objs */
+  int *part,                    /* Input:  part assignments of local objs */
+  int nnbors,                   /* Input:  number of neighboring objs */
+  ZOLTAN_ID_PTR nbors_global,   /* Input:  GIDs of neighboring objs */
+  int *nbors_part               /* Output:  part assignments of neighbor objs */
+)
+{
+/* Function to retrieve the partition number for neighboring nodes. */
+char *yo = "get_nbor_parts";
+struct Zoltan_DD_Struct *dd = NULL;
+int *owner = NULL;
+int ierr;
+
+  ierr = Zoltan_DD_Create(&dd, zz->Communicator, zz->Num_GID, zz->Num_LID,
+                          0, 0, 0);
+  TEST_DD_ERROR(ierr, yo, zz->Proc, "Zoltan_DD_Create");
+
+  ierr = Zoltan_DD_Update(dd, global_ids, local_ids, NULL, part, nobj);
+  TEST_DD_ERROR(ierr, yo, zz->Proc, "Zoltan_DD_Update");
+  
+  owner = (int *) ZOLTAN_MALLOC(nnbors * sizeof(int));
+  ierr = Zoltan_DD_Find(dd, nbors_global, NULL, NULL, nbors_part,
+                        nnbors, owner);
+  ZOLTAN_FREE(&owner);
+  TEST_DD_ERROR(ierr, yo, zz->Proc, "Zoltan_DD_Find");
+
+End:
+  Zoltan_DD_Destroy(&dd);
+  return ierr;
+}
+
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

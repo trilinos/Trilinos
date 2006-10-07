@@ -29,6 +29,7 @@ extern "C" {
 static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_greedy;
 static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_random;
 static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_linear;
+static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_cluster;
 
 static ZOLTAN_PHG_COARSEPARTITION_FN* CoarsePartitionFns[] = 
                                       {&coarse_part_greedy,
@@ -70,6 +71,7 @@ char *str, *str2;
   else if (!strcasecmp(str, "greedy")) return coarse_part_greedy;
   else if (!strcasecmp(str, "random")) return coarse_part_random;
   else if (!strcasecmp(str, "linear")) return coarse_part_linear;
+  else if (!strcasecmp(str, "cluster")) return coarse_part_cluster;
   else {                              
     *ierr = ZOLTAN_FATAL; 
     return NULL;
@@ -116,6 +118,7 @@ int worst, new_cand;
 float bal, cut, worst_cut;
 int fine_timing = (hgp->use_timers > 2);
 static int timer_cpart=-1, timer_gather=-1, timer_refine=-1; 
+int local_coarse_part = hgp->LocalCoarsePartition;
 
 /* Number of iterations to try coarse partitioning on each proc. */
 /* 10 when p=1, and 1 when p is large. */
@@ -137,11 +140,11 @@ const int num_coarse_iter = 1 + 9/zz->Num_Proc;
 
 
   /* Force LocalCoarsePartition if large global graph */
-#define LARGE_GRAPH_VTX   32000
+#define LARGE_GRAPH_VTX   64000
 #define LARGE_GRAPH_PINS 256000
   if (phg->dist_x[phg->comm->nProc_x] > LARGE_GRAPH_VTX){
     /* TODO: || (global_nPins > LARGE_GRAPH_PINS) */
-    hgp->LocalCoarsePartition = 1;
+    local_coarse_part = 1;
   }
 
   /* take care of all special cases first */
@@ -192,7 +195,7 @@ const int num_coarse_iter = 1 + 9/zz->Num_Proc;
     for (i = 0; i < phg->nVtx; i++)
       part[i] = phg->dist_x[phg->comm->myProc_x]+i;
   }
-  else if (hgp->LocalCoarsePartition) {
+  else if (local_coarse_part) {
     /* Apply local partitioner to each column */
     ierr = local_coarse_partitioner(zz, phg, numPart, part_sizes, part, hgp,
                                     hgp->CoarsePartition);
@@ -300,10 +303,12 @@ const int num_coarse_iter = 1 + 9/zz->Num_Proc;
         ZOLTAN_TIMER_START(zz->ZTime, timer_refine, phg->comm->Communicator);
       }
 
+      if (CoarsePartition != coarse_part_cluster) {
       /* UVCUVC: Refine new candidate: only one pass is enough. */
-      hgp->fm_loop_limit = 1;
-      Zoltan_PHG_Refinement(zz, shg, numPart, part_sizes, new_part, hgp);
-      hgp->fm_loop_limit = savefmlooplimit;
+        hgp->fm_loop_limit = 1;
+        Zoltan_PHG_Refinement(zz, shg, numPart, part_sizes, new_part, hgp);
+        hgp->fm_loop_limit = savefmlooplimit;
+      }
       
       /* stop refinement timer */
       if (fine_timing) {
@@ -559,6 +564,27 @@ static int seq_part (
 }
 
 /****************************************************************************/
+/* Clustering. Assume coarsening identified clusters.  Simply assign a 
+ * cluster number to each coarse vertex.
+ */
+
+static int coarse_part_cluster(
+  ZZ *zz, 
+  HGraph *hg, 
+  int p, 
+  float *part_sizes,
+  Partition part, 
+  PHGPartParams *hgp
+)
+{
+int i;
+
+  for (i = 0; i < hg->nVtx; i++)
+    part[i] = i;
+  return ZOLTAN_OK;
+}
+
+/****************************************************************************/
 /* Linear partitioning. Sequence partitioning with vertices in linear order. */
 
 static int coarse_part_linear (
@@ -793,6 +819,8 @@ static int coarse_part_greedy (
   float *old_ewgt=NULL, *new_ewgt=NULL;
   int err = ZOLTAN_OK;
   char *yo = "coarse_part_greedy";
+
+  if (hg->nVtx == 0) return ZOLTAN_OK; /* Nothing to do. */
 
 #if 0 /* Disable edge scaling for now since collective comm causes hang. TODO */
   /* Scale the edge weights */

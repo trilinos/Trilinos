@@ -388,8 +388,11 @@ int Zoltan_PHG_rdivide(
           if (detail_timing) {
               ZOLTAN_TIMER_START(zz->ZTime, timer_wait, hgc->Communicator);
           }          
-      } else
+      } else {
           nsend = 0; 
+          Zoltan_HG_HGraph_Free (&newleft);  /* free dist_x and dist_y */
+          Zoltan_HG_HGraph_Free (&newright); /* allocated in Redistribute*/
+      }
 
       if (detail_timing) {
           MPI_Barrier(hgc->Communicator);

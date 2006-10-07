@@ -9,7 +9,7 @@
  *    $Author$
  *    $Date$
  *    $Revision$
- ***************************************************************************/
+ ****************************************************************************/
  
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
@@ -887,9 +887,6 @@ static int pmatching_ipm (ZZ *zz,
           /* flag first data in each destination row for merging */
           if (rows[candidate_gno % hgc->nProc_y] != 1)  {
             rows[candidate_gno % hgc->nProc_y] = 1;
-            /* UVCUVC BUGBUG CHECK!? won't the following assignment cause
-               a problem on dest[sendcnt] !?
-               KDDKDD YES INDEED -- FIXED ON OCT 4, 2006 */
             candidate_index = -candidate_index -1; 
           }
           

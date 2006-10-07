@@ -557,7 +557,7 @@ int hedge_init_dist_type;
       *hewgts = (float *) malloc(*nhedges * *hewgt_dim * sizeof(float));
     if ((*nhedges && !(*hgid)) || !(*hindex) || 
         (size[myproc] && (!(*hvertex) || !(*hvertex_proc))) ||
-        (*nhedges && *hewgt_dim && !(*hewgt_dim))) {
+        (*nhedges && *hewgt_dim && !(*hewgts))) {
       Gen_Error(0, "fatal: memory error in dist_hyperedges");
       return 0;
     }
@@ -602,7 +602,7 @@ int hedge_init_dist_type;
       *hewgts = (float *) malloc(hcnt[0] * *hewgt_dim * sizeof(float));
     if ((hcnt[0] && !(*hgid)) || !(*hindex) || 
         (hcnt[1] && (!(*hvertex) || !(*hvertex_proc))) ||
-        (hcnt[0] && *hewgt_dim && !(*hewgt_dim))) {
+        (hcnt[0] && *hewgt_dim && !(*hewgts))) {
       Gen_Error(0, "fatal: memory error in dist_hyperedges");
       return 0;
     }

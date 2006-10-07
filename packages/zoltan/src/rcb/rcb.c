@@ -514,7 +514,6 @@ static int rcb_fn(
 
       /* move dots */
       allocflag = 0;
-      printf("[%2d] Calling Zoltan_RB_Send_Dots\n", proc);
       ierr = Zoltan_RB_Send_Dots(zz, &(rcb->Global_IDs), &(rcb->Local_IDs),
                                  &(rcb->Dots), &dotmark, 
                                  proc_list, outgoing, 

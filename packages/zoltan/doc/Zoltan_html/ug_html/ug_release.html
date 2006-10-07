@@ -32,6 +32,8 @@
 releases of Zoltan:
 </a>
 <blockquote>
+  <a href="#Release2.1">Zoltan Release v2.1</a><br>
+  <a href="#Release2.02">Zoltan Release v2.02</a><br>
   <a href="#Release2.01">Zoltan Release v2.01</a><br>
   <a href="#Release2.0">Zoltan Release v2.0</a><br>
   <a href="#Release1.54">Zoltan Release v1.54</a>
@@ -45,21 +47,36 @@ releases of Zoltan:
   <a href="#Release1.3">Zoltan Release v1.3</a>
 </blockquote>
 <hr>
-<h2><a name="Release2.01"></a>Zoltan Release Notes v2.01</h2>
+<h2><a name="Release2.1"></a>Zoltan Release Notes v2.1:  October 5, 2006</h2>
+Zoltan v2.1 includes a significant bug fix for the hypergraph partitioner.
+We strongly recommend that users upgrade to Zoltan v2.1.
+<hr>
+<h2><a name="Release2.02"></a>Zoltan Release Notes v2.02:  September 26, 2006</h2>
+Zoltan v2.02 includes bugfixes:
+<ul>
+<li>Zoltan_LB_Eval now correctly computes edge cuts with respect to partitions 
+when partitions are spread across more than one processor.
+</li>
+<li>Extraneous (and annoying) print statement has been removed from
+Zoltan partitioning method RCB.
+</li>
+</ul>
+<hr>
+<h2><a name="Release2.01"></a>Zoltan Release Notes v2.01:  August 2006</h2>
 Zoltan v2.01 includes enhancements to version 2.0.
-These fixes change the specific partition assignments 
-compared to v2.0, but they do not change 
-the overall quality of solution.
 <ul>
   <li>F90 interface fixes to comply with standard F90 (e.g., shortened
 variable names and continuation lines).  The hypergraph callback function
 names have changed, but C and C++ compatibility with v2.0 is maintained.</li>
   <li>Performance improvement to initial building of hypergraphs from
 application data.</li>
+  <li>Major bug fix for dense-edge removal in parallel hypergraph method; 
+      partitioning of hypergraphs with edges containing more than 25% of 
+      the vertices was affected by this bug.</li>
   <li>Minor fixes to parallel hypergraph code.</li>
 </ul>
 <hr>
-<h2><a name="Release2.0"></a>Zoltan Release Notes v2.0</h2>
+<h2><a name="Release2.0"></a>Zoltan Release Notes v2.0:  April 2006</h2>
 Zoltan v2.0 includes several major additions:<br>
 <ul>
   <li><a href="ug_alg_phg.html">Parallel hypergraph partitioning</a>. </li>

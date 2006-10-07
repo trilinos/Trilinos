@@ -9,6 +9,9 @@
  *    $Author$
  *    $Date$
  *    $Revision$
+ *    $Author$
+ *    $Date$
+ *    $Revision$
  ****************************************************************************/
 
 
@@ -57,6 +60,15 @@ static PARAM_VARS Graph_params[] = {
         { "ADD_OBJ_WEIGHT",  NULL,  "STRING", 0},
         { NULL, NULL, NULL, 0 } };
 
+/***************  prototypes for internal functions ********************/
+
+#if (defined(ZOLTAN_JOSTLE) || defined(ZOLTAN_PARMETIS))
+static int Compute_Bal(ZZ *, int, float *, int *, double *);
+static int Compute_EdgeCut(ZZ *, int, int *, float *, int *, int *, double *);
+static int Compute_NetCut(ZZ *, int, int *, int *, int *);
+static int Compute_ConCut(ZZ *, int, int *, int *, int *);
+static int Compute_Adjpart(ZZ *, int, int *, int *, int *, int *, int *, int *);
+#endif
 
 /* Zoltan_ParMetis_Shared should be compiled even when ZOLTAN_PARMETIS 
    is not defined so it can return an error.
@@ -1947,7 +1959,8 @@ int tag = 24542;
 
   return ZOLTAN_OK;
 }
-#endif
+#endif /* ZOLTAN_PARMETIS  || ZOLTAN_JOSTLE */
+
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

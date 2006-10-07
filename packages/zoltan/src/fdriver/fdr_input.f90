@@ -186,7 +186,8 @@ type(PARIO_INFO) :: pio_info
        endif
     endif
 
-    if (lowercase(trim(command)) == "zoltan parameters") then
+    if ((lowercase(trim(command)) == "zoltan parameters").or. &
+        (lowercase(trim(command)) == "zoltan parameter")) then
 ! assumes there is one blank between "=" and the parameter name
        temp_string = lowercase(trim(inp_line(index(inp_line,"=")+2:)))
 ! assumes no blanks between second "=" and the parameter name
