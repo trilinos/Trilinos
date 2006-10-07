@@ -35,7 +35,7 @@
 #include "Teuchos_RefCountPtr.hpp"
 
 #include "FEApp_AbstractPDE.hpp"
-#include "FEApp_AbstractSourceFunction.hpp"
+#include "FEApp_SourceFunctionFactory.hpp"
 
 namespace FEApp {
 
@@ -96,6 +96,22 @@ namespace FEApp {
     //! Source function values
     std::vector<ScalarT> f;
 
+  };
+
+  class HeatNonlinearSourcePDE_TemplateBuilder {
+  public:
+    HeatNonlinearSourcePDE_TemplateBuilder(
+		const Teuchos::RefCountPtr<Teuchos::ParameterList>& params_) :
+      params(Teuchos::rcp(&(params_->sublist("Source Function")),false)) {}
+    template <typename T>
+    Teuchos::RefCountPtr<FEApp::AbstractPDE_NTBase> build() const {
+      FEApp::SourceFunctionFactory<T> factory(params);
+      Teuchos::RefCountPtr< FEApp::AbstractSourceFunction<T> > source =
+	factory.create();
+      return Teuchos::rcp( new FEApp::HeatNonlinearSourcePDE<T>(source));
+    }
+  protected:
+    Teuchos::RefCountPtr<Teuchos::ParameterList> params;
   };
 
 }

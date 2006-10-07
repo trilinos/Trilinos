@@ -108,31 +108,41 @@ am__objects_2 = FEApp_GaussianQuadrature2.$(OBJEXT) \
 	FEApp_QuadratureFactory.$(OBJEXT)
 am__objects_3 =
 am__objects_4 = FEApp_ConstantDirichletBC.$(OBJEXT)
-am__objects_5 = FEApp_Mesh.$(OBJEXT)
-am__objects_6 = FEApp_InitPostOps.$(OBJEXT)
-am__objects_7 = FEApp_CZeroDiscretization.$(OBJEXT) \
+am__objects_5 = FEApp_BrusselatorProblem.$(OBJEXT) \
+	FEApp_HeatNonlinearSourceProblem.$(OBJEXT) \
+	FEApp_ProblemFactory.$(OBJEXT)
+am__objects_6 = FEApp_Mesh.$(OBJEXT)
+am__objects_7 = FEApp_InitPostOps.$(OBJEXT)
+am__objects_8 = FEApp_CZeroDiscretization.$(OBJEXT) \
 	FEApp_DiscretizationFactory.$(OBJEXT)
-am__objects_8 = FEApp_Application.$(OBJEXT)
-am__objects_9 = $(am__objects_1) $(am__objects_2) $(am__objects_3) \
+am__objects_9 = FEApp_Application.$(OBJEXT) \
+	FEApp_ModelEvaluator.$(OBJEXT)
+am__objects_10 = $(am__objects_1) $(am__objects_2) $(am__objects_3) \
 	$(am__objects_3) $(am__objects_4) $(am__objects_5) \
-	$(am__objects_6) $(am__objects_7) $(am__objects_8)
-am__objects_10 = $(am__objects_3) $(am__objects_3) $(am__objects_3) \
+	$(am__objects_6) $(am__objects_7) $(am__objects_8) \
+	$(am__objects_9)
+am__objects_11 = $(am__objects_3) $(am__objects_3) $(am__objects_3) \
 	$(am__objects_3) $(am__objects_3) $(am__objects_3) \
-	$(am__objects_3) $(am__objects_3) $(am__objects_3)
-am_lib1DFEM_a_OBJECTS = $(am__objects_9) $(am__objects_10)
+	$(am__objects_3) $(am__objects_3) $(am__objects_3) \
+	$(am__objects_3)
+am_lib1DFEM_a_OBJECTS = $(am__objects_10) $(am__objects_11)
 lib1DFEM_a_OBJECTS = $(am_lib1DFEM_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/FEApp_Application.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/FEApp_BrusselatorProblem.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/FEApp_CZeroDiscretization.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/FEApp_ConstantDirichletBC.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/FEApp_DiscretizationFactory.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/FEApp_ElementFactory.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/FEApp_GaussianQuadrature2.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/FEApp_HeatNonlinearSourceProblem.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/FEApp_InitPostOps.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/FEApp_LinearElement.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/FEApp_Mesh.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/FEApp_ModelEvaluator.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/FEApp_ProblemFactory.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/FEApp_QuadratureFactory.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -304,7 +314,9 @@ QUADRATURE = \
 
 SOURCE_H = \
 	$(srcdir)/FEApp_AbstractSourceFunction.hpp \
-	$(srcdir)/FEApp_QuadraticSourceFunction.hpp
+	$(srcdir)/FEApp_QuadraticSourceFunction.hpp \
+	$(srcdir)/FEApp_SourceFunctionFactory.hpp \
+	$(srcdir)/FEApp_SourceFunctionFactoryImpl.hpp
 
 SOURCE = 
 PDE_H = \
@@ -322,6 +334,17 @@ BC_H = \
 
 BC = \
 	$(srcdir)/FEApp_ConstantDirichletBC.cpp
+
+PROBLEM_H = \
+	$(srcdir)/FEApp_AbstractProblem.hpp \
+	$(srcdir)/FEApp_BrusselatorProblem.hpp \
+	$(srcdir)/FEApp_HeatNonlinearSourceProblem.hpp \
+	$(srcdir)/FEApp_ProblemFactory.hpp
+
+PROBLEM = \
+	$(srcdir)/FEApp_BrusselatorProblem.cpp \
+	$(srcdir)/FEApp_HeatNonlinearSourceProblem.cpp \
+	$(srcdir)/FEApp_ProblemFactory.cpp
 
 MESH_H = \
 	$(srcdir)/FEApp_Mesh.hpp
@@ -348,10 +371,12 @@ DISC = \
 	$(srcdir)/FEApp_DiscretizationFactory.cpp
 
 APP_H = \
-	$(srcdir)/FEApp_Application.hpp
+	$(srcdir)/FEApp_Application.hpp \
+	$(srcdir)/FEApp_ModelEvaluator.hpp
 
 APP = \
-	$(srcdir)/FEApp_Application.cpp
+	$(srcdir)/FEApp_Application.cpp \
+	$(srcdir)/FEApp_ModelEvaluator.cpp
 
 ONEDFEM_H = \
 	$(ELEMENT_H) \
@@ -359,6 +384,7 @@ ONEDFEM_H = \
 	$(SOURCE_H) \
 	$(PDE_H) \
 	$(BC_H) \
+	$(PROBLEM_H) \
 	$(MESH_H) \
 	$(FILL_H) \
 	$(DISC_H) \
@@ -370,6 +396,7 @@ ONEDFEM = \
 	$(SOURCE) \
 	$(PDE) \
 	$(BC) \
+	$(PROBLEM) \
 	$(MESH) \
 	$(FILL) \
 	$(DISC) \
@@ -484,14 +511,18 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_Application.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_BrusselatorProblem.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_CZeroDiscretization.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_ConstantDirichletBC.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_DiscretizationFactory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_ElementFactory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_GaussianQuadrature2.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_HeatNonlinearSourceProblem.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_InitPostOps.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_LinearElement.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_Mesh.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_ModelEvaluator.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_ProblemFactory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_QuadratureFactory.Po@am__quote@
 
 .cpp.o:
@@ -590,6 +621,54 @@ FEApp_ConstantDirichletBC.obj: $(srcdir)/FEApp_ConstantDirichletBC.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_ConstantDirichletBC.obj `if test -f '$(srcdir)/FEApp_ConstantDirichletBC.cpp'; then $(CYGPATH_W) '$(srcdir)/FEApp_ConstantDirichletBC.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/FEApp_ConstantDirichletBC.cpp'; fi`
 
+FEApp_BrusselatorProblem.o: $(srcdir)/FEApp_BrusselatorProblem.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_BrusselatorProblem.o -MD -MP -MF "$(DEPDIR)/FEApp_BrusselatorProblem.Tpo" -c -o FEApp_BrusselatorProblem.o `test -f '$(srcdir)/FEApp_BrusselatorProblem.cpp' || echo '$(srcdir)/'`$(srcdir)/FEApp_BrusselatorProblem.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/FEApp_BrusselatorProblem.Tpo" "$(DEPDIR)/FEApp_BrusselatorProblem.Po"; else rm -f "$(DEPDIR)/FEApp_BrusselatorProblem.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/FEApp_BrusselatorProblem.cpp' object='FEApp_BrusselatorProblem.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/FEApp_BrusselatorProblem.Po' tmpdepfile='$(DEPDIR)/FEApp_BrusselatorProblem.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_BrusselatorProblem.o `test -f '$(srcdir)/FEApp_BrusselatorProblem.cpp' || echo '$(srcdir)/'`$(srcdir)/FEApp_BrusselatorProblem.cpp
+
+FEApp_BrusselatorProblem.obj: $(srcdir)/FEApp_BrusselatorProblem.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_BrusselatorProblem.obj -MD -MP -MF "$(DEPDIR)/FEApp_BrusselatorProblem.Tpo" -c -o FEApp_BrusselatorProblem.obj `if test -f '$(srcdir)/FEApp_BrusselatorProblem.cpp'; then $(CYGPATH_W) '$(srcdir)/FEApp_BrusselatorProblem.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/FEApp_BrusselatorProblem.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/FEApp_BrusselatorProblem.Tpo" "$(DEPDIR)/FEApp_BrusselatorProblem.Po"; else rm -f "$(DEPDIR)/FEApp_BrusselatorProblem.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/FEApp_BrusselatorProblem.cpp' object='FEApp_BrusselatorProblem.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/FEApp_BrusselatorProblem.Po' tmpdepfile='$(DEPDIR)/FEApp_BrusselatorProblem.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_BrusselatorProblem.obj `if test -f '$(srcdir)/FEApp_BrusselatorProblem.cpp'; then $(CYGPATH_W) '$(srcdir)/FEApp_BrusselatorProblem.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/FEApp_BrusselatorProblem.cpp'; fi`
+
+FEApp_HeatNonlinearSourceProblem.o: $(srcdir)/FEApp_HeatNonlinearSourceProblem.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_HeatNonlinearSourceProblem.o -MD -MP -MF "$(DEPDIR)/FEApp_HeatNonlinearSourceProblem.Tpo" -c -o FEApp_HeatNonlinearSourceProblem.o `test -f '$(srcdir)/FEApp_HeatNonlinearSourceProblem.cpp' || echo '$(srcdir)/'`$(srcdir)/FEApp_HeatNonlinearSourceProblem.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/FEApp_HeatNonlinearSourceProblem.Tpo" "$(DEPDIR)/FEApp_HeatNonlinearSourceProblem.Po"; else rm -f "$(DEPDIR)/FEApp_HeatNonlinearSourceProblem.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/FEApp_HeatNonlinearSourceProblem.cpp' object='FEApp_HeatNonlinearSourceProblem.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/FEApp_HeatNonlinearSourceProblem.Po' tmpdepfile='$(DEPDIR)/FEApp_HeatNonlinearSourceProblem.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_HeatNonlinearSourceProblem.o `test -f '$(srcdir)/FEApp_HeatNonlinearSourceProblem.cpp' || echo '$(srcdir)/'`$(srcdir)/FEApp_HeatNonlinearSourceProblem.cpp
+
+FEApp_HeatNonlinearSourceProblem.obj: $(srcdir)/FEApp_HeatNonlinearSourceProblem.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_HeatNonlinearSourceProblem.obj -MD -MP -MF "$(DEPDIR)/FEApp_HeatNonlinearSourceProblem.Tpo" -c -o FEApp_HeatNonlinearSourceProblem.obj `if test -f '$(srcdir)/FEApp_HeatNonlinearSourceProblem.cpp'; then $(CYGPATH_W) '$(srcdir)/FEApp_HeatNonlinearSourceProblem.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/FEApp_HeatNonlinearSourceProblem.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/FEApp_HeatNonlinearSourceProblem.Tpo" "$(DEPDIR)/FEApp_HeatNonlinearSourceProblem.Po"; else rm -f "$(DEPDIR)/FEApp_HeatNonlinearSourceProblem.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/FEApp_HeatNonlinearSourceProblem.cpp' object='FEApp_HeatNonlinearSourceProblem.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/FEApp_HeatNonlinearSourceProblem.Po' tmpdepfile='$(DEPDIR)/FEApp_HeatNonlinearSourceProblem.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_HeatNonlinearSourceProblem.obj `if test -f '$(srcdir)/FEApp_HeatNonlinearSourceProblem.cpp'; then $(CYGPATH_W) '$(srcdir)/FEApp_HeatNonlinearSourceProblem.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/FEApp_HeatNonlinearSourceProblem.cpp'; fi`
+
+FEApp_ProblemFactory.o: $(srcdir)/FEApp_ProblemFactory.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_ProblemFactory.o -MD -MP -MF "$(DEPDIR)/FEApp_ProblemFactory.Tpo" -c -o FEApp_ProblemFactory.o `test -f '$(srcdir)/FEApp_ProblemFactory.cpp' || echo '$(srcdir)/'`$(srcdir)/FEApp_ProblemFactory.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/FEApp_ProblemFactory.Tpo" "$(DEPDIR)/FEApp_ProblemFactory.Po"; else rm -f "$(DEPDIR)/FEApp_ProblemFactory.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/FEApp_ProblemFactory.cpp' object='FEApp_ProblemFactory.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/FEApp_ProblemFactory.Po' tmpdepfile='$(DEPDIR)/FEApp_ProblemFactory.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_ProblemFactory.o `test -f '$(srcdir)/FEApp_ProblemFactory.cpp' || echo '$(srcdir)/'`$(srcdir)/FEApp_ProblemFactory.cpp
+
+FEApp_ProblemFactory.obj: $(srcdir)/FEApp_ProblemFactory.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_ProblemFactory.obj -MD -MP -MF "$(DEPDIR)/FEApp_ProblemFactory.Tpo" -c -o FEApp_ProblemFactory.obj `if test -f '$(srcdir)/FEApp_ProblemFactory.cpp'; then $(CYGPATH_W) '$(srcdir)/FEApp_ProblemFactory.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/FEApp_ProblemFactory.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/FEApp_ProblemFactory.Tpo" "$(DEPDIR)/FEApp_ProblemFactory.Po"; else rm -f "$(DEPDIR)/FEApp_ProblemFactory.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/FEApp_ProblemFactory.cpp' object='FEApp_ProblemFactory.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/FEApp_ProblemFactory.Po' tmpdepfile='$(DEPDIR)/FEApp_ProblemFactory.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_ProblemFactory.obj `if test -f '$(srcdir)/FEApp_ProblemFactory.cpp'; then $(CYGPATH_W) '$(srcdir)/FEApp_ProblemFactory.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/FEApp_ProblemFactory.cpp'; fi`
+
 FEApp_Mesh.o: $(srcdir)/FEApp_Mesh.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_Mesh.o -MD -MP -MF "$(DEPDIR)/FEApp_Mesh.Tpo" -c -o FEApp_Mesh.o `test -f '$(srcdir)/FEApp_Mesh.cpp' || echo '$(srcdir)/'`$(srcdir)/FEApp_Mesh.cpp; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/FEApp_Mesh.Tpo" "$(DEPDIR)/FEApp_Mesh.Po"; else rm -f "$(DEPDIR)/FEApp_Mesh.Tpo"; exit 1; fi
@@ -669,6 +748,22 @@ FEApp_Application.obj: $(srcdir)/FEApp_Application.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/FEApp_Application.Po' tmpdepfile='$(DEPDIR)/FEApp_Application.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_Application.obj `if test -f '$(srcdir)/FEApp_Application.cpp'; then $(CYGPATH_W) '$(srcdir)/FEApp_Application.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/FEApp_Application.cpp'; fi`
+
+FEApp_ModelEvaluator.o: $(srcdir)/FEApp_ModelEvaluator.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_ModelEvaluator.o -MD -MP -MF "$(DEPDIR)/FEApp_ModelEvaluator.Tpo" -c -o FEApp_ModelEvaluator.o `test -f '$(srcdir)/FEApp_ModelEvaluator.cpp' || echo '$(srcdir)/'`$(srcdir)/FEApp_ModelEvaluator.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/FEApp_ModelEvaluator.Tpo" "$(DEPDIR)/FEApp_ModelEvaluator.Po"; else rm -f "$(DEPDIR)/FEApp_ModelEvaluator.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/FEApp_ModelEvaluator.cpp' object='FEApp_ModelEvaluator.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/FEApp_ModelEvaluator.Po' tmpdepfile='$(DEPDIR)/FEApp_ModelEvaluator.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_ModelEvaluator.o `test -f '$(srcdir)/FEApp_ModelEvaluator.cpp' || echo '$(srcdir)/'`$(srcdir)/FEApp_ModelEvaluator.cpp
+
+FEApp_ModelEvaluator.obj: $(srcdir)/FEApp_ModelEvaluator.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_ModelEvaluator.obj -MD -MP -MF "$(DEPDIR)/FEApp_ModelEvaluator.Tpo" -c -o FEApp_ModelEvaluator.obj `if test -f '$(srcdir)/FEApp_ModelEvaluator.cpp'; then $(CYGPATH_W) '$(srcdir)/FEApp_ModelEvaluator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/FEApp_ModelEvaluator.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/FEApp_ModelEvaluator.Tpo" "$(DEPDIR)/FEApp_ModelEvaluator.Po"; else rm -f "$(DEPDIR)/FEApp_ModelEvaluator.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/FEApp_ModelEvaluator.cpp' object='FEApp_ModelEvaluator.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/FEApp_ModelEvaluator.Po' tmpdepfile='$(DEPDIR)/FEApp_ModelEvaluator.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_ModelEvaluator.obj `if test -f '$(srcdir)/FEApp_ModelEvaluator.cpp'; then $(CYGPATH_W) '$(srcdir)/FEApp_ModelEvaluator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/FEApp_ModelEvaluator.cpp'; fi`
 uninstall-info-am:
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)

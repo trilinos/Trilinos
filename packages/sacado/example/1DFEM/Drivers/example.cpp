@@ -31,9 +31,6 @@
 
 #include <iostream>
 
-#include "FEApp_HeatNonlinearSourcePDE.hpp"
-#include "FEApp_QuadraticSourceFunction.hpp"
-#include "FEApp_ConstantDirichletBC.hpp"
 #include "FEApp_Application.hpp"
 
 #ifdef HAVE_MPI
@@ -41,20 +38,6 @@
 #else
 #include "Epetra_SerialComm.h"
 #endif
-
-class HeatNonlinearSourcePDE_TemplateBuilder {
-public:
-  HeatNonlinearSourcePDE_TemplateBuilder(double factor_) :
-    factor(factor_) {}
-  template <typename T>
-  Teuchos::RefCountPtr<FEApp::AbstractPDE_NTBase> build() const {
-    Teuchos::RefCountPtr< FEApp::AbstractSourceFunction<T> > source =
-      Teuchos::rcp(new FEApp::QuadraticSourceFunction<T>(factor));
-    return Teuchos::rcp( new FEApp::HeatNonlinearSourcePDE<T>(source));
-  }
-protected:
-  double factor;
-};
 
 int main(int argc, char *argv[]) {
   unsigned int nelem = 100;
@@ -79,25 +62,27 @@ int main(int argc, char *argv[]) {
     Comm = Teuchos::rcp(new Epetra_SerialComm);
 #endif
 
-    HeatNonlinearSourcePDE_TemplateBuilder pdeBuilder(factor);
-
     vector<double> x(nelem+1);
     for (unsigned int i=0; i<=nelem; i++)
       x[i] = h*i;
     
     Teuchos::RefCountPtr<Teuchos::ParameterList> appParams = 
       Teuchos::rcp(new Teuchos::ParameterList);
-    
-    FEApp::Application app(pdeBuilder, x, 1, Comm, appParams);
-    Teuchos::RefCountPtr<Epetra_Map> map = app.getMap();
 
-    std::vector< Teuchos::RefCountPtr<const FEApp::AbstractBC> > bc(2);
-    bc[0] = Teuchos::rcp(new FEApp::ConstantDirichletBC(map->MinAllGID(),
-							left_bc));
-    bc[1] = Teuchos::rcp(new FEApp::ConstantDirichletBC(map->MaxAllGID(),
-							right_bc));
-    app.setBCs(bc);
+    Teuchos::ParameterList& problemParams = 
+      appParams->sublist("Problem");
+    problemParams.set("Name", "Heat Nonlinear Source");
+    problemParams.set("Left BC", left_bc);
+    problemParams.set("Right BC", right_bc);
+
+    Teuchos::ParameterList& sourceParams = 
+      problemParams.sublist("Source Function");
+    sourceParams.set("Name", "Quadratic");
+    sourceParams.set("Nonlinear Factor", factor);
     
+    FEApp::Application app(x, Comm, appParams);
+
+    Teuchos::RefCountPtr<const Epetra_Map> map = app.getMap();
     Epetra_Vector u(*map);
     u.PutScalar(1.0);
     Epetra_Vector f(*map);
@@ -107,6 +92,8 @@ int main(int argc, char *argv[]) {
 
     f.Print(std::cout);
     jac.Print(std::cout);
+
+    std::cout << std::endl << *appParams << std::endl;
 
 #ifdef HAVE_MPI
     MPI_Finalize() ;

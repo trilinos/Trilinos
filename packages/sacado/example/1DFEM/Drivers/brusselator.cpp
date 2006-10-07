@@ -31,9 +31,10 @@
 
 #include <iostream>
 
-#include "FEApp_BrusselatorPDE.hpp"
-#include "FEApp_ConstantDirichletBC.hpp"
-#include "FEApp_Application.hpp"
+#include "NOX.H"
+#include "NOX_Epetra.H"
+
+#include "FEApp_ModelEvaluator.hpp"
 
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
@@ -56,50 +57,143 @@ int main(int argc, char *argv[]) {
     MPI_Init(&argc,&argv);
 #endif
 
-    Teuchos::RefCountPtr<Epetra_Comm> Comm;
-
     // Create a communicator for Epetra objects
+    Teuchos::RefCountPtr<Epetra_Comm> Comm;
 #ifdef HAVE_MPI
     Comm = Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
 #else
     Comm = Teuchos::rcp(new Epetra_SerialComm);
 #endif
 
-    FEApp::BrusselatorPDE_TemplateBuilder pdeBuilder(alpha, beta, D1, D2);
+    int MyPID = Comm->MyPID();
     
+    // Create mesh
     vector<double> x(nelem+1);
     for (unsigned int i=0; i<=nelem; i++)
       x[i] = h*i;
 
+    // Set up application parameters
     Teuchos::RefCountPtr<Teuchos::ParameterList> appParams = 
       Teuchos::rcp(new Teuchos::ParameterList);
-    Teuchos::ParameterList& quadParams = appParams->sublist("Quadrature");
-    quadParams.set("Method", "Gaussian");
-    quadParams.set("Num Points", 2);
+    Teuchos::ParameterList& problemParams = 
+      appParams->sublist("Problem");
+    problemParams.set("Name", "Brusselator");
+    problemParams.set("alpha", alpha);
+    problemParams.set("beta", beta);
+    problemParams.set("D1", D1);
+    problemParams.set("D2", D2);
 
-    FEApp::Application app(pdeBuilder, x, 2, Comm, appParams);
-    Teuchos::RefCountPtr<Epetra_Map> map = app.getMap();
+    // Create application
+    Teuchos::RefCountPtr<FEApp::Application> app = 
+      Teuchos::rcp(new FEApp::Application(x, Comm, appParams));
 
-    std::vector< Teuchos::RefCountPtr<const FEApp::AbstractBC> > bc(4);
-    bc[0] = Teuchos::rcp(new FEApp::ConstantDirichletBC(map->MinAllGID(),
-							alpha));
-    bc[1] = Teuchos::rcp(new FEApp::ConstantDirichletBC(map->MinAllGID()+1,
-							beta/alpha));
-    bc[2] = Teuchos::rcp(new FEApp::ConstantDirichletBC(map->MaxAllGID()-1,
-							alpha));
-    bc[3] = Teuchos::rcp(new FEApp::ConstantDirichletBC(map->MaxAllGID(),
-							beta/alpha));
-    app.setBCs(bc);
-    
-    Epetra_Vector u(*map);
-    u.PutScalar(1.0);
-    Epetra_Vector f(*map);
-    Epetra_CrsMatrix jac(Copy, *(app.getJacobianGraph()));
+    // Create initial guess
+    Teuchos::RefCountPtr<const Epetra_Vector> u = app->getInitialSolution();
+    NOX::Epetra::Vector nox_u(*u);
 
-    app.computeGlobalJacobian(u, f, jac);
+    // Create model evaluator
+    Teuchos::RefCountPtr<FEApp::ModelEvaluator> model = 
+      Teuchos::rcp(new FEApp::ModelEvaluator(app));
 
-    f.Print(std::cout);
-    jac.Print(std::cout);
+    //app->getJacobianGraph()->Print(cout);
+
+    // Create NOX interface
+    Teuchos::RefCountPtr<NOX::Epetra::ModelEvaluatorInterface> interface =
+      Teuchos::rcp(new NOX::Epetra::ModelEvaluatorInterface(model));
+
+    // Set up NOX parameters
+    Teuchos::RefCountPtr<Teuchos::ParameterList> noxParams =
+      Teuchos::rcp(&(appParams->sublist("NOX")),false);
+
+    // Set the nonlinear solver method
+    noxParams->set("Nonlinear Solver", "Line Search Based");
+
+    // Set the printing parameters in the "Printing" sublist
+    Teuchos::ParameterList& printParams = noxParams->sublist("Printing");
+    printParams.set("MyPID", MyPID); 
+    printParams.set("Output Precision", 3);
+    printParams.set("Output Processor", 0);
+    printParams.set("Output Information", 
+		    NOX::Utils::OuterIteration + 
+		    NOX::Utils::OuterIterationStatusTest + 
+		    NOX::Utils::InnerIteration +
+		    NOX::Utils::Parameters + 
+		    NOX::Utils::Details + 
+		    NOX::Utils::LinearSolverDetails +
+		    NOX::Utils::Warning + 
+		    NOX::Utils::Error);
+
+    // Create printing utilities
+    NOX::Utils utils(printParams);
+
+    // Sublist for line search 
+    Teuchos::ParameterList& searchParams = noxParams->sublist("Line Search");
+    searchParams.set("Method", "Full Step");
+
+    // Sublist for direction
+    Teuchos::ParameterList& dirParams = noxParams->sublist("Direction");
+    dirParams.set("Method", "Newton");
+    Teuchos::ParameterList& newtonParams = dirParams.sublist("Newton");
+    newtonParams.set("Forcing Term Method", "Constant");
+
+    // Sublist for linear solver for the Newton method
+    Teuchos::ParameterList& lsParams = newtonParams.sublist("Linear Solver");
+    lsParams.set("Aztec Solver", "GMRES");  
+    lsParams.set("Max Iterations", 800);  
+    lsParams.set("Tolerance", 1e-4); 
+    lsParams.set("Output Frequency", 50);
+    lsParams.set("Preconditioner", "Ifpack");
+
+    // Create the Jacobian matrix
+    Teuchos::RefCountPtr<Epetra_Operator> A = model->create_W(); 
+
+    // Create the linear system
+    Teuchos::RefCountPtr<NOX::Epetra::Interface::Required> iReq = interface;
+    Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> iJac = interface;
+    Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO> linsys = 
+      Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, 
+							lsParams,
+							iReq, iJac, A, nox_u));
+
+    // Create the Group
+    Teuchos::RefCountPtr<NOX::Epetra::Group> grp =
+      Teuchos::rcp(new NOX::Epetra::Group(printParams, iReq, nox_u, linsys)); 
+
+    // Create the Solver convergence test
+    Teuchos::RefCountPtr<NOX::StatusTest::NormF> wrms = 
+      Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8, 
+					   NOX::StatusTest::NormF::Unscaled));
+    Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> maxiters = 
+      Teuchos::rcp(new NOX::StatusTest::MaxIters(10));
+    Teuchos::RefCountPtr<NOX::StatusTest::Combo> combo = 
+      Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
+    combo->addStatusTest(wrms);
+    combo->addStatusTest(maxiters);
+
+    // Create the solver
+    NOX::Solver::Manager solver(grp, combo, noxParams);
+
+    // Solve
+    NOX::StatusTest::StatusType status = solver.solve();
+    if (status != NOX::StatusTest::Converged)
+      if (MyPID==0) 
+	utils.out() << "Nonlinear solver failed to converge!" << endl;
+
+    // Get the Epetra_Vector with the final solution from the solver
+    const NOX::Epetra::Group& finalGroup = 
+      dynamic_cast<const NOX::Epetra::Group&>(solver.getSolutionGroup());
+    const Epetra_Vector& finalSolution = 
+      (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
+
+    // Output the parameter list
+    if (utils.isPrintType(NOX::Utils::Parameters)) {
+      utils.out() << endl << "Final Parameters" << endl
+		  << "****************" << endl;
+      appParams->print(utils.out());
+      utils.out() << endl;
+    }
+
+    //finalSolution.Print(utils.out());
 
 #ifdef HAVE_MPI
     MPI_Finalize() ;

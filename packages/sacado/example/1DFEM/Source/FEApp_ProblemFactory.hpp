@@ -29,72 +29,47 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef FEAPP_ABSTRACTDISCRETIZATION_HPP
-#define FEAPP_ABSTRACTDISCRETIZATION_HPP
+#ifndef FEAPP_PROBLEMFACTORY_HPP
+#define FEAPP_PROBLEMFACTORY_HPP
 
-#include <vector>
-
+#include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 
-#include "Epetra_Map.h"
-#include "Epetra_CrsGraph.h"
-
-#include "FEApp_Mesh.hpp"
+#include "FEApp_AbstractProblem.hpp"
 
 namespace FEApp {
 
-  class AbstractDiscretization {
+  /*!
+   * \brief A factory class to instantiate AbstractProblem objects
+   */
+  class ProblemFactory {
   public:
 
-    //! Constructor
-    AbstractDiscretization() {}
+    //! Default constructor
+    ProblemFactory(
+	   const Teuchos::RefCountPtr<Teuchos::ParameterList>& problemParams);
 
     //! Destructor
-    virtual ~AbstractDiscretization() {}
+    virtual ~ProblemFactory() {}
 
-    //! Create element mesh
-    virtual void createMesh() = 0;
-
-    //! Create DOF maps
-    virtual void createMaps() = 0;
-
-    //! Create Jacobian graph
-    virtual void createJacobianGraphs() = 0;
-
-    //! Get element mesh
-    virtual Teuchos::RefCountPtr<const FEApp::Mesh> 
-    getMesh() const = 0; 
-
-    //! Get DOF map
-    virtual Teuchos::RefCountPtr<const Epetra_Map> 
-    getMap() const = 0;
-
-    //! Get overlapped DOF map
-    virtual Teuchos::RefCountPtr<const Epetra_Map> 
-    getOverlapMap() const = 0;
-
-    //! Get Jacobian graph
-    virtual Teuchos::RefCountPtr<const Epetra_CrsGraph> 
-    getJacobianGraph() const = 0;
-
-    //! Get overlap Jacobian graph
-    virtual Teuchos::RefCountPtr<const Epetra_CrsGraph> 
-    getOverlapJacobianGraph() const = 0;
-
-    //! Get number of nodes per element
-    virtual int getNumNodesPerElement() const = 0;
-
+    virtual Teuchos::RefCountPtr<FEApp::AbstractProblem>
+    create();
 
   private:
 
     //! Private to prohibit copying
-    AbstractDiscretization(const AbstractDiscretization&);
+    ProblemFactory(const ProblemFactory&);
 
     //! Private to prohibit copying
-    AbstractDiscretization& operator=(const AbstractDiscretization&);
+    ProblemFactory& operator=(const ProblemFactory&);
+
+  protected:
+
+    //! Parameter list specifying what problem to create
+    Teuchos::RefCountPtr<Teuchos::ParameterList> problemParams;
 
   };
 
 }
 
-#endif // FEAPP_ABSTRACTDISCRETIZATION_HPP
+#endif // FEAPP_PROBLEMFACTORY_HPP

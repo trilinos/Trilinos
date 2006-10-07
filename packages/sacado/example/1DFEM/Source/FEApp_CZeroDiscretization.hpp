@@ -65,19 +65,24 @@ namespace FEApp {
     virtual void createJacobianGraphs();
 
     //! Get element mesh
-    virtual Teuchos::RefCountPtr<FEApp::Mesh> getMesh(); 
+    virtual Teuchos::RefCountPtr<const FEApp::Mesh> 
+    getMesh() const; 
 
     //! Get DOF map
-    virtual Teuchos::RefCountPtr<Epetra_Map> getMap();
+    virtual Teuchos::RefCountPtr<const Epetra_Map> 
+    getMap() const;
 
     //! Get overlapped DOF map
-    virtual Teuchos::RefCountPtr<Epetra_Map> getOverlapMap();
+    virtual Teuchos::RefCountPtr<const Epetra_Map> 
+    getOverlapMap() const;
 
     //! Get Jacobian graph
-    virtual Teuchos::RefCountPtr<Epetra_CrsGraph> getJacobianGraph();
+    virtual Teuchos::RefCountPtr<const Epetra_CrsGraph> 
+    getJacobianGraph() const;
 
     //! Get overlap Jacobian graph
-    virtual Teuchos::RefCountPtr<Epetra_CrsGraph> getOverlapJacobianGraph();
+    virtual Teuchos::RefCountPtr<const Epetra_CrsGraph> 
+    getOverlapJacobianGraph() const;
 
     //! Get number of nodes per element
     virtual int getNumNodesPerElement() const;

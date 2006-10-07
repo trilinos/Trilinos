@@ -29,72 +29,66 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef FEAPP_ABSTRACTDISCRETIZATION_HPP
-#define FEAPP_ABSTRACTDISCRETIZATION_HPP
+#ifndef FEAPP_ABSTRACTPROBLEM_HPP
+#define FEAPP_ABSTRACTPROBLEM_HPP
 
 #include <vector>
 
 #include "Teuchos_RefCountPtr.hpp"
-
 #include "Epetra_Map.h"
-#include "Epetra_CrsGraph.h"
+#include "Epetra_Vector.h"
 
-#include "FEApp_Mesh.hpp"
+#include "FEApp_AbstractBC.hpp"
+#include "FEApp_AbstractPDE.hpp"
+
+#include "Sacado_Fad_DFad.hpp"
+#include "Sacado_TemplateManager.hpp"
+#include "Sacado_MPL_vector.hpp"
+
+typedef double RealType;
+typedef Sacado::Fad::DFad<double> FadType;
+typedef Sacado::mpl::vector<RealType, FadType> ValidTypes;
 
 namespace FEApp {
 
-  class AbstractDiscretization {
+  /*!
+   * \brief Abstract interface for representing a 1-D finite element
+   * problem.
+   */
+  class AbstractProblem {
   public:
-
-    //! Constructor
-    AbstractDiscretization() {}
+  
+    //! Default constructor
+    AbstractProblem() {};
 
     //! Destructor
-    virtual ~AbstractDiscretization() {}
+    virtual ~AbstractProblem() {};
 
-    //! Create element mesh
-    virtual void createMesh() = 0;
+    //! Get the number of equations
+    virtual unsigned int numEquations() const = 0;
 
-    //! Create DOF maps
-    virtual void createMaps() = 0;
+    //! Build the PDE instantiations
+    virtual void 
+    buildPDEs(FEApp::AbstractPDE_TemplateManager<ValidTypes>& pdeTM) = 0;
 
-    //! Create Jacobian graph
-    virtual void createJacobianGraphs() = 0;
+    //! Build the boundary conditions
+    virtual std::vector< Teuchos::RefCountPtr<const FEApp::AbstractBC> >
+    buildBCs(const Epetra_Map& dofMap) = 0;
 
-    //! Get element mesh
-    virtual Teuchos::RefCountPtr<const FEApp::Mesh> 
-    getMesh() const = 0; 
-
-    //! Get DOF map
-    virtual Teuchos::RefCountPtr<const Epetra_Map> 
-    getMap() const = 0;
-
-    //! Get overlapped DOF map
-    virtual Teuchos::RefCountPtr<const Epetra_Map> 
-    getOverlapMap() const = 0;
-
-    //! Get Jacobian graph
-    virtual Teuchos::RefCountPtr<const Epetra_CrsGraph> 
-    getJacobianGraph() const = 0;
-
-    //! Get overlap Jacobian graph
-    virtual Teuchos::RefCountPtr<const Epetra_CrsGraph> 
-    getOverlapJacobianGraph() const = 0;
-
-    //! Get number of nodes per element
-    virtual int getNumNodesPerElement() const = 0;
-
+    //! Build the initial solution
+    virtual Teuchos::RefCountPtr<Epetra_Vector>
+    buildInitialSolution(const Epetra_Map& dofMap) = 0;
 
   private:
 
     //! Private to prohibit copying
-    AbstractDiscretization(const AbstractDiscretization&);
-
+    AbstractProblem(const AbstractProblem&);
+    
     //! Private to prohibit copying
-    AbstractDiscretization& operator=(const AbstractDiscretization&);
+    AbstractProblem& operator=(const AbstractProblem&);
 
   };
 
 }
 
-#endif // FEAPP_ABSTRACTDISCRETIZATION_HPP
+#endif // FEAPP_ABSTRACTPROBLEM_HPP

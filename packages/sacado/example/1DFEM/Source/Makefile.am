@@ -53,7 +53,9 @@ QUADRATURE = \
 
 SOURCE_H = \
 	$(srcdir)/FEApp_AbstractSourceFunction.hpp \
-	$(srcdir)/FEApp_QuadraticSourceFunction.hpp
+	$(srcdir)/FEApp_QuadraticSourceFunction.hpp \
+	$(srcdir)/FEApp_SourceFunctionFactory.hpp \
+	$(srcdir)/FEApp_SourceFunctionFactoryImpl.hpp
 
 SOURCE = 
 
@@ -73,6 +75,17 @@ BC_H = \
 
 BC = \
 	$(srcdir)/FEApp_ConstantDirichletBC.cpp
+
+PROBLEM_H = \
+	$(srcdir)/FEApp_AbstractProblem.hpp \
+	$(srcdir)/FEApp_BrusselatorProblem.hpp \
+	$(srcdir)/FEApp_HeatNonlinearSourceProblem.hpp \
+	$(srcdir)/FEApp_ProblemFactory.hpp
+
+PROBLEM = \
+	$(srcdir)/FEApp_BrusselatorProblem.cpp \
+	$(srcdir)/FEApp_HeatNonlinearSourceProblem.cpp \
+	$(srcdir)/FEApp_ProblemFactory.cpp
 
 MESH_H = \
 	$(srcdir)/FEApp_Mesh.hpp
@@ -99,10 +112,12 @@ DISC = \
 	$(srcdir)/FEApp_DiscretizationFactory.cpp
 
 APP_H = \
-	$(srcdir)/FEApp_Application.hpp
+	$(srcdir)/FEApp_Application.hpp \
+	$(srcdir)/FEApp_ModelEvaluator.hpp
 
 APP = \
-	$(srcdir)/FEApp_Application.cpp
+	$(srcdir)/FEApp_Application.cpp \
+	$(srcdir)/FEApp_ModelEvaluator.cpp
 
 ONEDFEM_H = \
 	$(ELEMENT_H) \
@@ -110,6 +125,7 @@ ONEDFEM_H = \
 	$(SOURCE_H) \
 	$(PDE_H) \
 	$(BC_H) \
+	$(PROBLEM_H) \
 	$(MESH_H) \
 	$(FILL_H) \
 	$(DISC_H) \
@@ -121,6 +137,7 @@ ONEDFEM = \
 	$(SOURCE) \
 	$(PDE) \
 	$(BC) \
+	$(PROBLEM) \
 	$(MESH) \
 	$(FILL) \
 	$(DISC) \

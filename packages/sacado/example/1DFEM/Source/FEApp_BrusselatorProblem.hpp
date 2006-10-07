@@ -29,72 +29,61 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef FEAPP_ABSTRACTDISCRETIZATION_HPP
-#define FEAPP_ABSTRACTDISCRETIZATION_HPP
-
-#include <vector>
+#ifndef FEAPP_BRUSSELATORPROBLEM_HPP
+#define FEAPP_BRUSSELATORPROBLEM_HPP
 
 #include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_ParameterList.hpp"
 
-#include "Epetra_Map.h"
-#include "Epetra_CrsGraph.h"
-
-#include "FEApp_Mesh.hpp"
+#include "FEApp_AbstractProblem.hpp"
+#include "FEApp_BrusselatorPDE.hpp"
 
 namespace FEApp {
 
-  class AbstractDiscretization {
+  /*!
+   * \brief Abstract interface for representing a 1-D finite element
+   * problem.
+   */
+  class BrusselatorProblem : public FEApp::AbstractProblem {
   public:
-
-    //! Constructor
-    AbstractDiscretization() {}
+  
+    //! Default constructor
+    BrusselatorProblem(
+		 const Teuchos::RefCountPtr<Teuchos::ParameterList>& params);
 
     //! Destructor
-    virtual ~AbstractDiscretization() {}
+    virtual ~BrusselatorProblem();
 
-    //! Create element mesh
-    virtual void createMesh() = 0;
+    //! Get the number of equations
+    virtual unsigned int numEquations() const;
 
-    //! Create DOF maps
-    virtual void createMaps() = 0;
+    //! Build the PDE instantiations
+    virtual void 
+    buildPDEs(FEApp::AbstractPDE_TemplateManager<ValidTypes>& pdeTM);
 
-    //! Create Jacobian graph
-    virtual void createJacobianGraphs() = 0;
+    //! Build the boundary conditions
+    virtual std::vector< Teuchos::RefCountPtr<const FEApp::AbstractBC> >
+    buildBCs(const Epetra_Map& dofMap);
 
-    //! Get element mesh
-    virtual Teuchos::RefCountPtr<const FEApp::Mesh> 
-    getMesh() const = 0; 
-
-    //! Get DOF map
-    virtual Teuchos::RefCountPtr<const Epetra_Map> 
-    getMap() const = 0;
-
-    //! Get overlapped DOF map
-    virtual Teuchos::RefCountPtr<const Epetra_Map> 
-    getOverlapMap() const = 0;
-
-    //! Get Jacobian graph
-    virtual Teuchos::RefCountPtr<const Epetra_CrsGraph> 
-    getJacobianGraph() const = 0;
-
-    //! Get overlap Jacobian graph
-    virtual Teuchos::RefCountPtr<const Epetra_CrsGraph> 
-    getOverlapJacobianGraph() const = 0;
-
-    //! Get number of nodes per element
-    virtual int getNumNodesPerElement() const = 0;
-
+    //! Build the initial solution
+    virtual Teuchos::RefCountPtr<Epetra_Vector>
+    buildInitialSolution(const Epetra_Map& dofMap);
 
   private:
 
     //! Private to prohibit copying
-    AbstractDiscretization(const AbstractDiscretization&);
-
+    BrusselatorProblem(const BrusselatorProblem&);
+    
     //! Private to prohibit copying
-    AbstractDiscretization& operator=(const AbstractDiscretization&);
+    BrusselatorProblem& operator=(const BrusselatorProblem&);
+
+  protected:
+
+    //! Model parameters
+    double alpha, beta, D1, D2;
 
   };
 
 }
 
-#endif // FEAPP_ABSTRACTDISCRETIZATION_HPP
+#endif // FEAPP_BRUSSELATORPROBLEM_HPP

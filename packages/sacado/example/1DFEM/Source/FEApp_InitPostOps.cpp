@@ -56,6 +56,9 @@ FEApp::ResidualOp::evalInit(const FEApp::AbstractElement& e,
   // Local ID of first DOF
   unsigned int firstDOF;
 
+  // Number of nodes
+  unsigned int nnode = e.numNodes();
+
   // Copy element solution
   for (unsigned int i=0; i<e.numNodes(); i++) {
     node_GID = e.nodeGID(i);
@@ -64,6 +67,22 @@ FEApp::ResidualOp::evalInit(const FEApp::AbstractElement& e,
       elem_x[neqn*i+j] = (*x)[firstDOF+j];
     }
   }
+
+//   // Copy element solution
+//   int row;
+//   unsigned int lrow;
+//   for (unsigned int node_row=0; node_row<nnode; node_row++) {
+//     for (unsigned int eq_row=0; eq_row<neqn; eq_row++) {
+//       lrow = neqn*node_row+eq_row;
+//       row = static_cast<int>(e.nodeGID(node_row)*neqn + eq_row);
+//       if (!x->Map().MyGID(row)) {
+// 	std::cout << "ResidualOp::evalInit:  invalid row " << row 
+// 		  << " for node " << node_row 
+// 		  << "and equation " << eq_row << std::endl;
+//       }
+//       elem_x[lrow] = (*x)[x->Map().LID(row)];
+//     }
+//   }
 }
 
 void
@@ -77,12 +96,26 @@ FEApp::ResidualOp::evalPost(const FEApp::AbstractElement& e,
   // Local ID of first DOF
   unsigned int firstDOF;
 
+  // Number of nodes
+  unsigned int nnode = e.numNodes();
+
+//   // Sum element residual into global residual
+//   for (unsigned int i=0; i<e.numNodes(); i++) {
+//     node_GID = e.nodeGID(i);
+//     firstDOF = f->Map().LID(node_GID*neqn);
+//     for (unsigned int j=0; j<neqn; j++) {
+//       (*f)[firstDOF+j] += elem_f[neqn*i+j];
+//     }
+//   }
+
   // Sum element residual into global residual
-  for (unsigned int i=0; i<e.numNodes(); i++) {
-    node_GID = e.nodeGID(i);
-    firstDOF = f->Map().LID(node_GID*neqn);
-    for (unsigned int j=0; j<neqn; j++) {
-      (*f)[firstDOF+j] += elem_f[neqn*i+j];
+  int row;
+  unsigned int lrow;
+  for (unsigned int node_row=0; node_row<nnode; node_row++) {
+    for (unsigned int eq_row=0; eq_row<neqn; eq_row++) {
+      lrow = neqn*node_row+eq_row;
+      row = static_cast<int>(e.nodeGID(node_row)*neqn + eq_row);
+      f->SumIntoGlobalValues(1, &(elem_f[lrow]), &row);
     }
   }
 }
@@ -127,6 +160,23 @@ FEApp::JacobianOp::evalInit(const FEApp::AbstractElement& e,
 	Sacado::Fad::DFad<double>(ndof, neqn*i+j, (*x)[firstDOF+j]);
     }
   }
+
+//   // Copy element solution
+//   int row;
+//   unsigned int lrow;
+//   for (unsigned int node_row=0; node_row<nnode; node_row++) {
+//     for (unsigned int eq_row=0; eq_row<neqn; eq_row++) {
+//       lrow = neqn*node_row+eq_row;
+//       row = static_cast<int>(e.nodeGID(node_row)*neqn + eq_row);
+//       if (!x->Map().MyGID(row)) {
+// 	std::cout << "JacobianOp::evalInit:  invalid row " << row 
+// 		  << " for node " << node_row 
+// 		  << "and equation " << eq_row << std::endl;
+//       }
+//       elem_x[lrow] = Sacado::Fad::DFad<double>(ndof, lrow, 
+// 					       (*x)[x->Map().LID(row)]);
+//     }
+//   }
 }
 
 void
@@ -143,16 +193,7 @@ FEApp::JacobianOp::evalPost(const FEApp::AbstractElement& e,
    // Number of nodes
   unsigned int nnode = e.numNodes();
 
-  // Sum element residual into global residual
-  for (unsigned int i=0; i<nnode; i++) {
-    node_GID = e.nodeGID(i);
-    firstDOF = f->Map().LID(node_GID*neqn);
-    for (unsigned int j=0; j<neqn; j++) {
-      (*f)[firstDOF+j] += elem_f[neqn*i+j].val();
-    }
-  }
-
-  // Sum element Jacobian into global Jacobian
+  // Sum element residual and Jacobian into global residual, Jacobian
   // Loop over nodes in element
   int row, col;
   unsigned int lrow, lcol;
@@ -162,8 +203,11 @@ FEApp::JacobianOp::evalPost(const FEApp::AbstractElement& e,
     for (unsigned int eq_row=0; eq_row<neqn; eq_row++) {
       lrow = neqn*node_row+eq_row;
 
-      // Matrix row
+      // Global row
       row = static_cast<int>(e.nodeGID(node_row)*neqn + eq_row);
+
+      // Sum residual
+      f->SumIntoGlobalValues(1, &(elem_f[lrow].val()), &row);
 	
       // Check derivative array is nonzero
       if (elem_f[lrow].hasFastAccess()) {
@@ -175,9 +219,10 @@ FEApp::JacobianOp::evalPost(const FEApp::AbstractElement& e,
 	  for (unsigned int eq_col=0; eq_col<neqn; eq_col++) {
 	    lcol = neqn*node_col+eq_col;
 	      
-	    // Matrix column
+	    // Global column
 	    col = static_cast<int>(e.nodeGID(node_col)*neqn + eq_col);
 
+	    // Sum Jacobian
 	    jac->SumIntoGlobalValues(row, 1, 
 				     &(elem_f[lrow].fastAccessDx(lcol)),
 				     &col);

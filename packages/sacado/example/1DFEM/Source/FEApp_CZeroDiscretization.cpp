@@ -28,6 +28,7 @@
 // 
 // ***********************************************************************
 // @HEADER
+#include "Epetra_Export.h"
 
 #include "FEApp_CZeroDiscretization.hpp"
 
@@ -147,8 +148,6 @@ FEApp::CZeroDiscretization::createJacobianGraphs()
 
 	    // Add column indices
 	    overlap_graph->InsertGlobalIndices(row, 1, &col);
-	    if (map->MyGID(row))
-	      graph->InsertGlobalIndices(row, 1, &col);
 
 	  } // column equations
 
@@ -160,36 +159,39 @@ FEApp::CZeroDiscretization::createJacobianGraphs()
     
   } // element
 
-  graph->FillComplete();
   overlap_graph->FillComplete();
+
+  Epetra_Export exporter(*overlap_map, *map);
+  graph->Export(*overlap_graph, exporter, Insert);
+  graph->FillComplete();
 }
 	    
-Teuchos::RefCountPtr<FEApp::Mesh>
-FEApp::CZeroDiscretization::getMesh() 
+Teuchos::RefCountPtr<const FEApp::Mesh>
+FEApp::CZeroDiscretization::getMesh() const
 {
   return mesh;
 }
 
-Teuchos::RefCountPtr<Epetra_Map>
-FEApp::CZeroDiscretization::getMap()
+Teuchos::RefCountPtr<const Epetra_Map>
+FEApp::CZeroDiscretization::getMap() const
 {
   return map;
 }
 
-Teuchos::RefCountPtr<Epetra_Map>
-FEApp::CZeroDiscretization::getOverlapMap()
+Teuchos::RefCountPtr<const Epetra_Map>
+FEApp::CZeroDiscretization::getOverlapMap() const
 {
   return overlap_map;
 }
 
-Teuchos::RefCountPtr<Epetra_CrsGraph>
-FEApp::CZeroDiscretization::getJacobianGraph()
+Teuchos::RefCountPtr<const Epetra_CrsGraph>
+FEApp::CZeroDiscretization::getJacobianGraph() const
 {
   return graph;
 }
 
-Teuchos::RefCountPtr<Epetra_CrsGraph>
-FEApp::CZeroDiscretization::getOverlapJacobianGraph()
+Teuchos::RefCountPtr<const Epetra_CrsGraph>
+FEApp::CZeroDiscretization::getOverlapJacobianGraph() const
 {
   return overlap_graph;
 }

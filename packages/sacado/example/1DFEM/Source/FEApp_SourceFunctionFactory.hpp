@@ -29,72 +29,51 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef FEAPP_ABSTRACTDISCRETIZATION_HPP
-#define FEAPP_ABSTRACTDISCRETIZATION_HPP
+#ifndef FEAPP_SOURCEFUNCTIONFACTORY_HPP
+#define FEAPP_SOURCEFUNCTIONFACTORY_HPP
 
-#include <vector>
-
+#include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 
-#include "Epetra_Map.h"
-#include "Epetra_CrsGraph.h"
-
-#include "FEApp_Mesh.hpp"
+#include "FEApp_AbstractSourceFunction.hpp"
 
 namespace FEApp {
 
-  class AbstractDiscretization {
+  /*!
+   * \brief A factory class to instantiate AbstractSourceFunction objects
+   */
+  template <typename ScalarT>
+  class SourceFunctionFactory {
   public:
 
-    //! Constructor
-    AbstractDiscretization() {}
+    //! Default constructor
+    SourceFunctionFactory(
+	       const Teuchos::RefCountPtr<Teuchos::ParameterList>& funcParams);
 
     //! Destructor
-    virtual ~AbstractDiscretization() {}
+    virtual ~SourceFunctionFactory() {}
 
-    //! Create element mesh
-    virtual void createMesh() = 0;
-
-    //! Create DOF maps
-    virtual void createMaps() = 0;
-
-    //! Create Jacobian graph
-    virtual void createJacobianGraphs() = 0;
-
-    //! Get element mesh
-    virtual Teuchos::RefCountPtr<const FEApp::Mesh> 
-    getMesh() const = 0; 
-
-    //! Get DOF map
-    virtual Teuchos::RefCountPtr<const Epetra_Map> 
-    getMap() const = 0;
-
-    //! Get overlapped DOF map
-    virtual Teuchos::RefCountPtr<const Epetra_Map> 
-    getOverlapMap() const = 0;
-
-    //! Get Jacobian graph
-    virtual Teuchos::RefCountPtr<const Epetra_CrsGraph> 
-    getJacobianGraph() const = 0;
-
-    //! Get overlap Jacobian graph
-    virtual Teuchos::RefCountPtr<const Epetra_CrsGraph> 
-    getOverlapJacobianGraph() const = 0;
-
-    //! Get number of nodes per element
-    virtual int getNumNodesPerElement() const = 0;
-
+    virtual Teuchos::RefCountPtr< FEApp::AbstractSourceFunction<ScalarT> >
+    create();
 
   private:
 
     //! Private to prohibit copying
-    AbstractDiscretization(const AbstractDiscretization&);
+    SourceFunctionFactory(const SourceFunctionFactory&);
 
     //! Private to prohibit copying
-    AbstractDiscretization& operator=(const AbstractDiscretization&);
+    SourceFunctionFactory& operator=(const SourceFunctionFactory&);
+
+  protected:
+
+    //! Parameter list specifying what strategy to create
+    Teuchos::RefCountPtr<Teuchos::ParameterList> funcParams;
 
   };
 
 }
 
-#endif // FEAPP_ABSTRACTDISCRETIZATION_HPP
+// Include implementation
+#include "FEApp_SourceFunctionFactoryImpl.hpp"
+
+#endif // FEAPP_SOURCEFUNCTIONFACTORY_HPP
