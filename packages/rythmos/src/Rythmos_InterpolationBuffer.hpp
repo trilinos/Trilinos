@@ -46,7 +46,7 @@ class InterpolationBuffer : virtual public InterpolationBufferBase<Scalar>
     
     /** \brief. */
     InterpolationBuffer();
-    InterpolationBuffer( int storage );
+    InterpolationBuffer( Interpolator<Scalar>& interpolator_, int storage=2 );
 
     /// Set the interpolator for this buffer
     SetInterpolator(Interpolator<Scalar>& interpolator_);
@@ -87,11 +87,10 @@ class InterpolationBuffer : virtual public InterpolationBufferBase<Scalar>
 
   private:
 
-    Interpolator<Scalar> interpolator;
+    Teuchos::RefCountPtr<Interpolator<Scalar>> interpolator;
     int storage_limit;
     Thyra::VectorBase<Scalar> tmp_vec;
     std::vector<Teuchos::RefCountPtr<DataStore<Scalar> > > data_vec;
-    int order;
 
 };
 
@@ -100,14 +99,14 @@ class InterpolationBuffer : virtual public InterpolationBufferBase<Scalar>
 template<class Scalar>
 InterpolationBuffer<Scalar>::InterpolationBuffer()
 {
-  order = 1;
+  interpolator = Teuchos::rcp(new LinearInterpolator<Scalar>);
   SetStorage(2);
 }
 
 template<class Scalar>
-InterpolationBuffer<Scalar>::InterpolationBuffer( int storage_ )
+InterpolationBuffer<Scalar>::InterpolationBuffer( Interpolator<Scalar> interpolator_, int storage_ )
 {
-  order = 1;
+  interpolator = interpolator_;
   SetStorage(storage_);
 }
 
@@ -160,7 +159,7 @@ bool InterpolationBuffer<Scalar>::GetPoints(
     ,std::vector<ScalarMag>* accuracy_vec) const
 {
   std::vector<Teuchos::RefCountPtr<DataStore<Scalar> > > data_out;
-  bool status = interpolator.interpolate(data_vec, time_vec, &data_out);
+  bool status = interpolator->interpolate(data_vec, time_vec, &data_out);
   if (!status) return(status);
   std::vector<Scalar>& time_out_vec;
   DataStoreSeqToVector(data_out, &time_out_vec, x_vec, xdot_vec, accuracy_vec);
@@ -276,7 +275,7 @@ bool InterpolationBuffer<Scalar>::RemoveNodes( std::vector<Scalar>& time_vec ) c
 template<class Scalar>
 int InterpolationBuffer<Scalar>::GetOrder() const
 {
-  return(interpolator.order);
+  return(interpolator->order());
 }
 
 } // namespace Rythmos
