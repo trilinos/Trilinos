@@ -43,10 +43,13 @@ class LinearInterpolator : virtual public Interpolator<Scalar>
 
     /// Interpolation:
     bool interpolate(
-        const std::vector<DataStore<Scalar> > &data_in
+        const std::vector<Teuchos::RefCountPtr<DataStore<Scalar> > > &data_in
         ,const std::vector<Scalar> &t_values
-        ,std::vector<DataStore<Scalar> > *data_out
+        ,std::vector<Teuchos::RefCountPtr<DataStore<Scalar> > > *data_out
         ) const;
+
+    /// Order of interpolation:
+    int order() const; 
 
   private:
 
@@ -55,7 +58,7 @@ class LinearInterpolator : virtual public Interpolator<Scalar>
 };
 
 template<class Scalar>
-bool LinearInterpolator::interpolate(
+bool LinearInterpolator<Scalar>::interpolate(
     const std::vector<Teuchos::RefCountPtr<DataStore<Scalar> > > &data_in
     ,const std::vector<Scalar> &t_values
     ,std::vector<Teuchos::RefCountPtr<DataStore<Scalar> > > *data_out ) const
@@ -111,6 +114,12 @@ bool LinearInterpolator::interpolate(
     }
   }
   return(true);
+}
+
+template<class Scalar>
+int LinearInterpolator<Scalar>::order()
+{
+  return(1);
 }
 
 } // namespace Rythmos

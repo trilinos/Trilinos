@@ -44,10 +44,13 @@ class Interpolator
 
     /// Interpolation:
     virtual bool interpolate(
-        const std::vector<DataStore<Scalar> > &data_in
+        const std::vector<Teuchos::RefCountPtr<DataStore<Scalar> > > &data_in
         ,const std::vector<Scalar> &t_values
-        ,std::vector<DataStore<Scalar> > *data_out
+        ,std::vector<Teuchos::RefCountPtr<DataStore<Scalar> > > *data_out
         ) const =0;
+
+    /// Order of interpolation:
+    virtual int order() const =0;
 
 };
 
