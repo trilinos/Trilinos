@@ -38,7 +38,9 @@
 
 #include "Teuchos_RefCountPtr.hpp"
 
-#include "Sacado_MPL_vector.hpp"
+#include "Sacado_mpl_size.hpp"
+#include "Sacado_mpl_find.hpp"
+#include "Sacado_mpl_for_each.hpp"
 
 namespace Sacado {
 

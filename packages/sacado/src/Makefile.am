@@ -71,11 +71,27 @@ SACADO_RAD = \
 	$(srcdir)/uninit.c
 
 SACADO_TEMPLATE_H = \
-	$(srcdir)/Sacado_MPL_vector.hpp \
 	$(srcdir)/Sacado_TemplateManager.hpp \
 	$(srcdir)/Sacado_TemplateManagerImp.hpp \
-	$(srcdir)/Sacado_TemplateIterator.hpp \
-	$(srcdir)/Sacado_TemplateInstantiations.hpp
+	$(srcdir)/Sacado_TemplateIterator.hpp 
+
+SACADO_MPL_H = \
+	$(srcdir)/mpl/Sacado_mpl_is_same.hpp \
+	$(srcdir)/mpl/Sacado_mpl_if.hpp \
+	$(srcdir)/mpl/Sacado_mpl_none.hpp \
+	$(srcdir)/mpl/Sacado_mpl_begin.hpp \
+	$(srcdir)/mpl/Sacado_mpl_end.hpp \
+	$(srcdir)/mpl/Sacado_mpl_next.hpp \
+	$(srcdir)/mpl/Sacado_mpl_size.hpp \
+	$(srcdir)/mpl/Sacado_mpl_at.hpp \
+	$(srcdir)/mpl/Sacado_mpl_deref.hpp \
+	$(srcdir)/mpl/Sacado_mpl_push_back.hpp \
+	$(srcdir)/mpl/Sacado_mpl_find.hpp \
+	$(srcdir)/mpl/Sacado_mpl_for_each.hpp \
+	$(srcdir)/mpl/Sacado_mpl_vector.hpp \
+	$(srcdir)/mpl/Sacado_mpl_vector_size_spec.hpp \
+	$(srcdir)/mpl/Sacado_mpl_vector_at_spec.hpp \
+	$(srcdir)/mpl/Sacado_mpl_vector_push_back_spec.hpp
 
 SACADO_H = \
 	$(srcdir)/Sacado_ConfigDefs.h \
@@ -86,6 +102,7 @@ SACADO_H = \
 	$(SACADO_CACHEFAD_H) \
 	$(SACADO_TAYLOR_H) \
 	$(SACADO_RAD_H) \
+	$(SACADO_MPL_H) \
 	$(SACADO_TEMPLATE_H)
 
 SACADO = \

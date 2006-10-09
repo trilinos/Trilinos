@@ -29,40 +29,43 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef SACADO_TEMPLATEINSTANTIATIONS_HPP
-#define SACADO_TEMPLATEINSTANTIATIONS_HPP
+#ifndef SACADO_MPL_FIND_HPP
+#define SACADO_MPL_FIND_HPP
 
-/*
-#include "Sacado_TemplateTypes.hpp"
+#include "Sacado_mpl_none.hpp"
+#include "Sacado_mpl_begin.hpp"
+#include "Sacado_mpl_end.hpp"
+#include "Sacado_mpl_deref.hpp"
+#include "Sacado_mpl_next.hpp"
+#include "Sacado_mpl_is_same.hpp"
+#include "Sacado_mpl_if.hpp"
 
-#define INSTANTIATE_TEMPLATE_CLASS_REAL(name) template class name<double>;
+namespace Sacado {
 
-#if FAD_ACTIVE
-#define INSTANTIATE_TEMPLATE_CLASS_FAD(name) template class name<FadType>;
-#else
-#define INSTANTIATE_TEMPLATE_CLASS_FAD(name)
-#endif
+  namespace mpl {
 
-#if TFAD_ACTIVE
-#define INSTANTIATE_TEMPLATE_CLASS_TFAD(name) template class name<TFadType>;
-#else
-#define INSTANTIATE_TEMPLATE_CLASS_TFAD(name)
-#endif
+    template <class Seq, class T>
+    class TypeSequenceDoesNotContainType {};
 
-#if REVAD_ACTIVE
-#define INSTANTIATE_TEMPLATE_CLASS_REVAD(name) template class name<RadType>;
-#else
-#define INSTANTIATE_TEMPLATE_CLASS_REVAD(name)
-#endif
+    template <class Seq, 
+	      class T,
+	      class Iter1 = typename mpl::begin<Seq>::type, 
+	      class Iter2 = typename mpl::end<Seq>::type>
+    struct find {
+      static const int value = 
+        mpl::mpl_if< mpl::is_same<typename mpl::deref<Iter1>::type, T>::value, 
+		     Iter1,
+		     find<Seq, T, typename mpl::next<Iter1>::type, 
+			  Iter2> >::value;
+    };
 
-// A macro to explicitly instantiate template classes on the scalar type
-#define INSTANTIATE_TEMPLATE_CLASS(name) \
-  INSTANTIATE_TEMPLATE_CLASS_REAL(name)	 \
-  INSTANTIATE_TEMPLATE_CLASS_FAD(name)   \
-  INSTANTIATE_TEMPLATE_CLASS_TFAD(name) \
-  INSTANTIATE_TEMPLATE_CLASS_REVAD(name)
+    template <class Seq, class T, class Iter1>
+    struct find<Seq, T, Iter1, Iter1> {
+      static const int value = TypeSequenceDoesNotContainType<Seq,T>::value;
+    };
 
-*/
+  }
 
+}
 
-#endif
+#endif // SACADO_MPL_FIND_HPP
