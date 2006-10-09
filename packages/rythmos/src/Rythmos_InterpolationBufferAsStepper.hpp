@@ -47,12 +47,19 @@ class InterpolationBufferAsStepper : virtual public Rythmos::InterpolationBuffer
 
     /// Constructor
     InterpolationBufferAsStepper();
+    InterpolationBufferAsStepper(
+      const Teuchos::RefCountPtr<const Rythmos::Stepper<Scalar> > &stepper_
+      ,const Teuchos::RefCountPtr<const Rythmos::InterpolationBuffer<Scalar> > &IB_
+      ,Teuchos::ParameterList &parameterList_ );
 
-    /// Add InterpolationBufferAsStepper:
+    /// Set InterpolationBuffer:
     setInterpolationBuffer(const Teuchos::RefCountPtr<const Rythmos::InterpolationBuffer<Scalar> > &IB_);
 
-    /// Add Stepper:
+    /// Set Stepper:
     setStepper(const Teuchos::RefCountPtr<const Rythmos::Stepper<Scalar> > &stepper_);
+    
+    /// Set ParameterList:
+    setParameterList( Teuchos::RefCountPtr<Teuchos::ParameterList> &parameterList_);
 
     /// Redefined from InterpolationBuffer
     /// This is a pass-through to the underlying InterpolationBuffer:
@@ -88,6 +95,9 @@ class InterpolationBufferAsStepper : virtual public Rythmos::InterpolationBuffer
     // Stepper used to fill interpolation buffer.
     Teuchos::RefCountPtr<Rythmos::Stepper<Scalar> > stepper;
 
+    // ParameterList to control behavior
+    Teuchos::RefCountPtr<Teuchos::ParameterList> &paramerList;
+
 };
 
 // ////////////////////////////
@@ -96,10 +106,12 @@ template<class Scalar>
 InterpolationBufferAsStepper<Scalar>::InterpolationBufferAsStepper(
     const Teuchos::RefCountPtr<const Rythmos::Stepper<Scalar> > &stepper_
     ,const Teuchos::RefCountPtr<const Rythmos::InterpolationBuffer<Scalar> > &IB_
+    ,const Teuchos::RefCountPTr<Teuchos::ParameterList> &parameterList_
     )
 {
   setStepper(stepper_);
   setInterpolationBuffer(IB_);
+  setParameterList(parameterList_);
 }
 
 template<class Scalar>
@@ -107,6 +119,23 @@ InterpolationBufferAsStepper<Scalar>::setStepper(
     const Teuchos::RefCountPtr<const Rythmos::Stepper<Scalar> > &stepper_
     )
 {
+  // 10/9/06 tscoffe:  What should we do if this is called after initialization?
+  //                   Basically, you're swapping out the stepper for a new one.
+  //                   Since we're copying the data into IB after each
+  //                   stepper.TakeStep() call, this should be fine, and it
+  //                   will essentially result in changing the stepper
+  //                   mid-stream.  If the new stepper has a time value before
+  //                   the end of the data in IB, then you will not get new
+  //                   stepper data until you ask for time values after the end
+  //                   of IB's data.  And then the stepper will walk forward
+  //                   inserting new (potentially inconsistent) data into IB
+  //                   until it can give you the time values you asked for.
+  //                   Then IB will potentially have old and new data in it.
+  //                   On the other hand, if you swap out the stepper and the
+  //                   time value is synchronized with the old stepper, then
+  //                   you will essentially change the integrator mid-stream
+  //                   and everything should proceed without problems.
+  //                   Note also:  this functionality is important for checkpointing.
   stepper = stepper_;
 }
 
@@ -115,8 +144,26 @@ InterpolationBufferAsStepper<Scalar>::setInterpolationBuffer(
     const Teuchos::RefCountPtr<const Rythmos::InterpolationBuffer<Scalar> > &IB_
     )
 {
+  // 10/9/06 tscoffe:  What should we do if this is called after initialization?
+  //                   Basically, you're swapping out the history for a new
+  //                   one.  This could be the result of upgrading or
+  //                   downgrading the accuracy of the buffer, or something I
+  //                   haven't thought of yet.  Since IB's node_list is checked
+  //                   each time GetPoints is called, this should be fine.  And
+  //                   the time values in IB need not be synchronized with
+  //                   stepper.
+  //                   Note also:  this functionality is important for checkpointing.
   IB = IB_;
 }
+
+template<class Scalar>
+InterpolationBufferAsStepper<Scalar>::setParameterList( 
+    Teuchos::RefCountPtr<Teuchos::ParameterList> &parameterList_
+    )
+{
+  parameterList = parameterList_;
+}
+
 
 template<class Scalar>
 bool InterpolationBufferAsStepper<Scalar>::SetPoints(
@@ -183,7 +230,11 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
       while (stepper_end < time_list_[i])
       {
         // integrate forward with stepper 
-        Scalar step_taken = stepper.TakeStep();
+        Scalar step_taken;
+        if parameterList->isParameter("fixed_dt")
+          step_taken = stepper.TakeStep(parameterList->get<Scalar>("fixed_dt"));
+        else
+          Scalar step_taken = stepper.TakeStep();
         // Pass information from stepper to IB:
         status = IB.SetRange(stepper_end,stepper_end+step_taken,stepper);
         if (!status) return(status);
