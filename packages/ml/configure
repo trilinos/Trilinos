@@ -968,10 +968,11 @@ Optional Features:
                           --enable-epetra. See notes for --enable-ml_metis.
   --enable-galeri         Enable Galeri support. Galeri, a Trilinos package,
                           is used in some ML examples to construct the linear
-                          system. Can be overridden with --disable-ml-galeri.
-  --enable-ifpack-galeri  Enable Galeri support. Galeri, a Trilinos package,
+                          system and can optionally be used by the MLAPI. Can
+                          be overridden with --disable-ml-galeri.
+  --enable-ml-galeri      Enable Galeri support. Galeri, a Trilinos package,
                           is used in some ML examples to construct the linear
-                          system.
+                          system and can optionally be used by the MLAPI.
   --enable-thyra          Build the Thyra operator/vector adapater support in
                           ML. Can be overridden with --disable-ml-thyra.
   --enable-ml-thyra       Build the Thyra operator/vector adapter support in
@@ -4029,7 +4030,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:4032:" \
+echo "$as_me:4033:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -8571,21 +8572,21 @@ else
 fi;
 
 if test "Xyes" != "Xno"; then
-  ac_cv_ifpack_using_galeri_default=$ac_cv_implicit_use_galeri
+  ac_cv_ml_using_galeri_default=$ac_cv_implicit_use_galeri
 else
-  ac_cv_ifpack_using_galeri_default=no
+  ac_cv_ml_using_galeri_default=no
 fi
 
-# Check whether --enable-ifpack-galeri or --disable-ifpack-galeri was given.
-if test "${enable_ifpack_galeri+set}" = set; then
-  enableval="$enable_ifpack_galeri"
+# Check whether --enable-ml-galeri or --disable-ml-galeri was given.
+if test "${enable_ml_galeri+set}" = set; then
+  enableval="$enable_ml_galeri"
   ac_cv_use_galeri=$enableval
 else
-  ac_cv_use_galeri=$ac_cv_ifpack_using_galeri_default
+  ac_cv_use_galeri=$ac_cv_ml_using_galeri_default
 fi;
 
-echo "$as_me:$LINENO: checking whether to build optional galeri dependent code in ifpack" >&5
-echo $ECHO_N "checking whether to build optional galeri dependent code in ifpack... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking whether to build optional galeri dependent code in ml" >&5
+echo $ECHO_N "checking whether to build optional galeri dependent code in ml... $ECHO_C" >&6
 
 if test "X$ac_cv_use_galeri" != "Xno"; then
   echo "$as_me:$LINENO: result: yes" >&5
@@ -9873,7 +9874,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:9876: \"$ac_link\") >&5
+(eval echo $as_me:9877: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9951,7 +9952,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:9954: \"$ac_link\") >&5
+(eval echo $as_me:9955: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -13818,7 +13819,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:13821: \"$ac_link\") >&5
+(eval echo $as_me:13822: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -13896,7 +13897,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:13899: \"$ac_link\") >&5
+(eval echo $as_me:13900: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS

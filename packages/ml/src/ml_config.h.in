@@ -114,7 +114,7 @@
 /* Define if want to build with ml_flops enabled */
 #undef HAVE_ML_FLOPS
 
-/* Define if want to build with ifpack enabled */
+/* Define if want to build with ml enabled */
 #undef HAVE_ML_GALERI
 
 /* Define if want to build with ml enabled */
