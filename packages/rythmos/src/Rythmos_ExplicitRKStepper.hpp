@@ -72,7 +72,7 @@ class ExplicitRKStepper : virtual public Stepper<Scalar>
       ,const std::string          indentSpacer
       ) const;
 
-    /// Redefined from InterpolationBuffer 
+    /// Redefined from InterpolationBufferBase 
     /// Add points to buffer
     bool SetPoints(
       const std::vector<Scalar>& time_list
@@ -90,7 +90,7 @@ class ExplicitRKStepper : virtual public Stepper<Scalar>
     bool SetRange(
       const Scalar& time_lower
       ,const Scalar& time_upper
-      ,const InterpolationBuffer<Scalar> & IB);
+      ,const InterpolationBufferBase<Scalar> & IB);
 
     /// Get interpolation nodes
     bool GetNodes(std::vector<Scalar>* time_list) const;
@@ -378,7 +378,7 @@ template<class Scalar>
 bool ExplicitRKStepper<Scalar>::SetRange(
     const Scalar& time_lower
     ,const Scalar& time_upper
-    ,const InterpolationBuffer<Scalar>& IB)
+    ,const InterpolationBufferBase<Scalar>& IB)
 {
   return(false);
 }

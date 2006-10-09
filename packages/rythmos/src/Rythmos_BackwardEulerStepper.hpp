@@ -78,7 +78,7 @@ class BackwardEulerStepper : virtual public Stepper<Scalar>
       ,const Teuchos::EVerbosityLevel      verbLevel
       ) const;
 
-    /// Redefined from InterpolationBuffer 
+    /// Redefined from InterpolationBufferBase 
     /// Add points to buffer
     /// This will take the last one or two points in the list and set up to integrate from here.
     bool SetPoints(
@@ -99,7 +99,7 @@ class BackwardEulerStepper : virtual public Stepper<Scalar>
     bool SetRange(
       const Scalar& time_lower
       ,const Scalar& time_upper
-      ,const InterpolationBuffer<Scalar> & IB);
+      ,const InterpolationBufferBase<Scalar> & IB);
 
     /// Get interpolation nodes
     /// This will return t_old_ and t_ provided t_old_ != t_
@@ -241,11 +241,11 @@ bool BackwardEulerStepper<Scalar>::SetPoints(
     ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& xdot_list)
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  if (time_list.length() == 0)
+  if (time_list.size() == 0)
   {
     return(false);
   }
-  else if (time_list.length() == 1)
+  else if (time_list.size() == 1)
   {
     int n = 0;
     t_ = time_list[n];
@@ -255,8 +255,8 @@ bool BackwardEulerStepper<Scalar>::SetPoints(
   }
   else 
   {
-    int n = time_list.length()-1;
-    int nm1 = time_list.length()-2;
+    int n = time_list.size()-1;
+    int nm1 = time_list.size()-2;
     t_ = time_list[n];
     t_old_ = time_list[nm1];
     Thyra::V_V(&*x_,*x_list[n]);
@@ -288,7 +288,7 @@ template<class Scalar>
 bool BackwardEulerStepper<Scalar>::SetRange(
     const Scalar& time_lower
     ,const Scalar& time_upper
-    ,const InterpolationBuffer<Scalar>& IB)
+    ,const InterpolationBufferBase<Scalar>& IB)
 {
   // TODO:
   // get node_list from IB, crop it to [time_lower,time_upper], crop x_list to same,

@@ -175,7 +175,7 @@ namespace Rythmos {
       ,const std::string          indentSpacer
       ) const;
 
-    /// Redefined from InterpolationBuffer 
+    /// Redefined from InterpolationBufferBase 
     /// Add points to buffer
     bool SetPoints(
       const std::vector<Scalar>& time_list
@@ -193,7 +193,7 @@ namespace Rythmos {
     bool SetRange(
       const Scalar& time_lower
       ,const Scalar& time_upper
-      ,const InterpolationBuffer<Scalar> & IB);
+      ,const InterpolationBufferBase<Scalar> & IB);
 
     /// Get interpolation nodes
     bool GetNodes(std::vector<Scalar>* time_list) const;
@@ -600,7 +600,7 @@ template<class Scalar>
 bool ExplicitTaylorPolynomialStepper<Scalar>::SetRange(
     const Scalar& time_lower
     ,const Scalar& time_upper
-    ,const InterpolationBuffer<Scalar>& IB)
+    ,const InterpolationBufferBase<Scalar>& IB)
 {
   return(false);
 }

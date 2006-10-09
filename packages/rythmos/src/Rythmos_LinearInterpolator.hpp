@@ -55,52 +55,59 @@ class LinearInterpolator : virtual public Interpolator<Scalar>
 };
 
 template<class Scalar>
-bool LinearInterpolationBuffer<Scalar>::GetPoints(
-    const std::vector<Scalar>& time_vec
-    ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* x_vec
-    ,std::vector<Tuechos::RefCountPtr<Thyra::VectorBase<Scalar> > >* xdot_vec
-    ,std::vector<ScalarMag>* accuracy_vec) const
+bool LinearInterpolator::interpolate(
+    const std::vector<Teuchos::RefCountPtr<DataStore<Scalar> > > &data_in
+    ,const std::vector<Scalar> &t_values
+    ,std::vector<Teuchos::RefCountPtr<DataStore<Scalar> > > *data_out ) const
 {
-  // Copy the const time_vec to a local sorted time_vec
-  std::vector<Scalar> local_time_vec = time_vec;
-  std::sort(local_time_vec.begin(),local_time_vec.end());
-  // If there are fewer than 2 points in node_list, then return failure
-  if (node_list.size() < 2)
+  // If there are fewer than 2 points in data_in, then return failure
+  if (data_in.size() < 2)
     return(false);
+  // Sort data_in: 
+  std::vector<Scalar> local_data_in = data_in;
+  std::sort(local_data_in.begin(),local_data_in.end());
+  // Sort t_values:
+  std::vector<Scalar> local_time_vec = t_values;
+  std::sort(local_time_vec.begin(),local_time_vec.end());
   // If time is outside range of t_values, then return failure
-  if ( (*local_time_vec.begin() < node_list.begin().t) || (*local_time_vec.end() > node_list.end().t) )
+  if ( (*local_time_vec.begin() < local_data_in.begin().time) || (*local_time_vec.end() > local_data_in.end().time) )
     return(false);
   // Find t values on either side of time
   std::vector<Scalar>::iterator input_it = local_time_vec.begin();
-  std::vector<DataStore<Scalar> >::iterator node_it = node_list.begin();
-  for ( ; node_it != node_list.end() ; node_it++ )
+  std::vector<DataStore<Scalar> >::iterator node_it = local_data_in.begin();
+  for ( ; node_it != local_data_in.end() ; node_it++ )
   {
-    while ((*input_it >= node_it->t) && (*input_it <= (node_it+1)->t))
+    while ((*input_it >= node_it->time) && (*input_it <= (node_it+1)->time))
     {
       Scalar& t = *input_it;
-      Scalar& ti = node_it->t;
-      Scalar& tip1 = (node_it+1)->t;
+      Scalar& ti = node_it->time;
+      Scalar& tip1 = (node_it+1)->time;
       Thyra::VectorBase<Scalar>& xi = *(node_it->x);
       Thyra::VectorBase<Scalar>& xip1 = *((node_it+1)->x);
       Thyra::VectorBase<Scalar>& xdoti = *(node_it->xdot);
       Thyra::VectorBase<Scalar>& xdotip1 = *((node_it+1)->xdot);
 
+      Thyra::VectorBase<Scalar> tmp_vec;
+
       // interpolate this point
+      Teuchos::RefCountPtr<DataStore<Scalar> > DS = Teuchos::rcp(new DataStore<Scalar>);
+      DS->time = t;
       Scalar h = tip1-ti;
       // First we work on x.
       V_StVpStV(&*tmp_vec,Scalar(ST::one()/h),xi,Scalar(-ST::one()/h),xip1);
       Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x = (node_it->x).clone_v();
       V_StVpStV(&*x, ST::one(), xi, t-ti, tmp_vec);
-      x_vec.pushback(x);
+      DS->x = x;
       // Then we work on xdot.
       V_StVpStV(&*tmp_vec,Scalar(ST::one()/h),xdoti,Scalar(-ST::one()/h),xdotip1);
       Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xdot = (node_it->xdot).clone_v();
       V_StVpStV(&*xdot, ST::one(), xdoti, t-ti, tmp_vec);
-      xdot_vec.pushback(xdot);
+      DS->xdot = xdot;
       // And finally we estimate our order of accuracy
-      accuracy_vec.pushback(h); 
+      DS->accuracy = h;
       // Now we increment iterator for local_time_vec
       input_it++;
+      data_out->push_back(DS);
     }
   }
   return(true);

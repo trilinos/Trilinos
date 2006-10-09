@@ -26,8 +26,8 @@
 // ***********************************************************************
 //@HEADER
 
-#ifndef Rythmos_INTERPOLATION_BUFFER_H
-#define Rythmos_INTERPOLATION_BUFFER_H
+#ifndef Rythmos_INTERPOLATION_BUFFER_BASE_H
+#define Rythmos_INTERPOLATION_BUFFER_BASE_H
 
 #include "Thyra_VectorBase.hpp"
 #include "Teuchos_Describable.hpp"
@@ -36,14 +36,14 @@ namespace Rythmos {
 
 /** \brief Base class for defining interpolation buffer functionality. */
 template<class Scalar> 
-class InterpolationBuffer : virtual public Teuchos::Describable
+class InterpolationBufferBase : virtual public Teuchos::Describable
 {
   public:
 
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
 
     /// Destructor
-    virtual ~InterpolationBuffer() {};
+    virtual ~InterpolationBufferBase() {};
 
     /// Add points to buffer
     virtual bool SetPoints(
@@ -62,7 +62,7 @@ class InterpolationBuffer : virtual public Teuchos::Describable
     virtual bool SetRange(
       const Scalar& time_lower
       ,const Scalar& time_upper
-      ,const InterpolationBuffer<Scalar> & IB) =0;
+      ,const InterpolationBufferBase<Scalar> & IB) =0;
 
     /// Get interpolation nodes
     virtual bool GetNodes(std::vector<Scalar>* time_list) const =0;
@@ -77,4 +77,4 @@ class InterpolationBuffer : virtual public Teuchos::Describable
 
 } // namespace Rythmos
 
-#endif //Rythmos_INTERPOLATION_BUFFER_H
+#endif //Rythmos_INTERPOLATION_BUFFER_BASE_H

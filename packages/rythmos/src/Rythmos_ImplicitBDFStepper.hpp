@@ -104,7 +104,7 @@ class ImplicitBDFStepper : virtual public Stepper<Scalar>
       , const Thyra::VectorBase<Scalar> &y
       ) const;
     
-    /// Redefined from InterpolationBuffer 
+    /// Redefined from InterpolationBufferBase 
     /// Add points to buffer
     bool SetPoints(
       const std::vector<Scalar>& time_list
@@ -122,7 +122,7 @@ class ImplicitBDFStepper : virtual public Stepper<Scalar>
     bool SetRange(
       const Scalar& time_lower
       ,const Scalar& time_upper
-      ,const InterpolationBuffer<Scalar> & IB);
+      ,const InterpolationBufferBase<Scalar> & IB);
 
     /// Get interpolation nodes
     bool GetNodes(std::vector<Scalar>* time_list) const;
@@ -1311,7 +1311,7 @@ template<class Scalar>
 bool ImplicitBDFStepper<Scalar>::SetRange(
     const Scalar& time_lower 
     ,const Scalar& time_upper
-    ,const InterpolationBuffer<Scalar>& IB)
+    ,const InterpolationBufferBase<Scalar>& IB)
 {
   return(false);
 }

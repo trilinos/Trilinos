@@ -39,7 +39,7 @@ namespace Rythmos {
 
 /** \brief Base class for defining stepper functionality. */
 template<class Scalar> 
-class Stepper : virtual public InterpolationBuffer<Scalar>
+class Stepper : virtual public InterpolationBufferBase<Scalar>
 {
   public:
     

@@ -36,7 +36,7 @@ namespace Rythmos {
 
 /** \brief Base class for defining interpolation buffer functionality. */
 template<class Scalar> 
-class InterpolationBufferAsStepper : virtual public Rythmos::InterpolationBuffer<Scalar>
+class InterpolationBufferAsStepper : virtual public Rythmos::InterpolationBufferBase<Scalar>
 {
   public:
 
@@ -49,11 +49,11 @@ class InterpolationBufferAsStepper : virtual public Rythmos::InterpolationBuffer
     InterpolationBufferAsStepper();
     InterpolationBufferAsStepper(
       const Teuchos::RefCountPtr<const Rythmos::Stepper<Scalar> > &stepper_
-      ,const Teuchos::RefCountPtr<const Rythmos::InterpolationBuffer<Scalar> > &IB_
+      ,const Teuchos::RefCountPtr<const Rythmos::InterpolationBufferBase<Scalar> > &IB_
       ,Teuchos::RefCountPtr<Teuchos::ParameterList> &parameterList_ = Teuchos::null);
 
-    /// Set InterpolationBuffer:
-    setInterpolationBuffer(const Teuchos::RefCountPtr<const Rythmos::InterpolationBuffer<Scalar> > &IB_);
+    /// Set InterpolationBufferBase:
+    setInterpolationBuffer(const Teuchos::RefCountPtr<const Rythmos::InterpolationBufferBase<Scalar> > &IB_);
 
     /// Set Stepper:
     setStepper(const Teuchos::RefCountPtr<const Rythmos::Stepper<Scalar> > &stepper_);
@@ -61,8 +61,8 @@ class InterpolationBufferAsStepper : virtual public Rythmos::InterpolationBuffer
     /// Set ParameterList:
     setParameterList( Teuchos::RefCountPtr<Teuchos::ParameterList> &parameterList_);
 
-    /// Redefined from InterpolationBuffer
-    /// This is a pass-through to the underlying InterpolationBuffer:
+    /// Redefined from InterpolationBufferBase
+    /// This is a pass-through to the underlying InterpolationBufferBase:
     bool SetPoints(
       const std::vector<Scalar>& time_list
       ,const std::vector<Thyra::VectorBase<Scalar> >& x_list
@@ -75,22 +75,22 @@ class InterpolationBufferAsStepper : virtual public Rythmos::InterpolationBuffer
       ,std::vector<Thyra::VectorBase<Scalar> >* xdot_list_
       ,std::vector<ScalarMag>* accuracy_list_) const;
 
-    /// This is a pass-through to the underlying InterpolationBuffer:
+    /// This is a pass-through to the underlying InterpolationBufferBase:
     bool SetRange(
       const Scalar& time_lower
       ,const Scalar& time_upper
-      ,const InterpolationBuffer<Scalar> & IB_);
+      ,const InterpolationBufferBase<Scalar> & IB_);
 
-    /// This is a pass-through to the underlying InterpolationBuffer:
+    /// This is a pass-through to the underlying InterpolationBufferBase:
     bool GetNodes(std::vector<Scalar>* time_list) const;
 
-    /// This is a pass-through to the underlying InterpolationBuffer:
+    /// This is a pass-through to the underlying InterpolationBufferBase:
     int GetOrder() const;
 
   private:
 
     // Interpolation Buffer used to store past results
-    Teuchos::RefCountPtr<Rythmos::InterpolationBuffer<Scalar> > IB;
+    Teuchos::RefCountPtr<Rythmos::InterpolationBufferBase<Scalar> > IB;
 
     // Stepper used to fill interpolation buffer.
     Teuchos::RefCountPtr<Rythmos::Stepper<Scalar> > stepper;
@@ -105,7 +105,7 @@ class InterpolationBufferAsStepper : virtual public Rythmos::InterpolationBuffer
 template<class Scalar>
 InterpolationBufferAsStepper<Scalar>::InterpolationBufferAsStepper(
     const Teuchos::RefCountPtr<const Rythmos::Stepper<Scalar> > &stepper_
-    ,const Teuchos::RefCountPtr<const Rythmos::InterpolationBuffer<Scalar> > &IB_
+    ,const Teuchos::RefCountPtr<const Rythmos::InterpolationBufferBase<Scalar> > &IB_
     ,const Teuchos::RefCountPtr<Teuchos::ParameterList> &parameterList_
     )
 {
@@ -141,7 +141,7 @@ InterpolationBufferAsStepper<Scalar>::setStepper(
 
 template<class Scalar>
 InterpolationBufferAsStepper<Scalar>::setInterpolationBuffer(
-    const Teuchos::RefCountPtr<const Rythmos::InterpolationBuffer<Scalar> > &IB_
+    const Teuchos::RefCountPtr<const Rythmos::InterpolationBufferBase<Scalar> > &IB_
     )
 {
   // 10/9/06 tscoffe:  What should we do if this is called after initialization?
@@ -266,7 +266,7 @@ template<class Scalar>
 bool InterpolationBufferAsStepper<Scalar>::SetRange(
       const Scalar& time_lower
       ,const Scalar& time_upper
-      ,const InterpolationBuffer<Scalar> & IB_
+      ,const InterpolationBufferBase<Scalar> & IB_
       )
 {
   return(IB->SetRange(time_lower,time_upper,IB_));

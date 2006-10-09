@@ -38,7 +38,7 @@ namespace Rythmos {
 
 /** \brief class for defining linear interpolation buffer functionality. */
 template<class Scalar> 
-class LinearInterpolationBuffer : virtual public InterpolationBuffer<Scalar>
+class LinearInterpolationBuffer : virtual public InterpolationBufferBase<Scalar>
 {
   public:
 
@@ -70,7 +70,7 @@ class LinearInterpolationBuffer : virtual public InterpolationBuffer<Scalar>
     bool SetRange(
       const Scalar& time_lower
       ,const Scalar& time_upper
-      ,const InterpolationBuffer<Scalar>& IB);
+      ,const InterpolationBufferBase<Scalar>& IB);
 
     /// Get interpolation nodes
     bool GetNodes(std::vector<Scalar>* time_list) const;
@@ -148,6 +148,16 @@ bool LinearInterpolationBuffer<Scalar>::GetPoints(
     ,std::vector<Tuechos::RefCountPtr<Thyra::VectorBase<Scalar> > >* xdot_vec
     ,std::vector<ScalarMag>* accuracy_vec) const
 {
+
+}
+
+template<class Scalar>
+bool LinearInterpolationBuffer<Scalar>::GetPoints(
+    const std::vector<Scalar>& time_vec
+    ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* x_vec
+    ,std::vector<Tuechos::RefCountPtr<Thyra::VectorBase<Scalar> > >* xdot_vec
+    ,std::vector<ScalarMag>* accuracy_vec) const
+{
   // Copy the const time_vec to a local sorted time_vec
   std::vector<Scalar> local_time_vec = time_vec;
   std::sort(local_time_vec.begin(),local_time_vec.end());
@@ -197,7 +207,7 @@ template<class Scalar>
 bool LinearInterpolationBuffer<Scalar>::SetRange(
     const Scalar& time_lower
     ,const Scalar& time_upper
-    ,const InterpolationBuffer<Scalar>& IB )
+    ,const InterpolationBufferBase<Scalar>& IB )
 {
   std::vector<ScalarMag> input_nodes;
   bool status = IB.GetNodes(&input_nodes);
