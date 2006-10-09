@@ -26,10 +26,10 @@
 // ***********************************************************************
 //@HEADER
 
-#ifndef Rythmos_LINEAR_INTERPOLATION_BUFFER_H
-#define Rythmos_LINEAR_INTERPOLATION_BUFFER_H
+#ifndef Rythmos_INTERPOLATION_BUFFER_H
+#define Rythmos_INTERPOLATION_BUFFER_H
 
-#include "Rythmos_InterpolationBuffer.hpp"
+#include "Rythmos_InterpolationBufferBase.hpp"
 #include "Rythmos_DataStore.hpp"
 
 #include "Thyra_VectorBase.hpp"
@@ -38,20 +38,20 @@ namespace Rythmos {
 
 /** \brief class for defining linear interpolation buffer functionality. */
 template<class Scalar> 
-class LinearInterpolationBuffer : virtual public InterpolationBufferBase<Scalar>
+class InterpolationBuffer : virtual public InterpolationBufferBase<Scalar>
 {
   public:
 
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
     
     /** \brief. */
-    LinearInterpolationBuffer();
-    LinearInterpolationBuffer( int storage );
+    InterpolationBuffer();
+    InterpolationBuffer( int storage );
 
     SetStorage( int storage );
         
     /// Destructor
-    ~LinearInterpolationBuffer() {};
+    ~InterpolationBuffer() {};
 
     /// Add point to buffer
     bool SetPoints(
@@ -93,27 +93,27 @@ class LinearInterpolationBuffer : virtual public InterpolationBufferBase<Scalar>
 // ////////////////////////////
 // Defintions
 template<class Scalar>
-LinearInterpolationBuffer<Scalar>::LinearInterpolationBuffer()
+InterpolationBuffer<Scalar>::InterpolationBuffer()
 {
   order = 1;
   SetStorage(2);
 }
 
 template<class Scalar>
-LinearInterpolationBuffer<Scalar>::LinearInterpolationBuffer( int storage_ )
+InterpolationBuffer<Scalar>::InterpolationBuffer( int storage_ )
 {
   order = 1;
   SetStorage(storage_);
 }
 
 template<class Scalar>
-LinearInterpolationBuffer<Scalar>::SetStorage( int storage_ )
+InterpolationBuffer<Scalar>::SetStorage( int storage_ )
 {
   storage_limit = min(2,storage_); // Minimum of two points so interpolation is possible
 }
 
 template<class Scalar>
-bool LinearInterpolationBuffer<Scalar>::SetPoints( 
+bool InterpolationBuffer<Scalar>::SetPoints( 
     const std::vector<Scalar>& time_vec
     ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& x_vec
     ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& xdot_vec );
@@ -142,7 +142,7 @@ bool LinearInterpolationBuffer<Scalar>::SetPoints(
 }
 
 template<class Scalar>
-bool LinearInterpolationBuffer<Scalar>::GetPoints(
+bool InterpolationBuffer<Scalar>::GetPoints(
     const std::vector<Scalar>& time_vec
     ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* x_vec
     ,std::vector<Tuechos::RefCountPtr<Thyra::VectorBase<Scalar> > >* xdot_vec
@@ -152,7 +152,7 @@ bool LinearInterpolationBuffer<Scalar>::GetPoints(
 }
 
 template<class Scalar>
-bool LinearInterpolationBuffer<Scalar>::GetPoints(
+bool InterpolationBuffer<Scalar>::GetPoints(
     const std::vector<Scalar>& time_vec
     ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* x_vec
     ,std::vector<Tuechos::RefCountPtr<Thyra::VectorBase<Scalar> > >* xdot_vec
@@ -204,7 +204,7 @@ bool LinearInterpolationBuffer<Scalar>::GetPoints(
 }
 
 template<class Scalar>
-bool LinearInterpolationBuffer<Scalar>::SetRange(
+bool InterpolationBuffer<Scalar>::SetRange(
     const Scalar& time_lower
     ,const Scalar& time_upper
     ,const InterpolationBufferBase<Scalar>& IB )
@@ -283,7 +283,7 @@ bool LinearInterpolationBuffer<Scalar>::SetRange(
 }
 
 template<class Scalar>
-bool LinearInterpolationBuffer<Scalar>::GetNodes( std::vector<Scalar>* time_list ) const
+bool InterpolationBuffer<Scalar>::GetNodes( std::vector<Scalar>* time_list ) const
 {
   std::list<DataStore<Scalar> >::iterator list_it = node_list.begin();
   for (; list_it != node_list.end() ; list_it++)
@@ -294,7 +294,7 @@ bool LinearInterpolationBuffer<Scalar>::GetNodes( std::vector<Scalar>* time_list
 }
 
 template<class Scalar>
-bool LinearInterpolationBuffer<Scalar>::RemoveNodes( std::vector<Scalar>& time_vec ) const
+bool InterpolationBuffer<Scalar>::RemoveNodes( std::vector<Scalar>& time_vec ) const
 {
   int N = time_vec.size();
   for (int i=0; i<N ; ++i)
@@ -305,11 +305,11 @@ bool LinearInterpolationBuffer<Scalar>::RemoveNodes( std::vector<Scalar>& time_v
 }
 
 template<class Scalar>
-int LinearInterpolationBuffer<Scalar>::GetOrder() const
+int InterpolationBuffer<Scalar>::GetOrder() const
 {
   return(order);
 }
 
 } // namespace Rythmos
 
-#endif // Rythmos_LINEAR_INTERPOLATION_BUFFER_H
+#endif // Rythmos_INTERPOLATION_BUFFER_H

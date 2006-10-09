@@ -29,7 +29,7 @@
 #ifndef Rythmos_INTERPOLATION_BUFFER_AS_STEPPER_H
 #define Rythmos_INTERPOLATION_BUFFER_AS_STEPPER_H
 
-#include "Rythmos_InterpolationBuffer.hpp"
+#include "Rythmos_InterpolationBufferBase.hpp"
 #include "Rythmos_Stepper.hpp"
 
 namespace Rythmos {

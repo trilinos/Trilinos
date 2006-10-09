@@ -33,7 +33,7 @@
 #include "Teuchos_RefCountPtr.hpp"
 #include "Thyra_VectorBase.hpp"
 #include "Teuchos_Describable.hpp"
-#include "Rythmos_InterpolationBuffer.hpp"
+#include "Rythmos_InterpolationBufferBase.hpp"
 
 namespace Rythmos {
 
