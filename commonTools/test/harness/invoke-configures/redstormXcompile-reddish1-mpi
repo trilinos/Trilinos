@@ -16,15 +16,13 @@ module load PrgEnv-pgi;
 --enable-new_package \
 --without-ml_superlu \
 --enable-ml \
---with-ml_zoltan \
---with-ml_parmetis3x \
+--without-ml_zoltan \
+--without-ml_parmetis3x \
 --enable-teuchos \
 --enable-triutils \
 --enable-anasazi \
 --enable-epetraext-transform \
 --disable-default-packages \
---disable-examples \
---disable-ml-tests \
 --disable-ml_enrich \
 --disable-dependency-tracking \
 --with-blas="-L/home/jmwille/TPL/lapackblas/3.0/lib/opt_storm -llapack -L/home/jmwille/TPL/lapackblas/3.0/lib/opt_storm -lblas" \
@@ -37,7 +35,7 @@ module load PrgEnv-pgi;
 CC="cc -tp k8-64 -fast" \
 CXX="CC -tp k8-64 -fast" \
 F77="ftn -tp k8-64 -fast" \
-CPPFLAGS="-DMPICH_SKIP_MPICXX -DNDEBUG -I/home/jmwille/TPL/superlu/1.1/include -I/home/jmwille/TPL/zoltan/1.56/include -I/home/jmwille/TPL/parmetis/3.1/include" \
+CPPFLAGS="-DMPICH_SKIP_MPICXX -DNDEBUG -I/home/jmwille/TPL/superlu/1.1/include" \
 CFLAGS="" CXXFLAGS="" FFLAGS="" LDFLAGS=" " \
 FLIBS="-lpgf90 -lpgf90_rpm1 -lpgf902 -lpgf90rtl -lpgftnrtl" \
         --with-ar="ar rcv" \
@@ -62,7 +60,5 @@ FLIBS="-lpgf90 -lpgf90_rpm1 -lpgf902 -lpgf90rtl -lpgftnrtl" \
 --enable-tpetra \
 --enable-moertel \
 --enable-galeri \
---enable-isorropia \
---disable-amesos-thyra \
---disable-aztecoo-thyra
+--enable-isorropia
 
