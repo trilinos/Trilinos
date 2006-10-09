@@ -40,14 +40,7 @@
 
 #include "FEApp_AbstractBC.hpp"
 #include "FEApp_AbstractPDE.hpp"
-
-#include "Sacado_Fad_DFad.hpp"
-#include "Sacado_TemplateManager.hpp"
-#include "Sacado_MPL_vector.hpp"
-
-typedef double RealType;
-typedef Sacado::Fad::DFad<double> FadType;
-typedef Sacado::mpl::vector<RealType, FadType> ValidTypes;
+#include "FEApp_TemplateTypes.hpp"
 
 namespace FEApp {
 

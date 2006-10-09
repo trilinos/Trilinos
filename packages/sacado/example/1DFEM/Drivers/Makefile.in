@@ -261,6 +261,7 @@ example_DEPENDENCIES = \
 
 example_CXXFLAGS = \
 	-I$(top_srcdir)/src \
+	-I$(top_srcdir)/src/mpl \
 	-I$(top_builddir)/src \
 	-I$(top_srcdir)/example/1DFEM/Source \
 	$(LOCA_INCLUDES)

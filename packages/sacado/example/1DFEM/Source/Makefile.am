@@ -77,6 +77,7 @@ BC = \
 	$(srcdir)/FEApp_ConstantDirichletBC.cpp
 
 PROBLEM_H = \
+	$(srcdir)/FEApp_TemplateTypes.hpp \
 	$(srcdir)/FEApp_AbstractProblem.hpp \
 	$(srcdir)/FEApp_BrusselatorProblem.hpp \
 	$(srcdir)/FEApp_HeatNonlinearSourceProblem.hpp \
@@ -156,6 +157,7 @@ include_HEADERS = $(ONEDFEM_H)
 #We need the following to support separate build directories
 AM_CPPFLAGS=\
 	-I$(top_srcdir)/src \
+	-I$(top_srcdir)/src/mpl \
 	-I$(top_builddir)/src \
 	$(LOCA_INCLUDES)
 

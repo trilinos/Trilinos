@@ -46,6 +46,7 @@
 #include "FEApp_AbstractQuadrature.hpp"
 #include "FEApp_AbstractDiscretization.hpp"
 #include "FEApp_AbstractProblem.hpp"
+#include "FEApp_TemplateTypes.hpp"
 
 namespace FEApp {
 
