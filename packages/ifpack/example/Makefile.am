@@ -56,16 +56,19 @@ if HAVE_IFPACK_AZTECOO
 if HAVE_IFPACK_TEUCHOS
 if HAVE_IFPACK_GALERI
 EXAMPLE_EXT = Ifpack_ex_Factory              \
-	      Ifpack_ex_Amesos               \
-	      Ifpack_ex_ICT                  \
-	      Ifpack_ex_BlockRelaxation     
+	      Ifpack_ex_ICT
+if HAVE_IFPACK_AMESOS
+EXAMPLE_EXT2 = Ifpack_ex_Amesos               \
+	       Ifpack_ex_BlockRelaxation
+endif
 else
 EXAMPLE_EXT =
+EXAMPLE_EXT2 =
 endif
 endif
 endif
 
-noinst_PROGRAMS = $(EXAMPLE_CORE) $(EXAMPLE_EXT)
+noinst_PROGRAMS = $(EXAMPLE_CORE) $(EXAMPLE_EXT) $(EXAMPLE_EXT2)
 
 Ifpack_ex_Factory_SOURCES      = $(srcdir)/Ifpack_ex_Factory.cpp
 Ifpack_ex_Factory_DEPENDENCIES = $(top_builddir)/src/libifpack.a 
