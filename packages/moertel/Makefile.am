@@ -55,7 +55,7 @@ config/ac_cxx_mutable.m4                  config/mkinstalldirs \
 config/ac_cxx_namespaces.m4               config/tac_arg_check_mpi.m4 \
 config/tac_arg_config_mpi.m4 		  config/tac_arg_enable_feature.m4 \
 config/generate-makeoptions.pl    config/tac_arg_enable_feature_sub_check.m4 \
-config/replace-install-prefix.pl \
+config/replace-install-prefix.pl 	  config/string-replace.pl \
 config/tac_arg_enable_export-makefiles.m4 \
 config/ac_cxx_std_sprintf.m4 \
 config/tac_arg_with_ar.m4 \
@@ -63,8 +63,8 @@ config/tac_arg_with_flags.m4 \
 config/tac_arg_with_incdirs.m4 \
 config/config.guess                       config/tac_arg_with_libdirs.m4 \
 config/config.sub \
-config/strip_dup_incl_paths.pl            config/strip_dup_libs_.pl \
-config/tac_arg_with_perl.pl \
+config/strip_dup_incl_paths.pl            config/strip_dup_libs.pl \
+config/tac_arg_with_perl.m4 \
 bootstrap 
 #
 #       I believe that by switching to AUX_DIR(../../config) one 
@@ -142,16 +142,16 @@ endif
 #TEST_SUBDIR=test
 #endif
 
-#if BUILD_EXAMPLES
-#EXAMPLE_SUBDIR=example
-#endif
+if BUILD_EXAMPLES
+EXAMPLE_SUBDIR=example
+endif
 
 #if PYTHON_USE
 #PYTHON_SUBDIR=python
 #endif
 
 #SUBDIRS = src $(TEST_SUBDIR) $(EXAMPLE_SUBDIR) $(PYTHON_SUBDIR)
-SUBDIRS = src
+SUBDIRS = src $(EXAMPLE_SUBDIR)
 
 TRILINOS_HOME_DIR=@abs_top_srcdir@/../..
 TRILINOS_BUILD_DIR=@abs_top_builddir@/../..

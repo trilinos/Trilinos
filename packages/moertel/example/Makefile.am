@@ -42,7 +42,7 @@ EXEEXT = .exe
 
 noinst_PROGRAMS = TwoSquares Hex_3D test1
 
-EXTRA_DIST = TwoSquares.grid Hex_3D.grid
+EXTRA_DIST = TwoSquares.grid Hex_3D.grid TwoSquares.m
 
 TwoSquares_SOURCES      = $(srcdir)/TwoSquares.cpp
 TwoSquares_DEPENDENCIES = $(top_builddir)/src/libmoertel.a
