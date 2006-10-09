@@ -61,7 +61,9 @@ class DataStore : virtual public Teuchos::Describable
     ScalarMag accuracy;
 
     /// Less than comparison for sorting:
-    bool operator< (const DataStore<Scalar>& d1, const DataStore<Scalar>& d2) const
+    bool operator< (
+        const DataStore<Scalar>& d1
+        ,const DataStore<Scalar>& d2) const
     { return( d1.time < d2.time ); }
 
     /// Redefined from describable
