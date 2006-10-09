@@ -33,6 +33,8 @@
 
    By: Chris Siefert <csiefer@sandia.gov>
    Version History
+   10/09/2006 - Bug fixed where specifying coordinates for aggregation would not
+                work in 2D.
    10/04/2006 - Added aggregate mode, patches for Matlab R2006b + mwArray.
    09/08/2006 - Memory leak fixed.
    08/30/2006 - Added ML_epetra interface functionality.
@@ -813,6 +815,12 @@ Teuchos::ParameterList* build_teuchos_list(int nrhs,const mxArray *prhs[]){
 #endif
         TPL->set(option_name, opt_float[0]);
       }/*end if*/
+      else if(M==0 || N==0){
+#ifdef VERBOSE_OUTPUT
+        mexPrintf("[%s] Float(Empty) Found!\n",option_name);
+#endif
+        TPL->set(option_name,(double*)NULL);
+      }  
       else{
 #ifdef VERBOSE_OUTPUT
         mexPrintf("[%s] Float Found!\n",option_name);
