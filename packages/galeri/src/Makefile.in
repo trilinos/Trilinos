@@ -285,6 +285,7 @@ CORE_H = $(srcdir)/Galeri_Version.h                    \
 	 $(srcdir)/Galeri_CrsMatrices.h                \
 	 $(srcdir)/Galeri_VbrMatrices.h                \
          $(srcdir)/Galeri_Exception.h                  \
+	 $(srcdir)/Galeri_FiniteElements.h             \
 	 $(srcdir)/Galeri_Utils.h                      \
 	 $(srcdir)/Galeri_ReadHB.h                     \
 	 $(srcdir)/iohb.h                              \
@@ -322,6 +323,7 @@ CORE_H = $(srcdir)/Galeri_Version.h                    \
 	 $(srcdir)/FiniteElements/Galeri_AbstractProblem.h        \
 	 $(srcdir)/FiniteElements/Galeri_AbstractQuadrature.h     \
 	 $(srcdir)/FiniteElements/Galeri_AbstractVariational.h    \
+	 $(srcdir)/FiniteElements/Galeri_FileGrid.h               \
 	 $(srcdir)/FiniteElements/Galeri_TriangleRectangleGrid.h  \
 	 $(srcdir)/FiniteElements/Galeri_QuadRectangleGrid.h      \
 	 $(srcdir)/FiniteElements/Galeri_HexCubeGrid.h            \

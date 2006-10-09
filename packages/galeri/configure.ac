@@ -40,7 +40,7 @@
 # Optional 3rd argument is email address for bugs.
 
 #  #np# - package name, version number, and e-mail address below
-AC_INIT(Galeri, 1.0, marzio@inf.ethz.ch)
+AC_INIT(Galeri, 1.1d, marzio@inf.ethz.ch)
 
 # Hello World!
 #  #auto np# - package name below
