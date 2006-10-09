@@ -50,7 +50,7 @@ class InterpolationBufferAsStepper : virtual public Rythmos::InterpolationBuffer
     InterpolationBufferAsStepper(
       const Teuchos::RefCountPtr<const Rythmos::Stepper<Scalar> > &stepper_
       ,const Teuchos::RefCountPtr<const Rythmos::InterpolationBuffer<Scalar> > &IB_
-      ,Teuchos::ParameterList &parameterList_ );
+      ,Teuchos::RefCountPtr<Teuchos::ParameterList> &parameterList_ = Teuchos::null);
 
     /// Set InterpolationBuffer:
     setInterpolationBuffer(const Teuchos::RefCountPtr<const Rythmos::InterpolationBuffer<Scalar> > &IB_);
@@ -106,7 +106,7 @@ template<class Scalar>
 InterpolationBufferAsStepper<Scalar>::InterpolationBufferAsStepper(
     const Teuchos::RefCountPtr<const Rythmos::Stepper<Scalar> > &stepper_
     ,const Teuchos::RefCountPtr<const Rythmos::InterpolationBuffer<Scalar> > &IB_
-    ,const Teuchos::RefCountPTr<Teuchos::ParameterList> &parameterList_
+    ,const Teuchos::RefCountPtr<Teuchos::ParameterList> &parameterList_
     )
 {
   setStepper(stepper_);
@@ -161,7 +161,10 @@ InterpolationBufferAsStepper<Scalar>::setParameterList(
     Teuchos::RefCountPtr<Teuchos::ParameterList> &parameterList_
     )
 {
-  parameterList = parameterList_;
+  if (parameterList_ == Teuchos::null)
+    parameterList = Teuchos::rcp(new Teuchos::ParameterList);
+  else
+    parameterList = parameterList_;
 }
 
 
