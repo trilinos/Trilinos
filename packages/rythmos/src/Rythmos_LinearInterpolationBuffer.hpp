@@ -30,6 +30,8 @@
 #define Rythmos_LINEAR_INTERPOLATION_BUFFER_H
 
 #include "Rythmos_InterpolationBuffer.hpp"
+#include "Rythmos_DataStore.hpp"
+
 #include "Thyra_VectorBase.hpp"
 
 namespace Rythmos {
@@ -85,33 +87,6 @@ class LinearInterpolationBuffer : virtual public InterpolationBuffer<Scalar>
     Thyra::VectorBase<Scalar> tmp_vec;
     std::list<Teuchos::RefCountPtr<DataStore<Scalar> > > node_list;
     int order;
-
-    template<class Scalar>
-    class DataStore
-    {
-      public:
-        ~DataStore();
-        DataStore();
-        DataStore(ScalarMag &time
-          ,Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > &x
-          ,Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > &xdot);
-        ScalarMag time;
-        Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x;
-        Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xdot;
-        bool operator< (const DataStore<Scalar>& d1, const DataStore<Scalar>& d2) const
-        { return( d1.time < d2.time ); }
-    }
-    void VectorToDataStoreList(
-      std::list<Teuchos::RefCountPtr<DataStore<Scalar> > > *list_ds
-      ,const std::vector<ScalarMag> &time_vec
-      ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > &x_vec
-      ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > &xdot_vec) const;
-    void DataStoreListToVector(
-      std::vector<ScalarMag> *time_vec
-      ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > *x_vec
-      ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > *xdot_vec
-      ,const std::list<Teuchos::RefCountPtr<DataStore<Scalar> > > &list_ds) const;
-
 
 };
 
@@ -324,60 +299,6 @@ int LinearInterpolationBuffer<Scalar>::GetOrder() const
 {
   return(order);
 }
-
-// DataStore definitions:
-template<class Scalar>
-DataStore<Scalar>::DataStore(ScalarMag &time_
-  ,Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > &x_
-  ,Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > &xdot_)
-{
-  time = time_;
-  x = x_;
-  xdot = xdot_;
-}
-
-template<class Scalar>
-void LinearInterpolationBuffer<Scalar>::VectorToDataStoreList(
-      std::list<Teuchos::RefCountPtr<DataStore<Scalar> > > *list_ds
-      ,const std::vector<ScalarMag> &time_vec
-      ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > &x_vec
-      ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > &xdot_vec) const
-{
-  int N = time_vec.size();
-  int Nx = x_vec.size();
-  int Nxdot = xdot_vec.size();
-  if ((N != Nx) || (N != Nxdot))
-  {
-    list_ds = NULL;
-    return;
-  }
-  list_ds->clear();
-  for (int i=0; i<N ; ++i)
-  {
-    list_ds->push_back(Teuchos::rcp(new DataStore(time_list[i],x_list[i],xdot_list[i])));
-  }
-}
-
-template<class Scalar>
-void LinearInterpolationBuffer<Scalar>::DataStoreListToVector(
-      std::vector<ScalarMag> *time_vec
-      ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > *x_vec
-      ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > *xdot_vec
-      ,const std::list<Teuchos::RefCountPtr<DataStore<Scalar> > > &list_ds) const
-{
-  int N = list_ds.size();
-  time_list->reserve(N); time_list->clear();
-  x_list->reserve(N);    x_list->clear();
-  xdot_list->reserve(N); xdot_list->clear();
-  std::list<DataStore<Scalar> >::iterator list_it = list_ds.begin();
-  for (; list_it != list_ds.end() ; list_it++)
-  {
-    time_list->push_back(list_it->time);
-    x_list->push_back(list_it->x);
-    x_dot_list->push_back(list_it->xdot);
-  }
-}
-
 
 } // namespace Rythmos
 
