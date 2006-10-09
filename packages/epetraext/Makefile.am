@@ -60,7 +60,7 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 #The following line helps the test harness recover from build errors.
                                                                                 
 all-local:
-	@if [ $(top_srcdir) != @abs_top_builddir@ ]; then cp -f $(srcdir)/example/inout/matlab.h5 $(top_builddir)/example/inout/matlab.h5 ; fi
+	if [ $(srcdir) != $(top_builddir) ]; then cp -f $(srcdir)/example/inout/matlab.h5 $(top_builddir)/example/inout/matlab.h5 ; fi
 	@echo "Trilinos package epetraext built successfully"
 	@echo "To check the installation, simply type \"$(MAKE) run-examples\"."
 	@echo "For more details, please refer to the instructions"
