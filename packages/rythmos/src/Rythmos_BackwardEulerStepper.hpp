@@ -68,9 +68,6 @@ class BackwardEulerStepper : virtual public Stepper<Scalar>
     /** \brief . */
     Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_solution() const;
 
-    /** \brief . */
-    Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_residual() const;
-
     /// Redefined from describable
     /** \brief . */
     std::string description() const;
@@ -83,12 +80,14 @@ class BackwardEulerStepper : virtual public Stepper<Scalar>
 
     /// Redefined from InterpolationBuffer 
     /// Add points to buffer
+    /// This will take the last one or two points in the list and set up to integrate from here.
     bool SetPoints(
       const std::vector<Scalar>& time_list
       ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& x_list
       ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& xdot_list);
     
     /// Get values from buffer
+    /// This will interpolate points if t_old_ != t_
     bool GetPoints(
       const std::vector<Scalar>& time_list
       ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* x_list
@@ -96,18 +95,22 @@ class BackwardEulerStepper : virtual public Stepper<Scalar>
       ,std::vector<ScalarMag>* accuracy_list) const;
 
     /// Fill data in from another interpolation buffer
+    /// This will do the same as SetPoints
     bool SetRange(
       const Scalar& time_lower
       ,const Scalar& time_upper
       ,const InterpolationBuffer<Scalar> & IB);
 
     /// Get interpolation nodes
+    /// This will return t_old_ and t_ provided t_old_ != t_
     bool GetNodes(std::vector<Scalar>* time_list) const;
 
     /// Remove interpolation nodes
+    /// This would allow removal of t_old_ and/or t_ which might be used to reject steps.
     bool RemoveNodes(std::vector<Scalar>& time_list) const;
 
     /// Get order of interpolation
+    /// This will return 1.
     int GetOrder() const;
 
   private:
@@ -116,7 +119,6 @@ class BackwardEulerStepper : virtual public Stepper<Scalar>
     Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > solver_;
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x_;
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > scaled_x_old_;
-    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > f_;
     Scalar t_;
     Scalar t_old_;
 
@@ -143,8 +145,8 @@ void BackwardEulerStepper<Scalar>::setModel(const Teuchos::RefCountPtr<const Thy
   typedef Teuchos::ScalarTraits<Scalar> ST;
   model_ = model;
   t_ = ST::zero();
+  t_old_  = t_;
   x_ = model_->getNominalValues().get_x()->clone_v();
-  f_ = Thyra::createMember(model_->get_f_space());
 
   scaled_x_old_ = x_->clone_v();
   
@@ -183,6 +185,7 @@ Scalar BackwardEulerStepper<Scalar>::TakeStep(Scalar dt)
   //
   // Solve the implicit nonlinear system to a tolerance of ???
   //
+  // 10/9/06 tscoffe:  I could use FE as a predictor here.
   Thyra::assign(&*x_,ST::zero());
   solver_->solve(&*x_); // Note that x in input is x_old and on output is the solved x!
   //
@@ -197,12 +200,6 @@ template<class Scalar>
 Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > BackwardEulerStepper<Scalar>::get_solution() const
 {
   return(x_);
-}
-
-template<class Scalar>
-Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > BackwardEulerStepper<Scalar>::get_residual() const
-{
-  return(f_);
 }
 
 template<class Scalar>
@@ -229,8 +226,6 @@ void BackwardEulerStepper<Scalar>::describe(
     x_->describe(out,verbLevel);
     out << "\nscaled_x_old_ = " << std::endl;
     scaled_x_old_->describe(out,verbLevel);
-    out << "\nf_ = " << std::endl;
-    f_->describe(out,verbLevel);
     out << "\nt_ = " << t_;
     out << "\nt_old_ = " << t_old_;
     out << std::endl;
@@ -245,7 +240,30 @@ bool BackwardEulerStepper<Scalar>::SetPoints(
     ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& x_list
     ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& xdot_list)
 {
-  return(false);
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  if (time_list.length() == 0)
+  {
+    return(false);
+  }
+  else if (time_list.length() == 1)
+  {
+    int n = 0;
+    t_ = time_list[n];
+    t_old_ = t_;
+    Thyra::V_V(&*x_,*x_list[n]);
+    Thyra::V_V(&*scaled_x_old_,*x_);
+  }
+  else 
+  {
+    int n = time_list.length()-1;
+    int nm1 = time_list.length()-2;
+    t_ = time_list[n];
+    t_old_ = time_list[nm1];
+    Thyra::V_V(&*x_,*x_list[n]);
+    Scalar dt = t_ - t_old_;
+    Thyra::V_StV(&*scaled_x_old_,Scalar(-ST::one()/dt),*x_list[nm1]);
+  }
+  return(true);
 }
 
 template<class Scalar>
@@ -255,6 +273,14 @@ bool BackwardEulerStepper<Scalar>::GetPoints(
     ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* xdot_list
     ,std::vector<ScalarMag>* accuracy_list) const
 {
+  // TODO:
+  // Copy code from LinearInterpolationBuffer 
+  // 10/9/06 tscoffe:  Could I derive off of LinearInterpolationBuffer to use that code?
+  //                   Would it be better to write a helper function to do the
+  //                   interpolations, either linear, Hermite, or otherwise,
+  //                   and then call those helper functions from the concrete
+  //                   InterpolationBuffers, and hence enable the use of those
+  //                   interpolations within the Steppers also?  
   return(false);
 }
 
@@ -264,18 +290,28 @@ bool BackwardEulerStepper<Scalar>::SetRange(
     ,const Scalar& time_upper
     ,const InterpolationBuffer<Scalar>& IB)
 {
+  // TODO:
+  // get node_list from IB, crop it to [time_lower,time_upper], crop x_list to same,
+  // pass to SetPoints.
   return(false);
 }
 
 template<class Scalar>
 bool BackwardEulerStepper<Scalar>::GetNodes(std::vector<Scalar>* time_list) const
 {
-  return(false);
+  time_list->push_back(t_old_);
+  if (t_old_ != t_)
+    time_list->push_back(t_);
+  return(true);
 }
 
 template<class Scalar>
 bool BackwardEulerStepper<Scalar>::RemoveNodes(std::vector<Scalar>& time_list) const
 {
+  // TODO:
+  // if any time in time_list matches t_ or t_old_, then do the following:
+  // remove t_old_:  set t_old_ = t_ and set scaled_x_old_ = x_
+  // remove t_:  set t_ = t_old_ and set x_ = -dt*scaled_x_old_
   return(false);
 }
 
