@@ -32,7 +32,8 @@ include $(top_builddir)/Makefile.export.teuchos
 
 bin_PROGRAMS = Teuchos_exit_test
 
-Teuchos_exit_test_SOURCES = $(srcdir)/cxx_main.cpp $(srcdir)/some_c_func.c
+Teuchos_exit_test_SOURCES = $(srcdir)/cxx_main.cpp $(srcdir)/some_c_func.c \
+				$(srcdir)/some_c_func.h
 
 Teuchos_exit_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
 

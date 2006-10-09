@@ -282,7 +282,9 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-Teuchos_exit_test_SOURCES = $(srcdir)/cxx_main.cpp $(srcdir)/some_c_func.c
+Teuchos_exit_test_SOURCES = $(srcdir)/cxx_main.cpp $(srcdir)/some_c_func.c \
+				$(srcdir)/some_c_func.h
+
 Teuchos_exit_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
 AM_CPPFLAGS = $(TEUCHOS_INCLUDES)
 Teuchos_exit_test_LDADD = $(TEUCHOS_LIBS)
