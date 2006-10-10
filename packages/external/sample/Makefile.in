@@ -139,7 +139,8 @@ AUTOMAKE_OPTIONS = foreign
 #np# new package so that the files can be used in creating the 
 #np# configure script for other packages. 
 EXTRA_DIST = \
-config.guess  config.sub  install-sh  missing bootstrap 
+config/config.guess  config/config.sub  config/install-sh  \
+config/missing bootstrap 
 
 
 #AUX_DIST = config/install-sh config/missing config/mkinstalldirs 
