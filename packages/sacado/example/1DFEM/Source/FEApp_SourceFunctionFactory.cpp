@@ -29,53 +29,13 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef FEAPP_SOURCEFUNCTIONFACTORY_HPP
-#define FEAPP_SOURCEFUNCTIONFACTORY_HPP
+#include "FEApp_TemplateTypes.hpp"
 
-#include "Teuchos_ParameterList.hpp"
-#include "Teuchos_RefCountPtr.hpp"
+#ifdef SACADO_ETI
 
-#include "FEApp_AbstractSourceFunction.hpp"
-
-namespace FEApp {
-
-  /*!
-   * \brief A factory class to instantiate AbstractSourceFunction objects
-   */
-  template <typename ScalarT>
-  class SourceFunctionFactory {
-  public:
-
-    //! Default constructor
-    SourceFunctionFactory(
-	       const Teuchos::RefCountPtr<Teuchos::ParameterList>& funcParams);
-
-    //! Destructor
-    virtual ~SourceFunctionFactory() {}
-
-    virtual Teuchos::RefCountPtr< FEApp::AbstractSourceFunction<ScalarT> >
-    create();
-
-  private:
-
-    //! Private to prohibit copying
-    SourceFunctionFactory(const SourceFunctionFactory&);
-
-    //! Private to prohibit copying
-    SourceFunctionFactory& operator=(const SourceFunctionFactory&);
-
-  protected:
-
-    //! Parameter list specifying what strategy to create
-    Teuchos::RefCountPtr<Teuchos::ParameterList> funcParams;
-
-  };
-
-}
-
-// Include implementation
-#ifndef SACADO_ETI
+#include "FEApp_SourceFunctionFactory.hpp"
 #include "FEApp_SourceFunctionFactoryImpl.hpp"
-#endif 
 
-#endif // FEAPP_SOURCEFUNCTIONFACTORY_HPP
+INSTANTIATE_TEMPLATE_CLASS(FEApp::SourceFunctionFactory)
+
+#endif

@@ -119,6 +119,8 @@ namespace FEApp {
 }
 
 // Include implementation
+#ifndef SACADO_ETI
 #include "FEApp_BrusselatorPDEImpl.hpp"
+#endif 
 
 #endif // FEAPP_BRUSSELATORPDE_HPP

@@ -57,7 +57,8 @@ SOURCE_H = \
 	$(srcdir)/FEApp_SourceFunctionFactory.hpp \
 	$(srcdir)/FEApp_SourceFunctionFactoryImpl.hpp
 
-SOURCE = 
+SOURCE = \
+	$(srcdir)/FEApp_SourceFunctionFactory.cpp
 
 PDE_H = \
 	$(srcdir)/FEApp_AbstractPDE_NTBase.hpp \
@@ -67,7 +68,9 @@ PDE_H = \
 	$(srcdir)/FEApp_BrusselatorPDE.hpp \
 	$(srcdir)/FEApp_BrusselatorPDEImpl.hpp
 
-PDE = 
+PDE = \
+	$(srcdir)/FEApp_HeatNonlinearSourcePDE.cpp \
+	$(srcdir)/FEApp_BrusselatorPDE.cpp
 
 BC_H = \
 	$(srcdir)/FEApp_AbstractBC.hpp \
@@ -101,7 +104,8 @@ FILL_H = \
 	$(srcdir)/FEApp_GlobalFillImpl.hpp
 
 FILL = \
-	$(srcdir)/FEApp_InitPostOps.cpp
+	$(srcdir)/FEApp_InitPostOps.cpp \
+	$(srcdir)/FEApp_GlobalFill.cpp
 
 DISC_H = \
 	$(srcdir)/FEApp_AbstractDiscretization.hpp \

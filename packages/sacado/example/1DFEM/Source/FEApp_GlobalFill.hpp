@@ -97,6 +97,9 @@ namespace FEApp {
 
 }
 
+// Include implementation
+#ifndef SACADO_ETI
 #include "FEApp_GlobalFillImpl.hpp"
+#endif 
 
 #endif // FEAPP_GLOBALFILL_HPP

@@ -117,6 +117,8 @@ namespace FEApp {
 }
 
 // Include implementation
+#ifndef SACADO_ETI
 #include "FEApp_HeatNonlinearSourcePDEImpl.hpp"
+#endif 
 
 #endif // FEAPP_HEATNONLINERASOURCEPDE_HPP
