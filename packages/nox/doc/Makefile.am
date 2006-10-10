@@ -42,16 +42,7 @@ all-local:
 ## #######################################################################
 ## Additional files to be included in distribution for 'make dist'
 ## #######################################################################
-EXTRA_DIST = Doxyfile \
-	$(srcdir)/images/gold-rule-500x11.gif \
-	$(srcdir)/images/gold-rule-557x11.gif \
-	$(srcdir)/images/red-vertical-bar-background.gif \
-	$(srcdir)/images/snl-globe-left.gif \
-	$(srcdir)/images/spacer-16x1.gif \
-	$(srcdir)/images/spacer-6x1.gif \
-	$(srcdir)/includes/footer.html \
-	$(srcdir)/includes/header.html \
-	$(srcdir)/includes/stylesheet.css
+EXTRA_DIST = Doxyfile
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'

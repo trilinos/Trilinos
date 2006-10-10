@@ -309,6 +309,15 @@ LOCA_FACTORY = \
 	$(srcdir)/LOCA_Factory.C \
 	$(srcdir)/LOCA_GlobalData.C
 
+EXTRA_LOCA_ANASAZI_H = \
+	$(srcdir)/Anasazi_LOCA_MultiVecTraits.H \
+	$(srcdir)/Anasazi_LOCA_OperatorTraits.H \
+	$(srcdir)/Anasazi_LOCA_Sort.H \
+	$(srcdir)/LOCA_Eigensolver_AnasaziStrategy.H
+
+EXTRA_LOCA_ANASAZI = \
+	$(srcdir)/Anasazi_LOCA_Sort.C \
+	$(srcdir)/LOCA_Eigensolver_AnasaziStrategy.C
 
 if BUILD_LOCAANASAZI
 
@@ -318,18 +327,14 @@ LOCA_ANASAZI_H = \
 	$(srcdir)/LOCA_AnasaziOperator_ShiftInvert.H \
 	$(srcdir)/LOCA_AnasaziOperator_Cayley.H \
 	$(srcdir)/LOCA_AnasaziOperator_Factory.H \
-	$(srcdir)/Anasazi_LOCA_MultiVecTraits.H \
-	$(srcdir)/Anasazi_LOCA_OperatorTraits.H \
-	$(srcdir)/Anasazi_LOCA_Sort.H \
-	$(srcdir)/LOCA_Eigensolver_AnasaziStrategy.H
+	$(EXTRA_LOCA_ANASAZI_H)
 
 LOCA_ANASAZI = \
 	$(srcdir)/LOCA_AnasaziOperator_JacobianInverse.C \
 	$(srcdir)/LOCA_AnasaziOperator_ShiftInvert.C \
 	$(srcdir)/LOCA_AnasaziOperator_Cayley.C \
 	$(srcdir)/LOCA_AnasaziOperator_Factory.C \
-	$(srcdir)/Anasazi_LOCA_Sort.C \
-	$(srcdir)/LOCA_Eigensolver_AnasaziStrategy.C
+	$(EXTRA_LOCA_ANASAZI)
 
 else
 
@@ -405,6 +410,8 @@ AM_CPPFLAGS = $(EXPORT_INCLUDES)
 # ------------------------------------------------------------------------
 
 libloca_a_SOURCES = $(LOCA_H) $(LOCA)
+
+EXTRA_libloca_a_SOURCES = $(EXTRA_LOCA_ANASAZI) $(EXTRA_LOCA_ANASAZI_H) 
 
 libloca_a_CXXFLAGS = \
 	-I$(top_srcdir)/src \

@@ -121,6 +121,10 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
+COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+CCLD = $(CC)
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(NOX_BroydenOp_SOURCES) $(NOX_Operators_SOURCES)
 DIST_SOURCES = $(NOX_BroydenOp_SOURCES) $(NOX_Operators_SOURCES)
 ETAGS = etags
@@ -339,7 +343,9 @@ target_vendor = @target_vendor@
 @USING_GNUMAKE_FALSE@TEST_INCLUDES = $(NOX_TEST_INCLUDES)
 @USING_GNUMAKE_TRUE@TEST_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(NOX_TEST_INCLUDES))
 AM_CPPFLAGS = $(TEST_INCLUDES)
-NOX_Operators_SOURCES = $(srcdir)/test.C $(srcdir)/Laplace2D.C
+NOX_Operators_SOURCES = $(srcdir)/test.C $(srcdir)/Laplace2D.C \
+	$(srcdir)/Laplace2D.H
+
 NOX_Operators_DEPENDENCIES = \
                          $(top_builddir)/src/libnox.a \
                          $(top_builddir)/src-epetra/libnoxepetra.a \

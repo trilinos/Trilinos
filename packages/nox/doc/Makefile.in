@@ -311,17 +311,7 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-EXTRA_DIST = Doxyfile \
-	$(srcdir)/images/gold-rule-500x11.gif \
-	$(srcdir)/images/gold-rule-557x11.gif \
-	$(srcdir)/images/red-vertical-bar-background.gif \
-	$(srcdir)/images/snl-globe-left.gif \
-	$(srcdir)/images/spacer-16x1.gif \
-	$(srcdir)/images/spacer-6x1.gif \
-	$(srcdir)/includes/footer.html \
-	$(srcdir)/includes/header.html \
-	$(srcdir)/includes/stylesheet.css
-
+EXTRA_DIST = Doxyfile
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'
@@ -370,7 +360,6 @@ CTAGS:
 
 
 distdir: $(DISTFILES)
-	$(mkdir_p) $(distdir)/$(srcdir)/images $(distdir)/$(srcdir)/includes
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \

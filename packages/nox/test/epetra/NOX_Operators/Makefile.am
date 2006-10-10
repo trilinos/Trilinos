@@ -48,7 +48,8 @@ if BUILD_EPETRA_TESTS
 noinst_PROGRAMS = NOX_Operators NOX_BroydenOp
 endif
 
-NOX_Operators_SOURCES = $(srcdir)/test.C $(srcdir)/Laplace2D.C
+NOX_Operators_SOURCES = $(srcdir)/test.C $(srcdir)/Laplace2D.C \
+	$(srcdir)/Laplace2D.H
 
 NOX_Operators_DEPENDENCIES = \
                          $(top_builddir)/src/libnox.a \

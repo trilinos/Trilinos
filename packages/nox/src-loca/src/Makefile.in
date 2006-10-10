@@ -54,7 +54,7 @@
 # ------------------------------------------------------------------------
 
 
-SOURCES = $(libloca_a_SOURCES)
+SOURCES = $(libloca_a_SOURCES) $(EXTRA_libloca_a_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -290,23 +290,24 @@ am__libloca_a_SOURCES_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_SaveEigenData_Factory.C \
 	$(srcdir)/LOCA_Factory.C $(srcdir)/LOCA_GlobalData.C
 am__objects_1 =
-am__objects_2 = $(am__objects_1) $(am__objects_1) $(am__objects_1) \
-	$(am__objects_1) $(am__objects_1) $(am__objects_1) \
+@BUILD_LOCAANASAZI_TRUE@am__objects_2 = $(am__objects_1)
+am__objects_3 = $(am__objects_1) $(am__objects_1) $(am__objects_1) \
+	$(am__objects_2) $(am__objects_1) $(am__objects_1) \
 	$(am__objects_1) $(am__objects_1) $(am__objects_1) \
 	$(am__objects_1) $(am__objects_1) $(am__objects_1) \
 	$(am__objects_1) $(am__objects_1) $(am__objects_1) \
 	$(am__objects_1) $(am__objects_1)
-am__objects_3 = libloca_a-LOCA_Extended_Vector.$(OBJEXT) \
+am__objects_4 = libloca_a-LOCA_Extended_Vector.$(OBJEXT) \
 	libloca_a-LOCA_Extended_MultiVector.$(OBJEXT) \
 	libloca_a-LOCA_Extended_MultiAbstractGroup.$(OBJEXT)
-am__objects_4 = libloca_a-LOCA_BorderedSolver_LowerTriangularBlockElimination.$(OBJEXT) \
+am__objects_5 = libloca_a-LOCA_BorderedSolver_LowerTriangularBlockElimination.$(OBJEXT) \
 	libloca_a-LOCA_BorderedSolver_UpperTriangularBlockElimination.$(OBJEXT) \
 	libloca_a-LOCA_BorderedSolver_AbstractStrategy.$(OBJEXT) \
 	libloca_a-LOCA_BorderedSolver_Bordering.$(OBJEXT) \
 	libloca_a-LOCA_BorderedSolver_HouseholderQR.$(OBJEXT) \
 	libloca_a-LOCA_BorderedSolver_Nested.$(OBJEXT) \
 	libloca_a-LOCA_BorderedSolver_Factory.$(OBJEXT)
-am__objects_5 =  \
+am__objects_6 =  \
 	libloca_a-LOCA_MultiContinuation_ExtendedVector.$(OBJEXT) \
 	libloca_a-LOCA_MultiContinuation_ExtendedMultiVector.$(OBJEXT) \
 	libloca_a-LOCA_MultiContinuation_AbstractGroup.$(OBJEXT) \
@@ -322,17 +323,18 @@ am__objects_5 =  \
 	libloca_a-LOCA_MultiContinuation_ArcLengthGroup.$(OBJEXT) \
 	libloca_a-LOCA_MultiContinuation_ArcLengthConstraint.$(OBJEXT) \
 	libloca_a-LOCA_MultiContinuation_Factory.$(OBJEXT)
-@BUILD_LOCAANASAZI_FALSE@am__objects_6 = libloca_a-LOCA_AnasaziOperator_JacobianInverse.$(OBJEXT) \
+am__objects_7 = libloca_a-Anasazi_LOCA_Sort.$(OBJEXT) \
+	libloca_a-LOCA_Eigensolver_AnasaziStrategy.$(OBJEXT)
+@BUILD_LOCAANASAZI_FALSE@am__objects_8 = libloca_a-LOCA_AnasaziOperator_JacobianInverse.$(OBJEXT) \
 @BUILD_LOCAANASAZI_FALSE@	libloca_a-LOCA_AnasaziOperator_ShiftInvert.$(OBJEXT) \
 @BUILD_LOCAANASAZI_FALSE@	libloca_a-LOCA_AnasaziOperator_Cayley.$(OBJEXT) \
 @BUILD_LOCAANASAZI_FALSE@	libloca_a-LOCA_AnasaziOperator_Factory.$(OBJEXT)
-@BUILD_LOCAANASAZI_TRUE@am__objects_6 = libloca_a-LOCA_AnasaziOperator_JacobianInverse.$(OBJEXT) \
+@BUILD_LOCAANASAZI_TRUE@am__objects_8 = libloca_a-LOCA_AnasaziOperator_JacobianInverse.$(OBJEXT) \
 @BUILD_LOCAANASAZI_TRUE@	libloca_a-LOCA_AnasaziOperator_ShiftInvert.$(OBJEXT) \
 @BUILD_LOCAANASAZI_TRUE@	libloca_a-LOCA_AnasaziOperator_Cayley.$(OBJEXT) \
 @BUILD_LOCAANASAZI_TRUE@	libloca_a-LOCA_AnasaziOperator_Factory.$(OBJEXT) \
-@BUILD_LOCAANASAZI_TRUE@	libloca_a-Anasazi_LOCA_Sort.$(OBJEXT) \
-@BUILD_LOCAANASAZI_TRUE@	libloca_a-LOCA_Eigensolver_AnasaziStrategy.$(OBJEXT)
-am__objects_7 = libloca_a-LOCA_TurningPoint_MooreSpence_ExtendedVector.$(OBJEXT) \
+@BUILD_LOCAANASAZI_TRUE@	$(am__objects_7)
+am__objects_9 = libloca_a-LOCA_TurningPoint_MooreSpence_ExtendedVector.$(OBJEXT) \
 	libloca_a-LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.$(OBJEXT) \
 	libloca_a-LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.$(OBJEXT) \
 	libloca_a-LOCA_TurningPoint_MooreSpence_ExtendedGroup.$(OBJEXT) \
@@ -356,13 +358,13 @@ am__objects_7 = libloca_a-LOCA_TurningPoint_MooreSpence_ExtendedVector.$(OBJEXT)
 	libloca_a-LOCA_Hopf_MooreSpence_SalingerBordering.$(OBJEXT) \
 	libloca_a-LOCA_Hopf_MooreSpence_SolverFactory.$(OBJEXT) \
 	libloca_a-LOCA_Bifurcation_Factory.$(OBJEXT)
-am__objects_8 = libloca_a-LOCA_Homotopy_Group.$(OBJEXT)
-am__objects_9 = libloca_a-LOCA_DerivUtils.$(OBJEXT)
-am__objects_10 = libloca_a-LOCA_ErrorCheck.$(OBJEXT)
-am__objects_11 = libloca_a-LOCA_Parameter_Vector.$(OBJEXT) \
+am__objects_10 = libloca_a-LOCA_Homotopy_Group.$(OBJEXT)
+am__objects_11 = libloca_a-LOCA_DerivUtils.$(OBJEXT)
+am__objects_12 = libloca_a-LOCA_ErrorCheck.$(OBJEXT)
+am__objects_13 = libloca_a-LOCA_Parameter_Vector.$(OBJEXT) \
 	libloca_a-LOCA_Parameter_Library.$(OBJEXT) \
 	libloca_a-LOCA_Parameter_SublistParser.$(OBJEXT)
-am__objects_12 =  \
+am__objects_14 =  \
 	libloca_a-LOCA_MultiPredictor_AbstractStrategy.$(OBJEXT) \
 	libloca_a-LOCA_MultiPredictor_Constant.$(OBJEXT) \
 	libloca_a-LOCA_MultiPredictor_Tangent.$(OBJEXT) \
@@ -370,28 +372,28 @@ am__objects_12 =  \
 	libloca_a-LOCA_MultiPredictor_Random.$(OBJEXT) \
 	libloca_a-LOCA_MultiPredictor_Restart.$(OBJEXT) \
 	libloca_a-LOCA_MultiPredictor_Factory.$(OBJEXT)
-am__objects_13 = libloca_a-LOCA_StepSize_Constant.$(OBJEXT) \
+am__objects_15 = libloca_a-LOCA_StepSize_Constant.$(OBJEXT) \
 	libloca_a-LOCA_StepSize_Adaptive.$(OBJEXT) \
 	libloca_a-LOCA_StepSize_Factory.$(OBJEXT)
-am__objects_14 = libloca_a-LOCA_Stepper.$(OBJEXT)
-am__objects_15 = libloca_a-LOCA_Abstract_Group.$(OBJEXT) \
+am__objects_16 = libloca_a-LOCA_Stepper.$(OBJEXT)
+am__objects_17 = libloca_a-LOCA_Abstract_Group.$(OBJEXT) \
 	libloca_a-LOCA_Abstract_Iterator.$(OBJEXT) \
 	libloca_a-LOCA_Abstract_Factory.$(OBJEXT)
-am__objects_16 = libloca_a-LOCA_Eigensolver_DefaultStrategy.$(OBJEXT) \
+am__objects_18 = libloca_a-LOCA_Eigensolver_DefaultStrategy.$(OBJEXT) \
 	libloca_a-LOCA_Eigensolver_Factory.$(OBJEXT) \
 	libloca_a-LOCA_EigenvalueSort_Strategies.$(OBJEXT) \
 	libloca_a-LOCA_EigenvalueSort_Factory.$(OBJEXT) \
 	libloca_a-LOCA_SaveEigenData_DefaultStrategy.$(OBJEXT) \
 	libloca_a-LOCA_SaveEigenData_Factory.$(OBJEXT)
-am__objects_17 = libloca_a-LOCA_Factory.$(OBJEXT) \
+am__objects_19 = libloca_a-LOCA_Factory.$(OBJEXT) \
 	libloca_a-LOCA_GlobalData.$(OBJEXT)
-am__objects_18 = $(am__objects_3) $(am__objects_4) $(am__objects_5) \
-	$(am__objects_6) $(am__objects_1) $(am__objects_7) \
-	$(am__objects_8) $(am__objects_9) $(am__objects_10) \
-	$(am__objects_11) $(am__objects_12) $(am__objects_13) \
-	$(am__objects_14) $(am__objects_15) $(am__objects_1) \
-	$(am__objects_16) $(am__objects_17)
-am_libloca_a_OBJECTS = $(am__objects_2) $(am__objects_18)
+am__objects_20 = $(am__objects_4) $(am__objects_5) $(am__objects_6) \
+	$(am__objects_8) $(am__objects_1) $(am__objects_9) \
+	$(am__objects_10) $(am__objects_11) $(am__objects_12) \
+	$(am__objects_13) $(am__objects_14) $(am__objects_15) \
+	$(am__objects_16) $(am__objects_17) $(am__objects_1) \
+	$(am__objects_18) $(am__objects_19)
+am_libloca_a_OBJECTS = $(am__objects_3) $(am__objects_20)
 libloca_a_OBJECTS = $(am_libloca_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -488,8 +490,9 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(libloca_a_SOURCES)
-DIST_SOURCES = $(am__libloca_a_SOURCES_DIST)
+SOURCES = $(libloca_a_SOURCES) $(EXTRA_libloca_a_SOURCES)
+DIST_SOURCES = $(am__libloca_a_SOURCES_DIST) \
+	$(EXTRA_libloca_a_SOURCES)
 am__include_HEADERS_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_Extended_Vector.H \
 	$(srcdir)/LOCA_Extended_MultiVector.H \
@@ -1065,6 +1068,16 @@ LOCA_FACTORY = \
 	$(srcdir)/LOCA_Factory.C \
 	$(srcdir)/LOCA_GlobalData.C
 
+EXTRA_LOCA_ANASAZI_H = \
+	$(srcdir)/Anasazi_LOCA_MultiVecTraits.H \
+	$(srcdir)/Anasazi_LOCA_OperatorTraits.H \
+	$(srcdir)/Anasazi_LOCA_Sort.H \
+	$(srcdir)/LOCA_Eigensolver_AnasaziStrategy.H
+
+EXTRA_LOCA_ANASAZI = \
+	$(srcdir)/Anasazi_LOCA_Sort.C \
+	$(srcdir)/LOCA_Eigensolver_AnasaziStrategy.C
+
 @BUILD_LOCAANASAZI_FALSE@LOCA_ANASAZI_H = \
 @BUILD_LOCAANASAZI_FALSE@	$(srcdir)/LOCA_AnasaziOperator_AbstractStrategy.H \
 @BUILD_LOCAANASAZI_FALSE@	$(srcdir)/LOCA_AnasaziOperator_JacobianInverse.H \
@@ -1078,10 +1091,7 @@ LOCA_FACTORY = \
 @BUILD_LOCAANASAZI_TRUE@	$(srcdir)/LOCA_AnasaziOperator_ShiftInvert.H \
 @BUILD_LOCAANASAZI_TRUE@	$(srcdir)/LOCA_AnasaziOperator_Cayley.H \
 @BUILD_LOCAANASAZI_TRUE@	$(srcdir)/LOCA_AnasaziOperator_Factory.H \
-@BUILD_LOCAANASAZI_TRUE@	$(srcdir)/Anasazi_LOCA_MultiVecTraits.H \
-@BUILD_LOCAANASAZI_TRUE@	$(srcdir)/Anasazi_LOCA_OperatorTraits.H \
-@BUILD_LOCAANASAZI_TRUE@	$(srcdir)/Anasazi_LOCA_Sort.H \
-@BUILD_LOCAANASAZI_TRUE@	$(srcdir)/LOCA_Eigensolver_AnasaziStrategy.H
+@BUILD_LOCAANASAZI_TRUE@	$(EXTRA_LOCA_ANASAZI_H)
 
 @BUILD_LOCAANASAZI_FALSE@LOCA_ANASAZI = \
 @BUILD_LOCAANASAZI_FALSE@	$(srcdir)/LOCA_AnasaziOperator_JacobianInverse.C \
@@ -1094,8 +1104,7 @@ LOCA_FACTORY = \
 @BUILD_LOCAANASAZI_TRUE@	$(srcdir)/LOCA_AnasaziOperator_ShiftInvert.C \
 @BUILD_LOCAANASAZI_TRUE@	$(srcdir)/LOCA_AnasaziOperator_Cayley.C \
 @BUILD_LOCAANASAZI_TRUE@	$(srcdir)/LOCA_AnasaziOperator_Factory.C \
-@BUILD_LOCAANASAZI_TRUE@	$(srcdir)/Anasazi_LOCA_Sort.C \
-@BUILD_LOCAANASAZI_TRUE@	$(srcdir)/LOCA_Eigensolver_AnasaziStrategy.C
+@BUILD_LOCAANASAZI_TRUE@	$(EXTRA_LOCA_ANASAZI)
 
 LOCA_H = \
         $(srcdir)/LOCA.H \
@@ -1144,6 +1153,7 @@ AM_CPPFLAGS = $(EXPORT_INCLUDES)
 # Loca library specifications
 # ------------------------------------------------------------------------
 libloca_a_SOURCES = $(LOCA_H) $(LOCA)
+EXTRA_libloca_a_SOURCES = $(EXTRA_LOCA_ANASAZI) $(EXTRA_LOCA_ANASAZI_H) 
 libloca_a_CXXFLAGS = \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/src-lapack \
