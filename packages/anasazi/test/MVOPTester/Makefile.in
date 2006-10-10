@@ -356,6 +356,11 @@ MVOPTpetra_test_LDADD = $(EXPORT_LIBS) \
 			 $(top_builddir)/../tpetra/src/libtpetra.a \
 			 $(top_builddir)/../kokkos/src/libkokkos.a
 
+EXTRA_DIST = $(srcdir)/MyMultiVec.hpp \
+	$(srcdir)/MyBetterOperator.hpp \
+	$(srcdir)/MyOperator.hpp \
+	$(srcdir)/mhd1280b.cua
+
 all: all-am
 
 .SUFFIXES:
@@ -524,6 +529,7 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
+	$(mkdir_p) $(distdir)/$(srcdir)
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -642,7 +648,7 @@ uninstall-am: uninstall-info-am
 include $(top_builddir)/Makefile.export.anasazi
 
 Dummy$(EXEEXT): $(srcdir)/Dummy
-	cp  $(srcdir)/mhd1280b.cua mhd1280b.cua
+	if [ $(srcdir) != '.' ]; then cp  $(srcdir)/mhd1280b.cua mhd1280b.cua; fi
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

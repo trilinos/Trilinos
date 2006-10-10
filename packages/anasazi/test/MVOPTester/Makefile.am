@@ -56,7 +56,7 @@ endif
 noinst_PROGRAMS = MVOPTester_test $(MVOP_COMPLEX_TEST) $(MVOP_TPETRA_TEST)
 
 Dummy$(EXEEXT): $(srcdir)/Dummy
-	cp  $(srcdir)/mhd1280b.cua mhd1280b.cua
+	if [ $(srcdir) != '.' ]; then cp  $(srcdir)/mhd1280b.cua mhd1280b.cua; fi
 
 #np# One SOURCES primary is needed for EACH exe.  (Notice for all of the following 
 #np# primaries that the pattern is "(Exe_name)_(PRIMARY_NAME) = ").  List all source 
@@ -109,4 +109,8 @@ MVOPTpetra_test_LDADD = $(EXPORT_LIBS) \
 # Dummy for new export makefiles
 LIBS = 
 
+EXTRA_DIST = $(srcdir)/MyMultiVec.hpp \
+	$(srcdir)/MyBetterOperator.hpp \
+	$(srcdir)/MyOperator.hpp \
+	$(srcdir)/mhd1280b.cua
 
