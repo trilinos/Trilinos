@@ -26,7 +26,7 @@
 # ************************************************************************
 # @HEADER
 
-EXTRA_DIST = setup.py
+EXTRA_DIST = setup.py SharedUtils.py
 
 @HAVE_MPI_TRUE@HAVE_MPI = 1
 @HAVE_MPI_FALSE@HAVE_MPI =

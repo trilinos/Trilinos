@@ -183,7 +183,7 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-EXTRA_DIST = setup.py
+EXTRA_DIST = setup.py SharedUtils.py
 @HAVE_MPI_TRUE@HAVE_MPI = 1
 @HAVE_MPI_FALSE@HAVE_MPI = 
 
