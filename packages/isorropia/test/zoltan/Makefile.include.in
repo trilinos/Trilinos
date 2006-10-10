@@ -287,9 +287,6 @@ rebalance_zoltan_LDADD = \
       -L$(top_builddir)/src -lisorropia \
       $(EPETRAEXT_LIBS) $(EPETRA_LIBS) $(TEUCHOS_LIBS) $(LIBS) $(BLAS_LIBS) $(FLIBS)
 
-EXTRA_DIST = \
-	src_rebalance_1d_dist.2
-
 all: all-am
 
 .SUFFIXES:

@@ -51,7 +51,8 @@ CORE_H = \
 	$(srcdir)/Isorropia_Redistributor.hpp \
 	$(srcdir)/Isorropia_Utils.hpp \
 	$(srcdir)/Isorropia_Epetra.hpp \
-	$(srcdir)/Isorropia_Exception.hpp
+	$(srcdir)/Isorropia_Exception.hpp \
+	$(srcdir)/Isorropia_configdefs.hpp
 
 ZOLTAN = \
 	$(srcdir)/zoltan/Isorropia_Zoltan_Repartition.cpp \
