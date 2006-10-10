@@ -39,7 +39,7 @@
 # This must be the first line in configure.ac.
 # Optional 3rd argument is email address for bugs.
 
-AC_INIT(pliris, 1.1d, jdkotul@sandia.gov)
+AC_INIT(pliris, 1.2d, jdkotul@sandia.gov)
 
 # Hello World!
 echo "----------------------------------------"
@@ -340,6 +340,7 @@ AC_CONFIG_FILES([
 		src/Makefile
 		test/Makefile
 		test/vector_random/Makefile
+		test/vector_random_fs/Makefile
 		])
 
 AC_OUTPUT()

@@ -2,7 +2,7 @@
 # ************************************************************************
 # 
 #                Pliris: Parallel Dense Solver Package
-#                 Copyright (2001) Sandia Corporation
+#                 Copyright (2004) Sandia Corporation
 # 
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 # license for use of this work by or on behalf of the U.S. Government.
@@ -25,25 +25,15 @@
 # 
 # ************************************************************************
 #@HEADER
+#Builds a simple tester program.  Note that executables must end with a .exe
+#to allow certain proprietary operating systems to use them.
 
-# The following line helps the test harness recover from build errors.
+bin_PROGRAMS = vector_random_fs_test.exe
 
-all-local:
-	@echo ""
-	@echo "Trilinos package pliris subdirectory test built successfully."
-	@echo ""
+vector_random_fs_test_exe_SOURCES = $(srcdir)/cxx_main.cpp
 
-if HAVE_EPETRA
-if HAVE_MPI
-VECTOR_RANDOM_SUBDIR = vector_random
-VECTOR_RANDOM_FS_SUBDIR = vector_random_fs
-endif
-endif
+vector_random_fs_test_exe_DEPENDENCIES = $(top_builddir)/src/libdpliris.a $(top_builddir)/../epetra/src/libepetra.a
 
-SUBDIRS = $(VECTOR_RANDOM_SUBDIR) $(VECTOR_RANDOM_FS_SUBDIR)
+vector_random_fs_test_exe_LDADD = $(top_builddir)/src/libdpliris.a $(top_builddir)/../epetra/src/libepetra.a $(LIBS) $(BLAS_LIBS) $(FLIBS)
 
-#TESTS = \
-#BlockMap/BlockMap_test.exe
-
-EXTRA_DIST = definition
-
+AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src -I$(top_srcdir)/src -I$(top_builddir)/src
