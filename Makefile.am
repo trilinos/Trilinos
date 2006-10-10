@@ -56,6 +56,7 @@ EXTRA_DIST = \
 	commonTools/test/harness/invoke-configures/linux-beowulf-mpi \
 	commonTools/test/utilities/compareTestOutput \
 	commonTools/test/utilities/dependencies \
+	commonTools/test/utilities/packages \
 	commonTools/test/utilities/README \
 	commonTools/test/utilities/report \
 	commonTools/test/utilities/runbuild \
