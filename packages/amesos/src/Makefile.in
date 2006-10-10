@@ -453,6 +453,7 @@ am__include_HEADERS_DIST = $(srcdir)/Amesos_Dscpack.h \
 	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod.h \
 	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod_internal.h \
 	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod_partition.h \
+	$(srcdir)/UFsparse/UFconfig/UFconfig.h \
 	$(srcdir)/UFsparse/KLU/Include/klu.h \
 	$(srcdir)/UFsparse/KLU/Include/klu_internal.h \
 	$(srcdir)/UFsparse/KLU/Include/klu_version.h \
@@ -461,7 +462,8 @@ am__include_HEADERS_DIST = $(srcdir)/Amesos_Dscpack.h \
 	$(srcdir)/Amesos_Klu.h $(srcdir)/Amesos_Paraklete.h \
 	$(srcdir)/UFsparse/PARAKLETE/paraklete.h \
 	$(srcdir)/UFsparse/CCOLAMD/ccolamd.h $(srcdir)/Amesos_MC64.h \
-	$(srcdir)/Amesos_Scalapack.h $(srcdir)/Amesos.h \
+	$(srcdir)/Amesos_Scalapack.h \
+	$(srcdir)/Amesos_SCALAPACK_wrappers.h $(srcdir)/Amesos.h \
 	$(srcdir)/Amesos_Superlu.h $(srcdir)/Amesos_Superludist.h \
 	$(srcdir)/Epetra_CrsKundertSparse.h $(srcdir)/Amesos_Lapack.h \
 	$(srcdir)/Amesos_BaseSolver.h \
@@ -793,7 +795,8 @@ SUPPORT = $(srcdir)/Amesos_Status.cpp  $(srcdir)/Amesos_Control.cpp $(srcdir)/Am
 
 @HAVE_AMESOS_SCALAPACK_FALSE@SCALAPACK_H = 
 @HAVE_AMESOS_SCALAPACK_TRUE@SCALAPACK_H = \
-@HAVE_AMESOS_SCALAPACK_TRUE@	$(srcdir)/Amesos_Scalapack.h
+@HAVE_AMESOS_SCALAPACK_TRUE@	$(srcdir)/Amesos_Scalapack.h \
+@HAVE_AMESOS_SCALAPACK_TRUE@	$(srcdir)/Amesos_SCALAPACK_wrappers.h
 
 @HAVE_AMESOS_SCALAPACK_FALSE@SCALAPACK = 
 @HAVE_AMESOS_SCALAPACK_TRUE@SCALAPACK = \
@@ -848,7 +851,8 @@ PARAKLETE_KLU_COMMON_H = \
 	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod_core.h \
 	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod.h \
 	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod_internal.h \
-	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod_partition.h 
+	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod_partition.h \
+	$(srcdir)/UFsparse/UFconfig/UFconfig.h
 
 @HAVE_AMESOS_KLU_FALSE@@HAVE_AMESOS_PARAKLETE_FALSE@PARAKLETE_KLU = 
 @HAVE_AMESOS_KLU_TRUE@@HAVE_AMESOS_PARAKLETE_FALSE@PARAKLETE_KLU = ${PARAKLETE_KLU_COMMON}
@@ -3245,7 +3249,7 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
-	$(mkdir_p) $(distdir)/UFsparse/AMD/Include $(distdir)/UFsparse/BTF/Include $(distdir)/UFsparse/CCOLAMD $(distdir)/UFsparse/CHOLMOD/Include $(distdir)/UFsparse/COLAMD $(distdir)/UFsparse/KLU/Include $(distdir)/UFsparse/PARAKLETE
+	$(mkdir_p) $(distdir)/UFsparse/AMD/Include $(distdir)/UFsparse/BTF/Include $(distdir)/UFsparse/CCOLAMD $(distdir)/UFsparse/CHOLMOD/Include $(distdir)/UFsparse/COLAMD $(distdir)/UFsparse/KLU/Include $(distdir)/UFsparse/PARAKLETE $(distdir)/UFsparse/UFconfig
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \

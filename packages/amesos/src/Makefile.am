@@ -180,7 +180,8 @@ endif
 
 if HAVE_AMESOS_SCALAPACK
 SCALAPACK_H = \
-	$(srcdir)/Amesos_Scalapack.h
+	$(srcdir)/Amesos_Scalapack.h \
+	$(srcdir)/Amesos_SCALAPACK_wrappers.h
 SCALAPACK = \
 	$(srcdir)/Amesos_Scalapack.cpp
 else
@@ -244,7 +245,8 @@ PARAKLETE_KLU_COMMON_H = \
 	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod_core.h \
 	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod.h \
 	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod_internal.h \
-	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod_partition.h 
+	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod_partition.h \
+	$(srcdir)/UFsparse/UFconfig/UFconfig.h
 
 if HAVE_AMESOS_PARAKLETE
 PARAKLETE_KLU = ${PARAKLETE_KLU_COMMON}
