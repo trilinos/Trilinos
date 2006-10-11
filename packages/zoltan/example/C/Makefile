@@ -1,7 +1,7 @@
 # $Id$
 #
 
-CEXAMPLES = zoltanSimple zoltanExample1 subDirs phgExample
+CEXAMPLES = simpleRCB zoltanSimple zoltanExample1 subDirs phgExample
 
 DOTDOTINCLUDE= $(subst -I../, -I../../, $(INCLUDE))
 DOTDOTLIBDIR= $(subst -L../, -L../../, $(LIBDIR))
