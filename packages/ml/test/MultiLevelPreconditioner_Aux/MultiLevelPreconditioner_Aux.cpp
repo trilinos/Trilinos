@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
   int NumPDEs = 5;
   Epetra_VbrMatrix* VbrA = CreateVbrMatrix(CrsA, NumPDEs);
 
-  int NumVectors = 1;
+#define NumVectors 1
   Epetra_MultiVector LHS(VbrA->Map(), NumVectors);
   Epetra_MultiVector RHS(VbrA->Map(), NumVectors);
   Epetra_LinearProblem Problem(VbrA, &LHS, &RHS);
