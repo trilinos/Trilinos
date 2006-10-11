@@ -34,7 +34,7 @@ PURE_CC			= purify -best-effort -follow-child-processes=yes \
 
 INCLUDE_PATH		= -I/Net/local/lang/SC3.0.1/include \
 			  -I/Net/local/lang/SC3.0.1/ansi_include \
-                          -I/Net/proj/zoltan/arch/solaris/include \
+                          -I/Net/local/proj/zoltan/arch/solaris/include \
 			  -I/Net/local/mpi/include \
 			  -I/Net/local/mpi/build/solaris/ch_p4/include
 DBG_FLAGS		= -g
@@ -52,8 +52,8 @@ FARG                    = farg_typical
 MPI_LIB			= -lmpich++ -lpmpich -lmpich -lsocket -lnsl -laio -lc -lC
 MPI_LIBPATH		= -L/Net/local/mpi/build/solaris/ch_p4/lib  -L/Net/local/arch/sun/solaris/opt/SUNWspro/lib/CC4
 
-PARMETIS_LIBPATH 	= -L/Net/proj/zoltan/arch/solaris/lib/debug/ParMETIS3
-PARMETIS_INCPATH 	= -I/Net/proj/zoltan/arch//all/src/ParMETIS3
+PARMETIS_LIBPATH 	= -L/Net/local/proj/zoltan/arch/solaris/lib/debug/ParMETIS3
+PARMETIS_INCPATH 	= -I/Net/local/proj/zoltan/arch//all/src/ParMETIS3
 
 #PATOH_LIBPATH		= -L/home/u/kddevin/code/PaToH/lib
 #PATOH_INCPATH		= -I/home/u/kddevin/code/PaToH/src/api

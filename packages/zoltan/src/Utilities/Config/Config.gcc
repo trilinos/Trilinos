@@ -29,7 +29,7 @@ CPPC			= g++ -Wall -Wno-deprecated
 
 INCLUDE_PATH		= -I/Net/local/lang/SC3.0.1/include \
 			  -I/Net/local/lang/SC3.0.1/ansi_include \
-			  -I/Net/proj/zoltan/arch/solaris/include 
+			  -I/Net/local/proj/zoltan/arch/solaris/include 
 DBG_FLAGS		= -g 
 OPT_FLAGS		= -O
 CFLAGS 			= $(DBG_FLAGS)
