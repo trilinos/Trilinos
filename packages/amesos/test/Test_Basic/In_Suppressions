@@ -1,733 +1,571 @@
-#
-#  This file specifies memory errors which we want valgrind to ignore when running 
-#  TestOptions.
-#
-#
-#  The errors suppressed in this file can be grouped as follows:
-#    1)  Eleven memory leaks in DSCPACK
-#    2)  Eight errors in write, mwrite and writev
-#    3)  An overlap error in lam_memcpy
-#    4)  A memory leak in AmesosClasses
-#    5)  A memory leak in fopen
-#
-#  The memory leak in AmesosClasses is, I claim, bogus.  Valgrind objects to the following construct:
-#     
-# 
-
-
-#    2)  Eight errors in write, mwrite and writev
-{
-   <mwrite #1>
-   Memcheck:Param
-   write(buf)
-   fun:__GI___libc_write
-   fun:mwrite
-   fun:_cio_kreqfront
-   fun:_cio_kreq
-}
-{
-   <mwrite #2>
-   Memcheck:Param
-   writev(vector[...])
-   fun:vgAllRoadsLeadToRome_writev
-   fun:__writev
-   fun:mwritev
-   fun:_cio_send
-}
-{
-   <mwrite #3>
-   Memcheck:Param
-   write(buf)
-   fun:__GI___libc_write
-   fun:mwrite
-   fun:_cio_kreqfront
-   fun:_cipc_ksrfront
-}
-{
-   <mwrite #4>
-   Memcheck:Param
-   writev(vector)
-   fun:vgAllRoadsLeadToRome_writev
-   fun:__writev
-   fun:mwritev
-   fun:_cio_send
-}
-{
-   <mwrite #5>
-   Memcheck:Param
-   write(buf)
-   fun:__GI___libc_write
-   fun:mwrite
-   fun:_cio_kreqfront
-   fun:kdetach
-}
- {
-   <another AllRoadsLeadToRome unitialized value>
-   Memcheck:Param
-   readv(vector)
-   fun:vgAllRoadsLeadToRome_readv
-   fun:__readv
-   fun:mreadv
-   fun:_cio_recv
-}
-{
-   <mwrite A#1>
-   Memcheck:Param
-   write(buf)
-   fun:__GI___libc_write
-   fun:mwrite
-   fun:_cio_kreq
-   fun:kattach
-}
-{
-   <mwrite uninitialized>
-   Memcheck:Param
-   write(buf)
-   fun:__GI___libc_write
-   fun:mwrite
-   fun:_cio_kreq
-   fun:_cipc_ksend
-}
-{
-   <mwrite uninitialized 2>
-   Memcheck:Param
-   write(buf)
-   fun:__GI___libc_write
-   fun:new_do_write
-   fun:*
-   fun:*
-}
-
-#    3)  An overlap error in lam_memcpy
-{
-   <Overlap in lam_memcopy>
-   Memcheck:Overlap
-   fun:memcpy
-   fun:lam_memcpy
-   fun:lam_dtsndrcv
-   fun:lam_ssi_coll_lam_basic_gather
-}
-#  I wonder if this might be the same error in a different lam (this one on my Fedora box)
-#  this one happens on mpirun -np 4 TestOptions.exe but not on mpirun -np 2 TestOptions.exe
- {
-   <another overlap in lam_memcpy>
-   Memcheck:Overlap
-   fun:memcpy
-   fun:lam_arr_remove
-   fun:lam_ssi_rpi_tcp_finalize
-   fun:MPI_Finalize
-}
-
-
-#    4)  A memory leak in AmesosClasses
-{
-   <vector string AmesosClasses memory leak>
-   Memcheck:Leak
-   fun:__builtin_new
-   fun:_Znwj
-   fun:_ZNSt24__default_alloc_templateILb1ELi0EE14_S_chunk_allocEjRi
-   fun:_ZNSt24__default_alloc_templateILb1ELi0EE9_S_refillEj
-}
-#    5)  A memory leak in fopen
 {
    <insert a suppression name here>
-   Memcheck:Leak
-   fun:malloc
-   fun:__fopen_internal
-   fun:_IO_fopen@@GLIBC_2.1
-   fun:_Z27Trilinos_Util_ReadHb2EpetraPcRK11Epetra_CommRP10Epetra_MapRP16Epetra_CrsMatrixRP13Epetra_VectorSB_SB_
-}
-
-
-{
-   <Unitialized Conditional Jump in Superludist>
-   Memcheck:Cond
-   fun:genmmd_dist_
-   fun:get_perm_c_dist
-   fun:pdgssvx
-   fun:_ZN18Amesos_Superludist6FactorEv
-}
-
-
-{
-   <memory leak in SuperLU>
-   Memcheck:Leak
-   fun:malloc
-   fun:MPI_Type_contiguous
-   fun:superlu_gridmap
-   fun:superlu_gridinit
+   Memcheck:Param
+   write(buf)
+   fun:write
+   fun:_cio_kreqfront
+   fun:_cio_kreq
+   fun:kattach
+   fun:kinit
+   fun:main
 }
 {
-   <memory leak in Superludist>
-   Memcheck:Leak
-   fun:malloc
-   fun:superlu_malloc_dist
-   fun:pxgstrs_init
-   fun:dSolveInit
+   <insert a suppression name here>
+   Memcheck:Param
+   write(buf)
+   fun:write
+   fun:_cio_kreqfront
+   fun:_cipc_ksrfront
+   fun:ksrfront
+   fun:ksr
+   fun:dsfr
+   fun:getnodes
+   fun:getnodeid
+   fun:rversion
+   fun:kinit
+   fun:main
 }
-
- {
-   <another memory leak in Superludist>
-   Memcheck:Leak
-   fun:malloc
-   fun:superlu_malloc_dist
-   fun:intMalloc_dist
-   fun:pdgssvx
-}
-
-
-#
-#  These showed up when running amesos/test/Test_Detailed on ken's Fedora linux box
-#
 {
-   <sendmsg unitialized value>
+   <insert a suppression name here>
+   Memcheck:Param
+   writev(vector[...])
+   obj:/lib/libc-2.3.6.so
+   fun:mwritev
+   fun:_cio_send
+   fun:_cipc_ksrfront
+   fun:ksrfront
+   fun:ksr
+   fun:dsfr
+   fun:getnodes
+   fun:getnodeid
+   fun:rversion
+   fun:kinit
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   write(buf)
+   fun:write
+   fun:_cio_kreqfront
+   fun:_cio_kreq
+   fun:_cipc_ksend
+   fun:ksend
+   fun:dsend
+   fun:nsend
+   fun:rversion
+   fun:kinit
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   writev(vector[...])
+   obj:/lib/libc-2.3.6.so
+   fun:mwritev
+   fun:_cio_send
+   fun:_cipc_ksend
+   fun:ksend
+   fun:dsend
+   fun:nsend
+   fun:rversion
+   fun:kinit
+   fun:main
+}
+{
+   <insert a suppression name here>
    Memcheck:Param
    socketcall.sendmsg(msg)
-   fun:__libc_sendmsg
-   fun:sfh_send_fd
+   fun:sendmsg
    fun:lam_lfopenfd
    fun:set_stdio
+   fun:main
 }
 {
-   <second sendmsg unitialized value>
+   <insert a suppression name here>
    Memcheck:Param
    socketcall.sendmsg(msg)
-   fun:__libc_sendmsg
-   fun:sfh_send_fd
-   fun:send_stdio_fds
-   fun:rpcreatev
+   fun:sendmsg
+   fun:lam_lfopenfd
+   fun:set_stdio
+   fun:main
 }
-
-
-#  These showed up running Amesos_Klu on Ken Stanley's linux box running Fedora 
- {
-   <unitialized or unaddressable bytes in lam or libc>
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   socketcall.sendmsg(msg)
+   fun:sendmsg
+   fun:lam_lfopenfd
+   fun:set_stdio
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   readv(vector)
+   obj:/lib/libc-2.3.6.so
+   fun:mreadv
+   fun:_cio_recv
+   fun:_cipc_ksrback
+   fun:ksrback
+   fun:ksr
+   fun:dsfr
+   fun:bfrecv
+   fun:nrecv
+   fun:get_mpi_world
+   fun:main
+}
+{
+   <insert a suppression name here>
    Memcheck:Param
    write(buf)
-   fun:__GI___libc_write
-   fun:swrite
-   fun:tcp_req_send_ack_long
-   fun:lam_ssi_rpi_tcp_adv1
-}
-{
-   <try-catch in EpetraCrsMatrix::CheckSizes >
-   Memcheck:Leak	
-   fun:malloc
-   fun:__cxa_get_globals 
-}
-
-#
-
-
-#
-#  Neededby TestOptions:
-{
-   <Leak in Epetra_MpiComm>
-   Memcheck:Leak 
-   fun:__builtin_new
-   fun:_Znwj
-   fun:_ZNK14Epetra_MpiComm5CloneEv
-   fun:_ZTv0_n12_NK14Epetra_MpiComm5CloneEv
-}
-#  These appear not to be needed anymore, at least not in TestOptions
-#
-#
-#{
-#   <Leak in MPID>
-#   Memcheck:Leak
-#   fun:malloc
-#   fun:MPID_SBinit
-#   fun:MPID_InitQueue
-#   fun:MPID_Init
-#}
-#{
-#   <Leak in Trilinos_Util_ReadMatrixMaket2Epetra>
-#   Memcheck:Leak
-#   fun:__builtin_new
-#   fun:_Znwj
-#   fun:_Z37Trilinos_Util_ReadMatrixMarket2EpetraPcRK11Epetra_CommRP10Epetra_MapRP16Epetra_CrsMatrixRP13Epetra_VectorSB_SB_
-#   fun:_Z15CreateCrsMatrixPcR11Epetra_CommP10Epetra_MapbbRbRP16Epetra_CrsMatrix
-#}
-#{
-#   <Leak in Epetra_Object Set Label>
-#   Memcheck:Leak
-#   fun:__builtin_vec_new
-#   fun:_Znaj
-#   fun:_ZN13Epetra_Object8SetLabelEPKc
-#   fun:_ZN13Epetra_ObjectC2EPKci
-#}
-#{
-#   <Leak B in MPID>
-#   Memcheck:Leak
-#   fun:malloc
-#   fun:MPID_SBiAllocate
-#   fun:MPID_SBinit
-#   fun:MPID_InitQueue
-#}
-#{
-#   <Leak B in Epetra_MpiComm>
-#   Memcheck:Leak
-#   fun:__builtin_new
-#   fun:_Znwj
-#   fun:_ZN14Epetra_MpiCommC1Ei
-#   fun:main
-#}
-
-
-
-
-#
-#  Some more memory leaks found by TestOptions 
-#
-
-{
-   <insert a suppression name here>
-   Memcheck:Leak
-   fun:__builtin_vec_new
-   fun:_Znaj
-   fun:_ZN13Epetra_Object8SetLabelEPKc
-   fun:_ZN13Epetra_ObjectC2EPKci
-}
- {
-   <insert a suppression name here>
-   Memcheck:Leak
-   fun:__builtin_new
-   fun:_Znwj
-   fun:_ZNK14Epetra_MpiComm5CloneEv
-   fun:_ZN19Epetra_BlockMapDataC1EiiiRK11Epetra_Comm
-}
-
-{
-   <insert a suppression name here>
-   Memcheck:Leak
-   fun:malloc
-   fun:MPI_Group_incl
-   fun:superlu_gridmap
-   fun:superlu_gridinit
-}
- {
-   <insert a suppression name here>
-   Memcheck:Leak
-   fun:__builtin_vec_new
-   fun:_Znaj
-   fun:_ZN19Epetra_CrsGraphDataC1E17Epetra_DataAccessRK15Epetra_BlockMapb
-   fun:_ZN15Epetra_CrsGraphC1E17Epetra_DataAccessRK15Epetra_BlockMapib
-}
-
- {
-   <Superlu leak>
-   Memcheck:Leak
-   fun:malloc
-   fun:superlu_malloc_dist
-   fun:int*alloc_dist
-   fun:get_diag_procs
-}
-
- {
-   <Superlu leak >
-   Memcheck:Leak
-   fun:malloc
-   fun:superlu_malloc_dist
-   fun:int*alloc_dist
-   fun:dSolveInit
-}
-#
-#
-#
-#  The following are needed to run TestOptions on herouxsmp:
-#
- {
-   <memory overlap in lam>
-   Memcheck:Overlap
-   fun:memcpy
-   fun:lam_arr_remove_index
-   fun:finalize1
-   fun:lam_ssi_rpi_usysv_finalize
-}
-
-
-
-
-#
-#  The following are needed to run TestOptions with Amesos_Dscpack
-#
-#  When Bug #1210 is fixed, we should be able to eliminate all of the dscpack specific suppressions 
-#  It is not clear to me exactly which suppressions are related to dscpack
-#
-#
-{
-   <insert a suppression name here>
-   Memcheck:Cond
-   fun:_IO_vfprintf_internal
-   fun:_IO_printf
-   fun:_Z27Trilinos_Util_ReadHb2EpetraPcRK11Epetra_CommRP10Epetra_MapRP16Epetra_CrsMatrixRP13Epetra_VectorSB_SB_
-   fun:*
-}
-
-
-{
-   <insert a suppression name here>
-   Memcheck:Cond
-   fun:_Z27Trilinos_Util_ReadHb2EpetraPcRK11Epetra_CommRP10Epetra_MapRP16Epetra_CrsMatrixRP13Epetra_VectorSB_SB_
-   fun:*
-   fun:*
-   fun:*
-}
-
-
-
-
-{
-   <insert a suppression name here>
-   Memcheck:Value4
-   fun:_IO_vfprintf_internal
-   fun:_IO_printf
-   fun:_Z27Trilinos_Util_ReadHb2EpetraPcRK11Epetra_CommRP10Epetra_MapRP16Epetra_CrsMatrixRP13Epetra_VectorSB_SB_
-   fun:*
-}
-
-{
-   <another printf problem in Trilinos_Util_ReadHb2Epetra>
-   Memcheck:Cond
-   fun:_IO_file_xsputn@@GLIBC_2.1
-   fun:_IO_vfprintf_internal
-   fun:_IO_printf
-   fun:_Z27Trilinos_Util_ReadHb2EpetraPcRK11Epetra_CommRP10Epetra_MapRP16Epetra_CrsMatrixRP13Epetra_VectorSB_SB_
-}
-{
-   <yet another printf problem in Trilinos_Util_ReadHb2Epetra>
-   Memcheck:Cond
-   fun:_IO_file_overflow@@GLIBC_2.1
-   fun:_IO_default_xsputn_internal
-   fun:_IO_file_xsputn@@GLIBC_2.1
-   fun:_IO_vfprintf_internal
-}
-{
-   <yet another another printf problem in Trilinos_Util_ReadHb2Epetra>
-   Memcheck:Cond
-   fun:_IO_default_xsputn_internal
-   fun:_IO_file_xsputn@@GLIBC_2.1
-   fun:_IO_vfprintf_internal
-   fun:_IO_printf
-}
-
-
-#
-#  These four leaks all occur when DSCPACK/Solve1 2 3 4 1 1 1 1 1 1   is run 
-#
-{
-   <DSCPACK leak #1A order_and_make_tree2>
-   Memcheck:Leak
-   fun:malloc
-   fun:order_and_make_tree2
-   fun:DSC_Order
-   fun:*
-}
-
-{
-   <DSCPACK leak #1B in order_and_make_tree2hyb bug #1210>
-   Memcheck:Leak
-   fun:malloc
-   fun:order_and_make_tree2hyb
-   fun:*
-   fun:*
-}
-{
-   <DSCPACK leak #1C in order_and_make_tree2hyb bug #1210>
-   Memcheck:Leak
-   fun:malloc
-   fun:order_and_make_tree2
-   fun:*
-   fun:*
-}
-{
-   <DSCPACK leak #1D DSC_Analayze>
-   Memcheck:Leak
-   fun:malloc
-   fun:DSC_Analyze
-   fun:*
-   fun:*
-}
-
-#
-#  The following leaks occurs when mpirun -np 4 Solve1 2 3 4 1 1 1 1 1 1   is run 
-#
- {
-   <insert a suppression name here>
-   Memcheck:Leak
-   fun:malloc
-   fun:DSC_Test_3_D
-   fun:*
-   obj:*
-}
-
- {
-   <insert a suppression name here>
-   Memcheck:Leak
-   fun:malloc
-   fun:DSC_Begin
-   fun:*
-   obj:*
-}
-
-{
-   <insert a suppression name here>
-   Memcheck:Leak
-   fun:malloc
-   fun:MPI_Group_range_incl
-   fun:DSC_Open0
-   fun:*
-}
-
-#
-#  The following 4 leaks occur when TestOptions.exe is run with Dscpack enabled:
-#
-
-
-# {
-#    <DSCPACK leak #1 DSC_Open0  >
-#    Memcheck:Leak
-#    fun:malloc
-#    fun:MPI_Group_range_incl
-#    fun:DSC_Open0
-#    fun:_ZN14Amesos_Dscpack21SymbolicFactorizationEv
-# }
-
-
-{
-   <DSCPACK leak #2>
-   Memcheck:Leak
-   fun:malloc
-   fun:alloc_more
-   fun:lam_mp_init
-   fun:lam_comm_new
-}
-
-{
-   <DSCPACK leak #2 from SymbolicFactorization>
-   Memcheck:Leak
-   fun:malloc
-   fun:s_fact_allocate_vecs
-   fun:*
-   fun:*
-}
-{
-   <DSCPACK leak #3 from SymbolicFactorization>
-   Memcheck:Leak
-   fun:malloc
-   fun:n_fact_allocate_vecs
-   fun:*
-   fun:*
-}
-{
-   <DSCPACK leak #4 from SymbolicFactorization>
-   Memcheck:Leak
-   fun:malloc
-   fun:n_solve_initialize
-   fun:*
-   fun:*
-}
-{
-   <DSCPACK leak #5 from SymbolicFactorization>
-   Memcheck:Leak
-   fun:malloc
-   fun:n_fact_initialize
-   fun:*
-   fun:*
-}
-{
-   <DSCPACK leak #7 from Symbolic Factorization>
-   Memcheck:Leak
-   fun:malloc
-   fun:local_order_greedy
-   fun:*
-   fun:*
-}
-{
-   <DSCPACK leak #8 from Symbolic Factorization>
-   Memcheck:Leak
-   fun:malloc
-   fun:matrix_structure_spd
-   fun:*
-   fun:*
-}
-
-
-#
-#  Needed by Test_KLU 
-#
-{
-   <lam problem in Test_KLU>
-   Memcheck:Param
-   write(buf)
-   fun:__GI___libc_write
-   fun:swrite
-   fun:tcp_req_send_ack_long
-   fun:lam_ssi_rpi_tcp_advmultiple
-}
-#
-#  Needed by TestOptions with ScaLAPACK enabled 
-#
-#
-{
-   <BLACS memory leak #1>
-   Memcheck:Leak
-   fun:malloc
-   fun:blacs_gridmap__
-   fun:blacs_gridinit__
-   fun:sl_init__
-}
-{
-   <BLACS memory leak #2>
-   Memcheck:Leak
-   fun:malloc
-   fun:blacs_gridmap__
-   fun:blacs_gridinit__
-   fun:sl_init__
-}
-
-{
-   <BLACS memory leak #3>
-   Memcheck:Leak
-   fun:malloc
-   fun:MPI_Type_contiguous
-   fun:blacs_gridmap__
-   fun:blacs_gridinit__
-}
-{
-   <lam mpi memory leak>
-   Memcheck:Leak
-   fun:malloc
-   fun:alloc_more
-   fun:lam_mp_malloc
-   fun:lam_comm_new
-}
-{
-   <BLACS memory leak #4>
-   Memcheck:Leak
-   fun:malloc
-   fun:blacs_pinfo__
-   fun:sl_init__
-   fun:_ZN16Amesos_Scalapack13RedistributeAEv
-}
-{
-   <BLACS memory leak #5>
-   Memcheck:Leak
-   fun:malloc
-   fun:MPI_Group_incl
-   fun:BI_TransUserComm
-   fun:blacs_gridmap__
-}
-#
-#  These are required by TestOptions when using multiple processes and ScaLAPACK 
-#
-{
-   <PBLAS unitialized conditional>
-   Memcheck:Cond
-   fun:PB_CptrsmAB
-   fun:pdtrsm_
-   fun:pdgetrs_
-   fun:_ZN16Amesos_Scalapack5SolveEv
-}
-{
-   <PBLAS unitiliazed conditional #2>
-   Memcheck:Cond
-   fun:PB_CptrsmAB
-   fun:pdtrsm_
-   fun:pdgetrs_
-   fun:_ZN16Amesos_Scalapack5SolveEv
-}
-{
-   <BLACS parallel memory leak >
-   Memcheck:Leak
-   fun:malloc
-   fun:MPI_Group_incl
-   fun:MPI_Comm_split
-   fun:blacs_gridmap__
-}
-
-#{
-#  <Taucs memory leak bug #1580 >
-#  Memcheck:Addr4
-#  fun:recursive_multifrontal_supernodal_factor_llt
-#  fun:recursive_multifrontal_supernodal_factor_llt_caller
-#  fun:taucs_dccs_factor_llt_numeric
-#  fun:taucs_ccs_factor_llt_numeric
-#}
-{
-   <superludist memory leak #3 bug #1459 >
-   Memcheck:Leak
-   fun:malloc
-   fun:at_plus_a_dist
-   fun:get_perm_c_dist
-   fun:pdgssvx
-}
-#
-#  Needed on my fedora linux laptop
-#
-{
-   <linux_laptop_write_1>
-   Memcheck:Param
-   write(buf)
-   fun:__write_nocancel
-   fun:mwrite
+   fun:write
    fun:_cio_kreqfront
    fun:kdetach
-}
-
-{
-   <linux_laptop_write_2>
-   Memcheck:Param
-   writev(vector)
-   fun:writev
-   fun:mwritev
-   fun:_cio_send
-   fun:_cipc_ksend
+   fun:lam_kexit
+   fun:kexit
+   fun:main
 }
 
 
+
+
+
 {
-   <linux_laptop_write_3>
-   Memcheck:Param
-   writev(vector[...])
-   fun:writev
-   fun:mwritev
-   fun:_cio_send
-   fun:_cipc_ksrfront
-}
-{
-   <linux_laptop_write_4>
+   <insert a suppression name here>
    Memcheck:Param
    write(buf)
-   fun:__write_nocancel
-   fun:mwrite
+   fun:write
    fun:_cio_kreqfront
-   fun:_cipc_ksrfront
-}
-{
-   <linux_laptop_write_5>
-   Memcheck:Param
-   writev(vector[...])
-   fun:writev
-   fun:mwritev
-   fun:_cio_send
-   fun:_cipc_ksend
-}
-{
-   <linux_laptop_write_6>
-   Memcheck:Param
-   write(buf)
-   fun:__write_nocancel
-   fun:mwrite
-   fun:_cio_kreq
-   fun:_cipc_ksend
-}
-{
-   <linux_laptop_write_7>
-   Memcheck:Param
-   write(buf)
-   fun:__write_nocancel
-   fun:mwrite
    fun:_cio_kreq
    fun:kattach
+   fun:kinit
+   fun:kenter
+   fun:lam_linit
+   fun:lam_mpi_init
+   fun:MPI_Init
+   fun:_Z8NextMainiPPc
+   fun:main
 }
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   write(buf)
+   fun:write
+   fun:_cio_kreqfront
+   fun:_cio_kreq
+   fun:_cipc_ksend
+   fun:ksend
+   fun:dsend
+   fun:nsend
+   fun:lpattach
+   fun:kenter
+   fun:lam_linit
+   fun:lam_mpi_init
+   fun:MPI_Init
+}
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   writev(vector[...])
+   obj:/lib/libc-2.3.6.so
+   fun:mwritev
+   fun:_cio_send
+   fun:_cipc_ksend
+   fun:ksend
+   fun:dsend
+   fun:nsend
+   fun:lpattach
+   fun:kenter
+   fun:lam_linit
+   fun:lam_mpi_init
+   fun:MPI_Init
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   write(buf)
+   fun:write
+   fun:_cio_kreqfront
+   fun:_cipc_ksrfront
+   fun:ksrfront
+   fun:ksr
+   fun:dsfr
+   fun:getnodes
+   fun:getnodeid
+   fun:lam_linit
+   fun:lam_mpi_init
+   fun:MPI_Init
+   fun:_Z8NextMainiPPc
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   writev(vector[...])
+   obj:/lib/libc-2.3.6.so
+   fun:mwritev
+   fun:_cio_send
+   fun:_cipc_ksrfront
+   fun:ksrfront
+   fun:ksr
+   fun:dsfr
+   fun:getnodes
+   fun:getnodeid
+   fun:lam_linit
+   fun:lam_mpi_init
+   fun:MPI_Init
+}
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   write(buf)
+   fun:write
+   fun:_cio_kreqfront
+   fun:kdetach
+   fun:lam_kexit
+   fun:MPI_Finalize
+   fun:_Z8NextMainiPPc
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   writev(vector)
+   obj:/lib/libc-2.3.6.so
+   fun:mwritev
+   fun:_cio_send
+   fun:_cipc_ksend
+   fun:ksend
+   fun:dsend
+   fun:nsend
+   fun:lam_rtrnamesweep
+   fun:lam_nukepublished
+   fun:MPI_Finalize
+   fun:_Z8NextMainiPPc
+   fun:main
+}
+
+
+
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   write(buf)
+   fun:write
+   fun:_cio_kreqfront
+   fun:_cio_kreq
+   fun:kattach
+   fun:kinit
+   fun:kenter
+   fun:lam_linit
+   fun:lam_mpi_init
+   fun:MPI_Init
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   write(buf)
+   fun:write
+   fun:_cio_kreqfront
+   fun:_cipc_ksrfront
+   fun:ksrfront
+   fun:ksr
+   fun:dsfr
+   fun:getnodes
+   fun:getnodeid
+   fun:lam_linit
+   fun:lam_mpi_init
+   fun:MPI_Init
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   writev(vector)
+   obj:/lib/libc-2.3.6.so
+   fun:mwritev
+   fun:_cio_send
+   fun:_cipc_ksend
+   fun:ksend
+   fun:dsend
+   fun:nsend
+   fun:lam_rtrnamesweep
+   fun:lam_nukepublished
+   fun:MPI_Finalize
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   write(buf)
+   fun:write
+   fun:_cio_kreqfront
+   fun:kdetach
+   fun:lam_kexit
+   fun:MPI_Finalize
+   fun:main
+}
+
+#
+#  Test_Basic - Amesos_Klu 
+#
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   fun:lam_ssi_base_module_find
+   fun:lam_ssi_crlam_base_open
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   fun:sfh_argv_add
+   fun:asc_compat
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   fun:asc_bufparse
+   fun:build_app
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   fun:asc_bufparse
+   fun:build_app
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   fun:al_append
+   fun:asc_schedule
+   fun:build_app
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:realloc
+   fun:sfh_argv_add
+   fun:asc_compat
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   fun:sfh_argv_add
+   fun:asc_compat
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   obj:/lib/libc-2.3.6.so
+   fun:__nss_database_lookup
+   obj:*
+   obj:*
+   fun:getpwuid_r
+   fun:getpwuid
+   fun:lam_tmpdir_init_opt
+   fun:lam_tmpdir_init
+   fun:_cio_init
+   fun:_cipc_init
+   fun:kinit
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   fun:__nss_lookup_function
+   obj:*
+   obj:*
+   fun:getpwuid_r
+   fun:getpwuid
+   fun:lam_tmpdir_init_opt
+   fun:lam_tmpdir_init
+   fun:_cio_init
+   fun:_cipc_init
+   fun:kinit
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   fun:al_init
+   fun:nid_parse
+   fun:build_app
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   fun:sfh_argv_add
+   fun:sfh_argv_break_quoted
+   fun:asc_bufparse
+   fun:build_app
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:malloc
+   fun:tsearch
+   fun:__nss_lookup_function
+   obj:*
+   obj:*
+   fun:getpwuid_r
+   fun:getpwuid
+   fun:lam_tmpdir_init_opt
+   fun:lam_tmpdir_init
+   fun:_cio_init
+   fun:_cipc_init
+   fun:kinit
+}
+{
+   <insert a suppression name here>
+   Memcheck:Leak
+   fun:realloc
+   fun:sfh_argv_add
+   fun:sfh_argv_break_quoted
+   fun:asc_bufparse
+   fun:build_app
+   fun:main
+}
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   write(buf)
+   fun:write
+   fun:_cio_kreqfront
+   fun:_cipc_ksrfront
+   fun:ksrfront
+   fun:ksr
+   fun:dsfr
+   fun:bfrecv
+   fun:nrecv
+   fun:rpstate
+   fun:lam_send_pid_idx
+   fun:lam_linit
+   fun:lam_mpi_init
+}
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   writev(vector[...])
+   obj:*
+   fun:mwritev
+   fun:_cio_send
+   fun:_cipc_ksrfront
+   fun:ksrfront
+   fun:ksr
+   fun:dsfr
+   fun:bfrecv
+   fun:nrecv
+   fun:rpstate
+   fun:lam_send_pid_idx
+   fun:lam_linit
+}
+
+
+
+
+
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   writev(vector)
+   obj:/lib/libc-2.3.6.so
+   fun:mwritev
+   fun:_cio_send
+   fun:_cipc_ksend
+   fun:ksend
+   fun:dsend
+   fun:nsend
+   fun:lam_send_pid_idx
+   fun:lam_linit
+   fun:lam_mpi_init
+   fun:MPI_Init
+   fun:NextMain
+}
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   writev(vector)
+   obj:/lib/libc-2.3.6.so
+   fun:mwritev
+   fun:_cio_send
+   fun:_cipc_ksend
+   fun:*
+   fun:*
+   fun:*
+   fun:*
+   fun:*
+   fun:*
+   fun:*
+   fun:*
+}
+{
+   <KEPERER insert a suppression name here>
+   Memcheck:Param
+   writev(vector)
+   obj:/lib/libc-2.3.6.so
+   fun:mwritev
+   fun:_cio_send
+   fun:_cipc_ksend
+   fun:ksend
+   fun:dsend
+   fun:nsend
+   fun:lam_send_pid_idx
+   fun:lam_linit
+   fun:lam_mpi_init
+   fun:MPI_Init
+   fun:NextMain
+}
+
+
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   readv(vector)
+   obj:*
+   fun:mreadv
+   fun:_cio_recv
+   fun:_cipc_ksrback
+   fun:ksrback
+   fun:ksr
+   fun:dsfr
+   fun:bfrecv
+   fun:*
+   fun:*
+   fun:*
+   fun:*
+}
+
+
