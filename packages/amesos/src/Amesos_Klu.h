@@ -31,7 +31,7 @@
  *
  * \class Amesos_Klu
  *
- * \brief Interface to KLU internal solver.Interface to KLU internal solver.
+ * \brief Interface to KLU internal solver.
  *
  * \date Last updated on 24-May-05.
  */
@@ -86,8 +86,7 @@ do not suffer much fill-in (such as most circuit matrices when
 permuted properly) dense matrix kernels do not help, and the
 asymptotic run-time is of practical importance.
 
-The \c klu_
-btf code first permutes the matrix to upper block
+The \c klu_btf code first permutes the matrix to upper block
 triangular form (using two algorithms by Duff and Reid,
 MC13 and MC21, in the ACM Collected Algorithms).  It then permutes
 each block via a symmetric minimum degree ordering (AMD, by Amestoy,
@@ -245,6 +244,10 @@ private:
   // @}
   
   int SerialXlda_ ;
+
+#ifdef Bug_8212
+  int *lose_this_;
+#endif
   int *Lp, *Li, *Up, *Ui, *P ;	
   double *Lx, *Ux ;
   //

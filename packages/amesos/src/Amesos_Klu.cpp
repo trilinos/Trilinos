@@ -99,6 +99,7 @@ Amesos_Klu::Amesos_Klu(const Epetra_LinearProblem &prob ) :
   // MS // set up before calling Comm()
   Teuchos::ParameterList ParamList ;
   SetParameters( ParamList ) ;
+
 }
 
 //=============================================================================
@@ -455,6 +456,9 @@ int Amesos_Klu::PerformSymbolicFactorization()
 //=============================================================================
 int Amesos_Klu::PerformNumericFactorization( ) 
 {
+
+  lose_this_ = (int *) malloc( 30003 ) ;
+
   // Changed this; it was "if (!TrustMe)...
   // The behavior is not intuitive. Maybe we should introduce a new
   // parameter, FastSolvers or something like that, that does not perform
@@ -638,7 +642,24 @@ int Amesos_Klu::Solve()
   Epetra_MultiVector* vecX = 0 ;
   Epetra_MultiVector* vecB = 0 ;
 
-  if ( !TrustMe_ ) { 
+
+#ifdef Bug_8212
+  //  This demonstrates Bug #2812 - Valgrind does not catch this
+  //  memory leak
+  lose_this_ = (int *) malloc( 300 ) ;
+
+  
+#ifdef Bug_8212_B
+  //  This demonstrates Bug #2812 - Valgrind does catch this
+  //  use of unitialized data - but only in TestOptions.exe 
+  //  not in Test_Basic/amesos_test.exe 	
+  //  		
+    if ( lose_this_[0] == 12834 ) { 
+	     cout << __FILE__ << "::"  << __LINE__ << " very unlikely to happen " << endl ; 
+    }
+#endif
+#endif
+  if ( !TrustMe_  ) { 
 
     SerialB_ = Problem_->GetRHS() ;
     SerialX_ = Problem_->GetLHS() ;
