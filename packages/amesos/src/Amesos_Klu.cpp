@@ -457,8 +457,6 @@ int Amesos_Klu::PerformSymbolicFactorization()
 int Amesos_Klu::PerformNumericFactorization( ) 
 {
 
-  lose_this_ = (int *) malloc( 30003 ) ;
-
   // Changed this; it was "if (!TrustMe)...
   // The behavior is not intuitive. Maybe we should introduce a new
   // parameter, FastSolvers or something like that, that does not perform
