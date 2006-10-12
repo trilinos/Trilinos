@@ -96,7 +96,7 @@ AC_DEFUN([AZ_MATLAB_DEFAULT],
 # Ouput:
 #   MATLAB_USE (AM_CONDITIONAL) is true if matlab executable found
 #   and --with-matlab was requested; otherwise false.
-#   $MATLAB contains the full executable path to matlab if MATLAB_USE
+#   $MATLAB_BIN contains the full executable path to matlab if MATLAB_USE
 #   is true.
 #
 # Example:
@@ -108,7 +108,7 @@ AC_DEFUN([AZ_MATLAB_EXEC],
 [
     AC_ARG_VAR([MATLAB_EXE],[Matlab Executable Path])
 
-    # unless MATLAB was supplied to us (as a precious variable),
+    # unless MATLAB_EXE was supplied to us (as a precious variable),
     # see if --with-matlab[=MatlabExecutablePath], --with-matlab,
     # --without-matlab or --with-matlab=no was given.
     if test -z "$MATLAB_EXE"
@@ -124,17 +124,13 @@ AC_DEFUN([AZ_MATLAB_EXEC],
                 then
                     # "yes" was specified, but we don't have a path
                     # for the executable.
-		    # Check PATH + $1 if needed
-                    AC_MSG_RESULT(yes)		
-                    AC_PATH_PROG([MEX],mex,[],[$1:$PATH])
-                    AC_PATH_PROG([MATLAB],matlab,[$1:$PATH])
-                    if test -z "$MATLAB"
+                    # So, let's searth the PATH Environment Variable.
+                    AC_MSG_RESULT(yes)
+                    AC_PATH_PROG([MEX],mex,[],$1)
+                    AC_PATH_PROG([MATLAB_BIN],matlab,[],$1)
+                    if test -z "$MATLAB_EXE"
                     then
-                        AC_MSG_ERROR(no path to matlab binary found)
-                    fi
-                    if test -z "$MEX"
-                    then
-                        AC_MSG_ERROR(no path to mex binary found)
+                        AC_MSG_ERROR(no path to matlab found)
                     fi
                     az_matlab_use=true
                     AM_CONDITIONAL(MATLAB_USE, test x"$az_matlab_use" = x"true")
@@ -148,15 +144,7 @@ AC_DEFUN([AZ_MATLAB_EXEC],
                     AC_SUBST([MATLAB_EXE], ["${withval}"])
                     AC_MSG_RESULT($withval)
                     AC_PATH_PROG([MEX],mex,[],$MATLAB_EXE)
-                    AC_PATH_PROG([MATLAB],matlab,[],$MATLAB_EXE)
-                    if test -z "$MATLAB"
-                    then
-                        AC_MSG_ERROR(no path to matlab binary found)
-                    fi
-                    if test -z "$MEX"
-                    then
-                        AC_MSG_ERROR(no path to mex binary found)
-                    fi
+                    AC_PATH_PROG([MATLAB_BIN],matlab,[],$MATLAB_EXE)
                     az_matlab_use=true
                     AM_CONDITIONAL(MATLAB_USE, test x"$az_matlab_use" = x"true")
                 fi
