@@ -33,6 +33,7 @@
 
    By: Chris Siefert <csiefer@sandia.gov>
    Version History
+   10/12/2006 - Bug fixed for error tolerance for ISINT checks.
    10/09/2006 - Bug fixed where specifying coordinates for aggregation would not
                 work in 2D.
    10/04/2006 - Added aggregate mode, patches for Matlab R2006b + mwArray.
