@@ -31,12 +31,25 @@
 
 /*!	
   \file BelosTypes.hpp
-  \brief Collection of the enumerated lists used in Belos.
+  \brief Collection of types and exceptions used within the Belos solvers.
 */
 
 
 namespace Belos {
-  
+ 
+  //! @name Belos Exceptions
+  //@{
+
+  /*! \class BelosError 
+      \brief An exception class parent to all Belos exceptions.
+   */
+  class BelosError: public std::logic_error {
+    public: BelosError(const std::string& what_arg) : std::logic_error(what_arg) {}
+  };
+
+  //@}
+
+ 
   /*!
     \enum Belos::ETrans
     \brief Enumerated list for describing the application of an operator.

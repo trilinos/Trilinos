@@ -20,14 +20,17 @@ CORE_H = \
 	$(srcdir)/BelosBlockGmres.hpp \
 	$(srcdir)/BelosCG.hpp \
 	$(srcdir)/BelosConfigDefs.hpp \
+	$(srcdir)/BelosDGKSOrthoManager.hpp \
 	$(srcdir)/BelosEpetraAdapter.hpp \
 	$(srcdir)/BelosEpetraOperator.h \
 	$(srcdir)/BelosIterativeSolver.hpp \
 	$(srcdir)/BelosLinearProblem.hpp \
+	$(srcdir)/BelosMatOrthoManager.hpp \
 	$(srcdir)/BelosMultiVec.hpp \
 	$(srcdir)/BelosMultiVecTraits.hpp \
 	$(srcdir)/BelosOperator.hpp \
 	$(srcdir)/BelosOperatorTraits.hpp \
+	$(srcdir)/BelosOrthoManager.hpp \
 	$(srcdir)/BelosOutputManager.hpp \
 	$(srcdir)/BelosStatusTest.hpp \
 	$(srcdir)/BelosStatusTestCombo.hpp \

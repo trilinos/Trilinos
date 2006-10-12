@@ -57,6 +57,7 @@
 #include "BelosStatusTest.hpp"
 #include "BelosOperatorTraits.hpp"
 #include "BelosMultiVecTraits.hpp"
+#include "BelosDGKSOrthoManager.hpp"
 
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_LAPACK.hpp"
@@ -196,6 +197,9 @@ namespace Belos {
     //! Reference to the output manager for this linear solver. [passed in by user]
     RefCountPtr<OutputManager<ScalarType> > _om;
 
+    //! Reference to the orthogonalization manager for this linear solver.
+    RefCountPtr<OrthoManager<ScalarType, MV> > _ortho;
+
     //! Parameter list containing information for configuring the linear solver. [passed in by user]
     RefCountPtr<ParameterList> _pl;     
 
@@ -287,6 +291,7 @@ namespace Belos {
     const MagnitudeType two = 2.0;
     const MagnitudeType eps = SCT::eps();
     _dep_tol = MGT::one()/MGT::squareroot(two);
+    cout << "Dependency tolerance = " << _dep_tol << endl;
     _blk_tol = 10*sqrt(eps);
     _sing_tol = 10 * eps;
   }
@@ -383,6 +388,10 @@ namespace Belos {
     Teuchos::LAPACK<int, ScalarType> lapack;
     Teuchos::BLAS<int, ScalarType> blas;
     //
+    // Create the orthogonalization manager.
+    //
+    _ortho = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>() );
+    //
     // Obtain the output stream from the OutputManager.
     //
     _os = _om->GetOStream();
@@ -445,10 +454,12 @@ namespace Belos {
 	// Re-initialize RHS of the least squares system and create a view.
 	//
 	_z.putScalar();
-	Teuchos::SerialDenseMatrix<int,ScalarType> G10(Teuchos::View, _z, _blocksize, _blocksize);
-	ortho_flg = QRFactorAug( *U_vec, G10, true );
+	Teuchos::RefCountPtr< Teuchos::SerialDenseMatrix<int,ScalarType> > G10
+	  = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View, _z, _blocksize, _blocksize) );
+	int rank = 0;
+	rank = _ortho->normalize( *U_vec, G10 );
 	//
-	if (ortho_flg){
+	if (rank != _blocksize){
 	  if (_om->isVerbosityAndPrint( Errors )){
 	    *_os << "Exiting Block GMRES" << endl;
 	    *_os << "  Restart iteration# " << _restartiter
@@ -462,7 +473,7 @@ namespace Belos {
 	// be updated when U_vec is changed.  Thus, to ensure consistency between U_vec and _basisvecs,
 	// U_vec must be destroyed at this point!
 	//
-	if (U_vec.get()) {U_vec == null;}
+	U_vec = Teuchos::null;
 	//
 	//	
 	for (_iter=0; _iter<_length && _stest->CheckStatus(this) == Unconverged && !ortho_flg; ++_iter, ++_totaliter) {
@@ -614,6 +625,9 @@ namespace Belos {
   {
     //
     int i;	
+    bool flg = false;
+    ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
+    ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
     std::vector<int> index( _blocksize );
     RefCountPtr<MV> AU_vec = MVT::Clone( *_basisvecs,_blocksize );
     //
@@ -649,6 +663,54 @@ namespace Belos {
 	Teuchos::TimeMonitor OpTimer(*_timerOp);
 	_lp->Apply( *U_vec, *AU_vec ); 
       }
+
+    // Clean up pointer to the j-th block of _basisvecs
+    U_vec = Teuchos::null;
+
+    /*
+    //
+    // Resize index and get previous vectors.
+    //
+    int num_prev = (_iter+1)*_blocksize;
+    index.resize( num_prev );
+    for (i=0; i<num_prev; i++) { 
+      index[i] = i; 
+    }
+    RefCountPtr<MV> V_prev = MVT::CloneView( *_basisvecs, index );
+    Teuchos::Array< RefCountPtr<const MV> > V_array( 1, V_prev );
+    //
+    // Get a view of the current part of the upper-hessenberg matrix.
+    //
+    RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > h_new 
+      = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::View, _hessmatrix, num_prev, _blocksize, 0, _iter*_blocksize ) );
+    Teuchos::Array< RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > h_array( 1, h_new );
+
+    RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > r_new
+      = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::View, _hessmatrix, _blocksize, _blocksize, num_prev, _iter*_blocksize ) );
+    //
+    // Orthonormalize the new block of the Krylov expansion
+    // 
+    int rank = _ortho->projectAndNormalize( *AU_vec, h_array, r_new, V_array );
+
+    if (rank != _blocksize) {
+      flg = true;
+    } else {
+      //
+      // Copy the new multivector into the basis
+      //
+      index.resize(_blocksize);
+      for (i=0; i<_blocksize; i++) { index[i] = (_iter+1)*_blocksize + i; }
+      //
+      // Associate (j+1)-st block of ArnoldiVecs with F_vec.
+      //
+      RefCountPtr<MV> F_vec = MVT::CloneView( *_basisvecs, index );
+      //
+      // Copy preconditioned AU_vec into (j+1)st block of _basisvecs
+      //
+      MVT::MvAddMv( one, *AU_vec, zero, *AU_vec, *F_vec );
+    }
+
+    */
     //
     //  Orthogonalize the new block in the Krylov expansion and check for dependencies.
     //
@@ -668,13 +730,14 @@ namespace Belos {
     // of the current Krylov subspaces), block orthogonalization is 
     // implemented with a variant of A. Ruhe's approach.
     //
-    bool flg = false;
     if (dep_flg){
       Teuchos::TimeMonitor OrthoTimer(*_timerOrtho);
       flg = BlkOrthSing(*AU_vec);
     }
     //
+
     return flg;
+
     //
   } // end BlockReduction()
   
