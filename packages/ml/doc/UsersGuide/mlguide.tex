@@ -3152,7 +3152,6 @@ The build system uses the \texttt{mexext} script from Mathworks to
 detect the appropriate file extension for the architecture.  At least
 at present, this means that cross-compilation is not possible.  
 
-
 \subsection{Using MLMEX}\label{sec:mlmex:usage}
 MLMEX is designed to be interfaced with via the MATLAB script
 \texttt{ml.m}.  There are five modes in which MLMEX can be run:
@@ -3249,6 +3248,23 @@ The parameter \texttt{A} represents the sparse matrix to perform
 aggregation upon.  The aggregates are returned and all memory is
 immediately freed.  The purpose of this option is to allow access to
 ML's aggregation routines in MATLAB.
+
+\subsection{Tips and Tricks }\label{sec:mlmex:tips}
+
+Internally, MATLAB represents all data as doubles unless you go
+through efforts to do otherwise.  MLMEX detects integer parameters by
+a relative error test, seeing if the relative difference between the
+value from MATLAB and the value of the \texttt{int}-typecast value are
+less than 1e-15.  Unfortunately, this means that MLMEX will choose the 
+incorrect type for parameters which are doubles that happen to have an
+integer value (a good example of where this might happen would be the parameter
+`smoother MLS: alpha', which defaults to 30.0).  Since MLMEX does no
+internal typechecking of 
+parameters (it uses ML's internal checks), it has no way of detecting
+this conflict.  From the user's perspective, avoiding this is as
+simple as adding a small perturbation (greater than a relative 1e-15)
+to the parameter that makes it non-integer valued.
+
 
 %%%
 %%%
