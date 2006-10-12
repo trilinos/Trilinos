@@ -184,16 +184,15 @@ AC_DEFUN([AZ_MATLAB_EXEC],
 AC_DEFUN([AZ_MATLAB_ROOT],
 [
     AC_ARG_VAR([MATLAB],[Matlab Root Directory])
-
     # unless MATLAB_ROOT was supplied to us (as a precious variable),
     # see if --with-matlab-root[=MatlabExecutablePath], --with-matlab-root,
     # --without-matlab or --with-matlab=no was given.
-    if test -z "$MATLAB"
+    if test -z "$MATLAB_ROOT"
     then
         AC_MSG_CHECKING(for --with-matlab-root)
         AC_ARG_WITH(
             matlab-root,
-            AC_HELP_STRING([--with-matlab-root@<:@=MATLAB@:>@],
+            AC_HELP_STRING([--with-matlab-root@<:@=MATLAB_ROOT@:>@],
                 [absolute path name of Matlab root directory]
             ),
             [
@@ -201,7 +200,7 @@ AC_DEFUN([AZ_MATLAB_ROOT],
                 then
                     # "yes" was specified, not an actual path.  Well, we'd better hope that $1
                     # has the root path for matlab.  We'll use mexext to check (not to mention 
-                    # we need to find it anyway
+                    # we need to find it anyway).
                     AC_MSG_RESULT(yes)
                     AC_PATH_PROG([MEXEXT],mexext,[],$1/bin)
                     if test -z "$MEXEXT"
@@ -209,6 +208,7 @@ AC_DEFUN([AZ_MATLAB_ROOT],
                         AC_MSG_ERROR(matlab root not found)
                     else 
                       MV=`$MEXEXT`
+  		      echo "Running $MEXEXT to yield $MV"
                       AC_SUBST(MEXEXT_VALUE,["$MV"])
                     fi
                     az_matlab_root_use=true
@@ -220,16 +220,18 @@ AC_DEFUN([AZ_MATLAB_ROOT],
                     AM_CONDITIONAL(MATLAB_ROOT_USE, test x"$az_matlab_root_use" = x"true")
                 else
                     # $withval must be the root path then.
+                    AC_SUBST([MATLAB_ROOT], ["${withval}"])
                     AC_SUBST([MATLAB], ["${withval}"])
                     AC_MSG_RESULT($withval)
 
                     # Check for mexext
-                    AC_PATH_PROG([MEXEXT],mexext,[],$MATLAB/bin)
+                    AC_PATH_PROG([MEXEXT],mexext,[],$MATLAB_ROOT/bin)
                     if test -z "$MEXEXT"
                     then
-                        AC_MSG_ERROR(mexext not found in $MATLAB/bin)
+                        AC_MSG_ERROR(mexext not found in $MATLAB_ROOT/bin)
                     else
                       MV=`$MEXEXT`
+  		      echo "Running $MEXEXT to yield $MV"
                       AC_SUBST(MEXEXT_VALUE,["$MV"])
                     fi
                     az_matlab_root_use=true

@@ -11,8 +11,8 @@ if test -n "$MATLAB_EXE"; then
   AM_CONDITIONAL(BUILD_MATLAB, true)
  
   # Let's include the appropriate MATLAB include directories
-  if test -n "$MATLAB"; then
-    MATLAB_INCLUDES=-I$MATLAB/extern/include
+  if test -n "$MATLAB_ROOT"; then
+    MATLAB_INCLUDES=-I$MATLAB_ROOT/extern/include
     echo "Setting MATLAB_INCLUDES to: $MATLAB_INCLUDES" #debug line
   else 
     MATLAB_INCLUDES=[]

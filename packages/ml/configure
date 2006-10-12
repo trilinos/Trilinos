@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CXX CXXFLAGS LDFLAGS CPPFLAGS ac_ct_CXX EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CC CFLAGS ac_ct_CC CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB ML_BUILD_DIRECTORY USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP USING_EXPORT_MAKEFILES_TRUE USING_EXPORT_MAKEFILES_FALSE PERL_EXE HAVE_PERL USING_PERL_TRUE USING_PERL_FALSE USING_GNUMAKE_TRUE USING_GNUMAKE_FALSE EGREP LIBOBJS ML_CFUNC_TRUE ML_CFUNC_FALSE ML_BENCHMARKING_TRUE ML_BENCHMARKING_FALSE ML_USING_NOX_TRUE ML_USING_NOX_FALSE ML_USING_EPETRA_TRUE ML_USING_EPETRA_FALSE ML_USING_AMESOS_TRUE ML_USING_AMESOS_FALSE ML_USING_IFPACK_TRUE ML_USING_IFPACK_FALSE ML_USING_TEUCHOS_TRUE ML_USING_TEUCHOS_FALSE ML_USING_AZTECOO_TRUE ML_USING_AZTECOO_FALSE ML_USING_EPETRAEXT_TRUE ML_USING_EPETRAEXT_FALSE ML_USING_GALERI_TRUE ML_USING_GALERI_FALSE ENABLE_ML_THYRA_TRUE ENABLE_ML_THYRA_FALSE ML_STANDALONE_MODE_TRUE ML_STANDALONE_MODE_FALSE ML_BUILD_EXAMPLES_TRUE ML_BUILD_EXAMPLES_FALSE BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_ML_PYTHON_TRUE BUILD_ML_PYTHON_FALSE PYTHON_USE_TRUE PYTHON_USE_FALSE PYTHON PYTHON_PREFIX PYTHON_EXECPREFIX BUILD_PYTHON_TRUE BUILD_PYTHON_FALSE PYTHON_CSPEC PYTHON_LSPEC WITH_SWIG SWIG SWIG_LIB SWIG_PYTHON_OPT SWIG_PYTHON_CPPFLAGS HAVE_SWIG_TRUE HAVE_SWIG_FALSE GNU_HAVE_SWIG FLIBS BLAS_LIBS LAPACK_LIBS BUILD_ML_MATLAB_TRUE BUILD_ML_MATLAB_FALSE MATLAB_USE_TRUE MATLAB_USE_FALSE MATLAB_ROOT_USE_TRUE MATLAB_ROOT_USE_FALSE MATLAB_EXE MEX MATLAB MEXEXT MEXEXT_VALUE BUILD_MATLAB_TRUE BUILD_MATLAB_FALSE ML_MATLAB_INCLUDES TRILINOS_TEMPLATE_OBJS ac_aux_dir LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CXX CXXFLAGS LDFLAGS CPPFLAGS ac_ct_CXX EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CC CFLAGS ac_ct_CC CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB ML_BUILD_DIRECTORY USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP USING_EXPORT_MAKEFILES_TRUE USING_EXPORT_MAKEFILES_FALSE PERL_EXE HAVE_PERL USING_PERL_TRUE USING_PERL_FALSE USING_GNUMAKE_TRUE USING_GNUMAKE_FALSE EGREP LIBOBJS ML_CFUNC_TRUE ML_CFUNC_FALSE ML_BENCHMARKING_TRUE ML_BENCHMARKING_FALSE ML_USING_NOX_TRUE ML_USING_NOX_FALSE ML_USING_EPETRA_TRUE ML_USING_EPETRA_FALSE ML_USING_AMESOS_TRUE ML_USING_AMESOS_FALSE ML_USING_IFPACK_TRUE ML_USING_IFPACK_FALSE ML_USING_TEUCHOS_TRUE ML_USING_TEUCHOS_FALSE ML_USING_AZTECOO_TRUE ML_USING_AZTECOO_FALSE ML_USING_EPETRAEXT_TRUE ML_USING_EPETRAEXT_FALSE ML_USING_GALERI_TRUE ML_USING_GALERI_FALSE ENABLE_ML_THYRA_TRUE ENABLE_ML_THYRA_FALSE ML_STANDALONE_MODE_TRUE ML_STANDALONE_MODE_FALSE ML_BUILD_EXAMPLES_TRUE ML_BUILD_EXAMPLES_FALSE BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_ML_PYTHON_TRUE BUILD_ML_PYTHON_FALSE PYTHON_USE_TRUE PYTHON_USE_FALSE PYTHON PYTHON_PREFIX PYTHON_EXECPREFIX BUILD_PYTHON_TRUE BUILD_PYTHON_FALSE PYTHON_CSPEC PYTHON_LSPEC WITH_SWIG SWIG SWIG_LIB SWIG_PYTHON_OPT SWIG_PYTHON_CPPFLAGS HAVE_SWIG_TRUE HAVE_SWIG_FALSE GNU_HAVE_SWIG FLIBS BLAS_LIBS LAPACK_LIBS BUILD_ML_MATLAB_TRUE BUILD_ML_MATLAB_FALSE MATLAB_USE_TRUE MATLAB_USE_FALSE MATLAB_ROOT_USE_TRUE MATLAB_ROOT_USE_FALSE MATLAB_EXE MEX MATLAB MEXEXT MEXEXT_VALUE MATLAB_ROOT BUILD_MATLAB_TRUE BUILD_MATLAB_FALSE ML_MATLAB_INCLUDES TRILINOS_TEMPLATE_OBJS ac_aux_dir LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -1130,7 +1130,7 @@ Optional Packages:
   --with-lapack=<lib>     use LAPACK library <lib>
   --with-matlab-exec[=MATLAB_EXE]
                           absolute path of Matlab executable
-  --with-matlab-root[=MATLAB]
+  --with-matlab-root[=MATLAB_ROOT]
                           absolute path name of Matlab root directory
 
 Some influential environment variables:
@@ -13105,11 +13105,10 @@ fi;
      # Check for --with-matlab-exec
 
 
-
     # unless MATLAB_ROOT was supplied to us (as a precious variable),
     # see if --with-matlab-root[=MatlabExecutablePath], --with-matlab-root,
     # --without-matlab or --with-matlab=no was given.
-    if test -z "$MATLAB"
+    if test -z "$MATLAB_ROOT"
     then
         echo "$as_me:$LINENO: checking for --with-matlab-root" >&5
 echo $ECHO_N "checking for --with-matlab-root... $ECHO_C" >&6
@@ -13122,7 +13121,7 @@ if test "${with_matlab_root+set}" = set; then
                 then
                     # "yes" was specified, not an actual path.  Well, we'd better hope that
                     # has the root path for matlab.  We'll use mexext to check (not to mention
-                    # we need to find it anyway
+                    # we need to find it anyway).
                     echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
                     # Extract the first word of "mexext", so it can be a program name with args.
@@ -13171,6 +13170,7 @@ echo "$as_me: error: matlab root not found" >&2;}
    { (exit 1); exit 1; }; }
                     else
                       MV=`$MEXEXT`
+  		      echo "Running $MEXEXT to yield $MV"
                       MEXEXT_VALUE="$MV"
 
                     fi
@@ -13202,6 +13202,8 @@ fi
 
                 else
                     # $withval must be the root path then.
+                    MATLAB_ROOT="${withval}"
+
                     MATLAB="${withval}"
 
                     echo "$as_me:$LINENO: result: $withval" >&5
@@ -13221,7 +13223,7 @@ else
   ;;
   *)
   as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $MATLAB/bin
+for as_dir in $MATLAB_ROOT/bin
 do
   IFS=$as_save_IFS
   test -z "$as_dir" && as_dir=.
@@ -13249,11 +13251,12 @@ fi
 
                     if test -z "$MEXEXT"
                     then
-                        { { echo "$as_me:$LINENO: error: mexext not found in $MATLAB/bin" >&5
-echo "$as_me: error: mexext not found in $MATLAB/bin" >&2;}
+                        { { echo "$as_me:$LINENO: error: mexext not found in $MATLAB_ROOT/bin" >&5
+echo "$as_me: error: mexext not found in $MATLAB_ROOT/bin" >&2;}
    { (exit 1); exit 1; }; }
                     else
                       MV=`$MEXEXT`
+  		      echo "Running $MEXEXT to yield $MV"
                       MEXEXT_VALUE="$MV"
 
                     fi
@@ -13311,8 +13314,8 @@ fi
 
 
   # Let's include the appropriate MATLAB include directories
-  if test -n "$MATLAB"; then
-    MATLAB_INCLUDES=-I$MATLAB/extern/include
+  if test -n "$MATLAB_ROOT"; then
+    MATLAB_INCLUDES=-I$MATLAB_ROOT/extern/include
     echo "Setting MATLAB_INCLUDES to: $MATLAB_INCLUDES" #debug line
   else
     MATLAB_INCLUDES=
@@ -13802,7 +13805,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:13805: \"$ac_link\") >&5
+(eval echo $as_me:13808: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -13880,7 +13883,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:13883: \"$ac_link\") >&5
+(eval echo $as_me:13886: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -15298,6 +15301,7 @@ s,@MEX@,$MEX,;t t
 s,@MATLAB@,$MATLAB,;t t
 s,@MEXEXT@,$MEXEXT,;t t
 s,@MEXEXT_VALUE@,$MEXEXT_VALUE,;t t
+s,@MATLAB_ROOT@,$MATLAB_ROOT,;t t
 s,@BUILD_MATLAB_TRUE@,$BUILD_MATLAB_TRUE,;t t
 s,@BUILD_MATLAB_FALSE@,$BUILD_MATLAB_FALSE,;t t
 s,@ML_MATLAB_INCLUDES@,$ML_MATLAB_INCLUDES,;t t
