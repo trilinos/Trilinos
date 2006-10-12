@@ -90,7 +90,7 @@ extern void _main();
 /* Macros */
 #define MAX(x,y) ((x)>(y)?(x):(y))
 #define FLOOR(x) ((int)(x))
-#define ISINT(x) ((x)==0? (((x-(int)(x))<1e-15)?true:false) (((x-(int)(x))<1e-15*(x))?true:false))
+#define ISINT(x) ((x)==0?(((x-(int)(x))<1e-15)?true:false):(((x-(int)(x))<1e-15*(x))?true:false))
 #define IS_FALSE 0
 #define IS_TRUE  1
 #define MLMEX_ERROR -1
