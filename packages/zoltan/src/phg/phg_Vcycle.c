@@ -208,11 +208,13 @@ int Zoltan_PHG_Partition (
   static int timer_match = -1,    /* Timers for various stages */
              timer_coarse = -1,   /* Declared static so we can accumulate */
              timer_refine = -1,   /* times over calls to Zoltan_PHG_Partition */
+             timer_cpart=-1, timer_gather=-1, timer_crefine=-1,
              timer_coarsepart = -1,
              timer_project = -1,
              timer_vcycle = -1;   /* times everything in Vcycle not included
                                      in above timers */
   int do_timing = (hgp->use_timers > 1);
+  int fine_timing = (hgp->use_timers > 2);
   int vcycle_timing = (hgp->use_timers > 4);
 
   ZOLTAN_TRACE_ENTER(zz, yo);
@@ -399,9 +401,14 @@ int Zoltan_PHG_Partition (
 	if (hgc->myProc < 0)
 	  /* I'm not in the redistributed part so I should go to uncoarsening
 	     refinement and wait */ {
-	  Zoltan_Timer_Init(zz->ZTime, 1, "CP Gather");
-	  Zoltan_Timer_Init(zz->ZTime, 0, "CP Refine");
-	  Zoltan_Timer_Init(zz->ZTime, 0, "CP Part");
+	  if (fine_timing) {
+	    if (timer_gather < 0)
+	      timer_gather = Zoltan_Timer_Init(zz->ZTime, 1, "CP Gather");
+	    if (timer_crefine < 0)
+	      timer_crefine =Zoltan_Timer_Init(zz->ZTime, 0, "CP Refine");
+	    if (timer_cpart < 0)
+	      timer_cpart = Zoltan_Timer_Init(zz->ZTime, 0, "CP Part");
+	  }
 	  goto Refine;
 	}
 
