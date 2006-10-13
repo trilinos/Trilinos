@@ -1,6 +1,5 @@
 /***************************************************************
-** Basic example of using Zoltan to compute an RCB partitioning
-** of a very simple mesh or graph.
+** Basic example of using Zoltan to partition a graph.
 ***************************************************************/
 
 #include <mpi.h>
@@ -16,10 +15,11 @@ int main(int argc, char *argv[])
   float ver;
   struct Zoltan_Struct *zz;
   int changes, numGidEntries, numLidEntries, numImport, numExport;
-  ZOLTAN_ID_PTR importGlobalGids, importLocalGids, exportGlobalGids, exportLocalGids; 
+  ZOLTAN_ID_PTR importGlobalGids, importLocalGids, exportGlobalGids, exportLocalGids;
   int *importProcs, *importToPart, *exportProcs, *exportToPart;
   float *wgt_list;
   int *gid_flags, *gid_list, *lid_list;
+
 
   /******************************************************************
   ** Initialize MPI and Zoltan
@@ -49,28 +49,27 @@ int main(int argc, char *argv[])
   /* General parameters */
 
   Zoltan_Set_Param(zz, "DEBUG_LEVEL", "0");
-  Zoltan_Set_Param(zz, "LB_METHOD", "RCB");
+  Zoltan_Set_Param(zz, "LB_METHOD", "GRAPH");
   Zoltan_Set_Param(zz, "NUM_GID_ENTRIES", "1"); 
   Zoltan_Set_Param(zz, "NUM_LID_ENTRIES", "1");
   Zoltan_Set_Param(zz, "OBJ_WEIGHT_DIM", "1");
   Zoltan_Set_Param(zz, "RETURN_LISTS", "ALL");
 
-  /* RCB parameters */
+  /* Graph parameters */
 
-  Zoltan_Set_Param(zz, "KEEP_CUTS", "1"); 
-  Zoltan_Set_Param(zz, "RCB_OUTPUT_LEVEL", "0");
-  Zoltan_Set_Param(zz, "RCB_RECTILINEAR_BLOCKS", "1"); 
+  Zoltan_Set_Param(zz, "PARMETIS_METHOD", "PARTKWAY"); 
+  Zoltan_Set_Param(zz, "PARMETIS_COARSE_ALG", "2");
+  Zoltan_Set_Param(zz, "CHECK_GRAPH", "2"); 
 
-  /* Query functions - defined in simpleQueries.h, to return
-   * information about objects defined in simpleGraph.h      */
+  /* Query functions - defined in simpleQueries.h */
 
   Zoltan_Set_Num_Obj_Fn(zz, get_number_of_objects, NULL);
   Zoltan_Set_Obj_List_Fn(zz, get_object_list, NULL);
-  Zoltan_Set_Num_Geom_Fn(zz, get_num_geometry, NULL);
-  Zoltan_Set_Geom_Multi_Fn(zz, get_geometry_list, NULL);
+  Zoltan_Set_Num_Edges_Multi_Fn(zz, get_num_edges_list, NULL);
+  Zoltan_Set_Edge_List_Multi_Fn(zz, get_edge_list, NULL);
 
   /******************************************************************
-  ** Zoltan can now partition the vertices in the simple mesh.
+  ** Zoltan can now partition the simple graph.
   ** In this simple example, we assume the number of partitions is
   ** equal to the number of processes.  Process rank 0 will own
   ** partition 0, process rank 1 will own partition 1, and so on.
@@ -100,20 +99,21 @@ int main(int argc, char *argv[])
 
   /******************************************************************
   ** In a real application, you would rebalance the problem now by
-  ** sending the objects to their new partitions.
+  ** sending the objects to their new partitions.  Your query 
+  ** functions would need to reflect the new partitioning.
   ******************************************************************/
 
   /******************************************************************
   ** Create a list of GIDs now assigned to my partition, let
   ** process zero display the partitioning.
   ******************************************************************/
-
+  
   ngids = get_number_of_objects(NULL, &rc);
   gid_flags = (int *)calloc(sizeof(int) , simpleNumVertices);
   gid_list = (int *)malloc(sizeof(int) * ngids);
   lid_list = (int *)malloc(sizeof(int) * ngids);
   wgt_list = (float *)malloc(sizeof(float) * simpleNumVertices);
-  get_object_list(NULL, 1, 1, 
+  get_object_list(NULL, 1, 1,
                   (ZOLTAN_ID_PTR)gid_list, (ZOLTAN_ID_PTR)lid_list,
                   1, wgt_list, &rc);
 
