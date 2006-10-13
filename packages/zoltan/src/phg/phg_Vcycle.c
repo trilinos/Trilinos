@@ -398,8 +398,12 @@ int Zoltan_PHG_Partition (
 
 	if (hgc->myProc < 0)
 	  /* I'm not in the redistributed part so I should go to uncoarsening
-	     refinement and wait */
+	     refinement and wait */ {
+	  Zoltan_Timer_Init(zz->ZTime, 1, "CP Gather");
+	  Zoltan_Timer_Init(zz->ZTime, 0, "CP Refine");
+	  Zoltan_Timer_Init(zz->ZTime, 0, "CP Part");
 	  goto Refine;
+	}
 
 	hg = vcycle->hg;
 	hg->redl = hgp->redl; /* not set with hg creation */
