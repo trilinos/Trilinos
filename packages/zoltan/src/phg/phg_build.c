@@ -106,6 +106,7 @@ char *yo = "Zoltan_PHG_Build_Hypergraph";
   zhg->Input_Parts = NULL;
   zhg->Output_Parts = NULL;
   zhg->AppObjSizes = NULL;
+  zhg->showMoveVol = 0;
   zhg->GnRepartVtx = 0;
   zhg->GnObj = 0;
   zhg->nRemove = 0;
@@ -2740,7 +2741,8 @@ static int getObjectSizes(ZZ *zz, ZHG *zhg)
 {
     int i, ierr=ZOLTAN_OK;
     char *yo="getObjectSizes";
-    
+
+    zhg->showMoveVol = 1;
     if (zhg->nObj) {
       if (!(zhg->AppObjSizes = (int *) ZOLTAN_MALLOC(zhg->nObj * sizeof(int)))) 
         MEMORY_ERROR;

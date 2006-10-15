@@ -508,7 +508,8 @@ static int Zoltan_ParMetis_Jostle(
   int nsend, wgtflag, numflag, graph_type; 
   int get_graph_data, get_geom_data, get_times; 
   int compute_only_part_changes=0; /* TODO: Read parameter when implemented. */
-  idxtype *vtxdist, *xadj, *adjncy, *vwgt, *vwgt_new, *adjwgt, *part, *vsize, *vsizeBACKUP=NULL;
+  idxtype *vtxdist, *xadj, *adjncy, *vwgt, *vwgt_new, *adjwgt, *part, *vsize, *vsizeBACKUP;
+  int showMoveVol=0;
   int *adjproc;
   idxtype *sep_sizes, *part_orig;
   int num_obj_orig, ncon, start_index, compute_order=0;
@@ -553,7 +554,7 @@ static int Zoltan_ParMetis_Jostle(
    */
   vtxdist = xadj = adjncy = vwgt = vwgt_new = adjwgt = part = NULL;
   adjproc = NULL;
-  vsize = sep_sizes = NULL;
+  vsize = vsizeBACKUP = sep_sizes = NULL;
   float_vwgt = ewgts = xyz = imb_tols = NULL;
   geom_vec = NULL;
   local_ids = NULL;
@@ -891,7 +892,9 @@ static int Zoltan_ParMetis_Jostle(
 #if (PARMETIS_MAJOR_VERSION >= 3) 
   /* Get object sizes if requested */ 
   if (options[PMV3_OPT_USE_OBJ_SIZE] && 
-      (zz->Get_Obj_Size || zz->Get_Obj_Size_Multi)) {
+      (zz->Get_Obj_Size || zz->Get_Obj_Size_Multi) &&
+      (!strcmp(alg, "ADAPTIVEREPART") || final_output)) {
+    showMoveVol = 1;
     vsize = (idxtype *) ZOLTAN_MALLOC(num_obj*sizeof(idxtype));
     vsizeBACKUP = (idxtype *) ZOLTAN_MALLOC(num_obj*sizeof(idxtype));    
     if (num_obj && !vsize){
@@ -1466,7 +1469,7 @@ End:
       }
 
 #ifdef UVC_DORUK_COMP_OBJSIZE
-      if (vsizeBACKUP) {      
+      if (showMoveVol) {      
           MPI_Allreduce(&minD, &gminD, 1, MPI_DOUBLE, MPI_MIN, zz->Communicator);
           MPI_Allreduce(&maxD, &gmaxD, 1, MPI_DOUBLE, MPI_MAX, zz->Communicator);
           
@@ -1512,8 +1515,8 @@ End:
         printf("STATS Runs %d  cutn CURRENT %d  MAX %d  MIN %d  AVG %f\n",
                 nRuns, cutn, cutnmax, cutnmin, cutnsum/nRuns);
 	printf("STATS Runs %d  %s CURRENT %f  MAX %f  MIN %f  AVG %f\n",
-		nRuns, vsizeBACKUP ? "moveVol" : "moveCnt", gmove, movemax, movemin, movesum/nRuns);
-        if (vsizeBACKUP)
+		nRuns, showMoveVol ? "moveVol" : "moveCnt", gmove, movemax, movemin, movesum/nRuns);
+        if (showMoveVol)
             printf("STATS Runs %d  repart CURRENT %f  MAX %f  MIN %f  AVG %f\n",
                    nRuns, repart, repartmax, repartmin, repartsum/nRuns);        
         
@@ -1536,10 +1539,17 @@ End:
   if (float_vwgt)ZOLTAN_FREE(&float_vwgt); 
   if (ewgts)     ZOLTAN_FREE(&ewgts); 
   if (imb_tols)  ZOLTAN_FREE(&imb_tols);
+
 #define PARMETIS31_ALWAYS_FREES_VSIZE   /* Bug in ParMetis 3.1 */  
+
+  if (vsize)   {
+      if (strcmp(alg, "ADAPTIVEREPART")) /* it is not adaptive repart; so free it */
+          ZOLTAN_FREE(&vsize);
 #ifndef PARMETIS31_ALWAYS_FREES_VSIZE
-  if (vsize)     ZOLTAN_FREE(&vsize); 
-#endif
+      else 
+          ZOLTAN_FREE(&vsize);      
+#endif      
+  }
   if (vsizeBACKUP) ZOLTAN_FREE(&vsizeBACKUP);    
   if (sep_sizes) ZOLTAN_FREE(&sep_sizes);
   if (newproc)   ZOLTAN_FREE(&newproc);

@@ -815,8 +815,13 @@ static int coarse_part_greedy (
   PHGPartParams *hgp
 )
 {
-  int start, scaling;
-  float *old_ewgt=NULL, *new_ewgt=NULL;
+  int start;
+#if 0
+  /* UVC commented out to avoid warning */
+  int scaling;
+  float *new_ewgt=NULL;
+#endif
+  float *old_ewgt=NULL; 
   int err = ZOLTAN_OK;
   char *yo = "coarse_part_greedy";
 

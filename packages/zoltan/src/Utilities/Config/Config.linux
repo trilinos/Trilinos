@@ -104,7 +104,7 @@ CPPC			= mpiCC -Wall -Werror-implicit-function-declaration
 
 DBG_FLAGS		= -g -Wall
 OPT_FLAGS		= -O2 
-CFLAGS 			= $(DBG_FLAGS)
+CFLAGS 			= $(OPT_FLAGS)
 
 LOCAL_F90		= $(F90)
 
@@ -120,8 +120,8 @@ endif
 #MPI_LIBPATH = -L/usr/lib/gcc-lib/i386-redhat-linux/2.96
 
 
-PARMETIS_LIBPATH        = -L/Net/local/proj/zoltan/arch/linux/lib/ParMETIS3 
-PARMETIS_INCPATH        = -I/Net/local/proj/zoltan/arch/all/src/ParMETIS3
+PARMETIS_LIBPATH        = -L/home/vjleung/TSTT/ParMETIS3_1
+PARMETIS_INCPATH        = -I/home/vjleung/TSTT/ParMETIS3_1
 
 
 #JOSTLE_LIBPATH 	= -L/Net/local/proj/zoltan/arch/linux/lib

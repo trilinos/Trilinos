@@ -512,7 +512,7 @@ End:
                                        zz->LB.Num_Global_Parts);
       
 #ifdef UVC_DORUK_COMP_OBJSIZE      
-      if (zoltan_hg->AppObjSizes) {
+      if (zoltan_hg->showMoveVol) {
           minD = zoltan_hg->AppObjSizes[0];
           maxD = zoltan_hg->AppObjSizes[0];
           }
@@ -523,7 +523,7 @@ End:
             move += (double) ((zoltan_hg->AppObjSizes) ? zoltan_hg->AppObjSizes[i] : 1.0);
 
 #ifdef UVC_DORUK_COMP_OBJSIZE        
-        if (zoltan_hg->AppObjSizes) {        
+        if (zoltan_hg->showMoveVol) {        
             minD = minD < zoltan_hg->AppObjSizes[i] ? minD : zoltan_hg->AppObjSizes[i];
             maxD = maxD > zoltan_hg->AppObjSizes[i] ? maxD : zoltan_hg->AppObjSizes[i];
         }
@@ -532,7 +532,7 @@ End:
     }
 
 #ifdef UVC_DORUK_COMP_OBJSIZE    
-    if (zoltan_hg->AppObjSizes) {
+    if (zoltan_hg->showMoveVol) {
         MPI_Allreduce(&minD, &gminD, 1, MPI_DOUBLE, MPI_MIN, zz->Communicator);
         MPI_Allreduce(&maxD, &gmaxD, 1, MPI_DOUBLE, MPI_MAX, zz->Communicator);
     
@@ -586,8 +586,8 @@ End:
                 nRuns, cutn, cutnmax, cutnmin, cutnsum/nRuns);
 	uprintf(hg->comm,
 		"STATS Runs %d  %s CURRENT %f  MAX %f  MIN %f  AVG %f\n",
-		nRuns, (zoltan_hg->AppObjSizes) ? "moveVol" : "moveCnt", gmove, movemax, movemin, movesum/nRuns);
-        if (zoltan_hg->AppObjSizes) 
+		nRuns, (zoltan_hg->showMoveVol) ? "moveVol" : "moveCnt", gmove, movemax, movemin, movesum/nRuns);
+        if (zoltan_hg->showMoveVol) 
             uprintf(hg->comm,
 		"STATS Runs %d  repart CURRENT %f  MAX %f  MIN %f  AVG %f\n",
 		nRuns, repart, repartmax, repartmin, repartsum/nRuns);        
