@@ -71,7 +71,7 @@
 #endif
 
 // Status tests
-// #include "LOCA_StatusTest_Wrapper.H"
+#include "LOCA_StatusTest_Wrapper.H"
 // #include "LOCA_Continuation_StatusTest_ParameterUpdateNorm.H"
 // #include "LOCA_Continuation_StatusTest_ParameterResidualNorm.H"
 // #include "LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.H"

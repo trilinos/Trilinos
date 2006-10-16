@@ -42,8 +42,9 @@
 #include "LOCA_StatusTest_Wrapper.H"
 #include "LOCA_Solver_Wrapper.H"
 
-LOCA::StatusTest::Wrapper::Wrapper(NOX::StatusTest::Generic& s) :
-  statusTestPtr(&s)
+LOCA::StatusTest::Wrapper::Wrapper(
+		    const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& s) :
+  statusTestPtr(s)
 {
 }
 
@@ -55,7 +56,7 @@ NOX::StatusTest::StatusType
 LOCA::StatusTest::Wrapper::checkStatus(const NOX::Solver::Generic& problem, 
 				       NOX::StatusTest::CheckType checkType)
 {
-  LOCA::Solver::Wrapper problemWrapper(problem);
+  LOCA::Solver::Wrapper problemWrapper(Teuchos::rcp(&problem,false));
 
   return statusTestPtr->checkStatus(problemWrapper, checkType);
 }
@@ -71,14 +72,14 @@ ostream& LOCA::StatusTest::Wrapper::print(ostream& stream, int indent) const
   return statusTestPtr->print(stream, indent);
 }
 
-NOX::StatusTest::Generic&
+Teuchos::RefCountPtr<NOX::StatusTest::Generic>
 LOCA::StatusTest::Wrapper::getUnderlyingStatusTest() 
 {
-  return *statusTestPtr;
+  return statusTestPtr;
 }
 
-const NOX::StatusTest::Generic&
+Teuchos::RefCountPtr<const NOX::StatusTest::Generic>
 LOCA::StatusTest::Wrapper::getUnderlyingStatusTest() const
 {
-  return *statusTestPtr;
+  return statusTestPtr;
 }

@@ -42,6 +42,8 @@
 #ifndef LOCA_STATUSTEST_WRAPPER_H
 #define LOCA_STATUSTEST_WRAPPER_H
 
+#include "Teuchos_RefCountPtr.hpp"
+
 #include "NOX_StatusTest_Generic.H" // base class
 
 namespace LOCA {
@@ -68,7 +70,7 @@ namespace LOCA {
     public:
 
       //! Constructor
-      Wrapper(NOX::StatusTest::Generic& s);
+      Wrapper(const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& s);
 
       //! Destructor
       virtual ~Wrapper();
@@ -85,11 +87,11 @@ namespace LOCA {
       virtual ostream& print(ostream& stream, int indent = 0) const;
 
       //! Returns underlying status test
-      NOX::StatusTest::Generic&
+      Teuchos::RefCountPtr<NOX::StatusTest::Generic>
       getUnderlyingStatusTest();
 
       //! Returns underlying status test
-      const NOX::StatusTest::Generic&
+      Teuchos::RefCountPtr<const NOX::StatusTest::Generic>
       getUnderlyingStatusTest() const;
 
     private:
@@ -103,7 +105,7 @@ namespace LOCA {
     protected:
 
       //! Stores pointer to underlying status test
-      NOX::StatusTest::Generic *statusTestPtr;
+      Teuchos::RefCountPtr<NOX::StatusTest::Generic> statusTestPtr;
       
     }; // class Wrapper
 

@@ -203,6 +203,8 @@ am__libloca_a_SOURCES_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_Abstract_TransposeSolveGroup.H \
 	$(srcdir)/LOCA_Abstract_Iterator.H \
 	$(srcdir)/LOCA_Abstract_Factory.H \
+	$(srcdir)/LOCA_Solver_Wrapper.H \
+	$(srcdir)/LOCA_StatusTest_Wrapper.H \
 	$(srcdir)/LOCA_Eigensolver_AbstractStrategy.H \
 	$(srcdir)/LOCA_Eigensolver_DefaultStrategy.H \
 	$(srcdir)/LOCA_Eigensolver_Factory.H \
@@ -282,6 +284,8 @@ am__libloca_a_SOURCES_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_Abstract_Group.C \
 	$(srcdir)/LOCA_Abstract_Iterator.C \
 	$(srcdir)/LOCA_Abstract_Factory.C \
+	$(srcdir)/LOCA_Solver_Wrapper.C \
+	$(srcdir)/LOCA_StatusTest_Wrapper.C \
 	$(srcdir)/LOCA_Eigensolver_DefaultStrategy.C \
 	$(srcdir)/LOCA_Eigensolver_Factory.C \
 	$(srcdir)/LOCA_EigenvalueSort_Strategies.C \
@@ -379,21 +383,23 @@ am__objects_16 = libloca_a-LOCA_Stepper.$(OBJEXT)
 am__objects_17 = libloca_a-LOCA_Abstract_Group.$(OBJEXT) \
 	libloca_a-LOCA_Abstract_Iterator.$(OBJEXT) \
 	libloca_a-LOCA_Abstract_Factory.$(OBJEXT)
-am__objects_18 = libloca_a-LOCA_Eigensolver_DefaultStrategy.$(OBJEXT) \
+am__objects_18 = libloca_a-LOCA_Solver_Wrapper.$(OBJEXT) \
+	libloca_a-LOCA_StatusTest_Wrapper.$(OBJEXT)
+am__objects_19 = libloca_a-LOCA_Eigensolver_DefaultStrategy.$(OBJEXT) \
 	libloca_a-LOCA_Eigensolver_Factory.$(OBJEXT) \
 	libloca_a-LOCA_EigenvalueSort_Strategies.$(OBJEXT) \
 	libloca_a-LOCA_EigenvalueSort_Factory.$(OBJEXT) \
 	libloca_a-LOCA_SaveEigenData_DefaultStrategy.$(OBJEXT) \
 	libloca_a-LOCA_SaveEigenData_Factory.$(OBJEXT)
-am__objects_19 = libloca_a-LOCA_Factory.$(OBJEXT) \
+am__objects_20 = libloca_a-LOCA_Factory.$(OBJEXT) \
 	libloca_a-LOCA_GlobalData.$(OBJEXT)
-am__objects_20 = $(am__objects_4) $(am__objects_5) $(am__objects_6) \
+am__objects_21 = $(am__objects_4) $(am__objects_5) $(am__objects_6) \
 	$(am__objects_8) $(am__objects_1) $(am__objects_9) \
 	$(am__objects_10) $(am__objects_11) $(am__objects_12) \
 	$(am__objects_13) $(am__objects_14) $(am__objects_15) \
-	$(am__objects_16) $(am__objects_17) $(am__objects_1) \
-	$(am__objects_18) $(am__objects_19)
-am_libloca_a_OBJECTS = $(am__objects_3) $(am__objects_20)
+	$(am__objects_16) $(am__objects_17) $(am__objects_18) \
+	$(am__objects_19) $(am__objects_20)
+am_libloca_a_OBJECTS = $(am__objects_3) $(am__objects_21)
 libloca_a_OBJECTS = $(am_libloca_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -466,6 +472,8 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Pitchfork_MooreSpence_SolverFactory.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_SaveEigenData_DefaultStrategy.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_SaveEigenData_Factory.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Solver_Wrapper.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_StatusTest_Wrapper.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_StepSize_Adaptive.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_StepSize_Constant.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_StepSize_Factory.Po \
@@ -581,6 +589,8 @@ am__include_HEADERS_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_Abstract_TransposeSolveGroup.H \
 	$(srcdir)/LOCA_Abstract_Iterator.H \
 	$(srcdir)/LOCA_Abstract_Factory.H \
+	$(srcdir)/LOCA_Solver_Wrapper.H \
+	$(srcdir)/LOCA_StatusTest_Wrapper.H \
 	$(srcdir)/LOCA_Eigensolver_AbstractStrategy.H \
 	$(srcdir)/LOCA_Eigensolver_DefaultStrategy.H \
 	$(srcdir)/LOCA_Eigensolver_Factory.H \
@@ -810,8 +820,6 @@ LOCA_OLD_H = \
 	$(srcdir)/LOCA_SingularJacobianSolve_Nic.H \
 	$(srcdir)/LOCA_SingularJacobianSolve_NicDay.H \
 	$(srcdir)/LOCA_SingularJacobianSolve_ItRef.H \
-	$(srcdir)/LOCA_Solver_Wrapper.H \
-	$(srcdir)/LOCA_StatusTest_Wrapper.H \
 	$(srcdir)/LOCA_Continuation_StatusTest_ParameterUpdateNorm.H \
 	$(srcdir)/LOCA_Continuation_StatusTest_ParameterResidualNorm.H \
 	$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.H \
@@ -826,8 +834,6 @@ LOCA_OLD = \
 	$(srcdir)/LOCA_SingularJacobianSolve_Nic.C \
 	$(srcdir)/LOCA_SingularJacobianSolve_NicDay.C \
 	$(srcdir)/LOCA_SingularJacobianSolve_ItRef.C \
-	$(srcdir)/LOCA_Solver_Wrapper.C \
-	$(srcdir)/LOCA_StatusTest_Wrapper.C \
 	$(srcdir)/LOCA_Continuation_StatusTest_ParameterUpdateNorm.C \
 	$(srcdir)/LOCA_Continuation_StatusTest_ParameterResidualNorm.C \
 	$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.C \
@@ -1040,8 +1046,14 @@ LOCA_STEPPER_H = \
 LOCA_STEPPER = \
 	$(srcdir)/LOCA_Stepper.C
 
-LOCA_STATUSTEST_H = 
-LOCA_STATUSTEST = 
+LOCA_STATUSTEST_H = \
+	$(srcdir)/LOCA_Solver_Wrapper.H \
+	$(srcdir)/LOCA_StatusTest_Wrapper.H
+
+LOCA_STATUSTEST = \
+	$(srcdir)/LOCA_Solver_Wrapper.C \
+	$(srcdir)/LOCA_StatusTest_Wrapper.C
+
 LOCA_EIGENSOLVER_H = \
 	$(srcdir)/LOCA_Eigensolver_AbstractStrategy.H \
 	$(srcdir)/LOCA_Eigensolver_DefaultStrategy.H \
@@ -1336,6 +1348,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Pitchfork_MooreSpence_SolverFactory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_SaveEigenData_DefaultStrategy.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_SaveEigenData_Factory.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Solver_Wrapper.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_StatusTest_Wrapper.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_StepSize_Adaptive.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_StepSize_Constant.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_StepSize_Factory.Po@am__quote@
@@ -2567,6 +2581,38 @@ libloca_a-LOCA_Abstract_Factory.obj: $(srcdir)/LOCA_Abstract_Factory.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_Abstract_Factory.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Abstract_Factory.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Abstract_Factory.obj `if test -f '$(srcdir)/LOCA_Abstract_Factory.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Abstract_Factory.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Abstract_Factory.C'; fi`
+
+libloca_a-LOCA_Solver_Wrapper.o: $(srcdir)/LOCA_Solver_Wrapper.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_Solver_Wrapper.o -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_Solver_Wrapper.Tpo" -c -o libloca_a-LOCA_Solver_Wrapper.o `test -f '$(srcdir)/LOCA_Solver_Wrapper.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Solver_Wrapper.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_Solver_Wrapper.Tpo" "$(DEPDIR)/libloca_a-LOCA_Solver_Wrapper.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_Solver_Wrapper.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Solver_Wrapper.C' object='libloca_a-LOCA_Solver_Wrapper.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_Solver_Wrapper.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Solver_Wrapper.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Solver_Wrapper.o `test -f '$(srcdir)/LOCA_Solver_Wrapper.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Solver_Wrapper.C
+
+libloca_a-LOCA_Solver_Wrapper.obj: $(srcdir)/LOCA_Solver_Wrapper.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_Solver_Wrapper.obj -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_Solver_Wrapper.Tpo" -c -o libloca_a-LOCA_Solver_Wrapper.obj `if test -f '$(srcdir)/LOCA_Solver_Wrapper.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Solver_Wrapper.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Solver_Wrapper.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_Solver_Wrapper.Tpo" "$(DEPDIR)/libloca_a-LOCA_Solver_Wrapper.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_Solver_Wrapper.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Solver_Wrapper.C' object='libloca_a-LOCA_Solver_Wrapper.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_Solver_Wrapper.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Solver_Wrapper.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Solver_Wrapper.obj `if test -f '$(srcdir)/LOCA_Solver_Wrapper.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Solver_Wrapper.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Solver_Wrapper.C'; fi`
+
+libloca_a-LOCA_StatusTest_Wrapper.o: $(srcdir)/LOCA_StatusTest_Wrapper.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_StatusTest_Wrapper.o -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_StatusTest_Wrapper.Tpo" -c -o libloca_a-LOCA_StatusTest_Wrapper.o `test -f '$(srcdir)/LOCA_StatusTest_Wrapper.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_StatusTest_Wrapper.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_StatusTest_Wrapper.Tpo" "$(DEPDIR)/libloca_a-LOCA_StatusTest_Wrapper.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_StatusTest_Wrapper.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_StatusTest_Wrapper.C' object='libloca_a-LOCA_StatusTest_Wrapper.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_StatusTest_Wrapper.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_StatusTest_Wrapper.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_StatusTest_Wrapper.o `test -f '$(srcdir)/LOCA_StatusTest_Wrapper.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_StatusTest_Wrapper.C
+
+libloca_a-LOCA_StatusTest_Wrapper.obj: $(srcdir)/LOCA_StatusTest_Wrapper.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_StatusTest_Wrapper.obj -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_StatusTest_Wrapper.Tpo" -c -o libloca_a-LOCA_StatusTest_Wrapper.obj `if test -f '$(srcdir)/LOCA_StatusTest_Wrapper.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_StatusTest_Wrapper.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_StatusTest_Wrapper.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_StatusTest_Wrapper.Tpo" "$(DEPDIR)/libloca_a-LOCA_StatusTest_Wrapper.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_StatusTest_Wrapper.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_StatusTest_Wrapper.C' object='libloca_a-LOCA_StatusTest_Wrapper.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_StatusTest_Wrapper.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_StatusTest_Wrapper.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_StatusTest_Wrapper.obj `if test -f '$(srcdir)/LOCA_StatusTest_Wrapper.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_StatusTest_Wrapper.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_StatusTest_Wrapper.C'; fi`
 
 libloca_a-LOCA_Eigensolver_DefaultStrategy.o: $(srcdir)/LOCA_Eigensolver_DefaultStrategy.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_Eigensolver_DefaultStrategy.o -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_Eigensolver_DefaultStrategy.Tpo" -c -o libloca_a-LOCA_Eigensolver_DefaultStrategy.o `test -f '$(srcdir)/LOCA_Eigensolver_DefaultStrategy.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Eigensolver_DefaultStrategy.C; \

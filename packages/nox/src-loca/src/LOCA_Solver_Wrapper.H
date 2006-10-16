@@ -70,9 +70,9 @@ namespace LOCA {
      * This solver wrapper class fixes this problem by reimplementing the
      * solution group accessor methods to return the underlying groups of 
      * the solution groups 
-     * (via LOCA::Extended::AbstractGroup::getUnderlyingGroup()) if they are 
-     * extended groups (derived from LOCA::Extended::AbstractGroup).  If the
-     * groups are not extended groups, the original solution groups are 
+     * (via LOCA::Extended::MultiAbstractGroup::getUnderlyingGroup()) if they 
+     * are extended groups (derived from LOCA::Extended::MultiAbstractGroup).  
+     * If the groups are not extended groups, the original solution groups are 
      * returned.  All other NOX::Solver::Generic methods are passed to the
      * wrapped solver.
      *
@@ -85,19 +85,19 @@ namespace LOCA {
 
     public:
 
-      //! Constructor with a non-const reference to a %NOX solver
+      //! Constructor with a non-const ref-count pointer to a %NOX solver
       /*!
        * The constructor calls resetWrapper() to grab the proper solution
        * groups.
        */
-      Wrapper(NOX::Solver::Generic& solver);
+      Wrapper(const Teuchos::RefCountPtr<NOX::Solver::Generic>& solver);
 
-      //! Constructor with a const reference to a %NOX solver
+      //! Constructor with a const ref-count pointer to a %NOX solver
       /*!
        * The constructor calls resetWrapper() to grab the proper solution
        * groups.
        */
-      Wrapper(const NOX::Solver::Generic& solver);
+      Wrapper(const Teuchos::RefCountPtr<const NOX::Solver::Generic>& solver);
 
       //! Destructor
       ~Wrapper();
@@ -106,6 +106,9 @@ namespace LOCA {
       bool reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
 		 const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests, 
 		 const Teuchos::RefCountPtr<Teuchos::ParameterList>& params);
+
+      //! Implementation of reset method (forwarded to wrapped solver)
+      bool reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp);
   
       //! Implementation of reset method (forwarded to wrapped solver)
       bool reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
@@ -114,8 +117,8 @@ namespace LOCA {
       //! Implementation of getStatus method (forwarded to wrapped solver)
       NOX::StatusTest::StatusType getStatus();
       
-      //! Implementation of iterate method (forwarded to wrapped solver)
-      NOX::StatusTest::StatusType iterate();
+      //! Implementation of step method (forwarded to wrapped solver)
+      NOX::StatusTest::StatusType step();
       
       //! Implementation of solve method (forwarded to wrapped solver)
       NOX::StatusTest::StatusType solve();
@@ -152,7 +155,10 @@ namespace LOCA {
     protected:
       
       //! Pointer to the solver object
-      NOX::Solver::Generic* solverPtr;
+      Teuchos::RefCountPtr<NOX::Solver::Generic> solverPtr;
+
+      //! Pointer to the const solver object
+      Teuchos::RefCountPtr<const NOX::Solver::Generic> constSolverPtr;
 
       //! Pointer to solution group
       Teuchos::RefCountPtr<const NOX::Abstract::Group> solnGrpPtr;

@@ -47,8 +47,6 @@ LOCA_OLD_H = \
 	$(srcdir)/LOCA_SingularJacobianSolve_Nic.H \
 	$(srcdir)/LOCA_SingularJacobianSolve_NicDay.H \
 	$(srcdir)/LOCA_SingularJacobianSolve_ItRef.H \
-	$(srcdir)/LOCA_Solver_Wrapper.H \
-	$(srcdir)/LOCA_StatusTest_Wrapper.H \
 	$(srcdir)/LOCA_Continuation_StatusTest_ParameterUpdateNorm.H \
 	$(srcdir)/LOCA_Continuation_StatusTest_ParameterResidualNorm.H \
 	$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.H \
@@ -63,8 +61,6 @@ LOCA_OLD = \
 	$(srcdir)/LOCA_SingularJacobianSolve_Nic.C \
 	$(srcdir)/LOCA_SingularJacobianSolve_NicDay.C \
 	$(srcdir)/LOCA_SingularJacobianSolve_ItRef.C \
-	$(srcdir)/LOCA_Solver_Wrapper.C \
-	$(srcdir)/LOCA_StatusTest_Wrapper.C \
 	$(srcdir)/LOCA_Continuation_StatusTest_ParameterUpdateNorm.C \
 	$(srcdir)/LOCA_Continuation_StatusTest_ParameterResidualNorm.C \
 	$(srcdir)/LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.C \
@@ -279,9 +275,13 @@ LOCA_STEPPER_H = \
 LOCA_STEPPER = \
 	$(srcdir)/LOCA_Stepper.C
 
-LOCA_STATUSTEST_H = 
+LOCA_STATUSTEST_H = \
+	$(srcdir)/LOCA_Solver_Wrapper.H \
+	$(srcdir)/LOCA_StatusTest_Wrapper.H
 
-LOCA_STATUSTEST = 
+LOCA_STATUSTEST = \
+	$(srcdir)/LOCA_Solver_Wrapper.C \
+	$(srcdir)/LOCA_StatusTest_Wrapper.C
 
 LOCA_EIGENSOLVER_H = \
 	$(srcdir)/LOCA_Eigensolver_AbstractStrategy.H \
