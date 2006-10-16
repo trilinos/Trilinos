@@ -21,7 +21,7 @@ Regardless of the load balancing method chosen, every program must:
 \end{itemize}
 
 The simple graph used in all three examples is illustrated
-in Figure \ref{fig:simpleGraph}.1.
+in Figure \ref{fig:simpleGraph}.
 It is defined in the Zoltan source file \textbf{examples/C/simpleGraph.h},
 which is listed in Figure \ref{fig:simpleGraphDotH}.
 
@@ -380,6 +380,269 @@ int main(int argc, char *argv[])
 
 \clearpage
 \section{A graph problem}
+
+In this section we provide an example of a parallel C program
+that uses the Zoltan library to partition the simple graph that
+was pictured in Figure \ref{fig:simpleGraph}.  You can compile
+and run this example if you have the Zoltan source code.  It is
+in the examples directory, in file \textbf{examples/C/simpleGRAPH.c}.
+
+\subsection{Application defined query functions}
+
+We must define four query functions in order to use the
+particular graph submethod we chose for this example.  See the
+User's Guide at
+\url{http://www.cs.sandia.gov/Zoltan/ug_html/ug_alg_rcb.html} for
+the requirements of other submethods.
+
+The function prototypes referred to below
+are defined in the Zoltan file \textbf{include/zoltan.h}.
+The four query functions are:
+
+\begin{itemize}
+\item A function of type ZOLTAN\_NUM\_OBJ\_FN (Figure \ref{fig:NumObj}) which provides the number of objects belonging to this process 
+\item A function of type ZOLTAN\_OBJ\_LIST\_FN (Figure \ref{fig:ObjList}) which supplies the global IDs for the objects belonging to the process
+\item A function of type ZOLTAN\_NUM\_EDGES\_MULTI\_FN (Figure \ref{fig:NumEdges}) which provides the number of edges for each object in a list supplied to the application by the library
+\item A function of type ZOLTAN\_EDGE\_LIST\_MULTI\_FN (Figure \ref{fig:EdgeListMulti})
+which receives a list of object IDs from the library and responds with the IDs for
+each adjacent object, the process owning that adjacent object, and optionally a weight
+for each edge
+\end{itemize}
+
+An alternative to defining a single ZOLTAN\_OBJ\_LIST\_FN is to define
+a ZOLTAN\_FIRST\_OBJ\_FN and a ZOLTAN\_NEXT\_OBJ\_FN.  The first function
+would return the global ID for first object.  Each call to the second function would
+return a subsequent gloabl ID.
+
+An alternative to defining a ZOLTAN\_NUM\_EDGES\_MULTI\_FN is to 
+define a ZOLTAN\_NUM\_EDGES\_FN, which returns the number of adjacent
+objects for a single object ID.
+
+An alternative to defining a ZOLTAN\_EDGE\_LIST\_MULTI\_FN is to 
+define a ZOLTAN\_EDGE\_LIST\_FN, which
+returns the same information but for a single object.
+
+The variables used in these query functions to describe our simple graph
+refer to those defined in \textbf{examples/C/simpleGraph.h} which were shown in
+Figure \ref{fig:simpleGraphDotH}.
+
+\begin{figure}
+\begin{flushleft}
+\begin{verbatim}
+static void get_num_edges_list(void *data, int sizeGID, int sizeLID,
+        int num_obj, ZOLTAN_ID_PTR globalID, ZOLTAN_ID_PTR localID,
+        int *numEdges, int *ierr)
+{
+int i, idx;
+
+  if ( (sizeGID != 1) || (sizeLID != 1)){
+    *ierr = ZOLTAN_FATAL;
+    return;
+  }
+
+  for (i=0;  i < num_obj ; i++){
+    idx = globalID[i] - 1;
+    numEdges[i] = simpleNumEdges[idx];
+  }
+
+  *ierr = ZOLTAN_OK;
+  return;
+}
+\end{verbatim}
+\end{flushleft}
+\caption{A ZOLTAN\_NUM\_EDGES\_MULTI\_FN query function}
+\label{fig:NumEdges}
+\end{figure}
+
+\begin{figure}
+\begin{flushleft}
+\begin{verbatim}
+static void get_edge_list(void *data, int sizeGID, int sizeLID,
+        int num_obj, ZOLTAN_ID_PTR globalID, ZOLTAN_ID_PTR localID,
+        int *num_edges, ZOLTAN_ID_PTR nborGID, int *nborProc,
+        int wgt_dim, float *ewgts, int *ierr)
+{
+int i, j, idx;
+ZOLTAN_ID_PTR nextID;
+int *nextProc;
+
+  if ( (sizeGID != 1) || (sizeLID != 1) || (wgt_dim != 0)){
+    *ierr = ZOLTAN_FATAL;
+    return;
+  }
+
+  nextID = nborGID;
+  nextProc = nborProc;
+
+  for (i=0;  i < num_obj ; i++){
+    idx = globalID[i] - 1;
+    if (num_edges[i] != simpleNumEdges[idx]){
+      *ierr = ZOLTAN_FATAL;
+      return;
+    }
+    for (j=0; j<num_edges[i]; j++){
+      *nextID++ = simpleEdges[idx][j];
+      *nextProc++ = (simpleEdges[idx][j] - 1) % numProcs;
+    }
+  }
+
+  *ierr = ZOLTAN_OK;
+
+  return;
+}
+\end{verbatim}
+\end{flushleft}
+\caption{A ZOLTAN\_EDGE\_LIST\_MULTI\_FN query function}
+\label{fig:EdgeListMulti}
+\end{figure}
+
+\clearpage
+
+\subsection{Calling the Zoltan library}
+
+The code in this section may be found in the file \textbf{examples/C/simpleGRAPH.c}.
+
+\begin{flushleft}
+\begin{verbatim}
+#include <mpi.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include "zoltan.h"
+#include "simpleGraph.h"
+#include "simpleQueries.h"
+
+int main(int argc, char *argv[])
+{
+  int rc, i, ngids, nextIdx;
+  float ver;
+  struct Zoltan_Struct *zz;
+  int changes, numGidEntries, numLidEntries, numImport, numExport;
+  ZOLTAN_ID_PTR importGlobalGids, importLocalGids;
+  ZOLTAN_ID_PTR exportGlobalGids, exportLocalGids;
+  int *importProcs, *importToPart, *exportProcs, *exportToPart;
+  float *wgt_list;
+  int *gid_flags, *gid_list, *lid_list;
+
+
+  /******************************************************************
+  ** Initialize MPI and Zoltan
+  ******************************************************************/
+
+  MPI_Init(&argc, &argv);
+  MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
+  MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
+
+  rc = Zoltan_Initialize(argc, argv, &ver);
+
+  if (rc != ZOLTAN_OK){
+    printf("sorry...\n");
+    MPI_Finalize();
+    exit(0);
+  }
+\end{verbatim}
+\end{flushleft}
+
+\clearpage
+\begin{flushleft}
+\begin{verbatim}
+  /******************************************************************
+  ** Create a Zoltan library structure for this instance of load
+  ** balancing.  Set the parameters and query functions that will
+  ** govern the library's calculation.  See the Zoltan User's
+  ** Guide for the definition of these and many other parameters.
+  ******************************************************************/
+
+  zz = Zoltan_Create(MPI_COMM_WORLD);
+
+  /* General parameters */
+
+  Zoltan_Set_Param(zz, "DEBUG_LEVEL", "0");
+  Zoltan_Set_Param(zz, "LB_METHOD", "GRAPH");
+  Zoltan_Set_Param(zz, "NUM_GID_ENTRIES", "1"); 
+  Zoltan_Set_Param(zz, "NUM_LID_ENTRIES", "1");
+  Zoltan_Set_Param(zz, "OBJ_WEIGHT_DIM", "1");
+  Zoltan_Set_Param(zz, "RETURN_LISTS", "ALL");
+
+  /* Graph parameters */
+
+  Zoltan_Set_Param(zz, "PARMETIS_METHOD", "PARTKWAY"); 
+  Zoltan_Set_Param(zz, "PARMETIS_COARSE_ALG", "2");
+  Zoltan_Set_Param(zz, "CHECK_GRAPH", "2"); 
+
+  /* Query functions - defined in simpleQueries.h */
+
+  Zoltan_Set_Num_Obj_Fn(zz, get_number_of_objects, NULL);
+  Zoltan_Set_Obj_List_Fn(zz, get_object_list, NULL);
+  Zoltan_Set_Num_Edges_Multi_Fn(zz, get_num_edges_list, NULL);
+  Zoltan_Set_Edge_List_Multi_Fn(zz, get_edge_list, NULL);
+\end{verbatim}
+\end{flushleft}
+
+\clearpage
+\begin{flushleft}
+\begin{verbatim}
+  /******************************************************************
+  ** Zoltan can now partition the simple graph.
+  ** In this simple example, we assume the number of partitions is
+  ** equal to the number of processes.  Process rank 0 will own
+  ** partition 0, process rank 1 will own partition 1, and so on.
+  ******************************************************************/
+
+  rc = Zoltan_LB_Partition(zz, /* input (all remaining fields are output) */
+        &changes,        /* 1 if partitioning was changed, 0 otherwise */ 
+        &numGidEntries,  /* Number of integers used for a global ID */
+        &numLidEntries,  /* Number of integers used for a local ID */
+        &numImport,      /* Number of vertices to be sent to me */
+        &importGlobalGids,  /* Global IDs of vertices to be sent to me */
+        &importLocalGids,   /* Local IDs of vertices to be sent to me */
+        &importProcs,    /* Process rank for source of each incoming vertex */
+        &importToPart,   /* New partition for each incoming vertex */
+        &numExport,      /* Number of vertices I must send to other processes*/
+        &exportGlobalGids,  /* Global IDs of the vertices I must send */
+        &exportLocalGids,   /* Local IDs of the vertices I must send */
+        &exportProcs,    /* Process to which I send each of the vertices */
+        &exportToPart);  /* Partition to which each vertex will belong */
+
+  if (rc != ZOLTAN_OK){
+    printf("sorry...\n");
+    MPI_Finalize();
+    Zoltan_Destroy(&zz);
+    exit(0);
+  }
+
+  /******************************************************************
+  ** In a real application, you would rebalance the problem now by
+  ** sending the objects to their new partitions.  Your query 
+  ** functions would need to reflect the new partitioning.
+  ******************************************************************/
+\end{verbatim}
+\end{flushleft}
+
+\clearpage
+\begin{flushleft}
+\begin{verbatim}
+  /******************************************************************
+  ** Free the arrays allocated by Zoltan_LB_Partition, and free
+  ** the storage allocated for the Zoltan structure.
+  ******************************************************************/
+
+  Zoltan_LB_Free_Part(&importGlobalGids, &importLocalGids, 
+                      &importProcs, &importToPart);
+  Zoltan_LB_Free_Part(&exportGlobalGids, &exportLocalGids, 
+                      &exportProcs, &exportToPart);
+
+  Zoltan_Destroy(&zz);
+
+  /**********************
+  ** all done ***********
+  **********************/
+
+  MPI_Finalize();
+
+  return 0;
+}
+\end{verbatim}
+\end{flushleft}
 
 \newpage
 \section{A hypergraph problem}
