@@ -215,7 +215,7 @@ int Zoltan_PHG_Partition (
                                      in above timers */
   int do_timing = (hgp->use_timers > 1);
   int fine_timing = (hgp->use_timers > 2);
-  int vcycle_timing = (hgp->use_timers > 4);
+  int vcycle_timing = (hgp->use_timers > 4 && hgp->ProRedL == 0);
 
   ZOLTAN_TRACE_ENTER(zz, yo);
     
