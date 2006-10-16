@@ -409,18 +409,6 @@ int Zoltan_PHG_Partition (
 	    if (timer_cpart < 0)
 	      timer_cpart = Zoltan_Timer_Init(zz->ZTime, 0, "CP Part");
 	  }
-	  if (vcycle_timing) {
-	    if (vcycle->timer_refine < 0) {
-	      char str[80];
-	      sprintf(str, "VC Refinement %d", hg->info);
-	      vcycle->timer_refine = Zoltan_Timer_Init(vcycle->timer, 0, str);
-	    }
-	    if (vcycle->timer_project < 0) {
-	      char str[80];
-	      sprintf(str, "VC Project Up %d", hg->info);
-	      vcycle->timer_project = Zoltan_Timer_Init(vcycle->timer, 0, str);
-	    }
-	  }
 	  goto Refine;
 	}
 
