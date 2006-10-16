@@ -1,8 +1,0 @@
-CC=cc
-CXX=CC
-FC=f77
-RANLIB=ranlib
-LINKER=$(CXX)
-ARCH_FLAGS = -O3 -v -DHAVE_FORTRAN_UNDERSCORE
-ARCH_LIBS=-lmalloc -lM77 -lF77 -xlic_lib=sunperf -lsunmath -lnsl -lsocket
-AR=ar

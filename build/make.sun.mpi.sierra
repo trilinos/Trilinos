@@ -1,3 +1,0 @@
-make ARCH_CFLAGS="xO3 -xtarget=ultra2 -xcache=16/32/1:4096/64/1" \
-     CC=cc FC=f77 CXX=CC MPI_INCLUDES=-I/usr/local/mpi/include \
-     LIBMPI="-L/usr/local/mpi/lib/solaris/ch_p4 -lmpi -lnsl -lsocket"

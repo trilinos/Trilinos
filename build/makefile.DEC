@@ -1,6 +1,0 @@
-ARCH_FLAGS=-O2
-CC=cc
-FC=f77
-RANLIB=touch
-LINKER=$(CC)
-ARCH_LIBS=-lots -lfor

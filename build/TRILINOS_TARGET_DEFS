@@ -1,4 +1,0 @@
-TRILINOS_HOME_WIN = c:\cygwin\home\mheroux\Trilinos
-TRILINOS_ARCH = LINUX
-TRILINOS_COMM = MPI
-TRILINOS_ID = _DEBUG

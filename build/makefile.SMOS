@@ -1,8 +1,0 @@
-ARCH_FLAGS=-O4 -Mnostreamall -Mxp -Mnoperfmon -Mnodepchk -Mnodebug -Mquad \
-           -Mfunc32 -Msafeptr=arg,dummy,auto,static,global -Knoieee
-CC=sicc
-FC=sif77
-LINKER=$(CC)
-ARCH_LIBS= -lkmath -lf
-AR=ar860
-RANLIB=touch
