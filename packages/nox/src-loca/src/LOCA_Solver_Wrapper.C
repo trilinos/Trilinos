@@ -84,6 +84,15 @@ reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp,
   return res;
 }
 
+bool 
+LOCA::Solver::Wrapper::
+reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp) 
+{
+  bool res =  solverPtr->reset(grp);
+  resetWrapper();
+  return res;
+}
+
 NOX::StatusTest::StatusType 
 LOCA::Solver::Wrapper::getStatus()
 {
