@@ -1,7 +1,10 @@
 # $Id$
 #
+ifdef PARMETIS_LIBPATH
+GRAPH_EXAMPLE=simpleGRAPH
+endif
 
-CEXAMPLES = simpleRCB simpleGRAPH zoltanSimple zoltanExample1 subDirs phgExample
+CEXAMPLES = simpleRCB $(GRAPH_EXAMPLE) simpleHG zoltanSimple zoltanExample1 subDirs phgExample
 
 LIBZOLTAN = ../lib/libexzoltan.a $(ZOLTAN_LIB_DIR)/libzoltan.a
 
@@ -9,6 +12,10 @@ DOTDOTINCLUDE= $(subst -I../, -I../../, $(INCLUDE))
 DOTDOTLIBDIR= $(subst -L../, -L../../, $(LIBDIR))
 
 all:    $(CEXAMPLES)
+
+simpleHG : simpleHG.c simpleGraph.h simpleQueries.h $(LIBZOLTAN)
+	@echo "Building $@"
+	@$(CC) $(CFLAGS) -o $@ $(INCLUDE) $(LIBDIR) $< $(LIBS)
 
 simpleRCB : simpleRCB.c simpleGraph.h simpleQueries.h $(LIBZOLTAN)
 	@echo "Building $@"

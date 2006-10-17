@@ -119,6 +119,8 @@ exampleLibrary:
 
 C_Examples: exampleLibrary
 	@cd C; $(MAKE) all "ZOLTAN_LIB_DIR=$(ZOLTAN_LIB_DIR)" \
+           "PARMETIS_LIBPATH=$(PARMETIS_LIBPATH)" \
+           "PARMETIS_INCPATH=$(PARMETIS_INCPATH)" \
            "CC=$(CC)" "CFLAGS=$(CFLAGS)" "INCLUDE=$(INCLUDE)" \
                           "LIBDIR=$(LIBDIR)" "LIBS=$(LIBS)"
 
