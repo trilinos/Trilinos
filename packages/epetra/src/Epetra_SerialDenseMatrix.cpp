@@ -264,6 +264,28 @@ Epetra_SerialDenseMatrix& Epetra_SerialDenseMatrix::operator = (const Epetra_Ser
   return(*this);
 }
 
+
+//=============================================================================
+bool Epetra_SerialDenseMatrix::operator==(const Epetra_SerialDenseMatrix& rhs) const
+{
+  if (M_ != rhs.M_ || N_ != rhs.N_) return(false);
+
+  const double* A = A_;
+  const double* rhsA = rhs.A_;
+
+  for(int j=0; j<N_; ++j) {
+    int offset = j*LDA_;
+    int rhsOffset = j*rhs.LDA_;
+    for(int i=0; i<M_; ++i) {
+      if (std::abs(A[offset+i] - rhsA[rhsOffset+i]) > Epetra_MinDouble) {
+	return(false);
+      }
+    }
+  }
+
+  return(true);
+}
+
 //=============================================================================
 Epetra_SerialDenseMatrix& Epetra_SerialDenseMatrix::operator+= ( const Epetra_SerialDenseMatrix & Source) {
   if (M() != Source.M()) 

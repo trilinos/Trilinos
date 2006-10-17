@@ -241,6 +241,27 @@ Epetra_IntSerialDenseMatrix& Epetra_IntSerialDenseMatrix::operator = (const Epet
 }
 
 //=============================================================================
+bool Epetra_IntSerialDenseMatrix::operator==(const Epetra_IntSerialDenseMatrix& rhs) const
+{
+  if (M_ != rhs.M_ || N_ != rhs.N_) return(false);
+
+  const int* A = A_;
+  const int* rhsA = rhs.A_;
+
+  for(int j=0; j<N_; ++j) {
+    int offset = j*LDA_;
+    int rhsOffset = j*rhs.LDA_;
+    for(int i=0; i<M_; ++i) {
+      if (A[offset+i] != rhsA[rhsOffset+i]) {
+	return(false);
+      }
+    }
+  }
+
+  return(true);
+}
+
+//=============================================================================
 int Epetra_IntSerialDenseMatrix::MakeViewOf(const Epetra_IntSerialDenseMatrix& Source) {
 	if(strcmp(Label(), Source.Label()) != 0)
 		return(-1);

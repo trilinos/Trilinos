@@ -631,7 +631,7 @@ int Epetra_MpiDistributor::DoPosts( char * export_objs,
     ++proc_index;                    
   if( proc_index == nblocks ) proc_index = 0;
    
-  int self_num, self_index;
+  int self_num = 0, self_index = 0;
   int p;
 
   if( !indices_to_ ) //data already blocked by processor
@@ -1066,7 +1066,7 @@ int Epetra_MpiDistributor::DoPosts( char * export_objs,
     ++proc_index;                    
   if( proc_index == nblocks ) proc_index = 0;
    
-  int self_num;
+  int self_num = 0;
   int p;
 
   if( !indices_to_ ) //data already blocked by processor

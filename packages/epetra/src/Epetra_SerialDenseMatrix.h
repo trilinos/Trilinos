@@ -279,6 +279,18 @@ This function performs a variety of matrix-matrix multiply operations.
   */
     Epetra_SerialDenseMatrix & operator = (const Epetra_SerialDenseMatrix& Source);
 
+    //! Comparison operator.
+    /*! operator== compares two Epetra_SerialDenseMatrix objects, returns false if sizes are different,
+      or if any coefficients differ by an amount greater than Epetra_MinDouble.
+    */
+    bool operator==(const Epetra_SerialDenseMatrix& rhs) const;
+
+    //! Inequality operator
+    /*! operator!= simply returns the negation of operator==.
+     */
+    bool operator!=(const Epetra_SerialDenseMatrix& rhs) const
+    { return !(*this == rhs); }
+
   //! Add one matrix to another.
   /*!
     The operator+= allows one to add the values from one existin SerialDenseMatrix to another, as

@@ -130,6 +130,7 @@ int main(int argc, char *argv[])
 	Matrix = new Epetra_SerialDenseMatrix(Copy, A, LDA, i, i);
 	LDA1 = i;
       }
+
       GenerateHilbert(A1, LDA1, i);
 	
       if (kk==1) {
@@ -146,6 +147,7 @@ int main(int argc, char *argv[])
 	}
       Epetra_SerialDenseMatrix Epetra_B(View, B, LDB, i, NRHS);
       Epetra_SerialDenseMatrix Epetra_X(View, X, LDX, i, NRHS);
+
       solver.SetMatrix(*Matrix);
       solver.SetVectors(Epetra_X, Epetra_B);
       
@@ -227,6 +229,20 @@ int main(int argc, char *argv[])
     x(i,0) = 1.0;
     y1(i,0) = 0.0;
     y2(i,0) = 0.0;
+  }
+
+  //quick check of operator==
+  if (x == y1) {
+    if (verbose) cout << "err in Epetra_SerialDenseMatrix::operator==, "
+        << "erroneously returned true." << std::endl;
+    return(-1);
+  }
+
+  //quick check of operator!=
+  if (x != x) {
+    if (verbose) cout << "err in Epetra_SerialDenseMatrix::operator==, "
+        << "erroneously returned true." << std::endl;
+    return(-1);
   }
 
   int err1 = smallA.Multiply(false, x, y1);

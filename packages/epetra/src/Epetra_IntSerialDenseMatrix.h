@@ -213,6 +213,18 @@ class Epetra_IntSerialDenseMatrix : public Epetra_Object {
   */
     Epetra_IntSerialDenseMatrix& operator = (const Epetra_IntSerialDenseMatrix& Source);
 
+    //! Comparison operator.
+    /*! operator== compares two Epetra_IntSerialDenseMatrix objects, returns false if sizes are different,
+      or if any coefficients differ.
+    */
+    bool operator==(const Epetra_IntSerialDenseMatrix& rhs) const;
+
+    //! Inequality operator
+    /*! operator!= simply returns the negation of operator==.
+     */
+    bool operator!=(const Epetra_IntSerialDenseMatrix& rhs) const
+    { return !(*this == rhs); }
+
   //! Element access function.
   /*!
     The parentheses operator returns the element in the ith row and jth column if A(i,j) is
