@@ -1,5 +1,5 @@
 /***************************************************************
-** Basic example of using Zoltan to partition a graph.
+** Basic example of using Zoltan to partition a hypergraph.
 ***************************************************************/
 
 #include <mpi.h>
@@ -15,10 +15,10 @@ int main(int argc, char *argv[])
   float ver;
   struct Zoltan_Struct *zz;
   int changes, numGidEntries, numLidEntries, numImport, numExport;
-  ZOLTAN_ID_PTR importGlobalGids, importLocalGids, exportGlobalGids, exportLocalGids;
+  ZOLTAN_ID_PTR importGlobalGids, importLocalGids;
+  ZOLTAN_ID_PTR exportGlobalGids, exportLocalGids;
   int *importProcs, *importToPart, *exportProcs, *exportToPart;
-  float *wgt_list;
-  int *gid_flags, *gid_list, *lid_list;
+  int *gid_flags, *gid_list;
 
 
   /******************************************************************
@@ -49,27 +49,33 @@ int main(int argc, char *argv[])
   /* General parameters */
 
   Zoltan_Set_Param(zz, "DEBUG_LEVEL", "0");
-  Zoltan_Set_Param(zz, "LB_METHOD", "GRAPH");
+  Zoltan_Set_Param(zz, "LB_METHOD", "HYPERGRAPH");
   Zoltan_Set_Param(zz, "NUM_GID_ENTRIES", "1"); 
-  Zoltan_Set_Param(zz, "NUM_LID_ENTRIES", "1");
-  Zoltan_Set_Param(zz, "OBJ_WEIGHT_DIM", "1");
+  Zoltan_Set_Param(zz, "NUM_LID_ENTRIES", "0");
+  Zoltan_Set_Param(zz, "OBJ_WEIGHT_DIM", "0");
   Zoltan_Set_Param(zz, "RETURN_LISTS", "ALL");
 
-  /* Graph parameters */
+  /* Hypergraph parameters */
 
-  Zoltan_Set_Param(zz, "PARMETIS_METHOD", "PARTKWAY"); 
-  Zoltan_Set_Param(zz, "PARMETIS_COARSE_ALG", "2");
-  Zoltan_Set_Param(zz, "CHECK_GRAPH", "2"); 
+  Zoltan_Set_Param(zz, "HYPERGRAPH_PACKAGE", "PHG"); 
+  Zoltan_Set_Param(zz, "PHG_COARSENING_METHOD", "ipm");
+  Zoltan_Set_Param(zz, "PHG_COARSEPARTITION_METHOD", "greedy");
+  Zoltan_Set_Param(zz, "PHG_REFINEMENT_METHOD", "fm");
+  Zoltan_Set_Param(zz, "PHG_EDGE_WEIGHT_OPERATION", "error"); 
+  Zoltan_Set_Param(zz, "PHG_EDGE_SIZE_THRESHOLD", ".7"); 
+  Zoltan_Set_Param(zz, "ADD_OBJ_WEIGHT", "unit"); 
 
   /* Query functions - defined in simpleQueries.h */
 
-  Zoltan_Set_Num_Obj_Fn(zz, get_number_of_objects, NULL);
-  Zoltan_Set_Obj_List_Fn(zz, get_object_list, NULL);
-  Zoltan_Set_Num_Edges_Multi_Fn(zz, get_num_edges_list, NULL);
-  Zoltan_Set_Edge_List_Multi_Fn(zz, get_edge_list, NULL);
+  Zoltan_Set_Num_Obj_Fn(zz, get_number_of_objects, &hg_data);
+  Zoltan_Set_Obj_List_Fn(zz, get_hg_object_list, &hg_data);
+  Zoltan_Set_HG_Size_CS_Fn(zz, get_hg_size, &hg_data);
+  Zoltan_Set_HG_CS_Fn(zz, get_hg, &hg_data);
+  Zoltan_Set_HG_Size_Edge_Wts_Fn(zz, get_hg_num_edge_weights, &hg_data);
+  Zoltan_Set_HG_Edge_Wts_Fn(zz, get_hyperedge_weights, &hg_data);
 
   /******************************************************************
-  ** Zoltan can now partition the simple graph.
+  ** Zoltan can now partition the vertices.
   ** In this simple example, we assume the number of partitions is
   ** equal to the number of processes.  Process rank 0 will own
   ** partition 0, process rank 1 will own partition 1, and so on.
@@ -108,18 +114,14 @@ int main(int argc, char *argv[])
   ** Create a list of GIDs now assigned to my partition, let
   ** process zero display the partitioning.
   ******************************************************************/
-  
 
   ngids = get_number_of_objects(NULL, &rc);
   gid_flags = (int *)calloc(sizeof(int) , simpleNumVertices);
   gid_list = (int *)malloc(sizeof(int) * ngids);
-  lid_list = (int *)malloc(sizeof(int) * ngids);
-  wgt_list = (float *)malloc(sizeof(float) * simpleNumVertices);
-  get_object_list(NULL, 1, 1,
-                  (ZOLTAN_ID_PTR)gid_list, (ZOLTAN_ID_PTR)lid_list,
-                  1, wgt_list, &rc);
+  get_hg_object_list(NULL, 1, 0, (ZOLTAN_ID_PTR)gid_list, NULL,
+                  0, NULL, &rc);
 
-  draw_partitions("initial distribution", ngids, gid_list, 1, wgt_list);
+  draw_sparse_matrix("initial distribution", ngids, gid_list, 0, NULL, 1);
 
   for (i=0; i<ngids; i++){
     gid_flags[gid_list[i]-1] = 1;    /* my original vertices */
@@ -134,16 +136,13 @@ int main(int argc, char *argv[])
   for (i=0; i<simpleNumVertices; i++){
     if (gid_flags[i]){
       gid_flags[nextIdx] = i+1; /* my new GID list */
-      wgt_list[nextIdx] = simpleNumEdges[i];
       nextIdx++;
     }
   }
-  draw_partitions("new partitioning", nextIdx, gid_flags, 1, wgt_list, 1);
+  draw_sparse_matrix("new partitioning", nextIdx, gid_flags, 0, NULL, 1);
 
   if (gid_flags) free(gid_flags);
   if (gid_list) free(gid_list);
-  if (lid_list) free(lid_list);
-  if (wgt_list) free(wgt_list);
 
   /******************************************************************
   ** Free the arrays allocated by Zoltan_LB_Partition, and free

@@ -104,6 +104,7 @@ int main(int argc, char *argv[])
   ******************************************************************/
 
   /******************************************************************
+  ** Visualize the new partitioning.
   ** Create a list of GIDs now assigned to my partition, let
   ** process zero display the partitioning.
   ******************************************************************/
@@ -113,9 +114,11 @@ int main(int argc, char *argv[])
   gid_list = (int *)malloc(sizeof(int) * ngids);
   lid_list = (int *)malloc(sizeof(int) * ngids);
   wgt_list = (float *)malloc(sizeof(float) * simpleNumVertices);
-  get_object_list(NULL, 1, 1, 
+  get_object_list(NULL, 1, 1,
                   (ZOLTAN_ID_PTR)gid_list, (ZOLTAN_ID_PTR)lid_list,
                   1, wgt_list, &rc);
+
+  draw_partitions("initial distribution", ngids, gid_list, 1, wgt_list, 0);
 
   for (i=0; i<ngids; i++){
     gid_flags[gid_list[i]-1] = 1;    /* my original vertices */
@@ -134,7 +137,7 @@ int main(int argc, char *argv[])
       nextIdx++;
     }
   }
-  draw_partitions(nextIdx, gid_flags, 1, wgt_list);
+  draw_partitions("new partitioning", nextIdx, gid_flags, 1, wgt_list, 0);
 
   if (gid_flags) free(gid_flags);
   if (gid_list) free(gid_list);

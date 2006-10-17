@@ -56,9 +56,7 @@ int i, next;
    * the length of my global IDs, local IDs, and object weights.
    */
 
-  if ( (sizeGID != 1) ||  /* My global IDs are 1 integer */
-       (sizeLID != 1) ||  /* My local IDs are 1 integer */
-       (wgt_dim != 1)){   /* My vertex weights are 1 float */
+  if (sizeGID != 1){  /* My global IDs are 1 integer */
     *ierr = ZOLTAN_FATAL;
     return;
   }
@@ -182,6 +180,207 @@ int *nextProc;
     for (j=0; j<num_edges[i]; j++){
       *nextID++ = simpleEdges[idx][j];
       *nextProc++ = (simpleEdges[idx][j] - 1) % numProcs;
+    }
+  }
+
+  *ierr = ZOLTAN_OK;
+
+  return;
+}
+/* 
+ **************************************************************
+ * Prototype: ZOLTAN_HG_SIZE_CS_FN
+ * This function tells the Zoltan library how many hyperedges
+ * I will supply, and how many total pins (vertices) are in those
+ * hyperedges, and my choice of compressed hyperedge format.
+ *
+ * For hypergraph methods.
+ *
+ * We will create a hypergraph out of the simple graph in the
+ * following way.  For every vertex in the graph, we will 
+ * create a hyperedge connecting that vertex and each of its
+ * neighbors.
+ *
+ * We will supply this hypergraph to Zoltan in compressed
+ * hyperedge format.  (Compressed vertices is other choice.  See
+ * the Zoltan User's Guide section on this query function for
+ * more information on compressed formats.)
+ *
+ * We will initially divide the hyperedges across the processes
+ * in a round robin manner.  However Zoltan does not require 
+ * that each process supply an entire hyperedge.  Hyperedges 
+ * could be distributed across processes. 
+ **************************************************************
+ */
+
+static struct _hg_data{
+  int numEdges;
+  int numPins;
+}hg_data;
+
+void get_hg_size(void *data, int *num_lists, int *num_pins, 
+                 int *format, int *ierr)
+{
+int i;
+struct _hg_data *hgd;
+
+  hgd = (struct _hg_data *)data;
+
+  hgd->numEdges = 0;
+  hgd->numPins  = 0;
+
+  for (i=0; i<simpleNumVertices; i++){
+    if (i % numProcs == myRank){    
+      hgd->numPins += simpleNumEdges[i] + 1;  /* my hyperedge */
+      hgd->numEdges++;
+    }
+  }
+
+  *num_lists = hgd->numEdges;
+  *num_pins  = hgd->numPins;
+  *format    = ZOLTAN_COMPRESSED_EDGE;
+  *ierr      = ZOLTAN_OK;
+
+  return;
+}
+/* 
+ **************************************************************
+ * Prototype: ZOLTAN_HG_CS_FN
+ *
+ * Return a compressed list describing the hypergraph sparse matrix.
+ * We can think of the columns as vertices and the rows as
+ * hyperedges.  For each row we have ones in the column representing
+ * vertices in the hyperedge, and zeroes in the other entries.
+ * 
+ * For hypergraph methods.
+ **************************************************************
+ */
+void get_hg(void *data, int sizeGID, int num_rows, int num_pins, 
+            int format, ZOLTAN_ID_PTR edge_GID, int *edge_ptr, 
+            ZOLTAN_ID_PTR pin_GID, int *ierr) 
+{
+int i, j, npins;
+struct _hg_data *hgd;
+
+  hgd    = (struct _hg_data *)data;
+
+  if ((num_rows != hgd->numEdges) || (num_pins != hgd->numPins) ||
+      (format != ZOLTAN_COMPRESSED_EDGE)){
+    *ierr = ZOLTAN_FATAL;
+    return;
+  }
+
+  npins = 0;
+
+  for (i=0; i<simpleNumVertices; i++){
+    if (i % numProcs == myRank){    /* my hyperedge */
+      *edge_ptr++ = npins;      /* index into start of pin list */
+      *edge_GID++ = i+1;        /* hyperedge global ID */
+
+      /* list global ID of each pin (vertex) in hyperedge */
+      for (j=0; j<simpleNumEdges[i]; j++){
+        *pin_GID++ = simpleEdges[i][j];
+      }
+      *pin_GID++ = i+1;
+      npins += simpleNumEdges[i] + 1;
+    }
+  }
+
+  *ierr = ZOLTAN_OK;
+
+  return;
+}
+/* 
+ **************************************************************
+ * Prototype: ZOLTAN_HG_SIZE_EDGE_WTS_FN
+ * This query function returns the number of hyperedges for which
+ * the process will supply edge weights.  The edges for which
+ * a process supplies edge weights need not be the same edges
+ * for which it supplied pins.  Multiple processes can supply
+ * weights for the same edge.  The multiple weights are resolved
+ * according the the setting of the PGH_EDGE_WEIGHT_OPERATION 
+ * parameter.  Edge weights are optional.
+ *
+ * For hypergraph methods.
+ **************************************************************
+ */
+void get_hg_num_edge_weights(void *data, int *num_edges, int *ierr) 
+{
+struct _hg_data *hgd;
+
+  hgd    = (struct _hg_data *)data;
+
+  *num_edges = hgd->numEdges;
+  *ierr = ZOLTAN_OK;
+
+  return;
+}
+/* 
+ **************************************************************
+ * Prototype: ZOLTAN_HG_EDGE_WTS_FN
+ * This query function supplies edge weights to the
+ * Zoltan library.  The edge global ID corresponds to the
+ * hyperedge global IDs supplied in the ZOLTAN_HG_CS_FN.
+ * The edge local IDs are for consistency with the rest
+ * of the Zoltan library, but at this point in time, there
+ * is no interface that uses local IDs to refer to hyperedges.
+ *
+ * The edge weight dimension was supplied by the application 
+ * as the value of the EDGE_WEIGHT_DIM parameter.  If the dimension 
+ * is greater than one, list all weights for the first edge,
+ * followed by all weights for the second edge, and so on.
+ *
+ * For hypergraph methods.
+ **************************************************************
+ */
+void get_hyperedge_weights(void *data, int sizeGID, 
+         int sizeLID, int num_edges, int edge_weight_dim, 
+         ZOLTAN_ID_PTR edge_GID, ZOLTAN_ID_PTR edge_LID, 
+         float  *edge_weight, int *ierr) 
+{
+int i;
+struct _hg_data *hgd;
+
+  hgd    = (struct _hg_data *)data;
+
+  if ((sizeGID != 1) || (sizeLID != 0) || 
+      (num_edges != hgd->numEdges) || (edge_weight_dim != 1)){
+    *ierr = ZOLTAN_FATAL;
+    return;
+  }
+
+  for (i=0; i<simpleNumVertices; i++){
+    if (i % numProcs == myRank){ 
+      *edge_GID++ = i+1;        /* hyperedge global ID */
+      *edge_weight++ = 1.0;  /* all hyperedges same weight */
+    }
+  }
+  *ierr = ZOLTAN_OK;
+  return;
+}
+/* 
+ **************************************************************
+ * Prototype: ZOLTAN_OBJ_LIST_FN
+ * Return list of my objects.
+ * This version assumes we are not supplying object local IDs or
+ * object weights.  We'll use it for the hypergraph example.
+ **************************************************************
+ */
+static void get_hg_object_list(void *data, int sizeGID, int sizeLID,
+            ZOLTAN_ID_PTR globalID, ZOLTAN_ID_PTR localID,
+                  int wgt_dim, float *obj_wgts, int *ierr)
+{
+int i, next;
+
+  if (sizeGID != 1){
+    *ierr = ZOLTAN_FATAL;
+    return;
+  }
+
+  for (i=0, next=0; i<simpleNumVertices; i++){
+    if (i % numProcs == myRank){
+      globalID[next] = i+1;   /* application wide global ID */
+      next++;
     }
   }
 
