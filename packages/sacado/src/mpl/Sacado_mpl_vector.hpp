@@ -29,8 +29,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef SCADO_MPL_VECTOR_HPP
-#define SCADO_MPL_VECTOR_HPP
+#ifndef SACADO_MPL_VECTOR_HPP
+#define SACADO_MPL_VECTOR_HPP
 
 #include "Sacado_mpl_none.hpp"
 #include "Sacado_mpl_size.hpp"
