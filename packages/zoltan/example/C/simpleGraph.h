@@ -3,7 +3,7 @@
 /*
  * A very simple mesh or graph.
  *   Global IDs of vertices are 1 through 25.
- *   Vertex adjacencies are listed in the "edges" array.
+ *   Vertex adjacencies are listed in the "simpleEdges" array.
  *
  *   Regarded as a mesh, vertex 1 is at location (0,0)
  *   and vertex 25 is at location (4,4);
@@ -63,9 +63,11 @@ static int simpleEdges[25][4]={
  * This assumes the number of partitions equals the number of processes.
  */
 
-static void draw_partitions(char *info,
-           int nobj, int *gids, int wgt_dim, float *wgts,
-           int docuts)
+static void draw_partitions(
+           char *info,               /* text description for graph */
+           int nobj, int *gids,      /* size and list of my global IDs */
+           int wgt_dim, float *wgts, /* weights per object, weight list */
+           int docuts)          /* 1 - count edge cuts, 0 - don't count */
 {
 int i, j, me, idx, nprocs, ncuts, root=0;
 int *incounts=NULL, *ingids=NULL, *indisp=NULL, *parts=NULL, *gid;
@@ -189,9 +191,11 @@ int col;
   }
   return 0;
 }
-static void draw_sparse_matrix(char *info,
-           int nobj, int *gids, int wgt_dim, float *wgts,
-           int docuts)
+static void draw_sparse_matrix(
+           char *info,               /* text description for hypergraph */
+           int nobj, int *gids,      /* size and list of my global IDs */
+           int wgt_dim, float *wgts, /* weights per object, weight list */
+           int docuts)          /* 1 - count edge cuts, 0 - don't count */
 {
 int i, j, me, idx, nprocs, ncuts, total_cuts, root=0;
 int *incounts=NULL, *ingids=NULL, *indisp=NULL, *parts=NULL, *gid;

@@ -119,7 +119,7 @@ int main(int argc, char *argv[])
                   (ZOLTAN_ID_PTR)gid_list, (ZOLTAN_ID_PTR)lid_list,
                   1, wgt_list, &rc);
 
-  draw_partitions("initial distribution", ngids, gid_list, 1, wgt_list);
+  draw_partitions("initial distribution", ngids, gid_list, 1, wgt_list, 1);
 
   for (i=0; i<ngids; i++){
     gid_flags[gid_list[i]-1] = 1;    /* my original vertices */

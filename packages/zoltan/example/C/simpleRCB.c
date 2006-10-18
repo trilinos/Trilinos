@@ -60,6 +60,7 @@ int main(int argc, char *argv[])
   Zoltan_Set_Param(zz, "KEEP_CUTS", "1"); 
   Zoltan_Set_Param(zz, "RCB_OUTPUT_LEVEL", "0");
   Zoltan_Set_Param(zz, "RCB_RECTILINEAR_BLOCKS", "1"); 
+  /*Zoltan_Set_Param(zz, "RCB_RECTILINEAR_BLOCKS", "0"); */
 
   /* Query functions - defined in simpleQueries.h, to return
    * information about objects defined in simpleGraph.h      */
