@@ -113,7 +113,7 @@ RUN (hrothgar-nightly-serial) {
     INVOKE-CONFIGURE    = linux-hrothgar;
     MAKE-COMMAND        = make -j2;
     TEST-CATEGORY       = FRAMEWORK;
-    TTR-DIR             = /usr/people/faculty/other/mphenow/TrilinosTestHarness/TrilinosTestResults;
+    TTR-DIR             = /common/TrilinosTestHarness/TrilinosTestResults;
     SSG-USERNAME        = mnpheno;
 
 }
@@ -136,7 +136,7 @@ RUN (hrothgar-nightly-mpi) {
     MPI-START           = lamboot;
     MPI-PING            = mpitask;
     MPI-STOP            = lamhalt;    
-    TTR-DIR             = /usr/people/faculty/other/mphenow/TrilinosTestHarness/TrilinosTestResults;
+    TTR-DIR             = /common/TrilinosTestHarness/TrilinosTestResults;
     SSG-USERNAME        = mnpheno;
 
 }
