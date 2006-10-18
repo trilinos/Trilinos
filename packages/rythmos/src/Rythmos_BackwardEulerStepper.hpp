@@ -123,8 +123,14 @@ class BackwardEulerStepper : virtual public Stepper<Scalar>
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > scaled_x_old_;
     Scalar t_;
     Scalar t_old_;
+    int numSteps;
 
     Teuchos::RefCountPtr<Thyra::SingleResidSSDAEModelEvaluator<Scalar> >  neModel_;
+
+#ifdef Rythmos_DEBUG
+    int debugLevel;
+    Teuchos::RefCountPtr<Teuchos::FancyOStream> debug_out;
+#endif // Rythmos_DEBUG
 
 };
 
@@ -139,11 +145,26 @@ BackwardEulerStepper<Scalar>::BackwardEulerStepper(
 {
   setModel(model);
   setSolver(solver);
+  numSteps = 0;
+#ifdef Rythmos_DEBUG
+  debugLevel = 2;
+  debug_out = Teuchos::VerboseObjectBase::getDefaultOStream();
+  debug_out->precision(15);
+  debug_out->setMaxLenLinePrefix(32);
+  debug_out->pushLinePrefix("Rythmos::BackwardEulerStepper");
+  debug_out->setShowLinePrefix(true);
+  debug_out->setTabIndentStr("    ");
+#endif // Rythmos_DEBUG
 }
 
 template<class Scalar>
 void BackwardEulerStepper<Scalar>::setModel(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model)
 {
+#ifdef Rythmos_DEBUG
+  Teuchos::OSTab ostab(debug_out,1,"BES::setModel");
+  if (debugLevel > 1)
+    *debug_out << "model = " << model->description() << std::endl;
+#endif // Rythmos_DEBUG
   typedef Teuchos::ScalarTraits<Scalar> ST;
   model_ = model;
   t_ = ST::zero();
@@ -157,12 +178,22 @@ void BackwardEulerStepper<Scalar>::setModel(const Teuchos::RefCountPtr<const Thy
 template<class Scalar>
 void BackwardEulerStepper<Scalar>::setSolver(const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > &solver)
 {
+#ifdef Rythmos_DEBUG
+  Teuchos::OSTab ostab(debug_out,1,"BES::setSolver");
+  if (debugLevel > 1)
+    *debug_out << "solver = " << solver->description() << std::endl;
+#endif // Rythmos_DEBUG
   solver_ = solver;
 }
 
 template<class Scalar>
 Scalar BackwardEulerStepper<Scalar>::TakeStep()
 {
+#ifdef Rythmos_DEBUG
+  Teuchos::OSTab ostab(debug_out,1,"BES::TakeStep()");
+  if (debugLevel > 1)
+    *debug_out << "This is not valid for BackwardEulerStepper at this time." << std::endl;
+#endif // Rythmos_DEBUG
   // print something out about this method not supporting automatic variable step-size
   typedef Teuchos::ScalarTraits<Scalar> ST;
   return(-ST::one());
@@ -171,6 +202,11 @@ Scalar BackwardEulerStepper<Scalar>::TakeStep()
 template<class Scalar>
 Scalar BackwardEulerStepper<Scalar>::TakeStep(Scalar dt)
 {
+#ifdef Rythmos_DEBUG
+  Teuchos::OSTab ostab(debug_out,1,"BES::TakeStep(dt)");
+  if (debugLevel > 1)
+    *debug_out << "dt = " << dt << std::endl;
+#endif // Rythmos_DEBUG
   typedef Teuchos::ScalarTraits<Scalar> ST;
   //
   // Setup the nonlinear equations:
@@ -194,6 +230,14 @@ Scalar BackwardEulerStepper<Scalar>::TakeStep(Scalar dt)
   // Update the step
   //
   t_ += dt;
+  numSteps++;
+#ifdef Rythmos_DEBUG
+  if (debugLevel > 1)
+  {
+    *debug_out << "t_old_ = " << t_old_ << std::endl;
+    *debug_out << "t_ = " << t_ << std::endl;
+  }
+#endif // Rythmos_DEBUG
 
   return(dt);
 }
@@ -244,6 +288,15 @@ bool BackwardEulerStepper<Scalar>::SetPoints(
     ,const std::vector<ScalarMag> & accuracy_vec 
     )
 {
+#ifdef Rythmos_DEBUG
+  Teuchos::OSTab ostab(debug_out,1,"BES::SetPoints");
+  if (debugLevel > 1)
+  {
+    *debug_out << "time_vec = " << std::endl;
+    for (int i=0 ; i<time_vec.size() ; ++i)
+      *debug_out << "time_vec[" << i << "] = " << time_vec[i] << std::endl;
+  }
+#endif // Rythmos_DEBUG
   typedef Teuchos::ScalarTraits<Scalar> ST;
   if (time_vec.size() == 0)
   {
@@ -277,6 +330,15 @@ bool BackwardEulerStepper<Scalar>::GetPoints(
     ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* xdot_vec
     ,std::vector<ScalarMag>* accuracy_vec) const
 {
+#ifdef Rythmos_DEBUG
+  Teuchos::OSTab ostab(debug_out,1,"BES::GetPoints");
+  if (debugLevel > 1)
+  {
+    *debug_out << "time_vec = " << std::endl;
+    for (int i=0 ; i<time_vec.size() ; ++i)
+      *debug_out << "time_vec[" << i << "] = " << time_vec[i] << std::endl;
+  }
+#endif // Rythmos_DEBUG
   // TODO:
   // Copy code from LinearInterpolationBuffer 
   // 10/9/06 tscoffe:  Could I derive off of LinearInterpolationBuffer to use that code?
@@ -285,6 +347,15 @@ bool BackwardEulerStepper<Scalar>::GetPoints(
   //                   and then call those helper functions from the concrete
   //                   InterpolationBuffers, and hence enable the use of those
   //                   interpolations within the Steppers also?  
+  /*
+  LinearInterpolator<Scalar> interpolator;
+  std::vector<DataStore<Scalar> > BE_data;
+  BE_data.push_back(DataStore<Scalar>(t_old,x_old,Teuchos::null,ST::zero()));
+  BE_data.push_back(DataStore<Scalar>(t,x,Teuchos::null,ST::zero()));
+  VectorToDataStoreVector(time_vec,x_vec,xdot_vec,accuracy_vec);
+  bool status = interpolator.interpolate();
+  return(status);
+  */
   return(false);
 }
 
@@ -294,6 +365,15 @@ bool BackwardEulerStepper<Scalar>::SetRange(
     ,const Scalar& time_upper
     ,const InterpolationBufferBase<Scalar>& IB)
 {
+#ifdef Rythmos_DEBUG
+  Teuchos::OSTab ostab(debug_out,1,"BES::SetRange");
+  if (debugLevel > 1)
+  {
+    *debug_out << "time_lower = " << time_lower << std::endl;
+    *debug_out << "time_upper = " << time_upper << std::endl;
+    *debug_out << "IB = " << IB.description() << std::endl;
+  }
+#endif // Rythmos_DEBUG
   // TODO:
   // get node_list from IB, crop it to [time_lower,time_upper], crop x_vec to same,
   // pass to SetPoints.
@@ -303,15 +383,36 @@ bool BackwardEulerStepper<Scalar>::SetRange(
 template<class Scalar>
 bool BackwardEulerStepper<Scalar>::GetNodes(std::vector<Scalar>* time_vec) const
 {
+  time_vec->clear();
   time_vec->push_back(t_old_);
-  if (t_old_ != t_)
+  if (numSteps > 0)
     time_vec->push_back(t_);
+#ifdef Rythmos_DEBUG
+  Teuchos::OSTab ostab(debug_out,1,"BES::GetNodes");
+  if (debugLevel > 1)
+  {
+    *debug_out << this->description() << std::endl;
+    for (int i=0 ; i<time_vec->size() ; ++i)
+    {
+      *debug_out << "time_vec[" << i << "] = " << (*time_vec)[i] << std::endl;
+    }
+  }
+#endif // Rythmos_DEBUG
   return(true);
 }
 
 template<class Scalar>
 bool BackwardEulerStepper<Scalar>::RemoveNodes(std::vector<Scalar>& time_vec) 
 {
+#ifdef Rythmos_DEBUG
+  Teuchos::OSTab ostab(debug_out,1,"BES::RemoveNodes");
+  if (debugLevel > 1)
+  {
+    *debug_out << "time_vec = " << std::endl;
+    for (int i=0 ; i<time_vec.size() ; ++i)
+      *debug_out << "time_vec[" << i << "] = " << time_vec[i] << std::endl;
+  }
+#endif // Rythmos_DEBUG
   // TODO:
   // if any time in time_vec matches t_ or t_old_, then do the following:
   // remove t_old_:  set t_old_ = t_ and set scaled_x_old_ = x_

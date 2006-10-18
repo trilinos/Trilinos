@@ -180,7 +180,7 @@ void InterpolationBufferAsStepper<Scalar>::setStepper(
   //                   Note also:  this functionality is important for checkpointing.
   stepper = stepper_;
 #ifdef Rythmos_DEBUG
-  Teuchos::OSTab ostab(debug_out,1,"setStepper");
+  Teuchos::OSTab ostab(debug_out,1,"IBAS::setStepper");
   if (debugLevel > 1)
   {
     *debug_out << "stepper = " << stepper->description() << std::endl;
@@ -204,7 +204,7 @@ void InterpolationBufferAsStepper<Scalar>::setInterpolationBuffer(
   //                   Note also:  this functionality is important for checkpointing.
   IB = IB_;
 #ifdef Rythmos_DEBUG
-  Teuchos::OSTab ostab(debug_out,1,"setInterpolationBuffer");
+  Teuchos::OSTab ostab(debug_out,1,"IBAS::setInterpolationBuffer");
   if (debugLevel > 1)
   {
     *debug_out << "IB = " << IB->description() << std::endl;
@@ -222,7 +222,7 @@ void InterpolationBufferAsStepper<Scalar>::setParameterList(
   else
     parameterList = parameterList_;
 #ifdef Rythmos_DEBUG
-  Teuchos::OSTab ostab(debug_out,1,"setParameterList");
+  Teuchos::OSTab ostab(debug_out,1,"IBAS::setParameterList");
   if (debugLevel > 1)
   {
     *debug_out << "parameterList = " << parameterList->print(*debug_out) << std::endl;
@@ -251,7 +251,7 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
       ) const
 {
 #ifdef Rythmos_DEBUG
-  Teuchos::OSTab ostab(debug_out,1,"GetPoints");
+  Teuchos::OSTab ostab(debug_out,1,"IBAS::GetPoints");
   if (debugLevel > 1)
   {
     *debug_out << "time_vec_ = " << std::endl;
@@ -333,6 +333,48 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
     }
   }
 #endif // Rythmos_DEBUG
+  if (node_vec.size() == 0)
+  {
+    // Initialization case for an empty InterpolationBuffer
+    std::vector<Scalar> stepper_vec;
+    status = stepper->GetNodes(&stepper_vec);
+    if (!status) return(status);
+    if (stepper_vec.size() < 2)
+    {
+      // Stepper and IB are basically empty
+#ifdef Rythmos_DEBUG
+      if (debugLevel > 1)
+        *debug_out << "Initializing empty Stepper and InterpolationBuffer" << std::endl;
+#endif // Rythmos_DEBUG
+      Scalar step_taken;
+      if (parameterList->isParameter("fixed_dt"))
+        step_taken = stepper->TakeStep(parameterList->get<Scalar>("fixed_dt"));
+      else
+        step_taken = stepper->TakeStep();
+      // Pass information from stepper to IB:
+      status = stepper->GetNodes(&stepper_vec);
+      if (!status) return(status);
+      Scalar stepper_begin = stepper_vec[0];
+      Scalar stepper_end = stepper_vec[stepper_vec.size()-1];
+      status = IB->SetRange(stepper_begin,stepper_end,*stepper);
+      if (!status) return(status);
+    }
+    else 
+    {
+      // Just the IB is empty
+#ifdef Rythmos_DEBUG
+      if (debugLevel > 1)
+        *debug_out << "Initializing empty InterpolationBuffer" << std::endl;
+#endif // Rythmos_DEBUG
+      std::vector<Scalar> stepper_vec;
+      status = stepper->GetNodes(&stepper_vec);
+      if (!status) return(status);
+      Scalar stepper_begin = *(stepper_vec.begin());
+      Scalar stepper_end = *(stepper_vec.end());
+      status = IB->SetRange(stepper_begin,stepper_end,*stepper);
+      if (!status) return(status);
+    }
+  }
   Scalar node_begin = *(node_vec.begin());
   Scalar node_end = *(node_vec.end());
   // Check for valid input of local_time_vec:  (check initialization conditions)
@@ -344,7 +386,29 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
 #endif // Rythmos_DEBUG
   // Get time out of stepper:
   std::vector<Scalar> stepper_vec;
-  stepper->GetNodes(&stepper_vec);
+  status = stepper->GetNodes(&stepper_vec);
+  if (!status) return(status);
+  if (stepper_vec.size() < 2)
+  {
+    // Initialization case for an empty Stepper
+#ifdef Rythmos_DEBUG
+    if (debugLevel > 1)
+      *debug_out << "Initializing empty Stepper" << std::endl;
+#endif // Rythmos_DEBUG
+    Scalar stepper_begin = *(stepper_vec.begin()); // There must be an IC in the stepper.
+    Scalar step_taken;
+    if (parameterList->isParameter("fixed_dt"))
+      step_taken = stepper->TakeStep(parameterList->get<Scalar>("fixed_dt"));
+    else
+      step_taken = stepper->TakeStep();
+    // Pass information from stepper to IB:
+    status = IB->SetRange(stepper_begin,stepper_begin+step_taken,*stepper);
+    if (!status) return(status);
+    status = IB->GetNodes(&node_vec); 
+    if (!status) return(status);
+    node_begin = *(node_vec.begin());
+    node_end = *(node_vec.end());
+  }
   Scalar stepper_begin = *(stepper_vec.begin());
   Scalar stepper_end = *(stepper_vec.end());
   int num = local_time_vec.size();
@@ -417,6 +481,15 @@ bool InterpolationBufferAsStepper<Scalar>::SetRange(
       ,const InterpolationBufferBase<Scalar> & IB_
       )
 {
+#ifdef Rythmos_DEBUG
+  Teuchos::OSTab ostab(debug_out,1,"IBAS::SetRange");
+  if (debugLevel > 1)
+  {
+    *debug_out << "time_lower = " << time_lower << std::endl;
+    *debug_out << "time_upper = " << time_upper << std::endl;
+    *debug_out << "IB = " << IB_.description() << std::endl;
+  }
+#endif // Rythmos_DEBUG
   return(IB->SetRange(time_lower,time_upper,IB_));
 }
 
@@ -425,6 +498,11 @@ bool InterpolationBufferAsStepper<Scalar>::GetNodes(
     std::vector<Scalar>* time_vec
     ) const
 {
+#ifdef Rythmos_DEBUG
+  Teuchos::OSTab ostab(debug_out,1,"IBAS::GetNodes");
+  if (debugLevel > 1)
+    *debug_out << this->description() << std::endl;
+#endif // Rythmos_DEBUG
   return(IB->GetNodes(time_vec));
 }
 

@@ -68,10 +68,10 @@ class DataStore : virtual public Teuchos::Describable
     /// Less than comparison for sorting:
     bool operator< (const DataStore<Scalar>& ds) const;
 
-    /// Greather than comparison for sorting:
-    bool operator> (const DataStore<Scalar>& ds) const;
+    /// Greater than comparison for sorting:
+//    bool operator> (const DataStore<Scalar>& ds) const;
 
-    /// Equality comparison for matchin:
+    /// Equality comparison for matching:
     bool operator== (const DataStore<Scalar>& ds) const;
 
     /// typedef for creating vectors of DataStore objects.
@@ -147,11 +147,11 @@ bool DataStore<Scalar>::operator< (const DataStore<Scalar>& ds) const
   return( this->time < ds.time ); 
 }
 
-template<class Scalar>
-bool DataStore<Scalar>::operator> (const DataStore<Scalar>& ds) const
-{ 
-  return( this->time > ds.time ); 
-}
+//template<class Scalar>
+//bool DataStore<Scalar>::operator> (const DataStore<Scalar>& ds) const
+//{ 
+//  return( this->time > ds.time ); 
+//}
 
 template<class Scalar>
 bool DataStore<Scalar>::operator== (const DataStore<Scalar>& ds) const

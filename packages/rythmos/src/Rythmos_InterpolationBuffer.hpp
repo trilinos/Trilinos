@@ -152,7 +152,7 @@ void InterpolationBuffer<Scalar>::initialize(
   debug_out->setShowLinePrefix(true);
   debug_out->setTabIndentStr("    ");
   *debug_out << "Initializing InterpolationBuffer" << std::endl;
-  Teuchos::OSTab ostab(debug_out,1,"initialize");
+  Teuchos::OSTab ostab(debug_out,1,"IB::initialize");
   if (debugLevel > 1)
     *debug_out << "Calling SetInterpolator..." << std::endl;
 #endif // Rythmos_DEBUG
@@ -169,7 +169,7 @@ void InterpolationBuffer<Scalar>::SetStorage( int storage_ )
 {
   storage_limit = max(2,storage_); // Minimum of two points so interpolation is possible
 #ifdef Rythmos_DEBUG
-  Teuchos::OSTab ostab(debug_out,1,"SetStorage");
+  Teuchos::OSTab ostab(debug_out,1,"IB::SetStorage");
   if (debugLevel > 1)
   {
     *debug_out << "storage_limit = " << storage_limit << std::endl;
@@ -191,7 +191,7 @@ void InterpolationBuffer<Scalar>::SetInterpolator(
     interpolator = interpolator_;
   }
 #ifdef Rythmos_DEBUG
-  Teuchos::OSTab ostab(debug_out,1,"SetInterpolator");
+  Teuchos::OSTab ostab(debug_out,1,"IB::SetInterpolator");
   if (debugLevel > 1)
   {
     *debug_out << "interpolator = " << interpolator->description() << std::endl;
@@ -208,7 +208,7 @@ bool InterpolationBuffer<Scalar>::SetPoints(
     )
 {
 #ifdef Rythmos_DEBUG
-  Teuchos::OSTab ostab(debug_out,1,"SetPoints");
+  Teuchos::OSTab ostab(debug_out,1,"IB::SetPoints");
   if (debugLevel > 1)
   {
     *debug_out << "time_vec = " << std::endl;
@@ -333,7 +333,7 @@ bool InterpolationBuffer<Scalar>::GetPoints(
     ,std::vector<ScalarMag>* accuracy_vec) const
 {
 #ifdef Rythmos_DEBUG
-  Teuchos::OSTab ostab(debug_out,1,"GetPoints");
+  Teuchos::OSTab ostab(debug_out,1,"IB::GetPoints");
   if (debugLevel > 1)
     *debug_out << "Calling interpolate..." << std::endl;
 #endif // Rythmos_DEBUG
@@ -363,7 +363,7 @@ bool InterpolationBuffer<Scalar>::SetRange(
     ,const InterpolationBufferBase<Scalar>& IB )
 {
 #ifdef Rythmos_DEBUG
-  Teuchos::OSTab ostab(debug_out,1,"SetRange");
+  Teuchos::OSTab ostab(debug_out,1,"IB::SetRange");
   if (debugLevel > 1)
   {
     *debug_out << "time_lower = " << time_lower << std::endl;
@@ -371,13 +371,13 @@ bool InterpolationBuffer<Scalar>::SetRange(
     *debug_out << "IB = " << IB.description() << std::endl;
   }
 #endif // Rythmos_DEBUG
-  std::vector<ScalarMag> input_nodes;
+  std::vector<Scalar> input_nodes;
   bool status = IB.GetNodes(&input_nodes);
   if (!status) return(status);
 #ifdef Rythmos_DEBUG
   if (debugLevel > 1)
   {
-    *debug_out << "input_nodes = " << std::endl;
+    *debug_out << "input_nodes:" << std::endl;
     for (int i=0 ; i<input_nodes.size() ; ++i)
       *debug_out << "input_nodes[" << i << "] = " << input_nodes[i] << std::endl;
   }
@@ -392,7 +392,7 @@ bool InterpolationBuffer<Scalar>::SetRange(
   }
 #endif // Rythmos_DEBUG
   // Remove nodes outside the range [time_lower,time_upper]
-  typename std::vector<ScalarMag>::iterator input_it = input_nodes.begin();
+  typename std::vector<Scalar>::iterator input_it = input_nodes.begin();
   for (; input_it != input_nodes.end() ; input_it++)
   {
     if (*input_it >= time_lower)
@@ -407,14 +407,18 @@ bool InterpolationBuffer<Scalar>::SetRange(
     int n0 = 0;
     int n1 = input_it - input_nodes.begin();
     *debug_out << "Removing input_nodes before time_lower:" << std::endl;
+    *debug_out << "n0 = " << n0 << std::endl;
+    *debug_out << "n1 = " << n1 << std::endl;
     for (int i=n0 ; i<=n1; ++i)
     {
       *debug_out << "input_nodes[" << i << "] = " << input_nodes[i] << std::endl;
     }
   }
 #endif // Rythmos_DEBUG
-  input_nodes.erase(input_nodes.begin(),input_it);
+  if (input_it - input_nodes.begin() >= 0)
+    input_nodes.erase(input_nodes.begin(),input_it);
   input_it = input_nodes.end();
+  input_it--;
   for (; input_it != input_nodes.begin() ; input_it--)
   {
     if (*input_it <= time_upper)
@@ -427,36 +431,69 @@ bool InterpolationBuffer<Scalar>::SetRange(
   if (debugLevel > 1)
   {
     int n0 = input_it - input_nodes.begin();
-    int n1 = input_nodes.end() - input_nodes.begin();
+    int n1 = input_nodes.size();
     *debug_out << "Removing input_nodes after time_upper:" << std::endl;
-    for (int i=n0 ; i<=n1; ++i)
+    *debug_out << "n0 = " << n0 << std::endl;
+    *debug_out << "n1 = " << n1 << std::endl;
+    for (int i=n0 ; i<n1; ++i)
     {
       *debug_out << "input_nodes[" << i << "] = " << input_nodes[i] << std::endl;
     }
   }
 #endif // Rythmos_DEBUG
-  input_nodes.erase(input_it,input_nodes.end());
+  if (input_it - input_nodes.begin() < input_nodes.size())
+    input_nodes.erase(input_it,input_nodes.end());
+#ifdef Rythmos_DEBUG
+  if (debugLevel > 1)
+  {
+    *debug_out << "input_nodes remaining:" << std::endl;
+    for (int i=0 ; i<input_nodes.size() ; ++i)
+      *debug_out << "input_nodes[" << i << "] = " << input_nodes[i] << std::endl;
+  }
+#endif // Rythmos_DEBUG
 
   // Ask IB to interpolate more points if IB's order is higher than ours
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  ScalarMag h_safety = ScalarMag(2*ST::one());
+  Scalar h_safety = Scalar(2*ST::one());
   int IBOrder = IB.GetOrder();
   if (IBOrder >= interpolator->order())
   {
-    for (input_it = input_nodes.begin() ; input_it != input_nodes.end() ; input_it++)
+    std::list<Scalar> add_nodes;
+    for (int i=0 ; i<input_nodes.size()-1 ; ++i)
     {
-      typename std::vector<ScalarMag>::iterator input_it_next = input_it++;
-      if (input_it_next == input_nodes.end())
-        break;
-      ScalarMag h_0 = *input_it_next - *input_it;
-      ScalarMag h = pow(h_0,(IBOrder/interpolator->order())/h_safety);
-      Scalar N = ceil(h_0/h);
-      h = ScalarMag(h_0/N);
-      for (int i=1 ; i<N ; ++i)
+      Scalar h_0 = input_nodes[i+1] - input_nodes[i];
+      Scalar h = pow(h_0,(IBOrder/interpolator->order())/h_safety);
+#ifdef Rythmos_DEBUG
+      if (debugLevel > 1)
       {
-        input_nodes.insert(input_it_next,*input_it+i*h);
+        *debug_out << "i = " << i << std::endl;
+        *debug_out << "interpolator->order() = " << interpolator->order() << std::endl;
+        *debug_out << "IB.GetOrder() = " << IB.GetOrder() << std::endl;
+        *debug_out << "h = " << h << std::endl;
+      }
+#endif // Rythmos_DEBUG
+      Scalar N = ceil(h_0/h);
+      h = Scalar(h_0/N);
+#ifdef Rythmos_DEBUG
+      if (debugLevel > 1)
+      {
+        *debug_out << "h_0 = " << h_0 << std::endl;
+        *debug_out << "N = " << N << std::endl;
+        *debug_out << "h = " << h << std::endl;
+        *debug_out << "Inserting an additional " << N-1 << " points to be interpolated:" << std::endl;
+      }
+#endif // Rythmos_DEBUG
+      for (int j=1 ; j<N ; ++j)
+      {
+#ifdef Rythmos_DEBUG
+        if (debugLevel > 1)
+          *debug_out << input_nodes[i]+j*h << std::endl;
+#endif // Rythmos_DEBUG
+        add_nodes.push_back(input_nodes[i]+j*h);
       }
     }
+    input_nodes.insert(input_nodes.end(),add_nodes.begin(),add_nodes.end());
+    std::sort(input_nodes.begin(),input_nodes.end());
   }
   // If IB's order is lower than ours, then simply grab the node values and continue.
   // If IB's order is higher than ours, then grab the node values and ask IB to
@@ -480,7 +517,7 @@ bool InterpolationBuffer<Scalar>::SetRange(
   status = IB.GetPoints( input_nodes, &input_x, &input_xdot, &input_accuracy );
   if (!status) return(status);
   // We could check that the accuracy meets our criteria here.
-  status = SetPoints( input_nodes, input_x, input_xdot );
+  status = SetPoints( input_nodes, input_x, input_xdot, input_accuracy );
   return(status);
 }
 
@@ -492,6 +529,15 @@ bool InterpolationBuffer<Scalar>::GetNodes( std::vector<Scalar>* time_vec ) cons
   time_vec->reserve(N);
   for (int i=0 ; i<N ; ++i)
     time_vec->push_back(data_vec[i].time);
+#ifdef Rythmos_DEBUG
+  Teuchos::OSTab ostab(debug_out,1,"IB::GetNodes");
+  if (debugLevel > 1)
+  {
+    *debug_out << this->description() << std::endl;
+    for (int i=0 ; i<time_vec->size() ; ++i)
+      *debug_out << "time_vec[" << i << "] = " << (*time_vec)[i] << std::endl;
+  }
+#endif // Rythmos_DEBUG
   return(true);
 }
 
