@@ -339,6 +339,49 @@ bool BackwardEulerStepper<Scalar>::GetPoints(
       *debug_out << "time_vec[" << i << "] = " << time_vec[i] << std::endl;
   }
 #endif // Rythmos_DEBUG
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  bool status = true;
+  Scalar dt = t_ - t_old_;
+  for (int i=0 ; i<time_vec.size() ; ++i)
+  {
+    if (time_vec[i] == t_old_)
+    {
+#ifdef Rythmos_DEBUG
+      if (debugLevel > 1)
+        *debug_out << "time_vec[" << i << "] == t_old_, passing t_old_ out" << std::endl;
+#endif // Rythmos_DEBUG
+
+      Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x_temp = scaled_x_old_->clone_v();
+      Thyra::Vt_S(&*x_temp,Scalar(-ST::one()*dt));
+      x_vec->push_back(x_temp);
+      Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xdot_temp = x_->clone_v();
+      Thyra::Vt_S(&*xdot_temp,Scalar(ST::one()/dt));
+      Thyra::Vp_V(&*xdot_temp,*x_);
+      xdot_vec->push_back(xdot_temp);
+      accuracy_vec->push_back(dt);  
+    }
+    else if (time_vec[i] == t_)
+    {
+#ifdef Rythmos_DEBUG
+      if (debugLevel > 1)
+        *debug_out << "time_vec[" << i << "] == t_, passing t_ out" << std::endl;
+#endif // Rythmos_DEBUG
+      x_vec->push_back(x_);
+      Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xdot_temp = x_->clone_v();
+      Thyra::Vt_S(&*xdot_temp,Scalar(ST::one()/dt));
+      Thyra::Vp_V(&*xdot_temp,*x_);
+      xdot_vec->push_back(xdot_temp);
+      accuracy_vec->push_back(dt);
+    }
+    else
+    {
+#ifdef Rythmos_DEBUG
+      if (debugLevel > 1)
+        *debug_out << "time_vec[" << i << "] != t_old_ or t_, returning failure" << std::endl;
+#endif // Rythmos_DEBUG
+      status = false;
+    }
+  }
   // TODO:
   // Copy code from LinearInterpolationBuffer 
   // 10/9/06 tscoffe:  Could I derive off of LinearInterpolationBuffer to use that code?
@@ -356,7 +399,7 @@ bool BackwardEulerStepper<Scalar>::GetPoints(
   bool status = interpolator.interpolate();
   return(status);
   */
-  return(false);
+  return(status);
 }
 
 template<class Scalar>
