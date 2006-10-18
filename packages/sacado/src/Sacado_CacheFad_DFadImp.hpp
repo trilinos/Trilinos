@@ -72,7 +72,7 @@ Sacado::CacheFad::DFad<T>::operator=(const T& val)
   this->val_ = val;
 
   if (this->dx_.size()) 
-    this->dx_.resize(0.);
+    this->dx_.resize(0);
 
   return *this;
 }
