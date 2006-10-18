@@ -75,16 +75,18 @@ class ExplicitRKStepper : virtual public Stepper<Scalar>
     /// Redefined from InterpolationBufferBase 
     /// Add points to buffer
     bool SetPoints(
-      const std::vector<Scalar>& time_list
-      ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& x_list
-      ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& xdot_list);
+      const std::vector<Scalar>& time_vec
+      ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& x_vec
+      ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& xdot_vec
+      ,const std::vector<ScalarMag> & accuracy_vec 
+      );
     
     /// Get values from buffer
     bool GetPoints(
-      const std::vector<Scalar>& time_list
-      ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* x_list
-      ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* xdot_list
-      ,std::vector<ScalarMag>* accuracy_list) const;
+      const std::vector<Scalar>& time_vec
+      ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* x_vec
+      ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* xdot_vec
+      ,std::vector<ScalarMag>* accuracy_vec) const;
 
     /// Fill data in from another interpolation buffer
     bool SetRange(
@@ -93,10 +95,10 @@ class ExplicitRKStepper : virtual public Stepper<Scalar>
       ,const InterpolationBufferBase<Scalar> & IB);
 
     /// Get interpolation nodes
-    bool GetNodes(std::vector<Scalar>* time_list) const;
+    bool GetNodes(std::vector<Scalar>* time_vec) const;
 
     /// Remove interpolation nodes
-    bool RemoveNodes(std::vector<Scalar>& time_list) const;
+    bool RemoveNodes(std::vector<Scalar>& time_vec);
 
     /// Get order of interpolation
     int GetOrder() const;
@@ -357,19 +359,21 @@ std::ostream& ExplicitRKStepper<Scalar>::describe(
 
 template<class Scalar>
 bool ExplicitRKStepper<Scalar>::SetPoints(
-    const std::vector<Scalar>& time_list
-    ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& x_list
-    ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& xdot_list)
+    const std::vector<Scalar>& time_vec
+    ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& x_vec
+    ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& xdot_vec
+    ,const std::vector<ScalarMag> & accuracy_vec 
+    )
 {
   return(false);
 }
 
 template<class Scalar>
 bool ExplicitRKStepper<Scalar>::GetPoints(
-    const std::vector<Scalar>& time_list
-    ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* x_list
-    ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* xdot_list
-    ,std::vector<ScalarMag>* accuracy_list) const
+    const std::vector<Scalar>& time_vec
+    ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* x_vec
+    ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* xdot_vec
+    ,std::vector<ScalarMag>* accuracy_vec) const
 {
   return(false);
 }
@@ -384,13 +388,13 @@ bool ExplicitRKStepper<Scalar>::SetRange(
 }
 
 template<class Scalar>
-bool ExplicitRKStepper<Scalar>::GetNodes(std::vector<Scalar>* time_list) const
+bool ExplicitRKStepper<Scalar>::GetNodes(std::vector<Scalar>* time_vec) const
 {
   return(false);
 }
 
 template<class Scalar>
-bool ExplicitRKStepper<Scalar>::RemoveNodes(std::vector<Scalar>& time_list) const
+bool ExplicitRKStepper<Scalar>::RemoveNodes(std::vector<Scalar>& time_vec) 
 {
   return(false);
 }

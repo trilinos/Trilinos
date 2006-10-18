@@ -47,28 +47,30 @@ class InterpolationBufferBase : virtual public Teuchos::Describable
 
     /// Add points to buffer
     virtual bool SetPoints(
-      const std::vector<Scalar>& time_list
-      ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& x_list
-      ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& xdot_list) =0;
+      const std::vector<Scalar>& time_vec
+      ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& x_vec
+      ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& xdot_vec
+      ,const std::vector<ScalarMag> & accuracy_vec
+      ) =0; 
 
     /// Get values from buffer
     virtual bool GetPoints(
-      const std::vector<Scalar>& time_list
-      ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* x_list
-      ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* xdot_list
-      ,std::vector<ScalarMag>* accuracy_list) const =0;
+      const std::vector<Scalar>& time_vec
+      ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* x_vec
+      ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* xdot_vec
+      ,std::vector<ScalarMag>* accuracy_vec) const =0;
 
     /// Fill data in from another interpolation buffer
     virtual bool SetRange(
       const Scalar& time_lower
       ,const Scalar& time_upper
-      ,const InterpolationBufferBase<Scalar> & IB) =0;
+      ,const InterpolationBufferBase<Scalar>& IB) =0;
 
     /// Get interpolation nodes
-    virtual bool GetNodes(std::vector<Scalar>* time_list) const =0;
+    virtual bool GetNodes(std::vector<Scalar>* time_vec) const =0;
 
     /// Remove interpolation nodes
-    virtual bool RemoveNodes(std::vector<Scalar>& time_list) const =0;
+    virtual bool RemoveNodes(std::vector<Scalar>& time_vec) =0;
 
     /// Get order of interpolation
     virtual int GetOrder() const =0;

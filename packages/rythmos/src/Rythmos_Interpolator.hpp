@@ -35,7 +35,7 @@ namespace Rythmos {
 
 /** \brief Base strategy class for interpolation functionality. */
 template<class Scalar> 
-class Interpolator 
+class Interpolator : virtual public Teuchos::Describable
 {
   public:
 
@@ -44,9 +44,9 @@ class Interpolator
 
     /// Interpolation:
     virtual bool interpolate(
-        const std::vector<Teuchos::RefCountPtr<DataStore<Scalar> > > &data_in
+        const typename DataStore<Scalar>::DataStoreVector_t &data_in
         ,const std::vector<Scalar> &t_values
-        ,std::vector<Teuchos::RefCountPtr<DataStore<Scalar> > > *data_out
+        ,typename DataStore<Scalar>::DataStoreVector_t *data_out
         ) const =0;
 
     /// Order of interpolation:

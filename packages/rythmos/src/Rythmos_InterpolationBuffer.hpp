@@ -30,6 +30,8 @@
 #define Rythmos_INTERPOLATION_BUFFER_H
 
 #include "Rythmos_InterpolationBufferBase.hpp"
+#include "Rythmos_Interpolator.hpp"
+#include "Rythmos_LinearInterpolator.hpp"
 #include "Rythmos_DataStore.hpp"
 
 #include "Thyra_VectorBase.hpp"
@@ -46,29 +48,39 @@ class InterpolationBuffer : virtual public InterpolationBufferBase<Scalar>
     
     /** \brief. */
     InterpolationBuffer();
-    InterpolationBuffer( Interpolator<Scalar>& interpolator_, int storage=2 );
+    InterpolationBuffer( const Teuchos::RefCountPtr<Interpolator<Scalar> >& interpolator_, int storage_ );
+
+    /// Initialize the buffer:
+    void initialize( const Teuchos::RefCountPtr<Interpolator<Scalar> >& interpolator_, int storage_ );
 
     /// Set the interpolator for this buffer
-    SetInterpolator(Interpolator<Scalar>& interpolator_);
+    void SetInterpolator(const Teuchos::RefCountPtr<Interpolator<Scalar> >& interpolator_);
 
     /// Set the maximum storage of this buffer
-    SetStorage( int storage );
+    void SetStorage( int storage );
         
     /// Destructor
     ~InterpolationBuffer() {};
 
     /// Add point to buffer
     bool SetPoints(
-      const std::vector<Scalar>& time_list
-      ,const std::vector<Thyra::VectorBase<Scalar> >& x_list
-      ,const std::vector<Thyra::VectorBase<Scalar> >& xdot_list);
+      const std::vector<Scalar>& time_vec
+      ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& x_vec
+      ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& xdot_vec
+      ,const std::vector<ScalarMag> & accuracy_vec 
+      );
+
+    bool SetPoints(
+      const std::vector<Scalar>& time_vec
+      ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& x_vec
+      ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& xdot_vec);
 
     /// Get value from buffer
     bool GetPoints(
-      const std::vector<Scalar>& time_list
-      ,std::vector<Thyra::VectorBase<Scalar> >* x_list
-      ,std::vector<Thyra::VectorBase<Scalar> >* xdot_list
-      ,std::vector<ScalarMag>* accuracy_list) const;
+      const std::vector<Scalar>& time_vec
+      ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* x_vec
+      ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* xdot_vec
+      ,std::vector<ScalarMag>* accuracy_vec) const;
 
     /// Fill data in from another interpolation buffer
     bool SetRange(
@@ -77,20 +89,34 @@ class InterpolationBuffer : virtual public InterpolationBufferBase<Scalar>
       ,const InterpolationBufferBase<Scalar>& IB);
 
     /// Get interpolation nodes
-    bool GetNodes(std::vector<Scalar>* time_list) const;
+    bool GetNodes(std::vector<Scalar>* time_vec) const;
 
     /// Remove interpolation nodes
-    bool RemoveNodes(std::vector<Scalar>* time_list) const;
+    bool RemoveNodes(std::vector<Scalar>& time_vec);
 
     /// Get order of interpolation
     int GetOrder() const;
 
+    /// Redefined from Teuchos::Describable
+    /** \brief . */
+    std::string description() const;
+
+    /** \brief . */
+    void describe(
+      Teuchos::FancyOStream       &out
+      ,const Teuchos::EVerbosityLevel      verbLevel
+      ) const;
+
   private:
 
-    Teuchos::RefCountPtr<Interpolator<Scalar>> interpolator;
+    Teuchos::RefCountPtr<Interpolator<Scalar> > interpolator;
     int storage_limit;
-    Thyra::VectorBase<Scalar> tmp_vec;
-    std::vector<Teuchos::RefCountPtr<DataStore<Scalar> > > data_vec;
+    typename DataStore<Scalar>::DataStoreVector_t data_vec;
+
+#ifdef Rythmos_DEBUG
+    int debugLevel;
+    Teuchos::RefCountPtr<Teuchos::FancyOStream> debug_out;
+#endif // Rythmos_DEBUG
 
 };
 
@@ -99,47 +125,168 @@ class InterpolationBuffer : virtual public InterpolationBufferBase<Scalar>
 template<class Scalar>
 InterpolationBuffer<Scalar>::InterpolationBuffer()
 {
-  interpolator = Teuchos::rcp(new LinearInterpolator<Scalar>);
-  SetStorage(2);
+  initialize(Teuchos::null,0);
 }
 
 template<class Scalar>
-InterpolationBuffer<Scalar>::InterpolationBuffer( Interpolator<Scalar> interpolator_, int storage_ )
+InterpolationBuffer<Scalar>::InterpolationBuffer( 
+    const Teuchos::RefCountPtr<Interpolator<Scalar> >& interpolator_
+    ,int storage_ 
+    )
 {
-  interpolator = interpolator_;
+  initialize(interpolator_,storage_);
+}
+
+template<class Scalar>
+void InterpolationBuffer<Scalar>::initialize( 
+    const Teuchos::RefCountPtr<Interpolator<Scalar> >& interpolator_
+    ,int storage_
+    )
+{
+#ifdef Rythmos_DEBUG
+  debugLevel = 2;
+  debug_out = Teuchos::VerboseObjectBase::getDefaultOStream();
+  debug_out->precision(15);
+  debug_out->setMaxLenLinePrefix(30);
+  debug_out->pushLinePrefix("Rythmos::InterpolationBuffer");
+  debug_out->setShowLinePrefix(true);
+  debug_out->setTabIndentStr("    ");
+  *debug_out << "Initializing InterpolationBuffer" << std::endl;
+  Teuchos::OSTab ostab(debug_out,1,"initialize");
+  if (debugLevel > 1)
+    *debug_out << "Calling SetInterpolator..." << std::endl;
+#endif // Rythmos_DEBUG
+  SetInterpolator(interpolator_);
+#ifdef Rythmos_DEBUG
+  if (debugLevel > 1)
+    *debug_out << "Calling SetStorage..." << std::endl;
+#endif // Rythmos_DEBUG
   SetStorage(storage_);
 }
 
 template<class Scalar>
-InterpolationBuffer<Scalar>::SetStorage( int storage_ )
+void InterpolationBuffer<Scalar>::SetStorage( int storage_ )
 {
-  storage_limit = min(2,storage_); // Minimum of two points so interpolation is possible
+  storage_limit = max(2,storage_); // Minimum of two points so interpolation is possible
+#ifdef Rythmos_DEBUG
+  Teuchos::OSTab ostab(debug_out,1,"SetStorage");
+  if (debugLevel > 1)
+  {
+    *debug_out << "storage_limit = " << storage_limit << std::endl;
+  }
+#endif // Rythmos_DEBUG
 }
 
 template<class Scalar>
-InterpolationBuffer<Scalar>::SetInterpolator(Interpolator<Scalar>& interpolator_)
+void InterpolationBuffer<Scalar>::SetInterpolator(
+    const Teuchos::RefCountPtr<Interpolator<Scalar> >& interpolator_
+    )
 {
-  interpolator = interpolator_;
+  if (interpolator_ == Teuchos::null)
+  {
+    interpolator = Teuchos::rcp(new LinearInterpolator<Scalar>);
+  }
+  else
+  {
+    interpolator = interpolator_;
+  }
+#ifdef Rythmos_DEBUG
+  Teuchos::OSTab ostab(debug_out,1,"SetInterpolator");
+  if (debugLevel > 1)
+  {
+    *debug_out << "interpolator = " << interpolator->description() << std::endl;
+  }
+#endif // Rythmos_DEBUG
 }
 
 template<class Scalar>
 bool InterpolationBuffer<Scalar>::SetPoints( 
     const std::vector<Scalar>& time_vec
     ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& x_vec
-    ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& xdot_vec );
+    ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& xdot_vec 
+    ,const std::vector<ScalarMag> & accuracy_vec 
+    )
 {
-  std::list<Teuchos::RefCountPtr<DataStore<Scalar> > > input_data_list;
-  VectorToDataStoreSeq(time_vec,x_vec,xdot_vec,&input_data_list);
+#ifdef Rythmos_DEBUG
+  Teuchos::OSTab ostab(debug_out,1,"SetPoints");
+  if (debugLevel > 1)
+  {
+    *debug_out << "time_vec = " << std::endl;
+    for (int i=0 ; i<time_vec.size() ; ++i)
+      *debug_out << "time_vec[" << i << "] = " << time_vec[i] << std::endl;
+    *debug_out << "x_vec = " << std::endl;
+    for (int i=0 ; i<x_vec.size() ; ++i)
+    {
+      *debug_out << "x_vec[" << i << "] = " << std::endl;
+      x_vec[i]->describe(*debug_out,Teuchos::VERB_EXTREME);
+    }
+    *debug_out << "xdot_vec = " << std::endl;
+    for (int i=0 ; i<xdot_vec.size() ; ++i)
+    {
+      *debug_out << "xdot_vec[" << i << "] = " << std::endl;
+      xdot_vec[i]->describe(*debug_out,Teuchos::VERB_EXTREME);
+    }
+    *debug_out << "accuracy_vec = " << std::endl;
+    for (int i=0 ; i<accuracy_vec.size() ; ++i)
+      *debug_out << "accuracy_vec[" << i << "] = " << accuracy_vec[i] << std::endl;
+  }
+#endif // Rythmos_DEBUG
+  typename DataStore<Scalar>::DataStoreList_t input_data_list;
+  VectorToDataStoreList<Scalar>(time_vec,x_vec,xdot_vec,accuracy_vec,&input_data_list);
+#ifdef Rythmos_DEBUG
+  if (debugLevel > 1)
+  {
+    *debug_out << "input_data_list = " << std::endl;
+    typename DataStore<Scalar>::DataStoreList_t::iterator
+      data_it = input_data_list.begin();
+    int i=0;
+    for (; data_it != input_data_list.end() ; data_it++)
+    {
+      *debug_out << "item " << i << ":" << std::endl;
+      data_it->describe(*debug_out,Teuchos::VERB_EXTREME);
+      i++;
+    }
+  }
+#endif // Rythmos_DEBUG
   input_data_list.sort();
+#ifdef Rythmos_DEBUG
+  if (debugLevel > 1)
+  {
+    *debug_out << "input_data_list after sorting = " << std::endl;
+    typename DataStore<Scalar>::DataStoreList_t::iterator
+      data_it = input_data_list.begin();
+    int i=0;
+    for (; data_it != input_data_list.end() ; data_it++)
+    {
+      *debug_out << "item " << i << ":" << std::endl;
+      data_it->describe(*debug_out,Teuchos::VERB_EXTREME);
+      i++;
+    }
+  }
+#endif // Rythmos_DEBUG
   // Determine if time is already in list and if so, replace existing data with new data.
-  std::list<Teuchos::RefCountPtr<DataStore<Scalar> > >::iterator input_it = input_data_list.begin();
+  typename DataStore<Scalar>::DataStoreList_t::iterator 
+    input_it = input_data_list.begin();
   for ( ; input_it != input_data_list.end() ; input_it++)
   {
-    std::vector<Teuchos::RefCountPtr<DataStore<Scalar> > >::iterator 
-      node_it = find(data_vec.begin(),data_vec.end(),*input_it);
+    typename DataStore<Scalar>::DataStoreVector_t::iterator 
+      node_it = std::find(data_vec.begin(),data_vec.end(),*input_it);
     if (node_it != data_vec.end())
     {
-      data_vec[i] = *input_it;
+      int node_index = node_it - data_vec.begin(); // 10/17/06 tscoffe:  this
+                                                   // is how you back out an
+                                                   // element's index into a
+                                                   // vector from its iterator.
+#ifdef Rythmos_DEBUG
+      if (debugLevel > 1)
+      {
+        *debug_out << "Replacing data_vec[" << node_index << "] = " << std::endl;
+        node_it->describe(*debug_out,Teuchos::VERB_EXTREME);
+        *debug_out << "with:" << std::endl;
+        input_it->describe(*debug_out,Teuchos::VERB_EXTREME);
+      }
+#endif // Rythmos_DEBUG
+      data_vec[node_index] = *input_it;
       input_data_list.erase(input_it);
     }
   }
@@ -148,23 +295,63 @@ bool InterpolationBuffer<Scalar>::SetPoints(
     return(false);
   // Now add all the remaining points to data_vec
   data_vec.insert(data_vec.end(),input_data_list.begin(),input_data_list.end());
+  // And sort data_vec:
+  std::sort(data_vec.begin(),data_vec.end());
+#ifdef Rythmos_DEBUG
+  if (debugLevel > 1)
+  {
+    *debug_out << "data_vec and end of SetPoints:" << std::endl;
+    for (int i=0 ; i<data_vec.size() ; ++i)
+    {
+      *debug_out << "data_vec[" << i << "] = " << std::endl;
+      data_vec[i].describe(*debug_out,Teuchos::VERB_EXTREME);
+    }
+  }
+#endif // Rythmos_DEBUG
   return(true);
+}
+
+template<class Scalar>
+bool InterpolationBuffer<Scalar>::SetPoints( 
+    const std::vector<Scalar>& time_vec
+    ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& x_vec
+    ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& xdot_vec )
+{
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  std::vector<ScalarMag> accuracy_vec;
+  accuracy_vec.reserve(x_vec.size());
+  for (int i=0;i<x_vec.size();++i)
+    accuracy_vec[i] = ST::zero();
+  return(this->SetPoints(time_vec,x_vec,xdot_vec,accuracy_vec));
 }
 
 template<class Scalar>
 bool InterpolationBuffer<Scalar>::GetPoints(
     const std::vector<Scalar>& time_vec
     ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* x_vec
-    ,std::vector<Tuechos::RefCountPtr<Thyra::VectorBase<Scalar> > >* xdot_vec
+    ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* xdot_vec
     ,std::vector<ScalarMag>* accuracy_vec) const
 {
-  std::vector<Teuchos::RefCountPtr<DataStore<Scalar> > > data_out;
+#ifdef Rythmos_DEBUG
+  Teuchos::OSTab ostab(debug_out,1,"GetPoints");
+  if (debugLevel > 1)
+    *debug_out << "Calling interpolate..." << std::endl;
+#endif // Rythmos_DEBUG
+  typename DataStore<Scalar>::DataStoreVector_t data_out;
   bool status = interpolator->interpolate(data_vec, time_vec, &data_out);
   if (!status) return(status);
-  std::vector<Scalar>& time_out_vec;
-  DataStoreSeqToVector(data_out, &time_out_vec, x_vec, xdot_vec, accuracy_vec);
+#ifdef Rythmos_DEBUG
+  if (debugLevel > 1)
+    *debug_out << "Interpolation successful" << std::endl;
+#endif // Rythmos_DEBUG
+  std::vector<Scalar> time_out_vec;
+  DataStoreVectorToVector<Scalar>(data_out, &time_out_vec, x_vec, xdot_vec, accuracy_vec);
   // Double check that time_out_vec == time_vec
   if (time_vec.size() != time_out_vec.size()) return(false);
+#ifdef Rythmos_DEBUG
+  if (debugLevel > 1)
+    *debug_out << "Conversion of DataStoreVector to Vector successful" << std::endl;
+#endif // Rythmos_DEBUG
   return(true);
 }
 
@@ -175,12 +362,37 @@ bool InterpolationBuffer<Scalar>::SetRange(
     ,const Scalar& time_upper
     ,const InterpolationBufferBase<Scalar>& IB )
 {
+#ifdef Rythmos_DEBUG
+  Teuchos::OSTab ostab(debug_out,1,"SetRange");
+  if (debugLevel > 1)
+  {
+    *debug_out << "time_lower = " << time_lower << std::endl;
+    *debug_out << "time_upper = " << time_upper << std::endl;
+    *debug_out << "IB = " << IB.description() << std::endl;
+  }
+#endif // Rythmos_DEBUG
   std::vector<ScalarMag> input_nodes;
   bool status = IB.GetNodes(&input_nodes);
   if (!status) return(status);
+#ifdef Rythmos_DEBUG
+  if (debugLevel > 1)
+  {
+    *debug_out << "input_nodes = " << std::endl;
+    for (int i=0 ; i<input_nodes.size() ; ++i)
+      *debug_out << "input_nodes[" << i << "] = " << input_nodes[i] << std::endl;
+  }
+#endif // Rythmos_DEBUG
   std::sort(input_nodes.begin(),input_nodes.end());
+#ifdef Rythmos_DEBUG
+  if (debugLevel > 1)
+  {
+    *debug_out << "input_nodes after sorting = " << std::endl;
+    for (int i=0 ; i<input_nodes.size() ; ++i)
+      *debug_out << "input_nodes[" << i << "] = " << input_nodes[i] << std::endl;
+  }
+#endif // Rythmos_DEBUG
   // Remove nodes outside the range [time_lower,time_upper]
-  std::vector<ScalarMag>::iterator input_it = input_nodes.begin();
+  typename std::vector<ScalarMag>::iterator input_it = input_nodes.begin();
   for (; input_it != input_nodes.end() ; input_it++)
   {
     if (*input_it >= time_lower)
@@ -189,6 +401,18 @@ bool InterpolationBuffer<Scalar>::SetRange(
       break;
     }
   }
+#ifdef Rythmos_DEBUG
+  if (debugLevel > 1)
+  {
+    int n0 = 0;
+    int n1 = input_it - input_nodes.begin();
+    *debug_out << "Removing input_nodes before time_lower:" << std::endl;
+    for (int i=n0 ; i<=n1; ++i)
+    {
+      *debug_out << "input_nodes[" << i << "] = " << input_nodes[i] << std::endl;
+    }
+  }
+#endif // Rythmos_DEBUG
   input_nodes.erase(input_nodes.begin(),input_it);
   input_it = input_nodes.end();
   for (; input_it != input_nodes.begin() ; input_it--)
@@ -199,21 +423,34 @@ bool InterpolationBuffer<Scalar>::SetRange(
       break;
     }
   }
+#ifdef Rythmos_DEBUG
+  if (debugLevel > 1)
+  {
+    int n0 = input_it - input_nodes.begin();
+    int n1 = input_nodes.end() - input_nodes.begin();
+    *debug_out << "Removing input_nodes after time_upper:" << std::endl;
+    for (int i=n0 ; i<=n1; ++i)
+    {
+      *debug_out << "input_nodes[" << i << "] = " << input_nodes[i] << std::endl;
+    }
+  }
+#endif // Rythmos_DEBUG
   input_nodes.erase(input_it,input_nodes.end());
 
   // Ask IB to interpolate more points if IB's order is higher than ours
+  typedef Teuchos::ScalarTraits<Scalar> ST;
   ScalarMag h_safety = ScalarMag(2*ST::one());
   int IBOrder = IB.GetOrder();
-  if (IBOrder >= order)
+  if (IBOrder >= interpolator->order())
   {
     for (input_it = input_nodes.begin() ; input_it != input_nodes.end() ; input_it++)
     {
-      std::vector<ScalarMag>::iterator input_it_next = input_it++;
+      typename std::vector<ScalarMag>::iterator input_it_next = input_it++;
       if (input_it_next == input_nodes.end())
         break;
       ScalarMag h_0 = *input_it_next - *input_it;
-      ScalarMag h = h_0^(IBOrder/order)/h_safety;
-      int N = ceil(h_0/h);
+      ScalarMag h = pow(h_0,(IBOrder/interpolator->order())/h_safety);
+      Scalar N = ceil(h_0/h);
       h = ScalarMag(h_0/N);
       for (int i=1 ; i<N ; ++i)
       {
@@ -237,10 +474,10 @@ bool InterpolationBuffer<Scalar>::SetRange(
   // Don't forget to check the interval [time_lower,time_upper].
   // Use SetPoints and check return value to make sure we observe storage_limit.
 
-  std::vector<Teuchos::RefCountPtr<Scalar> > input_x;
-  std::vector<Teuchos::RefCountPtr<Scalar> > input_xdot;
+  std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > input_x;
+  std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > input_xdot;
   std::vector<ScalarMag> input_accuracy;
-  status = IB.GetPoints( input_nodes, &input_x, &input_xdot &input_accuracy );
+  status = IB.GetPoints( input_nodes, &input_x, &input_xdot, &input_accuracy );
   if (!status) return(status);
   // We could check that the accuracy meets our criteria here.
   status = SetPoints( input_nodes, input_x, input_xdot );
@@ -250,22 +487,26 @@ bool InterpolationBuffer<Scalar>::SetRange(
 template<class Scalar>
 bool InterpolationBuffer<Scalar>::GetNodes( std::vector<Scalar>* time_vec ) const
 {
-  std::vector<Teuchos::RefCountPtr<DataStore<Scalar> > >::iterator data_it = data_vec.begin();
-  for (; data_it != data_vec.end() ; data_it++)
-  {
-    time_vec->push_back((*data_it)->time);
-  }
+  int N = data_vec.size();
+  time_vec->clear();
+  time_vec->reserve(N);
+  for (int i=0 ; i<N ; ++i)
+    time_vec->push_back(data_vec[i].time);
   return(true);
 }
 
 template<class Scalar>
-bool InterpolationBuffer<Scalar>::RemoveNodes( std::vector<Scalar>& time_vec ) const
+bool InterpolationBuffer<Scalar>::RemoveNodes( std::vector<Scalar>& time_vec ) 
 {
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  ScalarMag z = ST::zero();
+  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > vec_temp;
   int N = time_vec.size();
   for (int i=0; i<N ; ++i)
   {
-    std::vector<Teuchos::RefCountPtr<DataStore<Scalar> > >::iterator 
-      data_it = std::find(data_vec.begin(),data_vec.end(),time_vec[i]);
+    DataStore<Scalar> ds_temp(time_vec[i],vec_temp,vec_temp,z);
+    typename DataStore<Scalar>::DataStoreVector_t::iterator 
+      data_it = std::find(data_vec.begin(),data_vec.end(),ds_temp);
     if (data_it != data_vec.end())
       data_vec.erase(data_it);
   }
@@ -276,6 +517,33 @@ template<class Scalar>
 int InterpolationBuffer<Scalar>::GetOrder() const
 {
   return(interpolator->order());
+}
+
+template<class Scalar>
+std::string InterpolationBuffer<Scalar>::description() const
+{
+  std::string name = "Rythmos::InterpolationBuffer";
+  return(name);
+}
+
+template<class Scalar>
+void InterpolationBuffer<Scalar>::describe(
+      Teuchos::FancyOStream                &out
+      ,const Teuchos::EVerbosityLevel      verbLevel
+      ) const
+{
+  if (verbLevel == Teuchos::VERB_EXTREME)
+  {
+    out << description() << "::describe" << std::endl;
+    out << "interpolator = " << interpolator->description() << std::endl;
+    out << "storage_limit = " << storage_limit << std::endl;
+    out << "data_vec = " << std::endl;
+    for (int i=0; i<data_vec.size() ; ++i)
+    {
+      out << "data_vec[" << i << "] = " << std::endl;
+      data_vec[i].describe(out,Teuchos::VERB_EXTREME);
+    }
+  }
 }
 
 } // namespace Rythmos

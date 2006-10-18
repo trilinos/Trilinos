@@ -82,17 +82,19 @@ class BackwardEulerStepper : virtual public Stepper<Scalar>
     /// Add points to buffer
     /// This will take the last one or two points in the list and set up to integrate from here.
     bool SetPoints(
-      const std::vector<Scalar>& time_list
-      ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& x_list
-      ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& xdot_list);
+      const std::vector<Scalar>& time_vec
+      ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& x_vec
+      ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& xdot_vec
+      ,const std::vector<ScalarMag> & accuracy_vec 
+      );
     
     /// Get values from buffer
     /// This will interpolate points if t_old_ != t_
     bool GetPoints(
-      const std::vector<Scalar>& time_list
-      ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* x_list
-      ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* xdot_list
-      ,std::vector<ScalarMag>* accuracy_list) const;
+      const std::vector<Scalar>& time_vec
+      ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* x_vec
+      ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* xdot_vec
+      ,std::vector<ScalarMag>* accuracy_vec) const;
 
     /// Fill data in from another interpolation buffer
     /// This will do the same as SetPoints
@@ -103,11 +105,11 @@ class BackwardEulerStepper : virtual public Stepper<Scalar>
 
     /// Get interpolation nodes
     /// This will return t_old_ and t_ provided t_old_ != t_
-    bool GetNodes(std::vector<Scalar>* time_list) const;
+    bool GetNodes(std::vector<Scalar>* time_vec) const;
 
     /// Remove interpolation nodes
     /// This would allow removal of t_old_ and/or t_ which might be used to reject steps.
-    bool RemoveNodes(std::vector<Scalar>& time_list) const;
+    bool RemoveNodes(std::vector<Scalar>& time_vec);
 
     /// Get order of interpolation
     /// This will return 1.
@@ -236,42 +238,44 @@ void BackwardEulerStepper<Scalar>::describe(
 
 template<class Scalar>
 bool BackwardEulerStepper<Scalar>::SetPoints(
-    const std::vector<Scalar>& time_list
-    ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& x_list
-    ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& xdot_list)
+    const std::vector<Scalar>& time_vec
+    ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& x_vec
+    ,const std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >& xdot_vec
+    ,const std::vector<ScalarMag> & accuracy_vec 
+    )
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  if (time_list.size() == 0)
+  if (time_vec.size() == 0)
   {
     return(false);
   }
-  else if (time_list.size() == 1)
+  else if (time_vec.size() == 1)
   {
     int n = 0;
-    t_ = time_list[n];
+    t_ = time_vec[n];
     t_old_ = t_;
-    Thyra::V_V(&*x_,*x_list[n]);
+    Thyra::V_V(&*x_,*x_vec[n]);
     Thyra::V_V(&*scaled_x_old_,*x_);
   }
   else 
   {
-    int n = time_list.size()-1;
-    int nm1 = time_list.size()-2;
-    t_ = time_list[n];
-    t_old_ = time_list[nm1];
-    Thyra::V_V(&*x_,*x_list[n]);
+    int n = time_vec.size()-1;
+    int nm1 = time_vec.size()-2;
+    t_ = time_vec[n];
+    t_old_ = time_vec[nm1];
+    Thyra::V_V(&*x_,*x_vec[n]);
     Scalar dt = t_ - t_old_;
-    Thyra::V_StV(&*scaled_x_old_,Scalar(-ST::one()/dt),*x_list[nm1]);
+    Thyra::V_StV(&*scaled_x_old_,Scalar(-ST::one()/dt),*x_vec[nm1]);
   }
   return(true);
 }
 
 template<class Scalar>
 bool BackwardEulerStepper<Scalar>::GetPoints(
-    const std::vector<Scalar>& time_list
-    ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* x_list
-    ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* xdot_list
-    ,std::vector<ScalarMag>* accuracy_list) const
+    const std::vector<Scalar>& time_vec
+    ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* x_vec
+    ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* xdot_vec
+    ,std::vector<ScalarMag>* accuracy_vec) const
 {
   // TODO:
   // Copy code from LinearInterpolationBuffer 
@@ -291,25 +295,25 @@ bool BackwardEulerStepper<Scalar>::SetRange(
     ,const InterpolationBufferBase<Scalar>& IB)
 {
   // TODO:
-  // get node_list from IB, crop it to [time_lower,time_upper], crop x_list to same,
+  // get node_list from IB, crop it to [time_lower,time_upper], crop x_vec to same,
   // pass to SetPoints.
   return(false);
 }
 
 template<class Scalar>
-bool BackwardEulerStepper<Scalar>::GetNodes(std::vector<Scalar>* time_list) const
+bool BackwardEulerStepper<Scalar>::GetNodes(std::vector<Scalar>* time_vec) const
 {
-  time_list->push_back(t_old_);
+  time_vec->push_back(t_old_);
   if (t_old_ != t_)
-    time_list->push_back(t_);
+    time_vec->push_back(t_);
   return(true);
 }
 
 template<class Scalar>
-bool BackwardEulerStepper<Scalar>::RemoveNodes(std::vector<Scalar>& time_list) const
+bool BackwardEulerStepper<Scalar>::RemoveNodes(std::vector<Scalar>& time_vec) 
 {
   // TODO:
-  // if any time in time_list matches t_ or t_old_, then do the following:
+  // if any time in time_vec matches t_ or t_old_, then do the following:
   // remove t_old_:  set t_old_ = t_ and set scaled_x_old_ = x_
   // remove t_:  set t_ = t_old_ and set x_ = -dt*scaled_x_old_
   return(false);
