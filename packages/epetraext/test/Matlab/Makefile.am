@@ -38,19 +38,17 @@ matlab_test_DEPENDENCIES = \
   $(top_builddir)/src/libepetraext.a \
   $(top_builddir)/../epetra/src/libepetra.a
 
-matlab_test_CXXFLAGS = -I$(top_srcdir)/src/matlab \
-                      -I$(top_srcdir)/src \
-                      -I$(top_builddir)/src \
-                      -I$(top_srcdir)/../epetra/src \
-                      -I$(top_builddir)/../epetra/src \
-                      -I$(top_srcdir)/../triutils/src \
-                      -I$(top_builddir)/../triutils/src
+include $(top_builddir)/Makefile.export.epetraext
 
-matlab_test_LDADD = \
-  $(top_builddir)/src/libepetraext.a \
-  $(top_builddir)/../epetra/src/libepetra.a \
-  $(top_builddir)/../triutils/src/libtriutils.a \
-  $(LIBS) \
-  $(BLAS_LIBS) \
-  $(FLIBS)
+if USING_GNUMAKE
+EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(EPETRAEXT_LIBS))
+EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(EPETRAEXT_INCLUDES))
+else
+EXPORT_LIBS = $(EPETRAEXT_LIBS)
+EXPORT_INC_PATH = $(EPETRAEXT_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(EXPORT_INC_PATH)
+
+matlab_test_LDADD = $(EXPORT_LIBS)
 

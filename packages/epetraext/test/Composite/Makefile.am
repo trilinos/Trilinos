@@ -38,16 +38,15 @@ Composite_test_DEPENDENCIES = \
   $(top_builddir)/src/libepetraext.a \
   $(top_builddir)/../epetra/src/libepetra.a
 
-Composite_test_CXXFLAGS = -I$(top_srcdir)/src/transform \
-                          -I$(top_srcdir)/src \
-                          -I$(top_builddir)/src \
-                          -I$(top_srcdir)/../epetra/src \
-                          -I$(top_builddir)/../epetra/src
+if USING_GNUMAKE
+EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(EPETRAEXT_LIBS))
+EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(EPETRAEXT_INCLUDES))
+else
+EXPORT_LIBS = $(EPETRAEXT_LIBS)
+EXPORT_INC_PATH = $(EPETRAEXT_INCLUDES)
+endif
 
-Composite_test_LDADD = \
-  $(top_builddir)/src/libepetraext.a \
-  $(top_builddir)/../epetra/src/libepetra.a \
-  $(LIBS) \
-  $(BLAS_LIBS) \
-  $(FLIBS)
+AM_CPPFLAGS = $(EXPORT_INC_PATH)
+
+Composite_test_LDADD = $(EXPORT_LIBS)
 

@@ -33,7 +33,7 @@ _EPETRAEXT_INCLUDES = -I@abs_top_builddir@/src -I@abs_top_srcdir@/src \
 
 _EPETRAEXT_LIBS = \
   @LDFLAGS@ -L@abs_top_builddir@/src $(EPETRAEXT_THYRA_LIBS) -lepetraext \
-  $(EPETRA_LIBS) $(TRIUTILS_LIBS) $(TEUCHOS_LIBS) @LIBS@ @LAPACK_LIBS@ @BLAS_LIBS@ @FLIBS@
+  $(EPETRA_LIBS) $(TRIUTILS_LIBS) $(TEUCHOS_LIBS) @LIBS@ @FLIBS@
 
 @USING_GNUMAKE_TRUE@EPETRAEXT_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_EPETRAEXT_INCLUDES))
 @USING_GNUMAKE_TRUE@EPETRAEXT_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_EPETRAEXT_LIBS))

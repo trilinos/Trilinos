@@ -369,7 +369,7 @@ TAC_ARG_ENABLE_FEATURE(examples, [Build examples for all Trilinos packages (not 
 TAC_ARG_ENABLE_FEATURE_SUB_CHECK( epetraext, examples, [Build EpetraExt examples], EPETRAEXT_EXAMPLES)
 AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_epetraext_examples" != "Xno")
 
-TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
+TAC_ARG_ENABLE_FEATURE(libcheck, [Check for third-party libraries.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
 
 TAC_ARG_ENABLE_FEATURE(experimental, [Build experimental code for all Trilinos packages (not all packages are sensitive to this option)], EXPERIMENTAL, no)
 AM_CONDITIONAL(BUILD_EXPERIMENTAL, test "X$ac_cv_use_experimental" != "Xno")
@@ -408,13 +408,6 @@ dnl Replace `main' with a function in -lm:
 AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
 AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
 
-dnl Check for user-specified names for LAPACK and BLAS
-TAC_ARG_WITH_BLASLIB
-TAC_ARG_WITH_LAPACKLIB
-
-# find or choose to supply valid blas and lapack libraries
-  ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)]])])
-  ACX_LAPACK([], [AC_MSG_ERROR([[Cannot find lapack library, specify a path using --with-ldflags=-I<DIR> (ex. --with-dlflags=-I/usr/path/lib) or a specific library using --with-lapack=DIR/LIB (ex. --with-lapack=/usr/path/lib/libcxml.a)]])])
 fi
 # end of the list of libraries that don't need to be checked for if
 # tests and examples are disabled.

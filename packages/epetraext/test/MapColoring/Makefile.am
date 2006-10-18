@@ -45,12 +45,11 @@ if USING_GNUMAKE
 EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(EPETRAEXT_LIBS))
 EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(EPETRAEXT_INCLUDES))
 else
-EXPORT_LIBS = $(EPETRAEXT_LIBS) \
-  $(top_builddir)/../teuchos/src/libteuchos.a
+EXPORT_LIBS = $(EPETRAEXT_LIBS)
 EXPORT_INC_PATH = $(EPETRAEXT_INCLUDES)
 endif
 
 AM_CPPFLAGS = $(EXPORT_INC_PATH)
 
-MapColoring_test_LDADD = $(EXPORT_LIBS) \
-  $(top_builddir)/../teuchos/src/libteuchos.a
+MapColoring_test_LDADD = $(EXPORT_LIBS)
+

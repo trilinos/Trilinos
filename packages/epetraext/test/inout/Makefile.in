@@ -77,8 +77,6 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/ac_cxx_std_sprintf.m4 \
 	$(top_srcdir)/config/ac_cxx_stl_map_key_const.m4 \
 	$(top_srcdir)/config/ac_pkg_swig.m4 \
-	$(top_srcdir)/config/acx_blas.m4 \
-	$(top_srcdir)/config/acx_lapack.m4 \
 	$(top_srcdir)/config/az_python.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
@@ -91,10 +89,8 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/tac_arg_enable_option.m4 \
 	$(top_srcdir)/config/tac_arg_inform_subpackage_used.m4 \
 	$(top_srcdir)/config/tac_arg_with_ar.m4 \
-	$(top_srcdir)/config/tac_arg_with_blaslib.m4 \
 	$(top_srcdir)/config/tac_arg_with_flags.m4 \
 	$(top_srcdir)/config/tac_arg_with_incdirs.m4 \
-	$(top_srcdir)/config/tac_arg_with_lapacklib.m4 \
 	$(top_srcdir)/config/tac_arg_with_libdirs.m4 \
 	$(top_srcdir)/config/tac_arg_with_libs.m4 \
 	$(top_srcdir)/config/tac_arg_with_perl.m4 \
@@ -106,15 +102,17 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/EpetraExt_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_inout_test_OBJECTS = inout_test-cxx_main.$(OBJEXT) \
-	inout_test-Poisson2dOperator.$(OBJEXT)
+am_inout_test_OBJECTS = cxx_main.$(OBJEXT) Poisson2dOperator.$(OBJEXT)
 inout_test_OBJECTS = $(am_inout_test_OBJECTS)
 am__DEPENDENCIES_1 =
+@USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
+@USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
+@USING_GNUMAKE_TRUE@	$(EPETRAEXT_LIBS))
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/inout_test-Poisson2dOperator.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/inout_test-cxx_main.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Poisson2dOperator.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/cxx_main.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -138,7 +136,6 @@ AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
-BLAS_LIBS = @BLAS_LIBS@
 BUILD_BLOCK_FALSE = @BUILD_BLOCK_FALSE@
 BUILD_BLOCK_TRUE = @BUILD_BLOCK_TRUE@
 BUILD_BTF_FALSE = @BUILD_BTF_FALSE@
@@ -206,7 +203,6 @@ INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
-LAPACK_LIBS = @LAPACK_LIBS@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
@@ -312,23 +308,12 @@ inout_test_DEPENDENCIES = \
   $(top_builddir)/../epetra/src/libepetra.a \
   $(top_builddir)/../teuchos/src/libteuchos.a
 
-inout_test_CXXFLAGS = -I$(top_srcdir)/src/inout \
-                      -I$(top_srcdir)/src \
-                      -I$(top_builddir)/src \
-                      -I$(top_srcdir)/../epetra/src \
-                      -I$(top_builddir)/../epetra/src \
-                      -I$(top_srcdir)/../triutils/src \
-                      -I$(top_builddir)/../triutils/src
-
-inout_test_LDADD = \
-  $(top_builddir)/src/libepetraext.a \
-  $(top_builddir)/../epetra/src/libepetra.a \
-  $(top_builddir)/../triutils/src/libtriutils.a \
-  $(top_builddir)/../teuchos/src/libteuchos.a \
-  $(LIBS) \
-  $(BLAS_LIBS) \
-  $(FLIBS)
-
+@USING_GNUMAKE_FALSE@EXPORT_LIBS = $(EPETRAEXT_LIBS)
+@USING_GNUMAKE_TRUE@EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(EPETRAEXT_LIBS))
+@USING_GNUMAKE_FALSE@EXPORT_INC_PATH = $(EPETRAEXT_INCLUDES)
+@USING_GNUMAKE_TRUE@EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(EPETRAEXT_INCLUDES))
+AM_CPPFLAGS = $(EXPORT_INC_PATH)
+inout_test_LDADD = $(EXPORT_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -375,8 +360,8 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/inout_test-Poisson2dOperator.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/inout_test-cxx_main.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Poisson2dOperator.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cxx_main.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -394,37 +379,37 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-inout_test-cxx_main.o: $(srcdir)/cxx_main.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(inout_test_CXXFLAGS) $(CXXFLAGS) -MT inout_test-cxx_main.o -MD -MP -MF "$(DEPDIR)/inout_test-cxx_main.Tpo" -c -o inout_test-cxx_main.o `test -f '$(srcdir)/cxx_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/inout_test-cxx_main.Tpo" "$(DEPDIR)/inout_test-cxx_main.Po"; else rm -f "$(DEPDIR)/inout_test-cxx_main.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main.cpp' object='inout_test-cxx_main.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/inout_test-cxx_main.Po' tmpdepfile='$(DEPDIR)/inout_test-cxx_main.TPo' @AMDEPBACKSLASH@
+cxx_main.o: $(srcdir)/cxx_main.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT cxx_main.o -MD -MP -MF "$(DEPDIR)/cxx_main.Tpo" -c -o cxx_main.o `test -f '$(srcdir)/cxx_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/cxx_main.Tpo" "$(DEPDIR)/cxx_main.Po"; else rm -f "$(DEPDIR)/cxx_main.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main.cpp' object='cxx_main.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/cxx_main.Po' tmpdepfile='$(DEPDIR)/cxx_main.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(inout_test_CXXFLAGS) $(CXXFLAGS) -c -o inout_test-cxx_main.o `test -f '$(srcdir)/cxx_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o cxx_main.o `test -f '$(srcdir)/cxx_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp
 
-inout_test-cxx_main.obj: $(srcdir)/cxx_main.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(inout_test_CXXFLAGS) $(CXXFLAGS) -MT inout_test-cxx_main.obj -MD -MP -MF "$(DEPDIR)/inout_test-cxx_main.Tpo" -c -o inout_test-cxx_main.obj `if test -f '$(srcdir)/cxx_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/inout_test-cxx_main.Tpo" "$(DEPDIR)/inout_test-cxx_main.Po"; else rm -f "$(DEPDIR)/inout_test-cxx_main.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main.cpp' object='inout_test-cxx_main.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/inout_test-cxx_main.Po' tmpdepfile='$(DEPDIR)/inout_test-cxx_main.TPo' @AMDEPBACKSLASH@
+cxx_main.obj: $(srcdir)/cxx_main.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT cxx_main.obj -MD -MP -MF "$(DEPDIR)/cxx_main.Tpo" -c -o cxx_main.obj `if test -f '$(srcdir)/cxx_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/cxx_main.Tpo" "$(DEPDIR)/cxx_main.Po"; else rm -f "$(DEPDIR)/cxx_main.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main.cpp' object='cxx_main.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/cxx_main.Po' tmpdepfile='$(DEPDIR)/cxx_main.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(inout_test_CXXFLAGS) $(CXXFLAGS) -c -o inout_test-cxx_main.obj `if test -f '$(srcdir)/cxx_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o cxx_main.obj `if test -f '$(srcdir)/cxx_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main.cpp'; fi`
 
-inout_test-Poisson2dOperator.o: $(srcdir)/Poisson2dOperator.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(inout_test_CXXFLAGS) $(CXXFLAGS) -MT inout_test-Poisson2dOperator.o -MD -MP -MF "$(DEPDIR)/inout_test-Poisson2dOperator.Tpo" -c -o inout_test-Poisson2dOperator.o `test -f '$(srcdir)/Poisson2dOperator.cpp' || echo '$(srcdir)/'`$(srcdir)/Poisson2dOperator.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/inout_test-Poisson2dOperator.Tpo" "$(DEPDIR)/inout_test-Poisson2dOperator.Po"; else rm -f "$(DEPDIR)/inout_test-Poisson2dOperator.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Poisson2dOperator.cpp' object='inout_test-Poisson2dOperator.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/inout_test-Poisson2dOperator.Po' tmpdepfile='$(DEPDIR)/inout_test-Poisson2dOperator.TPo' @AMDEPBACKSLASH@
+Poisson2dOperator.o: $(srcdir)/Poisson2dOperator.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Poisson2dOperator.o -MD -MP -MF "$(DEPDIR)/Poisson2dOperator.Tpo" -c -o Poisson2dOperator.o `test -f '$(srcdir)/Poisson2dOperator.cpp' || echo '$(srcdir)/'`$(srcdir)/Poisson2dOperator.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Poisson2dOperator.Tpo" "$(DEPDIR)/Poisson2dOperator.Po"; else rm -f "$(DEPDIR)/Poisson2dOperator.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Poisson2dOperator.cpp' object='Poisson2dOperator.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Poisson2dOperator.Po' tmpdepfile='$(DEPDIR)/Poisson2dOperator.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(inout_test_CXXFLAGS) $(CXXFLAGS) -c -o inout_test-Poisson2dOperator.o `test -f '$(srcdir)/Poisson2dOperator.cpp' || echo '$(srcdir)/'`$(srcdir)/Poisson2dOperator.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Poisson2dOperator.o `test -f '$(srcdir)/Poisson2dOperator.cpp' || echo '$(srcdir)/'`$(srcdir)/Poisson2dOperator.cpp
 
-inout_test-Poisson2dOperator.obj: $(srcdir)/Poisson2dOperator.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(inout_test_CXXFLAGS) $(CXXFLAGS) -MT inout_test-Poisson2dOperator.obj -MD -MP -MF "$(DEPDIR)/inout_test-Poisson2dOperator.Tpo" -c -o inout_test-Poisson2dOperator.obj `if test -f '$(srcdir)/Poisson2dOperator.cpp'; then $(CYGPATH_W) '$(srcdir)/Poisson2dOperator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Poisson2dOperator.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/inout_test-Poisson2dOperator.Tpo" "$(DEPDIR)/inout_test-Poisson2dOperator.Po"; else rm -f "$(DEPDIR)/inout_test-Poisson2dOperator.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Poisson2dOperator.cpp' object='inout_test-Poisson2dOperator.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/inout_test-Poisson2dOperator.Po' tmpdepfile='$(DEPDIR)/inout_test-Poisson2dOperator.TPo' @AMDEPBACKSLASH@
+Poisson2dOperator.obj: $(srcdir)/Poisson2dOperator.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Poisson2dOperator.obj -MD -MP -MF "$(DEPDIR)/Poisson2dOperator.Tpo" -c -o Poisson2dOperator.obj `if test -f '$(srcdir)/Poisson2dOperator.cpp'; then $(CYGPATH_W) '$(srcdir)/Poisson2dOperator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Poisson2dOperator.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Poisson2dOperator.Tpo" "$(DEPDIR)/Poisson2dOperator.Po"; else rm -f "$(DEPDIR)/Poisson2dOperator.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Poisson2dOperator.cpp' object='Poisson2dOperator.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Poisson2dOperator.Po' tmpdepfile='$(DEPDIR)/Poisson2dOperator.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(inout_test_CXXFLAGS) $(CXXFLAGS) -c -o inout_test-Poisson2dOperator.obj `if test -f '$(srcdir)/Poisson2dOperator.cpp'; then $(CYGPATH_W) '$(srcdir)/Poisson2dOperator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Poisson2dOperator.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Poisson2dOperator.obj `if test -f '$(srcdir)/Poisson2dOperator.cpp'; then $(CYGPATH_W) '$(srcdir)/Poisson2dOperator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Poisson2dOperator.cpp'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
@@ -588,6 +573,8 @@ uninstall-am: uninstall-info-am
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am uninstall-info-am
 
+
+include $(top_builddir)/Makefile.export.epetraext
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
