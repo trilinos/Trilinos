@@ -46,6 +46,10 @@
 #include "Rythmos_BackwardEulerStepper.hpp"
 #include "Rythmos_ExplicitRKStepper.hpp"
 #include "Rythmos_ImplicitBDFStepper.hpp"
+// 10/9/06 tscoffe:  InterpolationBufferAsStepper includes: 
+#include "Rythmos_InterpolationBuffer.hpp"
+#include "Rythmos_LinearInterpolator.hpp"
+#include "Rythmos_InterpolationBufferAsStepper.hpp"
 
 // Includes for Thyra:
 #include "Thyra_EpetraThyraWrappers.hpp"
@@ -111,6 +115,9 @@ int main(int argc, char *argv[])
     double reltol = 1.0e-2;
     double abstol = 1.0e-4;
     int maxOrder = 5;
+#ifdef Rythmos_NEW
+    bool useIntegrator = false;
+#endif // Rythmos_NEW
 #ifdef Rythmos_DEBUG
     int debugLevel = 2; // debugLevel is used when Rythmos_DEBUG ifdef is set.
 #endif // Rythmos_DEBUG
@@ -138,6 +145,9 @@ int main(int argc, char *argv[])
     clp.setOption( "reltol", &reltol, "Relative Error Tolerance" );
     clp.setOption( "abstol", &abstol, "Absolute Error Tolerance" );
     clp.setOption( "maxorder", &maxOrder, "Maximum Implicit BDF order" );
+#ifdef Rythmos_NEW
+    clp.setOption( "useintegrator", "normal", &useIntegrator, "Use InterpolationBufferAsStepper as integrator" );
+#endif // Rythmos_NEW
 #ifdef Rythmos_DEBUG
     clp.setOption( "debuglevel", &debugLevel, "Debug Level for Rythmos" );
 #endif // Rythmos_DEBUG
@@ -265,32 +275,64 @@ int main(int argc, char *argv[])
     double dt = (finalTime-t0)/N;
     double time = t0;
 
+    Teuchos::RefCountPtr<const Thyra::VectorBase<double> > x_computed_thyra_ptr;
     if (step_method_val == FIXED_STEP)
     {
-      // Integrate forward with fixed step sizes:
-      for (int i=1 ; i<=N ; ++i)
+#ifdef Rythmos_NEW
+      if (useIntegrator)
       {
-        double dt_taken = stepper.TakeStep(dt);
-        time += dt_taken;
-        numSteps++;
-#ifdef Rythmos_DEBUG
-        if (debugLevel > 1)
-        {
-          stepper.describe(*out,Teuchos::VERB_EXTREME);
-        }
-#endif // Rythmos_DEBUG
-        if (dt_taken != dt)
-        {
-          cerr << "Error, stepper took step of dt = " << dt_taken << " when asked to take step of dt = " << dt << std::endl;
-          break;
-        }
+        // Set up fixed-step-size integration:
+        Teuchos::RefCountPtr<Teuchos::ParameterList> 
+          integratorParams = Teuchos::rcp(new Teuchos::ParameterList);
+        integratorParams->set( "fixed_dt", dt );
+        // Create integrator using stepper and linear interpolation buffer:
+        Teuchos::RefCountPtr<Rythmos::Interpolator<double> > 
+          linearInterpolator = Teuchos::rcp(new Rythmos::LinearInterpolator<double>());
+        Teuchos::RefCountPtr<Rythmos::InterpolationBuffer<double> > 
+          IB = Teuchos::rcp(new Rythmos::InterpolationBuffer<double>(linearInterpolator,1000));
+        Rythmos::InterpolationBufferAsStepper<double> integrator(stepper_ptr,IB,integratorParams);
+        // Ask for desired time value:
+        std::vector<double> time_vals;
+        time_vals.push_back(finalTime);
+        std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<double> > > x_vec;
+        std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<double> > > xdot_vec;
+        std::vector<double> accuracy_vec;
+        integrator.GetPoints(time_vals,&x_vec,&xdot_vec,&accuracy_vec);
+        // Get solution out of stepper:
+        x_computed_thyra_ptr = x_vec[0];
       }
+      else
+      {
+#endif // Rythmos_NEW
+        // Integrate forward with fixed step sizes:
+        for (int i=1 ; i<=N ; ++i)
+        {
+          double dt_taken = stepper.TakeStep(dt);
+          time += dt_taken;
+          numSteps++;
+#ifdef Rythmos_DEBUG
+          if (debugLevel > 1)
+          {
+            stepper.describe(*out,Teuchos::VERB_EXTREME);
+          }
+#endif // Rythmos_DEBUG
+          if (dt_taken != dt)
+          {
+            cerr << "Error, stepper took step of dt = " << dt_taken << " when asked to take step of dt = " << dt << std::endl;
+            break;
+          }
+        }
+        // Get solution out of stepper:
+        x_computed_thyra_ptr = stepper.get_solution();
+#ifdef Rythmos_NEW
+      }
+#endif // Rythmos_NEW
     }
     else // (step_method_val == VARIABLE_STEP)
     {
 #ifdef Rythmos_DEBUG
       // Create a place to store the computed solutions
-      Teuchos::RefCountPtr<const Thyra::VectorBase<double> > x_computed_thyra_ptr = stepper.get_solution();
+      x_computed_thyra_ptr = stepper.get_solution();
       // Convert Thyra::VectorBase to Epetra_Vector
       Teuchos::RefCountPtr<const Epetra_Vector> x_computed_ptr = Thyra::get_Epetra_Vector(*(epetraModel->get_x_map()),x_computed_thyra_ptr);
       // Create a place to store the exact numerical solution
@@ -374,12 +416,12 @@ int main(int argc, char *argv[])
         time += dt_taken;
         *out << "Took stepsize of: " << dt_taken << " time = " << time << endl;
       }
+      // Get solution out of stepper:
+      x_computed_thyra_ptr = stepper.get_solution();
     }
     *out << "Integrated to time = " << time << endl;
 
-    // Get solution out of stepper:
-    Teuchos::RefCountPtr<const Thyra::VectorBase<double> > x_computed_thyra_ptr = stepper.get_solution();
-    // Convert Thyra::VectorBase to Epetra_Vector
+    // Convert solution from Thyra::VectorBase to Epetra_Vector
     Teuchos::RefCountPtr<const Epetra_Vector>
       x_computed_ptr = Thyra::get_Epetra_Vector(*(epetraModel->get_x_map()),x_computed_thyra_ptr);
     const Epetra_Vector &x_computed = *x_computed_ptr;
