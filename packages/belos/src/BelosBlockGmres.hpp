@@ -291,7 +291,6 @@ namespace Belos {
     const MagnitudeType two = 2.0;
     const MagnitudeType eps = SCT::eps();
     _dep_tol = MGT::one()/MGT::squareroot(two);
-    cout << "Dependency tolerance = " << _dep_tol << endl;
     _blk_tol = 10*sqrt(eps);
     _sing_tol = 10 * eps;
   }
@@ -456,8 +455,7 @@ namespace Belos {
 	_z.putScalar();
 	Teuchos::RefCountPtr< Teuchos::SerialDenseMatrix<int,ScalarType> > G10
 	  = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View, _z, _blocksize, _blocksize) );
-	int rank = 0;
-	rank = _ortho->normalize( *U_vec, G10 );
+	int rank = _ortho->normalize( *U_vec, G10 );
 	//
 	if (rank != _blocksize){
 	  if (_om->isVerbosityAndPrint( Errors )){
@@ -710,7 +708,7 @@ namespace Belos {
       MVT::MvAddMv( one, *AU_vec, zero, *AU_vec, *F_vec );
     }
 
-    */
+*/
     //
     //  Orthogonalize the new block in the Krylov expansion and check for dependencies.
     //
@@ -994,10 +992,10 @@ namespace Belos {
       }
       else { 
         //
-        if (_om->isVerbosityAndPrint( OrthoDetails )) {
+	//        if (_om->isVerbosityAndPrint( OrthoDetails )) {
           *_os << "Column " << num_prev << " of _basisvecs is dependent" << endl;
           *_os << endl;
-        }
+	  //        }
         //
         // Create a random vector and orthogonalize it against all 
         // previous cols of _basisvecs
