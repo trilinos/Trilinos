@@ -47,6 +47,8 @@ TAC_ARG_ENABLE_FEATURE(amesos, [Build amesos], AMESOS, no)
 
 TAC_ARG_ENABLE_FEATURE(anasazi, [Build anasazi], ANASAZI, no)
 
+TAC_ARG_ENABLE_FEATURE(aristos, [Build aristos], ARISTOS, no)
+
 TAC_ARG_ENABLE_DEFAULT_FEATURE(aztecoo, [Build aztecoo], AZTECOO)
 
 TAC_ARG_ENABLE_FEATURE(belos, [Build belos], BELOS, no)
@@ -145,6 +147,7 @@ if test "X$ac_cv_use_teuchos" != "Xno" ||
 	test "X$ac_cv_use_galeri" != "Xno" || 
 	test "X$ac_cv_use_amesos" != "Xno" || 
  	test "X$ac_cv_use_anasazi" != "Xno" ||
+ 	test "X$ac_cv_use_aristos" != "Xno" ||
 	test "X$ac_cv_use_aztecoo_teuchos" != "Xno" ||
 	test "X$ac_cv_use_capo" != "Xno" ||
 	test "X$ac_cv_use_epetraext" != "Xno" ||
@@ -233,6 +236,7 @@ if test "X$ac_cv_use_epetra" != "Xno" || test "X$ac_cv_use_ifpack" != "Xno" ||
         test "X$ac_cv_use_epetraext" != "Xno" ||
 	test "X$ac_cv_use_belos" != "Xno" ||
 	test "X$ac_cv_use_anasazi" != "Xno" ||
+	test "X$ac_cv_use_aristos" != "Xno" ||
         test "X$ac_cv_use_claps" != "Xno" ||
 	test "X$ac_cv_use_meros" != "Xno" ||
         test "X$ac_cv_use_moertel" != "Xno" ||
@@ -395,6 +399,17 @@ else
   BUILD_RBGEN=no
 fi
 AM_CONDITIONAL(BUILD_RBGEN, test "X$BUILD_RBGEN" != "Xno")
+
+if test "X$ac_cv_use_aristos" != "Xno"; then
+  AC_CONFIG_SUBDIRS([packages/aristos])
+  BUILD_ARISTOS=yes
+  if test "X$ac_cv_use_aristos_explicit" != "Xyes"; then
+    ac_configure_args="$ac_configure_args --enable-aristos"
+  fi
+else
+  BUILD_ARISTOS=no
+fi
+AM_CONDITIONAL(BUILD_ARISTOS, test "X$BUILD_ARISTOS" != "Xno")
 
 if test "X$ac_cv_use_meros" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/meros])
