@@ -4,7 +4,10 @@
 ##
 ## BEGIN COPY HERE
 ##
+use Sys::Hostname;
+my $host = hostname();
 use Cwd;
+
 
 #
 # See if the first argument is '-I' which specifies an include path
@@ -196,9 +199,15 @@ foreach $word (TestLib::get_tokens($testparams{"_inp"})) {
   $files = $files . $word . " ";
 }
 
+my $solver;
+
 # can configure a short script to create a custom zdrive here, if desired
 # but it uses the commandline to specify the name
-my $solver = "/Net/local/mpi/build/solaris/ch_p4/bin/mpirun -np $testparams{_np} ../../Obj_solaris/zdrive";
+if ($host eq "qed.sandia.gov") {
+  $solver = "mpiexec -n $testparams{_np} ../../Obj_qed/zdrive";
+} else {
+  $solver = "/Net/local/mpi/build/solaris/ch_p4/bin/mpirun -np $testparams{_np} ../../Obj_solaris/zdrive";
+}
 
 # $solver = "/bin/cat test.out"; #debug
 

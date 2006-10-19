@@ -14,16 +14,20 @@ if ($host eq "qed.sandia.gov") {
 # there must be a space after the -n, e.g.: mpiexec -n 32, or mpiexec -np 32
 # assume 2 processors per node
   my $p = 1;
-  for (my $i=0; $i < $#ARGV; $i++) {
-    if ($ARGV[$i] eq "-n" || $ARGV[$i] eq "-np") {
-      $p = $ARGV[$i+1];
-      break;
+  for (my $i=0; $i <= $#ARGV; $i++) {
+    if ($ARGV[$i] =~ /-np?.*/ ) {
+      if ($ARGV[$i] =~ /-np? *(\d+)/ ) {
+	$p = $1;
+	break;
+      } else {
+        $p = $ARGV[$i + 1];
+      }
     }
   }
   $p = int(($p + 1) / 2);	# 2 ppn
   $p = 1 if ($p < 1);
   my $out = "qsub.$$.out";
-  my $job = `(./runqsub.qed $p 00:05:00 \"( @ARGV ) >& $out\")`;
+  my $job = `(runqsub.qed $p 01:00:00 \"( @ARGV ) >& $out\")`;
   chomp $job;
 
   print "job=$job proc=$p out=$out\n";
@@ -35,7 +39,7 @@ if ($host eq "qed.sandia.gov") {
 # qstat 7445.qed >& /dev/null && echo running
 
   while (`qstat $job >& /dev/null && echo 1`) {
-    sleep 10;
+    sleep 30;
   }
 
   system("cat $out");
