@@ -233,21 +233,6 @@ bool InterpolationBuffer<Scalar>::SetPoints(
 #endif // Rythmos_DEBUG
   typename DataStore<Scalar>::DataStoreList_t input_data_list;
   VectorToDataStoreList<Scalar>(time_vec,x_vec,xdot_vec,accuracy_vec,&input_data_list);
-#ifdef Rythmos_DEBUG
-  if (debugLevel > 1)
-  {
-    *debug_out << "input_data_list = " << std::endl;
-    typename DataStore<Scalar>::DataStoreList_t::iterator
-      data_it = input_data_list.begin();
-    int i=0;
-    for (; data_it != input_data_list.end() ; data_it++)
-    {
-      *debug_out << "item " << i << ":" << std::endl;
-      data_it->describe(*debug_out,Teuchos::VERB_EXTREME);
-      i++;
-    }
-  }
-#endif // Rythmos_DEBUG
   input_data_list.sort();
 #ifdef Rythmos_DEBUG
   if (debugLevel > 1)
@@ -323,7 +308,7 @@ bool InterpolationBuffer<Scalar>::SetPoints(
 #ifdef Rythmos_DEBUG
   if (debugLevel > 1)
   {
-    *debug_out << "data_vec and end of SetPoints:" << std::endl;
+    *debug_out << "data_vec at end of SetPoints:" << std::endl;
     for (int i=0 ; i<data_vec.size() ; ++i)
     {
       *debug_out << "data_vec[" << i << "] = " << std::endl;
@@ -397,14 +382,6 @@ bool InterpolationBuffer<Scalar>::SetRange(
   std::vector<Scalar> input_nodes;
   bool status = IB.GetNodes(&input_nodes);
   if (!status) return(status);
-#ifdef Rythmos_DEBUG
-  if (debugLevel > 1)
-  {
-    *debug_out << "input_nodes:" << std::endl;
-    for (int i=0 ; i<input_nodes.size() ; ++i)
-      *debug_out << "input_nodes[" << i << "] = " << input_nodes[i] << std::endl;
-  }
-#endif // Rythmos_DEBUG
   std::sort(input_nodes.begin(),input_nodes.end());
 #ifdef Rythmos_DEBUG
   if (debugLevel > 1)
@@ -415,12 +392,11 @@ bool InterpolationBuffer<Scalar>::SetRange(
   }
 #endif // Rythmos_DEBUG
   // Remove nodes outside the range [time_lower,time_upper]
-  typename std::vector<Scalar>::iterator input_it = input_nodes.begin();
-  for (; input_it != input_nodes.end() ; input_it++)
+  typename std::vector<Scalar>::iterator input_it_lower = input_nodes.begin();
+  for (; input_it_lower != input_nodes.end() ; input_it_lower++)
   {
-    if (*input_it >= time_lower)
+    if (*input_it_lower >= time_lower)
     {
-      input_it--;
       break;
     }
   }
@@ -428,44 +404,44 @@ bool InterpolationBuffer<Scalar>::SetRange(
   if (debugLevel > 1)
   {
     int n0 = 0;
-    int n1 = input_it - input_nodes.begin();
-    *debug_out << "Removing input_nodes before time_lower:" << std::endl;
-    *debug_out << "n0 = " << n0 << std::endl;
-    *debug_out << "n1 = " << n1 << std::endl;
-    for (int i=n0 ; i<=n1; ++i)
+    int n1 = input_it_lower - input_nodes.begin();
+    *debug_out << "Removing input_nodes before time_lower with indices: [" << n0 << "," << n1 << ")" << std::endl;
+    for (int i=n0 ; i<n1; ++i)
     {
-      *debug_out << "input_nodes[" << i << "] = " << input_nodes[i] << std::endl;
+      *debug_out << "  input_nodes[" << i << "] = " << input_nodes[i] << std::endl;
     }
   }
 #endif // Rythmos_DEBUG
-  if (input_it - input_nodes.begin() >= 0)
-    input_nodes.erase(input_nodes.begin(),input_it);
-  input_it = input_nodes.end();
-  input_it--;
-  for (; input_it != input_nodes.begin() ; input_it--)
+  // tscoffe 10/19/06 Note:  erase removes the range [it_begin,it_end)
+  if (input_it_lower - input_nodes.begin() >= 0)
+    input_nodes.erase(input_nodes.begin(),input_it_lower);
+  typename std::vector<Scalar>::iterator input_it_upper = input_nodes.end();
+  input_it_upper--;
+  for (; input_it_upper != input_nodes.begin() ; input_it_upper--)
   {
-    if (*input_it <= time_upper)
+    if (*input_it_upper <= time_upper)
     {
-      input_it++;
+      input_it_upper++;
       break;
     }
   }
+  // This is to handle the case of one element in the vector
+  if (*input_it_upper <= time_upper)
+    input_it_upper++;
 #ifdef Rythmos_DEBUG
   if (debugLevel > 1)
   {
-    int n0 = input_it - input_nodes.begin();
+    int n0 = input_it_upper - input_nodes.begin();
     int n1 = input_nodes.size();
-    *debug_out << "Removing input_nodes after time_upper:" << std::endl;
-    *debug_out << "n0 = " << n0 << std::endl;
-    *debug_out << "n1 = " << n1 << std::endl;
+    *debug_out << "Removing input_nodes after time_upper with indices [" << n0 << "," << n1 << ")" << std::endl;
     for (int i=n0 ; i<n1; ++i)
     {
-      *debug_out << "input_nodes[" << i << "] = " << input_nodes[i] << std::endl;
+      *debug_out << "  input_nodes[" << i << "] = " << input_nodes[i] << std::endl;
     }
   }
 #endif // Rythmos_DEBUG
-  if (input_it - input_nodes.begin() < input_nodes.size())
-    input_nodes.erase(input_it,input_nodes.end());
+  if (input_it_upper - input_nodes.begin() < input_nodes.size())
+    input_nodes.erase(input_it_upper,input_nodes.end());
 #ifdef Rythmos_DEBUG
   if (debugLevel > 1)
   {

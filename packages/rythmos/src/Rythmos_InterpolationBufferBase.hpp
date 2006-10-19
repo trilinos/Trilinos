@@ -61,6 +61,8 @@ class InterpolationBufferBase : virtual public Teuchos::Describable
       ,std::vector<ScalarMag>* accuracy_vec) const =0;
 
     /// Fill data in from another interpolation buffer
+    /// The time points in the interval [time_lower,time_upper] will be
+    /// inserted into the interpolation buffer.
     virtual bool SetRange(
       const Scalar& time_lower
       ,const Scalar& time_upper

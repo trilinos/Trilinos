@@ -134,7 +134,7 @@ InterpolationBufferAsStepper<Scalar>::InterpolationBufferAsStepper(
 #ifdef Rythmos_DEBUG
   debugLevel = 2;
   debug_out = Teuchos::VerboseObjectBase::getDefaultOStream();
-  debug_out->precision(15);
+  debug_out->precision(20);
   debug_out->setMaxLenLinePrefix(40);
   debug_out->pushLinePrefix("Rythmos::InterpolationBufferAsStepper");
   debug_out->setShowLinePrefix(true);
@@ -536,11 +536,26 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
         else
           step_taken = stepper->TakeStep();
         // Pass information from stepper to IB:
-        status = IB->SetRange(stepper_end,stepper_end+step_taken,*stepper);
+        status = IB->SetRange(stepper_end+step_taken,stepper_end+step_taken,*stepper);
         if (!status) return(status);
         // Check to see if we're past the current requested local_time_vec[i] point:
+#ifdef Rythmos_DEBUG
+        if (debugLevel > 1)
+        {
+          *debug_out << "Checking to see if we're past the current requested time" << std::endl;
+          *debug_out << "local_time_vec[" << i << "] = " << local_time_vec[i] 
+            << " <= " << stepper_end+step_taken << " stepper_end+step_taken" << std::endl;
+        }
+#endif // Rythmos_DEBUG
         if (local_time_vec[i] <= stepper_end+step_taken)
         {
+#ifdef Rythmos_DEBUG
+          if (debugLevel > 1)
+          {
+            *debug_out << "We've integrated past local_time_vec[" << i << "] = " 
+              << local_time_vec[i] << "!" << std::endl;
+          }
+#endif // Rythmos_DEBUG
           std::vector<Scalar> tmp_time_vec;
           tmp_time_vec.push_back(local_time_vec[i]);
           std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > tmp_x_vec, tmp_xdot_vec;
