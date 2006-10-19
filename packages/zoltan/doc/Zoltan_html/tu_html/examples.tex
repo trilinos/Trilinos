@@ -513,7 +513,7 @@ int *nextProc;
 
 \subsection{Calling the Zoltan library}
 
-The code in this section may be found in the 
+This code may be found in the 
 file \textbf{examples/C/simpleGRAPH.c}.
 More information about graph parameters 
 may be found in the Zoltan User's Guide at
@@ -551,7 +551,6 @@ int main(int argc, char *argv[])
   rc = Zoltan_Initialize(argc, argv, &ver);
 
   if (rc != ZOLTAN_OK){
-    printf("sorry...\n");
     MPI_Finalize();
     exit(0);
   }
@@ -679,10 +678,10 @@ for each vertex in the simple graph.
 We are creating this hypergraph in the hypergraph query functions.
 But you can use the Zoltan parameter
 \emph{PHG\_FROM\_GRAPH\_METHOD=neighbors} to accomplish the same
-result.  In this case you use graph callbacks to supply the 
+result.  In this case you use graph query functions instead of
+hypergraph query funtions to supply the 
 graph to Zoltan.
-The Zoltan library would then do the conversion we are doing
-in the query functions.
+The Zoltan library would then do the conversion to a hypergraph.
 
 First we will define the required query functions.
 
