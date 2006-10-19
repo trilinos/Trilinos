@@ -356,7 +356,16 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
       if (!status) return(status);
       Scalar stepper_begin = stepper_vec[0];
       Scalar stepper_end = stepper_vec[stepper_vec.size()-1];
+#ifdef Rythmos_DEBUG
+      if (debugLevel > 1)
+      {
+        *debug_out << "stepper_begin = " << stepper_begin << std::endl;
+        *debug_out << "stepper_end = " << stepper_end << std::endl;
+      }
+#endif // Rythmos_DEBUG
       status = IB->SetRange(stepper_begin,stepper_end,*stepper);
+      if (!status) return(status);
+      status = IB->GetNodes(&node_vec);
       if (!status) return(status);
     }
     else 
@@ -369,14 +378,30 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
       std::vector<Scalar> stepper_vec;
       status = stepper->GetNodes(&stepper_vec);
       if (!status) return(status);
-      Scalar stepper_begin = *(stepper_vec.begin());
-      Scalar stepper_end = *(stepper_vec.end());
+      Scalar stepper_begin = stepper_vec[0];
+      Scalar stepper_end = stepper_vec[stepper_vec.size()-1];
+#ifdef Rythmos_DEBUG
+      if (debugLevel > 1)
+      {
+        *debug_out << "stepper_begin = " << stepper_begin << std::endl;
+        *debug_out << "stepper_end = " << stepper_end << std::endl;
+      }
+#endif // Rythmos_DEBUG
       status = IB->SetRange(stepper_begin,stepper_end,*stepper);
+      if (!status) return(status);
+      status = IB->GetNodes(&node_vec);
       if (!status) return(status);
     }
   }
-  Scalar node_begin = *(node_vec.begin());
-  Scalar node_end = *(node_vec.end());
+  Scalar node_begin = node_vec[0];
+  Scalar node_end = node_vec[node_vec.size()-1];
+#ifdef Rythmos_DEBUG
+  if (debugLevel > 1)
+  {
+    *debug_out << "node_begin = " << node_begin << std::endl;
+    *debug_out << "node_end = " << node_end << std::endl;
+  }
+#endif // Rythmos_DEBUG
   // Check for valid input of local_time_vec:  (check initialization conditions)
   if ((*(local_time_vec.end()) < node_vec[0]) || (*(local_time_vec.begin()) < node_vec[0]))
     return(false);
@@ -401,21 +426,45 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
       step_taken = stepper->TakeStep(parameterList->get<Scalar>("fixed_dt"));
     else
       step_taken = stepper->TakeStep();
+    status = stepper->GetNodes(&stepper_vec);
+    if (!status) return(status);
     // Pass information from stepper to IB:
     status = IB->SetRange(stepper_begin,stepper_begin+step_taken,*stepper);
     if (!status) return(status);
     status = IB->GetNodes(&node_vec); 
     if (!status) return(status);
-    node_begin = *(node_vec.begin());
-    node_end = *(node_vec.end());
+    node_begin = node_vec[0];
+    node_end = node_vec[node_vec.size()-1];
+#ifdef Rythmos_DEBUG
+    if (debugLevel > 1)
+    {
+      *debug_out << "node_begin = " << node_begin << std::endl;
+      *debug_out << "node_end = " << node_end << std::endl;
+    }
+#endif // Rythmos_DEBUG
   }
-  Scalar stepper_begin = *(stepper_vec.begin());
-  Scalar stepper_end = *(stepper_vec.end());
+  Scalar stepper_begin = stepper_vec[0];
+  Scalar stepper_end = stepper_vec[stepper_vec.size()-1];
+#ifdef Rythmos_DEBUG
+  if (debugLevel > 1)
+  {
+    *debug_out << "stepper_begin = " << stepper_begin << std::endl;
+    *debug_out << "stepper_end = " << stepper_end << std::endl;
+  }
+#endif // Rythmos_DEBUG
   int num = local_time_vec.size();
   for (int i=0; i<num ; ++i)
   {
     if ( ( node_begin < local_time_vec[i] ) && ( local_time_vec[i] < node_end ) )
     {
+#ifdef Rythmos_DEBUG
+      if (debugLevel > 1)
+      {
+        *debug_out << "Requested local_time_vec[" << i << "] = " << 
+          local_time_vec[i] << " available in IB[" << 
+          node_begin << "," << node_end << "]" << std::endl;
+      }
+#endif // Rythmos_DEBUG
       std::vector<Scalar> tmp_time_vec; 
       tmp_time_vec.push_back(local_time_vec[i]);
       std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > tmp_x_vec, tmp_xdot_vec;
@@ -424,10 +473,29 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
       x_vec[i] = tmp_x_vec[0];
       xdot_vec[i] = tmp_xdot_vec[0];
       accuracy_vec[i] = tmp_accuracy_vec[0];
+#ifdef Rythmos_DEBUG
+      if (debugLevel > 1)
+      {
+        *debug_out << "IB->GetPoints returned:" << std::endl;
+        *debug_out << "x_vec[" << i << "] = " << std::endl;
+        x_vec[i]->describe(*debug_out,Teuchos::VERB_EXTREME);
+        *debug_out << "xdot_vec[" << i << "] = " << std::endl;
+        xdot_vec[i]->describe(*debug_out,Teuchos::VERB_EXTREME);
+        *debug_out << "accuracy_vec[" << i << "] = " << accuracy_vec[i] << std::endl;
+      }
+#endif // Rythmos_DEBUG
       if (!status) return(status);
     }
     else if ( ( stepper_begin < local_time_vec[i] ) && ( local_time_vec[i] < stepper_end ) )
     {
+#ifdef Rythmos_DEBUG
+      if (debugLevel > 1)
+      {
+        *debug_out << "Requested local_time_vec[" << i << "] = " << 
+          local_time_vec[i] << " available in stepper[" << 
+          stepper_begin << "," << stepper_end << "]" << std::endl;
+      }
+#endif // Rythmos_DEBUG
       std::vector<Scalar> tmp_time_vec; 
       tmp_time_vec.push_back(local_time_vec[i]);
       std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > tmp_x_vec, tmp_xdot_vec;
@@ -436,10 +504,29 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
       x_vec[i] = tmp_x_vec[0];
       xdot_vec[i] = tmp_xdot_vec[0];
       accuracy_vec[i] = tmp_accuracy_vec[0];
+#ifdef Rythmos_DEBUG
+      if (debugLevel > 1)
+      {
+        *debug_out << "stepper->GetPoints returned:" << std::endl;
+        *debug_out << "x_vec[" << i << "] = " << std::endl;
+        x_vec[i]->describe(*debug_out,Teuchos::VERB_EXTREME);
+        *debug_out << "xdot_vec[" << i << "] = " << std::endl;
+        xdot_vec[i]->describe(*debug_out,Teuchos::VERB_EXTREME);
+        *debug_out << "accuracy_vec[" << i << "] = " << accuracy_vec[i] << std::endl;
+      }
+#endif // Rythmos_DEBUG
       if (!status) return(status);
     }
     else
     {
+#ifdef Rythmos_DEBUG
+      if (debugLevel > 1)
+      {
+        *debug_out << "Requested local_time_vec[" << i << "] = " <<
+          local_time_vec[i] << " not available in IB or stepper" << std::endl;
+        *debug_out << "Integrating forward with stepper" << std::endl;
+      }
+#endif // Rythmos_DEBUG
       while (stepper_end < local_time_vec[i])
       {
         // integrate forward with stepper 

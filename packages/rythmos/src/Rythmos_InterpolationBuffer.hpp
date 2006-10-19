@@ -267,8 +267,12 @@ bool InterpolationBuffer<Scalar>::SetPoints(
   // Determine if time is already in list and if so, replace existing data with new data.
   typename DataStore<Scalar>::DataStoreList_t::iterator 
     input_it = input_data_list.begin();
-  for ( ; input_it != input_data_list.end() ; input_it++)
+  while (input_it != input_data_list.end())
   {
+#ifdef Rythmos_DEBUG
+    if (debugLevel > 1)
+      *debug_out << "Looking for time = " << (*input_it).time << " in data_vec to replace with new value" << std::endl;
+#endif // Rythmos_DEBUG
     typename DataStore<Scalar>::DataStoreVector_t::iterator 
       node_it = std::find(data_vec.begin(),data_vec.end(),*input_it);
     if (node_it != data_vec.end())
@@ -287,7 +291,26 @@ bool InterpolationBuffer<Scalar>::SetPoints(
       }
 #endif // Rythmos_DEBUG
       data_vec[node_index] = *input_it;
-      input_data_list.erase(input_it);
+      input_it = input_data_list.erase(input_it);
+#ifdef Rythmos_DEBUG
+      if (debugLevel > 1)
+      {
+        *debug_out << "input_data_list after removing an element = " << std::endl;
+        typename DataStore<Scalar>::DataStoreList_t::iterator
+          data_it = input_data_list.begin();
+        int i=0;
+        for (; data_it != input_data_list.end() ; data_it++)
+        {
+          *debug_out << "item " << i << ":" << std::endl;
+          data_it->describe(*debug_out,Teuchos::VERB_EXTREME);
+          i++;
+        }
+      }
+#endif // Rythmos_DEBUG
+    }
+    else
+    {
+      input_it++;
     }
   }
   // Check that we're not going to exceed our storage limit:
