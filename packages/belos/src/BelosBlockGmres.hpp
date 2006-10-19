@@ -585,10 +585,7 @@ namespace Belos {
     //
     int i;	
     bool flg = false;
-    ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
-    ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
     std::vector<int> index( _blocksize );
-    RefCountPtr<MV> AU_vec = MVT::Clone( *_basisvecs,_blocksize );
     //
     // Associate the j-th block of _basisvecs with U_vec.
     //
@@ -596,13 +593,23 @@ namespace Belos {
       index[i] = _iter*_blocksize+i;
     }
     RefCountPtr<MV> U_vec = MVT::CloneView( *_basisvecs, index );
+    //
+    RefCountPtr<MV> Z_vec;
+    if (_flexible) {                                                            
+      Z_vec = MVT::CloneView( *_z_basisvecs, index );             
+    }
+    //
+    // Associate the j+1-th block of _basisvecs with AU_vec.
+    //
+    for ( i=0; i<_blocksize; i++ ) {
+      index[i] = (_iter+1)*_blocksize+i;
+    }
+    RefCountPtr<MV> AU_vec = MVT::CloneView( *_basisvecs, index );
     //                                                                          
     // If this is the flexible variant apply operator separately, else apply composite operator.
     //                                                                          
     if (_flexible) {                                                            
       //
-      RefCountPtr<MV> Z_vec = MVT::CloneView( *_z_basisvecs, index );             
-      //                                                                        
       //  Apply right preconditioning and store it in _z_basisvecs.             
       //                                                                        
       {
@@ -652,21 +659,7 @@ namespace Belos {
 
     if (rank != _blocksize) {
       flg = true;
-    } else {
-      //
-      // Copy the new multivector into the basis
-      //
-      index.resize(_blocksize);
-      for (i=0; i<_blocksize; i++) { index[i] = (_iter+1)*_blocksize + i; }
-      //
-      // Associate (j+1)-st block of ArnoldiVecs with F_vec.
-      //
-      RefCountPtr<MV> F_vec = MVT::CloneView( *_basisvecs, index );
-      //
-      // Copy preconditioned AU_vec into (j+1)st block of _basisvecs
-      //
-      MVT::MvAddMv( one, *AU_vec, zero, *AU_vec, *F_vec );
-    }
+    } 
 
     return flg;
 
