@@ -399,8 +399,8 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
       if (!status) return(status);
     }
   }
-  Scalar node_begin = node_vec[0];
-  Scalar node_end = node_vec[node_vec.size()-1];
+  Scalar node_begin = node_vec.front();
+  Scalar node_end = node_vec.back();
 #ifdef Rythmos_DEBUG
   if (debugLevel > 1)
   {

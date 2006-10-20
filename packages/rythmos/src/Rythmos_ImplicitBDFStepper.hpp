@@ -155,6 +155,7 @@ class ImplicitBDFStepper : virtual public Stepper<Scalar>
     bool interpolateSolution(
         const Scalar& timepoint
         ,Thyra::VectorBase<Scalar>* x_ptr_
+        ,ScalarMag* accuracy_ptr_
         ) const;
 
     // 05/05/06 tscoffe:  I hate the underscores for private variables!
@@ -656,6 +657,7 @@ template<class Scalar>
 bool ImplicitBDFStepper<Scalar>::interpolateSolution(
         const Scalar& timepoint
         ,Thyra::VectorBase<Scalar>* x_ptr_
+        ,ScalarMag* accuracy_ptr_
         ) const
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
@@ -690,6 +692,7 @@ bool ImplicitBDFStepper<Scalar>::interpolateSolution(
     gam = (delt + psi[j-1])/psi[j];
     Thyra::Vp_StV(x_ptr_,c,*xHistory[j]);
   }
+  *accuracy_ptr_ = pow(usedStep,kord);
   return(true);
 }
 
@@ -1309,13 +1312,38 @@ bool ImplicitBDFStepper<Scalar>::GetPoints(
     ,std::vector<ScalarMag>* accuracy_vec) const
 {
   bool status;
+  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xdot_temp; // Teuchos::null
   for (int i=0 ; i<time_vec.size() ; ++i)
   {
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x_temp = xn0->clone_v();
-    status = interpolateSolution(time_vec[i],&*x_temp);
+    ScalarMag accuracy;
+    status = interpolateSolution(time_vec[i],&*x_temp,&accuracy);
     if (!status) return(status);
     x_vec->push_back(x_temp);
+    xdot_vec->push_back(xdot_temp);
+    accuracy_vec->push_back(accuracy);
   }
+#ifdef Rythmos_DEBUG
+  if (debugLevel > 1)
+  {
+    Teuchos::OSTab ostab(debug_out,1,"BDFS::GetPoints");
+    *debug_out << "Passing out the interpolated values:" << std::endl;
+    for (int i=0; i<time_vec.size() ; ++i)
+    {
+      *debug_out << "time[" << i << "] = " << time_vec[i] << std::endl;
+      *debug_out << "x_vec[" << i << "] = " << std::endl;
+      (*x_vec)[i]->describe(*debug_out,Teuchos::VERB_EXTREME);
+      if ( (*xdot_vec)[i] == Teuchos::null)
+        *debug_out << "xdot_vec[" << i << "] = Teuchos::null" << std::endl;
+      else
+      {
+        *debug_out << "xdot_vec[" << i << "] = " << std::endl;
+        (*xdot_vec)[i]->describe(*debug_out,Teuchos::VERB_EXTREME);
+      }
+      *debug_out << "accuracy[" << i << "] = " << (*accuracy_vec)[i] << std::endl;
+    }
+  }
+#endif // Rythmos_DEBUG
   return(status);
 }
 
@@ -1331,7 +1359,10 @@ bool ImplicitBDFStepper<Scalar>::SetRange(
 template<class Scalar>
 bool ImplicitBDFStepper<Scalar>::GetNodes(std::vector<Scalar>* time_vec) const
 {
-  return(false);
+  if (numberOfSteps > 0)
+    time_vec->push_back(time-usedStep);
+  time_vec->push_back(time);
+  return(true);
 }
 
 template<class Scalar>

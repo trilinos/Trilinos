@@ -220,7 +220,10 @@ bool InterpolationBuffer<Scalar>::SetPoints(
       *debug_out << "x_vec[" << i << "] = " << std::endl;
       x_vec[i]->describe(*debug_out,Teuchos::VERB_EXTREME);
     }
-    *debug_out << "xdot_vec = " << std::endl;
+    if (xdot_vec.size() == 0)
+      *debug_out << "xdot_vec = empty vector" << std::endl;
+    else
+      *debug_out << "xdot_vec = " << std::endl;
     for (int i=0 ; i<xdot_vec.size() ; ++i)
     {
       if (xdot_vec[i] == Teuchos::null)
@@ -231,7 +234,10 @@ bool InterpolationBuffer<Scalar>::SetPoints(
         xdot_vec[i]->describe(*debug_out,Teuchos::VERB_EXTREME);
       }
     }
-    *debug_out << "accuracy_vec = " << std::endl;
+    if (accuracy_vec.size() == 0)
+      *debug_out << "accuracy_vec = empty vector" << std::endl;
+    else
+      *debug_out << "accuracy_vec = " << std::endl;
     for (int i=0 ; i<accuracy_vec.size() ; ++i)
       *debug_out << "accuracy_vec[" << i << "] = " << accuracy_vec[i] << std::endl;
   }

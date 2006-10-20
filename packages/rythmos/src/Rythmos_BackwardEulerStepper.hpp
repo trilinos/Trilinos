@@ -338,8 +338,7 @@ bool BackwardEulerStepper<Scalar>::GetPoints(
   {
     for (int i=0 ; i<time_vec.size() ; ++i)
       *debug_out << "time_vec[" << i << "] = " << time_vec[i] << std::endl;
-    *debug_out << "I can potentially interpolate in the interval [" 
-      << t_old_ << "," << t_ << "]." << std::endl;
+    *debug_out << "I can interpolate in the interval [" << t_old_ << "," << t_ << "]." << std::endl;
   }
 #endif // Rythmos_DEBUG
   typedef Teuchos::ScalarTraits<Scalar> ST;
