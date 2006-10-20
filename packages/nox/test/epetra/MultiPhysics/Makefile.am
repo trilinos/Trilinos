@@ -112,8 +112,3 @@ example_yeckel_DEPENDENCIES = $(top_builddir)/src/libnox.a \
         $(top_builddir)/src-epetra/libnoxepetra.a
 
 example_yeckel_LDADD = $(TEST_LIBS)
-
-EXTRA_DIST = \
-	$(srcdir)/gold_brusselator \
-	$(srcdir)/gold_hmx
-
