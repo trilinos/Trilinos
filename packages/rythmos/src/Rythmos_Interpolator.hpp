@@ -43,6 +43,10 @@ class Interpolator : virtual public Teuchos::Describable
     virtual ~Interpolator() {};
 
     /// Interpolation:
+    /// This function must support passing node values back out directly,
+    /// handling when only one node value is passed in,
+    /// and dealing with xdot == Teuchos::null. 
+    /// There is no guarantee at this time that data_out will be in the same order as t_values
     virtual bool interpolate(
         const typename DataStore<Scalar>::DataStoreVector_t &data_in
         ,const std::vector<Scalar> &t_values

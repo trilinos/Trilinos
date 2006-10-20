@@ -30,6 +30,8 @@
 #define Rythmos_BACKWARD_EULER_STEPPER_H
 
 #include "Rythmos_Stepper.hpp"
+#include "Rythmos_DataStore.hpp"
+#include "Rythmos_LinearInterpolator.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_ModelEvaluator.hpp"
@@ -341,65 +343,48 @@ bool BackwardEulerStepper<Scalar>::GetPoints(
   }
 #endif // Rythmos_DEBUG
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  bool status = true;
-  Scalar dt = t_ - t_old_;
-  for (int i=0 ; i<time_vec.size() ; ++i)
+  typename DataStore<Scalar>::DataStoreVector_t ds_nodes;
+  typename DataStore<Scalar>::DataStoreVector_t ds_out;
+  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xdot_temp; // Teuchos::null
+  if (t_old_ != t_)
   {
-    if (time_vec[i] == t_old_)
-    {
 #ifdef Rythmos_DEBUG
-      if (debugLevel > 1)
-        *debug_out << "time_vec[" << i << "] == t_old_, passing t_old_ out" << std::endl;
+    if (debugLevel > 1)
+      *debug_out << "Passing two points to interpolator:  " << t_old_ << " and " << t_ << std::endl;
 #endif // Rythmos_DEBUG
-
-      Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x_temp = scaled_x_old_->clone_v();
-      Thyra::Vt_S(&*x_temp,Scalar(-ST::one()*dt));
-      x_vec->push_back(x_temp);
-      Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xdot_temp = x_->clone_v();
-      Thyra::Vt_S(&*xdot_temp,Scalar(ST::one()/dt));
-      Thyra::Vp_V(&*xdot_temp,*x_);
-      xdot_vec->push_back(xdot_temp);
-      accuracy_vec->push_back(dt);  
-    }
-    else if (time_vec[i] == t_)
-    {
-#ifdef Rythmos_DEBUG
-      if (debugLevel > 1)
-        *debug_out << "time_vec[" << i << "] == t_, passing t_ out" << std::endl;
-#endif // Rythmos_DEBUG
-      x_vec->push_back(x_);
-      Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xdot_temp = x_->clone_v();
-      Thyra::Vt_S(&*xdot_temp,Scalar(ST::one()/dt));
-      Thyra::Vp_V(&*xdot_temp,*x_);
-      xdot_vec->push_back(xdot_temp);
-      accuracy_vec->push_back(dt);
-    }
-    else
-    {
-#ifdef Rythmos_DEBUG
-      if (debugLevel > 1)
-        *debug_out << "time_vec[" << i << "] != t_old_ or t_, returning failure" << std::endl;
-#endif // Rythmos_DEBUG
-      status = false;
-    }
+    DataStore<Scalar> ds_temp;
+    Scalar dt = t_ - t_old_;
+    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x_temp = scaled_x_old_->clone_v();
+    Thyra::Vt_S(&*x_temp,Scalar(-ST::one()*dt));  // undo the scaling
+    ds_temp.time = t_old_;
+    ds_temp.x = x_temp;
+    ds_temp.xdot = xdot_temp;
+    ds_temp.accuracy = ScalarMag(dt);
+    ds_nodes.push_back(ds_temp);
+    ds_temp.time = t_;
+    ds_temp.x = x_;
+    ds_temp.xdot = xdot_temp;
+    ds_temp.accuracy = ScalarMag(dt);
+    ds_nodes.push_back(ds_temp);
   }
-  // TODO:
-  // Copy code from LinearInterpolationBuffer 
-  // 10/9/06 tscoffe:  Could I derive off of LinearInterpolationBuffer to use that code?
-  //                   Would it be better to write a helper function to do the
-  //                   interpolations, either linear, Hermite, or otherwise,
-  //                   and then call those helper functions from the concrete
-  //                   InterpolationBuffers, and hence enable the use of those
-  //                   interpolations within the Steppers also?  
-  /*
+  else
+  {
+#ifdef Rythmos_DEBUG
+    if (debugLevel > 1)
+      *debug_out << "Passing one point to interpolator:  " << t_ << std::endl;
+#endif // Rythmos_DEBUG
+    DataStore<Scalar> ds_temp;
+    ds_temp.time = t_;
+    ds_temp.x = x_;
+    ds_temp.xdot = xdot_temp;
+    ds_temp.accuracy = ScalarMag(ST::zero());
+    ds_nodes.push_back(ds_temp);
+  }
   LinearInterpolator<Scalar> interpolator;
-  std::vector<DataStore<Scalar> > BE_data;
-  BE_data.push_back(DataStore<Scalar>(t_old,x_old,Teuchos::null,ST::zero()));
-  BE_data.push_back(DataStore<Scalar>(t,x,Teuchos::null,ST::zero()));
-  VectorToDataStoreVector(time_vec,x_vec,xdot_vec,accuracy_vec);
-  bool status = interpolator.interpolate();
-  return(status);
-  */
+  bool status = interpolator.interpolate(ds_nodes,time_vec,&ds_out);
+  if (!status) return(status);
+  std::vector<Scalar> time_out;
+  DataStoreVectorToVector(ds_out,&time_out,x_vec,xdot_vec,accuracy_vec);
   return(status);
 }
 

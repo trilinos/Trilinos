@@ -93,8 +93,9 @@ bool LinearInterpolator<Scalar>::interpolate(
     ,const std::vector<Scalar> &t_values
     ,typename DataStore<Scalar>::DataStoreVector_t *data_out ) const
 {
+  typedef Teuchos::ScalarTraits<Scalar> ST;
 #ifdef Rythmos_DEBUG
-  Teuchos::OSTab ostab(debug_out,1,"interpolate");
+  Teuchos::OSTab ostab(debug_out,1,"LI::interpolator");
   if (debugLevel > 1)
   {
     if (data_in.size() == 0)
@@ -132,30 +133,53 @@ bool LinearInterpolator<Scalar>::interpolate(
     }
   }
 #endif // Rythmos_DEBUG
-  typedef Teuchos::ScalarTraits<Scalar> ST;
-  // If there are fewer than 2 points in data_in, then return failure
-  if (data_in.size() < 2)
-    return(false);
   // Sort data_in: 
-  typename DataStore<Scalar>::DataStoreVector_t local_data_in = data_in;
+  typename DataStore<Scalar>::DataStoreVector_t local_data_in;
+  local_data_in.insert(local_data_in.end(),data_in.begin(),data_in.end());
   std::sort(local_data_in.begin(),local_data_in.end());
-  // Sort t_values:
-  std::vector<Scalar> local_time_vec = t_values;
-  std::sort(local_time_vec.begin(),local_time_vec.end());
-  int N_t = local_time_vec.size();
-  int N_D = local_data_in.size();
-  // If time is outside range of t_values, then return failure
-  if ( (local_time_vec[0] < local_data_in[0].time) || (local_time_vec[N_t] > local_data_in[N_D].time) )
-    return(false);
   // Clear the output:
   data_out->clear();
-  // Find t values on either side of time
-  int j=0;
-  for (int i=0 ; i<N_D-1 ; ++i)
+  // Sort incoming t values:
+  std::list<Scalar> local_t_values;
+  local_t_values.insert(local_t_values.end(),t_values.begin(),t_values.end());
+  local_t_values.sort();
+  // Check for node values to pass out directly:
+  typename std::list<Scalar>::iterator time_it = local_t_values.begin();
+  while (time_it != local_t_values.end())
   {
-    while ((local_data_in[i].time <= local_time_vec[j]) && (local_time_vec[j] <= local_data_in[i+1].time ))
+    typename DataStore<Scalar>::DataStoreVector_t::iterator data_in_it;
+    data_in_it = std::find(local_data_in.begin(),local_data_in.end(),*time_it);
+    if (data_in_it != local_data_in.end())
     {
-      Scalar& t = local_time_vec[j];
+#ifdef Rythmos_DEBUG
+      if (debugLevel > 1)
+        *debug_out << "Passing out data (w/o interpolating) for t = " << *time_it << std::endl;
+#endif // Rythmos_DEBUG
+      data_out->push_back(*data_in_it);
+      time_it = local_t_values.erase(time_it);
+    }
+    else
+    {
+      time_it++;
+    }
+  }
+  if (local_t_values.size() == 0)
+    return(true);
+  // If there are fewer than 2 points in data_in, then return failure
+  if (local_data_in.size() < 2)
+    return(false);
+
+  // If local_t_values are outside range of data_in, then return failure
+  if ( ! ( (local_data_in.front() <= local_t_values.front()) && 
+           (local_data_in.back()  >= local_t_values.back() ) )    )
+    return(false);
+  // Find t values on either side of time
+  time_it = local_t_values.begin();
+  for (int i=0 ; i<local_data_in.size()-1 ; ++i)
+  {
+    while ( (local_data_in[i] <= *time_it) && (local_data_in[i+1] >= *time_it) )
+    {
+      Scalar& t = *time_it;
       Scalar& ti = local_data_in[i].time;
       Scalar& tip1 = local_data_in[i+1].time;
       Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xi = local_data_in[i].x;
@@ -175,17 +199,23 @@ bool LinearInterpolator<Scalar>::interpolate(
       Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x = xi->clone_v();
       V_StVpStV(&*x, ST::one(), *xi, t-ti, *tmp_vec);
       DS.x = x;
-      // Then we work on xdot.
-      V_StVpStV(&*tmp_vec,Scalar(ST::one()/h),*xdoti,Scalar(-ST::one()/h),*xdotip1);
-      Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xdot = xdoti->clone_v();
-      V_StVpStV(&*xdot, ST::one(), *xdoti, t-ti, *tmp_vec);
-      DS.xdot = xdot;
+      // Check that xdot != Teuchos::null
+      if ( (xdoti != Teuchos::null) && (xdotip1 != Teuchos::null) )
+      {
+        // Then we work on xdot.
+        V_StVpStV(&*tmp_vec,Scalar(ST::one()/h),*xdoti,Scalar(-ST::one()/h),*xdotip1);
+        Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xdot = xdoti->clone_v();
+        V_StVpStV(&*xdot, ST::one(), *xdoti, t-ti, *tmp_vec);
+        DS.xdot = xdot;
+      }
+      else
+        DS.xdot = xdoti;
       // And finally we estimate our order of accuracy
       DS.accuracy = h;
       // Push DataStore object onto vector:
       data_out->push_back(DS);
-      // Increment local_time_vec time value
-      j++;
+      // Increment time_it:
+      time_it++;
     }
   }
   return(true);

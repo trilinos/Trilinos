@@ -279,8 +279,13 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
       *debug_out << "xdot_vec = " << std::endl;
       for (int i=0 ; i<xdot_vec_ptr_->size() ; ++i)
       {
-        *debug_out << "xdot_vec[" << i << "] = " << std::endl;
-        (*xdot_vec_ptr_)[i]->describe(*debug_out,Teuchos::VERB_EXTREME);
+        if ((*xdot_vec_ptr_)[i] == Teuchos::null)
+          *debug_out << "xdot_vec[" << i << "] = Teuchos::null" << std::endl;
+        else
+        {
+          *debug_out << "xdot_vec[" << i << "] = " << std::endl;
+          (*xdot_vec_ptr_)[i]->describe(*debug_out,Teuchos::VERB_EXTREME);
+        }
       }
     }
     if (accuracy_vec_ptr_ == NULL)
@@ -479,8 +484,13 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
         *debug_out << "IB->GetPoints returned:" << std::endl;
         *debug_out << "x_vec[" << i << "] = " << std::endl;
         x_vec[i]->describe(*debug_out,Teuchos::VERB_EXTREME);
-        *debug_out << "xdot_vec[" << i << "] = " << std::endl;
-        xdot_vec[i]->describe(*debug_out,Teuchos::VERB_EXTREME);
+        if (xdot_vec[i] == Teuchos::null)
+          *debug_out << "xdot_vec[" << i << "] = Teuchos::null" << std::endl;
+        else
+        {
+          *debug_out << "xdot_vec[" << i << "] = " << std::endl;
+          xdot_vec[i]->describe(*debug_out,Teuchos::VERB_EXTREME);
+        }
         *debug_out << "accuracy_vec[" << i << "] = " << accuracy_vec[i] << std::endl;
       }
 #endif // Rythmos_DEBUG
@@ -510,8 +520,13 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
         *debug_out << "stepper->GetPoints returned:" << std::endl;
         *debug_out << "x_vec[" << i << "] = " << std::endl;
         x_vec[i]->describe(*debug_out,Teuchos::VERB_EXTREME);
-        *debug_out << "xdot_vec[" << i << "] = " << std::endl;
-        xdot_vec[i]->describe(*debug_out,Teuchos::VERB_EXTREME);
+        if (xdot_vec[i] == Teuchos::null)
+          *debug_out << "xdot_vec[" << i << "] = Teuchos::null" << std::endl;
+        else
+        {
+          *debug_out << "xdot_vec[" << i << "] = " << std::endl;
+          xdot_vec[i]->describe(*debug_out,Teuchos::VERB_EXTREME);
+        }
         *debug_out << "accuracy_vec[" << i << "] = " << accuracy_vec[i] << std::endl;
       }
 #endif // Rythmos_DEBUG
