@@ -430,6 +430,10 @@ example_yeckel_DEPENDENCIES = $(top_builddir)/src/libnox.a \
         $(top_builddir)/src-epetra/libnoxepetra.a
 
 example_yeckel_LDADD = $(TEST_LIBS)
+EXTRA_DIST = \
+	$(srcdir)/gold_brusselator \
+	$(srcdir)/gold_hmx
+
 all: all-am
 
 .SUFFIXES:
@@ -819,6 +823,7 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
+	$(mkdir_p) $(distdir)/$(srcdir)
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
