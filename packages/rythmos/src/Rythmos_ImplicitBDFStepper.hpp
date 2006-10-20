@@ -142,7 +142,6 @@ class ImplicitBDFStepper : virtual public Stepper<Scalar>
     void obtainPredictor();
     void obtainResidual();
     void obtainJacobian();
-    // bool interpolateSolution(Scalar time, Thyra::VectorBase<Scalar> &tmpSolVector);
     void updateHistory();
     void restoreHistory();
     void updateCoeffs();
@@ -152,6 +151,11 @@ class ImplicitBDFStepper : virtual public Stepper<Scalar>
     void completeStep();
 
     void setDefaultMagicNumbers(Teuchos::ParameterList &magicNumberList);
+
+    bool interpolateSolution(
+        const Scalar& timepoint
+        ,Thyra::VectorBase<Scalar>* x_ptr_
+        ) const;
 
     // 05/05/06 tscoffe:  I hate the underscores for private variables!
     Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > model;
@@ -648,25 +652,20 @@ void ImplicitBDFStepper<Scalar>::obtainPredictor()
 #endif // Rythmos_DEBUG
 }
 
-/* // This function is not ready yet.
 template<class Scalar>
-void ImplicitBDFStepper<Scalar>::interpolateSolution(Scalar timepoint, 
-    	Thyra::VectorBase<Scalar>  &tmpSolVector)
+bool ImplicitBDFStepper<Scalar>::interpolateSolution(
+        const Scalar& timepoint
+        ,Thyra::VectorBase<Scalar>* x_ptr_
+        ) const
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
-
-// 03/23/04 tscoffe:  Currently this code is nearly identical to the IDA code
-// for interpolating to an output time.  Either we acknowledge the copyright,
-// the list of conditions in the license and the disclaimer or we rewrite this
-// function.  The IDA license is included after this routine.
   Scalar tfuzz;   // fuzz factor to check for valid output time
   Scalar tp;      // approximately t{n-1}
   Scalar delt;    // distance between timepoint and time
-  Scalar c = Scalar(1.0); // coefficient for interpolation
+  Scalar c = ST::one(); // coefficient for interpolation
   Scalar gam;     // coefficient for interpolation
   int kord;       // order of interpolation
   Scalar tn = time;
-  Scalar hh = hh;
   Scalar hused = usedStep;
   int kused = usedOrder;
   Scalar uround = ST::zero();  // unit round-off (set to zero for now)
@@ -674,9 +673,11 @@ void ImplicitBDFStepper<Scalar>::interpolateSolution(Scalar timepoint,
   tfuzz = 100 * uround * (tn + hh);
   tp = tn - hused - tfuzz;
   if ( (timepoint - tp)*hh < ST::zero() ) 
-    return false;
+    return(false);
+  if ( timepoint - (time-tfuzz) > ST::zero() )
+    return(false);
 
-  assign(&*tmpSolVector,*xHistory[0]),
+  Thyra::V_V(x_ptr_,*xHistory[0]);
   kord = kused;
   if ( (kused == 0) || (timepoint == tn) ) 
     kord = 1;
@@ -687,11 +688,10 @@ void ImplicitBDFStepper<Scalar>::interpolateSolution(Scalar timepoint,
   {
     c = c*gam;
     gam = (delt + psi[j-1])/psi[j];
-    Vp_StV(&*tmpSolVector,c,*xHistory[j]);
+    Thyra::Vp_StV(x_ptr_,c,*xHistory[j]);
   }
-  return true;
+  return(true);
 }
-*/
 
 template<class Scalar>
 void ImplicitBDFStepper<Scalar>::updateHistory()
@@ -1308,7 +1308,15 @@ bool ImplicitBDFStepper<Scalar>::GetPoints(
     ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* xdot_vec
     ,std::vector<ScalarMag>* accuracy_vec) const
 {
-  return(false);
+  bool status;
+  for (int i=0 ; i<time_vec.size() ; ++i)
+  {
+    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x_temp = xn0->clone_v();
+    status = interpolateSolution(time_vec[i],&*x_temp);
+    if (!status) return(status);
+    x_vec->push_back(x_temp);
+  }
+  return(status);
 }
 
 template<class Scalar>
