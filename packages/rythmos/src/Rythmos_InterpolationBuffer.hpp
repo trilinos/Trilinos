@@ -223,8 +223,13 @@ bool InterpolationBuffer<Scalar>::SetPoints(
     *debug_out << "xdot_vec = " << std::endl;
     for (int i=0 ; i<xdot_vec.size() ; ++i)
     {
-      *debug_out << "xdot_vec[" << i << "] = " << std::endl;
-      xdot_vec[i]->describe(*debug_out,Teuchos::VERB_EXTREME);
+      if (xdot_vec[i] == Teuchos::null)
+        *debug_out << "xdot_vec[" << i << "] = Teuchos::null" << std::endl;
+      else
+      {
+        *debug_out << "xdot_vec[" << i << "] = " << std::endl;
+        xdot_vec[i]->describe(*debug_out,Teuchos::VERB_EXTREME);
+      }
     }
     *debug_out << "accuracy_vec = " << std::endl;
     for (int i=0 ; i<accuracy_vec.size() ; ++i)

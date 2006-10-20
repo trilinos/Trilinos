@@ -385,6 +385,26 @@ bool BackwardEulerStepper<Scalar>::GetPoints(
   if (!status) return(status);
   std::vector<Scalar> time_out;
   DataStoreVectorToVector(ds_out,&time_out,x_vec,xdot_vec,accuracy_vec);
+#ifdef Rythmos_DEBUG
+  if (debugLevel > 1)
+  {
+    *debug_out << "Passing out the interpolated values:" << std::endl;
+    for (int i=0; i<time_out.size() ; ++i)
+    {
+      *debug_out << "time[" << i << "] = " << time_out[i] << std::endl;
+      *debug_out << "x_vec[" << i << "] = " << std::endl;
+      (*x_vec)[i]->describe(*debug_out,Teuchos::VERB_EXTREME);
+      if ( (*xdot_vec)[i] == Teuchos::null)
+        *debug_out << "xdot_vec[" << i << "] = Teuchos::null" << std::endl;
+      else
+      {
+        *debug_out << "xdot_vec[" << i << "] = " << std::endl;
+        (*xdot_vec)[i]->describe(*debug_out,Teuchos::VERB_EXTREME);
+      }
+      *debug_out << "accuracy[" << i << "] = " << (*accuracy_vec)[i] << std::endl;
+    }
+  }
+#endif // Rythmos_DEBUG
   return(status);
 }
 

@@ -302,6 +302,7 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
 #endif // Rythmos_DEBUG
   bool status = IB->GetPoints(time_vec_,x_vec_ptr_,xdot_vec_ptr_,accuracy_vec_ptr_);
   if (status) return(status);
+  x_vec_ptr_->clear();
 #ifdef Rythmos_DEBUG
   if (debugLevel > 1)
     *debug_out << "IB->GetPoints unsuccessful" << std::endl;
@@ -475,23 +476,23 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
       std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > tmp_x_vec, tmp_xdot_vec;
       std::vector<ScalarMag> tmp_accuracy_vec;
       status = IB->GetPoints(tmp_time_vec, &tmp_x_vec, &tmp_xdot_vec, &tmp_accuracy_vec); 
-      x_vec[i] = tmp_x_vec[0];
-      xdot_vec[i] = tmp_xdot_vec[0];
-      accuracy_vec[i] = tmp_accuracy_vec[0];
+      x_vec.push_back(tmp_x_vec[0]);
+      xdot_vec.push_back(tmp_xdot_vec[0]);
+      accuracy_vec.push_back(tmp_accuracy_vec[0]);
 #ifdef Rythmos_DEBUG
       if (debugLevel > 1)
       {
         *debug_out << "IB->GetPoints returned:" << std::endl;
-        *debug_out << "x_vec[" << i << "] = " << std::endl;
-        x_vec[i]->describe(*debug_out,Teuchos::VERB_EXTREME);
-        if (xdot_vec[i] == Teuchos::null)
-          *debug_out << "xdot_vec[" << i << "] = Teuchos::null" << std::endl;
+        *debug_out << "tmp_x_vec[" << i << "] = " << std::endl;
+        tmp_x_vec[i]->describe(*debug_out,Teuchos::VERB_EXTREME);
+        if (tmp_xdot_vec[i] == Teuchos::null)
+          *debug_out << "tmp_xdot_vec[" << i << "] = Teuchos::null" << std::endl;
         else
         {
-          *debug_out << "xdot_vec[" << i << "] = " << std::endl;
-          xdot_vec[i]->describe(*debug_out,Teuchos::VERB_EXTREME);
+          *debug_out << "tmp_xdot_vec[" << i << "] = " << std::endl;
+          tmp_xdot_vec[i]->describe(*debug_out,Teuchos::VERB_EXTREME);
         }
-        *debug_out << "accuracy_vec[" << i << "] = " << accuracy_vec[i] << std::endl;
+        *debug_out << "tmp_accuracy_vec[" << i << "] = " << accuracy_vec[i] << std::endl;
       }
 #endif // Rythmos_DEBUG
       if (!status) return(status);
@@ -511,23 +512,23 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
       std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > tmp_x_vec, tmp_xdot_vec;
       std::vector<ScalarMag> tmp_accuracy_vec;
       status = stepper->GetPoints(tmp_time_vec, &tmp_x_vec, &tmp_xdot_vec, &tmp_accuracy_vec); 
-      x_vec[i] = tmp_x_vec[0];
-      xdot_vec[i] = tmp_xdot_vec[0];
-      accuracy_vec[i] = tmp_accuracy_vec[0];
+      x_vec.push_back(tmp_x_vec[0]);
+      xdot_vec.push_back(tmp_xdot_vec[0]);
+      accuracy_vec.push_back(tmp_accuracy_vec[0]);
 #ifdef Rythmos_DEBUG
       if (debugLevel > 1)
       {
         *debug_out << "stepper->GetPoints returned:" << std::endl;
-        *debug_out << "x_vec[" << i << "] = " << std::endl;
-        x_vec[i]->describe(*debug_out,Teuchos::VERB_EXTREME);
-        if (xdot_vec[i] == Teuchos::null)
-          *debug_out << "xdot_vec[" << i << "] = Teuchos::null" << std::endl;
+        *debug_out << "tmp_x_vec[" << i << "] = " << std::endl;
+        tmp_x_vec[i]->describe(*debug_out,Teuchos::VERB_EXTREME);
+        if (tmp_xdot_vec[i] == Teuchos::null)
+          *debug_out << "tmp_xdot_vec[" << i << "] = Teuchos::null" << std::endl;
         else
         {
-          *debug_out << "xdot_vec[" << i << "] = " << std::endl;
-          xdot_vec[i]->describe(*debug_out,Teuchos::VERB_EXTREME);
+          *debug_out << "tmp_xdot_vec[" << i << "] = " << std::endl;
+          tmp_xdot_vec[i]->describe(*debug_out,Teuchos::VERB_EXTREME);
         }
-        *debug_out << "accuracy_vec[" << i << "] = " << accuracy_vec[i] << std::endl;
+        *debug_out << "tmp_accuracy_vec[" << i << "] = " << tmp_accuracy_vec[i] << std::endl;
       }
 #endif // Rythmos_DEBUG
       if (!status) return(status);
@@ -576,9 +577,9 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
           std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > tmp_x_vec, tmp_xdot_vec;
           std::vector<ScalarMag> tmp_accuracy_vec;
           status = stepper->GetPoints(tmp_time_vec, &tmp_x_vec, &tmp_xdot_vec, &tmp_accuracy_vec); 
-          x_vec[i] = tmp_x_vec[0];
-          xdot_vec[i] = tmp_xdot_vec[0];
-          accuracy_vec[i] = tmp_accuracy_vec[0];
+          x_vec.push_back(tmp_x_vec[0]);
+          xdot_vec.push_back(tmp_xdot_vec[0]);
+          accuracy_vec.push_back(tmp_accuracy_vec[0]);
           if (!status) return(status);
         }
         // Update end-points:
