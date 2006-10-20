@@ -297,7 +297,12 @@ int main(int argc, char *argv[])
         std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<double> > > x_vec;
         std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<double> > > xdot_vec;
         std::vector<double> accuracy_vec;
-        integrator.GetPoints(time_vals,&x_vec,&xdot_vec,&accuracy_vec);
+        bool status = integrator.GetPoints(time_vals,&x_vec,&xdot_vec,&accuracy_vec);
+        if (!status) 
+        {
+          std::cout << "ERROR:  Integrator.GetPoints returned failure" << std::endl;
+          return(-1);
+        }
         // Get solution out of stepper:
         x_computed_thyra_ptr = x_vec[0];
       }
@@ -330,94 +335,128 @@ int main(int argc, char *argv[])
     }
     else // (step_method_val == VARIABLE_STEP)
     {
-#ifdef Rythmos_DEBUG
-      // Create a place to store the computed solutions
-      x_computed_thyra_ptr = stepper.get_solution();
-      // Convert Thyra::VectorBase to Epetra_Vector
-      Teuchos::RefCountPtr<const Epetra_Vector> x_computed_ptr = Thyra::get_Epetra_Vector(*(epetraModel->get_x_map()),x_computed_thyra_ptr);
-      // Create a place to store the exact numerical solution
-      Teuchos::RefCountPtr<Epetra_Vector> x_numerical_exact_ptr = Teuchos::rcp(new Epetra_Vector(x_computed_ptr->Map()));
-      Epetra_Vector& x_numerical_exact = *x_numerical_exact_ptr;
-      // Create a place to store the relative difference:
-      Teuchos::RefCountPtr<Epetra_Vector> x_rel_diff_ptr = Teuchos::rcp(new Epetra_Vector(x_computed_ptr->Map()));
-      Epetra_Vector& x_rel_diff = *x_rel_diff_ptr;
-      // get lambda from the problem:
-      Teuchos::RefCountPtr<const Epetra_Vector> lambda_ptr = epetraModel->get_coeff();
-      const Epetra_Vector &lambda = *lambda_ptr;
-#endif // Rythmos_DEBUG
-      while (time < finalTime)
+#ifdef Rythmos_NEW
+      if (useIntegrator)
       {
-        double dt_taken = stepper.TakeStep();
-        numSteps++;
-#ifdef Rythmos_DEBUG
-        if (debugLevel > 1)
+        // Set up fixed-step-size integration:
+        Teuchos::RefCountPtr<Teuchos::ParameterList> 
+          integratorParams = Teuchos::rcp(new Teuchos::ParameterList);
+        //integratorParams->set( "fixed_dt", dt );
+        // Create integrator using stepper and linear interpolation buffer:
+        Teuchos::RefCountPtr<Rythmos::Interpolator<double> > 
+          linearInterpolator = Teuchos::rcp(new Rythmos::LinearInterpolator<double>());
+        Teuchos::RefCountPtr<Rythmos::InterpolationBuffer<double> > 
+          IB = Teuchos::rcp(new Rythmos::InterpolationBuffer<double>(linearInterpolator,1000));
+        Rythmos::InterpolationBufferAsStepper<double> integrator(stepper_ptr,IB,integratorParams);
+        // Ask for desired time value:
+        std::vector<double> time_vals;
+        time_vals.push_back(finalTime);
+        std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<double> > > x_vec;
+        std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<double> > > xdot_vec;
+        std::vector<double> accuracy_vec;
+        bool status = integrator.GetPoints(time_vals,&x_vec,&xdot_vec,&accuracy_vec);
+        if (!status) 
         {
-          stepper.describe(*out,Teuchos::VERB_EXTREME);
+          std::cout << "ERROR:  Integrator.GetPoints returned failure" << std::endl;
+          return(-1);
         }
-#endif // Rythmos_DEBUG
-        if (dt_taken < 0)
-        {
-          *out << "Error, stepper failed for some reason with step taken = " << dt_taken << endl;
-          break;
-        }
-#ifdef Rythmos_DEBUG
         // Get solution out of stepper:
+        x_computed_thyra_ptr = x_vec[0];
+      }
+      else
+      {
+#endif // Rythmos_NEW
+#ifdef Rythmos_DEBUG
+        // Create a place to store the computed solutions
         x_computed_thyra_ptr = stepper.get_solution();
         // Convert Thyra::VectorBase to Epetra_Vector
-        x_computed_ptr = Thyra::get_Epetra_Vector(*(epetraModel->get_x_map()),x_computed_thyra_ptr);
-        if ((method_val == METHOD_BDF) && (maxOrder == 1))
+        Teuchos::RefCountPtr<const Epetra_Vector> x_computed_ptr = Thyra::get_Epetra_Vector(*(epetraModel->get_x_map()),x_computed_thyra_ptr);
+        // Create a place to store the exact numerical solution
+        Teuchos::RefCountPtr<Epetra_Vector> x_numerical_exact_ptr = Teuchos::rcp(new Epetra_Vector(x_computed_ptr->Map()));
+        Epetra_Vector& x_numerical_exact = *x_numerical_exact_ptr;
+        // Create a place to store the relative difference:
+        Teuchos::RefCountPtr<Epetra_Vector> x_rel_diff_ptr = Teuchos::rcp(new Epetra_Vector(x_computed_ptr->Map()));
+        Epetra_Vector& x_rel_diff = *x_rel_diff_ptr;
+        // get lambda from the problem:
+        Teuchos::RefCountPtr<const Epetra_Vector> lambda_ptr = epetraModel->get_coeff();
+        const Epetra_Vector &lambda = *lambda_ptr;
+#endif // Rythmos_DEBUG
+        while (time < finalTime)
         {
-          int myN = x_numerical_exact.MyLength();
-          if (numSteps == 1) // First step
+          double dt_taken = stepper.TakeStep();
+          numSteps++;
+#ifdef Rythmos_DEBUG
+          if (debugLevel > 1)
           {
-            for (int i=0 ; i<myN ; ++i)
-              x_numerical_exact[i] = x0;
+            stepper.describe(*out,Teuchos::VERB_EXTREME);
           }
-          for (int i=0 ; i<myN ; ++i)
-            x_numerical_exact[i] = ( x_numerical_exact[i]
-                 +dt_taken*epetraModel->evalR(time+dt_taken,lambda[i],coeff_s))
-                 /(1-lambda[i]*dt_taken);
-          for (int i=0 ; i<myN ; ++i)
-            x_rel_diff[i] = (x_numerical_exact[i]-(*x_computed_ptr)[i])/x_numerical_exact[i];
-          if (myN == 1)
-            *out << "Computed x(" << time+dt_taken << ") = " << (*x_computed_ptr)[0] 
-                 << "  Numerical Exact = " << x_numerical_exact[0] 
-                 << "  Rel Diff = " << x_rel_diff[0] << std::endl;
+#endif // Rythmos_DEBUG
+          if (dt_taken < 0)
+          {
+            *out << "Error, stepper failed for some reason with step taken = " << dt_taken << endl;
+            break;
+          }
+#ifdef Rythmos_DEBUG
+          // Get solution out of stepper:
+          x_computed_thyra_ptr = stepper.get_solution();
+          // Convert Thyra::VectorBase to Epetra_Vector
+          x_computed_ptr = Thyra::get_Epetra_Vector(*(epetraModel->get_x_map()),x_computed_thyra_ptr);
+          if ((method_val == METHOD_BDF) && (maxOrder == 1))
+          {
+            int myN = x_numerical_exact.MyLength();
+            if (numSteps == 1) // First step
+            {
+              for (int i=0 ; i<myN ; ++i)
+                x_numerical_exact[i] = x0;
+            }
+            for (int i=0 ; i<myN ; ++i)
+              x_numerical_exact[i] = ( x_numerical_exact[i]
+                  +dt_taken*epetraModel->evalR(time+dt_taken,lambda[i],coeff_s))
+                  /(1-lambda[i]*dt_taken);
+            for (int i=0 ; i<myN ; ++i)
+              x_rel_diff[i] = (x_numerical_exact[i]-(*x_computed_ptr)[i])/x_numerical_exact[i];
+            if (myN == 1)
+              *out << "Computed x(" << time+dt_taken << ") = " << (*x_computed_ptr)[0] 
+                  << "  Numerical Exact = " << x_numerical_exact[0] 
+                  << "  Rel Diff = " << x_rel_diff[0] << std::endl;
+            else
+            {
+              for (int i=0 ; i<myN ; ++i)
+                *out << "Computed x_" << i << "(" << time+dt_taken << ") = " << (*x_computed_ptr)[i] 
+                    << "  Numerical Exact = " << x_numerical_exact[i] 
+                    << "  Rel Diff = " << x_rel_diff[i] <<  std::endl;
+            }
+          }
           else
           {
+            // compute exact answer
+            Teuchos::RefCountPtr<const Epetra_Vector> x_star_ptr = epetraModel->get_exact_solution(time);
+            const Epetra_Vector& x_star = *x_star_ptr;
+            int myN = x_computed_ptr->MyLength();
             for (int i=0 ; i<myN ; ++i)
-              *out << "Computed x_" << i << "(" << time+dt_taken << ") = " << (*x_computed_ptr)[i] 
-                   << "  Numerical Exact = " << x_numerical_exact[i] 
-                   << "  Rel Diff = " << x_rel_diff[i] <<  std::endl;
+              x_rel_diff[i] = (x_star[i]-(*x_computed_ptr)[i])/x_star[i];
+            if (myN == 1)
+              *out << "Computed x(" << time+dt_taken << ") = " << (*x_computed_ptr)[0] 
+                  << "  Exact = " << x_star[0] 
+                  << "  Rel Diff = " << x_rel_diff[0] << std::endl;
+            else
+            {
+              for (int i=0 ; i<myN ; ++i)
+                *out << "Computed x_" << i << "(" << time+dt_taken << ") = " << (*x_computed_ptr)[i] 
+                    << "  Exact = " << x_star[i] 
+                    << "  Rel Diff = " << x_rel_diff[i] << std::endl;
+            }
           }
-        }
-        else
-        {
-          // compute exact answer
-          Teuchos::RefCountPtr<const Epetra_Vector> x_star_ptr = epetraModel->get_exact_solution(time);
-          const Epetra_Vector& x_star = *x_star_ptr;
-          int myN = x_computed_ptr->MyLength();
-          for (int i=0 ; i<myN ; ++i)
-            x_rel_diff[i] = (x_star[i]-(*x_computed_ptr)[i])/x_star[i];
-          if (myN == 1)
-            *out << "Computed x(" << time+dt_taken << ") = " << (*x_computed_ptr)[0] 
-                 << "  Exact = " << x_star[0] 
-                 << "  Rel Diff = " << x_rel_diff[0] << std::endl;
-          else
-          {
-            for (int i=0 ; i<myN ; ++i)
-              *out << "Computed x_" << i << "(" << time+dt_taken << ") = " << (*x_computed_ptr)[i] 
-                   << "  Exact = " << x_star[i] 
-                   << "  Rel Diff = " << x_rel_diff[i] << std::endl;
-          }
-        }
 
 #endif // Rythmos_DEBUG
-        time += dt_taken;
-        *out << "Took stepsize of: " << dt_taken << " time = " << time << endl;
+          time += dt_taken;
+          *out << "Took stepsize of: " << dt_taken << " time = " << time << endl;
+        }
+        // Get solution out of stepper:
+        x_computed_thyra_ptr = stepper.get_solution();
+#ifdef Rythmos_NEW
       }
-      // Get solution out of stepper:
-      x_computed_thyra_ptr = stepper.get_solution();
+#endif // Rythmos_NEW
     }
     *out << "Integrated to time = " << time << endl;
 
