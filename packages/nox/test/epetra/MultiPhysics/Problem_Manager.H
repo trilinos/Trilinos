@@ -215,6 +215,10 @@ public:
   // composite Jacobian
   void copyProblemJacobiansToComposite();
 
+  // Copy problem Jacobians as block diagonal contributions to 
+  // specified composite matrix
+  void copyProblemJacobiansToComposite( Epetra_CrsMatrix & mat );
+
   // Solve problem using fixed-point iteration
   bool solve();
 
@@ -269,7 +273,10 @@ public:
   virtual Teuchos::RefCountPtr<Epetra_CrsGraph> 
   composeGraphs( const Epetra_CrsGraph &, const Epetra_CrsGraph & );
 
-private:
+  // method to compute the action of a block on a vector using a directional derivative
+  virtual bool applyBlockAction( int probId, int depId, const Epetra_Vector &, Epetra_Vector & );
+
+protected:
 
   // Creates a composite graph from existing graphs of registered problems
   void generateGraph();

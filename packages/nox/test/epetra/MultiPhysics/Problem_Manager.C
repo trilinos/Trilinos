@@ -590,6 +590,8 @@ Problem_Manager::registerComplete()
         jacInterface, jacOperator,
         precInterface, precOperator,
         compositeSoln) );
+
+    //dynamic_cast<NOX::Epetra::MatrixFree*>(jacOperator.get())->computeJacobian(*compositeSoln, *jacOperator);
   }
 
   if( 0 ) // Matrix-Free Jacobian and Broyden preconditioner
@@ -620,13 +622,18 @@ Problem_Manager::registerComplete()
     broydenParams.set("Write Broyden Info", true);
 
     // Create some temp objects needed for construction
-    Teuchos::RefCountPtr<Epetra_CrsGraph>  blockAA = generateBlockDiagonalGraph( *compositeMap, false );             ;
+    Teuchos::RefCountPtr<Epetra_CrsGraph>  blockAA = generateBlockDiagonalGraph( *compositeMap, false );
     blockAA->FillComplete();
     Teuchos::RefCountPtr<Epetra_CrsMatrix> blockA = Teuchos::rcp( new Epetra_CrsMatrix(Copy, *blockAA) ); 
     blockA->FillComplete();
     evaluate( NOX::Epetra::Interface::Required::Jac, &(*compositeSoln), NULL );
+    copyProblemJacobiansToComposite( *blockA );
+
+    //cout << blockA->Graph() << endl;
+    //cout << *blockA << endl;
+
     Teuchos::RefCountPtr<NOX::Epetra::BroydenOperator> broydenOp = 
-      Teuchos::rcp(new NOX::Epetra::BroydenOperator( *nlParams, utilsPtr, *compositeSoln, A, true) );
+      Teuchos::rcp(new NOX::Epetra::BroydenOperator( *nlParams, utilsPtr, *compositeSoln, blockA, true) );
     jacOperator = broydenOp;
     jacInterface = broydenOp;
 
@@ -640,6 +647,7 @@ Problem_Manager::registerComplete()
     // To allow replacement of diagonal block values, register ourself as the
     // needed interface
     //broydenOp->addReplacementInterface( this );
+    //broydenOp->removeEntriesFromBroydenUpdate( A->Graph() );
   }
 
   if( 0 )
@@ -1087,7 +1095,7 @@ Problem_Manager::getBlockJacobianMatrix(int probId, int depId)
     p_problemMatrix = &((*iter)->getMatrix());
   }
 
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> mat = Teuchos::rcp( p_problemMatrix );
+  Teuchos::RefCountPtr<Epetra_CrsMatrix> mat = Teuchos::rcp( p_problemMatrix, false );
 
   return mat;
 }
@@ -1312,10 +1320,20 @@ Problem_Manager::copyVectorToComposite( Epetra_Vector& compositeVec, int id, con
 void 
 Problem_Manager::copyProblemJacobiansToComposite()
 {
+  copyProblemJacobiansToComposite(*A);
+
+  return;
+}
+
+//-----------------------------------------------------------------------------
+
+void 
+Problem_Manager::copyProblemJacobiansToComposite( Epetra_CrsMatrix & mat )
+{
   // Copy problem Jacobians as block diagonal contributions to 
   // composite Jacobian
 
-  Epetra_CrsMatrix &compositeMatrix = dynamic_cast<Epetra_CrsMatrix&>(*A);
+  Epetra_CrsMatrix & compositeMatrix = mat;
 
   map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemIter = Problems.begin();
   map<int, Teuchos::RefCountPtr<GenericEpetraProblem> >::iterator problemLast = Problems.end();
@@ -2002,12 +2020,11 @@ Problem_Manager::generateGraph()
   Teuchos::RefCountPtr<Epetra_CrsGraph> diagBlkGraph = generateBlockDiagonalGraph( *compositeMap, true );
   diagBlkGraph->FillComplete();
 
-  //// Next create inter-problem block graph contributions if desired;
-  //// default is false
+  // Next create inter-problem block graph contributions if desired;
+  //   default is false
   if( doOffBlocks ) 
   {
-    Teuchos::RefCountPtr<Epetra_CrsGraph> offBlkGraph = 
-      generateOffDiagonalBlockGraph( *compositeMap );
+    Teuchos::RefCountPtr<Epetra_CrsGraph> offBlkGraph = generateOffDiagonalBlockGraph( *compositeMap );
     offBlkGraph->FillComplete();
 
     AA = composeGraphs( *diagBlkGraph, *offBlkGraph );
@@ -2185,5 +2202,37 @@ Problem_Manager::getReplacementValuesMatrix( const Epetra_Vector & x, FILL_TYPE 
  
   return A;
 } 
+
+//-----------------------------------------------------------------------------
+
+bool
+Problem_Manager::applyBlockAction( int probId, int depId, const Epetra_Vector & x, Epetra_Vector & result )
+{ 
+  // We currently rely on an existing MatrixFree jacobian operator for this action
+  Teuchos::RefCountPtr<NOX::Epetra::MatrixFree> mfOp = Teuchos::rcp_dynamic_cast<NOX::Epetra::MatrixFree>( jacOperator );
+  if( Teuchos::is_null(mfOp) )
+  {
+    cout << "ERROR: Problem_Manager::applyBlockAction : jacOperator is not of type NOX::Epetra::MatrixFree." << endl;
+    throw "Problem_Manager ERROR";
+  }
+
+  if( !x     .Map().SameAs(getSolutionVec(depId).Map())  ||
+      !result.Map().SameAs(getSolutionVec(probId).Map())   )
+  {
+    cout << "ERROR: Problem_Manager::applyBlockAction : domain and/or range map of operation is not consistent with block size." << endl;
+    throw "Problem_Manager ERROR";
+  }
+  Teuchos::RefCountPtr<Epetra_Vector> tmpXcomposite = Teuchos::rcp( new Epetra_Vector(*compositeSoln) );
+  Teuchos::RefCountPtr<Epetra_Vector> tmpYcomposite = Teuchos::rcp( new Epetra_Vector(*compositeSoln) );
+
+  tmpXcomposite->PutScalar(0.0);
+  copyVectorToComposite( *tmpXcomposite, depId, x );
+
+  mfOp->Apply( *tmpXcomposite, *tmpYcomposite );
+
+  copyCompositeToVector( *tmpYcomposite, probId, result );
+
+  return true;
+}
 
 //-----------------------------------------------------------------------------

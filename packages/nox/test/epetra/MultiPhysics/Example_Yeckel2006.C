@@ -413,6 +413,26 @@ int main(int argc, char *argv[])
     outputUtils.out() << "Serial Run" << endl;
 #endif
 
+  if( 1 ) // some testing of inter-problem directional derivatives
+  {
+    Teuchos::RefCountPtr<Epetra_Vector> tmpA = Teuchos::rcp( new Epetra_Vector( *Reg1_PDE.getSolution()) );
+    Teuchos::RefCountPtr<Epetra_Vector> tmpB = Teuchos::rcp( new Epetra_Vector( *Reg2_PDE.getSolution()) );
+
+    cout << "\nBefore doing apply(1,2) :\n" << *tmpA << *tmpB << endl;
+
+    problemManager.applyBlockAction( 1, 2, *tmpB, *tmpA);
+
+    cout << "\nAfter doing apply(1,2) :\n" << *tmpA << *tmpB << endl;
+
+    //problemManager.setGroupX(1);//.setX(*tmpA);
+    //problemManager.getGroup(1).computeJacobian();
+    //*tmpB = *Reg1_PDE.getSolution();
+    //problemManager.getBlockJacobianMatrix(1,1)->Apply(*tmpA, *tmpB);
+
+    //cout << "\nAfter doing apply(1,1) using FDC matrix:\n" << *tmpA << *tmpB << endl;
+
+  }
+
   // Solve the coupled problem
   if( runMF )
     problemManager.solveMF(); // Need a status test check here ....
