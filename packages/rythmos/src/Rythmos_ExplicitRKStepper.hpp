@@ -128,11 +128,20 @@ class ExplicitRKStepper : virtual public Stepper<Scalar>
 
     Scalar t_;
 
+    Teuchos::RefCountPtr<Teuchos::ParameterList> parameterList_;
+
 };
 
 template<class Scalar>
 ExplicitRKStepper<Scalar>::ExplicitRKStepper(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model)
 {
+  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  out->precision(15);
+  out->setMaxLenLinePrefix(30);
+  out->pushLinePrefix("Rythmos::ExplicitRKStepper");
+  out->setShowLinePrefix(true);
+  out->setTabIndentStr("    ");
+
   typedef Teuchos::ScalarTraits<Scalar> ST;
   model_ = model;
   t_ = ST::zero();
@@ -342,20 +351,33 @@ std::ostream& ExplicitRKStepper<Scalar>::describe(
       ,const std::string          indentSpacer
       ) const
 {
-  if (verbLevel == Teuchos::VERB_EXTREME)
+  if ( (static_cast<int>(verbLevel) == static_cast<int>(Teuchos::VERB_DEFAULT) ) ||
+       (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW)     )
+     )
   {
     out << description() << "::describe" << std::endl;
-    out << "model_ = " << std::endl;
-    out << model_->describe(out,verbLevel,leadingIndent,indentSpacer) << std::endl;
-    out << "solution_vector_ = " << std::endl;
-    out << solution_vector_->describe(out,verbLevel,leadingIndent,indentSpacer) << std::endl;
+    out << "model = " << model_->description() << std::endl;
+    out << stages_ << " stage Explicit RK method" << std::endl;
+  }
+  else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
+  {
+    out << "solution_vector = " << std::endl;
+    solution_vector_->describe(out,verbLevel,leadingIndent,indentSpacer); 
+  }
+  else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_MEDIUM))
+  {
+  }
+  else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_HIGH))
+  {
+    out << "model = " << std::endl;
+    model_->describe(out,verbLevel,leadingIndent,indentSpacer); 
     for (int i=0 ; i<stages_ ; ++i)
     {
-      out << "k_vector_[" << i << "] = " << std::endl;
+      out << "k_vector[" << i << "] = " << std::endl;
       out << k_vector_[i]->describe(out,verbLevel,leadingIndent,indentSpacer) << std::endl;
     }
-    out << "ktemp_vector_ = " << std::endl;
-    out << ktemp_vector_->describe(out,verbLevel,leadingIndent,indentSpacer) << std::endl;
+    out << "ktemp_vector = " << std::endl;
+    ktemp_vector_->describe(out,verbLevel,leadingIndent,indentSpacer); 
     for (int i=0 ; i<stages_ ; ++i)
       for (int j=0 ; j<stages_ ; ++j)
         out << "b_A[" << i << "][" << j << "] = " << b_A[i][j] << std::endl;
@@ -363,7 +385,7 @@ std::ostream& ExplicitRKStepper<Scalar>::describe(
       out << "b_b[" << i << "] = " << b_b[i] << std::endl;
     for (int i=0 ; i<stages_ ; ++i)
       out << "b_c[" << i << "] = " << b_c[i] << std::endl;
-    out << "t_ = " << t_ << std::endl;
+    out << "t = " << t_ << std::endl;
   }
   return(out);
 }
@@ -419,18 +441,24 @@ int ExplicitRKStepper<Scalar>::GetOrder() const
 template <class Scalar>
 void ExplicitRKStepper<Scalar>::setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList)
 {
+  parameterList_ = paramList;
+  int outputLevel = parameterList_->get( "outputLevel", int(-1) );
+  outputLevel = min(max(outputLevel,-1),4);
+  this->setVerbLevel(static_cast<Teuchos::EVerbosityLevel>(outputLevel));
 }
 
 template <class Scalar>
 Teuchos::RefCountPtr<Teuchos::ParameterList> ExplicitRKStepper<Scalar>::getParameterList()
 {
-  return(Teuchos::null);
+  return(parameterList_);
 }
 
 template <class Scalar>
 Teuchos::RefCountPtr<Teuchos::ParameterList> ExplicitRKStepper<Scalar>::unsetParameterList()
 {
-  return(Teuchos::null);
+  Teuchos::RefCountPtr<Teuchos::ParameterList> temp_param_list = parameterList_;
+  parameterList_ = Teuchos::null;
+  return(temp_param_list);
 }
 
 } // namespace Rythmos

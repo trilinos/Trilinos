@@ -123,11 +123,20 @@ class ForwardEulerStepper : virtual public Stepper<Scalar>
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > residual_vector_;
     Scalar t_;
 
+    Teuchos::RefCountPtr<Teuchos::ParameterList> parameterList_;
+
 };
 
 template<class Scalar>
 ForwardEulerStepper<Scalar>::ForwardEulerStepper(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model)
 {
+  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  out->precision(15);
+  out->setMaxLenLinePrefix(30);
+  out->pushLinePrefix("Rythmos::ForwardEulerStepper");
+  out->setShowLinePrefix(true);
+  out->setTabIndentStr("    ");
+
   typedef Teuchos::ScalarTraits<Scalar> ST;
   model_ = model;
   t_ = ST::zero();
@@ -203,15 +212,27 @@ std::ostream& ForwardEulerStepper<Scalar>::describe(
       ,const std::string          indentSpacer
       ) const
 {
-  if (verbLevel == Teuchos::VERB_EXTREME)
+  if ( (static_cast<int>(verbLevel) == static_cast<int>(Teuchos::VERB_DEFAULT) ) ||
+       (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW)     )
+     )
   {
     out << description() << "::describe" << std::endl;
-    out << "model_ = " << std::endl;
-    out << model_->describe(out,verbLevel,leadingIndent,indentSpacer) << std::endl;
-    out << "solution_vector_ = " << std::endl;
-    out << solution_vector_->describe(out,verbLevel,leadingIndent,indentSpacer) << std::endl;
-    out << "residual_vector_ = " << std::endl;
-    out << residual_vector_->describe(out,verbLevel,leadingIndent,indentSpacer) << std::endl;
+    out << "model = " << model_->description() << std::endl;
+  }
+  else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
+  {
+  }
+  else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_MEDIUM))
+  {
+  }
+  else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_HIGH))
+  {
+    out << "model = " << std::endl;
+    model_->describe(out,verbLevel,leadingIndent,indentSpacer);
+    out << "solution_vector = " << std::endl;
+    solution_vector_->describe(out,verbLevel,leadingIndent,indentSpacer);
+    out << "residual_vector = " << std::endl;
+    residual_vector_->describe(out,verbLevel,leadingIndent,indentSpacer);
   }
   return(out);
 }
@@ -267,18 +288,24 @@ int ForwardEulerStepper<Scalar>::GetOrder() const
 template <class Scalar>
 void ForwardEulerStepper<Scalar>::setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList)
 {
+  parameterList_ = paramList;
+  int outputLevel = parameterList_->get( "outputLevel", int(-1) );
+  outputLevel = min(max(outputLevel,-1),4);
+  this->setVerbLevel(static_cast<Teuchos::EVerbosityLevel>(outputLevel));
 }
 
 template <class Scalar>
 Teuchos::RefCountPtr<Teuchos::ParameterList> ForwardEulerStepper<Scalar>::getParameterList()
 {
-  return(Teuchos::null);
+  return(parameterList_);
 }
 
 template <class Scalar>
 Teuchos::RefCountPtr<Teuchos::ParameterList> ForwardEulerStepper<Scalar>::unsetParameterList()
 {
-  return(Teuchos::null);
+  Teuchos::RefCountPtr<Teuchos::ParameterList> temp_param_list = parameterList_;
+  parameterList_ = Teuchos::null;
+  return(temp_param_list);
 }
 
 

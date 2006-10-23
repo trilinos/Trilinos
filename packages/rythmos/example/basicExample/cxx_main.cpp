@@ -222,10 +222,16 @@ int main(int argc, char *argv[])
     Teuchos::RefCountPtr<Rythmos::Stepper<double> > stepper_ptr;
     if ( method_val == METHOD_ERK ) {
       stepper_ptr = Teuchos::rcp(new Rythmos::ExplicitRKStepper<double>(model));
+      Teuchos::RefCountPtr<Teuchos::ParameterList> ERKparams = Teuchos::rcp(new Teuchos::ParameterList);
+      ERKparams->set( "outputLevel", outputLevel);
+      stepper_ptr->setParameterList(ERKparams);
       method = "Explicit Runge-Kutta of order 4";
       step_method_val = FIXED_STEP;
     } else if (method_val == METHOD_FE) {
       stepper_ptr = Teuchos::rcp(new Rythmos::ForwardEulerStepper<double>(model));
+      Teuchos::RefCountPtr<Teuchos::ParameterList> FEparams = Teuchos::rcp(new Teuchos::ParameterList);
+      FEparams->set( "outputLevel", outputLevel);
+      stepper_ptr->setParameterList(FEparams);
       method = "Forward Euler";
       step_method_val = FIXED_STEP;
     } else if ((method_val == METHOD_BE) | (method_val == METHOD_BDF)) {
@@ -238,6 +244,9 @@ int main(int argc, char *argv[])
       if (method_val == METHOD_BE)
       {
         stepper_ptr = Teuchos::rcp(new Rythmos::BackwardEulerStepper<double>(model,nonlinearSolver));
+        Teuchos::RefCountPtr<Teuchos::ParameterList> BEparams = Teuchos::rcp(new Teuchos::ParameterList);
+        BEparams->set( "outputLevel", outputLevel);
+        stepper_ptr->setParameterList(BEparams);
         method = "Backward Euler";
         step_method_val = FIXED_STEP;
       } 

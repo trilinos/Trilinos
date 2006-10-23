@@ -581,7 +581,9 @@ void ImplicitBDFStepper<Scalar>::describe(
       ,const Teuchos::EVerbosityLevel      verbLevel
       ) const
 {
-  if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_DEFAULT))
+  if ( (static_cast<int>(verbLevel) == static_cast<int>(Teuchos::VERB_DEFAULT) ) ||
+       (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW)     )
+     )
   {
     out << description() << "::describe" << std::endl;
     out << "model = " << model->description() << std::endl;

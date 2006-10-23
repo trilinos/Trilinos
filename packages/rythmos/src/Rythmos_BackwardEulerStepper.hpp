@@ -139,10 +139,7 @@ class BackwardEulerStepper : virtual public Stepper<Scalar>
 
     Teuchos::RefCountPtr<Thyra::SingleResidSSDAEModelEvaluator<Scalar> >  neModel_;
 
-#ifdef Rythmos_DEBUG
-    int debugLevel;
-    Teuchos::RefCountPtr<Teuchos::FancyOStream> debug_out;
-#endif // Rythmos_DEBUG
+    Teuchos::RefCountPtr<Teuchos::ParameterList> parameterList_;
 
 };
 
@@ -155,28 +152,25 @@ BackwardEulerStepper<Scalar>::BackwardEulerStepper(
   ,const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > &solver
   )
 {
+  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  out->precision(15);
+  out->setMaxLenLinePrefix(32);
+  out->pushLinePrefix("Rythmos::BackwardEulerStepper");
+  out->setShowLinePrefix(true);
+  out->setTabIndentStr("    ");
+
   setModel(model);
   setSolver(solver);
   numSteps = 0;
-#ifdef Rythmos_DEBUG
-  debugLevel = 2;
-  debug_out = Teuchos::VerboseObjectBase::getDefaultOStream();
-  debug_out->precision(15);
-  debug_out->setMaxLenLinePrefix(32);
-  debug_out->pushLinePrefix("Rythmos::BackwardEulerStepper");
-  debug_out->setShowLinePrefix(true);
-  debug_out->setTabIndentStr("    ");
-#endif // Rythmos_DEBUG
 }
 
 template<class Scalar>
 void BackwardEulerStepper<Scalar>::setModel(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model)
 {
-#ifdef Rythmos_DEBUG
-  Teuchos::OSTab ostab(debug_out,1,"BES::setModel");
-  if (debugLevel > 1)
-    *debug_out << "model = " << model->description() << std::endl;
-#endif // Rythmos_DEBUG
+  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::OSTab ostab(out,1,"BES::setModel");
+  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
+    *out << "model = " << model->description() << std::endl;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   model_ = model;
   t_ = ST::zero();
@@ -190,22 +184,20 @@ void BackwardEulerStepper<Scalar>::setModel(const Teuchos::RefCountPtr<const Thy
 template<class Scalar>
 void BackwardEulerStepper<Scalar>::setSolver(const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > &solver)
 {
-#ifdef Rythmos_DEBUG
-  Teuchos::OSTab ostab(debug_out,1,"BES::setSolver");
-  if (debugLevel > 1)
-    *debug_out << "solver = " << solver->description() << std::endl;
-#endif // Rythmos_DEBUG
+  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::OSTab ostab(out,1,"BES::setSolver");
+  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
+    *out << "solver = " << solver->description() << std::endl;
   solver_ = solver;
 }
 
 template<class Scalar>
 Scalar BackwardEulerStepper<Scalar>::TakeStep()
 {
-#ifdef Rythmos_DEBUG
-  Teuchos::OSTab ostab(debug_out,1,"BES::TakeStep()");
-  if (debugLevel > 1)
-    *debug_out << "This is not valid for BackwardEulerStepper at this time." << std::endl;
-#endif // Rythmos_DEBUG
+  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::OSTab ostab(out,1,"BES::TakeStep()");
+  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_LOW) )
+    *out << "This is not valid for BackwardEulerStepper at this time." << std::endl;
   // print something out about this method not supporting automatic variable step-size
   typedef Teuchos::ScalarTraits<Scalar> ST;
   return(-ST::one());
@@ -214,11 +206,10 @@ Scalar BackwardEulerStepper<Scalar>::TakeStep()
 template<class Scalar>
 Scalar BackwardEulerStepper<Scalar>::TakeStep(Scalar dt)
 {
-#ifdef Rythmos_DEBUG
-  Teuchos::OSTab ostab(debug_out,1,"BES::TakeStep(dt)");
-  if (debugLevel > 1)
-    *debug_out << "dt = " << dt << std::endl;
-#endif // Rythmos_DEBUG
+  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::OSTab ostab(out,1,"BES::TakeStep(dt)");
+  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
+    *out << "dt = " << dt << std::endl;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   //
   // Setup the nonlinear equations:
@@ -243,13 +234,11 @@ Scalar BackwardEulerStepper<Scalar>::TakeStep(Scalar dt)
   //
   t_ += dt;
   numSteps++;
-#ifdef Rythmos_DEBUG
-  if (debugLevel > 1)
+  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
   {
-    *debug_out << "t_old_ = " << t_old_ << std::endl;
-    *debug_out << "t_ = " << t_ << std::endl;
+    *out << "t_old_ = " << t_old_ << std::endl;
+    *out << "t_ = " << t_ << std::endl;
   }
-#endif // Rythmos_DEBUG
 
   return(dt);
 }
@@ -273,22 +262,35 @@ void BackwardEulerStepper<Scalar>::describe(
       ,const Teuchos::EVerbosityLevel      verbLevel
       ) const
 {
-  if (verbLevel == Teuchos::VERB_EXTREME)
+  if ( (static_cast<int>(verbLevel) == static_cast<int>(Teuchos::VERB_DEFAULT) ) ||
+       (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW)     )
+     )
   {
-    out << description() << "::describe:";
-    out << "\nmodel_ = " << std::endl;
+    out << description() << "::describe:" << std::endl;
+    out << "model = " << model_->description() << std::endl;
+    out << "solver = " << solver_->description() << std::endl;
+    out << "neModel = " << neModel_->description() << std::endl;
+  }
+  else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
+  {
+    out << "t_ = " << t_ << std::endl;
+    out << "t_old_ = " << t_old_ << std::endl;
+  }
+  else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_MEDIUM))
+  {
+  }
+  else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_HIGH))
+  {
+    out << "model_ = " << std::endl;
     model_->describe(out,verbLevel);
-    out << "\nsolver_ = " << std::endl;
+    out << "solver_ = " << std::endl;
     solver_->describe(out,verbLevel);
-    out << "\nx_ = " << std::endl;
+    out << "neModel = " << std::endl;
+    neModel_->describe(out,verbLevel);
+    out << "x_ = " << std::endl;
     x_->describe(out,verbLevel);
-    out << "\nscaled_x_old_ = " << std::endl;
+    out << "scaled_x_old_ = " << std::endl;
     scaled_x_old_->describe(out,verbLevel);
-    out << "\nt_ = " << t_;
-    out << "\nt_old_ = " << t_old_;
-    out << std::endl;
-//    out << "neModel_ = " << std::endl;
-//    out << neModel_->describe(out,verbLevel) << std::endl;
   }
 }
 
@@ -300,15 +302,14 @@ bool BackwardEulerStepper<Scalar>::SetPoints(
     ,const std::vector<ScalarMag> & accuracy_vec 
     )
 {
-#ifdef Rythmos_DEBUG
-  Teuchos::OSTab ostab(debug_out,1,"BES::SetPoints");
-  if (debugLevel > 1)
+  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::OSTab ostab(out,1,"BES::SetPoints");
+  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
   {
-    *debug_out << "time_vec = " << std::endl;
+    *out << "time_vec = " << std::endl;
     for (int i=0 ; i<time_vec.size() ; ++i)
-      *debug_out << "time_vec[" << i << "] = " << time_vec[i] << std::endl;
+      *out << "time_vec[" << i << "] = " << time_vec[i] << std::endl;
   }
-#endif // Rythmos_DEBUG
   typedef Teuchos::ScalarTraits<Scalar> ST;
   if (time_vec.size() == 0)
   {
@@ -342,25 +343,22 @@ bool BackwardEulerStepper<Scalar>::GetPoints(
     ,std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > >* xdot_vec
     ,std::vector<ScalarMag>* accuracy_vec) const
 {
-#ifdef Rythmos_DEBUG
-  Teuchos::OSTab ostab(debug_out,1,"BES::GetPoints");
-  if (debugLevel > 1)
+  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::OSTab ostab(out,1,"BES::GetPoints");
+  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
   {
     for (int i=0 ; i<time_vec.size() ; ++i)
-      *debug_out << "time_vec[" << i << "] = " << time_vec[i] << std::endl;
-    *debug_out << "I can interpolate in the interval [" << t_old_ << "," << t_ << "]." << std::endl;
+      *out << "time_vec[" << i << "] = " << time_vec[i] << std::endl;
+    *out << "I can interpolate in the interval [" << t_old_ << "," << t_ << "]." << std::endl;
   }
-#endif // Rythmos_DEBUG
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typename DataStore<Scalar>::DataStoreVector_t ds_nodes;
   typename DataStore<Scalar>::DataStoreVector_t ds_out;
   Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xdot_temp; // Teuchos::null
   if (t_old_ != t_)
   {
-#ifdef Rythmos_DEBUG
-    if (debugLevel > 1)
-      *debug_out << "Passing two points to interpolator:  " << t_old_ << " and " << t_ << std::endl;
-#endif // Rythmos_DEBUG
+    if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
+      *out << "Passing two points to interpolator:  " << t_old_ << " and " << t_ << std::endl;
     DataStore<Scalar> ds_temp;
     Scalar dt = t_ - t_old_;
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x_temp = scaled_x_old_->clone_v();
@@ -378,10 +376,8 @@ bool BackwardEulerStepper<Scalar>::GetPoints(
   }
   else
   {
-#ifdef Rythmos_DEBUG
-    if (debugLevel > 1)
-      *debug_out << "Passing one point to interpolator:  " << t_ << std::endl;
-#endif // Rythmos_DEBUG
+    if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
+      *out << "Passing one point to interpolator:  " << t_ << std::endl;
     DataStore<Scalar> ds_temp;
     ds_temp.time = t_;
     ds_temp.x = x_;
@@ -394,26 +390,24 @@ bool BackwardEulerStepper<Scalar>::GetPoints(
   if (!status) return(status);
   std::vector<Scalar> time_out;
   DataStoreVectorToVector(ds_out,&time_out,x_vec,xdot_vec,accuracy_vec);
-#ifdef Rythmos_DEBUG
-  if (debugLevel > 1)
+  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
   {
-    *debug_out << "Passing out the interpolated values:" << std::endl;
+    *out << "Passing out the interpolated values:" << std::endl;
     for (int i=0; i<time_out.size() ; ++i)
     {
-      *debug_out << "time[" << i << "] = " << time_out[i] << std::endl;
-      *debug_out << "x_vec[" << i << "] = " << std::endl;
-      (*x_vec)[i]->describe(*debug_out,Teuchos::VERB_EXTREME);
+      *out << "time[" << i << "] = " << time_out[i] << std::endl;
+      *out << "x_vec[" << i << "] = " << std::endl;
+      (*x_vec)[i]->describe(*out,Teuchos::VERB_EXTREME);
       if ( (*xdot_vec)[i] == Teuchos::null)
-        *debug_out << "xdot_vec[" << i << "] = Teuchos::null" << std::endl;
+        *out << "xdot_vec[" << i << "] = Teuchos::null" << std::endl;
       else
       {
-        *debug_out << "xdot_vec[" << i << "] = " << std::endl;
-        (*xdot_vec)[i]->describe(*debug_out,Teuchos::VERB_EXTREME);
+        *out << "xdot_vec[" << i << "] = " << std::endl;
+        (*xdot_vec)[i]->describe(*out,Teuchos::VERB_EXTREME);
       }
-      *debug_out << "accuracy[" << i << "] = " << (*accuracy_vec)[i] << std::endl;
+      *out << "accuracy[" << i << "] = " << (*accuracy_vec)[i] << std::endl;
     }
   }
-#endif // Rythmos_DEBUG
   return(status);
 }
 
@@ -423,15 +417,14 @@ bool BackwardEulerStepper<Scalar>::SetRange(
     ,const Scalar& time_upper
     ,const InterpolationBufferBase<Scalar>& IB)
 {
-#ifdef Rythmos_DEBUG
-  Teuchos::OSTab ostab(debug_out,1,"BES::SetRange");
-  if (debugLevel > 1)
+  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::OSTab ostab(out,1,"BES::SetRange");
+  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
   {
-    *debug_out << "time_lower = " << time_lower << std::endl;
-    *debug_out << "time_upper = " << time_upper << std::endl;
-    *debug_out << "IB = " << IB.description() << std::endl;
+    *out << "time_lower = " << time_lower << std::endl;
+    *out << "time_upper = " << time_upper << std::endl;
+    *out << "IB = " << IB.description() << std::endl;
   }
-#endif // Rythmos_DEBUG
   // TODO:
   // get node_list from IB, crop it to [time_lower,time_upper], crop x_vec to same,
   // pass to SetPoints.
@@ -445,32 +438,30 @@ bool BackwardEulerStepper<Scalar>::GetNodes(std::vector<Scalar>* time_vec) const
   time_vec->push_back(t_old_);
   if (numSteps > 0)
     time_vec->push_back(t_);
-#ifdef Rythmos_DEBUG
-  Teuchos::OSTab ostab(debug_out,1,"BES::GetNodes");
-  if (debugLevel > 1)
+  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::OSTab ostab(out,1,"BES::GetNodes");
+  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
   {
-    *debug_out << this->description() << std::endl;
+    *out << this->description() << std::endl;
     for (int i=0 ; i<time_vec->size() ; ++i)
     {
-      *debug_out << "time_vec[" << i << "] = " << (*time_vec)[i] << std::endl;
+      *out << "time_vec[" << i << "] = " << (*time_vec)[i] << std::endl;
     }
   }
-#endif // Rythmos_DEBUG
   return(true);
 }
 
 template<class Scalar>
 bool BackwardEulerStepper<Scalar>::RemoveNodes(std::vector<Scalar>& time_vec) 
 {
-#ifdef Rythmos_DEBUG
-  Teuchos::OSTab ostab(debug_out,1,"BES::RemoveNodes");
-  if (debugLevel > 1)
+  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::OSTab ostab(out,1,"BES::RemoveNodes");
+  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
   {
-    *debug_out << "time_vec = " << std::endl;
+    *out << "time_vec = " << std::endl;
     for (int i=0 ; i<time_vec.size() ; ++i)
-      *debug_out << "time_vec[" << i << "] = " << time_vec[i] << std::endl;
+      *out << "time_vec[" << i << "] = " << time_vec[i] << std::endl;
   }
-#endif // Rythmos_DEBUG
   // TODO:
   // if any time in time_vec matches t_ or t_old_, then do the following:
   // remove t_old_:  set t_old_ = t_ and set scaled_x_old_ = x_
@@ -487,18 +478,24 @@ int BackwardEulerStepper<Scalar>::GetOrder() const
 template <class Scalar>
 void BackwardEulerStepper<Scalar>::setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList)
 {
+  parameterList_ = paramList;
+  int outputLevel = parameterList_->get( "outputLevel", int(-1) );
+  outputLevel = min(max(outputLevel,-1),4);
+  this->setVerbLevel(static_cast<Teuchos::EVerbosityLevel>(outputLevel));
 }
 
 template <class Scalar>
 Teuchos::RefCountPtr<Teuchos::ParameterList> BackwardEulerStepper<Scalar>::getParameterList()
 {
-  return(Teuchos::null);
+  return(parameterList_);
 }
 
 template <class Scalar>
 Teuchos::RefCountPtr<Teuchos::ParameterList> BackwardEulerStepper<Scalar>::unsetParameterList()
 {
-  return(Teuchos::null);
+  Teuchos::RefCountPtr<Teuchos::ParameterList> temp_param_list = parameterList_;
+  parameterList_ = Teuchos::null;
+  return(temp_param_list);
 }
 
 } // namespace Rythmos
