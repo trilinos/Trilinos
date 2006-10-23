@@ -106,9 +106,7 @@ int main(int argc, char *argv[])
     double reltol = 1.0e-2;
     double abstol = 1.0e-4;
     int maxOrder = 5;
-#ifdef Rythmos_DEBUG
-    int debugLevel = 2; // debugLevel is used when Rythmos_DEBUG ifdef is set.
-#endif // Rythmos_DEBUG
+    int outputLevel = 2; // outputLevel is used to control Rythmos verbosity
 
     // Parse the command-line options:
     Teuchos::CommandLineProcessor  clp(false); // Don't throw exceptions
@@ -128,13 +126,14 @@ int main(int argc, char *argv[])
     clp.setOption( "maxorder", &maxOrder, "Maximum Implicit BDF order" );
     clp.setOption( "verbose", "quiet", &verbose, "Set if output is printed or not" );
     clp.setOption( "version", "run", &version, "Version of this code" );
-#ifdef Rythmos_DEBUG
-    clp.setOption( "debuglevel", &debugLevel, "Debug Level for Rythmos" );
-#endif // Rythmos_DEBUG
+    clp.setOption( "outputLevel", &outputLevel, "Debug Level for Rythmos" );
 
 
     Teuchos::CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
     if( parse_return != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
+
+    // 10/23/06 tscoffe:  bounds on Teuchos::EVerbosityLevel:
+    outputLevel = min(max(outputLevel,-1),4);
 
 #ifdef HAVE_RYTHMOS_STRATIMIKOS
     lowsfCreator.readParameters(out.get());
@@ -218,9 +217,7 @@ int main(int argc, char *argv[])
       BDFparams->set( "maxOrder", maxOrder );
       BDFparams->set( "relErrTol", reltol );
       BDFparams->set( "absErrTol", abstol );
-#ifdef Rythmos_DEBUG
-      BDFparams->set( "debugLevel", debugLevel );
-#endif // Rythmos_DEBUG
+      BDFparams->set( "outputLevel", outputLevel );
       stepper_ptr = Teuchos::rcp(new Rythmos::ImplicitBDFStepper<double>(model,nonlinearSolver,BDFparams));
       step_method = STEP_METHOD_VARIABLE;
       method = "Implicit BDF";
@@ -229,13 +226,11 @@ int main(int argc, char *argv[])
     }
     Rythmos::Stepper<double> &stepper = *stepper_ptr;
 
-#ifdef Rythmos_DEBUG
     Teuchos::RefCountPtr<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
-    if (debugLevel > 1)
+    if (outputLevel >= 3)
     {
-      stepper.describe(*out,Teuchos::VERB_EXTREME);
+      stepper.describe(*out,static_cast<Teuchos::EVerbosityLevel>(outputLevel));
     }
-#endif // Rythmos_DEBUG
 
     double t0 = 0.0;
     double t1 = finalTime;
@@ -264,12 +259,10 @@ int main(int argc, char *argv[])
       {
         double dt_taken = stepper.TakeStep();
         numSteps++;
-#ifdef Rythmos_DEBUG
-        if (debugLevel > 1)
+        if (outputLevel >= 3)
         {
-          stepper.describe(*out,Teuchos::VERB_EXTREME);
+          stepper.describe(*out,static_cast<Teuchos::EVerbosityLevel>(outputLevel));
         }
-#endif // Rythmos_DEBUG
         if (dt_taken < 0)
         {
           cerr << "Error, stepper failed for some reason with step taken = " << dt_taken << endl;
