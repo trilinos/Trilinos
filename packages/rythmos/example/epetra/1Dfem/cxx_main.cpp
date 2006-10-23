@@ -213,13 +213,13 @@ int main(int argc, char *argv[])
         _nonlinearSolver = Teuchos::rcp(new Thyra::TimeStepNewtonNonlinearSolver<double>());
       _nonlinearSolver->defaultTol(1e-3*maxError);
       nonlinearSolver = _nonlinearSolver;
-      Teuchos::ParameterList BDFparams;
-      BDFparams.set( "stopTime", finalTime );
-      BDFparams.set( "maxOrder", maxOrder );
-      BDFparams.set( "relErrTol", reltol );
-      BDFparams.set( "absErrTol", abstol );
+      Teuchos::RefCountPtr<Teuchos::ParameterList> BDFparams = Teuchos::rcp(new Teuchos::ParameterList);
+      BDFparams->set( "stopTime", finalTime );
+      BDFparams->set( "maxOrder", maxOrder );
+      BDFparams->set( "relErrTol", reltol );
+      BDFparams->set( "absErrTol", abstol );
 #ifdef Rythmos_DEBUG
-      BDFparams.set( "debugLevel", debugLevel );
+      BDFparams->set( "debugLevel", debugLevel );
 #endif // Rythmos_DEBUG
       stepper_ptr = Teuchos::rcp(new Rythmos::ImplicitBDFStepper<double>(model,nonlinearSolver,BDFparams));
       step_method = STEP_METHOD_VARIABLE;
