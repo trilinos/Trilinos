@@ -31,12 +31,15 @@
 
 #include "Thyra_VectorBase.hpp"
 #include "Teuchos_Describable.hpp"
+#include "Teuchos_ParameterListAcceptor.hpp"
 
 namespace Rythmos {
 
 /** \brief Base class for defining interpolation buffer functionality. */
 template<class Scalar> 
-class InterpolationBufferBase : virtual public Teuchos::Describable
+class InterpolationBufferBase 
+  : virtual public Teuchos::Describable
+  , virtual public Teuchos::ParameterListAcceptor
 {
   public:
 

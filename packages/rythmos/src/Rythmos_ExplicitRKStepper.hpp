@@ -103,6 +103,17 @@ class ExplicitRKStepper : virtual public Stepper<Scalar>
     /// Get order of interpolation
     int GetOrder() const;
 
+    /// Redefined from Teuchos::ParameterListAcceptor
+    /** \brief . */
+    void setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList);
+
+    /** \brief . */
+    Teuchos::RefCountPtr<Teuchos::ParameterList> getParameterList();
+
+    /** \brief . */
+    Teuchos::RefCountPtr<Teuchos::ParameterList> unsetParameterList();
+    
+
   private:
 
     Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > model_;
@@ -403,6 +414,23 @@ template<class Scalar>
 int ExplicitRKStepper<Scalar>::GetOrder() const
 {
   return(4);
+}
+
+template <class Scalar>
+void ExplicitRKStepper<Scalar>::setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList)
+{
+}
+
+template <class Scalar>
+Teuchos::RefCountPtr<Teuchos::ParameterList> ExplicitRKStepper<Scalar>::getParameterList()
+{
+  return(Teuchos::null);
+}
+
+template <class Scalar>
+Teuchos::RefCountPtr<Teuchos::ParameterList> ExplicitRKStepper<Scalar>::unsetParameterList()
+{
+  return(Teuchos::null);
 }
 
 } // namespace Rythmos

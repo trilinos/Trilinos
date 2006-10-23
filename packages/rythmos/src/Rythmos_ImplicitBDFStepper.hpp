@@ -61,11 +61,11 @@ class ImplicitBDFStepper : virtual public Stepper<Scalar>
     ImplicitBDFStepper(
       const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> >  &model
       ,const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> >  &solver
-      ,Teuchos::ParameterList &parameterList
+      ,Teuchos::RefCountPtr<Teuchos::ParameterList> &parameterList
       );
 
     /** \brief . */
-    void InitializeStepper(Teuchos::ParameterList &implicitBDFParameters);
+    void InitializeStepper(Teuchos::RefCountPtr<Teuchos::ParameterList> &implicitBDFParameters);
 
     /** \brief . */
     void setModel(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model);
@@ -135,6 +135,15 @@ class ImplicitBDFStepper : virtual public Stepper<Scalar>
     /// Get order of interpolation
     int GetOrder() const;
 
+    /// Redefined from Teuchos::ParameterListAcceptor
+    /** \brief . */
+    void setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList);
+
+    /** \brief . */
+    Teuchos::RefCountPtr<Teuchos::ParameterList> getParameterList();
+
+    /** \brief . */
+    Teuchos::RefCountPtr<Teuchos::ParameterList> unsetParameterList();
 
   private:
 
@@ -232,6 +241,8 @@ class ImplicitBDFStepper : virtual public Stepper<Scalar>
 
     int newtonConvergenceStatus;
 
+    Teuchos::RefCountPtr<Teuchos::ParameterList> parameterList;
+
 #ifdef Rythmos_DEBUG
     int debugLevel;
     Teuchos::RefCountPtr<Teuchos::FancyOStream> debug_out;
@@ -245,12 +256,13 @@ class ImplicitBDFStepper : virtual public Stepper<Scalar>
 
 template<class Scalar>
 void ImplicitBDFStepper<Scalar>::InitializeStepper(
-    Teuchos::ParameterList &implicitBDFParameters
+    Teuchos::RefCountPtr<Teuchos::ParameterList> &implicitBDFParameters
     )
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
   // Initialize algorithm coefficients
-  maxOrder = implicitBDFParameters.get("maxOrder",int(5)); // maximum order
+  setParameterList(implicitBDFParameters);
+  maxOrder = parameterList->get("maxOrder",int(5)); // maximum order
   maxOrder = max(1,min(maxOrder,5)); // 1 <= maxOrder <= 5
   currentOrder=1; // Current order of integration
   oldOrder=1; // previous order of integration
@@ -291,14 +303,14 @@ void ImplicitBDFStepper<Scalar>::InitializeStepper(
   newOrder=1;
   initialPhase=true;
 
-  relErrTol = implicitBDFParameters.get( "relErrTol", Scalar(1.0e-4) );
-  absErrTol = implicitBDFParameters.get( "absErrTol", Scalar(1.0e-6) );
-  constantStepSize = implicitBDFParameters.get( "constantStepSize", false );
-  stopTime = implicitBDFParameters.get( "stopTime", Scalar(10.0) );
+  relErrTol = parameterList->get( "relErrTol", Scalar(1.0e-4) );
+  absErrTol = parameterList->get( "absErrTol", Scalar(1.0e-6) );
+  constantStepSize = parameterList->get( "constantStepSize", false );
+  stopTime = parameterList->get( "stopTime", Scalar(10.0) );
 
 
 #ifdef Rythmos_DEBUG
-  debugLevel = implicitBDFParameters.get( "debugLevel", int(1) );
+  debugLevel = parameterList->get( "debugLevel", int(1) );
   debug_out = Teuchos::VerboseObjectBase::getDefaultOStream();
   debug_out->precision(15);
   debug_out->setMaxLenLinePrefix(28);
@@ -307,7 +319,7 @@ void ImplicitBDFStepper<Scalar>::InitializeStepper(
   debug_out->setTabIndentStr("    ");
 #endif // Rythmos_DEBUG
 
-  setDefaultMagicNumbers(implicitBDFParameters.sublist("magicNumbers"));
+  setDefaultMagicNumbers(parameterList->sublist("magicNumbers"));
 
 #ifdef Rythmos_DEBUG
   Teuchos::OSTab ostab(debug_out,1,"InitializeStepper");
@@ -356,7 +368,7 @@ template<class Scalar>
 ImplicitBDFStepper<Scalar>::ImplicitBDFStepper(
   const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model
   ,const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > &solver
-  ,Teuchos::ParameterList &parameterList
+  ,Teuchos::RefCountPtr<Teuchos::ParameterList> &parameterList
   )
 {
   InitializeStepper(parameterList);
@@ -1377,6 +1389,25 @@ int ImplicitBDFStepper<Scalar>::GetOrder() const
   return(currentOrder);
 }
 
+template <class Scalar>
+void ImplicitBDFStepper<Scalar>::setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList)
+{
+  parameterList = paramList;
+}
+
+template <class Scalar>
+Teuchos::RefCountPtr<Teuchos::ParameterList> ImplicitBDFStepper<Scalar>::getParameterList()
+{
+  return(parameterList);
+}
+
+template <class Scalar>
+Teuchos::RefCountPtr<Teuchos::ParameterList> ImplicitBDFStepper<Scalar>::unsetParameterList()
+{
+  Teuchos::RefCountPtr<Teuchos::ParameterList> temp_param_list = parameterList;
+  parameterList = Teuchos::null;
+  return(temp_param_list);
+}
 
 } // namespace Rythmos
 

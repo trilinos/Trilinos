@@ -117,6 +117,16 @@ class BackwardEulerStepper : virtual public Stepper<Scalar>
     /// This will return 1.
     int GetOrder() const;
 
+    /// Redefined from Teuchos::ParameterListAcceptor
+    /** \brief . */
+    void setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList);
+
+    /** \brief . */
+    Teuchos::RefCountPtr<Teuchos::ParameterList> getParameterList();
+
+    /** \brief . */
+    Teuchos::RefCountPtr<Teuchos::ParameterList> unsetParameterList();
+
   private:
 
     Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > model_;
@@ -474,6 +484,22 @@ int BackwardEulerStepper<Scalar>::GetOrder() const
   return(1);
 }
 
+template <class Scalar>
+void BackwardEulerStepper<Scalar>::setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList)
+{
+}
+
+template <class Scalar>
+Teuchos::RefCountPtr<Teuchos::ParameterList> BackwardEulerStepper<Scalar>::getParameterList()
+{
+  return(Teuchos::null);
+}
+
+template <class Scalar>
+Teuchos::RefCountPtr<Teuchos::ParameterList> BackwardEulerStepper<Scalar>::unsetParameterList()
+{
+  return(Teuchos::null);
+}
 
 } // namespace Rythmos
 

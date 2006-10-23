@@ -106,7 +106,15 @@ class ForwardEulerStepper : virtual public Stepper<Scalar>
     /// Get order of interpolation
     int GetOrder() const;
 
+    /// Redefined from Teuchos::ParameterListAcceptor
+    /** \brief . */
+    void setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList);
 
+    /** \brief . */
+    Teuchos::RefCountPtr<Teuchos::ParameterList> getParameterList();
+
+    /** \brief . */
+    Teuchos::RefCountPtr<Teuchos::ParameterList> unsetParameterList();
 
   private:
 
@@ -254,6 +262,23 @@ template<class Scalar>
 int ForwardEulerStepper<Scalar>::GetOrder() const
 {
   return(1);
+}
+
+template <class Scalar>
+void ForwardEulerStepper<Scalar>::setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList)
+{
+}
+
+template <class Scalar>
+Teuchos::RefCountPtr<Teuchos::ParameterList> ForwardEulerStepper<Scalar>::getParameterList()
+{
+  return(Teuchos::null);
+}
+
+template <class Scalar>
+Teuchos::RefCountPtr<Teuchos::ParameterList> ForwardEulerStepper<Scalar>::unsetParameterList()
+{
+  return(Teuchos::null);
 }
 
 

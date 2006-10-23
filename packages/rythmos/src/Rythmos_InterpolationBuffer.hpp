@@ -107,6 +107,16 @@ class InterpolationBuffer : virtual public InterpolationBufferBase<Scalar>
       ,const Teuchos::EVerbosityLevel      verbLevel
       ) const;
 
+    /// Redefined from Teuchos::ParameterListAcceptor
+    /** \brief . */
+    void setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList);
+
+    /** \brief . */
+    Teuchos::RefCountPtr<Teuchos::ParameterList> getParameterList();
+
+    /** \brief . */
+    Teuchos::RefCountPtr<Teuchos::ParameterList> unsetParameterList();
+    
   private:
 
     Teuchos::RefCountPtr<Interpolator<Scalar> > interpolator;
@@ -600,6 +610,23 @@ void InterpolationBuffer<Scalar>::describe(
       data_vec[i].describe(out,Teuchos::VERB_EXTREME);
     }
   }
+}
+
+template <class Scalar>
+void InterpolationBuffer<Scalar>::setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList)
+{
+}
+
+template <class Scalar>
+Teuchos::RefCountPtr<Teuchos::ParameterList> InterpolationBuffer<Scalar>::getParameterList()
+{
+  return(Teuchos::null);
+}
+
+template <class Scalar>
+Teuchos::RefCountPtr<Teuchos::ParameterList> InterpolationBuffer<Scalar>::unsetParameterList()
+{
+  return(Teuchos::null);
 }
 
 } // namespace Rythmos

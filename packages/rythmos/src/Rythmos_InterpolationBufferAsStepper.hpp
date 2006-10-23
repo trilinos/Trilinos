@@ -59,9 +59,6 @@ class InterpolationBufferAsStepper : virtual public Rythmos::InterpolationBuffer
     /// Set Stepper:
     void setStepper(const Teuchos::RefCountPtr<Rythmos::Stepper<Scalar> > &stepper_);
     
-    /// Set ParameterList:
-    void setParameterList(const Teuchos::RefCountPtr<Teuchos::ParameterList> &parameterList_);
-
     /// Redefined from InterpolationBufferBase
     /// This is a pass-through to the underlying InterpolationBufferBase:
     bool SetPoints(
@@ -103,6 +100,18 @@ class InterpolationBufferAsStepper : virtual public Rythmos::InterpolationBuffer
       ,const Teuchos::EVerbosityLevel      verbLevel
       ) const;
 
+    /// Redefined from Teuchos::ParameterListAcceptor
+    /** \brief . */
+    void setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList);
+
+    /** \brief . */
+    Teuchos::RefCountPtr<Teuchos::ParameterList> getParameterList();
+
+    /** \brief . */
+    Teuchos::RefCountPtr<Teuchos::ParameterList> unsetParameterList();
+
+    /** \brief . */
+    Teuchos::RefCountPtr<const Teuchos::ParameterList> getValidParameters() const;
 
   private:
 
@@ -208,24 +217,6 @@ void InterpolationBufferAsStepper<Scalar>::setInterpolationBuffer(
   if (debugLevel > 1)
   {
     *debug_out << "IB = " << IB->description() << std::endl;
-  }
-#endif // Rythmos_DEBUG
-}
-
-template<class Scalar>
-void InterpolationBufferAsStepper<Scalar>::setParameterList( 
-    const Teuchos::RefCountPtr<Teuchos::ParameterList> &parameterList_
-    )
-{
-  if (parameterList_ == Teuchos::null)
-    parameterList = Teuchos::rcp(new Teuchos::ParameterList);
-  else
-    parameterList = parameterList_;
-#ifdef Rythmos_DEBUG
-  Teuchos::OSTab ostab(debug_out,1,"IBAS::setParameterList");
-  if (debugLevel > 1)
-  {
-    *debug_out << "parameterList = " << parameterList->print(*debug_out) << std::endl;
   }
 #endif // Rythmos_DEBUG
 }
@@ -658,6 +649,44 @@ void InterpolationBufferAsStepper<Scalar>::describe(
     out << "stepper = " << stepper->description() << std::endl;
     out << "parameterList = " << parameterList->print(out) << std::endl;
   }
+}
+
+template <class Scalar>
+void InterpolationBufferAsStepper<Scalar>::setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& parameterList_)
+{
+  if (parameterList_ == Teuchos::null)
+    parameterList = Teuchos::rcp(new Teuchos::ParameterList);
+  else
+    parameterList = parameterList_;
+#ifdef Rythmos_DEBUG
+  Teuchos::OSTab ostab(debug_out,1,"IBAS::setParameterList");
+  if (debugLevel > 1)
+  {
+    *debug_out << "parameterList = " << parameterList->print(*debug_out) << std::endl;
+  }
+#endif // Rythmos_DEBUG
+}
+
+template <class Scalar>
+Teuchos::RefCountPtr<Teuchos::ParameterList> InterpolationBufferAsStepper<Scalar>::getParameterList()
+{
+  return(parameterList);
+}
+
+template <class Scalar>
+Teuchos::RefCountPtr<Teuchos::ParameterList> InterpolationBufferAsStepper<Scalar>::unsetParameterList()
+{
+  Teuchos::RefCountPtr<Teuchos::ParameterList> temp_param_list = parameterList;
+  parameterList = Teuchos::null;
+  return(temp_param_list);
+}
+
+template <class Scalar>
+Teuchos::RefCountPtr<const Teuchos::ParameterList> InterpolationBufferAsStepper<Scalar>::getValidParameters() const
+{
+  Teuchos::RefCountPtr<Teuchos::ParameterList> temp_param_list = Teuchos::rcp(new Teuchos::ParameterList);
+  temp_param_list->set<Scalar>( "fixed_dt", Scalar(0.1) );
+  return(temp_param_list);
 }
 
 } // namespace Rythmos
