@@ -115,9 +115,7 @@ int main(int argc, char *argv[])
     double reltol = 1.0e-2;
     double abstol = 1.0e-4;
     int maxOrder = 5;
-#ifdef Rythmos_NEW
     bool useIntegrator = false;
-#endif // Rythmos_NEW
 #ifdef Rythmos_DEBUG
     int debugLevel = 2; // debugLevel is used when Rythmos_DEBUG ifdef is set.
 #endif // Rythmos_DEBUG
@@ -145,9 +143,7 @@ int main(int argc, char *argv[])
     clp.setOption( "reltol", &reltol, "Relative Error Tolerance" );
     clp.setOption( "abstol", &abstol, "Absolute Error Tolerance" );
     clp.setOption( "maxorder", &maxOrder, "Maximum Implicit BDF order" );
-#ifdef Rythmos_NEW
     clp.setOption( "useintegrator", "normal", &useIntegrator, "Use InterpolationBufferAsStepper as integrator" );
-#endif // Rythmos_NEW
 #ifdef Rythmos_DEBUG
     clp.setOption( "debuglevel", &debugLevel, "Debug Level for Rythmos" );
 #endif // Rythmos_DEBUG
@@ -278,7 +274,6 @@ int main(int argc, char *argv[])
     Teuchos::RefCountPtr<const Thyra::VectorBase<double> > x_computed_thyra_ptr;
     if (step_method_val == FIXED_STEP)
     {
-#ifdef Rythmos_NEW
       if (useIntegrator)
       {
         // Set up fixed-step-size integration:
@@ -308,7 +303,6 @@ int main(int argc, char *argv[])
       }
       else
       {
-#endif // Rythmos_NEW
         // Integrate forward with fixed step sizes:
         for (int i=1 ; i<=N ; ++i)
         {
@@ -329,13 +323,10 @@ int main(int argc, char *argv[])
         }
         // Get solution out of stepper:
         x_computed_thyra_ptr = stepper.get_solution();
-#ifdef Rythmos_NEW
       }
-#endif // Rythmos_NEW
     }
     else // (step_method_val == VARIABLE_STEP)
     {
-#ifdef Rythmos_NEW
       if (useIntegrator)
       {
         // Set up fixed-step-size integration:
@@ -365,7 +356,6 @@ int main(int argc, char *argv[])
       }
       else
       {
-#endif // Rythmos_NEW
 #ifdef Rythmos_DEBUG
         // Create a place to store the computed solutions
         x_computed_thyra_ptr = stepper.get_solution();
@@ -454,9 +444,7 @@ int main(int argc, char *argv[])
         }
         // Get solution out of stepper:
         x_computed_thyra_ptr = stepper.get_solution();
-#ifdef Rythmos_NEW
       }
-#endif // Rythmos_NEW
     }
     *out << "Integrated to time = " << time << endl;
 
