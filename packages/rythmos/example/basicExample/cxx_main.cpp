@@ -116,9 +116,6 @@ int main(int argc, char *argv[])
     double abstol = 1.0e-4;
     int maxOrder = 5;
     bool useIntegrator = false;
-#ifdef Rythmos_DEBUG
-    int debugLevel = 2; // debugLevel is used when Rythmos_DEBUG ifdef is set.
-#endif // Rythmos_DEBUG
     int outputLevel = -1; // outputLevel determines the level of output / verbosity
 
     // Parse the command-line options:
@@ -145,13 +142,13 @@ int main(int argc, char *argv[])
     clp.setOption( "abstol", &abstol, "Absolute Error Tolerance" );
     clp.setOption( "maxorder", &maxOrder, "Maximum Implicit BDF order" );
     clp.setOption( "useintegrator", "normal", &useIntegrator, "Use InterpolationBufferAsStepper as integrator" );
-#ifdef Rythmos_DEBUG
-    clp.setOption( "debuglevel", &debugLevel, "Debug Level for Rythmos" );
-#endif // Rythmos_DEBUG
     clp.setOption( "outputLevel", &outputLevel, "Verbosity level for Rythmos" );
 
     Teuchos::CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
     if( parse_return != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
+
+    // 10/23/06 tscoffe:  bounds on Teuchos::EVerbosityLevel:
+    outputLevel = min(max(outputLevel,-1),4);
 
 #ifdef HAVE_RYTHMOS_STRATIMIKOS
     lowsfCreator.readParameters(out.get());
@@ -178,9 +175,7 @@ int main(int argc, char *argv[])
       return(1);
     }
 
-#ifdef Rythmos_DEBUG
     *out << std::setprecision(15);
-#endif // Rythmos_DEBUG
     
     // Set up the parameter list for the application:
     Teuchos::ParameterList params;
@@ -267,13 +262,9 @@ int main(int argc, char *argv[])
       TEST_FOR_EXCEPT(true);
     }
     Rythmos::Stepper<double> &stepper = *stepper_ptr;
-#ifdef Rythmos_DEBUG
     Teuchos::RefCountPtr<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
-    if (debugLevel > 1)
-    {
-      stepper.describe(*out,Teuchos::VERB_EXTREME);
-    }
-#endif // Rythmos_DEBUG
+    if (outputLevel >= 3)
+      stepper.describe(*out,static_cast<Teuchos::EVerbosityLevel>(outputLevel));
 
     int numSteps = 0;
     double t0 = 0.0;
@@ -318,12 +309,8 @@ int main(int argc, char *argv[])
           double dt_taken = stepper.TakeStep(dt);
           time += dt_taken;
           numSteps++;
-#ifdef Rythmos_DEBUG
-          if (debugLevel > 1)
-          {
-            stepper.describe(*out,Teuchos::VERB_EXTREME);
-          }
-#endif // Rythmos_DEBUG
+          if (outputLevel >= 3)
+            stepper.describe(*out,static_cast<Teuchos::EVerbosityLevel>(outputLevel));
           if (dt_taken != dt)
           {
             cerr << "Error, stepper took step of dt = " << dt_taken << " when asked to take step of dt = " << dt << std::endl;
@@ -365,7 +352,7 @@ int main(int argc, char *argv[])
       }
       else
       {
-#ifdef Rythmos_DEBUG
+        // HIGH output data structures:
         // Create a place to store the computed solutions
         x_computed_thyra_ptr = stepper.get_solution();
         // Convert Thyra::VectorBase to Epetra_Vector
@@ -379,75 +366,71 @@ int main(int argc, char *argv[])
         // get lambda from the problem:
         Teuchos::RefCountPtr<const Epetra_Vector> lambda_ptr = epetraModel->get_coeff();
         const Epetra_Vector &lambda = *lambda_ptr;
-#endif // Rythmos_DEBUG
+
         while (time < finalTime)
         {
           double dt_taken = stepper.TakeStep();
           numSteps++;
-#ifdef Rythmos_DEBUG
-          if (debugLevel > 1)
-          {
-            stepper.describe(*out,Teuchos::VERB_EXTREME);
-          }
-#endif // Rythmos_DEBUG
+          if (outputLevel >= 3)
+            stepper.describe(*out,static_cast<Teuchos::EVerbosityLevel>(outputLevel));
           if (dt_taken < 0)
           {
             *out << "Error, stepper failed for some reason with step taken = " << dt_taken << endl;
             break;
           }
-#ifdef Rythmos_DEBUG
-          // Get solution out of stepper:
-          x_computed_thyra_ptr = stepper.get_solution();
-          // Convert Thyra::VectorBase to Epetra_Vector
-          x_computed_ptr = Thyra::get_Epetra_Vector(*(epetraModel->get_x_map()),x_computed_thyra_ptr);
-          if ((method_val == METHOD_BDF) && (maxOrder == 1))
+          if (outputLevel >= 3)
           {
-            int myN = x_numerical_exact.MyLength();
-            if (numSteps == 1) // First step
+            // Get solution out of stepper:
+            x_computed_thyra_ptr = stepper.get_solution();
+            // Convert Thyra::VectorBase to Epetra_Vector
+            x_computed_ptr = Thyra::get_Epetra_Vector(*(epetraModel->get_x_map()),x_computed_thyra_ptr);
+            if ((method_val == METHOD_BDF) && (maxOrder == 1))
             {
+              int myN = x_numerical_exact.MyLength();
+              if (numSteps == 1) // First step
+              {
+                for (int i=0 ; i<myN ; ++i)
+                  x_numerical_exact[i] = x0;
+              }
               for (int i=0 ; i<myN ; ++i)
-                x_numerical_exact[i] = x0;
+                x_numerical_exact[i] = ( x_numerical_exact[i]
+                    +dt_taken*epetraModel->evalR(time+dt_taken,lambda[i],coeff_s))
+                    /(1-lambda[i]*dt_taken);
+              for (int i=0 ; i<myN ; ++i)
+                x_rel_diff[i] = (x_numerical_exact[i]-(*x_computed_ptr)[i])/x_numerical_exact[i];
+              if (myN == 1)
+                *out << "Computed x(" << time+dt_taken << ") = " << (*x_computed_ptr)[0] 
+                    << "  Numerical Exact = " << x_numerical_exact[0] 
+                    << "  Rel Diff = " << x_rel_diff[0] << std::endl;
+              else
+              {
+                for (int i=0 ; i<myN ; ++i)
+                  *out << "Computed x_" << i << "(" << time+dt_taken << ") = " << (*x_computed_ptr)[i] 
+                      << "  Numerical Exact = " << x_numerical_exact[i] 
+                      << "  Rel Diff = " << x_rel_diff[i] <<  std::endl;
+              }
             }
-            for (int i=0 ; i<myN ; ++i)
-              x_numerical_exact[i] = ( x_numerical_exact[i]
-                  +dt_taken*epetraModel->evalR(time+dt_taken,lambda[i],coeff_s))
-                  /(1-lambda[i]*dt_taken);
-            for (int i=0 ; i<myN ; ++i)
-              x_rel_diff[i] = (x_numerical_exact[i]-(*x_computed_ptr)[i])/x_numerical_exact[i];
-            if (myN == 1)
-              *out << "Computed x(" << time+dt_taken << ") = " << (*x_computed_ptr)[0] 
-                  << "  Numerical Exact = " << x_numerical_exact[0] 
-                  << "  Rel Diff = " << x_rel_diff[0] << std::endl;
             else
             {
+              // compute exact answer
+              Teuchos::RefCountPtr<const Epetra_Vector> x_star_ptr = epetraModel->get_exact_solution(time);
+              const Epetra_Vector& x_star = *x_star_ptr;
+              int myN = x_computed_ptr->MyLength();
               for (int i=0 ; i<myN ; ++i)
-                *out << "Computed x_" << i << "(" << time+dt_taken << ") = " << (*x_computed_ptr)[i] 
-                    << "  Numerical Exact = " << x_numerical_exact[i] 
-                    << "  Rel Diff = " << x_rel_diff[i] <<  std::endl;
+                x_rel_diff[i] = (x_star[i]-(*x_computed_ptr)[i])/x_star[i];
+              if (myN == 1)
+                *out << "Computed x(" << time+dt_taken << ") = " << (*x_computed_ptr)[0] 
+                    << "  Exact = " << x_star[0] 
+                    << "  Rel Diff = " << x_rel_diff[0] << std::endl;
+              else
+              {
+                for (int i=0 ; i<myN ; ++i)
+                  *out << "Computed x_" << i << "(" << time+dt_taken << ") = " << (*x_computed_ptr)[i] 
+                      << "  Exact = " << x_star[i] 
+                      << "  Rel Diff = " << x_rel_diff[i] << std::endl;
+              }
             }
           }
-          else
-          {
-            // compute exact answer
-            Teuchos::RefCountPtr<const Epetra_Vector> x_star_ptr = epetraModel->get_exact_solution(time);
-            const Epetra_Vector& x_star = *x_star_ptr;
-            int myN = x_computed_ptr->MyLength();
-            for (int i=0 ; i<myN ; ++i)
-              x_rel_diff[i] = (x_star[i]-(*x_computed_ptr)[i])/x_star[i];
-            if (myN == 1)
-              *out << "Computed x(" << time+dt_taken << ") = " << (*x_computed_ptr)[0] 
-                  << "  Exact = " << x_star[0] 
-                  << "  Rel Diff = " << x_rel_diff[0] << std::endl;
-            else
-            {
-              for (int i=0 ; i<myN ; ++i)
-                *out << "Computed x_" << i << "(" << time+dt_taken << ") = " << (*x_computed_ptr)[i] 
-                    << "  Exact = " << x_star[i] 
-                    << "  Rel Diff = " << x_rel_diff[i] << std::endl;
-            }
-          }
-
-#endif // Rythmos_DEBUG
           time += dt_taken;
           *out << "Took stepsize of: " << dt_taken << " time = " << time << endl;
         }

@@ -269,7 +269,10 @@ void BackwardEulerStepper<Scalar>::describe(
     out << description() << "::describe:" << std::endl;
     out << "model = " << model_->description() << std::endl;
     out << "solver = " << solver_->description() << std::endl;
-    out << "neModel = " << neModel_->description() << std::endl;
+    if (neModel_ == Teuchos::null)
+      out << "neModel = Teuchos::null" << std::endl;
+    else
+      out << "neModel = " << neModel_->description() << std::endl;
   }
   else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
   {
@@ -285,8 +288,13 @@ void BackwardEulerStepper<Scalar>::describe(
     model_->describe(out,verbLevel);
     out << "solver_ = " << std::endl;
     solver_->describe(out,verbLevel);
-    out << "neModel = " << std::endl;
-    neModel_->describe(out,verbLevel);
+    if (neModel_ == Teuchos::null)
+      out << "neModel = Teuchos::null" << std::endl;
+    else
+    {
+      out << "neModel = " << std::endl;
+      neModel_->describe(out,verbLevel);
+    }
     out << "x_ = " << std::endl;
     x_->describe(out,verbLevel);
     out << "scaled_x_old_ = " << std::endl;
