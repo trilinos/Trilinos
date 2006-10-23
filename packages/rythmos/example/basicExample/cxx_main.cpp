@@ -119,6 +119,7 @@ int main(int argc, char *argv[])
 #ifdef Rythmos_DEBUG
     int debugLevel = 2; // debugLevel is used when Rythmos_DEBUG ifdef is set.
 #endif // Rythmos_DEBUG
+    int outputLevel = -1; // outputLevel determines the level of output / verbosity
 
     // Parse the command-line options:
     Teuchos::CommandLineProcessor  clp(false); // Don't throw exceptions
@@ -147,6 +148,7 @@ int main(int argc, char *argv[])
 #ifdef Rythmos_DEBUG
     clp.setOption( "debuglevel", &debugLevel, "Debug Level for Rythmos" );
 #endif // Rythmos_DEBUG
+    clp.setOption( "outputLevel", &outputLevel, "Verbosity level for Rythmos" );
 
     Teuchos::CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
     if( parse_return != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
@@ -246,9 +248,7 @@ int main(int argc, char *argv[])
         BDFparams->set( "maxOrder", maxOrder );
         BDFparams->set( "relErrTol", reltol );
         BDFparams->set( "absErrTol", abstol );
-#ifdef Rythmos_DEBUG
-        BDFparams->set( "debugLevel", debugLevel );
-#endif // Rythmos_DEBUG
+        BDFparams->set( "outputLevel", outputLevel );
 
         stepper_ptr = Teuchos::rcp(new Rythmos::ImplicitBDFStepper<double>(model,nonlinearSolver,BDFparams));
         method = "Implicit BDF";
