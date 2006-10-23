@@ -145,6 +145,8 @@ class ImplicitBDFStepper : virtual public Stepper<Scalar>
     /** \brief . */
     Teuchos::RefCountPtr<Teuchos::ParameterList> unsetParameterList();
 
+    Teuchos::RefCountPtr<const Teuchos::ParameterList> getValidParameters() const;
+
   private:
 
 
@@ -1389,23 +1391,56 @@ int ImplicitBDFStepper<Scalar>::GetOrder() const
   return(currentOrder);
 }
 
-template <class Scalar>
+template<class Scalar>
 void ImplicitBDFStepper<Scalar>::setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList)
 {
   parameterList = paramList;
 }
 
-template <class Scalar>
+template<class Scalar>
 Teuchos::RefCountPtr<Teuchos::ParameterList> ImplicitBDFStepper<Scalar>::getParameterList()
 {
   return(parameterList);
 }
 
-template <class Scalar>
+template<class Scalar>
 Teuchos::RefCountPtr<Teuchos::ParameterList> ImplicitBDFStepper<Scalar>::unsetParameterList()
 {
   Teuchos::RefCountPtr<Teuchos::ParameterList> temp_param_list = parameterList;
   parameterList = Teuchos::null;
+  return(temp_param_list);
+}
+
+template<class Scalar>
+Teuchos::RefCountPtr<const Teuchos::ParameterList> ImplicitBDFStepper<Scalar>::getValidParameters() const
+{
+  Teuchos::RefCountPtr<Teuchos::ParameterList> temp_param_list = Teuchos::rcp(new Teuchos::ParameterList);
+  temp_param_list->set<int>   ( "maxOrder",         5              );
+  temp_param_list->set<Scalar>( "relErrTol",        Scalar(1.0e-4) );
+  temp_param_list->set<Scalar>( "absErrTol",        Scalar(1.0e-6) );
+  temp_param_list->set<bool>  ( "constantStepSize", false          );
+  temp_param_list->set<Scalar>( "stopTime",         Scalar(10.0)   );
+#ifdef Rythmos_DEBUG
+  debugLevel = parameterList->get( "debugLevel", int(1) );
+#endif // Rythmos_DEBUG
+  Teuchos::ParameterList& magicNumberList = temp_param_list->sublist("magicNumbers");
+  magicNumberList.set<Scalar>( "h0_safety",      Scalar(2.0)     );
+  magicNumberList.set<Scalar>( "h0_max_factor",  Scalar(0.001)   );
+  magicNumberList.set<Scalar>( "h_phase0_incr",  Scalar(2.0)     );
+  magicNumberList.set<Scalar>( "h_max_inv",      Scalar(0.0)     );
+  magicNumberList.set<Scalar>( "Tkm1_Tk_safety", Scalar(2.0)     );
+  magicNumberList.set<Scalar>( "Tkp1_Tk_safety", Scalar(0.5)     );
+  magicNumberList.set<Scalar>( "r_factor",       Scalar(0.9)     );
+  magicNumberList.set<Scalar>( "r_safety",       Scalar(2.0)     );
+  magicNumberList.set<Scalar>( "r_fudge",        Scalar(0.0001)  );
+  magicNumberList.set<Scalar>( "r_min",          Scalar(0.125)   );
+  magicNumberList.set<Scalar>( "r_max",          Scalar(0.9)     );
+  magicNumberList.set<Scalar>( "r_hincr_test",   Scalar(2.0)     );
+  magicNumberList.set<Scalar>( "r_hincr",        Scalar(2.0)     );
+  magicNumberList.set<int>   ( "max_LET_fail",   int(15)         );
+  magicNumberList.set<Scalar>( "minTimeStep",    Scalar(0.0)     );
+  magicNumberList.set<Scalar>( "maxTimeStep",    Scalar(10.0)    ); 
+
   return(temp_param_list);
 }
 
