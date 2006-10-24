@@ -64,27 +64,31 @@ class LinearInterpolator : virtual public Interpolator<Scalar>
       ,const Teuchos::EVerbosityLevel      verbLevel
       ) const;
 
+    /// Redefined from Teuchos::ParameterListAcceptor
+    /** \brief . */
+    void setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList);
+
+    /** \brief . */
+    Teuchos::RefCountPtr<Teuchos::ParameterList> getParameterList();
+
+    /** \brief . */
+    Teuchos::RefCountPtr<Teuchos::ParameterList> unsetParameterList();
+
   private:
 
-#ifdef Rythmos_DEBUG
-    int debugLevel;
-    Teuchos::RefCountPtr<Teuchos::FancyOStream> debug_out;
-#endif // Rythmos_DEBUG
+    Teuchos::RefCountPtr<Teuchos::ParameterList> parameterList;
 
 };
 
 template<class Scalar>
 LinearInterpolator<Scalar>::LinearInterpolator()
 {
-#ifdef Rythmos_DEBUG
-  debugLevel = 2;
-  debug_out = Teuchos::VerboseObjectBase::getDefaultOStream();
-  debug_out->precision(15);
-  debug_out->setMaxLenLinePrefix(28);
-  debug_out->pushLinePrefix("Rythmos::LinearInterpolator");
-  debug_out->setShowLinePrefix(true);
-  debug_out->setTabIndentStr("    ");
-#endif // Rythmos_DEBUG
+  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  out->precision(15);
+  out->setMaxLenLinePrefix(28);
+  out->pushLinePrefix("Rythmos::LinearInterpolator");
+  out->setShowLinePrefix(true);
+  out->setTabIndentStr("    ");
 }
 
 template<class Scalar>
@@ -94,45 +98,44 @@ bool LinearInterpolator<Scalar>::interpolate(
     ,typename DataStore<Scalar>::DataStoreVector_t *data_out ) const
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
-#ifdef Rythmos_DEBUG
-  Teuchos::OSTab ostab(debug_out,1,"LI::interpolator");
-  if (debugLevel > 1)
+  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::OSTab ostab(out,1,"LI::interpolator");
+  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
   {
     if (data_in.size() == 0)
-      *debug_out << "data_in = empty vector" << std::endl;
+      *out << "data_in = empty vector" << std::endl;
     else
     {
-      *debug_out << "data_in:" << std::endl;
+      *out << "data_in:" << std::endl;
       for (int i=0 ; i<data_in.size() ; ++i)
       {
-        *debug_out << "data_in[" << i << "] = " << std::endl;
-        data_in[i].describe(*debug_out,Teuchos::VERB_EXTREME);
+        *out << "data_in[" << i << "] = " << std::endl;
+        data_in[i].describe(*out,Teuchos::VERB_EXTREME);
       }
     }
     if (t_values.size() == 0)
-      *debug_out << "t_values = empty vector" << std::endl;
+      *out << "t_values = empty vector" << std::endl;
     else
     {
-      *debug_out << "t_values = " << std::endl;
+      *out << "t_values = " << std::endl;
       for (int i=0 ; i<t_values.size() ; ++i)
       {
-        *debug_out << "t_values[" << i << "] = " << t_values[i] << std::endl;
+        *out << "t_values[" << i << "] = " << t_values[i] << std::endl;
       }
     }
     if (data_out == NULL)
-      *debug_out << "data_out = NULL" << std::endl;
+      *out << "data_out = NULL" << std::endl;
     else if (data_out->size() == 0)
-      *debug_out << "data_out = empty vector" << std::endl;
+      *out << "data_out = empty vector" << std::endl;
     else
     {
       for (int i=0; i<data_out->size() ; ++i)
       {
-        *debug_out << "data_out[" << i << "] = " << std::endl;
-        (*data_out)[i].describe(*debug_out,Teuchos::VERB_EXTREME);
+        *out << "data_out[" << i << "] = " << std::endl;
+        (*data_out)[i].describe(*out,Teuchos::VERB_EXTREME);
       }
     }
   }
-#endif // Rythmos_DEBUG
   // Sort data_in: 
   typename DataStore<Scalar>::DataStoreVector_t local_data_in;
   local_data_in.insert(local_data_in.end(),data_in.begin(),data_in.end());
@@ -151,10 +154,8 @@ bool LinearInterpolator<Scalar>::interpolate(
     data_in_it = std::find(local_data_in.begin(),local_data_in.end(),*time_it);
     if (data_in_it != local_data_in.end())
     {
-#ifdef Rythmos_DEBUG
-      if (debugLevel > 1)
-        *debug_out << "Passing out data (w/o interpolating) for t = " << *time_it << std::endl;
-#endif // Rythmos_DEBUG
+      if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
+        *out << "Passing out data (w/o interpolating) for t = " << *time_it << std::endl;
       data_out->push_back(*data_in_it);
       time_it = local_t_values.erase(time_it);
     }
@@ -240,10 +241,44 @@ void LinearInterpolator<Scalar>::describe(
       ,const Teuchos::EVerbosityLevel      verbLevel
       ) const
 {
-  if (verbLevel == Teuchos::VERB_EXTREME)
+  if ( (static_cast<int>(verbLevel) == static_cast<int>(Teuchos::VERB_DEFAULT) ) ||
+       (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW)     )
+     )
   {
     out << description() << "::describe" << std::endl;
   }
+  else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
+  {
+  }
+  else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_MEDIUM))
+  {
+  }
+  else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_HIGH))
+  {
+  }
+}
+
+template <class Scalar>
+void LinearInterpolator<Scalar>::setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList)
+{
+  parameterList = paramList;
+  int outputLevel = parameterList->get( "outputLevel", int(-1) );
+  outputLevel = min(max(outputLevel,-1),4);
+  this->setVerbLevel(static_cast<Teuchos::EVerbosityLevel>(outputLevel));
+}
+
+template <class Scalar>
+Teuchos::RefCountPtr<Teuchos::ParameterList> LinearInterpolator<Scalar>::getParameterList()
+{
+  return(parameterList);
+}
+
+template <class Scalar>
+Teuchos::RefCountPtr<Teuchos::ParameterList> LinearInterpolator<Scalar>::unsetParameterList()
+{
+  Teuchos::RefCountPtr<Teuchos::ParameterList> temp_param_list = parameterList;
+  parameterList = Teuchos::null;
+  return(temp_param_list);
 }
 
 } // namespace Rythmos

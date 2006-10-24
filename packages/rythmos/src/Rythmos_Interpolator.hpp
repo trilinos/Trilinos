@@ -35,7 +35,10 @@ namespace Rythmos {
 
 /** \brief Base strategy class for interpolation functionality. */
 template<class Scalar> 
-class Interpolator : virtual public Teuchos::Describable
+class Interpolator
+  : virtual public Teuchos::Describable
+  , virtual public Teuchos::ParameterListAcceptor
+  , virtual public Teuchos::VerboseObject<Interpolator<Scalar> >
 {
   public:
 

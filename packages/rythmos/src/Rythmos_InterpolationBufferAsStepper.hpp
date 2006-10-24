@@ -586,12 +586,23 @@ void InterpolationBufferAsStepper<Scalar>::describe(
       ,const Teuchos::EVerbosityLevel      verbLevel
       ) const
 {
-  if (verbLevel == Teuchos::VERB_EXTREME)
+  if ( (static_cast<int>(verbLevel) == static_cast<int>(Teuchos::VERB_DEFAULT) ) ||
+       (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW)     )
+     )
   {
     out << description() << "::describe" << std::endl;
     out << "interpolation buffer = " << IB->description() << std::endl;
     out << "stepper = " << stepper->description() << std::endl;
+  }
+  else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
+  {
+  }
+  else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_MEDIUM))
+  {
     out << "parameterList = " << parameterList->print(out) << std::endl;
+  }
+  else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_HIGH))
+  {
   }
 }
 

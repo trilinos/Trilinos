@@ -151,7 +151,6 @@ void InterpolationBuffer<Scalar>::initialize(
     )
 {
   Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
-  out = Teuchos::VerboseObjectBase::getDefaultOStream();
   out->precision(15);
   out->setMaxLenLinePrefix(30);
   out->pushLinePrefix("Rythmos::InterpolationBuffer");
@@ -551,16 +550,27 @@ void InterpolationBuffer<Scalar>::describe(
       ,const Teuchos::EVerbosityLevel      verbLevel
       ) const
 {
-  if (verbLevel == Teuchos::VERB_EXTREME)
+  if ( (static_cast<int>(verbLevel) == static_cast<int>(Teuchos::VERB_DEFAULT) ) ||
+       (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW)     )
+     )
   {
     out << description() << "::describe" << std::endl;
     out << "interpolator = " << interpolator->description() << std::endl;
     out << "storage_limit = " << storage_limit << std::endl;
+  }
+  else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
+  {
+  }
+  else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_MEDIUM))
+  {
+  }
+  else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_HIGH))
+  {
     out << "data_vec = " << std::endl;
     for (int i=0; i<data_vec.size() ; ++i)
     {
       out << "data_vec[" << i << "] = " << std::endl;
-      data_vec[i].describe(out,Teuchos::VERB_EXTREME);
+      data_vec[i].describe(out,this->getVerbLevel());
     }
   }
 }
