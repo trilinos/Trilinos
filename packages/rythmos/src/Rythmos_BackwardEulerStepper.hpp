@@ -62,6 +62,9 @@ class BackwardEulerStepper : virtual public Stepper<Scalar>
     void setSolver(const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > &solver);
 
     /** \brief . */
+    void setInterpolator(const Teuchos::RefCountPtr<InterpolatorBase<Scalar> > &interpolator);
+
+    /** \brief . */
     Scalar TakeStep(Scalar dt);
    
     /** \brief . */
@@ -141,6 +144,8 @@ class BackwardEulerStepper : virtual public Stepper<Scalar>
 
     Teuchos::RefCountPtr<Teuchos::ParameterList> parameterList_;
 
+    Teuchos::RefCountPTr<InterpolatorBase<Scalar> > interpolator_;
+
 };
 
 // ////////////////////////////
@@ -189,6 +194,12 @@ void BackwardEulerStepper<Scalar>::setSolver(const Teuchos::RefCountPtr<Thyra::N
   if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
     *out << "solver = " << solver->description() << std::endl;
   solver_ = solver;
+}
+
+template<class Scalar>
+void BackwardEulerStepper<Scalar>::setInterpolator(const Teuchos::RefCountPtr<InterpolatorBase<Scalar> > &interpolator)
+{
+  interpolator_ = interpolator;
 }
 
 template<class Scalar>
@@ -393,8 +404,9 @@ bool BackwardEulerStepper<Scalar>::GetPoints(
     ds_temp.accuracy = ScalarMag(ST::zero());
     ds_nodes.push_back(ds_temp);
   }
-  LinearInterpolator<Scalar> interpolator;
-  bool status = interpolator.interpolate(ds_nodes,time_vec,&ds_out);
+  if (interpolator_ == Teuchos::null)
+    interpolator = Teuchos::rcp(new LinearInterpolator<Scalar>);
+  bool status = interpolator_->interpolate(ds_nodes,time_vec,&ds_out);
   if (!status) return(status);
   std::vector<Scalar> time_out;
   DataStoreVectorToVector(ds_out,&time_out,x_vec,xdot_vec,accuracy_vec);
