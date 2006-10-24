@@ -26,8 +26,8 @@
 // ***********************************************************************
 //@HEADER
 
-#ifndef Rythmos_INTERPOLATOR_H
-#define Rythmos_INTERPOLATOR_H
+#ifndef Rythmos_INTERPOLATOR_BASE_H
+#define Rythmos_INTERPOLATOR_BASE_H
 
 #include "Rythmos_DataStore.hpp"
 
@@ -35,15 +35,15 @@ namespace Rythmos {
 
 /** \brief Base strategy class for interpolation functionality. */
 template<class Scalar> 
-class Interpolator
+class InterpolatorBase
   : virtual public Teuchos::Describable
   , virtual public Teuchos::ParameterListAcceptor
-  , virtual public Teuchos::VerboseObject<Interpolator<Scalar> >
+  , virtual public Teuchos::VerboseObject<InterpolatorBase<Scalar> >
 {
   public:
 
     /// Destructor
-    virtual ~Interpolator() {};
+    virtual ~InterpolatorBase() {};
 
     /// Interpolation:
     /// This function must support passing node values back out directly,
@@ -63,4 +63,4 @@ class Interpolator
 
 } // namespace Rythmos
 
-#endif //Rythmos_INTERPOLATOR_H
+#endif //Rythmos_INTERPOLATOR_BASE_H

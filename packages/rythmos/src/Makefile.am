@@ -61,7 +61,7 @@ CORE_H = \
 	$(srcdir)/Rythmos_InterpolationBuffer.hpp \
 	$(srcdir)/Rythmos_InterpolationBufferAsStepper.hpp \
 	$(srcdir)/Rythmos_DataStore.hpp \
-	$(srcdir)/Rythmos_Interpolator.hpp \
+	$(srcdir)/Rythmos_InterpolatorBase.hpp \
 	$(srcdir)/Rythmos_LinearInterpolator.hpp 
 
 

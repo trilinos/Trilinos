@@ -30,7 +30,7 @@
 #define Rythmos_INTERPOLATION_BUFFER_H
 
 #include "Rythmos_InterpolationBufferBase.hpp"
-#include "Rythmos_Interpolator.hpp"
+#include "Rythmos_InterpolatorBase.hpp"
 #include "Rythmos_LinearInterpolator.hpp"
 #include "Rythmos_DataStore.hpp"
 
@@ -48,13 +48,13 @@ class InterpolationBuffer : virtual public InterpolationBufferBase<Scalar>
     
     /** \brief. */
     InterpolationBuffer();
-    InterpolationBuffer( const Teuchos::RefCountPtr<Interpolator<Scalar> >& interpolator_, int storage_ );
+    InterpolationBuffer( const Teuchos::RefCountPtr<InterpolatorBase<Scalar> >& interpolator_, int storage_ );
 
     /// Initialize the buffer:
-    void initialize( const Teuchos::RefCountPtr<Interpolator<Scalar> >& interpolator_, int storage_ );
+    void initialize( const Teuchos::RefCountPtr<InterpolatorBase<Scalar> >& interpolator_, int storage_ );
 
     /// Set the interpolator for this buffer
-    void SetInterpolator(const Teuchos::RefCountPtr<Interpolator<Scalar> >& interpolator_);
+    void SetInterpolator(const Teuchos::RefCountPtr<InterpolatorBase<Scalar> >& interpolator_);
 
     /// Set the maximum storage of this buffer
     void SetStorage( int storage );
@@ -119,7 +119,7 @@ class InterpolationBuffer : virtual public InterpolationBufferBase<Scalar>
     
   private:
 
-    Teuchos::RefCountPtr<Interpolator<Scalar> > interpolator;
+    Teuchos::RefCountPtr<InterpolatorBase<Scalar> > interpolator;
     int storage_limit;
     typename DataStore<Scalar>::DataStoreVector_t data_vec;
 
@@ -137,7 +137,7 @@ InterpolationBuffer<Scalar>::InterpolationBuffer()
 
 template<class Scalar>
 InterpolationBuffer<Scalar>::InterpolationBuffer( 
-    const Teuchos::RefCountPtr<Interpolator<Scalar> >& interpolator_
+    const Teuchos::RefCountPtr<InterpolatorBase<Scalar> >& interpolator_
     ,int storage_ 
     )
 {
@@ -146,7 +146,7 @@ InterpolationBuffer<Scalar>::InterpolationBuffer(
 
 template<class Scalar>
 void InterpolationBuffer<Scalar>::initialize( 
-    const Teuchos::RefCountPtr<Interpolator<Scalar> >& interpolator_
+    const Teuchos::RefCountPtr<InterpolatorBase<Scalar> >& interpolator_
     ,int storage_
     )
 {
@@ -178,7 +178,7 @@ void InterpolationBuffer<Scalar>::SetStorage( int storage_ )
 
 template<class Scalar>
 void InterpolationBuffer<Scalar>::SetInterpolator(
-    const Teuchos::RefCountPtr<Interpolator<Scalar> >& interpolator_
+    const Teuchos::RefCountPtr<InterpolatorBase<Scalar> >& interpolator_
     )
 {
   if (interpolator_ == Teuchos::null)

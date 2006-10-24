@@ -29,12 +29,12 @@
 #ifndef Rythmos_LINEAR_INTERPOLATOR_H
 #define Rythmos_LINEAR_INTERPOLATOR_H
 
-#include "Rythmos_Interpolator.hpp"
+#include "Rythmos_InterpolatorBase.hpp"
 
 namespace Rythmos {
 
 template<class Scalar>
-class LinearInterpolator : virtual public Interpolator<Scalar>
+class LinearInterpolator : virtual public InterpolatorBase<Scalar>
 {
   public:
 
