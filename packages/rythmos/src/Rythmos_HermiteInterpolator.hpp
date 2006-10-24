@@ -99,7 +99,7 @@ bool HermiteInterpolator<Scalar>::interpolate(
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
   Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
-  Teuchos::OSTab ostab(out,1,"LI::interpolator");
+  Teuchos::OSTab ostab(out,1,"HI::interpolator");
   if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
   {
     if (data_in.size() == 0)
