@@ -156,9 +156,9 @@ void RTOpPack::deserialize(
     );
 #endif
   op.load_reduct_obj_state(
-                           num_values_in,   
-                           num_values_in  ? PVTST::convertFromCharPtr(&reduct_obj_ext[values_off]) : 0
-                           ,num_indexes_in, num_indexes_in ? ITST::convertFromCharPtr(&reduct_obj_ext[indexes_off]) : 0
+    num_values_in,   
+    num_values_in  ? PVTST::convertFromCharPtr(&reduct_obj_ext[values_off]) : 0
+    ,num_indexes_in, num_indexes_in ? ITST::convertFromCharPtr(&reduct_obj_ext[indexes_off]) : 0
     ,num_chars_in,   num_chars_in   ? CTST::convertFromCharPtr(&reduct_obj_ext[chars_off])   : 0
     ,reduct_obj
     );
@@ -203,7 +203,7 @@ void ReductTargetSerializer<Scalar>::serialize(
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( !(count > 0) );
   TEST_FOR_EXCEPT( !reduct_objs );
-  TEST_FOR_EXCEPT( !(bytes==getBufferSize(count)) );
+  TEST_FOR_EXCEPT( !(bytes==this->getBufferSize(count)) );
   TEST_FOR_EXCEPT( !charBuffer );
 #endif
   int offset = 0;
@@ -467,6 +467,19 @@ void RTOpPack::SPMD_apply_op(
             );
         }
       }
+#ifdef RTOPPACK_SPMD_APPLY_OP_DUMP
+      if(show_spmd_apply_op_dump) {
+        if(reduct_objs) {
+          *out << "\nIntermediate reduction objects in this process before global reduction:\n";
+          Teuchos::OSTab tab(out);
+          for( int kc = 0; kc < num_cols; ++kc ) {
+            *out
+              << "\ni_reduct_objs["<<kc<<"] =\n"
+              << describe(*i_reduct_objs[kc],Teuchos::VERB_EXTREME);
+          }
+        }
+      }
+#endif // RTOPPACK_SPMD_APPLY_OP_DUMP
       //
       // Reduce the local intermediate reduction objects into the global reduction objects
       //
@@ -475,6 +488,13 @@ void RTOpPack::SPMD_apply_op(
       for( int kc = 0; kc < num_cols; ++kc ) {
         _i_reduct_objs[kc] = &*i_reduct_objs[kc];
       }
+#ifdef RTOPPACK_SPMD_APPLY_OP_DUMP
+      if(show_spmd_apply_op_dump) {
+        if(reduct_objs) {
+          *out << "\nPerforming global reduction ...\n";
+        }
+      }
+#endif // RTOPPACK_SPMD_APPLY_OP_DUMP
       SPMD_all_reduce(comm,op,num_cols,&_i_reduct_objs[0],reduct_objs);
     }
   }

@@ -520,7 +520,6 @@ bool LinearOpTester<RangeScalar,DomainScalar>::check(
         Teuchos::RefCountPtr<MultiVectorBase<DomainScalar> > v4 = createMembers(domain,num_rhs);
         applyTranspose( op, CONJ_ELE, *v2, &*v4, d_half );
         if(dump_all()) *oss << endl << "v4 =\n" << describe(*v4,verbLevel);
-      
 
         std::vector<DomainScalar> prod_v4_v1(num_rhs);
         domain->scalarProds(*v4,*v1,&prod_v4_v1[0]);

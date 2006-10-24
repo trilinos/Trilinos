@@ -215,7 +215,7 @@ void DefaultProductVector<Scalar>::applyOp(
   // Validate the compatibility of the vectors!
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(
-    !(0 <= first_ele_offset_in && first_ele_offset_in+1 <= n), std::out_of_range
+    !(0 <= first_ele_offset_in && first_ele_offset_in < n), std::out_of_range
     ,"DefaultProductVector::applyOp(...): Error, "
     "first_ele_offset_in = " << first_ele_offset_in << " is not in range [0,"<<(n-1)<<"]" );
   TEST_FOR_EXCEPTION(
@@ -401,7 +401,7 @@ void DefaultProductVector<Scalar>::releaseDetachedView(
   if( sub_vec->values() == NULL ) return;
   int    kth_vector_space  = -1;
   Index  kth_global_offset = 0;
-  productSpace_->getVecSpcPoss(sub_vec->globalOffset()+1,&kth_vector_space,&kth_global_offset);
+  productSpace_->getVecSpcPoss(sub_vec->globalOffset(),&kth_vector_space,&kth_global_offset);
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( !( 0 <= kth_vector_space && kth_vector_space <= numBlocks_ ) );
 #endif
@@ -462,7 +462,7 @@ void DefaultProductVector<Scalar>::commitDetachedView(
   if( sub_vec->values() == NULL ) return;
   int    kth_vector_space  = -1;
   Index  kth_global_offset = 0;
-  productSpace_->getVecSpcPoss(sub_vec->globalOffset()+1,&kth_vector_space,&kth_global_offset);
+  productSpace_->getVecSpcPoss(sub_vec->globalOffset(),&kth_vector_space,&kth_global_offset);
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( !( 0 <= kth_vector_space && kth_vector_space <= numBlocks_ ) );
 #endif
@@ -488,7 +488,7 @@ void DefaultProductVector<Scalar>::setSubVector(
 {
   int    kth_vector_space  = -1;
   Index  kth_global_offset = 0;
-  productSpace_->getVecSpcPoss(sub_vec.globalOffset()+1,&kth_vector_space,&kth_global_offset);
+  productSpace_->getVecSpcPoss(sub_vec.globalOffset(),&kth_vector_space,&kth_global_offset);
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( !( 0 <= kth_vector_space && kth_vector_space <= numBlocks_ ) );
 #endif

@@ -47,8 +47,8 @@ public:
   //@{
   /** \brief . */
   void apply_op(
-    const int   num_vecs,       const ConstSubVectorView<Scalar>         sub_vecs[]
-    ,const int  num_targ_vecs,  const SubVectorView<Scalar>  targ_sub_vecs[]
+    const int   num_vecs,       const ConstSubVectorView<Scalar>    sub_vecs[]
+    ,const int  num_targ_vecs,  const SubVectorView<Scalar>         targ_sub_vecs[]
     ,ReductTarget *_reduct_obj
     ) const
     {

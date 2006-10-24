@@ -44,6 +44,12 @@
 #include "RTOpPack_TOpSetSubVector.hpp"
 #include "Teuchos_TestForException.hpp"
 
+#ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
+#  include "Teuchos_VerboseObject.hpp"
+#  define THYRA_VECTOR_VERBOSE_OUT_STATEMENT \
+     Teuchos::RefCountPtr<Teuchos::FancyOStream> dbgout = Teuchos::VerboseObjectBase::getDefaultOStream()
+#endif // THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
+
 namespace Thyra {
 
 // Overridden from Teuchos::Describable
@@ -79,7 +85,8 @@ Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> >
 VectorDefaultBase<Scalar>::range() const
 {
 #ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
-  std::cerr << "\nVector<Scalar>::range() called!\n";
+  THYRA_VECTOR_VERBOSE_OUT_STATEMENT;
+  *dbgout << "\nThyra::VectorDefaultBase<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::range() called!\n";
 #endif
   return this->space();
 }
@@ -89,7 +96,8 @@ Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> >
 VectorDefaultBase<Scalar>::domain() const
 {
 #ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
-  std::cerr << "\nVector<Scalar>::domain() called!\n";
+  THYRA_VECTOR_VERBOSE_OUT_STATEMENT;
+  *dbgout << "\nThyra::VectorDefaultBase<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::domain() called!\n";
 #endif
   if(!domain_.get())
     const_cast<VectorDefaultBase<Scalar>*>(this)->domain_
@@ -124,7 +132,8 @@ void VectorDefaultBase<Scalar>::apply(
   if( M_trans == NOTRANS || (M_trans == CONJ && !ST::isComplex) ) {
     // y = beta*y + alpha*m*x  (x is a scalar!)
 #ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
-    std::cerr << "\nVector<Scalar>::apply(...) : y = beta*y + alpha*m*x  (x is a scalar!)\n";
+    THYRA_VECTOR_VERBOSE_OUT_STATEMENT;
+    *dbgout << "\nThyra::VectorDefaultBase<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::apply(...) : y = beta*y + alpha*m*x  (x is a scalar!)\n";
 #endif
     Vt_S( y, beta );
     Vp_StV( y, Scalar(alpha*get_ele(x,0)), *this );
@@ -132,18 +141,35 @@ void VectorDefaultBase<Scalar>::apply(
   else if( M_trans == CONJTRANS || (M_trans == TRANS && !ST::isComplex) ) {
     // y = beta*y + alpha*m'*x  (y is a scalar!)
 #ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
-    std::cerr << "\nVector<Scalar>::apply(...) : y = beta*y + alpha*m'*x  (y is a scalar!)\n";
+    THYRA_VECTOR_VERBOSE_OUT_STATEMENT;
+    *dbgout << "\nThyra::VectorDefaultBase<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::apply(...) : y = beta*y + alpha*m'*x  (y is a scalar!)\n";
 #endif
     Scalar y_inout;
     if( beta == ST::zero() ) {
       y_inout = ST::zero();
     }
     else {
-      y_inout = get_ele(*y,0);
-      y_inout = beta*y_inout;
+      y_inout = beta*get_ele(*y,0);
     }
+#if defined(THYRA_VECTOR_VERBOSE_TO_ERROR_OUT) && defined(RTOPPACK_SPMD_APPLY_OP_DUMP)
+    RTOpPack::show_spmd_apply_op_dump = true;
+#endif
+#if defined(THYRA_VECTOR_VERBOSE_TO_ERROR_OUT) && defined(RTOPPACK_RTOPT_HELPER_DUMP_OUTPUT)
+    RTOpPack::rtop_helpers_dump_all = true;
+#endif
     y_inout += alpha*this->space()->scalarProd(*this,x);
+#if defined(THYRA_VECTOR_VERBOSE_TO_ERROR_OUT) && defined(RTOPPACK_SPMD_APPLY_OP_DUMP)
+    RTOpPack::show_spmd_apply_op_dump = false;
+#endif
+#if defined(THYRA_VECTOR_VERBOSE_TO_ERROR_OUT) && defined(RTOPPACK_RTOPT_HELPER_DUMP_OUTPUT)
+    RTOpPack::rtop_helpers_dump_all = false;
+#endif
     set_ele(0,y_inout,y);
+#ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
+    *dbgout
+      << "\nThyra::VectorDefaultBase<"<<ST::name()<<">::apply(...) : y_inout = "
+      << y_inout << "\n";
+#endif
   }
   else {
     TEST_FOR_EXCEPTION(
@@ -178,7 +204,8 @@ Teuchos::RefCountPtr<VectorBase<Scalar> >
 VectorDefaultBase<Scalar>::col(Index j)
 {
 #ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
-  std::cerr << "\nVector<Scalar>::col(j) called!\n";
+  THYRA_VECTOR_VERBOSE_OUT_STATEMENT;
+  *dbgout << "\nThyra::VectorDefaultBase<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::col(j) called!\n";
 #endif
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( j != 0 );
@@ -191,7 +218,8 @@ Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
 VectorDefaultBase<Scalar>::clone_mv() const
 {
 #ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
-  std::cerr << "\nVector<Scalar>::clone_mv() called!\n";
+  THYRA_VECTOR_VERBOSE_OUT_STATEMENT;
+  *dbgout << "\nThyra::VectorDefaultBase<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::clone_mv() called!\n";
 #endif
   return this->clone_v();
 }
@@ -201,7 +229,8 @@ Teuchos::RefCountPtr<const MultiVectorBase<Scalar> >
 VectorDefaultBase<Scalar>::subView( const Range1D& col_rng ) const
 {
 #ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
-  std::cerr << "\nVector<Scalar>::subView(col_rng) const called!\n";
+  THYRA_VECTOR_VERBOSE_OUT_STATEMENT;
+  *dbgout << "\nThyra::VectorDefaultBase<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::subView(col_rng) const called!\n";
 #endif
   validateColRng(col_rng);
   return Teuchos::rcp(this,false);
@@ -212,7 +241,8 @@ Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
 VectorDefaultBase<Scalar>::subView( const Range1D& col_rng )
 {
 #ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
-  std::cerr << "\nVector<Scalar>::subView(col_rng) called!\n";
+  THYRA_VECTOR_VERBOSE_OUT_STATEMENT;
+  *dbgout << "\nThyra::VectorDefaultBase<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::subView(col_rng) called!\n";
 #endif
   validateColRng(col_rng);
   return Teuchos::rcp(this,false);
@@ -223,7 +253,8 @@ Teuchos::RefCountPtr<const MultiVectorBase<Scalar> >
 VectorDefaultBase<Scalar>::subView( const int numCols, const int cols[] ) const
 {
 #ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
-  std::cerr << "\nVector<Scalar>::subView(numCols,cols) const called!\n";
+  THYRA_VECTOR_VERBOSE_OUT_STATEMENT;
+  *dbgout << "\nThyra::VectorDefaultBase<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::subView(numCols,cols) const called!\n";
 #endif
   validateColIndexes(numCols,cols);
   return Teuchos::rcp(this,false);
@@ -234,7 +265,8 @@ Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
 VectorDefaultBase<Scalar>::subView( const int numCols, const int cols[] )
 {
 #ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
-  std::cerr << "\nVector<Scalar>::subView(numCols,cols) called!\n";
+  THYRA_VECTOR_VERBOSE_OUT_STATEMENT;
+  *dbgout << "\nThyra::VectorDefaultBase<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::subView(numCols,cols) called!\n";
 #endif
   validateColIndexes(numCols,cols);
   return Teuchos::rcp(this,false);
@@ -248,7 +280,8 @@ void VectorDefaultBase<Scalar>::acquireDetachedView(
   ) const
 {
 #ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
-  std::cerr << "\nVector<Scalar>::acquireDetachedView() const called!\n";
+  THYRA_VECTOR_VERBOSE_OUT_STATEMENT;
+  *dbgout << "\nThyra::VectorDefaultBase<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::acquireDetachedView() const called!\n";
 #endif
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(sub_mv==NULL);
@@ -266,7 +299,8 @@ template<class Scalar>
 void VectorDefaultBase<Scalar>::releaseDetachedView( RTOpPack::ConstSubMultiVectorView<Scalar>* sub_mv ) const
 {
 #ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
-  std::cerr << "\nVector<Scalar>::releaseDetachedView() const called!\n";
+  THYRA_VECTOR_VERBOSE_OUT_STATEMENT;
+  *dbgout << "\nThyra::VectorDefaultBase<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::releaseDetachedView() const called!\n";
 #endif
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(sub_mv==NULL);
@@ -284,7 +318,8 @@ void VectorDefaultBase<Scalar>::acquireDetachedView(
   )
 {
 #ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
-  std::cerr << "\nVector<Scalar>::acquireDetachedView() called!\n";
+  THYRA_VECTOR_VERBOSE_OUT_STATEMENT;
+  *dbgout << "\nThyra::VectorDefaultBase<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::acquireDetachedView() called!\n";
 #endif
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(sub_mv==NULL);
@@ -302,7 +337,8 @@ template<class Scalar>
 void VectorDefaultBase<Scalar>::commitDetachedView( RTOpPack::SubMultiVectorView<Scalar>* sub_mv )
 {
 #ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
-  std::cerr << "\nVector<Scalar>::commitDetachedView() called!\n";
+  THYRA_VECTOR_VERBOSE_OUT_STATEMENT;
+  *dbgout << "\nThyra::VectorDefaultBase<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::commitDetachedView() called!\n";
 #endif
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(sub_mv==NULL);
@@ -319,7 +355,8 @@ Teuchos::RefCountPtr<VectorBase<Scalar> >
 VectorDefaultBase<Scalar>::clone_v() const
 {
 #ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
-  std::cerr << "\nVector<Scalar>::clone_v() called!\n";
+  THYRA_VECTOR_VERBOSE_OUT_STATEMENT;
+  *dbgout << "\nThyra::VectorDefaultBase<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::clone_v() called!\n";
 #endif
   Teuchos::RefCountPtr<VectorBase<Scalar> > copy = createMember(this->space());
   assign( &*copy, *this );

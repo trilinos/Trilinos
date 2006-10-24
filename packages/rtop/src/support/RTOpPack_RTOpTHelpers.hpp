@@ -30,10 +30,17 @@
 #ifndef RTOPPACK_RTOP_NEW_T_HELPERS_HPP
 #define RTOPPACK_RTOP_NEW_T_HELPERS_HPP
 
+//#define RTOPPACK_RTOPT_HELPER_DUMP_OUTPUT
+
 #include "RTOpPack_RTOpT.hpp"
 #include "Teuchos_StandardMemberCompositionMacros.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_dyn_cast.hpp"
+
+#ifdef RTOPPACK_RTOPT_HELPER_DUMP_OUTPUT
+#  include "Teuchos_VerboseObject.hpp"
+namespace RTOpPack { extern bool rtop_helpers_dump_all; }
+#endif // RTOPPACK_RTOPT_HELPER_DUMP_OUTPUT
 
 namespace RTOpPack {
 
@@ -92,7 +99,7 @@ private:
   ScalarIndex<Scalar> scalarIndex_;
 };
 
-template<bool isComplex, class Scalar, class ReductScalar>
+template<bool isComplex, bool isScalarReductScalar, class Scalar, class ReductScalar>
 class ROpScalarReductionBaseRawValSetter;
 
 /** \brief Simple base class for all reduction operators that return a simple
@@ -154,7 +161,29 @@ public:
     {
       const ReductScalar in_val    = getRawVal(in_reduct_obj);
       const ReductScalar inout_val = getRawVal(*inout_reduct_obj);
+#ifdef RTOPPACK_RTOPT_HELPER_DUMP_OUTPUT
+      Teuchos::RefCountPtr<Teuchos::FancyOStream>
+        out = Teuchos::VerboseObjectBase::getDefaultOStream();
+      Teuchos::OSTab tab(out);
+      if(rtop_helpers_dump_all) {
+        *out << "\nEntering RTOpPack::ROpScalarReductionBase::reduce_reduct_objs(...) ...\n";
+        *out
+          << "\nop = " << this->description() << "\n"
+          << "in_reduct_obj = " << Teuchos::describe(in_reduct_obj,Teuchos::VERB_EXTREME)
+          << "in_val = " << in_val << "\n"
+          << "inout_reduct_obj (before reduction) = "
+          <<     Teuchos::describe(*inout_reduct_obj,Teuchos::VERB_EXTREME)
+          << "inout_val (before reduction) = " << inout_val << "\n";
+      }
+#endif // RTOPPACK_RTOPT_HELPER_DUMP_OUTPUT
       setRawVal( in_val + inout_val, inout_reduct_obj );
+#ifdef RTOPPACK_RTOPT_HELPER_DUMP_OUTPUT
+      if(rtop_helpers_dump_all) {
+        *out
+          << "\ninout_reduct_obj (after reduction) = "
+          << Teuchos::describe(*inout_reduct_obj,Teuchos::VERB_EXTREME);
+      }
+#endif // RTOPPACK_RTOPT_HELPER_DUMP_OUTPUT
     }
   /** \brief . */
   void reduct_obj_reinit( ReductTarget* reduct_obj ) const
@@ -198,34 +227,84 @@ public:
         ,std::invalid_argument, "Error!"
         );
 #endif
-      Scalar val = ST::zero();
+#ifdef RTOPPACK_RTOPT_HELPER_DUMP_OUTPUT
+      Teuchos::RefCountPtr<Teuchos::FancyOStream>
+        out = Teuchos::VerboseObjectBase::getDefaultOStream();
+      Teuchos::OSTab tab(out);
+      if(rtop_helpers_dump_all) {
+        *out << "\nEntering ROpScalarReductionBase::load_reduct_obj_state(...) ...\n"
+             << "\nOn input:\n";
+        Teuchos::OSTab tab(out);
+        *out << "op = " << this->description() << "\n";
+        *out << "num_values = " << num_values << "\n";
+        if(num_values) {
+          *out <<"value_data[] = { ";
+          for( int i = 0; i < num_values-1; ++i )
+            *out << value_data[i] << ", ";
+          *out << value_data[num_values-1] << " }\n";
+        }
+        *out << "num_indexes = " << num_indexes << "\n";
+        if(num_indexes) {
+          *out <<"index_data[] = { ";
+          for( int i = 0; i < num_indexes-1; ++i )
+            *out << index_data[i] << ", ";
+          *out << index_data[num_indexes-1] << " }\n";
+        }
+        *out << "num_chars = " << num_chars << "\n";
+        if(num_chars) {
+          *out <<"char_data[] = { ";
+          for( int i = 0; i < num_chars-1; ++i )
+            *out << char_data[i] << ", ";
+          *out << char_data[num_chars-1] << " }\n";
+        }
+      }
+#endif // RTOPPACK_RTOPT_HELPER_DUMP_OUTPUT
+      Scalar val = ST::nan();
       Teuchos::PrimitiveTypeTraits<Scalar>::loadPrimitiveObjs( num_values, value_data, &val );
-      ROpScalarReductionBaseRawValSetter<ST::isComplex,Scalar,ReductScalar>::setRawVal( *this, val, reduct_obj );
+      ROpScalarReductionBaseRawValSetter<ST::isComplex,sizeof(Scalar)==sizeof(ReductScalar),Scalar,ReductScalar>::setRawVal( *this, val, reduct_obj );
+#ifdef RTOPPACK_RTOPT_HELPER_DUMP_OUTPUT
+      if(rtop_helpers_dump_all) {
+        *out << "\nOn output:\n";
+        Teuchos::OSTab tab(out);
+        *out << "val = " << val << "\n";
+        *out << "reduct_op = " << Teuchos::describe(*reduct_obj,Teuchos::VERB_EXTREME);
+      }
+#endif // RTOPPACK_RTOPT_HELPER_DUMP_OUTPUT
     }
   //@}
 protected:
   /** \brief . */
   STANDARD_MEMBER_COMPOSITION_MEMBERS( ReductScalar, initReductObjValue )
-}; // class ROpScalarReductionBase
-
-template<class Scalar, class ReductScalar>
-class ROpScalarReductionBaseRawValSetter<true,Scalar,ReductScalar> {
-public:
-  static void setRawVal(
-    const ROpScalarReductionBase<Scalar,ReductScalar> &rtop
-    ,const Scalar &rawVal, ReductTarget *reduct_obj
-    )
-      { rtop.setRawVal(Teuchos::ScalarTraits<Scalar>::real(rawVal),reduct_obj); }
 };
 
 template<class Scalar, class ReductScalar>
-class ROpScalarReductionBaseRawValSetter<false,Scalar,ReductScalar> {
+class ROpScalarReductionBaseRawValSetter<true,false,Scalar,ReductScalar> {
 public:
   static void setRawVal(
     const ROpScalarReductionBase<Scalar,ReductScalar> &rtop
     ,const Scalar &rawVal, ReductTarget *reduct_obj
     )
-      { rtop.setRawVal(rawVal,reduct_obj); }
+    { rtop.setRawVal(Teuchos::ScalarTraits<Scalar>::real(rawVal),reduct_obj); }
+};
+
+template<class Scalar, class ReductScalar>
+class ROpScalarReductionBaseRawValSetter<true,true,Scalar,ReductScalar> {
+public:
+  static void setRawVal(
+    const ROpScalarReductionBase<Scalar,ReductScalar> &rtop
+    ,const Scalar &rawVal, ReductTarget *reduct_obj
+    )
+    { rtop.setRawVal(rawVal,reduct_obj); }
+};
+
+template<bool isScalarReductScalar, class Scalar, class ReductScalar>
+class ROpScalarReductionBaseRawValSetter<false,isScalarReductScalar,Scalar,ReductScalar> {
+public:
+  static void setRawVal(
+    const ROpScalarReductionBase<Scalar,ReductScalar> &rtop
+    ,const Scalar &rawVal, ReductTarget *reduct_obj
+    )
+    { rtop.setRawVal(rawVal,reduct_obj); }
 };
 
 /** \brief Base class for all reduction operators that return a
@@ -273,7 +352,7 @@ public:
     ,int*  num_chars
     ) const
     {
-      *num_values = Teuchos::PrimitiveTypeTraits<Scalar>::numPrimitiveObjs();
+      *num_values = num_values_;
       *num_indexes = 1;
       *num_chars = 0;
     }
@@ -304,7 +383,7 @@ public:
     {
 #ifdef TEUCHOS_DEBUG
       TEST_FOR_EXCEPTION(
-        num_values==0 || value_data==NULL || num_indexes==0 || index_data==NULL || num_chars!=0 || char_data!=NULL
+        num_values!=num_values_ || value_data==NULL || num_indexes!=1 || index_data==NULL || num_chars!=0 || char_data!=NULL
         ,std::invalid_argument, "Error!"
         );
 #endif
@@ -325,11 +404,11 @@ public:
     {
 #ifdef TEUCHOS_DEBUG
       TEST_FOR_EXCEPTION(
-        num_values==0 || value_data==NULL || num_indexes==0 || index_data==NULL || num_chars!=0 || char_data!=NULL
+        num_values!=num_values_ || value_data==NULL || num_indexes!=1 || index_data==NULL || num_chars!=0 || char_data!=NULL
         ,std::invalid_argument, "Error!"
         );
 #endif
-      Scalar val = Teuchos::ScalarTraits<Scalar>::zero();
+      Scalar val = Teuchos::ScalarTraits<Scalar>::nan();
       Teuchos::PrimitiveTypeTraits<Scalar>::loadPrimitiveObjs( num_values, value_data, &val );
       setRawVal( ScalarIndex<Scalar>(val,index_data[0]), reduct_obj );
     }
@@ -338,7 +417,12 @@ protected:
   /** \brief . */
   STANDARD_MEMBER_COMPOSITION_MEMBERS( Scalar, initScalarReductObjValue )
   STANDARD_MEMBER_COMPOSITION_MEMBERS( Index, initIndexReductObjValue )
-}; // class ROpScalarIndexReductionBase
+private:
+  static const int num_values_;
+};
+
+template<class Scalar>
+const int ROpScalarIndexReductionBase<Scalar>::num_values_=Teuchos::PrimitiveTypeTraits<Scalar>::numPrimitiveObjs();
 
 /** \brief Simple base class for all reduction operators that return a simple
  * index reduction object.
@@ -418,7 +502,7 @@ public:
     {
 #ifdef TEUCHOS_DEBUG
       TEST_FOR_EXCEPTION(
-        num_values!=0 || value_data!=NULL || num_indexes!=1 || index_data!=NULL || num_chars!=0 || char_data!=NULL
+        num_values!=0 || value_data!=NULL || num_indexes!=1 || index_data==NULL || num_chars!=0 || char_data!=NULL
         ,std::invalid_argument, "Error!"
         );
 #endif
@@ -438,7 +522,7 @@ public:
       using Teuchos::dyn_cast;
 #ifdef TEUCHOS_DEBUG
       TEST_FOR_EXCEPTION(
-        num_values!=0 || value_data!=NULL || num_indexes!=1 || index_data!=NULL || num_chars!=0 || char_data!=NULL
+        num_values!=0 || value_data!=NULL || num_indexes!=1 || index_data==NULL || num_chars!=0 || char_data!=NULL
         ,std::invalid_argument, "Error!"
         );
 #endif
@@ -448,7 +532,7 @@ public:
 protected:
   /** \brief . */
   STANDARD_MEMBER_COMPOSITION_MEMBERS( index_type, initReductObjValue )
-}; // class ROpIndexReductionBase
+};
 
 /** \brief Simple base class for all transformation operators that
  * use a single piece of Scalar data.
@@ -476,7 +560,7 @@ public:
     ,int* num_chars
     ) const
     {
-      *num_values = Teuchos::PrimitiveTypeTraits<Scalar>::numPrimitiveObjs();
+      *num_values = num_values_;
       *num_indexes = 0;
       *num_chars = 0;
     }
@@ -492,7 +576,7 @@ public:
     {
 #ifdef TEUCHOS_DEBUG
       TEST_FOR_EXCEPTION(
-        num_values==0 || value_data==NULL || num_indexes!=0 || index_data!=NULL || num_chars!=0 || char_data!=NULL
+        num_values!=num_values_ || value_data==NULL || num_indexes!=0 || index_data!=NULL || num_chars!=0 || char_data!=NULL
         ,std::invalid_argument, "Error!"
         );
 #endif
@@ -510,7 +594,7 @@ public:
     {
 #ifdef TEUCHOS_DEBUG
       TEST_FOR_EXCEPTION(
-        num_values==0 || value_data==NULL || num_indexes!=0 || index_data!=NULL || num_chars!=0 || char_data!=NULL
+        num_values!=num_values_ || value_data==NULL || num_indexes!=0 || index_data!=NULL || num_chars!=0 || char_data!=NULL
         ,std::invalid_argument, "Error!"
         );
 #endif
@@ -520,7 +604,12 @@ public:
 protected:
   /** \brief . */
   STANDARD_MEMBER_COMPOSITION_MEMBERS( Scalar, scalarData )
-}; // class ROpScalarTransformationBase
+private:
+  static const int num_values_;
+};
+
+template<class Scalar>
+const int ROpScalarTransformationBase<Scalar>::num_values_=Teuchos::PrimitiveTypeTraits<Scalar>::numPrimitiveObjs();
 
 /** \brief Simple base class for all transformation operators that
  * use a pair of Scalar data members.
@@ -551,7 +640,7 @@ public:
     ,int* num_chars
     ) const
     {
-      *num_values = 2 * Teuchos::PrimitiveTypeTraits<Scalar>::numPrimitiveObjs();
+      *num_values = num_values_;
       *num_indexes = 0;
       *num_chars = 0;
     }
@@ -567,7 +656,7 @@ public:
     {
 #ifdef TEUCHOS_DEBUG
       TEST_FOR_EXCEPTION(
-        num_values==0 || value_data==NULL || num_indexes!=0 || index_data!=NULL || num_chars!=0 || char_data!=NULL
+        num_values!=num_values_ || value_data==NULL || num_indexes!=0 || index_data!=NULL || num_chars!=0 || char_data!=NULL
         ,std::invalid_argument, "Error!"
         );
 #endif
@@ -586,7 +675,7 @@ public:
     {
 #ifdef TEUCHOS_DEBUG
       TEST_FOR_EXCEPTION(
-        num_values==0 || value_data==NULL || num_indexes!=0 || index_data!=NULL || num_chars!=0 || char_data!=NULL
+        num_values!=num_values_ || value_data==NULL || num_indexes!=0 || index_data!=NULL || num_chars!=0 || char_data!=NULL
         ,std::invalid_argument, "Error!"
         );
 #endif
@@ -599,50 +688,48 @@ protected:
   STANDARD_MEMBER_COMPOSITION_MEMBERS( Scalar, scalarData1 )
   /** \brief . */
   STANDARD_MEMBER_COMPOSITION_MEMBERS( Scalar, scalarData2 )
-}; // class ROpScalarTransformationBase
+private:
+  static const int num_values_;
+};
 
+template<class Scalar>
+const int ROpScalarScalarTransformationBase<Scalar>::num_values_=2*Teuchos::PrimitiveTypeTraits<Scalar>::numPrimitiveObjs();
 
-
-  /**
-   * \brief Do a transformation and reduce to a bool. Needed for the NVector 
-   * adapters for the SUNDIALS interface.
-   * \author K. Long
-   */
-  template<class Scalar>
-  class RTOpBoolReduceAndTransform 
-    : public ROpIndexReductionBase<Scalar>,
-      public ROpScalarTransformationBase<Scalar>
-  {
-
-  public:
-    typedef typename RTOpT<Scalar>::primitive_value_type primitive_value_type;
-    /** */
-    RTOpBoolReduceAndTransform()
-      : RTOpT<Scalar>(""), 
-        ROpIndexReductionBase<Scalar>(1),
-        ROpScalarTransformationBase<Scalar>() 
+/** \brief Do a transformation and reduce to a bool. Needed for the NVector
+ * adapters for the SUNDIALS interface.
+ *
+ * \author K. Long
+ */
+template<class Scalar>
+class RTOpBoolReduceAndTransform 
+  : public ROpIndexReductionBase<Scalar>,
+    public ROpScalarTransformationBase<Scalar>
+{
+public:
+  /** \brief . */
+  typedef typename RTOpT<Scalar>::primitive_value_type primitive_value_type;
+  /** \brief . */
+  RTOpBoolReduceAndTransform()
+    : RTOpT<Scalar>(""), 
+      ROpIndexReductionBase<Scalar>(1),
+      ROpScalarTransformationBase<Scalar>() 
     {;}
-
-    /** */
-    virtual ~RTOpBoolReduceAndTransform(){;}
-
-    /** */
-    index_type operator()(const ReductTarget& reduct_obj ) const 
+  
+  /** \brief . */
+  virtual ~RTOpBoolReduceAndTransform(){;}
+  
+  /** \brief . */
+  index_type operator()(const ReductTarget& reduct_obj ) const 
     { return this->getRawVal(reduct_obj); }
-
-
-    /** \brief Default implementation here is for a logical AND. */
-    void reduce_reduct_objs(const ReductTarget& in_reduct_obj, 
-                            ReductTarget* inout_reduct_obj) const
+  /** \brief Default implementation here is for a logical AND. */
+  void reduce_reduct_objs(const ReductTarget& in_reduct_obj, 
+                          ReductTarget* inout_reduct_obj) const
     {
       const index_type in_val    = this->getRawVal(in_reduct_obj);
       const index_type inout_val = this->getRawVal(*inout_reduct_obj);
       this->setRawVal( in_val && inout_val, inout_reduct_obj );
     }
-
-  };
-
-
+};
 
 } // namespace RTOpPack
 

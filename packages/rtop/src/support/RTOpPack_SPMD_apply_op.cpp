@@ -32,3 +32,9 @@
 #ifdef RTOPPACK_SPMD_APPLY_OP_DUMP
 bool RTOpPack::show_spmd_apply_op_dump = false;
 #endif // RTOPPACK_SPMD_APPLY_OP_DUMP
+
+#include "RTOpPack_RTOpTHelpers.hpp"
+
+#ifdef RTOPPACK_RTOPT_HELPER_DUMP_OUTPUT
+bool RTOpPack::rtop_helpers_dump_all = false;
+#endif // RTOPPACK_RTOPT_HELPER_DUMP_OUTPUT

@@ -79,7 +79,7 @@ bool run_product_space_tests(
   for( int i = 0; i < numBlocks; ++i )
     vecSpaces[i] = spaceBlock;
   
-  if(out.get()) *out << "\nA) Performing basic tests on product vectors with serial constituent vectors ...\n";
+  if(out.get()) *out << "\nA) Performing basic tests on product vectors with SPMD constituent vectors ...\n";
 
   if(out.get()) *out << "\nCreating a product space ps with numBlocks="<<numBlocks<<" and n="<<n<<"vector elements per block ...\n";
 
