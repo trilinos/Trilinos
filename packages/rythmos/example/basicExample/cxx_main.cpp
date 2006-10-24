@@ -281,7 +281,7 @@ int main(int argc, char *argv[])
           integratorParams = Teuchos::rcp(new Teuchos::ParameterList);
         integratorParams->set( "fixed_dt", dt );
         // Create integrator using stepper and linear interpolation buffer:
-        Teuchos::RefCountPtr<Rythmos::Interpolator<double> > 
+        Teuchos::RefCountPtr<Rythmos::InterpolatorBase<double> > 
           linearInterpolator = Teuchos::rcp(new Rythmos::LinearInterpolator<double>());
         Teuchos::RefCountPtr<Rythmos::InterpolationBuffer<double> > 
           IB = Teuchos::rcp(new Rythmos::InterpolationBuffer<double>(linearInterpolator,1000));
@@ -330,7 +330,7 @@ int main(int argc, char *argv[])
           integratorParams = Teuchos::rcp(new Teuchos::ParameterList);
         //integratorParams->set( "fixed_dt", dt );
         // Create integrator using stepper and linear interpolation buffer:
-        Teuchos::RefCountPtr<Rythmos::Interpolator<double> > 
+        Teuchos::RefCountPtr<Rythmos::InterpolatorBase<double> > 
           linearInterpolator = Teuchos::rcp(new Rythmos::LinearInterpolator<double>());
         Teuchos::RefCountPtr<Rythmos::InterpolationBuffer<double> > 
           IB = Teuchos::rcp(new Rythmos::InterpolationBuffer<double>(linearInterpolator,1000));
