@@ -32,7 +32,20 @@
 #include "Rythmos_InterpolatorBase.hpp"
 
 namespace Rythmos {
-
+/** 
+  This class implements piecewise Hermite interpolation on each interval where the data is:
+  (x0,f(x0)), (x1,f(x1)), (x0,f'(x0)), (x1,f'(x1))
+  The Hermite Interpolation polynomial is:
+  H_3(x) = f[z0] + f[z0,z1](x-x0) + f[z0,z1,z2](x-x0)^2 + f[z0,z1,z2,z3](x-x0)^2(x-x1)
+  where z0 = z1 = x0 and z2 = z3 = x1 and
+  f[z0,z1] = f'(x0) and f[z2,z3] = f'(x1)
+  This reduces to:
+  H_3(x) = f(x0) + f'(x0)(x-x0) + ((f(x1)-f(x0))/(x1-x0) - f'(x0))(x-x0)^2/(x1-x0)
+           +(f'(x1) - 2(f(x1)-f(x0))/(x1-x0) + f'(x0))(x-x0)^2(x-x1)/(x1-x0)^2
+  With the error expression:
+  f(x) - H_3(x) = (f^{(3)}(\xi(x))/(4!))(x-x0)^2(x-x1)^2
+  Which is 2nd order in f(x) and 1st order in f'(x)
+  **/
 template<class Scalar>
 class HermiteInterpolator : virtual public InterpolatorBase<Scalar>
 {
