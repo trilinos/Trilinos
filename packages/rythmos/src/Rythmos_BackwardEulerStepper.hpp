@@ -62,7 +62,10 @@ class BackwardEulerStepper : virtual public Stepper<Scalar>
     void setSolver(const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > &solver);
 
     /** \brief . */
-    void setInterpolator(const Teuchos::RefCountPtr<InterpolatorBase<Scalar> > &interpolator);
+    void setInterpolator(Teuchos::RefCountPtr<InterpolatorBase<Scalar> > interpolator);
+
+    /** \brief . */
+    Teuchos::RefCountPtr<InterpolatorBase<Scalar> > unsetInterpolator();
 
     /** \brief . */
     Scalar TakeStep(Scalar dt);
@@ -144,7 +147,7 @@ class BackwardEulerStepper : virtual public Stepper<Scalar>
 
     Teuchos::RefCountPtr<Teuchos::ParameterList> parameterList_;
 
-    Teuchos::RefCountPTr<InterpolatorBase<Scalar> > interpolator_;
+    Teuchos::RefCountPtr<InterpolatorBase<Scalar> > interpolator_;
 
 };
 
@@ -166,6 +169,7 @@ BackwardEulerStepper<Scalar>::BackwardEulerStepper(
 
   setModel(model);
   setSolver(solver);
+  setInterpolator(Teuchos::null);
   numSteps = 0;
 }
 
@@ -197,9 +201,20 @@ void BackwardEulerStepper<Scalar>::setSolver(const Teuchos::RefCountPtr<Thyra::N
 }
 
 template<class Scalar>
-void BackwardEulerStepper<Scalar>::setInterpolator(const Teuchos::RefCountPtr<InterpolatorBase<Scalar> > &interpolator)
+void BackwardEulerStepper<Scalar>::setInterpolator(Teuchos::RefCountPtr<InterpolatorBase<Scalar> > interpolator)
 {
-  interpolator_ = interpolator;
+  if (interpolator == Teuchos::null)
+    interpolator_ = Teuchos::rcp(new LinearInterpolator<Scalar> );
+  else
+    interpolator_ = interpolator;
+}
+
+template<class Scalar>
+Teuchos::RefCountPtr<InterpolatorBase<Scalar> > BackwardEulerStepper<Scalar>::unsetInterpolator()
+{
+  Teuchos::RefCountPtr<InterpolatorBase<Scalar> > temp_interpolator = interpolator_;
+  interpolator_ = Teuchos::rcp(new LinearInterpolator<Scalar> );
+  return(temp_interpolator);
 }
 
 template<class Scalar>
@@ -404,8 +419,6 @@ bool BackwardEulerStepper<Scalar>::GetPoints(
     ds_temp.accuracy = ScalarMag(ST::zero());
     ds_nodes.push_back(ds_temp);
   }
-  if (interpolator_ == Teuchos::null)
-    interpolator = Teuchos::rcp(new LinearInterpolator<Scalar>);
   bool status = interpolator_->interpolate(ds_nodes,time_vec,&ds_out);
   if (!status) return(status);
   std::vector<Scalar> time_out;
