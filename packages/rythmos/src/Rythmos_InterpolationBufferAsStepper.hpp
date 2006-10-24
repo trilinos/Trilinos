@@ -124,11 +124,6 @@ class InterpolationBufferAsStepper : virtual public Rythmos::InterpolationBuffer
     // ParameterList to control behavior
     Teuchos::RefCountPtr<Teuchos::ParameterList> parameterList;
 
-#ifdef Rythmos_DEBUG
-    int debugLevel;
-    Teuchos::RefCountPtr<Teuchos::FancyOStream> debug_out;
-#endif // Rythmos_DEBUG
-
 };
 
 // ////////////////////////////
@@ -140,29 +135,25 @@ InterpolationBufferAsStepper<Scalar>::InterpolationBufferAsStepper(
     ,const Teuchos::RefCountPtr<Teuchos::ParameterList> &parameterList_ 
     )
 {
-#ifdef Rythmos_DEBUG
-  debugLevel = 2;
-  debug_out = Teuchos::VerboseObjectBase::getDefaultOStream();
-  debug_out->precision(20);
-  debug_out->setMaxLenLinePrefix(40);
-  debug_out->pushLinePrefix("Rythmos::InterpolationBufferAsStepper");
-  debug_out->setShowLinePrefix(true);
-  debug_out->setTabIndentStr("    ");
-  *debug_out << "Initializing InterpolationBuferAsStepper" << std::endl;
-  if (debugLevel > 1)
-    *debug_out << "Calling setStepper..." << std::endl;
-#endif // Rythmos_DEBUG
-  setStepper(stepper_);
-#ifdef Rythmos_DEBUG
-  if (debugLevel > 1)
-    *debug_out << "Calling setInterpolationBuffer..." << std::endl;
-#endif // Rythmos_DEBUG
-  setInterpolationBuffer(IB_);
-#ifdef Rythmos_DEBUG
-  if (debugLevel > 1)
-    *debug_out << "Calling setParameterList..." << std::endl;
-#endif // Rythmos_DEBUG
   setParameterList(parameterList_);
+  int outputLevel = parameterList_->get( "outputLevel", int(-1) );
+  outputLevel = min(max(outputLevel,-1),4);
+  this->setVerbLevel(static_cast<Teuchos::EVerbosityLevel>(outputLevel));
+  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  out->precision(20);
+  out->setMaxLenLinePrefix(40);
+  out->pushLinePrefix("Rythmos::InterpolationBufferAsStepper");
+  out->setShowLinePrefix(true);
+  out->setTabIndentStr("    ");
+  *out << "Initializing InterpolationBuferAsStepper" << std::endl;
+  if (outputLevel >= 3)
+    *out << "Calling setStepper..." << std::endl;
+  setStepper(stepper_);
+  if (outputLevel >= 3)
+    *out << "Calling setInterpolationBuffer..." << std::endl;
+  setInterpolationBuffer(IB_);
+  if (outputLevel >= 3)
+    *out << "Calling setParameterList..." << std::endl;
 }
 
 template<class Scalar>
@@ -188,13 +179,10 @@ void InterpolationBufferAsStepper<Scalar>::setStepper(
   //                   and everything should proceed without problems.
   //                   Note also:  this functionality is important for checkpointing.
   stepper = stepper_;
-#ifdef Rythmos_DEBUG
-  Teuchos::OSTab ostab(debug_out,1,"IBAS::setStepper");
-  if (debugLevel > 1)
-  {
-    *debug_out << "stepper = " << stepper->description() << std::endl;
-  }
-#endif // Rythmos_DEBUG
+  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::OSTab ostab(out,1,"IBAS::setStepper");
+  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
+    *out << "stepper = " << stepper->description() << std::endl;
 }
 
 template<class Scalar>
@@ -212,13 +200,10 @@ void InterpolationBufferAsStepper<Scalar>::setInterpolationBuffer(
   //                   stepper.
   //                   Note also:  this functionality is important for checkpointing.
   IB = IB_;
-#ifdef Rythmos_DEBUG
-  Teuchos::OSTab ostab(debug_out,1,"IBAS::setInterpolationBuffer");
-  if (debugLevel > 1)
-  {
-    *debug_out << "IB = " << IB->description() << std::endl;
-  }
-#endif // Rythmos_DEBUG
+  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::OSTab ostab(out,1,"IBAS::setInterpolationBuffer");
+  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
+    *out << "IB = " << IB->description() << std::endl;
 }
 
 
@@ -241,63 +226,60 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
       ,std::vector<ScalarMag>* accuracy_vec_ptr_
       ) const
 {
-#ifdef Rythmos_DEBUG
-  Teuchos::OSTab ostab(debug_out,1,"IBAS::GetPoints");
-  if (debugLevel > 1)
+  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::OSTab ostab(out,1,"IBAS::GetPoints");
+  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
   {
-    *debug_out << "time_vec_ = " << std::endl;
+    *out << "time_vec_ = " << std::endl;
     for (int i=0 ; i<time_vec_.size() ; ++i)
-      *debug_out << "time_vec_[" << i << "] = " << time_vec_[i] << std::endl;
+      *out << "time_vec_[" << i << "] = " << time_vec_[i] << std::endl;
     if (x_vec_ptr_ == NULL)
-      *debug_out << "x_vec_ptr_ = NULL" << std::endl;
+      *out << "x_vec_ptr_ = NULL" << std::endl;
     else if (x_vec_ptr_->size() == 0)
-      *debug_out << "x_vec_ptr_ = ptr to empty vector" << std::endl;
+      *out << "x_vec_ptr_ = ptr to empty vector" << std::endl;
     else
     {
-      *debug_out << "x_vec_ptr_ = " << std::endl;
+      *out << "x_vec_ptr_ = " << std::endl;
       for (int i=0 ; i<x_vec_ptr_->size() ; ++i)
       {
-        *debug_out << "x_vec[" << i << "] = " << std::endl;
-        (*x_vec_ptr_)[i]->describe(*debug_out,Teuchos::VERB_EXTREME);
+        *out << "x_vec[" << i << "] = " << std::endl;
+        (*x_vec_ptr_)[i]->describe(*out,Teuchos::VERB_EXTREME);
       }
     }
     if (xdot_vec_ptr_ == NULL)
-      *debug_out << "xdot_vec_ptr_ = NULL" << std::endl;
+      *out << "xdot_vec_ptr_ = NULL" << std::endl;
     else if (xdot_vec_ptr_->size() == 0)
-      *debug_out << "xdot_vec_ptr_ = ptr to empty vector" << std::endl;
+      *out << "xdot_vec_ptr_ = ptr to empty vector" << std::endl;
     else
     {
-      *debug_out << "xdot_vec = " << std::endl;
+      *out << "xdot_vec = " << std::endl;
       for (int i=0 ; i<xdot_vec_ptr_->size() ; ++i)
       {
         if ((*xdot_vec_ptr_)[i] == Teuchos::null)
-          *debug_out << "xdot_vec[" << i << "] = Teuchos::null" << std::endl;
+          *out << "xdot_vec[" << i << "] = Teuchos::null" << std::endl;
         else
         {
-          *debug_out << "xdot_vec[" << i << "] = " << std::endl;
-          (*xdot_vec_ptr_)[i]->describe(*debug_out,Teuchos::VERB_EXTREME);
+          *out << "xdot_vec[" << i << "] = " << std::endl;
+          (*xdot_vec_ptr_)[i]->describe(*out,Teuchos::VERB_EXTREME);
         }
       }
     }
     if (accuracy_vec_ptr_ == NULL)
-      *debug_out << "accuracy_vec_ptr_ = NULL" << std::endl;
+      *out << "accuracy_vec_ptr_ = NULL" << std::endl;
     else if (accuracy_vec_ptr_->size() == 0)
-      *debug_out << "accuracy_vec_ptr_ = ptr to empty vector" << std::endl;
+      *out << "accuracy_vec_ptr_ = ptr to empty vector" << std::endl;
     else
     {
-      *debug_out << "accuracy_vec = " << std::endl;
+      *out << "accuracy_vec = " << std::endl;
       for (int i=0 ; i<accuracy_vec_ptr_->size() ; ++i)
-        *debug_out << "accuracy_vec[" << i << "] = " << (*accuracy_vec_ptr_)[i] << std::endl;
+        *out << "accuracy_vec[" << i << "] = " << (*accuracy_vec_ptr_)[i] << std::endl;
     }
   }
-#endif // Rythmos_DEBUG
   bool status = IB->GetPoints(time_vec_,x_vec_ptr_,xdot_vec_ptr_,accuracy_vec_ptr_);
   if (status) return(status);
   x_vec_ptr_->clear();
-#ifdef Rythmos_DEBUG
-  if (debugLevel > 1)
-    *debug_out << "IB->GetPoints unsuccessful" << std::endl;
-#endif // Rythmos_DEBUG
+  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
+    *out << "IB->GetPoints unsuccessful" << std::endl;
   status = true;
   std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > &x_vec = *x_vec_ptr_;
   std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > &xdot_vec = *xdot_vec_ptr_;
@@ -305,31 +287,27 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
   // Sort time_vec_
   std::vector<Scalar> local_time_vec = time_vec_;
   std::sort(local_time_vec.begin(),local_time_vec.end());
-#ifdef Rythmos_DEBUG
-  if (debugLevel > 1)
+  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
   {
-    *debug_out << "sorted local time_vec:" << std::endl;
+    *out << "sorted local time_vec:" << std::endl;
     for (int i=0 ; i<local_time_vec.size() ; ++i)
-      *debug_out << "local_time_vec[" << i << "] = " << local_time_vec[i] << std::endl;
+      *out << "local_time_vec[" << i << "] = " << local_time_vec[i] << std::endl;
   }
-#endif // Rythmos_DEBUG
   // Get nodes out of IB:
   std::vector<Scalar> node_vec; 
   status = IB->GetNodes(&node_vec); 
   if (!status) return(status);
-#ifdef Rythmos_DEBUG
-  if (debugLevel > 1)
+  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
   {
     if (node_vec.size() == 0)
-      *debug_out << "IB->GetNodes: node_vec = empty vector" << std::endl;
+      *out << "IB->GetNodes: node_vec = empty vector" << std::endl;
     else
     {
-      *debug_out << "IB->GetNodes:" << std::endl;
+      *out << "IB->GetNodes:" << std::endl;
       for (int i=0 ; i<node_vec.size() ; ++i)
-        *debug_out << "node_vec[" << i << "] = " << node_vec[i] << std::endl;
+        *out << "node_vec[" << i << "] = " << node_vec[i] << std::endl;
     }
   }
-#endif // Rythmos_DEBUG
   if (node_vec.size() == 0)
   {
     // Initialization case for an empty InterpolationBuffer
@@ -339,10 +317,8 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
     if (stepper_vec.size() < 2)
     {
       // Stepper and IB are basically empty
-#ifdef Rythmos_DEBUG
-      if (debugLevel > 1)
-        *debug_out << "Initializing empty Stepper and InterpolationBuffer" << std::endl;
-#endif // Rythmos_DEBUG
+      if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
+        *out << "Initializing empty Stepper and InterpolationBuffer" << std::endl;
       Scalar step_taken;
       if (parameterList->isParameter("fixed_dt"))
         step_taken = stepper->TakeStep(parameterList->get<Scalar>("fixed_dt"));
@@ -353,13 +329,11 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
       if (!status) return(status);
       Scalar stepper_begin = stepper_vec[0];
       Scalar stepper_end = stepper_vec[stepper_vec.size()-1];
-#ifdef Rythmos_DEBUG
-      if (debugLevel > 1)
+      if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
       {
-        *debug_out << "stepper_begin = " << stepper_begin << std::endl;
-        *debug_out << "stepper_end = " << stepper_end << std::endl;
+        *out << "stepper_begin = " << stepper_begin << std::endl;
+        *out << "stepper_end = " << stepper_end << std::endl;
       }
-#endif // Rythmos_DEBUG
       status = IB->SetRange(stepper_begin,stepper_end,*stepper);
       if (!status) return(status);
       status = IB->GetNodes(&node_vec);
@@ -368,22 +342,18 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
     else 
     {
       // Just the IB is empty
-#ifdef Rythmos_DEBUG
-      if (debugLevel > 1)
-        *debug_out << "Initializing empty InterpolationBuffer" << std::endl;
-#endif // Rythmos_DEBUG
+      if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
+        *out << "Initializing empty InterpolationBuffer" << std::endl;
       std::vector<Scalar> stepper_vec;
       status = stepper->GetNodes(&stepper_vec);
       if (!status) return(status);
       Scalar stepper_begin = stepper_vec[0];
       Scalar stepper_end = stepper_vec[stepper_vec.size()-1];
-#ifdef Rythmos_DEBUG
-      if (debugLevel > 1)
+      if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
       {
-        *debug_out << "stepper_begin = " << stepper_begin << std::endl;
-        *debug_out << "stepper_end = " << stepper_end << std::endl;
+        *out << "stepper_begin = " << stepper_begin << std::endl;
+        *out << "stepper_end = " << stepper_end << std::endl;
       }
-#endif // Rythmos_DEBUG
       status = IB->SetRange(stepper_begin,stepper_end,*stepper);
       if (!status) return(status);
       status = IB->GetNodes(&node_vec);
@@ -392,20 +362,16 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
   }
   Scalar node_begin = node_vec.front();
   Scalar node_end = node_vec.back();
-#ifdef Rythmos_DEBUG
-  if (debugLevel > 1)
+  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
   {
-    *debug_out << "node_begin = " << node_begin << std::endl;
-    *debug_out << "node_end = " << node_end << std::endl;
+    *out << "node_begin = " << node_begin << std::endl;
+    *out << "node_end = " << node_end << std::endl;
   }
-#endif // Rythmos_DEBUG
   // Check for valid input of local_time_vec:  (check initialization conditions)
   if ((*(local_time_vec.end()) < node_vec[0]) || (*(local_time_vec.begin()) < node_vec[0]))
     return(false);
-#ifdef Rythmos_DEBUG
-  if (debugLevel > 1)
-    *debug_out << "Requested times are valid." << std::endl;
-#endif // Rythmos_DEBUG
+  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
+    *out << "Requested times are valid." << std::endl;
   // Get time out of stepper:
   std::vector<Scalar> stepper_vec;
   status = stepper->GetNodes(&stepper_vec);
@@ -413,10 +379,8 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
   if (stepper_vec.size() < 2)
   {
     // Initialization case for an empty Stepper
-#ifdef Rythmos_DEBUG
-    if (debugLevel > 1)
-      *debug_out << "Initializing empty Stepper" << std::endl;
-#endif // Rythmos_DEBUG
+    if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
+      *out << "Initializing empty Stepper" << std::endl;
     Scalar stepper_begin = *(stepper_vec.begin()); // There must be an IC in the stepper.
     Scalar step_taken;
     if (parameterList->isParameter("fixed_dt"))
@@ -432,36 +396,30 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
     if (!status) return(status);
     node_begin = node_vec[0];
     node_end = node_vec[node_vec.size()-1];
-#ifdef Rythmos_DEBUG
-    if (debugLevel > 1)
+    if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
     {
-      *debug_out << "node_begin = " << node_begin << std::endl;
-      *debug_out << "node_end = " << node_end << std::endl;
+      *out << "node_begin = " << node_begin << std::endl;
+      *out << "node_end = " << node_end << std::endl;
     }
-#endif // Rythmos_DEBUG
   }
   Scalar stepper_begin = stepper_vec[0];
   Scalar stepper_end = stepper_vec[stepper_vec.size()-1];
-#ifdef Rythmos_DEBUG
-  if (debugLevel > 1)
+  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
   {
-    *debug_out << "stepper_begin = " << stepper_begin << std::endl;
-    *debug_out << "stepper_end = " << stepper_end << std::endl;
+    *out << "stepper_begin = " << stepper_begin << std::endl;
+    *out << "stepper_end = " << stepper_end << std::endl;
   }
-#endif // Rythmos_DEBUG
   int num = local_time_vec.size();
   for (int i=0; i<num ; ++i)
   {
     if ( ( node_begin < local_time_vec[i] ) && ( local_time_vec[i] < node_end ) )
     {
-#ifdef Rythmos_DEBUG
-      if (debugLevel > 1)
+      if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
       {
-        *debug_out << "Requested local_time_vec[" << i << "] = " << 
+        *out << "Requested local_time_vec[" << i << "] = " << 
           local_time_vec[i] << " available in IB[" << 
           node_begin << "," << node_end << "]" << std::endl;
       }
-#endif // Rythmos_DEBUG
       std::vector<Scalar> tmp_time_vec; 
       tmp_time_vec.push_back(local_time_vec[i]);
       std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > tmp_x_vec, tmp_xdot_vec;
@@ -470,34 +428,30 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
       x_vec.push_back(tmp_x_vec[0]);
       xdot_vec.push_back(tmp_xdot_vec[0]);
       accuracy_vec.push_back(tmp_accuracy_vec[0]);
-#ifdef Rythmos_DEBUG
-      if (debugLevel > 1)
+      if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
       {
-        *debug_out << "IB->GetPoints returned:" << std::endl;
-        *debug_out << "tmp_x_vec[" << i << "] = " << std::endl;
-        tmp_x_vec[i]->describe(*debug_out,Teuchos::VERB_EXTREME);
+        *out << "IB->GetPoints returned:" << std::endl;
+        *out << "tmp_x_vec[" << i << "] = " << std::endl;
+        tmp_x_vec[i]->describe(*out,Teuchos::VERB_EXTREME);
         if (tmp_xdot_vec[i] == Teuchos::null)
-          *debug_out << "tmp_xdot_vec[" << i << "] = Teuchos::null" << std::endl;
+          *out << "tmp_xdot_vec[" << i << "] = Teuchos::null" << std::endl;
         else
         {
-          *debug_out << "tmp_xdot_vec[" << i << "] = " << std::endl;
-          tmp_xdot_vec[i]->describe(*debug_out,Teuchos::VERB_EXTREME);
+          *out << "tmp_xdot_vec[" << i << "] = " << std::endl;
+          tmp_xdot_vec[i]->describe(*out,Teuchos::VERB_EXTREME);
         }
-        *debug_out << "tmp_accuracy_vec[" << i << "] = " << accuracy_vec[i] << std::endl;
+        *out << "tmp_accuracy_vec[" << i << "] = " << accuracy_vec[i] << std::endl;
       }
-#endif // Rythmos_DEBUG
       if (!status) return(status);
     }
     else if ( ( stepper_begin < local_time_vec[i] ) && ( local_time_vec[i] < stepper_end ) )
     {
-#ifdef Rythmos_DEBUG
-      if (debugLevel > 1)
+      if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
       {
-        *debug_out << "Requested local_time_vec[" << i << "] = " << 
+        *out << "Requested local_time_vec[" << i << "] = " << 
           local_time_vec[i] << " available in stepper[" << 
           stepper_begin << "," << stepper_end << "]" << std::endl;
       }
-#endif // Rythmos_DEBUG
       std::vector<Scalar> tmp_time_vec; 
       tmp_time_vec.push_back(local_time_vec[i]);
       std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > tmp_x_vec, tmp_xdot_vec;
@@ -506,34 +460,30 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
       x_vec.push_back(tmp_x_vec[0]);
       xdot_vec.push_back(tmp_xdot_vec[0]);
       accuracy_vec.push_back(tmp_accuracy_vec[0]);
-#ifdef Rythmos_DEBUG
-      if (debugLevel > 1)
+      if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
       {
-        *debug_out << "stepper->GetPoints returned:" << std::endl;
-        *debug_out << "tmp_x_vec[" << i << "] = " << std::endl;
-        tmp_x_vec[i]->describe(*debug_out,Teuchos::VERB_EXTREME);
+        *out << "stepper->GetPoints returned:" << std::endl;
+        *out << "tmp_x_vec[" << i << "] = " << std::endl;
+        tmp_x_vec[i]->describe(*out,Teuchos::VERB_EXTREME);
         if (tmp_xdot_vec[i] == Teuchos::null)
-          *debug_out << "tmp_xdot_vec[" << i << "] = Teuchos::null" << std::endl;
+          *out << "tmp_xdot_vec[" << i << "] = Teuchos::null" << std::endl;
         else
         {
-          *debug_out << "tmp_xdot_vec[" << i << "] = " << std::endl;
-          tmp_xdot_vec[i]->describe(*debug_out,Teuchos::VERB_EXTREME);
+          *out << "tmp_xdot_vec[" << i << "] = " << std::endl;
+          tmp_xdot_vec[i]->describe(*out,Teuchos::VERB_EXTREME);
         }
-        *debug_out << "tmp_accuracy_vec[" << i << "] = " << tmp_accuracy_vec[i] << std::endl;
+        *out << "tmp_accuracy_vec[" << i << "] = " << tmp_accuracy_vec[i] << std::endl;
       }
-#endif // Rythmos_DEBUG
       if (!status) return(status);
     }
     else
     {
-#ifdef Rythmos_DEBUG
-      if (debugLevel > 1)
+      if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
       {
-        *debug_out << "Requested local_time_vec[" << i << "] = " <<
+        *out << "Requested local_time_vec[" << i << "] = " <<
           local_time_vec[i] << " not available in IB or stepper" << std::endl;
-        *debug_out << "Integrating forward with stepper" << std::endl;
+        *out << "Integrating forward with stepper" << std::endl;
       }
-#endif // Rythmos_DEBUG
       while (stepper_end < local_time_vec[i])
       {
         // integrate forward with stepper 
@@ -546,23 +496,19 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
         status = IB->SetRange(stepper_end+step_taken,stepper_end+step_taken,*stepper);
         if (!status) return(status);
         // Check to see if we're past the current requested local_time_vec[i] point:
-#ifdef Rythmos_DEBUG
-        if (debugLevel > 1)
+        if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
         {
-          *debug_out << "Checking to see if we're past the current requested time" << std::endl;
-          *debug_out << "local_time_vec[" << i << "] = " << local_time_vec[i] 
+          *out << "Checking to see if we're past the current requested time" << std::endl;
+          *out << "local_time_vec[" << i << "] = " << local_time_vec[i] 
             << " <= " << stepper_end+step_taken << " stepper_end+step_taken" << std::endl;
         }
-#endif // Rythmos_DEBUG
         if (local_time_vec[i] <= stepper_end+step_taken)
         {
-#ifdef Rythmos_DEBUG
-          if (debugLevel > 1)
+          if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
           {
-            *debug_out << "We've integrated past local_time_vec[" << i << "] = " 
+            *out << "We've integrated past local_time_vec[" << i << "] = " 
               << local_time_vec[i] << "!" << std::endl;
           }
-#endif // Rythmos_DEBUG
           std::vector<Scalar> tmp_time_vec;
           tmp_time_vec.push_back(local_time_vec[i]);
           std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > tmp_x_vec, tmp_xdot_vec;
@@ -590,15 +536,14 @@ bool InterpolationBufferAsStepper<Scalar>::SetRange(
       ,const InterpolationBufferBase<Scalar> & IB_
       )
 {
-#ifdef Rythmos_DEBUG
-  Teuchos::OSTab ostab(debug_out,1,"IBAS::SetRange");
-  if (debugLevel > 1)
+  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::OSTab ostab(out,1,"IBAS::SetRange");
+  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
   {
-    *debug_out << "time_lower = " << time_lower << std::endl;
-    *debug_out << "time_upper = " << time_upper << std::endl;
-    *debug_out << "IB = " << IB_.description() << std::endl;
+    *out << "time_lower = " << time_lower << std::endl;
+    *out << "time_upper = " << time_upper << std::endl;
+    *out << "IB = " << IB_.description() << std::endl;
   }
-#endif // Rythmos_DEBUG
   return(IB->SetRange(time_lower,time_upper,IB_));
 }
 
@@ -607,11 +552,10 @@ bool InterpolationBufferAsStepper<Scalar>::GetNodes(
     std::vector<Scalar>* time_vec
     ) const
 {
-#ifdef Rythmos_DEBUG
-  Teuchos::OSTab ostab(debug_out,1,"IBAS::GetNodes");
-  if (debugLevel > 1)
-    *debug_out << this->description() << std::endl;
-#endif // Rythmos_DEBUG
+  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::OSTab ostab(out,1,"IBAS::GetNodes");
+  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
+    *out << this->description() << std::endl;
   return(IB->GetNodes(time_vec));
 }
 
@@ -658,13 +602,12 @@ void InterpolationBufferAsStepper<Scalar>::setParameterList(Teuchos::RefCountPtr
     parameterList = Teuchos::rcp(new Teuchos::ParameterList);
   else
     parameterList = parameterList_;
-#ifdef Rythmos_DEBUG
-  Teuchos::OSTab ostab(debug_out,1,"IBAS::setParameterList");
-  if (debugLevel > 1)
+  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::OSTab ostab(out,1,"IBAS::setParameterList");
+  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
   {
-    *debug_out << "parameterList = " << parameterList->print(*debug_out) << std::endl;
+    *out << "parameterList = " << parameterList->print(*out) << std::endl;
   }
-#endif // Rythmos_DEBUG
 }
 
 template <class Scalar>
