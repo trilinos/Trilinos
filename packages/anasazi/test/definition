@@ -51,9 +51,16 @@
             OrthoManager/OrthoManagerComplex_test.exe,
             LOBPCG/LOBPCGComplex_test.exe,
             BlockDavidson/BlockDavidsonComplex_test.exe,
-            BlockKrylovSchur/BlockKrylovSchurComplex_test.exe;
+            BlockKrylovSchur/BlockKrylovSchur_complex_test.exe;
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = --verbose --filename=$ABS_TOP_SRCDIR/packages/anasazi/test/MVOPTester/mhd1280b.cua;
+    COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK,INSTALL,AnasaziTests,AnasaziComplexTests,COVERAGE) {
+    TESTS = BlockKrylovSchur/BlockKrylovSchur_complex_lap_test.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = --verbose;
     COMM = SERIAL, MPI;
 }
 

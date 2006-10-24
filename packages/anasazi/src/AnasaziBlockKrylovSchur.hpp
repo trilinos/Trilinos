@@ -660,6 +660,62 @@ namespace Anasazi {
 #endif
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Helper function for correctly computing the Ritz residuals of the projected eigenproblem.
+  // This allows us to use template specialization to ensure the Ritz residuals are correct.
+  template<class ScalarType>
+  void computeRitzResiduals( const std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>& iRV,
+			     const Teuchos::SerialDenseMatrix<int, ScalarType>& S,
+			     std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>* RR
+			     )
+  {
+    typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
+    MagnitudeType MT_ZERO = Teuchos::ScalarTraits<MagnitudeType>::zero();
+    
+    Teuchos::LAPACK<int,MagnitudeType> lapack_mag;
+    Teuchos::BLAS<int,ScalarType> blas;
+    
+    int i = 0;
+    int s_stride = S.stride();
+    int s_rows = S.numRows();
+    int s_cols = S.numCols();
+    ScalarType* s_ptr = S.values();
+
+    while( i < s_cols ) {
+      if ( iRV[i] != MT_ZERO ) {
+	(*RR)[i] = lapack_mag.LAPY2( blas.NRM2(s_rows, s_ptr + i*s_stride, 1),
+				     blas.NRM2(s_rows, s_ptr + (i+1)*s_stride, 1) );
+	(*RR)[i+1] = (*RR)[i];
+	i = i+2;
+      } else {
+	(*RR)[i] = blas.NRM2(s_rows, s_ptr + i*s_stride, 1);
+	i++;
+      }
+    }          
+  }
+
+#ifdef HAVE_TEUCHOS_COMPLEX	
+  // Template specialization for the complex scalar type.
+  template<>
+  void computeRitzResiduals( const std::vector<double>& iRV,
+			     const Teuchos::SerialDenseMatrix<int, ANSZI_CPLX_CLASS<double> >& S,
+			     std::vector<double>* RR
+			     )
+  {
+    Teuchos::BLAS<int,ANSZI_CPLX_CLASS<double> > blas;
+    
+    int s_stride = S.stride();
+    int s_rows = S.numRows();
+    int s_cols = S.numCols();
+    ANSZI_CPLX_CLASS<double>* s_ptr = S.values();
+
+    for (int i=0; i<s_cols; ++i ) {
+      (*RR)[i] = blas.NRM2(s_rows, s_ptr + i*s_stride, 1);
+    }
+  }          
+  
+#endif
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
   // Constructor
   template <class ScalarType, class MV, class OP>
   BlockKrylovSchur<ScalarType,MV,OP>::BlockKrylovSchur(
@@ -1578,21 +1634,9 @@ namespace Anasazi {
             }
             */
             //
-            // Compute the Ritz residuals for Ritz value 'i' from the 'i'-th column of ritzRes.
+            // Compute the Ritz residuals for each Ritz value.
             // 
-            ScalarType* rr_ptr = ritzRes.values();
-            int i = 0;
-            while( i < curDim_ ) {
-            if ( tmp_iRitzValues[i] != MT_ZERO ) {
-            ritzResiduals_[i] = lapack_mag.LAPY2( blas.NRM2(blockSize_, rr_ptr + i*blockSize_, 1),
-                                                      blas.NRM2(blockSize_, rr_ptr + (i+1)*blockSize_, 1) );
-                ritzResiduals_[i+1] = ritzResiduals_[i];
-                i = i+2;
-              } else {
-                ritzResiduals_[i] = blas.NRM2(blockSize_, rr_ptr + i*blockSize_, 1);
-                i++;
-              }
-            }          
+	    computeRitzResiduals( tmp_iRitzValues, ritzRes, &ritzResiduals_ );
           }
           //
           // Sort the Ritz values.
