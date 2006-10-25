@@ -229,7 +229,7 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
   if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
   {
     *out << "time_vec_ = " << std::endl;
-    for (int i=0 ; i<time_vec_.size() ; ++i)
+    for (unsigned int i=0 ; i<time_vec_.size() ; ++i)
       *out << "time_vec_[" << i << "] = " << time_vec_[i] << std::endl;
     if (x_vec_ptr_ == NULL)
       *out << "x_vec_ptr_ = NULL" << std::endl;
@@ -238,7 +238,7 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
     else
     {
       *out << "x_vec_ptr_ = " << std::endl;
-      for (int i=0 ; i<x_vec_ptr_->size() ; ++i)
+      for (unsigned int i=0 ; i<x_vec_ptr_->size() ; ++i)
       {
         *out << "x_vec[" << i << "] = " << std::endl;
         (*x_vec_ptr_)[i]->describe(*out,Teuchos::VERB_EXTREME);
@@ -251,7 +251,7 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
     else
     {
       *out << "xdot_vec = " << std::endl;
-      for (int i=0 ; i<xdot_vec_ptr_->size() ; ++i)
+      for (unsigned int i=0 ; i<xdot_vec_ptr_->size() ; ++i)
       {
         if ((*xdot_vec_ptr_)[i] == Teuchos::null)
           *out << "xdot_vec[" << i << "] = Teuchos::null" << std::endl;
@@ -269,7 +269,7 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
     else
     {
       *out << "accuracy_vec = " << std::endl;
-      for (int i=0 ; i<accuracy_vec_ptr_->size() ; ++i)
+      for (unsigned int i=0 ; i<accuracy_vec_ptr_->size() ; ++i)
         *out << "accuracy_vec[" << i << "] = " << (*accuracy_vec_ptr_)[i] << std::endl;
     }
   }
@@ -288,7 +288,7 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
   if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
   {
     *out << "sorted local time_vec:" << std::endl;
-    for (int i=0 ; i<local_time_vec.size() ; ++i)
+    for (unsigned int i=0 ; i<local_time_vec.size() ; ++i)
       *out << "local_time_vec[" << i << "] = " << local_time_vec[i] << std::endl;
   }
   // Get nodes out of IB:
@@ -302,7 +302,7 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
     else
     {
       *out << "IB->GetNodes:" << std::endl;
-      for (int i=0 ; i<node_vec.size() ; ++i)
+      for (unsigned int i=0 ; i<node_vec.size() ; ++i)
         *out << "node_vec[" << i << "] = " << node_vec[i] << std::endl;
     }
   }

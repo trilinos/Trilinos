@@ -1297,7 +1297,7 @@ bool ImplicitBDFStepper<Scalar>::GetPoints(
     ,std::vector<ScalarMag>* accuracy_vec) const
 {
   bool status;
-  for (int i=0 ; i<time_vec.size() ; ++i)
+  for (unsigned int i=0 ; i<time_vec.size() ; ++i)
   {
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x_temp = xn0->clone_v();
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xdot_temp = xn0->clone_v();
@@ -1313,7 +1313,7 @@ bool ImplicitBDFStepper<Scalar>::GetPoints(
     Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
     Teuchos::OSTab ostab(out,1,"BDFS::GetPoints");
     *out << "Passing out the interpolated values:" << std::endl;
-    for (int i=0; i<time_vec.size() ; ++i)
+    for (unsigned int i=0; i<time_vec.size() ; ++i)
     {
       *out << "time[" << i << "] = " << time_vec[i] << std::endl;
       *out << "x_vec[" << i << "] = " << std::endl;

@@ -107,7 +107,7 @@ bool LinearInterpolator<Scalar>::interpolate(
     else
     {
       *out << "data_in:" << std::endl;
-      for (int i=0 ; i<data_in.size() ; ++i)
+      for (unsigned int i=0 ; i<data_in.size() ; ++i)
       {
         *out << "data_in[" << i << "] = " << std::endl;
         data_in[i].describe(*out,Teuchos::VERB_EXTREME);
@@ -118,7 +118,7 @@ bool LinearInterpolator<Scalar>::interpolate(
     else
     {
       *out << "t_values = " << std::endl;
-      for (int i=0 ; i<t_values.size() ; ++i)
+      for (unsigned int i=0 ; i<t_values.size() ; ++i)
       {
         *out << "t_values[" << i << "] = " << t_values[i] << std::endl;
       }
@@ -129,7 +129,7 @@ bool LinearInterpolator<Scalar>::interpolate(
       *out << "data_out = empty vector" << std::endl;
     else
     {
-      for (int i=0; i<data_out->size() ; ++i)
+      for (unsigned int i=0; i<data_out->size() ; ++i)
       {
         *out << "data_out[" << i << "] = " << std::endl;
         (*data_out)[i].describe(*out,Teuchos::VERB_EXTREME);
@@ -176,7 +176,7 @@ bool LinearInterpolator<Scalar>::interpolate(
     return(false);
   // Find t values on either side of time
   time_it = local_t_values.begin();
-  for (int i=0 ; i<local_data_in.size()-1 ; ++i)
+  for (unsigned int i=0 ; i<local_data_in.size()-1 ; ++i)
   {
     while ( (local_data_in[i] <= *time_it) && (local_data_in[i+1] >= *time_it) )
     {

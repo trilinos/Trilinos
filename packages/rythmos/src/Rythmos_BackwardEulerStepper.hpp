@@ -341,7 +341,7 @@ bool BackwardEulerStepper<Scalar>::SetPoints(
   if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
   {
     *out << "time_vec = " << std::endl;
-    for (int i=0 ; i<time_vec.size() ; ++i)
+    for (unsigned int i=0 ; i<time_vec.size() ; ++i)
       *out << "time_vec[" << i << "] = " << time_vec[i] << std::endl;
   }
   typedef Teuchos::ScalarTraits<Scalar> ST;
@@ -381,7 +381,7 @@ bool BackwardEulerStepper<Scalar>::GetPoints(
   Teuchos::OSTab ostab(out,1,"BES::GetPoints");
   if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
   {
-    for (int i=0 ; i<time_vec.size() ; ++i)
+    for (unsigned int i=0 ; i<time_vec.size() ; ++i)
       *out << "time_vec[" << i << "] = " << time_vec[i] << std::endl;
     *out << "I can interpolate in the interval [" << t_old_ << "," << t_ << "]." << std::endl;
   }
@@ -426,7 +426,7 @@ bool BackwardEulerStepper<Scalar>::GetPoints(
   if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
   {
     *out << "Passing out the interpolated values:" << std::endl;
-    for (int i=0; i<time_out.size() ; ++i)
+    for (unsigned int i=0; i<time_out.size() ; ++i)
     {
       *out << "time[" << i << "] = " << time_out[i] << std::endl;
       *out << "x_vec[" << i << "] = " << std::endl;
@@ -476,7 +476,7 @@ bool BackwardEulerStepper<Scalar>::GetNodes(std::vector<Scalar>* time_vec) const
   if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
   {
     *out << this->description() << std::endl;
-    for (int i=0 ; i<time_vec->size() ; ++i)
+    for (unsigned int i=0 ; i<time_vec->size() ; ++i)
     {
       *out << "time_vec[" << i << "] = " << (*time_vec)[i] << std::endl;
     }
@@ -492,7 +492,7 @@ bool BackwardEulerStepper<Scalar>::RemoveNodes(std::vector<Scalar>& time_vec)
   if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
   {
     *out << "time_vec = " << std::endl;
-    for (int i=0 ; i<time_vec.size() ; ++i)
+    for (unsigned int i=0 ; i<time_vec.size() ; ++i)
       *out << "time_vec[" << i << "] = " << time_vec[i] << std::endl;
   }
   // TODO:

@@ -216,10 +216,10 @@ bool InterpolationBuffer<Scalar>::SetPoints(
   if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
   {
     *out << "time_vec = " << std::endl;
-    for (int i=0 ; i<time_vec.size() ; ++i)
+    for (unsigned int i=0 ; i<time_vec.size() ; ++i)
       *out << "time_vec[" << i << "] = " << time_vec[i] << std::endl;
     *out << "x_vec = " << std::endl;
-    for (int i=0 ; i<x_vec.size() ; ++i)
+    for (unsigned int i=0 ; i<x_vec.size() ; ++i)
     {
       *out << "x_vec[" << i << "] = " << std::endl;
       x_vec[i]->describe(*out,Teuchos::VERB_EXTREME);
@@ -228,7 +228,7 @@ bool InterpolationBuffer<Scalar>::SetPoints(
       *out << "xdot_vec = empty vector" << std::endl;
     else
       *out << "xdot_vec = " << std::endl;
-    for (int i=0 ; i<xdot_vec.size() ; ++i)
+    for (unsigned int i=0 ; i<xdot_vec.size() ; ++i)
     {
       if (xdot_vec[i] == Teuchos::null)
         *out << "xdot_vec[" << i << "] = Teuchos::null" << std::endl;
@@ -242,7 +242,7 @@ bool InterpolationBuffer<Scalar>::SetPoints(
       *out << "accuracy_vec = empty vector" << std::endl;
     else
       *out << "accuracy_vec = " << std::endl;
-    for (int i=0 ; i<accuracy_vec.size() ; ++i)
+    for (unsigned int i=0 ; i<accuracy_vec.size() ; ++i)
       *out << "accuracy_vec[" << i << "] = " << accuracy_vec[i] << std::endl;
   }
   typename DataStore<Scalar>::DataStoreList_t input_data_list;
@@ -305,7 +305,7 @@ bool InterpolationBuffer<Scalar>::SetPoints(
     }
   }
   // Check that we're not going to exceed our storage limit:
-  if ((data_vec.size()+input_data_list.size()) > storage_limit)
+  if ((data_vec.size()+input_data_list.size()) > static_cast<unsigned int>(storage_limit))
   { 
     if (policy == BUFFER_STATIC)
       return(false);
@@ -343,7 +343,7 @@ bool InterpolationBuffer<Scalar>::SetPoints(
   if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
   {
     *out << "data_vec at end of SetPoints:" << std::endl;
-    for (int i=0 ; i<data_vec.size() ; ++i)
+    for (unsigned int i=0 ; i<data_vec.size() ; ++i)
     {
       *out << "data_vec[" << i << "] = " << std::endl;
       data_vec[i].describe(*out,Teuchos::VERB_EXTREME);
@@ -361,7 +361,7 @@ bool InterpolationBuffer<Scalar>::SetPoints(
   typedef Teuchos::ScalarTraits<Scalar> ST;
   std::vector<ScalarMag> accuracy_vec;
   accuracy_vec.reserve(x_vec.size());
-  for (int i=0;i<x_vec.size();++i)
+  for (unsigned int i=0;i<x_vec.size();++i)
     accuracy_vec[i] = ST::zero();
   return(this->SetPoints(time_vec,x_vec,xdot_vec,accuracy_vec));
 }
@@ -413,7 +413,7 @@ bool InterpolationBuffer<Scalar>::SetRange(
   if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
   {
     *out << "input_nodes after sorting = " << std::endl;
-    for (int i=0 ; i<input_nodes.size() ; ++i)
+    for (unsigned int i=0 ; i<input_nodes.size() ; ++i)
       *out << "input_nodes[" << i << "] = " << input_nodes[i] << std::endl;
   }
   // Remove nodes outside the range [time_lower,time_upper]
@@ -459,12 +459,12 @@ bool InterpolationBuffer<Scalar>::SetRange(
     for (int i=n0 ; i<n1; ++i)
       *out << "  input_nodes[" << i << "] = " << input_nodes[i] << std::endl;
   }
-  if (input_it_upper - input_nodes.begin() < input_nodes.size())
+  if (static_cast<unsigned int>(input_it_upper - input_nodes.begin()) < input_nodes.size())
     input_nodes.erase(input_it_upper,input_nodes.end());
   if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
   {
     *out << "input_nodes remaining:" << std::endl;
-    for (int i=0 ; i<input_nodes.size() ; ++i)
+    for (unsigned int i=0 ; i<input_nodes.size() ; ++i)
       *out << "input_nodes[" << i << "] = " << input_nodes[i] << std::endl;
   }
 
@@ -475,7 +475,7 @@ bool InterpolationBuffer<Scalar>::SetRange(
   if (IBOrder >= interpolator->order())
   {
     std::list<Scalar> add_nodes;
-    for (int i=0 ; i<input_nodes.size()-1 ; ++i)
+    for (unsigned int i=0 ; i<input_nodes.size()-1 ; ++i)
     {
       Scalar h_0 = input_nodes[i+1] - input_nodes[i];
       Scalar h = pow(h_0,(IBOrder/interpolator->order())/h_safety);
@@ -544,7 +544,7 @@ bool InterpolationBuffer<Scalar>::GetNodes( std::vector<Scalar>* time_vec ) cons
   if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
   {
     *out << this->description() << std::endl;
-    for (int i=0 ; i<time_vec->size() ; ++i)
+    for (unsigned int i=0 ; i<time_vec->size() ; ++i)
       *out << "time_vec[" << i << "] = " << (*time_vec)[i] << std::endl;
   }
   return(true);
@@ -604,7 +604,7 @@ void InterpolationBuffer<Scalar>::describe(
   else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_HIGH))
   {
     out << "data_vec = " << std::endl;
-    for (int i=0; i<data_vec.size() ; ++i)
+    for (unsigned int i=0; i<data_vec.size() ; ++i)
     {
       out << "data_vec[" << i << "] = " << std::endl;
       data_vec[i].describe(out,this->getVerbLevel());
