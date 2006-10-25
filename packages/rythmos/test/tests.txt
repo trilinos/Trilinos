@@ -5,17 +5,114 @@ Integrate \dot{x} = lambda * x from 0 to 1 with FE
 	Evaluate model
 	Take an integration step
 	
+Integrate 1DfemTransient test from Nox with various integrators
+
 Unit tests:  
-	InArgs class:  
-		set_x and get_x back
-		set_t and get_t back
-	OutArgs class:
-		request_F and get_F back
-	ModelEvaluator class:
-		evalModel
-		get_vector
-	Stepper class:
-		TakeStep
-		get_solution
+----------------------------------------
+  DataStore:
+    operators:  < <= > >= == 
+      Check both DS ~= DS and DS ~= Scalar
+    const operators:  < <= > >= == 
+      Check both DS ~= DS and DS ~= Scalar
+    DataStoreVectorToVector
+    VectorToDataStoreVector
+    VectorToDataStoreList
+    VectorToDataStoreList w/o accuracy
+
+  InterpolationBufferBase:
+    SetPoints:
+      insert valid points then GetNodes, check that t values are the same
+      insert valid points then GetNodes then GetPoints at node values, verify data comes back out
+      call with empty time_vec input
+      call with Teuchos::null input
+      call with non-empty time_vec input and empty vectors 
+      call with non-empty time_vec input and vectors of different sizes
+      call with replacement data at a node and check that it was replaced correctly with GetNodes and GetPoints
+      call with both replacement data and new data and verify it works correctly
+    GetPoints:
+      call with empty time_vec input
+      call with values getween nodes and verify that time value is between nodes
+        verify that if x != null then x_out != null (same for xdot)
+      call with NULLs for output
+      call with partially filled vectors
+    SetRange:
+      call with another IB and then check with GetNodes and GetPoints
+      test time_lower and time_upper values for correctness of bound checking
+        use valid and invalid ranges
+      test empty IB passed in
+    GetNodes:
+      call with null ptr
+      call with partially filled vector
+    RemoveNodes:
+      call and then then verify nodes are gone with GetNodes
+      call with empty vector
+       
+  InterpolationBuffer:
+    initialize:
+      test normal procedure
+      test calling midstream
+      check that IBPolicy is reset
+    SetInterpolator:
+      test changing interpolator midstream
+      verify Teuchos::null results in linear interpolator
+    SetStorage:
+      test lowering storage_limit when its already full
+      test raising storage_limit when its full and adding points
+      test lower bounds on storage
+    (in addition to testing on base class), test:
+    SetPoints:  
+      call with IBPolicy=BUFFER_STATIC and verify it returns failure when full
+      call with both replacement data and new data that will exceed storage_limit
+      test that storage_limit is observed
+    SetPoints w/o accuracy:
+      call and verify points were set with accuracy set to zero.
+    GetPoints: nothing new
+    SetRange:  
+      SetRange with IBPolicy=BUFFER_STATIC and incoming IB inside range has too many points
+      SetRange with IBPolicy=BUFFER_KEEP_NEW and verify it removes nodes at beginning when full
+      test that storage_limit is observed
+      call with replacement nodes and new nodes that will exceed storage_limit
+      call with higher order IB than local interpolator and see if it adds extra points correctly
+    GetNodes:  nothing new
+    RemoveNodes:  nothing new
+    
+  InterpolationBufferAsStepper:
+    setInterpolationBuffer:
+      try changing to uninitialized IB mid stream 
+      try changing to IB with data before and after current stepper's time 
+      try changing to IB with data long before current stepper time
+      try changing to IB with data long after current stepper time
+    setStepper:
+      try changing to an uninitialized stepper mid stream 
+      try initializing a new stepper with the same time points as the old stepper and changing over to it midstream
+      try initializing a new stepper with time before end of IB's
+      try initializing a new stepper with time before beginning of IB's
+      try initializing a new stepper with time after end of IB's
+    (in addition to testing on base class), test:
+    SetPoints: nothing new
+    GetPoints: 
+      verify the IB is initialized correctly 
+      verify the stepper is initialized correctly
+      verify you get data from IB correctly
+      verify you get data from stepper correctly
+      call with points from IB and stepper and verify you get all the right points
+      call with points from IB and stepper and new points and verify you get all the right points from the right sources
+    SetRange:  nothing new
+    GetNodes:  nothing new
+    RemoveNodes:  nothing new
+
+  StepperBase:
+  BackwardEulerStepper:
+  ForwardEulerStepper:
+  ExplicitRKStepper:
+  ImplicitBDFStepper:
+
+  InterpolatorBase:
+
+  LinearInterpolator:
+  
+  HermiteInterpolator:
+
+
 
 
