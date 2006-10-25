@@ -29,7 +29,7 @@
 #ifndef Rythmos_BACKWARD_EULER_STEPPER_H
 #define Rythmos_BACKWARD_EULER_STEPPER_H
 
-#include "Rythmos_Stepper.hpp"
+#include "Rythmos_StepperBase.hpp"
 #include "Rythmos_DataStore.hpp"
 #include "Rythmos_LinearInterpolator.hpp"
 #include "Teuchos_RefCountPtr.hpp"
@@ -43,7 +43,7 @@ namespace Rythmos {
 
 /** \brief . */
 template<class Scalar>
-class BackwardEulerStepper : virtual public Stepper<Scalar>
+class BackwardEulerStepper : virtual public StepperBase<Scalar>
 {
   public:
 

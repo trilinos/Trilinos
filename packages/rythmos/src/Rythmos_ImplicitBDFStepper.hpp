@@ -29,7 +29,7 @@
 #ifndef Rythmos_IMPLICITBDF_STEPPER_H
 #define Rythmos_IMPLICITBDF_STEPPER_H
 
-#include "Rythmos_Stepper.hpp"
+#include "Rythmos_StepperBase.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_ModelEvaluator.hpp"
@@ -45,7 +45,7 @@ enum BDFstatusFlag { PREDICT_AGAIN, CONTINUE_ANYWAY, REP_ERR_FAIL, REP_CONV_FAIL
 
 /** \brief . */
 template<class Scalar>
-class ImplicitBDFStepper : virtual public Stepper<Scalar>
+class ImplicitBDFStepper : virtual public StepperBase<Scalar>
 {
   public:
 

@@ -29,7 +29,7 @@
 #ifndef Rythmos_FORWARDEULER_STEPPER_H
 #define Rythmos_FORWARDEULER_STEPPER_H
 
-#include "Rythmos_Stepper.hpp"
+#include "Rythmos_StepperBase.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_ModelEvaluator.hpp"
@@ -39,7 +39,7 @@ namespace Rythmos {
 
 /** \brief . */
 template<class Scalar>
-class ForwardEulerStepper : virtual public Stepper<Scalar>
+class ForwardEulerStepper : virtual public StepperBase<Scalar>
 {
   public:
 
