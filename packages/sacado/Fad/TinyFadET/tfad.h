@@ -63,6 +63,8 @@ public:
   TFad(const T & x) : val_(x) {memset(dx_,0,Num*sizeof(T));}
   TFad(const T & x, const int i) : val_(x) 
     {memset(dx_,0,Num*sizeof(T));dx_[i]=1.0;}
+  TFad(const int sz, const T & x) : val_(x) 
+    {memset(dx_,0,Num*sizeof(T));}
   TFad(const int sz, const int i, const T & x) : val_(x) 
     {memset(dx_,0,Num*sizeof(T));dx_[i]=1.0;}
   TFad(const TFad<Num,T> & x);
