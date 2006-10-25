@@ -416,7 +416,7 @@ all-local:
 #np# in a subdirectory of this directory, use the Makefile.am located in
 #np# test1/ rather than this file.
 
-#SUBDIRS = scripts 
+#SUBDIRS = unitTests
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

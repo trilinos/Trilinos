@@ -11676,6 +11676,9 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 #  to add a new directory.
                                                                                 ac_config_files="$ac_config_files Makefile Makefile.export.rythmos src/Makefile example/Makefile example/basicExample/Makefile example/epetra/Makefile example/epetra/1Dfem/Makefile test/Makefile"
 
+#    test/unitTests/Makefile
+#    test/unitTests/InArgs/Makefile
+#    test/unitTests/OutArgs/Makefile
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure

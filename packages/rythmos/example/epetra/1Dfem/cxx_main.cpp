@@ -189,7 +189,7 @@ int main(int argc, char *argv[])
 
     // Create Stepper object depending on command-line input
     std::string method;
-    Teuchos::RefCountPtr<Rythmos::Stepper<double> > stepper_ptr;
+    Teuchos::RefCountPtr<Rythmos::StepperBase<double> > stepper_ptr;
     if ( method_val == METHOD_ERK ) {
       stepper_ptr = Teuchos::rcp(new Rythmos::ExplicitRKStepper<double>(model));
       method = "Explicit Runge-Kutta of order 4";
@@ -224,7 +224,7 @@ int main(int argc, char *argv[])
     } else {
       TEST_FOR_EXCEPT(true);
     }
-    Rythmos::Stepper<double> &stepper = *stepper_ptr;
+    Rythmos::StepperBase<double> &stepper = *stepper_ptr;
 
     Teuchos::RefCountPtr<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
     if (outputLevel >= 3)

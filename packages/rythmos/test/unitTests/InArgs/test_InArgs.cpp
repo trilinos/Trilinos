@@ -26,8 +26,8 @@
 // ***********************************************************************
 //@HEADER
 
-// Includes for Rythmos:
-#include "Rythmos_InOutArgs.hpp"
+// Includes for ModelEvaluator:
+#include "EpetraExt_ModelEvaluator.h"
 
 // Includes for Thyra:
 #include "Thyra_VectorBase.hpp"
@@ -49,7 +49,7 @@ bool test1()
     Teuchos::RefCountPtr<Epetra_Map> epetra_map = Teuchos::rcp(new Epetra_Map(1,0,epetra_comm));
     Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<double> > thyra_vs = Thyra::create_VectorSpace(epetra_map);
     Teuchos::RefCountPtr<Thyra::VectorBase<double> > in_vector = Thyra::createMember(thyra_vs);
-    Rythmos::InArgs<double> inargs;
+    EpetraExt::InArgs<double> inargs;
     inargs.set_x(in_vector);
     Teuchos::RefCountPtr<const Thyra::VectorBase<double> > out_vector = inargs.get_x();
     if ( out_vector.get() == in_vector.get() )
@@ -60,7 +60,7 @@ bool test1()
 int test2()
 {
     bool test = false;
-    Rythmos::InArgs<double> inargs;
+    EpetraExt::InArgs<double> inargs;
     double in_t = 10.0;
     inargs.set_t(in_t);
     double out_t = inargs.get_t();

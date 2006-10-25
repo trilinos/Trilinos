@@ -51,7 +51,7 @@ all-local:
 #np# Make sure to list all source files in one of the following categories.
 CORE_H = \
 	$(srcdir)/Rythmos_ConfigDefs.h \
-	$(srcdir)/Rythmos_Stepper.hpp \
+	$(srcdir)/Rythmos_StepperBase.hpp \
 	$(srcdir)/Rythmos_BackwardEulerStepper.hpp \
 	$(srcdir)/Rythmos_ForwardEulerStepper.hpp \
 	$(srcdir)/Rythmos_ExplicitRKStepper.hpp \

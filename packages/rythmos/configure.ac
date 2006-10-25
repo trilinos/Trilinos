@@ -523,6 +523,9 @@ AC_CONFIG_FILES([
 		example/epetra/1Dfem/Makefile
 		test/Makefile
 		])
+#    test/unitTests/Makefile
+#    test/unitTests/InArgs/Makefile
+#    test/unitTests/OutArgs/Makefile
 
 AC_OUTPUT()
 

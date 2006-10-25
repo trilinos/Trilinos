@@ -30,7 +30,7 @@
 #define Rythmos_INTERPOLATION_BUFFER_AS_STEPPER_H
 
 #include "Rythmos_InterpolationBufferBase.hpp"
-#include "Rythmos_Stepper.hpp"
+#include "Rythmos_StepperBase.hpp"
 
 namespace Rythmos {
 
@@ -48,7 +48,7 @@ class InterpolationBufferAsStepper : virtual public Rythmos::InterpolationBuffer
     /// Constructors
     InterpolationBufferAsStepper();
     InterpolationBufferAsStepper(
-      const Teuchos::RefCountPtr<Rythmos::Stepper<Scalar> > &stepper_
+      const Teuchos::RefCountPtr<Rythmos::StepperBase<Scalar> > &stepper_
       ,const Teuchos::RefCountPtr<Rythmos::InterpolationBufferBase<Scalar> > &IB_
       ,const Teuchos::RefCountPtr<Teuchos::ParameterList> &parameterList_ = Teuchos::null
       );
@@ -57,7 +57,7 @@ class InterpolationBufferAsStepper : virtual public Rythmos::InterpolationBuffer
     void setInterpolationBuffer(const Teuchos::RefCountPtr<Rythmos::InterpolationBufferBase<Scalar> > &IB_);
 
     /// Set Stepper:
-    void setStepper(const Teuchos::RefCountPtr<Rythmos::Stepper<Scalar> > &stepper_);
+    void setStepper(const Teuchos::RefCountPtr<Rythmos::StepperBase<Scalar> > &stepper_);
     
     /// Redefined from InterpolationBufferBase
     /// This is a pass-through to the underlying InterpolationBufferBase:
@@ -119,7 +119,7 @@ class InterpolationBufferAsStepper : virtual public Rythmos::InterpolationBuffer
     Teuchos::RefCountPtr<Rythmos::InterpolationBufferBase<Scalar> > IB;
 
     // Stepper used to fill interpolation buffer.
-    Teuchos::RefCountPtr<Rythmos::Stepper<Scalar> > stepper;
+    Teuchos::RefCountPtr<Rythmos::StepperBase<Scalar> > stepper;
 
     // ParameterList to control behavior
     Teuchos::RefCountPtr<Teuchos::ParameterList> parameterList;
@@ -130,7 +130,7 @@ class InterpolationBufferAsStepper : virtual public Rythmos::InterpolationBuffer
 // Defintions
 template<class Scalar>
 InterpolationBufferAsStepper<Scalar>::InterpolationBufferAsStepper(
-    const Teuchos::RefCountPtr<Rythmos::Stepper<Scalar> > &stepper_
+    const Teuchos::RefCountPtr<Rythmos::StepperBase<Scalar> > &stepper_
     ,const Teuchos::RefCountPtr<Rythmos::InterpolationBufferBase<Scalar> > &IB_
     ,const Teuchos::RefCountPtr<Teuchos::ParameterList> &parameterList_ 
     )
@@ -156,7 +156,7 @@ InterpolationBufferAsStepper<Scalar>::InterpolationBufferAsStepper(
 
 template<class Scalar>
 void InterpolationBufferAsStepper<Scalar>::setStepper(
-    const Teuchos::RefCountPtr<Rythmos::Stepper<Scalar> > &stepper_
+    const Teuchos::RefCountPtr<Rythmos::StepperBase<Scalar> > &stepper_
     )
 {
   // 10/9/06 tscoffe:  What should we do if this is called after initialization?
