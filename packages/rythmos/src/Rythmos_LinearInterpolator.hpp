@@ -196,17 +196,17 @@ bool LinearInterpolator<Scalar>::interpolate(
       DS.time = t;
       Scalar h = tip1-ti;
       // First we work on x.
-      V_StVpStV(&*tmp_vec,Scalar(ST::one()/h),*xi,Scalar(-ST::one()/h),*xip1);
+      Thyra::V_StVpStV(&*tmp_vec,Scalar(ST::one()/h),*xi,Scalar(-ST::one()/h),*xip1);
       Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x = xi->clone_v();
-      V_StVpStV(&*x, ST::one(), *xi, t-ti, *tmp_vec);
+      Thyra::V_StVpStV(&*x, ST::one(), *xi, t-ti, *tmp_vec);
       DS.x = x;
       // Check that xdot != Teuchos::null
       if ( (xdoti != Teuchos::null) && (xdotip1 != Teuchos::null) )
       {
         // Then we work on xdot.
-        V_StVpStV(&*tmp_vec,Scalar(ST::one()/h),*xdoti,Scalar(-ST::one()/h),*xdotip1);
+        Thyra::V_StVpStV(&*tmp_vec,Scalar(ST::one()/h),*xdoti,Scalar(-ST::one()/h),*xdotip1);
         Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xdot = xdoti->clone_v();
-        V_StVpStV(&*xdot, ST::one(), *xdoti, t-ti, *tmp_vec);
+        Thyra::V_StVpStV(&*xdot, ST::one(), *xdoti, t-ti, *tmp_vec);
         DS.xdot = xdot;
       }
       else

@@ -42,6 +42,9 @@ namespace Rythmos {
   This reduces to:
   H_3(x) = f(x0) + f'(x0)(x-x0) + ((f(x1)-f(x0))/(x1-x0) - f'(x0))(x-x0)^2/(x1-x0)
            +(f'(x1) - 2(f(x1)-f(x0))/(x1-x0) + f'(x0))(x-x0)^2(x-x1)/(x1-x0)^2
+  With derivative:
+  H_3'(x) =        f'(x0) + 2*((f(x1)-f(x0))/(x1-x0) - f'(x0))(x-x0)/(x1-x0)
+           +(f'(x1) - 2(f(x1)-f(x0))/(x1-x0) + f'(x0))[2*(x-x0)(x-x1) + (x-x0)^2]/(x1-x0)^2
   With the error expression:
   f(x) - H_3(x) = (f^{(3)}(\xi(x))/(4!))(x-x0)^2(x-x1)^2
   Which is 2nd order in f(x) and 1st order in f'(x)
@@ -200,32 +203,56 @@ bool HermiteInterpolator<Scalar>::interpolate(
       Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xip1 = local_data_in[i+1].x;
       Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xdoti = local_data_in[i].xdot;
       Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xdotip1 = local_data_in[i+1].xdot;
+      // Check for invalid vectors:
+      if ( (xi == Teuchos::null) || (xip1 == Teuchos::null) 
+           || (xdoti == Teuchos::null) || (xdotip1 == Teuchos::null) )
+        return(false);
 
       // 10/10/06 tscoffe:  this could be expensive:
       Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > tmp_vec = xi->clone_v(); 
+      Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xdot_temp = xip1->clone_v(); 
+      Scalar dt = tip1-ti;
+      Scalar dt2 = dt*dt;
+      Scalar t_t0 = t - ti;
+      Scalar t_t1 = t - tip1;
+      Scalar tmp_t;
+
+      // Compute numerical divided difference:
+      Thyra::Vt_S(&*xdot_temp,Scalar(ST::one()/dt));
+      Thyra::Vp_StV(&*xdot_temp,Scalar(-ST::one()/dt),*xi);
 
       // interpolate this point
       DataStore<Scalar> DS;
       DS.time = t;
-      Scalar h = tip1-ti;
-      // First we work on x.
-      V_StVpStV(&*tmp_vec,Scalar(ST::one()/h),*xi,Scalar(-ST::one()/h),*xip1);
-      Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x = xi->clone_v();
-      V_StVpStV(&*x, ST::one(), *xi, t-ti, *tmp_vec);
-      DS.x = x;
-      // Check that xdot != Teuchos::null
-      if ( (xdoti != Teuchos::null) && (xdotip1 != Teuchos::null) )
-      {
-        // Then we work on xdot.
-        V_StVpStV(&*tmp_vec,Scalar(ST::one()/h),*xdoti,Scalar(-ST::one()/h),*xdotip1);
-        Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xdot = xdoti->clone_v();
-        V_StVpStV(&*xdot, ST::one(), *xdoti, t-ti, *tmp_vec);
-        DS.xdot = xdot;
-      }
-      else
-        DS.xdot = xdoti;
-      // And finally we estimate our order of accuracy
-      DS.accuracy = h;
+
+      //  H_3(x) = f(x0) + f'(x0)(x-x0) + ((f(x1)-f(x0))/(x1-x0) - f'(x0))(x-x0)^2/(x1-x0)
+      //           +(f'(x1) - 2(f(x1)-f(x0))/(x1-x0) + f'(x0))(x-x0)^2(x-x1)/(x1-x0)^2
+      Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x_vec = xi->clone_v(); 
+      Thyra::Vp_StV(&*x_vec,t_t0,*xdoti);
+      tmp_t = t_t0*t_t0/dt;
+      Thyra::V_StVpStV(&*tmp_vec,tmp_t,*xdot_temp,Scalar(-ST::one()*tmp_t),*xdoti);
+      Thyra::Vp_V(&*x_vec,*tmp_vec);
+      tmp_t = t_t0*t_t0*t_t1/dt2;
+      Thyra::V_StVpStV(&*tmp_vec,tmp_t,*xdotip1,Scalar(-2*tmp_t),*xdot_temp);
+      Thyra::Vp_StV(&*tmp_vec,tmp_t,*xdoti);
+      Thyra::Vp_V(&*x_vec,*tmp_vec);
+      DS.x = x_vec;
+
+      //  H_3'(x) =        f'(x0) + 2*((f(x1)-f(x0))/(x1-x0) - f'(x0))(x-x0)/(x1-x0)
+      //           +(f'(x1) - 2(f(x1)-f(x0))/(x1-x0) + f'(x0))[2*(x-x0)(x-x1) + (x-x0)^2]/(x1-x0)^2
+      Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xdot_vec = xdoti->clone_v(); 
+      tmp_t = t_t0/dt;
+      Thyra::Vp_StVpStV(&*xdot_vec,Scalar(2*tmp_t),*xdot_temp,Scalar(-ST::one()*tmp_t),*xdoti);
+      tmp_t = Scalar((2*t_t0*t_t1+t_t0*t_t0)/dt2);
+      Thyra::V_StVpStV(&*tmp_vec,tmp_t,*xdotip1,Scalar(-2*tmp_t),*xdot_temp);
+      Thyra::Vp_StV(&*tmp_vec,tmp_t,*xdoti);
+      Thyra::Vp_V(&*xdot_vec,*tmp_vec);
+      DS.xdot = xdot_vec;
+      
+      // Accuracy:
+      // f(x) - H_3(x) = (f^{(3)}(\xi(x))/(4!))(x-x0)^2(x-x1)^2
+      DS.accuracy = (t_t0)*(t_t0)*(t_t1)*(t_t1);
+
       // Push DataStore object onto vector:
       data_out->push_back(DS);
       // Increment time_it:
