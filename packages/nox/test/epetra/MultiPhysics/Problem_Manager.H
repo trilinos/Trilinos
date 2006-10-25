@@ -92,7 +92,7 @@ public:
   GenericEpetraProblem & getProblem(string name);
 
   // Get a group given its unique id
-  const NOX::Epetra::Group & getSolutionGroup(int id);
+  const NOX::Epetra::Group & getProblemSolutionGroup(int id);
 
   // Get the solution vector from a problem group
   const Epetra_Vector & getSolutionVec(int id);
@@ -181,6 +181,9 @@ public:
   // Get an individual block Jacobian given an integer pairing of problem and
   // the problem variables on which it depends
   Teuchos::RefCountPtr<Epetra_CrsMatrix> getBlockJacobianMatrix(int i, int j = -1);
+
+  // Get an individual block Jacobian inverse operator 
+  Teuchos::RefCountPtr<Epetra_Operator> getBlockInverseOperator(int i);
 
   // Compute sum of norms of each problem residual
   double getNormSum();
@@ -276,6 +279,9 @@ public:
   // method to compute the action of a block on a vector using a directional derivative
   virtual bool applyBlockAction( int probId, int depId, const Epetra_Vector &, Epetra_Vector & );
 
+  // method to create an inverse or its approximation to a diagonal block matrix
+  virtual bool createBlockInverseOperator( int probId, Teuchos::ParameterList & );
+
 protected:
 
   // Creates a composite graph from existing graphs of registered problems
@@ -326,6 +332,7 @@ private:
   map<int, vector<OffBlock_Manager*> > OffBlock_Managers;    
 #endif
 
+  map<int, Teuchos::RefCountPtr<Epetra_Operator> > BlockInverseOperators; // inverses (or approximations) to diagonal blocks
 
 };
 #endif

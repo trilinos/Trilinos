@@ -68,6 +68,9 @@
 #include "EpetraExt_MapColoringIndex.h"
 #endif
 
+// Needed for block inverse operators
+#include "Ifpack.h"
+
 // Header for Timing info
 #include "Epetra_Time.h"
 
@@ -187,7 +190,7 @@ Problem_Manager::getProblem( string name )
 //-----------------------------------------------------------------------------
 
 const NOX::Epetra::Group &
-Problem_Manager::getSolutionGroup(int id)
+Problem_Manager::getProblemSolutionGroup(int id)
 {
   // Get a group given its unique id
   //if( Teuchos::is_null(Solvers[id]->rcpSolver) )
@@ -216,7 +219,7 @@ Problem_Manager::getSolutionVec(int id)
   }
 
   const Epetra_Vector & epetraSolnVec = dynamic_cast<const NOX::Epetra::Vector&>
-    (getSolutionGroup(id).getX()).getEpetraVector();
+    (getProblemSolutionGroup(id).getX()).getEpetraVector();
 
   return epetraSolnVec;
 }
@@ -1102,12 +1105,30 @@ Problem_Manager::getBlockJacobianMatrix(int probId, int depId)
 
 //-----------------------------------------------------------------------------
 
+Teuchos::RefCountPtr<Epetra_Operator>
+Problem_Manager::getBlockInverseOperator(int probId)
+{
+
+  if( BlockInverseOperators.end() == BlockInverseOperators.find(probId) )
+  {
+    cout << "ERROR: No valid Block Inverse Operator exists for problem # " 
+         << probId << endl;
+    throw "Problem_Manager ERROR";
+  }
+
+  Teuchos::RefCountPtr<Epetra_Operator> pInvOp = BlockInverseOperators[probId];
+
+  return pInvOp;
+}
+
+//-----------------------------------------------------------------------------
+
 const Epetra_Vector &
 Problem_Manager::getResidualVec(int probId )
 {
 
   const Epetra_Vector & vec = dynamic_cast<const NOX::Epetra::Vector&>
-                 (getSolutionGroup(probId).getF()).getEpetraVector();
+                 (getProblemSolutionGroup(probId).getF()).getEpetraVector();
 
   return vec;
 }
@@ -2207,7 +2228,7 @@ Problem_Manager::getReplacementValuesMatrix( const Epetra_Vector & x, FILL_TYPE 
 
 bool
 Problem_Manager::applyBlockAction( int probId, int depId, const Epetra_Vector & x, Epetra_Vector & result )
-{ 
+{
   // We currently rely on an existing MatrixFree jacobian operator for this action
   Teuchos::RefCountPtr<NOX::Epetra::MatrixFree> mfOp = Teuchos::rcp_dynamic_cast<NOX::Epetra::MatrixFree>( jacOperator );
   if( Teuchos::is_null(mfOp) )
@@ -2219,7 +2240,7 @@ Problem_Manager::applyBlockAction( int probId, int depId, const Epetra_Vector & 
   if( !x     .Map().SameAs(getSolutionVec(depId).Map())  ||
       !result.Map().SameAs(getSolutionVec(probId).Map())   )
   {
-    cout << "ERROR: Problem_Manager::applyBlockAction : domain and/or range map of operation is not consistent with block size." << endl;
+    cout << "ERROR: Problem_Manager::applyBlockAction : vector sizes not compatible with domain and/or range of block dimensions." << endl;
     throw "Problem_Manager ERROR";
   }
   Teuchos::RefCountPtr<Epetra_Vector> tmpXcomposite = Teuchos::rcp( new Epetra_Vector(*compositeSoln) );
@@ -2232,6 +2253,41 @@ Problem_Manager::applyBlockAction( int probId, int depId, const Epetra_Vector & 
 
   copyCompositeToVector( *tmpYcomposite, probId, result );
 
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+
+bool
+Problem_Manager::createBlockInverseOperator( int probId, Teuchos::ParameterList & pList )
+{
+  // For now, we will hard-c ode use of Ifpack.  Note that direct inverses via Amesos can be
+  // used by propoer specification in the Teuchos::ParameterList.
+
+  Teuchos::RefCountPtr<Ifpack_Preconditioner> inverseOperator;
+
+  // Get any relevant parameters for the Inverting package using sublists
+  Teuchos::ParameterList& teuchosParams = pList.sublist("Ifpack Teuchos Parameter List");
+
+  Ifpack Factory;
+
+  Teuchos::RefCountPtr<Epetra_CrsMatrix> pMatrix = getBlockJacobianMatrix(probId);
+
+  if( NULL == pMatrix.get() )
+  {
+    cout << "ERROR: Problem_Manager::createBlockInverseOperator : Cannot get an Epetra_CrsMatrix for diagonal block # " << probId << endl;
+    throw "Problem_Manager ERROR";
+  }
+
+  inverseOperator = Teuchos::rcp(Factory.Create( pList.get("Ifpack Preconditioner", "ILU"), 
+    &(*pMatrix), 
+    pList.get("Overlap", 0) ));
+  inverseOperator->SetParameters(teuchosParams);
+  inverseOperator->Initialize();
+  inverseOperator->Compute();
+
+  BlockInverseOperators[probId] = inverseOperator;
+  
   return true;
 }
 

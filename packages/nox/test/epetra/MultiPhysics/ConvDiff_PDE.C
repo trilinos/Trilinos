@@ -213,14 +213,6 @@ ConvDiff_PDE::initialize()
     outFile1 << i << "  " << x[i] << "  " << (*exactSolution)[i] << endl;
     outFile2 << i << "  " << x[i] << "  " << (*dTdx         )[i] << endl;
   }
-
-  // Do a test for debugging purposes
-  //{
-  //  computeHeatFlux( exactSolution );
-  //  cout << "\n\n\t\t\t-- ** Test ** --" << endl
-  //       << "\t\t\tRegion \"" << myName << "\", myFlux = " << myFlux << endl
-  //       << "    \t\t\t----------------" << endl;
-  //}
 }
 
 //-----------------------------------------------------------------------------
@@ -233,6 +225,12 @@ ConvDiff_PDE::initializeSolution(double val)
   Epetra_Vector& soln = *initialSolution;
 
   soln.PutScalar(val);
+
+  //Epetra_Vector perturb(soln);
+  //perturb.Random();
+  //perturb.Scale(0.20);
+
+  //soln.Update(1.0, perturb, 1.0);
   
   *oldSolution = soln;
 } 

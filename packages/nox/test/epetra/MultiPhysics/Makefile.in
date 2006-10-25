@@ -114,7 +114,8 @@ am_example_brusselator_OBJECTS = Example_Brusselator.$(OBJEXT) \
 	Problem_Interface.$(OBJEXT) NOX_Matlab_Interface.$(OBJEXT) \
 	NOX_Multiphysics_Matlab_Interface.$(OBJEXT) \
 	Problem_Manager.$(OBJEXT) OffBlock_Manager.$(OBJEXT) \
-	Xfer_Operator.$(OBJEXT)
+	Xfer_Operator.$(OBJEXT) \
+	NOX_Epetra_SchurCouplingOperator.$(OBJEXT)
 example_brusselator_OBJECTS = $(am_example_brusselator_OBJECTS)
 am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
@@ -125,7 +126,8 @@ am_example_hmx_OBJECTS = Example_HMX.$(OBJEXT) HMX_PDE.$(OBJEXT) \
 	Problem_Interface.$(OBJEXT) NOX_Matlab_Interface.$(OBJEXT) \
 	NOX_Multiphysics_Matlab_Interface.$(OBJEXT) \
 	Problem_Manager.$(OBJEXT) OffBlock_Manager.$(OBJEXT) \
-	Xfer_Operator.$(OBJEXT)
+	Xfer_Operator.$(OBJEXT) \
+	NOX_Epetra_SchurCouplingOperator.$(OBJEXT)
 example_hmx_OBJECTS = $(am_example_hmx_OBJECTS)
 am_example_yeckel_OBJECTS = Example_Yeckel2006.$(OBJEXT) \
 	ConvDiff_PDE.$(OBJEXT) Basis.$(OBJEXT) \
@@ -133,7 +135,8 @@ am_example_yeckel_OBJECTS = Example_Yeckel2006.$(OBJEXT) \
 	NOX_Matlab_Interface.$(OBJEXT) \
 	NOX_Multiphysics_Matlab_Interface.$(OBJEXT) \
 	Problem_Manager.$(OBJEXT) OffBlock_Manager.$(OBJEXT) \
-	Xfer_Operator.$(OBJEXT)
+	Xfer_Operator.$(OBJEXT) \
+	NOX_Epetra_SchurCouplingOperator.$(OBJEXT)
 example_yeckel_OBJECTS = $(am_example_yeckel_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -147,6 +150,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/Example_Yeckel2006.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/GenericEpetraProblem.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/HMX_PDE.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/NOX_Epetra_SchurCouplingOperator.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/NOX_Matlab_Interface.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/NOX_Multiphysics_Matlab_Interface.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/OffBlock_Manager.Po \
@@ -392,7 +396,8 @@ example_hmx_SOURCES = $(srcdir)/Example_HMX.C \
 	$(srcdir)/NOX_Multiphysics_Matlab_Interface.C $(srcdir)/NOX_Multiphysics_Matlab_Interface.H \
 	$(srcdir)/Problem_Manager.C $(srcdir)/Problem_Manager.H \
 	$(srcdir)/OffBlock_Manager.C $(srcdir)/OffBlock_Manager.H \
-	$(srcdir)/Xfer_Operator.C $(srcdir)/Xfer_Operator.H
+	$(srcdir)/Xfer_Operator.C $(srcdir)/Xfer_Operator.H \
+	$(srcdir)/NOX_Epetra_SchurCouplingOperator.C $(srcdir)/NOX_Epetra_SchurCouplingOperator.H
 
 example_hmx_DEPENDENCIES = $(top_builddir)/src/libnox.a \
         $(top_builddir)/src-epetra/libnoxepetra.a
@@ -409,7 +414,8 @@ example_brusselator_SOURCES = $(srcdir)/Example_Brusselator.C \
 	$(srcdir)/NOX_Multiphysics_Matlab_Interface.C $(srcdir)/NOX_Multiphysics_Matlab_Interface.H \
 	$(srcdir)/Problem_Manager.C $(srcdir)/Problem_Manager.H \
 	$(srcdir)/OffBlock_Manager.C $(srcdir)/OffBlock_Manager.H \
-	$(srcdir)/Xfer_Operator.C $(srcdir)/Xfer_Operator.H
+	$(srcdir)/Xfer_Operator.C $(srcdir)/Xfer_Operator.H \
+	$(srcdir)/NOX_Epetra_SchurCouplingOperator.C $(srcdir)/NOX_Epetra_SchurCouplingOperator.H
 
 example_brusselator_DEPENDENCIES = $(top_builddir)/src/libnox.a \
         $(top_builddir)/src-epetra/libnoxepetra.a
@@ -424,7 +430,8 @@ example_yeckel_SOURCES = $(srcdir)/Example_Yeckel2006.C \
 	$(srcdir)/NOX_Multiphysics_Matlab_Interface.C $(srcdir)/NOX_Multiphysics_Matlab_Interface.H \
 	$(srcdir)/Problem_Manager.C $(srcdir)/Problem_Manager.H \
 	$(srcdir)/OffBlock_Manager.C $(srcdir)/OffBlock_Manager.H \
-	$(srcdir)/Xfer_Operator.C $(srcdir)/Xfer_Operator.H
+	$(srcdir)/Xfer_Operator.C $(srcdir)/Xfer_Operator.H \
+	$(srcdir)/NOX_Epetra_SchurCouplingOperator.C $(srcdir)/NOX_Epetra_SchurCouplingOperator.H
 
 example_yeckel_DEPENDENCIES = $(top_builddir)/src/libnox.a \
         $(top_builddir)/src-epetra/libnoxepetra.a
@@ -492,6 +499,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Example_Yeckel2006.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/GenericEpetraProblem.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/HMX_PDE.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_Epetra_SchurCouplingOperator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_Matlab_Interface.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_Multiphysics_Matlab_Interface.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/OffBlock_Manager.Po@am__quote@
@@ -706,6 +714,22 @@ Xfer_Operator.obj: $(srcdir)/Xfer_Operator.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Xfer_Operator.Po' tmpdepfile='$(DEPDIR)/Xfer_Operator.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Xfer_Operator.obj `if test -f '$(srcdir)/Xfer_Operator.C'; then $(CYGPATH_W) '$(srcdir)/Xfer_Operator.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Xfer_Operator.C'; fi`
+
+NOX_Epetra_SchurCouplingOperator.o: $(srcdir)/NOX_Epetra_SchurCouplingOperator.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NOX_Epetra_SchurCouplingOperator.o -MD -MP -MF "$(DEPDIR)/NOX_Epetra_SchurCouplingOperator.Tpo" -c -o NOX_Epetra_SchurCouplingOperator.o `test -f '$(srcdir)/NOX_Epetra_SchurCouplingOperator.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Epetra_SchurCouplingOperator.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NOX_Epetra_SchurCouplingOperator.Tpo" "$(DEPDIR)/NOX_Epetra_SchurCouplingOperator.Po"; else rm -f "$(DEPDIR)/NOX_Epetra_SchurCouplingOperator.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Epetra_SchurCouplingOperator.C' object='NOX_Epetra_SchurCouplingOperator.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/NOX_Epetra_SchurCouplingOperator.Po' tmpdepfile='$(DEPDIR)/NOX_Epetra_SchurCouplingOperator.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Epetra_SchurCouplingOperator.o `test -f '$(srcdir)/NOX_Epetra_SchurCouplingOperator.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Epetra_SchurCouplingOperator.C
+
+NOX_Epetra_SchurCouplingOperator.obj: $(srcdir)/NOX_Epetra_SchurCouplingOperator.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NOX_Epetra_SchurCouplingOperator.obj -MD -MP -MF "$(DEPDIR)/NOX_Epetra_SchurCouplingOperator.Tpo" -c -o NOX_Epetra_SchurCouplingOperator.obj `if test -f '$(srcdir)/NOX_Epetra_SchurCouplingOperator.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Epetra_SchurCouplingOperator.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Epetra_SchurCouplingOperator.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NOX_Epetra_SchurCouplingOperator.Tpo" "$(DEPDIR)/NOX_Epetra_SchurCouplingOperator.Po"; else rm -f "$(DEPDIR)/NOX_Epetra_SchurCouplingOperator.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Epetra_SchurCouplingOperator.C' object='NOX_Epetra_SchurCouplingOperator.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/NOX_Epetra_SchurCouplingOperator.Po' tmpdepfile='$(DEPDIR)/NOX_Epetra_SchurCouplingOperator.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Epetra_SchurCouplingOperator.obj `if test -f '$(srcdir)/NOX_Epetra_SchurCouplingOperator.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Epetra_SchurCouplingOperator.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Epetra_SchurCouplingOperator.C'; fi`
 
 Example_HMX.o: $(srcdir)/Example_HMX.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Example_HMX.o -MD -MP -MF "$(DEPDIR)/Example_HMX.Tpo" -c -o Example_HMX.o `test -f '$(srcdir)/Example_HMX.C' || echo '$(srcdir)/'`$(srcdir)/Example_HMX.C; \

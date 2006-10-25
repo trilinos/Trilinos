@@ -80,6 +80,7 @@
 
 // User's application specific files 
 #include "Problem_Manager.H" 
+#include "NOX_Epetra_SchurCouplingOperator.H" 
 #include "Problem_Interface.H" 
 #include "ConvDiff_PDE.H"              
 
@@ -111,6 +112,7 @@ int main(int argc, char *argv[])
   // Default run-time options that can be changed from the command line
   bool          verbose         = true          ;
   int           NumGlobalNodes  = 20            ;
+  int           probSizeRatio   = 1             ;
   bool          runMF           = true          ;
   bool          useMatlab       = false         ;
   bool          doOffBlocks     = false         ;
@@ -121,12 +123,14 @@ int main(int argc, char *argv[])
   double        beta            = 0.40          ;
   // Physical parameters
   double        radiation       = 5.67          ;
+  double        initVal         = 0.995         ;
   string        outputDir       = "."           ;
   string        goldDir         = "."           ;
 
 
   clp.setOption( "verbose", "no-verbose", &verbose, "Verbosity on or off." );
   clp.setOption( "n", &NumGlobalNodes, "Number of elements" );
+  clp.setOption( "nratio", &probSizeRatio, "Ratio of size of problem 2 to problem 1" );
   clp.setOption( "runMF", "loose", &runMF, "Use Matrix-Free strong coupling" );
   clp.setOption( "offblocks", "no-offblocks", &doOffBlocks, "Include off-diagonal blocks in preconditioning matrix" );
   clp.setOption( "matlab", "no-matlab", &useMatlab, "Use Matlab debugging engine" );
@@ -135,6 +139,7 @@ int main(int argc, char *argv[])
   clp.setOption( "alpha", &alpha, "Interfacial coupling coefficient, alpha" );
   clp.setOption( "beta", &beta, "Interfacial coupling coefficient, beta" );
   clp.setOption( "radiation", &radiation, "Radiation source term coefficient, R" );
+  clp.setOption( "initialval", &initVal, "Initial guess for solution values" );
   clp.setOption( "outputdir", &outputDir, "Directory to output mesh and results into. Default is \"./\"" );
   clp.setOption( "golddir", &goldDir, "Directory to read gold test from. Default is \"./\"" );
 
@@ -270,11 +275,11 @@ int main(int argc, char *argv[])
                   xmax, 
                   Tleft,
                   T1_analytic,
-                  1*NumGlobalNodes, 
+                  NumGlobalNodes, 
                   myName  );
 
   // Override default initialization with values we want
-  Reg1_PDE.initializeSolution(0.995);
+  Reg1_PDE.initializeSolution(initVal);
 
   problemManager.addProblem(Reg1_PDE);
 
@@ -294,7 +299,7 @@ int main(int argc, char *argv[])
                   xmax, 
                   T1_analytic,
                   Tright,
-                  1*NumGlobalNodes, 
+                  probSizeRatio*NumGlobalNodes, 
                   myName  );
 
   // For this problem involving interfacial coupling, the problems are given control
@@ -305,7 +310,7 @@ int main(int argc, char *argv[])
   Reg2_PDE.setExpandJacobian( doOffBlocks );
 
   // Override default initialization with values we want
-  Reg2_PDE.initializeSolution(0.995);
+  Reg2_PDE.initializeSolution(initVal);
 
   problemManager.addProblem(Reg2_PDE);
 
@@ -413,23 +418,85 @@ int main(int argc, char *argv[])
     outputUtils.out() << "Serial Run" << endl;
 #endif
 
-  if( 1 ) // some testing of inter-problem directional derivatives
+  if( 0 ) // some testing of Schur Coupling Operator
   {
-    Teuchos::RefCountPtr<Epetra_Vector> tmpA = Teuchos::rcp( new Epetra_Vector( *Reg1_PDE.getSolution()) );
-    Teuchos::RefCountPtr<Epetra_Vector> tmpB = Teuchos::rcp( new Epetra_Vector( *Reg2_PDE.getSolution()) );
+    
+    Teuchos::RefCountPtr<Epetra_Vector> resA = Teuchos::rcp( new Epetra_Vector( problemManager.getResidualVec(1)) );
+    Teuchos::RefCountPtr<Epetra_Vector> resB = Teuchos::rcp( new Epetra_Vector( problemManager.getResidualVec(2)) );
 
-    cout << "\nBefore doing apply(1,2) :\n" << *tmpA << *tmpB << endl;
+    NOX::Epetra::SchurCouplingOp schurCplOp( 1, 2, problemManager );
 
-    problemManager.applyBlockAction( 1, 2, *tmpB, *tmpA);
+    problemManager.setGroupX(1);
+    problemManager.setGroupX(2);
+    problemManager.getGroup(1).computeF();
+    problemManager.getGroup(2).computeF();
+    problemManager.getGroup(1).computeJacobian();
+    problemManager.getGroup(2).computeJacobian();
+    problemManager.createBlockInverseOperator(1, lsParams);
+    problemManager.createBlockInverseOperator(2, lsParams);
 
-    cout << "\nAfter doing apply(1,2) :\n" << *tmpA << *tmpB << endl;
+    //schurCplOp.Apply( *tmpA1, *tmpA2 );
 
-    //problemManager.setGroupX(1);//.setX(*tmpA);
+    Epetra_Vector solutionA(problemManager.getSolutionVec(1));
+    solutionA.PutScalar(0.0);
+    cout << "Solution A: \n" << solutionA << endl;
+
+    cout << "Original RHS :\n" << *resA << endl;
+    schurCplOp.modifyRHS( resA, resB );
+    cout << "Modified RHS :\n" << *resA << endl;
+
+    Epetra_LinearProblem * linear_problem = new Epetra_LinearProblem(&schurCplOp, &solutionA, &(*resA));
+    AztecOO * aztecoo_solver = new AztecOO(*linear_problem);
+
+    aztecoo_solver->SetAztecOption(AZ_precond, AZ_none);
+
+    cout << "... Solving.\n";
+    aztecoo_solver->Iterate(100, 1.0e-8);
+    cout << "... Solved to a tolerance of " << aztecoo_solver->TrueResidual() << " in " << aztecoo_solver->NumIters() << " iterations.\n";
+
+    cout << "\n----- Solution for update vector ---- :\n" << solutionA << endl;
+
+    solutionA.Update(1.0, problemManager.getSolutionVec(1), -1.0);
+
+    cout << "\n----- Solution vector ---- :\n" << solutionA << endl;
+
+    exit(0);
+    ////cout << "\nBefore doing apply(1,2) :\n" << *tmpA << *tmpB << endl;
+
+    ////problemManager.applyBlockAction( 1, 2, *tmpB, *tmpA);
+
+    ////cout << "\nAfter doing apply(1,2) :\n" << *tmpA << *tmpB << endl;
+
+    //problemManager.setGroupX(1);
+    //problemManager.setGroupX(2);
     //problemManager.getGroup(1).computeJacobian();
-    //*tmpB = *Reg1_PDE.getSolution();
-    //problemManager.getBlockJacobianMatrix(1,1)->Apply(*tmpA, *tmpB);
+    //problemManager.getGroup(2).computeJacobian();
+    //problemManager.createBlockInverseOperator(1, lsParams);
+    //problemManager.createBlockInverseOperator(2, lsParams);
 
-    //cout << "\nAfter doing apply(1,1) using FDC matrix:\n" << *tmpA << *tmpB << endl;
+    ////cout << "\nBefore doing apply(1,1) :\n" << *tmpA << *tmpB << endl;
+    ////problemManager.getBlockJacobianMatrix(1,1)->Apply(*tmpA, *tmpB);
+    ////cout << "\nAfter doing apply(1,1) :\n" << *tmpA << *tmpB << endl;
+
+    ////problemManager.getBlockInverseOperator(1)->ApplyInverse(*tmpB, *tmpA);
+    ////cout << "\nAfter doing applyinverse(1) :\n" << *tmpA << *tmpB << endl;
+
+    //cout << "Problem 1 solution :\n" << problemManager.getSolutionVec(1) << endl;
+    //cout << "Problem 2 solution :\n" << problemManager.getSolutionVec(2) << endl;
+
+    //problemManager.getGroup(1).computeF();
+    //problemManager.getGroup(2).computeF();
+
+    //cout << "Problem 1 residual :\n" << problemManager.getResidualVec(1) << endl;
+    //cout << "Problem 2 residual :\n" << problemManager.getResidualVec(2) << endl;
+
+    //*tmpB = problemManager.getResidualVec(2);
+    //problemManager.getBlockInverseOperator(2)->ApplyInverse(*tmpB, *tmpB);
+    //cout << "After applying blockInverse(2) to Problem 2 residual :\n" << *tmpB << endl;
+
+    //problemManager.applyBlockAction( 1, 2, *tmpB, *tmpA);
+    //cout << "After applying blockAction(1, 2) to modified Problem 2 residual :\n" << *tmpA << endl;
+
 
   }
 
