@@ -253,7 +253,7 @@ dfad_nonlinear_CXXFLAGS = -O2 \
 	-I$(top_builddir)/src \
 	-I$(top_srcdir)/test/utils \
 	-I$(top_srcdir)/Fad \
-        $(LOCA_INCLUDES)
+        $(TEUCHOS_INCLUDES)
 
 dfad_nonlinear_DEPENDENCIES = \
         $(top_builddir)/src/libsacado.a \
@@ -262,7 +262,7 @@ dfad_nonlinear_DEPENDENCIES = \
 dfad_nonlinear_LDADD = \
 	-L$(top_builddir)/src -lsacado \
 	-L$(top_builddir)/test/utils -lsacadoutils \
-	$(LOCA_LIBS) \
+	$(TEUCHOS_LIBS) \
 	$(LIBS) $(FLIBS)
 
 dfad_mult_SOURCES = dfad_mult.cpp
@@ -533,7 +533,7 @@ uninstall-am: uninstall-info-am
 
 
 # Include NOX export Makefile for correct paths
-include $(top_builddir)/../nox/Makefile.export.nox
+include $(top_builddir)/../teuchos/Makefile.export.teuchos
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

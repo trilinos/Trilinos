@@ -30,7 +30,7 @@
 # @HEADER
 
 # Include NOX export Makefile for correct paths
-include $(top_builddir)/../nox/Makefile.export.nox
+include $(top_builddir)/../teuchos/Makefile.export.teuchos
 
 EXEEXT = .exe
 
@@ -44,14 +44,14 @@ dfad_nonlinear_CXXFLAGS = -O2 \
 	-I$(top_builddir)/src \
 	-I$(top_srcdir)/test/utils \
 	-I$(top_srcdir)/Fad \
-        $(LOCA_INCLUDES)
+        $(TEUCHOS_INCLUDES)
 dfad_nonlinear_DEPENDENCIES = \
         $(top_builddir)/src/libsacado.a \
 	$(top_builddir)/test/utils/libsacadoutils.a
 dfad_nonlinear_LDADD = \
 	-L$(top_builddir)/src -lsacado \
 	-L$(top_builddir)/test/utils -lsacadoutils \
-	$(LOCA_LIBS) \
+	$(TEUCHOS_LIBS) \
 	$(LIBS) $(FLIBS)
 
 dfad_mult_SOURCES = dfad_mult.cpp
