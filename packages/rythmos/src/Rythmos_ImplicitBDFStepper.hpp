@@ -166,6 +166,7 @@ class ImplicitBDFStepper : virtual public Stepper<Scalar>
     bool interpolateSolution(
         const Scalar& timepoint
         ,Thyra::VectorBase<Scalar>* x_ptr_
+        ,Thyra::VectorBase<Scalar>* xdot_ptr_
         ,ScalarMag* accuracy_ptr_
         ) const;
 
@@ -667,6 +668,7 @@ template<class Scalar>
 bool ImplicitBDFStepper<Scalar>::interpolateSolution(
         const Scalar& timepoint
         ,Thyra::VectorBase<Scalar>* x_ptr_
+        ,Thyra::VectorBase<Scalar>* xdot_ptr_
         ,ScalarMag* accuracy_ptr_
         ) const
 {
@@ -674,7 +676,8 @@ bool ImplicitBDFStepper<Scalar>::interpolateSolution(
   Scalar tfuzz;   // fuzz factor to check for valid output time
   Scalar tp;      // approximately t{n-1}
   Scalar delt;    // distance between timepoint and time
-  Scalar c = ST::one(); // coefficient for interpolation
+  Scalar c = ST::one(); // coefficient for interpolation of x
+  Scalar d = ST::zero(); // coefficient for interpolation of xdot
   Scalar gam;     // coefficient for interpolation
   int kord;       // order of interpolation
   Scalar tn = time;
@@ -690,6 +693,7 @@ bool ImplicitBDFStepper<Scalar>::interpolateSolution(
     return(false);
 
   Thyra::V_V(x_ptr_,*xHistory[0]);
+  Thyra::V_S(xdot_ptr_,ST::zero());
   kord = kused;
   if ( (kused == 0) || (timepoint == tn) ) 
     kord = 1;
@@ -698,9 +702,11 @@ bool ImplicitBDFStepper<Scalar>::interpolateSolution(
   gam = delt/psi[0];
   for (int j=1 ; j <= kord ; ++j)
   {
+    d = d*gam + c/psi[j-1];
     c = c*gam;
     gam = (delt + psi[j-1])/psi[j];
     Thyra::Vp_StV(x_ptr_,c,*xHistory[j]);
+    Thyra::Vp_StV(xdot_ptr_,d,*xHistory[j]);
   }
   *accuracy_ptr_ = pow(usedStep,kord);
   return(true);
@@ -1291,12 +1297,12 @@ bool ImplicitBDFStepper<Scalar>::GetPoints(
     ,std::vector<ScalarMag>* accuracy_vec) const
 {
   bool status;
-  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xdot_temp; // Teuchos::null
   for (int i=0 ; i<time_vec.size() ; ++i)
   {
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x_temp = xn0->clone_v();
+    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xdot_temp = xn0->clone_v();
     ScalarMag accuracy;
-    status = interpolateSolution(time_vec[i],&*x_temp,&accuracy);
+    status = interpolateSolution(time_vec[i],&*x_temp,&*xdot_temp,&accuracy);
     if (!status) return(status);
     x_vec->push_back(x_temp);
     xdot_vec->push_back(xdot_temp);
