@@ -266,7 +266,7 @@ bool HermiteInterpolator<Scalar>::interpolate(
 template<class Scalar>
 int HermiteInterpolator<Scalar>::order() const
 {
-  return(1);
+  return(2);
 }
 
 template<class Scalar>
