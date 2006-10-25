@@ -308,6 +308,7 @@ REMOVE --enable-nox
 REMOVE --enable-rythmos
 REMOVE --enable-rtop
 REMOVE --enable-thyra
+REMOVE --enable-sacado
 REMOVE --enable-stratimikos
 REMOVE --enable-webtrilinos
 DONE
