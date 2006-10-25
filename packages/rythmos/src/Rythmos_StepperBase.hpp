@@ -26,8 +26,8 @@
 // ***********************************************************************
 //@HEADER
 
-#ifndef Rythmos_STEPPER_H
-#define Rythmos_STEPPER_H
+#ifndef Rythmos_STEPPER_BASE_H
+#define Rythmos_STEPPER_BASE_H
 
 
 #include "Teuchos_RefCountPtr.hpp"
@@ -39,12 +39,12 @@ namespace Rythmos {
 
 /** \brief Base class for defining stepper functionality. */
 template<class Scalar> 
-class Stepper : virtual public InterpolationBufferBase<Scalar>
+class StepperBase : virtual public InterpolationBufferBase<Scalar>
 {
   public:
     
     /// Destructor
-    virtual ~Stepper() {};
+    virtual ~StepperBase() {};
 
     /// Take a step _no larger_ than dt 
     virtual Scalar TakeStep(Scalar dt)=0;
@@ -59,4 +59,4 @@ class Stepper : virtual public InterpolationBufferBase<Scalar>
 
 } // namespace Rythmos
 
-#endif //Rythmos_STEPPER_H
+#endif //Rythmos_STEPPER_BASE_H

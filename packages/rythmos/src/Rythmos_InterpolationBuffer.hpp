@@ -182,6 +182,11 @@ void InterpolationBuffer<Scalar>::SetStorage( int storage_ )
   Teuchos::OSTab ostab(out,1,"IB::SetStorage");
   if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
     *out << "storage_limit = " << storage_limit << std::endl;
+  // 10/25/06 tscoffe:
+  // We should check the IBPolicy against lowering the storage_limit below its current storage.
+  // In the case of BUFFER_STATIC, you would have to RemoveNodes before lowering storage_limit
+  // This routine should return bool instead.
+  // Is there any way to ask what the storage_limit is?
 }
 
 template<class Scalar>
