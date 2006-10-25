@@ -49,6 +49,7 @@
 // 10/9/06 tscoffe:  InterpolationBufferAsStepper includes: 
 #include "Rythmos_InterpolationBuffer.hpp"
 #include "Rythmos_LinearInterpolator.hpp"
+#include "Rythmos_HermiteInterpolator.hpp"
 #include "Rythmos_InterpolationBufferAsStepper.hpp"
 
 // Includes for Thyra:
@@ -334,11 +335,15 @@ int main(int argc, char *argv[])
           integratorParams = Teuchos::rcp(new Teuchos::ParameterList);
         //integratorParams->set( "fixed_dt", dt );
         integratorParams->set( "outputLevel", outputLevel );
-        // Create integrator using stepper and linear interpolation buffer:
+        // Create integrator using stepper and interpolation buffer:
+        //Teuchos::RefCountPtr<Rythmos::InterpolatorBase<double> > 
+        //  linearInterpolator = Teuchos::rcp(new Rythmos::LinearInterpolator<double>());
+        //Teuchos::RefCountPtr<Rythmos::InterpolationBuffer<double> > 
+        //  IB = Teuchos::rcp(new Rythmos::InterpolationBuffer<double>(linearInterpolator,buffersize));
         Teuchos::RefCountPtr<Rythmos::InterpolatorBase<double> > 
-          linearInterpolator = Teuchos::rcp(new Rythmos::LinearInterpolator<double>());
+          hermiteInterpolator = Teuchos::rcp(new Rythmos::HermiteInterpolator<double>());
         Teuchos::RefCountPtr<Rythmos::InterpolationBuffer<double> > 
-          IB = Teuchos::rcp(new Rythmos::InterpolationBuffer<double>(linearInterpolator,buffersize));
+          IB = Teuchos::rcp(new Rythmos::InterpolationBuffer<double>(hermiteInterpolator,buffersize));
         IB->setParameterList(integratorParams);
         Rythmos::InterpolationBufferAsStepper<double> integrator(stepper_ptr,IB,integratorParams);
         // Ask for desired time value:
