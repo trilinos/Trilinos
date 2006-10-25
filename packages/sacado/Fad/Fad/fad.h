@@ -238,8 +238,10 @@ template <class T> inline  Fad<T> & Fad<T>::operator+= (const Fad<T>& x)
 {
   int xsz = x.size(), sz = dx_.size();
 
+#ifdef FAD_DEBUG
   if ((xsz != sz) && (xsz != 0) && (sz != 0))
     throw "Fad Error:  Attempt to assign with incompatible sizes";
+#endif
 
   if (xsz) {
     T* xdx = x.dx_.begin();
@@ -265,8 +267,10 @@ template <class T> inline  Fad<T> & Fad<T>::operator-= (const Fad<T>& x)
 {
   int xsz = x.size(), sz = dx_.size();
 
+#ifdef FAD_DEBUG
   if ((xsz != sz) && (xsz != 0) && (sz != 0))
     throw "Fad Error:  Attempt to assign with incompatible sizes";
+#endif
 
   if (xsz) {
     T* RESTRICT xdx = x.dx_.begin();
@@ -293,8 +297,10 @@ template <class T> inline  Fad<T> & Fad<T>::operator*= (const Fad<T>& x)
   int xsz = x.size(), sz = dx_.size();
   T xval = x.val_;
 
+#ifdef FAD_DEBUG
   if ((xsz != sz) && (xsz != 0) && (sz != 0))
     throw "Fad Error:  Attempt to assign with incompatible sizes";
+#endif
 
   if (xsz) {
     T* RESTRICT xdx = x.dx_.begin();
@@ -328,8 +334,10 @@ template <class T> inline  Fad<T> & Fad<T>::operator/= (const Fad<T>& x)
   int xsz = x.size(), sz = dx_.size();
   T xval = x.val_;
 
+#ifdef FAD_DEBUG
   if ((xsz != sz) && (xsz != 0) && (sz != 0))
     throw "Fad Error:  Attempt to assign with incompatible sizes";
+#endif
 
   if (xsz) {
     T* RESTRICT xdx = x.dx_.begin(); 
@@ -364,8 +372,10 @@ template <class T> template <class ExprT> inline  Fad<T> & Fad<T>::operator+= (c
 {
   int xsz = x.size(), sz = dx_.size();
 
+#ifdef FAD_DEBUG
   if ((xsz != sz) && (xsz != 0) && (sz != 0))
     throw "Fad Error:  Attempt to assign with incompatible sizes";
+#endif
 
   if (xsz) {
     if (sz) {
@@ -398,8 +408,10 @@ template <class T> template <class ExprT> inline  Fad<T> & Fad<T>::operator-= (c
 {
   int xsz = x.size(), sz = dx_.size();
 
+#ifdef FAD_DEBUG
   if ((xsz != sz) && (xsz != 0) && (sz != 0))
     throw "Fad Error:  Attempt to assign with incompatible sizes";
+#endif
 
   if (xsz) {
     if (sz) {
@@ -434,8 +446,10 @@ template <class T> template <class ExprT> inline  Fad<T> & Fad<T>::operator*= (c
   int xsz = x.size(), sz = dx_.size();
   T xval = x.val();
 
+#ifdef FAD_DEBUG
   if ((xsz != sz) && (xsz != 0) && (sz != 0))
     throw "Fad Error:  Attempt to assign with incompatible sizes";
+#endif
 
   if (xsz) {
     if (sz) {
@@ -476,8 +490,10 @@ template <class T> template <class ExprT> inline  Fad<T> & Fad<T>::operator/= (c
   int xsz = x.size(), sz = dx_.size();
   T xval = x.val();
 
+#ifdef FAD_DEBUG
   if ((xsz != sz) && (xsz != 0) && (sz != 0))
     throw "Fad Error:  Attempt to assign with incompatible sizes";
+#endif
 
   if (xsz) {
     if (sz) {
