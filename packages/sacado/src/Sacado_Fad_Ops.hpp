@@ -66,17 +66,17 @@ namespace Sacado {							\
 									\
       typedef typename ExprT::value_type value_type;			\
 									\
-      OP(const ExprT& expr) {}						\
+      OP() {}						                \
 									\
-      value_type computeValue(const ExprT& expr) const {		\
+      static value_type computeValue(const ExprT& expr) {		\
 	return VALUE;							\
       }									\
 									\
-      value_type computeDx(int i, const ExprT& expr) const {		\
+      static value_type computeDx(int i, const ExprT& expr) {		\
 	return DX;							\
       }									\
 									\
-      value_type computeFastAccessDx(int i, const ExprT& expr) const {	\
+      static value_type computeFastAccessDx(int i, const ExprT& expr) {	\
 	return FASTACCESSDX;						\
       }									\
     };									\
@@ -224,22 +224,22 @@ namespace Sacado {							\
       typedef typename Sacado::Promote<value_type_1,			\
 				       value_type_1>::type value_type;  \
 									\
-      OP(const ExprT1& expr1, const ExprT2 expr2) {}			\
+      OP() {}			                                        \
 									\
-      value_type							\
-      computeValue(const ExprT1& expr1, const ExprT2& expr2) const {	\
+      static value_type							\
+      computeValue(const ExprT1& expr1, const ExprT2& expr2) {	        \
 	return VALUE;							\
       }									\
 									\
-      value_type							\
+      static value_type							\
       computeDx(int i, const ExprT1& expr1,				\
-		const ExprT2& expr2) const {				\
+		const ExprT2& expr2) {				        \
 	return DX;							\
       }									\
 									\
-      value_type							\
+      static value_type							\
       computeFastAccessDx(int i, const ExprT1& expr1,			\
-			  const ExprT2& expr2) const {			\
+			  const ExprT2& expr2) {			\
 	return FASTACCESSDX;						\
       }									\
     };									\
@@ -252,22 +252,22 @@ namespace Sacado {							\
       typedef typename ExprT1::value_type value_type;			\
       typedef ConstExpr<typename ExprT1::value_type> ExprT2;		\
 									\
-      OP(const ExprT1& expr1, const ExprT2 expr2) {}			\
+      OP() {}			                                        \
 									\
-      value_type							\
-      computeValue(const ExprT1& expr1, const ExprT2& expr2) const {	\
+      static value_type							\
+      computeValue(const ExprT1& expr1, const ExprT2& expr2) {	        \
 	return VALUE;							\
       }									\
 									\
-      value_type							\
+      static value_type							\
       computeDx(int i, const ExprT1& expr1,				\
-		const ExprT2& expr2) const {				\
+		const ExprT2& expr2) {				        \
 	return CONST_DX_2;						\
       }									\
 									\
-      value_type							\
+      static value_type							\
       computeFastAccessDx(int i, const ExprT1& expr1,			\
-			  const ExprT2& expr2) const {			\
+			  const ExprT2& expr2) {			\
 	return CONST_FASTACCESSDX_2;					\
       }									\
     };									\
@@ -280,22 +280,22 @@ namespace Sacado {							\
       typedef typename ExprT2::value_type value_type;			\
       typedef ConstExpr<typename ExprT2::value_type> ExprT1;		\
 									\
-      OP(const ExprT1& expr1, const ExprT2 expr2) {}			\
+      OP() {}			                                        \
 									\
-      value_type							\
-      computeValue(const ExprT1& expr1, const ExprT2& expr2) const {	\
+      static value_type							\
+      computeValue(const ExprT1& expr1, const ExprT2& expr2){	        \
 	return VALUE;							\
       }									\
 									\
-      value_type							\
+      static value_type							\
       computeDx(int i, const ExprT1& expr1,				\
-		const ExprT2& expr2) const {				\
+		const ExprT2& expr2) {				        \
 	return CONST_DX_1;						\
       }									\
 									\
-      value_type							\
+      static value_type							\
       computeFastAccessDx(int i, const ExprT1& expr1,			\
-			  const ExprT2& expr2) const {			\
+			  const ExprT2& expr2) {			\
 	return CONST_FASTACCESSDX_1;					\
       }									\
     };									\

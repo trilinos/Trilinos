@@ -29,11 +29,10 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef SACADO_FAD_IMPLEMENTATION_HPP
-#define SACADO_FAD_IMPLEMENTATION_HPP
+#ifndef SACADO_FAD_GENERALFAD_HPP
+#define SACADO_FAD_GENERALFAD_HPP
 
 #include "Sacado_ConfigDefs.h"
-#include "Sacado_Fad_GeneralFadTraits.hpp"
 #include "Sacado_Fad_Expression.hpp"
 
 // forward decalarations
@@ -49,34 +48,39 @@ namespace Sacado {
   //! Namespace for forward-mode AD classes
   namespace Fad {
 
-    //! Forward-mode AD class templated on the storage for the deriavtive array
+    //! Forward-mode AD class templated on the storage for the derivative array
     /*!
-     * This class provides the implementation of the Fad object required
-     * for expression templating.  Class GeneralFad provides the complete
-     * user inteface.
+     * This class provides a general forward mode AD implementation for any
+     * type of derivative array storage.  It does not incorporate expression
+     * templates.
      */
     template <typename T, typename Storage> 
-    class Implementation : protected Storage {
+    class GeneralFad {
 
     public:
 
       //! Typename of values
       typedef T value_type;
 
+      /*!
+       * @name Initialization methods
+       */
+      //@{
+
       //! Default constructor
-      Implementation() : Storage(), val_( T(0)) {}
+      GeneralFad() : val_( T(0)), s_() {}
 
       //! Constructor with supplied value \c x
       /*!
        * Initializes value to \c x and derivative array is empty
        */
-      Implementation(const T & x) : Storage(), val_(x) {}
+      GeneralFad(const T & x) : val_(x), s_() {}
 
       //! Constructor with size \c sz and value \c x
       /*!
        * Initializes value to \c x and derivative array 0 of length \c sz
        */
-      Implementation(const int sz, const T & x) : Storage(sz), val_(x) {}
+      GeneralFad(const int sz, const T & x) : val_(x), s_(sz) {}
 
       //! Constructor with size \c sz, index \c i, and value \c x
       /*!
@@ -84,17 +88,31 @@ namespace Sacado {
        * as row \c i of the identity matrix, i.e., sets derivative component
        * \c i to 1 and all other's to zero.
        */
-      Implementation(const int sz, const int i, const T & x) : 
-	Storage(sz), val_(x) { 
-	this->dx_[i]=1.; 
+      GeneralFad(const int sz, const int i, const T & x) : 
+	val_(x), s_(sz) { 
+	s_.dx_[i]=1.; 
       }
 
       //! Copy constructor
-      Implementation(const Implementation& x) : 
-	Storage(x), val_(x.val_) {}
+      GeneralFad(const GeneralFad& x) : 
+	val_(x.val_), s_(x.s_) {}
+
+      //! Copy constructor from any Expression object
+      template <typename S> GeneralFad(const Expr<S>& x);
 
       //! Destructor
-      ~Implementation() {}
+      ~GeneralFad() {}
+
+      //! Set %GeneralFad object as the \c ith independent variable
+      /*!
+       * Sets the derivative array of length \c n to the \c ith row of the
+       * identity matrix and has the same affect as the 
+       * Implementation(const int sz, const int i, const T & x) 
+       * constructor.
+       */
+      void diff(const int ith, const int n);
+
+      //@}
 
       /*!
        * @name Value accessor methods
@@ -115,145 +133,34 @@ namespace Sacado {
       //@{
 
       //! Returns number of derivative components
-      int size() const { return Storage::size();}
+      int size() const { return s_.size();}
 
       //! Returns true if derivative array is not empty
-      bool hasFastAccess() const { return Storage::size()!=0;}
+      bool hasFastAccess() const { return s_.size()!=0;}
 
       //! Returns true if derivative array is empty
-      bool isPassive() const { return Storage::size()!=0;}
+      bool isPassive() const { return s_.size()!=0;}
       
       //! Set whether variable is constant
       void setIsConstant(bool is_const) { 
-	if (is_const && Storage::size()!=0)
-	  Storage::resize(0);
+	if (is_const && s_.size()!=0)
+	  s_.resize(0);
       }
 
       //! Returns derivative array
-      const T* dx() const { return &(this->dx_[0]);}
+      const T* dx() const { return &(s_.dx_[0]);}
 
       //! Returns derivative component \c i with bounds checking
       T dx(int i) const { 
-	return Storage::size() ? this->dx_[i] : T(0); }
+	return s_.size() ? s_.dx_[i] : T(0); }
     
       //! Returns derivative component \c i without bounds checking
-      T& fastAccessDx(int i) { return this->dx_[i];}
+      T& fastAccessDx(int i) { return s_.dx_[i];}
 
       //! Returns derivative component \c i without bounds checking
-      T fastAccessDx(int i) const { return this->dx_[i];}
+      T fastAccessDx(int i) const { return s_.dx_[i];}
     
       //@}
-
-    protected:
-
-      //! Value
-      T val_;
-
-    }; // class Implementation
-
-    //! GeneralFad expression template specialization
-    /*!
-     * This template class represents a simple GeneralFad expression.
-     */
-    template <typename T, typename Storage> 
-    class Expr< Implementation<T,Storage> > : 
-      public Implementation<T,Storage> {
-
-    public:
-
-      //! Default constructor
-      Expr() : Implementation<T,Storage>() {}
-
-      //! Constructor with supplied value \c x
-      /*!
-       * Initializes value to \c x and derivative array is empty
-       */
-      Expr(const T & x) : Implementation<T,Storage>(x) {}
-
-      //! Constructor with size \c sz and value \c x
-      /*!
-       * Initializes value to \c x and derivative array 0 of length \c sz
-       */
-      Expr(const int sz, const T & x) : Implementation<T,Storage>(sz,x) {}
-
-      //! Constructor with size \c sz, index \c i, and value \c x
-      /*!
-       * Initializes value to \c x and derivative array of length \c sz
-       * as row \c i of the identity matrix, i.e., sets derivative component
-       * \c i to 1 and all other's to zero.
-       */
-      Expr(const int sz, const int i, const T & x) : 
-	Implementation<T,Storage>(sz,i,x) {}
-
-      //! Copy constructor
-      Expr(const Expr& x) : Implementation<T,Storage>(x) {}
-
-    }; // class Expr< Implementation<T,Storage> >
-
-    //! Forward-mode AD class templated on the storage for the derivative array
-    /*!
-     * This class provides the user interface of the GeneralFad object.  Class
-     * Implementation provides the implementation.
-     *
-     * We should probably do more checking on derivative array dimensions.  
-     */
-    template <typename T, typename Storage>
-    class GeneralFad : public Expr< Implementation<T,Storage> > {
-
-    public:
-
-      /*!
-       * @name Initialization methods
-       */
-      //@{
-
-      //! Default constructor.
-      /*!
-       * Initializes value to 0 and derivative array is empty
-       */
-      GeneralFad() : Expr< Implementation<T,Storage> >() {}
-
-      //! Constructor with supplied value \c x
-      /*!
-       * Initializes value to \c x and derivative array is empty
-       */
-      GeneralFad(const T & x) : Expr< Implementation<T,Storage> >(x) {}
-
-      //! Constructor with size \c sz and value \c x
-      /*!
-       * Initializes value to \c x and derivative array 0 of length \c sz
-       */
-      GeneralFad(const int sz, const T & x) : 
-	Expr< Implementation<T,Storage> >(sz,x) {}
-
-      //! Constructor with size \c sz, index \c i, and value \c x
-      /*!
-       * Initializes value to \c x and derivative array of length \c sz
-       * as row \c i of the identity matrix, i.e., sets derivative component
-       * \c i to 1 and all other's to zero.
-       */
-      GeneralFad(const int sz, const int i, const T & x) : 
-	Expr< Implementation<T,Storage> >(sz,i,x) {}
-
-      //! Copy constructor
-      GeneralFad(const GeneralFad& x) : Expr< Implementation<T,Storage> >(x) {}
-
-      //! Copy constructor from any Expression object
-      template <typename S> GeneralFad(const Expr<S>& x);
-
-      //! Set %GeneralFad object as the \c ith independent variable
-      /*!
-       * Sets the derivative array of length \c n to the \c ith row of the
-       * identity matrix and has the same affect as the 
-       * Implementation(const int sz, const int i, const T & x) 
-       * constructor.
-       */
-      void diff(const int ith, const int n);
-
-      //@}
-
-      //! Destructor
-      ~GeneralFad() {}
 
       /*!
        * @name Assignment operators
@@ -261,13 +168,15 @@ namespace Sacado {
       //@{
 
       //! Assignment operator with constant right-hand-side
-      GeneralFad<T,Storage>& operator=(const T& val);
+      GeneralFad& operator=(const T& val);
 
-      //! Assignment with GeneralFad right-hand-side
-      GeneralFad<T,Storage>& operator=(const GeneralFad<T,Storage>& x);
+      //! Assignment with Expr right-hand-side
+      GeneralFad& 
+      operator=(const GeneralFad& x);
 
       //! Assignment operator with any expression right-hand-side
-      template <typename S> GeneralFad<T,Storage>& operator=(const Expr<S>& x); 
+      template <typename S> 
+      GeneralFad& operator=(const Expr<S>& x); 
 
       //@}
 
@@ -277,56 +186,65 @@ namespace Sacado {
       //@{
 
       //! Unary-plus operator
-      inline Expr< UnaryExpr< GeneralFad<T,Storage>, UnaryPlusOp > >
+      inline 
+      Expr< UnaryExpr< GeneralFad, UnaryPlusOp > >
       operator + () const {
-	typedef UnaryExpr< GeneralFad<T,Storage>, UnaryPlusOp > expr_t;
+	typedef UnaryExpr< GeneralFad, UnaryPlusOp > expr_t;
 	return Expr<expr_t>(expr_t(*this));
       }
 
       //! Unary-minus operator
-      inline Expr< UnaryExpr< GeneralFad<T,Storage>, UnaryMinusOp > >
+      inline 
+      Expr< UnaryExpr< GeneralFad, UnaryMinusOp > >
       operator - () const {
-	typedef UnaryExpr< GeneralFad<T,Storage>, UnaryMinusOp > expr_t;
+	typedef UnaryExpr< GeneralFad, UnaryMinusOp > expr_t;
 	return Expr<expr_t>(expr_t(*this));
       }
 
       //! Addition-assignment operator with constant right-hand-side
-      GeneralFad<T,Storage>& operator += (const T& x);
+      GeneralFad& operator += (const T& x);
 
       //! Subtraction-assignment operator with constant right-hand-side
-      GeneralFad<T,Storage>& operator -= (const T& x);
+      GeneralFad& operator -= (const T& x);
 
       //! Multiplication-assignment operator with constant right-hand-side
-      GeneralFad<T,Storage>& operator *= (const T& x);
+      GeneralFad& operator *= (const T& x);
 
       //! Division-assignment operator with constant right-hand-side
-      GeneralFad<T,Storage>& operator /= (const T& x);
+      GeneralFad& operator /= (const T& x);
 
-      //! Addition-assignment operator with GeneralFad right-hand-side
+      //! Addition-assignment operator with Expr right-hand-side
       template <typename S> 
-      GeneralFad<T,Storage>& operator += (const Expr<S>& x);
+      GeneralFad& operator += (const Expr<S>& x);
 
-      //! Subtraction-assignment operator with GeneralFad right-hand-side
+      //! Subtraction-assignment operator with Expr right-hand-side
       template <typename S> 
-      GeneralFad<T,Storage>& operator -= (const Expr<S>& x);
+      GeneralFad& operator -= (const Expr<S>& x);
   
-      //! Multiplication-assignment operator with GeneralFad right-hand-side
+      //! Multiplication-assignment operator with Expr right-hand-side
       template <typename S> 
-      GeneralFad<T,Storage>& operator *= (const Expr<S>& x);
+      GeneralFad& operator *= (const Expr<S>& x);
 
-      //! Division-assignment operator with GeneralFad right-hand-side
+      //! Division-assignment operator with Expr right-hand-side
       template <typename S> 
-      GeneralFad<T,Storage>& operator /= (const Expr<S>& x);
+      GeneralFad& operator /= (const Expr<S>& x);
 
       //@}
 
-    }; // class GeneralFad<T,Storage>
+    protected:
+
+      //! Value
+      T val_;
+
+      //! Derivatives
+      Storage s_;
+
+    }; // class GeneralFad
 
   } // namespace Fad
 
 } // namespace Sacado
 
 #include "Sacado_Fad_GeneralFadImp.hpp"
-#include "Sacado_Fad_Ops.hpp"
 
-#endif // SACADO_FAD_DFAD_HPP
+#endif // SACADO_FAD_GENERALFAD_HPP

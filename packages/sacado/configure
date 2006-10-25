@@ -7063,7 +7063,7 @@ fi
 # ------------------------------------------------------------------------
 # Output files
 # ------------------------------------------------------------------------
-                                                                                                              ac_config_files="$ac_config_files Makefile src/Makefile example/Makefile example/1DFEM/Makefile example/1DFEM/Source/Makefile example/1DFEM/Drivers/Makefile test/Makefile test/utils/Makefile test/TestSuite/Makefile test/tradoptest/Makefile test/tradoptest/testgen.as"
+                                                                                                                        ac_config_files="$ac_config_files Makefile src/Makefile example/Makefile example/1DFEM/Makefile example/1DFEM/Source/Makefile example/1DFEM/Drivers/Makefile test/Makefile test/utils/Makefile test/TestSuite/Makefile test/tradoptest/Makefile test/tradoptest/testgen.as test/performance/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -7724,6 +7724,7 @@ do
   "test/TestSuite/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/TestSuite/Makefile" ;;
   "test/tradoptest/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/tradoptest/Makefile" ;;
   "test/tradoptest/testgen.as" ) CONFIG_FILES="$CONFIG_FILES test/tradoptest/testgen.as" ;;
+  "test/performance/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/performance/Makefile" ;;
   "depfiles" ) CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
   "src/Sacado_config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS src/Sacado_config.h:src/Sacado_config.h.in" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5

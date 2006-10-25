@@ -29,47 +29,32 @@
 # ************************************************************************
 # @HEADER
 
-if HAVE_CPPUNIT
-CPPUNIT_TESTDIRS = TestSuite
-else
-CPPUNIT_TESTDIRS =
-endif
+# Include NOX export Makefile for correct paths
+include $(top_builddir)/../nox/Makefile.export.nox
 
-if BUILD_ALLTESTS
-SLOWTESTDIRS = tradoptest
-else
-SLOWTESTDIRS = 
-endif
+EXEEXT = .exe
 
-SUBDIRS = utils $(CPPUNIT_TESTDIRS) $(SLOWTESTDIRS) performance
+noinst_PROGRAMS = \
+	dfad_nonlinear \
+	dfad_mult
 
-#
-# The below targets allow you to use the new
-# testharness to run the test suite as make targets
-#
+dfad_nonlinear_SOURCES = dfad_nonlinear.cpp 
+dfad_nonlinear_CXXFLAGS = -O2 \
+	-I$(top_srcdir)/src \
+	-I$(top_builddir)/src \
+	-I$(top_srcdir)/test/utils \
+	-I$(top_srcdir)/Fad \
+        $(LOCA_INCLUDES)
+dfad_nonlinear_DEPENDENCIES = \
+        $(top_builddir)/src/libsacado.a \
+	$(top_builddir)/test/utils/libsacadoutils.a
+dfad_nonlinear_LDADD = \
+	-L$(top_builddir)/src -lsacado \
+	-L$(top_builddir)/test/utils -lsacadoutils \
+	$(LOCA_LIBS) \
+	$(LIBS) $(FLIBS)
 
-TRILINOS_HOME_DIR=@abs_top_srcdir@/../..
-TRILINOS_BUILD_DIR=@abs_top_builddir@/../..
-
-runtests-serial :
-	$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-  --trilinos-dir=$(TRILINOS_HOME_DIR) \
-  --comm=serial \
-  --build-dir=$(TRILINOS_BUILD_DIR) \
-  --category=FRAMEWORK \
-  --output-dir=@abs_top_builddir@/test/runtests-results \
-  --verbosity=1 \
-  --packages=sacado
-
-runtests-mpi :
-	$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-  --trilinos-dir=$(TRILINOS_HOME_DIR) \
-  --comm=mpi \
-  --mpi-go=$(TRILINOS_MPI_GO) \
-  --build-dir=$(TRILINOS_BUILD_DIR) \
-  --category=FRAMEWORK \
-  --output-dir=@abs_top_builddir@/test/runtests-results \
-  --verbosity=1 \
-  --packages=sacado
-
-EXTRA_DIST = definition
+dfad_mult_SOURCES = dfad_mult.cpp
+dfad_mult_CXXFLAGS = $(dfad_nonlinear_CXXFLAGS)
+dfad_mult_DEPENDENCIES = $(dfad_nonlinear_DEPENDENCIES)
+dfad_mult_LDADD = $(dfad_nonlinear_LDADD)

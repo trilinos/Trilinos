@@ -32,27 +32,224 @@
 #ifndef SACADO_FAD_SFAD_HPP
 #define SACADO_FAD_SFAD_HPP
 
-#include "Sacado_Fad_GeneralFad.hpp"
+#include "Sacado_ConfigDefs.h"
 #include "Sacado_Fad_SFadTraits.hpp"
+#include "Sacado_Fad_Expression.hpp"
+#include "Sacado_Fad_StaticStorage.hpp"
+
+// forward decalarations
+namespace Sacado {
+  namespace Fad {
+    template <class ExprT> class UnaryPlusOp;
+    template <class ExprT> class UnaryMinusOp;
+  }
+}
 
 namespace Sacado {
 
+  //! Namespace for forward-mode AD classes
   namespace Fad {
 
-    // Forward declaration
+    //! A tag for specializing Expr for SFad expressions
     template <typename T, int Num> 
-    class StaticStorage;
+    struct SFadExprTag {};
+
+    /*!
+     * \brief Expression template forward-mode AD class with static memory
+     * allocation.
+     */
+    /*!
+     * This classes specializes Expr to SFad expressions.
+     */
+    template <typename T, int Num> 
+    class Expr< SFadExprTag<T,Num> > {
+
+    public:
+
+      //! Typename of values
+      typedef T value_type;
+
+      /*!
+       * @name Initialization methods
+       */
+      //@{
+
+      //! Default constructor
+      Expr() : val_( T(0)) { ss_array<T>::zero(dx_, Num); }
+
+      //! Constructor with supplied value \c x
+      /*!
+       * Initializes value to \c x and derivative array is empty
+       */
+      Expr(const T & x) : val_(x)  { ss_array<T>::zero(dx_, Num); }
+
+      //! Constructor with size \c sz and value \c x
+      /*!
+       * Initializes value to \c x and derivative array 0 of length \c sz
+       */
+      Expr(const int sz, const T & x) : val_(x){ ss_array<T>::zero(dx_, Num); }
+
+      //! Constructor with size \c sz, index \c i, and value \c x
+      /*!
+       * Initializes value to \c x and derivative array of length \c sz
+       * as row \c i of the identity matrix, i.e., sets derivative component
+       * \c i to 1 and all other's to zero.
+       */
+      Expr(const int sz, const int i, const T & x) : val_(x) {
+	ss_array<T>::zero(dx_, Num);
+	dx_[i]=1.; 
+      }
+
+      //! Copy constructor
+      Expr(const Expr& x) : val_(x.val_) { 
+	ss_array<T>::copy(x.dx_, dx_, Num); }
+
+      //! Copy constructor from any Expression object
+      template <typename S> Expr(const Expr<S>& x);
+
+      //! Destructor
+      ~Expr() {}
+
+      //! Set %Fad object as the \c ith independent variable
+      /*!
+       * Sets the derivative array of length \c n to the \c ith row of the
+       * identity matrix and has the same affect as the 
+       * Implementation(const int sz, const int i, const T & x) 
+       * constructor.
+       */
+      void diff(const int ith, const int n);
+
+      //@}
+
+      /*!
+       * @name Value accessor methods
+       */
+      //@{
+
+      //! Returns value
+      const T& val() const { return val_;}
+
+      //! Returns value
+      T& val() { return val_;}
+
+      //@}
+
+      /*!
+       * @name Derivative accessor methods
+       */
+      //@{
+
+      //! Returns number of derivative components
+      int size() const { return Num;}
+
+      //! Returns true if derivative array is not empty
+      bool hasFastAccess() const { return true; }
+
+      //! Returns true if derivative array is empty
+      bool isPassive() const { return false; }
+      
+      //! Set whether variable is constant
+      void setIsConstant(bool is_const) {}
+
+      //! Returns derivative array
+      const T* dx() const { return &(dx_[0]);}
+
+      //! Returns derivative component \c i with bounds checking
+      T dx(int i) const { return dx_[i]; }
+    
+      //! Returns derivative component \c i without bounds checking
+      T& fastAccessDx(int i) { return dx_[i];}
+
+      //! Returns derivative component \c i without bounds checking
+      T fastAccessDx(int i) const { return dx_[i];}
+    
+      //@}
+
+      /*!
+       * @name Assignment operators
+       */
+      //@{
+
+      //! Assignment operator with constant right-hand-side
+      Expr< SFadExprTag<T,Num> >& operator=(const T& val);
+
+      //! Assignment with Expr right-hand-side
+      Expr< SFadExprTag<T,Num> >& 
+      operator=(const Expr< SFadExprTag<T,Num> >& x);
+
+      //! Assignment operator with any expression right-hand-side
+      template <typename S> 
+      Expr< SFadExprTag<T,Num> >& operator=(const Expr<S>& x); 
+
+      //@}
+
+      /*!
+       * @name Unary operators
+       */
+      //@{
+
+      //! Unary-plus operator
+      inline 
+      Expr< UnaryExpr< Expr< SFadExprTag<T,Num> >, UnaryPlusOp > >
+      operator + () const {
+	typedef UnaryExpr< Expr< SFadExprTag<T,Num> >, UnaryPlusOp > expr_t;
+	return Expr<expr_t>(expr_t(*this));
+      }
+
+      //! Unary-minus operator
+      inline 
+      Expr< UnaryExpr< Expr< SFadExprTag<T,Num> >, UnaryMinusOp > >
+      operator - () const {
+	typedef UnaryExpr< Expr< SFadExprTag<T,Num> >, UnaryMinusOp > expr_t;
+	return Expr<expr_t>(expr_t(*this));
+      }
+
+      //! Addition-assignment operator with constant right-hand-side
+      Expr< SFadExprTag<T,Num> >& operator += (const T& x);
+
+      //! Subtraction-assignment operator with constant right-hand-side
+      Expr< SFadExprTag<T,Num> >& operator -= (const T& x);
+
+      //! Multiplication-assignment operator with constant right-hand-side
+      Expr< SFadExprTag<T,Num> >& operator *= (const T& x);
+
+      //! Division-assignment operator with constant right-hand-side
+      Expr< SFadExprTag<T,Num> >& operator /= (const T& x);
+
+      //! Addition-assignment operator with Expr right-hand-side
+      template <typename S> 
+      Expr< SFadExprTag<T,Num> >& operator += (const Expr<S>& x);
+
+      //! Subtraction-assignment operator with Expr right-hand-side
+      template <typename S> 
+      Expr< SFadExprTag<T,Num> >& operator -= (const Expr<S>& x);
+  
+      //! Multiplication-assignment operator with Expr right-hand-side
+      template <typename S> 
+      Expr< SFadExprTag<T,Num> >& operator *= (const Expr<S>& x);
+
+      //! Division-assignment operator with Expr right-hand-side
+      template <typename S> 
+      Expr< SFadExprTag<T,Num> >& operator /= (const Expr<S>& x);
+
+      //@}
+
+    protected:
+
+      //! Value
+      T val_;
+
+      //! Derivatives
+      T dx_[Num];
+
+    }; // class Expr<SFadExprTag>
 
     //! Forward-mode AD class using static memory allocation
     /*!
      * This is the user-level class for forward mode AD with static
      * memory allocation, and is appropriate for whenever the number
-     * of derivative components is known at compile time.  The largest size
-     * of the derivative array is fixed by the template parameter \c Num
-     * while the actual size used is set by the \c sz argument to the 
-     * constructor or the \c n argument to diff().  The user
-     * interface is split between the Sacado::Fad::GeneralFad and 
-     * and Sacado::Fad::Implementation classes.
+     * of derivative components is known at compile time.  The size
+     * of the derivative array is fixed by the template parameter \c Num.  
      *
      * The class is templated on two types, \c ValueT and \c ScalarT.  Type
      * \c ValueT is the type for values the derivative class holds, while
@@ -66,7 +263,8 @@ namespace Sacado {
      */
     template <typename ValueT, int Num,
 	      typename ScalarT = typename ScalarValueType<ValueT>::type >
-    class SFad : public GeneralFad<ValueT,StaticStorage<ValueT,Num> > {
+    class SFad : 
+      public Expr< SFadExprTag<ValueT,Num > > {
 
     public:
 
@@ -79,28 +277,29 @@ namespace Sacado {
       /*!
        * Initializes value to 0 and derivative array is empty
        */
-      SFad() : GeneralFad< ValueT,StaticStorage<ValueT,Num> >() {}
+      SFad() : 
+	Expr< SFadExprTag< ValueT,Num > >() {}
 
       //! Constructor with supplied value \c x
       /*!
        * Initializes value to \c x and derivative array is empty
        */
       SFad(const ValueT & x) : 
-	GeneralFad< ValueT,StaticStorage<ValueT,Num> >(x) {}
+	Expr< SFadExprTag< ValueT,Num > >(x) {}
 
       //! Constructor with supplied value \c x of type ScalarT
       /*!
        * Initializes value to \c ValueT(x) and derivative array is empty
        */
       SFad(const ScalarT& x) : 
-	GeneralFad< ValueT,StaticStorage<ValueT,Num> >(ValueT(x)) {}
+	Expr< SFadExprTag< ValueT,Num > >(ValueT(x)) {}
 
       //! Constructor with size \c sz and value \c x
       /*!
        * Initializes value to \c x and derivative array 0 of length \c sz
        */
       SFad(const int sz, const ValueT & x) : 
-	GeneralFad< ValueT,StaticStorage<ValueT,Num> >(sz,x) {}
+	Expr< SFadExprTag< ValueT,Num > >(sz,x) {}
 
       //! Constructor with size \c sz, index \c i, and value \c x
       /*!
@@ -109,20 +308,27 @@ namespace Sacado {
        * \c i to 1 and all other's to zero.
        */
       SFad(const int sz, const int i, const ValueT & x) : 
-	GeneralFad< ValueT,StaticStorage<ValueT,Num> >(sz,i,x) {}
+	Expr< SFadExprTag< ValueT,Num > >(sz,i,x) {}
 
       //! Copy constructor
       SFad(const SFad& x) : 
-	GeneralFad< ValueT,StaticStorage<ValueT,Num> >(x) {}
+	Expr< SFadExprTag< ValueT,Num > >(x) {}
 
       //! Copy constructor from any Expression object
       template <typename S> SFad(const Expr<S>& x) : 
-	GeneralFad< ValueT,StaticStorage<ValueT,Num> >(x) {}
+	Expr< SFadExprTag< ValueT,Num > >(x) {}
 
       //@}
 
       //! Destructor
       ~SFad() {}
+
+      //! Assignment operator with any expression right-hand-side
+      template <typename S> SFad& operator=(const Expr<S>& x) 
+      {
+	Expr< SFadExprTag< ValueT,Num > >::operator=(x);
+	return *this;
+      }
 
     }; // class SFad<ValueT,Num,ScalarT>
 
@@ -134,7 +340,7 @@ namespace Sacado {
      */
     template <typename ValueT, int Num>
     class SFad<ValueT,Num,ValueT> : 
-      public GeneralFad<ValueT,StaticStorage<ValueT,Num> > {
+      public Expr< SFadExprTag<ValueT,Num >  >{
 
     public:
 
@@ -147,21 +353,21 @@ namespace Sacado {
       /*!
        * Initializes value to 0 and derivative array is empty
        */
-      SFad() : GeneralFad< ValueT,StaticStorage<ValueT,Num> >() {}
+      SFad() : Expr< SFadExprTag< ValueT,Num > >() {}
 
       //! Constructor with supplied value \c x
       /*!
        * Initializes value to \c x and derivative array is empty
        */
       SFad(const ValueT & x) : 
-	GeneralFad< ValueT,StaticStorage<ValueT,Num> >(x) {}
+	Expr< SFadExprTag< ValueT,Num > >(x) {}
 
       //! Constructor with size \c sz and value \c x
       /*!
        * Initializes value to \c x and derivative array 0 of length \c sz
        */
       SFad(const int sz, const ValueT & x) : 
-	GeneralFad< ValueT,StaticStorage<ValueT,Num> >(sz,x) {}
+	Expr< SFadExprTag< ValueT,Num > >(sz,x) {}
 
       //! Constructor with size \c sz, index \c i, and value \c x
       /*!
@@ -170,78 +376,35 @@ namespace Sacado {
        * \c i to 1 and all other's to zero.
        */
       SFad(const int sz, const int i, const ValueT & x) : 
-	GeneralFad< ValueT,StaticStorage<ValueT,Num> >(sz,i,x) {}
+	Expr< SFadExprTag< ValueT,Num > >(sz,i,x) {}
 
       //! Copy constructor
       SFad(const SFad& x) : 
-	GeneralFad< ValueT,StaticStorage<ValueT,Num> >(x) {}
+	Expr< SFadExprTag< ValueT,Num > >(x) {}
 
       //! Copy constructor from any Expression object
       template <typename S> SFad(const Expr<S>& x) : 
-	GeneralFad< ValueT,StaticStorage<ValueT,Num> >(x) {}
+	Expr< SFadExprTag< ValueT,Num > >(x) {}
 
       //@}
 
       //! Destructor
       ~SFad() {}
 
-    }; // class SFad<ValueT,Num>
-
-    //! Derivative array storage class using static memory allocation
-    /*!
-     * This class uses a statically allocated array whose dimension is fixed
-     * by the template parameter \c Num.
-     */
-    template <typename T, int Num> 
-    class StaticStorage {
-
-    public:
-
-      //! Default constructor
-      StaticStorage() : sz_(0) {}
-
-      //! Constructor with size \c sz
-      /*!
-       * Initializes derivative array 0 of length \c sz
-       */
-      StaticStorage(const int sz) : sz_(sz) { memset(dx_,0,sz_*sizeof(T)); }
-
-      //! Copy constructor
-      StaticStorage(const StaticStorage& x) : 
-	sz_(x.sz_) { for (int i=0; i<sz_; i++) dx_[i] = x.dx_[i]; }
-
-      //! Destructor
-      ~StaticStorage() {}
-
-      //! Assignment
-      StaticStorage& operator=(const StaticStorage& x) {
-	sz_ = x.sz_;
-	for (int i=0; i<sz_; i++) 
-	  dx_[i] = x.dx_[i]; 
+      //! Assignment operator with any expression right-hand-side
+      template <typename S> SFad& operator=(const Expr<S>& x) 
+      {
+	Expr< SFadExprTag< ValueT,Num > >::operator=(x);
 	return *this;
       }
 
-      //! Returns number of derivative components
-      int size() const { return sz_;}
-
-      //! Resize the derivative array to sz
-      void resize(int sz) { sz_ = sz; }
-
-      //! Zero out derivative array
-      void zero() { memset(dx_,0,sz_*sizeof(T)); }
-
-    protected:
-
-      //! Size of derivative array
-      int sz_;
-
-      //! Derivative array
-      T dx_[Num];
-
-    }; // class DynamicStorage
+    }; // class SFad<ValueT,Num>
 
   } // namespace Fad
 
 } // namespace Sacado
+
+#include "Sacado_Fad_SFadImp.hpp"
+#include "Sacado_Fad_Ops.hpp"
 
 #endif // SACADO_FAD_SFAD_HPP

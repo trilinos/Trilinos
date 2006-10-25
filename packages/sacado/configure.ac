@@ -391,6 +391,7 @@ AC_CONFIG_FILES([
 		test/TestSuite/Makefile
 		test/tradoptest/Makefile
 		test/tradoptest/testgen.as
+		test/performance/Makefile
 		])
 
 AC_OUTPUT()

@@ -136,9 +136,10 @@ namespace Sacado {
 
       //! Typename of argument value
       typedef typename ExprT::value_type value_type;
+      typedef Op<ExprT> OpT;
 
       //! Constructor
-      UnaryExpr(const ExprT& expr) : expr_(expr), op_(expr) {}
+      UnaryExpr(const ExprT& expr) : expr_(expr) {}
 
       //! Return size of the derivative array of the operation
       int size() const { return expr_.size(); }
@@ -150,23 +151,20 @@ namespace Sacado {
       bool isPassive() const { return expr_.isPassive();}
 
       //! Return value of operation
-      value_type val() const { return op_.computeValue(expr_); }
+      value_type val() const { return OpT::computeValue(expr_); }
 
       //! Return derivative component \c i of operation
-      value_type dx(int i) const { return op_.computeDx(i,expr_); }
+      value_type dx(int i) const { return OpT::computeDx(i,expr_); }
       
       //! Return derivative component \c i of operation
       value_type fastAccessDx(int i) const { 
-	return op_.computeFastAccessDx(i,expr_); 
+	return OpT::computeFastAccessDx(i,expr_); 
       }
 
     protected:
       
       //! Left argument
       const ExprT& expr_;
-
-      //! Operator
-      Op<ExprT> op_;
 
     }; // class UnaryExpr
 
@@ -193,9 +191,11 @@ namespace Sacado {
       typedef typename Sacado::Promote<value_type_1,
 				       value_type_2>::type value_type;
 
+      typedef Op<ExprT1,ExprT2> OpT;
+
       //! Constructor
       BinaryExpr(const ExprT1& expr1, const ExprT2& expr2) : 
-	expr1_(expr1), expr2_(expr2), op_(expr1,expr2) {}
+	expr1_(expr1), expr2_(expr2) {}
 
       //! Return size of the derivative array of the operation
       int size() const {
@@ -213,15 +213,15 @@ namespace Sacado {
 
       //! Return value of operation
       value_type val() const { 
-	return op_.computeValue(expr1_,expr2_); }
+	return OpT::computeValue(expr1_,expr2_); }
 
       //! Return derivative component \c i of operation
       value_type dx(int i) const { 
-	return op_.computeDx(i,expr1_,expr2_); }
+	return OpT::computeDx(i,expr1_,expr2_); }
       
       //! Return derivative component \c i of operation
       value_type fastAccessDx(int i) const { 
-	return op_.computeFastAccessDx(i,expr1_,expr2_); 
+	return OpT::computeFastAccessDx(i,expr1_,expr2_); 
       }
 
     protected:
@@ -231,9 +231,6 @@ namespace Sacado {
 
       //! Right argument
       const ExprT2& expr2_;
-
-      //! Operator
-      Op<ExprT1,ExprT2> op_;
 
     }; // class BinaryExpr
 
@@ -256,9 +253,11 @@ namespace Sacado {
       //! Typename of the second argument value
       typedef typename ExprT2::value_type value_type;
 
+      typedef Op<ExprT1,ExprT2> OpT;
+
       //! Constructor
       BinaryExpr(const ExprT1& expr1, const ExprT2& expr2) : 
-	expr1_(expr1), expr2_(expr2), op_(expr1,expr2) {}
+	expr1_(expr1), expr2_(expr2) {}
 
       //! Return size of the derivative array of the operation
       int size() const {
@@ -274,15 +273,15 @@ namespace Sacado {
 
       //! Return value of operation
       value_type val() const { 
-	return op_.computeValue(expr1_,expr2_); }
+	return OpT::computeValue(expr1_,expr2_); }
 
       //! Return derivative component \c i of operation
       value_type dx(int i) const { 
-	return op_.computeDx(i,expr1_,expr2_); }
+	return OpT::computeDx(i,expr1_,expr2_); }
       
       //! Return derivative component \c i of operation
       value_type fastAccessDx(int i) const { 
-	return op_.computeFastAccessDx(i,expr1_,expr2_); 
+	return OpT::computeFastAccessDx(i,expr1_,expr2_); 
       }
 
     protected:
@@ -292,9 +291,6 @@ namespace Sacado {
 
       //! Right argument
       const ExprT2& expr2_;
-
-      //! Operator
-      Op<ExprT1,ExprT2> op_;
 
     }; // class BinaryExpr
 
@@ -317,9 +313,11 @@ namespace Sacado {
       //! Typename of the second argument value
       typedef typename ExprT1::value_type value_type;
 
+      typedef Op<ExprT1,ExprT2> OpT;
+
       //! Constructor
       BinaryExpr(const ExprT1& expr1, const ExprT2& expr2) : 
-	expr1_(expr1), expr2_(expr2), op_(expr1,expr2) {}
+	expr1_(expr1), expr2_(expr2) {}
 
       //! Return size of the derivative array of the operation
       int size() const {
@@ -335,15 +333,15 @@ namespace Sacado {
 
       //! Return value of operation
       value_type val() const { 
-	return op_.computeValue(expr1_,expr2_); }
+	return OpT::computeValue(expr1_,expr2_); }
 
       //! Return derivative component \c i of operation
       value_type dx(int i) const { 
-	return op_.computeDx(i,expr1_,expr2_); }
+	return OpT::computeDx(i,expr1_,expr2_); }
       
       //! Return derivative component \c i of operation
       value_type fastAccessDx(int i) const { 
-	return op_.computeFastAccessDx(i,expr1_,expr2_); 
+	return OpT::computeFastAccessDx(i,expr1_,expr2_); 
       }
 
     protected:
@@ -353,9 +351,6 @@ namespace Sacado {
 
       //! Right argument
       ExprT2 expr2_;
-
-      //! Operator
-      Op<ExprT1,ExprT2> op_;
 
     }; // class BinaryExpr
 
