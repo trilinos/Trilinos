@@ -325,8 +325,8 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
       // Pass information from stepper to IB:
       status = stepper->GetNodes(&stepper_vec);
       if (!status) return(status);
-      Scalar stepper_begin = stepper_vec[0];
-      Scalar stepper_end = stepper_vec[stepper_vec.size()-1];
+      Scalar stepper_begin = stepper_vec.front();
+      Scalar stepper_end = stepper_vec.back();
       if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
       {
         *out << "stepper_begin = " << stepper_begin << std::endl;
@@ -345,8 +345,8 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
       std::vector<Scalar> stepper_vec;
       status = stepper->GetNodes(&stepper_vec);
       if (!status) return(status);
-      Scalar stepper_begin = stepper_vec[0];
-      Scalar stepper_end = stepper_vec[stepper_vec.size()-1];
+      Scalar stepper_begin = stepper_vec.front();
+      Scalar stepper_end = stepper_vec.back();
       if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
       {
         *out << "stepper_begin = " << stepper_begin << std::endl;
@@ -410,7 +410,7 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
   int num = local_time_vec.size();
   for (int i=0; i<num ; ++i)
   {
-    if ( ( node_begin < local_time_vec[i] ) && ( local_time_vec[i] < node_end ) )
+    if ( ( node_begin <= local_time_vec[i] ) && ( local_time_vec[i] <= node_end ) )
     {
       if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
       {
@@ -419,6 +419,7 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
           node_begin << "," << node_end << "]" << std::endl;
       }
       std::vector<Scalar> tmp_time_vec; 
+      tmp_time_vec.clear();
       tmp_time_vec.push_back(local_time_vec[i]);
       std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > tmp_x_vec, tmp_xdot_vec;
       std::vector<ScalarMag> tmp_accuracy_vec;
@@ -429,20 +430,20 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
       if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
       {
         *out << "IB->GetPoints returned:" << std::endl;
-        *out << "tmp_x_vec[" << i << "] = " << std::endl;
-        tmp_x_vec[i]->describe(*out,Teuchos::VERB_EXTREME);
-        if (tmp_xdot_vec[i] == Teuchos::null)
-          *out << "tmp_xdot_vec[" << i << "] = Teuchos::null" << std::endl;
+        *out << "tmp_x_vec = " << std::endl;
+        tmp_x_vec[0]->describe(*out,Teuchos::VERB_EXTREME);
+        if (tmp_xdot_vec[0] == Teuchos::null)
+          *out << "tmp_xdot_vec = Teuchos::null" << std::endl;
         else
         {
-          *out << "tmp_xdot_vec[" << i << "] = " << std::endl;
-          tmp_xdot_vec[i]->describe(*out,Teuchos::VERB_EXTREME);
+          *out << "tmp_xdot_vec = " << std::endl;
+          tmp_xdot_vec[0]->describe(*out,Teuchos::VERB_EXTREME);
         }
-        *out << "tmp_accuracy_vec[" << i << "] = " << accuracy_vec[i] << std::endl;
+        *out << "tmp_accuracy_vec = " << accuracy_vec[0] << std::endl;
       }
       if (!status) return(status);
     }
-    else if ( ( stepper_begin < local_time_vec[i] ) && ( local_time_vec[i] < stepper_end ) )
+    else if ( ( stepper_begin <= local_time_vec[i] ) && ( local_time_vec[i] <= stepper_end ) )
     {
       if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
       {
@@ -461,16 +462,16 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
       if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
       {
         *out << "stepper->GetPoints returned:" << std::endl;
-        *out << "tmp_x_vec[" << i << "] = " << std::endl;
-        tmp_x_vec[i]->describe(*out,Teuchos::VERB_EXTREME);
-        if (tmp_xdot_vec[i] == Teuchos::null)
-          *out << "tmp_xdot_vec[" << i << "] = Teuchos::null" << std::endl;
+        *out << "tmp_x_vec = " << std::endl;
+        tmp_x_vec[0]->describe(*out,Teuchos::VERB_EXTREME);
+        if (tmp_xdot_vec[0] == Teuchos::null)
+          *out << "tmp_xdot_vec = Teuchos::null" << std::endl;
         else
         {
-          *out << "tmp_xdot_vec[" << i << "] = " << std::endl;
-          tmp_xdot_vec[i]->describe(*out,Teuchos::VERB_EXTREME);
+          *out << "tmp_xdot_vec = " << std::endl;
+          tmp_xdot_vec[0]->describe(*out,Teuchos::VERB_EXTREME);
         }
-        *out << "tmp_accuracy_vec[" << i << "] = " << tmp_accuracy_vec[i] << std::endl;
+        *out << "tmp_accuracy_vec = " << tmp_accuracy_vec[0] << std::endl;
       }
       if (!status) return(status);
     }

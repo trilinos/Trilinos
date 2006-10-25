@@ -289,10 +289,12 @@ int main(int argc, char *argv[])
           linearInterpolator = Teuchos::rcp(new Rythmos::LinearInterpolator<double>());
         Teuchos::RefCountPtr<Rythmos::InterpolationBuffer<double> > 
           IB = Teuchos::rcp(new Rythmos::InterpolationBuffer<double>(linearInterpolator,buffersize));
+        IB->setParameterList(integratorParams);
         Rythmos::InterpolationBufferAsStepper<double> integrator(stepper_ptr,IB,integratorParams);
         // Ask for desired time value:
         std::vector<double> time_vals;
-        time_vals.push_back(finalTime);
+        for (int i=0 ; i<=N ; ++i)
+          time_vals.push_back(i*dt);
         std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<double> > > x_vec;
         std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<double> > > xdot_vec;
         std::vector<double> accuracy_vec;
@@ -303,7 +305,7 @@ int main(int argc, char *argv[])
           return(-1);
         }
         // Get solution out of stepper:
-        x_computed_thyra_ptr = x_vec[0];
+        x_computed_thyra_ptr = x_vec.back();
       }
       else
       {
@@ -348,7 +350,8 @@ int main(int argc, char *argv[])
         Rythmos::InterpolationBufferAsStepper<double> integrator(stepper_ptr,IB,integratorParams);
         // Ask for desired time value:
         std::vector<double> time_vals;
-        time_vals.push_back(finalTime);
+        for (int i=0 ; i<=N ; ++i)
+          time_vals.push_back(i*dt);
         std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<double> > > x_vec;
         std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<double> > > xdot_vec;
         std::vector<double> accuracy_vec;
@@ -359,7 +362,7 @@ int main(int argc, char *argv[])
           return(-1);
         }
         // Get solution out of stepper:
-        x_computed_thyra_ptr = x_vec[0];
+        x_computed_thyra_ptr = x_vec.back();
       }
       else
       {
