@@ -78,53 +78,18 @@ SchurCouplingOp::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 
   // The substance of this operator ----- to do RWH 10/24/2006
 
-  cout << "Incoming X :\n" << *wrappedX << endl;
+  //cout << "Incoming X :\n" << *wrappedX << endl;
   problemManager.applyBlockAction( depId, probId, *wrappedX, *tempY);
-  cout << "After applyBlockAction(" << depId << ", " << probId << ") :\n" << *tempY << endl;
+  //cout << "After applyBlockAction(" << depId << ", " << probId << ") :\n" << *tempY << endl;
   problemManager.getBlockInverseOperator(depId)->ApplyInverse(*tempY, *tempY);
-  cout << "After ApplyInverse :\n" << *tempY << endl;
+  //cout << "After ApplyInverse :\n" << *tempY << endl;
   problemManager.applyBlockAction( probId, depId, *tempY, *tempX);
-  cout << "After applyBlockAction(" << probId << ", " << depId << ") :\n" << *tempX << endl;
+  //cout << "After applyBlockAction(" << probId << ", " << depId << ") :\n" << *tempX << endl;
 
   problemManager.getBlockJacobianMatrix(probId)->Apply(*wrappedX, *wrappedY);
-  cout << "After Apply of diagonal block :\n" << *wrappedY << endl;
+  //cout << "After Apply of diagonal block :\n" << *wrappedY << endl;
   wrappedY->Update(-1.0, *tempX, 1.0);
-  cout << "After combingin; final result :\n" << *wrappedY << endl;
-
-  //Teuchos::RefCountPtr<Epetra_Vector> tmpA = Teuchos::rcp( new Epetra_Vector( *problemManager.getProblem(1).getSolution()) );
-  //Teuchos::RefCountPtr<Epetra_Vector> tmpB = Teuchos::rcp( new Epetra_Vector( *problemManager.getProblem(1).getSolution()) );
-
-  //Teuchos::ParameterList& lsParams = (*problemManager.nlParams).sublist("Direction").sublist("Newton").sublist("Linear Solver");
-
-  //problemManager.setGroupX(1);
-  //problemManager.setGroupX(2);
-  //problemManager.getGroup(1).computeJacobian();
-  //problemManager.getGroup(2).computeJacobian();
-  //problemManager.createBlockInverseOperator(1, lsParams);
-  //problemManager.createBlockInverseOperator(2, lsParams);
-
-  ////cout << "\nBefore doing apply(1,1) :\n" << *tmpA << *tmpB << endl;
-  ////problemManager.getBlockJacobianMatrix(1,1)->Apply(*tmpA, *tmpB);
-  ////cout << "\nAfter doing apply(1,1) :\n" << *tmpA << *tmpB << endl;
-
-  ////problemManager.getBlockInverseOperator(1)->ApplyInverse(*tmpB, *tmpA);
-  ////cout << "\nAfter doing applyinverse(1) :\n" << *tmpA << *tmpB << endl;
-
-  //cout << "Problem 1 solution :\n" << problemManager.getSolutionVec(1) << endl;
-  //cout << "Problem 2 solution :\n" << problemManager.getSolutionVec(2) << endl;
-
-  //problemManager.getGroup(1).computeF();
-  //problemManager.getGroup(2).computeF();
-
-  //cout << "Problem 1 residual :\n" << problemManager.getResidualVec(1) << endl;
-  //cout << "Problem 2 residual :\n" << problemManager.getResidualVec(2) << endl;
-
-  //*tmpB = problemManager.getResidualVec(2);
-  //problemManager.getBlockInverseOperator(2)->ApplyInverse(*tmpB, *tmpB);
-  //cout << "After applying blockInverse(2) to Problem 2 residual :\n" << *tmpB << endl;
-
-  //problemManager.applyBlockAction( 1, 2, *tmpB, *tmpA);
-  //cout << "After applying blockAction(1, 2) to modified Problem 2 residual :\n" << *tmpA << endl;
+  //cout << "After combingin; final result :\n" << *wrappedY << endl;
 
   return (0);
 }

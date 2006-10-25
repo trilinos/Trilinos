@@ -456,48 +456,24 @@ int main(int argc, char *argv[])
 
     cout << "\n----- Solution for update vector ---- :\n" << solutionA << endl;
 
+    *resA = solutionA;
+
     solutionA.Update(1.0, problemManager.getSolutionVec(1), -1.0);
 
     cout << "\n----- Solution vector ---- :\n" << solutionA << endl;
 
+    // Now back substitue for other problem solution
+    problemManager.applyBlockAction( 2, 1, *resA, *resB);
+    resB->Update(-1.0, problemManager.getResidualVec(2), 1.0);
+    problemManager.getBlockInverseOperator(2)->ApplyInverse(*resB, *resB);
+
+    cout << "\n----- Second Solution for update vector ---- :\n" << *resB << endl;
+
+    resB->Update(1.0, problemManager.getSolutionVec(2), 1.0);
+
+    cout << "\n----- Second Solution vector ---- :\n" << *resB << endl;
+
     exit(0);
-    ////cout << "\nBefore doing apply(1,2) :\n" << *tmpA << *tmpB << endl;
-
-    ////problemManager.applyBlockAction( 1, 2, *tmpB, *tmpA);
-
-    ////cout << "\nAfter doing apply(1,2) :\n" << *tmpA << *tmpB << endl;
-
-    //problemManager.setGroupX(1);
-    //problemManager.setGroupX(2);
-    //problemManager.getGroup(1).computeJacobian();
-    //problemManager.getGroup(2).computeJacobian();
-    //problemManager.createBlockInverseOperator(1, lsParams);
-    //problemManager.createBlockInverseOperator(2, lsParams);
-
-    ////cout << "\nBefore doing apply(1,1) :\n" << *tmpA << *tmpB << endl;
-    ////problemManager.getBlockJacobianMatrix(1,1)->Apply(*tmpA, *tmpB);
-    ////cout << "\nAfter doing apply(1,1) :\n" << *tmpA << *tmpB << endl;
-
-    ////problemManager.getBlockInverseOperator(1)->ApplyInverse(*tmpB, *tmpA);
-    ////cout << "\nAfter doing applyinverse(1) :\n" << *tmpA << *tmpB << endl;
-
-    //cout << "Problem 1 solution :\n" << problemManager.getSolutionVec(1) << endl;
-    //cout << "Problem 2 solution :\n" << problemManager.getSolutionVec(2) << endl;
-
-    //problemManager.getGroup(1).computeF();
-    //problemManager.getGroup(2).computeF();
-
-    //cout << "Problem 1 residual :\n" << problemManager.getResidualVec(1) << endl;
-    //cout << "Problem 2 residual :\n" << problemManager.getResidualVec(2) << endl;
-
-    //*tmpB = problemManager.getResidualVec(2);
-    //problemManager.getBlockInverseOperator(2)->ApplyInverse(*tmpB, *tmpB);
-    //cout << "After applying blockInverse(2) to Problem 2 residual :\n" << *tmpB << endl;
-
-    //problemManager.applyBlockAction( 1, 2, *tmpB, *tmpA);
-    //cout << "After applying blockAction(1, 2) to modified Problem 2 residual :\n" << *tmpA << endl;
-
-
   }
 
   // Solve the coupled problem
