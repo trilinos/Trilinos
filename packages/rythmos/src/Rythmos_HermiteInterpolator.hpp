@@ -242,7 +242,8 @@ bool HermiteInterpolator<Scalar>::interpolate(
       //           +(f'(x1) - 2(f(x1)-f(x0))/(x1-x0) + f'(x0))[2*(x-x0)(x-x1) + (x-x0)^2]/(x1-x0)^2
       Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xdot_vec = xdoti->clone_v(); 
       tmp_t = t_t0/dt;
-      Thyra::Vp_StVpStV(&*xdot_vec,Scalar(2*tmp_t),*xdot_temp,Scalar(-ST::one()*tmp_t),*xdoti);
+      Thyra::Vp_StV(&*xdot_vec,Scalar(2*tmp_t),*xdot_temp);
+      Thyra::Vp_StV(&*xdot_vec,Scalar(-ST::one()*tmp_t),*xdoti);
       tmp_t = Scalar((2*t_t0*t_t1+t_t0*t_t0)/dt2);
       Thyra::V_StVpStV(&*tmp_vec,tmp_t,*xdotip1,Scalar(-2*tmp_t),*xdot_temp);
       Thyra::Vp_StV(&*tmp_vec,tmp_t,*xdoti);
