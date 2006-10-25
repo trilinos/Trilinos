@@ -145,15 +145,13 @@ InterpolationBufferAsStepper<Scalar>::InterpolationBufferAsStepper(
   out->pushLinePrefix("Rythmos::InterpolationBufferAsStepper");
   out->setShowLinePrefix(true);
   out->setTabIndentStr("    ");
-  *out << "Initializing InterpolationBuferAsStepper" << std::endl;
+  *out << "Initializing InterpolationBufferAsStepper" << std::endl;
   if (outputLevel >= 3)
     *out << "Calling setStepper..." << std::endl;
   setStepper(stepper_);
   if (outputLevel >= 3)
     *out << "Calling setInterpolationBuffer..." << std::endl;
   setInterpolationBuffer(IB_);
-  if (outputLevel >= 3)
-    *out << "Calling setParameterList..." << std::endl;
 }
 
 template<class Scalar>
@@ -487,11 +485,15 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
       while (stepper_end < local_time_vec[i])
       {
         // integrate forward with stepper 
+        int num_local_steps_taken = 0;
         Scalar step_taken;
         if (parameterList->isParameter("fixed_dt"))
           step_taken = stepper->TakeStep(parameterList->get<Scalar>("fixed_dt"));
         else
           step_taken = stepper->TakeStep();
+        num_local_steps_taken++;
+        if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_MEDIUM) )
+          *out << "Took step of size " << step_taken << " with stepper" << std::endl;
         // Pass information from stepper to IB:
         status = IB->SetRange(stepper_end+step_taken,stepper_end+step_taken,*stepper);
         if (!status) return(status);
@@ -504,6 +506,8 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
         }
         if (local_time_vec[i] <= stepper_end+step_taken)
         {
+          if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_LOW) )
+            *out << "Took " << num_local_steps_taken << " with stepper" << std::endl;
           if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
           {
             *out << "We've integrated past local_time_vec[" << i << "] = " 

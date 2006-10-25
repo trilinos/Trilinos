@@ -116,6 +116,11 @@ class InterpolationBuffer : virtual public InterpolationBufferBase<Scalar>
 
     /** \brief . */
     Teuchos::RefCountPtr<Teuchos::ParameterList> unsetParameterList();
+
+    enum IBPolicy {
+      BUFFER_STATIC = 0
+      ,BUFFER_KEEP_NEWEST = 1
+    };
     
   private:
 
@@ -124,6 +129,8 @@ class InterpolationBuffer : virtual public InterpolationBufferBase<Scalar>
     typename DataStore<Scalar>::DataStoreVector_t data_vec;
 
     Teuchos::RefCountPtr<Teuchos::ParameterList> parameterList;
+
+    IBPolicy policy;
 
 };
 
@@ -164,6 +171,7 @@ void InterpolationBuffer<Scalar>::initialize(
   if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
     *out << "Calling SetStorage..." << std::endl;
   SetStorage(storage_);
+  policy = BUFFER_KEEP_NEWEST;
 }
 
 template<class Scalar>
@@ -298,7 +306,36 @@ bool InterpolationBuffer<Scalar>::SetPoints(
   }
   // Check that we're not going to exceed our storage limit:
   if ((data_vec.size()+input_data_list.size()) > storage_limit)
-    return(false);
+  { 
+    if (policy == BUFFER_STATIC)
+      return(false);
+    else if (policy == BUFFER_KEEP_NEWEST)
+    {
+      if (input_data_list.front() > data_vec.back())
+      {
+        // Case:  all of new points are past end of existing points
+        // Remove points from the beginning of data_vec, then add new points
+        int num_extra_points = input_data_list.size();
+        typename DataStore<Scalar>::DataStoreVector_t::iterator 
+          data_it = data_vec.begin();
+        for (int i=0 ; i < num_extra_points ; ++i)
+          data_it++;
+        if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
+        {
+          *out << "Removing " << num_extra_points 
+            << " from beginning of data_vec to make room for new points." << std::endl;
+        }
+        data_vec.erase(data_vec.begin(),data_it);
+      }
+      else
+      {
+        // Case:  At least one new point is before end of existing points
+        return(false);
+      }
+    }
+    else
+      return(false);
+  }
   // Now add all the remaining points to data_vec
   data_vec.insert(data_vec.end(),input_data_list.begin(),input_data_list.end());
   // And sort data_vec:
@@ -582,6 +619,9 @@ void InterpolationBuffer<Scalar>::setParameterList(Teuchos::RefCountPtr<Teuchos:
   int outputLevel = parameterList->get( "outputLevel", int(-1) );
   outputLevel = min(max(outputLevel,-1),4);
   this->setVerbLevel(static_cast<Teuchos::EVerbosityLevel>(outputLevel));
+  int policyLevel = parameterList->get( "InterpolationBufferPolicy", int(1) );
+  policyLevel = min(max(policyLevel,0),1);
+  policy = static_cast<IBPolicy>(policyLevel);
 }
 
 template <class Scalar>
