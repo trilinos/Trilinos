@@ -116,6 +116,7 @@ int main(int argc, char *argv[])
     double abstol = 1.0e-4;
     int maxOrder = 5;
     bool useIntegrator = false;
+    int buffersize = 100;
     int outputLevel = -1; // outputLevel determines the level of output / verbosity
 
     // Parse the command-line options:
@@ -142,7 +143,8 @@ int main(int argc, char *argv[])
     clp.setOption( "abstol", &abstol, "Absolute Error Tolerance" );
     clp.setOption( "maxorder", &maxOrder, "Maximum Implicit BDF order" );
     clp.setOption( "useintegrator", "normal", &useIntegrator, "Use InterpolationBufferAsStepper as integrator" );
-    clp.setOption( "outputLevel", &outputLevel, "Verbosity level for Rythmos" );
+    clp.setOption( "buffersize", &buffersize, "Number of solutions to store in InterpolationBuffer" );
+    clp.setOption( "outputlevel", &outputLevel, "Verbosity level for Rythmos" );
 
     Teuchos::CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
     if( parse_return != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
@@ -280,12 +282,12 @@ int main(int argc, char *argv[])
         Teuchos::RefCountPtr<Teuchos::ParameterList> 
           integratorParams = Teuchos::rcp(new Teuchos::ParameterList);
         integratorParams->set( "fixed_dt", dt );
-        integratorParams->set( "outputlevel", outputLevel );
+        integratorParams->set( "outputLevel", outputLevel );
         // Create integrator using stepper and linear interpolation buffer:
         Teuchos::RefCountPtr<Rythmos::InterpolatorBase<double> > 
           linearInterpolator = Teuchos::rcp(new Rythmos::LinearInterpolator<double>());
         Teuchos::RefCountPtr<Rythmos::InterpolationBuffer<double> > 
-          IB = Teuchos::rcp(new Rythmos::InterpolationBuffer<double>(linearInterpolator,10));
+          IB = Teuchos::rcp(new Rythmos::InterpolationBuffer<double>(linearInterpolator,buffersize));
         Rythmos::InterpolationBufferAsStepper<double> integrator(stepper_ptr,IB,integratorParams);
         // Ask for desired time value:
         std::vector<double> time_vals;
@@ -314,7 +316,8 @@ int main(int argc, char *argv[])
             stepper.describe(*out,static_cast<Teuchos::EVerbosityLevel>(outputLevel));
           if (dt_taken != dt)
           {
-            cerr << "Error, stepper took step of dt = " << dt_taken << " when asked to take step of dt = " << dt << std::endl;
+            cerr << "Error, stepper took step of dt = " << dt_taken 
+              << " when asked to take step of dt = " << dt << std::endl;
             break;
           }
         }
@@ -335,7 +338,8 @@ int main(int argc, char *argv[])
         Teuchos::RefCountPtr<Rythmos::InterpolatorBase<double> > 
           linearInterpolator = Teuchos::rcp(new Rythmos::LinearInterpolator<double>());
         Teuchos::RefCountPtr<Rythmos::InterpolationBuffer<double> > 
-          IB = Teuchos::rcp(new Rythmos::InterpolationBuffer<double>(linearInterpolator,10));
+          IB = Teuchos::rcp(new Rythmos::InterpolationBuffer<double>(linearInterpolator,buffersize));
+        IB->setParameterList(integratorParams);
         Rythmos::InterpolationBufferAsStepper<double> integrator(stepper_ptr,IB,integratorParams);
         // Ask for desired time value:
         std::vector<double> time_vals;

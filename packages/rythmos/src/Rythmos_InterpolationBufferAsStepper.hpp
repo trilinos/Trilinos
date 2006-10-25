@@ -482,10 +482,10 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
           local_time_vec[i] << " not available in IB or stepper" << std::endl;
         *out << "Integrating forward with stepper" << std::endl;
       }
+      int num_local_steps_taken = 0;
       while (stepper_end < local_time_vec[i])
       {
         // integrate forward with stepper 
-        int num_local_steps_taken = 0;
         Scalar step_taken;
         if (parameterList->isParameter("fixed_dt"))
           step_taken = stepper->TakeStep(parameterList->get<Scalar>("fixed_dt"));
@@ -506,8 +506,6 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
         }
         if (local_time_vec[i] <= stepper_end+step_taken)
         {
-          if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_LOW) )
-            *out << "Took " << num_local_steps_taken << " with stepper" << std::endl;
           if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
           {
             *out << "We've integrated past local_time_vec[" << i << "] = " 
@@ -528,6 +526,8 @@ bool InterpolationBufferAsStepper<Scalar>::GetPoints(
         stepper_begin = stepper_end;
         stepper_end += step_taken;
       }
+      if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_LOW) )
+        *out << "Took " << num_local_steps_taken << " steps with " << stepper->description() << std::endl;
     }
   }
   return(status);
