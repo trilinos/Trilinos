@@ -7,11 +7,24 @@
 #include "Epetra_Comm.h"
 #include "Epetra_CrsGraph.h"
 
-/** \brief An upgrade of <tt>EpetraModelEval2DSim</tt> that add the ability to
- * manipulate the parameters, adds a response function and includes first
- * derivatives.
+/** \brief A simple serial example model which includes a parameter subvector
+ * and a response function that can be used to define an optimization problem.
  *
- * ToDo: Finish Documentation!
+ * Represents the model:
+ 
+ \verbatim
+
+    f[0] =        x[0]      + x[1]*x[1] - p[0];
+    f[1] = d_ * ( x[0]*x[0] - x[1]      - p[1] );
+
+    g[0] = 0.5 * ( sqr(x[0]-xt0_) + sqr(x[1]-xt1_) + sqr(p[0]-pt0_) + sqr(p[1]-pt1_) );
+ 
+ \endverbatim
+ *
+ * where there is just one state vector <tt>x = [ x[0], x[1] ]</tt> and one
+ * parameter subvector <tt>p = [ p[0], p[1] ]</tt>.
+ *
+ * See the function <tt>evalModel()</tt> for more details.
  */
 class EpetraModelEval4DOpt : public EpetraExt::ModelEvaluator {
 public:
