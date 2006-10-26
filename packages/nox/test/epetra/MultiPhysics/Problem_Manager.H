@@ -56,6 +56,18 @@ class OffBlock_Manager;
 
 #include <vector>
 
+enum CouplingSolveMethod { LOOSE_HARDCODED,
+                           LOOSE_LIBRARY  ,
+                           MATRIX_FREE    ,
+                           SCHUR_BASED      };
+
+const CouplingSolveMethod SolveMethodValues[] = { LOOSE_HARDCODED, LOOSE_LIBRARY, MATRIX_FREE, SCHUR_BASED };
+
+static const char * SolveMethodNames[] = { "loose-hardcoded" ,
+                                           "loose-library"   ,
+                                           "matrix-free"     ,
+                                           "schur-based"       };
+
 class Problem_Manager : public GenericEpetraProblem ,
                         public NOX::Multiphysics::DataExchange::Interface,
                         public NOX::Epetra::BroydenOperator::ReplacementInterface
@@ -227,6 +239,9 @@ public:
 
   // Solve problems using matrix-free coupling
   bool solveMF();
+
+  // Solve problems using schur-based coupling
+  bool solveSchurBased();
 
   // Output summary of copled problems
   void outputStatus( ostream & os );

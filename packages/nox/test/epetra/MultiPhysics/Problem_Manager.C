@@ -39,6 +39,8 @@
 #include "NOX.H"
 #include "NOX_Epetra.H"
 #include "NOX_Epetra_DebugTools.H"
+#include "NOX_Epetra_SchurCouplingOperator.H" 
+
 // Trilinos Objects
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
@@ -594,7 +596,7 @@ Problem_Manager::registerComplete()
         precInterface, precOperator,
         compositeSoln) );
 
-    //dynamic_cast<NOX::Epetra::MatrixFree*>(jacOperator.get())->computeJacobian(*compositeSoln, *jacOperator);
+    dynamic_cast<NOX::Epetra::MatrixFree*>(jacOperator.get())->computeJacobian(*compositeSoln, *jacOperator);
   }
 
   if( 0 ) // Matrix-Free Jacobian and Broyden preconditioner
@@ -632,8 +634,8 @@ Problem_Manager::registerComplete()
     evaluate( NOX::Epetra::Interface::Required::Jac, &(*compositeSoln), NULL );
     copyProblemJacobiansToComposite( *blockA );
 
-    //cout << blockA->Graph() << endl;
-    //cout << *blockA << endl;
+    cout << blockA->Graph() << endl;
+    cout << *blockA << endl;
 
     Teuchos::RefCountPtr<NOX::Epetra::BroydenOperator> broydenOp = 
       Teuchos::rcp(new NOX::Epetra::BroydenOperator( *nlParams, utilsPtr, *compositeSoln, blockA, true) );
@@ -1687,6 +1689,78 @@ Problem_Manager::solveMF()
 
 //-----------------------------------------------------------------------------
 
+bool 
+Problem_Manager::solveSchurBased()
+{
+  if( 2 != Problems.size() )
+  {
+    cout << "ERROR: Schur-based coupling currently requires exactly two problems!" << endl;
+    throw "Problem_Manager ERROR";
+  }
+
+  Teuchos::RefCountPtr<Epetra_Vector> resA = Teuchos::rcp( new Epetra_Vector( getResidualVec(1)) );
+  Teuchos::RefCountPtr<Epetra_Vector> resB = Teuchos::rcp( new Epetra_Vector( getResidualVec(2)) );
+
+  NOX::Epetra::SchurCouplingOp schurCplOp( 1, 2, *this );
+
+  Teuchos::ParameterList& lsParams = nlParams->sublist("Direction").sublist("Newton").sublist("Linear Solver");
+
+  setGroupX(1);
+  setGroupX(2);
+  getGroup(1).computeF();
+  getGroup(2).computeF();
+  getGroup(1).computeJacobian();
+  getGroup(2).computeJacobian();
+  createBlockInverseOperator(1, lsParams);
+  createBlockInverseOperator(2, lsParams);
+
+  //schurCplOp.Apply( *tmpA1, *tmpA2 );
+
+  Epetra_Vector solutionA(getSolutionVec(1));
+  solutionA.PutScalar(0.0);
+  cout << "Solution A: \n" << solutionA << endl;
+
+  cout << "Original RHS :\n" << *resA << endl;
+  schurCplOp.modifyRHS( resA, resB );
+  cout << "Modified RHS :\n" << *resA << endl;
+
+  Epetra_LinearProblem * linear_problem = new Epetra_LinearProblem(&schurCplOp, &solutionA, &(*resA));
+  AztecOO * aztecoo_solver = new AztecOO(*linear_problem);
+
+  aztecoo_solver->SetAztecOption(AZ_precond, AZ_none);
+
+  cout << "... Solving.\n";
+  aztecoo_solver->Iterate(100, 1.0e-8);
+  cout << "... Solved to a tolerance of " << aztecoo_solver->TrueResidual() << " in " << aztecoo_solver->NumIters() << " iterations.\n";
+
+  cout << "\n----- Solution for update vector ---- :\n" << solutionA << endl;
+
+  *resA = solutionA;
+
+  solutionA.Update(1.0, getSolutionVec(1), -1.0);
+
+  cout << "\n----- Solution vector ---- :\n" << solutionA << endl;
+
+  // Now back substitue for other problem solution
+  applyBlockAction( 2, 1, *resA, *resB);
+  resB->Update(-1.0, getResidualVec(2), 1.0);
+  getBlockInverseOperator(2)->ApplyInverse(*resB, *resB);
+
+  cout << "\n----- Second Solution for update vector ---- :\n" << *resB << endl;
+
+  resB->Update(1.0, getSolutionVec(2), 1.0);
+
+  cout << "\n----- Second Solution vector ---- :\n" << *resB << endl;
+
+  exit(0);
+  // Update all problem's solutions with final solutions from solvers
+  copyAllGroupXtoProblems();
+
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+
 
 // These methods are needed to allow inheritance from GenericEpetraProblem base
 
@@ -2038,7 +2112,7 @@ Problem_Manager::generateGraph()
 { 
 
   // First construct a graph for each problem's self-dependence
-  Teuchos::RefCountPtr<Epetra_CrsGraph> diagBlkGraph = generateBlockDiagonalGraph( *compositeMap, true );
+  Teuchos::RefCountPtr<Epetra_CrsGraph> diagBlkGraph = generateBlockDiagonalGraph( *compositeMap, false );
   diagBlkGraph->FillComplete();
 
   // Next create inter-problem block graph contributions if desired;

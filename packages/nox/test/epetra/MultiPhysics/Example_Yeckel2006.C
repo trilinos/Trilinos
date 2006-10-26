@@ -110,31 +110,29 @@ int main(int argc, char *argv[])
   Teuchos::CommandLineProcessor clp( false );
 
   // Default run-time options that can be changed from the command line
-  bool          verbose         = true          ;
-  int           NumGlobalNodes  = 20            ;
-  int           probSizeRatio   = 1             ;
-  bool          runMF           = true          ;
-  bool          useMatlab       = false         ;
-  bool          doOffBlocks     = false         ;
-  bool          libloose        = true          ;
-  std::string   solvType        = "seidel"      ;
+  CouplingSolveMethod method          = MATRIX_FREE   ;
+  bool                verbose         = true          ;
+  int                 NumGlobalNodes  = 20            ;
+  int                 probSizeRatio   = 1             ;
+  bool                useMatlab       = false         ;
+  bool                doOffBlocks     = false         ;
+  std::string         solvType        = "seidel"      ;
   // Coupling parameters
-  double        alpha           = 0.50          ;
-  double        beta            = 0.40          ;
+  double              alpha           = 0.50          ;
+  double              beta            = 0.40          ;
   // Physical parameters
-  double        radiation       = 5.67          ;
-  double        initVal         = 0.995         ;
-  string        outputDir       = "."           ;
-  string        goldDir         = "."           ;
+  double              radiation       = 5.67          ;
+  double              initVal         = 0.995         ;
+  string              outputDir       = "."           ;
+  string              goldDir         = "."           ;
 
 
+  clp.setOption<CouplingSolveMethod>( "solvemethod", &method, 4, SolveMethodValues, SolveMethodNames, "Selects the coupling method to use");
   clp.setOption( "verbose", "no-verbose", &verbose, "Verbosity on or off." );
   clp.setOption( "n", &NumGlobalNodes, "Number of elements" );
   clp.setOption( "nratio", &probSizeRatio, "Ratio of size of problem 2 to problem 1" );
-  clp.setOption( "runMF", "loose", &runMF, "Use Matrix-Free strong coupling" );
   clp.setOption( "offblocks", "no-offblocks", &doOffBlocks, "Include off-diagonal blocks in preconditioning matrix" );
   clp.setOption( "matlab", "no-matlab", &useMatlab, "Use Matlab debugging engine" );
-  clp.setOption( "noxlib", "no-noxlib", &libloose, "Perform loose coupling using NOX's library (as opposed to hard-coded test driver)." );
   clp.setOption( "solvType", &solvType, "Solve Type.  Valid choices are: jacobi, seidel" );
   clp.setOption( "alpha", &alpha, "Interfacial coupling coefficient, alpha" );
   clp.setOption( "beta", &beta, "Interfacial coupling coefficient, beta" );
@@ -418,102 +416,56 @@ int main(int argc, char *argv[])
     outputUtils.out() << "Serial Run" << endl;
 #endif
 
-  if( 0 ) // some testing of Schur Coupling Operator
-  {
-    
-    Teuchos::RefCountPtr<Epetra_Vector> resA = Teuchos::rcp( new Epetra_Vector( problemManager.getResidualVec(1)) );
-    Teuchos::RefCountPtr<Epetra_Vector> resB = Teuchos::rcp( new Epetra_Vector( problemManager.getResidualVec(2)) );
-
-    NOX::Epetra::SchurCouplingOp schurCplOp( 1, 2, problemManager );
-
-    problemManager.setGroupX(1);
-    problemManager.setGroupX(2);
-    problemManager.getGroup(1).computeF();
-    problemManager.getGroup(2).computeF();
-    problemManager.getGroup(1).computeJacobian();
-    problemManager.getGroup(2).computeJacobian();
-    problemManager.createBlockInverseOperator(1, lsParams);
-    problemManager.createBlockInverseOperator(2, lsParams);
-
-    //schurCplOp.Apply( *tmpA1, *tmpA2 );
-
-    Epetra_Vector solutionA(problemManager.getSolutionVec(1));
-    solutionA.PutScalar(0.0);
-    cout << "Solution A: \n" << solutionA << endl;
-
-    cout << "Original RHS :\n" << *resA << endl;
-    schurCplOp.modifyRHS( resA, resB );
-    cout << "Modified RHS :\n" << *resA << endl;
-
-    Epetra_LinearProblem * linear_problem = new Epetra_LinearProblem(&schurCplOp, &solutionA, &(*resA));
-    AztecOO * aztecoo_solver = new AztecOO(*linear_problem);
-
-    aztecoo_solver->SetAztecOption(AZ_precond, AZ_none);
-
-    cout << "... Solving.\n";
-    aztecoo_solver->Iterate(100, 1.0e-8);
-    cout << "... Solved to a tolerance of " << aztecoo_solver->TrueResidual() << " in " << aztecoo_solver->NumIters() << " iterations.\n";
-
-    cout << "\n----- Solution for update vector ---- :\n" << solutionA << endl;
-
-    *resA = solutionA;
-
-    solutionA.Update(1.0, problemManager.getSolutionVec(1), -1.0);
-
-    cout << "\n----- Solution vector ---- :\n" << solutionA << endl;
-
-    // Now back substitue for other problem solution
-    problemManager.applyBlockAction( 2, 1, *resA, *resB);
-    resB->Update(-1.0, problemManager.getResidualVec(2), 1.0);
-    problemManager.getBlockInverseOperator(2)->ApplyInverse(*resB, *resB);
-
-    cout << "\n----- Second Solution for update vector ---- :\n" << *resB << endl;
-
-    resB->Update(1.0, problemManager.getSolutionVec(2), 1.0);
-
-    cout << "\n----- Second Solution vector ---- :\n" << *resB << endl;
-
-    exit(0);
-  }
-
   // Solve the coupled problem
-  if( runMF )
-    problemManager.solveMF(); // Need a status test check here ....
-  else if( !libloose )
-    problemManager.solve(); // Hard-coded loose coupling
-  else // Loose coupling via NOX library
+  switch( method ) 
   {
-    // Create the loose coupling solver manager
-    Teuchos::RefCountPtr<vector<Teuchos::RefCountPtr<NOX::Solver::Manager> > > solversVec =
-      Teuchos::rcp( new vector<Teuchos::RefCountPtr<NOX::Solver::Manager> > );
+    case MATRIX_FREE :
+      problemManager.solveMF(); // Need a status test check here ....
+      break;
 
-    map<int, Teuchos::RefCountPtr<NOX::Solver::Manager> >::iterator iter = problemManager.getSolvers().begin(),
-                                                                iter_end = problemManager.getSolvers().end()   ;
-    for( ; iter_end != iter; ++iter )
+    case SCHUR_BASED :
+      problemManager.solveSchurBased();
+      break;
+
+    case LOOSE_HARDCODED :
+      problemManager.solve(); // Hard-coded loose coupling
+      break;
+
+    case LOOSE_LIBRARY :
+    default            :
     {
-      cout << " ........  registered Solver::Manager # " << (*iter).first << endl;
-      solversVec->push_back( (*iter).second );
+      // Create the loose coupling solver manager
+      Teuchos::RefCountPtr<vector<Teuchos::RefCountPtr<NOX::Solver::Manager> > > solversVec =
+        Teuchos::rcp( new vector<Teuchos::RefCountPtr<NOX::Solver::Manager> > );
+
+      map<int, Teuchos::RefCountPtr<NOX::Solver::Manager> >::iterator iter = problemManager.getSolvers().begin(),
+                                                                  iter_end = problemManager.getSolvers().end()   ;
+      for( ; iter_end != iter; ++iter )
+      {
+        cout << " ........  registered Solver::Manager # " << (*iter).first << endl;
+        solversVec->push_back( (*iter).second );
+      }
+
+      // Package the Problem_Manager as the DataExchange::Intreface
+      Teuchos::RefCountPtr<NOX::Multiphysics::DataExchange::Interface> dataExInterface =
+        Teuchos::rcp( &problemManager, false );
+      
+      Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> fixedPt_maxiters = 
+        Teuchos::rcp(new NOX::StatusTest::MaxIters(20));
+
+      if( "jacobi" == solvType )
+        nlParamsPtr->sublist("Solver Options").set("Fixed Point Iteration Type", "Jacobi");
+
+      NOX::Multiphysics::Solver::Manager cplSolv( solversVec, dataExInterface, fixedPt_maxiters, nlParamsPtr );
+
+      cplSolv.solve();
+
+      // Refresh all problems with solutions from solver
+      problemManager.copyAllGroupXtoProblems();
+
+      // Reset all solver groups to force recomputation of residuals
+      problemManager.resetAllCurrentGroupX();
     }
-
-    // Package the Problem_Manager as the DataExchange::Intreface
-    Teuchos::RefCountPtr<NOX::Multiphysics::DataExchange::Interface> dataExInterface =
-      Teuchos::rcp( &problemManager, false );
-    
-    Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> fixedPt_maxiters = 
-      Teuchos::rcp(new NOX::StatusTest::MaxIters(20));
-
-    if( "jacobi" == solvType )
-      nlParamsPtr->sublist("Solver Options").set("Fixed Point Iteration Type", "Jacobi");
-
-    NOX::Multiphysics::Solver::Manager cplSolv( solversVec, dataExInterface, fixedPt_maxiters, nlParamsPtr );
-
-    cplSolv.solve();
-
-    // Refresh all problems with solutions from solver
-    problemManager.copyAllGroupXtoProblems();
-
-    // Reset all solver groups to force recomputation of residuals
-    problemManager.resetAllCurrentGroupX();
   }
   
   // Output timing info
