@@ -25,6 +25,8 @@ Unit tests:
       insert valid points then GetNodes then GetPoints at node values, verify data comes back out
       call with empty time_vec input
       call with Teuchos::null input
+      call wtih x valid but xdot = Teuchos::null
+      call with x valid but random xdot = Teuchos::null
       call with non-empty time_vec input and empty vectors 
       call with non-empty time_vec input and vectors of different sizes
       call with replacement data at a node and check that it was replaced correctly with GetNodes and GetPoints
@@ -102,16 +104,44 @@ Unit tests:
     RemoveNodes:  nothing new
 
   StepperBase:
+    TakeStep(dt):
+    TakeStep():
+    get_solution:
+    (in addition to testing on base class), test:
+    SetPoints:
+    GetPoints:
+    SetRange:
+    GetNodes:
+    RemoveNodes:
   BackwardEulerStepper:
   ForwardEulerStepper:
   ExplicitRKStepper:
   ImplicitBDFStepper:
 
   InterpolatorBase:
+    interpolate:
+      call with valid inputs & outputs and verify output t values match input t values
+      call with empty DataStore vector input
+      call with empty time input vector
+      call with null pointer for output DataStore vector
+      call with t values outside range of input DataStore vector
+      call with t values equal to input DataStore t values and verify output equals input.
+      compare performance:
+        Large DataStore input vector with Small time values vector 
+        Small DataStore input vector with Large time values vector
+        Small DataStore input vector with Small time values vector
+        Large DataStore input vector with Large time values vector
 
   LinearInterpolator:
+    (in addition to testing on base class), test:
+    interpolate:
+      verify interpolation is indeed linear.
+      
   
   HermiteInterpolator:
+    (in addition to testing on base class), test:
+    interpolate:
+      verify interpolation is indeed quadratic in x and linear in xdot.
 
 
 
