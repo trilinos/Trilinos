@@ -60,6 +60,11 @@ int test_azoo_as_precond_op(Epetra_CrsMatrix& A,
                             Epetra_Vector& b,
                             bool verbose);
 
+int test_azoo_conv_anorm(Epetra_CrsMatrix& A,
+                         Epetra_Vector& x,
+                         Epetra_Vector& b,
+                         bool verbose);
+
 int test_azoo_with_ilut(Epetra_CrsMatrix& A,
                         Epetra_Vector& x,
                         Epetra_Vector& b,
@@ -127,7 +132,7 @@ int main(int argc, char *argv[])
 
   ///////////////////////////////////////////////////
 
-  int local_n = 20;
+  int local_n = 30;
   int global_n = numprocs*local_n;
 
   Epetra_Map emap(global_n, 0, comm);
@@ -150,6 +155,12 @@ int main(int argc, char *argv[])
   int err = test_azoo_as_precond_op(*A, x, b, verbose);
   if (err != 0) {
     cout << "test_azoo_as_precond_op err, test FAILED."<<endl;
+    return(err);
+  }
+
+  err = test_azoo_conv_anorm(*A, x, b, verbose);
+  if (err != 0) {
+    cout << "test_azoo_conv_anorm err, test FAILED."<<endl;
     return(err);
   }
 
@@ -437,6 +448,66 @@ int test_azoo_with_ilut(Epetra_CrsMatrix& A,
   }
 
   delete azoo0;
+
+  return(0);
+}
+
+int test_azoo_conv_anorm(Epetra_CrsMatrix& A,
+                         Epetra_Vector& x,
+                         Epetra_Vector& b,
+                         bool verbose)
+{
+  if (verbose) {
+    cout << "testing AztecOO with AZ_conv = AZ_Anorm" << endl;
+  }
+
+  Epetra_Vector soln_Anorm(x), soln_none(x), vec1(x), rhs(x);
+
+  //We'll put large numbers in a vector and use that to generate an rhs
+  //which has norm much larger than the infinity-norm of the matrix.
+  vec1.PutScalar(1000.0);
+  soln_Anorm.PutScalar(0.0);
+  soln_none.PutScalar(0.0);
+
+  A.Multiply(false, vec1, rhs);
+
+  AztecOO azoo(&A, &soln_Anorm, &rhs);
+  azoo.SetAztecOption(AZ_conv, AZ_Anorm);
+  azoo.SetAztecOption(AZ_solver, AZ_cg);
+
+  azoo.Iterate(30, 1.e-5);
+
+  AztecOO azoo1(&A, &soln_none, &rhs);
+  azoo1.SetAztecOption(AZ_conv, AZ_rhs);
+  azoo1.SetAztecOption(AZ_solver, AZ_cg);
+
+  azoo1.Iterate(30, 1.e-5);
+
+  double rhsnorm = 0.0;
+  rhs.Norm2(&rhsnorm);
+
+  double anorm = A.NormInf();
+
+  double rnrm_anorm = resid2norm(A, soln_Anorm, rhs);
+  double rnrm_rhs = resid2norm(A, soln_none, rhs);
+
+  //we expect the ratio rnrm_anorm/rnrm_rhs to roughly equal
+  //the ratio anorm/rhsnorm, since rnrm_anorm is the residual norm
+  //obtained for the solve that used Anorm scaling to determine
+  //convergence, and rnrm_rhs is the residual norm obtained for
+  //the solve that used rhs scaling.
+
+  double ratio1 = rnrm_anorm/rnrm_rhs;
+  double ratio2 = anorm/rhsnorm;
+
+  cout << "ratio1: " << ratio1 << ", ratio2: " << ratio2 << endl;
+  if (std::abs(ratio1 - ratio2) > 1.e-1) {
+    if (verbose) {
+      cout << "anorm: " << anorm << ", rhsnorm: " << rhsnorm
+       << "rnrm_anorm: " << rnrm_anorm << ", rnrm_rhs: " << rnrm_rhs<<endl;
+    }
+    return(-1);
+  }
 
   return(0);
 }
