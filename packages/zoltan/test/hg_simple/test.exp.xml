@@ -1,0 +1,28 @@
+<experimental-study name="zoltan">
+  <tags>
+    <tag>smoke</tag>
+  </tags>
+
+  <experiment name="simple">
+    <factors>
+      <factor name="zdrive">
+	<level name="sun">../../Obj_sun/zdrive</level>
+      </factor>
+      <factor name="numproc">
+	<level name="np">4</level>
+      </factor>
+      <factor name="zinput" filename="zoltan.tests">
+      </factor>
+    </factors>
+    <controls>
+       <executable>../bin/exp.zoltan.pl</executable>
+    </controls>
+  </experiment>
+
+  <analysis name="checksums" type="validation">
+    <data experiment="simple" />
+    <options>_measurement=OutputFail _value=0</options>
+  </analysis>
+
+</experimental-study>
+
