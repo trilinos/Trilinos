@@ -3198,7 +3198,7 @@ options, setup mode has one unique option of its own:
 \subsubsection{Solve Mode}
 Solve mode is called as follows:
 \begin{verbatim}
->> ml(h,A,b,['parameter',value,...])
+>> x=ml(h,A,b,['parameter',value,...])
 \end{verbatim}
 The parameter \texttt{h} is a problem handle returned by the
 setup mode call, \texttt{A} is the sparse matrix with which to
@@ -3213,7 +3213,7 @@ supported by ML\_Epetra, are supported as well:
 \choicebox{\tt krylov: type}{[{\tt string}] Solver to use, e.g.\ 'cg',
     'gmres', 'fixed point'. Default 'gmres'.}
 \choicebox{\tt krylov: output level}{[{\tt int}] ML output level. Default 10.}
-\choicebox{\tt krylov: conv}{[{\tt int}] ML convergence criterion. Default
+\choicebox{\tt krylov: conv}{[{\tt string}] ML convergence criterion. Default
   'r0'.}
 
 All of these options are taken directly from MLAPI, so consult its
