@@ -26,25 +26,33 @@
 // ***********************************************************************
 //@HEADER
 
+// Includes for Rythmos:
 #include "Rythmos_InterpolationBufferBaseTester.hpp"
-
-
-// Includes for ModelEvaluator:
-#include "EpetraExt_ModelEvaluator.h"
-
-// Includes for Thyra:
-#include "Thyra_VectorBase.hpp"
-#include "Thyra_EpetraThyraWrappers.hpp"
-
+#include "Rythmos_BackwardEulerStepper.hpp"
+#include "Rythmos_ExplicitRKStepper.hpp"
+#include "Rythmos_ForwardEulerStepper.hpp"
+#include "Rythmos_ImplicitBDFStepper.hpp"
+#include "Rythmos_InterpolationBuffer.hpp"
+#include "Rythmos_InterpolationBufferAsStepper.hpp"
+#include "Rythmos_LinearInterpolator.hpp"
+#include "Rythmos_HermiteInterpolator.hpp"
+#include "../../../example/basicExample/ExampleApplication.hpp"
+#include "../../../example/epetra/1Dfem/ExampleApplication1Dfem.hpp"
 // Includes for Teuchos:
+#include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_RefCountPtr.hpp"
-
+// Includes for Thyra:
+#include "Thyra_EpetraModelEvaluator.hpp"
+#include "Thyra_TimeStepNewtonNonlinearSolver.hpp"
+// Includes for Stratimikos:
+#ifdef HAVE_RYTHMOS_STRATIMIKOS
+#  include "Thyra_DefaultRealLinearSolverBuilder.hpp"
+#endif
 // Includes for Epetra:
 #include "Epetra_SerialComm.h"
-#include "Epetra_Map.h"
-
+// Includes for stl:
 #include <iostream>
-
 
 int main(int argc, char *argv[])
 {
@@ -58,10 +66,14 @@ int main(int argc, char *argv[])
     Thyra::DefaultRealLinearSolverBuilder lowsfCreator;
     lowsfCreator.setupCLP(&clp);
 #endif // HAVE_RYTHMOS_STRATIMIKOS
+    int outputLevel = -1;
+    clp.setOption( "outputlevel", &outputLevel, "Verbosity level [0-4]" );
     Teuchos::CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
     if( parse_return != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
+    outputLevel = min(max(outputLevel,-1),4);
 
-    Teuchos::RefCountPtr<Teuchos::FancyOStream> out = Teuchos::rcp(new FancyOStream(rcp(&std::cout,false)));
+    Teuchos::RefCountPtr<Teuchos::FancyOStream> 
+      out = Teuchos::rcp(new Teuchos::FancyOStream(Teuchos::rcp(&std::cout,false)));
     Teuchos::RefCountPtr<Epetra_Comm> epetra_comm_ptr_ = Teuchos::rcp( new Epetra_SerialComm  );
     Teuchos::RefCountPtr<Thyra::LinearOpWithSolveFactoryBase<double> > W_factory;
 
@@ -80,9 +92,10 @@ int main(int argc, char *argv[])
       basicExample = Teuchos::rcp(new ExampleApplication(epetra_comm_ptr_, explicitParams));
     Teuchos::RefCountPtr<Thyra::ModelEvaluator<double> >
       basicExamplemodel = Teuchos::rcp(new Thyra::EpetraModelEvaluator(basicExample,W_factory));
-    //Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<double> > vs = model->get_x_space();
+    Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<double> > vs = basicExamplemodel->get_x_space();
     explicit_model_vec.push_back(basicExamplemodel);
 
+    /*
     // Create a list of implicit models:
     std::vector<Teuchos::RefCountPtr<Thyra::ModelEvaluator<double> > > implicit_model_vec;
     Teuchos::ParameterList implicitParams;
@@ -105,19 +118,18 @@ int main(int argc, char *argv[])
     double maxError = 0.01;
     _nonlinearSolver->defaultTol(1e-3*maxError);
     nonlinearSolver = _nonlinearSolver;
+    */
 
 
     Teuchos::RefCountPtr<Rythmos::StepperBase<double> > stepper_ptr;
 
     Teuchos::RefCountPtr<Teuchos::ParameterList> fixedStepIntegratorParams = Teuchos::rcp(new Teuchos::ParameterList);
     double dt = 0.1;
-    integratorParams->set( "fixed_dt", dt );
-    int outputLevel = 4;
-    integratorParams->set( "outputLevel", outputLevel );
+    fixedStepIntegratorParams->set( "fixed_dt", dt );
+    fixedStepIntegratorParams->set( "outputLevel", outputLevel );
 
     Teuchos::RefCountPtr<Teuchos::ParameterList> variableStepIntegratorParams = Teuchos::rcp(new Teuchos::ParameterList);
-    int outputLevel = 4;
-    integratorParams->set( "outputLevel", outputLevel );
+    variableStepIntegratorParams->set( "outputLevel", outputLevel );
 
     Teuchos::RefCountPtr<Rythmos::InterpolatorBase<double> > interpolator;
     Teuchos::RefCountPtr<Rythmos::InterpolationBuffer<double> > IB;
@@ -127,7 +139,7 @@ int main(int argc, char *argv[])
     // Create a list of concrete objects derived from InterpolationBufferBase:
     std::vector<Teuchos::RefCountPtr<Rythmos::InterpolationBufferBase<double> > > IB_vec;
     // Explicit models:
-    for (int i=0 ; i < explicit_model_vec.size() ; ++i) 
+    for (unsigned int i=0 ; i < explicit_model_vec.size() ; ++i) 
     {
       // Forward Euler Stepper
       stepper_ptr = Teuchos::rcp( new Rythmos::ForwardEulerStepper<double>(explicit_model_vec[i]) );
@@ -149,6 +161,7 @@ int main(int argc, char *argv[])
       integrator = Teuchos::rcp(new Rythmos::InterpolationBufferAsStepper<double>(stepper_ptr,IB,fixedStepIntegratorParams));
       IB_vec.push_back(integrator);
 
+      /*
       // Backward Euler Stepper
       stepper_ptr = Teuchos::rcp( new Rythmos::BackwardEulerStepper<double>(explicit_model_vec[i],nonlinearSolver) );
       IB_vec.push_back(stepper_ptr);
@@ -186,9 +199,11 @@ int main(int argc, char *argv[])
       IB->setParameterList(variableStepIntegratorParams);
       integrator = Teuchos::rcp(new Rythmos::InterpolationBufferAsStepper<double>(stepper_ptr,IB,variableStepIntegratorParams));
       IB_vec.push_back(integrator);
+      */
     }
+    /*
     // Implicit models:
-    for (int i=0 ; i < implicit_model_vec.size() ; ++i)
+    for (unsigned int i=0 ; i < implicit_model_vec.size() ; ++i)
     {
       // Backward Euler Stepper
       stepper_ptr = Teuchos::rcp( new Rythmos::BackwardEulerStepper<double>(explicit_model_vec[i],nonlinearSolver) );
@@ -228,6 +243,7 @@ int main(int argc, char *argv[])
       integrator = Teuchos::rcp(new Rythmos::InterpolationBufferAsStepper<double>(stepper_ptr,IB,variableStepIntegratorParams));
       IB_vec.push_back(integrator);
     }
+    */
     // Interpolation Buffers:
     // linear:
     interpolator = Teuchos::rcp(new Rythmos::LinearInterpolator<double>());
@@ -237,11 +253,12 @@ int main(int argc, char *argv[])
     IB = Teuchos::rcp(new Rythmos::InterpolationBuffer<double>(interpolator,buffersize));
     IB_vec.push_back(IB);
     
+    // Actually test the InterpolationBufferBase member functions:
     bool localstatus = false;
     Rythmos::InterpolationBufferBaseTester<double> IBtester;
     for (unsigned int i=0 ; i < IB_vec.size() ; ++i)
     {
-      localstatus = IBtester.check(IB_vec[i],vs,out.get());
+      localstatus = IBtester.check(*(IB_vec[i]),*vs);
       if (!localstatus)
         status = false;
     }

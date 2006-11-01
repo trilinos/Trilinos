@@ -36,6 +36,9 @@ namespace Rythmos {
 
 template<class Scalar>
 class InterpolationBufferBaseTester
+  : virtual public Teuchos::Describable
+  , virtual public Teuchos::ParameterListAcceptor
+  , virtual public Teuchos::VerboseObject<InterpolationBufferBaseTester<Scalar> >
 {
   public:
 
@@ -45,36 +48,52 @@ class InterpolationBufferBaseTester
 
     bool check(const InterpolationBufferBase<Scalar> &IB
         ,const Thyra::VectorSpaceBase<Scalar>& vs
-        ,Teuchos::FancyOStream *out_arg
         ) const;
 
     bool checkSetPoints(const InterpolationBufferBase<Scalar> &IB
         ,const Thyra::VectorSpaceBase<Scalar>& vs
-        ,Teuchos::FancyOStream *out_arg
         ) const;
     bool checkGetPoints(const InterpolationBufferBase<Scalar> &IB
         ,const Thyra::VectorSpaceBase<Scalar>& vs
-        ,Teuchos::FancyOStream *out_arg
         ) const;
     bool checkSetRange(const InterpolationBufferBase<Scalar> &IB
         ,const Thyra::VectorSpaceBase<Scalar>& vs
-        ,Teuchos::FancyOStream *out_arg
         ) const;
     bool checkGetNodes(const InterpolationBufferBase<Scalar> &IB
         ,const Thyra::VectorSpaceBase<Scalar>& vs
-        ,Teuchos::FancyOStream *out_arg
         ) const;
     bool checkRemoveNodes(const InterpolationBufferBase<Scalar> &IB
         ,const Thyra::VectorSpaceBase<Scalar>& vs
-        ,Teuchos::FancyOStream *out_arg
         ) const;
     bool checkGetOrder(const InterpolationBufferBase<Scalar> &IB
         ,const Thyra::VectorSpaceBase<Scalar>& vs
-        ,Teuchos::FancyOStream *out_arg
         ) const;
+
+    /// Redefined from describable
+    /** \brief . */
+    std::string description() const;
+
+    /** \brief . */
+    void describe(
+      Teuchos::FancyOStream                &out
+      ,const Teuchos::EVerbosityLevel      verbLevel
+      ) const;
+
+    /// Redefined from Teuchos::ParameterListAcceptor
+    /** \brief . */
+    void setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList);
+
+    /** \brief . */
+    Teuchos::RefCountPtr<Teuchos::ParameterList> getParameterList();
+
+    /** \brief . */
+    Teuchos::RefCountPtr<Teuchos::ParameterList> unsetParameterList();
+
+
   private:
     int num_rand_vectors;
-}
+    Teuchos::RefCountPtr<Teuchos::ParameterList> parameterList;
+};
 
 template<class Scalar>
 InterpolationBufferBaseTester<Scalar>::InterpolationBufferBaseTester()
@@ -83,36 +102,35 @@ InterpolationBufferBaseTester<Scalar>::InterpolationBufferBaseTester()
 }
 
 template<class Scalar>
-InterpolationBufferBaseTester<Scalar>::check(
+bool InterpolationBufferBaseTester<Scalar>::check(
     const InterpolationBufferBase<Scalar>& IB
     ,const Thyra::VectorSpaceBase<Scalar>& vs
-    ,Teuchos::FancyOStream *out
     ) const
 {
   bool status = false;
-  status = checkSetPoints(IB,out);
+  status = checkSetPoints(IB,vs);
   if (!status) return(status);
-  status = checkGetPoints(IB,out);
+  status = checkGetPoints(IB,vs);
   if (!status) return(status);
-  status = checkSetRange(IB,out);
+  status = checkSetRange(IB,vs);
   if (!status) return(status);
-  status = checkGetNodes(IB,out);
+  status = checkGetNodes(IB,vs);
   if (!status) return(status);
-  status = checkRemoveNodes(IB,out);
+  status = checkRemoveNodes(IB,vs);
   if (!status) return(status);
-  status = checkGetOrder(IB,out);
+  status = checkGetOrder(IB,vs);
   return(status);
 }
 
 template<class Scalar>
-InterpolationBufferBaseTester<Scalar>::checkSetPoints(
+bool InterpolationBufferBaseTester<Scalar>::checkSetPoints(
     const InterpolationBufferBase<Scalar> &IB
     ,const Thyra::VectorSpaceBase<Scalar>& vs
-    ,Teuchos::FancyOStream *out
     ) const
 {
   bool status=false;
   /*
+  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
   typename Teuchos::ScalarTraits<Scalar> ST;
   typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
 
@@ -169,10 +187,9 @@ InterpolationBufferBaseTester<Scalar>::checkSetPoints(
 }
 
 template<class Scalar>
-InterpolationBufferBaseTester<Scalar>::checkGetPoints(
+bool InterpolationBufferBaseTester<Scalar>::checkGetPoints(
     const InterpolationBufferBase<Scalar> &IB
     ,const Thyra::VectorSpaceBase<Scalar>& vs
-    ,Teuchos::FancyOStream *out
     ) const
 {
       // call with empty time_vec input
@@ -183,10 +200,9 @@ InterpolationBufferBaseTester<Scalar>::checkGetPoints(
   return(false);
 }
 template<class Scalar>
-InterpolationBufferBaseTester<Scalar>::checkSetRange(
+bool InterpolationBufferBaseTester<Scalar>::checkSetRange(
     const InterpolationBufferBase<Scalar> &IB
     ,const Thyra::VectorSpaceBase<Scalar>& vs
-    ,Teuchos::FancyOStream *out
     ) const
 {
       // call with another IB and then check with GetNodes and GetPoints
@@ -196,10 +212,9 @@ InterpolationBufferBaseTester<Scalar>::checkSetRange(
   return(false);
 }
 template<class Scalar>
-InterpolationBufferBaseTester<Scalar>::checkGetNodes(
+bool InterpolationBufferBaseTester<Scalar>::checkGetNodes(
     const InterpolationBufferBase<Scalar> &IB
     ,const Thyra::VectorSpaceBase<Scalar>& vs
-    ,Teuchos::FancyOStream *out
     ) const
 {
       // call with null ptr
@@ -207,10 +222,9 @@ InterpolationBufferBaseTester<Scalar>::checkGetNodes(
   return(false);
 }
 template<class Scalar>
-InterpolationBufferBaseTester<Scalar>::checkRemoveNodes(
+bool InterpolationBufferBaseTester<Scalar>::checkRemoveNodes(
     const InterpolationBufferBase<Scalar> &IB
     ,const Thyra::VectorSpaceBase<Scalar>& vs
-    ,Teuchos::FancyOStream *out
     ) const
 {
       // call and then then verify nodes are gone with GetNodes
@@ -218,13 +232,13 @@ InterpolationBufferBaseTester<Scalar>::checkRemoveNodes(
   return(false);
 }
 template<class Scalar>
-InterpolationBufferBaseTester<Scalar>::checkGetOrder(
+bool InterpolationBufferBaseTester<Scalar>::checkGetOrder(
     const InterpolationBufferBase<Scalar> &IB
     ,const Thyra::VectorSpaceBase<Scalar>& vs
-    ,Teuchos::FancyOStream *out
     ) const
 {
   bool status = false;
+  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
   // call and verify that a reasonable number comes out, i.e. larger than zero
   int order = IB.GetOrder();
   if (order >= 0) 
@@ -236,6 +250,58 @@ InterpolationBufferBaseTester<Scalar>::checkGetOrder(
   }
   return(status);
 }
+
+template<class Scalar>
+std::string InterpolationBufferBaseTester<Scalar>::description() const
+{
+  std::string name = "Rythmos::InterpolationBufferBaseTester";
+  return(name);
+}
+
+template<class Scalar>
+void InterpolationBufferBaseTester<Scalar>::describe(
+      Teuchos::FancyOStream                &out
+      ,const Teuchos::EVerbosityLevel      verbLevel
+      ) const
+{
+  if ( (static_cast<int>(verbLevel) == static_cast<int>(Teuchos::VERB_DEFAULT) ) ||
+       (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW)     )
+     )
+  {
+  }
+  else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
+  {
+  }
+  else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_MEDIUM))
+  {
+  }
+  else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_HIGH))
+  {
+  }
+}
+
+template<class Scalar>
+void InterpolationBufferBaseTester<Scalar>::setParameterList(
+    Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList
+    )
+{
+  parameterList = paramList;
+}
+
+template<class Scalar>
+Teuchos::RefCountPtr<Teuchos::ParameterList> InterpolationBufferBaseTester<Scalar>::getParameterList()
+{
+  return(parameterList);
+}
+
+template<class Scalar>
+Teuchos::RefCountPtr<Teuchos::ParameterList> InterpolationBufferBaseTester<Scalar>::unsetParameterList()
+{
+  Teuchos::RefCountPtr<Teuchos::ParameterList> temp_param_list = parameterList;
+  parameterList = Teuchos::null;
+  return(temp_param_list);
+}
+
 
 } // namespace Rythmos
 
