@@ -26,7 +26,7 @@
 // ***********************************************************************
 //@HEADER
 
-#include "ExampleApplication.hpp"
+#include "ExampleApplication1Dfem.hpp"
 #ifdef HAVE_MPI
 #  include "Epetra_MpiComm.h"
 #  include "mpi.h"

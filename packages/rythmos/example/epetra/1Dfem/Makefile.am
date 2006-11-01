@@ -60,8 +60,8 @@ noinst_PROGRAMS = 1DfemTransient
 	                 $(srcdir)/1DfemInterface.H \
                    $(srcdir)/1DfemInterface.C \
                    $(srcdir)/1DfemTransient.H \
-									 $(srcdir)/ExampleApplication.hpp \
-									 $(srcdir)/ExampleApplication.cpp \
+									 $(srcdir)/ExampleApplication1Dfem.hpp \
+									 $(srcdir)/ExampleApplication1Dfem.cpp \
 									 $(srcdir)/cxx_main.cpp
 
 1DfemTransient_DEPENDENCIES = \

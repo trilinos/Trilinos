@@ -37,7 +37,7 @@
 #include "Epetra_Vector.h"
 #include "Epetra_Version.h"
 
-#include "ExampleApplication.hpp"
+#include "ExampleApplication1Dfem.hpp"
 
 // Includes for Rythmos:
 #include "Rythmos_ConfigDefs.h"
