@@ -1,0 +1,16 @@
+#!/bin/csh -f
+
+setenv PATH /bin:/usr/bin:/usr/sbin:/sbin:/usr/ucb/bin:/usr/ucb
+
+foreach d (*)
+  if (! -d $d) continue
+  if (-e $d/zoltan.tests) then
+    echo "skipping $d/zoltan.tests"
+    continue;
+  endif
+
+  foreach f (`find $d -name 'zdrive.inp.*'`)
+    set suf=`echo $f | sed 's/.*zdrive\.inp\.//g'`
+    echo "zinp=../$f _level_name=$suf" >> $d/zoltan.tests
+  end
+end
