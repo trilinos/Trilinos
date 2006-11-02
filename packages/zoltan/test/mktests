@@ -9,8 +9,20 @@ foreach d (*)
     continue;
   endif
 
+  set last=""
   foreach f (`find $d -name 'zdrive.inp.*'`)
+    if ("$last" != "$d") echo -n "building $d zoltan.tests"
+    set last="$d"
     set suf=`echo $f | sed 's/.*zdrive\.inp\.//g'`
     echo "zinp=../$f _level_name=$suf" >> $d/zoltan.tests
   end
+
+  if (-d $d/answers) then
+    echo -n " checksums"
+    set last="$d"
+    (cd $d/answers ; cksum *[0-9] > ../checksums)
+  endif
+
+  if ("$last" != "") echo ""
+
 end
