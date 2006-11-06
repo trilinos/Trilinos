@@ -57,6 +57,7 @@ LOCA_EPETRA_H = \
 	$(srcdir)/LOCA_Epetra_LowRankUpdateOp.H \
 	$(srcdir)/LOCA_Epetra_LowRankUpdateRowMatrix.H \
 	$(srcdir)/LOCA_BorderedSolver_EpetraHouseholder.H \
+	$(srcdir)/LOCA_Epetra_AnasaziOperator_Floquet.H \
 	$(srcdir)/LOCA_Epetra_AugmentedOp.H \
 	$(srcdir)/LOCA_BorderedSolver_EpetraAugmented.H \
 	$(srcdir)/LOCA_Epetra_Factory.H \
@@ -73,6 +74,7 @@ LOCA_EPETRA = \
 	$(srcdir)/LOCA_Epetra_LowRankUpdateOp.C \
 	$(srcdir)/LOCA_Epetra_LowRankUpdateRowMatrix.C \
 	$(srcdir)/LOCA_BorderedSolver_EpetraHouseholder.C \
+	$(srcdir)/LOCA_Epetra_AnasaziOperator_Floquet.C \
 	$(srcdir)/LOCA_Epetra_AugmentedOp.C \
 	$(srcdir)/LOCA_BorderedSolver_EpetraAugmented.C \
 	$(srcdir)/LOCA_Epetra_Factory.C \

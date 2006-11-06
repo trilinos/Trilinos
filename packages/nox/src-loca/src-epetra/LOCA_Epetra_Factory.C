@@ -45,6 +45,7 @@
 #include "LOCA_Parameter_SublistParser.H"
 #include "LOCA_BorderedSolver_EpetraHouseholder.H"
 #include "LOCA_BorderedSolver_EpetraAugmented.H"
+#include "LOCA_Epetra_AnasaziOperator_Floquet.H"
 
 LOCA::Epetra::Factory::Factory() :
   globalData()
@@ -88,4 +89,25 @@ LOCA::Epetra::Factory::createBorderedSolverStrategy(
   else
     return false;
 }
+
+bool
+LOCA::Epetra::Factory::createAnasaziOperatorStrategy(
+       const string& strategyName,
+       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+       const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams,
+       const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams,
+       const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp,
+       Teuchos::RefCountPtr<LOCA::AnasaziOperator::AbstractStrategy>& strategy)
+{
+if (strategyName == "Floquet") {
+
+    strategy = 
+      Teuchos::rcp(new LOCA::Epetra::AnasaziOperator::Floquet(globalData,
+                                topParams, eigenParams, solverParams, grp));
+    return true;
+  }
+  else
+    return false;
+}
+
 

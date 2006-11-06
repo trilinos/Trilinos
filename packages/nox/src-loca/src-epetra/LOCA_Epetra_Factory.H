@@ -43,6 +43,8 @@
 #define LOCA_EPETRA_FACTORY_H
 
 #include "LOCA_Abstract_Factory.H"    // base class
+#include "LOCA_GlobalData.H"
+#include "LOCA_ErrorCheck.H"
 
 // Forward declarations
 namespace LOCA{
@@ -82,6 +84,16 @@ namespace LOCA {
        const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
        const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams,
        Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy>& strategy);
+
+      //! Create Anasazi operator strategy for Floquet option
+      virtual bool
+      createAnasaziOperatorStrategy(
+       const string& strategyName,
+       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+       const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams,
+       const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams,
+       const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp,
+       Teuchos::RefCountPtr<LOCA::AnasaziOperator::AbstractStrategy>& strategy);
 
       //@}
 

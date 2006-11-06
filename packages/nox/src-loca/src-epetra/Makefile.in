@@ -125,6 +125,7 @@ am__liblocaepetra_a_SOURCES_DIST = $(srcdir)/LOCA_Epetra_TransposeLinearSystem_T
 	$(srcdir)/LOCA_Epetra_LowRankUpdateOp.C \
 	$(srcdir)/LOCA_Epetra_LowRankUpdateRowMatrix.C \
 	$(srcdir)/LOCA_BorderedSolver_EpetraHouseholder.C \
+	$(srcdir)/LOCA_Epetra_AnasaziOperator_Floquet.C \
 	$(srcdir)/LOCA_Epetra_AugmentedOp.C \
 	$(srcdir)/LOCA_BorderedSolver_EpetraAugmented.C \
 	$(srcdir)/LOCA_Epetra_Factory.C \
@@ -148,6 +149,7 @@ am__liblocaepetra_a_SOURCES_DIST = $(srcdir)/LOCA_Epetra_TransposeLinearSystem_T
 	$(srcdir)/LOCA_Epetra_LowRankUpdateOp.H \
 	$(srcdir)/LOCA_Epetra_LowRankUpdateRowMatrix.H \
 	$(srcdir)/LOCA_BorderedSolver_EpetraHouseholder.H \
+	$(srcdir)/LOCA_Epetra_AnasaziOperator_Floquet.H \
 	$(srcdir)/LOCA_Epetra_AugmentedOp.H \
 	$(srcdir)/LOCA_BorderedSolver_EpetraAugmented.H \
 	$(srcdir)/LOCA_Epetra_Factory.H \
@@ -164,6 +166,7 @@ am__objects_1 = LOCA_Epetra_TransposeLinearSystem_TransposePreconditioner.$(OBJE
 	LOCA_Epetra_LowRankUpdateOp.$(OBJEXT) \
 	LOCA_Epetra_LowRankUpdateRowMatrix.$(OBJEXT) \
 	LOCA_BorderedSolver_EpetraHouseholder.$(OBJEXT) \
+	LOCA_Epetra_AnasaziOperator_Floquet.$(OBJEXT) \
 	LOCA_Epetra_AugmentedOp.$(OBJEXT) \
 	LOCA_BorderedSolver_EpetraAugmented.$(OBJEXT) \
 	LOCA_Epetra_Factory.$(OBJEXT) \
@@ -181,6 +184,7 @@ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/LOCA_BorderedSolver_EpetraAugmented.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/LOCA_BorderedSolver_EpetraHouseholder.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/LOCA_Epetra_AnasaziOperator_Floquet.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/LOCA_Epetra_AugmentedOp.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/LOCA_Epetra_CompactWYOp.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/LOCA_Epetra_Factory.Po \
@@ -223,6 +227,7 @@ am__include_HEADERS_DIST = $(srcdir)/LOCA_Epetra.H \
 	$(srcdir)/LOCA_Epetra_LowRankUpdateOp.H \
 	$(srcdir)/LOCA_Epetra_LowRankUpdateRowMatrix.H \
 	$(srcdir)/LOCA_BorderedSolver_EpetraHouseholder.H \
+	$(srcdir)/LOCA_Epetra_AnasaziOperator_Floquet.H \
 	$(srcdir)/LOCA_Epetra_AugmentedOp.H \
 	$(srcdir)/LOCA_BorderedSolver_EpetraAugmented.H \
 	$(srcdir)/LOCA_Epetra_Factory.H \
@@ -460,6 +465,7 @@ LOCA_EPETRA_H = \
 	$(srcdir)/LOCA_Epetra_LowRankUpdateOp.H \
 	$(srcdir)/LOCA_Epetra_LowRankUpdateRowMatrix.H \
 	$(srcdir)/LOCA_BorderedSolver_EpetraHouseholder.H \
+	$(srcdir)/LOCA_Epetra_AnasaziOperator_Floquet.H \
 	$(srcdir)/LOCA_Epetra_AugmentedOp.H \
 	$(srcdir)/LOCA_BorderedSolver_EpetraAugmented.H \
 	$(srcdir)/LOCA_Epetra_Factory.H \
@@ -476,6 +482,7 @@ LOCA_EPETRA = \
 	$(srcdir)/LOCA_Epetra_LowRankUpdateOp.C \
 	$(srcdir)/LOCA_Epetra_LowRankUpdateRowMatrix.C \
 	$(srcdir)/LOCA_BorderedSolver_EpetraHouseholder.C \
+	$(srcdir)/LOCA_Epetra_AnasaziOperator_Floquet.C \
 	$(srcdir)/LOCA_Epetra_AugmentedOp.C \
 	$(srcdir)/LOCA_BorderedSolver_EpetraAugmented.C \
 	$(srcdir)/LOCA_Epetra_Factory.C \
@@ -621,6 +628,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOCA_BorderedSolver_EpetraAugmented.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOCA_BorderedSolver_EpetraHouseholder.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOCA_Epetra_AnasaziOperator_Floquet.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOCA_Epetra_AugmentedOp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOCA_Epetra_CompactWYOp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOCA_Epetra_Factory.Po@am__quote@
@@ -812,6 +820,22 @@ LOCA_BorderedSolver_EpetraHouseholder.obj: $(srcdir)/LOCA_BorderedSolver_EpetraH
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOCA_BorderedSolver_EpetraHouseholder.Po' tmpdepfile='$(DEPDIR)/LOCA_BorderedSolver_EpetraHouseholder.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_BorderedSolver_EpetraHouseholder.obj `if test -f '$(srcdir)/LOCA_BorderedSolver_EpetraHouseholder.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_BorderedSolver_EpetraHouseholder.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_BorderedSolver_EpetraHouseholder.C'; fi`
+
+LOCA_Epetra_AnasaziOperator_Floquet.o: $(srcdir)/LOCA_Epetra_AnasaziOperator_Floquet.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_Epetra_AnasaziOperator_Floquet.o -MD -MP -MF "$(DEPDIR)/LOCA_Epetra_AnasaziOperator_Floquet.Tpo" -c -o LOCA_Epetra_AnasaziOperator_Floquet.o `test -f '$(srcdir)/LOCA_Epetra_AnasaziOperator_Floquet.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Epetra_AnasaziOperator_Floquet.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOCA_Epetra_AnasaziOperator_Floquet.Tpo" "$(DEPDIR)/LOCA_Epetra_AnasaziOperator_Floquet.Po"; else rm -f "$(DEPDIR)/LOCA_Epetra_AnasaziOperator_Floquet.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Epetra_AnasaziOperator_Floquet.C' object='LOCA_Epetra_AnasaziOperator_Floquet.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOCA_Epetra_AnasaziOperator_Floquet.Po' tmpdepfile='$(DEPDIR)/LOCA_Epetra_AnasaziOperator_Floquet.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_Epetra_AnasaziOperator_Floquet.o `test -f '$(srcdir)/LOCA_Epetra_AnasaziOperator_Floquet.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Epetra_AnasaziOperator_Floquet.C
+
+LOCA_Epetra_AnasaziOperator_Floquet.obj: $(srcdir)/LOCA_Epetra_AnasaziOperator_Floquet.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_Epetra_AnasaziOperator_Floquet.obj -MD -MP -MF "$(DEPDIR)/LOCA_Epetra_AnasaziOperator_Floquet.Tpo" -c -o LOCA_Epetra_AnasaziOperator_Floquet.obj `if test -f '$(srcdir)/LOCA_Epetra_AnasaziOperator_Floquet.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Epetra_AnasaziOperator_Floquet.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Epetra_AnasaziOperator_Floquet.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOCA_Epetra_AnasaziOperator_Floquet.Tpo" "$(DEPDIR)/LOCA_Epetra_AnasaziOperator_Floquet.Po"; else rm -f "$(DEPDIR)/LOCA_Epetra_AnasaziOperator_Floquet.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Epetra_AnasaziOperator_Floquet.C' object='LOCA_Epetra_AnasaziOperator_Floquet.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOCA_Epetra_AnasaziOperator_Floquet.Po' tmpdepfile='$(DEPDIR)/LOCA_Epetra_AnasaziOperator_Floquet.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_Epetra_AnasaziOperator_Floquet.obj `if test -f '$(srcdir)/LOCA_Epetra_AnasaziOperator_Floquet.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Epetra_AnasaziOperator_Floquet.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Epetra_AnasaziOperator_Floquet.C'; fi`
 
 LOCA_Epetra_AugmentedOp.o: $(srcdir)/LOCA_Epetra_AugmentedOp.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_Epetra_AugmentedOp.o -MD -MP -MF "$(DEPDIR)/LOCA_Epetra_AugmentedOp.Tpo" -c -o LOCA_Epetra_AugmentedOp.o `test -f '$(srcdir)/LOCA_Epetra_AugmentedOp.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Epetra_AugmentedOp.C; \

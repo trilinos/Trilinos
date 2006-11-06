@@ -156,6 +156,15 @@ namespace LOCA {
 	//! LOCA Interface function for printing the solution
 	virtual void printSolution(const Epetra_Vector& x_, double conParam);
 	
+	//! Method to alert object that Jacobian fills need to be altered
+        //! to compute operator for Floquet theory (monodromy operator)
+	void setFloquetFillFlag(bool fff);
+
+	//! Method to start the application of the monodromy matrix,
+        //! which involves multiplication by one mass matrix block and
+	void beginFloquetOperatorApplication(Epetra_Vector& v);
+	void finishFloquetOperatorApplication(Epetra_Vector& v);
+	
 	//! Accessor for the global solution BlockVector
 	virtual EpetraExt::BlockVector& getSolution();
 	
@@ -258,8 +267,17 @@ namespace LOCA {
 	//! Pointer to split (spatial) mass matrix in CRS matrix form.
 	Epetra_CrsMatrix* splitMassCrs;
 	
+	//! Pointer to split (spatial) mass matrix saved for Floquet operation.
+	Epetra_RowMatrix* savedSplitMassForFloquet;
+	
+	//! Flag indicating whether space matrix is Crs (determined by cast attempt)
+	bool  isCrsMatrix;
+
 	//! Flag indicating whether XYZT system is periodic
 	bool  isPeriodic;
+	
+	//! Flag indicating Jacobian fill needs to be altered for Floquet calcs
+	bool floquetFillFlag;
 	
       };
 

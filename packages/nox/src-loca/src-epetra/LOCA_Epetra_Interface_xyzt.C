@@ -41,6 +41,7 @@
 #ifdef HAVE_NOX_EPETRAEXT
 
 #include "EpetraExt_MatrixMatrix.h"
+#include "Epetra_VbrMatrix.h"
 
 LOCA::Epetra::Interface::xyzt::
 xyzt(
@@ -73,7 +74,10 @@ xyzt(
   rowStencil(0),
   rowIndex(0), 
   precPrintParams(precPrintParams_), 
-  precLSParams(precLSParams_)
+  precLSParams(precLSParams_),
+  isCrsMatrix(true),
+  floquetFillFlag(false),
+  savedSplitMassForFloquet(0)
 {
    if (precLSParams)
      isPeriodic = precLSParams_->get("Periodic",false);
@@ -130,6 +134,7 @@ xyzt(
      
      splitJacCrs = dynamic_cast<Epetra_CrsMatrix *>(splitJac.get());
      if (splitJacCrs == NULL) {
+        isCrsMatrix = false;
         cout << "CAST OF splitJacCrs failed!, constructing CRS matrix " << endl;
 
         std::vector< std::vector<int> > row(1); row[0].push_back(0);
@@ -147,14 +152,7 @@ xyzt(
        new LOCA::Epetra::xyztPrec(*jacobian, *splitJacCrs, *splitMassCrs, 
 				  *solution, *solutionOverlap, *overlapImporter,
 				  *precPrintParams, *precLSParams, globalComm);
-     if (preconditioner != 0) {
-       // TODO: pass in globalData and use output stream
-       //cout << "LOCA::Epetra::Interface::xyzt - " 
-       //    << "preconditioner created successfully" << endl;
-     }
    }
-   // TODO: pass in globalData and use output stream
-   //cout << "Ending xyzt constructor" << endl;
 }
 
 LOCA::Epetra::Interface::xyzt::
@@ -242,7 +240,10 @@ computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac)
     else {
       jacobian->LoadBlock(*splitJac, i, 1);
       stat = stat && iMass->computeMassMatrix( splitVecOld );
-      jacobian->LoadBlock(*splitMass, i, 0);
+      // Floquet fills, save first mass matrix instead of loading it
+      if (i==0 && timeDomain==0 && isPeriodic && floquetFillFlag)
+              (*savedSplitMassForFloquet) = *(splitMass.get()); 
+      else jacobian->LoadBlock(*splitMass, i, 0); //Normal case
     }
   }
 
@@ -273,6 +274,68 @@ printSolution(const Epetra_Vector& x, double conParam)
   for (int j=timeDomain; j<numTimeDomains-1; j++) globalComm->Barrier();
 
   conStep++; // Counter for continuation step, used for printing
+}
+
+void LOCA::Epetra::Interface::xyzt::
+setFloquetFillFlag(bool fff)
+{
+   if (fff) {
+     floquetFillFlag = true;
+     // allocate saved Mass matrix
+     if (isCrsMatrix)
+       savedSplitMassForFloquet = new Epetra_CrsMatrix(dynamic_cast<Epetra_CrsMatrix&>(*(splitMass.get())));
+     else
+       savedSplitMassForFloquet = new Epetra_VbrMatrix(dynamic_cast<Epetra_VbrMatrix&>(*(splitMass.get())));
+   }
+   else {
+     floquetFillFlag = false;
+     // free the saved Mass matrix
+     delete savedSplitMassForFloquet;
+   }
+}
+
+void LOCA::Epetra::Interface::xyzt::
+beginFloquetOperatorApplication(Epetra_Vector& v)
+{
+  if (!isPeriodic)
+    cout << "\n\n\t Must be periodic for FLoquet theory\n" << endl;
+  // Take perturbation in final time step, apply the saved
+  // mass matrix, and put as forcing of first time step
+
+  // Create BlockVectors for manipulation of single blocks
+  solution->Epetra_Vector::operator=(v);
+  solutionOverlap->Import(*solution, *overlapImporter, Insert);
+
+  // Set vector to all zeros -- 
+  solution->PutScalar(0.0);
+
+  // only process perturbation to last vector, and place in first vector
+  if (timeDomain == 0) {
+    int blockRowOld = (*rowIndex)[0] + (*rowStencil)[0][0];
+    solutionOverlap->ExtractBlockValues(splitVecOld, blockRowOld);
+    savedSplitMassForFloquet->Multiply(false, splitVecOld, splitVec);
+    splitVec.Scale(-1.0); // subtract over to RHS
+    solution->LoadBlockValues(splitVec, 0);
+  }
+
+  v = *solution;
+}
+
+void LOCA::Epetra::Interface::xyzt::
+finishFloquetOperatorApplication(Epetra_Vector& v)
+{
+  // zero out all component vectors except the final one...
+  solution->Epetra_Vector::operator=(v);
+
+  if ( timeDomain == numTimeDomains-1 )
+    solution->ExtractBlockValues(splitVec, globalComm->NumTimeSteps()-1);
+
+  solution->PutScalar(0.0);
+
+  if ( timeDomain == numTimeDomains-1 )
+    solution->LoadBlockValues(splitVec, globalComm->NumTimeSteps()-1);
+
+   v = *solution;
 }
 
 EpetraExt::BlockVector& LOCA::Epetra::Interface::xyzt::
