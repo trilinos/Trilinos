@@ -138,14 +138,19 @@ int AZOO_Scale(int action,
   }
   else {
     if (action == AZ_SCALE_MAT_RHS_SOL) {
-      vec = AZOO_create_scaling_vector(A, options[AZ_scaling]);
-      if (vec == NULL) {
-        if (options[AZ_output] != AZ_none) {
-          cerr << "AZOO_create_scaling_vector ERROR"<<endl;
+      if (scaling->scaling_data == NULL) {
+        vec = AZOO_create_scaling_vector(A, options[AZ_scaling]);
+        if (vec == NULL) {
+          if (options[AZ_output] != AZ_none) {
+            cerr << "AZOO_create_scaling_vector ERROR"<<endl;
+          }
+          return(-1);
         }
-        return(-1);
+        scaling->scaling_data = (void*)vec;
       }
-      scaling->scaling_data = (void*)vec;
+      else {
+        vec = (Epetra_Vector*)(scaling->scaling_data);
+      }
     }
     else {
       if (scaling->scaling_data != NULL) {

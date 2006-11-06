@@ -563,9 +563,6 @@ int test_azoo_scaling(Epetra_CrsMatrix& A,
     return(err);
   }
 
-  AztecOO_scale_epetra(AZ_DESTROY_SCALING_DATA, Amat, options,
-                       bvals, xvals, NULL, scaling);
-
   A.Multiply(false, vec1, vec3);
 
   vec4.Multiply(1.0, diag, vec3, 0.0);
@@ -578,6 +575,20 @@ int test_azoo_scaling(Epetra_CrsMatrix& A,
   if (fabs(vec2nrm - vec4nrm) > 1.e-6) {
     return(-1);
   }
+
+  //now call the scaling function again, just to allow for
+  //testing memory-leak issues.
+  err = AztecOO_scale_epetra(AZ_SCALE_MAT_RHS_SOL, Amat,
+                             options, bvals, xvals, NULL, scaling);
+  if (err != 0) {
+    if (verbose) {
+      cout << "AztecOO_scale_epetra returned err="<<err<<endl;
+    }
+    return(err);
+  }
+
+  AztecOO_scale_epetra(AZ_DESTROY_SCALING_DATA, Amat, options,
+                       bvals, xvals, NULL, scaling);
 
   x.PutScalar(1.0);
 
