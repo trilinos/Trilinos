@@ -226,7 +226,7 @@ void MLPreconditionerFactory::initializePrec(
       
       timer.stop();
       if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
-        *OSTab(out).getOStream() <<"\n=> Creation time = "<<timer.totalElapsedTime()<<" sec\n";
+        OSTab(out)() <<"\n=> Creation time = "<<timer.totalElapsedTime()<<" sec\n";
       // RAB: Above, I am just passing a string to ML::Create(...) in order
       // get this code written.  However, in the future, it would be good to
       // copy the contents of what is in ML::Create(...) into a local
@@ -252,7 +252,7 @@ void MLPreconditionerFactory::initializePrec(
   TEST_FOR_EXCEPT(0!=ml_precOp->ComputePreconditioner());
   timer.stop();
   if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
-    *OSTab(out).getOStream() <<"\n=> Factorization time = "<<timer.totalElapsedTime()<<" sec\n";
+    OSTab(out)() <<"\n=> Factorization time = "<<timer.totalElapsedTime()<<" sec\n";
   //
   // Compute the conditioner number estimate if asked
   //

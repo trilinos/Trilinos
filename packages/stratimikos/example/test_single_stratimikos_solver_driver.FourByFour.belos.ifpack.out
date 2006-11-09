@@ -25,7 +25,9 @@ Creating a Thyra::DefaultRealLinearSolverBuilder object ...
 
 Valid parameters for DefaultRealLinearSolverBuilder ...
  Linear Solver Type : string = Amesos
+   #   Valid values: "Belos", "Amesos", "AztecOO"
  Preconditioner Type : string = ML
+   #   Valid values: "None", "Ifpack", "ML"
  Linear Solver Types -> 
    Amesos -> 
      Refactorization Policy : string = RepivotOnRefactorization
@@ -96,6 +98,19 @@ Valid parameters for DefaultRealLinearSolverBuilder ...
          RCM Reordering : string = Disabled
          Size of Krylov Subspace : int = 300
          Steps : int = 3
+   Belos -> 
+     Adjustable Block Size : bool = 1
+     Block Size : int = 1
+     Default Rel Res Norm : double = 1e-06
+     Max Iters : int = 400
+     Max Restarts : int = 25
+     Solver Type : string = GMRES
+     GMRES -> 
+       Max Number of Krylov Vectors : int = 300
+       Variant : string = Standard
+     Outputter -> 
+       Output Frequency : int = 10
+       Output Max Res Only : bool = 1
  Preconditioner Types -> 
    Ifpack -> 
      Overlap : int = 0
@@ -124,8 +139,7 @@ Valid parameters for DefaultRealLinearSolverBuilder ...
        relaxation: damping factor : double = 1
        relaxation: min diagonal value : double = 1
        relaxation: sweeps : int = 1
-       relaxation: typ*** Caught standard exception : /home/rabartl/PROJECTS/Trilinos.release-7-0-branch/Trilinos/packages/stratimikos/src/Thyra_DefaultRealLinearSolverBuilder.cpp:277: itr == lowsf_map_.end(): Error, the value "Linear Solver Type"="Belos" is not a valid linear solver type.  Valid linear solve strategy names include {"AztecOO","Amesos"}!
-e : string = Jacobi
+       relaxation: type : string = Jacobi
        relaxation: zero starting solution : bool = 1
        schwarz: combine mode : string = Zero
        schwarz: compute condest : bool = 1
@@ -146,8 +160,8 @@ e : string = Jacobi
      prec type : string = MGV
      print unused : int = -2
      smoother: Aztec as solver : bool = 0
-     smoother: Aztec options : int* = 0x8506c18
-     smoother: Aztec params : double* = 0x8506cd8
+     smoother: Aztec options : int* = 0xa8d330
+     smoother: Aztec params : double* = 0xa8d400
      smoother: damping factor : double = 0.67
      smoother: pre or post : string = both
      smoother: sweeps : int = 2
@@ -155,4 +169,54 @@ e : string = Jacobi
 
 Creating the LinearOpWithSolveFactoryBase object lowsFactory ...
 
-Oh no! At least one of the tests failed!
+lowsFactory described as:
+  Thyra::BelosLinearOpWithSolveFactory
+
+
+Running example use cases ...
+  
+  Running example use cases for a LinearOpWithSolveFactoryBase object ...
+    
+    Performing a single linear solve ...
+    
+    Solve status:
+      solveStatus = SOLVE_STATUS_UNKNOWN
+      achievedTol = unknownTolerance()
+      message: "The Belos solver of type "Belos::BlockGmres<...,double>{Variant='Standard'}" returned a solve status of "Converged" in 4 iterations and achieved an approximate max tolerance of 0 with total CPU time of 0.004461 sec"
+      extraParameters: NONE
+    
+    Performing a solve, changing the operator, then performing another solve ...
+    
+    Performing a solve, changing the operator in a very small way, then performing another solve ...
+    
+    Performing a solve, changing the operator in a major way, then performing another solve ...
+
+Printing the parameter list (showing what was used) ...
+ Matrix File : string = FourByFour.mtx
+ Linear Solver Builder -> 
+   Linear Solver Type : string = Belos
+   Preconditioner Type : string = Ifpack
+   Linear Solver Types -> 
+     Belos -> 
+       Adjustable Block Size : bool = 1   [default]
+       Block Size : int = 1   [default]
+       Default Rel Res Norm : double = 1e-06   [default]
+       Max Iters : int = 400   [default]
+       Max Restarts : int = 25   [default]
+       Solver Type : string = GMRES   [default]
+       GMRES -> 
+         Max Number of Krylov Vectors : int = 300   [default]
+         Variant : string = Standard   [default]
+       Outputter -> 
+         Output Frequency : int = 10   [default]
+         Output Max Res Only : bool = 1   [default]
+   Preconditioner Types -> 
+     Ifpack -> 
+       Overlap : int = 0   [default]
+       Prec Type : string = ILU   [default]
+ LinearOpTester -> 
+   [empty list]
+ LinearOpWithSolveTester -> 
+   [empty list]
+
+Congratulations! All of the tests checked out!

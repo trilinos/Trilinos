@@ -72,6 +72,22 @@
       </ParameterList>
       <Parameter name="Output Every RHS" type="bool" value="0"/>
     </ParameterList>
+    <ParameterList name="Belos">
+      <Parameter name="Adjustable Block Size" type="bool" value="1"/>
+      <Parameter name="Block Size" type="int" value="1"/>
+      <Parameter name="Default Rel Res Norm" type="double" value="1e-06"/>
+      <ParameterList name="GMRES">
+        <Parameter name="Max Number of Krylov Vectors" type="int" value="300"/>
+        <Parameter name="Variant" type="string" value="Standard"/>
+      </ParameterList>
+      <Parameter name="Max Iters" type="int" value="400"/>
+      <Parameter name="Max Restarts" type="int" value="25"/>
+      <ParameterList name="Outputter">
+        <Parameter name="Output Frequency" type="int" value="10"/>
+        <Parameter name="Output Max Res Only" type="bool" value="1"/>
+      </ParameterList>
+      <Parameter name="Solver Type" type="string" value="GMRES"/>
+    </ParameterList>
   </ParameterList>
   <Parameter name="Preconditioner Type" type="string" value="ML"/>
   <ParameterList name="Preconditioner Types">
@@ -125,8 +141,8 @@
       <Parameter name="prec type" type="string" value="MGV"/>
       <Parameter name="print unused" type="int" value="-2"/>
       <Parameter name="smoother: Aztec as solver" type="bool" value="0"/>
-      <Parameter name="smoother: Aztec options" type="any" value="0x84f8098   [unused]"/>
-      <Parameter name="smoother: Aztec params" type="any" value="0x84f8158   [unused]"/>
+      <Parameter name="smoother: Aztec options" type="any" value="0xa7fe80   [unused]"/>
+      <Parameter name="smoother: Aztec params" type="any" value="0xa7ff50   [unused]"/>
       <Parameter name="smoother: damping factor" type="double" value="0.67"/>
       <Parameter name="smoother: pre or post" type="string" value="both"/>
       <Parameter name="smoother: sweeps" type="int" value="2"/>

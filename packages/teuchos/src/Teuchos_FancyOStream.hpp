@@ -488,11 +488,35 @@ public:
     }
   /** \brief. */
   basic_OSTab(
+    const RefCountPtr<std::basic_ostream<CharT,Traits> >   &oStream
+    ,const int                                             tabs = 1
+    ,const std::basic_string<CharT,Traits>                 linePrefix = ""
+    )
+    :fancyOStream_(getFancyOStream(oStream))
+    ,tabs_(tabs)
+    ,linePrefix_(linePrefix)
+    {
+      updateState();
+    }
+  /** \brief Warning: Only call this constructor for stack-based object. */
+  basic_OSTab(
     basic_FancyOStream<CharT,Traits>                       &fancyOStream
     ,const int                                             tabs = 1
     ,const std::basic_string<CharT,Traits>                 linePrefix = ""
     )
     :fancyOStream_(rcp(&fancyOStream,false))
+    ,tabs_(tabs)
+    ,linePrefix_(linePrefix)
+    {
+      updateState();
+    }
+  /** \brief Warning: Only call this constructor for stack-based object. */
+  basic_OSTab(
+    std::basic_ostream<CharT,Traits>                       &oStream
+    ,const int                                             tabs = 1
+    ,const std::basic_string<CharT,Traits>                 linePrefix = ""
+    )
+    :fancyOStream_(getFancyOStream(rcp(&oStream,false)))
     ,tabs_(tabs)
     ,linePrefix_(linePrefix)
     {
@@ -535,14 +559,14 @@ public:
       return *this;
     }
   /** \brief. */
-  RefCountPtr<basic_FancyOStream<CharT,Traits> > getOStream() const
-    {
-      return fancyOStream_;
-    }
-  /** \brief. */
   basic_FancyOStream<CharT,Traits>& operator()() const
     {
       return *fancyOStream_;
+    }
+  /** \brief. */
+  basic_FancyOStream<CharT,Traits>* get() const
+    {
+      return fancyOStream_.get();
     }
   
 private:
@@ -563,6 +587,70 @@ private:
     }
   
 };
+
+/** \brief Create a tab for an RCP-wrapped <tt>basic_FancyOStream</tt> object
+ * to cause the indentation of all output automatically!.
+ *
+ * This function returns an RCP object to a <tt>basic_FancyOStream</tt> object
+ * that has its tab indented by one.  If the input <tt>*out</tt> object is
+ * already a <tt>%basic_FancyOStream</tt> object, then that object is used as
+ * is.  If the <tt>*out</tt> object is not a <tt>%basic_FancyOStream</tt>
+ * object, then a new <tt>%basic_FancyOStream</tt> object is created and its
+ * tab is set!"
+ *
+ * In any case, when the returned RCP object is destroyed, the tab will be
+ * removed automatically!
+ *
+ * \relates basic_FancyOStream
+ */
+template <typename CharT, typename Traits>
+RefCountPtr<basic_FancyOStream<CharT,Traits> >
+tab(
+  const RefCountPtr<basic_FancyOStream<CharT,Traits> > &out
+  ,const int                                           tabs = 1
+  ,const std::basic_string<CharT,Traits>               linePrefix = ""
+  )
+{
+  if(out.get()==NULL)
+    return Teuchos::null;
+  RefCountPtr<basic_FancyOStream<CharT,Traits> >
+    fancyOut = rcp(&*out,false);
+  set_extra_data( out, "out", &fancyOut );
+  set_extra_data(
+    rcp(new basic_OSTab<CharT,Traits>(out,tabs,linePrefix))
+    ,"OSTab"
+    ,&fancyOut
+    ,PRE_DESTROY
+    );
+  return fancyOut;
+}
+
+
+/** \brief Create a tab for an RCP-wrapped <tt>std:: ostream</tt> object to
+ * cause the indentation of all output automatically!.
+ *
+ * This function returns an RCP object to a <tt>basic_FancyOStream</tt> object
+ * that has its tab indented by one.  If the input <tt>*out</tt> object is
+ * already a <tt>%basic_FancyOStream</tt> object, then that object is used as
+ * is.  If the <tt>*out</tt> object is not a <tt>%basic_FancyOStream</tt>
+ * object, then a new <tt>%basic_FancyOStream</tt> object is created and its
+ * tab is set!"
+ *
+ * In any case, when the returned RCP object is destroyed, the tab will be
+ * removed automatically!
+ *
+ * \relates basic_FancyOStream
+ */
+template <typename CharT, typename Traits>
+RefCountPtr<basic_FancyOStream<CharT,Traits> >
+tab(
+  const RefCountPtr<std::basic_ostream<CharT,Traits> > &out
+  ,const int                                           tabs = 1
+  ,const std::basic_string<CharT,Traits>               linePrefix = ""
+  )
+{
+  return tab(getFancyOStream(out),tabs,linePrefix);
+}
 
 // ///////////////////////////////
 // Typedefs

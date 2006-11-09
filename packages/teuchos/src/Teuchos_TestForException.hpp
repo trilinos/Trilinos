@@ -112,8 +112,10 @@ void TestForException_break();
     if(throw_exception) { \
         TestForException_break(); \
 	    TeuchosOStringStream omsg; \
-	    omsg << __FILE__ << ":" << __LINE__ << ": " \
-             << #throw_exception_test << ": " << msg; \
+	    omsg \
+              << __FILE__ << ":" << __LINE__ << ":" \
+              << "\n\nThrow test that evaluated to true: "#throw_exception_test << "\n\n" \
+              << msg; \
 	    throw Exception(TEUCHOS_OSTRINGSTREAM_GET_C_STR(omsg)); \
     } \
 }

@@ -1,4 +1,5 @@
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_Array.hpp"	
 #include "Teuchos_Version.hpp"
 
@@ -10,15 +11,30 @@ int main(int argc, char* argv[])
   Teuchos::ParameterList My_List;
 
   // Setting parameters in this list can be easily done:
-  My_List.set("Max Iters", 1550);
-  My_List.set("Tolerance", 1e-10);
-  My_List.set("Solver", "GMRES");
+  My_List.set("Max Iters", 1550, "Determines the maximum number of iterations in the solver");
+  My_List.set("Tolerance", 1e-10, "The tolerance used for the convergence check");
+  
+  // For the "Solver" option, create a validator that will automatically
+  // create documentation for this parameter but will also help in validation.
+  Teuchos::RefCountPtr<Teuchos::StringToIntegralParameterEntryValidator<int> >
+    solverValidator = Teuchos::rcp(
+      new Teuchos::StringToIntegralParameterEntryValidator<int>(
+        Teuchos::tuple<std::string>( "GMRES", "CG", "TFQMR" )
+        ,"Solver"
+        )
+      );
+  My_List.set(
+    "Solver"
+    ,"GMRES" // This will be validated by solverValidator right here!
+    ,"The type of solver to use."
+    ,solverValidator
+    );
 
   /* The templated ``set'' method should cast the input {\it value} to the
      correct data type.  However, in the case where the compiler is not casting the input
      value to the expected data type, an explicit cast can be used with the ``set'' method:
   */
-  My_List.set("Tolerance", (float)(1e-10));
+  My_List.set("Tolerance", (float)(1e-10), "The tolerance used for the convergence check");
 
   /* Reference-counted pointers can also be passed through a Teuchos::ParameterList.
      To illustrate this we will use the Teuchos::Array class to create an array of 10 doubles
@@ -29,17 +45,19 @@ int main(int argc, char* argv[])
   Teuchos::RefCountPtr<Teuchos::Array<double> > rcp_Array = 
     Teuchos::rcp( new Teuchos::Array<double>( 10, 0.0 ) );
   
-  My_List.set("Initial Guess", rcp_Array);
+  My_List.set("Initial Guess", rcp_Array, "The initial guess as a RCP to an array object.");
 
   /* A hierarchy of parameter lists can be constructed using {\tt Teuchos::ParameterList}.  This 
      means another parameter list is a valid {\it value} in any parameter list.  To create a sublist
      in a parameter list and obtain a reference to it:
   */
-  Teuchos::ParameterList& Prec_List = My_List.sublist("Preconditioner");
+  Teuchos::ParameterList&
+    Prec_List = My_List.sublist("Preconditioner",false,"Sublist that defines the preconditioner.");
 
   // Now this parameter list can be filled with values:
-  Prec_List.set("Type", "ILU");
-  Prec_List.set("Drop Tolerance", 1e-3);
+  Prec_List.set("Type", "ILU", "The tpye of preconditioner to use");
+  Prec_List.set("Drop Tolerance", 1e-3
+                ,"The tolerance below which entries from the\n""factorization are left out of the factors.");
 
   // The parameter list can be queried about the existance of a parameter, sublist, or type:
   // Has a solver been chosen?
@@ -65,6 +83,11 @@ int main(int argc, char* argv[])
   float tol;
   // Get method that retrieves a parameter of a particular type.
   tol = My_List.INVALID_TEMPLATE_QUALIFIER get<float>("Tolerance");
+  // Get the "Solver" value and validate!
+  std::string
+    solver = solverValidator->validateString(
+      Teuchos::getParameter<std::string>(My_List,"Solver")
+      );
 
   /* In the above example, the first ``get'' method is a safe way of
      obtaining a parameter when its existence is indefinite but required.
@@ -102,14 +125,18 @@ int main(int argc, char* argv[])
     cout << e.what() << endl;
   }
 
-  // A parameter list can be sent to the output stream:
-  cout<< My_List << endl;
+  cout << "\n# Printing this parameter list using opeator<<(...) ...\n\n";
+  cout << My_List << endl;
+
+  cout << "\n# Printing the parameter list only showing documentation fields ...\n\n";
+  My_List.print(cout,Teuchos::ParameterList::PrintOptions().showDoc(true).indent(2).showTypes(true)); 
 
   /* It is important to note that mispelled parameters 
      (with additional space characters, capitalizations, etc.) may be ignored.  
      Therefore, it is important to be aware that a given parameter has not been used. 
      Unused parameters can be printed with method:
   */ 
+  cout << "\n# Showing unused parameters ...\n\n";
   My_List.unused( cout );
 
   return 0;

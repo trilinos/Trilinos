@@ -30,6 +30,6 @@ Solve status:
 Solution ||epetra_x||2 = 1.24984
 
 Testing the solution error ||b-A*x||/||b|| computed through the Epetra objects ...
-||b-A*x||/||b|| = 0/1.52593 = 0 < tol = 1e-05 ? passed
+||b-A*x||/||b|| = 1.11022e-16/1.52593 = 7.27571e-17 < tol = 1e-05 ? passed
 
 Congratulations! All of the tests checked out!

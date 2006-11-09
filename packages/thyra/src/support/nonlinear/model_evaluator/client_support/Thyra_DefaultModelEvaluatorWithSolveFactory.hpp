@@ -252,7 +252,7 @@ void DefaultModelEvaluatorWithSolveFactory<Scalar>::evalModel(
   
   timer.stop();
   if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
-    *OSTab(out).getOStream() << "\nTime to evaluate underlying model = "<<timer.totalElapsedTime()<<" sec\n";
+    OSTab(out)() << "\nTime to evaluate underlying model = "<<timer.totalElapsedTime()<<" sec\n";
 
   // Postprocess arguments
   
@@ -276,7 +276,7 @@ void DefaultModelEvaluatorWithSolveFactory<Scalar>::evalModel(
 
   timer.stop();
   if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
-    *OSTab(out).getOStream() << "\nTime to process output objects = "<<timer.totalElapsedTime()<<" sec\n";
+    OSTab(out)() << "\nTime to process output objects = "<<timer.totalElapsedTime()<<" sec\n";
 
   totalTimer.stop();
   if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))

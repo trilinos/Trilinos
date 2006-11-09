@@ -129,9 +129,9 @@ bool runCgSolveExample(
   //
   if(verbose) *out << "\nSolving the linear system with sillyCgSolve(...) ...\n";
   if(useSillierCg)
-    result = sillierCgSolve(*A,*b,maxNumIters,tolerance,&*x,OSTab(out).getOStream().get());
+    result = sillierCgSolve(*A,*b,maxNumIters,tolerance,&*x,OSTab(out).get());
   else
-    result = sillyCgSolve(*A,*b,maxNumIters,tolerance,&*x,OSTab(out).getOStream().get());
+    result = sillyCgSolve(*A,*b,maxNumIters,tolerance,&*x,OSTab(out).get());
   if(!result) success = false;
   //
   // (C) Check that the linear system was solved to the specified tolerance

@@ -243,7 +243,7 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
         timer.start(true);
         op.apply(NONCONJ_ELE,*v1,&*v2);
         timer.stop();
-        *OSTab(oss).getOStream() <<"\n=> Apply time = "<<timer.totalElapsedTime()<<" sec\n";
+        OSTab(oss)() <<"\n=> Apply time = "<<timer.totalElapsedTime()<<" sec\n";
         if(dump_all()) *oss <<endl<< "v2 =\n" << describe(*v2,verbLevel);
 
         *oss <<endl<< "v3 = inv(Op)*v2 ...\n" ;
@@ -255,12 +255,12 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
           timer.start(true);
           solveStatus = solve(op,NONCONJ_ELE,*v2,&*v3,static_cast<const SolveCriteria<Scalar>*>(0));
           timer.stop();
-          *OSTab(oss).getOStream() <<"\n=> Solve time = "<<timer.totalElapsedTime()<<" sec\n";
+          OSTab(oss)() <<"\n=> Solve time = "<<timer.totalElapsedTime()<<" sec\n";
         }
         if(dump_all()) *oss <<endl<< "v3 =\n" << describe(*v3,verbLevel);
         *oss
           <<endl<< "solve status:\n";
-        *OSTab(oss).getOStream() << solveStatus;
+        OSTab(oss)() << solveStatus;
 
         *oss <<endl<< "v4 = v3 - v1 ...\n" ;
         Teuchos::RefCountPtr<MultiVectorBase<RangeScalar> > v4 = createMembers(domain,num_rhs);
@@ -273,7 +273,7 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
         timer.start(true);
         op.apply(NONCONJ_ELE,*v3,&*v5,Scalar(1.0),Scalar(-1.0));
         timer.stop();
-        *OSTab(oss).getOStream() <<"\n=> Apply time = "<<timer.totalElapsedTime()<<" sec\n";
+        OSTab(oss)() <<"\n=> Apply time = "<<timer.totalElapsedTime()<<" sec\n";
         if(dump_all()) *oss <<endl<< "v5 =\n" << describe(*v5,verbLevel);
 
         std::vector<DomainScalarMag> norms_v1(num_rhs), norms_v4(num_rhs), norms_v4_norms_v1(num_rhs);
@@ -314,7 +314,7 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
       *oss <<endl<< "Forward operator not supported, skipping check!\n";
     }
 
-    printTestResults(these_results,ossStore.str(),show_all_tests(),&success,OSTab(out).getOStream().get());
+    printTestResults(these_results,ossStore.str(),show_all_tests(),&success,OSTab(out).get());
 
   }
   else {
@@ -366,7 +366,7 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
         timer.start(true);
         op.apply(NONCONJ_ELE,*v1,&*v2);
         timer.stop();
-        *OSTab(oss).getOStream() <<"\n=> Apply time = "<<timer.totalElapsedTime()<<" sec\n";
+        OSTab(oss)() <<"\n=> Apply time = "<<timer.totalElapsedTime()<<" sec\n";
         if(dump_all()) *oss <<endl<< "v2 =\n" << describe(*v2,verbLevel);
 
         *oss <<endl<< "v3 = inv(Op)*v2 ...\n" ;
@@ -382,12 +382,12 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
           timer.start(true);
           solveStatus = solve<RangeScalar,DomainScalar>(op,NONCONJ_ELE,*v2,&*v3,&solveCriteria);
           timer.stop();
-          *OSTab(oss).getOStream() <<"\n=> Solve time = "<<timer.totalElapsedTime()<<" sec\n";
+          OSTab(oss)() <<"\n=> Solve time = "<<timer.totalElapsedTime()<<" sec\n";
         }
         if(dump_all()) *oss <<endl<< "v3 =\n" << describe(*v3,verbLevel);
         *oss
           <<endl<< "solve status:\n";
-        *OSTab(oss).getOStream() << solveStatus;
+        OSTab(oss)() << solveStatus;
         result = solveStatus.solveStatus==SOLVE_STATUS_CONVERGED;
         if(!result) these_results = false;
         *oss
@@ -400,7 +400,7 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
         timer.start(true);
         op.apply(NONCONJ_ELE,*v3,&*v4,Scalar(1.0),Scalar(-1.0));
         timer.stop();
-        *OSTab(oss).getOStream() <<"\n=> Apply time = "<<timer.totalElapsedTime()<<" sec\n";
+        OSTab(oss)() <<"\n=> Apply time = "<<timer.totalElapsedTime()<<" sec\n";
         if(dump_all()) *oss <<endl<< "v4 =\n" << describe(*v4,verbLevel);
 
         std::vector<DomainScalarMag> norms_v2(num_rhs), norms_v4(num_rhs), norms_v4_norms_v2(num_rhs);
@@ -425,7 +425,7 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
       *oss <<endl<< "Forward operator not supported, skipping check!\n";
     }
 
-    printTestResults(these_results,ossStore.str(),show_all_tests(),&success,OSTab(out).getOStream().get());
+    printTestResults(these_results,ossStore.str(),show_all_tests(),&success,OSTab(out).get());
 
   }
   else {
@@ -481,7 +481,7 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
         timer.start(true);
         op.applyTranspose(CONJ_ELE,*v1,&*v2);
         timer.stop();
-        *OSTab(oss).getOStream() <<"\n=> Apply time = "<<timer.totalElapsedTime()<<" sec\n";
+        OSTab(oss)() <<"\n=> Apply time = "<<timer.totalElapsedTime()<<" sec\n";
         if(dump_all()) *oss <<endl<< "v2 =\n" << describe(*v2,verbLevel);
 
         *oss <<endl<< "v3 = inv(Op')*v2 ...\n" ;
@@ -493,12 +493,12 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
           timer.start(true);
           solveStatus = solveTranspose(op,CONJ_ELE,*v2,&*v3,static_cast<const SolveCriteria<Scalar>*>(0));
           timer.stop();
-          *OSTab(oss).getOStream() <<"\n=> Solve time = "<<timer.totalElapsedTime()<<" sec\n";
+          OSTab(oss)() <<"\n=> Solve time = "<<timer.totalElapsedTime()<<" sec\n";
         }
         if(dump_all()) *oss <<endl<< "v3 =\n" << describe(*v3,verbLevel);
         *oss
           <<endl<< "solve status:\n";
-        *OSTab(oss).getOStream() << solveStatus;
+        OSTab(oss)() << solveStatus;
 
         *oss <<endl<< "v4 = v3 - v1 ...\n" ;
         Teuchos::RefCountPtr<MultiVectorBase<RangeScalar> > v4 = createMembers(range,num_rhs);
@@ -511,7 +511,7 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
         timer.start(true);
         op.applyTranspose(CONJ_ELE,*v3,&*v5,Scalar(1.0),Scalar(-1.0));
         timer.stop();
-        *OSTab(oss).getOStream() <<"\n=> Apply time = "<<timer.totalElapsedTime()<<" sec\n";
+        OSTab(oss)() <<"\n=> Apply time = "<<timer.totalElapsedTime()<<" sec\n";
         if(dump_all()) *oss <<endl<< "v5 =\n" << describe(*v5,verbLevel);
 
         std::vector<RangeScalarMag> norms_v1(num_rhs), norms_v4(num_rhs), norms_v4_norms_v1(num_rhs);
@@ -552,7 +552,7 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
       *oss <<endl<< "Adjoint operator not supported, skipping check!\n";
     }
 
-    printTestResults(these_results,ossStore.str(),show_all_tests(),&success,OSTab(out).getOStream().get());
+    printTestResults(these_results,ossStore.str(),show_all_tests(),&success,OSTab(out).get());
 
   }
   else {
@@ -604,7 +604,7 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
         timer.start(true);
         op.applyTranspose(CONJ_ELE,*v1,&*v2);
         timer.stop();
-        *OSTab(oss).getOStream() <<"\n=> Apply time = "<<timer.totalElapsedTime()<<" sec\n";
+        OSTab(oss)() <<"\n=> Apply time = "<<timer.totalElapsedTime()<<" sec\n";
         if(dump_all()) *oss <<endl<< "v2 =\n" << describe(*v2,verbLevel);
 
         *oss <<endl<< "v3 = inv(Op')*v2 ...\n" ;
@@ -620,12 +620,12 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
           timer.start(true);
           solveStatus = solveTranspose(op,CONJ_ELE,*v2,&*v3,&solveCriteria);
           timer.stop();
-          *OSTab(oss).getOStream() <<"\n=> Solve time = "<<timer.totalElapsedTime()<<" sec\n";
+          OSTab(oss)() <<"\n=> Solve time = "<<timer.totalElapsedTime()<<" sec\n";
         }
         if(dump_all()) *oss <<endl<< "v3 =\n" << describe(*v3,verbLevel);
         *oss
           <<endl<< "solve status:\n";
-        *OSTab(oss).getOStream() << solveStatus;
+        OSTab(oss)() << solveStatus;
         result = solveStatus.solveStatus==SOLVE_STATUS_CONVERGED;
         if(!result) these_results = false;
         *oss
@@ -640,7 +640,7 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
         timer.start(true);
         op.applyTranspose(CONJ_ELE,*v3,&*v4,Scalar(1.0),Scalar(-1.0));
         timer.stop();
-        *OSTab(oss).getOStream() <<"\n=> Apply time = "<<timer.totalElapsedTime()<<" sec\n";
+        OSTab(oss)() <<"\n=> Apply time = "<<timer.totalElapsedTime()<<" sec\n";
         if(dump_all()) *oss <<endl<< "v4 =\n" << describe(*v4,verbLevel);
 
         std::vector<RangeScalarMag> norms_v2(num_rhs), norms_v4(num_rhs), norms_v4_norms_v2(num_rhs);
@@ -665,7 +665,7 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
       *oss <<endl<< "Adjoint operator not supported, skipping check!\n";
     }
 
-    printTestResults(these_results,ossStore.str(),show_all_tests(),&success,OSTab(out).getOStream().get());
+    printTestResults(these_results,ossStore.str(),show_all_tests(),&success,OSTab(out).get());
 
   }
   else {

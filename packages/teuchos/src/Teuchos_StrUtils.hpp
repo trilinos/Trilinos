@@ -131,9 +131,15 @@ namespace Teuchos
 
       /** \brief Returns the int value of a string. */
       static int atoi(const string& str);
+
+      /** \brief Print lines with prefix first. */
+      static std::ostream& printLines(
+        std::ostream             &os
+        ,const std::string       &linePrefix
+        ,const std::string       &lines
+        );
+
     };
-
-
 
 }
 

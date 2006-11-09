@@ -2352,14 +2352,14 @@ int Epetra_CrsMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
     *out << "\nEntering Epetra_CrsMatrix::Multipy("<<TransA<<",X,Y) ...\n";
     if(!TransA) {
       *out << "\nDomainMap =\n";
-      this->DomainMap().Print(*Teuchos::OSTab(out).getOStream());
+      this->DomainMap().Print(Teuchos::OSTab(out)());
     }
     else {
       *out << "\nRangeMap =\n";
-      this->RangeMap().Print(*Teuchos::OSTab(out).getOStream());
+      this->RangeMap().Print(Teuchos::OSTab(out)());
     }
     *out << "\nInitial input X with " << ( TransA ? "RangeMap" : "DomainMap" ) << " =\n\n";
-    X.Print(*Teuchos::OSTab(out).getOStream());
+    X.Print(Teuchos::OSTab(out)());
   }
 #endif // EPETRA_CRS_MATRIX_TRACE_DUMP_MULTIPLY
 
@@ -2400,9 +2400,9 @@ int Epetra_CrsMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
 #ifdef EPETRA_CRS_MATRIX_TRACE_DUMP_MULTIPLY
       if(Epetra_CrsMatrixTraceDumpMultiply) {
         *out << "\nColMap =\n";
-        this->ColMap().Print(*Teuchos::OSTab(out).getOStream());
+        this->ColMap().Print(Teuchos::OSTab(out)());
         *out << "\nX after import from DomainMap to ColMap =\n\n";
-        ImportVector_->Print(*Teuchos::OSTab(out).getOStream());
+        ImportVector_->Print(Teuchos::OSTab(out)());
       }
 #endif // EPETRA_CRS_MATRIX_TRACE_DUMP_MULTIPLY
     }
@@ -2421,12 +2421,12 @@ int Epetra_CrsMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
 #ifdef EPETRA_CRS_MATRIX_TRACE_DUMP_MULTIPLY
     if(Epetra_CrsMatrixTraceDumpMultiply) {
       *out << "\nRowMap =\n";
-      this->RowMap().Print(*Teuchos::OSTab(out).getOStream());
+      this->RowMap().Print(Teuchos::OSTab(out)());
       *out << "\nY after local mat-vec where Y has RowMap =\n\n";
       if(Exporter()!=0)
-        ExportVector_->Print(*Teuchos::OSTab(out).getOStream());
+        ExportVector_->Print(Teuchos::OSTab(out)());
       else
-        Y.Print(*Teuchos::OSTab(out).getOStream());
+        Y.Print(Teuchos::OSTab(out)());
     }
 #endif // EPETRA_CRS_MATRIX_TRACE_DUMP_MULTIPLY
     if (Exporter()!=0) {
@@ -2435,9 +2435,9 @@ int Epetra_CrsMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
 #ifdef EPETRA_CRS_MATRIX_TRACE_DUMP_MULTIPLY
       if(Epetra_CrsMatrixTraceDumpMultiply) {
         *out << "\nRangeMap =\n";
-        this->RangeMap().Print(*Teuchos::OSTab(out).getOStream());
+        this->RangeMap().Print(Teuchos::OSTab(out)());
         *out << "\nY after export from RowMap to RangeMap = \n\n";
-        Y.Print(*Teuchos::OSTab(out).getOStream());
+        Y.Print(Teuchos::OSTab(out)());
       }
 #endif // EPETRA_CRS_MATRIX_TRACE_DUMP_MULTIPLY
     }
@@ -2455,9 +2455,9 @@ int Epetra_CrsMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
 #ifdef EPETRA_CRS_MATRIX_TRACE_DUMP_MULTIPLY
       if(Epetra_CrsMatrixTraceDumpMultiply) {
         *out << "\nRowMap =\n";
-        this->RowMap().Print(*Teuchos::OSTab(out).getOStream());
+        this->RowMap().Print(Teuchos::OSTab(out)());
         *out << "\nX after import from RangeMap to RowMap =\n\n";
-        ExportVector_->Print(*Teuchos::OSTab(out).getOStream());
+        ExportVector_->Print(Teuchos::OSTab(out)());
       }
 #endif // EPETRA_CRS_MATRIX_TRACE_DUMP_MULTIPLY
     }
@@ -2476,12 +2476,12 @@ int Epetra_CrsMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
 #ifdef EPETRA_CRS_MATRIX_TRACE_DUMP_MULTIPLY
     if(Epetra_CrsMatrixTraceDumpMultiply) {
       *out << "\nColMap =\n";
-      this->ColMap().Print(*Teuchos::OSTab(out).getOStream());
+      this->ColMap().Print(Teuchos::OSTab(out)());
       *out << "\nY after local transpose mat-vec where Y has ColMap =\n\n";
       if(Importer()!=0)
-        ImportVector_->Print(*Teuchos::OSTab(out).getOStream());
+        ImportVector_->Print(Teuchos::OSTab(out)());
       else
-        Y.Print(*Teuchos::OSTab(out).getOStream());
+        Y.Print(Teuchos::OSTab(out)());
     }
 #endif // EPETRA_CRS_MATRIX_TRACE_DUMP_MULTIPLY
     if (Importer()!=0) {
@@ -2490,9 +2490,9 @@ int Epetra_CrsMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
 #ifdef EPETRA_CRS_MATRIX_TRACE_DUMP_MULTIPLY
       if(Epetra_CrsMatrixTraceDumpMultiply) {
         *out << "\nDomainMap =\n";
-        this->DomainMap().Print(*Teuchos::OSTab(out).getOStream());
+        this->DomainMap().Print(Teuchos::OSTab(out)());
         *out << "\nY after export from ColMap to DomainMap =\n\n";
-        Y.Print(*Teuchos::OSTab(out).getOStream());
+        Y.Print(Teuchos::OSTab(out)());
       }
 #endif // EPETRA_CRS_MATRIX_TRACE_DUMP_MULTIPLY
     }

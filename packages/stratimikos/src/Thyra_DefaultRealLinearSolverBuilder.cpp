@@ -33,6 +33,7 @@
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_StandardParameterEntryValidators.hpp"
 
 #ifdef HAVE_STRATIMIKOS_AMESOS_THYRA
 #  include "Thyra_AmesosLinearOpWithSolveFactory.hpp"
@@ -56,6 +57,12 @@ const std::string LinearSolverType_name    = "Linear Solver Type";
 const std::string LinearSolverTypes_name   = "Linear Solver Types";
 const std::string PreconditionerType_name    = "Preconditioner Type";
 const std::string PreconditionerTypes_name   = "Preconditioner Types";
+
+Teuchos::RefCountPtr<const Teuchos::StringToIntegralParameterEntryValidator<int> >
+lowsfValidator;
+
+Teuchos::RefCountPtr<const Teuchos::StringToIntegralParameterEntryValidator<int> >
+pfValidator;
 
 } // namespace 
 
@@ -95,8 +102,8 @@ void DefaultRealLinearSolverBuilder::setLinearSolveStrategyFactory(
   ,const std::string                                                                                  &solveStrategyName
   )
 {
-  lowsf_map_[solveStrategyName] = solveStrategyFactory;
   validLowsfNames_.push_back(solveStrategyName);
+  lowsfArray_.push_back(solveStrategyFactory);
   defaultLOWSF_ = solveStrategyName;
   validParamList_ = Teuchos::null;
 }
@@ -106,8 +113,8 @@ void DefaultRealLinearSolverBuilder::setPreconditioningStrategyFactory(
   ,const std::string                                                                                  &precStrategyName
   )
 {
-  pf_map_[precStrategyName] = precStrategyFactory;
   validPfNames_.push_back(precStrategyName);
+  pfArray_.push_back(precStrategyFactory);
   defaultPF_ = precStrategyName;
   validParamList_ = Teuchos::null;
 }
@@ -160,16 +167,19 @@ std::string
 DefaultRealLinearSolverBuilder::getLinearSolveStrategyName() const
 {
   TEST_FOR_EXCEPT(!paramList_.get());
-  return paramList_->get(LinearSolverType_name,defaultLOWSF_);
+  if(!lowsfValidator.get())
+    this->getValidParameters(); // Make sure lowsfValidator has been initialized!
+  return lowsfValidator->getStringValue(*paramList_,LinearSolverType_name,defaultLOWSF_);
 }
 
 std::string
 DefaultRealLinearSolverBuilder::getPreconditionerStrategyName() const
 {
   TEST_FOR_EXCEPT(!paramList_.get());
-  return paramList_->get(PreconditionerType_name,defaultPF_);
+  if(!pfValidator.get())
+    this->getValidParameters(); // Make sure pfValidator has been initialized!
+  return pfValidator->getStringValue(*paramList_,PreconditionerType_name,defaultPF_);
 }
-
 
 // Overridden from ParameterListAcceptor
 
@@ -210,36 +220,50 @@ DefaultRealLinearSolverBuilder::getValidParameters() const
     Teuchos::RefCountPtr<Teuchos::ParameterList>
       validParamList = Teuchos::rcp(new Teuchos::ParameterList);
     // Linear Solver Types
-    validParamList->set(LinearSolverType_name,defaultLOWSF_);
+    lowsfValidator = Teuchos::rcp(
+      new Teuchos::StringToIntegralParameterEntryValidator<int>(
+        validLowsfNames_,LinearSolverType_name
+        )
+      );
+    validParamList->set(
+      LinearSolverType_name,defaultLOWSF_
+      ,(std::string("Determines the type of linear solver that will be used.\n")
+        + "The parameters for each solver type are specified in the sublist \""
+        + LinearSolverTypes_name + "\"").c_str()
+      ,lowsfValidator
+      );
     Teuchos::RefCountPtr<Teuchos::ParameterList>
       linearSolverTypesSL = sublist(validParamList,LinearSolverTypes_name);
-    for(
-      lowsf_map_t::const_iterator itr = lowsf_map_.begin();
-      itr != lowsf_map_.end();
-      ++itr
-      )
-    {
+    for( int i = 0; i < static_cast<int>(lowsfArray_.size()); ++i ) {
       const std::string
-        &name = itr->first;
+        &lsname = validLowsfNames_[i];
       const Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<double> >
-        lowsf = itr->second->create();
-      linearSolverTypesSL->sublist(name).setParameters(*lowsf->getValidParameters());
+        lowsf = lowsfArray_[i]->create();
+      linearSolverTypesSL->sublist(lsname).setParameters(*lowsf->getValidParameters());
     }
     // Preconditioner Type
-    validParamList->set(PreconditionerType_name,defaultPF_);
+    pfValidator = Teuchos::rcp(
+      new Teuchos::StringToIntegralParameterEntryValidator<int>(
+        validPfNames_,PreconditionerType_name
+        )
+      );
+    validParamList->set(
+      PreconditionerType_name,defaultPF_
+      ,(std::string("Determines the type of preconditioner that will be used.\n")
+        + "This option is only meaningful for linear solvers that accept preconditioner"
+        + " factory objects!\n"
+        + "The parameters for each preconditioner are specified in the sublist \""
+        + PreconditionerTypes_name + "\"").c_str()
+      ,pfValidator
+      );
     Teuchos::RefCountPtr<Teuchos::ParameterList>
       precTypesSL = sublist(validParamList,PreconditionerTypes_name);
-    for(
-      pf_map_t::const_iterator itr = pf_map_.begin();
-      itr != pf_map_.end();
-      ++itr
-      )
-    {
+    for( int i = 0; i < static_cast<int>(pfArray_.size()); ++i ) {
       const std::string
-        &name = itr->first;
+        &pfname = validPfNames_[i+1]; // "None" is the 0th entry!
       const Teuchos::RefCountPtr<PreconditionerFactoryBase<double> >
-        pf = itr->second->create();
-      precTypesSL->sublist(name).setParameters(*pf->getValidParameters());
+        pf = pfArray_[i]->create();
+      precTypesSL->sublist(pfname).setParameters(*pf->getValidParameters());
     }
     validParamList_ = validParamList;
   }
@@ -262,23 +286,18 @@ DefaultRealLinearSolverBuilder::createLinearSolveStrategy(
   std::cout << "\nthis->getLinearSolveStrategyName() = \"" << this->getLinearSolveStrategyName() << "\"\n";
 #endif
   const std::string
-    name = ( linearSolveStrategyName.length()
+    lsname = ( linearSolveStrategyName.length()
              ? linearSolveStrategyName
              : this->getLinearSolveStrategyName() );
 #ifdef THYRA_DEFAULT_REAL_LINEAR_SOLVER_BUILDER_DUMP
-  std::cout << "\nname = \"" << name << "\"\n";
+  std::cout << "\nlsname = \"" << lsname << "\"\n";
 #endif
-  // Validate that the linear solver strategy with this name exists
-  lowsf_map_t::const_iterator itr = lowsf_map_.find(name);
-  TEST_FOR_EXCEPTION(
-    itr == lowsf_map_.end(), std::invalid_argument
-    ,"Error, the value \""<<LinearSolverType_name<<"\"=\""<<name<<"\" is not a valid"
-    " linear solver type.  Valid linear solve strategy names include "
-    <<validLinearSolveStrategyNames()<<"!"
-    );
+  // Get the index of this linear solver strategy (this will validate!)
+  const int
+    ls_idx = lowsfValidator->getIntegralValue(lsname,LinearSolverType_name);
   // Create the uninitialized LOWSFB object
   Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<double> >
-    lowsf = itr->second->create();
+    lowsf = lowsfArray_[ls_idx]->create();
   // First, set the preconditioner factory and its parameters
   if(lowsf->acceptsPreconditionerFactory()) {
     const std::string &pfName = this->getPreconditionerStrategyName();
@@ -289,7 +308,7 @@ DefaultRealLinearSolverBuilder::createLinearSolveStrategy(
   }
   // Now set the parameters for the linear solver (some of which might
   // override some preconditioner factory parameters).
-  lowsf->setParameterList(sublist(sublist(paramList_,LinearSolverTypes_name),name));
+  lowsf->setParameterList(sublist(sublist(paramList_,LinearSolverTypes_name),lsname));
   //
   return lowsf;
 }
@@ -301,22 +320,18 @@ DefaultRealLinearSolverBuilder::createPreconditioningStrategy(
 {
   // Get the name of the preconditioning strategy
   const std::string
-    name = ( preconditioningStrategyName.length()
+    pfname = ( preconditioningStrategyName.length()
              ? preconditioningStrategyName
              : this->getPreconditionerStrategyName() );
   Teuchos::RefCountPtr<PreconditionerFactoryBase<double> >
     pf = Teuchos::null;
-  if( name != "None" ) {
-    pf_map_t::const_iterator itr = pf_map_.find(name);
-    TEST_FOR_EXCEPTION(
-      itr == pf_map_.end(), std::invalid_argument
-      ,"Error, the value \""<<PreconditionerType_name<<"\"=\""<<name<<"\" is not a valid"
-      " preconditioner type.  Valid preconditioning strategy names include "
-      <<validPreconditioningStrategyNames()<<"!"
-      );
+  // Get the index of this preconditioning strategy (this will validate!)
+  const int
+    pf_idx = pfValidator->getIntegralValue(pfname,PreconditionerTypes_name);
+  if( pf_idx != 0 ) {
     Teuchos::RefCountPtr<PreconditionerFactoryBase<double> >
-      pf = itr->second->create();
-    pf->setParameterList(sublist(sublist(paramList_,PreconditionerTypes_name),name));
+      pf = pfArray_[pf_idx-1]->create(); // We offset by -1 since "None" is first!
+    pf->setParameterList(sublist(sublist(paramList_,PreconditionerTypes_name),pfname));
   }
   return pf;
 }
@@ -329,6 +344,9 @@ void DefaultRealLinearSolverBuilder::initializeDefaults()
   using Teuchos::AbstractFactoryStd;
   defaultLOWSF_ = "";
   defaultPF_ = "";
+  validLowsfNames_.resize(0);
+  validPfNames_.resize(0);
+  validPfNames_.push_back("None"); // This will offset everything!
   // Solvers
 #ifdef HAVE_STRATIMIKOS_BELOS_THYRA
   setLinearSolveStrategyFactory(
@@ -366,34 +384,6 @@ void DefaultRealLinearSolverBuilder::initializeDefaults()
     ,"ML"
     );
 #endif
-}
-
-std::string
-DefaultRealLinearSolverBuilder::validLinearSolveStrategyNames() const
-{
-  std::ostringstream oss;
-  oss << "{";
-  for( int i = 0; i < int(validLowsfNames_.size()); ++i ) {
-    oss << "\"" << validLowsfNames_[i] << "\"";
-    if( i != int(validLowsfNames_.size()-1) )
-      oss << ",";
-  }
-  oss << "}";
-  return oss.str();
-}
-
-std::string
-DefaultRealLinearSolverBuilder::validPreconditioningStrategyNames() const
-{
-  std::ostringstream oss;
-  oss << "{";
-  for( int i = 0; i < int(validPfNames_.size()); ++i ) {
-    oss << "\"" << validPfNames_[i] << "\"";
-    if( i != int(validPfNames_.size()-1) )
-      oss << ",";
-  }
-  oss << "}";
-  return oss.str();
 }
 
 } // namespace Thyra

@@ -29,6 +29,8 @@
 //#define TEUCHOS_PARAMETER_LIST_SHOW_TRACE
 
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_FancyOStream.hpp"
+#include "Teuchos_StrUtils.hpp"
 
 #ifdef TEUCHOS_PARAMETER_LIST_SHOW_TRACE
 #include "Teuchos_VerboseObject.hpp"
@@ -117,18 +119,17 @@ void ParameterList::unused(ostream& os) const
 std::string ParameterList::currentParametersString() const
 {
   std::ostringstream oss;
-  oss << "{";
+  oss << "     {\n";
   ParameterList::ConstIterator itr;
   int i;
   for( itr = this->begin(), i = 0; itr != this->end(); ++itr, ++i ) {
     const std::string     &entryName   = this->name(itr);
     const ParameterEntry  &entry       = this->entry(itr);
-    if(i) oss << ",";
     oss
-      << "\""<<entryName<<"\":"<<entry.getAny().typeName()
-      <<"="<<filterValueToString(entry);
+      << "          \""<<entryName<<"\" : "<<entry.getAny().typeName()
+      <<" = "<<filterValueToString(entry) << "\n";
   }
-  oss << "}";
+  oss << "     }\n";
   return oss.str();
 }
 
@@ -147,7 +148,10 @@ bool ParameterList::isParameter(const string& name) const
   return (params_.find(name) != params_.end());
 }
 
-ParameterList& ParameterList::sublist(const string& name, bool mustAlreadyExist)
+ParameterList& ParameterList::sublist(
+  const string& name, bool mustAlreadyExist
+  ,const string& docString
+  )
 {
   // Find name in list, if it exists.
   Iterator i = params_.find(name);
@@ -164,13 +168,13 @@ ParameterList& ParameterList::sublist(const string& name, bool mustAlreadyExist)
 
   // The list does not exist so create a new empty list and return its reference
   TEST_FOR_EXCEPTION(
-    mustAlreadyExist, Exceptions::InvalidParameter
+    mustAlreadyExist, Exceptions::InvalidParameterName
     ,"The sublist "<<this->name()<<"->\""<<name<<"\" does not exist!"
     );
   const ParameterList newSubList(this->name()+std::string("->")+name);
   return any_cast<ParameterList>(
     params_.insert(
-      Map::value_type(name,ParameterEntry(newSubList,false,true))
+      Map::value_type(name,ParameterEntry(newSubList,false,true,docString))
       ).first->second.getAny(false)
     );
   // Note that above I am very careful to construct the parameter list entry
@@ -185,7 +189,7 @@ const ParameterList& ParameterList::sublist(const string& name) const
 
   // If it does not exist, throw an error
   TEST_FOR_EXCEPTION(
-    i == params_.end(), Exceptions::InvalidParameter
+    i == params_.end(), Exceptions::InvalidParameterName
     ,"The sublist "<<this->name()<<"->\""<<name<<"\" does not exist!"
     );
 
@@ -197,24 +201,47 @@ const ParameterList& ParameterList::sublist(const string& name) const
   
 ostream& ParameterList::print(ostream& os, int indent, bool showTypes, bool showFlags) const
 {
+  return this->print(os,PrintOptions().indent(indent).showTypes(showTypes).showFlags(showFlags));
+}
+  
+ostream& ParameterList::print(ostream& os, const PrintOptions &printOptions ) const
+{
+  const int   indent    = printOptions.indent();
+  const bool  showTypes = printOptions.showTypes();
+  const bool  showFlags = printOptions.showFlags();
+  const bool  showDoc   = printOptions.showDoc();
+  const std::string linePrefix(indent,' ');
+  RefCountPtr<FancyOStream>
+    out = getFancyOStream(rcp(&os,false));
+  OSTab tab(out,indent);
   if (params_.begin() == params_.end()) {
-    for (int j = 0; j < indent; j ++)
-      os << ' ';
-    os << "[empty list]" << endl;
+    *out <<"[empty list]" << endl;
   }
   else { 
     // Print parameters first
     for (ConstIterator i = params_.begin(); i != params_.end(); ++i) 
     {
       const ParameterEntry &entry_i = entry(i);
+      RefCountPtr<const ParameterEntryValidator>
+        validator = entry_i.validator();
       if(entry_i.isList())
         continue;
-      for (int j = 0; j < indent; j ++)
-        os << ' ';
-      os << name(i);
+      const string &docString = entry_i.docString();
+      *out << name(i);
       if(showTypes)
-        os << " : " << entry_i.getAny(false).typeName();
-      os << " = "; entry_i.leftshift(os,showFlags); os << endl;
+        *out << " : " << entry_i.getAny(false).typeName();
+      *out << " = "; entry_i.leftshift(os,showFlags); *out << endl;
+      if(validator.get()) {
+        validator->printDoc(docString,OSTab(os)());
+      }
+      else if( docString.length() && showDoc ) {
+        StrUtils::printLines(OSTab(out)(),"# ",docString);
+      }
+/*
+  const string &validValues = (validator.get() ? validator->validValues() : "");
+  if(validValues.length())
+  *out << "  #   Valid values: " << validValues << "\n";
+*/
     }
     // Print sublists second
     for (ConstIterator i = params_.begin(); i != params_.end(); ++i) 
@@ -222,10 +249,12 @@ ostream& ParameterList::print(ostream& os, int indent, bool showTypes, bool show
       const ParameterEntry &entry_i = entry(i);
       if(!entry_i.isList())
         continue;
-      for (int j = 0; j < indent; j ++)
-        os << ' ';
-      os << name(i) << " -> " << endl;
-      getValue<ParameterList>(entry_i).print(os, indent + 2,showTypes,showFlags);
+      const string &docString = entry_i.docString();
+      *out << name(i) << " -> " << endl;
+      if( docString.length() && showDoc ) {
+        StrUtils::printLines(OSTab(out)(),"# ",docString);
+      }
+      getValue<ParameterList>(entry_i).print(OSTab(out)(), printOptions.copy().indent(0));
     }
   }
   return os;
@@ -240,8 +269,6 @@ ParameterList::ConstIterator ParameterList::end() const
 {
   return params_.end();
 }
-
-
 
 #if defined(TFLOP)
 
@@ -260,7 +287,7 @@ const ParameterEntry& ParameterList::entry(ConstIterator i) const
   return ((*i).second);
 }
 
-#else
+#else // defined(TFLOP)
 
 const string& ParameterList::name(ConstIterator i) const
 {
@@ -277,13 +304,13 @@ const ParameterEntry& ParameterList::entry(ConstIterator i) const
   return (i->second);
 }
 
-#endif
+#endif // defined(TFLOP)
 
 void ParameterList::validateParameters(
-  const ParameterList              &validParamList
-  ,const int                       depth
-  ,const EValidateUsed             validateUsed
-  ,const EValidateDefaults         validateDefaults
+  ParameterList        const& validParamList
+  ,int                 const  depth
+  ,EValidateUsed       const  validateUsed
+  ,EValidateDefaults   const  validateDefaults
   ) const
 {
   typedef std::deque<ListPlusValidList> sublist_list_t;
@@ -302,6 +329,10 @@ void ParameterList::validateParameters(
   for( itr = this->begin(); itr != this->end(); ++itr ) {
     const std::string    &entryName   = this->name(itr);
     const ParameterEntry &entry       = this->entry(itr);
+#ifdef TEUCHOS_PARAMETER_LIST_SHOW_TRACE
+    OSTab tab(out);
+    *out << "\nentryName=\""<<entryName<<"\"\n";
+#endif
     if(
       ( entry.isUsed() && validateUsed!=VALIDATE_USED_ENABLED )
       ||
@@ -311,23 +342,29 @@ void ParameterList::validateParameters(
       continue;
     }
     const ParameterEntry *validEntry = validParamList.getEntryPtr(entryName);
-#ifdef TEUCHOS_PARAMETER_LIST_SHOW_TRACE
-    OSTab tab(out);
-    *out << "\nentryName=\""<<entryName<<"\"\n";
-#endif
-    const bool validType = ( validEntry!=NULL ? entry.getAny(false).type() == validEntry->getAny(false).type() : false );
     TEST_FOR_EXCEPTION(
-      !( validEntry!=NULL && validType )
-      ,Exceptions::InvalidParameter
+      !validEntry, Exceptions::InvalidParameterName
       ,"Error, the parameter {name=\""<<entryName<<"\",type=\""<<entry.getAny(false).typeName()<<"\""
-      ",value=\""<<filterValueToString(entry)<<"\"} in the parameter (sub)list \""<<this->name()<<"\" "
-      << ( validEntry==NULL
-           ? "was not found in the list of valid parameters"
-           : std::string("exists in the list of valid parameters but has the wrong type.  The correct type is \"")
-           +validEntry->getAny(false).typeName()+std::string("\"")
-        )
-      << ". The valid parameters and types are "<<validParamList.currentParametersString()
+      ",value=\""<<filterValueToString(entry)<<"\"}"
+      "\nin the parameter (sub)list \""<<this->name()<<"\""
+      "\nwas not found in the list of valid parameters!"
+      "\n\nThe valid parameters and types are:\n"<<validParamList.currentParametersString()
       );
+    RefCountPtr<const ParameterEntryValidator> validator;
+    if( (validator=validEntry->validator()).get() ) {
+      validator->validate( entry, entryName, this->name() ); 
+    }
+    else {
+      const bool validType = ( validEntry!=NULL ? entry.getAny(false).type() == validEntry->getAny(false).type() : false );
+      TEST_FOR_EXCEPTION(
+        !validType, Exceptions::InvalidParameterType
+        ,"Error, the parameter {name=\""<<entryName<<"\",type=\""<<entry.getAny(false).typeName()<<"\""
+        ",value=\""<<filterValueToString(entry)<<"\"}"
+        "\nin the parameter (sub)list \""<<this->name()<<"\""
+        "\nexists in the list of valid parameters but has the wrong type."
+        "\n\nThe correct type is \"" << validEntry->getAny(false).typeName() << "\"."
+        );
+    }
     if( entry.isList() && depth > 0 ) {
       sublist_list.push_back(
         ListPlusValidList(

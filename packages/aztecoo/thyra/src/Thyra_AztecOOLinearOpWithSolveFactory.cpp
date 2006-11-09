@@ -297,16 +297,38 @@ AztecOOLinearOpWithSolveFactory::generateAndGetValidParameters()
   static Teuchos::RefCountPtr<Teuchos::ParameterList> validParamList;
   if(validParamList.get()==NULL) {
     validParamList = Teuchos::rcp(new Teuchos::ParameterList("AztecOOLinearOpWithSolveFactory"));
-    validParamList->set(OutputEveryRhs_name,OutputEveryRhs_default);
+    validParamList->set(
+      OutputEveryRhs_name,OutputEveryRhs_default
+      ,"Determines if output is created for each individual RHS (true or 1) or if output\n"
+      "is just created for an entire set of RHSs (false or 0)."
+      );
     static Teuchos::RefCountPtr<const Teuchos::ParameterList>
       aztecParamList = getValidAztecOOParameters();
     Teuchos::ParameterList
-      &fwdSolvePL = validParamList->sublist(ForwardSolve_name);
-    fwdSolvePL.set(Tolerance_name,Tolerance_default);
-    fwdSolvePL.set(MaxIterations_name,MaxIterations_default);
-    fwdSolvePL.sublist(AztecOO_Settings_name).setParameters(*aztecParamList);
+      &fwdSolvePL = validParamList->sublist(
+        ForwardSolve_name, false
+        ,"Gives the options for the forward solve."
+        );
+    fwdSolvePL.set(
+      Tolerance_name,Tolerance_default
+      ,"The tolerence used in the convergence check (see the convergence test\n"
+      "in the sublist \"" + AztecOO_Settings_name + "\")"
+      );
+    fwdSolvePL.set(
+      MaxIterations_name,MaxIterations_default
+      ,"The maximum number of iterations the AztecOO solver is allowed to perform." 
+      );
+    fwdSolvePL.sublist(
+      AztecOO_Settings_name,false
+      ,"Sets the parameters on the AztecOO object itself."
+      ).setParameters(*aztecParamList);
     Teuchos::ParameterList
-      &adjSolvePL = validParamList->sublist(AdjointSolve_name);
+      &adjSolvePL = validParamList->sublist(
+        AdjointSolve_name, false
+        ,"The options for the adjoint solve.\n"
+        "If this sublist is missing then the parameters from the\n"
+        "\""+ForwardSolve_name+"\" sublist are used instead."
+        );
     adjSolvePL.setParameters(fwdSolvePL); // Make the adjoint solve have same defaults as forward solve
   }
   return validParamList;
@@ -370,8 +392,8 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
   const EpetraLinearOpBase* epFwdOp 
     = dynamic_cast<const EpetraLinearOpBase*>(tmpFwdOp.get());
 
-  const EpetraLinearOpBase* epApproxFwdOp 
-    = dynamic_cast<const EpetraLinearOpBase*>(tmpApproxFwdOp.get());
+  //const EpetraLinearOpBase* epApproxFwdOp 
+  //  = dynamic_cast<const EpetraLinearOpBase*>(tmpApproxFwdOp.get());
   
   if (epFwdOp!=0)
     {

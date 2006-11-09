@@ -36,6 +36,8 @@
 
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_any.hpp"
+#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_ParameterEntryValidator.hpp"
 
 namespace Teuchos {
 
@@ -63,7 +65,11 @@ public:
 
   //! Templated constructor
   template<typename T>
-  explicit ParameterEntry(T value, bool isDefault = false, bool isList = false);
+  explicit ParameterEntry(
+    T value, bool isDefault = false, bool isList = false
+    ,const std::string &docString = ""
+    ,RefCountPtr<const ParameterEntryValidator> const& validator = null
+    );
 
   //! Destructor
   ~ParameterEntry();
@@ -84,10 +90,17 @@ public:
 	    </ul>
   */
   template<typename T>
-  void setValue(T value, bool isDefault = false);
+  void setValue(
+    T value, bool isDefault = false
+    ,const std::string &docString = ""
+    ,RefCountPtr<const ParameterEntryValidator> const& validator = null
+    );
 
   //! Create a parameter entry that is an empty list.
-  ParameterList& setList(bool isDefault = false);
+  ParameterList& setList(
+    bool isDefault = false
+    ,const std::string &docString = ""
+    );
 
   //@}
 
@@ -132,6 +145,12 @@ public:
   //! Indicate whether this entry takes on the default value.
   bool isDefault() const;
 
+  //! Return the (optional) documentation string
+  std::string docString() const;
+
+  //! Return the (optional) validator object
+  RefCountPtr<const ParameterEntryValidator> validator() const;
+
   //@}
 
   //! @name I/O Methods 
@@ -162,6 +181,12 @@ private:
 
   //! Was this parameter a default value assigned by a "get" function?
   mutable bool isDefault_;
+
+  //! Optional documentation field
+  std::string  docString_;
+
+  //! Optional validator object
+  RefCountPtr<const ParameterEntryValidator> validator_;
 
 };
 
@@ -212,11 +237,17 @@ inline ostream& operator<<(ostream& os, const ParameterEntry& e)
 
 template<typename T>
 inline
-ParameterEntry::ParameterEntry(T value, bool isDefault, bool isList)
+ParameterEntry::ParameterEntry(
+  T value, bool isDefault, bool isList
+  ,const std::string &docString
+  ,RefCountPtr<const ParameterEntryValidator> const& validator
+  )
   : val_(value),
     isList_(isList),
     isUsed_(false),
-    isDefault_(isDefault)
+    isDefault_(isDefault),
+    docString_(docString),
+    validator_(validator)
 {}
 
 inline
@@ -227,10 +258,17 @@ ParameterEntry::~ParameterEntry()
 
 template<typename T>
 inline
-void ParameterEntry::setValue(T value, bool isDefault)
+void ParameterEntry::setValue(
+  T value, bool isDefault, const std::string &docString
+  ,RefCountPtr<const ParameterEntryValidator> const& validator
+  )
 {
   val_ = value;
   isDefault_ = isDefault;
+  if(docString.length())
+    docString_ = docString;
+  if(validator.get())
+    validator_ = validator;
 }
 
 // Get Methods
@@ -279,6 +317,15 @@ bool ParameterEntry::isType() const
 inline
 bool ParameterEntry::isDefault() const
 { return isDefault_; }
+
+inline
+std::string ParameterEntry::docString() const
+{ return docString_; }
+
+inline
+RefCountPtr<const ParameterEntryValidator>
+ParameterEntry::validator() const
+{ return validator_; }
 
 } // namespace Teuchos
 

@@ -1,127 +1,211 @@
- Linear Solver Type : string = Amesos
- Preconditioner Type : string = ML
- Linear Solver Types -> 
-   Amesos -> 
-     Refactorization Policy : string = RepivotOnRefactorization
-     Solver Type : string = Klu
-     Throw on Preconditioner Input : bool = 1
-     Amesos Settings -> 
-       AddToDiag : double = 0
-       AddZeroToDiag : bool = 0
-       ComputeTrueResidual : bool = 0
-       ComputeVectorNorms : bool = 0
-       DebugLevel : int = 0
-       MatrixProperty : string = general
-       MaxProcs : int = -1
-       NoDestroy : bool = 0
-       OutputLevel : int = 1
-       PrintTiming : bool = 0
-       RcondThreshold : double = 1e-12
-       Redistribute : bool = 0
-       Refactorize : bool = 0
-       Reindex : int = 0
-       ScaleMethod : int = 0
-       TrustMe : bool = 0
-       Lapack -> 
-         [empty list]
-       Mumps -> 
-         [empty list]
-       Pardiso -> 
-         [empty list]
-       Scalapack -> 
-         [empty list]
-       Superludist -> 
-         [empty list]
-   AztecOO -> 
-     Output Every RHS : bool = 0
-     Adjoint Solve -> 
-       Max Iterations : int = 400
-       Tolerance : double = 1e-06
-       AztecOO Settings -> 
-         Aztec Preconditioner : string = ilu
-         Aztec Solver : string = GMRES
-         Convergence Test : string = r0
-         Drop Tolerance : double = 0
-         Fill Factor : double = 1
-         Graph Fill : int = 0
-         Ill-Conditioning Threshold : double = 1e+11
-         Orthogonalization : string = Classical
-         Output Frequency : int = 0
-         Overlap : int = 0
-         Polynomial Order : int = 3
-         RCM Reordering : string = Disabled
-         Size of Krylov Subspace : int = 300
-         Steps : int = 3
-     Forward Solve -> 
-       Max Iterations : int = 400
-       Tolerance : double = 1e-06
-       AztecOO Settings -> 
-         Aztec Preconditioner : string = ilu
-         Aztec Solver : string = GMRES
-         Convergence Test : string = r0
-         Drop Tolerance : double = 0
-         Fill Factor : double = 1
-         Graph Fill : int = 0
-         Ill-Conditioning Threshold : double = 1e+11
-         Orthogonalization : string = Classical
-         Output Frequency : int = 0
-         Overlap : int = 0
-         Polynomial Order : int = 3
-         RCM Reordering : string = Disabled
-         Size of Krylov Subspace : int = 300
-         Steps : int = 3
- Preconditioner Types -> 
-   Ifpack -> 
-     Overlap : int = 0
-     Prec Type : string = ILU
-     Ifpack Settings -> 
-       amesos: solver type : string = Amesos_Klu
-       fact: absolute threshold : double = 0
-       fact: drop tolerance : double = 0
-       fact: ict level-of-fill : double = 1
-       fact: ilut level-of-fill : double = 1
-       fact: level-of-fill : int = 0
-       fact: relative threshold : double = 1
-       fact: relax value : double = 0
-       fact: sparskit: alph : double = 0
-       fact: sparskit: droptol : double = 0
-       fact: sparskit: lfil : int = 0
-       fact: sparskit: mbloc : int = -1
-       fact: sparskit: permtol : double = 0.1
-       fact: sparskit: tol : double = 0
-       fact: sparskit: type : string = ILUT
-       partitioner: local parts : int = 1
-       partitioner: overlap : int = 0
-       partitioner: print level : int = 0
-       partitioner: type : string = greedy
-       partitioner: use symmetric graph : bool = 1
-       relaxation: damping factor : double = 1
-       relaxation: min diagonal value : double = 1
-       relaxation: sweeps : int = 1
-       relaxation: type : string = Jacobi
-       relaxation: zero starting solution : bool = 1
-       schwarz: combine mode : string = Zero
-       schwarz: compute condest : bool = 1
-       schwarz: filter singletons : bool = 0
-       schwarz: reordering type : string = none
-   ML -> 
-     PDE equations : int = 1
-     aggregation: damping factor : double = 1.333
-     aggregation: local aggregates : int = 128
-     aggregation: threshold : double = 0
-     aggregation: type : string = METIS
-     coarse: max size : int = 128
-     coarse: type : string = Amesos-KLU
-     default values : string = DD
-     increasing or decreasing : string = increasing
-     max levels : int = 2
-     output : int = 8
-     prec type : string = MGV
-     print unused : int = -2
-     smoother: Aztec as solver : bool = 0
-     smoother: Aztec options : int* = 0x84f8098
-     smoother: Aztec params : double* = 0x84f8158
-     smoother: damping factor : double = 0.67
-     smoother: pre or post : string = both
-     smoother: sweeps : int = 2
-     smoother: type : string = Aztec
+  Linear Solver Type : string = Amesos
+    # Determines the type of linear solver that will be used.
+    # The parameters for each solver type are specified in the sublist "Linear Solver Types"
+    #   Valid values: "Belos", "Amesos", "AztecOO"
+  Preconditioner Type : string = ML
+    # Determines the type of preconditioner that will be used.
+    # This option is only meaningful for linear solvers that accept preconditioner factory objects!
+    # The parameters for each preconditioner are specified in the sublist "Preconditioner Types"
+    #   Valid values: "None", "Ifpack", "ML"
+  Linear Solver Types -> 
+    Amesos -> 
+      Refactorization Policy : string = RepivotOnRefactorization
+      Solver Type : string = Klu
+      Throw on Preconditioner Input : bool = 1
+      Amesos Settings -> 
+        AddToDiag : double = 0
+        AddZeroToDiag : bool = 0
+        ComputeTrueResidual : bool = 0
+        ComputeVectorNorms : bool = 0
+        DebugLevel : int = 0
+        MatrixProperty : string = general
+        MaxProcs : int = -1
+        NoDestroy : bool = 0
+        OutputLevel : int = 1
+        PrintTiming : bool = 0
+        RcondThreshold : double = 1e-12
+        Redistribute : bool = 0
+        Refactorize : bool = 0
+        Reindex : int = 0
+        ScaleMethod : int = 0
+        TrustMe : bool = 0
+        Lapack -> 
+          [empty list]
+        Mumps -> 
+          [empty list]
+        Pardiso -> 
+          [empty list]
+        Scalapack -> 
+          [empty list]
+        Superludist -> 
+          [empty list]
+    AztecOO -> 
+      Output Every RHS : bool = 0
+        # Determines if output is created for each individual RHS (true or 1) or if output
+        # is just created for an entire set of RHSs (false or 0).
+      Adjoint Solve -> 
+        Max Iterations : int = 400
+          # The maximum number of iterations the AztecOO solver is allowed to perform.
+        Tolerance : double = 1e-06
+          # The tolerence used in the convergence check (see the convergence test
+          # in the sublist "AztecOO Settings")
+        AztecOO Settings -> 
+          Aztec Preconditioner : string = ilu
+            # Type of internal preconditioner to use.
+            # Note! this preconditioner will only be used if the input operator
+            # supports the Epetra_RowMatrix interface and the client does not pass
+            # in an external preconditioner!
+            #   Valid values: "none", "ilu", "ilut", "Jacobi", "Symmetric Gauss-Seidel", "Polynomial", "Least-squares Polynomial"
+          Aztec Solver : string = GMRES
+            # Type of linear solver algorithm to use.
+            #   Valid values: "CG", "GMRES", "CGS", "TFQMR", "BiCGStab", "LU"
+          Convergence Test : string = r0
+            # The convergence test to use for terminating the iterative solver.
+            #   Valid values: "r0", "rhs", "Anorm", "no scaling", "sol"
+          Drop Tolerance : double = 0
+            # The tolerance below which an entry from the factors of an internal "ilut"
+            # preconditioner will be dropped.
+          Fill Factor : double = 1
+            # The amount of fill allowed for an internal "ilut" preconditioner.
+          Graph Fill : int = 0
+            # The amount of fill allowed for the internal "ilu" preconditioner.
+          Ill-Conditioning Threshold : double = 1e+11
+            # The threshold tolerance above which a system is considered
+            # ill conditioned.
+          Orthogonalization : string = Classical
+            # The type of orthogonalization to use with the "GMRES" solver.
+            #   Valid values: "Classical", "Modified"
+          Output Frequency : int = 0
+            # The number of iterations between each output of the solver's progress.
+          Overlap : int = 0
+            # The amount of overlap used for the internal "ilu" and "ilut" preconditioners.
+          Polynomial Order : int = 3
+            # The order for of the polynomials used for the "Polynomial" and
+            # "Least-squares Polynomial" internal preconditioners.
+          RCM Reordering : string = Disabled
+            # Determines if RCM reordering is used with the internal
+            # "ilu" or "ilut" preconditioners.
+            #   Valid values: "Enabled", "Disabled"
+          Size of Krylov Subspace : int = 300
+            # The maximum size of the Krylov subspace used with "GMRES" before
+            # a restart is performed.
+          Steps : int = 3
+            # Number of steps taken for the "Jacobi" or the "Symmetric Gauss-Seidel"
+            # internal preconditioners for each preconditioner application.
+      Forward Solve -> 
+        Max Iterations : int = 400
+          # The maximum number of iterations the AztecOO solver is allowed to perform.
+        Tolerance : double = 1e-06
+          # The tolerence used in the convergence check (see the convergence test
+          # in the sublist "AztecOO Settings")
+        AztecOO Settings -> 
+          Aztec Preconditioner : string = ilu
+            # Type of internal preconditioner to use.
+            # Note! this preconditioner will only be used if the input operator
+            # supports the Epetra_RowMatrix interface and the client does not pass
+            # in an external preconditioner!
+            #   Valid values: "none", "ilu", "ilut", "Jacobi", "Symmetric Gauss-Seidel", "Polynomial", "Least-squares Polynomial"
+          Aztec Solver : string = GMRES
+            # Type of linear solver algorithm to use.
+            #   Valid values: "CG", "GMRES", "CGS", "TFQMR", "BiCGStab", "LU"
+          Convergence Test : string = r0
+            # The convergence test to use for terminating the iterative solver.
+            #   Valid values: "r0", "rhs", "Anorm", "no scaling", "sol"
+          Drop Tolerance : double = 0
+            # The tolerance below which an entry from the factors of an internal "ilut"
+            # preconditioner will be dropped.
+          Fill Factor : double = 1
+            # The amount of fill allowed for an internal "ilut" preconditioner.
+          Graph Fill : int = 0
+            # The amount of fill allowed for the internal "ilu" preconditioner.
+          Ill-Conditioning Threshold : double = 1e+11
+            # The threshold tolerance above which a system is considered
+            # ill conditioned.
+          Orthogonalization : string = Classical
+            # The type of orthogonalization to use with the "GMRES" solver.
+            #   Valid values: "Classical", "Modified"
+          Output Frequency : int = 0
+            # The number of iterations between each output of the solver's progress.
+          Overlap : int = 0
+            # The amount of overlap used for the internal "ilu" and "ilut" preconditioners.
+          Polynomial Order : int = 3
+            # The order for of the polynomials used for the "Polynomial" and
+            # "Least-squares Polynomial" internal preconditioners.
+          RCM Reordering : string = Disabled
+            # Determines if RCM reordering is used with the internal
+            # "ilu" or "ilut" preconditioners.
+            #   Valid values: "Enabled", "Disabled"
+          Size of Krylov Subspace : int = 300
+            # The maximum size of the Krylov subspace used with "GMRES" before
+            # a restart is performed.
+          Steps : int = 3
+            # Number of steps taken for the "Jacobi" or the "Symmetric Gauss-Seidel"
+            # internal preconditioners for each preconditioner application.
+    Belos -> 
+      Adjustable Block Size : bool = 1
+      Block Size : int = 1
+      Default Rel Res Norm : double = 1e-06
+      Max Iters : int = 400
+      Max Restarts : int = 25
+      Solver Type : string = GMRES
+      GMRES -> 
+        Max Number of Krylov Vectors : int = 300
+        Variant : string = Standard
+      Outputter -> 
+        Output Frequency : int = 10
+        Output Max Res Only : bool = 1
+  Preconditioner Types -> 
+    Ifpack -> 
+      Overlap : int = 0
+      Prec Type : string = ILU
+      Ifpack Settings -> 
+        amesos: solver type : string = Amesos_Klu
+        fact: absolute threshold : double = 0
+        fact: drop tolerance : double = 0
+        fact: ict level-of-fill : double = 1
+        fact: ilut level-of-fill : double = 1
+        fact: level-of-fill : int = 0
+        fact: relative threshold : double = 1
+        fact: relax value : double = 0
+        fact: sparskit: alph : double = 0
+        fact: sparskit: droptol : double = 0
+        fact: sparskit: lfil : int = 0
+        fact: sparskit: mbloc : int = -1
+        fact: sparskit: permtol : double = 0.1
+        fact: sparskit: tol : double = 0
+        fact: sparskit: type : string = ILUT
+        partitioner: local parts : int = 1
+        partitioner: overlap : int = 0
+        partitioner: print level : int = 0
+        partitioner: type : string = greedy
+        partitioner: use symmetric graph : bool = 1
+        relaxation: damping factor : double = 1
+        relaxation: min diagonal value : double = 1
+        relaxation: sweeps : int = 1
+        relaxation: type : string = Jacobi
+        relaxation: zero starting solution : bool = 1
+        schwarz: combine mode : string = Zero
+        schwarz: compute condest : bool = 1
+        schwarz: filter singletons : bool = 0
+        schwarz: reordering type : string = none
+    ML -> 
+      PDE equations : int = 1
+      aggregation: damping factor : double = 1.333
+      aggregation: local aggregates : int = 128
+      aggregation: threshold : double = 0
+      aggregation: type : string = METIS
+      coarse: max size : int = 128
+      coarse: type : string = Amesos-KLU
+      default values : string = DD
+      increasing or decreasing : string = increasing
+      max levels : int = 2
+      output : int = 8
+      prec type : string = MGV
+      print unused : int = -2
+      smoother: Aztec as solver : bool = 0
+      smoother: Aztec options : int* = 0xa7fe80
+      smoother: Aztec params : double* = 0xa7ff50
+      smoother: damping factor : double = 0.67
+      smoother: pre or post : string = both
+      smoother: sweeps : int = 2
+      smoother: type : string = Aztec

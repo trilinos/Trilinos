@@ -158,7 +158,7 @@ int main(int argc, char* argv[])
               result =
                 Thyra::test_single_amesos_thyra_solver(
                   matrixDir+"/"+mtp.matrixFile,&amesosLOWSFPL,testTranspose,numRandomVectors
-                  ,mtp.maxFwdError,mtp.maxError,mtp.maxResid,showAllTestsDetails,dumpAll,OSTab(oss).getOStream().get()
+                  ,mtp.maxFwdError,mtp.maxError,mtp.maxResid,showAllTestsDetails,dumpAll,OSTab(oss).get()
                   );
               if(!result) success = false;
               if(verbose) {

@@ -27,68 +27,43 @@
 // @HEADER
 
 
-#include "Teuchos_ParameterEntry.hpp" // class definition
-#include "Teuchos_ParameterList.hpp"	 // for sublists
+#ifndef TEUCHOS_PARAMETER_LIST_EXCEPTIONS_H
+#define TEUCHOS_PARAMETER_LIST_EXCEPTIONS_H
 
-using namespace Teuchos;
+#include "Teuchos_ConfigDefs.hpp"
 
-ParameterEntry::ParameterEntry() : 
-  isList_(false),
-  isUsed_(false),
-  isDefault_(false)
-{
-}
+namespace Teuchos {
 
-ParameterEntry::ParameterEntry(const ParameterEntry& source)
-{
-  operator=(source);
-}
+namespace Exceptions {
 
-ParameterEntry& ParameterEntry::operator=(const ParameterEntry& source)
-{
-  if (&source == this)
-    return *this;
+/** \brief .
+ * \relates ParameterList
+ */
+class InvalidParameter : public std::logic_error
+{public: InvalidParameter(const std::string& what_arg) : std::logic_error(what_arg) {}};
 
-  val_ = source.val_;
-  isList_ = source.isList_;
-  isUsed_ = source.isUsed_;
-  isDefault_ = source.isDefault_;
-  docString_ = source.docString_;
-  validator_ = source.validator_;
+/** \brief .
+ * \relates ParameterList
+ */
+class InvalidParameterName : public InvalidParameter
+{public: InvalidParameterName(const std::string& what_arg) : InvalidParameter(what_arg) {}};
 
-  return *this;
-}
+/** \brief .
+ * \relates ParameterList
+ */
+class InvalidParameterType : public InvalidParameter
+{public: InvalidParameterType(const std::string& what_arg) : InvalidParameter(what_arg) {}};
 
-ParameterList& ParameterEntry::setList(bool isDefault, const std::string &docString)
-{
-  val_ = ParameterList();
-  isDefault_ = isDefault;
-  isUsed_ = true;
-  isList_ = true;
-  docString_ = docString;
-  return any_cast<ParameterList>( val_ );
-}
+/** \brief .
+ * \relates ParameterList
+ */
+class InvalidParameterValue : public InvalidParameter
+{public: InvalidParameterValue(const std::string& what_arg) : InvalidParameter(what_arg) {}};
 
-void ParameterEntry::reset()
-{
-  //delete val_;
-  isUsed_ = false;
-  isDefault_ = false;
-}
+} // namespace Exceptions
+  
+} // end of Teuchos namespace
 
-ostream& ParameterEntry::leftshift(ostream& os, bool printFlags) const
-{
-  if( !isList_ ) os << val_;
-
-  if(printFlags) {
-    if (isDefault_)
-      os << "   [default]";
-    else if (!isUsed_)
-      os << "   [unused]";
-  }
-
-  return os;
-}
-
+#endif // TEUCHOS_PARAMETER_LIST_EXCEPTIONS_H
 
 

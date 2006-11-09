@@ -60,6 +60,7 @@ int main(int argc, char* argv[])
   using Teuchos::rcp;
   using Teuchos::RefCountPtr;
   using Teuchos::CommandLineProcessor;
+  typedef Teuchos::ParameterList::PrintOptions PLPrintOptions;
 
   bool success = true;
   bool verbose = true;
@@ -123,7 +124,9 @@ int main(int argc, char* argv[])
           ,*out
           );
       else
-        linearSolverBuilder.getValidParameters()->print(*out,1,true,false);
+        linearSolverBuilder.getValidParameters()->print(
+          *out,PLPrintOptions().indent(2).showTypes(true).showDoc(true)
+          );
       return 0;
     }
     

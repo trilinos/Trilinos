@@ -52,17 +52,16 @@ Array<string> StrUtils::splitIntoLines(const string& input)
   int begin = 0;
   Array<string> rtn;
 
-  for (unsigned int p=0; p<input.length(); p++)
+  for (unsigned int p=0; p<input.length(); ++p) {
+    const bool isEnd = p==input.length()-1;
+    if( input[p]=='\n' || input[p]=='\0' || input[p]=='\r' || isEnd )
     {
-      if (input[p]=='\n' || input[p]=='\0' || input[p]=='\r')
-	{
-	  if (p-begin > 1) rtn.append(subString(input, begin, p));
-	  begin = p+1;
-	}
+      if (p-begin > 1) rtn.append(subString(input, begin, p+(isEnd?1:0)));
+      begin = p+1;
     }
+  }
   return rtn;
 }
-	
 
 Array<Array<string> > StrUtils::tokenizeFile(istream& is, char comment)
 {
@@ -370,6 +369,20 @@ int StrUtils::atoi(const string& s)
 	return ::atoi(s.c_str());
 }
 
-
+std::ostream& StrUtils::printLines(
+  std::ostream             &os
+  ,const std::string       &linePrefix
+  ,const std::string       &lines
+  )
+{
+  typedef Teuchos::Array<string> array_t;
+  array_t linesArray = splitIntoLines(lines);
+  for( int i = 0; i < static_cast<int>(linesArray.size()); ++i )
+  {
+    os << linePrefix << linesArray[i] << "\n";
+  }
+  return os;
+}
+  
 
 	

@@ -1203,7 +1203,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::describe(
               *out << Teuchos::describe(*DfDp_l.getLinearOp(),verbLevel);
             }
             else {
-              *OSTab(out).getOStream()
+              OSTab(out)()
                 << "orientation="
                 << toString(DfDp_l.getDerivativeMultiVector().getOrientation()) << "\n";
               *out << Teuchos::describe(*DfDp_l.getDerivativeMultiVector().getMultiVector(),verbLevel);

@@ -84,7 +84,7 @@ bool Thyra::test_single_amesos_thyra_solver(
       OSTab tab(out);
       *out
         << "amesosLOWSFPL:\n";
-      amesosLOWSFPL->print(*OSTab(out).getOStream(),0,true);
+      amesosLOWSFPL->print(OSTab(out)(),0,true);
     }
   }
   
@@ -109,7 +109,7 @@ bool Thyra::test_single_amesos_thyra_solver(
   if(out.get()) {
     *out << "\nlowsFactory.description() = " << lowsFactory->description() << std::endl;
     *out << "\nlowsFactory.getValidParameters() =\n";
-    lowsFactory->getValidParameters()->print(*OSTab(out).getOStream(),0,true,false);
+    lowsFactory->getValidParameters()->print(OSTab(out)(),0,true,false);
   }
 
   if(out.get()) *out << "\nC) Creating a AmesosLinearOpWithSolve object nsA ...\n";

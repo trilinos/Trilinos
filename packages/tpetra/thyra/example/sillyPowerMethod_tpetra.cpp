@@ -95,7 +95,7 @@ bool runPowerMethodExample(
   linearOpTester.set_all_warning_tol(ScalarMag(ScalarMag(1e2)*errTol));
   linearOpTester.set_all_error_tol(errTol);
   linearOpTester.check_linear_properties(true);
-  result = linearOpTester.check(*A,&*OSTab(out).getOStream());
+  result = linearOpTester.check(*A,OSTab(out).get());
   if(!result) success = false;
   
   //

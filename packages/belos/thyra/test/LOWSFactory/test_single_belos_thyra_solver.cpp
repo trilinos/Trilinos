@@ -81,7 +81,7 @@ bool Thyra::test_single_belos_thyra_solver(
 
     if(out.get()) {
       *out << "\nlowsFactory.getValidParameters() before setting preconditioner factory:\n";
-      lowsFactory->getValidParameters()->print(*OSTab(out).getOStream(),0,true,false);
+      lowsFactory->getValidParameters()->print(OSTab(out)(),0,true,false);
     }
 
     if(usePreconditioner) {
@@ -100,16 +100,16 @@ bool Thyra::test_single_belos_thyra_solver(
     
     if(out.get()) {
       *out << "\nlowsFactory.getValidParameters() after setting preconditioner factory:\n";
-      lowsFactory->getValidParameters()->print(*OSTab(out).getOStream(),0,true,false);
+      lowsFactory->getValidParameters()->print(OSTab(out)(),0,true,false);
       *out << "\nbelosLOWSFPL before setting parameters:\n";
-      belosLOWSFPL->print(*OSTab(out).getOStream(),0,true);
+      belosLOWSFPL->print(OSTab(out)(),0,true);
     }
 
     lowsFactory->setParameterList(Teuchos::rcp(belosLOWSFPL,false));
 
     if(out.get()) {
       *out << "\nbelosLOWSFPL after setting parameters:\n";
-      belosLOWSFPL->print(*OSTab(out).getOStream(),0,true);
+      belosLOWSFPL->print(OSTab(out)(),0,true);
     }
 
     if(out.get()) *out << "\nC) Creating a BelosLinearOpWithSolve object nsA from A ...\n";
@@ -163,7 +163,7 @@ bool Thyra::test_single_belos_thyra_solver(
 
     if(out.get()) {
       *out << "\nbelosLOWSFPL after solving:\n";
-      belosLOWSFPL->print(*OSTab(out).getOStream(),0,true);
+      belosLOWSFPL->print(OSTab(out)(),0,true);
     }
     
 #else // __sun

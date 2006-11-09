@@ -32,7 +32,7 @@ noinst_PROGRAMS = ParameterList_test
 
 ParameterList_test_SOURCES = $(srcdir)/cxx_main.cpp
 
-ParameterList_test_DEPENDENCIES =
+ParameterList_test_DEPENDENCIES =   $(top_builddir)/src/libteuchos.a
 
 ParameterList_test_CXXFLAGS = -I$(top_srcdir)/src
 

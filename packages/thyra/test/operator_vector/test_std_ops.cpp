@@ -78,10 +78,10 @@ bool run_std_ops_tests(
   const DefaultSpmdVectorSpace<Scalar>  svs(comm,n,-1);
 
   if(out.get()) *out << "\nTesting standard vector ops with svs ...\n";
-  if(!vectorStdOpsTester.checkStdOps(svs,OSTab(out).getOStream().get(),dumpAll)) success = false;
+  if(!vectorStdOpsTester.checkStdOps(svs,OSTab(out).get(),dumpAll)) success = false;
 
   if(out.get()) *out << "\nTesting standard multi-vector ops with svs ...\n";
-  if(!multiVectorStdOpsTester.checkStdOps(svs,OSTab(out).getOStream().get(),dumpAll)) success = false;
+  if(!multiVectorStdOpsTester.checkStdOps(svs,OSTab(out).get(),dumpAll)) success = false;
 
   const int numBlocks = 3;
 
@@ -98,10 +98,10 @@ bool run_std_ops_tests(
   Thyra::DefaultProductVectorSpace<Scalar> pvs(numBlocks,&vecSpaces[0]);
 
   if(out.get()) *out << "\nTesting standard vector ops with pvs ...\n";
-  if(!vectorStdOpsTester.checkStdOps(pvs,OSTab(out).getOStream().get(),dumpAll)) success = false;
+  if(!vectorStdOpsTester.checkStdOps(pvs,OSTab(out).get(),dumpAll)) success = false;
 
   if(out.get()) *out << "\nTesting standard multi-vector ops with pvs ...\n";
-  if(!multiVectorStdOpsTester.checkStdOps(pvs,OSTab(out).getOStream().get(),dumpAll)) success = false;
+  if(!multiVectorStdOpsTester.checkStdOps(pvs,OSTab(out).get(),dumpAll)) success = false;
 
   if(out.get()) *out << "\nCreating a nested product space ppvs with numBlocks="<<numBlocks<<" product spaces as components ...\n";
 
@@ -113,10 +113,10 @@ bool run_std_ops_tests(
   Thyra::DefaultProductVectorSpace<Scalar> ppvs(numBlocks,&blockVecSpaces[0]);
 
   if(out.get()) *out << "\nTesting standard vector ops with ppvs ...\n";
-  if(!vectorStdOpsTester.checkStdOps(ppvs,OSTab(out).getOStream().get(),dumpAll)) success = false;
+  if(!vectorStdOpsTester.checkStdOps(ppvs,OSTab(out).get(),dumpAll)) success = false;
 
   if(out.get()) *out << "\nTesting standard multi-vector ops with ppvs ...\n";
-  if(!multiVectorStdOpsTester.checkStdOps(ppvs,OSTab(out).getOStream().get(),dumpAll)) success = false;
+  if(!multiVectorStdOpsTester.checkStdOps(ppvs,OSTab(out).get(),dumpAll)) success = false;
 
   return success;
 

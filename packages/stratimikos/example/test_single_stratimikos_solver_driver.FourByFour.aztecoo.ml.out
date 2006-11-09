@@ -25,7 +25,9 @@ Creating a Thyra::DefaultRealLinearSolverBuilder object ...
 
 Valid parameters for DefaultRealLinearSolverBuilder ...
  Linear Solver Type : string = Amesos
+   #   Valid values: "Belos", "Amesos", "AztecOO"
  Preconditioner Type : string = ML
+   #   Valid values: "None", "Ifpack", "ML"
  Linear Solver Types -> 
    Amesos -> 
      Refactorization Policy : string = RepivotOnRefactorization
@@ -96,6 +98,19 @@ Valid parameters for DefaultRealLinearSolverBuilder ...
          RCM Reordering : string = Disabled
          Size of Krylov Subspace : int = 300
          Steps : int = 3
+   Belos -> 
+     Adjustable Block Size : bool = 1
+     Block Size : int = 1
+     Default Rel Res Norm : double = 1e-06
+     Max Iters : int = 400
+     Max Restarts : int = 25
+     Solver Type : string = GMRES
+     GMRES -> 
+       Max Number of Krylov Vectors : int = 300
+       Variant : string = Standard
+     Outputter -> 
+       Output Frequency : int = 10
+       Output Max Res Only : bool = 1
  Preconditioner Types -> 
    Ifpack -> 
      Overlap : int = 0
@@ -145,8 +160,8 @@ Valid parameters for DefaultRealLinearSolverBuilder ...
      prec type : string = MGV
      print unused : int = -2
      smoother: Aztec as solver : bool = 0
-     smoother: Aztec options : int* = 0x8506c18
-     smoother: Aztec params : double* = 0x8506cd8
+     smoother: Aztec options : int* = 0xa8d330
+     smoother: Aztec params : double* = 0xa8d400
      smoother: damping factor : double = 0.67
      smoother: pre or post : string = both
      smoother: sweeps : int = 2
@@ -167,7 +182,7 @@ Running example use cases ...
     Solve status:
       solveStatus = SOLVE_STATUS_UNKNOWN
       achievedTol = unknownTolerance()
-      message: "AztecOO solver converged on m = 1 RHSs using 4 cumulative iterations for an average of 4 iterations/RHS and total CPU time of 0.004463 sec."
+      message: "AztecOO solver converged on m = 1 RHSs using 4 cumulative iterations for an average of 4 iterations/RHS and total CPU time of 0.001642 sec."
       extraParameters: NONE
     
     Performing a solve, changing the operator, then performing another solve ...

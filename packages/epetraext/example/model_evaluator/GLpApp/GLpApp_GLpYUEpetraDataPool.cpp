@@ -904,9 +904,9 @@ int GLpApp::assemble_bdry(
 
 #ifdef GLPAPP_SHOW_BOUNDARY_ASSEMBLY
   *out << "\nstandardmap:\n";
-  standardmap.Print(*Teuchos::OSTab(out).getOStream());
+  standardmap.Print(Teuchos::OSTab(out)());
   *out << "\nmybdryctrlmap:\n";
-  mybdryctrlmap.Print(*Teuchos::OSTab(out).getOStream());
+  mybdryctrlmap.Print(Teuchos::OSTab(out)());
 #endif
 
   //
@@ -994,7 +994,7 @@ int GLpApp::assemble_bdry(
 
 #ifdef GLPAPP_SHOW_BOUNDARY_ASSEMBLY
   *out << "\nB =\n";
-  B->Print(*Teuchos::OSTab(out).getOStream());
+  B->Print(Teuchos::OSTab(out)());
   *out << "\nLeaving assemble_bdry(...) ...\n";
 #endif
 

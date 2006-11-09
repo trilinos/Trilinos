@@ -27,11 +27,14 @@
 // @HEADER
 
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_getConst.hpp"
 #include "Teuchos_Version.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
+#include "Teuchos_FancyOStream.hpp"
+#include "Teuchos_StandardParameterEntryValidators.hpp"
 
 #ifdef HAVE_TEUCHOS_EXTENDED
 #include "Teuchos_XMLParameterListHelpers.hpp"
@@ -201,9 +204,7 @@ int main( int argc, char *argv[] )
     string rec_step_type = PL_Polynomial.get("Recovery Step Type", "Constant");
     string suff_dec_cond = PL_Polynomial.get("Sufficient Decrease Condition", "Armijo-Goldstein" );
     use_cntrs = PL_Polynomial.get("Use Counters", true );
-
-    PL_Main.set("Nonlinear Solver", "Line Search Based"); 
- 
+    PL_Main.set("Nonlinear Solver", "Line Search Based");
     //-----------------------------------------------------------
     // Set the Line Search Parameter List equal to the one just constructed
     //-----------------------------------------------------------
@@ -591,8 +592,10 @@ int main( int argc, char *argv[] )
   }
   catch(const std::exception& e)
   {
-    if(verbose)
-      cerr << "caught exception " << e.what() << endl;
+    if(verbose) {
+      cerr << "caught exception:\n\n";
+      OSTab(cerr)() << e.what() << endl;
+    }
     FailedTests++;
   }
 
@@ -618,7 +621,7 @@ int main( int argc, char *argv[] )
 
   if (verbose) {
     print_break();
-    cout << "Accessing a sublist using the wrong name (should throw a Teuchos::Exceptions::InvalidParameter exception)...\n";
+    cout << "Accessing a sublist using the wrong name (should throw a Teuchos::Exceptions::InvalidParameterName exception)...\n";
     print_break();
   }
   try {
@@ -626,12 +629,13 @@ int main( int argc, char *argv[] )
     if (verbose) cout << "Did not throw exception, error!\n";
     ++FailedTests;
   }
-  catch(const Teuchos::Exceptions::InvalidParameter &e) {
-    cerr << "caught expected Teuchos::Exceptions::InvalidParameter: " << e.what() << endl;
+  catch(const Teuchos::Exceptions::InvalidParameterName &e) {
+    cerr << "caught expected Teuchos::Exceptions::InvalidParameterName:\n\n";
+    OSTab(cerr)() << e.what() << endl;
   }
   if (verbose) {
     print_break();
-    cout << "Accessing a parameter using the wrong name (should throw a Teuchos::Exceptions::InvalidParameter exception)...\n";
+    cout << "Accessing a parameter using the wrong name (should throw a Teuchos::Exceptions::InvalidParameterName exception)...\n";
     print_break();
   }
   try {
@@ -639,19 +643,23 @@ int main( int argc, char *argv[] )
     if (verbose) cout << "Did not throw exception, error!\n";
     ++FailedTests;
   }
-  catch(const Teuchos::Exceptions::InvalidParameter &e) {
-    if(verbose)
-      cerr << "caught expected Teuchos::Exceptions::InvalidParameter: " << e.what() << endl;
+  catch(const Teuchos::Exceptions::InvalidParameterName &e) {
+    if(verbose) {
+      cerr << "caught expected Teuchos::Exceptions::InvalidParameterName:\n\n";
+      OSTab(cerr)() << e.what() << endl;
+    }
   }
   catch(const std::exception &e) {
-    if(verbose)
-      cerr << "caught unexpected exception: " << e.what() << endl;
+    if(verbose) {
+      cerr << "caught unexpected exception:\n\n";
+      OSTab(cerr)() << e.what() << endl;
+    }
     ++FailedTests;
   }
 
   if (verbose) {
     print_break();
-    cout << "Accessing a parameter using the wrong parameter type (should throw a Teuchos::Exceptions::InvalidParameter exception)...\n";
+    cout << "Accessing a parameter using the wrong parameter type (should throw a Teuchos::Exceptions::InvalidParameterType exception)...\n";
     print_break();
   }
   try {
@@ -659,13 +667,17 @@ int main( int argc, char *argv[] )
     if (verbose) cout << "Did not throw exception, error!\n";
     ++FailedTests;
   }
-  catch(const Teuchos::Exceptions::InvalidParameter &e) {
-    if(verbose)
-      cerr << "caught expected Teuchos::Exceptions::InvalidParameter: " << e.what() << endl;
+  catch(const Teuchos::Exceptions::InvalidParameterType &e) {
+    if(verbose) {
+      cerr << "caught expected Teuchos::Exceptions::InvalidParameterType:\n\n";
+      OSTab(cerr)() << e.what() << endl;
+    }
   }
   catch(const std::exception &e) {
-    if(verbose)
-      cerr << "caught unexpected exception: " << e.what() << endl;
+    if(verbose) {
+      cerr << "caught unexpected exception:\n\n";
+      OSTab(cerr)() << e.what() << endl;
+    }
     ++FailedTests;
   }
 
@@ -673,8 +685,22 @@ int main( int argc, char *argv[] )
   // Validate the parameter list
   //-----------------------------------------------------------
 
-  Teuchos::ParameterList PL_Main_copy("PL_Main_copy");
-  PL_Main_copy.setParameters(PL_Main);
+  // Create a validator version of PL_Main that we will validate against!
+  Teuchos::ParameterList PL_Main_valid("PL_Main_copy");
+  PL_Main_valid.setParameters(PL_Main);
+
+  Teuchos::RefCountPtr<Teuchos::StringToIntegralParameterEntryValidator<int> >
+    nonlinearSolverValidator = rcp(
+    new Teuchos::StringToIntegralParameterEntryValidator<int>(
+      Teuchos::tuple<std::string>("Line Search Based","Trust Region Based")
+      ,"Nonlinear Solver"
+      )
+    );
+  PL_Main_valid.set(
+    "Nonlinear Solver", "Line Search Based"
+    ,"Selects the type of nonlinear solver to use"
+    ,nonlinearSolverValidator
+    );
 
   if (verbose) {
     print_break();
@@ -682,76 +708,190 @@ int main( int argc, char *argv[] )
     print_break();
   }
   try {
-    PL_Main_copy.validateParameters(PL_Main);
+    PL_Main.validateParameters(PL_Main_valid);
     if (verbose) cout << "Did not throw exception, success!\n\n";
   }
   catch(const std::exception &e) {
-    if(verbose)
-      cerr << "caught unexpected exception " << e.what() << endl;
+    if(verbose) {
+      cerr << "caught unexpected exception:\n\n";
+      OSTab(cerr)() << e.what() << endl;
+    }
     ++FailedTests;
   }
 
   if (verbose) {
     print_break();
-    cout << "Adding an invalid parameter type then validating (should throw a Teuchos::Exceptions::InvalidParameter exception)...\n";
+    cout << "Adding an invalid parameter type then validating (should throw a Teuchos::Exceptions::InvalidParameterType exception)...\n";
     print_break();
   }
   try {
-    PL_Main_copy.sublist("Line Search").sublist("Polynomial").set("Max Iters",10.0); // Should be an int!
-    PL_Main_copy.validateParameters(PL_Main);
+    PL_Main.sublist("Line Search").sublist("Polynomial").set("Max Iters",10.0); // Should be an int!
+    PL_Main.validateParameters(PL_Main_valid);
     if (verbose) cout << "Did not throw exception, error!\n";
     ++FailedTests;
   }
-  catch(const Teuchos::Exceptions::InvalidParameter &e) {
-    if(verbose)
-      cerr << "caught expected Teuchos::Exceptions::InvalidParameter: " << e.what() << endl;
+  catch(const Teuchos::Exceptions::InvalidParameterType &e) {
+    if(verbose) {
+      cerr << "caught expected Teuchos::Exceptions::InvalidParameterType:\n\n";
+      OSTab(cerr)() << e.what() << endl;
+    }
   }
   catch(const std::exception &e) {
-    if(verbose)
-      cerr << "caught unexpected exception: " << e.what() << endl;
+    if(verbose) {
+      cerr << "caught unexpected exception:\n\n";
+      OSTab(cerr)() << e.what() << endl;
+    }
     ++FailedTests;
   }
-  PL_Main_copy.sublist("Line Search").sublist("Polynomial").set("Max Iters",10); // Put back the valid int!
+  PL_Main.sublist("Line Search").sublist("Polynomial").set("Max Iters",10); // Put back the valid int!
 
   if (verbose) {
     print_break();
-    cout << "Adding an invalid parameter name then validating (should throw a Teuchos::Exceptions::InvalidParameter exception)...\n";
+    cout << "Adding an invalid parameter name then validating (should throw a Teuchos::Exceptions::InvalidParameterName exception)...\n";
     print_break();
   }
   try {
-    PL_Main_copy.sublist("Line Search").sublist("Polynomial").set("Max Iter",10);
-    PL_Main_copy.validateParameters(PL_Main);
+    PL_Main.sublist("Line Search").sublist("Polynomial").set("Max Iter",10);
+    PL_Main.validateParameters(PL_Main_valid);
     if (verbose) cout << "Did not throw exception, error!\n";
     ++FailedTests;
   }
-  catch(const Teuchos::Exceptions::InvalidParameter &e) {
-    if(verbose)
-      cerr << "caught expected Teuchos::Exceptions::InvalidParameter: " << e.what() << endl;
+  catch(const Teuchos::Exceptions::InvalidParameterName &e) {
+    if(verbose) {
+      cerr << "caught expected Teuchos::Exceptions::InvalidParameterName:\n\n";
+      OSTab(cerr)() << e.what() << endl;
+    }
   }
   catch(const std::exception &e) {
-    if(verbose)
-      cerr << "caught unexpected exception: " << e.what() << endl;
+    if(verbose) {
+      cerr << "caught unexpected exception:\n\n";
+      OSTab(cerr)() << e.what() << endl;
+    }
     ++FailedTests;
   }
 
   if (verbose) {
     print_break();
-    cout << "Adding an invalid sublist then validating (should throw a Teuchos::Exceptions::InvalidParameter exception)...\n";
+    cout << "Adding an invalid parameter type then validating using validator (should throw a Teuchos::Exceptions::InvalidParameterType exception)...\n";
     print_break();
   }
   try {
-    PL_Main_copy.sublist("Line Search").sublist("Polynomials").set("Max Iters",10); // param correct, sublist wrong
-    PL_Main_copy.validateParameters(PL_Main);
+    PL_Main.set("Nonlinear Solver",int(0)); // Should be a string!
+    PL_Main.validateParameters(PL_Main_valid);
     if (verbose) cout << "Did not throw exception, error!\n";
     ++FailedTests;
   }
-  catch(const Teuchos::Exceptions::InvalidParameter &e) {
-    if(verbose)
-      cerr << "caught expected Teuchos::Exceptions::InvalidParameter: " << e.what() << endl;
+  catch(const Teuchos::Exceptions::InvalidParameterType &e) {
+    if(verbose) {
+      cerr << "caught expected Teuchos::Exceptions::InvalidParameterType:\n\n";
+      OSTab(cerr)() << e.what() << endl;
+    }
   }
   catch(const std::exception &e) {
-    if(verbose)
-      cerr << "caught unexpected exception: " << e.what() << endl;
+    if(verbose) {
+      cerr << "caught unexpected exception:\n\n";
+      OSTab(cerr)() << e.what() << endl;
+    }
+    ++FailedTests;
+  }
+  PL_Main.set("Nonlinear Solver","Line Search Based"); // Put back the valid value!
+
+  if (verbose) {
+    print_break();
+    cout << "Adding an invalid parameter value then validating using validator (should throw a Teuchos::Exceptions::InvalidParameterValue exception)...\n";
+    print_break();
+  }
+  try {
+    PL_Main.set("Nonlinear Solver","LineSearch Based"); // Should be "Line Search Based"!
+    PL_Main.validateParameters(PL_Main_valid);
+    if (verbose) cout << "Did not throw exception, error!\n";
+    ++FailedTests;
+  }
+  catch(const Teuchos::Exceptions::InvalidParameterValue &e) {
+    if(verbose) {
+      cerr << "caught expected Teuchos::Exceptions::InvalidParameterValue:\n\n";
+      OSTab(cerr)() << e.what() << endl;
+    }
+  }
+  catch(const std::exception &e) {
+    if(verbose) {
+      cerr << "caught unexpected exception:\n\n";
+      OSTab(cerr)() << e.what() << endl;
+    }
+    ++FailedTests;
+  }
+  PL_Main.set("Nonlinear Solver","Line Search Based"); // Put back the valid value!
+
+  if (verbose) {
+    print_break();
+    cout << "Use the validator to access integral value (should *not* throw exception)...\n";
+    print_break();
+  }
+  try {
+    const int
+      nonlinearSolverValue
+      = nonlinearSolverValidator->getIntegralValue(PL_Main,"Nonlinear Solver");
+    const bool
+      result = (nonlinearSolverValue == 0);
+    cout
+      << "Read value = " << nonlinearSolverValue << " == 0 : "
+      << ( result ? "passed" : "failed") << "\n";
+    if(!result) ++FailedTests;
+  }
+  catch(const std::exception &e) {
+    if(verbose) {
+      cerr << "caught unexpected exception:\n\n";
+      OSTab(cerr)() << e.what() << endl;
+    }
+    ++FailedTests;
+  }
+
+  if (verbose) {
+    print_break();
+    cout << "Use the validator to access string value (should *not* throw exception)...\n";
+    print_break();
+  }
+  try {
+    const std::string
+      nonlinearSolverValue
+      = nonlinearSolverValidator->getStringValue(PL_Main,"Nonlinear Solver");
+    const bool
+      result = (nonlinearSolverValue == "Line Search Based");
+    cout
+      << "Read value = \"" << nonlinearSolverValue << " == \"Line Search Based\" : "
+      << ( result ? "passed" : "failed") << "\n";
+    if(!result) ++FailedTests;
+  }
+  catch(const std::exception &e) {
+    if(verbose) {
+      cerr << "caught unexpected exception:\n\n";
+      OSTab(cerr)() << e.what() << endl;
+    }
+    ++FailedTests;
+  }
+
+  if (verbose) {
+    print_break();
+    cout << "Adding an invalid sublist then validating (should throw a Teuchos::Exceptions::InvalidParameterName exception)...\n";
+    print_break();
+  }
+  try {
+    PL_Main.sublist("Line Search").sublist("Polynomials").set("Max Iters",10); // param correct, sublist wrong
+    PL_Main.validateParameters(PL_Main_valid);
+    if (verbose) cout << "Did not throw exception, error!\n";
+    ++FailedTests;
+  }
+  catch(const Teuchos::Exceptions::InvalidParameterName &e) {
+    if(verbose) {
+      cerr << "caught expected Teuchos::Exceptions::InvalidParameterName:\n\n";
+      OSTab(cerr)() << e.what() << endl;
+    }
+  }
+  catch(const std::exception &e) {
+    if(verbose) {
+      cerr << "caught unexpected exception:\n\n";
+      OSTab(cerr)() << e.what() << endl;
+    }
     ++FailedTests;
   }
 
@@ -761,12 +901,14 @@ int main( int argc, char *argv[] )
     print_break();
   }
   try {
-    PL_Main_copy.validateParameters(PL_Main,0);
+    PL_Main.validateParameters(PL_Main_valid,0);
     if (verbose) cout << "Did not throw exception, success!\n\n";
   }
   catch(const std::exception &e) {
-    if(verbose)
-      cerr << "caught unexpected exception " << e.what() << endl;
+    if(verbose) {
+      cerr << "caught unexpected exception:\n\n";
+      OSTab(cerr)() << e.what() << endl;
+    }
     ++FailedTests;
   }
 
@@ -800,8 +942,9 @@ int main( int argc, char *argv[] )
 
   if (verbose) {
     print_break();
-    cout << "Changing PL_Main_copy and checking that PL_Main_copy != PL_Main == true : ";
+    cout << "Create copy PL_Main_copy, change PL_Main_copy, and check that PL_Main != PL_Main == true : ";
   }
+  ParameterList PL_Main_copy(PL_Main);
   PL_Main_copy.sublist("Line Search").sublist("Polynomial").set("Max Iters",100); // Not the default!
   result = (PL_Main_copy != PL_Main);
   if(!result)

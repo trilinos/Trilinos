@@ -34,10 +34,10 @@
     \brief Templated Parameter List class
 */  
 
-#include "Teuchos_ParameterEntry.hpp" // class data element 
+#include "Teuchos_ParameterListExceptions.hpp"
+#include "Teuchos_ParameterEntry.hpp"
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_RefCountPtr.hpp"
-#include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_map.hpp"
 
 /** \example ParameterList/cxx_main.cpp
@@ -70,16 +70,6 @@ enum EValidateDefaults {
                                   the validation list */
 };
 
-namespace Exceptions {
-
-/** \brief .
- * \relates ParameterList
- */
-class InvalidParameter : public std::logic_error
-{public: InvalidParameter(const std::string& what_arg) : std::logic_error(what_arg) {}};
-
-} // namespace Exceptions
-
 /*! \brief Templated parameter list.
   
     Parameters can be added and retreived with the templated "get" and "set"
@@ -108,6 +98,27 @@ public:
 
   //! Parameter container const iterator typedef
   typedef Map::const_iterator ConstIterator;
+
+  /** \brief Utility class for setting and passing in print options. */
+  class PrintOptions {
+  public:
+    PrintOptions() : indent_(0), showTypes_(false), showFlags_(false), showDoc_(false) {}
+    PrintOptions& indent(int _indent)        { indent_ = _indent; return *this; }
+    PrintOptions& showTypes(bool _showTypes) { showTypes_ = _showTypes; return *this; }
+    PrintOptions& showFlags(bool _showFlags) { showFlags_ = _showFlags; return *this; }
+    PrintOptions& showDoc(bool _showDoc)     { showDoc_ = _showDoc; return *this; }
+    PrintOptions& incrIndent(int indents)    { indent_ += indents; return *this; }
+    int indent() const { return indent_; }
+    bool showTypes() const { return showTypes_; }
+    bool showFlags() const { return showFlags_; }
+    bool showDoc() const { return showDoc_; }
+    PrintOptions copy() const { return PrintOptions(*this); }
+  private:
+    int    indent_;
+    bool   showTypes_;
+    bool   showFlags_;
+    bool   showDoc_;
+  };
 
   //@}
   
@@ -158,21 +169,32 @@ public:
     </ul>
   */
   template<typename T>
-  void set(const string& name, T value);
+  void set(
+    std::string const& name, T const& value, std::string const& docString = ""
+    ,RefCountPtr<const ParameterEntryValidator> const& validator = null
+    );
 
   /*! \brief Template specialization for the case when a user sets the parameter with a character
     string in parenthesis.
   */
-  void set(const string& name, char value[]);
+  void set(
+    std::string const& name, char value[], std::string const& docString = ""
+    ,RefCountPtr<const ParameterEntryValidator> const& validator = null
+    );
 
   /*! \brief Template specialization for the case when a user sets the parameter with a character
     string in parenthesis.
   */
-  void set(const string& name, const char value[]);
+  void set(
+    std::string const& name, const char value[], string const& docString = ""
+    ,RefCountPtr<const ParameterEntryValidator> const& validator = null
+    );
 
   /*! \brief Template specialization for the case when a user sets the parameter with a ParameterList.
    */
-  void set(const string& name, ParameterList value);
+  void set(
+    std::string const& name, ParameterList const& value, string const& docString = ""
+    );
 
   /*! \brief Set a parameter directly as a ParameterEntry. 
    * \note This is required to preserve the isDefault value when reading back
@@ -208,18 +230,22 @@ public:
   */
   std::string& get(const string& name, const char def_value[]);
   
-  /*! \brief Retrieves parameter \c name of type \c T from a list, an <tt>Exceptions::InvalidParameter</tt>
-    exception is thrown if this parameter doesn't exist or is the wrong type.
-    \note The syntax for calling this method is: <tt> list.template get<int>(
-    "Iters" ) </tt>
+  /*! \brief Retrieves parameter \c name of type \c T from a list, an
+    <tt>Exceptions::InvalidParameter</tt> exception is thrown if this
+    parameter doesn't exist (<tt>Exceptions::InvalidParameterName</tt>) or is
+    the wrong type (<tt>Exceptions::InvalidParameterName</tt>).  \note The
+    syntax for calling this method is: <tt> list.template get<int>( "Iters" )
+    </tt>
   */
   template<typename T>
   T& get(const string& name);
   
-  /*! \brief Retrieves parameter \c name of type \c T from a constant list, an <tt>Exceptions::InvalidParameter</tt>
-    exception is thrown if this parameter doesn't exist or is the wrong type.
-    \note The syntax for calling this method is: <tt> list.template get<int>(
-    "Iters" ) </tt>
+  /*! \brief Retrieves parameter \c name of type \c T from a constant list, an
+    <tt>Exceptions::InvalidParameter</tt> exception is thrown if this
+    parameter doesn't exist (<tt>Exceptions::InvalidParameterName</tt>) or is
+    the wrong type (<tt>Exceptions::InvalidParameterName</tt>).  \note The
+    syntax for calling this method is: <tt> list.template get<int>( "Iters" )
+    </tt>
   */
   template<typename T>
   const T& get(const string& name) const;  
@@ -258,7 +284,10 @@ public:
    *  sublist. If the name exists but is not a sublist, an exception is
    *  thrown.
    */
-  ParameterList& sublist(const string& name, bool mustAlreadyExist = false);
+  ParameterList& sublist(
+    const string& name, bool mustAlreadyExist = false
+    ,const string& docString = ""
+    );
   
   /*! \brief Return a const reference to an existing sublist \c name.  If the
    *  list does not already exist or the name exists but is not a sublist, an
@@ -307,6 +336,10 @@ public:
   
   //! @name I/O Functions 
   //@{
+
+  /*! \brief Printing method for parameter lists which takes an print options
+   *  object.*/
+  ostream& print(ostream& os, const PrintOptions &printOptions ) const;
 
   /*! \brief Printing method for parameter lists.  Indenting is used to indicate
     parameter list hierarchies. */
@@ -360,18 +393,22 @@ public:
    *              <tt>validateDefaults = VALIDATE_DEFAULTS_ENABLED</tt>.
    *
    * If a parameter in <tt>*this</tt> is not found in <tt>validParamList</tt>
-   * then an exception of type <tt>Exceptions::InvalidParameter</tt> will be
-   * thrown which will contain an excellent error message returned by
-   * <tt>excpt.what()</tt>.
+   * then an exception of type <tt>Exceptions::InvalidParameterName</tt> will
+   * be thrown which will contain an excellent error message returned by
+   * <tt>excpt.what()</tt>.  If the parameter exists but has the wrong type,
+   * then an exception type <tt>Exceptions::InvalidParameterType</tt> will be
+   * thrown.  If the parameter exists and has the right type, but the value is
+   * not valid then an exception type
+   * <tt>Exceptions::InvalidParameterValue</tt> will be thrown.
    *
    * A breath-first search is performed to validate all of the parameters in
    * one sublist before moving into nested subslist.
    */
   void validateParameters(
-    const ParameterList        &validParamList
-    ,const int                 depth            = 1000
-    ,const EValidateUsed       validateUsed     = VALIDATE_USED_ENABLED
-    ,const EValidateDefaults   validateDefaults = VALIDATE_DEFAULTS_ENABLED
+    ParameterList        const& validParamList
+    ,int                 const  depth            = 1000
+    ,EValidateUsed       const  validateUsed     = VALIDATE_USED_ENABLED
+    ,EValidateDefaults   const  validateDefaults = VALIDATE_DEFAULTS_ENABLED
     ) const;
 
   //@}
@@ -432,28 +469,44 @@ void ParameterList::setName( const std::string &name )
 }
 
 // Set functions
- 
+
 template<typename T>
 inline
-void ParameterList::set(const string& name, T value)
+void ParameterList::set(
+  std::string const& name, T const& value, std::string const& docString
+  ,RefCountPtr<const ParameterEntryValidator> const& validator
+  )
 {
-  params_[name].setValue(value);
+  ParameterEntry &entry = params_[name]; // Will add the entry if not exists
+  entry.setValue(value,false,docString,validator);
+  // Validate the value *after* you set it.  It is important to use
+  // entry.validator() instead of validator since validator might be null!
+  if(entry.validator().get())
+    entry.validator()->validate(entry,name,this->name());
 }
 
 inline
-void ParameterList::set(const string& name, char value[]) 
-{ set( name, std::string(value) ); }
+void ParameterList::set(
+  std::string const& name, char value[], string const& docString
+  ,RefCountPtr<const ParameterEntryValidator> const& validator
+  ) 
+{ set( name, std::string(value), docString, validator ); }
 
 inline
-void ParameterList::set(const string& name, const char value[]) 
-{ set( name, std::string(value) ); }
+void ParameterList::set(
+  const string& name, const char value[], const string &docString
+  ,RefCountPtr<const ParameterEntryValidator> const& validator
+  ) 
+{ set( name, std::string(value), docString, validator ); }
 
 inline
-void ParameterList::set(const string& name, ParameterList value)
+void ParameterList::set(
+  std::string const& name, ParameterList const& value, string const& docString
+  )
 { sublist(name) = value; }
 
 inline
-void ParameterList::setEntry(const string& name, const ParameterEntry& entry)
+void ParameterList::setEntry(std::string const& name, ParameterEntry const& entry)
 {params_[name] = entry;}
 
 // Get functions
@@ -578,9 +631,12 @@ inline
 void ParameterList::validateEntryExists( const std::string &funcName, const std::string &name, const ParameterEntry *entry ) const
 {
   TEST_FOR_EXCEPTION(
-    entry==NULL, Exceptions::InvalidParameter,
-    funcName<<"(...): Error!  The parameter \""<<name<<"\" does not exist in the parameter (sub)list \""<<this->name()<<"\"."
-    "  The current parameters set in (sub)list \""<<this->name()<<"\" are " << this->currentParametersString() << "!"
+    entry==NULL, Exceptions::InvalidParameterName
+    ,"Teuchos::ParameterList::"<<funcName<<"(...):"
+    "\n\nError!  The parameter \""<<name<<"\" does not exist"\
+    "\nin the parameter (sub)list \""<<this->name()<<"\"."
+    "\n\nThe current parameters set in (sub)list \""<<this->name()<<"\" are:\n\n"
+    << this->currentParametersString()
     );
 }
 
@@ -588,10 +644,12 @@ template<typename T>
 void ParameterList::validateEntryType( const std::string &funcName, const std::string &name, const ParameterEntry &entry ) const
 {
   TEST_FOR_EXCEPTION(
-    entry.getAny().type() != typeid(T), Exceptions::InvalidParameter,
-    funcName<<"(...): Error!  An attempt was made to access parameter \""<<name<<"\""
-    " of type \""<<entry.getAny().type().name()<<"\" in the parameter (sub)list \""<<this->name()<<"\""
-    " using the incorrect type \""<<typeid(T).name()<<"\"!"
+    entry.getAny().type() != typeid(T), Exceptions::InvalidParameterType
+    ,"Teuchos::ParameterList::"<<funcName<<"(...):"
+    "\n\nError!  An attempt was made to access parameter \""<<name<<"\""
+    "of type \""<<entry.getAny().typeName()<<"\""
+    "\nin the parameter (sub)list \""<<this->name()<<"\""
+    "\nusing the incorrect type \""<<TypeNameTraits<T>::name()<<"\"!"
     );
 }
 

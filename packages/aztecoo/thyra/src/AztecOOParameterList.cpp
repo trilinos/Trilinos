@@ -30,89 +30,105 @@
 #include "AztecOOParameterList.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_StringToIntMap.hpp"
+#include "Teuchos_StandardParameterEntryValidators.hpp"
 
 namespace {
 
 //
-// (Single defintion) parameter names
+// Define the names of the different parameters, their default values
+// and a validator if appropriate!
+//
+// All of this setup makes these parameters all validated and all
+// maintainable!
 //
 
 const std::string AztecSolver_name = "Aztec Solver";
-const std::string AztecPreconditioner_name = "Aztec Preconditioner";
+const Teuchos::RefCountPtr<Teuchos::StringToIntegralParameterEntryValidator<int> >
+aztecSolverValidator = Teuchos::rcp(
+  new Teuchos::StringToIntegralParameterEntryValidator<int>(
+    Teuchos::tuple<std::string>("CG","GMRES","CGS","TFQMR","BiCGStab","LU")
+    ,Teuchos::tuple<int>(AZ_cg,AZ_gmres,AZ_cgs,AZ_tfqmr,AZ_bicgstab,AZ_lu)
+    ,AztecSolver_name
+    )
+  );
+const std::string AztecSolver_default = "GMRES";
+
+const std::string AztecPreconditioner_name = "Aztec Preconditioner";enum EAztecPreconditioner { AZTEC_PREC_NONE, AZTEC_PREC_ILU, AZTEC_PREC_ILUT, AZTEC_PREC_JACOBI, AZTEC_PREC_SYMMGS, AZTEC_PREC_POLY, AZTEC_PREC_LSPOLY };
+const Teuchos::RefCountPtr<Teuchos::StringToIntegralParameterEntryValidator<EAztecPreconditioner> >
+aztecPrecValidator = rcp(
+  new Teuchos::StringToIntegralParameterEntryValidator<EAztecPreconditioner>(
+    Teuchos::tuple<std::string>(
+      "none","ilu","ilut","Jacobi","Symmetric Gauss-Seidel","Polynomial","Least-squares Polynomial"
+      )
+    ,Teuchos::tuple<EAztecPreconditioner>(
+      AZTEC_PREC_NONE,AZTEC_PREC_ILU,AZTEC_PREC_ILUT,AZTEC_PREC_JACOBI,AZTEC_PREC_SYMMGS,AZTEC_PREC_POLY,AZTEC_PREC_LSPOLY
+      )
+    ,AztecPreconditioner_name
+    )
+  );
+const std::string AztecPreconditioner_default = "ilu";
+  
 const std::string Overlap_name = "Overlap";
-const std::string GraphFill_name = "Graph Fill";
-const std::string DropTolerance_name = "Drop Tolerance";
-const std::string FillFactor_name = "Fill Factor";
-const std::string Steps_name = "Steps";
-const std::string PolynomialOrder_name = "Polynomial Order";
-const std::string RCMReordering_name = "RCM Reordering";
-const std::string Orthogonalization_name = "Orthogonalization";
-const std::string SizeOfKrylovSubspace_name = "Size of Krylov Subspace";
-const std::string ConvergenceTest_name = "Convergence Test";
-const std::string IllConditioningThreshold_name = "Ill-Conditioning Threshold";
-const std::string OutputFrequency_name = "Output Frequency";
-
-//
-// Parameter value lists and (single definition) default values
-//
-
-// AztecSolver
-const int numAztecSolverValues = 6;
-enum EAztecSolver
-{ AZTEC_SOLVER_CG, AZTEC_SOLVER_GMRES, AZTEC_SOLVER_CGS, AZTEC_SOLVER_TFQMR, AZTEC_SOLVER_BICGSTAB, AZTEC_SOLVER_LU };
-const char* AztecSolverValues[numAztecSolverValues] =
-{ "CG", "GMRES", "CGS", "TFQMR", "BiCGStab", "LU" };
-const Teuchos::StringToIntMap
-AztecSolverMap(AztecSolver_name,numAztecSolverValues,AztecSolverValues);
-const EAztecSolver AztecSolver_default = AZTEC_SOLVER_GMRES;
-// AztecPreconditioner
-const int numAztecPreconditionerValues = 7;
-enum EAztecPreconditioner
-{ AZTEC_PREC_NONE, AZTEC_PREC_ILU, AZTEC_PREC_ILUT, AZTEC_PREC_JACOBI, AZTEC_PREC_SYMMGS, AZTEC_PREC_POLY, AZTEC_PREC_LSPOLY };
-const char* AztecPreconditionerValues[numAztecPreconditionerValues] =
-{ "none", "ilu", "ilut", "Jacobi", "Symmetric Gauss-Seidel", "Polynomial", "Least-squares Polynomial" };
-const Teuchos::StringToIntMap
-AztecPreconditionerMap(AztecPreconditioner_name,numAztecPreconditionerValues,AztecPreconditionerValues);
-const EAztecPreconditioner AztecPreconditioner_default = AZTEC_PREC_ILU;
-// Overlap
 const int Overlap_default = 0;
-// GraphFill
+
+const std::string GraphFill_name = "Graph Fill";
 const int GraphFill_default = 0;
-// DropTolerance
+
+const std::string DropTolerance_name = "Drop Tolerance";
 const double DropTolerance_default = 0.0;
-// FillFactor
+
+const std::string FillFactor_name = "Fill Factor";
 const double FillFactor_default = 1.0;
-// Steps
+
+const std::string Steps_name = "Steps";
 const int Steps_default = 3;
-// PolynomialOrder
+
+const std::string PolynomialOrder_name = "Polynomial Order";
 const int PolynomialOrder_default = 3;
-// RCMReordering
-const int numRCMReorderingValues = 2;
-enum ERCMReordering { RCM_REORDERING_ENABLED, RCM_REORDERING_DISABLED }; 
-const char* RCMReorderingValues[numRCMReorderingValues] = { "Enabled", "Disabled" };
-const Teuchos::StringToIntMap RCMReorderingMap(RCMReordering_name,numRCMReorderingValues,RCMReorderingValues);
-const ERCMReordering RCMReordering_default = RCM_REORDERING_DISABLED;
-// Orthogonalization
-const int numOrthogonalizationValues = 2;
-enum EOrthogonalization { ORTHOG_CLASSICAL, ORTHOG_MODIFIED }; 
-const char* OrthogonalizationValues[numOrthogonalizationValues] = { "Classical", "Modified" };
-const Teuchos::StringToIntMap OrthogonalizationMap(Orthogonalization_name,numOrthogonalizationValues,OrthogonalizationValues);
-const EOrthogonalization Orthogonalization_default = ORTHOG_CLASSICAL;
-// SizeOfKrylovSubspace
+
+const std::string RCMReordering_name = "RCM Reordering";
+const Teuchos::RefCountPtr<Teuchos::StringToIntegralParameterEntryValidator<int> >
+rcmReorderingValidator = Teuchos::rcp(
+  new Teuchos::StringToIntegralParameterEntryValidator<int>(
+    Teuchos::tuple<std::string>("Enabled","Disabled")
+    ,Teuchos::tuple<int>(1,0)
+    ,RCMReordering_name
+    )
+  );
+const std::string RCMReordering_default = "Disabled";
+
+const std::string Orthogonalization_name = "Orthogonalization";
+const Teuchos::RefCountPtr<Teuchos::StringToIntegralParameterEntryValidator<int> >
+orthogValidator = Teuchos::rcp(
+  new Teuchos::StringToIntegralParameterEntryValidator<int>(
+    Teuchos::tuple<std::string>("Classical","Modified")
+    ,Teuchos::tuple<int>(AZ_classic,AZ_modified)
+    ,Orthogonalization_name
+    )
+  );
+const std::string Orthogonalization_default = "Classical";
+
+const std::string SizeOfKrylovSubspace_name = "Size of Krylov Subspace";
 const int SizeOfKrylovSubspace_default = 300;
-// ConvergenceTest
-const int numConvergenceTestValues = 5;
-enum EConvergenceTest
-{ CONV_TEST_R0, CONV_TEST_RHS, CONV_TEST_ANORM, CONV_TEST_NOSCALING, CONV_TEST_SOL };
-const char* ConvergenceTestValues[numConvergenceTestValues] =
-{ "r0", "rhs", "Anorm", "no scaling", "sol" };
-const Teuchos::StringToIntMap
-ConvergenceTestMap(ConvergenceTest_name,numConvergenceTestValues,ConvergenceTestValues);
-const EConvergenceTest ConvergenceTest_default = CONV_TEST_R0; // Same as RHS when X=0
-// IllConditioningThreshold
+
+const std::string ConvergenceTest_name = "Convergence Test";
+const Teuchos::RefCountPtr<Teuchos::StringToIntegralParameterEntryValidator<int> >
+convTestValidator = Teuchos::rcp(
+  new Teuchos::StringToIntegralParameterEntryValidator<int>(
+    Teuchos::tuple<std::string>("r0","rhs","Anorm","no scaling","sol")
+    ,Teuchos::tuple<int>(AZ_r0,AZ_rhs,AZ_Anorm,AZ_noscaled,AZ_sol)
+    ,ConvergenceTest_name
+    )
+  );
+const std::string ConvergenceTest_default = "r0"; // Same as "rhs" when x=0
+
+const std::string IllConditioningThreshold_name = "Ill-Conditioning Threshold";
 const double IllConditioningThreshold_default = 1e+11;
-// OutputFrequency
+
+const std::string OutputFrequency_name = "Output Frequency";
 const int OutputFrequency_default = 0; // Aztec only prints to stdout which is not acceptable!
+
+Teuchos::RefCountPtr<Teuchos::ParameterList>  validAztecOOParams;
 
 } // namespace
 
@@ -121,33 +137,16 @@ void setAztecOOParameters(
   ,AztecOO                *solver
   )
 {
+  TEST_FOR_EXCEPT(pl==NULL);
+  TEST_FOR_EXCEPT(solver==NULL);
   // Aztec Solver
-  const std::string aztecSolverName = pl->get(AztecSolver_name,AztecSolverValues[AztecSolver_default]);
-  switch(AztecSolverMap.get<EAztecSolver>(aztecSolverName,pl->name()+"->"+AztecSolver_name)) {
-    case AZTEC_SOLVER_CG:
-      solver->SetAztecOption(AZ_solver,AZ_cg);
-      break;
-    case AZTEC_SOLVER_GMRES:
-      solver->SetAztecOption(AZ_solver,AZ_gmres);
-      break;
-    case AZTEC_SOLVER_CGS:
-      solver->SetAztecOption(AZ_solver,AZ_cgs);
-      break;
-    case AZTEC_SOLVER_TFQMR:
-      solver->SetAztecOption(AZ_solver,AZ_tfqmr);
-      break;
-    case AZTEC_SOLVER_BICGSTAB:
-      solver->SetAztecOption(AZ_solver,AZ_bicgstab);
-      break;
-    case AZTEC_SOLVER_LU:
-      solver->SetAztecOption(AZ_solver,AZ_lu);
-      break;
-    default:
-      TEST_FOR_EXCEPT(true); // Should never get here!
-  }
+  solver->SetAztecOption(
+    AZ_solver
+    ,aztecSolverValidator->getIntegralValue(*pl,AztecSolver_name,AztecSolver_default)
+    );
   // Aztec Preconditioner
-  const::string aztecPrecName = pl->get(AztecPreconditioner_name,AztecPreconditionerValues[AztecPreconditioner_default]);
-  switch(AztecPreconditionerMap.get<EAztecPreconditioner>(aztecPrecName,pl->name()+"->"+AztecPreconditioner_name)) {
+  switch(aztecPrecValidator->getIntegralValue(*pl,AztecPreconditioner_name,AztecPreconditioner_default))
+  {
     case AZTEC_PREC_NONE:
       solver->SetAztecOption(AZ_precond,AZ_none);
       break;
@@ -184,76 +183,122 @@ void setAztecOOParameters(
       TEST_FOR_EXCEPT(true); // Should never get here!
   }
   // RCM Reordering (in conjunction with domain decomp preconditioning)
-  std::string rcmReorderingName = pl->get(RCMReordering_name,RCMReorderingValues[RCMReordering_default]);
-  switch(RCMReorderingMap.get<ERCMReordering>(rcmReorderingName,pl->name()+"->"+RCMReordering_name)) {
-    case RCM_REORDERING_ENABLED:
-      solver->SetAztecOption(AZ_reorder,1);
-      break;
-    case RCM_REORDERING_DISABLED:
-      solver->SetAztecOption(AZ_reorder,0);
-      break;
-    default:
-      TEST_FOR_EXCEPT(true); // Should never get here!
-  }
+  solver->SetAztecOption(
+    AZ_reorder
+    ,rcmReorderingValidator->getIntegralValue(*pl,RCMReordering_name,RCMReordering_default)
+    );
   // Gram-Schmidt orthogonalization procedure (GMRES only)
-  std::string orthogName = pl->get(Orthogonalization_name,OrthogonalizationValues[Orthogonalization_default]);
-  switch(OrthogonalizationMap.get<EOrthogonalization>(orthogName,pl->name()+"->"+Orthogonalization_name)) {
-    case ORTHOG_CLASSICAL:
-      solver->SetAztecOption(AZ_orthog,AZ_classic);
-      break;
-    case ORTHOG_MODIFIED:
-      solver->SetAztecOption(AZ_orthog,AZ_modified);
-      break;
-    default:
-      TEST_FOR_EXCEPT(true); // Should never get here!
-  }
+  solver->SetAztecOption(
+    AZ_orthog
+    ,orthogValidator->getIntegralValue(*pl,Orthogonalization_name,Orthogonalization_default)
+    );
   // Size of the krylov subspace
   solver->SetAztecOption(AZ_kspace,pl->get(SizeOfKrylovSubspace_name,SizeOfKrylovSubspace_default));
   // Convergence criteria to use in the linear solver
-  std::string convTestName = pl->get(ConvergenceTest_name,ConvergenceTestValues[ConvergenceTest_default]);
-  switch(ConvergenceTestMap.get<EConvergenceTest>(convTestName,pl->name()+"->"+ConvergenceTest_name)) {
-    case CONV_TEST_R0:
-      solver->SetAztecOption(AZ_conv,AZ_r0);
-      break;
-    case CONV_TEST_RHS:
-      solver->SetAztecOption(AZ_conv,AZ_rhs);
-      break;
-    case CONV_TEST_ANORM:
-      solver->SetAztecOption(AZ_conv,AZ_Anorm);
-      break;
-    case CONV_TEST_NOSCALING:
-      solver->SetAztecOption(AZ_conv,AZ_noscaled);
-      break;
-    case CONV_TEST_SOL:
-      solver->SetAztecOption(AZ_conv,AZ_sol);
-      break;
-    default:
-      TEST_FOR_EXCEPT(true); // Should never get here!
-  }
+  solver->SetAztecOption(
+    AZ_conv
+    ,convTestValidator->getIntegralValue(*pl,ConvergenceTest_name,ConvergenceTest_default)
+    );
   // Set the ill-conditioning threshold for the upper hessenberg matrix
-  solver->SetAztecParam(AZ_ill_cond_thresh,pl->get(IllConditioningThreshold_name,IllConditioningThreshold_default));
+  solver->SetAztecParam(
+    AZ_ill_cond_thresh
+    ,pl->get(IllConditioningThreshold_name,IllConditioningThreshold_default)
+    );
   // Frequency of linear solve residual output
-  solver->SetAztecOption(AZ_output,pl->get(OutputFrequency_name,OutputFrequency_default));
+  solver->SetAztecOption(
+    AZ_output
+    ,pl->get(OutputFrequency_name,OutputFrequency_default)
+    );
+#ifdef TEUCHOS_DEBUG
+  // Check to make sure that I did not use the PL incorrectly!
+  pl->validateParameters(*getValidAztecOOParameters());
+#endif // TEUCHOS_DEBUG
 }
 
 Teuchos::RefCountPtr<const Teuchos::ParameterList>
 getValidAztecOOParameters()
 {
-  Teuchos::RefCountPtr<Teuchos::ParameterList>
-    pl = Teuchos::rcp(new Teuchos::ParameterList());
-  pl->set(AztecSolver_name,AztecSolverValues[AztecSolver_default]);
-  pl->set(AztecPreconditioner_name,AztecPreconditionerValues[AztecPreconditioner_default]);
-  pl->set(Overlap_name,Overlap_default);
-  pl->set(GraphFill_name,GraphFill_default);
-  pl->set(DropTolerance_name,DropTolerance_default);
-  pl->set(FillFactor_name,FillFactor_default);
-  pl->set(Steps_name,Steps_default);
-  pl->set(PolynomialOrder_name,PolynomialOrder_default);
-  pl->set(RCMReordering_name,RCMReorderingValues[RCMReordering_default]);
-  pl->set(Orthogonalization_name,OrthogonalizationValues[Orthogonalization_default]);
-  pl->set(SizeOfKrylovSubspace_name,SizeOfKrylovSubspace_default);
-  pl->set(ConvergenceTest_name,ConvergenceTestValues[ConvergenceTest_default]);
-  pl->set(IllConditioningThreshold_name,IllConditioningThreshold_default);
-  pl->set(OutputFrequency_name,OutputFrequency_default);
+  //
+  using Teuchos::RefCountPtr;
+  using Teuchos::rcp;
+  using Teuchos::tuple;
+  using Teuchos::StringToIntegralParameterEntryValidator;
+  using Teuchos::ParameterList;
+  //
+  RefCountPtr<ParameterList> pl = validAztecOOParams;
+  if(pl.get()) return pl;
+  pl = validAztecOOParams = rcp(new ParameterList());
+  //
+  pl->set(
+    AztecSolver_name,AztecSolver_default
+    ,"Type of linear solver algorithm to use."
+    ,aztecSolverValidator
+    );
+  pl->set(
+    AztecPreconditioner_name,AztecPreconditioner_default
+    ,"Type of internal preconditioner to use.\n"
+    "Note! this preconditioner will only be used if the input operator\n"
+    "supports the Epetra_RowMatrix interface and the client does not pass\n"
+    "in an external preconditioner!"
+    ,aztecPrecValidator
+    );
+  pl->set(
+    Overlap_name,Overlap_default
+    ,"The amount of overlap used for the internal \"ilu\" and \"ilut\" preconditioners."
+    );
+  pl->set(
+    GraphFill_name,GraphFill_default
+    ,"The amount of fill allowed for the internal \"ilu\" preconditioner."
+    );
+  pl->set(
+    DropTolerance_name,DropTolerance_default
+    ,"The tolerance below which an entry from the factors of an internal \"ilut\"\n"
+    "preconditioner will be dropped."
+    );
+  pl->set(
+    FillFactor_name,FillFactor_default
+    ,"The amount of fill allowed for an internal \"ilut\" preconditioner."
+    );
+  pl->set(
+    Steps_name,Steps_default
+    ,"Number of steps taken for the \"Jacobi\" or the \"Symmetric Gauss-Seidel\"\n"
+    "internal preconditioners for each preconditioner application."
+    );
+  pl->set(
+    PolynomialOrder_name,PolynomialOrder_default
+    ,"The order for of the polynomials used for the \"Polynomial\" and\n"
+    "\"Least-squares Polynomial\" internal preconditioners."
+    );
+  pl->set(
+    RCMReordering_name,"Disabled"
+    ,"Determines if RCM reordering is used with the internal\n"
+    "\"ilu\" or \"ilut\" preconditioners."
+    ,rcmReorderingValidator
+    );
+  pl->set(
+    Orthogonalization_name,Orthogonalization_default
+    ,"The type of orthogonalization to use with the \"GMRES\" solver."
+    ,orthogValidator
+    );
+  pl->set(
+    SizeOfKrylovSubspace_name,SizeOfKrylovSubspace_default
+    ,"The maximum size of the Krylov subspace used with \"GMRES\" before\n"
+    "a restart is performed."
+    );
+  pl->set(
+    ConvergenceTest_name,ConvergenceTest_default
+    ,"The convergence test to use for terminating the iterative solver."
+    ,convTestValidator
+    );
+  pl->set(
+    IllConditioningThreshold_name,IllConditioningThreshold_default
+    ,"The threshold tolerance above which a system is considered\n"
+    "ill conditioned."
+    );
+  pl->set(
+    OutputFrequency_name,OutputFrequency_default
+    ,"The number of iterations between each output of the solver's progress."
+    );
+  //
   return pl;
 }

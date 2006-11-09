@@ -233,27 +233,25 @@ private:
   // //////////////////////////////////////
   // Private types
 
-  typedef std::map<std::string,Teuchos::RefCountPtr<const Teuchos::AbstractFactory<LinearOpWithSolveFactoryBase<double> > > >  lowsf_map_t;
-  typedef std::map<std::string,Teuchos::RefCountPtr<const Teuchos::AbstractFactory<PreconditionerFactoryBase<double> > > >     pf_map_t;
+  typedef Teuchos::RefCountPtr<const Teuchos::AbstractFactory<LinearOpWithSolveFactoryBase<double> > >  lowsf_fcty_t;
+  typedef Teuchos::RefCountPtr<const Teuchos::AbstractFactory<PreconditionerFactoryBase<double> > >     pf_fcty_t;
 
   // //////////////////////////////////////
   // Private data members
   
   Teuchos::RefCountPtr<Teuchos::ParameterList>                 paramList_;
   mutable Teuchos::RefCountPtr<const Teuchos::ParameterList>   validParamList_;
-  lowsf_map_t                                                  lowsf_map_;
-  std::vector<std::string>                                     validLowsfNames_;
+  Teuchos::Array<std::string>                                  validLowsfNames_;
+  Teuchos::Array<lowsf_fcty_t>                                 lowsfArray_;
   std::string                                                  defaultLOWSF_;
-  pf_map_t                                                     pf_map_;
-  std::vector<std::string>                                     validPfNames_;
+  Teuchos::Array<std::string>                                  validPfNames_; // Contains "None" as the 0th entry!
+  Teuchos::Array<pf_fcty_t>                                    pfArray_;
   std::string                                                  defaultPF_;
 
   // //////////////////////////////////////
   // Private member functions
 
   void initializeDefaults();
-  std::string validLinearSolveStrategyNames() const;
-  std::string validPreconditioningStrategyNames() const;
 
 };
 

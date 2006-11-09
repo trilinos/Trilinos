@@ -21,7 +21,7 @@
 class EpetraModelEval2DSim : public EpetraExt::ModelEvaluator {
 public:
 
-  // Constructor
+  /** \brief . */
   EpetraModelEval2DSim(
 		const double         d                   = 10.0
 		,const double        p0                  = 2.0
@@ -59,17 +59,16 @@ private:
   double    d_;
   bool      showGetInvalidArg_;
 
-
-	bool      isInitialized_;
-
+  bool      isInitialized_;
+  
   Teuchos::RefCountPtr<const Epetra_Comm>  epetra_comm_;
-	Teuchos::RefCountPtr<const Epetra_Map>   map_x_;
-
-	Teuchos::RefCountPtr<Epetra_Vector> x0_;
-	Teuchos::RefCountPtr<Epetra_Vector> p_;
-
+  Teuchos::RefCountPtr<const Epetra_Map>   map_x_;
+  
+  Teuchos::RefCountPtr<Epetra_Vector> x0_;
+  Teuchos::RefCountPtr<Epetra_Vector> p_;
+  
   Teuchos::RefCountPtr<Epetra_CrsGraph>  W_graph_;
-
+  
 };
 
 #endif // EPETRA_MODEL_EVAL_2D_SIM_HPP

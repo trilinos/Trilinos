@@ -95,7 +95,9 @@ CORE_H = \
   $(srcdir)/Teuchos_OpaqueWrapper.hpp \
 	$(srcdir)/Teuchos_OrdinalTraits.hpp \
 	$(srcdir)/Teuchos_ParameterEntry.hpp \
+	$(srcdir)/Teuchos_ParameterEntryValidator.hpp \
 	$(srcdir)/Teuchos_ParameterList.hpp \
+	$(srcdir)/Teuchos_ParameterListExceptions.hpp \
 	$(srcdir)/Teuchos_ParameterListAcceptor.hpp \
 	$(srcdir)/Teuchos_PrimitiveTypeTraits.hpp \
   $(srcdir)/Teuchos_ReductionOp.hpp \
@@ -123,6 +125,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_StandardCatchMacros.hpp \
 	$(srcdir)/Teuchos_StandardCompositionMacros.hpp \
 	$(srcdir)/Teuchos_StandardMemberCompositionMacros.hpp \
+	$(srcdir)/Teuchos_StandardParameterEntryValidators.hpp \
 	$(srcdir)/Teuchos_StringToIntMap.hpp \
 	$(srcdir)/Teuchos_TableColumn.hpp \
 	$(srcdir)/Teuchos_TableEntry.hpp \

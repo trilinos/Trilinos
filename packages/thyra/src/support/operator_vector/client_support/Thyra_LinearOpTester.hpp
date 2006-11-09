@@ -287,7 +287,7 @@ bool LinearOpTester<RangeScalar,DomainScalar>::check(
     if(!result) these_results = false;
     *oss << passfail(result) << endl;
 
-    printTestResults(these_results,ossStore.str(),show_all_tests(),&success,OSTab(out).getOStream().get());
+    printTestResults(these_results,ossStore.str(),show_all_tests(),&success,OSTab(out).get());
 
   }
 
@@ -373,7 +373,7 @@ bool LinearOpTester<RangeScalar,DomainScalar>::check(
       *oss << endl << "Forward operator not supported, skipping check!\n";
     }
 
-    printTestResults(these_results,ossStore.str(),show_all_tests(),&success,OSTab(out).getOStream().get());
+    printTestResults(these_results,ossStore.str(),show_all_tests(),&success,OSTab(out).get());
 
   }
   else {
@@ -463,7 +463,7 @@ bool LinearOpTester<RangeScalar,DomainScalar>::check(
       *oss << endl << "Adjoint operator not supported, skipping check!\n";
     }
 
-    printTestResults(these_results,ossStore.str(),show_all_tests(),&success,OSTab(out).getOStream().get());
+    printTestResults(these_results,ossStore.str(),show_all_tests(),&success,OSTab(out).get());
 
   }
   else {
@@ -542,7 +542,7 @@ bool LinearOpTester<RangeScalar,DomainScalar>::check(
       *oss << endl << "Adjoint operator not supported, skipping check!\n";
     }
 
-    printTestResults(these_results,ossStore.str(),show_all_tests(),&success,OSTab(out).getOStream().get());
+    printTestResults(these_results,ossStore.str(),show_all_tests(),&success,OSTab(out).get());
 
   }
   else {
@@ -563,7 +563,7 @@ bool LinearOpTester<RangeScalar,DomainScalar>::check(
       op,&*dRand,*oss,num_rhs,num_random_vectors(),verbLevel,dump_all(),symmetry_error_tol(),symmetry_warning_tol(),&these_results
       );
     
-    printTestResults(these_results,ossStore.str(),show_all_tests(),&success,OSTab(out).getOStream().get());
+    printTestResults(these_results,ossStore.str(),show_all_tests(),&success,OSTab(out).get());
     
   }
   else {
@@ -653,7 +653,7 @@ bool LinearOpTester<RangeScalar,DomainScalar>::compare(
     if(!result) these_results = false;
     *oss << passfail(result) << endl;
 
-    printTestResults(these_results,ossStore.str(),show_all_tests(),&success,OSTab(out).getOStream().get());
+    printTestResults(these_results,ossStore.str(),show_all_tests(),&success,OSTab(out).get());
 
   }
 
@@ -717,7 +717,7 @@ bool LinearOpTester<RangeScalar,DomainScalar>::compare(
       
     }
 
-    printTestResults(these_results,ossStore.str(),show_all_tests(),&success,OSTab(out).getOStream().get());
+    printTestResults(these_results,ossStore.str(),show_all_tests(),&success,OSTab(out).get());
 
   }
   
