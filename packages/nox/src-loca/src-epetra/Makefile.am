@@ -57,7 +57,6 @@ LOCA_EPETRA_H = \
 	$(srcdir)/LOCA_Epetra_LowRankUpdateOp.H \
 	$(srcdir)/LOCA_Epetra_LowRankUpdateRowMatrix.H \
 	$(srcdir)/LOCA_BorderedSolver_EpetraHouseholder.H \
-	$(srcdir)/LOCA_Epetra_AnasaziOperator_Floquet.H \
 	$(srcdir)/LOCA_Epetra_AugmentedOp.H \
 	$(srcdir)/LOCA_BorderedSolver_EpetraAugmented.H \
 	$(srcdir)/LOCA_Epetra_Factory.H \
@@ -74,7 +73,6 @@ LOCA_EPETRA = \
 	$(srcdir)/LOCA_Epetra_LowRankUpdateOp.C \
 	$(srcdir)/LOCA_Epetra_LowRankUpdateRowMatrix.C \
 	$(srcdir)/LOCA_BorderedSolver_EpetraHouseholder.C \
-	$(srcdir)/LOCA_Epetra_AnasaziOperator_Floquet.C \
 	$(srcdir)/LOCA_Epetra_AugmentedOp.C \
 	$(srcdir)/LOCA_BorderedSolver_EpetraAugmented.C \
 	$(srcdir)/LOCA_Epetra_Factory.C \
@@ -83,11 +81,13 @@ LOCA_EPETRA = \
 if HAVE_MPI
 LOCA_EPETRA_XYZT_H =  \
 	$(srcdir)/LOCA_Epetra_Interface_xyzt.H \
-	$(srcdir)/LOCA_Epetra_xyztPrec.H 
+	$(srcdir)/LOCA_Epetra_xyztPrec.H \
+	$(srcdir)/LOCA_Epetra_AnasaziOperator_Floquet.H
 
 LOCA_EPETRA_XYZT = \
 	$(srcdir)/LOCA_Epetra_Interface_xyzt.C \
-	$(srcdir)/LOCA_Epetra_xyztPrec.C 
+	$(srcdir)/LOCA_Epetra_xyztPrec.C \
+	$(srcdir)/LOCA_Epetra_AnasaziOperator_Floquet.C
 else
 LOCA_EPETRA_XYZT_H = 
 
