@@ -38,6 +38,15 @@ const int ML_MFP_JACOBI = 0;
 const int ML_MFP_BLOCK_JACOBI = 1;
 const int ML_MFP_CHEBY = 2;
 
+static inline void catch_message(const string& what, const string& what2,
+                                 const string& file, const int& line)
+{
+  cerr << "Caught exception, file " << file << ", line " << line << endl;
+  cerr << "desc: " << what << endl;
+  if (what2 != "")
+    cerr << "desc: " << what2 << endl;
+}
+
 // ============================================================================ 
 ML_Epetra::MatrixFreePreconditioner::
 MatrixFreePreconditioner(const Epetra_Operator& Operator,
@@ -678,10 +687,14 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
       ColoredP = new Epetra_MultiVector(FineMap, NumColors * NullSpaceDim);
       ColoredAP_ptr.resize(NumColors * NullSpaceDim * NodeListMap->NumMyPoints());
     }
+    catch (std::exception& rhs)
+    {
+      catch_message("the allocation of ColoredP", rhs.what(), __FILE__, __LINE__);
+      ML_CHK_ERR(-1);
+    }
     catch (...)
     {
-      cerr << "Caught generic exception in the allocation of ColoredP" << endl;
-      cout << "and ColoredAP_ptr. Maybe a smaller problem should be run." << endl;
+      catch_message("the allocation of ColoredP", "", __FILE__, __LINE__);
       ML_CHK_ERR(-1);
     }
 
@@ -728,10 +741,14 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
       Epetra_Import Importer(*NodeListMap, Operator_.OperatorRangeMap());
       ExtColoredAP.Import(*ColoredP, Importer, Insert);
     }
+    catch (std::exception& rhs)
+    {
+      catch_message("importing of ExtColoredAP", rhs.what(), __FILE__, __LINE__);
+      ML_CHK_ERR(-1);
+    }
     catch (...)
     {
-      cerr << "Caught generic exception in the importing of ExtColoredAP." << endl;
-      cout << "Maybe a smaller problem should be run." << endl;
+      catch_message("importing of ExtColoredAP", "", __FILE__, __LINE__);
       ML_CHK_ERR(-1);
     }
 
@@ -784,10 +801,14 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
     {
       ColoredAP_ptr.resize(NullSpaceDim * NodeListMap->NumMyPoints());
     }
+    catch (std::exception& rhs)
+    {
+      catch_message("resizing of ColoredAP_pt", rhs.what(), __FILE__, __LINE__);
+      ML_CHK_ERR(-1);
+    }
     catch (...)
     {
-      cerr << "Caught generic exception in the resize of ColoredAP_ptr." << endl;
-      cout << "Maybe a smaller problem should be run." << endl;
+      catch_message("resizing of ColoredAP_pt", "", __FILE__, __LINE__);
       ML_CHK_ERR(-1);
     }
 
