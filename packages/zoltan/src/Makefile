@@ -177,14 +177,14 @@ ALL_OBJ_DIRS := $(wildcard Obj_*)
 #
 SUB_VPATH	= ../include ../Utilities/shared \
 		  ../zz ../all ../lb ../par ../rcb ../coloring ../oct ../hsfc \
-		  ../phg  ../util \
+		  ../phg  ../simple ../util \
 		  ../params ../driver$(ZOLTAN_OLD) ../ch ../parmetis ../timer \
                   ../order ../ha ../reftree ../hier \
 		  ../Utilities/Communication ../Utilities/Memory \
                   ../Utilities/DDirectory ../Utilities/Timer
 SUBINCPATH	= -I../include -I../Utilities/shared \
 		  -I../zz -I../all -I../lb -I../par -I../rcb \
-		  -I../coloring -I../oct  \
+		  -I../coloring -I../simple -I../oct  \
 		  -I../order -I../hsfc -I../phg  -I../util \
 		  -I../params -I../driver$(ZOLTAN_OLD) -I../ch \
 		  -I../parmetis -I../timer \
@@ -192,7 +192,7 @@ SUBINCPATH	= -I../include -I../Utilities/shared \
 		  -I../Utilities/Communication -I../Utilities/Memory \
                   -I../Utilities/DDirectory -I../Utilities/Timer
 SUBDIRS		= driver$(ZOLTAN_OLD) ch zz all lb order par rcb \
-		  coloring oct phg util \
+		  coloring oct phg simple util \
                   hsfc parmetis params hier \
 		  timer ha  reftree include
 UTIL_SUBDIRS	= Utilities/shared Utilities/Communication \
@@ -215,6 +215,9 @@ LB_INC		= lb_const.h lb_init_const.h
 
 ORDER_CSRC	= order.c order_struct.c perm.c
 ORDER_INC	= order_const.h 
+
+SIMPLE_CSRC	= simple.c random.c
+SIMPLE_INC	= 
 
 RCB_CSRC	= rcb.c rcb_util.c rcb_box.c box_assign.c point_assign.c \
                   create_proc_list.c rib.c rib_util.c \
@@ -338,7 +341,7 @@ endif
 ZOLTAN_INC_PATH	= $(SUBINCPATH) $(INCLUDE_PATH) $(MPI_INCPATH) \
 		  $(THIRD_PARTY_INCPATH)
 ZOLTAN_CSRC    += $(ZZ_CSRC) $(LB_CSRC) $(ALL_CSRC) $(RCB_CSRC) $(PAR_CSRC) \
-		  $(COLOR_CSRC) \
+		  $(COLOR_CSRC) $(SIMPLE_CSRC) \
 		  $(ORDER_CSRC) $(OCT_CSRC) $(HSFC_CSRC) \
 		  $(PARAMS_CSRC) $(PARMETIS_CSRC) $(PHG_CSRC) $(HG_CSRC) \
 		  $(TIMER_CSRC) $(HA_CSRC) $(REFTREE_CSRC) \

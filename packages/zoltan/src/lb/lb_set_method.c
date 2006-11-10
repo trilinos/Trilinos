@@ -70,7 +70,19 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
     goto End;
   }
 
-  if (strcmp(method_upper, "RCB") == 0) {
+  if (strcmp(method_upper, "SIMPLE") == 0) {
+    zz->LB.Method = SIMPLE;
+    zz->LB.LB_Fn = Zoltan_Simple;
+    zz->LB.Free_Structure = NULL;
+    zz->LB.Copy_Structure = NULL;
+  }
+  else if (strcmp(method_upper, "RANDOM") == 0) {
+    zz->LB.Method = RANDOM;
+    zz->LB.LB_Fn = Zoltan_Random;
+    zz->LB.Free_Structure = NULL;
+    zz->LB.Copy_Structure = NULL;
+  }
+  else if (strcmp(method_upper, "RCB") == 0) {
     zz->LB.Method = RCB;
     zz->LB.LB_Fn = Zoltan_RCB;
     zz->LB.Free_Structure = Zoltan_RCB_Free_Structure;

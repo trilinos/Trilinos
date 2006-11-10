@@ -54,6 +54,8 @@ typedef int ZOLTAN_LB_BOX_ASSIGN_FN(struct Zoltan_Struct *,
 
 typedef enum Zoltan_LB_Method {
   NONE = -1,
+  SIMPLE, 
+  RANDOM, 
   RCB,
   OCTPART,
   PARMETIS,
@@ -263,6 +265,8 @@ extern int Zoltan_LB_Copy_Struct(struct Zoltan_Struct *to,
                                struct Zoltan_Struct const *from);
 
 /* PARTITIONING FUNCTIONS */
+extern ZOLTAN_LB_FN Zoltan_Simple;
+extern ZOLTAN_LB_FN Zoltan_Random;
 extern ZOLTAN_LB_FN Zoltan_RCB;
 extern ZOLTAN_LB_FN Zoltan_Octpart;
 extern ZOLTAN_LB_FN Zoltan_ParMetis;
