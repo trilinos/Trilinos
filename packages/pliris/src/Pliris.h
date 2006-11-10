@@ -109,7 +109,7 @@ class Pliris {
    */
 
     /*! 
-     \param A(In) --  Epetra Vector that has the matrix and rhs packed
+     \param A(InOut) --  Epetra Vector that has the matrix and rhs packed( Note: matrix is overwritten)
      \param my_rows(In) --  number of rows of the matrix on this processor
      \param my_cols(In) --  number of columns of the matrix on this processor  
      \param matrix_size(In) -- order of the dense matrix
@@ -166,6 +166,22 @@ class Pliris {
                int* num_procsr,
                int* permute,
 	       double* secs);
+
+
+  //! Pliris Solve
+  /*! Solves the previously factored dense matrix
+   */
+
+    /*! 
+     \param permute(In) -- permutation matrix
+     \param num_rhs(In) -- factor and solve time in seconds 
+     \ Note that the matrix has been previously factored by Factor
+     \ The RHS has been set by SetRHS(Epetra_MultiVector * B) 
+     \ On output the result is in the RHS
+    */
+
+    int Solve(int* permute,
+	      int* num_rhs);
 
 
   //! Pliris Default Destructor.
