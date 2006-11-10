@@ -187,6 +187,8 @@ void X_FACTOR_ (DATA_TYPE *matrix,int *matrixsize,
 
   *secs = run_secs;
 
+  free(row2);
+
 }
 
 
