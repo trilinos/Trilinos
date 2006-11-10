@@ -30,7 +30,7 @@
 #include "xlu_solve.h"
 #include "permute.h"
 #include "x_factor.h"
-
+#include "x_solve.h"
 
 
 //=============================================================================
@@ -175,7 +175,21 @@ int Pliris::Factor( Epetra_Vector* A,
      return(0);
 } 
 
+// Solve the Matrix after previously factoring
 
+//=============================================================================
+
+int Pliris::Solve(int* permute,
+	          int* num_rhs){
+
+  dsolve_(a_,
+	  permute,
+	  b_,
+	  num_rhs);
+
+  return(0);
+
+}
 
 
 //=============================================================================
