@@ -193,7 +193,7 @@ SolveStatus<Scalar> TimeStepNewtonNonlinearSolver<Scalar>::solve(
     if(linearSolveStatus.solveStatus != SOLVE_STATUS_CONVERGED) {
       warningOut()
         << "Thyra::TimeStepNewtonNonlinearSolver<Scalar>::solve(...), Warning, linear solve did not converge with solve status:\n\n";
-      OSTab(getFancyOStream(rcp(&warningOut(),false)))() << linearSolveStatus;
+      OSTab(getFancyOStream(rcp(&warningOut(),false))).o() << linearSolveStatus;
       warningOut()
         <<endl<< "Continuing anyway :-)\n";
       // ToDo: Add option to throw exception failure

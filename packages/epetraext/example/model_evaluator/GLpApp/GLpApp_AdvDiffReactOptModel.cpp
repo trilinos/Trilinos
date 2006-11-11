@@ -146,7 +146,7 @@ AdvDiffReactOptModel::AdvDiffReactOptModel(
     }
 #ifdef GLPAPP_ADVDIFFREACT_OPTMODEL_DUMP_STUFF
     *out << "\nB_bar =\n\n";
-    B_bar_->Print(Teuchos::OSTab(out)());
+    B_bar_->Print(Teuchos::OSTab(out).o());
 #endif
   }
   else {
@@ -198,7 +198,7 @@ void AdvDiffReactOptModel::set_q( Teuchos::RefCountPtr<const Epetra_Vector> cons
     dout = Teuchos::VerboseObjectBase::getDefaultOStream();
   Teuchos::OSTab dtab(dout);
   *dout << "\nIn AdvDiffReactOptModel::set_q(q):  q =\n\n";
-  q_->Print(Teuchos::OSTab(dout)());
+  q_->Print(Teuchos::OSTab(dout).o());
 #endif
 }
 
@@ -369,9 +369,9 @@ void AdvDiffReactOptModel::evalModel( const InArgs& inArgs, const OutArgs& outAr
   const Epetra_Vector &x = *inArgs.get_x();
 #ifdef GLPAPP_ADVDIFFREACT_OPTMODEL_DUMP_STUFF
     *dout << "\nx =\n\n";
-    x.Print(Teuchos::OSTab(dout)());
+    x.Print(Teuchos::OSTab(dout).o());
     *dout << "\np =\n\n";
-    p.Print(Teuchos::OSTab(dout)());
+    p.Print(Teuchos::OSTab(dout).o());
 #endif
   //
   // Get the output arguments
@@ -439,13 +439,13 @@ void AdvDiffReactOptModel::evalModel( const InArgs& inArgs, const OutArgs& outAr
     g[0] = 0.5*dot(xq,Hxq) + 0.5*dat_->getbeta()*dot(*p_bar,*R_p_bar);
 #ifdef GLPAPP_ADVDIFFREACT_OPTMODEL_DUMP_STUFF
     *dout << "q =\n\n";
-    q_->Print(Teuchos::OSTab(dout)());
+    q_->Print(Teuchos::OSTab(dout).o());
     *dout << "x =\n\n";
-    x.Print(Teuchos::OSTab(dout)());
+    x.Print(Teuchos::OSTab(dout).o());
     *dout << "x-q =\n\n";
-    xq.Print(Teuchos::OSTab(dout)());
+    xq.Print(Teuchos::OSTab(dout).o());
     *dout << "H*(x-q) =\n\n";
-    Hxq.Print(Teuchos::OSTab(dout)());
+    Hxq.Print(Teuchos::OSTab(dout).o());
     *dout << "0.5*dot(xq,Hxq) = " << (0.5*dot(xq,Hxq)) << "\n";
     *dout << "0.5*regBeta*(B_bar*p)'*R*(B_bar*p) = " << (0.5*dat_->getbeta()*dot(*p_bar,*R_p_bar)) << "\n";
 #endif
@@ -571,11 +571,11 @@ void AdvDiffReactOptModel::evalModel( const InArgs& inArgs, const OutArgs& outAr
 #ifdef GLPAPP_ADVDIFFREACT_OPTMODEL_DUMP_STUFF
     if(DfDp_op) {
       *dout << "\nDfDp_op =\n\n";
-      DfDp_op->Print(Teuchos::OSTab(dout)());
+      DfDp_op->Print(Teuchos::OSTab(dout).o());
     }
     if(DfDp_mv) {
       *dout << "\nDfDp_mv =\n\n";
-      DfDp_mv->Print(Teuchos::OSTab(dout)());
+      DfDp_mv->Print(Teuchos::OSTab(dout).o());
     }
 #endif
   }
@@ -590,13 +590,13 @@ void AdvDiffReactOptModel::evalModel( const InArgs& inArgs, const OutArgs& outAr
     dat_->getH()->Multiply(false,xq,DgDx_trans);
 #ifdef GLPAPP_ADVDIFFREACT_OPTMODEL_DUMP_STUFF
     *dout << "q =\n\n";
-    q_->Print(Teuchos::OSTab(dout)());
+    q_->Print(Teuchos::OSTab(dout).o());
     *dout << "x =\n\n";
-    x.Print(Teuchos::OSTab(dout)());
+    x.Print(Teuchos::OSTab(dout).o());
     *dout << "x-q =\n\n";
-    xq.Print(Teuchos::OSTab(dout)());
+    xq.Print(Teuchos::OSTab(dout).o());
     *dout << "DgDx_trans = H*(x-q) =\n\n";
-    DgDx_trans.Print(Teuchos::OSTab(dout)());
+    DgDx_trans.Print(Teuchos::OSTab(dout).o());
 #endif
   }
   if(DgDp_trans_out) {
@@ -613,13 +613,13 @@ void AdvDiffReactOptModel::evalModel( const InArgs& inArgs, const OutArgs& outAr
     }
 #ifdef GLPAPP_ADVDIFFREACT_OPTMODEL_DUMP_STUFF
     *dout << "\nR_p_bar =\n\n";
-    R_p_bar->Print(Teuchos::OSTab(dout)());
+    R_p_bar->Print(Teuchos::OSTab(dout).o());
     if(B_bar_.get()) {
       *dout << "\nB_bar =\n\n";
-      B_bar_->Print(Teuchos::OSTab(dout)());
+      B_bar_->Print(Teuchos::OSTab(dout).o());
     }
     *dout << "\nDgDp_trans =\n\n";
-    DgDp_trans.Print(Teuchos::OSTab(dout)());
+    DgDp_trans.Print(Teuchos::OSTab(dout).o());
 #endif
   }
   if(out.get() && trace) *out << "\n*** Leaving AdvDiffReactOptModel::evalModel(...) ...\n"; 

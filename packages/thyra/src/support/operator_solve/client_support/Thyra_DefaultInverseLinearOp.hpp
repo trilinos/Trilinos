@@ -206,16 +206,16 @@ void DefaultInverseLinearOp<Scalar>::describe(
         out << " NULL\n";
       }
       else {
-        OSTab(out)() << "\n" << Teuchos::describe(*lows_.getConstObj(),verbLevel);
+        OSTab(out).o() << "\n" << Teuchos::describe(*lows_.getConstObj(),verbLevel);
 /*
   // ToDo: Implement printing of solve criteria!
         out << "fwdSolveCriteria:";
         if(fwdSolveCriteria_.get())
-          OSTab(out)() << "\n" << *fwdSolveCriteria_;
+          OSTab(out).o() << "\n" << *fwdSolveCriteria_;
         else
           out << " NULL\n";
         if(adjSolveCriteria_.get())
-          OSTab(out)() << "\n" << *adjSolveCriteria_;
+          OSTab(out).o() << "\n" << *adjSolveCriteria_;
         else
           out << " NULL\n";
 */

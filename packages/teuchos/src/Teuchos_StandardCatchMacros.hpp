@@ -60,7 +60,7 @@
       oss \
         << "p="<<::Teuchos::GlobalMPISession::getRank()<<": *** Caught standard exception of type \'" \
         <<typeid(excpt).name()<<"\' :\n\n"; \
-        Teuchos::OSTab(oss)() << excpt.what() << std::endl; \
+        Teuchos::OSTab(oss).o() << excpt.what() << std::endl; \
       (ERR_STREAM) << oss.str(); \
     (SUCCESS_FLAG) = false; \
     } \

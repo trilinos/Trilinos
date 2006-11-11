@@ -232,10 +232,10 @@ ostream& ParameterList::print(ostream& os, const PrintOptions &printOptions ) co
         *out << " : " << entry_i.getAny(false).typeName();
       *out << " = "; entry_i.leftshift(os,showFlags); *out << endl;
       if(validator.get()) {
-        validator->printDoc(docString,OSTab(os)());
+        validator->printDoc(docString,OSTab(os).o());
       }
       else if( docString.length() && showDoc ) {
-        StrUtils::printLines(OSTab(out)(),"# ",docString);
+        StrUtils::printLines(OSTab(out).o(),"# ",docString);
       }
 /*
   const string &validValues = (validator.get() ? validator->validValues() : "");
@@ -252,9 +252,9 @@ ostream& ParameterList::print(ostream& os, const PrintOptions &printOptions ) co
       const string &docString = entry_i.docString();
       *out << name(i) << " -> " << endl;
       if( docString.length() && showDoc ) {
-        StrUtils::printLines(OSTab(out)(),"# ",docString);
+        StrUtils::printLines(OSTab(out).o(),"# ",docString);
       }
-      getValue<ParameterList>(entry_i).print(OSTab(out)(), printOptions.copy().indent(0));
+      getValue<ParameterList>(entry_i).print(OSTab(out).o(), printOptions.copy().indent(0));
     }
   }
   return os;

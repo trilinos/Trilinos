@@ -125,7 +125,7 @@ bool Thyra::test_single_aztecoo_thyra_solver(
       lowsFactory = Teuchos::rcp(new AztecOOLinearOpWithSolveFactory());
     if(out.get()) {
       *out << "\nlowsFactory.getValidParameters() initially:\n";
-      lowsFactory->getValidParameters()->print(OSTab(out)(),PLPrintOptions().showTypes(true).showDoc(true));
+      lowsFactory->getValidParameters()->print(OSTab(out).o(),PLPrintOptions().showTypes(true).showDoc(true));
     }
     aztecooLOWSFPL->sublist("Forward Solve").set("Tolerance",maxResid);
     aztecooLOWSFPL->sublist("Adjoint Solve").set("Tolerance",maxResid);
@@ -134,7 +134,7 @@ bool Thyra::test_single_aztecoo_thyra_solver(
     }
     if(out.get()) {
       *out << "\naztecooLOWSFPL before setting parameters:\n";
-      aztecooLOWSFPL->print(OSTab(out)(),0,true);
+      aztecooLOWSFPL->print(OSTab(out).o(),0,true);
     }
     if(aztecooLOWSFPL) lowsFactory->setParameterList(Teuchos::rcp(aztecooLOWSFPL,false));
     
@@ -261,7 +261,7 @@ bool Thyra::test_single_aztecoo_thyra_solver(
       if(out.get()) {
         *out << "\nprecFactory.description() = " << precFactory->description() << std::endl;
         *out << "\nprecFactory.getValidParameters() =\n";
-        precFactory->getValidParameters()->print(OSTab(out)(),0,true,false);
+        precFactory->getValidParameters()->print(OSTab(out).o(),0,true,false);
       }
 
       Teuchos::RefCountPtr<Teuchos::ParameterList>
@@ -270,7 +270,7 @@ bool Thyra::test_single_aztecoo_thyra_solver(
       ifpackPFPL->set("Overlap",int(1));
       if(out.get()) {
         *out << "\nifpackPFPL before setting parameters =\n";
-        ifpackPFPL->print(OSTab(out)(),0,true);
+        ifpackPFPL->print(OSTab(out).o(),0,true);
       }
 
       precFactory->setParameterList(ifpackPFPL);
@@ -281,7 +281,7 @@ bool Thyra::test_single_aztecoo_thyra_solver(
       
       if(out.get()) {
         *out << "\nifpackPFPL after setting parameters =\n";
-        ifpackPFPL->print(OSTab(out)(),0,true);
+        ifpackPFPL->print(OSTab(out).o(),0,true);
         *out << "\nprecFactory.description() = " << precFactory->description() << std::endl;
       }
       

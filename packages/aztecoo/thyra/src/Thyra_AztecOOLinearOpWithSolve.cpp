@@ -447,7 +447,7 @@ void AztecOOLinearOpWithSolve::solve(
     oss << "  Achieved Tolerance = " << achievedTol << ".";
     oss << "  Total time = " << timer.totalElapsedTime() << " sec.";
     if(out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE) && outputEveryRhs())
-      Teuchos::OSTab(out)() << "j="<<j<<": " << oss.str() << "\n";
+      Teuchos::OSTab(out).o() << "j="<<j<<": " << oss.str() << "\n";
     //
     totalIterations += iterations;
     solveStatus.achievedTol = TEUCHOS_MAX(solveStatus.achievedTol,achievedTol);

@@ -366,7 +366,7 @@ void EpetraModelEvaluator::evalModel( const InArgs<double>& inArgs_in, const Out
 
   timer.stop();
   if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
-    OSTab(out)() << "\nTime to setup InArgs = "<<timer.totalElapsedTime()<<" sec\n";
+    OSTab(out).o() << "\nTime to setup InArgs = "<<timer.totalElapsedTime()<<" sec\n";
 
   // OutArgs
   
@@ -468,7 +468,7 @@ void EpetraModelEvaluator::evalModel( const InArgs<double>& inArgs_in, const Out
 
   timer.stop();
   if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
-    OSTab(out)() << "\nTime to setup OutArgs = "<<timer.totalElapsedTime()<<" sec\n";
+    OSTab(out).o() << "\nTime to setup OutArgs = "<<timer.totalElapsedTime()<<" sec\n";
 
   // Do the evaluation
   
@@ -480,7 +480,7 @@ void EpetraModelEvaluator::evalModel( const InArgs<double>& inArgs_in, const Out
 
   timer.stop();
   if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
-    OSTab(out)() << "\nTime to evaluate output functions = "<<timer.totalElapsedTime()<<" sec\n";
+    OSTab(out).o() << "\nTime to evaluate output functions = "<<timer.totalElapsedTime()<<" sec\n";
 
   // Postprocess arguments
   
@@ -507,7 +507,7 @@ void EpetraModelEvaluator::evalModel( const InArgs<double>& inArgs_in, const Out
 
   timer.stop();
   if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
-    OSTab(out)() << "\nTime to process output objects = "<<timer.totalElapsedTime()<<" sec\n";
+    OSTab(out).o() << "\nTime to process output objects = "<<timer.totalElapsedTime()<<" sec\n";
 
   if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_EXTREME))
     *out

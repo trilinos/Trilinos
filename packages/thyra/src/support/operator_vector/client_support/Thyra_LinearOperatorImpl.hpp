@@ -37,6 +37,8 @@
 #include "Thyra_DefaultMultipliedLinearOp.hpp"
 #include "Thyra_DefaultAddedLinearOp.hpp"
 #include "Thyra_DefaultScaledAdjointLinearOp.hpp"
+#include "Thyra_DefaultIdentityLinearOp.hpp"
+#include "Thyra_DefaultZeroLinearOp.hpp"
 
 namespace Thyra
 {
@@ -244,5 +246,20 @@ namespace Thyra
   }
   
 } // namespace Thyra
+
+
+template<class Scalar>
+Thyra::ConstLinearOperator<Scalar>
+Thyra::identity( const VectorSpace<Scalar> &space )
+{
+  return identity(space.constPtr());
+}
+
+template<class Scalar>
+Thyra::ConstLinearOperator<Scalar>
+Thyra::zero( const VectorSpace<Scalar> &range, const VectorSpace<Scalar> &domain )
+{
+  return zero(range.constPtr(),domain.constPtr());
+}
 
 #endif

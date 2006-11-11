@@ -79,8 +79,10 @@ public:
   //@{
 
   /** \brief Construct uninitialized. */
-   AztecOOLinearOpWithSolveFactory();
-    
+   AztecOOLinearOpWithSolveFactory(
+     Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList = Teuchos::null
+     );
+  
   /** \brief Set the strategy object used to extract an
    * <tt>Epetra_Operator</tt> view of an input forward operator.
    *

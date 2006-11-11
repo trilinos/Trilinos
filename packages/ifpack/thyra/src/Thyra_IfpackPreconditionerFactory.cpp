@@ -198,7 +198,7 @@ void IfpackPreconditionerFactory::initializePrec(
       );
     timer.stop();
     if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
-      OSTab(out)() <<"\n=> Creation time = "<<timer.totalElapsedTime()<<" sec\n";
+      OSTab(out).o() <<"\n=> Creation time = "<<timer.totalElapsedTime()<<" sec\n";
     // RAB: Above, I am just passing a string to Ifpack::Create(...) in order
     // get this code written.  However, in the future, it would be good to
     // copy the contents of what is in Ifpack::Create(...) into a local
@@ -230,7 +230,7 @@ void IfpackPreconditionerFactory::initializePrec(
     TEST_FOR_EXCEPT(0!=ifpack_precOp->Compute());
     timer.stop();
     if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
-      OSTab(out)() <<"\n=> Factorization time = "<<timer.totalElapsedTime()<<" sec\n";
+      OSTab(out).o() <<"\n=> Factorization time = "<<timer.totalElapsedTime()<<" sec\n";
   }
   //
   // Compute the conditioner number estimate if asked

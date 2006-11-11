@@ -69,7 +69,9 @@ namespace Thyra {
 
 // Constructors/initializers/accessors
 
-AztecOOLinearOpWithSolveFactory::AztecOOLinearOpWithSolveFactory()
+AztecOOLinearOpWithSolveFactory::AztecOOLinearOpWithSolveFactory(
+  Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList
+  )
   :epetraFwdOpViewExtractor_(Teuchos::rcp(new EpetraOperatorViewExtractorStd()))
   ,defaultFwdMaxIterations_(MaxIterations_default)
   ,defaultFwdTolerance_(Tolerance_default)
@@ -78,6 +80,8 @@ AztecOOLinearOpWithSolveFactory::AztecOOLinearOpWithSolveFactory()
   ,outputEveryRhs_(OutputEveryRhs_default)
 {
   updateThisValidParamList();
+  if(paramList.get())
+    setParameterList(paramList);
 }
 
 // Overridden from LinearOpWithSolveFactoryBase

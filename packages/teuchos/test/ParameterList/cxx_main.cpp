@@ -594,7 +594,7 @@ int main( int argc, char *argv[] )
   {
     if(verbose) {
       cerr << "caught exception:\n\n";
-      OSTab(cerr)() << e.what() << endl;
+      OSTab(cerr).o() << e.what() << endl;
     }
     FailedTests++;
   }
@@ -631,7 +631,7 @@ int main( int argc, char *argv[] )
   }
   catch(const Teuchos::Exceptions::InvalidParameterName &e) {
     cerr << "caught expected Teuchos::Exceptions::InvalidParameterName:\n\n";
-    OSTab(cerr)() << e.what() << endl;
+    OSTab(cerr).o() << e.what() << endl;
   }
   if (verbose) {
     print_break();
@@ -646,13 +646,13 @@ int main( int argc, char *argv[] )
   catch(const Teuchos::Exceptions::InvalidParameterName &e) {
     if(verbose) {
       cerr << "caught expected Teuchos::Exceptions::InvalidParameterName:\n\n";
-      OSTab(cerr)() << e.what() << endl;
+      OSTab(cerr).o() << e.what() << endl;
     }
   }
   catch(const std::exception &e) {
     if(verbose) {
       cerr << "caught unexpected exception:\n\n";
-      OSTab(cerr)() << e.what() << endl;
+      OSTab(cerr).o() << e.what() << endl;
     }
     ++FailedTests;
   }
@@ -670,13 +670,13 @@ int main( int argc, char *argv[] )
   catch(const Teuchos::Exceptions::InvalidParameterType &e) {
     if(verbose) {
       cerr << "caught expected Teuchos::Exceptions::InvalidParameterType:\n\n";
-      OSTab(cerr)() << e.what() << endl;
+      OSTab(cerr).o() << e.what() << endl;
     }
   }
   catch(const std::exception &e) {
     if(verbose) {
       cerr << "caught unexpected exception:\n\n";
-      OSTab(cerr)() << e.what() << endl;
+      OSTab(cerr).o() << e.what() << endl;
     }
     ++FailedTests;
   }
@@ -714,7 +714,7 @@ int main( int argc, char *argv[] )
   catch(const std::exception &e) {
     if(verbose) {
       cerr << "caught unexpected exception:\n\n";
-      OSTab(cerr)() << e.what() << endl;
+      OSTab(cerr).o() << e.what() << endl;
     }
     ++FailedTests;
   }
@@ -733,13 +733,13 @@ int main( int argc, char *argv[] )
   catch(const Teuchos::Exceptions::InvalidParameterType &e) {
     if(verbose) {
       cerr << "caught expected Teuchos::Exceptions::InvalidParameterType:\n\n";
-      OSTab(cerr)() << e.what() << endl;
+      OSTab(cerr).o() << e.what() << endl;
     }
   }
   catch(const std::exception &e) {
     if(verbose) {
       cerr << "caught unexpected exception:\n\n";
-      OSTab(cerr)() << e.what() << endl;
+      OSTab(cerr).o() << e.what() << endl;
     }
     ++FailedTests;
   }
@@ -759,13 +759,13 @@ int main( int argc, char *argv[] )
   catch(const Teuchos::Exceptions::InvalidParameterName &e) {
     if(verbose) {
       cerr << "caught expected Teuchos::Exceptions::InvalidParameterName:\n\n";
-      OSTab(cerr)() << e.what() << endl;
+      OSTab(cerr).o() << e.what() << endl;
     }
   }
   catch(const std::exception &e) {
     if(verbose) {
       cerr << "caught unexpected exception:\n\n";
-      OSTab(cerr)() << e.what() << endl;
+      OSTab(cerr).o() << e.what() << endl;
     }
     ++FailedTests;
   }
@@ -784,13 +784,13 @@ int main( int argc, char *argv[] )
   catch(const Teuchos::Exceptions::InvalidParameterType &e) {
     if(verbose) {
       cerr << "caught expected Teuchos::Exceptions::InvalidParameterType:\n\n";
-      OSTab(cerr)() << e.what() << endl;
+      OSTab(cerr).o() << e.what() << endl;
     }
   }
   catch(const std::exception &e) {
     if(verbose) {
       cerr << "caught unexpected exception:\n\n";
-      OSTab(cerr)() << e.what() << endl;
+      OSTab(cerr).o() << e.what() << endl;
     }
     ++FailedTests;
   }
@@ -810,13 +810,13 @@ int main( int argc, char *argv[] )
   catch(const Teuchos::Exceptions::InvalidParameterValue &e) {
     if(verbose) {
       cerr << "caught expected Teuchos::Exceptions::InvalidParameterValue:\n\n";
-      OSTab(cerr)() << e.what() << endl;
+      OSTab(cerr).o() << e.what() << endl;
     }
   }
   catch(const std::exception &e) {
     if(verbose) {
       cerr << "caught unexpected exception:\n\n";
-      OSTab(cerr)() << e.what() << endl;
+      OSTab(cerr).o() << e.what() << endl;
     }
     ++FailedTests;
   }
@@ -841,7 +841,7 @@ int main( int argc, char *argv[] )
   catch(const std::exception &e) {
     if(verbose) {
       cerr << "caught unexpected exception:\n\n";
-      OSTab(cerr)() << e.what() << endl;
+      OSTab(cerr).o() << e.what() << endl;
     }
     ++FailedTests;
   }
@@ -865,7 +865,7 @@ int main( int argc, char *argv[] )
   catch(const std::exception &e) {
     if(verbose) {
       cerr << "caught unexpected exception:\n\n";
-      OSTab(cerr)() << e.what() << endl;
+      OSTab(cerr).o() << e.what() << endl;
     }
     ++FailedTests;
   }
@@ -884,13 +884,13 @@ int main( int argc, char *argv[] )
   catch(const Teuchos::Exceptions::InvalidParameterName &e) {
     if(verbose) {
       cerr << "caught expected Teuchos::Exceptions::InvalidParameterName:\n\n";
-      OSTab(cerr)() << e.what() << endl;
+      OSTab(cerr).o() << e.what() << endl;
     }
   }
   catch(const std::exception &e) {
     if(verbose) {
       cerr << "caught unexpected exception:\n\n";
-      OSTab(cerr)() << e.what() << endl;
+      OSTab(cerr).o() << e.what() << endl;
     }
     ++FailedTests;
   }
@@ -907,7 +907,7 @@ int main( int argc, char *argv[] )
   catch(const std::exception &e) {
     if(verbose) {
       cerr << "caught unexpected exception:\n\n";
-      OSTab(cerr)() << e.what() << endl;
+      OSTab(cerr).o() << e.what() << endl;
     }
     ++FailedTests;
   }

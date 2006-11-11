@@ -49,7 +49,8 @@ namespace Thyra
   public:
 
     /** \brief . */
-    ConstLinearOperator() : Teuchos::ConstHandle<LinearOpBase<RangeScalar, DomainScalar> >(){;}
+    ConstLinearOperator( const Teuchos::ENull _null = Teuchos::null )
+      : Teuchos::ConstHandle<LinearOpBase<RangeScalar, DomainScalar> >(){;}
 
     /** \brief Construct from a raw pointer */
     ConstLinearOperator(Teuchos::ConstHandleable<LinearOpBase<RangeScalar, DomainScalar> >* rawPtr) 
@@ -114,7 +115,8 @@ namespace Thyra
   public:
 
     /** \brief .  */
-    LinearOperator() : Teuchos::Handle<LinearOpBase<RangeScalar, DomainScalar> >(){;}
+    LinearOperator( const Teuchos::ENull _null = Teuchos::null )
+      : Teuchos::Handle<LinearOpBase<RangeScalar, DomainScalar> >(){;}
 
     /** \brief Construct from a raw pointer */
     LinearOperator(Teuchos::Handleable<LinearOpBase<RangeScalar, DomainScalar> >* rawPtr) 
@@ -273,6 +275,16 @@ namespace Thyra
            const LinearOperator<Scalar>&   A01
            );
 
-}
+  /** \brief Create an identity operator. */
+  template<class Scalar>
+  ConstLinearOperator<Scalar>
+  identity( const VectorSpace<Scalar> &space );
+
+  /** \brief Create an identity operator. */
+  template<class Scalar>
+  ConstLinearOperator<Scalar>
+  zero( const VectorSpace<Scalar> &range, const VectorSpace<Scalar> &domain );
+
+} // namespace Thyra
 
 #endif

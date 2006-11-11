@@ -559,7 +559,7 @@ public:
       return *this;
     }
   /** \brief. */
-  basic_FancyOStream<CharT,Traits>& operator()() const
+  basic_FancyOStream<CharT,Traits>& o() const
     {
       return *fancyOStream_;
     }

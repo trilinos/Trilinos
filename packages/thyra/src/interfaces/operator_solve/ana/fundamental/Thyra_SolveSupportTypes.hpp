@@ -255,7 +255,7 @@ std::ostream& operator<<( std::ostream& out_arg, const SolveStatus<Scalar> &solv
     << "extraParameters:";
   if(solveStatus.extraParameters.get()) {
     *out << "\n";
-    solveStatus.extraParameters->print(Teuchos::OSTab(out)(),1000,true);
+    solveStatus.extraParameters->print(Teuchos::OSTab(out).o(),1000,true);
   }
   else {
     *out << " NONE\n";

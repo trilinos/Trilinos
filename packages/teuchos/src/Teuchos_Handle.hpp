@@ -180,7 +180,7 @@ handle(const Teuchos::RefCountPtr<contents >& smartPtr) : Teuchos::Handle<conten
  * an empty ctor, a ctor from a smart ptr, and a ctor from a raw pointer. 
  * The macro will also create appropriate doxygen for the handle ctors */
 #define TEUCHOS_CONST_HANDLE_CTORS(handle, contents) \
-handle() : Teuchos::ConstHandle<contents >() {;} \
+handle( Teuchos::ENull _null = Teuchos::null ) : Teuchos::ConstHandle<contents >() {;} \
 handle(const Teuchos::ConstHandleable<contents >* rawPtr) : Teuchos::ConstHandle<contents >(rawPtr) {;} \
 handle(const Teuchos::RefCountPtr<const contents >& smartPtr) : Teuchos::ConstHandle<contents >(smartPtr){;}
 

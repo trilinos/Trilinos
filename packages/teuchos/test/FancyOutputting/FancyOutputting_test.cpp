@@ -33,7 +33,7 @@ void someLessDumbFunction( std::ostream &out_arg )
   OSTab tab(out,1,"LDUMBALGO");
   *out << "\nEntering someLessDumbFunction(...)\n";
   if(1) {
-    Teuchos::OSTab(out_arg)()
+    Teuchos::OSTab(out_arg).o()
       << std::endl << "I am less \"dumb\" code that knows about FancyOStream but my interface does not support it directly! ...\n";
     *Teuchos::tab(out)
       << std::endl << "Another print from this less \"dumb\" code ...\n";

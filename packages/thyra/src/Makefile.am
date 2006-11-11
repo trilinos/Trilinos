@@ -233,20 +233,21 @@ INTERFACES_OPERATOR_SOLVE_ANA_EXTENDED_H = \
   $(srcdir)/interfaces/operator_solve/ana/extended/Thyra_PhysicallyBlockedLinearOpWithSolveBase.hpp
 
 SUPPORT_OPERATOR_SOLVE_CLIENT_SUPPORT_H = \
-  $(srcdir)/support/operator_solve/client_support/Thyra_DefaultDiagonalLinearOpWithSolveDecl.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultDiagonalLinearOpWithSolve.hpp\
-  $(srcdir)/support/operator_solve/client_support/Thyra_DefaultInverseLinearOpDecl.hpp\
+  $(srcdir)/support/operator_solve/client_support/Thyra_DefaultDiagonalLinearOpWithSolveDecl.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultInverseLinearOp.hpp\
-  $(srcdir)/support/operator_solve/client_support/Thyra_DefaultLinearOpSourceDecl.hpp\
+  $(srcdir)/support/operator_solve/client_support/Thyra_DefaultInverseLinearOpDecl.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultLinearOpSource.hpp\
-  $(srcdir)/support/operator_solve/client_support/Thyra_DefaultPreconditionerDecl.hpp\
+  $(srcdir)/support/operator_solve/client_support/Thyra_DefaultLinearOpSourceDecl.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultPreconditioner.hpp\
+  $(srcdir)/support/operator_solve/client_support/Thyra_DefaultPreconditionerDecl.hpp\
+  $(srcdir)/support/operator_solve/client_support/Thyra_InverseLinearOperator.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_LinearOpWithSolveFactoryHelpers.hpp\
-  $(srcdir)/support/operator_solve/client_support/Thyra_LinearOpWithSolveTesterDecl.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_LinearOpWithSolveTester.hpp\
+  $(srcdir)/support/operator_solve/client_support/Thyra_LinearOpWithSolveTesterDecl.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_PreconditionerFactoryHelpers.hpp\
-  $(srcdir)/support/operator_solve/client_support/Thyra_SingleRhsLinearOpWithSolveBaseDecl.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_SingleRhsLinearOpWithSolveBase.hpp\
+  $(srcdir)/support/operator_solve/client_support/Thyra_SingleRhsLinearOpWithSolveBaseDecl.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_SingleScalarLinearOpWithSolveBaseDecl.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_SingleScalarLinearOpWithSolveBase.hpp
 
