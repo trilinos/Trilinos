@@ -88,7 +88,7 @@ void SpmdVectorBase<Scalar>::applyOp(
   if(show_dump) {
     *out << "\nEntering SpmdVectorBase<Scalar>::applyOp(...) ...\n";
     *out
-      << "\nop = " << typeid(op).name()
+      << "\nop = " << typeName(op)
       << "\nnum_vecs = " << num_vecs
       << "\nnum_targ_vecs = " << num_targ_vecs
       << "\nreduct_obj = " << reduct_obj

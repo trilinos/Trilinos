@@ -33,8 +33,12 @@
  \brief Defines basic traits returning the
     name of a type in a portable and readable way.
 */
- 
+
 #include "Teuchos_ConfigDefs.hpp"
+
+#ifdef HAVE_GCC_ABI_DEMANGLE
+#  include <cxxabi.h>
+#endif
 
 #ifdef HAVE_TEUCHOS_ARPREC
 #include "mp/mpreal.h"
@@ -47,13 +51,44 @@
 
 namespace  Teuchos {
 
+/** \brief Template function for returning the demangled name of an object. */
+template<typename T>
+std::string typeName( const T &t )
+{
+#ifdef HAVE_GCC_ABI_DEMANGLE
+  const std::string
+    mangledName = typeid(t).name();
+  int status;
+  char
+    *_demangledName = abi::__cxa_demangle(mangledName.c_str(),0,0,&status);
+  const std::string demangledName(_demangledName);
+  free(_demangledName); // We have to free this!
+  return demangledName;
+#else
+  return typeid(t).name();
+#endif
+}
+
 /** \brief Default traits class that just returns
  * <tt>typeid(T).name()</tt>.
  */
 template<typename T>
 class TypeNameTraits {
 public:
-  static std::string name() { return typeid(T).name(); }
+#ifdef HAVE_GCC_ABI_DEMANGLE
+  static std::string name() {
+    const std::string
+      mangledName = typeid(T).name();
+    int status;
+    char
+      *_demangledName = abi::__cxa_demangle(mangledName.c_str(),0,0,&status);
+    const std::string demangledName(_demangledName);
+    free(_demangledName); // We have to free this!
+    return demangledName;
+#else
+    return typeid(T).name();
+#endif
+  }
 };
 
 #define TEUCHOS_TYPE_NAME_TRAITS_BUILTIN_TYPE_SPECIALIZATION(TYPE) \

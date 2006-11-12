@@ -82,7 +82,7 @@ public:
           out = Teuchos::VerboseObjectBase::getDefaultOStream();
         Teuchos::OSTab tab(out);
         *out << "\nOpaqueWrapperWithFree::~OpaqueWrapperWithFree(): Freeing opaque object"
-             << " of type " << typeid(Opaque).name() << "!\n";
+             << " of type " << TypeNameTraits<Opaque>::name() << "!\n";
 #endif // TEUCHOS_OPAQUE_WRAPPER_ANNOUNCE_FREE
         opaqueFree_(&this->opaque_);
       }

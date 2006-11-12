@@ -87,7 +87,7 @@ public:
     {
       TEST_FOR_EXCEPTION(
         constObj_.get() && isConst_, std::logic_error
-        ,"Error, the object of reference type \""<<typeid(ObjType).name()<<"\" was given "
+        ,"Error, the object of reference type \""<<TypeNameTraits<ObjType>::name()<<"\" was given "
         "as a const-only object and non-const access is not allowed."
         );
       return rcp_const_cast<ObjType>(constObj_);

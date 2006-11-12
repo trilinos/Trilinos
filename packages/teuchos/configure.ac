@@ -275,6 +275,7 @@ AC_CXX_HAVE_STL
 AC_CXX_BOOL
 AC_CXX_MUTABLE
 AC_CXX_NUMERIC_LIMITS
+AC_CXX_ABI_DEMANGLE
 # ---------------------------------------------------------------------
 # These are pretty obscure
 # ---------------------------------------------------------------------

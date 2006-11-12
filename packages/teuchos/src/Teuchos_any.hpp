@@ -43,71 +43,71 @@ namespace Teuchos {
 class any
 {
 public:
-	//! Empty constructor
-	any()
-		: content(0)
-		{}
+  //! Empty constructor
+  any()
+    : content(0)
+    {}
 
-	//! Templated constructor
-	template<typename ValueType>
-	explicit any(const ValueType & value)
-		: content(new holder<ValueType>(value))
-		{}
-	
-	//! Copy constructor
-	any(const any & other)
-		: content(other.content ? other.content->clone() : 0)
-		{}
+  //! Templated constructor
+  template<typename ValueType>
+  explicit any(const ValueType & value)
+    : content(new holder<ValueType>(value))
+    {}
+  
+  //! Copy constructor
+  any(const any & other)
+    : content(other.content ? other.content->clone() : 0)
+    {}
 
-	//! Destructor
-	~any()
-		{
-			delete content;
-		}
+  //! Destructor
+  ~any()
+    {
+      delete content;
+    }
 
-	//! Method for swapping the contents of two any classes
-	any & swap(any & rhs)
-		{
-			std::swap(content, rhs.content);
-			return *this;
-		}
-	
-	//! Copy the value <tt>rhs</tt>
-	template<typename ValueType>
-	any & operator=(const ValueType & rhs)
-		{
-			any(rhs).swap(*this);
-			return *this;
-		}
-	
-	//! Copy the value held in <tt>rhs</tt>
-	any & operator=(const any & rhs)
-		{
-			any(rhs).swap(*this);
-			return *this;
-		}
-	
-	//! Return true if nothing is being stored
-	bool empty() const
-		{
-			return !content;
-		}
-	
-	//! Return the type of value being stored
-	const std::type_info & type() const
-		{
-			return content ? content->type() : typeid(void);
-		}
-	
-	//! Return the name of the type
-	std::string typeName() const
-		{
-			return content ? content->typeName() : "NONE";
-		}
-	
-	//! \brief Return if two any objects are the same or not. 
-	bool same( const any &other ) const
-		{
+  //! Method for swapping the contents of two any classes
+  any & swap(any & rhs)
+    {
+      std::swap(content, rhs.content);
+      return *this;
+    }
+  
+  //! Copy the value <tt>rhs</tt>
+  template<typename ValueType>
+  any & operator=(const ValueType & rhs)
+    {
+      any(rhs).swap(*this);
+      return *this;
+    }
+  
+  //! Copy the value held in <tt>rhs</tt>
+  any & operator=(const any & rhs)
+    {
+      any(rhs).swap(*this);
+      return *this;
+    }
+  
+  //! Return true if nothing is being stored
+  bool empty() const
+    {
+      return !content;
+    }
+  
+  //! Return the type of value being stored
+  const std::type_info & type() const
+    {
+      return content ? content->type() : typeid(void);
+    }
+  
+  //! Return the name of the type
+  std::string typeName() const
+    {
+      return content ? content->typeName() : "NONE";
+    }
+  
+  //! \brief Return if two any objects are the same or not. 
+  bool same( const any &other ) const
+    {
       if( this->empty() && other.empty() )
         return true;
       else if( this->empty() && !other.empty() )
@@ -116,56 +116,56 @@ public:
         return false;
       // !this->empty() && !other.empty()
       return content->same(*other.content);
-		}
+    }
 
-	//! Print this value to the output stream <tt>os</tt>
-	void print(std::ostream& os) const
-		{
-			if (content) content->print(os);
-		}
+  //! Print this value to the output stream <tt>os</tt>
+  void print(std::ostream& os) const
+    {
+      if (content) content->print(os);
+    }
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
-	/** @name Private??? types */
-	//@{
+  /** @name Private??? types */
+  //@{
 
-	/** \brief . */
-	class placeholder
-	{
-	public:
-		/** \brief . */
-		virtual ~placeholder() {}
-		/** \brief . */
-		virtual const std::type_info & type() const = 0;
+  /** \brief . */
+  class placeholder
+  {
+  public:
+    /** \brief . */
+    virtual ~placeholder() {}
+    /** \brief . */
+    virtual const std::type_info & type() const = 0;
     /** \brief . */
     virtual std::string typeName() const = 0;
-		/** \brief . */
-		virtual placeholder * clone() const = 0;
-		/** \brief . */
-		virtual bool same( const placeholder &other ) const = 0;
+    /** \brief . */
+    virtual placeholder * clone() const = 0;
+    /** \brief . */
+    virtual bool same( const placeholder &other ) const = 0;
     /** \brief . */
     virtual void print(std::ostream & os) const = 0;
-	};
-	
-	/** \brief . */
-	template<typename ValueType>
-	class holder : public placeholder
-	{
-	public:
-		/** \brief . */
-		holder(const ValueType & value)
-			: held(value)
-			{}
-		/** \brief . */
-		const std::type_info & type() const
-			{ return typeid(ValueType); }
-		/** \brief . */
+  };
+  
+  /** \brief . */
+  template<typename ValueType>
+  class holder : public placeholder
+  {
+  public:
+    /** \brief . */
+    holder(const ValueType & value)
+      : held(value)
+      {}
+    /** \brief . */
+    const std::type_info & type() const
+      { return typeid(ValueType); }
+    /** \brief . */
     std::string typeName() const
       { return TypeNameTraits<ValueType>::name(); }
-		/** \brief . */
-		placeholder * clone() const
-			{ return new holder(held); }
-		/** \brief . */
-		bool same( const placeholder &other ) const
+    /** \brief . */
+    placeholder * clone() const
+      { return new holder(held); }
+    /** \brief . */
+    bool same( const placeholder &other ) const
       {
         if( type() != other.type() ) {
           return false;
@@ -178,26 +178,26 @@ public:
     /** \brief . */
     void print(std::ostream & os) const
       { os << held; }
-		/** \brief . */
-		ValueType held;
-	};
+    /** \brief . */
+    ValueType held;
+  };
 
-	//@}
+  //@}
 
 public:
-	// Danger: This is made public to allow any_cast to be non-friend
-	placeholder* access_content()
-		{ return content; }
-	const placeholder* access_content() const
-		{ return content; }
+  // Danger: This is made public to allow any_cast to be non-friend
+  placeholder* access_content()
+    { return content; }
+  const placeholder* access_content() const
+    { return content; }
 #endif
 
 private:
 
-	// /////////////////////////
-	// Private data members
-	
-	placeholder * content;
+  // /////////////////////////
+  // Private data members
+  
+  placeholder * content;
 
 };
 
@@ -207,56 +207,56 @@ private:
 class bad_any_cast : public std::runtime_error
 {
 public:
-	bad_any_cast( const std::string msg ) : std::runtime_error(msg) {}
+  bad_any_cast( const std::string msg ) : std::runtime_error(msg) {}
 };
 
 /*! \relates any
     \brief Used to extract the templated value held in Teuchos::any to a given value type.
 
-    \note <ul> 	<li> If the templated value type and templated type are not the same then a 
-		bad_any_cast is thrown.
-		<li> If the dynamic cast fails, then a Teuchos::bad_any_cast exception is thrown.
-	  </ul>
+    \note <ul>   <li> If the templated value type and templated type are not the same then a 
+    bad_any_cast is thrown.
+    <li> If the dynamic cast fails, then a Teuchos::bad_any_cast exception is thrown.
+    </ul>
 */
 template<typename ValueType>
 ValueType& any_cast(any &operand)
 {
   const std::string ValueTypeName = TypeNameTraits<ValueType>::name();
-	TEST_FOR_EXCEPTION(
-		operand.type() != typeid(ValueType), bad_any_cast
-		,"any_cast<"<<ValueTypeName<<">(operand): Error, cast to type "
-		<< "any::holder<"<<ValueTypeName<<"> failed since the actual underlying type is \'"
-		<< typeid(*operand.access_content()).name() << "!"
-		);
-	TEST_FOR_EXCEPTION(
-		!operand.access_content(), bad_any_cast
-		,"any_cast<"<<ValueTypeName<<">(operand): Error, cast to type "
-		<< "any::holder<"<<ValueTypeName<<"> failed because the content is NULL"
-		);
-	any::holder<ValueType>
-		*dyn_cast_content = dynamic_cast<any::holder<ValueType>*>(operand.access_content());
-	TEST_FOR_EXCEPTION(
-		!dyn_cast_content, std::logic_error
-		,"any_cast<"<<ValueTypeName <<">(operand): Error, cast to type "
-		<< "any::holder<"<<ValueTypeName<<"> failed but should not have and the actual underlying type is \'"
-		<< typeid(*operand.access_content()).name() << "!"
-		);
-	return dyn_cast_content->held;
+  TEST_FOR_EXCEPTION(
+    operand.type() != typeid(ValueType), bad_any_cast
+    ,"any_cast<"<<ValueTypeName<<">(operand): Error, cast to type "
+    << "any::holder<"<<ValueTypeName<<"> failed since the actual underlying type is \'"
+    << typeName(*operand.access_content()) << "!"
+    );
+  TEST_FOR_EXCEPTION(
+    !operand.access_content(), bad_any_cast
+    ,"any_cast<"<<ValueTypeName<<">(operand): Error, cast to type "
+    << "any::holder<"<<ValueTypeName<<"> failed because the content is NULL"
+    );
+  any::holder<ValueType>
+    *dyn_cast_content = dynamic_cast<any::holder<ValueType>*>(operand.access_content());
+  TEST_FOR_EXCEPTION(
+    !dyn_cast_content, std::logic_error
+    ,"any_cast<"<<ValueTypeName <<">(operand): Error, cast to type "
+    << "any::holder<"<<ValueTypeName<<"> failed but should not have and the actual underlying type is \'"
+    << typeName(*operand.access_content()) << "!"
+    );
+  return dyn_cast_content->held;
 }
 
 /*! \relates any
     \brief Used to extract the const templated value held in Teuchos::any to a given 
-	const value type.
+  const value type.
 
-    \note <ul> 	<li> If the templated value type and templated type are not the same then a 
-		bad_any_cast is thrown.
-		<li> If the dynamic cast fails, then a logic_error is thrown.
-	  </ul>
+    \note <ul>   <li> If the templated value type and templated type are not the same then a 
+    bad_any_cast is thrown.
+    <li> If the dynamic cast fails, then a logic_error is thrown.
+    </ul>
 */
 template<typename ValueType>
 const ValueType& any_cast(const any &operand)
 {
-	return any_cast<ValueType>(const_cast<any&>(operand));
+  return any_cast<ValueType>(const_cast<any&>(operand));
 }
 
 /*! \relates any
@@ -266,7 +266,7 @@ inline std::string toString(const any &rhs)
 {
   std::ostringstream oss;
   rhs.print(oss);
-	return oss.str();
+  return oss.str();
 }
 
 /*! \relates any
@@ -291,7 +291,7 @@ inline bool operator!=( const any &a, const any &b )
 inline std::ostream & operator<<(std::ostream & os, const any &rhs)
 {
   rhs.print(os);
-	return os;
+  return os;
 }
 
 } // namespace Teuchos

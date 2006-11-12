@@ -27,14 +27,15 @@
 // @HEADER
 
 #include "Teuchos_Describable.hpp"
+#include "Teuchos_TypeNameTraits.hpp"
 
 namespace Teuchos {
 
-const EVerbosityLevel Describable::verbLevel_default      = VERB_DEFAULT;
+const EVerbosityLevel Describable::verbLevel_default = VERB_DEFAULT;
 
 std::string Describable::description() const
 {
-	return typeid(*this).name();
+  return typeName(*this);
 }
 
 void Describable::describe(
@@ -44,7 +45,7 @@ void Describable::describe(
 {
   RefCountPtr<FancyOStream> out = rcp(&out_arg,false);
   OSTab tab(out);
-	*out << this->description() << std::endl;
+  *out << this->description() << std::endl;
 }
 
 } // namespace Teuchos

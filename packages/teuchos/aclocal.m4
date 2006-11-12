@@ -955,6 +955,7 @@ fi
 INSTALL_STRIP_PROGRAM="\${SHELL} \$(install_sh) -c -s"
 AC_SUBST([INSTALL_STRIP_PROGRAM])])
 
+m4_include([config/ac_cxx_abi_demangle.m4])
 m4_include([config/ac_cxx_bool.m4])
 m4_include([config/ac_cxx_have_stl.m4])
 m4_include([config/ac_cxx_invalid_template_qualifier.m4])

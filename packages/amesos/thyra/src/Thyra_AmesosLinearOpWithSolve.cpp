@@ -150,7 +150,7 @@ std::string AmesosLinearOpWithSolve::description() const
   oss << "Thyra::AmesosLinearOpWithSolve";
   if(amesosSolver_.get()) {
     oss << "(fwdOp=\'"<<fwdOp_->description()<<"\'"
-        << ",amesosSolver=\'"<<typeid(*amesosSolver_).name()<<"\')";
+        << ",amesosSolver=\'"<<typeName(*amesosSolver_)<<"\')";
   }
   return oss.str();
 }
@@ -213,7 +213,7 @@ void AmesosLinearOpWithSolve::solve(
   Teuchos::EVerbosityLevel                     verbLevel = this->getVerbLevel();
   OSTab tab = this->getOSTab();
   if(out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE))
-    *out << "\nSolving block system using Amesos solver " << typeid(*amesosSolver_).name() << " ...\n\n";
+    *out << "\nSolving block system using Amesos solver " << typeName(*amesosSolver_) << " ...\n\n";
   //
   // Get the op(...) range and domain maps
   //
@@ -241,7 +241,7 @@ void AmesosLinearOpWithSolve::solve(
   amesosSolver_->SetUseTranspose(amesosOpTransp==TRANS);
   TEST_FOR_EXCEPTION(
     0!=amesosSolver_->Solve(), CatastrophicSolveFailure
-    ,"Error, the Amesos solver of type \'"<<typeid(*amesosSolver_).name()<<"\' could not perform the solve!"
+    ,"Error, the Amesos solver of type \'"<<typeName(*amesosSolver_)<<"\' could not perform the solve!"
     );
   amesosSolver_->SetUseTranspose(oldUseTranspose);
   //
@@ -264,7 +264,7 @@ void AmesosLinearOpWithSolve::solve(
       blockSolveStatus[i].solveStatus = SOLVE_STATUS_CONVERGED;
       blockSolveStatus[i].achievedTol = SS::unknownTolerance();
       blockSolveStatus[i].message
-        = std::string("Solver ")+typeid(*amesosSolver_).name()+std::string(" converged!");
+        = std::string("Solver ")+typeName(*amesosSolver_)+std::string(" converged!");
     }
   }
   //

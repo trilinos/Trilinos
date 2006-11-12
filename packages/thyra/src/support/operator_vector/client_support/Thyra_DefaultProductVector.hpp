@@ -234,7 +234,7 @@ void DefaultProductVector<Scalar>::applyOp(
     TEST_FOR_EXCEPTION(
       test_failed, Exceptions::IncompatibleVectorSpaces
       ,"DefaultProductVector::applyOp(...): Error vecs["<<k<<"]->space() "
-      <<"of type \'"<<typeid(*vecs[k]->space()).name()<<"\' is not compatible with this "
+      <<"of type \'"<<typeName(*vecs[k]->space())<<"\' is not compatible with this "
       <<"\'VectorSpaceBlocked\' vector space!"
       );
   }
@@ -243,7 +243,7 @@ void DefaultProductVector<Scalar>::applyOp(
     TEST_FOR_EXCEPTION(
       test_failed, Exceptions::IncompatibleVectorSpaces
       ,"DefaultProductVector::applyOp(...): Error targ_vecs["<<k<<"]->space() "
-      <<"of type \'"<<typeid(*vecs[k]->space()).name()<<"\' is not compatible with this "
+      <<"of type \'"<<typeName(*vecs[k]->space())<<"\' is not compatible with this "
       <<"\'VectorSpaceBlocked\' vector space!"
       );
   }
@@ -273,7 +273,7 @@ void DefaultProductVector<Scalar>::applyOp(
       TEST_FOR_EXCEPTION(
         !this_isInCore || (this_isInCore && !isInCore_k), Exceptions::IncompatibleVectorSpaces
         ,"DefaultProductVector::applyOp(...): Error vecs["<<k<<"] "
-        <<"of type \'"<<typeid(*vecs[k]).name()<<"\' does not support the "
+        <<"of type \'"<<typeName(*vecs[k])<<"\' does not support the "
         <<"\'DefaultProductVector<Scalar>\' interface and is not an incore vector or this is not an incore vector!"
         );
     }
@@ -291,7 +291,7 @@ void DefaultProductVector<Scalar>::applyOp(
       TEST_FOR_EXCEPTION(
         !this_isInCore || (this_isInCore && !isInCore_k), Exceptions::IncompatibleVectorSpaces
         ,"DefaultProductVector::applyOp(...): Error targ_vecs["<<k<<"] "
-        <<"of type \'"<<typeid(*targ_vecs[k]).name()<<"\' does not support the "
+        <<"of type \'"<<typeName(*targ_vecs[k])<<"\' does not support the "
         <<"\'DefaultProductVector<Scalar>\' interface and is not an incore vector or this is not an incore vector!"
         );
     }

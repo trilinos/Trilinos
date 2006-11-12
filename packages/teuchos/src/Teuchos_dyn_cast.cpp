@@ -34,14 +34,16 @@
 	constructor for use with the TEST_FOR_EXCEPTION macro.
 */
 void Teuchos::dyn_cast_throw_exception(
-	const char T_from[], const char T_from_concr[], const char T_to[]
+  const std::string   &T_from
+  ,const std::string  &T_from_concr
+  ,const std::string  &T_to
   )
 {
   TEST_FOR_EXCEPTION(
-		true, m_bad_cast
-		,"dyn_cast<" << T_to << ">(" << T_from
-		<< ") : Error, the object with the concrete type \'"
-		<< T_from_concr << "\' (passed in through the interface type \'" << T_from <<  "\') "
-		" does not support the interface \'"
-		<< T_to << "\' and the dynamic cast failed!" );
+    true, m_bad_cast
+    ,"dyn_cast<" << T_to << ">(" << T_from
+    << ") : Error, the object with the concrete type \'"
+    << T_from_concr << "\' (passed in through the interface type \'" << T_from <<  "\') "
+    " does not support the interface \'"
+    << T_to << "\' and the dynamic cast failed!" );
 }

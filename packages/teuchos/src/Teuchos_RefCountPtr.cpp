@@ -47,7 +47,7 @@ void RefCountPtr_node::set_extra_data( const any &extra_data, const std::string&
 	if(extra_data_map_==NULL) {
 		extra_data_map_ = new extra_data_map_t;
 	}
-	const std::string type_and_name( extra_data.type().name() + std::string(":") + name );
+	const std::string type_and_name( extra_data.typeName() + std::string(":") + name );
 	if( !extra_data_map_->empty() && force_unique ) {
 		extra_data_map_t::iterator itr = extra_data_map_->find(type_and_name);
 		TEST_FOR_EXCEPTION(

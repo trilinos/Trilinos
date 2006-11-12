@@ -33,7 +33,7 @@
 \brief Macro for throwing an exception with breakpointing to ease debugging.
 */
 
-#include "Teuchos_ConfigDefs.hpp"
+#include "Teuchos_TypeNameTraits.hpp"
 
 /*! \defgroup TestForException_grp Utility code for throwing exceptions and setting breakpoints. 
 \ingroup teuchos_language_support_grp
@@ -154,7 +154,7 @@ catch(const std::exception &except) { \
   ostream *l_out_ptr = (out_ptr); \
   if(l_out_ptr) { \
     *l_out_ptr \
-      << "\nThorwing an std::exception of type \'"<<typeid(except).name()<<"\' with the error message: " \
+      << "\nThorwing an std::exception of type \'"<<Teuchos::typeName(except)<<"\' with the error message: " \
       << except.what(); \
   } \
   throw; \

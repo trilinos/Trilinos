@@ -706,7 +706,7 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
         TEST_FOR_EXCEPTION(
           rowmatrix_epetraFwdOp.get()==NULL, std::logic_error
           ,"AztecOOLinearOpWithSolveFactor::initializeOp_impl(...): Error, There is no preconditioner given by client, but the client "
-          "passed in an Epetra_Operator for the forward operator of type \'" <<typeid(*epetra_epetraFwdOp).name()<<"\' that does not "
+          "passed in an Epetra_Operator for the forward operator of type \'" <<typeName(*epetra_epetraFwdOp)<<"\' that does not "
           "support the Epetra_RowMatrix interface!"
           );
         TEST_FOR_EXCEPTION(
@@ -729,7 +729,7 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
         TEST_FOR_EXCEPTION(
           rowmatrix_epetraPrecOp.get()==NULL, std::logic_error
           ,"AztecOOLinearOpWithSolveFactor::initializeOp_impl(...): The client "
-          "passed in an Epetra_Operator for the preconditioner matrix of type \'" <<typeid(*epetra_epetraPrecOp).name()<<"\' that does not "
+          "passed in an Epetra_Operator for the preconditioner matrix of type \'" <<typeName(*epetra_epetraPrecOp)<<"\' that does not "
           "support the Epetra_RowMatrix interface!"
           );
         TEST_FOR_EXCEPTION(

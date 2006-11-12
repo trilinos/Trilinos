@@ -31,6 +31,7 @@
 
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_FancyOStream.hpp"
+#include "Teuchos_TypeNameTraits.hpp"
 
 /** \brief Simple macro that catches and reports standard exceptions and other exceptions.
  *
@@ -59,7 +60,7 @@
       std::ostringstream oss; \
       oss \
         << "p="<<::Teuchos::GlobalMPISession::getRank()<<": *** Caught standard exception of type \'" \
-        <<typeid(excpt).name()<<"\' :\n\n"; \
+        <<Teuchos::typeName(excpt)<<"\' :\n\n"; \
         Teuchos::OSTab(oss).o() << excpt.what() << std::endl; \
       (ERR_STREAM) << oss.str(); \
     (SUCCESS_FLAG) = false; \

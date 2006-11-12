@@ -43,6 +43,7 @@
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_dyn_cast.hpp"
 #include "Teuchos_map.hpp"
+#include "Teuchos_TypeNameTraits.hpp"
 
 //#define TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES // Define this on command line to keep track of this!
 
@@ -65,37 +66,37 @@ void throw_null( const std::string &type_name );
 // the reference count for RefCountPtr<...>
 class RefCountPtr_node {
 public:
-	RefCountPtr_node(bool has_ownership)
-		: count_(1), has_ownership_(has_ownership), extra_data_map_(NULL)
-	{}
-	virtual ~RefCountPtr_node()
-	{
-		if(extra_data_map_) delete extra_data_map_;
-	}
-	int count() const {
-		return count_;	
-	}
-	int incr_count() {
-		return ++count_;
-	}
-	int deincr_count() {
-		return --count_;
-	}
-	void has_ownership(bool has_ownership) {
-		has_ownership_ = has_ownership;
-	}
-	bool has_ownership() const {
-		return has_ownership_;
-	}
-	void set_extra_data( const any &extra_data, const std::string& name, EPrePostDestruction destroy_when, bool force_unique );
-	any& get_extra_data( const std::string& type_name, const std::string& name );
-	const any& get_extra_data( const std::string& type_name, const std::string& name ) const {
-		return const_cast<RefCountPtr_node*>(this)->get_extra_data(type_name,name);
-	}
-	any* get_optional_extra_data( const std::string& type_name, const std::string& name );
-	const any* get_optional_extra_data( const std::string& type_name, const std::string& name ) const {
-		return const_cast<RefCountPtr_node*>(this)->get_optional_extra_data(type_name,name);
-	}
+  RefCountPtr_node(bool has_ownership)
+    : count_(1), has_ownership_(has_ownership), extra_data_map_(NULL)
+  {}
+  virtual ~RefCountPtr_node()
+  {
+    if(extra_data_map_) delete extra_data_map_;
+  }
+  int count() const {
+    return count_;  
+  }
+  int incr_count() {
+    return ++count_;
+  }
+  int deincr_count() {
+    return --count_;
+  }
+  void has_ownership(bool has_ownership) {
+    has_ownership_ = has_ownership;
+  }
+  bool has_ownership() const {
+    return has_ownership_;
+  }
+  void set_extra_data( const any &extra_data, const std::string& name, EPrePostDestruction destroy_when, bool force_unique );
+  any& get_extra_data( const std::string& type_name, const std::string& name );
+  const any& get_extra_data( const std::string& type_name, const std::string& name ) const {
+    return const_cast<RefCountPtr_node*>(this)->get_extra_data(type_name,name);
+  }
+  any* get_optional_extra_data( const std::string& type_name, const std::string& name );
+  const any* get_optional_extra_data( const std::string& type_name, const std::string& name ) const {
+    return const_cast<RefCountPtr_node*>(this)->get_optional_extra_data(type_name,name);
+  }
 protected:
   void pre_delete_extra_data() {
     if(extra_data_map_) impl_pre_delete_extra_data();
@@ -108,47 +109,47 @@ private:
     any extra_data;
     EPrePostDestruction destroy_when;
   };  
-	typedef Teuchos::map<std::string,extra_data_entry_t> extra_data_map_t;
-	int                 count_;
-	bool                has_ownership_;
-	extra_data_map_t    *extra_data_map_;
-	// Above is made a pointer to reduce overhead for the general case
-	// where this is not used
+  typedef Teuchos::map<std::string,extra_data_entry_t> extra_data_map_t;
+  int                 count_;
+  bool                has_ownership_;
+  extra_data_map_t    *extra_data_map_;
+  // Above is made a pointer to reduce overhead for the general case
+  // where this is not used
   void impl_pre_delete_extra_data();
   // Not defined and not to be called
-	RefCountPtr_node();
-	RefCountPtr_node(const RefCountPtr_node&);
-	RefCountPtr_node& operator=(const RefCountPtr_node&);
-};	// end class RefCountPtr_node;
+  RefCountPtr_node();
+  RefCountPtr_node(const RefCountPtr_node&);
+  RefCountPtr_node& operator=(const RefCountPtr_node&);
+};  // end class RefCountPtr_node;
 
 // Implementation class for actually deleting the object if has_ownership() == true.
 template<class T, class Dealloc_T>
 class RefCountPtr_node_tmpl : public RefCountPtr_node {
 public:
 
-	//
-	RefCountPtr_node_tmpl(T* p, Dealloc_T dealloc, bool has_ownership)
-		: RefCountPtr_node(has_ownership), ptr_(p), dealloc_(dealloc)
-	{}
-	//
-	Dealloc_T& get_dealloc() { return dealloc_; }
-	//
-	const Dealloc_T& get_dealloc() const { return dealloc_; }
-	//
-	~RefCountPtr_node_tmpl() {
+  //
+  RefCountPtr_node_tmpl(T* p, Dealloc_T dealloc, bool has_ownership)
+    : RefCountPtr_node(has_ownership), ptr_(p), dealloc_(dealloc)
+  {}
+  //
+  Dealloc_T& get_dealloc() { return dealloc_; }
+  //
+  const Dealloc_T& get_dealloc() const { return dealloc_; }
+  //
+  ~RefCountPtr_node_tmpl() {
     this->pre_delete_extra_data();
-		if( has_ownership() )
-			dealloc_.free(ptr_);
-	}
+    if( has_ownership() )
+      dealloc_.free(ptr_);
+  }
 
 private:
 
-	T           *ptr_;
-	Dealloc_T   dealloc_;
-	// not defined and not to be called
-	RefCountPtr_node_tmpl();
-	RefCountPtr_node_tmpl(const RefCountPtr_node_tmpl&);
-	RefCountPtr_node_tmpl& operator=(const RefCountPtr_node_tmpl&);
+  T           *ptr_;
+  Dealloc_T   dealloc_;
+  // not defined and not to be called
+  RefCountPtr_node_tmpl();
+  RefCountPtr_node_tmpl(const RefCountPtr_node_tmpl&);
+  RefCountPtr_node_tmpl& operator=(const RefCountPtr_node_tmpl&);
 
 }; // end class RefCountPtr_node_tmpl<T>
 
@@ -171,7 +172,7 @@ private:
   static int count_;
 };
 
-}	// end namespace PrivateUtilityPack 
+}  // end namespace PrivateUtilityPack 
 
 } // namespace Teuchos
 
@@ -196,33 +197,33 @@ namespace Teuchos {
 template<class T>
 inline
 RefCountPtr<T>::RefCountPtr( ENull )
-	: ptr_(NULL)
-	, node_(NULL)
+  : ptr_(NULL)
+  , node_(NULL)
 {}
 
 template<class T>
 REFCOUNTPTR_INLINE
 RefCountPtr<T>::RefCountPtr(const RefCountPtr<T>& r_ptr)
-	: ptr_(r_ptr.ptr_), node_(r_ptr.node_)
+  : ptr_(r_ptr.ptr_), node_(r_ptr.node_)
 {
-	if(node_) node_->incr_count();
+  if(node_) node_->incr_count();
 }
 
 template<class T>
 REFCOUNTPTR_INLINE
 template <class T2>
 RefCountPtr<T>::RefCountPtr(const RefCountPtr<T2>& r_ptr)
-	: ptr_(const_cast<T2*>(r_ptr.get()))                 // will not compile if T1 is not an ancestor of T2
-	, node_(const_cast<node_t*>(r_ptr.access_node()))
+  : ptr_(const_cast<T2*>(r_ptr.get()))                 // will not compile if T1 is not an ancestor of T2
+  , node_(const_cast<node_t*>(r_ptr.access_node()))
 {
-	if(node_) node_->incr_count();
+  if(node_) node_->incr_count();
 }
 
 template<class T>
 REFCOUNTPTR_INLINE
 RefCountPtr<T>::~RefCountPtr()
 {
-	if(node_ && node_->deincr_count() == 0 ) {
+  if(node_ && node_->deincr_count() == 0 ) {
 #ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
     printActiveRefCountPtrNodes.foo(); // Make sure this object is used!
     remove_RefCountPtr_node(node_);
@@ -237,78 +238,78 @@ RefCountPtr<T>& RefCountPtr<T>::operator=(const RefCountPtr<T>& r_ptr)
 {
   if( this == &r_ptr )
     return *this; // Assignment to self
-	if( node_ && !node_->deincr_count() ) {
+  if( node_ && !node_->deincr_count() ) {
 #ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
     remove_ArrayRefCountPtr_node(node_);
 #endif
     delete node_;
   }
-	ptr_  = r_ptr.ptr_;
-	node_ = r_ptr.node_;
-	if(node_) node_->incr_count();
-	return *this;
+  ptr_  = r_ptr.ptr_;
+  node_ = r_ptr.node_;
+  if(node_) node_->incr_count();
+  return *this;
 }
 
 template<class T>
 inline
 T* RefCountPtr<T>::operator->() const {
 #ifdef TEUCHOS_REFCOUNTPTR_ASSERT_NONNULL
-	assert_not_null();
+  assert_not_null();
 #endif
-	return ptr_;
+  return ptr_;
 }
 
 template<class T>
 inline
 T& RefCountPtr<T>::operator*() const {
 #ifdef TEUCHOS_REFCOUNTPTR_ASSERT_NONNULL
-	assert_not_null();
+  assert_not_null();
 #endif
-	return *ptr_;
+  return *ptr_;
 }
 
 template<class T>
 inline
 T* RefCountPtr<T>::get() const {
-	return ptr_;
+  return ptr_;
 }
 
 template<class T>
 REFCOUNTPTR_INLINE
 T* RefCountPtr<T>::release() {
-	if(node_)
-		node_->has_ownership(false);
-	return ptr_;
+  if(node_)
+    node_->has_ownership(false);
+  return ptr_;
 }
 
 template<class T>
 REFCOUNTPTR_INLINE
 int RefCountPtr<T>::count() const {
-	if(node_)
-		return node_->count();
-	return 0;
+  if(node_)
+    return node_->count();
+  return 0;
 }
 
 template<class T>
 REFCOUNTPTR_INLINE
 void RefCountPtr<T>::set_has_ownership() {
-	if(node_)
-		node_->has_ownership(true);
+  if(node_)
+    node_->has_ownership(true);
 }
 
 template<class T>
 REFCOUNTPTR_INLINE
 bool RefCountPtr<T>::has_ownership() const {
-	if(node_)
-		return node_->has_ownership();
-	return false;
+  if(node_)
+    return node_->has_ownership();
+  return false;
 }
 
 template<class T>
 REFCOUNTPTR_INLINE
 template <class T2>
 bool RefCountPtr<T>::shares_resource(const RefCountPtr<T2>& r_ptr) const {
-	return node_ == r_ptr.access_node();
+  return node_ == r_ptr.access_node();
   // Note: above, r_ptr is *not* the same class type as *this so we can not
   // access its node_ member directly!  This is an interesting detail to the
   // C++ protected/private protection mechanism!
@@ -317,8 +318,8 @@ bool RefCountPtr<T>::shares_resource(const RefCountPtr<T2>& r_ptr) const {
 template<class T>
 inline
 const RefCountPtr<T>& RefCountPtr<T>::assert_not_null() const {
-	if(!ptr_) PrivateUtilityPack::throw_null(typeid(T).name());
-	return *this;
+  if(!ptr_) PrivateUtilityPack::throw_null(TypeNameTraits<T>::name());
+  return *this;
 }
 
 // very bad public functions
@@ -326,13 +327,13 @@ const RefCountPtr<T>& RefCountPtr<T>::assert_not_null() const {
 template<class T>
 inline
 RefCountPtr<T>::RefCountPtr( T* p, bool has_ownership )
-	: ptr_(p)
-	, node_( p ? new PrivateUtilityPack::RefCountPtr_node_tmpl<T,DeallocDelete<T> >(p,DeallocDelete<T>(),has_ownership) : NULL )
+  : ptr_(p)
+  , node_( p ? new PrivateUtilityPack::RefCountPtr_node_tmpl<T,DeallocDelete<T> >(p,DeallocDelete<T>(),has_ownership) : NULL )
 {
 #ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
   if(node_) {
     std::ostringstream os;
-    os << "{T=\'"<<typeid(T).name()<<"\',Concrete T=\'"<<typeid(*p).name()<<"\',p="<<p<<",has_ownership="<<has_ownership<<"}";
+    os << "{T=\'"<<TypeNameTraits<T>::name()<<"\',Concrete T=\'"<<typeName(*p)<<"\',p="<<p<<",has_ownership="<<has_ownership<<"}";
     add_new_RefCountPtr_node(node_,os.str());
   }
 #endif
@@ -342,13 +343,13 @@ template<class T>
 REFCOUNTPTR_INLINE
 template<class Dealloc_T>
 RefCountPtr<T>::RefCountPtr( T* p, Dealloc_T dealloc, bool has_ownership )
-	: ptr_(p)
-	, node_( p ? new PrivateUtilityPack::RefCountPtr_node_tmpl<T,Dealloc_T>(p,dealloc,has_ownership) : NULL )
+  : ptr_(p)
+  , node_( p ? new PrivateUtilityPack::RefCountPtr_node_tmpl<T,Dealloc_T>(p,dealloc,has_ownership) : NULL )
 {
 #ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
   if(node_) {
     std::ostringstream os;
-    os << "{T=\'"<<typeid(T).name()<<"\',Concrete T=\'"<<typeid(*p).name()<<"\',p="<<p<<",has_ownership="<<has_ownership<<"}";
+    os << "{T=\'"<<TypeNameTraits<T>::name()<<"\',Concrete T=\'"<<typeName(*p)<<"\',p="<<p<<",has_ownership="<<has_ownership<<"}";
     add_new_RefCountPtr_node(node_,os.str());
   }
 #endif
@@ -357,27 +358,27 @@ RefCountPtr<T>::RefCountPtr( T* p, Dealloc_T dealloc, bool has_ownership )
 template<class T>
 inline
 RefCountPtr<T>::RefCountPtr( T* p, node_t* node)
-	: ptr_(p), node_(node)
+  : ptr_(p), node_(node)
 {
-	if(node_) node_->incr_count();
+  if(node_) node_->incr_count();
 }
 
 template<class T>
 inline
 T*& RefCountPtr<T>::access_ptr()
-{	return ptr_; }
+{  return ptr_; }
 
 template<class T>
 inline
 typename RefCountPtr<T>::node_t*& RefCountPtr<T>::access_node()
-{	return node_; }
+{  return node_; }
 
 template<class T>
 inline
 typename RefCountPtr<T>::node_t* RefCountPtr<T>::access_node() const
-{	return node_; }
+{  return node_; }
 
-}	// end namespace Teuchos
+}  // end namespace Teuchos
 
 // /////////////////////////////////////////////////////////////////////////////////
 // Inline non-member functions for RefCountPtr
@@ -387,7 +388,7 @@ inline
 Teuchos::RefCountPtr<T>
 Teuchos::rcp( T* p, bool owns_mem )
 {
-	return RefCountPtr<T>(p,owns_mem);
+  return RefCountPtr<T>(p,owns_mem);
 }
 
 template<class T, class Dealloc_T>
@@ -395,7 +396,7 @@ inline
 Teuchos::RefCountPtr<T>
 Teuchos::rcp( T* p, Dealloc_T dealloc, bool owns_mem )
 {
-	return RefCountPtr<T>(p,dealloc,owns_mem);
+  return RefCountPtr<T>(p,dealloc,owns_mem);
 }
 
 template<class T>
@@ -438,14 +439,14 @@ REFCOUNTPTR_INLINE
 Teuchos::RefCountPtr<T2>
 Teuchos::rcp_implicit_cast(const RefCountPtr<T1>& p1)
 {
-	T2 *check = p1.get();	// Make the compiler check if the conversion is legal
-	RefCountPtr<T2> p2;
-	if(p1.access_node()) {
-		p2.access_ptr()  = check;
-		p2.access_node() = const_cast<RefCountPtr<T1>&>(p1).access_node();
-		p2.access_node()->incr_count();
-	}
-	return p2;
+  T2 *check = p1.get();  // Make the compiler check if the conversion is legal
+  RefCountPtr<T2> p2;
+  if(p1.access_node()) {
+    p2.access_ptr()  = check;
+    p2.access_node() = const_cast<RefCountPtr<T1>&>(p1).access_node();
+    p2.access_node()->incr_count();
+  }
+  return p2;
 }
 
 template<class T2, class T1>
@@ -453,14 +454,14 @@ REFCOUNTPTR_INLINE
 Teuchos::RefCountPtr<T2>
 Teuchos::rcp_static_cast(const RefCountPtr<T1>& p1)
 {
-	T2 *check = static_cast<T2*>(p1.get()); // Make the compiler check if the conversion is legal
-	RefCountPtr<T2> p2;
-	if(p1.access_node()) {
-		p2.access_ptr()  = check;
-		p2.access_node() = const_cast<RefCountPtr<T1>&>(p1).access_node();
-		p2.access_node()->incr_count();
-	}
-	return p2;
+  T2 *check = static_cast<T2*>(p1.get()); // Make the compiler check if the conversion is legal
+  RefCountPtr<T2> p2;
+  if(p1.access_node()) {
+    p2.access_ptr()  = check;
+    p2.access_node() = const_cast<RefCountPtr<T1>&>(p1).access_node();
+    p2.access_node()->incr_count();
+  }
+  return p2;
 }
 
 template<class T2, class T1>
@@ -468,14 +469,14 @@ REFCOUNTPTR_INLINE
 Teuchos::RefCountPtr<T2>
 Teuchos::rcp_const_cast(const RefCountPtr<T1>& p1)
 {
-	T2 *check = const_cast<T2*>(p1.get()); // Make the compiler check if the conversion is legal
-	RefCountPtr<T2> p2;
-	if(p1.access_node()) {
-		p2.access_ptr()  = check;
-		p2.access_node() = const_cast<RefCountPtr<T1>&>(p1).access_node();
-		p2.access_node()->incr_count();
-	}
-	return p2;
+  T2 *check = const_cast<T2*>(p1.get()); // Make the compiler check if the conversion is legal
+  RefCountPtr<T2> p2;
+  if(p1.access_node()) {
+    p2.access_ptr()  = check;
+    p2.access_node() = const_cast<RefCountPtr<T1>&>(p1).access_node();
+    p2.access_node()->incr_count();
+  }
+  return p2;
 }
 
 template<class T2, class T1>
@@ -483,52 +484,52 @@ REFCOUNTPTR_INLINE
 Teuchos::RefCountPtr<T2>
 Teuchos::rcp_dynamic_cast(const RefCountPtr<T1>& p1, bool throw_on_fail)
 {
-	RefCountPtr<T2> p2; // NULL by default
-	if( p1.get() ) {
-		T2 *check = NULL;
-		if(throw_on_fail)
-			check = &dyn_cast<T2>(*p1);
-		else
-			check = dynamic_cast<T2*>(p1.get()); // Make the compiler check if the conversion is legal
-		if(check) {
-			p2.access_ptr()  = check;
-			p2.access_node() = const_cast<RefCountPtr<T1>&>(p1).access_node();
-			p2.access_node()->incr_count();
-		}
-	}
-	return p2;
+  RefCountPtr<T2> p2; // NULL by default
+  if( p1.get() ) {
+    T2 *check = NULL;
+    if(throw_on_fail)
+      check = &dyn_cast<T2>(*p1);
+    else
+      check = dynamic_cast<T2*>(p1.get()); // Make the compiler check if the conversion is legal
+    if(check) {
+      p2.access_ptr()  = check;
+      p2.access_node() = const_cast<RefCountPtr<T1>&>(p1).access_node();
+      p2.access_node()->incr_count();
+    }
+  }
+  return p2;
 }
 
 template<class T1, class T2>
 REFCOUNTPTR_INLINE
 void Teuchos::set_extra_data( const T1 &extra_data, const std::string& name, Teuchos::RefCountPtr<T2> *p, EPrePostDestruction destroy_when, bool force_unique )
 {
-	p->assert_not_null();
-	p->access_node()->set_extra_data( any(extra_data), name, destroy_when, force_unique );
+  p->assert_not_null();
+  p->access_node()->set_extra_data( any(extra_data), name, destroy_when, force_unique );
 }
 
 template<class T1, class T2>
 REFCOUNTPTR_INLINE
 T1& Teuchos::get_extra_data( RefCountPtr<T2>& p, const std::string& name )
 {
-	p.assert_not_null();
-	return any_cast<T1>(p.access_node()->get_extra_data(typeid(T1).name(),name));
+  p.assert_not_null();
+  return any_cast<T1>(p.access_node()->get_extra_data(TypeNameTraits<T1>::name(),name));
 }
 
 template<class T1, class T2>
 REFCOUNTPTR_INLINE
 const T1& Teuchos::get_extra_data( const RefCountPtr<T2>& p, const std::string& name )
 {
-	p.assert_not_null();
-	return any_cast<T1>(p.access_node()->get_extra_data(typeid(T1).name(),name));
+  p.assert_not_null();
+  return any_cast<T1>(p.access_node()->get_extra_data(TypeNameTraits<T1>::name(),name));
 }
 
 template<class T1, class T2>
 REFCOUNTPTR_INLINE
 T1* Teuchos::get_optional_extra_data( RefCountPtr<T2>& p, const std::string& name )
 {
-	p.assert_not_null();
-  any *extra_data = p.access_node()->get_optional_extra_data(typeid(T1).name(),name);
+  p.assert_not_null();
+  any *extra_data = p.access_node()->get_optional_extra_data(TypeNameTraits<T1>::name(),name);
   if( extra_data ) return &any_cast<T1>(*extra_data);
   return NULL;
 }
@@ -537,8 +538,8 @@ template<class T1, class T2>
 REFCOUNTPTR_INLINE
 const T1* Teuchos::get_optional_extra_data( const RefCountPtr<T2>& p, const std::string& name )
 {
-	p.assert_not_null();
-  any *extra_data = p.access_node()->get_optional_extra_data(typeid(T1).name(),name);
+  p.assert_not_null();
+  any *extra_data = p.access_node()->get_optional_extra_data(TypeNameTraits<T1>::name(),name);
   if( extra_data ) return &any_cast<T1>(*extra_data);
   return NULL;
 }
@@ -548,16 +549,17 @@ REFCOUNTPTR_INLINE
 Dealloc_T&
 Teuchos::get_dealloc( RefCountPtr<T>& p )
 {
-	p.assert_not_null();
-	PrivateUtilityPack::RefCountPtr_node_tmpl<typename Dealloc_T::ptr_t,Dealloc_T>
-		*dnode = dynamic_cast<PrivateUtilityPack::RefCountPtr_node_tmpl<typename Dealloc_T::ptr_t,Dealloc_T>*>(p.access_node());
-	TEST_FOR_EXCEPTION(
-		dnode==NULL, std::logic_error
-		,"get_dealloc<" << typeid(Dealloc_T).name() << "," << typeid(T).name() << ">(p): "
-		<< "Error, requested type \'" << typeid(PrivateUtilityPack::RefCountPtr_node_tmpl<typename Dealloc_T::ptr_t,Dealloc_T>).name()
-		<< "\' does not match actual type of the node \'" << typeid(*p.access_node()).name() << "!"
-		);
-	return dnode->get_dealloc();
+  typedef PrivateUtilityPack::RefCountPtr_node_tmpl<typename Dealloc_T::ptr_t,Dealloc_T>  requested_type;
+  p.assert_not_null();
+  PrivateUtilityPack::RefCountPtr_node_tmpl<typename Dealloc_T::ptr_t,Dealloc_T>
+    *dnode = dynamic_cast<PrivateUtilityPack::RefCountPtr_node_tmpl<typename Dealloc_T::ptr_t,Dealloc_T>*>(p.access_node());
+  TEST_FOR_EXCEPTION(
+    dnode==NULL, std::logic_error
+    ,"get_dealloc<" << TypeNameTraits<Dealloc_T>::name() << "," << TypeNameTraits<T>::name() << ">(p): "
+    << "Error, requested type \'" << TypeNameTraits<requested_type>::name()
+    << "\' does not match actual type of the node \'" << typeName(*p.access_node()) << "!"
+    );
+  return dnode->get_dealloc();
 }
 
 template<class Dealloc_T, class T>
@@ -565,7 +567,7 @@ inline
 const Dealloc_T& 
 Teuchos::get_dealloc( const Teuchos::RefCountPtr<T>& p )
 {
-	return get_dealloc<Dealloc_T>(const_cast<RefCountPtr<T>&>(p));
+  return get_dealloc<Dealloc_T>(const_cast<RefCountPtr<T>&>(p));
 }
 
 template<class Dealloc_T, class T>
@@ -573,9 +575,9 @@ REFCOUNTPTR_INLINE
 Dealloc_T*
 Teuchos::get_optional_dealloc( RefCountPtr<T>& p )
 {
-	p.assert_not_null();
-	PrivateUtilityPack::RefCountPtr_node_tmpl<typename Dealloc_T::ptr_t,Dealloc_T>
-		*dnode = dynamic_cast<PrivateUtilityPack::RefCountPtr_node_tmpl<typename Dealloc_T::ptr_t,Dealloc_T>*>(p.access_node());
+  p.assert_not_null();
+  PrivateUtilityPack::RefCountPtr_node_tmpl<typename Dealloc_T::ptr_t,Dealloc_T>
+    *dnode = dynamic_cast<PrivateUtilityPack::RefCountPtr_node_tmpl<typename Dealloc_T::ptr_t,Dealloc_T>*>(p.access_node());
   if(dnode)
     return &dnode->get_dealloc();
   return NULL;
@@ -586,7 +588,7 @@ inline
 const Dealloc_T*
 Teuchos::get_optional_dealloc( const Teuchos::RefCountPtr<T>& p )
 {
-	return get_optional_dealloc<Dealloc_T>(const_cast<RefCountPtr<T>&>(p));
+  return get_optional_dealloc<Dealloc_T>(const_cast<RefCountPtr<T>&>(p));
 }
 
 template<class T>

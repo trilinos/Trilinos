@@ -186,7 +186,7 @@ void DefaultClusteredSpmdProductVector<Scalar>::applyOp(
     TEST_FOR_EXCEPTION(
       test_failed, Exceptions::IncompatibleVectorSpaces
       ,"DefaultClusteredSpmdProductVector::applyOp(...): Error vecs["<<k<<"]->space() "
-      <<"of type \'"<<typeid(*vecs[k]->space()).name()<<"\' is not compatible with this "
+      <<"of type \'"<<typeName(*vecs[k]->space())<<"\' is not compatible with this "
       <<"\'VectorSpaceBlocked\' vector space!"
       );
   }
@@ -195,7 +195,7 @@ void DefaultClusteredSpmdProductVector<Scalar>::applyOp(
     TEST_FOR_EXCEPTION(
       test_failed, Exceptions::IncompatibleVectorSpaces
       ,"DefaultClusteredSpmdProductVector::applyOp(...): Error targ_vecs["<<k<<"]->space() "
-      <<"of type \'"<<typeid(*vecs[k]->space()).name()<<"\' is not compatible with this "
+      <<"of type \'"<<typeName(*vecs[k]->space())<<"\' is not compatible with this "
       <<"\'VectorSpaceBlocked\' vector space!"
       );
   }

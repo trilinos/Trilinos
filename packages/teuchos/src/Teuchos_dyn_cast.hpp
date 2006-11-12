@@ -29,7 +29,7 @@
 #ifndef TEUCHOS_DYN_CAST_HPP
 #define TEUCHOS_DYN_CAST_HPP
 
-#include "Teuchos_ConfigDefs.hpp"
+#include "Teuchos_TypeNameTraits.hpp"
 
 namespace Teuchos {
 
@@ -50,7 +50,11 @@ public:
 };
 
 // Throw the exception <tt>std::invalid_argument</tt> for below functions
-void dyn_cast_throw_exception( const char type_from_name[], const char type_from_concr_name[], const char type_to_name[] );
+void dyn_cast_throw_exception(
+  const std::string   &type_from_name
+  ,const std::string  &type_from_concr_name
+  ,const std::string  &type_to_name
+  );
 
 /** \brief Dynamic casting utility function meant to replace
  * <tt>dynamic_cast<T&></tt> by throwing a better documented error
@@ -150,12 +154,16 @@ template <class T_To, class T_From>
 inline
 T_To& dyn_cast(T_From &from)
 {
-	T_To *to_ = dynamic_cast<T_To*>(&from);
-	if(!to_)
-		dyn_cast_throw_exception( typeid(T_From).name(), typeid(from).name(), typeid(T_To).name() );
-	return *to_;
+  T_To *to_ = dynamic_cast<T_To*>(&from);
+  if(!to_)
+    dyn_cast_throw_exception(
+      TypeNameTraits<T_From>::name()
+      ,typeName(from)
+      ,TypeNameTraits<T_To>::name()
+      );
+  return *to_;
 }
 
-}	// end namespace Teuchos
+} // namespace Teuchos
 
 #endif // TEUCHOS_DYN_CAST_HPP

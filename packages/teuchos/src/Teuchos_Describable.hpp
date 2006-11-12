@@ -31,6 +31,7 @@
 
 #include "Teuchos_VerbosityLevel.hpp"
 #include "Teuchos_FancyOStream.hpp"
+#include "Teuchos_TypeNameTraits.hpp"
 
 namespace Teuchos {
 
@@ -62,59 +63,59 @@ namespace Teuchos {
 class Describable {
 public:
 
-	/// Default value for <tt>verLevel</tt> in <tt>description()</tt>
-	static const EVerbosityLevel   verbLevel_default;
+  /// Default value for <tt>verLevel</tt> in <tt>description()</tt>
+  static const EVerbosityLevel   verbLevel_default;
 
-	/** \brief . */
-	virtual ~Describable() {}
+  /** \brief . */
+  virtual ~Describable() {}
 
   //! @name Public virtual member functions 
-	//@{
+  //@{
 
-	/** \brief Return a simple description (usually just one line) of this object.
-	 *
-	 * The default implementation just returns <tt>typeid(*this).name()</tt> but
-	 * a subclass can modify this if needed.  Note that some compilers return a
-	 * mangled name from <tt>std::type_info::name()</tt> (e.g. g++ version 3.4.x
-	 * and before) that is hard for non-g++ developers to read.  Therefore, it
-	 * is usually beneficial to override this function to build a more
-	 * human-readable name for a subclass, especially if templating is used.
-	 */
-	virtual std::string description() const;
+  /** \brief Return a simple description (usually just one line) of this object.
+   *
+   * The default implementation just returns <tt>typeName(*this)</tt> but
+   * a subclass can modify this if needed.  Note that some compilers return a
+   * mangled name from <tt>std::type_info::name()</tt> (e.g. g++ version 3.4.x
+   * and before) that is hard for non-g++ developers to read.  Therefore, it
+   * is usually beneficial to override this function to build a more
+   * human-readable name for a subclass, especially if templating is used.
+   */
+  virtual std::string description() const;
 
-	/** \brief Print the object with some verbosity level to an
-	 * <tt>FancyOStream</tt> object.
-	 *
-	 * \param  out   
-	 *               [in] The <tt>FancyOStream</tt> object that output is sent to.
-	 * \param  verbLevel
-	 *               [in] Determines the level of verbosity for which the
-	 *               the object will be printed.  If <tt>verbLevel==VERB_DEFAULT</tt>
-	 *               (which is the default value), then the verbosity level will
-	 *               be determined by the <tt>*this</tt> object (i.e. perhaps through the
-	 *               <tt>ObjectWithVerbosity</tt> interface).  It is up to <tt>*this</tt>
-	 *               how to interpret the level represented by <tt>verbLevel</tt>.
-	 *               The default value is <tt>VERB_DEFAULT</tt>.
-	 *
-	 * In order for this function to work effectively for independently
-	 * developed classes, a general consensus needs be reached as to
-	 * what the various verbosity levels represented in
-	 * <tt>verbLevel</tt> mean in relation to the amount of output
-	 * produced.
-	 *
-	 * A default implementation of this function is provided that simply
-	 * performs:
+  /** \brief Print the object with some verbosity level to an
+   * <tt>FancyOStream</tt> object.
+   *
+   * \param  out   
+   *               [in] The <tt>FancyOStream</tt> object that output is sent to.
+   * \param  verbLevel
+   *               [in] Determines the level of verbosity for which the
+   *               the object will be printed.  If <tt>verbLevel==VERB_DEFAULT</tt>
+   *               (which is the default value), then the verbosity level will
+   *               be determined by the <tt>*this</tt> object (i.e. perhaps through the
+   *               <tt>ObjectWithVerbosity</tt> interface).  It is up to <tt>*this</tt>
+   *               how to interpret the level represented by <tt>verbLevel</tt>.
+   *               The default value is <tt>VERB_DEFAULT</tt>.
+   *
+   * In order for this function to work effectively for independently
+   * developed classes, a general consensus needs be reached as to
+   * what the various verbosity levels represented in
+   * <tt>verbLevel</tt> mean in relation to the amount of output
+   * produced.
+   *
+   * A default implementation of this function is provided that simply
+   * performs:
    \verbatim
 
    return out << this->description() << std::endl; \endverbatim
-	 *
-	 * A subclass should override this function to provide more
-	 * interesting and more useful information about the object.
-	 */
-	virtual void describe(
-		FancyOStream                &out
-		,const EVerbosityLevel      verbLevel     = verbLevel_default
-		) const;
+   *
+   * A subclass should override this function to provide more
+   * interesting and more useful information about the object.
+   */
+  virtual void describe(
+    FancyOStream                &out
+    ,const EVerbosityLevel      verbLevel     = verbLevel_default
+    ) const;
   
 };
 
@@ -124,7 +125,7 @@ public:
 // being given doxygen documentation!
 struct DescribableStreamManipulatorState {
   const Describable          &describable;
-	const EVerbosityLevel      verbLevel;
+  const EVerbosityLevel      verbLevel;
   DescribableStreamManipulatorState(
     const Describable          &_describable
     ,const EVerbosityLevel     _verbLevel=VERB_MEDIUM

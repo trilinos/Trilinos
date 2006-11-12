@@ -594,7 +594,7 @@ std::string TpetraLinearOp<Ordinal,Scalar>::description() const
     << ">";
   oss << "{";
   if(op_.getConstObj().get()) {
-    oss << "op=\'"<<typeid(*op_.getConstObj()).name()<<"\'";
+    oss << "op=\'"<<typeName(*op_.getConstObj())<<"\'";
   }
   else {
     oss << "op=NULL";
@@ -634,7 +634,7 @@ void TpetraLinearOp<Ordinal,Scalar>::describe(
         << "rangeDim = " << this->range()->dim() << ", domainDim = " << this->domain()->dim() << std::endl;
       OSTab tab(out);
       if(op_.getConstObj().get()) {
-        *out << "op=\'"<<typeid(*op_.getConstObj()).name()<<"\'\n";
+        *out << "op=\'"<<typeName(*op_.getConstObj())<<"\'\n";
         *out << "adjointSupport="<<toString(adjointSupport_)<<"\n";
       }
       else {

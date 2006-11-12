@@ -308,7 +308,7 @@ std::string EpetraLinearOp::description() const
   oss << "Thyra::EpetraLinearOp";
   oss << "{";
   if(op_.get()) {
-    oss << "op=\'"<<typeid(*op_).name()<<"\'";
+    oss << "op=\'"<<typeName(*op_)<<"\'";
   }
   else {
     oss << "op=NULL";
@@ -343,7 +343,7 @@ void EpetraLinearOp::describe(
         << "rangeDim = " << this->range()->dim() << ", domainDim = " << this->domain()->dim() << std::endl;
       OSTab tab(out);
       if(op_.get()) {
-        *out << "op=\'"<<typeid(*op_).name()<<"\'\n";
+        *out << "op=\'"<<typeName(*op_)<<"\'\n";
         *out << "opTrans="<<toString(opTrans_)<<"\n";
         *out << "applyAs="<<toString(applyAs_)<<"\n";
         *out << "adjointSupport="<<toString(adjointSupport_)<<"\n";

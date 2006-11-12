@@ -58,8 +58,8 @@ namespace Teuchos {
 template<class T>
 inline
 ArrayRefCountPtr<T>::ArrayRefCountPtr( ENull )
-	: ptr_(NULL)
-	, node_(NULL)
+  : ptr_(NULL)
+  , node_(NULL)
   , lowerOffset_(0)
   , upperOffset_(-1)
 {}
@@ -67,18 +67,18 @@ ArrayRefCountPtr<T>::ArrayRefCountPtr( ENull )
 template<class T>
 REFCOUNTPTR_INLINE
 ArrayRefCountPtr<T>::ArrayRefCountPtr(const ArrayRefCountPtr<T>& r_ptr)
-	: ptr_(r_ptr.ptr_), node_(r_ptr.node_)
+  : ptr_(r_ptr.ptr_), node_(r_ptr.node_)
   , lowerOffset_(r_ptr.lowerOffset_)
   , upperOffset_(r_ptr.upperOffset_)
 {
-	if(node_) node_->incr_count();
+  if(node_) node_->incr_count();
 }
 
 template<class T>
 REFCOUNTPTR_INLINE
 ArrayRefCountPtr<T>::~ArrayRefCountPtr()
 {
-	if(node_ && node_->deincr_count() == 0 ) {
+  if(node_ && node_->deincr_count() == 0 ) {
 #ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
     printActiveArrayRefCountPtrNodes.foo(); // Make sure this object is used!
     remove_ArrayRefCountPtr_node(node_);
@@ -93,18 +93,18 @@ ArrayRefCountPtr<T>& ArrayRefCountPtr<T>::operator=(const ArrayRefCountPtr<T>& r
 {
   if( this == &r_ptr )
     return *this; // Assignment to self
-	if( node_ && !node_->deincr_count() ) {
+  if( node_ && !node_->deincr_count() ) {
 #ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
     remove_ArrayRefCountPtr_node(node_);
 #endif
     delete node_;
   }
-	ptr_   = r_ptr.ptr_;
-	node_  = r_ptr.node_;
+  ptr_   = r_ptr.ptr_;
+  node_  = r_ptr.node_;
   lowerOffset_ = r_ptr.lowerOffset_;
   upperOffset_ = r_ptr.upperOffset_;
-	if(node_) node_->incr_count();
-	return *this;
+  if(node_) node_->incr_count();
+  return *this;
 }
 
 // Object/Pointer Access Functions
@@ -116,7 +116,7 @@ T* ArrayRefCountPtr<T>::operator->() const
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   assert_in_range(0,1);
 #endif
-	return ptr_;
+  return ptr_;
 }
 
 template<class T>
@@ -126,7 +126,7 @@ T& ArrayRefCountPtr<T>::operator*() const
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   assert_in_range(0,1);
 #endif
-	return *ptr_;
+  return *ptr_;
 }
 
 template<class T>
@@ -267,9 +267,9 @@ ArrayRefCountPtr<T>::subview( Ordinal lowerOffset, Ordinal size ) const
 template<class T>
 REFCOUNTPTR_INLINE
 int ArrayRefCountPtr<T>::count() const {
-	if(node_)
-		return node_->count();
-	return 0;
+  if(node_)
+    return node_->count();
+  return 0;
 }
 
 template<class T>
@@ -277,7 +277,7 @@ REFCOUNTPTR_INLINE
 template <class T2>
 bool ArrayRefCountPtr<T>::shares_resource(const ArrayRefCountPtr<T2>& r_ptr) const
 {
-	return node_ == r_ptr.access_node();
+  return node_ == r_ptr.access_node();
   // Note: above, r_ptr is *not* the same class type as *this so we can not
   // access its node_ member directly!  This is an interesting detail to the
   // C++ protected/private protection mechanism!
@@ -338,26 +338,26 @@ template<class T>
 REFCOUNTPTR_INLINE
 T* ArrayRefCountPtr<T>::release()
 {
-	if(node_)
-		node_->has_ownership(false);
-	return ptr_;
+  if(node_)
+    node_->has_ownership(false);
+  return ptr_;
 }
 
 template<class T>
 REFCOUNTPTR_INLINE
 void ArrayRefCountPtr<T>::set_has_ownership()
 {
-	if(node_)
-		node_->has_ownership(true);
+  if(node_)
+    node_->has_ownership(true);
 }
 
 template<class T>
 REFCOUNTPTR_INLINE
 bool ArrayRefCountPtr<T>::has_ownership() const
 {
-	if(node_)
-		return node_->has_ownership();
-	return false;
+  if(node_)
+    return node_->has_ownership();
+  return false;
 }
 
 // Assertion Functions.
@@ -367,8 +367,8 @@ inline
 const ArrayRefCountPtr<T>&
 ArrayRefCountPtr<T>::assert_not_null() const
 {
-	if(!ptr_) PrivateUtilityPack::throw_null(typeid(T).name());
-	return *this;
+  if(!ptr_) PrivateUtilityPack::throw_null(TypeNameTraits<T>::name());
+  return *this;
 }
 
 template<class T>
@@ -379,11 +379,11 @@ ArrayRefCountPtr<T>::assert_in_range( Ordinal lowerOffset, Ordinal size ) const
   assert_not_null();
   TEST_FOR_EXCEPTION(
     !( lowerOffset_ <= lowerOffset && lowerOffset+size-1 <= upperOffset_ ), std::logic_error
-    ,"Teuchos::ArrayRefCountPtr<"<<typeid(T).name()<<">::assert_in_range:"
+    ,"Teuchos::ArrayRefCountPtr<"<<TypeNameTraits<T>::name()<<">::assert_in_range:"
     " Error, [lowerOffset,lowerOffset+size-1] = ["<<lowerOffset<<","<<(lowerOffset+size-1)<<"] does not lie in the"
     " range ["<<lowerOffset_<<","<<upperOffset_<<"]!"
     );
-	return *this;
+  return *this;
 }
 
 // very bad public functions
@@ -393,7 +393,7 @@ inline
 ArrayRefCountPtr<T>::ArrayRefCountPtr(
   T* p, Ordinal lowerOffset, Ordinal upperOffset, bool has_ownership
   )
-	: ptr_(p)
+  : ptr_(p)
   , node_(
     p
     ? new PrivateUtilityPack::RefCountPtr_node_tmpl<T,DeallocArrayDelete<T> >(
@@ -407,7 +407,7 @@ ArrayRefCountPtr<T>::ArrayRefCountPtr(
 #ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
   if(node_) {
     std::ostringstream os;
-    os << "{T=\'"<<typeid(T).name()<<"\',Concrete T=\'"<<typeid(*p).name()<<"\',p="<<p<<",has_ownership="<<has_ownership<<"}";
+    os << "{T=\'"<<TypeNameTraits<T>::name()<<"\',Concrete T=\'"<<typeName(*p)<<"\',p="<<p<<",has_ownership="<<has_ownership<<"}";
     add_new_ArrayRefCountPtr_node(node_,os.str());
   }
 #endif
@@ -419,15 +419,15 @@ template<class Dealloc_T>
 ArrayRefCountPtr<T>::ArrayRefCountPtr(
   T* p, Ordinal lowerOffset, Ordinal upperOffset, Dealloc_T dealloc, bool has_ownership
   )
-	: ptr_(p)
-	, node_( p ? new PrivateUtilityPack::RefCountPtr_node_tmpl<T,Dealloc_T>(p,dealloc,has_ownership) : NULL )
+  : ptr_(p)
+  , node_( p ? new PrivateUtilityPack::RefCountPtr_node_tmpl<T,Dealloc_T>(p,dealloc,has_ownership) : NULL )
   ,lowerOffset_(lowerOffset)
   ,upperOffset_(upperOffset)
 {
 #ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
   if(node_) {
     std::ostringstream os;
-    os << "{T=\'"<<typeid(T).name()<<"\',Concrete T=\'"<<typeid(*p).name()<<"\',p="<<p<<",has_ownership="<<has_ownership<<"}";
+    os << "{T=\'"<<TypeNameTraits<T>::name()<<"\',Concrete T=\'"<<typeName(*p)<<"\',p="<<p<<",has_ownership="<<has_ownership<<"}";
     add_new_ArrayRefCountPtr_node(node_,os.str());
   }
 #endif
@@ -438,35 +438,35 @@ inline
 ArrayRefCountPtr<T>::ArrayRefCountPtr(
   T* p, Ordinal lowerOffset, Ordinal upperOffset, node_t* node
   )
-	: ptr_(p)
+  : ptr_(p)
   , node_(node)
   ,lowerOffset_(lowerOffset)
   ,upperOffset_(upperOffset)
 {
-	if(node_) node_->incr_count();
+  if(node_) node_->incr_count();
 }
 
 template<class T>
 inline
 T*& ArrayRefCountPtr<T>::access_ptr()
-{	return ptr_; }
+{  return ptr_; }
 
 template<class T>
 inline
 T* ArrayRefCountPtr<T>::access_ptr() const
-{	return ptr_; }
+{  return ptr_; }
 
 template<class T>
 inline
 typename ArrayRefCountPtr<T>::node_t*& ArrayRefCountPtr<T>::access_node()
-{	return node_; }
+{  return node_; }
 
 template<class T>
 inline
 typename ArrayRefCountPtr<T>::node_t* ArrayRefCountPtr<T>::access_node() const
-{	return node_; }
+{  return node_; }
 
-}	// end namespace Teuchos
+}  // end namespace Teuchos
 
 // ///////////////////////////////////////////
 // Non-member functions for ArrayRefCountPtr
@@ -494,7 +494,7 @@ T* p, typename ArrayRefCountPtr<T>::Ordinal lowerOffset
   ,bool owns_mem
   )
 {
-	return ArrayRefCountPtr<T>(p,lowerOffset,lowerOffset+size-1,owns_mem);
+  return ArrayRefCountPtr<T>(p,lowerOffset,lowerOffset+size-1,owns_mem);
 }
 
 template<class T, class Dealloc_T>
@@ -506,7 +506,7 @@ T* p, typename ArrayRefCountPtr<T>::Ordinal lowerOffset
   ,Dealloc_T dealloc, bool owns_mem
   )
 {
-	return ArrayRefCountPtr<T>(p,lowerOffset,lowerOffset+size-1,dealloc,owns_mem);
+  return ArrayRefCountPtr<T>(p,lowerOffset,lowerOffset+size-1,dealloc,owns_mem);
 }
 
 template<class T>
@@ -514,7 +514,7 @@ inline
 Teuchos::ArrayRefCountPtr<T>
 Teuchos::arcp( typename ArrayRefCountPtr<T>::Ordinal size )
 {
-	return ArrayRefCountPtr<T>(new T[size],0,size-1,true);
+  return ArrayRefCountPtr<T>(new T[size],0,size-1,true);
 }
 
 template<class T>
@@ -657,32 +657,32 @@ void Teuchos::set_extra_data(
   ,EPrePostDestruction destroy_when, bool force_unique
   )
 {
-	p->assert_not_null();
-	p->access_node()->set_extra_data( any(extra_data), name, destroy_when, force_unique );
+  p->assert_not_null();
+  p->access_node()->set_extra_data( any(extra_data), name, destroy_when, force_unique );
 }
 
 template<class T1, class T2>
 REFCOUNTPTR_INLINE
 T1& Teuchos::get_extra_data( ArrayRefCountPtr<T2>& p, const std::string& name )
 {
-	p.assert_not_null();
-	return any_cast<T1>(p.access_node()->get_extra_data(typeid(T1).name(),name));
+  p.assert_not_null();
+  return any_cast<T1>(p.access_node()->get_extra_data(TypeNameTraits<T1>::name(),name));
 }
 
 template<class T1, class T2>
 REFCOUNTPTR_INLINE
 const T1& Teuchos::get_extra_data( const ArrayRefCountPtr<T2>& p, const std::string& name )
 {
-	p.assert_not_null();
-	return any_cast<T1>(p.access_node()->get_extra_data(typeid(T1).name(),name));
+  p.assert_not_null();
+  return any_cast<T1>(p.access_node()->get_extra_data(TypeNameTraits<T1>::name(),name));
 }
 
 template<class T1, class T2>
 REFCOUNTPTR_INLINE
 T1* Teuchos::get_optional_extra_data( ArrayRefCountPtr<T2>& p, const std::string& name )
 {
-	p.assert_not_null();
-  any *extra_data = p.access_node()->get_optional_extra_data(typeid(T1).name(),name);
+  p.assert_not_null();
+  any *extra_data = p.access_node()->get_optional_extra_data(TypeNameTraits<T1>::name(),name);
   if( extra_data ) return &any_cast<T1>(*extra_data);
   return NULL;
 }
@@ -691,8 +691,8 @@ template<class T1, class T2>
 REFCOUNTPTR_INLINE
 const T1* Teuchos::get_optional_extra_data( const ArrayRefCountPtr<T2>& p, const std::string& name )
 {
-	p.assert_not_null();
-  any *extra_data = p.access_node()->get_optional_extra_data(typeid(T1).name(),name);
+  p.assert_not_null();
+  any *extra_data = p.access_node()->get_optional_extra_data(TypeNameTraits<T1>::name(),name);
   if( extra_data ) return &any_cast<T1>(*extra_data);
   return NULL;
 }
@@ -702,16 +702,17 @@ REFCOUNTPTR_INLINE
 Dealloc_T&
 Teuchos::get_dealloc( ArrayRefCountPtr<T>& p )
 {
-	p.assert_not_null();
-	PrivateUtilityPack::RefCountPtr_node_tmpl<typename Dealloc_T::ptr_t,Dealloc_T>
-		*dnode = dynamic_cast<PrivateUtilityPack::RefCountPtr_node_tmpl<typename Dealloc_T::ptr_t,Dealloc_T>*>(p.access_node());
-	TEST_FOR_EXCEPTION(
-		dnode==NULL, std::logic_error
-		,"get_dealloc<" << typeid(Dealloc_T).name() << "," << typeid(T).name() << ">(p): "
-		<< "Error, requested type \'" << typeid(PrivateUtilityPack::RefCountPtr_node_tmpl<typename Dealloc_T::ptr_t,Dealloc_T>).name()
-		<< "\' does not match actual type of the node \'" << typeid(*p.access_node()).name() << "!"
-		);
-	return dnode->get_dealloc();
+  typedef PrivateUtilityPack::RefCountPtr_node_tmpl<typename Dealloc_T::ptr_t,Dealloc_T>  requested_type;
+  p.assert_not_null();
+  PrivateUtilityPack::RefCountPtr_node_tmpl<typename Dealloc_T::ptr_t,Dealloc_T>
+    *dnode = dynamic_cast<PrivateUtilityPack::RefCountPtr_node_tmpl<typename Dealloc_T::ptr_t,Dealloc_T>*>(p.access_node());
+  TEST_FOR_EXCEPTION(
+    dnode==NULL, std::logic_error
+    ,"get_dealloc<" << TypeNameTraits<Dealloc_T>::name() << "," << TypeNameTraits<T>::name() << ">(p): "
+    << "Error, requested type \'" << TypeNameTraits<requested_type>::name()
+    << "\' does not match actual type of the node \'" << typeName(*p.access_node()) << "!"
+    );
+  return dnode->get_dealloc();
 }
 
 template<class Dealloc_T, class T>
@@ -719,7 +720,7 @@ inline
 const Dealloc_T& 
 Teuchos::get_dealloc( const Teuchos::ArrayRefCountPtr<T>& p )
 {
-	return get_dealloc<Dealloc_T>(const_cast<ArrayRefCountPtr<T>&>(p));
+  return get_dealloc<Dealloc_T>(const_cast<ArrayRefCountPtr<T>&>(p));
 }
 
 template<class Dealloc_T, class T>
@@ -727,9 +728,9 @@ REFCOUNTPTR_INLINE
 Dealloc_T*
 Teuchos::get_optional_dealloc( ArrayRefCountPtr<T>& p )
 {
-	p.assert_not_null();
-	PrivateUtilityPack::RefCountPtr_node_tmpl<typename Dealloc_T::ptr_t,Dealloc_T>
-		*dnode = dynamic_cast<PrivateUtilityPack::RefCountPtr_node_tmpl<typename Dealloc_T::ptr_t,Dealloc_T>*>(p.access_node());
+  p.assert_not_null();
+  PrivateUtilityPack::RefCountPtr_node_tmpl<typename Dealloc_T::ptr_t,Dealloc_T>
+    *dnode = dynamic_cast<PrivateUtilityPack::RefCountPtr_node_tmpl<typename Dealloc_T::ptr_t,Dealloc_T>*>(p.access_node());
   if(dnode)
     return &dnode->get_dealloc();
   return NULL;
@@ -740,7 +741,7 @@ inline
 const Dealloc_T*
 Teuchos::get_optional_dealloc( const Teuchos::ArrayRefCountPtr<T>& p )
 {
-	return get_optional_dealloc<Dealloc_T>(const_cast<ArrayRefCountPtr<T>&>(p));
+  return get_optional_dealloc<Dealloc_T>(const_cast<ArrayRefCountPtr<T>&>(p));
 }
 
 template<class T>

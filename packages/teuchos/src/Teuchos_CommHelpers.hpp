@@ -37,6 +37,7 @@
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_OrdinalTraits.hpp"
 #include "Teuchos_Array.hpp"
+#include "Teuchos_TypeNameTraits.hpp"
 
 namespace Teuchos {
 
@@ -689,7 +690,7 @@ void Teuchos::broadcast(
 {
   TEUCHOS_COMM_TIME_MONITOR(
     "Teuchos::CommHelpers: broadcast<"
-    <<OrdinalTraits<Ordinal>::name()<<","<<typeid(Packet).name()
+    <<OrdinalTraits<Ordinal>::name()<<","<<TypeNameTraits<Packet>::name()
     <<">( reference type )"
     );
   ReferenceTypeSerializationBuffer<Ordinal,Packet>
@@ -788,7 +789,7 @@ void Teuchos::reduceAll(
 {
   TEUCHOS_COMM_TIME_MONITOR(
     "Teuchos::CommHelpers: reduceAll<"
-    <<OrdinalTraits<Ordinal>::name()<<","<<typeid(Packet).name()
+    <<OrdinalTraits<Ordinal>::name()<<","<<TypeNameTraits<Packet>::name()
     <<">( reference type )"
     );
   ConstReferenceTypeSerializationBuffer<Ordinal,Packet>

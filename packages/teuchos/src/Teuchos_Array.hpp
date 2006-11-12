@@ -36,6 +36,7 @@
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_Utils.hpp"
+#include "Teuchos_TypeNameTraits.hpp"
 
 namespace Teuchos
 {
@@ -140,7 +141,7 @@ namespace Teuchos
   {
     TEST_FOR_EXCEPTION(
       !( 0 <= i && i < length() ), std::range_error,
-      "Array<"<<typeid(T).name()<<">::indexCheckCrash: "
+      "Array<"<<TypeNameTraits<T>::name()<<">::indexCheckCrash: "
       "index " << i << " out of range [0, "<< length() << ")"
       );
   }

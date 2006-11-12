@@ -32,8 +32,12 @@
 #include "RTOpPack_Types.hpp"
 #include "Teuchos_Range1D.hpp"
 #include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_TypeNameTraits.hpp"
 
 namespace Thyra {
+
+using Teuchos::typeName;
+using Teuchos::TypeNameTraits;
 
 /** \defgroup Thyra_Op_Vec_BasicTypes_grp Basic Thyra types.
  * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp

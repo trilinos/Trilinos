@@ -69,7 +69,7 @@ void RTOpServer<Scalar>::print_op_factories(std::ostream& o) const
   o << setw(w) << "Operator name" << "Operator type" << std::endl;
   o << setw(w) << "-------------" << "-------------" << std::endl;
   for( typename op_factories_t::const_iterator itr = op_factories_.begin(); itr != op_factories_.end(); ++itr ) {
-    o << setw(w) << itr->first << typeid(*itr->second->create()).name() << std::endl;
+    o << setw(w) << itr->first << typeName(*itr->second->create()) << std::endl;
   }
   o << std::endl;
 }

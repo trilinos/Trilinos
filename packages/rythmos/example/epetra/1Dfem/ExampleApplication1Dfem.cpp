@@ -61,7 +61,7 @@ void ExampleApplication1Dfem::initialize(Teuchos::RefCountPtr<Epetra_Comm> &epet
   epetra_map_ptr_ = Teuchos::rcp( new Epetra_Map( problemInterfacePtr_->getMap() ) );
 //  Epetra_Vector& soln = problemInterfacePtr_->getSolution();
 //  const Epetra_BlockMap& solnBlockMap = soln.Map();
-//  std::cout << "typeid(solnBlockMap).name() = " << typeid(solnBlockMap).name() << std::endl;
+//  std::cout << "typeName(solnBlockMap).name() = " << typeid(solnBlockMap) << std::endl;
 //  const Epetra_Map& solnMap = Teuchos::dyn_cast<const Epetra_Map>(solnBlockMap);
 //  epetra_map_ptr_ = Teuchos::rcp( new Epetra_Map( solnMap ) );
 
