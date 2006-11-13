@@ -34,7 +34,6 @@ extern "C" {
 int Zoltan_Simple(
   ZZ *zz,                       /* The Zoltan structure.                     */
   float *part_sizes,            /* Input:  Array of size zz->LB.Num_Global_Parts
-                                   * zz->Obj_Weight_Dim
                                    containing the percentage of work to be
                                    assigned to each partition.               */
   int *num_import,              /* Return -1. Simple uses only export lists. */
@@ -108,6 +107,11 @@ int Zoltan_Simple(
   for (i=1; i<=zz->Num_Proc; i++)
     scansum[i] += scansum[i-1]; 
 
+  /* Overwrite part_sizes with cumulative sum (inclusive) part_sizes. */
+  /* A cleaner way is to make a copy, but this works. */
+  for (i=1; i<zz->LB.Num_Global_Parts; i++)
+    part_sizes[i] += part_sizes[i-1]; 
+
   /* Loop over objects and assign partition. */
   count = 0;
   part = 0;
@@ -117,7 +121,7 @@ int Zoltan_Simple(
     /* determine new partition number for this object, 
        using the "center of gravity" */
     while (part<zz->LB.Num_Global_Parts-1 && (wtsum+0.5*(wtflag? wgts[i]: 1.0)) 
-           > (part+1)*scansum[zz->Num_Proc]/zz->LB.Num_Global_Parts)
+           > part_sizes[part]*scansum[zz->Num_Proc])
       part++;
     if (part != parts[i]){
       /* export_global_ids[count] = global_ids[i]; */
