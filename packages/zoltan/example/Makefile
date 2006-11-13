@@ -88,7 +88,7 @@ endif
 
 LIBS = -lexzoltan -lzoltan $(THIRD_PARTY_LIBS) $(MPI_LIB) -lm
 
-ZOLTAN_INCLUDE= -I$(ZUTIL)/Communication \
+ZOLTAN_INCLUDE= -I. -I$(ZUTIL)/Communication \
                 -I$(ZUTIL)/DDirectory \
                 -I$(ZUTIL)/Memory \
                 -I$(ZUTIL)/Timer \
