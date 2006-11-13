@@ -75,8 +75,8 @@ std::string typeName( const T &t )
 template<typename T>
 class TypeNameTraits {
 public:
-#ifdef HAVE_GCC_ABI_DEMANGLE
   static std::string name() {
+#ifdef HAVE_GCC_ABI_DEMANGLE
     const std::string
       mangledName = typeid(T).name();
     int status;
