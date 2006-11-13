@@ -209,8 +209,7 @@ StringToIntegralParameterEntryValidator<IntegralType>::StringToIntegralParameter
     const bool unique = map_.insert( val_t( strings[i], i ) ).second;
     TEST_FOR_EXCEPTION(
       !unique, std::logic_error
-      ,"Teuchos::StringToIntegralParameterEntryValidator::StringToIntegralParameterEntryValidator(...):"
-      << "\n\nError, the string \"" << strings[i] << "\" is a duplicate for parameter \""
+      ,"Error, the string \"" << strings[i] << "\" is a duplicate for parameter \""
       << defaultParameterName_ << "\"."
       );
   }
@@ -232,8 +231,7 @@ StringToIntegralParameterEntryValidator<IntegralType>::StringToIntegralParameter
     const bool unique = map_.insert( val_t( strings[i], integralValues[i] ) ).second;
     TEST_FOR_EXCEPTION(
       !unique, std::logic_error
-      ,"Teuchos::StringToIntegralParameterEntryValidator::StringToIntegralParameterEntryValidator(...):"
-      << "\n\nError, the string \"" << strings[i] << "\" is a duplicate for parameter \""
+      ,"Error, the string \"" << strings[i] << "\" is a duplicate for parameter \""
       << defaultParameterName_ << "\""
       );
   }
@@ -250,13 +248,12 @@ StringToIntegralParameterEntryValidator<IntegralType>::getIntegralValue(
   ) const
 {
   typename map_t::const_iterator itr = map_.find(str);
-  TEST_FOR_EXCEPTION(
+  TEST_FOR_EXCEPTION_PURE_MSG(
     itr == map_.end(), Exceptions::InvalidParameterValue
-    ,"Teuchos::StringToIntegralParameterEntryValidator::getIntegralValue(\""<<str<<"\",...):"
-    << "\n\nError, the value \"" << str << "\" is not recognized for the parameter \""
-    << ( paramName.length() ? paramName : defaultParameterName_ )
-    << "\" in the sublist \"" << sublistName << "\"."
-    << "\n\nValid selections include: " << validValues_  << "."
+    ,"Error, the value \"" << str << "\" is not recognized for the parameter \""
+    << ( paramName.length() ? paramName : defaultParameterName_ ) << "\""
+    << "\nin the sublist \"" << sublistName << "\"."
+    << "\n\nValid values include: " << validValues_  << "."
     );
   return (*itr).second;	
 }
@@ -269,17 +266,17 @@ StringToIntegralParameterEntryValidator<IntegralType>::getIntegralValue(
   ) const
 {
   const bool validType = ( entry.getAny(activeQuery).type() == typeid(std::string) );
-  TEST_FOR_EXCEPTION(
+  TEST_FOR_EXCEPTION_PURE_MSG(
     !validType, Exceptions::InvalidParameterType
-    ,"Teuchos::StringToIntegralParameterEntryValidator::getIntegralValue(...):"
-    << "\n\nError, the parameter {paramName=\""<<(paramName.length()?paramName:defaultParameterName_)
+    ,"Error, the parameter {paramName=\""<<(paramName.length()?paramName:defaultParameterName_)
     << "\",type=\""<<entry.getAny(activeQuery).typeName()<<"\"}"
     << "\nin the sublist \"" << sublistName << "\""
-    << "\nhas the wrong type.  The correct type is \"string\"!"
+    << "\nhas the wrong type."
+    << "\n\nThe correct type is \"string\"!"
     );
   const std::string
     &strValue = any_cast<std::string>(entry.getAny(activeQuery)); // This cast should not fail!
-  return getIntegralValue(strValue); // This will validate the value!
+  return getIntegralValue(strValue,paramName,sublistName); // This will validate the value and throw!
 }
 
 template<class IntegralType>

@@ -40,7 +40,7 @@
 */
 //@{
 
-/// The only purpose for this function is to set a breakpoint.
+/** \brief The only purpose for this function is to set a breakpoint. */
 void TestForException_break();
 
 /** \brief Macro for throwing an exception with breakpointing to ease debugging
@@ -115,6 +115,23 @@ void TestForException_break();
 	    omsg \
               << __FILE__ << ":" << __LINE__ << ":" \
               << "\n\nThrow test that evaluated to true: "#throw_exception_test << "\n\n" \
+              << msg; \
+	    throw Exception(TEUCHOS_OSTRINGSTREAM_GET_C_STR(omsg)); \
+    } \
+}
+
+/** \brief Macro for throwing an exception with breakpointing to ease debugging
+ *
+ * This macro is equivalent to the <tt>TEST_FOR_EXCEPTION()</tt> macro except
+ * the file name, line number, and test condition are not printed.
+ */
+#define TEST_FOR_EXCEPTION_PURE_MSG(throw_exception_test,Exception,msg) \
+{ \
+    const bool throw_exception = (throw_exception_test); \
+    if(throw_exception) { \
+        TestForException_break(); \
+	    TeuchosOStringStream omsg; \
+	    omsg \
               << msg; \
 	    throw Exception(TEUCHOS_OSTRINGSTREAM_GET_C_STR(omsg)); \
     } \

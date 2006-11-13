@@ -630,7 +630,7 @@ bool ParameterList::isType(const string& name) const
 inline
 void ParameterList::validateEntryExists( const std::string &funcName, const std::string &name, const ParameterEntry *entry ) const
 {
-  TEST_FOR_EXCEPTION(
+  TEST_FOR_EXCEPTION_PURE_MSG(
     entry==NULL, Exceptions::InvalidParameterName
     ,"Teuchos::ParameterList::"<<funcName<<"(...):"
     "\n\nError!  The parameter \""<<name<<"\" does not exist"\
@@ -643,7 +643,7 @@ void ParameterList::validateEntryExists( const std::string &funcName, const std:
 template<typename T>
 void ParameterList::validateEntryType( const std::string &funcName, const std::string &name, const ParameterEntry &entry ) const
 {
-  TEST_FOR_EXCEPTION(
+  TEST_FOR_EXCEPTION_PURE_MSG(
     entry.getAny().type() != typeid(T), Exceptions::InvalidParameterType
     ,"Teuchos::ParameterList::"<<funcName<<"(...):"
     "\n\nError!  An attempt was made to access parameter \""<<name<<"\""

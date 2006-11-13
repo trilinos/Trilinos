@@ -159,15 +159,15 @@ ParameterList& ParameterList::sublist(
   // If it does exist and is a list, return the list value.
   // Otherwise, throw an error.
   if (i != params_.end()) {
-    TEST_FOR_EXCEPTION(
-      !entry(i).isList(), std::runtime_error,
-      " Parameter " << name << " is not a list, it is of type \""
+    TEST_FOR_EXCEPTION_PURE_MSG(
+      !entry(i).isList(), Exceptions::InvalidParameterType
+      ,"Error, the parameter " << name << " is not a list, it is of type \""
       <<entry(i).getAny(false).typeName()<<"\"!" );
     return getValue<ParameterList>(entry(i));
   }
 
   // The list does not exist so create a new empty list and return its reference
-  TEST_FOR_EXCEPTION(
+  TEST_FOR_EXCEPTION_PURE_MSG(
     mustAlreadyExist, Exceptions::InvalidParameterName
     ,"The sublist "<<this->name()<<"->\""<<name<<"\" does not exist!"
     );
@@ -188,14 +188,17 @@ const ParameterList& ParameterList::sublist(const string& name) const
   ConstIterator i = params_.find(name);
 
   // If it does not exist, throw an error
-  TEST_FOR_EXCEPTION(
+  TEST_FOR_EXCEPTION_PURE_MSG(
     i == params_.end(), Exceptions::InvalidParameterName
-    ,"The sublist "<<this->name()<<"->\""<<name<<"\" does not exist!"
+    ,"Error, the sublist "<<this->name()<<"->\""<<name<<"\" does not exist!"
     );
 
   // If it does exist and is a list, return the list value.
-  TEST_FOR_EXCEPTION( !entry(i).isList(), std::runtime_error,
-                      " Parameter " << name << " is not a list!" );
+  TEST_FOR_EXCEPTION_PURE_MSG(
+    !entry(i).isList(), Exceptions::InvalidParameterType
+    ,"Error, the parameter \""<<name<<"\" is not a list!  Instead it is of type"
+    " \""<<entry(i).getAny(false).typeName()<<"\"!"
+    );
   return getValue<ParameterList>(entry(i));
 }
   
@@ -342,7 +345,7 @@ void ParameterList::validateParameters(
       continue;
     }
     const ParameterEntry *validEntry = validParamList.getEntryPtr(entryName);
-    TEST_FOR_EXCEPTION(
+    TEST_FOR_EXCEPTION_PURE_MSG(
       !validEntry, Exceptions::InvalidParameterName
       ,"Error, the parameter {name=\""<<entryName<<"\",type=\""<<entry.getAny(false).typeName()<<"\""
       ",value=\""<<filterValueToString(entry)<<"\"}"
@@ -356,7 +359,7 @@ void ParameterList::validateParameters(
     }
     else {
       const bool validType = ( validEntry!=NULL ? entry.getAny(false).type() == validEntry->getAny(false).type() : false );
-      TEST_FOR_EXCEPTION(
+      TEST_FOR_EXCEPTION_PURE_MSG(
         !validType, Exceptions::InvalidParameterType
         ,"Error, the parameter {name=\""<<entryName<<"\",type=\""<<entry.getAny(false).typeName()<<"\""
         ",value=\""<<filterValueToString(entry)<<"\"}"
