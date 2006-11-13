@@ -1759,15 +1759,21 @@ void AZ_random_vector(double u[], int data_org[], int proc_config[])
 
   /* local variables */
 
-  static int seed = 493217272;
-  int        i, N;
+  static int seed = 0;
+  static int start = 1;
+  int        i,N;
+  int maxint = 2147483647;
 
   /*********************** BEGIN EXECUTION *********************************/
 
-  N    = (proc_config[AZ_node]+7) * (proc_config[AZ_node]+13) *
-    (19 + proc_config[AZ_node]);
+  /* Distribute the seeds evenly in [-maxint,maxint].  This guarantees nothing
+   * about where in a random number stream we are, but avoids overflow situations
+   * in parallel when multiplying by a PID. */
 
-  seed = (int) (AZ_srandom1(&N)* (double) seed);
+  if (start) {
+    seed = (int)(maxint * (1.0 - 2.0*(proc_config[AZ_node]+1)/(proc_config[AZ_N_procs]+1.0)));
+    start = 0;
+  }
   N    = data_org[AZ_N_internal] + data_org[AZ_N_border];
 
   for (i = 0; i < N; i++) u[i] = AZ_srandom1(&seed);
@@ -1816,7 +1822,7 @@ double AZ_srandom1(int *seed)
   test = a * lo - r * hi;
 
   if (test > 0) *seed = test;
-  *seed = test + m;
+  else *seed = test + m;
 
   rand_num = (double) *seed / (double) m;
 

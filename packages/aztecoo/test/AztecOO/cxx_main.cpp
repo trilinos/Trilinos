@@ -108,6 +108,8 @@ int test_AZ_iterate_then_AZ_scale_f(Epetra_Comm& Comm, bool verbose);
 
 int test_bug2554(Epetra_Comm& Comm, bool verbose);
 
+int test_bug2890(Epetra_Comm& Comm, bool verbose);
+
 Epetra_CrsMatrix* create_and_fill_crs_matrix(const Epetra_Map& emap);
 
 void destroy_matrix(AZ_MATRIX*& Amat);
@@ -250,6 +252,12 @@ int main(int argc, char *argv[])
   err = test_bug2554(comm, verbose);
   if (err != 0) {
     cout << "test_bug2554 err, test FAILED."<<endl;
+    return(err);
+  }
+
+  err = test_bug2890(comm, verbose);
+  if (err != 0) {
+    cout << "test_bug2890 err, test FAILED."<<endl;
     return(err);
   }
 
@@ -1477,3 +1485,26 @@ int test_bug2554(Epetra_Comm& Comm, bool verbose)
   return(0);
 }
 
+int test_bug2890(Epetra_Comm& Comm, bool verbose)
+{
+//This function tests the AZ_random1() function in AztecOO.
+//The implementation of the Park and Miller random number
+//generator was incorrect and resulted in an overflow condition.
+//This is *not* a complete test of AztecOO's RNG.
+//
+//A more robust check is to compile AztecOO with gcc -ftrapv and run
+//a Krylov method that invokes AZ_random_vector().
+
+  int seed = -127773;
+  double rand_num;
+
+  rand_num = AZ_srandom1(&seed);
+
+  if (verbose && Comm.MyPID() == 0)
+    printf("test_bugRandom: rand_num = %e (should be in [0,1])\n",rand_num);
+
+  if ( (rand_num > 1) || (rand_num < 0) )
+    return 1;    // rand_num should be in [0,1]
+  else
+    return 0;
+}
