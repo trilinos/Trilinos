@@ -53,7 +53,7 @@ int Zoltan_Simple(
   int i, count, num_obj;
   int part, max_export;
   int wtflag;
-  double wtsum, scansum[zz->Num_Proc];
+  double wtsum, scansum[zz->Num_Proc+1];
   ZOLTAN_ID_PTR global_ids = NULL;
   ZOLTAN_ID_PTR local_ids = NULL; 
   int *parts = NULL;
@@ -91,7 +91,7 @@ int Zoltan_Simple(
     }
   }
 
-  /* Sum up object weights. */
+  /* Sum up local object weights. */
   if (wtflag){
     wtsum = 0.0;
     for (i=0; i<num_obj; i++)
@@ -101,17 +101,22 @@ int Zoltan_Simple(
     wtsum = num_obj;
 
   /* Cumulative global wtsum */
-  scansum[0] = 0.0;  
-  MPI_Scan(&wtsum, &scansum[1], 1, MPI_DOUBLE, MPI_SUM, zz->Communicator);
+  MPI_Allgather(&wtsum, 1, MPI_DOUBLE, &scansum[1], 1, MPI_DOUBLE, 
+                zz->Communicator);
+  /* scansum = sum of weights on lower processors, excluding self. */
+  scansum[0] = 0.;
+  for (i=1; i<=zz->Num_Proc; i++)
+    scansum[i] += scansum[i-1]; 
 
   /* Loop over objects and assign partition. */
   count = 0;
   part = 0;
   wtsum = scansum[zz->Proc];
   for (i=0; i<num_obj; i++){
-    /* wtsum is sum of all lower-ordered object */
-    /* determine new partition number for this object */
-    while (part<zz->LB.Num_Global_Parts && (wtsum+0.5*(wtflag? wgts[i] : 1.0)) 
+    /* wtsum is now sum of all lower-ordered object */
+    /* determine new partition number for this object, 
+       using the "center of gravity" */
+    while (part<zz->LB.Num_Global_Parts-1 && (wtsum+0.5*(wtflag? wgts[i]: 1.0)) 
            > (part+1)*scansum[zz->Num_Proc]/zz->LB.Num_Global_Parts)
       part++;
     if (part != parts[i]){
@@ -128,9 +133,12 @@ int Zoltan_Simple(
       (*export_procs)[count] = Zoltan_LB_Part_To_Proc(zz, 
                      (*export_to_part)[count], &global_ids[i*zz->Num_GID]);
 
+/*
       printf("Debug: export gid %u to part %d and proc %d.\n", (*export_global_ids)[count], (*export_to_part)[count], (*export_procs)[count]);
+*/
       ++count;
     }
+    wtsum += (wtflag? wgts[i] : 1.0);
   }
   (*num_export) = count;
 
