@@ -626,7 +626,9 @@ class AztecOO {
 
 // External prototypes
 extern "C" void Epetra_Aztec_matvec(double x[], double y[], AZ_MATRIX *Amat, int proc_config[]);
+extern "C" double Epetra_Aztec_matnorminf(AZ_MATRIX *Amat);
 extern "C" void Epetra_Aztec_operatorvec(double x[], double y[], AZ_MATRIX *Amat, int proc_config[]);
+extern "C" double Epetra_Aztec_operatornorminf(AZ_MATRIX *Amat);
 extern "C" void Epetra_Aztec_precond(double x[], int input_options[],
                                      int proc_config[], double input_params[], AZ_MATRIX *Amat,
                                      AZ_PRECOND *prec);

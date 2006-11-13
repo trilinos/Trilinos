@@ -143,9 +143,8 @@ struct AZ_MATRIX_STRUCT {
   /*                                        */
   /* End Aztec 2.1 mheroux mod */
   void (*matvec)(double *,       /* function ptr to user-defined routine   */
-                 double *, struct
-                 AZ_MATRIX_STRUCT *,
-                 int *);
+                 double *, struct AZ_MATRIX_STRUCT *, int *);
+  double (*matnorminf)(struct AZ_MATRIX_STRUCT *); /* function ptr to user-routine   */
   /*********************************************************************/
   /*********************************************************************/
   int (*getrow)(int columns[], double values[], int row_lengths[],
@@ -1289,6 +1288,9 @@ void PREFIX AZ_SLAIC1_F77(int * , int *, float *, float *, float *, float *,
 
   extern void AZ_set_MATFREE(AZ_MATRIX *Amat, void *data,
                              void (*matvec)(double *, double *, struct AZ_MATRIX_STRUCT *, int *));
+
+  extern void AZ_set_MATNORMINF(AZ_MATRIX *Amat, void *data,
+                             double (*matnorminf)(struct AZ_MATRIX_STRUCT *));
 
   extern void AZ_set_MATFREE_getrow(AZ_MATRIX *Amat, void *data,
                                     int  (*getrow)(int *, double *, int *, struct AZ_MATRIX_STRUCT *, int ,

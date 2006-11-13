@@ -2594,6 +2594,11 @@ void AZ_precond_destroy(AZ_PRECOND **precond)
    *precond = NULL;
 }
 
+void AZ_set_MATNORMINF(AZ_MATRIX *Amat, void* data, double (*matnorminf)(AZ_MATRIX* Amat))
+{
+  Amat->matnorminf = matnorminf;
+}
+
 void AZ_set_MATFREE_matrix_norm(AZ_MATRIX *Amat, double mat_norm)
 {
    Amat->matrix_norm = mat_norm;

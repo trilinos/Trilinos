@@ -298,6 +298,7 @@ void AZ_compute_global_scalars(AZ_MATRIX *Amat,
                               Amat->data_org);
         }
         else {
+          Amat->matrix_norm = Amat->matnorminf(Amat);
           if (Amat->matrix_norm <= 0.0) {
             if (proc_config[AZ_node]==0) {
               AZ_printf_out("Error: matrix is not MSR or VBR, and Amat->"

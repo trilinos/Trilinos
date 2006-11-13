@@ -421,8 +421,10 @@ int AztecOO::SetUserOperator(Epetra_Operator * UserOperator) {
   AZ_set_MATFREE(Amat_, (void *) UserOperatorData_, Epetra_Aztec_operatorvec);
   
   // Aztec needs upper bound for matrix norm if doing polynomial preconditioning
-  if (UserOperator->HasNormInf())
+  if (UserOperator->HasNormInf()) {
     AZ_set_MATFREE_matrix_norm(Amat_, UserOperator->NormInf()); 
+    AZ_set_MATNORMINF(Amat_, (void*)UserOperatorData_, Epetra_Aztec_operatornorminf);
+  }
 
   // Set operator label
    const char * label = UserOperator->Label();
@@ -445,6 +447,7 @@ int AztecOO::SetUserMatrix(Epetra_RowMatrix * UserMatrix,
   SetProcConfig(UserMatrix->Comm());
   EPETRA_CHK_ERR(SetUserOperator(UserMatrix));
   AZ_set_MATFREE(Amat_, (void *) UserMatrixData_, Epetra_Aztec_matvec);
+  AZ_set_MATNORMINF(Amat_, (void*)UserMatrixData_, Epetra_Aztec_matnorminf);
   //int N_ghost = UserMatrix->NumMyCols() - UserMatrix->NumMyRows();
   int N_ghost = 0;
   if (UserMatrix->RowMatrixImporter()!=0)
@@ -500,6 +503,7 @@ int AztecOO::SetPrecMatrix(Epetra_RowMatrix * PrecMatrix) {
   SetProcConfig(PrecMatrix->Comm());
   Pmat_ = AZ_matrix_create(N_local_);
   AZ_set_MATFREE(Pmat_, (void *) PrecMatrixData_, Epetra_Aztec_matvec);
+  AZ_set_MATNORMINF(Amat_, (void*)UserMatrixData_, Epetra_Aztec_matnorminf);
   
   // Aztec needs upper bound for matrix norm if doing polynomial preconditioning
   if (PrecMatrix->HasNormInf())
@@ -1342,6 +1346,14 @@ void AztecOO::PrintLinearSystem(const char* name)
 
 
 //=============================================================================
+double Epetra_Aztec_matnorminf(AZ_MATRIX* Amat)
+{
+  AztecOO::MatrixData* Data = (AztecOO::MatrixData*)AZ_get_matvec_data(Amat);
+  Epetra_RowMatrix* A = (Epetra_RowMatrix*)Data->A;
+  return( A->NormInf() );
+}
+
+//=============================================================================
 void Epetra_Aztec_matvec(double x[], double y[],
                          AZ_MATRIX *Amat, int proc_config[])
 {
@@ -1368,6 +1380,15 @@ void Epetra_Aztec_matvec(double x[], double y[],
   int ierr = A->Apply(*X, *Y);
   if (ierr!=0) throw X->ReportError("Error in call to Epetra_Operator for preconditioner", ierr);
 
+}
+
+//=============================================================================
+double Epetra_Aztec_operatornorminf(AZ_MATRIX* Amat)
+{
+  AztecOO::OperatorData * Data = (AztecOO::OperatorData *) AZ_get_matvec_data(Amat);
+  Epetra_Operator * A = (Epetra_Operator *) Data->A;
+
+  return( A->HasNormInf() ? A->NormInf() : -1.0);
 }
 
 //=============================================================================

@@ -65,6 +65,9 @@ int test_azoo_conv_anorm(Epetra_CrsMatrix& A,
                          Epetra_Vector& b,
                          bool verbose);
 
+int test_azoo_conv_anorm_with_scaling(const Epetra_Comm& comm,
+                                      bool verbose);
+
 int test_azoo_with_ilut(Epetra_CrsMatrix& A,
                         Epetra_Vector& x,
                         Epetra_Vector& b,
@@ -161,6 +164,12 @@ int main(int argc, char *argv[])
   err = test_azoo_conv_anorm(*A, x, b, verbose);
   if (err != 0) {
     cout << "test_azoo_conv_anorm err, test FAILED."<<endl;
+    return(err);
+  }
+
+  err = test_azoo_conv_anorm_with_scaling(A->Comm(), verbose);
+  if (err != 0) {
+    cout << "test_azoo_conv_anorm_with_scaling err, test FAILED."<<endl;
     return(err);
   }
 
@@ -452,6 +461,174 @@ int test_azoo_with_ilut(Epetra_CrsMatrix& A,
   return(0);
 }
 
+int test_azoo_conv_anorm_with_scaling(const Epetra_Comm& comm,
+                                      bool verbose)
+{
+  if (verbose) {
+    cout << "testing AztecOO with AZ_conv = AZ_Anorm, and AZ_scaling = AZ_sym_diag" << endl;
+  }
+
+  int localN = 20;
+  int numprocs = comm.NumProc();
+  int globalN = numprocs*localN;
+ 
+  Epetra_Map emap(globalN, 0, comm);
+  Epetra_CrsMatrix* Acrs = create_and_fill_crs_matrix(emap);
+
+  Epetra_Vector x_crs(emap), b_crs(emap);
+  x_crs.PutScalar(1.0);
+
+  Acrs->Multiply(false, x_crs, b_crs);
+  x_crs.PutScalar(0.0);
+
+  AztecOO azoo(Acrs, &x_crs, &b_crs);
+  azoo.SetAztecOption(AZ_conv, AZ_Anorm);
+  azoo.SetAztecOption(AZ_solver, AZ_cg);
+  azoo.SetAztecOption(AZ_scaling, AZ_sym_diag);
+
+  azoo.Iterate(100, 1.e-9);
+
+  //now, do the same thing with 'old-fashioned Aztec', and compare
+  //the solutions.
+
+    int* proc_config = new int[AZ_PROC_SIZE];
+
+#ifdef EPETRA_MPI
+  AZ_set_proc_config(proc_config, MPI_COMM_WORLD);
+  AZ_set_comm(proc_config, MPI_COMM_WORLD);
+#else
+  AZ_set_proc_config(proc_config, 0);
+#endif
+
+  int *external, *update_index, *external_index;
+  int *external2, *update_index2, *external_index2;
+  AZ_MATRIX* Amsr = NULL;
+  AZ_MATRIX* Avbr = NULL;
+  int err = create_and_transform_simple_matrix(AZ_MSR_MATRIX, localN, 4.0,
+                                               proc_config, Amsr,
+                                               external, update_index,
+                                               external_index);
+
+  int N_update = localN+Amsr->data_org[AZ_N_border];
+  double* x_msr = new double[N_update];
+  double* b_msr = new double[N_update*2];
+  double* b_msr_u = b_msr+N_update;
+  double* x_vbr = new double[N_update];
+  double* b_vbr = new double[N_update*2];
+  double* b_vbr_u = b_vbr+N_update;
+
+  err = create_and_transform_simple_matrix(AZ_VBR_MATRIX, localN, 4.0,
+                                           proc_config, Avbr,
+                                           external2, update_index2,
+                                           external_index2);
+  for(int i=0; i<N_update; ++i) {
+    x_msr[i] = 1.0;
+    b_msr[i] = 0.0;
+    b_msr_u[i] = 0.0;
+    x_vbr[i] = 1.0;
+    b_vbr[i] = 0.0;
+    b_vbr_u[i] = 0.0;
+  }
+
+  Amsr->matvec(x_msr, b_msr, Amsr, proc_config);
+  Avbr->matvec(x_vbr, b_vbr, Avbr, proc_config);
+
+  for(int i=0; i<N_update; ++i) {
+    x_msr[i] = 0.0;
+    x_vbr[i] = 0.0;
+  }
+
+  //check that the rhs's are the same.
+  double max_rhs_diff1 = 0.0;
+  double max_rhs_diff2 = 0.0;
+  double* bptr_crs = b_crs.Values();
+
+  AZ_invorder_vec(b_msr, Amsr->data_org, update_index, NULL, b_msr_u);
+  AZ_invorder_vec(b_vbr, Avbr->data_org, update_index2, Avbr->rpntr, b_vbr_u);
+  for(int i=0; i<localN; ++i) {
+    if (std::abs(bptr_crs[i] - b_msr_u[i]) > max_rhs_diff1) {
+      max_rhs_diff1 = std::abs(bptr_crs[i] - b_msr_u[i]);
+    }
+    if (std::abs(bptr_crs[i] - b_vbr_u[i]) > max_rhs_diff2) {
+      max_rhs_diff2 = std::abs(bptr_crs[i] - b_vbr_u[i]);
+    }
+  }
+
+  if (max_rhs_diff1> 1.e-12) {
+    cout << "AztecOO rhs not equal to Aztec msr rhs "<<max_rhs_diff1<<endl;
+    return(-1);
+  }
+
+  if (max_rhs_diff2> 1.e-12) {
+    cout << "AztecOO rhs not equal to Aztec vbr rhs "<<max_rhs_diff2<<endl;
+    return(-1);
+  }
+
+  int* az_options = new int[AZ_OPTIONS_SIZE];
+  double* params = new double[AZ_PARAMS_SIZE];
+  double* status = new double[AZ_STATUS_SIZE];
+  AZ_defaults(az_options, params);
+  az_options[AZ_solver] = AZ_cg;
+  az_options[AZ_conv] = AZ_Anorm;
+  az_options[AZ_scaling] = AZ_sym_diag;
+
+  az_options[AZ_max_iter] = 100;
+  params[AZ_tol] = 1.e-9;
+
+  AZ_iterate(x_msr, b_msr, az_options, params, status, proc_config,
+             Amsr, NULL, NULL);
+  AZ_iterate(x_vbr, b_vbr, az_options, params, status, proc_config,
+             Avbr, NULL, NULL);
+
+  AZ_invorder_vec(x_msr, Amsr->data_org, update_index, NULL, b_msr_u);
+  AZ_invorder_vec(x_vbr, Avbr->data_org, update_index2, Avbr->rpntr, b_vbr_u);
+
+  double max_diff1 = 0.0;
+  double max_diff2 = 0.0;
+  double* xptr_crs = x_crs.Values();
+
+  for(int i=0; i<localN; ++i) {
+    if (std::abs(xptr_crs[i] - b_msr_u[i]) > max_diff1) {
+      max_diff1 = std::abs(xptr_crs[i] - b_msr_u[i]);
+    }
+    if (std::abs(xptr_crs[i] - b_vbr_u[i]) > max_diff2) {
+      max_diff2 = std::abs(xptr_crs[i] - b_vbr_u[i]);
+    }
+  }
+
+  if (max_diff1 > 1.e-7) {
+    cout << "AztecOO failed to match Aztec msr with scaling and Anorm conv."
+      << endl;
+    return(-1);
+  }
+
+  if (max_diff2 > 1.e-7) {
+    cout << "AztecOO failed to match Aztec vbr with scaling and Anorm conv."
+      << endl;
+    return(-1);
+  }
+
+  delete Acrs;
+  delete [] x_msr;
+  delete [] b_msr;
+  delete [] x_vbr;
+  delete [] b_vbr;
+  destroy_matrix(Amsr);
+  destroy_matrix(Avbr);
+  delete [] proc_config;
+  free(update_index);
+  free(external);
+  free(external_index);
+  free(update_index2);
+  free(external2);
+  free(external_index2);
+  delete [] az_options;
+  delete [] params;
+  delete [] status;
+
+  return(0);
+}
+
 int test_azoo_conv_anorm(Epetra_CrsMatrix& A,
                          Epetra_Vector& x,
                          Epetra_Vector& b,
@@ -474,6 +651,7 @@ int test_azoo_conv_anorm(Epetra_CrsMatrix& A,
   AztecOO azoo(&A, &soln_Anorm, &rhs);
   azoo.SetAztecOption(AZ_conv, AZ_Anorm);
   azoo.SetAztecOption(AZ_solver, AZ_cg);
+  //azoo.SetAztecOption(AZ_scaling, AZ_sym_diag);
 
   azoo.Iterate(30, 1.e-5);
 
@@ -814,17 +992,16 @@ int test_AZ_iterate_AZ_pre_calc_AZ_reuse(Epetra_Comm& Comm,
   int i, N = 5;
   AZ_MATRIX* Amsr = NULL;
   AZ_MATRIX* Avbr = NULL;
-  int err = create_and_transform_simple_matrix(AZ_MSR_MATRIX, N, 2.0,
+  int err = create_and_transform_simple_matrix(AZ_MSR_MATRIX, N, 3.0,
                                                proc_config, Amsr,
                                                external, update_index,
                                                external_index);
 
-  err += create_and_transform_simple_matrix(AZ_VBR_MATRIX, N, 2.0,
+  err += create_and_transform_simple_matrix(AZ_VBR_MATRIX, N, 3.0,
                                             proc_config, Avbr,
                                             external2, update_index2,
                                             external_index2);
 
-//  Epetra_MsrMatrix emsr(proc_config, Amsr);
 
   int* az_options = new int[AZ_OPTIONS_SIZE];
   double* params = new double[AZ_PARAMS_SIZE];
@@ -841,10 +1018,11 @@ int test_AZ_iterate_AZ_pre_calc_AZ_reuse(Epetra_Comm& Comm,
     az_options[AZ_output] = 0;
   }
 
-  double* x = new double[N];
-  double* b = new double[N];
+  int N_update = N+Amsr->data_org[AZ_N_border];
+  double* x = new double[N_update];
+  double* b = new double[N_update];
 
-  for(i=0; i<N; ++i) {
+  for(i=0; i<N_update; ++i) {
     x[i] = 0.0;
     b[i] = 1.0;
   }
@@ -857,8 +1035,6 @@ int test_AZ_iterate_AZ_pre_calc_AZ_reuse(Epetra_Comm& Comm,
  // Amsr->data_org[AZ_name] = 1;
  // Avbr->data_org[AZ_name] = 2;
 
-//  AZ_manage_memory(0, -43, 0, 0, 0);
-
   //First solve with the first matrix (Amsr).
   if (verbose)
     cout << "solve Amsr, name: "<<Amsr->data_org[AZ_name]<<endl;
@@ -866,18 +1042,12 @@ int test_AZ_iterate_AZ_pre_calc_AZ_reuse(Epetra_Comm& Comm,
   call_AZ_iterate(Amsr, Pmsr, Smsr, x, b, az_options, params, status,
                   proc_config, 1, AZ_calc, verbose);
 
-//  AZ_manage_memory(0, -43, 0, 0, 0);
-
   //First solve with the second matrix (Avbr).
   if (verbose)
     cout << "solve Avbr, name: " <<Avbr->data_org[AZ_name]<<endl;
 
-//  AZ_manage_memory(0, -43, 0, 0, 0);
-
   call_AZ_iterate(Avbr, Pvbr, Svbr, x, b, az_options, params, status,
                   proc_config, 0, AZ_calc, verbose);
-
-//  AZ_manage_memory(0, -43, 0, 0, 0);
 
   //Second solve with Amsr, reusing preconditioner
   if (verbose)
@@ -886,8 +1056,6 @@ int test_AZ_iterate_AZ_pre_calc_AZ_reuse(Epetra_Comm& Comm,
   call_AZ_iterate(Amsr, Pmsr, Smsr, x, b, az_options, params, status,
                   proc_config, 1, AZ_reuse, verbose);
 
-//  AZ_manage_memory(0, -43, 0, 0, 0);
-
   //Second solve with Avbr, not reusing preconditioner
   if (verbose)
     cout << "solve Avbr (keepinfo==0), name: " <<Avbr->data_org[AZ_name]<<endl;
@@ -895,14 +1063,11 @@ int test_AZ_iterate_AZ_pre_calc_AZ_reuse(Epetra_Comm& Comm,
   call_AZ_iterate(Avbr, Pvbr, Svbr, x, b, az_options, params, status,
                   proc_config, 0, AZ_calc, verbose);
 
-//  AZ_manage_memory(0, -43, 0, 0, 0);
   if (verbose)
     std::cout << "calling AZ_free_memory..."<<std::endl;
 
   AZ_free_memory(Amsr->data_org[AZ_name]);
   AZ_free_memory(Avbr->data_org[AZ_name]);
-
-//  AZ_manage_memory(0, -43, 0, 0, 0);
 
   //solve with Amsr again, not reusing preconditioner
   if (verbose)
@@ -910,8 +1075,6 @@ int test_AZ_iterate_AZ_pre_calc_AZ_reuse(Epetra_Comm& Comm,
 
   call_AZ_iterate(Amsr, Pmsr, Smsr, x, b, az_options, params, status,
                   proc_config, 0, AZ_calc, verbose);
-
-//  AZ_manage_memory(0, -43, 0, 0, 0);
 
   //Second solve with Avbr, this time with keepinfo==1
   if (verbose)
@@ -1017,7 +1180,7 @@ int test_AZ_iterate_then_AZ_scale_f(Epetra_Comm& Comm, bool verbose)
 
   int i, N = 5;
   AZ_MATRIX* Amat = NULL;
-  int err = create_and_transform_simple_matrix(AZ_MSR_MATRIX, N, 2.0,
+  int err = create_and_transform_simple_matrix(AZ_MSR_MATRIX, N, 3.0,
                                                proc_config, Amat,
                                                  external, update_index,
                                                  external_index);
@@ -1037,10 +1200,11 @@ int test_AZ_iterate_then_AZ_scale_f(Epetra_Comm& Comm, bool verbose)
     options[AZ_output] = 0;
   }
   
-  double* x = new double[N];
-  double* b = new double[N];
+  int N_update = N+Amat->data_org[AZ_N_border];
+  double* x = new double[N_update];
+  double* b = new double[N_update];
 
-  for(i=0; i<N; ++i) {
+  for(i=0; i<N_update; ++i) {
     x[i] = 0.0;
     b[i] = 1.0;
   }
@@ -1102,42 +1266,93 @@ int create_and_transform_simple_matrix(int matrix_type,
                                     int*& update_index,
                                     int*& external_index)
 {
-  //We're going to create a very simple diagonal matrix.
+  //We're going to create a very simple tri-diagonal matrix with diag_term
+  //on the diagonal, and -1.0 on the off-diagonals.
 
   Amat = AZ_matrix_create(N);
 
   int* update = new int[N];
   int i;
+  int numprocs = proc_config[AZ_N_procs];
   int first_eqn = proc_config[AZ_node]*N;
+  int adjustment = 0;
   for(i=0; i<N; ++i) {
     update[i] = first_eqn+i;
+    if (update[i] == 0 || update[i] == numprocs*N-1) ++adjustment;
   }
 
   int* data_org;
 
-  int nnz = N;
-  double* val = new double[nnz+1];
-  int* bindx = new int[nnz+1];
+  //global row 0 and global-N-1 (N*numprocs-1) will have 2 nonzeros in the first
+  //and last rows, and there will be 3 nonzeros in all other rows.
+  //If you are brave enough to attempt to modify any of the following code,
+  //bear in mind that the number of nonzeros per row (3) is hard-coded in
+  //a few places.
+
+  int nnz = 3*N - adjustment;
+  double* val = new double[nnz+2];
+  int* bindx = new int[nnz+2];
   int* indx = NULL;
   int* rpntr = NULL;
   int* cpntr = NULL;
   int* bpntr = NULL;
 
-  for(i=0; i<nnz+1; ++i) {
+  int offs = N+1;
+  for(i=0; i<N; ++i) {
     val[i] = diag_term;
-    bindx[i] = N+1;
+    bindx[i] = offs;
+    int num_off_diagonals = 2;
+    if (update[i]==0 || update[i]==numprocs*N-1) num_off_diagonals = 1;
+    offs += num_off_diagonals;
+  }
+  bindx[N] = offs;
+
+  for(i=0; i<N; ++i) {
+    int global_row = update[i];
+
+    if (global_row > 0) {
+      int ks = bindx[i];
+      val[ks] = -1.0;
+      bindx[ks] = global_row-1;
+    }
+    if (global_row < numprocs*N-1) {
+      int ke = bindx[i+1]-1;
+      val[ke] = -1.0;
+      bindx[ke] = global_row+1;
+    }
   }
 
   if (matrix_type == AZ_VBR_MATRIX) {
     //AZ_transform allocates cpntr
     rpntr = new int[N+1];
     bpntr = new int[N+1];
-    indx  = new int[N+1];
+    indx  = new int[nnz+2];
 
-    for(i=0; i<N+1; ++i) {
+    offs = 0;
+    for(i=0; i<N; ++i) {
       rpntr[i] = i;
-      bpntr[i] = i;
-      bindx[i] = first_eqn+i;
+ 
+      bpntr[i] = offs;
+
+      if (update[i]==0 || update[i]==numprocs*N-1) offs += 2;
+      else offs += 3;
+    }
+    rpntr[N] = N;
+    bpntr[N] = offs;
+
+    for(i=0; i<N; ++i) {
+      int global_col = update[i] - 1;
+      if (update[i]==0) ++global_col;
+
+      for(int j=bpntr[i]; j<=bpntr[i+1]-1; ++j) {
+        if (global_col == update[i]) val[j] = diag_term;
+        else val[j] = -1.0;
+
+        bindx[j] = global_col++;
+      }
+    }
+
+    for(i=0; i<nnz+2; ++i) {
       indx[i] = i;
     }
   }
