@@ -1,13 +1,17 @@
 # $Id$
 #
 
-EXAMPLES = zCPPExample1 zCPPExample2
+EXAMPLES = zCPPExample1 zCPPExample2 simpleRCB
 
 all:    $(EXAMPLES)
 
 % : %.cpp ../lib/libexzoltan.a $(ZOLTAN_LIB_DIR)/libzoltan.a
 	@echo "Building $@"
 	@$(CC) $(CFLAGS) -o $@ $(INCLUDE) $(LIBDIR) $< $(LIBS)
+
+simpleRCB: rectangularGraph.h simpleRCB.cpp
+	@echo "Building simpleRCB"
+	@$(CC) $(CFLAGS) -o simpleRCB $(INCLUDE) $(LIBDIR) simpleRCB.cpp $(LIBS)
 
 ../lib/libexzoltan.a:
 	@cd ..; $(MAKE) exampleLibrary
