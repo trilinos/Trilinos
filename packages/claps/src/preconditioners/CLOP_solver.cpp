@@ -63,6 +63,7 @@ CLOP_solver::CLOP_solver(const Epetra_CrsMatrix* AStandard_,
     CStandard(CStandard_), SubMap(SubMap_), ConStandard(ConStandard_), 
     GNStandard(GNStandard_), clop_params(clop_params_), Comm(AStandard->Comm())
 {
+  ExpetraExt::RowMatrixToMatlabFile("C.dat", ConStandard);
   overlap        = int(clop_params[0]); 
   solver_tol     = clop_params[1];
   maxiter        = int(clop_params[2]);

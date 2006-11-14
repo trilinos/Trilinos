@@ -51,6 +51,7 @@
 #include "Epetra_BLAS.h"
 #include "Epetra_LAPACK.h"
 #include "EpetraExtCD_MatrixMatrix.hpp"
+#include "EpetraExt_RowMatrixOut.h"
 
 class CLOP_solver 
 {
