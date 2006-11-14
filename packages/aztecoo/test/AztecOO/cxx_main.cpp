@@ -1501,7 +1501,7 @@ int test_bug2890(Epetra_Comm& Comm, bool verbose)
   rand_num = AZ_srandom1(&seed);
 
   if (verbose && Comm.MyPID() == 0)
-    printf("test_bugRandom: rand_num = %e (should be in [0,1])\n",rand_num);
+    printf("test_bug2890: rand_num = %e (should be in [0,1])\n",rand_num);
 
   if ( (rand_num > 1) || (rand_num < 0) )
     return 1;    // rand_num should be in [0,1]
