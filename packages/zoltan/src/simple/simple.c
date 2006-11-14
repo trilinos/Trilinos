@@ -66,7 +66,7 @@ int Zoltan_Simple(
 
   /* Get list of local objects. */
   wtflag = (zz->Obj_Weight_Dim>0 ? 1 : 0);
-  ierr = Zoltan_Get_Obj_List(zz, &num_obj, &global_ids, &local_ids, 0,
+  ierr = Zoltan_Get_Obj_List(zz, &num_obj, &global_ids, &local_ids, wtflag,
                              &wgts, &parts);
 
   /* TODO: Estimate number of objects to export. */
@@ -137,9 +137,6 @@ int Zoltan_Simple(
       (*export_procs)[count] = Zoltan_LB_Part_To_Proc(zz, 
                      (*export_to_part)[count], &global_ids[i*zz->Num_GID]);
 
-/*
-      printf("Debug: export gid %u to part %d and proc %d.\n", (*export_global_ids)[count], (*export_to_part)[count], (*export_procs)[count]);
-*/
       ++count;
     }
     wtsum += (wtflag? wgts[i] : 1.0);
