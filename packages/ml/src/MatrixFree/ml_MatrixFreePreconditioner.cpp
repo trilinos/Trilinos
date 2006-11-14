@@ -190,8 +190,10 @@ Coarsen(ML_Operator*A, ML_Aggregate** MLAggr, ML_Operator** P,
   // Aggregate object, with settings
   ML_Aggregate_Create(MLAggr);
   
-  string CoarsenType = List_.get("aggregation: type", "Uncoupled");
-  double Threshold   = List_.get("aggregation: threshold", 0.0);
+  string CoarsenType  = List_.get("aggregation: type", "Uncoupled");
+  double Threshold    = List_.get("aggregation: threshold", 0.0);
+  int    NodesPerAggr = List_.get("aggregation: nodes per aggregate", 
+                                  ML_Aggregate_Get_OptimalNumberOfNodesPerAggregate());
 
   ML_Aggregate_Set_MaxLevels(*MLAggr, 2);
   ML_Aggregate_Set_StartLevel(*MLAggr, 0);
@@ -205,7 +207,10 @@ Coarsen(ML_Operator*A, ML_Aggregate** MLAggr, ML_Operator** P,
   if (CoarsenType == "Uncoupled") 
     (*MLAggr)->coarsen_scheme = ML_AGGR_UNCOUPLED;
   else if (CoarsenType == "METIS")
+  {
     (*MLAggr)->coarsen_scheme = ML_AGGR_METIS;
+    ML_Aggregate_Set_NodesPerAggr(0, *MLAggr, 0, NodesPerAggr);
+  }
   else 
   {
     ML_CHK_ERR(-1);
