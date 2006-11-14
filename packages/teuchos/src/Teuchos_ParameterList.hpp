@@ -275,6 +275,27 @@ public:
   const ParameterEntry* getEntryPtr(const string& name) const;  
 
   //@}
+
+  //! @name Parameter removal functions
+  //@{
+ 
+  /** \brief Remove a parameter (does not depend on the type).  
+   *
+   * \param  name
+   *           [in] The name of the parameter to remove
+   * \param  throwIfNotExists
+   *           [in] If <tt>true</tt> then if the parameter with
+   *           the name <tt>name</tt> an exception will be thrown!
+   *
+   * Returns <tt>true</tt> of the parameter was removed, and <tt>false</tt> if
+   * the parameter was not removed (return value possible only if
+   * <tt>throwIfExists==false</tt>).
+   */
+  bool remove(
+    std::string const& name, bool throwIfNotExists = true
+    );
+
+  //@}
   
   //! @name Sublist Functions 
   //@{

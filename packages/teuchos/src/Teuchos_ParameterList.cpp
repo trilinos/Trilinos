@@ -136,16 +136,30 @@ std::string ParameterList::currentParametersString() const
 bool ParameterList::isSublist(const string& name) const
 {
   ConstIterator i = params_.find(name);
-
   if (i != params_.end())
     return (entry(i).isList());
-
   return false;
 }
 
 bool ParameterList::isParameter(const string& name) const
 {
   return (params_.find(name) != params_.end());
+}
+
+bool ParameterList::remove(
+  std::string const& name, bool throwIfNotExists
+  )
+{
+  Iterator i = params_.find(name);
+  TEST_FOR_EXCEPTION(
+    throwIfNotExists && i == params_.end(), Exceptions::InvalidParameterName
+    ,"Teuchos::ParameterList::remove(name,throwIfNotExists):"
+    "\n\nError, the parameter \"" << name << "\" does not exist!"
+    );
+  if( i != params_.end() ) {
+    params_.erase(i);
+  }
+  return false;
 }
 
 ParameterList& ParameterList::sublist(

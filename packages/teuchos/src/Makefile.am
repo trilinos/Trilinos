@@ -62,14 +62,14 @@ CORE_H = \
 	$(srcdir)/Teuchos_BLAS_wrappers.hpp \
 	$(srcdir)/Teuchos_BLAS_types.hpp \
 	$(srcdir)/Teuchos_Comm.hpp \
-  $(srcdir)/Teuchos_CommHelpers.hpp \
-  $(srcdir)/Teuchos_CommUtilities.hpp \
+	$(srcdir)/Teuchos_CommHelpers.hpp \
+	$(srcdir)/Teuchos_CommUtilities.hpp \
 	$(srcdir)/Teuchos_CommandLineProcessor.hpp \
 	$(srcdir)/Teuchos_CompileTimeAssert.hpp \
 	$(srcdir)/Teuchos_CompObject.hpp \
 	$(srcdir)/Teuchos_ConfigDefs.hpp \
-  $(srcdir)/Teuchos_ConstNonconstObjectContainer.hpp \
-  $(srcdir)/Teuchos_DefaultComm.hpp \
+	$(srcdir)/Teuchos_ConstNonconstObjectContainer.hpp \
+	$(srcdir)/Teuchos_DefaultComm.hpp \
 	$(srcdir)/Teuchos_DefaultSerialComm.hpp \
 	$(srcdir)/Teuchos_DataAccess.hpp \
 	$(srcdir)/Teuchos_Describable.hpp \
@@ -92,7 +92,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_MPISession.hpp \
 	$(srcdir)/Teuchos_MPITraits.hpp \
 	$(srcdir)/Teuchos_Object.hpp \
-  $(srcdir)/Teuchos_OpaqueWrapper.hpp \
+	$(srcdir)/Teuchos_OpaqueWrapper.hpp \
 	$(srcdir)/Teuchos_OrdinalTraits.hpp \
 	$(srcdir)/Teuchos_ParameterEntry.hpp \
 	$(srcdir)/Teuchos_ParameterEntryValidator.hpp \
@@ -100,8 +100,8 @@ CORE_H = \
 	$(srcdir)/Teuchos_ParameterListExceptions.hpp \
 	$(srcdir)/Teuchos_ParameterListAcceptor.hpp \
 	$(srcdir)/Teuchos_PrimitiveTypeTraits.hpp \
-  $(srcdir)/Teuchos_ReductionOp.hpp \
-  $(srcdir)/Teuchos_ReductionOpHelpers.hpp \
+	$(srcdir)/Teuchos_ReductionOp.hpp \
+	$(srcdir)/Teuchos_ReductionOpHelpers.hpp \
 	$(srcdir)/Teuchos_PerformanceMonitorBase.hpp \
 	$(srcdir)/Teuchos_PerformanceMonitorUtils.hpp \
 	$(srcdir)/Teuchos_PolynomialTraits.hpp \
@@ -116,10 +116,10 @@ CORE_H = \
 	$(srcdir)/Teuchos_RefCountPtrBoostSharedPtrConversionsDecl.hpp \
 	$(srcdir)/Teuchos_RefCountPtrBoostSharedPtrConversions.hpp \
 	$(srcdir)/Teuchos_ScalarTraits.hpp \
-  $(srcdir)/Teuchos_SerializationTraits.hpp \
-  $(srcdir)/Teuchos_SerializationTraitsHelpers.hpp \
-  $(srcdir)/Teuchos_Serializer.hpp \
-  $(srcdir)/Teuchos_SerializerHelpers.hpp \
+	$(srcdir)/Teuchos_SerializationTraits.hpp \
+	$(srcdir)/Teuchos_SerializationTraitsHelpers.hpp \
+	$(srcdir)/Teuchos_Serializer.hpp \
+	$(srcdir)/Teuchos_SerializerHelpers.hpp \
 	$(srcdir)/Teuchos_SerialDenseMatrix.hpp \
 	$(srcdir)/Teuchos_SerialDenseVector.hpp \
 	$(srcdir)/Teuchos_StandardCatchMacros.hpp \
@@ -133,7 +133,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_TestForException.hpp \
 	$(srcdir)/Teuchos_Time.hpp \
 	$(srcdir)/Teuchos_TimeMonitor.hpp \
-        $(srcdir)/Teuchos_TypeNameTraits.hpp \
+	      $(srcdir)/Teuchos_TypeNameTraits.hpp \
 	$(srcdir)/Teuchos_Utils.hpp \
 	$(srcdir)/Teuchos_VerboseObject.hpp \
 	$(srcdir)/Teuchos_VerbosityLevel.hpp \
@@ -159,6 +159,7 @@ CORE = \
 	$(srcdir)/Teuchos_Range1D.cpp \
 	$(srcdir)/Teuchos_RefCountPtr.cpp \
 	$(srcdir)/Teuchos_ScalarTraits.cpp \
+	$(srcdir)/Teuchos_StandardParameterEntryValidators.cpp \
 	$(srcdir)/Teuchos_StringToIntMap.cpp \
 	$(srcdir)/Teuchos_TableColumn.cpp \
 	$(srcdir)/Teuchos_TableEntry.cpp \
@@ -236,7 +237,7 @@ SERIAL =
 #  set up by TAC_ARC_CONFIG_MPI 
 #
 EXTRA_MPI_H = \
-  $(srcdir)/Teuchos_DefaultMpiComm.hpp \
+	$(srcdir)/Teuchos_DefaultMpiComm.hpp \
 	$(srcdir)/Teuchos_MpiReductionOpSetter.hpp 
 
 EXTRA_MPI = \

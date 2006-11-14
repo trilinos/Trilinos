@@ -31,6 +31,7 @@
 #define TEUCHOS_PARAMETER_ENTRY_VALIDATOR_H
 
 #include "Teuchos_Array.hpp"
+#include "Teuchos_RefCountPtr.hpp"
 
 namespace Teuchos {
 
@@ -73,7 +74,8 @@ public:
    * The returned strings must not contain any newlines (i.e. no <tt>'\n'</tt>
    * characters) and must be short enough to fit on one line and be readable.
    */
-  virtual Teuchos::RefCountPtr<const Array<std::string> > validStringValues() const = 0;
+  virtual Teuchos::RefCountPtr<const Array<std::string> >
+  validStringValues() const = 0;
 
   /** \brief Validate a parameter entry value and throw exception (with a
    * great error message) if validation fails.

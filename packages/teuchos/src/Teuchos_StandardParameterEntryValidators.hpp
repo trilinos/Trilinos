@@ -26,7 +26,6 @@
 // ***********************************************************************
 // @HEADER
 
-
 #ifndef TEUCHOS_STANDARD_PARAMETER_ENTRY_VALIDATORS_H
 #define TEUCHOS_STANDARD_PARAMETER_ENTRY_VALIDATORS_H
 
@@ -39,13 +38,17 @@
 namespace Teuchos {
 
 /** \brief Standard implementation of a ParameterEntryValidator that maps from
- * a list of strings to some integral type.
+ * a list of strings to some integral type value.
+ *
+ * Objects of this type are meant to be used as both abstract objects passed
+ * to <tt>Teuchos::ParameterList</tt> objects to be used to validate parameter
+ * types and values, and to be used by the code that reads parameter values.
+ * Having a single definition for the types of valids input and outputs for a
+ * parameter value makes it easier to write error free validated code.
  */
 template<class IntegralType>
 class StringToIntegralParameterEntryValidator : public ParameterEntryValidator {
 public:
-
-  //@}
 
   /** \name Constructors */
   //@{
@@ -86,7 +89,7 @@ public:
 
   //@}
 
-  /** \name Local non-virtual lookup functions */
+  /** \name Local non-virtual validated lookup functions */
   //@{
 
   /** \brief Perform a mapping from a string value to its integral value.
@@ -128,16 +131,16 @@ public:
    * its associated integral value.
    */
   IntegralType getIntegralValue(
-    ParameterList &paramList, const std::string &paramName = ""
-    ,const std::string &defaultValue = ""
+    ParameterList &paramList, const std::string &paramName
+    ,const std::string &defaultValue
     ) const;
 
   /** \brief Lookup a parameter from a parameter list, validate the string
    * value, and return the string value.
    */
   std::string getStringValue(
-    ParameterList &paramList, const std::string &paramName = ""
-    ,const std::string &defaultValue = ""
+    ParameterList &paramList, const std::string &paramName
+    ,const std::string &defaultValue
     ) const;
 
   /** \brief Validate the string and pass it on..
@@ -193,8 +196,155 @@ private:
 
 };
 
+/** \brief Standard implementation of a ParameterEntryValidator that accepts
+ * numbers from a number of different formats and converts them to numbers
+ * from another format.
+ *
+ * Objects of this type are meant to be used as both abstract objects passed
+ * to <tt>Teuchos::ParameterList</tt> objects to be used to validate parameter
+ * types and values, and to be used by the code that reads parameter values.
+ * Having a single definition for the types of valids input and outputs for a
+ * parameter value makes it easier to write error free validated code.
+ */
+class AnyNumberParameterEntryValidator : public ParameterEntryValidator {
+public:
+
+  /** \name Public types */
+  //@{
+
+  /** \brief Determines the types that are accepted.
+   */
+  class AcceptedTypes {
+  public:
+    /** \brief Allow all types or not on construction. */
+    AcceptedTypes( bool allowAllTypesByDefault = true )
+      :allowInt_(allowAllTypesByDefault),allowDouble_(allowAllTypesByDefault)
+       ,allowString_(allowAllTypesByDefault)
+      {}
+    /** \brief Set allow an <tt>int</tt> value or not */
+    AcceptedTypes& allowInt( bool _allowInt )
+      { allowInt_ = _allowInt; return *this; }
+    /** \brief Set allow a <tt>double</tt> value or not */
+    AcceptedTypes& allowDouble( bool _allowDouble )
+      { allowDouble_ = _allowDouble; return *this; }
+    /** \brief Set allow an <tt>string</tt> value or not */
+    AcceptedTypes& allowString( bool _allowString )
+      { allowString_ = _allowString; return *this; }
+    /** \brief Allow an <tt>int</tt> value? */
+    bool allowInt() const { return allowInt_; }
+    /** \brief Allow an <tt>double</tt> value? */
+    bool allowDouble() const { return allowDouble_; }
+    /** \brief Allow an <tt>string</tt> value? */
+    bool allowString() const { return allowString_; }
+  private:
+    bool  allowInt_;
+    bool  allowDouble_;
+    bool  allowString_;
+  };
+
+  //@}
+
+  /** \name Constructors */
+  //@{
+
+  /** \brief Construct with allowed input and output types. */
+  AnyNumberParameterEntryValidator(
+    AcceptedTypes    const& acceptedTypes
+    );
+
+  //@}
+
+  /** \name Local non-virtual validated lookup functions */
+  //@{
+
+  /** \brief Get an integer value from a parameter entry. */
+  int getInt(
+    const ParameterEntry &entry, const std::string &paramName = ""
+    ,const std::string &sublistName = "", const bool activeQuery = true
+    ) const;
+
+  /** \brief Get a double value from a parameter entry. */
+  double getDouble(
+    const ParameterEntry &entry, const std::string &paramName = ""
+    ,const std::string &sublistName = "", const bool activeQuery = true
+    ) const;
+
+  /** \brief Get a string value from a parameter entry. */
+  std::string getString(
+    const ParameterEntry &entry, const std::string &paramName = ""
+    ,const std::string &sublistName = "", const bool activeQuery = true
+    ) const;
+
+  /** \brief Lookup parameter from a parameter list and return as an int
+   * value.
+   */
+  int getInt(
+    ParameterList &paramList, const std::string &paramName
+    ,const int defaultValue
+    ) const;
+
+  /** \brief Lookup parameter from a parameter list and return as an double
+   * value.
+   */
+  double getDouble(
+    ParameterList &paramList, const std::string &paramName
+    ,const double defaultValue
+    ) const;
+
+  /** \brief Lookup parameter from a parameter list and return as an string
+   * value.
+   */
+  std::string getString(
+    ParameterList &paramList, const std::string &paramName
+    ,const std::string &defaultValue
+    ) const;
+  
+  //@}
+
+  /** \name Overridden from ParameterEntryValidator */
+  //@{
+
+  /** \brief . */
+  void printDoc(
+    std::string         const& docString
+    ,std::ostream            & out
+    ) const;
+
+  /** \brief . */
+  Teuchos::RefCountPtr<const Array<std::string> >
+  validStringValues() const;
+
+  /** \brief . */
+  void validate(
+    ParameterEntry  const& entry
+    ,std::string    const& paramName
+    ,std::string    const& sublistName
+    ) const;
+
+  //@}
+
+private:
+
+  AcceptedTypes    const   acceptedTypes_;
+  std::string              acceptedTypesString_;
+
+  void throwTypeError(
+    ParameterEntry  const& entry
+    ,std::string    const& paramName
+    ,std::string    const& sublistName
+    ) const;
+
+  // Not defined and not to be called.
+  AnyNumberParameterEntryValidator();
+
+};
+
 // ///////////////////////////
 // Implementations
+
+//
+// StringToIntegralParameterEntryValidator
+//
 
 // Constructors
 

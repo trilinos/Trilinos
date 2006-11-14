@@ -130,6 +130,7 @@ am__libteuchos_a_SOURCES_DIST = $(srcdir)/Teuchos_BLAS.cpp \
 	$(srcdir)/Teuchos_Range1D.cpp \
 	$(srcdir)/Teuchos_RefCountPtr.cpp \
 	$(srcdir)/Teuchos_ScalarTraits.cpp \
+	$(srcdir)/Teuchos_StandardParameterEntryValidators.cpp \
 	$(srcdir)/Teuchos_StringToIntMap.cpp \
 	$(srcdir)/Teuchos_TableColumn.cpp \
 	$(srcdir)/Teuchos_TableEntry.cpp \
@@ -171,6 +172,7 @@ am__objects_1 = Teuchos_BLAS.$(OBJEXT) \
 	Teuchos_PerformanceMonitorUtils.$(OBJEXT) \
 	Teuchos_Range1D.$(OBJEXT) Teuchos_RefCountPtr.$(OBJEXT) \
 	Teuchos_ScalarTraits.$(OBJEXT) \
+	Teuchos_StandardParameterEntryValidators.$(OBJEXT) \
 	Teuchos_StringToIntMap.$(OBJEXT) Teuchos_TableColumn.$(OBJEXT) \
 	Teuchos_TableEntry.$(OBJEXT) Teuchos_TableFormat.$(OBJEXT) \
 	Teuchos_TestForException.$(OBJEXT) Teuchos_Time.$(OBJEXT) \
@@ -226,6 +228,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_Range1D.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_RefCountPtr.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_ScalarTraits.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Teuchos_StandardParameterEntryValidators.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_StrUtils.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_StringInputSource.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_StringInputStream.Po \
@@ -551,14 +554,14 @@ CORE_H = \
 	$(srcdir)/Teuchos_BLAS_wrappers.hpp \
 	$(srcdir)/Teuchos_BLAS_types.hpp \
 	$(srcdir)/Teuchos_Comm.hpp \
-  $(srcdir)/Teuchos_CommHelpers.hpp \
-  $(srcdir)/Teuchos_CommUtilities.hpp \
+	$(srcdir)/Teuchos_CommHelpers.hpp \
+	$(srcdir)/Teuchos_CommUtilities.hpp \
 	$(srcdir)/Teuchos_CommandLineProcessor.hpp \
 	$(srcdir)/Teuchos_CompileTimeAssert.hpp \
 	$(srcdir)/Teuchos_CompObject.hpp \
 	$(srcdir)/Teuchos_ConfigDefs.hpp \
-  $(srcdir)/Teuchos_ConstNonconstObjectContainer.hpp \
-  $(srcdir)/Teuchos_DefaultComm.hpp \
+	$(srcdir)/Teuchos_ConstNonconstObjectContainer.hpp \
+	$(srcdir)/Teuchos_DefaultComm.hpp \
 	$(srcdir)/Teuchos_DefaultSerialComm.hpp \
 	$(srcdir)/Teuchos_DataAccess.hpp \
 	$(srcdir)/Teuchos_Describable.hpp \
@@ -581,7 +584,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_MPISession.hpp \
 	$(srcdir)/Teuchos_MPITraits.hpp \
 	$(srcdir)/Teuchos_Object.hpp \
-  $(srcdir)/Teuchos_OpaqueWrapper.hpp \
+	$(srcdir)/Teuchos_OpaqueWrapper.hpp \
 	$(srcdir)/Teuchos_OrdinalTraits.hpp \
 	$(srcdir)/Teuchos_ParameterEntry.hpp \
 	$(srcdir)/Teuchos_ParameterEntryValidator.hpp \
@@ -589,8 +592,8 @@ CORE_H = \
 	$(srcdir)/Teuchos_ParameterListExceptions.hpp \
 	$(srcdir)/Teuchos_ParameterListAcceptor.hpp \
 	$(srcdir)/Teuchos_PrimitiveTypeTraits.hpp \
-  $(srcdir)/Teuchos_ReductionOp.hpp \
-  $(srcdir)/Teuchos_ReductionOpHelpers.hpp \
+	$(srcdir)/Teuchos_ReductionOp.hpp \
+	$(srcdir)/Teuchos_ReductionOpHelpers.hpp \
 	$(srcdir)/Teuchos_PerformanceMonitorBase.hpp \
 	$(srcdir)/Teuchos_PerformanceMonitorUtils.hpp \
 	$(srcdir)/Teuchos_PolynomialTraits.hpp \
@@ -605,10 +608,10 @@ CORE_H = \
 	$(srcdir)/Teuchos_RefCountPtrBoostSharedPtrConversionsDecl.hpp \
 	$(srcdir)/Teuchos_RefCountPtrBoostSharedPtrConversions.hpp \
 	$(srcdir)/Teuchos_ScalarTraits.hpp \
-  $(srcdir)/Teuchos_SerializationTraits.hpp \
-  $(srcdir)/Teuchos_SerializationTraitsHelpers.hpp \
-  $(srcdir)/Teuchos_Serializer.hpp \
-  $(srcdir)/Teuchos_SerializerHelpers.hpp \
+	$(srcdir)/Teuchos_SerializationTraits.hpp \
+	$(srcdir)/Teuchos_SerializationTraitsHelpers.hpp \
+	$(srcdir)/Teuchos_Serializer.hpp \
+	$(srcdir)/Teuchos_SerializerHelpers.hpp \
 	$(srcdir)/Teuchos_SerialDenseMatrix.hpp \
 	$(srcdir)/Teuchos_SerialDenseVector.hpp \
 	$(srcdir)/Teuchos_StandardCatchMacros.hpp \
@@ -622,7 +625,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_TestForException.hpp \
 	$(srcdir)/Teuchos_Time.hpp \
 	$(srcdir)/Teuchos_TimeMonitor.hpp \
-        $(srcdir)/Teuchos_TypeNameTraits.hpp \
+	      $(srcdir)/Teuchos_TypeNameTraits.hpp \
 	$(srcdir)/Teuchos_Utils.hpp \
 	$(srcdir)/Teuchos_VerboseObject.hpp \
 	$(srcdir)/Teuchos_VerbosityLevel.hpp \
@@ -648,6 +651,7 @@ CORE = \
 	$(srcdir)/Teuchos_Range1D.cpp \
 	$(srcdir)/Teuchos_RefCountPtr.cpp \
 	$(srcdir)/Teuchos_ScalarTraits.cpp \
+	$(srcdir)/Teuchos_StandardParameterEntryValidators.cpp \
 	$(srcdir)/Teuchos_StringToIntMap.cpp \
 	$(srcdir)/Teuchos_TableColumn.cpp \
 	$(srcdir)/Teuchos_TableEntry.cpp \
@@ -720,7 +724,7 @@ SERIAL =
 #  set up by TAC_ARC_CONFIG_MPI 
 #
 EXTRA_MPI_H = \
-  $(srcdir)/Teuchos_DefaultMpiComm.hpp \
+	$(srcdir)/Teuchos_DefaultMpiComm.hpp \
 	$(srcdir)/Teuchos_MpiReductionOpSetter.hpp 
 
 EXTRA_MPI = \
@@ -949,6 +953,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_Range1D.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_RefCountPtr.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_ScalarTraits.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_StandardParameterEntryValidators.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_StrUtils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_StringInputSource.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_StringInputStream.Po@am__quote@
@@ -1293,6 +1298,22 @@ Teuchos_ScalarTraits.obj: $(srcdir)/Teuchos_ScalarTraits.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Teuchos_ScalarTraits.Po' tmpdepfile='$(DEPDIR)/Teuchos_ScalarTraits.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_ScalarTraits.obj `if test -f '$(srcdir)/Teuchos_ScalarTraits.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_ScalarTraits.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_ScalarTraits.cpp'; fi`
+
+Teuchos_StandardParameterEntryValidators.o: $(srcdir)/Teuchos_StandardParameterEntryValidators.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_StandardParameterEntryValidators.o -MD -MP -MF "$(DEPDIR)/Teuchos_StandardParameterEntryValidators.Tpo" -c -o Teuchos_StandardParameterEntryValidators.o `test -f '$(srcdir)/Teuchos_StandardParameterEntryValidators.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_StandardParameterEntryValidators.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Teuchos_StandardParameterEntryValidators.Tpo" "$(DEPDIR)/Teuchos_StandardParameterEntryValidators.Po"; else rm -f "$(DEPDIR)/Teuchos_StandardParameterEntryValidators.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Teuchos_StandardParameterEntryValidators.cpp' object='Teuchos_StandardParameterEntryValidators.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Teuchos_StandardParameterEntryValidators.Po' tmpdepfile='$(DEPDIR)/Teuchos_StandardParameterEntryValidators.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_StandardParameterEntryValidators.o `test -f '$(srcdir)/Teuchos_StandardParameterEntryValidators.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_StandardParameterEntryValidators.cpp
+
+Teuchos_StandardParameterEntryValidators.obj: $(srcdir)/Teuchos_StandardParameterEntryValidators.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_StandardParameterEntryValidators.obj -MD -MP -MF "$(DEPDIR)/Teuchos_StandardParameterEntryValidators.Tpo" -c -o Teuchos_StandardParameterEntryValidators.obj `if test -f '$(srcdir)/Teuchos_StandardParameterEntryValidators.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_StandardParameterEntryValidators.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_StandardParameterEntryValidators.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Teuchos_StandardParameterEntryValidators.Tpo" "$(DEPDIR)/Teuchos_StandardParameterEntryValidators.Po"; else rm -f "$(DEPDIR)/Teuchos_StandardParameterEntryValidators.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Teuchos_StandardParameterEntryValidators.cpp' object='Teuchos_StandardParameterEntryValidators.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Teuchos_StandardParameterEntryValidators.Po' tmpdepfile='$(DEPDIR)/Teuchos_StandardParameterEntryValidators.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_StandardParameterEntryValidators.obj `if test -f '$(srcdir)/Teuchos_StandardParameterEntryValidators.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_StandardParameterEntryValidators.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_StandardParameterEntryValidators.cpp'; fi`
 
 Teuchos_StringToIntMap.o: $(srcdir)/Teuchos_StringToIntMap.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_StringToIntMap.o -MD -MP -MF "$(DEPDIR)/Teuchos_StringToIntMap.Tpo" -c -o Teuchos_StringToIntMap.o `test -f '$(srcdir)/Teuchos_StringToIntMap.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_StringToIntMap.cpp; \

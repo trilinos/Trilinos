@@ -689,6 +689,7 @@ int main( int argc, char *argv[] )
   Teuchos::ParameterList PL_Main_valid("PL_Main_copy");
   PL_Main_valid.setParameters(PL_Main);
 
+  // Create a validator for the "Nonlinear Solver" parameter
   Teuchos::RefCountPtr<Teuchos::StringToIntegralParameterEntryValidator<int> >
     nonlinearSolverValidator = rcp(
     new Teuchos::StringToIntegralParameterEntryValidator<int>(
@@ -700,6 +701,37 @@ int main( int argc, char *argv[] )
     "Nonlinear Solver", "Line Search Based"
     ,"Selects the type of nonlinear solver to use"
     ,nonlinearSolverValidator
+    );
+
+  // Create a validator for the parameter "Line Search"->"Polynomial"->"Max Iters"
+  // that accepts an 'int', a 'double' or a 'string' value!
+  typedef Teuchos::AnyNumberParameterEntryValidator::AcceptedTypes AcceptedTypes;
+  Teuchos::RefCountPtr<Teuchos::AnyNumberParameterEntryValidator>
+    linesearchMaxItersValiator = rcp(
+      new Teuchos::AnyNumberParameterEntryValidator(
+        AcceptedTypes(false).allowInt(true).allowDouble(true).allowString(true)
+        )
+      );
+  PL_Main_valid.sublist("Line Search").sublist("Polynomial").set(
+    "Max Iters",3
+    ,"The maximum number of inner linear search iterations allowed."
+    ,linesearchMaxItersValiator
+    );
+
+  // Create a validator for the parameter "Direction"->"Newton"->"Linear Solver"->"Tol"
+  // that accepts a 'double' or a 'string' value!
+  typedef Teuchos::AnyNumberParameterEntryValidator::AcceptedTypes AcceptedTypes;
+  Teuchos::RefCountPtr<Teuchos::AnyNumberParameterEntryValidator>
+    linSolveTolValidator = rcp(
+      new Teuchos::AnyNumberParameterEntryValidator(
+        AcceptedTypes(false).allowDouble(true).allowString(true)
+        )
+      );
+  PL_Main_valid.sublist("Direction",true).sublist("Newton",true)
+    .sublist("Linear Solver",true).set(
+      "Tol", double(1e-5)
+      ,"Select the linear solve tolerance"
+    ,linSolveTolValidator
     );
 
   if (verbose) {
@@ -725,7 +757,7 @@ int main( int argc, char *argv[] )
     print_break();
   }
   try {
-    PL_Main.sublist("Line Search").sublist("Polynomial").set("Max Iters",10.0); // Should be an int!
+    PL_Main.sublist("Line Search").sublist("Polynomial").set("Max Iters",(short int)(3)); // Should be an int!
     PL_Main.validateParameters(PL_Main_valid);
     if (verbose) cout << "Did not throw exception, error!\n";
     ++FailedTests;
@@ -743,7 +775,7 @@ int main( int argc, char *argv[] )
     }
     ++FailedTests;
   }
-  PL_Main.sublist("Line Search").sublist("Polynomial").set("Max Iters",10); // Put back the valid int!
+  PL_Main.sublist("Line Search").sublist("Polynomial").set("Max Iters",3); // Put back the valid int!
 
   if (verbose) {
     print_break();
@@ -769,6 +801,7 @@ int main( int argc, char *argv[] )
     }
     ++FailedTests;
   }
+  PL_Main.sublist("Line Search").sublist("Polynomial").remove("Max Iter");
 
   if (verbose) {
     print_break();
@@ -830,7 +863,7 @@ int main( int argc, char *argv[] )
   try {
     const int
       nonlinearSolverValue
-      = nonlinearSolverValidator->getIntegralValue(PL_Main,"Nonlinear Solver");
+      = nonlinearSolverValidator->getIntegralValue(PL_Main,"Nonlinear Solver","Trust Region Based");
     const bool
       result = (nonlinearSolverValue == 0);
     cout
@@ -854,7 +887,7 @@ int main( int argc, char *argv[] )
   try {
     const std::string
       nonlinearSolverValue
-      = nonlinearSolverValidator->getStringValue(PL_Main,"Nonlinear Solver");
+      = nonlinearSolverValidator->getStringValue(PL_Main,"Nonlinear Solver","Trust Region Based");
     const bool
       result = (nonlinearSolverValue == "Line Search Based");
     cout
@@ -870,13 +903,124 @@ int main( int argc, char *argv[] )
     ++FailedTests;
   }
 
+  //
+  // Testing access of numbers using validator
+  //
+
+  for( int type_i = 0; type_i < 3; ++type_i ) {
+
+    ParameterList &Polynomial_sublist
+      = PL_Main.sublist("Line Search",true).sublist("Polynomial",true);
+    
+    std::string typeName;
+
+    switch(type_i) {
+      case 0:
+        typeName = "int";
+        Polynomial_sublist.set("Max Iters",(int)(3));
+        break;
+      case 1:
+        typeName = "double";
+        Polynomial_sublist.set("Max Iters",(double)(3.0));
+        break;
+      case 2:
+        typeName = "string";
+        Polynomial_sublist.set("Max Iters",(std::string)("3"));
+        break;
+      default:
+        TEST_FOR_EXCEPT(true);
+    }
+
+    if (verbose) {
+      print_break();
+      cout << "Use the number validator to access a "<<typeName<<" as an int ...\n";
+      print_break();
+    }
+    try {
+      const int
+        lineserchMaxIters
+        = linesearchMaxItersValiator->getInt(
+          PL_Main.sublist("Line Search",true).sublist("Polynomial",true)
+          ,"Max Iters",0
+          );
+      const bool
+        result = (lineserchMaxIters == int(3));
+      cout
+        << "Read value = " << lineserchMaxIters << " == 3 : "
+        << ( result ? "passed" : "failed") << "\n";
+      if(!result) ++FailedTests;
+    }
+    catch(const std::exception &e) {
+      if(verbose) {
+        cerr << "caught unexpected exception:\n\n";
+        OSTab(cerr).o() << e.what() << endl;
+      }
+      ++FailedTests;
+    }
+
+    if (verbose) {
+      print_break();
+      cout << "Use the number validator to access a "<<typeName<<" as a double ...\n";
+      print_break();
+    }
+    try {
+      const double
+        lineserchMaxIters
+        = linesearchMaxItersValiator->getDouble(
+          PL_Main.sublist("Line Search",true).sublist("Polynomial",true)
+          ,"Max Iters",0.0
+          );
+      const bool
+        result = (lineserchMaxIters == double(3.0));
+      cout
+        << "Read value = " << lineserchMaxIters << " == 3 : "
+        << ( result ? "passed" : "failed") << "\n";
+      if(!result) ++FailedTests;
+    }
+    catch(const std::exception &e) {
+      if(verbose) {
+        cerr << "caught unexpected exception:\n\n";
+        OSTab(cerr).o() << e.what() << endl;
+      }
+      ++FailedTests;
+    }
+
+    if (verbose) {
+      print_break();
+      cout << "Use the number validator to access a "<<typeName<<" as a string ...\n";
+      print_break();
+    }
+    try {
+      const std::string
+        lineserchMaxIters
+        = linesearchMaxItersValiator->getString(
+          PL_Main.sublist("Line Search",true).sublist("Polynomial",true)
+          ,"Max Iters","0"
+          );
+      const bool
+        result = (lineserchMaxIters == "3");
+      cout
+        << "Read value = \"" << lineserchMaxIters << "\" == \"3\" : "
+        << ( result ? "passed" : "failed") << "\n";
+      if(!result) ++FailedTests;
+    }
+    catch(const std::exception &e) {
+      if(verbose) {
+        cerr << "caught unexpected exception:\n\n";
+        OSTab(cerr).o() << e.what() << endl;
+      }
+      ++FailedTests;
+    }
+
+  }
+
   if (verbose) {
     print_break();
     cout << "Adding an invalid sublist then validating (should throw a Teuchos::Exceptions::InvalidParameterName exception)...\n";
     print_break();
   }
   try {
-    PL_Main.sublist("Line Search").sublist("Polynomials").set("Max Iters",10); // param correct, sublist wrong
+    PL_Main.sublist("Line Search").sublist("Polynomials").set("Max Iters",3); // param correct, sublist wrong
     PL_Main.validateParameters(PL_Main_valid);
     if (verbose) cout << "Did not throw exception, error!\n";
     ++FailedTests;
@@ -894,6 +1038,7 @@ int main( int argc, char *argv[] )
     }
     ++FailedTests;
   }
+  PL_Main.sublist("Line Search").remove("Polynomials");
 
   if (verbose) {
     print_break();
@@ -945,7 +1090,7 @@ int main( int argc, char *argv[] )
     cout << "Create copy PL_Main_copy, change PL_Main_copy, and check that PL_Main != PL_Main == true : ";
   }
   ParameterList PL_Main_copy(PL_Main);
-  PL_Main_copy.sublist("Line Search").sublist("Polynomial").set("Max Iters",100); // Not the default!
+  PL_Main_copy.sublist("Line Search",true).sublist("Polynomial",true).set("Max Iters",100); // Not the default!
   result = (PL_Main_copy != PL_Main);
   if(!result)
     ++FailedTests;
