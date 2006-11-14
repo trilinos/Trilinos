@@ -1524,7 +1524,10 @@ namespace Teuchos
 
   template<typename OrdinalType>
   float BLAS<OrdinalType, float>::ASUM(const OrdinalType n, const float* x, const OrdinalType incx) const
-  { return SASUM_F77(&n, x, &incx); }
+  {
+    float tmp = SASUM_F77(&n, x, &incx);
+    return tmp;
+  }
   
   template<typename OrdinalType>
   void BLAS<OrdinalType, float>::AXPY(const OrdinalType n, const float alpha, const float* x, const OrdinalType incx, float* y, const OrdinalType incy) const
