@@ -114,7 +114,7 @@ int ML_Aggregate_Options_Defaults( ML_Aggregate_Options * pointer,
 */
 /* ------------------------------------------------------------------------ */
 
-int ML_Aggregate_Set_NodesPerAggr( ML *ml, ML_Aggregate *ag, 
+int ML_Aggregate_Set_NodesPerAggr(ML *ml, ML_Aggregate *ag, 
 				  int level, int Nnodes_per_aggre  )
 {
 
@@ -122,8 +122,17 @@ int ML_Aggregate_Set_NodesPerAggr( ML *ml, ML_Aggregate *ag,
   
   int i;
   ML_Aggregate_Options *pointer = NULL;
-  int Nlevels = ml->ML_num_levels;
+  int Nlevels;
   
+  /* MS * modified on Nov-06 so that ML* ml can be set to NULL. 
+   * MS * This happens in src/MatrixFree/ml_MatrixFreePreconditioner.cpp,
+   * MS * where I just have one level but no ML* object. In this
+   * MS * case level must be 0. */
+  if (ml == NULL)
+    Nlevels = 1;
+  else
+    Nlevels = ml->ML_num_levels;
+
   /* ********************************************************************** */
   /* control on the input parameters                                        */
   /* ********************************************************************** */
