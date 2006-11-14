@@ -25,11 +25,14 @@ extern "C" {
 #include "params_const.h"
 #include "all_allo_const.h"
 
+/* local function prototypes */
+static void simple_part(ZZ *zz, int num_obj, int wtflag, float *wgts, 
+            float *part_sizes, int *newparts);
+
 /* Simple partitioning method.
  * Consider all objects as a linear sequence and do
  * a simple parallel sequence (1d) partitioning stategy.
  */
-
 
 int Zoltan_Simple(
   ZZ *zz,                       /* The Zoltan structure.                     */
@@ -50,12 +53,11 @@ int Zoltan_Simple(
 {
   int ierr = ZOLTAN_OK;
   int i, count, num_obj;
-  int part, max_export;
   int wtflag;
-  double wtsum, scansum[zz->Num_Proc+1];
   ZOLTAN_ID_PTR global_ids = NULL;
   ZOLTAN_ID_PTR local_ids = NULL; 
   int *parts = NULL;
+  int *newparts = NULL;
   float *wgts = NULL;
   static char *yo = "Zoltan_Simple";
 
@@ -69,26 +71,84 @@ int Zoltan_Simple(
   ierr = Zoltan_Get_Obj_List(zz, &num_obj, &global_ids, &local_ids, wtflag,
                              &wgts, &parts);
 
-  /* TODO: Estimate number of objects to export. */
-  max_export = num_obj;
+  /* Compute the new partition numbers. */
+  newparts = (int *) ZOLTAN_MALLOC(num_obj * sizeof(int));
+  if (!newparts){
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
+    ierr = ZOLTAN_MEMERR;
+    goto End;
+  }
+  simple_part(zz, num_obj, wtflag, wgts, part_sizes, newparts);
+
+  /* Check how many partition numbers changed. */
+  count=0;
+  for (i=0; i<num_obj; i++){
+    if (newparts[i] != parts[i])
+      ++count;
+  }
+  (*num_export) = count;
 
   /* Allocate export lists. */
   *export_global_ids = *export_local_ids = NULL;
   *export_procs = *export_to_part = NULL;
-  if (max_export > 0) {
-    if (!Zoltan_Special_Malloc(zz, (void **)export_global_ids, max_export,
+  if ((*num_export) > 0) {
+    if (!Zoltan_Special_Malloc(zz, (void **)export_global_ids, (*num_export),
                                ZOLTAN_SPECIAL_MALLOC_GID)
-     || !Zoltan_Special_Malloc(zz, (void **)export_local_ids, max_export,
+     || !Zoltan_Special_Malloc(zz, (void **)export_local_ids, (*num_export),
                                ZOLTAN_SPECIAL_MALLOC_LID)
-     || !Zoltan_Special_Malloc(zz, (void **)export_procs, max_export,
+     || !Zoltan_Special_Malloc(zz, (void **)export_procs, (*num_export),
                                ZOLTAN_SPECIAL_MALLOC_INT)
-     || !Zoltan_Special_Malloc(zz, (void **)export_to_part, max_export,
+     || !Zoltan_Special_Malloc(zz, (void **)export_to_part, (*num_export),
                                ZOLTAN_SPECIAL_MALLOC_INT)) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
       ierr = ZOLTAN_MEMERR;
       goto End;
     }
   }
+
+  /* Loop over objects and fill export lists. */
+  count=0;
+  for (i=0; i<num_obj; i++){
+    if (newparts[i] != parts[i]){
+      /* export_global_ids[count] = global_ids[i]; */
+      ZOLTAN_SET_GID(zz, &((*export_global_ids)[count*zz->Num_GID]),
+                     &global_ids[i*zz->Num_GID]);
+      if (local_ids)
+        /* export_local_ids[count] = local_ids[i]; */
+        ZOLTAN_SET_LID(zz, &((*export_local_ids)[count*zz->Num_LID]),
+                       &local_ids[i*zz->Num_LID]);
+      /* Set new partition number. */
+      (*export_to_part)[count] = newparts[i];
+      /* Processor is derived from partition number. */
+      (*export_procs)[count] = Zoltan_LB_Part_To_Proc(zz, 
+                     (*export_to_part)[count], &global_ids[i*zz->Num_GID]);
+
+      ++count;
+    }
+  }
+
+End:
+  /* Free local memory, but not export lists. */
+  ZOLTAN_FREE(&global_ids);
+  ZOLTAN_FREE(&local_ids);
+  ZOLTAN_FREE(&parts);
+  ZOLTAN_FREE(&newparts);
+  if (wtflag) ZOLTAN_FREE(&wgts);
+
+  ZOLTAN_TRACE_EXIT(zz, yo);
+  return ierr;
+}
+
+
+/* Core function to compute partition numbers. */
+/* Replace this function with your own algorithm if desired. */
+/* Output: newparts contains the new partition numbers. */
+
+static void simple_part(ZZ *zz, int num_obj, int wtflag, float *wgts, 
+            float *part_sizes, int *newparts)
+{
+  int i, part;
+  double wtsum, scansum[zz->Num_Proc+1];
 
   /* Sum up local object weights. */
   if (wtflag){
@@ -113,7 +173,6 @@ int Zoltan_Simple(
     part_sizes[i] += part_sizes[i-1]; 
 
   /* Loop over objects and assign partition. */
-  count = 0;
   part = 0;
   wtsum = scansum[zz->Proc];
   for (i=0; i<num_obj; i++){
@@ -123,33 +182,7 @@ int Zoltan_Simple(
     while (part<zz->LB.Num_Global_Parts-1 && (wtsum+0.5*(wtflag? wgts[i]: 1.0)) 
            > part_sizes[part]*scansum[zz->Num_Proc])
       part++;
-    if (part != parts[i]){
-      /* export_global_ids[count] = global_ids[i]; */
-      ZOLTAN_SET_GID(zz, &((*export_global_ids)[count*zz->Num_GID]),
-                     &global_ids[i*zz->Num_GID]);
-      if (local_ids)
-        /* export_local_ids[count] = local_ids[i]; */
-        ZOLTAN_SET_LID(zz, &((*export_local_ids)[count*zz->Num_LID]),
-                       &local_ids[i*zz->Num_LID]);
-      /* Set new partition number. */
-      (*export_to_part)[count] = part;
-      /* Processor is derived from partition number. */
-      (*export_procs)[count] = Zoltan_LB_Part_To_Proc(zz, 
-                     (*export_to_part)[count], &global_ids[i*zz->Num_GID]);
-
-      ++count;
-    }
+    newparts[i] = part;
     wtsum += (wtflag? wgts[i] : 1.0);
   }
-  (*num_export) = count;
-
-End:
-  /* Free local memory, but not export lists. */
-  ZOLTAN_FREE(&global_ids);
-  ZOLTAN_FREE(&local_ids);
-  ZOLTAN_FREE(&parts);
-
-  ZOLTAN_TRACE_EXIT(zz, yo);
-  return ierr;
 }
-
