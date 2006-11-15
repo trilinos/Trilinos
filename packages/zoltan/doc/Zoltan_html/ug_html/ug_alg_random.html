@@ -28,10 +28,11 @@
 <h2>
 <a name="RANDOM"></a>Random</h2>
 Random is not really a load-balancing algorithm,
-and should only be used for testing.
+and should only be used for testing!
 It takes each object and randomly assigns it to a new partition. 
 Via a parameter, one can alternatively choose to randomly perturb 
-only a fraction of the objects.
+only a fraction of the objects. The random method does not use weights
+and does not attempt to achieve load balance.
 <br>
 &nbsp;
 <table width="100%" nosave="">
