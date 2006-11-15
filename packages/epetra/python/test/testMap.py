@@ -119,7 +119,7 @@ class EpetraMapTestCase(unittest.TestCase):
     def testConstructor4(self):
         "Test Epetra.Map nonuniform, arbitrary constructor, bad list"
         self.myGlobalEls[-1] = "pi"
-        self.assertRaises(TypeError, Epetra.Map, self.numGlobalEl,
+        self.assertRaises((TypeError,ValueError), Epetra.Map, self.numGlobalEl,
                           self.myGlobalEls, self.indexBase, self.comm)
 
     def testConstructor5(self):

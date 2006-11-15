@@ -90,7 +90,8 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
     def testConstructor03(self):
         "Test Epetra.MultiVector (BlockMap,bad-list) constructor"
         list = [0, 1.0, "e", "pi"]
-        self.assertRaises(TypeError, Epetra.MultiVector, self.map, list)
+        self.assertRaises((TypeError,ValueError), Epetra.MultiVector, self.map,
+                          list)
 
     def testConstructor04(self):
         "Test Epetra.MultiVector (BlockMap,1D-small-list) constructor"
@@ -225,7 +226,7 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
     def testConstructor17(self):
         "Test Epetra.MultiVector (bad-list) constructor"
         list = [0, 1.0, "e", "pi"]
-        self.assertRaises(TypeError, Epetra.MultiVector, list)
+        self.assertRaises((TypeError,ValueError), Epetra.MultiVector, list)
 
     def testConstructor18(self):
         "Test Epetra.MultiVector (Copy,MultiVector,range-of-1) constructor"
@@ -275,7 +276,8 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
         multiArray = [squareArray] * 8
         emv1  = Epetra.MultiVector(self.map,multiArray)
         indexes = [0, 1.0, "e", "pi"]
-        self.assertRaises(TypeError, Epetra.MultiVector, Epetra.Copy, emv1, indexes)
+        self.assertRaises((TypeError,ValueError), Epetra.MultiVector,
+                          Epetra.Copy, emv1, indexes)
 
     def testConstructor22(self):
         "Test Epetra.MultiVector (View,MultiVector,range-of-1) constructor"
@@ -325,7 +327,8 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
         multiArray = [squareArray] * 8
         emv1  = Epetra.MultiVector(self.map,multiArray)
         indexes = [0, 1.0, "e", "pi"]
-        self.assertRaises(TypeError, Epetra.MultiVector, Epetra.View, emv1, indexes)
+        self.assertRaises((TypeError,ValueError), Epetra.MultiVector,
+                          Epetra.View, emv1, indexes)
 
     def testConstructor26(self):
         "Test Epetra.MultiVector copy constructor"

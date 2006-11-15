@@ -66,8 +66,8 @@ class EpetraIntVectorTestCase(unittest.TestCase):
         self.length      = 9
         self.comm        = Epetra.PyComm()
         self.map         = Epetra.Map(self.length*self.comm.NumProc(),0,self.comm)
-        self.numPyArray1 = arange(self.length)
-        self.numPyArray2 = array([0,-1,2,-3,4,-5,6,-7,6])
+        self.numPyArray1 = arange(self.length,dtype='i')
+        self.numPyArray2 = array([0,-1,2,-3,4,-5,6,-7,6],dtype='i')
         self.dtype       = zeros(1,'i').dtype
 
     def tearDown(self):
@@ -90,7 +90,8 @@ class EpetraIntVectorTestCase(unittest.TestCase):
     def testConstructor03(self):
         "Test Epetra.IntVector (BlockMap,bad-list) constructor"
         list = [0, 1.0, "e", "pi"]
-        self.assertRaises(TypeError,Epetra.IntVector,self.map,list)
+        self.assertRaises((TypeError,ValueError),Epetra.IntVector,self.map,
+                          list)
 
     def testConstructor04(self):
         "Test Epetra.IntVector (BlockMap,1D-small-list) constructor"
@@ -227,7 +228,7 @@ class EpetraIntVectorTestCase(unittest.TestCase):
     def testConstructor15(self):
         "Test Epetra.IntVector (bad-list) constructor"
         list = [0, 1.0, "e", "pi"]
-        self.assertRaises(TypeError,Epetra.IntVector,list)
+        self.assertRaises((TypeError,ValueError),Epetra.IntVector,list)
 
     def testConstructor16(self):
         "Test Epetra.IntVector copy constructor"

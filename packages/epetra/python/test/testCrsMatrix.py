@@ -269,14 +269,14 @@ class EpetraCrsMatrixTestCase(unittest.TestCase):
         "Test Epetra.CrsMatrix InsertGlobalValues method for bad values"
         crsm = Epetra.CrsMatrix(Epetra.Copy, self.rowMap, 3)
         grid = crsm.GRID(0)
-        self.assertRaises(TypeError, crsm.InsertGlobalValues, grid,
+        self.assertRaises((TypeError,ValueError), crsm.InsertGlobalValues, grid,
                           [0,"e","pi"], [grid,grid+1,grid+2])
 
     def testInsertGlobalValuesBad2(self):
         "Test Epetra.CrsMatrix InsertGlobalValues method for bad indices"
         crsm = Epetra.CrsMatrix(Epetra.Copy, self.rowMap, 3)
         grid = crsm.GRID(0)
-        self.assertRaises(TypeError, crsm.InsertGlobalValues, grid,
+        self.assertRaises((TypeError,ValueError), crsm.InsertGlobalValues, grid,
                           [-1, 2, -1], [0,"e","pi"])
 
     def testReplaceGlobalValues(self):

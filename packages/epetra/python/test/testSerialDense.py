@@ -126,7 +126,8 @@ class EpetraSerialDenseMatrixTestCase(unittest.TestCase):
     def testConstructor06(self):
         "Test Epetra.SerialDenseMatrix (1D-list) constructor"
         list = self.array[1]
-        self.assertRaises(TypeError, Epetra.SerialDenseMatrix, list)
+        self.assertRaises((TypeError,ValueError), Epetra.SerialDenseMatrix,
+                          list)
 
     def testConstructor07(self):
         "Test Epetra.SerialDenseMatrix (2D-list) constructor"
@@ -147,12 +148,14 @@ class EpetraSerialDenseMatrixTestCase(unittest.TestCase):
     def testConstructor09(self):
         "Test Epetra.SerialDenseMatrix (3D-list) constructor"
         list = [self.array, self.array]
-        self.assertRaises(TypeError, Epetra.SerialDenseMatrix, list)
+        self.assertRaises((TypeError,ValueError), Epetra.SerialDenseMatrix,
+                          list)
 
     def testConstructor10(self):
         "Test Epetra.SerialDenseMatrix (bad-list) constructor"
         myArray = [ [0, 1.2], ["e","pi"] ]
-        self.assertRaises(TypeError, Epetra.SerialDenseMatrix, myArray)
+        self.assertRaises((TypeError,ValueError), Epetra.SerialDenseMatrix,
+                          myArray)
 
     def testConstructor11(self):
         "Test Epetra.SerialDenseMatrix copy constructor for default"
@@ -595,7 +598,8 @@ class EpetraSerialDenseVectorTestCase(unittest.TestCase):
     def testConstructor5(self):
         "Test Epetra.SerialDenseVector bad-list constructor"
         list = [0,1.0,"e","pi"]
-        self.assertRaises(TypeError,Epetra.SerialDenseVector,list)
+        self.assertRaises((TypeError,ValueError), Epetra.SerialDenseVector,
+                          list)
 
     def testPrint(self):
         "Test Epetra.SerialDenseVector Print method"

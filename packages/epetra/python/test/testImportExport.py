@@ -74,7 +74,7 @@ class EpetraImportTestCase(unittest.TestCase):
         self.myN        = 2
         self.globalN    = self.myN * self.numProc
         self.globalSize = self.globalN*self.globalN
-        self.gids       = arange(self.globalSize)
+        self.gids       = arange(self.globalSize,dtype='i')
         self.gids.shape = (self.globalN,self.globalN)
         self.start      = self.myN * self.myPID
         self.end        = self.start + self.myN
@@ -262,7 +262,7 @@ class EpetraExportTestCase(unittest.TestCase):
         self.myN        = 2
         self.globalN    = self.myN * self.numProc
         self.globalSize = self.globalN*self.globalN
-        self.gids       = arange(self.globalSize)
+        self.gids       = arange(self.globalSize,dtype='i')
         self.gids.shape = (self.globalN,self.globalN)
         self.start      = self.myN * self.myPID
         self.end        = self.start + self.myN

@@ -153,9 +153,9 @@ class EpetraBlockMapTestCase(unittest.TestCase):
     def testConstructor09(self):
         "Test Epetra.BlockMap nonuniform, arbitrary constructor, bad list"
         self.myGlobalEls[-1] = "pi"
-        self.assertRaises(TypeError, Epetra.BlockMap, self.numGlobalEl,
-                          self.myGlobalEls, self.elSizeConst, self.indexBase,
-                          self.comm)
+        self.assertRaises((TypeError,ValueError), Epetra.BlockMap,
+                          self.numGlobalEl, self.myGlobalEls, self.elSizeConst,
+                          self.indexBase, self.comm)
 
     def testConstructor10(self):
         "Test Epetra.BlockMap nonuniform, arbitrary constructor, negative global size"

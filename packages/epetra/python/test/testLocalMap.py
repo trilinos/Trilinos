@@ -90,7 +90,7 @@ class EpetraLocalMapTestCase(unittest.TestCase):
 
     def testRemoteIDList(self):
         "Test Epetra.LocalMap RemoteIDList method for constant element size"
-        gidList  = arange(self.map.NumGlobalElements())
+        gidList  = range(self.map.NumGlobalElements())
         sizeList = ones(  self.map.NumGlobalElements())
         pidList  = sizeList * self.myPID
         lidList  = gidList
