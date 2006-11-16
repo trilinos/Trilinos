@@ -39,6 +39,8 @@ namespace Thyra {
 
 /** \brief Testing function for a single stratimikos solver for a single
  * matrix.
+ *
+ * \ingroup stratimikos_testing_grp
  */
 bool test_single_stratimikos_solver(
   Teuchos::ParameterList                  *paramList

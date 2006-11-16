@@ -48,14 +48,14 @@ public:
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
 
   /** \brief Set the maximum relative error before a warning is generated. */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( ScalarMag, warning_tol )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( ScalarMag, warning_tol );
 
   /** \brief Set the maximum relative error before an error is generated. */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( ScalarMag, error_tol )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( ScalarMag, error_tol );
 
   /** \brief Set the number of columns to use to create test <tt>MultiVectorBase</tt> objects.
    */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( int, num_mv_cols )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( int, num_mv_cols );
 
   /** \brief . */
   MultiVectorStdOpsTester(

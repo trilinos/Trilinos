@@ -46,10 +46,10 @@
  * declaration as follows:
  \verbatim
 
-	class YourClass {
-	public:
-		STANDARD_MEMBER_COMPOSITION_MEMBERS( MyClass, my_attribute )
-	};
+  class YourClass {
+  public:
+    STANDARD_MEMBER_COMPOSITION_MEMBERS( MyClass, my_attribute );
+  };
  \endverbatim
  * This macro adds the following data member to the class declaration:
  \verbatim
@@ -58,7 +58,7 @@
  \endverbatim
  * and the following methods to your class declaration:
  \verbatim
-	public:
+  public:
   void my_attribute( const My_Class & my_attribute )
     { my_attribute_ = my_attribute; }
   const My_Class& my_attribute() const
@@ -73,6 +73,15 @@
   const TYPE& NAME() const { return NAME ## _; }\
 private:\
   TYPE NAME ## _;\
-public:
+public: \
+  typedef ::Teuchos::DummyDummyClass NAME ## DummyDummyClass_t
+
+// Note: Above, the 'using Teuchos::DummyDummyClass' statement is just there
+// to allow (and require) the macro use of the form:
+//
+//  STANDARD_MEMBER_COMPOSITION_MEMBERS( MyClass, my_attribute );
+//
+// which allows a semicolon at the end!
+//
 
 #endif	// TEUCHOS_STANDARD_MEMBER_COMPOSITION_MACROS_H

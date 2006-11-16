@@ -125,104 +125,104 @@ public:
     );
   
   /** \brief Set if a default forward solve will be performed on not. */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, check_forward_default  )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, check_forward_default  );
 
   /** \brief . */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( RangeScalarMag, forward_default_residual_warning_tol  )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( RangeScalarMag, forward_default_residual_warning_tol  );
 
   /** \brief . */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( RangeScalarMag, forward_default_residual_error_tol  )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( RangeScalarMag, forward_default_residual_error_tol  );
 
   /** \brief . */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( DomainScalarMag, forward_default_solution_error_warning_tol  )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( DomainScalarMag, forward_default_solution_error_warning_tol  );
 
   /** \brief . */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( DomainScalarMag, forward_default_solution_error_error_tol  )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( DomainScalarMag, forward_default_solution_error_error_tol  );
 
   /** \brief Set if a tolerance on the residual of the forward solve should checked or not. */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, check_forward_residual  )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, check_forward_residual  );
 
   /** \brief Set the relative tolerance that will be requested in the residual
    * for the forward solve . */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( RangeScalarMag, forward_residual_solve_tol  )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( RangeScalarMag, forward_residual_solve_tol  );
 
   /** \brief . */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( RangeScalarMag, forward_residual_slack_warning_tol  )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( RangeScalarMag, forward_residual_slack_warning_tol  );
 
   /** \brief . */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( RangeScalarMag, forward_residual_slack_error_tol  )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( RangeScalarMag, forward_residual_slack_error_tol  );
 
   /** \brief Set if a tolerance on the solution error of the forward solve should checked or not. */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, check_forward_solution_error  )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, check_forward_solution_error  );
 
   /** \brief Set the relative tolerance that will be requested in the solution_error
    * for the forward solve . */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( RangeScalarMag, forward_solution_error_solve_tol  )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( RangeScalarMag, forward_solution_error_solve_tol  );
 
   /** \brief . */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( RangeScalarMag, forward_solution_error_slack_warning_tol  )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( RangeScalarMag, forward_solution_error_slack_warning_tol  );
 
   /** \brief . */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( RangeScalarMag, forward_solution_error_slack_error_tol  )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( RangeScalarMag, forward_solution_error_slack_error_tol  );
 
   /** \brief Set if a default forward solve will be performed on not. */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, check_adjoint_default  )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, check_adjoint_default  );
 
   /** \brief . */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( DomainScalarMag, adjoint_default_residual_warning_tol  )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( DomainScalarMag, adjoint_default_residual_warning_tol  );
 
   /** \brief . */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( DomainScalarMag, adjoint_default_residual_error_tol  )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( DomainScalarMag, adjoint_default_residual_error_tol  );
 
   /** \brief . */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( RangeScalarMag, adjoint_default_solution_error_warning_tol  )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( RangeScalarMag, adjoint_default_solution_error_warning_tol  );
 
   /** \brief . */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( RangeScalarMag, adjoint_default_solution_error_error_tol  )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( RangeScalarMag, adjoint_default_solution_error_error_tol  );
 
   /** \brief Set if a tolerance on the residual of the adjoint solve should
    * checked or not. */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, check_adjoint_residual  )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, check_adjoint_residual  );
 
   /** \brief Set the relative tolerance that will be requested in the residual
    * in the adjoint solve . */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( DomainScalarMag, adjoint_residual_solve_tol  )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( DomainScalarMag, adjoint_residual_solve_tol  );
 
   /** \brief . */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( DomainScalarMag, adjoint_residual_slack_warning_tol  )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( DomainScalarMag, adjoint_residual_slack_warning_tol  );
 
   /** \brief . */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( DomainScalarMag, adjoint_residual_slack_error_tol  )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( DomainScalarMag, adjoint_residual_slack_error_tol  );
 
   /** \brief Set if a tolerance on the solution error of the adjoint solve should checked or not. */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, check_adjoint_solution_error  )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, check_adjoint_solution_error  );
 
   /** \brief Set the relative tolerance that will be requested in the solution_error
    * for the adjoint solve . */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( RangeScalarMag, adjoint_solution_error_solve_tol  )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( RangeScalarMag, adjoint_solution_error_solve_tol  );
 
   /** \brief . */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( RangeScalarMag, adjoint_solution_error_slack_warning_tol  )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( RangeScalarMag, adjoint_solution_error_slack_warning_tol  );
 
   /** \brief . */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( RangeScalarMag, adjoint_solution_error_slack_error_tol  )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( RangeScalarMag, adjoint_solution_error_slack_error_tol  );
 
   /** \brief Set the number random vectors that is generated during each test.
    */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( int, num_random_vectors )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( int, num_random_vectors );
 
   /** \brief Set if all tests are shown or just summaries.
    */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, show_all_tests )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, show_all_tests );
 
   /** \brief Set if all of the vectors are dumped or not (only relevant if
    * <tt>show_all_tests()==true</tt>).
    */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, dump_all )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, dump_all );
 
   /** \brief Set the number of right-hand-sides in the multivectors
    */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( int, num_rhs )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( int, num_rhs );
 
   /** \brief Turn off all tests so that individual tests can be set.
    *

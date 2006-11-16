@@ -281,6 +281,10 @@ using namespace std;
 #include <iomanip.h>  
 #endif
 
+namespace Teuchos { class DummyDummyClass; }
+// Above, is used for a dumb reason (see
+// Teuchs_StandardMemberCompositionMacros.hpp).
+
 #else /* __cplusplus not defined */
 
 #include <assert.h>   

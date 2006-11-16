@@ -116,6 +116,20 @@ private:
 
 };  // end class StringToIntMap
 
+/** \brief Nonmember get function.
+ * \relates StringToIntMap
+ */
+template<class EnumType>
+inline
+EnumType get(
+  StringToIntMap   const& map
+  ,std::string     const& option
+  ,std::string     const& groupName = ""
+  )
+{
+  return static_cast<EnumType>(map.get(option,groupName));
+}
+
 // ////////////////////////////////////////////
 // Inline declarations
 

@@ -68,16 +68,16 @@ public:
   typedef Teuchos::ScalarTraits<ScalarMag> SMT;
 
   /** \brief The default solution tolerance. */
-   STANDARD_MEMBER_COMPOSITION_MEMBERS( ScalarMag, defaultTol )
+   STANDARD_MEMBER_COMPOSITION_MEMBERS( ScalarMag, defaultTol );
 
   /** \brief The default maximum number of iterations. */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( int, defaultMaxNewtonIterations )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( int, defaultMaxNewtonIterations );
   
   /** \brief Set the armijo constant for the line search */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( Scalar, armijoConstant )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( Scalar, armijoConstant );
   
   /** \brief Set the maximum number of backtracking line search iterations to take. */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( int, maxLineSearchIterations )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( int, maxLineSearchIterations );
 
   /** \brief . */
   DampenedNewtonNonlinearSolver(

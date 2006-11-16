@@ -43,19 +43,27 @@ namespace Thyra {
  * <tt>PreconditionerFactoryBase</tt> object on demand for various Trilinos
  * linear solver packages.
  *
- * The parameters this class accepts are shown below in human readable format
- * and in XML (i.e. machine readable) format.
+ * For an example of how to use this class see
+ *  <a href="simple__stratimikos__example_8cpp-example.html">simple_stratimikos_example.cpp</a></tt>.
  *
- * <b>Human readable format for valid parameters (with default values) accepted by this class</b>
+ * The parameters this class accepts are shown below in different format:
+ * <ul>
+ * <li> \ref HumanReadableWithDocumentation "Human readable format (with documentation) for valid parameters accepted by this class"
+ * <li> \ref HumanReadableWithoutDocumentation "Human readable format (without documentation) for valid parameters accepted by this class"
+ * <li> \ref XmlFormat "XML format for valid parameters accepted by this class"
+ * </ul>
+ *
+ * <b>\anchor HumanReadableWithDocumentation Human readable format (with documentation) for valid parameters accepted by this class</b>
+ *
+ * \verbinclude simple_stratimikos_example.options.readablewithdoc.out
+ *
+ * <b>\anchor HumanReadableWithoutDocumentation Human readable format (without documentation) for valid parameters accepted by this class</b>
  *
  * \verbinclude simple_stratimikos_example.options.readable.out
  *
- * <b>XML format for valid parameters (with default values) accepted by this class</b>
+ * <b>\anchor XmlFormat XML format for valid parameters accepted by this class</b>
  *
  * \verbinclude simple_stratimikos_example.options.xml.out
- *
- * For an example of how to use this class see
-  <a href="simple__stratimikos__example_8cpp-example.html">simple_stratimikos_example.cpp</a></tt>.
  * 
  */
 class DefaultRealLinearSolverBuilder : public LinearSolverBuilderBase<double>
@@ -87,32 +95,32 @@ public:
   /** \brief The name an XML file that will be read to get XML parameters (if
    * not "").
    */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS(std::string,paramsXmlFileName)
+  STANDARD_MEMBER_COMPOSITION_MEMBERS(std::string,paramsXmlFileName);
     
   /** \brief An XML string that will be used to update the parameters (if not
    * "").
    */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS(std::string,extraParamsXmlString)
+  STANDARD_MEMBER_COMPOSITION_MEMBERS(std::string,extraParamsXmlString);
 
   /** \brief The name of an XML file that will be written (if not "") for the
    * parameters actually used.
    */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS(std::string,paramsUsedXmlOutFileName)
+  STANDARD_MEMBER_COMPOSITION_MEMBERS(std::string,paramsUsedXmlOutFileName);
 
   /** \brief The name of the option that will be added the the commandline
    * processor that will set <tt>paramsXmlFileName()</tt> .
    */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS(std::string,paramsXmlFileNameOption)
+  STANDARD_MEMBER_COMPOSITION_MEMBERS(std::string,paramsXmlFileNameOption);
 
   /** \brief The name of the option that will be added the the commandline
    * processor that will set <tt>extraParamsXmlString()</tt> .
    */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS(std::string,extraParamsXmlStringOption)
+  STANDARD_MEMBER_COMPOSITION_MEMBERS(std::string,extraParamsXmlStringOption);
 
   /** \brief The name of the option that will be added the the commandline
    * processor that will set <tt>paramsUsedXmlOutFileName()</tt> .
    */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS(std::string,paramsUsedXmlOutFileNameOption)
+  STANDARD_MEMBER_COMPOSITION_MEMBERS(std::string,paramsUsedXmlOutFileNameOption);
 
   /** \brief Set a new linear solver strategy factory object. */
   void setLinearSolveStrategyFactory(

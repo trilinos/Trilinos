@@ -51,12 +51,15 @@ Array<string> StrUtils::splitIntoLines(const string& input)
 {
   int begin = 0;
   Array<string> rtn;
-
-  for (unsigned int p=0; p<input.length(); ++p) {
-    const bool isEnd = p==input.length()-1;
+  const unsigned int len = input.length();
+  for (unsigned int p=0; p<len; ++p) {
+    const bool isEnd = p==len-1;
     if( input[p]=='\n' || input[p]=='\0' || input[p]=='\r' || isEnd )
     {
-      if (p-begin > 1) rtn.append(subString(input, begin, p+(isEnd?1:0)));
+      if (p-begin > 1)
+        rtn.append(
+          subString( input, begin, p+(isEnd?(input[len-1]=='\n'?0:1):0) )
+          );
       begin = p+1;
     }
   }

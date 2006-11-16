@@ -198,7 +198,7 @@ protected:
    * <li><tt>this->forceUnitStride() == forceUnitStride</tt>
    * </ul>
    */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, forceUnitStride )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, forceUnitStride );
 
   /** Construct to uninitialized
    *

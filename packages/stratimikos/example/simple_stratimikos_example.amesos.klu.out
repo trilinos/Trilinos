@@ -16,7 +16,7 @@ Printing statistics of the Epetra linear system ...
 
 Reading parameters from XML file "../example/amesos.klu.xml" ...
   
-  Solving block system using Amesos solver 10Amesos_Klu ...
+  Solving block system using Amesos solver Amesos_Klu ...
   
   
   Total solve time = 0 sec
@@ -24,7 +24,7 @@ Reading parameters from XML file "../example/amesos.klu.xml" ...
 Solve status:
   solveStatus = SOLVE_STATUS_CONVERGED
   achievedTol = unknownTolerance()
-  message: "Solver 10Amesos_Klu converged!"
+  message: "Solver Amesos_Klu converged!"
   extraParameters: NONE
 
 Solution ||epetra_x||2 = 1.24984

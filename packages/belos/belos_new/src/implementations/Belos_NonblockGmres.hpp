@@ -62,22 +62,22 @@ public:
 	/** Determine the maximum Krylov subspace dimension before a restart
 	 * is performed.
 	 */
-	STANDARD_MEMBER_COMPOSITION_MEMBERS(int,maxKrylovDim)
+	STANDARD_MEMBER_COMPOSITION_MEMBERS(int,maxKrylovDim);
 
 	///
 	/** Set the tolerance for detecting solver breakdown
 	 */
-	STANDARD_MEMBER_COMPOSITION_MEMBERS(ScalarMag,breakdown_tol )
+	STANDARD_MEMBER_COMPOSITION_MEMBERS(ScalarMag,breakdown_tol );
 
 	///
 	/** Set the output steam for iterative algorithm.
 	 */
-	STANDARD_COMPOSITION_MEMBERS(std::ostream,out)
+	STANDARD_COMPOSITION_MEMBERS(std::ostream,out);
 
 	///
 	/** Determine if we dump all info or not.
 	 */
-	STANDARD_MEMBER_COMPOSITION_MEMBERS(bool,dump_all)
+	STANDARD_MEMBER_COMPOSITION_MEMBERS(bool,dump_all);
 
 	///
 	/** Default initialization.

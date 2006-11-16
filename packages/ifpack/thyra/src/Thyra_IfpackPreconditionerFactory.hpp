@@ -30,10 +30,10 @@
 #ifndef THYRA_IFPACK_PRECONDITIONER_FACTORY_DECL_HPP
 #define THYRA_IFPACK_PRECONDITIONER_FACTORY_DECL_HPP
 
-#include "Thyra_Ifpack_Types.hpp"
 #include "Thyra_PreconditionerFactoryBase.hpp"
 #include "Thyra_EpetraOperatorViewExtractorBase.hpp"
 #include "Teuchos_StandardCompositionMacros.hpp"
+#include "Ifpack.h"
 
 namespace Thyra {
 
@@ -58,7 +58,7 @@ public:
    *
    * The default implementation used is <tt>EpetraOperatorViewExtractorBase</tt>.
    */
-  STANDARD_COMPOSITION_MEMBERS( EpetraOperatorViewExtractorBase, epetraFwdOpViewExtractor )
+  STANDARD_COMPOSITION_MEMBERS( EpetraOperatorViewExtractorBase, epetraFwdOpViewExtractor );
 
   //@}
 
@@ -117,16 +117,14 @@ private:
   // ////////////////////////////////
   // Private data members
 
-  Ifpack::EPrecType                                  precType_;
-  int                                                overlap_;
   Teuchos::RefCountPtr<Teuchos::ParameterList>       paramList_;
+  ::Ifpack::EPrecType                                precType_;
+  int                                                overlap_;
 
   // ////////////////////////////////
   // Private member functions
 
   static void initializeTimers();
-
-  static Teuchos::RefCountPtr<const Teuchos::ParameterList> generateAndGetValidParameters();
 
 };
 

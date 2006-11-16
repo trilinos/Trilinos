@@ -274,7 +274,7 @@ public:
   //@}
 protected:
   /** \brief . */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( ReductScalar, initReductObjValue )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( ReductScalar, initReductObjValue );
 };
 
 template<class Scalar, class ReductScalar>
@@ -415,8 +415,8 @@ public:
   //@}
 protected:
   /** \brief . */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( Scalar, initScalarReductObjValue )
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( Index, initIndexReductObjValue )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( Scalar, initScalarReductObjValue );
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( Index, initIndexReductObjValue );
 private:
   static const int num_values_;
 };
@@ -531,7 +531,7 @@ public:
   //@}
 protected:
   /** \brief . */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( index_type, initReductObjValue )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( index_type, initReductObjValue );
 };
 
 /** \brief Simple base class for all transformation operators that
@@ -603,7 +603,7 @@ public:
   //@}
 protected:
   /** \brief . */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( Scalar, scalarData )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( Scalar, scalarData );
 private:
   static const int num_values_;
 };
@@ -685,9 +685,9 @@ public:
   //@}
 protected:
   /** \brief . */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( Scalar, scalarData1 )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( Scalar, scalarData1 );
   /** \brief . */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( Scalar, scalarData2 )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( Scalar, scalarData2 );
 private:
   static const int num_values_;
 };

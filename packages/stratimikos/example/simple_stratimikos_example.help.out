@@ -22,6 +22,8 @@ Usage: ../example/simple_stratimikos_example.exe [options]
   --continue-after-printing-options          (default: --continue-after-printing-options)
   --print-xml-format                 bool    Print the valid options in XML format or in readable format.
   --print-readable-format                    (default: --print-readable-format)
+  --show-doc                         bool    Print the valid options with or without documentation.
+  --hide-doc                                 (default: --show-doc)
 
 DETAILED DOCUMENTATION:
 

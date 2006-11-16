@@ -46,7 +46,7 @@ class SpmdMultiVectorSerializer {
 public:
 
   /// Set to true if to use binary IO and to false if using ASCII.
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, binaryMode )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, binaryMode );
 
   /** \brief . */
   SpmdMultiVectorSerializer(

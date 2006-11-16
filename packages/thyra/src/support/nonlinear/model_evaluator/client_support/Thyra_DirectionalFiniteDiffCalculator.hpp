@@ -64,10 +64,10 @@ public:
   typedef DirectionalFiniteDiffCalculatorTypes::EFDStepSelectType EFDStepSelectType;
 
   /** \brief . */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( EFDMethodType, fd_method_type )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( EFDMethodType, fd_method_type );
 
   /** \brief . */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( EFDStepSelectType, fd_step_select_type )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( EFDStepSelectType, fd_step_select_type );
 
   /** \brief Pick the size of the finite difference step.
    *
@@ -75,7 +75,7 @@ public:
    * select it based on the order of method <tt>fd_method_type()</tt>
    * that is selected.
    */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( ScalarMag, fd_step_size )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( ScalarMag, fd_step_size );
 
   /** \brief Pick the minimum step size under which the finite difference product.
    *
@@ -85,7 +85,7 @@ public:
    * will always be performed.  If <tt>fd_step_size_min < 0</tt> then the
    * minimum step size will be determined internally.
    */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( ScalarMag, fd_step_size_min )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( ScalarMag, fd_step_size_min );
 
   /** \brief . */
   DirectionalFiniteDiffCalculator(

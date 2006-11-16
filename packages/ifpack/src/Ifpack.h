@@ -80,27 +80,107 @@ cout << *Prec;
 delete Prec;
 \endcode
 
-\author Marzio Sala, SNL 9214
+\author Marzio Sala, (formally) SNL org. 1414
 
 \date Last updated on 25-Jan-05.
 */
 
 class Ifpack {
-
 public:
-  //! Creates an instance of Ifpack_Preconditioner.
-  /*! Creates an Ifpack_Preconditioner.
-   * \param PrecType (In) - type of preconditioner to be created. 
+
+  /** \brief Enum for the type of preconditioner. */
+  enum EPrecType {
+    POINT_RELAXATION
+    ,POINT_RELAXATION_STAND_ALONE
+    ,BLOCK_RELAXATION
+    ,BLOCK_RELAXATION_STAND_ALONE
+    ,BLOCK_RELAXATION_STAND_ALONE_ILU
+#ifdef HAVE_IFPACK_AMESOS
+    ,BLOCK_RELAXATION_STAND_ALONE_AMESOS
+    ,BLOCK_RELAXATION_AMESOS
+    ,AMESOS
+    ,AMESOS_STAND_ALONE
+#endif // HAVE_IFPACK_AMESOS
+    ,IC
+    ,IC_STAND_ALONE
+    ,ICT
+    ,ICT_STAND_ALONE
+    ,ILU
+    ,ILU_STAND_ALONE
+    ,ILUT
+    ,ILUT_STAND_ALONE
+#ifdef HAVE_IFPACK_SPARSKIT
+    ,SPARSKIT
+#endif // HAVE_IFPACK_SPARSKIT
+    ,CHEBYSHEV
+  };
+
+  /** \brief . */
+  static const int numPrecTypes =
+    +5
+#ifdef HAVE_IFPACK_AMESOS
+    +4
+#endif
+    +8
+#ifdef HAVE_IFPACK_SPARSKIT
+    +1
+#endif
+    +1
+    ;
+
+  /** \brief List of the preconditioner types as enum values . */
+  static const EPrecType precTypeValues[numPrecTypes];
+
+  /** \brief List of preconditioner types as string values. */
+  static const char* precTypeNames[numPrecTypes];
+
+  /** \brief List of bools that determines if the precondtioner type supports
+   * unsymmetric matrices. */
+  static const bool supportsUnsymmetric[numPrecTypes];
+
+  /** \brief Function that gives the string name for preconditioner given its
+   * enumerication value. */
+  static const char* toString(const EPrecType precType)
+      { return precTypeNames[precType]; }
+
+  /** \brief Creates an instance of Ifpack_Preconditioner given the enum value
+   * of the preconditioner type (can not fail, no bad input possible).
+   *
+   * \param PrecType (In) - Enum value of preconditioner type to be created. 
    *
    * \param Matrix (In) - Matrix used to define the preconditioner
    *
    * \param overlap (In) - specified overlap, defaulted to 0.
    */
+  static Ifpack_Preconditioner* Create(
+    EPrecType PrecType, Epetra_RowMatrix* Matrix, const int overlap = 0
+    );
+
+  /** \brief Creates an instance of Ifpack_Preconditioner given the string
+   * name of the preconditioner type (can fail with bad input).
+   *
+   * \param PrecType (In) - String name of preconditioner type to be created. 
+   *
+   * \param Matrix (In) - Matrix used to define the preconditioner
+   *
+   * \param overlap (In) - specified overlap, defaulted to 0.
+   *
+   * Returns <tt>0</tt> if the preconditioner with that input name does not
+   * exist.  Otherwise, return a newly created preconditioner object.  Note
+   * that the client is responsible for calling <tt>delete</tt> on the
+   * returned object once it is finished using it!
+   */
   Ifpack_Preconditioner* Create(const string PrecType,
 				Epetra_RowMatrix* Matrix,
 				const int overlap = 0);
 
-  //! Sets the options in List from the command line
+  /** \brief Sets the options in List from the command line.
+   *
+   * Note: If you want full support for all parameters, consider reading in a
+   * parameter list from an XML file as supported by the Teuchos helper
+   * function <tt>Teuchos::updateParametersFromXmlFile()</tt> or
+   * <tt>Teuchos::updateParametersFromXmlStream()</tt>.
+   */
   int SetParameters(int argc, char* argv[],
                     Teuchos::ParameterList& List, string& PrecType,
                     int& Overlap);

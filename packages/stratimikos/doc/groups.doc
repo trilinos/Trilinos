@@ -66,3 +66,7 @@ Sample output looks like:
 Here is the main driver itself:
 
 */
+
+/** \defgroup stratimikos_testing_grp Stratimikos testing code.
+
+*/

@@ -37,15 +37,24 @@
 #include "Epetra_RowMatrix.h"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_dyn_cast.hpp"
+#include "Teuchos_StandardParameterEntryValidators.hpp"
 
 namespace {
 
 Teuchos::RefCountPtr<Teuchos::Time> overallTimer, creationTimer, factorizationTimer;
 
 const std::string Ifpack_name = "Ifpack";
+
 const std::string IfpackSettings_name = "Ifpack Settings";
+
 const std::string PrecType_name = "Prec Type";
+Teuchos::RefCountPtr<Teuchos::StringToIntegralParameterEntryValidator<Ifpack::EPrecType> >
+precTypeValidator; // Will be setup below!
+const Ifpack::EPrecType PrecType_default = Ifpack::ILU;
+const std::string PrecTypeName_default = Ifpack::precTypeNames[PrecType_default];
+
 const std::string Overlap_name = "Overlap";
+const int Overlap_default = 0;
 
 } // namespace
 
@@ -55,10 +64,11 @@ namespace Thyra {
 
 IfpackPreconditionerFactory::IfpackPreconditionerFactory()
   :epetraFwdOpViewExtractor_(Teuchos::rcp(new EpetraOperatorViewExtractorStd()))
-   ,precType_(Ifpack::ILU)
-   ,overlap_(0)
+  ,precType_(PrecType_default)
+  ,overlap_(Overlap_default)
 {
   initializeTimers();
+  getValidParameters(); // Make sure validators get created!
 }
 
 // Overridden from PreconditionerFactoryBase
@@ -138,7 +148,8 @@ void IfpackPreconditionerFactory::initializePrec(
   EAdjointEpetraOp                            epetraFwdOpAdjointSupport;
   double                                      epetraFwdOpScalar;
   epetraFwdOpViewExtractor_->getEpetraOpView(
-    fwdOp,&epetraFwdOp,&epetraFwdOpTransp,&epetraFwdOpApplyAs,&epetraFwdOpAdjointSupport,&epetraFwdOpScalar
+    fwdOp,&epetraFwdOp,&epetraFwdOpTransp,&epetraFwdOpApplyAs
+    ,&epetraFwdOpAdjointSupport,&epetraFwdOpScalar
     );
   // Validate what we get is what we need
   RefCountPtr<const Epetra_RowMatrix>
@@ -183,15 +194,13 @@ void IfpackPreconditionerFactory::initializePrec(
   // he can.
   if(startingOver) {
     if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
-      *out << "\nCreating the initial Ifpack_Preconditioner object of type \'"<<toString(precType_)<<"\' ...\n";
+      *out << "\nCreating the initial Ifpack_Preconditioner object of type \'"<<Ifpack::toString(precType_)<<"\' ...\n";
     timer.start(true);
     Teuchos::TimeMonitor creationTimeMonitor(*creationTimer);
     // Create the initial preconditioner
-    ::Ifpack ifpackFcty; // Should be a static function!
-    const std::string &precTypeName = toString(precType_);
     ifpack_precOp = rcp(
-      ifpackFcty.Create(
-        precTypeName
+      ::Ifpack::Create(
+        precType_
         ,const_cast<Epetra_RowMatrix*>(&*epetraFwdRowMat)
         ,overlap_
         )
@@ -199,19 +208,15 @@ void IfpackPreconditionerFactory::initializePrec(
     timer.stop();
     if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
       OSTab(out).o() <<"\n=> Creation time = "<<timer.totalElapsedTime()<<" sec\n";
-    // RAB: Above, I am just passing a string to Ifpack::Create(...) in order
-    // get this code written.  However, in the future, it would be good to
-    // copy the contents of what is in Ifpack::Create(...) into a local
-    // function and then use switch(...) to create the initial
-    // Ifpack_Preconditioner object.  This would result in better validation
-    // and faster code.
-    TEST_FOR_EXCEPTION(
-      ifpack_precOp.get()==NULL, std::logic_error
-      ,"Error, Ifpack::Create(precTypeName,...) returned NULL for precType = \""<<precTypeName<<"\"!"
-      );
     // Set parameters if the list exists
-    if(paramList_.get())
-      TEST_FOR_EXCEPT(0!=ifpack_precOp->SetParameters(paramList_->sublist(IfpackSettings_name))); // This will create new sublist if it does not exist!
+    if(paramList_.get()) {
+      Teuchos::ParameterList
+        &ifpackSettingsPL = paramList_->sublist(IfpackSettings_name);
+      // Above will create new sublist if it does not exist!
+      TEST_FOR_EXCEPT(0!=ifpack_precOp->SetParameters(ifpackSettingsPL));
+      // Above, I have not idea how any error messages for a mistake will be
+      // reported back to the user!
+    }
     // Initailize the structure for the preconditioner
     TEST_FOR_EXCEPT(0!=ifpack_precOp->Initialize());
   }
@@ -281,15 +286,22 @@ void IfpackPreconditionerFactory::uninitializePrec(
 void IfpackPreconditionerFactory::setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList)
 {
   TEST_FOR_EXCEPT(paramList.get()==NULL);
-  paramList->validateParameters(*this->getValidParameters(),1);
+  paramList->validateParameters(*this->getValidParameters(),2);
+  // Note: The above validation will validate right down into the the sublist
+  // named IfpackSettings_name!
   paramList_ = paramList;
-  overlap_ = paramList_->get(Overlap_name,overlap_);
+  overlap_ = paramList_->get(Overlap_name,Overlap_default);
   std::ostringstream oss;
   oss << "(sub)list \""<<paramList->name()<<"\"parameter \"Prec Type\"";
-  precType_ = Ifpack::precTypeNameToEnum(
-    paramList_->get(PrecType_name,toString(precType_))
-    ,oss.str()
-    );
+  precType_ =
+    ( paramList_.get()
+      ? precTypeValidator->getIntegralValue(*paramList_,PrecType_name,PrecTypeName_default)
+      : PrecType_default
+      );
+#ifdef TEUCHOS_DEBUG
+  // Validate my use of the parameters!
+  paramList->validateParameters(*this->getValidParameters(),1);
+#endif
 }
 
 Teuchos::RefCountPtr<Teuchos::ParameterList>
@@ -315,7 +327,53 @@ IfpackPreconditionerFactory::getParameterList() const
 Teuchos::RefCountPtr<const Teuchos::ParameterList>
 IfpackPreconditionerFactory::getValidParameters() const
 {
-  return generateAndGetValidParameters();
+  using Teuchos::rcp;
+  static Teuchos::RefCountPtr<Teuchos::ParameterList> validParamList;
+  if(validParamList.get()==NULL) {
+    validParamList = Teuchos::rcp(new Teuchos::ParameterList(Ifpack_name));
+    if(1) {
+      // Create the validator for the preconditioner type!
+      Teuchos::Array<std::string>
+        precTypeNames;
+      precTypeNames.insert(
+        precTypeNames.begin()
+        ,&Ifpack::precTypeNames[0]
+        ,&Ifpack::precTypeNames[0]+Ifpack::numPrecTypes
+        );
+      Teuchos::Array<Ifpack::EPrecType>
+        precTypeValues;
+      precTypeValues.insert(
+        precTypeValues.begin()
+        ,&Ifpack::precTypeValues[0]
+        ,&Ifpack::precTypeValues[0]+Ifpack::numPrecTypes
+        );
+      precTypeValidator = rcp(
+        new Teuchos::StringToIntegralParameterEntryValidator<Ifpack::EPrecType>(
+          precTypeNames,precTypeValues,PrecType_name
+          )
+        );
+    }
+    validParamList->set(
+      PrecType_name,PrecTypeName_default
+      ,"Type of Ifpack preconditioner to use."
+      ,precTypeValidator
+      );
+    validParamList->set(
+      Overlap_name,Overlap_default
+      ,"Number of rows/columns overlapped between subdomains in different"
+      "\nprocesses in the additive Schwarz-type domain-decomposition preconditioners."
+      );
+    validParamList->sublist(
+      IfpackSettings_name, false
+      ,"Preconditioner settings that are passed onto the Ifpack preconditioners themselves."
+      ).setParameters(Ifpack_GetValidParameters());
+    // Note that in the above setParameterList(...) function that we actually
+    // validate down into the first level of this sublist.  Really the
+    // Ifpack_Preconditioner objects themselves should do validation but we do
+    // it ourselves taking the return from the Ifpack_GetValidParameters()
+    // function as gospel!
+  }
+  return validParamList;
 }
 
 // Public functions overridden from Teuchos::Describable
@@ -324,7 +382,7 @@ std::string IfpackPreconditionerFactory::description() const
 {
   std::ostringstream oss;
   oss << "Thyra::IfpackPreconditionerFactory{";
-  oss << "precType=\"" << toString(precType_) << "\"";
+  oss << "precType=\"" << ::Ifpack::toString(precType_) << "\"";
   oss << ",overlap=" << overlap_;
   oss << "}";
   return oss.str();
@@ -339,19 +397,6 @@ void IfpackPreconditionerFactory::initializeTimers()
     creationTimer      = Teuchos::TimeMonitor::getNewTimer("IfpackPF:Creation");
     factorizationTimer = Teuchos::TimeMonitor::getNewTimer("IfpackPF:Factorization");
   }
-}
-
-Teuchos::RefCountPtr<const Teuchos::ParameterList>
-IfpackPreconditionerFactory::generateAndGetValidParameters()
-{
-  static Teuchos::RefCountPtr<Teuchos::ParameterList> validParamList;
-  if(validParamList.get()==NULL) {
-    validParamList = Teuchos::rcp(new Teuchos::ParameterList(Ifpack_name));
-    validParamList->set(PrecType_name,"ILU");
-    validParamList->set(Overlap_name,0);
-    validParamList->sublist(IfpackSettings_name).setParameters(Ifpack_GetValidParameters());
-  }
-  return validParamList;
 }
 
 } // namespace Thyra

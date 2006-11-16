@@ -15,11 +15,9 @@
 #
 
 SOURCE_H = \
-	$(srcdir)/Thyra_Ifpack_Types.hpp \
 	$(srcdir)/Thyra_IfpackPreconditionerFactory.hpp
 
 SOURCE = \
-	$(srcdir)/Thyra_Ifpack_Types.cpp \
 	$(srcdir)/Thyra_IfpackPreconditionerFactory.cpp
 
 # Specify locations of include files within Trilinos

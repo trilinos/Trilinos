@@ -86,15 +86,15 @@ public:
     );
 
   /** \brief The default maximum number of iterations for forward solves. */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( int, fwdDefaultMaxIterations )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( int, fwdDefaultMaxIterations );
   /** \brief The default solution tolerance on the residual for forward solves. */
-   STANDARD_MEMBER_COMPOSITION_MEMBERS( double, fwdDefaultTol )
+   STANDARD_MEMBER_COMPOSITION_MEMBERS( double, fwdDefaultTol );
   /** \brief The default maximum number of iterations for adjoint solves. */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( int, adjDefaultMaxIterations )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( int, adjDefaultMaxIterations );
   /** \brief The default solution tolerance on the residual for adjoint solves. */
-   STANDARD_MEMBER_COMPOSITION_MEMBERS( double, adjDefaultTol )
+   STANDARD_MEMBER_COMPOSITION_MEMBERS( double, adjDefaultTol );
   /** \brief Determine if output for every RHS will be printed or not. */
-   STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, outputEveryRhs )
+   STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, outputEveryRhs );
 
   /** \brief Sets up this object.
    *

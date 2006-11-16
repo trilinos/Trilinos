@@ -29,10 +29,12 @@
 #ifndef TEUCHOS_PARAMETER_LIST_ACCEPTOR_HPP
 #define TEUCHOS_PARAMETER_LIST_ACCEPTOR_HPP
 
-#include "Teuchos_ParameterList.hpp"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_ConfigDefs.hpp"
 
 namespace Teuchos {
+
+class ParameterList;
+template<class T> class RefCountPtr;
 
 /** \brief Base class objects that can accept a parameter list.
  *
@@ -76,15 +78,15 @@ public:
    * an option is changed by the client that this will automatically be
    * recognized by <tt>*this</tt> object.
    */
-  virtual void setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList) = 0;
+  virtual void setParameterList(RefCountPtr<ParameterList> const& paramList) = 0;
 
   /** \brief Get the parameter list that was set using <tt>setParameterList()</tt>.
    */
-  virtual Teuchos::RefCountPtr<Teuchos::ParameterList> getParameterList() = 0;
+  virtual RefCountPtr<ParameterList> getParameterList() = 0;
 
   /** \brief Unset the parameter list that was set using <tt>setParameterList()</tt>.
    */
-  virtual Teuchos::RefCountPtr<Teuchos::ParameterList> unsetParameterList() = 0;
+  virtual RefCountPtr<ParameterList> unsetParameterList() = 0;
 
   //@}
 
@@ -98,14 +100,14 @@ public:
    return const_cast<ParameterListAcceptor*>(this)->getParameterList();
    \endcode
    */
-  virtual Teuchos::RefCountPtr<const Teuchos::ParameterList> getParameterList() const;
+  virtual RefCountPtr<const ParameterList> getParameterList() const;
 
   /** \brief Return a const parameter list of all of the valid parameters that
    * <tt>this->setParameterList(...)</tt> will accept.
    *
    * The default implementation returns <tt>Teuchos::null</tt>.
    */
-  virtual Teuchos::RefCountPtr<const Teuchos::ParameterList> getValidParameters() const;
+  virtual RefCountPtr<const ParameterList> getValidParameters() const;
 
   //@}
 

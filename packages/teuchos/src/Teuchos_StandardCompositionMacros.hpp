@@ -49,7 +49,7 @@
  \verbatim
  class YourClass {
  public:
-   STANDARD_COMPOSITION_MEMBERS( MyClass, my_object )
+   STANDARD_COMPOSITION_MEMBERS( MyClass, my_object );
  };
  \endverbatim
  *
@@ -72,7 +72,7 @@
 private: \
 	Teuchos::RefCountPtr< TYPE > NAME ## _; \
 public: \
-  typedef Teuchos::RefCountPtr< TYPE > NAME ## _ptr_t;
+  typedef Teuchos::RefCountPtr< TYPE > NAME ## _ptr_t
 
 /** \breif Macro that adds <<std comp>> members for a composition association.
  * \ingroup StandardContainmentMacros_grp
@@ -88,7 +88,7 @@ public: \
  \verbatim
  class YourClass {
  public:
-   STANDARD_NONCONST_COMPOSITION_MEMBERS( MyClass, my_object )
+   STANDARD_NONCONST_COMPOSITION_MEMBERS( MyClass, my_object );
  };
  \endverbatim
  *
@@ -109,7 +109,7 @@ public: \
 private: \
 	Teuchos::RefCountPtr< TYPE > NAME ## _; \
 public: \
-  typedef Teuchos::RefCountPtr< TYPE > NAME ## _ptr_t;
+  typedef Teuchos::RefCountPtr< TYPE > NAME ## _ptr_t
 
 /** \brief Macro that adds <<std comp>> members for a composition association.
  * \ingroup StandardContainmentMacros_grp
@@ -125,7 +125,7 @@ public: \
  \verbatim
  class YourClass {
  public:
-   STANDARD_CONST_COMPOSITION_MEMBERS( MyClass, my_object )
+   STANDARD_CONST_COMPOSITION_MEMBERS( MyClass, my_object );
  };
  \endverbatim
  *
@@ -147,6 +147,6 @@ public: \
 private: \
 	Teuchos::RefCountPtr< const TYPE > NAME ## _; \
 public: \
-  typedef Teuchos::RefCountPtr< const TYPE > NAME ## _ptr_t;
+  typedef Teuchos::RefCountPtr< const TYPE > NAME ## _ptr_t
 
-#endif	// TEUCHOS_STANDARD_COMPOSITION_MACROS_HPPx
+#endif	// TEUCHOS_STANDARD_COMPOSITION_MACROS_HPP

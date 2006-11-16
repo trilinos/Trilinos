@@ -43,13 +43,18 @@ run_cmnd(
   );
 
 run_cmnd(
-  "../example/simple_stratimikos_example.exe --teuchos-suppress-startup-banner --only-print-options --print-xml-format"
-  ,"$abs_top_srcdir/example/simple_stratimikos_example.options.xml.out"
+  "../example/simple_stratimikos_example.exe --teuchos-suppress-startup-banner --only-print-options --print-readable-format --show-doc"
+  ,"$abs_top_srcdir/example/simple_stratimikos_example.options.readablewithdoc.out"
   );
 
 run_cmnd(
-  "../example/simple_stratimikos_example.exe --teuchos-suppress-startup-banner --only-print-options --print-readable-format"
+  "../example/simple_stratimikos_example.exe --teuchos-suppress-startup-banner --only-print-options --print-readable-format --hide-doc"
   ,"$abs_top_srcdir/example/simple_stratimikos_example.options.readable.out"
+  );
+
+run_cmnd(
+  "../example/simple_stratimikos_example.exe --teuchos-suppress-startup-banner --only-print-options --print-xml-format"
+  ,"$abs_top_srcdir/example/simple_stratimikos_example.options.xml.out"
   );
 
 run_cmnd(

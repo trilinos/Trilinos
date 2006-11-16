@@ -57,6 +57,7 @@ const std::string LinearSolverType_name    = "Linear Solver Type";
 const std::string LinearSolverTypes_name   = "Linear Solver Types";
 const std::string PreconditionerType_name    = "Preconditioner Type";
 const std::string PreconditionerTypes_name   = "Preconditioner Types";
+const std::string None_name = "None";
 
 Teuchos::RefCountPtr<const Teuchos::StringToIntegralParameterEntryValidator<int> >
 lowsfValidator;
@@ -343,10 +344,10 @@ void DefaultRealLinearSolverBuilder::initializeDefaults()
   using Teuchos::rcp;
   using Teuchos::AbstractFactoryStd;
   defaultLOWSF_ = "";
-  defaultPF_ = "";
+  defaultPF_ = None_name;
   validLowsfNames_.resize(0);
   validPfNames_.resize(0);
-  validPfNames_.push_back("None"); // This will offset everything!
+  validPfNames_.push_back(None_name); // This will offset everything!
   // Solvers
 #ifdef HAVE_STRATIMIKOS_BELOS_THYRA
   setLinearSolveStrategyFactory(
@@ -371,7 +372,10 @@ void DefaultRealLinearSolverBuilder::initializeDefaults()
     defaultLOWSF_ = "Amesos";
   }
 #endif
+  // Note: the last LOWSF object set will be the default!
+  //
   // Preconditioners
+  //
 #ifdef HAVE_STRATIMIKOS_IFPACK_THYRA
   setPreconditioningStrategyFactory(
     rcp(new AbstractFactoryStd<PreconditionerFactoryBase<double>,IfpackPreconditionerFactory>())
@@ -384,6 +388,7 @@ void DefaultRealLinearSolverBuilder::initializeDefaults()
     ,"ML"
     );
 #endif
+  // Note: the last PF object set will be the default!
 }
 
 } // namespace Thyra

@@ -91,7 +91,7 @@ public:
    *
    * The default implementation used is <tt>EpetraOperatorViewExtractorBase</tt>.
    */
-  STANDARD_COMPOSITION_MEMBERS( EpetraOperatorViewExtractorBase, epetraFwdOpViewExtractor )
+  STANDARD_COMPOSITION_MEMBERS( EpetraOperatorViewExtractorBase, epetraFwdOpViewExtractor );
 
   //@}
 

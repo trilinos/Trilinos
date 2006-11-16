@@ -119,17 +119,17 @@ void ParameterList::unused(ostream& os) const
 std::string ParameterList::currentParametersString() const
 {
   std::ostringstream oss;
-  oss << "     {\n";
+  oss << "  {\n";
   ParameterList::ConstIterator itr;
   int i;
   for( itr = this->begin(), i = 0; itr != this->end(); ++itr, ++i ) {
     const std::string     &entryName   = this->name(itr);
     const ParameterEntry  &entry       = this->entry(itr);
     oss
-      << "          \""<<entryName<<"\" : "<<entry.getAny().typeName()
+      << "    \""<<entryName<<"\" : "<<entry.getAny().typeName()
       <<" = "<<filterValueToString(entry) << "\n";
   }
-  oss << "     }\n";
+  oss << "  }\n";
   return oss.str();
 }
 
@@ -248,17 +248,14 @@ ostream& ParameterList::print(ostream& os, const PrintOptions &printOptions ) co
       if(showTypes)
         *out << " : " << entry_i.getAny(false).typeName();
       *out << " = "; entry_i.leftshift(os,showFlags); *out << endl;
-      if(validator.get()) {
-        validator->printDoc(docString,OSTab(os).o());
+      if(showDoc) {
+        if(validator.get()) {
+          validator->printDoc(docString,OSTab(os).o());
+        }
+        else if( docString.length() ) {
+          StrUtils::printLines(OSTab(out).o(),"# ",docString);
+        }
       }
-      else if( docString.length() && showDoc ) {
-        StrUtils::printLines(OSTab(out).o(),"# ",docString);
-      }
-/*
-  const string &validValues = (validator.get() ? validator->validValues() : "");
-  if(validValues.length())
-  *out << "  #   Valid values: " << validValues << "\n";
-*/
     }
     // Print sublists second
     for (ConstIterator i = params_.begin(); i != params_.end(); ++i) 

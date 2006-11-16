@@ -89,65 +89,65 @@ public:
   /** \brief Set if to check for linear properties <tt>alpha*op*(x + y) ==
    * op(alpha*x) + op(alpha*y)</tt>
    */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, check_linear_properties )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, check_linear_properties );
 
   /** \brief Set the tolerance above which a relative error will generate a
    * warning message for the check of the linear properties.
    */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( ScalarMag, linear_properties_warning_tol )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( ScalarMag, linear_properties_warning_tol );
 
   /** \brief Set the tolerance above which a relative error will generate a
    * error message and result in test failure for the check of the linear
    * properties.
    */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( ScalarMag, linear_properties_error_tol )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( ScalarMag, linear_properties_error_tol );
 
   /** \brief Set if to check for adjoint property <tt>x'*(op*y) ==
    * y'*(op'*x)</tt> if adjoint is supported.
    */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, check_adjoint  )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, check_adjoint  );
 
   /** \brief Set the tolerance above which a relative error will generate a
    * warning message for the check of the adjoint.
    */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( ScalarMag, adjoint_warning_tol )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( ScalarMag, adjoint_warning_tol );
 
   /** \brief Set the tolerance above which a relative error will generate a
    * error message and result in test failure for the check of the adjoint.
    */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( ScalarMag, adjoint_error_tol )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( ScalarMag, adjoint_error_tol );
 
   /** \brief Set if to check for symmetry property <tt>x'*(op*y) ==
    * y'*(op*x)</tt> for symmetric operators.
    */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, check_for_symmetry  )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, check_for_symmetry  );
 
   /** \brief Set the tolerance above which a relative error will generate a
    * warning message for the check of symmetry.
    */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( ScalarMag, symmetry_warning_tol )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( ScalarMag, symmetry_warning_tol );
 
   /** \brief Set the tolerance above which a relative error will generate a
    * error message and result in test failure for the check of symmetry.
    */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( ScalarMag, symmetry_error_tol )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( ScalarMag, symmetry_error_tol );
 
   /** \brief Set the number random vectors that is generated during each test.
    */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( int, num_random_vectors )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( int, num_random_vectors );
 
   /** \brief Set if all tests are shown or just summaries.
    */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, show_all_tests )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, show_all_tests );
 
   /** \brief Set if all of the vectors are dumped or not (only relevant if
    * <tt>show_all_tests()==true</tt>).
    */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, dump_all )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, dump_all );
 
   /** \brief Set the number of right-hand-sides in the multivectors
    */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( int, num_rhs )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( int, num_rhs );
 
   /** \brief Enable or disable all tests.
    *

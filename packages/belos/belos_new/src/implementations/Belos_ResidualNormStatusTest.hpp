@@ -47,10 +47,10 @@ public:
 	typedef Teuchos::ScalarTraits<Scalar>  ST;
 
 	/// Set the stream that output will be sent to
-	STANDARD_COMPOSITION_MEMBERS( std::ostream, out )
+	STANDARD_COMPOSITION_MEMBERS( std::ostream, out );
 
 	/// Set the leading string that will be printed at the beginning of each new line of output.
-	STANDARD_MEMBER_COMPOSITION_MEMBERS( std::string, leadingOutputStr )
+	STANDARD_MEMBER_COMPOSITION_MEMBERS( std::string, leadingOutputStr );
 
 	/** @name Constructor/initializers/accessors */
 	//@{

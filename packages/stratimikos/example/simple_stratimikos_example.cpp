@@ -84,6 +84,7 @@ int main(int argc, char* argv[])
     double          tol                    = 1e-5;
     bool            onlyPrintOptions       = false;
     bool            printXmlFormat         = false;
+    bool            showDoc                = true;
 
     Thyra::DefaultRealLinearSolverBuilder linearSolverBuilder;
 
@@ -99,6 +100,8 @@ int main(int argc, char* argv[])
                    ,"Only print options and stop or continue on" );
     clp.setOption( "print-xml-format", "print-readable-format", &printXmlFormat
                    ,"Print the valid options in XML format or in readable format." );
+    clp.setOption( "show-doc", "hide-doc", &showDoc
+                   ,"Print the valid options with or without documentation." );
     
     clp.setDocString(
       "Simple example for the use of the Stratimikos facade Thyra::DefaultRealLinearSolverBuilder.\n"
@@ -125,7 +128,7 @@ int main(int argc, char* argv[])
           );
       else
         linearSolverBuilder.getValidParameters()->print(
-          *out,PLPrintOptions().indent(2).showTypes(true).showDoc(true)
+          *out,PLPrintOptions().indent(2).showTypes(true).showDoc(showDoc)
           );
       return 0;
     }

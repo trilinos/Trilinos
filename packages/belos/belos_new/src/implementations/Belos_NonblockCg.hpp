@@ -59,12 +59,12 @@ public:
 	///
 	/** Set the output steam for iterative algorithm.
 	 */
-	STANDARD_COMPOSITION_MEMBERS(std::ostream,out)
+	STANDARD_COMPOSITION_MEMBERS(std::ostream,out);
 
 	///
 	/** Determine if we dump all info or not.
 	 */
-	STANDARD_MEMBER_COMPOSITION_MEMBERS(bool,dump_all)
+	STANDARD_MEMBER_COMPOSITION_MEMBERS(bool,dump_all);
 
 	//@}
 

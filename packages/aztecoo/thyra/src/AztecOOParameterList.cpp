@@ -53,7 +53,8 @@ aztecSolverValidator = Teuchos::rcp(
   );
 const std::string AztecSolver_default = "GMRES";
 
-const std::string AztecPreconditioner_name = "Aztec Preconditioner";enum EAztecPreconditioner { AZTEC_PREC_NONE, AZTEC_PREC_ILU, AZTEC_PREC_ILUT, AZTEC_PREC_JACOBI, AZTEC_PREC_SYMMGS, AZTEC_PREC_POLY, AZTEC_PREC_LSPOLY };
+const std::string AztecPreconditioner_name = "Aztec Preconditioner";
+enum EAztecPreconditioner { AZTEC_PREC_NONE, AZTEC_PREC_ILU, AZTEC_PREC_ILUT, AZTEC_PREC_JACOBI, AZTEC_PREC_SYMMGS, AZTEC_PREC_POLY, AZTEC_PREC_LSPOLY };
 const Teuchos::RefCountPtr<Teuchos::StringToIntegralParameterEntryValidator<EAztecPreconditioner> >
 aztecPrecValidator = rcp(
   new Teuchos::StringToIntegralParameterEntryValidator<EAztecPreconditioner>(

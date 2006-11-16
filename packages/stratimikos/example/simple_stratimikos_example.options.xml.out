@@ -141,8 +141,8 @@
       <Parameter name="prec type" type="string" value="MGV"/>
       <Parameter name="print unused" type="int" value="-2"/>
       <Parameter name="smoother: Aztec as solver" type="bool" value="0"/>
-      <Parameter name="smoother: Aztec options" type="any" value="0xa7fe80   [unused]"/>
-      <Parameter name="smoother: Aztec params" type="any" value="0xa7ff50   [unused]"/>
+      <Parameter name="smoother: Aztec options" type="any" value="0xa97360   [unused]"/>
+      <Parameter name="smoother: Aztec params" type="any" value="0xa97430   [unused]"/>
       <Parameter name="smoother: damping factor" type="double" value="0.67"/>
       <Parameter name="smoother: pre or post" type="string" value="both"/>
       <Parameter name="smoother: sweeps" type="int" value="2"/>

@@ -110,7 +110,7 @@ public:
 
   /** \brief Set the number of columns to use to create test <tt>MultiVectorBase</tt> objects.
    */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( int, num_mv_cols )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( int, num_mv_cols );
 
   /** \brief Set whether all of the tests will be printed independent if they
    * pass or fail.

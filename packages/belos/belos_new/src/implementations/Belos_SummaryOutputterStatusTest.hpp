@@ -50,25 +50,25 @@ class SummaryOutputterStatusTest : public AttachStatusTestBase<Scalar> {
 public:
 
 	/// Set the stream that output will be sent to
-	STANDARD_COMPOSITION_MEMBERS( std::ostream, out )
+	STANDARD_COMPOSITION_MEMBERS( std::ostream, out );
 
 	/// Set the leading string that will be printed at the beginning of each new line of output.
-	STANDARD_MEMBER_COMPOSITION_MEMBERS( std::string, leadingOutputStr )
+	STANDARD_MEMBER_COMPOSITION_MEMBERS( std::string, leadingOutputStr );
 
 	/// Print max norm over all current systems
-	STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, printMaxNativeRhsNorm )
+	STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, printMaxNativeRhsNorm );
 
 	/// Print norms for each native RHS separately.
-	STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, printEachNativeRhsNorm )
+	STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, printEachNativeRhsNorm );
 
 	/// Print norms for each original RHS separately.
-	STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, printEachOrigRhsNorm )
+	STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, printEachOrigRhsNorm );
 
 	/// Print norms for each original RHS numerator separately.
-	STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, printEachOrigRhsNormNumer )
+	STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, printEachOrigRhsNormNumer );
 
 	/// Print norms for each original RHS denominator separately.
-	STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, printEachOrigRhsNormDecom )
+	STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, printEachOrigRhsNormDecom );
 
 	/** @name Constructors / initializers */
 	//@{

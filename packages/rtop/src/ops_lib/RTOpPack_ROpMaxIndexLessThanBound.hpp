@@ -52,7 +52,7 @@ template<class Scalar>
 class ROpMaxIndexLessThanBound : public ROpScalarIndexReductionBase<Scalar> {
 public:
   /** \brief . */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( Scalar, bound )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( Scalar, bound );
   /** \brief . */
   ROpMaxIndexLessThanBound( const Scalar &bound = Teuchos::ScalarTraits<Scalar>::zero() )
     :RTOpT<Scalar>("ROpMaxLessThanBound")

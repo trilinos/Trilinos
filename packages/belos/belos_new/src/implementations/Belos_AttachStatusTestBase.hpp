@@ -77,7 +77,7 @@ public:
 		);
 
 	/// Set the attachment mdoe (see <tt>EAttachmentMode</tt>)
-	STANDARD_MEMBER_COMPOSITION_MEMBERS( EAttachmentMode, attachmentMode )
+	STANDARD_MEMBER_COMPOSITION_MEMBERS( EAttachmentMode, attachmentMode );
 
 	//@}
 

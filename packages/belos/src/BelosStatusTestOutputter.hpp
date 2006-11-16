@@ -67,20 +67,20 @@ public:
   
   /** \brief Set the number of iterations skipped between outputting.
    * A value <tt><=0</tt> means no outputting */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( int, outputFrequency )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( int, outputFrequency );
     
   /** \brief Determine if only max residual is printed or not for active RHS. */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, outputMaxResOnly )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, outputMaxResOnly );
     
   /** \brief Determine if only max residual is printed or not for active RHS. */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( std::string, resString )
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( std::string, resString );
     
   /** \brief Set the residual norm status test object [Required] */
-  STANDARD_COMPOSITION_MEMBERS( StatusTestResNorm_t, resNormStatusTest )
+  STANDARD_COMPOSITION_MEMBERS( StatusTestResNorm_t, resNormStatusTest );
   // Note: Above the typedef is needed for this macro to work
     
   /** \brief Set the output manager [Required] */
-  STANDARD_COMPOSITION_MEMBERS( OutputManager<ScalarType>, outputManager )
+  STANDARD_COMPOSITION_MEMBERS( OutputManager<ScalarType>, outputManager );
     
   /** \brief . */
   StatusTestOutputter(

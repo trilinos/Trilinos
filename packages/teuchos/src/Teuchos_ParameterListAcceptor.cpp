@@ -27,6 +27,7 @@
 // @HEADER
 
 #include "Teuchos_ParameterListAcceptor.hpp"
+#include "Teuchos_RefCountPtr.hpp"
 
 namespace Teuchos {
 

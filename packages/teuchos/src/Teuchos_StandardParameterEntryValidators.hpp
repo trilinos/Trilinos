@@ -403,7 +403,10 @@ StringToIntegralParameterEntryValidator<IntegralType>::getIntegralValue(
     ,"Error, the value \"" << str << "\" is not recognized for the parameter \""
     << ( paramName.length() ? paramName : defaultParameterName_ ) << "\""
     << "\nin the sublist \"" << sublistName << "\"."
-    << "\n\nValid values include: " << validValues_  << "."
+    << "\n\nValid values include:"
+    << "\n  {\n"
+    << validValues_
+    << "  }"
     );
   return (*itr).second;	
 }
@@ -474,7 +477,12 @@ void StringToIntegralParameterEntryValidator<IntegralType>::printDoc(
   ) const
 {
   StrUtils::printLines(out,"# ",docString);
-  out << "#   Valid string values: " << validValues_ << ".\n";
+  out << "#   Valid string values:\n";
+  out << "#     {\n";
+  StrUtils::printLines(out,"#   ",validValues_);
+  // Note: Above validValues_ has for initial spaces already so indent should
+  // be correct!
+  out << "#     }\n";
 }
 
 template<class IntegralType>
@@ -507,9 +515,9 @@ void StringToIntegralParameterEntryValidator<IntegralType>::setValidValues(
   std::ostringstream oss;
   typename map_t::const_iterator itr = map_.begin();
   for( int i = 0; i < static_cast<int>(strings.size()); ++i ) {
-    if(i > 0) oss << ", ";
-    oss << "\""<<strings[i]<<"\"";
+    oss << "    \""<<strings[i]<<"\"\n";
   }
+  // Note: Above four spaces is designed for the error output above.
   validValues_ = oss.str();
 }
 

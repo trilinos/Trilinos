@@ -54,7 +54,7 @@ public:
   //@{
 
   /** \brief Utility object that computes directional finite differences */
-  STANDARD_COMPOSITION_MEMBERS( Thyra::DirectionalFiniteDiffCalculator<Scalar>, direcFiniteDiffCalculator )
+  STANDARD_COMPOSITION_MEMBERS( Thyra::DirectionalFiniteDiffCalculator<Scalar>, direcFiniteDiffCalculator );
 
   /** \brief . */
   DefaultFiniteDifferenceModelEvaluator();
