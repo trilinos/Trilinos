@@ -27,9 +27,12 @@ if test -n "$PYTHON"; then
   AC_MSG_ERROR([You must have Python.h in order to build the Python support!!]))
   CPPFLAGS="$save_CPPFLAGS"
 
-  # Check for numpy python module
+  # Check for numpy python module and user_array/UserArray submodule
   AC_PYTHON_MODULE(numpy,yes)
-  AC_PYTHON_MODULE(numpy.lib.UserArray,yes)
+  AC_PYTHON_MODULE(numpy.lib.user_array)
+  if test "X$HAVE_PYMOD_NUMPY_LIB_USER_ARRAY" == "Xno"; then
+    AC_PYTHON_MODULE(numpy.lib.UserArray,yes)
+  fi
 
   # No longer check that numpy/arrayobject.h is available.  The
   # setup.py script does this automatically, and if the numpy python
