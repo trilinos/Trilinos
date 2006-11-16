@@ -450,8 +450,8 @@ RUN (bandito-nightly-serial) {
     COMM                = serial;
     INVOKE-CONFIGURE    = linux-intel-bandito;
     TEST-CATEGORY       = FRAMEWORK;
-    TTR-DIR             = /home/jmwille/TrilinosTestHarness/TrilinosTestResults;
-    SSG-USERNAME        = jmwille;
+    TTR-DIR             = /home/hkthorn/TrilinosTestHarness/TrilinosTestResults;
+    SSG-USERNAME        = hkthorn;
 
 }
 
