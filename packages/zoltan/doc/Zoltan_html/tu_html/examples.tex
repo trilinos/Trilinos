@@ -5,19 +5,26 @@
 %
 \chapter{Examples}
 
-This chapter contains the source code for three parallel C programs 
-which use the Zoltan library to partition a set of objects.  Using
-the same simple graph or mesh, we will apply a geometric method,
-a graph method and a hypergraph method.
+This chapter begins with a very simple example of using the Zoltan
+library in a parallel application to partition a small set of 
+objects, each of which has only a global ID and a weight.
 
-If you have the Zoltan source code, can compile and run these examples.
-In the \textbf{examples} directory, do
+We follow this with three more realistic examples, still fairly
+simple.  These examples use the Zoltan library to apply a geometric method,
+a graph method and a then hypergraph method to a small mesh, graph
+or hypergraph.
+
+If you have the Zoltan source code, and you have already built the
+Zoltan library, you can compile and run these examples.
+In the \textbf{examples}/C directory, do
 
 \begin{verbatim}
-make ZOLTAN_ARCH={my zoltan arch} C_Examples
+make ZOLTAN_ARCH={my zoltan arch} all
 \end{verbatim}
 
-This will build \textbf{examples/C/simpleRCB},
+This will build 
+\textbf{examples/C/simpleSIMPLE},
+\textbf{examples/C/simpleRCB},
 \textbf{examples/C/simpleGRAPH} and
 \textbf{examples/C/simpleHG}.
 
@@ -30,6 +37,148 @@ Regardless of the load balancing method chosen, every program must:
 \item call Zoltan\_LB\_Partition to begin the load balancing calculation
 \item free memory allocated by Zoltan when done
 \end{itemize}
+
+\clearpage
+\section{A very simple partitioning method}
+
+Some text here will introduce this example.
+
+\begin{flushleft}
+\begin{verbatim}
+
+#include <mpi.h>
+#include "zoltan.h"
+
+static int numObjects = 36;
+static int numProcs, myRank, myNumObj;
+static int myGlobalIDs[36];
+static float objWeight(int globalID)
+{
+  return (float)(((globalID % 3) + 1.0) / 0.3);
+}
+static int get_number_of_objects(void *data, int *ierr)
+{
+  *ierr = ZOLTAN_OK;
+  return myNumObj;
+}
+static void get_object_list(void *data, int sizeGID, int sizeLID,
+            ZOLTAN_ID_PTR globalID, ZOLTAN_ID_PTR localID,
+                  int wgt_dim, float *obj_wgts, int *ierr)
+{
+int i;
+  *ierr = ZOLTAN_OK;
+  for (i=0; i<myNumObj; i++){
+    globalID[i] = myGlobalIDs[i];
+    obj_wgts[i] = objWeight(myGlobalIDs[i]);
+  }
+}
+
+int main(int argc, char *argv[])
+{
+  int rc, i;
+  float ver;
+  struct Zoltan_Struct *zz;
+  int changes, numGidEntries, numLidEntries, numImport, numExport;
+  ZOLTAN_ID_PTR importGlobalGids, importLocalGids;
+  ZOLTAN_ID_PTR exportGlobalGids, exportLocalGids; 
+  int *importProcs, *importToPart, *exportProcs, *exportToPart;
+
+  /******************************************************************
+  ** Create a simple initial partitioning for this example
+  ******************************************************************/
+
+  for (i=0, myNumObj=0; i<numObjects; i++){
+    if (i % numProcs == myRank){
+      myGlobalIDs[myNumObj++] = i+1;
+    }
+  }
+
+  /******************************************************************
+  ** Initialize MPI and Zoltan
+  ******************************************************************/
+
+  MPI_Init(&argc, &argv);
+  MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
+  MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
+
+  rc = Zoltan_Initialize(argc, argv, &ver);
+
+  if (rc != ZOLTAN_OK){
+    printf("Error initializing Zoltan\n");
+    MPI_Finalize();
+    exit(0);
+  }
+
+  /******************************************************************
+  ** Create a Zoltan library structure for this instance of load
+  ** balancing.  Set the parameters and query functions.
+  ******************************************************************/
+
+  zz = Zoltan_Create(MPI_COMM_WORLD);
+
+  /* General parameters */
+
+  Zoltan_Set_Param(zz, "LB_METHOD", "SIMPLE");  /* Zoltan method: "SIMPLE" */
+  Zoltan_Set_Param(zz, "NUM_GID_ENTRIES", "1"); /* global ID is 1 integer */
+  Zoltan_Set_Param(zz, "NUM_LID_ENTRIES", "0"); /* no local IDs */
+
+  /* Query functions */
+
+  Zoltan_Set_Num_Obj_Fn(zz, get_number_of_objects, NULL);
+  Zoltan_Set_Obj_List_Fn(zz, get_object_list, NULL);
+
+  /******************************************************************
+  ** Call Zoltan to partition the objects.
+  ******************************************************************/
+
+  rc = Zoltan_LB_Partition(zz, /* input (all remaining fields are output) */
+        &changes,        /* 1 if partitioning was changed, 0 otherwise */ 
+        &numGidEntries,  /* Number of integers used for a global ID */
+        &numLidEntries,  /* Number of integers used for a local ID */
+        &numImport,      /* Number of vertices to be sent to me */
+        &importGlobalGids,  /* Global IDs of vertices to be sent to me */
+        &importLocalGids,   /* Local IDs of vertices to be sent to me */
+        &importProcs,    /* Process rank for source of each incoming vertex */
+        &importToPart,   /* New partition for each incoming vertex */
+        &numExport,      /* Number of vertices I must send to other processes*/
+        &exportGlobalGids,  /* Global IDs of the vertices I must send */
+        &exportLocalGids,   /* Local IDs of the vertices I must send */
+        &exportProcs,    /* Process to which I send each of the vertices */
+        &exportToPart);  /* Partition to which each vertex will belong */
+
+  if (rc != ZOLTAN_OK){
+    printf("Error in Zoltan library\n");
+    MPI_Finalize();
+    Zoltan_Destroy(&zz);
+    exit(0);
+  }
+
+  /******************************************************************
+  ** In a real application, you would rebalance the problem now by
+  ** sending the objects to their new partitions.
+  ******************************************************************/
+
+  /******************************************************************
+  ** Free the arrays allocated by Zoltan_LB_Partition, and free
+  ** the storage allocated for the Zoltan structure.
+  ******************************************************************/
+
+  Zoltan_LB_Free_Part(&importGlobalGids, &importLocalGids, 
+                      &importProcs, &importToPart);
+  Zoltan_LB_Free_Part(&exportGlobalGids, &exportLocalGids, 
+                      &exportProcs, &exportToPart);
+
+  Zoltan_Destroy(&zz);
+
+  MPI_Finalize();
+
+  return 0;
+}
+\end{verbatim}
+\end{flushleft}
+
+\clearpage
+\section{A Geometric, Graph and Hypergraph Example}
 
 The simple graph used in all three examples is illustrated
 in Figure~\ref{fig:simpleGraph}.
@@ -101,8 +250,9 @@ static int edges[25][4]={
 \label{fig:simpleGraphDotH}
 \end{figure}
 
+
 \clearpage
-\section{Recursive Coordinate Bisection}
+\subsection{Recursive Coordinate Bisection}
 
 This example uses \emph{Recursive Coordinate Bisection}, 
 one of Zoltan's geometric methods, to partition
@@ -116,7 +266,7 @@ First we will define the query functions required by RCB.
 The full source code for this example may be found in
 \textbf{examples/C/simpleRCB.c}.
 
-\subsection{Application defined query functions}
+\subsubsection{Application defined query functions}
 
 We must define four query functions.  The function prototyes named 
 below are defined in the Zoltan file \textbf{include/zoltan.h}.
@@ -238,7 +388,7 @@ int row, col;
 \end{figure}
 
 \clearpage
-\subsection{Calling the Zoltan library}
+\subsubsection{Calling the Zoltan library}
 
 The source code below may be found in the file
 \textbf{examples/C/simpleRCB.c}.
@@ -391,7 +541,7 @@ int main(int argc, char *argv[])
 \end{flushleft}
 
 \clearpage
-\section{A graph problem}
+\subsection{A graph problem}
 
 In this section we provide an example of a parallel C program
 that uses the Zoltan library to partition the simple graph that
@@ -399,7 +549,7 @@ was pictured in Figure~\ref{fig:simpleGraph}.  You can compile
 and run this example if you have the Zoltan source code.  It is
 in the examples directory, in file \textbf{examples/C/simpleGRAPH.c}.
 
-\subsection{Application defined query functions}
+\subsubsection{Application defined query functions}
 
 We must define four query functions in order to use the
 particular graph submethod we chose for this example.  See the
@@ -511,7 +661,7 @@ int *nextProc;
 
 \clearpage
 
-\subsection{Calling the Zoltan library}
+\subsubsection{Calling the Zoltan library}
 
 This code may be found in the 
 file \textbf{examples/C/simpleGRAPH.c}.
@@ -660,7 +810,7 @@ int main(int argc, char *argv[])
 \end{flushleft}
 
 \clearpage
-\section{A hypergraph problem}
+\subsection{A hypergraph problem}
 
 In this example, we use the simple graph in 
 Figure~\ref{fig:simpleGraph} to create a hypergraph, and
@@ -685,7 +835,7 @@ The Zoltan library would then do the conversion to a hypergraph.
 
 First we will define the required query functions.
 
-\subsection{Application defined query functions}
+\subsubsection{Application defined query functions}
 
 We must define six query functions.  The function prototyes named 
 below are defined in the Zoltan file \textbf{include/zoltan.h}.
@@ -882,7 +1032,7 @@ struct _hg_data *hgd;
 \end{figure}
 
 \clearpage
-\subsection{Calling the Zoltan library}
+\subsubsection{Calling the Zoltan library}
 If you have the Zoltan source, the file containing this
 code is \textbf{examples/C/simpleHG.c}.
 More information about the hypergraph parameters
