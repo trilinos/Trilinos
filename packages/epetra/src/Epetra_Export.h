@@ -104,7 +104,7 @@ Suppose that the entries of this forcing vector are computed by integrating over
 \verbatim
 ^  ^  ^  ^  ^  ^  ^  ^  ^
  \/ \/ \/ \/ \/ \/ \/ \/ 
- /\ /\ /\ /\ /\ /\ /\ /\ 
+ /\ /\ /\ /\ /\ /\ /\ /\
 +--+--+--+--+--+--+--+--+
 0  1  2  3  4  5  6  7  8
 
