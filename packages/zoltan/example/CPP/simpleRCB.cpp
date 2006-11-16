@@ -138,7 +138,7 @@ int main(int argc, char *argv[])
 
   int nMyGids = rectangularMesh::get_number_of_objects((void *)mesh, &rc);
   int nGids   = 0;
-  int includeVertexWeights = 1;
+  int includeVertexWeights = 1; /* if OBJ_WEIGHT_DIM is 0, this should be 0 */
 
 #ifdef MPICPP
   MPI::COMM_WORLD.Allreduce(&nMyGids, &nGids, 1, MPI::INT, MPI::SUM);
@@ -146,7 +146,6 @@ int main(int argc, char *argv[])
   MPI_Allreduce(&nMyGids, &nGids, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 #endif
 
-  int *gid_flags = new int[nGids];
   int *gid_list = new int[nMyGids];
   int *lid_list = new int[nMyGids];
 
@@ -156,6 +155,7 @@ int main(int argc, char *argv[])
 
   mesh->draw_partitions("initial", nMyGids, gid_list, includeVertexWeights);
 
+  int *gid_flags = new int[nGids];
   memset(gid_flags, 0, sizeof(int) * nGids);
   for (int i=0; i<nMyGids; i++){
     gid_flags[gid_list[i]-1] = 1;    // my original vertices 
@@ -182,7 +182,7 @@ int main(int argc, char *argv[])
 
   ////////////////////////////////////////////////////////////////
   // Free the arrays allocated by LB_Partition, and free
-  // the storage allocated for the Zoltan structure.
+  // the storage allocated for the Zoltan structure and the mesh.
   ////////////////////////////////////////////////////////////////
 
   zz->LB_Free_Part(&importGlobalIds, &importLocalIds, &importProcs,

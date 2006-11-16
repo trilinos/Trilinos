@@ -209,9 +209,6 @@ public:
   void set_x_1(int x1){this->x_1 = x1; }
   void set_y_1(int y1){this->y_1 = y1; }
 
-  // can add parallel method to have process 0 draw the partitions
-  // in the mesh after Zoltan library has created them
-
   // Query functions for Zoltan library
 
   static int get_number_of_objects(void *data, int *ierr)
