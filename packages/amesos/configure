@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP USING_EXPORT_MAKEFILES_TRUE USING_EXPORT_MAKEFILES_FALSE PERL_EXE HAVE_PERL USING_PERL_TRUE USING_PERL_FALSE USING_GNUMAKE_TRUE USING_GNUMAKE_FALSE EGREP BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE HAVE_PERFORMANCE_TRUE HAVE_PERFORMANCE_FALSE HAVE_VALGRIND_TRUE HAVE_VALGRIND_FALSE HAVE_COVERAGE_TRUE HAVE_COVERAGE_FALSE HAVE_AMESOS_EPETRAEXT_TRUE HAVE_AMESOS_EPETRAEXT_FALSE HAVE_AMESOS_TRIUTILS_TRUE HAVE_AMESOS_TRIUTILS_FALSE HAVE_AMESOS_GALERI_TRUE HAVE_AMESOS_GALERI_FALSE BUILD_AMESOS_PYTHON_TRUE BUILD_AMESOS_PYTHON_FALSE PYTHON_USE_TRUE PYTHON_USE_FALSE PYTHON PYTHON_PREFIX PYTHON_EXECPREFIX BUILD_PYTHON_TRUE BUILD_PYTHON_FALSE PYTHON_CSPEC PYTHON_LSPEC WITH_SWIG SWIG SWIG_LIB SWIG_PYTHON_OPT SWIG_PYTHON_CPPFLAGS HAVE_SWIG_TRUE HAVE_SWIG_FALSE GNU_HAVE_SWIG FLIBS ENABLE_AMESOS_THYRA_TRUE ENABLE_AMESOS_THYRA_FALSE BLAS_LIBS LAPACK_LIBS tac_with_trilinosdatadir HAVE_AMESOS_LAPACK_TRUE HAVE_AMESOS_LAPACK_FALSE NEED_PARAMETER_LIST_TRUE NEED_PARAMETER_LIST_FALSE HAVE_AMESOS_KLU_TRUE HAVE_AMESOS_KLU_FALSE CPP HAVE_AMESOS_UMFPACK_TRUE HAVE_AMESOS_UMFPACK_FALSE HAVE_AMESOS_SUPERLU_TRUE HAVE_AMESOS_SUPERLU_FALSE HAVE_AMESOS_SUPERLUDIST_TRUE HAVE_AMESOS_SUPERLUDIST_FALSE HAVE_AMESOS_DSCPACK_TRUE HAVE_AMESOS_DSCPACK_FALSE HAVE_AMESOS_SCALAPACK_TRUE HAVE_AMESOS_SCALAPACK_FALSE HAVE_AMESOS_MUMPS_TRUE HAVE_AMESOS_MUMPS_FALSE HAVE_AMESOS_PARDISO_TRUE HAVE_AMESOS_PARDISO_FALSE HAVE_AMESOS_PASTIX_TRUE HAVE_AMESOS_PASTIX_FALSE HAVE_AMESOS_PARAKLETE_TRUE HAVE_AMESOS_PARAKLETE_FALSE HAVE_AMESOS_TAUCS_TRUE HAVE_AMESOS_TAUCS_FALSE HAVE_AMESOS_MERIKOS_TRUE HAVE_AMESOS_MERIKOS_FALSE HAVE_AMESOS_MC64_TRUE HAVE_AMESOS_MC64_FALSE HAVE_AMESOS_KUNDERT_TRUE HAVE_AMESOS_KUNDERT_FALSE TRILINOS_TEMPLATE_OBJS XTRALDADD ac_aux_dir LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP USING_EXPORT_MAKEFILES_TRUE USING_EXPORT_MAKEFILES_FALSE PERL_EXE HAVE_PERL USING_PERL_TRUE USING_PERL_FALSE USING_GNUMAKE_TRUE USING_GNUMAKE_FALSE EGREP BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE HAVE_PERFORMANCE_TRUE HAVE_PERFORMANCE_FALSE HAVE_VALGRIND_TRUE HAVE_VALGRIND_FALSE HAVE_COVERAGE_TRUE HAVE_COVERAGE_FALSE HAVE_AMESOS_EPETRAEXT_TRUE HAVE_AMESOS_EPETRAEXT_FALSE HAVE_AMESOS_TRIUTILS_TRUE HAVE_AMESOS_TRIUTILS_FALSE HAVE_AMESOS_STRATIMIKOS_TRUE HAVE_AMESOS_STRATIMIKOS_FALSE HAVE_AMESOS_ML_TRUE HAVE_AMESOS_ML_FALSE HAVE_AMESOS_THYRA_TRUE HAVE_AMESOS_THYRA_FALSE HAVE_AMESOS_GALERI_TRUE HAVE_AMESOS_GALERI_FALSE BUILD_AMESOS_PYTHON_TRUE BUILD_AMESOS_PYTHON_FALSE PYTHON_USE_TRUE PYTHON_USE_FALSE PYTHON PYTHON_PREFIX PYTHON_EXECPREFIX BUILD_PYTHON_TRUE BUILD_PYTHON_FALSE PYTHON_CSPEC PYTHON_LSPEC WITH_SWIG SWIG SWIG_LIB SWIG_PYTHON_OPT SWIG_PYTHON_CPPFLAGS HAVE_SWIG_TRUE HAVE_SWIG_FALSE GNU_HAVE_SWIG FLIBS ENABLE_AMESOS_THYRA_TRUE ENABLE_AMESOS_THYRA_FALSE BLAS_LIBS LAPACK_LIBS tac_with_trilinosdatadir HAVE_AMESOS_LAPACK_TRUE HAVE_AMESOS_LAPACK_FALSE NEED_PARAMETER_LIST_TRUE NEED_PARAMETER_LIST_FALSE HAVE_AMESOS_KLU_TRUE HAVE_AMESOS_KLU_FALSE CPP HAVE_AMESOS_UMFPACK_TRUE HAVE_AMESOS_UMFPACK_FALSE HAVE_AMESOS_SUPERLU_TRUE HAVE_AMESOS_SUPERLU_FALSE HAVE_AMESOS_SUPERLUDIST_TRUE HAVE_AMESOS_SUPERLUDIST_FALSE HAVE_AMESOS_DSCPACK_TRUE HAVE_AMESOS_DSCPACK_FALSE HAVE_AMESOS_SCALAPACK_TRUE HAVE_AMESOS_SCALAPACK_FALSE HAVE_AMESOS_MUMPS_TRUE HAVE_AMESOS_MUMPS_FALSE HAVE_AMESOS_PARDISO_TRUE HAVE_AMESOS_PARDISO_FALSE HAVE_AMESOS_PASTIX_TRUE HAVE_AMESOS_PASTIX_FALSE HAVE_AMESOS_PARAKLETE_TRUE HAVE_AMESOS_PARAKLETE_FALSE HAVE_AMESOS_TAUCS_TRUE HAVE_AMESOS_TAUCS_FALSE HAVE_AMESOS_MERIKOS_TRUE HAVE_AMESOS_MERIKOS_FALSE HAVE_AMESOS_MC64_TRUE HAVE_AMESOS_MC64_FALSE HAVE_AMESOS_KUNDERT_TRUE HAVE_AMESOS_KUNDERT_FALSE TRILINOS_TEMPLATE_OBJS XTRALDADD ac_aux_dir LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -917,6 +917,24 @@ Optional Features:
   --enable-triutils       Allow Amesos tests and examples to use Triutils to
                           build matrices. Default is no. Requires Triutils
                           package.
+  --enable-stratimikos    Enable Stratimikos support. Stratimikos, a Trilinos
+                          package, is demonstrated in
+                          example/startimikos_example. Can be overridden with
+                          --disable-amesos-stratimikos.
+  --enable-amesos-stratimikos
+                          Enable Stratimikos support. Stratimikos, a Trilinos
+                          package, is demonstrated in
+                          example/startimikos_example.
+  --enable-ml             Enable Ml support. Ml, a Trilinos package, is
+                          required in example/startimikos_example. Can be
+                          overridden with --disable-amesos-ml.
+  --enable-amesos-ml      Enable Ml support. Ml, a Trilinos package is
+                          required in example/startimikos_example.
+  --enable-thyra          Enable Thyra support. Thyra, a Trilinos package, is
+                          required in example/startimikos_example. Can be
+                          overridden with --disable-amesos-thyra.
+  --enable-amesos-thyra   Enable Thyra support. Thyra, a Trilinos package is
+                          required in example/startimikos_example.
   --enable-galeri         Enable Galeri support. Galeri, a Trilinos package,
                           is used in some Amesos examples to construct the
                           linear system. Can be overridden with
@@ -3900,7 +3918,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3903:" \
+echo "$as_me:3921:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -7659,6 +7677,165 @@ fi
 
 
 
+# Check whether --enable-stratimikos or --disable-stratimikos was given.
+if test "${enable_stratimikos+set}" = set; then
+  enableval="$enable_stratimikos"
+  ac_cv_implicit_use_stratimikos=$enableval
+else
+  ac_cv_implicit_use_stratimikos=no
+fi;
+
+if test "Xyes" != "Xno"; then
+  ac_cv_amesos_using_stratimikos_default=$ac_cv_implicit_use_stratimikos
+else
+  ac_cv_amesos_using_stratimikos_default=no
+fi
+
+# Check whether --enable-amesos-stratimikos or --disable-amesos-stratimikos was given.
+if test "${enable_amesos_stratimikos+set}" = set; then
+  enableval="$enable_amesos_stratimikos"
+  ac_cv_use_stratimikos=$enableval
+else
+  ac_cv_use_stratimikos=$ac_cv_amesos_using_stratimikos_default
+fi;
+
+echo "$as_me:$LINENO: checking whether to build optional stratimikos dependent code in amesos" >&5
+echo $ECHO_N "checking whether to build optional stratimikos dependent code in amesos... $ECHO_C" >&6
+
+if test "X$ac_cv_use_stratimikos" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_AMESOS_STRATIMIKOS 1
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+
+if test "X$ac_cv_use_stratimikos" = "Xyes"; then
+  HAVE_AMESOS_STRATIMIKOS_TRUE=
+  HAVE_AMESOS_STRATIMIKOS_FALSE='#'
+else
+  HAVE_AMESOS_STRATIMIKOS_TRUE='#'
+  HAVE_AMESOS_STRATIMIKOS_FALSE=
+fi
+
+
+
+
+
+
+# Check whether --enable-ml or --disable-ml was given.
+if test "${enable_ml+set}" = set; then
+  enableval="$enable_ml"
+  ac_cv_implicit_use_ml=$enableval
+else
+  ac_cv_implicit_use_ml=no
+fi;
+
+if test "Xyes" != "Xno"; then
+  ac_cv_amesos_using_ml_default=$ac_cv_implicit_use_ml
+else
+  ac_cv_amesos_using_ml_default=no
+fi
+
+# Check whether --enable-amesos-ml or --disable-amesos-ml was given.
+if test "${enable_amesos_ml+set}" = set; then
+  enableval="$enable_amesos_ml"
+  ac_cv_use_ml=$enableval
+else
+  ac_cv_use_ml=$ac_cv_amesos_using_ml_default
+fi;
+
+echo "$as_me:$LINENO: checking whether to build optional ml dependent code in amesos" >&5
+echo $ECHO_N "checking whether to build optional ml dependent code in amesos... $ECHO_C" >&6
+
+if test "X$ac_cv_use_ml" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_AMESOS_ML 1
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+
+if test "X$ac_cv_use_ml" = "Xyes"; then
+  HAVE_AMESOS_ML_TRUE=
+  HAVE_AMESOS_ML_FALSE='#'
+else
+  HAVE_AMESOS_ML_TRUE='#'
+  HAVE_AMESOS_ML_FALSE=
+fi
+
+
+
+
+
+
+# Check whether --enable-thyra or --disable-thyra was given.
+if test "${enable_thyra+set}" = set; then
+  enableval="$enable_thyra"
+  ac_cv_implicit_use_thyra=$enableval
+else
+  ac_cv_implicit_use_thyra=no
+fi;
+
+if test "Xyes" != "Xno"; then
+  ac_cv_amesos_using_thyra_default=$ac_cv_implicit_use_thyra
+else
+  ac_cv_amesos_using_thyra_default=no
+fi
+
+# Check whether --enable-amesos-thyra or --disable-amesos-thyra was given.
+if test "${enable_amesos_thyra+set}" = set; then
+  enableval="$enable_amesos_thyra"
+  ac_cv_use_thyra=$enableval
+else
+  ac_cv_use_thyra=$ac_cv_amesos_using_thyra_default
+fi;
+
+echo "$as_me:$LINENO: checking whether to build optional thyra dependent code in amesos" >&5
+echo $ECHO_N "checking whether to build optional thyra dependent code in amesos... $ECHO_C" >&6
+
+if test "X$ac_cv_use_thyra" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_AMESOS_THYRA 1
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+
+if test "X$ac_cv_use_thyra" = "Xyes"; then
+  HAVE_AMESOS_THYRA_TRUE=
+  HAVE_AMESOS_THYRA_FALSE='#'
+else
+  HAVE_AMESOS_THYRA_TRUE='#'
+  HAVE_AMESOS_THYRA_FALSE=
+fi
+
+
+
+
+
+
 # Check whether --enable-galeri or --disable-galeri was given.
 if test "${enable_galeri+set}" = set; then
   enableval="$enable_galeri"
@@ -8770,7 +8947,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:8773: \"$ac_link\") >&5
+(eval echo $as_me:8950: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8848,7 +9025,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:8851: \"$ac_link\") >&5
+(eval echo $as_me:9028: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -14344,7 +14521,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:14347: \"$ac_link\") >&5
+(eval echo $as_me:14524: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -14422,7 +14599,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:14425: \"$ac_link\") >&5
+(eval echo $as_me:14602: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -14853,6 +15030,27 @@ if test -z "${HAVE_AMESOS_TRIUTILS_TRUE}" && test -z "${HAVE_AMESOS_TRIUTILS_FAL
   { { echo "$as_me:$LINENO: error: conditional \"HAVE_AMESOS_TRIUTILS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"HAVE_AMESOS_TRIUTILS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${HAVE_AMESOS_STRATIMIKOS_TRUE}" && test -z "${HAVE_AMESOS_STRATIMIKOS_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_AMESOS_STRATIMIKOS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"HAVE_AMESOS_STRATIMIKOS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${HAVE_AMESOS_ML_TRUE}" && test -z "${HAVE_AMESOS_ML_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_AMESOS_ML\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"HAVE_AMESOS_ML\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${HAVE_AMESOS_THYRA_TRUE}" && test -z "${HAVE_AMESOS_THYRA_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_AMESOS_THYRA\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"HAVE_AMESOS_THYRA\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -15912,6 +16110,12 @@ s,@HAVE_AMESOS_EPETRAEXT_TRUE@,$HAVE_AMESOS_EPETRAEXT_TRUE,;t t
 s,@HAVE_AMESOS_EPETRAEXT_FALSE@,$HAVE_AMESOS_EPETRAEXT_FALSE,;t t
 s,@HAVE_AMESOS_TRIUTILS_TRUE@,$HAVE_AMESOS_TRIUTILS_TRUE,;t t
 s,@HAVE_AMESOS_TRIUTILS_FALSE@,$HAVE_AMESOS_TRIUTILS_FALSE,;t t
+s,@HAVE_AMESOS_STRATIMIKOS_TRUE@,$HAVE_AMESOS_STRATIMIKOS_TRUE,;t t
+s,@HAVE_AMESOS_STRATIMIKOS_FALSE@,$HAVE_AMESOS_STRATIMIKOS_FALSE,;t t
+s,@HAVE_AMESOS_ML_TRUE@,$HAVE_AMESOS_ML_TRUE,;t t
+s,@HAVE_AMESOS_ML_FALSE@,$HAVE_AMESOS_ML_FALSE,;t t
+s,@HAVE_AMESOS_THYRA_TRUE@,$HAVE_AMESOS_THYRA_TRUE,;t t
+s,@HAVE_AMESOS_THYRA_FALSE@,$HAVE_AMESOS_THYRA_FALSE,;t t
 s,@HAVE_AMESOS_GALERI_TRUE@,$HAVE_AMESOS_GALERI_TRUE,;t t
 s,@HAVE_AMESOS_GALERI_FALSE@,$HAVE_AMESOS_GALERI_FALSE,;t t
 s,@BUILD_AMESOS_PYTHON_TRUE@,$BUILD_AMESOS_PYTHON_TRUE,;t t

@@ -59,6 +59,21 @@ else
 EXAMPLES_GALERI = 
 endif
 
+if HAVE_AMESOS_STRATIMIKOS
+if HAVE_AMESOS_ML
+if HAVE_AMESOS_THYRA
+EXAMPLES_STRATIMIKOS = stratimikos_example
+else
+EXAMPLES_STRATIMIKOS = 
+endif
+else
+EXAMPLES_STRATIMIKOS = 
+endif
+else
+EXAMPLES_STRATIMIKOS = 
+endif
+
+
 if HAVE_AMESOS_MC64
 EXAMPLES_MC64 = example_MC64
 else
@@ -71,9 +86,14 @@ else
 EXAMPLES_MPI = 
 endif
 
-noinst_PROGRAMS = $(EXAMPLES_MPI) example_AmesosFactory_Tridiag $(EXAMPLES_GALERI) $(EXAMPLES_MC64)
+noinst_PROGRAMS = $(EXAMPLES_MPI) example_AmesosFactory_Tridiag $(EXAMPLES_STRATIMIKOS)  $(EXAMPLES_GALERI) $(EXAMPLES_MC64)
 
-EXTRA_DIST = In_662_bus.rsa
+EXTRA_DIST = In_662_bus.rsa _stratimikos_amesos_lapack.xml
+
+stratimikos_example_SOURCES      = $(srcdir)/stratimikos_example.cpp  $(srcdir)/simpleStratimikosSolve.cpp $(srcdir)/Thyra_AmesosLinearOpWithSolveFactory.cpp
+stratimikos_example_DEPENDENCIES = $(top_builddir)/src/libamesos.a $(top_builddir)/../stratimikos/src/libstratimikos.a 
+stratimikos_example_CXXFLAGS     = $(EXAMPLE_INCLUDES)  -I$(top_builddir)/../stratimikos/src/  -I$(top_builddir)/../thyra/src/  -I$(top_srcdir)/../stratimikos/src/ -I$(top_srcdir)/../thyra/src/
+stratimikos_example_LDADD        =  $(top_builddir)/../stratimikos/src/libstratimikos.a  $(top_builddir)/../aztecoo/thyra/src/libaztecoothyra.a  $(top_builddir)/../aztecoo/src/libaztecoo.a  $(top_builddir)/../ml/thyra/src/libmlthyra.a  $(top_builddir)/../ml/src/libml.a  $(STRATIMIKOS_LIBS) $(EXAMPLE_LIBS)
 
 example_AmesosFactory_SOURCES      = $(srcdir)/example_AmesosFactory.cpp
 example_AmesosFactory_DEPENDENCIES = $(top_builddir)/src/libamesos.a 
@@ -110,4 +130,5 @@ a_trivial_mpi_test_CXXFLAGS     =
 a_trivial_mpi_test_LDADD        = 
 
 clean:  clean-am
-	rm -f  662_bus.rsa
+	rm -f  662_bus.rsa stratimikos_amesos_lapack.xml
+

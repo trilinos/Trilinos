@@ -320,6 +320,12 @@ fi
 
 AM_CONDITIONAL(HAVE_AMESOS_TRIUTILS, [test "X$ac_cv_use_triutils" != "Xno"])
 
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(amesos, stratimikos, AMESOS_STRATIMIKOS, HAVE_AMESOS_STRATIMIKOS, yes, [Enable Stratimikos support. Stratimikos, a Trilinos package, is demonstrated in example/startimikos_example.], [Enable Stratimikos support. Stratimikos, a Trilinos package, is demonstrated in example/startimikos_example. Can be overridden with --disable-amesos-stratimikos.])
+
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(amesos, ml, AMESOS_ML, HAVE_AMESOS_ML, yes, [Enable Ml support. Ml, a Trilinos package is required in example/startimikos_example.], [Enable Ml support. Ml, a Trilinos package, is required in example/startimikos_example. Can be overridden with --disable-amesos-ml.])
+
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(amesos, thyra, AMESOS_THYRA, HAVE_AMESOS_THYRA, yes, [Enable Thyra support. Thyra, a Trilinos package is required in example/startimikos_example.], [Enable Thyra support. Thyra, a Trilinos package, is required in example/startimikos_example. Can be overridden with --disable-amesos-thyra.])
+
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(amesos, galeri, AMESOS_GALERI, HAVE_AMESOS_GALERI, yes, [Enable Galeri support. Galeri, a Trilinos package, is used in some Amesos examples to construct the linear system.], [Enable Galeri support. Galeri, a Trilinos package, is used in some Amesos examples to construct the linear system. Can be overridden with --disable-amesos-galeri.])
 
 TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)

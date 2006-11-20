@@ -69,6 +69,8 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 
 all-local:
 	@cp -f $(srcdir)/example/In_662_bus.rsa $(top_builddir)/example/662_bus.rsa
+	@cp -f $(srcdir)/example/_stratimikos_amesos_lapack.xml $(top_builddir)/example/stratimikos_amesos_lapack.xml
+	@cp -f $(srcdir)/example/_FourByFour.mtx $(top_builddir)/example/FourByFour.mtx
 	@echo 
 	@echo "        +----------------------------------------------------+"
 	@echo "        | Trilinos package amesos built successfully         |"

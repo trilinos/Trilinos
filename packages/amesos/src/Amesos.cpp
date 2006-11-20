@@ -333,7 +333,6 @@ Teuchos::ParameterList Amesos::GetValidParameters(){
   //  Superludist Parameters
   ParamList.set("Redistribute", false ) ; 
   Teuchos::ParameterList SuperludistParams;
-  ParamList.set("Superludist", SuperludistParams ) ; 
   { 
     SuperludistParams.set("ReuseSymbolic",false);
     SuperludistParams.set("Fact","SamePattern");
@@ -346,18 +345,18 @@ Teuchos::ParameterList Amesos::GetValidParameters(){
     SuperludistParams.set("ReplaceTinyPivot",true);
     SuperludistParams.set("PrintNonzeros",false);
   }
+  ParamList.set("Superludist", SuperludistParams ) ; 
   //  MC64 Parameters - none
 
   //  Lapack Parameters
   Teuchos::ParameterList LapackParams;
-  ParamList.set("Lapack", LapackParams ) ; 
   { 
     LapackParams.set("Equilibrate",true);
   }
+  ParamList.set("Lapack", LapackParams ) ; 
   //  Mumps Parameters
   ParamList.set("NoDestroy",false);
   Teuchos::ParameterList MumpsParams;
-  ParamList.set("Mumps", MumpsParams ) ; 
   { 
     MumpsParams.set("Equilibrate",true);
     // ICNTL0, ICNT1, ..., ICNTL40 
@@ -381,12 +380,12 @@ Teuchos::ParameterList Amesos::GetValidParameters(){
     MumpsParams.set("ColScaling",(double *) 0);
 
   }
+  ParamList.set("Mumps", MumpsParams ) ; 
 
   //  Paraklete Parameters - same as Klu
 
   //  Pardiso Parameters
   Teuchos::ParameterList PardisoParams;
-  ParamList.set("Pardiso", PardisoParams ) ; 
   { 
     PardisoParams.set("MSGLVL",0);
     PardisoParams.set("IPARM(1)",0);
@@ -401,15 +400,16 @@ Teuchos::ParameterList Amesos::GetValidParameters(){
     PardisoParams.set("IPARM(21)",0);
  
   }
+  ParamList.set("Pardiso", PardisoParams ) ; 
   //  Pastix Parameters - none 
 
   //  Scalapack Parameters
   Teuchos::ParameterList ScalapackParams;
-  ParamList.set("Scalapack", ScalapackParams ) ; 
   { 
     ScalapackParams.set("2D distribution",true);
     ScalapackParams.set("grid_nb",32);
   }
+  ParamList.set("Scalapack", ScalapackParams ) ; 
   //  Taucs Parameters - none
 
   //  Umfpack Parameters - none

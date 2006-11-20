@@ -43,9 +43,28 @@ Amesos_Lapack::Amesos_Lapack(const Epetra_LinearProblem &Problem) :
   NumNumericFact_(0),
   NumSolve_(0)
 {
-  Teuchos::ParameterList ParamList;
-  SetParameters(ParamList);
+  ParameterList_ = unsetParameterList();
 }
+
+Teuchos::RefCountPtr<Teuchos::ParameterList> Amesos_Lapack::unsetParameterList() {
+  Teuchos::RefCountPtr<Teuchos::ParameterList> PL = rcp( new Teuchos::ParameterList);
+  setParameterList(PL);
+  return PL ; 
+}
+
+
+void Amesos_Lapack::setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& pl) {
+
+  pl_ = pl; 
+  Teuchos::ParameterList& LAPACKParams = pl_->sublist("Lapack") ;
+  AddZeroToDiag_ = LAPACKParams.get( "AddZeroToDiag", false );
+  AddToDiag_ = LAPACKParams.get( "AddToDiag", 0.0 );
+
+  bool Equilibrate = LAPACKParams.get("Equilibrate",true);
+  DenseSolver_.FactorWithEquilibration(Equilibrate);
+}
+
+
 
 //=============================================================================
 Amesos_Lapack::~Amesos_Lapack(void) 

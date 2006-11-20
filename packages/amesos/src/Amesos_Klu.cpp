@@ -649,7 +649,7 @@ int Amesos_Klu::Solve()
   
 #ifdef Bug_8212_B
   //  This demonstrates Bug #2812 - Valgrind does catch this
-  //  use of unitialized data - but only in TestOptions.exe 
+  //  use of unitialized data - but only in TestOptions/TestOptions.exe 
   //  not in Test_Basic/amesos_test.exe 	
   //  		
     if ( lose_this_[0] == 12834 ) { 
@@ -767,8 +767,7 @@ int Amesos_Klu::Solve()
 #if 0
   //
   //  ComputeTrueResidual causes TestOptions to fail on my linux box 
-  //  Bug #1417
-  if (ComputeTrueResidual_)
+  if (ComputeTrueResidual_) //  Bug #1417
     ComputeTrueResidual(*SerialMatrix_, *vecX, *vecB, UseTranspose(), "Amesos_Klu");
 #endif
 

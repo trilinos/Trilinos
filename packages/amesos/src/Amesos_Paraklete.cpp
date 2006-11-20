@@ -856,8 +856,7 @@ int Amesos_Paraklete::Solve()
 
 #if 0
   //
-  //  ComputeTrueResidual causes TestOptions to fail on my linux box 
-  //  Bug #1417
+  //  ComputeTrueResidual causes TestOptions to fail on my linux box //  Bug #1417
   if (ComputeTrueResidual_)
     ComputeTrueResidual(*SerialMatrix_, *vecX, *vecB, UseTranspose(), "Amesos_Paraklete");
 #endif

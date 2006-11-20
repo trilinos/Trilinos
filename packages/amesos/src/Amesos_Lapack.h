@@ -113,6 +113,15 @@ public:
     return(GetProblem()->GetOperator()->Comm());
   }
 
+   //!  Use this parameter list to read values from  
+   /*!  Redefined from Teuchos::ParameterListAcceptor
+    */
+  void setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList) ;
+
+  Teuchos::RefCountPtr<Teuchos::ParameterList> unsetParameterList() ;
+
+
+  //!  Deprecated - Sets parameters 
   int SetParameters( Teuchos::ParameterList &ParameterList )  ;
 
   //! Computes the eigenvalues of the linear system matrix using DGEEV.
@@ -179,6 +188,8 @@ protected:
     return(*(Importer_.get()));
   }
 
+  Teuchos::RefCountPtr<Teuchos::ParameterList> pl_ ; 
+
   //! Solves the linear system, when only one process is used.
   int SolveSerial(Epetra_MultiVector& X,
 		  const Epetra_MultiVector& B);
@@ -224,5 +235,7 @@ protected:
 
   int NumGlobalRows_;
   int NumGlobalNonzeros_;
+
+  Teuchos::RefCountPtr<Teuchos::ParameterList> ParameterList_ ; 
 };  // End of  class Amesos_Lapack
 #endif /* AMESOS_LAPACK_H */

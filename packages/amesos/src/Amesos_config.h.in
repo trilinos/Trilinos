@@ -41,6 +41,9 @@
 /* Define if want to build amesos-mc64 */
 #undef HAVE_AMESOS_MC64
 
+/* Define if want to build with amesos enabled */
+#undef HAVE_AMESOS_ML
+
 /* Define if want to build amesos-mumps_mpi_c2f */
 #undef HAVE_AMESOS_MPI_C2F
 
@@ -61,6 +64,9 @@
 
 /* Define if want to build amesos-scalapack */
 #undef HAVE_AMESOS_SCALAPACK
+
+/* Define if want to build with amesos enabled */
+#undef HAVE_AMESOS_STRATIMIKOS
 
 /* Define if want to build amesos-superlu */
 #undef HAVE_AMESOS_SUPERLU

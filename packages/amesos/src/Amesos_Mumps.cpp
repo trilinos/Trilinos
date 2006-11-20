@@ -422,7 +422,7 @@ int Amesos_Mumps::SymbolicFactorization()
                       //  symmetric matrices.  Hence setting MDS.sym to be non-zero
                       //  indicating that the matrix is symmetric will only work
                       //  if we change ConvertToTriplet to pass only half of the 
-                      //  matrix.  Bug #2331 and Bug #2332 
+                      //  matrix.  Bug #2331 and Bug #2332 - low priority
 
 
   RedistrMatrix(true);

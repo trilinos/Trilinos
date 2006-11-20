@@ -45,6 +45,7 @@ const int StructurallySingularMatrixError = -21;
 const int NumericallySingularMatrixError = -22;
 
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_ParameterListAcceptor.hpp"
 #include "Epetra_LinearProblem.h"
 class Epetra_LinearProblem;
 class Epetra_MultiVector;
@@ -101,24 +102,6 @@ between each call to Solve().
 \endcode
     
 
-<H2>Pivot-less refactorization</H2> The following 
-calling sequence performs multiple solves of A x = b or A<SUP>T</SUP> x = b 
-provided that the change to A is small. 
-
-\code
-    Epetra_LinearProblem Problem(A,X,B);
-    Amesos_SolverName Solver(Problem);
-    Problem.SetUseTranspose( false ); 
-    Solver.NumericFactorization(); 
-    while( ... ) { 
-
-      <Here code which may change A slightly>
-
-      Solver.PivotlessRefactorization(); 
-      Solver.Solve(); 
-    }
-\endcode
-
 
 <H2>Re-using the numeric factorization</H2> The following 
 calling sequence performs multiple solves of A x = b or A<SUP>T</SUP> x = b 
@@ -145,7 +128,7 @@ provided that A remains unchanged between each call to Solve().
 <H2>Mathematical methods</H2> Four mathematical methods are
 defined in the base class Amesos_BaseSolver:
 SymbolicFactorization(), NumericFactorization(),
-PivotelssRefactorization() and Solve().  
+and Solve().  
 
 
 <H2>Switching concrete classes</H2>
@@ -235,8 +218,15 @@ NumericFactorization(), it is possible that a change to the
 matrix will cause a potentially catastrophic error.  
 */    
 
-class Amesos_BaseSolver {
-      
+class Amesos_BaseSolver 
+  : virtual public Teuchos::ParameterListAcceptor
+{
+
+#if 0      
+ private:
+  Teuchos::RefCountPtr<Teuchos::ParameterList> paramList_ ; 
+#endif
+
  public:
 
   //@{ \name Destructor
@@ -303,58 +293,6 @@ class Amesos_BaseSolver {
      \return Integer error code, set to 0 if successful.
   */
   virtual int NumericFactorization() = 0;
-
-
-    //! Performs Pivotless Numeric Factorization on the matrix A.
-    /*! PivotlessReFactorization() performs the same functionality 
-as NumericFactorization() except that typically 
-pivoting is performed.
-
-<p>PivotlessFactorization() should compare the ratio of the largest pivot 
-to the smallest pivot against the ratio after the most recent call to 
-NumericFactorization(), if pivot growth in pivot-less factorization 
-is too large, NumericFactorization() should be called by 
-PivotlessFactorization().  Such calls to NumericFactorization()
-are controlled by two parameters, either of which can be set to -1 to indicate no maximum.  
-<ul>
-  <li>"Maximum Relative Pivot Growth", default=10 
-  <li>"Maximum Pivot Growth", default=-1 
-</ul>
-
-<p>In solvers which do not offer pivot-less factorization, 
-PivotlessFactorization() defaults to a call to NumericFactorization().
-
-<p>If no previous cal to NumericFactorization() has been made, 
-PivotlessFactorization() defaults to a call to NumericFactorization().
-
-<p>Ideally, a call to PivotlessFactorization() should not involve 
-any memory allocation or re-allocation.
-
-
-      <br \>Preconditions:<ul>
-      <li>GetProblem().GetOperator() != 0 (return -1)
-      <li>MatrixShapeOk(GetProblem().GetOperator()) == true (return -6)
-      <li>The non-zero structure of the matrix should not have changed
-          since the last call to SymbolicFactorization().  
-      <li>The distribution of the matrix should not have changed 
-          since the last call to SymbolicFactorization()
-      <li>The change in the values in the matrix since the last call
-          to NumericFactorization() should be small enough that 
-	  pivot-less factorization is sufficiently accurate. 
-          (Or, expected to be sufficiently accurate.)
-      </ul>
-
-      <br \>Postconditions:<ul> 
-      <li>Numeric Factorization will be performed
-      allowing Solve() to be performed correctly despite a 
-      potential change in 
-      in the matrix values (though not in the non-zero structure).
-      </ul>
-
-     \return Integer error code, set to 0 if successful.
-
-    virtual int PivotlessFactorization() = 0;
-  */
 
     //! Solves A X = B (or A<SUP>T</SUP> x = B) 
     /*! 
@@ -453,7 +391,30 @@ revert to their default values.
 
   //! Prints timing information about the current solver. 
   virtual void PrintTiming() const = 0;
+
+
+   //! Redefined from Teuchos::ParameterListAcceptor
+  void setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList){
+    //    paramList_ = paramlist ;
+    //    this->SetParameters( *paramList_ );
+  }
+
+  //!  This is an empty stub 
+  Teuchos::RefCountPtr<Teuchos::ParameterList> getParameterList() {
+    Teuchos::RefCountPtr<Teuchos::ParameterList> PL ;
+    return PL ;
+  }
+
+  //!  This is an empty stub 
+  Teuchos::RefCountPtr<Teuchos::ParameterList> unsetParameterList() {
+    Teuchos::RefCountPtr<Teuchos::ParameterList> PL ;
+    //    this->SetParameters( *paramList_ );
+    return PL ; 
+  }
+
   //@}
+
+
 
 };
 
