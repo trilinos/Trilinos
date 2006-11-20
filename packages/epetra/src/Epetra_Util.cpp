@@ -163,6 +163,7 @@ Epetra_Util::Create_OneToOne_Map(const Epetra_Map& usermap,
 
   delete [] myOwnedElems;
   delete [] owner_procs;
+  delete directory;
 
   return(one_to_one_map);
 }
@@ -286,6 +287,7 @@ Epetra_Util::Create_OneToOne_BlockMap(const Epetra_BlockMap& usermap,
 
   delete [] myOwnedElems;
   delete [] owner_procs;
+  delete directory;
 
   return(one_to_one_map);
 }

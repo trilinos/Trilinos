@@ -49,7 +49,7 @@ class Epetra_Directory {
     //! @name Constructors/Destructor
   //@{ 
   //! Epetra_Directory destructor.
-  virtual ~Epetra_Directory(){};
+  virtual ~Epetra_Directory(){}
   //@}
   
   //! @name Query method
