@@ -253,6 +253,7 @@ DONE
 IF PACKAGE pytrilinos THEN
 REMOVE --enable-pytrilinos
 REMOVE --enable-webtrilinos
+REMOVE --enable-python
 DONE
 
 # RTOp -------------------------------------------------------------------------
