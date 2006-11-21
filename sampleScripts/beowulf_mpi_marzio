@@ -18,6 +18,9 @@ ${HOME}/Trilinos/$1/configure \
   --enable-amesos \
   --enable-ifpack \
   --enable-aztecoo \
-  --enable-ml \
   --enable-triutils \
+  --enable-galeri \
+  --enable-ml \
+  --enable-webtrilinos \
+  --enable-didasko \
   --enable-python
