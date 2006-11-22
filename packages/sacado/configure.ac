@@ -194,6 +194,20 @@ TAC_ARG_ENABLE_EXPORT_MAKEFILES(yes)
 # Checks for special package flags
 # ------------------------------------------------------------------------
 
+# Check for --enable-sacado-debug
+AC_ARG_ENABLE([sacado-debug], 
+              [AC_HELP_STRING([--enable-sacado-debug], 
+                              [Enable extra debugging checks that may decrease performance (default is no)])],
+              [ac_cv_use_sacado_debug=$enableval], 
+              [ac_cv_use_sacado_debug=no])
+AC_MSG_CHECKING(whether to use sacado-debug)
+if test "X$ac_cv_use_sacado_debug" != "Xno"; then
+  AC_MSG_RESULT(yes)  
+  AC_DEFINE([SACADO_DEBUG],,[Define to enable extra debugging checks])
+else
+  AC_MSG_RESULT(no)
+fi
+
 # ------------------------------------------------------------------------
 # Checks if tests and examples should be built
 # ------------------------------------------------------------------------
@@ -210,9 +224,11 @@ TAC_ARG_ENABLE_FEATURE_SUB_CHECK(sacado, examples, [Build Sacado examples], SACA
 AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_sacado_examples" != "Xno")
 
 AC_ARG_ENABLE([sacado-fem-example],
-AC_HELP_STRING([--enable-sacado-fem-example, Enable building of the 1D FEM example.]),
-ac_cv_use_fem_example=$enableval, ac_cv_use_fem_example=no)
-AC_MSG_CHECKING(whether we should enable 1DFEM example)
+              [AC_HELP_STRING([--enable-sacado-fem-example], 
+                              [Enable building of the 1D FEM example.  Requires epetra, nox, and nox-epetra])],
+              [ac_cv_use_fem_example=$enableval], 
+              [ac_cv_use_fem_example=no])
+AC_MSG_CHECKING(whether we should enable the 1DFEM example)
 if test "X$ac_cv_use_fem_example" != "Xno"; then
   AC_MSG_RESULT(yes)
 else
