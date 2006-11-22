@@ -65,7 +65,7 @@ int main(int argc, char **argv)
   double b = 2.0;
   double c = 3.0;
 
-  // Fad objects
+  // Rad objects
   Sacado::Rad::ADvar<double> arad = a; 
   Sacado::Rad::ADvar<double> brad = b; 
   Sacado::Rad::ADvar<double> crad = c;              // Passive variable

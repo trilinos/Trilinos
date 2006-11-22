@@ -67,7 +67,7 @@ int main(int argc, char **argv)
   double c = 3.0;
 
   // Number of independent variables
-  int num_deriv = 2;    // Must be <= 2 (see below)
+  int num_deriv = 2;    // Must be == 2 (see below)
 
   // Fad objects
   Sacado::Fad::SFad<double,2> afad(num_deriv, 0, a); // First (0) indep. var
