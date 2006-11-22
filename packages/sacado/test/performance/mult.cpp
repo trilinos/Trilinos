@@ -92,7 +92,7 @@ int main(int argc, char* argv[]) {
     clp.setDocString("This program tests the speed of various forward mode AD implementations for a single multiplication operation");
     int nderiv = 10;
     clp.setOption("nderiv", &nderiv, "Number of derivative components");
-    int nloop = 1000000;
+    int nloop = 10000000;
     clp.setOption("nloop", &nloop, "Number of loops");
 
     // Parse options

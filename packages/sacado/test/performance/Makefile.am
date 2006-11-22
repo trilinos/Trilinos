@@ -36,10 +36,10 @@ EXEEXT = .exe
 
 noinst_PROGRAMS = \
 	dfad_nonlinear \
-	dfad_mult
+	mult
 
 dfad_nonlinear_SOURCES = dfad_nonlinear.cpp 
-dfad_nonlinear_CXXFLAGS = -O2 \
+dfad_nonlinear_CXXFLAGS = -O2  \
 	-I$(top_srcdir)/src \
 	-I$(top_builddir)/src \
 	-I$(top_srcdir)/test/utils \
@@ -54,7 +54,7 @@ dfad_nonlinear_LDADD = \
 	$(TEUCHOS_LIBS) \
 	$(LIBS) $(FLIBS)
 
-dfad_mult_SOURCES = dfad_mult.cpp
-dfad_mult_CXXFLAGS = $(dfad_nonlinear_CXXFLAGS)
-dfad_mult_DEPENDENCIES = $(dfad_nonlinear_DEPENDENCIES)
-dfad_mult_LDADD = $(dfad_nonlinear_LDADD)
+mult_SOURCES = mult.cpp
+mult_CXXFLAGS = $(dfad_nonlinear_CXXFLAGS)
+mult_DEPENDENCIES = $(dfad_nonlinear_DEPENDENCIES)
+mult_LDADD = $(dfad_nonlinear_LDADD)
