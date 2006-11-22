@@ -7,16 +7,13 @@ EXAMPLE_INCLUDES = $(ML_EXTRA_INCLUDES) $(ML_INCLUDES)
 
 EXEEXT = .exe
 
-EXTRA_DIST = ml_ParameterList.xml
-
 # List the names of all exe's in this directory here
 
 noinst_PROGRAMS = ml_aztec_simple   \
                   ml_operator       \
                   ml_preconditioner \
                   ml_user_smoothing \
-		  ml_readex         \
-		  ml_XML
+		  ml_readex        
 
 CCLD = $(CXX)
 
@@ -34,11 +31,6 @@ ml_preconditioner_SOURCES      = $(srcdir)/ml_preconditioner.cpp
 ml_preconditioner_DEPENDENCIES = $(top_builddir)/src/libml.a
 ml_preconditioner_CXXFLAGS     = $(EXAMPLE_INCLUDES)
 ml_preconditioner_LDADD        = $(EXAMPLE_LIBS)
-
-ml_XML_SOURCES      = $(srcdir)/ml_XML.cpp
-ml_XML_DEPENDENCIES = $(top_builddir)/src/libml.a
-ml_XML_CXXFLAGS     = $(EXAMPLE_INCLUDES)
-ml_XML_LDADD        = $(EXAMPLE_LIBS)
 
 ml_readex_SOURCES      = $(srcdir)/ml_readex.c
 ml_readex_DEPENDENCIES = $(top_builddir)/src/libml.a

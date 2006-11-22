@@ -26,6 +26,8 @@ Visualization/              Using ML's visualization capabilities
 MultipleRHS/                Solving systems with multiple right-hand-sides
 Advanced/                   Advanced usage:  filtering, preconditioner analysis
 Other/                      Examples that don't fit into other categories
+XML/                        Shows how to set the ML parameters using
+                            an XML file
 MLAPI/                      Shows how to write MATLAB-like codes using the
                             MLAPI, the Application Program Interface of ML.
 FiniteElements/             A simple finite element code for scalar, second 
@@ -71,15 +73,6 @@ The goal of this example is to read old Aztec files (.data) and
 use the old/low level multigrid interface to set up a preconditioner.
 A hidden file '.data' is included which correspond to a simple finite
 element model of a Laplacian.
-
-*) ml_XML.cpp:
-
-The goal of this example is to show how to modify the parameter list 
-that is stored within the MultiLevelPreconditioner class without 
-recompiling the application. A set of parameters to be added is stored
-in a file, called ml_ParameterList.xml, located in the working
-directory. This file is parsed, and its content is used to build
-the preconditioner.
 
 ===============================================================================
 
@@ -160,3 +153,16 @@ The example defines a 3D Laplacian on a structured Cartesian grid; the
 problem is discretized using a classical 7-point formula, but the values
 of the matrix are never stored, and the rows are created "on-the-fly" at
 each call to getrow().
+
+===============================================================================
+
+files in ml/examples/XML
+
+*) ml_XML.cpp:
+
+The goal of this example is to show how to modify the parameter list 
+that is stored within the MultiLevelPreconditioner class without 
+recompiling the application. A set of parameters to be added is stored
+in a file, called ml_ParameterList.xml, located in the working
+directory. This file is parsed, and its content is used to build
+the preconditioner.

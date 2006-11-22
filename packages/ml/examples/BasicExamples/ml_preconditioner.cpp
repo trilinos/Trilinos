@@ -167,8 +167,6 @@ int main(int argc, char *argv[])
   MLList.set("coarse: type","Jacobi");
 #endif
 
-  MLList.set("read XML", false); // skip XML file in this directory
-
   // Creates the preconditioning object. We suggest to use `new' and
   // `delete' because the destructor contains some calls to MPI (as
   // required by ML and possibly Amesos). This is an issue only if the

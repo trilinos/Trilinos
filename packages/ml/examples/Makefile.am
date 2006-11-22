@@ -33,6 +33,6 @@ all-local:
 	echo "Trilinos package ml subdirectory examples built successfully."
 	@echo ""
 
-SUBDIRS = Advanced BasicExamples Elasticity MatrixFormats MatrixReading Maxwell StandAlone MultipleRHS TwoLevelDD Other MLAPI Visualization MatrixFree
+SUBDIRS = Advanced BasicExamples Elasticity MatrixFormats MatrixReading Maxwell StandAlone MultipleRHS TwoLevelDD Other MLAPI Visualization MatrixFree XML
 
 EXTRA_DIST = ExampleMatrices/simple_matrix.aij README
