@@ -80,11 +80,11 @@ DefaultRealLinearSolverBuilder::DefaultRealLinearSolverBuilder(
   ,const std::string   &paramsUsedXmlOutFileNameOption
   )
   :paramsXmlFileName_(paramsXmlFileName)
-   ,extraParamsXmlString_(extraParamsXmlString)
-   ,paramsUsedXmlOutFileName_(paramsUsedXmlOutFileName)
-   ,paramsXmlFileNameOption_(paramsXmlFileNameOption)
-   ,extraParamsXmlStringOption_(extraParamsXmlStringOption)
-   ,paramsUsedXmlOutFileNameOption_(paramsUsedXmlOutFileNameOption)
+  ,extraParamsXmlString_(extraParamsXmlString)
+  ,paramsUsedXmlOutFileName_(paramsUsedXmlOutFileName)
+  ,paramsXmlFileNameOption_(paramsXmlFileNameOption)
+  ,extraParamsXmlStringOption_(extraParamsXmlStringOption)
+  ,paramsUsedXmlOutFileNameOption_(paramsUsedXmlOutFileNameOption)
 {
   this->initializeDefaults();
 }

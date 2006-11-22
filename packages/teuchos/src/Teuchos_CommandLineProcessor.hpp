@@ -78,13 +78,14 @@ public:
   class UnrecognizedOption : public ParseError
   {public: UnrecognizedOption(const std::string& what_arg) : ParseError(what_arg) {}};
 
-  /** \enum EParseCommandLineReturn
-      \brief Return value for <tt>CommandLineProcessor::parse()</tt>.
+  /** \brief Return value for <tt>CommandLineProcessor::parse()</tt>.
+      Note: These enums are all given non-negative values since they are designed to
+      be returned from main().
    */
   enum EParseCommandLineReturn {
     PARSE_SUCCESSFUL              =  0 /*!< Parsing the command line was successful. */
     ,PARSE_HELP_PRINTED            =  1 /*!< The help statement was printed for the command line parser. */
-    ,PARSE_UNRECOGNIZED_OPTION     = -1 /*!< The command line parser encountered an unrecognized option. */
+    ,PARSE_UNRECOGNIZED_OPTION     =  2 /*!< The command line parser encountered an unrecognized option. */
   };
   
   //@}
