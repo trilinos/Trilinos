@@ -65,7 +65,7 @@ Sacado::Random::number() {
   const double A = 16807.0;
   const double bigInt = 2147483647.0;
       
-  seed = fmod(A*seed, bigInt);
+  seed = std::fmod(A*seed, bigInt);
   return (b-a)*(seed/bigInt) + a;
 }
 
