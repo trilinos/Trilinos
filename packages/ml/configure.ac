@@ -702,6 +702,7 @@ AC_CONFIG_FILES([
                 examples/MultipleRHS/Makefile
                 examples/MLAPI/Makefile
                 examples/NonlinML/Makefile
+                examples/XML/Makefile
                 examples/Other/Makefile
                 test/Makefile
                 test/MultiLevelPreconditioner_NonSym/Makefile
