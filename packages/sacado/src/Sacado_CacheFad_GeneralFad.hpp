@@ -29,22 +29,28 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef SACADO_FAD_GENERALFAD_HPP
-#define SACADO_FAD_GENERALFAD_HPP
+#ifndef SACADO_CACHEFAD_GENERALFAD_HPP
+#define SACADO_CACHEFAD_GENERALFAD_HPP
 
 #include "Sacado_ConfigDefs.h"
-#include "Sacado_Fad_Expression.hpp"
+#include "Sacado_CacheFad_Expression.hpp"
 
 namespace Sacado {
 
-  //! Namespace for forward-mode AD classes
-  namespace Fad {
+  //! Namespace for forward-mode AD classes w/caching
+  namespace CacheFad {
 
     //! Forward-mode AD class templated on the storage for the derivative array
     /*!
      * This class provides a general forward mode AD implementation for any
      * type of derivative array storage.  It does not incorporate expression
      * templates.
+     *
+     * This version of GeneralFad is virtually identical to 
+     * Sacado::Fad::GeneralFad, with small differences in the implementations 
+     * of some of the methods to support caching of "values" of intermediate
+     * operations in an expression, recognizing that the "this" object might
+     * also be on the right-hand-side of an expression.
      */
     template <typename T, typename Storage> 
     class GeneralFad {
@@ -217,10 +223,10 @@ namespace Sacado {
 
     }; // class GeneralFad
 
-  } // namespace Fad
+  } // namespace CacheFad
 
 } // namespace Sacado
 
-#include "Sacado_Fad_GeneralFadImp.hpp"
+#include "Sacado_CacheFad_GeneralFadImp.hpp"
 
-#endif // SACADO_FAD_GENERALFAD_HPP
+#endif // SACADO_CACHEFAD_GENERALFAD_HPP

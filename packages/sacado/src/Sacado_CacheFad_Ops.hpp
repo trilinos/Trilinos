@@ -240,7 +240,7 @@ namespace Sacado {							\
       typedef typename Sacado::Promote<value_type_1,			\
 				       value_type_1>::type value_type;  \
 									\
-      OP(const ExprT1& expr1, const ExprT2 expr2) {}			\
+      OP(const ExprT1& expr1, const ExprT2& expr2) {}			\
 									\
       value_type							\
       computeValue(const ExprT1& expr1, const ExprT2& expr2) const {	\
@@ -278,7 +278,7 @@ namespace Sacado {							\
       typedef typename ExprT1::value_type value_type;			\
       typedef ConstExpr<typename ExprT1::value_type> ExprT2;		\
 									\
-      OP(const ExprT1& expr1, const ExprT2 expr2) {}			\
+      OP(const ExprT1& expr1, const ExprT2& expr2) {}			\
 									\
       value_type							\
       computeValue(const ExprT1& expr1, const ExprT2& expr2) const {	\
@@ -316,7 +316,7 @@ namespace Sacado {							\
       typedef typename ExprT2::value_type value_type;			\
       typedef ConstExpr<typename ExprT2::value_type> ExprT1;		\
 									\
-      OP(const ExprT1& expr1, const ExprT2 expr2) {}			\
+      OP(const ExprT1& expr1, const ExprT2& expr2) {}			\
 									\
       value_type							\
       computeValue(const ExprT1& expr1, const ExprT2& expr2) const {	\

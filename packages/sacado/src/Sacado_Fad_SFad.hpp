@@ -37,14 +37,6 @@
 #include "Sacado_Fad_Expression.hpp"
 #include "Sacado_Fad_StaticStorage.hpp"
 
-// forward decalarations
-namespace Sacado {
-  namespace Fad {
-    template <class ExprT> class UnaryPlusOp;
-    template <class ExprT> class UnaryMinusOp;
-  }
-}
-
 namespace Sacado {
 
   //! Namespace for forward-mode AD classes
@@ -187,22 +179,6 @@ namespace Sacado {
        * @name Unary operators
        */
       //@{
-
-      //! Unary-plus operator
-      inline 
-      Expr< UnaryExpr< Expr< SFadExprTag<T,Num> >, UnaryPlusOp > >
-      operator + () const {
-	typedef UnaryExpr< Expr< SFadExprTag<T,Num> >, UnaryPlusOp > expr_t;
-	return Expr<expr_t>(expr_t(*this));
-      }
-
-      //! Unary-minus operator
-      inline 
-      Expr< UnaryExpr< Expr< SFadExprTag<T,Num> >, UnaryMinusOp > >
-      operator - () const {
-	typedef UnaryExpr< Expr< SFadExprTag<T,Num> >, UnaryMinusOp > expr_t;
-	return Expr<expr_t>(expr_t(*this));
-      }
 
       //! Addition-assignment operator with constant right-hand-side
       Expr< SFadExprTag<T,Num> >& operator += (const T& x);

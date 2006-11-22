@@ -121,7 +121,10 @@ namespace Sacado {
      * This template class represents a unary operation of the form
      * op(a) where a is the argument of type \c ExprT and op is the 
      * operation represented by type \c Op. The operation is evaluated by the 
-     * static methods Op::computeValue() and Op::computeDx().
+     * non-static methods Op::computeValue() and Op::computeDx().
+     *
+     * It is assumed Op::computeValue() will cache its result for later
+     * Op::computeDx() calls.
      */
     template <typename ExprT, template<typename> class Op> 
     class UnaryExpr {
@@ -161,15 +164,34 @@ namespace Sacado {
 
     }; // class UnaryExpr
 
+    // The Sun compiler has difficulty with class partial specialization and
+    // template templates, which the original BinaryExpr classes below use.
+    // However the only significant difference between the specializations
+    // of BinaryExpr for constant arguments is removing the reference
+    // for the corresponding data member.  The type functions below allow
+    // us to do this without specializing BinaryExpr.  We could also 
+    // remove the template templates, but that drastically increases
+    // compile times due to the increased length of template argument lists.
+    template <typename T> struct ExprConstRef {
+      typedef const T& type;
+    };
+    template <typename T> struct ExprConstRef< ConstExpr<T> > {
+      typedef const ConstExpr<T> type;
+    };
+
     //! Binary expression template
     /*!
      * This template class represents a binary operation of the form
      * op(a1,a2) where a1 is the left argument of type \c ExprT1, r is 
      * the right argument of type \c ExprT2, and op is the operation 
-     * represented by type \c Op. The operation is evaluated by the static 
+     * represented by type \c Op. The operation is evaluated by the non-static 
      * methods Op::computeValue() and Op::computeDx().
+     *
+     * It is assumed Op::computeValue() will cache its result for later
+     * Op::computeDx() calls.
      */
-    template <typename ExprT1, typename ExprT2, template<typename,typename> class Op> 
+    template <typename ExprT1, typename ExprT2, 
+	      template<typename,typename> class Op> 
     class BinaryExpr {
 		
     public:
@@ -214,126 +236,10 @@ namespace Sacado {
     protected:
       
       //! Left argument
-      const ExprT1& expr1_;
+      typename ExprConstRef<ExprT1>::type expr1_;
 
       //! Right argument
-      const ExprT2& expr2_;
-
-      //! Operator
-      Op<ExprT1,ExprT2> op_;
-
-    }; // class BinaryExpr
-
-    //! Binary expression template with first argument constant
-    /*!
-     * This template class represents a binary operation of the form
-     * op(a1,a2) where a1 is the left argument of type \c ExprT1, r is 
-     * the right argument of type \c ExprT2, and op is the operation 
-     * represented by type \c Op. The operation is evaluated by the static 
-     * methods Op::computeValue() and Op::computeDx().
-     */
-    template <typename ExprT2, template<typename,typename> class Op> 
-    class BinaryExpr<ConstExpr<typename ExprT2::value_type>, ExprT2, Op> {
-		
-    public:
-
-      //! Typename of constant expression
-      typedef ConstExpr<typename ExprT2::value_type> ExprT1;
-
-      //! Typename of the second argument value
-      typedef typename ExprT2::value_type value_type;
-
-      //! Constructor
-      BinaryExpr(const ExprT1& expr1, const ExprT2& expr2) : 
-	expr1_(expr1), expr2_(expr2), op_(expr1,expr2) {}
-
-      //! Return size of the derivative array of the operation
-      int size() const {
-	return expr2_.size(); 
-      }
-      
-      //! Return if operation has fast access
-      bool hasFastAccess() const { 
-	return expr2_.hasFastAccess();}
-
-      //! Return value of operation
-      value_type val() const { 
-	return op_.computeValue(expr1_,expr2_); }
-
-      //! Return derivative component \c i of operation
-      value_type dx(int i) const { 
-	return op_.computeDx(i,expr1_,expr2_); }
-      
-      //! Return derivative component \c i of operation
-      value_type fastAccessDx(int i) const { 
-	return op_.computeFastAccessDx(i,expr1_,expr2_); 
-      }
-
-    protected:
-      
-      //! Left argument
-      ExprT1 expr1_;
-
-      //! Right argument
-      const ExprT2& expr2_;
-
-      //! Operator
-      Op<ExprT1,ExprT2> op_;
-
-    }; // class BinaryExpr
-
-    //! Binary expression template with second argument constant
-    /*!
-     * This template class represents a binary operation of the form
-     * op(a1,a2) where a1 is the left argument of type \c ExprT1, r is 
-     * the right argument of type \c ExprT2, and op is the operation 
-     * represented by type \c Op. The operation is evaluated by the static 
-     * methods Op::computeValue() and Op::computeDx().
-     */
-    template <typename ExprT1, template<typename,typename> class Op> 
-    class BinaryExpr<ExprT1,ConstExpr<typename ExprT1::value_type>, Op> {
-		
-    public:
-
-      //! Typename of constant expression
-      typedef ConstExpr<typename ExprT1::value_type> ExprT2;
-
-      //! Typename of the second argument value
-      typedef typename ExprT1::value_type value_type;
-
-      //! Constructor
-      BinaryExpr(const ExprT1& expr1, const ExprT2& expr2) : 
-	expr1_(expr1), expr2_(expr2), op_(expr1,expr2) {}
-
-      //! Return size of the derivative array of the operation
-      int size() const {
-	return expr1_.size(); 
-      }
-      
-      //! Return if operation has fast access
-      bool hasFastAccess() const { 
-	return expr1_.hasFastAccess();}
-
-      //! Return value of operation
-      value_type val() const { 
-	return op_.computeValue(expr1_,expr2_); }
-
-      //! Return derivative component \c i of operation
-      value_type dx(int i) const { 
-	return op_.computeDx(i,expr1_,expr2_); }
-      
-      //! Return derivative component \c i of operation
-      value_type fastAccessDx(int i) const { 
-	return op_.computeFastAccessDx(i,expr1_,expr2_); 
-      }
-
-    protected:
-      
-      //! Left argument
-      const ExprT1& expr1_;
-
-      //! Right argument
-      ExprT2 expr2_;
+      typename ExprConstRef<ExprT2>::type expr2_;
 
       //! Operator
       Op<ExprT1,ExprT2> op_;
