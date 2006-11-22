@@ -20,13 +20,17 @@ differentiation.
 Sacado contains several basic AD classes:
 
 <ul> 
-
-<li> Forward mode AD with the number of derivative components chosen at run-time:  Sacado::Fad::DFad 
-<li>  Forward mode AD with the number of derivative components chosen at compile-time:  Sacado::Fad::SFad
+<li> Forward mode AD with the number of derivative components chosen at run-time:  Sacado::Fad::DFad (most flexible)
+<li>  Forward mode AD with the number of derivative components chosen at compile-time:  Sacado::Fad::SFad (most efficient)
+<li>  Forward mode AD with the maximum number of derivative components chosen at compile-time but actual number used chosen at run-time:  Sacado::Fad::SLFad (sits between Sacado::Fad::DFad and Sacado::Fad::SFad in flexibility and efficiency)
 <li> Reverse mode:  Sacado::Rad::ADvar
 <li> High-order univariate Taylor polynomials:  Sacado::Taylor::DTaylor
+</ul>
 
+Experimental AD classes:
 
+<ul>
+<li> Forward mode AD using caching expression templates:  Sacado::CacheFad::DFad.  Preliminary testing indicates this approach is more efficient for deep expressions with large number of derivative components, but is less efficient and Sacado::Fad::DFad otherwise.
 </ul>
 
 \section sacado_browser Browse all of sacado as a single doxygen collection
