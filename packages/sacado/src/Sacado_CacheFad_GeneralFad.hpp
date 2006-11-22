@@ -110,6 +110,17 @@ namespace Sacado {
        */
       void diff(const int ith, const int n);
 
+      //! Resize derivative array to length \c sz
+      /*!
+       * This method does not (re)initialize the derivative components, so any
+       * previous values may be lost.  Also any pointers to derivative
+       * components may be invalid.
+       */
+      void resize(int sz) { s_.resize(sz); }
+
+      //! Zero out the derivative array
+      void zero() { s_.zero(); }
+
       //@}
 
       /*!

@@ -79,7 +79,7 @@ namespace Sacado {
       /*!
        * Initializes value to \c x and derivative array 0 of length \c sz
        */
-      Expr(const int sz, const T & x) : val_(x){ ss_array<T>::zero(dx_, Num); }
+      Expr(const int sz, const T & x);
 
       //! Constructor with size \c sz, index \c i, and value \c x
       /*!
@@ -87,10 +87,7 @@ namespace Sacado {
        * as row \c i of the identity matrix, i.e., sets derivative component
        * \c i to 1 and all other's to zero.
        */
-      Expr(const int sz, const int i, const T & x) : val_(x) {
-	ss_array<T>::zero(dx_, Num);
-	dx_[i]=1.; 
-      }
+      Expr(const int sz, const int i, const T & x);
 
       //! Copy constructor
       Expr(const Expr& x) : val_(x.val_) { 
@@ -110,6 +107,16 @@ namespace Sacado {
        * constructor.
        */
       void diff(const int ith, const int n);
+
+      //! Resize derivative array to length \c sz
+      /*!
+       * Since the derivative array length is not dynamic, this method
+       * throws an error if compiled with SACADO_DEBUG defined.
+       */
+      void resize(int sz);
+
+      //! Zero out the derivative array
+      void zero() { ss_array<T>::zero(dx_, Num); }
 
       //@}
 

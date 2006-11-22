@@ -90,7 +90,13 @@ namespace Sacado {
       /*!
        * Initializes derivative array 0 of length \c sz
        */
-      StaticStorage(const int sz) : sz_(sz) { ss_array<T>::zero(dx_, sz_); }
+      StaticStorage(const int sz) : sz_(sz) { 
+#ifdef SACADO_DEBUG
+	if (sz > Num)
+	  throw "StaticStorage::StaticStorage() Error:  Supplied derivative dimension exceeds maximum length.";
+#endif
+	ss_array<T>::zero(dx_, sz_); 
+      }
 
       //! Copy constructor
       StaticStorage(const StaticStorage& x) : 
@@ -110,7 +116,13 @@ namespace Sacado {
       int size() const { return sz_;}
 
       //! Resize the derivative array to sz
-      void resize(int sz) { sz_ = sz; }
+      void resize(int sz) { 
+#ifdef SACADO_DEBUG
+	if (sz > Num)
+	  throw "StaticStorage::resize() Error:  Supplied derivative dimension exceeds maximum length.";
+#endif
+	sz_ = sz; 
+      }
 
       //! Zero out derivative array
       void zero() { ss_array<T>::zero(dx_, sz_); }

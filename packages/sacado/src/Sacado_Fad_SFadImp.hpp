@@ -30,10 +30,42 @@
 // @HEADER
 
 template <typename T, int Num> 
+inline Sacado::Fad::Expr< Sacado::Fad::SFadExprTag<T,Num> >::
+Expr(const int sz, const T & x) : val_(x)
+{
+#ifdef SACADO_DEBUG
+  if (sz != Num)
+    throw "SFad::SFad() Error:  Supplied derivative dimension does not match compile time length.";
+#endif
+
+  ss_array<T>::zero(dx_, Num); 
+}
+
+template <typename T, int Num> 
+inline Sacado::Fad::Expr< Sacado::Fad::SFadExprTag<T,Num> >::
+Expr(const int sz, const int i, const T & x) : val_(x) 
+{
+#ifdef SACADO_DEBUG
+  if (sz != Num)
+    throw "SFad::SFad() Error:  Supplied derivative dimension does not match compile time length.";
+  if (i >= Num)
+    throw "SFad::SFad() Error:  Invalid derivative index.";
+#endif
+
+  ss_array<T>::zero(dx_, Num);
+  dx_[i]=1.; 
+}
+
+template <typename T, int Num> 
 template <typename S> 
 inline Sacado::Fad::Expr< Sacado::Fad::SFadExprTag<T,Num> >::
 Expr(const Expr<S>& x) : val_(x.val())
 {
+#ifdef SACADO_DEBUG
+  if (x.size() != Num)
+    throw "SFad::SFad() Error:  Attempt to assign with incompatible sizes";
+#endif
+
   for(int i=0; i<Num; ++i) 
     dx_[i] = x.fastAccessDx(i);
 }
@@ -44,8 +76,24 @@ inline void
 Sacado::Fad::Expr< Sacado::Fad::SFadExprTag<T,Num> >::
 diff(const int ith, const int n) 
 { 
+#ifdef SACADO_DEBUG
+  if (n != Num)
+    throw "SFad::diff() Error:  Supplied derivative dimension does not match compile time length.";
+#endif
+
   ss_array<T>::zero(dx_, Num);
   dx_[ith] = T(1.);
+}
+
+template <typename T, int Num> 
+inline void 
+Sacado::Fad::Expr< Sacado::Fad::SFadExprTag<T,Num> >::
+resize(int sz)
+{
+#ifdef SACADO_DEBUG
+  if (sz != Num)
+    throw "SFad::resize() Error:  Cannot resize fixed derivative array dimension";
+#endif
 }
 
 template <typename T, int Num> 
@@ -79,6 +127,11 @@ inline Sacado::Fad::Expr< Sacado::Fad::SFadExprTag<T,Num> >&
 Sacado::Fad::Expr< Sacado::Fad::SFadExprTag<T,Num> >::
 operator=(const Expr<S>& x) 
 {
+#ifdef SACADO_DEBUG
+  if (x.size() != Num)
+    throw "SFad::operator=() Error:  Attempt to assign with incompatible sizes";
+#endif
+
   for(int i=0; i<Num; ++i)
     dx_[i] = x.fastAccessDx(i);
   
@@ -139,6 +192,11 @@ inline Sacado::Fad::Expr< Sacado::Fad::SFadExprTag<T,Num> >&
 Sacado::Fad::Expr< Sacado::Fad::SFadExprTag<T,Num> >::
 operator += (const Sacado::Fad::Expr<S>& x)
 {
+#ifdef SACADO_DEBUG
+  if (x.size() != Num)
+    throw "SFad::operator+=() Error:  Attempt to assign with incompatible sizes";
+#endif
+
   for (int i=0; i<Num; ++i)
     dx_[i] += x.fastAccessDx(i);
  
@@ -153,6 +211,11 @@ inline Sacado::Fad::Expr< Sacado::Fad::SFadExprTag<T,Num> >&
 Sacado::Fad::Expr< Sacado::Fad::SFadExprTag<T,Num> >::
 operator -= (const Sacado::Fad::Expr<S>& x)
 {
+#ifdef SACADO_DEBUG
+  if (x.size() != Num)
+    throw "SFad::operator-=() Error:  Attempt to assign with incompatible sizes";
+#endif
+
   for(int i=0; i<Num; ++i)
     dx_[i] -= x.fastAccessDx(i);
 
@@ -169,6 +232,11 @@ operator *= (const Sacado::Fad::Expr<S>& x)
 {
   T xval = x.val();
 
+#ifdef SACADO_DEBUG
+  if (x.size() != Num)
+    throw "SFad::operator*=() Error:  Attempt to assign with incompatible sizes";
+#endif
+
   for(int i=0; i<Num; ++i)
     dx_[i] = val_ * x.fastAccessDx(i) + dx_[i] * xval;
  
@@ -184,6 +252,11 @@ Sacado::Fad::Expr< Sacado::Fad::SFadExprTag<T,Num> >::
 operator /= (const Sacado::Fad::Expr<S>& x)
 {
   T xval = x.val();
+
+#ifdef SACADO_DEBUG
+  if (x.size() != Num)
+    throw "SFad::operator/=() Error:  Attempt to assign with incompatible sizes";
+#endif
 
   for(int i=0; i<Num; ++i)
     dx_[i] = ( dx_[i]*xval - val_*x.fastAccessDx(i) )/ (xval*xval);
