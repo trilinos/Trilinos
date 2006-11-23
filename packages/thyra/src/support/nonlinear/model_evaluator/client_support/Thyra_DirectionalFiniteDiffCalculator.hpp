@@ -203,6 +203,15 @@ DirectionalFiniteDiffCalculator<Scalar>::fdMethodValidator
       ,"order-four-central"
       ,"order-four-auto"
       )
+    ,Teuchos::tuple<std::string>(
+      "Use O(eps) one sided finite differences (cramped bounds)"
+      ,"Use O(eps^2) one sided finite differences (cramped bounds)"
+      ,"Use O(eps^2) two sided central finite differences"
+      ,"Use \"order-two-central\" when not cramped by bounds, otherwise use \"order-two\""
+      ,"Use O(eps^4) one sided finite differences (cramped bounds)"
+      ,"Use O(eps^4) two sided central finite differences"
+      ,"Use \"order-four-central\" when not cramped by bounds, otherwise use \"order-four\""
+      )
     ,Teuchos::tuple<Thyra::DirectionalFiniteDiffCalculatorTypes::EFDMethodType>(
       Thyra::DirectionalFiniteDiffCalculatorTypes::FD_ORDER_ONE
       ,Thyra::DirectionalFiniteDiffCalculatorTypes::FD_ORDER_TWO
@@ -219,6 +228,11 @@ template<class Scalar>
 const std::string DirectionalFiniteDiffCalculator<Scalar>::FDMethod_default = "order-one";
 
 template<class Scalar>
+const std::string DirectionalFiniteDiffCalculator<Scalar>::FDStepLength_name = "FD Step Length";
+template<class Scalar>
+const double DirectionalFiniteDiffCalculator<Scalar>::FDStepLength_default = -1.0;
+
+template<class Scalar>
 const std::string DirectionalFiniteDiffCalculator<Scalar>::FDStepSelectType_name = "FD Step Select Type";
 template<class Scalar>
 const Teuchos::RefCountPtr<
@@ -233,6 +247,10 @@ DirectionalFiniteDiffCalculator<Scalar>::fdStepSelectTypeValidator
       "Absolute"
       ,"Relative"
       )
+    ,Teuchos::tuple<std::string>(
+      "Use absolute step size \""+FDStepLength_name+"\""
+      ,"Use relative step size \""+FDStepLength_name+"\"*||xo||inf"
+      )
     ,Teuchos::tuple<Thyra::DirectionalFiniteDiffCalculatorTypes::EFDStepSelectType>(
       Thyra::DirectionalFiniteDiffCalculatorTypes::FD_STEP_ABSOLUTE
       ,Thyra::DirectionalFiniteDiffCalculatorTypes::FD_STEP_RELATIVE
@@ -242,11 +260,6 @@ DirectionalFiniteDiffCalculator<Scalar>::fdStepSelectTypeValidator
   );
 template<class Scalar>
 const std::string DirectionalFiniteDiffCalculator<Scalar>::FDStepSelectType_default = "Absolute";
-
-template<class Scalar>
-const std::string DirectionalFiniteDiffCalculator<Scalar>::FDStepLength_name = "FD Step Length";
-template<class Scalar>
-const double DirectionalFiniteDiffCalculator<Scalar>::FDStepLength_default = -1.0;
 
 // Constructors/initializer
 

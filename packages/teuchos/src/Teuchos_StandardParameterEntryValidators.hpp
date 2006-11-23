@@ -66,8 +66,8 @@ public:
     ,std::string         const& defaultParameterName
     );
 
-  /** \brief Construct with a mapping from strings to ordinals <tt>0</tt> to
-   * </tt>n-1</tt>.
+  /** \brief Construct with a mapping from strings to aribitrary typed
+   * integral values.
    *
    * \param  strings
    *             [in] Array of unique string names.
@@ -83,6 +83,31 @@ public:
    */
   StringToIntegralParameterEntryValidator(
     Array<std::string>    const& strings
+    ,Array<IntegralType>  const& integralValues 
+    ,std::string          const& defaultParameterName
+    );
+
+  /** \brief Construct with a mapping from strings (with documentation) to
+   * aribitrary typed integral values.
+   *
+   * \param  strings
+   *             [in] Array of unique string names.
+   * \param  stringsDocs
+   *             [in] Array of documentation strings for each string value.
+   * \param  integralValues
+   *            [in] Array that gives the integral values associated with
+   *            <tt>strings[]</tt>
+   * \param  defaultParameterName
+   *             [in] The default name of the parameter (used in error messages)
+   *
+   * <b>Preconditions:</b><ul>
+   * <li> <tt>strings.size() == stringDocs.size()</tt>
+   * <li> <tt>strings.size() == integralValues.size()</tt>
+   * </ul>
+   */
+  StringToIntegralParameterEntryValidator(
+    Array<std::string>    const& strings
+    ,Array<std::string>   const& stringsDocs
     ,Array<IntegralType>  const& integralValues 
     ,std::string          const& defaultParameterName
     );
@@ -187,9 +212,13 @@ private:
   std::string                             defaultParameterName_;
   std::string                             validValues_;
   RefCountPtr<const Array<std::string> >  validStringValues_;
+  RefCountPtr<const Array<std::string> >  validStringValuesDocs_;
   map_t                                   map_;
 
-  void setValidValues( Array<std::string> const& strings );
+  void setValidValues(
+    Array<std::string>   const& strings
+    ,Array<std::string>  const* stringsDocs = NULL
+    );
 
   // Not defined and not to be called.
   StringToIntegralParameterEntryValidator();
@@ -388,6 +417,31 @@ StringToIntegralParameterEntryValidator<IntegralType>::StringToIntegralParameter
   setValidValues(strings);
 }
 
+template<class IntegralType>
+StringToIntegralParameterEntryValidator<IntegralType>::StringToIntegralParameterEntryValidator(
+  Array<std::string>    const& strings
+  ,Array<std::string>   const& stringsDocs
+  ,Array<IntegralType>  const& integralValues 
+  ,std::string          const& defaultParameterName
+  )
+  :defaultParameterName_(defaultParameterName)
+{
+#ifdef TEUCHOS_DEBUG
+  TEST_FOR_EXCEPT( strings.size() != stringsDocs.size() );
+  TEST_FOR_EXCEPT( strings.size() != integralValues.size() );
+#endif
+  typedef typename map_t::value_type val_t;
+  for( int i = 0; i < static_cast<int>(strings.size()); ++i ) {
+    const bool unique = map_.insert( val_t( strings[i], integralValues[i] ) ).second;
+    TEST_FOR_EXCEPTION(
+      !unique, std::logic_error
+      ,"Error, the string \"" << strings[i] << "\" is a duplicate for parameter \""
+      << defaultParameterName_ << "\""
+      );
+  }
+  setValidValues(strings,&stringsDocs);
+}
+
 // Lookup functions
 
 template<class IntegralType>
@@ -479,9 +533,17 @@ void StringToIntegralParameterEntryValidator<IntegralType>::printDoc(
   StrUtils::printLines(out,"# ",docString);
   out << "#   Valid string values:\n";
   out << "#     {\n";
-  StrUtils::printLines(out,"#   ",validValues_);
-  // Note: Above validValues_ has for initial spaces already so indent should
-  // be correct!
+  if(validStringValuesDocs_.get()) {
+    for( int i = 0; i < static_cast<int>(validStringValues_->size()); ++i ) {
+      out << "#       \"" << (*validStringValues_)[i] << "\"\n";
+      StrUtils::printLines(out,"#          ",(*validStringValuesDocs_)[i] );
+    }
+  }
+  else {
+    StrUtils::printLines(out,"#   ",validValues_);
+    // Note: Above validValues_ has for initial spaces already so indent should
+    // be correct!
+  }
   out << "#     }\n";
 }
 
@@ -506,10 +568,13 @@ void StringToIntegralParameterEntryValidator<IntegralType>::validate(
 
 template<class IntegralType>
 void StringToIntegralParameterEntryValidator<IntegralType>::setValidValues(
-  Array<std::string> const& strings
+  Array<std::string>   const& strings
+  ,Array<std::string>  const* stringsDocs
   )
 {
   validStringValues_ = rcp(new Array<std::string>(strings));
+  if(stringsDocs)
+    validStringValuesDocs_ = rcp(new Array<std::string>(*stringsDocs));
   // Here I build the list of valid values in the same order as passed in by
   // the client!
   std::ostringstream oss;
