@@ -109,7 +109,6 @@ int ML_Epetra::MultiLevelPreconditioner::ReadXML(const string& FileName)
   if (j == 0)
     return(0);
   
-#ifdef HAVE_TEUCHOS_EXPAT
   if (Comm().MyPID() == 0)
   {
     cout << "***" << endl;
@@ -155,12 +154,6 @@ int ML_Epetra::MultiLevelPreconditioner::ReadXML(const string& FileName)
     cout << "***" << endl;
 
   return(0);
-#else
-  cerr << PrintMsg_ << "Sorry, method ReadXML() of class MultiLevelPreconditioner" << endl;
-  cerr << PrintMsg_ << "can be used only when Teuchos is support for expat," << endl;
-  cerr << PrintMsg_ << "configure option --enable-teuchos-expat." << endl;
-  ML_RETURN(-1);
-#endif
 }
 
 #endif
