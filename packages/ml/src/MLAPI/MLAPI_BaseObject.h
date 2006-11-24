@@ -71,7 +71,9 @@ private:
   static int count_;
 };
 
+#ifdef HAVE_ML_MLAPI
 std::ostream& operator<< (std::ostream& os, const BaseObject& obj);
+#endif
 
 } // namespace MLAPI
 
