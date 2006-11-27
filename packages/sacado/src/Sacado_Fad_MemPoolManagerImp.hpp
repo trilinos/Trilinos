@@ -29,20 +29,38 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef SACADO_HPP
-#define SACADO_HPP
+template <typename T>
+inline
+Sacado::Fad::MemPoolManager<T>::MemPoolManager(unsigned int nfad) : 
+  num_fad(nfad), 
+  poolMap() 
+{
+}
 
-#include "Sacado_Version.hpp"
-#include "Sacado_Fad_DFad.hpp"
-#include "Sacado_CacheFad_DFad.hpp"
-#include "Sacado_Fad_SFad.hpp"
-#include "Sacado_Fad_SLFad.hpp"
-#include "Sacado_Taylor_DTaylor.hpp"
-#include "Sacado_trad.hpp"
+template <typename T>
+inline
+Sacado::Fad::MemPoolManager<T>::~MemPoolManager() 
+{
+  for (typename MapType::iterator i = poolMap.begin(); 
+       i != poolMap.end(); ++i)
+    delete i->second;
+}
 
-#include "Sacado_Fad_MemPoolManager.hpp"
-#include "Sacado_Fad_DMFad.hpp"
+template <typename T>
+inline Sacado::Fad::MemPool*
+Sacado::Fad::MemPoolManager<T>::getMemoryPool(unsigned int dim) {
 
-#include "Sacado_Fad_ExpressionTraits.hpp"
+  // Find the memory pool
+  typename MapType::iterator i = poolMap.find(dim);
+  if (i != poolMap.end())
+    return i->second;
 
-#endif // SACADO_HPP 
+  // Create a new pool
+  unsigned int pre_alloc = 0;
+  if (poolMap.begin() != poolMap.end())
+    pre_alloc = poolMap.begin()->second->numChunks();
+  MemPool* pool = new MemPool(sizeof(T)*dim, num_fad, pre_alloc);
+  poolMap[dim] = pool;
+
+  return pool;
+}

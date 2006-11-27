@@ -272,6 +272,7 @@ SACADO_FAD_H = \
 	$(srcdir)/Sacado_Fad_GeneralFad.hpp \
 	$(srcdir)/Sacado_Fad_GeneralFadImp.hpp \
 	$(srcdir)/Sacado_Fad_GeneralFadExpr.hpp \
+	$(srcdir)/Sacado_Fad_ExpressionTraits.hpp \
 	$(srcdir)/Sacado_Fad_Expression.hpp \
 	$(srcdir)/Sacado_Fad_Ops.hpp \
 	$(srcdir)/Sacado_Fad_DynamicStorage.hpp \
@@ -282,7 +283,14 @@ SACADO_FAD_H = \
 	$(srcdir)/Sacado_Fad_SLFadTraits.hpp \
 	$(srcdir)/Sacado_Fad_SFad.hpp \
 	$(srcdir)/Sacado_Fad_SFadImp.hpp \
-	$(srcdir)/Sacado_Fad_SFadTraits.hpp
+	$(srcdir)/Sacado_Fad_SFadTraits.hpp \
+	$(srcdir)/Sacado_Fad_MemPool.hpp \
+	$(srcdir)/Sacado_Fad_MemPoolImp.hpp \
+	$(srcdir)/Sacado_Fad_MemPoolManager.hpp \
+	$(srcdir)/Sacado_Fad_MemPoolManagerImp.hpp \
+	$(srcdir)/Sacado_Fad_MemPoolStorage.hpp \
+	$(srcdir)/Sacado_Fad_DMFad.hpp \
+	$(srcdir)/Sacado_Fad_DMFadTraits.hpp
 
 SACADO_CACHEFAD_H = \
 	$(srcdir)/Sacado_CacheFad_GeneralFad.hpp \

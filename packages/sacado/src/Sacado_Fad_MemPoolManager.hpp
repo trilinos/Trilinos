@@ -29,20 +29,58 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef SACADO_HPP
-#define SACADO_HPP
+#ifndef SACADO_FAD_MEMPOOLMANAGER_HPP
+#define SACADO_FAD_MEMPOOLMANAGER_HPP
 
-#include "Sacado_Version.hpp"
-#include "Sacado_Fad_DFad.hpp"
-#include "Sacado_CacheFad_DFad.hpp"
-#include "Sacado_Fad_SFad.hpp"
-#include "Sacado_Fad_SLFad.hpp"
-#include "Sacado_Taylor_DTaylor.hpp"
-#include "Sacado_trad.hpp"
+#include <map>
 
-#include "Sacado_Fad_MemPoolManager.hpp"
-#include "Sacado_Fad_DMFad.hpp"
+#include "Sacado_Fad_MemPool.hpp"
 
-#include "Sacado_Fad_ExpressionTraits.hpp"
+namespace Sacado {
 
-#endif // SACADO_HPP 
+  namespace Fad {
+
+    //! Class to manage memory pools for different Fad dimensions
+    template <typename T>
+    class MemPoolManager {
+
+    public:
+      
+      //! Constructor
+      MemPoolManager(unsigned int nfad);
+
+      //! Destructor
+      ~MemPoolManager();
+
+      //! Get memory pool for supplied dimension \c dim
+      MemPool* getMemoryPool(unsigned int dim);
+
+    private:
+
+      //! Private to prohibit copying
+      MemPoolManager(const MemPoolManager&);
+
+      //! Private to prohibit copying
+      MemPoolManager& operator=(const MemPoolManager&);
+      
+    protected:
+
+      //! Number of Fad objects per chunk
+      unsigned int num_fad;
+
+      //! Typename of memory pool map
+      typedef std::map<unsigned int, MemPool*> MapType;
+
+      //! Map of memory pools
+      MapType poolMap;
+
+    };
+
+  } // namespace Fad
+
+} // namespace Sacado
+
+// Include implementation
+#include "Sacado_Fad_MemPoolManagerImp.hpp"
+
+#endif // SACADO_FAD_MEMPOOLMANAGER_HPP

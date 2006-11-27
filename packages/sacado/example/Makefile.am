@@ -36,6 +36,7 @@ noinst_PROGRAMS = \
 	dfad_example \
 	dfad_dfad_example \
 	sfad_example \
+	dmfad_example \
 	trad_example \
 	trad_dfad_example \
 	dtaylor_example \
@@ -62,6 +63,11 @@ sfad_example_SOURCES = $(srcdir)/sfad_example.cpp
 sfad_example_CXXFLAGS =  $(dfad_example_CXXFLAGS)
 sfad_example_DEPENDENCIES = $(dfad_example_DEPENDENCIES)
 sfad_example_LDADD = $(dfad_example_LDADD)
+
+dmfad_example_SOURCES = $(srcdir)/dmfad_example.cpp
+dmfad_example_CXXFLAGS =  $(dfad_example_CXXFLAGS)
+dmfad_example_DEPENDENCIES = $(dfad_example_DEPENDENCIES)
+dmfad_example_LDADD = $(dfad_example_LDADD)
 
 trad_example_SOURCES = $(srcdir)/trad_example.cpp
 trad_example_CXXFLAGS = $(dfad_example_CXXFLAGS)

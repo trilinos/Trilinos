@@ -43,7 +43,7 @@
 # ************************************************************************
 # @HEADER
 
-SOURCES = $(RunValgrind_SOURCES) $(ad_example_SOURCES) $(dfad_dfad_example_SOURCES) $(dfad_example_SOURCES) $(dtaylor_example_SOURCES) $(sfad_example_SOURCES) $(trad_dfad_example_SOURCES) $(trad_example_SOURCES)
+SOURCES = $(RunValgrind_SOURCES) $(ad_example_SOURCES) $(dfad_dfad_example_SOURCES) $(dfad_example_SOURCES) $(dmfad_example_SOURCES) $(dtaylor_example_SOURCES) $(sfad_example_SOURCES) $(trad_dfad_example_SOURCES) $(trad_example_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -68,8 +68,9 @@ POST_UNINSTALL = :
 host_triplet = @host@
 noinst_PROGRAMS = ad_example$(EXEEXT) dfad_example$(EXEEXT) \
 	dfad_dfad_example$(EXEEXT) sfad_example$(EXEEXT) \
-	trad_example$(EXEEXT) trad_dfad_example$(EXEEXT) \
-	dtaylor_example$(EXEEXT) RunValgrind$(EXEEXT)
+	dmfad_example$(EXEEXT) trad_example$(EXEEXT) \
+	trad_dfad_example$(EXEEXT) dtaylor_example$(EXEEXT) \
+	RunValgrind$(EXEEXT)
 subdir = example
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -107,6 +108,8 @@ am_dfad_dfad_example_OBJECTS =  \
 dfad_dfad_example_OBJECTS = $(am_dfad_dfad_example_OBJECTS)
 am_dfad_example_OBJECTS = dfad_example-dfad_example.$(OBJEXT)
 dfad_example_OBJECTS = $(am_dfad_example_OBJECTS)
+am_dmfad_example_OBJECTS = dmfad_example-dmfad_example.$(OBJEXT)
+dmfad_example_OBJECTS = $(am_dmfad_example_OBJECTS)
 am_dtaylor_example_OBJECTS =  \
 	dtaylor_example-dtaylor_example.$(OBJEXT)
 dtaylor_example_OBJECTS = $(am_dtaylor_example_OBJECTS)
@@ -123,6 +126,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/ad_example-ad_example.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/dfad_dfad_example-dfad_dfad_example.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/dfad_example-dfad_example.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/dmfad_example-dmfad_example.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/dtaylor_example-dtaylor_example.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/sfad_example-sfad_example.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/trad_dfad_example-trad_dfad_example.Po \
@@ -138,12 +142,14 @@ CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(RunValgrind_SOURCES) $(ad_example_SOURCES) \
 	$(dfad_dfad_example_SOURCES) $(dfad_example_SOURCES) \
-	$(dtaylor_example_SOURCES) $(sfad_example_SOURCES) \
-	$(trad_dfad_example_SOURCES) $(trad_example_SOURCES)
+	$(dmfad_example_SOURCES) $(dtaylor_example_SOURCES) \
+	$(sfad_example_SOURCES) $(trad_dfad_example_SOURCES) \
+	$(trad_example_SOURCES)
 DIST_SOURCES = $(RunValgrind_SOURCES) $(ad_example_SOURCES) \
 	$(dfad_dfad_example_SOURCES) $(dfad_example_SOURCES) \
-	$(dtaylor_example_SOURCES) $(sfad_example_SOURCES) \
-	$(trad_dfad_example_SOURCES) $(trad_example_SOURCES)
+	$(dmfad_example_SOURCES) $(dtaylor_example_SOURCES) \
+	$(sfad_example_SOURCES) $(trad_dfad_example_SOURCES) \
+	$(trad_example_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
 	install-exec-recursive install-info-recursive \
@@ -307,6 +313,10 @@ sfad_example_SOURCES = $(srcdir)/sfad_example.cpp
 sfad_example_CXXFLAGS = $(dfad_example_CXXFLAGS)
 sfad_example_DEPENDENCIES = $(dfad_example_DEPENDENCIES)
 sfad_example_LDADD = $(dfad_example_LDADD)
+dmfad_example_SOURCES = $(srcdir)/dmfad_example.cpp
+dmfad_example_CXXFLAGS = $(dfad_example_CXXFLAGS)
+dmfad_example_DEPENDENCIES = $(dfad_example_DEPENDENCIES)
+dmfad_example_LDADD = $(dfad_example_LDADD)
 trad_example_SOURCES = $(srcdir)/trad_example.cpp
 trad_example_CXXFLAGS = $(dfad_example_CXXFLAGS)
 trad_example_DEPENDENCIES = $(dfad_example_DEPENDENCIES)
@@ -371,6 +381,9 @@ dfad_dfad_example$(EXEEXT): $(dfad_dfad_example_OBJECTS) $(dfad_dfad_example_DEP
 dfad_example$(EXEEXT): $(dfad_example_OBJECTS) $(dfad_example_DEPENDENCIES) 
 	@rm -f dfad_example$(EXEEXT)
 	$(CXXLINK) $(dfad_example_LDFLAGS) $(dfad_example_OBJECTS) $(dfad_example_LDADD) $(LIBS)
+dmfad_example$(EXEEXT): $(dmfad_example_OBJECTS) $(dmfad_example_DEPENDENCIES) 
+	@rm -f dmfad_example$(EXEEXT)
+	$(CXXLINK) $(dmfad_example_LDFLAGS) $(dmfad_example_OBJECTS) $(dmfad_example_LDADD) $(LIBS)
 dtaylor_example$(EXEEXT): $(dtaylor_example_OBJECTS) $(dtaylor_example_DEPENDENCIES) 
 	@rm -f dtaylor_example$(EXEEXT)
 	$(CXXLINK) $(dtaylor_example_LDFLAGS) $(dtaylor_example_OBJECTS) $(dtaylor_example_LDADD) $(LIBS)
@@ -393,6 +406,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ad_example-ad_example.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dfad_dfad_example-dfad_dfad_example.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dfad_example-dfad_example.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dmfad_example-dmfad_example.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dtaylor_example-dtaylor_example.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sfad_example-sfad_example.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/trad_dfad_example-trad_dfad_example.Po@am__quote@
@@ -461,6 +475,22 @@ dfad_example-dfad_example.obj: $(srcdir)/dfad_example.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/dfad_example-dfad_example.Po' tmpdepfile='$(DEPDIR)/dfad_example-dfad_example.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(dfad_example_CXXFLAGS) $(CXXFLAGS) -c -o dfad_example-dfad_example.obj `if test -f '$(srcdir)/dfad_example.cpp'; then $(CYGPATH_W) '$(srcdir)/dfad_example.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/dfad_example.cpp'; fi`
+
+dmfad_example-dmfad_example.o: $(srcdir)/dmfad_example.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(dmfad_example_CXXFLAGS) $(CXXFLAGS) -MT dmfad_example-dmfad_example.o -MD -MP -MF "$(DEPDIR)/dmfad_example-dmfad_example.Tpo" -c -o dmfad_example-dmfad_example.o `test -f '$(srcdir)/dmfad_example.cpp' || echo '$(srcdir)/'`$(srcdir)/dmfad_example.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/dmfad_example-dmfad_example.Tpo" "$(DEPDIR)/dmfad_example-dmfad_example.Po"; else rm -f "$(DEPDIR)/dmfad_example-dmfad_example.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/dmfad_example.cpp' object='dmfad_example-dmfad_example.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/dmfad_example-dmfad_example.Po' tmpdepfile='$(DEPDIR)/dmfad_example-dmfad_example.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(dmfad_example_CXXFLAGS) $(CXXFLAGS) -c -o dmfad_example-dmfad_example.o `test -f '$(srcdir)/dmfad_example.cpp' || echo '$(srcdir)/'`$(srcdir)/dmfad_example.cpp
+
+dmfad_example-dmfad_example.obj: $(srcdir)/dmfad_example.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(dmfad_example_CXXFLAGS) $(CXXFLAGS) -MT dmfad_example-dmfad_example.obj -MD -MP -MF "$(DEPDIR)/dmfad_example-dmfad_example.Tpo" -c -o dmfad_example-dmfad_example.obj `if test -f '$(srcdir)/dmfad_example.cpp'; then $(CYGPATH_W) '$(srcdir)/dmfad_example.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/dmfad_example.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/dmfad_example-dmfad_example.Tpo" "$(DEPDIR)/dmfad_example-dmfad_example.Po"; else rm -f "$(DEPDIR)/dmfad_example-dmfad_example.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/dmfad_example.cpp' object='dmfad_example-dmfad_example.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/dmfad_example-dmfad_example.Po' tmpdepfile='$(DEPDIR)/dmfad_example-dmfad_example.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(dmfad_example_CXXFLAGS) $(CXXFLAGS) -c -o dmfad_example-dmfad_example.obj `if test -f '$(srcdir)/dmfad_example.cpp'; then $(CYGPATH_W) '$(srcdir)/dmfad_example.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/dmfad_example.cpp'; fi`
 
 dtaylor_example-dtaylor_example.o: $(srcdir)/dtaylor_example.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(dtaylor_example_CXXFLAGS) $(CXXFLAGS) -MT dtaylor_example-dtaylor_example.o -MD -MP -MF "$(DEPDIR)/dtaylor_example-dtaylor_example.Tpo" -c -o dtaylor_example-dtaylor_example.o `test -f '$(srcdir)/dtaylor_example.cpp' || echo '$(srcdir)/'`$(srcdir)/dtaylor_example.cpp; \
