@@ -15,7 +15,9 @@ namespace Thyra {
 
 namespace DirectionalFiniteDiffCalculatorTypes {
 
-/** \brief . */
+/** \brief .
+ * \relates DirectionalFiniteDiffCalculator
+ */
 enum EFDMethodType {
   FD_ORDER_ONE           ///< Use O(eps) one sided finite differences (cramped bounds)
   ,FD_ORDER_TWO          ///< Use O(eps^2) one sided finite differences (cramped bounds)
@@ -26,10 +28,35 @@ enum EFDMethodType {
   ,FD_ORDER_FOUR_AUTO    ///< Use FD_ORDER_FOUR_CENTRAL when not limited by bounds, otherwise use FD_ORDER_FOUR
 };
 
-/** \brief . */
+/** \brief .
+ * \relates DirectionalFiniteDiffCalculator
+ */
 enum EFDStepSelectType {
   FD_STEP_ABSOLUTE      ///< Use absolute step size <tt>fd_step_size</tt>
   ,FD_STEP_RELATIVE     ///< Use relative step size <tt>fd_step_size * ||xo||inf</tt>
+};
+
+/** \brief Simple utility class used to select finite difference
+ * derivatives for OutArgs object.
+ *
+ * \relates DirectionalFiniteDiffCalculator
+ */
+class SelectedDerivatives {
+public:
+  /** \brief . */
+  SelectedDerivatives() {}
+  /** \brief . */
+  SelectedDerivatives& supports( ModelEvaluatorBase::EOutArgsDfDp arg, int l )
+    { supports_DfDp_.push_back(l); return *this; }
+  /** \brief . */
+  SelectedDerivatives& supports( ModelEvaluatorBase::EOutArgsDgDp arg, int j, int l )
+    { supports_DgDp_.push_back(std::pair<int,int>(j,l)); return *this; }
+  // These should be private but I am too lazy to deal with the porting
+  // issues of friends ...
+  typedef std::list<int>                  supports_DfDp_t;
+  typedef std::list<std::pair<int,int> >  supports_DgDp_t;
+  supports_DfDp_t    supports_DfDp_;
+  supports_DgDp_t    supports_DgDp_;
 };
 
 } // namespace DirectionalFiniteDiffCalculatorTypes
@@ -56,9 +83,12 @@ enum EFDStepSelectType {
 template<class Scalar>
 class DirectionalFiniteDiffCalculator
   : public Teuchos::VerboseObject<DirectionalFiniteDiffCalculator<Scalar> >
-//, public Teuchos::ParameterListAccetor
+  , public Teuchos::ParameterListAcceptor
 {
 public:
+  
+  /** \name Public Types */
+  //@{
 
   /** \brief . */
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
@@ -68,6 +98,11 @@ public:
 
   /** \brief . */
   typedef DirectionalFiniteDiffCalculatorTypes::EFDStepSelectType EFDStepSelectType;
+
+  /** \brief . */
+  typedef DirectionalFiniteDiffCalculatorTypes::SelectedDerivatives SelectedDerivatives;
+
+  //@}
 
   /** \name Constructors/setup */
   //@{
@@ -125,6 +160,18 @@ public:
   /** \name Finite difference functions. */
   //@{
 
+  /** \brief Create an augmented out args object for holding finite difference
+   *  objects.
+   *
+   * <b>Warning!</b> The returned object must only be used with the below
+   * functions <tt>calcVariations()</tt> and <tt>calcDerivatives()</tt> and
+   * not with the original <tt>model</tt> object directly.
+   */
+  ModelEvaluatorBase::OutArgs<Scalar> createOutArgs(
+    const ModelEvaluator<Scalar> &model
+    ,const SelectedDerivatives   &fdDerivatives
+    );
+
   /** \brief Compute variations using directional finite differences..
    *
    * The computation may fail if a <tt>NaN</tt> or <tt>Inf</tt> is encountered
@@ -178,8 +225,74 @@ private:
 
 };
 
+} // namespace Thyra
+
 // //////////////////////////////
 // Implementations
+
+#include "Thyra_StateFuncModelEvaluatorBase.hpp"
+
+namespace Thyra {
+
+namespace DirectionalFiniteDiffCalculatorTypes {
+
+// Undocumented utility class for setting new derivative objects on an OutArgs
+// object!  Warning, a users should not attempt to play these tricks on their
+// own!
+//
+// Note that because of the design of the OutArgs and OutArgsSetup classes,
+// you can only change the list of supported arguments in a subclass of
+// ModelEvaluatorBase since OutArgsSetup is a protected type.
+template<class Scalar>
+class OutArgsCreator : public StateFuncModelEvaluatorBase<Scalar>
+{
+public:
+  // Public functions overridden from ModelEvaulator.
+  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_x_space() const
+    { TEST_FOR_EXCEPT(true); return Teuchos::null; }
+  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_f_space() const
+    { TEST_FOR_EXCEPT(true); return Teuchos::null; }
+  ModelEvaluatorBase::InArgs<Scalar> createInArgs() const
+    { TEST_FOR_EXCEPT(true); return ModelEvaluatorBase::InArgs<Scalar>(); }
+  ModelEvaluatorBase::OutArgs<Scalar> createOutArgs() const
+    { TEST_FOR_EXCEPT(true); return ModelEvaluatorBase::OutArgs<Scalar>(); }
+  void evalModel(
+    const ModelEvaluatorBase::InArgs<Scalar>    &inArgs
+    ,const ModelEvaluatorBase::OutArgs<Scalar>  &outArgs
+    ) const
+    { TEST_FOR_EXCEPT(true); }
+  // Static function that does the magic!
+  static ModelEvaluatorBase::OutArgs<Scalar> createOutArgs(
+    const ModelEvaluator<Scalar> &model
+    ,const SelectedDerivatives   &fdDerivatives
+    )
+    {
+      typedef ModelEvaluatorBase MEB;
+      const MEB::OutArgs<Scalar> wrappedOutArgs = model.createOutArgs();
+      const int Np = wrappedOutArgs.Np(), Ng = wrappedOutArgs.Ng();
+      MEB::OutArgsSetup<Scalar> outArgs;
+      outArgs.setModelEvalDescription(
+        "DirectionalFiniteDiffCalculator: " + model.description()
+        );
+      outArgs.set_Np_Ng(Np,Ng);
+      outArgs.setSupports(wrappedOutArgs);
+      // Just support derivatives for DfDp for now!
+      const SelectedDerivatives::supports_DfDp_t
+        &supports_DfDp = fdDerivatives.supports_DfDp_;
+      for(
+        SelectedDerivatives::supports_DfDp_t::const_iterator itr = supports_DfDp.begin();
+        itr != supports_DfDp.end();
+        ++itr
+        )
+      {
+        outArgs.setSupports(MEB::OUT_ARG_DfDp,*itr,MEB::DERIV_MV_BY_COL);
+      }
+      // ToDo: Add support for more derivatives as needed!
+      return outArgs;
+    }
+};
+
+} // namespace DirectionalFiniteDiffCalculatorTypes
 
 // Private static data members
 
@@ -333,6 +446,18 @@ DirectionalFiniteDiffCalculator<Scalar>::getValidParameters() const
       );
   }
   return pl;
+}
+
+template<class Scalar>
+ModelEvaluatorBase::OutArgs<Scalar>
+DirectionalFiniteDiffCalculator<Scalar>::createOutArgs(
+  const ModelEvaluator<Scalar> &model
+  ,const SelectedDerivatives   &fdDerivatives
+  )
+{
+  return DirectionalFiniteDiffCalculatorTypes::OutArgsCreator<Scalar>::createOutArgs(
+    model,fdDerivatives
+    );
 }
 
 template<class Scalar>
