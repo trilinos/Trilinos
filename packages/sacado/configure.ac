@@ -286,8 +286,8 @@ if test "X$ac_cv_use_sacado_tests" != "Xno"; then
   if test X${ac_cv_have_cppunit} = Xno; then
     AC_MSG_WARN([Cannot find cppunit and tests are enabled.  Disabling unit tests.  Configure with --with-cppunit-prefix=PATH to specify location of cppunit installation to enable unit tests])
   fi
-  AM_CONDITIONAL(HAVE_CPPUNIT, test X${ac_cv_have_cppunit} = Xyes)
 fi
+AM_CONDITIONAL(HAVE_CPPUNIT, test X${ac_cv_have_cppunit} = Xyes)
 
 # Check for ADOL-C
 AC_ARG_WITH(adolc, 

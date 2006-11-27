@@ -6945,6 +6945,7 @@ echo "${ECHO_T}no" >&6
     { echo "$as_me:$LINENO: WARNING: Cannot find cppunit and tests are enabled.  Disabling unit tests.  Configure with --with-cppunit-prefix=PATH to specify location of cppunit installation to enable unit tests" >&5
 echo "$as_me: WARNING: Cannot find cppunit and tests are enabled.  Disabling unit tests.  Configure with --with-cppunit-prefix=PATH to specify location of cppunit installation to enable unit tests" >&2;}
   fi
+fi
 
 
 if test X${ac_cv_have_cppunit} = Xyes; then
@@ -6955,7 +6956,6 @@ else
   HAVE_CPPUNIT_FALSE=
 fi
 
-fi
 
 # Check for ADOL-C
 
