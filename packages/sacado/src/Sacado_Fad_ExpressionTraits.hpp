@@ -43,50 +43,25 @@ namespace Sacado {
 
 namespace Sacado {
 
-  //! Specialization of %Promote to Expr types
-  template <typename T>
-  struct Promote< Fad::Expr<T>, Fad::Expr<T> > {
-    typedef Fad::Expr<T> type;
-  };
-
-  //! Specialization of %Promote to Expr types
-  template <typename T, typename R>
-  struct Promote< Fad::Expr<T>, R > {
-    typedef typename ValueType< Fad::Expr<T> >::type value_type_l;
-    typedef typename Promote<R,R>::type value_type_r;
-    typedef typename Promote<value_type_l,value_type_r>::type value_type;
-
-    typedef Fad::Expr<value_type> type;
-  };
-
-  //! Specialization of %Promote to Expr types
-  template <typename L, typename T>
-  struct Promote< L, Fad::Expr<T> > {
-  public:
-
-    typedef typename Promote<L,L>::type value_type_l;
-    typedef typename ValueType< Fad::Expr<T> >::type value_type_r;
-    typedef typename Promote<value_type_l,value_type_r>::type value_type;
-
-    typedef Fad::Expr<value_type> type;
-  };
+  // We don't specialize Promote because otherwise we can get ambiguous
+  // partial specializations with the Fad classes.
 
   //! Specialization of %ScalarType to Expr types
   template <typename T>
   struct ScalarType< Fad::Expr<T> > {
-    typedef T type;
+    typedef typename ScalarType< typename Fad::Expr<T>::value_type >::type type;
   };
 
   //! Specialization of %ValueType to Expr types
   template <typename T>
   struct ValueType< Fad::Expr<T> > {
-    typedef T type;
+    typedef typename Fad::Expr<T>::value_type type;
   };
 
    //! Specialization of %ScalarValueType to Expr types
   template <typename T>
   struct ScalarValueType< Fad::Expr<T> > {
-    typedef typename ScalarValueType<T>::type type;
+    typedef typename ScalarValueType< typename Fad::Expr<T>::value_type >::type type;
   };
 
   //! Specialization of %IsADType to Expr types

@@ -57,7 +57,7 @@ namespace Sacado {
   public:
 
     typedef typename ValueType< Taylor::DTaylor<L> >::type value_type_l;
-    typedef typename Promote<R,R>::type value_type_r;
+    typedef typename ValueType<R>::type value_type_r;
     typedef typename Promote<value_type_l,value_type_r>::type value_type;
 
     typedef Taylor::DTaylor<value_type> type;
@@ -68,7 +68,7 @@ namespace Sacado {
   class Promote< L, Taylor::DTaylor<R> > {
   public:
 
-    typedef typename Promote<L,L>::value_type value_type_l;
+    typedef typename ValueType<L>::type value_type_l;
     typedef typename ValueType< Taylor::DTaylor<R> >::type value_type_r;
     typedef typename Promote<value_type_l,value_type_r>::type value_type;
 

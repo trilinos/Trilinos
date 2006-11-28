@@ -53,7 +53,7 @@ namespace Sacado {
   template <typename ValueT, typename ScalarT, typename R>
   struct Promote< CacheFad::DFad<ValueT,ScalarT>, R > {
     typedef typename ValueType< CacheFad::DFad<ValueT,ScalarT> >::type value_type_l;
-    typedef typename Promote<R,R>::type value_type_r;
+    typedef typename ValueType<R>::type value_type_r;
     typedef typename Promote<value_type_l,value_type_r>::type value_type;
 
     typedef CacheFad::DFad<value_type,ScalarT> type;
@@ -64,7 +64,7 @@ namespace Sacado {
   struct Promote< L, CacheFad::DFad<ValueT, ScalarT> > {
   public:
 
-    typedef typename Promote<L,L>::type value_type_l;
+    typedef typename ValueType<L>::type value_type_l;
     typedef typename ValueType< CacheFad::DFad<ValueT,ScalarT> >::type value_type_r;
     typedef typename Promote<value_type_l,value_type_r>::type value_type;
 
