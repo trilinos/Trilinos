@@ -22,7 +22,7 @@ Ifpack_SingletonFilter::Ifpack_SingletonFilter(Epetra_RowMatrix* Matrix) :
 {
   // use this filter only on serial matrices
   if (A_.Comm().NumProc() != 1) {
-    cerr << "Ifpack_DropFilter can be used with Comm().NumProc() == 1" << endl;
+    cerr << "Ifpack_SingletonFilter can be used with Comm().NumProc() == 1" << endl;
     cerr << "only. This class is a tool for Ifpack_AdditiveSchwarz," << endl;
     cerr << "and it is not meant to be used otherwise." << endl;
     exit(EXIT_FAILURE);
