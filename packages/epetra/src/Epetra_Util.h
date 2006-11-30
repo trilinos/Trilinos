@@ -96,7 +96,7 @@ class Epetra_Util {
   //! Set seed for Random function.
   /*!
     \param In
-    Seed - An integer on the interval [0, INT_MAX).
+    Seed - An integer on the interval [1, 2^31-2]
 
     \return Integer error code, set to 0 if successful.
   */
