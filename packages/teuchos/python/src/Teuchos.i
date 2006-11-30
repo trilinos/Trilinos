@@ -38,7 +38,9 @@ in-depth information."
 %enddef
 
 // Define the module name, its package and documentation string
-%module(package="PyTrilinos", docstring=DOCSTRING) Teuchos
+%module(package   = "PyTrilinos",
+	autodoc   = "1",
+	docstring = DOCSTRING) Teuchos
 
 // SWIG does not support wrapping nested classes.  We will %import the
 // Teuchos::any class (ie, tell swig about it, but not wrap it), which
@@ -66,31 +68,16 @@ in-depth information."
 #include "Teuchos_PyDictParameterList.hpp"
 %}
 
-// Ignore directives.  Here we use them to prevent wrapping the Print
-// methods.  Instead, we will later define __str__() methods for the
-// classes, which is standard python technique for output.  The ignore
-// directive is also good for eliminating warnings about methods
-// python cannot wrap, such as operator=.
-%ignore *::operator=;
-%ignore *::print;
-%ignore Teuchos::ParameterList::set(const string &, ParameterList);
-%ignore Teuchos::ParameterList::set(const string &, char[ ]);
-%ignore Teuchos::ParameterList::set(const string &, const char[ ]);
-%ignore Teuchos::ParameterList::setEntry(const string &, const ParameterEntry &);
-%ignore Teuchos::ParameterList::get(const string &, char[ ]);
-%ignore Teuchos::ParameterList::get(const string &, const char[ ]);
-%ignore Teuchos::ParameterList::getPtr(const string &);
-%ignore Teuchos::ParameterList::getPtr(const string &) const;
-%ignore Teuchos::ParameterList::getEntryPtr(const string &);
-%ignore Teuchos::ParameterList::getEntryPtr(const string &) const;
-%ignore Teuchos::ParameterList::sublist(const string &) const;
-%ignore Teuchos::ParameterList::isType(const string &) const;
-%ignore Teuchos::ParameterList::isType(const string &, any*) const;
-%ignore Teuchos::ParameterList::unused(ostream &) const;
-%ignore Teuchos::ParameterList::begin() const;
-%ignore Teuchos::ParameterList::end() const;
-%ignore Teuchos::ParameterList::entry(ConstIterator) const;
-%ignore Teuchos::ParameterList::name(ConstIterator) const;
+// C++ STL support.  If the wrapped class uses standard template
+// library containers, the following %include wraps the containers
+// and makes certain conversions seamless, such as between std::string
+// and python strings.
+%include "stl.i"
+namespace std {
+  class logic_error;
+  class runtime_error;
+}
+using namespace std;
 
 // Define macro for handling exceptions thrown by Teuchos methods and
 // constructors
@@ -115,77 +102,51 @@ in-depth information."
 }
 %enddef
 
-TEUCHOS_EXCEPTION(ParameterList,ParameterList)
-TEUCHOS_EXCEPTION(ParameterList,set)
-TEUCHOS_EXCEPTION(ParameterList,get)
-TEUCHOS_EXCEPTION(ParameterList,sublist)
-TEUCHOS_EXCEPTION(ParameterList,type)
-TEUCHOS_EXCEPTION(PyDictParameterList,PyDictParameterList)
-TEUCHOS_EXCEPTION(PyDictParameterList,set)
-TEUCHOS_EXCEPTION(PyDictParameterList,get)
-TEUCHOS_EXCEPTION(PyDictParameterList,setParameters)
-TEUCHOS_EXCEPTION(PyDictParameterList,sublist)
-TEUCHOS_EXCEPTION(PyDictParameterList,type)
-TEUCHOS_EXCEPTION(PyDictParameterList,__contains__)
-TEUCHOS_EXCEPTION(PyDictParameterList,__setitem__)
-TEUCHOS_EXCEPTION(PyDictParameterList,has_key)
-TEUCHOS_EXCEPTION(PyDictParameterList,update)
+// General ignore directives
+%ignore *::operator=;
+%ignore *::print;
 
-// Auto-documentation feature.  This ensures that calling help() on a
-// wrapped method returns an argument list (or lists, in the case of
-// overloaded methods).  The "1" option includes type information in
-// the list.  While not as extensive as say, doxygen documentation,
-// this is often enough to greatly increase the wrapper's usability.
-%feature("autodoc", "1");
-
-// C++ STL support.  If the wrapped class uses standard template
-// library containers, the following %include wraps the containers
-// and makes certain conversions seamless, such as between std::string
-// and python strings.
-%include "stl.i"
-
-namespace std {
-  class logic_error;
-  class runtime_error;
-}
-
-// Teuchos interface includes
-using namespace std;
-%include "Teuchos_Version.hpp"
+// Teuchos imports
 %import  "Teuchos_TypeNameTraits.hpp"
 %import  "Teuchos_RefCountPtrDecl.hpp"
 %import  "Teuchos_any.hpp"
 %import  "Teuchos_ParameterEntry.hpp"
 %import  "Teuchos_PythonParameter.hpp"
-%include "Teuchos_ParameterList.hpp"
-%include "Teuchos_PyDictParameterList.hpp"
 
-// Extensions
+/////////////////////////////
+// Teuchos_Version support //
+/////////////////////////////
+%include "Teuchos_Version.hpp"
+%pythoncode %{
+  __version__ = Teuchos_Version().split()[2]
+%}
+
+///////////////////////////////////
+// Teuchos_ParameterList support //
+///////////////////////////////////
+TEUCHOS_EXCEPTION(ParameterList,ParameterList)
+TEUCHOS_EXCEPTION(ParameterList,set)
+TEUCHOS_EXCEPTION(ParameterList,get)
+TEUCHOS_EXCEPTION(ParameterList,sublist)
+TEUCHOS_EXCEPTION(ParameterList,type)
 %extend Teuchos::ParameterList {
-
   PyObject * set(const string &name, PyObject *value) {
-
     if (!setPythonParameter(*self,name,value)) {
       PyErr_SetString(PyExc_TypeError, "ParameterList value type not supported");
       goto fail;
     }
-
     return Py_BuildValue("");
-
   fail:
     return NULL;
   }
 
   PyObject * get(const string &name, PyObject * default_value=NULL) {
-
     PyObject * value = getPythonParameter(*self, name);
-
     // Type not supported
     if (value == NULL) {
       PyErr_SetString(PyExc_TypeError, "ParameterList value type not supported");
       goto fail;
     }
-
     // Name not found
     else if (value == Py_None) {
       if (default_value == NULL) {
@@ -196,10 +157,8 @@ using namespace std;
       Py_INCREF(default_value);
       return default_value;
     }
-
     // Type supported and name found
     else return value;
-
   fail:
     Py_XDECREF(value);
     return NULL;
@@ -207,22 +166,18 @@ using namespace std;
 
   PyObject * _print(PyObject * pf=NULL, int indent=0, bool showTypes=false,
 		    bool showFlags=true) {
-
     PyObject * returnObject = pf;
-
     // No arguments
     if (pf==NULL) {
       self->print(std::cout,indent,showTypes,showFlags);
       returnObject = Py_None;
     }
-
     // Given non-file pf argument
     else {
       if (!PyFile_Check(pf)) {
 	PyErr_SetString(PyExc_IOError, "_print() method expects a file object");
 	goto fail;
       }
-
       // Given file pf argument
       else {
 	std::FILE *f = PyFile_AsFile(pf);
@@ -238,19 +193,16 @@ using namespace std;
   }
 
   PyObject * unused(PyObject * pf=NULL) {
-
     // No arguments
     if (pf==NULL) {
       self->unused(std::cout);
     }
-
     // Given non-file pf argument
     else {
       if (!PyFile_Check(pf)) {
 	PyErr_SetString(PyExc_IOError, "unused() method expects a file object");
 	goto fail;
       }
-
       // Given file pf argument
       else {
 	std::FILE *f = PyFile_AsFile(pf);
@@ -265,39 +217,58 @@ using namespace std;
   }
 
   PyObject * type(const string & name) {
-
     PyObject * value = getPythonParameter(*self,name);
-
     // Type not supported
     if (value == NULL) {
       PyErr_SetString(PyExc_TypeError, "ParameterList value type not supported");
       goto fail;
     }
-
     // Name not found
     else if (value == Py_None) {
       PyErr_Format(PyExc_KeyError, "'%s'", name.c_str());
       goto fail;
     }
-
     // Name found and type supported
     return PyObject_Type(value);
-
   fail:
     return NULL;
   }
-
 }
+%ignore Teuchos::ParameterList::set;
+%ignore Teuchos::ParameterList::setEntry;
+%ignore Teuchos::ParameterList::get;
+%ignore Teuchos::ParameterList::getPtr;
+%ignore Teuchos::ParameterList::getEntryPtr;
+%ignore Teuchos::ParameterList::sublist(const string &) const;
+%ignore Teuchos::ParameterList::isType(const string &) const;
+%ignore Teuchos::ParameterList::isType(const string &, any*) const;
+%ignore Teuchos::ParameterList::unused(ostream &) const;
+%ignore Teuchos::ParameterList::begin() const;
+%ignore Teuchos::ParameterList::end() const;
+%ignore Teuchos::ParameterList::entry(ConstIterator) const;
+%ignore Teuchos::ParameterList::name(ConstIterator) const;
+%include "Teuchos_ParameterList.hpp"
 
-// Python code.  This code is added to the end of the python proxy
-// file created by swig.  Here we set the namespace attribute
-// "__version__" equal to the value returned by the
-// Teuchos_Version function.
-%pythoncode %{
+/////////////////////////////////////////
+// Teuchos_PyDictParameterList support //
+/////////////////////////////////////////
+TEUCHOS_EXCEPTION(PyDictParameterList,PyDictParameterList)
+TEUCHOS_EXCEPTION(PyDictParameterList,set)
+TEUCHOS_EXCEPTION(PyDictParameterList,get)
+TEUCHOS_EXCEPTION(PyDictParameterList,setParameters)
+TEUCHOS_EXCEPTION(PyDictParameterList,sublist)
+TEUCHOS_EXCEPTION(PyDictParameterList,type)
+TEUCHOS_EXCEPTION(PyDictParameterList,__contains__)
+TEUCHOS_EXCEPTION(PyDictParameterList,__setitem__)
+TEUCHOS_EXCEPTION(PyDictParameterList,has_key)
+TEUCHOS_EXCEPTION(PyDictParameterList,update)
+// Un-ignore the set method.  The %ignore directive for
+// ParameterList::set affects its derived classes as well.  This
+// %rename directive undoes the damage.
+%rename(set) Teuchos::PyDictParameterList::set;
+%include "Teuchos_PyDictParameterList.hpp"
 
-  __version__ = Teuchos_Version().split()[2]
-
-%}
+////////////////////////////////////////////////////////////////////////
 
 // Typemaps.  These are generally intended for other packages that
 // import this interface file.

@@ -271,7 +271,7 @@ class PyDictParameterListTestCase(unittest.TestCase):
     def testSublistBad(self):
         "Test Teuchos.PyDictParameterList sublist method for non-sublist"
         self.plist.set("new", 1)
-        self.assertRaises(RuntimeError, self.plist.sublist, "new")
+        self.assertRaises(KeyError, self.plist.sublist, "new")
 
     def testIsParameterTrue(self):
         "Test Teuchos.PyDictParameterList isParameter method existing parameter"
@@ -337,7 +337,7 @@ class PyDictParameterListTestCase(unittest.TestCase):
         f.close()
         lines = open(fName,"r").readlines()
         for i in range(len(lines)):
-            self.assertEqual(lines[i], "  %s = %g   [unused]\n" % (names[i], values[i]))
+            self.assertEqual(lines[i], "    %s = %g   [unused]\n" % (names[i], values[i]))
 
     def testPrint3(self):
         "Test Teuchos.PyDictParameterList _print method for non-empty list, indentation and types"
@@ -352,7 +352,7 @@ class PyDictParameterListTestCase(unittest.TestCase):
         f.close()
         lines = open(fName,"r").readlines()
         for i in range(len(lines)):
-            self.assertEqual(lines[i], "  %s : %s = %g   [unused]\n" %
+            self.assertEqual(lines[i], "    %s : %s = %g   [unused]\n" %
                              (names[i], types[i], values[i]))
 
     def testUnused(self):
@@ -377,11 +377,11 @@ class PyDictParameterListTestCase(unittest.TestCase):
         names  = ["max its","tolerance"]
         values = [100      , 1e-6      ]
         types  = ["int"    ,"double"   ]
-        result = "{"
+        result = "  {"
         for i in range(len(names)):
             self.plist.set(names[i], values[i])
-            result += '"%s":%s=%g,' % (names[i], types[i], values[i])
-        result = result[:-1] + "}"
+            result += '\n    "%s" : %s = %g' % (names[i], types[i], values[i])
+        result += "\n  }\n"
         self.assertEqual(self.plist.currentParametersString(), result)
 
     def testType(self):
