@@ -34,48 +34,52 @@ namespace Teuchos {
 
 void PrivateUtilityPack::throw_null( const std::string &type_name )
 {
-	TEST_FOR_EXCEPTION(
-		true, std::logic_error
-		,"RefCountPtr<"<<type_name<<">::assert_not_null() : You can not"
-		" call operator->() or operator*() if get()==NULL!" );
+  TEST_FOR_EXCEPTION(
+    true, std::logic_error
+    ,"RefCountPtr<"<<type_name<<">::assert_not_null() : You can not"
+    " call operator->() or operator*() if get()==NULL!" );
 }
 
 namespace PrivateUtilityPack {
 
-void RefCountPtr_node::set_extra_data( const any &extra_data, const std::string& name, EPrePostDestruction destroy_when, bool force_unique )
+void RefCountPtr_node::set_extra_data(
+  const any &extra_data, const std::string& name
+  ,EPrePostDestruction destroy_when
+  ,bool force_unique
+  )
 {
-	if(extra_data_map_==NULL) {
-		extra_data_map_ = new extra_data_map_t;
-	}
-	const std::string type_and_name( extra_data.typeName() + std::string(":") + name );
-	if( !extra_data_map_->empty() && force_unique ) {
-		extra_data_map_t::iterator itr = extra_data_map_->find(type_and_name);
-		TEST_FOR_EXCEPTION(
-			itr != extra_data_map_->end(), std::invalid_argument
-			,"Error, the type:name pair \'" << type_and_name << "\' already exists and force_unique==true!" );
-	}
-	(*extra_data_map_)[type_and_name] = extra_data_entry_t(extra_data,destroy_when); // This may add or replace!
+  if(extra_data_map_==NULL) {
+    extra_data_map_ = new extra_data_map_t;
+  }
+  const std::string type_and_name( extra_data.typeName() + std::string(":") + name );
+  if( !extra_data_map_->empty() && force_unique ) {
+    extra_data_map_t::iterator itr = extra_data_map_->find(type_and_name);
+    TEST_FOR_EXCEPTION(
+      itr != extra_data_map_->end(), std::invalid_argument
+      ,"Error, the type:name pair \'" << type_and_name << "\' already exists and force_unique==true!" );
+  }
+  (*extra_data_map_)[type_and_name] = extra_data_entry_t(extra_data,destroy_when); // This may add or replace!
 }
 
 any& RefCountPtr_node::get_extra_data( const std::string& type_name, const std::string& name )
 {
-	TEST_FOR_EXCEPTION(
-		extra_data_map_==NULL, std::invalid_argument
-		,"Error, no extra data has been set yet!" );
+  TEST_FOR_EXCEPTION(
+    extra_data_map_==NULL, std::invalid_argument
+    ,"Error, no extra data has been set yet!" );
   any *extra_data = get_optional_extra_data(type_name,name);
   if(extra_data) return *extra_data;
-	const std::string type_and_name( type_name + std::string(":") + name );
-	TEST_FOR_EXCEPTION(
-		extra_data == NULL, std::invalid_argument
-		,"Error, the type:name pair \'" << type_and_name << "\' is not found!" );
+  const std::string type_and_name( type_name + std::string(":") + name );
+  TEST_FOR_EXCEPTION(
+    extra_data == NULL, std::invalid_argument
+    ,"Error, the type:name pair \'" << type_and_name << "\' is not found!" );
   return *extra_data; // Will never be executed!
 }
 
 any* RefCountPtr_node::get_optional_extra_data( const std::string& type_name, const std::string& name )
 {
   if( extra_data_map_ == NULL ) return NULL;
-	const std::string type_and_name( type_name + std::string(":") + name );
-	extra_data_map_t::iterator itr = extra_data_map_->find(type_and_name);
+  const std::string type_and_name( type_name + std::string(":") + name );
+  extra_data_map_t::iterator itr = extra_data_map_->find(type_and_name);
   if(itr != extra_data_map_->end())
     return &(*itr).second.extra_data;
   return NULL;
