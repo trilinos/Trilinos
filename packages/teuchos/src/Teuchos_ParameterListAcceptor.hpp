@@ -85,6 +85,10 @@ public:
   virtual RefCountPtr<ParameterList> getParameterList() = 0;
 
   /** \brief Unset the parameter list that was set using <tt>setParameterList()</tt>.
+   *
+   * <b>Postconditions:</b><ul>
+   * <li><tt>this->getParameterList().get() == NULL</tt>
+   * </ul>
    */
   virtual RefCountPtr<ParameterList> unsetParameterList() = 0;
 
