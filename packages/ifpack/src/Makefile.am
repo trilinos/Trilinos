@@ -98,6 +98,8 @@ COMP_H = \
 	$(srcdir)/Ifpack_IlukGraph.h           \
 	$(srcdir)/Ifpack_CrsRiluk.h            \
 	$(srcdir)/Ifpack_ILU.h                 \
+	$(srcdir)/Ifpack_IKLU.h                \
+	$(srcdir)/Ifpack_IKLU_Utils.h          \
 	$(srcdir)/Ifpack_ILUT.h                \
 	$(srcdir)/Ifpack_OverlapGraph.h        \
 	$(srcdir)/Ifpack_ScalingType.h         \
@@ -150,6 +152,8 @@ COMP = \
 	$(srcdir)/Ifpack_IlukGraph.cpp              \
 	$(srcdir)/Ifpack_CrsRiluk.cpp               \
 	$(srcdir)/Ifpack_ILU.cpp                    \
+	$(srcdir)/Ifpack_IKLU.cpp                   \
+	$(srcdir)/Ifpack_IKLU_Utils.cpp             \
 	$(srcdir)/Ifpack_ILUT.cpp                   \
 	$(srcdir)/Ifpack_CrsIct.cpp                 \
 	$(srcdir)/Ifpack_ICT.cpp                    \
