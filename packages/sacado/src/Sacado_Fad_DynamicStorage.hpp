@@ -141,7 +141,7 @@ namespace Sacado {
       //! Destructor
       ~DynamicStorage() {
 	if (len_ != 0)
-	  delete [] dx_;
+	  operator delete((void*)dx_);
       }
 
       //! Assignment
@@ -149,7 +149,8 @@ namespace Sacado {
 	if (sz_ != x.sz_) {
 	  sz_ = x.sz_;
 	  if (x.sz_ > len_) {
-	    delete [] dx_;
+	    if (len_ != 0)
+	      operator delete((void*)dx_);
 	    len_ = x.sz_;
 	    dx_ = ds_array<T>::get_and_fill(x.dx_, sz_);
 	  }
@@ -168,8 +169,9 @@ namespace Sacado {
       //! Resize the derivative array to sz
       void resize(int sz) { 
 	if (sz > len_) {
-	  delete [] dx_;
-	  dx_ = new T[sz];
+	  if (len_ != 0)
+	    operator delete((void*)dx_);
+	  dx_ = static_cast<T* >(operator new(sz*sizeof(T)));
 	  len_ = sz;
 	}
 	sz_ = sz;
