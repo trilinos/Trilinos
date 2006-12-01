@@ -14,6 +14,7 @@ AdvDiffReactOptModelCreator::AdvDiffReactOptModelCreator()
   ,reactionRate_(1.0)
   ,x0_(0.0)
   ,p0_(1.0)
+  ,supportDerivatives_(true)
 {}
 
 void AdvDiffReactOptModelCreator::setupCLP(
@@ -31,6 +32,7 @@ void AdvDiffReactOptModelCreator::setupCLP(
   clp->setOption( "reaction-rate", &reactionRate_, "The rate of the reaction" );
   clp->setOption( "x0", &x0_, "Initial guess for the state." );
   clp->setOption( "p0", &p0_, "Initial guess or nonminal value for optimization parameters." );
+  clp->setOption( "support-derivatives","no-support-derivatives",&supportDerivatives_,"Support derivatives or not." );
 }
 
 Teuchos::RefCountPtr<AdvDiffReactOptModel>
@@ -42,7 +44,7 @@ AdvDiffReactOptModelCreator::createModel(
   return Teuchos::rcp(
     new GLpApp::AdvDiffReactOptModel(
       comm,beta_,len_x_,len_y_,local_nx_,local_ny_,geomFileBase_.c_str()
-      ,np_,x0_,p0_,reactionRate_,normalizeBasis_
+      ,np_,x0_,p0_,reactionRate_,normalizeBasis_,supportDerivatives_
       )
     );
 }

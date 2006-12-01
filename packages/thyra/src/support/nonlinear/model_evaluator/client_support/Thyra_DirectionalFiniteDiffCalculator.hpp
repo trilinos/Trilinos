@@ -8,6 +8,7 @@
 #include "Thyra_DetachedMultiVectorView.hpp"
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_ParameterListAcceptor.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_StandardMemberCompositionMacros.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 
@@ -389,14 +390,22 @@ DirectionalFiniteDiffCalculator<Scalar>::DirectionalFiniteDiffCalculator(
   ,fd_step_size_min_(fd_step_size_min)
 {}
 
+// Overriden from ParameterListAcceptor
+
 template<class Scalar>
 void DirectionalFiniteDiffCalculator<Scalar>::setParameterList(
   Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList
   )
 {
-  if(paramList.get())
-    paramList->validateParameters(*getValidParameters());
+  TEST_FOR_EXCEPT(paramList.get()==0);
+  paramList->validateParameters(*getValidParameters());
   paramList_ = paramList;
+  fd_method_type_ = fdMethodValidator->getIntegralValue(
+    *paramList_,FDMethod_name,FDMethod_default);
+  fd_step_select_type_ = fdStepSelectTypeValidator->getIntegralValue(
+    *paramList_,FDStepSelectType_name,FDStepSelectType_default);
+  fd_step_size_ = paramList_->get(
+    FDStepLength_name,FDStepLength_default);
 }
 
 template<class Scalar>
@@ -469,11 +478,17 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcVariations(
   ,const ModelEvaluatorBase::OutArgs<Scalar>   &var        // variations
   ) const
 {
+
+  using std::string;
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+
+  TEUCHOS_FUNC_TIME_MONITOR(
+    string("Thyra::DirectionalFiniteDiffCalculator<")+ST::name()+">::calcVariations(...)"
+    );
   
   using std::setw;
   using std::endl;
   using std::right;
-  typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType ScalarMag;
   typedef ModelEvaluatorBase MEB;
   namespace DFDCT = DirectionalFiniteDiffCalculatorTypes;
@@ -937,7 +952,14 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcDerivatives(
   ,const ModelEvaluatorBase::OutArgs<Scalar>   &deriv   // derivatives
   ) const
 {
+
+  using std::string;
   typedef Teuchos::ScalarTraits<Scalar> ST;
+
+  TEUCHOS_FUNC_TIME_MONITOR(
+    string("Thyra::DirectionalFiniteDiffCalculator<")+ST::name()+">::calcDerivatives(...)"
+    );
+
   typedef ModelEvaluatorBase MEB;
   typedef Teuchos::RefCountPtr<VectorBase<Scalar> > VectorPtr;
   typedef Teuchos::RefCountPtr<MultiVectorBase<Scalar> > MultiVectorPtr;
@@ -1068,8 +1090,8 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcDerivatives(
       << "\nderivatives=\n" << describe(deriv,verbLevel);
   
   if(out.get() && trace)
-    *out << "\nEntering DirectionalFiniteDiffCalculator<Scalar>::calcDerivatives(...)\n";
-  
+    *out << "\nLeaving DirectionalFiniteDiffCalculator<Scalar>::calcDerivatives(...)\n";
+
 }
 
 } // end namespace Thyra

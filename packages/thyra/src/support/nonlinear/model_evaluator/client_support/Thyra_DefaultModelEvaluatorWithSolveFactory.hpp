@@ -185,25 +185,11 @@ void DefaultModelEvaluatorWithSolveFactory<Scalar>::evalModel(
   using Teuchos::rcp_dynamic_cast;
   using Teuchos::OSTab;
 
-  Teuchos::Time totalTimer(""), timer("");
-  totalTimer.start(true);
+  THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_BEGIN(
+    "Thyra::DefaultModelEvaluatorWithSolveFactory",inArgs,outArgs
+    );
 
-  const Teuchos::RefCountPtr<Teuchos::FancyOStream> out       = this->getOStream();
-  const Teuchos::EVerbosityLevel                    verbLevel = this->getVerbLevel();
-  Teuchos::OSTab tab(out);
-  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
-    *out << "\nEntering Thyra::DefaultModelEvaluatorWithSolveFactory<Scalar>::evalModel(...) ...\n";
-
-  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_EXTREME))
-    *out
-      << "\ninArgs =\n" << Teuchos::describe(inArgs,verbLevel)
-      << "\noutArgs on input =\n" << Teuchos::describe(outArgs,Teuchos::VERB_LOW);
-  
-  const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> >
-    thyraModel = this->getUnderlyingModel();
-
-  typedef Teuchos::VerboseObjectTempState<ModelEvaluatorBase> VOTSME;
-  VOTSME thyraModel_outputTempState(thyraModel,out,verbLevel);
+  Teuchos::Time timer("");
 
   typedef Teuchos::VerboseObjectTempState<LinearOpWithSolveFactoryBase<Scalar> > VOTSLOWSF;
   VOTSLOWSF W_factory_outputTempState(W_factory_,out,verbLevel);
@@ -270,19 +256,11 @@ void DefaultModelEvaluatorWithSolveFactory<Scalar>::evalModel(
     TEST_FOR_EXCEPT(true); // Handle this case later if we need to!
   }
 
-  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_EXTREME))
-    *out
-      << "\noutArgs on output =\n" << Teuchos::describe(outArgs,verbLevel);
-
   timer.stop();
   if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
     OSTab(out).o() << "\nTime to process output objects = "<<timer.totalElapsedTime()<<" sec\n";
 
-  totalTimer.stop();
-  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
-    *out
-      << "\nTotal evaluation time = "<<totalTimer.totalElapsedTime()<<" sec\n"
-      << "\nLeaving Thyra::DefaultModelEvaluatorWithSolveFactory<Scalar>::evalModel(...) ...\n";
+  THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_END();
   
 }
 

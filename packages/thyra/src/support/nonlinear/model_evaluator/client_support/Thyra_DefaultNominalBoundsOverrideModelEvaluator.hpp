@@ -241,25 +241,9 @@ void DefaultNominalBoundsOverrideModelEvaluator<Scalar>::evalModel(
   using Teuchos::rcp_dynamic_cast;
   using Teuchos::OSTab;
 
-  Teuchos::Time totalTimer(""), timer("");
-  totalTimer.start(true);
-
-  const Teuchos::RefCountPtr<Teuchos::FancyOStream> out       = this->getOStream();
-  const Teuchos::EVerbosityLevel                    verbLevel = this->getVerbLevel();
-  Teuchos::OSTab tab(out);
-  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
-    *out << "\nEntering Thyra::DefaultNominalBoundsOverrideModelEvaluator<Scalar>::evalModel(...) ...\n";
-
-  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_EXTREME))
-    *out
-      << "\ninArgs =\n" << Teuchos::describe(inArgs,verbLevel)
-      << "\noutArgs on input =\n" << Teuchos::describe(outArgs,Teuchos::VERB_LOW);
-
-  const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> >
-    thyraModel = this->getUnderlyingModel();
-
-  typedef Teuchos::VerboseObjectTempState<ModelEvaluatorBase> VOTSME;
-  VOTSME thyraModel_outputTempState(thyraModel,out,verbLevel);
+  THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_BEGIN(
+    "Thyra::DefaultNominalBoundsOverrideModelEvaluator",inArgs,outArgs
+    );
 
   // First set the inArgs to what was overridden
   MEB::InArgs<Scalar> wrappedInArgs = *nominalValues_;
@@ -277,14 +261,7 @@ void DefaultNominalBoundsOverrideModelEvaluator<Scalar>::evalModel(
 
   thyraModel->evalModel(wrappedInArgs,outArgs);
 
-  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_EXTREME))
-    *out
-      << "\noutArgs on output =\n" << Teuchos::describe(outArgs,verbLevel);
-
-  totalTimer.stop();
-  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
-    *out
-      << "\nLeaving Thyra::DefaultNominalBoundsOverrideModelEvaluator<Scalar>::evalModel(...) ...\n";
+  THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_END();
   
 }
 

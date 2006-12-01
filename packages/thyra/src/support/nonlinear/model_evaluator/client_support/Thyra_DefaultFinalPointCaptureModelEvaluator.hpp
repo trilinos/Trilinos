@@ -150,23 +150,14 @@ void DefaultFinalPointCaptureModelEvaluator<Scalar>::evalModel(
   ) const
 {
 
-  const Teuchos::RefCountPtr<Teuchos::FancyOStream> out       = this->getOStream();
-  const Teuchos::EVerbosityLevel                    verbLevel = this->getVerbLevel();
-  Teuchos::OSTab tab(out);
-  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
-    *out << "\nEntering Thyra::DefaultFinalPointCapture<Scalar>::evalModel(...) ...\n";
-
-  const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> >
-    thyraModel = this->getUnderlyingModel();
-
-  typedef Teuchos::VerboseObjectTempState<ModelEvaluatorBase> VOTSME;
-  VOTSME thyraModel_outputTempState(thyraModel,out,verbLevel);
+  THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_BEGIN(
+    "Thyra::DefaultFinalPointCaptureModelEvaluator",inArgs,outArgs
+    );
 
   thyraModel->evalModel(inArgs,outArgs);
 
-  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
-    *out
-      << "\nLeaving Thyra::DefaultFinalPointCapture<Scalar>::evalModel(...) ...\n";
+  THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_END();
+
 }
 
 template<class Scalar>

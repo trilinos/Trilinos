@@ -31,6 +31,7 @@
 
 #include "Thyra_ModelEvaluator.hpp"
 #include "Teuchos_ConstNonconstObjectContainer.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 
 namespace Thyra {
 
@@ -155,6 +156,47 @@ private:
   Teuchos::ConstNonconstObjectContainer<ModelEvaluator<Scalar> > model_;
   
 };
+
+#define THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_BEGIN(CLASS_NAME,INARGS,OUTARGS) \
+  \
+  const std::string _classNameStr \
+    = std::string(CLASS_NAME)+"<"+Teuchos::ScalarTraits<Scalar>::name()+">"; \
+  const std::string _classFuncNameStr \
+    = _classNameStr+"::evalModel(...)"; \
+  TEUCHOS_FUNC_TIME_MONITOR(_classFuncNameStr); \
+  \
+  const ModelEvaluatorBase::OutArgs<Scalar> &blahblah_outArgs = (OUTARGS); \
+  \
+  Teuchos::Time totalTimer(""); \
+  totalTimer.start(true); \
+  \
+  const Teuchos::RefCountPtr<Teuchos::FancyOStream> out       = this->getOStream(); \
+  const Teuchos::EVerbosityLevel                    verbLevel = this->getVerbLevel(); \
+  Teuchos::OSTab tab(out); \
+  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW)) \
+    *out << "\nEntering " << _classFuncNameStr << " ...\n"; \
+  \
+  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_EXTREME)) \
+    *out \
+      << "\ninArgs =\n" << Teuchos::describe((INARGS),verbLevel) \
+      << "\noutArgs on input =\n" << Teuchos::describe((OUTARGS),Teuchos::VERB_LOW); \
+  \
+  const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> > \
+    thyraModel = this->getUnderlyingModel(); \
+  \
+  typedef Teuchos::VerboseObjectTempState<ModelEvaluatorBase> VOTSME; \
+  VOTSME thyraModel_outputTempState(thyraModel,out,verbLevel)
+
+#define THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_END() \
+  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_EXTREME)) \
+    *out \
+      << "\noutArgs on output =\n" << Teuchos::describe(blahblah_outArgs,verbLevel); \
+  \
+  totalTimer.stop(); \
+  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW)) \
+    *out \
+      << "\nTotal evaluation time = "<<totalTimer.totalElapsedTime()<<" sec\n" \
+      << "\nLeaving " << _classFuncNameStr << " ...\n"
 
 // /////////////////////////////////
 // Implementations

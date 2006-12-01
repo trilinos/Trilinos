@@ -32,6 +32,7 @@
 #include "Thyra_LinearOpWithSolveBase.hpp"
 #include "Teuchos_Describable.hpp"
 #include "Teuchos_Polynomial.hpp"
+#include "Teuchos_Array.hpp"
 #include "Thyra_PolynomialVectorTraits.hpp"
 
 namespace Thyra {
@@ -126,7 +127,7 @@ public:
     void _setUnsupportsAndRelated( EInArgsMembers arg );
   private:
     // types
-    typedef std::vector<Teuchos::RefCountPtr<const VectorBase<Scalar> > > p_t;
+    typedef Teuchos::Array<Teuchos::RefCountPtr<const VectorBase<Scalar> > > p_t;
     // data
     std::string                                      modelEvalDescription_;
     Teuchos::RefCountPtr<const VectorBase<Scalar> >  x_dot_;
@@ -418,10 +419,10 @@ public:
     void _setUnsupportsAndRelated( EOutArgsMembers arg );
   private:
     // types
-    typedef std::vector<Teuchos::RefCountPtr<VectorBase<Scalar> > >     g_t;
-    typedef std::vector<Derivative<Scalar> >                            deriv_t;
-    typedef std::vector<DerivativeProperties>                           deriv_properties_t;
-    typedef std::vector<DerivativeSupport>                              supports_t;
+    typedef Teuchos::Array<Teuchos::RefCountPtr<VectorBase<Scalar> > >     g_t;
+    typedef Teuchos::Array<Derivative<Scalar> >                            deriv_t;
+    typedef Teuchos::Array<DerivativeProperties>                           deriv_properties_t;
+    typedef Teuchos::Array<DerivativeSupport>                              supports_t;
     // data
     std::string                                           modelEvalDescription_;
     bool                                                  supports_[NUM_E_OUT_ARGS_MEMBERS];
@@ -1312,14 +1313,27 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_set_DgDp_properties( int j, int l, co
 template<class Scalar>
 void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports( const OutArgs<Scalar>& outArgs )
 {
+  typedef ModelEvaluatorBase MEB;
+  const int Np = TEUCHOS_MIN(this->Np(),outArgs.Np()); 
+  const int Ng = TEUCHOS_MIN(this->Ng(),outArgs.Ng()); 
   std::copy( &outArgs.supports_[0], &outArgs.supports_[0] + NUM_E_OUT_ARGS_MEMBERS, &supports_[0] );
-  supports_DfDp_ = outArgs.supports_DfDp_;
-  supports_DgDx_ = outArgs.supports_DgDx_;
-  supports_DgDp_ = outArgs.supports_DgDp_;
-  W_properties_ = outArgs.W_properties_;
-  DfDp_properties_ = outArgs.DfDp_properties_;
-  DgDx_properties_ = outArgs.DgDx_properties_;
-  DgDp_properties_ = outArgs.DgDp_properties_;
+  for( int l = 0; l < Np; ++l ) {
+    DerivativeSupport ds = outArgs.supports(MEB::OUT_ARG_DfDp,l);
+    this->_setSupports(MEB::OUT_ARG_DfDp,l,ds);
+    if(!ds.none()) this->_set_DfDp_properties(l,outArgs.get_DfDp_properties(l));
+  }
+  for( int j = 0; j < Ng; ++j ) {
+    DerivativeSupport ds = outArgs.supports(MEB::OUT_ARG_DgDx,j);
+    this->_setSupports(MEB::OUT_ARG_DgDx,j,ds);
+    if(!ds.none()) this->_set_DgDx_properties(j,outArgs.get_DgDx_properties(j));
+  }
+  for( int j = 0; j < Ng; ++j ) for( int l = 0; l < Np; ++l ) {
+    DerivativeSupport ds = outArgs.supports(MEB::OUT_ARG_DgDp,j,l);
+    this->_setSupports(MEB::OUT_ARG_DgDp,j,l,ds);
+    if(!ds.none()) this->_set_DgDp_properties(j,l,outArgs.get_DgDp_properties(j,l));
+  }
+  if(this->supports(OUT_ARG_W))
+    this->_set_W_properties(outArgs.get_W_properties());
 }
 
 template<class Scalar>

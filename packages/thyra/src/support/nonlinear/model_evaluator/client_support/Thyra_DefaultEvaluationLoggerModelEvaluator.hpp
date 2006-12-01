@@ -172,21 +172,10 @@ void DefaultEvaluationLoggerModelEvaluator<Scalar>::evalModel(
   ,const ModelEvaluatorBase::OutArgs<Scalar>   &outArgs
   ) const
 {
-  typedef ModelEvaluatorBase MEB;
-  using Teuchos::RefCountPtr;
-  using Teuchos::rcp;
-  using Teuchos::rcp_const_cast;
-  using Teuchos::rcp_dynamic_cast;
-  using Teuchos::OSTab;
 
-  const Teuchos::RefCountPtr<Teuchos::FancyOStream> out       = this->getOStream();
-  const Teuchos::EVerbosityLevel                    verbLevel = this->getVerbLevel();
-  Teuchos::OSTab tab(out);
-  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
-    *out << "\nEntering Thyra::DefaultEvaluationLoggerModelEvaluator<Scalar>::evalModel(...) ...\n";
-
-  const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> >
-    thyraModel = this->getUnderlyingModel();
+  THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_BEGIN(
+    "Thyra::DefaultEvaluationLoggerModelEvaluator",inArgs,outArgs
+    );
 
   thyraModel->evalModel(inArgs,outArgs);
 
@@ -196,9 +185,7 @@ void DefaultEvaluationLoggerModelEvaluator<Scalar>::evalModel(
   }
   printLine(outArgs);
 
-  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
-    *out
-      << "\nLeaving Thyra::DefaultEvaluationLoggerModelEvaluator<Scalar>::evalModel(...) ...\n";
+  THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_END();
   
 }
 

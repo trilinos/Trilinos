@@ -136,6 +136,7 @@ public:
     ,const double                                  p0
     ,const double                                  reactionRate
     ,const bool                                    normalizeBasis
+    ,const bool                                    supportDerivatives
     );
 
   /** \brief . */
@@ -191,6 +192,8 @@ private:
   static const int Np_         = 2; // Number of axiliary parameters
   static const int p_bndy_idx  = 0; // index for boundary flux parameters
   static const int p_rx_idx    = 1; // index for reaction rate parameter
+
+  bool      supportDerivatives_;
 
   bool      isInitialized_;
 

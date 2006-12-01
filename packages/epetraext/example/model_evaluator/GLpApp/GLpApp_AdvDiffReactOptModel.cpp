@@ -55,8 +55,10 @@ AdvDiffReactOptModel::AdvDiffReactOptModel(
   ,const double                                  p0
   ,const double                                  reactionRate
   ,const bool                                    normalizeBasis
+  ,const bool                                    supportDerivatives
   )
   :np_(np)
+  ,supportDerivatives_(supportDerivatives)
 {
   Teuchos::TimeMonitor initalizationTimerMonitor(*initalizationTimer);
 #ifdef GLPAPP_ADVDIFFREACT_OPTMODEL_DUMP_STUFF
@@ -308,36 +310,38 @@ AdvDiffReactOptModel::createOutArgs() const
       ,true // supportsAdjoint
       )
     );
-  outArgs.setSupports(
-    OUT_ARG_DfDp,0
-    ,( np_ > 0
-       ? DerivativeSupport(DERIV_MV_BY_COL)
-       : DerivativeSupport(DERIV_LINEAR_OP,DERIV_MV_BY_COL)
-      )
-    );
-  outArgs.set_DfDp_properties(
-    0,DerivativeProperties(
-      DERIV_LINEARITY_CONST
-      ,DERIV_RANK_DEFICIENT
-      ,true // supportsAdjoint
-      )
-    );
-  outArgs.setSupports(OUT_ARG_DgDx,0,DERIV_TRANS_MV_BY_ROW);
-  outArgs.set_DgDx_properties(
-    0,DerivativeProperties(
-      DERIV_LINEARITY_NONCONST
-      ,DERIV_RANK_DEFICIENT
-      ,true // supportsAdjoint
-      )
-    );
-  outArgs.setSupports(OUT_ARG_DgDp,0,0,DERIV_TRANS_MV_BY_ROW);
-  outArgs.set_DgDp_properties(
-    0,0,DerivativeProperties(
-      DERIV_LINEARITY_NONCONST
-      ,DERIV_RANK_DEFICIENT
-      ,true // supportsAdjoint
-      )
-    );
+  if(supportDerivatives_) {
+    outArgs.setSupports(
+      OUT_ARG_DfDp,0
+      ,( np_ > 0
+         ? DerivativeSupport(DERIV_MV_BY_COL)
+         : DerivativeSupport(DERIV_LINEAR_OP,DERIV_MV_BY_COL)
+        )
+      );
+    outArgs.set_DfDp_properties(
+      0,DerivativeProperties(
+        DERIV_LINEARITY_CONST
+        ,DERIV_RANK_DEFICIENT
+        ,true // supportsAdjoint
+        )
+      );
+    outArgs.setSupports(OUT_ARG_DgDx,0,DERIV_TRANS_MV_BY_ROW);
+    outArgs.set_DgDx_properties(
+      0,DerivativeProperties(
+        DERIV_LINEARITY_NONCONST
+        ,DERIV_RANK_DEFICIENT
+        ,true // supportsAdjoint
+        )
+      );
+    outArgs.setSupports(OUT_ARG_DgDp,0,0,DERIV_TRANS_MV_BY_ROW);
+    outArgs.set_DgDp_properties(
+      0,0,DerivativeProperties(
+        DERIV_LINEARITY_NONCONST
+        ,DERIV_RANK_DEFICIENT
+        ,true // supportsAdjoint
+        )
+      );
+  }
   return outArgs;
 }
 
@@ -379,9 +383,14 @@ void AdvDiffReactOptModel::evalModel( const InArgs& inArgs, const OutArgs& outAr
   Epetra_Vector       *f_out = outArgs.get_f().get();
   Epetra_Vector       *g_out = outArgs.get_g(0).get();
   Epetra_Operator     *W_out = outArgs.get_W().get();
-  Derivative          DfDp_out = outArgs.get_DfDp(0);
-  Epetra_MultiVector  *DgDx_trans_out = get_DgDx_mv(0,outArgs,DERIV_TRANS_MV_BY_ROW).get();
-  Epetra_MultiVector  *DgDp_trans_out = get_DgDp_mv(0,0,outArgs,DERIV_TRANS_MV_BY_ROW).get();
+  Derivative          DfDp_out;
+  Epetra_MultiVector  *DgDx_trans_out = 0;
+  Epetra_MultiVector  *DgDp_trans_out = 0;
+  if(supportDerivatives_) {
+    DfDp_out = outArgs.get_DfDp(0);
+    DgDx_trans_out = get_DgDx_mv(0,outArgs,DERIV_TRANS_MV_BY_ROW).get();
+    DgDp_trans_out = get_DgDp_mv(0,0,outArgs,DERIV_TRANS_MV_BY_ROW).get();
+  }
   //
   // Precompute some shared quantities
   //

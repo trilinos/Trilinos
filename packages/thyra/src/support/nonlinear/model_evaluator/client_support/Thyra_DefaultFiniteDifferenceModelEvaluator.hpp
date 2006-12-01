@@ -185,25 +185,9 @@ void DefaultFiniteDifferenceModelEvaluator<Scalar>::evalModel(
   typedef RefCountPtr<const VectorBase<Scalar> >   CV_ptr;
   typedef RefCountPtr<MultiVectorBase<Scalar> >    MV_ptr;
 
-  Teuchos::Time totalTimer(""), timer("");
-  totalTimer.start(true);
-
-  const Teuchos::RefCountPtr<Teuchos::FancyOStream> out       = this->getOStream();
-  const Teuchos::EVerbosityLevel                    verbLevel = this->getVerbLevel();
-  Teuchos::OSTab tab(out);
-  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
-    *out << "\nEntering Thyra::DefaultFiniteDifferenceModelEvaluator<Scalar>::evalModel(...) ...\n";
-
-  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_EXTREME))
-    *out
-      << "\ninArgs =\n" << Teuchos::describe(inArgs,verbLevel)
-      << "\noutArgs on input =\n" << Teuchos::describe(outArgs,Teuchos::VERB_LOW);
-
-  const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> >
-    thyraModel = this->getUnderlyingModel();
-
-  typedef Teuchos::VerboseObjectTempState<ModelEvaluatorBase> VOTSME;
-  VOTSME thyraModel_outputTempState(thyraModel,out,verbLevel);
+  THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_BEGIN(
+    "Thyra::DefaultFiniteDifferenceModelEvaluator",inArgs,outArgs
+    );
 
   //
   // Just do the g_0(p_0) case for now!
@@ -247,8 +231,11 @@ void DefaultFiniteDifferenceModelEvaluator<Scalar>::evalModel(
         deriv.set_DfDp(l,outArgs.get_DfDp(l));
       }
       for( int j = 0; j < Ng; ++j ) {
-        if( outArgs.supports(MEB::OUT_ARG_DgDp,j,l).none()==false
-            && outArgs.get_DgDp(j,l).isEmpty()==false )
+        if(
+          outArgs.supports(MEB::OUT_ARG_DgDp,j,l).none()==false
+          &&
+          outArgs.get_DgDp(j,l).isEmpty()==false
+          )
         {
           deriv.set_DgDp(j,l,outArgs.get_DgDp(j,l));
         }
@@ -266,15 +253,7 @@ void DefaultFiniteDifferenceModelEvaluator<Scalar>::evalModel(
     outArgs.setFailed();
   }
 
-  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_EXTREME))
-    *out
-      << "\noutArgs on output =\n" << Teuchos::describe(outArgs,verbLevel);
-  
-  totalTimer.stop();
-  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
-    *out
-      << "\nTotal evaluation time = "<<totalTimer.totalElapsedTime()<<" sec\n"
-      << "\nLeaving Thyra::DefaultFiniteDifferenceModelEvaluator<Scalar>::evalModel(...) ...\n";
+  THYRA_MODEL_EVALUATOR_DECORATOR_EVAL_MODEL_END();
   
 }
 

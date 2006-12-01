@@ -24,17 +24,18 @@ public:
 
 private:
 
-    double              len_x_;
-    double              len_y_;
-    int                 local_nx_;
-    int                 local_ny_;
-    std::string         geomFileBase_;
-    int                 np_;
-    bool                normalizeBasis_;
-    double              reactionRate_;
-    double              beta_;
-    double              x0_;
-    double              p0_;
+  double              len_x_;
+  double              len_y_;
+  int                 local_nx_;
+  int                 local_ny_;
+  std::string         geomFileBase_;
+  int                 np_;
+  bool                normalizeBasis_;
+  double              reactionRate_;
+  double              beta_;
+  double              x0_;
+  double              p0_;
+  bool                supportDerivatives_;
   
 };
 
