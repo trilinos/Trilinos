@@ -78,6 +78,14 @@ namespace Sacado {
 	for (int i=0; i<sz; ++i)
 	  *(dest++) = T(0.);
       }
+
+      //! Destroy array elements and release memory
+      static inline void destroy_and_release(T* m, int sz) {
+	T* e = m+sz;
+	for (T* b = m; b!=e; b++)
+	  b->~T();
+	operator delete((void*) m);
+      }
     };
 
     /*!
@@ -99,7 +107,7 @@ namespace Sacado {
        * entries from \c src
        */
       static inline T* get_and_fill(const T* src, int sz) {
-	T* m = new T[sz];
+	T* m = static_cast<T* >(operator new(sz*sizeof(T)));
 	for (int i=0; i<sz; ++i)
 	  m[i] = src[i];
 	return m;
@@ -113,6 +121,11 @@ namespace Sacado {
       //! Zero out array \c dest of length \c sz
       static inline void zero(T* dest, int sz) {
 	memset(dest,0,sz*sizeof(T));
+      }
+
+      //! Destroy array elements and release memory
+      static inline void destroy_and_release(T* m, int sz) {
+	operator delete((void*) m);
       }
     };
 
@@ -141,7 +154,7 @@ namespace Sacado {
       //! Destructor
       ~DynamicStorage() {
 	if (len_ != 0)
-	  operator delete((void*)dx_);
+	  ds_array<T>::destroy_and_release(dx_, len_);
       }
 
       //! Assignment
@@ -150,7 +163,7 @@ namespace Sacado {
 	  sz_ = x.sz_;
 	  if (x.sz_ > len_) {
 	    if (len_ != 0)
-	      operator delete((void*)dx_);
+	      ds_array<T>::destroy_and_release(dx_, len_);
 	    len_ = x.sz_;
 	    dx_ = ds_array<T>::get_and_fill(x.dx_, sz_);
 	  }
@@ -170,8 +183,8 @@ namespace Sacado {
       void resize(int sz) { 
 	if (sz > len_) {
 	  if (len_ != 0)
-	    operator delete((void*)dx_);
-	  dx_ = static_cast<T* >(operator new(sz*sizeof(T)));
+	    ds_array<T>::destroy_and_release(dx_, len_);
+	  dx_ = ds_array<T>::get_and_fill(sz);
 	  len_ = sz;
 	}
 	sz_ = sz;

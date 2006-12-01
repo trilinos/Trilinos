@@ -87,6 +87,14 @@ namespace Sacado {
 	for (int i=0; i<sz; ++i)
 	  *(dest++) = T(0.);
       }
+
+      //! Destroy array elements and release memory
+      static inline void destroy_and_release(T* m, int sz, MemPool* pool) {
+	T* e = m+sz;
+	for (T* b = m; b!=e; b++)
+	  b->~T();
+	pool->free((void*) m);
+      }
     };
 
     /*!
@@ -132,6 +140,11 @@ namespace Sacado {
       static inline void zero(T* dest, int sz) {
 	memset(dest,0,sz*sizeof(T));
       }
+
+      //! Destroy array elements and release memory
+      static inline void destroy_and_release(T* m, int sz, MemPool* pool) {
+	pool->free((void*) m);
+      }
     };
 
     //! Derivative array storage class using dynamic memory allocation
@@ -162,7 +175,7 @@ namespace Sacado {
       //! Destructor
       ~MemPoolStorage() {
 	if (len_ != 0)
-	  myPool_->free(dx_);
+	  mp_array<T>::destroy_and_release(dx_, len_, myPool_);
       }
 
       //! Assignment
@@ -170,7 +183,8 @@ namespace Sacado {
 	if (sz_ != x.sz_) {
 	  sz_ = x.sz_;
 	  if (x.sz_ > len_) {
-	    myPool_->free(dx_);
+	    if (len_ != 0)
+	      mp_array<T>::destroy_and_release(dx_, len_, myPool_);
 	    len_ = x.sz_;
 	    myPool_ = x.myPool_;
 	    dx_ = mp_array<T>::get_and_fill(x.dx_, sz_, myPool_);
@@ -190,7 +204,8 @@ namespace Sacado {
       //! Resize the derivative array to sz
       void resize(int sz) { 
 	if (sz > len_) {
-	  myPool_->free(dx_);
+	   if (len_ != 0)
+	    mp_array<T>::destroy_and_release(dx_, len_, myPool_);
 	  myPool_ = defaultPool_;
 	  dx_ = mp_array<T>::get_and_fill(sz, myPool_);
 	  len_ = sz;

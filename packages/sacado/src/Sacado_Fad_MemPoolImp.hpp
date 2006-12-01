@@ -54,7 +54,7 @@ Sacado::Fad::MemPool::~MemPool()
   while (n != NULL) {
     Chunk *p = n;
     n = n->next;
-    delete p;
+    operator delete((void*) p);
   }
 }
 
