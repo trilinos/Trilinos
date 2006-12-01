@@ -48,21 +48,21 @@ void Teuchos::print_memory_usage_stats( const WorkspaceStore* workspace_store, s
 {
   if( workspace_store ) {
     out
-			<< "\n*** Statistics for autmatic array workspace:"
-			<< "\n  Number of megabytes of preallocated workspace                = "
-			<< (workspace_store->num_bytes_total()*1e-6)
-			<< "\n  Number of megabytes needed                                   = "
-			<< (workspace_store->num_max_bytes_needed()*1e-6)
-			<< "\n  Number of allocations using preallocated workspace           = "
-			<< workspace_store->num_static_allocations()
-			<< "\n  Number of dynamic allocations beyond preallocated workspace  = "
-			<< workspace_store->num_dyn_allocations()
-      << std::endl;
+      << "\n*** Statistics for autmatic array workspace:"
+      << "\n  Number of megabytes of preallocated workspace                = "
+      << (workspace_store->num_bytes_total()*1e-6)
+      << "\n  Number of megabytes needed                                   = "
+      << (workspace_store->num_max_bytes_needed()*1e-6)
+      << "\n  Number of allocations using preallocated workspace           = "
+      << workspace_store->num_static_allocations()
+      << "\n  Number of dynamic allocations beyond preallocated workspace  = "
+      << workspace_store->num_dyn_allocations()
+      << "\n";
   }
   else {
     out
-			<< "\n*** Statistics for autmatic array workspace:"
-			<< "\n  No workspace storage was allocated!\n";
+      << "\n*** Statistics for autmatic array workspace:"
+      << "\n  No workspace storage was allocated!\n";
   }
 }
 
@@ -79,27 +79,27 @@ WorkspaceStore::WorkspaceStore(size_t num_bytes)
   , num_current_bytes_total_(0)
   , num_max_bytes_needed_(0)
 {
-	if(num_bytes)
-		protected_initialize(num_bytes);
+  if(num_bytes)
+    protected_initialize(num_bytes);
 }
 
 WorkspaceStore::~WorkspaceStore() {
-	if(workspace_begin_) delete [] workspace_begin_;
+  if(workspace_begin_) delete [] workspace_begin_;
 }
 
 void WorkspaceStore::protected_initialize(size_t num_bytes)
 {
-	TEST_FOR_EXCEPTION(
-		curr_ws_ptr_ != workspace_begin_, std::logic_error
-		,"WorkspaceStore::set_workspace_size(...) : Error, "
-		"You can not reset the workspace size when any RawWorkspace objects "
-		"are using workspace!" );
-	if(workspace_begin_) delete [] workspace_begin_;
-	workspace_begin_        = ::new char[num_bytes];
-	workspace_end_          = workspace_begin_ + num_bytes;
-	curr_ws_ptr_            = workspace_begin_;
-	num_static_allocations_ = 0;
-	num_dyn_allocations_    = 0;
+  TEST_FOR_EXCEPTION(
+    curr_ws_ptr_ != workspace_begin_, std::logic_error
+    ,"WorkspaceStore::set_workspace_size(...) : Error, "
+    "You can not reset the workspace size when any RawWorkspace objects "
+    "are using workspace!" );
+  if(workspace_begin_) delete [] workspace_begin_;
+  workspace_begin_        = ::new char[num_bytes];
+  workspace_end_          = workspace_begin_ + num_bytes;
+  curr_ws_ptr_            = workspace_begin_;
+  num_static_allocations_ = 0;
+  num_dyn_allocations_    = 0;
   num_current_bytes_total_= 0;
   num_max_bytes_needed_   = 0;
 } 
@@ -115,7 +115,7 @@ RawWorkspace::RawWorkspace(WorkspaceStore* workspace_store, size_t num_bytes)
       workspace_end_   = workspace_begin_ + num_bytes;
       owns_memory_     = true;
       if(workspace_store_)
-	workspace_store_->num_dyn_allocations_++;
+  workspace_store_->num_dyn_allocations_++;
     }
     else {
       workspace_begin_ = workspace_store_->curr_ws_ptr_;
@@ -148,9 +148,9 @@ RawWorkspace::~RawWorkspace()
   else {
     if(workspace_store_) {
       TEST_FOR_EXCEPTION(
-			 workspace_store_->curr_ws_ptr_ != workspace_end_, std::logic_error
-			 ,"RawWorkspace::~RawWorkspace(...): Error, "
-			 "Invalid usage of RawWorkspace class, corrupted WorspaceStore object!" );
+       workspace_store_->curr_ws_ptr_ != workspace_end_, std::logic_error
+       ,"RawWorkspace::~RawWorkspace(...): Error, "
+       "Invalid usage of RawWorkspace class, corrupted WorspaceStore object!" );
       workspace_store_->curr_ws_ptr_ = workspace_begin_;
     }
   }
