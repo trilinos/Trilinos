@@ -65,8 +65,8 @@ int test_azoo_conv_anorm(Epetra_CrsMatrix& A,
                          Epetra_Vector& b,
                          bool verbose);
 
-int test_azoo_conv_anorm_with_scaling(const Epetra_Comm& comm,
-                                      bool verbose);
+int test_azoo_conv_with_scaling(int conv_option, int scaling_option,
+                                const Epetra_Comm& comm, bool verbose);
 
 int test_azoo_with_ilut(Epetra_CrsMatrix& A,
                         Epetra_Vector& x,
@@ -169,9 +169,23 @@ int main(int argc, char *argv[])
     return(err);
   }
 
-  err = test_azoo_conv_anorm_with_scaling(A->Comm(), verbose);
+  if (verbose) {
+    cout << "testing AztecOO with AZ_conv = AZ_Anorm, and AZ_scaling = AZ_sym_diag" << endl;
+  }
+
+  err = test_azoo_conv_with_scaling(AZ_Anorm, AZ_sym_diag, A->Comm(), verbose);
   if (err != 0) {
-    cout << "test_azoo_conv_anorm_with_scaling err, test FAILED."<<endl;
+    cout << "test_azoo_conv_with_scaling err, test FAILED."<<endl;
+    return(err);
+  }
+
+  if (verbose) {
+    cout << "testing AztecOO with AZ_conv = AZ_rhs, and AZ_scaling = AZ_sym_diag" << endl;
+  }
+
+  err = test_azoo_conv_with_scaling(AZ_rhs, AZ_sym_diag, A->Comm(), verbose);
+  if (err != 0) {
+    cout << "test_azoo_conv_with_scaling err, test FAILED."<<endl;
     return(err);
   }
 
@@ -469,13 +483,9 @@ int test_azoo_with_ilut(Epetra_CrsMatrix& A,
   return(0);
 }
 
-int test_azoo_conv_anorm_with_scaling(const Epetra_Comm& comm,
-                                      bool verbose)
+int test_azoo_conv_with_scaling(int conv_option, int scaling_option,
+                                const Epetra_Comm& comm, bool verbose)
 {
-  if (verbose) {
-    cout << "testing AztecOO with AZ_conv = AZ_Anorm, and AZ_scaling = AZ_sym_diag" << endl;
-  }
-
   int localN = 20;
   int numprocs = comm.NumProc();
   int globalN = numprocs*localN;
@@ -490,9 +500,9 @@ int test_azoo_conv_anorm_with_scaling(const Epetra_Comm& comm,
   x_crs.PutScalar(0.0);
 
   AztecOO azoo(Acrs, &x_crs, &b_crs);
-  azoo.SetAztecOption(AZ_conv, AZ_Anorm);
+  azoo.SetAztecOption(AZ_conv, conv_option);
   azoo.SetAztecOption(AZ_solver, AZ_cg);
-  azoo.SetAztecOption(AZ_scaling, AZ_sym_diag);
+  azoo.SetAztecOption(AZ_scaling, scaling_option);
 
   azoo.Iterate(100, 1.e-9);
 
@@ -577,8 +587,8 @@ int test_azoo_conv_anorm_with_scaling(const Epetra_Comm& comm,
   double* status = new double[AZ_STATUS_SIZE];
   AZ_defaults(az_options, params);
   az_options[AZ_solver] = AZ_cg;
-  az_options[AZ_conv] = AZ_Anorm;
-  az_options[AZ_scaling] = AZ_sym_diag;
+  az_options[AZ_conv] = conv_option;
+  az_options[AZ_scaling] = scaling_option;
 
   az_options[AZ_max_iter] = 100;
   params[AZ_tol] = 1.e-9;
