@@ -118,11 +118,6 @@ Solver.Iterate(1550, 1e-5)
 // swig warning that would otherwise result, we use the following:
 #pragma SWIG nowarn=312
 
-// Ignore directives
-// We ignore the following method in favor of a different prototype
-// below in the %extend section
-%ignore AztecOO::AztecOO::SetParameters(Teuchos::ParameterList&,bool);
-
 // Auto-documentation feature
 %feature("autodoc", "1");
 
@@ -156,26 +151,6 @@ AZTECOO_EXCEPTION_HANDLER(AztecOO,SetParameters)
     const double* status = self->GetAztecStatus();
     return(status[what]);
   }
-
-#ifdef HAVE_AZTECOO_TEUCHOS
-  // This is a more general prototype than the C++ method of the same
-  // name that takes a Teuchos::ParameterList&.  Usually the Teuchos
-  // typemaps properly handle such an argument to accept python
-  // dictionaries also, but the boolean argument with the default
-  // value (as well as overloaded methods) causes swig to add
-  // additional type-checking code that prevents this from working.
-  // This extension fixes that.
-
-  int SetParameters(PyObject * list, bool cerr_warning_if_unused=false)
-  {
-    bool isNew = false;
-    Teuchos::PyDictParameterList * pdplist = Teuchos::pyObjectToPyDictParameterList(list, &isNew);
-    if (PyErr_Occurred()) return -1;
-    int result = self->SetParameters(*pdplist, cerr_warning_if_unused);
-    if (isNew) delete pdplist;
-    return result;
-  }
-#endif
 
 }
 

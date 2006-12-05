@@ -256,14 +256,13 @@ target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
 EXTRA_DIST = setpath.py \
-	     testParameterList.py \
-	     testPyDictParameterList.py \
-	     testTeuchos.py
+	     testTeuchos.py \
+	     testParameterList.py
 
 MAINTAINERCLEANFILES = Makefile.in
 
 # Define the suite of tests
-TEST_SUITE = testTeuchos testParameterList testPyDictParameterList
+TEST_SUITE = testTeuchos testParameterList
 SETPATH = setpath.py
 CLEANFILES = $(TEST_SUITE:=.py) $(SETPATH) *.pyc
 all: all-am
@@ -420,10 +419,12 @@ uninstall-am: uninstall-info-am
 
 
 all: $(TEST_SUITE)
-	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$(SETPATH) . ; fi
+	if [ `$(PYTHON) -c "import os; print os.path.abspath('$(srcdir)')"` != `pwd` ]; then \
+	   /bin/cp $(srcdir)/$(SETPATH) . ; fi
 
 test%:
-	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$@.py . ; fi
+	if [ `$(PYTHON) -c "import os; print os.path.abspath('$(srcdir)')"` != `pwd` ]; then \
+	   /bin/cp $(srcdir)/$@.py . ; fi
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

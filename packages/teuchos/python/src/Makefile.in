@@ -315,9 +315,9 @@ tempdir = $(shell $(PYTHON) -c "import sys,os; from distutils.util import get_pl
 INTERFACES = Teuchos.i
 WRAPPERS = $(INTERFACES:.i=_wrap.cpp)
 PROXIES = $(INTERFACES:.i=.py      )
-EXTRA_DIST = Teuchos_PythonParameter.hpp \
-	     Teuchos_PyDictParameterList.hpp \
-	     Teuchos.i \
+EXTRA_DIST = Teuchos.i \
+	     Teuchos_ParameterList_ext.i \
+	     Teuchos_PythonParameter.hpp \
 	     setup.py
 
 all: all-am

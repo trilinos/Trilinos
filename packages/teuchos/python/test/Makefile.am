@@ -30,9 +30,8 @@
 ## Additional files to be included in distribution for 'make dist'
 ## #######################################################################
 EXTRA_DIST = setpath.py \
-	     testParameterList.py \
-	     testPyDictParameterList.py \
-	     testTeuchos.py
+	     testTeuchos.py \
+	     testParameterList.py
 
 ## #######################################################################
 ## Files to be deleted by 'make maintainer-clean'
@@ -40,14 +39,16 @@ EXTRA_DIST = setpath.py \
 MAINTAINERCLEANFILES = Makefile.in
 
 # Define the suite of tests
-TEST_SUITE = testTeuchos testParameterList testPyDictParameterList
+TEST_SUITE = testTeuchos testParameterList
 
 SETPATH = setpath.py
 
 all: $(TEST_SUITE)
-	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$(SETPATH) . ; fi
+	if [ `$(PYTHON) -c "import os; print os.path.abspath('$(srcdir)')"` != `pwd` ]; then \
+	   /bin/cp $(srcdir)/$(SETPATH) . ; fi
 
 test%:
-	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$@.py . ; fi
+	if [ `$(PYTHON) -c "import os; print os.path.abspath('$(srcdir)')"` != `pwd` ]; then \
+	   /bin/cp $(srcdir)/$@.py . ; fi
 
 CLEANFILES = $(TEST_SUITE:=.py) $(SETPATH) *.pyc

@@ -114,6 +114,9 @@ print r.Norm2()
 
 #include "ml_config.h"
 
+// Teuchos includes
+#include "Teuchos_PythonParameter.hpp"
+
 // Epetra includes
 #include "Epetra_Map.h"
 #include "Epetra_FEVector.h"
@@ -131,21 +134,22 @@ print r.Norm2()
 #include "Epetra_NumPyVector.h"
 #include "Epetra_PyOperator.h"
 #include "Epetra_PyRowMatrix.h"
+#include "PyEpetra_Utils.h"
 
+// ML includes
 #include "ml_MultiLevelPreconditioner.h"
-#include "Teuchos_PythonParameter.hpp"
 #include "MLAPI.h"
 #include "MLAPI_PyMatrix.h"
-#include "PyEpetra_Utils.h"
 
 MLAPI::Operator GetPNonSmoothed(const MLAPI::Operator& A,
                                 const MLAPI::MultiVector& ThisNS,
                                 MLAPI::MultiVector& NextNS,
                                 PyObject* obj)
 {   
-  Teuchos::PyDictParameterList List(obj);
+  Teuchos::ParameterList * List = Teuchos::pyDictToNewParameterList(obj);
   MLAPI::Operator Ptent;
-  MLAPI::GetPtent(A, List, ThisNS, Ptent, NextNS);
+  MLAPI::GetPtent(A, *List, ThisNS, Ptent, NextNS);
+  delete List;
   return(Ptent);
 }
 
@@ -153,10 +157,10 @@ bool Iterate(const MLAPI::Operator& A, const MLAPI::MultiVector& LHS,
              const MLAPI::MultiVector& RHS, const MLAPI::BaseOperator& Prec, 
              PyObject* obj)
 {
-  Teuchos::PyDictParameterList List(obj);
-  if (PyErr_Occurred())
-    return(false);
-  Krylov(A, LHS, RHS, Prec, List);
+  Teuchos::ParameterList * List = Teuchos::pyDictToNewParameterList(obj);
+  if (List == NULL) return(false);
+  Krylov(A, LHS, RHS, Prec, *List);
+  delete List;
   return(true);
 }
 
@@ -209,8 +213,8 @@ using namespace std;
   int SetParameterListAndNullSpace(PyObject* obj,
                                    Epetra_MultiVector& NullSpace)
   {
-    Teuchos::PyDictParameterList pdList(obj);
-    Teuchos::ParameterList       List(pdList);
+    Teuchos::ParameterList * List = Teuchos::pyDictToNewParameterList(obj);
+    if (List == NULL) List = new Teuchos::ParameterList();
 
     // WARNING: THIS IS DELICATE, NULLSPACE SHOULD NOT DISAPPEAR
     // otherwise the pointer here stored will vanish. This function should
@@ -218,11 +222,12 @@ using namespace std;
     double* NullSpacePtr = (double*)NullSpace.Values();
     int NullSpaceDim = NullSpace.NumVectors();
 
-    List.set("null space: type", "pre-computed");
-    List.set("null space: vectors", NullSpacePtr);
-    List.set("null space: dimension", NullSpaceDim);
+    List->set("null space: type", "pre-computed");
+    List->set("null space: vectors", NullSpacePtr);
+    List->set("null space: dimension", NullSpaceDim);
 
-    self->SetParameterList(List);
+    self->SetParameterList(*List);
+    delete List;
 
     return(0);
   }
@@ -331,11 +336,11 @@ fail:
 
   bool Reshape(const Operator& Op, const string Type, PyObject* obj)
   {
-    Teuchos::PyDictParameterList List(obj);
-    if (PyErr_Occurred())
-      return(false);
+    Teuchos::ParameterList * List = Teuchos::pyDictToNewParameterList(obj);
+    if (List == NULL) return(false);
     else
-      self->Reshape(Op, Type, List);
+      self->Reshape(Op, Type, *List);
+    delete List;
     return(true);
   }
 }

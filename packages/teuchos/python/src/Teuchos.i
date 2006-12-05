@@ -38,9 +38,10 @@ in-depth information."
 %enddef
 
 // Define the module name, its package and documentation string
-%module(package   = "PyTrilinos",
-	autodoc   = "1",
-	docstring = DOCSTRING) Teuchos
+%module(package      = "PyTrilinos",
+	autodoc      = "1",
+	implicitconv = "1",
+	docstring    = DOCSTRING) Teuchos
 
 // SWIG does not support wrapping nested classes.  We will %import the
 // Teuchos::any class (ie, tell swig about it, but not wrap it), which
@@ -65,8 +66,10 @@ in-depth information."
 
 // Teuchos python interface includes
 #include "Teuchos_PythonParameter.hpp"
-#include "Teuchos_PyDictParameterList.hpp"
 %}
+
+// Auto-documentation feature
+%feature("autodoc", "1");
 
 // C++ STL support.  If the wrapped class uses standard template
 // library containers, the following %include wraps the containers
@@ -106,12 +109,12 @@ using namespace std;
 %ignore *::operator=;
 %ignore *::print;
 
-// Teuchos imports
-%import  "Teuchos_TypeNameTraits.hpp"
-%import  "Teuchos_RefCountPtrDecl.hpp"
-%import  "Teuchos_any.hpp"
-%import  "Teuchos_ParameterEntry.hpp"
-%import  "Teuchos_PythonParameter.hpp"
+//Teuchos imports
+%import "Teuchos_TypeNameTraits.hpp"
+%import "Teuchos_RefCountPtrDecl.hpp"
+%import "Teuchos_any.hpp"
+%import "Teuchos_ParameterEntry.hpp"
+%import "Teuchos_PythonParameter.hpp"
 
 /////////////////////////////
 // Teuchos_Version support //
@@ -126,114 +129,15 @@ using namespace std;
 ///////////////////////////////////
 TEUCHOS_EXCEPTION(ParameterList,ParameterList)
 TEUCHOS_EXCEPTION(ParameterList,set)
+TEUCHOS_EXCEPTION(ParameterList,setParameters)
 TEUCHOS_EXCEPTION(ParameterList,get)
 TEUCHOS_EXCEPTION(ParameterList,sublist)
 TEUCHOS_EXCEPTION(ParameterList,type)
-%extend Teuchos::ParameterList {
-  PyObject * set(const string &name, PyObject *value) {
-    if (!setPythonParameter(*self,name,value)) {
-      PyErr_SetString(PyExc_TypeError, "ParameterList value type not supported");
-      goto fail;
-    }
-    return Py_BuildValue("");
-  fail:
-    return NULL;
-  }
-
-  PyObject * get(const string &name, PyObject * default_value=NULL) {
-    PyObject * value = getPythonParameter(*self, name);
-    // Type not supported
-    if (value == NULL) {
-      PyErr_SetString(PyExc_TypeError, "ParameterList value type not supported");
-      goto fail;
-    }
-    // Name not found
-    else if (value == Py_None) {
-      if (default_value == NULL) {
-	PyErr_Format(PyExc_KeyError, "'%s'", name.c_str());
-	goto fail;
-      }
-      Py_DECREF(value);
-      Py_INCREF(default_value);
-      return default_value;
-    }
-    // Type supported and name found
-    else return value;
-  fail:
-    Py_XDECREF(value);
-    return NULL;
-  }
-
-  PyObject * _print(PyObject * pf=NULL, int indent=0, bool showTypes=false,
-		    bool showFlags=true) {
-    PyObject * returnObject = pf;
-    // No arguments
-    if (pf==NULL) {
-      self->print(std::cout,indent,showTypes,showFlags);
-      returnObject = Py_None;
-    }
-    // Given non-file pf argument
-    else {
-      if (!PyFile_Check(pf)) {
-	PyErr_SetString(PyExc_IOError, "_print() method expects a file object");
-	goto fail;
-      }
-      // Given file pf argument
-      else {
-	std::FILE *f = PyFile_AsFile(pf);
-	Teuchos::FILEstream buffer(f);
-	std::ostream os(&buffer);
-	self->print(os,indent,showTypes,showFlags);
-      }
-    }
-    Py_INCREF(returnObject);
-    return returnObject;
-  fail:
-    return NULL;
-  }
-
-  PyObject * unused(PyObject * pf=NULL) {
-    // No arguments
-    if (pf==NULL) {
-      self->unused(std::cout);
-    }
-    // Given non-file pf argument
-    else {
-      if (!PyFile_Check(pf)) {
-	PyErr_SetString(PyExc_IOError, "unused() method expects a file object");
-	goto fail;
-      }
-      // Given file pf argument
-      else {
-	std::FILE *f = PyFile_AsFile(pf);
-	Teuchos::FILEstream buffer(f);
-	std::ostream os(&buffer);
-	self->unused(os);
-      }
-    }
-    return Py_BuildValue("");
-  fail:
-    return NULL;
-  }
-
-  PyObject * type(const string & name) {
-    PyObject * value = getPythonParameter(*self,name);
-    // Type not supported
-    if (value == NULL) {
-      PyErr_SetString(PyExc_TypeError, "ParameterList value type not supported");
-      goto fail;
-    }
-    // Name not found
-    else if (value == Py_None) {
-      PyErr_Format(PyExc_KeyError, "'%s'", name.c_str());
-      goto fail;
-    }
-    // Name found and type supported
-    return PyObject_Type(value);
-  fail:
-    return NULL;
-  }
-}
+TEUCHOS_EXCEPTION(ParameterList,__setitem__)
+TEUCHOS_EXCEPTION(ParameterList,update)
+// There are a lot of extensions to the Teuchos::ParameterList class,
+// so I put them all in their own file
+%include "Teuchos_ParameterList_ext.i"
 %ignore Teuchos::ParameterList::set;
 %ignore Teuchos::ParameterList::setEntry;
 %ignore Teuchos::ParameterList::get;
@@ -249,95 +153,134 @@ TEUCHOS_EXCEPTION(ParameterList,type)
 %ignore Teuchos::ParameterList::name(ConstIterator) const;
 %include "Teuchos_ParameterList.hpp"
 
-/////////////////////////////////////////
-// Teuchos_PyDictParameterList support //
-/////////////////////////////////////////
-TEUCHOS_EXCEPTION(PyDictParameterList,PyDictParameterList)
-TEUCHOS_EXCEPTION(PyDictParameterList,set)
-TEUCHOS_EXCEPTION(PyDictParameterList,get)
-TEUCHOS_EXCEPTION(PyDictParameterList,setParameters)
-TEUCHOS_EXCEPTION(PyDictParameterList,sublist)
-TEUCHOS_EXCEPTION(PyDictParameterList,type)
-TEUCHOS_EXCEPTION(PyDictParameterList,__contains__)
-TEUCHOS_EXCEPTION(PyDictParameterList,__setitem__)
-TEUCHOS_EXCEPTION(PyDictParameterList,has_key)
-TEUCHOS_EXCEPTION(PyDictParameterList,update)
-// Un-ignore the set method.  The %ignore directive for
-// ParameterList::set affects its derived classes as well.  This
-// %rename directive undoes the damage.
-%rename(set) Teuchos::PyDictParameterList::set;
-%include "Teuchos_PyDictParameterList.hpp"
-
 ////////////////////////////////////////////////////////////////////////
 
 // Typemaps.  These are generally intended for other packages that
 // import this interface file.
 
 // These typemaps allow C++ methods that expect ParameterList&
-// arguments to have python wrappers that accept ParameterList,
-// PyDictParameterList, or python dictionary arguments.  C++ methods
-// that output ParameterLists will have python wrappers that output
-// PyDictParameterLists.
+// arguments to have python wrappers that accept ParameterList or
+// python dictionary arguments.
 
-%typemap(in) Teuchos::ParameterList & (bool cleanup = false)
+%typemap(in) Teuchos::ParameterList & (void * argp = 0, int res = 0, bool cleanup=false)
 {
-  $1 = Teuchos::pyObjectToPyDictParameterList($input,&cleanup);
-  if ($1 == NULL) SWIG_fail;
+  if (PyDict_Check($input)) {
+    $1 = Teuchos::pyDictToNewParameterList($input);
+    if ($1 == NULL) SWIG_fail;
+    cleanup = true;
+  }
+
+  else {
+    res = SWIG_ConvertPtr($input, &argp, $descriptor, %convertptr_flags);
+    if (!SWIG_IsOK(res)) {
+      %argument_fail(res, "$type", $symname, $argnum);
+    }
+    $1 = %reinterpret_cast(argp, $ltype);
+  }
 }
 
 %typecheck(200) Teuchos::ParameterList &
 {
-  // Accept PyDicts, ParameterLists or PyDictParameterLists
-  void * tmp = NULL;
+  // Accept PyDicts or ParameterLists
+  void * argp = NULL;
   $1 = PyDict_Check($input) ? 1 : 0;
-  if (!$1) if (SWIG_CheckState(SWIG_Python_ConvertPtr($input, &tmp,
+  if (!$1) if (SWIG_CheckState(SWIG_Python_ConvertPtr($input, &argp,
 						      $1_descriptor, 0))) $1 = 1;
 }
 
 %typemap(freearg) Teuchos::ParameterList &
 {
-  if (cleanup$argnum && $1) delete($1);
+  if (cleanup$argnum && $1) delete $1;
 }
 
-%typemap(out) Teuchos::ParameterList &
-{
-  static swig_type_info * PDPL_type = SWIG_TypeQuery("Teuchos::PyDictParameterList *");
-  Teuchos::PyDictParameterList * pdpl = new Teuchos::PyDictParameterList(*$1);
-  $result = SWIG_NewPointerObj(pdpl, PDPL_type, 1);
+// Extend the %extend_smart_pointer macro to handle derived classes.
+// This has been specialized for RefCountPtr, because the constructor
+// for creating a RefCountPtr has an additional argument: a boolean
+// false
+%define %extend_RefCountPtr(Type, SmartPtrType...)
+%typemap(in, noblock=1) const SWIGTYPE & SMARTPOINTER (void* argp = 0, int res = 0) {
+  res = SWIG_ConvertPtr($input, &argp, $descriptor, %convertptr_flags);
+  if (!SWIG_IsOK(res)) {
+    res = SWIG_ConvertPtr($input, &argp, $descriptor(Type*), %convertptr_flags);
+    if (!SWIG_IsOK(res)) {
+      %argument_fail(res, "$type", $symname, $argnum);
+    }
+    if (!argp) { %argument_nullref("$type", $symname, $argnum); }
+    $1 = new $*ltype ( %reinterpret_cast( argp, Type* ), false );
+  }
+  else {
+    if (!argp) { %argument_nullref("$type", $symname, $argnum); }
+    $1 = %reinterpret_cast(argp, $ltype);
+  }
 }
+
+%typecheck(1200) const SWIGTYPE & SMARTPOINTER {
+  static void * argp = 0;
+  $1 = SWIG_CheckState(SWIG_ConvertPtr($input, &argp, $descriptor, %convertptr_flags)) ? 1 : 0;
+  if (!$1)
+    $1 = SWIG_CheckState(SWIG_ConvertPtr($input, &argp, $descriptor(Type *),
+					 %convertptr_flags)) ? 1 : 0;
+}
+
+%typemap(freearg) const SWIGTYPE & SMARTPOINTER {
+  delete $1;
+}
+
+%extend_smart_pointer(SmartPtrType)
+
+%enddef
 
 // These typemap macros allow developers to generate typemaps for any
 // classes that are wrapped in RefCountPtr as function or method
 // arguments.
-%define TEUCHOS_RCP_TYPEMAPS(TypeName)
+%define TEUCHOS_RCP_TYPEMAPS(Type)
 
-%typemap(in) Teuchos::RefCountPtr< TypeName > &
-            (Teuchos::RefCountPtr< TypeName > arg)
-{
-  static void           * arg_ptr  = NULL;
-  if (SWIG_CheckState(SWIG_Python_ConvertPtr($input,&arg_ptr,
-					     $descriptor(TypeName*),0))) {
-    arg = Teuchos::rcp(reinterpret_cast<TypeName*>(arg_ptr),false);
-    $1 = &arg;
-  }
-  else {
-    PyErr_SetString(PyExc_TypeError,"in method '" "$symname" "', argument " "$argnum"
-		    " of type 'TypeName'");
-    SWIG_fail;
-  }
-}
+%extend_RefCountPtr(Type, Teuchos::RefCountPtr< Type >)
+%template()               Teuchos::RefCountPtr< Type >;
 
-%typecheck(300) Teuchos::RefCountPtr< TypeName > &
-{
-  void * tmp = NULL;
-  $1 = SWIG_CheckState(SWIG_Python_ConvertPtr($input, &tmp,
-					      $descriptor(TypeName*), 0)) ? 1 : 0;
-}
-
-%typemap(out) Teuchos::RefCountPtr< TypeName > &
-{
-  TypeName * out_ptr = $result->get();
-  $result = SWIG_NewPointerObj(out_ptr,$descriptor(TypeName*),0);
-}
+%extend_RefCountPtr(Type, Teuchos::RefCountPtr< const Type >)
+%template()               Teuchos::RefCountPtr< const Type >;
 
 %enddef
+
+// The following directives are for the special case of a
+// Teuchos::RefCountPtr that points to a Teuchos::ParameterList
+
+// Apply the RefCountPtr typemap macros to ParameterLists
+%ignore Teuchos::RefCountPtr< Teuchos::ParameterList >::get() const;
+TEUCHOS_RCP_TYPEMAPS(Teuchos::ParameterList)
+
+// *** Note: this doesn't seem to be working, so I have commented it out ***
+// %typemap(in) const Teuchos::RefCountPointer< Teuchos::ParameterList > & (void* argp    = 0,
+// 									 int   res     = 0,
+// 									 bool  cleanup = false) {
+//   res = SWIG_ConvertPtr($input, &argp, $descriptor, %convertptr_flags);
+//   if (!SWIG_IsOK(res)) {
+//     argp = (void*) Teuchos::pyObjectToParameterList($input,&cleanup);
+//     if (argp == NULL) SWIG_fail;
+//     $1 = new $*ltype ( %reinterpret_cast( argp, Teuchos::ParameterList* ), false );
+//   }
+//   else {
+//     if (!argp) { %argument_nullref("$type", $symname, $argnum); }
+//     $1 = %reinterpret_cast(argp, $ltype);
+//   }
+// }
+
+// %typecheck(1200) const Teuchos::RefCountPointer< Teuchos::ParameterList > & {
+//   static void * argp = 0;
+//   $1 = SWIG_CheckState(SWIG_ConvertPtr($input, &argp, $descriptor, %convertptr_flags)) ? 1 : 0;
+//   if (!$1) {
+//     $1 = PyDict_Check($input) ? 1 : 0;
+//     if (!$1) {
+//       if (SWIG_CheckState(SWIG_Python_ConvertPtr($input, &argp,
+//                                                  $1_descriptor, 0))) $1 = 1;
+//     }
+//   }
+// }
+
+// %typemap(freearg) const Teuchos::RefCountPointer< Teuchos::ParameterList > & {
+//   delete $1;
+// }
+
+// %extend_smart_pointer(Teuchos::RefCountPtr< Teuchos::ParameterList >)
+// %template()           Teuchos::RefCountPtr< Teuchos::ParameterList >;
