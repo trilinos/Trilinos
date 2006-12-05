@@ -78,6 +78,8 @@ for option in options:
         library_dirs.append(option[2:])
     elif option[:2] == "-l":
         libraries.append(option[2:])
+    elif option[-2:] == ".a":
+        libraries.append(os.path.split(option)[1][3:-2])
     else:
         extra_link_args.append(option)
 
