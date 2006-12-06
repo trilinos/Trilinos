@@ -1,4 +1,3 @@
-
 // @HEADER
 // ***********************************************************************
 //
@@ -161,6 +160,7 @@ class BlockKrylovSchurSolMgr : public SolverManager<ScalarType,MV,OP> {
   Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > _sort;
 
   string _whch, _ortho; 
+  MagnitudeType _ortho_kappa;
 
   MagnitudeType _convtol;
   int _maxRestarts;
@@ -182,6 +182,7 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::BlockKrylovSchurSolMgr(
   _problem(problem),
   _whch("LM"),
   _ortho("SVQB"),
+  _ortho_kappa(-1.0),
   _convtol(0),
   _maxRestarts(20),
   _relconvtol(true),
@@ -255,6 +256,9 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::BlockKrylovSchurSolMgr(
     _ortho = "SVQB";
   }
 
+  // which orthogonalization constant to use
+  _ortho_kappa = pl.get("Orthogonalization Constant",_ortho_kappa);
+
   // verbosity level
   if (pl.isParameter("Verbosity")) {
     if (Teuchos::isParameterType<int>(pl,"Verbosity")) {
@@ -299,7 +303,12 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
   if (_ortho=="SVQB") {
     ortho = Teuchos::rcp( new SVQBOrthoManager<ScalarType,MV,OP>(_problem->getM()) );
   } else if (_ortho=="DGKS") {
-    ortho = Teuchos::rcp( new BasicOrthoManager<ScalarType,MV,OP>(_problem->getM()) );
+    if (_ortho_kappa <= 0) {
+      ortho = Teuchos::rcp( new BasicOrthoManager<ScalarType,MV,OP>(_problem->getM()) );
+    }
+    else {
+      ortho = Teuchos::rcp( new BasicOrthoManager<ScalarType,MV,OP>(_problem->getM(),_ortho_kappa) );
+    }
   } else {
     TEST_FOR_EXCEPTION(_ortho!="SVQB"&&_ortho!="DGKS",std::logic_error,"Anasazi::BlockKrylovSchurSolMgr::solve(): Invalid orthogonalization type.");
   }

@@ -47,6 +47,7 @@
 #include "AnasaziMultiVecTraits.hpp"
 #include "AnasaziOperatorTraits.hpp"
 #include "AnasaziMatOrthoManager.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 
 namespace Anasazi {
 
@@ -64,8 +65,8 @@ namespace Anasazi {
     //! @name Constructor/Destructor
     //@{ 
     //! Constructor specifying re-orthogonalization tolerance.
-    BasicOrthoManager( Teuchos::RefCountPtr<const OP> Op = Teuchos::null,
-                       const MagnitudeType kappa = SCT::magnitude(1.5625) ) : MatOrthoManager<ScalarType,MV,OP>(Op), kappa_(kappa) {};
+    BasicOrthoManager( Teuchos::RefCountPtr<const OP> Op = Teuchos::null, const MagnitudeType kappa = SCT::magnitude(1.5625) );
+
 
     //! Destructor
     ~BasicOrthoManager() {};
@@ -256,8 +257,24 @@ namespace Anasazi {
     int findBasis(MV &X, Teuchos::RefCountPtr<MV> MX, 
                          Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > C, 
                          bool completeBasis, int howMany = -1 ) const;
+
+    //
+    // Internal timers
+    //
+    Teuchos::RefCountPtr<Teuchos::Time> timerReortho_;
     
   };
+
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Constructor
+  template<class ScalarType, class MV, class OP>
+  BasicOrthoManager<ScalarType,MV,OP>::BasicOrthoManager( Teuchos::RefCountPtr<const OP> Op,
+                                                          const MagnitudeType kappa         ) : 
+    MatOrthoManager<ScalarType,MV,OP>(Op), 
+    kappa_(kappa), 
+    timerReortho_(Teuchos::TimeMonitor::getNewTimer("BasicOrthoManager::Re-orthogonalization"))
+  {};
 
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -558,7 +575,7 @@ namespace Anasazi {
     for (int j = 0; j < xc; ++j) {
       
       if ( SCT::magnitude(kappa_*newDot[j]) < SCT::magnitude(oldDot[j]) ) {
-
+        Teuchos::TimeMonitor lcltimer( *timerReortho_ );
         for (int i=0; i<nq; i++) {
           Teuchos::SerialDenseMatrix<int,ScalarType> C2(*C[i]);
           
