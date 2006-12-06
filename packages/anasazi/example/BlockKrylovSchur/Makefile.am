@@ -56,17 +56,17 @@ if BUILD_AMESOS
 ANASAZI_BIRAM_EX_SI_AMESOS = BlockKrylovSchurEpetraExGenAmesos
 endif
 
-if BUILD_TRIUTILS
-ANASAZI_BIRAM_EX_HB = BlockKrylovSchurEpetraExHB
+if BUILD_EPETRAEXT
+ANASAZI_BIRAM_EX_FILE = BlockKrylovSchurEpetraExFile
 endif 
 
-noinst_PROGRAMS = BlockKrylovSchurEpetraEx BlockKrylovSchurEpetraExSVD $(ANASAZI_BIRAM_EX_HB) $(ANASAZI_BIRAM_EX_SI_AZTECOO) $(ANASAZI_BIRAM_EX_SI_BELOS) $(ANASAZI_BIRAM_EX_SI_AMESOS)
+noinst_PROGRAMS = BlockKrylovSchurEpetraEx BlockKrylovSchurEpetraExSVD $(ANASAZI_BIRAM_EX_FILE) $(ANASAZI_BIRAM_EX_SI_AZTECOO) $(ANASAZI_BIRAM_EX_SI_BELOS) $(ANASAZI_BIRAM_EX_SI_AMESOS)
 
 BlockKrylovSchurEpetraEx_SOURCES = $(srcdir)/BlockKrylovSchurEpetraEx.cpp
 
 BlockKrylovSchurEpetraExSVD_SOURCES = $(srcdir)/BlockKrylovSchurEpetraExSVD.cpp
 
-BlockKrylovSchurEpetraExHB_SOURCES = $(srcdir)/BlockKrylovSchurEpetraExHB.cpp
+BlockKrylovSchurEpetraExFile_SOURCES = $(srcdir)/BlockKrylovSchurEpetraExFile.cpp
 
 BlockKrylovSchurEpetraExGenAztecOO_SOURCES = $(srcdir)/BlockKrylovSchurEpetraExGenAztecOO.cpp
 
@@ -100,17 +100,14 @@ BlockKrylovSchurEpetraExSVD_CXXFLAGS = -I$(top_srcdir)/src
 #np# List libraries that np is dependent on.
 BlockKrylovSchurEpetraExSVD_LDADD = $(EXPORT_LIBS)
 
-BlockKrylovSchurEpetraExHB_DEPENDENCIES = \
-	$(top_builddir)/src/libanasazi.a \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../triutils/src/libtriutils.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a
+BlockKrylovSchurEpetraExFile_DEPENDENCIES = \
+        $(EXPORT_LIBS)
 
-BlockKrylovSchurEpetraExHB_CXXFLAGS = -I$(top_srcdir)/src \
+BlockKrylovSchurEpetraExFile_CXXFLAGS = -I$(top_srcdir)/src \
 	-I$(top_srcdir)/../triutils/src -I$(top_builddir)/../triutils/src
 
 #np# List libraries that np is dependent on.
-BlockKrylovSchurEpetraExHB_LDADD = $(EXPORT_LIBS)
+BlockKrylovSchurEpetraExFile_LDADD = $(EXPORT_LIBS)
 
 BlockKrylovSchurEpetraExGenAztecOO_DEPENDENCIES = \
 	$(top_builddir)/src/libanasazi.a \

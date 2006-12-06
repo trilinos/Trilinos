@@ -40,13 +40,19 @@ AM_CPPFLAGS = $(EXPORT_INC_PATH)
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = LOBPCGEpetraEx LOBPCGEpetraExSimple LOBPCGEpetraExGen
+if BUILD_EPETRAEXT
+ANASAZI_LOBPCG_EX_FILE = LOBPCGEpetraExFile
+endif
+
+noinst_PROGRAMS = LOBPCGEpetraEx LOBPCGEpetraExSimple LOBPCGEpetraExGen $(ANASAZI_LOBPCG_EX_FILE)
 
 LOBPCGEpetraEx_SOURCES = $(srcdir)/LOBPCGEpetraEx.cpp
 
 LOBPCGEpetraExSimple_SOURCES = $(srcdir)/LOBPCGEpetraExSimple.cpp
 
 LOBPCGEpetraExGen_SOURCES = $(srcdir)/LOBPCGEpetraExGen.cpp
+
+LOBPCGEpetraExFile_SOURCES = $(srcdir)/LOBPCGEpetraExFile.cpp
 
 #np# - List libraries that np is dependent on.  The DEPENDENCIES primary is
 #np# optional.
@@ -85,6 +91,15 @@ LOBPCGEpetraExGen_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/util/ModeLaplac
 #np# List libraries that np is dependent on.
 LOBPCGEpetraExGen_LDADD = $(top_builddir)/util/ModeLaplace/libModeLaplace.a \
                           $(EXPORT_LIBS)
+
+LOBPCGEpetraExFile_DEPENDENCIES = \
+ 	$(EXPORT_LIBS)
+
+LOBPCGEpetraExFile_CXXFLAGS = -I$(top_srcdir)/src \
+        -I$(top_srcdir)/../epetraext/src/inout -I$(top_builddir)/../epetraext/src
+
+#np# List libraries that np is dependent on.
+LOBPCGEpetraExFile_LDADD = $(EXPORT_LIBS)
 
 #np# Set "SUBDIRS= (list all subdirectories that are autotool'ed here)"
 #np# List all subdirectories even if one or more are configured/built only

@@ -318,6 +318,8 @@ AM_CONDITIONAL(BUILD_ANASAZI_EXPERIMENTAL, [test "X$ac_cv_use_anasazi_experiment
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(anasazi, triutils, ANASAZI_TRIUTILS, BUILD_TRIUTILS, yes, [Build examples which use Triutils.], [Build examples which use Triutils. Can be overridden with --disable-anasazi-triutils.])
 
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(anasazi, epetraext, ANASAZI_EPETRAEXT, BUILD_EPETRAEXT, yes, [Build examples which use EpetraExt.], [Build examples which use EpetraExt. Can be overridden with --disable-anasazi-epetraext.])
+
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(anasazi, belos, ANASAZI_BELOS, BUILD_BELOS, yes, [Build examples which use Belos. Can be overridden with --disable-anasazi-belos.], [Build examples which use Belos.])
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(anasazi, aztecoo, ANASAZI_AZTECOO, BUILD_AZTECOO, yes, [Build examples which use AztecOO. Can be overridden with --disable-anasazi-aztecoo.], [Build examples which use AztecOO.])

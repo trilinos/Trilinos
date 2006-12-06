@@ -42,7 +42,7 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(LOBPCGEpetraEx_SOURCES) $(LOBPCGEpetraExGen_SOURCES) $(LOBPCGEpetraExSimple_SOURCES)
+SOURCES = $(LOBPCGEpetraEx_SOURCES) $(LOBPCGEpetraExFile_SOURCES) $(LOBPCGEpetraExGen_SOURCES) $(LOBPCGEpetraExSimple_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -66,7 +66,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
 noinst_PROGRAMS = LOBPCGEpetraEx$(EXEEXT) \
-	LOBPCGEpetraExSimple$(EXEEXT) LOBPCGEpetraExGen$(EXEEXT)
+	LOBPCGEpetraExSimple$(EXEEXT) LOBPCGEpetraExGen$(EXEEXT) \
+	$(am__EXEEXT_1)
 subdir = example/LOBPCG
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -101,6 +102,7 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Anasazi_config.h
 CONFIG_CLEAN_FILES =
+@BUILD_EPETRAEXT_TRUE@am__EXEEXT_1 = LOBPCGEpetraExFile$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_LOBPCGEpetraEx_OBJECTS = LOBPCGEpetraEx-LOBPCGEpetraEx.$(OBJEXT)
 LOBPCGEpetraEx_OBJECTS = $(am_LOBPCGEpetraEx_OBJECTS)
@@ -108,6 +110,9 @@ am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
 @USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
 @USING_GNUMAKE_TRUE@	$(ANASAZI_TEST_LIBS))
+am_LOBPCGEpetraExFile_OBJECTS =  \
+	LOBPCGEpetraExFile-LOBPCGEpetraExFile.$(OBJEXT)
+LOBPCGEpetraExFile_OBJECTS = $(am_LOBPCGEpetraExFile_OBJECTS)
 am_LOBPCGEpetraExGen_OBJECTS =  \
 	LOBPCGEpetraExGen-LOBPCGEpetraExGen.$(OBJEXT)
 LOBPCGEpetraExGen_OBJECTS = $(am_LOBPCGEpetraExGen_OBJECTS)
@@ -118,6 +123,7 @@ DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/LOBPCGEpetraEx-LOBPCGEpetraEx.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/LOBPCGEpetraExFile-LOBPCGEpetraExFile.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/LOBPCGEpetraExGen-LOBPCGEpetraExGen.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/LOBPCGEpetraExSimple-LOBPCGEpetraExSimple.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
@@ -125,10 +131,10 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(LOBPCGEpetraEx_SOURCES) $(LOBPCGEpetraExGen_SOURCES) \
-	$(LOBPCGEpetraExSimple_SOURCES)
-DIST_SOURCES = $(LOBPCGEpetraEx_SOURCES) $(LOBPCGEpetraExGen_SOURCES) \
-	$(LOBPCGEpetraExSimple_SOURCES)
+SOURCES = $(LOBPCGEpetraEx_SOURCES) $(LOBPCGEpetraExFile_SOURCES) \
+	$(LOBPCGEpetraExGen_SOURCES) $(LOBPCGEpetraExSimple_SOURCES)
+DIST_SOURCES = $(LOBPCGEpetraEx_SOURCES) $(LOBPCGEpetraExFile_SOURCES) \
+	$(LOBPCGEpetraExGen_SOURCES) $(LOBPCGEpetraExSimple_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
 	install-exec-recursive install-info-recursive \
@@ -163,6 +169,8 @@ BUILD_AZTECOO_FALSE = @BUILD_AZTECOO_FALSE@
 BUILD_AZTECOO_TRUE = @BUILD_AZTECOO_TRUE@
 BUILD_BELOS_FALSE = @BUILD_BELOS_FALSE@
 BUILD_BELOS_TRUE = @BUILD_BELOS_TRUE@
+BUILD_EPETRAEXT_FALSE = @BUILD_EPETRAEXT_FALSE@
+BUILD_EPETRAEXT_TRUE = @BUILD_EPETRAEXT_TRUE@
 BUILD_EPETRA_THYRA_FALSE = @BUILD_EPETRA_THYRA_FALSE@
 BUILD_EPETRA_THYRA_TRUE = @BUILD_EPETRA_THYRA_TRUE@
 BUILD_EXAMPLES_FALSE = @BUILD_EXAMPLES_FALSE@
@@ -307,9 +315,11 @@ target_vendor = @target_vendor@
 @USING_GNUMAKE_FALSE@EXPORT_INC_PATH = $(ANASAZI_TEST_INCLUDES)
 @USING_GNUMAKE_TRUE@EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ANASAZI_TEST_INCLUDES))
 AM_CPPFLAGS = $(EXPORT_INC_PATH)  
+@BUILD_EPETRAEXT_TRUE@ANASAZI_LOBPCG_EX_FILE = LOBPCGEpetraExFile
 LOBPCGEpetraEx_SOURCES = $(srcdir)/LOBPCGEpetraEx.cpp
 LOBPCGEpetraExSimple_SOURCES = $(srcdir)/LOBPCGEpetraExSimple.cpp
 LOBPCGEpetraExGen_SOURCES = $(srcdir)/LOBPCGEpetraExGen.cpp
+LOBPCGEpetraExFile_SOURCES = $(srcdir)/LOBPCGEpetraExFile.cpp
 
 #np# - List libraries that np is dependent on.  The DEPENDENCIES primary is
 #np# optional.
@@ -349,6 +359,15 @@ LOBPCGEpetraExGen_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/util/ModeLaplac
 LOBPCGEpetraExGen_LDADD = $(top_builddir)/util/ModeLaplace/libModeLaplace.a \
                           $(EXPORT_LIBS)
 
+LOBPCGEpetraExFile_DEPENDENCIES = \
+ 	$(EXPORT_LIBS)
+
+LOBPCGEpetraExFile_CXXFLAGS = -I$(top_srcdir)/src \
+        -I$(top_srcdir)/../epetraext/src/inout -I$(top_builddir)/../epetraext/src
+
+
+#np# List libraries that np is dependent on.
+LOBPCGEpetraExFile_LDADD = $(EXPORT_LIBS)
 
 #np# Set "SUBDIRS= (list all subdirectories that are autotool'ed here)"
 #np# List all subdirectories even if one or more are configured/built only
@@ -397,6 +416,9 @@ clean-noinstPROGRAMS:
 LOBPCGEpetraEx$(EXEEXT): $(LOBPCGEpetraEx_OBJECTS) $(LOBPCGEpetraEx_DEPENDENCIES) 
 	@rm -f LOBPCGEpetraEx$(EXEEXT)
 	$(CXXLINK) $(LOBPCGEpetraEx_LDFLAGS) $(LOBPCGEpetraEx_OBJECTS) $(LOBPCGEpetraEx_LDADD) $(LIBS)
+LOBPCGEpetraExFile$(EXEEXT): $(LOBPCGEpetraExFile_OBJECTS) $(LOBPCGEpetraExFile_DEPENDENCIES) 
+	@rm -f LOBPCGEpetraExFile$(EXEEXT)
+	$(CXXLINK) $(LOBPCGEpetraExFile_LDFLAGS) $(LOBPCGEpetraExFile_OBJECTS) $(LOBPCGEpetraExFile_LDADD) $(LIBS)
 LOBPCGEpetraExGen$(EXEEXT): $(LOBPCGEpetraExGen_OBJECTS) $(LOBPCGEpetraExGen_DEPENDENCIES) 
 	@rm -f LOBPCGEpetraExGen$(EXEEXT)
 	$(CXXLINK) $(LOBPCGEpetraExGen_LDFLAGS) $(LOBPCGEpetraExGen_OBJECTS) $(LOBPCGEpetraExGen_LDADD) $(LIBS)
@@ -411,6 +433,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOBPCGEpetraEx-LOBPCGEpetraEx.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOBPCGEpetraExFile-LOBPCGEpetraExFile.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOBPCGEpetraExGen-LOBPCGEpetraExGen.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOBPCGEpetraExSimple-LOBPCGEpetraExSimple.Po@am__quote@
 
@@ -445,6 +468,22 @@ LOBPCGEpetraEx-LOBPCGEpetraEx.obj: $(srcdir)/LOBPCGEpetraEx.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOBPCGEpetraEx-LOBPCGEpetraEx.Po' tmpdepfile='$(DEPDIR)/LOBPCGEpetraEx-LOBPCGEpetraEx.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(LOBPCGEpetraEx_CXXFLAGS) $(CXXFLAGS) -c -o LOBPCGEpetraEx-LOBPCGEpetraEx.obj `if test -f '$(srcdir)/LOBPCGEpetraEx.cpp'; then $(CYGPATH_W) '$(srcdir)/LOBPCGEpetraEx.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOBPCGEpetraEx.cpp'; fi`
+
+LOBPCGEpetraExFile-LOBPCGEpetraExFile.o: $(srcdir)/LOBPCGEpetraExFile.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(LOBPCGEpetraExFile_CXXFLAGS) $(CXXFLAGS) -MT LOBPCGEpetraExFile-LOBPCGEpetraExFile.o -MD -MP -MF "$(DEPDIR)/LOBPCGEpetraExFile-LOBPCGEpetraExFile.Tpo" -c -o LOBPCGEpetraExFile-LOBPCGEpetraExFile.o `test -f '$(srcdir)/LOBPCGEpetraExFile.cpp' || echo '$(srcdir)/'`$(srcdir)/LOBPCGEpetraExFile.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOBPCGEpetraExFile-LOBPCGEpetraExFile.Tpo" "$(DEPDIR)/LOBPCGEpetraExFile-LOBPCGEpetraExFile.Po"; else rm -f "$(DEPDIR)/LOBPCGEpetraExFile-LOBPCGEpetraExFile.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOBPCGEpetraExFile.cpp' object='LOBPCGEpetraExFile-LOBPCGEpetraExFile.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOBPCGEpetraExFile-LOBPCGEpetraExFile.Po' tmpdepfile='$(DEPDIR)/LOBPCGEpetraExFile-LOBPCGEpetraExFile.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(LOBPCGEpetraExFile_CXXFLAGS) $(CXXFLAGS) -c -o LOBPCGEpetraExFile-LOBPCGEpetraExFile.o `test -f '$(srcdir)/LOBPCGEpetraExFile.cpp' || echo '$(srcdir)/'`$(srcdir)/LOBPCGEpetraExFile.cpp
+
+LOBPCGEpetraExFile-LOBPCGEpetraExFile.obj: $(srcdir)/LOBPCGEpetraExFile.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(LOBPCGEpetraExFile_CXXFLAGS) $(CXXFLAGS) -MT LOBPCGEpetraExFile-LOBPCGEpetraExFile.obj -MD -MP -MF "$(DEPDIR)/LOBPCGEpetraExFile-LOBPCGEpetraExFile.Tpo" -c -o LOBPCGEpetraExFile-LOBPCGEpetraExFile.obj `if test -f '$(srcdir)/LOBPCGEpetraExFile.cpp'; then $(CYGPATH_W) '$(srcdir)/LOBPCGEpetraExFile.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOBPCGEpetraExFile.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOBPCGEpetraExFile-LOBPCGEpetraExFile.Tpo" "$(DEPDIR)/LOBPCGEpetraExFile-LOBPCGEpetraExFile.Po"; else rm -f "$(DEPDIR)/LOBPCGEpetraExFile-LOBPCGEpetraExFile.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOBPCGEpetraExFile.cpp' object='LOBPCGEpetraExFile-LOBPCGEpetraExFile.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOBPCGEpetraExFile-LOBPCGEpetraExFile.Po' tmpdepfile='$(DEPDIR)/LOBPCGEpetraExFile-LOBPCGEpetraExFile.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(LOBPCGEpetraExFile_CXXFLAGS) $(CXXFLAGS) -c -o LOBPCGEpetraExFile-LOBPCGEpetraExFile.obj `if test -f '$(srcdir)/LOBPCGEpetraExFile.cpp'; then $(CYGPATH_W) '$(srcdir)/LOBPCGEpetraExFile.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOBPCGEpetraExFile.cpp'; fi`
 
 LOBPCGEpetraExGen-LOBPCGEpetraExGen.o: $(srcdir)/LOBPCGEpetraExGen.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(LOBPCGEpetraExGen_CXXFLAGS) $(CXXFLAGS) -MT LOBPCGEpetraExGen-LOBPCGEpetraExGen.o -MD -MP -MF "$(DEPDIR)/LOBPCGEpetraExGen-LOBPCGEpetraExGen.Tpo" -c -o LOBPCGEpetraExGen-LOBPCGEpetraExGen.o `test -f '$(srcdir)/LOBPCGEpetraExGen.cpp' || echo '$(srcdir)/'`$(srcdir)/LOBPCGEpetraExGen.cpp; \

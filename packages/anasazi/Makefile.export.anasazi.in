@@ -10,6 +10,7 @@ include @abs_top_builddir@/../teuchos/Makefile.export.teuchos
 # Optional dependencies on triutils, belos, aztecoo, and ifpack are for 
 # examples only.  We add them ONLY to the test target.
 @BUILD_TRIUTILS_TRUE@include @abs_top_builddir@/../triutils/Makefile.export.triutils
+@BUILD_EPETRAEXT_TRUE@include @abs_top_builddir@/../epetraext/Makefile.export.epetraext
 @BUILD_BELOS_TRUE@include @abs_top_builddir@/../belos/Makefile.export.belos
 @BUILD_AMESOS_TRUE@include @abs_top_builddir@/../amesos/Makefile.export.amesos
 @BUILD_AZTECOO_TRUE@include @abs_top_builddir@/../aztecoo/Makefile.export.aztecoo
@@ -42,10 +43,11 @@ _ANASAZI_TEST_INCLUDES = \
 	$(AZTECOO_INCLUDE) \
 	$(TRIUTILS_INCLUDES) \
 	$(ANASAZI_THYRA_INCLUDES) \
+        $(EPETRAEXT_INCLUDES) \
 	$(EPETRA_INCLUDES) \
 	$(TEUCHOS_INCLUDES)
 
-_ANASAZI_TEST_LIBS = @LDFLAGS@ $(ANASAZI_THYRA_LIBS) -L@abs_top_builddir@/src -lanasazi $(IFPACK_LIBS) $(BELOS_LIBS) $(AMESOS_LIBS) $(AZTECOO_LIBS) $(TRIUTILS_LIBS) $(EPETRA_LIBS) $(TEUCHOS_LIBS) @LAPACK_LIBS@ @BLAS_LIBS@ @LIBS@ @FLIBS@
+_ANASAZI_TEST_LIBS = @LDFLAGS@ $(ANASAZI_THYRA_LIBS) -L@abs_top_builddir@/src -lanasazi $(IFPACK_LIBS) $(BELOS_LIBS) $(AMESOS_LIBS) $(AZTECOO_LIBS) $(TRIUTILS_LIBS) $(EPETRAEXT_LIBS) $(EPETRA_LIBS) $(TEUCHOS_LIBS) @LAPACK_LIBS@ @BLAS_LIBS@ @LIBS@ @FLIBS@
 
 @USING_GNUMAKE_TRUE@ANASAZI_TEST_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_ANASAZI_TEST_INCLUDES))
 @USING_GNUMAKE_TRUE@ANASAZI_TEST_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_ANASAZI_TEST_LIBS))

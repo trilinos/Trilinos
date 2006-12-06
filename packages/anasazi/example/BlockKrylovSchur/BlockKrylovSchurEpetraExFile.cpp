@@ -41,7 +41,7 @@
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 
-#include "Trilinos_Util.h"
+#include "EpetraExt_readEpetraLinearSystem.h"
 
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
@@ -53,10 +53,7 @@
 
 int main(int argc, char *argv[]) {
   //
-  int i,info;
-  int n_nonzeros, N_update;
-  int *bindx=0, *update=0;
-  double *val=0;
+  bool haveM = false;
 
 #ifdef EPETRA_MPI  
   // Initialize MPI  
@@ -69,12 +66,16 @@ int main(int argc, char *argv[]) {
   int MyPID = Comm.MyPID();
 
   bool verbose=false;
-  std::string filename = "";
+  bool isHermitian=false;
+  std::string k_filename = "";
+  std::string m_filename = "";
   std::string which = "LM";
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+  cmdp.setOption("hermitian","non-hermitian",&isHermitian,"The eigenproblem being read in is Hermitian.");
   cmdp.setOption("sort",&which,"Targetted eigenvalues (SM,LM,SR,or LR).");
-  cmdp.setOption("filename",&filename,"Filename and path of a Harwell-Boeing data set.");
+  cmdp.setOption("K-filename",&k_filename,"Filename and path of the stiffness matrix.");
+  cmdp.setOption("M-filename",&m_filename,"Filename and path of the mass matrix.");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
 #ifdef HAVE_MPI
     MPI_Finalize();
@@ -86,53 +87,15 @@ int main(int argc, char *argv[]) {
   //******************Set up the problem to be solved*********************
   //**********************************************************************
   //
-  int NumGlobalElements;  // total # of rows in matrix
+  // *****Read in matrix from file******
   //
-  // *****Read in matrix from HB file******
-  //
-  Trilinos_Util_read_hb(const_cast<char *>(filename.c_str()), MyPID, &NumGlobalElements, 
-			&n_nonzeros, &val, &bindx);
-  //
-  // *****Distribute data among processors*****
-  //
-  Trilinos_Util_distrib_msr_matrix(Comm, &NumGlobalElements, &n_nonzeros, &N_update,
-                                 &update, &val, &bindx);
-  //
-  // *****Construct the matrix*****
-  //
-  int NumMyElements = N_update; // # local rows of matrix on processor
-  //
-  // Create an integer vector NumNz that is used to build the Epetra Matrix.
-  // NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation 
-  // on this processor
-  //
-  std::vector<int> NumNz(NumMyElements);
-  for (i=0; i<NumMyElements; i++) {
-    NumNz[i] = bindx[i+1] - bindx[i] + 1;
+  Teuchos::RefCountPtr<Epetra_Map> Map;
+  Teuchos::RefCountPtr<Epetra_CrsMatrix> K, M;
+  EpetraExt::readEpetraLinearSystem( k_filename, Comm, &K, &Map );
+
+  if (haveM) {
+    EpetraExt::readEpetraLinearSystem( m_filename, Comm, &M, &Map );
   }
-  //
-  Epetra_Map Map(NumGlobalElements, NumMyElements, update, 0, Comm);
-  //
-  // Create a Epetra_Matrix
-  //
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> A = Teuchos::rcp( new Epetra_CrsMatrix(Copy, Map, &NumNz[0]) );
-  //
-  // Add rows one-at-a-time
-  //
-  int NumEntries;
-  for (i=0; i<NumMyElements; i++) {
-    NumEntries = bindx[i+1] - bindx[i];
-    info = A->InsertGlobalValues(update[i], NumEntries, val + bindx[i], bindx + bindx[i]);
-    assert(info==0 );
-    info = A->InsertGlobalValues(update[i], 1, val+i, update+i);
-    assert( info==0 );
-  }
-  //
-  // Finish up
-  //
-  info = A->FillComplete();
-  assert( info==0 );
-  A->SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
   //
   //************************************
   // Start the block Arnoldi iteration
@@ -171,14 +134,19 @@ int main(int argc, char *argv[]) {
   //
   // Create the eigenproblem to be solved.
   //
-  Teuchos::RefCountPtr<Epetra_MultiVector> ivec = Teuchos::rcp( new Epetra_MultiVector(Map, blockSize) );
+  Teuchos::RefCountPtr<Epetra_MultiVector> ivec = Teuchos::rcp( new Epetra_MultiVector(*Map, blockSize) );
   ivec->Random();
   
-  Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double, MV, OP> > MyProblem =
-    Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>(A, ivec) );
-  
-  // Inform the eigenproblem that the matrix A is Hermitian
-  //MyProblem->setHermitian(true);
+  Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double, MV, OP> > MyProblem;
+  if (haveM) {
+    MyProblem = Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>(K, M, ivec) );
+  }
+  else { 
+    MyProblem = Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>(K, ivec) );
+  }
+
+  // Inform the eigenproblem that the (K,M) is Hermitian
+  MyProblem->setHermitian( isHermitian );
 
   // Set the number of eigenvalues requested 
   MyProblem->setNEV( nev );
@@ -214,88 +182,103 @@ int main(int argc, char *argv[]) {
   if (numev > 0) {
     // Compute residuals.
     Teuchos::LAPACK<int,double> lapack;
-    std::vector<double> normA(numev);
+    std::vector<double> normR(numev);
     
     if (MyProblem->isHermitian()) {
       // Get storage
-      Epetra_MultiVector Aevecs(Map,numev);
+      Epetra_MultiVector Kevecs(*Map,numev);
+      Teuchos::RefCountPtr<Epetra_MultiVector> Mevecs;
       Teuchos::SerialDenseMatrix<int,double> B(numev,numev);
       B.putScalar(0.0); 
       for (int i=0; i<numev; i++) {B(i,i) = evals[i].realpart;}
       
       // Compute A*evecs
-      OPT::Apply( *A, *evecs, Aevecs );
+      OPT::Apply( *K, *evecs, Kevecs );
+      if (haveM) {
+	Mevecs = Teuchos::rcp( new Epetra_MultiVector(*Map,numev) );
+        OPT::Apply( *M, *evecs, *Mevecs );
+      } 
+      else {
+        Mevecs = evecs;
+      }
       
       // Compute A*evecs - lambda*evecs and its norm
-      MVT::MvTimesMatAddMv( -1.0, *evecs, B, 1.0, Aevecs );
-      MVT::MvNorm( Aevecs, &normA );
+      MVT::MvTimesMatAddMv( -1.0, *Mevecs, B, 1.0, Kevecs );
+      MVT::MvNorm( Kevecs, &normR );
       
       // Scale the norms by the eigenvalue
       for (int i=0; i<numev; i++) {
-	normA[i] /= Teuchos::ScalarTraits<double>::magnitude( evals[i].realpart );
+	normR[i] /= Teuchos::ScalarTraits<double>::magnitude( evals[i].realpart );
       }
     } else {
       // The problem is non-Hermitian.
       int i=0;
       std::vector<int> curind(1);
       std::vector<double> resnorm(1), tempnrm(1);
-      Teuchos::RefCountPtr<MV> evecr, eveci, tempAevec;
-      Epetra_MultiVector Aevec(Map,numev);
+      Teuchos::RefCountPtr<MV> tempeveci, tempKevec, tempMevec, Mevecs;
+      Epetra_MultiVector Kevecs(*Map,numev);
       
-      // Compute A*evecs
-      OPT::Apply( *A, *evecs, Aevec );
+      // Compute K*evecs
+      OPT::Apply( *K, *evecs, Kevecs );
+      if (haveM) {
+        Mevecs = Teuchos::rcp( new Epetra_MultiVector(*Map,numev) );
+        OPT::Apply( *M, *evecs, *Mevecs );
+      }
+      else {
+        Mevecs = evecs;
+      }
       
       Teuchos::SerialDenseMatrix<int,double> Breal(1,1), Bimag(1,1);
       while (i<numev) {
 	if (index[i]==0) {
-	  // Get a view of the current eigenvector (evecr)
+	  // Get a view of the M*evecr
 	  curind[0] = i;
-	  evecr = MVT::CloneView( *evecs, curind );
+	  tempMevec = MVT::CloneView( *Mevecs, curind );
 	  
 	  // Get a copy of A*evecr
-	  tempAevec = MVT::CloneCopy( Aevec, curind );
+	  tempKevec = MVT::CloneCopy( Kevecs, curind );
 	  
-	  // Compute A*evecr - lambda*evecr
+	  // Compute K*evecr - lambda*M*evecr
 	  Breal(0,0) = evals[i].realpart;
-	  MVT::MvTimesMatAddMv( -1.0, *evecr, Breal, 1.0, *tempAevec );
+	  MVT::MvTimesMatAddMv( -1.0, *tempMevec, Breal, 1.0, *tempKevec );
 	  
 	  // Compute the norm of the residual and increment counter
-	  MVT::MvNorm( *tempAevec, &resnorm );
-	  normA[i] = resnorm[0]/Teuchos::ScalarTraits<double>::magnitude( evals[i].realpart );
+	  MVT::MvNorm( *tempKevec, &resnorm );
+	  normR[i] = resnorm[0]/Teuchos::ScalarTraits<double>::magnitude( evals[i].realpart );
 	  i++;
 	} else {
-	  // Get a view of the real part of the eigenvector (evecr)
+	  // Get a view of the real part of M*evecr
 	  curind[0] = i;
-	  evecr = MVT::CloneView( *evecs, curind );
+	  tempMevec = MVT::CloneView( *Mevecs, curind );
 	  
-	  // Get a copy of A*evecr
-	  tempAevec = MVT::CloneCopy( Aevec, curind );
+	  // Get a copy of K*evecr
+	  tempKevec = MVT::CloneCopy( Kevecs, curind );
 	  
 	  // Get a view of the imaginary part of the eigenvector (eveci)
 	  curind[0] = i+1;
-	  eveci = MVT::CloneView( *evecs, curind );
+	  tempeveci = MVT::CloneView( *Mevecs, curind );
 	  
 	  // Set the eigenvalue into Breal and Bimag
 	  Breal(0,0) = evals[i].realpart;
 	  Bimag(0,0) = evals[i].imagpart;
 	  
-	  // Compute A*evecr - evecr*lambdar + eveci*lambdai
-	  MVT::MvTimesMatAddMv( -1.0, *evecr, Breal, 1.0, *tempAevec );
-	  MVT::MvTimesMatAddMv( 1.0, *eveci, Bimag, 1.0, *tempAevec );
-	  MVT::MvNorm( *tempAevec, &tempnrm );
+	  // Compute K*evecr - M*evecr*lambdar + M*eveci*lambdai
+	  MVT::MvTimesMatAddMv( -1.0, *tempMevec, Breal, 1.0, *tempKevec );
+	  MVT::MvTimesMatAddMv( 1.0, *tempeveci, Bimag, 1.0, *tempKevec );
+	  MVT::MvNorm( *tempKevec, &tempnrm );
 	  
-	  // Get a copy of A*eveci
-	  tempAevec = MVT::CloneCopy( Aevec, curind );
+	  // Get a copy of K*eveci
+	  tempKevec = MVT::CloneCopy( Kevecs, curind );
 	  
-	  // Compute A*eveci - eveci*lambdar - evecr*lambdai
-	  MVT::MvTimesMatAddMv( -1.0, *evecr, Bimag, 1.0, *tempAevec );
-	  MVT::MvTimesMatAddMv( -1.0, *eveci, Breal, 1.0, *tempAevec );
-	  MVT::MvNorm( *tempAevec, &resnorm );
+	  // Compute K*eveci - M*eveci*lambdar - M*evecr*lambdai
+	  MVT::MvTimesMatAddMv( -1.0, *tempMevec, Bimag, 1.0, *tempKevec );
+	  MVT::MvTimesMatAddMv( -1.0, *tempeveci, Breal, 1.0, *tempKevec );
+	  MVT::MvNorm( *tempKevec, &resnorm );
 	  
 	  // Compute the norms and scale by magnitude of eigenvalue
-	  normA[i] = lapack.LAPY2( tempnrm[i], resnorm[i] ) /
+	  normR[i] = lapack.LAPY2( tempnrm[i], resnorm[i] ) /
 	    lapack.LAPY2( evals[i].realpart, evals[i].imagpart );
-	  normA[i+1] = normA[i];
+	  normR[i+1] = normR[i];
 	  
 	  i=i+2;
 	}
@@ -312,7 +295,7 @@ int main(int argc, char *argv[]) {
 	cout<<"-----------------------------------------------------------"<<endl;
 	for (int i=0; i<numev; i++) {
 	  cout<< std::setw(16) << evals[i].realpart 
-	      << std::setw(20) << normA[i] << endl;
+	      << std::setw(20) << normR[i] << endl;
 	}  
 	cout<<"-----------------------------------------------------------"<<endl;
       } 
@@ -324,20 +307,16 @@ int main(int argc, char *argv[]) {
 	for (int i=0; i<numev; i++) {
 	  cout<< std::setw(16) << evals[i].realpart 
 	      << std::setw(16) << evals[i].imagpart 
-	      << std::setw(20) << normA[i] << endl;
+	      << std::setw(20) << normR[i] << endl;
 	}  
 	cout<<"-----------------------------------------------------------"<<endl;
       }  
     }
   }
 
-  if (bindx) delete [] bindx;
-  if (update) delete [] update;
-  if (val) delete [] val;
-
 #ifdef EPETRA_MPI
     MPI_Finalize() ;
 #endif
     return 0;
 
-} // end BlockKrylovSchurEpetraExHb.cpp
+} // end BlockKrylovSchurEpetraExFile.cpp
