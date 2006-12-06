@@ -1,56 +1,3 @@
-/* Try to test all combinations of types and operations */
-
-#ifdef SACADO_NAMESPACE
-#define ADT_RAD Sacado::Rad::
-#else
-#define ADT_RAD /*nothing*/
-#endif
-
-#include "Sacado_trad.hpp"
-#include <stdio.h>
-
-typedef ADT_RAD IndepADvar<double> AI;
-typedef ADT_RAD ADvar<double> A;
-typedef ADT_RAD ConstADvar<double> C;
-typedef ADT_RAD ADvari<double> Ai;
-typedef const ADT_RAD IndepADvar<double> cAI;
-typedef const ADT_RAD ADvar<double> cA;
-typedef const ADT_RAD ConstADvar<double> cC;
-typedef const ADT_RAD ADvari<double> cAi;
-static int rc;
-
-/* This is to be run through an awk program that changes lines */
-/* with "BINTEST" or "UNOPTEST" at the beginning of the line into */
-/* a the desired C++ (which we can then inspect). */
-
- void
-botch(const char *what, double wanted, double got)
-{
-	printf("%s: expected %g, got %g, diff = %.2g\n", what, wanted, got, wanted-got);
-	rc = 1;
-	}
-
-#ifdef RAD_NO_EQ_ALIAS
-#define Plus_dx 1.
-#else
-#ifdef RAD_AUTO_AD_Const
-#define Plus_dx 1.
-#else
-#define Plus_dx 0.
-#endif
-#endif
-
- int
-main(void)
-{
-	AI xAI, yAI;
-	A fA, xA, yA;
-	C xC, yC;
-	double dx, dy, f, xd, yd;
-	long xL, yL;
-	int xi, yi;
-
-	rc = 0;
 BINTEST operator+  1.  2.  3.   1.   1.
 BINTEST operator-  7.  4   3.   1.  -1.
 BINTEST operator*  6.  7. 42.   7.   6.
@@ -111,8 +58,3 @@ UNOPTEST abs		37.   37.		 1.
 UNOPTEST +		17.   17.		 Plus_dx	1
 UNOPTEST +		17.   17.		 1.		1	1
 UNOPTEST -		19.  -19.		-1.		1
-
-	if (!rc) // chatter for badly-designed cppunit test that cannot tolerate silence
-		printf("OK\n");
-	return rc;
-	}

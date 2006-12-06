@@ -1,4 +1,78 @@
 #!/bin/sh
+cat <<\!
+/* Try to test all combinations of types and operations */
+
+#ifdef SACADO_NAMESPACE
+#define ADT_RAD Sacado::Rad::
+#else
+#define ADT_RAD /*nothing*/
+#endif
+
+#include "Sacado_trad.hpp"
+#include <stdio.h>
+
+typedef ADT_RAD IndepADvar<double> AI;
+typedef ADT_RAD ADvar<double> A;
+typedef ADT_RAD ConstADvar<double> C;
+typedef ADT_RAD ADvari<double> Ai;
+typedef const ADT_RAD IndepADvar<double> cAI;
+typedef const ADT_RAD ADvar<double> cA;
+typedef const ADT_RAD ConstADvar<double> cC;
+typedef const ADT_RAD ADvari<double> cAi;
+static int rc;
+
+/* This is to be run through an awk program that changes lines */
+/* with "BINTEST" or "UNOPTEST" at the beginning of the line into */
+/* a the desired C++ (which we can then inspect). */
+
+ void
+botch(const char *what, double wanted, double got)
+{
+	printf("%s: expected %g, got %g, diff = %.2g\n", what, wanted, got, wanted-got);
+	rc = 1;
+	}
+
+ const double tol = 5e-16;
+
+ int
+differ(double a, double b)
+{
+	double d = a - b;
+	if (d < 0.)
+		d = -d;
+	if (a < 0.)
+		a = -a;
+	if (b < 0.)
+		b = -b;
+	if (a < b)
+		a = b;
+	if (a > 0.)
+		d /= a;
+	return d > tol;
+	}
+
+#ifdef RAD_NO_EQ_ALIAS
+#define Plus_dx 1.
+#else
+#ifdef RAD_AUTO_AD_Const
+#define Plus_dx 1.
+#else
+#define Plus_dx 0.
+#endif
+#endif
+
+ int
+main(void)
+{
+	AI xAI, yAI;
+	A fA, xA, yA;
+	C xC, yC;
+	double dx, dy, f, xd, yd;
+	long xL, yL;
+	int xi, yi;
+
+	rc = 0;
+!
 @AWK@ '
 BEGIN {
 suf[0] = "AI"
@@ -45,11 +119,11 @@ function crunch(op,i,j,cL,cR)
 	if (infix) opname = sprintf("%s %s %s", x, op, y)
 	else	   opname = sprintf("%s(%s,%s)", op, x, y)
 	printf "\tfA = %s;\n\tA::Gradcomp();\n", opname
-	printf "\tif (fA.val() != f) botch(\"fA = %s\", f, fA.val());\n",opname
+	printf "\tif (differ(fA.val(), f)) botch(\"fA = %s\", f, fA.val());\n",opname
 	if (i < 4)
-	 printf "\telse if (%s.%s != dx) botch(\"d %s/dx\", dx, %s.%s);\n",x,adj[i],opname,x,adj[i]
+	 printf "\telse if (differ(%s.%s, dx)) botch(\"d %s/dx\", dx, %s.%s);\n",x,adj[i],opname,x,adj[i]
 	if (j < 4)
-	 printf "\telse if (%s.%s != dy) botch(\"d %s/dy\", dy, %s.%s);\n",y,adj[j],opname,y,adj[j]
+	 printf "\telse if (differ(%s.%s, dy)) botch(\"d %s/dy\", dy, %s.%s);\n",y,adj[j],opname,y,adj[j]
 	if (newcontext) printf "\t}\n"
 	printf "\n"
 	}
@@ -75,8 +149,8 @@ function crunch1(op, i, cL)
 	if (infix) opname = sprintf("%s%s", op, xx)
 	else	   opname = sprintf("%s(%s)", op, xx)
 	printf "\tfA = %s;\n\tA::Gradcomp();\n", opname
-	printf "\tif (fA.val() != f) botch(\"fA = %s\", f, fA.val());\n",opname
-	printf "\telse if (%s.%s != dx) botch(\"d %s/dx\", dx, %s.%s);\n",x,adj[i],opname,x,adj[i]
+	printf "\tif (differ(fA.val(), f)) botch(\"fA = %s\", f, fA.val());\n",opname
+	printf "\telse if (differ(%s.%s, dx)) botch(\"d %s/dx\", dx, %s.%s);\n",x,adj[i],opname,x,adj[i]
 	if (newcontext) printf "\t}\n"
 	printf "\n"
 	}
@@ -112,3 +186,10 @@ function crunch1(op, i, cL)
 	next
 	}
 {print}' "$*"
+cat <<\!
+
+	if (!rc) // chatter for cppunit test, which cannot tolerate silence
+		printf("OK\n");
+	return rc;
+	}
+!

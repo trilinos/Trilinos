@@ -43,7 +43,7 @@
 # ************************************************************************
 # @HEADER
 
-SOURCES = $(tradoptest1_SOURCES) $(tradoptest2_SOURCES) $(tradoptest3_SOURCES) $(tradoptest4_SOURCES) $(tradoptest5_SOURCES) $(tradoptest6_SOURCES)
+SOURCES = $(tradoptesta1_SOURCES) $(tradoptesta2_SOURCES) $(tradoptesta3_SOURCES) $(tradoptesta4_SOURCES) $(tradoptesta5_SOURCES) $(tradoptesta6_SOURCES) $(tradoptestb1_SOURCES) $(tradoptestb2_SOURCES) $(tradoptestb3_SOURCES) $(tradoptestb4_SOURCES) $(tradoptestb5_SOURCES) $(tradoptestb6_SOURCES) $(tradoptestc1_SOURCES) $(tradoptestc2_SOURCES) $(tradoptestc3_SOURCES) $(tradoptestc4_SOURCES) $(tradoptestc5_SOURCES) $(tradoptestc6_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -66,9 +66,15 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-noinst_PROGRAMS = tradoptest1$(EXEEXT) tradoptest2$(EXEEXT) \
-	tradoptest3$(EXEEXT) tradoptest4$(EXEEXT) tradoptest5$(EXEEXT) \
-	tradoptest6$(EXEEXT)
+noinst_PROGRAMS = tradoptesta1$(EXEEXT) tradoptestb1$(EXEEXT) \
+	tradoptestc1$(EXEEXT) tradoptesta2$(EXEEXT) \
+	tradoptestb2$(EXEEXT) tradoptestc2$(EXEEXT) \
+	tradoptesta3$(EXEEXT) tradoptestb3$(EXEEXT) \
+	tradoptestc3$(EXEEXT) tradoptesta4$(EXEEXT) \
+	tradoptestb4$(EXEEXT) tradoptestc4$(EXEEXT) \
+	tradoptesta5$(EXEEXT) tradoptestb5$(EXEEXT) \
+	tradoptestc5$(EXEEXT) tradoptesta6$(EXEEXT) \
+	tradoptestb6$(EXEEXT) tradoptestc6$(EXEEXT)
 subdir = test/tradoptest
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	$(srcdir)/testgen.as.in
@@ -95,40 +101,88 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Sacado_config.h
 CONFIG_CLEAN_FILES = testgen.as
 PROGRAMS = $(noinst_PROGRAMS)
-am_tradoptest1_OBJECTS = tradoptest1-tradoptest.$(OBJEXT)
-tradoptest1_OBJECTS = $(am_tradoptest1_OBJECTS)
+am_tradoptesta1_OBJECTS = tradoptesta1-tradoptesta.$(OBJEXT)
+tradoptesta1_OBJECTS = $(am_tradoptesta1_OBJECTS)
 am__DEPENDENCIES_1 =
-am_tradoptest2_OBJECTS = tradoptest2-tradoptest.$(OBJEXT)
-tradoptest2_OBJECTS = $(am_tradoptest2_OBJECTS)
+am_tradoptesta2_OBJECTS = tradoptesta2-tradoptesta.$(OBJEXT)
+tradoptesta2_OBJECTS = $(am_tradoptesta2_OBJECTS)
 am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1)
-am_tradoptest3_OBJECTS = tradoptest3-tradoptest.$(OBJEXT)
-tradoptest3_OBJECTS = $(am_tradoptest3_OBJECTS)
-am_tradoptest4_OBJECTS = tradoptest4-tradoptest.$(OBJEXT)
-tradoptest4_OBJECTS = $(am_tradoptest4_OBJECTS)
-am_tradoptest5_OBJECTS = tradoptest5-tradoptest.$(OBJEXT)
-tradoptest5_OBJECTS = $(am_tradoptest5_OBJECTS)
-am_tradoptest6_OBJECTS = tradoptest6-tradoptest.$(OBJEXT)
-tradoptest6_OBJECTS = $(am_tradoptest6_OBJECTS)
+am_tradoptesta3_OBJECTS = tradoptesta3-tradoptesta.$(OBJEXT)
+tradoptesta3_OBJECTS = $(am_tradoptesta3_OBJECTS)
+am_tradoptesta4_OBJECTS = tradoptesta4-tradoptesta.$(OBJEXT)
+tradoptesta4_OBJECTS = $(am_tradoptesta4_OBJECTS)
+am_tradoptesta5_OBJECTS = tradoptesta5-tradoptesta.$(OBJEXT)
+tradoptesta5_OBJECTS = $(am_tradoptesta5_OBJECTS)
+am_tradoptesta6_OBJECTS = tradoptesta6-tradoptesta.$(OBJEXT)
+tradoptesta6_OBJECTS = $(am_tradoptesta6_OBJECTS)
+am_tradoptestb1_OBJECTS = tradoptestb1-tradoptestb.$(OBJEXT)
+tradoptestb1_OBJECTS = $(am_tradoptestb1_OBJECTS)
+am_tradoptestb2_OBJECTS = tradoptestb2-tradoptestb.$(OBJEXT)
+tradoptestb2_OBJECTS = $(am_tradoptestb2_OBJECTS)
+am_tradoptestb3_OBJECTS = tradoptestb3-tradoptestb.$(OBJEXT)
+tradoptestb3_OBJECTS = $(am_tradoptestb3_OBJECTS)
+am_tradoptestb4_OBJECTS = tradoptestb4-tradoptestb.$(OBJEXT)
+tradoptestb4_OBJECTS = $(am_tradoptestb4_OBJECTS)
+am_tradoptestb5_OBJECTS = tradoptestb5-tradoptestb.$(OBJEXT)
+tradoptestb5_OBJECTS = $(am_tradoptestb5_OBJECTS)
+am_tradoptestb6_OBJECTS = tradoptestb6-tradoptestb.$(OBJEXT)
+tradoptestb6_OBJECTS = $(am_tradoptestb6_OBJECTS)
+am_tradoptestc1_OBJECTS = tradoptestc1-tradoptestc.$(OBJEXT)
+tradoptestc1_OBJECTS = $(am_tradoptestc1_OBJECTS)
+am_tradoptestc2_OBJECTS = tradoptestc2-tradoptestc.$(OBJEXT)
+tradoptestc2_OBJECTS = $(am_tradoptestc2_OBJECTS)
+am_tradoptestc3_OBJECTS = tradoptestc3-tradoptestc.$(OBJEXT)
+tradoptestc3_OBJECTS = $(am_tradoptestc3_OBJECTS)
+am_tradoptestc4_OBJECTS = tradoptestc4-tradoptestc.$(OBJEXT)
+tradoptestc4_OBJECTS = $(am_tradoptestc4_OBJECTS)
+am_tradoptestc5_OBJECTS = tradoptestc5-tradoptestc.$(OBJEXT)
+tradoptestc5_OBJECTS = $(am_tradoptestc5_OBJECTS)
+am_tradoptestc6_OBJECTS = tradoptestc6-tradoptestc.$(OBJEXT)
+tradoptestc6_OBJECTS = $(am_tradoptestc6_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/tradoptest1-tradoptest.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/tradoptest2-tradoptest.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/tradoptest3-tradoptest.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/tradoptest4-tradoptest.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/tradoptest5-tradoptest.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/tradoptest6-tradoptest.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/tradoptesta1-tradoptesta.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/tradoptesta2-tradoptesta.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/tradoptesta3-tradoptesta.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/tradoptesta4-tradoptesta.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/tradoptesta5-tradoptesta.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/tradoptesta6-tradoptesta.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/tradoptestb1-tradoptestb.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/tradoptestb2-tradoptestb.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/tradoptestb3-tradoptestb.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/tradoptestb4-tradoptestb.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/tradoptestb5-tradoptestb.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/tradoptestb6-tradoptestb.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/tradoptestc1-tradoptestc.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/tradoptestc2-tradoptestc.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/tradoptestc3-tradoptestc.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/tradoptestc4-tradoptestc.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/tradoptestc5-tradoptestc.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/tradoptestc6-tradoptestc.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(tradoptest1_SOURCES) $(tradoptest2_SOURCES) \
-	$(tradoptest3_SOURCES) $(tradoptest4_SOURCES) \
-	$(tradoptest5_SOURCES) $(tradoptest6_SOURCES)
-DIST_SOURCES = $(tradoptest1_SOURCES) $(tradoptest2_SOURCES) \
-	$(tradoptest3_SOURCES) $(tradoptest4_SOURCES) \
-	$(tradoptest5_SOURCES) $(tradoptest6_SOURCES)
+SOURCES = $(tradoptesta1_SOURCES) $(tradoptesta2_SOURCES) \
+	$(tradoptesta3_SOURCES) $(tradoptesta4_SOURCES) \
+	$(tradoptesta5_SOURCES) $(tradoptesta6_SOURCES) \
+	$(tradoptestb1_SOURCES) $(tradoptestb2_SOURCES) \
+	$(tradoptestb3_SOURCES) $(tradoptestb4_SOURCES) \
+	$(tradoptestb5_SOURCES) $(tradoptestb6_SOURCES) \
+	$(tradoptestc1_SOURCES) $(tradoptestc2_SOURCES) \
+	$(tradoptestc3_SOURCES) $(tradoptestc4_SOURCES) \
+	$(tradoptestc5_SOURCES) $(tradoptestc6_SOURCES)
+DIST_SOURCES = $(tradoptesta1_SOURCES) $(tradoptesta2_SOURCES) \
+	$(tradoptesta3_SOURCES) $(tradoptesta4_SOURCES) \
+	$(tradoptesta5_SOURCES) $(tradoptesta6_SOURCES) \
+	$(tradoptestb1_SOURCES) $(tradoptestb2_SOURCES) \
+	$(tradoptestb3_SOURCES) $(tradoptestb4_SOURCES) \
+	$(tradoptestb5_SOURCES) $(tradoptestb6_SOURCES) \
+	$(tradoptestc1_SOURCES) $(tradoptestc2_SOURCES) \
+	$(tradoptestc3_SOURCES) $(tradoptestc4_SOURCES) \
+	$(tradoptestc5_SOURCES) $(tradoptestc6_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -175,6 +229,7 @@ ENABLE_ADOLC_TRUE = @ENABLE_ADOLC_TRUE@
 EXEEXT = .exe
 F77 = @F77@
 FFLAGS = @FFLAGS@
+GREP = @GREP@
 HAVE_CPPUNIT_FALSE = @HAVE_CPPUNIT_FALSE@
 HAVE_CPPUNIT_TRUE = @HAVE_CPPUNIT_TRUE@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
@@ -224,8 +279,6 @@ ac_aux_dir = @ac_aux_dir@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@
 ac_ct_F77 = @ac_ct_F77@
-ac_ct_RANLIB = @ac_ct_RANLIB@
-ac_ct_STRIP = @ac_ct_STRIP@
 am__fastdepCC_FALSE = @am__fastdepCC_FALSE@
 am__fastdepCC_TRUE = @am__fastdepCC_TRUE@
 am__fastdepCXX_FALSE = @am__fastdepCXX_FALSE@
@@ -240,6 +293,9 @@ build_cpu = @build_cpu@
 build_os = @build_os@
 build_vendor = @build_vendor@
 datadir = @datadir@
+datarootdir = @datarootdir@
+docdir = @docdir@
+dvidir = @dvidir@
 exec_prefix = @exec_prefix@
 execincludedir = @execincludedir@
 host = @host@
@@ -247,17 +303,21 @@ host_alias = @host_alias@
 host_cpu = @host_cpu@
 host_os = @host_os@
 host_vendor = @host_vendor@
+htmldir = @htmldir@
 includedir = @includedir@
 infodir = @infodir@
 install_sh = @install_sh@
 libdir = @libdir@
 libexecdir = @libexecdir@
+localedir = @localedir@
 localstatedir = @localstatedir@
 mandir = @mandir@
 mkdir_p = @mkdir_p@
 oldincludedir = @oldincludedir@
+pdfdir = @pdfdir@
 prefix = @prefix@
 program_transform_name = @program_transform_name@
+psdir = @psdir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
@@ -266,49 +326,133 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-tradoptest1_SOURCES = tradoptest.cpp 
-tradoptest1_CXXFLAGS = -USACADO_NAMESPACE \
+tradoptesta1_SOURCES = tradoptesta.cpp 
+tradoptesta1_CXXFLAGS = -USACADO_NAMESPACE \
 	-I$(top_srcdir)/src \
 	-I$(top_builddir)/src
 
-tradoptest1_DEPENDENCIES = $(top_builddir)/src/libsacado.a
-tradoptest1_LDADD = -L$(top_builddir)/src -lsacado $(LIBS) $(FLIBS)
-tradoptest2_SOURCES = tradoptest.cpp 
-tradoptest2_CXXFLAGS = -USACADO_NAMESPACE -DRAD_AUTO_AD_Const \
+tradoptesta1_DEPENDENCIES = $(top_builddir)/src/libsacado.a
+tradoptesta1_LDADD = -L$(top_builddir)/src -lsacado $(LIBS) $(FLIBS)
+tradoptesta2_SOURCES = tradoptesta.cpp 
+tradoptesta2_CXXFLAGS = -USACADO_NAMESPACE -DRAD_AUTO_AD_Const \
 	-I$(top_srcdir)/src \
 	-I$(top_builddir)/src
 
-tradoptest2_DEPENDENCIES = $(tradoptest1_DEPENDENCIES)
-tradoptest2_LDADD = $(tradoptest1_LDADD)
-tradoptest3_SOURCES = tradoptest.cpp 
-tradoptest3_CXXFLAGS = -USACADO_NAMESPACE -DRAD_NO_EQ_ALIAS \
+tradoptesta2_DEPENDENCIES = $(tradoptesta1_DEPENDENCIES)
+tradoptesta2_LDADD = $(tradoptesta1_LDADD)
+tradoptesta3_SOURCES = tradoptesta.cpp 
+tradoptesta3_CXXFLAGS = -USACADO_NAMESPACE -DRAD_NO_EQ_ALIAS \
 	-I$(top_srcdir)/src \
 	-I$(top_builddir)/src
 
-tradoptest3_DEPENDENCIES = $(tradoptest1_DEPENDENCIES)
-tradoptest3_LDADD = $(tradoptest1_LDADD)
-tradoptest4_SOURCES = tradoptest.cpp 
-tradoptest4_CXXFLAGS = -DSACADO_NAMESPACE \
+tradoptesta3_DEPENDENCIES = $(tradoptesta1_DEPENDENCIES)
+tradoptesta3_LDADD = $(tradoptesta1_LDADD)
+tradoptesta4_SOURCES = tradoptesta.cpp 
+tradoptesta4_CXXFLAGS = -DSACADO_NAMESPACE \
 	-I$(top_srcdir)/src \
 	-I$(top_builddir)/src
 
-tradoptest4_DEPENDENCIES = $(tradoptest1_DEPENDENCIES)
-tradoptest4_LDADD = $(tradoptest1_LDADD)
-tradoptest5_SOURCES = tradoptest.cpp 
-tradoptest5_CXXFLAGS = -DSACADO_NAMESPACE -DRAD_AUTO_AD_Const \
+tradoptesta4_DEPENDENCIES = $(tradoptesta1_DEPENDENCIES)
+tradoptesta4_LDADD = $(tradoptesta1_LDADD)
+tradoptesta5_SOURCES = tradoptesta.cpp 
+tradoptesta5_CXXFLAGS = -DSACADO_NAMESPACE -DRAD_AUTO_AD_Const \
 	-I$(top_srcdir)/src \
 	-I$(top_builddir)/src
 
-tradoptest5_DEPENDENCIES = $(tradoptest1_DEPENDENCIES)
-tradoptest5_LDADD = $(tradoptest1_LDADD)
-tradoptest6_SOURCES = tradoptest.cpp 
-tradoptest6_CXXFLAGS = -DSACADO_NAMESPACE -DRAD_NO_EQ_ALIAS \
+tradoptesta5_DEPENDENCIES = $(tradoptesta1_DEPENDENCIES)
+tradoptesta5_LDADD = $(tradoptesta1_LDADD)
+tradoptesta6_SOURCES = tradoptesta.cpp 
+tradoptesta6_CXXFLAGS = -DSACADO_NAMESPACE -DRAD_NO_EQ_ALIAS \
 	-I$(top_srcdir)/src \
 	-I$(top_builddir)/src
 
-tradoptest6_DEPENDENCIES = $(tradoptest1_DEPENDENCIES)
-tradoptest6_LDADD = $(tradoptest1_LDADD)
-CLEANFILES = tradoptest.cpp
+tradoptesta6_DEPENDENCIES = $(tradoptesta1_DEPENDENCIES)
+tradoptesta6_LDADD = $(tradoptesta1_LDADD)
+tradoptestb1_SOURCES = tradoptestb.cpp 
+tradoptestb1_CXXFLAGS = -USACADO_NAMESPACE \
+	-I$(top_srcdir)/src \
+	-I$(top_builddir)/src
+
+tradoptestb1_DEPENDENCIES = $(top_builddir)/src/libsacado.a
+tradoptestb1_LDADD = -L$(top_builddir)/src -lsacado $(LIBS) $(FLIBS)
+tradoptestb2_SOURCES = tradoptestb.cpp 
+tradoptestb2_CXXFLAGS = -USACADO_NAMESPACE -DRAD_AUTO_AD_Const \
+	-I$(top_srcdir)/src \
+	-I$(top_builddir)/src
+
+tradoptestb2_DEPENDENCIES = $(tradoptestb1_DEPENDENCIES)
+tradoptestb2_LDADD = $(tradoptestb1_LDADD)
+tradoptestb3_SOURCES = tradoptestb.cpp 
+tradoptestb3_CXXFLAGS = -USACADO_NAMESPACE -DRAD_NO_EQ_ALIAS \
+	-I$(top_srcdir)/src \
+	-I$(top_builddir)/src
+
+tradoptestb3_DEPENDENCIES = $(tradoptestb1_DEPENDENCIES)
+tradoptestb3_LDADD = $(tradoptestb1_LDADD)
+tradoptestb4_SOURCES = tradoptestb.cpp 
+tradoptestb4_CXXFLAGS = -DSACADO_NAMESPACE \
+	-I$(top_srcdir)/src \
+	-I$(top_builddir)/src
+
+tradoptestb4_DEPENDENCIES = $(tradoptestb1_DEPENDENCIES)
+tradoptestb4_LDADD = $(tradoptestb1_LDADD)
+tradoptestb5_SOURCES = tradoptestb.cpp 
+tradoptestb5_CXXFLAGS = -DSACADO_NAMESPACE -DRAD_AUTO_AD_Const \
+	-I$(top_srcdir)/src \
+	-I$(top_builddir)/src
+
+tradoptestb5_DEPENDENCIES = $(tradoptestb1_DEPENDENCIES)
+tradoptestb5_LDADD = $(tradoptestb1_LDADD)
+tradoptestb6_SOURCES = tradoptestb.cpp 
+tradoptestb6_CXXFLAGS = -DSACADO_NAMESPACE -DRAD_NO_EQ_ALIAS \
+	-I$(top_srcdir)/src \
+	-I$(top_builddir)/src
+
+tradoptestb6_DEPENDENCIES = $(tradoptestb1_DEPENDENCIES)
+tradoptestb6_LDADD = $(tradoptestb1_LDADD)
+tradoptestc1_SOURCES = tradoptestc.cpp 
+tradoptestc1_CXXFLAGS = -USACADO_NAMESPACE \
+	-I$(top_srcdir)/src \
+	-I$(top_builddir)/src
+
+tradoptestc1_DEPENDENCIES = $(top_builddir)/src/libsacado.a
+tradoptestc1_LDADD = -L$(top_builddir)/src -lsacado $(LIBS) $(FLIBS)
+tradoptestc2_SOURCES = tradoptestc.cpp 
+tradoptestc2_CXXFLAGS = -USACADO_NAMESPACE -DRAD_AUTO_AD_Const \
+	-I$(top_srcdir)/src \
+	-I$(top_builddir)/src
+
+tradoptestc2_DEPENDENCIES = $(tradoptestc1_DEPENDENCIES)
+tradoptestc2_LDADD = $(tradoptestc1_LDADD)
+tradoptestc3_SOURCES = tradoptestc.cpp 
+tradoptestc3_CXXFLAGS = -USACADO_NAMESPACE -DRAD_NO_EQ_ALIAS \
+	-I$(top_srcdir)/src \
+	-I$(top_builddir)/src
+
+tradoptestc3_DEPENDENCIES = $(tradoptestc1_DEPENDENCIES)
+tradoptestc3_LDADD = $(tradoptestc1_LDADD)
+tradoptestc4_SOURCES = tradoptestc.cpp 
+tradoptestc4_CXXFLAGS = -DSACADO_NAMESPACE \
+	-I$(top_srcdir)/src \
+	-I$(top_builddir)/src
+
+tradoptestc4_DEPENDENCIES = $(tradoptestc1_DEPENDENCIES)
+tradoptestc4_LDADD = $(tradoptestc1_LDADD)
+tradoptestc5_SOURCES = tradoptestc.cpp 
+tradoptestc5_CXXFLAGS = -DSACADO_NAMESPACE -DRAD_AUTO_AD_Const \
+	-I$(top_srcdir)/src \
+	-I$(top_builddir)/src
+
+tradoptestc5_DEPENDENCIES = $(tradoptestc1_DEPENDENCIES)
+tradoptestc5_LDADD = $(tradoptestc1_LDADD)
+tradoptestc6_SOURCES = tradoptestc.cpp 
+tradoptestc6_CXXFLAGS = -DSACADO_NAMESPACE -DRAD_NO_EQ_ALIAS \
+	-I$(top_srcdir)/src \
+	-I$(top_builddir)/src
+
+tradoptestc6_DEPENDENCIES = $(tradoptestc1_DEPENDENCIES)
+tradoptestc6_LDADD = $(tradoptestc1_LDADD)
+CLEANFILES = tradoptesta.cpp tradoptestb.cpp tradoptestc.cpp
 all: all-am
 
 .SUFFIXES:
@@ -322,9 +466,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  test/tradoptest/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  test/tradoptest/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  test/tradoptest/Makefile
+	  $(AUTOMAKE) --gnu  test/tradoptest/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -347,24 +491,60 @@ testgen.as: $(top_builddir)/config.status $(srcdir)/testgen.as.in
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-tradoptest1$(EXEEXT): $(tradoptest1_OBJECTS) $(tradoptest1_DEPENDENCIES) 
-	@rm -f tradoptest1$(EXEEXT)
-	$(CXXLINK) $(tradoptest1_LDFLAGS) $(tradoptest1_OBJECTS) $(tradoptest1_LDADD) $(LIBS)
-tradoptest2$(EXEEXT): $(tradoptest2_OBJECTS) $(tradoptest2_DEPENDENCIES) 
-	@rm -f tradoptest2$(EXEEXT)
-	$(CXXLINK) $(tradoptest2_LDFLAGS) $(tradoptest2_OBJECTS) $(tradoptest2_LDADD) $(LIBS)
-tradoptest3$(EXEEXT): $(tradoptest3_OBJECTS) $(tradoptest3_DEPENDENCIES) 
-	@rm -f tradoptest3$(EXEEXT)
-	$(CXXLINK) $(tradoptest3_LDFLAGS) $(tradoptest3_OBJECTS) $(tradoptest3_LDADD) $(LIBS)
-tradoptest4$(EXEEXT): $(tradoptest4_OBJECTS) $(tradoptest4_DEPENDENCIES) 
-	@rm -f tradoptest4$(EXEEXT)
-	$(CXXLINK) $(tradoptest4_LDFLAGS) $(tradoptest4_OBJECTS) $(tradoptest4_LDADD) $(LIBS)
-tradoptest5$(EXEEXT): $(tradoptest5_OBJECTS) $(tradoptest5_DEPENDENCIES) 
-	@rm -f tradoptest5$(EXEEXT)
-	$(CXXLINK) $(tradoptest5_LDFLAGS) $(tradoptest5_OBJECTS) $(tradoptest5_LDADD) $(LIBS)
-tradoptest6$(EXEEXT): $(tradoptest6_OBJECTS) $(tradoptest6_DEPENDENCIES) 
-	@rm -f tradoptest6$(EXEEXT)
-	$(CXXLINK) $(tradoptest6_LDFLAGS) $(tradoptest6_OBJECTS) $(tradoptest6_LDADD) $(LIBS)
+tradoptesta1$(EXEEXT): $(tradoptesta1_OBJECTS) $(tradoptesta1_DEPENDENCIES) 
+	@rm -f tradoptesta1$(EXEEXT)
+	$(CXXLINK) $(tradoptesta1_LDFLAGS) $(tradoptesta1_OBJECTS) $(tradoptesta1_LDADD) $(LIBS)
+tradoptesta2$(EXEEXT): $(tradoptesta2_OBJECTS) $(tradoptesta2_DEPENDENCIES) 
+	@rm -f tradoptesta2$(EXEEXT)
+	$(CXXLINK) $(tradoptesta2_LDFLAGS) $(tradoptesta2_OBJECTS) $(tradoptesta2_LDADD) $(LIBS)
+tradoptesta3$(EXEEXT): $(tradoptesta3_OBJECTS) $(tradoptesta3_DEPENDENCIES) 
+	@rm -f tradoptesta3$(EXEEXT)
+	$(CXXLINK) $(tradoptesta3_LDFLAGS) $(tradoptesta3_OBJECTS) $(tradoptesta3_LDADD) $(LIBS)
+tradoptesta4$(EXEEXT): $(tradoptesta4_OBJECTS) $(tradoptesta4_DEPENDENCIES) 
+	@rm -f tradoptesta4$(EXEEXT)
+	$(CXXLINK) $(tradoptesta4_LDFLAGS) $(tradoptesta4_OBJECTS) $(tradoptesta4_LDADD) $(LIBS)
+tradoptesta5$(EXEEXT): $(tradoptesta5_OBJECTS) $(tradoptesta5_DEPENDENCIES) 
+	@rm -f tradoptesta5$(EXEEXT)
+	$(CXXLINK) $(tradoptesta5_LDFLAGS) $(tradoptesta5_OBJECTS) $(tradoptesta5_LDADD) $(LIBS)
+tradoptesta6$(EXEEXT): $(tradoptesta6_OBJECTS) $(tradoptesta6_DEPENDENCIES) 
+	@rm -f tradoptesta6$(EXEEXT)
+	$(CXXLINK) $(tradoptesta6_LDFLAGS) $(tradoptesta6_OBJECTS) $(tradoptesta6_LDADD) $(LIBS)
+tradoptestb1$(EXEEXT): $(tradoptestb1_OBJECTS) $(tradoptestb1_DEPENDENCIES) 
+	@rm -f tradoptestb1$(EXEEXT)
+	$(CXXLINK) $(tradoptestb1_LDFLAGS) $(tradoptestb1_OBJECTS) $(tradoptestb1_LDADD) $(LIBS)
+tradoptestb2$(EXEEXT): $(tradoptestb2_OBJECTS) $(tradoptestb2_DEPENDENCIES) 
+	@rm -f tradoptestb2$(EXEEXT)
+	$(CXXLINK) $(tradoptestb2_LDFLAGS) $(tradoptestb2_OBJECTS) $(tradoptestb2_LDADD) $(LIBS)
+tradoptestb3$(EXEEXT): $(tradoptestb3_OBJECTS) $(tradoptestb3_DEPENDENCIES) 
+	@rm -f tradoptestb3$(EXEEXT)
+	$(CXXLINK) $(tradoptestb3_LDFLAGS) $(tradoptestb3_OBJECTS) $(tradoptestb3_LDADD) $(LIBS)
+tradoptestb4$(EXEEXT): $(tradoptestb4_OBJECTS) $(tradoptestb4_DEPENDENCIES) 
+	@rm -f tradoptestb4$(EXEEXT)
+	$(CXXLINK) $(tradoptestb4_LDFLAGS) $(tradoptestb4_OBJECTS) $(tradoptestb4_LDADD) $(LIBS)
+tradoptestb5$(EXEEXT): $(tradoptestb5_OBJECTS) $(tradoptestb5_DEPENDENCIES) 
+	@rm -f tradoptestb5$(EXEEXT)
+	$(CXXLINK) $(tradoptestb5_LDFLAGS) $(tradoptestb5_OBJECTS) $(tradoptestb5_LDADD) $(LIBS)
+tradoptestb6$(EXEEXT): $(tradoptestb6_OBJECTS) $(tradoptestb6_DEPENDENCIES) 
+	@rm -f tradoptestb6$(EXEEXT)
+	$(CXXLINK) $(tradoptestb6_LDFLAGS) $(tradoptestb6_OBJECTS) $(tradoptestb6_LDADD) $(LIBS)
+tradoptestc1$(EXEEXT): $(tradoptestc1_OBJECTS) $(tradoptestc1_DEPENDENCIES) 
+	@rm -f tradoptestc1$(EXEEXT)
+	$(CXXLINK) $(tradoptestc1_LDFLAGS) $(tradoptestc1_OBJECTS) $(tradoptestc1_LDADD) $(LIBS)
+tradoptestc2$(EXEEXT): $(tradoptestc2_OBJECTS) $(tradoptestc2_DEPENDENCIES) 
+	@rm -f tradoptestc2$(EXEEXT)
+	$(CXXLINK) $(tradoptestc2_LDFLAGS) $(tradoptestc2_OBJECTS) $(tradoptestc2_LDADD) $(LIBS)
+tradoptestc3$(EXEEXT): $(tradoptestc3_OBJECTS) $(tradoptestc3_DEPENDENCIES) 
+	@rm -f tradoptestc3$(EXEEXT)
+	$(CXXLINK) $(tradoptestc3_LDFLAGS) $(tradoptestc3_OBJECTS) $(tradoptestc3_LDADD) $(LIBS)
+tradoptestc4$(EXEEXT): $(tradoptestc4_OBJECTS) $(tradoptestc4_DEPENDENCIES) 
+	@rm -f tradoptestc4$(EXEEXT)
+	$(CXXLINK) $(tradoptestc4_LDFLAGS) $(tradoptestc4_OBJECTS) $(tradoptestc4_LDADD) $(LIBS)
+tradoptestc5$(EXEEXT): $(tradoptestc5_OBJECTS) $(tradoptestc5_DEPENDENCIES) 
+	@rm -f tradoptestc5$(EXEEXT)
+	$(CXXLINK) $(tradoptestc5_LDFLAGS) $(tradoptestc5_OBJECTS) $(tradoptestc5_LDADD) $(LIBS)
+tradoptestc6$(EXEEXT): $(tradoptestc6_OBJECTS) $(tradoptestc6_DEPENDENCIES) 
+	@rm -f tradoptestc6$(EXEEXT)
+	$(CXXLINK) $(tradoptestc6_LDFLAGS) $(tradoptestc6_OBJECTS) $(tradoptestc6_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -372,12 +552,24 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tradoptest1-tradoptest.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tradoptest2-tradoptest.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tradoptest3-tradoptest.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tradoptest4-tradoptest.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tradoptest5-tradoptest.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tradoptest6-tradoptest.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tradoptesta1-tradoptesta.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tradoptesta2-tradoptesta.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tradoptesta3-tradoptesta.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tradoptesta4-tradoptesta.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tradoptesta5-tradoptesta.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tradoptesta6-tradoptesta.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tradoptestb1-tradoptestb.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tradoptestb2-tradoptestb.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tradoptestb3-tradoptestb.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tradoptestb4-tradoptestb.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tradoptestb5-tradoptestb.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tradoptestb6-tradoptestb.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tradoptestc1-tradoptestc.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tradoptestc2-tradoptestc.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tradoptestc3-tradoptestc.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tradoptestc4-tradoptestc.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tradoptestc5-tradoptestc.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tradoptestc6-tradoptestc.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -395,101 +587,293 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-tradoptest1-tradoptest.o: tradoptest.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptest1_CXXFLAGS) $(CXXFLAGS) -MT tradoptest1-tradoptest.o -MD -MP -MF "$(DEPDIR)/tradoptest1-tradoptest.Tpo" -c -o tradoptest1-tradoptest.o `test -f 'tradoptest.cpp' || echo '$(srcdir)/'`tradoptest.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/tradoptest1-tradoptest.Tpo" "$(DEPDIR)/tradoptest1-tradoptest.Po"; else rm -f "$(DEPDIR)/tradoptest1-tradoptest.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tradoptest.cpp' object='tradoptest1-tradoptest.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/tradoptest1-tradoptest.Po' tmpdepfile='$(DEPDIR)/tradoptest1-tradoptest.TPo' @AMDEPBACKSLASH@
+tradoptesta1-tradoptesta.o: tradoptesta.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptesta1_CXXFLAGS) $(CXXFLAGS) -MT tradoptesta1-tradoptesta.o -MD -MP -MF "$(DEPDIR)/tradoptesta1-tradoptesta.Tpo" -c -o tradoptesta1-tradoptesta.o `test -f 'tradoptesta.cpp' || echo '$(srcdir)/'`tradoptesta.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/tradoptesta1-tradoptesta.Tpo" "$(DEPDIR)/tradoptesta1-tradoptesta.Po"; else rm -f "$(DEPDIR)/tradoptesta1-tradoptesta.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tradoptesta.cpp' object='tradoptesta1-tradoptesta.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/tradoptesta1-tradoptesta.Po' tmpdepfile='$(DEPDIR)/tradoptesta1-tradoptesta.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptest1_CXXFLAGS) $(CXXFLAGS) -c -o tradoptest1-tradoptest.o `test -f 'tradoptest.cpp' || echo '$(srcdir)/'`tradoptest.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptesta1_CXXFLAGS) $(CXXFLAGS) -c -o tradoptesta1-tradoptesta.o `test -f 'tradoptesta.cpp' || echo '$(srcdir)/'`tradoptesta.cpp
 
-tradoptest1-tradoptest.obj: tradoptest.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptest1_CXXFLAGS) $(CXXFLAGS) -MT tradoptest1-tradoptest.obj -MD -MP -MF "$(DEPDIR)/tradoptest1-tradoptest.Tpo" -c -o tradoptest1-tradoptest.obj `if test -f 'tradoptest.cpp'; then $(CYGPATH_W) 'tradoptest.cpp'; else $(CYGPATH_W) '$(srcdir)/tradoptest.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/tradoptest1-tradoptest.Tpo" "$(DEPDIR)/tradoptest1-tradoptest.Po"; else rm -f "$(DEPDIR)/tradoptest1-tradoptest.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tradoptest.cpp' object='tradoptest1-tradoptest.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/tradoptest1-tradoptest.Po' tmpdepfile='$(DEPDIR)/tradoptest1-tradoptest.TPo' @AMDEPBACKSLASH@
+tradoptesta1-tradoptesta.obj: tradoptesta.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptesta1_CXXFLAGS) $(CXXFLAGS) -MT tradoptesta1-tradoptesta.obj -MD -MP -MF "$(DEPDIR)/tradoptesta1-tradoptesta.Tpo" -c -o tradoptesta1-tradoptesta.obj `if test -f 'tradoptesta.cpp'; then $(CYGPATH_W) 'tradoptesta.cpp'; else $(CYGPATH_W) '$(srcdir)/tradoptesta.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/tradoptesta1-tradoptesta.Tpo" "$(DEPDIR)/tradoptesta1-tradoptesta.Po"; else rm -f "$(DEPDIR)/tradoptesta1-tradoptesta.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tradoptesta.cpp' object='tradoptesta1-tradoptesta.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/tradoptesta1-tradoptesta.Po' tmpdepfile='$(DEPDIR)/tradoptesta1-tradoptesta.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptest1_CXXFLAGS) $(CXXFLAGS) -c -o tradoptest1-tradoptest.obj `if test -f 'tradoptest.cpp'; then $(CYGPATH_W) 'tradoptest.cpp'; else $(CYGPATH_W) '$(srcdir)/tradoptest.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptesta1_CXXFLAGS) $(CXXFLAGS) -c -o tradoptesta1-tradoptesta.obj `if test -f 'tradoptesta.cpp'; then $(CYGPATH_W) 'tradoptesta.cpp'; else $(CYGPATH_W) '$(srcdir)/tradoptesta.cpp'; fi`
 
-tradoptest2-tradoptest.o: tradoptest.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptest2_CXXFLAGS) $(CXXFLAGS) -MT tradoptest2-tradoptest.o -MD -MP -MF "$(DEPDIR)/tradoptest2-tradoptest.Tpo" -c -o tradoptest2-tradoptest.o `test -f 'tradoptest.cpp' || echo '$(srcdir)/'`tradoptest.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/tradoptest2-tradoptest.Tpo" "$(DEPDIR)/tradoptest2-tradoptest.Po"; else rm -f "$(DEPDIR)/tradoptest2-tradoptest.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tradoptest.cpp' object='tradoptest2-tradoptest.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/tradoptest2-tradoptest.Po' tmpdepfile='$(DEPDIR)/tradoptest2-tradoptest.TPo' @AMDEPBACKSLASH@
+tradoptesta2-tradoptesta.o: tradoptesta.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptesta2_CXXFLAGS) $(CXXFLAGS) -MT tradoptesta2-tradoptesta.o -MD -MP -MF "$(DEPDIR)/tradoptesta2-tradoptesta.Tpo" -c -o tradoptesta2-tradoptesta.o `test -f 'tradoptesta.cpp' || echo '$(srcdir)/'`tradoptesta.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/tradoptesta2-tradoptesta.Tpo" "$(DEPDIR)/tradoptesta2-tradoptesta.Po"; else rm -f "$(DEPDIR)/tradoptesta2-tradoptesta.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tradoptesta.cpp' object='tradoptesta2-tradoptesta.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/tradoptesta2-tradoptesta.Po' tmpdepfile='$(DEPDIR)/tradoptesta2-tradoptesta.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptest2_CXXFLAGS) $(CXXFLAGS) -c -o tradoptest2-tradoptest.o `test -f 'tradoptest.cpp' || echo '$(srcdir)/'`tradoptest.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptesta2_CXXFLAGS) $(CXXFLAGS) -c -o tradoptesta2-tradoptesta.o `test -f 'tradoptesta.cpp' || echo '$(srcdir)/'`tradoptesta.cpp
 
-tradoptest2-tradoptest.obj: tradoptest.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptest2_CXXFLAGS) $(CXXFLAGS) -MT tradoptest2-tradoptest.obj -MD -MP -MF "$(DEPDIR)/tradoptest2-tradoptest.Tpo" -c -o tradoptest2-tradoptest.obj `if test -f 'tradoptest.cpp'; then $(CYGPATH_W) 'tradoptest.cpp'; else $(CYGPATH_W) '$(srcdir)/tradoptest.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/tradoptest2-tradoptest.Tpo" "$(DEPDIR)/tradoptest2-tradoptest.Po"; else rm -f "$(DEPDIR)/tradoptest2-tradoptest.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tradoptest.cpp' object='tradoptest2-tradoptest.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/tradoptest2-tradoptest.Po' tmpdepfile='$(DEPDIR)/tradoptest2-tradoptest.TPo' @AMDEPBACKSLASH@
+tradoptesta2-tradoptesta.obj: tradoptesta.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptesta2_CXXFLAGS) $(CXXFLAGS) -MT tradoptesta2-tradoptesta.obj -MD -MP -MF "$(DEPDIR)/tradoptesta2-tradoptesta.Tpo" -c -o tradoptesta2-tradoptesta.obj `if test -f 'tradoptesta.cpp'; then $(CYGPATH_W) 'tradoptesta.cpp'; else $(CYGPATH_W) '$(srcdir)/tradoptesta.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/tradoptesta2-tradoptesta.Tpo" "$(DEPDIR)/tradoptesta2-tradoptesta.Po"; else rm -f "$(DEPDIR)/tradoptesta2-tradoptesta.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tradoptesta.cpp' object='tradoptesta2-tradoptesta.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/tradoptesta2-tradoptesta.Po' tmpdepfile='$(DEPDIR)/tradoptesta2-tradoptesta.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptest2_CXXFLAGS) $(CXXFLAGS) -c -o tradoptest2-tradoptest.obj `if test -f 'tradoptest.cpp'; then $(CYGPATH_W) 'tradoptest.cpp'; else $(CYGPATH_W) '$(srcdir)/tradoptest.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptesta2_CXXFLAGS) $(CXXFLAGS) -c -o tradoptesta2-tradoptesta.obj `if test -f 'tradoptesta.cpp'; then $(CYGPATH_W) 'tradoptesta.cpp'; else $(CYGPATH_W) '$(srcdir)/tradoptesta.cpp'; fi`
 
-tradoptest3-tradoptest.o: tradoptest.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptest3_CXXFLAGS) $(CXXFLAGS) -MT tradoptest3-tradoptest.o -MD -MP -MF "$(DEPDIR)/tradoptest3-tradoptest.Tpo" -c -o tradoptest3-tradoptest.o `test -f 'tradoptest.cpp' || echo '$(srcdir)/'`tradoptest.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/tradoptest3-tradoptest.Tpo" "$(DEPDIR)/tradoptest3-tradoptest.Po"; else rm -f "$(DEPDIR)/tradoptest3-tradoptest.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tradoptest.cpp' object='tradoptest3-tradoptest.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/tradoptest3-tradoptest.Po' tmpdepfile='$(DEPDIR)/tradoptest3-tradoptest.TPo' @AMDEPBACKSLASH@
+tradoptesta3-tradoptesta.o: tradoptesta.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptesta3_CXXFLAGS) $(CXXFLAGS) -MT tradoptesta3-tradoptesta.o -MD -MP -MF "$(DEPDIR)/tradoptesta3-tradoptesta.Tpo" -c -o tradoptesta3-tradoptesta.o `test -f 'tradoptesta.cpp' || echo '$(srcdir)/'`tradoptesta.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/tradoptesta3-tradoptesta.Tpo" "$(DEPDIR)/tradoptesta3-tradoptesta.Po"; else rm -f "$(DEPDIR)/tradoptesta3-tradoptesta.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tradoptesta.cpp' object='tradoptesta3-tradoptesta.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/tradoptesta3-tradoptesta.Po' tmpdepfile='$(DEPDIR)/tradoptesta3-tradoptesta.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptest3_CXXFLAGS) $(CXXFLAGS) -c -o tradoptest3-tradoptest.o `test -f 'tradoptest.cpp' || echo '$(srcdir)/'`tradoptest.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptesta3_CXXFLAGS) $(CXXFLAGS) -c -o tradoptesta3-tradoptesta.o `test -f 'tradoptesta.cpp' || echo '$(srcdir)/'`tradoptesta.cpp
 
-tradoptest3-tradoptest.obj: tradoptest.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptest3_CXXFLAGS) $(CXXFLAGS) -MT tradoptest3-tradoptest.obj -MD -MP -MF "$(DEPDIR)/tradoptest3-tradoptest.Tpo" -c -o tradoptest3-tradoptest.obj `if test -f 'tradoptest.cpp'; then $(CYGPATH_W) 'tradoptest.cpp'; else $(CYGPATH_W) '$(srcdir)/tradoptest.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/tradoptest3-tradoptest.Tpo" "$(DEPDIR)/tradoptest3-tradoptest.Po"; else rm -f "$(DEPDIR)/tradoptest3-tradoptest.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tradoptest.cpp' object='tradoptest3-tradoptest.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/tradoptest3-tradoptest.Po' tmpdepfile='$(DEPDIR)/tradoptest3-tradoptest.TPo' @AMDEPBACKSLASH@
+tradoptesta3-tradoptesta.obj: tradoptesta.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptesta3_CXXFLAGS) $(CXXFLAGS) -MT tradoptesta3-tradoptesta.obj -MD -MP -MF "$(DEPDIR)/tradoptesta3-tradoptesta.Tpo" -c -o tradoptesta3-tradoptesta.obj `if test -f 'tradoptesta.cpp'; then $(CYGPATH_W) 'tradoptesta.cpp'; else $(CYGPATH_W) '$(srcdir)/tradoptesta.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/tradoptesta3-tradoptesta.Tpo" "$(DEPDIR)/tradoptesta3-tradoptesta.Po"; else rm -f "$(DEPDIR)/tradoptesta3-tradoptesta.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tradoptesta.cpp' object='tradoptesta3-tradoptesta.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/tradoptesta3-tradoptesta.Po' tmpdepfile='$(DEPDIR)/tradoptesta3-tradoptesta.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptest3_CXXFLAGS) $(CXXFLAGS) -c -o tradoptest3-tradoptest.obj `if test -f 'tradoptest.cpp'; then $(CYGPATH_W) 'tradoptest.cpp'; else $(CYGPATH_W) '$(srcdir)/tradoptest.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptesta3_CXXFLAGS) $(CXXFLAGS) -c -o tradoptesta3-tradoptesta.obj `if test -f 'tradoptesta.cpp'; then $(CYGPATH_W) 'tradoptesta.cpp'; else $(CYGPATH_W) '$(srcdir)/tradoptesta.cpp'; fi`
 
-tradoptest4-tradoptest.o: tradoptest.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptest4_CXXFLAGS) $(CXXFLAGS) -MT tradoptest4-tradoptest.o -MD -MP -MF "$(DEPDIR)/tradoptest4-tradoptest.Tpo" -c -o tradoptest4-tradoptest.o `test -f 'tradoptest.cpp' || echo '$(srcdir)/'`tradoptest.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/tradoptest4-tradoptest.Tpo" "$(DEPDIR)/tradoptest4-tradoptest.Po"; else rm -f "$(DEPDIR)/tradoptest4-tradoptest.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tradoptest.cpp' object='tradoptest4-tradoptest.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/tradoptest4-tradoptest.Po' tmpdepfile='$(DEPDIR)/tradoptest4-tradoptest.TPo' @AMDEPBACKSLASH@
+tradoptesta4-tradoptesta.o: tradoptesta.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptesta4_CXXFLAGS) $(CXXFLAGS) -MT tradoptesta4-tradoptesta.o -MD -MP -MF "$(DEPDIR)/tradoptesta4-tradoptesta.Tpo" -c -o tradoptesta4-tradoptesta.o `test -f 'tradoptesta.cpp' || echo '$(srcdir)/'`tradoptesta.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/tradoptesta4-tradoptesta.Tpo" "$(DEPDIR)/tradoptesta4-tradoptesta.Po"; else rm -f "$(DEPDIR)/tradoptesta4-tradoptesta.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tradoptesta.cpp' object='tradoptesta4-tradoptesta.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/tradoptesta4-tradoptesta.Po' tmpdepfile='$(DEPDIR)/tradoptesta4-tradoptesta.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptest4_CXXFLAGS) $(CXXFLAGS) -c -o tradoptest4-tradoptest.o `test -f 'tradoptest.cpp' || echo '$(srcdir)/'`tradoptest.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptesta4_CXXFLAGS) $(CXXFLAGS) -c -o tradoptesta4-tradoptesta.o `test -f 'tradoptesta.cpp' || echo '$(srcdir)/'`tradoptesta.cpp
 
-tradoptest4-tradoptest.obj: tradoptest.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptest4_CXXFLAGS) $(CXXFLAGS) -MT tradoptest4-tradoptest.obj -MD -MP -MF "$(DEPDIR)/tradoptest4-tradoptest.Tpo" -c -o tradoptest4-tradoptest.obj `if test -f 'tradoptest.cpp'; then $(CYGPATH_W) 'tradoptest.cpp'; else $(CYGPATH_W) '$(srcdir)/tradoptest.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/tradoptest4-tradoptest.Tpo" "$(DEPDIR)/tradoptest4-tradoptest.Po"; else rm -f "$(DEPDIR)/tradoptest4-tradoptest.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tradoptest.cpp' object='tradoptest4-tradoptest.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/tradoptest4-tradoptest.Po' tmpdepfile='$(DEPDIR)/tradoptest4-tradoptest.TPo' @AMDEPBACKSLASH@
+tradoptesta4-tradoptesta.obj: tradoptesta.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptesta4_CXXFLAGS) $(CXXFLAGS) -MT tradoptesta4-tradoptesta.obj -MD -MP -MF "$(DEPDIR)/tradoptesta4-tradoptesta.Tpo" -c -o tradoptesta4-tradoptesta.obj `if test -f 'tradoptesta.cpp'; then $(CYGPATH_W) 'tradoptesta.cpp'; else $(CYGPATH_W) '$(srcdir)/tradoptesta.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/tradoptesta4-tradoptesta.Tpo" "$(DEPDIR)/tradoptesta4-tradoptesta.Po"; else rm -f "$(DEPDIR)/tradoptesta4-tradoptesta.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tradoptesta.cpp' object='tradoptesta4-tradoptesta.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/tradoptesta4-tradoptesta.Po' tmpdepfile='$(DEPDIR)/tradoptesta4-tradoptesta.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptest4_CXXFLAGS) $(CXXFLAGS) -c -o tradoptest4-tradoptest.obj `if test -f 'tradoptest.cpp'; then $(CYGPATH_W) 'tradoptest.cpp'; else $(CYGPATH_W) '$(srcdir)/tradoptest.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptesta4_CXXFLAGS) $(CXXFLAGS) -c -o tradoptesta4-tradoptesta.obj `if test -f 'tradoptesta.cpp'; then $(CYGPATH_W) 'tradoptesta.cpp'; else $(CYGPATH_W) '$(srcdir)/tradoptesta.cpp'; fi`
 
-tradoptest5-tradoptest.o: tradoptest.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptest5_CXXFLAGS) $(CXXFLAGS) -MT tradoptest5-tradoptest.o -MD -MP -MF "$(DEPDIR)/tradoptest5-tradoptest.Tpo" -c -o tradoptest5-tradoptest.o `test -f 'tradoptest.cpp' || echo '$(srcdir)/'`tradoptest.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/tradoptest5-tradoptest.Tpo" "$(DEPDIR)/tradoptest5-tradoptest.Po"; else rm -f "$(DEPDIR)/tradoptest5-tradoptest.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tradoptest.cpp' object='tradoptest5-tradoptest.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/tradoptest5-tradoptest.Po' tmpdepfile='$(DEPDIR)/tradoptest5-tradoptest.TPo' @AMDEPBACKSLASH@
+tradoptesta5-tradoptesta.o: tradoptesta.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptesta5_CXXFLAGS) $(CXXFLAGS) -MT tradoptesta5-tradoptesta.o -MD -MP -MF "$(DEPDIR)/tradoptesta5-tradoptesta.Tpo" -c -o tradoptesta5-tradoptesta.o `test -f 'tradoptesta.cpp' || echo '$(srcdir)/'`tradoptesta.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/tradoptesta5-tradoptesta.Tpo" "$(DEPDIR)/tradoptesta5-tradoptesta.Po"; else rm -f "$(DEPDIR)/tradoptesta5-tradoptesta.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tradoptesta.cpp' object='tradoptesta5-tradoptesta.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/tradoptesta5-tradoptesta.Po' tmpdepfile='$(DEPDIR)/tradoptesta5-tradoptesta.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptest5_CXXFLAGS) $(CXXFLAGS) -c -o tradoptest5-tradoptest.o `test -f 'tradoptest.cpp' || echo '$(srcdir)/'`tradoptest.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptesta5_CXXFLAGS) $(CXXFLAGS) -c -o tradoptesta5-tradoptesta.o `test -f 'tradoptesta.cpp' || echo '$(srcdir)/'`tradoptesta.cpp
 
-tradoptest5-tradoptest.obj: tradoptest.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptest5_CXXFLAGS) $(CXXFLAGS) -MT tradoptest5-tradoptest.obj -MD -MP -MF "$(DEPDIR)/tradoptest5-tradoptest.Tpo" -c -o tradoptest5-tradoptest.obj `if test -f 'tradoptest.cpp'; then $(CYGPATH_W) 'tradoptest.cpp'; else $(CYGPATH_W) '$(srcdir)/tradoptest.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/tradoptest5-tradoptest.Tpo" "$(DEPDIR)/tradoptest5-tradoptest.Po"; else rm -f "$(DEPDIR)/tradoptest5-tradoptest.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tradoptest.cpp' object='tradoptest5-tradoptest.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/tradoptest5-tradoptest.Po' tmpdepfile='$(DEPDIR)/tradoptest5-tradoptest.TPo' @AMDEPBACKSLASH@
+tradoptesta5-tradoptesta.obj: tradoptesta.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptesta5_CXXFLAGS) $(CXXFLAGS) -MT tradoptesta5-tradoptesta.obj -MD -MP -MF "$(DEPDIR)/tradoptesta5-tradoptesta.Tpo" -c -o tradoptesta5-tradoptesta.obj `if test -f 'tradoptesta.cpp'; then $(CYGPATH_W) 'tradoptesta.cpp'; else $(CYGPATH_W) '$(srcdir)/tradoptesta.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/tradoptesta5-tradoptesta.Tpo" "$(DEPDIR)/tradoptesta5-tradoptesta.Po"; else rm -f "$(DEPDIR)/tradoptesta5-tradoptesta.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tradoptesta.cpp' object='tradoptesta5-tradoptesta.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/tradoptesta5-tradoptesta.Po' tmpdepfile='$(DEPDIR)/tradoptesta5-tradoptesta.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptest5_CXXFLAGS) $(CXXFLAGS) -c -o tradoptest5-tradoptest.obj `if test -f 'tradoptest.cpp'; then $(CYGPATH_W) 'tradoptest.cpp'; else $(CYGPATH_W) '$(srcdir)/tradoptest.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptesta5_CXXFLAGS) $(CXXFLAGS) -c -o tradoptesta5-tradoptesta.obj `if test -f 'tradoptesta.cpp'; then $(CYGPATH_W) 'tradoptesta.cpp'; else $(CYGPATH_W) '$(srcdir)/tradoptesta.cpp'; fi`
 
-tradoptest6-tradoptest.o: tradoptest.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptest6_CXXFLAGS) $(CXXFLAGS) -MT tradoptest6-tradoptest.o -MD -MP -MF "$(DEPDIR)/tradoptest6-tradoptest.Tpo" -c -o tradoptest6-tradoptest.o `test -f 'tradoptest.cpp' || echo '$(srcdir)/'`tradoptest.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/tradoptest6-tradoptest.Tpo" "$(DEPDIR)/tradoptest6-tradoptest.Po"; else rm -f "$(DEPDIR)/tradoptest6-tradoptest.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tradoptest.cpp' object='tradoptest6-tradoptest.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/tradoptest6-tradoptest.Po' tmpdepfile='$(DEPDIR)/tradoptest6-tradoptest.TPo' @AMDEPBACKSLASH@
+tradoptesta6-tradoptesta.o: tradoptesta.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptesta6_CXXFLAGS) $(CXXFLAGS) -MT tradoptesta6-tradoptesta.o -MD -MP -MF "$(DEPDIR)/tradoptesta6-tradoptesta.Tpo" -c -o tradoptesta6-tradoptesta.o `test -f 'tradoptesta.cpp' || echo '$(srcdir)/'`tradoptesta.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/tradoptesta6-tradoptesta.Tpo" "$(DEPDIR)/tradoptesta6-tradoptesta.Po"; else rm -f "$(DEPDIR)/tradoptesta6-tradoptesta.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tradoptesta.cpp' object='tradoptesta6-tradoptesta.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/tradoptesta6-tradoptesta.Po' tmpdepfile='$(DEPDIR)/tradoptesta6-tradoptesta.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptest6_CXXFLAGS) $(CXXFLAGS) -c -o tradoptest6-tradoptest.o `test -f 'tradoptest.cpp' || echo '$(srcdir)/'`tradoptest.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptesta6_CXXFLAGS) $(CXXFLAGS) -c -o tradoptesta6-tradoptesta.o `test -f 'tradoptesta.cpp' || echo '$(srcdir)/'`tradoptesta.cpp
 
-tradoptest6-tradoptest.obj: tradoptest.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptest6_CXXFLAGS) $(CXXFLAGS) -MT tradoptest6-tradoptest.obj -MD -MP -MF "$(DEPDIR)/tradoptest6-tradoptest.Tpo" -c -o tradoptest6-tradoptest.obj `if test -f 'tradoptest.cpp'; then $(CYGPATH_W) 'tradoptest.cpp'; else $(CYGPATH_W) '$(srcdir)/tradoptest.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/tradoptest6-tradoptest.Tpo" "$(DEPDIR)/tradoptest6-tradoptest.Po"; else rm -f "$(DEPDIR)/tradoptest6-tradoptest.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tradoptest.cpp' object='tradoptest6-tradoptest.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/tradoptest6-tradoptest.Po' tmpdepfile='$(DEPDIR)/tradoptest6-tradoptest.TPo' @AMDEPBACKSLASH@
+tradoptesta6-tradoptesta.obj: tradoptesta.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptesta6_CXXFLAGS) $(CXXFLAGS) -MT tradoptesta6-tradoptesta.obj -MD -MP -MF "$(DEPDIR)/tradoptesta6-tradoptesta.Tpo" -c -o tradoptesta6-tradoptesta.obj `if test -f 'tradoptesta.cpp'; then $(CYGPATH_W) 'tradoptesta.cpp'; else $(CYGPATH_W) '$(srcdir)/tradoptesta.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/tradoptesta6-tradoptesta.Tpo" "$(DEPDIR)/tradoptesta6-tradoptesta.Po"; else rm -f "$(DEPDIR)/tradoptesta6-tradoptesta.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tradoptesta.cpp' object='tradoptesta6-tradoptesta.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/tradoptesta6-tradoptesta.Po' tmpdepfile='$(DEPDIR)/tradoptesta6-tradoptesta.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptest6_CXXFLAGS) $(CXXFLAGS) -c -o tradoptest6-tradoptest.obj `if test -f 'tradoptest.cpp'; then $(CYGPATH_W) 'tradoptest.cpp'; else $(CYGPATH_W) '$(srcdir)/tradoptest.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptesta6_CXXFLAGS) $(CXXFLAGS) -c -o tradoptesta6-tradoptesta.obj `if test -f 'tradoptesta.cpp'; then $(CYGPATH_W) 'tradoptesta.cpp'; else $(CYGPATH_W) '$(srcdir)/tradoptesta.cpp'; fi`
+
+tradoptestb1-tradoptestb.o: tradoptestb.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptestb1_CXXFLAGS) $(CXXFLAGS) -MT tradoptestb1-tradoptestb.o -MD -MP -MF "$(DEPDIR)/tradoptestb1-tradoptestb.Tpo" -c -o tradoptestb1-tradoptestb.o `test -f 'tradoptestb.cpp' || echo '$(srcdir)/'`tradoptestb.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/tradoptestb1-tradoptestb.Tpo" "$(DEPDIR)/tradoptestb1-tradoptestb.Po"; else rm -f "$(DEPDIR)/tradoptestb1-tradoptestb.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tradoptestb.cpp' object='tradoptestb1-tradoptestb.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/tradoptestb1-tradoptestb.Po' tmpdepfile='$(DEPDIR)/tradoptestb1-tradoptestb.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptestb1_CXXFLAGS) $(CXXFLAGS) -c -o tradoptestb1-tradoptestb.o `test -f 'tradoptestb.cpp' || echo '$(srcdir)/'`tradoptestb.cpp
+
+tradoptestb1-tradoptestb.obj: tradoptestb.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptestb1_CXXFLAGS) $(CXXFLAGS) -MT tradoptestb1-tradoptestb.obj -MD -MP -MF "$(DEPDIR)/tradoptestb1-tradoptestb.Tpo" -c -o tradoptestb1-tradoptestb.obj `if test -f 'tradoptestb.cpp'; then $(CYGPATH_W) 'tradoptestb.cpp'; else $(CYGPATH_W) '$(srcdir)/tradoptestb.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/tradoptestb1-tradoptestb.Tpo" "$(DEPDIR)/tradoptestb1-tradoptestb.Po"; else rm -f "$(DEPDIR)/tradoptestb1-tradoptestb.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tradoptestb.cpp' object='tradoptestb1-tradoptestb.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/tradoptestb1-tradoptestb.Po' tmpdepfile='$(DEPDIR)/tradoptestb1-tradoptestb.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptestb1_CXXFLAGS) $(CXXFLAGS) -c -o tradoptestb1-tradoptestb.obj `if test -f 'tradoptestb.cpp'; then $(CYGPATH_W) 'tradoptestb.cpp'; else $(CYGPATH_W) '$(srcdir)/tradoptestb.cpp'; fi`
+
+tradoptestb2-tradoptestb.o: tradoptestb.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptestb2_CXXFLAGS) $(CXXFLAGS) -MT tradoptestb2-tradoptestb.o -MD -MP -MF "$(DEPDIR)/tradoptestb2-tradoptestb.Tpo" -c -o tradoptestb2-tradoptestb.o `test -f 'tradoptestb.cpp' || echo '$(srcdir)/'`tradoptestb.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/tradoptestb2-tradoptestb.Tpo" "$(DEPDIR)/tradoptestb2-tradoptestb.Po"; else rm -f "$(DEPDIR)/tradoptestb2-tradoptestb.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tradoptestb.cpp' object='tradoptestb2-tradoptestb.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/tradoptestb2-tradoptestb.Po' tmpdepfile='$(DEPDIR)/tradoptestb2-tradoptestb.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptestb2_CXXFLAGS) $(CXXFLAGS) -c -o tradoptestb2-tradoptestb.o `test -f 'tradoptestb.cpp' || echo '$(srcdir)/'`tradoptestb.cpp
+
+tradoptestb2-tradoptestb.obj: tradoptestb.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptestb2_CXXFLAGS) $(CXXFLAGS) -MT tradoptestb2-tradoptestb.obj -MD -MP -MF "$(DEPDIR)/tradoptestb2-tradoptestb.Tpo" -c -o tradoptestb2-tradoptestb.obj `if test -f 'tradoptestb.cpp'; then $(CYGPATH_W) 'tradoptestb.cpp'; else $(CYGPATH_W) '$(srcdir)/tradoptestb.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/tradoptestb2-tradoptestb.Tpo" "$(DEPDIR)/tradoptestb2-tradoptestb.Po"; else rm -f "$(DEPDIR)/tradoptestb2-tradoptestb.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tradoptestb.cpp' object='tradoptestb2-tradoptestb.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/tradoptestb2-tradoptestb.Po' tmpdepfile='$(DEPDIR)/tradoptestb2-tradoptestb.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptestb2_CXXFLAGS) $(CXXFLAGS) -c -o tradoptestb2-tradoptestb.obj `if test -f 'tradoptestb.cpp'; then $(CYGPATH_W) 'tradoptestb.cpp'; else $(CYGPATH_W) '$(srcdir)/tradoptestb.cpp'; fi`
+
+tradoptestb3-tradoptestb.o: tradoptestb.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptestb3_CXXFLAGS) $(CXXFLAGS) -MT tradoptestb3-tradoptestb.o -MD -MP -MF "$(DEPDIR)/tradoptestb3-tradoptestb.Tpo" -c -o tradoptestb3-tradoptestb.o `test -f 'tradoptestb.cpp' || echo '$(srcdir)/'`tradoptestb.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/tradoptestb3-tradoptestb.Tpo" "$(DEPDIR)/tradoptestb3-tradoptestb.Po"; else rm -f "$(DEPDIR)/tradoptestb3-tradoptestb.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tradoptestb.cpp' object='tradoptestb3-tradoptestb.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/tradoptestb3-tradoptestb.Po' tmpdepfile='$(DEPDIR)/tradoptestb3-tradoptestb.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptestb3_CXXFLAGS) $(CXXFLAGS) -c -o tradoptestb3-tradoptestb.o `test -f 'tradoptestb.cpp' || echo '$(srcdir)/'`tradoptestb.cpp
+
+tradoptestb3-tradoptestb.obj: tradoptestb.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptestb3_CXXFLAGS) $(CXXFLAGS) -MT tradoptestb3-tradoptestb.obj -MD -MP -MF "$(DEPDIR)/tradoptestb3-tradoptestb.Tpo" -c -o tradoptestb3-tradoptestb.obj `if test -f 'tradoptestb.cpp'; then $(CYGPATH_W) 'tradoptestb.cpp'; else $(CYGPATH_W) '$(srcdir)/tradoptestb.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/tradoptestb3-tradoptestb.Tpo" "$(DEPDIR)/tradoptestb3-tradoptestb.Po"; else rm -f "$(DEPDIR)/tradoptestb3-tradoptestb.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tradoptestb.cpp' object='tradoptestb3-tradoptestb.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/tradoptestb3-tradoptestb.Po' tmpdepfile='$(DEPDIR)/tradoptestb3-tradoptestb.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptestb3_CXXFLAGS) $(CXXFLAGS) -c -o tradoptestb3-tradoptestb.obj `if test -f 'tradoptestb.cpp'; then $(CYGPATH_W) 'tradoptestb.cpp'; else $(CYGPATH_W) '$(srcdir)/tradoptestb.cpp'; fi`
+
+tradoptestb4-tradoptestb.o: tradoptestb.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptestb4_CXXFLAGS) $(CXXFLAGS) -MT tradoptestb4-tradoptestb.o -MD -MP -MF "$(DEPDIR)/tradoptestb4-tradoptestb.Tpo" -c -o tradoptestb4-tradoptestb.o `test -f 'tradoptestb.cpp' || echo '$(srcdir)/'`tradoptestb.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/tradoptestb4-tradoptestb.Tpo" "$(DEPDIR)/tradoptestb4-tradoptestb.Po"; else rm -f "$(DEPDIR)/tradoptestb4-tradoptestb.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tradoptestb.cpp' object='tradoptestb4-tradoptestb.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/tradoptestb4-tradoptestb.Po' tmpdepfile='$(DEPDIR)/tradoptestb4-tradoptestb.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptestb4_CXXFLAGS) $(CXXFLAGS) -c -o tradoptestb4-tradoptestb.o `test -f 'tradoptestb.cpp' || echo '$(srcdir)/'`tradoptestb.cpp
+
+tradoptestb4-tradoptestb.obj: tradoptestb.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptestb4_CXXFLAGS) $(CXXFLAGS) -MT tradoptestb4-tradoptestb.obj -MD -MP -MF "$(DEPDIR)/tradoptestb4-tradoptestb.Tpo" -c -o tradoptestb4-tradoptestb.obj `if test -f 'tradoptestb.cpp'; then $(CYGPATH_W) 'tradoptestb.cpp'; else $(CYGPATH_W) '$(srcdir)/tradoptestb.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/tradoptestb4-tradoptestb.Tpo" "$(DEPDIR)/tradoptestb4-tradoptestb.Po"; else rm -f "$(DEPDIR)/tradoptestb4-tradoptestb.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tradoptestb.cpp' object='tradoptestb4-tradoptestb.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/tradoptestb4-tradoptestb.Po' tmpdepfile='$(DEPDIR)/tradoptestb4-tradoptestb.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptestb4_CXXFLAGS) $(CXXFLAGS) -c -o tradoptestb4-tradoptestb.obj `if test -f 'tradoptestb.cpp'; then $(CYGPATH_W) 'tradoptestb.cpp'; else $(CYGPATH_W) '$(srcdir)/tradoptestb.cpp'; fi`
+
+tradoptestb5-tradoptestb.o: tradoptestb.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptestb5_CXXFLAGS) $(CXXFLAGS) -MT tradoptestb5-tradoptestb.o -MD -MP -MF "$(DEPDIR)/tradoptestb5-tradoptestb.Tpo" -c -o tradoptestb5-tradoptestb.o `test -f 'tradoptestb.cpp' || echo '$(srcdir)/'`tradoptestb.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/tradoptestb5-tradoptestb.Tpo" "$(DEPDIR)/tradoptestb5-tradoptestb.Po"; else rm -f "$(DEPDIR)/tradoptestb5-tradoptestb.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tradoptestb.cpp' object='tradoptestb5-tradoptestb.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/tradoptestb5-tradoptestb.Po' tmpdepfile='$(DEPDIR)/tradoptestb5-tradoptestb.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptestb5_CXXFLAGS) $(CXXFLAGS) -c -o tradoptestb5-tradoptestb.o `test -f 'tradoptestb.cpp' || echo '$(srcdir)/'`tradoptestb.cpp
+
+tradoptestb5-tradoptestb.obj: tradoptestb.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptestb5_CXXFLAGS) $(CXXFLAGS) -MT tradoptestb5-tradoptestb.obj -MD -MP -MF "$(DEPDIR)/tradoptestb5-tradoptestb.Tpo" -c -o tradoptestb5-tradoptestb.obj `if test -f 'tradoptestb.cpp'; then $(CYGPATH_W) 'tradoptestb.cpp'; else $(CYGPATH_W) '$(srcdir)/tradoptestb.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/tradoptestb5-tradoptestb.Tpo" "$(DEPDIR)/tradoptestb5-tradoptestb.Po"; else rm -f "$(DEPDIR)/tradoptestb5-tradoptestb.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tradoptestb.cpp' object='tradoptestb5-tradoptestb.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/tradoptestb5-tradoptestb.Po' tmpdepfile='$(DEPDIR)/tradoptestb5-tradoptestb.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptestb5_CXXFLAGS) $(CXXFLAGS) -c -o tradoptestb5-tradoptestb.obj `if test -f 'tradoptestb.cpp'; then $(CYGPATH_W) 'tradoptestb.cpp'; else $(CYGPATH_W) '$(srcdir)/tradoptestb.cpp'; fi`
+
+tradoptestb6-tradoptestb.o: tradoptestb.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptestb6_CXXFLAGS) $(CXXFLAGS) -MT tradoptestb6-tradoptestb.o -MD -MP -MF "$(DEPDIR)/tradoptestb6-tradoptestb.Tpo" -c -o tradoptestb6-tradoptestb.o `test -f 'tradoptestb.cpp' || echo '$(srcdir)/'`tradoptestb.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/tradoptestb6-tradoptestb.Tpo" "$(DEPDIR)/tradoptestb6-tradoptestb.Po"; else rm -f "$(DEPDIR)/tradoptestb6-tradoptestb.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tradoptestb.cpp' object='tradoptestb6-tradoptestb.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/tradoptestb6-tradoptestb.Po' tmpdepfile='$(DEPDIR)/tradoptestb6-tradoptestb.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptestb6_CXXFLAGS) $(CXXFLAGS) -c -o tradoptestb6-tradoptestb.o `test -f 'tradoptestb.cpp' || echo '$(srcdir)/'`tradoptestb.cpp
+
+tradoptestb6-tradoptestb.obj: tradoptestb.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptestb6_CXXFLAGS) $(CXXFLAGS) -MT tradoptestb6-tradoptestb.obj -MD -MP -MF "$(DEPDIR)/tradoptestb6-tradoptestb.Tpo" -c -o tradoptestb6-tradoptestb.obj `if test -f 'tradoptestb.cpp'; then $(CYGPATH_W) 'tradoptestb.cpp'; else $(CYGPATH_W) '$(srcdir)/tradoptestb.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/tradoptestb6-tradoptestb.Tpo" "$(DEPDIR)/tradoptestb6-tradoptestb.Po"; else rm -f "$(DEPDIR)/tradoptestb6-tradoptestb.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tradoptestb.cpp' object='tradoptestb6-tradoptestb.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/tradoptestb6-tradoptestb.Po' tmpdepfile='$(DEPDIR)/tradoptestb6-tradoptestb.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptestb6_CXXFLAGS) $(CXXFLAGS) -c -o tradoptestb6-tradoptestb.obj `if test -f 'tradoptestb.cpp'; then $(CYGPATH_W) 'tradoptestb.cpp'; else $(CYGPATH_W) '$(srcdir)/tradoptestb.cpp'; fi`
+
+tradoptestc1-tradoptestc.o: tradoptestc.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptestc1_CXXFLAGS) $(CXXFLAGS) -MT tradoptestc1-tradoptestc.o -MD -MP -MF "$(DEPDIR)/tradoptestc1-tradoptestc.Tpo" -c -o tradoptestc1-tradoptestc.o `test -f 'tradoptestc.cpp' || echo '$(srcdir)/'`tradoptestc.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/tradoptestc1-tradoptestc.Tpo" "$(DEPDIR)/tradoptestc1-tradoptestc.Po"; else rm -f "$(DEPDIR)/tradoptestc1-tradoptestc.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tradoptestc.cpp' object='tradoptestc1-tradoptestc.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/tradoptestc1-tradoptestc.Po' tmpdepfile='$(DEPDIR)/tradoptestc1-tradoptestc.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptestc1_CXXFLAGS) $(CXXFLAGS) -c -o tradoptestc1-tradoptestc.o `test -f 'tradoptestc.cpp' || echo '$(srcdir)/'`tradoptestc.cpp
+
+tradoptestc1-tradoptestc.obj: tradoptestc.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptestc1_CXXFLAGS) $(CXXFLAGS) -MT tradoptestc1-tradoptestc.obj -MD -MP -MF "$(DEPDIR)/tradoptestc1-tradoptestc.Tpo" -c -o tradoptestc1-tradoptestc.obj `if test -f 'tradoptestc.cpp'; then $(CYGPATH_W) 'tradoptestc.cpp'; else $(CYGPATH_W) '$(srcdir)/tradoptestc.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/tradoptestc1-tradoptestc.Tpo" "$(DEPDIR)/tradoptestc1-tradoptestc.Po"; else rm -f "$(DEPDIR)/tradoptestc1-tradoptestc.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tradoptestc.cpp' object='tradoptestc1-tradoptestc.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/tradoptestc1-tradoptestc.Po' tmpdepfile='$(DEPDIR)/tradoptestc1-tradoptestc.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptestc1_CXXFLAGS) $(CXXFLAGS) -c -o tradoptestc1-tradoptestc.obj `if test -f 'tradoptestc.cpp'; then $(CYGPATH_W) 'tradoptestc.cpp'; else $(CYGPATH_W) '$(srcdir)/tradoptestc.cpp'; fi`
+
+tradoptestc2-tradoptestc.o: tradoptestc.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptestc2_CXXFLAGS) $(CXXFLAGS) -MT tradoptestc2-tradoptestc.o -MD -MP -MF "$(DEPDIR)/tradoptestc2-tradoptestc.Tpo" -c -o tradoptestc2-tradoptestc.o `test -f 'tradoptestc.cpp' || echo '$(srcdir)/'`tradoptestc.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/tradoptestc2-tradoptestc.Tpo" "$(DEPDIR)/tradoptestc2-tradoptestc.Po"; else rm -f "$(DEPDIR)/tradoptestc2-tradoptestc.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tradoptestc.cpp' object='tradoptestc2-tradoptestc.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/tradoptestc2-tradoptestc.Po' tmpdepfile='$(DEPDIR)/tradoptestc2-tradoptestc.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptestc2_CXXFLAGS) $(CXXFLAGS) -c -o tradoptestc2-tradoptestc.o `test -f 'tradoptestc.cpp' || echo '$(srcdir)/'`tradoptestc.cpp
+
+tradoptestc2-tradoptestc.obj: tradoptestc.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptestc2_CXXFLAGS) $(CXXFLAGS) -MT tradoptestc2-tradoptestc.obj -MD -MP -MF "$(DEPDIR)/tradoptestc2-tradoptestc.Tpo" -c -o tradoptestc2-tradoptestc.obj `if test -f 'tradoptestc.cpp'; then $(CYGPATH_W) 'tradoptestc.cpp'; else $(CYGPATH_W) '$(srcdir)/tradoptestc.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/tradoptestc2-tradoptestc.Tpo" "$(DEPDIR)/tradoptestc2-tradoptestc.Po"; else rm -f "$(DEPDIR)/tradoptestc2-tradoptestc.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tradoptestc.cpp' object='tradoptestc2-tradoptestc.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/tradoptestc2-tradoptestc.Po' tmpdepfile='$(DEPDIR)/tradoptestc2-tradoptestc.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptestc2_CXXFLAGS) $(CXXFLAGS) -c -o tradoptestc2-tradoptestc.obj `if test -f 'tradoptestc.cpp'; then $(CYGPATH_W) 'tradoptestc.cpp'; else $(CYGPATH_W) '$(srcdir)/tradoptestc.cpp'; fi`
+
+tradoptestc3-tradoptestc.o: tradoptestc.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptestc3_CXXFLAGS) $(CXXFLAGS) -MT tradoptestc3-tradoptestc.o -MD -MP -MF "$(DEPDIR)/tradoptestc3-tradoptestc.Tpo" -c -o tradoptestc3-tradoptestc.o `test -f 'tradoptestc.cpp' || echo '$(srcdir)/'`tradoptestc.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/tradoptestc3-tradoptestc.Tpo" "$(DEPDIR)/tradoptestc3-tradoptestc.Po"; else rm -f "$(DEPDIR)/tradoptestc3-tradoptestc.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tradoptestc.cpp' object='tradoptestc3-tradoptestc.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/tradoptestc3-tradoptestc.Po' tmpdepfile='$(DEPDIR)/tradoptestc3-tradoptestc.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptestc3_CXXFLAGS) $(CXXFLAGS) -c -o tradoptestc3-tradoptestc.o `test -f 'tradoptestc.cpp' || echo '$(srcdir)/'`tradoptestc.cpp
+
+tradoptestc3-tradoptestc.obj: tradoptestc.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptestc3_CXXFLAGS) $(CXXFLAGS) -MT tradoptestc3-tradoptestc.obj -MD -MP -MF "$(DEPDIR)/tradoptestc3-tradoptestc.Tpo" -c -o tradoptestc3-tradoptestc.obj `if test -f 'tradoptestc.cpp'; then $(CYGPATH_W) 'tradoptestc.cpp'; else $(CYGPATH_W) '$(srcdir)/tradoptestc.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/tradoptestc3-tradoptestc.Tpo" "$(DEPDIR)/tradoptestc3-tradoptestc.Po"; else rm -f "$(DEPDIR)/tradoptestc3-tradoptestc.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tradoptestc.cpp' object='tradoptestc3-tradoptestc.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/tradoptestc3-tradoptestc.Po' tmpdepfile='$(DEPDIR)/tradoptestc3-tradoptestc.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptestc3_CXXFLAGS) $(CXXFLAGS) -c -o tradoptestc3-tradoptestc.obj `if test -f 'tradoptestc.cpp'; then $(CYGPATH_W) 'tradoptestc.cpp'; else $(CYGPATH_W) '$(srcdir)/tradoptestc.cpp'; fi`
+
+tradoptestc4-tradoptestc.o: tradoptestc.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptestc4_CXXFLAGS) $(CXXFLAGS) -MT tradoptestc4-tradoptestc.o -MD -MP -MF "$(DEPDIR)/tradoptestc4-tradoptestc.Tpo" -c -o tradoptestc4-tradoptestc.o `test -f 'tradoptestc.cpp' || echo '$(srcdir)/'`tradoptestc.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/tradoptestc4-tradoptestc.Tpo" "$(DEPDIR)/tradoptestc4-tradoptestc.Po"; else rm -f "$(DEPDIR)/tradoptestc4-tradoptestc.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tradoptestc.cpp' object='tradoptestc4-tradoptestc.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/tradoptestc4-tradoptestc.Po' tmpdepfile='$(DEPDIR)/tradoptestc4-tradoptestc.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptestc4_CXXFLAGS) $(CXXFLAGS) -c -o tradoptestc4-tradoptestc.o `test -f 'tradoptestc.cpp' || echo '$(srcdir)/'`tradoptestc.cpp
+
+tradoptestc4-tradoptestc.obj: tradoptestc.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptestc4_CXXFLAGS) $(CXXFLAGS) -MT tradoptestc4-tradoptestc.obj -MD -MP -MF "$(DEPDIR)/tradoptestc4-tradoptestc.Tpo" -c -o tradoptestc4-tradoptestc.obj `if test -f 'tradoptestc.cpp'; then $(CYGPATH_W) 'tradoptestc.cpp'; else $(CYGPATH_W) '$(srcdir)/tradoptestc.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/tradoptestc4-tradoptestc.Tpo" "$(DEPDIR)/tradoptestc4-tradoptestc.Po"; else rm -f "$(DEPDIR)/tradoptestc4-tradoptestc.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tradoptestc.cpp' object='tradoptestc4-tradoptestc.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/tradoptestc4-tradoptestc.Po' tmpdepfile='$(DEPDIR)/tradoptestc4-tradoptestc.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptestc4_CXXFLAGS) $(CXXFLAGS) -c -o tradoptestc4-tradoptestc.obj `if test -f 'tradoptestc.cpp'; then $(CYGPATH_W) 'tradoptestc.cpp'; else $(CYGPATH_W) '$(srcdir)/tradoptestc.cpp'; fi`
+
+tradoptestc5-tradoptestc.o: tradoptestc.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptestc5_CXXFLAGS) $(CXXFLAGS) -MT tradoptestc5-tradoptestc.o -MD -MP -MF "$(DEPDIR)/tradoptestc5-tradoptestc.Tpo" -c -o tradoptestc5-tradoptestc.o `test -f 'tradoptestc.cpp' || echo '$(srcdir)/'`tradoptestc.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/tradoptestc5-tradoptestc.Tpo" "$(DEPDIR)/tradoptestc5-tradoptestc.Po"; else rm -f "$(DEPDIR)/tradoptestc5-tradoptestc.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tradoptestc.cpp' object='tradoptestc5-tradoptestc.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/tradoptestc5-tradoptestc.Po' tmpdepfile='$(DEPDIR)/tradoptestc5-tradoptestc.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptestc5_CXXFLAGS) $(CXXFLAGS) -c -o tradoptestc5-tradoptestc.o `test -f 'tradoptestc.cpp' || echo '$(srcdir)/'`tradoptestc.cpp
+
+tradoptestc5-tradoptestc.obj: tradoptestc.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptestc5_CXXFLAGS) $(CXXFLAGS) -MT tradoptestc5-tradoptestc.obj -MD -MP -MF "$(DEPDIR)/tradoptestc5-tradoptestc.Tpo" -c -o tradoptestc5-tradoptestc.obj `if test -f 'tradoptestc.cpp'; then $(CYGPATH_W) 'tradoptestc.cpp'; else $(CYGPATH_W) '$(srcdir)/tradoptestc.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/tradoptestc5-tradoptestc.Tpo" "$(DEPDIR)/tradoptestc5-tradoptestc.Po"; else rm -f "$(DEPDIR)/tradoptestc5-tradoptestc.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tradoptestc.cpp' object='tradoptestc5-tradoptestc.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/tradoptestc5-tradoptestc.Po' tmpdepfile='$(DEPDIR)/tradoptestc5-tradoptestc.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptestc5_CXXFLAGS) $(CXXFLAGS) -c -o tradoptestc5-tradoptestc.obj `if test -f 'tradoptestc.cpp'; then $(CYGPATH_W) 'tradoptestc.cpp'; else $(CYGPATH_W) '$(srcdir)/tradoptestc.cpp'; fi`
+
+tradoptestc6-tradoptestc.o: tradoptestc.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptestc6_CXXFLAGS) $(CXXFLAGS) -MT tradoptestc6-tradoptestc.o -MD -MP -MF "$(DEPDIR)/tradoptestc6-tradoptestc.Tpo" -c -o tradoptestc6-tradoptestc.o `test -f 'tradoptestc.cpp' || echo '$(srcdir)/'`tradoptestc.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/tradoptestc6-tradoptestc.Tpo" "$(DEPDIR)/tradoptestc6-tradoptestc.Po"; else rm -f "$(DEPDIR)/tradoptestc6-tradoptestc.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tradoptestc.cpp' object='tradoptestc6-tradoptestc.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/tradoptestc6-tradoptestc.Po' tmpdepfile='$(DEPDIR)/tradoptestc6-tradoptestc.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptestc6_CXXFLAGS) $(CXXFLAGS) -c -o tradoptestc6-tradoptestc.o `test -f 'tradoptestc.cpp' || echo '$(srcdir)/'`tradoptestc.cpp
+
+tradoptestc6-tradoptestc.obj: tradoptestc.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptestc6_CXXFLAGS) $(CXXFLAGS) -MT tradoptestc6-tradoptestc.obj -MD -MP -MF "$(DEPDIR)/tradoptestc6-tradoptestc.Tpo" -c -o tradoptestc6-tradoptestc.obj `if test -f 'tradoptestc.cpp'; then $(CYGPATH_W) 'tradoptestc.cpp'; else $(CYGPATH_W) '$(srcdir)/tradoptestc.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/tradoptestc6-tradoptestc.Tpo" "$(DEPDIR)/tradoptestc6-tradoptestc.Po"; else rm -f "$(DEPDIR)/tradoptestc6-tradoptestc.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='tradoptestc.cpp' object='tradoptestc6-tradoptestc.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/tradoptestc6-tradoptestc.Po' tmpdepfile='$(DEPDIR)/tradoptestc6-tradoptestc.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradoptestc6_CXXFLAGS) $(CXXFLAGS) -c -o tradoptestc6-tradoptestc.obj `if test -f 'tradoptestc.cpp'; then $(CYGPATH_W) 'tradoptestc.cpp'; else $(CYGPATH_W) '$(srcdir)/tradoptestc.cpp'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
@@ -656,15 +1040,33 @@ uninstall-am: uninstall-info-am
 
 
 testall : $(noinst_PROGRAMS)
-	./tradoptest1$(EXEEXT)
-	./tradoptest2$(EXEEXT)
-	./tradoptest3$(EXEEXT)	
-	./tradoptest4$(EXEEXT)
-	./tradoptest5$(EXEEXT)
-	./tradoptest6$(EXEEXT)
+	./tradoptesta1$(EXEEXT)
+	./tradoptesta2$(EXEEXT)
+	./tradoptesta3$(EXEEXT)	
+	./tradoptesta4$(EXEEXT)
+	./tradoptesta5$(EXEEXT)
+	./tradoptesta6$(EXEEXT)
+	./tradoptestb1$(EXEEXT)
+	./tradoptestb2$(EXEEXT)
+	./tradoptestb3$(EXEEXT)	
+	./tradoptestb4$(EXEEXT)
+	./tradoptestb5$(EXEEXT)
+	./tradoptestb6$(EXEEXT)
+	./tradoptestc1$(EXEEXT)
+	./tradoptestc2$(EXEEXT)
+	./tradoptestc3$(EXEEXT)	
+	./tradoptestc4$(EXEEXT)
+	./tradoptestc5$(EXEEXT)
+	./tradoptestc6$(EXEEXT)
 
-tradoptest.cpp : testgen.as tradoptest.c0
-	$(SHELL) testgen.as $(srcdir)/tradoptest.c0 > tradoptest.cpp
+tradoptesta.cpp : testgen.as tradoptesta.c0
+	$(SHELL) testgen.as $(srcdir)/tradoptesta.c0 > tradoptesta.cpp
+
+tradoptestb.cpp : testgen.as tradoptestb.c0
+	$(SHELL) testgen.as $(srcdir)/tradoptestb.c0 > tradoptestb.cpp
+
+tradoptestc.cpp : testgen.as tradoptestc.c0
+	$(SHELL) testgen.as $(srcdir)/tradoptestc.c0 > tradoptestc.cpp
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
