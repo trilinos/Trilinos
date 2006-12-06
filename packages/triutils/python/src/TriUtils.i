@@ -42,6 +42,7 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_FECrsMatrix.h"
 #include "Epetra_VbrMatrix.h"
+#include "Epetra_FEVbrMatrix.h"
 
 // Epetra wrapper helper includes
 #include "NumPyImporter.h"

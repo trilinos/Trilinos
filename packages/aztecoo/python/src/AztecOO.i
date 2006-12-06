@@ -93,6 +93,8 @@ Solver.Iterate(1550, 1e-5)
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_VbrMatrix.h"
 #include "Epetra_JadMatrix.h"
+#include "Epetra_FECrsMatrix.h"
+#include "Epetra_FEVbrMatrix.h"
 
 // Epetra python includes
 #include "NumPyImporter.h"

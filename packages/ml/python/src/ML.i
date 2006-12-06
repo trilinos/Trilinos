@@ -128,6 +128,7 @@ print r.Norm2()
 #include "Epetra_BasicRowMatrix.h"
 #include "Epetra_JadMatrix.h"
 #include "Epetra_JadOperator.h"
+#include "Epetra_FEVbrMatrix.h"
 
 // Epetra python includes
 #include "Epetra_NumPyMultiVector.h"

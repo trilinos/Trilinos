@@ -67,6 +67,7 @@ Finally, the following functions are avaiable in the IFPACK module:
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
 #endif
+#include "Epetra_LocalMap.h"
 #include "Epetra_FEVector.h"
 #include "Epetra_Operator.h"
 #include "Epetra_InvOperator.h"
@@ -75,6 +76,8 @@ Finally, the following functions are avaiable in the IFPACK module:
 #include "Epetra_BasicRowMatrix.h"
 #include "Epetra_JadMatrix.h"
 #include "Epetra_JadOperator.h"
+#include "Epetra_FECrsMatrix.h"
+#include "Epetra_FEVbrMatrix.h"
 
 // Epetra python includes
 #include "Epetra_NumPyMultiVector.h"
