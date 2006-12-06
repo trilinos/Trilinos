@@ -50,10 +50,10 @@ Sacado::Fad::MemPool::MemPool(unsigned int elem_size, unsigned int n_elem,
 inline 
 Sacado::Fad::MemPool::~MemPool()
 {
-  Chunk *n = chunks;
-  while (n != NULL) {
-    Chunk *p = n;
-    n = n->next;
+  Chunk * nc = chunks;
+  while (nc != NULL) {
+    Chunk * p = nc;
+    nc = nc->next;
     operator delete((void*) p);
   }
 }
