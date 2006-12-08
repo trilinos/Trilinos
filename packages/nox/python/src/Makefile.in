@@ -104,17 +104,18 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
-	$(srcdir)/TRILINOS_HOME_DIR.in $(srcdir)/__init__.py.in \
-	$(top_srcdir)/config/swig.am
+	$(srcdir)/TRILINOS_HOME_DIR.in $(top_srcdir)/config/swig.am
 subdir = python/src
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps =  \
 	$(top_srcdir)/config/ac_cxx_invalid_template_qualifier.m4 \
 	$(top_srcdir)/config/ac_cxx_namespaces.m4 \
 	$(top_srcdir)/config/ac_cxx_stl_map_key_const.m4 \
+	$(top_srcdir)/config/ac_pkg_swig.m4 \
 	$(top_srcdir)/config/acx_blas.m4 \
 	$(top_srcdir)/config/acx_dggev.m4 \
 	$(top_srcdir)/config/acx_lapack.m4 \
+	$(top_srcdir)/config/az_python.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_enable_can_use_package.m4 \
@@ -130,12 +131,13 @@ am__aclocal_m4_deps =  \
 	$(top_srcdir)/config/tac_arg_with_lapacklib.m4 \
 	$(top_srcdir)/config/tac_arg_with_libs.m4 \
 	$(top_srcdir)/config/tac_arg_with_perl.m4 \
+	$(top_srcdir)/config/tac_enable_python.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
-CONFIG_CLEAN_FILES = TRILINOS_HOME_DIR __init__.py
+CONFIG_CLEAN_FILES = TRILINOS_HOME_DIR
 SOURCES =
 DIST_SOURCES =
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -223,6 +225,8 @@ BUILD_PETSC_TESTS_FALSE = @BUILD_PETSC_TESTS_FALSE@
 BUILD_PETSC_TESTS_TRUE = @BUILD_PETSC_TESTS_TRUE@
 BUILD_PRERELEASE_FALSE = @BUILD_PRERELEASE_FALSE@
 BUILD_PRERELEASE_TRUE = @BUILD_PRERELEASE_TRUE@
+BUILD_PYTHON_FALSE = @BUILD_PYTHON_FALSE@
+BUILD_PYTHON_TRUE = @BUILD_PYTHON_TRUE@
 BUILD_TESTUTILS_FALSE = @BUILD_TESTUTILS_FALSE@
 BUILD_TESTUTILS_TRUE = @BUILD_TESTUTILS_TRUE@
 CC = @CC@
@@ -245,10 +249,13 @@ EXEEXT = @EXEEXT@
 F77 = @F77@
 FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
+GNU_HAVE_SWIG = @GNU_HAVE_SWIG@
 HAVE_DOXYGEN_DOT = @HAVE_DOXYGEN_DOT@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
 HAVE_PERL = @HAVE_PERL@
+HAVE_SWIG_FALSE = @HAVE_SWIG_FALSE@
+HAVE_SWIG_TRUE = @HAVE_SWIG_TRUE@
 IMPORT_EPETRA = @IMPORT_EPETRA@
 IMPORT_LAPACK = @IMPORT_LAPACK@
 INSIDE_TRILINOS_FALSE = @INSIDE_TRILINOS_FALSE@
@@ -285,10 +292,21 @@ PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PERL_EXE = @PERL_EXE@
 PETSC_CXXFLAGS = @PETSC_CXXFLAGS@
+PYTHON = @PYTHON@
+PYTHON_CSPEC = @PYTHON_CSPEC@
+PYTHON_EXECPREFIX = @PYTHON_EXECPREFIX@
+PYTHON_LSPEC = @PYTHON_LSPEC@
+PYTHON_PREFIX = @PYTHON_PREFIX@
+PYTHON_USE_FALSE = @PYTHON_USE_FALSE@
+PYTHON_USE_TRUE = @PYTHON_USE_TRUE@
 RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
+SWIG = @SWIG@
+SWIG_LIB = @SWIG_LIB@
+SWIG_PYTHON_CPPFLAGS = @SWIG_PYTHON_CPPFLAGS@
+SWIG_PYTHON_OPT = @SWIG_PYTHON_OPT@
 USE_ALTERNATE_AR_FALSE = @USE_ALTERNATE_AR_FALSE@
 USE_ALTERNATE_AR_TRUE = @USE_ALTERNATE_AR_TRUE@
 USING_EXPORT_MAKEFILES_FALSE = @USING_EXPORT_MAKEFILES_FALSE@
@@ -299,6 +317,7 @@ USING_PERL_FALSE = @USING_PERL_FALSE@
 USING_PERL_TRUE = @USING_PERL_TRUE@
 VERSION = @VERSION@
 WITH_PRERELEASE_SUBST = @WITH_PRERELEASE_SUBST@
+WITH_SWIG = @WITH_SWIG@
 abs_builddir = @abs_builddir@
 abs_top_builddir = @abs_top_builddir@
 ac_aux_dir = @ac_aux_dir@
@@ -355,52 +374,43 @@ DEPFILES = $(shell ls $(DEPDIR)/*.Pi 2> /dev/null; ls $(DEPDIR)/dummy)
 
 # Clean target.  Put the generated dependency files in the list of files to
 # be removed with a "make clean"
-CLEANFILES = $(DEPDIR)/*.Pi $(WRAPPERS) $(PROXIES)
+CLEANFILES = $(DEPDIR)/*.Pi $(WRAPPERS) $(PROXIES) $(EPETRA_DEP)
 
 # Define the SWIGCOMPILE macro
 SWIGCOMPILE = $(SWIG) $(SWIG_PYTHON_OPT) $(SWIG_CXXFLAGS)
 
 # Include swig rules
 SWIG_CXXFLAGS = $(NOX_INCLUDES) \
+		-I$(top_srcdir)/../teuchos/python/src \
 		-I$(top_srcdir)/../epetra/python/src
 
 
 # Currently, this temporary directory is required to be present for the
 # setup.py script to work correctly
 @BUILD_NOX_PYTHON_TRUE@tempdir = $(shell $(PYTHON) -c "import sys,os; from distutils.util import get_platform; print os.path.join('build','temp.%s-%s'%(get_platform(),sys.version[0:3]))")
-@BUILD_LIBNOXEPETRA_FALSE@@BUILD_NOX_PYTHON_TRUE@EPETRA_I = 
 
-# Set the appropriate Make macros
-@BUILD_LIBNOXEPETRA_TRUE@@BUILD_NOX_PYTHON_TRUE@EPETRA_I = NOX_Epetra.i
+# Top-level NOX interface, wrapper and proxy variables
+@BUILD_NOX_PYTHON_TRUE@NOX_INTERFACES = NOX.__init__.i   \
+@BUILD_NOX_PYTHON_TRUE@	         NOX.Abstract.i   \
+@BUILD_NOX_PYTHON_TRUE@	         NOX.Solver.i     \
+@BUILD_NOX_PYTHON_TRUE@	         NOX.StatusTest.i
+
+@BUILD_NOX_PYTHON_TRUE@NOX_WRAPPERS = $(NOX_INTERFACES:.i=_wrap.cpp)
+@BUILD_NOX_PYTHON_TRUE@NOX_TEMPS = $(NOX_INTERFACES:NOX.=PyTrilinos/NOX/)
+@BUILD_NOX_PYTHON_TRUE@NOX_PROXIES = $(NOX_PROXIES_TMP:.i=.py)
+
+# NOX.Epetra interface, wrapper and proxy variables
+@BUILD_LIBNOXEPETRA_TRUE@@BUILD_NOX_PYTHON_TRUE@NOX_EPETRA_INTERFACES = NOX.Epetra.__init__.i \
+@BUILD_LIBNOXEPETRA_TRUE@@BUILD_NOX_PYTHON_TRUE@	                  NOX.Epetra.Interface.i
+
+@BUILD_LIBNOXEPETRA_TRUE@@BUILD_NOX_PYTHON_TRUE@NOX_EPETRA_WRAPPERS = $(NOX_EPETRA_INTERFACES:.i=_wrap.cpp)
+@BUILD_LIBNOXEPETRA_TRUE@@BUILD_NOX_PYTHON_TRUE@NOX_EPETRA_TEMPS = $(NOX_EPETRA_INTERFCES:NOX.Epetra.=PyTrilinos/NOX/Epetra/)
+@BUILD_LIBNOXEPETRA_TRUE@@BUILD_NOX_PYTHON_TRUE@NOX_EPETRA_PROXIES = $(NOX_EPETRA_TEMPS:.i=.py)
 @BUILD_LIBNOXEPETRA_FALSE@@BUILD_NOX_PYTHON_TRUE@PYTHON_NOX_EPETRA = 0
 @BUILD_LIBNOXEPETRA_TRUE@@BUILD_NOX_PYTHON_TRUE@PYTHON_NOX_EPETRA = 1
-@BUILD_LIBNOXLAPACK_FALSE@@BUILD_NOX_PYTHON_TRUE@LAPACK_I = 
-@BUILD_LIBNOXLAPACK_TRUE@@BUILD_NOX_PYTHON_TRUE@LAPACK_I = NOX_LAPACK.i
-@BUILD_LIBNOXLAPACK_FALSE@@BUILD_NOX_PYTHON_TRUE@PYTHON_NOX_LAPACK = 0
-@BUILD_LIBNOXLAPACK_TRUE@@BUILD_NOX_PYTHON_TRUE@PYTHON_NOX_LAPACK = 1
-
-# Define the SWIG interface files and the resulting wrapper files
-INTERFACES = NOX_TopLevel.i NOX_Abstract.i NOX_Parameter.i NOX_Solver.i \
-	      NOX_StatusTest.i $(EPETRA_I) $(LAPACK_I)
-
-WRAPPERS = $(INTERFACES:.i=_wrap.cpp)
-PROXIES_TMP = $(INTERFACES:.i=.py      )
-PROXIES = $(PROXIES_TMP:NOX_=      )
-
-# ------------------------------------------------------------------------
-# Extra files to be installed by 'make dist'
-# ------------------------------------------------------------------------
-EXTRA_DIST = \
-	$(INTERFACES) \
-	setup.py \
-	Epetra_VectorHelper.h \
-	Epetra_VectorHelper.cpp \
-	PyInterface.h \
-	PyInterface.cpp \
-	NOX_Epetra.i \
-	NOX_LAPACK.i \
-	Utils_enums.H
-
+@BUILD_NOX_PYTHON_TRUE@INTERFACES = $(NOX_INTERFACES) $(NOX_EPETRA_INTERFACES)
+@BUILD_NOX_PYTHON_TRUE@WRAPPERS = $(NOX_WRAPPERS)   $(NOX_EPETRA_WRAPPERS)
+@BUILD_NOX_PYTHON_TRUE@PROXIES = $(NOX_PROXIES)    $(NOX_EPETRA_PROXIES)
 all: all-am
 
 .SUFFIXES:
@@ -434,8 +444,6 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 TRILINOS_HOME_DIR: $(top_builddir)/config.status $(srcdir)/TRILINOS_HOME_DIR.in
-	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
-__init__.py: $(top_builddir)/config.status $(srcdir)/__init__.py.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 uninstall-info-am:
 tags: TAGS
@@ -563,10 +571,8 @@ include $(top_builddir)/Makefile.export.nox
 include $(DEPFILES)
 
 # Wrapper and proxy targets
-%.py: %_wrap.cpp
-
-%_wrap.cpp: $(srcdir)/%.i 
-	if $(SWIGCOMPILE) -MMD -MF "$(DEPDIR)/$*.Tpi" -o $@ $<; \
+%_wrap.cpp: $(srcdir)/%.i
+	if $(SWIGCOMPILE) -outdir `$(srcdir)/outdir $<` -MMD -MF "$(DEPDIR)/$*.Tpi" -o $@ $<; \
 	then mv -f "$(DEPDIR)/$*.Tpi" "$(DEPDIR)/$*.Pi"; else rm -f "$(DEPDIR)/$*.Tpi"; exit 1; fi
 
 swigclean:
@@ -579,7 +585,7 @@ all-am: build
 @BUILD_NOX_PYTHON_TRUE@	@echo "Creating directory $@"
 @BUILD_NOX_PYTHON_TRUE@	mkdir -p $@
 
-@BUILD_NOX_PYTHON_TRUE@build: $(WRAPPERS) $(tempdir)
+@BUILD_NOX_PYTHON_TRUE@build: $(WRAPPERS) $(tempdir) # $(EPETRA_DEP)
 @BUILD_NOX_PYTHON_TRUE@	$(PYTHON) $(srcdir)/setup.py build
 
 @BUILD_NOX_PYTHON_TRUE@install: build
@@ -590,6 +596,20 @@ all-am: build
 @BUILD_NOX_PYTHON_TRUE@	$(RM) -r ../../packages
 @BUILD_NOX_PYTHON_FALSE@build:
 @BUILD_NOX_PYTHON_FALSE@	echo 'NOX-Python support is disabled!'
+
+# ------------------------------------------------------------------------
+# Extra files to be installed by 'make dist'
+# ------------------------------------------------------------------------
+
+#EXTRA_DIST = \
+#	$(INTERFACES) \
+#	setup.py \
+#	NOX_TopLevel.i \
+#	NOX_Abstract.i \
+#	NOX_Solver.i \
+#	NOX_StatusTest.i \
+#	NOX_Epetra.i \
+#	NOX_Epetra_Interface.i
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

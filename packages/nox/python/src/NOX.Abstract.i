@@ -28,21 +28,42 @@
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos.NOX") Abstract
+%module(package      = "PyTrilinos.NOX",
+	directors    = "1",
+	autodoc      = "1",
+	implicitconv = "1") Abstract
 
 %{
+// Teuchos includes
+#include "Teuchos_PythonParameter.hpp"
+
 // NOX includes
 #include "NOX_Abstract_Group.H"
+#include "NOX_Abstract_PrePostOperator.H"
+#include "NOX_Abstract_MultiVector.H"
 #include "NOX_Abstract_Vector.H"
 %}
 
 // Ignore directives
-%ignore *::print() const;
 %ignore *::operator=;
+%ignore *::operator[];
+%ignore NOX::Abstract::MultiVector::clone(int) const;
 
-// Auto-documentation feature
-%feature("autodoc", "1");
+// Rename directive
+%rename(_print) NOX::Abstract::Vector::print;
+%rename(_print) NOX::Abstract::MultiVector::print;
+
+// Feature directives
+%feature("director") NOX::Abstract::PrePostOperator;
+
+// Trilinos module imports
+%import "Teuchos.i"
+
+// Support for Teuchos::RefCountPtrs
+TEUCHOS_RCP_TYPEMAPS(NOX::Abstract::Group)
 
 // NOX interface includes
 %include "NOX_Abstract_Group.H"
+%include "NOX_Abstract_PrePostOperator.H"
+%include "NOX_Abstract_MultiVector.H"
 %include "NOX_Abstract_Vector.H"

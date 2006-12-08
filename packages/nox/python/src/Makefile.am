@@ -36,48 +36,48 @@ include $(top_builddir)/Makefile.export.nox
 # Include swig rules
 include $(top_srcdir)/config/swig.am
 SWIG_CXXFLAGS = $(NOX_INCLUDES) \
+		-I$(top_srcdir)/../teuchos/python/src \
 		-I$(top_srcdir)/../epetra/python/src
 
 # Default make target
 all-am: build
 
+if BUILD_NOX_PYTHON
+
 # Currently, this temporary directory is required to be present for the
 # setup.py script to work correctly
-if BUILD_NOX_PYTHON
 tempdir = $(shell $(PYTHON) -c "import sys,os; from distutils.util import get_platform; print os.path.join('build','temp.%s-%s'%(get_platform(),sys.version[0:3]))")
 
 $(tempdir):
 	@echo "Creating directory $@"
 	mkdir -p $@
-endif
 
-# Set the appropriate Make macros
-if BUILD_NOX_PYTHON
+# Top-level NOX interface, wrapper and proxy variables
+NOX_INTERFACES = NOX.__init__.i   \
+	         NOX.Abstract.i   \
+	         NOX.Solver.i     \
+	         NOX.StatusTest.i
+NOX_WRAPPERS   = $(NOX_INTERFACES:.i=_wrap.cpp)
+NOX_TEMPS      = $(NOX_INTERFACES:NOX.=PyTrilinos/NOX/)
+NOX_PROXIES    = $(NOX_PROXIES_TMP:.i=.py)
+
+# NOX.Epetra interface, wrapper and proxy variables
 if BUILD_LIBNOXEPETRA
-  EPETRA_I=NOX_Epetra.i
+  NOX_EPETRA_INTERFACES = NOX.Epetra.__init__.i \
+	                  NOX.Epetra.Interface.i
+  NOX_EPETRA_WRAPPERS   = $(NOX_EPETRA_INTERFACES:.i=_wrap.cpp)
+  NOX_EPETRA_TEMPS      = $(NOX_EPETRA_INTERFCES:NOX.Epetra.=PyTrilinos/NOX/Epetra/)
+  NOX_EPETRA_PROXIES    = $(NOX_EPETRA_TEMPS:.i=.py)
   PYTHON_NOX_EPETRA=1
 else
-  EPETRA_I=
   PYTHON_NOX_EPETRA=0
 endif
-if BUILD_LIBNOXLAPACK
-  LAPACK_I=NOX_LAPACK.i
-  PYTHON_NOX_LAPACK=1
-else
-  LAPACK_I= 
-  PYTHON_NOX_LAPACK=0
-endif
-endif
 
-# Define the SWIG interface files and the resulting wrapper files
-INTERFACES  = NOX_TopLevel.i NOX_Abstract.i NOX_Parameter.i NOX_Solver.i \
-	      NOX_StatusTest.i $(EPETRA_I) $(LAPACK_I)
-WRAPPERS    = $(INTERFACES:.i=_wrap.cpp)
-PROXIES_TMP = $(INTERFACES:.i=.py      )
-PROXIES     = $(PROXIES_TMP:NOX_=      )
+INTERFACES = $(NOX_INTERFACES) $(NOX_EPETRA_INTERFACES)
+WRAPPERS   = $(NOX_WRAPPERS)   $(NOX_EPETRA_WRAPPERS)
+PROXIES    = $(NOX_PROXIES)    $(NOX_EPETRA_PROXIES)
 
-if BUILD_NOX_PYTHON
-build: $(WRAPPERS) $(tempdir)
+build: $(WRAPPERS) $(tempdir) # $(EPETRA_DEP)
 	$(PYTHON) $(srcdir)/setup.py build
 
 install: build
@@ -91,20 +91,18 @@ build:
 	echo 'NOX-Python support is disabled!'
 endif
 
-CLEANFILES += $(WRAPPERS) $(PROXIES)
+CLEANFILES += $(WRAPPERS) $(PROXIES) $(EPETRA_DEP)
 
 # ------------------------------------------------------------------------
 # Extra files to be installed by 'make dist'
 # ------------------------------------------------------------------------
 
-EXTRA_DIST = \
-	$(INTERFACES) \
-	setup.py \
-	Epetra_VectorHelper.h \
-	Epetra_VectorHelper.cpp \
-	PyInterface.h \
-	PyInterface.cpp \
-	NOX_Epetra.i \
-	NOX_LAPACK.i \
-	Utils_enums.H
-
+#EXTRA_DIST = \
+#	$(INTERFACES) \
+#	setup.py \
+#	NOX_TopLevel.i \
+#	NOX_Abstract.i \
+#	NOX_Solver.i \
+#	NOX_StatusTest.i \
+#	NOX_Epetra.i \
+#	NOX_Epetra_Interface.i

@@ -28,36 +28,40 @@
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos.NOX") LAPACK
-
-// DISREGARD?
-// This swig interface file includes the actual definitions for the LAPACK
-// module.  See NOX_LAPACK.swi for a description of why this is done this way
+%module(package      = "PyTrilinos.NOX",
+	autodoc      = "1",
+	implicitconv = "1") Solver
 
 %{
+// Teuchos includes
+#include "Teuchos_PythonParameter.hpp"
+
 // NOX includes
-#include "NOX.H"
-#include "NOX_LAPACK.H"
+#include "NOX_StatusTest_Generic.H"
+#include "NOX_StatusTest_NormWRMS.H"
+#include "NOX_StatusTest_Stagnation.H"
+#include "NOX_StatusTest_MaxIters.H"
+#include "NOX_StatusTest_Combo.H"
+#include "NOX_StatusTest_FiniteValue.H"
+#include "NOX_StatusTest_NormF.H"
+#include "NOX_StatusTest_NormUpdate.H"
+#include "NOX_Solver_Generic.H"
+#include "NOX_Solver_Manager.H"
 %}
 
-// Ignore/renames
-//%rename(Print) *::print() const;
-%ignore NOX::Abstract::Group::operator=(const NOX::Abstract::Group&);
-%ignore NOX::Abstract::Group::operator=(const NOX::LAPACK::Group&);
-%ignore NOX::Abstract::Vector::operator=(const NOX::Abstract::Vector&);
-%ignore NOX::Abstract::Vector::operator=(const NOX::LAPACK::Vector&);
-%ignore NOX::Abstract::Vector::operator=(const vector<double>&);
-%ignore operator<<(ostream&, const NOX::LAPACK::Vector&);
-%ignore *::print() const;
+// Ignore directives
+%ignore operator<<(ostream &, NOX::StatusTest::StatusType );
+%ignore *::print(ostream& stream, int indent = 0) const;
 
-// NOX::Abstract imports
-%import "NOX_Abstract_Group.H"
-%import "NOX_Abstract_Vector.H"
+// Rename directives
+%rename(StatusTest_Generic) NOX::StatusTest::Generic;
+%rename(StatusTest_None   ) NOX::StatusTest::None;
 
-// Import base class declarations
-//%import "NOX_Abstract.i"
+// Trilinos imports
+%import "Teuchos.i"
+%import "NOX.Abstract.i"
+%import "NOX.StatusTest.i"
 
-// LOCA interface includes
-%include "NOX_LAPACK_Vector.H"
-%include "NOX_LAPACK_Interface.H"
-%include "NOX_LAPACK_Group.H"
+// NOX interface includes
+%include "NOX_Solver_Generic.H"
+%include "NOX_Solver_Manager.H"

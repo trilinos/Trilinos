@@ -28,11 +28,16 @@
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos.NOX") StatusTest
+%module(package      = "PyTrilinos.NOX",
+	autodoc      = "1",
+	implicitconv = "1") StatusTest
 
 %{
 // System includes
 #include <sstream>
+
+// Teuchos includes
+#include "Teuchos_PythonParameter.hpp"
 
 // NOX includes
 #include "NOX_StatusTest_Generic.H"
@@ -46,7 +51,14 @@
 #include "NOX_Abstract_Group.H"
 %}
 
+// Trilinos interface file imports
+%import "Teuchos.i"
+
+// RefCountPtr typemaps
+TEUCHOS_RCP_TYPEMAPS(NOX::StatusTest::Generic)
+
 // Ignore directives
+%ignore *::operator=;
 %ignore operator<<(ostream &, NOX::StatusTest::StatusType );
 %ignore NOX::Abstract::Group::operator=(const NOX::Abstract::Group&);
 %ignore *::print(ostream& stream, int indent = 0) const;
@@ -54,8 +66,15 @@
 // Rename directives
 %rename(StatusTest_None) NOX::StatusTest::None;
 
+// Auto-documentation feature
+%feature("autodoc", "1");
+
 // SWIG library includes
-%include "std_string.i"
+%include "stl.i"
+
+// Teuchos imports
+//%import "Teuchos_TypeNameTraits.hpp"
+//%import "Teuchos_RefCountPtrDecl.hpp"
 
 // NOX::Abstract import
 %import "NOX_Abstract_Group.H"

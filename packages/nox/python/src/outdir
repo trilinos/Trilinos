@@ -1,0 +1,73 @@
+#! /usr/bin/env python
+
+# @HEADER
+# ************************************************************************
+#
+#                 PyTrilinos.NOX: Python Interface to NOX
+#                   Copyright (2005) Sandia Corporation
+#
+# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+# license for use of this work by or on behalf of the U.S. Government.
+#
+# This library is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation; either version 2.1 of the
+# License, or (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+# Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+#
+# ************************************************************************
+# @HEADER
+
+"""
+This outdir script takes a SWIG interface filename as its command-line argument,
+and searches the file for a %module directive.  If that directive is found and
+has a "package=..." option, the name of the package is extracted and the result
+is output in the form of a directory path.  If the search is unsuccessful, then
+the current directory "." is output.
+
+This script is useful for the SWIG "-outdir" option.  For example, if swig is
+invoked on "file.i" via
+
+    swig ... -outdir `outdir file.i` ... file.i
+
+then the output will be placed in the directory specified by its package,
+assuming that directory exists.
+"""
+
+# Imports
+import os.path
+import re
+import sys
+
+# Quote string
+q      = "'" + '"'
+
+# Regular expression object
+packageRE = re.compile(r"%module\(.*package\s*=\s*[" + q + r"]([^" + q + r"]+)",
+                       re.DOTALL)
+
+# Obtain the filename from the command line
+filename = sys.argv[1]
+
+# Search for first occurence of the regular expression within the given file
+match = packageRE.search(open(filename,"r").read())
+
+# Check for match
+if match:
+    # If found, split package into sub-package names, remove "PyTrilinos", and
+    # re-combine in to directory path
+    package = match.group(1).split(".")
+    print os.path.join(*package)
+else:
+    # If not found, output the current directory
+    print "."

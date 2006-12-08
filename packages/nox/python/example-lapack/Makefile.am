@@ -60,13 +60,13 @@ EXAMPLE_SUITE =
 SETPATH = setpath.py
 
 if BUILD_NOX_PYTHON
-if BUILD_LAPACK_EXAMPLES
 all: $(EXAMPLE_SUITE)
-	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$(SETPATH) . ; fi
+	if [ `$(PYTHON) -c "import os; print os.path.abspath('$(srcdir)')"` != `pwd` ]; then \
+	   /bin/cp $(srcdir)/$(SETPATH) . ; fi
 
 ex%:
-	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$@.py . ; fi
+	if [ `$(PYTHON) -c "import os; print os.path.abspath('$(srcdir)')"` != `pwd` ]; then \
+	   /bin/cp $(srcdir)/$@.py . ; fi
 
 CLEANFILES = $(EXAMPLE_SUITE:=.py) $(SETPATH) *.pyc
-endif
 endif

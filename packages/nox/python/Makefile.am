@@ -34,5 +34,5 @@
 ## Subdirectories to be make'd recursively
 ## #######################################################################
 
-SUBDIRS = src src-loca test test-lapack example-lapack \
-          test-epetra example-epetra
+SUBDIRS = src test test-lapack test-epetra example-lapack example-epetra \
+	  src-loca

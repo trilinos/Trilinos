@@ -41,7 +41,7 @@
 # This must be the first line in configure.ac.
 # Optional 3rd argument is email address for bugs.
 
-AC_INIT([nox],[4.0-dev],[nox-developers@software.sandia.gov])
+AC_INIT([nox],[7.0],[nox-developers@software.sandia.gov])
 
 # Hello World!
 echo "----------------------------------------"
@@ -609,34 +609,34 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(nox, ml, NOX_ML_EPETRA, BUILD_NOX_EPETRA_ML_SUPPO
 # last month added smart pointers that phyton currently can't handle.
 # Until Bill Spotz fixes this for Trilinos in general, we can't
 # support python.  
-BUILD_NOX_PYTHON=no
+# BUILD_NOX_PYTHON=no
 
-#TAC_ENABLE_PYTHON
+TAC_ENABLE_PYTHON
 
-# Separate builds for loca and nox
-#AC_ARG_ENABLE(nox-python,
-#[AC_HELP_STRING([--disable-nox-python],[Used ONLY to disable the python supportin nox.  It cannot be used to enable python support.  Use the flag --enable-python to enable support.])],
-#[
-#  BUILD_NOX_PYTHON=${enableval}
-#  if test X${BUILD_NOX_PYTHON} != Xno; then
-#    echo "*****************************"
-#    echo "NOX Configure ERROR - the flag \"--enable-nox-python\" is not"
-#    echo "allowed!  To enable python support in nox, use --enable-python."
-#    echo "The flag \"--disable-nox-python\" is allowed to specifically"
-#    echo "disable nox python support while allowing python support in"
-#    echo "other Trilinos packages."
-#    echo "*****************************"
-#    AC_MSG_ERROR([The flag \"--enable-nox-python\" is not allowed.])
-#  fi
-#],
-#[
-#  AC_ARG_ENABLE(python,
-#  [],
-#  [BUILD_NOX_PYTHON=${enableval}],
-#  [BUILD_NOX_PYTHON=no]
-#  )
-#]
-#)
+ Separate builds for loca and nox
+AC_ARG_ENABLE(nox-python,
+[AC_HELP_STRING([--disable-nox-python],[Used ONLY to disable the python support in nox.  It cannot be used to enable python support.  Use the flag --enable-python to enable support.])],
+[
+  BUILD_NOX_PYTHON=${enableval}
+  if test X${BUILD_NOX_PYTHON} != Xno; then
+    echo "*****************************"
+    echo "NOX Configure ERROR - the flag \"--enable-nox-python\" is not"
+    echo "allowed!  To enable python support in nox, use --enable-python."
+    echo "The flag \"--disable-nox-python\" is allowed to specifically"
+    echo "disable nox python support while allowing python support in"
+    echo "other Trilinos packages."
+    echo "*****************************"
+    AC_MSG_ERROR([The flag \"--enable-nox-python\" is not allowed.])
+  fi
+],
+[
+  AC_ARG_ENABLE(python,
+  [],
+  [BUILD_NOX_PYTHON=${enableval}],
+  [BUILD_NOX_PYTHON=no]
+  )
+]
+)
 
 if test X${BUILD_NOX_PYTHON} = Xyes && test X${BUILD_LOCA} = Xyes; then
   ## RPP: For now we have completely disabled python support in loca
@@ -743,13 +743,6 @@ fi
 if test X${ac_cv_use_anasazi} = Xyes; then
   TRILINOS_HEADER(anasazi,Anasazi_config.h,src)
   TRILINOS_HEADER(anasazi,AnasaziTypes.hpp,src)
-fi
-
-if test X${BUILD_PYTHON} = Xyes && test X${ADDON_epetra} = Xyes; then
-# Commenting out the check for PyTrilinos_config.h for right now since
-# PyTrilinos is configured after NOX, so this file may not exist
-#  TRILINOS_HEADER(PyTrilinos,PyTrilinos_config.h,src)
-  TRILINOS_HEADER(PyTrilinos,FileStream.h,src)
 fi
 
 # ------------------------------------------------------------------------
@@ -970,7 +963,6 @@ AC_CONFIG_FILES([
 		test/epetra/LOCA_Tcubed/Makefile
 		test/epetra/LOCA_Pitchfork/Makefile
 		test/epetra/LOCA_Brusselator/Makefile
-		test/epetra/LOCA_Brusselator_xyzt/Makefile
                 test/epetra/1Dfem/Makefile
                 test/epetra/MultiPhysics/Makefile
                 test/epetra/DS6.5.1/Makefile
@@ -980,9 +972,10 @@ AC_CONFIG_FILES([
 		python/Makefile
 		python/src/Makefile
 		python/src/TRILINOS_HOME_DIR
-		python/src/__init__.py
-		python/src/PyTrilinos/__init__.py
 		python/src/.deps/dummy
+		python/src/PyTrilinos/__init__.py
+		python/src/PyTrilinos/NOX/Epetra/.dummy
+		python/src/PyTrilinos/NOX/LAPACK/.dummy
 		python/test/Makefile
 		python/test-epetra/Makefile
 		python/test-lapack/Makefile
@@ -1010,3 +1003,8 @@ AC_OUTPUT
 echo "------------------------------------------"
 echo "Finished Running NOX Configure Script"
 echo "------------------------------------------"
+
+
+#		python/src/__init__.py
+#		python/src/Epetra/__init__.py
+#		python/src/LAPACK/__init__.py

@@ -56,18 +56,18 @@ EXTRA_DIST = \
 MAINTAINERCLEANFILES = Makefile.in
 
 # Define the suite of tests
-TEST_SUITE = testNOXParameter testNOXStatusTest
+TEST_SUITE = testNOXStatusTest
 
-SETPATH_PY = setpath.py
+SETPATH = setpath.py
 
 if BUILD_NOX_PYTHON
-if BUILD_NOX_TESTS
 all: $(TEST_SUITE)
-	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$(SETPATH_PY) . ; fi
+	if [ `$(PYTHON) -c "import os; print os.path.abspath('$(srcdir)')"` != `pwd` ]; then \
+	   /bin/cp $(srcdir)/$(SETPATH) . ; fi
 
 test%:
-	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$@.py . ; fi
+	if [ `$(PYTHON) -c "import os; print os.path.abspath('$(srcdir)')"` != `pwd` ]; then \
+	   /bin/cp $(srcdir)/$@.py . ; fi
 
 CLEANFILES = $(TEST_SUITE:=.py) $(SETPATH) *.pyc
-endif
 endif

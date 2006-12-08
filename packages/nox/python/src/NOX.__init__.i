@@ -28,31 +28,69 @@
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos.NOX") TopLevel
+%module(package="PyTrilinos.NOX") __init__
 
 %{
 // System includes
 #include <sstream>
 
-// NOX top-level includes
+// Teuchos include
+#include "Teuchos_PythonParameter.hpp"
+
+// NOX includes
 #include "NOX_Version.H"
-#include "Utils_enums.H"
+#include "NOX_Utils.H"
+#include "NOX_Abstract_Group.H"
+#include "NOX_Abstract_PrePostOperator.H"
+#include "NOX_Abstract_MultiVector.H"
+#include "NOX_Abstract_Vector.H"
+#include "NOX_Solver_Generic.H"
+#include "NOX_Solver_Manager.H"
+#include "NOX_StatusTest_Generic.H"
+#include "NOX_StatusTest_Combo.H"
+#include "NOX_StatusTest_NormF.H"
+#include "NOX_StatusTest_NormUpdate.H"
+#include "NOX_StatusTest_NormWRMS.H"
+#include "NOX_StatusTest_MaxIters.H"
+#include "NOX_StatusTest_Stagnation.H"
+#include "NOX_StatusTest_FiniteValue.H"
 %}
+
+// Ignore directives
+%ignore operator<<;
+%ignore *::operator=;
+%ignore NOX::Utils::fill;
+%ignore NOX::Utils::sciformat;
+
+// Rename directive
+%rename(_print) NOX::Utils::print;
 
 // Auto-documentation feature
 %feature("autodoc", "1");
 
 // SWIG library includes
-%include "std_string.i"
+%include "stl.i"
+
+// Trilinos interface file imports.  Note: Teuchos.i turns off
+// warnings for nested classes, so we do not have to do it again.
+%import "Teuchos.i"
 
 // NOX top-level interface includes
 using namespace std;
 %include "NOX_Version.H"
-%include "Utils_enums.H"
+%include "NOX_Utils.H"
+
+// NOX namespace imports
+%import "NOX.Abstract.i"
+%import "NOX.Solver.i"
+%import "NOX.StatusTest.i"
 
 // Python code for the NOX module
 %pythoncode %{
-
 __version__ = version().split()[2]
 
+try:
+    import Epetra
+except ImportError:
+    pass
 %}

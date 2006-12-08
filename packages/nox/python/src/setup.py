@@ -77,6 +77,8 @@ for option in options:
         library_dirs.append(option[2:])
     elif option[:2] == "-l":
         libraries.append(option[2:])
+    elif option[-2:] == ".a":
+        libraries.append(os.path.split(option)[1][3:-2])
     else:
         extra_link_args.append(option)
 
@@ -99,23 +101,24 @@ pyTrilinosBuildDir = os.path.normpath(os.path.join(os.getcwd(), "..", "..",
 library_dirs.insert(0,pyTrilinosBuildDir)
 
 # Define the strings that refer to the required local source files
-noxTopLevelWrap        = "NOX_TopLevel_wrap.cpp"
-noxAbstractWrap        = "NOX_Abstract_wrap.cpp"
-noxSolverWrap          = "NOX_Solver_wrap.cpp"
-noxStatusTestWrap      = "NOX_StatusTest_wrap.cpp"
-noxEpetraWrap          = "NOX_Epetra_wrap.cpp"
-noxEpetraInterfaceWrap = "NOX_Epetra_Interface_wrap.cpp"
-noxLAPACKWrap          = "NOX_LAPACK_wrap.cpp"
-noxLAPACKInterfaceWrap = "NOX_LAPACK_Interface.cpp"
+#noxTopLevelWrap        = "NOX_TopLevel_wrap.cpp"
+nox__init__Wrap        = "NOX.__init___wrap.cpp"
+noxAbstractWrap        = "NOX.Abstract_wrap.cpp"
+noxSolverWrap          = "NOX.Solver_wrap.cpp"
+noxStatusTestWrap      = "NOX.StatusTest_wrap.cpp"
+noxEpetra__init__Wrap  = "NOX.Epetra.__init___wrap.cpp"
+noxEpetraInterfaceWrap = "NOX.Epetra.Interface_wrap.cpp"
+noxLAPACK__init__Wrap  = "NOX.LAPACK.__init___wrap.cpp"
+noxLAPACKInterfaceWrap = "NOX.LAPACK.Interface_wrap.cpp"
 
 # Compiler and linker
 sysconfig.get_config_vars()
 sysconfig._config_vars["CC" ] = CXX
 sysconfig._config_vars["CXX"] = CXX
 
-# NOX_TopLevel extension module
-NOX_TopLevel = Extension("PyTrilinos.NOX._TopLevel",
-                         [noxTopLevelWrap],
+# # NOX___init__ extension module
+NOX___init__ = Extension("PyTrilinos.NOX.___init__",
+                         [nox__init__Wrap],
                          define_macros      = [("HAVE_CONFIG_H", "1")],
                          include_dirs       = include_dirs,
                          library_dirs       = library_dirs,
@@ -157,19 +160,19 @@ NOX_StatusTest = Extension("PyTrilinos.NOX._StatusTest",
                            extra_link_args    = extra_link_args
                            )
 
-# NOX_Epetra_TopLevel extension module
-NOX_Epetra = Extension("PyTrilinos.NOX.Epetra._Epetra",
-                       [noxEpetraWrap],
-                       define_macros      = [("HAVE_CONFIG_H", "1")],
-                       include_dirs       = include_dirs,
-                       library_dirs       = library_dirs,
-                       libraries          = libraries,
-                       extra_compile_args = extra_compile_args,
-                       extra_link_args    = extra_link_args
-                       )
+# NOX_Epetra___init__ extension module
+NOX_Epetra___init__ = Extension("PyTrilinos.NOX.Epetra.___init__",
+                                [noxEpetra__init__Wrap],
+                                define_macros      = [("HAVE_CONFIG_H", "1")],
+                                include_dirs       = include_dirs,
+                                library_dirs       = library_dirs,
+                                libraries          = libraries,
+                                extra_compile_args = extra_compile_args,
+                                extra_link_args    = extra_link_args
+                                )
 
 # NOX_Epetra_Interface extension module
-NOX_Epetra_Interface = Extension("PyTrilinos.NOX.Epetra._Epetra_Interface",
+NOX_Epetra_Interface = Extension("PyTrilinos.NOX.Epetra._Interface",
                                  [noxEpetraInterfaceWrap],
                                  define_macros      = [("HAVE_CONFIG_H", "1")],
                                  include_dirs       = include_dirs,
@@ -179,43 +182,43 @@ NOX_Epetra_Interface = Extension("PyTrilinos.NOX.Epetra._Epetra_Interface",
                                  extra_link_args    = extra_link_args
                                  )
 
-# NOX_LAPACK_TopLevel extension module
-NOX_LAPACK = Extension("PyTrilinos.NOX.LAPACK._LAPACK",
-                       [noxLAPACKWrap],
-                       define_macros      = [("HAVE_CONFIG_H", "1")],
-                       include_dirs       = include_dirs,
-                       library_dirs       = library_dirs,
-                       libraries          = libraries,
-                       extra_compile_args = extra_compile_args,
-                       extra_link_args    = extra_link_args
-                       )
+# # NOX_LAPACK_TopLevel extension module
+# NOX_LAPACK = Extension("PyTrilinos.NOX.LAPACK._LAPACK",
+#                        [noxLAPACKWrap],
+#                        define_macros      = [("HAVE_CONFIG_H", "1")],
+#                        include_dirs       = include_dirs,
+#                        library_dirs       = library_dirs,
+#                        libraries          = libraries,
+#                        extra_compile_args = extra_compile_args,
+#                        extra_link_args    = extra_link_args
+#                        )
 
-# NOX_LAPACK_Interface extension module
-NOX_LAPACK_Interface = Extension("PyTrilinos.NOX.LAPACK._LAPACK_Interface",
-                                 [noxLAPACKInterfaceWrap],
-                                 define_macros      = [("HAVE_CONFIG_H", "1")],
-                                 include_dirs       = include_dirs,
-                                 library_dirs       = library_dirs,
-                                 libraries          = libraries,
-                                 extra_compile_args = extra_compile_args,
-                                 extra_link_args    = extra_link_args
-                                 )
+# # NOX_LAPACK_Interface extension module
+# NOX_LAPACK_Interface = Extension("PyTrilinos.NOX.LAPACK._LAPACK_Interface",
+#                                  [noxLAPACKInterfaceWrap],
+#                                  define_macros      = [("HAVE_CONFIG_H", "1")],
+#                                  include_dirs       = include_dirs,
+#                                  library_dirs       = library_dirs,
+#                                  libraries          = libraries,
+#                                  extra_compile_args = extra_compile_args,
+#                                  extra_link_args    = extra_link_args
+#                                  )
 
-# Build the list of packages to wrap
+# # Build the list of packages to wrap
 packages = ["PyTrilinos", "PyTrilinos.NOX"]
 if PYTHON_NOX_EPETRA == "1":
     packages.append("PyTrilinos.NOX.Epetra")
-if PYTHON_NOX_LAPACK == "1":
-    packages.append("PyTrilinos.NOX.LAPACK")
+#if PYTHON_NOX_LAPACK == "1":
+#    packages.append("PyTrilinos.NOX.LAPACK")
 
 # Build the list of extension modules to wrap
-ext_modules = [NOX_TopLevel, NOX_Abstract, NOX_Solver, NOX_StatusTest]
+ext_modules = [NOX___init__, NOX_Abstract, NOX_Solver, NOX_StatusTest]
 if PYTHON_NOX_EPETRA == "1":
-    ext_modules.append(NOX_Epetra          )
+    ext_modules.append(NOX_Epetra___init__ )
     ext_modules.append(NOX_Epetra_Interface)
-if PYTHON_NOX_LAPACK == "1":
-    ext_modules.append(NOX_LAPACK          )
-    ext_modules.append(NOX_LAPACK_Interface)
+# if PYTHON_NOX_LAPACK == "1":
+#     ext_modules.append(NOX_LAPACK          )
+#     ext_modules.append(NOX_LAPACK_Interface)
 
 # PyTrilinos.NOX setup
 setup(name         = "PyTrilinos.NOX",
@@ -223,7 +226,6 @@ setup(name         = "PyTrilinos.NOX",
       description  = "Python Interface to Trilinos Package NOX",
       author       = "Bill Spotz",
       author_email = "wfspotz@sandia.gov",
-      package_dir  = {"PyTrilinos.NOX" : "."},
       packages     = packages,
       ext_modules  = ext_modules
       )

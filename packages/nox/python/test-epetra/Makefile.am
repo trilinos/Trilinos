@@ -62,10 +62,12 @@ SETPATH = setpath.py
 if BUILD_NOX_PYTHON
 if BUILD_EPETRA_TESTS
 all: $(TEST_SUITE)
-	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$(SETPATH) . ; fi
+	if [ `$(PYTHON) -c "import os; print os.path.abspath('$(srcdir)')"` != `pwd` ]; then \
+	   /bin/cp $(srcdir)/$(SETPATH) . ; fi
 
 test%:
-	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$@.py . ; fi
+	if [ `$(PYTHON) -c "import os; print os.path.abspath('$(srcdir)')"` != `pwd` ]; then \
+	   /bin/cp $(srcdir)/$@.py . ; fi
 
 CLEANFILES = $(TEST_SUITE:=.py) $(SETPATH) *.pyc
 endif

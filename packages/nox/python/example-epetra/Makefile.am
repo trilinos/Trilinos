@@ -47,7 +47,7 @@ ACLOCAL	= aclocal -I config
 ## #######################################################################
 ## Additional files to be included in distribution for 'make dist'
 ## #######################################################################
-EXTRA_DIST = setpath.py exNLDiffusion_1D.py
+EXTRA_DIST = setpath.py ex1Dfem.py exNLDiffusion_1D.py
 
 ## #######################################################################
 ## Files to be deleted by 'make maintainer-clean'
@@ -55,18 +55,18 @@ EXTRA_DIST = setpath.py exNLDiffusion_1D.py
 MAINTAINERCLEANFILES = Makefile.in
 
 # Define the suite of examples
-EXAMPLE_SUITE = exNLDiffusion_1D
+EXAMPLE_SUITE = ex1Dfem exNLDiffusion_1D
 
 SETPATH = setpath.py
 
 if BUILD_NOX_PYTHON
-if BUILD_EPETRA_EXAMPLES
 all: $(EXAMPLE_SUITE)
-	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$(SETPATH) . ; fi
+	if [ `$(PYTHON) -c "import os; print os.path.abspath('$(srcdir)')"` != `pwd` ]; then \
+	   /bin/cp $(srcdir)/$(SETPATH) . ; fi
 
 ex%:
-	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$@.py . ; fi
+	if [ `$(PYTHON) -c "import os; print os.path.abspath('$(srcdir)')"` != `pwd` ]; then \
+	   /bin/cp $(srcdir)/$@.py . ; fi
 
 CLEANFILES = $(EXAMPLE_SUITE:=.py) $(SETPATH) *.pyc
-endif
 endif
