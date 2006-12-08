@@ -51,7 +51,7 @@ modules = [
            "IFPACK",
            #"Anasazi",
            "ML",
-           #"NOX",
+           "NOX",
            #"LOCA",
            "New_Package",
            ]
