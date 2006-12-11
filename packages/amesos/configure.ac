@@ -884,7 +884,6 @@ AC_CONFIG_FILES([
 		Makefile
 		Makefile.export.amesos 
 		src/Makefile
-                doc/Makefile
 		example/Makefile
 		test/Makefile
 		test/Test_Basic/Makefile

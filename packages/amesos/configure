@@ -14820,7 +14820,7 @@ fi
 # ------------------------------------------------------------------------
 ##
 #
-                                                                                                                                                                                                                                                                                                                                                                                  ac_config_files="$ac_config_files Makefile Makefile.export.amesos src/Makefile doc/Makefile example/Makefile test/Makefile test/Test_Basic/Makefile test/Test_Performance/Makefile test/Test_Epetra_RowMatrix/Makefile test/Test_Epetra_CrsMatrix/Makefile test/Test_MultipleSolves/Makefile test/Test_Detailed/Makefile test/Test_LAPACK/Makefile test/Test_KLU/Makefile test/Test_UMFPACK/Makefile test/Test_MUMPS/Makefile test/Test_SuperLU/Makefile test/Test_SuperLU_DIST/Makefile test/Test_DSCPACK/Makefile test/TestOptions/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/mpi/Makefile test/scripts/daily/serial/Makefile test/scripts/weekly/Makefile test/scripts/weekly/mpi/Makefile python/Makefile python/src/Makefile python/src/TRILINOS_HOME_DIR python/src/__init__.py python/src/.deps/dummy python/example/Makefile python/test/Makefile thyra/Makefile thyra/src/Makefile thyra/example/Makefile thyra/test/Makefile"
+                                                                                                                                                                                                                                                                                                                                                                        ac_config_files="$ac_config_files Makefile Makefile.export.amesos src/Makefile example/Makefile test/Makefile test/Test_Basic/Makefile test/Test_Performance/Makefile test/Test_Epetra_RowMatrix/Makefile test/Test_Epetra_CrsMatrix/Makefile test/Test_MultipleSolves/Makefile test/Test_Detailed/Makefile test/Test_LAPACK/Makefile test/Test_KLU/Makefile test/Test_UMFPACK/Makefile test/Test_MUMPS/Makefile test/Test_SuperLU/Makefile test/Test_SuperLU_DIST/Makefile test/Test_DSCPACK/Makefile test/TestOptions/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/mpi/Makefile test/scripts/daily/serial/Makefile test/scripts/weekly/Makefile test/scripts/weekly/mpi/Makefile python/Makefile python/src/Makefile python/src/TRILINOS_HOME_DIR python/src/__init__.py python/src/.deps/dummy python/example/Makefile python/test/Makefile thyra/Makefile thyra/src/Makefile thyra/example/Makefile thyra/test/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -15893,7 +15893,6 @@ do
   "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
   "Makefile.export.amesos" ) CONFIG_FILES="$CONFIG_FILES Makefile.export.amesos" ;;
   "src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
-  "doc/Makefile" ) CONFIG_FILES="$CONFIG_FILES doc/Makefile" ;;
   "example/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/Makefile" ;;
   "test/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
   "test/Test_Basic/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Test_Basic/Makefile" ;;

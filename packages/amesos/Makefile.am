@@ -42,7 +42,10 @@ ACLOCAL	= aclocal -I config
 EXTRA_DIST = README-Amesos ChangeLog-Amesos \
        config/generate-makeoptions.pl \
        config/strip_dup_incl_paths.pl config/strip_dup_libs.pl \
-       config/replace-install-prefix.pl config/string-replace.pl
+       config/replace-install-prefix.pl config/string-replace.pl \
+       doc/Doxyfile doc/AmesosLogo.eps doc/AmesosLogo.jpeg \
+       doc/Doxyfile doc/footer.html doc/index.doc \
+       doc/header.tex doc/AmesosReferenceGuide/AmesosReferenceGuide.pdf
 
 
 ## #######################################################################
@@ -116,7 +119,7 @@ else
 THYRA_SUBDIR=
 endif
 
-SUBDIRS = src $(THYRA_SUBDIR) $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) doc $(PYTHON_SUBDIR)
+SUBDIRS = src $(THYRA_SUBDIR) $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) $(PYTHON_SUBDIR)
 
 ## #######################################################################
 ## Target for circular dependencies

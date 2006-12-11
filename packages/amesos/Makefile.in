@@ -116,7 +116,7 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	uninstall-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = src thyra example test doc python
+DIST_SUBDIRS = src thyra example test python
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -328,7 +328,10 @@ AUTOMAKE_OPTIONS = foreign
 EXTRA_DIST = README-Amesos ChangeLog-Amesos \
        config/generate-makeoptions.pl \
        config/strip_dup_incl_paths.pl config/strip_dup_libs.pl \
-       config/replace-install-prefix.pl config/string-replace.pl
+       config/replace-install-prefix.pl config/string-replace.pl \
+       doc/Doxyfile doc/AmesosLogo.eps doc/AmesosLogo.jpeg \
+       doc/Doxyfile doc/footer.html doc/index.doc \
+       doc/header.tex doc/AmesosReferenceGuide/AmesosReferenceGuide.pdf
 
 AUX_DIST = config/install-sh config/missing config/mkinstalldirs 
 MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
@@ -341,7 +344,7 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 @BUILD_AMESOS_PYTHON_TRUE@@PYTHON_USE_TRUE@PYTHON_SUBDIR = python
 @ENABLE_AMESOS_THYRA_FALSE@THYRA_SUBDIR = 
 @ENABLE_AMESOS_THYRA_TRUE@THYRA_SUBDIR = thyra
-SUBDIRS = src $(THYRA_SUBDIR) $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) doc $(PYTHON_SUBDIR)
+SUBDIRS = src $(THYRA_SUBDIR) $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) $(PYTHON_SUBDIR)
 @ENABLE_AMESOS_THYRA_FALSE@BUILD_THYRA_SUBLIB = 
 @ENABLE_AMESOS_THYRA_TRUE@BUILD_THYRA_SUBLIB = cd $(top_builddir)/thyra/src ; $(MAKE)
 TRILINOS_HOME_DIR = @abs_top_srcdir@/../..
@@ -509,7 +512,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/. $(distdir)/config $(distdir)/python/src $(distdir)/python/src/.deps
+	$(mkdir_p) $(distdir)/. $(distdir)/config $(distdir)/doc $(distdir)/doc/AmesosReferenceGuide $(distdir)/python/src $(distdir)/python/src/.deps
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
