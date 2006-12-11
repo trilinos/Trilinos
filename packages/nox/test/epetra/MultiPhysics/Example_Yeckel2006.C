@@ -80,7 +80,7 @@
 
 // User's application specific files 
 #include "Problem_Manager.H" 
-#include "NOX_Epetra_SchurCouplingOperator.H" 
+#include "NOX_Epetra_SchurCoupler.H" 
 #include "Problem_Interface.H" 
 #include "ConvDiff_PDE.H"              
 
