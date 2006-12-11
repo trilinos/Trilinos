@@ -36,28 +36,28 @@
 // ************************************************************************
 //@HEADER
                                                                                 
-#ifndef NOX_EPETRA_SCHURCOUPLINGOPERATOR_H
-#define NOX_EPETRA_SCHURCOUPLINGOPERATOR_H
+#ifndef NOX_EPETRA_SCHUROPERATOR_H
+#define NOX_EPETRA_SCHUROPERATOR_H
 
 #include "NOX_Epetra.H"
-#include "Problem_Manager.H"
+#include "NOX_Epetra_SchurInterface.H"
 
 //-----------------------------------------------------------------------------
 
-// This is a new class that may evantually get moved into NOX::Epetra.  For now,
+// This is a new class that may eventually get moved into NOX::Epetra.  For now,
 // this is simply used as a testbed for driving new coupling algorithms - RWH 10/23/2006
 
 namespace NOX {
 
 namespace Epetra {
 
-class SchurCouplingOp : public Epetra_Operator
+class SchurOp : public Epetra_Operator
 {
 public:
 
-  SchurCouplingOp( int probId, int depId, Problem_Manager & );
+  SchurOp( int probId, int depId, SchurInterface & );
 
-  virtual ~SchurCouplingOp();
+  virtual ~SchurOp();
 
 
   // Inherited methods from Epetra_Operator
@@ -149,12 +149,14 @@ protected:
   // Methods
 
   // Data 
-  Problem_Manager & problemManager ;
 
-  // Block row identifier
+  //! The interface to the action of matrix blocks
+  SchurInterface & schurInterface ;
+
+  //! Matrix row block identifier
   int probId;
 
-  // Block column identifier
+  //! Matrix column block identifier
   int depId;
 
   //! Label for operator

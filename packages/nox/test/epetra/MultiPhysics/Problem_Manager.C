@@ -36,10 +36,12 @@
 // ************************************************************************
 //@HEADER
                                                                                 
+#include "Problem_Manager.H"
+
 #include "NOX.H"
 #include "NOX_Epetra.H"
 #include "NOX_Epetra_DebugTools.H"
-#include "NOX_Epetra_SchurCouplingOperator.H" 
+#include "NOX_Epetra_SchurCoupler.H" 
 
 // Trilinos Objects
 #ifdef HAVE_MPI
@@ -56,8 +58,6 @@
 #include "Epetra_LinearProblem.h"
 #include "AztecOO.h"
 #include "AztecOO_ConditionNumber.h"
-
-#include "Problem_Manager.H"
 
 #include "GenericEpetraProblem.H"
 #include "Xfer_Operator.H"
@@ -1701,7 +1701,9 @@ Problem_Manager::solveSchurBased()
   Teuchos::RefCountPtr<Epetra_Vector> resA = Teuchos::rcp( new Epetra_Vector( getResidualVec(1)) );
   Teuchos::RefCountPtr<Epetra_Vector> resB = Teuchos::rcp( new Epetra_Vector( getResidualVec(2)) );
 
-  NOX::Epetra::SchurCouplingOp schurCplOp( 1, 2, *this );
+  NOX::Epetra::SchurCoupler schurCoupler(*this);
+  NOX::Epetra::SchurOp & schurCplOp = *schurCoupler.getSchurOperator(0, 0);
+  //NOX::Epetra::SchurOp schurCplOp( 1, 2, *this );
 
   Teuchos::ParameterList& lsParams = nlParams->sublist("Direction").sublist("Newton").sublist("Linear Solver");
 
@@ -1728,6 +1730,19 @@ Problem_Manager::solveSchurBased()
   AztecOO * aztecoo_solver = new AztecOO(*linear_problem);
 
   aztecoo_solver->SetAztecOption(AZ_precond, AZ_none);
+
+  // Test use of a diagonal block preconditioner
+  if( 1 )
+  {
+    double conditionNumberEstimate = -1.0;
+    Teuchos::RefCountPtr<Epetra_CrsMatrix> pMatrix = getBlockJacobianMatrix(1);
+    aztecoo_solver->SetPrecMatrix(pMatrix.get());
+    aztecoo_solver->SetAztecOption(AZ_precond, AZ_dom_decomp);
+    aztecoo_solver->SetAztecOption(AZ_overlap, 0);
+    aztecoo_solver->SetAztecOption(AZ_subdomain_solve, AZ_ilu);
+    aztecoo_solver->SetAztecOption(AZ_graph_fill, 0);
+    aztecoo_solver->ConstructPreconditioner(conditionNumberEstimate);
+  }
 
   cout << "... Solving.\n";
   aztecoo_solver->Iterate(100, 1.0e-8);
@@ -2333,9 +2348,36 @@ Problem_Manager::applyBlockAction( int probId, int depId, const Epetra_Vector & 
 //-----------------------------------------------------------------------------
 
 bool
+Problem_Manager::applyBlockInverseAction( int probId, int depId, const Epetra_Vector & x, Epetra_Vector & result )
+{
+  // We simply invoke the action of a previously created inverse
+  getBlockInverseOperator(probId)->ApplyInverse(x, result);
+
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+
+bool
+Problem_Manager::hasExplicitOperator( int rowBlock, int colBlock )
+{
+  return ( rowBlock == colBlock );
+}
+
+//-----------------------------------------------------------------------------
+
+Teuchos::RefCountPtr<Epetra_Operator>
+Problem_Manager::getExplicitOperator( int rowBlock, int colBlock )
+{
+  return getBlockJacobianMatrix(rowBlock);
+}
+
+//-----------------------------------------------------------------------------
+
+bool
 Problem_Manager::createBlockInverseOperator( int probId, Teuchos::ParameterList & pList )
 {
-  // For now, we will hard-c ode use of Ifpack.  Note that direct inverses via Amesos can be
+  // For now, we will hard-code use of Ifpack.  Note that direct inverses via Amesos can be
   // used by propoer specification in the Teuchos::ParameterList.
 
   Teuchos::RefCountPtr<Ifpack_Preconditioner> inverseOperator;

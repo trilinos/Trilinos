@@ -73,7 +73,9 @@ example_hmx_SOURCES = $(srcdir)/Example_HMX.C \
 	$(srcdir)/Problem_Manager.C $(srcdir)/Problem_Manager.H \
 	$(srcdir)/OffBlock_Manager.C $(srcdir)/OffBlock_Manager.H \
 	$(srcdir)/Xfer_Operator.C $(srcdir)/Xfer_Operator.H \
-	$(srcdir)/NOX_Epetra_SchurCouplingOperator.C $(srcdir)/NOX_Epetra_SchurCouplingOperator.H
+	$(srcdir)/NOX_Epetra_SchurOperator.C $(srcdir)/NOX_Epetra_SchurOperator.H \
+	$(srcdir)/NOX_Epetra_SchurInterface.H \
+	$(srcdir)/NOX_Epetra_SchurCoupler.C $(srcdir)/NOX_Epetra_SchurCoupler.H
 
 example_hmx_DEPENDENCIES = $(top_builddir)/src/libnox.a \
         $(top_builddir)/src-epetra/libnoxepetra.a
@@ -92,7 +94,9 @@ example_brusselator_SOURCES = $(srcdir)/Example_Brusselator.C \
 	$(srcdir)/Problem_Manager.C $(srcdir)/Problem_Manager.H \
 	$(srcdir)/OffBlock_Manager.C $(srcdir)/OffBlock_Manager.H \
 	$(srcdir)/Xfer_Operator.C $(srcdir)/Xfer_Operator.H \
-	$(srcdir)/NOX_Epetra_SchurCouplingOperator.C $(srcdir)/NOX_Epetra_SchurCouplingOperator.H
+	$(srcdir)/NOX_Epetra_SchurOperator.C $(srcdir)/NOX_Epetra_SchurOperator.H \
+	$(srcdir)/NOX_Epetra_SchurInterface.H \
+	$(srcdir)/NOX_Epetra_SchurCoupler.C $(srcdir)/NOX_Epetra_SchurCoupler.H
 
 example_brusselator_DEPENDENCIES = $(top_builddir)/src/libnox.a \
         $(top_builddir)/src-epetra/libnoxepetra.a
@@ -109,7 +113,9 @@ example_yeckel_SOURCES = $(srcdir)/Example_Yeckel2006.C \
 	$(srcdir)/Problem_Manager.C $(srcdir)/Problem_Manager.H \
 	$(srcdir)/OffBlock_Manager.C $(srcdir)/OffBlock_Manager.H \
 	$(srcdir)/Xfer_Operator.C $(srcdir)/Xfer_Operator.H \
-	$(srcdir)/NOX_Epetra_SchurCouplingOperator.C $(srcdir)/NOX_Epetra_SchurCouplingOperator.H
+	$(srcdir)/NOX_Epetra_SchurOperator.C $(srcdir)/NOX_Epetra_SchurOperator.H \
+	$(srcdir)/NOX_Epetra_SchurInterface.H \
+	$(srcdir)/NOX_Epetra_SchurCoupler.C $(srcdir)/NOX_Epetra_SchurCoupler.H
 
 example_yeckel_DEPENDENCIES = $(top_builddir)/src/libnox.a \
         $(top_builddir)/src-epetra/libnoxepetra.a

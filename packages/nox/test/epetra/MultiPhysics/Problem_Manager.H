@@ -41,6 +41,7 @@
 
 #include "NOX.H"
 #include "NOX_Multiphysics_DataExchange_Interface.H"
+#include "NOX_Epetra_SchurInterface.H"
 #include "NOX_Epetra.H"
 #include "NOX_Epetra_BroydenOperator.H"
 
@@ -68,8 +69,9 @@ static const char * SolveMethodNames[] = { "loose-hardcoded" ,
                                            "matrix-free"     ,
                                            "schur-based"       };
 
-class Problem_Manager : public GenericEpetraProblem ,
-                        public NOX::Multiphysics::DataExchange::Interface,
+class Problem_Manager : public GenericEpetraProblem                               ,
+                        public NOX::Multiphysics::DataExchange::Interface         ,
+                        public NOX::Epetra::SchurInterface                        ,
                         public NOX::Epetra::BroydenOperator::ReplacementInterface
 {
 
@@ -117,6 +119,10 @@ public:
 
   // Get the compositeSoln vector
   Teuchos::RefCountPtr<Epetra_Vector> getCompositeSoln();
+
+  // Get the compositeSoln Map
+  Teuchos::RefCountPtr<Epetra_Map> getCompositeMap()
+    { return compositeMap; }
 
   // Get the container of solver managers
   map<int, Teuchos::RefCountPtr<NOX::Solver::Manager> > & getSolvers()
@@ -291,8 +297,23 @@ public:
   virtual Teuchos::RefCountPtr<Epetra_CrsGraph> 
   composeGraphs( const Epetra_CrsGraph &, const Epetra_CrsGraph & );
 
+  // Inherited from NOX::Epetra::SchurInterface
+
   // method to compute the action of a block on a vector using a directional derivative
   virtual bool applyBlockAction( int probId, int depId, const Epetra_Vector &, Epetra_Vector & );
+
+  // method to compute the action of a block inverse on a vector
+  virtual bool applyBlockInverseAction( int probId, int depId, const Epetra_Vector &, Epetra_Vector & );
+
+  // Accessor for the communicator
+  virtual const Epetra_Comm & getComm()
+    { return *Comm; }
+
+  //! Query availability of explicit operator
+  virtual bool hasExplicitOperator( int rowBlock, int colBlock );
+
+  //! Access explicit operator
+  virtual Teuchos::RefCountPtr<Epetra_Operator> getExplicitOperator( int rowBlock, int colBlock );
 
   // method to create an inverse or its approximation to a diagonal block matrix
   virtual bool createBlockInverseOperator( int probId, Teuchos::ParameterList & );
