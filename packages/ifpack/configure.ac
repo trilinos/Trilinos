@@ -418,7 +418,6 @@ AC_CONFIG_FILES([
                 Makefile.export.ifpack
 		src/Makefile
 		example/Makefile
-                doc/Makefile
 		test/Makefile
 		test/PreconditionerFactory/Makefile
 		test/TestAll/Makefile

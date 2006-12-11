@@ -41,8 +41,10 @@ ACLOCAL	= aclocal -I config
 EXTRA_DIST = README-IFPACK ChangeLog-IFPACK \
        config/generate-makeoptions.pl \
        config/strip_dup_incl_paths.pl config/strip_dup_libs.pl \
-       config/replace-install-prefix.pl config/string-replace.pl
-
+       config/replace-install-prefix.pl config/string-replace.pl \
+       doc/Doxyfile doc/IFPACKLogo.gif doc/Doxyfile_c_wrappers \
+       doc/Doxyfile_internals doc/footer.html doc/header.html \
+       doc/header.tex doc/index.doc doc/UsersGuide/manual.ps
 
 
 # #######################################################################
@@ -106,7 +108,7 @@ else
 THYRA_SUBDIR=
 endif
 
-SUBDIRS = src $(THYRA_SUBDIR) $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) doc $(PYTHON_SUBDIR)
+SUBDIRS = src $(THYRA_SUBDIR) $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) $(PYTHON_SUBDIR)
 # Note, thyra/src must be built before the examples and tests because -lifpackthyra.a
 # needs to be found!
 

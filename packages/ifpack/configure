@@ -11858,7 +11858,7 @@ fi
 #		example/Makefile
 #		example/ifpack_hb/Makefile
 
-                                                                                                                                                                                                                                                                              ac_config_files="$ac_config_files Makefile Makefile.export Makefile.export.ifpack src/Makefile example/Makefile doc/Makefile test/Makefile test/PreconditionerFactory/Makefile test/TestAll/Makefile test/IlukGraph/Makefile test/SetParameters/Makefile test/Relaxation/Makefile test/Container/Makefile test/OverlappingRowMatrix/Makefile test/CompareWithAztecOO/Makefile test/ILU/Makefile test/IC/Makefile test/UseTranspose/Makefile python/Makefile python/src/Makefile python/src/TRILINOS_HOME_DIR python/src/__init__.py python/src/.deps/dummy python/example/Makefile python/test/Makefile thyra/Makefile thyra/src/Makefile"
+                                                                                                                                                                                                                                                                    ac_config_files="$ac_config_files Makefile Makefile.export Makefile.export.ifpack src/Makefile example/Makefile test/Makefile test/PreconditionerFactory/Makefile test/TestAll/Makefile test/IlukGraph/Makefile test/SetParameters/Makefile test/Relaxation/Makefile test/Container/Makefile test/OverlappingRowMatrix/Makefile test/CompareWithAztecOO/Makefile test/ILU/Makefile test/IC/Makefile test/UseTranspose/Makefile python/Makefile python/src/Makefile python/src/TRILINOS_HOME_DIR python/src/__init__.py python/src/.deps/dummy python/example/Makefile python/test/Makefile thyra/Makefile thyra/src/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -12625,7 +12625,6 @@ do
   "Makefile.export.ifpack" ) CONFIG_FILES="$CONFIG_FILES Makefile.export.ifpack" ;;
   "src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
   "example/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/Makefile" ;;
-  "doc/Makefile" ) CONFIG_FILES="$CONFIG_FILES doc/Makefile" ;;
   "test/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
   "test/PreconditionerFactory/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/PreconditionerFactory/Makefile" ;;
   "test/TestAll/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/TestAll/Makefile" ;;

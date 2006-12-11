@@ -89,7 +89,7 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	uninstall-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = src thyra example test doc python
+DIST_SUBDIRS = src thyra example test python
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -288,7 +288,10 @@ AUTOMAKE_OPTIONS = foreign
 EXTRA_DIST = README-IFPACK ChangeLog-IFPACK \
        config/generate-makeoptions.pl \
        config/strip_dup_incl_paths.pl config/strip_dup_libs.pl \
-       config/replace-install-prefix.pl config/string-replace.pl
+       config/replace-install-prefix.pl config/string-replace.pl \
+       doc/Doxyfile doc/IFPACKLogo.gif doc/Doxyfile_c_wrappers \
+       doc/Doxyfile_internals doc/footer.html doc/header.html \
+       doc/header.tex doc/index.doc doc/UsersGuide/manual.ps
 
 
 # #######################################################################
@@ -303,7 +306,7 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 @BUILD_IFPACK_PYTHON_TRUE@@PYTHON_USE_TRUE@PYTHON_SUBDIR = python
 @ENABLE_IFPACK_THYRA_FALSE@THYRA_SUBDIR = 
 @ENABLE_IFPACK_THYRA_TRUE@THYRA_SUBDIR = thyra
-SUBDIRS = src $(THYRA_SUBDIR) $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) doc $(PYTHON_SUBDIR)
+SUBDIRS = src $(THYRA_SUBDIR) $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) $(PYTHON_SUBDIR)
 @ENABLE_IFPACK_THYRA_FALSE@BUILD_THYRA_SUBLIB = 
 # Note, thyra/src must be built before the examples and tests because -lifpackthyra.a
 # needs to be found!
@@ -477,7 +480,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/. $(distdir)/config $(distdir)/python/src $(distdir)/python/src/.deps
+	$(mkdir_p) $(distdir)/. $(distdir)/config $(distdir)/doc $(distdir)/doc/UsersGuide $(distdir)/python/src $(distdir)/python/src/.deps
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
