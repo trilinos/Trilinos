@@ -55,8 +55,9 @@ ACLOCAL	= aclocal -I config
 EXTRA_DIST = ChangeLog-ML README-ML COPYRIGHT \
        config/generate-makeoptions.pl \
        config/strip_dup_incl_paths.pl config/strip_dup_libs.pl \
-       config/replace-install-prefix.pl config/string-replace.pl
-
+       config/replace-install-prefix.pl config/string-replace.pl \
+       doc/Doxyfile doc/mainpage.doxygen doc/mlguide.pdf \
+       doc/footer.html doc/header.tex doc/ml-image.jpg
 
 #
 #       I believe that by switching to AUX_DIR(../../config) one 
@@ -133,7 +134,7 @@ else
 THYRA_SUBDIR=
 endif
 
-SUBDIRS = src $(THYRA_SUBDIR) $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) doc $(PYTHON_SUBDIR) $(MATLAB_SUBDIR)
+SUBDIRS = src $(THYRA_SUBDIR) $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) $(PYTHON_SUBDIR) $(MATLAB_SUBDIR)
 
 
 ## #######################################################################

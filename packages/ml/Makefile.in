@@ -127,7 +127,7 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	uninstall-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = src thyra examples test doc python matlab
+DIST_SUBDIRS = src thyra examples test python matlab
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -329,7 +329,9 @@ AUTOMAKE_OPTIONS = foreign
 EXTRA_DIST = ChangeLog-ML README-ML COPYRIGHT \
        config/generate-makeoptions.pl \
        config/strip_dup_incl_paths.pl config/strip_dup_libs.pl \
-       config/replace-install-prefix.pl config/string-replace.pl
+       config/replace-install-prefix.pl config/string-replace.pl \
+       doc/Doxyfile doc/mainpage.doxygen doc/mlguide.pdf \
+       doc/footer.html doc/header.tex doc/ml-image.jpg
 
 
 #
@@ -351,7 +353,7 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 @BUILD_ML_MATLAB_TRUE@MATLAB_SUBDIR = matlab
 @ENABLE_ML_THYRA_FALSE@THYRA_SUBDIR = 
 @ENABLE_ML_THYRA_TRUE@THYRA_SUBDIR = thyra
-SUBDIRS = src $(THYRA_SUBDIR) $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) doc $(PYTHON_SUBDIR) $(MATLAB_SUBDIR)
+SUBDIRS = src $(THYRA_SUBDIR) $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) $(PYTHON_SUBDIR) $(MATLAB_SUBDIR)
 @ENABLE_ML_THYRA_FALSE@BUILD_THYRA_SUBLIB = 
 @ENABLE_ML_THYRA_TRUE@BUILD_THYRA_SUBLIB = cd $(top_builddir)/thyra/src ; $(MAKE)
 TRILINOS_HOME_DIR = @abs_top_srcdir@/../..
@@ -520,7 +522,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/. $(distdir)/config $(distdir)/python/src $(distdir)/python/src/.deps
+	$(mkdir_p) $(distdir)/. $(distdir)/config $(distdir)/doc $(distdir)/python/src $(distdir)/python/src/.deps
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
