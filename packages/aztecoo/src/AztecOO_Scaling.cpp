@@ -138,12 +138,6 @@ int AZOO_Scale(int action,
   }
   else {
     if (action == AZ_SCALE_MAT_RHS_SOL) {
-      if (scaling->scaling_data != NULL) {
-        Epetra_Vector* vec = (Epetra_Vector*)(scaling->scaling_data);
-        delete vec;
-        scaling->scaling_data = 0;
-      }
-
       vec = AZOO_create_scaling_vector(A, options[AZ_scaling]);
       if (vec == NULL) {
         if (options[AZ_output] != AZ_none) {
@@ -171,13 +165,15 @@ int AZOO_Scale(int action,
   double* vec_vals = NULL;
   vec->ExtractView(&vec_vals);
 
-  if (action == AZ_SCALE_MAT_RHS_SOL) {
+  if (action == AZ_SCALE_MAT_RHS_SOL && options[AZ_pre_calc] <= AZ_recalc) {
     A->LeftScale(*vec);
 
     if (options[AZ_scaling] == AZ_sym_diag) {
       A->RightScale(*vec);
     }
+  }
 
+  if (action == AZ_SCALE_MAT_RHS_SOL) {
     if (options[AZ_scaling] == AZ_sym_diag) {
       for(int i=0; i<numMyRows; ++i) {
         b[i] *= vec_vals[i];
