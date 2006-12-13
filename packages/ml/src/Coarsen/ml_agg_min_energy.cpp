@@ -7,97 +7,6 @@
 #include <algorithm>
 #include "float.h"
 
-#define NEW_HASH
-#ifdef NEW_HASH
-template<class T>
-class QuickHash
-{
-  public:
-    inline QuickHash(const int hash_length)
-    {
-      ResetData(hash_length);
-    }
-
-    inline void ResetData(const int hash_length)
-    {
-      hash_length_ = hash_length;
-
-      hash_list_.resize(hash_length_);
-      hash_data_.resize(hash_length_);
-
-      for (int i = 0; i < hash_length_; ++i)
-      {
-        hash_list_[i] = -1;
-        hash_data_[i] = 0.0;
-      }
-
-      hash_used_ = 0;
-    }
-
-    inline ~QuickHash()
-    {}
-
-    inline int HashUsed() const
-    {
-      return(hash_used_);
-    }
-
-    inline T& operator[](int new_index)
-    {
-      int pos = HashIt(new_index);
-      return(hash_data_[pos]);
-    }
-
-    inline double CheapFind(int new_index)
-    {
-      int index;
-
-      index = new_index<<1;
-      if (index < 0) index = new_index;
-      index = index%hash_length_;
-      while (hash_list_[index] != new_index) {
-        if (hash_list_[index] == -1) 
-        { 
-          return(0.0);
-        }
-        index++;
-        index = (index)%hash_length_;
-      }
-      return(hash_data_[index]);
-    }
-
-    int HashIt(int new_index)
-    {
-      int index;
-
-      index = new_index<<1;
-      if (index < 0) index = new_index;
-      index = index%hash_length_;
-      while (hash_list_[index] != new_index) {
-        if (hash_list_[index] == -1) 
-        { 
-          (hash_used_)++; 
-          break;
-        }
-        index++;
-        index = (index)%hash_length_;
-      }
-      hash_list_[index] = new_index;
-      return(index);
-    }
-
-  private:
-    QuickHash(const QuickHash& rhs);
-
-    QuickHash& operator=(const QuickHash& rhs);
-    
-    std::vector<int> hash_list_;
-    std::vector<T> hash_data_;
-    int hash_length_;
-    int hash_used_;
-};
-#endif
-
 using namespace std;
 
 // ============ //
@@ -108,107 +17,57 @@ static int     Dinv_size = -1;
 static double* Dinv      = 0;
 static bool    SinglePrecision = true; // to save memory
 
-void peek(char *str, ML_Operator *mat, int row ) 
-{
-  int allocated = 0, *bindx = NULL, row_length, i;
-  double *val = NULL;
-
-  ML_get_matrix_row(mat, 1, &row, &allocated, &bindx, &val, &row_length, 0);
-
-  for (i = 0; i < row_length; i++) 
-    printf("%s(%d,%d) = %20.13e;\n",str,row+1,bindx[i]+1,val[i]);
-
-  ML_free(bindx); ML_free(val);
-}
-
 // ====================================================================== 
-inline static double multiply(int row, struct ML_CSR_MSRdata* left, 
-                              struct ML_CSR_MSRdata* right)
-{
-  double res = 0;
-
-  int*    lrowptr = left->rowptr;
-  int     llen    = lrowptr[row + 1] - lrowptr[row];
-  int*    lbindx  = &(left->columns[lrowptr[row]]);
-  double* lval    = &(left->values[lrowptr[row]]);
-
-  int*    rrowptr = right->rowptr;
-  int     rlen    = rrowptr[row + 1] - rrowptr[row];
-  int*    rbindx  = &(right->columns[rrowptr[row]]);
-  double* rval    = &(right->values[rrowptr[row]]);
-
-  map<int, double> rmap;
-  map<int, double>::iterator cur;
-
-  for (int i = 0 ; i < rlen ; ++i)
-    rmap[rbindx[i]] = rval[i];
-
-  for (int i = 0 ; i < llen ; ++i)
-  {
-    cur = rmap.find(lbindx[i]);
-    if (cur != rmap.end())
-      res += lval[i] * (cur->second);
-  }
-
-  return(res);
-}
-
-// ====================================================================== 
-inline static double multiply_self(int row, struct ML_CSR_MSRdata* self)
-{
-  double res = 0;
-
-  int*    rowptr = self->rowptr;
-  int     len    = rowptr[row + 1] - rowptr[row];
-  double* val    = &(self->values[rowptr[row]]);
-
-  for (int i = 0 ; i < len ; ++i)
-  {
-    res += val[i] * val[i];
-  }
-
-  return(res);
-}
-
-// ====================================================================== 
-// Note: Op must be an CSR matrix but it is easy to make it for
-// a generic getrow()
-// Note: off-processor connections are simply discarded
-static void multiply_self_all(ML_Operator* Op, double* result)
+// Take each column of Op, compute its 2-norm squared, and store
+// in Column2Norm[]. 
+//
+// NOTE: Column2Norm[] must have enough space to store ghost unknowns.
+//
+// Note: Must a CSR matrix but it is easy to change for a generic getrow()
+//
+static void multiply_self_all(ML_Operator* Op, double* Column2Norm)
 {
   int n = Op->invec_leng;
   int n_rows = Op->getrow->Nrows;
 
-  for (int i = 0 ; i < n ; ++i) result[i] = 0.0;
+  for (int i = 0 ; i < n ; ++i) Column2Norm[i] = 0.0;
 
   struct ML_CSR_MSRdata* data = 0;
   data = (struct ML_CSR_MSRdata*)ML_Get_MyGetrowData(Op);
-  int* rowptr = data->rowptr;
-  int* columns = data->columns;
-  double* values = data->values;
 
-  for (int row = 0 ; row < n_rows ; ++row)
-  {
-    int     len    = rowptr[row + 1] - rowptr[row];
-    int*    bindx  = &(columns[rowptr[row]]);
-    double* val    = &(values[rowptr[row]]);
+  int nnz     = (data->rowptr)[n_rows];
+  int *bindx  = data->columns;
+  double *val = data->values;
+  double register dtemp;
 
-    for (int i = 0 ; i < len ; ++i)
-      if (bindx[i] < n)
-        result[bindx[i]] += val[i] * val[i];
+  for (int i = 0; i < nnz; i++) {
+       dtemp = *val++;
+       Column2Norm[*bindx++] += (dtemp*dtemp);
   }
+
+  if (Op->getrow->pre_comm != NULL)
+    ML_transposed_exchange_bdry(Column2Norm, Op->getrow->pre_comm, n, 
+				Op->comm, ML_ADD);
 }
 
 // ====================================================================== 
-// Note: Op must be an CSR matrix but it is easy to make it for
-// a generic getrow()
-// Note: off-processor connections are simply discarded
+// Take inner product between column(i) in left and column(i) in right 
+// and store in InnerProd[i]. 
+// 
+// NOTE: InnerProd[] must have enough space to store ghost unknowns in right.
+//
+// Note: Must be CSR matrices but it is easy to change for a generic getrow()
+//
 inline static void multiply_all(ML_Operator* left, ML_Operator* right,
-                                double* result)
+                                double* InnerProd)
 {
   int n = left->invec_leng;
   int n_rows = left->getrow->Nrows;
+  int LeftGhost = 0, RightGhost = 0;
+  int *LeftGlobal = NULL, *RightGlobal = NULL;
+  int *LeftLocal  = NULL, *RightLocal  = NULL, *NewLeftLocal = NULL;
 
+  
   if (n != right->invec_leng || n_rows != right->getrow->Nrows)
   {
     cerr << "Error: non-comparible operators" << endl;
@@ -216,71 +75,103 @@ inline static void multiply_all(ML_Operator* left, ML_Operator* right,
     exit(EXIT_FAILURE);
   }
 
-  for (int i = 0 ; i < n ; ++i) result[i] = 0.0;
+  // compute the number of ghosts and make up some global ids
 
-  struct ML_CSR_MSRdata* left_data = 0;
-  struct ML_CSR_MSRdata* right_data = 0;
-  left_data = (struct ML_CSR_MSRdata*)ML_Get_MyGetrowData(left);
-  right_data = (struct ML_CSR_MSRdata*)ML_Get_MyGetrowData(right);
+  if ( left->getrow->pre_comm != NULL) {
+      ML_CommInfoOP_Compute_TotalRcvLength( left->getrow->pre_comm);
+      LeftGhost =  left->getrow->pre_comm->total_rcv_length;
+      ML_create_unique_id(left->invec_leng, &LeftGlobal, 
+                          left->getrow->pre_comm, left->comm, -1);
+   }
+  if (right->getrow->pre_comm != NULL) {
+      ML_CommInfoOP_Compute_TotalRcvLength(right->getrow->pre_comm);
+      RightGhost = right->getrow->pre_comm->total_rcv_length;
+      ML_create_unique_id(right->invec_leng, &RightGlobal, 
+                          right->getrow->pre_comm, right->comm, -1);
+   }
+   if (  (LeftGhost > 0) && (RightGhost > 0) ) {
 
-  int*    lrowptr = left_data->rowptr;
-  int*    rrowptr = right_data->rowptr;
-#ifdef NEW_HASH
-  int hash_size = 2;
-  QuickHash<double> lhash(hash_size);
-#else
-  map<int, double>::iterator cur;
-#endif
+      LeftLocal    = (int *) ML_allocate(sizeof(int)*(n+LeftGhost));
+      RightLocal   = (int *) ML_allocate(sizeof(int)*(n+RightGhost));
+      NewLeftLocal = (int *) ML_allocate(sizeof(int)*(n+LeftGhost));
 
+      // Sort global ids
+
+      for (int i = 0; i <  n+LeftGhost; i++) LeftLocal[i] = i;
+      for (int i = 0; i < n+RightGhost; i++) RightLocal[i] = i;
+
+      ML_az_sort( LeftGlobal,  n+LeftGhost,  LeftLocal, NULL);
+      ML_az_sort(RightGlobal, n+RightGhost, RightLocal, NULL);
+
+      // Compute new local ids for the left matrix that correspond
+      // to the local ids for the right matrix. If there is a left global
+      // id that is not found in the right, assign it the id of n+RightGhost+1.
+      // It will never be accessed and this avoids an if. Any index
+      // that is not found in both matrices doesn't contribute to final result.
+
+      for (int i = 0; i <  n+LeftGhost; i++) NewLeftLocal[i] = n+RightGhost+1;
+
+      int j = 0;
+      for (int i = 0; i <  n+LeftGhost; i++) {
+         while ( (j < n+RightGhost) && ( RightGlobal[j] < LeftGlobal[i]) ) j++;
+         if (RightGlobal[j] == LeftGlobal[i])
+            NewLeftLocal[LeftLocal[i]] = RightLocal[j];
+      }
+   }
+
+   for (int i = 0 ; i < n+RightGhost ; ++i) InnerProd[i] = 0.0;
+
+   struct ML_CSR_MSRdata* left_data = 0;
+   struct ML_CSR_MSRdata* right_data = 0;
+   left_data  = (struct ML_CSR_MSRdata*)ML_Get_MyGetrowData(left);
+   right_data = (struct ML_CSR_MSRdata*)ML_Get_MyGetrowData(right);
+
+   int*    lrowptr = left_data->rowptr;
+   int*    rrowptr = right_data->rowptr;
+   double *temp_array = NULL;
+
+   temp_array = (double *) ML_allocate(sizeof(double)*(n+RightGhost+1));
+                                // use RightGhost because these indices are
+                                // based off right matrix
+  for (int i = 0; i < n+RightGhost+1; i++) temp_array[i] = 0.;
+
+  double *rval = right_data->values;
+  double *lval = left_data->values;
+  int*    rbindx  = right_data->columns;
+  int     rpos;
+  int*    lbindx1  = left_data->columns;
+  int*    lbindx2  = left_data->columns;
   for (int row = 0 ; row < n_rows ; ++row)
   {
     int     llen    = lrowptr[row + 1] - lrowptr[row];
-    int*    lbindx  = &(left_data->columns[lrowptr[row]]);
-    double* lval    = &(left_data->values[lrowptr[row]]);
-
     int     rlen    = rrowptr[row + 1] - rrowptr[row];
-    int*    rbindx  = &(right_data->columns[rrowptr[row]]);
-    double* rval    = &(right_data->values[rrowptr[row]]);
 
-#ifdef NEW_HASH
-    while (hash_size < 2 * llen)
-      hash_size *= 2;
+    if (NewLeftLocal == NULL) 
+        for (int i = 0 ; i < llen ; ++i) temp_array[*lbindx1++] = *lval++;
+    else
+        for (int i = 0 ; i < llen ; ++i)
+               temp_array[NewLeftLocal[*lbindx1++]] = *lval++;
 
-    lhash.ResetData(hash_size);
-
-    for (int i = 0 ; i < llen ; ++i)
-    {
-      int& pos = lbindx[i];
-      if (pos < n && lval[i] != 0.0)
-        lhash[pos] = lval[i];
+    for (int i = 0 ; i < rlen ; ++i) {
+      rpos = *rbindx++;
+      InnerProd[rpos] += (*rval++) * temp_array[rpos];
     }
-#else
-    map<int, double> lmap;
 
-    for (int i = 0 ; i < llen ; ++i)
-    {
-      lmap[lbindx[i]] = lval[i];
-    }
-#endif
-
-    for (int i = 0 ; i < rlen ; ++i)
-    {
-      int rpos = rbindx[i];
-      if (rpos < n) 
-      {
-#ifdef NEW_HASH
-        double lval = lhash.CheapFind(rpos);
-
-        if (lval != 0.0 && rval[i] != 0.0)
-          result[rpos] += rval[i] * lval;
-#else
-        cur = lmap.find(rpos);
-        if (cur != lmap.end())
-          result[rpos] += rval[i] * (cur->second);
-#endif
-      }
-    }
+    if (NewLeftLocal == NULL) 
+      for (int i = 0; i < llen; ++i) temp_array[*lbindx2++] = 0.;
+    else
+      for (int i = 0; i < llen; ++i) temp_array[NewLeftLocal[*lbindx2++]] = 0.;
   }
+  if (right->getrow->pre_comm != NULL)
+     ML_transposed_exchange_bdry(InnerProd, right->getrow->pre_comm, n, 
+                                 right->comm, ML_ADD);
+
+  if (temp_array  != NULL) ML_free(temp_array);
+  if (NewLeftLocal!= NULL) ML_free(NewLeftLocal);
+  if (  LeftLocal != NULL) ML_free(LeftLocal);
+  if ( RightLocal != NULL) ML_free(RightLocal);
+  if (RightGlobal != NULL) ML_free(RightGlobal);
+  if ( LeftGlobal != NULL) ML_free(LeftGlobal);
 }
 
 // ====================================================================== 
@@ -336,9 +227,11 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
   double t0;
   t0 =  GetClock();
 #endif
+//  double t0;
+//  t0 =  GetClock();
 
   ML_Operator* Amat = &(ml->Amat[level]); //already created and filled
-  prev_P_tentatives = ag->P_tentative; // for keep_P_tentative
+  prev_P_tentatives = ag->P_tentative;    // for keep_P_tentative
 
   Amat->num_PDEs = ag->num_PDE_eqns;
 
@@ -418,7 +311,7 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
     // point scaling automatically in Amat so we don't need to worry about
     // it any more.                                                       
 
-    Dinv = (double *) ML_allocate(sizeof(double)*(Amat->outvec_leng + Nghost +1));
+    Dinv = (double *) ML_allocate(sizeof(double)*(Amat->outvec_leng+Nghost +1));
     for (int row = 0; row < Amat->outvec_leng; row++) {
       Dinv[row] = 1.;
       ML_get_matrix_row(Amat, 1, &row, &allocated, &bindx,&val,&row_length,0); 
@@ -458,6 +351,12 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
   if (SinglePrecision)
     ML_Operator_ChangeToSinglePrecision(DinvAP0);
 
+  int N_ghost = 0;
+  if (DinvAP0->getrow->pre_comm != NULL) {
+      ML_CommInfoOP_Compute_TotalRcvLength(DinvAP0->getrow->pre_comm);
+      N_ghost = DinvAP0->getrow->pre_comm->total_rcv_length;
+   }
+
   // rst: This is a routine that will drop small entries. In Premo
   //      there are billions of small values. I don't really remember
   //      the current state of this code nor do I remember how to choose
@@ -466,11 +365,7 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
   if (dropping != 0.0)
     ML_CSR_DropSmall(DinvAP0, 0.0, dropping, 0.0);
 
-  Numerator   = (double *) ML_allocate(sizeof(double)*(P0->invec_leng+1));
-  Denominator = (double *) ML_allocate(sizeof(double)*(P0->invec_leng+1));
   DinvAP0_subset = DinvAP0;
-  NumeratorAtRootPts = Numerator;
-  DenominatorAtRootPts = Denominator;
 
   if ( (compress == 1) && (ag->minimizing_energy == 2)) {
     // Only compute omega's at a subset of coarse grid points. This is done 
@@ -505,8 +400,7 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
   int n_0     = P0->invec_leng;
   int n_0_tot = ML_gsum_int(n_0, P0->comm);
 
-  vector<double> tmp(n_0);
-  vector<double> ColBasedOmega(n_0);
+
 
   //
   // Compute the matrix D^{-1} A  D^{-1} A P0 which will
@@ -532,6 +426,24 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
       ML_Operator_ChangeToSinglePrecision(DinvADinvAP0);
   }
 
+  if (DinvADinvAP0->getrow->pre_comm != NULL) {
+      ML_CommInfoOP_Compute_TotalRcvLength(DinvADinvAP0->getrow->pre_comm);
+      if (DinvADinvAP0->getrow->pre_comm->total_rcv_length > N_ghost)
+      N_ghost = DinvADinvAP0->getrow->pre_comm->total_rcv_length;
+   }
+  Numerator   = (double *) ML_allocate(sizeof(double)*(P0->invec_leng+N_ghost));
+  Denominator = (double *) ML_allocate(sizeof(double)*(P0->invec_leng+N_ghost));
+  if (NumeratorAtRootPts   == NULL) NumeratorAtRootPts = Numerator;
+  if (DenominatorAtRootPts == NULL) DenominatorAtRootPts = Denominator;
+  for (int i = 0 ; i < n_0+N_ghost ; ++i) NumeratorAtRootPts[i] = 0.;
+  for (int i = 0 ; i < n_0+N_ghost ; ++i) DenominatorAtRootPts[i] = 0.;
+
+  vector<double> tmp(n_0+N_ghost);
+  vector<double> ColBasedOmega(n_0+N_ghost);
+
+  for (int i = 0 ; i < n_0+N_ghost ; ++i) tmp[i] = 0.;
+  for (int i = 0 ; i < n_0+N_ghost ; ++i) ColBasedOmega[i] = 0.;
+
   switch (ag->minimizing_energy) {
   case 1:
     // Minimize with respect to L2 norm
@@ -555,7 +467,6 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
     //
     multiply_all(DinvAP0_subset, DinvADinvAP0, &NumeratorAtRootPts[0]);
     multiply_self_all(DinvADinvAP0, &DenominatorAtRootPts[0]);
-    //multiply_all(DinvADinvAP0, DinvADinvAP0, &DenominatorAtRootPts[0]);
 
     break;
 
@@ -713,17 +624,20 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
   double* RowOmega = (double *) ML_allocate(sizeof(double)*(n + Nghost + 1));
   ag->old_RowOmegas = RowOmega;
 
+
+  if (DinvAP0->getrow->pre_comm != NULL) 
+     ML_exchange_bdry(&ColBasedOmega[0],DinvAP0->getrow->pre_comm, n_0,
+                      DinvAP0->comm, ML_OVERWRITE,NULL);
+
   for (int row = 0 ; row < n ; row++) {
     RowOmega[row] = -1.;
     ML_get_matrix_row(DinvAP0, 1, &row, &allocated, &bindx, &val,
                       &row_length, 0); // should really be P0 + DinvAP0
 
     for  (int j = 0; j < row_length; j++) {
-      if (bindx[j] < n) { // could do communication to get ghost omegas
 	double omega = ColBasedOmega[bindx[j]];
 	if (RowOmega[row] == -1.)  RowOmega[row] = omega;
         else if (omega < RowOmega[row]) RowOmega[row] = omega;
-      }
     }
     if (RowOmega[row] < 0.) RowOmega[row] = 0.;
   }
@@ -769,6 +683,7 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
   ml->Pmat[clevel].build_time =  GetClock() - t0;
   ml->timing->total_build_time += ml->Pmat[clevel].build_time;
 #endif
+//  printf("THE TIME %e\n", GetClock() - t0);
   return(0);
 }
 
@@ -786,6 +701,7 @@ int ML_AGG_Gen_Restriction_MinEnergy(ML *ml,int level, int clevel, void *data)
 {
   ML_Operator **prev_P_tentatives;
   ML_Aggregate * ag = (ML_Aggregate *) data;
+  double       *tempOmega = NULL;
 
 #ifdef ML_TIMING
   double t0;
@@ -852,8 +768,18 @@ int ML_AGG_Gen_Restriction_MinEnergy(ML *ml,int level, int clevel, void *data)
 
       ttt = ML_Operator_ImplicitlyBlockDinvScale(Amat);
 
-      ML_AGG_DinvP(P0TA, (MLSthing *) ttt->data, Amat->num_PDEs,1,0,Amat);
-      Scaled_P0TA = ML_Operator_ImplicitlyVCScale(P0TA, &(RowOmega[0]), 0);
+      ML_AGG_DinvP(P0TA,(MLSthing *)ttt->data,Amat->num_PDEs,COL_SCALE_WITH_DT);
+
+      int Nghost;
+      Nghost = ML_CommInfoOP_Compute_TotalRcvLength(P0TA->getrow->pre_comm);
+
+      tempOmega = (double *) ML_allocate(sizeof(double)*(P0TA->invec_leng + Nghost + 1));
+      for (int i = 0; i < P0TA->invec_leng; i++) tempOmega[i] = RowOmega[i];
+
+      ML_exchange_bdry(tempOmega,P0TA->getrow->pre_comm, P0TA->invec_leng, 
+                       P0TA->comm, ML_OVERWRITE,NULL);
+      Scaled_P0TA = ML_Operator_ImplicitlyVCScale(P0TA, &(tempOmega[0]), 0);
+
       ML_Operator_Add(P0_trans,Scaled_P0TA,&(ml->Rmat[level]),ML_CSR_MATRIX,-1.0);
     }
   }
@@ -876,6 +802,7 @@ int ML_AGG_Gen_Restriction_MinEnergy(ML *ml,int level, int clevel, void *data)
   if (P0_trans != NULL) ML_Operator_Destroy(&P0_trans);  
   if (P0TA != NULL) ML_Operator_Destroy(&P0TA);
   if (Scaled_P0TA != NULL) ML_Operator_Destroy(&Scaled_P0TA);
+  if (tempOmega != NULL) ML_free(tempOmega);
 
   return(0);
 }

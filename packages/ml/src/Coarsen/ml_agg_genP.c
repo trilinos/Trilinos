@@ -622,7 +622,8 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
           */
          Ptemp = ML_Operator_Create(Amat->comm);
          ML_2matmult(Amat, tmpmat1, Ptemp, ML_CSR_MATRIX );
-         ML_AGG_DinvP(Ptemp, mls_widget, Amat->num_PDEs,1,1, Amat);
+         ML_AGG_DinvP(Ptemp, mls_widget, Amat->num_PDEs, ROW_SCALE_WITH_D);
+
          ML_Operator_Add(tmpmat1, Ptemp, tmpmat2, ML_CSR_MATRIX,
                          -dampingFactors[ii] / max_eigen);
          ML_Operator_Destroy(&Ptemp);
@@ -2941,236 +2942,6 @@ int ML_MultiLevel_Gen_Restriction(ML *ml,int level, int next, void *data)
   return 0;
 }
 
-/*
- * This routine is used for block diagonal scaling in the prolongator
- * Smoother. Essentially, it takes the matrix Ptemp and multiplies
- * it by the block diagonal scaling which is inside the MLSthing. 
- *
- * The tricky thing is that we want to access Ptemp by Rows ... so
- * what we do is we transpose it. However, we have to be sure that
- * we use the funny transpose that leaves all the same data within
- * processor (and has the funny post communication). After we are
- * finished doing the computation (which is all local) we need
- * to transpose things back. The only catch is that this 
- * tranpose routine does not work with matrices that have 
- * post communication (which we now have due to the first call
- * to the transpose function). So we take the transposed data
- * and put it into the original Ptemp (that has the correct
- * communication data structure).
- */
-
-int ML_AGG_DinvP(ML_Operator *Ptemp, struct MLSthing *mls_widget,
-		 int blk_size, int transposeD, int transposePtemp,
-		 ML_Operator *Amatrix)
-/* tranposeD indicates whether we want to do inv(D) or inv(D^T) */
-/* transposePtemp indicates whether we need to first transpose the
-   matrix so that the columns become the rows (and then later transpose
-   the result back. 
-   Note: In ml_agg_min_energy.cpp, we need to compute 
-         H D^{-1}  where H = P^T A .This is equivalent
-         to computing (D^{-T} H^T)^T. In this case we want
-         tranposeD to be 1 and tranposePtemp to be 0.
-*/
-{
-  ML_Operator *Rtemp, *P2temp;
-  struct ML_CSR_MSRdata *csr_data;
-  int Num_blocks = 0, i, j, block, column;
-  int *rowptr, *columns;
-  int *new_columns = NULL, first, last, nz_ptr;
-  double *new_values = NULL, *values;
-  int **perms;
-  double **blockdata;
-  char N[2];
-  /*unsigned int   itmp=0;*/
-  int info, one = 1, NghostBlocks;
-  double **ExpandedBlockData = NULL, *ghostblocks = NULL;
-
-
-  if (transposePtemp == 1) {
-    Rtemp = ML_Operator_Create(Ptemp->comm);
-    ML_Operator_Transpose(Ptemp, Rtemp);
-  }
-  else Rtemp = Ptemp;
-
-  csr_data = (struct ML_CSR_MSRdata *) Rtemp->data;
-
-  /* count the total number of blocks */
-
-  rowptr  = csr_data->rowptr;
-  columns = csr_data->columns;
-  values  = csr_data->values;
-  for (i = 0; i < Rtemp->outvec_leng; i++) {
-    ML_az_sort( &(columns[rowptr[i]]), 
-		rowptr[i+1]-rowptr[i], NULL, 
-		&(values[rowptr[i]])); 
-    block = -1;
-    /* it looks like we count every block in every row           */
-    /* as opposed to block row. I believe this is what we        */
-    /* actually want as the total space is then multiplied by    */
-    /* the block size (as oppose to the square of the block size)*/
-
-    for (j = rowptr[i]; j < rowptr[i+1]; j++) {
-      if (columns[j]/blk_size != block) {
-	Num_blocks++;
-	block = columns[j]/blk_size;
-      }
-    }
-  }
-  /* Make sure that all columns within a block */
-  /* are present (i.e. pad with zeros if some  */
-  /* are missing).                             */
-  if (blk_size*Num_blocks != rowptr[Rtemp->outvec_leng]) {
-    new_columns= (int    *) ML_allocate(sizeof(int)*Num_blocks*blk_size);
-    new_values = (double *) ML_allocate(sizeof(double)*Num_blocks*blk_size);
-    first = rowptr[0];
-       nz_ptr = 0;
-       for (i = 0; i < Rtemp->outvec_leng; i++) {
-	 j = first;
-	 last = rowptr[i+1];
-
-	 while ( j < last ) {
-	   block = columns[j]/blk_size;
-	   column = block*blk_size;
-	   while (column < block*blk_size+blk_size) {
-	     new_columns[nz_ptr] = column;
-	     if (  (j < rowptr[i+1]) && (columns[j] == column)) {
-	       new_values[nz_ptr++] = values[j];
-	       j++;
-	     }
-	     else new_values[nz_ptr++] = 0.;
-	     column++;
-	   }
-	 }
-	 first = last;
-	 rowptr[i+1] = nz_ptr;
-       }
-       ML_free(values); ML_free(columns);
-       csr_data->values = new_values;
-       csr_data->columns = new_columns;
-       columns = csr_data->columns;
-       values  = csr_data->values;
-
-     }
-     blockdata  = mls_widget->block_scaling->blockfacts;
-     perms      = mls_widget->block_scaling->perms;
-     if (transposeD == 1) strcpy(N,"T");
-     else strcpy(N,"N");
-
-     if (transposeD == 1) { /* inv(A^T) */
-
-       if (Rtemp->comm->ML_nprocs > 1) {
-	 /* Since we are scaling the columns, we must communicate */
-	 /* the block diagonals. To do this, we will first        */
-	 /* create an amalgamated communication list. Then, we    */
-	 /* will exchange the block diagonals.                    */
-
-	 ML_Operator_AmalgamateAndDropWeak(Amatrix, blk_size, 0.0);
-	 NghostBlocks = ML_CommInfoOP_Compute_TotalRcvLength(
-                             Amatrix->getrow->pre_comm);
-	 ghostblocks = (double *) ML_allocate(sizeof(double)*blk_size*
-					      blk_size*NghostBlocks);
-	 ML_exchange_Blocks(blockdata, ghostblocks, Amatrix->getrow->pre_comm,
-	                    Amatrix->comm, blk_size*blk_size);
-
-	 ExpandedBlockData = (double **) ML_allocate(sizeof(double *)*
-	                    (Amatrix->invec_leng+NghostBlocks+1));
-         for (i = 0; i < Amatrix->invec_leng; i++) 
-	     ExpandedBlockData[i] = blockdata[i];
-
-	 for (i = 0; i < NghostBlocks; i++) 
-	     ExpandedBlockData[i+Amatrix->invec_leng] = 
-                       &(ghostblocks[i*blk_size*blk_size]);
-	 ML_Operator_UnAmalgamateAndDropWeak(Amatrix, blk_size, 0.0);
-       }
-
-       if (mls_widget->block_scaling->optimized == 1) {
-	 /* To use the opitmized version, ML_permute_for_dgetrs_special() */
-	 /* must be called after the factorization was computed.          */
-
-	 for (i = 0; i < Rtemp->outvec_leng; i++) {
-	   for (j = csr_data->rowptr[i];j < csr_data->rowptr[i+1]; j += blk_size) {
-	     block  = (csr_data->columns[j])/blk_size;
-	     ML_dgetrs_trans_special(blk_size, blockdata[block], perms[block], 
-				     &(values[j]));
-	   }
-	 }
-       }
-       else {  /* unoptimized version of inv(A^T)  */
-	 for (i = 0; i < Rtemp->outvec_leng; i++) {
-	   for (j = csr_data->rowptr[i];j < csr_data->rowptr[i+1]; j += blk_size) {
-	     block  = (csr_data->columns[j])/blk_size;
-	     DGETRS_F77(N,&blk_size,&one,blockdata[block],&blk_size,
-	                perms[block], &(values[j]),
-			&blk_size, &info);
-	     if ( info != 0 ) {
-	       printf("dgetrs returns with %d at block %d\n",info,i); 
-	       exit(1);
-	     }
-	   }
-	 }
-       }
-     }
-     else {  /* inv(A) */
-       if (mls_widget->block_scaling->optimized == 1) {
-	 /* To use the opitmized version, ML_permute_for_dgetrs_special() */
-	 /* must be called after the factorization was computed.          */
-
-	 for (i = 0; i < Rtemp->outvec_leng; i++) {
-	   for (j = csr_data->rowptr[i];j < csr_data->rowptr[i+1]; j += blk_size) {
-	     block  = (csr_data->columns[j])/blk_size;
-	     ML_dgetrs_special(blk_size, blockdata[block], perms[block], 
-			       &(values[j]));
-	   }
-	 }
-       }
-       else { /* unoptimized version of inv(A) */
-	 for (i = 0; i < Rtemp->outvec_leng; i++) {
-	   for (j = csr_data->rowptr[i];j < csr_data->rowptr[i+1]; j += blk_size) {
-	     block  = (csr_data->columns[j])/blk_size;
-	     DGETRS_F77(N,&blk_size,&one,blockdata[block],&blk_size,
-	                perms[block], &(values[j]),
-			&blk_size, &info); 
-	     if ( info != 0 ) {
-	       printf("dgetrs returns with %d at block %d\n",info,i); 
-	       exit(1);
-	     }
-	   }
-	 }
-       }
-     }
-
-     /* We need to transpose the matrix back. Unfortunately, */
-     /* the routine ML_Operator_Transpose() takes a matrix   */
-     /* with pre-communication and makes a matrix with post- */
-     /* communication. This means that Rtemp has post-       */
-     /* communication ... so the second call to ML_Operator_ */
-     /* Transpose() will not get the communication right.    */
-     /* So what we will do is swap the data pointers with    */
-     /* the original Ptemp (which has the correct            */
-     /* communication pointer).                              */
-	
-     if (transposePtemp == 1) {
-       P2temp = ML_Operator_Create(Ptemp->comm);
-       ML_Operator_Transpose(Rtemp, P2temp);
-       ML_Operator_Destroy(&Rtemp);
-
-       csr_data = (struct ML_CSR_MSRdata *) P2temp->data;
-       P2temp->data = Ptemp->data;
-       Ptemp->data = csr_data;
-       ML_Operator_Destroy(&P2temp);
-     }
-     else {
-       Ptemp->data = csr_data;
-     }
-
-
-     if (ghostblocks != NULL) {
-       ML_free(ghostblocks); ML_free(ExpandedBlockData);
-     }
-
-     return 0;
-}
-
 /******************************************************************************
 Regenerate the multigrid hierarchy using smoothed aggregation reusing the 
 existing aggregates.
@@ -3244,3 +3015,390 @@ void ML_AGG_Calculate_Smoothing_Factors(int numSweeps, double *factors)
     factors[i] = 1.0 / (root*root);
   }
 }
+
+/* This function block scales matrices. It can be invoked in differnt ways.   */
+/* Let X be the matrix to be scaled and D be the block diagonal scaling       */
+/* matrix. Here are the possibilities:                                        */
+/*                                                                            */
+/*      a)   D X (ROW_SCALE_WITH_D)                                           */
+/*              Implemented by first transposing, scaling, and transposing    */
+/*              back: (  X^T D^T )^T.  This was probably done so things were  */
+/*              contiguous for the scaling. One REAL tricky thing is that     */
+/*              ML_Operator_Transpose() only locally transposes data and then */
+/*              sets up a strange post communication object. This is IMPORTANT*/
+/*              because if data is shuffled (e.g. a real transpose), it would */
+/*              be necessary to communicate D.  However, this is not needed as*/
+/*              all data remains local. The catch is that the second transpose*/
+/*              has messed up communication as ML_Operator_Transpose() was not*/
+/*              designed to work with post communication on input. So we      */
+/*              ignore the communication object produced by the transpose and */
+/*              use X's communication object in the final result. By the way, */
+/*              ML_Operator_ExplicitDinvA() looks like it has the same        */
+/*              functionality (without all this transpose stuff). Probably,   */
+/*              these functions were written without knowledge of each other. */
+/*      b)   X D^T  (COL_SCALE_WITH_DT)                                       */
+/*              X is not tranposed here. Communication is used on D.          */
+/*      c)   D^T X  (ROW_SCALE_WITH_DT)                                       */
+/*              Probably never tested. Should function similar to a) and so   */
+/*              hopefully just works.                                         */
+/*      d)   X D   (COL_SCALE_WITH_D)                                         */
+/*              Probably never tested. Should function similar to b) and so   */
+/*              hopefully just works.                                         */
+/*                                                                            */
+/* One nasty issue is that nnz(D X) >= nnz(X). That is, we might have some    */
+/* new nonzeros. This means that both the data object and the communication   */
+/* object need to be changed first to accommodate the new nonzeros before any */
+/* scaling is applied.                                                        */
+
+int ML_AGG_DinvP(ML_Operator *X, struct MLSthing *mls_widget,
+                 int BlkSize,   int ScalingType) 
+/*
+ * X           (On input ) Matrix to be scaled. 
+ *             (On output) Scaled matrix. 
+ *
+ * mls_widget  This effectively holds the block diagonal scaling matrix. 
+ *             Do something like y = ML_Operator_ImplicitlyBlockDinvScale(Amat);
+ *             to compute it (in y->data).
+ */
+{
+  ML_Operator     *TmpMat, *X_or_XT;
+  ML_CommInfoOP   *Blkd_comm = NULL;
+  struct ML_CSR_MSRdata *csr_data;
+
+  int      info, one = 1, **IntPtr, NBlocks, Nghost = 0,  column, last;
+  int      nz_ptr, first, *new_columns = NULL, NumNnz = 0, i, j;
+  int      *columns, *rowptr, **perms, block; 
+  double   *buffer, **DblPtr, *new_values = NULL, *values = NULL, **blockdata; 
+  char       N[2];
+  double   *WhichDOF = NULL; 
+  int      *NewLocalIds =NULL, max_per_proc, CurBlock, Nneighbors, *neigh_list = NULL;
+  int      Nrcv, *rcv_list, prev, *GlobalBlockIds = NULL;
+
+  blockdata  = mls_widget->block_scaling->blockfacts;
+  perms      = mls_widget->block_scaling->perms;
+
+  if (X->getrow->pre_comm != NULL) 
+     Nghost = ML_CommInfoOP_Compute_TotalRcvLength(X->getrow->pre_comm);
+
+  if ( (ScalingType == ROW_SCALE_WITH_D) || (ScalingType == COL_SCALE_WITH_DT)) 
+     strcpy(N,"T");
+  else strcpy(N,"N");
+
+  if ((ScalingType == ROW_SCALE_WITH_D) || (ScalingType == ROW_SCALE_WITH_D)){
+    X_or_XT = ML_Operator_Create(X->comm);
+    ML_Operator_Transpose(X, X_or_XT); /* Do not change to by_row! */
+  }
+  else X_or_XT = X;
+
+  csr_data = (struct ML_CSR_MSRdata *) X_or_XT->data;
+  rowptr   = csr_data->rowptr;
+  columns  = csr_data->columns;
+  values   = csr_data->values;
+
+  /* sort the blocks */
+  for (i = 0; i < X_or_XT->outvec_leng; i++) {
+    ML_az_sort( &(columns[rowptr[i]]), rowptr[i+1]-rowptr[i], NULL, 
+              &(values[rowptr[i]])); 
+  }
+
+  /* See if the matrix should be padded with zeros so that the sparsity*/
+  /* matches that of the final scaled matrix. Here are the 2 cases:    */
+  /*     col scaling :  This is tricky because communication and       */
+  /*                    column numbering needs to be changed to account*/
+  /*                    for new ghost unknowns. So we do the following:*/
+  /*                     a) compute new numbering for ghost nodes      */
+  /*                        and put this into the unpadded matrix.     */
+  /*                     b) count nonzeros in new matrix               */
+  /*                     c) pad matrix with zeros                      */
+  /*                     d) update the communication structure.        */
+  /*     row scaling :  This is the easier case because we don't have  */
+  /*                    to consider ghost variables. That is, the      */
+  /*                    communication associated with X and D X is the */
+  /*                    same. This also means that the node numbering  */
+  /*                    is also okay. Here are the steps:              */
+  /*                     a) count nonzeros in new matrix               */
+  /*                     b) pad matrix with zeros                      */
+
+  if (((ScalingType == COL_SCALE_WITH_D)||(ScalingType == COL_SCALE_WITH_DT))
+       && (X->comm->ML_nprocs > 1)) {
+
+     ML_create_unique_BlockCol_id(X->invec_leng, &GlobalBlockIds, 
+                BlkSize, X->getrow->pre_comm, &max_per_proc, X->comm);
+
+     WhichDOF = (double *) ML_allocate((X->invec_leng+Nghost+1)*sizeof(double));
+
+     for (i = 0; i < X->invec_leng; i++) WhichDOF[i] = (double) (i%BlkSize);
+       
+     ML_exchange_bdry(WhichDOF, X->getrow->pre_comm, X->invec_leng,
+                        X->comm, ML_OVERWRITE, NULL);
+
+     CurBlock = X->invec_leng/BlkSize - 1;
+
+     NewLocalIds = (int *) ML_allocate((Nghost+1)*sizeof(int));
+
+     Nneighbors = ML_CommInfoOP_Get_Nneighbors(X->getrow->pre_comm);
+     neigh_list = ML_CommInfoOP_Get_neighbors(X->getrow->pre_comm);
+     for (i = 0; i < Nneighbors; i++) {
+         Nrcv = ML_CommInfoOP_Get_Nrcvlist(X->getrow->pre_comm,neigh_list[i]);
+         rcv_list =ML_CommInfoOP_Get_rcvlist(X->getrow->pre_comm,neigh_list[i]);
+         prev = -1;
+         for (j = 0; j < Nrcv; j++) {
+            if ( GlobalBlockIds[rcv_list[j]] > prev ) 
+               CurBlock++;    /* new block */
+            else if ( GlobalBlockIds[rcv_list[j]] < prev ) {
+               printf("Ugh: I think this means that the send list is out of\n");
+               printf("order. That is, the i^th degree of freedom within a\n");
+               printf("block is sent before the j^th DOF where j<i.\n");
+               exit(1);
+            }
+
+            prev = GlobalBlockIds[rcv_list[j]];
+
+            NewLocalIds[rcv_list[j] - X->invec_leng]=
+                    CurBlock*BlkSize+WhichDOF[rcv_list[j]];
+         }
+         if (rcv_list != NULL) ML_free(rcv_list);
+     }
+     if (neigh_list != NULL) ML_free(neigh_list);
+     for (i = 0; i < rowptr[X->outvec_leng]; i++) {
+        if ( columns[i] >= X->invec_leng) {
+           columns[i] = (int) NewLocalIds[columns[i] - X->invec_leng];
+        }
+     }
+     if (NewLocalIds    != NULL) ML_free(NewLocalIds);
+     if (WhichDOF       != NULL) ML_free(WhichDOF);
+     if (GlobalBlockIds != NULL) ML_free(GlobalBlockIds);
+  }
+                
+
+  /* Count the number of nonzeros in the new local matrix */
+
+  NumNnz = 0;
+  for (i = 0; i < X_or_XT->outvec_leng; i++) {
+    CurBlock = -1;
+    for (j = rowptr[i]; j < rowptr[i+1]; j++) {
+      if (columns[j]/BlkSize != CurBlock) {
+         NumNnz += BlkSize;
+         CurBlock = columns[j]/BlkSize;
+      }
+    }
+  }
+
+  /* Make sure that all columns within a block are present (i.e. pad with  *
+   * zeros if some are missing).                                           */
+
+
+  if (NumNnz != rowptr[X_or_XT->outvec_leng]) {
+     new_columns= (int    *) ML_allocate(sizeof(int)*NumNnz*100);
+     new_values = (double *) ML_allocate(sizeof(double)*NumNnz*100);
+
+     first = rowptr[0];
+     nz_ptr = 0;
+     for (i = 0; i < X_or_XT->getrow->Nrows; i++) {
+       j = first;
+       last = rowptr[i+1];
+
+       while ( j < last ) {
+         block = columns[j]/BlkSize;
+         column = block*BlkSize;
+         while (column < block*BlkSize+BlkSize) {
+           new_columns[nz_ptr] = column;
+           if (  (j < rowptr[i+1]) && (columns[j] == column))
+             new_values[nz_ptr++] = values[j++];
+           else new_values[nz_ptr++] = 0.;
+           column++;
+         }
+       }
+       first = last;
+       rowptr[i+1] = nz_ptr;
+    }
+    ML_free(values); ML_free(columns);
+    csr_data->values = new_values;
+    csr_data->columns = new_columns;
+    columns = csr_data->columns;
+    values  = csr_data->values;
+  } 
+
+  /* Fix the communication object as well so it corresponds to the padded *
+   * matrix. This will also be used if D needs to be communicated.        */
+
+  if (((ScalingType == COL_SCALE_WITH_D)||(ScalingType == COL_SCALE_WITH_DT))
+       && (X_or_XT->comm->ML_nprocs > 1)) {
+
+       ML_CommInfoOP_PopulateBlks(X->getrow->pre_comm, &Blkd_comm, 
+                                  X->invec_leng, BlkSize,X->comm);
+
+       if (X->getrow->pre_comm != NULL) 
+            ML_CommInfoOP_Destroy( &(X->getrow->pre_comm) );
+
+       X->getrow->pre_comm = Blkd_comm;
+  }
+
+  /* Communicate D's blocks if needed */
+
+  if ( (X_or_XT->comm->ML_nprocs > 1) &&
+      ((ScalingType == COL_SCALE_WITH_DT) || (ScalingType == COL_SCALE_WITH_D)))
+  {
+     /* Since we scale the columns, we must communicate the block diagonals. */
+
+     Nghost = 0;
+     if (X->getrow->pre_comm != NULL) 
+        Nghost = ML_CommInfoOP_Compute_TotalRcvLength(X->getrow->pre_comm);
+
+     NBlocks = (X->invec_leng + Nghost)/BlkSize;
+
+     if (  NBlocks*BlkSize != (X->invec_leng + Nghost) ) {
+        printf("invec plus ghost not divisible by blksize %d %d %d\n",
+               X->invec_leng,Nghost,BlkSize);
+        exit(1);
+     }
+
+     /* Allocate space for ghost blocks. First copy the nonghost block  */
+     /* pointers to a new pointer-pointer array.                        */
+
+     DblPtr = (double **)  ML_allocate(sizeof(double *)*(NBlocks+1));
+     for (i = 0; i < mls_widget->block_scaling->Nblocks; i++) 
+        DblPtr[i] = blockdata[i];
+     if (blockdata != NULL) ML_free(blockdata);
+     blockdata = DblPtr;
+     mls_widget->block_scaling->blockfacts = blockdata;
+
+     IntPtr = (int **)  ML_allocate(sizeof(int *)*(NBlocks+1));
+     for (i = 0; i < mls_widget->block_scaling->Nblocks; i++) 
+        IntPtr[i] = perms[i];
+     if (perms != NULL) ML_free(perms);
+     perms = IntPtr;
+     mls_widget->block_scaling->perms = perms;
+
+     /* now allocate space for ghosts */
+
+     for (i = mls_widget->block_scaling->Nblocks; i < NBlocks; i++) {
+        blockdata[i] = (double *) ML_allocate(sizeof(double)*BlkSize*BlkSize);
+        if (blockdata[i] == NULL) {
+           printf("Not enough space for block factors\n"); exit(1);
+        }
+        perms[i] = (int *) ML_allocate(sizeof(int)*BlkSize);
+        if (perms[i] == NULL) {
+           printf("Not enough space for perms\n"); exit(1);
+        }
+     }
+     mls_widget->block_scaling->Nblocks = NBlocks;
+
+    /* Extract information corresponding to the ith column within each */
+    /* diagonal block. Stuff this into a vector and do an ML_exch_bdry */
+    /* to communicate the column. Then, pull the ghost information out */
+    /* and put it back into blockdata.                                 */
+
+     
+    buffer = (double *) ML_allocate(sizeof(double)*(X->invec_leng+Nghost+1));
+    if (buffer == NULL) {printf("Not enough space for buffer\n"); exit(1); }
+
+    for (i = 0; i < BlkSize; i++) {
+       for (j = 0; j < X->invec_leng; j++) {
+          block = j/BlkSize;
+          buffer[j] = blockdata[block][i*BlkSize + j - block*BlkSize];
+       }
+
+       ML_exchange_bdry(buffer,X->getrow->pre_comm, X->getrow->Nrows,
+                        X->comm,ML_OVERWRITE,NULL);
+
+       for (j = X->invec_leng; j < X->invec_leng+Nghost; j++){
+          block = j/BlkSize;
+          blockdata[block][i*BlkSize+j - block*BlkSize] = buffer[j];
+       }
+    }
+    for (j = 0; j < X->invec_leng; j++) {
+       block = j/BlkSize;
+       buffer[j] = (double ) perms[block][j - block*BlkSize];
+    }
+    ML_exchange_bdry(buffer,X->getrow->pre_comm, X->getrow->Nrows,
+                     X->comm,ML_OVERWRITE,NULL);
+
+    for (j = X->invec_leng; j < X->invec_leng+Nghost; j++) {
+       block = j/BlkSize;
+       perms[block][j - block*BlkSize] = (int) buffer[j];
+    }
+    ML_free(buffer);
+
+  }
+  
+
+  if ((ScalingType == ROW_SCALE_WITH_D) || (ScalingType == COL_SCALE_WITH_DT)){
+    if (mls_widget->block_scaling->optimized == 1) { 
+       /* optimized inv(A^T): ML_permute_for_dgetrs_special()     */
+      /* must be called after the factorization is computed.      */
+
+      for (i = 0; i < X_or_XT->getrow->Nrows; i++) {
+        for (j = csr_data->rowptr[i];j < csr_data->rowptr[i+1]; j += BlkSize) {
+           block  = (csr_data->columns[j])/BlkSize;
+           ML_dgetrs_trans_special(BlkSize, blockdata[block], perms[block], 
+                                   &(values[j]));
+        }
+      }
+    }
+    else {  /* unoptimized version of inv(A^T)  */
+      for (i = 0; i < X_or_XT->getrow->Nrows; i++) {
+        for (j = csr_data->rowptr[i];j < csr_data->rowptr[i+1]; j += BlkSize) {
+           block  = (csr_data->columns[j])/BlkSize;
+           DGETRS_F77(N,&BlkSize,&one,blockdata[block],&BlkSize, perms[block],
+                      &(values[j]), &BlkSize, &info);
+           if ( info != 0 ) {
+              printf("dgetrs returns with %d at block %d\n",info,i); 
+              exit(1);
+           }
+        }
+      }
+    }
+  }
+  else { 
+    if (mls_widget->block_scaling->optimized == 1) {
+      /* optimized inv(A): ML_permute_for_dgetrs_special()      */
+      /* must be called after the factorization is computed.    */
+
+      for (i = 0; i < X_or_XT->getrow->Nrows; i++) {
+        for (j = csr_data->rowptr[i];j < csr_data->rowptr[i+1]; j += BlkSize) {
+            block  = (csr_data->columns[j])/BlkSize;
+            ML_dgetrs_special(BlkSize, blockdata[block], perms[block], 
+                            &(values[j]));
+        }
+      }
+    }
+    else { /* unoptimized version of inv(A) */
+      for (i = 0; i < X_or_XT->getrow->Nrows; i++) {
+        for (j = csr_data->rowptr[i];j < csr_data->rowptr[i+1]; j += BlkSize) {
+            block  = (csr_data->columns[j])/BlkSize;
+            DGETRS_F77(N,&BlkSize,&one,blockdata[block],&BlkSize,
+                       perms[block], &(values[j]), &BlkSize, &info); 
+            if ( info != 0 ) {
+              printf("dgetrs returns with %d at block %d\n",info,i); 
+              exit(1);
+            }
+        }
+      }
+    }
+  }
+
+  /* Transpose back if needed. Must use X->getrow->pre_comm as  */
+  /* ML_Operator_Transpose(ML_Operator_Transpose(X)) messes up  */
+  /* the communication object. This is because the first        */
+  /* transpose creates a post communication object which the    */
+  /* second transpose does not know how to deal with.           */
+
+  if ((ScalingType == ROW_SCALE_WITH_D)||(ScalingType == ROW_SCALE_WITH_DT)) {
+    TmpMat = ML_Operator_Create(X->comm);
+    i = X_or_XT->outvec_leng;  /* need to make ML_Operator_Transpose work */
+    X_or_XT->outvec_leng = X_or_XT->getrow->Nrows; 
+    ML_Operator_Transpose(X_or_XT, TmpMat); /* Do not change to by_row! */
+    X_or_XT->outvec_leng = i;
+    ML_Operator_Destroy(&X_or_XT);
+
+    /* swap data pointers */
+    csr_data     = (struct ML_CSR_MSRdata *) TmpMat->data;
+    TmpMat->data = X->data;
+    X->data      = csr_data;
+
+    ML_Operator_Destroy(&TmpMat);
+  }
+  return 0;
+}
+

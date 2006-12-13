@@ -105,7 +105,7 @@ extern int ML_AGG_Amat_Getrows(ML_Operator *data, int N_requested_rows,
                int requested_rows[], int allocated_space, int columns[], 
                double values[], int row_lengths[]);
 extern int ML_AGG_DinvP(ML_Operator *Ptemp, struct MLSthing *mls_widget,
-			int blk_size, int , int, ML_Operator *);
+			int blk_size, int );
 
 
 extern int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
