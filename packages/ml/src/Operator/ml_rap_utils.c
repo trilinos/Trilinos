@@ -294,18 +294,27 @@ void ML_get_matrix_row(ML_Operator *input_matrix, int N_requested_rows,
                &((*columns)[index]), &((*values)[index]), row_lengths) == 0) {
       *allocated_space = 2*(*allocated_space) + 1;
       t1 = (int    *) ML_allocate(*allocated_space*sizeof(int   ));
+      if (t1 == NULL) {
+            printf("Not enough space to get a matrix row. A row length of \n");
+            printf("%d Was not sufficient\n",(*allocated_space-1)/2);
+   	    fflush(stdout);
+            exit(1);
+      }
+      else {
+         for (i = 0; i < index; i++) t1[i] = (*columns)[i];
+         if (*columns != NULL) ML_free(*columns);  
+         *columns = t1;
+      }
+
       t2 = (double *) ML_allocate(*allocated_space*sizeof(double));
       if (t2 == NULL) {
-         printf("Not enough space to get a matrix row. A row length of \n");
-         printf("%d was not sufficient\n",(*allocated_space-1)/2);
-	 fflush(stdout);
-         exit(1);
+            printf("Not enough space to get a matrix row. A row length of \n");
+            printf("%d Was not sufficient\n",(*allocated_space-1)/2);
+   	    fflush(stdout);
+            exit(1);
       }
-      for (i = 0; i < index; i++) t1[i] = (*columns)[i];
       for (i = 0; i < index; i++) t2[i] = (*values)[i];
-      if (*columns != NULL) ML_free(*columns);  
       if (*values  != NULL) ML_free(*values);
-      *columns = t1;
       *values  = t2;
    }
 

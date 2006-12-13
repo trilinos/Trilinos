@@ -843,6 +843,13 @@ int ML_amalg_drop_getrow(ML_Operator *data, int N_requested_rows, int requested_
    tallocated_space = allocated_space*block_size*block_size + 1;
    tcolumns     = (int    *) ML_allocate(sizeof(int)*tallocated_space);
    tvalues      = (double *) ML_allocate(sizeof(double)*tallocated_space);
+   while ( ((tvalues==NULL) || (tcolumns==NULL)) && (tallocated_space > 100)) {
+      if (tcolumns != NULL) ML_free(tcolumns);
+      if (tvalues != NULL) ML_free(tvalues);
+      tallocated_space = tallocated_space/10;
+      tcolumns     = (int    *) ML_allocate(sizeof(int)*tallocated_space);
+      tvalues      = (double *) ML_allocate(sizeof(double)*tallocated_space);
+   }
 
    if ( (tvalues == NULL) || (tcolumns == NULL)) {
       if (tcolumns != NULL) ML_free(tcolumns);
