@@ -823,7 +823,7 @@ int AZ_block_MSR(int **param_bindx, double **param_val,
          for (k = 0; k < num_PDE_eqns; k++) {
             if (block_list[j]*num_PDE_eqns+k != update[i]) {
                if (offset >= allocated)
-                  pr_error("ML_block_MSR: Did not allocate enough space\n");
+                  pr_error("AZ_block_MSR: Did not allocate enough space\n");
 
                newbindx[offset] = block_list[j]*num_PDE_eqns+k;
                if ( (current < bindx[i+1]) &&
