@@ -144,6 +144,14 @@
 #define ML_GLOBAL_INDICES    1
 /*ms*/
 
+/* RST: These are for doing block diagonal scaling of a matrix */
+#define ROW_SCALE_WITH_D     1 
+#define ROW_SCALE_WITH_DT    2
+#define COL_SCALE_WITH_D     3
+#define COL_SCALE_WITH_DT    4
+/* RST */
+
+
 /* maximum dimension of the subspace associated with an ML_Operator type */
 #define ML_MAX_SUBSPACE_DIM 3
 
