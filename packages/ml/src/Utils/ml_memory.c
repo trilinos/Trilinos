@@ -472,10 +472,13 @@ char *ML_allocate(unsigned int isize) {
                                      /* MALLOC AND NOT AN ML_ALLOCATE */
 
     if (ptr == NULL) {
-       ML_free(ml_widget);
+       free(ml_widget);
        return(NULL);
     }
     ml_allo_count++;
+if  ( (ml_allo_count == -1644)  
+&& (size-7*sizeof(double) == 240) 
+) while ( 1 == 1) ;
 
     /* put trash in the space to make sure nobody is expecting zeros */
     for (i = 0 ; i < size/sizeof(char) ; i++ ) 
