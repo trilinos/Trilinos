@@ -805,6 +805,104 @@ void ML_create_unique_id(int N_local, int **map,
 /******************************************************************************/
 /******************************************************************************/
 
+void ML_create_unique_BlockCol_id(int N_local, int **map, int BlkSize,
+                ML_CommInfoOP *comm_info, int *max_per_proc, ML_Comm *comm)
+{
+/* Create a map between local block variables on this processor and a 
+ * global number where local block variables on different processors which
+ * correspond to the same global block variable have the same unique global 
+ * number. 
+ *
+ * Parameters
+ * ==========
+ *   N_local       On input, number of local variables assigned to this node.
+ * 
+ *   map           On output, map[k] is the unique block global id of the kth 
+ *                 local
+ *                 variable. Note: if the kth local variable on processor P0
+ *                 corresponds to the jth local variable on processor P1, then
+ *                 map[k] on P0 is equal to map[j] on P1.
+ *   
+ *   comm_info     On input, communcation information (see ml_rap.h) which
+ *                 indicates which local variables are sent to other processors
+ *                 and where received information is stored locally.
+ *
+ *   max_per_proc  On output, the maximum number of local variables on any one
+ *                 processor.
+ */
+
+   int i, j, count, N_rcvd, N_send, offset, flag = 0;
+   double *dtemp;
+
+   /* compute the number of variables to receive and send */
+
+   N_rcvd = 0;
+   N_send = 0;
+   if (comm_info != NULL) 
+   {
+      for (i = 0; i < comm_info->N_neighbors; i++)  
+      {
+         N_rcvd += (comm_info->neighbors)[i].N_rcv;
+         N_send += (comm_info->neighbors)[i].N_send;
+         if (  ((comm_info->neighbors)[i].N_rcv != 0) &&
+            ((comm_info->neighbors)[i].rcv_list != NULL) )  flag = 1;
+      }
+   }
+
+   dtemp  = (double *) ML_allocate((N_local + N_rcvd + 1)*sizeof(double));
+   if (dtemp == NULL) 
+   {
+     printf("out of space in ML_create_unique_col_ids\n");
+     exit(1);
+   }
+
+   /* Set the N_local components of 'map' and 'dtemp' */
+   /* to unique numbers on each processor.            */
+
+   *max_per_proc = ML_gmax_int(N_local/BlkSize, comm);
+   offset       = *max_per_proc*(comm->ML_mypid);
+
+   *map = (int    *) ML_allocate((N_local + N_rcvd + 1) * sizeof(int));
+   if (map == NULL) 
+   {
+      printf("out of space in ML_create_unique_col_ids\n");
+      exit(1);
+   }
+   for (i = 0 ; i < N_local; i++ ) 
+   {
+      (*map)[i]    = offset + i/BlkSize;
+      dtemp[i] = (double) (*map)[i];
+   }
+
+   /* exchange these global ids with the neighbors, appending */
+   /* received information (starting at dtemp[N_local])       */
+
+   if (comm_info != NULL)
+   {
+      ML_cheap_exchange_bdry(dtemp, comm_info, N_local, N_send, comm);
+   }
+
+   if (flag == 1) 
+   {
+      count = N_local;
+      for (i = 0; i < comm_info->N_neighbors; i++) 
+      {
+         for (j = 0; j < comm_info->neighbors[i].N_rcv; j++) 
+         {
+            (*map)[comm_info->neighbors[i].rcv_list[j]] = (int) dtemp[count++];
+         }
+      }
+   }
+   else 
+      for (i = N_local; i < N_local + N_rcvd; i++ ) (*map)[i] = (int) dtemp[i];
+
+   ML_free(dtemp);
+}
+
+/******************************************************************************/
+/******************************************************************************/
+/******************************************************************************/
+
 void ML_create_unique_col_id(int N_local, int **map, 
                 ML_CommInfoOP *comm_info, int *max_per_proc, ML_Comm *comm)
 {
@@ -1286,79 +1384,6 @@ void ML_exchange_bdry(double x[], ML_CommInfoOP *comm_info, int start_location,
 #endif
 } /* ML_exchange_bdry */
 
-void ML_exchange_Blocks(double **blockdata, double *ghostblocks, 
-                        ML_CommInfoOP *comm_info, ML_Comm *comm, int Size)
-{
-
-  double          *send_buf;
-  int              type, N_neighbors, *temp, i, j, k, rtype;
-  int             count, kk;
-  USR_REQ         *request;
-  ML_NeighborList *neighbor;
-
-  printf("I don't believe this routine actually works yet.\n");
-  if (comm_info == NULL) return;
-  N_neighbors = comm_info->N_neighbors;
-  if (N_neighbors == 0) return;
-
-  /* Set up send messages: Gather send unknowns from blockdata */
-
-  if ( N_neighbors > 0 ) {
-     request = (USR_REQ  *)  ML_allocate(N_neighbors*sizeof(USR_REQ ));
-  } else request = NULL;
-
-  type = 2005;
-
-  /* post receives for all messages */
-
-  count = 0;
-  for (i = 0; i < N_neighbors; i++) {
-    neighbor = &(comm_info->neighbors[i]);
-    rtype = type;   j = sizeof(double)* neighbor->N_rcv*Size;
-    comm->USR_irecvbytes((void *) &(ghostblocks[count]), (unsigned int)j, 
-		&(neighbor->ML_id), &rtype, comm->USR_comm, request+i);
-    count += (neighbor->N_rcv*Size);
-  }
-
-
-  /* write out all messages */
-
-  for (i = 0; i < N_neighbors; i++) {
-    neighbor = &(comm_info->neighbors[i]);
-    j = sizeof(double)* neighbor->N_send*Size;
-    send_buf = (double *)  ML_allocate(j);
-    count = 0;
-    temp = comm_info->neighbors[i].send_list;
-
-    for (k = 0; k < neighbor->N_send; k++) {
-       for (kk = 0; kk < Size; kk++) {
-	          send_buf[count++] = blockdata[ temp[k] ][kk];
-        }
-    }
-
-#ifdef out
-    comm->USR_sendbytes((void *) send_buf, (unsigned) j, neighbor->ML_id, 
-                          rtype, comm->USR_comm);
-#endif
-    if (send_buf != NULL) ML_free(send_buf);
-  }
-
-  /* wait for all messages */
-  count = 0;
-  for (i = 0; i < N_neighbors; i++) {
-    neighbor = &(comm_info->neighbors[i]);
-    rtype = type;   j = sizeof(double)* neighbor->N_rcv*Size;
-    comm->USR_cheapwaitbytes((void *) &(ghostblocks[count]), 
-                             (unsigned int) j, &(neighbor->ML_id),
-                             &rtype, comm->USR_comm, request+i);
-    count += (neighbor->N_rcv*Size);
-  }
-  if ( N_neighbors > 0 ) ML_free(request);
-
-}
-
-
-
 int ML_CommInfoOP_Compute_TotalRcvLength(ML_CommInfoOP *comm_info)
 {
   int i;
@@ -1649,3 +1674,124 @@ int ML_reverse_exchange(double *x_over, ML_CommInfoOP
   return 0;
 
 }
+/********************************************************************
+ * Take a standard 'pre_comm' communication object and alter it so
+ * that if one DOF within a block is sent, they all are sent. If one
+ * DOF within a block is received, they all are received.
+ *    On input:
+ *        pre_comm     An existing communication structure 
+ *        invec_leng   The length of the local vector for which the
+ *                     pre  communication is defined.
+ *        BlkSize      the block size
+ *
+ *    On output
+ *        Blkd_comm    A new communication structure that corresponds
+ *                     fully populates all entries within a block (i.e.
+ *                     there are no sends or receive that do not involve
+ *                     all entries within a block.
+ *
+ *    Returns the number of ghost nodes in the new communicator. 
+ *
+ ********************************************************************/
+int ML_CommInfoOP_PopulateBlks(ML_CommInfoOP *pre_comm, 
+       ML_CommInfoOP **Blkd_comm, int invec_leng, int BlkSize, ML_Comm *comm)
+{
+   int Nneighbors, Nrcv, Nsend, i, j, count, k;
+   int *neigh_list, *send_list, *rcv_list;
+   int Nghost = 0, Nblocks, block, offset = 0;
+   int *Marked, NMarked, *newsend, *newrcv;
+   double *GhostBlocks = NULL;
+ 
+   if (pre_comm == NULL) return 0;
+
+
+   Nghost     = ML_CommInfoOP_Compute_TotalRcvLength(pre_comm);
+   Nneighbors = ML_CommInfoOP_Get_Nneighbors(pre_comm);
+   if (pre_comm == NULL) return 0;
+
+   /* for ghosts we need to figure out what block index we have */
+
+   GhostBlocks = (double *) ML_allocate(sizeof(double)*(invec_leng+Nghost));
+   for (i = 0; i < invec_leng; i++) GhostBlocks[i] = (double) (i/BlkSize);
+   ML_exchange_bdry(GhostBlocks,pre_comm,invec_leng,comm,ML_OVERWRITE,NULL);
+
+
+   neigh_list = ML_CommInfoOP_Get_neighbors(pre_comm);
+
+   NMarked = invec_leng + Nghost*BlkSize;
+   Marked = (int *) ML_allocate(sizeof(int)*NMarked);
+   for (i = 0; i < NMarked ; i++) Marked[i] = 0;
+
+   ML_CommInfoOP_Set_neighbors(Blkd_comm, Nneighbors,
+ 			      neigh_list,ML_OVERWRITE, NULL, 0);
+
+
+   offset = invec_leng;
+   for (i = 0; i < Nneighbors; i++) {
+      Nsend      = ML_CommInfoOP_Get_Nsendlist(pre_comm, neigh_list[i]);
+      send_list  = ML_CommInfoOP_Get_sendlist (pre_comm, neigh_list[i]);
+      Nrcv       = ML_CommInfoOP_Get_Nrcvlist (pre_comm, neigh_list[i]);
+      rcv_list   = ML_CommInfoOP_Get_rcvlist(pre_comm, neigh_list[i]);
+
+      /* count blocks in send */
+
+      Nblocks = 0;
+      for (j = 0; j < Nsend; j++) {
+         block = send_list[j]/BlkSize;
+         if (Marked[block] == 0) Nblocks++;
+         Marked[block] = 1;
+      }
+
+      /* clean up */
+
+      for (j = 0; j < Nsend; j++) Marked[send_list[j]/BlkSize] = 0;
+      
+      /* build new send list */
+
+      newsend = (int *) ML_allocate( Nblocks*BlkSize*sizeof(int));
+      count = 0;
+      for (j = 0; j < Nsend; j++) {
+         block = send_list[j]/BlkSize;
+         if (Marked[block] == 0) 
+            for (k = 0; k < BlkSize; k++) newsend[count++] = block*BlkSize+k;
+         Marked[block] = 1;
+      }
+      if (  count != Nblocks*BlkSize ) { printf("trouble\n"); exit(1); }
+
+      /* clean up */
+      for (j = 0; j < Nsend; j++) Marked[send_list[j]/BlkSize] = 0;
+
+      Nsend = Nblocks*BlkSize;
+
+      /* count blocks in recv */
+
+      Nblocks = 0;
+      if (Nrcv > 0) Nblocks++;
+      for (j = 1; j < Nrcv; j++) {
+        if (((int) GhostBlocks[rcv_list[j-1]])!=((int)GhostBlocks[rcv_list[j]]))
+          Nblocks++;
+      }
+
+      /* build new rcv list */
+
+      newrcv = (int *) ML_allocate( Nblocks*BlkSize*sizeof(int));
+      for (j = 0; j < Nblocks*BlkSize; j++) newrcv[j] = offset+j;
+      Nrcv = Nblocks*BlkSize;
+      offset += Nrcv;
+
+      ML_CommInfoOP_Set_exch_info(*Blkd_comm, neigh_list[i], Nrcv,newrcv,
+                                  Nsend, newsend);
+
+      if (newrcv    != NULL) ML_free(newrcv);   
+      if (newsend   != NULL) ML_free(newsend);
+      if (rcv_list  != NULL) ML_free(rcv_list);
+      if (send_list != NULL) ML_free(send_list);
+      send_list = NULL; rcv_list = NULL;  newsend = NULL; newrcv = NULL;
+   }
+   if (Marked      != NULL) ML_free(Marked);
+   if (neigh_list  != NULL) ML_free(neigh_list);
+   if (GhostBlocks != NULL) ML_free(GhostBlocks);
+
+   return 0;
+}
+

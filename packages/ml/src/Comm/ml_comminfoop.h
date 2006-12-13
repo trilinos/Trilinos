@@ -112,6 +112,12 @@ extern int  ML_CommInfoOP_Print(ML_CommInfoOP *c_info, char *label);
 extern int ML_CommInfoOP_TransComm(ML_CommInfoOP *pre_comm, 
 				   ML_CommInfoOP **post_comm,
 				   int invec_leng);
+extern int ML_CommInfoOP_PopulateBlks(ML_CommInfoOP *pre_comm,
+       ML_CommInfoOP **Blkd_comm, int invec_leng, int BlkSize, ML_Comm *comm);
+
+extern void ML_create_unique_BlockCol_id(int N_local, int **map, int BlkSize,
+                ML_CommInfoOP *comm_info, int *max_per_proc, ML_Comm *comm);
+
 
 extern void ML_create_unique_col_id(int Ncols, int **map, ML_CommInfoOP *,
                                     int *max_per_proc, ML_Comm *comm);
@@ -122,8 +128,6 @@ extern void ML_create_unique_id(int N_local, int **map, ML_CommInfoOP *, ML_Comm
 extern void ML_cheap_exchange_bdry(double dtemp[], ML_CommInfoOP *comm_info,
                                    int start_location, int total_send,
                                    ML_Comm *comm);
-void ML_exchange_Blocks(double **blockdata, double *ghostblocks, 
-                        ML_CommInfoOP *comm_info, ML_Comm *comm, int);
 
 extern void ML_exchange_bdry(double dtemp[], ML_CommInfoOP *comm_info,
                              int start_location, ML_Comm *comm,
