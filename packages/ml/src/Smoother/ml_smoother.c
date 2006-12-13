@@ -3980,7 +3980,7 @@ int ML_Smoother_Gen_BGSFacts(ML_Sm_BGS_Data **data, ML_Operator *Amat,
    {
       blockfacts[j]=(double *) ML_allocate(blocksize*blocksize*sizeof(double));
       for (kkk = 0; kkk < blocksize*blocksize; kkk++) blockfacts[j][kkk] = 0.;
-      perms[j]=(int *)ML_allocate(blocksize*blocksize*sizeof(int));
+      perms[j]=(int *)ML_allocate(blocksize*sizeof(int));
    }
    cols = (int    *) ML_allocate(allocated_space*sizeof(int    ));
    vals = (double *) ML_allocate(allocated_space*sizeof(double ));
