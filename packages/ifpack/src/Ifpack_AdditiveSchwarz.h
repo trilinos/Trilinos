@@ -4,7 +4,6 @@
 #include "Ifpack_ConfigDefs.h"
 #if defined(HAVE_IFPACK_TEUCHOS)
 #include "Ifpack_Preconditioner.h"
-#include "Teuchos_ParameterList.hpp"
 #include "Ifpack_ConfigDefs.h"
 #include "Ifpack_Preconditioner.h"
 #include "Ifpack_Reordering.h"
@@ -24,6 +23,7 @@
 #include "Epetra_RowMatrix.h"
 #include "Epetra_CrsMatrix.h"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_RefCountPtr.hpp"
 
 //! Ifpack_AdditiveSchwarz: a class to define Additive Schwarz preconditioners of Epetra_RowMatrix's.
 
@@ -101,7 +101,7 @@ public:
 			 int OverlapLevel = 0);
   
   //! Destructor
-  virtual ~Ifpack_AdditiveSchwarz();
+  virtual ~Ifpack_AdditiveSchwarz() {};
   //@}
 
   //@{ \name Atribute set methods.
@@ -246,7 +246,7 @@ public:
   
   virtual const T* Inverse() const
   {
-    return(Inverse_);
+    return(&*Inverse_);
   }
 
   //! Returns the number of calls to Initialize().
@@ -326,19 +326,16 @@ protected:
   //! Sets up the localized matrix and the singleton filter.
   int Setup();
   
-  //! Destroys all allocated data
-  void Destroy();
-
   // @}
 
   // @{ Internal data.
   
   //! Pointers to the matrix to be preconditioned.
-  const Epetra_RowMatrix* Matrix_;
+  Teuchos::RefCountPtr<const Epetra_RowMatrix> Matrix_;
   //! Pointers to the overlapping matrix.
-  Ifpack_OverlappingRowMatrix* OverlappingMatrix_;
+  Teuchos::RefCountPtr<Ifpack_OverlappingRowMatrix> OverlappingMatrix_;
   //! Localized version of Matrix_ or OverlappingMatrix_.
-  Ifpack_LocalFilter* LocalizedMatrix_;
+  Teuchos::RefCountPtr<Ifpack_LocalFilter> LocalizedMatrix_;
   //! Contains the label of \c this object.
   string Label_;
   //! If true, the preconditioner has been successfully initialized.
@@ -346,7 +343,7 @@ protected:
   //! If true, the preconditioner has been successfully computed.
   bool IsComputed_;
   //! Pointer to the local solver.
-  T* Inverse_;
+  Teuchos::RefCountPtr<T> Inverse_;
   //! If \c true, solve with the transpose (not supported by all solvers).
   bool UseTranspose_;
   //! If true, overlapping is used
@@ -366,13 +363,13 @@ protected:
   //! Type of reordering of the local matrix.
   string ReorderingType_;
   //! Pointer to a reordering object.
-  Ifpack_Reordering* Reordering_;
+  Teuchos::RefCountPtr<Ifpack_Reordering> Reordering_;
   //! Pointer to the reorderd matrix.
-  Ifpack_ReorderFilter* ReorderedLocalizedMatrix_;
+  Teuchos::RefCountPtr<Ifpack_ReorderFilter> ReorderedLocalizedMatrix_;
   //! Filter for singletons.
   bool FilterSingletons_;
   //! filtering object.
-  Ifpack_SingletonFilter* SingletonFilter_;
+  Teuchos::RefCountPtr<Ifpack_SingletonFilter> SingletonFilter_;
   //! Contains the number of successful calls to Initialize().
   int NumInitialize_;
   //! Contains the number of successful call to Compute().
@@ -392,7 +389,7 @@ protected:
   //! Contain sthe number of flops for ApplyInverse().
   mutable double ApplyInverseFlops_;
   //! Object used for timing purposes.
-  Epetra_Time* Time_;
+  Teuchos::RefCountPtr<Epetra_Time> Time_;
 
 }; // class Ifpack_AdditiveSchwarz<T>
 
@@ -401,12 +398,8 @@ template<typename T>
 Ifpack_AdditiveSchwarz<T>::
 Ifpack_AdditiveSchwarz(Epetra_RowMatrix* Matrix,
 		       int OverlapLevel) :
-  Matrix_(Matrix),
-  OverlappingMatrix_(0),
-  LocalizedMatrix_(0),
   IsInitialized_(false),
   IsComputed_(false),
-  Inverse_(0),
   UseTranspose_(false),
   IsOverlapping_(false),
   OverlapLevel_(OverlapLevel),
@@ -415,10 +408,7 @@ Ifpack_AdditiveSchwarz(Epetra_RowMatrix* Matrix,
   ComputeCondest_(true),
   UseReordering_(false),
   ReorderingType_("none"),
-  Reordering_(0),
-  ReorderedLocalizedMatrix_(0),
   FilterSingletons_(false),
-  SingletonFilter_(0),
   NumInitialize_(0),
   NumCompute_(0),
   NumApplyInverse_(0),
@@ -427,9 +417,11 @@ Ifpack_AdditiveSchwarz(Epetra_RowMatrix* Matrix,
   ApplyInverseTime_(0.0),
   InitializeFlops_(0.0),
   ComputeFlops_(0.0),
-  ApplyInverseFlops_(0.0),
-  Time_(0)
+  ApplyInverseFlops_(0.0)
 {
+  // Construct a reference-counted pointer with the input matrix, don't manage the memory.
+  Matrix_ = Teuchos::rcp( Matrix, false );
+
   if (Matrix_->Comm().NumProc() == 1)
     OverlapLevel_ = 0;
 
@@ -442,95 +434,55 @@ Ifpack_AdditiveSchwarz(Epetra_RowMatrix* Matrix,
 
 //==============================================================================
 template<typename T>
-Ifpack_AdditiveSchwarz<T>::~Ifpack_AdditiveSchwarz()
-{
-  Destroy();
-}
-
-//==============================================================================
-template<typename T>
-void Ifpack_AdditiveSchwarz<T>::Destroy() 
-{
-  if (OverlappingMatrix_)
-    delete OverlappingMatrix_;
-  OverlappingMatrix_ = 0;
-
-  if (Inverse_)
-    delete Inverse_;
-  Inverse_ = 0;
-
-  if (LocalizedMatrix_)
-    delete LocalizedMatrix_;
-  LocalizedMatrix_ = 0;
-
-  if (ReorderedLocalizedMatrix_)
-    delete ReorderedLocalizedMatrix_;
-  ReorderedLocalizedMatrix_ = 0;
-
-  if (SingletonFilter_)
-    delete SingletonFilter_;
-  SingletonFilter_ = 0;
-
-  if (Reordering_)
-    delete Reordering_;
-  Reordering_ = 0;
-
-  if (Time_)
-    delete Time_;
-  Time_ = 0;
-}
-
-//==============================================================================
-template<typename T>
 int Ifpack_AdditiveSchwarz<T>::Setup()
 {
 
   Epetra_RowMatrix* MatrixPtr;
 
-  if (OverlappingMatrix_)
-    LocalizedMatrix_ = new Ifpack_LocalFilter(OverlappingMatrix_);
+  if (OverlappingMatrix_ != Teuchos::null)
+    LocalizedMatrix_ = Teuchos::rcp( new Ifpack_LocalFilter(&*OverlappingMatrix_) );
   else
-    LocalizedMatrix_ = new Ifpack_LocalFilter(Matrix_);
+    LocalizedMatrix_ = Teuchos::rcp( new Ifpack_LocalFilter(&*Matrix_) );
 
-  if (LocalizedMatrix_ == 0)
+  if (LocalizedMatrix_ == Teuchos::null)
     IFPACK_CHK_ERR(-5);
 
   // users may want to skip singleton check
   if (FilterSingletons_) {
-    SingletonFilter_ = new Ifpack_SingletonFilter(LocalizedMatrix_);
-    MatrixPtr = SingletonFilter_;
+    SingletonFilter_ = Teuchos::rcp( new Ifpack_SingletonFilter(&*LocalizedMatrix_) );
+    MatrixPtr = &*SingletonFilter_;
   }
   else
-    MatrixPtr = LocalizedMatrix_;
+    MatrixPtr = &*LocalizedMatrix_;
 
   if (UseReordering_) {
 
-    // create reordeing and compute it
+    // create reordering and compute it
     if (ReorderingType_ == "rcm")
-      Reordering_ = new Ifpack_RCMReordering();
+      Reordering_ = Teuchos::rcp( new Ifpack_RCMReordering() );
     else if (ReorderingType_ == "metis")
-      Reordering_ = new Ifpack_METISReordering();
+      Reordering_ = Teuchos::rcp( new Ifpack_METISReordering() );
     else {
       cerr << "reordering type not correct (" << ReorderingType_ << ")" << endl;
       exit(EXIT_FAILURE);
     }
-    if (Reordering_ == 0) IFPACK_CHK_ERR(-5);
+    if (Reordering_ == Teuchos::null) IFPACK_CHK_ERR(-5);
 
     IFPACK_CHK_ERR(Reordering_->SetParameters(List_));
     IFPACK_CHK_ERR(Reordering_->Compute(*MatrixPtr));
 
     // now create reordered localized matrix
     ReorderedLocalizedMatrix_ = 
-      new Ifpack_ReorderFilter(MatrixPtr,Reordering_);
+      Teuchos::rcp( new Ifpack_ReorderFilter(&*MatrixPtr,&*Reordering_) );
 
-    if (ReorderedLocalizedMatrix_ == 0) IFPACK_CHK_ERR(-5);
+    if (ReorderedLocalizedMatrix_ == Teuchos::null) IFPACK_CHK_ERR(-5);
 
-    MatrixPtr = ReorderedLocalizedMatrix_;
+    MatrixPtr = &*ReorderedLocalizedMatrix_;
   }
 
-  Inverse_ = new T(MatrixPtr);
+  Inverse_ = Teuchos::rcp( new T(MatrixPtr) );
 
-  if (Inverse_ == 0)
+  if (Inverse_ == Teuchos::null)
     IFPACK_CHK_ERR(-5);
 
   return(0);
@@ -611,27 +563,25 @@ int Ifpack_AdditiveSchwarz<T>::Initialize()
   IsComputed_ = false; // values required
   Condest_ = -1.0; // zero-out condest
 
-  Destroy();
-
-  if (Time_ == 0)
-    Time_ = new Epetra_Time(Comm());
+  if (Time_ == Teuchos::null)
+    Time_ = Teuchos::rcp( new Epetra_Time(Comm()) );
 
   Time_->ResetStartTime();
 
   // compute the overlapping matrix if necessary
   if (IsOverlapping_) {
     OverlappingMatrix_ = 
-      new Ifpack_OverlappingRowMatrix(Matrix_, OverlapLevel_);
-    if (OverlappingMatrix_ == 0)
+      Teuchos::rcp( new Ifpack_OverlappingRowMatrix(&*Matrix_, OverlapLevel_) );
+    if (OverlappingMatrix_ == Teuchos::null)
       IFPACK_CHK_ERR(-5);
   }
 
   IFPACK_CHK_ERR(Setup());
 
-  if (Inverse_ == 0)
+  if (Inverse_ == Teuchos::null)
     IFPACK_CHK_ERR(-5);
 
-  if (LocalizedMatrix_ == 0)
+  if (LocalizedMatrix_ == Teuchos::null)
     IFPACK_CHK_ERR(-5);
 
   IFPACK_CHK_ERR(Inverse_->SetUseTranspose(UseTranspose()));
@@ -680,7 +630,7 @@ int Ifpack_AdditiveSchwarz<T>::Compute()
 
   // sum up flops
   double partial = Inverse_->ComputeFlops();
-  double total;
+   double total;
   Comm().SumAll(&partial, &total, 1);
   ComputeFlops_ += total;
 
@@ -710,7 +660,7 @@ int Ifpack_AdditiveSchwarz<T>::SetUseTranspose(bool UseTranspose)
   UseTranspose_ = UseTranspose;
 
   // If Inverse_ exists, pass it right now.
-  if (Inverse_)
+  if (Inverse_!=Teuchos::null)
     IFPACK_CHK_ERR(Inverse_->SetUseTranspose(UseTranspose));
   return(0);
 }
@@ -789,9 +739,9 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 
   Time_->ResetStartTime();
 
-  Epetra_MultiVector* OverlappingX;
-  Epetra_MultiVector* OverlappingY;
-  Epetra_MultiVector* Xtmp = 0;
+  Teuchos::RefCountPtr<Epetra_MultiVector> OverlappingX;
+  Teuchos::RefCountPtr<Epetra_MultiVector> OverlappingY;
+  Teuchos::RefCountPtr<Epetra_MultiVector> Xtmp;
 
   // for flop count, see bottom of this function
   double pre_partial = Inverse_->ApplyInverseFlops();
@@ -800,11 +750,11 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 
   // process overlap, may need to create vectors and import data
   if (IsOverlapping()) {
-    OverlappingX = new Epetra_MultiVector(OverlappingMatrix_->RowMatrixRowMap(),
-					  X.NumVectors());
-    OverlappingY = new Epetra_MultiVector(OverlappingMatrix_->RowMatrixRowMap(),
-                                          Y.NumVectors());
-    if (OverlappingY == 0) IFPACK_CHK_ERR(-5);
+    OverlappingX = Teuchos::rcp( new Epetra_MultiVector(OverlappingMatrix_->RowMatrixRowMap(),
+							X.NumVectors()) );
+    OverlappingY = Teuchos::rcp( new Epetra_MultiVector(OverlappingMatrix_->RowMatrixRowMap(),
+							Y.NumVectors()) );
+    if (OverlappingY == Teuchos::null) IFPACK_CHK_ERR(-5);
 
     OverlappingY->PutScalar(0.0);
     OverlappingX->PutScalar(0.0);
@@ -814,9 +764,9 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     // IFPACK_CHK_ERR(OverlappingMatrix_->ImportMultiVector(Y,*OverlappingY,Insert));
   }
   else {
-    Xtmp = new Epetra_MultiVector(X);
-    OverlappingX = (Epetra_MultiVector*)Xtmp;
-    OverlappingY = &Y;
+    Xtmp = Teuchos::rcp( new Epetra_MultiVector(X) );
+    OverlappingX = Xtmp;
+    OverlappingY = Teuchos::rcp( &Y, false );
   }
 
   if (FilterSingletons_) {
@@ -857,14 +807,8 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 
   if (IsOverlapping()) {
     IFPACK_CHK_ERR(OverlappingMatrix_->ExportMultiVector(*OverlappingY,Y,
-                                                        CombineMode_));
-
-    delete OverlappingX;
-    delete OverlappingY;
+							 CombineMode_));
   }
-
-  if (Xtmp)
-    delete Xtmp;
 
   // add flops. Note the we only have to add the newly counted
   // flops -- and each Inverse returns the cumulative sum
