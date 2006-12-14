@@ -33,7 +33,7 @@
 class CRS_serial 
 {
  public: // functions
-  CRS_serial::CRS_serial(
+  CRS_serial(
      double*   A_,        // nonzero entries of matrix
      int*      rowbeg_,   // beginning of rows array
      int*      colidx_,   // column indices

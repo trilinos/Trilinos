@@ -64,12 +64,11 @@
 class CLIP_solver2 : public preconditioner_crd
 {
  public: // functions
-CLIP_solver2::CLIP_solver2(
-	  CRS_serial* A_,              // problem data
-	  const Epetra_Map* SubMap_,   // subdomain map
-	  const Epetra_Map* OwnMap_,   // unique owner map
-	  const double* clip_params_,  // array of solver parameters
-	  const double* amg_params_);  // array of amg parameters
+  CLIP_solver2(CRS_serial* A_,              // problem data
+	       const Epetra_Map* SubMap_,   // subdomain map
+	       const Epetra_Map* OwnMap_,   // unique owner map
+	       const double* clip_params_,  // array of solver parameters
+	       const double* amg_params_);  // array of amg parameters
   ~CLIP_solver2();
   double norm2(double a[], int n);
   double dotprod(double a[], double b[], int n);
