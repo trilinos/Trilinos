@@ -142,6 +142,7 @@ int Ifpack_IKLU::Initialize()
   Time_.ResetStartTime();
 
   if (A_.Comm().NumProc() != 1) {
+    cout << " There are too many processors !!! " << endl;
     cerr << "Ifpack_IKLU can be used with Comm().NumProc() == 1" << endl;
     cerr << "only. This class is a subdomain solver for Ifpack_AdditiveSchwarz," << endl;
     cerr << "and it is currently not meant to be used otherwise." << endl;
@@ -159,8 +160,7 @@ int Ifpack_IKLU::Initialize()
   vector<int>    RowIndices(Length);
   vector<double> RowValues(Length);
 
-  //cout << "The local matrix on processor " << Comm().MyPID() << " is out of " << Comm().NumProc() << " processors " << endl;
-  //cout << "This processor owns " << NumMyRows_ << " rows and has " << NumMyNonzeros_ << " nonzeros " << endl;
+  //cout << "Processor " << Comm().MyPID() << " owns " << NumMyRows_ << " rows and has " << NumMyNonzeros_ << " nonzeros " << endl;
   // get general symbolic structure of the matrix
   csrA_ = csr_spalloc( NumMyRows_, NumMyRows_, NumMyNonzeros_, 1, 0 );
 
@@ -300,12 +300,13 @@ int Ifpack_IKLU::ApplyInverse(const Epetra_MultiVector& X,
   // AztecOO gives X and Y pointing to the same memory location,
   // need to create an auxiliary vector, Xcopy and apply permutation.
   std::vector<int> invq( NumMyRows_ );
+
   for (int i=0; i<NumMyRows_; ++i ) {
     csrnN_->perm[ csrnN_->pinv[i] ] = i;
     invq[ cssS_->q[i] ] = i;
   }
 
-  Teuchos::RefCountPtr<Epetra_MultiVector> Xcopy = Teuchos::rcp( new Epetra_MultiVector(X.Map(),X.NumVectors(), false) );
+  Teuchos::RefCountPtr<Epetra_MultiVector> Xcopy = Teuchos::rcp( new Epetra_MultiVector(X.Map(),X.NumVectors()), false );
   Teuchos::RefCountPtr<Epetra_MultiVector> Ytemp = Teuchos::rcp( new Epetra_MultiVector(Y.Map(),Y.NumVectors()) );
 
   for (int i=0; i<NumMyRows_; ++i) {
@@ -329,7 +330,7 @@ int Ifpack_IKLU::ApplyInverse(const Epetra_MultiVector& X,
 
   // Reverse the permutation.
   for (int i=0; i<NumMyRows_; ++i) {
-    for (int j=0; j<X.NumVectors(); ++j) {
+    for (int j=0; j<Y.NumVectors(); ++j) {
       Y.ReplaceMyValue( csrnN_->perm[i], j, (*(*Ytemp)(j))[i] );
     }
   }
