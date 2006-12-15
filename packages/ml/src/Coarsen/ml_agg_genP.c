@@ -3189,8 +3189,11 @@ int ML_AGG_DinvP(ML_Operator *X, struct MLSthing *mls_widget,
 
 
   if (NumNnz != rowptr[X_or_XT->outvec_leng]) {
-     new_columns= (int    *) ML_allocate(sizeof(int)*NumNnz*100);
-     new_values = (double *) ML_allocate(sizeof(double)*NumNnz*100);
+     new_columns= (int    *) ML_allocate(sizeof(int)*(NumNnz+1));
+     new_values = (double *) ML_allocate(sizeof(double)*(NumNnz+1));
+     if ( (new_columns == NULL) || (new_values == NULL)) {
+        printf("ML_AGG_DinvP: Not enough memory\n"); exit(1);
+     }
 
      first = rowptr[0];
      nz_ptr = 0;
