@@ -2735,7 +2735,8 @@ ML_Operator *ML_CSRmatrix_ColumnSubset(ML_Operator *Amat, int Nsubset,
   ML_Operator_Set_ApplyFuncData(Amat_subset, Nsubset, n, csr_data, n, NULL, 0);
   ML_Operator_Set_Getrow(Amat_subset, n, CSR_getrow);
   ML_Operator_Set_ApplyFunc (Amat_subset, CSR_matvec);
-/* ML_CommInfoOP_Clone( &(Amat->getrow->pre_comm),   */
+  Amat_subset->getrow->pre_comm = ML_CommInfoOP_SqueezeColumns(
+               Amat->getrow->pre_comm, Nsubset, subset);
   Amat_subset->data_destroy   = ML_CSR_MSRdata_Destroy;
   Amat_subset->max_nz_per_row = max_nz_per_row;
   Amat_subset->N_nonzeros     = count;

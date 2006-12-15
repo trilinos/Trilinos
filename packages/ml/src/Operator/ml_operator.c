@@ -2016,14 +2016,14 @@ int ML_Operator_Add(ML_Operator *A, ML_Operator *B, ML_Operator *C,
   }
 #endif
 
-  ML_free(A_gids);
-  ML_free(B_gids);
-  ML_free(hashed_vals);
-  ML_free(hashed_inds);
-  ML_free(A_val);
-  ML_free(A_bindx);
-  ML_free(B_val);
-  ML_free(B_bindx);
+  if (A_gids != NULL) ML_free(A_gids);
+  if (B_gids != NULL) ML_free(B_gids);
+  if (hashed_vals != NULL) ML_free(hashed_vals);
+  if (hashed_inds != NULL) ML_free(hashed_inds);
+  if (A_val   != NULL) ML_free(A_val);
+  if (A_bindx != NULL) ML_free(A_bindx);
+  if (B_val   != NULL) ML_free(B_val);
+  if (B_bindx != NULL) ML_free(B_bindx);
 
   return 1;
 
