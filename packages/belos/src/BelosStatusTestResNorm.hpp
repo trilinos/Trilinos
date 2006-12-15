@@ -86,8 +86,8 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
     \brief Select the scale type.
   */
   enum ScaleType {NormOfRHS,     /*!< Use the norm of the right-hand-side. */
-		  NormOfInitRes, /*!< Use the initial residual vector (exlicitly computed). */
-		  NormOfPrecInitRes, /*!< Use the preconditioned initial residual vector (exlicitly computed). */
+		  NormOfInitRes, /*!< Use the initial residual vector (explicitly computed). */
+		  NormOfPrecInitRes, /*!< Use the preconditioned initial residual vector (explicitly computed). */
 		  None,          /*!< Use unscaled residual. */
 		  UserProvided   /*!< User provides an explicit value that the norm of 
 				   the residual will be divided by. */
