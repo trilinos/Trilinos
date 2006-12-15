@@ -69,7 +69,7 @@ const char* Ifpack::precTypeNames[Ifpack::numPrecTypes] =
   ,"block relaxation stand-alone (Amesos)"
   ,"block relaxation (Amesos)"
   ,"Amesos"
-  ,"LU"
+  ,"Amesos stand-alone"
 #endif
   ,"IC"
   ,"IC stand-alone"
@@ -97,7 +97,7 @@ const bool Ifpack::supportsUnsymmetric[Ifpack::numPrecTypes] =
   ,true // block relaxation stand-alone (Amesos)
   ,true // block relaxation (Amesos)
   ,true // Amesos
-  ,true // LU
+  ,true // Amesos stand-alone 
 #endif
   ,false // IC
   ,false // IC stand-alone
