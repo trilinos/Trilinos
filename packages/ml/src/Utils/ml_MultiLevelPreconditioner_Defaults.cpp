@@ -102,7 +102,7 @@ int ML_Epetra::SetDefaults(string ProblemType, ParameterList & List,
 /*! Sets the following default values for "DD":
   - "default values" = DD"
   - \c "max levels" = 2
-  - \c "output" = 8
+  - \c "output" = 0
   - \c "increasing or decreasing" = increasing"
   - \c "PDE equations" = 1
   - \c "aggregation: type" = METIS"
@@ -130,7 +130,7 @@ int ML_Epetra::SetDefaultsDD(ParameterList & inList,
 
   List.set("max levels",2);
 
-  List.set("output",8);
+  List.set("output",0);
   
   List.set("increasing or decreasing","increasing");
 
@@ -194,7 +194,7 @@ int ML_Epetra::SetDefaultsDD_LU(ParameterList & inList,
 
   List.set("max levels",2);
 
-  List.set("output",8);
+  List.set("output",0);
   
   List.set("increasing or decreasing","increasing");
 
@@ -251,7 +251,7 @@ int ML_Epetra::SetDefaultsDD_LU(ParameterList & inList,
 /*! Sets the following default values for "DD"
  - \c "default values" = "DD-ML"
  - \c "max levels" = 3
- - \c "output" = 8
+ - \c "output" = 0
  - \c "increasing or decreasing" = "increasing"
  - \c "PDE equations" = 1
  - \c "aggregation: type" = "METIS"
@@ -280,7 +280,7 @@ int ML_Epetra::SetDefaultsDD_3Levels(ParameterList & inList,
 
   List.set("max levels",3);
 
-  List.set("output",8);
+  List.set("output",0);
   
   List.set("increasing or decreasing","increasing");
 
@@ -348,7 +348,7 @@ int ML_Epetra::SetDefaultsDD_3Levels_LU(ParameterList & inList,
 
   List.set("max levels",3);
 
-  List.set("output",10);
+  List.set("output",0);
   
   List.set("increasing or decreasing","increasing");
 
@@ -406,7 +406,7 @@ int ML_Epetra::SetDefaultsDD_3Levels_LU(ParameterList & inList,
  * - \c "default values" \c = \c "maxwell"
    - General
        - \c "max levels" \c = \c 10
-       - \c "output" \c = \c 10
+       - \c "output" \c = \c 0
        - \c "prec type" \c = \c "MGV"
        - \c "PDE equations" \c = \c 1
        - \c "print unused" \c = \c -2
@@ -416,13 +416,14 @@ int ML_Epetra::SetDefaultsDD_3Levels_LU(ParameterList & inList,
        - \c "aggregation: damping factor" \c =   1.3333
        - \c "coarse: max size" \c = \c 75
        - \c "aggregation: threshold" \c = 0.0
+       - \c "aggregation: edge prolongator drop threshold" \c = 0.0
    - Smoothing
        - \c "smoother: type" \c = \c "Hiptmair"
        - \c "smoother: sweeps" \c = \c 2
        - \c "smoother: Hiptmair efficient symmetric" \c = \c true
        - \c "smoother: damping factor" \c =  1.0
        - \c "smoother: type" \c = \c "MLS"
-       - \c "smoother: MLS polynomial order" \c = \c 3
+       - \c "smoother: MLS polynomial order" \c = \c 2
        - \c "smoother: pre or post" \c = \c "both"
    - Coarse Solution
        - \c "coarse: type" \c = \c "Amesos-KLU"
@@ -434,7 +435,7 @@ int ML_Epetra::SetDefaultsMaxwell(ParameterList & inList,
 
   List.set("default values","maxwell");
   List.set("max levels",10);
-  List.set("output",10);
+  List.set("output",0);
   
   List.set("PDE equations",1);
 
@@ -452,6 +453,9 @@ int ML_Epetra::SetDefaultsMaxwell(ParameterList & inList,
   // don't forget any element
   List.set("aggregation: threshold",0.0);
 
+  // dropping threshold for small entries in edge prolongator
+  List.set("aggregation: edge prolongator drop threshold",0.0);
+
   // Hiptmair for all levels but coarsest
   List.set("smoother: sweeps",2);
 
@@ -462,7 +466,7 @@ int ML_Epetra::SetDefaultsMaxwell(ParameterList & inList,
 
   //Hiptmair subsmoother options
   List.set("subsmoother: type", "MLS");
-  List.set("subsmoother: MLS polynomial order",3);
+  List.set("subsmoother: MLS polynomial order",2);
   List.set("subsmoother: MLS alpha",27.0);
 
   List.set("smoother: pre or post","both");
@@ -491,7 +495,7 @@ int ML_Epetra::SetDefaultsMaxwell(ParameterList & inList,
   - \c "default values" \c = \c "SA"
    - General
         - \c "max levels" \c = \c 10
-        - \c "output" \c = \c 8
+        - \c "output" \c = \c 0
         - \c "PDE equations" \c = \c 1
         - \c "prec type" \c = \c "MGV"
         - \c "print unused" \c = \c -2
@@ -518,7 +522,7 @@ int ML_Epetra::SetDefaultsSA(ParameterList & inList,
 
   List.set("max levels",10);
 
-  List.set("output",8);
+  List.set("output",0);
   
   List.set("PDE equations",1);
 

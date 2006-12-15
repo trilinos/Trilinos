@@ -90,9 +90,6 @@ std::cout << "--- Leaving:
 
 #endif
 
-
-
-
 #define million  0.1e7
 
 #ifndef ML_CPP
@@ -103,9 +100,9 @@ std::cout << "--- Leaving:
 
    int    pr_error(char *fmt,  ... );
    double GetClock(void);
-   void   StartTimer(void);
-   void   StopTimer(void);
-   double GetElapsedTime(void);
+   void StartTimer(double* t0);
+   void StopTimer(double* t0, double* delta);
+   void ReportTimer(double t0, char *msgString, ML_Comm *comm);
 
    int    ML_crude_search( int, int, int * ); 
    int    ML_sorted_search( int, int, int * ); 

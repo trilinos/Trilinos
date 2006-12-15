@@ -147,7 +147,7 @@ int ML_Gen_MGHierarchy_UsingAggregation(ML *ml, int start,
    }
 #ifdef ML_TIMING
    t0 = GetClock() - t0;
-   if ( ml->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 10 ) 
+   if ( ml->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 9 ) 
       printf("Aggregation total setup time = %e seconds\n", t0);
 #endif
 
@@ -162,11 +162,13 @@ int ML_Gen_MGHierarchy_UsingAggregation(ML *ml, int start,
    dnnz = ML_gsum_double( dnnz, ml->comm );
    ml_ag->operator_complexity += dnnz;
 
-   for (i=0; i<level; i++) {
-     int thisLevel = ml->LevelID[i];
-     ML_Operator_Profile(ml->Amat+thisLevel,NULL);
-     if (i != level-1) ML_Operator_Profile(ml->Rmat+thisLevel,NULL);
-     if (i != 0)       ML_Operator_Profile(ml->Pmat+thisLevel,NULL);
+   if (ML_Get_PrintLevel() > 4) {
+     for (i=0; i<level; i++) {
+       int thisLevel = ml->LevelID[i];
+       ML_Operator_Profile(ml->Amat+thisLevel,NULL);
+       if (i != level-1) ML_Operator_Profile(ml->Rmat+thisLevel,NULL);
+       if (i != 0)       ML_Operator_Profile(ml->Pmat+thisLevel,NULL);
+     }
    }
 
    idata = ML_gmax_int(idata, ml->comm);
@@ -196,6 +198,7 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
    ML_CommInfoOP *getrow_comm; 
    ML_Operator *Ptent;
    ML_Aggregate_Viz_Stats *grid_info;
+   char str[80];
 #ifdef ML_TIMING
    double t0;
 #endif
@@ -292,7 +295,18 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
 #ifdef ML_MPI
 MPI_Barrier(MPI_COMM_WORLD);
 #endif
+      if (ML_Get_PrintLevel() > 4) {
+        sprintf(str,"Node_before_repartitioning");
+        ML_Operator_Profile(ml->Amat+next,str);
+      }
+
       ML_repartition_Acoarse(ml, level, next, ag, ML_TRUE, ML_FALSE);
+
+      if (ML_Get_PrintLevel() > 4) {
+        sprintf(str,"Node_after_repartitioning");
+        ML_Operator_Profile(ml->Amat+next,str);
+      }
+
 #ifdef ML_MPI
 MPI_Barrier(MPI_COMM_WORLD);
 #endif
@@ -2445,6 +2459,8 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
    ML_CommInfoOP *getrow_comm;
    int aux_flag;
    ML_Aggregate_Viz_Stats *grid_info;
+   ML_Aggregate *ag;
+   char str[80];
    
 #ifdef ML_TIMING
    double t0;
@@ -2540,11 +2556,38 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
 #endif
 
       ML_Gen_AmatrixRAP(ml, level, next);
+
+      ag = (ML_Aggregate*) user_data;
+      /* project the coordinates (if any) to the next coarser level */
+      if (ag->P_tentative != NULL)
+        Ptent = ag->P_tentative[next];
+      else
+        Ptent = &(ml->Pmat[next]);
+
+      grid_info =(ML_Aggregate_Viz_Stats *) ml->Amat[level].to->Grid->Grid;
+      if (grid_info) {
+        if (grid_info->x != NULL) {
+          if (ML_Get_PrintLevel() > 4 && ml->comm->ML_mypid == 0)
+            printf("ML_Gen_MGHierarchy: Projecting node coordinates from level %d to level %d\n",
+                   level,next);
+          ML_Project_Coordinates(ml->Amat+level, Ptent, ml->Amat+next);
+        }
+      }
 #ifdef ML_MPI
       MPI_Barrier(ml->comm->USR_comm);
 #endif
+      if (ML_Get_PrintLevel() > 4) {
+        sprintf(str,"Node_before_repartitioning");
+        ML_Operator_Profile(ml->Amat+next,str);
+      }
+
       ML_repartition_Acoarse(ml, level, next, (ML_Aggregate*)user_data, 
                              ML_TRUE, ML_FALSE);
+
+      if (ML_Get_PrintLevel() > 4) {
+        sprintf(str,"Node_after_repartitioning");
+        ML_Operator_Profile(ml->Amat+next,str);
+      }
 #ifdef ML_MPI
       MPI_Barrier(ml->comm->USR_comm);
 #endif
@@ -2572,7 +2615,7 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
       if (grid_info) {
         if (grid_info->x != NULL || grid_info->y != NULL || 
             grid_info->z != NULL) {
-          if (ML_Get_PrintLevel() > 4)
+          if (ML_Get_PrintLevel() > 4 && ml->comm->ML_mypid == 0)
             printf("ML_Gen_MultiLevelHierarchy: Projecting node coordinates from level %d to level %d\n",
                     level,next);
           ML_Project_Coordinates(Amat, Ptent, &(ml->Amat[next]));
@@ -3155,7 +3198,7 @@ int ML_AGG_DinvP(ML_Operator *X, struct MLSthing *mls_widget,
             prev = GlobalBlockIds[rcv_list[j]];
 
             NewLocalIds[rcv_list[j] - X->invec_leng]=
-                    CurBlock*BlkSize+WhichDOF[rcv_list[j]];
+                    CurBlock*BlkSize+((int) WhichDOF[rcv_list[j]]);
          }
          if (rcv_list != NULL) ML_free(rcv_list);
      }

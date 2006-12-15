@@ -96,7 +96,9 @@
 #include "nlnml_ConstrainedMultiLevelOperator.H"
 
 // ---------- Forward Declarations ----------
-class NLNML::NLNML_FineLevelNoxInterface;
+namespace NLNML {
+class NLNML_FineLevelNoxInterface;
+}
 
 using namespace std;
 using namespace Teuchos;

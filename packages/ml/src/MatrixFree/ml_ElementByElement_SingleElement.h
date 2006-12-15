@@ -198,6 +198,7 @@ class ElementByElement_SingleElement: public Epetra_Operator
       Y.PutScalar(0.0);
       ML_CHK_ERR(Y.Export(ColX, *ColImporter_, Add));
       ML_CHK_ERR(ResetMyBoundaryRows(Y));
+      return(0);
     }
   
     int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const

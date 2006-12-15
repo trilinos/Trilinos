@@ -10,6 +10,13 @@
 /* Date          : September, 1998                                      */
 /* ******************************************************************** */
 
+/*
+Current revision: $Revision$
+Branch:           $Branch$
+Last modified:    $Date$
+Modified by:      $Author$
+*/
+
 #include <math.h>
 #include <stdlib.h>
 #include "ml_utils.h"
@@ -62,30 +69,64 @@ return( second());
 
 /* ******************************************************************** */
 /* StartTimer                                                           */
+/*   t0   (out) start time                                              */ 
 /* ******************************************************************** */
-static double elapsed_time;
-
-void StartTimer()
+void StartTimer(double* t0)
 {
-  elapsed_time = GetClock();
+#ifdef ML_TIMING
+  *t0 = GetClock();
+#else
+  return;
+#endif
 }
 
 /* ******************************************************************** */
 /* StopTimer                                                            */
+/*   t0   (in/out) On entry, the start time recorded by a previous call */
+/*                 to either StartTimer() or StopTimer().               */
+/*                 On exit, the stop time.                              */ 
+/*   delta (out)   Difference between current time and that passed      */
+/*                 in via t0.                                           */
 /* ******************************************************************** */
 
-void StopTimer()
+void StopTimer(double* t0, double *delta)
 {
-  elapsed_time = GetClock() - elapsed_time;
+#ifdef ML_TIMING
+  double now;
+
+  now = GetClock();
+  *delta = now - *t0;
+  *t0 = now;
+#else
+  return;
+#endif
 }
 
 /* ******************************************************************** */
-/* Get the time                                                         */
+/* ReportTimer                                                          */
+/*   Reports average time over all processors & standard deviation.     */
+/*   Nothing prints if the ML print level is 0.                         */
+/*                                                                      */
+/*   t0        (in) The time to report.  This will be averaged over all */
+/*                  processors.                                         */
+/*   msgString (in) Pointer to message to print with time reported.     */ 
+/*   comm      (in) Pointer to an ML communicator.                      */
 /* ******************************************************************** */
 
-double GetElapsedTime()
+void ReportTimer(double t0, char *msgString, ML_Comm *comm)
 {
-  return elapsed_time;
+#ifdef ML_TIMING
+  double t1, sd;
+  if (ML_Get_PrintLevel() == 0)
+    return;
+  t1 = ML_gsum_double(t0, comm);
+  t1 = t1/((double) comm->ML_nprocs);
+  sd = ML_Global_Standard_Deviation(t0,comm->ML_nprocs, ML_TRUE, comm);
+  if (comm->ML_mypid==0)
+    printf("%s \t= %e seconds\n(std deviation = %e)\n", msgString,t1,sd);
+#else
+  return;
+#endif
 }
 
 /* ******************************************************************** */
@@ -530,7 +571,6 @@ int ML_random_init()
 /* ******************************************************************** */
 /* randomize an integer array                                           */
 /* -------------------------------------------------------------------- */
-#include <stdlib.h>
 int ML_randomize(int nlist, int *list) 
 {
    int    i, nm1, iran1, iran2, itmp;
@@ -2464,28 +2504,44 @@ void ML_random_vec(double u[], int N, ML_Comm *comm)
 
   /* local variables */
 
-  static int seed = 5;
+  static int seed = 0;
+  static int start = 1;
   int        i;
+  int maxint = 2147483647; /* 2^31 -1 */
 
   /*********************** BEGIN EXECUTION *********************************/
 
-  i    = (7+ comm->ML_mypid) * (13 + comm->ML_mypid) * (19 + comm->ML_mypid);
-  i *= seed;
-  seed = (int) (ML_srandom1(&i)* ((double) seed));
+  /* Distribute the seeds evenly in [1,maxint-1].  This guarantees nothing
+   * about where in random number stream we are, but avoids overflow situations
+   * in parallel when multiplying by a PID.  It would be better to use
+   * a good parallel random number generator. */
+
+  if (start) {
+    seed = (int)((maxint-1) * (1.0 -(comm->ML_mypid+1)/(comm->ML_nprocs+1.0)) );
+    start = 0;
+  }
+  if (seed < 1 || seed == maxint)
+    pr_error("ML*ERR* Problem detected in ML_random_vec with seed = %d.\nML*ERR* It should be in the interval [1,2^31-2].\n",seed);
 
   for (i = 0; i < N; i++) u[i] = ML_srandom1(&seed);
 
-} /* ML_random_vector */
+} /* ML_random_vec */
 
 /******************************************************************************/
 double ML_srandom1(int *seed)
 
 /*******************************************************************************
   Random number generator.
+  From Park, S. K. and Miller, K. W. 1988. "Random number generators: good ones
+  are hard to find." Commun. ACM 31, 10 (Oct. 1988), 1192-1201.
 
   Parameter list:
   ===============
   seed:            Random number seed.
+
+  Return value:
+  ===============
+  scalar double in interval (0,1)
 
 *******************************************************************************/
 {
@@ -2500,7 +2556,7 @@ double ML_srandom1(int *seed)
   test = a * lo - r * hi;
 
   if (test > 0) *seed = test;
-  *seed = test + m;
+  else *seed = test + m;
 
   rand_num = (double) *seed / (double) m;
   return rand_num;

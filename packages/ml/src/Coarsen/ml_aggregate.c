@@ -1218,7 +1218,7 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
    t0 = GetClock() - t0;
    t0 = ML_gsum_double(t0, comm);
    t0 = t0/((double) comm->ML_nprocs);
-   if (comm->ML_mypid == 0 && ML_Get_PrintLevel() > 10)
+   if (comm->ML_mypid == 0 && ML_Get_PrintLevel() > 9)
       printf("Aggregation time \t= %e\n",t0);
 #endif
 
@@ -1646,7 +1646,7 @@ int ML_random_global_subset(ML_Operator *Amat, double reduction,
 /*         to more than one subdomain) are decided randomly.                 */
 /*                                                                           */
 /* This function is not intended to produce super great partitions. Instead  */
-/* its role is to releave stress from aggregation routines whose quality     */
+/* its role is to relieve stress from aggregation routines whose quality     */
 /* suffers when each processor has roughly one point. The idea is to generate*/
 /* P_tent via aggregation on the repartitioned matrix and then permute P_tent*/
 /* for use on the original matrix. Specifically, if Q is a permutation       */
@@ -1723,6 +1723,8 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
    ML_free(block_list);
 
 #else
+   if (mypid == 0 && ML_Get_PrintLevel() > 0)
+     printf("ML*WRN* No 3rd party load balancing tool is available.  Continuing with\nML*WRN* repartitioning that uses a simple internal ML method.\n");
   if (Nglobal/num_PDE_eqns >= 12*nprocs) return 1;
 
   /* Choose a random subset of global unknowns. These will become root nodes */
@@ -2043,7 +2045,7 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
     temp->rowptr = NULL;
   }
 
-  if (ML_Get_PrintLevel() > 9) {
+  if (ML_Get_PrintLevel() > 15) {
     printf("(pid %d, level %d): permutation matrix has %10d rows, %10d columns\n",mypid,mat->to->levelnum,perm_mat->outvec_leng,
 	       perm_mat->invec_leng);
   }
@@ -2153,17 +2155,26 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
   ML_Aggregate_Viz_Stats *grid_info;
   int N_dimensions;
   int haveCoordinates = 0;
+  double t0,delta;
 
-  if (ML_Repartition_Status(ml) == ML_FALSE)
+  StartTimer(&t0);
+
+  if (ML_Repartition_Status(ml) == ML_FALSE) {
+    StopTimer(&t0,&delta);
+    ReportTimer(delta,"Time spent in ML_repartition_Acoarse",ml->comm);
     return NULL;
+  }
 
   Amatrix = &(ml->Amat[coarse]);
   Rmat = &(ml->Rmat[fine]);
   Pmat = &(ml->Pmat[coarse]);
 
   if ((ml->MinPerProc_repartition == -1) && 
-      (ml->LargestMinMaxRatio_repartition == -1.)) 
+      (ml->LargestMinMaxRatio_repartition == -1.)) {
+    StopTimer(&t0,&delta);
+    ReportTimer(delta,"Time spent in ML_repartition_Acoarse",ml->comm);
     return NULL;
+  }
 
   ml_gmax = ML_gmax_int(Amatrix->invec_leng,ml->comm);
   ml_gmin = Amatrix->invec_leng;
@@ -2190,7 +2201,11 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
     if (Nprocs_ToUse < 1) Nprocs_ToUse = 1;
   }
 
-  if (flag == 0) return NULL;
+  if (flag == 0) {
+    StopTimer(&t0,&delta);
+    ReportTimer(delta,"Time spent in ML_repartition_Acoarse",ml->comm);
+    return NULL;
+  }
 
   grid_info = (ML_Aggregate_Viz_Stats *) ml->Grid[coarse].Grid;
   which_partitioner = ML_Repartition_Get_Partitioner(ml);
@@ -2212,12 +2227,7 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
       printf("ML*WRN* Either x- or y-coordinates are missing. This is not necessarily an\nML*WRN* error, but repartitioning with Zoltan is impossible.\n\n");
   }
   else {
-     haveCoordinates = 1;
-/*
-    j = ((int) fabs((double)(ag->begin_level - ag->cur_level))) + 1;
-    printf("(pid %d, level %d):  ag->begin_level = %d, ag->cur_level = %d, j = %d\n",
-            ml->comm->ML_mypid, fine,ag->begin_level, ag->cur_level,j);
-*/
+    haveCoordinates = 1;
     xcoord = grid_info->x;
     ycoord = grid_info->y;
     zcoord = grid_info->z;
@@ -2231,13 +2241,6 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
       if ((ml->comm->ML_mypid == 0) && (ML_Get_PrintLevel() > 0))
         printf("ML*WRN* ML_repartition_Acoarse: problem dimension was not previously set.\nML*WRN* Now setting dimension to %d.\n",N_dimensions);
     }
-/*
-    printf("(pid %d, level %d) (x,y,z) = %p, %p, %p\n",ml->comm->ML_mypid, fine,xcoord,ycoord,zcoord);
-    printf("(pid %d, level 0) (x,y,z) = %p, %p, %p\n",ml->comm->ML_mypid, 
-                 &((ag->nodal_coord)[0][0]),
-                 &((ag->nodal_coord)[0][Pmat->invec_leng/ag->nullspace_dim]),
-                 &((ag->nodal_coord)[0][2*Pmat->invec_leng/ag->nullspace_dim]));
-*/
   }
 
   /* Turn off implicit transpose because the getrow is needed to apply
@@ -2253,15 +2256,6 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
   {
     if (ag !=NULL)
     {
-/*
-       for (i = 0; i < perm->invec_leng; i++)
-         printf("(pid %d, level %d): old coords(%d) =  %e %e\n",perm->comm->ML_mypid,j,i,
-                xcoord[i],ycoord[i]);
-       for (i = 0; i < perm->outvec_leng; i++)
-         printf("(pid %d, level %d): new coords(%d) =  %e %e\n",perm->comm->ML_mypid,j,i,
-                new_xcoord[i], new_ycoord[i]);
-*/
-
      if (ag->nullspace_vect != NULL) {
        new_null = (double *) ML_allocate(sizeof(double)*ag->nullspace_dim*
                   perm->outvec_leng);
@@ -2374,6 +2368,9 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
     }
     ML_Operator_ChangeToSinglePrecision(&(ml->Pmat[coarse]));
   } /*if (status == 0)*/
+
+  StopTimer(&t0,&delta);
+  ReportTimer(delta,"Time spent in ML_repartition_Acoarse",ml->comm);
 
   if (ReturnPerm == ML_FALSE)
     return NULL;

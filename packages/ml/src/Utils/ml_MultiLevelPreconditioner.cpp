@@ -2170,7 +2170,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
   double Omega = List_.get("coarse: damping factor", 0.67);
   double AddToDiag = List_.get("coarse: add to diag", 1e-12);
   double MLSalpha = List_.get("coarse: MLS alpha",27.0);
-  int MLSPolynomialOrder = List_.get("coarse: MLS polynomial order",3);
+  int MLSPolynomialOrder = List_.get("coarse: MLS polynomial order",2);
 
   char msg[80];
   sprintf(msg, "Coarse solve (level %d) : ", LevelID_[NumLevels_-1]);

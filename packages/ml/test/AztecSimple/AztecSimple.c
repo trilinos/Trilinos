@@ -127,15 +127,15 @@ int main(int argc, char *argv[])
 #endif
   /* compare iteration number */
   if (proc_config[AZ_node] == 0 && verbose)
-    printf("iterations = %d (expected 13)\n", (int)(status[AZ_its]));
-  if( (int)(status[AZ_its]) != 13 ) {
+    printf("iterations = %d (expected 14)\n", (int)(status[AZ_its]));
+  if( (int)(status[AZ_its]) != 14 ) {
     printf("Test `AztecSimple.exe' failed!\n");
-    return 1;
+    exit(EXIT_FAILURE);
   }
   else {
     if (proc_config[AZ_node] == 0 && verbose)
       printf("Test `AztecSimple.exe' passed!\n");
-    return 0;
+    exit(EXIT_SUCCESS);
   }
 }
 

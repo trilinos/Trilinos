@@ -52,18 +52,16 @@ int main(int argc, char *argv[])
   int    *cpntr = NULL;
   int    *bindx = NULL, N_update, iii;
   double *val = NULL;
-	double *xxx, *rhs;
+  double *xxx, *rhs;
 
-	AZ_MATRIX *Amat;
-	AZ_PRECOND *Pmat = NULL;
-	ML *ml;
-	FILE *fp;
+  AZ_MATRIX *Amat;
+  AZ_PRECOND *Pmat = NULL;
+  ML *ml;
+  FILE *fp;
   int ch,i;
-   struct AZ_SCALING *scaling;
-double solve_time, setup_time, start_time;
-ML_Aggregate *ag;
-int  nblocks, *blocks;
-
+  struct AZ_SCALING *scaling;
+  double solve_time, setup_time, start_time;
+  ML_Aggregate *ag;
 
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);

@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
   int    Nits_per_presmooth=1;      /* # of pre & post smoothings per level */
   double tolerance = 1.0e-8;        /* At convergence:                      */
                                     /*   ||r_k||_2 < tolerance ||r_0||_2    */
-  int smoothPe_factor = ML_DDEFAULT;/* != 0: smooth tentative prolongator */
+  double smoothPe_factor = ML_DDEFAULT;/* != 0: smooth tentative prolongator */
                                     /* ML_DDEFAULT: use ML default value */
                                     /* 0: don't smooth prolongator      */
 

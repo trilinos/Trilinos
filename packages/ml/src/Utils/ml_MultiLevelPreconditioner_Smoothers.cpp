@@ -546,7 +546,6 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       if (Comm().NumProc() == 1) subsmOmega = 1.0;
       else                       subsmOmega = ML_DDEFAULT;
       subsmOmega = List_.get("subsmoother: damping factor",subsmOmega);
-
       sprintf(parameter,"subsmoother: type (level %d)", level);
       SubSmootherType = List_.get(parameter,SubSmootherType);
 

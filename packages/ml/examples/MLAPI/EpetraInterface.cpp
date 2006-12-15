@@ -126,7 +126,6 @@ int main(int argc, char *argv[])
   // compute the real residual
 
   double residual;
-  double TotalResidual = 0.0;
   LHS.Norm2(&residual);
 
   if( Comm.MyPID()==0 ) {

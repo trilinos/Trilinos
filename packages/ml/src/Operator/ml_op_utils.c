@@ -1974,6 +1974,8 @@ void ML_Operator_ReportStatistics(ML_Operator *mat, char *appendlabel,
   ML_CommInfoOP *c_info;
   int minnzs,maxnzs;
 
+  if (ML_Get_PrintLevel() == 0)
+    return;
   modlabel = (char *) ML_allocate(80 * sizeof(char));
   origlabel = mat->label;
   if (mat->label == NULL) {
@@ -2257,8 +2259,12 @@ void ML_Operator_Profile(ML_Operator *A, char *appendlabel)
   double apply_time, apply_without_comm_time, pre_time, post_time;
   double t0;
 
-  if (numits <= 0)
+  if (ML_Get_PrintLevel() == 0) return;
+
+  if (numits <= 0) {
+    ML_Operator_ReportStatistics(A,appendlabel,ML_FALSE);
     return;
+  }
 
   xvec = (double *) ML_allocate((A->invec_leng) * sizeof(double));
   ML_random_vec(xvec, A->invec_leng, A->comm);
@@ -2299,8 +2305,10 @@ void ML_Operator_Profile(ML_Operator *A, char *appendlabel)
   ML_free(xvec);
   ML_free(bvec);
 #else
-  if (A->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 0 && numits > 0)
+  if (ML_Get_PrintLevel() == 0) return;
+  if (A->comm->ML_mypid == 0 && numits > 0)
     printf("ML_Operator_Profile: not compiled with -DML_TIMING\n");
+  ML_Operator_ReportStatistics(A,appendlabel,ML_FALSE);
 #endif
 }
 

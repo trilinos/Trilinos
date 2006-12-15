@@ -27,6 +27,7 @@
            MultiLevelPreconditioner_NonSym,
            MultiLevelPreconditioner_Sym,
            MatrixFree,
+           Miscellaneous,
          # Scalability,
          # VerySimple,
          # Zoltan,
@@ -144,4 +145,3 @@
     COMMAND-FILE = EvaluateDefinitions;
     COMM = SERIAL, MPI(1);
 }
-

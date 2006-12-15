@@ -206,9 +206,24 @@ int main(int argc, char *argv[])
     EpetraExt::MatrixMarketFileToMap(datafile, Comm, nodeMap);
   }
   else { // linear maps
-    // FIXME  we should really read in sizes from file
-    edgeMap = new Epetra_Map(40457,0,Comm);
-    nodeMap = new Epetra_Map(4921,0,Comm);
+    if (Comm.MyPID() == 0)
+      printf("Using linear edge and node maps ...\n");
+    const int lineLength = 1025;
+    char line[lineLength];
+    FILE *handle;
+    int M,N,NZ;
+
+    handle = fopen(argv[3],"r");
+    if (handle == 0) EPETRA_CHK_ERR(-1); // file not found
+    // Strip off header lines (which start with "%")
+    do {
+       if(fgets(line, lineLength, handle)==0) {if (handle!=0) fclose(handle);}
+    } while (line[0] == '%');
+    // Next get problem dimensions: M, N, NZ
+    if(sscanf(line,"%d %d %d", &M, &N, &NZ)==0) {if (handle!=0) fclose(handle);}
+    fclose(handle);
+    edgeMap = new Epetra_Map(M,0,Comm);
+    nodeMap = new Epetra_Map(N,0,Comm); 
   }
 
   // ===================================================== //

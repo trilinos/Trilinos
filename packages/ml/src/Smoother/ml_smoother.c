@@ -301,7 +301,7 @@ int ML_Smoother_Clean(ML_Smoother *ml_sm)
 #endif
 
 #ifdef ML_TIMING_DETAILED
-   if (ml_sm->label != NULL && nprocs > 0 && (ml_sm->times_applied != 0))
+   if (ml_sm->my_level != NULL && ml_sm->label != NULL && nprocs > 0 && (ml_sm->times_applied != 0))
    {
       comm = ml_sm->my_level->comm;
       t1 = ML_gsum_double( (proc_active ? ml_sm->apply_time : 0.0), comm);
@@ -1645,15 +1645,15 @@ int ML_Smoother_BlockGS(ML_Smoother *sm,int inlen,double x[],int outlen,
 
    allocated_space = Amat->max_nz_per_row+2;
 
-if (Amat_MsrBindx == NULL) {
+   if (Amat_MsrBindx == NULL) {
      if (Amat->getrow->func_ptr == CSR_getrow) {
        ptr   = (struct ML_CSR_MSRdata *) Amat->data;
        Amat_CrsVal   = ptr->values;
        Amat_CrsBindx = ptr->columns;
        Amat_CrsRowptr = ptr->rowptr;
-      cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
-      vals = (double *) ML_allocate(allocated_space*sizeof(double));
-      oldcols = cols;  oldvals = vals;
+       cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
+       vals = (double *) ML_allocate(allocated_space*sizeof(double));
+       oldcols = cols;  oldvals = vals;
      }
    }
 
@@ -1667,15 +1667,16 @@ if (Amat_MsrBindx == NULL) {
 #endif /*ifdef ML_WITH_EPETRA*/
 
    correc = (double *) ML_allocate(blocksize*sizeof(double));
-   if (correc == NULL) pr_error("Error in ML_BlockGaussSeidel:Not enough space\n");
+   if (correc == NULL)
+     pr_error("Error in ML_BlockGaussSeidel:Not enough space\n");
    if (Amat->getrow->post_comm != NULL)
-      pr_error("Post communication not implemented for BGS smoother\n");
+     pr_error("Post communication not implemented for BGS smoother\n");
 
    getrow_comm= Amat->getrow->pre_comm;
    if (getrow_comm != NULL) 
    {
       x2 = (double *) ML_allocate((inlen+getrow_comm->total_rcv_length+1)
-				   *sizeof(double));
+                   *sizeof(double));
       if (x2 == NULL) 
       {
          printf("Not enough space in Gauss-Seidel\n"); exit(1);
@@ -1686,112 +1687,111 @@ if (Amat_MsrBindx == NULL) {
 
    for (iter = 0; iter < smooth_ptr->ntimes; iter++) 
    {
-      if (getrow_comm != NULL)
-         ML_exchange_bdry(x2,getrow_comm, inlen,comm,ML_OVERWRITE,NULL);
+     if (getrow_comm != NULL)
+       ML_exchange_bdry(x2,getrow_comm, inlen,comm,ML_OVERWRITE,NULL);
 
-      row = 0;
-      xptr = x2;
-      if (Amat_CrsBindx != NULL) {
-        evals = Amat_CrsVal;
-        ecols = Amat_CrsBindx;
-	for (i = 0; i < Nblocks; i++) {
-	   for (k = 0; k < blocksize; k++) {
-	    dtemp = 0.;
-	    vals = oldvals; cols = oldcols;
-	    for (j = Amat_CrsRowptr[row]; j < Amat_CrsRowptr[row+1]; j++) 
-		dtemp += (*evals++)*x2[*ecols++];
-	    correc[k]=rhs[row++]-dtemp;
-	  }
-	  ML_dgetrs_special(blocksize, blockdata[i], perms[i], correc);
-	  for (k = 0; k < blocksize; k++) (*xptr++) += omega*correc[k];
-	}
-      }
-      else if (Amat_MsrBindx != NULL) {
-	cols = &(Amat_MsrBindx[Amat_MsrBindx[0]]);
-	vals = &(Amat_MsrVal[Amat_MsrBindx[0]]);
-	for (i = 0; i < Nblocks; i++) {
-	  for (k = 0; k < blocksize; k++) {
-	    length = Amat_MsrBindx[row+1] -  Amat_MsrBindx[row];
-	    dtemp  = Amat_MsrVal[row]*x2[row];
-	    for (j = 0; j < length; j++) dtemp += (*vals++)*x2[*cols++];
-	    correc[k]=rhs[row++]-dtemp;
-	  }
-	  ML_dgetrs_special(blocksize, blockdata[i], perms[i], correc);
-	  for (k = 0; k < blocksize; k++) (*xptr++) += omega*correc[k];
-	}
-      }
-      else {
-	for (i = 0; i < Nblocks; i++) {
-	  for (k = 0; k < blocksize; k++) {
-	    dtemp = 0.;
-	    vals = oldvals; cols = oldcols;
-	    ML_get_matrix_row(Amat, 1, &row , &allocated_space , &cols, &vals,
-			      &length, 0);
-	    for (j = 0; j < length; j++) dtemp += (*vals++)*x2[*cols++]; 
-	    correc[k]=rhs[row++]-dtemp;
-	  }
-	  ML_dgetrs_special(blocksize, blockdata[i], perms[i], correc);
-	  for (k = 0; k < blocksize; k++) (*xptr++) += omega*correc[k];
-	}
-      }
-      /* symmetrize it  */
-      if (smooth_ptr->symmetric_sweep == 1) {
-	blocksizeminusone = blocksize - 1;
-	row = Nblocks*blocksize - 1;
-	xptr = &(x2[row]);
-        if (Amat_CrsBindx != NULL) {
-          evals--; ecols--;  /* set pointer to last element of */
-                             /* arrays after forward sweep.    */
-	  for (i = Nblocks-1; i >= 0; i--) {
-	    for (k = blocksizeminusone; k >= 0; k--) {
-	      dtemp = 0.;
-	      vals = oldvals; cols = oldcols;
-	      for (j = Amat_CrsRowptr[row]; j < Amat_CrsRowptr[row+1]; j++) 
-		 dtemp += (*evals--)*x2[*ecols--];
-	      correc[k]=rhs[row--]-dtemp;
-	    }
-	    ML_dgetrs_special(blocksize, blockdata[i], perms[i], correc);
-	    for (k = blocksizeminusone; k >= 0; k--)(*xptr--) += omega*correc[k];
-	  }
-        }
-	else if (Amat_MsrBindx != NULL) {
-	  cols = &(Amat_MsrBindx[Amat_MsrBindx[row+1]]);  cols--;
-	  vals = &(Amat_MsrVal[Amat_MsrBindx[row+1]]);   vals--;
-	  for (i = Nblocks-1; i >= 0; i--) {
-	    for (k = blocksizeminusone; k >= 0; k--) {
-	      length = Amat_MsrBindx[row+1] -  Amat_MsrBindx[row];
-	      dtemp = Amat_MsrVal[row]*x2[row];
-	      for (j = 0; j < length; j++) dtemp += (*vals--)*x2[*cols--];
-	      correc[k]=rhs[row--]-dtemp;
-	    }
-	    ML_dgetrs_special(blocksize, blockdata[i], perms[i], correc);
-	    for (k = blocksizeminusone; k >= 0; k--)(*xptr--) += omega*correc[k];
-	  }
-	}
-	else {
-	  for (i = Nblocks-1; i >= 0; i--) {
-	    for (k = blocksizeminusone; k >= 0; k--) {
-	      dtemp = 0.;
-	      vals = oldvals; cols = oldcols;
-	      ML_get_matrix_row(Amat, 1, &row , &allocated_space , &cols, &vals,
-		 	        &length, 0);
-	      for (j = 0; j < length; j++) dtemp += (*vals++)*x2[*cols++]; 
-	      correc[k]=rhs[row--]-dtemp;
-	    }
-	    ML_dgetrs_special(blocksize, blockdata[i], perms[i], correc);
-	    for (k = blocksizeminusone; k >= 0; k--)(*xptr--) += omega*correc[k];
-	  }
-	}
-      }
-   }
-	 
-   if (getrow_comm != NULL) 
-   {
-      for (i = 0; i < inlen; i++) x[i] = x2[i];
-      ML_free(x2);
+     row = 0;
+     xptr = x2;
+     if (Amat_CrsBindx != NULL)
+     {
+       evals = Amat_CrsVal;
+       ecols = Amat_CrsBindx;
+       for (i = 0; i < Nblocks; i++) {
+         for (k = 0; k < blocksize; k++) {
+           dtemp = 0.;
+           vals = oldvals; cols = oldcols;
+           for (j = Amat_CrsRowptr[row]; j < Amat_CrsRowptr[row+1]; j++) 
+             dtemp += (*evals++)*x2[*ecols++];
+           correc[k]=rhs[row++]-dtemp;
+         }
+         ML_dgetrs_special(blocksize, blockdata[i], perms[i], correc);
+         for (k = 0; k < blocksize; k++) (*xptr++) += omega*correc[k];
+       } /*for (i = 0; */
+     }
+     else if (Amat_MsrBindx != NULL) {
+       cols = &(Amat_MsrBindx[Amat_MsrBindx[0]]);
+       vals = &(Amat_MsrVal[Amat_MsrBindx[0]]);
+         for (i = 0; i < Nblocks; i++) {
+           for (k = 0; k < blocksize; k++) {
+             length = Amat_MsrBindx[row+1] -  Amat_MsrBindx[row];
+             dtemp  = Amat_MsrVal[row]*x2[row];
+             for (j = 0; j < length; j++) dtemp += (*vals++)*x2[*cols++];
+             correc[k]=rhs[row++]-dtemp;
+           }
+           ML_dgetrs_special(blocksize, blockdata[i], perms[i], correc);
+           for (k = 0; k < blocksize; k++) (*xptr++) += omega*correc[k];
+         }
+     }
+     else {
+       for (i = 0; i < Nblocks; i++) {
+         for (k = 0; k < blocksize; k++) {
+           dtemp = 0.;
+           vals = oldvals; cols = oldcols;
+           ML_get_matrix_row(Amat, 1, &row , &allocated_space , &cols, &vals,
+                              &length, 0);
+           for (j = 0; j < length; j++) dtemp += (*vals++)*x2[*cols++]; 
+           correc[k]=rhs[row++]-dtemp;
+         }
+         ML_dgetrs_special(blocksize, blockdata[i], perms[i], correc);
+         for (k = 0; k < blocksize; k++) (*xptr++) += omega*correc[k];
+       }
+     }
+     /* symmetrize it  */
+     if (smooth_ptr->symmetric_sweep == 1)
+     {
+       blocksizeminusone = blocksize - 1;
+       row = Nblocks*blocksize - 1;
+       xptr = &(x2[row]);
+       if (Amat_CrsBindx != NULL) {
+         evals--; ecols--;  /* set pointer to last element of */
+                            /* arrays after forward sweep.    */
+         for (i = Nblocks-1; i >= 0; i--) {
+           for (k = blocksizeminusone; k >= 0; k--) {
+             dtemp = 0.;
+             vals = oldvals; cols = oldcols;
+             for (j = Amat_CrsRowptr[row]; j < Amat_CrsRowptr[row+1]; j++) 
+             dtemp += (*evals--)*x2[*ecols--];
+             correc[k]=rhs[row--]-dtemp;
+           }
+           ML_dgetrs_special(blocksize, blockdata[i], perms[i], correc);
+           for (k = blocksizeminusone; k >= 0; k--)(*xptr--) += omega*correc[k];
+         }
+       } else if (Amat_MsrBindx != NULL) {
+         cols = &(Amat_MsrBindx[Amat_MsrBindx[row+1]]);  cols--;
+         vals = &(Amat_MsrVal[Amat_MsrBindx[row+1]]);   vals--;
+         for (i = Nblocks-1; i >= 0; i--) {
+           for (k = blocksizeminusone; k >= 0; k--) {
+             length = Amat_MsrBindx[row+1] -  Amat_MsrBindx[row];
+             dtemp = Amat_MsrVal[row]*x2[row];
+             for (j = 0; j < length; j++) dtemp += (*vals--)*x2[*cols--];
+             correc[k]=rhs[row--]-dtemp;
+           }
+           ML_dgetrs_special(blocksize, blockdata[i], perms[i], correc);
+           for (k = blocksizeminusone; k >= 0; k--)(*xptr--) += omega*correc[k];
+         }
+       } else {
+         for (i = Nblocks-1; i >= 0; i--) {
+           for (k = blocksizeminusone; k >= 0; k--) {
+             dtemp = 0.;
+             vals = oldvals; cols = oldcols;
+             ML_get_matrix_row(Amat, 1, &row , &allocated_space , &cols, &vals,
+                        &length, 0);
+             for (j = 0; j < length; j++) dtemp += (*vals++)*x2[*cols++]; 
+             correc[k]=rhs[row--]-dtemp;
+           }
+           ML_dgetrs_special(blocksize, blockdata[i], perms[i], correc);
+           for (k = blocksizeminusone; k >= 0; k--)(*xptr--) += omega*correc[k];
+         }
+       }
+     } /*if (smooth_ptr->symmetric_sweep == 1) */
+   } /*for (iter = 0; iter < smooth_ptr->ntimes; iter++) */
+     
+   if (getrow_comm != NULL) {
+     for (i = 0; i < inlen; i++) x[i] = x2[i];
+     ML_free(x2);
    }
    if (allocated_space != Amat->max_nz_per_row+2) {
-      Amat->max_nz_per_row = allocated_space;
+     Amat->max_nz_per_row = allocated_space;
    }
    if (Amat_MsrBindx == NULL) {
      ML_free(oldvals); ML_free(oldcols); 
@@ -3818,7 +3818,8 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
    if (Amat->to != NULL) {
      sprintf(str,"TAT_%d",Amat->to->levelnum);
      ML_Operator_Set_Label( tmpmat,str);
-     ML_Operator_Profile(tmpmat, NULL);
+     if (ML_Get_PrintLevel() > 4)
+       ML_Operator_Profile(tmpmat, NULL);
 
    }
 

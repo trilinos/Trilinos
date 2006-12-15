@@ -1,7 +1,7 @@
 #@HEADER
 # ************************************************************************
 # 
-#                 Amesos: Direct Sparse Solver Package
+#                 ML
 #                 Copyright (2004) Sandia Corporation
 # 
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -26,30 +26,16 @@
 # ************************************************************************
 #@HEADER
 
-# The following line helps the test harness recover from build errors.
+include $(top_builddir)/Makefile.export.ml
 
-all-local:
-	@echo ""
-	@echo "Trilinos package ml subdirectory test built successfully."
-	@echo ""
+TEST_LIBS     = $(ML_EXTRA_LIBS)     $(ML_LIBS)
+TEST_INCLUDES = $(ML_EXTRA_INCLUDES) $(ML_INCLUDES)
 
-SUBDIRS = MultiLevelPreconditioner_NonSym    \
-      MultiLevelPreconditioner_Sym       \
-      MultiLevelPreconditioner_Maxwell   \
-      MultiLevelPreconditioner_Aux       \
-      ML_Operator2Epetra_RowMatrix       \
-      AztecSimple                        \
-      IFPACKSmoothers                    \
-      MLAPICompare                       \
-      MLAPILinearCombination             \
-      MLAPISerialMatrix                  \
-      MLAPIDistributedMatrix             \
-      2d_Poisson                         \
-      3d_Poisson                         \
-      Communicator                       \
-      SelfSmoother                       \
-      METISCoarsening                    \
-      MatrixFree                         \
-      Miscellaneous
+EXEEXT = .exe
 
-EXTRA_DIST = definition
+noinst_PROGRAMS = ml_Miscellaneous
+
+ml_Miscellaneous_SOURCES      = $(srcdir)/cxx_main.cpp
+ml_Miscellaneous_DEPENDENCIES = $(top_builddir)/src/libml.a
+ml_Miscellaneous_CXXFLAGS     = ${TEST_INCLUDES}
+ml_Miscellaneous_LDADD        = ${TEST_LIBS}

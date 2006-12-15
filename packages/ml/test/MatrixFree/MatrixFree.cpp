@@ -226,7 +226,6 @@ int main(int argc, char *argv[])
   solver.Iterate(500, 1e-5);
 
   int MFPIters = solver.NumIters();
-  double MFPResidual = solver.TrueResidual();
 
   delete MFP;
 
@@ -249,7 +248,6 @@ int main(int argc, char *argv[])
   solver.Iterate(500, 1e-5);
 
   int MFP2Iters = solver.NumIters();
-  double MFP2Residual = solver.TrueResidual();
 
   assert (MFP2Iters == MFPIters);
 
@@ -279,7 +277,6 @@ int main(int argc, char *argv[])
   solver.Iterate(500, 1e-5);
 
   int MLPIters = solver.NumIters();
-  double MLPResidual = solver.TrueResidual();
 
   delete MLP;
 
