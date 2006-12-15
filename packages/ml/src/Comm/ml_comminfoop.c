@@ -1637,6 +1637,71 @@ int ML_CommInfoOP_TransComm(ML_CommInfoOP *pre_comm, ML_CommInfoOP **post_comm,
    return Nghost;
 }
 
+/********************************************************************
+ *    Take an existing communicator for a matrix and make a new
+ *    communicator corresponding to some columns that are squeezed
+ *    out of the matrix.
+ *
+ ********************************************************************/
+ML_CommInfoOP *ML_CommInfoOP_SqueezeColumns(ML_CommInfoOP *pre_comm, 
+                                            int invec_leng, int NewCols[])
+/*
+ * Input:
+ *        pre_comm     Old communicator.
+ *     
+ *        invec_leng   Invec_leng of squeezed out matrix.
+ *
+ *        NewCols      NewCols[i] == -1 => the ith old column is not in the 
+ *                                         squeezed matrix.
+ *                     NewCols[i] != -1 => the ith old column is now the 
+ *                                         NewCols[i]th column in squeezed matrix.
+ * Output:
+ *        Returns a new communicator corresponding to squeezed matrix.
+ * 
+ */
+{
+   int            Nneighbors, *neigh_list, Nsend, Nnewsend, Nrcv, Nnewrcv;
+   int            *send_list, *rcv_list, Nghost, i, j; 
+   ML_CommInfoOP  *SqueezeComm = NULL;
+
+
+
+   if (pre_comm == NULL) return(NULL);
+
+   Nneighbors = ML_CommInfoOP_Get_Nneighbors(pre_comm);
+   neigh_list = ML_CommInfoOP_Get_neighbors(pre_comm);
+
+   ML_CommInfoOP_Set_neighbors(&SqueezeComm, Nneighbors,
+ 			      neigh_list,ML_OVERWRITE, NULL, 0);
+
+   Nghost = 0;
+   for (i = 0; i < Nneighbors; i++) {
+      Nsend = ML_CommInfoOP_Get_Nsendlist(pre_comm, neigh_list[i]);
+      send_list = ML_CommInfoOP_Get_sendlist (pre_comm, neigh_list[i]);
+      Nnewsend  = 0;
+      for (j = 0; j < Nsend; j++) {
+         if ( NewCols[send_list[j]] != -1) send_list[Nnewsend++] = NewCols[send_list[j]];
+      }
+      Nrcv      = ML_CommInfoOP_Get_Nrcvlist (pre_comm, neigh_list[i]);
+      rcv_list  = ML_CommInfoOP_Get_rcvlist(pre_comm, neigh_list[i]);
+      Nnewrcv   = 0;
+      for (j = 0; j < Nrcv; j++) {
+         if ( NewCols[rcv_list[j]] != -1) rcv_list[Nnewrcv++] = NewCols[rcv_list[j]];
+      }
+      Nghost    += Nnewrcv;
+
+      ML_CommInfoOP_Set_exch_info(SqueezeComm, neigh_list[i], Nnewrcv, rcv_list,
+ 				 Nnewsend,send_list);
+
+      if (send_list != NULL) ML_free(send_list);
+      if ( rcv_list != NULL) ML_free( rcv_list);
+   }
+   if (neigh_list != NULL) ML_free(neigh_list);
+   SqueezeComm->total_rcv_length = Nghost;
+
+   return SqueezeComm;
+}
+
 int ML_reverse_exchange(double *x_over, ML_CommInfoOP 
 			*nonOverlapped_2_Overlapped,
 			int nn_over , ML_Comm *comm)

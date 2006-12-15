@@ -112,6 +112,9 @@ extern int  ML_CommInfoOP_Print(ML_CommInfoOP *c_info, char *label);
 extern int ML_CommInfoOP_TransComm(ML_CommInfoOP *pre_comm, 
 				   ML_CommInfoOP **post_comm,
 				   int invec_leng);
+extern ML_CommInfoOP *ML_CommInfoOP_SqueezeColumns(ML_CommInfoOP *pre_comm, 
+                                            int invec_leng, int NewCols[]);
+
 extern int ML_CommInfoOP_PopulateBlks(ML_CommInfoOP *pre_comm,
        ML_CommInfoOP **Blkd_comm, int invec_leng, int BlkSize, ML_Comm *comm);
 
