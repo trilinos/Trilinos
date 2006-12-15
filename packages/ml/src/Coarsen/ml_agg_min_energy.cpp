@@ -173,7 +173,6 @@ inline static void multiply_all(ML_Operator* left, ML_Operator* right,
   if (RightGlobal != NULL) ML_free(RightGlobal);
   if ( LeftGlobal != NULL) ML_free(LeftGlobal);
 }
-
 // ====================================================================== 
 // generate smooth prolongator by minimizing energy                      
 //
@@ -211,9 +210,6 @@ inline static void multiply_all(ML_Operator* left, ML_Operator* right,
 //              c) I started working on an algorithm that computes only a 
 //                 subset of the omegas. I believe that this worked in serial
 //                 and not in parallel. It is currently turned off.
-//  Overall, I am not really sure what works in parallel anymore. For the
-//  paper, I don't think it is necessary to have the funky stuff that reduces
-//  setup ... though it might be useful to have the block scaling.
 //      
 // ====================================================================== 
 int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
@@ -227,8 +223,6 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
   double t0;
   t0 =  GetClock();
 #endif
-//  double t0;
-//  t0 =  GetClock();
 
   ML_Operator* Amat = &(ml->Amat[level]); //already created and filled
   prev_P_tentatives = ag->P_tentative;    // for keep_P_tentative
@@ -301,9 +295,9 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
     exit(EXIT_FAILURE);
   }
 
-  int Nghost = 0;
+  int AmatNghost = 0;
   if (Amat->getrow->pre_comm != 0)
-    Nghost = Amat->getrow->pre_comm->total_rcv_length;
+    AmatNghost = Amat->getrow->pre_comm->total_rcv_length;
   ML_Operator *UnscaledAmat = NULL;
   if (Amat->num_PDEs == 1 || ag->block_scaled_SA == 0) {
 
@@ -311,7 +305,7 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
     // point scaling automatically in Amat so we don't need to worry about
     // it any more.                                                       
 
-    Dinv = (double *) ML_allocate(sizeof(double)*(Amat->outvec_leng+Nghost +1));
+    Dinv = (double *) ML_allocate(sizeof(double)*(Amat->outvec_leng+AmatNghost +1));
     for (int row = 0; row < Amat->outvec_leng; row++) {
       Dinv[row] = 1.;
       ML_get_matrix_row(Amat, 1, &row, &allocated, &bindx,&val,&row_length,0); 
@@ -323,14 +317,15 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
   }
 
   ML_Operator* DinvAmat = NULL;
-  ML_Operator *DinvAP0_subset = NULL, *P0_T = NULL, *P0_TAP0 = NULL;
-  int *root_pts = NULL, Nroots = -1;
-  double *NumeratorAtRootPts = NULL, *DenominatorAtRootPts = NULL;
+  ML_Operator *DinvAP0_subset = NULL;
+  int *Subset = NULL, Nsubset = 0, Nsubset_tot, NComputedOmegas;
   double *Numerator = NULL, *Denominator = NULL;
   int compress = 0;   // compress = 1 corresponds to only computing
                       // the omegas at a subset of points          
                       // some form of this code works, but I can't 
                       // really remember so it is turned off.      
+
+  NComputedOmegas = P0->invec_leng;
 
   // Compute D^{-1} A P0
 
@@ -340,7 +335,7 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
   // Scale result. Note: if Amat corresponds to a scalar PDE, the
   // point scaling is already incorporated into Amat so there is 
   // only a need to scale explicitly if solving a PDE system.    
-  // rst: This may not work in parallel?                         
+
 
   if (Amat->num_PDEs != 1 && ag->block_scaled_SA == 1) {
     DinvAmat = ML_Operator_ImplicitlyBlockDinvScale(Amat);
@@ -351,10 +346,10 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
   if (SinglePrecision)
     ML_Operator_ChangeToSinglePrecision(DinvAP0);
 
-  int N_ghost = 0;
+  int AP0Nghost = 0;
   if (DinvAP0->getrow->pre_comm != NULL) {
       ML_CommInfoOP_Compute_TotalRcvLength(DinvAP0->getrow->pre_comm);
-      N_ghost = DinvAP0->getrow->pre_comm->total_rcv_length;
+      AP0Nghost = DinvAP0->getrow->pre_comm->total_rcv_length;
    }
 
   // rst: This is a routine that will drop small entries. In Premo
@@ -367,38 +362,74 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
 
   DinvAP0_subset = DinvAP0;
 
-  if ( (compress == 1) && (ag->minimizing_energy == 2)) {
-    // Only compute omega's at a subset of coarse grid points. This is done 
-    // by first computing a MIS(P0T_AP0) and then forming a matrix          
-    // DinvAP0_subset that only contains a subset of columns. Later, we     
-    // will approximate the omegas at the neighboring points.               
+  int n_0     = P0->invec_leng;
+  int n_0_tot = ML_gsum_int(n_0, P0->comm);
+  if (n_0_tot < 100) compress = 0;
+  if (ag->minimizing_energy != 2) compress = 0;
+      //
+      // We don't have a subset of P0 so compress is only supported for
+      // minimizing_energy = 2.
+  Nsubset_tot = n_0_tot;
 
-    P0_T       = ML_Operator_Create(Amat->comm);
-    P0_TAP0    = ML_Operator_Create(Amat->comm);
+  if (compress == 1) {
 
-    // Build P0_TAP0 = P0'*A*P0 
+    // Only compute omega's at a subset of coarse grid points and then
+    // later approximate the omegas at the neighboring points.               
 
-    ML_Operator_Transpose(P0,P0_T);
-    ML_2matmult(P0_T, DinvAP0, P0_TAP0, ML_CSR_MATRIX);
+    double *dtemp;
+    int    count = 0;
 
-    // Label a subset of points for which we will find damping parameters
+    dtemp    = (double *) ML_allocate((n_0+1+AP0Nghost)*sizeof(double));
+    Subset   = (int    *) ML_allocate((n_0+1+AP0Nghost)*sizeof(int));
 
-    Nroots = ML_Operator_MisRootPts( P0_TAP0,  Amat->num_PDEs, &root_pts);
-    NumeratorAtRootPts   = (double *) ML_allocate(sizeof(double)*(Nroots+1));
-    DenominatorAtRootPts = (double *) ML_allocate(sizeof(double)*(Nroots+1));
+    ML_random_vec(dtemp, n_0, P0->comm);
+    ML_exchange_bdry(dtemp,DinvAP0->getrow->pre_comm, n_0,
+                     DinvAP0->comm, ML_OVERWRITE,NULL);
+    for (int i = 0; i < n_0+AP0Nghost; i++) {
+       if ( ML_dabs(dtemp[i]) < .1 ) {
+          Subset[i] = count++;
+          if (i < n_0 ) Nsubset++;
+       }
+       else Subset[i] = -1;
+    }
+    ML_free(dtemp);
+
+
+    /* Here is some old code that works in serial but I'm not sure in parallel.
+     * It can be used as an alternative to random() above. It essentially
+     * uses root points of an MIS(P0T_AP0) for the locations of computed omegas.
+     *
+     * ML_Operator *P0_T = NULL, *P0_TAP0 = NULL;
+     * P0_T       = ML_Operator_Create(Amat->comm);
+     * P0_TAP0    = ML_Operator_Create(Amat->comm);
+     *
+     * ML_Operator_Transpose(P0,P0_T);
+     * ML_2matmult(P0_T, DinvAP0, P0_TAP0, ML_CSR_MATRIX);
+     * Nsubset = ML_Operator_MisRootPts( P0_TAP0,  Amat->num_PDEs, &Subset);
+     *
+     * if (P0_TAP0)  ML_Operator_Destroy(&P0_TAP0);
+     * if (P0_T)     ML_Operator_Destroy(&P0_T);
+     */
+
+    Nsubset_tot = ML_gsum_int(Nsubset, P0->comm);
+    if (Nsubset_tot == 0) compress = 0;
+  }
+
+  if (compress == 1) {
+
+    NComputedOmegas = Nsubset;
 
 
     // Form the compressed matrix
-    DinvAP0_subset = ML_CSRmatrix_ColumnSubset(DinvAP0, Nroots,root_pts);
+
+    DinvAP0_subset = ML_CSRmatrix_ColumnSubset(DinvAP0, Nsubset,Subset);
 
     if (dropping != 0.0)
       ML_CSR_DropSmall(DinvAP0_subset, 0.0, dropping, 0.0);
+
   }
 
   ML_Operator* DinvADinvAP0 = 0;
-
-  int n_0     = P0->invec_leng;
-  int n_0_tot = ML_gsum_int(n_0, P0->comm);
 
 
 
@@ -410,7 +441,6 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
   if (ag->minimizing_energy != 1) {
     DinvADinvAP0 = ML_Operator_Create(P0->comm);
     ML_2matmult(Amat, DinvAP0_subset, DinvADinvAP0, ML_CSR_MATRIX);
-    //ML_2matmult(UnscaledAmat, DinvAP0_subset, DinvADinvAP0, ML_CSR_MATRIX);
 
     // Scale result. Note: if Amat corresponds to a scalar PDE, the 
     // point scaling is already incorporated into Amat so there is  
@@ -425,24 +455,24 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
     if (SinglePrecision)
       ML_Operator_ChangeToSinglePrecision(DinvADinvAP0);
   }
+  int MaxGhost;
 
-  if (DinvADinvAP0->getrow->pre_comm != NULL) {
+   MaxGhost = AP0Nghost;
+  if ( (DinvADinvAP0 != NULL) && (DinvADinvAP0->getrow->pre_comm != NULL)) {
       ML_CommInfoOP_Compute_TotalRcvLength(DinvADinvAP0->getrow->pre_comm);
-      if (DinvADinvAP0->getrow->pre_comm->total_rcv_length > N_ghost)
-      N_ghost = DinvADinvAP0->getrow->pre_comm->total_rcv_length;
+      if (DinvADinvAP0->getrow->pre_comm->total_rcv_length > MaxGhost)
+      MaxGhost = DinvADinvAP0->getrow->pre_comm->total_rcv_length;
    }
-  Numerator   = (double *) ML_allocate(sizeof(double)*(P0->invec_leng+N_ghost));
-  Denominator = (double *) ML_allocate(sizeof(double)*(P0->invec_leng+N_ghost));
-  if (NumeratorAtRootPts   == NULL) NumeratorAtRootPts = Numerator;
-  if (DenominatorAtRootPts == NULL) DenominatorAtRootPts = Denominator;
-  for (int i = 0 ; i < n_0+N_ghost ; ++i) NumeratorAtRootPts[i] = 0.;
-  for (int i = 0 ; i < n_0+N_ghost ; ++i) DenominatorAtRootPts[i] = 0.;
+  Numerator   = (double *) ML_allocate(sizeof(double)*(P0->invec_leng+MaxGhost));
+  Denominator = (double *) ML_allocate(sizeof(double)*(P0->invec_leng+MaxGhost));
+  for (int i = 0 ; i < NComputedOmegas+MaxGhost ; ++i) Numerator[i] = 0.;
+  for (int i = 0 ; i < NComputedOmegas+MaxGhost ; ++i) Denominator[i] = 0.;
 
-  vector<double> tmp(n_0+N_ghost);
-  vector<double> ColBasedOmega(n_0+N_ghost);
+  vector<double> tmp(n_0+MaxGhost);
+  vector<double> ColBasedOmega(n_0+ MaxGhost);
 
-  for (int i = 0 ; i < n_0+N_ghost ; ++i) tmp[i] = 0.;
-  for (int i = 0 ; i < n_0+N_ghost ; ++i) ColBasedOmega[i] = 0.;
+  for (int i = 0 ; i < n_0+MaxGhost ; ++i) tmp[i] = 0.;
+  for (int i = 0 ; i < n_0+MaxGhost ; ++i) ColBasedOmega[i] = 0.;
 
   switch (ag->minimizing_energy) {
   case 1:
@@ -453,8 +483,8 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
     //             diag( P0' A' D^{-1}' D^{-1} A P0)
     //
 
-    multiply_all(P0, DinvAP0, &NumeratorAtRootPts[0]);
-    multiply_self_all(DinvAP0, &DenominatorAtRootPts[0]);
+    multiply_all(P0, DinvAP0, &Numerator[0]);
+    multiply_self_all(DinvAP0, &Denominator[0]);
     break;
 
   case 2:
@@ -465,8 +495,8 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
     //   omega =   --------------------------------------------------------
     //             diag( P0' A' D^{-1}' ( A' D^{-1}' D^{-1} A) D^{-1} A P0)
     //
-    multiply_all(DinvAP0_subset, DinvADinvAP0, &NumeratorAtRootPts[0]);
-    multiply_self_all(DinvADinvAP0, &DenominatorAtRootPts[0]);
+    multiply_all(DinvAP0_subset, DinvADinvAP0, &Numerator[0]);
+    multiply_self_all(DinvADinvAP0, &Denominator[0]);
 
     break;
 
@@ -480,13 +510,12 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
     //                2*diag( DinvADinvAP0'DinvAP0)
     //
     //
-    multiply_all(P0, DinvADinvAP0,  &NumeratorAtRootPts[0]);
+    multiply_all(P0, DinvADinvAP0,  &Numerator[0]);
     multiply_self_all(DinvAP0, &tmp[0]);
-    //multiply_all(DinvAP0, DinvAP0, &tmp[0]);
 
-    for (int i = 0 ; i < n_0 ; ++i) NumeratorAtRootPts[i] += tmp[i];
-    multiply_all(DinvAP0, DinvADinvAP0, &DenominatorAtRootPts[0]);
-    for (int i = 0 ; i < n_0 ; ++i) DenominatorAtRootPts[i] *= 2.;
+    for (int i = 0 ; i < n_0 ; ++i) Numerator[i] += tmp[i];
+    multiply_all(DinvAP0, DinvADinvAP0, &Denominator[0]);
+    for (int i = 0 ; i < n_0 ; ++i) Denominator[i] *= 2.;
     break;
 
   default:
@@ -496,103 +525,13 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
     exit(EXIT_FAILURE);
   }
 
-  double temp_omega = -1., temp_den, temp_num;
-  int flag;
-  if ( (compress == 1) && (ag->minimizing_energy == 2)){// looks like only 
-                                                        //debugged for ==2 case
-
-    // Convert from omegas @ root points to omegas @ all the coarse points.
-    //
-    //    The basic idea of this code is simple however the details are
-    //    a bit tricky. It also is not yet setup to run in parallel.
-    // 
-
-
-    for (int row = 0 ; row < P0_TAP0->invec_leng ; row++) Denominator[row] = -1;
-
-    // Compute temporary omegas at all the root points
-
-    int nghost = 0;
-    double *ttemp_omega = (double *) ML_allocate(sizeof(double)*(1+nghost+P0_TAP0->invec_leng));
-    for (int row = 0 ; row < P0_TAP0->invec_leng ; row++) ttemp_omega[row]=-1.;
-    for (int kkk = 0; kkk < P0_TAP0->invec_leng; kkk++) {
-      if (root_pts[kkk] != -1) {
-	temp_omega = NumeratorAtRootPts[root_pts[kkk]]/DenominatorAtRootPts[root_pts[kkk]];  
-	if (temp_omega > 0.) ttemp_omega[ kkk] = temp_omega;
-      }
-    }
-
-    // We might want to communicate this using P0_TAP0's exchange bdry?
-
-    // For each matrix row in P0' A P0, see if any of the neighbors
-    // correspond to an MIS root point. If so do the following:
-    //    a) If row is a root point:
-    //           Set   temp_num = temp_omega() and temp_den = 1 
-    //    b) If row is not a root point:
-    //           Set   temp_num and temp_den only if this neighbor's
-    //           omega is lower than the current one in temp_num.
-    // Note1: 'flag' is used to indicate whether the current row is
-    //        a root point or not.
-    // Note2: I changed the meaning of 'temp_den' in a pretty poor coding
-    //        style fashion. temp_den = -1 means that an omega has not
-    //        yet been set for this row while temp_den = 1 means that this
-    //        row's omega has been set (at least once). For this reason,
-    //        'temp_num' now actually stands for the omega.
-   
-    for (int row = 0 ; row < P0_TAP0->invec_leng ; row++) {
-      flag = -1;
-      temp_omega = 1e+20; temp_num = -1.e10; temp_den = -1.;
-      ML_get_matrix_row(P0_TAP0, 1, &row, &allocated, &bindx, &val,&row_length, 0); 
-      for  (int j = 0; j < row_length; j++) {
-	if ( (flag != 1) && ( root_pts[bindx[j]] != -1 )) {
-	  if ( bindx[j] == row ) {
-	    temp_num = ttemp_omega[bindx[j]]; temp_den = 1.;
-	    flag = 1;  // flag marks that 'row' is a root point so we should not
-	               // change its omega based on any neighboring root points. 
-	  }
-	  else {
-	    if ( (ttemp_omega[bindx[j]] != -1.) &&
-		 (ttemp_omega[bindx[j]] < temp_num/temp_den)) {
-	      temp_num = ttemp_omega[bindx[j]]; temp_den = 1.;
-	    }
-	  }
-	}
-      }
-      // put this in to handle case where P0_TAP0 does not have 
-      // a symmetric pattern (and so MIS does not guarantee that
-      // we  will find an off-diagonal root point with the above
-      // procedure. The idea of this procedure is to effectively
-      // look up columns (of P0_TAP0) instead of rows.          
-
-      if (flag == 1) {
-	for  (int j = 0; j < row_length; j++)     {
-	  if (Denominator[bindx[j]] == -1) {
-	    Denominator[bindx[j]] = 1.; Numerator[bindx[j]] = ttemp_omega[bindx[j]]; 
-	  }
-	}
-      }
-      if (temp_den != -1) {
-	Numerator[row] = temp_num; Denominator[row] = temp_den;
-      }
-    }
-    for (int row = 0 ; row < P0_TAP0->invec_leng ; row++) {
-      if (Denominator[row] == -1) {
-	printf("problem: Row %d is not adjacent to a root pt\n",row);
-	exit(1);
-      }
-    }
-    if (DenominatorAtRootPts != Denominator) ML_free(DenominatorAtRootPts); 
-    if (NumeratorAtRootPts   != Numerator  ) ML_free(NumeratorAtRootPts);
-    ML_free(ttemp_omega);
-  }
-
   int zero_local   = 0;
   double min_local = DBL_MAX;
   double max_local = DBL_MIN;
 
   // Compute 'column-based' Omega's (with safeguard)
 
-  for (int i = 0 ; i < n_0 ; ++i) {
+  for (int i = 0 ; i < NComputedOmegas ; ++i) {
     ColBasedOmega[i] = Numerator[i]/Denominator[i];
     double& val = ColBasedOmega[i];
     if (val < 0.0) {
@@ -602,8 +541,8 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
     if (val < min_local) min_local = val;
     if (val > max_local) max_local = val;
   }
-  ML_free(Denominator);
-  ML_free(Numerator);
+  if (Denominator != NULL) ML_free(Denominator);
+  if (Numerator   != NULL) ML_free(Numerator);
 
   double min_all  = ML_gmin_double(min_local, P0->comm);
   double max_all  = ML_gmax_double(max_local, P0->comm);
@@ -614,33 +553,101 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
     cout << "Prolongator Smoothing: Using energy minimization (scheme = " 
          << ag->minimizing_energy << ")" << endl;
     cout << "Damping parameter: min = " << min_all <<  ", max = " << max_all 
-         << " (" << zero_all << " zeros out of " << n_0_tot << ")" << endl;
+         << " (" << zero_all << " zeros out of " << Nsubset_tot << ")" << endl;
     cout << "Dropping tolerance for DinvAP_0 = " << dropping << endl;
     cout << endl;
   }
 
+  //  Stick the Omegas in their proper column (if they have been compressed).
+
+  if (compress == 1) {
+    double *TmpOmega = (double *) ML_allocate(sizeof(double)*(1+n_0));
+    for (int i = 0; i < n_0; i++) {
+       if (Subset[i] != -1) TmpOmega[i] =  ColBasedOmega[Subset[i]]; 
+       else TmpOmega[i] = -666.;
+    }
+    for (int i = 0; i < n_0; i++) ColBasedOmega[i] = TmpOmega[i];  
+    ML_free(TmpOmega);
+  }
+
   // convert the omega's from column-based to row-based
 
-  double* RowOmega = (double *) ML_allocate(sizeof(double)*(n + Nghost + 1));
+  double* RowOmega = (double *) ML_allocate(sizeof(double)*(n + AmatNghost + 1));
   ag->old_RowOmegas = RowOmega;
 
 
-  if (DinvAP0->getrow->pre_comm != NULL) 
+  if (DinvAP0_subset->getrow->pre_comm != NULL) 
      ML_exchange_bdry(&ColBasedOmega[0],DinvAP0->getrow->pre_comm, n_0,
                       DinvAP0->comm, ML_OVERWRITE,NULL);
 
+  int AtLeastOneDefined, NRowOmegasSet = 0;
   for (int row = 0 ; row < n ; row++) {
-    RowOmega[row] = -1.;
-    ML_get_matrix_row(DinvAP0, 1, &row, &allocated, &bindx, &val,
-                      &row_length, 0); // should really be P0 + DinvAP0
-
-    for  (int j = 0; j < row_length; j++) {
-	double omega = ColBasedOmega[bindx[j]];
-	if (RowOmega[row] == -1.)  RowOmega[row] = omega;
-        else if (omega < RowOmega[row]) RowOmega[row] = omega;
+     RowOmega[row] = -666.;            // RowOmega not set
+     ML_get_matrix_row(DinvAP0, 1, &row, &allocated, &bindx, &val,
+                      &row_length, 0);
+     AtLeastOneDefined = 0;
+     for  (int j = 0; j < row_length; j++) {
+       double omega = ColBasedOmega[bindx[j]];
+       if ( omega != -666. ) {  // ColBasedOmega not set
+           AtLeastOneDefined = 1;
+	   if (RowOmega[row] == -666.)  RowOmega[row] = omega;
+           else if (omega < RowOmega[row]) RowOmega[row] = omega;
+       }
     }
-    if (RowOmega[row] < 0.) RowOmega[row] = 0.;
+    if (AtLeastOneDefined == 1) {
+       NRowOmegasSet++;
+       if (RowOmega[row] < 0.) RowOmega[row] = 0.;
+    }
   }
+
+  // If only a subset of column omegas are computed then we might not have
+  // all of the RowOmega's defined. We need to loop a few times to get them.
+  // Note: This should only be necessary if the compressed version is used.
+
+  int Tries = 0;
+  int Nrows_tot = ML_gsum_int(n, P0->comm);
+  int NSet_tot  = ML_gsum_int(NRowOmegasSet, P0->comm);
+  double *NewOmega = NULL;
+
+  while ( NSet_tot < Nrows_tot) {
+     if (NewOmega == NULL) 
+        NewOmega = (double *) ML_allocate(sizeof(double)*(n + AmatNghost + 1));
+     ML_exchange_bdry(RowOmega, Amat->getrow->pre_comm, Amat->invec_leng,
+                       Amat->comm, ML_OVERWRITE, NULL);
+
+     for (int row = 0 ; row < n ; row++) {
+        if ( RowOmega[row] == -666.) {
+           NewOmega[row] = -666.;
+           int    NDefined = 0;
+           double sum = 0.;
+           ML_get_matrix_row(Amat, 1, &row, &allocated, &bindx, &val,
+                             &row_length, 0);
+           for  (int j = 0; j < row_length; j++) {
+              double omega = RowOmega[bindx[j]];
+              if (omega != -666.) {
+                 sum = sum + omega; //just take average
+                 NDefined++;
+              }
+           }
+           if (NDefined != 0) {
+              NewOmega[row] = sum/((double) NDefined);
+              NRowOmegasSet++;
+           }
+        }
+     } 
+     for (int row = 0 ; row < n ; row++) {
+        if ( (RowOmega[row] == -666.) && (NewOmega[row] != -666.))
+           RowOmega[row] = NewOmega[row];
+     }
+     Tries++;
+     if (Tries == 3) { // just sent any remaining ones to 0
+        for (int row = 0 ; row < n ; row++) 
+           if ( RowOmega[row] == -666.) RowOmega[row] = 0.;
+        NRowOmegasSet = n;
+     }
+     NSet_tot  = ML_gsum_int(NRowOmegasSet, P0->comm);
+  }
+  if (NewOmega != NULL) ML_free(NewOmega);
 
   ML_Operator* OmegaDinvAP0 = 0;
 
@@ -648,11 +655,6 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
   // quantities, we can always use the implicit scaling function here.
 
   OmegaDinvAP0 = ML_Operator_ImplicitlyVScale(DinvAP0, &RowOmega[0], 0);
-
-  //
-  //  Maybe we will need some communcation in parallel?
-  //  ML_CommInfoOP_Clone(&(OmegaDinvAP0->getrow->pre_comm), 
-  //		      DinvAP0->getrow->pre_comm);
 
   // The following sometimes crashes when used with MIS aggregation
   // (in parallel).
@@ -672,18 +674,15 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
   }
   if (DinvAmat != NULL) ML_Operator_Destroy(&DinvAmat);
   if (DinvAP0_subset != DinvAP0) ML_Operator_Destroy(&DinvAP0_subset);
-  if (P0_TAP0)          ML_Operator_Destroy(&P0_TAP0);
-  if (P0_T)             ML_Operator_Destroy(&P0_T);
   if (DinvAP0)          ML_Operator_Destroy(&DinvAP0);
   if (DinvADinvAP0)     ML_Operator_Destroy(&DinvADinvAP0);
   if (OmegaDinvAP0)     ML_Operator_Destroy(&OmegaDinvAP0);
-  if (root_pts != NULL) ML_free(root_pts);
+  if (Subset != NULL) ML_free(Subset);
 
 #ifdef ML_TIMING
   ml->Pmat[clevel].build_time =  GetClock() - t0;
   ml->timing->total_build_time += ml->Pmat[clevel].build_time;
 #endif
-//  printf("THE TIME %e\n", GetClock() - t0);
   return(0);
 }
 
