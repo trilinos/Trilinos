@@ -320,7 +320,9 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
   ML_Operator *DinvAP0_subset = NULL;
   int *Subset = NULL, Nsubset = 0, Nsubset_tot, NComputedOmegas;
   double *Numerator = NULL, *Denominator = NULL;
-  int compress = 0;   // compress = 1 corresponds to only computing
+
+  int compress = ag->cheap_minimizing_energy;   
+                      // compress = 1 corresponds to only computing
                       // the omegas at a subset of points          
                       // some form of this code works, but I can't 
                       // really remember so it is turned off.      
@@ -386,7 +388,7 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
     ML_exchange_bdry(dtemp,DinvAP0->getrow->pre_comm, n_0,
                      DinvAP0->comm, ML_OVERWRITE,NULL);
     for (int i = 0; i < n_0+AP0Nghost; i++) {
-       if ( ML_dabs(dtemp[i]) < .1 ) {
+       if ( ML_dabs(dtemp[i])*((double)Amat->num_PDEs) < .5 ) {
           Subset[i] = count++;
           if (i < n_0 ) Nsubset++;
        }

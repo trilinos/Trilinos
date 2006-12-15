@@ -1312,6 +1312,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
     Time.ResetStartTime();
 
     // Added on Jan-06
+
     if (List_.get("aggregation: use tentative restriction", false))
     {
       agg_->minimizing_energy = -1;
@@ -1346,6 +1347,13 @@ ComputePreconditioner(const bool CheckPreconditioner)
       agg_->minimizing_energy = List_.get("energy minimization: type", 2);
 
       agg_->minimizing_energy_droptol = List_.get("energy minimization: droptol", 0.0);
+      if (List_.get("energy minimization: cheap", false)) {
+         agg_->cheap_minimizing_energy = 1;
+         if ( (verbose_) && (agg_->minimizing_energy != 2)) {
+            cout << endl;
+            cout << "Warning: Option `energy minimization: cheap' has no effect when the type is not 2." << endl;
+         }
+      }
     }
 
     profileIterations_ = List_.get("profile: operator iterations", 0);
