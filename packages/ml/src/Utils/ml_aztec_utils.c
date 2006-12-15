@@ -804,24 +804,25 @@ int AZ_block_MSR(int **param_bindx, double **param_val,
 
    for (i = 0; i < N_update; i++) {
 
-      /* make a list of all the block columns in this row */
+      /* make a list of all the block columns in this block row */
 
-      nblocks = 0;
-      block_list[nblocks++] = update[i]/num_PDE_eqns;
-      for (j = bindx[i]; j < bindx[i+1]; j++) {
-         block = bindx[j]/num_PDE_eqns;
-         if ((block != block_list[0]) && (block != block_list[nblocks-1])) {
-            block_list[nblocks++] = block;
+      if ( (i%num_PDE_eqns) == 0) {
+         nblocks = 0;
+         block_list[nblocks++] = update[i]/num_PDE_eqns;
+         for (j = bindx[i]; j < bindx[i+num_PDE_eqns]; j++) {
+            block = bindx[j]/num_PDE_eqns;
+            if ((block != block_list[0]) && (block != block_list[nblocks-1])) {
+               block_list[nblocks++] = block;
+            }
          }
+         AZ_sort(block_list, nblocks, NULL, NULL);
+         AZ_rm_duplicates(block_list, &nblocks);
       }
+      /* make sure that within each block we have each point column entry. */
 
-      /* sort the block and make sure that within    */
-      /* each block we have each point column entry. */
-
-      AZ_sort(block_list, nblocks, NULL, NULL);
       for (j = 0; j < nblocks; j++) {
          for (k = 0; k < num_PDE_eqns; k++) {
-            if (block_list[j]*num_PDE_eqns+k != update[i]) {
+            if (block_list[j]*num_PDE_eqns+k != update[i]) {  /* off-diagonal */
                if (offset >= allocated)
                   pr_error("AZ_block_MSR: Did not allocate enough space\n");
 
@@ -830,12 +831,15 @@ int AZ_block_MSR(int **param_bindx, double **param_val,
                     (bindx[current] == newbindx[offset]) ) {
                   newval[offset++] = val[current++];
                }
-               else { newval[offset++] = 0.;  }
+               else { newval[offset++] = 0.0;  }
             }
          }
       }
       newbindx[i+1] = offset;
    }
+   AZ_free(block_list);
+   AZ_free(bindx);
+   AZ_free(val);
    return 0;
 }
 
