@@ -2970,7 +2970,7 @@ void Epetra_CrsMatrix::GeneralSV(bool Upper, bool Trans, bool UnitDiagonal, doub
 void Epetra_CrsMatrix::GeneralSM(bool Upper, bool Trans, bool UnitDiagonal, double ** Xp, int LDX, double ** Yp, int LDY, int NumVectors)  const{
 
   int i, j, j0, k;
-  double diag;
+  double diag = 0.0;
 
   if (StorageOptimized() && Graph().StorageOptimized()) {
     double * Values = All_Values();
@@ -3590,7 +3590,7 @@ int Epetra_CrsMatrix::Solve1(bool Upper, bool Trans, bool UnitDiagonal, const Ep
   int* NumEntriesPerRow = Graph().NumIndicesPerRow();
   int** Indices = Graph().Indices();
   double** Vals = Values();
-  double diag;
+  double diag = 0.0;
 
   // If upper, point to last row
   if((Upper && !Trans) || (!Upper && Trans)) {
