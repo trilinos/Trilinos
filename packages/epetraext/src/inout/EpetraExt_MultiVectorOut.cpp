@@ -175,8 +175,8 @@ int writeMultiVector(FILE * handle, const Epetra_MultiVector & A, bool mmFormat)
   }
   else {
     if (length!=A.MyLength()) ierr = -1;
-    for (int i=0; i<length; i++) {
-      for (int j=0; j<numVectors; j++) {
+    for (int j=0; j<numVectors; j++) {
+      for (int i=0; i<length; i++) {
 	double val = A[j][i];
 	if (mmFormat)
 	  fprintf(handle, "%22.16e\n", val);
