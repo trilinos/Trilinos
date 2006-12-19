@@ -440,9 +440,9 @@ int Ifpack_AdditiveSchwarz<T>::Setup()
   Epetra_RowMatrix* MatrixPtr;
 
   if (OverlappingMatrix_ != Teuchos::null)
-    LocalizedMatrix_ = Teuchos::rcp( new Ifpack_LocalFilter(&*OverlappingMatrix_) );
+    LocalizedMatrix_ = Teuchos::rcp( new Ifpack_LocalFilter(OverlappingMatrix_) );
   else
-    LocalizedMatrix_ = Teuchos::rcp( new Ifpack_LocalFilter(&*Matrix_) );
+    LocalizedMatrix_ = Teuchos::rcp( new Ifpack_LocalFilter(Matrix_) );
 
   if (LocalizedMatrix_ == Teuchos::null)
     IFPACK_CHK_ERR(-5);

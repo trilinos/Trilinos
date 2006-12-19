@@ -42,6 +42,7 @@
 #include "Galeri_Maps.h"
 #include "Galeri_CrsMatrices.h"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_RefCountPtr.hpp"
 #include "Ifpack_OverlappingRowMatrix.h"
 #include "Ifpack_LocalFilter.h"
 #include "Ifpack_Utils.h"
@@ -60,6 +61,7 @@ int main(int argc, char *argv[])
 #ifdef HAVE_MPI
     MPI_Finalize();
 #endif
+    cout << "Test `TestOverlappingRowMatrix.exe' passed!" << endl;
     exit(EXIT_SUCCESS);
   }
 
@@ -68,8 +70,8 @@ int main(int argc, char *argv[])
   GaleriList.set("n", nx * nx);
   GaleriList.set("nx", nx);
   GaleriList.set("ny", nx);
-  Epetra_Map* Map = Galeri::CreateMap("Linear", Comm, GaleriList);
-  Epetra_CrsMatrix* A = Galeri::CreateCrsMatrix("Laplace2D", Map, GaleriList);
+  Teuchos::RefCountPtr<Epetra_Map> Map = Teuchos::rcp( Galeri::CreateMap("Linear", Comm, GaleriList) );
+  Teuchos::RefCountPtr<Epetra_CrsMatrix> A = Teuchos::rcp( Galeri::CreateCrsMatrix("Laplace2D", &*Map, GaleriList) );
 
   int OverlapLevel = 5;
   Epetra_Time Time(Comm);
@@ -80,7 +82,7 @@ int main(int argc, char *argv[])
   // ======================================== //
  
   Time.ResetStartTime();
-  Ifpack_OverlappingRowMatrix B(A,OverlapLevel);
+  Ifpack_OverlappingRowMatrix B(&*A,OverlapLevel);
   if (Comm.MyPID() == 0)
     cout << "Time to create B = " << Time.ElapsedTime() << endl;
 
@@ -112,7 +114,7 @@ int main(int argc, char *argv[])
 
   Time.ResetStartTime();
   Epetra_CrsMatrix& C = 
-    *(Ifpack_CreateOverlappingCrsMatrix(A,OverlapLevel));
+    *(Ifpack_CreateOverlappingCrsMatrix(&*A,OverlapLevel));
   if (Comm.MyPID() == 0)
     cout << "Time to create C = " << Time.ElapsedTime() << endl;
 
@@ -141,11 +143,7 @@ int main(int argc, char *argv[])
   // now localize the matrix //
   // ======================= //
 
-  Ifpack_LocalFilter D(&B);
-
-  // free memory
-  delete A;
-  delete Map;
+  Ifpack_LocalFilter D(Teuchos::rcp(&B, false));
 
 #ifdef HAVE_MPI
   MPI_Finalize() ; 

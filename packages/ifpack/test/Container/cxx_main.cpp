@@ -39,6 +39,7 @@
 #include "Galeri_CrsMatrices.h"
 #include "Galeri_Utils.h"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_RefCountPtr.hpp"
 #include "Ifpack_DenseContainer.h"
 #include "Ifpack_SparseContainer.h"
 #include "Ifpack_Amesos.h"
@@ -47,7 +48,7 @@
 static bool verbose = false;
 
 // ======================================================================
-bool TestContainer(string Type, Epetra_RowMatrix* A)
+bool TestContainer(string Type, const Teuchos::RefCountPtr<Epetra_RowMatrix>& A)
 {
   int NumVectors = 3;
   int NumMyRows = A->NumMyRows();
@@ -58,7 +59,7 @@ bool TestContainer(string Type, Epetra_RowMatrix* A)
   LHS_exact.Random(); LHS.PutScalar(0.0); 
   A->Multiply(false, LHS_exact, RHS);
 
-  Epetra_LinearProblem Problem(A, &LHS, &RHS);
+  Epetra_LinearProblem Problem(&*A, &LHS, &RHS);
 
   if (verbose) {
     cout << "Container type = " << Type << endl;
@@ -66,14 +67,14 @@ bool TestContainer(string Type, Epetra_RowMatrix* A)
   }
   LHS.PutScalar(0.0);
   
-  Ifpack_Container* Container;
+  Teuchos::RefCountPtr<Ifpack_Container> Container;
 
   if (Type == "dense")
-    Container = new Ifpack_DenseContainer(A->NumMyRows(), NumVectors);
+    Container = Teuchos::rcp( new Ifpack_DenseContainer(A->NumMyRows(), NumVectors) );
   else
-    Container = new Ifpack_SparseContainer<Ifpack_Amesos>(A->NumMyRows(), NumVectors);
+    Container = Teuchos::rcp( new Ifpack_SparseContainer<Ifpack_Amesos>(A->NumMyRows(), NumVectors) );
 
-  assert (Container != 0);
+  assert (Container != Teuchos::null);
 
   IFPACK_CHK_ERR(Container->Initialize());
   // set as ID all the local rows of A
@@ -116,8 +117,6 @@ bool TestContainer(string Type, Epetra_RowMatrix* A)
   if (residual < 1e-5)
     passed = true;
 
-  delete Container;
-
   return(passed);
 }
 
@@ -141,10 +140,10 @@ int main(int argc, char *argv[])
   GaleriList.set("nx", nx);
   GaleriList.set("ny", nx);
 
-  Epetra_Map* Map = Galeri::CreateMap("Linear", Comm, GaleriList);
-  Epetra_RowMatrix* Matrix = Galeri::CreateCrsMatrix("Laplace2D", Map, GaleriList);
+  Teuchos::RefCountPtr<Epetra_Map> Map = Teuchos::rcp( Galeri::CreateMap("Linear", Comm, GaleriList) );
+  Teuchos::RefCountPtr<Epetra_RowMatrix> Matrix = Teuchos::rcp( Galeri::CreateCrsMatrix("Laplace2D", &*Map, GaleriList) );
   
-  Ifpack_LocalFilter* LocalMatrix = new Ifpack_LocalFilter(Matrix);
+  Teuchos::RefCountPtr<Ifpack_LocalFilter> LocalMatrix = Teuchos::rcp( new Ifpack_LocalFilter(Matrix) );
   int TestPassed = true;
 
   if (!TestContainer("dense",LocalMatrix))  TestPassed = false;
@@ -160,10 +159,6 @@ int main(int argc, char *argv[])
     exit(EXIT_FAILURE);
   }
   
-  delete LocalMatrix;
-  delete Matrix;
-  delete Map;
-
 #ifdef HAVE_MPI
   MPI_Finalize(); 
 #endif

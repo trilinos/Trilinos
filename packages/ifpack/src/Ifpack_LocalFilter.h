@@ -8,6 +8,8 @@
 #include "Epetra_SerialComm.h"
 #endif
 #include "Epetra_RowMatrix.h"
+#include "Teuchos_RefCountPtr.hpp"
+
 class Epetra_Map;
 class Epetra_MultiVector;
 class Epetra_Vector;
@@ -27,7 +29,7 @@ class Epetra_BlockMap;
  \code
  #include "Ifpack_LocalFilter.h"
  ...
- Epetra_RowMatrix* A;             // fill the elements of A,
+ Teuchos::RefCountPtr<Epetra_RowMatrix> A;             // fill the elements of A,
  A->FillComplete();
 
  Ifpack_LocalFilter LocalA(A);
@@ -56,12 +58,12 @@ class Ifpack_LocalFilter : public virtual Epetra_RowMatrix {
 public:
   //@{ \name Constructor.
   //! Constructor
-  Ifpack_LocalFilter(const Epetra_RowMatrix* Matrix);
+  Ifpack_LocalFilter(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& Matrix);
 
   //@}
   //@{ \name Destructor.
   //! Destructor
-  virtual ~Ifpack_LocalFilter();
+  virtual ~Ifpack_LocalFilter() {};
 
   //@}
 
@@ -337,16 +339,16 @@ const char* Label() const{
 private:
 
   //! Pointer to the matrix to be preconditioned.
-  const Epetra_RowMatrix* Matrix_;
+  Teuchos::RefCountPtr<const Epetra_RowMatrix> Matrix_;
 #ifdef HAVE_MPI
   //! Communicator containing this process only.
-  Epetra_MpiComm* SerialComm_;
+  Teuchos::RefCountPtr<Epetra_MpiComm> SerialComm_;
 #else
   //! Communicator containing this process only.
-  Epetra_SerialComm* SerialComm_;
+  Teuchos::RefCountPtr<Epetra_SerialComm> SerialComm_;
 #endif
   //! Map based on SerialComm_, containing the local rows only.
-  Epetra_Map* Map_;
+  Teuchos::RefCountPtr<Epetra_Map> Map_;
   //! Number of rows in the local matrix.
   int NumRows_;
   //! Number of nonzeros in the local matrix.
@@ -365,7 +367,7 @@ private:
   bool UseTranspose_;
   //! Label for \c this object.
   char Label_[80];
-  Epetra_Vector* Diagonal_;
+  Teuchos::RefCountPtr<Epetra_Vector> Diagonal_;
   double NormOne_;
   double NormInf_;
 

@@ -8,29 +8,26 @@
 #include "Ifpack_LocalFilter.h"
 
 //==============================================================================
-Ifpack_LocalFilter::Ifpack_LocalFilter(const Epetra_RowMatrix* Matrix) :
+Ifpack_LocalFilter::Ifpack_LocalFilter(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& Matrix) :
   Matrix_(Matrix),
-  SerialComm_(0),
-  Map_(0),
   NumRows_(0),
   NumNonzeros_(0),
   MaxNumEntries_(0),
-  MaxNumEntriesA_(0),
-  Diagonal_(0)
+  MaxNumEntriesA_(0)
 {
   sprintf(Label_,"%s","Ifpack_LocalFilter");
 
 #ifdef HAVE_MPI
-  SerialComm_ = new Epetra_MpiComm(MPI_COMM_SELF);
+  SerialComm_ = Teuchos::rcp( new Epetra_MpiComm(MPI_COMM_SELF) );
 #else
-  SerialComm_ = new Epetra_SerialComm;
+  SerialComm_ = Teuchos::rcp( new Epetra_SerialComm );
 #endif
 
   // localized matrix has all the local rows of Matrix
   NumRows_ = Matrix->NumMyRows();
 
   // build a linear map, based on the serial communicator
-  Map_ = new Epetra_Map(NumRows_,0,*SerialComm_);
+  Map_ = Teuchos::rcp( new Epetra_Map(NumRows_,0,*SerialComm_) );
 
   // NumEntries_ will contain the actual number of nonzeros
   // for each localized row (that is, without external nodes,
@@ -38,8 +35,8 @@ Ifpack_LocalFilter::Ifpack_LocalFilter(const Epetra_RowMatrix* Matrix) :
   NumEntries_.resize(NumRows_);
 
   // want to store the diagonal vector. FIXME: am I really useful?
-  Diagonal_ = new Epetra_Vector(*Map_);
-  if (Diagonal_ == 0) IFPACK_CHK_ERRV(-5);
+  Diagonal_ = Teuchos::rcp( new Epetra_Vector(*Map_) );
+  if (Diagonal_ == Teuchos::null) IFPACK_CHK_ERRV(-5);
   
   // store this for future access to ExtractMyRowCopy().
   // This is the # of nonzeros in the non-local matrix
@@ -83,17 +80,6 @@ Ifpack_LocalFilter::Ifpack_LocalFilter(const Epetra_RowMatrix* Matrix) :
   }
  
   MaxNumEntries_ = ActualMaxNumEntries;
-}
-
-//==============================================================================
-Ifpack_LocalFilter::~Ifpack_LocalFilter()
-{
-  if (Diagonal_)
-    delete Diagonal_;
-  if (Map_)
-    delete Map_;
-  if (SerialComm_)
-    delete SerialComm_;
 }
 
 //==============================================================================
