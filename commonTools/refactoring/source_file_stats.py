@@ -6,11 +6,15 @@ for files of different types.
 """
 
 # ToDo: I want to add the following statistics as well:
+# 0) Count the number of semi-colons
 # 1) Count the number of tokens in all of the source code lines
 # 2) Count the number of total non-space chars in all of the source code lines
 # 3) Count the number of total non-space chars in all of the documentation lines
+# 4) Separate out the copyright header comment lines for the the other comment
+#    lines and print the count for these separately
 
 import sys
+import os
 import re
 
 reBeginCStyleCommentLine = re.compile(r"^\s*/\*.*")
@@ -23,6 +27,7 @@ def countLines(fileName):
   file = open(fileName)
   #
   numBlankLines = 0
+  numCopyrightHeaderLines = 0
   numCommentLines = 0
   numCodeLines = 0
   numTotalLines = 0
@@ -68,7 +73,9 @@ def countLines(fileName):
 if __name__ == '__main__':
   (numBlankLines,numCommentLines,numCodeLines,numTotalLines) \
     = countLines(sys.argv[1])
-  print "numBlankLines =", numBlankLines
-  print "numCommentLines =", numCommentLines
-  print "numCodeLines =", numCodeLines
-  print "numTotalLines =", numTotalLines
+  print "File: ", os.path.basename(sys.argv[1])
+  print "Number of blank lines    =", numBlankLines
+  print "Number of comment lines  =", numCommentLines
+  print "Number of code lines     =", numCodeLines
+  print "numTotalLines (", numTotalLines, ")"
+
