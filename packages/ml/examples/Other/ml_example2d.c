@@ -662,7 +662,7 @@ null_vect[ i*ndim+ leng + 1 ]=-1.;
       ML_Aggregate_Scale_NullSpace(*ml_ag, scaling_vect,leng);
 #endif
 
-      coarsest_level = ML_Gen_MGHierarchy_UsingAggregation(ml, N_levels-1, 
+      coarsest_level = ML_Gen_MultiLevelHierarchy_UsingAggregation(ml, N_levels-1, 
                                                           ML_DECREASING, *ml_ag);
       coarsest_level = N_levels - coarsest_level;
       if ( proc_config[AZ_node] == 0 )

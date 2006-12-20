@@ -69,6 +69,7 @@ int main(int argc, char *argv[])
    struct AZ_SCALING *scaling;
 double solve_time, setup_time, start_time;
 ML_Aggregate *ag;
+int *ivec;
 
 
 #ifdef ML_MPI
@@ -109,7 +110,7 @@ ML_Aggregate *ag;
 	
   AZ_read_update(&N_update, &update, proc_config, N_grid_pts, num_PDE_eqns,
                  AZ_linear);
-	
+ 
   AZ_read_msr_matrix(update, &val, &bindx, N_update, proc_config);
 
   /* This code is to fix things up so that we are sure we have */
@@ -121,7 +122,7 @@ ML_Aggregate *ag;
   AZ_transform(proc_config, &external, bindx, val,  update, &update_index,
 	       &extern_index, &data_org, N_update, 0, 0, 0, &cpntr, 
                AZ_MSR_MATRIX);
-	
+
   Amat = AZ_matrix_create( leng );
   AZ_set_MSR(Amat, bindx, val, data_org, 0, NULL, AZ_LOCAL);
 
@@ -138,13 +139,41 @@ ML_Aggregate *ag;
   /* set up discretization matrix and matrix vector function */
 	
   AZ_ML_Set_Amat(ml, N_levels-1, N_update, N_update, Amat, proc_config);
-	
+
   ML_Aggregate_Create( &ag );
   ML_Aggregate_Set_CoarsenScheme_MIS(ag);
   ML_Aggregate_Set_Threshold(ag,0.0);
   ML_Aggregate_Set_SpectralNormScheme_Anorm(ag);
+  ML_Aggregate_Set_DampingFactor(ag, 0.);
+  ML_Aggregate_Set_Phase3AggregateCreationAggressiveness(ag,.5);
+/*
+   To run SA:
+     a) set damping factor to 1 and use power method
+        ML_Aggregate_Set_DampingFactor(ag, 4./3.); 
+        ML_Aggregate_Set_SpectralNormScheme_PowerMethod(ag);
+   To run NSA:
+     a) set damping factor to 0
+        ML_Aggregate_Set_DampingFactor(ag, 0.); 
+   To run NSR
+     a) set damping factor to 1 and use power method
+        ML_Aggregate_Set_DampingFactor(ag, 1.); 
+        ML_Aggregate_Set_SpectralNormScheme_PowerMethod(ag);
+        ag->Restriction_smoothagg_transpose = ML_FALSE;
+        ag->keep_agg_information=1; 
+        ag->keep_P_tentative=1; 
+     b) hack code so it calls the energy minimizing restriction
+          line 2973 of ml_agg_genP.c
+     c) turn on the NSR flag in ml_agg_energy_min.cpp
+   To run Emin
+     a) set min_eneryg = 2 and keep_agg_info = 1;
+      ag->minimizing_energy=2; 
+      ag->keep_agg_information=1; 
+      ag->cheap_minimizing_energy = 0;
+      ag->block_scaled_SA = 1;
+*/
+
   ML_Aggregate_Set_NullSpace(ag, num_PDE_eqns, num_PDE_eqns, NULL, N_update);
-  ML_Aggregate_Set_MaxCoarseSize( ag, 1);
+  ML_Aggregate_Set_MaxCoarseSize( ag, 20);
 
 /*
 ML_Aggregate_Set_RandomOrdering( ag );
@@ -155,7 +184,7 @@ ML_Aggregate_Set_MaxCoarseSize( ag, 300);
 */
 
 
-	coarsest_level = ML_Gen_MGHierarchy_UsingAggregation(ml, N_levels-1, ML_DECREASING, ag);
+	coarsest_level = ML_Gen_MultiLevelHierarchy_UsingAggregation(ml, N_levels-1, ML_DECREASING, ag);
 	coarsest_level = N_levels - coarsest_level;
 	if ( proc_config[AZ_node] == 0 )
 		printf("Coarse level = %d \n", coarsest_level);
@@ -168,6 +197,7 @@ ML_Aggregate_Set_MaxCoarseSize( ag, 300);
           /* This is the Aztec domain decomp/ilu smoother that we */
           /* usually use for this problem.                        */
 
+/*
           options[AZ_precond] = AZ_dom_decomp;
           options[AZ_subdomain_solve] = AZ_ilut;
           params[AZ_ilut_fill] = 1.0;
@@ -175,6 +205,7 @@ ML_Aggregate_Set_MaxCoarseSize( ag, 300);
           ML_Gen_SmootherAztec(ml, level, options, params, 
                         proc_config, status, AZ_ONLY_PRECONDITIONER, 
                         ML_PRESMOOTHER,NULL);
+*/
 
           /*  Sparse approximate inverse smoother that acutally does both */
           /*  pre and post smoothing.                                     */
@@ -209,11 +240,13 @@ ML_Aggregate_Set_MaxCoarseSize( ag, 300);
 	  ML_Gen_Smoother_BlockGaussSeidel(ml,level,ML_POSTSMOOTHER, 
                                            nsmooth, 0.67, num_PDE_eqns);
           */
-		
+
+
+	  ML_Gen_Smoother_SymBlockGaussSeidel(ml,level,ML_POSTSMOOTHER,
+                                              1, 1.0, num_PDE_eqns);
 	}
 	
 	ML_Gen_CoarseSolverSuperLU( ml, coarsest_level);
-		
 	ML_Gen_Solver(ml, ML_MGV, N_levels-1, coarsest_level); 
 	AZ_defaults(options, params);
 	
@@ -244,35 +277,31 @@ setup_time = AZ_second() - start_time;
 	
         /* Set rhs */
  
-        fp = fopen("AZ_capture_rhs.dat","r");
+        fp = fopen("AZ_capture_rhs.mat","r");
         if (fp == NULL) {
            if (proc_config[AZ_node] == 0) printf("taking random vector for rhs\n");
            AZ_random_vector(rhs, data_org, proc_config);
            AZ_reorder_vec(rhs, data_org, update_index, NULL);
         }
         else {
-           ch = getc(fp);
-           if (ch == 'S') {
-              while ( (ch = getc(fp)) != '\n') ;
-           }
-           else ungetc(ch,fp);
-           for (i = 0; i < data_org[AZ_N_internal]+data_org[AZ_N_border]; i++) 
-              fscanf(fp,"%lf",&(rhs[i]));
            fclose(fp);
+	   ivec =(int *)malloc((leng+1)*sizeof(int));
+           AZ_input_msr_matrix("AZ_capture_rhs.mat", update, &rhs, &ivec, 
+                                N_update, proc_config);
+           free(ivec);
+           AZ_reorder_vec(rhs, data_org, update_index, NULL);
         }
 
         /* Set x */
 
-        fp = fopen("AZ_capture_init_guess.dat","r");
+        fp = fopen("AZ_capture_init_guess.mat","r");
         if (fp != NULL) {
-           ch = getc(fp);
-           if (ch == 'S') {
-              while ( (ch = getc(fp)) != '\n') ;
-           }
-           else ungetc(ch,fp);
-           for (i = 0; i < data_org[AZ_N_internal]+data_org[AZ_N_border]; i++)
-              fscanf(fp,"%lf",&(xxx[i]));
            fclose(fp);
+	   ivec =(int *)malloc((leng+1)*sizeof(int));
+           AZ_input_msr_matrix("AZ_capture_init_guess.mat",update, &xxx, &ivec, 
+                                N_update, proc_config);
+           free(ivec);
+           AZ_reorder_vec(xxx, data_org, update_index, NULL);
            options[AZ_conv] = AZ_expected_values;
         }
 
@@ -344,7 +373,7 @@ start_time = AZ_second();
 #ifdef ML_MPI
   MPI_Finalize();
 #endif
-	
+
   return 0;
 	
 }
