@@ -2966,6 +2966,9 @@ int ML_MultiLevel_Gen_Restriction(ML *ml,int level, int next, void *data)
       break;
     case 0:
       ML_Gen_Restrictor_TransP(ml, level, next, NULL);   
+      /* To do NSR we need to turn on NSR in ml_agg_min_energy.cpp */
+      /* and change the above line to                              */
+      /* ML_AGG_Gen_Restriction_MinEnergy(ml, level, next, data);  */  
       break;
     case 1: /* Z_1 */
     case 2: /* Z_2 */
