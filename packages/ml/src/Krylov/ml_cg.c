@@ -535,7 +535,172 @@ if (maxiter == 0) {
 
 
 /* ******************************************************************** */
-/* ML_Power_ComputeEigenvalues                                             */
+/* ML_SubspaceIteration_ComputeEigenvalues                              */
+/*      This is essentially the power method to compute eigenvalues     */
+/*      with subspace dimension = 2. The initial guess for the first    */
+/*      vector is real and the initial guess for the 2nd vector is      */
+/*      pure imaginary. I don't know how good this routine really is    */
+/*      but it appears a lot better than just doing the straight        */
+/*      power method on a nonsymmetric system.                          */
+/*                                                                      */
+/* NOTE: if scale_by_diag == ML_TRUE compute lambda (D^{1/2} A D^{1/2}) */
+/*       if scale_by_diag == ML_FALSE compute  lambda ( A )             */
+/* ******************************************************************** */
+
+int ML_SubspaceIteration_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
+{
+   int         totallength, maxiter;
+   int         i, j, ncnt, Nbc, *colInd = NULL, allocated, level;
+   double      *colVal = NULL, norm, *diag = NULL, sum;
+   ML_Operator *matrix;
+   ML_Comm     *comm;
+   double      *v1real=NULL,*v2imag=NULL,*y1real=NULL,*y2imag=NULL;
+   double      norm1, norm2, alpha, Toneone, Ttwotwo, b, c;
+
+   /* ----------------------------------------------------------------*/
+   /* get all parameters from parent object*/
+   /* ----------------------------------------------------------------*/
+
+   matrix      = ML_Krylov_Get_Amatrix(data);
+   level = -1;
+   if (matrix->to != NULL) level = matrix->to->levelnum;
+
+   comm        = ML_Krylov_Get_Comm(data);
+   totallength = ML_Comm_GsumInt(comm, length);
+   maxiter     = 10;
+   if ( totallength < maxiter ) maxiter = totallength;
+
+
+   /* ----------------------------------------------------------------*/
+   /* allocate temporary memory  */
+   /* ----------------------------------------------------------------*/
+
+   if ( length > 0 )
+   {
+     v1real   = (double *) ML_allocate(length * sizeof(double));
+     v2imag   = (double *) ML_allocate(length * sizeof(double));
+     y1real   = (double *) ML_allocate(length * sizeof(double));
+     y2imag   = (double *) ML_allocate(length * sizeof(double));
+     diag = (double *) ML_allocate(length * sizeof(double));
+      if ( diag == NULL )
+      {
+         printf("ML : ERROR in allocating memory.\n");
+         exit(1);
+      }
+      for (i = 0; i < length; i++) diag[i] = 1.;
+   }
+   ML_random_vec(v1real, length, comm); 
+   ML_random_vec(v2imag, length, comm); 
+
+   /* ----------------------------------------------------------------*/
+   /* retrieve the diagonals */
+   /* ----------------------------------------------------------------*/
+
+   allocated = 100;
+   colInd = (int    *) ML_allocate( allocated * sizeof(int) );
+   colVal = (double *) ML_allocate( allocated * sizeof(double) );
+   Nbc = 0;  /* rst to handle nonsymmetric (due to BCs) matrices */
+   if (scale_by_diag)
+   {
+     for ( i = 0; i < length; i++ )
+     {
+        while(ML_Operator_Getrow(matrix,1,&i,allocated,colInd,colVal,&ncnt)==0)
+        {
+           allocated *= 2;
+           ML_free(colInd); ML_free(colVal);
+           colInd = (int    *) ML_allocate( allocated * sizeof(int) );
+           colVal = (double *) ML_allocate( allocated * sizeof(double) );
+        }
+
+        sum = 0.0;
+        for ( j = 0; j < ncnt; j++ ) {
+           if ( colInd[j] == i ) diag[i] = colVal[j];
+           else sum += ML_dabs(colVal[j]);
+        }
+        /* kludging this in to handle Dirichlet BC's */
+        if ( sum == 0.0) {
+          v1real[i] = 0.; v2imag[i] = 0.; Nbc++; diag[i] = 1.;
+        } else {
+           if ( diag[i] == 0.0 ) {
+             if (ML_Get_PrintLevel() > 0) {
+               if (level != -1)
+                 printf("%d : diagonal[%d] == 0.0 for matrix stored on level %d within MG hierarchy\n", comm->ML_mypid, i, level);
+               else
+                 printf("%d : diagonal[%d] == 0.0\n", comm->ML_mypid, i);
+             }
+             diag[i] = 1.;
+           }
+           /* MS * added on 01-Mar-06 */
+           else
+             diag[i] = 1.0 / diag[i];
+        } /*if ( sum == 0.0) */
+     } /*for ( i = 0; i < length; i++ )*/
+   }
+   else {
+     for (i = 0; i < length; i++) diag[i] = 1.;
+   }
+
+   ML_free(colInd);
+   ML_free(colVal);
+
+   norm1 = sqrt(ML_gdot(length, v1real, v1real, comm));
+   norm2 = sqrt(ML_gdot(length, v2imag, v2imag, comm));
+   if ( (norm1 == 0.0) || (norm2 == 0.0)) {
+     data->ML_eigen_max = 1.;
+     data->ML_eigen_min = 1.;
+     if ( v1real != NULL ) ML_free(v1real);
+     if ( y1real != NULL ) ML_free(y1real);
+     if ( v2imag != NULL ) ML_free(v2imag);
+     if ( y2imag != NULL ) ML_free(y2imag);
+     return 1;
+   }
+   norm1 = 1./norm1;
+   norm2 = 1./norm2;
+   for (j = 0; j < length; j++) v1real[j] *= norm1;
+   for (j = 0; j < length; j++) v2imag[j] *= norm2;
+
+   for (i = 0; i < maxiter; i++) {
+     ML_Operator_Apply(matrix, length, v1real, length, y1real);
+     for (j = 0; j < length; j++) y1real[j] *= diag[j];
+     ML_Operator_Apply(matrix, length, v2imag, length, y2imag);
+     for (j = 0; j < length; j++) y2imag[j] *= diag[j];
+     alpha = sqrt(ML_gdot(length, y1real, y1real, comm));
+     for (j = 0; j < length; j++) v1real[j] = y1real[j]/alpha;
+     alpha = ML_gdot(length, v1real, y2imag, comm);
+     for (j = 0; j < length; j++) v2imag[j] = y2imag[j] - alpha*v1real[j];
+     alpha = sqrt(ML_gdot(length, v2imag, v2imag, comm));
+     for (j = 0; j < length; j++) v2imag[j] = v2imag[j]/alpha;
+   }
+   ML_Operator_Apply(matrix, length, v1real, length, y1real);
+   for (j = 0; j < length; j++) y1real[j] *= diag[j];
+   ML_Operator_Apply(matrix, length, v2imag, length, y2imag);
+   for (j = 0; j < length; j++) y2imag[j] *= diag[j];
+   Toneone = ML_gdot(length, v1real, y1real, comm);
+   Ttwotwo = ML_gdot(length, v2imag, y2imag, comm);
+   b = -( Toneone + Ttwotwo);
+   c = Toneone*Ttwotwo - ML_gdot(length, v1real, y2imag, comm)*
+       ML_gdot(length, v2imag, y1real, comm);
+   if (  b*b-4.*c > 0) {
+      data->ML_eigen_max = (ML_abs(b) + sqrt(b*b - 4.*c))/2;
+   }
+   else {
+      data->ML_eigen_max = sqrt(b*b + ML_abs(b*b - 4.*c))/2.;
+   }
+
+   data->ML_eigen_min = 0.; /* no estimate for smallest eigenvalue */
+   if ( v1real != NULL ) ML_free(v1real);
+   if ( y1real != NULL ) ML_free(y1real);
+   if ( v2imag != NULL ) ML_free(v2imag);
+   if ( y2imag != NULL ) ML_free(y2imag);
+
+   return 1;
+}
+
+/* ******************************************************************** */
+/* ML_Power_ComputeEigenvalues                                          */
+/*   NOTE: It is BETTER to use ML_SubspaceIteration_ComputeEigenvalues  */
+/*         for nonsymmetric systems. This keeps a subspace dimension of */
+/*         2 and better handles complex conjugates.                     */
 /*                                                                      */
 /* NOTE: if scale_by_diag == ML_TRUE compute lambda (D^{1/2} A D^{1/2}) */
 /*       if scale_by_diag == ML_FALSE compute  lambda ( A )             */

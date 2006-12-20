@@ -375,16 +375,16 @@ int ML_Krylov_Solve(ML_Krylov *data,int leng,double *invec,double* outvec)
    {
 #ifdef RST_MODIF
       if (data->ML_dont_scale_by_diag == 1)
-	ML_Power_ComputeEigenvalues(data, leng, ML_FALSE); 
-      else ML_Power_ComputeEigenvalues(data, leng, ML_TRUE); 
+	ML_SubspaceIteration_ComputeEigenvalues(data, leng, ML_FALSE); 
+      else ML_SubspaceIteration_ComputeEigenvalues(data, leng, ML_TRUE); 
 #else
 #ifndef MB_MODIF
       if (data->ML_dont_scale_by_diag == 1)
-	ML_Power_ComputeEigenvalues(data, leng, ML_FALSE); 
-      else ML_Power_ComputeEigenvalues(data, leng, ML_TRUE); 
+	ML_SubspaceIteration_ComputeEigenvalues(data, leng, ML_FALSE); 
+      else ML_SubspaceIteration_ComputeEigenvalues(data, leng, ML_TRUE); 
 #else
       /* no diag. in smoother */
-      ML_Power_ComputeEigenvalues(data, leng, ML_FALSE); 
+      ML_SubspaceIteration_ComputeEigenvalues(data, leng, ML_FALSE); 
 #endif
 #endif
       data->ML_nonsym_eigen = 0;
