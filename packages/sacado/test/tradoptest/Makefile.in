@@ -18,7 +18,7 @@
 # ************************************************************************
 # 
 #                           Sacado Package
-#                 Copyright (2004) Sandia Corporation
+#                 Copyright (2006) Sandia Corporation
 # 
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 # license for use of this work by or on behalf of the U.S. Government.
@@ -286,7 +286,6 @@ ENABLE_ADOLC_TRUE = @ENABLE_ADOLC_TRUE@
 EXEEXT = .exe
 F77 = @F77@
 FFLAGS = @FFLAGS@
-GREP = @GREP@
 HAVE_CPPUNIT_FALSE = @HAVE_CPPUNIT_FALSE@
 HAVE_CPPUNIT_TRUE = @HAVE_CPPUNIT_TRUE@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
@@ -336,6 +335,8 @@ ac_aux_dir = @ac_aux_dir@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@
 ac_ct_F77 = @ac_ct_F77@
+ac_ct_RANLIB = @ac_ct_RANLIB@
+ac_ct_STRIP = @ac_ct_STRIP@
 am__fastdepCC_FALSE = @am__fastdepCC_FALSE@
 am__fastdepCC_TRUE = @am__fastdepCC_TRUE@
 am__fastdepCXX_FALSE = @am__fastdepCXX_FALSE@
@@ -350,9 +351,6 @@ build_cpu = @build_cpu@
 build_os = @build_os@
 build_vendor = @build_vendor@
 datadir = @datadir@
-datarootdir = @datarootdir@
-docdir = @docdir@
-dvidir = @dvidir@
 exec_prefix = @exec_prefix@
 execincludedir = @execincludedir@
 host = @host@
@@ -360,21 +358,17 @@ host_alias = @host_alias@
 host_cpu = @host_cpu@
 host_os = @host_os@
 host_vendor = @host_vendor@
-htmldir = @htmldir@
 includedir = @includedir@
 infodir = @infodir@
 install_sh = @install_sh@
 libdir = @libdir@
 libexecdir = @libexecdir@
-localedir = @localedir@
 localstatedir = @localstatedir@
 mandir = @mandir@
 mkdir_p = @mkdir_p@
 oldincludedir = @oldincludedir@
-pdfdir = @pdfdir@
 prefix = @prefix@
 program_transform_name = @program_transform_name@
-psdir = @psdir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
@@ -613,9 +607,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  test/tradoptest/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  test/tradoptest/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu  test/tradoptest/Makefile
+	  $(AUTOMAKE) --foreign  test/tradoptest/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
