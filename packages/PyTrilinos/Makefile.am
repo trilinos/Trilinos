@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 # 
-#                  PyTrilinos: Rapid Prototyping Package
+#                PyTrilinos: Python Interface to Trilinos
 #                   Copyright (2005) Sandia Corporation
 # 
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -21,7 +21,7 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
-# Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+# Questions? Contact Bill Spotz (wfspotz@sandia.gov) 
 # 
 # ************************************************************************
 # @HEADER
@@ -57,6 +57,7 @@ config/ac_cxx_new_for_scoping.m4        config/tac_arg_config_mpi.m4 \
 config/ac_cxx_reinterpret_cast.m4 \
 config/tac_arg_enable_compiler_options.m4 \
 config/ac_cxx_std_ios_base_fmtflags.m4  config/tac_arg_enable_feature.m4 \
+config/tac_arg_enable_feature_sub.m4    config/tac_arg_enable_default_feature.m4
 config/ac_cxx_std_sprintf.m4            config/tac_arg_enable_option.m4 \
 config/ac_prompt_user.m4                config/tac_arg_with_ar.m4 \
 config/ac_prompt_user_no_define.m4      config/tac_arg_with_blaslib.m4 \

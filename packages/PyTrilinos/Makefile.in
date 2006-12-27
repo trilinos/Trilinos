@@ -17,7 +17,7 @@
 # @HEADER
 # ************************************************************************
 # 
-#                  PyTrilinos: Rapid Prototyping Package
+#                PyTrilinos: Python Interface to Trilinos
 #                   Copyright (2005) Sandia Corporation
 # 
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -37,7 +37,7 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
-# Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+# Questions? Contact Bill Spotz (wfspotz@sandia.gov) 
 # 
 # ************************************************************************
 # @HEADER
@@ -63,16 +63,26 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
 DIST_COMMON = $(am__configure_deps) $(srcdir)/Makefile.am \
-	$(srcdir)/Makefile.in $(top_srcdir)/configure INSTALL \
+	$(srcdir)/Makefile.in $(top_srcdir)/configure \
+	$(top_srcdir)/src/.deps/dummy.in \
+	$(top_srcdir)/src/PyTrilinos/.dummy.in \
+	$(top_srcdir)/src/PyTrilinos/NOX/.dummy.in \
+	$(top_srcdir)/src/PyTrilinos/NOX/Epetra/.dummy.in \
+	$(top_srcdir)/src/PyTrilinos/NOX/LAPACK/.dummy.in INSTALL \
 	config/config.guess config/config.sub config/depcomp \
 	config/install-sh config/missing config/mkinstalldirs
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/config/ac_python_module.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/config/ac_pkg_swig.m4 \
+	$(top_srcdir)/config/ac_python_module.m4 \
 	$(top_srcdir)/config/az_python.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
+	$(top_srcdir)/config/tac_arg_enable_can_use_package.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
+	$(top_srcdir)/config/tac_arg_enable_feature_sub.m4 \
+	$(top_srcdir)/config/tac_arg_with_incdirs.m4 \
+	$(top_srcdir)/config/tac_arg_with_libdirs.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -80,7 +90,9 @@ am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno configure.status.lineno
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/PyTrilinos_config.h
-CONFIG_CLEAN_FILES =
+CONFIG_CLEAN_FILES = src/.deps/dummy src/PyTrilinos/.dummy \
+	src/PyTrilinos/NOX/.dummy src/PyTrilinos/NOX/Epetra/.dummy \
+	src/PyTrilinos/NOX/LAPACK/.dummy
 SOURCES =
 DIST_SOURCES =
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
@@ -128,8 +140,41 @@ ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
+GNU_HAVE_SWIG = @GNU_HAVE_SWIG@
+HAVE_AZTECOO_TEUCHOS_FALSE = @HAVE_AZTECOO_TEUCHOS_FALSE@
+HAVE_AZTECOO_TEUCHOS_TRUE = @HAVE_AZTECOO_TEUCHOS_TRUE@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
+HAVE_NOX_EPETRA_FALSE = @HAVE_NOX_EPETRA_FALSE@
+HAVE_NOX_EPETRA_TRUE = @HAVE_NOX_EPETRA_TRUE@
+HAVE_PYTRILINOS_AMESOS_FALSE = @HAVE_PYTRILINOS_AMESOS_FALSE@
+HAVE_PYTRILINOS_AMESOS_TRUE = @HAVE_PYTRILINOS_AMESOS_TRUE@
+HAVE_PYTRILINOS_ANASAZI_FALSE = @HAVE_PYTRILINOS_ANASAZI_FALSE@
+HAVE_PYTRILINOS_ANASAZI_TRUE = @HAVE_PYTRILINOS_ANASAZI_TRUE@
+HAVE_PYTRILINOS_AZTECOO_FALSE = @HAVE_PYTRILINOS_AZTECOO_FALSE@
+HAVE_PYTRILINOS_AZTECOO_TRUE = @HAVE_PYTRILINOS_AZTECOO_TRUE@
+HAVE_PYTRILINOS_EPETRAEXT_FALSE = @HAVE_PYTRILINOS_EPETRAEXT_FALSE@
+HAVE_PYTRILINOS_EPETRAEXT_TRUE = @HAVE_PYTRILINOS_EPETRAEXT_TRUE@
+HAVE_PYTRILINOS_EPETRA_FALSE = @HAVE_PYTRILINOS_EPETRA_FALSE@
+HAVE_PYTRILINOS_EPETRA_TRUE = @HAVE_PYTRILINOS_EPETRA_TRUE@
+HAVE_PYTRILINOS_GALERI_FALSE = @HAVE_PYTRILINOS_GALERI_FALSE@
+HAVE_PYTRILINOS_GALERI_TRUE = @HAVE_PYTRILINOS_GALERI_TRUE@
+HAVE_PYTRILINOS_IFPACK_FALSE = @HAVE_PYTRILINOS_IFPACK_FALSE@
+HAVE_PYTRILINOS_IFPACK_TRUE = @HAVE_PYTRILINOS_IFPACK_TRUE@
+HAVE_PYTRILINOS_LOCA_FALSE = @HAVE_PYTRILINOS_LOCA_FALSE@
+HAVE_PYTRILINOS_LOCA_TRUE = @HAVE_PYTRILINOS_LOCA_TRUE@
+HAVE_PYTRILINOS_ML_FALSE = @HAVE_PYTRILINOS_ML_FALSE@
+HAVE_PYTRILINOS_ML_TRUE = @HAVE_PYTRILINOS_ML_TRUE@
+HAVE_PYTRILINOS_NOX_FALSE = @HAVE_PYTRILINOS_NOX_FALSE@
+HAVE_PYTRILINOS_NOX_TRUE = @HAVE_PYTRILINOS_NOX_TRUE@
+HAVE_PYTRILINOS_TEUCHOS_FALSE = @HAVE_PYTRILINOS_TEUCHOS_FALSE@
+HAVE_PYTRILINOS_TEUCHOS_TRUE = @HAVE_PYTRILINOS_TEUCHOS_TRUE@
+HAVE_PYTRILINOS_THYRA_FALSE = @HAVE_PYTRILINOS_THYRA_FALSE@
+HAVE_PYTRILINOS_THYRA_TRUE = @HAVE_PYTRILINOS_THYRA_TRUE@
+HAVE_PYTRILINOS_TRIUTILS_FALSE = @HAVE_PYTRILINOS_TRIUTILS_FALSE@
+HAVE_PYTRILINOS_TRIUTILS_TRUE = @HAVE_PYTRILINOS_TRIUTILS_TRUE@
+HAVE_SWIG_FALSE = @HAVE_SWIG_FALSE@
+HAVE_SWIG_TRUE = @HAVE_SWIG_TRUE@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
@@ -165,7 +210,12 @@ PYTHON_USE_TRUE = @PYTHON_USE_TRUE@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
+SWIG = @SWIG@
+SWIG_LIB = @SWIG_LIB@
+SWIG_PYTHON_CPPFLAGS = @SWIG_PYTHON_CPPFLAGS@
+SWIG_PYTHON_OPT = @SWIG_PYTHON_OPT@
 VERSION = @VERSION@
+WITH_SWIG = @WITH_SWIG@
 ac_ct_CXX = @ac_ct_CXX@
 ac_ct_STRIP = @ac_ct_STRIP@
 am__fastdepCXX_FALSE = @am__fastdepCXX_FALSE@
@@ -289,6 +339,16 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(srcdir) && $(AUTOCONF)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(srcdir) && $(ACLOCAL) $(ACLOCAL_AMFLAGS)
+src/.deps/dummy: $(top_builddir)/config.status $(top_srcdir)/src/.deps/dummy.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/PyTrilinos/.dummy: $(top_builddir)/config.status $(top_srcdir)/src/PyTrilinos/.dummy.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/PyTrilinos/NOX/.dummy: $(top_builddir)/config.status $(top_srcdir)/src/PyTrilinos/NOX/.dummy.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/PyTrilinos/NOX/Epetra/.dummy: $(top_builddir)/config.status $(top_srcdir)/src/PyTrilinos/NOX/Epetra/.dummy.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/PyTrilinos/NOX/LAPACK/.dummy: $(top_builddir)/config.status $(top_srcdir)/src/PyTrilinos/NOX/LAPACK/.dummy.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
 uninstall-info-am:
 
 # This directory's subdirectories are mostly independent; you can cd
@@ -410,7 +470,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/config $(distdir)/src
+	$(mkdir_p) $(distdir)/config $(distdir)/src/.deps $(distdir)/src/PyTrilinos $(distdir)/src/PyTrilinos/NOX $(distdir)/src/PyTrilinos/NOX/Epetra $(distdir)/src/PyTrilinos/NOX/LAPACK
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
