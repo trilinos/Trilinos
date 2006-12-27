@@ -1,5 +1,11 @@
 /* src/PyTrilinos_config.h.in.  Generated from configure.ac by autoheader.  */
 
+/* Define if want to build aztecoo-teuchos */
+#undef HAVE_AZTECOO_TEUCHOS
+
+/* Define if want to build default-packages */
+#undef HAVE_DEFAULT_PACKAGES
+
 /* Define if want to build examples */
 #undef HAVE_EXAMPLES
 
@@ -11,6 +17,54 @@
 
 /* define if we want to use MPI */
 #undef HAVE_MPI
+
+/* Define if want to build nox-epetra */
+#undef HAVE_NOX_EPETRA
+
+/* Define if want to build with pytrilinos enabled */
+#undef HAVE_PYTRILINOS_AMESOS
+
+/* Define if want to build with pytrilinos enabled */
+#undef HAVE_PYTRILINOS_ANASAZI
+
+/* Define if want to build with pytrilinos enabled */
+#undef HAVE_PYTRILINOS_AZTECOO
+
+/* Define if want to build with pytrilinos enabled */
+#undef HAVE_PYTRILINOS_EPETRA
+
+/* Define if want to build with pytrilinos enabled */
+#undef HAVE_PYTRILINOS_EPETRAEXT
+
+/* Define if want to build pytrilinos-examples */
+#undef HAVE_PYTRILINOS_EXAMPLES
+
+/* Define if want to build with pytrilinos enabled */
+#undef HAVE_PYTRILINOS_GALERI
+
+/* Define if want to build with pytrilinos enabled */
+#undef HAVE_PYTRILINOS_IFPACK
+
+/* Define if want to build with pytrilinos enabled */
+#undef HAVE_PYTRILINOS_LOCA
+
+/* Define if want to build with pytrilinos enabled */
+#undef HAVE_PYTRILINOS_ML
+
+/* Define if want to build with pytrilinos enabled */
+#undef HAVE_PYTRILINOS_NOX
+
+/* Define if want to build pytrilinos-tests */
+#undef HAVE_PYTRILINOS_TESTS
+
+/* Define if want to build with pytrilinos enabled */
+#undef HAVE_PYTRILINOS_TEUCHOS
+
+/* Define if want to build with pytrilinos enabled */
+#undef HAVE_PYTRILINOS_THYRA
+
+/* Define if want to build with pytrilinos enabled */
+#undef HAVE_PYTRILINOS_TRIUTILS
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H

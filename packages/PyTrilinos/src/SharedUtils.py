@@ -1,13 +1,52 @@
+# @HEADER
+# ************************************************************************
+# 
+#              PyTrilinos: Python interface to Trilinos
+#                 Copyright (2004) Sandia Corporation
+# 
+# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+# license for use of this work by or on behalf of the U.S. Government.
+# 
+# This library is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation; either version 2.1 of the
+# License, or (at your option) any later version.
+#  
+# This library is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#  
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+# Questions? Contact Bill Spotz (wfspotz@sandia.gov) 
+# 
+# ************************************************************************
+# @HEADER
+
 # System imports
 import commands
 import glob
 import os
 import sys
 
-# Trilinos import
-TRILINOS_HOME_DIR = os.path.normpath(open("TRILINOS_HOME_DIR").read()[:-1])
-sys.path.insert(0,os.path.join(TRILINOS_HOME_DIR,"commonTools","buildTools"))
+# Local import
 from MakefileVariables import *
+
+######################################################################
+
+def buildSharedLibraries():
+    """
+    Return boolean indicating whether the shared libraries need to be built.
+    Returns True if the operating system is either Darwin or Linux and this is
+    an MPI build.
+    """
+    #if os.uname()[0] not in ("Darwin", "Linux"): return False
+    #makefileVars = processMakefile("Makefile")
+    #return bool(makefileVars["HAVE_MPI"])
+    return os.uname()[0] in ("Darwin","Linux")
 
 ######################################################################
 
@@ -62,6 +101,7 @@ def removeExtensionModules(path):
     Remove every file whose name matches the pattern _*.so under the given
     path.
     """
+    if True: return
     print "removing extension modules"
     runCommand("find %s -name _*.so -print -delete" % path)
 
@@ -92,8 +132,7 @@ class SharedTrilinosBuilder:
         self.__absDylibName = os.path.join(self.__thisDir, self.__dylibName)
         self.__makeMacros   = self.getMakeMacros()
         self.__linkCmd      = self.getLinkCmd()
-        self.__supported    = self.__sysName in ("Darwin", "Linux") and \
-                              self.__makeMacros["HAVE_MPI"]
+        self.__supported    = buildSharedLibraries()
 
     ######################################################################
 
@@ -125,14 +164,9 @@ class SharedTrilinosBuilder:
 
     def getMakeMacros(self):
         """
-        Obtain the dictionary of Makefile macros appropriate for this Trilinos
-        package.
+        Obtain the dictionary of Makefile macros appropriate for PyTrilinos.
         """
-        makeMacros   = processMakefile("Makefile")
-        makefileName = os.path.join(self.__topBuildDir, "python", "src",
-                                    "Makefile")
-        makeMacros.update(processMakefile(makefileName))
-        return makeMacros
+        return processMakefile("Makefile")
 
     ######################################################################
 
@@ -167,18 +201,17 @@ class SharedTrilinosBuilder:
         Change directory to the Trilinos package and, if necessary, re-link the
         package library as a dynamic/shared library.
         """
-
         if not self.__supported: return
 
         # Build a new shared library
-        print "\nConverting", self.__package, "to a shared library"
-        changeDirectory(self.__buildDir)
         if needsToBeBuilt(self.__absDylibName, glob.glob("*.o")):
+            print "\nConverting", self.__package, "to a shared library"
+            changeDirectory(self.__buildDir)
             runCommand(self.__linkCmd)
             print "Moving", self.__dylibName, "to", self.__absDylibName
             os.rename(self.__dylibName, self.__absDylibName)
-        else:
-            print "nothing needs to be done for", self.__absDylibName
+            # Restore the current working directory
+            changeDirectory(self.__thisDir)
 
     ######################################################################
 
@@ -187,8 +220,8 @@ class SharedTrilinosBuilder:
         Change directory to the Trilinos package python build directory and
         re-link the extension module to the new dynamic libraries.
         """
-
-        if not self.__supported: return
+        #if not self.__supported: return
+        if True: return
 
         # Remove all outdated extension modules and run make
         print "\nLinking", self.__package, "extension module to shared libraries"
@@ -210,7 +243,6 @@ class SharedTrilinosBuilder:
         Remove all files created by the buildShared() and reLinkExtension()
         methods.
         """
-
         if not self.__supported: return
 
         # Remove the shared library
@@ -218,11 +250,11 @@ class SharedTrilinosBuilder:
         deleteFile(self.__absDylibName)
 
         # Clean the python directory
-        changeDirectory(os.path.join(self.__buildDir,"..", "python", "src"))
-        removeExtensionModules("build")
+        #changeDirectory(os.path.join(self.__buildDir,"..", "python", "src"))
+        #removeExtensionModules("build")
 
         # Restore the current working directory
-        changeDirectory(self.__thisDir)
+        #changeDirectory(self.__thisDir)
 
     ######################################################################
 
@@ -231,7 +263,6 @@ class SharedTrilinosBuilder:
         Install the new shared Trilinos library and the newly linked python
         extension module in the appropriate directories.
         """
-
         if not self.__supported: return
 
         # Initialize
@@ -254,7 +285,6 @@ class SharedTrilinosBuilder:
         """
         Uninstall the shared Trilinos library.
         """
-
         if not self.__supported: return
 
         # Initialize

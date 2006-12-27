@@ -17,7 +17,7 @@
 # @HEADER
 # ************************************************************************
 # 
-#               PyTrilinos: Python interface to Trilinos
+#              PyTrilinos: Python interface to Trilinos
 #                 Copyright (2004) Sandia Corporation
 # 
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -37,10 +37,47 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
-# Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+# Questions? Contact Bill Spotz (wfspotz@sandia.gov) 
 # 
 # ************************************************************************
 # @HEADER
+
+# @HEADER
+# ************************************************************************
+# 
+#            NOX: An Object-Oriented Nonlinear Solver Package
+#                 Copyright (2002) Sandia Corporation
+# 
+#            LOCA: Library of Continuation Algorithms Package
+#                 Copyright (2005) Sandia Corporation
+# 
+# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+# license for use of this work by or on behalf of the U.S. Government.
+# 
+# This library is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation; either version 2.1 of the
+# License, or (at your option) any later version.
+#  
+# This library is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+# 
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+# 
+# Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+# Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
+# ************************************************************************
+# @HEADER
+
+# ------------------------------------------------------------------------
+# Rules for building python interface files using swig.  Automatic 
+# dependency tracking for swig interface files is implemented.
+# ------------------------------------------------------------------------
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
 VPATH = @srcdir@
@@ -62,22 +99,26 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-subdir = src
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
-	$(srcdir)/PyTrilinos_config.h.in \
-	$(srcdir)/TRILINOS_HOME_DIR.in
+	$(srcdir)/PyTrilinos_config.h.in $(top_srcdir)/config/swig.am
+subdir = src
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/config/ac_python_module.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/config/ac_pkg_swig.m4 \
+	$(top_srcdir)/config/ac_python_module.m4 \
 	$(top_srcdir)/config/az_python.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
+	$(top_srcdir)/config/tac_arg_enable_can_use_package.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
+	$(top_srcdir)/config/tac_arg_enable_feature_sub.m4 \
+	$(top_srcdir)/config/tac_arg_with_incdirs.m4 \
+	$(top_srcdir)/config/tac_arg_with_libdirs.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = PyTrilinos_config.h
-CONFIG_CLEAN_FILES = TRILINOS_HOME_DIR
+CONFIG_CLEAN_FILES =
 SOURCES =
 DIST_SOURCES =
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -106,8 +147,41 @@ ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
+GNU_HAVE_SWIG = @GNU_HAVE_SWIG@
+HAVE_AZTECOO_TEUCHOS_FALSE = @HAVE_AZTECOO_TEUCHOS_FALSE@
+HAVE_AZTECOO_TEUCHOS_TRUE = @HAVE_AZTECOO_TEUCHOS_TRUE@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
+HAVE_NOX_EPETRA_FALSE = @HAVE_NOX_EPETRA_FALSE@
+HAVE_NOX_EPETRA_TRUE = @HAVE_NOX_EPETRA_TRUE@
+HAVE_PYTRILINOS_AMESOS_FALSE = @HAVE_PYTRILINOS_AMESOS_FALSE@
+HAVE_PYTRILINOS_AMESOS_TRUE = @HAVE_PYTRILINOS_AMESOS_TRUE@
+HAVE_PYTRILINOS_ANASAZI_FALSE = @HAVE_PYTRILINOS_ANASAZI_FALSE@
+HAVE_PYTRILINOS_ANASAZI_TRUE = @HAVE_PYTRILINOS_ANASAZI_TRUE@
+HAVE_PYTRILINOS_AZTECOO_FALSE = @HAVE_PYTRILINOS_AZTECOO_FALSE@
+HAVE_PYTRILINOS_AZTECOO_TRUE = @HAVE_PYTRILINOS_AZTECOO_TRUE@
+HAVE_PYTRILINOS_EPETRAEXT_FALSE = @HAVE_PYTRILINOS_EPETRAEXT_FALSE@
+HAVE_PYTRILINOS_EPETRAEXT_TRUE = @HAVE_PYTRILINOS_EPETRAEXT_TRUE@
+HAVE_PYTRILINOS_EPETRA_FALSE = @HAVE_PYTRILINOS_EPETRA_FALSE@
+HAVE_PYTRILINOS_EPETRA_TRUE = @HAVE_PYTRILINOS_EPETRA_TRUE@
+HAVE_PYTRILINOS_GALERI_FALSE = @HAVE_PYTRILINOS_GALERI_FALSE@
+HAVE_PYTRILINOS_GALERI_TRUE = @HAVE_PYTRILINOS_GALERI_TRUE@
+HAVE_PYTRILINOS_IFPACK_FALSE = @HAVE_PYTRILINOS_IFPACK_FALSE@
+HAVE_PYTRILINOS_IFPACK_TRUE = @HAVE_PYTRILINOS_IFPACK_TRUE@
+HAVE_PYTRILINOS_LOCA_FALSE = @HAVE_PYTRILINOS_LOCA_FALSE@
+HAVE_PYTRILINOS_LOCA_TRUE = @HAVE_PYTRILINOS_LOCA_TRUE@
+HAVE_PYTRILINOS_ML_FALSE = @HAVE_PYTRILINOS_ML_FALSE@
+HAVE_PYTRILINOS_ML_TRUE = @HAVE_PYTRILINOS_ML_TRUE@
+HAVE_PYTRILINOS_NOX_FALSE = @HAVE_PYTRILINOS_NOX_FALSE@
+HAVE_PYTRILINOS_NOX_TRUE = @HAVE_PYTRILINOS_NOX_TRUE@
+HAVE_PYTRILINOS_TEUCHOS_FALSE = @HAVE_PYTRILINOS_TEUCHOS_FALSE@
+HAVE_PYTRILINOS_TEUCHOS_TRUE = @HAVE_PYTRILINOS_TEUCHOS_TRUE@
+HAVE_PYTRILINOS_THYRA_FALSE = @HAVE_PYTRILINOS_THYRA_FALSE@
+HAVE_PYTRILINOS_THYRA_TRUE = @HAVE_PYTRILINOS_THYRA_TRUE@
+HAVE_PYTRILINOS_TRIUTILS_FALSE = @HAVE_PYTRILINOS_TRIUTILS_FALSE@
+HAVE_PYTRILINOS_TRIUTILS_TRUE = @HAVE_PYTRILINOS_TRIUTILS_TRUE@
+HAVE_SWIG_FALSE = @HAVE_SWIG_FALSE@
+HAVE_SWIG_TRUE = @HAVE_SWIG_TRUE@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
@@ -143,7 +217,12 @@ PYTHON_USE_TRUE = @PYTHON_USE_TRUE@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
+SWIG = @SWIG@
+SWIG_LIB = @SWIG_LIB@
+SWIG_PYTHON_CPPFLAGS = @SWIG_PYTHON_CPPFLAGS@
+SWIG_PYTHON_OPT = @SWIG_PYTHON_OPT@
 VERSION = @VERSION@
+WITH_SWIG = @WITH_SWIG@
 ac_ct_CXX = @ac_ct_CXX@
 ac_ct_STRIP = @ac_ct_STRIP@
 am__fastdepCXX_FALSE = @am__fastdepCXX_FALSE@
@@ -183,9 +262,74 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-EXTRA_DIST = setup.py SharedUtils.py
+EXTRA_DIST = Amesos.i Anasazi.i AztecOO.i \
+	     Epetra.i Epetra_Base.i Epetra_Comm.i Epetra_Graphs.i \
+	     Epetra_Maps.i Epetra_Operators.i Epetra_SerialDense.i Epetra_Vectors.i \
+	     EpetraExt.i Galeri.i IFPACK.i ML.i \
+	     NOX.__init__.i NOX.Abstract.i NOX.Epetra.__init__.i \
+	     NOX.Epetra.Interface.i NOX.Solver.i NOX.StatusTest.i \
+	     Teuchos.i Teuchos_ParameterList_ext.i \
+	     Thyra.i TriuTils.i \
+	     numpy.i setup.py SharedUtils.py
+
 @HAVE_MPI_TRUE@HAVE_MPI = 1
 @HAVE_MPI_FALSE@HAVE_MPI = 
+
+# Dependencies.  Obtain the list of dependencies by executing ls.  This could
+# be empty, so when we include the dependency files, we also include 'dummy',
+# an empty file used to trick configure into making the dependency directory.
+DEPFILES = $(shell ls $(DEPDIR)/*.Pi 2> /dev/null; ls $(DEPDIR)/dummy)
+
+# Clean target.  Put the generated dependency files in the list of files to
+# be removed with a "make clean"
+CLEANFILES = $(DEPDIR)/*.Pi $(PROXIES) $(WRAPPERS) $(DIR_HDRS)
+
+# Define the SWIGCOMPILE macro
+SWIGCOMPILE = $(SWIG) $(SWIG_PYTHON_OPT)
+@HAVE_PYTRILINOS_TEUCHOS_TRUE@TEUCHOS_INTERFACES = Teuchos.i
+@HAVE_PYTRILINOS_TEUCHOS_TRUE@TEUCHOS_PROXIES = PyTrilinos/Teuchos.py
+@HAVE_PYTRILINOS_THYRA_TRUE@THYRA_INTERFACES = Thyra.i
+@HAVE_PYTRILINOS_THYRA_TRUE@THYRA_PROXIES = PyTrilinos/Thyra.py
+@HAVE_PYTRILINOS_EPETRA_TRUE@EPETRA_INTERFACES = Epetra.i
+@HAVE_PYTRILINOS_EPETRA_TRUE@EPETRA_PROXIES = PyTrilinos/Epetra.py
+@HAVE_PYTRILINOS_TRIUTILS_TRUE@TRIUTILS_INTERFACES = TriUtils.i
+@HAVE_PYTRILINOS_TRIUTILS_TRUE@TRIUTILS_PROXIES = PyTrilinos/TriUtils.py
+@HAVE_PYTRILINOS_EPETRAEXT_TRUE@EPETRAEXT_INTERFACES = EpetraExt.i
+@HAVE_PYTRILINOS_EPETRAEXT_TRUE@EPETRAEXT_PROXIES = PyTrilinos/EpetraExt.py
+@HAVE_PYTRILINOS_AZTECOO_TRUE@AZTECOO_INTERFACES = AztecOO.i
+@HAVE_PYTRILINOS_AZTECOO_TRUE@AZTECOO_PROXIES = PyTrilinos/AztecOO.py
+@HAVE_PYTRILINOS_GALERI_TRUE@GALERI_INTERFACES = Galeri.i
+@HAVE_PYTRILINOS_GALERI_TRUE@GALERI_PROXIES = PyTrilinos/Galeri.py
+@HAVE_PYTRILINOS_AMESOS_TRUE@AMESOS_INTERFACES = Amesos.i
+@HAVE_PYTRILINOS_AMESOS_TRUE@AMESOS_PROXIES = PyTrilinos/Amesos.py
+@HAVE_PYTRILINOS_IFPACK_TRUE@IFPACK_INTERFACES = IFPACK.i
+@HAVE_PYTRILINOS_IFPACK_TRUE@IFPACK_PROXIES = PyTrilinos/IFPACK.py
+@HAVE_PYTRILINOS_ANASAZI_TRUE@ANASAZI_INTERFACES = Anasazi.i
+@HAVE_PYTRILINOS_ANASAZI_TRUE@ANASAZI_PROXIES = PyTrilinos/Anasazi.py
+@HAVE_PYTRILINOS_ML_TRUE@ML_INTERFACES = ML.i
+@HAVE_PYTRILINOS_ML_TRUE@ML_PROXIES = PyTrilinos/ML.py
+@HAVE_PYTRILINOS_NOX_TRUE@NOX_BASE_INTERFACES = NOX.__init__.i NOX.Abstract.i NOX.Solver.i NOX.StatusTest.i
+@HAVE_PYTRILINOS_NOX_TRUE@NOX_BASE_PROXIES = PyTrilinos/NOX/__init__.py PyTrilinos/NOX/Abstract.py \
+@HAVE_PYTRILINOS_NOX_TRUE@                   PyTrilinos/NOX/Solver.py   PyTrilinos/NOX/StatusTest.py
+
+@HAVE_NOX_EPETRA_TRUE@@HAVE_PYTRILINOS_NOX_TRUE@NOX_EPETRA_INTERFACES = NOX.Epetra.__init__.i NOX.Epetra.Interface.i
+@HAVE_NOX_EPETRA_TRUE@@HAVE_PYTRILINOS_NOX_TRUE@NOX_EPETRA_PROXIES = PyTrilinos/NOX/Epetra/__init__.py PyTrilinos/NOX/Epetra/Interface.py
+@HAVE_PYTRILINOS_NOX_TRUE@NOX_INTERFACES = $(NOX_BASE_INTERFACES) $(NOX_EPETRA_INTERFACES) $(NOX_LAPACK_INTERFACES)
+@HAVE_PYTRILINOS_NOX_TRUE@NOX_PROXIES = $(NOX_BASE_PROXIES) $(NOX_EPETRA_PROXIES) $(NOX_LAPACK_PROXIES)
+
+# PyTrilinos
+INTERFACES = $(TEUCHOS_INTERFACES)  $(THYRA_INTERFACES)     $(EPETRA_INTERFACES)  \
+	     $(TRIUTILS_INTERFACES) $(EPETRAEXT_INTERFACES) $(AZTECOO_INTERFACES) \
+	     $(GALERI_INTERFACES)   $(AMESOS_INTERFACES)    $(IFPACK_INTERFACES)  \
+	     $(ANASAZI_INTERFACES)  $(ML_INTERFACES)        $(NOX_INTERFACES)
+
+PROXIES = $(TEUCHOS_PROXIES)  $(THYRA_PROXIES)     $(EPETRA_PROXIES)  \
+	     $(TRIUTILS_PROXIES) $(EPETRAEXT_PROXIES) $(AZTECOO_PROXIES) \
+	     $(GALERI_PROXIES)   $(AMESOS_PROXIES)    $(IFPACK_PROXIES)  \
+	     $(ANASAZI_PROXIES)  $(ML_PROXIES)        $(NOX_PROXIES)
+
+WRAPPERS = $(INTERFACES:.i=_wrap.cpp)
+DIR_HDRS = $(INTERFACES:.i=_wrap.h)
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'
@@ -195,7 +339,7 @@ all: PyTrilinos_config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
 .SUFFIXES:
-$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/config/swig.am $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -241,8 +385,6 @@ $(srcdir)/PyTrilinos_config.h.in: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 
 distclean-hdr:
 	-rm -f PyTrilinos_config.h stamp-h1
-TRILINOS_HOME_DIR: $(top_builddir)/config.status $(srcdir)/TRILINOS_HOME_DIR.in
-	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 uninstall-info-am:
 tags: TAGS
 TAGS:
@@ -252,6 +394,7 @@ CTAGS:
 
 
 distdir: $(DISTFILES)
+	$(mkdir_p) $(distdir)/../config
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -297,6 +440,7 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
+	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-rm -f $(CONFIG_CLEAN_FILES)
@@ -363,6 +507,62 @@ uninstall-am: uninstall-info-am
 
 # Default make target
 all-local: build
+include $(DEPFILES)
+
+# Wrapper and proxy targets
+%_wrap.cpp: $(srcdir)/%.i
+	if $(SWIGCOMPILE) `$(srcdir)/pkg_info.py -i $<` -outdir `$(srcdir)/pkg_info.py -o $<` -MMD -MF "$(DEPDIR)/$*.Tpi" -o $@ $<; \
+	then mv -f "$(DEPDIR)/$*.Tpi" "$(DEPDIR)/$*.Pi"; \
+	else rm -f "$(DEPDIR)/$*.Tpi"; exit 1; fi
+
+swigclean:
+	rm -f $(srcdir)/*_wrap.cpp $(WRAPPERS) 
+
+# Include swig rules
+
+# For the package-enabling macros that follow, I would have preferred
+# all info (interface file names, python proxy file names, wrapper code
+# file names and wrapper header file names) to derive from a single
+# source (interface file name, for example).  This would be possible
+# with GNU make substitution rules, but this is not portable.  So I
+# require a list of interface files and a list of proxy files for each
+# package.
+
+# Teuchos
+@HAVE_PYTRILINOS_TEUCHOS_TRUE@include $(top_builddir)/../teuchos/Makefile.export.teuchos
+
+# Thyra
+@HAVE_PYTRILINOS_THYRA_TRUE@include $(top_builddir)/../thyra/Makefile.export.thyra
+
+# Epetra
+@HAVE_PYTRILINOS_EPETRA_TRUE@include $(top_builddir)/../epetra/Makefile.export.epetra
+
+# TriUtils
+@HAVE_PYTRILINOS_TRIUTILS_TRUE@include $(top_builddir)/../triutils/Makefile.export.triutils
+
+# EpetraExt
+@HAVE_PYTRILINOS_EPETRAEXT_TRUE@include $(top_builddir)/../epetraext/Makefile.export.epetraext
+
+# AztecOO
+@HAVE_PYTRILINOS_AZTECOO_TRUE@include $(top_builddir)/../aztecoo/Makefile.export.aztecoo
+
+# Galeri
+@HAVE_PYTRILINOS_GALERI_TRUE@include $(top_builddir)/../galeri/Makefile.export.galeri
+
+# Amesos
+@HAVE_PYTRILINOS_AMESOS_TRUE@include $(top_builddir)/../amesos/Makefile.export.amesos
+
+# IFPACK
+@HAVE_PYTRILINOS_IFPACK_TRUE@include $(top_builddir)/../ifpack/Makefile.export.ifpack
+
+# Anasazi
+@HAVE_PYTRILINOS_ANASAZI_TRUE@include $(top_builddir)/../anasazi/Makefile.export.anasazi
+
+# ML
+@HAVE_PYTRILINOS_ML_TRUE@include $(top_builddir)/../ml/Makefile.export.ml
+
+# NOX
+@HAVE_PYTRILINOS_NOX_TRUE@include $(top_builddir)/../nox/Makefile.export.nox
 
 # The following line helps the test harness recover from build errors.
 all-am:
@@ -370,7 +570,7 @@ all-am:
 	@echo "Trilinos package PyTrilinos subdirectory src built successfully."
 	@echo ""
 
-build:
+build: $(WRAPPERS)
 	$(PYTHON) $(srcdir)/setup.py build
 
 install: build

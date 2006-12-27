@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 # 
-#               PyTrilinos: Python interface to Trilinos
+#              PyTrilinos: Python interface to Trilinos
 #                 Copyright (2004) Sandia Corporation
 # 
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -21,12 +21,20 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
-# Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+# Questions? Contact Bill Spotz (wfspotz@sandia.gov) 
 # 
 # ************************************************************************
 # @HEADER
 
-EXTRA_DIST = setup.py SharedUtils.py
+EXTRA_DIST = Amesos.i Anasazi.i AztecOO.i \
+	     Epetra.i Epetra_Base.i Epetra_Comm.i Epetra_Graphs.i \
+	     Epetra_Maps.i Epetra_Operators.i Epetra_SerialDense.i Epetra_Vectors.i \
+	     EpetraExt.i Galeri.i IFPACK.i ML.i \
+	     NOX.__init__.i NOX.Abstract.i NOX.Epetra.__init__.i \
+	     NOX.Epetra.Interface.i NOX.Solver.i NOX.StatusTest.i \
+	     Teuchos.i Teuchos_ParameterList_ext.i \
+	     Thyra.i TriuTils.i \
+	     numpy.i setup.py SharedUtils.py
 
 @HAVE_MPI_TRUE@HAVE_MPI = 1
 @HAVE_MPI_FALSE@HAVE_MPI =
@@ -34,13 +42,127 @@ EXTRA_DIST = setup.py SharedUtils.py
 # Default make target
 all-local: build
 
+# Include swig rules
+include $(top_srcdir)/config/swig.am
+
+# For the package-enabling macros that follow, I would have preferred
+# all info (interface file names, python proxy file names, wrapper code
+# file names and wrapper header file names) to derive from a single
+# source (interface file name, for example).  This would be possible
+# with GNU make substitution rules, but this is not portable.  So I
+# require a list of interface files and a list of proxy files for each
+# package.
+
+# Teuchos
+if HAVE_PYTRILINOS_TEUCHOS
+include $(top_builddir)/../teuchos/Makefile.export.teuchos
+TEUCHOS_INTERFACES = Teuchos.i
+TEUCHOS_PROXIES = PyTrilinos/Teuchos.py
+endif
+
+# Thyra
+if HAVE_PYTRILINOS_THYRA
+include $(top_builddir)/../thyra/Makefile.export.thyra
+THYRA_INTERFACES = Thyra.i
+THYRA_PROXIES = PyTrilinos/Thyra.py
+endif
+
+# Epetra
+if HAVE_PYTRILINOS_EPETRA
+include $(top_builddir)/../epetra/Makefile.export.epetra
+EPETRA_INTERFACES = Epetra.i
+EPETRA_PROXIES = PyTrilinos/Epetra.py
+endif
+
+# TriUtils
+if HAVE_PYTRILINOS_TRIUTILS
+include $(top_builddir)/../triutils/Makefile.export.triutils
+TRIUTILS_INTERFACES = TriUtils.i
+TRIUTILS_PROXIES = PyTrilinos/TriUtils.py
+endif
+
+# EpetraExt
+if HAVE_PYTRILINOS_EPETRAEXT
+include $(top_builddir)/../epetraext/Makefile.export.epetraext
+EPETRAEXT_INTERFACES = EpetraExt.i
+EPETRAEXT_PROXIES = PyTrilinos/EpetraExt.py
+endif
+
+# AztecOO
+if HAVE_PYTRILINOS_AZTECOO
+include $(top_builddir)/../aztecoo/Makefile.export.aztecoo
+AZTECOO_INTERFACES = AztecOO.i
+AZTECOO_PROXIES = PyTrilinos/AztecOO.py
+endif
+
+# Galeri
+if HAVE_PYTRILINOS_GALERI
+include $(top_builddir)/../galeri/Makefile.export.galeri
+GALERI_INTERFACES = Galeri.i
+GALERI_PROXIES = PyTrilinos/Galeri.py
+endif
+
+# Amesos
+if HAVE_PYTRILINOS_AMESOS
+include $(top_builddir)/../amesos/Makefile.export.amesos
+AMESOS_INTERFACES = Amesos.i
+AMESOS_PROXIES = PyTrilinos/Amesos.py
+endif
+
+# IFPACK
+if HAVE_PYTRILINOS_IFPACK
+include $(top_builddir)/../ifpack/Makefile.export.ifpack
+IFPACK_INTERFACES = IFPACK.i
+IFPACK_PROXIES = PyTrilinos/IFPACK.py
+endif
+
+# Anasazi
+if HAVE_PYTRILINOS_ANASAZI
+include $(top_builddir)/../anasazi/Makefile.export.anasazi
+ANASAZI_INTERFACES = Anasazi.i
+ANASAZI_PROXIES = PyTrilinos/Anasazi.py
+endif
+
+# ML
+if HAVE_PYTRILINOS_ML
+include $(top_builddir)/../ml/Makefile.export.ml
+ML_INTERFACES = ML.i
+ML_PROXIES = PyTrilinos/ML.py
+endif
+
+# NOX
+if HAVE_PYTRILINOS_NOX
+include $(top_builddir)/../nox/Makefile.export.nox
+NOX_BASE_INTERFACES = NOX.__init__.i NOX.Abstract.i NOX.Solver.i NOX.StatusTest.i
+NOX_BASE_PROXIES = PyTrilinos/NOX/__init__.py PyTrilinos/NOX/Abstract.py \
+                   PyTrilinos/NOX/Solver.py   PyTrilinos/NOX/StatusTest.py
+if HAVE_NOX_EPETRA
+NOX_EPETRA_INTERFACES = NOX.Epetra.__init__.i NOX.Epetra.Interface.i
+NOX_EPETRA_PROXIES = PyTrilinos/NOX/Epetra/__init__.py PyTrilinos/NOX/Epetra/Interface.py
+endif
+NOX_INTERFACES = $(NOX_BASE_INTERFACES) $(NOX_EPETRA_INTERFACES) $(NOX_LAPACK_INTERFACES)
+NOX_PROXIES = $(NOX_BASE_PROXIES) $(NOX_EPETRA_PROXIES) $(NOX_LAPACK_PROXIES)
+endif
+
+# PyTrilinos
+INTERFACES = $(TEUCHOS_INTERFACES)  $(THYRA_INTERFACES)     $(EPETRA_INTERFACES)  \
+	     $(TRIUTILS_INTERFACES) $(EPETRAEXT_INTERFACES) $(AZTECOO_INTERFACES) \
+	     $(GALERI_INTERFACES)   $(AMESOS_INTERFACES)    $(IFPACK_INTERFACES)  \
+	     $(ANASAZI_INTERFACES)  $(ML_INTERFACES)        $(NOX_INTERFACES)
+PROXIES  =   $(TEUCHOS_PROXIES)  $(THYRA_PROXIES)     $(EPETRA_PROXIES)  \
+	     $(TRIUTILS_PROXIES) $(EPETRAEXT_PROXIES) $(AZTECOO_PROXIES) \
+	     $(GALERI_PROXIES)   $(AMESOS_PROXIES)    $(IFPACK_PROXIES)  \
+	     $(ANASAZI_PROXIES)  $(ML_PROXIES)        $(NOX_PROXIES)
+WRAPPERS   = $(INTERFACES:.i=_wrap.cpp)
+DIR_HDRS   = $(INTERFACES:.i=_wrap.h)
+
 # The following line helps the test harness recover from build errors.
 all-am:
 	@echo ""
 	@echo "Trilinos package PyTrilinos subdirectory src built successfully."
 	@echo ""
 
-build:
+build: $(WRAPPERS)
 	$(PYTHON) $(srcdir)/setup.py build
 
 install: build
@@ -51,6 +173,8 @@ uninstall:
 
 clean-local:
 	$(PYTHON) $(srcdir)/setup.py clean
+
+CLEANFILES += $(PROXIES) $(WRAPPERS) $(DIR_HDRS)
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'
