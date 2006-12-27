@@ -2,7 +2,23 @@
 # FRAMEWORK group
 #
 
-(FRAMEWORK) {
-    TESTS = ;
-    COMM = SERIAL, MPI;
+(FRAMEWORK, INSTALL, PyTrilinos_Tests) {
+    DIR  = .;
+    ARGS = --testharness;
+    EXIT-STATUS = STRING-COMPARISON;
+    COMM = SERIAL, MPI(1-4);
 }
+
+(FRAMEWORK, INSTALL, PyTrilinos_Examples) {
+    DIR  = ../example;
+    DESCEND_DIRS = YES;
+    ARGS = --testharness;
+    EXIT-STATUS = STRING-COMPARISON;
+    COMM = SERIAL, MPI(1-4);
+}
+
+ml
+nox
+teuchos
+thyra
+triutils
