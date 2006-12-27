@@ -2,6 +2,7 @@
 *~
 *.o
 *_wrap.cxx
+*.pyc
 RawEpetra.py
 EpetraExt.py
 old
