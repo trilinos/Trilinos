@@ -17,7 +17,7 @@
 # @HEADER
 # ************************************************************************
 # 
-#                  PyTrilinos: Rapid Prototyping Package
+#                PyTrilinos: Python Interface to Trilinos
 #                   Copyright (2005) Sandia Corporation
 # 
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -37,12 +37,10 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
-# Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+# Questions? Contact Bill Spotz (wfspotz@sandia.gov) 
 # 
 # ************************************************************************
 # @HEADER
-
-# The following line helps the test harness recover from build errors.
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
 VPATH = @srcdir@
@@ -67,11 +65,16 @@ host_triplet = @host@
 subdir = example
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/config/ac_python_module.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/config/ac_pkg_swig.m4 \
+	$(top_srcdir)/config/ac_python_module.m4 \
 	$(top_srcdir)/config/az_python.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
+	$(top_srcdir)/config/tac_arg_enable_can_use_package.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
+	$(top_srcdir)/config/tac_arg_enable_feature_sub.m4 \
+	$(top_srcdir)/config/tac_arg_with_incdirs.m4 \
+	$(top_srcdir)/config/tac_arg_with_libdirs.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -81,7 +84,7 @@ CONFIG_CLEAN_FILES =
 SOURCES =
 DIST_SOURCES =
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
-ACLOCAL = @ACLOCAL@
+ACLOCAL = aclocal -I config
 AMDEP_FALSE = @AMDEP_FALSE@
 AMDEP_TRUE = @AMDEP_TRUE@
 AMTAR = @AMTAR@
@@ -106,8 +109,41 @@ ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
+GNU_HAVE_SWIG = @GNU_HAVE_SWIG@
+HAVE_AZTECOO_TEUCHOS_FALSE = @HAVE_AZTECOO_TEUCHOS_FALSE@
+HAVE_AZTECOO_TEUCHOS_TRUE = @HAVE_AZTECOO_TEUCHOS_TRUE@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
+HAVE_NOX_EPETRA_FALSE = @HAVE_NOX_EPETRA_FALSE@
+HAVE_NOX_EPETRA_TRUE = @HAVE_NOX_EPETRA_TRUE@
+HAVE_PYTRILINOS_AMESOS_FALSE = @HAVE_PYTRILINOS_AMESOS_FALSE@
+HAVE_PYTRILINOS_AMESOS_TRUE = @HAVE_PYTRILINOS_AMESOS_TRUE@
+HAVE_PYTRILINOS_ANASAZI_FALSE = @HAVE_PYTRILINOS_ANASAZI_FALSE@
+HAVE_PYTRILINOS_ANASAZI_TRUE = @HAVE_PYTRILINOS_ANASAZI_TRUE@
+HAVE_PYTRILINOS_AZTECOO_FALSE = @HAVE_PYTRILINOS_AZTECOO_FALSE@
+HAVE_PYTRILINOS_AZTECOO_TRUE = @HAVE_PYTRILINOS_AZTECOO_TRUE@
+HAVE_PYTRILINOS_EPETRAEXT_FALSE = @HAVE_PYTRILINOS_EPETRAEXT_FALSE@
+HAVE_PYTRILINOS_EPETRAEXT_TRUE = @HAVE_PYTRILINOS_EPETRAEXT_TRUE@
+HAVE_PYTRILINOS_EPETRA_FALSE = @HAVE_PYTRILINOS_EPETRA_FALSE@
+HAVE_PYTRILINOS_EPETRA_TRUE = @HAVE_PYTRILINOS_EPETRA_TRUE@
+HAVE_PYTRILINOS_GALERI_FALSE = @HAVE_PYTRILINOS_GALERI_FALSE@
+HAVE_PYTRILINOS_GALERI_TRUE = @HAVE_PYTRILINOS_GALERI_TRUE@
+HAVE_PYTRILINOS_IFPACK_FALSE = @HAVE_PYTRILINOS_IFPACK_FALSE@
+HAVE_PYTRILINOS_IFPACK_TRUE = @HAVE_PYTRILINOS_IFPACK_TRUE@
+HAVE_PYTRILINOS_LOCA_FALSE = @HAVE_PYTRILINOS_LOCA_FALSE@
+HAVE_PYTRILINOS_LOCA_TRUE = @HAVE_PYTRILINOS_LOCA_TRUE@
+HAVE_PYTRILINOS_ML_FALSE = @HAVE_PYTRILINOS_ML_FALSE@
+HAVE_PYTRILINOS_ML_TRUE = @HAVE_PYTRILINOS_ML_TRUE@
+HAVE_PYTRILINOS_NOX_FALSE = @HAVE_PYTRILINOS_NOX_FALSE@
+HAVE_PYTRILINOS_NOX_TRUE = @HAVE_PYTRILINOS_NOX_TRUE@
+HAVE_PYTRILINOS_TEUCHOS_FALSE = @HAVE_PYTRILINOS_TEUCHOS_FALSE@
+HAVE_PYTRILINOS_TEUCHOS_TRUE = @HAVE_PYTRILINOS_TEUCHOS_TRUE@
+HAVE_PYTRILINOS_THYRA_FALSE = @HAVE_PYTRILINOS_THYRA_FALSE@
+HAVE_PYTRILINOS_THYRA_TRUE = @HAVE_PYTRILINOS_THYRA_TRUE@
+HAVE_PYTRILINOS_TRIUTILS_FALSE = @HAVE_PYTRILINOS_TRIUTILS_FALSE@
+HAVE_PYTRILINOS_TRIUTILS_TRUE = @HAVE_PYTRILINOS_TRIUTILS_TRUE@
+HAVE_SWIG_FALSE = @HAVE_SWIG_FALSE@
+HAVE_SWIG_TRUE = @HAVE_SWIG_TRUE@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
@@ -143,7 +179,12 @@ PYTHON_USE_TRUE = @PYTHON_USE_TRUE@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
+SWIG = @SWIG@
+SWIG_LIB = @SWIG_LIB@
+SWIG_PYTHON_CPPFLAGS = @SWIG_PYTHON_CPPFLAGS@
+SWIG_PYTHON_OPT = @SWIG_PYTHON_OPT@
 VERSION = @VERSION@
+WITH_SWIG = @WITH_SWIG@
 ac_ct_CXX = @ac_ct_CXX@
 ac_ct_STRIP = @ac_ct_STRIP@
 am__fastdepCXX_FALSE = @am__fastdepCXX_FALSE@
@@ -183,7 +224,75 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
+AUTOMAKE_OPTIONS = foreign
+EXTRA_DIST = definition setpath.py gre__115.rua \
+	     exAmesos_Factory.py exAmesos_Solvers.py exAztecOO.py exAztecOO_Operator.py \
+	     exAztecOO_RowMatrix.py exEpetra.py exEpetra_Comm.py \
+	     exEpetra_CrsMatrix_Easy.py exEpetra_CrsMatrix_Efficient.py \
+	     exEpetra_FECrsMatrix_Easy.py exEpetra_ImportExport.py \
+	     exEpetraExt_IO_MatrixMarket.py exEpetraExt_IO_XML.py \
+	     exEpetraExt_MatrixMatrix.py exGaleri.py exGaleri_ReadHB.py exIFPACK.py \
+	     exMLAPI.py exMLAPI_Simple.py exMLAPI_AztecOO.py exMLAPI_Iterate.py \
+	     exMLAPI_PyMatrix.py exMLAPI_Smoother.py exNOX_1Dfem.py exThyra.py
+
 MAINTAINERCLEANFILES = Makefile.in
+
+# Teuchos examples
+@HAVE_PYTRILINOS_TEUCHOS_TRUE@TEUCHOS_EXAMPLES = 
+
+# Thyra examples
+@HAVE_PYTRILINOS_EPETRA_TRUE@@HAVE_PYTRILINOS_THYRA_TRUE@THYRA_EXAMPLES = exThyra
+
+# Epetra examples
+@HAVE_PYTRILINOS_EPETRA_TRUE@EPETRA_EXAMPLES = exEpetra exEpetra_Comm exEpetra_CrsMatrix_Easy \
+@HAVE_PYTRILINOS_EPETRA_TRUE@	          exEpetra_CrsMatrix_Efficient exEpetra_FECrsMatrix_Easy \
+@HAVE_PYTRILINOS_EPETRA_TRUE@	          exEpetra_ImportExport
+
+
+# TriUtils examples
+@HAVE_PYTRILINOS_TRIUTILS_TRUE@TRIUTILS_EXAMPLES = 
+
+# EpetraExt examples
+@HAVE_PYTRILINOS_EPETRAEXT_TRUE@@HAVE_PYTRILINOS_EPETRA_TRUE@EPETRAEXT_EXAMPLES = exEpetraExt_IO_MatrixMarket exEpetraExt_IO_XML \
+@HAVE_PYTRILINOS_EPETRAEXT_TRUE@@HAVE_PYTRILINOS_EPETRA_TRUE@	             exEpetraExt_MatrixMatrix
+
+
+# AztecOO examples
+@HAVE_PYTRILINOS_AZTECOO_TRUE@@HAVE_PYTRILINOS_EPETRA_TRUE@@HAVE_PYTRILINOS_GALERI_TRUE@AZTECOO_EX1 = exAztecOO
+@HAVE_PYTRILINOS_AZTECOO_TRUE@@HAVE_PYTRILINOS_EPETRA_TRUE@AZTECOO_EX2 = exAztecOO_Operator exAztecOO_RowMatrix
+@HAVE_PYTRILINOS_AZTECOO_TRUE@@HAVE_PYTRILINOS_EPETRA_TRUE@AZTECOO_EXAMPLES = $(AZTECOO_EX1) $(AZTECOO_EX2)
+
+# Galeri examples
+@HAVE_PYTRILINOS_EPETRA_TRUE@@HAVE_PYTRILINOS_GALERI_TRUE@GALERI_EXAMPLES = exGaleri exGaleri_ReadHB
+
+# Amesos examples
+@HAVE_PYTRILINOS_AMESOS_TRUE@@HAVE_PYTRILINOS_EPETRA_TRUE@AMESOS_EXAMPLES = exAmesos_Factory exAmesos_Solvers
+
+# IFPACK examples
+@HAVE_PYTRILINOS_AZTECOO_TRUE@@HAVE_PYTRILINOS_EPETRA_TRUE@@HAVE_PYTRILINOS_GALERI_TRUE@@HAVE_PYTRILINOS_IFPACK_TRUE@@HAVE_PYTRILINOS_TRIUTILS_TRUE@IFPACK_EXAMPLES = exIFPACK
+
+# Anasazi examples
+@HAVE_PYTRILINOS_ANASAZI_TRUE@ANASAZI_EXAMPLES = 
+
+# ML examples
+@HAVE_PYTRILINOS_EPETRA_TRUE@@HAVE_PYTRILINOS_ML_TRUE@ML_EX1 = exMLAPI exMLAPI_Iterate exMLAPI_PyMatrix exMLAPI_Smoother
+@HAVE_PYTRILINOS_AZTECOO_TRUE@@HAVE_PYTRILINOS_EPETRA_TRUE@@HAVE_PYTRILINOS_ML_TRUE@ML_EX2 = exMLAPI_AztecOO
+@HAVE_PYTRILINOS_AZTECOO_TRUE@@HAVE_PYTRILINOS_EPETRA_TRUE@@HAVE_PYTRILINOS_GALERI_TRUE@@HAVE_PYTRILINOS_ML_TRUE@ML_EX3 = exMLAPI_Simple exMLAPI_AztecOO
+@HAVE_PYTRILINOS_EPETRA_TRUE@@HAVE_PYTRILINOS_ML_TRUE@ML_EXAMPLES = $(ML_EX1) $(ML_EX2) $(ML_EX3)
+
+# NOX examples
+@HAVE_NOX_EPETRA_TRUE@@HAVE_PYTRILINOS_NOX_TRUE@NOX_EXAMPLES = exNOX_1Dfem
+
+# Collect the package examples into a suite of examples
+EXAMPLE_SUITE = $(TEUCHOS_EXAMPLES)  $(THYRA_EXAMPLES)     $(EPETRA_EXAMPLES) \
+	        $(TRIUTILS_EXAMPLES) $(EPETRAEXT_EXAMPLES) $(AZTECOO_EXAMPLES) \
+	        $(GALERI_EXAMPLES)   $(AMESOS_EXAMPLES)    $(IFPACK_EXAMPLES) \
+	        $(ANASAZI_EXAMPLES)  $(ML_EXAMPLES)        $(NOX_EXAMPLES)
+
+EXAMPLE_PYSCRIPTS = $(EXAMPLE_SUITE:=.py) 
+SETPATH = setpath.py
+GRE__115 = gre__115.rua
+CLEANFILES = $(EXAMPLE_PYSCRIPTS) $(SETPATH) *.pyc *.dat
 all: all-am
 
 .SUFFIXES:
@@ -272,6 +381,7 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
+	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-rm -f $(CONFIG_CLEAN_FILES)
@@ -336,10 +446,25 @@ uninstall-am: uninstall-info-am
 	uninstall-am uninstall-info-am
 
 
-all-local:
+# The following line helps the test harness recover from build errors.
+all:
 	@echo ""
-	@echo "Trilinos package pytrilinos subdirectory example built successfully."
+	@echo "Trilinos package PyTrilinos subdirectory example built successfully."
 	@echo ""
+
+all-local: $(EXAMPLE_SUITE)
+	@if [ `$(PYTHON) -c "import os; print os.path.abspath('$(srcdir)')"` != `pwd` ]; then \
+	  echo "copying $(SETPATH)"; /bin/cp $(srcdir)/$(SETPATH) . ; fi
+	@if [ `$(PYTHON) -c "import os; print os.path.abspath('$(srcdir)')"` != `pwd` ]; then \
+	  echo "copying $(GRE__115)"; /bin/cp $(srcdir)/$(GRE__115) . ; fi
+
+ex%:
+	@if [ `$(PYTHON) -c "import os; print os.path.abspath('$(srcdir)')"` != `pwd` ]; then \
+	  echo "copying $@.py"; /bin/cp $(srcdir)/$@.py . ; fi
+
+run-examples: all-local
+	@for ex_script in $(EXAMPLE_PYSCRIPTS); do if [ $$ex_script != '.py' ]; then \
+	  echo; echo "Running $$ex_script"; echo; $$ex_script -t; fi; done
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
