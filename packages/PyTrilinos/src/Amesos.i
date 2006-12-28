@@ -82,6 +82,7 @@ For examples of usage, please consult the python/example subdirectory.
 #include "Epetra_DataAccess.h"
 #include "Epetra_PyOperator.h"
 #include "Epetra_PyRowMatrix.h"
+#include "Epetra_FEVbrMatrix.h"
 
 // Teuchos includes
 #include "Teuchos_RefCountPtr.hpp"

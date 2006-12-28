@@ -57,7 +57,9 @@ The most important classes of the EpetraExt module are:
 "
 %enddef
 
-%module(package="PyTrilinos", directors="1", docstring=EPETRAEXT_DOCSTRING) EpetraExt
+%module(package   = "PyTrilinos",
+	directors = "1",
+	docstring = EPETRAEXT_DOCSTRING) EpetraExt
 
 %{
 // System includes
@@ -79,6 +81,7 @@ The most important classes of the EpetraExt module are:
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_VbrMatrix.h"
 #include "Epetra_FECrsMatrix.h"
+#include "Epetra_FEVbrMatrix.h"
 #include "Epetra_JadMatrix.h"
 #include "Epetra_FEVector.h"
 #include "Epetra_IntVector.h"
@@ -91,8 +94,6 @@ The most important classes of the EpetraExt module are:
 #include "Epetra_NumPyIntVector.h"
 #include "Epetra_PyOperator.h"
 #include "Epetra_PyRowMatrix.h"
-#include "Epetra_BasicRowMatrix.h"
-#include "Epetra_JadMatrix.h"
 
 // EpetraExt includes
 #include "EpetraExt_Version.h"
