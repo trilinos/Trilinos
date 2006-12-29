@@ -117,17 +117,17 @@ if __name__ == "__main__":
         # Create the shared library builders
         builders = [ ]
         for module in enabledModules:
-            #print "Creating shared library builder object for", module, "...",
-            #sys.stdout.flush()
             builders.append(SharedUtils.SharedTrilinosBuilder(module))
-            #print "done"
+        if makeMacros["HAVE_NOX_EPETRA_TRUE"] == "":
+            noxEpetraBuilder = SharedUtils.SharedTrilinosBuilder("NoxEpetra")
+            builders.append(noxEpetraBuilder)
 
         # Build command
         if command == "build":
             # Convert package libraries to shared
             for builder in builders:
                 builder.buildShared()
-            # Linke extension modules to dynamic libraries
+            # Link the extension modules to dynamic libraries
             for builder in builders:
                 builder.reLinkExtension()
 

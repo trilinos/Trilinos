@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 # 
-#              PyTrilinos: Python interface to Trilinos
+#              PyTrilinos: Python Interface to Trilinos
 #                 Copyright (2004) Sandia Corporation
 # 
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -109,8 +109,8 @@ def removeExtensionModules(path):
 
 class SharedTrilinosBuilder:
     """
-    Class for performing various build processes (build, install, clean) related
-    to converting a Trilinos library from static to dynamic.
+    Class for performing various build processes (build, install, clean,
+    uninstall) related to converting a Trilinos library from static to dynamic.
     """
 
     def __init__(self,package):
@@ -125,8 +125,12 @@ class SharedTrilinosBuilder:
         self.__libPathVar   = self.getLibPathVarName()
         self.__libOption    = "-l"  + self.__packageLower
         self.__dylibName    = self.getDylibName()
-        self.__topBuildDir  = os.path.join("..", "..", self.__packageLower)
-        self.__buildDir     = os.path.join(self.__topBuildDir, "src")
+        if self.__packageLower == "noxepetra":
+            self.__topBuildDir  = os.path.join("..", "..", "nox")
+            self.__buildDir     = os.path.join(self.__topBuildDir, "src-epetra")
+        else:
+            self.__topBuildDir  = os.path.join("..", "..", self.__packageLower)
+            self.__buildDir     = os.path.join(self.__topBuildDir, "src")
         self.__pythonDir    = os.path.join(self.__topBuildDir, "python", "src")
         self.__thisDir      = os.getcwd()
         self.__absDylibName = os.path.join(self.__thisDir, self.__dylibName)
@@ -175,8 +179,12 @@ class SharedTrilinosBuilder:
         Determine the appropriate dynamic link command for this Trilinos
         package.
         """
-        cxx     = self.__makeMacros["CXX"]
-        default = self.__makeMacros[self.__packageUpper + "_LIBS"]
+        cxx = self.__makeMacros["CXX"]
+        if self.__packageLower == "noxepetra":
+            libVar = "NOX_LIBS"
+        else:
+            libVar = self.__packageUpper + "_LIBS"
+        default = self.__makeMacros[libVar]
         ldFlags = self.__makeMacros.get(self.__packageUpper + "_PYTHON_LIBS",
                                         default)
         ldFlags = ldFlags.replace(self.__libOption+" ", "")  # Remove -lpackage
@@ -204,7 +212,7 @@ class SharedTrilinosBuilder:
         if not self.__supported: return
 
         # Build a new shared library
-        if needsToBeBuilt(self.__absDylibName, glob.glob("*.o")):
+        if needsToBeBuilt(self.__absDylibName, glob.glob(os.path.join(self.__buildDir,"*.o"))):
             print "\nConverting", self.__package, "to a shared library"
             changeDirectory(self.__buildDir)
             runCommand(self.__linkCmd)
@@ -246,7 +254,7 @@ class SharedTrilinosBuilder:
         if not self.__supported: return
 
         # Remove the shared library
-        print "\nRemoving", self.__package, "dynamic library"
+        #print "\nRemoving", self.__package, "dynamic library"
         deleteFile(self.__absDylibName)
 
         # Clean the python directory

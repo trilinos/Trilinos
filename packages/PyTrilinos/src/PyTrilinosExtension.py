@@ -85,7 +85,7 @@ def makePyTrilinosExtensions(moduleName):
     # Initialize Extension class constructor arguments
     define_macros      = [      ]
     include_dirs       = [srcdir]
-    library_dirs       = [      ]
+    library_dirs       = ["."   ]
     libraries          = [      ]
     extra_compile_args = vars["CPPFLAGS"].split() + \
                          vars["CXXFLAGS"].split()
