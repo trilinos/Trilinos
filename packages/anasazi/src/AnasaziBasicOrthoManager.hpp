@@ -274,7 +274,7 @@ namespace Anasazi {
     MatOrthoManager<ScalarType,MV,OP>(Op), 
     kappa_(kappa), 
     timerReortho_(Teuchos::TimeMonitor::getNewTimer("BasicOrthoManager::Re-orthogonalization"))
-  {};
+  {}
 
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
