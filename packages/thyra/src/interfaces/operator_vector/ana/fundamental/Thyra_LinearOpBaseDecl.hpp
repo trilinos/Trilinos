@@ -115,10 +115,10 @@ namespace Thyra {
  * Note that the vector spaces returned from <tt>domain()</tt> and
  * <tt>range()</tt> may have specialized implementations of the scalar product
  * \f$<u,w>\f$ (i.e. \f$<u,w> \neq u^H w\f$ in general).  As a result, the
- * operator and adjoint operator must obey the defined scalar product.
- * Specifically, for any two vectors \f$w\in\mathcal{D}\f$ (the domain space)
- * and \f$u\in\mathcal{R}\f$ (the range space), the adjoint operation must
- * obey the adjoint property
+ * operator and adjoint operator must obey the defined scalar products.
+ * Specifically, for any two vectors \f$w\in\mathcal{D}\f$ (in the domain
+ * space of <tt>A</tt>) and \f$u\in\mathcal{R}\f$ (in the range space of
+ * <tt>A</tt>), the adjoint operation must obey the adjoint property
  *
  \f[
   <u,A v>_{\mathcal{R}} =\!= <A^H u, v>_{\mathcal{D}}

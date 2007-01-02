@@ -162,12 +162,11 @@ createMembersView( const VectorSpaceBase<Scalar> &vs, const RTOpPack::ConstSubMu
 /** \brief Abstract interface for objects that represent a space for vectors.
  *
  * This interface acts primarily as an "Abstract Factory" interface for
- * creating <tt>VectorBase</tt> objects using the
+ * creating <tt>VectorBase</tt> objects using the non-member function
  * <tt>Thyra::createMember()</tt>.  A <tt>%VectorSpaceBase</tt> can also
  * create <tt> MultiVectorBase</tt> objects which represent a compact
  * collection of vectors.  A secondary role for <tt>%VectorSpaceBase</tt>
- * objects is to test for compatibility of vector spaces (and the vectors and
- * linear operators using those spaces) objects using the
+ * objects is to test for compatibility of vector space objects using the
  * <tt>isCompatible()</tt> method.
  *
  * Clients can not directly create <tt>%VectorBase</tt> and
@@ -179,17 +178,18 @@ createMembersView( const VectorSpaceBase<Scalar> &vs, const RTOpPack::ConstSubMu
  * Note that a <tt>%VectorSpaceBase</tt> object must also be able to create
  * <tt>MultiVectorBase</tt> objects with any number of column vectors using
  * the <tt>Thyra::createMembers()</tt> function.  Once created, the
- * <tt>LinearOpBase::domain()</tt> function supported by the created
- * <tt>%MultiVectorBase</tt> objects returns a vector space of that dimension.
- * An interesting implication of this design is that the creation of a
- * multi-vector provides a way for clients to create vector spaces of any
- * arbitrary (although small usually) dimension.  In order to give the client
- * the same ability to create smaller vector spaces without having to create a
- * dummy multi-vector object first, the method <tt>smallVecSpcFcty()</tt> is
- * included.  The method <tt>smallVecSpcFcty()</tt> returns a
- * <tt>VectorSpaceFactoryBase</tt> object that can create (serial) vector
- * spaces of any small dimension that are compatible with the domain spaces of
- * so created <tt>%MultiVectorBase</tt> objects.
+ * <tt>LinearOpBase::domain()</tt> function supported by a created
+ * <tt>%MultiVectorBase</tt> object returns a vector space of dimension equal
+ * to the number of columns in the multi-vector.  An interesting implication
+ * of this design is that the creation of a multi-vector provides a way for
+ * clients to create vector spaces of any arbitrary (although small usually)
+ * dimension.  In order to give the client the same ability to create smaller
+ * vector spaces without having to create a dummy multi-vector object first,
+ * the method <tt>smallVecSpcFcty()</tt> is included.  The method
+ * <tt>smallVecSpcFcty()</tt> returns a <tt>VectorSpaceFactoryBase</tt> object
+ * that can create (typically serial) vector spaces of any small dimension
+ * that are compatible with the domain spaces of <tt>%MultiVectorBase</tt>
+ * objects created by the vector space object.
  *
  * A vector space is also where the scalar product for the space is defined
  * which is computed by the <tt>scalarProd()</tt> method.  A scalar product
@@ -205,7 +205,7 @@ createMembersView( const VectorSpaceBase<Scalar> &vs, const RTOpPack::ConstSubMu
  * This is a fairly bare-bones interface class without much in the way of
  * default function implementations.  The subclass
  * <tt>VectorSpaceDefaultBase</tt> provides a default multi-vector
- * implementation and should the the first choice for subclasses
+ * implementation and should the the first choice for subclass
  * implementations.
  *
  * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
@@ -235,7 +235,7 @@ public:
    * </ul>
    *
    * <b>Postconditions:</b><ul>
-   * <li> [<tt>this->dim() != vecSpc.dim()</tt>] <tt>return == false</tt>
+   * <li> [<tt>this->dim() != vecSpc.dim()</tt>] <tt>returnVal == false</tt>
    * </ul>
    *
    * <b>Invariants:</b><ul>
@@ -245,7 +245,7 @@ public:
   virtual bool isCompatible( const VectorSpaceBase<Scalar>& vecSpc ) const = 0;
 
   /** \brief Return a <tt>VectorSpaceFactoryBase</tt> object for the creation
-   * of (serial) vector spaces with a small dimension.
+   * of (usually serial) vector spaces with a small dimension.
    *
    * <b>Preconditions:</b><ul>
    * <li><tt>this->dim() > 0</tt>
@@ -258,10 +258,6 @@ public:
    * <b>Preconditions:</b><ul>
    * <li><tt>x.space()->isCompatible(*this)</tt> (throw <tt>Exceptions::IncompatibleVectorSpaces</tt>)
    * <li><tt>y.space()->isCompatible(*this)</tt> (throw <tt>Exceptions::IncompatibleVectorSpaces</tt>)
-   * </ul>
-   *
-   * <b>Postconditions:</b><ul>
-   * <li>The scalar product is returned.
    * </ul>
    */
   virtual Scalar scalarProd( const VectorBase<Scalar>& x, const VectorBase<Scalar>& y ) const = 0;
@@ -279,10 +275,6 @@ public:
    * <li><tt>Y.range()->isCompatible(*this)</tt> (throw <tt>Exceptions::IncompatibleVectorSpaces</tt>)
    * <li><tt>X.domain()->isCompatible(*Y.domain())</tt> (throw <tt>Exceptions::IncompatibleVectorSpaces</tt>)
    * </ul>
-   *
-   * <b>Postconditions:</b><ul>
-   * <li><tt>scalar_prod[j] = this->scalarProd(*X.col(j),*Y.col(j))</tt>, for <tt>j = 0 ... X.domain()->dim()-1</tt>
-   * </ul>
    */
   virtual void scalarProds( const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y, Scalar scalar_prods[] ) const = 0;
 
@@ -294,8 +286,8 @@ public:
   /** \brief Return if this vector space has a Euclidean (identity) basis in
    * which case the scalar product is the same as the dot product.
    *
-   * The default implementation returns <tt>false</tt> (evenn though on average
-   * the truth is most likely <tt>true</tt>).
+   * The default implementation returns <tt>false</tt> (even though on average
+   * the Euclidean scalar product is used).
    */
   virtual bool isEuclidean() const;
 
@@ -304,13 +296,10 @@ public:
    *
    * \param  rng  [in] The range of elements for the view (see <tt>acquireDetachedView()</tt>).
    *              The default value is <tt>Range1D()</tt> (i.e. All of the elements in the vector).
-   * \param  hasDirectView
-   *              [in] If <tt>true</tt> then the view must be a direct view of data.
-   *              The default value is <tt>false</tt>.
-   * \param  isContiguous
-   *              [in] If <tt>true</tt> then requires the view must also have contiguous elements
-   *              with stride one.  This argument is meaningless if <tt>hasDirectView==false</tt.
-   *              The default value is <tt>false</tt>.
+   * \param  viewType
+   *              [in] The type of view allowed.
+   * \param  strideType
+   *              [in] The type of stride the view is allowed to be.
    *
    * <b>Preconditions:</b><ul>
    * <li><tt>this->dim() > 0</tt>
@@ -322,19 +311,19 @@ public:
    *
    * <ul>
    * <li>The elements in <tt>rng</tt> are fairly cheaply accessble
-   *     in local (i.e. in core) memory if <tt>this->hasInCoreView(rng)==true</tt>.
+   *     in local (i.e. in-core) memory if <tt>this->hasInCoreView(rng)==true</tt>.
    *     Note that this also allows for detached temporary copies of data. 
    * <li>A direct view of the elements in <tt>rng</tt> is available
-   *     in local (i.e. in core) memory if <tt>this->hasInCoreView(rng,VIEW_TYPE_DIRECT)==true</tt>.
+   *     in local (i.e. in-core) memory if <tt>this->hasInCoreView(rng,VIEW_TYPE_DIRECT)==true</tt>.
    *     No copy of data is allowed here.
    * <li>A direct view of the elements in <tt>rng</tt> with unit stride is available in
-   *     local (i.e. in core) memory if <tt>this->hasInCoreView(rng,VIEW_TYPE_DIRECT,STRIDE_TYPE_UNIT)==true</tt>
+   *     local (i.e. in-core) memory if <tt>this->hasInCoreView(rng,VIEW_TYPE_DIRECT,STRIDE_TYPE_UNIT)==true</tt>
    *     No copy of data is allowed here.
    * </ul>
    *
-   * The default implementation returns <tt>false</tt> (i.e. by default we
-   * assume that direct and/or contiguous views of any range of data is not
-   * provided).
+   * The default implementation returns <tt>false</tt> (i.e. by default we do
+   * not assume that any direct and/or contiguous views of any range of data
+   * are provided).
    */
   virtual bool hasInCoreView(
     const Range1D       &rng            = Range1D()
@@ -344,14 +333,14 @@ public:
 
   /** \brief Clone this object (if supported).
    *
-   * It is allowed for <tt>return.get()==NULL</tt> which means that this
+   * It is allowed for <tt>returnVal.get()==NULL</tt> which means that this
    * capability is optional.
    *
    * <b>Preconditions:</b><ul>
    * <li><tt>this->dim() > 0</tt>
    * </ul>
    *
-   * The default implementation returns <tt>return.get()==NULL</tt>.
+   * The default implementation returns <tt>returnVal.get()==NULL</tt>.
    */
   virtual Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > clone() const;
 
@@ -402,19 +391,18 @@ protected:
    * </ul>
    *
    * <b>Postconditions:</b><ul>
-   * <li> <tt>return.get() != NULL</tt>
-   * <li> <tt>return->dim() == this->dim()</tt>
-   * <li> <tt>return->space()->isCompatible(*this) == true</tt>
+   * <li> <tt>returnVal.get() != NULL</tt>
+   * <li> <tt>returnVal->space()->isCompatible(*this) == true</tt>
    * </ul>
    *
    * <b>Note:</b> This function is not to be called directly since it is
    * protected!  See the \ref Thyra_Op_Vec_createMember_grp.
    *
-   * @return Returns a smart reference counted pointer to a
-   * dynamically allocated vector object.  After construction the
-   * values in the vector <tt>*return</tt> are unspecified
-   * (uninitialized).  This allows for faster execution times.  Note
-   * that <tt>return->space().get() == this</tt> need not be true.
+   * \returns A smart reference counted pointer to a dynamically allocated
+   * vector object.  After construction the values in the vector
+   * <tt>*returnVal</tt> are unspecified (uninitialized).  This allows for faster
+   * execution times.  Note that <tt>returnVal->space().get() == this</tt> need
+   * not be true.
    */
   virtual Teuchos::RefCountPtr< VectorBase<Scalar> > createMember() const = 0;
 
@@ -426,16 +414,16 @@ protected:
    * </ul>
    *
    * <b>Postconditions:</b><ul>
-   * <li> <tt>return->range()->isCompatible(*this) == true</tt>
-   * <li> <tt>return->domain()->dim() == numMembers</tt>
+   * <li> <tt>returnVal->range()->isCompatible(*this) == true</tt>
+   * <li> <tt>returnVal->domain()->dim() == numMembers</tt>
    * </ul>
    *
-   * @return This method returns a smart reference-counted pointer to a
-   * dynamically allocated multi-vector object.  After construction, the
-   * values in <tt>*return</tt> are unspecified (uninitialized).  This allows
-   * for faster execution times.  Note that
-   * <tt>return->range().get()==this</tt> does not have to be true but will be
-   * in may cases.
+   * \returns A smart reference-counted pointer to a dynamically allocated
+   * multi-vector object.  After construction, the values in
+   * <tt>*returnVal</tt> are unspecified (uninitialized).  This allows for
+   * faster execution times.  Note that
+   * <tt>returnVal->range().get()==this</tt> does not have to be true but will
+   * be in may cases.
    */
   virtual Teuchos::RefCountPtr< MultiVectorBase<Scalar> > createMembers(int numMembers) const = 0;
 
@@ -460,7 +448,7 @@ protected:
    *
    * It is stated here that the client can not expect that the values pointed
    * to by <tt>raw_v.values()</tt> to be changed until the smart pointer
-   * <tt>return</tt> goes out of scope.  This is to allow an implementation
+   * <tt>returnVal</tt> goes out of scope.  This is to allow an implementation
    * that temporarily copies data into and out of a <tt>VectorBase</tt> object
    * using explicit vector access.
    */
@@ -507,7 +495,7 @@ protected:
    *
    * It is stated here that the client can not expect that the values pointed
    * to by <tt>raw_mv.values()</tt> to be changed until the smart pointer
-   * <tt>return</tt> goes out of scope.  This is to allow for an
+   * <tt>returnVal</tt> goes out of scope.  This is to allow for an
    * implementation that temporarily copies data into and out of a
    * <tt>MultiVectorBase</tt> object using explicit vector access.
    */
