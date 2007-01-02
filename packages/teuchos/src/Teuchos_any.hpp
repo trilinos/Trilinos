@@ -240,6 +240,7 @@ ValueType& any_cast(any &operand)
     ,"any_cast<"<<ValueTypeName <<">(operand): Error, cast to type "
     << "any::holder<"<<ValueTypeName<<"> failed but should not have and the actual underlying type is \'"
     << typeName(*operand.access_content()) << "!"
+    << "  The problem might be related to incompatible RTTI systems in static and shared libraries!"
     );
   return dyn_cast_content->held;
 }
