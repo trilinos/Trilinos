@@ -1,0 +1,22 @@
+(2007/01/02)
+
+Here is a .emacs file and a syntax highlighting lisp file that Roscoe Bartlett
+uses to to format C++ code in Thyra and related projects.  To setup your
+system to use this .emacs file, from this directory, just run the script:
+
+  ./setup-emacs-formating.sh
+
+and it will copy the following files:
+
+ $HOME
+   |
+   |-- .emacs
+   |
+   \-- elisp
+         |
+         \-- cpp-font-lock.el
+
+Note that it will overwrite any $HOME/.emacs file that you might have so
+please move it out of the way before you run this script.  Also, if you already
+have a directory $HOME/elisp, you might want to take care of what happens here
+too.
