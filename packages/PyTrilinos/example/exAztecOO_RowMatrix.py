@@ -28,12 +28,14 @@
 # ************************************************************************
 # @HEADER
 
+######################################################################
+#
 # Example of 1D Laplacian on one processor.
 # 
 # This example shows how to derive class Epetra_RowMatrix in Python.
 # For the sake of simplicity, the example runs only with one processor.
 # The main procedure is as follows:
-# - create a Python class derived from Epetra.PyRowMatrix
+# - create a Python class derived from Epetra.RowMatrix
 # - define all the methods as done in this file. Probably, the most
 #   important methods are Apply, Multiply, and ExtractMyRowCopy. Some
 #   methods do not need to be implemented; in this case simply returns
@@ -48,231 +50,242 @@
 # \author Marzio Sala, ETHZ/COLAB
 #
 # \date Last updated on 04-Dec-05
+#
+######################################################################
 
-#try:
-import setpath
-import Epetra
-import AztecOO
-#except:
-#  from PyTrilinos import Epetra, AztecOO
-#  print "Using installed version of Epetra, AztecOO"
+try:
+    import setpath
+    import Epetra
+    import AztecOO
+except:
+    from PyTrilinos import Epetra, AztecOO
+    print "Using installed version of Epetra, AztecOO"
+
+import numpy
 
 ################################################################################
 
-class Laplace1D(Epetra.PyRowMatrix):
-  def __init__(self, n, Comm):
-    Epetra.PyRowMatrix.__init__(self, Comm)
-    self.NumRows_ = n
-    self.NumCols_ = n
-    self.RowMap_  = Epetra.Map(self.NumRows_, 0, Comm)
-    self.ColMap_  = Epetra.Map(self.NumCols_, 0, Comm)
-    self.NumEntries_ = Epetra.IArray(1)
-    self.Indices_    = Epetra.IArray(3)
-    self.Values_     = Epetra.DArray(3)
+class Laplace1D(Epetra.RowMatrix):
 
-  def __str__(self):
-    return("Laplace1D")
+    def __init__(self, n, comm):
+        Epetra.RowMatrix.__init__(self)
+        self.__useTranspose = False
+        self.__comm         = comm
+        self.__numRows      = n
+        self.__numCols      = n
+        self.__rowMap       = Epetra.Map(self.__numRows, 0, comm)
+        self.__colMap       = Epetra.Map(self.__numCols, 0, comm)
+        self.__numEntries   = Epetra.IArray(1)
+        self.__indices      = Epetra.IArray(3)
+        self.__values       = Epetra.DArray(3)
+        #self.__numEntries   = numpy.array([0])
+        #self.__indices      = numpy.array([0,0,0])
+        #self.__values       = numpy.array([0.0,0.0,0.0])
 
-  def Multiply(*args):
-    self         = args[0]
-    UseTranspose = args[1] 
-    LHS          = args[2]
-    RHS          = args[3]
-    Indices    = self.Indices_
-    Values     = self.Values_
-    NumEntries = self.NumEntries_
+    def __str__(self):
+        return "Laplace1D"
 
-    n = RHS.MyLength()
-    if LHS.NumVectors() != 1:
-      print "this Apply() function has been implemented for a single vector"
-      return(-1)
+    ###############################################################################
+    # The following method is an implementation of the Epetra.SrcDistObject class #
+    ###############################################################################
 
-    # I need to wrap the Values() array as DArray; if I use the bracket
-    # operator the code crashes...
-    LHS_V = Epetra.DArray(LHS.Values(), n)
-    RHS_V = Epetra.DArray(RHS.Values(), n)
+    def Map(self):
+        return self.__rowMap
 
-    for i in xrange(self.NumRows_):
-      ierr = self.ExtractMyRowCopy(i, 5, NumEntries.Values(), Values.Values(), Indices.Values())
-      total = 0.0
-      for j in xrange(NumEntries[0]):
-        total = total + LHS_V[Indices[j]] * Values[j]
-      RHS_V[i] = total  
+    ##########################################################################
+    # The following methods are implementations of the Epetra.Operator class #
+    ##########################################################################
 
-    return(0)
+    def SetUseTranspose(self, useTranspose):
+        self.__useTranspose = bool(useTranspose)
 
-  def NumMyRowEntries(*args):
-    self       = args[0]
-    MyRow      = args[1]
-    NumEntries = Epetra.IArray(args[2], 1)
-    if MyRow == 0 | MyRow == self.NumRows_:
-      NumEntries[0] = 2
-    else:
-      NumEntries[0] = 3
-    return(0);
+    def UseTranspose(self):
+        return self.__useTranspose
 
-  # Input to this function one has an int* pointer (NumEntries),
-  # a double* pointer (Values) and an int* pointer(Indices); these
-  # pointers are wrapped as IArray's and DArray's
-  def ExtractMyRowCopy(*args):
-    self    = args[0]
-    MyRow   = args[1]
-    Length  = args[2]
-    if (Length < 3):
-      return(-1)
-    NumEntries = Epetra.IArray(args[3], 1)
-    Values     = Epetra.DArray(args[4], Length)
-    Indices    = Epetra.IArray(args[5], Length)
-    n = self.NumRows_
-    if MyRow == 0:
-      Indices[0] = 0; Indices[1] = 1
-      Values[0] = 2.0; Values[1] = -1.0
-      NumEntries[0] = 2
-    elif MyRow == n - 1:
-      Indices[0] = n - 1; Indices[1] = n - 2
-      Values[0] = 2.0; Values[1] = -1.0
-      NumEntries[0] = 2
-    else:
-      Indices[0] = MyRow; Indices[1] = MyRow - 1; Indices[2] = MyRow + 1
-      Values[0] = 2.0; Values[1] = -1.0; Values[2] = -1.0
-      NumEntries[0] = 3
-    return(0)
+    def Apply(self, LHS, RHS):
+        return self.Multiply(self.__useTranspose, LHS, RHS)
 
-  def ApplyInverse(*args):
-    return(-2)
-  def HasNormInf(*args):
-    return(True);
+    def ApplyInverse(self):
+        return -2
 
-  def NormInf(*args):
-    return(0)
-  def MaxNumEntries(*args):
-    return(3)
-  def Apply(*args):
-    self = args[0]
-    LHS = args[1]
-    RHS = args[2]
-    return(self.Multiply(False, LHS, RHS))
-  def NumGlobalNonzeros(*args):
-    self = args[0]
-    return(3 * self.NumRows_ - 2);
-  def NumMyNonzeros(*args):
-    self = args[0]
-    return(3 * self.NumRows_ - 2);
-  def NumGlobalDiagonals(*args):
-    self = args[0]
-    return(self.NumRows_);
-  def NumMyDiagonals(*args):
-    self = args[0]
-    return(self.NumRows_);
-  def ExtractDiagonalCopy(*args):
-    self = args[0]
-    Diagonal = args[1]
-    Diagonal.PutScalar(2.0)
-    return(0)
-  def HasNormInf(*args):
-    return(True)
-  def NormInf(*args):
-    return(4.0)
-  def NormOne(*args):
-    return(4.0)
-  def UseTranspose(*args):
-    return(False)
-  def SetTranspose(*args):
-    return(0)
+    def HasNormInf(self):
+        return True
 
-  def RowMatrixRowMap(*args):
-    self = args[0]
-    return(self.RowMap_);
+    def NormInf(self):
+        return 4.0
 
-  def RowMatrixColMap(*args):
-    self = args[0]
-    return(self.ColMap_);
+    def Label(self):
+        return "Laplace1D"
 
-  def UpperTriangular(*args):
-    return(False)
+    def Comm(self):
+        return self.__comm
 
-  def LowerTriangular(*args):
-    return(False)
+    def OperatorDomainMap(self):
+        return self.__rowMap
 
-  def NumMyRows(*args):
-    self = args[0]
-    return(self.NumRows_);
+    def OperatorRangeMap(self):
+        return self.__rowMap
 
-  def NumMyCols(*args):
-    self = args[0]
-    return(self.NumCols_);
+    ###########################################################################
+    # The following methods are implementations of the Epetra.RowMatrix class #
+    ###########################################################################
 
-  def NumGlobalRows(*args):
-    self = args[0]
-    return(self.NumRows_);
+    def NumMyRowEntries(self, MyRow, n):
+        NumEntries = Epetra.IArray(n, 1)
+        if MyRow == 0 or MyRow == self.__numRows:
+            NumEntries[0] = 2
+        else:
+            NumEntries[0] = 3
+        return 0
 
-  def NumGlobalCols(*args):
-    self = args[0]
-    return(self.NumCols_);
+    def MaxNumEntries(self):
+        return 3
 
-  def Filled(*args):
-    return(True)
+    # Input to this function one has an int* pointer (NumEntries),
+    # a double* pointer (Values) and an int* pointer(Indices); these
+    # pointers are wrapped as IArray's and DArray's
+    def ExtractMyRowCopy(self, MyRow, Length, n, vals, ind):
+        if (Length < 3):
+            return -1
+        NumEntries = Epetra.IArray(n,    1     )
+        Values     = Epetra.DArray(vals, Length)
+        Indices    = Epetra.IArray(ind,  Length)
+        n = self.__numRows
+        if MyRow == 0:
+            Indices[0] = 0
+            Indices[1] = 1
+            Values[0] = 2.0
+            Values[1] = -1.0
+            NumEntries[0] = 2
+        elif MyRow == n - 1:
+            Indices[0] = n - 1; Indices[1] = n - 2
+            Values[0] = 2.0; Values[1] = -1.0
+            NumEntries[0] = 2
+        else:
+            Indices[0] = MyRow; Indices[1] = MyRow - 1; Indices[2] = MyRow + 1
+            Values[0] = 2.0; Values[1] = -1.0; Values[2] = -1.0
+            NumEntries[0] = 3
+        return 0
 
-  def RightScale(*args):
-    return(-1)
+    def ExtractDiagonalCopy(self, Diagonal):
+        Diagonal.PutScalar(2.0)
+        return 0
 
-  def LeftScale(*args):
-    return(-1)
+    def Multiply(self, UseTranspose, LHS, RHS):
+        Indices      = self.__indices
+        Values       = self.__values
+        NumEntries   = self.__numEntries
 
-  def InvRowSum(*args):
-    return(-1)
+        n = RHS.MyLength()
+        if LHS.NumVectors() != 1:
+            print "this Apply() function has been implemented for a single vector"
+            return -1
 
-  def InvColSum(*args):
-    return(-1)
+        # I need to wrap the Values() array as DArray; if I use the bracket
+        # operator the code crashes...
+        LHS_V = Epetra.DArray(LHS.Values(), n)
+        RHS_V = Epetra.DArray(RHS.Values(), n)
 
-  def Solve(*args):
-    return(-1)
+        for i in xrange(self.__numRows):
+            ierr = self.ExtractMyRowCopy(i, 5, NumEntries.Values(),
+                                         Values.Values(), Indices.Values())
+            total = 0.0
+            for j in xrange(NumEntries[0]):
+                total = total + LHS_V[Indices[j]] * Values[j]
+            RHS_V[i] = total  
 
-  def OperatorDomainMap(*args):
-    self = args[0]
-    return(self.RowMap_)
+        return 0
 
-  def OperatorRangeMap(*args):
-    self = args[0]
-    return(self.RowMap_)
+    def Solve(self, upper, trans, unitDiagonal, x, y):
+        return -1
 
-  def Map(*args):
-    self = args[0]
-    return(self.RowMap_)
+    def InvRowSums(self, x):
+        return -1
 
-  def RowMatrixImporter(*args):
-    self = args[0]
-    Importer = Epetra.Import(self.RowMap_, self.RowMap_)
-    return(Importer)
+    def LeftScale(self, x):
+        return -1
+
+    def InvColSums(self, x):
+        return -1
+
+    def RightScale(self, x):
+        return -1
+
+    def Filled(self):
+        return True
+
+    def NormOne(self):
+        return 4.0
+
+    def NumGlobalNonzeros(self):
+        return 3 * self.__numRows - 2
+
+    def NumGlobalRows(self):
+        return self.__numRows
+
+    def NumGlobalCols(self):
+        return self.__numCols
+
+    def NumGlobalDiagonals(self):
+        return self.__numRows
+
+    def NumMyNonzeros(self):
+        return 3 * self.__numRows - 2
+
+    def NumMyRows(self):
+        return self.__numRows
+
+    def NumMyCols(self):
+        return self.__numCols
+
+    def NumMyDiagonals(self):
+        return self.__numRows
+
+    def LowerTriangular(self):
+        return False
+
+    def UpperTriangular(self):
+        return False
+
+    def RowMatrixRowMap(self):
+        return self.__rowMap
+
+    def RowMatrixColMap(self):
+        return self.__colMap
+
+    def RowMatrixImporter(self):
+        return Epetra.Import(self.__rowMap, self.__rowMap)
 
 ################################################################################
 
 def main():
 
-  n = 10
-  Comm = Epetra.PyComm()
-  if Comm.NumProc() != 1:
-    print "This example is only serial, sorry"
-    return
-  Matrix = Laplace1D(n, Comm)
+    # Problem initialization
+    n = 10
+    comm = Epetra.PyComm()
+    if comm.NumProc() != 1:
+        print "This example is only serial, sorry"
+        return
 
-  LHS = Epetra.Vector(Matrix.Map())
-  RHS = Epetra.Vector(Matrix.Map())
-  LHS.PutScalar(0.0)
-  RHS.PutScalar(1.0)
-  
-  Solver = AztecOO.AztecOO(Matrix, LHS, RHS)
-  
-  Solver.SetAztecOption(AztecOO.AZ_solver,AztecOO.AZ_gmres)
-  Solver.SetAztecOption(AztecOO.AZ_precond, AztecOO.AZ_Jacobi)
-  Solver.SetAztecOption(AztecOO.AZ_output, 16)
-  Solver.Iterate(1550, 1e-5)
-  
-  del Matrix
+    # Create a 1D Laplacian linear system
+    matrix = Laplace1D(n, comm)
+    lhs    = Epetra.Vector(matrix.Map())
+    rhs    = Epetra.Vector(matrix.Map())
+    lhs.PutScalar(0.0)
+    rhs.PutScalar(1.0)
+    solver = AztecOO.AztecOO(matrix, lhs, rhs)
 
-  if Comm.MyPID() == 0: print "End Result: TEST PASSED"
+    # Set the AztecOO options
+    solver.SetAztecOption(AztecOO.AZ_solver,AztecOO.AZ_gmres)
+    solver.SetAztecOption(AztecOO.AZ_precond, AztecOO.AZ_Jacobi)
+    solver.SetAztecOption(AztecOO.AZ_output, 16)
+
+    # Solve the problem
+    solver.Iterate(1550, 1e-5)
+
+    if comm.MyPID() == 0: print "End Result: TEST PASSED"
 
 ################################################################################
 
 if __name__ == "__main__":
-  main()
+    main()
