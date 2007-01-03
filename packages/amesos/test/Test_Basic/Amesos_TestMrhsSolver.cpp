@@ -122,12 +122,7 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
 		     int special, AMESOS_MatrixType matrix_type ) {
 
 
-  int iam = Comm.MyPID() ;
-
-  //  int hatever;
-  //  if ( iam == 0 )  cin >> hatever ; 
   Comm.Barrier();
-
 
   Epetra_Map * readMap;
   Epetra_CrsMatrix * readA; 
@@ -491,11 +486,6 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
 	    Epetra_Vector *passx_i = (*passx)(i) ;
 	    Problem.SetLHS( dynamic_cast<Epetra_MultiVector *>(passx_i) ) ;
 	    Problem.SetRHS( dynamic_cast<Epetra_MultiVector *>(passb_i) );
-
-	    Epetra_MultiVector* THISvecX = Problem.GetLHS() ;
-	    Epetra_MultiVector* THISvecB = Problem.GetRHS() ;
-
-	    int NumVectors = THISvecX->NumVectors();
 
 	    EPETRA_CHK_ERR( klu.Solve( ) ); 
 	    factor = false; 

@@ -226,7 +226,6 @@ int TestErrors( const vector<bool> AmesosClassesInstalled,
     bool printit = true ; 
     if ( printit && verbose ) cout << __FILE__ << "::" << __LINE__ << endl ; 
     const int EpetraMatrixType = 0 ;
-    int MaxLevel = 3 ; 
     bool symmetric = true;
     const int iterDist = 0 ; 
     

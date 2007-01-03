@@ -414,7 +414,6 @@ int main(int argc, char **argv)
 	char *releasenum = uname_buf.release;
 #else
 	char *hostname = (char *)  "";
-	char *releasenum = (char *) "";
 #endif
 	
 

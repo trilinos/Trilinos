@@ -129,11 +129,6 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
 		       int special, AMESOS_MatrixType matrix_type ) {
 
 
-
-
-  int iam = Comm.MyPID() ;
-
-
   Epetra_Map * readMap;
   Epetra_CrsMatrix * readA; 
   Epetra_Vector * readx; 

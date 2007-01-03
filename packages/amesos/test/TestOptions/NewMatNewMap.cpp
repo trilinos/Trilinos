@@ -66,8 +66,8 @@ RefCountPtr<Epetra_CrsMatrix> NewMatNewMap(Epetra_CrsMatrix& In,
     assert( ReindexRowMap==0 && ReindexColMap == 0 ) ; 
   }
 
-  int (*RowPermute)(int in) ;
-  int (*ColPermute)(int in) ;
+  int (*RowPermute)(int in) = 0;
+  int (*ColPermute)(int in) = 0;
 
   assert( Diagonal >= 0  && Diagonal <= 2 ); 
   assert( ReindexRowMap>=0 && ReindexRowMap<=2 );

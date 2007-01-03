@@ -39,7 +39,6 @@ int PartialFactorizationOneStep( const char* AmesosClass,
   int iam = Comm.MyPID() ; 
   int errors = 0 ; 
 
-  const Epetra_Map *Map = &Amat->RowMap() ; 
   const Epetra_Map *RangeMap = 
     transpose?&Amat->OperatorDomainMap():&Amat->OperatorRangeMap() ; 
   const Epetra_Map *DomainMap = 
@@ -86,7 +85,6 @@ int PartialFactorizationOneStep( const char* AmesosClass,
       if ( Steps > 2 ) {
 		
 	int ind[1];
-	double val[1];
 	ind[0] = 0;
 	xexact.Random();
 	xexact.PutScalar(1.0);
@@ -94,8 +92,6 @@ int PartialFactorizationOneStep( const char* AmesosClass,
 	//
 	//  Compute cAx = A' xexact
 	//
-	double Value = 1.0 ;
-	
 	Amat->Multiply( transpose, xexact, b ) ;  //  b = A x2 = A A' A'' xexact
 
 #if 0 

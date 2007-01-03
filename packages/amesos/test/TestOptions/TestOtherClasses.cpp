@@ -90,16 +90,10 @@ int TestOtherClasses( const char* AmesosClass,
 
   string AC = AmesosClass ; 
 
-  bool superlu = ( AC ==  "Amesos_Superlu" );
-  bool superludist = ( AC ==  "Amesos_Superludist" );
   bool taucs = ( AC ==  "Amesos_Taucs" );
-  bool umfpack = ( AC ==  "Amesos_Umfpack" );
   bool klu = ( AC ==  "Amesos_Klu" );
   bool paraklete = ( AC ==  "Amesos_Paraklete" );
-  bool pardiso = ( AC ==  "Amesos_Pardiso" );
-  bool dscpack = ( AC ==  "Amesos_Dscpack" );       
   bool mumps = ( AC ==  "Amesos_Mumps" );
-  bool pastix = ( AC ==  "Amesos_Pastix" );
   bool scalapack = ( AC ==  "Amesos_Scalapack" ) ;
   bool lapack = ( AC ==  "Amesos_Lapack" );
 

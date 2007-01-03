@@ -107,7 +107,7 @@ int PerformOneSolveAndTest( const char* AmesosClass,
 
   Amesos_TestRowMatrix ATRW( &*MyMat ) ; 
   
-  Epetra_RowMatrix* MyRowMat ; 
+  Epetra_RowMatrix* MyRowMat = 0; 
   
   assert ( EpetraMatrixType >= 0 && EpetraMatrixType <= 2 );
   switch ( EpetraMatrixType ) {
@@ -183,7 +183,6 @@ int PerformOneSolveAndTest( const char* AmesosClass,
   int iam = Comm.MyPID() ; 
   int errors = 0 ; 
 
-  const Epetra_Map *Map = &MyMat->RowMap() ; 
   const Epetra_Map *RangeMap = 
     transpose?&MyMat->OperatorDomainMap():&MyMat->OperatorRangeMap() ; 
   const Epetra_Map *DomainMap = 
@@ -375,10 +374,6 @@ int PerformOneSolveAndTest( const char* AmesosClass,
 	if ( MyMat->MyGRID( 0 ) )
 	  MyMat->SumIntoMyValues( 0, 1, val, ind ) ; 
 	OUR_CHK_ERR( Abase->NumericFactorization(  ) ); 
-	
-	Teuchos::ParameterList* NullList = (Teuchos::ParameterList*) 0 ;  
-	//      We do not presently handle null lists.
-	//	OUR_CHK_ERR( Abase->SetParameters( *NullList ) );   // Make sure we handle null lists 
 	OUR_CHK_ERR( Abase->Solve(  ) ); 
 	if ( TrustMe ) sAx = FixedLHS ; 
 	
