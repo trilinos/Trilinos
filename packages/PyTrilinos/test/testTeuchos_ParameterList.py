@@ -233,7 +233,7 @@ class ParameterListTestCase(unittest.TestCase):
     def testSublistBad(self):
         "Test Teuchos.ParameterList sublist method for non-sublist"
         self.plist.set("new", 1)
-        self.assertRaises(KeyError, self.plist.sublist, "new")
+        self.assertRaises(TypeError, self.plist.sublist, "new")
 
     def testIsParameterTrue(self):
         "Test Teuchos.ParameterList isParameter method existing parameter"
