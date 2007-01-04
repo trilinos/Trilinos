@@ -31,7 +31,7 @@
 #define IFPACK_SPARSKIT_H
 
 #include "Ifpack_ConfigDefs.h"
-#if defined(HAVE_IFPACK_TEUCHOS) && defined(HAVE_IFPACK_SPARSKIT)
+#ifdef HAVE_IFPACK_SPARSKIT
 #include "Ifpack_CondestType.h"
 #include "Ifpack_ScalingType.h"
 #include "Ifpack_Preconditioner.h"
@@ -55,7 +55,6 @@ class Ifpack_SPARSKIT: public Ifpack_Preconditioner {
   //! Ifpack_SPARSKIT Destructor
   virtual ~Ifpack_SPARSKIT();
 
-#ifdef HAVE_IFPACK_TEUCHOS
   //! Set parameters using a Teuchos::ParameterList object.
   /* This method is only available if the Teuchos package is enabled.
      This method recognizes five parameter names: level_fill, drop_tolerance,
@@ -65,7 +64,6 @@ class Ifpack_SPARSKIT: public Ifpack_Preconditioner {
      Epetra_CombineMode.
   */
   int SetParameters(Teuchos::ParameterList& parameterlis);
-#endif
 
   int SetParameter(const string Name, const int Value)
   {
@@ -290,5 +288,5 @@ private:
 
 };
 
-#endif // HAVE_IFPACK_TEUCHOS && HAVE_IFPACK_SPARSKIT
+#endif // HAVE_IFPACK_SPARSKIT
 #endif /* IFPACK_SPARSKIT_H */

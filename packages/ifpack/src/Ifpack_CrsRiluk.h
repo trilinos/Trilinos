@@ -45,11 +45,9 @@ class Epetra_RowMatrix;
 class Epetra_Vector;
 class Epetra_MultiVector;
 
-#ifdef HAVE_IFPACK_TEUCHOS
 namespace Teuchos {
   class ParameterList;
 }
-#endif
 
 //! Ifpack_CrsRiluk: A class for constructing and using an incomplete lower/upper (ILU) factorization of a given Epetra_RowMatrix.
 
@@ -248,7 +246,6 @@ class Ifpack_CrsRiluk: public Epetra_Object, public Epetra_CompObject, public vi
   //! Set overlap mode type
   void SetOverlapMode( Epetra_CombineMode OverlapMode) {OverlapMode_ = OverlapMode; return;}
 
-#ifdef HAVE_IFPACK_TEUCHOS
   //! Set parameters using a Teuchos::ParameterList object.
   /* This method is only available if the Teuchos package is enabled.
      This method recognizes four parameter names: relax_value,
@@ -259,7 +256,6 @@ class Ifpack_CrsRiluk: public Epetra_Object, public Epetra_CompObject, public vi
   */
   int SetParameters(const Teuchos::ParameterList& parameterlist,
                     bool cerr_warning_if_unused=false);
-#endif
 
   //! Compute ILU factors L and U using the specified graph, diagonal perturbation thresholds and relaxation parameters.
   /*! This function computes the RILU(k) factors L and U using the current:

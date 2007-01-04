@@ -76,7 +76,6 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/ac_cxx_new_for_scoping.m4 \
 	$(top_srcdir)/config/ac_cxx_std_sprintf.m4 \
 	$(top_srcdir)/config/ac_pkg_swig.m4 \
-	$(top_srcdir)/config/ac_python_module.m4 \
 	$(top_srcdir)/config/acx_blas.m4 \
 	$(top_srcdir)/config/acx_lapack.m4 \
 	$(top_srcdir)/config/az_python.m4 \
@@ -86,6 +85,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/tac_arg_enable_compiler_options.m4 \
 	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
+	$(top_srcdir)/config/tac_arg_enable_feature_sub.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub_check.m4 \
 	$(top_srcdir)/config/tac_arg_with_ar.m4 \
 	$(top_srcdir)/config/tac_arg_with_blaslib.m4 \
@@ -132,6 +132,8 @@ AWK = @AWK@
 BLAS_LIBS = @BLAS_LIBS@
 BUILD_EXAMPLES_FALSE = @BUILD_EXAMPLES_FALSE@
 BUILD_EXAMPLES_TRUE = @BUILD_EXAMPLES_TRUE@
+BUILD_IFPACK_PYTHON_FALSE = @BUILD_IFPACK_PYTHON_FALSE@
+BUILD_IFPACK_PYTHON_TRUE = @BUILD_IFPACK_PYTHON_TRUE@
 BUILD_PYTHON_FALSE = @BUILD_PYTHON_FALSE@
 BUILD_PYTHON_TRUE = @BUILD_PYTHON_TRUE@
 BUILD_TESTS_FALSE = @BUILD_TESTS_FALSE@
@@ -151,6 +153,8 @@ ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
+ENABLE_IFPACK_THYRA_FALSE = @ENABLE_IFPACK_THYRA_FALSE@
+ENABLE_IFPACK_THYRA_TRUE = @ENABLE_IFPACK_THYRA_TRUE@
 EXEEXT = .exe
 F77 = @F77@
 FFLAGS = @FFLAGS@
@@ -162,12 +166,10 @@ HAVE_IFPACK_AZTECOO_FALSE = @HAVE_IFPACK_AZTECOO_FALSE@
 HAVE_IFPACK_AZTECOO_TRUE = @HAVE_IFPACK_AZTECOO_TRUE@
 HAVE_IFPACK_EPETRAEXT_FALSE = @HAVE_IFPACK_EPETRAEXT_FALSE@
 HAVE_IFPACK_EPETRAEXT_TRUE = @HAVE_IFPACK_EPETRAEXT_TRUE@
+HAVE_IFPACK_GALERI_FALSE = @HAVE_IFPACK_GALERI_FALSE@
+HAVE_IFPACK_GALERI_TRUE = @HAVE_IFPACK_GALERI_TRUE@
 HAVE_IFPACK_METIS_FALSE = @HAVE_IFPACK_METIS_FALSE@
 HAVE_IFPACK_METIS_TRUE = @HAVE_IFPACK_METIS_TRUE@
-HAVE_IFPACK_TEUCHOS_FALSE = @HAVE_IFPACK_TEUCHOS_FALSE@
-HAVE_IFPACK_TEUCHOS_TRUE = @HAVE_IFPACK_TEUCHOS_TRUE@
-HAVE_IFPACK_TRIUTILS_FALSE = @HAVE_IFPACK_TRIUTILS_FALSE@
-HAVE_IFPACK_TRIUTILS_TRUE = @HAVE_IFPACK_TRIUTILS_TRUE@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
 HAVE_PERL = @HAVE_PERL@

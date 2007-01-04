@@ -65,7 +65,8 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-@HAVE_IFPACK_GALERI_TRUE@@HAVE_IFPACK_TEUCHOS_TRUE@noinst_PROGRAMS = TestPreconditionerFactory$(EXEEXT)
+@HAVE_IFPACK_GALERI_TRUE@noinst_PROGRAMS =  \
+@HAVE_IFPACK_GALERI_TRUE@	TestPreconditionerFactory$(EXEEXT)
 subdir = test/PreconditionerFactory
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -104,7 +105,7 @@ CONFIG_HEADER = $(top_builddir)/src/Ifpack_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
 am__TestPreconditionerFactory_SOURCES_DIST = $(srcdir)/cxx_main.cpp
-@HAVE_IFPACK_GALERI_TRUE@@HAVE_IFPACK_TEUCHOS_TRUE@am_TestPreconditionerFactory_OBJECTS = TestPreconditionerFactory-cxx_main.$(OBJEXT)
+@HAVE_IFPACK_GALERI_TRUE@am_TestPreconditionerFactory_OBJECTS = TestPreconditionerFactory-cxx_main.$(OBJEXT)
 TestPreconditionerFactory_OBJECTS =  \
 	$(am_TestPreconditionerFactory_OBJECTS)
 am__DEPENDENCIES_1 =
@@ -173,8 +174,6 @@ HAVE_IFPACK_GALERI_FALSE = @HAVE_IFPACK_GALERI_FALSE@
 HAVE_IFPACK_GALERI_TRUE = @HAVE_IFPACK_GALERI_TRUE@
 HAVE_IFPACK_METIS_FALSE = @HAVE_IFPACK_METIS_FALSE@
 HAVE_IFPACK_METIS_TRUE = @HAVE_IFPACK_METIS_TRUE@
-HAVE_IFPACK_TEUCHOS_FALSE = @HAVE_IFPACK_TEUCHOS_FALSE@
-HAVE_IFPACK_TEUCHOS_TRUE = @HAVE_IFPACK_TEUCHOS_TRUE@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
 HAVE_PERL = @HAVE_PERL@
@@ -280,10 +279,10 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 EXAMPLE_LIBS = $(IFPACK_EXTRA_LIBS)     $(IFPACK_LIBS)
 EXAMPLE_INCLUDES = $(IFPACK_EXTRA_INCLUDES) $(IFPACK_INCLUDES)
-@HAVE_IFPACK_GALERI_TRUE@@HAVE_IFPACK_TEUCHOS_TRUE@TestPreconditionerFactory_SOURCES = $(srcdir)/cxx_main.cpp
-@HAVE_IFPACK_GALERI_TRUE@@HAVE_IFPACK_TEUCHOS_TRUE@TestPreconditionerFactory_DEPENDENCIES = $(top_builddir)/src/libifpack.a 
-@HAVE_IFPACK_GALERI_TRUE@@HAVE_IFPACK_TEUCHOS_TRUE@TestPreconditionerFactory_CXXFLAGS = $(EXAMPLE_INCLUDES)
-@HAVE_IFPACK_GALERI_TRUE@@HAVE_IFPACK_TEUCHOS_TRUE@TestPreconditionerFactory_LDADD = $(EXAMPLE_LIBS)
+@HAVE_IFPACK_GALERI_TRUE@TestPreconditionerFactory_SOURCES = $(srcdir)/cxx_main.cpp
+@HAVE_IFPACK_GALERI_TRUE@TestPreconditionerFactory_DEPENDENCIES = $(top_builddir)/src/libifpack.a 
+@HAVE_IFPACK_GALERI_TRUE@TestPreconditionerFactory_CXXFLAGS = $(EXAMPLE_INCLUDES)
+@HAVE_IFPACK_GALERI_TRUE@TestPreconditionerFactory_LDADD = $(EXAMPLE_LIBS)
 all: all-am
 
 .SUFFIXES:

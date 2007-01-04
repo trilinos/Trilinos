@@ -27,7 +27,6 @@
 //@HEADER
 
 #include "Ifpack_ConfigDefs.h"
-#ifdef HAVE_IFPACK_TEUCHOS
 #include "Ifpack_CondestType.h"
 #include "Ifpack_ILU.h"
 #include "Epetra_ConfigDefs.h"
@@ -64,10 +63,8 @@ Ifpack_ILU::Ifpack_ILU(Epetra_RowMatrix* Matrix) :
   ApplyInverseFlops_(0.0),
   Time_(Comm())
 {
-#ifdef HAVE_IFPACK_TEUCHOS
   Teuchos::ParameterList List;
   SetParameters(List);
-#endif
 }
 
 //==============================================================================
@@ -619,4 +616,3 @@ Ifpack_ILU::Print(std::ostream& os) const
 
   return(os);
 }
-#endif // IFPACK_TEUCHOS

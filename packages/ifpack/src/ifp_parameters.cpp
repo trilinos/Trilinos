@@ -8,7 +8,6 @@
 
 namespace Ifpack {
 
-#ifdef HAVE_IFPACK_TEUCHOS
 //----------------------------------------------------------------------------
 Teuchos::map<string,parameter>& key_map()
 {
@@ -115,8 +114,6 @@ void set_parameters(const Teuchos::ParameterList& parameterlist,
     }
   }
 }
-
-#endif //HAVE_IFPACK_TEUCHOS
 
 } // namespace Ifpack
 

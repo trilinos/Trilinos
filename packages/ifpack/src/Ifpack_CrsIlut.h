@@ -89,7 +89,6 @@ class Ifpack_CrsIlut: public Epetra_Object, public Epetra_CompObject, public Ifp
   //! Set fill tolerance value as defined by the ILUT algorithm.
   int SetFillTol(double FillTol) {FillTol_ = FillTol; return(0);};
 
-#ifdef HAVE_IFPACK_TEUCHOS
   //! Set parameters using a Teuchos::ParameterList object.
   /* This method is only available if the Teuchos package is enabled.
      This method recognizes two parameter names: drop_tolerance and
@@ -98,7 +97,6 @@ class Ifpack_CrsIlut: public Epetra_Object, public Epetra_CompObject, public Ifp
   */
   int SetParameters(const Teuchos::ParameterList& parameterlist,
                     bool cerr_warning_if_unused=false);
-#endif
   //@}
   
   //@{ \name Attribute access methods.

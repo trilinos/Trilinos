@@ -2,7 +2,6 @@
 #define IFPACK_PARTITIONER_H
 
 #include "Ifpack_ConfigDefs.h"
-#ifdef HAVE_IFPACK_TEUCHOS
 #include "Teuchos_ParameterList.hpp"
 class Epetra_Comm;
 class Ifpack_Graph;
@@ -171,5 +170,4 @@ inline ostream& operator<<(ostream& os, const Ifpack_Partitioner& obj)
   return(obj.Print(os));
 }
 
-#endif // HAVE_IFPACK_TEUCHOS
 #endif // IFPACK_PARTITIONER_H

@@ -27,7 +27,7 @@
 // @HEADER
 
 #include "Ifpack_ConfigDefs.h"
-#if defined(HAVE_IFPACK_AZTECOO) && defined(HAVE_IFPACK_TEUCHOS)
+#ifdef HAVE_IFPACK_AZTECOO 
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
 #else

@@ -1,5 +1,4 @@
 #include "Ifpack_ConfigDefs.h"
-#ifdef HAVE_IFPACK_TEUCHOS
 #include <iomanip>
 #include "Epetra_Operator.h"
 #include "Epetra_RowMatrix.h"
@@ -788,4 +787,3 @@ ApplyInverseSGS_FastCrsMatrix(const Epetra_CrsMatrix* A, const Epetra_MultiVecto
   return(0);
 }
 
-#endif

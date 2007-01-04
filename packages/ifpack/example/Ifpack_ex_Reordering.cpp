@@ -98,7 +98,6 @@ int main(int argc, char *argv[])
 
   A.FillComplete();
 
-#ifdef HAVE_IFPACK_TEUCHOS
   // print the sparsity to file, postscript format
   ////Ifpack_PrintSparsity(A,"OrigA.ps");
 
@@ -115,7 +114,6 @@ int main(int argc, char *argv[])
 
   // print the sparsity to file, postscript format
   ////Ifpack_PrintSparsity(ReordA,"ReordA.ps");
-#endif
 
 #ifdef HAVE_MPI
   MPI_Finalize(); 

@@ -65,7 +65,7 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-@HAVE_IFPACK_TEUCHOS_TRUE@noinst_PROGRAMS = TestUseTranspose$(EXEEXT)
+noinst_PROGRAMS = TestUseTranspose$(EXEEXT)
 subdir = test/UseTranspose
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -103,9 +103,7 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Ifpack_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am__TestUseTranspose_SOURCES_DIST = $(srcdir)/cxx_main.cpp
-@HAVE_IFPACK_TEUCHOS_TRUE@am_TestUseTranspose_OBJECTS =  \
-@HAVE_IFPACK_TEUCHOS_TRUE@	TestUseTranspose-cxx_main.$(OBJEXT)
+am_TestUseTranspose_OBJECTS = TestUseTranspose-cxx_main.$(OBJEXT)
 TestUseTranspose_OBJECTS = $(am_TestUseTranspose_OBJECTS)
 am__DEPENDENCIES_1 =
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
@@ -118,7 +116,7 @@ CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
 SOURCES = $(TestUseTranspose_SOURCES)
-DIST_SOURCES = $(am__TestUseTranspose_SOURCES_DIST)
+DIST_SOURCES = $(TestUseTranspose_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -172,8 +170,6 @@ HAVE_IFPACK_GALERI_FALSE = @HAVE_IFPACK_GALERI_FALSE@
 HAVE_IFPACK_GALERI_TRUE = @HAVE_IFPACK_GALERI_TRUE@
 HAVE_IFPACK_METIS_FALSE = @HAVE_IFPACK_METIS_FALSE@
 HAVE_IFPACK_METIS_TRUE = @HAVE_IFPACK_METIS_TRUE@
-HAVE_IFPACK_TEUCHOS_FALSE = @HAVE_IFPACK_TEUCHOS_FALSE@
-HAVE_IFPACK_TEUCHOS_TRUE = @HAVE_IFPACK_TEUCHOS_TRUE@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
 HAVE_PERL = @HAVE_PERL@
@@ -279,10 +275,10 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 EXAMPLE_LIBS = $(IFPACK_EXTRA_LIBS)     $(IFPACK_LIBS)
 EXAMPLE_INCLUDES = $(IFPACK_EXTRA_INCLUDES) $(IFPACK_INCLUDES)
-@HAVE_IFPACK_TEUCHOS_TRUE@TestUseTranspose_SOURCES = $(srcdir)/cxx_main.cpp
-@HAVE_IFPACK_TEUCHOS_TRUE@TestUseTranspose_DEPENDENCIES = $(top_builddir)/src/libifpack.a 
-@HAVE_IFPACK_TEUCHOS_TRUE@TestUseTranspose_CXXFLAGS = $(EXAMPLE_INCLUDES)
-@HAVE_IFPACK_TEUCHOS_TRUE@TestUseTranspose_LDADD = $(EXAMPLE_LIBS)
+TestUseTranspose_SOURCES = $(srcdir)/cxx_main.cpp
+TestUseTranspose_DEPENDENCIES = $(top_builddir)/src/libifpack.a 
+TestUseTranspose_CXXFLAGS = $(EXAMPLE_INCLUDES)
+TestUseTranspose_LDADD = $(EXAMPLE_LIBS)
 all: all-am
 
 .SUFFIXES:

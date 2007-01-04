@@ -2,7 +2,6 @@
 #define IFPACK_OVERLAPPINGPARTITIONER_H
 
 #include "Ifpack_ConfigDefs.h"
-#ifdef HAVE_IFPACK_TEUCHOS
 #include "Ifpack_Partitioner.h"
 #include "Teuchos_ParameterList.hpp"
 class Epetra_Comm;
@@ -169,5 +168,4 @@ protected:
 
 }; // class Ifpack_Partitioner
 
-#endif // HAVE_IFPACK_TEUCHOS
 #endif // IFPACK_OVERLAPPINGPARTITIONER_H

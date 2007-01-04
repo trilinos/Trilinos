@@ -1,5 +1,4 @@
 #include "Ifpack_ConfigDefs.h"
-#if defined(HAVE_IFPACK_TEUCHOS)
 #include "Teuchos_ParameterList.hpp"
 #include "Epetra_MultiVector.h"
 #include "Ifpack_Graph.h"
@@ -74,14 +73,12 @@ SetParameter(const string Name, const double Value)
 }
 
 //==============================================================================
-#ifdef HAVE_IFPACK_TEUCHOS  
 int Ifpack_RCMReordering::
 SetParameters(Teuchos::ParameterList& List)
 {
   RootNode_ = List.get("reorder: root node", RootNode_);
   return(0);
 }
-#endif
 
 //==============================================================================
 int Ifpack_RCMReordering::Compute(const Epetra_RowMatrix& Matrix)
@@ -266,4 +263,3 @@ ostream& Ifpack_RCMReordering::Print(std::ostream& os) const
    
   return(os);
 }
-#endif // HAVE_IFPACK_TEUCHOS

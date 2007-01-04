@@ -44,67 +44,51 @@ SUBDIRS = IlukGraph               \
           IC                      \
 	  UseTranspose            \
 	  TestAll
-# CrsRiluk             
-if HAVE_IFPACK_TEUCHOS
+
+# CrsRiluk 
+
 if HAVE_IFPACK_AZTECOO
 IFPACK_COMPARE_WITH_AZTECOO_TEST = CompareWithAztecOO/TestCompareWithAztecOO.exe
 endif
-endif
 
-if HAVE_IFPACK_TEUCHOS
 if HAVE_IFPACK_AMESOS
 IFPACK_CONTAINER_TEST = Container/TestContainer.exe
 endif
-endif
 
-if HAVE_IFPACK_TEUCHOS
 if HAVE_IFPACK_AZTECOO
 if HAVE_IFPACK_AMESOS
 IFPACK_OVERLAPPING_ROW_MATRIX_TEST = OverlappingRowMatrix/TestOverlappingRowMatrix.exe
 endif
 endif
-endif
 
-if HAVE_IFPACK_TEUCHOS
 if HAVE_IFPACK_AZTECOO
 IFPACK_PRECONDITIONER_FACTORY_TEST = PreconditionerFactory/TestPreconditionerFactory.exe
 endif
-endif
 
-if HAVE_IFPACK_TEUCHOS
 if HAVE_IFPACK_AZTECOO
 IFPACK_RELAXATION_TEST = Relaxation/TestRelaxation.exe
 endif
-endif
 
-if HAVE_IFPACK_TEUCHOS
 if HAVE_IFPACK_AMESOS
 IFPACK_ILU_TEST = ILU/TestILU.exe
 endif
-endif
 
-if HAVE_IFPACK_TEUCHOS
 if HAVE_IFPACK_AMESOS
 IFPACK_IC_TEST = IC/TestIC.exe
-endif
-endif
-
-if HAVE_IFPACK_TEUCHOS
-IFPACK_TRANSPOSE_TEST = UseTranspose/TestUseTranspose.exe
 endif
 
 TESTS = \
 CrsRiluk/CrsRiluk_test.exe \
 IlukGraph/IlukGraph_test.exe \
 SetParameters/SetParameters.exe \
+UseTranspose/TestUseTranspose.exe \
 $(IFPACK_COMPARE_WITH_AZTECOO_TEST) \
 $(IFPACK_CONTAINER_TEST) \
 $(IFPACK_OVERLAPPING_ROW_MATRIX_TEST) \
 $(IFPACK_PRECONDITIONER_FACTORY_TEST) \
 $(IFPACK_RELAXATION_TEST) \
 $(IFPACK_ILU_TEST) \
-$(IFPACK_IC_TEST) \
-$(IFPACK_TRANSPOSE_TEST)
+$(IFPACK_IC_TEST)
 
 EXTRA_DIST = definition
 

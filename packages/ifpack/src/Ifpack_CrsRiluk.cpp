@@ -36,10 +36,8 @@
 #include "Epetra_Vector.h"
 #include "Epetra_MultiVector.h"
 
-#ifdef HAVE_IFPACK_TEUCHOS
 #include <Teuchos_ParameterList.hpp>
 #include <ifp_parameters.h>
-#endif
 
 //==============================================================================
 Ifpack_CrsRiluk::Ifpack_CrsRiluk(const Ifpack_IlukGraph & Graph) 
@@ -194,7 +192,6 @@ int Ifpack_CrsRiluk::AllocateVbr() {
   return(0);
 }
 
-#ifdef HAVE_IFPACK_TEUCHOS
 //==========================================================================
 int Ifpack_CrsRiluk::SetParameters(const Teuchos::ParameterList& parameterlist,
                                    bool cerr_warning_if_unused)
@@ -214,7 +211,6 @@ int Ifpack_CrsRiluk::SetParameters(const Teuchos::ParameterList& parameterlist,
 
   return(0);
 }
-#endif
 
 //==========================================================================
 int Ifpack_CrsRiluk::InitValues(const Epetra_CrsMatrix & A) {

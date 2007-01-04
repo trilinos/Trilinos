@@ -53,7 +53,6 @@ EXAMPLE_CORE =	Ifpack_ex_Reordering           \
 		Ifpack_ex_Filtering           
 
 if HAVE_IFPACK_AZTECOO
-if HAVE_IFPACK_TEUCHOS
 if HAVE_IFPACK_GALERI
 EXAMPLE_EXT = Ifpack_ex_Factory              \
 	      Ifpack_ex_ICT
@@ -64,7 +63,6 @@ endif
 else
 EXAMPLE_EXT =
 EXAMPLE_EXT2 =
-endif
 endif
 endif
 

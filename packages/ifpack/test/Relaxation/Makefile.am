@@ -36,7 +36,6 @@ EXEEXT = .exe
 if HAVE_IFPACK_AMESOS
 if HAVE_IFPACK_AZTECOO
 if HAVE_IFPACK_GALERI
-if HAVE_IFPACK_TEUCHOS
 
 noinst_PROGRAMS = TestRelaxation
 
@@ -45,7 +44,6 @@ TestRelaxation_DEPENDENCIES = $(top_builddir)/src/libifpack.a
 TestRelaxation_CXXFLAGS     = $(EXAMPLE_INCLUDES)
 TestRelaxation_LDADD        = $(EXAMPLE_LIBS)
 
-endif
 endif
 endif
 endif

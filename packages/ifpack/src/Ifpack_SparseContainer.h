@@ -2,7 +2,6 @@
 #define IFPACK_SPARSECONTAINER_H
 
 #include "Ifpack_Container.h"
-#ifdef HAVE_IFPACK_TEUCHOS
 #include "Epetra_IntSerialDenseVector.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
@@ -593,5 +592,4 @@ ostream& Ifpack_SparseContainer<T>::Print(ostream & os) const
 
   return(os);
 }
-#endif // HAVE_IFPACK_TEUCHOS
 #endif // IFPACK_SPARSECONTAINER_H

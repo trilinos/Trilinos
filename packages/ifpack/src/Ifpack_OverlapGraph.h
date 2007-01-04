@@ -38,11 +38,9 @@ class Epetra_BlockMap;
 class Epetra_RowMatrix;
 class Epetra_Import;
 
-#ifdef HAVE_IFPACK_TEUCHOS
 namespace Teuchos {
   class ParameterList;
 }
-#endif
 
 //! Ifpack_OverlapGraph: Constructs a graph for use with Ifpack preconditioners.
 
@@ -74,7 +72,6 @@ class Ifpack_OverlapGraph: public Epetra_Object {
 
   //@{ \name Atribute access methods.
     
-#ifdef HAVE_IFPACK_TEUCHOS
   //! Set parameters using a Teuchos::ParameterList object.
   /* This method is only available if the configure argument
      '--enable-ifpack-teuchos' was used.
@@ -83,7 +80,6 @@ class Ifpack_OverlapGraph: public Epetra_Object {
   */
   int SetParameters(const Teuchos::ParameterList& parameterlist,
                     bool cerr_warning_if_unused=false);
-#endif
 
   //! Returns the overlap graph object.
   const Epetra_CrsGraph & OverlapGraph() const {return(*OverlapGraph_);}

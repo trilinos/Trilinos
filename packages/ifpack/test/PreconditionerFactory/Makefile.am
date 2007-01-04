@@ -33,7 +33,6 @@ EXAMPLE_INCLUDES = $(IFPACK_EXTRA_INCLUDES) $(IFPACK_INCLUDES)
 
 EXEEXT = .exe
 
-if HAVE_IFPACK_TEUCHOS
 if HAVE_IFPACK_GALERI
 
 noinst_PROGRAMS = TestPreconditionerFactory
@@ -43,5 +42,4 @@ TestPreconditionerFactory_DEPENDENCIES = $(top_builddir)/src/libifpack.a
 TestPreconditionerFactory_CXXFLAGS     = $(EXAMPLE_INCLUDES)
 TestPreconditionerFactory_LDADD        = $(EXAMPLE_LIBS)
 
-endif
 endif

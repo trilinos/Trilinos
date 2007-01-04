@@ -33,8 +33,6 @@ EXAMPLE_INCLUDES = $(IFPACK_EXTRA_INCLUDES) $(IFPACK_INCLUDES)
 
 EXEEXT = .exe
 
-if HAVE_IFPACK_TEUCHOS
-
 noinst_PROGRAMS = TestUseTranspose
 
 TestUseTranspose_SOURCES      = $(srcdir)/cxx_main.cpp
@@ -42,4 +40,3 @@ TestUseTranspose_DEPENDENCIES = $(top_builddir)/src/libifpack.a
 TestUseTranspose_CXXFLAGS     = $(EXAMPLE_INCLUDES)
 TestUseTranspose_LDADD        = $(EXAMPLE_LIBS)
 
-endif

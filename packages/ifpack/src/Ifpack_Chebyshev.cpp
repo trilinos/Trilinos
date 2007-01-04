@@ -1,5 +1,4 @@
 #include "Ifpack_ConfigDefs.h"
-#ifdef HAVE_IFPACK_TEUCHOS
 #include <iomanip>
 #include "Epetra_Operator.h"
 #include "Epetra_RowMatrix.h"
@@ -565,4 +564,3 @@ CG(const Epetra_Operator& Operator,
 #endif
 }
 
-#endif

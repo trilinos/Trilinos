@@ -1,10 +1,10 @@
 ## Required dependency on epetra
+include @abs_top_builddir@/../teuchos/Makefile.export.teuchos
 include @abs_top_builddir@/../epetra/Makefile.export.epetra
 
 ## Optional dependencies
 @HAVE_IFPACK_AMESOS_TRUE@include @abs_top_builddir@/../amesos/Makefile.export.amesos
 @HAVE_IFPACK_AZTECOO_TRUE@include @abs_top_builddir@/../aztecoo/Makefile.export.aztecoo
-@HAVE_IFPACK_TEUCHOS_TRUE@include @abs_top_builddir@/../teuchos/Makefile.export.teuchos
 
 ## Optional dependency on thyra
 @ENABLE_IFPACK_THYRA_TRUE@include @abs_top_builddir@/../thyra/Makefile.export.thyra

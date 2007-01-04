@@ -43,11 +43,9 @@ class Epetra_Map;
 class Epetra_CrsMatrix;
 class Epetra_MultiVector;
 
-#ifdef HAVE_IFPACK_TEUCHOS
 namespace Teuchos {
   class ParameterList;
 }
-#endif
 
 //! Ifpack_CrsIct: A class for constructing and using an incomplete Cholesky factorization of a given Epetra_CrsMatrix.
 
@@ -186,7 +184,6 @@ class Ifpack_CrsIct: public Epetra_Object, public Epetra_CompObject, public virt
   //! Set overlap mode type
   void SetOverlapMode( Epetra_CombineMode OverlapMode) {OverlapMode_ = OverlapMode; return;}
 
-#ifdef HAVE_IFPACK_TEUCHOS
   //! Set parameters using a Teuchos::ParameterList object.
   /* This method is only available if the Teuchos package is enabled.
      This method recognizes five parameter names: level_fill, drop_tolerance,
@@ -197,7 +194,6 @@ class Ifpack_CrsIct: public Epetra_Object, public Epetra_CompObject, public virt
   */
   int SetParameters(const Teuchos::ParameterList& parameterlist,
                     bool cerr_warning_if_unused=false);
-#endif
 
   //! Initialize L and U with values from user matrix A.
   /*! Copies values from the user's matrix into the nonzero pattern of L and U.

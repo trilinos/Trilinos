@@ -1,5 +1,4 @@
 #include "Ifpack_ConfigDefs.h"
-#ifdef HAVE_IFPACK_TEUCHOS
 #include "Ifpack_Partitioner.h"
 #include "Ifpack_OverlappingPartitioner.h"
 #include "Ifpack_GreedyPartitioner.h"
@@ -125,4 +124,3 @@ int Ifpack_GreedyPartitioner::ComputePartitions()
   return(0);
 }
 
-#endif // HAVE_IFPACK_TEUCHOS

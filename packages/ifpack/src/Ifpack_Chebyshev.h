@@ -2,8 +2,8 @@
 #define IFPACK_CHEBYSHEV_H
 
 #include "Ifpack_ConfigDefs.h"
-#ifdef HAVE_IFPACK_TEUCHOS
 #include "Ifpack_Preconditioner.h"
+
 namespace Teuchos {
   class ParameterList;
 }
@@ -360,5 +360,4 @@ private:
 };
 
 
-#endif // HAVE_IFPACK_TEUCHOS
 #endif // IFPACK_CHEBYSHEV_H

@@ -31,10 +31,8 @@
 #include "Epetra_Comm.h"
 #include "Epetra_Import.h"
 
-#ifdef HAVE_IFPACK_TEUCHOS
 #include <Teuchos_ParameterList.hpp>
 #include <ifp_parameters.h>
-#endif
 
 //==============================================================================
 Ifpack_IlukGraph::Ifpack_IlukGraph(const Epetra_CrsGraph & Graph, int LevelFill, int LevelOverlap)
@@ -112,7 +110,6 @@ Ifpack_IlukGraph::~Ifpack_IlukGraph()
   if (OverlapImporter_!=0) delete OverlapImporter_;
 }
 
-#ifdef HAVE_IFPACK_TEUCHOS
 //==============================================================================
 int Ifpack_IlukGraph::SetParameters(const Teuchos::ParameterList& parameterlist,
                                     bool cerr_warning_if_unused)
@@ -127,7 +124,6 @@ int Ifpack_IlukGraph::SetParameters(const Teuchos::ParameterList& parameterlist,
   LevelOverlap_ = params.int_params[Ifpack::level_overlap-FIRST_INT_PARAM];
   return(0);
 }
-#endif
 
 //==============================================================================
 int Ifpack_IlukGraph::ConstructOverlapGraph() {

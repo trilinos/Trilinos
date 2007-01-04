@@ -69,10 +69,8 @@ public:
   //! Sets double parameters `Name'.
   virtual int SetParameter(const string Name, const double Value) = 0;
 
-#ifdef HAVE_IFPACK_TEUCHOS  
   //! Sets all parameters.
   virtual int SetParameters(Teuchos::ParameterList& List) = 0;
-#endif
 
   //! Computes all it is necessary to initialize the reordering object.
   virtual int Compute(const Ifpack_Graph& Graph) = 0;

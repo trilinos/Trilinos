@@ -2,7 +2,6 @@
 #define IFPACK_GREEDYPARTITIONER_H
 
 #include "Ifpack_ConfigDefs.h"
-#ifdef HAVE_IFPACK_TEUCHOS
 #include "Ifpack_Partitioner.h"
 #include "Ifpack_OverlappingPartitioner.h"
 #include "Teuchos_ParameterList.hpp"
@@ -44,5 +43,4 @@ private:
 
 }; // class Ifpack_GreedyPartitioner
 
-#endif // HAVE_IFPACK_TEUCHOS
 #endif // IFPACK_GREEDYPARTITIONER_H

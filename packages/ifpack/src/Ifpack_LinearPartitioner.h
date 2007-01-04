@@ -2,7 +2,6 @@
 #define IFPACK_LINEARPARTITIONER_H
 
 #include "Ifpack_ConfigDefs.h"
-#ifdef HAVE_IFPACK_TEUCHOS
 #include "Ifpack_Partitioner.h"
 #include "Ifpack_OverlappingPartitioner.h"
 #include "Teuchos_ParameterList.hpp"
@@ -37,5 +36,4 @@ public:
 
 };
 
-#endif // HAVE_IFPACK_TEUCHOS
 #endif // IFPACK_LINEARPARTITIONER_H

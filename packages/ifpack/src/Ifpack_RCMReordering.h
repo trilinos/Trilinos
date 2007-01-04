@@ -2,7 +2,6 @@
 #define IFPACK_RCMREORDERING_H
 
 #include "Ifpack_ConfigDefs.h"
-#if defined(HAVE_IFPACK_TEUCHOS)
 #include "Ifpack_Reordering.h"
 
 namespace Teuchos {
@@ -93,5 +92,4 @@ private:
   vector<int> InvReorder_;
 }; 
 
-#endif
 #endif

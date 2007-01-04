@@ -32,10 +32,8 @@
 
 #include <Ifpack_ConfigDefs.h>
 
-#ifdef HAVE_IFPACK_TEUCHOS
 #include <Teuchos_map.hpp>
 #include <Teuchos_ParameterList.hpp>
-#endif
 #include <Epetra_CombineMode.h>
 
 namespace Ifpack {
@@ -73,8 +71,6 @@ struct param_struct {
   Epetra_CombineMode overlap_mode;
 };
 
-#ifdef HAVE_IFPACK_TEUCHOS
-
 Teuchos::map<string,parameter>& key_map();
 
 void initialize_string_map();
@@ -84,8 +80,6 @@ string upper_case(const string& s);
 void set_parameters(const Teuchos::ParameterList& parameterlist,
                     param_struct& params,
                     bool cerr_warning_if_unused=false);
-
-#endif //HAVE_IFPACK_TEUCHOS
 
 }//namespace Ifpack
 

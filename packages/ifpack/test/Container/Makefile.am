@@ -33,7 +33,6 @@ EXAMPLE_INCLUDES = $(IFPACK_EXTRA_INCLUDES) $(IFPACK_INCLUDES)
 
 EXEEXT = .exe
 
-if HAVE_IFPACK_TEUCHOS
 if HAVE_IFPACK_GALERI
 if HAVE_IFPACK_AMESOS
 
@@ -44,6 +43,5 @@ TestContainer_DEPENDENCIES = $(top_builddir)/src/libifpack.a
 TestContainer_CXXFLAGS     = $(EXAMPLE_INCLUDES)
 TestContainer_LDADD        = $(EXAMPLE_LIBS)
 
-endif
 endif
 endif

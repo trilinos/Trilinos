@@ -2,7 +2,7 @@
 #define IFPACK_AMESOS_H
 
 #include "Ifpack_ConfigDefs.h"
-#if defined(HAVE_IFPACK_AMESOS) && defined(HAVE_IFPACK_TEUCHOS)
+#ifdef HAVE_IFPACK_AMESOS
 
 #include "Ifpack_Preconditioner.h"
 #include "Epetra_Operator.h"
@@ -372,5 +372,5 @@ private:
   double Condest_;
 };
 
-#endif // HAVE_IFPACK_AMESOS && HAVE_IFPAC_TEUCHOS
+#endif // HAVE_IFPACK_AMESOS 
 #endif // IFPACK_AMESOS_H

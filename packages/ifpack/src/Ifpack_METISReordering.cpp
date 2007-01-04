@@ -1,5 +1,4 @@
 #include "Ifpack_ConfigDefs.h"
-#ifdef HAVE_IFPACK_TEUCHOS
 #include "Ifpack_Reordering.h"
 #include "Ifpack_METISReordering.h"
 #include "Ifpack_Graph.h"
@@ -228,4 +227,3 @@ ostream& Ifpack_METISReordering::Print(std::ostream& os) const
   return(os);
 }
 
-#endif

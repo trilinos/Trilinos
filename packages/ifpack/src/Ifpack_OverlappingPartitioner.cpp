@@ -1,5 +1,4 @@
 #include "Ifpack_ConfigDefs.h"
-#ifdef HAVE_IFPACK_TEUCHOS
 #include "Ifpack_Partitioner.h"
 #include "Ifpack_OverlappingPartitioner.h"
 #include "Ifpack_Graph.h"
@@ -253,4 +252,3 @@ ostream& Ifpack_OverlappingPartitioner::Print(ostream & os) const
   return(os);
 }
 
-#endif // HAVE_IFPACK_TEUCHOS

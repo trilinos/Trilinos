@@ -5,9 +5,7 @@
 #include "Ifpack_CondestType.h"
 #include "Epetra_Object.h"
 #include "Epetra_Operator.h"
-#ifdef HAVE_IFPACK_TEUCHOS
 #include "Teuchos_ParameterList.hpp"
-#endif
 class Epetra_RowMatrix;
 
 //! Ifpack_Preconditioner: basic class for preconditioning in Ifpack
@@ -97,10 +95,8 @@ class Ifpack_Preconditioner : public Epetra_Operator {
 
 public:
 
-#ifdef HAVE_IFPACK_TEUCHOS
   //! Sets all parameters for the preconditioner.
   virtual int SetParameters(Teuchos::ParameterList& List) = 0;
-#endif
 
   //! Computes all it is necessary to initialize the preconditioner.
   virtual int Initialize() = 0;

@@ -37,10 +37,8 @@
 #include "Epetra_Util.h"
 #include "icrout_cholesky_mex.h"
 
-#ifdef HAVE_IFPACK_TEUCHOS
 #include <Teuchos_ParameterList.hpp>
 #include <ifp_parameters.h>
-#endif
 
 //==============================================================================
 Ifpack_CrsIct::Ifpack_CrsIct(const Epetra_CrsMatrix & A, double Droptol, int Lfil) 
@@ -138,7 +136,6 @@ Ifpack_CrsIct::~Ifpack_CrsIct(){
   Allocated_ = false;
 }
 
-#ifdef HAVE_IFPACK_TEUCHOS
 //==========================================================================
 int Ifpack_CrsIct::SetParameters(const Teuchos::ParameterList& parameterlist,
 				 bool cerr_warning_if_unused)
@@ -160,7 +157,6 @@ int Ifpack_CrsIct::SetParameters(const Teuchos::ParameterList& parameterlist,
 
   return(0);
 }
-#endif
 
 //==========================================================================
 int Ifpack_CrsIct::InitValues(const Epetra_CrsMatrix & A) {

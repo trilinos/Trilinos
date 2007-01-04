@@ -1,5 +1,4 @@
 #include "Ifpack_ConfigDefs.h"
-#ifdef HAVE_IFPACK_TEUCHOS
 #include "Ifpack_Partitioner.h"
 #include "Ifpack_OverlappingPartitioner.h"
 #include "Ifpack_METISPartitioner.h"
@@ -240,4 +239,3 @@ int Ifpack_METISPartitioner::ComputePartitions()
 
   return(0);
 } 
-#endif

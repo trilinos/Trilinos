@@ -2,7 +2,6 @@
 #define IFPACK_EQUATIONPARTITIONER_H
 
 #include "Ifpack_ConfigDefs.h"
-#ifdef HAVE_IFPACK_TEUCHOS
 #include "Ifpack_Partitioner.h"
 #include "Ifpack_OverlappingPartitioner.h"
 #include "Teuchos_ParameterList.hpp"
@@ -52,5 +51,4 @@ private:
 
 };
 
-#endif // HAVE_IFPACK_TEUCHOS
 #endif // IFPACK_EQUATIONPARTITIONER_H

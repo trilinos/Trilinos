@@ -38,9 +38,7 @@
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_Map.h>
 
-#ifdef HAVE_IFPACK_TEUCHOS
 #include <Teuchos_ParameterList.hpp>
-#endif
 
 #include <ifp_parameters.h>
 #include <Epetra_SerialComm.h>
@@ -65,7 +63,6 @@ int main(int argc, char* argv[]) {
   Epetra_SerialComm Comm;
 #endif
 
-#ifdef HAVE_IFPACK_TEUCHOS
   Ifpack::param_struct params;
   params.double_params[Ifpack::absolute_threshold] = -99.9;
 
@@ -87,7 +84,6 @@ int main(int argc, char* argv[]) {
     }
     return(-1);
   }
-#endif
 
   int i, local_n = 5;
   int my_pid = Comm.MyPID();
@@ -122,7 +118,6 @@ int main(int argc, char* argv[]) {
 
   Ifpack_CrsIct crsict(A, 1.0, 1);
 
-#ifdef HAVE_IFPACK_TEUCHOS
   ilukgraph.SetParameters(paramlist);
  
   int levelfill = ilukgraph.LevelFill();
@@ -138,9 +133,7 @@ int main(int argc, char* argv[]) {
         << endl;
     return(-1);
   }
-#endif
 
-#ifdef HAVE_IFPACK_TEUCHOS
   crsriluk.SetParameters(paramlist);
 
   double athresh = crsriluk.GetAbsoluteThreshold();
@@ -182,7 +175,6 @@ int main(int argc, char* argv[]) {
         << endl;
     return(-1);
   }
-#endif
 #endif
 
   if (verbose1==true) {

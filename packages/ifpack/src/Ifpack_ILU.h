@@ -31,7 +31,6 @@
 #define IFPACK_ILU_H
 
 #include "Ifpack_ConfigDefs.h"
-#ifdef HAVE_IFPACK_TEUCHOS
 #include "Ifpack_Preconditioner.h"
 #include "Ifpack_Condest.h"
 #include "Ifpack_ScalingType.h"
@@ -48,13 +47,11 @@
 #include "Epetra_RowMatrix.h"
 #include "Epetra_Time.h"
 
-#ifdef HAVE_IFPACK_TEUCHOS
 namespace Teuchos {
   class ParameterList;
   template<class T>
   class RefCountPtr;
 }
-#endif
 
 //! Ifpack_ILU: A class for constructing and using an incomplete lower/upper (ILU) factorization of a given Epetra_RowMatrix.
 
@@ -426,5 +423,4 @@ private:
 
 };
 
-#endif // HAVE_IFPACK_TEUCHOS
 #endif /* IFPACK_ILU_H */

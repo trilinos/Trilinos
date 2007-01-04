@@ -31,7 +31,6 @@
 #define IFPACK_IC_H
 
 #include "Ifpack_ConfigDefs.h"
-#ifdef HAVE_IFPACK_TEUCHOS
 #include "Ifpack_CondestType.h"
 #include "Ifpack_ScalingType.h"
 #include "Ifpack_Preconditioner.h"
@@ -87,7 +86,6 @@ class Ifpack_IC: public Ifpack_Preconditioner {
   //! Set relative threshold value
   void SetRelativeThreshold( double Rthresh) {Rthresh_ = Rthresh; return;}
 
-#ifdef HAVE_IFPACK_TEUCHOS
   //! Set parameters using a Teuchos::ParameterList object.
   /* This method is only available if the Teuchos package is enabled.
      This method recognizes five parameter names: level_fill, drop_tolerance,
@@ -97,7 +95,7 @@ class Ifpack_IC: public Ifpack_Preconditioner {
      Epetra_CombineMode.
   */
   int SetParameters(Teuchos::ParameterList& parameterlis);
-#endif
+  
   int SetParameter(const string Name, const int Value)
   {
     IFPACK_CHK_ERR(-98);
@@ -364,5 +362,4 @@ class Ifpack_IC: public Ifpack_Preconditioner {
 
 };
 
-#endif // HAVE_IFPACK_TEUCHOS
 #endif /* IFPACK_IC_H */

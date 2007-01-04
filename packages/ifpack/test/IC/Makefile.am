@@ -34,7 +34,6 @@ EXAMPLE_INCLUDES = $(IFPACK_EXTRA_INCLUDES) $(IFPACK_INCLUDES)
 EXEEXT = .exe
 
 if HAVE_IFPACK_AZTECOO
-if HAVE_IFPACK_TEUCHOS
 if HAVE_IFPACK_GALERI
 
 noinst_PROGRAMS = TestIC
@@ -44,6 +43,5 @@ TestIC_DEPENDENCIES = $(top_builddir)/src/libifpack.a
 TestIC_CXXFLAGS     = $(EXAMPLE_INCLUDES)
 TestIC_LDADD        = $(EXAMPLE_LIBS)
 
-endif
 endif
 endif

@@ -31,7 +31,6 @@
 #define IFPACK_IKLU_H
 
 #include "Ifpack_ConfigDefs.h"
-#ifdef HAVE_IFPACK_TEUCHOS
 #include "Ifpack_CondestType.h"
 #include "Ifpack_ScalingType.h"
 #include "Ifpack_Preconditioner.h"
@@ -378,5 +377,4 @@ private:
 
 }; // Ifpack_IKLU
 
-#endif // HAVE_IFPACK_TEUCHOS
 #endif /* IFPACK_IKLU_H */

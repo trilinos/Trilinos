@@ -2,7 +2,6 @@
 #define IFPACK_BLOCKPRECONDITIONER_H
 
 #include "Ifpack_ConfigDefs.h"
-#ifdef HAVE_IFPACK_TEUCHOS
 #include "Ifpack_Preconditioner.h" 
 #include "Ifpack_Partitioner.h"
 #include "Ifpack_LinearPartitioner.h"
@@ -1183,5 +1182,4 @@ int Ifpack_BlockRelaxation<T>::Initialize()
 }
 
 //==============================================================================
-#endif // HAVE_IFPACK_TEUCHOS
 #endif // IFPACK_BLOCKPRECONDITIONER_H

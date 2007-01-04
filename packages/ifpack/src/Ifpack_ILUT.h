@@ -31,7 +31,6 @@
 #define IFPACK_ILUT_H
 
 #include "Ifpack_ConfigDefs.h"
-#ifdef HAVE_IFPACK_TEUCHOS
 #include "Ifpack_CondestType.h"
 #include "Ifpack_ScalingType.h"
 #include "Ifpack_Preconditioner.h"
@@ -367,5 +366,4 @@ private:
   Teuchos::RefCountPtr<Epetra_Map> SerialMap_;
 }; // Ifpack_ILUT
 
-#endif // HAVE_IFPACK_TEUCHOS
 #endif /* IFPACK_ILUT_H */

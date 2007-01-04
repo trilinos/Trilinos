@@ -28,7 +28,7 @@
 */
 
 #include "Ifpack_ConfigDefs.h"
-#if defined(HAVE_IFPACK_TEUCHOS) && defined(HAVE_IFPACK_SPARSKIT)
+#ifdef HAVE_IFPACK_SPARSKIT
 #include "Ifpack_Preconditioner.h"
 #include "Ifpack_SPARSKIT.h"
 #include "Ifpack_Condest.h"
@@ -331,4 +331,3 @@ Ifpack_SPARSKIT::Print(std::ostream& os) const
 
   return(os);
 } 
-#endif // HAVE_IFPACK_TEUCHOS

@@ -28,7 +28,6 @@
 */
 
 #include "Ifpack_ConfigDefs.h"
-#ifdef HAVE_IFPACK_TEUCHOS
 #include "Ifpack_Preconditioner.h"
 #include "Ifpack_ILUT.h"
 #include "Ifpack_Condest.h"
@@ -589,4 +588,3 @@ Ifpack_ILUT::Print(std::ostream& os) const
 
   return(os);
 }
-#endif // HAVE_IFPACK_TEUCHOS

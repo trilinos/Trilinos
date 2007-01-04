@@ -28,7 +28,6 @@
 */
 
 #include "Ifpack_ConfigDefs.h"
-#ifdef HAVE_IFPACK_TEUCHOS
 #include "Ifpack_Preconditioner.h"
 #include "Ifpack_IC.h"
 #include "Ifpack_IC_Utils.h"
@@ -68,10 +67,8 @@ Ifpack_IC::Ifpack_IC(Epetra_RowMatrix* A) :
   ComputeFlops_(0.0),
   ApplyInverseFlops_(0.0)
 {
-#ifdef HAVE_IFPACK_TEUCHOS
   Teuchos::ParameterList List;
   SetParameters(List);
-#endif
 
 }
 //==============================================================================
@@ -402,4 +399,3 @@ Ifpack_IC::Print(std::ostream& os) const
   
   return(os);
 } 
-#endif // HAVE_IFPACK_TEUCHOS

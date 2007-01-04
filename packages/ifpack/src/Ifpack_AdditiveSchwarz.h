@@ -2,7 +2,6 @@
 #define IFPACK_ADDITIVESCHWARZ_H
 
 #include "Ifpack_ConfigDefs.h"
-#if defined(HAVE_IFPACK_TEUCHOS)
 #include "Ifpack_Preconditioner.h"
 #include "Ifpack_ConfigDefs.h"
 #include "Ifpack_Preconditioner.h"
@@ -898,5 +897,4 @@ Condest(const Ifpack_CondestType CT, const int MaxIters,
   return(Condest_);
 }
 
-#endif // HAVE_IFPACK_TEUCHOS
 #endif // IFPACK_ADDITIVESCHWARZ_H

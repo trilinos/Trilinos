@@ -2,7 +2,6 @@
 #define IFPACK_METISREORDERING_H
 
 #include "Ifpack_ConfigDefs.h"
-#ifdef HAVE_IFPACK_TEUCHOS
 #include "Ifpack_Reordering.h"
 #include "Teuchos_ParameterList.hpp"
 class Epetra_Comm;
@@ -91,5 +90,4 @@ private:
 
 }; // class Ifpack_METISReordering
 
-#endif // HAVE_IFPACK_TEUCHOS
 #endif // IFPACK_METISREORDERING_H
