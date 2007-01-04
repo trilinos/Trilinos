@@ -207,7 +207,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Compute K*evecs - lambda*M*evecs and its norm
-    MVT::MvTimesMatAddMv( -1.0, *evecs, B, 1.0, *Kevecs );
+    MVT::MvTimesMatAddMv( -1.0, *Mevecs, B, 1.0, *Kevecs );
     MVT::MvNorm( *Kevecs, &normEV );
     
     // Scale the norms by the eigenvalue
