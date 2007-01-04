@@ -79,22 +79,39 @@ using namespace NOX::Abstract;
 using namespace NOX::Epetra;
 %}
 
-// The following #define is to change the name of a NOX method
-// argument that conflicts with a SWIG director method argument
-#define result nox_result
+using namespace std;
 
-// Ignore directives
+// Define macro for handling exceptions thrown by NOX.Epetra methods and
+// constructors
+%define NOXEPETRA_EXCEPTION(className,methodName)
+  %exception NOX::Epetra::className::methodName {
+  try {
+    $action
+    if (PyErr_Occurred()) SWIG_fail;
+  }
+  catch(Teuchos::Exceptions::InvalidParameterType e) {
+    PyErr_SetString(PyExc_TypeError, e.what());
+    SWIG_fail;
+  }
+  catch(Teuchos::Exceptions::InvalidParameter e) {
+    PyErr_SetString(PyExc_KeyError, e.what());
+    SWIG_fail;
+  }
+  catch(std::runtime_error e) {
+    PyErr_SetString(PyExc_RuntimeError, e.what());
+    SWIG_fail;
+  }
+  catch(std::logic_error e) {
+    PyErr_SetString(PyExc_RuntimeError, e.what());
+    SWIG_fail;
+  }
+}
+%enddef
+
+// General ignore directives
 %ignore *::print(std::ostream &) const;
 %ignore *::print(std::ostream &, int) const;
 %ignore *::operator=;
-%ignore NOX::Epetra::Vector(Epetra_Vector&, NOX::CopyType, bool);
-%ignore NOX::Epetra::Vector::getEpetraVector() const;
-
-// Rename directives
-%rename(Group_None) NOX::Epetra::Group::None;
-
-// Feature directives
-%feature("director") NOX::Epetra::LinearSystem;
 
 // SWIG library includes
 %include "stl.i"
@@ -106,8 +123,8 @@ using namespace NOX::Epetra;
 TEUCHOS_RCP_TYPEMAPS(NOX::Epetra::LinearSystem)
 TEUCHOS_RCP_TYPEMAPS(Epetra_Operator)
 
-// Make Epetra_Vector and NOX::Epetra::Vector input arguments
-// interchangeable
+// Typemaps: Make Epetra_Vector and NOX::Epetra::Vector input
+// arguments interchangeable
 %typemap(in) NOX::Epetra::Vector & (void* argp=0, int res=0) {
   res = SWIG_ConvertPtr($input, &argp, $descriptor, %convertptr_flags);
   if (!SWIG_IsOK(res)) {
@@ -121,7 +138,6 @@ TEUCHOS_RCP_TYPEMAPS(Epetra_Operator)
     $1 = %reinterpret_cast(argp, NOX::Epetra::Vector*);
   }
 }
-
 %typecheck(1190) NOX::Epetra::Vector & {
   static void * argp = 0;
   $1 = SWIG_CheckState(SWIG_ConvertPtr($input, &argp, $descriptor, %convertptr_flags)) ? 1 : 0;
@@ -129,15 +145,14 @@ TEUCHOS_RCP_TYPEMAPS(Epetra_Operator)
     $1 = SWIG_CheckState(SWIG_ConvertPtr($input, &argp, $descriptor(Epetra_Vector*),
                                          %convertptr_flags)) ? 1 : 0;
 }
-
 %typemap(freearg) NOX::Epetra::Vector {
   delete $1;
 }
 
 // Epetra imports
-%import  "Epetra_SrcDistObject.h"
-%import  "Epetra_Operator.h"
-%import  "Epetra_RowMatrix.h"
+%import "Epetra_SrcDistObject.h"
+%import "Epetra_Operator.h"
+%import "Epetra_RowMatrix.h"
 
 // NOX imports
 %import "NOX_Abstract_Group.H"
@@ -146,12 +161,50 @@ TEUCHOS_RCP_TYPEMAPS(Epetra_Operator)
 // NOX::Epetra::Interface imports
 %import "NOX.Epetra.Interface.i"
 
-// NOX::Epetra includes
-using namespace std;
+//////////////////////////////
+// NOX.Epetra.Group support //
+//////////////////////////////
+NOXEPETRA_EXCEPTION(Group,Group)
+%rename(Group_None) NOX::Epetra::Group::None;
 %include "NOX_Epetra_Group.H"
+
+///////////////////////////////
+// NOX.Epetra.Vector support //
+///////////////////////////////
+%ignore NOX::Epetra::Vector(Epetra_Vector&, NOX::CopyType, bool);
+%ignore NOX::Epetra::Vector::getEpetraVector() const;
 %include "NOX_Epetra_Vector.H"
+
+/////////////////////////////////////////
+// NOX.Epetra.FiniteDifference support //
+/////////////////////////////////////////
+NOXEPETRA_EXCEPTION(FiniteDifference,FiniteDifference)
 %include "NOX_Epetra_FiniteDifference.H"
+
+/////////////////////////////////////////////////
+// NOX.Epetra.FiniteDifferenceColoring support //
+/////////////////////////////////////////////////
+NOXEPETRA_EXCEPTION(FiniteDifferenceColoring,FiniteDifferenceColoring)
 %include "NOX_Epetra_FiniteDifferenceColoring.H"
+
+///////////////////////////////////
+// NOX.Epetra.MatrixFree support //
+///////////////////////////////////
+NOXEPETRA_EXCEPTION(MatrixFree,MatrixFree)
 %include "NOX_Epetra_MatrixFree.H"
+
+/////////////////////////////////////
+// NOX.Epetra.LinearSystem support //
+/////////////////////////////////////
+NOXEPETRA_EXCEPTION(LinearSystem,LinearSystem)
+%feature("director") NOX::Epetra::LinearSystem;
+// The following #define is to change the name of NOX method
+// arguments that conflict with a SWIG director method argument
+#define result nox_result
 %include "NOX_Epetra_LinearSystem.H"
+
+////////////////////////////////////////////
+// NOX.Epetra.LinearSystemAztecOO support //
+////////////////////////////////////////////
+NOXEPETRA_EXCEPTION(LinearSystemAztecOO,linearSystemAztecOO)
 %include "NOX_Epetra_LinearSystem_AztecOO.H"

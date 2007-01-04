@@ -90,6 +90,10 @@ using namespace std;
     $action
     if (PyErr_Occurred()) SWIG_fail;
   }
+  catch(Teuchos::Exceptions::InvalidParameterType e) {
+    PyErr_SetString(PyExc_TypeError, e.what());
+    SWIG_fail;
+  }
   catch(Teuchos::Exceptions::InvalidParameter e) {
     PyErr_SetString(PyExc_KeyError, e.what());
     SWIG_fail;
@@ -249,38 +253,3 @@ TEUCHOS_EXCEPTION(ParameterList,update)
 // Apply the RefCountPtr typemap macros to ParameterLists
 %ignore Teuchos::RefCountPtr< Teuchos::ParameterList >::get() const;
 TEUCHOS_RCP_TYPEMAPS(Teuchos::ParameterList)
-
-// *** Note: this doesn't seem to be working, so I have commented it out ***
-// %typemap(in) const Teuchos::RefCountPointer< Teuchos::ParameterList > & (void* argp    = 0,
-// 									 int   res     = 0,
-// 									 bool  cleanup = false) {
-//   res = SWIG_ConvertPtr($input, &argp, $descriptor, %convertptr_flags);
-//   if (!SWIG_IsOK(res)) {
-//     argp = (void*) Teuchos::pyObjectToParameterList($input,&cleanup);
-//     if (argp == NULL) SWIG_fail;
-//     $1 = new $*ltype ( %reinterpret_cast( argp, Teuchos::ParameterList* ), false );
-//   }
-//   else {
-//     if (!argp) { %argument_nullref("$type", $symname, $argnum); }
-//     $1 = %reinterpret_cast(argp, $ltype);
-//   }
-// }
-
-// %typecheck(1200) const Teuchos::RefCountPointer< Teuchos::ParameterList > & {
-//   static void * argp = 0;
-//   $1 = SWIG_CheckState(SWIG_ConvertPtr($input, &argp, $descriptor, %convertptr_flags)) ? 1 : 0;
-//   if (!$1) {
-//     $1 = PyDict_Check($input) ? 1 : 0;
-//     if (!$1) {
-//       if (SWIG_CheckState(SWIG_Python_ConvertPtr($input, &argp,
-//                                                  $1_descriptor, 0))) $1 = 1;
-//     }
-//   }
-// }
-
-// %typemap(freearg) const Teuchos::RefCountPointer< Teuchos::ParameterList > & {
-//   delete $1;
-// }
-
-// %extend_smart_pointer(Teuchos::RefCountPtr< Teuchos::ParameterList >)
-// %template()           Teuchos::RefCountPtr< Teuchos::ParameterList >;

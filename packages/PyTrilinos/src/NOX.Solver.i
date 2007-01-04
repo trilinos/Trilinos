@@ -49,7 +49,34 @@
 #include "NOX_Solver_Manager.H"
 %}
 
-// Ignore directives
+// Define macro for handling exceptions thrown by NOX.Solver methods and
+// constructors
+%define NOXSOLVER_EXCEPTION(className,methodName)
+  %exception NOX::Solver::className::methodName {
+  try {
+    $action
+    if (PyErr_Occurred()) SWIG_fail;
+  }
+  catch(Teuchos::Exceptions::InvalidParameterType e) {
+    PyErr_SetString(PyExc_TypeError, e.what());
+    SWIG_fail;
+  }
+  catch(Teuchos::Exceptions::InvalidParameter e) {
+    PyErr_SetString(PyExc_KeyError, e.what());
+    SWIG_fail;
+  }
+  catch(std::runtime_error e) {
+    PyErr_SetString(PyExc_RuntimeError, e.what());
+    SWIG_fail;
+  }
+  catch(std::logic_error e) {
+    PyErr_SetString(PyExc_RuntimeError, e.what());
+    SWIG_fail;
+  }
+}
+%enddef
+
+// General ignore directives
 %ignore operator<<(ostream &, NOX::StatusTest::StatusType );
 %ignore *::print(ostream& stream, int indent = 0) const;
 
@@ -62,10 +89,15 @@
 %import "NOX.Abstract.i"
 %import "NOX.StatusTest.i"
 
-// NOX::Solver::Generic support
+//////////////////////////////////
+// NOX::Solver::Generic support //
+//////////////////////////////////
 %include "NOX_Solver_Generic.H"
 
-// NOX::Solver::Manager support
+//////////////////////////////////
+// NOX::Solver::Manager support //
+//////////////////////////////////
+NOXSOLVER_EXCEPTION(Manager,Manager)
 %ignore NOX::Solver::Manager::Manager(const Teuchos::RefCountPtr< NOX::Abstract::Group & >,
                                    const Teuchos::RefCountPtr< NOX::StatusTest::Generic & >,
                                    const Teuchos::RefCountPtr< Teuchos::ParameterList > &);
@@ -160,6 +192,5 @@
   fail:
     return false;
   }
-
 }
 %include "NOX_Solver_Manager.H"
