@@ -63,6 +63,7 @@ in-depth information."
 #include "Teuchos_any.hpp"
 #include "Teuchos_ParameterEntry.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_ParameterListAcceptor.hpp"
 
 // Teuchos python interface includes
 #include "Teuchos_PythonParameter.h"
@@ -119,18 +120,17 @@ using namespace std;
 %import "Teuchos_any.hpp"
 %import "Teuchos_ParameterEntry.hpp"
 %import "Teuchos_PythonParameter.h"
-
-/////////////////////////////
-// Teuchos_Version support //
-/////////////////////////////
+//////////////////////////////////////
+// Teuchos::Teuchos_Version support //
+//////////////////////////////////////
 %include "Teuchos_Version.hpp"
 %pythoncode %{
   __version__ = Teuchos_Version().split()[2]
 %}
 
-///////////////////////////////////
-// Teuchos_ParameterList support //
-///////////////////////////////////
+////////////////////////////////////
+// Teuchos::ParameterList support //
+////////////////////////////////////
 TEUCHOS_EXCEPTION(ParameterList,ParameterList)
 TEUCHOS_EXCEPTION(ParameterList,set)
 TEUCHOS_EXCEPTION(ParameterList,setParameters)
@@ -157,10 +157,39 @@ TEUCHOS_EXCEPTION(ParameterList,update)
 %ignore Teuchos::ParameterList::name(ConstIterator) const;
 %include "Teuchos_ParameterList.hpp"
 
-////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////
+// Teuchos::ParameterListAcceptor support //
+////////////////////////////////////////////
+%ignore Teuchos::ParameterListAcceptor::setParameterList(Teuchos::RefCountPtr<
+							 Teuchos::ParameterList > const &);
+%ignore Teuchos::ParameterListAcceptor::getParameterList();
+%ignore Teuchos::ParameterListAcceptor::unsetParameterList();
+%ignore Teuchos::ParameterListAcceptor::getParameterList() const;
+%ignore Teuchos::ParameterListAcceptor::getValidParameters() const;
+%extend Teuchos::ParameterListAcceptor {
 
-// Typemaps.  These are generally intended for other packages that
-// import this interface file.
+  // The ParameterListAcceptor Class has the following virtual
+  // functions with default implementations: getParameterList() const;
+  // and getValidParameters() const.  These both return
+  // RefCountPtr<const ParameterList> objects, which presents a
+  // problem: there are typemaps for RefCountPtr< > and for
+  // ParameterList, but combinations of the two must be handled in a
+  // "brute force" manner.
+
+  const Teuchos::ParameterList * getParameterList() const {
+    Teuchos::RefCountPtr<const Teuchos::ParameterList> p_plist = self->getParameterList();
+    return p_plist.get();
+  }
+
+  const Teuchos::ParameterList * getValidParameters() const {
+    Teuchos::RefCountPtr<const Teuchos::ParameterList> p_plist = self->getValidParameters();
+    return p_plist.get();
+  }
+
+}
+%include "Teuchos_ParameterListAcceptor.hpp"
+
+////////////////////////////////////////////////////////////////////////
 
 // These typemaps allow C++ methods that expect ParameterList&
 // arguments to have python wrappers that accept ParameterList or
