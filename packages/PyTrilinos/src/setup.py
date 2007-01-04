@@ -118,7 +118,7 @@ if __name__ == "__main__":
         builders = [ ]
         for module in enabledModules:
             builders.append(SharedUtils.SharedTrilinosBuilder(module))
-        if makeMacros["HAVE_NOX_EPETRA_TRUE"] == "":
+        if makeMacros["HAVE_PYTRILINOS_NOX_EPETRA_TRUE"] == "":
             noxEpetraBuilder = SharedUtils.SharedTrilinosBuilder("NoxEpetra")
             builders.append(noxEpetraBuilder)
 

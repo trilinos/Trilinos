@@ -57,7 +57,7 @@ config/ac_cxx_new_for_scoping.m4        config/tac_arg_config_mpi.m4 \
 config/ac_cxx_reinterpret_cast.m4 \
 config/tac_arg_enable_compiler_options.m4 \
 config/ac_cxx_std_ios_base_fmtflags.m4  config/tac_arg_enable_feature.m4 \
-config/tac_arg_enable_feature_sub.m4    config/tac_arg_enable_default_feature.m4
+config/tac_arg_enable_feature_sub.m4    config/tac_arg_enable_default_feature.m4 \
 config/ac_cxx_std_sprintf.m4            config/tac_arg_enable_option.m4 \
 config/ac_prompt_user.m4                config/tac_arg_with_ar.m4 \
 config/ac_prompt_user_no_define.m4      config/tac_arg_with_blaslib.m4 \
@@ -68,7 +68,7 @@ config/acx_pthread.m4                   config/tac_arg_with_lapacklib.m4 \
 config/config.guess                     config/tac_arg_with_libdirs.m4 \
 config/config.sub                       config/tac_arg_with_package.m4 \
 config/strip_dup_incl_paths.pl          config/strip_dup_libs.pl \
-config/replace-install-prefix.pl        bootstrap 
+config/replace-install-prefix.pl        bootstrap
 #
 #       I believe that by switching to AUX_DIR(../../config) one 
 #       could get rid of these.

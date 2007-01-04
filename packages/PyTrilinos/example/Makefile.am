@@ -143,7 +143,7 @@ endif
 
 # NOX examples
 if HAVE_PYTRILINOS_NOX
-if HAVE_NOX_EPETRA
+if HAVE_PYTRILINOS_NOX_EPETRA
 NOX_EXAMPLES = exNOX_1Dfem
 endif
 endif

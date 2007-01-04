@@ -136,7 +136,7 @@ include $(top_builddir)/../nox/Makefile.export.nox
 NOX_BASE_INTERFACES = NOX.__init__.i NOX.Abstract.i NOX.Solver.i NOX.StatusTest.i
 NOX_BASE_PROXIES = PyTrilinos/NOX/__init__.py PyTrilinos/NOX/Abstract.py \
                    PyTrilinos/NOX/Solver.py   PyTrilinos/NOX/StatusTest.py
-if HAVE_NOX_EPETRA
+if HAVE_PYTRILINOS_NOX_EPETRA
 NOX_EPETRA_INTERFACES = NOX.Epetra.__init__.i NOX.Epetra.Interface.i
 NOX_EPETRA_PROXIES = PyTrilinos/NOX/Epetra/__init__.py PyTrilinos/NOX/Epetra/Interface.py
 endif

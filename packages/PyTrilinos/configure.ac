@@ -84,8 +84,8 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(pytrilinos, aztecoo, PYTRILINOS_AZTECOO,
 
 TAC_ARG_ENABLE_FEATURE_SUB(aztecoo, teuchos,
        [Build python interface to aztecoo-teuchos.], 
-       AZTECOO_TEUCHOS, yes)
-AM_CONDITIONAL(HAVE_AZTECOO_TEUCHOS, test "X$ac_cv_use_aztecoo_teuchos" = "Xyes")
+       PYTRILINOS_AZTECOO_TEUCHOS, yes)
+AM_CONDITIONAL(HAVE_PYTRILINOS_AZTECOO_TEUCHOS, test "X$ac_cv_use_aztecoo_teuchos" = "Xyes")
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(pytrilinos, galeri, PYTRILINOS_GALERI,
        HAVE_PYTRILINOS_GALERI, yes,
@@ -119,8 +119,8 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(pytrilinos, nox, PYTRILINOS_NOX,
 
 TAC_ARG_ENABLE_FEATURE_SUB(nox, epetra,
        [Build python interface to nox-epetra.], 
-       NOX_EPETRA, no)
-AM_CONDITIONAL(HAVE_NOX_EPETRA, test "X$ac_cv_use_nox_epetra" = "Xyes")
+       PYTRILINOS_NOX_EPETRA, no)
+AM_CONDITIONAL(HAVE_PYTRILINOS_NOX_EPETRA, test "X$ac_cv_use_nox_epetra" = "Xyes")
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(pytrilinos, loca, PYTRILINOS_LOCA,
        HAVE_PYTRILINOS_LOCA, yes,
