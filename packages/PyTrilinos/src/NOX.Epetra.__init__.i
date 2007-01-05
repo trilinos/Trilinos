@@ -62,6 +62,7 @@
 #include "NOX_Epetra_FiniteDifference.H"
 #include "NOX_Epetra_FiniteDifferenceColoring.H"
 #include "NOX_Epetra_MatrixFree.H"
+#include "NOX_Epetra_Scaling.H"
 #include "NOX_Epetra_LinearSystem.H"
 #include "NOX_Epetra_LinearSystem_AztecOO.H"
 
@@ -112,6 +113,7 @@ using namespace std;
 %ignore *::print(std::ostream &) const;
 %ignore *::print(std::ostream &, int) const;
 %ignore *::operator=;
+%ignore *::operator<<;
 
 // SWIG library includes
 %include "stl.i"
@@ -121,6 +123,7 @@ using namespace std;
 
 // Support for Teuchos::RefCountPtrs
 TEUCHOS_RCP_TYPEMAPS(NOX::Epetra::LinearSystem)
+TEUCHOS_RCP_TYPEMAPS(NOX::Epetra::Scaling)
 TEUCHOS_RCP_TYPEMAPS(Epetra_Operator)
 
 // Typemaps: Make Epetra_Vector and NOX::Epetra::Vector input
@@ -193,6 +196,13 @@ NOXEPETRA_EXCEPTION(FiniteDifferenceColoring,FiniteDifferenceColoring)
 NOXEPETRA_EXCEPTION(MatrixFree,MatrixFree)
 %include "NOX_Epetra_MatrixFree.H"
 
+////////////////////////////////
+// NOX.Epetra.Scaling support //
+////////////////////////////////
+%ignore operator<<(ostream&, NOX::Epetra::Scaling&);
+%rename(Scaling_None) NOX::Epetra::Scaling::None;
+%include "NOX_Epetra_Scaling.H"
+
 /////////////////////////////////////
 // NOX.Epetra.LinearSystem support //
 /////////////////////////////////////
@@ -206,5 +216,5 @@ NOXEPETRA_EXCEPTION(LinearSystem,LinearSystem)
 ////////////////////////////////////////////
 // NOX.Epetra.LinearSystemAztecOO support //
 ////////////////////////////////////////////
-NOXEPETRA_EXCEPTION(LinearSystemAztecOO,linearSystemAztecOO)
+NOXEPETRA_EXCEPTION(LinearSystemAztecOO,LinearSystemAztecOO)
 %include "NOX_Epetra_LinearSystem_AztecOO.H"

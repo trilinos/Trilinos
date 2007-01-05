@@ -45,6 +45,7 @@
 #include "NOX_StatusTest_FiniteValue.H"
 #include "NOX_StatusTest_NormF.H"
 #include "NOX_StatusTest_NormUpdate.H"
+#include "NOX_Abstract_Group.H"
 #include "NOX_Solver_Generic.H"
 #include "NOX_Solver_Manager.H"
 %}
