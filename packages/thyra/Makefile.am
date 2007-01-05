@@ -95,13 +95,7 @@ if BUILD_EXAMPLES
 EXAMPLE_SUBDIR=example
 endif
 
-if PYTHON_USE
-if BUILD_THYRA_PYTHON
-PYTHON_SUBDIR=python
-endif
-endif
-
-SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) $(PYTHON_SUBDIR)
+SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
 
 ## #######################################################################
 ## The below targets allow you to use the new
@@ -140,42 +134,6 @@ THYRA_CHECK_COMM=mpi
 else
 THYRA_CHECK_COMM=serial
 endif
-
-run-pytests:
-	@echo
-	@echo "================================="
-	@echo "Running the Python/Thyra tests..."
-	@echo "================================="
-	@echo
-	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
-	@echo
-	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-	--trilinos-dir=$(TRILINOS_HOME_DIR) \
-	--comm=$(THYRA_CHECK_COMM) \
-	--mpi-go="$(TRILINOS_MPI_GO)" \
-	--build-dir=$(TRILINOS_BUILD_DIR) \
-	--category=ThyraPyTests \
-	--output-dir=@abs_top_builddir@/test/runtests-results \
-	--verbosity=1 \
-	--packages=thyra
-
-run-pyexamples:
-	@echo
-	@echo "===================================="
-	@echo "Running the Python/Thyra examples..."
-	@echo "===================================="
-	@echo
-	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
-	@echo
-	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-	--trilinos-dir=$(TRILINOS_HOME_DIR) \
-	--comm=$(THYRA_CHECK_COMM) \
-	--mpi-go=$(TRILINOS_MPI_GO) \
-	--build-dir=$(TRILINOS_BUILD_DIR) \
-	--category=ThyraPyExamples \
-	--output-dir=@abs_top_builddir@/test/runtests-results \
-	--verbosity=1 \
-	--packages=thyra
 
 ## #######################################################################
 ## Export makefile stuff

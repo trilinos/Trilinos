@@ -188,17 +188,6 @@ TAC_ARG_ENABLE_FEATURE_SUB_CHECK( thyra, examples, [Build Thyra examples], THYRA
 AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_thyra_examples" != "Xno")
 
 # ------------------------------------------------------------------------
-# Enable optional python wrappers
-# ------------------------------------------------------------------------
-# Python wrappers are currently disabled for release 7.0.  When we are ready
-# to re-enable them, reverse the comments on the following four lines:
-#TAC_ARG_ENABLE_FEATURE_SUB( thyra, python, [Build Thyra Python wrappers (requires --enable-python, which is NOT set by default)], THYRA_PYTHON, yes)
-TAC_ARG_ENABLE_FEATURE_SUB( thyra, python, [Build Thyra Python wrappers (requires --enable-python, which is NOT set by default)], THYRA_PYTHON, no)
-#AM_CONDITIONAL(BUILD_THYRA_PYTHON, test "X$ac_cv_use_thyra_python" != "Xno")
-AM_CONDITIONAL(BUILD_THYRA_PYTHON, test "X$ac_cv_use_thyra_python" == "Xdisabled")
-TAC_ENABLE_PYTHON
-
-# ------------------------------------------------------------------------
 # Specify other directories 
 # ------------------------------------------------------------------------
 
@@ -304,13 +293,6 @@ AC_CONFIG_FILES([
     example/external/Makefile.external.stub
     test/Makefile
     test/operator_vector/Makefile
-    python/Makefile
-    python/src/Makefile
-    python/src/TRILINOS_HOME_DIR
-    python/src/__init__.py
-    python/src/.deps/dummy
-    python/test/Makefile
-    python/example/Makefile
     ])
 
 AC_OUTPUT()
