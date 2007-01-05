@@ -47,10 +47,10 @@ modules = [
            "Galeri",
            "Amesos",
            "IFPACK",
-           #"Anasazi",
+           "Anasazi",
            "ML",
            "NOX",
-           #"LOCA",
+           "LOCA",
            ]
 
 # System imports

@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 # 
-#              PyTrilinos: Python interface to Trilinos
+#              PyTrilinos: Python Interface to Trilinos
 #                 Copyright (2004) Sandia Corporation
 # 
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -29,7 +29,11 @@
 EXTRA_DIST = Amesos.i Anasazi.i AztecOO.i \
 	     Epetra.i Epetra_Base.i Epetra_Comm.i Epetra_Graphs.i \
 	     Epetra_Maps.i Epetra_Operators.i Epetra_SerialDense.i Epetra_Vectors.i \
-	     EpetraExt.i Galeri.i IFPACK.i ML.i \
+	     EpetraExt.i Galeri.i IFPACK.i \
+	     LOCA.__init__.i LOCA.Abstract.i LOCA.Bifurcation.i LOCA.Chan.i \
+	     LOCA.Continuation.i LOCA.Epetra.i LOCA.Homotopy.i LOCA.LAPACK.i \
+	     LOCA.Multicontinuation.i LOCA.TimeDependent.i \
+	     ML.i \
 	     NOX.__init__.i NOX.Abstract.i NOX.Epetra.__init__.i \
 	     NOX.Epetra.Interface.i NOX.Solver.i NOX.StatusTest.i \
 	     Teuchos.i Teuchos_ParameterList_ext.i \
@@ -144,15 +148,40 @@ NOX_INTERFACES = $(NOX_BASE_INTERFACES) $(NOX_EPETRA_INTERFACES) $(NOX_LAPACK_IN
 NOX_PROXIES = $(NOX_BASE_PROXIES) $(NOX_EPETRA_PROXIES) $(NOX_LAPACK_PROXIES)
 endif
 
+# LOCA
+if HAVE_PYTRILINOS_NOX
+if HAVE_PYTRILINOS_LOCA
+LOCA_BASE_INTERFACES =  LOCA.__init__.i LOCA.Abstract.i LOCA.Bifurcation.i LOCA.Chan.i \
+	                LOCA.Continuation.i LOCA.Homotopy.i LOCA.MultiContinuation.i \
+	                LOCA.TimeDependent.i
+LOCA_BASE_PROXIES =  PyTrilinos/LOCA/__init__.py PyTrilinos/LOCA/Abstract.py \
+	             PyTrilinos/LOCA/Bifurcation.py PyTrilinos/LOCA/Chan.py \
+	             PyTrilinos/LOCA/Continuation.py PyTrilinos/LOCA/Homotopy.py \
+	             PyTrilinos/LOCA/MultiContinuation.py PyTrilinos/LOCA/TimeDependent.py
+if HAVE_PYTRILINOS_NOX_EPETRA
+LOCA_EPETRA_INTERFACES = LOCA.Epetra.i
+LOCA_EPETRA_PROXIES = PyTrilinos/LOCA/Epetra.py
+endif
+#if HAVE_PYTRILINOS_NOX_LAPACK
+#LOCA_LAPACK_INTERFACES = LOCA.LAPACK.i
+#LOCA_LAPACK_PROXIES = PyTrilinos/LOCA/LAPACK.py
+#endif
+LOCA_INTERFACES = $(LOCA_BASE_INTERFACES) $(LOCA_EPETRA_INTERFACES) $(LOCA_LAPACK_INTERFACES)
+LOCA_PROXIES = $(LOCA_BASE_PROXIES) $(LOCA_EPETRA_PROXIES) $(LOCA_LAPACK_PROXIES)
+endif
+endif
+
 # PyTrilinos
 INTERFACES = $(TEUCHOS_INTERFACES)  $(THYRA_INTERFACES)     $(EPETRA_INTERFACES)  \
 	     $(TRIUTILS_INTERFACES) $(EPETRAEXT_INTERFACES) $(AZTECOO_INTERFACES) \
 	     $(GALERI_INTERFACES)   $(AMESOS_INTERFACES)    $(IFPACK_INTERFACES)  \
-	     $(ANASAZI_INTERFACES)  $(ML_INTERFACES)        $(NOX_INTERFACES)
+	     $(ANASAZI_INTERFACES)  $(ML_INTERFACES)        $(NOX_INTERFACES)     \
+	     $(LOCA_INTERFACES)
 PROXIES  =   $(TEUCHOS_PROXIES)  $(THYRA_PROXIES)     $(EPETRA_PROXIES)  \
 	     $(TRIUTILS_PROXIES) $(EPETRAEXT_PROXIES) $(AZTECOO_PROXIES) \
 	     $(GALERI_PROXIES)   $(AMESOS_PROXIES)    $(IFPACK_PROXIES)  \
-	     $(ANASAZI_PROXIES)  $(ML_PROXIES)        $(NOX_PROXIES)
+	     $(ANASAZI_PROXIES)  $(ML_PROXIES)        $(NOX_PROXIES)     \
+	     $(LOCA_INTERFACES)
 WRAPPERS   = $(INTERFACES:.i=_wrap.cpp)
 DIR_HDRS   = $(INTERFACES:.i=_wrap.h)
 

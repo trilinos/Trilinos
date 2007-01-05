@@ -120,6 +120,7 @@ using namespace std;
 %import "Teuchos_any.hpp"
 %import "Teuchos_ParameterEntry.hpp"
 %import "Teuchos_PythonParameter.h"
+
 //////////////////////////////////////
 // Teuchos::Teuchos_Version support //
 //////////////////////////////////////

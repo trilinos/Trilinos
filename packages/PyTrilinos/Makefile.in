@@ -66,6 +66,7 @@ DIST_COMMON = $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(top_srcdir)/configure \
 	$(top_srcdir)/src/.deps/dummy.in \
 	$(top_srcdir)/src/PyTrilinos/.dummy.in \
+	$(top_srcdir)/src/PyTrilinos/LOCA/.dummy.in \
 	$(top_srcdir)/src/PyTrilinos/NOX/.dummy.in \
 	$(top_srcdir)/src/PyTrilinos/NOX/Epetra/.dummy.in \
 	$(top_srcdir)/src/PyTrilinos/NOX/LAPACK/.dummy.in INSTALL \
@@ -92,7 +93,7 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/PyTrilinos_config.h
 CONFIG_CLEAN_FILES = src/.deps/dummy src/PyTrilinos/.dummy \
 	src/PyTrilinos/NOX/.dummy src/PyTrilinos/NOX/Epetra/.dummy \
-	src/PyTrilinos/NOX/LAPACK/.dummy
+	src/PyTrilinos/NOX/LAPACK/.dummy src/PyTrilinos/LOCA/.dummy
 SOURCES =
 DIST_SOURCES =
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
@@ -350,6 +351,8 @@ src/PyTrilinos/NOX/Epetra/.dummy: $(top_builddir)/config.status $(top_srcdir)/sr
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 src/PyTrilinos/NOX/LAPACK/.dummy: $(top_builddir)/config.status $(top_srcdir)/src/PyTrilinos/NOX/LAPACK/.dummy.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/PyTrilinos/LOCA/.dummy: $(top_builddir)/config.status $(top_srcdir)/src/PyTrilinos/LOCA/.dummy.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
 uninstall-info-am:
 
 # This directory's subdirectories are mostly independent; you can cd
@@ -471,7 +474,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/config $(distdir)/src/.deps $(distdir)/src/PyTrilinos $(distdir)/src/PyTrilinos/NOX $(distdir)/src/PyTrilinos/NOX/Epetra $(distdir)/src/PyTrilinos/NOX/LAPACK
+	$(mkdir_p) $(distdir)/config $(distdir)/src/.deps $(distdir)/src/PyTrilinos $(distdir)/src/PyTrilinos/LOCA $(distdir)/src/PyTrilinos/NOX $(distdir)/src/PyTrilinos/NOX/Epetra $(distdir)/src/PyTrilinos/NOX/LAPACK
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
