@@ -118,27 +118,6 @@
     ARG-MASTER-PAIRS  = ml_inputfile7:baseline7;
 }
 
-(FRAMEWORK, INSTALL, MLPyExamples) {
-    TESTS = ../python/example/exSimple.py,
-            ../python/example/exMLAPI_PyMatrix.py,
-            ../python/example/exMLAPI.py,
-            ../python/example/exMLAPI_AztecOO.py,
-            ../python/example/exMLAPI_Iterate.py,
-            ../python/example/exMLAPI_Smoother.py,
-            ../python/example/exPyOperator.py,
-            ../python/example/exPyRowMatrix.py;
-    ARGS = --testharness;
-    EXIT-STATUS = STRING-COMPARISON;
-    COMM  = SERIAL;
-}
-
-(FRAMEWORK, INSTALL, MLPyTests) {
-    DIRS = ../python/test;
-    ARGS = --testharness;
-    EXIT-STATUS = STRING-COMPARISON;
-    COMM = SERIAL, MPI(1-4);
-}
-
 (ThirdParty) {
     DIRS = METISCoarsening;
     MASTER-FILE = baseline1;
