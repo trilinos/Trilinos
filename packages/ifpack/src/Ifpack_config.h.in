@@ -71,9 +71,6 @@
 /* Define if you want to build Ifpack's ParameterList interface */
 #undef HAVE_IFPACK_METIS
 
-/* Define if want to build ifpack-python */
-#undef HAVE_IFPACK_PYTHON
-
 /* Define if want to build ifpack-tests */
 #undef HAVE_IFPACK_TESTS
 
