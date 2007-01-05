@@ -44,7 +44,6 @@ EXTRA_DIST = config/generate-makeoptions.pl \
        config/strip_dup_incl_paths.pl config/strip_dup_libs.pl \
        config/replace-install-prefix.pl config/string-replace.pl
 
-
 ## #######################################################################
 ## Tools in the auxillary directory 
 ## #######################################################################
@@ -80,19 +79,13 @@ if BUILD_EXAMPLES
 EXAMPLE_SUBDIR=example
 endif
 
-if PYTHON_USE
-if BUILD_EPETRA_PYTHON
-PYTHON_SUBDIR=python
-endif
-endif
-
 if ENABLE_EPETRA_THYRA
 THYRA_SUBDIR=thyra
 else
 THYRA_SUBDIR=
 endif
 
-SUBDIRS = src $(THYRA_SUBDIR) $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) $(PYTHON_SUBDIR)
+SUBDIRS = src $(THYRA_SUBDIR) $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
 
 ## #######################################################################
 ## The below targets allow you to use the new
@@ -209,42 +202,6 @@ run-tests:
 	--mpi-go="$(TRILINOS_MPI_GO)" \
 	--build-dir=$(TRILINOS_BUILD_DIR) \
 	--category=FRAMEWORK \
-	--output-dir=@abs_top_builddir@/test/runtests-results \
-	--verbosity=1 \
-	--packages=epetra
-
-run-pyexamples:
-	@echo
-	@echo "====================================="
-	@echo "Running the Python/Epetra examples..."
-	@echo "====================================="
-	@echo
-	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
-	@echo
-	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-	--trilinos-dir=$(TRILINOS_HOME_DIR) \
-	--comm=$(EPETRA_CHECK_COMM) \
-	--mpi-go="$(TRILINOS_MPI_GO)" \
-	--build-dir=$(TRILINOS_BUILD_DIR) \
-	--category=EpetraPyExamples \
-	--output-dir=@abs_top_builddir@/test/runtests-results \
-	--verbosity=1 \
-	--packages=epetra
-
-run-pytests:
-	@echo
-	@echo "=================================="
-	@echo "Running the Python/Epetra tests..."
-	@echo "=================================="
-	@echo
-	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
-	@echo
-	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-	--trilinos-dir=$(TRILINOS_HOME_DIR) \
-	--comm=$(EPETRA_CHECK_COMM) \
-	--mpi-go="$(TRILINOS_MPI_GO)" \
-	--build-dir=$(TRILINOS_BUILD_DIR) \
-	--category=EpetraPyTests \
 	--output-dir=@abs_top_builddir@/test/runtests-results \
 	--verbosity=1 \
 	--packages=epetra

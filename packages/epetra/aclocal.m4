@@ -955,11 +955,8 @@ fi
 INSTALL_STRIP_PROGRAM="\${SHELL} \$(install_sh) -c -s"
 AC_SUBST([INSTALL_STRIP_PROGRAM])])
 
-m4_include([config/ac_pkg_swig.m4])
-m4_include([config/ac_python_module.m4])
 m4_include([config/acx_blas.m4])
 m4_include([config/acx_lapack.m4])
-m4_include([config/az_python.m4])
 m4_include([config/tac_arg_check_mpi.m4])
 m4_include([config/tac_arg_config_mpi.m4])
 m4_include([config/tac_arg_enable_can_use_package.m4])
@@ -975,4 +972,3 @@ m4_include([config/tac_arg_with_libdirs.m4])
 m4_include([config/tac_arg_with_libs.m4])
 m4_include([config/tac_arg_with_package.m4])
 m4_include([config/tac_arg_with_perl.m4])
-m4_include([config/tac_enable_python.m4])

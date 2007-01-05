@@ -43,20 +43,6 @@
     COMM = SERIAL;
 }
 
-(FRAMEWORK, INSTALL, EpetraPyTests) {
-      DIRS = ../python/test;
-      ARGS = --testharness;
-      EXIT-STATUS = STRING-COMPARISON;
-      COMM = SERIAL, MPI(1-4);
-}
-
-(FRAMEWORK, INSTALL, EpetraPyExamples) {
-      DIRS = ../python/example;
-      ARGS = --testharness;
-      EXIT-STATUS = STRING-COMPARISON;
-      COMM = SERIAL, MPI(1-4);
-}
-
 (FRAMEWORK,INSTALL) {
     TESTS = ../thyra/example/sillyCgSolve_epetra.exe,
             ../thyra/example/sillyPowerMethod_epetra.exe;

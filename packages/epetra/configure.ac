@@ -232,14 +232,6 @@ AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_epetra_examples" != "Xno")
 TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
 
 # ------------------------------------------------------------------------
-# Enable optional python wrappers
-# ------------------------------------------------------------------------
-TAC_ARG_ENABLE_FEATURE_SUB( epetra, python, [Build Epetra Python wrappers (requires --enable-python, which is NOT set by default)], EPETRA_PYTHON, yes)
-AM_CONDITIONAL(BUILD_EPETRA_PYTHON, test "X$ac_cv_use_epetra_python" != "Xno")
-
-TAC_ENABLE_PYTHON
-
-# ------------------------------------------------------------------------
 # Specify other directories 
 # ------------------------------------------------------------------------
 
@@ -370,13 +362,6 @@ AC_CONFIG_FILES([
 		example/UG_Ex1/Makefile
 		example/UG_ExMaps/Makefile
 		example/my_example/Makefile
-		python/Makefile
-		python/src/Makefile
-		python/src/TRILINOS_HOME_DIR
-		python/src/__init__.py
-		python/src/.deps/dummy
-		python/test/Makefile
-		python/example/Makefile
 		thyra/Makefile
 		thyra/src/Makefile
 		thyra/example/Makefile
