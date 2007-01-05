@@ -25,17 +25,3 @@
     ARGS = -v;
     COMM = SERIAL, MPI(1-4);
 }
-
-(FRAMEWORK, INSTALL, IFPACKPyTests) {
-    DIRS = ../python/test;
-    ARGS = --testharness;
-    EXIT-STATUS = STRING-COMPARISON;
-    COMM = SERIAL, MPI(1-4);
-}
-
-(FRAMEWORK, INSTALL, IFPACKPyExamples) {
-    DIRS = ../python/example;
-    ARGS = --testharness;
-    EXIT-STATUS = STRING-COMPARISON;
-    COMM = SERIAL, MPI(1-4);
-}

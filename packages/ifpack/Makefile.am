@@ -96,19 +96,13 @@ if BUILD_EXAMPLES
 EXAMPLE_SUBDIR=example
 endif 
 
-if PYTHON_USE
-if BUILD_IFPACK_PYTHON
-PYTHON_SUBDIR=python
-endif
-endif
-
 if ENABLE_IFPACK_THYRA
 THYRA_SUBDIR=thyra
 else
 THYRA_SUBDIR=
 endif
 
-SUBDIRS = src $(THYRA_SUBDIR) $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) $(PYTHON_SUBDIR)
+SUBDIRS = src $(THYRA_SUBDIR) $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
 # Note, thyra/src must be built before the examples and tests because -lifpackthyra.a
 # needs to be found!
 
