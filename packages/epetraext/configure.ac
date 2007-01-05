@@ -377,13 +377,6 @@ TAC_ARG_ENABLE_FEATURE_SUB( epetraext, experimental, [Build experimental code fo
 AM_CONDITIONAL(BUILD_EXPERIMENTAL, test "X$ac_cv_use_epetraext_experimental" != "Xno")
 
 # ------------------------------------------------------------------------
-# Enable optional python wrappers
-# ------------------------------------------------------------------------
-TAC_ARG_ENABLE_FEATURE_SUB( epetraext, python, [Build EpetraExt Python wrappers (requires --enable-python, which is NOT set by default)], EPETRAEXT_PYTHON, yes)
-AM_CONDITIONAL(BUILD_EPETRAEXT_PYTHON, test "X$ac_cv_use_epetraext_python" != "Xno")
-TAC_ENABLE_PYTHON
-
-# ------------------------------------------------------------------------
 # Specify other directories 
 # ------------------------------------------------------------------------
 
@@ -525,13 +518,6 @@ AC_CONFIG_FILES([
 		example/zoltan/Makefile
 		example/matlab/Makefile
 		example/MapColoring/Makefile
-		python/Makefile
-		python/src/Makefile
-		python/src/TRILINOS_HOME_DIR
-		python/src/__init__.py
-		python/src/.deps/dummy
-		python/test/Makefile
-		python/example/Makefile
 		thyra/Makefile
 		thyra/src/Makefile
 		thyra/example/Makefile

@@ -56,9 +56,6 @@
 /* Define if want to build epetraext-hdf5 */
 #undef HAVE_EPETRAEXT_HDF5
 
-/* Define if want to build epetraext-python */
-#undef HAVE_EPETRAEXT_PYTHON
-
 /* Define if want to build epetraext-tests */
 #undef HAVE_EPETRAEXT_TESTS
 

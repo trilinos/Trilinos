@@ -20,20 +20,6 @@
     COMM = SERIAL;
 }
 
-(FRAMEWORK, INSTALL, EpetraExtPyExamples) {
-        DIRS = ../python/example;
-	ARGS = --testharness;
-	EXIT-STATUS = STRING-COMPARISON;
-        COMM = SERIAL, MPI(1-4);
-}
-
-(FRAMEWORK, INSTALL, EpetraExtPyTests) {
-        DIRS = ../python/test;
-	ARGS = --testharness;
-	EXIT-STATUS = STRING-COMPARISON;
-        COMM = SERIAL, MPI(1-4);
-}
-
 (FRAMEWORK, INSTALL, EpetraExtThyraTests) {
   TESTS = ../thyra/example/model_evaluator/ForwardSolveEpetraModelEval2DSim.exe;
   ARGS = --max-iters=6;

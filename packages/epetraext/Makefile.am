@@ -79,19 +79,13 @@ if BUILD_EXAMPLES
 EXAMPLE_SUBDIR=example
 endif
 
-if PYTHON_USE
-if BUILD_EPETRAEXT_PYTHON
-PYTHON_SUBDIR=python
-endif
-endif
-
 if ENABLE_EPETRAEXT_THYRA
 THYRA_SUBDIR=thyra
 else
 THYRA_SUBDIR=
 endif
 
-SUBDIRS = src $(THYRA_SUBDIR) $(TEST_SUBDIR) $(EXAMPLE_SUBDIR) $(PYTHON_SUBDIR)
+SUBDIRS = src $(THYRA_SUBDIR) $(TEST_SUBDIR) $(EXAMPLE_SUBDIR)
 
 
 ## #######################################################################
@@ -210,42 +204,6 @@ run-tests:
 	--mpi-go="$(TRILINOS_MPI_GO)" \
 	--build-dir=$(TRILINOS_BUILD_DIR) \
 	--category=FRAMEWORK \
-	--output-dir=@abs_top_builddir@/test/runtests-results \
-	--verbosity=1 \
-	--packages=epetraext
-
-run-pyexamples:
-	@echo
-	@echo "========================================"
-	@echo "Running the Python/EpetraExt examples..."
-	@echo "========================================"
-	@echo
-	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
-	@echo
-	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-	--trilinos-dir=$(TRILINOS_HOME_DIR) \
-	--comm=$(EPETRAEXT_CHECK_COMM) \
-	--mpi-go="$(TRILINOS_MPI_GO)" \
-	--build-dir=$(TRILINOS_BUILD_DIR) \
-	--category=EpetraExtPyExamples \
-	--output-dir=@abs_top_builddir@/test/runtests-results \
-	--verbosity=1 \
-	--packages=epetraext
-
-run-pytests:
-	@echo
-	@echo "====================================="
-	@echo "Running the Python/EpetraExt tests..."
-	@echo "====================================="
-	@echo
-	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
-	@echo
-	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-	--trilinos-dir=$(TRILINOS_HOME_DIR) \
-	--comm=$(EPETRAEXT_CHECK_COMM) \
-	--mpi-go="$(TRILINOS_MPI_GO)" \
-	--build-dir=$(TRILINOS_BUILD_DIR) \
-	--category=EpetraExtPyTests \
 	--output-dir=@abs_top_builddir@/test/runtests-results \
 	--verbosity=1 \
 	--packages=epetraext
