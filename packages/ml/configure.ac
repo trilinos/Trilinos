@@ -526,14 +526,6 @@ AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_ml_tests" != "Xno")
 TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
 
 # ------------------------------------------------------------------------
-# Enable optional python wrappers
-# ------------------------------------------------------------------------
-TAC_ARG_ENABLE_FEATURE_SUB( ml, python, [Build ML Python wrappers (requires --enable-python, which is NOT set by default)], ML_PYTHON, yes)
-AM_CONDITIONAL(BUILD_ML_PYTHON, test "X$ac_cv_use_ml_python" != "Xno")
-TAC_ENABLE_PYTHON
-
-
-# ------------------------------------------------------------------------
 # Specify other directories 
 # ------------------------------------------------------------------------
 
@@ -723,13 +715,6 @@ AC_CONFIG_FILES([
         test/METISCoarsening/Makefile
         test/MatrixFree/Makefile
         test/Miscellaneous/Makefile
-        python/Makefile
-        python/src/Makefile
-        python/src/TRILINOS_HOME_DIR
-        python/src/__init__.py
-        python/src/.deps/dummy
-        python/example/Makefile
-        python/test/Makefile
         thyra/Makefile  
         thyra/src/Makefile
         matlab/Makefile

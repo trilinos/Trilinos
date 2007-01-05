@@ -117,12 +117,6 @@ if ML_BUILD_EXAMPLES
 EXAMPLE_SUBDIR=examples
 endif
 
-if PYTHON_USE
-if BUILD_ML_PYTHON
-PYTHON_SUBDIR=python
-endif
-endif
-
 if BUILD_ML_MATLAB
 MATLAB_SUBDIR=matlab
 endif
@@ -134,7 +128,7 @@ else
 THYRA_SUBDIR=
 endif
 
-SUBDIRS = src $(THYRA_SUBDIR) $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) $(PYTHON_SUBDIR) $(MATLAB_SUBDIR)
+SUBDIRS = src $(THYRA_SUBDIR) $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) $(MATLAB_SUBDIR)
 
 
 ## #######################################################################

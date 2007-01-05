@@ -147,9 +147,6 @@
 /* Define if want to build with ml_parpack enabled */
 #undef HAVE_ML_PARPACK
 
-/* Define if want to build ml-python */
-#undef HAVE_ML_PYTHON
-
 /* Define if want to build with ml_superlu enabled */
 #undef HAVE_ML_SUPERLU
 
