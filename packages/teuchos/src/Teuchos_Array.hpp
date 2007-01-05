@@ -41,6 +41,12 @@
 namespace Teuchos
 {
 
+  /** \brief .
+   * \relates Array
+   */
+  class InvalidArrayStringRepresentation : public std::logic_error
+  {public:InvalidArrayStringRepresentation(const std::string& what_arg) : std::logic_error(what_arg) {}};
+
   /**
    * \brief Array is a templated array class derived from the STL vector, but with
    * index boundschecking and an extended interface.
@@ -96,7 +102,6 @@ namespace Teuchos
 
   /** \relates Array */
   template<class T> std::string toString(const Array<T>& array);
-
 
   template<class T> inline Array<T>::Array()
     : std::vector<T>()
@@ -177,12 +182,138 @@ namespace Teuchos
     return ss.str();
   }
 
-  template<class T> inline std::string toString(const Array<T>& array)
+  /** \relates Array. */
+  template<class T> inline
+  std::string toString(const Array<T>& array)
   {
     return array.toString();
   }
 
+  /** \brief Converts from string representation (as created by
+   * <tt>toString()</tt>) back into the array object.
+   *
+   * \param  arrayStr
+   *           [in] The string representation of the array (see below).
+   *
+   * <b>Exceptions:</b> If the string representation is not valid, then an
+   * exception of type <tt>InvalidArrayStringRepresentation</tt> with be
+   * thrown with a decent error message attached.
+   *
+   * The formating of the string <tt>arrayStr</tt> must look like:
+   
+   \verbatim
 
+      {  val[0], val[1], val[2], val[3], ..., val[n-1] }
+
+   \endverbatim
+
+   * Currently <tt>operator>>()</tt> is used to convert the entries from their
+   * string representation to objects of type <tt>T</tt>.  White space is
+   * unimportant and the parser keys off of ',', '{' and '}' so even newlines
+   * are allowed.  In the future, a traits class might be defined that will
+   * allow for finer-grained control of how the conversion from strings to
+   * values is performed in cases where <tt>operator>>()</tt> does not exist
+   * for certain types.
+   *
+   * <b>Warning!</b> Currently this function only supports reading in flat
+   * array objects for basic types like <tt>bool</tt>, <tt>int</tt>, and
+   * <tt>double</tt> and does not yet support nested arrays (i.e. no
+   * <tt>Array<Array<int> ></tt>) or other such fancy nested types.  Support
+   * for nested arrays and other user defined types <tt>T</tt> can be added in
+   * the future with no impact on user code.  Only the parser for the array
+   * needs to be improved.  More specifically, the current implementation will
+   * not work for any types <tt>T</tt> who's string representation contains
+   * the characters <tt>','</tt> or <tt>'}'</tt>.  This implementation can be
+   * modified to allow any such types by watching for the nesting of common
+   * enclosing structures like <tt>[...]</tt>, <tt>{...}</tt> or
+   * <tt>(...)</tt> within each entry of the string representation.  However,
+   * this should all just work fine on most machines for the types
+   * <tt>int</tt>, <tt>bool</tt>, <tt>float</tt>, <tt>double</tt> etc.
+   *
+   * <b>Warning!</b> Trying to read in an array in string format of doubles in
+   * scientific notation such as <tt>{1e+2,3.53+6,...}</tt> into an array
+   * object such as <tt>Array<int></tt> will not yield the correct results.
+   * If one wants to allow a neutral string representation to be read in as an
+   * <tt>Array<double></tt> object or an <tt>Array<int></tt> object, then
+   * general formating such as <tt>{100,3530000,...}</tt> should be used.
+   * This templated function is unable to deal complex type conversion issues.
+   * 
+   * \relates Array.
+   */
+  template<class T>
+  Array<T> fromStringToArray(const std::string& arrayStr)
+  {
+    const std::string str = Utils::trimWhiteSpace(arrayStr);
+    std::istringstream iss(str);
+    TEST_FOR_EXCEPTION(
+      ( str[0]!='{' || str[str.length()-1] != '}' )
+      ,InvalidArrayStringRepresentation
+      ,"Error, the string:\n"
+      "----------\n"
+      <<str<<
+      "\n----------\n"
+      "is not a valid array represntation!"
+      );
+    char c;
+    c = iss.get(); // Read initial '{'
+    TEST_FOR_EXCEPT(c!='{'); // Should not throw!
+    // Now we are ready to begin reading the entries of the array!
+    Array<T> a;
+    while( !iss.eof() ) {
+      // Get the basic entry string
+      std::string entryStr;
+      std::getline(iss,entryStr,','); // Get next entry up to ,!
+      // ToDo: Above, we might have to be careful to look for the opening and
+      // closing of parentheses in order not to pick up an internal ',' in the
+      // middle of an entry (for a complex number for instance).  The above
+      // implementation assumes that there will be no commas in the middle of
+      // the string representation of an entry.  This is certainly true for
+      // the types bool, int, float, and double.
+      //
+      // Trim whitespace from beginning and end
+      entryStr = Utils::trimWhiteSpace(entryStr);
+      // Remove the final '}' if this is the last entry and we did not
+      // actually terminate the above getline(...) on ','
+      bool found_end = false;
+      if(entryStr[entryStr.length()-1]=='}') {
+        entryStr = entryStr.substr(0,entryStr.length()-1);
+        found_end = true;
+        if( entryStr.length()==0 && a.size()==0 )
+          return a; // This is the empty array "{}" (with any spaces in it!)
+      }
+      TEST_FOR_EXCEPTION(
+        0 == entryStr.length()
+        ,InvalidArrayStringRepresentation
+        ,"Error, the string:\n"
+        "----------\n"
+        <<str<<
+        "\n----------\n"
+        "is not a valid array represntation!"
+        );
+      // Finally we can convert the entry and add it to the array!
+      std::istringstream entryiss(entryStr);
+      T entry;
+      entryiss >> entry; // Assumes type has operator>>(...) defined!
+      // ToDo: We may need to define a traits class to allow us to specialized
+      // how conversion from a string to a object is done!
+      a.push_back(entry);
+      // At the end of the loop body here, if we have reached the last '}'
+      // then the input stream iss should be empty and iss.eof() should be
+      // true, so the loop should terminate.  We put an exception test here
+      // just in case something has gone wrong.
+      TEST_FOR_EXCEPTION(
+        found_end && !iss.eof()
+        ,InvalidArrayStringRepresentation
+        ,"Error, the string:\n"
+        "----------\n"
+        <<str<<
+        "\n----------\n"
+        "is not a valid array represntation!"
+        );
+    }
+    return a;
+  }
+                      
   /** \relates Array 
       \brief Create an array with one entry 
   */
@@ -346,4 +477,3 @@ namespace Teuchos
 }
 
 #endif // TEUCHOS_ARRAY_H
-

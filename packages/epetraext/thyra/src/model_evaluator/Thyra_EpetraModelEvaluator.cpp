@@ -651,8 +651,10 @@ Thyra::convert(
     return EpetraExt::ModelEvaluator::Derivative(
       EpetraExt::ModelEvaluator::DerivativeMultiVector(
         get_Epetra_MultiVector(
-          derivative.getDerivativeMultiVector().getOrientation() == MEB::DERIV_MV_BY_COL
-          ? *fnc_map : *var_map
+          ( derivative.getDerivativeMultiVector().getOrientation() == MEB::DERIV_MV_BY_COL
+            ? *fnc_map
+            : *var_map
+            )
           ,derivative.getDerivativeMultiVector().getMultiVector()
           )
         ,convert(derivative.getDerivativeMultiVector().getOrientation())

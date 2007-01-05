@@ -948,20 +948,12 @@ private:
 
 }; // end class MultiVectorBase<Scalar>
 
-/** \defgroup Thyra_Op_Vec_MultiVectorBase_support_grp Support functions for MultiVectorBase interface
-
-These functions allow a client to use a <tt>MultiVectorBase</tt> object more easily
-in simpler use cases.
-
-\ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
-
-*/
-//@{
-
 /** \brief Apply a reduction/transformation operator column by column and
  * return an array of the reduction objects.
  *
  * ToDo: Finish documentation!
+ *
+ * \relates MultiVectorBase
  */
 template<class Scalar>
 inline
@@ -1030,10 +1022,12 @@ void applyOp(
 }
 #endif
 
-/** \brief Apply a reduction/transformation operator column by column and reduce the intermediate
- * reduction objects into one reduction object.
+/** \brief Apply a reduction/transformation operator column by column and
+ * reduce the intermediate reduction objects into one reduction object.
  *
  * ToDo: Finish documentation!
+ *
+ * \relates MultiVectorBase
  */
 template<class Scalar>
 inline
@@ -1105,8 +1099,6 @@ void applyOp(
 }
 
 #endif // __sun
-
-//@}
 
 } // namespace Thyra
 

@@ -34,8 +34,8 @@
 
 namespace Thyra {
 
-/** \brief Concrete utility class for reading and writing SPMD MultiVectorBase
- * objects to and from standard streams.
+/** \brief Concrete utility class for reading and writing SPMD-based
+ * MultiVectorBase objects to and from standard streams.
  *
  * ToDo: Finish documentation!
  *
@@ -52,6 +52,9 @@ public:
   SpmdMultiVectorSerializer(
     const bool  binaryMode = false
     );
+
+  /** \brief Determine if the multi-vector is compatible or not. */
+  bool isCompatible( const MultiVectorBase<Scalar> &mv ) const;
 
   /** \brief Write to a stream.
    *

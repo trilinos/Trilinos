@@ -44,12 +44,21 @@ SpmdMultiVectorSerializer<Scalar>::SpmdMultiVectorSerializer(
 {}
 
 template<class Scalar>
+bool SpmdMultiVectorSerializer<Scalar>::isCompatible(
+  const MultiVectorBase<Scalar> &mv
+  ) const
+{
+  return 0!=dynamic_cast<const SpmdVectorSpaceBase<Scalar>*>(&*mv.range());
+}
+
+template<class Scalar>
 void SpmdMultiVectorSerializer<Scalar>::serialize(
   const MultiVectorBase<Scalar>& mv, std::ostream& out
   ) const
 {
   Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> >
-    mpi_vec_spc = Teuchos::rcp_dynamic_cast<const SpmdVectorSpaceBase<Scalar> >(mv.range());
+    mpi_vec_spc
+    = Teuchos::rcp_dynamic_cast<const SpmdVectorSpaceBase<Scalar> >(mv.range());
   out.precision(std::numeric_limits<Scalar>::digits10+4);
   if( mpi_vec_spc.get() ) {
     // This is a mpi-based vector space so let's just write the local

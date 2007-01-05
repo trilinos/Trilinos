@@ -38,6 +38,7 @@
 #include "Teuchos_ParameterEntry.hpp"
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_Array.hpp"
 #include "Teuchos_map.hpp"
 
 /** \example ParameterList/cxx_main.cpp
@@ -653,8 +654,7 @@ void ParameterList::validateEntryExists( const std::string &funcName, const std:
 {
   TEST_FOR_EXCEPTION_PURE_MSG(
     entry==NULL, Exceptions::InvalidParameterName
-    ,"Teuchos::ParameterList::"<<funcName<<"(...):"
-    "\n\nError!  The parameter \""<<name<<"\" does not exist"\
+    ,"Error!  The parameter \""<<name<<"\" does not exist"\
     "\nin the parameter (sub)list \""<<this->name()<<"\"."
     "\n\nThe current parameters set in (sub)list \""<<this->name()<<"\" are:\n\n"
     << this->currentParametersString()
@@ -666,8 +666,7 @@ void ParameterList::validateEntryType( const std::string &funcName, const std::s
 {
   TEST_FOR_EXCEPTION_PURE_MSG(
     entry.getAny().type() != typeid(T), Exceptions::InvalidParameterType
-    ,"Teuchos::ParameterList::"<<funcName<<"(...):"
-    "\n\nError!  An attempt was made to access parameter \""<<name<<"\""
+    ,"Error!  An attempt was made to access parameter \""<<name<<"\""
     "of type \""<<entry.getAny().typeName()<<"\""
     "\nin the parameter (sub)list \""<<this->name()<<"\""
     "\nusing the incorrect type \""<<TypeNameTraits<T>::name()<<"\"!"
@@ -702,6 +701,32 @@ const T& getParameter( const ParameterList& l, const string& name )
 }
   
 /*! \relates ParameterList
+  \brief A templated helper function for getting a pointer to a parameter from
+  a non-const list, if it exists.  This helper function prevents the need for
+  giving a nominal value of the specific template type.
+  \note The syntax for calling this function is:
+  <tt>getParameterPtr<int>(list,"Iters")</tt>
+*/
+template<typename T>
+T* getParameterPtr( ParameterList& l, const string& name )
+{
+  return l.template getPtr<T>(name);
+}
+  
+/*! \relates ParameterList
+  \brief A templated helper function for getting a pointer to a parameter from
+  a non-const list, if it exists.  This helper function prevents the need for
+  giving a nominal value of the specific template type.
+  \note The syntax for calling this function is:
+  <tt>getParameterPtr<int>(list,"Iters")</tt>
+*/
+template<typename T>
+const T* getParameterPtr( const ParameterList& l, const string& name )
+{
+  return l.template getPtr<T>(name);
+}
+  
+/*! \relates ParameterList
   \brief A templated helper function for determining the type of a parameter entry for a non-const list.  
   This helper function avoids the need for giving a nominal value of the specific template type.
     
@@ -723,6 +748,144 @@ template<typename T>
 bool isParameterType( const ParameterList& l, const string& name )
 {
   return l.isType( name, (T*)NULL );
+}
+  
+/** \brief Set a string parameter representation of an array.
+ *
+ * \param  paramName
+ *           [in] The name of the parameter containing the string
+ *           representation of the array.
+ * \param  array
+ *           [in] The array that will be set as a string parameter.
+ * \param  paramList
+ *           [in/out] The parameter list that the array will be set on.
+ *
+ * \relates ParameterList
+ */
+template<typename T>
+void setStringParameterFromArray(
+  const string          &paramName
+  ,const Array<T>       &array
+  ,ParameterList        *paramList
+  )
+{
+  TEST_FOR_EXCEPT(!paramList);
+  paramList->set(paramName,toString(array));
+}
+  
+/** \brief Get an Array object (with entries of type <tt>T</tt>) from a
+ * parameter holding a string representation of the array.
+ *
+ * \param  paramList
+ *           [in] The parameter list to extract the parameter array from.
+ * \param  paramName
+ *           [in] The name of the parameter containing the string
+ *           representation of the array.
+ * \param  arrayDim
+ *           [in] If <tt>arrayDim >= 0</tt>, then the read in array
+ *           must be equal to this dimension, or an exception will
+ *           be thrown.  If <tt>arrayDim < 0</tt>, then an array
+ *           of any dimension will be returned.  The default is <tt>-1</tt>
+ *           and therefore no array length validation will be performed.
+ * \param  mustExist
+ *           [in] If <tt>mustExist==true</tt>, then the parameter
+ *           <tt>paramName</tt> must exist and must contain a valid array, or
+ *           an exception is thrown.  If <tt>mustExist==false</tt>, and if
+ *           the parameter <tt>paramName</tt> does not exist or contains an
+ *           empty array string value, then an empty array object will be
+ *           returned.
+ *
+ * \returns an array object if an exception is not thrown.  If
+ * <tt>mustExist==false</tt> and the parameter does not exist, then an empty
+ * array object will be returned.  If <tt>mustExist==true</tt> and
+ * <tt>arrayDim < 0</tt>, then if the parameter <tt>paramName</tt> exists and
+ * its array value is valid, then the converted array, of any size, will be
+ * returned.  If <tt>mustExist==true</tt> and <tt>arrayDim >= 0</tt> then an
+ * array of dimension <tt>arrayDim</tt> will be returned if an exception is
+ * not thrown.
+ *
+ * <b>Exceptions:</b>
+ *
+ * <ul>
+ *
+ * <li><tt>Exceptions::InvalidParameterName</tt> will be thrown if
+ * <tt>mustExist==true</tt> and the parameter <tt>paramName</tt> does not
+ * exist in <tt>paramList</tt>
+ *
+ * <li><tt>Exceptions::InvalidParameterType</tt> will be thrown if the
+ * parameter exists but does not have a value type of <tt>std::string</tt>.
+ *
+ * <li><tt>Exceptions::InvalidParameterValue</tt> will be thrown in the following cases:
+ *
+ *   <ul>
+ *   <li>If the parameter <tt>paramName</tt> exists but the array in string form
+ *       is not formated correctly.
+ *   <li>If <tt>arrayDim >= 0</tt> and the read in array dimension dies not equal
+ *       <tt>arrayDim</tt>
+ *   </ul>
+ *
+ * </ul>
+ *
+ * <b>Detailed Description:</b>
+ *
+ * This function allows <tt>Array<T></tt> objects to be read in from a
+ * parameter with a string representation of the array.  The templated function
+ * <tt>Teuchos::fromStringToArray()</tt> (see documentation for
+ * <tt>Teuchos::Array</tt>) is used to parse the string representation and
+ * return the array object (see this function's documentation for details on
+ * what the formatting of the array string must be and what can be handled and
+ * what can not be handled.
+ *
+ * \relates ParameterList
+ */
+template<typename T>
+Array<T> getArrayFromStringParameter(
+  const ParameterList   &paramList
+  ,const string         &paramName
+  ,const int            arrayDim        = -1
+  ,const bool           mustExist       = true
+  )
+{
+  std::string arrayStr;
+  if(mustExist) {
+    arrayStr = getParameter<std::string>(paramList,paramName);
+  }
+  else {
+    const std::string
+      *arrayStrPtr = getParameterPtr<std::string>(paramList,paramName);
+    if(arrayStrPtr) {
+      arrayStr = *arrayStrPtr;
+    }
+    else {
+      return Array<T>(); // Return an empty array
+    }
+  }
+  Array<T> a;
+  try {
+    a = fromStringToArray<T>(arrayStr);
+  }
+  catch( const InvalidArrayStringRepresentation &except ) {
+    TEST_FOR_EXCEPTION_PURE_MSG(
+      true, Exceptions::InvalidParameterValue
+      ,"Error!  The parameter \""<<paramName<<"\"\n"
+      "in the sublist \""<<paramList.name()<<"\"\n"
+      "exists, but the string value:\n"
+      "----------\n"
+      <<arrayStr<<
+      "\n----------\n"
+      "is not a valid array represntation!"
+      );
+  }
+  TEST_FOR_EXCEPTION_PURE_MSG(
+    ( ( a.size()>0 && arrayDim>=0 ) && static_cast<int>(a.size())!=arrayDim )
+    ,Exceptions::InvalidParameterValue
+    ,"Error!  The parameter \""<<paramName<<"\"\n"
+    "in the sublist \""<<paramList.name()<<"\"\n"
+    "exists and is a valid array, but the dimension of\n"
+    "the read in array a.size() = " << a.size() << "\n"
+    "was not equal to the expected size arrayDim = " << arrayDim << "!"
+    );
+  return a;
 }
 
 /*! \relates ParameterList

@@ -62,6 +62,9 @@ define interoperability between objects in many contexts.
   <li> <b>Miscellaneous</b>
   
     <ul>
+    <li><tt>Thyra::MultiVectorFileIOBase</tt> is an interface for strategy
+        objects that can read and write (multi)vectors
+        to and from files in a very abstract way.
     <li><tt>Thyra::MultiVectorRandomizerBase</tt> is an interface for strategy objects that can produce random vectors and multi-vectors.
     <li><tt>Teuchos::PolynomialTraits</tt> is a concrete traits class that is used in the <tt>Thyra::ModelEvaluator</tt> interface.
     </ul>

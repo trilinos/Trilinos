@@ -368,6 +368,20 @@ provided in the following operator functions:
 also <tt>Thyra::MultiVectorBase</tt>) objects.
 </ul>
 
+<li> <b>Miscellaneous software</b>
+
+Here is software that does not neatly fall into any of the above categories
+but is still considered ANA software.
+
+<ul>
+<li><tt>Thyra::ParameterDrivenMultiVectorInput</tt> is a simple concrete
+utility class that derives from <tt>Teuchos::ParameterListAcceptor</tt> that
+defines a parameter sublist that specifies how to read (multi)vectors for a
+file(s) or directly from the parameter list.
+</ul>
+
+</ol>
+
 \section Thyra_Op_Vec_ANA_Development_examples_sec Examples of Abstract Numerical Algorithms
 
 There are several code examples that one can study to see how to use
@@ -743,8 +757,8 @@ subclasses.
 
 \section Thyra_Op_Vec_adapters_Spmd_concrete_std_classes_grp Concrete SPMD Subclasses
 
-The concrete subclasses described here derive directly from the \ref
-\ref Thyra_Op_Vec_adapters_Spmd_support_grp.
+The concrete subclasses described here, for the most part, derive directly
+from the \ref \ref Thyra_Op_Vec_adapters_Spmd_support_grp.
 
 <ul>
 
@@ -771,6 +785,11 @@ efficient <tt>%Thyra::%MultiVectorBase</tt> subclass implementation for
 SPMD multi-vectors.  Objects of this type can be constructed
 from a variety of data sources due to the magic of
 <tt>%Teuchos::%RefCountPtr</tt>.
+
+<li><tt>Thyra::DefaultSpmdMultiVectorFileIO</tt> in a concrete implementation
+of <tt>Thyra::MultiVectorFileIO</tt> that reads and writes (multi)vector to
+and from files in parallel.  Each process is given its own file name and has
+its own extension.
 
 </ul>
 

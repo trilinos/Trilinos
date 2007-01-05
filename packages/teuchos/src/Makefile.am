@@ -52,41 +52,33 @@ all-local:
 CORE_H = \
 	$(srcdir)/Teuchos_AbstractFactory.hpp \
 	$(srcdir)/Teuchos_AbstractFactoryStd.hpp \
-	$(srcdir)/Teuchos_any.hpp \
 	$(srcdir)/Teuchos_Array.hpp \
 	$(srcdir)/Teuchos_ArrayRefCountPtr.hpp \
 	$(srcdir)/Teuchos_ArrayRefCountPtrDecl.hpp \
-	$(srcdir)/Teuchos_arrayArg.hpp \
-	$(srcdir)/Teuchos_basic_oblackholestream.hpp \
 	$(srcdir)/Teuchos_BLAS.hpp \
-	$(srcdir)/Teuchos_BLAS_wrappers.hpp \
 	$(srcdir)/Teuchos_BLAS_types.hpp \
+	$(srcdir)/Teuchos_BLAS_wrappers.hpp \
 	$(srcdir)/Teuchos_Comm.hpp \
 	$(srcdir)/Teuchos_CommHelpers.hpp \
 	$(srcdir)/Teuchos_CommUtilities.hpp \
 	$(srcdir)/Teuchos_CommandLineProcessor.hpp \
-	$(srcdir)/Teuchos_CompileTimeAssert.hpp \
 	$(srcdir)/Teuchos_CompObject.hpp \
+	$(srcdir)/Teuchos_CompileTimeAssert.hpp \
 	$(srcdir)/Teuchos_ConfigDefs.hpp \
 	$(srcdir)/Teuchos_ConstNonconstObjectContainer.hpp \
+	$(srcdir)/Teuchos_DataAccess.hpp \
 	$(srcdir)/Teuchos_DefaultComm.hpp \
 	$(srcdir)/Teuchos_DefaultSerialComm.hpp \
-	$(srcdir)/Teuchos_DataAccess.hpp \
 	$(srcdir)/Teuchos_Describable.hpp \
-	$(srcdir)/Teuchos_dyn_cast.hpp \
 	$(srcdir)/Teuchos_ErrorPolling.hpp \
-	$(srcdir)/Teuchos_exit.h \
+	$(srcdir)/Teuchos_F77_wrappers.h \
 	$(srcdir)/Teuchos_FancyOStream.hpp \
 	$(srcdir)/Teuchos_Flops.hpp \
-	$(srcdir)/Teuchos_F77_wrappers.h \
 	$(srcdir)/Teuchos_GlobalMPISession.hpp \
-	$(srcdir)/Teuchos_getConst.hpp \
 	$(srcdir)/Teuchos_Handle.hpp \
 	$(srcdir)/Teuchos_Handleable.hpp \
 	$(srcdir)/Teuchos_LAPACK.hpp \
 	$(srcdir)/Teuchos_LAPACK_wrappers.hpp \
-	$(srcdir)/Teuchos_map.hpp \
-	$(srcdir)/Teuchos_oblackholestream.hpp \
 	$(srcdir)/Teuchos_MPIComm.hpp \
 	$(srcdir)/Teuchos_MPIContainerComm.hpp \
 	$(srcdir)/Teuchos_MPISession.hpp \
@@ -97,31 +89,31 @@ CORE_H = \
 	$(srcdir)/Teuchos_ParameterEntry.hpp \
 	$(srcdir)/Teuchos_ParameterEntryValidator.hpp \
 	$(srcdir)/Teuchos_ParameterList.hpp \
-	$(srcdir)/Teuchos_ParameterListExceptions.hpp \
 	$(srcdir)/Teuchos_ParameterListAcceptor.hpp \
-	$(srcdir)/Teuchos_PrimitiveTypeTraits.hpp \
-	$(srcdir)/Teuchos_ReductionOp.hpp \
-	$(srcdir)/Teuchos_ReductionOpHelpers.hpp \
+	$(srcdir)/Teuchos_ParameterListExceptions.hpp \
 	$(srcdir)/Teuchos_PerformanceMonitorBase.hpp \
 	$(srcdir)/Teuchos_PerformanceMonitorUtils.hpp \
-	$(srcdir)/Teuchos_PolynomialTraits.hpp \
-	$(srcdir)/Teuchos_PolynomialDecl.hpp \
 	$(srcdir)/Teuchos_Polynomial.hpp \
+	$(srcdir)/Teuchos_PolynomialDecl.hpp \
+	$(srcdir)/Teuchos_PolynomialTraits.hpp \
+	$(srcdir)/Teuchos_PrimitiveTypeTraits.hpp \
 	$(srcdir)/Teuchos_PromotionTraits.hpp \
 	$(srcdir)/Teuchos_Range1D.hpp \
 	$(srcdir)/Teuchos_RawMPITraits.hpp \
 	$(srcdir)/Teuchos_ReductionOp.hpp \
-	$(srcdir)/Teuchos_RefCountPtrDecl.hpp \
+	$(srcdir)/Teuchos_ReductionOp.hpp \
+	$(srcdir)/Teuchos_ReductionOpHelpers.hpp \
 	$(srcdir)/Teuchos_RefCountPtr.hpp \
-	$(srcdir)/Teuchos_RefCountPtrBoostSharedPtrConversionsDecl.hpp \
 	$(srcdir)/Teuchos_RefCountPtrBoostSharedPtrConversions.hpp \
+	$(srcdir)/Teuchos_RefCountPtrBoostSharedPtrConversionsDecl.hpp \
+	$(srcdir)/Teuchos_RefCountPtrDecl.hpp \
 	$(srcdir)/Teuchos_ScalarTraits.hpp \
+	$(srcdir)/Teuchos_SerialDenseMatrix.hpp \
+	$(srcdir)/Teuchos_SerialDenseVector.hpp \
 	$(srcdir)/Teuchos_SerializationTraits.hpp \
 	$(srcdir)/Teuchos_SerializationTraitsHelpers.hpp \
 	$(srcdir)/Teuchos_Serializer.hpp \
 	$(srcdir)/Teuchos_SerializerHelpers.hpp \
-	$(srcdir)/Teuchos_SerialDenseMatrix.hpp \
-	$(srcdir)/Teuchos_SerialDenseVector.hpp \
 	$(srcdir)/Teuchos_StandardCatchMacros.hpp \
 	$(srcdir)/Teuchos_StandardCompositionMacros.hpp \
 	$(srcdir)/Teuchos_StandardMemberCompositionMacros.hpp \
@@ -133,10 +125,19 @@ CORE_H = \
 	$(srcdir)/Teuchos_TestForException.hpp \
 	$(srcdir)/Teuchos_Time.hpp \
 	$(srcdir)/Teuchos_TimeMonitor.hpp \
-	      $(srcdir)/Teuchos_TypeNameTraits.hpp \
+	$(srcdir)/Teuchos_TypeNameTraits.hpp \
 	$(srcdir)/Teuchos_Utils.hpp \
 	$(srcdir)/Teuchos_VerboseObject.hpp \
 	$(srcdir)/Teuchos_VerbosityLevel.hpp \
+	$(srcdir)/Teuchos_any.hpp \
+	$(srcdir)/Teuchos_arrayArg.hpp \
+	$(srcdir)/Teuchos_basic_oblackholestream.hpp \
+	$(srcdir)/Teuchos_dyn_cast.hpp \
+	$(srcdir)/Teuchos_exit.h \
+	$(srcdir)/Teuchos_getConst.hpp \
+	$(srcdir)/Teuchos_implicit_cast.hpp \
+	$(srcdir)/Teuchos_map.hpp \
+	$(srcdir)/Teuchos_oblackholestream.hpp \
 	$(srcdir)/Teuchos_Workspace.hpp
 
 CORE = \

@@ -36,7 +36,6 @@
 #include "Teuchos_RefCountPtr.hpp"
 
 /** \brief Macro that adds <<std comp>> members for a composition association.
- * \ingroup StandardContainmentMacros_grp
  *
  * This form is for when the object being held will have const attributes
  * the same as the <tt>this</tt> object.
@@ -59,6 +58,8 @@
  private:
    Teuchos::RefCountPtr< TYPE > NAME_;		
  \endverbatim
+ *
+ * \ingroup StandardContainmentMacros_grp
  */
 #define STANDARD_COMPOSITION_MEMBERS( TYPE, NAME ) \
 	void set_ ## NAME (const Teuchos::RefCountPtr< TYPE >& NAME ) \
@@ -75,7 +76,6 @@ public: \
   typedef Teuchos::RefCountPtr< TYPE > NAME ## _ptr_t
 
 /** \breif Macro that adds <<std comp>> members for a composition association.
- * \ingroup StandardContainmentMacros_grp
  *
  * This form is for when the object being held will have non-const attributes
  * irrespective of the const of <tt>this</tt>.
@@ -98,6 +98,8 @@ public: \
  private:
    Teuchos::RefCountPtr< TYPE > NAME_;		
  \endverbatim
+ *
+ * \ingroup StandardContainmentMacros_grp
  */
 #define STANDARD_NONCONST_COMPOSITION_MEMBERS( TYPE, NAME ) \
 	void set_ ## NAME ( const Teuchos::RefCountPtr< TYPE >& NAME ) \
@@ -111,8 +113,8 @@ private: \
 public: \
   typedef Teuchos::RefCountPtr< TYPE > NAME ## _ptr_t
 
-/** \brief Macro that adds <<std comp>> members for a composition association.
- * \ingroup StandardContainmentMacros_grp
+/** \brief Macro that adds <<std comp>> members for a composition association
+ * where the contained object is always constant.
  *
  * This form is for when the object being held will have const attributes
  * irrespective of the const of <tt>this</tt>.
@@ -135,6 +137,8 @@ public: \
  private:
    NAME_ptr_t NAME_;		
  \endverbatim
+ *
+ * \ingroup StandardContainmentMacros_grp
  */
 #define STANDARD_CONST_COMPOSITION_MEMBERS( TYPE, NAME ) \
 public: \

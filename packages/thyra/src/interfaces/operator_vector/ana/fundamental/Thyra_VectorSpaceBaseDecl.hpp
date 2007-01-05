@@ -34,23 +34,10 @@
 
 namespace Thyra {
 
-/** \defgroup Thyra_Op_Vec_createMember_grp User callable creational functions for VectorBase and MultiVectorBase.
-
-These functions must be used by clients to create all <tt>VectorBase</tt> and
-<tt>MultiVectorBase</tt> objects in order to ensure that the created objects
-can live past the life time of the <tt>VectorSpaceBase</tt> object that
-created them.
-
-\ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
-
-*/
-//@{
-
-
 /** \brief Helper function that clones a <tt>VectorSpaceBase</tt> object if
  * the <tt>RefCountPtr</tt> does not have ownership.
  *
- * \ingroup Thyra_Op_Vec_createMember_grp
+ * \relates VectorSpaceBase
  */
 template<class Scalar>
 Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
@@ -61,6 +48,7 @@ makeHaveOwnership( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &v
  * Calls <tt>VectorSpaceBase::createMember()</tt> on <tt>vs</tt> but
  * the returned <tt>VectorBase</tt> object can live past <tt>vs</tt>.
  *
+ * \relates VectorSpaceBase
  */
 template<class Scalar>
 Teuchos::RefCountPtr< VectorBase<Scalar> >
@@ -68,6 +56,7 @@ createMember( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs );
 
 /** \brief Calls <tt>createMember(Teuchos::rcp(&vs,false))</tt>.
  *
+ * \relates VectorSpaceBase
  */
 template<class Scalar>
 Teuchos::RefCountPtr< VectorBase<Scalar> >
@@ -78,6 +67,7 @@ createMember( const VectorSpaceBase<Scalar> &vs );
  * Calls <tt>VectorSpaceBase::createMembers()</tt> on <tt>vs</tt> but the
  * returned <tt>MultiVectorBase</tt> object can live past <tt>vs</tt>.
  *
+ * \relates VectorSpaceBase
  */
 template<class Scalar>
 Teuchos::RefCountPtr< MultiVectorBase<Scalar> >
@@ -85,6 +75,7 @@ createMembers( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs, i
 
 /** \brief Calls <tt>createMembers(Teuchos::rcp(&vs,false),numMembers)</tt>.
  *
+ * \relates VectorSpaceBase
  */
 template<class Scalar>
 Teuchos::RefCountPtr< MultiVectorBase<Scalar> >
@@ -95,6 +86,7 @@ createMembers( const VectorSpaceBase<Scalar> &vs, int numMembers );
  * Calls <tt>VectorSpaceBase::createMemberView()</tt> on <tt>vs</tt> but the
  * returned <tt>VectorBase</tt> object can live past <tt>vs</tt>.
  *
+ * \relates VectorSpaceBase
  */
 template<class Scalar>
 Teuchos::RefCountPtr<VectorBase<Scalar> >
@@ -102,6 +94,7 @@ createMemberView( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs
 
 /** \brief Calls <tt>createMemberView(Teuchos::rcp(&vs,false),raw_v)</tt>.
  *
+ * \relates VectorSpaceBase
  */
 template<class Scalar>
 Teuchos::RefCountPtr<VectorBase<Scalar> >
@@ -112,12 +105,15 @@ createMemberView( const VectorSpaceBase<Scalar> &vs, const RTOpPack::SubVectorVi
  * Calls <tt>VectorSpaceBase::createMemberView()</tt> on <tt>vs</tt> but the
  * returned <tt>VectorBase</tt> object can live past <tt>vs</tt>.
  *
+ * \relates VectorSpaceBase
  */
 template<class Scalar>
 Teuchos::RefCountPtr<const VectorBase<Scalar> >
 createMemberView( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs, const RTOpPack::ConstSubVectorView<Scalar> &raw_v );
 
 /** \brief Calls <tt>createMemberView(Teuchos::rcp(&vs,false),raw_v)</tt>.
+ *
+ * \relates VectorSpaceBase
  */
 template<class Scalar>
 Teuchos::RefCountPtr<const VectorBase<Scalar> >
@@ -128,6 +124,7 @@ createMemberView( const VectorSpaceBase<Scalar> &vs, const RTOpPack::ConstSubVec
  * Calls <tt>VectorSpaceBase::createMembersView()</tt> on <tt>vs</tt> but the
  * returned <tt>MultiVectorBase</tt> object can live past <tt>vs</tt>.
  *
+ * \relates VectorSpaceBase
  */
 template<class Scalar>
 Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
@@ -135,6 +132,7 @@ createMembersView( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &v
 
 /** \brief Calls <tt>createMembersView(Teuchos::rcp(&vs,false),raw_mv)</tt>.
  *
+ * \relates VectorSpaceBase
  */
 template<class Scalar>
 Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
@@ -145,6 +143,7 @@ createMembersView( const VectorSpaceBase<Scalar> &vs, const RTOpPack::SubMultiVe
  * Calls <tt>VectorSpaceBase::createMembersView()</tt> on <tt>vs</tt> but the
  * returned <tt>MultiVectorBase</tt> object can live past <tt>vs</tt>.
  *
+ * \relates VectorSpaceBase
  */
 template<class Scalar>
 Teuchos::RefCountPtr<const MultiVectorBase<Scalar> >
@@ -152,12 +151,11 @@ createMembersView( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &v
 
 /** \brief Calls <tt>createMembersView(Teuchos::rcp(&vs,false),raw_mv)</tt>.
  *
+ * \relates VectorSpaceBase
  */
 template<class Scalar>
 Teuchos::RefCountPtr<const MultiVectorBase<Scalar> >
 createMembersView( const VectorSpaceBase<Scalar> &vs, const RTOpPack::ConstSubMultiVectorView<Scalar> &raw_mv );
-
-//@}
 
 /** \brief Abstract interface for objects that represent a space for vectors.
  *

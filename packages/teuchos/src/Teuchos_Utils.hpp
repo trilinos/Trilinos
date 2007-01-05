@@ -47,63 +47,49 @@ namespace Teuchos
     {
     public:
 
-      /**
-       * print a description of the current build
-       */
+      /** \brief print a description of the current build. */
       static void aboutBuild();
 
-      /**
-       * Set a number to zero if it is less than chopVal.
-       */
+      /** \brief Set a number to zero if it is less than
+       * <tt>getChopVal()</tt>. */
       static double chop(const double& x);
 
-      /**
-       * write a real as a string
-       */
+      /** \brief Get the chopping value, below which numbers are considered to
+       * be zero. */
+      static double getChopVal() {return chopVal_;}
+
+      /** \brief Set the chopping value, below which numbers are considered to
+       * be zero. */
+      static void setChopVal(double chopVal) {chopVal_ = chopVal;}
+
+      /** \brief Determine if a char is whitespace or not. */
+      static bool isWhiteSpace( const char c )
+        { return ( c==' ' || c =='\t' || c=='\n' ); }
+
+      /** \brief Trim whitespace from beginning and end of string. */
+      static std::string trimWhiteSpace( const std::string& str );
+
+      /** \brief Write a double as a string. */
       static string toString(const double& x);
 
-      /**
-       * write an int as a string
-       */
+      /** \brief Write an int as a string. */
       static string toString(const int& x);
 
-      /**
-       * write an unsigned int as a string
-       */
+      /** \brief Write an unsigned int as a string. */
       static string toString(const unsigned int& x);
 
-//       /**
-//        * IEEE positive infinity
-//        */
-//       static double infinity() {return HUGE_VAL;}
-
-//       /**
-//        * IEEE negative infinity
-//        */
-//       static double negativeInfinity() {return -HUGE_VAL;}
-
-      /**
-       * pi.
-       */
+      /** \brief pi. */
 #ifdef M_PI
       static double pi() {return M_PI;}
 #else
       static double pi() {return 3.14159265358979323846;}
 #endif
-      /**
-       * Get the chopping value, below which numbers are considered to be zero
-       */
-      static double getChopVal() {return chopVal_;}
-      /**
-       * Set the chopping value, below which numbers are considered to be zero
-       */
-      static void setChopVal(double chopVal) {chopVal_ = chopVal;}
-      /** \brief parallel extention . */
+
+      /** \brief Get a parallel file name extention . */
       static std::string getParallelExtension(
         int    procRank = -1
         ,int   numProcs = -1
         );
-      /** \brief Get a parallel file name . */
 
     private:
       static double chopVal_;

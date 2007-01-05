@@ -91,6 +91,29 @@ XMLObject XMLParameterListWriter::toXML(const ParameterEntry& entry) const
       type = "bool";
       value = toString(any_cast<bool>(entry.getAny(false)));
     }
+/*
+  else if (entry.isType<Array<int> >())
+    {
+      const Array<int>
+        &a = any_cast<Array<int> >(entry.getAny(false));
+      type = "Array<int>";
+      value = a.toString();
+    }
+  else if (entry.isType<Array<float> >())
+    {
+      const Array<float>
+        &a = any_cast<Array<float> >(entry.getAny(false));
+      type = "Array<double>";
+      value = a.toString();
+    }
+  else if (entry.isType<Array<double> >())
+    {
+      const Array<double>
+        &a = any_cast<Array<double> >(entry.getAny(false));
+      type = "Array<double>";
+      value = a.toString();
+    }
+*/
   else
     {
       type = "any";

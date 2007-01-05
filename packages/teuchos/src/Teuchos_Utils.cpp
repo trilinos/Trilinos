@@ -39,6 +39,52 @@ double Utils::chop(const double& x)
 	return x;
 }
 
+std::string Utils::trimWhiteSpace( const std::string& str )
+{
+  typedef std::string::size_type size_type;
+  const size_type len = str.length();
+  size_type first_non_white = 0;
+  for(
+    first_non_white = 0 ;
+    isWhiteSpace(str[first_non_white]) && first_non_white < len ;
+    ++first_non_white
+    );
+  // Above, if only whitespace is found, then first_non_white==len on
+  // termination of the loop!
+  size_type last_non_white = 0;
+  for(
+    last_non_white = len-1 ;
+    isWhiteSpace(str[last_non_white]) && last_non_white >= 0;
+    --last_non_white
+    );
+  // Above, if only whitespace is found, last_non_white==0 on termination of
+  // the loop!
+  if( first_non_white > last_non_white )
+    return std::string(""); // The string is all whitespace!
+  return str.substr(first_non_white,last_non_white-first_non_white+1);
+}
+
+string Utils::toString(const int& x)
+{
+	char s[100];
+	sprintf(s, "%d", x);
+	return string(s);
+}
+
+string Utils::toString(const unsigned int& x)
+{
+	char s[100];
+	sprintf(s, "%d", x);
+	return string(s);
+}
+
+string Utils::toString(const double& x)
+{
+	char s[100];
+	sprintf(s, "%g", x);
+	return string(s);
+}
+
 string Utils::getParallelExtension(
   int         procRank_in
   ,int        numProcs_in
@@ -76,27 +122,5 @@ string Utils::getParallelExtension(
     << procRank;
   return parallelExtension.str();
 }
-
-string Utils::toString(const int& x)
-{
-	char s[100];
-	sprintf(s, "%d", x);
-	return string(s);
-}
-
-string Utils::toString(const unsigned int& x)
-{
-	char s[100];
-	sprintf(s, "%d", x);
-	return string(s);
-}
-
-string Utils::toString(const double& x)
-{
-	char s[100];
-	sprintf(s, "%g", x);
-	return string(s);
-}
-
 
 } // end namespace Teuchos

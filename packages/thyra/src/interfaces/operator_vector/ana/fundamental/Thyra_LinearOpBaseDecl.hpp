@@ -370,18 +370,9 @@ public:
 
 };	// end class LinearOpBase
 
-/** \defgroup Thyra_Op_Vec_LinearOpBase_support_grp Support functions for LinearOpBase interface
-
-These functions allow a client to use a <tt>LinearOpBase</tt> object more
-easily in simpler use cases.
-
-\ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
-
-*/
-//@{
-
 /** \brief Determines if an operation is supported for a single scalar type.
  *
+ * \relates LinearOpBase
  */
 template<class Scalar>
 inline bool opSupported( const LinearOpBase<Scalar> &M, ETransp M_trans )
@@ -395,6 +386,7 @@ inline bool opSupported( const LinearOpBase<Scalar> &M, ETransp M_trans )
  *
  * Calls <tt>M.apply(conj,X,Y,alpha,beta)</tt>.
  *
+ * \relates LinearOpBase
  */
 template<class RangeScalar, class DomainScalar>
 inline void apply(
@@ -448,6 +440,7 @@ inline void apply(
  *
  * Calls <tt>M.applyTranspose(conj,X,Y,alpha,beta)</tt>.
  *
+ * \relates LinearOpBase
  */
 template<class RangeScalar, class DomainScalar>
 inline void applyTranspose(
@@ -504,6 +497,7 @@ inline void applyTranspose(
  * Calls <tt>M.apply(...,X,Y,alpha,beta)</tt> or
  * <tt>M.applyTranspose(...,X,Y,alpha,beta)</tt>.
  *
+ * \relates LinearOpBase
  */
 template<class Scalar>
 inline void apply(
@@ -555,8 +549,6 @@ inline void apply(
 }
 
 #endif
-
-//@}
 
 }	// end namespace Thyra
 

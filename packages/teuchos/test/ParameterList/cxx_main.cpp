@@ -485,6 +485,113 @@ int main( int argc, char *argv[] )
     }	    
 
     //-----------------------------------------------------------
+    // We can add Array<T> objects of various types T as string parameters!
+    //-----------------------------------------------------------
+    if(verbose) {
+      print_break();
+      cout << "Setting int and double array objects as string parameters ...\n";
+      print_break();
+    }
+    const Teuchos::Array<int>
+      intArray = Teuchos::tuple<int>(0,1,2,3,4,5,6);
+    const Teuchos::Array<double>
+      doubleArray = Teuchos::tuple<double>(0,1.0,2.0,3.0,4.0,5.0,6.0);
+    //const Teuchos::Array<bool>
+    //boolArray = Teuchos::tuple<bool>(true,true,false,false);
+    Teuchos::setStringParameterFromArray("Int Array",intArray,&PL_Main);
+    Teuchos::setStringParameterFromArray("Double Array",doubleArray,&PL_Main);
+    //Teuchos::setStringParameterFromArray("Bool Array",boolArray,&PL_Main);
+    if(verbose) {
+      print_break();
+      cout << "Testing retrieval of set array objects ...\n";
+      print_break();
+    }
+    if(1) {
+
+      const Teuchos::Array<int>
+        readIntArray = Teuchos::getArrayFromStringParameter<int>(PL_Main,"Int Array");
+      result = readIntArray == intArray;
+      if(!result) ++FailedTests;
+      if(verbose)
+        cout
+          << "readIntArray = " << readIntArray << " == intArray = " << intArray << " ? "
+          << (result ? "passed" : "failed")
+          << "\n";
+
+      const Teuchos::Array<int>
+        readDoubleAsIntArray = Teuchos::getArrayFromStringParameter<int>(PL_Main,"Double Array");
+      result = readDoubleAsIntArray == intArray;
+      if(!result) ++FailedTests;
+      if(verbose)
+        cout
+          << "readDoubleAsIntArray = " << readDoubleAsIntArray << " == intArray = " << intArray << " ? "
+          << (result ? "passed" : "failed")
+          << "\n";
+
+/*
+      const Teuchos::Array<bool>
+        readBoolArray = Teuchos::getArrayFromStringParameter<bool>(PL_Main,"Bool Array");
+      result = readBoolArray == boolArray;
+      if(!result) ++FailedTests;
+      if(verbose)
+        cout
+          << "readBoolArray = " << readBoolArray << " == boolArray = " << boolArray << " ? "
+          << (result ? "passed" : "failed")
+          << "\n";
+*/
+
+      if(verbose) {
+        print_break();
+      }
+      
+    }
+
+    //-----------------------------------------------------------
+    // We can directly set the array strings!
+    //-----------------------------------------------------------
+
+    if(verbose) {
+      print_break();
+      cout << "Setting a array of doubles as a string parameter directly ...\n";
+      print_break();
+    }
+
+    PL_Main.set(
+      "Double Array"
+      ,"  {\n"
+      "      0.00000\n"
+      "      ,1.0e0\n"
+      "      ,0.2e1\n"
+      "      ,30.0e-1\n"
+      "      ,4\n"
+      "      ,5.0000\n"
+      "      ,6\n"
+      "  }\n  "
+      );
+
+    if(1) {
+
+      const Teuchos::Array<double>
+        readDoubleArray = Teuchos::getArrayFromStringParameter<double>(PL_Main,"Double Array");
+      Teuchos::Array<int>
+        doubleAsIntArray(readDoubleArray.size());
+      for(int i=0;i<static_cast<int>(readDoubleArray.size());++i)
+        doubleAsIntArray[i] = static_cast<int>(readDoubleArray[i]);
+      result = doubleAsIntArray == intArray;
+      if(!result) ++FailedTests;
+      if(verbose)
+        cout
+          << "doubleAsIntArray = " << doubleAsIntArray << " == intArray = " << intArray << " ? "
+          << (result ? "passed" : "failed")
+          << "\n";
+
+      if(verbose) {
+        print_break();
+      }
+      
+    }
+
+    //-----------------------------------------------------------
     // Can we pass a pointer to a function to the parameter list.
     // Use a simple function, pass it in and get it back out ...
     // ( HKT 03/23/2004 This test is not supported on Janus )

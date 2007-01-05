@@ -50,9 +50,17 @@ create_DgDx_mv( const ModelEvaluator<Scalar>& model, int j, ModelEvaluatorBase::
   typedef ModelEvaluatorBase MEB;
   switch(orientation) {
     case MEB::DERIV_MV_BY_COL:
-      return createMembers( model.get_g_space(j), model.get_x_space()->dim() );
+      return
+        MEB::DerivativeMultiVector<Scalar>(
+          createMembers( model.get_g_space(j), model.get_x_space()->dim() )
+          ,MEB::DERIV_MV_BY_COL
+          );
     case MEB::DERIV_TRANS_MV_BY_ROW:
-      return createMembers( model.get_x_space(j), model.get_g_space()->dim() );
+      return
+        MEB::DerivativeMultiVector<Scalar>(
+          createMembers( model.get_x_space(), model.get_g_space(j)->dim() )
+          ,MEB::DERIV_TRANS_MV_BY_ROW
+          );
     default:
       TEST_FOR_EXCEPT(true);
   }
@@ -67,9 +75,17 @@ create_DgDp_mv( const ModelEvaluator<Scalar>& model, int j, int l, ModelEvaluato
   typedef ModelEvaluatorBase MEB;
   switch(orientation) {
     case MEB::DERIV_MV_BY_COL:
-      return createMembers( model.get_g_space(j), model.get_p_space(l)->dim() );
+      return
+        MEB::DerivativeMultiVector<Scalar>(
+          createMembers( model.get_g_space(j), model.get_p_space(l)->dim() )
+          ,MEB::DERIV_MV_BY_COL
+          );
     case MEB::DERIV_TRANS_MV_BY_ROW:
-      return createMembers( model.get_p_space(l), model.get_g_space(j)->dim() );
+      return
+        MEB::DerivativeMultiVector<Scalar>(
+          createMembers( model.get_p_space(l), model.get_g_space(j)->dim() )
+          ,MEB::DERIV_TRANS_MV_BY_ROW
+          );
     default:
       TEST_FOR_EXCEPT(true);
   }

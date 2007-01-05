@@ -389,16 +389,6 @@ public:
 
 }; // end class VectorBase
 
-/** \defgroup Thyra_Op_Vec_VectorBase_support_grp Support functions for VectorBase interface
-
-These functions allow a client to use a <tt>VectorBase</tt> object more easily
-in simpler use cases.
-
-\ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
-
-*/
-//@{
-
 /** \brief Apply a reduction/transformation operator over a set of vectors:
  * <tt>op(op(v[0]...v[nv-1],z[0]...z[nz-1]),(*reduct_obj)) ->
  * z[0]...z[nz-1],(*reduct_obj)</tt>.
@@ -480,6 +470,8 @@ in simpler use cases.
  * <tt>global_offset == 0</tt> is for when a sub-view of the vectors are being
  * treated as full vectors.  Other combinations of these arguments are also
  * possible.
+ *
+ * \relates VectorBase
  */
 template<class Scalar>
 inline
@@ -525,8 +517,6 @@ void applyOp(
   applyOp(op,num_vecs,vecs,num_targ_vecs,targ_vecs,reduct_obj,0,-1,0);
 }
 #endif
-
-//@}
 
 } // end namespace Thyra
 
