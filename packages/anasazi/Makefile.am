@@ -112,15 +112,7 @@ if BUILD_ANASAZI_THYRA
 THYRA_SUBDIR = thyra
 endif
 
-if PYTHON_USE
-if BUILD_ANASAZI_PYTHON
-PYTHON_SUBDIR=python
-endif
-endif
-
-SUBDIRS = src $(UTIL_SUBDIR) $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) $(THYRA_SUBDIR) \
-	  $(PYTHON_SUBDIR)
-
+SUBDIRS = src $(UTIL_SUBDIR) $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) $(THYRA_SUBDIR)
 
 ## #######################################################################
 ## Target for circular dependencies

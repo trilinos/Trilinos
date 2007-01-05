@@ -331,13 +331,6 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(amesos, galeri, AMESOS_GALERI, HAVE_AMESOS_GALERI
 TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
 
 # ------------------------------------------------------------------------
-# Enable optional python wrappers
-# ------------------------------------------------------------------------
-TAC_ARG_ENABLE_FEATURE_SUB( amesos, python, [Build Amesos Python wrappers (requires --enable-python, which is NOT set by default)], AMESOS_PYTHON, yes)
-AM_CONDITIONAL(BUILD_AMESOS_PYTHON, test "X$ac_cv_use_amesos_python" != "Xno")
-TAC_ENABLE_PYTHON
-
-# ------------------------------------------------------------------------
 # Specify other directories 
 # ------------------------------------------------------------------------
 
@@ -906,13 +899,6 @@ AC_CONFIG_FILES([
 		test/scripts/daily/serial/Makefile
 		test/scripts/weekly/Makefile
 		test/scripts/weekly/mpi/Makefile
-		python/Makefile
-		python/src/Makefile
-		python/src/TRILINOS_HOME_DIR
-		python/src/__init__.py
-		python/src/.deps/dummy
-		python/example/Makefile
-		python/test/Makefile
 		thyra/Makefile
 		thyra/src/Makefile
 		thyra/example/Makefile

@@ -107,19 +107,13 @@ if BUILD_EXAMPLES
 EXAMPLE_SUBDIR=example
 endif
 
-if PYTHON_USE
-if BUILD_AMESOS_PYTHON
-PYTHON_SUBDIR=python
-endif
-endif
-
 if ENABLE_AMESOS_THYRA
 THYRA_SUBDIR=thyra
 else
 THYRA_SUBDIR=
 endif
 
-SUBDIRS = src $(THYRA_SUBDIR) $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) $(PYTHON_SUBDIR)
+SUBDIRS = src $(THYRA_SUBDIR) $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
 
 ## #######################################################################
 ## Target for circular dependencies

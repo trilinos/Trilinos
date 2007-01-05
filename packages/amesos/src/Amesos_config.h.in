@@ -59,9 +59,6 @@
 /* Define if want to build amesos-pastix */
 #undef HAVE_AMESOS_PASTIX
 
-/* Define if want to build amesos-python */
-#undef HAVE_AMESOS_PYTHON
-
 /* Define if want to build amesos-scalapack */
 #undef HAVE_AMESOS_SCALAPACK
 

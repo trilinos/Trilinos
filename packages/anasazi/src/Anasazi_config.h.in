@@ -44,9 +44,6 @@
 /* Define if want to build with anasazi enabled */
 #undef HAVE_ANASAZI_IFPACK
 
-/* Define if want to build anasazi-python */
-#undef HAVE_ANASAZI_PYTHON
-
 /* Define if want to build anasazi-tests */
 #undef HAVE_ANASAZI_TESTS
 

@@ -335,13 +335,6 @@ TAC_ARG_INFORM_SUBPACKAGE_USED(epetra, thyra, EPETRA_THYRA, BUILD_EPETRA_THYRA, 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(anasazi, tpetra, ANASAZI_TPETRA, BUILD_ANASAZI_TPETRA, no, [Build examples which use Tpetra adapters.  Can be overridden with --disable-anasazi-tpetra.], [Build examples which use Tpetra adapters.])
 
 # ------------------------------------------------------------------------
-# Enable optional python wrappers
-# ------------------------------------------------------------------------
-TAC_ARG_ENABLE_FEATURE_SUB( anasazi, python, [Build Anasazi Python wrappers (requires --enable-python, which is NOT set by default)], ANASAZI_PYTHON, yes)
-AM_CONDITIONAL(BUILD_ANASAZI_PYTHON, test "X$ac_cv_use_anasazi_python" != "Xno")
-TAC_ENABLE_PYTHON
-
-# ------------------------------------------------------------------------
 # Specify other directories 
 # ------------------------------------------------------------------------
 
@@ -478,13 +471,6 @@ AC_CONFIG_FILES([
 		thyra/test/LOBPCG/Makefile
 		thyra/test/BlockKrylovSchur/Makefile
 		thyra/test/BlockDavidson/Makefile
-		python/Makefile
-		python/src/Makefile
-		python/src/TRILINOS_HOME_DIR
-		python/src/__init__.py
-		python/src/.deps/dummy
-		python/test/Makefile
-		python/example/Makefile
 		])
 
 AC_OUTPUT()
@@ -494,4 +480,3 @@ AC_OUTPUT()
 echo "----------------------------------------"
 echo "Finished Running Anasazi Configure Script"
 echo "----------------------------------------"
-

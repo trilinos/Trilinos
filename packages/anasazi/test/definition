@@ -64,17 +64,6 @@
     COMM = SERIAL, MPI;
 }
 
-(FRAMEWORK, INSTALL, AnasaziPyTests) {
-      DIRS = ../python/test;
-      EXIT-STATUS = STRING-COMPARISON;
-      COMM = SERIAL, MPI(1-4);
-}
-
-(FRAMEWORK, INSTALL, AnasaziPyExamples) {
-      DIRS = ../python/example;
-      COMM = SERIAL, MPI(1-4);
-}
-
 (COVERAGE) {
     TESTS = LOBPCG/LOBPCG_test.exe,
             LOBPCG/LOBPCG_solvertest.exe,
