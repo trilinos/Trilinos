@@ -29,7 +29,6 @@
  '(show-paren-mode t nil (paren))
  '(tab-width 2)
  '(transient-mark-mode t)
- '(truncate-lines t)
  '(user-mail-address "rabartl@sandia.gov"))
 (custom-set-faces
  '(default ((t (:family "Clean" :size "12pt")))))
