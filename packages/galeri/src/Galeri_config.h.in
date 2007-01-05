@@ -47,9 +47,6 @@
 /* Define if want to build galeri-examples */
 #undef HAVE_GALERI_EXAMPLES
 
-/* Define if want to build galeri-python */
-#undef HAVE_GALERI_PYTHON
-
 /* Define if want to build galeri-tests */
 #undef HAVE_GALERI_TESTS
 

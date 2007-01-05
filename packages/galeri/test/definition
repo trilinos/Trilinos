@@ -13,18 +13,3 @@
     ARGS = -v;
     COMM = SERIAL;
 }
-
-(FRAMEWORK, INSTALL, GaleriPyExamples) {
-        DIRS = ../python/example;
-	DESCEND_DIRS = YES;
-	ARGS = --testharness;
-	EXIT-STATUS = STRING-COMPARISON;
-        COMM = SERIAL, MPI(1-4);
-}
-
-(FRAMEWORK, INSTALL, GaleriPyTests) {
-        DIRS = ../python/test;
-	ARGS = --testharness;
-	EXIT-STATUS = STRING-COMPARISON;
-        COMM = SERIAL, MPI(1-4);
-}
