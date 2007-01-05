@@ -225,9 +225,6 @@
 /* Define if want to build teuchos-libxml2 */
 #undef HAVE_TEUCHOS_LIBXML2
 
-/* Define if want to build teuchos-python */
-#undef HAVE_TEUCHOS_PYTHON
-
 /* Define if want to build teuchos-tests */
 #undef HAVE_TEUCHOS_TESTS
 

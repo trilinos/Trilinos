@@ -90,18 +90,3 @@
     EXIT-STATUS = STRING-COMPARISON;
     COMM = MPI(1-10),SERIAL;
 }
-
-(FRAMEWORK, INSTALL, TeuchosPyExamples) {
-        DIRS = ../python/example;
-        ARGS = --testharness;
-        EXIT-STATUS = STRING-COMPARISON;
-        COMM = SERIAL;
-}
-
-(FRAMEWORK, INSTALL, TeuchosPyTests) {
-        DIRS = ../python/test;
-        DESCEND_DIRS = YES;
-        ARGS = --testharness;
-        EXIT-STATUS = STRING-COMPARISON;
-        COMM = SERIAL;
-}

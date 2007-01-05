@@ -66,7 +66,6 @@ DIST_COMMON = $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.export.in \
 	$(srcdir)/Makefile.export.teuchos.in $(srcdir)/Makefile.in \
 	$(top_srcdir)/configure \
-	$(top_srcdir)/python/src/.deps/dummy.in \
 	$(top_srcdir)/test/scripts/daily/serial/run-teuchos-tests.pl.in \
 	config/config.guess config/config.sub config/depcomp \
 	config/install-sh config/missing config/mkinstalldirs
@@ -83,10 +82,8 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_abi_demangle.m4 \
 	$(top_srcdir)/config/ac_cxx_protected_nested_template_class_access.m4 \
 	$(top_srcdir)/config/ac_cxx_std_ios_base_fmtflags.m4 \
 	$(top_srcdir)/config/ac_cxx_std_sprintf.m4 \
-	$(top_srcdir)/config/ac_pkg_swig.m4 \
 	$(top_srcdir)/config/acx_blas.m4 \
 	$(top_srcdir)/config/acx_lapack.m4 \
-	$(top_srcdir)/config/az_python.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
@@ -99,7 +96,6 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_abi_demangle.m4 \
 	$(top_srcdir)/config/tac_arg_with_libdirs.m4 \
 	$(top_srcdir)/config/tac_arg_with_libs.m4 \
 	$(top_srcdir)/config/tac_arg_with_perl.m4 \
-	$(top_srcdir)/config/tac_enable_python.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -108,8 +104,7 @@ am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Teuchos_config.h
 CONFIG_CLEAN_FILES = Makefile.export Makefile.export.teuchos \
-	test/scripts/daily/serial/run-teuchos-tests.pl \
-	python/src/.deps/dummy
+	test/scripts/daily/serial/run-teuchos-tests.pl
 SOURCES =
 DIST_SOURCES =
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
@@ -120,7 +115,7 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	uninstall-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = src test example python
+DIST_SUBDIRS = src test example
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -144,12 +139,8 @@ AWK = @AWK@
 BLAS_LIBS = @BLAS_LIBS@
 BUILD_EXAMPLES_FALSE = @BUILD_EXAMPLES_FALSE@
 BUILD_EXAMPLES_TRUE = @BUILD_EXAMPLES_TRUE@
-BUILD_PYTHON_FALSE = @BUILD_PYTHON_FALSE@
-BUILD_PYTHON_TRUE = @BUILD_PYTHON_TRUE@
 BUILD_TESTS_FALSE = @BUILD_TESTS_FALSE@
 BUILD_TESTS_TRUE = @BUILD_TESTS_TRUE@
-BUILD_TEUCHOS_PYTHON_FALSE = @BUILD_TEUCHOS_PYTHON_FALSE@
-BUILD_TEUCHOS_PYTHON_TRUE = @BUILD_TEUCHOS_PYTHON_TRUE@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
@@ -169,12 +160,9 @@ EXEEXT = @EXEEXT@
 F77 = @F77@
 FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
-GNU_HAVE_SWIG = @GNU_HAVE_SWIG@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
 HAVE_PERL = @HAVE_PERL@
-HAVE_SWIG_FALSE = @HAVE_SWIG_FALSE@
-HAVE_SWIG_TRUE = @HAVE_SWIG_TRUE@
 HAVE_TEUCHOS_BOOST_FALSE = @HAVE_TEUCHOS_BOOST_FALSE@
 HAVE_TEUCHOS_BOOST_TRUE = @HAVE_TEUCHOS_BOOST_TRUE@
 HAVE_TEUCHOS_COMPLEX_FALSE = @HAVE_TEUCHOS_COMPLEX_FALSE@
@@ -212,21 +200,10 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PERL_EXE = @PERL_EXE@
-PYTHON = @PYTHON@
-PYTHON_CSPEC = @PYTHON_CSPEC@
-PYTHON_EXECPREFIX = @PYTHON_EXECPREFIX@
-PYTHON_LSPEC = @PYTHON_LSPEC@
-PYTHON_PREFIX = @PYTHON_PREFIX@
-PYTHON_USE_FALSE = @PYTHON_USE_FALSE@
-PYTHON_USE_TRUE = @PYTHON_USE_TRUE@
 RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
-SWIG = @SWIG@
-SWIG_LIB = @SWIG_LIB@
-SWIG_PYTHON_CPPFLAGS = @SWIG_PYTHON_CPPFLAGS@
-SWIG_PYTHON_OPT = @SWIG_PYTHON_OPT@
 TEUCHOS_BUILD_DIRECTORY = @TEUCHOS_BUILD_DIRECTORY@
 TRILINOS_TEMPLATE_OBJS = @TRILINOS_TEMPLATE_OBJS@
 USE_ALTERNATE_AR = @USE_ALTERNATE_AR@
@@ -239,7 +216,6 @@ USING_GNUMAKE_TRUE = @USING_GNUMAKE_TRUE@
 USING_PERL_FALSE = @USING_PERL_FALSE@
 USING_PERL_TRUE = @USING_PERL_TRUE@
 VERSION = @VERSION@
-WITH_SWIG = @WITH_SWIG@
 ac_aux_dir = @ac_aux_dir@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@
@@ -287,7 +263,6 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 AUTOMAKE_OPTIONS = foreign
 
-#
 #       I believe that by switching to AUX_DIR(../../config) one 
 #       could get rid of these.
 #
@@ -314,8 +289,7 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 
 @BUILD_TESTS_TRUE@TEST_SUBDIR = test
 @BUILD_EXAMPLES_TRUE@EXAMPLE_SUBDIR = example
-@BUILD_TEUCHOS_PYTHON_TRUE@@PYTHON_USE_TRUE@PYTHON_SUBDIR = python
-SUBDIRS = src $(TEST_SUBDIR) $(EXAMPLE_SUBDIR) $(PYTHON_SUBDIR)
+SUBDIRS = src $(TEST_SUBDIR) $(EXAMPLE_SUBDIR)
 TRILINOS_HOME_DIR = @abs_top_srcdir@/../..
 TRILINOS_BUILD_DIR = @abs_top_builddir@/../..
 TRILINOS_TEST_CATEGORY = INSTALL
@@ -362,8 +336,6 @@ Makefile.export: $(top_builddir)/config.status $(srcdir)/Makefile.export.in
 Makefile.export.teuchos: $(top_builddir)/config.status $(srcdir)/Makefile.export.teuchos.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 test/scripts/daily/serial/run-teuchos-tests.pl: $(top_builddir)/config.status $(top_srcdir)/test/scripts/daily/serial/run-teuchos-tests.pl.in
-	cd $(top_builddir) && $(SHELL) ./config.status $@
-python/src/.deps/dummy: $(top_builddir)/config.status $(top_srcdir)/python/src/.deps/dummy.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 uninstall-info-am:
 
@@ -486,7 +458,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/. $(distdir)/config $(distdir)/python/src $(distdir)/python/src/.deps $(distdir)/test/scripts/daily/serial
+	$(mkdir_p) $(distdir)/. $(distdir)/config $(distdir)/test/scripts/daily/serial
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -774,42 +746,6 @@ libs:
 @USING_EXPORT_MAKEFILES_FALSE@install-exec-hook:
 
 @USING_EXPORT_MAKEFILES_FALSE@uninstall-hook:
-
-run-pyexamples:
-	@echo
-	@echo "======================================"
-	@echo "Running the Python/Teuchos examples..."
-	@echo "======================================"
-	@echo
-	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
-	@echo
-	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-	--trilinos-dir=$(TRILINOS_HOME_DIR) \
-	--comm=$(TEUCHOS_CHECK_COMM) \
-	--mpi-go="$(TRILINOS_MPI_GO)" \
-	--build-dir=$(TRILINOS_BUILD_DIR) \
-	--category=TeuchosPyExamples \
-	--output-dir=@abs_top_builddir@/test/runtests-results \
-	--verbosity=1 \
-	--packages=teuchos
-
-run-pytests:
-	@echo
-	@echo "==================================="
-	@echo "Running the Python/Teuchos tests..."
-	@echo "==================================="
-	@echo
-	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
-	@echo
-	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-	--trilinos-dir=$(TRILINOS_HOME_DIR) \
-	--comm=$(TEUCHOS_CHECK_COMM) \
-	--mpi-go="$(TRILINOS_MPI_GO)" \
-	--build-dir=$(TRILINOS_BUILD_DIR) \
-	--category=TeuchosPyTests \
-	--output-dir=@abs_top_builddir@/test/runtests-results \
-	--verbosity=1 \
-	--packages=teuchos
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

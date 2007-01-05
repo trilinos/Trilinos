@@ -305,17 +305,6 @@ AM_CONDITIONAL(BUILD_EXAMPLES, [test "X$ac_cv_use_teuchos_examples" != "Xno"])
 TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
 
 # ------------------------------------------------------------------------
-# Enable optional python wrappers
-# ------------------------------------------------------------------------
-TAC_ARG_ENABLE_FEATURE_SUB( teuchos, python, 
-[Build Teuchos Python wrappers (requires --enable-python, which is NOT set by default)], 
-TEUCHOS_PYTHON, yes)
-
-AM_CONDITIONAL(BUILD_TEUCHOS_PYTHON, test "X$ac_cv_use_teuchos_python" != "Xno")
-
-TAC_ENABLE_PYTHON
-
-# ------------------------------------------------------------------------
 # Specify other directories 
 # ------------------------------------------------------------------------
 
@@ -785,19 +774,12 @@ AC_CONFIG_FILES([
 		example/RefCountPtr/Makefile
 		example/TimeMonitor/Makefile
 		example/XML/Makefile
-		python/Makefile
-		python/src/Makefile
-		python/src/TRILINOS_HOME_DIR
-		python/src/__init__.py
-		python/src/.deps/dummy
-		python/test/Makefile
-		python/example/Makefile
 		])
 
 AC_OUTPUT()
 
 # Bye World!
 #  #np# change package name
-echo "----------------------------------------"
+echo "-----------------------------------------"
 echo "Finished Running Teuchos Configure Script"
-echo "----------------------------------------"
+echo "-----------------------------------------"
