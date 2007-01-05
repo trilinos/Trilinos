@@ -32,9 +32,6 @@
 /* Define if want to build with aztecoo enabled */
 #undef HAVE_AZTECOO_IFPACK
 
-/* Define if want to build aztecoo-python */
-#undef HAVE_AZTECOO_PYTHON
-
 /* Define if want to build aztecoo-tests */
 #undef HAVE_AZTECOO_TESTS
 

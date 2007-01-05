@@ -45,17 +45,3 @@
     DIRS = ../example/UG_Ex1;
     COMM = SERIAL, MPI;
 }
-
-(FRAMEWORK, INSTALL, AztecOOPyTests) {
-    DIRS = ../python/test;
-    ARGS = --testharness;
-    EXIT-STATUS = STRING-COMPARISON;
-    COMM = SERIAL, MPI(1-4);
-}
-
-(FRAMEWORK, INSTALL, AztecOOPyExamples) {
-    DIRS = ../python/example;
-    ARGS = --testharness;
-    EXIT-STATUS = STRING-COMPARISON;
-    COMM = SERIAL, MPI(1-4);
-}
