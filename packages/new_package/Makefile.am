@@ -150,13 +150,7 @@ if BUILD_EXAMPLES
 EXAMPLE_SUBDIR=example
 endif
 
-if PYTHON_USE
-if BUILD_NEW_PACKAGE_PYTHON
-PYTHON_SUBDIR=python
-endif
-endif
-
-SUBDIRS = src $(TEST_SUBDIR) $(EXAMPLE_SUBDIR) $(PYTHON_SUBDIR)
+SUBDIRS = src $(TEST_SUBDIR) $(EXAMPLE_SUBDIR)
 
 ## #######################################################################
 ## The below targets allow you to use the new
@@ -229,39 +223,3 @@ endif
 # 	--output-dir=@abs_top_builddir@/test/runtests-results \
 # 	--verbosity=1 \
 # 	--packages=new_package
-
-run-pyexamples:
-	@echo
-	@echo "=========================================="
-	@echo "Running the Python/New_Package examples..."
-	@echo "=========================================="
-	@echo
-	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
-	@echo
-	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-	--trilinos-dir=$(TRILINOS_HOME_DIR) \
-	--comm=$(NEW_PACKAGE_CHECK_COMM) \
-	--mpi-go="$(TRILINOS_MPI_GO)" \
-	--build-dir=$(TRILINOS_BUILD_DIR) \
-	--category=New_PackagePyExamples \
-	--output-dir=@abs_top_builddir@/test/runtests-results \
-	--verbosity=1 \
-	--packages=new_package
-
-run-pytests:
-	@echo
-	@echo "======================================="
-	@echo "Running the Python/New_Package tests..."
-	@echo "======================================="
-	@echo
-	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
-	@echo
-	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-	--trilinos-dir=$(TRILINOS_HOME_DIR) \
-	--comm=$(NEW_PACKAGE_CHECK_COMM) \
-	--mpi-go="$(TRILINOS_MPI_GO)" \
-	--build-dir=$(TRILINOS_BUILD_DIR) \
-	--category=New_PackagePyTests \
-	--output-dir=@abs_top_builddir@/test/runtests-results \
-	--verbosity=1 \
-	--packages=new_package

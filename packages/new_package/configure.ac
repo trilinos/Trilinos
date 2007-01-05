@@ -269,13 +269,6 @@ AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_new_package_examples" != "Xno")
 TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
 
 # ------------------------------------------------------------------------
-# Enable optional python wrappers
-# ------------------------------------------------------------------------
-TAC_ARG_ENABLE_FEATURE_SUB( new_package, python, [Build New_Package Python wrappers (requires --enable-python, which is NOT set by default)], NEW_PACKAGE_PYTHON, yes)
-AM_CONDITIONAL(BUILD_NEW_PACKAGE_PYTHON, test "X$ac_cv_use_new_package_python" != "Xno")
-TAC_ENABLE_PYTHON
-
-# ------------------------------------------------------------------------
 # Specify other directories 
 # ------------------------------------------------------------------------
 
@@ -374,23 +367,16 @@ AC_CONFIG_FILES([
 		Makefile.export.new_package
 		src/Makefile
 		example/Makefile
-    example/generate-sample-output.pl.stub
+		example/generate-sample-output.pl.stub
 		test/Makefile
 		test/Hello_Test/Makefile
 		test/Jambo_Test/Makefile
-		python/Makefile
-		python/src/Makefile
-		python/src/TRILINOS_HOME_DIR
-		python/src/__init__.py
-		python/src/.deps/dummy
-		python/test/Makefile
-		python/example/Makefile
 		])
 
 AC_OUTPUT()
 
 # Bye World!
 #  #auto np# change package name
-echo "----------------------------------------"
+echo "---------------------------------------------"
 echo "Finished Running New_Package Configure Script"
-echo "----------------------------------------"
+echo "---------------------------------------------"

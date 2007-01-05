@@ -68,9 +68,6 @@
 /* Define if want to build new_package-examples */
 #undef HAVE_NEW_PACKAGE_EXAMPLES
 
-/* Define if want to build new_package-python */
-#undef HAVE_NEW_PACKAGE_PYTHON
-
 /* Define if want to build new_package-tests */
 #undef HAVE_NEW_PACKAGE_TESTS
 
