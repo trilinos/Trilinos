@@ -8,16 +8,3 @@
     COMM = SERIAL, MPI;
 #    COMM = SERIAL;
 }
-
-(FRAMEWORK, INSTALL, TriutilsPyTests) {
-    DIRS = ../python/test;
-    ARGS = --testharness;
-    EXIT-STATUS = STRING-COMPARISON;
-    COMM = SERIAL, MPI(1-4);
-}
-
-(FRAMEWORK, INSTALL, TriutilsPyExamples) {
-    DIRS = ../python/example;
-    ARGS = --testharness;
-    COMM = SERIAL, MPI(1-4);
-}

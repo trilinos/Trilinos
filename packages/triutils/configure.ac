@@ -213,13 +213,6 @@ AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_triutils_tests" != "Xno")
 TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
 
 # ------------------------------------------------------------------------
-# Enable optional python wrappers
-# ------------------------------------------------------------------------
-TAC_ARG_ENABLE_FEATURE_SUB( triutils, python, [Build TriUtils Python wrappers (requires --enable-python, which is NOT set by default)], TRIUTILS_PYTHON, yes)
-AM_CONDITIONAL(BUILD_TRIUTILS_PYTHON, test "X$ac_cv_use_triutils_python" != "Xno")
-TAC_ENABLE_PYTHON
-
-# ------------------------------------------------------------------------
 # Specify other directories 
 # ------------------------------------------------------------------------
 
@@ -318,18 +311,11 @@ AC_CONFIG_FILES([
 		src/Makefile
 		test/Makefile
 		test/Read/Makefile
-                python/Makefile
-                python/src/Makefile
-                python/src/TRILINOS_HOME_DIR
-                python/src/__init__.py
-                python/src/.deps/dummy
-		python/test/Makefile
-		python/example/Makefile
                 ])
 
 AC_OUTPUT()
 
 # Bye World!
-echo "----------------------------------------"
+echo "------------------------------------------"
 echo "Finished Running Triutils Configure Script"
-echo "----------------------------------------"
+echo "------------------------------------------"

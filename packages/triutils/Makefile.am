@@ -43,7 +43,6 @@ EXTRA_DIST = config/generate-makeoptions.pl \
        config/strip_dup_incl_paths.pl config/strip_dup_libs.pl \
        config/replace-install-prefix.pl config/string-replace.pl
 
-
 ## #######################################################################
 ## Tools in the auxillary directory 
 ## #######################################################################
@@ -69,13 +68,7 @@ if BUILD_TESTS
 TEST_SUBDIR=test
 endif
 
-if PYTHON_USE
-if BUILD_TRIUTILS_PYTHON
-PYTHON_SUBDIR=python
-endif
-endif
-
-SUBDIRS = src $(TEST_SUBDIR) $(PYTHON_SUBDIR)
+SUBDIRS = src $(TEST_SUBDIR)
 
 ## #######################################################################
 ## Target for circular dependencies
@@ -99,42 +92,6 @@ TRIUTILS_CHECK_COMM=mpi
 else
 TRIUTILS_CHECK_COMM=serial
 endif
-
-run-pytests:
-	@echo
-	@echo "===================================="
-	@echo "Running the Python/Triutils tests..."
-	@echo "===================================="
-	@echo
-	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
-	@echo
-	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-	--trilinos-dir=$(TRILINOS_HOME_DIR) \
-	--comm=$(TRIUTILS_CHECK_COMM) \
-	--mpi-go="$(TRILINOS_MPI_GO)" \
-	--build-dir=$(TRILINOS_BUILD_DIR) \
-	--category=TriutilsPyTests \
-	--output-dir=@abs_top_builddir@/test/runtests-results \
-	--verbosity=1 \
-	--packages=triutils
-
-run-pyexamples:
-	@echo
-	@echo "======================================="
-	@echo "Running the Python/Triutils examples..."
-	@echo "======================================="
-	@echo
-	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
-	@echo
-	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-	--trilinos-dir=$(TRILINOS_HOME_DIR) \
-	--comm=$(TRIUTILS_CHECK_COMM) \
-	--mpi-go="$(TRILINOS_MPI_GO)" \
-	--build-dir=$(TRILINOS_BUILD_DIR) \
-	--category=TriutilsPyExamples \
-	--output-dir=@abs_top_builddir@/test/runtests-results \
-	--verbosity=1 \
-	--packages=triutils
 
 ## #######################################################################
 ## Export Makefile Installation

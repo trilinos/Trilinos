@@ -64,10 +64,9 @@ POST_UNINSTALL = :
 host_triplet = @host@
 DIST_COMMON = $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.export.triutils.in $(srcdir)/Makefile.in \
-	$(top_srcdir)/configure \
-	$(top_srcdir)/python/src/.deps/dummy.in config/config.guess \
-	config/config.sub config/depcomp config/install-sh \
-	config/missing config/mkinstalldirs
+	$(top_srcdir)/configure config/config.guess config/config.sub \
+	config/depcomp config/install-sh config/missing \
+	config/mkinstalldirs
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
@@ -76,15 +75,12 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/ac_cxx_namespaces.m4 \
 	$(top_srcdir)/config/ac_cxx_new_for_scoping.m4 \
 	$(top_srcdir)/config/ac_cxx_std_sprintf.m4 \
-	$(top_srcdir)/config/ac_pkg_swig.m4 \
 	$(top_srcdir)/config/acx_blas.m4 \
-	$(top_srcdir)/config/az_python.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_enable_compiler_options.m4 \
 	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
-	$(top_srcdir)/config/tac_arg_enable_feature_sub.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub_check.m4 \
 	$(top_srcdir)/config/tac_arg_with_ar.m4 \
 	$(top_srcdir)/config/tac_arg_with_blaslib.m4 \
@@ -93,7 +89,6 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/tac_arg_with_libdirs.m4 \
 	$(top_srcdir)/config/tac_arg_with_libs.m4 \
 	$(top_srcdir)/config/tac_arg_with_perl.m4 \
-	$(top_srcdir)/config/tac_enable_python.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -101,7 +96,7 @@ am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno configure.status.lineno
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Triutils_config.h
-CONFIG_CLEAN_FILES = Makefile.export.triutils python/src/.deps/dummy
+CONFIG_CLEAN_FILES = Makefile.export.triutils
 SOURCES =
 DIST_SOURCES =
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
@@ -112,7 +107,7 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	uninstall-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = src test python
+DIST_SUBDIRS = src test
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -134,12 +129,8 @@ AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
 BLAS_LIBS = @BLAS_LIBS@
-BUILD_PYTHON_FALSE = @BUILD_PYTHON_FALSE@
-BUILD_PYTHON_TRUE = @BUILD_PYTHON_TRUE@
 BUILD_TESTS_FALSE = @BUILD_TESTS_FALSE@
 BUILD_TESTS_TRUE = @BUILD_TESTS_TRUE@
-BUILD_TRIUTILS_PYTHON_FALSE = @BUILD_TRIUTILS_PYTHON_FALSE@
-BUILD_TRIUTILS_PYTHON_TRUE = @BUILD_TRIUTILS_PYTHON_TRUE@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
@@ -159,12 +150,9 @@ EXEEXT = @EXEEXT@
 F77 = @F77@
 FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
-GNU_HAVE_SWIG = @GNU_HAVE_SWIG@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
 HAVE_PERL = @HAVE_PERL@
-HAVE_SWIG_FALSE = @HAVE_SWIG_FALSE@
-HAVE_SWIG_TRUE = @HAVE_SWIG_TRUE@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
@@ -191,21 +179,10 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PERL_EXE = @PERL_EXE@
-PYTHON = @PYTHON@
-PYTHON_CSPEC = @PYTHON_CSPEC@
-PYTHON_EXECPREFIX = @PYTHON_EXECPREFIX@
-PYTHON_LSPEC = @PYTHON_LSPEC@
-PYTHON_PREFIX = @PYTHON_PREFIX@
-PYTHON_USE_FALSE = @PYTHON_USE_FALSE@
-PYTHON_USE_TRUE = @PYTHON_USE_TRUE@
 RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
-SWIG = @SWIG@
-SWIG_LIB = @SWIG_LIB@
-SWIG_PYTHON_CPPFLAGS = @SWIG_PYTHON_CPPFLAGS@
-SWIG_PYTHON_OPT = @SWIG_PYTHON_OPT@
 TRILINOS_TEMPLATE_OBJS = @TRILINOS_TEMPLATE_OBJS@
 USE_ALTERNATE_AR_FALSE = @USE_ALTERNATE_AR_FALSE@
 USE_ALTERNATE_AR_TRUE = @USE_ALTERNATE_AR_TRUE@
@@ -216,7 +193,6 @@ USING_GNUMAKE_TRUE = @USING_GNUMAKE_TRUE@
 USING_PERL_FALSE = @USING_PERL_FALSE@
 USING_PERL_TRUE = @USING_PERL_TRUE@
 VERSION = @VERSION@
-WITH_SWIG = @WITH_SWIG@
 XTRALDADD = @XTRALDADD@
 ac_aux_dir = @ac_aux_dir@
 ac_ct_CC = @ac_ct_CC@
@@ -275,8 +251,7 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 	$(AUX_DIST) 
 
 @BUILD_TESTS_TRUE@TEST_SUBDIR = test
-@BUILD_TRIUTILS_PYTHON_TRUE@@PYTHON_USE_TRUE@PYTHON_SUBDIR = python
-SUBDIRS = src $(TEST_SUBDIR) $(PYTHON_SUBDIR)
+SUBDIRS = src $(TEST_SUBDIR)
 TRILINOS_HOME_DIR = @abs_top_srcdir@/../..
 TRILINOS_BUILD_DIR = @abs_top_builddir@/../..
 @HAVE_MPI_FALSE@TRIUTILS_CHECK_COMM = serial
@@ -318,8 +293,6 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(srcdir) && $(ACLOCAL) $(ACLOCAL_AMFLAGS)
 Makefile.export.triutils: $(top_builddir)/config.status $(srcdir)/Makefile.export.triutils.in
-	cd $(top_builddir) && $(SHELL) ./config.status $@
-python/src/.deps/dummy: $(top_builddir)/config.status $(top_srcdir)/python/src/.deps/dummy.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 uninstall-info-am:
 
@@ -442,7 +415,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/. $(distdir)/config $(distdir)/python/src $(distdir)/python/src/.deps
+	$(mkdir_p) $(distdir)/. $(distdir)/config
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -690,42 +663,6 @@ all-libs:
 
 libs:
 	cd src ; $(MAKE)
-
-run-pytests:
-	@echo
-	@echo "===================================="
-	@echo "Running the Python/Triutils tests..."
-	@echo "===================================="
-	@echo
-	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
-	@echo
-	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-	--trilinos-dir=$(TRILINOS_HOME_DIR) \
-	--comm=$(TRIUTILS_CHECK_COMM) \
-	--mpi-go="$(TRILINOS_MPI_GO)" \
-	--build-dir=$(TRILINOS_BUILD_DIR) \
-	--category=TriutilsPyTests \
-	--output-dir=@abs_top_builddir@/test/runtests-results \
-	--verbosity=1 \
-	--packages=triutils
-
-run-pyexamples:
-	@echo
-	@echo "======================================="
-	@echo "Running the Python/Triutils examples..."
-	@echo "======================================="
-	@echo
-	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
-	@echo
-	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-	--trilinos-dir=$(TRILINOS_HOME_DIR) \
-	--comm=$(TRIUTILS_CHECK_COMM) \
-	--mpi-go="$(TRILINOS_MPI_GO)" \
-	--build-dir=$(TRILINOS_BUILD_DIR) \
-	--category=TriutilsPyExamples \
-	--output-dir=@abs_top_builddir@/test/runtests-results \
-	--verbosity=1 \
-	--packages=triutils
 
 @USING_EXPORT_MAKEFILES_TRUE@install-exec-hook:	
 @USING_EXPORT_MAKEFILES_TRUE@	cp $(top_builddir)/Makefile.export.triutils $(exec_prefix)/include/.
