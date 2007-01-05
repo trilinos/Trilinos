@@ -73,7 +73,7 @@ all-local:
 ## #######################################################################
 
 SUBDIRS = doc src src-lapack src-epetra src-petsc src-belos \
-	  src-loca test examples python
+	  src-loca test examples
 
 ## #######################################################################
 ## Documentation

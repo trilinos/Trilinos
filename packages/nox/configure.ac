@@ -603,65 +603,6 @@ AM_CONDITIONAL(BUILD_EPETRA_MULTIPHYSICS, true)
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(nox, ml, NOX_ML_EPETRA, BUILD_NOX_EPETRA_ML_SUPPORT, yes, [Build ml support into the noxepetra library.], [Implicitly build ml support into the noxepetra library.  Can be overridden with --<en|dis>able-nox-ml.])
 
 # ------------------------------------------------------------------------
-# NOX/LOCA-Python Check.
-# ------------------------------------------------------------------------
-# RPP: 11/30/2005 - disabling all python in NOX.  The refactor from
-# last month added smart pointers that phyton currently can't handle.
-# Until Bill Spotz fixes this for Trilinos in general, we can't
-# support python.  
-# BUILD_NOX_PYTHON=no
-
-TAC_ENABLE_PYTHON
-
- Separate builds for loca and nox
-AC_ARG_ENABLE(nox-python,
-[AC_HELP_STRING([--disable-nox-python],[Used ONLY to disable the python support in nox.  It cannot be used to enable python support.  Use the flag --enable-python to enable support.])],
-[
-  BUILD_NOX_PYTHON=${enableval}
-  if test X${BUILD_NOX_PYTHON} != Xno; then
-    echo "*****************************"
-    echo "NOX Configure ERROR - the flag \"--enable-nox-python\" is not"
-    echo "allowed!  To enable python support in nox, use --enable-python."
-    echo "The flag \"--disable-nox-python\" is allowed to specifically"
-    echo "disable nox python support while allowing python support in"
-    echo "other Trilinos packages."
-    echo "*****************************"
-    AC_MSG_ERROR([The flag \"--enable-nox-python\" is not allowed.])
-  fi
-],
-[
-  AC_ARG_ENABLE(python,
-  [],
-  [BUILD_NOX_PYTHON=${enableval}],
-  [BUILD_NOX_PYTHON=no]
-  )
-]
-)
-
-if test X${BUILD_NOX_PYTHON} = Xyes && test X${BUILD_LOCA} = Xyes; then
-  ## RPP: For now we have completely disabled python support in loca
-  ##BUILD_LOCA_PYTHON=yes
-  BUILD_LOCA_PYTHON=no
-else
-  BUILD_LOCA_PYTHON=no
-fi
-AM_CONDITIONAL(BUILD_NOX_PYTHON, test X${BUILD_NOX_PYTHON} = Xyes)
-AM_CONDITIONAL(BUILD_LOCA_PYTHON, test X${BUILD_LOCA_PYTHON} = Xyes)
-
-# Determine which addon libraries to support in Python
-IMPORT_LAPACK=0
-if test X${BUILD_PYTHON} = Xyes && test X${ADDON_lapack} = Xyes; then
-  IMPORT_LAPACK=1
-fi
-AC_SUBST(IMPORT_LAPACK)
-
-IMPORT_EPETRA=0
-if test X${BUILD_PYTHON} = Xyes && test X${ADDON_epetra} = Xyes; then
-  IMPORT_EPETRA=1
-fi
-AC_SUBST(IMPORT_EPETRA)
-
-# ------------------------------------------------------------------------
 # User defined directories 
 # ------------------------------------------------------------------------
 # enable use of --with-incdirs="-Lincdir1 -Lincdir2 ..." to prepend to CPPFLAGS
@@ -969,29 +910,6 @@ AC_CONFIG_FILES([
                 test/epetra/Brusselator/Makefile
                 test/epetra/FiniteDifferenceColoring/Makefile
                 test/petsc/Makefile
-		python/Makefile
-		python/src/Makefile
-		python/src/TRILINOS_HOME_DIR
-		python/src/.deps/dummy
-		python/src/PyTrilinos/__init__.py
-		python/src/PyTrilinos/NOX/Epetra/.dummy
-		python/src/PyTrilinos/NOX/LAPACK/.dummy
-		python/test/Makefile
-		python/test-epetra/Makefile
-		python/test-lapack/Makefile
-		python/example-epetra/Makefile
-		python/example-lapack/Makefile
-		python/src-loca/Makefile
-		python/src-loca/src/Makefile
-		python/src-loca/src/TRILINOS_HOME_DIR
-		python/src-loca/src/__init__.py
-		python/src-loca/src/.deps/dummy
-		python/src-loca/src/PyTrilinos/__init__.py
-		python/src-loca/test/Makefile
-		python/src-loca/test-epetra/Makefile
-		python/src-loca/test-lapack/Makefile
-		python/src-loca/example-epetra/Makefile
-		python/src-loca/example-lapack/Makefile
 		])
 
 AC_OUTPUT
@@ -1003,8 +921,3 @@ AC_OUTPUT
 echo "------------------------------------------"
 echo "Finished Running NOX Configure Script"
 echo "------------------------------------------"
-
-
-#		python/src/__init__.py
-#		python/src/Epetra/__init__.py
-#		python/src/LAPACK/__init__.py
