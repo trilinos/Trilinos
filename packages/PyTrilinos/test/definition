@@ -16,9 +16,3 @@
     EXIT-STATUS = STRING-COMPARISON;
     COMM = SERIAL, MPI(1-4);
 }
-
-ml
-nox
-teuchos
-thyra
-triutils

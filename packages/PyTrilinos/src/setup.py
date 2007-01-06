@@ -50,7 +50,7 @@ modules = [
            "Anasazi",
            "ML",
            "NOX",
-           "LOCA",
+           #"LOCA",
            ]
 
 # System imports
@@ -66,7 +66,8 @@ from   PyTrilinosExtension import *
 import SharedUtils
 
 # Build the __init__.py file
-def buildInitFile(pyTrilinosModules,filename,depfile):
+def buildInitFile(filename,depfile,pyTrilinosModules,
+                  pyTrilinosVersion,trilinosVersion):
     build = False
     if os.path.isfile(filename):
         if os.path.getmtime(filename) < os.path.getmtime(depfile):
@@ -79,7 +80,12 @@ def buildInitFile(pyTrilinosModules,filename,depfile):
         for module in pyTrilinosModules:
             print "   ", module
         print
-        open(filename,"w").write("__all__ = %s\n" % str(pyTrilinosModules))
+        content = """
+__all__ = %s
+__version__ = '%s'
+def version(): return 'Trilinos version: %s\\nPyTrilinos version: ' + __version__
+        """ % (str(pyTrilinosModules), pyTrilinosVersion, trilinosVersion)
+        open(filename,"w").write(content)
 
 # Main script
 if __name__ == "__main__":
@@ -98,15 +104,19 @@ if __name__ == "__main__":
     enabledModules     = [module for module in modules
                           if trilinosExport.has_key("ENABLE_" + module.upper())]
 
+    # Determine the Trilinos version
+    trilinosVersion = processMakefile(os.path.join("..","..","..","Makefile"))["PACKAGE_VERSION"]
+
     # Determine the installation prefix
     print "Extracting Makefile variables ...",
     sys.stdout.flush()
     makeMacros = processMakefile("Makefile")
     print "done"
-    prefix     = makeMacros["PYTHON_PREFIX"]
-    pyVersion  = "python%d.%d" % sys.version_info[:2]
-    installDir = os.path.join(prefix, "lib", pyVersion, "site-packages",
-                              "PyTrilinos")
+    prefix            = makeMacros["PYTHON_PREFIX"]
+    pyTrilinosVersion = makeMacros["PACKAGE_VERSION"]
+    pyVersion         = "python%d.%d" % sys.version_info[:2]
+    installDir        = os.path.join(prefix, "lib", pyVersion, "site-packages",
+                                     "PyTrilinos")
 
     ######################################################
     # Build/clean/install/uninstall the shared libraries #
@@ -156,7 +166,8 @@ if __name__ == "__main__":
     # Build command
     if command == "build":
         # Build the init file
-        buildInitFile(enabledModules,initFileName,trilinosExportFile)
+        buildInitFile(initFileName,trilinosExportFile,enabledModules,
+                      pyTrilinosVersion,trilinosVersion)
 
     # Clean command
     elif command == "clean":
@@ -205,7 +216,7 @@ if __name__ == "__main__":
     # Call the distutils setup function.  This defines the PyTrilinos package to
     # distutils and distutils takes over from here.
     setup(name         = "PyTrilinos",
-          version      = 4.0,
+          version      = pyTrilinosVersion,
           description  = "Python interface to Trilinos",
           author       = "Bill Spotz",
           author_email = "wfspotz@sandia.gov",
