@@ -744,42 +744,6 @@ runtests-mpi :
   --verbosity=1 \
   --packages=anasazi
 
-run-pytests:
-	@echo
-	@echo "==================================="
-	@echo "Running the Python/Anasazi tests..."
-	@echo "==================================="
-	@echo
-	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
-	@echo
-	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-	--trilinos-dir=$(TRILINOS_HOME_DIR) \
-	--comm=$(ANASAZI_CHECK_COMM) \
-	--mpi-go="$(TRILINOS_MPI_GO)" \
-	--build-dir=$(TRILINOS_BUILD_DIR) \
-	--category=AnasaziPyTests \
-	--output-dir=@abs_top_builddir@/test/runtests-results \
-	--verbosity=1 \
-	--packages=anasazi
-
-run-pyexamples:
-	@echo
-	@echo "======================================"
-	@echo "Running the Python/Anasazi examples..."
-	@echo "======================================"
-	@echo
-	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
-	@echo
-	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-	--trilinos-dir=$(TRILINOS_HOME_DIR) \
-	--comm=$(ANASAZI_CHECK_COMM) \
-	--mpi-go="$(TRILINOS_MPI_GO)" \
-	--build-dir=$(TRILINOS_BUILD_DIR) \
-	--category=AnasaziPyExamples \
-	--output-dir=@abs_top_builddir@/test/runtests-results \
-	--verbosity=1 \
-	--packages=anasazi
-
 @USING_EXPORT_MAKEFILES_TRUE@install-exec-hook:	
 @USING_EXPORT_MAKEFILES_TRUE@	cp $(top_builddir)/Makefile.export.anasazi $(exec_prefix)/include/.
 @USING_EXPORT_MAKEFILES_TRUE@	$(PERL_EXE) $(top_srcdir)/config/replace-install-prefix.pl \
