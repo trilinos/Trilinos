@@ -32,19 +32,19 @@
 
 %{
 // LOCA includes
-#include "LOCA_Bifurcation_TPBord_AbstractGroup.H"
-#include "LOCA_Bifurcation_TPBord_FiniteDifferenceGroup.H"
-#include "LOCA_Bifurcation_TPBord_SingularSolveGroup.H"
-#include "LOCA_Bifurcation_HopfBord_AbstractGroup.H"
-#include "LOCA_Bifurcation_HopfBord_FiniteDifferenceGroup.H"
+//#include "LOCA_Bifurcation_TPBord_AbstractGroup.H"
+//#include "LOCA_Bifurcation_TPBord_FiniteDifferenceGroup.H"
+//#include "LOCA_Bifurcation_TPBord_SingularSolveGroup.H"
+//#include "LOCA_Bifurcation_HopfBord_AbstractGroup.H"
+//#include "LOCA_Bifurcation_HopfBord_FiniteDifferenceGroup.H"
 #include "LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.H"
 #include "LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.H"
 #include "LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.H"
 #include "LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.H"
 #include "LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.H"
 
-// Extra includes due to importing LOCA_Continuation.i below
-#include "LOCA_Continuation_FiniteDifferenceGroup.H"
+// Extra includes due to importing LOCA.Continuation.i below
+//#include "LOCA_Continuation_FiniteDifferenceGroup.H"
 #include "LOCA_Continuation_StatusTest_ParameterResidualNorm.H"
 #include "LOCA_Continuation_StatusTest_ParameterUpdateNorm.H"
 
@@ -62,7 +62,6 @@
 %ignore operator=;
 %rename(Print) *::print(ostream& stream, int indent = 0) const;
 
-
 // Flatten out nested namespaces
 %rename(TPBordAbstractGroup) LOCA::Bifurcation::TPBord::AbstractGroup;
 %rename(TPBordFiniteDifferenceGroup) LOCA::Bifurcation::TPBord::FiniteDifferenceGroup;
@@ -76,15 +75,15 @@
 %rename(PitchforkBordSlackUpdateNorm) LOCA::Bifurcation::PitchforkBord::StatusTest::SlackUpdateNorm;
 
 // Import base class declarations
-%import "LOCA_Continuation.i"
-%import "LOCA_TimeDependent.i"
+%import "LOCA.Continuation.i"
+%import "LOCA.TimeDependent.i"
 
 // LOCA interface includes
-%include "LOCA_Bifurcation_TPBord_AbstractGroup.H"
-%include "LOCA_Bifurcation_TPBord_FiniteDifferenceGroup.H"
-%include "LOCA_Bifurcation_TPBord_SingularSolveGroup.H"
-%include "LOCA_Bifurcation_HopfBord_AbstractGroup.H"
-%include "LOCA_Bifurcation_HopfBord_FiniteDifferenceGroup.H"
+//%include "LOCA_Bifurcation_TPBord_AbstractGroup.H"
+//%include "LOCA_Bifurcation_TPBord_FiniteDifferenceGroup.H"
+//%include "LOCA_Bifurcation_TPBord_SingularSolveGroup.H"
+//%include "LOCA_Bifurcation_HopfBord_AbstractGroup.H"
+//%include "LOCA_Bifurcation_HopfBord_FiniteDifferenceGroup.H"
 %include "LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.H"
 %include "LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.H"
 %include "LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.H"

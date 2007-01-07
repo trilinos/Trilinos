@@ -32,12 +32,12 @@
 
 %{
 // LOCA includes
-#include "LOCA_Continuation_AbstractGroup.H"
-#include "LOCA_Continuation_FiniteDifferenceGroup.H"
+//#include "LOCA_Continuation_AbstractGroup.H"
+//#include "LOCA_Continuation_FiniteDifferenceGroup.H"
 #include "LOCA_Continuation_StatusTest_ParameterResidualNorm.H"
 #include "LOCA_Continuation_StatusTest_ParameterUpdateNorm.H"
 
-// Extra includes due to importing Abstract.i, StatusTest.i below
+// NOX includes
 #include "NOX_StatusTest_Generic.H"
 #include "NOX_StatusTest_Combo.H"
 #include "NOX_StatusTest_NormF.H"
@@ -57,7 +57,7 @@
 %import "NOX_StatusTest_Generic.H"
 
 // LOCA interface includes
-%include "LOCA_Continuation_AbstractGroup.H"
-%include "LOCA_Continuation_FiniteDifferenceGroup.H"
+//%include "LOCA_Continuation_AbstractGroup.H"
+//%include "LOCA_Continuation_FiniteDifferenceGroup.H"
 %include "LOCA_Continuation_StatusTest_ParameterResidualNorm.H"
 %include "LOCA_Continuation_StatusTest_ParameterUpdateNorm.H"

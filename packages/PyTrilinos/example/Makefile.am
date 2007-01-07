@@ -57,12 +57,12 @@ if HAVE_PYTRILINOS_TEUCHOS
 TEUCHOS_EXAMPLES = 
 endif
 
-# Thyra examples
-if HAVE_PYTRILINOS_THYRA
-if HAVE_PYTRILINOS_EPETRA
-THYRA_EXAMPLES = exThyra
-endif
-endif
+# # Thyra examples
+# if HAVE_PYTRILINOS_THYRA
+# if HAVE_PYTRILINOS_EPETRA
+# THYRA_EXAMPLES = exThyra
+# endif
+# endif
 
 # Epetra examples
 if HAVE_PYTRILINOS_EPETRA

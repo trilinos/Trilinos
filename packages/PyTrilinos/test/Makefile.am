@@ -57,9 +57,9 @@ if HAVE_PYTRILINOS_TEUCHOS
 TEUCHOS_TESTS = testTeuchos testTeuchos_ParameterList
 endif
 
-if HAVE_PYTRILINOS_THYRA
-THYRA_TESTS = testThyra
-endif
+# if HAVE_PYTRILINOS_THYRA
+# THYRA_TESTS = testThyra
+# endif
 
 if HAVE_PYTRILINOS_EPETRA
 EPETRA_TESTS = testEpetra_BlockMap testEpetra_Comm testEpetra_CompObject \

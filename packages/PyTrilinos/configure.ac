@@ -57,10 +57,10 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(pytrilinos, teuchos, PYTRILINOS_TEUCHOS,
        [Build python interface to teuchos.],
        [Build python interface to teuchos.  Can be overridden with --disable-pytrilinos-teuchos.])
 
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(pytrilinos, thyra, PYTRILINOS_THYRA,
-       HAVE_PYTRILINOS_THYRA, yes,
-       [Build python interface to thyra.],
-       [Build python interface to thyra.  Can be overridden with --disable-pytrilinos-thyra.])
+#TAC_ARG_ENABLE_CAN_USE_PACKAGE(pytrilinos, thyra, PYTRILINOS_THYRA,
+#       HAVE_PYTRILINOS_THYRA, yes,
+#       [Build python interface to thyra.],
+#       [Build python interface to thyra.  Can be overridden with --disable-pytrilinos-thyra.])
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(pytrilinos, epetra, PYTRILINOS_EPETRA,
        HAVE_PYTRILINOS_EPETRA, yes,
@@ -122,13 +122,12 @@ TAC_ARG_ENABLE_FEATURE_SUB(nox, epetra,
        PYTRILINOS_NOX_EPETRA, no)
 AM_CONDITIONAL(HAVE_PYTRILINOS_NOX_EPETRA, test "X$ac_cv_use_nox_epetra" = "Xyes")
 
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(pytrilinos, loca, PYTRILINOS_LOCA,
-       HAVE_PYTRILINOS_LOCA, yes,
-       [Build python interface to loca.],
-       [Build python interface to loca.  Can be overridden with --disable-pytrilinos-loca.])
+#TAC_ARG_ENABLE_CAN_USE_PACKAGE(pytrilinos, loca, PYTRILINOS_LOCA,
+#       HAVE_PYTRILINOS_LOCA, yes,
+#       [Build python interface to loca.],
+#       [Build python interface to loca.  Can be overridden with --disable-pytrilinos-loca.])
 
 # Configure should create src/PyTrilinos_config.h from src/PyTrilinos_config.h.in
-
 AM_CONFIG_HEADER(src/PyTrilinos_config.h:src/PyTrilinos_config.h.in)
 
 # Allow users to specify their own "install" command.  If none is specified,

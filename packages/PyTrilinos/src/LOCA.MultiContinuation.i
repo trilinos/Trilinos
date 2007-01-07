@@ -35,7 +35,7 @@
 #include "LOCA_MultiContinuation_AbstractGroup.H"
 #include "LOCA_MultiContinuation_FiniteDifferenceGroup.H"
 
-// Extra includes due to importing LOCA_Continuation.i below
+// Extra includes due to importing LOCA.Continuation.i below
 #include "LOCA_Continuation_FiniteDifferenceGroup.H"
 %}
 
@@ -43,7 +43,7 @@
 %ignore *::operator=;
 
 // Import base class declarations
-%import "LOCA_Continuation.i"
+%import "LOCA.Continuation.i"
 
 // LOCA interface includes
 %include "LOCA_MultiContinuation_AbstractGroup.H"

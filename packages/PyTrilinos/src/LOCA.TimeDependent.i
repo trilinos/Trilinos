@@ -42,7 +42,7 @@
 %ignore *::operator=;
 
 // Import base class declarations
-%import "LOCA_Continuation.i"
+%import "LOCA.Continuation.i"
 
 // LOCA interface includes
 %include "LOCA_TimeDependent_AbstractGroup.H"

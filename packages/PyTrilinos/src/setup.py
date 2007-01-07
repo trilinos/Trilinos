@@ -50,7 +50,7 @@ modules = [
            "Anasazi",
            "ML",
            "NOX",
-           #"LOCA",
+           "LOCA",
            ]
 
 # System imports
@@ -98,20 +98,20 @@ if __name__ == "__main__":
     if command not in ("build","install","clean","uninstall"):
         raise RuntimeError, "Command '%s' not supported" % command
 
+    # Extract the Makefile variables
+    print "\nExtracting Makefile variables ...",
+    sys.stdout.flush()
+    makeMacros = processMakefile("Makefile")
+    print "done"
+
     # Determine what packages are enabled
-    trilinosExportFile = os.path.join("..","..","..","Makefile.export.trilinos")
-    trilinosExport     = processMakefile(trilinosExportFile)
     enabledModules     = [module for module in modules
-                          if trilinosExport.has_key("ENABLE_" + module.upper())]
+                          if makeMacros["ENABLE_" + module.upper()] == "true"]
 
     # Determine the Trilinos version
     trilinosVersion = processMakefile(os.path.join("..","..","..","Makefile"))["PACKAGE_VERSION"]
 
     # Determine the installation prefix
-    print "Extracting Makefile variables ...",
-    sys.stdout.flush()
-    makeMacros = processMakefile("Makefile")
-    print "done"
     prefix            = makeMacros["PYTHON_PREFIX"]
     pyTrilinosVersion = makeMacros["PACKAGE_VERSION"]
     pyVersion         = "python%d.%d" % sys.version_info[:2]
@@ -128,7 +128,7 @@ if __name__ == "__main__":
         builders = [ ]
         for module in enabledModules:
             builders.append(SharedUtils.SharedTrilinosBuilder(module))
-        if makeMacros["HAVE_PYTRILINOS_NOX_EPETRA_TRUE"] == "":
+        if makeMacros["ENABLE_NOX_EPETRA"] == "true":
             noxEpetraBuilder = SharedUtils.SharedTrilinosBuilder("NoxEpetra")
             builders.append(noxEpetraBuilder)
 
@@ -166,8 +166,8 @@ if __name__ == "__main__":
     # Build command
     if command == "build":
         # Build the init file
-        buildInitFile(initFileName,trilinosExportFile,enabledModules,
-                      pyTrilinosVersion,trilinosVersion)
+        buildInitFile(initFileName, "Makefile", enabledModules,
+                      pyTrilinosVersion, trilinosVersion)
 
     # Clean command
     elif command == "clean":
@@ -179,7 +179,8 @@ if __name__ == "__main__":
     # Install command
     elif command == "install":
         # Build the init file, if needed
-        buildInitFile(enabledModules,initFileName,trilinosExportFile)
+        buildInitFile(initFileName, "Makefile", enabledModules,
+                      pyTrilinosVersion, trilinosVersion)
         # Install
         print "installing", initFileName, "->", installDir
         try:

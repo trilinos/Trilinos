@@ -166,11 +166,13 @@ def main():
         if package:
             if pyt in package: package.remove(pyt)
             pkgName = package[0].lower()
-            exportMakefile = os.path.join("..","..",pkgName,
-                                          "Makefile.export."+pkgName)
+            parentPkgName = pkgName
+            if parentPkgName == "loca": parentPkgName = "nox"
+            exportMakefile = os.path.join("..","..",parentPkgName,
+                                          "Makefile.export."+parentPkgName)
             if os.path.isfile(exportMakefile):
                 vars = processMakefile(exportMakefile)
-                name = pkgName.upper()+"_INCLUDES"
+                name = pkgName.upper() + "_INCLUDES"
                 if vars.has_key(name):
                     print vars[name]
 

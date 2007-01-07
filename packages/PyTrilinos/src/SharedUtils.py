@@ -125,7 +125,11 @@ class SharedTrilinosBuilder:
         self.__libPathVar   = self.getLibPathVarName()
         self.__libOption    = "-l"  + self.__packageLower
         self.__dylibName    = self.getDylibName()
-        if self.__packageLower == "noxepetra":
+        if self.__packageLower == "loca":
+            self.__topBuildDir  = os.path.join("..", "..", "nox")
+            self.__buildDir     = os.path.join(self.__topBuildDir, "src-loca",
+                                               "src")
+        elif self.__packageLower == "noxepetra":
             self.__topBuildDir  = os.path.join("..", "..", "nox")
             self.__buildDir     = os.path.join(self.__topBuildDir, "src-epetra")
         else:
