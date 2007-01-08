@@ -3930,7 +3930,7 @@ int ML_Smoother_ComputeOmegaViaSpectralradius(ML_Operator *Amat,
                                  Amat->outvec_leng, NULL,0);
    ML_Operator_Set_ApplyFunc (EyeMinusItOperator, ML_EyeMinusIterationOperator_Matvec);
 
-   ML_Gimmie_Eigenvalues(EyeMinusItOperator, ML_NO_SCALE, ML_NONSYMM, ML_NO_SYMMETRIZE);
+   ML_Gimmie_Eigenvalues(EyeMinusItOperator, ML_NO_SCALE, ML_USE_POWER, ML_NO_SYMMETRIZE);
    *spectral_radius = EyeMinusItOperator->lambda_max;
 
    lambda_lowest = *spectral_radius/1.2;
