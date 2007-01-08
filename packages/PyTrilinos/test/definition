@@ -3,14 +3,14 @@
 #
 
 (FRAMEWORK, INSTALL, PyTrilinos_Tests) {
-    DIR  = .;
+    DIRS  = .;
     ARGS = --testharness;
     EXIT-STATUS = STRING-COMPARISON;
     COMM = SERIAL, MPI(1-4);
 }
 
 (FRAMEWORK, INSTALL, PyTrilinos_Examples) {
-    DIR  = ../example;
+    DIRS  = ../example;
     DESCEND_DIRS = YES;
     ARGS = --testharness;
     EXIT-STATUS = STRING-COMPARISON;

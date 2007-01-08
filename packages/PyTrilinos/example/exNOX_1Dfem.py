@@ -322,9 +322,9 @@ def main():
     # Summarize the test results
     if myPID == 0:
         if status == 0:
-            print "Test passed!"
+            print "End Result: TEST PASSED"
         else:
-            print "Test failed!"
+            print "End Result: TEST FAILED"
 
     # Plot the results
     if options.plot:
