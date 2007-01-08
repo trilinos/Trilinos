@@ -162,6 +162,10 @@ OverWrite=true);
   //! Sets classical smoothed aggregation.
   int SetDefaultsSA(Teuchos::ParameterList & List, 
 		    int * options = 0, double * params = 0, const bool OverWrite=true);
+  
+  //! Sets defaults for smoothed aggregation for nonsymmetric problesm.
+  int SetDefaultsNSSA(Teuchos::ParameterList & List, 
+		    int * options = 0, double * params = 0, const bool OverWrite=true);
 
 /*!
  

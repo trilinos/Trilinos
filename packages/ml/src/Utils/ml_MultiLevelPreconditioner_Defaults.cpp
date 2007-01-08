@@ -69,6 +69,9 @@ int ML_Epetra::SetDefaults(string ProblemType, ParameterList & List,
   if( ProblemType == "SA" ) {
     ML_CHK_ERR( ML_Epetra::SetDefaultsSA(List, options, params, OverWrite) );
   }
+  else if( ProblemType == "NSSA" ) {
+    ML_CHK_ERR( ML_Epetra::SetDefaultsNSSA(List, options, params, OverWrite) );
+  }
   else if( ProblemType == "maxwell" || ProblemType == "Maxwell" ) {
     ML_CHK_ERR( ML_Epetra::SetDefaultsMaxwell(List, options, params,OverWrite));
   }
@@ -507,7 +510,7 @@ int ML_Epetra::SetDefaultsMaxwell(ParameterList & inList,
         - \c "aggregation: threshold" \c =  0.0
    - Smoothing
         - \c "smoother: sweeps" \c = \c 2
-        - \c "smoother: damping factor" \c =  \f$\frac{2}{3}\f$
+        - \c "smoother: damping factor" \c = 1.0 
         - \c "smoother: type" \c = \c "symmetric Gauss-Seidel"
         - \c "smoother: pre or post" \c = \c "both"
    - Coarse Solution
@@ -540,10 +543,13 @@ int ML_Epetra::SetDefaultsSA(ParameterList & inList,
   // don't forget any element
   List.set("aggregation: threshold",0.0);
 
+  // eigen-analysis
+  List.set("eigen-analysis: type","cg");
+
   // gauss-seidel for all levels
   List.set("smoother: sweeps",2);
 
-  List.set("smoother: damping factor",0.67);
+  List.set("smoother: damping factor",1.0);
 
   List.set("smoother: type","symmetric Gauss-Seidel");
   
@@ -563,5 +569,82 @@ int ML_Epetra::SetDefaultsSA(ParameterList & inList,
   return 0;
 
 } //ML_Epetra::SetDefaultsSA()
+
+// ============================================================================
+/*! Set default values for smoothed aggregation for nonsymmetric problems:
+  - \c "default values" \c = \c "NSSA"
+   - General
+        - \c "max levels" \c = \c 10
+        - \c "output" \c = \c 0
+        - \c "PDE equations" \c = \c 1
+        - \c "prec type" \c = \c "MGV"
+        - \c "print unused" \c = \c -2
+   - Coarsening
+        - \c "increasing or decreasing" \c = \c "increasing"
+        - \c "aggregation: type" \c = \c "Uncoupled-MIS"
+        - \c "aggregation: damping factor" \c = \f$\frac{4}{3}\f$
+        - \c "coarse: max size" \c = \c 16
+        - \c "aggregation: threshold" \c =  0.0
+   - Smoothing
+        - \c "smoother: sweeps" \c = \c 2
+        - \c "smoother: damping factor" \c = 1.0 
+        - \c "smoother: type" \c = \c "Gauss-Seidel"
+        - \c "smoother: pre or post" \c = \c "post"
+   - Coarse Solution
+        - \c "coarse: type" \c = \c "Amesos-KLU"
+ */
+int ML_Epetra::SetDefaultsNSSA(ParameterList & inList, 
+			     int * options, double * params, bool OverWrite)
+{
+  ParameterList List;
+
+  List.set("default values","NSSA");
+
+  List.set("max levels",10);
+
+  List.set("output",0);
+  
+  List.set("PDE equations",1);
+
+  List.set("increasing or decreasing","increasing");
+
+  // aggregation: Uncoupled for all levels
+  List.set("aggregation: type","Uncoupled-MIS");
+  
+  // optimal value for smoothed aggregation
+  List.set("aggregation: damping factor",1.3333);
+
+  // relative small coarse size
+  List.set("coarse: max size",16);
+
+  // don't forget any element
+  List.set("aggregation: threshold",0.0);
+
+  // eigen-analysis
+  List.set("eigen-analysis: type","power-method");
+
+  // gauss-seidel for all levels
+  List.set("smoother: sweeps",2);
+
+  List.set("smoother: damping factor",1.0);
+
+  List.set("smoother: type","Gauss-Seidel");
+  
+  List.set("smoother: pre or post","post");
+  
+  // simplest solver on coarse problem
+  List.set("coarse: type","Amesos-KLU");
+
+  List.set("prec type","MGV");
+
+  // print unused on proc 0
+  List.set("print unused",-2);
+
+  for(ParameterList::ConstIterator param=List.begin(); param!=List.end(); param++)
+    if ( inList.isParameter(inList.name(param)) == false || OverWrite )
+      inList.setEntry( inList.name(param) , inList.entry(param) );
+  return 0;
+
+} //ML_Epetra::SetDefaultsNSSA()
 
 #endif /*ifdef ML_WITH_EPETRA && ML_HAVE_TEUCHOS*/
