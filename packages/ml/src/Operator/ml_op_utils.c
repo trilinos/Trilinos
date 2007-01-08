@@ -2053,8 +2053,8 @@ void ML_Operator_ReportStatistics(ML_Operator *mat, char *appendlabel,
        printf("Operator %s: number of rows (stdev) \t= %e\n",mat->label,t1);
     if (mypid == 0) {
        printf("Operator %s: number of PDES \t = %d\n",mat->label,mat->num_PDEs);
-       printf("Operator %s: lamdba max \t = %e\n",mat->label,mat->lambda_max);
-       printf("Operator %s: lamdba min \t = %e\n",mat->label,mat->lambda_min);
+       printf("Operator %s: lambda max \t = %e\n",mat->label,mat->lambda_max);
+       printf("Operator %s: lambda min \t = %e\n",mat->label,mat->lambda_min);
     }
 
 /*

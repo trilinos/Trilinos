@@ -134,6 +134,7 @@ struct ML_Operator_Struct {
    double        lambda_max, lambda_min, lambda_max_img;
    int           N_total_cols_est;
    int           halfclone;
+   int           spectral_radius_scheme, spectral_radius_max_iters;
    ML_Operator_Subspace *subspace;
                 /* This is just a hook into modes that we want to project out
                    before (after) invoking a MG cycle.  I couldn't think of
@@ -315,6 +316,12 @@ extern int ML_CSR_DropSmall(ML_Operator *Pe, double AbsoluteDrop,
 			    double RelativeRowDrop, double RelativeColDrop);
 extern ML_Operator *ML_CSRmatrix_ColumnSubset(ML_Operator *Amat, int Nsubset,
 					      int subset[]);
+extern int ML_Operator_Set_SpectralNormScheme_Calc(       ML_Operator *mat);
+extern int ML_Operator_Set_SpectralNormScheme_Anorm(      ML_Operator *mat);
+extern int ML_Operator_Set_SpectralNormScheme_Anasazi(    ML_Operator *mat);
+extern int ML_Operator_Set_SpectralNormScheme_PowerMethod(ML_Operator *mat);
+extern int ML_Operator_Set_SpectralNorm_Iterations(ML_Operator *mat, int its);
+
 
 
 /* amalagamation routines */

@@ -26,7 +26,7 @@ ML_Krylov *ML_Krylov_Create(ML_Comm *comm)
    temp->ML_method         = 1;
    temp->ML_gmres_dim      = 300;
    temp->ML_cgstabl_dim    = 2;
-   temp->ML_max_iterations = 1000;
+   temp->ML_max_iterations = 10;
    temp->ML_tolerance      = 1.0e-6;
    temp->ML_matrix         = NULL;
    temp->ML_com            = comm;

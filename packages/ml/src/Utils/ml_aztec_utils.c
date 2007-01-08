@@ -775,7 +775,7 @@ int AZ_block_MSR(int **param_bindx, double **param_val,
  */
 
    int allocated, nblocks, *block_list, i, j, k;
-   int offset, current, block;
+   int offset, current, block, Blist_length;
    int *bindx, *newbindx;
    double *val, *newval;
 
@@ -783,8 +783,6 @@ int AZ_block_MSR(int **param_bindx, double **param_val,
    val   = *param_val;
 
    allocated  = (int     ) (((double)(bindx[N_update]+5))*3.2);
-   block_list = (int    *) AZ_allocate( N_update*sizeof(int));
-
    newbindx   = (int    *) AZ_allocate( allocated*sizeof(int));
    newval     = (double *) AZ_allocate( allocated*sizeof(double));
    *param_bindx = newbindx;
@@ -795,7 +793,15 @@ int AZ_block_MSR(int **param_bindx, double **param_val,
    /* Get the diagonal */
 
    for (i = 0; i < N_update; i++) newval[i] = val[i];
-   for (i = 0; i < N_update; i++) newbindx[i] = bindx[i+1] - bindx[i];
+
+   Blist_length = N_update;
+   for (i = 0; i < N_update; i++) {
+      newbindx[i] = bindx[i+1] - bindx[i];
+      if (newbindx[i]+1 > Blist_length) Blist_length = newbindx[i]+1;
+   }
+   block_list = (int    *) AZ_allocate( Blist_length*sizeof(int));
+   if (block_list == NULL) {printf("AZ_block_MSR: out of space\n"); exit(1); }
+   
 
    offset = bindx[0];
    current = bindx[0];
@@ -3101,7 +3107,9 @@ void MLAZ_Iterate( double delta_x[], double resid_vector[],
   ML_Aggregate_Create( &ag );
 
   AZ_ML_Set_Amat(ml, 0, N_update, N_update, Amat, proc_config);
-  
+
+  ML_Set_SpectralNormScheme_PowerMethod(ml);
+
   MLAZ_Setup_MLandAggregate( N_update, num_PDE_eqns, proc_config, ml, ag);
 
   AZ_set_ML_preconditioner(&ML_Prec, Amat, ml, solver_options);
@@ -3275,9 +3283,6 @@ int MLAZ_Setup_MLandAggregate( int N_update, int num_PDE_eqns,
     printf("Req local coarse size (for ParMETIS) = %d\n",
 	   Settings.req_aggre_per_proc);
   }
-
-  /* set to norm for nonsymmetric problem (FIXME: add an option) */
-  ML_Aggregate_Set_SpectralNormScheme_Anorm(ag);
 
   /************************************************************************/
   /* Build hierarchy using smoothed aggregation.                          */

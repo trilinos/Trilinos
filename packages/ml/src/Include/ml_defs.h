@@ -171,9 +171,12 @@ typedef ML_BIG_INT ml_big_int;
 /* Eigenvalue options */
 #define ML_DIAGSCALE           1
 #define ML_NO_SCALE            0
-#define ML_SYMMETRIC           0
-#define ML_NONSYMM             1
-#define ML_SYMMETRIZE_MATRIX   1
+#define ML_SYMMETRIC           1
+#define ML_NONSYMM             3
+#define ML_USE_MATRIX_NORM     9
+#define ML_USE_CG              10
+#define ML_USE_ANASAZI         20
+#define ML_USE_POWER           30
 #define ML_NO_SYMMETRIZE       0
 
 #define ML_Get_MySmootherData(smoother_obj) ((smoother_obj)->smoother->data)

@@ -46,7 +46,6 @@ typedef struct ML_Aggregate_Struct
    double curr_threshold;              /**<  adjusted for levels           */
    double drop_tol_for_smoothing;      /**<  self-explanatory              */
    int    attach_scheme;               /**<  aggregate shape control       */
-   int    spectral_radius_scheme;      /**<  way to compute approx maxeigen*/
    double smoothP_damping_factor;      /**<  for prolongator smoother      */
    int    smoothP_damping_sweeps;      /**<  #prolongator smoother sweeps  */
    int    smoothP_type;                /**<  point, block                  */
@@ -270,15 +269,6 @@ int ML_Aggregate_Set_BlockDiagScaling( ML_Aggregate *ag);
 int ML_Aggregate_Set_DampingSweeps( ML_Aggregate *ag, int numSweeps );
 int ML_Aggregate_Get_DampingSweeps( ML_Aggregate *ag);
 
-/* ------------------------------------------------------------------------- */
-/* set up scheme to compute spectral radius of A at each level               */
-/* ------------------------------------------------------------------------- */
-
-int ML_Aggregate_Set_SpectralNormScheme_Calc( ML_Aggregate * );
-int ML_Aggregate_Set_SpectralNormScheme_Anorm( ML_Aggregate * );
-int ML_Aggregate_Set_SpectralNormScheme_Anasazi( ML_Aggregate * );
-int ML_Aggregate_Set_SpectralNormScheme_PowerMethod( ML_Aggregate *ag);
-  
 /* ------------------------------------------------------------------------- */
 /* accessing aggregation information                                         */
 /* ------------------------------------------------------------------------- */

@@ -1402,7 +1402,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
                      Nnode, NULL, 0);
        ML_Operator_Set_ApplyFunc(scaled_Kn_approx, ML_ScaledKnApply);
        ML_Gimmie_Eigenvalues(scaled_Kn_approx,ML_NO_SCALE,
-                 ML_SYMMETRIC,ML_NO_SYMMETRIZE);
+                 ML_USE_POWER,ML_NO_SYMMETRIZE);
        beta = -2.*1.33333/scaled_Kn_approx->lambda_max;
        /*       beta = 0.; */
        beta = -2*beta; /* cancel out the divide below */
@@ -1670,6 +1670,7 @@ int ML_Gen_SmoothPnodal(ML *ml,int level, int clevel, void *data,
    ML_Krylov_Set_PrintFreq( kdata, 0 );
    ML_Krylov_Set_ComputeEigenvalues( kdata );
    ML_Krylov_Set_Amatrix(kdata, Amat);
+   ML_Krylov_Set_MaxIterations(kdata, Amat->spectral_radius_max_iters);
    ML_Krylov_Solve(kdata, Nfine, NULL, NULL);
    max_eigen = ML_Krylov_Get_MaxEigenvalue(kdata);
    max_eigen = 2.;

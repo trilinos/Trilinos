@@ -1260,6 +1260,31 @@ ComputePreconditioner(const bool CheckPreconditioner)
   }
 
   // ====================================================================== //
+  // Define the scheme for computing the spectral radius of the matrix.     //
+  // ====================================================================== //
+
+  string str = List_.get("eigen-analysis: type","cg");
+  
+  if( verbose_ ) cout << PrintMsg_ << "Using `" << str << "' scheme for eigen-computations" << endl;
+  
+  if( str == "cg" )                ML_Set_SpectralNormScheme_Calc(ml_);
+  else if( str == "Anorm" )        ML_Set_SpectralNormScheme_Anorm(ml_);
+  else if( str == "Anasazi" )      ML_Set_SpectralNormScheme_Anasazi(ml_);
+  else if( str == "power-method" ) ML_Set_SpectralNormScheme_PowerMethod(ml_);
+  else {
+    if( Comm().MyPID() == 0 ) {
+      cerr << ErrorMsg_ << "parameter `eigen-analysis: type' has an incorrect value"
+       << "(" << str << ")" << endl;
+      cerr << ErrorMsg_ << "It should be: " << endl
+       << ErrorMsg_ << "<cg> / <Anorm> / <Anasazi> / <power-method>" << endl;
+    }
+    ML_EXIT(-10); // wrong input parameter
+  }
+  int NumEigenIts = List_.get("eigen-analysis: iterations",10);  
+  ML_Set_SpectralNorm_Iterations(ml_, NumEigenIts);
+
+
+  // ====================================================================== //
   // Define scheme to determine damping parameter in prolongator and        //
   // restriction smoother. Only for non-Maxwell.                            //
   // ====================================================================== //
@@ -2949,6 +2974,13 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothingDampingClassic()
     cout << PrintMsg_ << "R and P smoothing : \\omega = " << DampingFactor << "/lambda_max" <<endl;
   }
     
+#ifdef no_longer_done_here
+  /*********************************************************************/
+  /* Changed the code so that the eigen-analysis type is no longer     */
+  /* connected to aggregates but is instead connected to matrices. This*/
+  /* means that the eigen-analysis stuff is parsed and set elsewhere.  */
+  /*********************************************************************/
+
   string str = List_.get("eigen-analysis: type","cg");
   
   if( verbose_ ) cout << PrintMsg_ << "Using `" << str << "' scheme for eigen-computations" << endl;
@@ -2966,6 +2998,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothingDampingClassic()
     }
     ML_EXIT(-10); // wrong input parameter
   }
+#endif
     
   return 0;
 }

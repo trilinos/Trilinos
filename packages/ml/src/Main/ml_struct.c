@@ -1993,7 +1993,8 @@ int ML_MLS_Setup_Coef(void *sm, int deg, int symmetrize)
        return (pr_error("*** value of deg larger than MLS_MAX_DEG !\n"));
    }
 
-   ML_Gimmie_Eigenvalues(Amat, ML_DIAGSCALE, ML_SYMMETRIC, symmetrize);
+   ML_Gimmie_Eigenvalues(Amat, ML_DIAGSCALE, Amat->spectral_radius_scheme, 
+                         symmetrize);
    rho = Amat->lambda_max;
 
    /* Boost the largest eigenvalue by a fudge factor  */
@@ -2160,49 +2161,121 @@ int ML_Gen_BlockScaledMatrix_with_Eigenvalues(ML_Operator *Amat,
 
   widget->scaled_matrix = *blockMat;
 
-  ML_Gimmie_Eigenvalues(*blockMat, ML_NO_SCALE, ML_NONSYMM, ML_NO_SYMMETRIZE);
+  ML_Gimmie_Eigenvalues(*blockMat, ML_NO_SCALE, ML_USE_POWER, ML_NO_SYMMETRIZE);
 
   return 0;
 
 }
+int ML_Set_SpectralNormScheme_Calc(ML *ml)
+{
+  int i;
+
+  if (ml == NULL) return 0;
+  for (i = 0; i < ml->ML_num_levels; i++)
+        ML_Operator_Set_SpectralNormScheme_Calc( &(ml->Amat[i]) );
+
+   return 0;
+}
+int ML_Set_SpectralNormScheme_Anorm(      ML *ml)
+{
+  int i;
+
+  if (ml == NULL) return 0;
+  for (i = 0; i < ml->ML_num_levels; i++)
+        ML_Operator_Set_SpectralNormScheme_Anorm( &(ml->Amat[i]) );
+
+   return 0;
+}
+int ML_Set_SpectralNormScheme_Anasazi(    ML *ml)
+{
+  int i;
+
+  if (ml == NULL) return 0;
+  for (i = 0; i < ml->ML_num_levels; i++)
+        ML_Operator_Set_SpectralNormScheme_Anasazi( &(ml->Amat[i]) );
+
+   return 0;
+}
+int ML_Set_SpectralNormScheme_PowerMethod(ML *ml)
+{
+  int i;
+
+  if (ml == NULL) return 0;
+  for (i = 0; i < ml->ML_num_levels; i++)
+        ML_Operator_Set_SpectralNormScheme_PowerMethod( &(ml->Amat[i]) );
+
+   return 0;
+}
+int ML_Set_SpectralNorm_Iterations(ML *ml, int its)
+{
+  int i;
+
+  if (ml == NULL) return 0;
+  for (i = 0; i < ml->ML_num_levels; i++)
+        ML_Operator_Set_SpectralNorm_Iterations( &(ml->Amat[i]), its );
+
+   return 0;
+}
+
 
 /* Set Amat->lambda_max and Amat->lambda_min by estimating the */
 /* eigenvalues of A or D^-1 A                                  */
 int ML_Gimmie_Eigenvalues(ML_Operator *Amat, int scale_by_diag,
-			  int matrix_is_nonsymmetric, int symmetrize_matrix)
+			  int method, int symmetrize_matrix)
 {
   ML_Krylov   *kdata;
   ML_Operator *t2, *t3;
 
 
   if ((Amat->lambda_max < -666.) && (Amat->lambda_max > -667)) {
-     kdata = ML_Krylov_Create( Amat->comm );
-     if (scale_by_diag == 0) ML_Krylov_Set_DiagScaling_Eig(kdata, 0);
-     if (matrix_is_nonsymmetric && (symmetrize_matrix == 0)) {
-       ML_Krylov_Set_ComputeNonSymEigenvalues( kdata );
-     }
-     else 
-       ML_Krylov_Set_ComputeEigenvalues( kdata );
+    if (method == ML_USE_MATRIX_NORM)
+      Amat->lambda_max = ML_Operator_MaxNorm(Amat, ML_TRUE);
+    else if (method == ML_USE_ANASAZI) {
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_ANASAxI) && defined(HAVE_ML_TEUCHOS)
+         ML_Anasazi_Get_SpectralNorm_Anasazi(Amat, 0, 10, 1e-5,
+                         ML_FALSE, ML_TRUE, &(Amat->lambda_max) );
+#else
+         fprintf(stderr,
+             "--enable-epetra --enable-anasazi --enable-teuchos required\n"
+             "(file %s, line %d)\n",
+             __FILE__,
+             __LINE__);
+         exit(EXIT_FAILURE);
+#endif
+         Amat->lambda_min = -12345.6789;
+         if ( Amat->lambda_max <= 0.0 ) {
+           printf("Warning: max eigen <= 0.0\n"); Amat->lambda_min = 1.0;
+         }
 
-     ML_Krylov_Set_PrintFreq( kdata, 0 );
+    }
+    else {
+      kdata = ML_Krylov_Create( Amat->comm );
+      ML_Krylov_Set_MaxIterations(kdata, Amat->spectral_radius_max_iters);
 
-     if (symmetrize_matrix == ML_TRUE) {
-       t2 = ML_Operator_Create(Amat->comm);
-       ML_Operator_Transpose_byrow(Amat,t2);
-       t3 = ML_Operator_Create(Amat->comm);
-       ML_Operator_Add(Amat,t2,t3, ML_CSR_MATRIX,1.);
-       ML_Krylov_Set_Amatrix(kdata, t3);
-     }
-     else  ML_Krylov_Set_Amatrix(kdata, Amat);
-     ML_Krylov_Solve(kdata, Amat->outvec_leng, NULL, NULL);
-     Amat->lambda_max = ML_Krylov_Get_MaxEigenvalue(kdata);
-     Amat->lambda_min = kdata->ML_eigen_min;
+      ML_Krylov_Set_PrintFreq( kdata, 0 );
+      if (scale_by_diag == 0) ML_Krylov_Set_DiagScaling_Eig(kdata, 0);
+      if (method==ML_USE_POWER) ML_Krylov_Set_ComputeNonSymEigenvalues( kdata );
+      else ML_Krylov_Set_ComputeEigenvalues( kdata );
 
-     ML_Krylov_Destroy( &kdata );
-     if (symmetrize_matrix == ML_TRUE) {
+
+      if (symmetrize_matrix == ML_TRUE) {
+        t2 = ML_Operator_Create(Amat->comm);
+        ML_Operator_Transpose_byrow(Amat,t2);
+        t3 = ML_Operator_Create(Amat->comm);
+        ML_Operator_Add(Amat,t2,t3, ML_CSR_MATRIX,1.);
+        ML_Krylov_Set_Amatrix(kdata, t3);
+      }
+      else  ML_Krylov_Set_Amatrix(kdata, Amat);
+      ML_Krylov_Solve(kdata, Amat->outvec_leng, NULL, NULL);
+      Amat->lambda_max = ML_Krylov_Get_MaxEigenvalue(kdata);
+      Amat->lambda_min = kdata->ML_eigen_min;
+
+      ML_Krylov_Destroy( &kdata );
+      if (symmetrize_matrix == ML_TRUE) {
        if (t3 != NULL) ML_Operator_Destroy(&t3);
        if (t2 != NULL) ML_Operator_Destroy(&t2);
-     }
+      }
+    }
   }
   return 0;
 } 
@@ -2262,7 +2335,7 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post,
      t0 = GetClock();
 #endif
      Amat = &(ml->Amat[i]);
-     ML_Gimmie_Eigenvalues(Amat, ML_DIAGSCALE, ML_SYMMETRIC, 
+     ML_Gimmie_Eigenvalues(Amat, ML_DIAGSCALE, Amat->spectral_radius_scheme, 
 			   ml->symmetrize_matrix);
 
      /* To avoid division by zero problem. */

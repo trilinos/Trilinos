@@ -50,6 +50,7 @@ typedef long ftnlen;
 #define DGEQPF_F77  F77_FUNC(sgeqpf,SGEQPF)
 #define DGEQRF_F77  F77_FUNC(sgeqrf,SGEQRF)
 #define DORGQR_F77  F77_FUNC(sorgqr,SORGQR)
+#define DSTEQR_F77  F77_FUNC(ssteqr,SSTEQR)
 
 #endif
 #if defined(INTEL_CXML)
@@ -81,6 +82,7 @@ typedef long ftnlen;
 #define DGEQPF_F77  F77_FUNC(dgeqpf,DGEQPF)
 #define DGEQRF_F77  F77_FUNC(dgeqrf,DGEQRF)
 #define DORGQR_F77  F77_FUNC(dorgqr,DORGQR)
+#define DSTEQR_F77  F77_FUNC(dsteqr,DSTEQR)
 
 #endif
 #if defined(INTEL_MKL)
@@ -112,6 +114,7 @@ typedef long ftnlen;
 #define DGEQPF_F77  F77_FUNC(dgeqpf,DGEQPF)
 #define DGEQRF_F77  F77_FUNC(dgeqrf,DGEQRF)
 #define DORGQR_F77  F77_FUNC(dorgqr,DORGQR)
+#define DSTEQR_F77  F77_FUNC(dsteqr,DSTEQR)
 
 #endif
 
@@ -166,6 +169,7 @@ typedef long ftnlen;
 #define DGEQPF_F77  F77_FUNC(dgeqpf,DGEQPF)
 #define DGEQRF_F77  F77_FUNC(dgeqrf,DGEQRF)
 #define DORGQR_F77  F77_FUNC(dorgqr,DORGQR)
+#define DSTEQR_F77  F77_FUNC(dsteqr,DSTEQR)
 
 #endif
 
@@ -181,6 +185,7 @@ typedef long ftnlen;
 #define DGEQPF_F77  F77_FUNC(dgeqpf,DGEQPF)
 #define DGEQRF_F77  F77_FUNC(dgeqrf,DGEQRF)
 #define DORGQR_F77  F77_FUNC(dorgqr,DORGQR)
+#define DSTEQR_F77  F77_FUNC(dsteqr,DSTEQR)
 
 #define SGETRF_F77  F77_FUNC(sgetrf,SGETRF)
 #define SGETRS_F77  F77_FUNC(sgetrs,SGETRS)
@@ -293,6 +298,8 @@ void PREFIX DGEQRF_F77(int *, int *, double *, int *,
 void PREFIX DORGQR_F77(int *m, int *n, int *k, double * a,
                  int *lda, double *tau, double *work, int *lwork, 
                  int *info);
+void PREFIX DSTEQR_F77(ml_fcd, int *, double *, double *, double *, int *,
+                 double *, int *);
 
   /* Single precision LAPACK linear solvers*/
 void PREFIX SGETRF_F77(int* m, int* n, float* a, int* lda, int* ipiv, int* info); 

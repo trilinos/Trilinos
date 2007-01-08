@@ -92,6 +92,8 @@ int ML_Operator_Init( ML_Operator *mat, ML_Comm *comm)
    mat->num_rigid           = 1;
    mat->N_total_cols_est    = -1;
    mat->subspace            = NULL;
+   mat->spectral_radius_scheme = ML_USE_CG;
+   mat->spectral_radius_max_iters = 10;
    ML_Aux_Data_Create(&(mat->aux_data));
    mat->type                = ML_TYPE_UNKNOWN;
 
@@ -325,6 +327,8 @@ int ML_Operator_halfClone_Init(ML_Operator *mat,
    mat->max_nz_per_row      = original->max_nz_per_row;
    mat->sub_matrix          = original->sub_matrix;
    mat->from_an_ml_operator = original->from_an_ml_operator;
+   mat->spectral_radius_scheme = original->spectral_radius_scheme;
+   mat->spectral_radius_max_iters = original->spectral_radius_max_iters;
    mat->data_destroy        = NULL;
    mat->build_time          = 0.0;
    mat->apply_time          = 0.0;
@@ -805,6 +809,20 @@ double ML_Operator_MaxNorm(ML_Operator *matrix, int divide_diag)
    largest = ML_Comm_GmaxDouble(matrix->comm, largest);
    return largest;
 }
+/* ******************************************************************** */
+/* set method to estimate spectral radius of A                          */
+/* -------------------------------------------------------------------- */
+int ML_Operator_Set_SpectralNormScheme_Calc( ML_Operator *mat ) /* cg */
+{ mat->spectral_radius_scheme = ML_USE_CG; return 0; }
+int ML_Operator_Set_SpectralNormScheme_Anorm( ML_Operator *mat )
+{ mat->spectral_radius_scheme = ML_USE_MATRIX_NORM; return 0; }
+int ML_Operator_Set_SpectralNormScheme_Anasazi( ML_Operator *mat)
+{ mat->spectral_radius_scheme = ML_USE_ANASAZI; return 0; }
+int ML_Operator_Set_SpectralNormScheme_PowerMethod( ML_Operator *mat)
+{ mat->spectral_radius_scheme = ML_USE_POWER; return 0; }
+int ML_Operator_Set_SpectralNorm_Iterations( ML_Operator *mat, int its )
+{ mat->spectral_radius_max_iters= its; return 0; }
+
 
 /* ******************************************************************** */
 /* Getrow function that is used to drop matrix elements and to collapse */

@@ -472,6 +472,14 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
 
    if ( ag->smoothP_damping_factor != 0.0 || numSmSweeps > 1 )
    {
+     /*********************************************************
+     /* If we symmetrize we need the symmetrized matrix so we */
+     /* don't call ML_Gimmie_Eigenvalues() here.              
+     ML_Gimmie_Eigenvalues(Amat, ML_DIAGSCALE, 
+                 Amat->spectral_radius_scheme, ml->symmetrize_matrix);
+     max_eigen = Amat->lambda_max;
+     *********************************************************/
+     
      if (ml->symmetrize_matrix == ML_TRUE) {
        t2 = ML_Operator_Create(Amat->comm);
        ML_Operator_Transpose_byrow(Amat,t2);
@@ -482,12 +490,13 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
 
      if ((max_eigen < -666.) && (max_eigen > -667)) {
 
-       switch( ag->spectral_radius_scheme ) {
+       switch( Amat->spectral_radius_scheme ) {
 
-       case 1:  /* compute it using CG */
+       case ML_USE_CG:  /* compute it using CG */
      
          kdata = ML_Krylov_Create( ml->comm );
          ML_Krylov_Set_PrintFreq( kdata, 0 );
+         ML_Krylov_Set_MaxIterations(kdata, Amat->spectral_radius_max_iters);
          ML_Krylov_Set_ComputeEigenvalues( kdata );
          if (ml->symmetrize_matrix ==ML_TRUE) ML_Krylov_Set_Amatrix(kdata, t3);
          else ML_Krylov_Set_Amatrix(kdata, Amat);
@@ -504,7 +513,7 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
 
          break;
 
-       case 2: /* Use Anasazi */
+       case ML_USE_ANASAZI: /* Use Anasazi */
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_ANASAxI) && defined(HAVE_ML_TEUCHOS)
          ML_Anasazi_Get_SpectralNorm_Anasazi(Amat, 0, 10, 1e-5,
                          ML_FALSE, ML_TRUE, &max_eigen);
@@ -525,9 +534,10 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
 
          break;
 
-       case 3: /* use ML's power method */
+       case ML_USE_POWER: /* use ML's power method */
          kdata = ML_Krylov_Create( ml->comm );
          ML_Krylov_Set_PrintFreq( kdata, 0 );
+         ML_Krylov_Set_MaxIterations(kdata, Amat->spectral_radius_max_iters);
          ML_Krylov_Set_ComputeNonSymEigenvalues( kdata );
          ML_Krylov_Set_Amatrix(kdata, Amat);
          ML_Krylov_Solve(kdata, Nfine, NULL, NULL);
@@ -546,9 +556,10 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
          max_eigen = ML_Operator_MaxNorm(Amat, ML_TRUE);
          break;
      
-       } /* switch( ag->spectral_radius_scheme ) */
+       } /* switch( Amat->spectral_radius_scheme ) */
 
      } /* if ((max_eigen < -666.) && (max_eigen > -667)) */
+
 
      widget.omega  = ag->smoothP_damping_factor / max_eigen;
      ml->spectral_radius[level] = max_eigen;
@@ -1074,6 +1085,7 @@ int ML_AGG_Gen_DDProlongator(ML *ml,int level, int clevel, void *data)
    ML_Krylov_Set_Amatrix(kdata, Amat);
    ML_Krylov_Set_Precon(kdata, (void *) newml);
    ML_Krylov_Set_PreconFunc(kdata, ML_AGG_DD_Solve);
+   ML_Krylov_Set_MaxIterations(kdata, Amat->spectral_radius_max_iters);
    ML_Krylov_Solve(kdata, Nfine, NULL, NULL);
    max_eigen = ML_Krylov_Get_MaxEigenvalue(kdata);
    ML_Krylov_Destroy( &kdata );

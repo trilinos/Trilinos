@@ -92,11 +92,24 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
   int aztec_its;
 #endif
 
-  int MLSPolynomialOrder = List_.get("smoother: MLS polynomial order",3);
+  /* It does not make sense to use both a polynomial order and */
+  /* smoother sweeps. If the user has set the sweeps and not   */
+  /* the polynomial order, let us just assume that sweeps was  */
+  /* really intended as polynomial order.                      */
+
+  int MLSPolynomialOrder = List_.get("smoother: MLS polynomial order",-7);
+  if (MLSPolynomialOrder == -7) {
+     if (num_smoother_steps != 1) MLSPolynomialOrder = num_smoother_steps;
+     else MLSPolynomialOrder = 3;
+  }
   double MLSalpha = List_.get("smoother: MLS alpha",30.0);
   
   // IFPACK version of Chebyshev (no MLS here)
-  int PolynomialOrder = List_.get("smoother: polynomial order",3);
+  int PolynomialOrder = List_.get("smoother: polynomial order",-7);
+  if (PolynomialOrder == -7) {
+     if (num_smoother_steps != 1) PolynomialOrder = num_smoother_steps;
+     else PolynomialOrder = 3;
+  }
   double alpha = List_.get("smoother: alpha", 30.0);
 
   int SmootherLevels = (NumLevels_>1)?(NumLevels_-1):1;
@@ -436,8 +449,8 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       }
 
       ML_Operator* this_A = &(ml_->Amat[LevelID_[level]]);
-      ML_Gimmie_Eigenvalues(this_A, ML_DIAGSCALE, ML_SYMMETRIC, 
-                            ml_->symmetrize_matrix);
+      ML_Gimmie_Eigenvalues(this_A, ML_DIAGSCALE, 
+                  this_A->spectral_radius_scheme, ml_->symmetrize_matrix);
 
       Teuchos::ParameterList IFPACKList;
       IFPACKList.set("chebyshev: ratio eigenvalue", alpha);

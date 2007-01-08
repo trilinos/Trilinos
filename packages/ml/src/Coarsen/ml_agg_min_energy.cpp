@@ -750,10 +750,13 @@ int ML_AGG_Gen_Restriction_MinEnergy(ML *ml,int level, int clevel, void *data)
         for (int i = 0; i < Amat->outvec_leng + Nghost; ++i)
           Dinv[i] *= RowOmega[i];
       }
+      ML_Operator *Amat_Scaled;
 
-      Amat = ML_Operator_ImplicitlyVCScale(Amat, Dinv, 0);
 
-      ML_2matmult(P0_trans, Amat, P0TA, ML_CSR_MATRIX);
+      Amat_Scaled = ML_Operator_ImplicitlyVCScale(Amat, Dinv, 0);
+
+      ML_2matmult(P0_trans, Amat_Scaled, P0TA, ML_CSR_MATRIX);
+      ML_Operator_Destroy(&Amat_Scaled);
 
       ML_Operator_Add(P0_trans,P0TA,&(ml->Rmat[level]),ML_CSR_MATRIX,-1.0);
       if (SinglePrecision)

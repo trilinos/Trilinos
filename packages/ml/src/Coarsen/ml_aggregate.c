@@ -63,7 +63,6 @@ int ML_Aggregate_Create( ML_Aggregate **ag )
    (*ag)->threshold                  = 0.0;
    (*ag)->smoothP_damping_factor     = 4.0/3.0;
    (*ag)->smoothP_damping_sweeps     = 1;
-   (*ag)->spectral_radius_scheme     = 1;  /* compute it */
    (*ag)->smoothP_type               = 0;  /* point type */
    (*ag)->num_PDE_eqns               = 1;
    (*ag)->nullspace_dim              = 1;
@@ -734,60 +733,6 @@ int ML_Aggregate_Get_DampingSweeps( ML_Aggregate *ag)
       exit(-1);
    }
    return ag->smoothP_damping_sweeps;
-}
-
-/* ************************************************************************* */
-/* set method to estimate spectral radius of A                          */
-/* -------------------------------------------------------------------- */
-
-int ML_Aggregate_Set_SpectralNormScheme_Calc( ML_Aggregate *ag )
-{
-   if ( ag->ML_id != ML_ID_AGGRE ) 
-   {
-      printf("ML_Aggregate_Set_SpectralNormScheme_Calc : wrong object. \n");
-      exit(-1);
-   }
-   ag->spectral_radius_scheme = 1;
-   return 0;
-}
-
-/* ------------------------------------------------------------------------- */
-
-int ML_Aggregate_Set_SpectralNormScheme_Anorm( ML_Aggregate *ag )
-{
-   if ( ag->ML_id != ML_ID_AGGRE ) 
-   {
-      printf("ML_Aggregate_Set_SpectralNormScheme_Anorm : wrong object. \n");
-      exit(-1);
-   }
-   ag->spectral_radius_scheme = 0;
-   return 0;
-}
-
-/* ------------------------------------------------------------------------- */
-
-int ML_Aggregate_Set_SpectralNormScheme_Anasazi( ML_Aggregate *ag)
-{
-   if ( ag->ML_id != ML_ID_AGGRE ) 
-   {
-      printf("ML_Aggregate_Set_SpectralNormScheme_Anorm : wrong object. \n");
-      exit(-1);
-   }
-   ag->spectral_radius_scheme = 2;
-   return 0;
-}
-
-/* ------------------------------------------------------------------------- */
-
-int ML_Aggregate_Set_SpectralNormScheme_PowerMethod( ML_Aggregate *ag)
-{
-   if ( ag->ML_id != ML_ID_AGGRE ) 
-   {
-      printf("ML_Aggregate_Set_SpectralNormScheme_PowerMethod : wrong object. \n");
-      exit(-1);
-   }
-   ag->spectral_radius_scheme = 3;
-   return 0;
 }
 
 /* ************************************************************************* */
