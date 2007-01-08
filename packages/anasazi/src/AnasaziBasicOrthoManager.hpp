@@ -69,7 +69,7 @@ namespace Anasazi {
 
 
     //! Destructor
-    ~BasicOrthoManager() {};
+    ~BasicOrthoManager() {}
     //@}
 
 
@@ -77,7 +77,7 @@ namespace Anasazi {
     //@{ 
 
     //! Set parameter for re-orthogonalization threshhold.
-    void setKappa( const MagnitudeType kappa ) { kappa_ = kappa; };
+    void setKappa( const MagnitudeType kappa ) { kappa_ = kappa; }
 
     //! Return parameter for re-orthogonalization threshhold.
     MagnitudeType getKappa() const { return kappa_; } 
