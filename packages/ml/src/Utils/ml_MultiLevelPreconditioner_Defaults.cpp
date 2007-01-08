@@ -544,7 +544,7 @@ int ML_Epetra::SetDefaultsSA(ParameterList & inList,
   List.set("aggregation: threshold",0.0);
 
   // eigen-analysis
-  List.set("eigen-analysis: type","cg");
+  List.set("eigen-analysis: type","power-method");
 
   // gauss-seidel for all levels
   List.set("smoother: sweeps",2);
