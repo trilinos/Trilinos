@@ -70,6 +70,13 @@ int main(int argc, char *argv[])
 double solve_time, setup_time, start_time;
 ML_Aggregate *ag;
 int *ivec;
+#ifdef VBR_VERSION
+ML_Operator *B, *C, *D;
+int *vbr_cnptr, *vbr_rnptr, *vbr_indx, *vbr_bindx, *vbr_bnptr, total_blk_rows;
+int total_blk_cols, blk_space, nz_space;
+double *vbr_val;
+struct ML_CSR_MSRdata *csr_data;
+#endif
 
 
 #ifdef ML_MPI
@@ -124,11 +131,48 @@ int *ivec;
                AZ_MSR_MATRIX);
 
   Amat = AZ_matrix_create( leng );
+
+#ifndef VBR_VERSION
+
   AZ_set_MSR(Amat, bindx, val, data_org, 0, NULL, AZ_LOCAL);
 
   Amat->matrix_type  = data_org[AZ_matrix_type];
 	
   data_org[AZ_N_rows]  = data_org[AZ_N_internal] + data_org[AZ_N_border];
+
+#else
+
+total_blk_rows = N_update/num_PDE_eqns;
+total_blk_cols = total_blk_rows;
+blk_space      = total_blk_rows*20;
+nz_space       = blk_space*num_PDE_eqns*num_PDE_eqns;
+
+vbr_cnptr = (int    *) ML_allocate(sizeof(int   )*(total_blk_cols+1));
+vbr_rnptr = (int    *) ML_allocate(sizeof(int   )*(total_blk_cols+1));
+vbr_bnptr = (int    *) ML_allocate(sizeof(int   )*(total_blk_cols+2));
+vbr_indx  = (int    *) ML_allocate(sizeof(int   )*(blk_space+1));
+vbr_bindx = (int    *) ML_allocate(sizeof(int   )*(blk_space+1));
+vbr_val   = (double *) ML_allocate(sizeof(double)*(nz_space+1));
+
+for (i = 0; i <= total_blk_cols; i++) vbr_cnptr[i] = num_PDE_eqns;
+
+  AZ_msr2vbr(vbr_val, vbr_indx, vbr_rnptr,  vbr_cnptr, vbr_bnptr,
+                vbr_bindx, bindx, val,
+                total_blk_rows, total_blk_cols, blk_space,
+                nz_space, -1);
+
+  data_org[AZ_N_rows]  = data_org[AZ_N_internal] + data_org[AZ_N_border];
+  data_org[AZ_N_int_blk]  = data_org[AZ_N_internal]/num_PDE_eqns;
+  data_org[AZ_N_bord_blk] = data_org[AZ_N_bord_blk]/num_PDE_eqns;
+  data_org[AZ_N_ext_blk]  = data_org[AZ_N_ext_blk]/num_PDE_eqns;
+  data_org[AZ_matrix_type] = AZ_VBR_MATRIX;
+
+
+  AZ_set_VBR(Amat, vbr_rnptr, vbr_cnptr, vbr_bnptr, vbr_indx, vbr_bindx, 
+             vbr_val, data_org, 0, NULL, AZ_LOCAL);
+
+  Amat->matrix_type  = data_org[AZ_matrix_type];
+#endif
 			
   start_time = AZ_second();
 	
@@ -141,23 +185,18 @@ int *ivec;
   AZ_ML_Set_Amat(ml, N_levels-1, N_update, N_update, Amat, proc_config);
 
   ML_Aggregate_Create( &ag );
-  ML_Aggregate_Set_CoarsenScheme_MIS(ag);
   ML_Aggregate_Set_Threshold(ag,0.0);
-  ML_Aggregate_Set_SpectralNormScheme_Anorm(ag);
-  ML_Aggregate_Set_DampingFactor(ag, 0.);
-  ML_Aggregate_Set_Phase3AggregateCreationAggressiveness(ag,.5);
+  ML_Set_SpectralNormScheme_PowerMethod(ml);
 /*
    To run SA:
      a) set damping factor to 1 and use power method
         ML_Aggregate_Set_DampingFactor(ag, 4./3.); 
-        ML_Aggregate_Set_SpectralNormScheme_PowerMethod(ag);
    To run NSA:
      a) set damping factor to 0
         ML_Aggregate_Set_DampingFactor(ag, 0.); 
    To run NSR
      a) set damping factor to 1 and use power method
         ML_Aggregate_Set_DampingFactor(ag, 1.); 
-        ML_Aggregate_Set_SpectralNormScheme_PowerMethod(ag);
         ag->Restriction_smoothagg_transpose = ML_FALSE;
         ag->keep_agg_information=1; 
         ag->keep_P_tentative=1; 
@@ -171,6 +210,8 @@ int *ivec;
       ag->cheap_minimizing_energy = 0;
       ag->block_scaled_SA = 1;
 */
+  ag->minimizing_energy=2; 
+  ag->keep_agg_information=1; 
 
   ML_Aggregate_Set_NullSpace(ag, num_PDE_eqns, num_PDE_eqns, NULL, N_update);
   ML_Aggregate_Set_MaxCoarseSize( ag, 20);
@@ -242,11 +283,11 @@ ML_Aggregate_Set_MaxCoarseSize( ag, 300);
           */
 
 
-	  ML_Gen_Smoother_SymBlockGaussSeidel(ml,level,ML_POSTSMOOTHER,
-                                              1, 1.0, num_PDE_eqns);
+  	  ML_Gen_Smoother_SymBlockGaussSeidel(ml,level,ML_POSTSMOOTHER,
+                                                1, 1.0, num_PDE_eqns);
 	}
 	
-	ML_Gen_CoarseSolverSuperLU( ml, coarsest_level);
+        ML_Gen_CoarseSolverSuperLU( ml, coarsest_level);
 	ML_Gen_Solver(ml, ML_MGV, N_levels-1, coarsest_level); 
 	AZ_defaults(options, params);
 	
@@ -302,7 +343,6 @@ setup_time = AZ_second() - start_time;
                                 N_update, proc_config);
            free(ivec);
            AZ_reorder_vec(xxx, data_org, update_index, NULL);
-           options[AZ_conv] = AZ_expected_values;
         }
 
         /* if Dirichlet BC ... put the answer in */
