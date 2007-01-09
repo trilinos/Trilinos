@@ -40,7 +40,7 @@
 #endif
 #include "Amesos.h"
 #include "Epetra_RowMatrix.h"
-#include "Epetra_Vector.h"
+#include "Epetra_MultiVector.h"
 #include "Epetra_LinearProblem.h"
 // following header file and namespace declaration
 // are  required by this example to generate the linear system,
@@ -59,7 +59,7 @@ using namespace Galeri;
 //     Epetra_LinearProblem. The matrix corresponds
 //     to a 5pt Laplacian (2D on Cartesian grid).
 //     The user can change the global size of the problem 
-//     by modifying variable NumGlobalRows.
+//     by modifying variables nx and ny.
 // 2.- The linear system matrix, solution and rhs
 //     are distributed among the available processors,
 //     using a linear distribution. This is for 
@@ -98,8 +98,8 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
-  int NumGlobalRows = 10000; // must be a square for the
-                             // matrix generator.
+  int nx = 100;                  // number of grid points in the x direction
+  int ny = 100 * Comm.NumProc(); // number of grid points in the y direction
   int NumVectors = 1;        // number of rhs's. Amesos
                              // supports single or
 			     // multiple RHS.
@@ -113,8 +113,8 @@ int main(int argc, char *argv[])
   // Here the problem has size nx x ny, and the 2D Cartesian
   // grid is divided into mx x my subdomains.
   ParameterList GaleriList;
-  GaleriList.set("nx", 100);
-  GaleriList.set("ny", 100 * Comm.NumProc());
+  GaleriList.set("nx", nx);
+  GaleriList.set("ny", ny);
   GaleriList.set("mx", 1);
   GaleriList.set("my", Comm.NumProc());
 
@@ -124,8 +124,8 @@ int main(int argc, char *argv[])
   // Creates vectors for right-hand side and solution, and the
   // linear problem container.
 
-  Epetra_Vector LHS(*Map); LHS.PutScalar(0.0); // zero solution
-  Epetra_Vector RHS(*Map); RHS.Random();       // random rhs
+  Epetra_MultiVector LHS(*Map, NumVectors); LHS.PutScalar(0.0); // zero solution
+  Epetra_MultiVector RHS(*Map, NumVectors); RHS.Random();       // random rhs
   Epetra_LinearProblem Problem(Matrix, &LHS, &RHS);
 
   // ===================================================== //
