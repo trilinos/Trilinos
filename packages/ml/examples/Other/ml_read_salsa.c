@@ -41,7 +41,7 @@ double parasails_loadbal    = 0.;
 
 int main(int argc, char *argv[])
 {
-	int num_PDE_eqns=5, N_levels=9;
+	int num_PDE_eqns=5, N_levels=3;
     /* int nsmooth=1; */
 
 	int    leng, level, N_grid_pts, coarsest_level;
@@ -212,6 +212,7 @@ for (i = 0; i <= total_blk_cols; i++) vbr_cnptr[i] = num_PDE_eqns;
 */
   ag->minimizing_energy=2; 
   ag->keep_agg_information=1; 
+  ag->block_scaled_SA = 1;
 
   ML_Aggregate_Set_NullSpace(ag, num_PDE_eqns, num_PDE_eqns, NULL, N_update);
   ML_Aggregate_Set_MaxCoarseSize( ag, 20);
