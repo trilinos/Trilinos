@@ -1,8 +1,8 @@
 .././configure \
 --prefix=/home/jmwille/TramontosTrilinos/tbird \
 --cache-file=config.cache \
---with-blas="-L/apps/intel/mkl721/lib/em64t -lmkl_em64t -lguide" \
---with-lapack="-L/apps/intel/mkl721/lib/em64t -lmkl_lapack -lmkl_em64t" \
+--with-blas="-L/projects/global/x86_64/libraries/l_mkl_p_8.0.1.006/lib/em64t -lmkl_em64t -lguide" \
+--with-lapack="-L/projects/global/x86_64/libraries/l_mkl_p_8.0.1.006/lib/em64t -lmkl_lapack -lmkl_em64t" \
 --with-mpi-compilers \
 --with-mpi-libs=-lmpich \
 CFLAGS=-O3 CXXFLAGS=-O3 \
