@@ -290,10 +290,10 @@ int main(int argc, char *argv[])
   ML_Aggregate_Set_Threshold(ag, context->agg_thresh);
 
   if (ML_strcmp(context->agg_spectral_norm,"Calc") == 0) {
-     ML_Aggregate_Set_SpectralNormScheme_Calc(ag);
+     ML_Set_SpectralNormScheme_Calc(ml);
   }
   else if (ML_strcmp(context->agg_spectral_norm,"Anorm") == 0) {
-     ML_Aggregate_Set_SpectralNormScheme_Anorm(ag);
+     ML_Set_SpectralNormScheme_Anorm(ml);
   }
   else {
      printf("ML: Unknown spectral norm scheme %s\n",context->agg_spectral_norm);
