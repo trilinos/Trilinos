@@ -62,6 +62,9 @@ extern void ML_globalcsr2localcsr(ML_Operator *imatrix, int max_per_proc);
 
 extern void ML_matmat_mult(ML_Operator *Amat, ML_Operator *Bmat, 
                            ML_Operator **Cmat);
+extern void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
+                       ML_Operator **Cmatrix);
+
 extern void ML_2matmult(ML_Operator *Mat1, ML_Operator *Mat2,
 			ML_Operator *Result, int matrix_type);
 
@@ -70,6 +73,9 @@ extern void ML_oldmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
 extern void ML_get_matrow_CSR(ML_Operator *input_matrix, int N_requested_rows,
         int requested_rows[], int *allocated_space, int **columns,
         double **values, int row_lengths[], int index);
+extern void ML_get_matrow_VBR(ML_Operator *input_matrix, int N_requested_rows,
+        int requested_rows[], int *allocated_space, int **columns,
+        int **values, int row_lengths[], int index);
 extern void ML_get_row_CSR_norow_map(ML_Operator *input_matrix, 
         int N_requested_rows, int requested_rows[], int *allocated_space, 
         int **columns, double **values, int row_lengths[], int index);
@@ -95,6 +101,11 @@ extern int ML_determine_Brows(int start, int *end, ML_Operator *Amatrix,
 		       int *rows_that_fit, 
 		       void   (*Agetrow)(ML_Operator *,int,int *,int *,int **,
 					 double **,int *,int));
+extern int ML_determine_Bblkrows(int start, int *end, ML_Operator *Amatrix,
+		       int *rows[], int *rows_length, int *NBrows,
+		       int *rows_that_fit, 
+		       void   (*Agetrow)(ML_Operator *,int,int *,int *,int **,
+					 int **,int *,int));
 
 
 

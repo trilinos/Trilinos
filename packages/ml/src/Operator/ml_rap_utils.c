@@ -13,6 +13,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include "ml_struct.h"
+#include "ml_aztec_utils.h"
 
 /*********************************************************************/
 /* Perform a matrix-vector product:  ovec = matrix * vec             */
@@ -325,6 +326,94 @@ void ML_get_matrix_row(ML_Operator *input_matrix, int N_requested_rows,
    }
 }
 
+void ML_get_matrow_VBR(ML_Operator *input_matrix, int N_requested_rows,
+        int requested_rows[], int *allocated_space, int **columns,
+        int **values, int row_lengths[], int index)
+{
+   int    i, *mapper, *t1, row;
+   ML_Operator *next;
+   int *t2;
+   struct aztec_context *context;
+   struct ML_vbrdata *matrix;
+   int    *rowptr, *bindx, *col_ptr, itemp, j;
+   int    *val_start;
+   int    *val_ptr;
+
+#ifdef DEBUG2
+   if (N_requested_rows != 1) {
+      printf("ML_get_matrix_row is currently implemented for only 1 row");
+      printf(" at a time.\n");
+      exit(1);
+   }
+#endif
+
+   row = requested_rows[0]; 
+#ifdef DEBUG2
+   if ( (row >= input_matrix->getrow->Nrows) || (row < 0) ) {
+      row_lengths[0] = 0;
+      return;
+   }
+#endif
+
+   if (input_matrix->getrow->row_map != NULL) {
+      if (input_matrix->getrow->row_map[row] != -1) 
+         row = input_matrix->getrow->row_map[row];
+      else { row_lengths[0] = 0; 
+	ML_avoid_unused_param( (void *) &N_requested_rows);
+	return;}
+   }
+
+   next = input_matrix->sub_matrix;
+   while ( (next != NULL) && (row < next->getrow->Nrows) ) {
+      input_matrix = next;
+      next = next->sub_matrix;
+   }
+   if (next != NULL) row -= next->getrow->Nrows;
+
+   context = (struct aztec_context *) input_matrix->data;
+   matrix =  (struct ML_vbrdata *)    context->getrowstuff;
+   rowptr = matrix->bpntr;
+   itemp   = rowptr[row];
+   bindx   = &(matrix->bindx[itemp]);
+   val_start = &(matrix->indx[itemp]);
+
+   *row_lengths = rowptr[row+1] - itemp;
+
+   if (*row_lengths+index > *allocated_space) {
+      *allocated_space = 2*(*allocated_space) + 1;
+      if (*row_lengths+index > *allocated_space) 
+         *allocated_space = *row_lengths + 5 + index;
+      t1 = (int    *) ML_allocate(*allocated_space*sizeof(int   ));
+      t2 = (int    *) ML_allocate(*allocated_space*sizeof(int   ));
+      if (t2 == NULL) {
+         printf("Not enough space to get a matrix row. A row length of \n");
+         printf("%d was not sufficient\n",(*allocated_space-1)/2);
+	 fflush(stdout);
+         exit(1);
+      }
+      for (i = 0; i < index; i++) t1[i] = (*columns)[i];
+      for (i = 0; i < index; i++) t2[i] = (*values)[i];
+      ML_free(*columns);  ML_free(*values);
+      *columns = t1;
+      *values  = t2;
+   }
+   col_ptr = &((*columns)[index]);
+   val_ptr = &((*values)[index]);
+
+
+   for (j = 0 ; j < *row_lengths; j++) {
+      *col_ptr++ = *bindx++;
+   }
+   for (j = 0 ; j < *row_lengths; j++) {
+      *val_ptr++  = *val_start++;
+   }
+
+   if ( (input_matrix->getrow->use_loc_glob_map == ML_YES)) {
+      mapper       = input_matrix->getrow->loc_glob_map;
+      for (i = 0; i < row_lengths[0]; i++) 
+         (*columns)[i+index] = mapper[(*columns)[index+i]];
+   }
+}
 void ML_get_matrow_CSR(ML_Operator *input_matrix, int N_requested_rows,
         int requested_rows[], int *allocated_space, int **columns,
         double **values, int row_lengths[], int index)
