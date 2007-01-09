@@ -282,7 +282,12 @@ int main(int argc, char** argv)
               cerr << "verdun is not in our hashtable" << endl;
             }
 
-      
+          /* remove a member of the hashtable (bug# 2983)*/
+          battles.remove( "waterloo" );
+
+          /* write to a string using the toString() method */
+          cerr << "hashtable is (after removal of waterloo): " << battles.toString() << endl;
+   
 
           /*-------------- do several tests of the StrUtils class --------- */
 

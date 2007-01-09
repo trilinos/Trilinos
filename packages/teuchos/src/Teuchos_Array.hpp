@@ -67,6 +67,9 @@ namespace Teuchos
     //! Add a new entry at the end of the array. Resize to allow space for the new entry.
     inline Array<T>& append(const T& entry) {this->push_back(entry); return *this;}
 
+    //! Remove the i-th element from the array, with optional boundschecking.
+    void remove(int i);
+
     /*! \brief Return number of elements in the array. 
      *	Equivalent to size(), but included for backwards compatibility.
      */
@@ -114,6 +117,15 @@ namespace Teuchos
   template<class T> inline Array<T>::Array(int n, const T& t)
     : std::vector<T>(n, t)
   {}
+
+  template<class T>
+  void Array<T>::remove(int i) {
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+    indexCheckCrash(i);
+#endif
+    // Erase the i-th element of this array.
+    this->erase( this->begin() + i );
+  }
 
   template<class T> inline
   T& Array<T>::operator[](int i) {
