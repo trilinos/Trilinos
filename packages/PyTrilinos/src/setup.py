@@ -91,7 +91,7 @@ def version(): return 'Trilinos version: %s\\nPyTrilinos version: ' + __version_
 if __name__ == "__main__":
 
     # Initialization
-    initFileName = "PyTrilinos/__init__.py"
+    initFileName = os.path.join("PyTrilinos", "__init__.py")
 
     # Command-line arguments
     command = sys.argv[1]
@@ -105,8 +105,8 @@ if __name__ == "__main__":
     print "done"
 
     # Determine what packages are enabled
-    enabledModules     = [module for module in modules
-                          if makeMacros["ENABLE_" + module.upper()] == "true"]
+    enabledModules = [module for module in modules
+                      if makeMacros["ENABLE_" + module.upper()] == "true"]
 
     # Determine the Trilinos version
     trilinosVersion = processMakefile(os.path.join("..","..","..","Makefile"))["PACKAGE_VERSION"]
@@ -115,8 +115,10 @@ if __name__ == "__main__":
     prefix            = makeMacros["PYTHON_PREFIX"]
     pyTrilinosVersion = makeMacros["PACKAGE_VERSION"]
     pyVersion         = "python%d.%d" % sys.version_info[:2]
-    installDir        = os.path.join(prefix, "lib", pyVersion, "site-packages",
-                                     "PyTrilinos")
+    install           = makeMacros["INSTALL"]
+    installHead       = os.path.join(prefix, "lib", pyVersion, "site-packages")
+    installInitFile   = os.path.join(installHead, initFileName)
+    installDir        = os.path.join(installHead, "PyTrilinos")
 
     ######################################################
     # Build/clean/install/uninstall the shared libraries #
@@ -133,70 +135,56 @@ if __name__ == "__main__":
             builders.append(noxEpetraBuilder)
 
         # Build command
-        if command == "build":
+        if command in ("build", "install"):
             # Convert package libraries to shared
             for builder in builders:
                 builder.buildShared()
-            # Link the extension modules to dynamic libraries
-            for builder in builders:
-                builder.reLinkExtension()
 
         # Clean command
-        elif command == "clean":
+        if command == "clean":
             # Remove any dynamic libraries
             for builder in builders:
                 builder.clean()
 
         # Install command
-        elif command == "install":
+        if command == "install":
             # Install the shared libraries and extension modules
             for builder in builders:
                 builder.install()
 
         # Uninstall command
-        elif command == "uninstall":
+        if command == "uninstall":
             # Uninstall the dynamic libraries
             for builder in builders:
                 builder.uninstall()
 
-    #################################################################
-    # Build/clean/install/uninstall the PyTrilinos __init__.py file #
-    #################################################################
+    #########################################################
+    # Build/clean/uninstall the PyTrilinos __init__.py file #
+    #########################################################
 
     # Build command
-    if command == "build":
+    if command in ("build", "install"):
         # Build the init file
         buildInitFile(initFileName, "Makefile", enabledModules,
                       pyTrilinosVersion, trilinosVersion)
 
     # Clean command
-    elif command == "clean":
+    if command == "clean":
         # Remove the __init__.py file
         if os.path.isfile(initFileName):
             print "removing", initFileName
             os.remove(initFileName)
 
-    # Install command
-    elif command == "install":
-        # Build the init file, if needed
-        buildInitFile(initFileName, "Makefile", enabledModules,
-                      pyTrilinosVersion, trilinosVersion)
-        # Install
-        print "installing", initFileName, "->", installDir
-        try:
-            open(os.path.join(installDir,initFileName),"w").write(open(initFileName,"r").read())
-        except IOError:
-            print "\n***Error*** Cannot write to\n%s\n" % installDir
-            sys.exit(1)
-
     # Uninstall command
-    elif command == "uninstall":
+    if command == "uninstall":
         # Remove the PyTrilinos package
         print "\nUninstalling PyTrilinos package"
         if os.path.isdir(installDir):
             SharedUtils.runCommand("rm -rf " + installDir)
         else:
             print "nothing needs to be done for", installDir
+        # "uninstall" is not a distutils command, so end here
+        sys.exit()
 
     #############################################################
     # Use distutils to build/clean/etc... the extension modules #

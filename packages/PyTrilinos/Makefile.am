@@ -48,27 +48,9 @@ ACLOCAL	= aclocal -I config
 #np# new package so that the files can be used in creating the 
 #np# configure script for other packages. 
 EXTRA_DIST = \
-config/ac_cxx_bool.m4                   config/depcomp \
-config/ac_cxx_have_std.m4               config/install-sh \
-config/ac_cxx_have_stl.m4               config/missing \
-config/ac_cxx_mutable.m4                config/mkinstalldirs \
-config/ac_cxx_namespaces.m4             config/tac_arg_check_mpi.m4 \
-config/ac_cxx_new_for_scoping.m4        config/tac_arg_config_mpi.m4 \
-config/ac_cxx_reinterpret_cast.m4 \
-config/tac_arg_enable_compiler_options.m4 \
-config/ac_cxx_std_ios_base_fmtflags.m4  config/tac_arg_enable_feature.m4 \
-config/tac_arg_enable_feature_sub.m4    config/tac_arg_enable_default_feature.m4 \
-config/ac_cxx_std_sprintf.m4            config/tac_arg_enable_option.m4 \
-config/ac_prompt_user.m4                config/tac_arg_with_ar.m4 \
-config/ac_prompt_user_no_define.m4      config/tac_arg_with_blaslib.m4 \
-config/acx_blas.m4                      config/tac_arg_with_compiler.m4 \
-config/acx_check_dos_filesys.m4         config/tac_arg_with_flags.m4 \
-config/acx_lapack.m4                    config/tac_arg_with_incdirs.m4 \
-config/acx_pthread.m4                   config/tac_arg_with_lapacklib.m4 \
-config/config.guess                     config/tac_arg_with_libdirs.m4 \
-config/config.sub                       config/tac_arg_with_package.m4 \
-config/strip_dup_incl_paths.pl          config/strip_dup_libs.pl \
-config/replace-install-prefix.pl        bootstrap
+config/replace-install-prefix.pl  config/strip_dup_incl_paths.pl \
+config/string-replace.pl          config/strip_dup_libs.pl       \
+INSTALL
 #
 #       I believe that by switching to AUX_DIR(../../config) one 
 #       could get rid of these.
@@ -86,7 +68,6 @@ AUX_DIST = config/install-sh config/missing config/mkinstalldirs
 ## #######################################################################
 MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 	configure config.status config.log \
-	src/common/config-h.in src/common/stamp-h.in \
 	$(AUX_DIST) 
 
 #The following line helps the test harness recover from build errors.

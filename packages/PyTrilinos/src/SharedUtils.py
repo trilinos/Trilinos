@@ -227,46 +227,14 @@ class SharedTrilinosBuilder:
 
     ######################################################################
 
-    def reLinkExtension(self):
-        """
-        Change directory to the Trilinos package python build directory and
-        re-link the extension module to the new dynamic libraries.
-        """
-        #if not self.__supported: return
-        if True: return
-
-        # Remove all outdated extension modules and run make
-        print "\nLinking", self.__package, "extension module to shared libraries"
-        changeDirectory(self.__pythonDir)
-        targets = commands.getoutput("find build -name _*.so -print").split()
-        depend  = [self.__absDylibName]
-        for target in targets:
-            if needsToBeBuilt(target,depend):
-                deleteFile(target)
-        runCommand("make")
-
-        # Restore the current working directory
-        changeDirectory(self.__thisDir)
-
-    ######################################################################
-
     def clean(self):
         """
-        Remove all files created by the buildShared() and reLinkExtension()
-        methods.
+        Remove all files created by the buildShared() method.
         """
         if not self.__supported: return
 
         # Remove the shared library
-        #print "\nRemoving", self.__package, "dynamic library"
-        deleteFile(self.__absDylibName)
-
-        # Clean the python directory
-        #changeDirectory(os.path.join(self.__buildDir,"..", "python", "src"))
-        #removeExtensionModules("build")
-
-        # Restore the current working directory
-        #changeDirectory(self.__thisDir)
+        deleteFile(self.__dylibName)
 
     ######################################################################
 
@@ -281,15 +249,9 @@ class SharedTrilinosBuilder:
         install    = self.__makeMacros["INSTALL"]
         prefix     = self.__makeMacros["prefix" ]
         installDir = os.path.join(prefix, "lib")
-        print "\nInstalling", self.__package, "module"
 
         # Install the shared library and python module
         runCommand(" ".join([install, self.__dylibName, installDir]))
-        changeDirectory(os.path.join(self.__buildDir, "..", "python", "src"))
-        runCommand("make install")
-        
-        # Restore the current working directory
-        changeDirectory(self.__thisDir)
 
     ######################################################################
 
@@ -302,7 +264,6 @@ class SharedTrilinosBuilder:
         # Initialize
         prefix     = self.__makeMacros["prefix"]
         installDir = os.path.join(prefix, "lib")
-        print "\nUninstalling", self.__package, "module"
 
         # Uninstall the shared library and python module
         deleteFile(os.path.join(installDir, self.__dylibName))

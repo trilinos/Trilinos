@@ -240,7 +240,7 @@ all-am:
 build: $(WRAPPERS)
 	$(PYTHON) $(srcdir)/setup.py build
 
-install: build
+install: $(WRAPPERS)
 	$(PYTHON) $(srcdir)/setup.py install
 
 uninstall:
