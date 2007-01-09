@@ -111,14 +111,16 @@ if __name__ == "__main__":
     # Determine the Trilinos version
     trilinosVersion = processMakefile(os.path.join("..","..","..","Makefile"))["PACKAGE_VERSION"]
 
-    # Determine the installation prefix
-    prefix            = makeMacros["PYTHON_PREFIX"]
+    # Determine the installation information
+    prefix            = makeMacros["prefix"]
+    pythonPrefix      = makeMacros["PYTHON_PREFIX"]
     pyTrilinosVersion = makeMacros["PACKAGE_VERSION"]
     pyVersion         = "python%d.%d" % sys.version_info[:2]
     install           = makeMacros["INSTALL"]
-    installHead       = os.path.join(prefix, "lib", pyVersion, "site-packages")
-    installInitFile   = os.path.join(installHead, initFileName)
-    installDir        = os.path.join(installHead, "PyTrilinos")
+    mkdir             = makeMacros["mkdir_p"]
+    libDir            = os.path.join(prefix, "lib")
+    pyTrilinosDir     = os.path.join(pythonPrefix, "lib", pyVersion, "site-packages",
+                                     "PyTrilinos")
 
     ######################################################
     # Build/clean/install/uninstall the shared libraries #
@@ -148,6 +150,8 @@ if __name__ == "__main__":
 
         # Install command
         if command == "install":
+            # Make sure the lib directory exists
+            SharedUtils.runCommand(" ".join([mkdir, libDir]))
             # Install the shared libraries and extension modules
             for builder in builders:
                 builder.install()
@@ -179,10 +183,10 @@ if __name__ == "__main__":
     if command == "uninstall":
         # Remove the PyTrilinos package
         print "\nUninstalling PyTrilinos package"
-        if os.path.isdir(installDir):
-            SharedUtils.runCommand("rm -rf " + installDir)
+        if os.path.isdir(pyTrilinosDir):
+            SharedUtils.runCommand("rm -rf " + pyTrilinosDir)
         else:
-            print "nothing needs to be done for", installDir
+            print "nothing needs to be done for", pyTrilinosDir
         # "uninstall" is not a distutils command, so end here
         sys.exit()
 
