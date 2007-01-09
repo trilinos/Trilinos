@@ -1333,6 +1333,7 @@ int Epetra_CrsGraph::ReplaceRowMap(const Epetra_BlockMap& newmap)
 {
   if (RowMap().PointSameAs(newmap)) {
     Epetra_DistObject::Map_ = newmap;
+    CrsGraphData_->MakeImportExport();
     return(0);
   }
 
@@ -1344,6 +1345,7 @@ int Epetra_CrsGraph::ReplaceColMap(const Epetra_BlockMap& newmap)
 {
   if (ColMap().PointSameAs(newmap)) {
     CrsGraphData_->ColMap_ = newmap;
+    CrsGraphData_->MakeImportExport();
     return(0);
   }
 
