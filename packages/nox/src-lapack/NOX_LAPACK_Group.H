@@ -212,10 +212,6 @@ namespace NOX {
       bool isValidGradient;
       bool isValidNewton;
       //@}
-  
-      //! Norm of F
-      double normF;
-
 
     };
 

@@ -343,9 +343,6 @@ protected:
   bool isValidConditionNumber;
   //@}
   
-  //! 2-Norm of RHS
-  double normRHS;
-
   //! 2-Norm of the Newton solve residual: ||Js+f||
   double normNewtonSolveResidual;
 

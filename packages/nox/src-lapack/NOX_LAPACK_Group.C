@@ -53,7 +53,6 @@ NOX::LAPACK::Group::Group(NOX::LAPACK::Interface& interface):
   jacSolver(xVector.length()),	// create a Jacobian matrix
   problemInterface(interface) // set reference to the problem interface
 {
-  normF = 0;
   resetIsValid();
 }
 
@@ -74,12 +73,10 @@ NOX::LAPACK::Group::Group(const NOX::LAPACK::Group& source, NOX::CopyType type) 
     isValidGradient = source.isValidGradient;
     isValidNewton = source.isValidNewton;
     isValidJacobian = source.isValidJacobian;
-    normF = source.normF;
     break;
 
   case NOX::ShapeCopy:
     resetIsValid();
-    normF = 0.0;
     break;
 
   default:
@@ -131,7 +128,6 @@ NOX::Abstract::Group& NOX::LAPACK::Group::operator=(const Group& source)
     // Only copy vectors that are valid
     if (isValidF) {
       fVector = source.fVector;
-      normF = source.normF;
     }
 
     if (isValidGradient)
@@ -181,9 +177,6 @@ NOX::Abstract::Group::ReturnType NOX::LAPACK::Group::computeF()
     return NOX::Abstract::Group::Ok;
 
   isValidF = problemInterface.computeF(fVector, xVector);
-
-  if (isValidF) 
-    normF = fVector.norm();
 
   return (isValidF) ? (NOX::Abstract::Group::Ok) : (NOX::Abstract::Group::Failed);
 }
@@ -398,7 +391,14 @@ const NOX::Abstract::Vector& NOX::LAPACK::Group::getF() const
 
 double NOX::LAPACK::Group::getNormF() const
 {
-  return normF;
+  if (isValidF) 
+    return fVector.norm();
+  
+  cerr << "ERROR: NOX::LAPACK::Group::getNormF() "
+       << "- invalid F, please call computeF() first." << endl;
+  throw "NOX Error";
+  
+  return 0.0;
 }
 
 const NOX::Abstract::Vector& NOX::LAPACK::Group::getGradient() const 
@@ -418,7 +418,6 @@ void NOX::LAPACK::Group::print() const
 
   if (isValidF) {
     cout << "F(x) = " << fVector << "\n";
-    cout << "|| F(x) || = " << normF << "\n";
   }
   else
     cout << "F(x) has not been computed" << "\n";

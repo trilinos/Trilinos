@@ -64,7 +64,6 @@ Group::Group(Teuchos::ParameterList& printParams,
   gradVector(*gradVectorPtr), 
   NewtonVectorPtr(rcp_dynamic_cast<NOX::Epetra::Vector>(x.clone(ShapeCopy))),
   NewtonVector(*NewtonVectorPtr),
-  normRHS(0.0),
   normNewtonSolveResidual(0),
   conditionNumber(0.0),
   sharedLinearSystem(*sharedLinearSystemPtr),
@@ -87,7 +86,6 @@ Group::Group(Teuchos::ParameterList& printParams,
   gradVector(*gradVectorPtr), 
   NewtonVectorPtr(rcp_dynamic_cast<NOX::Epetra::Vector>(x.clone(ShapeCopy))),
   NewtonVector(*NewtonVectorPtr),
-  normRHS(0.0),
   normNewtonSolveResidual(0),
   conditionNumber(0.0),
   sharedLinearSystemPtr(Teuchos::rcp(new SharedObject<NOX::Epetra::LinearSystem, NOX::Epetra::Group>(linSys))), 
@@ -123,7 +121,6 @@ Group::Group(const Group& source, CopyType type) :
     isValidNewton = source.isValidNewton;
     isValidNormNewtonSolveResidual = source.isValidNormNewtonSolveResidual;
     isValidConditionNumber = source.isValidConditionNumber;
-    normRHS = source.normRHS;
     normNewtonSolveResidual = source.normNewtonSolveResidual;
     conditionNumber = source.conditionNumber;
     isValidPreconditioner = source.isValidPreconditioner;
@@ -196,7 +193,6 @@ Abstract::Group& Group::operator=(const Group& source)
   // Only copy vectors that are valid
   if (isValidRHS) {
     RHSVector = source.RHSVector;
-    normRHS = source.normRHS;
   }
 
   if (isValidGrad)
@@ -272,8 +268,6 @@ Abstract::Group::ReturnType Group::computeF()
 	 << endl;
     throw "NOX Error: Fill Failed";
   } 
-
-  normRHS = RHSVector.norm();
 
   isValidRHS = true;
 
@@ -543,7 +537,7 @@ double Group::getNormF() const
     throw "NOX Error";
   }
     
-  return normRHS;
+  return RHSVectorPtr->norm();
 }
 
 const Abstract::Vector& Group::getGradient() const 
