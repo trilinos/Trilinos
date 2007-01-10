@@ -51,6 +51,7 @@ HOUSEHOLDERTRANSBORDEREDSOLVE = householderTransposeBorderedSolve
 TRANSPOSESOLVE = transposeSolve
 COMPOSITECONSTRAINT = compositeConstraint
 COMPOSITECONSTRAINTMVDX = compositeConstraintMVDX
+NCRF = naturalContResidualFills
 
 if BUILD_LOCA_EPETRA_TESTS
 noinst_PROGRAMS = \
@@ -58,7 +59,8 @@ noinst_PROGRAMS = \
 	$(HOUSEHOLDERTRANSBORDEREDSOLVE) \
 	$(TRANSPOSESOLVE) \
 	$(COMPOSITECONSTRAINT) \
-	$(COMPOSITECONSTRAINTMVDX)
+	$(COMPOSITECONSTRAINTMVDX) \
+	$(NCRF)
 endif
 
 householderBorderedSolve_SOURCES = \
@@ -108,6 +110,15 @@ compositeConstraintMVDX_DEPENDENCIES = \
 	$(householderBorderedSolve_DEPENDENCIES)
 
 compositeConstraintMVDX_LDADD = \
+	$(householderBorderedSolve_LDADD)
+
+naturalContResidualFills_SOURCES = \
+	$(srcdir)/NaturalContResidualFills.C
+
+naturalContResidualFills_DEPENDENCIES = \
+	$(householderBorderedSolve_DEPENDENCIES)
+
+naturalContResidualFills_LDADD = \
 	$(householderBorderedSolve_LDADD)
 
 # ------------------------------------------------------------------------

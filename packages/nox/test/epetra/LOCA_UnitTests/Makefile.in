@@ -46,7 +46,7 @@
 # ************************************************************************
 # @HEADER
 
-SOURCES = $(compositeConstraint_SOURCES) $(compositeConstraintMVDX_SOURCES) $(householderBorderedSolve_SOURCES) $(householderTransposeBorderedSolve_SOURCES) $(transposeSolve_SOURCES)
+SOURCES = $(compositeConstraint_SOURCES) $(compositeConstraintMVDX_SOURCES) $(householderBorderedSolve_SOURCES) $(householderTransposeBorderedSolve_SOURCES) $(naturalContResidualFills_SOURCES) $(transposeSolve_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -71,7 +71,8 @@ POST_UNINSTALL = :
 host_triplet = @host@
 @BUILD_LOCA_EPETRA_TESTS_TRUE@noinst_PROGRAMS = $(am__EXEEXT_1) \
 @BUILD_LOCA_EPETRA_TESTS_TRUE@	$(am__EXEEXT_2) $(am__EXEEXT_3) \
-@BUILD_LOCA_EPETRA_TESTS_TRUE@	$(am__EXEEXT_4) $(am__EXEEXT_5)
+@BUILD_LOCA_EPETRA_TESTS_TRUE@	$(am__EXEEXT_4) $(am__EXEEXT_5) \
+@BUILD_LOCA_EPETRA_TESTS_TRUE@	$(am__EXEEXT_6)
 subdir = test/epetra/LOCA_UnitTests
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -108,6 +109,7 @@ am__EXEEXT_2 = householderTransposeBorderedSolve$(EXEEXT)
 am__EXEEXT_3 = transposeSolve$(EXEEXT)
 am__EXEEXT_4 = compositeConstraint$(EXEEXT)
 am__EXEEXT_5 = compositeConstraintMVDX$(EXEEXT)
+am__EXEEXT_6 = naturalContResidualFills$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_compositeConstraint_OBJECTS = CompositeConstraint.$(OBJEXT)
 compositeConstraint_OBJECTS = $(am_compositeConstraint_OBJECTS)
@@ -128,6 +130,10 @@ am_householderTransposeBorderedSolve_OBJECTS =  \
 	HouseholderTransposeBorderedSolve.$(OBJEXT)
 householderTransposeBorderedSolve_OBJECTS =  \
 	$(am_householderTransposeBorderedSolve_OBJECTS)
+am_naturalContResidualFills_OBJECTS =  \
+	NaturalContResidualFills.$(OBJEXT)
+naturalContResidualFills_OBJECTS =  \
+	$(am_naturalContResidualFills_OBJECTS)
 am_transposeSolve_OBJECTS = TransposeSolve.$(OBJEXT)
 transposeSolve_OBJECTS = $(am_transposeSolve_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
@@ -137,6 +143,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/CompositeConstraintMVDX.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/HouseholderBorderedSolve.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/HouseholderTransposeBorderedSolve.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/NaturalContResidualFills.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/TransposeSolve.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -147,12 +154,12 @@ SOURCES = $(compositeConstraint_SOURCES) \
 	$(compositeConstraintMVDX_SOURCES) \
 	$(householderBorderedSolve_SOURCES) \
 	$(householderTransposeBorderedSolve_SOURCES) \
-	$(transposeSolve_SOURCES)
+	$(naturalContResidualFills_SOURCES) $(transposeSolve_SOURCES)
 DIST_SOURCES = $(compositeConstraint_SOURCES) \
 	$(compositeConstraintMVDX_SOURCES) \
 	$(householderBorderedSolve_SOURCES) \
 	$(householderTransposeBorderedSolve_SOURCES) \
-	$(transposeSolve_SOURCES)
+	$(naturalContResidualFills_SOURCES) $(transposeSolve_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -368,6 +375,7 @@ HOUSEHOLDERTRANSBORDEREDSOLVE = householderTransposeBorderedSolve
 TRANSPOSESOLVE = transposeSolve
 COMPOSITECONSTRAINT = compositeConstraint
 COMPOSITECONSTRAINTMVDX = compositeConstraintMVDX
+NCRF = naturalContResidualFills
 householderBorderedSolve_SOURCES = \
 	$(srcdir)/HouseholderBorderedSolve.C 
 
@@ -414,6 +422,15 @@ compositeConstraintMVDX_DEPENDENCIES = \
 	$(householderBorderedSolve_DEPENDENCIES)
 
 compositeConstraintMVDX_LDADD = \
+	$(householderBorderedSolve_LDADD)
+
+naturalContResidualFills_SOURCES = \
+	$(srcdir)/NaturalContResidualFills.C
+
+naturalContResidualFills_DEPENDENCIES = \
+	$(householderBorderedSolve_DEPENDENCIES)
+
+naturalContResidualFills_LDADD = \
 	$(householderBorderedSolve_LDADD)
 
 
@@ -474,6 +491,9 @@ householderBorderedSolve$(EXEEXT): $(householderBorderedSolve_OBJECTS) $(househo
 householderTransposeBorderedSolve$(EXEEXT): $(householderTransposeBorderedSolve_OBJECTS) $(householderTransposeBorderedSolve_DEPENDENCIES) 
 	@rm -f householderTransposeBorderedSolve$(EXEEXT)
 	$(CXXLINK) $(householderTransposeBorderedSolve_LDFLAGS) $(householderTransposeBorderedSolve_OBJECTS) $(householderTransposeBorderedSolve_LDADD) $(LIBS)
+naturalContResidualFills$(EXEEXT): $(naturalContResidualFills_OBJECTS) $(naturalContResidualFills_DEPENDENCIES) 
+	@rm -f naturalContResidualFills$(EXEEXT)
+	$(CXXLINK) $(naturalContResidualFills_LDFLAGS) $(naturalContResidualFills_OBJECTS) $(naturalContResidualFills_LDADD) $(LIBS)
 transposeSolve$(EXEEXT): $(transposeSolve_OBJECTS) $(transposeSolve_DEPENDENCIES) 
 	@rm -f transposeSolve$(EXEEXT)
 	$(CXXLINK) $(transposeSolve_LDFLAGS) $(transposeSolve_OBJECTS) $(transposeSolve_LDADD) $(LIBS)
@@ -488,6 +508,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CompositeConstraintMVDX.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/HouseholderBorderedSolve.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/HouseholderTransposeBorderedSolve.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NaturalContResidualFills.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TransposeSolve.Po@am__quote@
 
 .C.o:
@@ -569,6 +590,22 @@ HouseholderTransposeBorderedSolve.obj: $(srcdir)/HouseholderTransposeBorderedSol
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/HouseholderTransposeBorderedSolve.Po' tmpdepfile='$(DEPDIR)/HouseholderTransposeBorderedSolve.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o HouseholderTransposeBorderedSolve.obj `if test -f '$(srcdir)/HouseholderTransposeBorderedSolve.C'; then $(CYGPATH_W) '$(srcdir)/HouseholderTransposeBorderedSolve.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/HouseholderTransposeBorderedSolve.C'; fi`
+
+NaturalContResidualFills.o: $(srcdir)/NaturalContResidualFills.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NaturalContResidualFills.o -MD -MP -MF "$(DEPDIR)/NaturalContResidualFills.Tpo" -c -o NaturalContResidualFills.o `test -f '$(srcdir)/NaturalContResidualFills.C' || echo '$(srcdir)/'`$(srcdir)/NaturalContResidualFills.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NaturalContResidualFills.Tpo" "$(DEPDIR)/NaturalContResidualFills.Po"; else rm -f "$(DEPDIR)/NaturalContResidualFills.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NaturalContResidualFills.C' object='NaturalContResidualFills.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/NaturalContResidualFills.Po' tmpdepfile='$(DEPDIR)/NaturalContResidualFills.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NaturalContResidualFills.o `test -f '$(srcdir)/NaturalContResidualFills.C' || echo '$(srcdir)/'`$(srcdir)/NaturalContResidualFills.C
+
+NaturalContResidualFills.obj: $(srcdir)/NaturalContResidualFills.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NaturalContResidualFills.obj -MD -MP -MF "$(DEPDIR)/NaturalContResidualFills.Tpo" -c -o NaturalContResidualFills.obj `if test -f '$(srcdir)/NaturalContResidualFills.C'; then $(CYGPATH_W) '$(srcdir)/NaturalContResidualFills.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NaturalContResidualFills.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NaturalContResidualFills.Tpo" "$(DEPDIR)/NaturalContResidualFills.Po"; else rm -f "$(DEPDIR)/NaturalContResidualFills.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NaturalContResidualFills.C' object='NaturalContResidualFills.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/NaturalContResidualFills.Po' tmpdepfile='$(DEPDIR)/NaturalContResidualFills.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NaturalContResidualFills.obj `if test -f '$(srcdir)/NaturalContResidualFills.C'; then $(CYGPATH_W) '$(srcdir)/NaturalContResidualFills.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NaturalContResidualFills.C'; fi`
 
 TransposeSolve.o: $(srcdir)/TransposeSolve.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TransposeSolve.o -MD -MP -MF "$(DEPDIR)/TransposeSolve.Tpo" -c -o TransposeSolve.o `test -f '$(srcdir)/TransposeSolve.C' || echo '$(srcdir)/'`$(srcdir)/TransposeSolve.C; \
