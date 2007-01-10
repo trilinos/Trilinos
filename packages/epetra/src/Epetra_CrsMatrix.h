@@ -827,8 +827,7 @@ or if the number of entries in this row exceed the Length parameter.
 
       \pre RowMap().PointSameAs(newmap)==true
   */
-  int ReplaceRowMap(const Epetra_BlockMap& newmap)
-  {return( Graph_.ReplaceRowMap(newmap) ); }
+  int ReplaceRowMap(const Epetra_BlockMap& newmap);
 
   //! Returns true if we have a well-defined ColMap, and returns false otherwise.
   /*! \pre We have a well-defined ColMap if a) a ColMap was passed in at construction, 
@@ -844,8 +843,7 @@ or if the number of entries in this row exceed the Length parameter.
       
       \pre ColMap().PointSameAs(newmap)==true
   */
-  int ReplaceColMap(const Epetra_BlockMap& newmap)
-  {return( Graph_.ReplaceColMap(newmap) ); }
+  int ReplaceColMap(const Epetra_BlockMap& newmap);
 
 
   //! Returns the Epetra_Map object that describes the set of column-indices that appear in each processor's locally owned matrix rows.

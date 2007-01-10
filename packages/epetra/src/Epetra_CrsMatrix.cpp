@@ -363,6 +363,40 @@ void Epetra_CrsMatrix::DeleteMemory()
 }
 
 //==============================================================================
+int Epetra_CrsMatrix::ReplaceRowMap(const Epetra_BlockMap& newmap)
+{
+  int err = Graph_.ReplaceRowMap(newmap);
+  if (err == 0) {
+    //update export vector.
+
+    if (ExportVector_ != 0) {
+      delete ExportVector_; 
+      ExportVector_= 0;
+    }
+
+    ExportVector_ = new Epetra_MultiVector(RowMap(),1);
+  }
+  return(err);
+}
+
+//==============================================================================
+int Epetra_CrsMatrix::ReplaceColMap(const Epetra_BlockMap& newmap)
+{
+  int err = Graph_.ReplaceColMap(newmap);
+  if (err == 0) {
+    //update import vector.
+
+    if (ImportVector_ != 0) {
+      delete ImportVector_;
+      ImportVector_= 0;
+    }
+
+    ImportVector_ = new Epetra_MultiVector(ColMap(),1);
+  }
+  return(err);
+}
+
+//==============================================================================
 int Epetra_CrsMatrix::PutScalar(double ScalarConstant) 
 {
   if (StorageOptimized()) {

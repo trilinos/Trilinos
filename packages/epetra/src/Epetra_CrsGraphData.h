@@ -91,7 +91,7 @@ class Epetra_CrsGraphData : public Epetra_Data {
   //@}
   
   // Defined by CrsGraph::FillComplete and related
-  const Epetra_BlockMap RowMap_;
+  Epetra_BlockMap RowMap_;
   Epetra_BlockMap ColMap_;
   Epetra_BlockMap DomainMap_;
   Epetra_BlockMap RangeMap_;
