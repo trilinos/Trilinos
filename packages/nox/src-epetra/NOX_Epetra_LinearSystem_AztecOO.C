@@ -630,8 +630,8 @@ applyJacobianInverse(Teuchos::ParameterList &p,
 
     std::string mapFileName = prefixName + "_Map_" + postfixName;
     std::string jacFileName = prefixName + "_Jacobian_" + postfixName;    
-    std::string rhsFileName = prefixName + "_LHS_" + postfixName;
-    std::string lhsFileName = prefixName + "_RHS_" + postfixName;
+    std::string rhsFileName = prefixName + "_RHS_" + postfixName;
+    std::string lhsFileName = prefixName + "_LHS_" + postfixName;
 
     Epetra_RowMatrix* printMatrix = NULL;
     printMatrix = dynamic_cast<Epetra_RowMatrix*>(jacPtr.get()); 
