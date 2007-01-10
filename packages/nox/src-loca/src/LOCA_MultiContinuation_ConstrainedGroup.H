@@ -506,6 +506,9 @@ namespace LOCA {
       //! Flag that indicates whether underlying group is a bordered group
       bool isBordered;
 
+      //! Flag indicating whether to skip df/dp computations
+      bool skipDfDp;
+
     }; // Class ConstrainedGroup
 
   } // Namespace MultiContinuation

@@ -50,7 +50,8 @@
 
 //-----------------------------------------------------------------------------
 Problem_Interface::Problem_Interface(FiniteElementProblem& Problem) :
-  problem(Problem)
+  problem(Problem),
+  numFillsF(0)
 { 
 }
 
@@ -59,6 +60,7 @@ Problem_Interface::~Problem_Interface()
 
 bool Problem_Interface::computeF(const Epetra_Vector& x, Epetra_Vector& F, FillType flag)
 {
+  ++numFillsF;
   return problem.evaluate(F_ONLY, &x, &F, NULL);
 }
 

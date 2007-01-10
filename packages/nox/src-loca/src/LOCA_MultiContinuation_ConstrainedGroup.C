@@ -84,7 +84,8 @@ LOCA::MultiContinuation::ConstrainedGroup::ConstrainedGroup(
     isValidJacobian(false),
     isValidNewton(false),
     isValidGradient(false),
-    isBordered(false)
+    isBordered(false),
+    skipDfDp(false)
 {
   // Set up multi-vector views
   setupViews(); 
@@ -106,6 +107,9 @@ LOCA::MultiContinuation::ConstrainedGroup::ConstrainedGroup(
   bordered_grp = 
     Teuchos::rcp_dynamic_cast<LOCA::BorderedSystem::AbstractGroup>(grpPtr);
   isBordered = (bordered_grp != Teuchos::null);
+
+  // Determine whether we should skip df/dp
+  skipDfDp = constraintParams->get("Skip df/dp", false);
 }
 
 LOCA::MultiContinuation::ConstrainedGroup::ConstrainedGroup(
@@ -136,7 +140,8 @@ LOCA::MultiContinuation::ConstrainedGroup::ConstrainedGroup(
     isValidJacobian(source.isValidJacobian),
     isValidNewton(source.isValidNewton),
     isValidGradient(source.isValidGradient),
-    isBordered(false)
+    isBordered(false),
+    skipDfDp(source.skipDfDp)
 {
   // Set up multi-vector views
   setupViews();
@@ -170,7 +175,7 @@ LOCA::MultiContinuation::ConstrainedGroup::setConstraintParameter(int i,
 {
   grpPtr->setParam(constraintParamIDs[i],val);
   xVec->getScalar(i) = val;
-  constraintsPtr->setParam(constraintParamIDs[i],i);
+  constraintsPtr->setParam(constraintParamIDs[i],val);
 
   resetIsValid();
 }
@@ -281,13 +286,15 @@ LOCA::MultiContinuation::ConstrainedGroup::computeJacobian()
   NOX::Abstract::Group::ReturnType status;
 
   // Compute underlying df/dp (may invalidate underlying data)
-  status = grpPtr->computeDfDpMulti(constraintParamIDs, 
-				    *fMultiVec.getXMultiVec(), 
-				    isValidF);
-  finalStatus = 
-    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							   finalStatus,
-							   callingFunction);
+  if (!skipDfDp) {
+    status = grpPtr->computeDfDpMulti(constraintParamIDs, 
+				      *fMultiVec.getXMultiVec(), 
+				      isValidF);
+    finalStatus = 
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							     finalStatus,
+							     callingFunction);
+  }
 
   // We need to compute the constraint derivatives before computing the
   // Jacobian, because the constraint derivatives might involve derivatives
@@ -320,10 +327,16 @@ LOCA::MultiContinuation::ConstrainedGroup::computeJacobian()
   }
 
   // Set blocks in bordered solver
-  borderedSolver->setMatrixBlocks(grpPtr, 
-				  dfdpMultiVec->getXMultiVec(), 
-				  constraintsPtr,
-				  dfdpMultiVec->getScalars());
+  if (skipDfDp) 
+    borderedSolver->setMatrixBlocks(grpPtr, 
+				    Teuchos::null, 
+				    constraintsPtr,
+				    dfdpMultiVec->getScalars());
+  else
+    borderedSolver->setMatrixBlocks(grpPtr, 
+				    dfdpMultiVec->getXMultiVec(),
+				    constraintsPtr,
+				    dfdpMultiVec->getScalars());
   status = borderedSolver->initForSolve();
   finalStatus = 
       globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
@@ -730,6 +743,7 @@ LOCA::MultiContinuation::ConstrainedGroup::copy(
     isValidJacobian = source.isValidJacobian;
     isValidNewton = source.isValidNewton;
     isValidGradient = source.isValidGradient;
+    skipDfDp = source.skipDfDp;
 
     // set up views again just to be safe
     setupViews();

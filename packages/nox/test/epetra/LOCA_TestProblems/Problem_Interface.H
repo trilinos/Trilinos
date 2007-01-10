@@ -82,6 +82,9 @@ public:
    *  passdown class design by the application code.
    */ 
   FiniteElementProblem& problem;
+
+  //! Number of residual fills
+  int numFillsF;
 };
 
 #endif

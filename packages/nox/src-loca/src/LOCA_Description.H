@@ -140,6 +140,7 @@ The parameter list passed to the Stepper has two sublists, "LOCA" and "NOX".  Th
 	  <li> <B>"Min Value"</B> -- [double] (Must be supplied) Minimum value of continuation parameter
 	  <li> <B>"Max Steps"</B> -- [int] (default: 100) Maximum number of continuation steps (including failed steps)
 	  <li> <B>"Max Nonlinear Iterations"</B> -- [int] (default: 15) Maximum number of nonlinear iterations per continuation step
+	  <li> <B>"Skip df/dp"</B> -- [bool] (default: false)  For natural continuation, skip the df/dp computation which is usually unnecessary.
           <li> <B>"Enable Arc Length Scaling"</B> -- [bool] (default: true) Enable arc-length scaling to equilibrate solution and parameter components to arc-length equations (see LOCA::MultiContinuation::ArcLengthGroup)
 	  <li> <B>"Goal Arc Length Parameter Contribution"</B> -- [double] (default: 0.5) Goal for parameter contribution to arc-length equation
 	  <li> <B>"Max Arc Length Parameter Contribution"</B> -- [double] (default: 0.8) Max for parameter contribution to arc-length equation, triggering rescaling
