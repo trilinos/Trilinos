@@ -162,6 +162,23 @@ LOCA::MultiContinuation::ConstrainedGroup::ConstrainedGroup(
   bordered_grp = 
     Teuchos::rcp_dynamic_cast<LOCA::BorderedSystem::AbstractGroup>(grpPtr);
   isBordered = (bordered_grp != Teuchos::null);
+
+  // Set blocks in bordered solver
+  if (isValidJacobian) {
+    if (skipDfDp) 
+      borderedSolver->setMatrixBlocks(grpPtr, 
+				      Teuchos::null, 
+				      constraintsPtr,
+				      dfdpMultiVec->getScalars());
+    else
+      borderedSolver->setMatrixBlocks(grpPtr, 
+				      dfdpMultiVec->getXMultiVec(),
+				      constraintsPtr,
+				      dfdpMultiVec->getScalars());
+    NOX::Abstract::Group::ReturnType status = borderedSolver->initForSolve();
+    globalData->locaErrorCheck->checkReturnType(status, 
+						"LOCA::MultiContinuation::ConstrainedGroup::ConstrainedGroup()");
+  }
 }
 
 
@@ -753,6 +770,23 @@ LOCA::MultiContinuation::ConstrainedGroup::copy(
       globalData->locaFactory->createBorderedSolverStrategy(
 				   parsedParams,
 				   constraintParams);
+
+    // Set blocks in bordered solver
+    if (isValidJacobian) {
+      if (skipDfDp) 
+	borderedSolver->setMatrixBlocks(grpPtr, 
+					Teuchos::null, 
+					constraintsPtr,
+					dfdpMultiVec->getScalars());
+      else
+	borderedSolver->setMatrixBlocks(grpPtr, 
+					dfdpMultiVec->getXMultiVec(),
+					constraintsPtr,
+					dfdpMultiVec->getScalars());
+      NOX::Abstract::Group::ReturnType status = borderedSolver->initForSolve();
+      globalData->locaErrorCheck->checkReturnType(status, 
+						  "LOCA::MultiContinuation::ConstrainedGroup::copy()");
+    }
   }
 }
 
