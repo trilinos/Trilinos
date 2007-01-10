@@ -337,7 +337,6 @@ int **exp_to_part )         /* list of partitions to which exported objs
       detailed_balance_info(zz, hg, part_sizes, p, parts);
   }
   
-  
 /*
   uprintf(hg->comm, "Zoltan_PHG kway=%d #parts=%d\n", hgp.kway, zz->LB.Num_Global_Parts);
 */
@@ -610,6 +609,10 @@ End:
       Zoltan_Timer_PrintAll(zz->ZTime, 0, hgp.globalcomm.Communicator, stdout);
   }
 
+  if (hgp.globalcomm.row_comm != MPI_COMM_NULL)
+    MPI_Comm_free(&(hgp.globalcomm.row_comm));
+  if (hgp.globalcomm.col_comm != MPI_COMM_NULL)
+    MPI_Comm_free(&(hgp.globalcomm.col_comm));
   if (hgp.globalcomm.Communicator != MPI_COMM_NULL)
     MPI_Comm_free(&(hgp.globalcomm.Communicator));
 

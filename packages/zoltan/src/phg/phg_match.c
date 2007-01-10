@@ -887,7 +887,7 @@ static int pmatching_ipm (ZZ *zz,
           /* flag first data in each destination row for merging */
           if (rows[candidate_gno % hgc->nProc_y] != 1)  {
             rows[candidate_gno % hgc->nProc_y] = 1;
-            candidate_index = -candidate_index -1; 
+            candidate_index = -candidate_index -1;
           }
           
           /* current partial sums fit, so put them into the send buffer */

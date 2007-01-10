@@ -644,10 +644,11 @@ or
 <b><a href="ug_interface_mig.html#Zoltan_Invert_Lists">Zoltan_Invert_Lists</a></b>.
 Memory pointed to by the arguments is freed and the arguments are set to
 NULL in C and C++ or nullified in Fortran. NULL arguments may be passed to <b>Zoltan_LB_Free_Part</b>.
+Typically, <b>Zoltan_LB_Free_Part</b> is called twice: once for the import lists, and once for the export lists.<br>
 Note that this function does not destroy the Zoltan data structure itself;
 it is deallocated through a call to <b><a href="ug_interface_init.html#Zoltan_Destroy">Zoltan_Destroy</a></b>
 in C and Fortran and by the object destructor in C++.
-<br>&nbsp;
+<br>
 <table WIDTH="100%" >
 <tr>
 <td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>

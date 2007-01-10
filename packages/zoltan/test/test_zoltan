@@ -216,6 +216,7 @@ if (! $?run ) then
     case g++:
     case linux:
     case mac:
+    case mac32:
     case purecov:
     case pure:
       set run = "mpirun -np"

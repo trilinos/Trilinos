@@ -8,9 +8,9 @@ Parallel Disk Info	= number=0
 Global element ids assigned to processor 0
 GID	Part	Perm	IPerm
 1	1	-1	-1
-235	1	-1	-1
-242	1	-1	-1
-243	1	-1	-1
+237	1	-1	-1
+244	1	-1	-1
+245	1	-1	-1
 253	2	-1	-1
 254	2	-1	-1
 293	2	-1	-1

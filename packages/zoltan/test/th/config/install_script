@@ -1,0 +1,57 @@
+#!/bin/csh
+
+if (!(-d acro-mpi-s)) then
+   exit
+endif
+set hname = `hostname`
+
+##
+## Copy coliny
+##
+set install = "OK";
+if (!(-e acro-mpi-s/acro/test/smoke.coliny.ps.tests.xml)) then
+   set install = "FAIL"
+endif
+set nerrs = `grep "Fail" acro-mpi-s/acro/test/smoke.coliny.*xml | wc | awk '{print $1;}'`
+if ($nerrs != "0") then
+   set install = "FAIL"
+endif
+
+if ($install == "OK") then
+   if ($hname == "bobo.sandia.gov") then
+      echo "Installing coliny from bobo"
+      \rm -f /Net/proj/opt/bin/LINUX/coliny
+      cp acro-mpi-s/acro/packages/coliny/src/apps/coliny /Net/proj/opt/bin/LINUX/coliny
+   else if ($hname == "zamboni.sandia.gov") then
+      echo "Installing coliny from zamboni"
+      \rm -f /Net/proj/opt/bin/SOLARIS/coliny
+      cp acro-mpi-s/acro/packages/coliny/src/apps/coliny /Net/proj/opt/bin/SOLARIS/coliny
+   endif
+endif
+
+
+##
+## Copy PICO
+##
+set install = "OK";
+if (!(-e acro-mpi-s/acro/test/smoke.pico.lp.tests.xml)) then
+   set install = "FAIL";
+endif
+set nerrs = `grep "Fail" acro-mpi-s/acro/test/smoke.pico.*xml | wc | awk '{print $1;}'`
+if ($nerrs != "0") then
+   set install = "FAIL";
+endif
+
+if ($install == "OK") then
+   if ($hname == "bobo.sandia.gov") then
+      echo "Installing PICO from bobo"
+      \rm -f /Net/proj/opt/bin/LINUX/PICO
+      cp acro-mpi-s/acro/packages/pico/src/apps/milp/PICO /Net/proj/opt/bin/LINUX/PICO
+      scp acro-mpi-s/acro/packages/pico/src/apps/milp/PICO wehart@software.sandia.gov:public_html/downloads/PICO.linux
+   else if ($hname == "zamboni.sandia.gov") then
+      echo "Installing PICO from zamboni"
+      \rm -f /Net/proj/opt/bin/SOLARIS/PICO
+      cp acro-mpi-s/acro/packages/pico/src/apps/milp/PICO /Net/proj/opt/bin/SOLARIS/PICO
+      scp acro-mpi-s/acro/packages/pico/src/apps/milp/PICO wehart@software.sandia.gov:public_html/downloads/PICO.solaris
+   endif
+endif

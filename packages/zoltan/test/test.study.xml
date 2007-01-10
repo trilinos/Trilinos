@@ -1,0 +1,27 @@
+<experimental-study name="EXPNAME">
+  <tags>
+    <tag>TAG</tag>
+  </tags>
+
+  <experiment>
+    <factors>
+      <factor name="zdrive">
+	<level name="ARCH">../../Obj_ARCH/zdrive</level>
+      </factor>
+      <factor name="numproc">
+	<level name="np=NPROC">NPROC</level>
+      </factor>
+      <factor name="zinput" filename="zoltan.tests">
+      </factor>
+    </factors>
+    <controls>
+       <executable>perl ../bin/exp.zoltan.pl</executable>
+    </controls>
+  </experiment>
+
+  <analysis name="checksums" type="validation">
+    <options>_measurement=AllPass _value=1</options>
+  </analysis>
+
+</experimental-study>
+

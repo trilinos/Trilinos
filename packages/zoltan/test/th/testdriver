@@ -1,0 +1,173 @@
+#!/usr/bin/perl
+#
+#  This perl script determines if an error has occured within a
+#  src build. The script searches the output for specific keywords.
+#  This was adapted from Mario Alleva's grep_error.perl script.
+#
+#  See http://www.aptest.com/testtypes.html for a list of types of
+#  software testing.
+#
+#  William E. Hart
+#  September, 2004
+#
+################################################################
+
+#
+# See if the TESTLIBDIR environmental variable is set, which provides
+# an include path for the TestLib module
+#
+if ($ENV{TESTLIBDIR} ne "") {
+   unshift @INC, $ENV{TESTLIBDIR};
+   $ENV{'PATH'} = $ENV{'PATH'} . ":.:" . $ENV{TESTLIBDIR}
+   }
+
+###
+### MAIN ROUTINE
+###
+#
+# Check command line arguments
+#
+sub print_help {
+   die "testdriver [--name=<exp-name>] [--machines=<mach-file>] <command> [option-list] ...\
+\t--help         This message\
+\t--I            The directory that contains the Perl TestLib.pm module\
+\t--machines     Provide an mpi_machines filename\
+\t--name         Define the name of the software test\
+\t                 Default: the current directory name\
+\t--o            The directory that will contain the output files\
+\t                 (defaults to `pwd`/test)\
+\t--rm           Remove the *.xml files in the acro/test directory before\
+\t                 executing tests\
+\t--S            The directory that contains the Perl siteconfig.pl file\
+\t--v            Work in verbose mode\
+\
+testdriver commands:
+\tconfigure    Configure Acro\
+\t               Accepts standard configuration options\
+\t               (e.g. --with-optimization=-O3)\
+\t               --logfile=<file> (analyze a config output file)\
+\
+\treconfigure  Configure Acro\
+\t               Accepts no options, but re-applies the configuration options\
+\t               used in the previous configuration step\
+\t
+\tbuild        Build library and executables\
+\t               --clean   (perform 'make clean' before building)\
+\t               --check   (build with 'make check' rather than 'make')\
+\t               --logfile=<file> (analyze an existing build output file)\
+\
+\ttest        Perform quick-and-easy tests for basic functionality\
+\t               (these are usually a subset of the regression tests)\
+\t               --tag=<category> (limit tests to list of categories\
+\t               --cov=<web output directory> (generate coverage info)\
+\t               --cov (generate coverage info, deposit in default dir)\
+";
+}
+
+
+#
+# Process command line options
+#
+if ((! @ARGV) || (@ARGV && (($ARGV[0] eq "-h") || ($ARGV[0] eq "--help")))) {
+   print_help();
+}
+$tmp = shift @ARGV;
+$outdir = `pwd`;
+chomp($outdir);
+$outdir .= "/test";
+$using_siteconfig=0;
+while (substr($tmp,0,2) eq "--") {
+  if (substr($tmp,0,3) eq "--v") {
+    $verbose=1;
+  } elsif (substr($tmp,0,6) eq "--help") {
+    print_help();
+  } elsif (substr($tmp,0,4) eq "--rm") {
+    system("rm -f test/*.xml");
+  } elsif (substr($tmp,0,7) eq "--name=") {
+    $lsoftware=substr($tmp,7,length($tmp)-7);
+  } elsif (substr($tmp,0,11) eq "--machines=") {
+    $machinefile=substr($tmp,11,length($tmp)-11);
+  } elsif (substr($tmp,0,4) eq "--o=") {
+    $outdir=substr($tmp,4,length($tmp)-4);
+    if (substr($outdir,0,1) ne "/") {
+       $pwd = `pwd`;
+       chomp($pwd);
+       $foo = $pwd . "/" . $outdir;
+       $outdir = $foo;
+    }
+  } elsif (substr($tmp,0,4) eq "--I=") {
+    $dir=substr($tmp,4,length($tmp)-4);
+    if (substr($dir,0,1) ne "/") {
+       $pwd = `pwd`;
+       chomp($pwd);
+       $foo = $pwd . "/" . $dir;
+       $dir = $foo;
+    }
+    $ENV{PATH} = $ENV{PATH} . ":.:" . $dir;
+    $ENV{TESTLIBDIR} = $dir;
+    unshift @INC, $dir;
+  } elsif (substr($tmp,0,4) eq "--S=") {
+    $using_siteconfig=1;
+    $dir=substr($tmp,4,length($tmp)-4);
+    if (substr($dir,0,1) ne "/") {
+       $pwd = `pwd`;
+       chomp($pwd);
+       $foo = $pwd . "/" . $dir;
+       $dir = $foo;
+    }
+    $ENV{PATH} = $ENV{PATH} . ":.:" . $dir;
+    unshift @INC, $dir;
+  } else {
+    print "ERROR: Bad command line option: \"$tmp\"\n\n";
+    print_help();
+  }
+  if (!(@ARGV)) {
+    print "ERROR: No commands specified!\n\n";
+    print_help();
+  }
+  $tmp = shift @ARGV;
+}
+#local ($siteconfig);
+#if ($using_siteconfig == 1) {
+   #require "siteconfig.pl";
+   #my $dummy = "$siteconfig";
+#} else {
+   #$siteconfig = ""
+#}
+require TestLib;
+TestLib::set_name($lsoftware);
+if ($using_siteconfig == 1) {
+   TestLib::init_siteconfig();
+}
+$command = $tmp;
+
+if ($host eq "bobo.mp.sandia.gov") {
+     use autouse TIME::HiRes; # => qw( gettimeofday() tv_interval() );
+  } else {
+     use autouse TIME::Local; # => qw( gettimeofday() localtime() );
+  }
+
+system("mkdir -p $outdir");
+while ($command ne "") {
+  #
+  # Get command arguments
+  #
+  @arglist = ($outdir);
+  while (@ARGV && (substr($ARGV[0],0,2) eq "--")) {
+    $arg = shift @ARGV;
+    push @arglist, $arg;
+  }
+  #
+  # Execute the command
+  #
+  TestLib::exec_command($command,@arglist);
+  #
+  # Get driver command
+  #
+  if (@ARGV) {
+     $command = shift @ARGV;
+  } else {
+     $command = "";
+  }
+}
+ 

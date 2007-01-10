@@ -2217,7 +2217,7 @@ int msg_tag = 23132;
   }
 
   /* Send partition info back to requesting processor */
-  pin_parts = pin_procs;    /* Reuse the memory allocated for pin_procs. */
+  pin_parts = (int *) ZOLTAN_MALLOC(npins * sizeof(int));
   Zoltan_Comm_Do_Reverse(plan, msg_tag, (char *) outparts, 
                          sizeof(int), NULL, (char *) pin_parts);
 
@@ -2268,6 +2268,7 @@ End:
   if (!zhg->Remove_Pin_Procs){
     ZOLTAN_FREE(&pin_procs);
   }
+  ZOLTAN_FREE(&pin_parts);
   ZOLTAN_FREE(&parts);
 
   ZOLTAN_TRACE_EXIT(zz, yo);

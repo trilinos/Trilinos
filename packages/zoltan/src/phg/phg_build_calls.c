@@ -723,6 +723,7 @@ int num_pins, num_hedges, prefix_sum_hedges;
     *egids = ZOLTAN_MALLOC_GID_ARRAY(zz, num_hedges);
     *elids = ZOLTAN_MALLOC_GID_ARRAY(zz, num_hedges);
 
+    if (ewgtdim && *npins && !gewgts) MEMORY_ERROR;
     gid_ptr = lid_ptr = NULL;
 
     if (num_hedges){

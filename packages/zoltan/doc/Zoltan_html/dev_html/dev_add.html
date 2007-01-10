@@ -40,16 +40,16 @@ of Zoltan</a> and the <a href="dev_intro_coding.html">Coding Principles
 in Zoltan</a>.</li>
 
 <li>
-Add the algorithm to the <a href="dev_add_interface.html">Load-Balancing
-Interface Routines</a>.</li>
-
-<li>
 Use the <a href="dev_add_struct.html">Data Structures</a>
 provided by Zoltan.</li>
 
 <li>
 Implement a <a href="dev_add_lb.html">Load-Balancing Function</a> front-end
-to the algorithm.</li>
+to the algorithm. Note that Zoltan load-balance methods should assign objects both to processors and partitions, which may be different. The recommended strategy is to assign objects to partitions first, then use Zoltan_LB_Part_To_Proc to generate the corresponding processors.</li>
+
+<li>
+Add the algorithm to the <a href="dev_add_interface.html">Load-Balancing
+Interface Routines</a>.</li>
 
 <li>
 Add the <a href="dev_add_params.html">Parameters</a> needed by the algorithm.
@@ -60,15 +60,18 @@ Also make sure that the algorithm uses the <a href="../ug_html/ug_param.html#Gen
 <li>
 If necessary, write a routine to free your dynamically allocated data structures.
 See tips on <a href="dev_add_memory.html">memory management</a></li>
-in Zoltan.</a>
+in Zoltan.</a></li>
+
 <li>
-If the parameter <a href="../ug_html/ug_alg_rcb.html">KEEP_CUTS</a>
-is defined for your algorithm, write a routine 
-to copy your load balancing 
-<a href="dev_add_struct.html#Copy">data structure</a>. 
+If your algorithm uses persistent data structures,
+like the RCB tree with <a href="../ug_html/ug_alg_rcb.html">KEEP_CUTS</a>,
+write a routine to copy your load balancing 
+<a href="dev_add_struct.html#Copy">data structure</a>. </li>
+
 <li>
-Add partition remapping to your algorithm using 
-<a href="dev_add_.html"><b>Zoltan_LB_Remap</b></a>.
+We recommend you add partition remapping to your algorithm using
+<a href="dev_add_.html"><b>Zoltan_LB_Remap</b></a>.</li>
+
 <li>
 Update the <a href="dev_fortran.html#fortran dev add">Fortran</a>
 and <a href="dev_cpp.html">C++</a> interfaces, if necessary.</li>
@@ -77,11 +80,12 @@ and <a href="dev_cpp.html">C++</a> interfaces, if necessary.</li>
 Document your new method. The documentation should be written in a format
 that can easily be converted into HTML and PDF.  Consider adding a
 simple application to the <I>examples</I> directory demonstrating the
-use of your method.
+use of your method.</li>
 
 <li>
 Please contact the Zoltan team if you would like your method to be distributed
 with future versions of Zoltan.</li>
+
 </ol>
 
 <hr WIDTH="100%">

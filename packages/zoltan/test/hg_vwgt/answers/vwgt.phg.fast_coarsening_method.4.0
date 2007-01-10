@@ -10,6 +10,5 @@ zoltan parameters       = obj_weight_dim=1
 Global element ids assigned to processor 0
 GID	Part	Perm	IPerm
 0	0	-1	-1
+5	0	-1	-1
 10	0	-1	-1
-16	0	-1	-1
-22	0	-1	-1

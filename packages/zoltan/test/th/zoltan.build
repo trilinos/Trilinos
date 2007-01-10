@@ -1,0 +1,42 @@
+#!/bin/csh -f
+
+# inherit from cron_script
+# setenv PATH /Net/local/gnu/bin:/bin:/usr/ucb:/usr/ccs/bin:/Net/local/bin:/usr/local/bin:$PATH
+
+# todo: determine the following somehow
+set arch=gcc
+# todo: set appropriate revision
+
+#
+# inherited from run_fast
+$CVSCMD Zoltan
+
+# fix issue with python in /usr/local
+setenv LD_LIBRARY_PATH /usr/local/lib
+
+set dir=`pwd`
+set fastdir="$dir/../../fast/client"
+set driver="$fastdir/driver"
+
+cd Zoltan
+set zdir=`pwd`
+
+if ("$1" == "--codecheck") then
+  $driver --o=$dir/test --I=$fastdir --name="$2" check --config=test/th/codechecks.cfg
+else
+
+  echo "config: ZOLTAN_ARCH=$arch" >& $dir/test/config.out
+  $driver --o=$dir/test --I=$fastdir --name="$1" configure --logfile=$dir/test/config.out
+
+  gmake "ZOLTAN_ARCH=$arch" zoltan zdrive >& $dir/test/build.out
+
+  $driver --o=$dir/test --I=$fastdir --name="$1" build --logfile=$dir/test/build.out
+
+  # create the test data, xml files, factor files
+  ( cd test ; csh -f mktests >& $dir/mktest.out )
+
+  #
+  # Test
+  $driver --o=$dir/test --I=$fastdir --name="$1" test --testdirs='test/{ch_simple,hg_*}' --tag=nightly
+
+endif

@@ -1,0 +1,19 @@
+#!/bin/csh -f
+#
+# This is a simple script that invokes the test daemon in the user's
+# default shell
+#
+
+set mypwd = `pwd`
+set path = ($path $mypwd $mypwd/../bin /Net/local/gnu/bin /bin /usr/ucb /usr/ccs/bin /Net/local/bin /usr/local/bin)
+
+if (! -d config) then
+   echo "ERROR: missing testing configuration directory!"
+   exit 1
+endif
+
+/bin/rm -f cron_cvs.out
+cvs.z -Q update -d
+config/update_script
+test_daemon --I=$mypwd --archive
+config/install_script
