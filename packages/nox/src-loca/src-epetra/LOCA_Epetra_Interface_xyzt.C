@@ -231,7 +231,7 @@ computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac)
     }
   
     solution->ExtractBlockValues(splitVec, (*rowIndex)[i]);
-    stat =  stat && iJac->computeJacobian( splitVec, Jac );
+    stat =  stat && iJac->computeJacobian( splitVec, *splitJac );
 
     // Hardwired for -1 0 stencil meaning [M J]
     if (i==0 && timeDomain==0 && !isPeriodic) {
