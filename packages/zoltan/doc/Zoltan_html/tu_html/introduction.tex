@@ -1,20 +1,30 @@
 %
 % What this document is, what prior knowledge is assumed, and
 % brief outline of what is contained in it.
+% 
+% PLEASE FEEL FREE TO RE-WRITE ANY OF THIS!!
 %
 \chapter{Introduction}
 
-This document provides a brief introduction to the Zoltan Toolkit.
+This document provides a brief introduction to the Zoltan Toolkit,
+for Zoltan version 2.1.  Zoltan is a parallel load balancing library
+targeted to the high performance computing community.  It can be
+linked with C, C++ and Fortran applications, but this tutorial
+will provide most of its examples in C.
 
-Load balancing in general.
+The first section will discuss the load balancing problem in general,
+the multitude of solutions that Zoltan offers, and will provide a guide
+to choosing the method or methods best suited to your problem.
 
-It explains how to obtain the source code, and compile and install it.
-It describes the different partitioning methods available, and how
-to access them from your application code.
+The next section will describe in more detail the load balancing
+methods introduced in the first section.  This is followed
+by a section describing the library's programming interface.
 
-Complete examples in C.
-
-It assumes a knowledge of the C programming language.
+Finally we list the full source code for some simple C and C++
+examples.   These code examples are also in the examples directory
+of the Zoltan source code.  You can obtain the source code,
+along with installation instructions at
+\url{http://www.cs.sandia.gov/Zoltan/}.
 
 A more detailed and complete explanation of the application
 programmer's interface to Zoltan may be found 
