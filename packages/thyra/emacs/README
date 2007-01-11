@@ -1,10 +1,48 @@
-(2007/01/02)
+(2007/01/11)
 
-Here is a .emacs file and a syntax highlighting lisp file that Roscoe Bartlett
-uses to to format C++ code in Thyra and related projects.  To setup your
-system to use this .emacs file, from this directory, just run the script:
+A) Introduction:
 
-  ./setup-emacs-formating.sh
+Here is defined an (x)emacs style for the recommended Thyra coding style in
+the ./elisp/cpp-thyra-styles.el file.  Using this style from within emacs will
+help to provide consistency in the development of Thyra.
+
+Actually, there are a number of named styles that can be added to the
+cpp-thyra-styles.el file.  To make a source file automatically use a specific
+named style, just put the following line at the top of each such C/C++ file:
+
+  // -*- c-file-style: "thyra" -*-
+
+By adding new named styles and including a single line that specifies the
+style, multiple developers can successfully edit each other's files and use a
+consistent indentation style with little trouble.
+
+You can also set a named style manually by using, for example:
+
+  M-x [return] c-set-stype [return] thyra
+
+Note that if you press the tab key after the second [return], emacs will
+automatically print out the list of the defined named styles, including those
+added by the thyra styles.
+
+To copy just the file cpp-thyra-styles.el to the directory $HOME/elisp, use
+the script:
+
+  ./copy-emacs-thyra-styles.sh
+
+To import the styles into your emacs initialization file, just add the lines:
+
+  ;; Load custom Thyra C++ styles
+  (add-to-list 'load-path (expand-file-name "~/elisp/"))
+  (require 'cpp-thyra-styles)
+  ;; Set my style to the Thyra style!
+  (setq c-set-style "thyra")
+
+and that should do it.
+
+If you want to just copy a pre-setup .emacs file that uses this style by
+default, use the script
+
+  ./copy-emacs-init-file.sh
 
 and it will copy the following files:
 
@@ -14,9 +52,21 @@ and it will copy the following files:
    |
    \-- elisp
          |
-         \-- cpp-font-lock.el
+         \-- cpp-thyra-styles.el
 
-Note that it will overwrite any $HOME/.emacs file that you might have so
-please move it out of the way before you run this script.  Also, if you already
-have a directory $HOME/elisp, you might want to take care of what happens here
-too.
+Note that it will overwrite any $HOME/.emacs file that you might already have
+so you might want to move it out of the way before you run this script, just
+in case.
+
+B) Problems with using customized styles
+
+If one looks at the ./elisp/cpp-thyra-styles.el file one will see that a style
+is only added when the editor enters 'cc-mode (i.e. C or C++).  What this
+means is that a user-defined style is not added until a C/C++ file is actually
+opened.  Therefore, this means that one can not simply set the style in one's
+.emacs file using 'c-default-style'.
+
+
+
+
+

@@ -1,41 +1,40 @@
+;;; Emacs initialization file for Roscoe Bartlett (rabartl)
+
+;; Load custom Thyra C++ styles
+(add-to-list 'load-path (expand-file-name "~/elisp/"))
+(require 'cpp-thyra-styles)
+
+;; Set my style to the Thyra style!
+(setq c-set-style "thyra")
+
 ;; Set up the keyboard so the delete key on both the regular keyboard
 ;; and the keypad delete the character under the cursor and to the right
 ;; under X, instead of the default, backspace behavior.
 (global-set-key [delete] 'delete-char)
 (global-set-key [kp-delete] 'delete-char)
 (global-set-key "\C-v" 'yank)
-;; Create a custom indentation indentation style for C++
+
+;;; Set up other customizations
 (custom-set-variables
- '(c-basic-offset 2)
- '(c-default-style "stroustrup")
- '(c-label-minimum-indentation 0)
- '(c-offsets-alist (quote ((block-open . +) (case-label . +) (inextern-lang . 0) (innamespace . 0))))
- '(c-tab-always-indent t)
  '(case-fold-search t)
  '(current-language-environment "English")
- '(fill-column 78)
  '(font-lock-auto-fontify t)
  '(font-lock-maximum-decoration t)
  '(font-lock-mode t t (font-lock))
  '(font-lock-use-colors nil)
  '(font-lock-use-fonts t)
  '(global-font-lock-mode t nil (font-lock))
- '(indent-tabs-mode nil)
  '(line-number-mode t)
  '(load-home-init-file t t)
  '(make-backup-files nil)
  '(query-user-mail-address nil)
  '(require-final-newline t)
  '(show-paren-mode t nil (paren))
- '(tab-width 2)
  '(transient-mark-mode t)
- '(user-mail-address "rabartl@sandia.gov"))
+ '(user-mail-address "rabartl@sandia.gov")
+)
 (custom-set-faces
  '(default ((t (:family "Clean" :size "12pt")))))
-;; Load custom syntax highlighting package for C++
-(add-to-list 'load-path (expand-file-name "~/elisp/"))
-(require 'cpp-font-lock)
-;; Associate *.h files with c++ mode use the following line
-(add-to-list 'auto-mode-alist '("\\.h$" . c++-mode))
 ;; I can't remember what this does?
 (setq minibuffer-max-depth nil)
+
