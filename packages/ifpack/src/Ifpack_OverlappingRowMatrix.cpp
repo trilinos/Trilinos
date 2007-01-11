@@ -3,20 +3,14 @@
 #include "Epetra_RowMatrix.h"
 #include "Epetra_Map.h"
 #include "Epetra_CrsMatrix.h"
-#include "Epetra_Import.h"
 #include "Epetra_Comm.h"
 #include "Epetra_MultiVector.h"
 
 // ====================================================================== 
 Ifpack_OverlappingRowMatrix::
-Ifpack_OverlappingRowMatrix(const Epetra_RowMatrix* Matrix,
+Ifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& Matrix,
                             int OverlapLevel)  :
-  Map_(0),
-  Importer_(0),
   Matrix_(Matrix),
-  ExtMatrix_(0),
-  ExtMap_(0),
-  ExtImporter_(0),
   OverlapLevel_(OverlapLevel)
 {
   // should not be here if no overlap
@@ -100,49 +94,34 @@ Ifpack_OverlappingRowMatrix(const Epetra_RowMatrix* Matrix,
   for (int i = 0 ; i < (int)ExtElements.size() ; ++i)
     list[i + NumMyRowsA_] = ExtElements[i];
 
-  Map_ = new Epetra_Map(-1, NumMyRowsA_ + ExtElements.size(),
-                        &list[0], 0, Comm());
+  Map_ = Teuchos::rcp( new Epetra_Map(-1, NumMyRowsA_ + ExtElements.size(),
+				      &list[0], 0, Comm()) );
   // now build the map corresponding to all the external nodes
   // (with respect to A().RowMatrixRowMap().
-  ExtMap_ = new Epetra_Map(-1,ExtElements.size(),
-                           &ExtElements[0],0,A().Comm());
-  ExtMatrix_ = new Epetra_CrsMatrix(Copy,*ExtMap_,*Map_,0); 
+  ExtMap_ = Teuchos::rcp( new Epetra_Map(-1,ExtElements.size(),
+					 &ExtElements[0],0,A().Comm()) );
+  ExtMatrix_ = Teuchos::rcp( new Epetra_CrsMatrix(Copy,*ExtMap_,*Map_,0) ); 
 
-  ExtImporter_ = new Epetra_Import(*ExtMap_,A().RowMatrixRowMap()); 
+  ExtImporter_ = Teuchos::rcp( new Epetra_Import(*ExtMap_,A().RowMatrixRowMap()) ); 
   ExtMatrix_->Import(A(),*ExtImporter_,Insert); 
   ExtMatrix_->FillComplete(A().OperatorDomainMap(),*Map_);
 
-  Importer_ = new Epetra_Import(*Map_,A().RowMatrixRowMap());
+  Importer_ = Teuchos::rcp( new Epetra_Import(*Map_,A().RowMatrixRowMap()) );
 
   // fix indices for overlapping matrix
   NumMyRowsB_ = B().NumMyRows();
   NumMyRows_ = NumMyRowsA_ + NumMyRowsB_;
   NumMyCols_ = NumMyRows_;
-
+  
   NumMyDiagonals_ = A().NumMyDiagonals() + B().NumMyDiagonals();
-
+  
   NumMyNonzeros_ = A().NumMyNonzeros() + B().NumMyNonzeros();
   Comm().SumAll(&NumMyNonzeros_,&NumGlobalNonzeros_,1);
   MaxNumEntries_ = A().MaxNumEntries();
-
+  
   if (MaxNumEntries_ < B().MaxNumEntries())
     MaxNumEntries_ = B().MaxNumEntries();
 
-}
-
-// ======================================================================
-Ifpack_OverlappingRowMatrix::~Ifpack_OverlappingRowMatrix()
-{
-  if (Map_)
-    delete Map_;
-  if (Importer_)
-    delete Importer_;
-  if (ExtMatrix_)
-    delete ExtMatrix_;
-  if (ExtMap_)
-    delete ExtMap_;
-  if (ExtImporter_)
-    delete ExtImporter_;
 }
 
 // ======================================================================

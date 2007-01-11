@@ -40,6 +40,7 @@
 #include "Galeri_Maps.h"
 #include "Galeri_CrsMatrices.h"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_RefCountPtr.hpp"
 #include "AztecOO.h"
 #include "Ifpack_AdditiveSchwarz.h"
 #include "Ifpack_ICT.h"
@@ -63,8 +64,8 @@ int main(int argc, char *argv[])
   GaleriList.set("ny", nx * Comm.NumProc());
   GaleriList.set("mx", 1);
   GaleriList.set("my", Comm.NumProc());
-  Epetra_Map* Map = Galeri::CreateMap("Cartesian2D", Comm, GaleriList);
-  Epetra_RowMatrix* A = Galeri::CreateCrsMatrix("Laplace2D", Map, GaleriList);
+  Teuchos::RefCountPtr<Epetra_Map> Map = Teuchos::rcp( Galeri::CreateMap("Cartesian2D", Comm, GaleriList) );
+  Teuchos::RefCountPtr<Epetra_RowMatrix> A = Teuchos::rcp( Galeri::CreateCrsMatrix("Laplace2D", &*Map, GaleriList) );
 
   // =============================================================== //
   // B E G I N N I N G   O F   I F P A C K   C O N S T R U C T I O N //
@@ -79,7 +80,7 @@ int main(int argc, char *argv[])
 
   // In this example the overlap is zero. Use
   // Prec(A,OverlapLevel) for the general case.
-  Ifpack_AdditiveSchwarz<Ifpack_ICT> Prec(A);
+  Ifpack_AdditiveSchwarz<Ifpack_ICT> Prec(&*A);
 
   // `1.0' means that the factorization should approximatively
   // keep the same number of nonzeros per row of the original matrix.
@@ -120,7 +121,7 @@ int main(int argc, char *argv[])
   RHS.Random();
 
   // need an Epetra_LinearProblem to define AztecOO solver
-  Epetra_LinearProblem Problem(A,&LHS,&RHS);
+  Epetra_LinearProblem Problem(&*A,&LHS,&RHS);
 
   // now we can allocate the AztecOO solver
   AztecOO Solver(Problem);
@@ -139,9 +140,6 @@ int main(int argc, char *argv[])
 
   // Prints out some information about the preconditioner
   cout << Prec;
-
-  delete A;
-  delete Map;
 
 #ifdef HAVE_MPI
   MPI_Finalize(); 

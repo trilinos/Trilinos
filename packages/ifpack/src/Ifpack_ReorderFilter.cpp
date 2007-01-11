@@ -9,8 +9,8 @@
 #include "Epetra_Vector.h"
 
 //==============================================================================
-Ifpack_ReorderFilter::Ifpack_ReorderFilter(Epetra_RowMatrix* Matrix,
-                                           Ifpack_Reordering* Reordering) :
+Ifpack_ReorderFilter::Ifpack_ReorderFilter(const Teuchos::RefCountPtr<Epetra_RowMatrix>& Matrix,
+                                           const Teuchos::RefCountPtr<Ifpack_Reordering>& Reordering) :
   A_(Matrix),
   Reordering_(Reordering),
   NumMyRows_(Matrix->NumMyRows()),
@@ -20,17 +20,12 @@ Ifpack_ReorderFilter::Ifpack_ReorderFilter(Epetra_RowMatrix* Matrix,
 
 //==============================================================================
 Ifpack_ReorderFilter::Ifpack_ReorderFilter(const Ifpack_ReorderFilter& RHS) :
-  A_(&RHS.Matrix()),
-  Reordering_(&RHS.Reordering()),
+  A_(Matrix()),
+  Reordering_(Reordering()),
   NumMyRows_(RHS.NumMyRows()),
   MaxNumEntries_(RHS.MaxNumEntries())
 {
   strcpy(Label_,RHS.Label());
-}
-
-//==============================================================================
-Ifpack_ReorderFilter::~Ifpack_ReorderFilter()
-{
 }
 
 //==============================================================================
@@ -40,9 +35,9 @@ Ifpack_ReorderFilter::operator=(const Ifpack_ReorderFilter& RHS)
   if (this == &RHS)
     return (*this);
 
-  A_ = &RHS.Matrix();
+  A_ = RHS.Matrix();
 
-  Reordering_ = &RHS.Reordering();
+  Reordering_ = RHS.Reordering();
   MaxNumEntries_ = RHS.MaxNumEntries();
   NumMyRows_ = RHS.NumMyRows();
 
@@ -57,7 +52,7 @@ ExtractMyRowCopy(int MyRow, int Length, int & NumEntries,
 {
   int MyReorderdRow = Reordering_->InvReorder(MyRow);
 
-  IFPACK_CHK_ERR(Matrix().ExtractMyRowCopy(MyReorderdRow,MaxNumEntries_,
+  IFPACK_CHK_ERR(Matrix()->ExtractMyRowCopy(MyReorderdRow,MaxNumEntries_,
                                            NumEntries, Values,Indices));
 
   // suppose all elements are local. Note that now
@@ -74,7 +69,7 @@ int Ifpack_ReorderFilter::
 ExtractDiagonalCopy(Epetra_Vector & Diagonal) const
 {
   Epetra_Vector DiagonalTilde(Diagonal.Map());
-  IFPACK_CHK_ERR(Matrix().ExtractDiagonalCopy(DiagonalTilde));
+  IFPACK_CHK_ERR(Matrix()->ExtractDiagonalCopy(DiagonalTilde));
   IFPACK_CHK_ERR((Reordering_->P(DiagonalTilde,Diagonal)));
   return(0);
 }
@@ -90,7 +85,7 @@ Multiply(bool TransA, const Epetra_MultiVector& X,
   // bring X back to original ordering
   Reordering_->Pinv(X,Xtilde);
   // apply original matrix
-  IFPACK_CHK_ERR(Matrix().Multiply(TransA,Xtilde,Ytilde));
+  IFPACK_CHK_ERR(Matrix()->Multiply(TransA,Xtilde,Ytilde));
   // now reorder result
   Reordering_->P(Ytilde,Y);
 

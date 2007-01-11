@@ -39,6 +39,7 @@
 #include "Galeri_Maps.h"
 #include "Galeri_CrsMatrices.h"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_RefCountPtr.hpp"
 #include "AztecOO.h"
 #include "Ifpack_AdditiveSchwarz.h"
 #include "Ifpack_PointRelaxation.h"
@@ -64,8 +65,8 @@ int main(int argc, char *argv[])
   GaleriList.set("ny", nx * Comm.NumProc());
   GaleriList.set("mx", 1);
   GaleriList.set("my", Comm.NumProc());
-  Epetra_Map* Map = Galeri::CreateMap("Cartesian2D", Comm, GaleriList);
-  Epetra_RowMatrix* A = Galeri::CreateCrsMatrix("Laplace2D", Map, GaleriList);
+  Teuchos::RefCountPtr<Epetra_Map> Map = Teuchos::rcp( Galeri::CreateMap("Cartesian2D", Comm, GaleriList) );
+  Teuchos::RefCountPtr<Epetra_RowMatrix> A = Teuchos::rcp( Galeri::CreateCrsMatrix("Laplace2D", &*Map, GaleriList) );
 
   // =============================================================== //
   // B E G I N N I N G   O F   I F P A C K   C O N S T R U C T I O N //
@@ -98,7 +99,7 @@ int main(int argc, char *argv[])
 #if 0
   Ifpack_AdditiveSchwarz<Ifpack_BlockRelaxation<Ifpack_DenseContainer> > Prec(A, OverlapProcs);
 #else
-  Ifpack_AdditiveSchwarz<Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_Amesos> > > Prec(A, OverlapProcs);
+  Ifpack_AdditiveSchwarz<Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_Amesos> > > Prec(&*A, OverlapProcs);
 #endif
 
   List.set("relaxation: type", "symmetric Gauss-Seidel");
@@ -140,7 +141,7 @@ int main(int argc, char *argv[])
   RHS.Random();
 
   // need an Epetra_LinearProblem to define AztecOO solver
-  Epetra_LinearProblem Problem(A,&LHS,&RHS);
+  Epetra_LinearProblem Problem(&*A,&LHS,&RHS);
 
   // now we can allocate the AztecOO solver
   AztecOO Solver(Problem);
@@ -156,9 +157,6 @@ int main(int argc, char *argv[])
   // NOTE: with one process, the solver must converge in
   // one iteration.
   Solver.Iterate(1550,1e-5);
-
-  delete A;
-  delete Map;
 
 #ifdef HAVE_MPI
   MPI_Finalize() ; 

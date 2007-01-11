@@ -448,7 +448,7 @@ int Ifpack_AdditiveSchwarz<T>::Setup()
 
   // users may want to skip singleton check
   if (FilterSingletons_) {
-    SingletonFilter_ = Teuchos::rcp( new Ifpack_SingletonFilter(&*LocalizedMatrix_) );
+    SingletonFilter_ = Teuchos::rcp( new Ifpack_SingletonFilter(LocalizedMatrix_) );
     MatrixPtr = &*SingletonFilter_;
   }
   else
@@ -472,7 +472,7 @@ int Ifpack_AdditiveSchwarz<T>::Setup()
 
     // now create reordered localized matrix
     ReorderedLocalizedMatrix_ = 
-      Teuchos::rcp( new Ifpack_ReorderFilter(&*MatrixPtr,&*Reordering_) );
+      Teuchos::rcp( new Ifpack_ReorderFilter(Teuchos::rcp( MatrixPtr, false ), Reordering_) );
 
     if (ReorderedLocalizedMatrix_ == Teuchos::null) IFPACK_CHK_ERR(-5);
 
@@ -570,7 +570,7 @@ int Ifpack_AdditiveSchwarz<T>::Initialize()
   // compute the overlapping matrix if necessary
   if (IsOverlapping_) {
     OverlappingMatrix_ = 
-      Teuchos::rcp( new Ifpack_OverlappingRowMatrix(&*Matrix_, OverlapLevel_) );
+      Teuchos::rcp( new Ifpack_OverlappingRowMatrix(Matrix_, OverlapLevel_) );
     if (OverlappingMatrix_ == Teuchos::null)
       IFPACK_CHK_ERR(-5);
   }

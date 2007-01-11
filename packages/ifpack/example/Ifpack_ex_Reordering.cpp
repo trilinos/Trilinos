@@ -38,6 +38,7 @@
 #include "Ifpack_RCMReordering.h"
 #include "Ifpack_ReorderFilter.h"
 #include "Ifpack_Utils.h"
+#include "Teuchos_RefCountPtr.hpp"
 
 //==============================================================================
 int main(int argc, char *argv[])
@@ -74,7 +75,7 @@ int main(int argc, char *argv[])
   vector<int> Indices(NumPoints);
   vector<double> Values(NumPoints);
 
-  Epetra_CrsMatrix A(Copy,Map,0);
+  Teuchos::RefCountPtr<Epetra_CrsMatrix> A = Teuchos::rcp( new Epetra_CrsMatrix(Copy,Map,0) );
   for (int i = 0 ; i < NumPoints ; ++i) {
     
     int NumEntries;
@@ -93,24 +94,24 @@ int main(int argc, char *argv[])
       Values[1] = 1.0;
     }
 
-    A.InsertGlobalValues(i, NumEntries, &Values[0], &Indices[0]);
+    A->InsertGlobalValues(i, NumEntries, &Values[0], &Indices[0]);
   }
 
-  A.FillComplete();
+  A->FillComplete();
 
   // print the sparsity to file, postscript format
   ////Ifpack_PrintSparsity(A,"OrigA.ps");
 
   // create the reordering...
-  Ifpack_RCMReordering Reorder;
+  Teuchos::RefCountPtr<Ifpack_RCMReordering> Reorder = Teuchos::rcp( new Ifpack_RCMReordering() );
   // and compute is on A
-  IFPACK_CHK_ERR(Reorder.Compute(A));
+  IFPACK_CHK_ERR(Reorder->Compute(*A));
 
   // cout information
-  cout << Reorder;
+  cout << *Reorder;
 
   // create a reordered matrix
-  Ifpack_ReorderFilter ReordA(&A,&Reorder);
+  Ifpack_ReorderFilter ReordA(A, Reorder);
 
   // print the sparsity to file, postscript format
   ////Ifpack_PrintSparsity(ReordA,"ReordA.ps");

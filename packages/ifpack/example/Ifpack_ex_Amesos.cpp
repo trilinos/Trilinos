@@ -41,6 +41,7 @@
 #include "Galeri_Maps.h"
 #include "Galeri_CrsMatrices.h"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_RefCountPtr.hpp"
 #include "AztecOO.h"
 #include "Ifpack.h"
 
@@ -63,8 +64,8 @@ int main(int argc, char *argv[])
   GaleriList.set("ny", nx * Comm.NumProc());
   GaleriList.set("mx", 1);
   GaleriList.set("my", Comm.NumProc());
-  Epetra_Map* Map = Galeri::CreateMap("Cartesian2D", Comm, GaleriList);
-  Epetra_RowMatrix* A = Galeri::CreateCrsMatrix("Laplace2D", Map, GaleriList);
+  Teuchos::RefCountPtr<Epetra_Map> Map = Teuchos::rcp( Galeri::CreateMap("Cartesian2D", Comm, GaleriList) );
+  Teuchos::RefCountPtr<Epetra_RowMatrix> A = Teuchos::rcp( Galeri::CreateCrsMatrix("Laplace2D", &*Map, GaleriList) );
 
   // =============================================================== //
   // B E G I N N I N G   O F   I F P A C K   C O N S T R U C T I O N //
@@ -82,8 +83,8 @@ int main(int argc, char *argv[])
   int OverlapLevel = 2; // must be >= 0. If Comm.NumProc() == 1,
                         // it is ignored.
 
-  Ifpack_Preconditioner* Prec = Factory.Create(PrecType, A, OverlapLevel);
-  assert(Prec != 0);
+  Teuchos::RefCountPtr<Ifpack_Preconditioner> Prec = Teuchos::rcp( Factory.Create(PrecType, &*A, OverlapLevel) );
+  assert(Prec != Teuchos::null);
 
   // specify the Amesos solver to be used. 
   // If the selected solver is not available,
@@ -125,7 +126,7 @@ int main(int argc, char *argv[])
   RHS.Random();
 
   // need an Epetra_LinearProblem to define AztecOO solver
-  Epetra_LinearProblem Problem(A,&LHS,&RHS);
+  Epetra_LinearProblem Problem(&*A,&LHS,&RHS);
 
   // now we can allocate the AztecOO solver
   AztecOO Solver(Problem);
@@ -135,18 +136,13 @@ int main(int argc, char *argv[])
   Solver.SetAztecOption(AZ_output,32);
 
   // HERE WE SET THE IFPACK PRECONDITIONER
-  Solver.SetPrecOperator(Prec);
+  Solver.SetPrecOperator(&*Prec);
 
   // .. and here we solve
   // NOTE: with one process, the solver must converge in
   // one iteration.
   Solver.Iterate(1550,1e-8);
 
-  // free memory
-  delete Prec;
-  delete A;
-  delete Map;
-  
 #ifdef HAVE_MPI
   MPI_Finalize() ; 
 #endif

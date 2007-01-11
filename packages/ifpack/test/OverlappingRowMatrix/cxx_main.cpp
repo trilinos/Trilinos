@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
   // ======================================== //
  
   Time.ResetStartTime();
-  Ifpack_OverlappingRowMatrix B(&*A,OverlapLevel);
+  Ifpack_OverlappingRowMatrix B(A,OverlapLevel);
   if (Comm.MyPID() == 0)
     cout << "Time to create B = " << Time.ElapsedTime() << endl;
 

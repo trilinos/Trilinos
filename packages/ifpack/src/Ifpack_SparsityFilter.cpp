@@ -8,10 +8,10 @@
 #include "Epetra_Vector.h"
 
 //==============================================================================
-Ifpack_SparsityFilter::Ifpack_SparsityFilter(Epetra_RowMatrix* Matrix,
+Ifpack_SparsityFilter::Ifpack_SparsityFilter(const Teuchos::RefCountPtr<Epetra_RowMatrix>& Matrix,
 					     int AllowedEntries, 
 					     int AllowedBandwidth) :
-  A_(*Matrix),
+  A_(Matrix),
   MaxNumEntries_(0),
   MaxNumEntriesA_(0),
   AllowedBandwidth_(AllowedBandwidth),
@@ -20,7 +20,7 @@ Ifpack_SparsityFilter::Ifpack_SparsityFilter(Epetra_RowMatrix* Matrix,
   NumRows_(0)
 {
   // use this filter only on serial matrices
-  if (A_.Comm().NumProc() != 1) {
+  if (A_->Comm().NumProc() != 1) {
     cerr << "Ifpack_SparsityFilter can be used with Comm().NumProc() == 1" << endl;
     cerr << "only. This class is a tool for Ifpack_AdditiveSchwarz," << endl;
     cerr << "and it is not meant to be used otherwise." << endl;
@@ -28,12 +28,12 @@ Ifpack_SparsityFilter::Ifpack_SparsityFilter(Epetra_RowMatrix* Matrix,
   }
 
   // only square serial matrices
-  if ((A_.NumMyRows() != A_.NumMyCols()) ||
-     (A_.NumMyRows() != A_.NumGlobalRows()))
+  if ((A_->NumMyRows() != A_->NumMyCols()) ||
+     (A_->NumMyRows() != A_->NumGlobalRows()))
     IFPACK_CHK_ERRV(-1);
 
-  NumRows_ = A_.NumMyRows();
-  MaxNumEntriesA_ = A_.MaxNumEntries();
+  NumRows_ = A_->NumMyRows();
+  MaxNumEntriesA_ = A_->MaxNumEntries();
   Indices_.resize(MaxNumEntriesA_);
   Values_.resize(MaxNumEntriesA_);
 
@@ -51,7 +51,7 @@ Ifpack_SparsityFilter::Ifpack_SparsityFilter(Epetra_RowMatrix* Matrix,
   for (int i = 0 ; i < NumRows_ ; ++i)
     NumEntries_[i] = MaxNumEntriesA_;
 
-  for (int i = 0 ; i < A_.NumMyRows() ; ++i) {
+  for (int i = 0 ; i < A_->NumMyRows() ; ++i) {
     int Nnz;
     IFPACK_CHK_ERRV(ExtractMyRowCopy(i,MaxNumEntriesA_,Nnz,
 				     &Val[0], &Ind[0]));
@@ -65,11 +65,6 @@ Ifpack_SparsityFilter::Ifpack_SparsityFilter(Epetra_RowMatrix* Matrix,
 }
 
 //==============================================================================
-Ifpack_SparsityFilter::~Ifpack_SparsityFilter()
-{
-}
-
-//==============================================================================
 int Ifpack_SparsityFilter::
 ExtractMyRowCopy(int MyRow, int Length, int & NumEntries, 
 		 double *Values, int * Indices) const
@@ -78,7 +73,7 @@ ExtractMyRowCopy(int MyRow, int Length, int & NumEntries,
     IFPACK_CHK_ERR(-1);
 
   int Nnz;
-  IFPACK_CHK_ERR(A_.ExtractMyRowCopy(MyRow,MaxNumEntriesA_,Nnz,
+  IFPACK_CHK_ERR(A_->ExtractMyRowCopy(MyRow,MaxNumEntriesA_,Nnz,
 				     &Values_[0],&Indices_[0]));
 
   double Threshold = 0.0;
@@ -135,7 +130,7 @@ ExtractMyRowCopy(int MyRow, int Length, int & NumEntries,
 int Ifpack_SparsityFilter::
 ExtractDiagonalCopy(Epetra_Vector & Diagonal) const
 {
-  IFPACK_RETURN(A_.ExtractDiagonalCopy(Diagonal));
+  IFPACK_RETURN(A_->ExtractDiagonalCopy(Diagonal));
 }
 
 //==============================================================================
@@ -153,7 +148,7 @@ Multiply(bool TransA, const Epetra_MultiVector& X,
   vector<int> Indices(MaxNumEntries_);
   vector<double> Values(MaxNumEntries_);
 
-  for (int i = 0 ; i < A_.NumMyRows() ; ++i) {
+  for (int i = 0 ; i < A_->NumMyRows() ; ++i) {
 
     int Nnz;
     ExtractMyRowCopy(i,MaxNumEntries_,Nnz,

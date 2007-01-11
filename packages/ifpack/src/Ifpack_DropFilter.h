@@ -3,6 +3,8 @@
 
 #include "Ifpack_ConfigDefs.h"
 #include "Epetra_RowMatrix.h"
+#include "Teuchos_RefCountPtr.hpp"	
+
 class Epetra_Comm;
 class Epetra_Map;
 class Epetra_MultiVector;
@@ -16,15 +18,15 @@ absolute value is below a specified threshold.
 
 A typical use is as follows:
 \code
-Epetra_RowMatrix* A;
+Teuchos::RefCountPtr<Epetra_RowMatrix> A;
 // first localize the matrix
-Ifpack_LocalFilter LocalA(&A);
+Ifpack_LocalFilter LocalA(A);
 // drop all elements below this value
 double DropTol = 1e-5;
 // now create the matrix, elements below DropTol are
 // not included in calls to ExtractMyRowCopy(), Multiply()
 // and Apply()
-Ifpack_DropFilter DropA(&LocalA,DropTol)
+Ifpack_DropFilter DropA(LocalA,DropTol)
 \endcode
 
 <P>It is supposed that Ifpack_DropFilter is used on localized matrices.
@@ -38,11 +40,11 @@ class Ifpack_DropFilter : public virtual Epetra_RowMatrix {
 
 public:
   //! Constructor.
-  Ifpack_DropFilter(Epetra_RowMatrix* Matrix,
-		    double DropTop);
+  Ifpack_DropFilter(const Teuchos::RefCountPtr<Epetra_RowMatrix>& Matrix,
+		    double DropTol);
 
   //! Destructor.
-  virtual ~Ifpack_DropFilter();
+  virtual ~Ifpack_DropFilter() {};
 
   //! Returns the number of entries in MyRow.
   virtual inline int NumMyRowEntries(int MyRow, int & NumEntries) const
@@ -78,19 +80,19 @@ public:
 
   virtual int LeftScale(const Epetra_Vector& x)
   {
-    return(A_.LeftScale(x));
+    return(A_->LeftScale(x));
   }
 
   virtual int InvColSums(Epetra_Vector& x) const;
 
   virtual int RightScale(const Epetra_Vector& x) 
   {
-    return(A_.RightScale(x));
+    return(A_->RightScale(x));
   }
 
   virtual bool Filled() const
   {
-    return(A_.Filled());
+    return(A_->Filled());
   }
 
   virtual double NormInf() const
@@ -155,27 +157,27 @@ public:
 
   virtual const Epetra_Map & RowMatrixRowMap() const
   {
-    return(A_.RowMatrixRowMap());
+    return(A_->RowMatrixRowMap());
   }
 
   virtual const Epetra_Map & RowMatrixColMap() const
   {
-    return(A_.RowMatrixColMap());
+    return(A_->RowMatrixColMap());
   }
 
   virtual const Epetra_Import * RowMatrixImporter() const
   {
-    return(A_.RowMatrixImporter());
+    return(A_->RowMatrixImporter());
   }
 
   int SetUseTranspose(bool UseTranspose)
   {
-    return(A_.SetUseTranspose(UseTranspose));
+    return(A_->SetUseTranspose(UseTranspose));
   }
 
   bool UseTranspose() const 
   {
-    return(A_.UseTranspose());
+    return(A_->UseTranspose());
   }
 
   bool HasNormInf() const
@@ -185,22 +187,22 @@ public:
 
   const Epetra_Comm & Comm() const
   {
-    return(A_.Comm());
+    return(A_->Comm());
   }
 
   const Epetra_Map & OperatorDomainMap() const 
   {
-    return(A_.OperatorDomainMap());
+    return(A_->OperatorDomainMap());
   }
 
   const Epetra_Map & OperatorRangeMap() const 
   {
-    return(A_.OperatorRangeMap());
+    return(A_->OperatorRangeMap());
   }
 
   const Epetra_BlockMap& Map() const 
   {
-    return(A_.Map());
+    return(A_->Map());
   }
 
   const char* Label() const{
@@ -210,7 +212,7 @@ public:
 private:
 
   //! Pointer to the matrix to be preconditioned.
-  Epetra_RowMatrix& A_;
+  Teuchos::RefCountPtr<Epetra_RowMatrix> A_;
   //! Drop tolerance.
   double DropTol_;
   //! Maximum entries in each row.

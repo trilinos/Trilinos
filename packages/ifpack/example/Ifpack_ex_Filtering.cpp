@@ -38,6 +38,7 @@
 #include "Ifpack_SparsityFilter.h"
 #include "Ifpack_SingletonFilter.h"
 #include "Ifpack_Utils.h"
+#include "Teuchos_RefCountPtr.hpp"
 
 int main(int argc, char *argv[])
 {
@@ -61,7 +62,7 @@ int main(int argc, char *argv[])
   int NumPoints = 5;
   Epetra_Map Map(NumPoints,0,Comm);
 
-  Epetra_CrsMatrix Matrix(Copy,Map,0);
+  Teuchos::RefCountPtr<Epetra_CrsMatrix> Matrix = Teuchos::rcp( new Epetra_CrsMatrix(Copy,Map,0) );
 
   vector<int> Indices(NumPoints);
   vector<double> Values(NumPoints);
@@ -69,7 +70,7 @@ int main(int argc, char *argv[])
 
   for (int i = 0 ; i < NumPoints ; ++i) {
     // add a diagonal
-    Matrix.InsertGlobalValues(i,1,&Diag,&i);
+    Matrix->InsertGlobalValues(i,1,&Diag,&i);
 
     // add off-diagonals
     int NumEntries = 0;
@@ -78,16 +79,16 @@ int main(int argc, char *argv[])
       Values[NumEntries] = 1.0 * (j - i);
       ++NumEntries;
     }
-    Matrix.InsertGlobalValues(i,NumEntries,&Values[0],&Indices[0]);
+    Matrix->InsertGlobalValues(i,NumEntries,&Values[0],&Indices[0]);
   }
-  Matrix.FillComplete();
+  Matrix->FillComplete();
 
   // ================================= //
   // print sparsity of original matrix //
   // ================================= //
  
   cout << "Sparsity, non-dropped matrix" << endl;
-  Ifpack_PrintSparsity_Simple(Matrix);
+  Ifpack_PrintSparsity_Simple(*Matrix);
 
   // ====================================== //
   // create a new matrix, dropping by value //
@@ -96,7 +97,7 @@ int main(int argc, char *argv[])
   // drop all elements below 4.0. Only the upper-right element
   // is maintained, plus all the diagonals that are not
   // considering in dropping.
-  Ifpack_DropFilter DropA(&Matrix,4.0);
+  Ifpack_DropFilter DropA(Matrix,4.0);
   assert (DropA.MaxNumEntries() == 2);
 
   cout << "Sparsity, dropping by value" << endl;
@@ -107,7 +108,7 @@ int main(int argc, char *argv[])
   // ========================================= //
   //
   // Mantain 2 off-diagonal elements.
-  Ifpack_SparsityFilter SparsityA(&Matrix,2);
+  Ifpack_SparsityFilter SparsityA(Matrix,2);
 
   cout << "Sparsity, dropping by sparsity" << endl;
   Ifpack_PrintSparsity_Simple(SparsityA);
@@ -119,10 +120,10 @@ int main(int argc, char *argv[])
   //
   // If we apply this filter NumPoints - 1 times, 
   // we end up with a one-row matrix
-  Ifpack_SingletonFilter Filter1(&Matrix);
-  Ifpack_SingletonFilter Filter2(&Filter1);
-  Ifpack_SingletonFilter Filter3(&Filter2);
-  Ifpack_SingletonFilter Filter4(&Filter3);
+  Ifpack_SingletonFilter Filter1(Matrix);
+  Ifpack_SingletonFilter Filter2(Teuchos::rcp(&Filter1, false));
+  Ifpack_SingletonFilter Filter3(Teuchos::rcp(&Filter2, false));
+  Ifpack_SingletonFilter Filter4(Teuchos::rcp(&Filter3, false));
 
   cout << "Sparsity, dropping singletons 4 times" << endl;
   Ifpack_PrintSparsity_Simple(Filter4);

@@ -8,28 +8,28 @@
 #include "Epetra_Vector.h"
 
 //==============================================================================
-Ifpack_DropFilter::Ifpack_DropFilter(Epetra_RowMatrix* Matrix,
+Ifpack_DropFilter::Ifpack_DropFilter(const Teuchos::RefCountPtr<Epetra_RowMatrix>& Matrix,
 				     double DropTol) :
-  A_(*Matrix),
+  A_(Matrix),
   DropTol_(DropTol),
   MaxNumEntries_(0),
   MaxNumEntriesA_(0),
   NumNonzeros_(0)
 {
   // use this filter only on serial matrices
-  if (A_.Comm().NumProc() != 1) {
+  if (A_->Comm().NumProc() != 1) {
     cerr << "Ifpack_DropFilter can be used with Comm().NumProc() == 1" << endl;
     cerr << "only. This class is a tool for Ifpack_AdditiveSchwarz," << endl;
     cerr << "and it is not meant to be used otherwise." << endl;
     exit(EXIT_FAILURE);
   }
   
-  if ((A_.NumMyRows() != A_.NumGlobalRows()) ||
-      (A_.NumMyRows() != A_.NumMyCols()))
+  if ((A_->NumMyRows() != A_->NumGlobalRows()) ||
+      (A_->NumMyRows() != A_->NumMyCols()))
     IFPACK_CHK_ERRV(-2);
 
-  NumRows_ = A_.NumMyRows();
-  MaxNumEntriesA_ = A_.MaxNumEntries();
+  NumRows_ = A_->NumMyRows();
+  MaxNumEntriesA_ = A_->MaxNumEntries();
 
   NumEntries_.resize(NumRows_);
   Indices_.resize(MaxNumEntriesA_);
@@ -53,11 +53,6 @@ Ifpack_DropFilter::Ifpack_DropFilter(Epetra_RowMatrix* Matrix,
 }
 
 //==============================================================================
-Ifpack_DropFilter::~Ifpack_DropFilter()
-{
-}
-
-//==============================================================================
 int Ifpack_DropFilter::
 ExtractMyRowCopy(int MyRow, int Length, int & NumEntries, 
 		 double *Values, int * Indices) const
@@ -67,7 +62,7 @@ ExtractMyRowCopy(int MyRow, int Length, int & NumEntries,
 
   int Nnz;
 
-  IFPACK_CHK_ERR(A_.ExtractMyRowCopy(MyRow,MaxNumEntriesA_,Nnz,
+  IFPACK_CHK_ERR(A_->ExtractMyRowCopy(MyRow,MaxNumEntriesA_,Nnz,
 				     &Values_[0],&Indices_[0]));
 
   // loop over all nonzero elements of row MyRow,
@@ -96,7 +91,7 @@ ExtractMyRowCopy(int MyRow, int Length, int & NumEntries,
 int Ifpack_DropFilter::
 ExtractDiagonalCopy(Epetra_Vector & Diagonal) const
 {
-  IFPACK_CHK_ERR(A_.ExtractDiagonalCopy(Diagonal));
+  IFPACK_CHK_ERR(A_->ExtractDiagonalCopy(Diagonal));
   return(0);
 }
 

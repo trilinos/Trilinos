@@ -9,35 +9,33 @@
 #include "Epetra_Import.h"
 
 //==============================================================================
-Ifpack_SingletonFilter::Ifpack_SingletonFilter(Epetra_RowMatrix* Matrix) :
-  A_(*Matrix),
+Ifpack_SingletonFilter::Ifpack_SingletonFilter(const Teuchos::RefCountPtr<Epetra_RowMatrix>& Matrix) :
+  A_(Matrix),
   NumSingletons_(0),
   NumRows_(0),
   NumRowsA_(0),
   MaxNumEntries_(0),
   MaxNumEntriesA_(0),
-  NumNonzeros_(0),
-  Map_(0),
-  Diagonal_(0)
+  NumNonzeros_(0)
 {
   // use this filter only on serial matrices
-  if (A_.Comm().NumProc() != 1) {
+  if (A_->Comm().NumProc() != 1) {
     cerr << "Ifpack_SingletonFilter can be used with Comm().NumProc() == 1" << endl;
     cerr << "only. This class is a tool for Ifpack_AdditiveSchwarz," << endl;
     cerr << "and it is not meant to be used otherwise." << endl;
     exit(EXIT_FAILURE);
   }
   
-  if ((A_.NumMyRows() != A_.NumGlobalRows()) ||
-     (A_.NumMyRows() != A_.NumMyCols()))
+  if ((A_->NumMyRows() != A_->NumGlobalRows()) ||
+     (A_->NumMyRows() != A_->NumMyCols()))
     IFPACK_CHK_ERRV(-1);
   
-  NumRowsA_ = (A_.NumMyRows());
-  MaxNumEntriesA_ = A_.MaxNumEntries();
+  NumRowsA_ = (A_->NumMyRows());
+  MaxNumEntriesA_ = A_->MaxNumEntries();
 
   Indices_.resize(MaxNumEntriesA_);
   Values_.resize(MaxNumEntriesA_);
-  Reorder_.resize(A_.NumMyRows());
+  Reorder_.resize(A_->NumMyRows());
 
   for (int i = 0 ; i < NumRowsA_ ; ++i)
     Reorder_[i] = -1;
@@ -45,7 +43,7 @@ Ifpack_SingletonFilter::Ifpack_SingletonFilter(Epetra_RowMatrix* Matrix) :
   // first check how may singletons I do have
   for (int i = 0 ; i < NumRowsA_ ; ++i) {
     int Nnz;
-    IFPACK_CHK_ERRV(A_.ExtractMyRowCopy(i,MaxNumEntriesA_,Nnz,
+    IFPACK_CHK_ERRV(A_->ExtractMyRowCopy(i,MaxNumEntriesA_,Nnz,
 					&Values_[0], &Indices_[0]));
     if (Nnz != 1) {
       Reorder_[i] = NumRows_++;
@@ -67,10 +65,10 @@ Ifpack_SingletonFilter::Ifpack_SingletonFilter(Epetra_RowMatrix* Matrix) :
 
   // now compute the nonzeros per row
   int count = 0;
-  for (int i = 0 ; i < A_.NumMyRows() ; ++i) {
+  for (int i = 0 ; i < A_->NumMyRows() ; ++i) {
 
     int Nnz;
-    IFPACK_CHK_ERRV(A_.ExtractMyRowCopy(i,MaxNumEntriesA_,Nnz,
+    IFPACK_CHK_ERRV(A_->ExtractMyRowCopy(i,MaxNumEntriesA_,Nnz,
 					  &Values_[0], &Indices_[0]));
     int ii = Reorder_[i];
     if (ii >= 0) {
@@ -87,28 +85,18 @@ Ifpack_SingletonFilter::Ifpack_SingletonFilter(Epetra_RowMatrix* Matrix) :
     }
   }
 
-  Map_ = new Epetra_Map(NumRows_,0,Comm());
+  Map_ = Teuchos::rcp( new Epetra_Map(NumRows_,0,Comm()) );
 
   // and finish up with the diagonal entry
-  Diagonal_ = new Epetra_Vector(*Map_);
+  Diagonal_ = Teuchos::rcp( new Epetra_Vector(*Map_) );
 
-  Epetra_Vector Diagonal(A_.Map());
-  A_.ExtractDiagonalCopy(Diagonal);
+  Epetra_Vector Diagonal(A_->Map());
+  A_->ExtractDiagonalCopy(Diagonal);
   for (int i = 0 ; i < NumRows_ ; ++i) {
     int ii = InvReorder_[i];
     (*Diagonal_)[i] = Diagonal[ii];
   }
   
-}
-
-//==============================================================================
-Ifpack_SingletonFilter::~Ifpack_SingletonFilter()
-{
-  if (Diagonal_)
-    delete Diagonal_;
-
-  if (Map_)
-    delete Map_;
 }
 
 //==============================================================================
@@ -122,7 +110,7 @@ ExtractMyRowCopy(int MyRow, int Length, int & NumEntries,
     IFPACK_CHK_ERR(-1);
 
   int Row = InvReorder_[MyRow];
-  IFPACK_CHK_ERR(A_.ExtractMyRowCopy(Row,MaxNumEntriesA_,Nnz,
+  IFPACK_CHK_ERR(A_->ExtractMyRowCopy(Row,MaxNumEntriesA_,Nnz,
 				     &Values_[0],&Indices_[0]));
   NumEntries = 0;
   for (int i = 0 ; i < Nnz ; ++i) {
@@ -160,13 +148,13 @@ Multiply(bool TransA, const Epetra_MultiVector& X,
   vector<double> Values(MaxNumEntries_);
 
   // cycle over all rows of the original matrix
-  for (int i = 0 ; i < A_.NumMyRows() ; ++i) {
+  for (int i = 0 ; i < A_->NumMyRows() ; ++i) {
 
     if (Reorder_[i] < 0)
       continue; // skip singleton rows
     
     int Nnz;
-    A_.ExtractMyRowCopy(i,MaxNumEntriesA_,Nnz,
+    A_->ExtractMyRowCopy(i,MaxNumEntriesA_,Nnz,
 		     &Values[0], &Indices[0]);
     if (!TransA) {
       // no transpose first
@@ -223,7 +211,7 @@ SolveSingletons(const Epetra_MultiVector& RHS,
     int ii = SingletonIndex_[i];
     // get the diagonal value for the singleton
     int Nnz;
-    A_.ExtractMyRowCopy(ii,MaxNumEntriesA_,Nnz,
+    A_->ExtractMyRowCopy(ii,MaxNumEntriesA_,Nnz,
 			&Values_[0], &Indices_[0]);
     for (int j = 0 ; j < Nnz ; ++j) {
       if (Indices_[j] == ii) {
@@ -251,7 +239,7 @@ CreateReducedRHS(const Epetra_MultiVector& LHS,
   for (int i = 0 ; i < NumRows_ ; ++i) {
     int ii = InvReorder_[i];
     int Nnz;
-    IFPACK_CHK_ERR(A_.ExtractMyRowCopy(ii,MaxNumEntriesA_,Nnz,
+    IFPACK_CHK_ERR(A_->ExtractMyRowCopy(ii,MaxNumEntriesA_,Nnz,
 					&Values_[0], &Indices_[0]));
 
     for (int j = 0 ; j < Nnz ; ++j) {

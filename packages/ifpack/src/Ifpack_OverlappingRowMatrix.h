@@ -3,22 +3,24 @@
 
 #include "Ifpack_ConfigDefs.h"
 #include "Epetra_RowMatrix.h"
+#include "Epetra_CombineMode.h"
+#include "Teuchos_RefCountPtr.hpp"
+#include "Epetra_Import.h"
+
 class Epetra_Map;
 class Epetra_BlockMap;
 class Epetra_CrsMatrix;
 class Epetra_Comm;
-class Epetra_Import;
-#include "Epetra_CombineMode.h"
 
 class Ifpack_OverlappingRowMatrix : public virtual Epetra_RowMatrix {
 
 public:
 
   //@{ Constructors/Destructors
-  Ifpack_OverlappingRowMatrix(const Epetra_RowMatrix* Matrix,
+  Ifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& Matrix,
                               int OverlapLevel);
 
-  ~Ifpack_OverlappingRowMatrix();
+  ~Ifpack_OverlappingRowMatrix() {};
   //@}
 
   //@{ \name Matrix data extraction routines
@@ -222,7 +224,7 @@ public:
   //! Returns the Epetra_Import object that contains the import operations for distributed operations.
   virtual const Epetra_Import * RowMatrixImporter() const
   {
-    return(Importer_);
+    return(&*Importer_);
   }
   //@}
 
@@ -312,13 +314,13 @@ private:
 
   bool UseTranspose_;
 
-  const Epetra_Map* Map_;
-  const Epetra_Import* Importer_;
+  Teuchos::RefCountPtr<const Epetra_Map> Map_;
+  Teuchos::RefCountPtr<const Epetra_Import> Importer_;
 
-  const Epetra_RowMatrix* Matrix_;
-  Epetra_CrsMatrix* ExtMatrix_;
-  Epetra_Map* ExtMap_;
-  Epetra_Import* ExtImporter_;
+  Teuchos::RefCountPtr<const Epetra_RowMatrix> Matrix_;
+  Teuchos::RefCountPtr<Epetra_CrsMatrix> ExtMatrix_;
+  Teuchos::RefCountPtr<Epetra_Map> ExtMap_;
+  Teuchos::RefCountPtr<Epetra_Import> ExtImporter_;
 
   int OverlapLevel_;
   string Label_;

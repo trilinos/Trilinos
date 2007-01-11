@@ -3,6 +3,8 @@
 
 #include "Ifpack_ConfigDefs.h"
 #include "Epetra_RowMatrix.h"
+#include "Teuchos_RefCountPtr.hpp"
+
 class Epetra_Comm;
 class Epetra_Map;
 class Epetra_MultiVector;
@@ -15,10 +17,10 @@ class Ifpack_SingletonFilter : public virtual Epetra_RowMatrix {
 
 public:
   //! Constructor.
-  Ifpack_SingletonFilter(Epetra_RowMatrix* Matrix);
+  Ifpack_SingletonFilter(const Teuchos::RefCountPtr<Epetra_RowMatrix>& Matrix);
 
   //! Destructor.
-  virtual ~Ifpack_SingletonFilter();
+  virtual ~Ifpack_SingletonFilter() {};
 
   //! Returns the number of entries in MyRow.
   virtual inline int NumMyRowEntries(int MyRow, int & NumEntries) const
@@ -71,7 +73,7 @@ public:
 
   virtual bool Filled() const
   {
-    return(A_.Filled());
+    return(A_->Filled());
   }
 
   virtual double NormInf() const
@@ -146,17 +148,17 @@ public:
 
   virtual const Epetra_Import * RowMatrixImporter() const
   {
-    return(A_.RowMatrixImporter());
+    return(A_->RowMatrixImporter());
   }
 
   int SetUseTranspose(bool UseTranspose)
   {
-    return(A_.SetUseTranspose(UseTranspose));
+    return(A_->SetUseTranspose(UseTranspose));
   }
 
   bool UseTranspose() const 
   {
-    return(A_.UseTranspose());
+    return(A_->UseTranspose());
   }
 
   bool HasNormInf() const
@@ -166,7 +168,7 @@ public:
 
   const Epetra_Comm & Comm() const
   {
-    return(A_.Comm());
+    return(A_->Comm());
   }
 
   const Epetra_Map & OperatorDomainMap() const 
@@ -181,7 +183,7 @@ public:
 
   const Epetra_BlockMap& Map() const 
   {
-    return(*(const Epetra_BlockMap*)Map_);
+    return(*(const Epetra_BlockMap*)(&*Map_));
   }
 
   const char* Label() const{
@@ -201,7 +203,7 @@ public:
 private:
 
   //! Pointer to the matrix to be preconditioned.
-  Epetra_RowMatrix& A_;
+  Teuchos::RefCountPtr<Epetra_RowMatrix> A_;
 
   //! Used in ExtractMyRowCopy, to avoid allocation each time.
   mutable vector<int> Indices_;
@@ -223,9 +225,9 @@ private:
   int MaxNumEntries_;
   int MaxNumEntriesA_;
   int NumNonzeros_;
-  Epetra_Map* Map_;
+  Teuchos::RefCountPtr<Epetra_Map> Map_;
   
-  Epetra_Vector* Diagonal_;
+  Teuchos::RefCountPtr<Epetra_Vector> Diagonal_;
 
 };
 

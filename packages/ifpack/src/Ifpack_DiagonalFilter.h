@@ -4,12 +4,14 @@
 #include "Ifpack_ConfigDefs.h"
 #include "Epetra_ConfigDefs.h"
 #include "Epetra_RowMatrix.h"
+#include "Epetra_Time.h"
+#include "Teuchos_RefCountPtr.hpp"
+
 class Epetra_Comm;
 class Epetra_Map;
 class Epetra_MultiVector;
 class Epetra_Import;
 class Epetra_BlockMap;
-#include "Epetra_Time.h"
 
 //! Ifpack_DiagonalFilter: Filter to modify the diagonal entries of a given Epetra_RowMatrix.
 /*!
@@ -18,7 +20,7 @@ Ifpack_DiagonalFilter modifies the elements on the diagonal.
 
 A typical use is as follows:
 \code
-Epetra_RowMatrix* A;
+Teuchos::RefCountPtr<Epetra_RowMatrix> A;
 // creates a matrix B such that
 // B(i,i) = AbsoluteThreshold * sgn(B(i,i)) + 
 //          RelativeThreshold * B(i,i)
@@ -37,41 +39,9 @@ class Ifpack_DiagonalFilter : public virtual Epetra_RowMatrix {
 
 public:
   //! Constructor.
-  Ifpack_DiagonalFilter(Epetra_RowMatrix* Matrix,
+  Ifpack_DiagonalFilter(const Teuchos::RefCountPtr<Epetra_RowMatrix>& Matrix,
                         double AbsoluteThreshold,
-                        double RelativeThreshold) :
-    A_(*Matrix),
-    AbsoluteThreshold_(AbsoluteThreshold),
-    RelativeThreshold_(RelativeThreshold)
-  {
-    Epetra_Time Time(Comm());
-
-    pos_.resize(NumMyRows());
-    val_.resize(NumMyRows());
-
-    vector<int> Indices(MaxNumEntries());
-    vector<double> Values(MaxNumEntries());
-    int NumEntries;
-
-    for (int MyRow = 0 ; MyRow < NumMyRows() ; ++MyRow) {
-
-      pos_[MyRow] = -1;
-      val_[MyRow] = 0.0;
-      int ierr = A_.ExtractMyRowCopy(MyRow, MaxNumEntries(), NumEntries, 
-                                     &Values[0], &Indices[0]);
-      assert (ierr == 0);
-
-      for (int i = 0 ; i < NumEntries ; ++i) {
-        if (Indices[i] == MyRow) {
-          pos_[MyRow] = i;
-          val_[MyRow] = Values[i] * (RelativeThreshold_ - 1) +
-            AbsoluteThreshold_ * EPETRA_SGN(Values[i]);
-        }
-        break;
-      }
-    }
-    cout << "TIME = " << Time.ElapsedTime() << endl;
-  }
+                        double RelativeThreshold);
   
   //! Destructor.
   virtual ~Ifpack_DiagonalFilter() {};
@@ -79,13 +49,13 @@ public:
   //! Returns the number of entries in MyRow.
   virtual int NumMyRowEntries(int MyRow, int& NumEntries) const
   {
-    return(A_.NumMyRowEntries(MyRow, NumEntries));
+    return(A_->NumMyRowEntries(MyRow, NumEntries));
   }
 
   //! Returns the maximum number of entries.
   virtual int MaxNumEntries() const
   {
-    return(A_.MaxNumEntries());
+    return(A_->MaxNumEntries());
   }
 
   inline virtual int ExtractMyRowCopy(int MyRow, int Length, int& NumEntries, 
@@ -93,7 +63,7 @@ public:
 
   virtual int ExtractDiagonalCopy(Epetra_Vector & Diagonal) const
   {
-    IFPACK_RETURN(A_.ExtractDiagonalCopy(Diagonal));
+    IFPACK_RETURN(A_->ExtractDiagonalCopy(Diagonal));
   }
 
   virtual int Multiply(bool TransA, const Epetra_MultiVector& X, 
@@ -125,7 +95,7 @@ public:
 
   virtual int LeftScale(const Epetra_Vector& x)
   {
-    return(A_.LeftScale(x));
+    return(A_->LeftScale(x));
   }
 
   virtual int InvColSums(Epetra_Vector& x) const
@@ -135,12 +105,12 @@ public:
 
   virtual int RightScale(const Epetra_Vector& x) 
   {
-    return(A_.RightScale(x));
+    return(A_->RightScale(x));
   }
 
   virtual bool Filled() const
   {
-    return(A_.Filled());
+    return(A_->Filled());
   }
 
   //! Not implemented for efficiency reasons.
@@ -157,77 +127,77 @@ public:
 
   virtual int NumGlobalNonzeros() const
   {
-    return(A_.NumGlobalNonzeros());
+    return(A_->NumGlobalNonzeros());
   }
 
   virtual int NumGlobalRows() const
   {
-    return(A_.NumGlobalRows());
+    return(A_->NumGlobalRows());
   }
 
   virtual int NumGlobalCols() const
   {
-    return(A_.NumGlobalCols());
+    return(A_->NumGlobalCols());
   }
 
   virtual int NumGlobalDiagonals() const
   {
-    return(A_.NumGlobalDiagonals());
+    return(A_->NumGlobalDiagonals());
   }
 
   virtual int NumMyNonzeros() const
   {
-    return(A_.NumMyNonzeros());
+    return(A_->NumMyNonzeros());
   }
 
   virtual int NumMyRows() const
   {
-    return(A_.NumMyRows());
+    return(A_->NumMyRows());
   }
 
   virtual int NumMyCols() const
   {
-    return(A_.NumMyCols());
+    return(A_->NumMyCols());
   }
 
   virtual int NumMyDiagonals() const
   {
-    return(A_.NumMyDiagonals());
+    return(A_->NumMyDiagonals());
   }
 
   virtual bool LowerTriangular() const
   {
-    return(A_.LowerTriangular());
+    return(A_->LowerTriangular());
   }
 
   virtual bool UpperTriangular() const
   {
-    return(A_.UpperTriangular());
+    return(A_->UpperTriangular());
   }
 
   virtual const Epetra_Map& RowMatrixRowMap() const
   {
-    return(A_.RowMatrixRowMap());
+    return(A_->RowMatrixRowMap());
   }
 
   virtual const Epetra_Map& RowMatrixColMap() const
   {
-    return(A_.RowMatrixColMap());
+    return(A_->RowMatrixColMap());
   }
 
   virtual const Epetra_Import* RowMatrixImporter() const
   {
-    return(A_.RowMatrixImporter());
+    return(A_->RowMatrixImporter());
   }
 
   int SetUseTranspose(bool UseTranspose)
   {
-    return(A_.SetUseTranspose(UseTranspose));
+    return(A_->SetUseTranspose(UseTranspose));
   }
 
   bool UseTranspose() const 
   {
-    return(A_.UseTranspose());
+    return(A_->UseTranspose());
   }
 
   //! Not implemented for efficiency reasons.
@@ -238,32 +208,32 @@ public:
 
   const Epetra_Comm& Comm() const
   {
-    return(A_.Comm());
+    return(A_->Comm());
   }
 
   const Epetra_Map& OperatorDomainMap() const 
   {
-    return(A_.OperatorDomainMap());
+    return(A_->OperatorDomainMap());
   }
 
   const Epetra_Map& OperatorRangeMap() const 
   {
-    return(A_.OperatorRangeMap());
+    return(A_->OperatorRangeMap());
   }
 
   const Epetra_BlockMap& Map() const 
   {
-    return(A_.Map());
+    return(A_->Map());
   }
 
   const char* Label() const{
-    return(A_.Label());
+    return(A_->Label());
   }
 
 private:
 
   //! Pointer to the matrix to be filtered
-  Epetra_RowMatrix& A_;
+  Teuchos::RefCountPtr<Epetra_RowMatrix> A_;
   //! This value (times the sgn(A(i,i)) is added to the diagonal elements
   double AbsoluteThreshold_;
   //! Multiplies A(i,i) by this value.
