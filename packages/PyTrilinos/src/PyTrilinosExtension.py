@@ -121,8 +121,11 @@ def makePyTrilinosExtensions(moduleName):
         else:
             extra_link_args.append(option)
 
-    # *** Epetra needs the Teuchos source directory, or I need to move
-    # *** Teuchos_FILESTREAM.hpp into the PyTrilinos src directory.  Don't I?
+    # Epetra needs the Teuchos source directory for the Teuchos_FILEstream.hpp
+    # header.
+    if moduleName == "Epetra":
+        include_dirs.append(os.path.abspath(os.path.join(srcdir, "..", "..",
+                                                         "teuchos", "src")))
 
     # Find the include directory for numpy.  Function get_numpy_include is
     # deprecated now in favor of get_include, but let's support the older

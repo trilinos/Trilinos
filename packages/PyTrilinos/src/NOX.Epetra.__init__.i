@@ -34,6 +34,9 @@
 	implicitconv = "1") __init__
 
 %{
+// System includes
+#include <vector>
+
 // Teuchos includes
 #include "Teuchos_PythonParameter.h"
 
@@ -124,7 +127,11 @@ using namespace std;
 // Support for Teuchos::RefCountPtrs
 TEUCHOS_RCP_TYPEMAPS(NOX::Epetra::LinearSystem)
 TEUCHOS_RCP_TYPEMAPS(NOX::Epetra::Scaling)
+TEUCHOS_RCP_TYPEMAPS(Epetra_CrsGraph)
+TEUCHOS_RCP_TYPEMAPS(Epetra_MapColoring)
 TEUCHOS_RCP_TYPEMAPS(Epetra_Operator)
+%template() std::vector< Epetra_IntVector >;
+TEUCHOS_RCP_TYPEMAPS(std::vector< Epetra_IntVector >)
 
 // Typemaps: Make Epetra_Vector and NOX::Epetra::Vector input
 // arguments interchangeable

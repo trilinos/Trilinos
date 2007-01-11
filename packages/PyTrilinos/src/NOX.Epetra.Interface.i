@@ -86,7 +86,7 @@ TEUCHOS_RCP_TYPEMAPS(NOX::Epetra::Interface::Jacobian)
 TEUCHOS_RCP_TYPEMAPS(NOX::Epetra::Interface::Preconditioner)
 
 // NOX imports
-%import  "NOX_Utils.H"
+%import "NOX_Utils.H"
 
 // NOX::Epetra::Interface includes
 %include "NOX_Epetra_Interface_Required.H"
