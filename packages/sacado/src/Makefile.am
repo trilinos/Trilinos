@@ -108,6 +108,9 @@ SACADO_MPL_H = \
 	$(srcdir)/mpl/Sacado_mpl_vector_at_spec.hpp \
 	$(srcdir)/mpl/Sacado_mpl_vector_push_back_spec.hpp
 
+SACADO_SFC_H = \
+	$(srcdir)/Sacado_ScalarFlopCounter.hpp
+
 SACADO_H = \
 	$(srcdir)/Sacado_ConfigDefs.h \
 	$(srcdir)/Sacado_Version.hpp \
@@ -118,7 +121,8 @@ SACADO_H = \
 	$(SACADO_TAYLOR_H) \
 	$(SACADO_RAD_H) \
 	$(SACADO_MPL_H) \
-	$(SACADO_TEMPLATE_H)
+	$(SACADO_TEMPLATE_H) \
+	$(SACADO_SFC_H)
 
 SACADO = \
 	$(SACADO_RAD)

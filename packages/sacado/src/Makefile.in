@@ -109,7 +109,8 @@ am__objects_1 = Sacado_radops.$(OBJEXT) uninit.$(OBJEXT)
 am__objects_2 = $(am__objects_1)
 am__objects_3 =
 am__objects_4 = $(am__objects_3) $(am__objects_3) $(am__objects_3) \
-	$(am__objects_3) $(am__objects_3) $(am__objects_3)
+	$(am__objects_3) $(am__objects_3) $(am__objects_3) \
+	$(am__objects_3)
 am_libsacado_a_OBJECTS = $(am__objects_2) $(am__objects_4)
 libsacado_a_OBJECTS = $(am_libsacado_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I.
@@ -340,6 +341,9 @@ SACADO_MPL_H = \
 	$(srcdir)/mpl/Sacado_mpl_vector_at_spec.hpp \
 	$(srcdir)/mpl/Sacado_mpl_vector_push_back_spec.hpp
 
+SACADO_SFC_H = \
+	$(srcdir)/Sacado_ScalarFlopCounter.hpp
+
 SACADO_H = \
 	$(srcdir)/Sacado_ConfigDefs.h \
 	$(srcdir)/Sacado_Version.hpp \
@@ -350,7 +354,8 @@ SACADO_H = \
 	$(SACADO_TAYLOR_H) \
 	$(SACADO_RAD_H) \
 	$(SACADO_MPL_H) \
-	$(SACADO_TEMPLATE_H)
+	$(SACADO_TEMPLATE_H) \
+	$(SACADO_SFC_H)
 
 SACADO = \
 	$(SACADO_RAD)
