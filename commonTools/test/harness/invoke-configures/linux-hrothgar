@@ -2,6 +2,7 @@
 CXXFLAGS=-O3 \
 CFLAGS=-O3 \
 FFLAGS=-O3 \
+F77=gfortran \
 --cache-file=config.cache \
 --disable-default-packages \
 --enable-amesos \
