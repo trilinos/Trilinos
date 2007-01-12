@@ -1,2 +1,2 @@
 cp ./emacs-init-file $HOME/.emacs
-./copy-emacs-thyra-style.sh
+./copy-emacs-thyra-styles.sh
