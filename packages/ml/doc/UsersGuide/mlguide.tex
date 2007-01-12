@@ -1042,17 +1042,24 @@ specified with the option {\tt aggregation: global number}. \\
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{table}[tbh]
 \begin{center}
-\begin{tabular}{ | p{4cm} | p{10cm} | }
+\begin{tabular}{ | p{4.5cm} | p{10cm} | }
 \hline
 \verb!Jacobi! & Point-Jacobi. Damping factor is specified using
 {\tt smoother: damping factor}, and the number of sweeps with {\tt
   smoother: sweeps} \\ 
 \verb!Gauss-Seidel! & Point Gauss-Seidel.  Damping factor is specified using
 {\tt smoother: damping factor}, and the number of sweeps with {\tt
-  smoother: sweeps} \\
+ smoother: sweeps}.  For matrices of type Epetra\_CrsMatrix, the \ifpack\
+implementation is automatically used, if available. \\
+\verb!ML Gauss-Seidel! & Same as above, but forces the use of ML's internal
+version.\\
 \verb!symmetric Gauss-Seidel! & Point symmetric Gauss-Seidel.  Damping factor is specified using
 {\tt smoother: damping factor}, and the number of sweeps with {\tt
-  smoother: sweeps} \\
+ smoother: sweeps}.
+For matrices of type Epetra\_CrsMatrix, the \ifpack\
+implementation is automatically used, if available. \\
+\verb!ML symmetric Gauss-Seidel! & Same as above, but forces the use of ML's
+internal version.\\
 \verb!Aztec! & Use \aztecoo's built-in preconditioning functions as
 smoothers. Or, if {\tt smoother: Aztec as solver} is {\tt true},  use
 approximate solutions with \aztecoo~(with {\tt smoothers: sweeps}
@@ -1078,12 +1085,22 @@ the prototype {\tt int (*)(ML\_Smoother *, int inLength, double *invec, int outL
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{table}[tbh]
 \begin{center}
-\begin{tabular}{ | p{4cm} | p{10cm} | }
+\begin{tabular}{ | p{4.5cm} | p{10cm} | }
 \hline
 \verb!Jacobi! & Use {\tt coarse: sweeps} steps of Jacobi (with damping
 parameter {\tt coarse: damping parameter}) as a solver. \\
-\verb!Gauss-Seidel! & Use  {\tt coarse: sweeps} steps of Gauss-Seidel (with damping
-parameter {\tt coarse: damping parameter}) as a solver. \\ 
+\verb!Gauss-Seidel! & Use  {\tt coarse: sweeps} steps of Gauss-Seidel (with
+damping parameter {\tt coarse: damping parameter}) as a solver.
+For matrices of type Epetra\_CrsMatrix, the \ifpack\
+implementation is automatically used, if available. \\
+\verb!ML Gauss-Seidel! & Same as above, but forces the use of ML's
+internal version.\\
+\verb!symmetric Gauss-Seidel! & Use  {\tt coarse: sweeps} steps of symmetric
+Gauss-Seidel (with damping parameter {\tt coarse: damping parameter}) as a
+ solver.  For matrices of type Epetra\_CrsMatrix, the \ifpack\
+implementation is automatically used, if available. \\
+\verb!ML symmetric Gauss-Seidel! & Same as above, but forces the use of ML's
+internal version.\\
 \verb!MLS! & Use degree {\tt coarse: MLS polynomial order} Chebyshev polynomial
              as a solver. \\
 \verb!Hiptmair! & Use {\tt coarse: sweeps} steps of two-stage Hiptmair
@@ -1360,12 +1377,15 @@ schemes). Note: this value overwrites {\tt aggregation: global aggregates}.}
   and {\tt aggregation: nodes per aggregate} is specified, the default
   value is 1 aggregate per process.}
 
-\choicebox{\tt eigen-analysis: type}{[{\tt string}] Defines the numerical scheme to
-be used to compute an estimation of the maximum eigenvalue of $D^{-1}A$,
+\choicebox{\tt eigen-analysis: type}{[{\tt string}] Defines the numerical scheme
+to be used to compute an estimate of the maximum eigen-value of $D^{-1}A$,
 where $D = diag(A)$ (for smoothed
 aggregation only). Choices are: {\tt cg} (10 steps of conjugate gradient
-method), {\tt Anomr} (the A-norm of the matrix), {\tt Anasazi} 
-(use the Arnoldi method), {\tt power-method}. Default: {\tt Anorm}.}
+method), {\tt Anorm} (the A-norm of the matrix), {\tt Anasazi} 
+(use the Arnoldi method), {\tt power-method}. Default: {\tt power-method}.}
+
+\choicebox{\tt eigen-analysis: iterations}{[{\tt int}] Defines the number of
+iterations to perform in estimating the largest eigen-value.  Default: 10.}
 
 \choicebox{\tt aggregation: next-level aggregates per process
   $\star$}{[{\tt int}] Defines the maximum number of next-level matrix rows
@@ -1391,17 +1411,17 @@ scheme). Default: 128.}
 \subsubsection{Smoothing Parameters}\label{smoothing parameters}
 %----------------------------------%
 
-\choicebox{\tt smoother: sweeps $\star$}{[{\tt int}] Number of sweeps of smoother. 
-Default: 1.}
-
-\choicebox{\tt smoother: damping factor $\star$}{[{\tt double}] Smoother damping factor. 
-  Default: 0.67.}
-
-\choicebox{\tt smoother: pre or post $\star$}{[{\tt string}] It can assume
-  on the following values: {\tt pre, post, both}. Default: {\tt both}.}
-
 \choicebox{\tt smoother: type $\star$}{[{\tt string}] Type of the smoother. 
   See Table~\ref{tab:ml:smoother}. Default: {\tt symmetric Gauss-Seidel}.}
+
+\choicebox{\tt smoother: sweeps $\star$}{[{\tt int}] Number of sweeps of
+ smoother.  Default: 1.}
+
+\choicebox{\tt smoother: damping factor $\star$}{[{\tt double}] Smoother
+ damping factor.  Default: 1.0.}
+
+\choicebox{\tt smoother: pre or post $\star$}{[{\tt string}] It can assume
+one of the following values: {\tt pre, post, both}. Default: {\tt both}.}
 
 \choicebox{\tt smoother: Aztec options $\star$}{[{\tt int*}] Pointer to {\sc Aztec}'s
 options vector (only for {\tt Aztec}
@@ -1471,6 +1491,10 @@ value. Default: 128.}
 \choicebox{\tt coarse: type}{[{\tt string}] Coarse solver. 
 See Table~\ref{tab:ml:coarse}. Default: {\tt Amesos\_KLU}.}
 
+\choicebox{\tt coarse: pre or post $\star$}{[{\tt string}] It can assume
+one of the following values: {\tt pre, post, both}.  Practically, {\tt pre}
+and {\tt post} are the same.  Default: {\tt post}.}
+
 \choicebox{\tt coarse: sweeps}{[{\tt int}] (Only for {\tt Jacobi}, {\tt
                                             Gauss-Seidel}, {\tt symmetric
 Gauss-Seidel}, and {\tt Hiptmair}.)
@@ -1531,8 +1555,11 @@ Default: 20.}
   problem. Can assume the following values: $\{2,3\}$.}
 
 %------------------------------------%
-\subsubsection{Visualization}
+\subsubsection{Analysis Options}
 %------------------------------------%
+
+\choicebox{\tt analyze memory}{[{\tt bool}]  Analyze memory used by the
+preconditioner.  Default: {\tt false}.}
 
 \choicebox{\tt viz: enable}{[{\tt bool}]  Enable/disable visualization.
 Default: {\tt false}.}
@@ -1548,7 +1575,7 @@ printing of initial starting solution.}
 PDEs, the equation number to print.  Default: all equations.}
 
 %------------------------------------%
-\subsubsection{Miscellaneous}
+\subsubsection{Miscellaneous Options}
 \label{miscellaneous options}
 %------------------------------------%
 
@@ -1693,22 +1720,22 @@ increasing & \tt increasing & \tt decreasing \\
 \tt aggregation: local aggregates & \tt int & -- & 1 & -- & -- \\
 \tt aggregation: nodes per aggregate & \tt int & -- & -- & 512 & -- \\
 \tt aggregation: damping factor & \tt double &  4/3 & 4/3 & 4/3 & 4/3\\
-\tt eigen-analysis: type & \tt string & \tt Anorm & \tt Anorm & \tt Anorm & \tt
-Anorm \\
+\tt eigen-analysis: type & \tt string & \tt power-method & \tt power-method &
+                          \tt power-method & \tt power-method \\
 \tt aggregation: threshold & \tt double & 0.0 & 0.0 & 0.0 & 0.0\\
 \tt aggregation: next-level aggregates per process & \tt int & -- & --
 &128 & --\\
 \hline
 \hline
 \tt smoother: sweeps & \tt int & 2 & 2 & 2 & 1 \\
-\tt smoother: damping factor & \tt double & 0.67  & -- & --  & 1.0 \\
+\tt smoother: damping factor & \tt double & 1.0  & -- & --  & 1.0 \\
 \tt smoother: pre or post & \tt string & \tt both & \tt both & \tt both
 & \tt both \\
 \tt smoother: type & \tt string & \tt symmetric Gauss-Seidel & \tt Aztec & \tt
 Aztec & Hiptmair/MLS \\
 \tt smoother: Aztec as solver & \tt bool & -- & \tt false & \tt
 false & false \\
-\tt smoother: MLS polynomial order & \tt int & -- & -- & -- & 3 \\
+\tt smoother: MLS polynomial order & \tt int & -- & -- & -- & 2 \\
 \tt smoother: MLS alpha & \tt double & -- & -- & -- & 27.0 \\
 \hline
 \hline
