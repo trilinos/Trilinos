@@ -67,7 +67,7 @@ void test_ArrayRefCountPtr_iterators(
 
   // Pointer ++
   
-  if(1) {
+  {
     if(verbose)
       *out << "\nChecking ++itr and < ...\n";
     ArrayRefCountPtr<T> itr = ptr;
@@ -75,7 +75,7 @@ void test_ArrayRefCountPtr_iterators(
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
   
-  if(1) {
+  {
     if(verbose)
       *out << "\nChecking itr++ and <= ...\n";
     ArrayRefCountPtr<T> itr = ptr;
@@ -83,7 +83,7 @@ void test_ArrayRefCountPtr_iterators(
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
   
-  if(1) {
+  {
     if(verbose)
       *out << "\nChecking itr+=1 and != ...\n";
     ArrayRefCountPtr<T> itr = ptr;
@@ -91,7 +91,7 @@ void test_ArrayRefCountPtr_iterators(
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
   
-  if(1) {
+  {
     if(verbose)
       *out << "\nChecking itr=itr+1 and == ...\n";
     ArrayRefCountPtr<T> itr = ptr;
@@ -101,7 +101,7 @@ void test_ArrayRefCountPtr_iterators(
 
   // Pointer --
   
-  if(1) {
+  {
     if(verbose)
       *out << "\nChecking --itr and >= ...\n";
     ArrayRefCountPtr<T> itr = ptr+size-1;
@@ -109,7 +109,7 @@ void test_ArrayRefCountPtr_iterators(
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
   
-  if(1) {
+  {
     if(verbose)
       *out << "\nChecking itr-- and > ...\n";
     ArrayRefCountPtr<T> itr = ptr+size-1;
@@ -117,7 +117,7 @@ void test_ArrayRefCountPtr_iterators(
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
   
-  if(1) {
+  {
     if(verbose)
       *out << "\nChecking itr-=1 and != ...\n";
     ArrayRefCountPtr<T> itr = ptr+size-1;
@@ -125,7 +125,7 @@ void test_ArrayRefCountPtr_iterators(
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
   
-  if(1) {
+  {
     if(verbose)
       *out << "\nChecking itr=itr-1 and == ...\n";
     ArrayRefCountPtr<T> itr = ptr+size-1;
@@ -135,7 +135,7 @@ void test_ArrayRefCountPtr_iterators(
 
   // Iterator ++
   
-  if(1) {
+  {
     if(verbose)
       *out << "\nChecking iterator ++itr and < ...\n";
     typename ArrayRefCountPtr<T>::const_iterator itr = ptr.begin();
@@ -143,7 +143,7 @@ void test_ArrayRefCountPtr_iterators(
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
   
-  if(1) {
+  {
     if(verbose)
       *out << "\nChecking iterator itr++ and <= ...\n";
     typename ArrayRefCountPtr<T>::const_iterator itr = ptr.begin();
@@ -151,7 +151,7 @@ void test_ArrayRefCountPtr_iterators(
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
   
-  if(1) {
+  {
     if(verbose)
       *out << "\nChecking iterator itr+=1 and != ...\n";
     typename ArrayRefCountPtr<T>::const_iterator itr = ptr.begin();
@@ -159,7 +159,7 @@ void test_ArrayRefCountPtr_iterators(
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
   
-  if(1) {
+  {
     if(verbose)
       *out << "\nChecking iterator itr=itr+1 and == ...\n";
     typename ArrayRefCountPtr<T>::const_iterator itr = ptr.begin();
@@ -169,7 +169,7 @@ void test_ArrayRefCountPtr_iterators(
 
   // Iterator --
   
-  if(1) {
+  {
     if(verbose)
       *out << "\nChecking iterator --itr and >= ...\n";
     typename ArrayRefCountPtr<T>::const_iterator itr = ptr.begin()+size-1;
@@ -177,7 +177,7 @@ void test_ArrayRefCountPtr_iterators(
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
   
-  if(1) {
+  {
     if(verbose)
       *out << "\nChecking iterator itr-- and > ...\n";
     typename ArrayRefCountPtr<T>::const_iterator itr = ptr.begin()+size-1;
@@ -185,7 +185,7 @@ void test_ArrayRefCountPtr_iterators(
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
   
-  if(1) {
+  {
     if(verbose)
       *out << "\nChecking iterator itr-=1 and != ...\n";
     typename ArrayRefCountPtr<T>::const_iterator itr = ptr.begin()+size-1;
@@ -193,7 +193,7 @@ void test_ArrayRefCountPtr_iterators(
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
   
-  if(1) {
+  {
     if(verbose)
       *out << "\nChecking iterator itr=itr-1 and == ...\n";
     typename ArrayRefCountPtr<T>::const_iterator itr = ptr.begin()+size-1;
@@ -226,7 +226,7 @@ void test_ArrayRefCountPtr(
 
   const int size = ptr.size();
   
-  if(1) {
+  {
     if(verbose)
       *out << "\nInitializing data ...\n";
     for( int i = 0; i < size; ++i )

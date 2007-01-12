@@ -320,7 +320,7 @@ void EpetraModelEvaluator::evalModel( const InArgs<double>& inArgs_in, const Out
   if( inArgs.supports(IN_ARG_x) && (x = inArgs.get_x()).get() )
     epetraInArgs.set_x(get_Epetra_Vector(*x_map_,x));
 
-  if(1) {
+  {
     RefCountPtr<const VectorBase<double> > p_l;
     for(int l = 0;  l < outArgs.Np(); ++l ) {
       p_l = inArgs.get_p(l);
@@ -380,7 +380,7 @@ void EpetraModelEvaluator::evalModel( const InArgs<double>& inArgs_in, const Out
   if( outArgs.supports(OUT_ARG_f) && (f = outArgs.get_f()).get() )
     epetraOutArgs.set_f(get_Epetra_Vector(*f_map_,f));
 
-  if(1){
+  {
     Teuchos::RefCountPtr<VectorBase<double> > g_j;
     for(int j = 0;  j < outArgs.Ng(); ++j ) {
       g_j = outArgs.get_g(j);
@@ -426,7 +426,7 @@ void EpetraModelEvaluator::evalModel( const InArgs<double>& inArgs_in, const Out
   // problem, but the issue is duly noted here!  Only dangerous programming
   // use of this interface would cause any problem.
 
-  if(1){
+  {
     Derivative<double> DfDp_l;
     for(int l = 0;  l < outArgs.Np(); ++l ) {
       if( !outArgs.supports(OUT_ARG_DfDp,l).none() && !(DfDp_l = outArgs.get_DfDp(l)).isEmpty() )
@@ -434,7 +434,7 @@ void EpetraModelEvaluator::evalModel( const InArgs<double>& inArgs_in, const Out
     }
   }
 
-  if(1){
+  {
     Derivative<double> DgDx_j;
     for(int j = 0;  j < outArgs.Ng(); ++j ) {
       if( !outArgs.supports(OUT_ARG_DgDx,j).none() && !(DgDx_j = outArgs.get_DgDx(j)).isEmpty() )
@@ -442,7 +442,7 @@ void EpetraModelEvaluator::evalModel( const InArgs<double>& inArgs_in, const Out
     }
   }
 
-  if(1){
+  {
     Derivative<double> DgDp_j_l;
     for(int j = 0;  j < outArgs.Ng(); ++j ) {
       for(int l = 0;  l < outArgs.Np(); ++l ) {

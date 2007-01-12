@@ -1521,7 +1521,7 @@ int GLpApp::meshreader(const Epetra_Comm & Comm,
   TEST_FOR_EXCEPT(static_cast<int>(std::strlen(geomFileBase) + 5) > FileNameSize);
   sprintf(FileName, "%s.%03d", geomFileBase, MyPID);
 
-  if(1) {
+  {
     std::ifstream file_in(FileName);
     TEST_FOR_EXCEPTION(
       file_in.eof(), std::logic_error

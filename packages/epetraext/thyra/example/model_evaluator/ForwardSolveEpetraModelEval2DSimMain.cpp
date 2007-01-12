@@ -150,7 +150,7 @@ int main( int argc, char* argv[] )
       solveStatus = newtonSolver.solve(&*x,&solveCriteria);
     
     *out << "\nNonlinear solver return status:\n";
-    if(1) {
+    {
       Teuchos::OSTab tab(out);
       *out << solveStatus;
     }

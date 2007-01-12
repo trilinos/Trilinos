@@ -554,7 +554,7 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
   //
   RefCountPtr<AztecOO> aztecFwdSolver, aztecAdjSolver;
   bool startingOver;
-  if(1){
+  {
     // Let's assume that fwdOp, prec and/or approxFwdOp are compatible with
     // the already created AztecOO objects.  If they are not, then the client
     // should have created a new LOWSB object from scratch!

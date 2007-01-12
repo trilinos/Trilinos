@@ -391,7 +391,7 @@ void BelosLinearOpWithSolve<Scalar>::solve(
   //
   iterativeSolver_->GetStatusTest()->Reset(); 
   iterativeSolver_->Reset();
-  if(1){
+  {
     RefCountPtr<FancyOStream>
       outUsed =
       ( static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE)

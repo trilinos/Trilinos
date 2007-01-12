@@ -129,7 +129,7 @@ public:
 				*out << "\nCreating diagonal opeator of dimension " << dim_ << " with condition number " << opCondNum_ << " ...\n";
 			RefCountPtr<TSFCore::VectorSpace<Scalar> > space = rcp(new TSFCore::SerialVectorSpaceStd<Scalar>(dim_));
 			RefCountPtr<TSFCore::Vector<Scalar> > A_diag = space->createMember();
-			if(1) {
+			{
 				TSFCore::ExplicitMutableVectorView<Scalar> A_diag_ev(*A_diag);
 				for( int k = 1; k <= dim_; ++k ) A_diag_ev(k) = ( opCondNum_ - 1 ) / ( dim_ - 1 ) * (k - 1) + 1;
 			}
@@ -151,7 +151,7 @@ public:
 							<< " preconditioner of dimension  " << dim_ << " with condition number " << precCondNum << " ...\n";
 				}
 				RefCountPtr<TSFCore::Vector<Scalar> > P_diag = space->createMember();
-				if(1) {
+				{
 					TSFCore::ExplicitMutableVectorView<Scalar> P_diag_ev(*P_diag);
 					for( int k = 1; k <= dim_; ++k ) P_diag_ev(k) = 1 / ( ( precCondNum - 1 ) / ( dim_ - 1 ) * (k - 1) + 1 );
 				}

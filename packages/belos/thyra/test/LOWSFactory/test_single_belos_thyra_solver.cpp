@@ -73,7 +73,7 @@ bool Thyra::test_single_belos_thyra_solver(
 
     Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<double> >
       lowsFactory;
-    if(1) {
+    {
       Teuchos::RefCountPtr<BelosLinearOpWithSolveFactory<double> >
         belosLowsFactory = Teuchos::rcp(new BelosLinearOpWithSolveFactory<double>());
       lowsFactory = belosLowsFactory;

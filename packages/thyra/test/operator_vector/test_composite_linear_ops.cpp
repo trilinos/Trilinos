@@ -127,7 +127,7 @@ bool run_composite_linear_ops_tests(
   result = linearOpTester.compare(*dyn_cast<const Thyra::DefaultScaledAdjointLinearOp<Scalar> >(*A1).getOp(),*origA,out.get());
   if(!result) success = false;
 
-  if(1) {
+  {
 
     if(out.get()) *out << "\nUnwrapping origA to get non-persisting pointer to origA_1, scalar and transp ...\n";
     Scalar  scalar;
@@ -153,7 +153,7 @@ bool run_composite_linear_ops_tests(
     
   }
 
-  if(1) {
+  {
 
     if(out.get()) *out << "\nUnwrapping A1 to get non-persisting pointer to origA_2 ...\n";
     Scalar  scalar;

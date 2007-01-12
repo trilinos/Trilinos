@@ -91,7 +91,7 @@ void DefaultClusteredSpmdProductVectorSpace<Scalar>::initialize(
     );
   }
   // Here must then broadcast the values to all processes within each cluster.
-  if(1) {
+  {
     const Index num = 2;
     Index buff[num] = { clusterOffset_, globalDim_ };
     broadcast(*intraClusterComm_,clusterRootRank_,num,&buff[0]);

@@ -506,7 +506,7 @@ int main( int argc, char *argv[] )
       cout << "Testing retrieval of set array objects ...\n";
       print_break();
     }
-    if(1) {
+    {
 
       const Teuchos::Array<int>
         readIntArray = Teuchos::getArrayFromStringParameter<int>(PL_Main,"Int Array");
@@ -569,7 +569,7 @@ int main( int argc, char *argv[] )
       "  }\n  "
       );
 
-    if(1) {
+    {
 
       const Teuchos::Array<double>
         readDoubleArray = Teuchos::getArrayFromStringParameter<double>(PL_Main,"Double Array");

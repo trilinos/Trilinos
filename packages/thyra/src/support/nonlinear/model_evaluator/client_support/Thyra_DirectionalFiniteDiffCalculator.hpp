@@ -680,7 +680,7 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcVariations(
   // Setup storage for perturbed functions
   bool all_funcs_at_base_computed = true;
   MEB::OutArgs<Scalar> pfunc = model.createOutArgs();
-  if(1) {
+  {
     VectorPtr f;
     if( var.supports(MEB::OUT_ARG_f) && (f=var.get_f()).get() ) {
       pfunc.set_f(createMember(model.get_f_space()));
@@ -877,7 +877,7 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcVariations(
       if(out.get() && trace)
         *out << "\nSetting perturbedPoint = basePoint + uh_i*uh*direction ...\n";
       // z = zo + uh_i*uh*v
-      if(1) {
+      {
         if( dir.supports(MEB::IN_ARG_x) && dir.get_x().get() )
           V_StVpV(&*per_x,Scalar(uh_i*uh),*dir.get_x(),*bp.get_x());
         if( dir.supports(MEB::IN_ARG_x_dot) && dir.get_x_dot().get() )
@@ -896,7 +896,7 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcVariations(
       if(out.get() && trace)
         *out << "\nperturnedFunctions=\n" << describe(pfunc,verbLevel);
       // Sum perturbed function values into total variation
-      if(1) {
+      {
         // var_h += wgt_i*perturbed_h
         if(out.get() && trace)
           *out << "\nComputing variations += wgt_i*perturbedfunctions ...\n";
@@ -917,7 +917,7 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcVariations(
   // Multiply by the scaling factor!
   //
   
-  if(1) {
+  {
     // var_h *= 1.0/(dwgt*uh)
     const Scalar alpha = ST::one()/(dwgt*uh);
     if(out.get() && trace)

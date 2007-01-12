@@ -92,7 +92,7 @@ bool VectorTester<Scalar>::check(
     two   = Scalar(2)*one,
     three = Scalar(3)*one;
 
-  if(1) {
+  {
     
     std::ostringstream oss;
     bool these_results = true;

@@ -280,7 +280,7 @@ int main( int argc, char* argv[] ) {
 #endif
 		TEST_FOR_EXCEPT( d_ptr1.get() == NULL);
 
-		if(1) {
+		{
 
 			// Create some more smart points (no new memory!)
 
@@ -534,7 +534,7 @@ int main( int argc, char* argv[] ) {
     
 		if(verbose)
 			out << "\nCreate a circular reference that will case a memory leak! ...\n";
-    if(1) {
+    {
       RefCountPtr<A> a = rcp(new A());
       RefCountPtr<C> c = rcp(new C());
       a->set_C(c);

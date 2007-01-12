@@ -12,7 +12,7 @@
 void someDumbFunction( std::ostream &out, const std::string &indentSpacer )
 {
   out << "\nEntering someDumbFunction(...)\n";
-  if(1) {
+  {
     out << std::endl << indentSpacer << "I am \"dumb\" code that knows nothing of FancyOStream and does indenting manually! ...\n";
   }
   out << "\nLeaving someDumbFunction(...)\n";
@@ -32,7 +32,7 @@ void someLessDumbFunction( std::ostream &out_arg )
   // Do our tab indent and our name.
   OSTab tab(out,1,"LDUMBALGO");
   *out << "\nEntering someLessDumbFunction(...)\n";
-  if(1) {
+  {
     Teuchos::OSTab(out_arg).o()
       << std::endl << "I am less \"dumb\" code that knows about FancyOStream but my interface does not support it directly! ...\n";
     *Teuchos::tab(out)
@@ -67,14 +67,14 @@ public:
       OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
       if(out.get() && verbLevel!=Teuchos::VERB_NONE)
         *out << "\nEntering AlgorithmA::doAlgorithm()\n";
-      if(1) {
+      {
         // Here I use a simple macro for the typical case of one tab indent to
         // save typing.  The idea is that this should be as easy to write as
         // OSTab tab; but is more general.
         TEUCHOS_OSTAB;
         if(out.get() && verbLevel!=Teuchos::VERB_NONE)
           *out << "\nI am \"smart\" code that knows about FancyOStream and OSTab ...\n";
-        if(1) {
+        {
           // Here I temporaraly turn off tabbing so that I can print an imporant warning message.
           OSTab tab = this->getOSTab(OSTab::DISABLE_TABBING);
           if(out.get() && verbLevel!=Teuchos::VERB_NONE)
@@ -82,7 +82,7 @@ public:
         }
         if(out.get() && verbLevel!=Teuchos::VERB_NONE)
           *out << "\nHere I am doing some more stuff and printing with indenting turned back on!\n";
-        if(1) {
+        {
           // Here I am going to be calling a dumb piece of code that does not
           // know about the FancyOStream system and will not use tabs or
           // anything like that.  There is a lot of code in Trilinos that
@@ -265,14 +265,14 @@ int main(int argc, char* argv[])
     *out << " line two lines below the above output!\n";
     RefCountPtr<FancyOStream>
       out2 = rcp(new FancyOStream(rcp(new std::ostringstream),"  "));
-    if(1) {
+    {
       OSTab tab(out);
       *out << "This should be indented one tab!\n";
-      if(1) {
+      {
         OSTab tab(out);
         *out << "This should be indented two tabs!\n";
         *out2 << "This should be indented zero tabs from out2!\n";
-        if(1) {
+        {
           OSTab tab(out2);
           *out << "This should be indented two tabs!\n";
           *out2 << "This should be indented one tab from out2!\n";

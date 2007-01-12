@@ -130,7 +130,8 @@ void DefaultBlockedLinearOp<Scalar>::endBlockFill()
       TEST_FOR_EXCEPTION(
         !domainBlocks_[j].get(), std::logic_error
         ,"DefaultBlockedLinearOp<Scalar>::endBlockFill():"
-        " Error, no linear operator block for the j="<<j<<" block column was added"
+        " Error, no linear operator block for the j="
+	<<j<<" block column was added"
         " and we can not complete the block fill!"
         );
     }
@@ -312,7 +313,8 @@ void DefaultBlockedLinearOp<Scalar>::describe(
         << "}\n";
       OSTab tab(out);
       *out
-        <<  "Constituent LinearOpBase objects for M = [ Op[0,0] ... ; ... ; ... Op[numRowBlocks-1,numColBlocks-1]:\n";
+        <<  "Constituent LinearOpBase objects for M = [ Op[0,0] ..."
+	<< " ; ... ; ... Op[numRowBlocks-1,numColBlocks-1]:\n";
       tab.incrTab();
       for( int i = 0; i < numRowBlocks_; ++i ) {
         for( int j = 0; j < numColBlocks_; ++j ) {
@@ -394,14 +396,19 @@ void DefaultBlockedLinearOp<Scalar>::apply(
   for( int i = 0; i < opNumRowBlocks; ++i ) {
     MultiVectorPtr Y_i = Y.getNonconstMultiVectorBlock(i);
     for( int j = 0; j < opNumColBlocks; ++j ) {
-      ConstLinearOpPtr     Op_i_j = ( !struct_transp ? getBlock(i,j) : getBlock(j,i) );
-      ConstMultiVectorPtr  X_j    = X.getMultiVectorBlock(j);
+      ConstLinearOpPtr
+	Op_i_j = ( !struct_transp ? getBlock(i,j) : getBlock(j,i) );
+      ConstMultiVectorPtr
+	X_j    = X.getMultiVectorBlock(j);
       if(j==0) {
-        if(Op_i_j.get())  Thyra::apply(*Op_i_j,M_trans,*X_j,&*Y_i,alpha,beta);
-        else              scale(beta,&*Y_i);
+        if(Op_i_j.get())
+	  Thyra::apply(*Op_i_j,M_trans,*X_j,&*Y_i,alpha,beta);
+        else
+	  scale(beta,&*Y_i);
       }
       else {
-        if(Op_i_j.get())  Thyra::apply(*Op_i_j,M_trans,*X_j,&*Y_i,alpha,ST::one());
+        if(Op_i_j.get())
+	  Thyra::apply(*Op_i_j,M_trans,*X_j,&*Y_i,alpha,ST::one());
       }
     }
   }

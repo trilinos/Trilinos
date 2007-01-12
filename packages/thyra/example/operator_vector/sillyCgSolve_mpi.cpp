@@ -137,7 +137,7 @@ bool runCgSolveExample(
   if(!result) success = false;
   if(verbose) {
     *out << "\nChecking the residual ourselves ...\n";
-    if(1){
+    {
       OSTab tab(out);
       *out
         << "\n||b-A*x||/||b|| = "<<r_nrm<<"/"<<b_nrm<<" = "<<rel_err<<(result?" <= ":" > ")

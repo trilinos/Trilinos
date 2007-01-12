@@ -190,7 +190,7 @@ int main(int argc, char* argv[])
     RefCountPtr<const Thyra::VectorBase<double> >      b;
 
     // Create the Thyra wrappers
-    if(1) {
+    {
       // Create an RCP directly to the EpetraLinearOp so that we can access the
       // right range and domains spaces to use to create the wrappers for the
       // vector objects.
@@ -257,7 +257,7 @@ int main(int argc, char* argv[])
 
     // r = b - A*x
     Epetra_Vector epetra_r(*epetra_b);
-    if(1) {
+    {
       Epetra_Vector epetra_A_x(epetra_A->OperatorRangeMap());
       epetra_A->Apply(*epetra_x,epetra_A_x);
       epetra_r.Update(-1.0,epetra_A_x,1.0);

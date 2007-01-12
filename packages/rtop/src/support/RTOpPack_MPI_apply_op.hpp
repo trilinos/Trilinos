@@ -448,7 +448,7 @@ void RTOpPack::MPI_all_reduce(
       i_reduct_objs_tmp[k] = i_reduct_objs_ext[k];
 #endif // RTOp_USE_MPI
     // Load the updated state of the reduction target object and reduce.
-    if(1) {
+    {
       Teuchos::RefCountPtr<ReductTarget> tmp_reduct_obj = op.reduct_obj_create();
       for( int kc = 0; kc < num_cols; ++kc ) {
         load_reduct_obj_ext_state( op, &i_reduct_objs_tmp[0]+kc*reduct_obj_ext_size, &*tmp_reduct_obj );

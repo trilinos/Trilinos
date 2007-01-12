@@ -157,11 +157,11 @@ void SpmdVectorBase<Scalar>::applyOp(
   Workspace<RTOpPack::ConstSubVectorView<Scalar> > sub_vecs(wss,num_vecs);
   Workspace<RTOpPack::SubVectorView<Scalar> > sub_targ_vecs(wss,num_targ_vecs);
   if( overlap_first_local_ele_off >= 0 ) {
-    if(1){for(int k = 0; k < num_vecs; ++k ) {
+    {for(int k = 0; k < num_vecs; ++k ) {
       vecs[k]->acquireDetachedView( local_rng, &sub_vecs[k] );
       sub_vecs[k].setGlobalOffset( overlap_global_off );
     }}
-    if(1){for(int k = 0; k < num_targ_vecs; ++k ) {
+    {for(int k = 0; k < num_targ_vecs; ++k ) {
       targ_vecs[k]->acquireDetachedView( local_rng, &sub_targ_vecs[k] );
       sub_targ_vecs[k].setGlobalOffset( overlap_global_off );
     }}
@@ -179,11 +179,11 @@ void SpmdVectorBase<Scalar>::applyOp(
     );
   // Free and commit the local data
   if( overlap_first_local_ele_off >= 0 ) {
-    if(1){for(int k = 0; k < num_vecs; ++k ) {
+    {for(int k = 0; k < num_vecs; ++k ) {
       sub_vecs[k].setGlobalOffset(local_rng.lbound());
       vecs[k]->releaseDetachedView( &sub_vecs[k] );
     }}
-    if(1){for(int k = 0; k < num_targ_vecs; ++k ) {
+    {for(int k = 0; k < num_targ_vecs; ++k ) {
       sub_targ_vecs[k].setGlobalOffset(local_rng.lbound());
       targ_vecs[k]->commitDetachedView( &sub_targ_vecs[k] );
     }}

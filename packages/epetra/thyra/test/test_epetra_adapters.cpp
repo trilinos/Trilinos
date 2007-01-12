@@ -470,7 +470,7 @@ int main( int argc, char* argv[] )
 
     RefCountPtr<Epetra_Operator>  epetra_op;
 
-    if(1) {
+    {
       // Create a diagonal matrix with scalar on the diagonal
       RefCountPtr<Epetra_CrsMatrix>
         epetra_mat = rcp(new Epetra_CrsMatrix(::Copy,*epetra_map,1));
@@ -646,7 +646,7 @@ int main( int argc, char* argv[] )
 
     if(verbose) *out << "\n*** (B.10) Testing Vector and MultiVector view creation functions\n";
 
-    if(1) {
+    {
 
       const std::string s_n = "fabs(scalar)*num_mv_cols";
       const Scalar s = fabs(scalar)*num_mv_cols;
@@ -698,7 +698,7 @@ int main( int argc, char* argv[] )
 
     if(verbose) *out << "\n*** (B.11) Testing Epetra_Vector and Epetra_MultiVector wrappers\n";
 
-    if(1) {
+    {
 
       Teuchos::RefCountPtr<const Thyra::SpmdVectorSpaceBase<Scalar> >
         mpi_vs = Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<Scalar> >(epetra_vs,true);
@@ -817,7 +817,7 @@ int main( int argc, char* argv[] )
 
     if(verbose) *out << "\n*** (B.12) Test DiagonalEpetraLinearOpWithSolveFactory \n";
 
-    if(1) {
+    {
 
       if(verbose) *out << "\nUsing DiagonalEpetraLinearOpWithSolveFactory to create diagLOWS from Op ...\n";
       
@@ -874,7 +874,7 @@ int main( int argc, char* argv[] )
     const double flop_adjust_factor_1 = 3.0;
     const int num_time_loops_1 = int( max_flop_rate / ( flop_adjust_factor_1 * local_dim * num_mv_cols ) ) + 1;
 
-    if(1) {
+    {
         
       // Get references to Epetra_MultiVector objects in eV1 and eV2
       const RefCountPtr<Epetra_MultiVector>       eeV1 = get_Epetra_MultiVector(*epetra_map,eV1);
@@ -923,7 +923,7 @@ int main( int argc, char* argv[] )
     const double flop_adjust_factor_2 = 2.0;
     const int num_time_loops_2 = int( max_flop_rate / ( flop_adjust_factor_2* local_dim * num_mv_cols * num_mv_cols ) ) + 1;
 
-    if(1) {
+    {
       
       // Get constant references to Epetra_MultiVector objects in eV1 and eV2
       const RefCountPtr<const Epetra_MultiVector> eeV1 = get_Epetra_MultiVector(*epetra_map,eV1);
@@ -969,7 +969,7 @@ int main( int argc, char* argv[] )
     const double flop_adjust_factor_3 = 10.0; // lots of indirect addressing
     const int num_time_loops_3 = int( max_flop_rate / ( flop_adjust_factor_3 * local_dim * num_mv_cols ) ) + 1;
 
-    if(1) {
+    {
       
       // Get constant references to Epetra_MultiVector objects in eV1 and eV2
       const RefCountPtr<const Epetra_MultiVector> eeV1 = get_Epetra_MultiVector(*epetra_map,eV1);

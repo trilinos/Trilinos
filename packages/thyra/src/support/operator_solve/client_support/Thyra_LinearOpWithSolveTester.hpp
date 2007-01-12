@@ -250,7 +250,7 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
         Teuchos::RefCountPtr<MultiVectorBase<DomainScalar> > v3 = createMembers(domain,num_rhs);
         assign(&*v3,DST::zero());
         SolveStatus<Scalar> solveStatus;
-        if(1){
+        {
           VOTS lowsTempState(Teuchos::rcp(&op,false),oss,verbLevel);
           timer.start(true);
           solveStatus = solve(op,NONCONJ_ELE,*v2,&*v3,static_cast<const SolveCriteria<Scalar>*>(0));
@@ -377,7 +377,7 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
           );
         assign(&*v3,DST::zero());
         SolveStatus<Scalar> solveStatus;
-        if(1){
+        {
           VOTS lowsTempState(Teuchos::rcp(&op,false),oss,verbLevel);
           timer.start(true);
           solveStatus = solve<RangeScalar,DomainScalar>(op,NONCONJ_ELE,*v2,&*v3,&solveCriteria);
@@ -488,7 +488,7 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
         Teuchos::RefCountPtr<MultiVectorBase<RangeScalar> > v3 = createMembers(range,num_rhs);
         assign(&*v3,DST::zero());
         SolveStatus<Scalar> solveStatus;
-        if(1){
+        {
           VOTS lowsTempState(Teuchos::rcp(&op,false),oss,verbLevel);
           timer.start(true);
           solveStatus = solveTranspose(op,CONJ_ELE,*v2,&*v3,static_cast<const SolveCriteria<Scalar>*>(0));
@@ -615,7 +615,7 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
           );
         assign(&*v3,RST::zero());
         SolveStatus<Scalar> solveStatus;
-        if(1){
+        {
           VOTS lowsTempState(Teuchos::rcp(&op,false),oss,verbLevel);
           timer.start(true);
           solveStatus = solveTranspose(op,CONJ_ELE,*v2,&*v3,&solveCriteria);

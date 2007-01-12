@@ -270,7 +270,7 @@ bool LinearOpTester<RangeScalar,DomainScalar>::check(
   Teuchos::RefCountPtr<const VectorSpaceBase<RangeScalar> >  range  = op.range();
   Teuchos::RefCountPtr<const VectorSpaceBase<DomainScalar> > domain = op.domain();
   
-  if(1) {
+  {
 
     std::ostringstream ossStore;
     Teuchos::RefCountPtr<FancyOStream> oss = Teuchos::rcp(new FancyOStream(Teuchos::rcp(&ossStore,false)));
@@ -636,7 +636,7 @@ bool LinearOpTester<RangeScalar,DomainScalar>::compare(
 
   if(out.get()) *out << endl << "Checking that range and domain spaces are compatible ... ";
 
-  if(1) {
+  {
 
     std::ostringstream ossStore;
     Teuchos::RefCountPtr<FancyOStream> oss = Teuchos::rcp(new FancyOStream(Teuchos::rcp(&ossStore,false)));
@@ -664,7 +664,7 @@ bool LinearOpTester<RangeScalar,DomainScalar>::compare(
 
   if(out.get()) *out << endl << "Checking that op1 == op2 ... ";
 
-  if(1) {
+  {
 
     std::ostringstream ossStore;
     Teuchos::RefCountPtr<FancyOStream> oss = Teuchos::rcp(new FancyOStream(Teuchos::rcp(&ossStore,false)));

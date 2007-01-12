@@ -123,7 +123,7 @@ bool run_scalar_product_tests(
   linearOpTester.show_all_tests(true);
 
   if(out.get()) *out << "\nTesting LinearOpBase with Euclidean domain and range scalar products ...\n";
-  if(1) {
+  {
     OSTab tab(out);
     Thyra::assign( &*op, *op_coeff );
     if(out.get() && dumpAll) *out << "\nop =\n" << *op;
@@ -137,7 +137,7 @@ bool run_scalar_product_tests(
   }
  
   if(out.get()) *out << "\nTesting LinearOpBase with non-Euclidean domain and Euclidean range scalar products ...\n";
-  if(1) {
+  {
     OSTab tab(out);
     range->setScalarProd(euclideanScalarProd);
     domain->setScalarProd(domainScalarProd);
@@ -154,7 +154,7 @@ bool run_scalar_product_tests(
   }
     
   if(out.get()) *out << "\nTesting LinearOpBase with Euclidean domain and non-Euclidean range scalar products ...\n";
-  if(1) {
+  {
     OSTab tab(out);
     range->setScalarProd(rangeScalarProd);
     domain->setScalarProd(euclideanScalarProd);
@@ -171,7 +171,7 @@ bool run_scalar_product_tests(
   }
     
   if(out.get()) *out << "\nTesting LinearOpBase with non-Euclidean domain and non-Euclidean range scalar products ...\n";
-  if(1) {
+  {
     OSTab tab(out);
     range->setScalarProd(rangeScalarProd);
     domain->setScalarProd(domainScalarProd);

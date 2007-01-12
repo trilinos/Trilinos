@@ -206,7 +206,7 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
     // Create the concrete solver
     Teuchos::RefCountPtr<Amesos_BaseSolver>
       amesosSolver;
-    if(1) {
+    {
       Teuchos::TimeMonitor constructTimeMonitor(*constructTimer);
       switch(solverType_) {
         case Thyra::Amesos::LAPACK :
@@ -277,11 +277,11 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
     // Set the parameters
     if(paramList_.get()) amesosSolver->setParameterList(sublist(paramList_,"Amesos Settings"));
     // Do the initial factorization
-    if(1) {
+    {
       Teuchos::TimeMonitor symbolicTimeMonitor(*symbolicTimer);
       amesosSolver->SymbolicFactorization();
     }
-    if(1) {
+    {
       Teuchos::TimeMonitor factorTimeMonitor(*factorTimer);
       amesosSolver->NumericFactorization();
     }
@@ -309,7 +309,7 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
       Teuchos::TimeMonitor symbolicTimeMonitor(*symbolicTimer);
       amesosSolver->SymbolicFactorization();
     }
-    if(1) {
+    {
       Teuchos::TimeMonitor factorTimeMonitor(*factorTimer);
       amesosSolver->NumericFactorization();
     }

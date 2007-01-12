@@ -104,7 +104,7 @@ bool runPowerMethodExample(
   if(verbose) *out << "\n(3) Running the power method on matrix A ...\n";
   Scalar     lambda      = ST::zero();
   ScalarMag  tolerance   = ScalarMag(1e-3)*Teuchos::ScalarTraits<ScalarMag>::one();
-  if(1){
+  {
     OSTab tab(out);
     result = sillyPowerMethod(*A,maxNumIters,tolerance,&lambda,out.get());
     if(!result) success = false;
@@ -126,7 +126,7 @@ bool runPowerMethodExample(
   // (4) Run the power method ANA
   //
   if(verbose) *out << "\n(4) Running the power method again on matrix A ...\n";
-  if(1){
+  {
     OSTab tab(out);
     result = sillyPowerMethod(*A,maxNumIters,tolerance,&lambda,out.get());
     if(!result) success = false;

@@ -45,7 +45,7 @@ int simpleStratimikosSolve(
     RefCountPtr<const Thyra::MultiVectorBase<double> >   B;
  
     // Create the Thyra wrappers
-    if(1) {
+    {
       // Create an RCP directly to the EpetraLinearOp so that we can access the
       // right range and domains spaces to use to create the wrappers for the
       // vector objects.

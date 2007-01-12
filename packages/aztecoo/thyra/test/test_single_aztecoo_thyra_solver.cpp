@@ -189,7 +189,7 @@ bool Thyra::test_single_aztecoo_thyra_solver(
 
     // Scale the diagonal of the matrix and then create the preconditioner for it
     Thyra::uninitializeOp<double>(*lowsFactory,&*nsA); // Not required but a good idea since we are changing the matrix
-    if(1){
+    {
       Epetra_Vector diag(epetra_A->RowMap());
       epetra_A->ExtractDiagonalCopy(diag);
       diag.Scale(0.5);
@@ -199,7 +199,7 @@ bool Thyra::test_single_aztecoo_thyra_solver(
 
     // Scale the matrix back again and then reuse the preconditioner
     Thyra::uninitializeOp<double>(*lowsFactory,&*nsA); // Not required but a good idea since we are changing the matrix
-    if(1){
+    {
       Epetra_Vector diag(epetra_A->RowMap());
       epetra_A->ExtractDiagonalCopy(diag);
       diag.Scale(1.0/0.5);

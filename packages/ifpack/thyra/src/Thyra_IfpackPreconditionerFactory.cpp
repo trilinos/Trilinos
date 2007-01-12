@@ -227,7 +227,7 @@ void IfpackPreconditionerFactory::initializePrec(
   //
   // Update the factorization
   //
-  if(1){
+  {
     if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
       *out << "\nComputing the factorization of the preconditioner ...\n";
     Teuchos::TimeMonitor factorizationTimeMonitor(*factorizationTimer);
@@ -331,7 +331,7 @@ IfpackPreconditionerFactory::getValidParameters() const
   static Teuchos::RefCountPtr<Teuchos::ParameterList> validParamList;
   if(validParamList.get()==NULL) {
     validParamList = Teuchos::rcp(new Teuchos::ParameterList(Ifpack_name));
-    if(1) {
+    {
       // Create the validator for the preconditioner type!
       Teuchos::Array<std::string>
         precTypeNames;
