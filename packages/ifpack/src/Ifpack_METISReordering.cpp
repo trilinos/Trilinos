@@ -23,7 +23,7 @@ Ifpack_METISReordering::Ifpack_METISReordering() :
   UseSymmetricGraph_(false),
   NumMyRows_(0),
   IsComputed_(false)
-{ }
+{}
 
 //==============================================================================
 // Mainly copied from Ifpack_METISPartitioner.cpp
@@ -42,10 +42,10 @@ int Ifpack_METISReordering::Compute(const Ifpack_Graph& Graph)
 
   int ierr;
 
-  Epetra_CrsGraph* SymGraph = 0;
-  Epetra_Map* SymMap = 0;
-  Ifpack_Graph_Epetra_CrsGraph* SymIFPACKGraph = 0;
-  Ifpack_Graph* IFPACKGraph = (Ifpack_Graph*)&Graph;
+  Teuchos::RefCountPtr<Epetra_CrsGraph> SymGraph;
+  Teuchos::RefCountPtr<Epetra_Map> SymMap;
+  Teuchos::RefCountPtr<Ifpack_Graph_Epetra_CrsGraph> SymIFPACKGraph;
+  Teuchos::RefCountPtr<Ifpack_Graph> IFPACKGraph = Teuchos::rcp( (Ifpack_Graph*)&Graph, false );
 
   int Length = 2 * Graph.MaxMyNumEntries();
   int NumIndices;
@@ -66,12 +66,12 @@ int Ifpack_METISReordering::Compute(const Ifpack_Graph& Graph)
     // I do this in two stages:
     // 1.- construct an Epetra_CrsMatrix, symmetric
     // 2.- convert the Epetra_CrsMatrix into METIS format
-    SymMap = new Epetra_Map(NumMyRows_,0,Graph_->Comm());
-    SymGraph = new Epetra_CrsGraph(Copy,*SymMap,0);
+    SymMap = Teuchos::rcp( new Epetra_Map(NumMyRows_,0,Graph.Comm()) );
+    SymGraph = Teuchos::rcp( new Epetra_CrsGraph(Copy,*SymMap,0) );
 
     for (int i = 0; i < NumMyRows_ ; ++i) {
 
-      ierr = Graph_->ExtractMyRowCopy(i, Length, NumIndices, 
+      ierr = Graph.ExtractMyRowCopy(i, Length, NumIndices, 
 				      &Indices[0]);
       IFPACK_CHK_ERR(ierr);
 
@@ -86,7 +86,7 @@ int Ifpack_METISReordering::Compute(const Ifpack_Graph& Graph)
     }
     IFPACK_CHK_ERR(SymGraph->OptimizeStorage());
     IFPACK_CHK_ERR(SymGraph->FillComplete());
-    SymIFPACKGraph = new Ifpack_Graph_Epetra_CrsGraph(SymGraph);
+    SymIFPACKGraph = Teuchos::rcp( new Ifpack_Graph_Epetra_CrsGraph(SymGraph) );
     IFPACKGraph = SymIFPACKGraph;
   }
 
@@ -134,20 +134,13 @@ int Ifpack_METISReordering::Compute(const Ifpack_Graph& Graph)
   exit(EXIT_FAILURE);
 #endif
       
-  if (SymGraph)
-    delete SymGraph;
-  if (SymMap)
-    delete SymMap;
-  if (SymIFPACKGraph)
-    delete SymIFPACKGraph;
-
   return(0);
 } 
 
 //==============================================================================
 int Ifpack_METISReordering::Compute(const Epetra_RowMatrix& Matrix)
 {
-  Ifpack_Graph_Epetra_RowMatrix Graph(&Matrix);
+  Ifpack_Graph_Epetra_RowMatrix Graph(Teuchos::rcp(&Matrix, false));
 
   IFPACK_CHK_ERR(Compute(Graph));
 

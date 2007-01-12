@@ -4,6 +4,8 @@
 #include "Ifpack_ConfigDefs.h"
 #include "Ifpack_Reordering.h"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_RefCountPtr.hpp"
+
 class Epetra_Comm;
 class Epetra_RowMatrix;
 class Ifpack_Graph;
@@ -21,7 +23,7 @@ public:
   Ifpack_METISReordering();
 
   //! Destructor.
-  ~Ifpack_METISReordering() {};
+  virtual ~Ifpack_METISReordering() {};
 
   //! Sets integer parameters `Name'.
   virtual int SetParameter(const string Name, const int Value)
@@ -86,7 +88,6 @@ private:
   vector<int> Reorder_;
   //! Contains the inverse reordering.
   vector<int> InvReorder_;
-  Ifpack_Graph* Graph_;
 
 }; // class Ifpack_METISReordering
 

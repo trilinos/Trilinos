@@ -8,6 +8,7 @@
 #include "Epetra_CrsGraph.h"
 #include "Epetra_Map.h"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_RefCountPtr.hpp"
 
 // may need to change this for wierd installations
 typedef int idxtype;
@@ -39,10 +40,10 @@ int Ifpack_METISPartitioner::ComputePartitions()
   int edgecut;
 #endif
 
-  Epetra_CrsGraph* SymGraph = 0;
-  Epetra_Map* SymMap = 0;
-  Ifpack_Graph_Epetra_CrsGraph* SymIFPACKGraph = 0;
-  Ifpack_Graph* IFPACKGraph = (Ifpack_Graph*)Graph_;
+  Teuchos::RefCountPtr<Epetra_CrsGraph> SymGraph ;
+  Teuchos::RefCountPtr<Epetra_Map> SymMap;
+  Teuchos::RefCountPtr<Ifpack_Graph_Epetra_CrsGraph> SymIFPACKGraph;
+  Teuchos::RefCountPtr<Ifpack_Graph> IFPACKGraph = Teuchos::rcp( (Ifpack_Graph*)Graph_, false );
 
   int Length = 2 * MaxNumEntries();
   int NumIndices;
@@ -66,8 +67,8 @@ int Ifpack_METISPartitioner::ComputePartitions()
     // I do this in two stages:
     // 1.- construct an Epetra_CrsMatrix, symmetric
     // 2.- convert the Epetra_CrsMatrix into METIS format
-    SymMap = new Epetra_Map(NumMyRows(),0,Graph_->Comm());
-    SymGraph = new Epetra_CrsGraph(Copy,*SymMap,0);
+    SymMap = Teuchos::rcp( new Epetra_Map(NumMyRows(),0,Graph_->Comm()) );
+    SymGraph = Teuchos::rcp( new Epetra_CrsGraph(Copy,*SymMap,0) );
 
     for (int i = 0; i < NumMyRows() ; ++i) {
 
@@ -84,7 +85,7 @@ int Ifpack_METISPartitioner::ComputePartitions()
       }      
     }
     IFPACK_CHK_ERR(SymGraph->FillComplete());
-    SymIFPACKGraph = new Ifpack_Graph_Epetra_CrsGraph(SymGraph);
+    SymIFPACKGraph = Teuchos::rcp( new Ifpack_Graph_Epetra_CrsGraph(SymGraph) );
     IFPACKGraph = SymIFPACKGraph;
   }
 
@@ -229,13 +230,6 @@ int Ifpack_METISPartitioner::ComputePartitions()
     } /* while( ok == 0 ) */
   
   } /* if( NumLocalParts_ == 1 ) */
-
-  if (SymGraph)
-    delete SymGraph;
-  if (SymMap)
-    delete SymMap;
-  if (SymIFPACKGraph)
-    delete SymIFPACKGraph;
 
   return(0);
 } 

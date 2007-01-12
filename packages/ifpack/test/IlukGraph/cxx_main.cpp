@@ -42,6 +42,7 @@
 #include "Ifpack_Version.h"
 #include "Epetra_CrsGraph.h"
 #include "Ifpack_IlukGraph.h"
+#include "Teuchos_RefCountPtr.hpp"
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
 #else
@@ -56,7 +57,6 @@ int check(Epetra_CrsGraph& L, Epetra_CrsGraph& U, Ifpack_IlukGraph& LU,
  int main(int argc, char *argv[])
 {
   int ierr = 0, i, j;
-  int * Indices;
   int nx, ny;
 
 #ifdef EPETRA_MPI
@@ -145,7 +145,7 @@ int check(Epetra_CrsGraph& L, Epetra_CrsGraph& U, Ifpack_IlukGraph& LU,
   
   // Add  rows one-at-a-time
 
-  Indices = new int[4]; // Work space
+  std::vector<int> Indices(4); // Work space
   
   for (j=0; j<ny; j++) {
     for (i=0; i<nx; i++) {
@@ -161,22 +161,22 @@ int check(Epetra_CrsGraph& L, Epetra_CrsGraph& U, Ifpack_IlukGraph& LU,
 	if (j>0)    Indices[k++] = i   +(j-1)*nx;
 	
 	// Define lower triangular terms of original matrix and L(0)
-	assert(A.InsertGlobalIndices(Row, k, Indices)>=0);
-	assert(L0.InsertGlobalIndices(Row, k, Indices)>=0);
+	assert(A.InsertGlobalIndices(Row, k, &Indices[0])>=0);
+	assert(L0.InsertGlobalIndices(Row, k, &Indices[0])>=0);
 	
 	// Define entry (i+1,j-1)
 	if ((i<nx-1) && (j>0   )) Indices[k++] = i+1 +(j-1)*nx;
 	
 	
 	// Define lower triangle of level(1) fill matrix
-	assert(L1.InsertGlobalIndices(Row, k, Indices)>=0);
+	assert(L1.InsertGlobalIndices(Row, k, &Indices[0])>=0);
 	
 	// Define entry (i+2, j-1)
 	
 	if ((i<nx-2) && (j>0   )) Indices[k++] = i+2 +(j-1)*nx;
 	
 	// Define lower triangle of level(2) fill matrix
-	assert(L2.InsertGlobalIndices(Row, k, Indices)>=0);
+	assert(L2.InsertGlobalIndices(Row, k, &Indices[0])>=0);
 	
 	// Define main diagonal of original matrix
 	assert(A.InsertGlobalIndices(Row, 1, &Row)>=0);
@@ -191,27 +191,25 @@ int check(Epetra_CrsGraph& L, Epetra_CrsGraph& U, Ifpack_IlukGraph& LU,
 	if (j<ny-1) Indices[k++] = i   +(j+1)*nx;
 	
 	// Define upper  triangular terms of original matrix and L(0)
-	assert(A.InsertGlobalIndices(Row, k, Indices)>=0);
-	assert(U0.InsertGlobalIndices(Row, k, Indices)>=0);
+	assert(A.InsertGlobalIndices(Row, k, &Indices[0])>=0);
+	assert(U0.InsertGlobalIndices(Row, k, &Indices[0])>=0);
 	
 	// Define entry (i-1,j+1)
 	
 	if ((i>0   ) && (j<ny-1)) Indices[k++] = i-1 +(j+1)*nx;
 	
 	// Define upper triangle of level(1) fill matrix
-	assert(U1.InsertGlobalIndices(Row, k, Indices)>=0);
+	assert(U1.InsertGlobalIndices(Row, k, &Indices[0])>=0);
 	
 	// Define entry (i-2, j+1)
 	
 	if ((i>1   ) && (j<ny-1)) Indices[k++] = i-2 +(j+1)*nx;
 	
 	// Define upper triangle of level(2) fill matrix
-	assert(U2.InsertGlobalIndices(Row, k, Indices)>=0);
+	assert(U2.InsertGlobalIndices(Row, k, &Indices[0])>=0);
       }
     }
   }
-
-  delete [] Indices;
 
   // Finish up
   if (verbose) cout << "\n\nCompleting A" << endl<< endl;
@@ -258,14 +256,13 @@ int check(Epetra_CrsGraph& L, Epetra_CrsGraph& U, Ifpack_IlukGraph& LU,
 
   if (verbose) cout << "\n\n*****Testing copy constructor" << endl<< endl;
 
-  Ifpack_IlukGraph * OverlapGraph;
+  Teuchos::RefCountPtr<Ifpack_IlukGraph> OverlapGraph;
   for (int overlap = 1; overlap < 4; overlap++) {
     if (verbose) cout << "\n\n*********************************************" << endl;
     if (verbose) cout << "\n\nConstruct Level 1 fill with Overlap = " << overlap << ".\n\n" << endl;
     
-    OverlapGraph = new Ifpack_IlukGraph(A, 1, overlap);
+    OverlapGraph = Teuchos::rcp( new Ifpack_IlukGraph(A, 1, overlap) );
     assert(OverlapGraph->ConstructFilledGraph()==0);
-    
     
     if (verbose) {
       cout << "Number of Global Rows     = " << OverlapGraph->NumGlobalRows() << endl;
@@ -273,7 +270,6 @@ int check(Epetra_CrsGraph& L, Epetra_CrsGraph& U, Ifpack_IlukGraph& LU,
       cout << "Number of Local Rows     = " << OverlapGraph->NumMyRows() << endl;
       cout << "Number of Local Nonzeros = " << OverlapGraph->NumMyNonzeros() << endl;
     }
-    delete OverlapGraph;
   }
     
   if (verbose1) {
@@ -286,7 +282,7 @@ int check(Epetra_CrsGraph& L, Epetra_CrsGraph& U, Ifpack_IlukGraph& LU,
     // Create an integer vector NumNz that is used to build the Petra Matrix.
     // NumNz[i] is the Number of terms for the ith global equation on this processor
     
-    int * NumNz1 = new int[NumPoints1];
+    std::vector<int> NumNz1(NumPoints1);
     
     // We are building a tridiagonal matrix where each row has (-1 2 -1)
     // So we need 2 off-diagonal terms (except for the first and last equation)
@@ -300,14 +296,14 @@ int check(Epetra_CrsGraph& L, Epetra_CrsGraph& U, Ifpack_IlukGraph& LU,
     // Create a Epetra_Matrix
     
     Epetra_Map Map1(NumPoints1, NumPoints1, 1, Comm);
-    Epetra_CrsGraph A1(Copy, Map1, NumNz1);
+    Epetra_CrsGraph A1(Copy, Map1, &NumNz1[0]);
     
     // Add  rows one-at-a-time
     // Need some vectors to help
     // Off diagonal Values will always be -1
     
     
-    int *Indices1 = new int[2];
+    std::vector<int> Indices1(2);
     int NumEntries1;
     
     for (i=0; i<NumPoints1; i++)
@@ -328,7 +324,7 @@ int check(Epetra_CrsGraph& L, Epetra_CrsGraph& U, Ifpack_IlukGraph& LU,
 	    Indices1[1] = i+2;
 	    NumEntries1 = 2;
 	  }
-	assert(A1.InsertGlobalIndices(i+1, NumEntries1, Indices1)==0);
+	assert(A1.InsertGlobalIndices(i+1, NumEntries1, &Indices1[0])==0);
 	int ip1 = i+1;
 	assert(A1.InsertGlobalIndices(ip1, 1, &ip1)==0); // Put in the diagonal entry
       }
@@ -346,11 +342,6 @@ int check(Epetra_CrsGraph& L, Epetra_CrsGraph& U, Ifpack_IlukGraph& LU,
 
     if (verbose) cout << "\n\nPrint out Level 1 ILU graph of tridiagonal matrix with IndexBase = 1.\n\n" << endl;
     if (verbose1) cout << ILU11 << endl;
-
-    
-  // Release all objects
-  delete [] NumNz1;
-  delete [] Indices1;
 
   }
 

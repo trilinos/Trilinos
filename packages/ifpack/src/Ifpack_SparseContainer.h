@@ -11,6 +11,7 @@
 #include "Epetra_LinearProblem.h"
 #include "Epetra_IntSerialDenseVector.h"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_RefCountPtr.hpp"
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
 #else
@@ -194,7 +195,7 @@ public:
   //! Returns the flops in Compute().
   virtual double InitializeFlops() const
   {
-    if (Inverse_ == 0)
+    if (Inverse_ == Teuchos::null)
       return (0.0);
     else
       return(Inverse_->InitializeFlops());
@@ -203,7 +204,7 @@ public:
   //! Returns the flops in Compute().
   virtual double ComputeFlops() const
   {
-    if (Inverse_ == 0)
+    if (Inverse_ == Teuchos::null)
       return (0.0);
     else
       return(Inverse_->ComputeFlops());
@@ -218,7 +219,7 @@ public:
   //! Returns the flops in ApplyInverse().
   virtual double ApplyInverseFlops() const
   {
-    if (Inverse_ == 0)
+    if (Inverse_ == Teuchos::null)
       return (0.0);
     else
       return(Inverse_->ApplyInverseFlops());
@@ -237,13 +238,13 @@ private:
   //! Number of vectors in the local linear system.
   int NumVectors_; 
   //! Linear map on which the local matrix is based.
-  Epetra_Map* Map_;
+  Teuchos::RefCountPtr<Epetra_Map> Map_;
   //! Pointer to the local matrix.
-  Epetra_CrsMatrix* Matrix_;
+  Teuchos::RefCountPtr<Epetra_CrsMatrix> Matrix_;
   //! Solution vector.
-  Epetra_MultiVector* LHS_;
+  Teuchos::RefCountPtr<Epetra_MultiVector> LHS_;
   //! right-hand side for local problems.
-  Epetra_MultiVector* RHS_;
+  Teuchos::RefCountPtr<Epetra_MultiVector> RHS_;
   //! Contains the subrows/subcols of A that will be inserted in Matrix_.
   Epetra_IntSerialDenseVector GID_;
   //! If \c true, the container has been successfully initialized.
@@ -251,9 +252,9 @@ private:
   //! If \c true, the container has been successfully computed.
   bool IsComputed_;
   //! Serial communicator (containing only MPI_COMM_SELF if MPI is used).
-  Epetra_Comm* SerialComm_;
+  Teuchos::RefCountPtr<Epetra_Comm> SerialComm_;
   //! Pointer to an Ifpack_Preconditioner object whose ApplyInverse() defined the action of the inverse of the local matrix.
-  T* Inverse_;
+  Teuchos::RefCountPtr<T> Inverse_;
   //! Label for \c this object
   string Label_;
   Teuchos::ParameterList List_;
@@ -267,21 +268,15 @@ Ifpack_SparseContainer<T>::
 Ifpack_SparseContainer(const int NumRows, const int NumVectors) :
   NumRows_(NumRows),
   NumVectors_(NumVectors),
-  Map_(0),
-  Matrix_(0),
-  LHS_(0),
-  RHS_(0),
   IsInitialized_(false),
   IsComputed_(false),
-  SerialComm_(0),
-  Inverse_(0),
   ApplyFlops_(0.0)
 {
 
 #ifdef HAVE_MPI
-  SerialComm_ = new Epetra_MpiComm(MPI_COMM_SELF);
+  SerialComm_ = Teuchos::rcp( new Epetra_MpiComm(MPI_COMM_SELF) );
 #else
-  SerialComm_ = new Epetra_SerialComm;
+  SerialComm_ = Teuchos::rcp( new Epetra_SerialComm );
 #endif
 
 }
@@ -292,33 +287,27 @@ Ifpack_SparseContainer<T>::
 Ifpack_SparseContainer(const Ifpack_SparseContainer<T>& rhs) :
   NumRows_(rhs.NumRows()),
   NumVectors_(rhs.NumVectors()),
-  Map_(0),
-  Matrix_(0),
-  LHS_(0),
-  RHS_(0),
   IsInitialized_(rhs.IsInitialized()),
-  IsComputed_(rhs.IsComputed()),
-  SerialComm_(0),
-  Inverse_(0)
+  IsComputed_(rhs.IsComputed())
 {
 
 #ifdef HAVE_MPI
-  SerialComm_ = new Epetra_MpiComm(MPI_COMM_SELF);
+  SerialComm_ = Teuchos::rcp( new Epetra_MpiComm(MPI_COMM_SELF) );
 #else
-  SerialComm_ = new Epetra_SerialComm;
+  SerialComm_ = Teuchos::rcp( new Epetra_SerialComm );
 #endif
 
   if (rhs.Map())
-    Map_ = new Epetra_Map(*rhs.Map());
+    Map_ = Teuchos::rcp( new Epetra_Map(*rhs.Map()) );
 
   if (rhs.Matrix())
-    Matrix_ = new Epetra_CrsMatrix(*rhs.Matrix());
+    Matrix_ = Teuchos::rcp( new Epetra_CrsMatrix(*rhs.Matrix()) );
 
   if (rhs.LHS())
-    LHS_ = new Epetra_MultiVector(*rhs.LHS());
+    LHS_ = Teuchos::rcp( new Epetra_MultiVector(*rhs.LHS()) );
 
   if (rhs.RHS())
-    RHS_ = new Epetra_MultiVector(*rhs.RHS());
+    RHS_ = Teuchos::rcp( new Epetra_MultiVector(*rhs.RHS()) );
 
 }
 //==============================================================================
@@ -348,18 +337,18 @@ int Ifpack_SparseContainer<T>::Initialize()
 
   IsInitialized_ = false;
 
-  Map_ = new Epetra_Map(NumRows_,0,*SerialComm_);
+  Map_ = Teuchos::rcp( new Epetra_Map(NumRows_,0,*SerialComm_) );
 
-  LHS_ = new Epetra_MultiVector(*Map_,NumVectors_);
-  RHS_ = new Epetra_MultiVector(*Map_,NumVectors_);
+  LHS_ = Teuchos::rcp( new Epetra_MultiVector(*Map_,NumVectors_) );
+  RHS_ = Teuchos::rcp( new Epetra_MultiVector(*Map_,NumVectors_) );
   GID_.Reshape(NumRows_,1);
 
-  Matrix_ = new Epetra_CrsMatrix(Copy,*Map_,0);
+  Matrix_ = Teuchos::rcp( new Epetra_CrsMatrix(Copy,*Map_,0) );
 
   // create the inverse
-  Inverse_ = new T(Matrix_);
+  Inverse_ = Teuchos::rcp( new T(Matrix_.get()) );
 
-  if (Inverse_ == 0)
+  if (Inverse_ == Teuchos::null)
     IFPACK_CHK_ERR(-5);
 
   IFPACK_CHK_ERR(Inverse_->SetParameters(List_));
@@ -473,27 +462,6 @@ int Ifpack_SparseContainer<T>::ApplyInverse()
 template<typename T>
 int Ifpack_SparseContainer<T>::Destroy()
 {
-  if (Map_)
-    delete Map_;
-
-  if (Matrix_)
-    delete Matrix_;
-
-  if (LHS_)
-    delete LHS_;
-
-  if (RHS_)
-    delete RHS_;
-
-  if (Inverse_)
-    delete Inverse_;
-
-  Map_ = 0;
-  Matrix_ = 0;
-  Inverse_ = 0;
-  LHS_ = 0;
-  RHS_ = 0;
-
   IsInitialized_ = false;
   IsComputed_ = false;
   return(0);

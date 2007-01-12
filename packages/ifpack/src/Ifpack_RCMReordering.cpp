@@ -1,7 +1,9 @@
 #include "Ifpack_ConfigDefs.h"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_RefCountPtr.hpp"
 #include "Epetra_MultiVector.h"
 #include "Ifpack_Graph.h"
+#include "Epetra_RowMatrix.h"
 #include "Ifpack_Graph_Epetra_RowMatrix.h"
 #include "Ifpack_RCMReordering.h"
 
@@ -29,10 +31,6 @@ Ifpack_RCMReordering(const Ifpack_RCMReordering& RHS) :
   }
 }
 
-//==============================================================================
-Ifpack_RCMReordering::~Ifpack_RCMReordering()
-{}
-  
 //==============================================================================
 Ifpack_RCMReordering& Ifpack_RCMReordering::
 operator=(const Ifpack_RCMReordering& RHS)
@@ -83,7 +81,7 @@ SetParameters(Teuchos::ParameterList& List)
 //==============================================================================
 int Ifpack_RCMReordering::Compute(const Epetra_RowMatrix& Matrix)
 {
-  Ifpack_Graph_Epetra_RowMatrix Graph(&Matrix);
+  Ifpack_Graph_Epetra_RowMatrix Graph(Teuchos::rcp(&Matrix,false));
 
   IFPACK_CHK_ERR(Compute(Graph));
 

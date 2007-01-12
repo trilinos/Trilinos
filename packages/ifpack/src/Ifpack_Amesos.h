@@ -7,6 +7,8 @@
 #include "Ifpack_Preconditioner.h"
 #include "Epetra_Operator.h"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_RefCountPtr.hpp"
+
 class Epetra_Map;
 class Epetra_Time;
 class Epetra_Comm;
@@ -53,7 +55,7 @@ public:
 
   //@{ \name Destructor.
   //! Destructor
-  virtual ~Ifpack_Amesos();
+  virtual ~Ifpack_Amesos() {};
 
   //@}
 
@@ -329,12 +331,12 @@ protected:
 private:
 
   //! Pointers to the matrix to be preconditioned.
-  const Epetra_RowMatrix* Matrix_;
+  Teuchos::RefCountPtr<const Epetra_RowMatrix> Matrix_;
 
   //! Amesos solver, use to apply the inverse of the local matrix.
-  Amesos_BaseSolver* Solver_;
+  Teuchos::RefCountPtr<Amesos_BaseSolver> Solver_;
   //! Linear problem required by Solver_.
-  Epetra_LinearProblem* Problem_;
+  Teuchos::RefCountPtr<Epetra_LinearProblem> Problem_;
   //! Contains a copy of the input parameter list.
   Teuchos::ParameterList List_;
 
@@ -361,7 +363,7 @@ private:
   //! Contains the time for all successful calls to ApplyInverse().
   mutable double ApplyInverseTime_;
   //! Time object.
-  Epetra_Time* Time_;
+  Teuchos::RefCountPtr<Epetra_Time> Time_;
 
   //! Contains the number of flops for Compute().
   double ComputeFlops_;

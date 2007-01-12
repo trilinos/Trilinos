@@ -6,7 +6,7 @@
 #include "Epetra_RowMatrix.h"
 
 //==============================================================================
-Ifpack_Graph_Epetra_RowMatrix::Ifpack_Graph_Epetra_RowMatrix(const Epetra_RowMatrix* RowMatrix) :
+Ifpack_Graph_Epetra_RowMatrix::Ifpack_Graph_Epetra_RowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& RowMatrix) :
 RowMatrix_(RowMatrix)
 {
   NumMyRows_ = RowMatrix_->NumMyRows();
@@ -16,11 +16,6 @@ RowMatrix_(RowMatrix)
   MaxNumIndices_ = RowMatrix_->MaxNumEntries();
 
   Values_.resize(MaxNumIndices_);
-}
-
-//==============================================================================
-Ifpack_Graph_Epetra_RowMatrix::~Ifpack_Graph_Epetra_RowMatrix()
-{
 }
 
 //==============================================================================

@@ -40,6 +40,7 @@
 #include "Galeri_Maps.h"
 #include "Galeri_CrsMatrices.h"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_RefCountPtr.hpp"
 #include "Ifpack_AdditiveSchwarz.h"
 #include "AztecOO.h"
 #include "Ifpack_Graph_Epetra_RowMatrix.h"
@@ -66,7 +67,7 @@ bool CompareWithAztecOO(Epetra_LinearProblem& Problem, const string what,
 
   Epetra_MultiVector& RHS = *(Problem.GetRHS());
   Epetra_MultiVector& LHS = *(Problem.GetLHS());
-  Epetra_RowMatrix* A = Problem.GetMatrix();
+  Teuchos::RefCountPtr<Epetra_RowMatrix> A = Teuchos::rcp(Problem.GetMatrix(), false);
 
   LHS.Random();
   A->Multiply(false,LHS,RHS);
@@ -82,35 +83,35 @@ bool CompareWithAztecOO(Epetra_LinearProblem& Problem, const string what,
 
   Epetra_Time Time(A->Comm());
 
-  Ifpack_Preconditioner* Prec = 0;
+  Teuchos::RefCountPtr<Ifpack_Preconditioner> Prec;
   
   if (what == "Jacobi") {
-    Prec = new Ifpack_PointRelaxation(A);
+    Prec = Teuchos::rcp( new Ifpack_PointRelaxation(&*A) );
     List.set("relaxation: type", "Jacobi");
     AztecOOSolver.SetAztecOption(AZ_precond,AZ_Jacobi);
     AztecOOSolver.SetAztecOption(AZ_reorder,0);
   }
   else if (what == "IC no reord") {
-    Prec = new Ifpack_AdditiveSchwarz<Ifpack_IC>(A,Overlap);
+    Prec = Teuchos::rcp( new Ifpack_AdditiveSchwarz<Ifpack_IC>(&*A,Overlap) );
     AztecOOSolver.SetAztecOption(AZ_precond,AZ_dom_decomp);
     AztecOOSolver.SetAztecOption(AZ_subdomain_solve,AZ_icc);
     AztecOOSolver.SetAztecOption(AZ_reorder,0);
   }
   else if (what == "IC reord") {
-    Prec = new Ifpack_AdditiveSchwarz<Ifpack_IC>(A,Overlap);
+    Prec = Teuchos::rcp( new Ifpack_AdditiveSchwarz<Ifpack_IC>(&*A,Overlap) );
     List.set("schwarz: use reordering", true);
     AztecOOSolver.SetAztecOption(AZ_precond,AZ_dom_decomp);
     AztecOOSolver.SetAztecOption(AZ_subdomain_solve,AZ_icc);
     AztecOOSolver.SetAztecOption(AZ_reorder,1);
   }
   else if (what == "ILU no reord") {
-    Prec = new Ifpack_AdditiveSchwarz<Ifpack_ILU>(A,Overlap);
+    Prec = Teuchos::rcp( new Ifpack_AdditiveSchwarz<Ifpack_ILU>(&*A,Overlap) );
     AztecOOSolver.SetAztecOption(AZ_precond,AZ_dom_decomp);
     AztecOOSolver.SetAztecOption(AZ_subdomain_solve,AZ_ilu);
     AztecOOSolver.SetAztecOption(AZ_reorder,0);
   }
   else if (what == "ILU reord") {
-    Prec = new Ifpack_AdditiveSchwarz<Ifpack_ILU>(A,Overlap);
+    Prec = Teuchos::rcp( new Ifpack_AdditiveSchwarz<Ifpack_ILU>(&*A,Overlap) );
     List.set("schwarz: use reordering", true);
     AztecOOSolver.SetAztecOption(AZ_precond,AZ_dom_decomp);
     AztecOOSolver.SetAztecOption(AZ_subdomain_solve,AZ_ilu);
@@ -118,7 +119,7 @@ bool CompareWithAztecOO(Epetra_LinearProblem& Problem, const string what,
   }
 #ifdef HAVE_IFPACK_AMESOS
   else if (what == "LU") {
-    Prec = new Ifpack_AdditiveSchwarz<Ifpack_Amesos>(A,Overlap);
+    Prec = Teuchos::rcp( new Ifpack_AdditiveSchwarz<Ifpack_Amesos>(&*A,Overlap) );
     List.set("amesos: solver type", "Klu");
     AztecOOSolver.SetAztecOption(AZ_precond,AZ_dom_decomp);
     AztecOOSolver.SetAztecOption(AZ_subdomain_solve,AZ_lu);
@@ -157,7 +158,7 @@ bool CompareWithAztecOO(Epetra_LinearProblem& Problem, const string what,
   // =========================================== //
  
   Epetra_Time Time2(A->Comm());
-  assert(Prec != 0);
+  assert(Prec != Teuchos::null);
   IFPACK_CHK_ERR(Prec->SetParameters(List));
 
   Time.ResetStartTime();
@@ -173,7 +174,7 @@ bool CompareWithAztecOO(Epetra_LinearProblem& Problem, const string what,
          << Time.ElapsedTime() << " (s)" << endl;
 
 
-  AztecOOSolver.SetPrecOperator(Prec);
+  AztecOOSolver.SetPrecOperator(&*Prec);
 
   LHS.PutScalar(0.0);
 
@@ -188,8 +189,6 @@ bool CompareWithAztecOO(Epetra_LinearProblem& Problem, const string what,
   }
 
   int IFPACKPrecIters = AztecOOSolver.NumIters();
-
-  delete Prec;
 
   if (IFPACK_ABS(AztecOOPrecIters - IFPACKPrecIters) > 3) {
     cerr << "TEST FAILED (" << AztecOOPrecIters << " != " 
@@ -218,11 +217,11 @@ int main(int argc, char *argv[])
   GaleriList.set("nx", nx);
   GaleriList.set("ny", nx);
 
-  Epetra_Map* Map = Galeri::CreateMap("Linear", Comm, GaleriList);
-  Epetra_RowMatrix* A = Galeri::CreateCrsMatrix("Laplace2D", Map, GaleriList);
+  Teuchos::RefCountPtr<Epetra_Map> Map = Teuchos::rcp( Galeri::CreateMap("Linear", Comm, GaleriList) );
+  Teuchos::RefCountPtr<Epetra_RowMatrix> A = Teuchos::rcp( Galeri::CreateCrsMatrix("Laplace2D", &*Map, GaleriList) );
   Epetra_Vector LHS(*Map);
   Epetra_Vector RHS(*Map);
-  Epetra_LinearProblem Problem(A, &LHS, &RHS);
+  Epetra_LinearProblem Problem(&*A, &LHS, &RHS);
 
   int TestPassed = true;
 
@@ -262,9 +261,6 @@ int main(int argc, char *argv[])
     cerr << "Test `CompareWithAztecOO.exe' FAILED!" << endl;
     exit(EXIT_FAILURE);
   }
-
-  delete Map;
-  delete A;
 
 #ifdef HAVE_MPI
   MPI_Finalize() ; 

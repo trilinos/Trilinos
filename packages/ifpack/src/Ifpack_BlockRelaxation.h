@@ -13,6 +13,7 @@
 #include "Ifpack_DenseContainer.h" 
 #include "Ifpack_Utils.h" 
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_RefCountPtr.hpp"
 #include "Epetra_RowMatrix.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
@@ -1134,7 +1135,7 @@ int Ifpack_BlockRelaxation<T>::Initialize()
   if (Graph_)
     delete Graph_;
 
-  Graph_ = new Ifpack_Graph_Epetra_RowMatrix(&Matrix());
+  Graph_ = new Ifpack_Graph_Epetra_RowMatrix(Teuchos::rcp(&Matrix(),false));
   if (Graph_ == 0) IFPACK_CHK_ERR(-5);
 
   if (PartitionerType_ == "linear")

@@ -9,6 +9,7 @@ namespace Teuchos {
 }
 class Ifpack_Graph;
 class Epetra_MultiVector;
+class Epetra_RowMatrix;
 
 //! Ifpack_RCMReordering: reverse Cuthill-McKee reordering.
 
@@ -26,7 +27,7 @@ public:
   Ifpack_RCMReordering& operator=(const Ifpack_RCMReordering& RHS);
 
   //! Destructor.
-  virtual ~Ifpack_RCMReordering();
+  virtual ~Ifpack_RCMReordering() {};
   
   //! Sets integer parameters `Name'.
   virtual int SetParameter(const string Name, const int Value);

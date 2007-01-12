@@ -3,6 +3,7 @@
 
 #include "Ifpack_ConfigDefs.h"
 #include "Ifpack_Preconditioner.h"
+#include "Teuchos_RefCountPtr.hpp"
 
 namespace Teuchos {
   class ParameterList;
@@ -76,7 +77,7 @@ public:
   Ifpack_Chebyshev(const Epetra_RowMatrix* Matrix);
 
   //! Destructor.
-  virtual ~Ifpack_Chebyshev();
+  virtual ~Ifpack_Chebyshev() {};
 
   //@}
 
@@ -344,15 +345,15 @@ private:
   //! Number of global nonzeros.
   int NumGlobalNonzeros_;
   //! Pointers to the matrix to be preconditioned as an Epetra_Operator.
-  const Epetra_Operator* Operator_;
+  Teuchos::RefCountPtr<const Epetra_Operator> Operator_;
   //! Pointers to the matrix to be preconditioned as an Epetra_RowMatrix.
-  const Epetra_RowMatrix* Matrix_;
+  Teuchos::RefCountPtr<const Epetra_RowMatrix> Matrix_;
   //! Contains the inverse of diagonal elements of \c Matrix.
-  mutable Epetra_Vector* InvDiagonal_;
+  mutable Teuchos::RefCountPtr<Epetra_Vector> InvDiagonal_;
   //! If \c true, the Operator_ is an Epetra_RowMatrix.
   bool IsRowMatrix_;
   //! Time object to track timing.
-  Epetra_Time* Time_;
+  Teuchos::RefCountPtr<Epetra_Time> Time_;
   //! If \c true, the starting solution is always the zero vector.
   bool ZeroStartingSolution_;
   // @}

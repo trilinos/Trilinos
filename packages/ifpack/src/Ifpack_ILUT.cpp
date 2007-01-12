@@ -487,11 +487,11 @@ int Ifpack_ILUT::ApplyInverse(const Epetra_MultiVector& X,
   //
   // AztecOO gives X and Y pointing to the same memory location,
   // need to create an auxiliary vector, Xcopy
-  const Epetra_MultiVector* Xcopy;
+  Teuchos::RefCountPtr<const Epetra_MultiVector> Xcopy;
   if (X.Pointers()[0] == Y.Pointers()[0])
-    Xcopy = new Epetra_MultiVector(X);
+    Xcopy = Teuchos::rcp( new Epetra_MultiVector(X) );
   else
-    Xcopy = &X;
+    Xcopy = Teuchos::rcp( &X, false );
 
   if (!UseTranspose_)
   {
@@ -506,9 +506,6 @@ int Ifpack_ILUT::ApplyInverse(const Epetra_MultiVector& X,
     IFPACK_CHK_ERR(L_->Solve(false,true,false,Y,Y));
   }
 
-  if (Xcopy != &X)
-    delete Xcopy;
-
   ++NumApplyInverse_;
   ApplyInverseFlops_ += X.NumVectors() * 2 * GlobalNonzeros_;
   ApplyInverseTime_ += Time_.ElapsedTime();
@@ -521,7 +518,6 @@ int Ifpack_ILUT::ApplyInverse(const Epetra_MultiVector& X,
 int Ifpack_ILUT::Apply(const Epetra_MultiVector& X, 
 		      Epetra_MultiVector& Y) const 
 {
-
   return(-98);
 }
 

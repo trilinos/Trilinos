@@ -41,6 +41,7 @@
 #include "Galeri_CrsMatrices.h"
 #include "Galeri_Utils.h"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_RefCountPtr.hpp"
 #include "Ifpack_PointRelaxation.h"
 #include "Ifpack_BlockRelaxation.h"
 #include "Ifpack_SparseContainer.h"
@@ -53,13 +54,13 @@ static bool Solver = AZ_gmres;
 const int NumVectors = 3;
 
 // ====================================================================== 
-int CompareBlockOverlap(Epetra_RowMatrix* A, int Overlap)
+int CompareBlockOverlap(const Teuchos::RefCountPtr<Epetra_RowMatrix>& A, int Overlap)
 {
   Epetra_MultiVector LHS(A->RowMatrixRowMap(), NumVectors);
   Epetra_MultiVector RHS(A->RowMatrixRowMap(), NumVectors);
   LHS.PutScalar(0.0); RHS.Random();
 
-  Epetra_LinearProblem Problem(A, &LHS, &RHS);
+  Epetra_LinearProblem Problem(&*A, &LHS, &RHS);
 
   Teuchos::ParameterList List;
   List.set("relaxation: damping factor", 1.0);
@@ -72,7 +73,7 @@ int CompareBlockOverlap(Epetra_RowMatrix* A, int Overlap)
   RHS.PutScalar(1.0);
   LHS.PutScalar(0.0);
 
-  Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_Amesos> > Prec(A);
+  Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_Amesos> > Prec(&*A);
   Prec.SetParameters(List);
   Prec.Compute();
 
@@ -91,13 +92,13 @@ int CompareBlockOverlap(Epetra_RowMatrix* A, int Overlap)
 }
 
 // ====================================================================== 
-int CompareBlockSizes(string PrecType, Epetra_RowMatrix* A, int NumParts)
+int CompareBlockSizes(string PrecType, const Teuchos::RefCountPtr<Epetra_RowMatrix>& A, int NumParts)
 {
   Epetra_MultiVector RHS(A->RowMatrixRowMap(), NumVectors);
   Epetra_MultiVector LHS(A->RowMatrixRowMap(), NumVectors);
   LHS.PutScalar(0.0); RHS.Random();
 
-  Epetra_LinearProblem Problem(A, &LHS, &RHS);
+  Epetra_LinearProblem Problem(&*A, &LHS, &RHS);
 
   Teuchos::ParameterList List;
   List.set("relaxation: damping factor", 1.0);
@@ -109,7 +110,7 @@ int CompareBlockSizes(string PrecType, Epetra_RowMatrix* A, int NumParts)
   RHS.PutScalar(1.0);
   LHS.PutScalar(0.0);
 
-  Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_Amesos> > Prec(A);
+  Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_Amesos> > Prec(&*A);
   Prec.SetParameters(List);
   Prec.Compute();
 
@@ -128,13 +129,13 @@ int CompareBlockSizes(string PrecType, Epetra_RowMatrix* A, int NumParts)
 }
 
 // ====================================================================== 
-bool ComparePointAndBlock(string PrecType, Epetra_RowMatrix* A, int sweeps)
+bool ComparePointAndBlock(string PrecType, const Teuchos::RefCountPtr<Epetra_RowMatrix>& A, int sweeps)
 {
   Epetra_MultiVector RHS(A->RowMatrixRowMap(), NumVectors);
   Epetra_MultiVector LHS(A->RowMatrixRowMap(), NumVectors);
   LHS.PutScalar(0.0); RHS.Random();
 
-  Epetra_LinearProblem Problem(A, &LHS, &RHS);
+  Epetra_LinearProblem Problem(&*A, &LHS, &RHS);
 
   // Set up the list
   Teuchos::ParameterList List;
@@ -153,7 +154,7 @@ bool ComparePointAndBlock(string PrecType, Epetra_RowMatrix* A, int sweeps)
     RHS.PutScalar(1.0);
     LHS.PutScalar(0.0);
 
-    Ifpack_PointRelaxation Point(A);
+    Ifpack_PointRelaxation Point(&*A);
     Point.SetParameters(List);
     Point.Compute();
 
@@ -185,7 +186,7 @@ bool ComparePointAndBlock(string PrecType, Epetra_RowMatrix* A, int sweeps)
     RHS.PutScalar(1.0);
     LHS.PutScalar(0.0);
 
-    Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_Amesos> > Block(A);
+    Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_Amesos> > Block(&*A);
     Block.SetParameters(List);
     Block.Compute();
 
@@ -226,13 +227,13 @@ bool ComparePointAndBlock(string PrecType, Epetra_RowMatrix* A, int sweeps)
 }
 
 // ====================================================================== 
-bool KrylovTest(string PrecType, Epetra_RowMatrix* A)
+bool KrylovTest(string PrecType, const Teuchos::RefCountPtr<Epetra_RowMatrix>& A)
 {
   Epetra_MultiVector LHS(A->RowMatrixRowMap(), NumVectors);
   Epetra_MultiVector RHS(A->RowMatrixRowMap(), NumVectors);
   LHS.PutScalar(0.0); RHS.Random();
 
-  Epetra_LinearProblem Problem(A, &LHS, &RHS);
+  Epetra_LinearProblem Problem(&*A, &LHS, &RHS);
 
   // Set up the list
   Teuchos::ParameterList List;
@@ -252,7 +253,7 @@ bool KrylovTest(string PrecType, Epetra_RowMatrix* A)
   {
 
     List.set("relaxation: sweeps",1);
-    Ifpack_PointRelaxation Point(A);
+    Ifpack_PointRelaxation Point(&*A);
     Point.SetParameters(List);
     Point.Compute();
 
@@ -277,7 +278,7 @@ bool KrylovTest(string PrecType, Epetra_RowMatrix* A)
   // ======================================================== //
   {
     List.set("relaxation: sweeps",10);
-    Ifpack_PointRelaxation Point(A);
+    Ifpack_PointRelaxation Point(&*A);
     Point.SetParameters(List);
     Point.Compute();
     LHS.PutScalar(0.0);
@@ -315,14 +316,14 @@ bool KrylovTest(string PrecType, Epetra_RowMatrix* A)
 }
 
 // ====================================================================== 
-bool BasicTest(string PrecType, Epetra_RowMatrix* A)
+bool BasicTest(string PrecType, const Teuchos::RefCountPtr<Epetra_RowMatrix>& A)
 {
   Epetra_MultiVector LHS(A->RowMatrixRowMap(), NumVectors);
   Epetra_MultiVector RHS(A->RowMatrixRowMap(), NumVectors);
   LHS.PutScalar(0.0); RHS.Random();
 
-  double starting_residual = Galeri::ComputeNorm(A, &LHS, &RHS);
-  Epetra_LinearProblem Problem(A, &LHS, &RHS);
+  double starting_residual = Galeri::ComputeNorm(&*A, &LHS, &RHS);
+  Epetra_LinearProblem Problem(&*A, &LHS, &RHS);
 
   // Set up the list
   Teuchos::ParameterList List;
@@ -330,7 +331,7 @@ bool BasicTest(string PrecType, Epetra_RowMatrix* A)
   List.set("relaxation: sweeps",1550);
   List.set("relaxation: type", PrecType);
 
-  Ifpack_PointRelaxation Point(A);
+  Ifpack_PointRelaxation Point(&*A);
 
   Point.SetParameters(List);
   Point.Compute();
@@ -339,7 +340,7 @@ bool BasicTest(string PrecType, Epetra_RowMatrix* A)
 
   // compute the real residual
 
-  double residual = Galeri::ComputeNorm(A, &LHS, &RHS);
+  double residual = Galeri::ComputeNorm(&*A, &LHS, &RHS);
   
   if (A->Comm().MyPID() == 0 && verbose)
     cout << "||A * x - b||_2 (scaled) = " << residual / starting_residual << endl;
@@ -383,12 +384,12 @@ int main(int argc, char *argv[])
   GaleriList.set("ny", nx * Comm.NumProc());
   GaleriList.set("mx", 1);
   GaleriList.set("my", Comm.NumProc());
-  Epetra_Map* Map = Galeri::CreateMap("Cartesian2D", Comm, GaleriList);
-  Epetra_CrsMatrix* A;
+  Teuchos::RefCountPtr<Epetra_Map> Map = Teuchos::rcp( Galeri::CreateMap("Cartesian2D", Comm, GaleriList) );
+  Teuchos::RefCountPtr<Epetra_CrsMatrix> A;
   if (SymmetricGallery)
-    A = Galeri::CreateCrsMatrix("Laplace2D", Map, GaleriList);
+    A = Teuchos::rcp( Galeri::CreateCrsMatrix("Laplace2D", &*Map, GaleriList) );
   else
-    A = Galeri::CreateCrsMatrix("Recirc2D", Map, GaleriList);
+    A = Teuchos::rcp( Galeri::CreateCrsMatrix("Recirc2D", &*Map, GaleriList) );
 
   // test the preconditioner
   int TestPassed = true;
@@ -495,9 +496,6 @@ int main(int argc, char *argv[])
     exit(EXIT_FAILURE);
   }
   
-  delete A;
-  delete Map;
-
 #ifdef HAVE_MPI
   MPI_Finalize(); 
 #endif

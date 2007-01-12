@@ -2,6 +2,8 @@
 #define IFPACK_EPETRA_CRSGRAPH_H
 #include "Ifpack_ConfigDefs.h"
 #include "Ifpack_Graph.h"
+#include "Teuchos_RefCountPtr.hpp"
+
 class Epetra_Comm;
 class Epetra_CrsGraph;
 
@@ -19,10 +21,10 @@ class Ifpack_Graph_Epetra_CrsGraph : public Ifpack_Graph {
 public:
     
   //! Constructor.
-  Ifpack_Graph_Epetra_CrsGraph(const Epetra_CrsGraph* CrsGraph);
+  Ifpack_Graph_Epetra_CrsGraph(const Teuchos::RefCountPtr<const Epetra_CrsGraph>& CrsGraph);
 
   //! Destructor.
-  ~Ifpack_Graph_Epetra_CrsGraph();
+  virtual ~Ifpack_Graph_Epetra_CrsGraph() {};
 
   //! Returns the number of local rows.
   int NumMyRows() const
@@ -95,7 +97,7 @@ private:
   //! Maximum number of indices per row.
   int MaxNumIndices_;
   //! Pointer to the wrapped Epetra_CrsGraph.
-  const Epetra_CrsGraph* CrsGraph_;
+  Teuchos::RefCountPtr<const Epetra_CrsGraph> CrsGraph_;
 };
 
 #endif

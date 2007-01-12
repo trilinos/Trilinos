@@ -415,11 +415,11 @@ int Ifpack_ICT::ApplyInverse(const Epetra_MultiVector& X,
 
   // AztecOO gives X and Y pointing to the same memory location,
   // need to create an auxiliary vector, Xcopy
-  const Epetra_MultiVector* Xcopy;
+  Teuchos::RefCountPtr<const Epetra_MultiVector> Xcopy;
   if (X.Pointers()[0] == Y.Pointers()[0])
-    Xcopy = new Epetra_MultiVector(X);
+    Xcopy = Teuchos::rcp( new Epetra_MultiVector(X) );
   else
-    Xcopy = &X;
+    Xcopy = Teuchos::rcp( &X, false );
 
   // NOTE: H_ is based on SerialMap_, while Xcopy is based
   // on A.Map()... which are in general different. However, Solve()
@@ -427,9 +427,6 @@ int Ifpack_ICT::ApplyInverse(const Epetra_MultiVector& X,
   //
   EPETRA_CHK_ERR(H_->Solve(false,false,false,*Xcopy,Y));
   EPETRA_CHK_ERR(H_->Solve(false,true,false,Y,Y));
-
-  if (Xcopy != &X)
-    delete Xcopy;
 
   // these are global flop count
   ApplyInverseFlops_ += 4.0 * GlobalNonzeros_;

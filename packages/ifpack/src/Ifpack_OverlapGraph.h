@@ -33,10 +33,12 @@
 #include "Ifpack_ConfigDefs.h"
 #include "Epetra_Object.h"
 #include "Epetra_CrsGraph.h"
+#include "Epetra_Import.h"
+#include "Teuchos_RefCountPtr.hpp"
+
 class Epetra_Comm;
 class Epetra_BlockMap;
 class Epetra_RowMatrix;
-class Epetra_Import;
 
 namespace Teuchos {
   class ParameterList;
@@ -53,7 +55,7 @@ class Ifpack_OverlapGraph: public Epetra_Object {
     \param In
            UserMatrixGraph - Graph from user matrix.
   */
-  Ifpack_OverlapGraph(const Epetra_CrsGraph * UserMatrixGraph, int OverlapLevel);
+  Ifpack_OverlapGraph(const Teuchos::RefCountPtr<const Epetra_CrsGraph>& UserMatrixGraph, int OverlapLevel);
 
   //! Constructor using Epetra_RowMatrix.
   /*! Creates an Ifpack_OverlapGraph object from the user graph implicitly defined by the
@@ -61,13 +63,13 @@ class Ifpack_OverlapGraph: public Epetra_Object {
     \param In
             RowMatrix - An object that has implemented the Epetra_RowMatrix interface.
   */
-  Ifpack_OverlapGraph(const Epetra_RowMatrix * UserMatrix, int OverlapLevel);
+  Ifpack_OverlapGraph(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& UserMatrix, int OverlapLevel);
   
   //! Copy constructor.
   Ifpack_OverlapGraph(const Ifpack_OverlapGraph & Source);
 
   //! Ifpack_CrsIlut Destructor
-  virtual ~Ifpack_OverlapGraph();
+  virtual ~Ifpack_OverlapGraph() {};
   //@}
 
   //@{ \name Atribute access methods.
@@ -102,27 +104,26 @@ class Ifpack_OverlapGraph: public Epetra_Object {
   //@{ \name Epetra_Object print method (allows use of << operator with this class).
 
   void Print(ostream& os) const {
-
-  os << endl;
-  if (UserMatrix_!=0) 
-    os << "Overlap Graph created using the user's Epetra_RowMatrix object" << endl;
-  else
-        os << "Overlap Graph created using the user's Epetra_CrsGraph object" << endl;
-
-  os << " Level of Overlap = " << OverlapLevel_ << endl;
-  OverlapGraph_->Print(os);
-  return;
-}
+    os << endl;
+    if (UserMatrix_!=Teuchos::null) 
+      os << "Overlap Graph created using the user's Epetra_RowMatrix object" << endl;
+    else
+      os << "Overlap Graph created using the user's Epetra_CrsGraph object" << endl;
+    
+    os << " Level of Overlap = " << OverlapLevel_ << endl;
+    OverlapGraph_->Print(os);
+    return;
+  }
   //@}
 
  protected:
 
-  int ConstructOverlapGraph(const Epetra_CrsGraph * UserMatrixGraph);
-  Epetra_CrsGraph * OverlapGraph_;
-  const Epetra_CrsGraph * UserMatrixGraph_;
-  const Epetra_RowMatrix * UserMatrix_;
-  Epetra_BlockMap * OverlapRowMap_;
-  Epetra_Import * OverlapImporter_;
+  int ConstructOverlapGraph(const Teuchos::RefCountPtr<const Epetra_CrsGraph>& UserMatrixGraph);
+  Teuchos::RefCountPtr<Epetra_CrsGraph> OverlapGraph_;
+  Teuchos::RefCountPtr<const Epetra_CrsGraph> UserMatrixGraph_;
+  Teuchos::RefCountPtr<const Epetra_RowMatrix> UserMatrix_;
+  Teuchos::RefCountPtr<Epetra_BlockMap> OverlapRowMap_;
+  Teuchos::RefCountPtr<Epetra_Import> OverlapImporter_;
   int OverlapLevel_;
   bool IsOverlapped_;
 };

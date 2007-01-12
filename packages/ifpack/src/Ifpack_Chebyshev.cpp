@@ -43,11 +43,8 @@ Ifpack_Chebyshev(const Epetra_Operator* Operator) :
   NumMyNonzeros_(0),
   NumGlobalRows_(0),
   NumGlobalNonzeros_(0),
-  Operator_(Operator),
-  Matrix_(0),
-  InvDiagonal_(0),
+  Operator_(Teuchos::rcp(Operator,false)),
   IsRowMatrix_(false), 
-  Time_(0),
   ZeroStartingSolution_(true)
 {
 }
@@ -86,22 +83,11 @@ Ifpack_Chebyshev(const Epetra_RowMatrix* Operator) :
   NumMyNonzeros_(0),
   NumGlobalRows_(0),
   NumGlobalNonzeros_(0),
-  Operator_(Operator),
-  Matrix_(Operator),
-  InvDiagonal_(0),
+  Operator_(Teuchos::rcp(Operator,false)),
+  Matrix_(Teuchos::rcp(Operator,false)),
   IsRowMatrix_(true), 
-  Time_(0),
   ZeroStartingSolution_(true)
 {
-}
-
-//==============================================================================
-Ifpack_Chebyshev::~Ifpack_Chebyshev()
-{
-  if (InvDiagonal_)
-    delete InvDiagonal_;
-  if (Time_)
-    delete Time_;
 }
 
 //==============================================================================
@@ -122,8 +108,7 @@ int Ifpack_Chebyshev::SetParameters(Teuchos::ParameterList& List)
 
   if (ID != 0) 
   {
-    if (InvDiagonal_) delete InvDiagonal_;
-    InvDiagonal_ = new Epetra_Vector(*ID);
+    InvDiagonal_ = Teuchos::rcp( new Epetra_Vector(*ID) );
   }
 
   SetLabel();
@@ -176,11 +161,11 @@ int Ifpack_Chebyshev::Initialize()
 {
   IsInitialized_ = false;
 
-  if (Operator_ == 0)
+  if (Operator_ == Teuchos::null)
     IFPACK_CHK_ERR(-2);
 
-  if (Time_ == 0)
-    Time_ = new Epetra_Time(Comm());
+  if (Time_ == Teuchos::null)
+    Time_ = Teuchos::rcp( new Epetra_Time(Comm()) );
 
   if (IsRowMatrix_)
   {
@@ -220,11 +205,11 @@ int Ifpack_Chebyshev::Compute()
   if (PolyDegree_ <= 0)
     IFPACK_CHK_ERR(-2); // at least one application
   
-  if (IsRowMatrix_ && InvDiagonal_ == 0)
+  if (IsRowMatrix_ && InvDiagonal_ == Teuchos::null)
   {
-    InvDiagonal_ = new Epetra_Vector(Matrix().Map());
+    InvDiagonal_ = Teuchos::rcp( new Epetra_Vector(Matrix().Map()) );
 
-    if (InvDiagonal_ == 0)
+    if (InvDiagonal_ == Teuchos::null)
       IFPACK_CHK_ERR(-5);
 
     IFPACK_CHK_ERR(Matrix().ExtractDiagonalCopy(*InvDiagonal_));
@@ -347,11 +332,11 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 
   // AztecOO gives X and Y pointing to the same memory location,
   // need to create an auxiliary vector, Xcopy
-  const Epetra_MultiVector* Xcopy;
+  Teuchos::RefCountPtr<const Epetra_MultiVector> Xcopy;
   if (X.Pointers()[0] == Y.Pointers()[0])
-    Xcopy = new Epetra_MultiVector(X);
+    Xcopy = Teuchos::rcp( new Epetra_MultiVector(X) );
   else
-    Xcopy = &X;
+    Xcopy = Teuchos::rcp( &X, false );
 
   double **xPtr = 0, **yPtr = 0;
   Xcopy->ExtractView(&xPtr);
@@ -484,9 +469,6 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   } // if (nVec == 1)
 
   // Flops are updated in each of the following. 
-
-  if (Xcopy != &X)
-    delete Xcopy;
 
   ++NumApplyInverse_;
   ApplyInverseTime_ += Time_->ElapsedTime();

@@ -48,6 +48,7 @@
 #include "Galeri_CrsMatrices.h"
 #include "Ifpack_CrsRiluk.h"
 #include "Ifpack.h"
+#include "Teuchos_RefCountPtr.hpp"
 
 // function for fancy output
 
@@ -84,10 +85,10 @@ int main(int argc, char *argv[]) {
   GaleriList.set("ny", nx * Comm.NumProc());
   GaleriList.set("mx", 1);
   GaleriList.set("my", Comm.NumProc());
-  Epetra_Map* Map = Galeri::CreateMap("Cartesian2D", Comm, GaleriList);
-  Epetra_CrsMatrix* A = Galeri::CreateCrsMatrix("Laplace2D", Map, GaleriList);
-  Epetra_MultiVector* LHS = new Epetra_MultiVector(*Map, 1);
-  Epetra_MultiVector* RHS = new Epetra_MultiVector(*Map, 1);
+  Teuchos::RefCountPtr<Epetra_Map> Map = Teuchos::rcp( Galeri::CreateMap("Cartesian2D", Comm, GaleriList) );
+  Teuchos::RefCountPtr<Epetra_CrsMatrix> A = Teuchos::rcp( Galeri::CreateCrsMatrix("Laplace2D", &*Map, GaleriList) );
+  Teuchos::RefCountPtr<Epetra_MultiVector> LHS = Teuchos::rcp( new Epetra_MultiVector(*Map, 1) );
+  Teuchos::RefCountPtr<Epetra_MultiVector> RHS = Teuchos::rcp( new Epetra_MultiVector(*Map, 1) );
   LHS->PutScalar(0.0); RHS->Random();
 
   // ============================ //
@@ -103,15 +104,15 @@ int main(int argc, char *argv[]) {
   double Relax   = 0.1;
   int    Overlap = 2;
   
-  Ifpack_IlukGraph* Graph = 0;
-  Ifpack_CrsRiluk* RILU = 0;
+  Teuchos::RefCountPtr<Ifpack_IlukGraph> Graph;
+  Teuchos::RefCountPtr<Ifpack_CrsRiluk> RILU;
 
-  Graph = new Ifpack_IlukGraph(A->Graph(), LevelFill, Overlap);
+  Graph = Teuchos::rcp( new Ifpack_IlukGraph(A->Graph(), LevelFill, Overlap) );
   int ierr;
   ierr = Graph->ConstructFilledGraph();
   IFPACK_CHK_ERR(ierr);
 
-  RILU = new Ifpack_CrsRiluk(*Graph);
+  RILU = Teuchos::rcp( new Ifpack_CrsRiluk(*Graph) );
   RILU->SetAbsoluteThreshold(Athresh);
   RILU->SetRelativeThreshold(Rthresh);
   RILU->SetRelaxValue(Relax);
@@ -131,24 +132,21 @@ int main(int argc, char *argv[]) {
   int Niters = 1200;
 
   AztecOO solver;
-  solver.SetUserMatrix(A);
-  solver.SetLHS(LHS);
-  solver.SetRHS(RHS);
+  solver.SetUserMatrix(&*A);
+  solver.SetLHS(&*LHS);
+  solver.SetRHS(&*RHS);
   solver.SetAztecOption(AZ_solver,AZ_gmres);
-  solver.SetPrecOperator(RILU);
+  solver.SetPrecOperator(&*RILU);
   solver.SetAztecOption(AZ_output, 16); 
   solver.Iterate(Niters, 5.0e-5);
 
   int OldIters = solver.NumIters();
 
-
-  if (RILU!=0) delete RILU;
-				       
   // now rebuild the same preconditioner using RILU, we expect the same
   // number of iterations
 
   Ifpack Factory;
-  Ifpack_Preconditioner* Prec = Factory.Create("ILU", A, Overlap);
+  Teuchos::RefCountPtr<Ifpack_Preconditioner> Prec = Teuchos::rcp( Factory.Create("ILU", &*A, Overlap) );
 
   Teuchos::ParameterList List;
   List.get("fact: level-of-fill", LevelFill);
@@ -163,11 +161,11 @@ int main(int argc, char *argv[]) {
   // Here we create an AztecOO object
   LHS->PutScalar(0.0);
 
-  solver.SetUserMatrix(A);
-  solver.SetLHS(LHS);
-  solver.SetRHS(RHS);
+  solver.SetUserMatrix(&*A);
+  solver.SetLHS(&*LHS);
+  solver.SetRHS(&*RHS);
   solver.SetAztecOption(AZ_solver,AZ_gmres);
-  solver.SetPrecOperator(Prec);
+  solver.SetPrecOperator(&*Prec);
   solver.SetAztecOption(AZ_output, 16); 
   solver.Iterate(Niters, 5.0e-5);
 
@@ -175,12 +173,6 @@ int main(int argc, char *argv[]) {
 
   if (OldIters != NewIters)
     IFPACK_CHK_ERR(-1);
-
-  delete Prec;
-  delete LHS;
-  delete RHS;
-  delete A;
-  delete Map;
 
 #ifdef HAVE_MPI
   MPI_Finalize() ;

@@ -6,7 +6,7 @@
 
 //==============================================================================
 Ifpack_Graph_Epetra_CrsGraph::
-Ifpack_Graph_Epetra_CrsGraph(const Epetra_CrsGraph* CrsGraph) :
+Ifpack_Graph_Epetra_CrsGraph(const Teuchos::RefCountPtr<const Epetra_CrsGraph>& CrsGraph) :
 CrsGraph_(CrsGraph)
 {
   NumMyRows_ = CrsGraph_->NumMyRows();
@@ -14,11 +14,6 @@ CrsGraph_(CrsGraph)
   NumGlobalRows_ = CrsGraph_->NumGlobalRows();
   NumGlobalCols_ = CrsGraph_->NumGlobalCols();
   MaxNumIndices_ = CrsGraph_->MaxNumIndices();
-}
-
-//==============================================================================
-Ifpack_Graph_Epetra_CrsGraph::~Ifpack_Graph_Epetra_CrsGraph()
-{
 }
 
 //==============================================================================

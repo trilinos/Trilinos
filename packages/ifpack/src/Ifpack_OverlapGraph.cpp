@@ -32,17 +32,13 @@
 #include "Epetra_RowMatrix.h"
 #include "Epetra_BlockMap.h"
 #include "Epetra_Map.h"
-#include "Epetra_Import.h"
 
 #include <Teuchos_ParameterList.hpp>
 #include <ifp_parameters.h>
 
 //==============================================================================
-Ifpack_OverlapGraph::Ifpack_OverlapGraph(const Epetra_CrsGraph * UserMatrixGraph, int OverlapLevel)
-  : OverlapGraph_(0),
-    UserMatrixGraph_(UserMatrixGraph),
-    UserMatrix_(0),
-    OverlapRowMap_(0),
+Ifpack_OverlapGraph::Ifpack_OverlapGraph(const Teuchos::RefCountPtr<const Epetra_CrsGraph>& UserMatrixGraph, int OverlapLevel)
+  : UserMatrixGraph_(UserMatrixGraph),
     OverlapLevel_(OverlapLevel)
 {
   // Test for non-trivial overlap here so we can use it later.
@@ -52,11 +48,8 @@ Ifpack_OverlapGraph::Ifpack_OverlapGraph(const Epetra_CrsGraph * UserMatrixGraph
 
 }
 //==============================================================================
-Ifpack_OverlapGraph::Ifpack_OverlapGraph(const Epetra_RowMatrix * UserMatrix, int OverlapLevel)
-  : OverlapGraph_(0),
-    UserMatrixGraph_(0),
-    UserMatrix_(UserMatrix),
-    OverlapRowMap_(0),
+Ifpack_OverlapGraph::Ifpack_OverlapGraph(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& UserMatrix, int OverlapLevel)
+  : UserMatrix_(UserMatrix),
     OverlapLevel_(OverlapLevel)
 {
   // Test for non-trivial overlap here so we can use it later.
@@ -74,18 +67,10 @@ Ifpack_OverlapGraph::Ifpack_OverlapGraph(const Ifpack_OverlapGraph & Source)
     IsOverlapped_(Source.IsOverlapped_)
 {
   if (IsOverlapped_) {
-    if (OverlapGraph_!=0) OverlapGraph_ = new Epetra_CrsGraph(*OverlapGraph_);
-    if (OverlapRowMap_!=0) OverlapRowMap_ = new Epetra_BlockMap(*OverlapRowMap_);
+    if (OverlapGraph_!=Teuchos::null) OverlapGraph_ = Teuchos::rcp( new Epetra_CrsGraph(*OverlapGraph_) );
+    if (OverlapRowMap_!=Teuchos::null) OverlapRowMap_ = Teuchos::rcp( new Epetra_BlockMap(*OverlapRowMap_) );
   }
   
-}
-//==============================================================================
-Ifpack_OverlapGraph::~Ifpack_OverlapGraph() {
-  
-  if (IsOverlapped_) {
-    if (OverlapGraph_!=0) delete OverlapGraph_;
-    if (OverlapRowMap_!=0) delete OverlapRowMap_;
-  }
 }
 
 //==========================================================================
@@ -102,46 +87,43 @@ int Ifpack_OverlapGraph::SetParameters(const Teuchos::ParameterList& parameterli
 }
 
 //==============================================================================
-int Ifpack_OverlapGraph::ConstructOverlapGraph(const Epetra_CrsGraph * UserMatrixGraph) {
+int Ifpack_OverlapGraph::ConstructOverlapGraph(const Teuchos::RefCountPtr<const Epetra_CrsGraph>& UserMatrixGraph) {
 
-  OverlapGraph_ = (Epetra_CrsGraph *) UserMatrixGraph;
-  OverlapRowMap_ = (Epetra_BlockMap *) &UserMatrixGraph->RowMap();
+  if (!IsOverlapped_) {
+    OverlapGraph_ = Teuchos::rcp_const_cast<Epetra_CrsGraph>( UserMatrixGraph );
+    OverlapRowMap_ = Teuchos::rcp( (Epetra_BlockMap *) &UserMatrixGraph->RowMap(), false );
+    return(0); // All done
+  }
 
-  if (!IsOverlapped_) return(0); // All done
-
-  Epetra_CrsGraph * OldGraph;
-  Epetra_BlockMap * OldRowMap;
-  Epetra_BlockMap * DomainMap = (Epetra_BlockMap *) &UserMatrixGraph->DomainMap();
-  Epetra_BlockMap * RangeMap = (Epetra_BlockMap *) &UserMatrixGraph->RangeMap();
+  Teuchos::RefCountPtr<Epetra_CrsGraph> OldGraph;
+  Teuchos::RefCountPtr<Epetra_BlockMap> OldRowMap;
+  const Epetra_BlockMap DomainMap = UserMatrixGraph->DomainMap();
+  const Epetra_BlockMap RangeMap = UserMatrixGraph->RangeMap();
 
   for (int level=1; level <= OverlapLevel_; level++) {
     OldGraph = OverlapGraph_;
     OldRowMap = OverlapRowMap_;
 
-    OverlapImporter_ = (Epetra_Import *) OldGraph->Importer();
-    OverlapRowMap_ = new Epetra_BlockMap(OverlapImporter_->TargetMap());
+    OverlapImporter_ = Teuchos::rcp( (Epetra_Import *) OldGraph->Importer(), false );
+    OverlapRowMap_ = Teuchos::rcp( new Epetra_BlockMap(OverlapImporter_->TargetMap()) );
 
     if (level<OverlapLevel_)
-      OverlapGraph_ = new Epetra_CrsGraph(Copy, *OverlapRowMap_, 0);
+      OverlapGraph_ = Teuchos::rcp( new Epetra_CrsGraph(Copy, *OverlapRowMap_, 0) );
     else
       // On last iteration, we want to filter out all columns except those that correspond
       // to rows in the graph.  This assures that our matrix is square
-      OverlapGraph_ = new Epetra_CrsGraph(Copy, *OverlapRowMap_, *OverlapRowMap_, 0);
+      OverlapGraph_ = Teuchos::rcp( new Epetra_CrsGraph(Copy, *OverlapRowMap_, *OverlapRowMap_, 0) );
 
     EPETRA_CHK_ERR(OverlapGraph_->Import( *UserMatrixGraph, *OverlapImporter_, Insert));
     if (level<OverlapLevel_) {
-      EPETRA_CHK_ERR(OverlapGraph_->FillComplete(*DomainMap, *RangeMap));
+      EPETRA_CHK_ERR(OverlapGraph_->FillComplete(DomainMap, RangeMap));
     }
     else {
       // Copy last OverlapImporter because we will use it later
-      OverlapImporter_ = new Epetra_Import(*OverlapRowMap_, *DomainMap);
-      EPETRA_CHK_ERR(OverlapGraph_->FillComplete(*DomainMap, *RangeMap));
+      OverlapImporter_ = Teuchos::rcp( new Epetra_Import(*OverlapRowMap_, DomainMap) );
+      EPETRA_CHK_ERR(OverlapGraph_->FillComplete(DomainMap, RangeMap));
     }
 
-    if (level>1) {
-      delete OldGraph;
-      delete OldRowMap;
-    }
   }
 
   return(0);

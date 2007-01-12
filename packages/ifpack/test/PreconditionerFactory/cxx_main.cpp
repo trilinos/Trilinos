@@ -44,6 +44,7 @@
 #include "Galeri_Maps.h"
 #include "Galeri_CrsMatrices.h"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_RefCountPtr.hpp"
 #include "Ifpack_Preconditioner.h"
 #include "Ifpack.h"
 #include "AztecOO.h"
@@ -67,121 +68,103 @@ int main(int argc, char *argv[])
   Teuchos::ParameterList GaleriList;
   const int n = 9; 
   GaleriList.set("n", n);
-  Epetra_Map* Map = Galeri::CreateMap("Linear", Comm, GaleriList);
-  Epetra_CrsMatrix* A = Galeri::CreateCrsMatrix("Minij", Map, GaleriList);
+  Teuchos::RefCountPtr<Epetra_Map> Map = Teuchos::rcp( Galeri::CreateMap("Linear", Comm, GaleriList) );
+  Teuchos::RefCountPtr<Epetra_CrsMatrix> A = Teuchos::rcp( Galeri::CreateCrsMatrix("Minij", &*Map, GaleriList) );
   
   Ifpack Factory;
-  Ifpack_Preconditioner* Prec;
+  Teuchos::RefCountPtr<Ifpack_Preconditioner> Prec;
 
-  Prec = Factory.Create("point relaxation", A);
-  assert (Prec != 0);
+  Prec = Teuchos::rcp( Factory.Create("point relaxation", &*A) );
+  assert (Prec != Teuchos::null);
   IFPACK_CHK_ERR(Prec->Initialize());
   IFPACK_CHK_ERR(Prec->Compute());
   cout << *Prec;
-  delete Prec;
 
-  Prec = Factory.Create("point relaxation stand-alone", A);
-  assert (Prec != 0);
+  Prec = Teuchos::rcp( Factory.Create("point relaxation stand-alone", &*A) );
+  assert (Prec != Teuchos::null);
   IFPACK_CHK_ERR(Prec->Initialize());
   IFPACK_CHK_ERR(Prec->Compute());
   cout << *Prec;
-  delete Prec;
 
-  Prec = Factory.Create("block relaxation", A);
-  assert (Prec != 0);
+  Prec = Teuchos::rcp( Factory.Create("block relaxation", &*A) );
+  assert (Prec != Teuchos::null);
   IFPACK_CHK_ERR(Prec->Initialize());
   IFPACK_CHK_ERR(Prec->Compute());
   cout << *Prec;
-  delete Prec;
 
-  Prec = Factory.Create("block relaxation stand-alone", A);
-  assert (Prec != 0);
+  Prec = Teuchos::rcp( Factory.Create("block relaxation stand-alone", &*A) );
+  assert (Prec != Teuchos::null);
   IFPACK_CHK_ERR(Prec->Initialize());
   IFPACK_CHK_ERR(Prec->Compute());
   cout << *Prec;
-  delete Prec;
 
-  Prec = Factory.Create("IC", A);
-  assert (Prec != 0);
+  Prec = Teuchos::rcp( Factory.Create("IC", &*A) );
+  assert (Prec != Teuchos::null);
   IFPACK_CHK_ERR(Prec->Initialize());
   IFPACK_CHK_ERR(Prec->Compute());
   cout << *Prec;
-  delete Prec;
 
-  Prec = Factory.Create("ICT", A);
-  assert (Prec != 0);
+  Prec = Teuchos::rcp( Factory.Create("ICT", &*A) );
+  assert (Prec != Teuchos::null);
   IFPACK_CHK_ERR(Prec->Initialize());
   IFPACK_CHK_ERR(Prec->Compute());
   cout << *Prec;
-  delete Prec;
 
-  Prec = Factory.Create("ILU", A);
-  assert (Prec != 0);
+  Prec = Teuchos::rcp( Factory.Create("ILU", &*A) );
+  assert (Prec != Teuchos::null);
   IFPACK_CHK_ERR(Prec->Initialize());
   IFPACK_CHK_ERR(Prec->Compute());
   cout << *Prec;
-  delete Prec;
 
-  Prec = Factory.Create("ILUT", A);
-  assert (Prec != 0);
+  Prec = Teuchos::rcp( Factory.Create("ILUT", &*A) );
+  assert (Prec != Teuchos::null);
   IFPACK_CHK_ERR(Prec->Initialize());
   IFPACK_CHK_ERR(Prec->Compute());
   cout << *Prec;
-  delete Prec;
 
-  Prec = Factory.Create("IC stand-alone", A);
-  assert (Prec != 0);
+  Prec = Teuchos::rcp( Factory.Create("IC stand-alone", &*A) );
+  assert (Prec != Teuchos::null);
   IFPACK_CHK_ERR(Prec->Initialize());
   IFPACK_CHK_ERR(Prec->Compute());
   cout << *Prec;
-  delete Prec;
 
-  Prec = Factory.Create("ICT stand-alone", A);
-  assert (Prec != 0);
+  Prec = Teuchos::rcp( Factory.Create("ICT stand-alone", &*A) );
+  assert (Prec != Teuchos::null);
   IFPACK_CHK_ERR(Prec->Initialize());
   IFPACK_CHK_ERR(Prec->Compute());
   cout << *Prec;
-  delete Prec;
 
-  Prec = Factory.Create("ILU stand-alone", A);
-  assert (Prec != 0);
+  Prec = Teuchos::rcp( Factory.Create("ILU stand-alone", &*A) );
+  assert (Prec != Teuchos::null);
   IFPACK_CHK_ERR(Prec->Initialize());
   IFPACK_CHK_ERR(Prec->Compute());
   cout << *Prec;
-  delete Prec;
 
-  Prec = Factory.Create("ILUT stand-alone", A);
-  assert (Prec != 0);
+  Prec = Teuchos::rcp( Factory.Create("ILUT stand-alone", &*A) );
+  assert (Prec != Teuchos::null);
   IFPACK_CHK_ERR(Prec->Initialize());
   IFPACK_CHK_ERR(Prec->Compute());
   cout << *Prec;
-  delete Prec;
 
 #ifdef HAVE_IFPACK_AMESOS
-  Prec = Factory.Create("Amesos", A);
-  assert (Prec != 0);
+  Prec = Teuchos::rcp( Factory.Create("Amesos", &*A) );
+  assert (Prec != Teuchos::null);
   IFPACK_CHK_ERR(Prec->Initialize());
   IFPACK_CHK_ERR(Prec->Compute());
   cout << *Prec;
-  delete Prec;
 
-  Prec = Factory.Create("Amesos stand-alone", A);
-  assert (Prec != 0);
+  Prec = Teuchos::rcp( Factory.Create("Amesos stand-alone", &*A) );
+  assert (Prec != Teuchos::null);
   IFPACK_CHK_ERR(Prec->Initialize());
   IFPACK_CHK_ERR(Prec->Compute());
   cout << *Prec;
-  delete Prec;
 #endif
   
-  Prec = Factory.Create("Chebyshev", A);
-  assert (Prec != 0);
+  Prec = Teuchos::rcp( Factory.Create("Chebyshev", &*A) );
+  assert (Prec != Teuchos::null);
   IFPACK_CHK_ERR(Prec->Initialize());
   IFPACK_CHK_ERR(Prec->Compute());
   cout << *Prec;
-
-  delete Prec;
-  delete A;
-  delete Map;
 
   if (Comm.MyPID() == 0)
     cout << "Test `PrecondititonerFactory.exe' passed!" << endl;

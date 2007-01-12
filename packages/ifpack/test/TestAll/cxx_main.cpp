@@ -39,6 +39,7 @@
 #include "Galeri_Maps.h"
 #include "Galeri_CrsMatrices.h"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_RefCountPtr.hpp"
 #include "Ifpack_AdditiveSchwarz.h"
 #include "AztecOO.h"
 #include "Ifpack_PointRelaxation.h"
@@ -50,7 +51,7 @@
 #include "Ifpack_Chebyshev.h"
 
 template <class T>
-bool Test(Epetra_RowMatrix* Matrix, Teuchos::ParameterList& List)
+bool Test(const Teuchos::RefCountPtr<Epetra_RowMatrix>& Matrix, Teuchos::ParameterList& List)
 {
 
   int NumVectors = 1;
@@ -64,12 +65,12 @@ bool Test(Epetra_RowMatrix* Matrix, Teuchos::ParameterList& List)
   LHSexact.Random();
   Matrix->Multiply(UseTranspose,LHSexact,RHS);
 
-  Epetra_LinearProblem Problem(Matrix,&LHS,&RHS);
+  Epetra_LinearProblem Problem(&*Matrix,&LHS,&RHS);
 
-  T* Prec;
+  Teuchos::RefCountPtr<T> Prec;
   
-  Prec = new T(Matrix);
-  assert(Prec != 0);
+  Prec = Teuchos::rcp( new T(&*Matrix) );
+  assert(Prec != Teuchos::null);
 
   IFPACK_CHK_ERR(Prec->SetParameters(List));
   IFPACK_CHK_ERR(Prec->Initialize());
@@ -82,14 +83,13 @@ bool Test(Epetra_RowMatrix* Matrix, Teuchos::ParameterList& List)
   AztecOOSolver.SetAztecOption(AZ_solver,AZ_gmres);
   AztecOOSolver.SetAztecOption(AZ_output,32);
 
-  AztecOOSolver.SetPrecOperator(Prec);
+  AztecOOSolver.SetPrecOperator(&*Prec);
 
   // solver. The solver should converge in one iteration,
   // or maximum two (numerical errors)
   AztecOOSolver.Iterate(1550,1e-8);
 
   cout << *Prec;
-  delete Prec;
   
   vector<double> Norm(NumVectors);
   LHS.Update(1.0,LHSexact,-1.0);
@@ -120,8 +120,8 @@ int main(int argc, char *argv[])
   GaleriList.set("n", nx * nx);
   GaleriList.set("nx", nx);
   GaleriList.set("ny", nx);
-  Epetra_Map* Map = Galeri::CreateMap("Linear", Comm, GaleriList);
-  Epetra_RowMatrix* Matrix = Galeri::CreateCrsMatrix("Laplace2D", Map, GaleriList);
+  Teuchos::RefCountPtr<Epetra_Map> Map = Teuchos::rcp( Galeri::CreateMap("Linear", Comm, GaleriList) );
+  Teuchos::RefCountPtr<Epetra_RowMatrix> Matrix = Teuchos::rcp( Galeri::CreateCrsMatrix("Laplace2D", &*Map, GaleriList) );
 
   Teuchos::ParameterList List, DefaultList;
 
@@ -183,9 +183,6 @@ int main(int argc, char *argv[])
     cerr << "Test `TestAll.exe' FAILED!" << endl;
     exit(EXIT_FAILURE);
   }
-
-  delete Matrix;
-  delete Map;
 
 #ifdef HAVE_MPI
   MPI_Finalize(); 

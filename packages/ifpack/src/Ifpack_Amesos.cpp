@@ -16,9 +16,7 @@ static bool FirstTime = true;
 
 //==============================================================================
 Ifpack_Amesos::Ifpack_Amesos(Epetra_RowMatrix* Matrix) :
-  Matrix_(Matrix),
-  Solver_(0),
-  Problem_(0),
+  Matrix_(Teuchos::rcp( Matrix, false )),
   Label_("Amesos_Klu"),
   IsInitialized_(false),
   IsComputed_(false),
@@ -29,19 +27,16 @@ Ifpack_Amesos::Ifpack_Amesos(Epetra_RowMatrix* Matrix) :
   InitializeTime_(0.0),
   ComputeTime_(0.0),
   ApplyInverseTime_(0.0),
-  Time_(0),
   ComputeFlops_(0),
   ApplyInverseFlops_(0),
   Condest_(-1.0)
 {
-  Problem_ = new Epetra_LinearProblem;
+  Problem_ = Teuchos::rcp( new Epetra_LinearProblem );
 }
 
 //==============================================================================
 Ifpack_Amesos::Ifpack_Amesos(const Ifpack_Amesos& rhs) :
-  Matrix_(&rhs.Matrix()),
-  Solver_(0),
-  Problem_(0),
+  Matrix_(Teuchos::rcp( &rhs.Matrix(), false )),
   Label_(rhs.Label()),
   IsInitialized_(false),
   IsComputed_(false),
@@ -51,13 +46,12 @@ Ifpack_Amesos::Ifpack_Amesos(const Ifpack_Amesos& rhs) :
   InitializeTime_(rhs.InitializeTime()),
   ComputeTime_(rhs.ComputeTime()),
   ApplyInverseTime_(rhs.ApplyInverseTime()),
-  Time_(0),
   ComputeFlops_(rhs.ComputeFlops()),
   ApplyInverseFlops_(rhs.ApplyInverseFlops()),
   Condest_(rhs.Condest())
 {
 
-  Problem_ = new Epetra_LinearProblem;
+  Problem_ = Teuchos::rcp( new Epetra_LinearProblem );
 
   // copy the RHS list in *this.List
   Teuchos::ParameterList RHSList(rhs.List());
@@ -77,19 +71,6 @@ Ifpack_Amesos::Ifpack_Amesos(const Ifpack_Amesos& rhs) :
 
 }
 //==============================================================================
-Ifpack_Amesos::~Ifpack_Amesos()
-{
-  if (Problem_)
-    delete Problem_;
-
-  if (Solver_)
-    delete Solver_;
-
-  if (Time_)
-    delete Time_;
-}
-
-//==============================================================================
 int Ifpack_Amesos::SetParameters(Teuchos::ParameterList& List)
 {
 
@@ -105,7 +86,7 @@ int Ifpack_Amesos::Initialize()
   IsInitialized_ = false;
   IsComputed_ = false;
 
-  if (Matrix_ == 0)
+  if (Matrix_ == Teuchos::null)
     IFPACK_CHK_ERR(-1);
 
 #if 0
@@ -127,24 +108,20 @@ int Ifpack_Amesos::Initialize()
   if (Matrix_->NumMyNonzeros() == 0) 
     IFPACK_CHK_ERR(-1);
 
-  Problem_->SetOperator(const_cast<Epetra_RowMatrix*>(Matrix_));
+  Problem_->SetOperator(const_cast<Epetra_RowMatrix*>(Matrix_.get()));
 
-  if (Time_ == 0)
-    Time_ = new Epetra_Time(Comm());
-
-  // reallocate the solver. 
-  if (Solver_)
-    delete Solver_;
+  if (Time_ == Teuchos::null)
+    Time_ = Teuchos::rcp( new Epetra_Time(Comm()) );
 
   Amesos Factory;
-  Solver_ = Factory.Create((char*)Label_.c_str(),*Problem_);
+  Solver_ = Teuchos::rcp( Factory.Create((char*)Label_.c_str(),*Problem_) );
   
-  if (Solver_ == 0) 
+  if (Solver_ == Teuchos::null) 
   {
     // try to create KLU, it is generally enabled
-    Solver_ = Factory.Create("Amesos_Klu",*Problem_);
+    Solver_ = Teuchos::rcp( Factory.Create("Amesos_Klu",*Problem_) );
   }
-  if (Solver_ == 0)
+  if (Solver_ == Teuchos::null)
   {
     // finally try to create LAPACK, it is generally enabled
     // NOTE: the matrix is dense, so this should only be for
@@ -160,10 +137,10 @@ int Ifpack_Amesos::Initialize()
            << ")" << endl;
       FirstTime = false;
     }
-    Solver_ = Factory.Create("Amesos_Lapack",*Problem_);
+    Solver_ = Teuchos::rcp( Factory.Create("Amesos_Lapack",*Problem_) );
   }
   // if empty, give up.
-  if (Solver_ == 0)
+  if (Solver_ == Teuchos::null)
     IFPACK_CHK_ERR(-1);
 
   IFPACK_CHK_ERR(Solver_->SetUseTranspose(UseTranspose_));
@@ -186,7 +163,7 @@ int Ifpack_Amesos::Compute()
   IsComputed_ = false;
   Time_->ResetStartTime();
 
-  if (Matrix_ == 0)
+  if (Matrix_ == Teuchos::null)
     IFPACK_CHK_ERR(-1);
 
   IFPACK_CHK_ERR(Solver_->NumericFactorization());
@@ -203,7 +180,7 @@ int Ifpack_Amesos::SetUseTranspose(bool UseTranspose)
   // store the value in UseTranspose_. If we have the solver, we pass to it
   // right away, otherwise we wait till when it is created.
   UseTranspose_ = UseTranspose;
-  if (Solver_ != 0)
+  if (Solver_ != Teuchos::null)
     IFPACK_CHK_ERR(Solver_->SetUseTranspose(UseTranspose));
 
   return(0);
@@ -233,18 +210,15 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 
   // AztecOO gives X and Y pointing to the same memory location,
   // need to create an auxiliary vector, Xcopy
-  const Epetra_MultiVector* Xcopy;
+  Teuchos::RefCountPtr<const Epetra_MultiVector> Xcopy;
   if (X.Pointers()[0] == Y.Pointers()[0])
-    Xcopy = new Epetra_MultiVector(X);
+    Xcopy = Teuchos::rcp( new Epetra_MultiVector(X) );
   else
-    Xcopy = &X;
+    Xcopy = Teuchos::rcp( &X, false );
     
   Problem_->SetLHS(&Y);
-  Problem_->SetRHS((Epetra_MultiVector*)Xcopy);
+  Problem_->SetRHS((Epetra_MultiVector*)Xcopy.get());
   IFPACK_CHK_ERR(Solver_->Solve());
-
-  if (Xcopy != &X)
-    delete Xcopy;
 
   ++NumApplyInverse_;
   ApplyInverseTime_ += Time_->ElapsedTime();

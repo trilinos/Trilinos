@@ -3,6 +3,8 @@
 
 #include "Ifpack_ConfigDefs.h"
 #include "Ifpack_Graph.h"
+#include "Teuchos_RefCountPtr.hpp"
+
 class Epetra_Comm;
 class Epetra_RowMatrix;
 
@@ -22,10 +24,10 @@ class Ifpack_Graph_Epetra_RowMatrix : public Ifpack_Graph {
 public:
     
   //! Constructor.
-  Ifpack_Graph_Epetra_RowMatrix(const Epetra_RowMatrix* RowMatrix);
+  Ifpack_Graph_Epetra_RowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& RowMatrix);
 
   //! Destructor.
-  ~Ifpack_Graph_Epetra_RowMatrix();
+  virtual ~Ifpack_Graph_Epetra_RowMatrix() {};
 
   //! Returns the number of local rows.  
   int NumMyRows() const
@@ -98,7 +100,7 @@ private:
   //! Maximum number of indices per row.
   int MaxNumIndices_;
   //! Pointer to the wrapped Epetra_CrsGraph.
-  const Epetra_RowMatrix* RowMatrix_;
+  Teuchos::RefCountPtr<const Epetra_RowMatrix> RowMatrix_;
   //! Vectors that can be used in calls to ExtractMyRowView of the Row matrix.
   mutable std::vector<double> Values_;
 };

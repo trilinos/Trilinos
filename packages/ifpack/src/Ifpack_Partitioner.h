@@ -61,7 +61,7 @@ class Epetra_Import;
 ...
 Epetra_CrsMatrix* A;         // A is filled
 // create the wrapper from Epetra_CrsGraph
-Ifpack_Graph Graph = new Ifpack_Graph_Epetra_CrsGraph(A);
+Ifpack_Graph* Graph = new Ifpack_Graph_Epetra_CrsGraph(A);
 
 // we aim to create non-overlapping partitions only
 Ifpack_Partitioner Partitioner(Graph);

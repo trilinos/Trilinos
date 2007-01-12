@@ -26,9 +26,9 @@ Ifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& 
   // construct the external matrix
   vector<int> ExtElements; 
 
-  Epetra_Map* TmpMap = 0;
-  Epetra_CrsMatrix* TmpMatrix = 0; 
-  Epetra_Import* TmpImporter = 0; 
+  Teuchos::RefCountPtr<Epetra_Map> TmpMap;
+  Teuchos::RefCountPtr<Epetra_CrsMatrix> TmpMatrix; 
+  Teuchos::RefCountPtr<Epetra_Import> TmpImporter;
 
   // importing rows corresponding to elements that are 
   // in ColMap, but not in RowMap 
@@ -36,7 +36,7 @@ Ifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& 
   const Epetra_Map *ColMap; 
 
   for (int overlap = 0 ; overlap < OverlapLevel ; ++overlap) {
-    if (TmpMatrix) {
+    if (TmpMatrix != Teuchos::null) {
       RowMap = &(TmpMatrix->RowMatrixRowMap()); 
       ColMap = &(TmpMatrix->RowMatrixColMap()); 
     }
@@ -64,27 +64,16 @@ Ifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& 
       } 
     } 
 
-    if (TmpMap)
-      delete TmpMap;
-    TmpMap = new Epetra_Map(-1,count, &list[0],0,Comm()); 
+    TmpMap = Teuchos::rcp( new Epetra_Map(-1,count, &list[0],0,Comm()) ); 
 
-    if (TmpMatrix)
-      delete TmpMatrix;
-    TmpMatrix = new Epetra_CrsMatrix(Copy,*TmpMap,0); 
+    TmpMatrix = Teuchos::rcp( new Epetra_CrsMatrix(Copy,*TmpMap,0) ); 
 
-    if (TmpImporter)
-      delete TmpImporter;
-    TmpImporter = new Epetra_Import(*TmpMap,A().RowMatrixRowMap()); 
+    TmpImporter = Teuchos::rcp( new Epetra_Import(*TmpMap,A().RowMatrixRowMap()) ); 
 
     TmpMatrix->Import(A(),*TmpImporter,Insert); 
     TmpMatrix->FillComplete(A().OperatorDomainMap(),*TmpMap); 
 
   }
-
-  // clean up memory
-  delete TmpMap;
-  delete TmpMatrix;
-  delete TmpImporter;
 
   // build the map containing all the nodes (original
   // matrix + extended matrix)
