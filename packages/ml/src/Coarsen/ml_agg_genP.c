@@ -162,12 +162,12 @@ int ML_Gen_MGHierarchy_UsingAggregation(ML *ml, int start,
    dnnz = ML_gsum_double( dnnz, ml->comm );
    ml_ag->operator_complexity += dnnz;
 
-   if (ML_Get_PrintLevel() > 4) {
+   if (ML_Get_PrintLevel() > 10) {
      for (i=0; i<level; i++) {
        int thisLevel = ml->LevelID[i];
-       ML_Operator_Profile(ml->Amat+thisLevel,NULL);
-       if (i != level-1) ML_Operator_Profile(ml->Rmat+thisLevel,NULL);
-       if (i != 0)       ML_Operator_Profile(ml->Pmat+thisLevel,NULL);
+         ML_Operator_Profile(ml->Amat+thisLevel,NULL);
+         if (i != level-1) ML_Operator_Profile(ml->Rmat+thisLevel,NULL);
+         if (i != 0)       ML_Operator_Profile(ml->Pmat+thisLevel,NULL);
      }
    }
 
@@ -2438,12 +2438,13 @@ int ML_Gen_MultiLevelHierarchy_UsingAggregation(ML *ml, int start,
    dnnz = ML_gsum_double( dnnz, ml->comm );
    ml_ag->operator_complexity += dnnz;
                                                                                 
-   for (i=0; i<level; i++) {
-     int thisLevel = ml->LevelID[i];
-     ML_Operator_Profile(ml->Amat+thisLevel,NULL);
-     if (i != level-1) ML_Operator_Profile(ml->Rmat+thisLevel,NULL);
-     if (i != 0)       ML_Operator_Profile(ml->Pmat+thisLevel,NULL);
-   }
+   if (ML_Get_PrintLevel() > 10)
+     for (i=0; i<level; i++) {
+       int thisLevel = ml->LevelID[i];
+         ML_Operator_Profile(ml->Amat+thisLevel,NULL);
+         if (i != level-1) ML_Operator_Profile(ml->Rmat+thisLevel,NULL);
+         if (i != 0)       ML_Operator_Profile(ml->Pmat+thisLevel,NULL);
+     }
 
    idata = ML_gmax_int(idata, ml->comm);
    if ( ml->comm->ML_mypid == 0 && ml_ag->print_flag < ML_Get_PrintLevel()) 
@@ -2588,7 +2589,7 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
 #ifdef ML_MPI
       MPI_Barrier(ml->comm->USR_comm);
 #endif
-      if (ML_Get_PrintLevel() > 4) {
+      if (ML_Get_PrintLevel() > 10) {
         sprintf(str,"Node_before_repartitioning");
         ML_Operator_Profile(ml->Amat+next,str);
       }
@@ -2596,7 +2597,7 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
       ML_repartition_Acoarse(ml, level, next, (ML_Aggregate*)user_data, 
                              ML_TRUE, ML_FALSE);
 
-      if (ML_Get_PrintLevel() > 4) {
+      if (ML_Get_PrintLevel() > 10) {
         sprintf(str,"Node_after_repartitioning");
         ML_Operator_Profile(ml->Amat+next,str);
       }

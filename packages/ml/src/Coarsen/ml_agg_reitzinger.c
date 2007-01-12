@@ -130,11 +130,11 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
 
   Nlevels_nodal = ML_Gen_MGHierarchy_UsingAggregation(ml_nodes, fine_level, 
                                                       ML_DECREASING, ag);
-  if (ML_Get_PrintLevel() > 4)
+  if (ML_Get_PrintLevel() > 10)
     ML_Operator_Profile(ml_edges->Amat+fine_level, "edge");
-  if (ML_Get_PrintLevel() > 4)
+  if (ML_Get_PrintLevel() > 10)
     ML_Operator_Profile(Tfine, NULL);
-  if (ML_Get_PrintLevel() > 4)
+  if (ML_Get_PrintLevel() > 10)
     ML_Operator_Profile(Tmat_trans, NULL);
 /*
   Marzio's interface:
@@ -482,15 +482,6 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      ReportTimer(delta1, str, ml_edges->comm);
 
      StartTimer(&time1);
-
-/*
-     if (ML_Get_PrintLevel() > 7) {
-       sprintf(str,"Node%d",grid_level);
-       ML_Operator_ReportStatistics(ml_nodes->Amat+grid_level,str,ML_FALSE);
-     }
-     if (ML_Get_PrintLevel() > 4)
-       ML_Operator_Profile(Kn_coarse, "node");
-*/
 
 #ifdef ML_MAXWELL_FREE_NODE_HIERARCHY
      ML_Operator_Clean(Kn_coarse);
@@ -1153,10 +1144,6 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
   VT_end(ml_vt_build_Pe_state);
 #endif
    
-/*
-     if (ML_Get_PrintLevel() > 4)
-       ML_Operator_Profile(Pn_coarse, "node");
-*/
 #ifdef ML_MAXWELL_FREE_NODE_HIERARCHY
      ML_Operator_Clean(Pn_coarse);
 #endif
@@ -1446,10 +1433,10 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
                  &(ml_edges->SingleLevel[grid_level]), 
                  &(ml_edges->SingleLevel[grid_level+1]));
      ML_Operator_ChangeToSinglePrecision(ml_edges->Pmat+grid_level);
-     if (ML_Get_PrintLevel() > 4)
+     if (ML_Get_PrintLevel() > 10)
        ML_Operator_Profile(Pe, "edge_before_repartition");
      ML_Gen_Restrictor_TransP(ml_edges, grid_level+1, grid_level, NULL);
-     if (ML_Get_PrintLevel() > 4)
+     if (ML_Get_PrintLevel() > 10)
        ML_Operator_Profile(ml_edges->Rmat+grid_level+1, "edge_before_repartition");
      ML_Operator_ChangeToSinglePrecision(&(ml_edges->Rmat[grid_level+1]));
      ML_memory_check("L%d TransP end",grid_level);
@@ -1491,7 +1478,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      }
 
      Ke = &(ml_edges->Amat[grid_level]);
-     if (ML_Get_PrintLevel() > 4)
+     if (ML_Get_PrintLevel() > 10)
        ML_Operator_Profile(Ke, "edge_before_repartition");
 
      ML_memory_check("L%d EdgeRepartition",grid_level);
@@ -1506,10 +1493,10 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      StartTimer(&time1);
 
      Ke = &(ml_edges->Amat[grid_level]);
-     if (ML_Get_PrintLevel() > 4)
+     if (ML_Get_PrintLevel() > 10)
        ML_Operator_Profile(Ke, "edge_after_repartition");
 
-     if (ML_Get_PrintLevel() > 4) {
+     if (ML_Get_PrintLevel() > 10) {
        ML_Operator_Profile(Tcoarse, "before_repartition");
        ML_Operator_Profile(Tcoarse_trans, "before_repartition");
      }
@@ -1534,14 +1521,14 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
 
      if (ML_Repartition_Status(ml_edges) == ML_TRUE)
        ML_memory_check("L%d EdgeRepartition end",grid_level);
-     if (ML_Get_PrintLevel() > 4) {
+     if (ML_Get_PrintLevel() > 10) {
        ML_Operator_Profile(Tcoarse, "after_repartition");
        ML_Operator_Profile(Tcoarse_trans, "after_repartition");
      }
      Pe = Tcoarse;
      ML_Operator_ImplicitTranspose(&(ml_edges->Rmat[grid_level+1]),
 				   &(ml_edges->Pmat[grid_level]), ML_TRUE);
-     if (ML_Get_PrintLevel() > 4)
+     if (ML_Get_PrintLevel() > 10)
        ML_Operator_Profile(ml_edges->Rmat+grid_level+1, "edge");
 
      ML_memory_check("L%d RAP end",grid_level);
