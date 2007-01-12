@@ -9,22 +9,27 @@ This chapter begins with a very simple example.  We use the Zoltan
 library in a parallel application to partition a small set of 
 objects, each of which has only a global ID and a weight.
 
-We follow this with three more realistic examples, still fairly
-simple.  These examples use the Zoltan library to apply a geometric method,
+We follow this with three more realistic examples.
+These examples use the Zoltan library to apply a geometric method,
 a graph method and a then hypergraph method to a small mesh, graph
-or hypergraph.
+and hypergraph respectively.
 
 If you have the Zoltan source code, you can find these
-examples in the \textbf{examples/C} directory.  The examples display
-the partitioning after computing it.  (We omitted that part of the
-code in this tutorial.)  You can try changing parameters and then
-recompiling and rerunning the examples to see how the partitioning
-is affected.
+examples in the \textbf{examples/C} directory.  The versions
+found in the source code include code to
+display the initial partitioning followed by Zoltan's computed
+partitioning.  It may be helpful to compile and run them, and
+then try changing parameters 
+to see how the partitioning is affected.  Consult the Zoltan
+User's Guide at
+\url{http://www.cs.sandia.gov/Zoltan/ug_html/ug.html}
+for a complete list of parameters for each partitioning method.
 
-These four examples are all written in C.  At the end of this section,
+These four examples are written in C.  At the end of this section,
 we provide a C++ version of the geometric example.
 
-Regardless of the load balancing method chosen, every program must:
+As you read through these examples you will see that, regardless 
+of the load balancing method chosen, every program must:
 
 \begin{itemize}
 \item initialize the Zoltan library
@@ -41,11 +46,8 @@ This example is a C program which uses Zoltan to partition
 in parallel 36 objects, each of which has a weight.  The goal is
 to balance the weights across the parallel application.
 
-It uses the Zoltan method called SIMPLE.  This method partitions the
-weighted objects across processors, balancing the total weight in
-the final distribution.
-
-The SIMPLE method really exists as an aid to developers
+It uses the Zoltan method called SIMPLE. 
+This method really exists as an example for developers
 who want to learn how to write partitioning methods.  It was
 not intended to be a partitioning strategy for real applications.
 However it is a good choice for an example.  
@@ -55,13 +57,27 @@ application working with the SIMPLE method.  Once you have
 that first step accomplished, you can modify it to use one of the
 other partitioning methods.
 
-We must define two query functions.  The function prototyes named 
-below are defined in the Zoltan file \textbf{include/zoltan.h}.
+In order to use the SIMPLE method, we must define two query functions:
 
 \begin{itemize}
-\item A function (get\_number\_of\_objects) of type ZOLTAN\_NUM\_OBJ\_FN which provides the number of objects belonging to this process .
-\item A function (get\_object\_list) of type ZOLTAN\_OBJ\_LIST\_FN which supplies the global IDs and optional weights for the objects belonging to the process.
+\item A function of type ZOLTAN\_NUM\_OBJ\_FN which provides the number of objects belonging to this process.  In our example we call this function \textbf{get\_number\_of\_objects}.
+\item A function of type ZOLTAN\_OBJ\_LIST\_FN which supplies the global IDs and optional weights for the objects belonging to the process.  We name this function \textbf{get\_object\_list}.
 \end{itemize}
+
+The \textbf{ZOLTAN\_*} function prototyes named above
+are defined in the Zoltan file \textbf{include/zoltan.h}.
+
+Zoltan requires that the parallel application supply a unique 
+global ID to identify each of the objects to be partitioned.
+Zoltan is very flexible about the data type used to represent
+a global ID, and only requires that it be allowed to represent
+your global ID internally as an array of integers of some user-defined
+length.  Zoltan also permits the use of an additional set of
+IDs that are local to a process.  If you supply these optional local IDs,
+Zoltan will also include them when querying your application for data.
+
+The code listed below may be found in the Zoltan source in file
+\textbf{examples/C/simpleSIMPLE.c}.
 
 \begin{flushleft}
 \begin{verbatim}
@@ -202,12 +218,12 @@ int main(int argc, char *argv[])
 
 The simple graph used in all three examples in this section
 is illustrated
-in Figure~\ref{fig:simpleGraph}.
+in Figure~\ref{fig:mesh25}.
 It is defined in the Zoltan source file \textbf{examples/C/simpleGraph.h},
 which is listed in Figure~\ref{fig:simpleGraphDotH}.
 
 \begin{figure}[bottom]
-\label{fig:simpleGraph}
+\label{fig:mesh25}
 \begin{center}
 \begin{verbatim}
    21----22----23----24---25
@@ -294,11 +310,10 @@ We must define four query functions.  The function prototyes named
 below are defined in the Zoltan file \textbf{include/zoltan.h}.
 
 \begin{itemize}
-\item A function of type ZOLTAN\_NUM\_OBJ\_FN (Figure~\ref{fig:NumObj}) which provides the number of objects belonging to this process .
-\item A function of type ZOLTAN\_OBJ\_LIST\_FN (Figure~\ref{fig:ObjList}) which supplies the global IDs and optional weights .
-for the objects belonging to the process.
-\item A function of type ZOLTAN\_NUM\_GEOM\_FN (Figure~\ref{fig:NumGeom}) which provides the dimension of the objects.
-\item A function of type ZOLTAN\_GEOM\_MULTI\_FN (Figure~\ref{fig:GeomMulti}) which supplies the coordinates of the objects and optionally their weights.
+\item A function of type ZOLTAN\_NUM\_OBJ\_FN (Figure~\ref{fig:NumObj}) which provides the number of objects belonging to this process 
+\item A function of type ZOLTAN\_OBJ\_LIST\_FN (Figure~\ref{fig:ObjList}) which supplies the global IDs and optional weights for the objects belonging to the process
+\item A function of type ZOLTAN\_NUM\_GEOM\_FN (Figure~\ref{fig:NumGeom}) which provides the dimension of the objects
+\item A function of type ZOLTAN\_GEOM\_MULTI\_FN (Figure~\ref{fig:GeomMulti}) which supplies the coordinates of the objects and optionally their weights
 \end{itemize}
 
 An alternative to defining a single ZOLTAN\_OBJ\_LIST\_FN is to define
@@ -309,6 +324,10 @@ return a subsequent global ID.
 An alternative to ZOLTAN\_GEOM\_MULTI\_FN is to define a ZOLTAN\_GEOM\_FN which
 returns the coordinates for a single object rather than for a list
 of objects.
+
+The variables referred to in the query functions below were defined in the header
+file ~\ref{fig:simpleGraphDotH} to describe the mesh in Figure ~\ref{fig:mesh25}.
+
 
 \begin{figure}
 \begin{flushleft}
@@ -567,7 +586,7 @@ int main(int argc, char *argv[])
 
 In this section we provide an example of a parallel C program
 that uses the Zoltan library to partition the simple graph that
-was pictured in Figure~\ref{fig:simpleGraph}.  You can compile
+was pictured in Figure~\ref{fig:mesh25}.  You can compile
 and run this example if you have the Zoltan source code.  It is
 in the examples directory, in file \textbf{examples/C/simpleGRAPH.c}.
 
@@ -584,14 +603,13 @@ are defined in the Zoltan file \textbf{include/zoltan.h}.
 The four query functions are:
 
 \begin{itemize}
-\item A function of type ZOLTAN\_NUM\_OBJ\_FN (Figure~\ref{fig:NumObj}) which provides the number of objects belonging to this process .
-\item A function of type ZOLTAN\_OBJ\_LIST\_FN (Figure~\ref{fig:ObjList}) which supplies the global IDs and optional weights 
-for the objects belonging to the process.
-\item A function of type ZOLTAN\_NUM\_EDGES\_MULTI\_FN (Figure~\ref{fig:NumEdges}) which provides the number of edges for each object in a list supplied to the application by the library.
+\item A function of type ZOLTAN\_NUM\_OBJ\_FN (Figure~\ref{fig:NumObj}) which provides the number of objects belonging to this process 
+\item A function of type ZOLTAN\_OBJ\_LIST\_FN (Figure~\ref{fig:ObjList}) which supplies the global IDs and optional weights for the objects belonging to the process
+\item A function of type ZOLTAN\_NUM\_EDGES\_MULTI\_FN (Figure~\ref{fig:NumEdges}) which provides the number of edges for each object
 \item A function of type ZOLTAN\_EDGE\_LIST\_MULTI\_FN (Figure~\ref{fig:EdgeListMulti})
-which receives a list of object IDs from the library and responds with the IDs for
+which, for a given object ID, responds with the IDs for
 each adjacent object, the process owning that adjacent object, and optionally a weight
-for each edge.
+for each edge
 \end{itemize}
 
 An alternative to defining a single ZOLTAN\_OBJ\_LIST\_FN is to define
@@ -834,8 +852,8 @@ int main(int argc, char *argv[])
 \clearpage
 \subsection{A hypergraph problem}
 
-In this example, we use the simple graph in 
-Figure~\ref{fig:simpleGraph} to create a hypergraph, and
+In this example, we use the simple graph in  Figure~\ref{fig:mesh25}
+to create a hypergraph, and
 then partition it using Zoltan's parallel hypergraph
 partitioner.  
 
@@ -849,7 +867,10 @@ for each vertex in the simple graph.
 
 We are creating this hypergraph in the hypergraph query functions.
 But you can use the Zoltan parameter
-\emph{PHG\_FROM\_GRAPH\_METHOD=neighbors} to accomplish the same
+\emph{PHG\_FROM\_GRAPH\_METHOD=neighbors} 
+described in the User's Guide at 
+\url{http://www.cs.sandia.gov/Zoltan/ug_html/ug_alg_phg.html},
+to accomplish the same
 result.  In this case you use graph query functions instead of
 hypergraph query funtions to supply the 
 graph to Zoltan.
@@ -864,7 +885,7 @@ below are defined in the Zoltan file \textbf{include/zoltan.h}.
 
 \begin{itemize}
 \item A function of type ZOLTAN\_NUM\_OBJ\_FN (Figure~\ref{fig:NumObj}) which provides the number of objects (vertices) belonging to this process .
-\item A function of type ZOLTAN\_OBJ\_LIST\_FN (Figure~\ref{fig:ObjList2}) which supplies the object global IDs and optional weights.  It differs from the function in the last two examples (Figure~\ref{fig:ObjList}) because it omits the optional local IDs and weights.
+\item A function of type ZOLTAN\_OBJ\_LIST\_FN (Figure~\ref{fig:ObjList2}) which supplies the object global IDs and optional weights.  It differs from the query function created for the last two examples (Figure~\ref{fig:ObjList}) because it omits the optional local IDs and weights.
 \item A function of type ZOLTAN\_HG\_SIZE\_CS\_FN (Figure~\ref{fig:SizeCS}).  Each process will supply a portion of the hypergraph in a compressed storage format.  This function tells the Zoltan library the size of the information that will be returned by the application process.
 \item A function of type ZOLTAN\_HG\_CS\_FN (Figure~\ref{fig:CS}) which supplies a portion of the hypergraph in a compressed storage format.
 \item A function of type ZOLTAN\_HG\_SIZE\_EDGE\_WTS\_FN (Figure~\ref{fig:SizeEW}) which supplies the number of hyperedges for which the process will provide edge weights.
@@ -884,6 +905,9 @@ of the structure to the application when calling the query functions.
 
 If you have the Zoltan source, the following query functions
 are defined in the file \textbf{examples/C/simpleQueries.h}.
+The variables used in these query functions refer to those defined 
+in \textbf{examples/C/simpleGraph.h} which were shown in
+Figure~\ref{fig:simpleGraphDotH}.
 
 \begin{figure}
 \begin{flushleft}
@@ -1214,7 +1238,7 @@ recursive coordinate bisection problem that the C example
 in Section~\ref{sec:rcb} solves.
 
 We created a C++ class called \textbf{rectangularMesh}, which can represent
-the rectangular mesh shown in Figure~\ref{fig:simpleGraph}.
+the rectangular mesh shown in Figure~\ref{fig:mesh25}.
 The query functions required by Zoltan are implemented as 
 static methods of the \textbf{rectangularMesh} class.  They
 take as an argument an object of type \textbf{rectangularMesh}.
@@ -1238,9 +1262,10 @@ owned by the process:
 \end{verbatim}
 \end{flushleft}
 
-Your query functions could also be global C or C++ functions.
+We use static class methods, but your
+query functions could also be global C or C++ functions.
 
-The example below can also be found in the Zoltan source in 
+The example below can be found in the Zoltan source in 
 \textbf{examples/CPP/simpleRCB.cpp}.
 
 \clearpage
