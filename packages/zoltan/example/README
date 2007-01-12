@@ -19,10 +19,6 @@ Or just the C++ examples with:
 
 gmake ZOLTAN_ARCH={arch} CPP_Examples
 
-At this point the Makefiles are not sophisticated enough to
-allow you to go into the C or CPP directories and type "make".
-You need to build the examples from the Makefile in this directory.
-
 Note that C++ implementations vary widely.  If you have trouble
 building the CPP examples, try defining or not defining
 the MPI_CPP or NAMESPACES_OK values in the tests' source files.
