@@ -197,8 +197,8 @@ int main(int argc, char *argv[])
   // of tolerance (see AztecOO's user guide for more details)
   
   solver.SetPrecOperator(MLPrec);
-  solver.SetAztecOption(AZ_solver, AZ_gmres);
-  solver.SetAztecOption(AZ_output, 32);
+  solver.SetAztecOption(AZ_solver, AZ_cg);
+  solver.SetAztecOption(AZ_output, 1);
   solver.Iterate(500, 1e-12);
 
   // destroy the preconditioner
