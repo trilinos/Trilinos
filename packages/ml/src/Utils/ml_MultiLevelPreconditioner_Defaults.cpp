@@ -456,6 +456,9 @@ int ML_Epetra::SetDefaultsMaxwell(ParameterList & inList,
   // don't forget any element
   List.set("aggregation: threshold",0.0);
 
+  // eigen-analysis
+  List.set("eigen-analysis: type","power-method");
+
   // dropping threshold for small entries in edge prolongator
   List.set("aggregation: edge prolongator drop threshold",0.0);
 

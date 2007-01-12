@@ -1265,7 +1265,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
   // Define the scheme for computing the spectral radius of the matrix.     //
   // ====================================================================== //
 
-  string str = List_.get("eigen-analysis: type","cg");
+  string str = List_.get("eigen-analysis: type","power-method");
   
   if( verbose_ ) cout << PrintMsg_ << "Using `" << str << "' scheme for eigen-computations" << endl;
   
