@@ -32,12 +32,10 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
   double *accum_val;
   double dtemp;
   double *StartAblock, *StartBblock;
-  ML_Operator *current, *previous_matrix, *next;
-  struct ML_CSR_MSRdata *temp;
+  ML_Operator *current, *previous_matrix;
   int    max_nz_row_new = 0, total_nz = 0, index_length = 0;
   double A_avg_nz_per_row, B_avg_nz_per_row, estimated_nz_per_row;
   int    A_i_allocated;
-  int    flag;
   void   (*Agetrow)(ML_Operator *,int,int *,int *,int **,int **,int *,int);
   void   (*Bgetrow)(ML_Operator *,int,int *,int *,int **,int **,int *,int);
   int    *B_indx;
@@ -63,7 +61,6 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
   double sum, *Cvalues;
   double *tmp_val_ptr;
   int    *Ccpntr, *Crpntr, oldstart = 0;
-  int LargestDiff = 0;
   struct aztec_context  *Ccontext;
   struct ML_vbrdata     *Cvbr_mat;
 

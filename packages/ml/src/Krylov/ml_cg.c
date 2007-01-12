@@ -427,7 +427,7 @@ int ML_SubspaceIteration_ComputeEigenvalues(ML_Krylov *data, int length, int sca
 {
    int         totallength, maxiter;
    int         i, j, ncnt, Nbc, *colInd = NULL, allocated, level;
-   double      *colVal = NULL, norm, *diag = NULL, sum;
+   double      *colVal = NULL, *diag = NULL, sum;
    ML_Operator *matrix;
    ML_Comm     *comm;
    double      *v1real=NULL,*v2imag=NULL,*y1real=NULL,*y2imag=NULL;

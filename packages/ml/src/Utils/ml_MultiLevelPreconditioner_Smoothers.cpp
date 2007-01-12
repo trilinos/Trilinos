@@ -209,6 +209,34 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       if( verbose_ ) cout << msg << "Gauss-Seidel (sweeps="
 			 << num_smoother_steps << ",omega=" << omega << ","
 			 << PreOrPostSmoother << ")" << endl;
+#ifdef HAVE_ML_IFPACK
+      if (ml_->Amat[LevelID_[level]].type == ML_TYPE_CRS_MATRIX) {
+        if (verbose_)
+          cout << msg << "Epetra_CrsMatrix detected, using "
+               << "Ifpack implementation" << endl;
+        IfpackType = "point relaxation stand-alone";
+        ParameterList& IfpackList = List_.sublist("smoother: ifpack list");;
+        IfpackList.set("relaxation: type", "Gauss-Seidel");
+        IfpackList.set("relaxation: sweeps", num_smoother_steps);
+        IfpackList.set("relaxation: damping factor", omega);
+        ML_Gen_Smoother_Ifpack(ml_, IfpackType.c_str(),
+                               IfpackOverlap, LevelID_[level], pre_or_post,
+                               IfpackList,*Comm_);
+      }
+      else
+#endif
+      ML_Gen_Smoother_GaussSeidel(ml_, LevelID_[level], pre_or_post,
+				  num_smoother_steps, omega);
+
+    } else if( Smoother == "ML Gauss-Seidel" ) {
+
+      // ======================= //
+      // ML's point Gauss-Seidel //
+      // ======================= //
+
+      if( verbose_ ) cout << msg << "Gauss-Seidel (sweeps="
+			 << num_smoother_steps << ",omega=" << omega << ","
+			 << PreOrPostSmoother << ")" << endl;
       ML_Gen_Smoother_GaussSeidel(ml_, LevelID_[level], pre_or_post,
 				  num_smoother_steps, omega);
 
@@ -219,10 +247,39 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       // ====================== //
 
       if( verbose_ ) cout << msg << "symmetric Gauss-Seidel (sweeps="
-			  << num_smoother_steps << ",omega=" << omega << ","
-			  << PreOrPostSmoother << ")" << endl;
-      ML_Gen_Smoother_SymGaussSeidel(ml_, LevelID_[level], pre_or_post,
-				     num_smoother_steps, omega);
+                          << num_smoother_steps << ",omega=" << omega << ","
+                          << PreOrPostSmoother << ")" << endl;
+#ifdef HAVE_ML_IFPACK
+      if (ml_->Amat[LevelID_[level]].type == ML_TYPE_CRS_MATRIX) {
+        if (verbose_)
+          cout << msg << "Epetra_CrsMatrix detected, using "
+               << "Ifpack implementation" << endl;
+        IfpackType = "point relaxation stand-alone";
+        ParameterList& IfpackList = List_.sublist("smoother: ifpack list");;
+        IfpackList.set("relaxation: type", "symmetric Gauss-Seidel");
+        IfpackList.set("relaxation: sweeps", num_smoother_steps);
+        IfpackList.set("relaxation: damping factor", omega);
+        ML_Gen_Smoother_Ifpack(ml_, IfpackType.c_str(),
+                               IfpackOverlap, LevelID_[level], pre_or_post,
+                               IfpackList,*Comm_);
+      }
+      else
+#endif
+        ML_Gen_Smoother_SymGaussSeidel(ml_, LevelID_[level], pre_or_post,
+                                       num_smoother_steps, omega);
+
+    } else if( Smoother == "ML symmetric Gauss-Seidel" ) {
+
+      // ================================== //
+      // ML's native symmetric Gauss-Seidel //
+      // ================================== //
+
+      if( verbose_ ) cout << msg << "ML symmetric Gauss-Seidel (sweeps="
+                          << num_smoother_steps << ",omega=" << omega << ","
+                          << PreOrPostSmoother << ")" << endl;
+        ML_Gen_Smoother_SymGaussSeidel(ml_, LevelID_[level], pre_or_post,
+                                       num_smoother_steps, omega);
+
     } else if( Smoother == "block Gauss-Seidel" ) {
 
       // ================== //
@@ -555,10 +612,11 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
         ML_EXIT(EXIT_FAILURE);
       }
 
-      double subsmOmega;
+     double subsmOmega;
       if (Comm().NumProc() == 1) subsmOmega = 1.0;
       else                       subsmOmega = ML_DDEFAULT;
       subsmOmega = List_.get("subsmoother: damping factor",subsmOmega);
+
       sprintf(parameter,"subsmoother: type (level %d)", level);
       SubSmootherType = List_.get(parameter,SubSmootherType);
 

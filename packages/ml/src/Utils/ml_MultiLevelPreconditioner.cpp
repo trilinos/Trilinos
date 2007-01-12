@@ -93,6 +93,8 @@
 #include "EpetraExt_RowMatrixOut.h"
 #endif
 
+#include "ml_ifpack_wrap.h"
+
 using namespace Teuchos;
 
 // ================================================ ====== ==== ==== == =
@@ -1337,7 +1339,6 @@ ComputePreconditioner(const bool CheckPreconditioner)
     Time.ResetStartTime();
 
     // Added on Jan-06
-
     if (List_.get("aggregation: use tentative restriction", false))
     {
       agg_->minimizing_energy = -1;
@@ -1414,6 +1415,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
     double EdgeDampingFactor =
               List_.get("aggregation: damping factor",ML_DDEFAULT);
     double enrichBeta = List_.get("aggregation: enrich beta",0.0);
+
     double PeDropThreshold = List_.get("aggregation: edge prolongator drop threshold",ML_DDEFAULT);
 
     profileIterations_ = List_.get("profile: operator iterations", 0);
@@ -2200,28 +2202,95 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
 
   string CoarseSolution = List_.get("coarse: type", "Amesos-KLU");
   int NumSmootherSteps = List_.get("coarse: sweeps", 1);
-  double Omega = List_.get("coarse: damping factor", 0.67);
+  double Omega = List_.get("coarse: damping factor", 1.0);
   double AddToDiag = List_.get("coarse: add to diag", 1e-12);
   double MLSalpha = List_.get("coarse: MLS alpha",27.0);
   int MLSPolynomialOrder = List_.get("coarse: MLS polynomial order",2);
+  string PreOrPostSmoother = List_.get("coarse: pre or post","post");
+  int pre_or_post;
+  if( PreOrPostSmoother == "pre" ) pre_or_post = ML_PRESMOOTHER;
+  else if( PreOrPostSmoother == "both" ) pre_or_post = ML_BOTH;
+  else pre_or_post = ML_POSTSMOOTHER;
 
   char msg[80];
   sprintf(msg, "Coarse solve (level %d) : ", LevelID_[NumLevels_-1]);
     
   int MaxProcs = List_.get("coarse: max processes", -1);
 
-  if( CoarseSolution == "Jacobi" ) 
-    ML_Gen_Smoother_Jacobi(ml_, LevelID_[NumLevels_-1], ML_POSTSMOOTHER,
+  if( CoarseSolution == "Jacobi" ) {
+    if( verbose_ ) cout << msg << "Jacobi (sweeps="
+                        << NumSmootherSteps << ",omega=" << Omega
+                        << "," << PreOrPostSmoother << ")" << endl;
+    ML_Gen_Smoother_Jacobi(ml_, LevelID_[NumLevels_-1], pre_or_post,
                NumSmootherSteps, Omega);
-  else if( CoarseSolution == "Gauss-Seidel" ) 
-    ML_Gen_Smoother_GaussSeidel(ml_, LevelID_[NumLevels_-1], ML_POSTSMOOTHER,
+
+  } else if( CoarseSolution == "Gauss-Seidel" ) {
+    if( verbose_ ) cout << msg << "Gauss-Seidel (sweeps="
+                        << NumSmootherSteps << ",omega=" << Omega
+                        << "," << PreOrPostSmoother << ")" << endl;
+#ifdef HAVE_ML_IFPACK
+    if (ml_->Amat[LevelID_[NumLevels_-1]].type == ML_TYPE_CRS_MATRIX) {
+      if (verbose_)
+        cout << msg << "Epetra_CrsMatrix detected, using "
+             << "Ifpack implementation" << endl;
+      string IfpackType = "point relaxation stand-alone";
+      ParameterList& IfpackList = List_.sublist("smoother: ifpack list");;
+      IfpackList.set("relaxation: type", "Gauss-Seidel");
+      IfpackList.set("relaxation: sweeps", NumSmootherSteps);
+      IfpackList.set("relaxation: damping factor", Omega);
+      ML_Gen_Smoother_Ifpack(ml_, IfpackType.c_str(),
+                             0, LevelID_[NumLevels_-1], pre_or_post,
+                             IfpackList,*Comm_);
+    }
+    else
+#endif
+      ML_Gen_Smoother_GaussSeidel(ml_, LevelID_[NumLevels_-1], pre_or_post,
                 NumSmootherSteps, Omega);
-  else if( CoarseSolution == "symmetric Gauss-Seidel" )
+
+  } else if( CoarseSolution == "ML Gauss-Seidel" ) {
+    if( verbose_ ) cout << msg << "Gauss-Seidel (sweeps="
+                        << NumSmootherSteps << ",omega=" << Omega
+                        << "," << PreOrPostSmoother << ")" << endl;
+    ML_Gen_Smoother_GaussSeidel(ml_, LevelID_[NumLevels_-1], pre_or_post,
+                                NumSmootherSteps, Omega);
+
+  } else if( CoarseSolution == "symmetric Gauss-Seidel" ) {
+    if( verbose_ ) cout << msg << "symmetric Gauss-Seidel (sweeps="
+                        << NumSmootherSteps << ",omega=" << Omega
+                        << "," << PreOrPostSmoother << ")" << endl;
+#ifdef HAVE_ML_IFPACK
+    if (ml_->Amat[LevelID_[NumLevels_-1]].type == ML_TYPE_CRS_MATRIX) {
+      if (verbose_)
+        cout << msg << "Epetra_CrsMatrix detected, using "
+             << "Ifpack implementation" << endl;
+      string IfpackType = "point relaxation stand-alone";
+      ParameterList& IfpackList = List_.sublist("smoother: ifpack list");;
+      IfpackList.set("relaxation: type", "symmetric Gauss-Seidel");
+      IfpackList.set("relaxation: sweeps", NumSmootherSteps);
+      IfpackList.set("relaxation: damping factor", Omega);
+      ML_Gen_Smoother_Ifpack(ml_, IfpackType.c_str(),
+                             0, LevelID_[NumLevels_-1], pre_or_post,
+                             IfpackList,*Comm_);
+    }
+    else
+#endif
       ML_Gen_Smoother_SymGaussSeidel(ml_, LevelID_[NumLevels_-1],
-                     ML_POSTSMOOTHER, NumSmootherSteps, Omega);
-  else if( CoarseSolution == "MLS" ) {
-      ML_Gen_Smoother_MLS(ml_, LevelID_[NumLevels_-1], ML_POSTSMOOTHER,
-                          MLSalpha, MLSPolynomialOrder);
+                     pre_or_post, NumSmootherSteps, Omega);
+
+  } else if( CoarseSolution == "ML symmetric Gauss-Seidel" ) {
+    if( verbose_ ) cout << msg << "symmetric Gauss-Seidel (sweeps="
+                        << NumSmootherSteps << ",omega=" << Omega
+                        << "," << PreOrPostSmoother << ")" << endl;
+    ML_Gen_Smoother_SymGaussSeidel(ml_, LevelID_[NumLevels_-1],
+                                   pre_or_post, NumSmootherSteps, Omega);
+
+  } else if( CoarseSolution == "MLS" ) {
+    if( verbose_ ) cout << msg << "Chebyshev (degree="
+                        << MLSPolynomialOrder << ",alpha=" << MLSalpha
+                        << "," << PreOrPostSmoother << ")" << endl;
+     ML_Gen_Smoother_MLS(ml_, LevelID_[NumLevels_-1], pre_or_post,
+                         MLSalpha, MLSPolynomialOrder);
+
   } else if( CoarseSolution == "Hiptmair" ) {
                                                                                 
       if (SolvingMaxwell_ == false) {
@@ -2241,7 +2310,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
       void *edge_smoother = 0, *nodal_smoother = 0;
                                                                                 
       double omega;
-                                                                                
+      char subsmDetails[80];
       // only MLS and SGS are currently supported
       if (SubSmootherType == "MLS")
       {
@@ -2255,7 +2324,8 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
                                                                                 
         ML_Smoother_Arglist_Set(edge_args_, 1, &MLSalpha);
         ML_Smoother_Arglist_Set(nodal_args_, 1, &MLSalpha);
-
+        sprintf(subsmDetails,"degree=%d,alpha=%3.1e",
+                MLSPolynomialOrder,MLSalpha);
       }
       else if (SubSmootherType == "symmetric Gauss-Seidel") {
         omega = List_.get("coarse: damping factor",1.0);
@@ -2265,6 +2335,8 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
         edge_smoother=(void *) ML_Gen_Smoother_SymGaussSeidel;
         ML_Smoother_Arglist_Set(edge_args_, 0, &edge_its);
         ML_Smoother_Arglist_Set(edge_args_, 1, &omega);
+        sprintf(subsmDetails,"edge sweeps=%d,node sweeps=%d,omega=%3.1e",
+                edge_its,nodal_its,omega);
       }
       else if (Comm().MyPID() == 0)
         cerr << ErrorMsg_ << "Only MLS and SGS are supported as "
@@ -2272,6 +2344,11 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
 
       int hiptmair_type = (int)
              List_.get("smoother: Hiptmair efficient symmetric", true);
+
+      if( verbose_ ) cout << msg << "Hiptmair " << "(outer sweeps="
+                          << NumSmootherSteps << ","
+                          << PreOrPostSmoother << "," << SubSmootherType
+                          << "," << subsmDetails << ")" << endl;
                                                                                 
       ML_Gen_Smoother_Hiptmair(ml_, logical_level, ML_BOTH,
                  NumSmootherSteps, Tmat_array, Tmat_trans_array, NULL,
@@ -2304,14 +2381,24 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
   else if( CoarseSolution == "Amesos-ScaLAPACK" )
     ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1], 
                            ML_AMESOS_SCALAPACK, MaxProcs, AddToDiag);
-  else if( CoarseSolution == "block Gauss-Seidel" ) 
-    ML_Gen_Smoother_BlockGaussSeidel(ml_, LevelID_[NumLevels_-1], ML_POSTSMOOTHER,
-                                        NumSmootherSteps, Omega, NumPDEEqns_);
-  else if( CoarseSolution == "symmetric block Gauss-Seidel" ) 
-    ML_Gen_Smoother_SymBlockGaussSeidel(ml_, LevelID_[NumLevels_-1], ML_POSTSMOOTHER,
+
+  else if( CoarseSolution == "block Gauss-Seidel" ) {
+    if( verbose_ ) cout << msg << "block Gauss-Seidel (sweeps="
+                        << NumSmootherSteps << ",omega=" << Omega
+                        << "," << PreOrPostSmoother << "numPDEs="
+                        << NumPDEEqns_ << ")" << endl;
+    ML_Gen_Smoother_BlockGaussSeidel(ml_, LevelID_[NumLevels_-1], pre_or_post,
                                         NumSmootherSteps, Omega, NumPDEEqns_);
 
-  else if(CoarseSolution == "user-defined" ||CoarseSolution == "user defined") {
+  } else if( CoarseSolution == "symmetric block Gauss-Seidel" ) {
+    if( verbose_ ) cout << msg << "symmetric block Gauss-Seidel (sweeps="
+                        << NumSmootherSteps << ",omega=" << Omega
+                        << "," << PreOrPostSmoother << "numPDEs="
+                        << NumPDEEqns_ << ")" << endl;
+    ML_Gen_Smoother_SymBlockGaussSeidel(ml_, LevelID_[NumLevels_-1],pre_or_post,
+                                        NumSmootherSteps, Omega, NumPDEEqns_);
+
+  } else if(CoarseSolution == "user-defined"||CoarseSolution == "user defined"){
     // ============ //
     // user-defined //
     // ============ //
@@ -2324,7 +2411,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
     userSmootherName = List_.get("coarse: user-defined name", "User-defined");
 
     if( verbose_ ) cout << msg << userSmootherName << " (sweeps=" 
-			 << NumSmootherSteps << ", post-smoothing only)" << endl;
+			 << NumSmootherSteps << "," << PreOrPostSmoother << ")" << endl;
 
     if (userSmootherPtr == NULL) {
       if (Comm().MyPID() == 0)
@@ -2334,11 +2421,12 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
     }
     ML_Operator *data;
     ML_Get_Amatrix(ml_, LevelID_[NumLevels_-1], &data);
-    ML_Set_Smoother(ml_, LevelID_[NumLevels_-1], ML_POSTSMOOTHER, data,
+    ML_Set_Smoother(ml_, LevelID_[NumLevels_-1], pre_or_post, data,
                     userSmootherPtr,
                     const_cast<char *>(userSmootherName.c_str()));
 
   } else if( CoarseSolution == "do-nothing" ) {
+    if( verbose_ ) cout << msg << "No Coarse Solve" << endl;
 
     // do nothing, ML will not use any coarse solver 
   } else {

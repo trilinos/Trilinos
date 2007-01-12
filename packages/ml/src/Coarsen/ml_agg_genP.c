@@ -473,11 +473,11 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
    if ( ag->smoothP_damping_factor != 0.0 || numSmSweeps > 1 )
    {
      /*********************************************************
-     /* If we symmetrize we need the symmetrized matrix so we */
-     /* don't call ML_Gimmie_Eigenvalues() here.              
-     ML_Gimmie_Eigenvalues(Amat, ML_DIAGSCALE, 
-                 Amat->spectral_radius_scheme, ml->symmetrize_matrix);
-     max_eigen = Amat->lambda_max;
+     * If we symmetrize we need the symmetrized matrix so we
+     * don't call ML_Gimmie_Eigenvalues() here.              
+     * ML_Gimmie_Eigenvalues(Amat, ML_DIAGSCALE, 
+     *             Amat->spectral_radius_scheme, ml->symmetrize_matrix);
+     * max_eigen = Amat->lambda_max;
      *********************************************************/
      
      if (ml->symmetrize_matrix == ML_TRUE) {
