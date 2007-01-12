@@ -108,7 +108,11 @@ void SpmdMultiVectorSerializer<Scalar>::deserialize(
     const Range1D localRng( localOffset, localOffset+localSubDim-1 ); 
     DetachedMultiVectorView<Scalar> local_mv(*mv,localRng,Range1D());
 #ifdef TEUCHOS_DEBUG
-    TEST_FOR_EXCEPTION( !in, std::logic_error, "Error, premature end of input!"	);
+    TEST_FOR_EXCEPTION(
+      !in, std::logic_error
+      ,"Error: The input stream given is empty before any reading has began!\n"
+      "If this stream came from a file, then the file may not exist!"
+      );
 #endif
     Index localSubDim_in;
     in >> localSubDim_in;
@@ -153,7 +157,12 @@ void SpmdMultiVectorSerializer<Scalar>::deserialize(
 #endif
         for( Index j = 0; j < local_mv.numSubCols(); ++j ) {
 #ifdef TEUCHOS_DEBUG
-          TEST_FOR_EXCEPTION( !in, std::logic_error, "Error, premature end of input!"	);
+          TEST_FOR_EXCEPTION(
+            !in, std::logic_error
+            ,"Error: The input stream ran out at j="<<j<<" before"
+            " reaching the promised " << local_mv.numSubCols()
+            << " rows of the (multi)vector!"
+            );
 #endif
           in >> local_mv(i,j);
         }
