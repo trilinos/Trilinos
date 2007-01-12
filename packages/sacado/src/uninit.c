@@ -1,3 +1,9 @@
+/* uninit.c is part of the libf77 bundle in f2c available at 
+ * http://www.netlib.org/f2c/.  It is used by Rad to fill memory locations
+ * with NaN values so that uninitialized accesses of those memory locations
+ * will throw IEEE exceptions.  
+ */
+
 #include <stdio.h>
 #include <string.h>
 /*#include "arith.h"*/
