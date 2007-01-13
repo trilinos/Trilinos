@@ -861,7 +861,7 @@ bool ML_NOX::ML_Nox_Preconditioner::compPrec(const Epetra_Vector& x)
   
   //---------------------------------------------------------------------
   // Calculate spectral norm
-  ML_Aggregate_Set_SpectralNormScheme_Calc(ag_);
+  ML_Set_SpectralNormScheme_Calc(ml_);
   
   //---------------------------------------------------------------------
   // set ML printlevel

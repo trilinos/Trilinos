@@ -384,7 +384,7 @@ bool NLNML::NLNML_Preconditioner::compPrec(const Epetra_Vector& x)
   ML_Aggregate_Set_MaxCoarseSize(ag_,getParameter("nlnML coarse: max size",128));
   
   // Calculate spectral norm
-  ML_Aggregate_Set_SpectralNormScheme_Calc(ag_);
+  ML_Set_SpectralNormScheme_Calc(ml_);
   
   // Set output level
   ML_Set_PrintLevel(OutLevel());
