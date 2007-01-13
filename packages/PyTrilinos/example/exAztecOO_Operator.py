@@ -57,15 +57,19 @@ except:
 
 ################################################################################
 
-class MyOperator(Epetra.PyOperator):
+class MyOperator(Epetra.Operator):
 
     def __init__(self, map):
-        Epetra.PyOperator.__init__(self, map.Comm())
-        self.__comm  = map.Comm()
-        self.__map   = map
-        self.__label = "1D Laplace"
+        Epetra.Operator.__init__(self)
+        self.__comm            = map.Comm()
+        self.__map             = map
+        self.__label           = "1D Laplace"
+        self.__setUseTranspose = False
 
     def __str__(self):
+        return self.__label
+
+    def Label(self):
         return self.__label
 
     def Apply(self,x,y):
@@ -74,11 +78,10 @@ class MyOperator(Epetra.PyOperator):
         # them to Epetra.MultiVectors (or, in this case, Epetra.Vectors).
         lhs = Epetra.Vector(Epetra.View,x,0)
         rhs = Epetra.Vector(Epetra.View,y,0)
-        n   = rhs.MyLength()
-        rhs[ 0 ] = 2.0 * lhs[ 0 ] - lhs[ 1 ]
-        rhs[n-1] = 2.0 * lhs[n-1] - lhs[n-2]
-        for i in xrange(1, n-1):
-            rhs[i] = 2.0 * lhs[i] - lhs[i-1] - lhs[i+1]
+        rhs[0]    = 2.0 * lhs[0]    - lhs[1]
+        rhs[1:-1] = 2.0 * lhs[1:-1] - lhs[:-2] - lhs[2:]
+        rhs[-1]   = 2.0 * lhs[-1]   - lhs[-2]
+
         return 0
 
     def ApplyInverse(self):
@@ -93,11 +96,20 @@ class MyOperator(Epetra.PyOperator):
     def Map(self):
         return self.__map
 
+    def Comm(self):
+        return self.__comm
+
     def HasNormInf(self):
         return True
 
     def NormInf(self):
-        return 0
+        return 4.0
+
+    def SetUseTranspose(self, useTranspose):
+        self.__useTranspose = bool(useTranspose)
+
+    def UseTranspose(self):
+        return self.__useTranspose
 
 ################################################################################
 
@@ -120,7 +132,9 @@ def main():
     lhs.PutScalar(0.0)
 
     Problem = Epetra.LinearProblem(op, lhs, rhs)
+    print "Creating Solver"
     Solver  = AztecOO.AztecOO(Problem)
+    print "Solver Created"
 
     Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_cg)
     Solver.SetAztecOption(AztecOO.AZ_precond, AztecOO.AZ_none)

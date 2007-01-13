@@ -73,18 +73,21 @@ if options.testharness:
     import setpath
     import Teuchos
     import Epetra
+    import EpetraExt
     import NOX
 else:
     try:
         import setpath
         import Teuchos
         import Epetra
+        import EpetraExt
         import NOX
     except ImportError:
         from PyTrilinos import Teuchos
         from PyTrilinos import Epetra
+        from PyTrilinos import EpetraExt
         from PyTrilinos import NOX
-        print >>sys.stderr, "Using system-installed Teuchos, Epetra, NOX"
+        print >>sys.stderr, "Using system-installed Teuchos, Epetra, EpetraExt, NOX"
 
 # Plotting import
 if options.plot:
@@ -92,15 +95,11 @@ if options.plot:
 
 ######################################################################
 
-class Interface(NOX.Epetra.Interface.Required,
-                NOX.Epetra.Interface.Jacobian,
-                NOX.Epetra.Interface.Preconditioner):
+class Interface(NOX.Epetra.Interface.Required):
 
     def __init__(self, numGlobalElements, comm, bc0=1.0, bc1=2, xmin=0.0, xmax=1.0):
-        # Initialize the base classes
+        # Initialize the base class
         NOX.Epetra.Interface.Required.__init__(self)
-        NOX.Epetra.Interface.Jacobian.__init__(self)
-        NOX.Epetra.Interface.Preconditioner.__init__(self)
         # Interface initialization
         self.__numGlobalElements = numGlobalElements
         self.__comm              = comm
@@ -127,19 +126,22 @@ class Interface(NOX.Epetra.Interface.Required,
         self.__jacobian.FillComplete()
         x = array(self.__stdMap.MyGlobalElements()) / (numGlobalElements-1.0)
         self.__x                 = Epetra.Vector(self.__stdMap,x)
+        self.__h                 = (self.__xmax - self.__xmin) / (len(self.__x)-1)
         self.initializeSoln()
 
     def computeF(self, x, fVec, fillType=NOX.Epetra.Interface.Required.Residual):
-        return self.evaluate(fillType, x, fVec, 0)
+        # x and fVec come in as raw Epetra.Epetra_Vectors.  Convert them to
+        # enhanced Epetra.Vectors
+        soln = Epetra.Vector(Epetra.View, x,    0)
+        rhs  = Epetra.Vector(Epetra.View, fVec, 0)
+        h    = self.__h
+        # Compute the residual
+        if self.__haveBC0: rhs[0] = soln[0] - self.__bc0
+        rhs[1:-1] = (soln[:-2] - 2*soln[1:-1] + soln[2:]) / (h*h) - \
+                    self.__k * soln[1:-1] * soln[1:-1]
+        if self.__haveBC1: rhs[-1] = soln[-1] - self.__bc1
 
-    def computeJacobian(self, x, jac):
-        return self.evaluate(NOX.Epetra.Interface.Required.Jac, x, 0, 0)
-
-    def computePrecMatrix(self, x):
-        return self.evaluate(NOX.Epetra.Interface.Required.Prec, x, 0, 0)
-
-    def computePreconditioner(self, x, prec, precParams):
-        raise NotImplementedError, "Use explicit Jacobian only for this problem"
+        return True
 
     def getSolution(self):
         return self.__initialSoln
@@ -152,23 +154,6 @@ class Interface(NOX.Epetra.Interface.Required,
 
     def setPDEfactor(self, k):
         self.__k = k
-        return True
-
-    def evaluate(self, flag, solnVector, rhsVector, matrix):
-        soln = Epetra.Vector(Epetra.View,solnVector,0)
-        rhs  = Epetra.Vector(Epetra.View,rhsVector,0)
-        h    = (self.__xmax - self.__xmin) / (len(self.__x)-1)
-        # Check for unsupported requests
-        if flag == NOX.Epetra.Interface.Required.Jac:
-            return False
-        if flag == NOX.Epetra.Interface.Required.Prec:
-            return False
-        # Compute the residual
-        if self.__haveBC0: rhs[0] = soln[0] - self.__bc0
-        rhs[1:-1] = (soln[:-2] - 2*soln[1:-1] + soln[2:]) / (h*h) - \
-                    self.__k * soln[1:-1] * soln[1:-1]
-        if self.__haveBC1: rhs[-1] = soln[-1] - self.__bc1
-
         return True
 
     def createGraph(self):
@@ -187,6 +172,9 @@ class Interface(NOX.Epetra.Interface.Required,
         if self.__haveBC0: self.__initialSoln[ 0] = self.__bc0
         if self.__haveBC1: self.__initialSoln[-1] = self.__bc1
         return True
+
+    def getGraph(self):
+        return self.__graph
 
 ######################################################################
 
@@ -253,12 +241,20 @@ def main():
                                             NOX.Utils.OuterIteration
     printParams["Output Information"] = outputInfo
 
-    # Create all possible Epetra Operators
-    analytic = interface.getJacobian()
-    mf       = NOX.Epetra.MatrixFree(printParams,interface,noxSoln)
-    fd       = NOX.Epetra.FiniteDifference(printParams,interface,soln)
-    linSys   = NOX.Epetra.LinearSystemAztecOO(printParams, lsParams, mf, mf, fd,
-                                              fd, soln)
+    # Define the Jacobian linear system
+    mf            = NOX.Epetra.MatrixFree(printParams,interface,noxSoln)
+    mapColoring   = EpetraExt.CrsGraph_MapColoring()
+    colorMap      = mapColoring(interface.getGraph())
+    colorMapIndex = EpetraExt.CrsGraph_MapColoringIndex(colorMap)
+    columns       = colorMapIndex(interface.getGraph())
+    print "type(columns) =", type(columns)
+    #fdc           = NOX.Epetra.FiniteDifferenceColoring(printParams, interface,
+    #                                                    soln, colorMap, columns)
+    #linSys        = NOX.Epetra.LinearSystemAztecOO(printParams, lsParams, mf, mf, fdc,
+    #                                               fdc, soln)
+    fd            = NOX.Epetra.FiniteDifference(printParams, interface,soln)
+    linSys        = NOX.Epetra.LinearSystemAztecOO(printParams, lsParams, mf, mf, fd,
+                                                   fd, soln)
 
     # Create the Group
     initialGuess = NOX.Epetra.Vector(soln, NOX.Epetra.Vector.CreateView)
