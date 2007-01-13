@@ -74,8 +74,6 @@
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"
 #include "Epetra_NumPyIntVector.h"
-#include "Epetra_PyOperator.h"
-#include "Epetra_PyRowMatrix.h"
 
 // Namespace flattening
 using namespace NOX;

@@ -134,8 +134,6 @@ print r.Norm2()
 // Epetra python includes
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"
-#include "Epetra_PyOperator.h"
-#include "Epetra_PyRowMatrix.h"
 #include "PyEpetra_Utils.h"
 
 // ML includes

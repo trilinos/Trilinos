@@ -84,8 +84,6 @@ Finally, the following functions are avaiable in the IFPACK module:
 // Epetra python includes
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"
-#include "Epetra_PyOperator.h"
-#include "Epetra_PyRowMatrix.h"
 
 // Teuchos Python utility code
 #include "Teuchos_PythonParameter.h"

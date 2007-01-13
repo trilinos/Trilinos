@@ -158,17 +158,17 @@ class IntSerialDenseMatrix(UserArray,NumPyIntSerialDenseMatrix):
     def __str__(self):
         return str(self.array)
     def __lt__(self,other):
-        return less(self.array,other)
+        return numpy.less(self.array,other)
     def __le__(self,other):
-        return less_equal(self.array,other)
+        return numpy.less_equal(self.array,other)
     def __eq__(self,other):
-        return equal(self.array,other)
+        return numpy.equal(self.array,other)
     def __ne__(self,other):
-        return not_equal(self.array,other)
+        return numpy.not_equal(self.array,other)
     def __gt__(self,other):
-        return greater(self.array,other)
+        return numpy.greater(self.array,other)
     def __ge__(self,other):
-        return greater_equal(self.array,other)
+        return numpy.greater_equal(self.array,other)
     def __getattr__(self, key):
         # This should get called when the IntSerialDenseMatrix is accessed after
         # not properly being initialized
@@ -230,17 +230,17 @@ class IntSerialDenseVector(UserArray,NumPyIntSerialDenseVector):
     def __str__(self):
         return str(self.array)
     def __lt__(self,other):
-        return less(self.array,other)
+        return numpy.less(self.array,other)
     def __le__(self,other):
-        return less_equal(self.array,other)
+        return numpy.less_equal(self.array,other)
     def __eq__(self,other):
-        return equal(self.array,other)
+        return numpy.equal(self.array,other)
     def __ne__(self,other):
-        return not_equal(self.array,other)
+        return numpy.not_equal(self.array,other)
     def __gt__(self,other):
-        return greater(self.array,other)
+        return numpy.greater(self.array,other)
     def __ge__(self,other):
-        return greater_equal(self.array,other)
+        return numpy.greater_equal(self.array,other)
     def __getattr__(self, key):
         # This should get called when the IntSerialDenseVector is accessed after
         # not properly being initialized
@@ -294,17 +294,17 @@ class SerialDenseMatrix(UserArray,NumPySerialDenseMatrix):
     def __str__(self):
         return str(self.array)
     def __lt__(self,other):
-        return less(self.array,other)
+        return numpy.less(self.array,other)
     def __le__(self,other):
-        return less_equal(self.array,other)
+        return numpy.less_equal(self.array,other)
     def __eq__(self,other):
-        return equal(self.array,other)
+        return numpy.equal(self.array,other)
     def __ne__(self,other):
-        return not_equal(self.array,other)
+        return numpy.not_equal(self.array,other)
     def __gt__(self,other):
-        return greater(self.array,other)
+        return numpy.greater(self.array,other)
     def __ge__(self,other):
-        return greater_equal(self.array,other)
+        return numpy.greater_equal(self.array,other)
     def __getattr__(self, key):
         # This should get called when the SerialDenseMatrix is accessed after
         # not properly being initialized
@@ -366,17 +366,17 @@ class SerialDenseVector(UserArray,NumPySerialDenseVector):
     def __str__(self):
         return str(self.array)
     def __lt__(self,other):
-        return less(self.array,other)
+        return numpy.less(self.array,other)
     def __le__(self,other):
-        return less_equal(self.array,other)
+        return numpy.less_equal(self.array,other)
     def __eq__(self,other):
-        return equal(self.array,other)
+        return numpy.equal(self.array,other)
     def __ne__(self,other):
-        return not_equal(self.array,other)
+        return numpy.not_equal(self.array,other)
     def __gt__(self,other):
-        return greater(self.array,other)
+        return numpy.greater(self.array,other)
     def __ge__(self,other):
-        return greater_equal(self.array,other)
+        return numpy.greater_equal(self.array,other)
     def __getattr__(self, key):
         # This should get called when the SerialDenseVector is accessed after
         # not properly being initialized

@@ -190,6 +190,22 @@ if __name__ == "__main__":
         # "uninstall" is not a distutils command, so end here
         sys.exit()
 
+    ###################
+    # UserArray patch #
+    ###################
+
+    # NumPy version 0.9.8 has a bug in UserArray.  If the user is using this
+    # version of NumPy, we need to include our patched version of UserArray.py
+    # in the distribution
+    if command in ("build", "install"):
+        from numpy import __version__ as numpy_version
+        if numpy_version == "0.9.8":
+            userArraySrc = os.path.join(srcdir,"UserArray.patch")
+            userArrayTrg = "UserArrayFix.py"
+            if SharedUtils.needsToBeBuilt(userArrayTrg, [userArraySrc]):
+                print "copying %s -> %s" % (userArraySrc, userArrayTrg)
+                open(userArrayTrg,"w").write(open(userArraySrc,"r").read())
+
     #############################################################
     # Use distutils to build/clean/etc... the extension modules #
     #############################################################

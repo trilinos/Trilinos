@@ -56,37 +56,43 @@
 static PyObject * PyExc_EpetraError = PyErr_NewException("Epetra.Error",NULL,NULL);
 %}
 
-// Ignore directives
+// NumPy support
+%pythoncode %{
+# Much of the Epetra module is compatible with the numpy module
+import numpy
+
+# From numpy version 1.0 forward, we want to use the following import syntax for
+# user_array.container.  We rename it UserArray for backward compatibility with
+# 0.9.x versions of numpy:
+try:
+    from numpy.lib.user_array import container as UserArray
+
+# If the previous import failed, it is because we are using a numpy version
+# prior to 1.0.  So we catch it and try again with different syntax.
+except ImportError:
+
+    # There is a bug in UserArray from numpy 0.9.8.  If this is the case, we
+    # have our own patched version.
+    try:
+        from UserArrayFix import UserArray
+        
+    # If the previous import failed, it is because we are using a version of
+    # numpy prior to 0.9.8, such as 0.9.6, which has no bug and therefore has no
+    # local patch.  Now we can import using the old syntax:
+    except ImportError:
+        from numpy.lib.UserArray import UserArray
+%}
+
+// General ignore directives
 %ignore *::operator=;         // Not overrideable in python
 %ignore *::operator[];        // Replaced with __setitem__ method
 %ignore *::operator[] const;  // Replaced with __getitem__ method
-%ignore *::print;             // Replaced with __str__ method
-%ignore operator<<(ostream &, const Epetra_Object &);// From python, use __str__
-%ignore Epetra_Object::Print(ostream &) const;
-%ignore Epetra_MapColoring::Epetra_MapColoring(const Epetra_BlockMap &, int*, const int);
-%ignore Epetra_MapColoring::operator()(int) const;
-%ignore Epetra_MapColoring::ListOfColors() const;
-%ignore Epetra_MapColoring::ColorLIDList(int) const;
-%ignore Epetra_MapColoring::ElementColors() const;
 %ignore *::UpdateFlops(int) const;   // Use long int version
 %ignore *::UpdateFlops(float) const; // Use double version
 
-// Rename directives
-%rename(Version      ) Epetra_Version;
-%rename(Object       ) Epetra_Object;
-%rename(SrcDistObject) Epetra_SrcDistObject;
-%rename(DistObject   ) Epetra_DistObject;
-%rename(CompObject   ) Epetra_CompObject;
-%rename(BLAS         ) Epetra_BLAS;
-%rename(LAPACK       ) Epetra_LAPACK;
-%rename(FLOPS        ) Epetra_Flops;
-%rename(Time         ) Epetra_Time;
-%rename(Util         ) Epetra_Util;
-%rename(MapColoring  ) Epetra_MapColoring;
-%rename(DArray       ) Epetra_DArray;
-%rename(IArray       ) Epetra_IArray;
-
-// Exceptions.
+////////////////////////
+// Exception handling //
+////////////////////////
 
 // Define the EpetraError exception
 %constant PyObject * Error = PyExc_EpetraError;  // This steals the reference
@@ -145,6 +151,11 @@ static PyObject * PyExc_EpetraError = PyErr_NewException("Epetra.Error",NULL,NUL
 }
 %enddef
 
+//////////////////////////////
+// Raw data buffer handling //
+//////////////////////////////
+
+// Provide a mechnism for converting 1D array output to numpy array
 %define METHOD_WITH_OUTPUT_ARRAY1D(className,methodName,dimMethod)
 %ignore className::methodName() const;
 %extend className {
@@ -166,6 +177,7 @@ static PyObject * PyExc_EpetraError = PyErr_NewException("Epetra.Error",NULL,NUL
 }
 %enddef
 
+// Provide a mechnism for converting 2D array output to numpy array
 %define METHOD_WITH_OUTPUT_ARRAY2D(className,methodName,dimMethod1,dimMethod2)
 %ignore className::methodName() const;
 %extend className {
@@ -203,27 +215,32 @@ static PyObject * PyExc_EpetraError = PyErr_NewException("Epetra.Error",NULL,NUL
 }
 %enddef
 
-// Include directives
+////////////////////////////
+// Epetra_Version support //
+////////////////////////////
+%rename(Version) Epetra_Version;
 %include "Epetra_Version.h"
+%pythoncode %{
+__version__ = Version().split()[2]
+%}
+
+////////////////////////////////
+// Epetra_CombineMode support //
+////////////////////////////////
 %include "Epetra_CombineMode.h"
+
+///////////////////////////////
+// Epetra_DataAccess support //
+///////////////////////////////
 %include "Epetra_DataAccess.h"
-%include "Epetra_Object.h"
-%include "Epetra_SrcDistObject.h"
-%include "Epetra_DistObject.h"
-%include "Epetra_CompObject.h"
-%import  "Epetra_BLAS.h"       // These two classes are not included because I do not
-%import  "Epetra_LAPACK.h"     // want to expose their functionality to python
-%include "Epetra_Flops.h"
-%include "Epetra_Time.h"
-%include "Epetra_Util.h"
-%include "Epetra_MapColoring.h"
-%include "Epetra_DArray.h"
-%include "Epetra_IArray.h"
 
-// Extensions
+///////////////////////////
+// Epetra_Object support //
+///////////////////////////
+%rename(Object) Epetra_Object;
+EXCEPTION_HANDLER(Epetra_Object,Print)
 %extend Epetra_Object {
-
-  // Define the __str__() method, used by the python str() operator on any
+  // The __str__() method is used by the python str() operator on any
   // object given to the python print command.
   string __str__() {
     std::stringstream os;
@@ -234,17 +251,16 @@ static PyObject * PyExc_EpetraError = PyErr_NewException("Epetra.Error",NULL,NUL
       last-=1;                   // Ignore any trailing newline
     return s.substr(0,last);     // Return the string
   }
-
-  // The Epetra_Object::Print(ostream) method is ignored and replaced by a
-  // Print() method here that takes a python file as its argument.  If no
-  // argument is given, then output is to standard out.
-  PyObject * Print(PyObject*pf=NULL) const {
+  // The Epetra_Object::Print(ostream) method will be ignored and
+  // replaced by a Print() method here that takes a python file object
+  // as its optional argument.  If no argument is given, then output
+  // is to standard out.
+  void Print(PyObject*pf=NULL) const {
     if (pf == NULL) {
       self->Print(std::cout);
     } else {
       if (!PyFile_Check(pf)) {
 	PyErr_SetString(PyExc_IOError, "Print() method expects file object");
-	return NULL;
       } else {
 	std::FILE * f = PyFile_AsFile(pf);
 	Teuchos::FILEstream buffer(f);
@@ -252,10 +268,70 @@ static PyObject * PyExc_EpetraError = PyErr_NewException("Epetra.Error",NULL,NUL
 	self->Print(os);
       }
     }
-    return Py_BuildValue("");
   }
 }
+%ignore *::Print;  // Only the above Print() method will be implemented
+%ignore operator<<(ostream &, const Epetra_Object &); // From python, use __str__
+%include "Epetra_Object.h"
 
+//////////////////////////////////
+// Epetra_SrcDistObject support //
+//////////////////////////////////
+%rename(SrcDistObject) Epetra_SrcDistObject;
+%include "Epetra_SrcDistObject.h"
+
+///////////////////////////////
+// Epetra_DistObject support //
+///////////////////////////////
+%rename(DistObject) Epetra_DistObject;
+%include "Epetra_DistObject.h"
+
+///////////////////////////////
+// Epetra_CompObject support //
+///////////////////////////////
+%rename(CompObject) Epetra_CompObject;
+%include "Epetra_CompObject.h"
+
+/////////////////////////
+// Epetra_BLAS support //
+/////////////////////////
+%rename(BLAS) Epetra_BLAS;
+// I do not want to expose this functionality to python
+%import  "Epetra_BLAS.h"
+
+///////////////////////////
+// Epetra_LAPACK support //
+///////////////////////////
+%rename(FLOPS) Epetra_Flops;
+// I do not want to expose this functionality to python
+%import  "Epetra_LAPACK.h"
+
+//////////////////////////
+// Epetra_Flops support //
+//////////////////////////
+%include "Epetra_Flops.h"
+
+/////////////////////////
+// Epetra_Time support //
+/////////////////////////
+%rename(Time) Epetra_Time;
+%include "Epetra_Time.h"
+
+/////////////////////////
+// Epetra_Util support //
+/////////////////////////
+%rename(Util) Epetra_Util;
+%include "Epetra_Util.h"
+
+////////////////////////////////
+// Epetra_MapColoring support //
+////////////////////////////////
+%rename(MapColoring) Epetra_MapColoring;
+%ignore Epetra_MapColoring::Epetra_MapColoring(const Epetra_BlockMap &, int*, const int);
+%ignore Epetra_MapColoring::operator()(int) const;
+%ignore Epetra_MapColoring::ListOfColors() const;
+%ignore Epetra_MapColoring::ColorLIDList(int) const;
+%ignore Epetra_MapColoring::ElementColors() const;
 %extend Epetra_MapColoring {
 
   Epetra_MapColoring(const Epetra_BlockMap & map,
@@ -326,37 +402,16 @@ static PyObject * PyExc_EpetraError = PyErr_NewException("Epetra.Error",NULL,NUL
     return NULL;
   }
 }
+%include "Epetra_MapColoring.h"
 
-// Python code.  Here we import what we need from numpy and set the
-// __version__ string
-%pythoncode %{
+///////////////////////////
+// Epetra_DArray support //
+///////////////////////////
+%rename(DArray) Epetra_DArray;
+%include "Epetra_DArray.h"
 
-# Much of the Epetra module is compatible with the numpy module
-from numpy import *
-
-# From numpy version 1.0 forward, we want to use the following import syntax for
-# user_array.container.  We rename it UserArray for backward compatibility with
-# 0.9.x versions of numpy:
-try:
-    from numpy.lib.user_array import container as UserArray
-
-except ImportError:
-
-    # If the previous import failed, it is because we are using a numpy version
-    # prior to 1.0.  However, there is a bug in UserArray from numpy 0.9.8.  If
-    # that is what the user is running, then we have our own patched
-    # UserArrayFix module:
-
-    try:
-        from UserArrayFix import UserArray
-        
-    except ImportError:
-
-        # If the previous import failed, it is because we are using a version of
-        # numpy prior to 0.9.8, such as 0.9.6, which has no bug and therefore
-        # has no local patch.  Now we can import using the original syntax:
-
-        from numpy.lib.UserArray import UserArray
-
-__version__ = Version().split()[2]
-%}
+///////////////////////////
+// Epetra_IArray support //
+///////////////////////////
+%rename(IArray) Epetra_IArray;
+%include "Epetra_IArray.h"

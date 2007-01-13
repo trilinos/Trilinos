@@ -40,18 +40,12 @@
 #include "Epetra_FEVbrMatrix.h"
 #include "Epetra_JadMatrix.h"
 #include "Epetra_LinearProblem.h"
-
-// Local includes
-#include "Epetra_PyOperator.h"
-#include "Epetra_PyRowMatrix.h"
 %}
 
 // Feature directives
 %feature("director") Epetra_Operator;
 %feature("director") Epetra_InvOperator;
-%feature("director") PyOperator;
 %feature("director") Epetra_RowMatrix;
-%feature("director") PyRowMatrix;
 
 // Ignore directives
 %ignore Epetra_LinearProblem::SetOperator()(int) const;
@@ -572,20 +566,3 @@ int method(int row, PyObject * values, PyObject * indices) {
 //     return(0);
 //   }
 }
-
-%warnfilter(473) PyOperator;
-%warnfilter(473) PyRowMatrix;
-%include "Epetra_PyOperator.h"
-%include "Epetra_PyRowMatrix.h"
-
-// Epetra_RowMatrixTransposer, Epetra_FastCrsMatrix and
-// Epetra_LinearProblemRedistor are apparently not built
-//#include "Epetra_RowMatrixTransposer.h"
-//#include "Epetra_FastCrsMatrix.h"
-//#include "Epetra_LinearProblemRedistor.h"
-//%rename(RowMatrixTransposer  ) Epetra_RowMatrixTransposer;
-//%rename(FastCrsMatrix        ) Epetra_FastCrsMatrix;
-//%rename(LinearProblemRedistor) Epetra_LinearProblem;
-//%include "Epetra_RowMatrixTransposer.h"
-//%include "Epetra_FastCrsMatrix.h"
-//%include "Epetra_LinearProblemRedistor.h"

@@ -80,7 +80,6 @@ Galeri requires the Epetra and Teuchos modules of PyTrilinos.
 
 // Epetra Python utility code
 #include "NumPyImporter.h"
-#include "Epetra_PyRowMatrix.h"
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"
 

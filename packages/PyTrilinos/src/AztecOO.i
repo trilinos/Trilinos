@@ -103,8 +103,6 @@ Solver.Iterate(1550, 1e-5)
 #include "NumPyImporter.h"
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"
-#include "Epetra_PyOperator.h"
-#include "Epetra_PyRowMatrix.h"
 #include "Epetra_BasicRowMatrix.h"
 #include "Epetra_JadMatrix.h"
 
