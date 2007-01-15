@@ -106,9 +106,15 @@ int main(int argc, char *argv[]) {
 
           ParameterList MLList;
           SetDefaults("SA",MLList);
-          MLList.set("smoother: type", TestList[i]);
+          string mlSmootherType;
+          if (TestList[i] == "Gauss-Seidel")
+            mlSmootherType = "ML Gauss-Seidel";
+          else if (TestList[i] == "symmetric Gauss-Seidel")
+            mlSmootherType = "ML symmetric Gauss-Seidel";
+          else
+            mlSmootherType = TestList[i];
+          MLList.set("smoother: type", mlSmootherType);
           MLList.set("smoother: pre or post", PreOrPost[j]);
-          MLList.set("smoother: type", TestList[i]);
           MLList.set("smoother: sweeps", sweeps);
           MLList.set("smoother: damping factor", Damping[k]);
 
@@ -208,6 +214,7 @@ int main(int argc, char *argv[]) {
     int IFPACKCheby, MLCheby;
 
     ParameterList MLList;
+
     MLList.set("smoother: type", "MLS");
     MLList.set("smoother: MLS polynomial order", degree);
     MLList.set("smoother: MLS polynomial order", degree);
@@ -254,15 +261,20 @@ int main(int argc, char *argv[]) {
 
     if (diff > 3)
     {
-      cout << "TEST FAILED: ML converged in " << MLCheby << ", while" << endl;
-      cout << "IFPACK converged in " << IFPACKCheby << " iterations." << endl;
-      cout << "(for the Chebyshev preconditioner.)" << endl;
+      if (Comm.MyPID() == 0) {
+        cout << "TEST FAILED: ML converged in " << MLCheby << ", while" << endl;
+        cout << "IFPACK converged in " << IFPACKCheby << " iterations." << endl;
+        cout << "(for the Chebyshev preconditioner.)" << endl;
+      }
       TestPassed = false;
     }
   }
 
-  if (!TestPassed && Comm.MyPID() == 0) {
-    cerr << "Test `IFPACKSmoothers.exe' failed!" << endl;
+  if (!TestPassed) {
+    if (Comm.MyPID() == 0) cerr << "Test `IFPACKSmoothers.exe' failed!" << endl;
+#ifdef HAVE_MPI
+    MPI_Finalize();
+#endif
     exit(EXIT_FAILURE);
   }
 
