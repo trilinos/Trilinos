@@ -36,7 +36,7 @@ Modified by:      $Author$
 extern "C" 
 {
 #endif
-extern double second(void);
+extern double machine_dependent_second(void);
 #ifdef __cplusplus
 }
 #endif
@@ -45,7 +45,7 @@ extern double second(void);
 double GetClock(void)
 {
 #ifdef AZTEC
-return( second());
+return( machine_dependent_second());
 #else
 #ifdef SMOS
   double dclock();
