@@ -57,6 +57,10 @@
 #include "Epetra_MapColoring.h"
 #include "Epetra_JadMatrix.h"
 
+// EpetraExt includes
+#include "EpetraExt_MapColoring.h"
+#include "EpetraExt_MapColoringIndex.h"
+
 // NOX includes
 #include "NOX_Abstract_Group.H"
 #include "NOX_Abstract_Vector.H"
@@ -119,8 +123,8 @@ using namespace std;
 // SWIG library includes
 %include "stl.i"
 
-// Trilinos module imports
-%import "Teuchos.i"
+// Trilinos interface support
+%import  "Teuchos.i"
 
 // Support for Teuchos::RefCountPtrs
 TEUCHOS_RCP_TYPEMAPS(NOX::Epetra::LinearSystem)
@@ -128,8 +132,8 @@ TEUCHOS_RCP_TYPEMAPS(NOX::Epetra::Scaling)
 TEUCHOS_RCP_TYPEMAPS(Epetra_CrsGraph)
 TEUCHOS_RCP_TYPEMAPS(Epetra_MapColoring)
 TEUCHOS_RCP_TYPEMAPS(Epetra_Operator)
-%template() std::vector< Epetra_IntVector >;
-TEUCHOS_RCP_TYPEMAPS(std::vector< Epetra_IntVector >)
+//%template() std::vector< Epetra_IntVector >;
+TEUCHOS_RCP_TYPEMAPS(vector_Epetra_IntVector)
 
 // Typemaps: Make Epetra_Vector and NOX::Epetra::Vector input
 // arguments interchangeable
@@ -193,6 +197,56 @@ NOXEPETRA_EXCEPTION(FiniteDifference,FiniteDifference)
 // NOX.Epetra.FiniteDifferenceColoring support //
 /////////////////////////////////////////////////
 NOXEPETRA_EXCEPTION(FiniteDifferenceColoring,FiniteDifferenceColoring)
+namespace NOX {
+  namespace Epetra {
+    %ignore FiniteDifferenceColoring(Teuchos::ParameterList&,
+				     const Teuchos::RefCountPtr<Interface::Required>&, 
+				     const NOX::Epetra::Vector&, 
+				     const Teuchos::RefCountPtr<Epetra_MapColoring>&,
+				     const Teuchos::RefCountPtr< vector<Epetra_IntVector> >&,
+				     bool, bool, double, double);
+    %ignore FiniteDifferenceColoring(Teuchos::ParameterList&,
+				     const Teuchos::RefCountPtr<Interface::Required>&, 
+				     const NOX::Epetra::Vector&, 
+				     const Teuchos::RefCountPtr<Epetra_CrsGraph>&,
+				     const Teuchos::RefCountPtr<Epetra_MapColoring>&,
+				     const Teuchos::RefCountPtr< vector<Epetra_IntVector> >&,
+				     bool, bool, double, double);
+    %extend FiniteDifferenceColoring {
+      FiniteDifferenceColoring(Teuchos::ParameterList & printingParams,
+			       const Teuchos::RefCountPtr<Interface::Required> & i,
+			       const NOX::Epetra::Vector & initialGuess,
+			       const Teuchos::RefCountPtr<Epetra_CrsGraph> & rawGraph,
+			       bool parallelColoring = false,
+			       bool distance1 = false,
+			       double beta = 1.0e-6, double alpha = 1.0e-4) {
+	// Construct the coloring algorithm functor
+	EpetraExt::CrsGraph_MapColoring *mapColor = new EpetraExt::CrsGraph_MapColoring();
+	// Generate the color map
+	Teuchos::RefCountPtr<Epetra_MapColoring> colorMap = 
+	  Teuchos::rcp(&(*mapColor)(*rawGraph));
+	// Construct the coloring index functor
+	//Teuchos::RefCountPtr<EpetraExt::CrsGraph_MapColoringIndex> mapColorIndex =
+	//  Teuchos::rcp(new EpetraExt::CrsGraph_MapColoringIndex(*colorMap));
+	EpetraExt::CrsGraph_MapColoringIndex *mapColorIndex =
+	  new EpetraExt::CrsGraph_MapColoringIndex(*colorMap);
+	// Generate the coloring indexes
+	Teuchos::RefCountPtr<std::vector<Epetra_IntVector> > columns =
+	  Teuchos::rcp(&(*mapColorIndex)(*rawGraph));
+	// Construct the FiniteDifferenceColoring object
+	FiniteDifferenceColoring *fdc = new FiniteDifferenceColoring(printingParams,
+								     i, initialGuess,
+								     rawGraph,
+								     colorMap, columns,
+								     parallelColoring,
+								     distance1, beta,
+								     alpha);
+	// Return the pointer to FiniteDifferenceColoring object
+	return fdc;
+      }
+    }
+  }
+}
 %include "NOX_Epetra_FiniteDifferenceColoring.H"
 
 ///////////////////////////////////

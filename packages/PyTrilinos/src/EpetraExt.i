@@ -122,9 +122,9 @@ using namespace std;
 // C++ STL support
 %include "stl.i"
 
-// Epetra interface import
-%import "Teuchos.i"
-%import "Epetra.i"
+// Trilinos interface support
+%import  "Teuchos.i"
+%import  "Epetra.i"
 
 // Typemaps
 %define OUTPUT_ARGUMENT(ClassName)

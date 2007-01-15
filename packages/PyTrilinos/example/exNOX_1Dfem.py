@@ -242,19 +242,11 @@ def main():
     printParams["Output Information"] = outputInfo
 
     # Define the Jacobian linear system
-    mf            = NOX.Epetra.MatrixFree(printParams,interface,noxSoln)
-    mapColoring   = EpetraExt.CrsGraph_MapColoring()
-    colorMap      = mapColoring(interface.getGraph())
-    colorMapIndex = EpetraExt.CrsGraph_MapColoringIndex(colorMap)
-    columns       = colorMapIndex(interface.getGraph())
-    print "type(columns) =", type(columns)
-    #fdc           = NOX.Epetra.FiniteDifferenceColoring(printParams, interface,
-    #                                                    soln, colorMap, columns)
-    #linSys        = NOX.Epetra.LinearSystemAztecOO(printParams, lsParams, mf, mf, fdc,
-    #                                               fdc, soln)
-    fd            = NOX.Epetra.FiniteDifference(printParams, interface,soln)
-    linSys        = NOX.Epetra.LinearSystemAztecOO(printParams, lsParams, mf, mf, fd,
-                                                   fd, soln)
+    mf     = NOX.Epetra.MatrixFree(printParams,interface,noxSoln)
+    fdc    = NOX.Epetra.FiniteDifferenceColoring(printParams, interface,
+                                                 soln, interface.getGraph())
+    linSys = NOX.Epetra.LinearSystemAztecOO(printParams, lsParams, mf, mf, fdc,
+                                            fdc, soln)
 
     # Create the Group
     initialGuess = NOX.Epetra.Vector(soln, NOX.Epetra.Vector.CreateView)
