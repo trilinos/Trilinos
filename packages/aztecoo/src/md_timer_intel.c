@@ -45,13 +45,13 @@
 
 /* INTEL timer */
 extern double dclock(void);
-extern double second(void);
+extern double machine_dependent_second(void);
 
-double second(void)
+double machine_dependent_second(void)
 
 {
 
 
   return (dclock());
 
-} /* second */
+} /* machine_dependent_second */

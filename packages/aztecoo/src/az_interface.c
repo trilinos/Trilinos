@@ -47,7 +47,7 @@
 #include <stdlib.h>
 #include "az_aztec.h"
 
-extern double second(void);
+extern double machine_dependent_second(void);
 extern void get_parallel_info(int *proc, int *nprocs, int *dim);
 #ifdef AZTEC_MPI
 extern void parallel_info(int *proc, int *nprocs, int *dim, MPI_Comm comm);
@@ -63,7 +63,7 @@ double AZ_second(void)
 
 {
 
-  return second();
+  return machine_dependent_second();
 
 } /* AZ_second */
 

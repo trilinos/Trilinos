@@ -50,8 +50,8 @@
 
 /* MPI timer */
 
-extern double second(void);
-double second(void)
+extern double machine_dependent_second(void);
+double machine_dependent_second(void)
 
 {
 
@@ -61,4 +61,4 @@ double second(void)
   return (0.0);
 #endif
 
-} /* second */
+} /* machine_dependent_second */

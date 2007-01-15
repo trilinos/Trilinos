@@ -45,8 +45,8 @@
 
 #include <time.h>
 
-extern double second(void);
-double second(void)
+extern double machine_dependent_second(void);
+double machine_dependent_second(void)
 
   /*
   *    Returns system cpu and wall clock time in seconds. This

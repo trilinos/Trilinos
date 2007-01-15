@@ -45,9 +45,9 @@
 
 /* nCUBE timer */
 
-extern double second(void);
+extern double machine_dependent_second(void);
 extern long int n_time(int *);
-double second(void)
+double machine_dependent_second(void)
 
 {
 
@@ -58,4 +58,4 @@ double second(void)
 
   return ((double) nstart + ((double) nstart_micro) * 1.0e-6);
 
-} /* second */
+} /* machine_dependent_second */

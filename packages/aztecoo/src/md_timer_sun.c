@@ -49,10 +49,10 @@
 /******************************************************************************/
 /******************************************************************************/
 /******************************************************************************/
-extern double second(void);
+extern double machine_dependent_second(void);
 /* extern int getrusage(void);*/
 
-double second(void)
+double machine_dependent_second(void)
 
 {
   double mytime;                  /* elapsed time in seconds */
@@ -67,4 +67,4 @@ double second(void)
 
   return mytime;
 
-} /* second */
+} /* machine_dependent_second */

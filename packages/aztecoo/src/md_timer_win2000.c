@@ -32,7 +32,7 @@
 
 #include <time.h>
 
-double second(void) {
+double machine_dependent_second(void) {
    clock_t start;
    double duration;
 

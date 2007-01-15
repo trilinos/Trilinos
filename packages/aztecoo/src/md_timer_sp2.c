@@ -45,7 +45,7 @@
 
 #include <sys/time.h>
 
-double second()
+double machine_dependent_second()
 
 {
   double time;

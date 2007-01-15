@@ -48,7 +48,7 @@
 
 /* SUN SOLARIS timer */
 
-double second()
+double machine_dependent_second()
 
 {
   extern long int clock(void);
