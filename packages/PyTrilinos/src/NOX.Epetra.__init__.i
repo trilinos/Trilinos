@@ -201,29 +201,30 @@ namespace NOX {
   namespace Epetra {
     %extend FiniteDifferenceColoring {
       FiniteDifferenceColoring(Teuchos::ParameterList & printingParams,
-			       const Teuchos::RefCountPtr<Interface::Required> & i,
+			       Interface::Required & i,
 			       const NOX::Epetra::Vector & initialGuess,
-			       const Teuchos::RefCountPtr<Epetra_CrsGraph> & rawGraph,
+			       Epetra_CrsGraph & rawGraph,
 			       bool parallelColoring = false,
 			       bool distance1 = false,
 			       double beta = 1.0e-6, double alpha = 1.0e-4) {
-	// Construct the coloring algorithm functor
-	EpetraExt::CrsGraph_MapColoring *mapColor = new EpetraExt::CrsGraph_MapColoring();
-	// Generate the color map
-	Teuchos::RefCountPtr<Epetra_MapColoring> colorMap = 
-	  Teuchos::rcp(&(*mapColor)(*rawGraph));
-	// Construct the coloring index functor
-	//Teuchos::RefCountPtr<EpetraExt::CrsGraph_MapColoringIndex> mapColorIndex =
-	//  Teuchos::rcp(new EpetraExt::CrsGraph_MapColoringIndex(*colorMap));
-	EpetraExt::CrsGraph_MapColoringIndex *mapColorIndex =
+	// Wrap the interface and CRS graph in reference counters
+	Teuchos::RefCountPtr<Interface::Required> i_ptr     = Teuchos::rcp(&i,        false);
+	Teuchos::RefCountPtr<Epetra_CrsGraph>     graph_ptr = Teuchos::rcp(&rawGraph, false);
+	// Construct the coloring algorithm functor and generate the color map
+	EpetraExt::CrsGraph_MapColoring          *mapColor =
+	  new EpetraExt::CrsGraph_MapColoring();
+	Teuchos::RefCountPtr<Epetra_MapColoring> colorMap  = 
+	  Teuchos::rcp(&(*mapColor)(rawGraph));
+	// Construct the color index functor and generate the column indexes
+	EpetraExt::CrsGraph_MapColoringIndex                 *mapColorIndex =
 	  new EpetraExt::CrsGraph_MapColoringIndex(*colorMap);
-	// Generate the coloring indexes
-	Teuchos::RefCountPtr<std::vector<Epetra_IntVector> > columns =
-	  Teuchos::rcp(&(*mapColorIndex)(*rawGraph));
+	Teuchos::RefCountPtr<std::vector<Epetra_IntVector> > columns        =
+	  Teuchos::rcp(&(*mapColorIndex)(rawGraph));
 	// Construct the FiniteDifferenceColoring object
 	FiniteDifferenceColoring *fdc = new FiniteDifferenceColoring(printingParams,
-								     i, initialGuess,
-								     rawGraph,
+								     i_ptr,
+								     initialGuess,
+								     graph_ptr,
 								     colorMap, columns,
 								     parallelColoring,
 								     distance1, beta,
