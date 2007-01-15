@@ -22,6 +22,7 @@
 #include "Galeri_Maps.h"
 #include "Galeri_CrsMatrices.h"
 
+
 void PrintLine() 
 {
   cout << endl;
