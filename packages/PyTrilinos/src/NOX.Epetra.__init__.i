@@ -199,19 +199,6 @@ NOXEPETRA_EXCEPTION(FiniteDifference,FiniteDifference)
 NOXEPETRA_EXCEPTION(FiniteDifferenceColoring,FiniteDifferenceColoring)
 namespace NOX {
   namespace Epetra {
-    %ignore FiniteDifferenceColoring(Teuchos::ParameterList&,
-				     const Teuchos::RefCountPtr<Interface::Required>&, 
-				     const NOX::Epetra::Vector&, 
-				     const Teuchos::RefCountPtr<Epetra_MapColoring>&,
-				     const Teuchos::RefCountPtr< vector<Epetra_IntVector> >&,
-				     bool, bool, double, double);
-    %ignore FiniteDifferenceColoring(Teuchos::ParameterList&,
-				     const Teuchos::RefCountPtr<Interface::Required>&, 
-				     const NOX::Epetra::Vector&, 
-				     const Teuchos::RefCountPtr<Epetra_CrsGraph>&,
-				     const Teuchos::RefCountPtr<Epetra_MapColoring>&,
-				     const Teuchos::RefCountPtr< vector<Epetra_IntVector> >&,
-				     bool, bool, double, double);
     %extend FiniteDifferenceColoring {
       FiniteDifferenceColoring(Teuchos::ParameterList & printingParams,
 			       const Teuchos::RefCountPtr<Interface::Required> & i,
@@ -241,10 +228,14 @@ namespace NOX {
 								     parallelColoring,
 								     distance1, beta,
 								     alpha);
+	// Delete the temporary functors
+	delete mapColor;
+	delete mapColorIndex;
 	// Return the pointer to FiniteDifferenceColoring object
 	return fdc;
       }
     }
+    %ignore FiniteDifferenceColoring::FiniteDifferenceColoring;
   }
 }
 %include "NOX_Epetra_FiniteDifferenceColoring.H"
