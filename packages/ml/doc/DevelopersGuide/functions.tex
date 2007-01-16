@@ -371,52 +371,6 @@ aggregation algorithm can group them together.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\addcontentsline{toc}{subsection}{ML\_Aggregate\_Set\_SpectralNormScheme\_Calc}
-\protobox{int ML\_Aggregate\_Set\_SpectralNormScheme\_Calc( ML\_Aggregate *ag )}
-
-\vspace{2em}
-{\flushleft{\bf Description} \hrulefill}
-\vspace{1em}
-
-Set the method to be used for estimating the spectral radius of $A$
-(the discretization matrix) to be
-conjugate gradient. This spectral radius estimate is used when smoothing
-the initial prolongation operator  (see ML\_Aggregate\_Set\_DampingFactor).
-
-\vspace{2em}
-{\flushleft{\bf Parameters} \hrulefill}
-\vspace{1em}
-
-\optionbox{agg\_object}{On input, aggregate object pointer (see 
-                        ML\_Aggregate\_Create). On output,
-                        the spectral radius estimate will be determined by a 
-                        conjugate gradient routine.}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\addcontentsline{toc}{subsection}{ML\_Aggregate\_Set\_SpectralNormScheme\_Anorm}
-\protobox{int ML\_Aggregate\_Set\_SpectralNormScheme\_Anorm( ML\_Aggregate *ag)}
-
-\vspace{2em}
-{\flushleft{\bf Description} \hrulefill}
-\vspace{1em}
-
-Set the method to be used for estimating the spectral radius of $A$ 
-(the discretization matrix) to be
-the infinity norm. This spectral radius estimate is used when smoothing
-the initial prolongation operator  (see ML\_Aggregate\_Set\_DampingFactor).
-
-\vspace{2em}
-{\flushleft{\bf Parameters} \hrulefill}
-\vspace{1em}
-
-\optionbox{agg\_object}{On input, aggregate object pointer (see 
-                        ML\_Aggregate\_Create). On output,
-                        the spectral radius estimate will be taken as
-                        the infinity norm of the matrix.}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 \addcontentsline{toc}{subsection}{ML\_Aggregate\_Set\_Threshold}
 \protobox{int ML\_Aggregate\_Set\_Threshold(ML\_Aggregate *agg\_object, double tolerance)}
 
@@ -781,6 +735,48 @@ that is necessary.
 
 \optionbox{omega}{     On input, sets the damping parameter to be used during this Jacobi
                        smoothing. ML\_DEFAULT sets it to .5}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{ML\_Gen\_Smoother\_MLS}
+\protobox{int ML\_Gen\_Smoother\_MLS(ML *ml\_object, int k, int pre\_or\_post, 
+          double ratio, int ntimes)}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Set the k$^{th}$ level multigrid smoother of ml\_object to a Chebyshev 
+polynomial
+(over high frequencies) and perform any necessary initialization. The
+polynomial form is
+%is of the form 
+%$ p( diag(A)^{-1} A ) = 
+$I - \omega_1 diag(A)^{-1} A - \omega_2 ( diag(A)^{-1} A )^2 ...  $. 
+Note: polynomial uses spectral radius (and not the convex hull of the 
+      eigenvalues for nonsymmetric matrices).
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{ml\_object}{   On input, \ML\  object pointer (see ML\_Create). On output, the pre or
+                  post smoother of level k is set to MLS (Chebyshev).}
+
+\optionbox{k}{   On input, indicates level within ml\_object hierarchy (should be between
+                  0 and Nlevels${}^\dagger$-1). ML\_ALL\_LEVELS sets the smoothing on all levels in ml\_object.}
+
+\optionbox{pre\_or\_post}{On input, ML\_PRESMOOTHER or ML\_POSTSMOOTHER indicating whether the
+                        pre or post smoother is to be set.}
+
+\optionbox{ratio}{     On input, effectively sets the lower range of the 
+                  high frequencies. In particular, the Chebyshev polynomial
+                  minimizes errors over the eigenvalue ranges 
+                  between $r$/ratio and $r$ where $r$ is the spectral radius
+                  of $ diag(A)^{-1} A $. Ratio should roughly be set to the
+                  coarsening rate (i.e. $DOF(Afine)/DOF(Acoarse) $).}
+
+\optionbox{ntimes}{    On input, sets the polynomial degree (similar to setting the number of iterations).}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1315,6 +1311,113 @@ pass in the data pointer `data' via ML\_Get\_MySmootherData.
                   is printed by some routines when identifying the method.}
 
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{ML\_Set\_SpectralNorm\_Iterations}
+\protobox{int ML\_Set\_SpectralNorm\_Iterations( ML *ml\_object, int iters)}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Set the number of iterations that will be used when estimating the spectral 
+radius of the discretization matrices on all levels.
+This spectral radius estimate is 
+used when smoothing the initial prolongation operator  
+(see ML\_Aggregate\_Set\_DampingFactor)
+and is also used for polynomial smoothers
+(see ML\_Gen\_Smoother\_MLS).
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{ml\_object}{On input,  \ML\  object pointer (see ML\_Create). On
+                       output, discretization matrices on all levels will use
+                       iters iterations to 
+                       determine spectral radius estimates if needed.}
+\optionbox{iters}{On input, number of iterations to use in spectral
+                       radius esimtates.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{ML\_Set\_SpectralNormScheme\_Anorm}
+\protobox{int ML\_Set\_SpectralNormScheme\_Anorm( ML *ml\_object)}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Set the method to be used for estimating the spectral 
+radius of the discretization matrices on all levels
+to be
+the infinity norm. This spectral radius estimate is used when smoothing
+the initial prolongation operator  (see ML\_Aggregate\_Set\_DampingFactor)
+and is also used for polynomial smoothers
+(see ML\_Gen\_Smoother\_MLS).
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{ml\_object}{On input,  \ML\  object pointer (see ML\_Create). On
+                       output, discretization matrices on all levels are
+                       set to use the infinity norm to
+                       determine spectral radius estimates if needed.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{ML\_Set\_SpectralNormScheme\_Calc}
+\protobox{int ML\_Set\_SpectralNormScheme\_Calc( ML *ml\_object)}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Set the method to be used for estimating the spectral
+radius of the discretization matrices on all levels
+to be
+conjugate gradient. This spectral radius estimate is used when smoothing
+the initial prolongation operator  (see ML\_Aggregate\_Set\_DampingFactor)
+and is also used for polynomial smoothers
+(see ML\_Gen\_Smoother\_MLS).
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{ml\_object}{On input,  \ML\  object pointer (see ML\_Create). On 
+                       output, discretization matrices on all levels are 
+                       set to use the conjugate graident routine to 
+                       determine spectral radius estimates if needed.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{ML\_Set\_SpectralNormScheme\_PowerMethod}
+\protobox{int ML\_Set\_SpectralNormScheme\_PowerMethod( ML *ml\_object)}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Set method to be used for estimating the spectral 
+radius of discretization matrices on all levels
+to be a power method (with subspace 2).
+This should be used when the matrix is nonsymmetric.
+This spectral radius estimate is used when smoothing
+the initial prolongation operator  (see ML\_Aggregate\_Set\_DampingFactor)
+and is also used for polynomial smoothers
+(see ML\_Gen\_Smoother\_MLS).
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{ml\_object}{On input,  \ML\  object pointer (see ML\_Create). On 
+                       output, discretization matrices on all levels are 
+                       set to use the power method to 
+                       determine spectral radius estimates if needed.}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
