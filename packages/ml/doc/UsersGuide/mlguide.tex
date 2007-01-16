@@ -1295,6 +1295,18 @@ with the symbol $\star$ (this symbol is not part of the parameter name).
 %\choicebox{\tt ML label}{[{\tt string}] An optional label that is appended
 %to the existing multigrid label.  This makes differentiating between multiple
 %solves easier.}
+\choicebox{\tt eigen-analysis: type}{[{\tt string}] Defines the numerical 
+scheme to use when computing spectral radius estimates for $D^{-1}A$,
+where $D = diag(A)$ and $A$ refers to a discretization matrix on a 
+particular level. Spectral radius estimates are needed to generate
+the smoothed aggregation prolongator and for some smoothers. 
+Choices are: {\tt cg} (conjugate gradient
+method), {\tt Anorm} (the A-norm of the matrix), 
+%{\tt Anasazi} (use the Arnoldi method), 
+{\tt power-method}. Default: {\tt power-method}.}
+
+\choicebox{\tt eigen-analysis: iterations}{[{\tt int}] The number of
+iterations to perform in estimating the spectral radius.  Default: 10.}
 
 \choicebox{\tt output}{[{\tt int}] Controls the amount of information printed
 to the screen. Ranges from 0 to 10 (0 is no output, and 10 is incredibly
@@ -1376,16 +1388,6 @@ schemes). Note: this value overwrites {\tt aggregation: global aggregates}.}
     aggregation: global aggregates}, {\tt aggregation: local aggregates}
   and {\tt aggregation: nodes per aggregate} is specified, the default
   value is 1 aggregate per process.}
-
-\choicebox{\tt eigen-analysis: type}{[{\tt string}] Defines the numerical scheme
-to be used to compute an estimate of the maximum eigen-value of $D^{-1}A$,
-where $D = diag(A)$ (for smoothed
-aggregation only). Choices are: {\tt cg} (10 steps of conjugate gradient
-method), {\tt Anorm} (the A-norm of the matrix), {\tt Anasazi} 
-(use the Arnoldi method), {\tt power-method}. Default: {\tt power-method}.}
-
-\choicebox{\tt eigen-analysis: iterations}{[{\tt int}] Defines the number of
-iterations to perform in estimating the largest eigen-value.  Default: 10.}
 
 \choicebox{\tt aggregation: next-level aggregates per process
   $\star$}{[{\tt int}] Defines the maximum number of next-level matrix rows
@@ -2712,11 +2714,15 @@ using the function
 theoretically poorer, unsmoothed aggregation can have considerably less set up
 time and less cost per iteration than smoothed aggregation.
 When smoothing,
-\ML\ has two ways to determine the Jacobi damping parameter and each require some estimate
-of the largest eigenvalue of the discretization operator. The current default is to
-use a few iterations of a conjugate-gradient method to estimate this value.
-However, if the matrix is nonsymmetric, the infinity norm of the matrix should be used 
-instead via {\sf ML\_Aggregate\_Set\_SpectralNormScheme\_Anorm}.  
+\ML\ has a few ways to determine the Jacobi damping parameter and each 
+require some estimate of the spectral radius of the discretization 
+operator. The current default is to use a few iterations of the power method
+method (subspace size of two) to estimate this value
+(see {\sf ML\_Set\_SpectralNormScheme\_PowerMethod}) However, if the
+matrix is symmetric conjugate-gradient method should be used via
+{\sf ML\_Set\_SpectralNormScheme\_Calc}. It is also possible to
+change the default number of iterations used in the eigensolver from
+ten via {\sf ML\_Set\_SpectralNorm\_Iterations}. 
 There are several other internal parameters that have not 
 been discussed in this document. In the future, it is anticipated that some of 
 these will be made available to users.
