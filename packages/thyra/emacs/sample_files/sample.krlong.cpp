@@ -6,25 +6,25 @@
 
 namespace NamespaceA {
 
-void func1( int a, int b, int c,
-  int d, int e, int f,
-  int g, int h, int i
-  );
+  void func1( int a, int b, int c,
+              int d, int e, int f,
+              int g, int h, int i
+              );
 
 
-void func2(
-  int a, int b, int c,
-  int d, int e, int f,
-  int g, int h, int i
-  );
+  void func2(
+             int a, int b, int c,
+             int d, int e, int f,
+             int g, int h, int i
+             );
 
 
 } // namespace NamespaceA
 
 void NamespaceA::func1( int a, int b, int c,
-  int d, int e, int f,
-  int g, int h, int i
-  )
+                        int d, int e, int f,
+                        int g, int h, int i
+                        )
 {
   
   double aa, bb, cc,
@@ -46,50 +46,50 @@ void NamespaceA::func1( int a, int b, int c,
     }
 
     for ( int i = 0; i < a; ++i )
-    {
-      if ( i*a < b )
       {
-        va[i] = 2.0;
+        if ( i*a < b )
+          {
+            va[i] = 2.0;
+          }
+        else if ( i*b < c )
+          {
+            va[i] = 2.5;
+          }
+        else
+          {
+            va[i] = 3.0;
+          }
       }
-      else if ( i*b < c )
-      {
-        va[i] = 2.5;
-      }
-      else
-      {
-        va[i] = 3.0;
-      }
-    }
 
     switch(d) {
-      case 0:
-        aa = 4.0;
-        break;
-      case 1:
-        aa = 5.0;
-        break;
-      case 2:
-        aa = 6.0;
-        break;
-      default:
-        TEST_FOR_EXCEPT(!"Should never get here!");
+    case 0:
+      aa = 4.0;
+      break;
+    case 1:
+      aa = 5.0;
+      break;
+    case 2:
+      aa = 6.0;
+      break;
+    default:
+      TEST_FOR_EXCEPT(!"Should never get here!");
     }
 
     if(
-      a < b
-      && c > d
-      && f < g
-      )
-    {
-      bb = 8.0;
-    }
+       a < b
+       && c > d
+       && f < g
+       )
+      {
+        bb = 8.0;
+      }
     else if( h < i ) {
       bb = 9.0;
     }
     else
-    {
-      cc = 10.0;
-    }
+      {
+        cc = 10.0;
+      }
     
   }
   
@@ -97,18 +97,18 @@ void NamespaceA::func1( int a, int b, int c,
 
 
 void NamespaceA::func2(
-  int a, int b, int c,
-  int d, int e, int f,
-  int g, int h, int i
-  )
+                       int a, int b, int c,
+                       int d, int e, int f,
+                       int g, int h, int i
+                       )
 {
 
   func1( a, b, c, d, e,
-    f, g, h, i );
+         f, g, h, i );
 
   func2(
-    a, b, c, d, e,
-    f, g, h, i
-    );
+        a, b, c, d, e,
+        f, g, h, i
+        );
 
 }
