@@ -17,10 +17,12 @@
 ;;; Set up other customizations
 (custom-set-variables
  '(case-fold-search t)
+ '(column-number-mode t)
  '(current-language-environment "English")
+ '(fill-column 78)
  '(font-lock-auto-fontify t)
  '(font-lock-maximum-decoration t)
- '(font-lock-mode t t (font-lock))
+ '(font-lock-mode t nil (font-lock))
  '(font-lock-use-colors nil)
  '(font-lock-use-fonts t)
  '(global-font-lock-mode t nil (font-lock))
@@ -31,11 +33,9 @@
  '(require-final-newline t)
  '(show-paren-mode t nil (paren))
  '(transient-mark-mode t)
- '(fill-column 78)
- '(user-mail-address "rabartl@sandia.gov")
-)
+ '(user-mail-address "rabartl@sandia.gov"))
 (custom-set-faces
- '(default ((t (:family "Clean" :size "12pt")))))
+ '(default ((t (:family "Clean" :size "12pt"))) t))
 ;; I can't remember what this does?
 (setq minibuffer-max-depth nil)
 

@@ -1,44 +1,114 @@
 // -*- c-file-style: "thyra" -*-
-void Assembler::getGraph(int br, int bc,
-                         Array<int>& graphData,
-                         Array<int>& rowPtrs,
-                         Array<int>& nnzPerRow) const
+
+/** Same as sample.thyra-default.cpp except that the "thyra" style is used
+ * explicitly!
+ */
+
+namespace NamespaceA {
+
+void func1( int a, int b, int c,
+  int d, int e, int f,
+  int g, int h, int i
+  );
+
+
+void func2(
+  int a, int b, int c,
+  int d, int e, int f,
+  int g, int h, int i
+  );
+
+
+} // namespace NamespaceA
+
+void NamespaceA::func1( int a, int b, int c,
+  int d, int e, int f,
+  int g, int h, int i
+  )
 {
-  int i;
+  
+  double aa, bb, cc,
+    dd;
+  
   {
-    for (unsigned int d=0; d<eqn_->numRegions(); d++)
-    {
-      while (iter != cells.end())
-      {
-        if (pairs.get() != 0)
-        {
-          for (int c=0; c<nCells; c++)
-          {
-            for (int t=0; t<nt; t++)
-            {
-              for (unsigned int uit=0; uit<unksForTests[t].size(); uit++)
-              { 
-                for (int n=0; n<nTestNodes; n++)
-                {
-                  int row
-                    = testDOFs[(c*nTestFuncs + testFuncIndex)*nTestNodes + n];
-                  if ( row < lowestRow_[br] || row >= highestRow
-                       || (*(isBCRow_[br]))[row-lowestRow_[br]]
-                    )
-                    continue;
-                  Set<int>& colSet = tmpGraph[row-lowestRow_[br]];
-                  for (int m=0; m<nUnkNodes; m++)
-                  {
-                    int col
-                      = unkDOFs[(c*nUnkFuncs + unkFuncIndex)*nUnkNodes + m];
-                    colSet.put(col);
-                  }
-                }
-              }
-            }
-          }
-        }
+    std::vector<double> va(a);
+
+    for ( int i = 0; i < a; ++i ) {
+      if ( i*a < b ) {
+        va[i] = 2.0;
+      }
+      else if ( i*b < c ) {
+        va[i] = 2.5;
+      }
+      else {
+        va[i] = 3.0;
       }
     }
+
+    for ( int i = 0; i < a; ++i )
+    {
+      if ( i*a < b )
+      {
+        va[i] = 2.0;
+      }
+      else if ( i*b < c )
+      {
+        va[i] = 2.5;
+      }
+      else
+      {
+        va[i] = 3.0;
+      }
+    }
+
+    switch(d) {
+      case 0:
+        aa = 4.0;
+        break;
+      case 1:
+        aa = 5.0;
+        break;
+      case 2:
+        aa = 6.0;
+        break;
+      default:
+        TEST_FOR_EXCEPT(!"Should never get here!");
+    }
+
+    if(
+      a < b
+      && c > d
+      && f < g
+      )
+    {
+      bb = 8.0;
+    }
+    else if( h < i ) {
+      bb = 9.0;
+    }
+    else
+    {
+      cc = 10.0;
+    }
+    
   }
+  
+}
+
+
+void NamespaceA::func2(
+  int a, int b, int c,
+  int d, int e, int f,
+  int g, int h, int i
+  )
+{
+
+  func1( a, b, c, d, e,
+    f, g, h, i );
+
+  func2(
+    a, b, c, d, e,
+    f, g, h, i
+    );
+
 }

@@ -3,12 +3,15 @@
 A) Introduction:
 
 Here is defined an (x)emacs style for the recommended Thyra coding style in
-the ./elisp/cpp-thyra-styles.el file.  Using this style from within emacs will
-help to provide consistency in the development of Thyra.
+the ./elisp/cpp-thyra-styles.el file.  This coding style is largely based on
+the recommendations in the book "Code Complete", 2nd edition by Steve
+MConnell.  Using this style from within emacs will help to provide consistency
+in the development of Thyra.
 
-Actually, there are a number of named styles that can be added to the
-cpp-thyra-styles.el file.  To make a source file automatically use a specific
-named style, just put the following line at the top of each such C/C++ file:
+In addition to the "thyra" style, there are a number of named styles that can
+be added to the cpp-thyra-styles.el file.  To make a source file automatically
+use a specific named style, just put the following line at the top of each
+such C/C++ file:
 
   // -*- c-file-style: "thyra" -*-
 
