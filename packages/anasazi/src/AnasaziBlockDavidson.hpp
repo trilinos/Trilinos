@@ -299,7 +299,7 @@ namespace Anasazi {
      */
     std::vector<Value<ScalarType> > getRitzValues() { 
       std::vector<Value<ScalarType> > ret(curDim_);
-      for (int i=0; i<curDim_; i++) {
+      for (int i=0; i<curDim_; ++i) {
         ret[i].realpart = theta_[i];
         ret[i].imagpart = ZERO;
       }
@@ -688,7 +688,7 @@ namespace Anasazi {
     V_ = MVT::Clone(*tmp,newsd);
     KK_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(newsd,newsd) );
 
-    om_->print(Debug," >> done allocating.");
+    om_->print(Debug," >> done allocating.\n");
 
     initialized_ = false;
     curDim_ = 0;
@@ -704,7 +704,7 @@ namespace Anasazi {
     // set new auxiliary vectors
     auxVecs_ = auxvecs;
     numAuxVecs_ = 0;
-    for (tarcpmv i=auxVecs_.begin(); i != auxVecs_.end(); i++) {
+    for (tarcpmv i=auxVecs_.begin(); i != auxVecs_.end(); ++i) {
       numAuxVecs_ += MVT::GetNumberVecs(**i);
     }
 
@@ -741,7 +741,7 @@ namespace Anasazi {
     // NOTE: memory has been allocated by setBlockSize(). Use setBlock below; do not Clone
 
     std::vector<int> bsind(blockSize_);
-    for (int i=0; i<blockSize_; i++) bsind[i] = i;
+    for (int i=0; i<blockSize_; ++i) bsind[i] = i;
 
     Teuchos::BLAS<int,ScalarType> blas;
 
@@ -762,7 +762,11 @@ namespace Anasazi {
     // inconsitent multivectors widths and lengths will not be tolerated, and
     // will be treated with exceptions.
 
-    // set up V,KK: if the user doesn't specify these, ignore the rest
+    // set up V and KK: get them from "state" if user specified them
+    // otherwise, set them manually
+    Teuchos::RefCountPtr<MV> lclV;
+    Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > lclKK;
+
     if (state.V != Teuchos::null && state.KK != Teuchos::null) {
       TEST_FOR_EXCEPTION( MVT::GetVecLength(*state.V) != MVT::GetVecLength(*V_),
                           std::invalid_argument, "Anasazi::BlockDavidson::initialize(): Vector length of V not correct." );
@@ -783,260 +787,265 @@ namespace Anasazi {
                          "Anasazi::BlockDavidson::initialize(): Size of KK must be consistent with size of V.");
 
       std::vector<int> nevind(curDim_);
-      for (int i=0; i<curDim_; i++) nevind[i] = i;
+      for (int i=0; i<curDim_; ++i) nevind[i] = i;
 
       // put data in V
       MVT::SetBlock(*state.V,nevind,*V_);
-
-      // get local view of V: view of first curDim_ vectors
-      // lclKV and lclMV will be temporarily allocated space for M*lclV and K*lclV
-      Teuchos::RefCountPtr<MV> lclV, lclKV, lclMV;
-      // generate lclV in case we need it below
       lclV = MVT::CloneView(*V_,nevind);
 
       // put data into KK_
-      Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > lclKK;
       lclKK = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*KK_,curDim_,curDim_) );
       lclKK->assign(*state.KK);
       //
       // make lclKK hermitian in memory 
-      for (int j=0; j<curDim_; j++) {
-        for (int i=j+1; i<curDim_; i++) {
+      for (int j=0; j<curDim_; ++j) {
+        for (int i=j+1; i<curDim_; ++i) {
           (*lclKK)(i,j) = SCT::conjugate((*lclKK)(j,i));
         }
       }
-
-      // X,theta require Ritz analisys; if we have to generate one of these, we might as well generate both
-      if (state.X != Teuchos::null && state.T != Teuchos::null) {
-        TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.X) != blockSize_ || MVT::GetVecLength(*state.X) != MVT::GetVecLength(*X_),
-                            std::invalid_argument, "Anasazi::BlockDavidson::initialize(): Size of X must be consistent with block size and length of V.");
-        TEST_FOR_EXCEPTION((signed int)(state.T->size()) != curDim_,
-                            std::invalid_argument, "Anasazi::BlockDavidson::initialize(): Size of T must be consistent with dimension of V.");
-        MVT::SetBlock(*state.X,bsind,*X_);
-        std::copy(state.T->begin(),state.T->end(),theta_.begin());
-
-        // we don't have primitive ritz vector
-        for (int i=0; i<curDim_; i++) ritz2norms_[i] = NANVAL;
-      }
-      else {
-        // compute ritz vecs/vals
-        Teuchos::SerialDenseMatrix<int,ScalarType> S(curDim_,curDim_);
-        {
-          Teuchos::TimeMonitor lcltimer( *timerDS_ );
-          int rank = curDim_;
-          MSUtils_.directSolver(curDim_, *lclKK, 0, &S, &theta_, &rank, 10);
-          // we want all ritz values back
-          TEST_FOR_EXCEPTION(rank != curDim_,BlockDavidsonInitFailure,
-                             "Anasazi::BlockDavidson::initialize(): Not enough Ritz vectors to initialize algorithm.");
-        }
-        // sort ritz pairs
-        {
-          Teuchos::TimeMonitor lcltimer( *timerSortEval_ );
-
-          std::vector<int> order(curDim_);
-          //
-          // sort the first curDim_ values in theta_
-          sm_->sort( this, curDim_, theta_, &order );   // don't catch exception
-          //
-          // apply the same ordering to the primitive ritz vectors
-          MSUtils_.permuteVectors(order,S);
-        }
-        // compute ritz residual norms
-        {
-          Teuchos::BLAS<int,ScalarType> blas;
-          Teuchos::SerialDenseMatrix<int,ScalarType> R(curDim_,curDim_), T(curDim_,curDim_);
-          // R = S*diag(theta) - KK*S
-          for (int i=0; i<curDim_; i++) T(i,i) = theta_[i];
-          int info = R.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,ONE,S,T,ZERO);
-          TEST_FOR_EXCEPTION(info != 0, std::logic_error, "Anasazi::BlockDavidson::initialize(): Input error to SerialDenseMatrix::multiply.");
-          info = R.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,-ONE,*lclKK,S,ONE);
-          TEST_FOR_EXCEPTION(info != 0, std::logic_error, "Anasazi::BlockDavidson::initialize(): Input error to SerialDenseMatrix::multiply.");
-          for (int i=0; i<curDim_; i++) {
-            ritz2norms_[i] = blas.NRM2(curDim_,R[i],1);
-          }
-        }
-
-        // compute eigenvectors
-        Teuchos::SerialDenseMatrix<int,ScalarType> S1(Teuchos::View,S,curDim_,blockSize_);
-        {
-          Teuchos::TimeMonitor lcltimer( *timerLocal_ );
-
-          // X <- lclV*S
-          MVT::MvTimesMatAddMv( ONE, *lclV, S1, ZERO, *X_ );
-        }
-        // we generated theta,X so we don't want to use the user's KX,MX
-        state.KX = Teuchos::null;
-        state.MX = Teuchos::null;
-      }
-
-      // done with local pointers
-      lclV = Teuchos::null;
-      lclKK = Teuchos::null;
-
-      // set up KX,MX
-      if ( state.KX != Teuchos::null && (!hasM_ || state.MX != Teuchos::null) ) {
-        TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.KX) != blockSize_ || MVT::GetVecLength(*state.KX) != MVT::GetVecLength(*X_),
-                            std::invalid_argument, "Anasazi::BlockDavidson::initialize(): Size of KX must be consistent with block size and length of X.");
-        if (hasM_) {
-          TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.MX) != blockSize_ || MVT::GetVecLength(*state.KX) != MVT::GetVecLength(*X_),
-                              std::invalid_argument, "Anasazi::BlockDavidson::initialize(): Size of MX must be consistent with block size and length of X.");
-        }
-        MVT::SetBlock(*state.KX,bsind,*KX_);
-        if (hasM_) {
-          MVT::SetBlock(*state.MX,bsind,*MX_);
-        }
-      }
-      else {
-        // generate KX,MX
-        {
-          Teuchos::TimeMonitor lcltimer( *timerOp_ );
-          OPT::Apply(*Op_,*X_,*KX_);
-          count_ApplyOp_ += blockSize_;
-        }
-        if (hasM_) {
-          Teuchos::TimeMonitor lcltimer( *timerMOp_ );
-          OPT::Apply(*MOp_,*X_,*MX_);
-          count_ApplyM_ += blockSize_;
-        }
-        else {
-          MX_ = X_;
-        }
-
-        // we generated KX,MX; we will generate R as well
-        state.R = Teuchos::null;
-      }
-
-      // set up R
-      if (state.R != Teuchos::null) {
-        TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.R) != blockSize_ || MVT::GetVecLength(*state.R) != MVT::GetVecLength(*X_),
-                           std::invalid_argument, "Anasazi::BlockDavidson::initialize(): Size of R must be consistent with block size and length of X.");
-        MVT::SetBlock(*state.R,bsind,*R_);
-      }
-      else {
-        Teuchos::TimeMonitor lcltimer( *timerCompRes_ );
-        
-        // form R <- KX - MX*T
-        MVT::MvAddMv(ZERO,*KX_,ONE,*KX_,*R_);
-        Teuchos::SerialDenseMatrix<int,ScalarType> T(blockSize_,blockSize_);
-        T.putScalar(ZERO);
-        for (int i=0; i<blockSize_; i++) T(i,i) = theta_[i];
-        MVT::MvTimesMatAddMv(-ONE,*MX_,T,ONE,*R_);
-
-      }
-
-      // R has been updated; mark the norms as out-of-date
-      Rnorms_current_ = false;
-      R2norms_current_ = false;
-
-      // finally, we are initialized
-      initialized_ = true;
-
-      if (om_->isVerbosity( Debug ) ) {
-        // Check almost everything here
-        CheckList chk;
-        chk.checkV = true;
-        chk.checkX = true;
-        chk.checkKX = true;
-        chk.checkMX = true;
-        chk.checkR = true;
-        chk.checkQ = true;
-        chk.checkKK = true;
-        om_->print( Debug, accuracyCheck(chk, ": after initialize()") );
-      }
-
-      // Print information on current status
-      if (om_->isVerbosity(Debug)) {
-        currentStatus( om_->stream(Debug) );
-      }
-      else if (om_->isVerbosity(IterationDetails)) {
-        currentStatus( om_->stream(IterationDetails) );
-      }
     }
     else {
-      // user did not specify a basis V
-      // get vectors from problem or generate something, projectAndNormalize, call initialize() recursively
+      // user did not specify one of V or KK
+      // get vectors from problem or generate something, projectAndNormalize
       Teuchos::RefCountPtr<const MV> ivec = problem_->getInitVec();
       TEST_FOR_EXCEPTION(ivec == Teuchos::null,std::invalid_argument,
                          "Anasazi::BlockDavdison::initialize(): Eigenproblem did not specify initial vectors to clone from.");
+      // clear state so we won't use any data from it below
+      state.X      = Teuchos::null;
+      state.MX     = Teuchos::null;
+      state.KX     = Teuchos::null;
+      state.R      = Teuchos::null;
+      state.H      = Teuchos::null;
+      state.T      = Teuchos::null;
+      state.KK     = Teuchos::null;
+      state.V      = Teuchos::null;
+      state.curDim = 0;
 
-      int lclDim = MVT::GetNumberVecs(*ivec);
+      curDim_ = MVT::GetNumberVecs(*ivec);
       // pick the largest multiple of blockSize_
-      lclDim = (int)(lclDim / blockSize_)*blockSize_;
+      curDim_ = (int)(curDim_ / blockSize_)*blockSize_;
+      if (curDim_ > blockSize_*numBlocks_) {
+        // user specified too many vectors... truncate
+        // this produces a full subspace, but that is okay
+        curDim_ = blockSize_*numBlocks_;
+      }
       bool userand = false;
-      if (lclDim < blockSize_) {
+      if (curDim_ == 0) {
         // we need at least blockSize_ vectors
         // use a random multivec: ignore everything from InitVec
         userand = true;
-        lclDim = blockSize_;
+        curDim_ = blockSize_;
       }
 
       // make an index
-      std::vector<int> dimind(lclDim);
-      for (int i=0; i<lclDim; i++) dimind[i] = i;
+      std::vector<int> dimind(curDim_);
+      for (int i=0; i<curDim_; ++i) dimind[i] = i;
 
-      // alloc newV, newKV, newMV
-      Teuchos::RefCountPtr<MV> newMV, 
-                               newKV = MVT::Clone(*ivec,lclDim),
-                               newV  = MVT::Clone(*ivec,lclDim);
+      // get pointers into V,KV,MV
+      Teuchos::RefCountPtr<MV> lclMV, 
+                               lclKV = MVT::Clone(*V_,curDim_);
+      lclV  = MVT::CloneView(*V_,dimind);
       if (userand) {
-        MVT::MvRandom(*newV);
+        // generate random vector data
+        MVT::MvRandom(*lclV);
       }
       else {
-        // assign ivec to first part of newV
-        MVT::SetBlock(*ivec,dimind,*newV);
+        // assign ivec to first part of lclV
+        MVT::SetBlock(*ivec,dimind,*lclV);
       }
 
       // compute newMV if hasM_
       if (hasM_) {
-        newMV = MVT::Clone(*newV,lclDim);
+        lclMV = MVT::Clone(*V_,curDim_);
         {
           Teuchos::TimeMonitor lcltimer( *timerMOp_ );
-          OPT::Apply(*MOp_,*newV,*newMV);
-          count_ApplyM_ += lclDim;
+          OPT::Apply(*MOp_,*lclV,*lclMV);
+          count_ApplyM_ += curDim_;
         }
       }
       else {
-        newMV = Teuchos::null;
+        lclMV = Teuchos::null;
       }
 
-      // remove auxVecs from newV and normalize newV
+      // remove auxVecs from lclV and normalize it
       if (auxVecs_.size() > 0) {
         Teuchos::TimeMonitor lcltimer( *timerOrtho_ );
 
         Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > dummy;
-        int rank = orthman_->projectAndNormalize(*newV,newMV,dummy,Teuchos::null,auxVecs_);
-        TEST_FOR_EXCEPTION(rank != lclDim,BlockDavidsonInitFailure,
+        int rank = orthman_->projectAndNormalize(*lclV,lclMV,dummy,Teuchos::null,auxVecs_);
+        TEST_FOR_EXCEPTION(rank != curDim_,BlockDavidsonInitFailure,
                            "Anasazi::BlockDavidson::initialize(): Couldn't generate initial basis of full rank.");
       }
       else {
         Teuchos::TimeMonitor lcltimer( *timerOrtho_ );
 
-        int rank = orthman_->normalize(*newV,newMV,Teuchos::null);
-        TEST_FOR_EXCEPTION(rank != lclDim,BlockDavidsonInitFailure,
+        int rank = orthman_->normalize(*lclV,lclMV,Teuchos::null);
+        TEST_FOR_EXCEPTION(rank != curDim_,BlockDavidsonInitFailure,
                            "Anasazi::BlockDavidson::initialize(): Couldn't generate initial basis of full rank.");
       }
 
-      // compute newKV
+      // compute lclKV
       {
         Teuchos::TimeMonitor lcltimer( *timerOp_ );
-        OPT::Apply(*Op_,*newV,*newKV);
-        count_ApplyOp_ += lclDim;
+        OPT::Apply(*Op_,*lclV,*lclKV);
+        count_ApplyOp_ += curDim_;
       }
 
       // generate KK
-      Teuchos::RefCountPtr< Teuchos::SerialDenseMatrix<int,ScalarType> > KK;
-      KK = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(lclDim,lclDim) );
-      MVT::MvTransMv(ONE,*newV,*newKV,*KK);
+      lclKK = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*KK_,curDim_,curDim_) );
+      MVT::MvTransMv(ONE,*lclV,*lclKV,*lclKK);
 
       // clear newKV,newMV
-      newKV = newMV = Teuchos::null;
-
-      // call myself recursively
-      BlockDavidsonState<ScalarType,MV> newstate;
-      newstate.V = newV;
-      newstate.KK = KK;
-      initialize(newstate);
+      lclKV = Teuchos::null;
+      lclMV = Teuchos::null;
     }
+
+    // X,theta require Ritz analisys; if we have to generate one of these, we might as well generate both
+    if (state.X != Teuchos::null && state.T != Teuchos::null) {
+      TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.X) != blockSize_ || MVT::GetVecLength(*state.X) != MVT::GetVecLength(*X_),
+                          std::invalid_argument, "Anasazi::BlockDavidson::initialize(): Size of X must be consistent with block size and length of V.");
+      TEST_FOR_EXCEPTION((signed int)(state.T->size()) != curDim_,
+                          std::invalid_argument, "Anasazi::BlockDavidson::initialize(): Size of T must be consistent with dimension of V.");
+      MVT::SetBlock(*state.X,bsind,*X_);
+      std::copy(state.T->begin(),state.T->end(),theta_.begin());
+
+      // we don't have primitive ritz vector
+      for (int i=0; i<curDim_; ++i) ritz2norms_[i] = NANVAL;
+    }
+    else {
+      // compute ritz vecs/vals
+      Teuchos::SerialDenseMatrix<int,ScalarType> S(curDim_,curDim_);
+      {
+        Teuchos::TimeMonitor lcltimer( *timerDS_ );
+        int rank = curDim_;
+        MSUtils_.directSolver(curDim_, *lclKK, 0, &S, &theta_, &rank, 10);
+        // we want all ritz values back
+        TEST_FOR_EXCEPTION(rank != curDim_,BlockDavidsonInitFailure,
+                           "Anasazi::BlockDavidson::initialize(): Not enough Ritz vectors to initialize algorithm.");
+      }
+      // sort ritz pairs
+      {
+        Teuchos::TimeMonitor lcltimer( *timerSortEval_ );
+
+        std::vector<int> order(curDim_);
+        //
+        // sort the first curDim_ values in theta_
+        sm_->sort( this, curDim_, theta_, &order );   // don't catch exception
+        //
+        // apply the same ordering to the primitive ritz vectors
+        MSUtils_.permuteVectors(order,S);
+      }
+      // compute ritz residual norms
+      {
+        Teuchos::BLAS<int,ScalarType> blas;
+        Teuchos::SerialDenseMatrix<int,ScalarType> R(curDim_,curDim_), T(curDim_,curDim_);
+        // R = S*diag(theta) - KK*S
+        for (int i=0; i<curDim_; ++i) T(i,i) = theta_[i];
+        int info = R.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,ONE,S,T,ZERO);
+        TEST_FOR_EXCEPTION(info != 0, std::logic_error, "Anasazi::BlockDavidson::initialize(): Input error to SerialDenseMatrix::multiply.");
+        info = R.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,-ONE,*lclKK,S,ONE);
+        TEST_FOR_EXCEPTION(info != 0, std::logic_error, "Anasazi::BlockDavidson::initialize(): Input error to SerialDenseMatrix::multiply.");
+        for (int i=0; i<curDim_; ++i) {
+          ritz2norms_[i] = blas.NRM2(curDim_,R[i],1);
+        }
+      }
+
+      // compute eigenvectors
+      Teuchos::SerialDenseMatrix<int,ScalarType> S1(Teuchos::View,S,curDim_,blockSize_);
+      {
+        Teuchos::TimeMonitor lcltimer( *timerLocal_ );
+
+        // X <- lclV*S
+        MVT::MvTimesMatAddMv( ONE, *lclV, S1, ZERO, *X_ );
+      }
+      // we generated theta,X so we don't want to use the user's KX,MX
+      state.KX = Teuchos::null;
+      state.MX = Teuchos::null;
+    }
+
+    // done with local pointers
+    lclV = Teuchos::null;
+    lclKK = Teuchos::null;
+
+    // set up KX,MX
+    if ( state.KX != Teuchos::null && (!hasM_ || state.MX != Teuchos::null) ) {
+      TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.KX) != blockSize_ || MVT::GetVecLength(*state.KX) != MVT::GetVecLength(*X_),
+                          std::invalid_argument, "Anasazi::BlockDavidson::initialize(): Size of KX must be consistent with block size and length of X.");
+      if (hasM_) {
+        TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.MX) != blockSize_ || MVT::GetVecLength(*state.KX) != MVT::GetVecLength(*X_),
+                            std::invalid_argument, "Anasazi::BlockDavidson::initialize(): Size of MX must be consistent with block size and length of X.");
+      }
+      MVT::SetBlock(*state.KX,bsind,*KX_);
+      if (hasM_) {
+        MVT::SetBlock(*state.MX,bsind,*MX_);
+      }
+    }
+    else {
+      // generate KX,MX
+      {
+        Teuchos::TimeMonitor lcltimer( *timerOp_ );
+        OPT::Apply(*Op_,*X_,*KX_);
+        count_ApplyOp_ += blockSize_;
+      }
+      if (hasM_) {
+        Teuchos::TimeMonitor lcltimer( *timerMOp_ );
+        OPT::Apply(*MOp_,*X_,*MX_);
+        count_ApplyM_ += blockSize_;
+      }
+      else {
+        MX_ = X_;
+      }
+
+      // we generated KX,MX; we will generate R as well
+      state.R = Teuchos::null;
+    }
+
+    // set up R
+    if (state.R != Teuchos::null) {
+      TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.R) != blockSize_ || MVT::GetVecLength(*state.R) != MVT::GetVecLength(*X_),
+                         std::invalid_argument, "Anasazi::BlockDavidson::initialize(): Size of R must be consistent with block size and length of X.");
+      MVT::SetBlock(*state.R,bsind,*R_);
+    }
+    else {
+      Teuchos::TimeMonitor lcltimer( *timerCompRes_ );
+      
+      // form R <- KX - MX*T
+      MVT::MvAddMv(ZERO,*KX_,ONE,*KX_,*R_);
+      Teuchos::SerialDenseMatrix<int,ScalarType> T(blockSize_,blockSize_);
+      T.putScalar(ZERO);
+      for (int i=0; i<blockSize_; ++i) T(i,i) = theta_[i];
+      MVT::MvTimesMatAddMv(-ONE,*MX_,T,ONE,*R_);
+
+    }
+
+    // R has been updated; mark the norms as out-of-date
+    Rnorms_current_ = false;
+    R2norms_current_ = false;
+
+    // finally, we are initialized
+    initialized_ = true;
+
+    if (om_->isVerbosity( Debug ) ) {
+      // Check almost everything here
+      CheckList chk;
+      chk.checkV = true;
+      chk.checkX = true;
+      chk.checkKX = true;
+      chk.checkMX = true;
+      chk.checkR = true;
+      chk.checkQ = true;
+      chk.checkKK = true;
+      om_->print( Debug, accuracyCheck(chk, ": after initialize()") );
+    }
+
+    // Print information on current status
+    if (om_->isVerbosity(Debug)) {
+      currentStatus( om_->stream(Debug) );
+    }
+    else if (om_->isVerbosity(IterationDetails)) {
+      currentStatus( om_->stream(IterationDetails) );
+    }
+
   }
 
 
@@ -1086,11 +1095,11 @@ namespace Anasazi {
         currentStatus( om_->stream(IterationDetails) );
       }
 
-      iter_++;
+      ++iter_;
 
       // get the current part of the basis
       std::vector<int> curind(blockSize_);
-      for (int i=0; i<blockSize_; i++) curind[i] = curDim_ + i;
+      for (int i=0; i<blockSize_; ++i) curind[i] = curDim_ + i;
       H_ = MVT::CloneView(*V_,curind);
       
       // Apply the preconditioner on the residuals: H <- Prec*R
@@ -1102,7 +1111,7 @@ namespace Anasazi {
       }
       else {
         std::vector<int> bsind(blockSize_);
-        for (int i=0; i<blockSize_; i++) { bsind[i] = i; }
+        for (int i=0; i<blockSize_; ++i) { bsind[i] = i; }
         MVT::SetBlock(*R_,bsind,*H_);
       }
 
@@ -1121,7 +1130,7 @@ namespace Anasazi {
       // Get a view of the previous vectors
       // this is used for orthogonalization and for computing V^H K H
       std::vector<int> prevind(curDim_);
-      for (int i=0; i<curDim_; i++) prevind[i] = i;
+      for (int i=0; i<curDim_; ++i) prevind[i] = i;
       Teuchos::RefCountPtr<MV> Vprev = MVT::CloneView(*V_,prevind);
 
       // Orthogonalize H against the previous vectors and the auxiliary vectors, and normalize
@@ -1173,8 +1182,8 @@ namespace Anasazi {
       // 
       // make sure that KK_ is hermitian in memory
       nextKK = Teuchos::null;
-      for (int i=curDim_; i<curDim_+blockSize_; i++) {
-        for (int j=0; j<i; j++) {
+      for (int i=curDim_; i<curDim_+blockSize_; ++i) {
+        for (int j=0; j<i; ++j) {
           (*KK_)(i,j) = SCT::conjugate((*KK_)(j,i));
         }
       }
@@ -1192,7 +1201,7 @@ namespace Anasazi {
 
       // Get pointer to complete basis
       curind.resize(curDim_);
-      for (int i=0; i<curDim_; i++) curind[i] = i;
+      for (int i=0; i<curDim_; ++i) curind[i] = i;
       Teuchos::RefCountPtr<const MV> curV = MVT::CloneView(*V_,curind);
 
       // Perform spectral decomposition
@@ -1226,12 +1235,12 @@ namespace Anasazi {
         Teuchos::SerialDenseMatrix<int,ScalarType> curKK(Teuchos::View,*KK_,curDim_,curDim_),
                                                     curS(Teuchos::View,S,curDim_,curDim_);
         // R = S*diag(theta) - KK*S
-        for (int i=0; i<curDim_; i++) T(i,i) = theta_[i];
+        for (int i=0; i<curDim_; ++i) T(i,i) = theta_[i];
         int info = R.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,ONE,curS,T,ZERO);
         TEST_FOR_EXCEPTION(info != 0, std::logic_error, "Anasazi::BlockDavidson::iterate(): Input error to SerialDenseMatrix::multiply.");
         info = R.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,-ONE,curKK,curS,ONE);
         TEST_FOR_EXCEPTION(info != 0, std::logic_error, "Anasazi::BlockDavidson::iterate(): Input error to SerialDenseMatrix::multiply.");
-        for (int i=0; i<curDim_; i++) {
+        for (int i=0; i<curDim_; ++i) {
           ritz2norms_[i] = blas.NRM2(curDim_,R[i],1);
         }
       }
@@ -1268,7 +1277,7 @@ namespace Anasazi {
         
         MVT::MvAddMv( ONE, *KX_, ZERO, *KX_, *R_ );
         Teuchos::SerialDenseMatrix<int,ScalarType> T( blockSize_, blockSize_ );
-        for (int i = 0; i < blockSize_; i++) {
+        for (int i = 0; i < blockSize_; ++i) {
           T(i,i) = theta_[i];
         }
         MVT::MvTimesMatAddMv( -ONE, *MX_, T, ONE, *R_ );
@@ -1370,7 +1379,7 @@ namespace Anasazi {
 
     // V and friends
     std::vector<int> lclind(curDim_);
-    for (int i=0; i<curDim_; i++) lclind[i] = i;
+    for (int i=0; i<curDim_; ++i) lclind[i] = i;
     Teuchos::RefCountPtr<MV> lclV,lclKV;
     if (initialized_) {
       lclV = MVT::CloneView(*V_,lclind);
@@ -1378,7 +1387,7 @@ namespace Anasazi {
     if (chk.checkV && initialized_) {
       tmp = orthman_->orthonormError(*lclV);
       os << " >> Error in V^H M V == I  : " << tmp << endl;
-      for (unsigned int i=0; i<auxVecs_.size(); i++) {
+      for (unsigned int i=0; i<auxVecs_.size(); ++i) {
         tmp = orthman_->orthogError(*lclV,*auxVecs_[i]);
         os << " >> Error in V^H M Q[" << i << "] == 0 : " << tmp << endl;
       }
@@ -1389,8 +1398,8 @@ namespace Anasazi {
       Teuchos::SerialDenseMatrix<int,ScalarType> subKK(Teuchos::View,*KK_,curDim_,curDim_);
       curKK -= subKK;
       // dup the lower tri part
-      for (int j=0; j<curDim_; j++) {
-        for (int i=j+1; i<curDim_; i++) {
+      for (int j=0; j<curDim_; ++j) {
+        for (int i=j+1; i<curDim_; ++i) {
           curKK(i,j) = curKK(j,i);
         }
       }
@@ -1401,7 +1410,7 @@ namespace Anasazi {
     if (chk.checkX && initialized_) {
       tmp = orthman_->orthonormError(*X_);
       os << " >> Error in X^H M X == I  : " << tmp << endl;
-      for (unsigned int i=0; i<auxVecs_.size(); i++) {
+      for (unsigned int i=0; i<auxVecs_.size(); ++i) {
         tmp = orthman_->orthogError(*X_,*auxVecs_[i]);
         os << " >> Error in X^H M Q[" << i << "] == 0 : " << tmp << endl;
       }
@@ -1423,7 +1432,7 @@ namespace Anasazi {
       os << " >> Error in H^H M V == 0  : " << tmp << endl;
       tmp = orthman_->orthogError(*H_,*X_);
       os << " >> Error in H^H M X == 0  : " << tmp << endl;
-      for (unsigned int i=0; i<auxVecs_.size(); i++) {
+      for (unsigned int i=0; i<auxVecs_.size(); ++i) {
         tmp = orthman_->orthogError(*H_,*auxVecs_[i]);
         os << " >> Error in H^H M Q[" << i << "] == 0 : " << tmp << endl;
       }
@@ -1448,8 +1457,8 @@ namespace Anasazi {
     // KK
     if (chk.checkKK && initialized_) {
       Teuchos::SerialDenseMatrix<int,ScalarType> tmp(curDim_,curDim_), lclKK(Teuchos::View,*KK_,curDim_,curDim_);
-      for (int j=0; j<curDim_; j++) {
-        for (int i=0; i<curDim_; i++) {
+      for (int j=0; j<curDim_; ++j) {
+        for (int i=0; i<curDim_; ++i) {
           tmp(i,j) = lclKK(i,j) - SCT::conjugate(lclKK(j,i));
         }
       }
@@ -1458,10 +1467,10 @@ namespace Anasazi {
 
     // Q
     if (chk.checkQ) {
-      for (unsigned int i=0; i<auxVecs_.size(); i++) {
+      for (unsigned int i=0; i<auxVecs_.size(); ++i) {
         tmp = orthman_->orthonormError(*auxVecs_[i]);
         os << " >> Error in Q[" << i << "]^H M Q[" << i << "] == I : " << tmp << endl;
-        for (unsigned int j=i+1; j<auxVecs_.size(); j++) {
+        for (unsigned int j=i+1; j<auxVecs_.size(); ++j) {
           tmp = orthman_->orthogError(*auxVecs_[i],*auxVecs_[j]);
           os << " >> Error in Q[" << i << "]^H M Q[" << j << "] == 0 : " << tmp << endl;
         }
@@ -1507,7 +1516,7 @@ namespace Anasazi {
          << std::setw(20) << "Residual(2)"
          << endl;
       os <<"--------------------------------------------------------------------------------"<<endl;
-      for (int i=0; i<blockSize_; i++) {
+      for (int i=0; i<blockSize_; ++i) {
         os << std::setw(20) << theta_[i];
         if (Rnorms_current_) os << std::setw(20) << Rnorms_[i];
         else os << std::setw(20) << "not current";

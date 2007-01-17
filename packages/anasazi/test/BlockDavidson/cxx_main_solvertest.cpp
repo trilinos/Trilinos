@@ -139,7 +139,7 @@ void checks( RefCountPtr<BlockDavidson<ScalarType,MV,OP> > solver, int blocksize
     MVT::MvTransMv(1.0,*evecs,*Kevecs,T);
     for (int i=0; i<blocksize; i++) T(i,i) -= theta[i].realpart;
     error = T.normFrobenius() / ninf;
-    TEST_FOR_EXCEPTION(error > 1e-12,get_out,"Ritz values don't match eigenvectors.");
+    TEST_FOR_EXCEPTION(error > 1e-12,get_out,"Disagreement between Ritz vectors and Ritz values.");
   }
   else {
     // not initialized
@@ -151,7 +151,8 @@ void testsolver( RefCountPtr<BasicEigenproblem<ScalarType,MV,OP> > problem,
                  RefCountPtr< OutputManager<ScalarType> > printer,
                  RefCountPtr< MatOrthoManager<ScalarType,MV,OP> > ortho,
                  RefCountPtr< SortManager<ScalarType,MV,OP> > sorter,
-                 ParameterList &pls,bool invalid=false)
+                 ParameterList &pls,bool invalid,
+                 BlockDavidsonState<ScalarType,MV> initstate, bool invalidinit)
 {
   // create a status tester to run for two iterations
   RefCountPtr< StatusTest<ScalarType,MV,OP> > tester = rcp( new StatusTestMaxIters<ScalarType,MV,OP>(2) );
@@ -163,10 +164,10 @@ void testsolver( RefCountPtr<BasicEigenproblem<ScalarType,MV,OP> > problem,
   RefCountPtr< BlockDavidson<ScalarType,MV,OP> > solver;
   try {
     solver = rcp( new BlockDavidson<ScalarType,MV,OP>(problem,sorter,printer,tester,ortho,pls) );
-    TEST_FOR_EXCEPTION(invalid, get_out, "Initializing with invalid parameters failed to throw exception.")
+    TEST_FOR_EXCEPTION(invalid, get_out, "Instantiating with invalid parameters failed to throw exception.")
   }
   catch (std::invalid_argument ia) {
-    TEST_FOR_EXCEPTION(!invalid, get_out, "Initializing with valid parameters unexpectadly threw exception.");
+    TEST_FOR_EXCEPTION(!invalid, get_out, "Instantiating with valid parameters unexpectadly threw exception.");
     // caught expected exception
     return;
   }
@@ -183,7 +184,16 @@ void testsolver( RefCountPtr<BasicEigenproblem<ScalarType,MV,OP> > problem,
   if (cursize < blocksize) cursize = blocksize;
 
   // initialize solver and perform checks
-  solver->initialize();
+  try {
+    solver->initialize(initstate);
+    TEST_FOR_EXCEPTION(invalidinit, get_out, "Initializing with invalid data failed to throw exception.")
+  }
+  catch (std::invalid_argument ia) {
+    TEST_FOR_EXCEPTION(!invalidinit, get_out, "Initializing with valid data unexpectadly threw exception.");
+    // caught expected exception
+    return;
+  }
+
   TEST_FOR_EXCEPTION(solver->isInitialized() != true,get_out,"Solver should be initialized after call to initialize().");  
   TEST_FOR_EXCEPTION(solver->getNumIters() != 0,get_out,"Number of iterations should be zero.")
   TEST_FOR_EXCEPTION(solver->getAuxVecs().size() != 0,get_out,"getAuxVecs() should return empty.");
@@ -319,76 +329,78 @@ int main(int argc, char *argv[])
 
   try 
   {
+    BlockDavidsonState<ScalarType,MV> istate;
+
     // try with default args
     if (verbose) printer->stream(Errors) << "Testing solver(default,default) with standard eigenproblem..." << endl;
-    testsolver(probstd,printer,orthostd,sorter,pls);
+    testsolver(probstd,printer,orthostd,sorter,pls,false,istate,false);
     if (verbose) printer->stream(Errors) << "Testing solver(default,default) with generalized eigenproblem..." << endl;
-    testsolver(probgen,printer,orthogen,sorter,pls);
+    testsolver(probgen,printer,orthogen,sorter,pls,false,istate,false);
 
     pls.set<int>("Num Blocks",4);
 
     // try with blocksize == getInitVec() size
     pls.set<int>("Block Size",nev);
     if (verbose) printer->stream(Errors) << "Testing solver(nev,4) with standard eigenproblem..." << endl;
-    testsolver(probstd,printer,orthostd,sorter,pls);
+    testsolver(probstd,printer,orthostd,sorter,pls,false,istate,false);
     TEST_FOR_EXCEPTION(pls.getEntryPtr("Block Size")->isUsed() == false, get_out, "Solver did not consume parameter \"Block Size\".");
     TEST_FOR_EXCEPTION(pls.getEntryPtr("Num Blocks")->isUsed() == false, get_out, "Solver did not consume parameter \"Num Blocks\".");
     if (verbose) printer->stream(Errors) << "Testing solver(nev,4) with generalized eigenproblem..." << endl;
-    testsolver(probgen,printer,orthogen,sorter,pls);
+    testsolver(probgen,printer,orthogen,sorter,pls,false,istate,false);
 
     // try with getInitVec() too small
     pls.set<int>("Block Size",2*nev);
     if (verbose) printer->stream(Errors) << "Testing solver(2*nev,4) with standard eigenproblem..." << endl;
-    testsolver(probstd,printer,orthostd,sorter,pls);
+    testsolver(probstd,printer,orthostd,sorter,pls,false,istate,false);
     if (verbose) printer->stream(Errors) << "Testing solver(2*nev,4) with generalized eigenproblem..." << endl;
-    testsolver(probgen,printer,orthogen,sorter,pls);
+    testsolver(probgen,printer,orthogen,sorter,pls,false,istate,false);
 
     // try with getInitVec() == two blocks
     pls.set<int>("Block Size",nev/2);
     if (verbose) printer->stream(Errors) << "Testing solver(nev/2,4) with standard eigenproblem..." << endl;
-    testsolver(probstd,printer,orthostd,sorter,pls);
+    testsolver(probstd,printer,orthostd,sorter,pls,false,istate,false);
     if (verbose) printer->stream(Errors) << "Testing solver(nev/2,4) with generalized eigenproblem..." << endl;
-    testsolver(probgen,printer,orthogen,sorter,pls);
+    testsolver(probgen,printer,orthogen,sorter,pls,false,istate,false);
 
     // try with a larger number of blocks; leave room for some expansion
     pls.set<int>("Block Size",nev);
     pls.set<int>("Num Blocks",15);
     if (verbose) printer->stream(Errors) << "Testing solver(nev,15) with standard eigenproblem..." << endl;
-    testsolver(probstd,printer,orthostd,sorter,pls);
+    testsolver(probstd,printer,orthostd,sorter,pls,false,istate,false);
     if (verbose) printer->stream(Errors) << "Testing solver(nev,15) with generalized eigenproblem..." << endl;
-    testsolver(probgen,printer,orthogen,sorter,pls);
+    testsolver(probgen,printer,orthogen,sorter,pls,false,istate,false);
 
     // try with a larger number of blocks+1
     pls.set<int>("Block Size",nev);
     pls.set<int>("Num Blocks",16);
     if (verbose) printer->stream(Errors) << "Testing solver(nev,16) with standard eigenproblem..." << endl;
-    testsolver(probstd,printer,orthostd,sorter,pls);
+    testsolver(probstd,printer,orthostd,sorter,pls,false,istate,false);
     if (verbose) printer->stream(Errors) << "Testing solver(nev,16) with generalized eigenproblem..." << endl;
-    testsolver(probgen,printer,orthogen,sorter,pls);
+    testsolver(probgen,printer,orthogen,sorter,pls,false,istate,false);
 
     // try with an invalid blocksize
     pls.set<int>("Block Size",0);
     pls.set<int>("Num Blocks",4);
     if (verbose) printer->stream(Errors) << "Testing solver(0,4) with standard eigenproblem..." << endl;
-    testsolver(probstd,printer,orthostd,sorter,pls,true);
+    testsolver(probstd,printer,orthostd,sorter,pls,true,istate,false);
 
     // try with an invalid numblocks
     pls.set<int>("Block Size",4);
     pls.set<int>("Num Blocks",1);
     if (verbose) printer->stream(Errors) << "Testing solver(4,1) with standard eigenproblem..." << endl;
-    testsolver(probstd,printer,orthostd,sorter,pls,true);
+    testsolver(probstd,printer,orthostd,sorter,pls,true,istate,false);
 
     // try with a too-large subspace
     pls.set<int>("Block Size",4);
     pls.set<int>("Num Blocks",veclength/4+1);
     if (verbose) printer->stream(Errors) << "Testing solver(4,toomany) with standard eigenproblem..." << endl;
-    testsolver(probstd,printer,orthostd,sorter,pls,true);
+    testsolver(probstd,printer,orthostd,sorter,pls,true,istate,false);
 
     // try with an unset problem
     // setHermitian will mark the problem as unset
     probstd->setHermitian(false);
     if (verbose) printer->stream(Errors) << "Testing solver with unset eigenproblem..." << endl;
-    testsolver(probstd,printer,orthostd,sorter,pls,true);
+    testsolver(probstd,printer,orthostd,sorter,pls,true,istate,false);
 
     // set the problem, and try with a non-Hermitian problem
     if ( probstd->setProblem() != true ) {
@@ -402,10 +414,35 @@ int main(int argc, char *argv[])
       return -1;
     }
     if (verbose) printer->stream(Errors) << "Testing solver with non-Hermitian eigenproblem..." << endl;
-    testsolver(probstd,printer,orthostd,sorter,pls,true);
+    testsolver(probstd,printer,orthostd,sorter,pls,true,istate,false);
     // fix it now
     probstd->setHermitian(true);
     probstd->setProblem();
+
+    // try with a too-small initial basis
+    if (verbose) printer->stream(Errors) << "Initializing solver with too-small basis..." << endl;
+    pls.set("Block Size",4);
+    pls.set("Num Blocks",2);
+    istate.V  = MVT::Clone(*ivec,3);
+    istate.KK = rcp( new SerialDenseMatrix<int,ScalarType>(3,3) );
+    testsolver(probstd,printer,orthostd,sorter,pls,false,istate,true);
+
+    // try with a non-integral initial basis
+    if (verbose) printer->stream(Errors) << "Initializing solver with oddly sized basis..." << endl;
+    pls.set("Block Size",4);
+    pls.set("Num Blocks",2);
+    istate.V  = MVT::Clone(*ivec,5);
+    istate.KK = rcp( new SerialDenseMatrix<int,ScalarType>(5,5) );
+    testsolver(probstd,printer,orthostd,sorter,pls,false,istate,true);
+
+    // try with a incongruent KK and V
+    if (verbose) printer->stream(Errors) << "Initializing solver with incongruent KK and V..." << endl;
+    pls.set("Block Size",4);
+    pls.set("Num Blocks",2);
+    istate.V  = MVT::Clone(*ivec,4);
+    istate.KK = rcp( new SerialDenseMatrix<int,ScalarType>(3,3) );
+    testsolver(probstd,printer,orthostd,sorter,pls,false,istate,true);
+
 
     // create a dummy status tester
     RefCountPtr< StatusTest<ScalarType,MV,OP> > dumtester = rcp( new StatusTestMaxIters<ScalarType,MV,OP>(1) );
@@ -415,7 +452,7 @@ int main(int argc, char *argv[])
     try {
       RefCountPtr< BlockDavidson<ScalarType,MV,OP> > solver 
         = rcp( new BlockDavidson<ScalarType,MV,OP>(Teuchos::null,sorter,printer,dumtester,orthostd,pls) );
-      TEST_FOR_EXCEPTION(true,get_out,"Initializing with invalid parameters failed to throw exception.");
+      TEST_FOR_EXCEPTION(true,get_out,"Instantiating with invalid parameters failed to throw exception.");
     }
     catch (std::invalid_argument ia) {
       // caught expected exception
@@ -426,7 +463,7 @@ int main(int argc, char *argv[])
     try {
       RefCountPtr< BlockDavidson<ScalarType,MV,OP> > solver 
         = rcp( new BlockDavidson<ScalarType,MV,OP>(probstd,Teuchos::null,printer,dumtester,orthostd,pls) );
-      TEST_FOR_EXCEPTION(true,get_out,"Initializing with invalid parameters failed to throw exception.");
+      TEST_FOR_EXCEPTION(true,get_out,"Instantiating with invalid parameters failed to throw exception.");
     }
     catch (std::invalid_argument ia) {
       // caught expected exception
@@ -437,7 +474,7 @@ int main(int argc, char *argv[])
     try {
       RefCountPtr< BlockDavidson<ScalarType,MV,OP> > solver 
         = rcp( new BlockDavidson<ScalarType,MV,OP>(probstd,sorter,Teuchos::null,dumtester,orthostd,pls) );
-      TEST_FOR_EXCEPTION(true,get_out,"Initializing with invalid parameters failed to throw exception.");
+      TEST_FOR_EXCEPTION(true,get_out,"Instantiating with invalid parameters failed to throw exception.");
     }
     catch (std::invalid_argument ia) {
       // caught expected exception
@@ -448,7 +485,7 @@ int main(int argc, char *argv[])
     try {
       RefCountPtr< BlockDavidson<ScalarType,MV,OP> > solver 
         = rcp( new BlockDavidson<ScalarType,MV,OP>(probstd,sorter,printer,Teuchos::null,orthostd,pls) );
-      TEST_FOR_EXCEPTION(true,get_out,"Initializing with invalid parameters failed to throw exception.");
+      TEST_FOR_EXCEPTION(true,get_out,"Instantiating with invalid parameters failed to throw exception.");
     }
     catch (std::invalid_argument ia) {
       // caught expected exception
@@ -459,7 +496,7 @@ int main(int argc, char *argv[])
     try {
       RefCountPtr< BlockDavidson<ScalarType,MV,OP> > solver 
         = rcp( new BlockDavidson<ScalarType,MV,OP>(probstd,sorter,printer,dumtester,Teuchos::null,pls) );
-      TEST_FOR_EXCEPTION(true,get_out,"Initializing with invalid parameters failed to throw exception.");
+      TEST_FOR_EXCEPTION(true,get_out,"Instantiating with invalid parameters failed to throw exception.");
     }
     catch (std::invalid_argument ia) {
       // caught expected exception
