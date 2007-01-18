@@ -3,7 +3,7 @@
 // of a very simple mesh.
 ////////////////////////////////////////////////////////////////////
 
-#include <rectangularGraph.h>
+#include <rectangularMesh.h>
 
 static void MPIExit()
 {
