@@ -24,9 +24,10 @@ then try changing parameters
 to see how the partitioning is affected.  Consult the Zoltan
 User's Guide at
 \url{http://www.cs.sandia.gov/Zoltan/ug_html/ug.html}
-for a complete list of parameters for each partitioning method.
+for a complete list of all partitioning methods and all of the
+parameters for each partitioning method.
 
-These four examples are written in C.  At the end of this section,
+The next four examples are written in C.  At the end of this section,
 we also provide a C++ version of the geometric example.
 
 As you read through these examples you will see that, regardless 
@@ -77,21 +78,27 @@ length.  Zoltan also permits the use of an additional set of
 IDs that are local to a process.  If you supply these optional local IDs,
 Zoltan will also include them when querying your application for data.
 
-The code listed below may be found in the Zoltan source in file
-\textbf{examples/C/simpleSIMPLE.c}.
+A version of the 
+code listed below may be found in the Zoltan source in file
+\textbf{examples/C/simpleSIMPLE.c}. 
 
 \begin{flushleft}
 \begin{verbatim}
-
 #include <mpi.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include "zoltan.h"
 
 static int numObjects = 36;
 static int numProcs, myRank, myNumObj;
 static int myGlobalIDs[36];
+
 static float objWeight(int globalID)
 {
-  return (float)(((globalID % 3) + 1.0) / 0.3);
+float w;     /* simulate an initial imbalance */
+  if (globalID % numProcs == 0) w = 3;
+  else                          w = (globalID % 3 + 1);
+  return w;
 }
 static int get_number_of_objects(void *data, int *ierr)
 {
@@ -100,35 +107,23 @@ static int get_number_of_objects(void *data, int *ierr)
 }
 static void get_object_list(void *data, int sizeGID, int sizeLID,
             ZOLTAN_ID_PTR globalID, ZOLTAN_ID_PTR localID,
-                  int wgt_dim, float *obj_wgts, int *ierr)
+            int wgt_dim, float *obj_wgts, int *ierr)
 {
 int i;
   *ierr = ZOLTAN_OK;
   for (i=0; i<myNumObj; i++){
     globalID[i] = myGlobalIDs[i];
-    obj_wgts[i] = objWeight(myGlobalIDs[i]);
+    if (obj_wgts) obj_wgts[i] = objWeight(myGlobalIDs[i]);
   }
 }
-
 int main(int argc, char *argv[])
 {
-  int rc, i;
+  int rc, i, changes, numGidEntries, numLidEntries, numImport, numExport;
   float ver;
   struct Zoltan_Struct *zz;
-  int changes, numGidEntries, numLidEntries, numImport, numExport;
   ZOLTAN_ID_PTR importGlobalGids, importLocalGids;
   ZOLTAN_ID_PTR exportGlobalGids, exportLocalGids; 
   int *importProcs, *importToPart, *exportProcs, *exportToPart;
-
-  /******************************************************************
-  ** Create a simple initial partitioning for this example
-  ******************************************************************/
-
-  for (i=0, myNumObj=0; i<numObjects; i++){
-    if (i % numProcs == myRank){
-      myGlobalIDs[myNumObj++] = i+1;
-    }
-  }
 
   /******************************************************************
   ** Initialize MPI and Zoltan
@@ -147,6 +142,14 @@ int main(int argc, char *argv[])
   }
 
   /******************************************************************
+  ** Create a simple initial partitioning for this example
+  ******************************************************************/
+
+  for (i=0, myNumObj=0; i<numObjects; i++)
+    if (i % numProcs == myRank)
+      myGlobalIDs[myNumObj++] = i+1;
+
+  /******************************************************************
   ** Create a Zoltan library structure for this instance of load
   ** balancing.  Set the parameters and query functions.
   ******************************************************************/
@@ -155,9 +158,10 @@ int main(int argc, char *argv[])
 
   /* General parameters */
 
-  Zoltan_Set_Param(zz, "LB_METHOD", "SIMPLE");  /* Zoltan method: "SIMPLE" */
-  Zoltan_Set_Param(zz, "NUM_GID_ENTRIES", "1"); /* global ID is 1 integer */
-  Zoltan_Set_Param(zz, "NUM_LID_ENTRIES", "0"); /* no local IDs */
+  Zoltan_Set_Param(zz, "LB_METHOD", "SIMPLE");  /* name of Zoltan method */
+  Zoltan_Set_Param(zz, "NUM_GID_ENTRIES", "1"); /* size of global ID    */
+  Zoltan_Set_Param(zz, "NUM_LID_ENTRIES", "0"); /* no local IDs         */
+  Zoltan_Set_Param(zz, "OBJ_WEIGHT_DIM", "1"); /* weights are 1 float   */
 
   /* Query functions */
 
@@ -172,16 +176,16 @@ int main(int argc, char *argv[])
         &changes,        /* 1 if partitioning was changed, 0 otherwise */ 
         &numGidEntries,  /* Number of integers used for a global ID */
         &numLidEntries,  /* Number of integers used for a local ID */
-        &numImport,      /* Number of vertices to be sent to me */
-        &importGlobalGids,  /* Global IDs of vertices to be sent to me */
-        &importLocalGids,   /* Local IDs of vertices to be sent to me */
-        &importProcs,    /* Process rank for source of each incoming vertex */
-        &importToPart,   /* New partition for each incoming vertex */
-        &numExport,      /* Number of vertices I must send to other processes*/
-        &exportGlobalGids,  /* Global IDs of the vertices I must send */
-        &exportLocalGids,   /* Local IDs of the vertices I must send */
-        &exportProcs,    /* Process to which I send each of the vertices */
-        &exportToPart);  /* Partition to which each vertex will belong */
+        &numImport,      /* Number of objects to be sent to me */
+        &importGlobalGids,  /* Global IDs of objects to be sent to me */
+        &importLocalGids,   /* Local IDs of objects to be sent to me */
+        &importProcs,    /* Process rank for source of each incoming object */
+        &importToPart,   /* New partition for each incoming object */
+        &numExport,      /* Number of objects I must send to other processes*/
+        &exportGlobalGids,  /* Global IDs of the objects I must send */
+        &exportLocalGids,   /* Local IDs of the objects I must send */
+        &exportProcs,    /* Process to which I send each of the objects */
+        &exportToPart);  /* Partition to which each object will belong */
 
   if (rc != ZOLTAN_OK){
     printf("Error in Zoltan library\n");
@@ -191,8 +195,7 @@ int main(int argc, char *argv[])
   }
 
   /******************************************************************
-  ** In a real application, you would rebalance the problem now by
-  ** sending the objects to their new partitions.
+  ** Here you would send the objects to their new partitions.
   ******************************************************************/
 
   /******************************************************************
@@ -218,8 +221,7 @@ int main(int argc, char *argv[])
 \section{Geometric, Graph and Hypergraph Examples}
 
 The simple graph used in all three examples in this section
-is illustrated
-in Figure~\ref{fig:mesh25}.
+is illustrated in Figure~\ref{fig:mesh25}.
 It is defined in the Zoltan source file \textbf{examples/C/simpleGraph.h},
 which is listed in Figure~\ref{fig:simpleGraphDotH}.
 
