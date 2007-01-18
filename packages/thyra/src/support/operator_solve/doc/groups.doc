@@ -1,4 +1,39 @@
 //
+// Basic code
+//
+
+/** \defgroup OperatorVectorANASupportSoftware_grp Operator/Solve ANA Support Software
+
+<ul>
+
+<li><tt>Thyra::LinearOpWithSolveTester</tt> is a unit testing class for
+<tt>Thyra::LinearOpWithSolveBase</tt> and can be used to check the solve
+accuracy of any <tt>Thyra::LinearOpWithSolveBase</tt> object's solve function.
+
+<li><tt>Thyra::DefaultInverseLinearOp</tt> implements a
+<tt>Thyra::LinearOpBase</tt> object in terms of the solve operation on a
+<tt>Thyra::LinearOpWithSolveBase</tt> object.  This allows for the definition
+an approximate linear operator in terms of a linear solver.  This allows this
+approximate solve to be embedded in and used with in any other object that
+expects a <tt>Thyra::LinearOpBase</tt> object (including basic composite
+added, multiplied, blocked, etc. linear operators).
+
+<li><tt>Thyra::DefaultDiagonalLinearOpWithSolve</tt> implements the
+<tt>Thyra::LinearOpWithSolveBase</tt> interface for diagonal linear operators.
+
+<li><tt>Thyra::DefaultLinearOpSource</tt> implements a
+<tt>Thyra::LinearOpSourceBase</tt> object by just returning a simple
+<tt>Thyra::LinearOpBase</tt> object which it is configured with.
+
+<li><tt>Thyra::DefaultPreconditioner</tt> implements a
+<tt>Thyra::DefaultPreconditionerBase</tt> object in terms of separate
+<tt>Thyra::LinearOpBase</tt> objects which it is configured with.
+
+</ul>
+
+*/
+
+//
 // FFT examples
 //
 

@@ -20,25 +20,7 @@ Thyra ANA Operator Solve Interfaces</a>.
 
 <ul>
 
-<li><b>Composite Subclasses</b>
-
-  <ul>
-
-  <li><tt>Thyra::DefaultDiagonalLinearOpWithSolve</tt> implements the
-  <tt>Thyra::LinearOpWithSolveBase</tt> interface for diagonal linear
-  operators.
-
-  </ul>
-
-<li><b>Testing Support</b>
-
-  <ul>
-
-  <li><tt>Thyra::LinearOpWithSolveTester</tt> is a unit testing class for
-  <tt>Thyra::LinearOpWithSolveBase</tt> and can be used to check the solve
-  accuracy of any linear solve.
-
-  </ul>
+<li><b>\ref OperatorVectorANASupportSoftware_grp</b>
 
 </ul>
   
@@ -82,7 +64,7 @@ Wrappers for Thyra Linear Solver and Preconditioner Adapters</a></b>:
 Stratimikos contains neatly packaged access to all of the Thyra linear solver
 and preconditioner wrappers.  Currently, these allow the creation of linear
 solvers for nearly any <tt>Epetra_RowMatrix</tt> object.  However, the Belos
-implementation allows for the arbitrary implemention of the linear operators
+implementation allows for the arbitrary implementation of the linear operators
 and vector spaces.
 
 </ul>
