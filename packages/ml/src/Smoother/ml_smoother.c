@@ -6877,7 +6877,7 @@ int ML_Smoother_HiptmairSubsmoother_Create(ML **ml_subproblem,
      dbl_arg1 = (double *) ML_Smoother_Arglist_Get(args, 1); /* eig ratio     */
      int_arg2 = (int *) ML_Smoother_Arglist_Get(args, 0);    /* poly degree   */
      if (Amat->comm->ML_mypid == 0 && 2 < ML_Get_PrintLevel() )
-       printf("Generating subsmoother MLS   %d\n",*int_arg2);
+       printf("Generating subsmoother Chebyshev/MLS   %d\n",*int_arg2);
 #ifdef BLOCKMLS
      printf("size is %d\n",(*ml_subproblem)->Amat[0].invec_leng);
      if (((*ml_subproblem)->Amat[0].invec_leng != 13322) &&
