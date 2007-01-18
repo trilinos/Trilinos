@@ -842,6 +842,7 @@ namespace Anasazi {
       for (int i=0; i<curDim_; ++i) dimind[i] = i;
 
       // get pointers into V,KV,MV
+      // FINISH: replace lclMV and lclKV by a single tmpMV: take this tmpMV from V_ if there is space.
       Teuchos::RefCountPtr<MV> lclMV, 
                                lclKV = MVT::Clone(*V_,curDim_);
       lclV  = MVT::CloneView(*V_,dimind);
