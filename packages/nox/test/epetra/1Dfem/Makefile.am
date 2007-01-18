@@ -54,7 +54,7 @@ if BUILD_NOX_EPETRAEXT_SUPPORT
 1DFEM_WITHMODELEVALUATOR = 1DfemWithModelEvaluator
 endif
 
-noinst_PROGRAMS = 1Dfem 1DfemScaled 1DfemScaledInexactTrustRegion 1DfemTransient 1DfemMLPreconditioner 1DfemAztecSolverPrecReuse 1DfemAztecSolverPrecRebuild 1DfemAztecSolverPrecRecompute 1DfemAztecPrecRebuild 1DfemAztecPrecReuse 1DfemIfpackReuse 1DfemIfpackRecompute 1DfemIfpackRebuild $(1DFEM_BELOS) $(1DFEM_WITHMODELEVALUATOR) 
+noinst_PROGRAMS = 1Dfem 1DfemScaled 1DfemScaledInexactTrustRegion 1DfemTransient 1DfemMLPreconditioner 1DfemAztecSolverPrecReuse 1DfemAztecSolverPrecRebuild 1DfemAztecSolverPrecRecompute 1DfemAztecPrecRebuild 1DfemAztecPrecReuse 1DfemIfpackReuse 1DfemIfpackRecompute 1DfemIfpackRebuild 1DfemNonlinearCG $(1DFEM_BELOS) $(1DFEM_WITHMODELEVALUATOR) 
 
 endif
 
@@ -231,3 +231,14 @@ endif
                               $(top_builddir)/src-epetra/libnoxepetra.a
 
 1DfemIfpackRebuild_LDADD = $(TEST_LIBS)
+
+1DfemNonlinearCG_SOURCES = \
+                         $(srcdir)/1DfemInterface.H \
+                         $(srcdir)/1DfemInterface.C \
+                         $(srcdir)/1DfemNonlinearCG.C
+
+1DfemNonlinearCG_DEPENDENCIES = \
+                              $(top_builddir)/src/libnox.a \
+                              $(top_builddir)/src-epetra/libnoxepetra.a
+
+1DfemNonlinearCG_LDADD = $(TEST_LIBS)

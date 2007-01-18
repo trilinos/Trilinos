@@ -46,7 +46,7 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(1Dfem_SOURCES) $(1DfemAztecPrecRebuild_SOURCES) $(1DfemAztecPrecReuse_SOURCES) $(1DfemAztecSolverPrecRebuild_SOURCES) $(1DfemAztecSolverPrecRecompute_SOURCES) $(1DfemAztecSolverPrecReuse_SOURCES) $(1DfemBelos_SOURCES) $(1DfemIfpackRebuild_SOURCES) $(1DfemIfpackRecompute_SOURCES) $(1DfemIfpackReuse_SOURCES) $(1DfemMLPreconditioner_SOURCES) $(1DfemScaled_SOURCES) $(1DfemScaledInexactTrustRegion_SOURCES) $(1DfemTransient_SOURCES) $(1DfemWithModelEvaluator_SOURCES)
+SOURCES = $(1Dfem_SOURCES) $(1DfemAztecPrecRebuild_SOURCES) $(1DfemAztecPrecReuse_SOURCES) $(1DfemAztecSolverPrecRebuild_SOURCES) $(1DfemAztecSolverPrecRecompute_SOURCES) $(1DfemAztecSolverPrecReuse_SOURCES) $(1DfemBelos_SOURCES) $(1DfemIfpackRebuild_SOURCES) $(1DfemIfpackRecompute_SOURCES) $(1DfemIfpackReuse_SOURCES) $(1DfemMLPreconditioner_SOURCES) $(1DfemNonlinearCG_SOURCES) $(1DfemScaled_SOURCES) $(1DfemScaledInexactTrustRegion_SOURCES) $(1DfemTransient_SOURCES) $(1DfemWithModelEvaluator_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -82,6 +82,7 @@ host_triplet = @host@
 @BUILD_EPETRA_TESTS_TRUE@	1DfemIfpackReuse$(EXEEXT) \
 @BUILD_EPETRA_TESTS_TRUE@	1DfemIfpackRecompute$(EXEEXT) \
 @BUILD_EPETRA_TESTS_TRUE@	1DfemIfpackRebuild$(EXEEXT) \
+@BUILD_EPETRA_TESTS_TRUE@	1DfemNonlinearCG$(EXEEXT) \
 @BUILD_EPETRA_TESTS_TRUE@	$(am__EXEEXT_1) $(am__EXEEXT_2)
 subdir = test/epetra/1Dfem
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
@@ -156,6 +157,9 @@ am_1DfemIfpackReuse_OBJECTS = 1DfemInterface.$(OBJEXT) \
 am_1DfemMLPreconditioner_OBJECTS = 1DfemInterface.$(OBJEXT) \
 	1DfemMLPreconditioner.$(OBJEXT)
 1DfemMLPreconditioner_OBJECTS = $(am_1DfemMLPreconditioner_OBJECTS)
+am_1DfemNonlinearCG_OBJECTS = 1DfemInterface.$(OBJEXT) \
+	1DfemNonlinearCG.$(OBJEXT)
+1DfemNonlinearCG_OBJECTS = $(am_1DfemNonlinearCG_OBJECTS)
 am_1DfemScaled_OBJECTS = 1DfemInterface.$(OBJEXT) \
 	1DfemPrePostOperator.$(OBJEXT) 1DfemScaled.$(OBJEXT)
 1DfemScaled_OBJECTS = $(am_1DfemScaled_OBJECTS)
@@ -188,6 +192,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/1DfemInterface.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/1DfemMLPreconditioner.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/1DfemModelEvaluator.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/1DfemNonlinearCG.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/1DfemPrePostOperator.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/1DfemScaled.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/1DfemScaledInexactTrustRegion.Po \
@@ -209,7 +214,7 @@ SOURCES = $(1Dfem_SOURCES) $(1DfemAztecPrecRebuild_SOURCES) \
 	$(1DfemAztecSolverPrecReuse_SOURCES) $(1DfemBelos_SOURCES) \
 	$(1DfemIfpackRebuild_SOURCES) $(1DfemIfpackRecompute_SOURCES) \
 	$(1DfemIfpackReuse_SOURCES) $(1DfemMLPreconditioner_SOURCES) \
-	$(1DfemScaled_SOURCES) \
+	$(1DfemNonlinearCG_SOURCES) $(1DfemScaled_SOURCES) \
 	$(1DfemScaledInexactTrustRegion_SOURCES) \
 	$(1DfemTransient_SOURCES) $(1DfemWithModelEvaluator_SOURCES)
 DIST_SOURCES = $(1Dfem_SOURCES) $(1DfemAztecPrecRebuild_SOURCES) \
@@ -219,7 +224,7 @@ DIST_SOURCES = $(1Dfem_SOURCES) $(1DfemAztecPrecRebuild_SOURCES) \
 	$(1DfemAztecSolverPrecReuse_SOURCES) $(1DfemBelos_SOURCES) \
 	$(1DfemIfpackRebuild_SOURCES) $(1DfemIfpackRecompute_SOURCES) \
 	$(1DfemIfpackReuse_SOURCES) $(1DfemMLPreconditioner_SOURCES) \
-	$(1DfemScaled_SOURCES) \
+	$(1DfemNonlinearCG_SOURCES) $(1DfemScaled_SOURCES) \
 	$(1DfemScaledInexactTrustRegion_SOURCES) \
 	$(1DfemTransient_SOURCES) $(1DfemWithModelEvaluator_SOURCES)
 ETAGS = etags
@@ -593,6 +598,16 @@ AM_CPPFLAGS = $(TEST_INCLUDES)
                               $(top_builddir)/src-epetra/libnoxepetra.a
 
 1DfemIfpackRebuild_LDADD = $(TEST_LIBS)
+1DfemNonlinearCG_SOURCES = \
+                         $(srcdir)/1DfemInterface.H \
+                         $(srcdir)/1DfemInterface.C \
+                         $(srcdir)/1DfemNonlinearCG.C
+
+1DfemNonlinearCG_DEPENDENCIES = \
+                              $(top_builddir)/src/libnox.a \
+                              $(top_builddir)/src-epetra/libnoxepetra.a
+
+1DfemNonlinearCG_LDADD = $(TEST_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -662,6 +677,9 @@ clean-noinstPROGRAMS:
 1DfemMLPreconditioner$(EXEEXT): $(1DfemMLPreconditioner_OBJECTS) $(1DfemMLPreconditioner_DEPENDENCIES) 
 	@rm -f 1DfemMLPreconditioner$(EXEEXT)
 	$(CXXLINK) $(1DfemMLPreconditioner_LDFLAGS) $(1DfemMLPreconditioner_OBJECTS) $(1DfemMLPreconditioner_LDADD) $(LIBS)
+1DfemNonlinearCG$(EXEEXT): $(1DfemNonlinearCG_OBJECTS) $(1DfemNonlinearCG_DEPENDENCIES) 
+	@rm -f 1DfemNonlinearCG$(EXEEXT)
+	$(CXXLINK) $(1DfemNonlinearCG_LDFLAGS) $(1DfemNonlinearCG_OBJECTS) $(1DfemNonlinearCG_LDADD) $(LIBS)
 1DfemScaled$(EXEEXT): $(1DfemScaled_OBJECTS) $(1DfemScaled_DEPENDENCIES) 
 	@rm -f 1DfemScaled$(EXEEXT)
 	$(CXXLINK) $(1DfemScaled_LDFLAGS) $(1DfemScaled_OBJECTS) $(1DfemScaled_LDADD) $(LIBS)
@@ -694,6 +712,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/1DfemInterface.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/1DfemMLPreconditioner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/1DfemModelEvaluator.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/1DfemNonlinearCG.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/1DfemPrePostOperator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/1DfemScaled.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/1DfemScaledInexactTrustRegion.Po@am__quote@
@@ -923,6 +942,22 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/1DfemMLPreconditioner.Po' tmpdepfile='$(DEPDIR)/1DfemMLPreconditioner.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o 1DfemMLPreconditioner.obj `if test -f '$(srcdir)/1DfemMLPreconditioner.C'; then $(CYGPATH_W) '$(srcdir)/1DfemMLPreconditioner.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/1DfemMLPreconditioner.C'; fi`
+
+1DfemNonlinearCG.o: $(srcdir)/1DfemNonlinearCG.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT 1DfemNonlinearCG.o -MD -MP -MF "$(DEPDIR)/1DfemNonlinearCG.Tpo" -c -o 1DfemNonlinearCG.o `test -f '$(srcdir)/1DfemNonlinearCG.C' || echo '$(srcdir)/'`$(srcdir)/1DfemNonlinearCG.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/1DfemNonlinearCG.Tpo" "$(DEPDIR)/1DfemNonlinearCG.Po"; else rm -f "$(DEPDIR)/1DfemNonlinearCG.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/1DfemNonlinearCG.C' object='1DfemNonlinearCG.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/1DfemNonlinearCG.Po' tmpdepfile='$(DEPDIR)/1DfemNonlinearCG.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o 1DfemNonlinearCG.o `test -f '$(srcdir)/1DfemNonlinearCG.C' || echo '$(srcdir)/'`$(srcdir)/1DfemNonlinearCG.C
+
+1DfemNonlinearCG.obj: $(srcdir)/1DfemNonlinearCG.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT 1DfemNonlinearCG.obj -MD -MP -MF "$(DEPDIR)/1DfemNonlinearCG.Tpo" -c -o 1DfemNonlinearCG.obj `if test -f '$(srcdir)/1DfemNonlinearCG.C'; then $(CYGPATH_W) '$(srcdir)/1DfemNonlinearCG.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/1DfemNonlinearCG.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/1DfemNonlinearCG.Tpo" "$(DEPDIR)/1DfemNonlinearCG.Po"; else rm -f "$(DEPDIR)/1DfemNonlinearCG.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/1DfemNonlinearCG.C' object='1DfemNonlinearCG.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/1DfemNonlinearCG.Po' tmpdepfile='$(DEPDIR)/1DfemNonlinearCG.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o 1DfemNonlinearCG.obj `if test -f '$(srcdir)/1DfemNonlinearCG.C'; then $(CYGPATH_W) '$(srcdir)/1DfemNonlinearCG.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/1DfemNonlinearCG.C'; fi`
 
 1DfemScaled.o: $(srcdir)/1DfemScaled.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT 1DfemScaled.o -MD -MP -MF "$(DEPDIR)/1DfemScaled.Tpo" -c -o 1DfemScaled.o `test -f '$(srcdir)/1DfemScaled.C' || echo '$(srcdir)/'`$(srcdir)/1DfemScaled.C; \
