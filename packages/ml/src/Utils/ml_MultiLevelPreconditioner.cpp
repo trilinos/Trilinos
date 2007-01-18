@@ -725,7 +725,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
   NumLevels_ = List_.get("max levels",10);  
   MaxLevels_ = NumLevels_;
 
-  int OutputLevel = List_.get("output", 10);  
+  int OutputLevel = List_.get("output", 0);  
   ML_Set_PrintLevel(OutputLevel);
 
   verbose_ = ( (5 < ML_Get_PrintLevel()) && (Comm().MyPID() == 0) );
@@ -1657,7 +1657,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
   
   CreateLabel();
   
-  if( SolvingMaxwell_ == false ) 
+//  if( SolvingMaxwell_ == false ) rst: Not sure why this was here?
     SetPreconditioner();
 
   IsComputePreconditionerOK_ = true;
@@ -1745,7 +1745,7 @@ ReComputePreconditioner()
   // re-build the preconditioner //
   // =========================== //
 
-  int OutputLevel = List_.get("output", 10);  
+  int OutputLevel = List_.get("output", 0);  
   ML_Set_PrintLevel(OutputLevel);
 
   Epetra_Time Time(Comm());
@@ -2204,13 +2204,27 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
   int NumSmootherSteps = List_.get("coarse: sweeps", 1);
   double Omega = List_.get("coarse: damping factor", 1.0);
   double AddToDiag = List_.get("coarse: add to diag", 1e-12);
-  double MLSalpha = List_.get("coarse: MLS alpha",27.0);
-  int MLSPolynomialOrder = List_.get("coarse: MLS polynomial order",2);
   string PreOrPostSmoother = List_.get("coarse: pre or post","post");
   int pre_or_post;
   if( PreOrPostSmoother == "pre" ) pre_or_post = ML_PRESMOOTHER;
   else if( PreOrPostSmoother == "both" ) pre_or_post = ML_BOTH;
   else pre_or_post = ML_POSTSMOOTHER;
+
+  // rst: Changing polynomial interface:
+  //    1) polynomial degree is set from "coarse: sweeps"
+  //    2) "coarse: Chebyshev" also calls ML's Chebyshev
+  //    3) "coarse: Chebshev alpha" also sets alpha
+  //    4) "coarse: node sweeps" and "coarse: edge sweeps" now set polynomial
+  //                degree within Hiptmair 
+  //
+  // For backward compatiblity, we still take the degree from 
+  // "coarse: MLS polynomial order" if set, still recognize MLS 
+
+  double ChebyshevAlpha = List_.get("coarse: MLS alpha",-2.0);
+  if ( ChebyshevAlpha == -2.) ChebyshevAlpha = List_.get("coarse: Chebyshev alpha", 27.);
+
+  int ChebyshevPolyOrder = List_.get("coarse: MLS polynomial order",-7);
+  if (ChebyshevPolyOrder == -7) ChebyshevPolyOrder = NumSmootherSteps;
 
   char msg[80];
   sprintf(msg, "Coarse solve (level %d) : ", LevelID_[NumLevels_-1]);
@@ -2245,7 +2259,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
     else
 #endif
       ML_Gen_Smoother_GaussSeidel(ml_, LevelID_[NumLevels_-1], pre_or_post,
-                NumSmootherSteps, Omega);
+               NumSmootherSteps, Omega);
 
   } else if( CoarseSolution == "ML Gauss-Seidel" ) {
     if( verbose_ ) cout << msg << "Gauss-Seidel (sweeps="
@@ -2284,12 +2298,12 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
     ML_Gen_Smoother_SymGaussSeidel(ml_, LevelID_[NumLevels_-1],
                                    pre_or_post, NumSmootherSteps, Omega);
 
-  } else if( CoarseSolution == "MLS" ) {
-    if( verbose_ ) cout << msg << "Chebyshev (degree="
-                        << MLSPolynomialOrder << ",alpha=" << MLSalpha
+  } else if(( CoarseSolution == "MLS" ) || (CoarseSolution == "Chebyshev")) {
+  if( verbose_ ) cout << msg << "Chebyshev (degree="
+                        << ChebyshevPolyOrder << ",alpha=" << ChebyshevAlpha
                         << "," << PreOrPostSmoother << ")" << endl;
      ML_Gen_Smoother_MLS(ml_, LevelID_[NumLevels_-1], pre_or_post,
-                         MLSalpha, MLSPolynomialOrder);
+                         ChebyshevAlpha, ChebyshevPolyOrder);
 
   } else if( CoarseSolution == "Hiptmair" ) {
                                                                                 
@@ -2312,20 +2326,20 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
       double omega;
       char subsmDetails[80];
       // only MLS and SGS are currently supported
-      if (SubSmootherType == "MLS")
+      if ( (SubSmootherType == "MLS") || (SubSmootherType == "Chebyshev"))
       {
         nodal_smoother=(void *) ML_Gen_Smoother_MLS;
         // set polynomial degree
-        ML_Smoother_Arglist_Set(nodal_args_, 0, &MLSPolynomialOrder);
+        ML_Smoother_Arglist_Set(nodal_args_, 0, &nodal_its);
         edge_smoother=(void *) ML_Gen_Smoother_MLS;
-        ML_Smoother_Arglist_Set(edge_args_, 0, &MLSPolynomialOrder);
+        ML_Smoother_Arglist_Set(edge_args_, 0, &edge_its);
                                                                                 
         // set alpha (lower bound of smoothing interval (alpha,beta) )
                                                                                 
-        ML_Smoother_Arglist_Set(edge_args_, 1, &MLSalpha);
-        ML_Smoother_Arglist_Set(nodal_args_, 1, &MLSalpha);
-        sprintf(subsmDetails,"degree=%d,alpha=%3.1e",
-                MLSPolynomialOrder,MLSalpha);
+        ML_Smoother_Arglist_Set(edge_args_, 1, &ChebyshevAlpha);
+        ML_Smoother_Arglist_Set(nodal_args_, 1, &ChebyshevAlpha);
+        sprintf(subsmDetails,"edge sweeps=%d, node sweeps=%d,alpha=%3.1e",
+                edge_its,nodal_its,ChebyshevAlpha);
       }
       else if (SubSmootherType == "symmetric Gauss-Seidel") {
         omega = List_.get("coarse: damping factor",1.0);
@@ -2339,17 +2353,17 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
                 edge_its,nodal_its,omega);
       }
       else if (Comm().MyPID() == 0)
-        cerr << ErrorMsg_ << "Only MLS and SGS are supported as "
-             << "Hiptmair subsmoothers." << endl;
+        cerr << ErrorMsg_ << "Only Chebyshev(or MLS) and SGS are supported as "
+             << "Hiptmair subsmoothers ... not " << SubSmootherType << endl;
 
       int hiptmair_type = (int)
              List_.get("smoother: Hiptmair efficient symmetric", true);
 
-      if( verbose_ ) cout << msg << "Hiptmair " << "(outer sweeps="
+     if( verbose_ ) cout << msg << "Hiptmair " << "(outer sweeps="
                           << NumSmootherSteps << ","
                           << PreOrPostSmoother << "," << SubSmootherType
                           << "," << subsmDetails << ")" << endl;
-                                                                                
+
       ML_Gen_Smoother_Hiptmair(ml_, logical_level, ML_BOTH,
                  NumSmootherSteps, Tmat_array, Tmat_trans_array, NULL,
                  MassMatrix_array,
@@ -2382,7 +2396,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
     ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1], 
                            ML_AMESOS_SCALAPACK, MaxProcs, AddToDiag);
 
-  else if( CoarseSolution == "block Gauss-Seidel" ) {
+ else if( CoarseSolution == "block Gauss-Seidel" ) {
     if( verbose_ ) cout << msg << "block Gauss-Seidel (sweeps="
                         << NumSmootherSteps << ",omega=" << Omega
                         << "," << PreOrPostSmoother << "numPDEs="
@@ -2411,7 +2425,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
     userSmootherName = List_.get("coarse: user-defined name", "User-defined");
 
     if( verbose_ ) cout << msg << userSmootherName << " (sweeps=" 
-			 << NumSmootherSteps << "," << PreOrPostSmoother << ")" << endl;
+			 << NumSmootherSteps << ", " << PreOrPostSmoother << ")" << endl;
 
     if (userSmootherPtr == NULL) {
       if (Comm().MyPID() == 0)
@@ -2784,7 +2798,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothingDamping()
     List_.set("field-of-values: restart", 100);
     List_.set("field-of-values: ", 20);
     List_.set("field-of-values: print current status", false);
-    List_.set("output",10);
+    List_.set("output",0);
 
     struct ML_Field_Of_Values* field_of_values;
 
