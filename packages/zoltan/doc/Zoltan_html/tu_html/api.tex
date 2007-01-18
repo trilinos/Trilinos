@@ -7,6 +7,41 @@
 
 \section{Overview}
 
+The Zoltan library is a C library that you can link with your C,
+C++ or Fortran application.  Details of the C++ and Fortran bindings
+are provided in the User's Guide 
+(\url{http://www.cs.sandia.gov/Zoltan/ug_html/ug.html}).
+Because Zoltan uses MPI for communication, you must link your application
+with the Zoltan library and with MPI.
+
+The following points summarize the interface between your
+application and the Zoltan library:
+
+\begin{itemize}
+\item Your parallel application must have a global set of IDs that uniquely identify each object that will be included in the partitioning.  Zoltan is flexible about data type or size of your IDs.
+\item You make a call to the Zoltan library to create a load balancing instance or handle.  All subsequent interactions with Zoltan related to this partitioning problem are done through this handle.  
+\item You set parameters that state which partitioning method you wish Zoltan to use, how you want the method to behave, and what type of data you will be providing.
+\item You create functions that Zoltan can call during partitioning to obtain your data.  You provide the names of these functions to Zoltan.
+\item When you want to partition or repartition your data, all processes in your parallel application must call Zoltan.  When Zoltan returns, you will have lists of the IDs of the data that must be moved.  You must free these lists when you are done with them.
+\item The Zoltan functions that you call will return success or failure information.
+\end{itemize}
+
+Most Zoltan users will only use the partitioning functions of Zoltan.  But Zoltan provides
+some other useful capabilities as well, such as functions to aid with data migration, and
+global data dictionaries to locate the partition holding a data object.  
+After discussing the partitioning interface, we will briefly introduce those capabilities.
+
+\section{Initializing and releasing Zoltan}
+
+Every process in your parallel application must initialize Zoltan once
+with a call to \textbf{Zoltan\_Initialize}.  Every
+partitioning instance that is created with \textbf{Zoltan\_Create} must be freed at
+the end with \textbf{Zoltan\_Destroy}.  And all lists returned by
+Zoltan must also be freed with \textbf{Zoltan\_LB\_Free\_Part}.  These functions
+are defined in the User's Guide at
+\url{http://www.cs.sandia.gov/Zoltan/ug\_html/ug\_interface\_init.html}
+and they are are illustrated in each of the examples in chapter ~\ref{cha:ex}.
+
 \section{Application defined query functions}
 
 \section{Using parameters to configure Zoltan}
