@@ -10,7 +10,7 @@ static int myGlobalIDs[36];
 static float objWeight(int globalID)
 {
 float w;
-  if (globalID % numProcs == 0){
+  if (globalID % numProcs == 0)
     w = 3;  /* simulate an initial imbalance */
   else
     w = (globalID % 3 + 1);
@@ -103,16 +103,16 @@ int main(int argc, char *argv[])
         &changes,        /* 1 if partitioning was changed, 0 otherwise */ 
         &numGidEntries,  /* Number of integers used for a global ID */
         &numLidEntries,  /* Number of integers used for a local ID */
-        &numImport,      /* Number of vertices to be sent to me */
-        &importGlobalGids,  /* Global IDs of vertices to be sent to me */
-        &importLocalGids,   /* Local IDs of vertices to be sent to me */
-        &importProcs,    /* Process rank for source of each incoming vertex */
-        &importToPart,   /* New partition for each incoming vertex */
-        &numExport,      /* Number of vertices I must send to other processes*/
-        &exportGlobalGids,  /* Global IDs of the vertices I must send */
-        &exportLocalGids,   /* Local IDs of the vertices I must send */
-        &exportProcs,    /* Process to which I send each of the vertices */
-        &exportToPart);  /* Partition to which each vertex will belong */
+        &numImport,      /* Number of objects to be sent to me */
+        &importGlobalGids,  /* Global IDs of objects to be sent to me */
+        &importLocalGids,   /* Local IDs of objects to be sent to me */
+        &importProcs,    /* Process rank for source of each incoming object */
+        &importToPart,   /* New partition for each incoming object */
+        &numExport,      /* Number of objects I must send to other processes*/
+        &exportGlobalGids,  /* Global IDs of the objects I must send */
+        &exportLocalGids,   /* Local IDs of the objects I must send */
+        &exportProcs,    /* Process to which I send each of the objects */
+        &exportToPart);  /* Partition to which each object will belong */
 
   if (rc != ZOLTAN_OK){
     printf("Error in Zoltan library\n");
@@ -140,7 +140,7 @@ int main(int argc, char *argv[])
       printf("%d: ",i);
       for (j=0; j<ngids; j++){
         if (j && (j % 20 == 0)) printf("\n   ");
-        printf("%d (%2.0f) ",gid_list[j],objWeight(gid_list[j]));
+        printf("%d ",gid_list[j]);
         wgt += objWeight(gid_list[j]);
       }
       printf("   weight: %f\n",wgt);
@@ -172,7 +172,7 @@ int main(int argc, char *argv[])
       wgt=0.0;
       for (j=0; j<nextIdx; j++){
         if (j && (j % 20 == 0)) printf("\n   ");
-        printf("%d (%2.0f) ",gid_flags[j],objWeight(gid_flags[j]));
+        printf("%d ",gid_flags[j]);
         wgt += objWeight(gid_flags[j]);
       }
       printf("   weight: %f\n",wgt);
