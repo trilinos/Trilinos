@@ -15,7 +15,7 @@ endif
 	@echo "Building $@"
 	@$(CC) $(CFLAGS) -o $@ $(INCLUDE) $(LIBDIR) $< $(LIBS)
 
-simpleRCB: rectangularGraph.h simpleRCB.cpp
+simpleRCB: rectangularMesh.h simpleRCB.cpp
 	@echo "Building simpleRCB"
 	@$(CC) $(CFLAGS) -o simpleRCB $(INCLUDE) $(LIBDIR) simpleRCB.cpp $(LIBS)
 
