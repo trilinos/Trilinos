@@ -2107,7 +2107,8 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
 
   if (ML_Repartition_Status(ml) == ML_FALSE) {
     StopTimer(&t0,&delta);
-    ReportTimer(delta,"Time spent in ML_repartition_Acoarse",ml->comm);
+    if (ML_Get_PrintLevel() > 9)
+      ReportTimer(delta,"Time spent in ML_repartition_Acoarse",ml->comm);
     return NULL;
   }
 
@@ -2118,7 +2119,8 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
   if ((ml->MinPerProc_repartition == -1) && 
       (ml->LargestMinMaxRatio_repartition == -1.)) {
     StopTimer(&t0,&delta);
-    ReportTimer(delta,"Time spent in ML_repartition_Acoarse",ml->comm);
+    if (ML_Get_PrintLevel() > 9)
+      ReportTimer(delta,"Time spent in ML_repartition_Acoarse",ml->comm);
     return NULL;
   }
 
@@ -2149,7 +2151,8 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
 
   if (flag == 0) {
     StopTimer(&t0,&delta);
-    ReportTimer(delta,"Time spent in ML_repartition_Acoarse",ml->comm);
+    if (ML_Get_PrintLevel() > 9)
+      ReportTimer(delta,"Time spent in ML_repartition_Acoarse",ml->comm);
     return NULL;
   }
 
@@ -2316,7 +2319,8 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
   } /*if (status == 0)*/
 
   StopTimer(&t0,&delta);
-  ReportTimer(delta,"Time spent in ML_repartition_Acoarse",ml->comm);
+  if (ML_Get_PrintLevel() > 9)
+    ReportTimer(delta,"Time spent in ML_repartition_Acoarse",ml->comm);
 
   if (ReturnPerm == ML_FALSE)
     return NULL;
