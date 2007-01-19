@@ -38,7 +38,7 @@ void FAD::error(char *msg) {
 }
 
 DFadOpsUnitTest::DFadOpsUnitTest() :
-  urand(0.0, 1.0), n(5), tol_a(1.0e-16), tol_r(1.0e-15) {}
+  urand(0.0, 1.0), n(5), tol_a(1.0e-15), tol_r(1.0e-14) {}
 
 DFadOpsUnitTest::DFadOpsUnitTest(int numComponents, double absolute_tolerance, 
 				 double relative_tolerance) :
@@ -95,4 +95,98 @@ void DFadOpsUnitTest::compareFads(const DFadType& x_dfad,
 
 void DFadOpsUnitTest::compareDoubles(double a, double b) {
   CPPUNIT_ASSERT( fabs(a-b) < tol_a + tol_r*fabs(a) );
+}
+
+void DFadOpsUnitTest::testMax() {
+  double val;
+
+  DFadType aa_dfad = a_dfad + 1.0;
+  c_dfad = max(aa_dfad, a_dfad);
+  compareDoubles(c_dfad.val(), aa_dfad.val());
+  for (int i=0; i<n; i++) {
+    compareDoubles(c_dfad.dx(i), aa_dfad.dx(i));
+    compareDoubles(c_dfad.fastAccessDx(i), aa_dfad.fastAccessDx(i));
+  }
+  
+  c_dfad = max(a_dfad, aa_dfad);
+  compareDoubles(c_dfad.val(), aa_dfad.val());
+  for (int i=0; i<n; i++) {
+    compareDoubles(c_dfad.dx(i), aa_dfad.dx(i));
+    compareDoubles(c_dfad.fastAccessDx(i), aa_dfad.fastAccessDx(i));
+  }
+  
+  val = a_dfad.val() + 1;
+  c_dfad = max(a_dfad, val);
+  compareDoubles(c_dfad.val(), val);
+  for (int i=0; i<n; i++)
+    compareDoubles(c_dfad.dx(i), 0.0);
+  
+  val = a_dfad.val() - 1;
+  c_dfad = max(a_dfad, val);
+  compareDoubles(c_dfad.val(), a_dfad.val());
+  for (int i=0; i<n; i++) {
+    compareDoubles(c_dfad.dx(i), a_dfad.dx(i));
+    compareDoubles(c_dfad.fastAccessDx(i), a_dfad.fastAccessDx(i));
+  }
+
+  val = b_dfad.val() + 1;
+  c_dfad = max(val, b_dfad);
+  compareDoubles(c_dfad.val(), val);
+  for (int i=0; i<n; i++)
+    compareDoubles(c_dfad.dx(i), 0.0);
+  
+  val = b_dfad.val() - 1;
+  c_dfad = max(val, b_dfad);
+  compareDoubles(c_dfad.val(), b_dfad.val());
+  for (int i=0; i<n; i++) {
+    compareDoubles(c_dfad.dx(i), b_dfad.dx(i));
+    compareDoubles(c_dfad.fastAccessDx(i), b_dfad.fastAccessDx(i));
+  }
+}
+
+void DFadOpsUnitTest::testMin() {
+  double val;
+
+  DFadType aa_dfad = a_dfad - 1.0;
+  c_dfad = min(aa_dfad, a_dfad);
+  compareDoubles(c_dfad.val(), aa_dfad.val());
+  for (int i=0; i<n; i++) {
+    compareDoubles(c_dfad.dx(i), aa_dfad.dx(i));
+    compareDoubles(c_dfad.fastAccessDx(i), aa_dfad.fastAccessDx(i));
+  }
+
+  c_dfad = min(a_dfad, aa_dfad);
+  compareDoubles(c_dfad.val(), aa_dfad.val());
+  for (int i=0; i<n; i++) {
+    compareDoubles(c_dfad.dx(i), aa_dfad.dx(i));
+    compareDoubles(c_dfad.fastAccessDx(i), aa_dfad.fastAccessDx(i));
+  }
+
+  val = a_dfad.val() - 1;
+  c_dfad = min(a_dfad, val);
+  compareDoubles(c_dfad.val(), val);
+  for (int i=0; i<n; i++)
+    compareDoubles(c_dfad.dx(i), 0.0);
+  
+  val = a_dfad.val() + 1;
+  c_dfad = min(a_dfad, val);
+  compareDoubles(c_dfad.val(), a_dfad.val());
+  for (int i=0; i<n; i++) {
+    compareDoubles(c_dfad.dx(i), a_dfad.dx(i));
+    compareDoubles(c_dfad.fastAccessDx(i), a_dfad.fastAccessDx(i));
+  }
+
+  val = b_dfad.val() - 1;
+  c_dfad = min(val, b_dfad);
+  compareDoubles(c_dfad.val(), val);
+  for (int i=0; i<n; i++)
+    compareDoubles(c_dfad.dx(i), 0.0);
+  
+  val = b_dfad.val() + 1;
+  c_dfad = min(val, b_dfad);
+  compareDoubles(c_dfad.val(), b_dfad.val());
+  for (int i=0; i<n; i++) {
+    compareDoubles(c_dfad.dx(i), b_dfad.dx(i));
+    compareDoubles(c_dfad.fastAccessDx(i), b_dfad.fastAccessDx(i));
+  }
 }

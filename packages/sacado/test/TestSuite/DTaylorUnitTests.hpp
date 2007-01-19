@@ -42,6 +42,13 @@ typedef Sacado::Taylor::DTaylor<double> DTaylorType;
 #include "adouble.h"
 #include "interfaces.h"
 
+inline adouble max(const adouble& a, const adouble& b) { return fmax(a,b); }
+inline adouble max(const adouble& a, double v) { return fmax(a,v); }
+inline adouble max(double v, const adouble& b) { return fmax(v,b); }
+inline adouble min(const adouble& a, const adouble& b) { return fmin(a,b); }
+inline adouble min(const adouble& a, double v) { return fmin(a,v); }
+inline adouble min(double v, const adouble& b) { return fmin(v,b); }
+
 // Cppunit includes
 #include <cppunit/extensions/HelperMacros.h>
 
@@ -244,6 +251,8 @@ class DTaylorOpsUnitTest : public CppUnit::TestFixture {
   CPPUNIT_BINARY_OP_TEST(testDivision);
 
   CPPUNIT_BINARY_FUNC_TEST(testPow);
+  CPPUNIT_BINARY_FUNC_TEST(testMax);
+  CPPUNIT_BINARY_FUNC_TEST(testMin);
 
   CPPUNIT_TEST(testUnaryPlus);
   CPPUNIT_TEST(testUnaryMinus);
@@ -298,6 +307,8 @@ public:
   BINARY_OP_TEST(testDivision, /);
 
   BINARY_FUNC_TEST(testPow, pow);
+  BINARY_FUNC_TEST(testMax, max);
+  BINARY_FUNC_TEST(testMin, min);
 
   UNARY_OP_TEST(testUnaryPlus, +);
   UNARY_OP_TEST(testUnaryMinus, -);

@@ -1074,8 +1074,8 @@ namespace Sacado {
 	if (i == 0)
 	  return max(expr1.coeff(0), expr2.coeff(0));
 	else
-	  return expr1.value() >= expr2.value() ? expr1.coeff(i) : 
-	                                          expr2.coeff(i);
+	  return expr1.coeff(0) >= expr2.coeff(0) ? expr1.coeff(i) : 
+	    expr2.coeff(i);
       }
       
       value_type
@@ -1084,7 +1084,7 @@ namespace Sacado {
 	if (i == 0)
 	  return max(expr1.fastAccessCoeff(0), expr2.fastAccessCoeff(0));
 	else
-	  return expr1.value() >= expr2.value() ? 
+	  return expr1.fastAccessCoeff(0) >= expr2.fastAccessCoeff(0) ? 
 	    expr1.fastAccessoeff(i) : expr2.fastAccessCoeff(i);
       }
       
@@ -1107,8 +1107,8 @@ namespace Sacado {
 	if (i == 0)
 	  return max(expr1.coeff(0), expr2.value());
 	else
-	  return expr1.value() >= expr2.value() ? expr1.coeff(i) : 
-	                                          value_type(0);
+	  return expr1.coeff(0) >= expr2.value() ? expr1.coeff(i) : 
+	    value_type(0);
       }
 
       value_type
@@ -1117,8 +1117,8 @@ namespace Sacado {
 	if (i == 0)
 	  return max(expr1.fastAccessCoeff(0), expr2.value());
 	else
-	  return expr1.value() >= expr2.value() ? expr1.fastAccessCoeff(i) : 
-	                                          value_type(0);
+	  return expr1.fastAccessCoeff(0) >= expr2.value() ? 
+	    expr1.fastAccessCoeff(i) : value_type(0);
       }
 
     }; // class MaxOp
@@ -1140,8 +1140,8 @@ namespace Sacado {
 	if (i == 0)
 	  return max(expr1.value(), expr2.coeff(0));
 	else
-	  return expr1.value() >= expr2.value() ? value_type(0) : 
-	                                          expr2.coeff(i);
+	  return expr1.value() >= expr2.coeff(0) ? value_type(0) : 
+	    expr2.coeff(i);
       }
 
       value_type
@@ -1150,8 +1150,8 @@ namespace Sacado {
 	if (i == 0)
 	  return max(expr1.value(), expr2.fastAccessCoeff(0));
 	else
-	  return expr1.value() >= expr2.value() ? value_type(0) : 
-	                                          expr2.fastAccessCoeff(i);
+	  return expr1.value() >= expr2.fastAccessCoeff(0) ? value_type(0) : 
+	    expr2.fastAccessCoeff(i);
       }
 
     }; // class MaxOp
@@ -1177,8 +1177,8 @@ namespace Sacado {
 	if (i == 0)
 	  return min(expr1.coeff(0), expr2.coeff(0));
 	else
-	  return expr1.value() <= expr2.value() ? expr1.coeff(i) : 
-	                                          expr2.coeff(i);
+	  return expr1.coeff(0) <= expr2.coeff(0) ? expr1.coeff(i) : 
+	    expr2.coeff(i);
       }
       
       value_type
@@ -1187,8 +1187,8 @@ namespace Sacado {
 	if (i == 0)
 	  return min(expr1.fastAccessCoeff(0), expr2.fastAccessCoeff(0));
 	else
-	  return expr1.value() <= expr2.value() ? 
-	    expr1.fastAccessoeff(i) : expr2.fastAccessCoeff(i);
+	  return expr1.fastAccessCoeff(0) <= expr2.fastAccessCoeff(0) ? 
+	    expr1.fastAccessCoeff(i) : expr2.fastAccessCoeff(i);
       }
       
     }; // class MinOp
@@ -1210,8 +1210,8 @@ namespace Sacado {
 	if (i == 0)
 	  return min(expr1.coeff(0), expr2.value());
 	else
-	  return expr1.value() <= expr2.value() ? expr1.coeff(i) : 
-	                                          value_type(0);
+	  return expr1.coeff(0) <= expr2.value() ? expr1.coeff(i) : 
+	    value_type(0);
       }
 
       value_type
@@ -1220,8 +1220,8 @@ namespace Sacado {
 	if (i == 0)
 	  return min(expr1.fastAccessCoeff(0), expr2.value());
 	else
-	  return expr1.value() <= expr2.value() ? expr1.fastAccessCoeff(i) : 
-	                                          value_type(0);
+	  return expr1.fastAccessCoeff(0) <= expr2.value() ? 
+	    expr1.fastAccessCoeff(i) : value_type(0);
       }
 
     }; // class MinOp
@@ -1243,8 +1243,8 @@ namespace Sacado {
 	if (i == 0)
 	  return min(expr1.value(), expr2.coeff(0));
 	else
-	  return expr1.value() <= expr2.value() ? value_type(0) : 
-	                                          expr2.coeff(i);
+	  return expr1.value() <= expr2.coeff(0) ? value_type(0) : 
+	    expr2.coeff(i);
       }
 
       value_type
@@ -1253,8 +1253,8 @@ namespace Sacado {
 	if (i == 0)
 	  return min(expr1.value(), expr2.fastAccessCoeff(0));
 	else
-	  return expr1.value() <= expr2.value() ? value_type(0) : 
-	                                          expr2.fastAccessCoeff(i);
+	  return expr1.value() <= expr2.fastAccessCoeff(0) ? value_type(0) : 
+	    expr2.fastAccessCoeff(i);
       }
 
     }; // class MinOp

@@ -34,7 +34,7 @@
 CPPUNIT_TEST_SUITE_REGISTRATION( DTaylorOpsUnitTest );
 
 DTaylorOpsUnitTest::DTaylorOpsUnitTest() :
-  urand(0.0, 1.0), d(5), tol_a(1.0e-14), tol_r(1.0e-14) 
+  urand(0.0, 1.0), d(5), tol_a(1.0e-14), tol_r(1.0e-13) 
 {
   X = new double*[2];
   X[0] = new double[d+1];

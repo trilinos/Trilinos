@@ -34,7 +34,7 @@
 CPPUNIT_TEST_SUITE_REGISTRATION( SFadOpsUnitTest );
 
 SFadOpsUnitTest::SFadOpsUnitTest() :
-  urand(0.0, 1.0), n(num_comp), tol_a(1.0e-16), tol_r(1.0e-15) {}
+  urand(0.0, 1.0), n(num_comp), tol_a(1.0e-15), tol_r(1.0e-14) {}
 
 SFadOpsUnitTest::SFadOpsUnitTest(int numComponents, double absolute_tolerance, 
 				 double relative_tolerance) :
@@ -91,4 +91,98 @@ void SFadOpsUnitTest::compareFads(const SFadType& x_sfad,
 
 void SFadOpsUnitTest::compareDoubles(double a, double b) {
   CPPUNIT_ASSERT( fabs(a-b) < tol_a + tol_r*fabs(a) );
+}
+
+void SFadOpsUnitTest::testMax() {
+  double val;
+
+  SFadType aa_sfad = a_sfad + 1.0;
+  c_sfad = max(aa_sfad, a_sfad);
+  compareDoubles(c_sfad.val(), aa_sfad.val());
+  for (int i=0; i<n; i++) {
+    compareDoubles(c_sfad.dx(i), aa_sfad.dx(i));
+    compareDoubles(c_sfad.fastAccessDx(i), aa_sfad.fastAccessDx(i));
+  }
+  
+  c_sfad = max(a_sfad, aa_sfad);
+  compareDoubles(c_sfad.val(), aa_sfad.val());
+  for (int i=0; i<n; i++) {
+    compareDoubles(c_sfad.dx(i), aa_sfad.dx(i));
+    compareDoubles(c_sfad.fastAccessDx(i), aa_sfad.fastAccessDx(i));
+  }
+  
+  val = a_sfad.val() + 1;
+  c_sfad = max(a_sfad, val);
+  compareDoubles(c_sfad.val(), val);
+  for (int i=0; i<n; i++)
+    compareDoubles(c_sfad.dx(i), 0.0);
+  
+  val = a_sfad.val() - 1;
+  c_sfad = max(a_sfad, val);
+  compareDoubles(c_sfad.val(), a_sfad.val());
+  for (int i=0; i<n; i++) {
+    compareDoubles(c_sfad.dx(i), a_sfad.dx(i));
+    compareDoubles(c_sfad.fastAccessDx(i), a_sfad.fastAccessDx(i));
+  }
+
+  val = b_sfad.val() + 1;
+  c_sfad = max(val, b_sfad);
+  compareDoubles(c_sfad.val(), val);
+  for (int i=0; i<n; i++)
+    compareDoubles(c_sfad.dx(i), 0.0);
+  
+  val = b_sfad.val() - 1;
+  c_sfad = max(val, b_sfad);
+  compareDoubles(c_sfad.val(), b_sfad.val());
+  for (int i=0; i<n; i++) {
+    compareDoubles(c_sfad.dx(i), b_sfad.dx(i));
+    compareDoubles(c_sfad.fastAccessDx(i), b_sfad.fastAccessDx(i));
+  }
+}
+
+void SFadOpsUnitTest::testMin() {
+  double val;
+
+  SFadType aa_sfad = a_sfad - 1.0;
+  c_sfad = min(aa_sfad, a_sfad);
+  compareDoubles(c_sfad.val(), aa_sfad.val());
+  for (int i=0; i<n; i++) {
+    compareDoubles(c_sfad.dx(i), aa_sfad.dx(i));
+    compareDoubles(c_sfad.fastAccessDx(i), aa_sfad.fastAccessDx(i));
+  }
+
+  c_sfad = min(a_sfad, aa_sfad);
+  compareDoubles(c_sfad.val(), aa_sfad.val());
+  for (int i=0; i<n; i++) {
+    compareDoubles(c_sfad.dx(i), aa_sfad.dx(i));
+    compareDoubles(c_sfad.fastAccessDx(i), aa_sfad.fastAccessDx(i));
+  }
+
+  val = a_sfad.val() - 1;
+  c_sfad = min(a_sfad, val);
+  compareDoubles(c_sfad.val(), val);
+  for (int i=0; i<n; i++)
+    compareDoubles(c_sfad.dx(i), 0.0);
+  
+  val = a_sfad.val() + 1;
+  c_sfad = min(a_sfad, val);
+  compareDoubles(c_sfad.val(), a_sfad.val());
+  for (int i=0; i<n; i++) {
+    compareDoubles(c_sfad.dx(i), a_sfad.dx(i));
+    compareDoubles(c_sfad.fastAccessDx(i), a_sfad.fastAccessDx(i));
+  }
+
+  val = b_sfad.val() - 1;
+  c_sfad = min(val, b_sfad);
+  compareDoubles(c_sfad.val(), val);
+  for (int i=0; i<n; i++)
+    compareDoubles(c_sfad.dx(i), 0.0);
+  
+  val = b_sfad.val() + 1;
+  c_sfad = min(val, b_sfad);
+  compareDoubles(c_sfad.val(), b_sfad.val());
+  for (int i=0; i<n; i++) {
+    compareDoubles(c_sfad.dx(i), b_sfad.dx(i));
+    compareDoubles(c_sfad.fastAccessDx(i), b_sfad.fastAccessDx(i));
+  }
 }

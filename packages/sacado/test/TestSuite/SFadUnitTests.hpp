@@ -114,6 +114,8 @@ class SFadOpsUnitTest : public CppUnit::TestFixture {
   CPPUNIT_TEST(testDivision);
 
   CPPUNIT_TEST(testPow);
+  CPPUNIT_TEST(testMax);
+  CPPUNIT_TEST(testMin);
 
   CPPUNIT_TEST(testUnaryPlus);
   CPPUNIT_TEST(testUnaryMinus);
@@ -191,6 +193,9 @@ public:
   UNARY_ASSIGNOP_TEST(testMinusEquals, -=);
   UNARY_ASSIGNOP_TEST(testTimesEquals, *=);
   UNARY_ASSIGNOP_TEST(testDivideEquals, /=);
+
+  void testMax();
+  void testMin();
 
   template <typename ScalarT>
   ScalarT composite1(const ScalarT& a, const ScalarT& b) {
