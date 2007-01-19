@@ -215,7 +215,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
         if (verbose_)
           cout << msg << "Epetra_CrsMatrix detected, using "
                << "Ifpack implementation" << endl;
-        MyIfpackType = "point relaxation stand-alone";
+        string MyIfpackType = "point relaxation stand-alone";
         ParameterList& MyIfpackList = List_.sublist("smoother: ifpack list");;
         MyIfpackList.set("relaxation: type", "Gauss-Seidel");
         MyIfpackList.set("relaxation: sweeps", Mynum_smoother_steps);
