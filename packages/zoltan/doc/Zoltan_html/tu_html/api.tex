@@ -1,6 +1,6 @@
 %
 % This section describes in high level terms how an application uses Zoltan
-%
+% 
 \chapter{Using the Zoltan library}
 \label{cha:using}
 
@@ -18,11 +18,13 @@ The following points summarize the interface between your
 application and the Zoltan library:
 
 \begin{itemize}
-\item Your parallel application must have a global set of IDs that uniquely identify each object that will be included in the partitioning.  Zoltan is flexible about data type or size of your IDs.
+\item Your parallel application must have a global set of IDs that uniquely identify each object that will be included in the partitioning.  Zoltan is flexible about the data type or size of your IDs.
 \item You make a call to the Zoltan library to create a load balancing instance or handle.  All subsequent interactions with Zoltan related to this partitioning problem are done through this handle.  
 \item You set parameters that state which partitioning method you wish Zoltan to use, how you want the method to behave, and what type of data you will be providing.
 \item You create functions that Zoltan can call during partitioning to obtain your data.  You provide the names of these functions to Zoltan.
-\item When you want to partition or repartition your data, all processes in your parallel application must call Zoltan.  When Zoltan returns, you will have lists of the IDs of the data that must be moved.  You must free these lists when you are done with them.
+\item When you want to partition or repartition your data, all processes in your parallel application must call Zoltan.  When Zoltan returns, each process will have lists of the 
+IDs of the data it must move to another process and of the data it will receive from 
+other processes.  You must free these lists when you are done with them.
 \item The Zoltan functions that you call will return success or failure information.
 \end{itemize}
 
@@ -37,21 +39,136 @@ Every process in your parallel application must initialize Zoltan once
 with a call to \textbf{Zoltan\_Initialize}.  Every
 partitioning instance that is created with \textbf{Zoltan\_Create} must be freed at
 the end with \textbf{Zoltan\_Destroy}.  And all lists returned by
-Zoltan must also be freed with \textbf{Zoltan\_LB\_Free\_Part}.  These functions
+Zoltan must be freed with \textbf{Zoltan\_LB\_Free\_Part}.  These functions
 are defined in the User's Guide at
 \url{http://www.cs.sandia.gov/Zoltan/ug\_html/ug\_interface\_init.html}
 and they are are illustrated in each of the examples in chapter ~\ref{cha:ex}.
 
 \section{Application defined query functions}
 
+To make Zoltan easy to use, we do not impose any particular data structure 
+on an application, nor do we require an application to build a particular 
+data structure for Zoltan. Instead, Zoltan uses a callback function interface, 
+in which Zoltan queries the application for needed data. The application must 
+provide simple functions that answer these queries.
+
+To keep the application interface simple, we use a small set of callback functions 
+and make them easy to write by requesting only information that is easily accessible 
+to applications. For example, the most basic partitioning algorithms require only 
+four callback functions. These functions return the number of objects owned by a 
+processor, a list of weights and IDs for owned objects, the problem's dimensionality, 
+and a given object's coordinates. More sophisticated graph-based partitioning 
+algorithms require only two additional callback functions, which return the number 
+of edges per object and edge lists for objects.
+
+The User's Guide 
+(\url{http://www.cs.sandia.gov/Zoltan/ug\_html/ug\_query.html})
+provides detailed prototypes for application defined query functions.
+Several working examples of query functions can be found in this document,
+for example in the Recursive Coordinate Bisection section (\ref{sec:rcb});
+
 \section{Using parameters to configure Zoltan}
+
+The behavior of Zoltan is controlled by several parameters and debugging-output 
+levels. 
+For example, you will set the parameter \textbf{NUM\_GID\_ENTRIES} to the
+size of your application's global IDs, and you will set \textbf{DEBUG\_LEVEL}
+to indicate how verbose you want Zoltan to be.
+These parameters can be set by calls to \textbf{Zoltan\_Set\_Param}. Reasonable 
+default values for all parameters are specified by Zoltan. Many of the parameters 
+are specific to individual algorithms, and are listed in the descriptions of those 
+algorithms in the User's Guide 
+(\url{http://www.cs.sandia.gov/Zoltan/ug\_html/ug\_param.html}).
+
+Each example in the next chapter (\ref{cha:ex}) includes code that sets 
+general parameters and parameters for specific algorithms.
 
 \section{Errors returned by Zoltan}
 
-\section{Auxilliary functionality provided by Zoltan}
+All interface functions, with the exception of \textbf{Zoltan\_Create}, return an 
+error code to the application. The possible return codes are defined in 
+\textbf{include/zoltan\_types.h} and Fortran module \textbf{zoltan}.
 
-\subsection{Data migration}
-\subsection{Data dictionaries}
-\subsection{Timers}
-\subsection{Structured communication}
-\subsection{Memory allocation wrappers}
+They are:
+
+\begin{description}
+\item [ZOLTAN\_OK] Function returned without warnings or errors.
+\item [ZOLTAN\_WARN] Function returned with warnings. The application will probably be able to continue to run.
+\item [ZOLTAN\_FATAL] A fatal error occured within the Zoltan library.
+\item [ZOLTAN\_MEMERR] An error occurred while allocating memory. When this error occurs, the library frees any allocated memory and returns control to the application. If the application then wants to try to use another, less memory-intensive algorithm, it can do so.
+\end{description}
+
+\section{Additional functionality provided by Zoltan}
+
+The Zoltan library includes many functions, in addition to its
+partitioning codes, which are designed to aid parallel
+large-data message passing applications.
+
+While the focus of this tutorial is partitioning, we list these additional
+capabilities here.  Most are described more fully in the User's Guide.
+Where examples of use exist in the source code, we will point that out.
+
+\begin{description}
+\item [Data migration]
+Existing applications that are being ported to Zoltan may already contain code to 
+redistribute data across a parallel application.  However new codes may wish to
+use Zoltan's data migration capabilities.  The application must supply functions
+to pack and unpack the data.  Zoltan can either do the data migration automatically
+after computing the new partitioning, or the application can explicitly call
+\textbf{Zoltan\_Migrate} to perform the migration.  
+Details and examples can be
+found in the User's Guide
+(\url{http://www.cs.sandia.gov/Zoltan/ug\_html/ug\_interface\_mig.html}).
+
+
+\item [Distributed directory utility]
+The owner (i.e. the processor number) of any computational object is subject to 
+change during load balancing. An application may use this directory utility to 
+manage its objects' locations. A distributed directory balances the load (in terms 
+of memory and processing time) and avoids the bottle neck of a centralized directory design.
+This distributed directory module may be used alone or in conjunction with Zoltan's 
+load balancing capability and memory and communication services.
+Details of this feature can be found in the User's Guide
+(\url{http://www.cs.sandia.gov/Zoltan/ug\_html/ug\_util\_dd.html}).
+
+\item [Timers]
+\textbf{Zoltan\_Timer\_Create} is a useful function 
+that creates a platform independent
+timer that can be used by a parallel application.  The application can
+specify, for each timer, whether timing checks should involve a
+global barrier or not.  The Zoltan timer is not documented in the User's
+Guide, but the example \textbf{examples/C/zoltanExample1.c} uses it.
+
+\item [Unstructured communication]
+The unstructured communication package provides a simple interface for 
+doing complicated patterns of point-to-point communication, such as those 
+associated with data remapping. This package consists of a few simple functions 
+which create or modify communication plans, perform communication, and destroy 
+communication plans upon completion. The package has proved useful in a 
+variety of different applications. For this reason, it is maintained as a separate 
+library and can be used independently from Zoltan.
+Details of this feature can be found in the User's Guide
+(\url{http://www.cs.sandia.gov/Zoltan/ug\_html/ug\_util\_comm.html}).
+
+\item [Memory allocation wrappers]
+This package consists of wrappers around the standard C memory allocation and 
+deallocation routines which add error-checking and debugging capabilities. These 
+routines are packaged separately from Zoltan to allow their independent use in other 
+applications. 
+They are described more fully in the User's Guide
+(\url{http://www.cs.sandia.gov/Zoltan/ug\_html/ug\_util\_mem.html}).
+
+\item [Parallel ordering]
+With the \textbf{Zoltan\_Order} function,
+Zoltan provides limited capability for ordering a set of objects, typically 
+given as a graph.
+This feature is described more fully in the User's Guide
+(\url{http://www.cs.sandia.gov/Zoltan/ug\_html/ug\_interface\_order.html}).
+
+\item [Parallel coloring]
+Zoltan provides limited capability for coloring a set of objects, typically given 
+as a graph. In graph coloring, each vertex is assigned an integer label such 
+that no two adjacent vertices have the same label. 
+This feature is described more fully in the User's Guide
+(\url{http://www.cs.sandia.gov/Zoltan/ug\_html/ug\_interface\_color.html}).
+\end{description}
