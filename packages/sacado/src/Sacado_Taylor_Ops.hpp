@@ -32,6 +32,7 @@
 #ifndef SACADO_TAYLOR_OPS_HPP
 #define SACADO_TAYLOR_OPS_HPP
 
+#include "Sacado_ConfigDefs.h"
 #include "Sacado_Taylor_Expression.hpp"
 
 // Import the standard math functions into the Sacado::Taylor namespace
@@ -53,6 +54,8 @@ namespace Sacado {
     using std::abs;
     using std::fabs;
     using std::pow;
+    using std::max;
+    using std::min;
   }
 }
 
@@ -1050,6 +1053,212 @@ namespace Sacado {
 
     }; // class DivisionOp
 
+    // ---------------------- Max operator -----------------------------
+
+    template <typename ExprT1, typename ExprT2>
+    class MaxOp {
+    public:
+      
+      typedef typename ExprT1::value_type value_type_1;
+      typedef typename ExprT2::value_type value_type_2;
+      typedef typename Sacado::Promote<value_type_1,
+				       value_type_1>::type value_type;
+    
+      MaxOp(const ExprT1& expr1, const ExprT2 expr2) {}
+
+      void allocateCache(unsigned int d) const {}
+    
+      value_type
+      computeCoeff(unsigned int i, const ExprT1& expr1, 
+		   const ExprT2& expr2) const {
+	if (i == 0)
+	  return max(expr1.coeff(0), expr2.coeff(0));
+	else
+	  return expr1.value() >= expr2.value() ? expr1.coeff(i) : 
+	                                          expr2.coeff(i);
+      }
+      
+      value_type
+      computeFastAccessCoeff(unsigned int i, const ExprT1& expr1, 
+			     const ExprT2& expr2) const {
+	if (i == 0)
+	  return max(expr1.fastAccessCoeff(0), expr2.fastAccessCoeff(0));
+	else
+	  return expr1.value() >= expr2.value() ? 
+	    expr1.fastAccessoeff(i) : expr2.fastAccessCoeff(i);
+      }
+      
+    }; // class MaxOp
+
+    template <typename ExprT1>
+    class MaxOp<ExprT1, ConstExpr<typename ExprT1::value_type> > {
+    public:
+
+      typedef typename ExprT1::value_type value_type;
+      typedef ConstExpr<typename ExprT1::value_type> ExprT2;
+
+      MaxOp(const ExprT1& expr1, const ExprT2 expr2) {}
+
+      void allocateCache(unsigned int d) const {}
+
+      value_type
+      computeCoeff(unsigned int i, const ExprT1& expr1, 
+		   const ExprT2& expr2) const {
+	if (i == 0)
+	  return max(expr1.coeff(0), expr2.value());
+	else
+	  return expr1.value() >= expr2.value() ? expr1.coeff(i) : 
+	                                          value_type(0);
+      }
+
+      value_type
+      computeFastAccessCoeff(unsigned int i, const ExprT1& expr1,
+			     const ExprT2& expr2) const {
+	if (i == 0)
+	  return max(expr1.fastAccessCoeff(0), expr2.value());
+	else
+	  return expr1.value() >= expr2.value() ? expr1.fastAccessCoeff(i) : 
+	                                          value_type(0);
+      }
+
+    }; // class MaxOp
+
+    template <typename ExprT2>
+    class MaxOp<ConstExpr<typename ExprT2::value_type>, ExprT2 > {
+    public:
+
+      typedef typename ExprT2::value_type value_type;
+      typedef ConstExpr<typename ExprT2::value_type> ExprT1;
+
+      MaxOp(const ExprT1& expr1, const ExprT2 expr2) {}
+
+      void allocateCache(unsigned int d) const {}
+
+      value_type
+      computeCoeff(unsigned int i, const ExprT1& expr1, 
+		   const ExprT2& expr2) const {
+	if (i == 0)
+	  return max(expr1.value(), expr2.coeff(0));
+	else
+	  return expr1.value() >= expr2.value() ? value_type(0) : 
+	                                          expr2.coeff(i);
+      }
+
+      value_type
+      computeFastAccessCoeff(unsigned int i, const ExprT1& expr1,
+			     const ExprT2& expr2) const {
+	if (i == 0)
+	  return max(expr1.value(), expr2.fastAccessCoeff(0));
+	else
+	  return expr1.value() >= expr2.value() ? value_type(0) : 
+	                                          expr2.fastAccessCoeff(i);
+      }
+
+    }; // class MaxOp
+
+    // ---------------------- Min operator -----------------------------
+
+    template <typename ExprT1, typename ExprT2>
+    class MinOp {
+    public:
+      
+      typedef typename ExprT1::value_type value_type_1;
+      typedef typename ExprT2::value_type value_type_2;
+      typedef typename Sacado::Promote<value_type_1,
+				       value_type_1>::type value_type;
+    
+      MinOp(const ExprT1& expr1, const ExprT2 expr2) {}
+
+      void allocateCache(unsigned int d) const {}
+    
+      value_type
+      computeCoeff(unsigned int i, const ExprT1& expr1, 
+		   const ExprT2& expr2) const {
+	if (i == 0)
+	  return min(expr1.coeff(0), expr2.coeff(0));
+	else
+	  return expr1.value() <= expr2.value() ? expr1.coeff(i) : 
+	                                          expr2.coeff(i);
+      }
+      
+      value_type
+      computeFastAccessCoeff(unsigned int i, const ExprT1& expr1, 
+			     const ExprT2& expr2) const {
+	if (i == 0)
+	  return min(expr1.fastAccessCoeff(0), expr2.fastAccessCoeff(0));
+	else
+	  return expr1.value() <= expr2.value() ? 
+	    expr1.fastAccessoeff(i) : expr2.fastAccessCoeff(i);
+      }
+      
+    }; // class MinOp
+
+    template <typename ExprT1>
+    class MinOp<ExprT1, ConstExpr<typename ExprT1::value_type> > {
+    public:
+
+      typedef typename ExprT1::value_type value_type;
+      typedef ConstExpr<typename ExprT1::value_type> ExprT2;
+
+      MinOp(const ExprT1& expr1, const ExprT2 expr2) {}
+
+      void allocateCache(unsigned int d) const {}
+
+      value_type
+      computeCoeff(unsigned int i, const ExprT1& expr1, 
+		   const ExprT2& expr2) const {
+	if (i == 0)
+	  return min(expr1.coeff(0), expr2.value());
+	else
+	  return expr1.value() <= expr2.value() ? expr1.coeff(i) : 
+	                                          value_type(0);
+      }
+
+      value_type
+      computeFastAccessCoeff(unsigned int i, const ExprT1& expr1,
+			     const ExprT2& expr2) const {
+	if (i == 0)
+	  return min(expr1.fastAccessCoeff(0), expr2.value());
+	else
+	  return expr1.value() <= expr2.value() ? expr1.fastAccessCoeff(i) : 
+	                                          value_type(0);
+      }
+
+    }; // class MinOp
+
+    template <typename ExprT2>
+    class MinOp<ConstExpr<typename ExprT2::value_type>, ExprT2 > {
+    public:
+
+      typedef typename ExprT2::value_type value_type;
+      typedef ConstExpr<typename ExprT2::value_type> ExprT1;
+
+      MinOp(const ExprT1& expr1, const ExprT2 expr2) {}
+
+      void allocateCache(unsigned int d) const {}
+
+      value_type
+      computeCoeff(unsigned int i, const ExprT1& expr1, 
+		   const ExprT2& expr2) const {
+	if (i == 0)
+	  return min(expr1.value(), expr2.coeff(0));
+	else
+	  return expr1.value() <= expr2.value() ? value_type(0) : 
+	                                          expr2.coeff(i);
+      }
+
+      value_type
+      computeFastAccessCoeff(unsigned int i, const ExprT1& expr1,
+			     const ExprT2& expr2) const {
+	if (i == 0)
+	  return min(expr1.value(), expr2.fastAccessCoeff(0));
+	else
+	  return expr1.value() <= expr2.value() ? value_type(0) : 
+	                                          expr2.fastAccessCoeff(i);
+      }
+
+    }; // class MinOp
+
     // ------------------------ quadrature function ---------------------------
 
     template <typename ExprT1, typename ExprT2>
@@ -1285,8 +1494,15 @@ TAYLOR_BINARYOP_MACRO(operator+, AdditionOp)
 TAYLOR_BINARYOP_MACRO(operator-, SubtractionOp)
 TAYLOR_BINARYOP_MACRO(operator*, MultiplicationOp)
 TAYLOR_BINARYOP_MACRO(operator/, DivisionOp)
+TAYLOR_BINARYOP_MACRO(max, MaxOp)
+TAYLOR_BINARYOP_MACRO(min, MinOp)
 
 #undef TAYLOR_BINARYOP_MACRO
+
+namespace std {
+  using Sacado::Taylor::min;
+  using Sacado::Taylor::max;
+}
 
 namespace Sacado {
 
@@ -1558,8 +1774,6 @@ namespace Sacado {
 } // namespace Sacado
 
 //-------------------------- I/O Operators -----------------------
-
-#include <iostream>
 
 namespace Sacado {
 

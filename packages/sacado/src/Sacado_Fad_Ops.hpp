@@ -54,6 +54,7 @@
 #ifndef SACADO_FAD_OPS_HPP
 #define SACADO_FAD_OPS_HPP
 
+#include "Sacado_ConfigDefs.h"
 #include "Sacado_Fad_Expression.hpp"
 
 // Import the standard math functions into the Sacado::Fad namespace
@@ -75,6 +76,8 @@ namespace Sacado {
     using std::abs;
     using std::fabs;
     using std::pow;
+    using std::max;
+    using std::min;
   }
 }
 
@@ -419,6 +422,30 @@ FAD_BINARYOP_MACRO(pow,
 		     pow(expr1.val(),expr2.val()),
 		   expr2.val()*expr1.fastAccessDx(i)/
 		     expr1.val()*pow(expr1.val(),expr2.val()))
+FAD_BINARYOP_MACRO(max,
+		   MaxOp,
+		   max(expr1.val(), expr2.val()),
+		   expr1.val() >= expr2.val() ? expr1.dx(i) : expr2.dx(i),
+		   expr1.val() >= expr2.val() ? expr1.fastAccessDx(i) : 
+		                                expr2.fastAccessDx(i),
+		   expr1.val() >= expr2.val() ? value_type(0) : expr2.dx(i),
+		   expr1.val() >= expr2.val() ? expr1.dx(i) : value_type(0),
+		   expr1.val() >= expr2.val() ? value_type(0) : 
+		                                expr2.fastAccessDx(i),
+		   expr1.val() >= expr2.val() ? expr1.fastAccessDx(i) : 
+		                                value_type(0))
+FAD_BINARYOP_MACRO(min,
+		   MinOp,
+		   min(expr1.val(), expr2.val()),
+		   expr1.val() <= expr2.val() ? expr1.dx(i) : expr2.dx(i),
+		   expr1.val() <= expr2.val() ? expr1.fastAccessDx(i) : 
+		                                expr2.fastAccessDx(i),
+		   expr1.val() <= expr2.val() ? value_type(0) : expr2.dx(i),
+		   expr1.val() <= expr2.val() ? expr1.dx(i) : value_type(0),
+		   expr1.val() <= expr2.val() ? value_type(0) : 
+		                                expr2.fastAccessDx(i),
+		   expr1.val() <= expr2.val() ? expr1.fastAccessDx(i) : 
+		                                value_type(0))
 
 #undef FAD_BINARYOP_MACRO
 

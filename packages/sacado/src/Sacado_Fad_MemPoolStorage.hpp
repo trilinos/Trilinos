@@ -32,8 +32,7 @@
 #ifndef SACADO_FAD_MEMPOOLSTORAGE_HPP
 #define SACADO_FAD_MEMPOOLSTORAGE_HPP
 
-#include <new>
-
+#include "Sacado_ConfigDefs.h"
 #include "Sacado_Traits.hpp"
 #include "Sacado_Fad_MemPool.hpp"
 
@@ -154,21 +153,21 @@ namespace Sacado {
     public:
 
       //! Default constructor
-      MemPoolStorage() : 
-	sz_(0), len_(0), dx_(NULL), myPool_(defaultPool_) {}
+      MemPoolStorage(const T & x) : 
+	val_(x), sz_(0), len_(0), dx_(NULL), myPool_(defaultPool_) {}
 
       //! Constructor with size \c sz
       /*!
        * Initializes derivative array 0 of length \c sz
        */
-      MemPoolStorage(const int sz) : 
-	sz_(sz), len_(sz), myPool_(defaultPool_) {
+      MemPoolStorage(const int sz, const T & x) : 
+	val_(x), sz_(sz), len_(sz), myPool_(defaultPool_) {
 	dx_ = mp_array<T>::get_and_fill(sz_, myPool_);
       }
 
       //! Copy constructor
       MemPoolStorage(const MemPoolStorage& x) : 
-	sz_(x.sz_), len_(x.sz_), myPool_(x.myPool_) {
+	val_(x.val_), sz_(x.sz_), len_(x.sz_), myPool_(x.myPool_) {
 	dx_ = mp_array<T>::get_and_fill(x.dx_, sz_, myPool_);
       }
       
@@ -180,6 +179,7 @@ namespace Sacado {
 
       //! Assignment
       MemPoolStorage& operator=(const MemPoolStorage& x) { 
+	val_ = x.val_;
 	if (sz_ != x.sz_) {
 	  sz_ = x.sz_;
 	  if (x.sz_ > len_) {
@@ -219,6 +219,9 @@ namespace Sacado {
       }
 
     public:
+
+      //! Value
+      T val_;
 
       //! Derivative array size
       int sz_;

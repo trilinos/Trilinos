@@ -32,8 +32,7 @@
 #ifndef SACADO_SCALAR_FLOP_COUNTER_HPP
 #define SACADO_SCALAR_FLOP_COUNTER_HPP
 
-#include <vector>
-#include <cassert>
+#include "Sacado_ConfigDefs.h"
 
 namespace Sacado {
 

@@ -154,6 +154,27 @@ AC_CHECK_HEADERS([iostream iostream.h], [break],)
 AC_LANG([C++])
 AC_CHECK_HEADERS([string string.h], [break],)
 
+AC_LANG([C++])
+AC_CHECK_HEADERS([algorithm algorithm.h algo.h], [break],)
+
+AC_LANG([C++])
+AC_CHECK_HEADERS([new new.h], [break],)
+
+AC_LANG([C++])
+AC_CHECK_HEADERS([vector vector.h], [break],)
+
+AC_LANG([C++])
+AC_CHECK_HEADERS([valarray valarray.h], [break],)
+
+AC_LANG([C++])
+AC_CHECK_HEADERS([map map.h], [break],)
+
+AC_LANG([C++])
+AC_CHECK_HEADERS([iterator iterator.h], [break],)
+
+AC_LANG([C++])
+AC_CHECK_HEADERS([typeinfo typeinfo.h], [break],)
+
 if test "X$ac_cv_header_cstdlib" != "Xyes" && test "X$ac_cv_header_stdlib_h" != "Xyes"; then
   AC_MSG_ERROR([[Cannot find cstdlib or stdlib.h.  Sacado requires at least one or the other.]])
 fi
@@ -166,12 +187,40 @@ if test "X$ac_cv_header_cassert" != "Xyes" && test "X$ac_cv_header_assert_h" != 
   AC_MSG_ERROR([[Cannot find cassert or assert.h.  Sacado requires at least one or the other.]])
 fi
 
+if test "X$ac_cv_header_iostream" != "Xyes" && test "X$ac_cv_header_iostream_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find iostream or iostream.h.  Sacado requires at least one or the other.]])
+fi
+
 if test "X$ac_cv_header_string" != "Xyes" && test "X$ac_cv_header_string_h" != "Xyes"; then
   AC_MSG_ERROR([[Cannot find string or string.h.  Sacado requires at least one or the other.]])
 fi
 
-if test "X$ac_cv_header_iostream" != "Xyes" && test "X$ac_cv_header_iostream_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find iostream or iostream.h.  Sacado requires at least one or the other.]])
+if test "X$ac_cv_header_algorithm" != "Xyes" && test "X$ac_cv_header_algorithm_h" != "Xyes" && test "X$ac_cv_header_algo_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find algorithm, algorithm.h, or algo.h.  Sacado requires at least one.]])
+fi
+
+if test "X$ac_cv_header_new" != "Xyes" && test "X$ac_cv_header_new_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find new or new.h.  Sacado requires at least one or the other.]])
+fi
+
+if test "X$ac_cv_header_vector" != "Xyes" && test "X$ac_cv_header_vector_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find vector or vector.h.  Sacado requires at least one or the other.]])
+fi
+
+if test "X$ac_cv_header_valarray" != "Xyes" && test "X$ac_cv_header_valarray_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find valarray or valarray.h.  Sacado requires at least one or the other.]])
+fi
+
+if test "X$ac_cv_header_map" != "Xyes" && test "X$ac_cv_header_map_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find map or map.h.  Sacado requires at least one or the other.]])
+fi
+
+if test "X$ac_cv_header_iterator" != "Xyes" && test "X$ac_cv_header_iterator_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find iterator or iterator.h.  Sacado requires at least one or the other.]])
+fi
+
+if test "X$ac_cv_header_typeinfo" != "Xyes" && test "X$ac_cv_header_typeinfo_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find typeinfo or typeinfo.h.  Sacado requires at least one or the other.]])
 fi
 
 if test "X${host}" != "Xtflop"; then

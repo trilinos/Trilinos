@@ -1,5 +1,14 @@
 /* src/Sacado_config.h.in.  Generated from configure.ac by autoheader.  */
 
+/* Define to 1 if you have the <algorithm> header file. */
+#undef HAVE_ALGORITHM
+
+/* Define to 1 if you have the <algorithm.h> header file. */
+#undef HAVE_ALGORITHM_H
+
+/* Define to 1 if you have the <algo.h> header file. */
+#undef HAVE_ALGO_H
+
 /* Define to 1 if you have the <assert.h> header file. */
 #undef HAVE_ASSERT_H
 
@@ -39,8 +48,20 @@
 /* Define to 1 if you have the <iostream.h> header file. */
 #undef HAVE_IOSTREAM_H
 
+/* Define to 1 if you have the <iterator> header file. */
+#undef HAVE_ITERATOR
+
+/* Define to 1 if you have the <iterator.h> header file. */
+#undef HAVE_ITERATOR_H
+
 /* Define if want to build libcheck */
 #undef HAVE_LIBCHECK
+
+/* Define to 1 if you have the <map> header file. */
+#undef HAVE_MAP
+
+/* Define to 1 if you have the <map.h> header file. */
+#undef HAVE_MAP_H
 
 /* Define to 1 if you have the <math.h> header file. */
 #undef HAVE_MATH_H
@@ -50,6 +71,12 @@
 
 /* define if we want to use MPI */
 #undef HAVE_MPI
+
+/* Define to 1 if you have the <new> header file. */
+#undef HAVE_NEW
+
+/* Define to 1 if you have the <new.h> header file. */
+#undef HAVE_NEW_H
 
 /* Define if want to build sacado-alltests */
 #undef HAVE_SACADO_ALLTESTS
@@ -87,8 +114,26 @@
 /* Define if want to build tests */
 #undef HAVE_TESTS
 
+/* Define to 1 if you have the <typeinfo> header file. */
+#undef HAVE_TYPEINFO
+
+/* Define to 1 if you have the <typeinfo.h> header file. */
+#undef HAVE_TYPEINFO_H
+
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
+
+/* Define to 1 if you have the <valarray> header file. */
+#undef HAVE_VALARRAY
+
+/* Define to 1 if you have the <valarray.h> header file. */
+#undef HAVE_VALARRAY_H
+
+/* Define to 1 if you have the <vector> header file. */
+#undef HAVE_VECTOR
+
+/* Define to 1 if you have the <vector.h> header file. */
+#undef HAVE_VECTOR_H
 
 /* Name of package */
 #undef PACKAGE

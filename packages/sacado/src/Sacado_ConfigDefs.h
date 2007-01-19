@@ -39,8 +39,9 @@ Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
 #endif
 
 /*
- * The macros PACKAGE, PACKAGE_NAME, etc, get defined for each package and need to
- * be undef'd here to avoid warnings when this file is included from another package.
+ * The macros PACKAGE, PACKAGE_NAME, etc, get defined for each package and 
+ * need to be undef'd here to avoid warnings when this file is included from 
+ * another package.
  * KL 11/25/02
  */
 #ifdef PACKAGE
@@ -75,44 +76,88 @@ Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
 
 #ifdef HAVE_CSTDLIB
 #include <cstdlib>
-#else
+#elif defined(HAVE_STDLIB_H)
 #include <stdlib.h>
 #endif
 
 #ifdef HAVE_CSTDIO
 #include <cstdio>
-#else
+#elif defined(HAVE_STDIO_H)
 #include <stdio.h>
 #endif
 
 #ifdef HAVE_CASSERT
 #include <cassert>
-#else
+#elif defined(HAVE_ASSERT_H)
 #include <assert.h>
 #endif
 
 #ifdef HAVE_CMATH
 #include <cmath>
-#else
+#elif defined(HAVE_MATH_H)
 #include <math.h>
 #endif
 
 #ifdef HAVE_STRING
 #include <string>
-#else
+#elif defined(HAVE_STRING_H)
 #include <string.h>
 #endif
 
 #ifdef HAVE_IOSTREAM
 #include <iostream>
-#else
+#elif defined(HAVE_IOSTREAM_H)
 #include <iostream.h>
 #endif
 
 #ifdef HAVE_IOMANIP
 #include <iomanip>
-#else
+#elif defined(HAVE_IOMANIP_H)
 #include <iomanip.h>
+#endif
+
+#ifdef HAVE_ALGORITHM
+#include <algorithm>
+#elif defined(HAVE_ALGORITHM_H)
+#include <algorithm.h>
+#elif defined(HAVE_ALGO_H)
+#include <algo.h>
+#endif
+
+#ifdef HAVE_NEW
+#include <new>
+#elif defined(HAVE_NEW_H)
+#include <new.h>
+#endif
+
+#ifdef HAVE_VECTOR
+#include <vector>
+#elif defined(HAVE_VECTOR_H)
+#include <vector.h>
+#endif
+
+#ifdef HAVE_VALARRAY
+#include <valarray>
+#elif defined(HAVE_VALARRAY_H)
+#include <valarray.h>
+#endif
+
+#ifdef HAVE_MAP
+#include <map>
+#elif defined(HAVE_MAP_H)
+#include <map.h>
+#endif
+
+#ifdef HAVE_ITERATOR
+#include <iterator>
+#elif defined(HAVE_ITERATOR_H)
+#include <iterator.h>
+#endif
+
+#ifdef HAVE_TYPEINFO
+#include <typeinfo>
+#elif defined(HAVE_TYPEINFO_H)
+#include <typeinfo.h>
 #endif
 
 #endif /* SACADO_CONFIGDEFS_H */

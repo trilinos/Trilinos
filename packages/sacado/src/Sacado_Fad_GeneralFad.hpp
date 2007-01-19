@@ -82,19 +82,19 @@ namespace Sacado {
       //@{
 
       //! Default constructor
-      GeneralFad() : val_( T(0)), s_() {}
+      GeneralFad() : s_(T(0)) {}
 
       //! Constructor with supplied value \c x
       /*!
        * Initializes value to \c x and derivative array is empty
        */
-      GeneralFad(const T & x) : val_(x), s_() {}
+      GeneralFad(const T & x) : s_(x) {}
 
       //! Constructor with size \c sz and value \c x
       /*!
        * Initializes value to \c x and derivative array 0 of length \c sz
        */
-      GeneralFad(const int sz, const T & x) : val_(x), s_(sz) {}
+      GeneralFad(const int sz, const T & x) : s_(sz, x) {}
 
       //! Constructor with size \c sz, index \c i, and value \c x
       /*!
@@ -103,13 +103,13 @@ namespace Sacado {
        * \c i to 1 and all other's to zero.
        */
       GeneralFad(const int sz, const int i, const T & x) : 
-	val_(x), s_(sz) { 
+	s_(sz, x) { 
 	s_.dx_[i]=1.; 
       }
 
       //! Copy constructor
       GeneralFad(const GeneralFad& x) : 
-	val_(x.val_), s_(x.s_) {}
+	s_(x.s_) {}
 
       //! Copy constructor from any Expression object
       template <typename S> GeneralFad(const Expr<S>& x);
@@ -145,10 +145,10 @@ namespace Sacado {
       //@{
 
       //! Returns value
-      const T& val() const { return val_;}
+      const T& val() const { return s_.val_;}
 
       //! Returns value
-      T& val() { return val_;}
+      T& val() { return s_.val_;}
 
       //@}
 
@@ -242,10 +242,7 @@ namespace Sacado {
 
     protected:
 
-      //! Value
-      T val_;
-
-      //! Derivatives
+      //! Value & Derivatives
       Storage s_;
 
     }; // class GeneralFad

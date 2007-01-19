@@ -32,11 +32,9 @@
 #ifndef SACADO_TEMPLATEMANAGER_HPP
 #define SACADO_TEMPLATEMANAGER_HPP
 
-#include <vector>
-#include <map>
-#include <typeinfo>
-
 #include "Teuchos_RefCountPtr.hpp"
+
+#include "Sacado_ConfigDefs.h"
 
 #include "Sacado_mpl_size.hpp"
 #include "Sacado_mpl_find.hpp"

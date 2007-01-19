@@ -32,8 +32,6 @@
 #ifndef SACADO_TAYLOR_DTAYLOR_HPP
 #define SACADO_TAYLOR_DTAYLOR_HPP
 
-#include <valarray>
-
 #include "Sacado_ConfigDefs.h"
 #include "Sacado_Taylor_Expression.hpp"
 

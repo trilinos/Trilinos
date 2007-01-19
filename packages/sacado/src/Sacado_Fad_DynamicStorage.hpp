@@ -32,8 +32,7 @@
 #ifndef SACADO_FAD_DYNAMICSTORAGE_HPP
 #define SACADO_FAD_DYNAMICSTORAGE_HPP
 
-#include <new>
-
+#include "Sacado_ConfigDefs.h"
 #include "Sacado_Traits.hpp"
 
 namespace Sacado {
@@ -136,18 +135,21 @@ namespace Sacado {
     public:
 
       //! Default constructor
-      DynamicStorage() : sz_(0), len_(0), dx_(NULL) {}
+      DynamicStorage(const T & x) : 
+	val_(x), sz_(0), len_(0), dx_(NULL) {}
 
       //! Constructor with size \c sz
       /*!
        * Initializes derivative array 0 of length \c sz
        */
-      DynamicStorage(const int sz) : sz_(sz), len_(sz) {
+      DynamicStorage(const int sz, const T & x) : 
+	val_(x), sz_(sz), len_(sz) {
 	dx_ = ds_array<T>::get_and_fill(sz_);
       }
 
       //! Copy constructor
-      DynamicStorage(const DynamicStorage& x) : sz_(x.sz_), len_(x.sz_) {
+      DynamicStorage(const DynamicStorage& x) : 
+	val_(x.val_), sz_(x.sz_), len_(x.sz_) {
 	dx_ = ds_array<T>::get_and_fill(x.dx_, sz_);
       }
       
@@ -159,6 +161,7 @@ namespace Sacado {
 
       //! Assignment
       DynamicStorage& operator=(const DynamicStorage& x) { 
+	val_ = x.val_;
 	if (sz_ != x.sz_) {
 	  sz_ = x.sz_;
 	  if (x.sz_ > len_) {
@@ -196,6 +199,9 @@ namespace Sacado {
       }
 
     public:
+
+      //! Value
+      T val_;
 
       //! Derivative array size
       int sz_;

@@ -53,7 +53,8 @@
 
 template <typename T, typename Storage> 
 template <typename S> 
-inline Sacado::CacheFad::GeneralFad<T,Storage>::GeneralFad(const Expr<S>& x)
+inline Sacado::CacheFad::GeneralFad<T,Storage>::GeneralFad(const Expr<S>& x) :
+  s_(T(0))
 {
   int sz = x.size();
 
@@ -71,7 +72,7 @@ inline Sacado::CacheFad::GeneralFad<T,Storage>::GeneralFad(const Expr<S>& x)
 	s_.dx_[i] = x.dx(i);
   }
 
-  val_ = xval;
+  s_.val_ = xval;
 }
 
 
@@ -91,7 +92,7 @@ template <typename T, typename Storage>
 inline Sacado::CacheFad::GeneralFad<T,Storage>& 
 Sacado::CacheFad::GeneralFad<T,Storage>::operator=(const T& val) 
 {
-  val_ = val;
+  s_.val_ = val;
 
   if (s_.size()) 
     s_.resize(0);
@@ -104,10 +105,7 @@ inline Sacado::CacheFad::GeneralFad<T,Storage>&
 Sacado::CacheFad::GeneralFad<T,Storage>::operator=(
 			     const Sacado::CacheFad::GeneralFad<T,Storage>& x) 
 {
-  // Copy value
-  val_ = x.val_;
-
-  // Copy dx_
+  // Copy val_ and dx_
   s_.operator=(x.s_);
   
   return *this;
@@ -134,7 +132,7 @@ Sacado::CacheFad::GeneralFad<T,Storage>::operator=(const Expr<S>& x)
 	s_.dx_[i] = x.dx(i);
   }
   
-  val_ = xval;
+  s_.val_ = xval;
   
   return *this;
 }
@@ -143,7 +141,7 @@ template <typename T, typename Storage>
 inline  Sacado::CacheFad::GeneralFad<T,Storage>& 
 Sacado::CacheFad::GeneralFad<T,Storage>::operator += (const T& val)
 {
-  val_ += val;
+  s_.val_ += val;
 
   return *this;
 }
@@ -152,7 +150,7 @@ template <typename T, typename Storage>
 inline Sacado::CacheFad::GeneralFad<T,Storage>& 
 Sacado::CacheFad::GeneralFad<T,Storage>::operator -= (const T& val)
 {
-  val_ -= val;
+  s_.val_ -= val;
 
   return *this;
 }
@@ -163,7 +161,7 @@ Sacado::CacheFad::GeneralFad<T,Storage>::operator *= (const T& val)
 {
   int sz = s_.size();
 
-  val_ *= val;
+  s_.val_ *= val;
   for (int i=0; i<sz; ++i)
     s_.dx_[i] *= val;
 
@@ -176,7 +174,7 @@ Sacado::CacheFad::GeneralFad<T,Storage>::operator /= (const T& val)
 {
   int sz = s_.size();
 
-  val_ /= val;
+  s_.val_ /= val;
   for (int i=0; i<sz; ++i)
     s_.dx_[i] /= val;
 
@@ -217,7 +215,7 @@ Sacado::CacheFad::GeneralFad<T,Storage>::operator += (const Sacado::CacheFad::Ex
     }
   }
 
-  val_ += xval;
+  s_.val_ += xval;
 
   return *this;
 }
@@ -256,7 +254,7 @@ Sacado::CacheFad::GeneralFad<T,Storage>::operator -= (const Sacado::CacheFad::Ex
     }
   }
 
-  val_ -= xval;
+  s_.val_ -= xval;
 
 
   return *this;
@@ -279,19 +277,19 @@ Sacado::CacheFad::GeneralFad<T,Storage>::operator *= (const Sacado::CacheFad::Ex
     if (sz) {
       if (x.hasFastAccess())
 	for(int i=0; i<sz; ++i)
-	  s_.dx_[i] = val_ * x.fastAccessDx(i) + s_.dx_[i] * xval;
+	  s_.dx_[i] = s_.val_ * x.fastAccessDx(i) + s_.dx_[i] * xval;
       else
 	for (int i=0; i<sz; ++i)
-	  s_.dx_[i] = val_ * x.dx(i) + s_.dx_[i] * xval;
+	  s_.dx_[i] = s_.val_ * x.dx(i) + s_.dx_[i] * xval;
     }
     else {
       s_.resize(xsz);
       if (x.hasFastAccess())
 	for(int i=0; i<xsz; ++i)
-	  s_.dx_[i] = val_ * x.fastAccessDx(i);
+	  s_.dx_[i] = s_.val_ * x.fastAccessDx(i);
       else
 	for (int i=0; i<xsz; ++i)
-	  s_.dx_[i] = val_ * x.dx(i);
+	  s_.dx_[i] = s_.val_ * x.dx(i);
     }
   }
   else {
@@ -301,7 +299,7 @@ Sacado::CacheFad::GeneralFad<T,Storage>::operator *= (const Sacado::CacheFad::Ex
     }
   }
 
-  val_ *= xval;
+  s_.val_ *= xval;
 
   return *this;
 }
@@ -323,19 +321,19 @@ Sacado::CacheFad::GeneralFad<T,Storage>::operator /= (const Sacado::CacheFad::Ex
     if (sz) {
       if (x.hasFastAccess())
 	for(int i=0; i<sz; ++i)
-	  s_.dx_[i] = ( s_.dx_[i]*xval - val_*x.fastAccessDx(i) )/ (xval*xval);
+	  s_.dx_[i] = ( s_.dx_[i]*xval - s_.val_*x.fastAccessDx(i) )/ (xval*xval);
       else
 	for (int i=0; i<sz; ++i)
-	  s_.dx_[i] = ( s_.dx_[i]*xval - val_*x.dx(i) )/ (xval*xval);
+	  s_.dx_[i] = ( s_.dx_[i]*xval - s_.val_*x.dx(i) )/ (xval*xval);
     }
     else {
       s_.resize(xsz);
       if (x.hasFastAccess())
 	for(int i=0; i<xsz; ++i)
-	  s_.dx_[i] = - val_*x.fastAccessDx(i) / (xval*xval);
+	  s_.dx_[i] = - s_.val_*x.fastAccessDx(i) / (xval*xval);
       else
 	for (int i=0; i<xsz; ++i)
-	  s_.dx_[i] = -val_ * x.dx(i) / (xval*xval);
+	  s_.dx_[i] = -s_.val_ * x.dx(i) / (xval*xval);
     }
   }
   else {
@@ -345,7 +343,7 @@ Sacado::CacheFad::GeneralFad<T,Storage>::operator /= (const Sacado::CacheFad::Ex
     }
   }
 
-  val_ /= xval;
+  s_.val_ /= xval;
 
   return *this;
 }
