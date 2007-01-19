@@ -28,9 +28,21 @@ ML -- History of visible changes
 
 This file reports (some of) the visible changes to ML.
 Please submit ML bugs at software.sandia.gov/buzgilla, or
-report bugs to jhu@sandia.gov.
+report bugs to {jhu|rstumin}@sandia.gov.
+
+Jan 2007
+
+       * Improved eigen-value estimates throughout, especially for
+         non-symmetric systems.
+       * Improved run times by using Ifpack's native (symmetric)
+         Gauss-Seidel for Epetra_CrsMatrix types (when Ifpack is available).
 
 ------------------------------------------------------------------------------
+
+Dec 2006
+
+       * Fixed two overflow bugs in the random number generator.  This will
+         mainly impact very large parallel runs.
 
 July 2006
 
