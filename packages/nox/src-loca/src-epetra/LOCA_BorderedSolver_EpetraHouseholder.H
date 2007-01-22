@@ -372,6 +372,7 @@ namespace LOCA {
 
     protected:
 
+      //! Compute \f$U\f$ and \f$V\f$ multivectors in \f$P = J+U V^T\f$. 
       NOX::Abstract::Group::ReturnType  
       computeUV(const NOX::Abstract::MultiVector::DenseMatrix& Y1,
 		const NOX::Abstract::MultiVector& Y2,

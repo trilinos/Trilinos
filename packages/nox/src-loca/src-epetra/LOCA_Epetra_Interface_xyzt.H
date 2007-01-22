@@ -163,6 +163,9 @@ namespace LOCA {
 	//! Method to start the application of the monodromy matrix,
         //! which involves multiplication by one mass matrix block and
 	void beginFloquetOperatorApplication(Epetra_Vector& v);
+
+	//! Method to start the application of the monodromy matrix,
+        //! which involves multiplication by one mass matrix block and
 	void finishFloquetOperatorApplication(Epetra_Vector& v);
 	
 	//! Accessor for the global solution BlockVector

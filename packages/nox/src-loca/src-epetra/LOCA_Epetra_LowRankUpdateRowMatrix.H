@@ -236,6 +236,7 @@ namespace LOCA {
 
     protected:
 
+      //! Compute \c MyRow, \c MyCol entry of \f$U V^T\f$.
       double computeUV(int MyRow, int MyCol) const;
 
     private:
