@@ -1,8 +1,10 @@
 This module (directory) contains a couple very simple partitioning
-algorithms. They are instructional and useful only for testing,
+algorithms. They are instructional and useful mainly for testing,
 not for real work.
 
 random - Randomly assigns objects, without attempting load-balance.
+         May also be used to introduce random perturbations.
 
-simple - A very simple load-balancing method.
+simple - A very simple load-balancing method based on "linear"
+         partitioning.
 
