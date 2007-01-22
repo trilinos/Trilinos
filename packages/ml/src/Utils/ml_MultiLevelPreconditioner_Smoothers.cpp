@@ -70,18 +70,16 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
   char parameter[80];
   Epetra_Time Time(Comm());
 
-  int num_smoother_steps = List_.get("smoother: sweeps", 1);
+  int num_smoother_steps = List_.get("smoother: sweeps", 2);
 
   double omega = List_.get("smoother: damping factor",1.0);
 
   int pre_or_post = 0;
   string PreOrPostSmoother = List_.get("smoother: pre or post","both");
 
-#ifndef HAVE_ML_AZTECOO
-  string Smoother = List_.get("smoother: type","symmetric Gauss-Seidel");
-#else
-  string Smoother = List_.get("smoother: type","Aztec");
+  string Smoother = List_.get("smoother: type","Chebyshev");
 
+#ifdef HAVE_ML_AZTECOO
   int* SmootherOptionsPtr = (int*)0;
   SmootherOptionsPtr = List_.get("smoother: Aztec options",SmootherOptionsPtr);
 
@@ -91,6 +89,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
   bool AztecSmootherAsASolver = List_.get("smoother: Aztec as solver",false);
   int aztec_its;
 #endif
+
 
   // rst: Changing polynomial interface:
   //    1) polynomial degree is set from "smoother: sweeps"
@@ -134,8 +133,8 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
   int nodal_its = 1, edge_its = 1;
   if (SolvingMaxwell_ == true) {
     SubSmootherType = List_.get("subsmoother: type","MLS");
-    nodal_its = List_.get("subsmoother: node sweeps", 1);
-    edge_its = List_.get("subsmoother: edge sweeps", 1);
+    nodal_its = List_.get("subsmoother: node sweeps", 2);
+    edge_its = List_.get("subsmoother: edge sweeps", 2);
   }
 
   // ===================== //
@@ -298,7 +297,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
         sprintf(parameter,"smoother: Chebyshev alpha (level %d)",logical_level);
          MyChebyshevAlpha = List_.get(parameter,MyChebyshevAlpha);
       }
-      if (MyChebyshevAlpha == -2.) MyChebyshevAlpha = 30.;
+      if (MyChebyshevAlpha == -2.) MyChebyshevAlpha = 20.;
 
       if (verbose_) 
         if (MyChebyshevPolyOrder > 0)
@@ -494,7 +493,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
         sprintf(parameter,"smoother: Chebyshev alpha (level %d)",logical_level);
          MyChebyshevAlpha = List_.get(parameter,MyChebyshevAlpha);
       }
-      if (MyChebyshevAlpha == -2.) MyChebyshevAlpha = 30.;
+      if (MyChebyshevAlpha == -2.) MyChebyshevAlpha = 20.;
 
       if( verbose_ ) {
 	cout << msg << "IFPACK Chebyshev, order = " << MyChebyshevPolyOrder
@@ -638,7 +637,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
 
         double SubAlpha = List_.get("subsmoother: MLS alpha",-2.0);
         if (SubAlpha == -2.) SubAlpha=List_.get("subsmoother: Chebyshev alpha", -2.);
-        if (SubAlpha == -2.) SubAlpha = 27.;
+        if (SubAlpha == -2.) SubAlpha = 20.;
 
 
         nodal_smoother=(void *) ML_Gen_Smoother_MLS;

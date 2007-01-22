@@ -204,7 +204,7 @@ Visualize(bool VizAggre, bool VizPreSmoother,
   // - Paraview, or any other package that can read .vtk files (1D/2D/3D)
 
   int Format;
-  string FileFormat = List_.get("viz: output format", "xyz");
+  string FileFormat = List_.get("viz: output format", "vtk");
   // you are a cool guy if you plot with "xyz"
   if( FileFormat == "xyz" ) Format = 1;
   // you are a poor man if you need "dx". God bless you.

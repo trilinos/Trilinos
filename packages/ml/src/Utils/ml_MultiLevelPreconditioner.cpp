@@ -1028,7 +1028,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
 
       string Repartitioner = List_.get("repartition: partitioner","Zoltan");
 
-      double minmax = List_.get("repartition: max min ratio", 1.1);
+      double minmax = List_.get("repartition: max min ratio", 1.3);
       ML_Repartition_Set_LargestMinMaxRatio(ml_,minmax);
       int minperproc = List_.get("repartition: min per proc", 512);
       ML_Repartition_Set_MinPerProc(ml_,minperproc);
@@ -1149,12 +1149,12 @@ ComputePreconditioner(const bool CheckPreconditioner)
       ML_Repartition_Activate(ml_);
       ML_Repartition_Activate(ml_nodes_);
 
-      double minmax = List_.get("repartition: node max min ratio", 1.1);
+      double minmax = List_.get("repartition: node max min ratio", 1.3);
       ML_Repartition_Set_LargestMinMaxRatio(ml_nodes_,minmax);
       int minperproc = List_.get("repartition: node min per proc", 170);
       ML_Repartition_Set_MinPerProc(ml_nodes_,minperproc);
 
-      minmax = List_.get("repartition: max min ratio", 1.1);
+      minmax = List_.get("repartition: max min ratio", 1.3);
       ML_Repartition_Set_LargestMinMaxRatio(ml_,minmax);
       minperproc = List_.get("repartition: min per proc", 512);
       ML_Repartition_Set_MinPerProc(ml_,minperproc);
@@ -1345,7 +1345,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
     }
 
     // Added on Feb-28
-    if (List_.get("aggregation: block scaling", false) && NumPDEEqns_ != 1)
+    if (List_.get("aggregation: block scaling", false) && NumPDEEqns_ != 1) // Not advertised in manual
     {
       if (verbose_) 
         cout << PrintMsg_ << "Using block scaling for D^{-1}A" << endl;
@@ -2201,7 +2201,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
 {
 
   string CoarseSolution = List_.get("coarse: type", "Amesos-KLU");
-  int NumSmootherSteps = List_.get("coarse: sweeps", 1);
+  int NumSmootherSteps = List_.get("coarse: sweeps", 2);
   double Omega = List_.get("coarse: damping factor", 1.0);
   double AddToDiag = List_.get("coarse: add to diag", 1e-12);
   string PreOrPostSmoother = List_.get("coarse: pre or post","post");
@@ -2221,7 +2221,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
   // "coarse: MLS polynomial order" if set, still recognize MLS 
 
   double ChebyshevAlpha = List_.get("coarse: MLS alpha",-2.0);
-  if ( ChebyshevAlpha == -2.) ChebyshevAlpha = List_.get("coarse: Chebyshev alpha", 27.);
+  if ( ChebyshevAlpha == -2.) ChebyshevAlpha = List_.get("coarse: Chebyshev alpha", 30.);
 
   int ChebyshevPolyOrder = List_.get("coarse: MLS polynomial order",-7);
   if (ChebyshevPolyOrder == -7) ChebyshevPolyOrder = NumSmootherSteps;
@@ -2317,8 +2317,8 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
       }
                                                                                 
       string SubSmootherType = List_.get("coarse: subsmoother type","MLS");
-      int nodal_its = List_.get("coarse: node sweeps", 1);
-      int edge_its = List_.get("coarse: edge sweeps", 1);
+      int nodal_its = List_.get("coarse: node sweeps", 2);
+      int edge_its = List_.get("coarse: edge sweeps", 2);
                                                                                 
       int logical_level = LevelID_[NumLevels_-1];
       void *edge_smoother = 0, *nodal_smoother = 0;
@@ -2483,7 +2483,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetAggregation()
 
   if (CoarsenScheme == "Uncoupled-MIS")
       ML_Aggregate_Set_CoarsenScheme_UncoupledMIS(agg_);
-  else if (CoarsenScheme == "VBMETIS")
+  else if (CoarsenScheme == "VBMETIS")   // Not advertised in manual
   {
      ML_Aggregate_Set_CoarsenScheme_VBMETIS(agg_);
      int  nblocks   = List_.get("aggregation: nblocks",0);

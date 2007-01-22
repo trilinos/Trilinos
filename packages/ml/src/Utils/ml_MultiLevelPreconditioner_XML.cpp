@@ -93,7 +93,7 @@ static void AddSubList(Teuchos::ParameterList& List, Teuchos::ParameterList& Lis
 int ML_Epetra::MultiLevelPreconditioner::ReadXML(const string& FileName)
 {
   // loophole to avoid reading file if not desired
-  if (!List_.get("read XML", true)) return(0);
+  if (!List_.get("read XML", false)) return(0);
 
   int i = 0, j;
   FILE* ML_capture_flag;
