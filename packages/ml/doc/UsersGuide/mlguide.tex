@@ -854,9 +854,12 @@ important methods of this class.
 Input parameters are set via method \verb!set(Name,Value)!, where
 \verb!Name! is a string containing the parameter name, and \verb!Value! is the
 specified parameter value, whose type can be any C++ object or pointer. 
-A complete
-list of parameters available for class MultiLevelPreconditioner is
-reported in Section~\ref{all possible parameters}.
+A complete list of parameters available for class MultiLevelPreconditioner is
+reported in Section~\ref{all possible parameters}.  Automatic selection of defaults 
+is discussed in Section~\ref{default parameter settings}.
+In particular, the \verb!ML_Epetra::SetDefaults! command sets multigrid defaults 
+for specific problem or solution types (e.g. classic smoothed aggregation for 
+positive-definite systems or a variant more suitable for highly nonsymmetric systems.).
 
 The parameter list is passed to the constructor, together with a pointer
 to the matrix, and a boolean flag.  If this flag is set to \verb!false!,
@@ -989,7 +992,7 @@ obtained using
 
 Note that the input parameter list is {\sl copied} in the
 construction phase, hence later changes to \verb!MLList! will not affect
-the preconditioner. Should the user need to modify parameters in the
+the preconditioner. Should the user need to modify parameters in 
 \verb!MLPrec!'s internally stored parameter list, he or she can get a
 reference to the internally stored list:
 %
@@ -1066,9 +1069,10 @@ approximate solutions with \aztecoo~(with {\tt smoothers: sweeps}
 iterations as smoothers. 
 The \aztecoo~vectors \verb!options! and {\tt params} can be set using
 {\tt smoother: Aztec options} and {\tt smoother: Aztec params}. \\
-\verb!MLS! & Use MLS smoother. The polynomial order is specified by {\tt
-  \tt smoother: MLS polynomial order}, and the alpha value by {\tt
-  smoother: MLS alpha}.\\ 
+\verb!Chebyshev! & Use Chebyshev smoother. The polynomial order is specified by {\tt
+  \tt smoother: sweeps }. The smoother will damp errors between $\rho$ and $\rho/$alpha
+  where $\rho$ is the spectral radius of $diag(A)^{-1} A$ and alpha is specified
+  via {\tt smoother: Chebyshev alpha}.\\ 
 \verb!user-defined! & User-defined smoothing function.  The function must conform to
 the prototype {\tt int (*)(ML\_Smoother *, int inLength, double *invec, int outLength,
  double *outvec)}. The number of sweeps is controlled via {\tt smoother: sweeps}. See
@@ -1101,11 +1105,12 @@ Gauss-Seidel (with damping parameter {\tt coarse: damping parameter}) as a
 implementation is automatically used, if available. \\
 \verb!ML symmetric Gauss-Seidel! & Same as above, but forces the use of ML's
 internal version.\\
-\verb!MLS! & Use degree {\tt coarse: MLS polynomial order} Chebyshev polynomial
+\verb!Chebyshev! & Use degree {\tt coarse: sweeps} Chebyshev polynomial
              as a solver. \\
 \verb!Hiptmair! & Use {\tt coarse: sweeps} steps of two-stage Hiptmair
-             smoothing, with subsmoother {\tt coarse: subsmoother type},
-             as a solver. \\
+             smoothing taking {\tt coarse: node sweeps} 
+             (or {\tt coarse: edge sweeps}) iterations with method
+             {\tt coarse: subsmoother type} to solve the nodal (or edge) subproblem.\\
 \verb!Amesos-KLU! & Use \klu\ through \amesos. Coarse grid problem is shipped to
  proc 0, solved, and solution is broadcast \\
 \verb!Amesos-Superlu! & Use \superlu, version $3.0$, through \amesos. \\
@@ -1258,20 +1263,19 @@ only if \ML\ has been properly configured. In particular:
 \medskip
 
 \noindent
-{\bf Note that, in the parameters name, spaces are important: Do not
-  include non-required leading or trailing spaces, and do separate words by
+{\bf Note that spaces are important within a parameter's name.  Do not
+  include non-required leading or trailing spaces. Please separate words by
   just one space! Mispelled parameters will not be detected.} One may
-find useful to print unused parameters by calling \verb!PrintUnused()!
-{\sl after} the construction
-of the multilevel hierarchy.\\
+  find it useful to print unused parameters by calling \verb!PrintUnused()!
+  {\sl after} the construction of the multilevel hierarchy.\\
 
 \medskip
 
 Some of the parameters that affect the MultiLevelPreconditioner class can in
 principle be different from level to level.  By default, the set method
 for the MultiLevelPreconditioner class affects all levels in the
-multigrid hierarchy.  In order to change a setting on a particular level
-(say, \verb!d!), the string ``\verb!(level d)!" is appended to the
+multigrid hierarchy.  In order to change a setting on a particular level,
+such as level \verb!d!, the string ``\verb!(level d)!" is appended to the
 option string (note that a space must separate the option and the level
 specification).  For instance, assuming decreasing levels starting from
 4, one could set the aggregation schemes as follows:
@@ -1282,9 +1286,9 @@ specification).  For instance, assuming decreasing levels starting from
 \end{verbatim}
 
 \noindent
-If the finest level is 0, and one has 5 levels, the code will use {\tt
-  Uncoupled} for level 0, {\tt METIS} for levels 1 and 2, then {\tt MIS}
-for levels 3 and 4.
+If the finest level is 0 and there are 5 levels, 
+\ML\ uses {\tt Uncoupled} for levels 0, 2 and 4, 
+{\tt METIS} for level 1 and {\tt MIS} for level 3.
 Parameters that can be set differently on individual levels are denoted
 with the symbol $\star$ (this symbol is not part of the parameter name).
 
@@ -1295,6 +1299,26 @@ with the symbol $\star$ (this symbol is not part of the parameter name).
 %\choicebox{\tt ML label}{[{\tt string}] An optional label that is appended
 %to the existing multigrid label.  This makes differentiating between multiple
 %solves easier.}
+
+\choicebox{\tt output}{[{\tt int}] Controls the amount of printed information.
+Ranges from 0 to 10 (0 is no output, and 10 is incredibly
+detailed output).  Default: 0.}
+
+\choicebox{\tt print unused}{[{\tt int}] If non-negative, will print all
+  unused parameters on the specified processor. If -1, unused parameters
+    will be printed on all processes. If -2, nothing will be printed. 
+    Default: -2.}
+
+%\smallskip
+
+\choicebox{\tt PDE equations}{[{\tt int}] Number of PDE equations at each grid 
+           node. Not used for {\tt Epetra\_VbrMatrix} objects as this
+           is obtained from the block map used to construct the 
+           object. While only block maps with constant element size can be
+           considered, \ML\ has some ability to work with a nonconstant
+           number of equations per grid node (see {\tt ml\_example\_elasticity.c}).  
+           Default: 1.}
+
 \choicebox{\tt eigen-analysis: type}{[{\tt string}] Defines the numerical 
 scheme to use when computing spectral radius estimates for $D^{-1}A$,
 where $D = diag(A)$ and $A$ refers to a discretization matrix on a 
@@ -1303,34 +1327,23 @@ the smoothed aggregation prolongator and for some smoothers.
 Choices are: {\tt cg} (conjugate gradient
 method), {\tt Anorm} (the A-norm of the matrix), 
 %{\tt Anasazi} (use the Arnoldi method), 
-{\tt power-method}. Default: {\tt power-method}.}
+{\tt power-method}. Default: {\tt cg}.}
 
 \choicebox{\tt eigen-analysis: iterations}{[{\tt int}] The number of
 iterations to perform in estimating the spectral radius.  Default: 10.}
 
-\choicebox{\tt output}{[{\tt int}] Controls the amount of information printed
-to the screen. Ranges from 0 to 10 (0 is no output, and 10 is incredibly
-detailed output).  Default: 10.}
-
-\choicebox{\tt print unused}{[{\tt int}] If non-negative, will print all the
-  unused parameters on the specified processor. If -1, the unused parameters
-    will be printed on all processes. If -2, nothing will be printed. 
-    Default: -2.}
-
-%\smallskip
-
-\choicebox{\tt PDE equations}{[{\tt int}] Number of PDE equations for each grid node. This
-value is not considered for {\tt Epetra\_VbrMatrix} objects, as in this
-case is obtained from the block map used to construct the object. Note
-that only block maps with constant element size can be
-considered. Default: 1.}
+%\choicebox{\tt eigen-analysis: tolerance}{[{\tt double}] Tolerance for
+%  \anasazi. Default: 0.1.}
+%
+%\choicebox{\tt eigen-analysis: restart}{[{\tt int}] Number of restarts for
+%  \anasazi. Default: 2.}
 
 %-------------------------------------%
 \subsubsection{Multigrid Cycle Options}\label{multigrid cycle options}
 %-------------------------------------%
 
-\choicebox{\tt cycle applications}{[{\tt int}] Number of applications of the
-  multilevel V-cycle. Default: 1.}
+\choicebox{\tt cycle applications}{[{\tt int}] Number of multigrid applications within
+  a preconditioner  Default: 1.}
 
 \choicebox{\tt max levels}{[{\tt int}] Maximum number of levels. Default: 10.}
 
@@ -1355,7 +1368,7 @@ to be projected out before and after the AMG V-cycle is applied.  For use with
 the {\tt projected MGV} option.  Possible values: 1,2, or 3.  Default: 0.}
 
 %------------------------------------%
-\subsubsection{Aggregation Parameters}
+\subsubsection{Aggregation and Prolongator Parameters}
 %------------------------------------%
 
 \choicebox{\tt aggregation: type $\star$}{[{\tt string}] Define the
@@ -1368,14 +1381,15 @@ aggregation.  Default: 0.0.}
 smoothed aggregation. Default: $4/3$.}
 
 \choicebox{\tt aggregation: smoothing sweeps}{[{\tt int}] Number of
-smoothing sweeps to use in the prolongator smoother.  This should be used in
-conjunction with larger aggregates, from using either {\tt METIS} or
-{\tt ParMETIS} aggregation schemes.  If sweeps is equal to 1, then the value
-of {\tt aggregation: damping factor} is used.  If sweeps is greater than 1,
-the damping factors are calculated automatically.  Default: $1$.}
+smoothing sweeps to use in the prolongator smoother.  This should only be changed
+when using larger aggregates from either {\tt METIS} or
+{\tt ParMETIS} aggregation schemes.  In general, one wants the number of
+sweeps to be less than or equal to $log_2(\mbox{AggregateDiameter} - 1)$. 
+If sweeps equals 1, then {\tt aggregation: damping factor} is used.  If sweeps is 
+greater than 1, damping factors are calculated automatically.  Default: $1$.}
 
-\choicebox{\tt aggregation: global aggregates $\star$}{[{\tt int}] Defines the global number of
-aggregates (only for {\tt METIS} and {\tt ParMETIS} aggregation schemes). }
+\choicebox{\tt aggregation: global aggregates $\star$}{[{\tt int}] Defines the global 
+(or total) number of aggregates that should be created (only for {\tt METIS} and {\tt ParMETIS} aggregation schemes). }
 
 \choicebox{\tt aggregation: local aggregates $\star$}{[{\tt int}] Defines the number of aggregates
 of the calling processor (only for {\tt METIS} and {\tt ParMETIS} aggregation
@@ -1409,18 +1423,37 @@ scheme). Default: 128.}
   $P_{0,\ell}$ is the tentative prolongator at level $\ell$. The
   restriction is defined as $R_\ell = P_\ell^T$. Default: {\tt false}.}
 
+\choicebox{\tt energy minimization: enable} {[{\tt bool}] If {\tt true}, then use
+multigrid variant (based on local damping parameters and restrictor smoothing) 
+suitable for highly nonsymmetric problems.  Default: {\tt false}.}
+
+\choicebox{\tt energy minimization: type}   {[{\tt int}]
+Choose the norm used within local minimization of the energy minimizing option.
+{\tt 2} is the  more reliable. {\tt 1} is the cheapest to set up. {\tt 3} is the closest
+to classic smoothed aggregation. Default: {\tt 2}.}
+
+\choicebox{\tt energy minimization: droptol}{[{\tt double}]
+Drop entries in intermediate calculations of the energy minimizing 
+prolongator that have absolue value less than this tolerance Default: {\tt 0.}.}
+
+\choicebox{\tt energy minimization: cheap}  {[{\tt bool}]
+If {\tt true} and {\tt energy minimization: enable} has been set, a version
+of energy minimization which is less reliable but cheaper to set up is used.
+Default: {\tt false}.  }
+
 %----------------------------------%
 \subsubsection{Smoothing Parameters}\label{smoothing parameters}
 %----------------------------------%
 
 \choicebox{\tt smoother: type $\star$}{[{\tt string}] Type of the smoother. 
-  See Table~\ref{tab:ml:smoother}. Default: {\tt symmetric Gauss-Seidel}.}
+  See Table~\ref{tab:ml:smoother}. Default: {\tt Chebyshev}.}
 
-\choicebox{\tt smoother: sweeps $\star$}{[{\tt int}] Number of sweeps of
- smoother.  Default: 1.}
+\choicebox{\tt smoother: sweeps $\star$}{[{\tt int}] Number of smoother sweeps
+ (or polynomial degree if using Chebyshev).  Default: 2}
 
 \choicebox{\tt smoother: damping factor $\star$}{[{\tt double}] Smoother
- damping factor.  Default: 1.0.}
+   damping factor for {\tt Jacobi}, {\tt Gauss-Seidel}, {\tt symmetric Gauss-Seidel},
+   {\tt block Gauss-Seidel}, or {\tt symmetric block Gauss-Seidel}.  Default: 1.0.}
 
 \choicebox{\tt smoother: pre or post $\star$}{[{\tt string}] It can assume
 one of the following values: {\tt pre, post, both}. Default: {\tt both}.}
@@ -1438,12 +1471,9 @@ params vector (only for {\tt Aztec}
   preconditioner function will be used as smoother (only for {\tt Aztec}
   smoother). Default: {\tt false}.}
 
-\choicebox{\tt smoother: MLS polynomial order $\star$}{[{\tt int}] Polynomial order for {\tt
-MLS}
-smoothers. Default: 3.}
-
-\choicebox{\tt smoother: MLS alpha $\star$}{[{\tt double}] Alpha value for {\tt MLS} 
-smoothers. Default: 30.0.}
+\choicebox{\tt smoother: Chebyshev alpha $\star$}{[{\tt double}] 
+{\tt Chebyshev} smoother will damps errors between $\rho$ and $\rho/$alpha
+where $\rho$ is the spectral radius of $diag(A)^{-1} A$. Default: 20.} 
 
 \choicebox{\tt smoother: user-defined function}{[{\tt int (*)(ML\_Smoother *, int
 inLength, double *invec, int outLength, double *outvec)}] Pointer to user-defined
@@ -1452,35 +1482,32 @@ smoothing function.  Default: {\tt NULL}.}
 \choicebox{\tt smoother: user-defined name}{[{\tt string}] Label for user-defined
 smoother. Default: ``User-defined".}
 
-\choicebox{\tt smoother: Hiptmair sweeps $\star$}{[{\tt int}] Number of Hiptmair iterations
-to perform. Default: 1.}
-
 \choicebox{\tt smoother: Hiptmair efficient symmetric }{[{\tt bool}] Reduce the
-preconditioner computational work while maintaining symmetry by doing edge-node
-relaxation on the first leg of the V-cycle, and node-edge relaxation on the
+preconditioner computational work while maintaining symmetry by doing edge-then-node 
+relaxation on the first leg of the V-cycle, and node-then-edge relaxation on the
 second leg. Default: {\tt true}.}
 
 \choicebox{\tt subsmoother: type $\star$}{[{\tt string}] Smoother to be used
-as a subsmoother at each step of Hiptmair smoothing.  It can assume on the
-  following values: {\tt MLS}, {\tt symmetric Gauss-Seidel}. Default: {\tt
-    MLS}.}
+as a subsmoother on the nodal and edge subproblems within Hiptmair smoothing.  It can assume the
+  following values: {\tt Chebyshev}, {\tt symmetric Gauss-Seidel}. Default: {\tt
+    Chebyshev}.}
 
-\choicebox{\tt subsmoother: MLS polynomial order $\star$}{[{\tt int}] Polynomial
-order for Hiptmair {\tt MLS} sub-smoother.  Default: 3.}
-
-\choicebox{\tt subsmoother: MLS alpha $\star$}{[{\tt int}] Polynomial
-coefficient for Hiptmair {\tt MLS} sub-smoother.  Default: 3.}
+\choicebox{\tt subsmoother: Chebyshev alpha $\star$}{[{\tt double}] 
+Hiptmair {\tt Chebyshev} subsmoother will damps errors between $\rho$ and $\rho/$alpha
+where $\rho$ is the spectral radius of $diag(A)^{-1} A$. Default: 20.} 
 
 \choicebox{\tt subsmoother: SGS damping factor $\star$}{[{\tt double}]
-Damping factor for Hiptmair subsmoother {\tt symmetric Gauss-Seidel}. Automatically calculated in
-the range $(0,2)$.}
+Damping factor for Hiptmair subsmoother {\tt symmetric Gauss-Seidel}. Default: 
+automatically calculated in the range $(0,2)$.}
 
-\choicebox{\tt subsmoother: SGS edge sweeps $\star$}{[{\tt int}] Number of iterations
- of Hiptmair subsmoother SGS to perform on edge problem. Default: 1.}
+\choicebox{\tt subsmoother: edge sweeps $\star$}{[{\tt int}] Number of iterations
+ (or polynomial degree)
+ of Hiptmair subsmoother to perform on edge problem. Default: 2.}
 
-\choicebox{\tt subsmoother: SGS node sweeps $\star$}{[{\tt int}] Number of iterations
- of Hiptmair subsmoother SGS to perform on nodal projection problem.
-Default: 1.}
+\choicebox{\tt subsmoother: node sweeps $\star$}{[{\tt int}] Number of iterations
+ (or polynomial degree)
+ of Hiptmair subsmoother to perform on nodal projection problem.
+Default: 2.}
 
 %--------------------------------------%
 \subsubsection{Coarsest Grid Parameters}\label{coarsest grid parameters}
@@ -1491,7 +1518,7 @@ not coarsen further if current level\'s size  is less than this
 value. Default: 128.}
 
 \choicebox{\tt coarse: type}{[{\tt string}] Coarse solver. 
-See Table~\ref{tab:ml:coarse}. Default: {\tt Amesos\_KLU}.}
+See Table~\ref{tab:ml:coarse}. Default: {\tt Amesos\-KLU}.}
 
 \choicebox{\tt coarse: pre or post $\star$}{[{\tt string}] It can assume
 one of the following values: {\tt pre, post, both}.  Practically, {\tt pre}
@@ -1499,9 +1526,8 @@ and {\tt post} are the same.  Default: {\tt post}.}
 
 \choicebox{\tt coarse: sweeps}{[{\tt int}] (Only for {\tt Jacobi}, {\tt
                                             Gauss-Seidel}, {\tt symmetric
-Gauss-Seidel}, and {\tt Hiptmair}.)
- Number of
-sweeps in the coarse solver. Default: 1.}
+Gauss-Seidel}, {\tt Hiptmair}, and {\tt Chebyshev}.)
+ Number of sweeps (or polynomial degree) in the coarse solver. Default: 2.}
 
 \choicebox{\tt coarse: user-defined function}{[{\tt int (*)(ML\_Smoother *, int
 inLength, double *invec, int outLength, double *outvec)}] Pointer to user-defined
@@ -1510,9 +1536,24 @@ smoothing function.  Default: {\tt NULL}.}
 \choicebox{\tt coarse: user-defined name}{[{\tt string}] Label for user-defined
 smoother. Default: ``User-defined".}
 
-\choicebox{\tt coarse: damping factor}{[{\tt double}] (Only for {\tt Jacobi}
-                                                       and {\tt Gauss-Seidel}.)
-Damping factor in the coarse solver. Default: 0.67.}
+\choicebox{\tt coarse: damping factor}{[{\tt double}] Smoother
+   damping factor for {\tt Jacobi}, {\tt Gauss-Seidel}, {\tt symmetric Gauss-Seidel},
+   {\tt block Gauss-Seidel}, or {\tt symmetric block Gauss-Seidel}.  Default: 1.0.}
+
+\choicebox{\tt coarse: subsmoother type}{[{\tt string}] Smoother to be used
+as a subsmoother at each step of coarse Hiptmair smoothing.  It can assume the
+following values: {\tt Chebyshev}, {\tt symmetric Gauss-Seidel}. Default: {\tt
+Chebyshev}.}
+
+\choicebox{\tt coarse: node sweeps}{[{\tt int}] Number of sweeps (or polynomial
+degree) for nodal subproblem within coarse Hiptmair smoothing.  Default: 2.}
+
+\choicebox{\tt coarse: edge sweeps}{[{\tt int}] Number of sweeps (or polynomial
+degree) for edge subproblem within coarse Hiptmair smoothing.  Default: 2.}
+
+\choicebox{\tt coarse: Chebyshev alpha}{[{\tt double }] {\tt Chebyshev} smoother 
+(or subsmoother) will damps errors between $\rho$ and $\rho/$alpha
+where $\rho$ is the spectral radius of $diag(A)^{-1} A$. Default: 30.} 
 
 \choicebox{\tt coarse: max processes}{[{\tt int}] Maximum number of processes to be used in the
   coarse grid solution (only for {\tt
@@ -1532,26 +1573,26 @@ to use. Can assume the following values: {\tt Zoltan, ParMETIS}. Default: {\tt
 Zoltan}.}
 
 \choicebox{\tt repartition: max min ratio}{[{\tt double}] Specifies desired
-ratio of $g_{max} / g_{min}$, where $g_{max}$ is the maximum number rows over
+ratio of $g_{max} / g_{min}$, where $g_{max}$ is the maximum number of rows over
 all processors, and $g_{min}$ is the minimum number of rows over all processors.
 If the actual ratio is larger, then repartitioning occurs.
-Default: 1.1.}
+Default: 1.3.}
 
 \choicebox{\tt repartition: min per proc}{[{\tt int}] Specifies desired
-minimum number of rows per processor.   If the actual number is greater,
-then repartitioning occurs.  Default: 20.}
+minimum number of rows per processor.   If the actual number is smaller,
+then repartitioning occurs.  Default: 512.}
 
 \choicebox{\tt repartition: node max min ratio}{[{\tt double}] Maxwell-specific
 option for auxiliary nodal hierarchy.  Specifies desired
-ratio of $g_{max} / g_{min}$, where $g_{max}$ is the maximum number rows over
+ratio of $g_{max} / g_{min}$, where $g_{max}$ is the maximum number of rows over
 all processors, and $g_{min}$ is the minimum number of rows over all processors.
 If the actual ratio is larger, then repartitioning occurs.
-Default: 1.1.}
+Default: 1.3.}
 
 \choicebox{\tt repartition: node min per proc}{[{\tt int}] Maxwell-specific
 option for auxiliary nodal hierarchy.  Specifies desired minimum number of rows
-per processor.  If the actual number is greater, then repartitioning occurs.
-Default: 20.}
+per processor.  If the actual number is smaller, then repartitioning occurs.
+Default: 170.}
 
 \choicebox{\tt repartition: Zoltan dimensions}{[{\tt int}] Dimension of the
   problem. Can assume the following values: $\{2,3\}$.}
@@ -1603,20 +1644,28 @@ $z$-coordinates of mesh nodes. (Maxwell only)}
 %%% Detection of null space %%%
 %%% ======================= %%%
 
-\subsubsection{Null Space Detection}
+\subsubsection{Smoothed Aggregation and the Null Space}
 
-If used in conjunction with \anasazi, \ML~can compute an approximate null space
-of the linear operator to precondition. This can be done using the following
-options:
+Smoothed aggregation builds grid transfers by improving an initial
+operator based on a near null space. For scalar PDEs, this null 
+space is often taken to be a constant. In this case, the initial grid 
+transfer is piecewise constant interpolation.  For a PDE system
+with $n$ degrees of freedom per mesh node, the null space if often taken as 
+$n$ constant vectors corresponding to each degree of freedom. While \ML\ 
+generates these simple null spaces automatically, it is also possible to 
+pass in a null space (e.g. the set of rigid body modes for elasticity systems)
+that \ML\ uses. A possibility to compute a null space via \anasazi\ is currently
+disabled, but will hopefully get turned back on soon.
 
 \medskip
 
 \choicebox{\tt null space: type}{[{\tt string}] If {\tt default vectors}, the
-  default null space are used (no computation required). If {\tt
+  default null space is used (no computation required). If {\tt
     pre-computed}, a pointer to the already-computed null is obtained from
     option {\tt null space: vectors}. If {\tt enriched}, \ML~will compute,
   using \anasazi, an approximation of the null space of the operator.
-  Default: {\tt default vectors}.}
+  Note: there is a utility {\tt ML\_Coord2RBM()} that converts coordinates to 
+  rigid body modes for elasiticty problems.  Default: {\tt default vectors}.}
 
 \choicebox{\tt null space: vectors}{[{\tt double*}].  Pointer to user-supplied
 null space vectors.}
@@ -1631,11 +1680,6 @@ null space vectors.}
   the default null space (one constant vector for each unknown) will be added
     to the computed null space. Default: {\tt true}.}
 
-\choicebox{\tt eigen-analysis: tolerance}{[{\tt double}] Tolerance for
-  \anasazi. Default: 0.1.}
-
-\choicebox{\tt eigen-analysis: restart}{[{\tt int}] Number of restarts for
-  \anasazi. Default: 2.}
 
 %%% ====================== %%%
 %%% auxiliary matrix stuff %%%
@@ -1685,16 +1729,20 @@ matrix~(\ref{eq:discrete_laplacian}).  Default: {\tt false}.}
 
 %--------------------------------------------------------------%
 \subsection{Default Parameter Settings for Common Problem Types}
+\label{default parameter settings}
 %--------------------------------------------------------------%
 %
-The MultiLevelPreconditioner class provides default values for four different
+The MultiLevelPreconditioner class provides default values for five different
 preconditioner types:
 %
 \begin{enumerate}
-  \item Linear elasticity
-  \item Classical 2-level domain decomposition for the advection diffusion operator
-  \item 3-level algebraic domain decomposition for the advection diffusion operator
+  \item Classical smoothed aggregation for symmetric positive definite or nearly 
+        symmetric positive definite systems.
+  \item Classical smoothed aggregation-based 2-level domain decomposition 
+  \item 3-level algebraic domain decomposition
   \item Eddy current formulation of Maxwell's equations
+  \item Energy-based minimizing smoothed aggregation suitable for highly
+        convective nonsymmetric fluid flow problems.
 \end{enumerate}
 %
 Default values are listed in Table~\ref{tab:default}.
@@ -1702,56 +1750,49 @@ Default values are listed in Table~\ref{tab:default}.
 %%%%%%%%% table for SA, DD, DD-ML, and Maxwell problem type defaults %%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{sidewaystable}[tbhp]
-  \begin{tabular}{| p{7cm} | p{2.5cm} | p{2.5cm} | p{2.5cm} | p{2.5cm} |
-    p{2.5cm} | }
+  \begin{tabular}{| p{6.5cm} | p{1.3cm} | p{2.5cm} | p{2.1cm} | p{2.1cm} | p{2.5cm} | p{2.2cm} |}
     \hline
-    Option Name & Type & {\tt SA} & {\tt DD} & {\tt DD-ML} & \tt maxwell
-    \\
+    Option Name & Type &{\tt SA}&{\tt DD}&{\tt DD-ML}&{\tt maxwell}&{\tt NSSA} \\
     \hline
     \hline
-{\tt max levels} & \tt int & 10 & 2 & 3 & 10 \\
-\tt output & \tt int & 8 &  8 & 8 & 10 \\
-\tt increasing or decreasing & \tt string & \tt increasing & \tt
-increasing & \tt increasing & \tt decreasing \\
-\tt PDE equations & \tt int & 1 & 1 & 1 & 1 \\
-\tt print unused & \tt int & 0 & 0 & 0 & 0 \\
+{\tt max levels} & \tt int & 10 & 2 & 3 & 10 & 10 \\
+{\tt prec type} & \tt string & \tt MGV  & \tt MGV & \tt MGV & \tt MGV & \tt MGW \\
+\tt increasing or decreasing & \tt string & \tt increasing & \tt increasing & \tt increasing 
+& \tt decreasing & \tt increasing \\
 \hline
 \hline
-\tt aggregation: type & \tt string & \tt Uncoupled-MIS & \tt METIS & \tt METIS &
+\tt aggregation: type & \tt string & \tt Uncoupled-MIS & \tt METIS & \tt METIS & \tt Uncoupled-MIS & 
 \tt Uncoupled-MIS \\
-\tt aggregation: local aggregates & \tt int & -- & 1 & -- & -- \\
-\tt aggregation: nodes per aggregate & \tt int & -- & -- & 512 & -- \\
-\tt aggregation: damping factor & \tt double &  4/3 & 4/3 & 4/3 & 4/3\\
-\tt eigen-analysis: type & \tt string & \tt power-method & \tt power-method &
-                          \tt power-method & \tt power-method \\
-\tt aggregation: threshold & \tt double & 0.0 & 0.0 & 0.0 & 0.0\\
-\tt aggregation: next-level aggregates per process & \tt int & -- & --
-&128 & --\\
+\tt aggregation: local aggregates & \tt int & -- & 1 & -- & -- & -- \\
+\tt aggregation: nodes per aggregate & \tt int & -- & -- & 512 & -- & -- \\
+\tt aggregation: next-level aggregates \phantom{aggregation: }per process & \tt int & -- & -- &128 & -- & -- \\
+\tt aggregation: damping factor & \tt double &  4/3 & 4/3 & 4/3 & 4/3 & -- \\
+\tt energy minimization: enable & \tt bool & -- & -- & -- & -- & \tt true \\
+\tt eigen-analysis: type & \tt string & \tt cg & \tt power-method & \tt power-method &
+                          \tt cg & \tt power-method \\
+\tt eigen-analysis: iterations & \tt int & 10  & 20 & 20 & 10 & 20 \\
 \hline
 \hline
-\tt smoother: sweeps & \tt int & 2 & 2 & 2 & 1 \\
-\tt smoother: damping factor & \tt double & 1.0  & -- & --  & 1.0 \\
-\tt smoother: pre or post & \tt string & \tt both & \tt both & \tt both
-& \tt both \\
+\tt smoother: sweeps         & \tt int    &    2   &    1   &   1    &    1    & 4   \\
+\tt smoother: damping factor & \tt double &   1.0  &    --  &   --   &    1.0  & .67 \\
+\tt smoother: pre or post    & \tt string &\tt both&\tt both&\tt both&\tt both & \tt post \\
 \tt smoother: type & \tt string & \tt symmetric Gauss-Seidel & \tt Aztec & \tt
-Aztec & Hiptmair/MLS \\
-\tt smoother: Aztec as solver & \tt bool & -- & \tt false & \tt
-false & false \\
-\tt smoother: MLS polynomial order & \tt int & -- & -- & -- & 2 \\
-\tt smoother: MLS alpha & \tt double & -- & -- & -- & 27.0 \\
+Aztec & \tt Hiptmair & \tt symmetric Gauss-Seidel \\
+\tt smoother: Aztec as solver & \tt bool & -- & \tt false & \tt false & -- & -- \\
+\tt subsmoother: type     & \tt string & -- & -- & -- & \tt Chebyshev & -- \\
+\tt subsmoother: Chebyshev alpha & \tt double & -- & -- & -- & 27.0 & -- \\
+\tt subsmoother: node sweeps & \tt int & -- & -- & -- & 4 & -- \\
+\tt subsmoother: edge sweeps & \tt int & -- & -- & -- & 4 & -- \\
 \hline
 \hline
-\tt coarse: type & \tt string & \tt Amesos\_KLU & \tt Amesos\_KLU  & \tt
-Amesos\_KLU & \tt Amesos\_KLU \\
-\tt coarse: max size & \tt int & 16 & 128 & 128 & 75 \\
-\tt coarse: sweeps & \tt int & 1 & 1 & 1 & 1 \\
-\tt coarse: damping factor & \tt double & 1.0 & 1.0 & 1.0 & 1.0 \\
-\tt coarse: max processes & \tt int & 16 & 16 & 16 & -- \\
+\tt coarse: type & \tt string & \tt Amesos\-KLU & \tt Amesos\-KLU  & \tt Amesos\-KLU  & \tt
+Amesos\-KLU & \tt Amesos\-KLU \\
+\tt coarse: max size & \tt int & 128 & 128 & 128 & 128 & 256 \\
 \hline
   \end{tabular}
-  \caption{Default values for ML\_Epetra::MultiLevelPreconditioner for
-    the 4 currently supported problem types {\tt SA, DD, DD-ML,
-    Maxwell}. ``--'' means not set.}
+  \caption{ML\_Epetra::MultiLevelPreconditioner Default values for
+    5 supported problem types {\tt SA, DD, DD-ML, Maxwell,NNSA}. 
+    ``--'' means not set.}
   \label{tab:default}
 \end{sidewaystable}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% end of table %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1760,7 +1801,9 @@ In the table, {\tt SA} refers to ``classical'' smoothed aggregation (with
 small aggregates and relative large number of levels), {\tt DD} and {\tt
   DD-ML} to domain decomposition methods (whose coarse matrix is defined
 using aggressive coarsening and limited number of levels).  {\tt
-  Maxwell} refers to the solution of Maxwell's equations. 
+  Maxwell} refers to the solution of Maxwell's equations.  {\tt NSSA} 
+is a nonsymmetric smoothed aggregation variant which may be appropriate for highly
+nonsymmetric operators.
 
 Default values for the parameter list can be set by {\tt
   ML\_Epetra::SetDefaults()}.  The user can easily put the desired
@@ -2362,14 +2405,15 @@ projected system $T^{\mathrm{T}}MTe=T^{\mathrm{T}}r$, where $r = f - Kx$;
 and finally one step of a smoother $\mathcal S$ on the entire system with
 initial guess $x+e$.
 
-In serial, the default sub-smoother $\mathcal S$ is symmetric Gauss-Seidel
-(SGS).
-In parallel, the default sub-smoother $\mathcal S$ a degree 3 Chebyshev
+The default sub-smoother $\mathcal S$ is a degree 3 Chebyshev
 polynomial.
 The coefficients of this polynomial are calculated automatically based on the
 coarsening rate of the multigrid hierarchy.
-The Chebyshev degree can be changed with the option\\
-\verb!smoother: Hiptmair MLS polynomial order!
+The Chebyshev degree for the nodal (or edge) problem can be changed with the 
+options \verb!subsmoother: node sweeps!  (or \verb!subsmoother: edge sweeps!)
+and \verb!coarse: node sweeps! (or \verb!coarse: edge sweeps!) depending on
+whether the Hiptmair smoothing is done on a fine or the coarsest level.
+
 
 \clearpage
 \newpage
@@ -2701,7 +2745,8 @@ associated with an operator.  In elasticity, for example, it is well
 known that a floating structure has six rigid body modes (three
 translational vectors and three rotation vectors) that correspond to the
 null space of the operator.  In this case, the logical choice is to take
-these six vectors as the seed vectors in smoothed aggregation. When this
+these six vectors (which can be computed with the help of {\tt ML\_Coord2RBM()}) 
+as the seed vectors in smoothed aggregation. When this
 type of information is known, it should be given to \ML\ via the command
 {\sf ML\_Aggregate\_Set\_NullSpace}.
 
@@ -3291,7 +3336,7 @@ value from MATLAB and the value of the \texttt{int}-typecast value are
 less than 1e-15.  Unfortunately, this means that MLMEX will choose the 
 incorrect type for parameters which are doubles that happen to have an
 integer value (a good example of where this might happen would be the parameter
-`smoother MLS: alpha', which defaults to 30.0).  Since MLMEX does no
+`smoother Chebyshev: alpha', which defaults to 30.0).  Since MLMEX does no
 internal typechecking of 
 parameters (it uses ML's internal checks), it has no way of detecting
 this conflict.  From the user's perspective, avoiding this is as
