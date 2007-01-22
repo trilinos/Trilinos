@@ -50,6 +50,8 @@
 #include "LOCA_TurningPoint_MinimallyAugmented_AbstractGroup.H"
 #include "LOCA_Pitchfork_MooreSpence_ExtendedGroup.H"
 #include "LOCA_Pitchfork_MooreSpence_AbstractGroup.H"
+#include "LOCA_Pitchfork_MinimallyAugmented_ExtendedGroup.H"
+#include "LOCA_Pitchfork_MinimallyAugmented_AbstractGroup.H"
 #include "LOCA_Hopf_MooreSpence_ExtendedGroup.H"
 #include "LOCA_Hopf_MooreSpence_AbstractGroup.H"
 
@@ -134,6 +136,25 @@ LOCA::Bifurcation::Factory::create(
 							   topParams,
 							   bifurcationParams,
 							   msg));
+  }
+  else if (name == "Pitchfork:  Minimally Augmented") {
+
+    // Cast group to MinimallyAugmented group
+    Teuchos::RefCountPtr<LOCA::Pitchfork::MinimallyAugmented::AbstractGroup> mag = 
+      Teuchos::rcp_dynamic_cast<LOCA::Pitchfork::MinimallyAugmented::AbstractGroup>(grp);
+    if (mag.get() == NULL)
+      globalData->locaErrorCheck->throwError(
+	    methodName,
+	    string("Underlying group must be derived from ") + 
+	    string("LOCA::Pitchfork::MinimallyAugmented::AbstractGroup ") +
+	    string("for minimally augmented pitchfork continuation!"));
+
+    strategy = 
+      Teuchos::rcp(new LOCA::Pitchfork::MinimallyAugmented::ExtendedGroup(
+							   globalData,
+							   topParams,
+							   bifurcationParams,
+							   mag));
   }
   else if (name == "Hopf:  Moore-Spence") {
 

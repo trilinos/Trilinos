@@ -161,6 +161,7 @@ namespace LOCA {
 
 	//@}
 
+	//! Set the newton update for x and p
 	void setNewtonUpdates(const NOX::Abstract::Vector& dx, double dp, 
 			      double step);
 

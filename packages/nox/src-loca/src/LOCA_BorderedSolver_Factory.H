@@ -75,6 +75,12 @@ namespace LOCA {
      *   <li> "Nested" (LOCA::BorderedSolver::Nested)
      *   </ul>
      * </ul>
+     *
+     * There are also %Epetra and %LAPACK specific strategies that can
+     * be instantiated by the LOCA::Epetra::Factory and LOCA::LAPACK::Factory.
+     * See LOCA::BorderedSolver::LAPACKDirectSolve,
+     * LOCA::BorderedSolver::EpetraHouseholder and
+     * LOCA::BorderedSolver::Epetra::Augmented.
      */
     class Factory {
 

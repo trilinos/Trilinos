@@ -39,57 +39,66 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef LOCA_TURNINGPOINT_MINIMALLYAUGMENTED_EXTENDEDGROUP_H
-#define LOCA_TURNINGPOINT_MINIMALLYAUGMENTED_EXTENDEDGROUP_H
+#ifndef LOCA_PITCHFORK_MINIMALLYAUGMENTED_EXTENDEDGROUP_H
+#define LOCA_PITCHFORK_MINIMALLYAUGMENTED_EXTENDEDGROUP_H
 
 #include "Teuchos_RefCountPtr.hpp"
 
-#include "LOCA_MultiContinuation_AbstractGroup.H"         // base class
-#include "LOCA_Extended_MultiAbstractGroup.H"             // base class
+#include "LOCA_Extended_MultiAbstractGroup.H"           // base class
+#include "LOCA_MultiContinuation_AbstractGroup.H"       // base class
 #include "LOCA_BorderedSystem_AbstractGroup.H"          // base class
+#include "LOCA_MultiContinuation_ExtendedVector.H"      // class data element
+#include "LOCA_MultiContinuation_ExtendedMultiVector.H" // class data element
 
+// forward declarations
+namespace Teuchos {
+  class ParameterList;
+}
 namespace LOCA {
   class GlobalData;
   namespace Parameter {
     class SublistParser;
   }
-  namespace TurningPoint {
+  namespace Pitchfork {
     namespace MinimallyAugmented {
       class AbstractGroup;
       class Constraint;
     }
   }
-  namespace MultiContinuation {
-    class ConstrainedGroup;
+  namespace BorderedSolver {
+    class AbstractStrategy;
   }
 }
-namespace LOCA { 
 
-  namespace TurningPoint { 
+namespace LOCA {
+
+  namespace Pitchfork {
     
     namespace MinimallyAugmented {
 
       /*! 
-       * \brief A group representing the minimally augemented turning point 
+       * \brief A group representing the minimally augemented pitchfork
        * equations. 
        */
       /*!
-       * The LOCA::TurningPoint::MinimallyAugmented::ExtendedGroup is a 
+       * The LOCA::Pitchfork::MinimallyAugmented::ExtendedGroup is a 
        * concrete implementation of the NOX::Abstract::Group, 
        * LOCA::MultiContinuation::AbstractGroup and 
        * LOCA::Extended::MultiAbstractGroup that defines the following 
-       * extended set of equations that are regular at a generic turning point:
+       * extended set of equations that are regular at a generic pitchfork:
        * \f[
        *     G(z) = \left[
        *      \begin{array}{c}
-       *         F(x,p) \\
-       *         \sigma
+       *         F(x,p)+s\psi\\
+       *         \sigma \\
+       *         \langle x,\psi \rangle
        *      \end{array}
        *      \right] = 0
        *   \f]
-       * where \f$z = [x, p]\in\Re^{n+1}\f$, \f$x\f$ is the solution vector,
-       * \f$p\f$ is the bifurcation parameter, \f$J\f$ is the Jacobian of 
-       * \f$F\f$, and \f$\sigma\in\Re\f$ is a measure of the singularity of 
+       * where \f$z = [x, p, s]\in\Re^{n+2}\f$, \f$x\f$ is the solution vector,
+       * \f$s\f$ is the slack variable representing the asymmetry, 
+       * \f$p\f$ is the bifurcation parameter, \f$\psi\f$ is the asymmetric
+       * vector, and \f$\sigma\in\Re\f$ is a measure of the singularity of 
        * \f$F\f$ and is defined via
        * \f[
        *     \begin{bmatrix}
@@ -132,24 +141,28 @@ namespace LOCA {
        * \f]
        *
        * The group stores an underlying group of type 
-       * LOCA::TurningPoint::MinimallyAugmented::AbstractGroup to represent 
+       * LOCA::Pitchfork::MinimallyAugmented::AbstractGroup to represent 
        * the equations \f$F(x,p) = 0\f$ and to manipulate the underlying 
        * Jacobian \f$J\f$.  This interface defines methods for computing
-       * the derivatives \f$(w^T J v)_x\f$ and \f$(w^T J v)_p\f$ as well.
+       * the derivatives \f$(w^T J v)_x\f$ and \f$(w^T J v)_p\f$ and
+       * computing the inner product \f$\langle \psi,x \rangle \f$ as well.
        *
        * This class implements all of the NOX::Abstract::Group, 
        * LOCA::MultiContinuation::AbstractGroup, and 
        * LOCA::Extended::MultiAbstractGroup 
        * methods for this extended set of equations and therefore is a complete
        * group which can be passed to most %NOX solvers to locate a single 
-       * turning point or to the LOCA::Stepper to compute a family of 
-       * turning points in a second parameter.
+       * pitchfork or to the LOCA::Stepper to compute a family of 
+       * pitchforks in a second parameter.
        *
-       * The class is intialized via the \c tpParams parameter list argument 
+       * The class is intialized via the \c pfParams parameter list argument 
        * to the constructor.  The parameters this class recognizes are:
        * <ul>
        * <li> "Bifurcation Parameter" -- [string] (Must be supplied) - 
        *    Name of the bifurcation parameter \f$p\f$
+       * <li> "Antisymmetric Vector"  -- 
+       *      [Teuchos::RefCountPtr<NOX::Abstract::Vector>] (Must be supplied) 
+       *      Vector storing antisymmetric vector \f$\psi\f$
        * <li> "Bordered Solver Method" -- [string] (default "Bordering") 
        *      Method for solving bordered systems of equations.  See 
        *      LOCA::BorderedSolver::Factory for a description.
@@ -157,17 +170,6 @@ namespace LOCA {
        *    Flag indicating whether Jacobian matrix \f$J\f$ is symmetric,
        *    in which case we force \f$a = b\f$ and therefore the second
        *    tranpose solve for \f$w\f$ is unnecessary
-       * <li> "Constraint Method" -- [string] (default: "Default") -
-       *    Type of constraint method to use.  Valid choices are
-       *    <ul>
-       *    <li> "Default" (LOCA::TurningPoint::MinimallyAugmented::Constraint)
-       *         Default method described above.
-       *    <li> "Modified" 
-       *         (LOCA::TurningPoint::MinimallyAugmented::ModifedConstraint)
-       *          A modified method that computes updates to the null vectors
-       *          every nonlinear interation, instead of directly solving
-       *          for them
-       *    </ul>
        * <li> "Initial Null Vector Compuation" -- [string] 
        *      (default: "User Provided") - Method to compute initial \f$a\f$ 
        *      and \f$b\f$ vectors.  Valid choices are:
@@ -199,28 +201,36 @@ namespace LOCA {
        *    \f$a = w\f$ and \f$b = v\f$ every nonlinear iteration
        * </ul>
        */
-      class ExtendedGroup 
-	: public virtual LOCA::Extended::MultiAbstractGroup,
-	  public virtual LOCA::MultiContinuation::AbstractGroup,
-	  public virtual LOCA::BorderedSystem::AbstractGroup {
+      class ExtendedGroup : 
+	public virtual LOCA::Extended::MultiAbstractGroup,
+	public virtual LOCA::MultiContinuation::AbstractGroup,
+	public virtual LOCA::BorderedSystem::AbstractGroup {
 
       public:
 
-	/*! 
-	 * \brief Constructor with initial data passed through parameter lists.
+	//! Constructor 
+	/*!
+	 * \param global_data [in] Global data object
+	 * \param topParams [in] Parsed top-level parameter list.
+	 * \param pfParams [in] Parameter list determining the
+	 * bordered solver method.
+	 * \param grp [in] Group representing \f$f\f$.
 	 */
-	ExtendedGroup(
-	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-         const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& tpParams,
-	 const Teuchos::RefCountPtr<LOCA::TurningPoint::MinimallyAugmented::AbstractGroup>& g);
+      ExtendedGroup(
+       const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
+       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
+       const Teuchos::RefCountPtr<Teuchos::ParameterList>& pfParams,
+       const Teuchos::RefCountPtr<LOCA::Pitchfork::MinimallyAugmented::AbstractGroup>& grp);
 
-	//! Copy constructor.
+	//! Copy constructor
 	ExtendedGroup(const ExtendedGroup& source, 
 		      NOX::CopyType type = NOX::DeepCopy);
 
 	//! Destructor.
 	virtual ~ExtendedGroup();
+
+	//! Get bifurcation parameter
+	double getBifParam() const;
 
 	/*! 
 	 * @name Implementation of NOX::Abstract::Group virtual methods 
@@ -230,65 +240,46 @@ namespace LOCA {
 	//! Assignment operator
 	virtual NOX::Abstract::Group& 
 	operator=(const NOX::Abstract::Group& source);
-     
-	//! Cloning function
+
+	//! Clone function
 	virtual Teuchos::RefCountPtr<NOX::Abstract::Group>
 	clone(NOX::CopyType type = NOX::DeepCopy) const;
 
-	//! Set the solution vector, x, to y.
+	//! Set the solution vector to y.
 	virtual void setX(const NOX::Abstract::Vector& y);
-
-	//! Compute this.x = grp.x + step * d.
+	
+	/*! 
+	 * \brief Compute and return solution vector, x, where 
+	 * this.x = grp.x + step * d.
+	 */
 	virtual void computeX(const NOX::Abstract::Group& g, 
 			      const NOX::Abstract::Vector& d,
 			      double step);
 
-	//! Compute the turning point equation residual \f$G\f$.
-	/*!
-	 * This method fills the extended residual
-	 * \f[
-	 *     G(z) = \left[
-	 *     \begin{array}{c}
-	 *        F(x,p) \\
-	 *       \sigma
-	 *    \end{array}
-	 *     \right].
-	 * \f]
-	 */
+	//! Compute extended continuation equations 
 	virtual NOX::Abstract::Group::ReturnType computeF();
-
-	//! Compute the blocks of the Jacobian derivative of \f$G\f$
-	/*!
-	 * This method computes the \f$J\f$, \f$F_p\f$, \f$\sigma_x\f$ and 
-	 * \f$\sigma_p\f$ blocks of the extended Jacobian:
-	 * \f[
-	 *    D_z G(z) = 
-	 *    \begin{bmatrix}
-	 *       J        & F_p \\
-	 *       \sigma_x & \sigma_p
-	 *    \end{bmatrix}
-	 * \f]
-	 */
+	
+	//! Compute extended continuation jacobian
 	virtual NOX::Abstract::Group::ReturnType computeJacobian();
 
-	//! Gradient computation is not defined for this group
+	//! Gradient is not defined for this system
 	virtual NOX::Abstract::Group::ReturnType computeGradient();
 
-	//! Compute %Newton direction using applyJacobianInverse().
+	//! Compute Newton direction for extended continuation system
 	virtual NOX::Abstract::Group::ReturnType 
 	computeNewton(Teuchos::ParameterList& params);
-  
-	//! Computes the extended Jacobian vector product
+
+	//! Applies Jacobian for extended system
 	virtual NOX::Abstract::Group::ReturnType 
 	applyJacobian(const NOX::Abstract::Vector& input, 
 		      NOX::Abstract::Vector& result) const;
 
-	//! Computes the extended Jacobian transpose vector product
+	//! Jacobian transpose not defined for this system
 	virtual NOX::Abstract::Group::ReturnType 
 	applyJacobianTranspose(const NOX::Abstract::Vector& input, 
 			       NOX::Abstract::Vector& result) const;
 
-	//! Applies the inverse of the extended Jacobian matrix 
+	//! Applies Jacobian inverse for extended system
 	virtual NOX::Abstract::Group::ReturnType 
 	applyJacobianInverse(Teuchos::ParameterList& params, 
 			     const NOX::Abstract::Vector& input, 
@@ -299,7 +290,7 @@ namespace LOCA {
 	applyJacobianMultiVector(const NOX::Abstract::MultiVector& input, 
 				 NOX::Abstract::MultiVector& result) const;
 
-	//! Jacobian transpose for extended system
+	//! Jacobian transpose not defined for this system
 	virtual NOX::Abstract::Group::ReturnType 
 	applyJacobianTransposeMultiVector(
 				     const NOX::Abstract::MultiVector& input, 
@@ -311,35 +302,35 @@ namespace LOCA {
 				    Teuchos::ParameterList& params, 
 				    const NOX::Abstract::MultiVector& input, 
 				    NOX::Abstract::MultiVector& result) const;
-  
-	//! Return \c true if the extended residual \f$G\f$ is valid.
+
+	//! Return \c true if extended residual is valid.
 	virtual bool isF() const;
 
 	//! Return \c true if the extended Jacobian is valid.
 	virtual bool isJacobian() const;
-
-	//! Always returns false.
+      
+	//! Always returns false
 	virtual bool isGradient() const;
-
-	//! Return \c true if the extended Newton direction is valid.
+      
+	//! Return \c true if the extended Newton direction is valid
 	virtual bool isNewton() const;
 
-	//! Return extended solution vector \f$z\f$.  
+	//! Return extended solution vector.  
 	virtual const NOX::Abstract::Vector& getX() const;
 
-	//! Return extended equation residual \f$G(z)\f$
+	//! Return extended residual
 	virtual const NOX::Abstract::Vector& getF() const;
 
-	//! Return 2-norm of \f$G(z)\f$. 
+	//! Return 2-norm of extended residual. 
 	virtual double getNormF() const;
 
-	//! Vector returned is not valid.
+	//! Gradient is never valid
 	virtual const NOX::Abstract::Vector& getGradient() const;
 
 	//! Return extended Newton direction.
 	virtual const NOX::Abstract::Vector& getNewton() const;
-
-	//! Return the norm of the %Newton solve residual.
+	
+	//! Returns 2-norm of extended Newton solve residual
 	virtual double getNormNewtonSolveResidual() const;
 
 	//@}
@@ -354,12 +345,12 @@ namespace LOCA {
 	virtual 
 	Teuchos::RefCountPtr<const LOCA::MultiContinuation::AbstractGroup> 
 	getUnderlyingGroup() const;
-	
+      
 	//! Return underlying group
 	virtual 
 	Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>
 	getUnderlyingGroup();
-
+	
 	//@}
 
 	/*! 
@@ -373,25 +364,25 @@ namespace LOCA {
 
 	//! Set parameters indexed by (integer) paramIDs
 	virtual void setParamsMulti(
-			  const vector<int>& paramIDs, 
-			  const NOX::Abstract::MultiVector::DenseMatrix& vals);
+		     const vector<int>& paramIDs, 
+		     const NOX::Abstract::MultiVector::DenseMatrix& vals);
 
-	//! Set the parameter vector in the group to p.
+	//! Set the parameter vector in the group to p (pVector = p).  
 	virtual void setParams(const ParameterVector& p);
 
-	//! Set parameter indexed by paramID
-	virtual void setParam(string paramID, double val);
-
-	//! Set parameter indexed by paramID
+	//! Set parameter indexed by (integer) paramID
 	virtual void setParam(int paramID, double val);
 
-	//! Return a const reference to the paramter vector owned by the group.
+	//! Set parameter indexed by (string) paramID
+	virtual void setParam(string paramID, double val);
+
+	//! Return a const reference to the ParameterVector owned by the group.
 	virtual const ParameterVector& getParams() const;
 
-	//! Return copy of parameter indexed by paramID
+	//! Return copy of parameter indexed by (integer) paramID
 	virtual double getParam(int paramID) const;
 
-	//! Return copy of parameter indexed by paramID
+	//! Return copy of parameter indexed by (string) paramID
 	virtual double getParam(string paramID) const;
 
 	/*! 
@@ -413,7 +404,7 @@ namespace LOCA {
 	virtual void 
 	preProcessContinuationStep(
 			 LOCA::Abstract::Iterator::StepStatus stepStatus);
-	
+
 	//! Perform any postprocessing after a continuation step finishes.
 	/*!
 	 * The \c stepStatus argument indicates whether the step was
@@ -425,33 +416,26 @@ namespace LOCA {
 
 	//! Projects solution to a few scalars for multiparameter continuation
 	virtual void projectToDraw(const NOX::Abstract::Vector& x,
-				   double *px) const;
-
+				 double *px) const;
+	
 	//! Returns the dimension of the project to draw array
 	virtual int projectToDrawDimension() const;
 
-	/*! 
-	 * \brief Function to print out extended solution and continuation 
-	 * parameter after successful continuation step.
-	 */
-	/*!
-	 * This method prints the solution, null-vector, and parameter 
-	 * components of the extended solution vector using the printSolution
-	 * method of the underlying group.
-	 */
+	//! Compute a scaled dot product
+	virtual double
+	computeScaledDotProduct(const NOX::Abstract::Vector& a,
+				const NOX::Abstract::Vector& b) const;
+
+	//! Function to print out solution and parameter after successful step
 	virtual void printSolution(const double conParam) const;
 
-	/*! 
-	 * \brief Function to print out extended solution and continuation 
-	 * parameter after successful continuation step.
-	 */
-	/*!
-	 * This method prints the solution, null-vector, and parameter 
-	 * components of the extended solution vector using the printSolution
-	 * method of the underlying group.
-	 */
-	 virtual void printSolution(const NOX::Abstract::Vector& x_,
-				    const double conParam) const;
+	//! Function to print out a vector and parameter after successful step
+	virtual void printSolution(const NOX::Abstract::Vector& x,
+				   const double conParam) const;
+
+	//! Scales a vector using scaling vector
+	virtual void
+	scaleVector(NOX::Abstract::Vector& x) const;
 
 	//@}
 
@@ -460,23 +444,23 @@ namespace LOCA {
 	 * LOCA::BorderedSystem::AbstractGroup virtual methods 
 	 */
 	//@{
-	
+
 	//! Return the total width of the bordered rows/columns
 	virtual int getBorderedWidth() const;
 	
 	//! Get bottom-level unbordered group
 	virtual Teuchos::RefCountPtr<const NOX::Abstract::Group>
 	getUnborderedGroup() const;
-	
+
 	//! Indicates whether combined A block is zero
 	virtual bool isCombinedAZero() const;
 	
 	//! Indicates whether combined B block is zero
 	virtual bool isCombinedBZero() const;
-	
+
 	//! Indicates whether combined C block is zero
 	virtual bool isCombinedCZero() const;
-	
+
 	/*!
 	 * Given the vector \c v, extract the underlying solution component
 	 * corresponding to the unbordered group.
@@ -506,7 +490,7 @@ namespace LOCA {
 			  const NOX::Abstract::MultiVector& v_x,
 			  const NOX::Abstract::MultiVector::DenseMatrix& v_p,
 			  NOX::Abstract::MultiVector& v) const;
-
+	
 	//! Fill the combined A block as described above
 	virtual void fillA(NOX::Abstract::MultiVector& A) const;
 	
@@ -518,10 +502,13 @@ namespace LOCA {
 	
 	//@}
 
-	//! Get bifurcation parameter
-	double getBifParam() const;
-
       protected:
+	
+	//! Resets all isValid flags to false
+	virtual void resetIsValid();
+
+	//! Sets up multivector views
+	virtual void setupViews();
 
 	//! Set bifurcation parameter
 	void setBifParam(double param);
@@ -533,9 +520,9 @@ namespace LOCA {
 			 bool isSymmetric);
 
       private:
-
-	//! Prohibit generation and use of operator=()
-	ExtendedGroup& operator=(const ExtendedGroup&);
+	
+	//! Prevent generation and use of operator=()
+	ExtendedGroup& operator=(const ExtendedGroup& source);
 
       protected:
 
@@ -545,27 +532,87 @@ namespace LOCA {
 	//! Parsed top-level parameters
 	Teuchos::RefCountPtr<LOCA::Parameter::SublistParser> parsedParams;
 
-	//! Bifurcation parameter list
-	Teuchos::RefCountPtr<Teuchos::ParameterList> turningPointParams;
+	//! Pitchfork parameter list
+	Teuchos::RefCountPtr<Teuchos::ParameterList> pitchforkParams;
 
 	//! Pointer to base group that defines \f$F\f$
-	Teuchos::RefCountPtr<LOCA::TurningPoint::MinimallyAugmented::AbstractGroup> grpPtr;
+	Teuchos::RefCountPtr<LOCA::Pitchfork::MinimallyAugmented::AbstractGroup> grpPtr;
 
-	//! Pointer to the constraint equation
-	Teuchos::RefCountPtr<LOCA::TurningPoint::MinimallyAugmented::Constraint> constraint;
+	//! Pointer to base group as a bordered group
+	Teuchos::RefCountPtr<LOCA::BorderedSystem::AbstractGroup> bordered_grp;
 
-	//! Pointer to constrained group implementation
-	Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstrainedGroup> conGroup;
+	//! Pointer to constraint object
+	Teuchos::RefCountPtr<LOCA::Pitchfork::MinimallyAugmented::Constraint> constraintsPtr;
+
+	//! Stores the extended solution vector
+	LOCA::MultiContinuation::ExtendedMultiVector xMultiVec;
+
+	//! Stores the extended residual vector and df/dp
+	LOCA::MultiContinuation::ExtendedMultiVector fMultiVec;
+
+	//! Stores the extended Newton vector
+	LOCA::MultiContinuation::ExtendedMultiVector newtonMultiVec;
+
+	//! Stores the extended gradient vector
+	LOCA::MultiContinuation::ExtendedMultiVector gradientMultiVec;
+
+	//! Stores view of first column of xMultiVec
+	Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedVector> xVec;
+
+	//! Vector for \f$\psi\f$
+	Teuchos::RefCountPtr<NOX::Abstract::Vector> psiVec;
+
+	//! Stores view of first column of fMultiVec
+	Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedVector> fVec;
+      
+	//! Stores view of first column of fMultiVec as a multivec
+	Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedMultiVector> ffMultiVec;
+
+	//! Stores view of df/dp columns of fMultiVec
+	Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedMultiVector> dfdpMultiVec;
+
+	//! Stores view of f and first column of df/dp
+	Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedMultiVector> fBifMultiVec;
+
+	//! Stores view of first column of newtonMultiVec
+	Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedVector> newtonVec;
+
+	//! Stores view of first column of gradientMultiVec
+	Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedVector> gradientVec;
+
+	//! Stores bordered solver strategy
+	Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy> borderedSolver;
+
+	//! Stores indices for getting f part of fMultiVec
+	vector<int> index_f;
+
+	//! Stores indices for getting df/dp part of fMultiVec
+	vector<int> index_dfdp;
 
 	//! Stores the bifurcation parameter index
 	int bifParamID;
 
-      }; // class ExtendedGroup
+	//! Is residual vector valid
+	bool isValidF;
 
-    } // namespace MinimallyAugmented
+	//! Is Jacobian matrix valid
+	bool isValidJacobian;
 
-  } // namespace TurningPoint
+	//! Is Newton vector valid
+	bool isValidNewton;
 
-} // namespace LOCA
+	//! Is Gradient vector valid
+	bool isValidGradient;
 
-#endif
+	//! Flag that indicates whether underlying group is a bordered group
+	bool isBordered;
+
+      }; // Class ExtendedGroup
+
+    } // Namespace MinimallyAugmented
+
+  } // Namespace Pitchfork
+
+} // Namespace LOCA
+
+#endif // LOCA_PITCHFORK_MINIMALLYAUGMENTED_EXTENDEDGROUP_H

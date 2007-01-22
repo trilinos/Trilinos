@@ -172,6 +172,9 @@ am__libloca_a_SOURCES_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_SalingerBordering.H \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_PhippsBordering.H \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_SolverFactory.H \
+	$(srcdir)/LOCA_Pitchfork_MinimallyAugmented_AbstractGroup.H \
+	$(srcdir)/LOCA_Pitchfork_MinimallyAugmented_Constraint.H \
+	$(srcdir)/LOCA_Pitchfork_MinimallyAugmented_ExtendedGroup.H \
 	$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedVector.H \
 	$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedMultiVector.H \
 	$(srcdir)/LOCA_Hopf_MooreSpence_AbstractGroup.H \
@@ -260,6 +263,8 @@ am__libloca_a_SOURCES_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_SalingerBordering.C \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_PhippsBordering.C \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_SolverFactory.C \
+	$(srcdir)/LOCA_Pitchfork_MinimallyAugmented_Constraint.C \
+	$(srcdir)/LOCA_Pitchfork_MinimallyAugmented_ExtendedGroup.C \
 	$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedVector.C \
 	$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedMultiVector.C \
 	$(srcdir)/LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.C \
@@ -355,6 +360,8 @@ am__objects_9 = libloca_a-LOCA_TurningPoint_MooreSpence_ExtendedVector.$(OBJEXT)
 	libloca_a-LOCA_Pitchfork_MooreSpence_SalingerBordering.$(OBJEXT) \
 	libloca_a-LOCA_Pitchfork_MooreSpence_PhippsBordering.$(OBJEXT) \
 	libloca_a-LOCA_Pitchfork_MooreSpence_SolverFactory.$(OBJEXT) \
+	libloca_a-LOCA_Pitchfork_MinimallyAugmented_Constraint.$(OBJEXT) \
+	libloca_a-LOCA_Pitchfork_MinimallyAugmented_ExtendedGroup.$(OBJEXT) \
 	libloca_a-LOCA_Hopf_MooreSpence_ExtendedVector.$(OBJEXT) \
 	libloca_a-LOCA_Hopf_MooreSpence_ExtendedMultiVector.$(OBJEXT) \
 	libloca_a-LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.$(OBJEXT) \
@@ -464,6 +471,8 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Parameter_Library.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Parameter_SublistParser.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Parameter_Vector.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Pitchfork_MinimallyAugmented_Constraint.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Pitchfork_MinimallyAugmented_ExtendedGroup.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Pitchfork_MooreSpence_ExtendedGroup.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Pitchfork_MooreSpence_ExtendedMultiVector.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Pitchfork_MooreSpence_ExtendedVector.Po \
@@ -558,6 +567,9 @@ am__include_HEADERS_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_SalingerBordering.H \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_PhippsBordering.H \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_SolverFactory.H \
+	$(srcdir)/LOCA_Pitchfork_MinimallyAugmented_AbstractGroup.H \
+	$(srcdir)/LOCA_Pitchfork_MinimallyAugmented_Constraint.H \
+	$(srcdir)/LOCA_Pitchfork_MinimallyAugmented_ExtendedGroup.H \
 	$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedVector.H \
 	$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedMultiVector.H \
 	$(srcdir)/LOCA_Hopf_MooreSpence_AbstractGroup.H \
@@ -938,6 +950,9 @@ LOCA_BIFURCATION_H = \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_SalingerBordering.H \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_PhippsBordering.H \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_SolverFactory.H \
+	$(srcdir)/LOCA_Pitchfork_MinimallyAugmented_AbstractGroup.H \
+	$(srcdir)/LOCA_Pitchfork_MinimallyAugmented_Constraint.H \
+	$(srcdir)/LOCA_Pitchfork_MinimallyAugmented_ExtendedGroup.H \
 	$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedVector.H \
 	$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedMultiVector.H \
 	$(srcdir)/LOCA_Hopf_MooreSpence_AbstractGroup.H \
@@ -966,6 +981,8 @@ LOCA_BIFURCATION = \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_SalingerBordering.C \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_PhippsBordering.C \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_SolverFactory.C \
+	$(srcdir)/LOCA_Pitchfork_MinimallyAugmented_Constraint.C \
+	$(srcdir)/LOCA_Pitchfork_MinimallyAugmented_ExtendedGroup.C \
 	$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedVector.C \
 	$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedMultiVector.C \
 	$(srcdir)/LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.C \
@@ -1334,6 +1351,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Parameter_Library.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Parameter_SublistParser.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Parameter_Vector.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Pitchfork_MinimallyAugmented_Constraint.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Pitchfork_MinimallyAugmented_ExtendedGroup.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Pitchfork_MooreSpence_ExtendedGroup.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Pitchfork_MooreSpence_ExtendedMultiVector.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Pitchfork_MooreSpence_ExtendedVector.Po@am__quote@
@@ -2143,6 +2162,38 @@ libloca_a-LOCA_Pitchfork_MooreSpence_SolverFactory.obj: $(srcdir)/LOCA_Pitchfork
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_Pitchfork_MooreSpence_SolverFactory.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Pitchfork_MooreSpence_SolverFactory.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Pitchfork_MooreSpence_SolverFactory.obj `if test -f '$(srcdir)/LOCA_Pitchfork_MooreSpence_SolverFactory.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Pitchfork_MooreSpence_SolverFactory.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Pitchfork_MooreSpence_SolverFactory.C'; fi`
+
+libloca_a-LOCA_Pitchfork_MinimallyAugmented_Constraint.o: $(srcdir)/LOCA_Pitchfork_MinimallyAugmented_Constraint.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_Pitchfork_MinimallyAugmented_Constraint.o -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_Pitchfork_MinimallyAugmented_Constraint.Tpo" -c -o libloca_a-LOCA_Pitchfork_MinimallyAugmented_Constraint.o `test -f '$(srcdir)/LOCA_Pitchfork_MinimallyAugmented_Constraint.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Pitchfork_MinimallyAugmented_Constraint.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_Pitchfork_MinimallyAugmented_Constraint.Tpo" "$(DEPDIR)/libloca_a-LOCA_Pitchfork_MinimallyAugmented_Constraint.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_Pitchfork_MinimallyAugmented_Constraint.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Pitchfork_MinimallyAugmented_Constraint.C' object='libloca_a-LOCA_Pitchfork_MinimallyAugmented_Constraint.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_Pitchfork_MinimallyAugmented_Constraint.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Pitchfork_MinimallyAugmented_Constraint.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Pitchfork_MinimallyAugmented_Constraint.o `test -f '$(srcdir)/LOCA_Pitchfork_MinimallyAugmented_Constraint.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Pitchfork_MinimallyAugmented_Constraint.C
+
+libloca_a-LOCA_Pitchfork_MinimallyAugmented_Constraint.obj: $(srcdir)/LOCA_Pitchfork_MinimallyAugmented_Constraint.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_Pitchfork_MinimallyAugmented_Constraint.obj -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_Pitchfork_MinimallyAugmented_Constraint.Tpo" -c -o libloca_a-LOCA_Pitchfork_MinimallyAugmented_Constraint.obj `if test -f '$(srcdir)/LOCA_Pitchfork_MinimallyAugmented_Constraint.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Pitchfork_MinimallyAugmented_Constraint.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Pitchfork_MinimallyAugmented_Constraint.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_Pitchfork_MinimallyAugmented_Constraint.Tpo" "$(DEPDIR)/libloca_a-LOCA_Pitchfork_MinimallyAugmented_Constraint.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_Pitchfork_MinimallyAugmented_Constraint.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Pitchfork_MinimallyAugmented_Constraint.C' object='libloca_a-LOCA_Pitchfork_MinimallyAugmented_Constraint.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_Pitchfork_MinimallyAugmented_Constraint.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Pitchfork_MinimallyAugmented_Constraint.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Pitchfork_MinimallyAugmented_Constraint.obj `if test -f '$(srcdir)/LOCA_Pitchfork_MinimallyAugmented_Constraint.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Pitchfork_MinimallyAugmented_Constraint.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Pitchfork_MinimallyAugmented_Constraint.C'; fi`
+
+libloca_a-LOCA_Pitchfork_MinimallyAugmented_ExtendedGroup.o: $(srcdir)/LOCA_Pitchfork_MinimallyAugmented_ExtendedGroup.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_Pitchfork_MinimallyAugmented_ExtendedGroup.o -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_Pitchfork_MinimallyAugmented_ExtendedGroup.Tpo" -c -o libloca_a-LOCA_Pitchfork_MinimallyAugmented_ExtendedGroup.o `test -f '$(srcdir)/LOCA_Pitchfork_MinimallyAugmented_ExtendedGroup.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Pitchfork_MinimallyAugmented_ExtendedGroup.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_Pitchfork_MinimallyAugmented_ExtendedGroup.Tpo" "$(DEPDIR)/libloca_a-LOCA_Pitchfork_MinimallyAugmented_ExtendedGroup.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_Pitchfork_MinimallyAugmented_ExtendedGroup.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Pitchfork_MinimallyAugmented_ExtendedGroup.C' object='libloca_a-LOCA_Pitchfork_MinimallyAugmented_ExtendedGroup.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_Pitchfork_MinimallyAugmented_ExtendedGroup.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Pitchfork_MinimallyAugmented_ExtendedGroup.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Pitchfork_MinimallyAugmented_ExtendedGroup.o `test -f '$(srcdir)/LOCA_Pitchfork_MinimallyAugmented_ExtendedGroup.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Pitchfork_MinimallyAugmented_ExtendedGroup.C
+
+libloca_a-LOCA_Pitchfork_MinimallyAugmented_ExtendedGroup.obj: $(srcdir)/LOCA_Pitchfork_MinimallyAugmented_ExtendedGroup.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_Pitchfork_MinimallyAugmented_ExtendedGroup.obj -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_Pitchfork_MinimallyAugmented_ExtendedGroup.Tpo" -c -o libloca_a-LOCA_Pitchfork_MinimallyAugmented_ExtendedGroup.obj `if test -f '$(srcdir)/LOCA_Pitchfork_MinimallyAugmented_ExtendedGroup.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Pitchfork_MinimallyAugmented_ExtendedGroup.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Pitchfork_MinimallyAugmented_ExtendedGroup.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_Pitchfork_MinimallyAugmented_ExtendedGroup.Tpo" "$(DEPDIR)/libloca_a-LOCA_Pitchfork_MinimallyAugmented_ExtendedGroup.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_Pitchfork_MinimallyAugmented_ExtendedGroup.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Pitchfork_MinimallyAugmented_ExtendedGroup.C' object='libloca_a-LOCA_Pitchfork_MinimallyAugmented_ExtendedGroup.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_Pitchfork_MinimallyAugmented_ExtendedGroup.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Pitchfork_MinimallyAugmented_ExtendedGroup.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Pitchfork_MinimallyAugmented_ExtendedGroup.obj `if test -f '$(srcdir)/LOCA_Pitchfork_MinimallyAugmented_ExtendedGroup.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Pitchfork_MinimallyAugmented_ExtendedGroup.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Pitchfork_MinimallyAugmented_ExtendedGroup.C'; fi`
 
 libloca_a-LOCA_Hopf_MooreSpence_ExtendedVector.o: $(srcdir)/LOCA_Hopf_MooreSpence_ExtendedVector.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_Hopf_MooreSpence_ExtendedVector.o -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_Hopf_MooreSpence_ExtendedVector.Tpo" -c -o libloca_a-LOCA_Hopf_MooreSpence_ExtendedVector.o `test -f '$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedVector.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedVector.C; \

@@ -46,7 +46,7 @@
 
 #include "LOCA_Homotopy_AbstractGroup.H"
 #include "LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.H"
-#include "LOCA_Pitchfork_MooreSpence_AbstractGroup.H"
+#include "LOCA_Pitchfork_MinimallyAugmented_AbstractGroup.H"
 #include "LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.H"
 
 namespace LOCA { 
@@ -70,7 +70,7 @@ namespace LOCA {
     class Group : 
       public virtual LOCA::Homotopy::AbstractGroup,
       public virtual LOCA::TurningPoint::MinimallyAugmented::FiniteDifferenceGroup,
-      public virtual LOCA::Pitchfork::MooreSpence::AbstractGroup,
+      public virtual LOCA::Pitchfork::MinimallyAugmented::AbstractGroup,
       public virtual LOCA::Hopf::MooreSpence::FiniteDifferenceGroup
     {
 

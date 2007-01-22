@@ -94,6 +94,8 @@ namespace LOCA {
      *           <ul>
      *           <li> "Moore-Spence" [Default]
      *                (LOCA::Pitchfork::MooreSpence::ExtendedGroup)
+     *           <li> "Minimally Augmented" 
+     *               (LOCA::Pitchfork::MinimallyAugmented::ExtendedGroup)
      *           </ul>
      *      <li> For Hopf bifurcations:
      *           <ul>

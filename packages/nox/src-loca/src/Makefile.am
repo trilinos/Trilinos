@@ -173,6 +173,9 @@ LOCA_BIFURCATION_H = \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_SalingerBordering.H \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_PhippsBordering.H \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_SolverFactory.H \
+	$(srcdir)/LOCA_Pitchfork_MinimallyAugmented_AbstractGroup.H \
+	$(srcdir)/LOCA_Pitchfork_MinimallyAugmented_Constraint.H \
+	$(srcdir)/LOCA_Pitchfork_MinimallyAugmented_ExtendedGroup.H \
 	$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedVector.H \
 	$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedMultiVector.H \
 	$(srcdir)/LOCA_Hopf_MooreSpence_AbstractGroup.H \
@@ -201,6 +204,8 @@ LOCA_BIFURCATION = \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_SalingerBordering.C \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_PhippsBordering.C \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_SolverFactory.C \
+	$(srcdir)/LOCA_Pitchfork_MinimallyAugmented_Constraint.C \
+	$(srcdir)/LOCA_Pitchfork_MinimallyAugmented_ExtendedGroup.C \
 	$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedVector.C \
 	$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedMultiVector.C \
 	$(srcdir)/LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.C \

@@ -268,6 +268,23 @@ The parameter list passed to the Stepper has two sublists, "LOCA" and "NOX".  Th
 				       </ul>
 				  </ul>
 			      </ul>
+			 <li> "Minimally Augmented" -- Minmally augmented formulation (LOCA::Pitchfork::MinimallyAugmented::ExtendedGroup)
+			      <ul>
+			      <li> <B>"Bordered Solver Method"</B> -- Method for solving bordered systems of equations.  See description in the "Stepper" sublist above.
+			      <li> <B>"Symmetric Jacobian"</B>  -- [bool] (default: false) Flag indicating whether Jacobian matrix is symmetric.
+			      <li> <B>"Asymmetric Vector"</B> -- [Teuchos::RefCountPtr<NOX::Abstract::Vector>] (Must be supplied) Pointer to NOX::Abstract::Vector holding asymmetric vector \f$\psi\f$ used in pitchfork algorithm.
+			      <li> <B>"Initial Null Vector Compuation"</B> -- [string] (default: "User Provided") - Method to compute initial \f$a\f$ and \f$b\f$ vectors.  Valid choices are:
+			           <ul>
+				   <li> "User Provided" - Initial vectors are provided in the parameter list, in which case the following parameters are relevant:
+				        <ul>
+					<li> <B>"Initial A Vector"</B>  -- [Teuchos::RefCountPtr<NOX::Abstract::Vector>] (Must be supplied) Vector storing initial value for \f$a\f$ vector
+					<li> <B>"Initial B Vector"</B>  -- [Teuchos::RefCountPtr<NOX::Abstract::Vector>] (Must be supplied for nonsymmetric Jacobians) Vector storing initial value for \f$b\f$ vector
+					</ul>
+				   <li> "Solve df/dp" -- Compute \f$a = J^{-T}df/dp\f$ and \f$b = J^{-1} df/dp\f$ where \f$p\f$ is the bifurcation parameter.
+				   </ul>
+			      <li> <B>"Update Null Vectors Every Continuation Step"</B>  -- [bool] (default: true) Flag indicating whether to update \f$a\f$ and \f$b\f$ vectors continuation step
+			      <li> <B>"Update Null Vectors Every Nonlinear Iteration"</B>  -- [bool] (default: false) Flag indicating whether to update \f$a\f$ and \f$b\f$ vectors every nonlinear iteration
+			      </ul>
                          </ul>
 		    </ul>
                <li> <B>"Hopf"</B> -- Hopf bifurcations

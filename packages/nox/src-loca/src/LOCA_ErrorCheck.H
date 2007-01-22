@@ -71,7 +71,10 @@ namespace LOCA {
     ~ErrorCheck();
 
     //! Type for the action to be taken if the ReturnType is not Ok.
-    enum ActionType {ThrowError, PrintWarning};
+    enum ActionType {
+      ThrowError,  //!< Throw an error
+      PrintWarning //!< Print a warning
+    };
 
     //! Generic call to throw that prints info to the screen.
     void throwError(const string& callingFunction = "<Unknown Method>",

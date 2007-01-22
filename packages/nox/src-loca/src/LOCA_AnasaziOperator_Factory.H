@@ -77,6 +77,10 @@ namespace LOCA {
      *   <li> "Cayley" (LOCA::AnasaziOperator::Cayley)
      *   </ul>
      * </ul>
+     *
+     * There is also an %Epetra specific strategy that can
+     * be instantiated by the LOCA::Epetra::Factory.  See 
+     * LOCA::Epetra::AnasaziOperator::Floquet.
      */
     class Factory {
 

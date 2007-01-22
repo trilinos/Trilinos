@@ -75,6 +75,10 @@ namespace LOCA {
      *   <li> "Anasazi" (LOCA::Eigensolver::AnasaziStrategy)
      *   </ul>
      * </ul>
+     *
+     * There is also a %LAPACK specific strategy that can
+     * be instantiated by the LOCA::LAPACK::Factory.  See 
+     * LOCA::Eigensolver::DGGEVStrategy.
      */
     class Factory {
 

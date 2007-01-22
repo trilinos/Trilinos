@@ -90,17 +90,17 @@ namespace LOCA {
 
       //! Enumerated type for status of the iterator
       enum IteratorStatus {
-	LastIteration = 2,
-	Finished = 1,
-	Failed = 0,
-	NotFinished = -1
+	LastIteration = 2,  //!< This is the last iteration
+	Finished = 1,       //!< The iterator is finished
+	Failed = 0,         //!< The iterator has failed
+	NotFinished = -1    //!< The iterator is not finished
       };
 
       //! Enumerated type for status of each step of iterator
       enum StepStatus {
-	Successful = 1,
-	Unsuccessful = 0,
-	Provisional = -1
+	Successful = 1,    //!< The last step was successful
+	Unsuccessful = 0,  //!< The last step was unsuccessful
+	Provisional = -1   //!< One more unsuccessful step means failure
       };
 
       //! Constructor 
