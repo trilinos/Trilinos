@@ -73,7 +73,7 @@ int Zoltan_Simple(
 
   /* Compute the new partition numbers. */
   newparts = (int *) ZOLTAN_MALLOC(num_obj * sizeof(int));
-  if (!newparts){
+  if (num_obj && (!newparts)){
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
     ierr = ZOLTAN_MEMERR;
     goto End;
