@@ -670,7 +670,7 @@ namespace Anasazi {
     TEST_FOR_EXCEPTION(problem_->isProblemSet() == false, std::invalid_argument,
                        "Anasazi::LOBPCG::constructor: problem is not set.");
     TEST_FOR_EXCEPTION(problem_->isHermitian() == false, std::invalid_argument,
-                       "Anasazi::LOBPCG::constructor: problem is not hermitian.");
+                       "Anasazi::LOBPCG::constructor: problem is not Hermitian; LOBPCG requires Hermitian problem.");
 
     // get the problem operators
     Op_   = problem_->getOperator();
@@ -694,12 +694,11 @@ namespace Anasazi {
     // time spent here counts towards timerInit_
     Teuchos::TimeMonitor lcltimer( *timerInit_ );
 
-
     // This routine only allocates space; it doesn't not perform any computation
     // if size is decreased, take the first blockSize vectors of all and leave state as is
     // otherwise, grow/allocate space and set solver to unitialized
 
-    TEST_FOR_EXCEPTION(blockSize <= 0, std::invalid_argument, "Anasazi::LOBPCG::setBlockSize was passed a non-positive block size");
+    TEST_FOR_EXCEPTION(blockSize <= 0, std::invalid_argument, "Anasazi::LOBPCG::setBlockSize(): block size must be strictly postive.");
     if (blockSize == blockSize_) {
       // do nothing
       return;
@@ -782,7 +781,7 @@ namespace Anasazi {
       else {
         tmp = problem_->getInitVec();
         TEST_FOR_EXCEPTION(tmp == Teuchos::null,std::logic_error,
-                           "Anasazi::LOBPCG::setBlockSize(): Eigenproblem did not specify initial vectors to clone from");
+                           "Anasazi::LOBPCG::setBlockSize(): eigenproblem did not specify initial vectors to clone from.");
       }
       // grow/allocate vectors
       theta_.resize(3*blockSize,NANVAL);
@@ -873,253 +872,327 @@ namespace Anasazi {
   void LOBPCG<ScalarType,MV,OP>::initialize(LOBPCGState<ScalarType,MV> newstate)
   {
     // NOTE: memory has been allocated by setBlockSize(). Use SetBlock below; do not Clone
-    // NOTE: Time spent in this routine is allotted to timerInit_, in addition to the respective sections.
+    // NOTE: Overall time spent in this routine is counted to timerInit_; portions will also be counted towards other primitives
+
+    Teuchos::TimeMonitor lcltimer( *timerInit_ );
 
     hasP_ = false;  // this will be set to true below if appropriate
 
     std::vector<int> bsind(blockSize_);
     for (int i=0; i<blockSize_; i++) bsind[i] = i;
 
-    // set up X: if the user doesn't specify X, ignore the rest
-    if (newstate.X != Teuchos::null && MVT::GetNumberVecs(*newstate.X) >= blockSize_ && MVT::GetVecLength(*newstate.X) == MVT::GetVecLength(*X_) ) {
+    // in LOBPCG, X (the subspace iterate) is primary
+    // the order of dependence follows like so.
+    // --init->                 X
+    //    --op apply->          MX,KX
+    //       --ritz analysis->  theta
+    //          --optional->    P,MP,KP
+    // 
+    // if the user specifies all data for a level, we will accept it.
+    // otherwise, we will generate the whole level, and all subsequent levels.
+    //
+    // the data members are ordered based on dependence, and the levels are
+    // partitioned according to the amount of work required to produce the
+    // items in a level.
+    //
+    // inconsitent multivectors widths and lengths will not be tolerated, and
+    // will be treated with exceptions.
 
-      Teuchos::TimeMonitor lcltimer( *timerInit_ );
+    // set up X, KX, MX: get them from "state" if user specified them
 
-      // put data in X,MX,KX
+    // set up X, MX, KX
+    if (newstate.X != Teuchos::null) {
+      TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.X) != MVT::GetVecLength(*X_),
+                          std::invalid_argument, "Anasazi::LOBPCG::initialize(newstate): vector length of newstate.X not correct." );
+      // newstate.X must have blockSize_ vectors; any more will be ignored
+      TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.X) < blockSize_,
+                          std::invalid_argument, "Anasazi::LOBPCG::initialize(newstate): newstate.X must have at least block size vectors.");
+
+      // put data in X
       MVT::SetBlock(*newstate.X,bsind,*X_);
+
+      // put data in MX
       if (hasM_) {
-        if (newstate.MX != Teuchos::null && MVT::GetNumberVecs(*newstate.MX) >= blockSize_ && MVT::GetVecLength(*newstate.MX) == MVT::GetVecLength(*MX_) ) {
+        if (newstate.MX != Teuchos::null) {
+          TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.MX) != MVT::GetVecLength(*X_),
+                              std::invalid_argument, "Anasazi::LOBPCG::initialize(newstate): vector length of newstate.MX not correct." );
+          // newstate.MX must have blockSize_ vectors; any more will be ignored
+          TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.MX) < blockSize_,
+                              std::invalid_argument, "Anasazi::LOBPCG::initialize(newstate): newstate.MX must have at least block size vectors.");
           MVT::SetBlock(*newstate.MX,bsind,*MX_);
         }
         else {
-          Teuchos::TimeMonitor lcltimer( *timerMOp_ );
-          OPT::Apply(*MOp_,*X_,*MX_);
-          count_ApplyM_ += blockSize_;
+          {
+            Teuchos::TimeMonitor lcltimer( *timerMOp_ );
+            OPT::Apply(*MOp_,*X_,*MX_);
+            count_ApplyM_ += blockSize_;
+          }
+          // we generated KX; we will generate R as well
+          newstate.R = Teuchos::null;
         }
       }
       else {
-        // an assignment would be redundant; take advantage of this opportunity to debug a little
-        TEST_FOR_EXCEPTION(MX_ != X_, std::logic_error, "Anasazi::LOBPCG::initialize(): solver invariant not satisfied");
+        // the assignment MX_==X_ would be redundant; take advantage of this opportunity to debug a little
+        TEST_FOR_EXCEPTION(MX_ != X_, std::logic_error, "Anasazi::LOBPCG::initialize(): solver invariant not satisfied (MX==X).");
       }
-      if (newstate.KX != Teuchos::null && MVT::GetNumberVecs(*newstate.KX) >= blockSize_ && MVT::GetVecLength(*newstate.KX) == MVT::GetVecLength(*KX_) ) {
+  
+      // put data in KX
+      if (newstate.KX != Teuchos::null) {
+        TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.KX) != MVT::GetVecLength(*X_),
+                            std::invalid_argument, "Anasazi::LOBPCG::initialize(newstate): vector length of newstate.KX not correct." );
+        // newstate.KX must have blockSize_ vectors; any more will be ignored
+        TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.KX) < blockSize_,
+                            std::invalid_argument, "Anasazi::LOBPCG::initialize(newstate): newstate.KX must have at least block size vectors.");
         MVT::SetBlock(*newstate.KX,bsind,*KX_);
       }
       else {
+        {
+          Teuchos::TimeMonitor lcltimer( *timerOp_ );
+          OPT::Apply(*Op_,*X_,*KX_);
+          count_ApplyOp_ += blockSize_;
+        }
+        // we generated MX; we will generate R as well
+        newstate.R = Teuchos::null;
+      }
+    }
+    else {
+      // user did not specify X
+
+      // clear state so we won't use any data from it below
+      newstate.P  = Teuchos::null;
+      newstate.KP = Teuchos::null;
+      newstate.MP = Teuchos::null;
+      newstate.R  = Teuchos::null;
+      newstate.T  = Teuchos::null;
+
+      // generate something and projectAndNormalize
+      Teuchos::RefCountPtr<const MV> ivec = problem_->getInitVec();
+      TEST_FOR_EXCEPTION(ivec == Teuchos::null,std::logic_error,
+                         "Anasazi::LOBPCG::initialize(): Eigenproblem did not specify initial vectors to clone from.");
+
+      int initSize = MVT::GetNumberVecs(*ivec);
+      if (initSize > blockSize_) {
+        // we need only the first blockSize_ vectors from ivec; get a view of them
+        initSize = blockSize_;
+        std::vector<int> ind(blockSize_);
+        for (int i=0; i<blockSize_; i++) ind[i] = i;
+        ivec = MVT::CloneView(*ivec,ind);
+      }
+
+      // assign ivec to first part of X_
+      if (initSize > 0) {
+        std::vector<int> ind(initSize);
+        for (int i=0; i<initSize; i++) ind[i] = i;
+        MVT::SetBlock(*ivec,ind,*X_);
+      }
+      // fill the rest of X_ with random
+      if (blockSize_ > initSize) {
+        std::vector<int> ind(blockSize_ - initSize);
+        for (int i=0; i<blockSize_ - initSize; i++) ind[i] = initSize + i;
+        Teuchos::RefCountPtr<MV> rX = MVT::CloneView(*X_,ind);
+        MVT::MvRandom(*rX);
+        rX = Teuchos::null;
+      }
+
+      // put data in MX
+      if (hasM_) {
+        Teuchos::TimeMonitor lcltimer( *timerMOp_ );
+        OPT::Apply(*MOp_,*X_,*MX_);
+        count_ApplyM_ += blockSize_;
+      }
+      else {
+        // the assignment MX_==X_ would be redundant; take advantage of this opportunity to debug a little
+        TEST_FOR_EXCEPTION(MX_ != X_, std::logic_error, "Anasazi::LOBPCG::initialize(): solver invariant not satisfied (MX==X).");
+      }
+  
+      // remove auxVecs from X_ and normalize it
+      if (numAuxVecs_ > 0) {
+        Teuchos::TimeMonitor lcltimer( *timerOrtho_ );
+        Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > dummy;
+        int rank = orthman_->projectAndNormalize(*X_,MX_,dummy,Teuchos::null,auxVecs_);
+        TEST_FOR_EXCEPTION(rank != blockSize_, LOBPCGInitFailure,
+                           "Anasazi::LOBPCG::initialize(): Couldn't generate initial basis of full rank.");
+      }
+      else {
+        Teuchos::TimeMonitor lcltimer( *timerOrtho_ );
+        int rank = orthman_->normalize(*X_,MX_,Teuchos::null);
+        TEST_FOR_EXCEPTION(rank != blockSize_, LOBPCGInitFailure,
+                           "Anasazi::LOBPCG::initialize(): Couldn't generate initial basis of full rank.");
+      }
+
+      // put data in KX
+      {
         Teuchos::TimeMonitor lcltimer( *timerOp_ );
         OPT::Apply(*Op_,*X_,*KX_);
         count_ApplyOp_ += blockSize_;
       }
 
-      // set up Ritz values
-      theta_.resize(3*blockSize_,NANVAL);
-      ritz2norms_.resize(3*blockSize_,NANVAL);
-      if (newstate.T != Teuchos::null && (signed int)(newstate.T->size()) >= blockSize_) {
-        for (int i=0; i<blockSize_; i++) {
-          theta_[i] = (*newstate.T)[i];
-        }
+    } // end if (newstate.X != Teuchos::null)
+
+
+    // set up Ritz values
+    theta_.resize(3*blockSize_,NANVAL);
+    ritz2norms_.resize(3*blockSize_,NANVAL);
+    if (newstate.T != Teuchos::null) {
+      TEST_FOR_EXCEPTION( (signed int)(newstate.T->size()) < blockSize_,
+                          std::invalid_argument, "Anasazi::LOBPCG::initialize(newstate): newstate.T must contain at least block size Ritz values.");
+      for (int i=0; i<blockSize_; i++) {
+        theta_[i] = (*newstate.T)[i];
       }
-      else {
-        // get ritz vecs/vals
-        Teuchos::SerialDenseMatrix<int,ScalarType> KK(blockSize_,blockSize_),
-                                                   MM(blockSize_,blockSize_),
-                                                    S(blockSize_,blockSize_);
-        {
-          Teuchos::TimeMonitor lcltimer( *timerLocalProj_ );
-          // project K
-          MVT::MvTransMv(ONE,*X_,*KX_,KK);
-          // project M
-          MVT::MvTransMv(ONE,*X_,*MX_,MM);
-          nevLocal_ = blockSize_;
-        }
-
-        // solve the projected problem
-        {
-          Teuchos::TimeMonitor lcltimer( *timerDS_ );
-          MSUtils_.directSolver(blockSize_, KK, &MM, &S, &theta_, &nevLocal_, 1);
-          TEST_FOR_EXCEPTION(nevLocal_ != blockSize_,LOBPCGInitFailure,
-                             "Anasazi::LOBPCG::initialize(): Not enough Ritz vectors to initialize algorithm.");
-        }
-
-        // We only have blockSize_ ritz pairs, but we still want them in the correct order
-        {
-          Teuchos::TimeMonitor lcltimer( *timerSort_ );
-
-          std::vector<int> order(blockSize_);
-          // 
-          // sort the first blockSize_ values in theta_
-          sm_->sort( this, blockSize_, theta_, &order );   // don't catch exception
-          //
-          // apply the same ordering to the primitive ritz vectors
-          MSUtils_.permuteVectors(order,S);
-        }
-
-        // compute ritz residual norms
-        {
-          Teuchos::BLAS<int,ScalarType> blas;
-          Teuchos::SerialDenseMatrix<int,ScalarType> R(blockSize_,blockSize_);
-          // R = MM*S*diag(theta) - KK*S
-          R.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,ONE,MM,S,ZERO);
-          for (int i=0; i<blockSize_; i++) {
-            blas.SCAL(blockSize_,theta_[i],R[i],1);
-          }
-          R.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,-ONE,KK,S,ONE);
-          for (int i=0; i<blockSize_; i++) {
-            ritz2norms_[i] = blas.NRM2(blockSize_,R[i],1);
-          }
-        }
-
-        // update the solution
-        {
-          Teuchos::TimeMonitor lcltimer( *timerLocalUpdate_ );
-          // X <- X*S
-          MVT::MvAddMv( ONE, *X_, ZERO, *X_, *R_ );        
-          MVT::MvTimesMatAddMv( ONE, *R_, S, ZERO, *X_ );
-          // KX <- KX*S
-          MVT::MvAddMv( ONE, *KX_, ZERO, *KX_, *R_ );        
-          MVT::MvTimesMatAddMv( ONE, *R_, S, ZERO, *KX_ );
-          if (hasM_) {
-            // MX <- MX*S
-            MVT::MvAddMv( ONE, *MX_, ZERO, *MX_, *R_ );        
-            MVT::MvTimesMatAddMv( ONE, *R_, S, ZERO, *MX_ );
-          }
-        }
-      }
-
-  
-      // set up R
-      if (newstate.R != Teuchos::null && MVT::GetNumberVecs(*newstate.R) >= blockSize_ && MVT::GetVecLength(*newstate.R) == MVT::GetVecLength(*R_) ) {
-        MVT::SetBlock(*newstate.R,bsind,*R_);
-      }
-      else {
-        Teuchos::TimeMonitor lcltimer( *timerCompRes_ );
-        // form R <- KX - MX*T
-        MVT::MvAddMv(ZERO,*KX_,ONE,*KX_,*R_);
-        Teuchos::SerialDenseMatrix<int,ScalarType> T(blockSize_,blockSize_);
-        T.putScalar(ZERO);
-        for (int i=0; i<blockSize_; i++) T(i,i) = theta_[i];
-        MVT::MvTimesMatAddMv(-ONE,*MX_,T,ONE,*R_);
-      }
-
-      // R has been updated; mark the norms as out-of-date
-      Rnorms_current_ = false;
-      R2norms_current_ = false;
-  
-      // put data in P,KP,MP: P is not used to set theta
-      if (newstate.P != Teuchos::null && MVT::GetNumberVecs(*newstate.P) >= blockSize_ && MVT::GetVecLength(*newstate.P) == MVT::GetVecLength(*P_) ) {
-        hasP_ = true;
-
-        MVT::SetBlock(*newstate.P,bsind,*P_);
-
-        if (newstate.KP != Teuchos::null && MVT::GetNumberVecs(*newstate.KP) >= blockSize_ && MVT::GetVecLength(*newstate.KP) == MVT::GetVecLength(*KP_) ) {
-          MVT::SetBlock(*newstate.KP,bsind,*KP_);
-        }
-        else {
-          Teuchos::TimeMonitor lcltimer( *timerOp_ );
-          OPT::Apply(*Op_,*P_,*KP_);
-          count_ApplyOp_ += blockSize_;
-        }
-
-        if (hasM_) {
-          if (newstate.MP != Teuchos::null && MVT::GetNumberVecs(*newstate.MP) >= blockSize_ && MVT::GetVecLength(*newstate.MP) == MVT::GetVecLength(*MP_) ) {
-            MVT::SetBlock(*newstate.MP,bsind,*MP_);
-          }
-          else {
-            Teuchos::TimeMonitor lcltimer( *timerMOp_ );
-            OPT::Apply(*MOp_,*P_,*MP_);
-            count_ApplyM_ += blockSize_;
-          }
-        }
-      }
-
-      // finally, we are initialized
-      initialized_ = true;
-
-      if (om_->isVerbosity( Debug ) ) {
-        // Check almost everything here
-        CheckList chk;
-        chk.checkX = true;
-        chk.checkKX = true;
-        chk.checkMX = true;
-        chk.checkP = true;
-        chk.checkKP = true;
-        chk.checkMP = true;
-        chk.checkR = true;
-        chk.checkQ = true;
-        om_->print( Debug, accuracyCheck(chk, ": after initialize()") );
-      }
-
     }
     else {
+      // get ritz vecs/vals
+      Teuchos::SerialDenseMatrix<int,ScalarType> KK(blockSize_,blockSize_),
+                                                 MM(blockSize_,blockSize_),
+                                                  S(blockSize_,blockSize_);
+      {
+        Teuchos::TimeMonitor lcltimer( *timerLocalProj_ );
+        // project K
+        MVT::MvTransMv(ONE,*X_,*KX_,KK);
+        // project M
+        MVT::MvTransMv(ONE,*X_,*MX_,MM);
+        nevLocal_ = blockSize_;
+      }
 
-      LOBPCGState<ScalarType,MV> newstate;
-      { // begin timer scope
-        Teuchos::TimeMonitor lcltimer( *timerInit_ );
+      // solve the projected problem
+      {
+        Teuchos::TimeMonitor lcltimer( *timerDS_ );
+        MSUtils_.directSolver(blockSize_, KK, &MM, &S, &theta_, &nevLocal_, 1);
+        TEST_FOR_EXCEPTION(nevLocal_ != blockSize_,LOBPCGInitFailure,
+                           "Anasazi::LOBPCG::initialize(): Initial Ritz analysis did not produce enough Ritz pairs to initialize algorithm.");
+      }
 
-        // generate something, projectAndNormalize, call myself recursively
-        Teuchos::RefCountPtr<const MV> ivec = problem_->getInitVec();
-        TEST_FOR_EXCEPTION(ivec == Teuchos::null,std::logic_error,
-                           "Anasazi::LOBPCG::initialize(): Eigenproblem did not specify initial vectors to clone from");
+      // We only have blockSize_ ritz pairs, ergo we do not need to select.
+      // However, we still require them to be ordered correctly
+      {
+        Teuchos::TimeMonitor lcltimer( *timerSort_ );
 
-        int initSize = MVT::GetNumberVecs(*ivec);
-        if (initSize > blockSize_) {
-          // we need only the first blockSize_ vectors from ivec; get a view of them
-          initSize = blockSize_;
-          std::vector<int> ind(blockSize_);
-          for (int i=0; i<blockSize_; i++) ind[i] = i;
-          ivec = MVT::CloneView(*ivec,ind);
+        std::vector<int> order(blockSize_);
+        // 
+        // sort the first blockSize_ values in theta_
+        sm_->sort( this, blockSize_, theta_, &order );   // don't catch exception
+        //
+        // apply the same ordering to the primitive ritz vectors
+        MSUtils_.permuteVectors(order,S);
+      }
+
+      // compute ritz residual norms
+      {
+        Teuchos::BLAS<int,ScalarType> blas;
+        Teuchos::SerialDenseMatrix<int,ScalarType> R(blockSize_,blockSize_);
+        // R = MM*S*diag(theta) - KK*S
+        int info;
+        info = R.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,ONE,MM,S,ZERO);
+        TEST_FOR_EXCEPTION(info != 0, std::logic_error, "Anasazi::LOBPCG::iterate(): Logic error calling SerialDenseMatrix::multiply.");
+        for (int i=0; i<blockSize_; i++) {
+          blas.SCAL(blockSize_,theta_[i],R[i],1);
         }
-
-        // alloc newX
-        Teuchos::RefCountPtr<MV> newMX, newX = MVT::Clone(*ivec,blockSize_);
-        // assign ivec to first part of newX
-        std::vector<int> ind(initSize);
-        if (initSize > 0) {
-          for (int i=0; i<initSize; i++) ind[i] = i;
-          MVT::SetBlock(*ivec,ind,*newX);
+        info = R.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,-ONE,KK,S,ONE);
+        TEST_FOR_EXCEPTION(info != 0, std::logic_error, "Anasazi::LOBPCG::iterate(): Logic error calling SerialDenseMatrix::multiply.");
+        for (int i=0; i<blockSize_; i++) {
+          ritz2norms_[i] = blas.NRM2(blockSize_,R[i],1);
         }
-        // fill the rest of newX with random
-        if (blockSize_ > initSize) {
-          ind.resize(blockSize_ - initSize);
-          for (int i=0; i<blockSize_ - initSize; i++) ind[i] = initSize + i;
-          Teuchos::RefCountPtr<MV> rX = MVT::CloneView(*newX,ind);
-          MVT::MvRandom(*rX);
-          rX = Teuchos::null;
-        }
+      }
 
-        // compute newMX if hasM_
+      // update the solution
+      {
+        Teuchos::TimeMonitor lcltimer( *timerLocalUpdate_ );
+        // X <- X*S
+        MVT::MvAddMv( ONE, *X_, ZERO, *X_, *R_ );        
+        MVT::MvTimesMatAddMv( ONE, *R_, S, ZERO, *X_ );
+        // KX <- KX*S
+        MVT::MvAddMv( ONE, *KX_, ZERO, *KX_, *R_ );        
+        MVT::MvTimesMatAddMv( ONE, *R_, S, ZERO, *KX_ );
         if (hasM_) {
-          newMX = MVT::Clone(*ivec,blockSize_);
-          {
-            Teuchos::TimeMonitor lcltimer( *timerMOp_ );
-            OPT::Apply(*MOp_,*newX,*newMX);
-            count_ApplyM_ += blockSize_;
-          }
+          // MX <- MX*S
+          MVT::MvAddMv( ONE, *MX_, ZERO, *MX_, *R_ );        
+          MVT::MvTimesMatAddMv( ONE, *R_, S, ZERO, *MX_ );
         }
-        else {
-          newMX = Teuchos::null;
-        }
-
-        // remove auxVecs from newX and normalize newX
-        if (auxVecs_.size() > 0) {
-          Teuchos::TimeMonitor lcltimer( *timerOrtho_ );
-          Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > dummy;
-          int rank = orthman_->projectAndNormalize(*newX,newMX,dummy,Teuchos::null,auxVecs_);
-          TEST_FOR_EXCEPTION(rank != blockSize_,LOBPCGInitFailure,
-                             "Anasazi::LOBPCG::initialize(): Couldn't generate initial basis of full rank.");
-        }
-        else {
-          Teuchos::TimeMonitor lcltimer( *timerOrtho_ );
-          int rank = orthman_->normalize(*newX,newMX,Teuchos::null);
-          TEST_FOR_EXCEPTION(rank != blockSize_,LOBPCGInitFailure,
-                             "Anasazi::LOBPCG::initialize(): Couldn't generate initial basis of full rank.");
-        }
-
-        // call myself recursively
-        newstate.X = newX;
-        newstate.MX = newMX;
-      } // end of timer scope; we needed this because the following recursive call to initialize contains its own call to timerInit_
-      initialize(newstate);
+      }
     }
+
+  
+    // set up R
+    if (newstate.R != Teuchos::null) {
+      TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.R) < blockSize_,
+                          std::invalid_argument, "Anasazi::LOBPCG::initialize(newstate): newstate.R must have blockSize number of vectors." );
+      TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.R) != MVT::GetVecLength(*R_),
+                          std::invalid_argument, "Anasazi::LOBPCG::initialize(newstate): vector length of newstate.R not correct." );
+      MVT::SetBlock(*newstate.R,bsind,*R_);
+    }
+    else {
+      Teuchos::TimeMonitor lcltimer( *timerCompRes_ );
+      // form R <- KX - MX*T
+      MVT::MvAddMv(ZERO,*KX_,ONE,*KX_,*R_);
+      Teuchos::SerialDenseMatrix<int,ScalarType> T(blockSize_,blockSize_);
+      T.putScalar(ZERO);
+      for (int i=0; i<blockSize_; i++) T(i,i) = theta_[i];
+      MVT::MvTimesMatAddMv(-ONE,*MX_,T,ONE,*R_);
+    }
+
+    // R has been updated; mark the norms as out-of-date
+    Rnorms_current_ = false;
+    R2norms_current_ = false;
+  
+    // put data in P,KP,MP: P is not used to set theta
+    if (newstate.P != Teuchos::null) { 
+      TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.P) < blockSize_ ,
+                          std::invalid_argument, "Anasazi::LOBPCG::initialize(newstate): newstate.P must have blockSize number of vectors." );
+      TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.P) != MVT::GetVecLength(*P_),
+                          std::invalid_argument, "Anasazi::LOBPCG::initialize(newstate): vector length of newstate.P not correct." );
+      hasP_ = true;
+
+      // set P_
+      MVT::SetBlock(*newstate.P,bsind,*P_);
+
+      // set/compute KP_
+      if (newstate.KP != Teuchos::null) {
+        TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.KP) < blockSize_,
+                            std::invalid_argument, "Anasazi::LOBPCG::initialize(newstate): newstate.KP must have blockSize number of vectors." );
+        TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.KP) != MVT::GetVecLength(*KP_),
+                            std::invalid_argument, "Anasazi::LOBPCG::initialize(newstate): vector length of newstate.KP not correct." );
+        MVT::SetBlock(*newstate.KP,bsind,*KP_);
+      }
+      else {
+        Teuchos::TimeMonitor lcltimer( *timerOp_ );
+        OPT::Apply(*Op_,*P_,*KP_);
+        count_ApplyOp_ += blockSize_;
+      }
+
+      // set/compute MP_
+      if (hasM_) {
+        if (newstate.MP != Teuchos::null) {
+          TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.MP) < blockSize_,
+                              std::invalid_argument, "Anasazi::LOBPCG::initialize(newstate): newstate.MP must have blockSize number of vectors." );
+          TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.MP) != MVT::GetVecLength(*MP_),
+                              std::invalid_argument, "Anasazi::LOBPCG::initialize(newstate): vector length of newstate.MP not correct." );
+          MVT::SetBlock(*newstate.MP,bsind,*MP_);
+        }
+        else {
+          Teuchos::TimeMonitor lcltimer( *timerMOp_ );
+          OPT::Apply(*MOp_,*P_,*MP_);
+          count_ApplyM_ += blockSize_;
+        }
+      }
+    }
+
+    // finally, we are initialized
+    initialized_ = true;
+
+    if (om_->isVerbosity( Debug ) ) {
+      // Check almost everything here
+      CheckList chk;
+      chk.checkX = true;
+      chk.checkKX = true;
+      chk.checkMX = true;
+      chk.checkP = true;
+      chk.checkKP = true;
+      chk.checkMP = true;
+      chk.checkR = true;
+      chk.checkQ = true;
+      om_->print( Debug, accuracyCheck(chk, ": after initialize()") );
+    }
+
   }
 
   template <class ScalarType, class MV, class OP>
@@ -1240,7 +1313,7 @@ namespace Anasazi {
         Teuchos::TimeMonitor lcltimer( *timerOrtho_ );
         int rank = orthman_->projectAndNormalize(*H_,MH_,C,Teuchos::null,Q);
         TEST_FOR_EXCEPTION(rank != blockSize_,LOBPCGOrthoFailure,
-                           "Anasazi::LOBPCG::iterate(): unable to compute full basis for H");
+                           "Anasazi::LOBPCG::iterate(): unable to compute orthonormal basis for H.");
       }
 
       if (om_->isVerbosity( Debug ) ) {
@@ -1334,7 +1407,8 @@ namespace Anasazi {
         // we will not tolerate this ill-conditioning, and will throw an exception.
       }
       om_->stream(Debug) << " After directSolve: localSize == " << localSize << " \tnevLocal == " << nevLocal_ << endl;
-      TEST_FOR_EXCEPTION(nevLocal_ != localSize, LOBPCGRitzFailure, "Indefiniteness detected in projecteded mass matrix." );
+      TEST_FOR_EXCEPTION(nevLocal_ != localSize, LOBPCGRitzFailure, 
+                           "Anasazi::LOBPCG::iterate(): indefiniteness detected in projecteded mass matrix." );
 
       Teuchos::LAPACK<int,ScalarType> lapack;
       Teuchos::BLAS<int,ScalarType> blas;
@@ -1360,12 +1434,16 @@ namespace Anasazi {
         Teuchos::SerialDenseMatrix<int,ScalarType> R(nevLocal_,nevLocal_);
         Teuchos::SerialDenseMatrix<int,ScalarType> lclKK(Teuchos::View,KK,nevLocal_,nevLocal_),
                                                    lclMM(Teuchos::View,MM,nevLocal_,nevLocal_);
+        Teuchos::SerialDenseMatrix<int,ScalarType> lclS(Teuchos::View,S,nevLocal_,nevLocal_);
         // R = MM*S*diag(theta) - KK*S
-        R.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,ONE,lclMM,S,ZERO);
+        int info;
+        info = R.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,ONE,lclMM,lclS,ZERO);
+        TEST_FOR_EXCEPTION(info != 0, std::logic_error, "Anasazi::LOBPCG::iterate(): Logic error calling SerialDenseMatrix::multiply.");
         for (int i=0; i<nevLocal_; i++) {
           blas.SCAL(nevLocal_,theta_[i],R[i],1);
         }
-        R.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,-ONE,lclKK,S,ONE);
+        info = R.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,-ONE,lclKK,lclS,ONE);
+        TEST_FOR_EXCEPTION(info != 0, std::logic_error, "Anasazi::LOBPCG::iterate(): Logic error calling SerialDenseMatrix::multiply.");
         for (int i=0; i<nevLocal_; i++) {
           ritz2norms_[i] = blas.NRM2(nevLocal_,R[i],1);
         }
@@ -1434,17 +1512,19 @@ namespace Anasazi {
         // compute tmp1 = MM*C
         int teuchosret;
         teuchosret = tmp1.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,ONE,MM,C,ZERO);
-        TEST_FOR_EXCEPTION(teuchosret != 0,std::logic_error,"Logic error calling SerialDenseMatrix::multiply");
+        TEST_FOR_EXCEPTION(teuchosret != 0,std::logic_error,
+                           "Anasazi::LOBPCG::iterate(): Logic error calling SerialDenseMatrix::multiply");
 
         // compute tmp2 = C^H*tmp1 == C^H*MM*C
         teuchosret = tmp2.multiply(Teuchos::CONJ_TRANS,Teuchos::NO_TRANS,ONE,C,tmp1,ZERO);
-        TEST_FOR_EXCEPTION(teuchosret != 0,std::logic_error,"Logic error calling SerialDenseMatrix::multiply");
+        TEST_FOR_EXCEPTION(teuchosret != 0,std::logic_error,
+                           "Anasazi::LOBPCG::iterate(): Logic error calling SerialDenseMatrix::multiply");
 
         // compute R (cholesky) of tmp2
         int info;
         lapack.POTRF('U',twoBlocks,tmp2.values(),tmp2.stride(),&info);
         TEST_FOR_EXCEPTION(info != 0, LOBPCGOrthoFailure, 
-                           "Anasazi::LOBPCG::iterate(): Could not perform full orthogonalization.");
+                           "Anasazi::LOBPCG::iterate(): Cholesky factorization failed during full orthogonalization.");
         // compute C = C inv(R)
         blas.TRSM(Teuchos::RIGHT_SIDE,Teuchos::UPPER_TRI,Teuchos::NO_TRANS,Teuchos::NON_UNIT_DIAG,
                   threeBlocks,twoBlocks,ONE,tmp2.values(),tmp2.stride(),C.values(),C.stride());
@@ -1476,10 +1556,10 @@ namespace Anasazi {
           // check CX^T MM CX == I
           // compute tmp1 = MM*CX
           teuchosret = tmp1.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,ONE,MM,CX,ZERO);
-          TEST_FOR_EXCEPTION(teuchosret != 0,std::logic_error,"Logic error calling SerialDenseMatrix::multiply");
+          TEST_FOR_EXCEPTION(teuchosret != 0,std::logic_error,"Anasazi::LOBPCG::iterate(): Logic error calling SerialDenseMatrix::multiply");
           // compute tmp2 = CX^H*tmp1 == CX^H*MM*CX
           teuchosret = tmp2.multiply(Teuchos::CONJ_TRANS,Teuchos::NO_TRANS,ONE,CX,tmp1,ZERO);
-          TEST_FOR_EXCEPTION(teuchosret != 0,std::logic_error,"Logic error calling SerialDenseMatrix::multiply");
+          TEST_FOR_EXCEPTION(teuchosret != 0,std::logic_error,"Anasazi::LOBPCG::iterate(): Logic error calling SerialDenseMatrix::multiply");
           // subtrace tmp2 - I == CX^H * MM * CX - I
           for (int i=0; i<oneBlock; i++) tmp2(i,i) -= ONE;
           tmp = tmp2.normFrobenius();          
@@ -1488,10 +1568,10 @@ namespace Anasazi {
           // check CP^T MM CP == I
           // compute tmp1 = MM*CP
           teuchosret = tmp1.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,ONE,MM,CP,ZERO);
-          TEST_FOR_EXCEPTION(teuchosret != 0,std::logic_error,"Logic error calling SerialDenseMatrix::multiply");
+          TEST_FOR_EXCEPTION(teuchosret != 0,std::logic_error,"Anasazi::LOBPCG::iterate(): Logic error calling SerialDenseMatrix::multiply");
           // compute tmp2 = CP^H*tmp1 == CP^H*MM*CP
           teuchosret = tmp2.multiply(Teuchos::CONJ_TRANS,Teuchos::NO_TRANS,ONE,CP,tmp1,ZERO);
-          TEST_FOR_EXCEPTION(teuchosret != 0,std::logic_error,"Logic error calling SerialDenseMatrix::multiply");
+          TEST_FOR_EXCEPTION(teuchosret != 0,std::logic_error,"Anasazi::LOBPCG::iterate(): Logic error calling SerialDenseMatrix::multiply");
           // subtrace tmp2 - I == CP^H * MM * CP - I
           for (int i=0; i<oneBlock; i++) tmp2(i,i) -= ONE;
           tmp = tmp2.normFrobenius();          
@@ -1500,10 +1580,10 @@ namespace Anasazi {
           // check CX^T MM CP == 0
           // compute tmp1 = MM*CP
           teuchosret = tmp1.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,ONE,MM,CP,ZERO);
-          TEST_FOR_EXCEPTION(teuchosret != 0,std::logic_error,"Logic error calling SerialDenseMatrix::multiply");
+          TEST_FOR_EXCEPTION(teuchosret != 0,std::logic_error,"Anasazi::LOBPCG::iterate(): Logic error calling SerialDenseMatrix::multiply");
           // compute tmp2 = CX^H*tmp1 == CX^H*MM*CP
           teuchosret = tmp2.multiply(Teuchos::CONJ_TRANS,Teuchos::NO_TRANS,ONE,CX,tmp1,ZERO);
-          TEST_FOR_EXCEPTION(teuchosret != 0,std::logic_error,"Logic error calling SerialDenseMatrix::multiply");
+          TEST_FOR_EXCEPTION(teuchosret != 0,std::logic_error,"Anasazi::LOBPCG::iterate(): Logic error calling SerialDenseMatrix::multiply");
           // subtrace tmp2 == CX^H * MM * CP
           tmp = tmp2.normFrobenius();          
           os << " >> Error in CX^H MM CP == 0 : " << tmp << endl;

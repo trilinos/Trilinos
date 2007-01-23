@@ -768,7 +768,7 @@ namespace Anasazi {
 
     // get the step size
     TEST_FOR_EXCEPTION(!params.isParameter("Step Size"), std::invalid_argument,
-                       "Anasazi::BlockKrylovSchur::constructor: parameter 'Step Size' is not specified.");
+                       "Anasazi::BlockKrylovSchur::constructor: mandatory parameter 'Step Size' is not specified.");
     int ss = params.get("Step Size",numBlocks_);
     setStepSize(ss);
 
@@ -856,7 +856,7 @@ namespace Anasazi {
     else {
       tmp = problem_->getInitVec();
       TEST_FOR_EXCEPTION(tmp == Teuchos::null,std::invalid_argument,
-                         "Anasazi::BlockKrylovSchur::setSize(): Eigenproblem did not specify initial vectors to clone from");
+                         "Anasazi::BlockKrylovSchur::setSize(): eigenproblem did not specify initial vectors to clone from.");
     }
 
     //////////////////////////////////
@@ -917,7 +917,7 @@ namespace Anasazi {
    */
 
   template <class ScalarType, class MV, class OP>
-  void BlockKrylovSchur<ScalarType,MV,OP>::initialize(BlockKrylovSchurState<ScalarType,MV> state)
+  void BlockKrylovSchur<ScalarType,MV,OP>::initialize(BlockKrylovSchurState<ScalarType,MV> newstate)
   {
     // NOTE: memory has been allocated by setBlockSize(). Use SetBlock below; do not Clone
 
@@ -930,24 +930,26 @@ namespace Anasazi {
     // inconsitent multivectors widths and lengths will not be tolerated, and
     // will be treated with exceptions.
     //
-    std::string errstr("Anasazi::BlockKrylovSchur::initialize(): multivectors must have a consistent length and width.");
+    std::string errstr("Anasazi::BlockKrylovSchur::initialize(): specified multivectors must have a consistent length and width.");
 
     // set up V,H: if the user doesn't specify both of these these, 
     // we will start over with the initial vector.
-    if (state.V != Teuchos::null && state.H != Teuchos::null) {
+    if (newstate.V != Teuchos::null && newstate.H != Teuchos::null) {
 
-      TEST_FOR_EXCEPTION( MVT::GetVecLength(*state.V) != MVT::GetVecLength(*V_),
+      // initialize V_,H_, and curDim_
+
+      TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.V) != MVT::GetVecLength(*V_),
                           std::invalid_argument, errstr );
-      TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*state.V) < blockSize_,
+      TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.V) < blockSize_,
                           std::invalid_argument, errstr );
-      TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*state.V) > blockSize_*numBlocks_+1,
+      TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.V) > blockSize_*numBlocks_+1,
                           std::invalid_argument, errstr );
 
-      curDim_ = state.curDim;
-      int lclDim = MVT::GetNumberVecs(*state.V);
+      curDim_ = newstate.curDim;
+      int lclDim = MVT::GetNumberVecs(*newstate.V);
 
       // check size of H
-      TEST_FOR_EXCEPTION(state.H->numRows() < curDim_ || state.H->numCols() < curDim_, std::invalid_argument, errstr);
+      TEST_FOR_EXCEPTION(newstate.H->numRows() < curDim_ || newstate.H->numCols() < curDim_, std::invalid_argument, errstr);
       
       if (curDim_ == 0 && lclDim > blockSize_) {
         om_->stream(Warnings) << "Anasazi::BlockKrylovSchur::initialize(): the solver was initialized with a kernel of " << lclDim << endl
@@ -959,43 +961,24 @@ namespace Anasazi {
       std::vector<int> nevind(lclDim);
       for (int i=0; i<lclDim; i++) nevind[i] = i;
 
-      // copy basis vectors from the state into V
-      MVT::SetBlock(*state.V,nevind,*V_);
+      // copy basis vectors from newstate into V
+      MVT::SetBlock(*newstate.V,nevind,*V_);
 
       // put data into H_, make sure old information is not still hanging around.
       H_->putScalar( ST_ZERO );
       Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > lclH;
       lclH = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*H_,curDim_+blockSize_,curDim_) );
-      lclH->assign(*state.H);
+      lclH->assign(*newstate.H);
 
       // done with local pointers
       lclH = Teuchos::null;
-
-      initialized_ = true;
-
-      if (om_->isVerbosity( Debug ) ) {
-        // Check almost everything here
-        CheckList chk;
-        chk.checkV = true;
-        chk.checkArn = true;
-        chk.checkAux = true;
-        om_->print( Debug, accuracyCheck(chk, ": after initialize()") );
-      }
-
-      // Print information on current status
-      if (om_->isVerbosity(Debug)) {
-        currentStatus( om_->stream(Debug) );
-      }
-      else if (om_->isVerbosity(IterationDetails)) {
-        currentStatus( om_->stream(IterationDetails) );
-      }
     }
     else {
       // user did not specify a basis V
       // get vectors from problem or generate something, projectAndNormalize, call initialize() recursively
       Teuchos::RefCountPtr<const MV> ivec = problem_->getInitVec();
       TEST_FOR_EXCEPTION(ivec == Teuchos::null,std::invalid_argument,
-                         "Anasazi::BlockKrylovSchur::initialize(): Eigenproblem did not specify initial vectors to clone from");
+                         "Anasazi::BlockKrylovSchur::initialize(): eigenproblem did not specify initial vectors to clone from.");
 
       int lclDim = MVT::GetNumberVecs(*ivec);
       bool userand = false;
@@ -1016,7 +999,7 @@ namespace Anasazi {
         // copy the initial vectors into the first lclDim vectors of V
         MVT::SetBlock(*ivec,dimind2,*newV1);
 
-          // resize / reinitialize the index vector        
+        // resize / reinitialize the index vector        
         dimind2.resize(blockSize_-lclDim);
         for (int i=0; i<blockSize_-lclDim; i++) { dimind2[i] = lclDim + i; }
 
@@ -1032,15 +1015,11 @@ namespace Anasazi {
         Teuchos::RefCountPtr<const MV> ivecV = MVT::CloneView(*ivec,bsind);
  
         // assign ivec to first part of newV
-        MVT::MvAddMv(ST_ONE, *ivecV, ST_ZERO, *ivecV, *newV1);
+        MVT::SetBlock(*ivecV,bsind,*newV1);
       }
 
-      // alloc newV
+      // get pointer into first block of V
       Teuchos::RefCountPtr<MV> newV = MVT::CloneView(*V_,bsind);
-
-      // alloc newH
-      Teuchos::RefCountPtr< Teuchos::SerialDenseMatrix<int,ScalarType> > newH =
-        Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::View, *H_, blockSize_, blockSize_ ) );
 
       // remove auxVecs from newV and normalize newV
       if (auxVecs_.size() > 0) {
@@ -1049,28 +1028,47 @@ namespace Anasazi {
         Teuchos::Array<Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > > dummy;
         int rank = orthman_->projectAndNormalize(*newV,dummy,Teuchos::null,auxVecs_);
         TEST_FOR_EXCEPTION( rank != blockSize_,BlockKrylovSchurInitFailure,
-                            "Anasazi::BlockKrylovSchur::initialize(): Couldn't generate initial basis of full rank." );
+                            "Anasazi::BlockKrylovSchur::initialize(): couldn't generate initial basis of full rank." );
       }
       else {
         Teuchos::TimeMonitor lcltimer( *timerOrtho_ );
 
         int rank = orthman_->normalize(*newV,Teuchos::null);
         TEST_FOR_EXCEPTION( rank != blockSize_,BlockKrylovSchurInitFailure,
-                            "Anasazi::BlockKrylovSchur::initialize(): Couldn't generate initial basis of full rank." );
+                            "Anasazi::BlockKrylovSchur::initialize(): couldn't generate initial basis of full rank." );
       }
 
-      // call myself recursively
-      BlockKrylovSchurState<ScalarType,MV> newstate;
-      newstate.curDim = 0;
-      newstate.V = newV;
-      newstate.H = newH;
-      initialize(newstate);
+      // set curDim
+      curDim_ = 0;
+
+      // clear pointer
+      newV = Teuchos::null;
     }
 
     // The Ritz vectors/values and Schur form are no longer current.
     ritzVecsCurrent_ = false;
     ritzValsCurrent_ = false;
     schurCurrent_ = false;
+
+    // the solver is initialized
+    initialized_ = true;
+
+    if (om_->isVerbosity( Debug ) ) {
+      // Check almost everything here
+      CheckList chk;
+      chk.checkV = true;
+      chk.checkArn = true;
+      chk.checkAux = true;
+      om_->print( Debug, accuracyCheck(chk, ": after initialize()") );
+    }
+
+    // Print information on current status
+    if (om_->isVerbosity(Debug)) {
+      currentStatus( om_->stream(Debug) );
+    }
+    else if (om_->isVerbosity(IterationDetails)) {
+      currentStatus( om_->stream(IterationDetails) );
+    }
   }
 
 
@@ -1167,7 +1165,7 @@ namespace Anasazi {
                                ( Teuchos::View,*H_,blockSize_,blockSize_,lclDim,curDim_ ) );
         int rank = orthman_->projectAndNormalize(*Vnext,AsubH,subR,AVprev);
         TEST_FOR_EXCEPTION(rank != blockSize_,BlockKrylovSchurOrthoFailure,
-                           "Anasazi::BlockKrylovSchur::iterate(): Couldn't generate basis of full rank.");
+                           "Anasazi::BlockKrylovSchur::iterate(): couldn't generate basis of full rank.");
       }
       //
       // V has been extended, and H has been extended. 
@@ -1430,7 +1428,7 @@ namespace Anasazi {
           lapack.TREVC( side, curDim_, schurH_->values(), schurH_->stride(), vl, ldvl,
                         copyQ.values(), copyQ.stride(), curDim_, &mm, &work[0], &rwork[0], &info );
           TEST_FOR_EXCEPTION(info != 0, std::logic_error,
-                             "Anasazi::BlockKrylovSchur::computeRitzVectors(): TREVC returned info != 0");
+                             "Anasazi::BlockKrylovSchur::computeRitzVectors(): TREVC returned info != 0.");
 
           // Get a view into the eigenvectors of the Schur form
           Teuchos::SerialDenseMatrix<int,ScalarType> subCopyQ( Teuchos::View, copyQ, curDim_, numRitzVecs_ );
@@ -1549,7 +1547,7 @@ namespace Anasazi {
                        &rwork[0], &bwork[0], &info );
           
           TEST_FOR_EXCEPTION(info != 0, std::logic_error,
-                             "Anasazi::BlockKrylovSchur::computeSchurForm(): GEES returned info != 0");
+                             "Anasazi::BlockKrylovSchur::computeSchurForm(): GEES returned info != 0.");
           //
           //---------------------------------------------------
           // Use the Krylov-Schur factorization to compute the current Ritz residuals 
@@ -1597,7 +1595,7 @@ namespace Anasazi {
                           S.values(), S.stride(), curDim_, &mm, &work[0], &rwork[0], &info );
             
             TEST_FOR_EXCEPTION(info != 0, std::logic_error,
-                               "Anasazi::BlockKrylovSchur::computeSchurForm(): TREVC returned info != 0");
+                               "Anasazi::BlockKrylovSchur::computeSchurForm(): TREVC returned info != 0.");
             //
             // Scale the eigenvectors so that their euclidean norms are all one.
             //
@@ -1751,7 +1749,7 @@ namespace Anasazi {
       lapack.TREXC( compq, curDim_, ptr_h, ldh, ptr_q, ldq, order2[i]+1+offset2[i], 
                     1, &work[0], &info );
       TEST_FOR_EXCEPTION(info != 0, std::logic_error,
-                         "Anasazi::BlockKrylovSchur::computeSchurForm(): TREXC returned info != 0");
+                         "Anasazi::BlockKrylovSchur::computeSchurForm(): TREXC returned info != 0.");
     }
   }
 

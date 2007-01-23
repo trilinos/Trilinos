@@ -128,7 +128,7 @@ int main(int argc, char *argv[])
   // Create an identity matrix
   std::vector<ST> diag(dim);
   for (int i=0; i<dim; i++) diag[i] = 1.0;
-  RefCountPtr<MyOperator<ST> > I = rcp( new MyOperator<ST>(dim) );
+  RefCountPtr<MyOperator<ST> > I = rcp( new MyOperator<ST>(diag) );
   //
   // Create the solution eigenvectors
   std::vector<SCT::magnitudeType> v(blockSize);
