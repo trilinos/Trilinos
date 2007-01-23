@@ -51,7 +51,7 @@ unsigned int *idum;
     idum = myidum;
   else
     idum = &zidum;
-  *idum = (1664525U * *idum) + 1013904223U;
+  *idum = ((1664525U * *idum) + 1013904223U) % ZOLTAN_RAND_MAX;
   return (*idum);
 }
 

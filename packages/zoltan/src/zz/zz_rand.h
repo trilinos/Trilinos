@@ -20,7 +20,7 @@
 extern "C" {
 #endif
 
-#define ZOLTAN_RAND_MAX 0xffffffff
+#define ZOLTAN_RAND_MAX 0x7fffffff
 #define ZOLTAN_RAND_INIT 123456789U
 
 extern unsigned int Zoltan_Seed();
