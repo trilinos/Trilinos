@@ -25,9 +25,7 @@ extern "C" {
  * Needed because different random number implementations on different 
  * machines produced different answers!  This generator provides a portable, 
  * fast, algorithm with adequate random number generation. 
- * NOTE: this generator assumes 32 bit ints; previously
- * these variables were unsigned long (as was the return value) which
- * gave problems on stratus (which assumed 64 bit longs.) 
+ * This generator was designed for 32 bit ints but works for 64, too.
  */
 
 static unsigned int zidum = ZOLTAN_RAND_INIT;
@@ -51,7 +49,7 @@ unsigned int *idum;
     idum = myidum;
   else
     idum = &zidum;
-  *idum = ((1664525U * *idum) + 1013904223U) % ZOLTAN_RAND_MAX;
+  *idum = ((1664525U * *idum) + 1013904223U) % ZOLTAN_RAND_MAX; /* mod is slow! */
   return (*idum);
 }
 
