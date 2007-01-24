@@ -192,7 +192,7 @@ int main(int argc, char *argv[])
   lsParams.set("Aztec Solver", "GMRES");  
   //lsParams.set("Preconditioner Operator", "Use Jacobian");
   lsParams.set("Preconditioner", "AztecOO");
-  lsParams.set("AztecOO Preconditioner Iterations", 5);
+  lsParams.set("AztecOO Preconditioner Iterations", 15);
   lsParams.set("Preconditioner Reuse Policy", "Recompute");
 
   // Let's force all status tests to do a full check
@@ -277,7 +277,7 @@ int main(int argc, char *argv[])
 	printing.out() << "Nonlinear solver failed to converge!" << endl;
   }
   // 2. Nonlinear solve iterations (10)
-  if (const_cast<Teuchos::ParameterList&>(solver.getList()).sublist("Output").get("Nonlinear Iterations", 0) != 13)
+  if (const_cast<Teuchos::ParameterList&>(solver.getList()).sublist("Output").get("Nonlinear Iterations", 0) > 13)
     status = 2;
 
   // Summarize test results 
