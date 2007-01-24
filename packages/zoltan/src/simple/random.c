@@ -79,7 +79,7 @@ int Zoltan_Random(
   ierr = Zoltan_Get_Obj_List(zz, &num_obj, &global_ids, &local_ids, 0,
                              &dummy, &parts);
 
-  /* Estimate number of objects to export. */
+  /* Bound number of objects to export. */
   max_export = 1.5*rand_frac*num_obj;
 
   /* Allocate export lists. */
@@ -113,8 +113,8 @@ int Zoltan_Random(
         ZOLTAN_SET_LID(zz, &((*export_local_ids)[count*zz->Num_LID]),
                        &local_ids[i*zz->Num_LID]);
       /* Randomly pick new partition number. */
-      (*export_to_part)[count] = Zoltan_Rand(NULL) % zz->LB.Num_Global_Parts;
-      /* Processor is derived from partition number. */
+      (*export_to_part)[count] = Zoltan_Rand_InRange(NULL, zz->LB.Num_Global_Parts);
+      /* Processor number is derived from partition number. */
       (*export_procs)[count] = Zoltan_LB_Part_To_Proc(zz, 
                      (*export_to_part)[count], &global_ids[i*zz->Num_GID]);
 
