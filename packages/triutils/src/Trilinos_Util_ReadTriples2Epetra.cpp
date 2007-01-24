@@ -52,8 +52,8 @@ int Trilinos_Util_ReadTriples2Epetra( char *data_file,
 				      bool TimDavisHeader=false,
 				      bool ZeroBased=false ) {
   FILE *in_file ;
-  int N_rows, nnz ; 
-
+  int N_rows = 0, nnz = 0; 
+  
   const int BUFSIZE = 800 ; 
   char buffer[BUFSIZE] ; 
   std::vector<int> non_zeros;   // Number of non-zeros in each row
