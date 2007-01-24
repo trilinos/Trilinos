@@ -20,12 +20,15 @@ extern "C" {
 
 
 /****************************************************************************/
-/* Random Number generator due to Knuth found in Numerical Recipes in C
- * (2nd edition) by Press, Vetterling, Teukolsky, Flannery (Page 284.)
+ /* Linear congruential number generator, with right shift to account for
+ * the lack of randomness (even/odd/even/odd pattern) in low order bit.
+ *
  * Needed because different random number implementations on different 
  * machines produced different answers!  This generator provides a portable, 
  * fast, algorithm with adequate random number generation. 
- * This generator was designed for 32 bit ints but works for 64, too.
+ *
+ * Number generated should be the same on all platforms that have
+ * 32 bit integers.
  */
 
 static unsigned int zidum = ZOLTAN_RAND_INIT;
@@ -49,7 +52,7 @@ unsigned int *idum;
     idum = myidum;
   else
     idum = &zidum;
-  *idum = ((1664525U * *idum) + 1013904223U) % ZOLTAN_RAND_MAX; /* mod is slow! */
+  *idum = ((1664525U * *idum) + 1013904223U) >> 1;
   return (*idum);
 }
 
