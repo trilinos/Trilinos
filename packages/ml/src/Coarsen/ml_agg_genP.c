@@ -1926,6 +1926,16 @@ int  ML_Gen_MGHierarchy_UsingSmoothedAggr_ReuseExistingAgg(ML *ml,
    return 0;
 }
 
+/*****************************************************************************/
+/* I believe this routine works in the following way. The two dimensional    */
+/* array Filter has already been computed. Filter[i][0] indicates how many   */
+/* column entries in the ith row WILL be removed. Filter[i][1:Filter[i][0]]  */
+/* indicates which column values should be removed.  In addition, the matrix */
+/* diagonal is also modified so that piecewise constants are still in the    */ 
+/* null space (assuming that they were originally). This code appears to work*/
+/* even when we have a block PDE system.                                     */
+/*****************************************************************************/
+ 
 static int ML_Aux_Getrow(ML_Operator *data, int N_requested_rows, int requested_rows[],
                          int allocated_space, int columns[], double values[],
                          int row_lengths[])
@@ -1977,8 +1987,17 @@ static int ML_Aux_Getrow(ML_Operator *data, int N_requested_rows, int requested_
       /* look for elements to discard */
       if (Filter[j + 1] == BlockCol)
       {
-        if (columns[i] % mod == RowMod) 
+        /* We modify the matrix diagonal so that the constant vector */
+        /* is still in the null space (assuming that the constant    */
+        /* was in the original matrix null space). For block pde     */
+        /* systems we need to check that both the column and the row */
+        /* correspond to the same DOF within the node.               */
+        /* Note: This code will not preserve the null space if it is */
+        /* not given by piecewise constants.                         */
+
+        if (columns[i] % mod == RowMod) {
           DiagValue += values[i];
+        }
         goto after;
       }
     }
@@ -2216,9 +2235,9 @@ void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
 
 /*
  * This function allocates the filter field of the aux_data
- * structure. Filter[i] contains the number of allowed nonzero
+ * structure. Filter[i] contains the thrown away nonzero
  * connections in amalgamated row i. Filter[i][0] is the number
- * of allowed connections; connection `j' is stored in
+ * of removed connections; connection `j' is stored in
  * Filter[0][j + 1]
  */
 static void ML_Init_Aux(ML* ml, int level)
@@ -2232,7 +2251,7 @@ static void ML_Init_Aux(ML* ml, int level)
   int DiagID;
   double DiagValue;
   int** filter;
-  double dist;
+  double dist, largest;
   double* x_coord,* y_coord,* z_coord;
   ML_Aggregate_Viz_Stats *grid_info;
 
@@ -2243,6 +2262,10 @@ static void ML_Init_Aux(ML* ml, int level)
   x_coord = grid_info->x;
   y_coord = grid_info->y;
   z_coord = grid_info->z;
+  if (x_coord == NULL) {
+      printf("ML_Init_Aux: Cannot use aux options without supplying coordinates\n");
+      exit(1);
+  }
 
   threshold = A->aux_data->threshold;
   ML_Operator_AmalgamateAndDropWeak(A, num_PDEs, 0.0);
@@ -2260,6 +2283,7 @@ static void ML_Init_Aux(ML* ml, int level)
     BlockRow = i;
     DiagID = -1;
     DiagValue = 0.0;
+    largest = 0.;
     count = 0;
 
     ML_get_matrix_row(A,1,&i,&allocated,&columns,&values, &entries,0);
@@ -2294,6 +2318,7 @@ static void ML_Init_Aux(ML* ml, int level)
         }
 
         dist = 1.0 / dist;
+        if (dist > largest) largest = dist;
         values[j] = dist;
         DiagValue += dist;
       }
@@ -2311,8 +2336,18 @@ static void ML_Init_Aux(ML* ml, int level)
       exit(EXIT_FAILURE);
     }
 
-    DiagValue *= threshold;
+    /* Let's drop all elements that are within some threshold of the  */
+    /* largest off-diagonal element.                                  */
+    /* Note: we know that all the elements of the Laplacian are       */
+    /*       positive. Further, the previous criteria was nonsymmetric*/
+    /*       ... and so is the new one.                               */
+
+    DiagValue = threshold*largest;
     count = 0;
+
+    /* It does not look like things are thrown out in a symmetric  */
+    /* fashion. That is, we should look at the diagonal associated */
+    /* with both the row and the column.                           */
 
     for (j = 0 ; j < entries ; ++j) 
     {
