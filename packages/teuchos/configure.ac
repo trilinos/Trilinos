@@ -314,6 +314,29 @@ TAC_ARG_WITH_LIBDIRS
 TAC_ARG_WITH_INCDIRS
 
 # ------------------------------------------------------------------------
+# Check for library specification errors
+# -----------------------------------------------------------------------
+AC_MSG_CHECKING(for library specification errors )
+AC_LANG_SAVE
+AC_LANG_CPLUSPLUS
+AC_LINK_IFELSE([ AC_LANG_PROGRAM([[ ]], [[ ]]) ],
+   [AC_MSG_RESULT(no errors detected)],
+   [AC_MSG_RESULT(error found)
+            echo "-----"
+            echo "Cannot link with the current set of specified"
+            echo "libraries and paths.  Look for typos and other"
+            echo "possible errors in the values of --with-libs,"
+            echo "--with-ldflags and other places where libraries"
+            echo "are listed.  Grep for -"
+            echo "checking for library specification errors"
+            echo "-in packages/teuchos/config.log and look at"
+            echo "the next several lines for a hint as to"
+            echo "what the issue might be."
+            echo "-----"
+            AC_MSG_ERROR(cannot link)])
+AC_LANG_RESTORE
+
+# ------------------------------------------------------------------------
 # Checks for special package flags
 # ------------------------------------------------------------------------
 
