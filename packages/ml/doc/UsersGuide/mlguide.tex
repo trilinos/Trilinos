@@ -1697,11 +1697,15 @@ L_{i,i} = - \sum_{i \neq j} L_{i,j},
 \end{equation}
 (where $\mathbf{x}_i$ represents the coordinates of node $i$)
 in conjunction with a given nonzero dropping threshold.
-This may happen, for instance, when working with bilinear finite elements on 
-stretched grids. 
+This is often useful in cases where it is difficult to determine 
+directions where smoothing is difficult based only on matrix coefficients.
+This may happen, for instance, when working with bilinear finite 
+elements on stretched grids. 
 \ML~can be instructed to generate the aggregates using
-matrix~(\ref{eq:discrete_laplacian}), then build the preconditioner using the
-actual linear system matrix, as done in the following code fragment:
+matrix~(\ref{eq:discrete_laplacian}), then build the preconditioner 
+using the actual linear system matrix (i.e. use the original PDE matrix
+$A$ dropping entries according to (\ref{eq:discrete_laplacian}) in 
+the prolongator smoother), as done in the following code fragment:
 \begin{verbatim}
 double* x_coord;
 double* y_coord; // set to to 0 for 1D problems
@@ -1718,14 +1722,33 @@ The double vectors \verb!y_coord! and/or \verb!z_coord! can be set to \verb!0!.
 nodes assigned to the calling processor, plus that of the ghost nodes. For
 systems of PDE equations, the coordinates must refer to the block nodes (that
 is, x-coordinate of local row \verb!i! will be reported in
-\verb!x_coord[i/NumPDEEqns]!.
-
-The following option can be used:
+\verb!x_coord[i/NumPDEEqns]!. The actual PDE matrix $A$ is only modified 
+when developing a prolongator (i.e. for the aggregation and in the 
+prolongator smoother). This modification drops entries {\it corresponding}
+to small $L_{i,j}$'s and adds dropped entries to the diagonal. For block 
+PDEs, dropped entries in row $i$ are only added to the diagonal if they 
+correspond to the same degree of freedom within a block as $i$. The 
+general idea is that contants will still be in the null space of the
+modified $A$ if they were in the null space of $A$.
+The following options can be used:
 \smallskip
 
 \choicebox{\tt aggregation: aux: enable}{[{\tt bool}]. Enable/disable
 the use of 
 matrix~(\ref{eq:discrete_laplacian}).  Default: {\tt false}.}
+
+\choicebox{\tt aggregation: aux: threshold }{[{\tt double}]. 
+%Matrix entries are ignored based on this value.
+%In particular, 
+The matrix entry $A_{i,j}$ is ignored
+%within the $i^{th}$ row 
+if $L_{i,j} < threshold * max_{j,i \ne j} L_{i,j}$.
+%, then the corresponding matrix entry $A_{i,j}$ is ignored. 
+Note: the diagonal of $A$ is also
+modified so that constants are still in the null space (assuming that
+this was true for the unmodified $A$). 
+Default: {\tt 0.0}.}
+
 
 %--------------------------------------------------------------%
 \subsection{Default Parameter Settings for Common Problem Types}
