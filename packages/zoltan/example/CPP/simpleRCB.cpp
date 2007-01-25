@@ -80,6 +80,9 @@ int main(int argc, char *argv[])
   zz->Set_Param("RETURN_LISTS", "ALL");  // return all lists in LB_Partition
 
   // RCB parameters:
+  //   Note that relaxing RCB_RECTILINEAR_BLOCKS (the requirement that
+  //   all partitions be rectangles) may provide a better balance, but
+  //   more communication.
 
   zz->Set_Param("KEEP_CUTS", "1");              // save decomposition
   zz->Set_Param("RCB_OUTPUT_LEVEL", "0");       // amount of output desired

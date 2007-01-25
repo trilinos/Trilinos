@@ -102,6 +102,7 @@ int Zoltan_Random(
 
   /* Randomly assign ids to procs. */
   count=0;
+printf("RANDOM: %d obj, max export %d\n",num_obj,max_export);
   for (i=0; i<num_obj; i++){
     /* Randomly select some objects to move (export) */
     if ((count<max_export) && (Zoltan_Rand(NULL)<rand_frac*ZOLTAN_RAND_MAX)){
@@ -118,9 +119,7 @@ int Zoltan_Random(
       (*export_procs)[count] = Zoltan_LB_Part_To_Proc(zz, 
                      (*export_to_part)[count], &global_ids[i*zz->Num_GID]);
 
-/*
       printf("Debug: Export gid %u to part %d and proc %d.\n", (*export_global_ids)[count], (*export_to_part)[count], (*export_procs)[count]);
-*/
       ++count;
     }
   }
