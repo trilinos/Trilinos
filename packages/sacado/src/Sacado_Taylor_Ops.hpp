@@ -638,7 +638,7 @@ namespace Sacado {
       typedef typename ExprT1::value_type value_type_1;
       typedef typename ExprT2::value_type value_type_2;
       typedef typename Sacado::Promote<value_type_1,
-				       value_type_1>::type value_type;
+				       value_type_2>::type value_type;
     
       AdditionOp(const ExprT1& expr1, const ExprT2 expr2) {}
 
@@ -729,7 +729,7 @@ namespace Sacado {
       typedef typename ExprT1::value_type value_type_1;
       typedef typename ExprT2::value_type value_type_2;
       typedef typename Sacado::Promote<value_type_1,
-				       value_type_1>::type value_type;
+				       value_type_2>::type value_type;
     
       SubtractionOp(const ExprT1& expr1, const ExprT2 expr2) {}
 
@@ -820,7 +820,7 @@ namespace Sacado {
       typedef typename ExprT1::value_type value_type_1;
       typedef typename ExprT2::value_type value_type_2;
       typedef typename Sacado::Promote<value_type_1,
-				       value_type_1>::type value_type;
+				       value_type_2>::type value_type;
     
       MultiplicationOp(const ExprT1& expr1, const ExprT2 expr2) :
 	c(),
@@ -922,7 +922,7 @@ namespace Sacado {
       typedef typename ExprT1::value_type value_type_1;
       typedef typename ExprT2::value_type value_type_2;
       typedef typename Sacado::Promote<value_type_1,
-				       value_type_1>::type value_type;
+				       value_type_2>::type value_type;
     
       DivisionOp(const ExprT1& expr1, const ExprT2 expr2) :
 	c(),
@@ -1062,7 +1062,7 @@ namespace Sacado {
       typedef typename ExprT1::value_type value_type_1;
       typedef typename ExprT2::value_type value_type_2;
       typedef typename Sacado::Promote<value_type_1,
-				       value_type_1>::type value_type;
+				       value_type_2>::type value_type;
     
       MaxOp(const ExprT1& expr1, const ExprT2 expr2) {}
 
@@ -1165,7 +1165,7 @@ namespace Sacado {
       typedef typename ExprT1::value_type value_type_1;
       typedef typename ExprT2::value_type value_type_2;
       typedef typename Sacado::Promote<value_type_1,
-				       value_type_1>::type value_type;
+				       value_type_2>::type value_type;
     
       MinOp(const ExprT1& expr1, const ExprT2 expr2) {}
 
@@ -1268,7 +1268,7 @@ namespace Sacado {
       typedef typename ExprT1::value_type value_type_1;
       typedef typename ExprT2::value_type value_type_2;
       typedef typename Sacado::Promote<value_type_1,
-				       value_type_1>::type value_type;
+				       value_type_2>::type value_type;
 
       ASinQuadOp(const ExprT1& expr1, const ExprT2& expr2) :
 	c(),
@@ -1330,7 +1330,7 @@ namespace Sacado {
       typedef typename ExprT1::value_type value_type_1;
       typedef typename ExprT2::value_type value_type_2;
       typedef typename Sacado::Promote<value_type_1,
-				       value_type_1>::type value_type;
+				       value_type_2>::type value_type;
 
       ACosQuadOp(const ExprT1& expr1, const ExprT2& expr2) :
 	c(),
@@ -1392,7 +1392,7 @@ namespace Sacado {
       typedef typename ExprT1::value_type value_type_1;
       typedef typename ExprT2::value_type value_type_2;
       typedef typename Sacado::Promote<value_type_1,
-				       value_type_1>::type value_type;
+				       value_type_2>::type value_type;
 
       ATanQuadOp(const ExprT1& expr1, const ExprT2& expr2) :
 	c(),

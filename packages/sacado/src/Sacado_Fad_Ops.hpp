@@ -247,7 +247,7 @@ namespace Sacado {							\
       typedef typename ExprT1::value_type value_type_1;			\
       typedef typename ExprT2::value_type value_type_2;			\
       typedef typename Sacado::Promote<value_type_1,			\
-				       value_type_1>::type value_type;  \
+				       value_type_2>::type value_type;  \
 									\
       OP() {}			                                        \
 									\
@@ -444,7 +444,7 @@ namespace Sacado {							\
       typedef typename ExprT1::value_type value_type_1;			\
       typedef typename ExprT2::value_type value_type_2;			\
       typedef typename Sacado::Promote<value_type_1,			\
-				       value_type_1>::type value_type;  \
+				       value_type_2>::type value_type;  \
 									\
       OP() {}			                                        \
 									\
