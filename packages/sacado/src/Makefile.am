@@ -92,6 +92,7 @@ SACADO_TEMPLATE_H = \
 
 SACADO_MPL_H = \
 	$(srcdir)/mpl/Sacado_mpl_is_same.hpp \
+	$(srcdir)/mpl/Sacado_mpl_disable_if.hpp \
 	$(srcdir)/mpl/Sacado_mpl_if.hpp \
 	$(srcdir)/mpl/Sacado_mpl_none.hpp \
 	$(srcdir)/mpl/Sacado_mpl_begin.hpp \

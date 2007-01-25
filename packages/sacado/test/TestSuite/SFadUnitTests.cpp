@@ -110,6 +110,20 @@ void SFadOpsUnitTest::testMax() {
     compareDoubles(c_sfad.dx(i), aa_sfad.dx(i));
     compareDoubles(c_sfad.fastAccessDx(i), aa_sfad.fastAccessDx(i));
   }
+
+  c_sfad = max(a_sfad+1.0, a_sfad);
+  compareDoubles(c_sfad.val(), aa_sfad.val());
+  for (int i=0; i<n; i++) {
+    compareDoubles(c_sfad.dx(i), aa_sfad.dx(i));
+    compareDoubles(c_sfad.fastAccessDx(i), aa_sfad.fastAccessDx(i));
+  }
+  
+  c_sfad = max(a_sfad, a_sfad+1.0);
+  compareDoubles(c_sfad.val(), aa_sfad.val());
+  for (int i=0; i<n; i++) {
+    compareDoubles(c_sfad.dx(i), aa_sfad.dx(i));
+    compareDoubles(c_sfad.fastAccessDx(i), aa_sfad.fastAccessDx(i));
+  }
   
   val = a_sfad.val() + 1;
   c_sfad = max(a_sfad, val);

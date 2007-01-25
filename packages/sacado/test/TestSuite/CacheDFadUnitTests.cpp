@@ -111,6 +111,20 @@ void CacheDFadOpsUnitTest::testMax() {
     compareDoubles(c_dfad.dx(i), aa_dfad.dx(i));
     compareDoubles(c_dfad.fastAccessDx(i), aa_dfad.fastAccessDx(i));
   }
+
+  c_dfad = max(a_dfad+1.0, a_dfad);
+  compareDoubles(c_dfad.val(), aa_dfad.val());
+  for (int i=0; i<n; i++) {
+    compareDoubles(c_dfad.dx(i), aa_dfad.dx(i));
+    compareDoubles(c_dfad.fastAccessDx(i), aa_dfad.fastAccessDx(i));
+  }
+  
+  c_dfad = max(a_dfad, a_dfad+1.0);
+  compareDoubles(c_dfad.val(), aa_dfad.val());
+  for (int i=0; i<n; i++) {
+    compareDoubles(c_dfad.dx(i), aa_dfad.dx(i));
+    compareDoubles(c_dfad.fastAccessDx(i), aa_dfad.fastAccessDx(i));
+  }
   
   val = a_dfad.val() + 1;
   c_dfad = max(a_dfad, val);

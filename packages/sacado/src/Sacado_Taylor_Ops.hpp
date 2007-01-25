@@ -1494,10 +1494,62 @@ TAYLOR_BINARYOP_MACRO(operator+, AdditionOp)
 TAYLOR_BINARYOP_MACRO(operator-, SubtractionOp)
 TAYLOR_BINARYOP_MACRO(operator*, MultiplicationOp)
 TAYLOR_BINARYOP_MACRO(operator/, DivisionOp)
-TAYLOR_BINARYOP_MACRO(max, MaxOp)
-TAYLOR_BINARYOP_MACRO(min, MinOp)
 
 #undef TAYLOR_BINARYOP_MACRO
+
+  // The general definition of max/min works for Taylor variables too, except
+  // we need to add a case when the argument types are different.  This 
+  // can't conflict with the general definition, so we need to use
+  // Substitution Failure Is Not An Error
+#include "Sacado_mpl_disable_if.hpp"
+#include "Sacado_mpl_is_same.hpp"
+
+#define TAYLOR_SFINAE_BINARYOP_MACRO(OPNAME,OP)				\
+namespace Sacado {							\
+  namespace Taylor {							\
+    template <typename T1, typename T2>					\
+    inline                                                              \
+    typename                                                            \
+    mpl::disable_if< mpl::is_same<T1,T2>,                               \
+                     Expr<BinaryExpr<Expr<T1>, Expr<T2>, OP> > >::type  \
+    OPNAME (const Expr<T1>& expr1, const Expr<T2>& expr2)		\
+    {									\
+      typedef BinaryExpr< Expr<T1>, Expr<T2>, OP > expr_t;		\
+    									\
+      return Expr<expr_t>(expr_t(expr1, expr2));			\
+    }									\
+									\
+    template <typename T>						\
+    inline Expr< BinaryExpr< ConstExpr<typename Expr<T>::value_type>,	\
+			     Expr<T>, OP > >				\
+    OPNAME (const typename Expr<T>::value_type& c,			\
+	    const Expr<T>& expr)					\
+    {									\
+      typedef ConstExpr<typename Expr<T>::value_type> ConstT;		\
+      typedef BinaryExpr< ConstT, Expr<T>, OP > expr_t;			\
+									\
+      return Expr<expr_t>(expr_t(ConstT(c), expr));			\
+    }									\
+									\
+    template <typename T>						\
+    inline Expr< BinaryExpr< Expr<T>,					\
+			     ConstExpr<typename Expr<T>::value_type>,	\
+			     OP > >					\
+    OPNAME (const Expr<T>& expr,					\
+	    const typename Expr<T>::value_type& c)			\
+    {									\
+      typedef ConstExpr<typename Expr<T>::value_type> ConstT;		\
+      typedef BinaryExpr< Expr<T>, ConstT, OP > expr_t;			\
+									\
+      return Expr<expr_t>(expr_t(expr, ConstT(c)));			\
+    }									\
+  }									\
+}
+
+TAYLOR_SFINAE_BINARYOP_MACRO(max, MaxOp)
+TAYLOR_SFINAE_BINARYOP_MACRO(min, MinOp)
+
+#undef TAYLOR_SFINAE_BINARYOP_MACRO
 
 namespace std {
   using Sacado::Taylor::min;

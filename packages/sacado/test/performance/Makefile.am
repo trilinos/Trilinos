@@ -41,6 +41,7 @@ noinst_PROGRAMS = \
 dfad_nonlinear_SOURCES = dfad_nonlinear.cpp 
 dfad_nonlinear_CXXFLAGS = -O2  \
 	-I$(top_srcdir)/src \
+	-I$(top_srcdir)/src/mpl \
 	-I$(top_builddir)/src \
 	-I$(top_srcdir)/test/utils \
 	-I$(top_srcdir)/Fad \

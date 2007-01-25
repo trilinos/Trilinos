@@ -45,6 +45,7 @@ noinst_PROGRAMS = \
 dfad_example_SOURCES = $(srcdir)/dfad_example.cpp
 dfad_example_CXXFLAGS = \
 	-I$(top_srcdir)/src \
+	-I$(top_srcdir)/src/mpl \
 	-I$(top_builddir)/src
 dfad_example_DEPENDENCIES = $(top_builddir)/src/libsacado.a
 dfad_example_LDADD = -L$(top_builddir)/src -lsacado $(LIBS) $(FLIBS)

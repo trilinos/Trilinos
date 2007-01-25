@@ -63,6 +63,7 @@ TestSuite_exe_SOURCES = \
 
 TestSuite_exe_CXXFLAGS = \
 	-I$(top_srcdir)/src \
+	-I$(top_srcdir)/src/mpl \
 	-I$(top_builddir)/src \
 	-I$(top_srcdir)/test/utils \
 	-I$(top_srcdir)/Fad \

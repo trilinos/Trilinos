@@ -461,7 +461,180 @@ FAD_BINARYOP_MACRO(pow,
 		   expr1.dx(i)*a,
 		   expr2.fastAccessDx(i)*b,
 		   expr1.fastAccessDx(i)*a)
-FAD_BINARYOP_MACRO(max,
+
+#undef FAD_BINARYOP_MACRO
+  
+  // The general definition of max/min works for Fad variables too, except
+  // we need to add a case when the argument types are different.  This 
+  // can't conflict with the general definition, so we need to use
+  // Substitution Failure Is Not An Error
+#include "Sacado_mpl_disable_if.hpp"
+#include "Sacado_mpl_is_same.hpp"
+
+#define FAD_SFINAE_BINARYOP_MACRO(OPNAME,OP,PARTIAL,VALUE,DX,FASTACCESSDX,CONST_DX_1,CONST_DX_2,CONST_FASTACCESSDX_1,CONST_FASTACCESSDX_2) \
+namespace Sacado {							\
+  namespace CacheFad {							\
+									\
+    template <typename ExprT1, typename ExprT2>				\
+    class OP {								\
+									\
+    public:								\
+									\
+      typedef typename ExprT1::value_type value_type_1;			\
+      typedef typename ExprT2::value_type value_type_2;			\
+      typedef typename Sacado::Promote<value_type_1,			\
+				       value_type_1>::type value_type;  \
+									\
+      OP(const ExprT1& expr1, const ExprT2& expr2) {}			\
+									\
+      value_type							\
+      computeValue(const ExprT1& expr1, const ExprT2& expr2) const {	\
+	v1 = expr1.val();						\
+	v2 = expr2.val();						\
+	PARTIAL;							\
+	return VALUE;							\
+      }									\
+									\
+      value_type							\
+      computeDx(int i, const ExprT1& expr1,				\
+		const ExprT2& expr2) const {				\
+	return DX;							\
+      }									\
+									\
+      value_type							\
+      computeFastAccessDx(int i, const ExprT1& expr1,			\
+			  const ExprT2& expr2) const {			\
+	return FASTACCESSDX;						\
+      }									\
+									\
+    protected:								\
+									\
+      mutable value_type_1 v1;						\
+      mutable value_type_2 v2;						\
+      mutable value_type a;						\
+      mutable value_type b;						\
+    };									\
+									\
+    template <typename ExprT1>						\
+    class OP<ExprT1, ConstExpr<typename ExprT1::value_type> > {		\
+									\
+    public:								\
+									\
+      typedef typename ExprT1::value_type value_type;			\
+      typedef ConstExpr<typename ExprT1::value_type> ExprT2;		\
+									\
+      OP(const ExprT1& expr1, const ExprT2& expr2) {}			\
+									\
+      value_type							\
+      computeValue(const ExprT1& expr1, const ExprT2& expr2) const {	\
+	v1 = expr1.val();						\
+	v2 = expr2.val();						\
+	PARTIAL;							\
+	return VALUE;							\
+      }									\
+									\
+      value_type							\
+      computeDx(int i, const ExprT1& expr1,				\
+		const ExprT2& expr2) const {				\
+	return CONST_DX_2;						\
+      }									\
+									\
+      value_type							\
+      computeFastAccessDx(int i, const ExprT1& expr1,			\
+			  const ExprT2& expr2) const {			\
+	return CONST_FASTACCESSDX_2;					\
+      }									\
+									\
+    protected:								\
+									\
+      mutable value_type v1;						\
+      mutable value_type v2;						\
+      mutable value_type a;						\
+      mutable value_type b;						\
+    };									\
+									\
+    template <typename ExprT2>						\
+    class OP<ConstExpr<typename ExprT2::value_type>, ExprT2 > {		\
+									\
+    public:								\
+									\
+      typedef typename ExprT2::value_type value_type;			\
+      typedef ConstExpr<typename ExprT2::value_type> ExprT1;		\
+									\
+      OP(const ExprT1& expr1, const ExprT2& expr2) {}			\
+									\
+      value_type							\
+      computeValue(const ExprT1& expr1, const ExprT2& expr2) const {	\
+	v1 = expr1.val();						\
+	v2 = expr2.val();						\
+	PARTIAL;							\
+	return VALUE;							\
+      }									\
+									\
+      value_type							\
+      computeDx(int i, const ExprT1& expr1,				\
+		const ExprT2& expr2) const {				\
+	return CONST_DX_1;						\
+      }									\
+									\
+      value_type							\
+      computeFastAccessDx(int i, const ExprT1& expr1,			\
+			  const ExprT2& expr2) const {			\
+	return CONST_FASTACCESSDX_1;					\
+      }									\
+									\
+    protected:								\
+									\
+      mutable value_type v1;						\
+      mutable value_type v2;						\
+      mutable value_type a;						\
+      mutable value_type b;						\
+    };									\
+									\
+    template <typename T1, typename T2>					\
+    inline                                                              \
+    typename                                                            \
+    mpl::disable_if< mpl::is_same<T1,T2>,                               \
+                     Expr<BinaryExpr<Expr<T1>, Expr<T2>, OP> > >::type  \
+    OPNAME (const Expr<T1>& expr1, const Expr<T2>& expr2)		\
+    {									\
+      typedef BinaryExpr< Expr<T1>, Expr<T2>, OP > expr_t;		\
+    									\
+      return Expr<expr_t>(expr_t(expr1, expr2));			\
+    }									\
+									\
+    template <typename T>						\
+    inline Expr< BinaryExpr< ConstExpr<typename Expr<T>::value_type>,	\
+			     Expr<T>, OP > >				\
+    OPNAME (const typename Expr<T>::value_type& c,			\
+	    const Expr<T>& expr)					\
+    {									\
+      typedef ConstExpr<typename Expr<T>::value_type> ConstT;		\
+      typedef BinaryExpr< ConstT, Expr<T>, OP > expr_t;			\
+									\
+      return Expr<expr_t>(expr_t(ConstT(c), expr));			\
+    }									\
+									\
+    template <typename T>						\
+    inline Expr< BinaryExpr< Expr<T>,					\
+			     ConstExpr<typename Expr<T>::value_type>,	\
+			     OP > >					\
+    OPNAME (const Expr<T>& expr,					\
+	    const typename Expr<T>::value_type& c)			\
+    {									\
+      typedef ConstExpr<typename Expr<T>::value_type> ConstT;		\
+      typedef BinaryExpr< Expr<T>, ConstT, OP > expr_t;			\
+									\
+      return Expr<expr_t>(expr_t(expr, ConstT(c)));			\
+    }									\
+  }									\
+}                                                                       \
+                                                                        \
+namespace std {                                                         \
+  using Sacado::CacheFad::OPNAME;                                       \
+}
+
+FAD_SFINAE_BINARYOP_MACRO(max,
 		   MaxOp,
 		   ;,
 		   max(expr1.val(), expr2.val()),
@@ -474,7 +647,7 @@ FAD_BINARYOP_MACRO(max,
 		                                expr2.fastAccessDx(i),
 		   expr1.val() >= expr2.val() ? expr1.fastAccessDx(i) : 
 		                                value_type(0))
-FAD_BINARYOP_MACRO(min,
+FAD_SFINAE_BINARYOP_MACRO(min,
 		   MinOp,
 		   ;,
 		   min(expr1.val(), expr2.val()),
@@ -488,7 +661,7 @@ FAD_BINARYOP_MACRO(min,
 		   expr1.val() <= expr2.val() ? expr1.fastAccessDx(i) : 
 		                                value_type(0))
 
-#undef FAD_BINARYOP_MACRO
+#undef FAD_SFINAE_BINARYOP_MACRO
 
 //-------------------------- Relational Operators -----------------------
 

@@ -297,6 +297,7 @@ target_vendor = @target_vendor@
 dfad_example_SOURCES = $(srcdir)/dfad_example.cpp
 dfad_example_CXXFLAGS = \
 	-I$(top_srcdir)/src \
+	-I$(top_srcdir)/src/mpl \
 	-I$(top_builddir)/src
 
 dfad_example_DEPENDENCIES = $(top_builddir)/src/libsacado.a
