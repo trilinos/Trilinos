@@ -65,8 +65,6 @@ int TestMultiLevelPreconditioner(char ProblemType[],
   
   AztecOO solver(Problem);
   
-  MLList.set("output", 0);
-
   ML_Epetra::MultiLevelPreconditioner * MLPrec = new ML_Epetra::MultiLevelPreconditioner(*A, MLList, true);
   
   // tell AztecOO to use this preconditioner, then solve
@@ -155,14 +153,20 @@ int main(int argc, char *argv[]) {
 
   double TotalErrorResidual = 0.0, TotalErrorExactSol = 0.0;
 
-  // ================== //
-  // no-default options //
-  // ================== //
+
+  // JJH Note: default internal ML options are no longer appropriate for
+  // JJH       nonsymmetric problems.  Thus, the user should always populate
+  // JJH       the parameter list by calling SetDefaults().
+
+  // ======================== //
+  // default options  for NSSA//
+  // ======================== //
 
   if (Comm.MyPID() == 0) PrintLine();
 
   char mystring[80];
-  strcpy(mystring,"no defaults");
+  ML_Epetra::SetDefaults("NSSA",MLList);
+  strcpy(mystring,"NSSA");
   TestMultiLevelPreconditioner(mystring, MLList, Problem, 
                                TotalErrorResidual, TotalErrorExactSol );
 
@@ -225,7 +229,10 @@ int main(int argc, char *argv[]) {
 
   if (TotalErrorResidual > 1e-8) {
     if (Comm.MyPID() == 0)
-      cout << "ERROR: test `MultiLevelPreconditioner_NonSym.exe failed!" << endl;
+      cout << "ERROR: test `MultiLevelPreconditioner_NonSym.exe failed!" <<endl;
+#ifdef HAVE_MPI
+    MPI_Finalize();
+#endif
     return( EXIT_FAILURE );
   }
 

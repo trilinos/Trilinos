@@ -250,8 +250,37 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       if( verbose_ ) cout << msg << "symmetric Gauss-Seidel (sweeps="
 			  << Mynum_smoother_steps << ",omega=" << Myomega << ","
 			  << MyPreOrPostSmoother << ")" << endl;
+#ifdef HAVE_ML_IFPACK
+      if (ml_->Amat[LevelID_[level]].type == ML_TYPE_CRS_MATRIX) {
+        if (verbose_)
+          cout << msg << "Epetra_CrsMatrix detected, using "
+               << "Ifpack implementation" << endl;
+        string MyIfpackType = "point relaxation stand-alone";
+        ParameterList& MyIfpackList = List_.sublist("smoother: ifpack list");;
+        MyIfpackList.set("relaxation: type", "symmetric Gauss-Seidel");
+        MyIfpackList.set("relaxation: sweeps", Mynum_smoother_steps);
+        MyIfpackList.set("relaxation: damping factor", Myomega);
+        ML_Gen_Smoother_Ifpack(ml_, MyIfpackType.c_str(),
+                               IfpackOverlap, LevelID_[level], pre_or_post,
+                               MyIfpackList,*Comm_);
+      }
+      else
+#endif
       ML_Gen_Smoother_SymGaussSeidel(ml_, LevelID_[level], pre_or_post,
 				     Mynum_smoother_steps, Myomega);
+
+    } else if( Smoother == "ML symmetric Gauss-Seidel" ) {
+
+      // =========================== //
+      // ML's symmetric Gauss-Seidel //
+      // ============================//
+
+      if( verbose_ ) cout << msg << "ML symmetric Gauss-Seidel (sweeps="
+                          << Mynum_smoother_steps << ",omega=" << Myomega << ","
+                          << MyPreOrPostSmoother << ")" << endl;
+        ML_Gen_Smoother_SymGaussSeidel(ml_, LevelID_[level], pre_or_post,
+                                       Mynum_smoother_steps, Myomega);
+
     } else if( MySmoother == "block Gauss-Seidel" ) {
 
       // ================== //
@@ -263,17 +292,19 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
 			  << MyPreOrPostSmoother << ")" << endl;
       ML_Gen_Smoother_BlockGaussSeidel(ml_, LevelID_[level], pre_or_post,
 				       Mynum_smoother_steps, Myomega, NumPDEEqns_);
+
     } else if( MySmoother == "symmetric block Gauss-Seidel" ) {
 
-      // ================== //
-      // block Gauss-Seidel //
-      // ================== //
+      // ============================ //
+      // symmetric block Gauss-Seidel //
+      // ============================ //
       
       if( verbose_ ) cout << msg << "symmetric block Gauss-Seidel (sweeps="
 			  << Mynum_smoother_steps << ",omega=" << Myomega << ","
 			  << MyPreOrPostSmoother << ")" << endl;
       ML_Gen_Smoother_SymBlockGaussSeidel(ml_, LevelID_[level], pre_or_post,
 				    Mynum_smoother_steps, Myomega, NumPDEEqns_);
+
     } else if( ( MySmoother == "MLS" ) || ( MySmoother == "Chebyshev" )) {
 
       // === //
