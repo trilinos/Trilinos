@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
   if (argc > 1)
     nx = (int) strtol(argv[1],NULL,10);
   else
-    nx = 8;
+    nx = 50;
   int ny = nx * Comm.NumProc(); // each subdomain is a square
 
   ParameterList GaleriList;
