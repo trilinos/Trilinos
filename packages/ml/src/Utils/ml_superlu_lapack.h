@@ -1,3 +1,5 @@
+#ifndef __MLSUPERLULAPACKH__
+#define __MLSUPERLULAPACKH__
 #if defined(SUPERLU)
 
 #include "ml_common.h"
@@ -9,5 +11,6 @@
 #define ML_DLAMC3_FUNC
 #define ML_DLAMC4_FUNC
 #define ML_DLAMC5_FUNC
+#endif
 #endif
 #endif

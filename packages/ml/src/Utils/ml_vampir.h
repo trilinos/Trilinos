@@ -29,6 +29,9 @@
 #@HEADER
 */
 
+#ifndef __MLVAMPIREH__
+#define __MLVAMPIREH__
+
 #include "ml_common.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -64,3 +67,4 @@ extern void ML_Vampir_Setup(void);
 #endif
 
 #endif /*ifdef ML_VAMPIR*/
+#endif
