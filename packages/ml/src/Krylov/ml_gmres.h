@@ -10,11 +10,11 @@
 /* Date          : December, 1999                                       */
 /* ******************************************************************** */
 
-#include "ml_common.h"
-#include "ml_krylov.h"
-
 #ifndef __MLGMRES__
 #define __MLGMRES__
+
+#include "ml_common.h"
+#include "ml_krylov.h"
 
 #ifndef ML_CPP
 #ifdef __cplusplus
