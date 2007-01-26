@@ -1,3 +1,5 @@
+#ifndef __MLJOSTLEH__
+#define __MLJOSTLEH__
 extern	void	jostle_env(char*);
 
 extern	void	jostle_wrkspc_input(int*,char*);
@@ -13,4 +15,4 @@ extern	int	jostle_mem(void);
 extern	int	jostle_cut(void);
 extern	double	jostle_bal(void);
 extern	double	jostle_tim(void);
-
+#endif
