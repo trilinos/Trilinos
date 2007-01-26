@@ -25,6 +25,9 @@ Modified by:      $Author$
 #include <time.h>
 #include "ml_viz_stats.h"
 
+/* For hashing macro defined in ml_utils.h. */
+uint32_t ml_unew_val;
+
 /* ******************************************************************** */
 /* Timer subroutine                                                     */
 /* ******************************************************************** */
@@ -3198,3 +3201,58 @@ int ML_SetupCoordinates(ML *ml_ptr, int level, int NumPDEEqns,
 
   return(0);
 } /* ML_SetupCoordinates() */
+
+/* ************************************************************************ * */
+
+int ML_hash_init(int hash_list[], int hash_length, int *hash_used)
+{
+  int i;
+
+  for (i = 0; i < hash_length; i++) hash_list[i] = -1;
+  *hash_used = 0;
+  return 0;
+}
+
+/* ************************************************************************ * */
+
+#ifndef ML_UseInlinedHashFunction
+void ML_hash_it( int new_val, int hash_list[], int hash_length,int *hash_used,
+                 int *index)
+{
+  int ui;
+
+  ui = new_val<<1;
+  if (ui < 0) ui = new_val;
+  //index = ((int) ui) % hash_length;
+  *index = ui % hash_length;
+  while ( hash_list[*index] != new_val) {
+    if (hash_list[*index] == -1) { (*hash_used)++; break;}
+    (*index)++;
+    *index = (*index) % hash_length;
+  }
+}
+
+/* ************************************************************************ * */
+/*
+   Important: If you want to use ML_fast_hash, the table size must be 2^k for
+   a positive integer k.
+*/
+
+void ML_fast_hash(int new_val, int hash_list[], int hlm1,int *hash_used,
+                  int *index)
+{
+
+  uint32_t ui;
+
+  ui = new_val;
+  ml_hash_function(ui);
+  /* fast mod because hash_length = 2^k */
+  *index = ((int) ui) & hlm1;
+
+  while ( hash_list[*index] != new_val) {
+    if (hash_list[*index] == -1) { (*hash_used)++; break;}
+    (*index)++;
+    *index = (*index) & hlm1;
+  }
+}
+#endif /*ifndef ML_UseInlinedHashFunction*/

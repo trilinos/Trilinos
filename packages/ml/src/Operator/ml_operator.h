@@ -35,6 +35,7 @@ typedef struct ML_GetrowFunc_Struct ML_GetrowFunc;
 #include "ml_vec.h"
 #include "ml_gridagx.h"
 #include "ml_mls.h"
+#include "ml_utils.h"
 
 #ifdef WKC
 #include <Epetra_Comm.h>
@@ -230,9 +231,6 @@ extern int ML_Operator_Init(ML_Operator *, ML_Comm *comm);
 extern int ML_Operator_Clean(ML_Operator *);
 extern int ML_Operator_Dump(ML_Operator *Ke, double *, double *,
 			    char *str, int);
-extern int ML_hash_init(int hash_list[], int hash_length, int *hash_used);
-extern int ML_hash_it( int new_val, int hash_list[], int hash_length, 
-		       int *hash_used);
 
 extern int ML_Operator_Set_Label(ML_Operator *, char *str);
 extern int ML_Operator_Set_1Levels(ML_Operator *, ML_1Level*, ML_1Level*);

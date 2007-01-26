@@ -432,7 +432,7 @@ int ML_Operator_Add2(ML_Operator *A, ML_Operator *B, ML_Operator *C,
                         &A_length, 0);
       for (j = 0; j < A_length; j++) {
 	global_col = A_gids[A_bindx[j]];
-	hash_val = ML_hash_it(global_col, hashed_inds, index_length,&hash_used);
+	ML_hash_it(global_col, hashed_inds, index_length,&hash_used,&hash_val);
         hashed_inds[hash_val] = global_col;
         hashed_vals[hash_val] += scalarA * A_val[j];
 	A_bindx[j] = hash_val;
@@ -442,7 +442,7 @@ int ML_Operator_Add2(ML_Operator *A, ML_Operator *B, ML_Operator *C,
                         &B_length, 0);
       for (j = 0; j < B_length; j++) {
 	global_col = B_gids[B_bindx[j]];
-	hash_val = ML_hash_it(global_col, hashed_inds, index_length,&hash_used);
+	ML_hash_it(global_col, hashed_inds, index_length,&hash_used, &hash_val);
         hashed_inds[hash_val] = global_col;
         hashed_vals[hash_val] += scalarB*B_val[j];
         B_bindx[j] = hash_val;
@@ -489,7 +489,7 @@ int ML_Operator_Add2(ML_Operator *A, ML_Operator *B, ML_Operator *C,
                         &A_length, 0);
       for (j = 0; j < A_length; j++) {
 	global_col = A_gids[A_bindx[j]];
-	hash_val = ML_hash_it(global_col, hashed_inds, index_length,&hash_used);
+	ML_hash_it(global_col, hashed_inds, index_length,&hash_used, &hash_val);
         hashed_inds[hash_val] = global_col;
         hashed_vals[hash_val] += scalarA * A_val[j];
 	A_bindx[j] = hash_val;
@@ -499,7 +499,7 @@ int ML_Operator_Add2(ML_Operator *A, ML_Operator *B, ML_Operator *C,
                         &B_length, 0);
       for (j = 0; j < B_length; j++) {
 	global_col = B_gids[B_bindx[j]];
-	hash_val = ML_hash_it(global_col, hashed_inds, index_length,&hash_used);
+	ML_hash_it(global_col, hashed_inds, index_length,&hash_used, &hash_val);
         hashed_inds[hash_val] = global_col;
         hashed_vals[hash_val] += scalarB*B_val[j];
         B_bindx[j] = hash_val;

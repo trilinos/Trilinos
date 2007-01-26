@@ -37,6 +37,48 @@
 #define ML_max(x,y) (((x) > (y)) ? (x) : (y))
 #define ML_avoid_unused_param(x) ML_use_param(x,0)
 
+/* A fast integer hash function written by Bob Jenkins. */
+#define ml_hash_function(a) \
+{ \
+  a = (a+0x7ed55d16) + (a<<12); \
+  a = (a^0xc761c23c) ^ (a>>19); \
+  a = (a+0x165667b1) + (a<<5); \
+  a = (a+0xd3a2646c) ^ (a<<9); \
+  a = (a+0xfd7046c5) + (a<<3); \
+  a = (a^0xb55a4f09) ^ (a>>16); \
+}
+
+#define ML_UseInlinedHashFunction
+
+#ifdef ML_UseInlinedHashFunction
+extern uint32_t ml_unew_val;
+/* Important: If you want to use ML_fast_hash, the table size must be 2^k for a
+   positive integer k. */
+#define ML_fast_hash(new_val, hash_table, hlm1, used, hash_index) \
+{ \
+  ml_unew_val = new_val; \
+  ml_hash_function(ml_unew_val); \
+  *hash_index = ((int) ml_unew_val) & hlm1; \
+  while ( hash_table[*hash_index] != new_val) { \
+    if (hash_table[*hash_index] == -1) { (*used)++; break;} \
+    (*hash_index)++; \
+    *hash_index = (*hash_index) & hlm1; \
+  } \
+}
+
+#define ML_hash_it(new_val,hash_table,hash_length,used, hash_index) \
+{ \
+  *hash_index = new_val<<1; \
+  if (*hash_index < 0) *hash_index = new_val; \
+  *hash_index = (*hash_index) % hash_length; \
+  while ( hash_table[*hash_index] != new_val) { \
+    if (hash_table[*hash_index] == -1) { (*used)++; break;} \
+    (*hash_index)++; \
+    *hash_index = (*hash_index) % hash_length; \
+  } \
+}
+#endif /*ifdef ML_UseInlinedHashFunction */
+
 /* JJH FIXME
 #ifdef __GNUC__
 
@@ -166,6 +208,13 @@ std::cout << "--- Leaving:
    int ML_SetupCoordinates(ML *ml_ptr, int level, int NumPDEEqns,
                         double *in_x_coord, double *in_y_coord,
                         double *in_z_coord);
+   int ML_hash_init(int hash_list[], int hash_length, int *hash_used);
+#ifndef ML_UseInlinedHashFunction
+   void ML_hash_it(int value, int table[], int tableLength,int *spaceUsed,
+                   int *hashKey);
+   void ML_fast_hash(int value, int table[], int tableLengthMinusOne,
+                     int *spaceUsed, int *hashKey);
+#endif
 
 #ifndef ML_CPP
 #ifdef __cplusplus

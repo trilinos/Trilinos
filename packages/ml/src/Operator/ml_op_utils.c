@@ -1586,7 +1586,7 @@ int ML_build_overlapped_pre_comm(ML_Operator *tempA, ML_CommInfoOP
 	   (current >= max_per_proc*(proc_id+1))) {
 	/* now check if it is already in the hash table       */
 	/* if not, add to hash table and mark gid as external */
-	index = ML_hash_it( current, hash_list, hash_length, hash_used);
+	ML_hash_it( current, hash_list, hash_length, hash_used, &index);
 	if ( hash_list[index] == -1 ) {
 	  hash_list[index] = current;
 
@@ -1678,8 +1678,8 @@ int ML_Operator_HashGlobalRcvList(ML_CommInfoOP *pre_comm, int Nrows,
     Nrcv = ML_CommInfoOP_Get_Nrcvlist(pre_comm, neighbors[i]);
     rlist = ML_CommInfoOP_Get_rcvlist(pre_comm, neighbors[i]);
     for (j = 0; j < Nrcv; j++) {
-      index = ML_hash_it((int)(global_ids[rlist[j]]),hash_list,hash_length,
-			 hash_used);
+      ML_hash_it((int)(global_ids[rlist[j]]),hash_list,hash_length,
+			 hash_used, &index);
       if (hash_list[index] == -1) {
 	if (*Nexternal == *Nexternal_allocated) {/* Need to increase extern[]*/
 	  *Nexternal_allocated +=(*Nexternal_allocated+NGhost+10-oldNexternal);
@@ -1873,7 +1873,7 @@ int ML_overlap(ML_Operator *oldA, ML_Operator *newA, int overlap,
 	/* If in the hash table, then it is an element that will be */
 	/* kept in overlapped matrix. Othewise, this element gets   */
 	/* thrown away as it extends too far.                       */
-	index = ML_hash_it( current, hash_list, hash_length, &hash_used);
+	ML_hash_it( current, hash_list, hash_length, &hash_used, &index);
 	if ( hash_list[index] == -1 ) {
 	  hash_used--;   /* ML_hash_it assumes that the element will be */
 	                 /* added to the hash table and so it increments*/

@@ -10,10 +10,16 @@
 #include "ml_rap.h"
 #include "ml_memory.h"
 #include "ml_aztec_utils.h"
+#include <limits.h>
+
+#include <stdint.h>     /* defines uint32_t etc */
+#include <sys/param.h>  /* attempt to define endianness */
+#ifdef linux
+# include <endian.h>    /* attempt to define endianness */
+#endif
 
 #define HASH_SIZE     1024   /* should be a power of two */
 #define MASK          01777  /* should be bit pattern of hash size minus 1 */
-
 
 /* ******************************************************************** */
 /* matrix matrix multiplication                                         */ 
@@ -63,6 +69,7 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
   int    *Ccpntr, *Crpntr, oldstart = 0;
   struct aztec_context  *Ccontext;
   struct ML_vbrdata     *Cvbr_mat;
+  int hashTableIsPowerOfTwo = 0;
 
 
   printf("This is an experimental routine. It basically works but ...\n");
@@ -308,13 +315,62 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
   else B_total_Nnz = Bmatrix->N_nonzeros;
   B_total_Nnz++; /* avoid possible division by zero below */
 
-  index_length = 2*accum_size;
-  dtemp = 2.*((double) accum_size);
-  while (index_length < 0 ) { /* overflow */
-    dtemp *= 1.7;
-    index_length = (int) dtemp;
-  }
+  /* ******************************************************************
+     Try to make the hash table size a power of two.  Doing so makes
+     hash table lookup more efficient by using the bitwise AND (&) operator
+     and avoiding the modulus (%) function.
 
+     The new lookup is ML_fast_hash, the original is ML_hash_it.  All hashing
+     is located in ml/src/Utils/ml_utils.[ch].
+
+     First check for and handle potential overflow:
+
+           Case 1:  If accum_size is larger than 2^29, but not by much,
+                    use a hash table size of 2^30.
+           Case 2:  If accum_size is larger than 2^29 but less than 2^30,
+                    use a hash table size of 2*accum_size.
+           Case 3:  If accum_size is larger than 2^30 but not by much,
+                    use a hash table size of 2^30-1 (INT_MAX).
+           Case 4:  If accum_size is much larger than 2^30,
+                    issue an error and abort.
+
+     Otherwise, choose the hash table to be 2^k, where 2^k > 2*accum_size,
+     k is a positive integer, and k < 31.
+
+     Note:
+     This potentially wastes some space if accum_size is close to but not
+     exactly a power of 2.
+
+     Some useful constants:
+
+       2^31-1 = 2147483647 = INT_MAX
+       2^30   = 1073741824
+       2^29   =  536870912
+
+  ****************************************************************** */
+
+  if ( accum_size > 536870912 ) {
+    if ( 1.8*accum_size < 1073741824) {
+      index_length = 1073741824;
+      hashTableIsPowerOfTwo = 1;
+    } else if (accum_size < 1073741824) {
+      index_length = 2*accum_size;
+      hashTableIsPowerOfTwo = 0;
+    } else if (1.8*accum_size < INT_MAX) {
+      index_length = INT_MAX;
+      hashTableIsPowerOfTwo = 0;
+    } else {
+      printf("Cannot create hash table for accumulator of size %d\n",
+             accum_size);
+      exit(1);
+    }
+  } else {
+    index_length = 2;
+    while (index_length < 2*accum_size) {
+      index_length *= 2;
+    }
+    hashTableIsPowerOfTwo = 1;
+  }
 
   accum_index  = (int *) ML_allocate(index_length*sizeof(int));
   col_inds     = (int *) ML_allocate(index_length*sizeof(int));
@@ -403,33 +459,69 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
 
     tcols = 0;
     hash_used = 0;
-    for (i = 0; i < subB_Nnz; i++) {
-      if (hash_used >= ((int) (.75 * index_length)) ) {
-	ML_free(accum_index);
-	accum_index = (int *) ML_allocate(sizeof(int)*2*index_length);
-	tptr = (int *) ML_allocate(sizeof(int)*2*index_length);
-	if (tptr == NULL) pr_error("ML_matmat_mult: out of tptr space\n");
-	for (j = 0; j < 2*index_length; j++) accum_index[j] = -1;
-	for (j = 0; j < 2*index_length; j++) tptr[j] = -1;
-	for (j = 0; j < i; j++)
-	  Bcols[j] = col_inds[Bcols[j]];
-	ML_free(col_inds);  col_inds = tptr;
-	tcols = 0;
-	hash_used = 0;
-	index_length *= 2;
-	for (j = 0; j < i; j++) {
-	  hash_val = ML_hash_it(Bcols[j], col_inds, index_length, &hash_used);
-	  if (col_inds[hash_val] == -1) tcols++;
-	  col_inds[hash_val] = Bcols[j];
-	  Bcols[j] = hash_val;
-	}
-      }
-       
-      hash_val = ML_hash_it(Bcols[i], col_inds, index_length, &hash_used);
-      if (col_inds[hash_val] == -1) tcols++;
-      col_inds[hash_val] = Bcols[i];
-      Bcols[i] = hash_val;
-    }
+    if (hashTableIsPowerOfTwo)
+    {
+      int ilm1 = index_length-1;
+      for (i = 0; i < subB_Nnz; i++) {
+        if (hash_used >= ((int) (.5 * index_length)) ) {
+          ML_free(accum_index);
+          if (index_length >= 1073741824) /* 2^30 */
+            pr_error("Exceeded largest possible hash table size\n");
+          accum_index = (int *) ML_allocate(sizeof(int)*2*index_length);
+          tptr = (int *) ML_allocate(sizeof(int)*2*index_length);
+          if (tptr == NULL) pr_error("ML_matmat_mult: out of tptr space\n");
+          for (j = 0; j < 2*index_length; j++) accum_index[j] = -1;
+          for (j = 0; j < 2*index_length; j++) tptr[j] = -1;
+          for (j = 0; j < i; j++)
+            Bcols[j] = col_inds[Bcols[j]];
+          ML_free(col_inds);  col_inds = tptr;
+          tcols = 0;
+          hash_used = 0;
+          index_length *= 2;
+          ilm1 = index_length-1;
+          for (j = 0; j < i; j++) {
+            ML_fast_hash(Bcols[j], col_inds,ilm1,&hash_used, &hash_val);
+            if (col_inds[hash_val] == -1) tcols++;
+            col_inds[hash_val] = Bcols[j];
+            Bcols[j] = hash_val;
+          }
+        }
+         
+        ML_fast_hash(Bcols[i], col_inds, ilm1, &hash_used, &hash_val);
+        if (col_inds[hash_val] == -1) tcols++;
+        col_inds[hash_val] = Bcols[i];
+        Bcols[i] = hash_val;
+      } /*for (i = 0; i < subB_Nnz; i++)*/
+    } else {
+      /* hash table size is not 2^k */
+      for (i = 0; i < subB_Nnz; i++) {
+        if (hash_used >= ((int) (.5 * index_length)) ) {
+          ML_free(accum_index);
+          accum_index = (int *) ML_allocate(sizeof(int)*2*index_length);
+          tptr = (int *) ML_allocate(sizeof(int)*2*index_length);
+          if (tptr == NULL) pr_error("ML_matmat_mult: out of tptr space\n");
+          for (j = 0; j < 2*index_length; j++) accum_index[j] = -1;
+          for (j = 0; j < 2*index_length; j++) tptr[j] = -1;
+          for (j = 0; j < i; j++)
+            Bcols[j] = col_inds[Bcols[j]];
+          ML_free(col_inds);  col_inds = tptr;
+          tcols = 0;
+          hash_used = 0;
+          index_length *= 2;
+          for (j = 0; j < i; j++) {
+            ML_hash_it(Bcols[j], col_inds, index_length, &hash_used, &hash_val);
+            if (col_inds[hash_val] == -1) tcols++;
+            col_inds[hash_val] = Bcols[j];
+            Bcols[j] = hash_val;
+          }
+        }
+         
+        ML_hash_it(Bcols[i], col_inds, index_length, &hash_used, &hash_val);
+        if (col_inds[hash_val] == -1) tcols++;
+        col_inds[hash_val] = Bcols[i];
+        Bcols[i] = hash_val;
+      } /*for (i = 0; i < subB_Nnz; i++) */
+    } /* if (hashTableIsPowerOfTwo) */
 
     /* Count how many columns there are, record the number of   */
     /* columns and change the size of the accumulator if needed */
@@ -766,6 +858,7 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
   (*Cmatrix)->invec_leng    = save_ints[5];   
 
 }
+
 void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
                     ML_Operator **Cmatrix)
 {
@@ -791,6 +884,7 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
    int tcols, hash_used, j, *tptr;
    int *acc_col_ptr, *Bcol_ptr; double *acc_val_ptr, *Bval_ptr;
    int allzeros;
+   int hashTableIsPowerOfTwo = 0;
    /*
    t1 = GetClock();
    */
@@ -853,18 +947,12 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
          printf("*** ML_matmat_mult: %s x %s\n",Amatrix->label,Bmatrix->label);
 	  printf("*** %d: recomputing rcv length (%u %u)\n",Bmatrix->comm->ML_mypid,Bmatrix,current); fflush(stdout);
 #endif
-#ifdef charles
-#undef charles
-#endif
 	  ML_CommInfoOP_Compute_TotalRcvLength(current->getrow->pre_comm);
 	}
 
          Next_est += current->getrow->pre_comm->total_rcv_length;
 #ifdef charles
 	  printf("*** %d: Nghost = %d  %d (%d x %d)\n",Bmatrix->comm->ML_mypid,Next_est,current->getrow->pre_comm->total_rcv_length,Bmatrix->outvec_leng,Bmatrix->invec_leng); fflush(stdout);
-#endif
-#ifdef charles
-#undef charles
 #endif
       }
 #ifdef charles
@@ -875,7 +963,6 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
 #ifdef charles
    printf("\n\n%d: Next_est = %d\n\n",Bmatrix->comm->ML_mypid,Next_est);
 #endif
-
    /* Estimate the total number of columns in Bmatrix. Actually,  */
    /* we need a crude estimate. We will use twice this number for */
    /* hashing the columns. Once we are finished hashing columns   */
@@ -976,7 +1063,6 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
       exit(1);
    }
 
-
    /**************************************************************************/
    /* Make a copy of Bmatrix and use this copy to speed up the computation.  */
    /*   1) First count the total number of nonzeros                          */
@@ -999,13 +1085,62 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
    else B_total_Nnz = Bmatrix->N_nonzeros;
    B_total_Nnz++; /* avoid possible division by zero below */
 
-   index_length = 2*accum_size;
-   dtemp = 2.*((double) accum_size);
-   while (index_length < 0 ) { /* overflow */
-     dtemp *= 1.7;
-     index_length = (int) dtemp;
-   }
+   /* ******************************************************************
+      Try to make the hash table size a power of two.  Doing so makes
+      hash table lookup more efficient by using the bitwise AND (&) operator
+      and avoiding the modulus (%) function.
 
+      The new lookup is ML_fast_hash, the original is ML_hash_it.  All hashing
+      is located in ml/src/Utils/ml_utils.[ch].
+
+      First check for and handle potential overflow:
+
+            Case 1:  If accum_size is larger than 2^29, but not by much,
+                     use a hash table size of 2^30.
+            Case 2:  If accum_size is larger than 2^29 but less than 2^30,
+                     use a hash table size of 2*accum_size.
+            Case 3:  If accum_size is larger than 2^30 but not by much,
+                     use a hash table size of 2^30-1 (INT_MAX).
+            Case 4:  If accum_size is much larger than 2^30,
+                     issue an error and abort.
+
+      Otherwise, choose the hash table to be 2^k, where 2^k > 2*accum_size,
+      k is a positive integer, and k < 31.
+
+      Note:
+      This potentially wastes some space if accum_size is close to but not
+      exactly a power of 2.
+
+      Some useful constants:
+
+        2^31-1 = 2147483647 = INT_MAX
+        2^30   = 1073741824
+        2^29   =  536870912
+
+   ****************************************************************** */
+ 
+   if ( accum_size > 536870912 ) {
+     if ( 1.8*accum_size < 1073741824) {
+       index_length = 1073741824;
+       hashTableIsPowerOfTwo = 1;
+     } else if (accum_size < 1073741824) {
+       index_length = 2*accum_size;
+       hashTableIsPowerOfTwo = 0;
+     } else if (1.8*accum_size < INT_MAX) {
+       index_length = INT_MAX;
+       hashTableIsPowerOfTwo = 0;
+     } else {
+       printf("Cannot create hash table for accumulator of size %d\n",
+              accum_size);
+       exit(1);
+     }
+   } else {
+     index_length = 2;
+     while (index_length < 2*accum_size) {
+       index_length *= 2;
+     }
+     hashTableIsPowerOfTwo = 1;
+   }
 
    accum_index  = (int *) ML_allocate(index_length*sizeof(int));
    col_inds     = (int *) ML_allocate(index_length*sizeof(int));
@@ -1041,6 +1176,7 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
        if (rows_that_fit == 0) rows_that_fit++;
      }
       else rows_that_fit = 1;
+
 
    *Cmatrix        = NULL;
    previous_matrix = NULL;
@@ -1105,39 +1241,86 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
 
    tcols = 0;
    hash_used = 0;
-   for (i = 0; i < subB_Nnz; i++) {
-     if (hash_used >= ((int) (.75 * index_length)) ) {
+
+   if (hashTableIsPowerOfTwo)
+   {
+     int ilm1 = index_length-1;
+     for (i = 0; i < subB_Nnz; i++) {
+       if (hash_used >= ((int) (.5 * index_length)) ) {
 #ifdef charles
-       printf("%d: running out of hashing space: row = %d, tcols=%d"
-              " hash_length=%d, hash_used = %d\n",
-	          Bmatrix->comm->ML_mypid,i,tcols,index_length,hash_used);
-       fflush(stdout);
+         printf("%d: running out of hashing space: row = %d, tcols=%d"
+                " hash_length=%d, hash_used = %d\n",
+  	          Bmatrix->comm->ML_mypid,i,tcols,index_length,hash_used);
+         fflush(stdout);
 #endif
-       ML_free(accum_index);
-       accum_index = (int *) ML_allocate(sizeof(int)*2*index_length);
-       tptr = (int *) ML_allocate(sizeof(int)*2*index_length);
-       if (tptr == NULL) pr_error("ML_matmat_mult: out of tptr space\n");
-       for (j = 0; j < 2*index_length; j++) accum_index[j] = -1;
-       for (j = 0; j < 2*index_length; j++) tptr[j] = -1;
-       for (j = 0; j < i; j++)
-	 Bcols[j] = col_inds[Bcols[j]];
-       ML_free(col_inds);  col_inds = tptr;
-       tcols = 0;
-       hash_used = 0;
-       index_length *= 2;
-       for (j = 0; j < i; j++) {
-	 hash_val = ML_hash_it(Bcols[j], col_inds, index_length, &hash_used);
-	 if (col_inds[hash_val] == -1) tcols++;
-	 col_inds[hash_val] = Bcols[j];
-	 Bcols[j] = hash_val;
+         ML_free(accum_index);
+         if (index_length >= 1073741824) /* 2^30 */
+           pr_error("Exceeded largest possible hash table size\n");
+         accum_index = (int *) ML_allocate(sizeof(int)*2*index_length);
+         tptr = (int *) ML_allocate(sizeof(int)*2*index_length);
+         if (tptr == NULL) pr_error("ML_matmat_mult: out of tptr space\n");
+         for (j = 0; j < 2*index_length; j++) accum_index[j] = -1;
+         for (j = 0; j < 2*index_length; j++) tptr[j] = -1;
+         for (j = 0; j < i; j++)
+           Bcols[j] = col_inds[Bcols[j]];
+         ML_free(col_inds);  col_inds = tptr;
+         tcols = 0;
+         hash_used = 0;
+         index_length *= 2;
+         ilm1 = index_length-1;
+         for (j = 0; j < i; j++) {
+           ML_fast_hash(Bcols[j], col_inds,ilm1,&hash_used, &hash_val);
+           if (col_inds[hash_val] == -1) tcols++;
+           col_inds[hash_val] = Bcols[j];
+           Bcols[j] = hash_val;
+         }
        }
-     }
-       
-     hash_val = ML_hash_it(Bcols[i], col_inds, index_length, &hash_used);
-     if (col_inds[hash_val] == -1) tcols++;
-     col_inds[hash_val] = Bcols[i];
-     Bcols[i] = hash_val;
-   }
+       ML_fast_hash(Bcols[i], col_inds, ilm1, &hash_used, &hash_val);
+       if (col_inds[hash_val] == -1) tcols++;
+       col_inds[hash_val] = Bcols[i];
+       Bcols[i] = hash_val;
+     } /*for (i = 0; i < subB_Nnz; i++)*/
+
+   } else {
+
+     for (i = 0; i < subB_Nnz; i++) {
+       if (hash_used >= ((int) (.75 * index_length)) ) {
+#ifdef charles
+         printf("%d: running out of hashing space: row = %d, tcols=%d"
+                " hash_length=%d, hash_used = %d\n",
+  	          Bmatrix->comm->ML_mypid,i,tcols,index_length,hash_used);
+         fflush(stdout);
+#endif
+         ML_free(accum_index);
+         if (index_length >= 1073741824) /* 2^30 */
+           pr_error("Exceeded largest possible hash table size\n");
+         accum_index = (int *) ML_allocate(sizeof(int)*2*index_length);
+         tptr = (int *) ML_allocate(sizeof(int)*2*index_length);
+         if (tptr == NULL) pr_error("ML_matmat_mult: out of tptr space\n");
+         for (j = 0; j < 2*index_length; j++) accum_index[j] = -1;
+         for (j = 0; j < 2*index_length; j++) tptr[j] = -1;
+         for (j = 0; j < i; j++)
+           Bcols[j] = col_inds[Bcols[j]];
+         ML_free(col_inds);  col_inds = tptr;
+         tcols = 0;
+         hash_used = 0;
+         index_length *= 2;
+         for (j = 0; j < i; j++) {
+           ML_hash_it(Bcols[j], col_inds, index_length, &hash_used, &hash_val);
+           if (col_inds[hash_val] == -1) tcols++;
+           col_inds[hash_val] = Bcols[j];
+           Bcols[j] = hash_val;
+         }
+       }
+         
+       ML_hash_it(Bcols[i], col_inds, index_length, &hash_used, &hash_val);
+       if (col_inds[hash_val] == -1) tcols++;
+       col_inds[hash_val] = Bcols[i];
+       Bcols[i] = hash_val;
+     } /*for (i = 0; i < subB_Nnz; i++)*/
+
+   } /*if (hashTableIsPowerOfTwo)*/
+
 #ifdef charles
    printf("%d: after hashing %d %d\n",Bmatrix->comm->ML_mypid,tcols,hash_used);
    fflush(stdout);
@@ -1161,15 +1344,10 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
 	pr_error("ML_matmat_mult: no room for accumulator\n");
    }
 
-
-
    /**************************************************************************/
    /* Perform the matrix-matrix multiply operation by computing one new row  */
    /* at a time.                                                             */
    /*------------------------------------------------------------------------*/
-#ifdef takeout
-   for (k = 0; k < accum_size; k++) accum_val[k] = 0.;
-#endif
 
    for (i = start; i < end ; i++) {
       Ncols = 0;
@@ -1316,9 +1494,6 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
         }
       }
       /*      */
-#ifdef takeout
-for (jj = 0; jj < Ncols; jj++) accum_val[jj] = 0.;
-#endif
       C_ptr[sub_i+1] = next_nz;
       sub_i++;
       if (Ncols > max_nz_row_new) max_nz_row_new = Ncols;
@@ -1366,7 +1541,7 @@ for (jj = 0; jj < Ncols; jj++) accum_val[jj] = 0.;
      ML_CommInfoOP_Clone(&((*Cmatrix)->getrow->pre_comm),
 			 Bmatrix->getrow->pre_comm);
    }
-}
+} /* ML_matmat_mult() */
 
 /************************************************************************/
 /* For any accum_col[k] == accum_col[j] (k,j < Ncols), sum the          */
@@ -1770,44 +1945,6 @@ void ML_2matmult(ML_Operator *Mat1, ML_Operator *Mat2,
    ML_RECUR_CSR_MSRdata_Destroy(Mat1Mat2comm);
    ML_Operator_Destroy(&Mat1Mat2comm);
 }
-int ML_hash_init(int hash_list[], int hash_length, int *hash_used)
-{
-  int i;
-
-  for (i = 0; i < hash_length; i++) hash_list[i] = -1;
-  *hash_used = 0;
-  return 0;
-}
-
-int ML_hash_it( int new_val, int hash_list[], int hash_length,int *hash_used) {
-
-  int index;
-#ifdef charles
-  int origindex;
-#endif
-
-  index = new_val<<1;
-  if (index < 0) index = new_val;
-  index = index%hash_length;
-#ifdef charles
-  origindex = index;
-#endif
-  while ( hash_list[index] != new_val) {
-    if (hash_list[index] == -1) { (*hash_used)++; break;}
-    /* JJH */
-    /*index = (++index)%hash_length;*/
-    index++;
-    index = (index)%hash_length;
-    /* --JJH */
-#ifdef charles
-    if (origindex == index)
-       fprintf(stderr,"ML_hash_it: looped around original index = %d, new_val = %d, hash_length = %d, hash_used = %d\n");
-#endif
-  }
-
-  return(index);
-}
-
 
 /*
 Memory improvements:
@@ -1847,7 +1984,7 @@ int ML_determine_Brows(int start, int *end, ML_Operator *Amatrix,
 #endif
    while ( *NBrows < *rows_that_fit ) {
       if (j < rowi_N) {
-         hash_val = ML_hash_it(A_i_cols[j], rows, rows_length, &hash_used);
+        ML_hash_it(A_i_cols[j], rows, rows_length, &hash_used, &hash_val);
          if (rows[hash_val] == -1) {
             (*NBrows)++;
 	    if ( *NBrows == *rows_that_fit) {
@@ -1892,8 +2029,8 @@ int ML_determine_Brows(int start, int *end, ML_Operator *Amatrix,
    return 0;
 } 
 int ML_determine_Bblkrows(int start, int *end, ML_Operator *Amatrix,
-		       int *irows[], int *irows_length, int *NBrows,
-		       int *rows_that_fit, 
+               int *irows[], int *irows_length, int *NBrows,
+               int *rows_that_fit, 
                 void   (*Agetrow)(ML_Operator *,int,int *,int *,int **,
                        int **,int *,int))
 {
@@ -1916,25 +2053,25 @@ int ML_determine_Bblkrows(int start, int *end, ML_Operator *Amatrix,
 #endif
    while ( *NBrows < *rows_that_fit ) {
       if (j < rowi_N) {
-         hash_val = ML_hash_it(A_i_cols[j], rows, rows_length, &hash_used);
+         ML_hash_it(A_i_cols[j], rows, rows_length, &hash_used, &hash_val);
          if (rows[hash_val] == -1) {
             (*NBrows)++;
-	    if ( *NBrows == *rows_that_fit) {
-	      if ( (j+1 < rowi_N) && (i-1 == start)) {
+        if ( *NBrows == *rows_that_fit) {
+          if ( (j+1 < rowi_N) && (i-1 == start)) {
                  (*rows_that_fit)++;
                  if ( *rows_that_fit > rows_length) {
-		   (*irows_length) += 5;
-		   *irows = (int *) ML_allocate((*irows_length)*sizeof(int));
-		   if (*irows == NULL) pr_error("matmat: out of space\n");
-		   for (kk = 0; kk < rows_length; kk++) (*irows)[kk]=rows[kk];
-		   for (kk = rows_length; kk < *irows_length; kk++) (*irows)[kk]=-1;
-		   ML_free(rows);
+           (*irows_length) += 5;
+           *irows = (int *) ML_allocate((*irows_length)*sizeof(int));
+           if (*irows == NULL) pr_error("matmat: out of space\n");
+           for (kk = 0; kk < rows_length; kk++) (*irows)[kk]=rows[kk];
+           for (kk = rows_length; kk < *irows_length; kk++) (*irows)[kk]=-1;
+           ML_free(rows);
                    rows = *irows;
-		   rows_length = *irows_length;
-		 }
-	      }
-      	    }
-	 }
+           rows_length = *irows_length;
+         }
+          }
+            }
+     }
          rows[hash_val] = A_i_cols[j++];
       }
       else {
@@ -1959,7 +2096,7 @@ int ML_determine_Bblkrows(int start, int *end, ML_Operator *Amatrix,
    fflush(stdout);
 #endif
    return 0;
-} 
+}
 /*    
         
 
