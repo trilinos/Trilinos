@@ -189,9 +189,8 @@ int MatlabFileToCrsMatrix(const char *filename,
   }
 
   if (handle!=0) fclose(handle);
-
-  Epetra_Map domainMap(numGlobalRows, 0, comm);
-  Epetra_Map rangeMap(numGlobalCols, 0, comm);
+  Epetra_Map rangeMap(numGlobalRows, 0, comm);
+  Epetra_Map domainMap(numGlobalCols, 0, comm);
   A = new Epetra_CrsMatrix(Copy, rangeMap, 0);
 
   // Now read in each triplet and store to the local portion of the matrix if the row is owned.
