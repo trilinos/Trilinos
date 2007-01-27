@@ -51,6 +51,7 @@
 #define ML_UseInlinedHashFunction
 
 #ifdef ML_UseInlinedHashFunction
+#include <stdint.h>
 extern uint32_t ml_unew_val;
 /* Important: If you want to use ML_fast_hash, the table size must be 2^k for a
    positive integer k. */
