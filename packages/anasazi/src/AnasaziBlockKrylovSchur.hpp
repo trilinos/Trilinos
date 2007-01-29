@@ -819,6 +819,7 @@ namespace Anasazi {
     // Check to see if the number of requested Ritz vectors has changed.
     if (numRitzVecs != numRitzVecs_) {
       if (numRitzVecs) {
+        ritzVectors_ = Teuchos::null;
         ritzVectors_ = MVT::Clone(*V_, numRitzVecs);
       } else {
         ritzVectors_ = Teuchos::null;
@@ -871,6 +872,7 @@ namespace Anasazi {
     ritzValues_.resize(newsd);
     ritzResiduals_.resize(newsd,MT_ONE);
     ritzOrder_.resize(newsd);
+    V_ = Teuchos::null;
     V_ = MVT::Clone(*tmp,newsd+blockSize_);
     H_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(newsd+blockSize_,newsd) );
     Q_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(newsd,newsd) );

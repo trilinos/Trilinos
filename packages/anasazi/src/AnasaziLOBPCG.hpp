@@ -698,6 +698,20 @@ namespace Anasazi {
     // if size is decreased, take the first blockSize vectors of all and leave state as is
     // otherwise, grow/allocate space and set solver to unitialized
 
+    Teuchos::RefCountPtr<const MV> tmp;
+    // grab some Multivector to Clone
+    // in practice, getInitVec() should always provide this, but it is possible to use a 
+    // Eigenproblem with nothing in getInitVec() by manually initializing with initialize(); 
+    // in case of that strange scenario, we will try to Clone from X_
+    if (blockSize_ > 0) {
+      tmp = X_;
+    }
+    else {
+      tmp = problem_->getInitVec();
+      TEST_FOR_EXCEPTION(tmp == Teuchos::null,std::logic_error,
+                         "Anasazi::LOBPCG::setBlockSize(): eigenproblem did not specify initial vectors to clone from.");
+    }
+
     TEST_FOR_EXCEPTION(blockSize <= 0, std::invalid_argument, "Anasazi::LOBPCG::setBlockSize(): block size must be strictly postive.");
     if (blockSize == blockSize_) {
       // do nothing
@@ -706,6 +720,11 @@ namespace Anasazi {
     else if (blockSize < blockSize_) {
       // shrink vectors
       blockSize_ = blockSize;
+
+      // release H,MH_,KH_
+      H_ = Teuchos::null;
+      KH_ = Teuchos::null;
+      MH_ = Teuchos::null;
 
       theta_.resize(3*blockSize_);
       ritz2norms_.resize(3*blockSize_);
@@ -737,30 +756,40 @@ namespace Anasazi {
         }
       }
       else {
+        // release previous multivectors
+        X_ = Teuchos::null;
+        KX_ = Teuchos::null;
+        MX_ = Teuchos::null;
+        P_ = Teuchos::null;
+        KP_ = Teuchos::null;
+        MP_ = Teuchos::null;
+        R_ = Teuchos::null;
+
         // shrink multivectors without copying
-        X_ = MVT::Clone(*X_,blockSize_);
-        KX_ = MVT::Clone(*KX_,blockSize_);
+        X_ = MVT::Clone(*tmp,blockSize_);
+        KX_ = MVT::Clone(*tmp,blockSize_);
         if (hasM_) {
-          MX_ = MVT::Clone(*MX_,blockSize_);
+          MX_ = MVT::Clone(*tmp,blockSize_);
         }
         else {
           MX_ = X_;
         }
-        R_ = MVT::Clone(*R_,blockSize_);
-        P_ = MVT::Clone(*P_,blockSize_);
-        KP_ = MVT::Clone(*KP_,blockSize_);
+        R_ = MVT::Clone(*tmp,blockSize_);
+        P_ = MVT::Clone(*tmp,blockSize_);
+        KP_ = MVT::Clone(*tmp,blockSize_);
         if (hasM_) {
-          MP_ = MVT::Clone(*MP_,blockSize_);
+          MP_ = MVT::Clone(*tmp,blockSize_);
         }
         else {
           MP_ = P_;
         }
       }
+
       // shrink H
-      H_ = MVT::Clone(*H_,blockSize_);
-      KH_ = MVT::Clone(*KH_,blockSize_);
+      H_ = MVT::Clone(*tmp,blockSize_);
+      KH_ = MVT::Clone(*tmp,blockSize_);
       if (hasM_) {
-        MH_ = MVT::Clone(*MH_,blockSize_);
+        MH_ = MVT::Clone(*tmp,blockSize_);
       }
       else {
         MH_ = H_;
@@ -770,19 +799,18 @@ namespace Anasazi {
       // this is also the scenario for our initial call to setBlockSize(), in the constructor
       initialized_ = false;
 
-      Teuchos::RefCountPtr<const MV> tmp;
-      // grab some Multivector to Clone
-      // in practice, getInitVec() should always provide this, but it is possible to use a 
-      // Eigenproblem with nothing in getInitVec() by manually initializing with initialize(); 
-      // in case of that strange scenario, we will try to Clone from X_
-      if (blockSize_ > 0) {
-        tmp = X_;
-      }
-      else {
-        tmp = problem_->getInitVec();
-        TEST_FOR_EXCEPTION(tmp == Teuchos::null,std::logic_error,
-                           "Anasazi::LOBPCG::setBlockSize(): eigenproblem did not specify initial vectors to clone from.");
-      }
+      // free allocated memory
+      X_ = Teuchos::null;
+      KX_ = Teuchos::null;
+      MX_ = Teuchos::null;
+      P_ = Teuchos::null;
+      KP_ = Teuchos::null;
+      MP_ = Teuchos::null;
+      H_ = Teuchos::null;
+      KH_ = Teuchos::null;
+      MH_ = Teuchos::null;
+      R_ = Teuchos::null;
+
       // grow/allocate vectors
       theta_.resize(3*blockSize,NANVAL);
       ritz2norms_.resize(3*blockSize_,NANVAL);
@@ -1236,7 +1264,7 @@ namespace Anasazi {
     // if fullOrtho_ == true, then we must produce the following on every iteration:
     // [newX newP] = [X H P] [CX;CP]
     // the structure of [CX;CP] when using full orthogonalization does not allow us to 
-    // do this in place, and R_ does not have enough storage for newX and newP. therefore, 
+    // do this in situ, and R_ does not have enough storage for newX and newP. therefore, 
     // we must allocate additional storage for this.
     // otherwise, when not using full orthogonalization, the structure
     // [newX newP] = [X H P] [CX1  0 ]

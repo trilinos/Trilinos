@@ -669,6 +669,14 @@ namespace Anasazi {
     R2norms_.resize(blockSize_,NANVAL);
     //
     // clone multivectors off of tmp
+    //
+    // free current allocation first, to make room for new allocation
+    X_ = Teuchos::null;
+    KX_ = Teuchos::null;
+    MX_ = Teuchos::null;
+    R_ = Teuchos::null;
+    V_ = Teuchos::null;
+
     om_->print(Debug," >> Allocating X_\n");
     X_ = MVT::Clone(*tmp,blockSize_);
     om_->print(Debug," >> Allocating KX_\n");
