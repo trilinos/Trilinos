@@ -285,11 +285,22 @@ private:
   virtual int ApplyInverseJacobi(const Epetra_MultiVector& X, 
                                  Epetra_MultiVector& Y) const;
 
-  //! Applies the Jacobi preconditioner to X, returns the result in Y.
+  //! Applies the Gauss-Seidel preconditioner to X, returns the result in Y.
   virtual int ApplyInverseGS(const Epetra_MultiVector& X, 
-                             Epetra_MultiVector& Y) const;
+                              Epetra_MultiVector& Y) const;
 
-  //! Applies the Jacobi preconditioner to X, returns the result in Y.
+  virtual int ApplyInverseGS_RowMatrix(const Epetra_MultiVector& X, 
+                                        Epetra_MultiVector& Y) const;
+
+  virtual int ApplyInverseGS_CrsMatrix(const Epetra_CrsMatrix* A,
+                                        const Epetra_MultiVector& X, 
+                                        Epetra_MultiVector& Y) const;
+
+  virtual int ApplyInverseGS_FastCrsMatrix(const Epetra_CrsMatrix* A,
+                                            const Epetra_MultiVector& X, 
+                                            Epetra_MultiVector& Y) const;
+
+  //! Applies the symmetric Gauss-Seidel preconditioner to X, returns the result in Y.
   virtual int ApplyInverseSGS(const Epetra_MultiVector& X, 
                               Epetra_MultiVector& Y) const;
 
