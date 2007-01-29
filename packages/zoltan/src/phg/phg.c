@@ -38,6 +38,7 @@ extern "C" {
 static PARAM_VARS PHG_params[] = {
   /* Add parameters here. */
   {"HYPERGRAPH_PACKAGE",              NULL,  "STRING", 0},
+  {"HYPERGRAPH_METHOD",               NULL,  "STRING", 0},
   {"PHG_FROM_GRAPH_METHOD",           NULL,  "STRING", 0},  
   {"PHG_CUT_OBJECTIVE",               NULL,  "STRING", 0},
   {"PHG_OUTPUT_LEVEL",                NULL,  "INT",    0},
@@ -328,7 +329,8 @@ int **exp_to_part )         /* list of partitions to which exported objs
   if (do_timing)
     ZOLTAN_TIMER_STOP(zz->ZTime, timer_build, zz->Communicator);
 
-  if (zz->LB.Method == PHG_REFINE) { /* UVCUVC DEBUG PRINT */
+/* UVCUVC DEBUG PRINT
+  if (zz->LB.Method == PHG_REFINE) { 
       uprintf(hg->comm, 
           "UVC AFTERBUILD |V|=%6d |E|=%6d #pins=%6d p=%d bal=%.2f cutl=%.2f\n",
           hg->nVtx, hg->nEdge, hg->nPins, p,
@@ -336,12 +338,14 @@ int **exp_to_part )         /* list of partitions to which exported objs
           Zoltan_PHG_Compute_ConCut(hg->comm, hg, parts, p, &err));
       detailed_balance_info(zz, hg, part_sizes, p, parts);
   }
+*/
   
 /*
+  UVCUVC DEBUG PRINT
   uprintf(hg->comm, "Zoltan_PHG kway=%d #parts=%d\n", hgp.kway, zz->LB.Num_Global_Parts);
 */
 
-  if (zz->LB.Method == PARKWAY) {
+  if (!strcasecmp(hgp.hgraph_pkg, "PARKWAY")){
     if (do_timing) {
       if (timer_parkway < 0)
         timer_parkway = Zoltan_Timer_Init(zz->ZTime, 0, "PHG_ParKway");
@@ -353,7 +357,7 @@ int **exp_to_part )         /* list of partitions to which exported objs
         goto End;
     if (do_timing)
       ZOLTAN_TIMER_STOP(zz->ZTime, timer_parkway, zz->Communicator);
-  } else if (zz->LB.Method == PATOH) {
+  } else if (!strcasecmp(hgp.hgraph_pkg, "PATOH")){
     if (hgp.use_timers > 1) {
       if (timer_patoh < 0)
         timer_patoh = Zoltan_Timer_Init(zz->ZTime, 0, "HG_PaToH");
@@ -366,7 +370,7 @@ int **exp_to_part )         /* list of partitions to which exported objs
     if (hgp.use_timers > 1)
       ZOLTAN_TIMER_STOP(zz->ZTime, timer_patoh, zz->Communicator);
   }      
-  else { /* it must be PHG */
+  else { /* it must be PHG or PHG_*  */
     /* UVC: if it is bisection anyways; no need to create vmap etc; 
        rdivide is going to call Zoltan_PHG_Partition anyways... */
     if (hgp.globalcomm.Communicator != MPI_COMM_NULL) {
@@ -426,12 +430,13 @@ int **exp_to_part )         /* list of partitions to which exported objs
     }
   }
 
-  if (zz->LB.Method == PHG_REPART) {
+  if (!strcasecmp(hgp.hgraph_pkg, "PHG_REPART")){
     Zoltan_PHG_Remove_Repart_Data(zz, zoltan_hg, hg, &hgp);
   }
 
 
-  if (zz->LB.Method == PHG_REFINE) { /* UVCUVC DEBUG PRINT */  
+/* UVC DEBUG PRINT
+  if (!strcasecmp(hgp->hgraph_pkg, "PHG_REFINE")){
       uprintf(hg->comm, 
               "UVC ATTHEEND |V|=%6d |E|=%6d #pins=%6d p=%d bal=%.2f cutl=%.2f\n",
               hg->nVtx, hg->nEdge, hg->nPins, p,
@@ -439,7 +444,7 @@ int **exp_to_part )         /* list of partitions to which exported objs
               Zoltan_PHG_Compute_ConCut(hg->comm, hg, parts, p, &err));
       detailed_balance_info(zz, hg, part_sizes, p, parts);
   }
-  
+*/
 
   
   if (do_timing) {
@@ -676,6 +681,7 @@ int Zoltan_PHG_Initialize_Params(
                                    another param at least it will be 0 */
   
   Zoltan_Bind_Param(PHG_params, "HYPERGRAPH_PACKAGE", &hgp->hgraph_pkg);
+  Zoltan_Bind_Param(PHG_params, "HYPERGRAPH_METHOD", &hgp->hgraph_pkg);
   Zoltan_Bind_Param(PHG_params, "PHG_FROM_GRAPH_METHOD", hgp->convert_str);  
   Zoltan_Bind_Param(PHG_params, "PHG_OUTPUT_LEVEL", &hgp->output_level);
   Zoltan_Bind_Param(PHG_params, "FINAL_OUTPUT", &hgp->final_output); 
@@ -729,7 +735,7 @@ int Zoltan_PHG_Initialize_Params(
   
   
   /* Set default values */
-  strncpy(hgp->hgraph_pkg,       "default", MAX_PARAM_STRING_LEN);
+  strncpy(hgp->hgraph_pkg,           "phg", MAX_PARAM_STRING_LEN);
   strncpy(hgp->convert_str,    "neighbors", MAX_PARAM_STRING_LEN);
   strncpy(hgp->redm_str,             "ipm", MAX_PARAM_STRING_LEN);
   hgp->match_array_type = 0;
@@ -778,30 +784,9 @@ int Zoltan_PHG_Initialize_Params(
   /* Get application values of parameters. */
   err = Zoltan_Assign_Param_Vals(zz->Params, PHG_params, zz->Debug_Level, 
           zz->Proc, zz->Debug_Proc);
-
   
   nProc = zz->Num_Proc;
   usePrimeComm = 0;
-
-  /* Reset LB.Method if hgraph_pkg was set using a parameter */
-  if (!strcasecmp(hgp->hgraph_pkg, "PHG"))
-    zz->LB.Method = PHG;
-  else if (!strcasecmp(hgp->hgraph_pkg, "PHG_REPART"))
-    zz->LB.Method = PHG_REPART;
-  else if (!strcasecmp(hgp->hgraph_pkg, "PHG_REFINE"))
-    zz->LB.Method = PHG_REFINE;
-  else if (!strcasecmp(hgp->hgraph_pkg, "PHG_MULTILEVEL_REFINE"))
-    zz->LB.Method = PHG_MULTILEVEL_REFINE;
-  else if (!strcasecmp(hgp->hgraph_pkg, "PATOH"))
-    zz->LB.Method = PATOH;
-  else if (!strcasecmp(hgp->hgraph_pkg, "PARKWAY"))
-    zz->LB.Method = PARKWAY;
-  else if (!strcasecmp(hgp->hgraph_pkg, "default"))
-    ; /* do nothing; leave LB.Method as is */
-  else {
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid hypergraph package.\n");
-    err = ZOLTAN_WARN;
-  }
 
   /* Parse add_obj_weight parameter */
   if (!strcasecmp(add_obj_weight, "none")){
@@ -859,8 +844,7 @@ int Zoltan_PHG_Initialize_Params(
     hgp->fm_max_neg_move *= hgp->refinement_quality;
   }
 
-  if (zz->LB.Method == PHG || zz->LB.Method == PHG_REPART ||
-      zz->LB.Method == PHG_REFINE || zz->LB.Method == PHG_MULTILEVEL_REFINE) {
+  if (!strncasecmp(hgp->hgraph_pkg, "PHG", 3)){
     /* Test to determine whether we should change the number of processors
        used for partitioning to make more efficient 2D decomposition */
 
@@ -871,20 +855,13 @@ int Zoltan_PHG_Initialize_Params(
         usePrimeComm = 1;
 
 
-    if (zz->LB.Method == PHG_REPART ||
-        zz->LB.Method == PHG_REFINE || zz->LB.Method == PHG_MULTILEVEL_REFINE) {
+    if ((!strcasecmp(hgp->hgraph_pkg, "PHG_REPART")) ||
+        (!strcasecmp(hgp->hgraph_pkg, "PHG_REFINE")) ||
+        (!strcasecmp(hgp->hgraph_pkg, "PHG_MULTILEVEL_REFINE")) ){
       hgp->fm_loop_limit = 4; /* UVC: should be enough; I hope :) */
     }
     
-    if (zz->LB.Method == PHG_REPART) {
-        /* UVC: well it looks like l-ipm performs really bad :(
-           so we'll use default coarsening: ipm, or whatever is selected
-           via Zoltan Parameters...
-        strncpy(hgp->redm_str, "l-ipm", MAX_PARAM_STRING_LEN);
-        */
-    }    
-    
-    if (zz->LB.Method == PHG_REFINE) {
+    if (!strcasecmp(hgp->hgraph_pkg, "PHG_REFINE")){
         strncpy(hgp->redm_str, "no", MAX_PARAM_STRING_LEN);        
         /*   UVCUVC: just use default coarse partitioner; does better job :)
              Zoltan_Bind_Param(PHG_params, "PHG_COARSEPARTITION_METHOD", "no");
@@ -892,7 +869,7 @@ int Zoltan_PHG_Initialize_Params(
         zz->LB.Remap_Flag = 0;
         hgp->UsePrefPart = 1;
     }
-    if (zz->LB.Method == PHG_MULTILEVEL_REFINE) {
+    if (!strcasecmp(hgp->hgraph_pkg, "PHG_MULTILEVEL_REFINE")){
         /* UVCUVC: as a heuristic we prefer local matching;
            TODO this needs to be evaluated! */
         strncpy(hgp->redm_str, "l-ipm", MAX_PARAM_STRING_LEN);                
@@ -900,7 +877,7 @@ int Zoltan_PHG_Initialize_Params(
         hgp->UsePrefPart = 1;
     }    
   }
-  else if (zz->LB.Method == PARKWAY) {
+  else if (!strcasecmp(hgp->hgraph_pkg, "PARKWAY")){
     if (hgp->nProc_x_req>1) {
       err = ZOLTAN_FATAL;
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "ParKway requires nProc_x=1 or -1.");
@@ -908,7 +885,7 @@ int Zoltan_PHG_Initialize_Params(
     }
     hgp->nProc_x_req = 1;
   } 
-  else if (zz->LB.Method == PATOH) {
+  else if (!strcasecmp(hgp->hgraph_pkg, "PATOH")){
     if (zz->Num_Proc>1) {
       err = ZOLTAN_FATAL;
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "PaToH only works with Num_Proc=1.");

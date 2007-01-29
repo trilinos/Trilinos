@@ -148,32 +148,12 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
     zz->LB.Box_Assign = Zoltan_HSFC_Box_Assign;
   }
   else if ((strcmp(method_upper, "HYPERGRAPH") == 0) 
-           || (strcmp(method_upper, "PHG") == 0)
-           || (strcmp(method_upper, "PHG_REPART") == 0)
-	   || (strcmp(method_upper, "PHG_REFINE") == 0)
-	   || (strcmp(method_upper, "PHG_MULTILEVEL_REFINE") == 0)           
-           || (strcmp(method_upper, "PATOH") == 0)
-           || (strcmp(method_upper, "PARKWAY") == 0)){
-    /* The hypergraph methods have a lot in common. We allow
-       the user to either set the LB method to HYPERGRAPH and
-       select a package via the parameter HYPERGRAPH_PACKAGE,
-       or to set the LB method to be the package name (e.g. PHG, Patoh).
-       Either way, LB.Method will eventually be set to the
-       desired hypergraph package.
-    */
+           || (strcmp(method_upper, "PHG") == 0)){
+
 #ifdef ZOLTAN_HG
-    if (!strcmp(method_upper, "PATOH"))
-      zz->LB.Method = PATOH;
-    else if (!strcmp(method_upper, "PARKWAY"))
-      zz->LB.Method = PARKWAY;
-    else if (!strcmp(method_upper, "PHG_REPART"))
-      zz->LB.Method = PHG_REPART;
-    else if (!strcmp(method_upper, "PHG_REFINE"))
-      zz->LB.Method = PHG_REFINE;
-    else if (!strcmp(method_upper, "PHG_MULTILEVEL_REFINE"))
-      zz->LB.Method = PHG_MULTILEVEL_REFINE;
-    else /* HYPERGRAPH or PHG */
-      zz->LB.Method = PHG;
+    /* HYPERGRAPH is a family of methods. */
+    /* PHG is Zoltan's standard parallel hypergraph partitioner. */
+    zz->LB.Method = HYPERGRAPH;
     zz->LB.LB_Fn = Zoltan_PHG;
     zz->LB.Free_Structure = Zoltan_PHG_Free_Structure;
     zz->LB.Copy_Structure = NULL;

@@ -1486,7 +1486,7 @@ int nRepartEdge = 0, nRepartVtx = 0;
   nEdge = (myProc_y >= 0 ? dist_y[myProc_y+1] - dist_y[myProc_y] : 0);
   nVtx  = (myProc_x >= 0 ? dist_x[myProc_x+1] - dist_x[myProc_x] : 0);
 
-  if (zz->LB.Method == PHG_REPART) {
+  if (!strcasecmp(hgp->hgraph_pkg, "PHG_REPART")){
     /* For PHG_REPART, we add one vertex per partition and one edge 
      * per object (connecting the object with its input partition vertex).
      * Compute the number of these per processor within the 2D distribution
@@ -1759,7 +1759,7 @@ int nRepartEdge = 0, nRepartVtx = 0;
   /*  Send edge weights, if any */
 
   dim = zz->Edge_Weight_Dim;
-  if (zz->LB.Method == PHG_REPART && !dim)
+  if (!strcasecmp(hgp->hgraph_pkg, "PHG_REPART") && (!dim))
     dim = 1;  /* Need edge weights for PHG_REPART; force malloc of ewgt array */
   phg->EdgeWeightDim = dim;
   nwgt = (phg->nEdge + nRepartEdge) * dim;
@@ -1867,7 +1867,7 @@ int nRepartEdge = 0, nRepartVtx = 0;
   }
 
   
-  if (zz->LB.Method == PHG_REPART) {
+  if (!strcasecmp(hgp->hgraph_pkg, "PHG_REPART")){
     if (myProc_x >= 0 && myProc_y >= 0) {
       ierr = Zoltan_PHG_Add_Repart_Data(zz, zhg, phg,
                                         myObjs.vtx_gno, hgp, *input_parts);

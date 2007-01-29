@@ -63,12 +63,7 @@ typedef enum Zoltan_LB_Method {
   REFTREE,
   RIB,
   HSFC,
-  PHG,
-  PHG_REPART,
-  PHG_REFINE,
-  PHG_MULTILEVEL_REFINE,
-  PATOH,
-  PARKWAY,
+  HYPERGRAPH,
   HIER,
   ZOLTAN_LB_MAX_METHODS          /*  This entry should always be last.      */
 } ZOLTAN_LB_METHOD;
