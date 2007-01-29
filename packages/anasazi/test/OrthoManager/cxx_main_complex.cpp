@@ -37,7 +37,6 @@
 // NNZ: 22778 entries
 
 #include "AnasaziConfigDefs.hpp"
-#include "AnasaziModalSolverUtils.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "AnasaziBasicOutputManager.hpp"
 #include "AnasaziSVQBOrthoManager.hpp"
@@ -457,15 +456,6 @@ int testProjectAndNormalize(RefCountPtr<MatOrthoManager<ST,MV,OP> > OM,
   sout << "   || Q^T M X ||_F before     : " << err << endl;
 
 
-  // first, run with MSUtils
-  ModalSolverUtils<ST,MV,OP> MSU(rcp(new BasicOutputManager<ST>()));
-  xcopy  = MVT::CloneCopy(*X);
-  mxcopy = MVT::CloneCopy(*MX);
-  int iret = MSU.massOrthonormalize(*xcopy,*mxcopy,OM->getOp().get(),*Q,sizeX,0);
-  sout << "   MSU.massOrthonormalize returned " << iret << endl;
-  sout << "   MSU.massOrthonormalize || X^T M X - I ||_F : " << OM->orthonormError(*xcopy) << endl;
-  sout << "   MSU.massOrthonormalize || Q^T M X ||_F     : " << OM->orthogError(*Q,*xcopy) << endl;
-
   for (int t=0; t<numtests; t++) {
 
     xcopy = MVT::CloneCopy(*X);
@@ -611,14 +601,6 @@ int testProject(RefCountPtr<MatOrthoManager<ST,MV,OP> > OM,
   err = OM->orthogError(*Q,*X);
   sout << "   || Q^T M X ||_F before     : " << err << endl;
 
-  // first, run with MSUtils
-  ModalSolverUtils<ST,MV,OP> MSU(rcp(new BasicOutputManager<ST>()));
-  xcopy = MVT::CloneCopy(*X);
-  mxcopy = MVT::CloneCopy(*MX);
-  int iret = MSU.massOrthonormalize(*xcopy,*mxcopy,OM->getOp().get(),*Q,sizeX,1);
-  sout << "   MSU.massOrthonormalize returned " << iret << endl;
-  sout << "   MSU.massOrthonormalize error: " << OM->orthogError(*Q,*xcopy) << endl;
-
   for (int t=0; t<numtests; t++) {
 
     xcopy = MVT::CloneCopy(*X);
@@ -721,14 +703,6 @@ int testNormalize(RefCountPtr<MatOrthoManager<ST,MV,OP> > OM, RefCountPtr<MV> X)
   err = OM->orthonormError(*X);
   sout << "   || X^T M X - I ||_F before : " << err << endl;
 
-
-  // first, run with MSUtils
-  ModalSolverUtils<ST,MV,OP> MSU(rcp(new BasicOutputManager<ST>()));
-  xcopy  = MVT::CloneCopy(*X);
-  mxcopy = MVT::CloneCopy(*MX);
-  int iret = MSU.massOrthonormalize(*xcopy,*mxcopy,OM->getOp().get(),*xcopy,sizeX,2);
-  sout << "   MSU.massOrthonormalize returned " << iret << endl;
-  sout << "   MSU.massOrthonormalize error: " << OM->orthonormError(*xcopy) << endl;
 
   for (int t=0; t<numtests; t++) {
 

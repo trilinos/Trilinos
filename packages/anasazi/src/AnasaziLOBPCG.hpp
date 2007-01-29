@@ -60,7 +60,7 @@
 #include "Teuchos_ScalarTraits.hpp"
 
 #include "AnasaziMatOrthoManager.hpp"
-#include "AnasaziModalSolverUtils.hpp"
+#include "AnasaziSolverUtils.hpp"
 
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_BLAS.hpp"
@@ -501,6 +501,7 @@ namespace Anasazi {
     //
     // Convenience typedefs
     //
+    typedef SolverUtils<ScalarType,MV,OP> Utils;
     typedef MultiVecTraits<ScalarType,MV> MVT;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
@@ -540,10 +541,6 @@ namespace Anasazi {
     Teuchos::RefCountPtr<OP> MOp_;
     Teuchos::RefCountPtr<OP> Prec_;
     bool hasM_;
-    //
-    // Internal utilities class required by eigensolver.
-    //
-    ModalSolverUtils<ScalarType,MV,OP> MSUtils_;
     //
     // Internal timers
     //
@@ -630,7 +627,6 @@ namespace Anasazi {
     om_(printer),
     tester_(tester),
     orthman_(ortho),
-    MSUtils_(om_),
     // timers, counters
     timerOp_(Teuchos::TimeMonitor::getNewTimer("Operation Op*x")),
     timerMOp_(Teuchos::TimeMonitor::getNewTimer("Operation M*x")),
@@ -1085,7 +1081,7 @@ namespace Anasazi {
       // solve the projected problem
       {
         Teuchos::TimeMonitor lcltimer( *timerDS_ );
-        MSUtils_.directSolver(blockSize_, KK, &MM, &S, &theta_, &nevLocal_, 1);
+        Utils::directSolver(blockSize_, KK, &MM, &S, &theta_, &nevLocal_, 1);
         TEST_FOR_EXCEPTION(nevLocal_ != blockSize_,LOBPCGInitFailure,
                            "Anasazi::LOBPCG::initialize(): Initial Ritz analysis did not produce enough Ritz pairs to initialize algorithm.");
       }
@@ -1101,7 +1097,7 @@ namespace Anasazi {
         sm_->sort( this, blockSize_, theta_, &order );   // don't catch exception
         //
         // apply the same ordering to the primitive ritz vectors
-        MSUtils_.permuteVectors(order,S);
+        Utils::permuteVectors(order,S);
       }
 
       // compute ritz residual norms
@@ -1426,7 +1422,7 @@ namespace Anasazi {
       {
         Teuchos::TimeMonitor lcltimer( *timerDS_ );
         nevLocal_ = localSize;
-        MSUtils_.directSolver(localSize, KK, &MM, &S, &theta_, &nevLocal_, 0);    // don't catch the exception
+        Utils::directSolver(localSize, KK, &MM, &S, &theta_, &nevLocal_, 0);    // don't catch the exception
         // localSize tells directSolver() how big KK,MM are
         // however, directSolver() may choose to use only the principle submatrices of KK,MM because of loss of 
         // MM-orthogonality in the projected eigenvectors
@@ -1454,7 +1450,7 @@ namespace Anasazi {
         //
         // Sort the primitive ritz vectors
         Teuchos::SerialDenseMatrix<int,ScalarType> curS(Teuchos::View,S,nevLocal_,nevLocal_);
-        MSUtils_.permuteVectors(order,curS);
+        Utils::permuteVectors(order,curS);
       }
 
       // compute ritz residual norms
@@ -1935,11 +1931,11 @@ namespace Anasazi {
       }
     }
     if (chk.checkMX && hasM_ && initialized_) {
-      tmp = MSUtils_.errorEquality(X_.get(), MX_.get(), MOp_.get());
+      tmp = Utils::errorEquality(X_.get(), MX_.get(), MOp_.get());
       os << " >> Error in MX == M*X    : " << tmp << endl;
     }
     if (chk.checkKX && initialized_) {
-      tmp = MSUtils_.errorEquality(X_.get(), KX_.get(), Op_.get());
+      tmp = Utils::errorEquality(X_.get(), KX_.get(), Op_.get());
       os << " >> Error in KX == K*X    : " << tmp << endl;
     }
 
@@ -1957,11 +1953,11 @@ namespace Anasazi {
       }
     }
     if (chk.checkMP && hasM_ && hasP_ && initialized_) {
-      tmp = MSUtils_.errorEquality(P_.get(), MP_.get(), MOp_.get());
+      tmp = Utils::errorEquality(P_.get(), MP_.get(), MOp_.get());
       os << " >> Error in MP == M*P    : " << tmp << endl;
     }
     if (chk.checkKP && hasP_ && initialized_) {
-      tmp = MSUtils_.errorEquality(P_.get(), KP_.get(), Op_.get());
+      tmp = Utils::errorEquality(P_.get(), KP_.get(), Op_.get());
       os << " >> Error in KP == K*P    : " << tmp << endl;
     }
 
@@ -1983,7 +1979,7 @@ namespace Anasazi {
       }
     }
     if (chk.checkMH && hasM_ && initialized_) {
-      tmp = MSUtils_.errorEquality(H_.get(), MH_.get(), MOp_.get());
+      tmp = Utils::errorEquality(H_.get(), MH_.get(), MOp_.get());
       os << " >> Error in MH == M*H    : " << tmp << endl;
     }
 

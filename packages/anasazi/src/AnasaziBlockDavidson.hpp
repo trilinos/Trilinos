@@ -41,7 +41,7 @@
 #include "Teuchos_ScalarTraits.hpp"
 
 #include "AnasaziMatOrthoManager.hpp"
-#include "AnasaziModalSolverUtils.hpp"
+#include "AnasaziSolverUtils.hpp"
 
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_BLAS.hpp"
@@ -164,7 +164,7 @@ namespace Anasazi {
                  );
     
     //! %Anasazi::BlockDavidson destructor.
-    virtual ~BlockDavidson() {};
+    virtual ~BlockDavidson();
     //@}
 
 
@@ -239,7 +239,7 @@ namespace Anasazi {
      *      Otherwise, MX == Teuchos::null
      *    - R contains the residual vectors with respect to X
      */
-    bool isInitialized() { return initialized_; }
+    bool isInitialized();
 
     /*! \brief Get access to the current state of the eigensolver.
      * 
@@ -252,24 +252,7 @@ namespace Anasazi {
      * \returns A BlockDavidsonState object containing const pointers to the current
      * solver state.
      */
-    BlockDavidsonState<ScalarType,MV> getState() const {
-      BlockDavidsonState<ScalarType,MV> state;
-      state.curDim = curDim_;
-      state.V = V_;
-      state.X = X_;
-      state.KX = KX_;
-      if (hasM_) {
-        state.MX = MX_;
-      }
-      else {
-        state.MX = Teuchos::null;
-      }
-      state.R = R_;
-      state.H = H_;
-      state.KK = KK_;
-      state.T = Teuchos::rcp(new std::vector<MagnitudeType>(theta_));
-      return state;
-    }
+    BlockDavidsonState<ScalarType,MV> getState() const;
     
     //@}
 
@@ -278,10 +261,10 @@ namespace Anasazi {
     //@{ 
 
     //! \brief Get the current iteration count.
-    int getNumIters() const { return(iter_); };
+    int getNumIters() const;
 
     //! \brief Reset the iteration count.
-    void resetNumIters() { iter_=0; };
+    void resetNumIters();
 
     /*! \brief Get access to the current Ritz vectors.
       
@@ -290,21 +273,15 @@ namespace Anasazi {
         The i-th vector of the return corresponds to the i-th Ritz vector; there is no need to use
         getRitzIndex().
      */
-    Teuchos::RefCountPtr<const MV> getRitzVectors() {return X_;}
+    Teuchos::RefCountPtr<const MV> getRitzVectors();
 
     /*! \brief Get the Ritz values for the previous iteration.
      *
      *  \return A vector of length getCurSubspaceDim() containing the Ritz values from the
      *  previous projected eigensolve.
      */
-    std::vector<Value<ScalarType> > getRitzValues() { 
-      std::vector<Value<ScalarType> > ret(curDim_);
-      for (int i=0; i<curDim_; ++i) {
-        ret[i].realpart = theta_[i];
-        ret[i].imagpart = ZERO;
-      }
-      return ret;
-    }
+    std::vector<Value<ScalarType> > getRitzValues();
+
 
     /*! \brief Get the index used for extracting individual Ritz vectors from getRitzVectors().
      *
@@ -313,10 +290,7 @@ namespace Anasazi {
      *
      * \return An \c int vector of size getCurSubspaceDim() composed of zeros.
      */
-    std::vector<int> getRitzIndex() {
-      std::vector<int> ret(curDim_,0);
-      return ret;
-    }
+    std::vector<int> getRitzIndex();
 
 
     /*! \brief Get the current residual norms, computing the norms if they are not up-to-date with the current residual vectors.
@@ -339,25 +313,17 @@ namespace Anasazi {
      *
      *  \return A vector of length getCurSubspaceDim() containing the 2-norms of the current Ritz residuals.
      */
-    std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getRitzRes2Norms() {
-      std::vector<MagnitudeType> ret = ritz2norms_;
-      ret.resize(curDim_);
-      return ret;
-    }
-
+    std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> getRitzRes2Norms();
 
     /*! \brief Get the dimension of the search subspace used to generate the current eigenvectors and eigenvalues.
      *
      *  \return An integer specifying the rank of the Krylov subspace currently in use by the eigensolver. If isInitialized() == \c false, 
      *  the return is 0. Otherwise, it will be some strictly positive multiple of getBlockSize().
      */
-    int getCurSubspaceDim() const {
-      if (!initialized_) return 0;
-      return curDim_;
-    }
+    int getCurSubspaceDim() const;
 
     //! Get the maximum dimension allocated for the search subspace. For %BlockDavidson, this always returns numBlocks*blockSize.
-    int getMaxSubspaceDim() const {return blockSize_*numBlocks_;}
+    int getMaxSubspaceDim() const;
 
     //@}
 
@@ -367,7 +333,7 @@ namespace Anasazi {
 
 
     //! Get a constant reference to the eigenvalue problem.
-    const Eigenproblem<ScalarType,MV,OP>& getProblem() const { return(*problem_); };
+    const Eigenproblem<ScalarType,MV,OP>& getProblem() const;
 
     /*! \brief Set the blocksize. 
      *
@@ -381,7 +347,7 @@ namespace Anasazi {
     void setBlockSize(int blockSize);
 
     //! Get the blocksize used by the iterative solver.
-    int getBlockSize() const { return(blockSize_); }
+    int getBlockSize() const;
 
     /*! \brief Set the auxiliary vectors for the solver.
      *
@@ -398,7 +364,7 @@ namespace Anasazi {
     void setAuxVecs(const Teuchos::Array<Teuchos::RefCountPtr<const MV> > &auxvecs);
 
     //! Get the auxiliary vectors for the solver.
-    Teuchos::Array<Teuchos::RefCountPtr<const MV> > getAuxVecs() const {return auxVecs_;}
+    Teuchos::Array<Teuchos::RefCountPtr<const MV> > getAuxVecs() const;
 
     //@}
 
@@ -430,6 +396,7 @@ namespace Anasazi {
     //
     // Convenience typedefs
     //
+    typedef SolverUtils<ScalarType,MV,OP> Utils;
     typedef MultiVecTraits<ScalarType,MV> MVT;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
@@ -470,10 +437,6 @@ namespace Anasazi {
     Teuchos::RefCountPtr<OP> MOp_;
     Teuchos::RefCountPtr<OP> Prec_;
     bool hasM_;
-    //
-    // Internal utilities class required by eigensolver.
-    //
-    ModalSolverUtils<ScalarType,MV,OP> MSUtils_;
     //
     // Internal timers
     //
@@ -536,6 +499,14 @@ namespace Anasazi {
 
   };
 
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  //
+  // Implementations
+  //
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Constructor
@@ -557,7 +528,6 @@ namespace Anasazi {
     om_(printer),
     tester_(tester),
     orthman_(ortho),
-    MSUtils_(om_),
     // timers, counters
     timerOp_(Teuchos::TimeMonitor::getNewTimer("Operation Op*x")),
     timerMOp_(Teuchos::TimeMonitor::getNewTimer("Operation M*x")),
@@ -613,6 +583,12 @@ namespace Anasazi {
 
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Destructor
+  template <class ScalarType, class MV, class OP>
+  BlockDavidson<ScalarType,MV,OP>::~BlockDavidson() {}
+
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
   // Set the block size
   // This simply calls setSize(), modifying the block size while retaining the number of blocks.
   template <class ScalarType, class MV, class OP>
@@ -620,6 +596,133 @@ namespace Anasazi {
   {
     setSize(blockSize,numBlocks_);
   }
+
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Return the current auxiliary vectors
+  template <class ScalarType, class MV, class OP>
+  Teuchos::Array<Teuchos::RefCountPtr<const MV> > BlockDavidson<ScalarType,MV,OP>::getAuxVecs() const {
+    return auxVecs_;
+  }
+
+
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // return the current block size
+  template <class ScalarType, class MV, class OP>
+  int BlockDavidson<ScalarType,MV,OP>::getBlockSize() const {
+    return(blockSize_); 
+  }
+
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // return eigenproblem
+  template <class ScalarType, class MV, class OP>
+  const Eigenproblem<ScalarType,MV,OP>& BlockDavidson<ScalarType,MV,OP>::getProblem() const { 
+    return(*problem_); 
+  }
+
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // return max subspace dim
+  template <class ScalarType, class MV, class OP>
+  int BlockDavidson<ScalarType,MV,OP>::getMaxSubspaceDim() const {
+    return blockSize_*numBlocks_;
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // return current subspace dim
+  template <class ScalarType, class MV, class OP>
+  int BlockDavidson<ScalarType,MV,OP>::getCurSubspaceDim() const {
+    if (!initialized_) return 0;
+    return curDim_;
+  }
+
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // return ritz residual 2-norms
+  template <class ScalarType, class MV, class OP>
+  std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> 
+  BlockDavidson<ScalarType,MV,OP>::getRitzRes2Norms() {
+    std::vector<MagnitudeType> ret = ritz2norms_;
+    ret.resize(curDim_);
+    return ret;
+  }
+
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // return ritz index
+  template <class ScalarType, class MV, class OP>
+  std::vector<int> BlockDavidson<ScalarType,MV,OP>::getRitzIndex() {
+    std::vector<int> ret(curDim_,0);
+    return ret;
+  }
+
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // return ritz values
+  template <class ScalarType, class MV, class OP>
+  std::vector<Value<ScalarType> > BlockDavidson<ScalarType,MV,OP>::getRitzValues() { 
+    std::vector<Value<ScalarType> > ret(curDim_);
+    for (int i=0; i<curDim_; ++i) {
+      ret[i].realpart = theta_[i];
+      ret[i].imagpart = ZERO;
+    }
+    return ret;
+  }
+
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // return pointer to ritz vectors
+  template <class ScalarType, class MV, class OP>
+  Teuchos::RefCountPtr<const MV> BlockDavidson<ScalarType,MV,OP>::getRitzVectors() {
+    return X_;
+  }
+
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // reset number of iterations
+  template <class ScalarType, class MV, class OP>
+  void BlockDavidson<ScalarType,MV,OP>::resetNumIters() { 
+    iter_=0; 
+  }
+
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // retunr number of iterations
+  template <class ScalarType, class MV, class OP>
+  int BlockDavidson<ScalarType,MV,OP>::getNumIters() const { 
+    return(iter_); 
+  }
+
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // return state pointers
+  template <class ScalarType, class MV, class OP>
+  BlockDavidsonState<ScalarType,MV> BlockDavidson<ScalarType,MV,OP>::getState() const {
+    BlockDavidsonState<ScalarType,MV> state;
+    state.curDim = curDim_;
+    state.V = V_;
+    state.X = X_;
+    state.KX = KX_;
+    if (hasM_) {
+      state.MX = MX_;
+    }
+    else {
+      state.MX = Teuchos::null;
+    }
+    state.R = R_;
+    state.H = H_;
+    state.KK = KK_;
+    state.T = Teuchos::rcp(new std::vector<MagnitudeType>(theta_));
+    return state;
+  }
+
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Return initialized state
+  template <class ScalarType, class MV, class OP>
+  bool BlockDavidson<ScalarType,MV,OP>::isInitialized() { return initialized_; }
 
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -940,7 +1043,7 @@ namespace Anasazi {
       {
         Teuchos::TimeMonitor lcltimer( *timerDS_ );
         int rank = curDim_;
-        MSUtils_.directSolver(curDim_, *lclKK, 0, &S, &theta_, &rank, 10);
+        Utils::directSolver(curDim_, *lclKK, 0, &S, &theta_, &rank, 10);
         // we want all ritz values back
         TEST_FOR_EXCEPTION(rank != curDim_,BlockDavidsonInitFailure,
                            "Anasazi::BlockDavidson::initialize(newstate): Not enough Ritz vectors to initialize algorithm.");
@@ -955,7 +1058,7 @@ namespace Anasazi {
         sm_->sort( this, curDim_, theta_, &order );   // don't catch exception
         //
         // apply the same ordering to the primitive ritz vectors
-        MSUtils_.permuteVectors(order,S);
+        Utils::permuteVectors(order,S);
       }
       // compute ritz residual norms
       {
@@ -1243,7 +1346,7 @@ namespace Anasazi {
       {
         Teuchos::TimeMonitor lcltimer(*timerDS_);
         int nevlocal = curDim_;
-        int info = MSUtils_.directSolver(curDim_,*KK_,0,&S,&theta_,&nevlocal,10);
+        int info = Utils::directSolver(curDim_,*KK_,0,&S,&theta_,&nevlocal,10);
         TEST_FOR_EXCEPTION(info != 0,std::logic_error,"Anasazi::BlockDavidson::iterate(): direct solve returned error code.");
         // we did not ask directSolver to perform deflation, so nevLocal better be curDim_
         TEST_FOR_EXCEPTION(nevlocal != curDim_,std::logic_error,"Anasazi::BlockDavidson::iterate(): direct solve did not compute all eigenvectors."); // this should never happen
@@ -1260,7 +1363,7 @@ namespace Anasazi {
         //
         // apply the same ordering to the primitive ritz vectors
         Teuchos::SerialDenseMatrix<int,ScalarType> curS(Teuchos::View,S,curDim_,curDim_);
-        MSUtils_.permuteVectors(order,curS);
+        Utils::permuteVectors(order,curS);
       }
 
       // compute ritz residual norms
@@ -1451,11 +1554,11 @@ namespace Anasazi {
       }
     }
     if (chk.checkMX && hasM_ && initialized_) {
-      tmp = MSUtils_.errorEquality(X_.get(), MX_.get(), MOp_.get());
+      tmp = Utils::errorEquality(X_.get(), MX_.get(), MOp_.get());
       os << " >> Error in MX == M*X     : " << tmp << endl;
     }
     if (chk.checkKX && initialized_) {
-      tmp = MSUtils_.errorEquality(X_.get(), KX_.get(), Op_.get());
+      tmp = Utils::errorEquality(X_.get(), KX_.get(), Op_.get());
       os << " >> Error in KX == K*X     : " << tmp << endl;
     }
 
@@ -1473,11 +1576,11 @@ namespace Anasazi {
       }
     }
     if (chk.checkKH && initialized_) {
-      tmp = MSUtils_.errorEquality(H_.get(), KH_.get(), Op_.get());
+      tmp = Utils::errorEquality(H_.get(), KH_.get(), Op_.get());
       os << " >> Error in KH == K*H     : " << tmp << endl;
     }
     if (chk.checkMH && hasM_ && initialized_) {
-      tmp = MSUtils_.errorEquality(H_.get(), MH_.get(), MOp_.get());
+      tmp = Utils::errorEquality(H_.get(), MH_.get(), MOp_.get());
       os << " >> Error in MH == M*H     : " << tmp << endl;
     }
 

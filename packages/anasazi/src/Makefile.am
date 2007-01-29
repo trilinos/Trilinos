@@ -66,7 +66,7 @@ CORE_H = \
 	$(srcdir)/AnasaziLOBPCG.hpp \
 	$(srcdir)/AnasaziLOBPCGSolMgr.hpp \
 	$(srcdir)/AnasaziMatOrthoManager.hpp \
-	$(srcdir)/AnasaziModalSolverUtils.hpp \
+	$(srcdir)/AnasaziSolverUtils.hpp \
 	$(srcdir)/AnasaziMultiVec.hpp \
 	$(srcdir)/AnasaziMultiVecTraits.hpp \
 	$(srcdir)/AnasaziOperator.hpp \

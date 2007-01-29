@@ -70,7 +70,6 @@ int main(int argc, char *argv[])
   typedef Anasazi::Operator<ST>               OP;
   typedef Anasazi::MultiVecTraits<ST,MV>     MVT;
   typedef Anasazi::OperatorTraits<ST,MV,OP>  OPT;
-  ST ONE  = SCT::one();
 
 
   bool testFailed;
@@ -207,7 +206,6 @@ int main(int argc, char *argv[])
   RefCountPtr<MV> evecs = sol.Evecs;
   std::vector<Anasazi::Value<ST> > evals = sol.Evals;
   std::vector<int> index = sol.index;
-  int nevecs = sol.numVecs;
 
   // Perform spectral transform on eigenvalues, if we used the 
   // spectral xformed operator (Op)

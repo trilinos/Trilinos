@@ -42,7 +42,7 @@
 #include "AnasaziSVQBOrthoManager.hpp"
 #include "AnasaziBasicSort.hpp"
 #include "AnasaziStatusTestMaxIters.hpp"
-#include "AnasaziModalSolverUtils.hpp"
+#include "AnasaziSolverUtils.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 
@@ -74,7 +74,7 @@ class get_out : public std::logic_error {
 void checks( RefCountPtr<BlockDavidson<ScalarType,MV,OP> > solver, int blocksize, int numblocks, 
              RefCountPtr<Eigenproblem<ScalarType,MV,OP> > problem,
              RefCountPtr<MatOrthoManager<ScalarType,MV,OP> > ortho,
-             ModalSolverUtils<ScalarType,MV,OP> &msutils) {
+             SolverUtils<ScalarType,MV,OP> &msutils) {
   BlockDavidsonState<ScalarType,MV> state = solver->getState();
   
   TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.V)  != solver->getMaxSubspaceDim(),get_out,     "getMaxSubspaceDim() does not match allocated size for V.");
@@ -172,7 +172,7 @@ void testsolver( RefCountPtr<BasicEigenproblem<ScalarType,MV,OP> > problem,
     return;
   }
 
-  ModalSolverUtils<ScalarType,MV,OP> msutils(printer);
+  SolverUtils<ScalarType,MV,OP> msutils;
 
   // solver should be uninitialized
   TEST_FOR_EXCEPTION(solver->isInitialized() != false,get_out,"Solver should be un-initialized after instantiation.");  

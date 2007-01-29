@@ -42,7 +42,7 @@
 #include "AnasaziSVQBOrthoManager.hpp"
 #include "AnasaziBasicSort.hpp"
 #include "AnasaziStatusTestMaxIters.hpp"
-#include "AnasaziModalSolverUtils.hpp"
+#include "AnasaziSolverUtils.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 
@@ -73,7 +73,7 @@ class get_out : public std::logic_error {
 void checks( RefCountPtr<LOBPCG<ScalarType,MV,OP> > solver, int blocksize, bool fullortho, 
              RefCountPtr<Eigenproblem<ScalarType,MV,OP> > problem,
              RefCountPtr<MatOrthoManager<ScalarType,MV,OP> > ortho,
-             ModalSolverUtils<ScalarType,MV,OP> &msutils) {
+             SolverUtils<ScalarType,MV,OP> &msutils) {
   LOBPCGState<ScalarType,MV> state = solver->getState();
   
   TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.X)  != solver->getBlockSize(),get_out,"blockSize() does not match allocated size for X");
@@ -172,7 +172,7 @@ void testsolver( RefCountPtr<BasicEigenproblem<ScalarType,MV,OP> > problem,
   const int  blocksize = pls.get<int>("Block Size");
   const bool fullortho = pls.get<bool>("Full Ortho");
 
-  ModalSolverUtils<ScalarType,MV,OP> msutils(printer);
+  SolverUtils<ScalarType,MV,OP> msutils;
 
   // solver should be uninitialized
   TEST_FOR_EXCEPTION(solver->isInitialized() != false,get_out,"Solver should be un-initialized after instantiation.");  

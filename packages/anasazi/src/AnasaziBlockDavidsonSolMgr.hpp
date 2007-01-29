@@ -39,7 +39,7 @@
 
 #include "AnasaziEigenproblem.hpp"
 #include "AnasaziSolverManager.hpp"
-#include "AnasaziModalSolverUtils.hpp"
+#include "AnasaziSolverUtils.hpp"
 
 #include "AnasaziBlockDavidson.hpp"
 #include "AnasaziBasicSort.hpp"
@@ -295,7 +295,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
     = Teuchos::rcp( new SVQBOrthoManager<ScalarType,MV,OP>(problem_->getM()) );
 
   // utils
-  ModalSolverUtils<ScalarType,MV,OP> msutils(printer);
+  SolverUtils<ScalarType,MV,OP> msutils;
 
   //////////////////////////////////////////////////////////////////////////////////////
   // Parameter list

@@ -41,7 +41,6 @@
 #include "Teuchos_ScalarTraits.hpp"
 
 #include "AnasaziOrthoManager.hpp"
-#include "AnasaziModalSolverUtils.hpp"
 
 #include "Teuchos_LAPACK.hpp"
 #include "Teuchos_BLAS.hpp"

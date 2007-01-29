@@ -49,7 +49,7 @@
 #include "AnasaziStatusTestCombo.hpp"
 #include "AnasaziStatusTestOutput.hpp"
 #include "AnasaziBasicOutputManager.hpp"
-#include "AnasaziModalSolverUtils.hpp"
+#include "AnasaziSolverUtils.hpp"
 
 #include "Teuchos_TimeMonitor.hpp"
 
@@ -371,7 +371,7 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::solve() {
       sol.Evals[i].imagpart = MT::zero();
     }
     // now permute the eigenvectors according to order
-    ModalSolverUtils<ScalarType,MV,OP> msutils(printer);
+    SolverUtils<ScalarType,MV,OP> msutils;
     msutils.permuteVectors(sol.numVecs,order,*sol.Evecs);
   }
 

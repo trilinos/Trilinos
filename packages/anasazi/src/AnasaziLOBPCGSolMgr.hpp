@@ -40,6 +40,8 @@
 #include "AnasaziEigenproblem.hpp"
 #include "AnasaziSolverManager.hpp"
 
+#include "AnasaziSolverUtils.hpp"
+
 #include "AnasaziLOBPCG.hpp"
 #include "AnasaziBasicSort.hpp"
 #include "AnasaziSVQBOrthoManager.hpp"
@@ -336,7 +338,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
   plist.set("Full Ortho",fullOrtho_);
 
   // utils
-  ModalSolverUtils<ScalarType,MV,OP> msutils(printer);
+  SolverUtils<ScalarType,MV,OP> msutils;
 
   //////////////////////////////////////////////////////////////////////////////////////
   // LOBPCG solver

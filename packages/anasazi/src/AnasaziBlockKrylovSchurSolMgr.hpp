@@ -38,7 +38,6 @@
 
 #include "AnasaziEigenproblem.hpp"
 #include "AnasaziSolverManager.hpp"
-#include "AnasaziModalSolverUtils.hpp"
 
 #include "AnasaziBlockKrylovSchur.hpp"
 #include "AnasaziBasicSort.hpp"
@@ -313,9 +312,6 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
     TEST_FOR_EXCEPTION(_ortho!="SVQB"&&_ortho!="DGKS",std::logic_error,"Anasazi::BlockKrylovSchurSolMgr::solve(): Invalid orthogonalization type.");
   }
   
-  // utils
-  ModalSolverUtils<ScalarType,MV,OP> msutils(printer);
-
   //////////////////////////////////////////////////////////////////////////////////////
   // Parameter list
   Teuchos::ParameterList plist;
