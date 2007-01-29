@@ -312,24 +312,24 @@ tradopteste6_CXXFLAGS = -DSACADO_NAMESPACE -DRAD_NO_EQ_ALIAS \
 tradopteste6_DEPENDENCIES = $(tradopteste1_DEPENDENCIES)
 tradopteste6_LDADD = $(tradopteste1_LDADD)
 
-tradoptesta.cpp : testgen.as tradoptesta.c0
-	$(SHELL) testgen.as $(srcdir)/tradoptesta.c0 > tradoptesta.cpp
+#tradoptesta.cpp : testgen.as tradoptesta.c0
+#	$(SHELL) testgen.as $(srcdir)/tradoptesta.c0 > tradoptesta.cpp
 
-tradoptestb.cpp : testgen.as tradoptestb.c0
-	$(SHELL) testgen.as $(srcdir)/tradoptestb.c0 > tradoptestb.cpp
+#tradoptestb.cpp : testgen.as tradoptestb.c0
+#	$(SHELL) testgen.as $(srcdir)/tradoptestb.c0 > tradoptestb.cpp
 
-tradoptestc.cpp : testgen.as tradoptestc.c0
-	$(SHELL) testgen.as $(srcdir)/tradoptestc.c0 > tradoptestc.cpp
+#tradoptestc.cpp : testgen.as tradoptestc.c0
+#	$(SHELL) testgen.as $(srcdir)/tradoptestc.c0 > tradoptestc.cpp
 
-tradoptestd.cpp : testgen.as tradoptestd.c0
-	$(SHELL) testgen.as $(srcdir)/tradoptestd.c0 > tradoptestd.cpp
+#tradoptestd.cpp : testgen.as tradoptestd.c0
+#	$(SHELL) testgen.as $(srcdir)/tradoptestd.c0 > tradoptestd.cpp
 
-tradopteste.cpp : testgen.as tradopteste.c0
-	$(SHELL) testgen.as $(srcdir)/tradopteste.c0 > tradopteste.cpp
+#tradopteste.cpp : testgen.as tradopteste.c0
+#	$(SHELL) testgen.as $(srcdir)/tradopteste.c0 > tradopteste.cpp
 
-CLEANFILES = \
-	tradoptesta.cpp \
-	tradoptestb.cpp \
-	tradoptestc.cpp \
-	tradoptestd.cpp \
-	tradopteste.cpp
+#CLEANFILES = \
+#	tradoptesta.cpp \
+#	tradoptestb.cpp \
+#	tradoptestc.cpp \
+#	tradoptestd.cpp \
+#	tradopteste.cpp
