@@ -99,6 +99,7 @@
 // NOX::Solver::Manager support //
 //////////////////////////////////
 NOXSOLVER_EXCEPTION(Manager,Manager)
+NOXSOLVER_EXCEPTION(Manager,getList)
 %ignore NOX::Solver::Manager::Manager(const Teuchos::RefCountPtr< NOX::Abstract::Group & >,
                                    const Teuchos::RefCountPtr< NOX::StatusTest::Generic & >,
                                    const Teuchos::RefCountPtr< Teuchos::ParameterList > &);

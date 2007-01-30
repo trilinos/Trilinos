@@ -111,7 +111,7 @@ Solver.Iterate(1550, 1e-5)
 #include "AztecOO_Version.h"
 
 // Optional Teuchos support
-#ifdef HAVE_AZTECOO_TEUCHOS
+#ifdef HAVE_PYTRILINOS_AZTECOO_TEUCHOS
 #include "Teuchos_PythonParameter.h"
 #endif
 
@@ -127,7 +127,7 @@ Solver.Iterate(1550, 1e-5)
 // External Trilinos interface imports
 using namespace std;
 %import "Epetra.i"
-#ifdef HAVE_AZTECOO_TEUCHOS
+#ifdef HAVE_PYTRILINOS_AZTECOO_TEUCHOS
 %import "Teuchos.i"
 #endif
 
