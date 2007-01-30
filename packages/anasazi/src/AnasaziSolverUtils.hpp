@@ -105,8 +105,8 @@ namespace Anasazi {
       Each \f$H_i\f$ (\f$i=1,\ldots,k \leq n\f$) has the form<br>
       \f$ H_i = I - \tau_i v_i v_i^T \f$ <br>
       where \f$\tau_i\f$ is a scalar and \f$v_i\f$ is a vector with
-      \f$v_i(1:i-1) = 0\f$ and \f$e_i^T v_i\f$ = 1; \f$v(i+1:n)\f$ is stored below <tt>H(i,i)</tt>
-      and \f$\tau_i\f$ in <tt>tau[i-1]</tt>. (Note: zero-based indexing used for \c H and \c tau).
+      \f$v_i(1:i-1) = 0\f$ and \f$e_i^T v_i = 1\f$; \f$v(i+1:n)\f$ is stored below <tt>H(i,i)</tt>
+      and \f$\tau_i\f$ in <tt>tau[i-1]</tt>. (Note: zero-based indexing used for data structures \c H and \c tau, while one-based indexing used for mathematic object \f$v_i\f$).
 
       If the multivector is \f$m \times n\f$ and we apply \f$k\f$ Householder reflectors, the total cost of the method is
       \f$4mnk - 2m(k^2-k)\f$ flops. For \f$k=n\f$, this becomes \f$2mn^2\f$, the same as for a matrix-matrix multiplication by the accumulated Householder reflectors.

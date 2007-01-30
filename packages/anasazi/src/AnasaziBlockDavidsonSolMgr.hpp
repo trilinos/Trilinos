@@ -163,6 +163,8 @@ class BlockDavidsonSolMgr : public SolverManager<ScalarType,MV,OP> {
   int maxLocked_;
   int verbosity_;
   int lockQuorum_;
+  bool householderRestart_;
+  int numRestartBlocks_;
 };
 
 
@@ -183,7 +185,9 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::BlockDavidsonSolMgr(
   numBlocks_(0),
   maxLocked_(0),
   verbosity_(Anasazi::Errors),
-  lockQuorum_(1)
+  lockQuorum_(1),
+  householderRestart_(false),
+  numRestartBlocks_(1)
 {
   TEST_FOR_EXCEPTION(problem_ == Teuchos::null,               std::invalid_argument, "Problem not given to solver manager.");
   TEST_FOR_EXCEPTION(!problem_->isProblemSet(),               std::invalid_argument, "Problem not set.");
@@ -212,7 +216,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::BlockDavidsonSolMgr(
                      "Anasazi::BlockDavidsonSolMgr: \"Block Size\" must be strictly positive.");
   numBlocks_ = pl.get("Num Blocks",2);
   TEST_FOR_EXCEPTION(numBlocks_ <= 1, std::invalid_argument,
-                     "Anasazi::BlockDavidsonSolMgr: \"Num Blocks\" must be strictly positive.");
+                     "Anasazi::BlockDavidsonSolMgr: \"Num Blocks\" must be >= 1.");
 
   // max locked: default is nev(), must satisfy maxLocked_ + blockSize_ >= nev
   if (useLocking_) {
@@ -248,6 +252,22 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::BlockDavidsonSolMgr(
       verbosity_ = (int)Teuchos::getParameter<Anasazi::MsgType>(pl,"Verbosity");
     }
   }
+
+  /*
+  // restart size
+  numRestartBlocks_ = pl.get("Num Restart Blocks",numRestartBlocks_);
+  TEST_FOR_EXCEPTION(numRestartBlocks <= 0, std::invalid_argument,
+                     "Anasazi::BlockDavidsonSolMgr: \"Num Restart Blocks\" must be strictly positive.");
+
+  // restarting technique: V*Q or applyHouse(V,H,tau)
+  if (pl.isParameter("Householder Restart")) {
+    if (Teuchos::isParameterType<bool>(pl,"Householder Restart")) {
+      restartViaHouse_ = pl.get("Householder Restart",householderRestart_);
+    } else {
+      restartViaHouse_ = (bool)Teuchos::getParameter<int>(pl,householderRestart_);
+    }
+  }
+  */
 }
 
 
@@ -318,20 +338,23 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
   // for locked vectors
   int numlocked = 0;
   Teuchos::RefCountPtr<MV> lockvecs;
-  // lockvecs is used to hold the locked eigenvectors, as well as for temporary storage when locking
+  // lockvecs is used to hold the locked eigenvectors, as well as for temporary storage when locking.
   // when locking, we will lock some number of vectors numnew, where numnew <= maxlocked - curlocked
-  // we will allocated numnew random vectors, which will go into workMV (see below)
+  // we will produce numnew random vectors, which will go into the space with the new basis.
   // we will also need numnew storage for the image of these random vectors under A and M; 
   // columns [curlocked+1,curlocked+numnew] will be used for this storage
   if (maxLocked_ > 0) {
     lockvecs = MVT::Clone(*problem_->getInitVec(),maxLocked_);
   }
   std::vector<MagnitudeType> lockvals;
-  // workMV will be used when restarting because of 
-  // a) full basis, in which case we need 2*blockSize, for X and KX
-  // b) locking, in which case we will need as many vectors as in the current basis, 
+  // workMV will be used when 
+  // a) restarting when basis is full, in which case we need blockSize*numRestartBlocks for the new basis
+  // b) restarting after locking, in which case we will need storage equal to the size of the current basis,
   //    a number which will be always <= (numblocks-1)*blocksize
   //    [note: this is because we never lock with curdim == numblocks*blocksize]
+  //
+  // only require the workspace if householderRestart == false. 
+  // if householderRestart == true, then restarting happens in situ in the solver's memory
   Teuchos::RefCountPtr<MV> workMV;
   if (useLocking_) {
     workMV = MVT::Clone(*problem_->getInitVec(),(numBlocks_-1)*blockSize_);
@@ -352,14 +375,22 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
     try {
       bd_solver->iterate();
 
+      ////////////////////////////////////////////////////////////////////////////////////
+      //
       // check convergence first
+      //
+      ////////////////////////////////////////////////////////////////////////////////////
       if (convtest->getStatus() == Passed ) {
         // we have convergence
         // convtest->whichVecs() tells us which vectors from lockvecs and solver state are the ones we want
         // convtest->howMany() will tell us how many
         break;
       }
+      ////////////////////////////////////////////////////////////////////////////////////
+      //
       // check for restarting before locking: if we need to lock, it will happen after the restart
+      //
+      ////////////////////////////////////////////////////////////////////////////////////
       else if ( bd_solver->getCurSubspaceDim() == bd_solver->getMaxSubspaceDim() ) {
 
         if ( numRestarts >= maxRestarts_ ) {
@@ -413,13 +444,18 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
         BlockDavidsonState<ScalarType,MV> newstate;
         newstate.V = newV;
         newstate.KK = newKK;
+        newstate.curDim = blockSize_;
         bd_solver->initialize(newstate);
 
         // don't need either of these anymore
         newKV = Teuchos::null;
         newV = Teuchos::null;
       }
+      ////////////////////////////////////////////////////////////////////////////////////
+      //
       // check locking if we didn't converge or restart
+      //
+      ////////////////////////////////////////////////////////////////////////////////////
       else if (locktest != Teuchos::null && locktest->getStatus() == Passed) {
 
         // get number,indices of vectors to be locked
@@ -455,7 +491,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
         // lockvecs will be partitioned as follows:
         // lockvecs = [curlocked augTmp ...]
         // augTmp will be used for the storage of M*augV and K*augV
-        // later, the locked vectors (storeg inside the eigensolver and referenced via 
+        // later, the locked vectors (stored inside the eigensolver and referenced via 
         // an MV view) will be moved into lockvecs on top of augTmp when the space is no
         // longer needed.
         Teuchos::RefCountPtr<const MV> newvecs, curlocked;
@@ -562,6 +598,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
           MVT::MvTimesMatAddMv(ONE,*curV,Sunlocked,ZERO,*genV);
           //
           // compute leading block of the new projected stiffness matrix
+          // genV^T K genV = Sunlocked^T curV^T K curV Sunlocked = Sunlocked^T curKK Sunlocked
           {
             Teuchos::SerialDenseMatrix<int,ScalarType> tmpKK(curdim,curdim-numnew),
                                                        newKK11(Teuchos::View,*newKK,curdim-numnew,curdim-numnew),
@@ -654,6 +691,12 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
           locktest->setQuorum(blockSize_+1);
         }
       }
+      ////////////////////////////////////////////////////////////////////////////////////
+      //
+      // we returned from iterate(), but none of our status tests Passed.
+      // something is wrong, and it is probably our fault.
+      //
+      ////////////////////////////////////////////////////////////////////////////////////
       else {
         TEST_FOR_EXCEPTION(true,std::logic_error,"Anasazi::BlockDavidsonSolMgr::solve(): Invalid return from bd_solver::iterate().");
       }

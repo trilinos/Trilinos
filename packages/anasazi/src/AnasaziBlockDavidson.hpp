@@ -97,7 +97,7 @@ namespace Anasazi {
     Teuchos::RefCountPtr<const std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> > T;
     /*! \brief The current projected K matrix.
      *
-     * KK is of order BlockDavidson::getMaxSubspaceDim(), but only the principal submatrix of order \c curDim is meaningful. It is Hermitian.
+     * KK is of order BlockDavidson::getMaxSubspaceDim(), but only the principal submatrix of order \c curDim is meaningful. It is Hermitian in memory.
      *
      */
     Teuchos::RefCountPtr<const Teuchos::SerialDenseMatrix<int,ScalarType> > KK;
@@ -216,6 +216,8 @@ namespace Anasazi {
      * post-conditions specified under isInitialized(). Any component of the
      * state (i.e., KX) not given to initialize() will be generated.
      *
+     * Note, for any pointer in \c newstate which directly points to the multivectors in 
+     * the solver, the data is not copied.
      */
     void initialize(BlockDavidsonState<ScalarType,MV> newstate);
 
@@ -250,7 +252,8 @@ namespace Anasazi {
      * during iterate().
      *
      * \returns A BlockDavidsonState object containing const pointers to the current
-     * solver state.
+     * solver state. Note, these are direct pointers to the multivectors; they are not
+     * pointers to views of the multivectors.
      */
     BlockDavidsonState<ScalarType,MV> getState() const;
     
@@ -880,6 +883,9 @@ namespace Anasazi {
     //
     // inconsitent multivectors widths and lengths will not be tolerated, and
     // will be treated with exceptions.
+    //
+    // for multivector pointers in newstate which point directly (as opposed to indirectly, via a view) to 
+    // multivectors in the solver, the copy will not be affected.
 
     // set up V and KK: get them from newstate if user specified them
     // otherwise, set them manually
@@ -887,36 +893,43 @@ namespace Anasazi {
     Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > lclKK;
 
     if (newstate.V != Teuchos::null && newstate.KK != Teuchos::null) {
-      TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.V) != MVT::GetVecLength(*V_),
-                          std::invalid_argument, "Anasazi::BlockDavidson::initialize(newstate): Vector length of V not correct." );
-      TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.V) < blockSize_,
-                          std::invalid_argument, "Anasazi::BlockDavidson::initialize(newstate): Specified V must have at least block size vectors.");
-      TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.V) > blockSize_*numBlocks_,
-                          std::invalid_argument, "Anasazi::BlockDavidson::initialize(newstate): Number of vectors in V must be less than getMaxSubspaceDim().");
+      TEST_FOR_EXCEPTION( MVT::GetVecLength(*newstate.V) != MVT::GetVecLength(*V_), std::invalid_argument, 
+                          "Anasazi::BlockDavidson::initialize(newstate): Vector length of V not correct." );
+      TEST_FOR_EXCEPTION( newstate.curDim < blockSize_, std::invalid_argument, 
+                          "Anasazi::BlockDavidson::initialize(newstate): Rank of new state must be at least blockSize().");
+      TEST_FOR_EXCEPTION( newstate.curDim > blockSize_*numBlocks_, std::invalid_argument, 
+                          "Anasazi::BlockDavidson::initialize(newstate): Rank of new state must be less than getMaxSubspaceDim().");
+      TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.V) < newstate.curDim, std::invalid_argument, 
+                          "Anasazi::BlockDavidson::initialize(newstate): Multivector for basis in new state must be as large as specified state rank.");
 
-      curDim_ = MVT::GetNumberVecs(*newstate.V);
+      curDim_ = newstate.curDim;
       // pick an integral amount
       curDim_ = (int)(curDim_ / blockSize_)*blockSize_;
 
-      TEST_FOR_EXCEPTION( curDim_ != MVT::GetNumberVecs(*newstate.V),
-                          std::invalid_argument, "Anasazi::BlockDavidson::initialize(newstate): Number of vectors in V must be a multiple of getBlockSize().");
+      TEST_FOR_EXCEPTION( curDim_ != newstate.curDim, std::invalid_argument, 
+                          "Anasazi::BlockDavidson::initialize(newstate): Rank of new state must be a multiple of getBlockSize().");
 
       // check size of KK
-      TEST_FOR_EXCEPTION(newstate.KK->numRows() != curDim_ || newstate.KK->numCols() != curDim_, std::invalid_argument, 
-                         "Anasazi::BlockDavidson::initialize(newstate): Size of KK must be consistent with size of V.");
+      TEST_FOR_EXCEPTION( newstate.KK->numRows() < curDim_ || newstate.KK->numCols() < curDim_, std::invalid_argument, 
+                          "Anasazi::BlockDavidson::initialize(newstate): Projected matrix in new state must be as large as specified state rank.");
 
-      std::vector<int> nevind(curDim_);
-      for (int i=0; i<curDim_; ++i) nevind[i] = i;
 
       // put data in V
-      MVT::SetBlock(*newstate.V,nevind,*V_);
-      lclV = MVT::CloneView(*V_,nevind);
+      if (newstate.V != V_) {
+        std::vector<int> nevind(curDim_);
+        for (int i=0; i<curDim_; ++i) nevind[i] = i;
+        MVT::SetBlock(*newstate.V,nevind,*V_);
+        lclV = MVT::CloneView(*V_,nevind);
+      }
 
       // put data into KK_
-      lclKK = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*KK_,curDim_,curDim_) );
-      lclKK->assign(*newstate.KK);
+      if (newstate.KK != KK_) {
+        lclKK = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*KK_,curDim_,curDim_) );
+        Teuchos::SerialDenseMatrix<int,ScalarType> newKK(Teuchos::View,*newstate.KK,curDim_,curDim_);
+        lclKK->assign(newKK);
+      }
       //
-      // make lclKK hermitian in memory 
+      // make lclKK hermitian in memory (copy the upper half to the lower half)
       for (int j=0; j<curDim_; ++j) {
         for (int i=j+1; i<curDim_; ++i) {
           (*lclKK)(i,j) = SCT::conjugate((*lclKK)(j,i));
@@ -1031,7 +1044,11 @@ namespace Anasazi {
                           std::invalid_argument, "Anasazi::BlockDavidson::initialize(newstate): Size of X must be consistent with block size and length of V.");
       TEST_FOR_EXCEPTION((signed int)(newstate.T->size()) != curDim_,
                           std::invalid_argument, "Anasazi::BlockDavidson::initialize(newstate): Size of T must be consistent with dimension of V.");
-      MVT::SetBlock(*newstate.X,bsind,*X_);
+
+      if (newstate.X != X_) {
+        MVT::SetBlock(*newstate.X,bsind,*X_);
+      }
+
       std::copy(newstate.T->begin(),newstate.T->end(),theta_.begin());
 
       // we don't have primitive ritz vector
@@ -1098,7 +1115,9 @@ namespace Anasazi {
                           std::invalid_argument, "Anasazi::BlockDavidson::initialize(newstate): vector length of newstate.KX not correct." );
       TEST_FOR_EXCEPTION(MVT::GetVecLength(*newstate.KX) != MVT::GetVecLength(*X_),
                           std::invalid_argument, "Anasazi::BlockDavidson::initialize(newstate): newstate.KX must have at least block size vectors." );
-      MVT::SetBlock(*newstate.KX,bsind,*KX_);
+      if (newstate.KX != KX_) {
+        MVT::SetBlock(*newstate.KX,bsind,*KX_);
+      }
     }
     else {
       // generate KX
@@ -1118,7 +1137,9 @@ namespace Anasazi {
                             std::invalid_argument, "Anasazi::BlockDavidson::initialize(newstate): vector length of newstate.MX not correct." );
         TEST_FOR_EXCEPTION(MVT::GetVecLength(*newstate.MX) != MVT::GetVecLength(*X_),
                             std::invalid_argument, "Anasazi::BlockDavidson::initialize(newstate): newstate.MX must have at least block size vectors." );
-        MVT::SetBlock(*newstate.MX,bsind,*MX_);
+        if (newstate.MX != MX_) {
+          MVT::SetBlock(*newstate.MX,bsind,*MX_);
+        }
       }
       else {
         // generate MX
@@ -1142,7 +1163,9 @@ namespace Anasazi {
                           std::invalid_argument, "Anasazi::BlockDavidson::initialize(newstate): vector length of newstate.R not correct." );
       TEST_FOR_EXCEPTION(MVT::GetVecLength(*newstate.R) != MVT::GetVecLength(*X_),
                           std::invalid_argument, "Anasazi::BlockDavidson::initialize(newstate): newstate.R must have at least block size vectors." );
-      MVT::SetBlock(*newstate.R,bsind,*R_);
+      if (newstate.R != R_) {
+        MVT::SetBlock(*newstate.R,bsind,*R_);
+      }
     }
     else {
       Teuchos::TimeMonitor lcltimer( *timerCompRes_ );
