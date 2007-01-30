@@ -30,11 +30,15 @@
 //
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziEpetraAdapter.hpp"
-#include "AnasaziSolverUtils.hpp"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Vector.h"
-#include "AnasaziBasicOutputManager.hpp"
+
+#include "AnasaziSolverUtils.hpp"
 #include "AnasaziBasicOrthoManager.hpp"
+
+#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_LAPACK.hpp"
 
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
@@ -88,143 +92,232 @@ int main(int argc, char *argv[])
   
   typedef Epetra_MultiVector MV;
   typedef Epetra_Operator OP;
+  typedef Anasazi::MultiVecTraits<double,MV> MVT;
+
+  // declare an orthomanager for use below
+  Anasazi::BasicOrthoManager<double,MV,OP> orthman;
+
+  //--------------------------------------------------------------------------
+  //  test Householder code
+  //--------------------------------------------------------------------------
+  {
+    Teuchos::LAPACK<int,double> lapack;
+    double err;
+
+    if (verbose && MyPID == 0)
+      cout << endl << "************* Householder Apply Test *************" << endl << endl;
+
+    // generate random multivector V and orthonormalize it
+    Epetra_MultiVector V(Map,NumColumns), VQ(Map,NumColumns);
+    MVT::MvRandom(V);
+    orthman.normalize(V,Teuchos::null);
+
+    // generate random orthogonal matrix
+    int info;
+    std::vector<double> qrwork(NumColumns), tau(NumColumns);
+    Teuchos::SerialDenseMatrix<int,double> Q(NumColumns,NumColumns), H(NumColumns,NumColumns);
+    H.random();
+    // QR of random matrix H: this puts Householder reflectors in H,tau
+    lapack.GEQRF(H.numRows(),H.numCols(),H.values(),H.stride(),&tau[0],&qrwork[0],(int)qrwork.size(),&info);
+    if (info != 0)
+      cout << "error in LAPACK::GEQRF(), info==" << info << endl;
+    // generate Q of the QR=H
+    Q.assign(H);
+    lapack.ORGQR(Q.numRows(),Q.numCols(),Q.numCols(),Q.values(),Q.stride(),&tau[0],&qrwork[0],(int)qrwork.size(),&info);
+    if (info != 0)
+      cout << "error in LAPACK::ORGQR(), info==" << info << endl;
+
+    // test orthonormality of V
+    err = orthman.orthonormError(V);
+    if (verbose && MyPID == 0)
+      cout << "             orthonorm error of V: " << err << endl;
+    if (err > 1e-14) {
+      numberFailedTests++;
+      if (verbose && MyPID == 0) {
+        cout<< "ERROR:  orthonormalization failed." << endl;
+      }
+    }
+
+    // generate explicit V*Q
+    MVT::MvTimesMatAddMv(1.0,V,Q,0.0,VQ);
+
+    // test orthonormality of V*Q
+    err = orthman.orthonormError(VQ);
+    if (verbose && MyPID == 0)
+      cout << "            orthonorm error of VQ: " << err << endl;
+    if (err > 1e-14) {
+      numberFailedTests++;
+      if (verbose && MyPID == 0) {
+        cout<< "ERROR:  V*Q failed." << endl;
+      }
+    }
+
+    // apply house(V,H,tau)
+    Utils::applyHouse(H.numCols(),V,H,tau);
+    err = orthman.orthonormError(V);
+    if (verbose && MyPID == 0)
+      cout << "    orthonorm error of applyHouse: " << err << endl;
+    if (err > 1e-14) {
+      numberFailedTests++;
+      if (verbose && MyPID == 0) {
+        cout<< "ERROR:  applyHouse failed." << endl;
+      }
+    }
+
+
+    // test house(V,H,tau) == V*Q
+    err = Utils::errorEquality(V,VQ);
+    if (verbose && MyPID == 0)
+      cout << "        error(VQ - house(V,H,tau): " << err << endl;
+    if (err > 1e-14) {
+      numberFailedTests++;
+      if (verbose && MyPID == 0) {
+        cout<< "ERROR:  applyHouse failed." << endl;
+      }
+    }
+
+  }
 
   //--------------------------------------------------------------------------
   //  test direct solver code
   //--------------------------------------------------------------------------
+  {
 
-  if (verbose && MyPID == 0)
-    cout<< endl <<"************* Direct Solver Test *************" << endl << endl;
-
-  // using orthogonal vectors in Bvec in previous test to project the
-  // matrix with sorted vectors in Avec as diagonal entries.
-
-  std::vector<double> Avec( NumColumns );
-  Epetra_MultiVector Bvec(Map, NumColumns);
-  Epetra_Vector* colI = 0;
-  for (i=0; i<NumColumns; i++) {
-    colI = Bvec(i);
-    colI->PutScalar( i );
-  }
+    if (verbose && MyPID == 0)
+      cout<< endl <<"************* Direct Solver Test *************" << endl << endl;
   
-  for (i=0; i<NumColumns; i++) {
-    Avec[i] = Teuchos::ScalarTraits<double>::random();
-  }
-  std::sort(Avec.begin(),Avec.end());
-  if (verbose && MyPID == 0) {
+    // using orthogonal vectors in Bvec in previous test to project the
+    // matrix with sorted vectors in Avec as diagonal entries.
+  
+    std::vector<double> Avec( NumColumns );
+    Epetra_MultiVector Bvec(Map, NumColumns);
+    MVT::MvRandom(Bvec);
+    
     for (i=0; i<NumColumns; i++) {
-      cout << Avec[i] << "\t";
+      Avec[i] = Teuchos::ScalarTraits<double>::random();
     }
-    cout << endl;
-  }
-
-  int nev = ((NumColumns - 3) > 0) ? NumColumns - 3 : 3;
-  std::vector<double> lambda( nev );
-  Teuchos::SerialDenseMatrix<int,double> K( NumColumns, NumColumns );
-  Teuchos::SerialDenseMatrix<int,double> M( NumColumns, NumColumns );
-  Teuchos::SerialDenseMatrix<int,double> EV( NumColumns, nev );
-
-  for (i=0; i<NumColumns; i++) {
-    M(i,i) = 1.0;
-    K(i,i) = Avec[i];
-  }
-
-  Epetra_MultiVector MVtmp(Map, Bvec.NumVectors());
-
-  // orthonormalize this vector
-  Anasazi::BasicOrthoManager<double,MV,OP> OM;
-  OM.normalize(Bvec,Teuchos::null,Teuchos::null);
-
-  Anasazi::MultiVecTraits<double,MV>::MvTimesMatAddMv( 1.0, Bvec, K, 0.0, MVtmp );
-  Anasazi::MultiVecTraits<double,MV>::MvTransMv( 1.0, Bvec, MVtmp, K );
-
-  // Compute eigenvalues
-  info = 0;
-  info = Utils::directSolver( NumColumns, K, 0, &EV, &lambda, &nev, 10 );
-
-  testFailed = false;
-  if (info != 0) {
-    numberFailedTests++;
+    std::sort(Avec.begin(),Avec.end());
     if (verbose && MyPID == 0) {
-      cout<< "directSolver return code: "<< info << endl;
-      cout<< "ERROR:  DIRECT SOLVER FAILED [esType = 10]!"<<endl;
+      for (i=0; i<NumColumns; i++) {
+        cout << Avec[i] << "\t";
+      }
+      cout << endl;
     }
-  }
-  else {
-    for (i=0; i<nev; i++) {
-      if ( Teuchos::ScalarTraits<double>::magnitude( lambda[i]-K(i,i) ) > 1.0e-14 ) {
-        numberFailedTests++;
-        cout<< "ERROR (Processor "<<MyPID<<"):  DIRECT SOLVER FAILED [esType = 10]!"<<endl;
-        testFailed = true;
-        break;
-      }      
-    }
-    if (!testFailed && (verbose && MyPID == 0)) {
-      cout<< "DIRECT SOLVER PASSED [esType = 10]!"<<endl;
-    }
-  }
-
-  // now use non identity mass matrix and see how it goes
-
-  std::vector<double> Mdiag(NumColumns);
-  std::vector<double> true_lambda(NumColumns);
-  for (i=0; i<NumColumns; i++) {
-    Mdiag[i] = Teuchos::ScalarTraits<double>::random() + 2.0;
-    M(i,i) = Mdiag[i];
-    true_lambda[i] = K(i,i) / Mdiag[i]; 
-  }
-  //Utils::sortScalars( NumColumns, &true_lambda[0] );
-
-  // Compute eigenvalues
-  info = 0;
-  info = Utils::directSolver( NumColumns, K, &M, &EV, &lambda, &nev, 1 );
-
-  testFailed = false;
-  if (info != 0) {
-    if (verbose && MyPID == 0) {
-      cout<< "directSolver return code: "<< info << endl;
-      cout<< "ERROR:  DIRECT SOLVER FAILED [esType = 1]!"<<endl;
-    }
-  }
-  else {
-    for (i=0; i<nev; i++) {
-      if ( Teuchos::ScalarTraits<double>::magnitude( lambda[i]-true_lambda[i] ) > 1.0e-14 ) {
-        numberFailedTests++;
-        cout<< "ERROR (Processor "<<MyPID<<"):  DIRECT SOLVER FAILED [esType = 1]!"<<endl;
-        testFailed = true;
-        break;
-      } 
-    }
-    if (!testFailed && (verbose && MyPID == 0)) {
-      cout<< "DIRECT SOLVER PASSED [esType = 1]!"<<endl;
-    }
-  }
   
-  // same test using deflated eigensolver
+    int nev = ((NumColumns - 3) > 0) ? NumColumns - 3 : 3;
+    std::vector<double> lambda( nev );
+    Teuchos::SerialDenseMatrix<int,double> K( NumColumns, NumColumns );
+    Teuchos::SerialDenseMatrix<int,double> M( NumColumns, NumColumns );
+    Teuchos::SerialDenseMatrix<int,double> EV( NumColumns, nev );
+  
+    for (i=0; i<NumColumns; i++) {
+      M(i,i) = 1.0;
+      K(i,i) = Avec[i];
+    }
+  
+    Epetra_MultiVector MVtmp(Map, Bvec.NumVectors());
+  
+    // orthonormalize this multivector
+    int rank = orthman.normalize(Bvec,Teuchos::null,Teuchos::null);
+    if (rank != NumColumns) {
+      numberFailedTests++;
+      if (verbose && MyPID == 0) {
+        cout << "normalize produced only rank " << rank << " basis" << endl;
+      }
+    }
 
-  // Compute eigenvalues
-  info = 0;
-  info = Utils::directSolver( NumColumns, K, &M, &EV, &lambda, &nev, 0 );
+    MVT::MvTransMv(1.0,Bvec,Bvec,M);
+    cout << "orthoerror(Bvvec): " << orthman.orthonormError(Bvec) << endl;
+  
+    MVT::MvTimesMatAddMv( 1.0, Bvec, K, 0.0, MVtmp );
+    MVT::MvTransMv( 1.0, Bvec, MVtmp, K );
 
-  testFailed = false;
-  if (info != 0) {
-    if (verbose && MyPID == 0) {
-      cout<< "directSolver return code: "<< info << endl;
-      cout<< "ERROR:  DIRECT SOLVER FAILED [esType = 0]!"<<endl;
+    // Compute eigenvalues
+    info = Utils::directSolver( NumColumns, K, 0, &EV, &lambda, &nev, 10 );
+  
+    testFailed = false;
+    if (info != 0) {
+      numberFailedTests++;
+      if (verbose && MyPID == 0) {
+        cout<< "directSolver return code: "<< info << endl;
+        cout<< "ERROR:  DIRECT SOLVER FAILED [esType = 10]!"<<endl;
+      }
     }
-  }
-  else {
-    for (i=0; i<nev; i++) {
-      if ( Teuchos::ScalarTraits<double>::magnitude( lambda[i]-true_lambda[i] ) > 1.0e-14 ) {
-        numberFailedTests++;
-        cout<< "ERROR (Processor "<<MyPID<<"):  DIRECT SOLVER FAILED [esType = 0]!"<<endl;
-        testFailed = true;
-        break;
-      }      
+    else {
+      for (i=0; i<nev; i++) {
+        if ( Teuchos::ScalarTraits<double>::magnitude( lambda[i]-K(i,i) ) > 1.0e-14 ) {
+          numberFailedTests++;
+          cout<< "ERROR (Processor "<<MyPID<<"):  DIRECT SOLVER FAILED [esType = 10]!"<<endl;
+          testFailed = true;
+          break;
+        }      
+      }
+      if (!testFailed && (verbose && MyPID == 0)) {
+        cout<< "DIRECT SOLVER PASSED [esType = 10]!"<<endl;
+      }
     }
-    if (!testFailed && (verbose && MyPID == 0)) {
-      cout<< "DIRECT SOLVER PASSED [esType = 0]!"<<endl;
+  
+    // now use non identity mass matrix and see how it goes
+  
+    std::vector<double> Mdiag(NumColumns);
+    std::vector<double> true_lambda(NumColumns);
+    for (i=0; i<NumColumns; i++) {
+      Mdiag[i] = Teuchos::ScalarTraits<double>::random() + 2.0;
+      M(i,i) = Mdiag[i];
+      true_lambda[i] = K(i,i) / Mdiag[i]; 
     }
+    //Utils::sortScalars( NumColumns, &true_lambda[0] );
+  
+    // Compute eigenvalues
+    info = Utils::directSolver( NumColumns, K, &M, &EV, &lambda, &nev, 1 );
+  
+    testFailed = false;
+    if (info != 0) {
+      if (verbose && MyPID == 0) {
+        cout<< "directSolver return code: "<< info << endl;
+        cout<< "ERROR:  DIRECT SOLVER FAILED [esType = 1]!"<<endl;
+      }
+    }
+    else {
+      for (i=0; i<nev; i++) {
+        if ( Teuchos::ScalarTraits<double>::magnitude( lambda[i]-true_lambda[i] ) > 1.0e-14 ) {
+          numberFailedTests++;
+          cout<< "ERROR (Processor "<<MyPID<<"):  DIRECT SOLVER FAILED [esType = 1]!"<<endl;
+          testFailed = true;
+          break;
+        } 
+      }
+      if (!testFailed && (verbose && MyPID == 0)) {
+        cout<< "DIRECT SOLVER PASSED [esType = 1]!"<<endl;
+      }
+    }
+    
+    // same test using deflated eigensolver
+  
+    // Compute eigenvalues
+    info = Utils::directSolver( NumColumns, K, &M, &EV, &lambda, &nev, 0 );
+  
+    testFailed = false;
+    if (info != 0) {
+      if (verbose && MyPID == 0) {
+        cout<< "directSolver return code: "<< info << endl;
+        cout<< "ERROR:  DIRECT SOLVER FAILED [esType = 0]!"<<endl;
+      }
+    }
+    else {
+      for (i=0; i<nev; i++) {
+        if ( Teuchos::ScalarTraits<double>::magnitude( lambda[i]-true_lambda[i] ) > 1.0e-14 ) {
+          numberFailedTests++;
+          cout<< "ERROR (Processor "<<MyPID<<"):  DIRECT SOLVER FAILED [esType = 0]!"<<endl;
+          testFailed = true;
+          break;
+        }      
+      }
+      if (!testFailed && (verbose && MyPID == 0)) {
+        cout<< "DIRECT SOLVER PASSED [esType = 0]!"<<endl;
+      }
+    }
+
   }
   
 #ifdef EPETRA_MPI
@@ -235,14 +328,14 @@ int main(int argc, char *argv[])
 
  if (numberFailedTests) {
     if (verbose && MyPID==0)
-      cout << "End Result: TEST FAILED" << endl;
+      cout << endl << "End Result: TEST FAILED" << endl;
     return -1;
   }
   //
   // Default return value
   //
   if (verbose && MyPID==0)
-    cout << "End Result: TEST PASSED" << endl;
+    cout << endl << "End Result: TEST PASSED" << endl;
   return 0;
 
 }

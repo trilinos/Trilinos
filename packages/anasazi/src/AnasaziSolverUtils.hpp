@@ -86,6 +86,35 @@ namespace Anasazi {
 
     //@} 
 
+    //! @name Basis update methods
+    //@{
+
+    //! Apply a sequence of Householder reflectors (from \c GEQRF) to a multivector, using minimal workspace.
+    /*! 
+      @param k [in] the number of Householder reflectors composing the product
+      @param V [in/out] the multivector to be modified, with \f$n\f$ columns
+      @param H [in] a \f$n \times n\f$ matrix containing the encoded Householder vectors, as returned from \c GEQRF (see below)
+      @param tau [in] the \f$n\f$ coefficients for the Householder reflects, as returned from \c GEQRF
+      @param workMV [work] (optional) a multivector used for workspace. it need contain only a single vector; it if contains more, only the first vector will be modified.
+
+      This routine applies a sequence of Householder reflectors, \f$H_1 H_2 \cdots H_k\f$, to a multivector \f$V\f$. The 
+      reflectors are applied individually, as rank-one updates to the multivector. The benefit of this is that the only 
+      required workspace is a one-column multivector. This workspace can be provided by the user. If it is not, it will
+      be allocated locally on each call to applyHouse.
+
+      Each \f$H_i\f$ (\f$i=1,\ldots,k \leq n\f$) has the form<br>
+      \f$ H_i = I - \tau_i v_i v_i^T \f$ <br>
+      where \f$\tau_i\f$ is a scalar and \f$v_i\f$ is a vector with
+      \f$v_i(1:i-1) = 0\f$ and \f$e_i^T v_i\f$ = 1; \f$v(i+1:n)\f$ is stored below <tt>H(i,i)</tt>
+      and \f$\tau_i\f$ in <tt>tau[i-1]</tt>. (Note: zero-based indexing used for \c H and \c tau).
+
+      If the multivector is \f$m \times n\f$ and we apply \f$k\f$ Householder reflectors, the total cost of the method is
+      \f$4mnk - 2m(k^2-k)\f$ flops. For \f$k=n\f$, this becomes \f$2mn^2\f$, the same as for a matrix-matrix multiplication by the accumulated Householder reflectors.
+     */
+    static void applyHouse(int k, MV &V, const Teuchos::SerialDenseMatrix<int,ScalarType> &H, const std::vector<ScalarType> &tau, Teuchos::RefCountPtr<MV> workMV = Teuchos::null);
+
+    //@}
+
     //! @name Eigensolver Projection Methods
     //@{ 
 
@@ -129,7 +158,7 @@ namespace Anasazi {
     //! Return the maximum coefficient of the matrix \f$M * X - MX\f$ scaled by the maximum coefficient of \c MX.
     /*! \note When \c M is not specified, the identity is used.
      */
-    static MagnitudeType errorEquality(const MV *X, const MV *MX, const OP *M = 0);
+    static MagnitudeType errorEquality(const MV &X, const MV &MX, Teuchos::RefCountPtr<const OP> M = Teuchos::null);
     
     //@}
     
@@ -152,6 +181,7 @@ namespace Anasazi {
 
   template<class ScalarType, class MV, class OP>
   SolverUtils<ScalarType, MV, OP>::SolverUtils() {}
+
 
   //-----------------------------------------------------------------------------
   // 
@@ -244,6 +274,76 @@ namespace Anasazi {
       blas.COPY(m, copyQ[perm[i]], 1, Q[i], 1);
     }
   }
+
+
+  //-----------------------------------------------------------------------------
+  // 
+  //  BASIS UPDATE METHODS
+  //
+  //-----------------------------------------------------------------------------
+
+  // apply householder reflectors to multivector
+  template<class ScalarType, class MV, class OP>
+  void SolverUtils<ScalarType, MV, OP>::applyHouse(int k, MV &V, const Teuchos::SerialDenseMatrix<int,ScalarType> &H, const std::vector<ScalarType> &tau, Teuchos::RefCountPtr<MV> workMV) {
+
+    const int n = MVT::GetNumberVecs(V);
+    const ScalarType ONE = SCT::one();
+    const ScalarType ZERO = SCT::zero();
+
+    // early exit if V has zero-size or if k==0
+    if (MVT::GetNumberVecs(V) == 0 || MVT::GetVecLength(V) == 0 || k == 0) {
+      return;
+    }
+
+    if (workMV == Teuchos::null) {
+      // user did not give us any workspace; allocate some
+      workMV = MVT::Clone(V,1);
+    }
+    else if (MVT::GetNumberVecs(*workMV) > 1) {
+      std::vector<int> first(1);
+      first[0] = 0;
+      workMV = MVT::CloneView(*workMV,first);
+    }
+    else {
+      TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*workMV) < 1,std::invalid_argument,"Anasazi::SolverUtils::applyHouse(): work multivector was empty.");
+    }
+    // Q = H_1 ... H_k must be square, with as many rows as V has vectors
+    TEST_FOR_EXCEPTION( H.numRows() != H.numCols(), std::invalid_argument,"Anasazi::SolverUtils::applyHouse(): H should be square.");
+    TEST_FOR_EXCEPTION( H.numRows() != (int)tau.size(), std::invalid_argument,"Anasazi::SolverUtils::applyHouse(): Size of H,tau inconsistent.");
+    TEST_FOR_EXCEPTION( H.numRows() != MVT::GetNumberVecs(V), std::invalid_argument,"Anasazi::SolverUtils::applyHouse(): Size of H,V inconsistent.");
+
+    // perform the loop
+    // flops: Sum_{i=0:k-1} 4 m (n-i) == 4mnk - 2m(k^2- k)
+    for (int i=0; i<k; i++) {
+      // apply V H_i+1 = V - tau_i+1 (V v_i+1) v_i+1^T
+      // because of the structure of v_i+1, this transform does not affect the first i columns of V
+      std::vector<int> activeind(n-i);
+      for (int j=0; j<n-i; j++) activeind[j] = j+i;
+      Teuchos::RefCountPtr<MV> actV = MVT::CloneView(V,activeind);
+
+      // note, below H_i, v_i and tau_i are mathematical objects which use 1-based indexing
+      // while H, v and tau are data structures using 0-based indexing
+
+      // get v_i+1: i-th column of H
+      Teuchos::SerialDenseMatrix<int,ScalarType> v(Teuchos::Copy,H,n-i,1,i,i);
+      // v_i+1(1:i) = 0: this isn't part of v
+      // e_i+1^T v_i+1 = 1 = v(0)
+      v(0,0) = ONE;
+
+      // compute -tau_i V v_i
+      // tau_i+1 is tau[i]
+      // flops: 2 m n-i
+      MVT::MvTimesMatAddMv(-tau[i],*actV,v,ZERO,*workMV);
+
+      // perform V = V + workMV v_i^T
+      // flops: 2 m n-i
+      Teuchos::SerialDenseMatrix<int,ScalarType> vT(v,Teuchos::CONJ_TRANS);
+      MVT::MvTimesMatAddMv(ONE,*workMV,vT,ONE,*actV);
+
+      actV = Teuchos::null;
+    }
+  }
+
   
   //-----------------------------------------------------------------------------
   // 
@@ -507,8 +607,8 @@ namespace Anasazi {
   //-----------------------------------------------------------------------------
 
   template<class ScalarType, class MV, class OP>
-  typename Teuchos::ScalarTraits<ScalarType>::magnitudeType SolverUtils<ScalarType, MV, OP>::errorEquality(const MV *X, const MV *MX, 
-                                                                 const OP *M)
+  typename Teuchos::ScalarTraits<ScalarType>::magnitudeType 
+  SolverUtils<ScalarType, MV, OP>::errorEquality(const MV &X, const MV &MX, Teuchos::RefCountPtr<const OP> M)
   {
     // Return the maximum coefficient of the matrix M * X - MX
     // scaled by the maximum coefficient of MX.
@@ -516,17 +616,18 @@ namespace Anasazi {
     
     MagnitudeType maxDiff = SCT::magnitude(SCT::zero());
     
-    int xc = (X) ? MVT::GetNumberVecs( *X ) : 0;
-    int mxc = (MX) ? MVT::GetNumberVecs( *MX ) : 0;
+    int xc = MVT::GetNumberVecs(X);
+    int mxc = MVT::GetNumberVecs(MX);
     
-    if ((xc != mxc) || (xc*mxc == 0)) {
+    TEST_FOR_EXCEPTION(xc != mxc,std::invalid_argument,"Anasazi::SolverUtils::errorEquality(): input multivecs have different number of columns.");
+    if (xc == 0) {
       return maxDiff;
     }
     
     int i;
     MagnitudeType maxCoeffX = SCT::magnitude(SCT::zero());
     std::vector<MagnitudeType> tmp( xc );
-    MVT::MvNorm( *MX, &tmp );
+    MVT::MvNorm(MX, &tmp);
 
     for (i = 0; i < xc; ++i) {
       maxCoeffX = (tmp[i] > maxCoeffX) ? tmp[i] : maxCoeffX;
@@ -534,14 +635,14 @@ namespace Anasazi {
 
     std::vector<int> index( 1 );
     Teuchos::RefCountPtr<MV> MtimesX; 
-    if (M) {
-      MtimesX = MVT::Clone( *X, xc );
-      OPT::Apply( *M, *X, *MtimesX );
+    if (M != Teuchos::null) {
+      MtimesX = MVT::Clone( X, xc );
+      OPT::Apply( *M, X, *MtimesX );
     }
     else {
-      MtimesX = MVT::CloneCopy( *(const_cast<MV *>(X)) );
+      MtimesX = MVT::CloneCopy(X);
     }
-    MVT::MvAddMv( -1.0, *MX, 1.0, *MtimesX, *MtimesX );
+    MVT::MvAddMv( -1.0, MX, 1.0, *MtimesX, *MtimesX );
     MVT::MvNorm( *MtimesX, &tmp );
    
     for (i = 0; i < xc; ++i) {

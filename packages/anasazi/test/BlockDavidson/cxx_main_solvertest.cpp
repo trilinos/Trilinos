@@ -127,7 +127,7 @@ void checks( RefCountPtr<BlockDavidson<ScalarType,MV,OP> > solver, int blocksize
     for (int i=0; i<blocksize; i++) T(i,i) = theta[i].realpart;
     // BlockDavidson computes residuals like R = K*X - M*X*T 
     MVT::MvTimesMatAddMv(-1.0,*Mevecs,T,1.0,*Kevecs);
-    MagnitudeType error = msutils.errorEquality(Kevecs.get(),state.R.get());
+    MagnitudeType error = msutils.errorEquality(*Kevecs,*state.R);
     // residuals from BlockDavidson should be exact; we will cut a little slack
     TEST_FOR_EXCEPTION(error > 1e-14,get_out,"Residuals from solver did not match eigenvectors.");
 

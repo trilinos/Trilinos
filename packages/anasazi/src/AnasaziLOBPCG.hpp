@@ -1931,11 +1931,11 @@ namespace Anasazi {
       }
     }
     if (chk.checkMX && hasM_ && initialized_) {
-      tmp = Utils::errorEquality(X_.get(), MX_.get(), MOp_.get());
+      tmp = Utils::errorEquality(*X_, *MX_, MOp_);
       os << " >> Error in MX == M*X    : " << tmp << endl;
     }
     if (chk.checkKX && initialized_) {
-      tmp = Utils::errorEquality(X_.get(), KX_.get(), Op_.get());
+      tmp = Utils::errorEquality(*X_, *KX_, Op_);
       os << " >> Error in KX == K*X    : " << tmp << endl;
     }
 
@@ -1953,11 +1953,11 @@ namespace Anasazi {
       }
     }
     if (chk.checkMP && hasM_ && hasP_ && initialized_) {
-      tmp = Utils::errorEquality(P_.get(), MP_.get(), MOp_.get());
+      tmp = Utils::errorEquality(*P_, *MP_, MOp_);
       os << " >> Error in MP == M*P    : " << tmp << endl;
     }
     if (chk.checkKP && hasP_ && initialized_) {
-      tmp = Utils::errorEquality(P_.get(), KP_.get(), Op_.get());
+      tmp = Utils::errorEquality(*P_, *KP_, Op_);
       os << " >> Error in KP == K*P    : " << tmp << endl;
     }
 
@@ -1979,7 +1979,7 @@ namespace Anasazi {
       }
     }
     if (chk.checkMH && hasM_ && initialized_) {
-      tmp = Utils::errorEquality(H_.get(), MH_.get(), MOp_.get());
+      tmp = Utils::errorEquality(*H_, *MH_, MOp_);
       os << " >> Error in MH == M*H    : " << tmp << endl;
     }
 
