@@ -209,8 +209,14 @@ namespace Anasazi {
      * post-conditions specified under isInitialized(). Any necessary component of the
      * state not given to initialize() will be generated.
      *
+     * Note, for any pointer in \c newstate which directly points to the multivectors in 
+     * the solver, the data is not copied.
      */
     void initialize(BlockKrylovSchurState<ScalarType,MV> state);
+
+    /*! \brief Initialize the solver with the initial vectors from the eigenproblem
+     *  or random data.
+     */
     void initialize();
 
     /*! \brief Indicates whether the solver has been initialized or not.
@@ -963,16 +969,22 @@ namespace Anasazi {
       for (int i=0; i<lclDim; i++) nevind[i] = i;
 
       // copy basis vectors from newstate into V
-      MVT::SetBlock(*newstate.V,nevind,*V_);
+      if (newstate.V != V_) {
+        MVT::SetBlock(*newstate.V,nevind,*V_);
+      }
 
       // put data into H_, make sure old information is not still hanging around.
-      H_->putScalar( ST_ZERO );
-      Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > lclH;
-      lclH = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*H_,curDim_+blockSize_,curDim_) );
-      lclH->assign(*newstate.H);
+      if (newstate.H != H_) {
+        H_->putScalar( ST_ZERO );
+        Teuchos::SerialDenseMatrix<int,ScalarType> newH(Teuchos::View,*newstate.H,curDim_+blockSize_,curDim_);
+        Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > lclH;
+        lclH = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*H_,curDim_+blockSize_,curDim_) );
+        lclH->assign(newH);
 
-      // done with local pointers
-      lclH = Teuchos::null;
+        // done with local pointers
+        lclH = Teuchos::null;
+      }
+
     }
     else {
       // user did not specify a basis V
