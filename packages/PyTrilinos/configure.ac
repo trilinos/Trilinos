@@ -204,11 +204,9 @@ TAC_ARG_WITH_INCDIRS
 # Configure python
 # ------------------------------------------------------------------------
 
+AZ_PYTHON_ENABLE( )   # Check for --enable-python, --disable-python
 AZ_PYTHON_WITH( )     # Check for --with-python, --without-python
-az_python_use=true
-AM_CONDITIONAL(PYTHON_USE, test x"$az_python_use" = x"true")
-
-AC_PATH_PROG([PYTHON], python)
+AZ_PYTHON_PATH( )     # Look for python assuming none has been previously found
 
 if test -z "$PYTHON"; then
    AC_MSG_ERROR(no path to python found)
