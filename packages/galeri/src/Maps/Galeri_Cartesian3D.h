@@ -58,24 +58,35 @@ Cartesian3D(const Epetra_Comm& Comm, const int nx, const int ny, const int nz,
   int MyPID = Comm.MyPID();
   int startx, starty, startz, endx, endy, endz;
 
-  int modx = (nx +(nx %mx )) / mx;
-  int mody = (ny +(ny %my )) / my;
-  int modz = (nz +(nz %mz )) / mz;
-
   int mxy  = mx * my;
   int zpid = MyPID / mxy;
   int xpid = (MyPID % mxy) % mx;
   int ypid = (MyPID % mxy) / mx;
 
-  startx = xpid * modx;
-  if ((xpid + 1) * modx < nx) endx = (xpid + 1) * modx;
-  else                        endx = nx;
-  starty = ypid * mody;
-  if ((ypid + 1) * mody < ny) endy = (ypid + 1) * mody;
-  else                        endy = ny;
-  startz = zpid * modz;
-  if ((zpid + 1) * modz < nz) endz = (zpid + 1) * modz;
-  else                        endz = nz;
+  int PerProcSmallXDir = (int) (((double) nx)/((double) mx));
+  int PerProcSmallYDir = (int) (((double) ny)/((double) my));
+  int PerProcSmallZDir = (int) (((double) nz)/((double) mz));
+  int NBigXDir         = nx - PerProcSmallXDir*mx;
+  int NBigYDir         = ny - PerProcSmallYDir*my;
+  int NBigZDir         = nz - PerProcSmallZDir*mz;
+
+  if (xpid < NBigXDir) startx =  xpid*(PerProcSmallXDir+1);
+  else                 startx = (xpid-NBigXDir)*PerProcSmallXDir +
+                                      NBigXDir*(PerProcSmallXDir+1);
+  endx = startx + PerProcSmallXDir;
+  if (xpid < NBigXDir) endx++;
+
+  if (ypid < NBigYDir) starty =  ypid*(PerProcSmallYDir+1);
+  else                 starty = (ypid-NBigYDir)*PerProcSmallYDir +
+                                      NBigYDir*(PerProcSmallYDir+1);
+  endy = starty + PerProcSmallYDir;
+  if ( ypid < NBigYDir) endy++;
+
+  if (zpid < NBigZDir) startz =  zpid*(PerProcSmallZDir+1);
+  else                 startz = (zpid-NBigZDir)*PerProcSmallZDir +
+                                      NBigZDir*(PerProcSmallZDir+1);
+  endz = startz + PerProcSmallZDir;
+  if ( zpid < NBigZDir) endz++;
 
   int NumMyElements = (endx - startx) * (endy - starty) * (endz - startz);
   vector<int> MyGlobalElements(NumMyElements);

@@ -86,13 +86,16 @@ CreateMap(string MapType, Epetra_Comm& Comm, Teuchos::ParameterList& List)
 
     if (mx == -1 || my == -1) 
     {
-      mx = (int)sqrt((double)(Comm.NumProc()));
-      my = mx;
+      mx = (int)(sqrt((double)(Comm.NumProc()+.001)));
+      my =  Comm.NumProc()/mx;
 
-      if (mx * my != Comm.NumProc()) 
-        throw(Exception(__FILE__, __LINE__,
-                        "Number of processes must be a perfect square", 
-                        "otherwise set mx and my"));
+      // simple attempt at trying to find an mx and my such 
+      // mx*my = NumProc
+
+      while ( (mx*my) != Comm.NumProc() ) {
+        mx--;
+        my = Comm.NumProc()/mx;
+      }
     } 
 
     return(Maps::Cartesian2D(Comm, nx, ny, mx, my));
@@ -131,10 +134,33 @@ CreateMap(string MapType, Epetra_Comm& Comm, Teuchos::ParameterList& List)
       my = mx;
       mz = mx;
 
-      if (mx * my * mz != Comm.NumProc()) 
-        throw(Exception(__FILE__, __LINE__,
-                        "Number of processes must be a perfect cube", 
-                        "otherwise set mx, my and mz"));
+      if (mx * my * mz != Comm.NumProc())  {
+	  // simple attempt to find a set of processor assignments
+         mx = 1; my = 1; mz = 1;
+         int ProcTemp = Comm.NumProc();
+         int factors[50];
+         for (int jj = 0; jj < 50; jj++) factors[jj] = 0;
+         for (int jj = 2; jj < 50; jj++) {
+            int flag = 1;
+            while (flag == 1) {
+               int temp = ProcTemp/jj;
+               if (temp*jj == ProcTemp) {
+                  factors[jj]++; ProcTemp = temp;
+               }
+               else flag = 0;
+            }
+         }
+         mx = ProcTemp;
+         for (int jj = 50-1; jj > 0; jj--) {
+             while (factors[jj] != 0) {
+                if (  (mx <= my) && (mx <= mz) ) mx = mx*jj;
+                else if (  (my <= mx) && (my <= mz) ) my = my*jj;
+                else mz = mz*jj;
+                factors[jj]--;
+             }
+         }
+        
+      }
     } 
     else 
     {
