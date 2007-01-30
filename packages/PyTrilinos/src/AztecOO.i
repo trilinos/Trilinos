@@ -77,7 +77,9 @@ Solver.Iterate(1550, 1e-5)
 """
 %enddef
 
-%module(package="PyTrilinos", docstring=AZTECOO_DOCSTRING) AztecOO
+%module(package   = "PyTrilinos",
+	docstring = AZTECOO_DOCSTRING,
+	autodoc   = "1") AztecOO
 
 %{
 // System includes
@@ -111,7 +113,7 @@ Solver.Iterate(1550, 1e-5)
 #include "AztecOO_Version.h"
 
 // Optional Teuchos support
-#ifdef HAVE_PYTRILINOS_AZTECOO_TEUCHOS
+#ifdef HAVE_AZTECOO_TEUCHOS
 #include "Teuchos_PythonParameter.h"
 #endif
 
@@ -127,7 +129,7 @@ Solver.Iterate(1550, 1e-5)
 // External Trilinos interface imports
 using namespace std;
 %import "Epetra.i"
-#ifdef HAVE_PYTRILINOS_AZTECOO_TEUCHOS
+#ifdef HAVE_AZTECOO_TEUCHOS
 %import "Teuchos.i"
 #endif
 
@@ -139,25 +141,27 @@ using namespace std;
 }
 %enddef
 
-AZTECOO_EXCEPTION_HANDLER(AztecOO,SetParameters)
-
-// AztecOO interface includes
-%include "AztecOO.h"
-%include "AztecOO_Version.h"
+//////////////////////////////////////
+// AztecOO enumerated types support //
+//////////////////////////////////////
 %include "az_aztec_defs.h"
 
-// Extend directives
-%extend AztecOO {
-
-  double GetStatus(int what)
-  {
-    const double* status = self->GetAztecStatus();
-    return(status[what]);
-  }
-
-}
-
-// Python code
+/////////////////////////////
+// AztecOO Version support //
+/////////////////////////////
+%include "AztecOO_Version.h"
 %pythoncode %{
 __version__ = AztecOO_Version().split()[2]
 %}
+
+/////////////////////
+// AztecOO support //
+/////////////////////
+AZTECOO_EXCEPTION_HANDLER(AztecOO,SetParameters)
+%extend AztecOO {
+  double GetStatus(int what) {
+    const double* status = self->GetAztecStatus();
+    return(status[what]);
+  }
+}
+%include "AztecOO.h"

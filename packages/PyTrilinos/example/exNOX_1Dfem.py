@@ -3,7 +3,7 @@
 # @HEADER
 # ************************************************************************
 #
-#                 PyTrilinos.NOX: Python Interface to NOX
+#                PyTrilinos: Python Interface to Trilinos
 #                   Copyright (2005) Sandia Corporation
 #
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -122,8 +122,6 @@ class Interface(NOX.Epetra.Interface.Required):
         self.__initialSoln       = Epetra.Vector(self.__stdMap)
         self.__rhs               = Epetra.Vector(self.__stdMap)
         self.createGraph()
-        self.__jacobian          = Epetra.CrsMatrix(Epetra.Copy,self.__graph)
-        self.__jacobian.FillComplete()
         x = array(self.__stdMap.MyGlobalElements()) / (numGlobalElements-1.0)
         self.__x                 = Epetra.Vector(self.__stdMap,x)
         self.__h                 = (self.__xmax - self.__xmin) / (len(self.__x)-1)
@@ -148,9 +146,6 @@ class Interface(NOX.Epetra.Interface.Required):
 
     def getMesh(self):
         return self.__x
-
-    def getJacobian(self):
-        return self.__jacobian
 
     def setPDEfactor(self, k):
         self.__k = k

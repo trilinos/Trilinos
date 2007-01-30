@@ -101,6 +101,7 @@ POST_UNINSTALL = :
 host_triplet = @host@
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	$(srcdir)/PyTrilinos_config.h.in $(top_srcdir)/config/swig.am
+@HAVE_PYTRILINOS_AZTECOO_TEUCHOS_TRUE@@HAVE_PYTRILINOS_AZTECOO_TRUE@am__append_1 = -DHAVE_AZTECOO_TEUCHOS 
 subdir = src
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_pkg_swig.m4 \
@@ -325,7 +326,10 @@ DEPFILES = $(shell ls $(DEPDIR)/*.Pi 2> /dev/null; ls $(DEPDIR)/dummy)
 CLEANFILES = $(DEPDIR)/*.Pi $(PROXIES) $(WRAPPERS) $(DIR_HDRS)
 
 # Define the SWIGCOMPILE macro
-SWIGCOMPILE = $(SWIG) $(SWIG_PYTHON_OPT)
+SWIGCOMPILE = $(SWIG) $(SWIG_PYTHON_OPT) $(SWIG_DEFINES)
+
+# Include swig rules
+SWIG_DEFINES = $(am__append_1)
 @HAVE_PYTRILINOS_TEUCHOS_TRUE@TEUCHOS_INTERFACES = Teuchos.i
 @HAVE_PYTRILINOS_TEUCHOS_TRUE@TEUCHOS_PROXIES = PyTrilinos/Teuchos.py
 @HAVE_PYTRILINOS_EPETRA_TRUE@EPETRA_INTERFACES = Epetra.i
@@ -580,8 +584,6 @@ include $(DEPFILES)
 
 swigclean:
 	rm -f $(srcdir)/*_wrap.cpp $(WRAPPERS) 
-
-# Include swig rules
 
 # For the package-enabling macros that follow, I would have preferred
 # all info (interface file names, python proxy file names, wrapper code
