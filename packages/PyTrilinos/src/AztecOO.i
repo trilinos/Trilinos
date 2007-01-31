@@ -78,8 +78,8 @@ Solver.Iterate(1550, 1e-5)
 %enddef
 
 %module(package   = "PyTrilinos",
-	docstring = AZTECOO_DOCSTRING,
-	autodoc   = "1") AztecOO
+	autodoc   = "1",
+	docstring = AZTECOO_DOCSTRING) AztecOO
 
 %{
 // System includes

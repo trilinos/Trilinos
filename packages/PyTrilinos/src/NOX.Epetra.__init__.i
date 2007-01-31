@@ -135,8 +135,12 @@ TEUCHOS_RCP_TYPEMAPS(Epetra_Operator)
 //%template() std::vector< Epetra_IntVector >;
 TEUCHOS_RCP_TYPEMAPS(vector_Epetra_IntVector)
 
-// Typemaps: Make Epetra_Vector and NOX::Epetra::Vector input
-// arguments interchangeable
+//////////////
+// Typemaps //
+//////////////
+
+// Make Epetra_Vector and NOX::Epetra::Vector input arguments
+// interchangeable
 %typemap(in) NOX::Epetra::Vector & (void* argp=0, int res=0) {
   res = SWIG_ConvertPtr($input, &argp, $descriptor, %convertptr_flags);
   if (!SWIG_IsOK(res)) {
@@ -159,6 +163,17 @@ TEUCHOS_RCP_TYPEMAPS(vector_Epetra_IntVector)
 }
 %typemap(freearg) NOX::Epetra::Vector {
   delete $1;
+}
+
+// Convert NOX::Abstract::Vector return arguments to NOX.Epetra.Vectors
+%typemap(out) NOX::Abstract::Vector & {
+  static swig_type_info * swig_NEV_ptr = SWIG_TypeQuery("NOX::Epetra::Vector*");
+  NOX::Epetra::Vector * nevResult = dynamic_cast<NOX::Epetra::Vector*>($1);
+  if (nevResult == NULL) {
+    // If we can't upcast, then return the NOX::Abstract::Vector
+    $result = SWIG_NewPointerObj((void*)&$1, $descriptor, 1);
+  }
+  $result = SWIG_NewPointerObj((void*)nevResult, swig_NEV_ptr, 1);
 }
 
 // Epetra imports

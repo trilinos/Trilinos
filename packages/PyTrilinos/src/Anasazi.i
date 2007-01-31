@@ -30,7 +30,7 @@
 
 // This documentation string will be the python help facility help
 // string
-%define DOCSTRING
+%define ANASAZI_DOCSTRING
 "The Anasazi module allows access to The Trilinos package
 Anasazi.  Use the python help() facility for local documentation
 on classes and methods, or see the on-line documentation for more
@@ -38,7 +38,9 @@ in-depth information."
 %enddef
 
 // Define the module name, its package and documentation string
-%module(package="PyTrilinos", docstring=DOCSTRING) Anasazi
+%module(package   = "PyTrilinos",
+	autodoc   = "1",
+	docstring = ANASAZI_DOCSTRING) Anasazi
 
 // Code within the percent-bracket delimiters is copied verbatim to
 // the C++ wrapper source file.  Anything that is %include-ed later
@@ -56,59 +58,37 @@ in-depth information."
 #include "AnasaziOutputManager.hpp"
 %}
 
-// Ignore directives.  Here we use them to prevent wrapping the Print
-// methods supported by Newp_Hello and Newp_Jambo.  Instead, we will
-// later define __str__() methods for the classes, which is standard
-// python technique for output.  The ignore directive is also good for
-// eliminating warnings about methods python cannot wrap, such as
-// operator=.
+// General ignore directives
 %ignore *::operator=;
 %ignore *::print;
 
-// Auto-documentation feature.  This ensures that calling help() on a
-// wrapped method returns an argument list (or lists, in the case of
-// overloaded methods).  The "1" option includes type information in
-// the list.  While not as extensive as say, doxygen documentation,
-// this is often enough to greatly increase the wrapper's usability.
+// Auto-documentation feature
 %feature("autodoc", "1");
 
 // Rename directives
 %rename (OutputManager_) Anasazi::OutputManager;
 
-// C++ STL support.  If the wrapped class uses standard template
-// library containers, the following %include-s wraps the containers
-// and makes certain conversions seamless, such as between std::string
-// and python strings.
-%include "std_string.i"
-
- //%import "Epetra.i"
-
-// Anasazi interface includes.  Create a %include line for every
-// header file with a prototype you want wrapped.  In this example,
-// Anasazi_Version contains a function, Newp_Hello contains a
-// class, and Newp_Jambo contains an optional class.
+// C++ STL support
 using namespace std;
+%include "stl.i"
+
+// Support for other Trilinos packages
+//%import "Epetra.i"
+
+/////////////////////////////
+// Anasazi Version support //
+/////////////////////////////
 %include "AnasaziVersion.cpp"
-%include "AnasaziBasicSort.hpp"
-%include "AnasaziOutputManager.hpp"
-
- //%template (OutputManager) Anasazi::OutputManager<double>;
-
-// Extensions.  The %extend directive allows you to extend classes to
-// include additional methods.  In this example, we are adding a
-// __str__() method, which is a standard python method for classes.
-// When the python "print" command encounters a non-string object, it
-// calls the str() function, which in turn looks for a __str__()
-// method in the class.  Thus if hello is a Newp_Hello object, then
-// "print hello" will return a string obtained from the C++ Print()
-// method.
-
-// Python code.  This code is added to the end of the python proxy
-// file created by swig.  Here we set the namespace attribute
-// "__version__" equal to the value returned by the
-// Anasazi_Version function.
 %pythoncode %{
-
-  __version__ = Anasazi_Version().split()[2]
-
+__version__ = Anasazi_Version().split()[2]
 %}
+
+///////////////////////////////
+// Anasazi BasicSort support //
+///////////////////////////////
+%include "AnasaziBasicSort.hpp"
+
+///////////////////////////////////
+// Anasazi OutputManager support //
+///////////////////////////////////
+%include "AnasaziOutputManager.hpp"

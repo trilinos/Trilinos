@@ -55,7 +55,9 @@ For examples of usage, please consult the python/example subdirectory.
 "
 %enddef
 
-%module(package="PyTrilinos", docstring=AMESOS_DOCSTRING) Amesos
+%module(package   = "PyTrilinos",
+	autodoc   = "1",
+	docstring = AMESOS_DOCSTRING) Amesos
 
 %{
 // System includes
@@ -151,42 +153,15 @@ For examples of usage, please consult the python/example subdirectory.
 %rename(Dscpack    ) Amesos_Dscpack;
 
 // SWIG library includes
-%include "std_string.i"
+%include "stl.i"
 
-// Amesos interface includes
+/////////////////////////
+// Amesos core support //
+/////////////////////////
 %include "Amesos_config.h"
 %include "Amesos_ConfigDefs.h"
 %include "Amesos.h"
 %include "Amesos_BaseSolver.h"
-#ifdef HAVE_AMESOS_LAPACK
-%include "Amesos_Lapack.h"
-#endif
-#ifdef HAVE_AMESOS_KLU
-%include "Amesos_Klu.h"
-#endif
-#ifdef HAVE_AMESOS_UMFPACK
-%include "Amesos_Umfpack.h"
-#endif
-#ifdef HAVE_AMESOS_SCALAPACK
-%include "Amesos_Scalapack.h"
-#endif
-#ifdef HAVE_AMESOS_TAUCS
-%include "Amesos_Taucs.h"
-#endif
-#ifdef HAVE_AMESOS_PARDISO
-%include "Amesos_Pardiso.h"
-#endif
-#ifdef HAVE_AMESOS_SUPERLU
-%include "Amesos_Superlu.h"
-#endif
-#ifdef HAVE_AMESOS_SUPERLUDIST
-%include "Amesos_Superludist.h"
-#endif
-#ifdef HAVE_AMESOS_MUMPS
-%include "Amesos_Mumps.h"
-#endif
-
-// Extensions for Amesos
 %extend Amesos_BaseSolver 
 {
   string __str__() {
@@ -194,9 +169,70 @@ For examples of usage, please consult the python/example subdirectory.
     os << "*** Amesos_BaseSolver ***";
     return os.str();
   }
-
-  void __del__()
-  {
+  void __del__() {
     delete self;
   }
 }
+
+///////////////////////////
+// Amesos LAPACK support //
+///////////////////////////
+#ifdef HAVE_AMESOS_LAPACK
+%include "Amesos_Lapack.h"
+#endif
+
+////////////////////////
+// Amesos KLU support //
+////////////////////////
+#ifdef HAVE_AMESOS_KLU
+%include "Amesos_Klu.h"
+#endif
+
+////////////////////////////
+// Amesos UMFPACK support //
+////////////////////////////
+#ifdef HAVE_AMESOS_UMFPACK
+%include "Amesos_Umfpack.h"
+#endif
+
+//////////////////////////////
+// Amesos ScaLAPACK support //
+//////////////////////////////
+#ifdef HAVE_AMESOS_SCALAPACK
+%include "Amesos_Scalapack.h"
+#endif
+
+//////////////////////////
+// Amesos Taucs support //
+//////////////////////////
+#ifdef HAVE_AMESOS_TAUCS
+%include "Amesos_Taucs.h"
+#endif
+
+////////////////////////////
+// Amesos Pardiso support //
+////////////////////////////
+#ifdef HAVE_AMESOS_PARDISO
+%include "Amesos_Pardiso.h"
+#endif
+
+////////////////////////////
+// Amesos SuperLU support //
+////////////////////////////
+#ifdef HAVE_AMESOS_SUPERLU
+%include "Amesos_Superlu.h"
+#endif
+
+////////////////////////////////
+// Amesos SuperLUDist support //
+////////////////////////////////
+#ifdef HAVE_AMESOS_SUPERLUDIST
+%include "Amesos_Superludist.h"
+#endif
+
+//////////////////////////
+// Amesos MUMPS support //
+//////////////////////////
+#ifdef HAVE_AMESOS_MUMPS
+%include "Amesos_Mumps.h"
+#endif
