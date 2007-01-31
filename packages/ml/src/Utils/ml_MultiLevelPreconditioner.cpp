@@ -1719,6 +1719,13 @@ ComputePreconditioner(const bool CheckPreconditioner)
  } 
  catch(...)
  {
+   fprintf(stderr,"\n**********************************************************\n");
+   fprintf(stderr,"Looks like something is wrong with ML's parameter list.The \n");
+   fprintf(stderr,"most common problem is having the wrong data type for one\n");
+   fprintf(stderr,"of ML's options (e.g. 'int' instead of 'bool').\n\n");
+   fprintf(stderr,"Note: PrintUnused(0) might help figure out the bad one.\n");
+   fprintf(stderr,"**********************************************************\n\n");
+
    ML_CHK_ERR(-1);
  }
   
