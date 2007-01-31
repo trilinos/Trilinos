@@ -56,19 +56,15 @@
 #include "NOX_StatusTest_FiniteValue.H"
 %}
 
-// Ignore directives
+// General ignore directives
 %ignore operator<<;
 %ignore *::operator=;
-%ignore NOX::Utils::fill;
-%ignore NOX::Utils::sciformat;
-
-// Rename directive
-%rename(_print) NOX::Utils::print;
 
 // Auto-documentation feature
 %feature("autodoc", "1");
 
 // SWIG library includes
+using namespace std;
 %include "stl.i"
 
 // Trilinos interface file imports.
@@ -84,9 +80,20 @@ sys.path.append(os.path.normpath(os.path.join(currentDir,"..")))
 // Note: Teuchos.i turns off warnings for nested classes, so we do not
 // have to do it again.
 
-// NOX top-level interface includes
-using namespace std;
+/////////////////////////
+// NOX Version support //
+/////////////////////////
 %include "NOX_Version.H"
+%pythoncode %{
+__version__ = version().split()[2]
+%}
+
+///////////////////////
+// NOX Utils support //
+///////////////////////
+%rename(_print) NOX::Utils::print;
+%ignore NOX::Utils::fill;
+%ignore NOX::Utils::sciformat;
 %include "NOX_Utils.H"
 
 // NOX namespace imports
@@ -96,10 +103,9 @@ using namespace std;
 
 // Python code for the NOX module
 %pythoncode %{
-__version__ = version().split()[2]
-
 try:
     import Epetra
-except ImportError:
-    pass
+except ImportError, e:
+    if str(e) != "No module named Epetra":
+        print e
 %}

@@ -85,8 +85,6 @@ using namespace NOX::Abstract;
 using namespace NOX::Epetra;
 %}
 
-using namespace std;
-
 // Define macro for handling exceptions thrown by NOX.Epetra methods and
 // constructors
 %define NOXEPETRA_EXCEPTION(className,methodName)
@@ -121,10 +119,11 @@ using namespace std;
 %ignore *::operator<<;
 
 // SWIG library includes
+using namespace std;
 %include "stl.i"
 
 // Trilinos interface support
-%import  "Teuchos.i"
+%import "Teuchos.i"
 
 // Support for Teuchos::RefCountPtrs
 TEUCHOS_RCP_TYPEMAPS(NOX::Epetra::LinearSystem)
@@ -132,8 +131,6 @@ TEUCHOS_RCP_TYPEMAPS(NOX::Epetra::Scaling)
 TEUCHOS_RCP_TYPEMAPS(Epetra_CrsGraph)
 TEUCHOS_RCP_TYPEMAPS(Epetra_MapColoring)
 TEUCHOS_RCP_TYPEMAPS(Epetra_Operator)
-//%template() std::vector< Epetra_IntVector >;
-TEUCHOS_RCP_TYPEMAPS(vector_Epetra_IntVector)
 
 //////////////
 // Typemaps //
@@ -165,15 +162,24 @@ TEUCHOS_RCP_TYPEMAPS(vector_Epetra_IntVector)
   delete $1;
 }
 
-// Convert NOX::Abstract::Vector return arguments to NOX.Epetra.Vectors
+// Convert NOX::Abstract::Vector return arguments to Epetra.Vectors
 %typemap(out) NOX::Abstract::Vector & {
-  static swig_type_info * swig_NEV_ptr = SWIG_TypeQuery("NOX::Epetra::Vector*");
+  static swig_type_info * swig_ENPV_ptr = SWIG_TypeQuery("Epetra_NumPyVector*");
   NOX::Epetra::Vector * nevResult = dynamic_cast<NOX::Epetra::Vector*>($1);
   if (nevResult == NULL) {
     // If we can't upcast, then return the NOX::Abstract::Vector
     $result = SWIG_NewPointerObj((void*)&$1, $descriptor, 1);
+  } else {
+    Epetra_NumPyVector * enpvResult = new Epetra_NumPyVector(View, nevResult->getEpetraVector(), 0);
+    $result = SWIG_NewPointerObj((void*)enpvResult, swig_ENPV_ptr, 1);
   }
-  $result = SWIG_NewPointerObj((void*)nevResult, swig_NEV_ptr, 1);
+}
+
+// Convert Epetra_Vector return arguments to Epetra.Vectors
+%typemap(out) Epetra_Vector & {
+  static swig_type_info * swig_ENPV_ptr = SWIG_TypeQuery("Epetra_NumPyVector*");
+  Epetra_NumPyVector * enpvResult = new Epetra_NumPyVector(View, *$1, 0);
+  $result = SWIG_NewPointerObj((void*)enpvResult, swig_ENPV_ptr, 1);
 }
 
 // Epetra imports
