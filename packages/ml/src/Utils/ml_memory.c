@@ -17,6 +17,8 @@
 #include "ml_utils.h"
 #include "ml_comm.h"
 #include "ml_memory.h"
+#include "string.h"
+#include "limits.h"
 
 /*
 #include <stdio.h>
@@ -472,13 +474,10 @@ char *ML_allocate(unsigned int isize) {
                                      /* MALLOC AND NOT AN ML_ALLOCATE */
 
     if (ptr == NULL) {
-       free(ml_widget);
+       ML_free(ml_widget);
        return(NULL);
     }
     ml_allo_count++;
-if  ( (ml_allo_count == -1644)  
-&& (size-7*sizeof(double) == 240) 
-) while ( 1 == 1) ;
 
     /* put trash in the space to make sure nobody is expecting zeros */
     for (i = 0 ; i < size/sizeof(char) ; i++ ) 
@@ -724,9 +723,9 @@ ML_print_it();
 
 /*****************************************************************************
  *  ML_memory_check: 
- *    Print out memory usage information. ML_memory_check's arguments
- *    are used to print an identifying string along with the memory information
- *    and are identical to printf's arguments.
+ *    Print out memory usage information in megabytes. ML_memory_check's
+ *    arguments are used to print an identifying string along with the
+ *    memory information and are identical to printf's arguments.
  *
  *    On return, ML_memory_check() returns a pointer to the last string
  *    that ML_memory_check() used when print. 
@@ -735,38 +734,72 @@ ML_print_it();
  *    the last string used to print. This enables low level routines to
  *    take previous string to ML_memory_check() and append to it.
  *
+ *    Ideally 'ML_memory_check' should be called in the beginning of
+ *    the program to calibrate the total amount of available memory.
+ *
+ *    Implementation notes:  All calculations are done in megabytes.
+ *    I'm also not sure what happens on a shared memory machine if multiple
+ *    processors are reading /proc/meminfo.
+ *
 ******************************************************************************/
-#define ML_NIntStats 6
-#define ML_NDblStats 1
-/* OS X defines malloc in a non-standard place */
-#ifdef HAVE_MALLOC_H
-#include "malloc.h"
+#define ML_NIntStats 10
+#define ML_NDblStats 2
+#ifdef ML_TFLOP
+#  include <catamount/catmalloc.h>
+int heap_info(size_t *a, unsigned long *b,
+              unsigned long *c, unsigned long *d);
 #else
-#include <stdlib.h>
-#endif
+   /* OS X defines malloc in a non-standard place */
+#  ifdef HAVE_MALLOC_H
+#    include "malloc.h"
+#  else
+#    include <stdlib.h>
+#  endif
+#endif /*ifdef ML_TFLOP*/
 #include "ml_utils.h"
 #include <stdarg.h>
-#ifdef ML_TFLOP
-int heap_info(long *a, long *b, long *c, long *d);
-#endif
+
+/* two typedefs that are used in the MPI reduction calls. */
+typedef struct ml_IntLoc_struct {
+  int value;
+  int rank;
+} ml_IntLoc;
+
+typedef struct ml_DblLoc_struct {
+  double value;
+  int rank;
+} ml_DblLoc;
+
 char * ML_memory_check(char *fmt, ... )
 {
 #ifdef ML_MEMORY_CHK
-   long int fragments, total_free, largest_free, total_used;
+   size_t fragments=0;
+   int total_free=0, largest_free=0, total_used=0;
+   int total_swap=0, total_swap_free=0, total_swap_used=0;
    static double start_time = -1.;
    double elapsed_time;
    int id, nnodes, i;
-   long isrcvec[ML_NIntStats],imaxvec[ML_NIntStats],
-        iminvec[ML_NIntStats],iavgvec[ML_NIntStats];
-   double dsrcvec[ML_NDblStats],dmaxvec[ML_NDblStats],
-        dminvec[ML_NDblStats],davgvec[ML_NDblStats];
+   ml_IntLoc isrcvec[ML_NIntStats],imaxvec[ML_NIntStats],
+        iminvec[ML_NIntStats];
+   int isrcvec_copy[ML_NIntStats];
+   int iavgvec[ML_NIntStats];
+   ml_DblLoc dsrcvec[ML_NDblStats],dmaxvec[ML_NDblStats],
+        dminvec[ML_NDblStats];
+   double dsrcvec_copy[ML_NDblStats];
+   double davgvec[ML_NDblStats];
    static char *ml_memory_label = NULL;
    va_list ap;
-#ifndef  ML_TFLOP
+#ifdef  ML_TFLOP
+   unsigned long ultotal_free=0, ullargest_free=0, ultotal_used=0;
+#else
    struct mallinfo M;
-   int *junk;
-   static long unsigned int ml_total_mem = 0;
+   static int ml_total_mem = 0;
 #endif
+   FILE *fid;
+#  define ml_meminfo_size 23
+   int haveMemInfo=0, overflowDetected = 0;
+   char method[80];
+   int mypid=0;
 
   /* allocate space for string that is printed with memory information */
 
@@ -796,50 +829,61 @@ char * ML_memory_check(char *fmt, ... )
   elapsed_time = elapsed_time - start_time;
 
 #ifdef ML_TFLOP
-   heap_info(&fragments, &total_free, &largest_free, &total_used);  
+   /* Memory statistics for Red Storm.  FYI, heap_info returns bytes. */
+   heap_info(&fragments, &ultotal_free, &ullargest_free, &ultotal_used);  
+#ifdef ML_MPI
+   MPI_Comm_rank(MPI_COMM_WORLD,&mypid);
+#endif
+   total_free=(int) (ultotal_free / (1024*1024));
+   largest_free= (int) (ullargest_free / (1024*1024));
+   total_used = (int) (ultotal_used / (1024*1024));
+   sprintf(method,"Using heap_info()");
 #else
-   /* Try to estimate the amount of total space in the system */
-   /* by doing mallocs and frees on increasing size chunks.   */
-   /* Ideally 'ML_memory_check' should be called in the beginning of   */
-   /* the program to calibrate the total amount of avail. mem.*/
-
-   if (ml_total_mem == 0) {
-     junk = NULL;
-     ml_total_mem = 10000;
-     while ( (junk = malloc(sizeof(int)*ml_total_mem)) != NULL) {
-       ml_total_mem *= 2;
-       free(junk);
-     }
-     ml_total_mem = ml_total_mem/2;
-     ml_total_mem = (int) (((double)ml_total_mem)*1.1);
-     while ( (junk = malloc(sizeof(int)*ml_total_mem)) != NULL) {
-       ml_total_mem = (int) (((double)ml_total_mem)*1.1);
-       free(junk);
-     }
-     ml_total_mem = (int) (((double)ml_total_mem)/1.1);
-     while ( (junk = malloc(sizeof(int)*ml_total_mem)) != NULL) {
-       ml_total_mem = ml_total_mem + 1000;
-       free(junk);
-     }
-     ml_total_mem = ml_total_mem - 1000;
-     ml_total_mem = ml_total_mem*sizeof(int);
-   }
-
-   /* now use system call to get memory used information */
+   /*
+      Memory statistics for all other platforms, via the system call mallinfo()
+      and reading file /proc/meminfo, which is available under most Linux OS's.
+   */
 
    M = mallinfo();
-   fragments = M.ordblks + M.smblks + M.hblks;
-   total_free = M.fsmblks + M.fordblks;
-   total_used = M.hblkhd + M.usmblks + M.uordblks;
-   total_free = ml_total_mem - total_used;
-   largest_free = -1024;
-#endif
 
-   /* convert to Kbytes */
+   fid = fopen("/proc/meminfo","r");
+   if (fid != NULL) {
+     char str[80], units[10];
+     int k;
+     for (i=0; i< ml_meminfo_size; i++) {
+       if (fscanf(fid,"%s%d%s", str, &k,units) == 3) {
+         if (strcmp(str,"MemTotal:") == 0 && (ml_total_mem==0))
+            ml_total_mem = k/1024;
+         if (strcmp(str,"MemFree:") == 0)  {total_free = k/1024; }
+         if (strcmp(str,"SwapTotal:") == 0)  {total_swap = k/1024; }
+         if (strcmp(str,"SwapFree:") == 0)  {total_swap_free = k/1024; }
+       }
+     }
+     fclose(fid);
+     total_used = ml_total_mem - total_free;
+     total_swap_used = total_swap - total_swap_free;
+     sprintf(method,"Using /proc/meminfo");
+     haveMemInfo = 1;
+   }
 
-   total_free   = total_free/1024;
-   largest_free = largest_free/1024;
-   total_used   = total_used/1024;
+   /* If /proc/meminfo doesn't exist, use mallinfo() instead. */
+   if ( !haveMemInfo )
+   {
+     if (ml_total_mem == 0) ml_total_mem = ML_MaxAllocatableSize();
+     if (M.hblkhd < 0) { /* try to fix overflow */
+       double delta = fabs(((double) INT_MIN) - ((double) M.hblkhd)) + 1;
+       total_used = (int) ( (((double) INT_MAX) + delta) / (1024*1024) );
+       overflowDetected = 1;
+     }
+     /*Ignore this field upon overflow because I'm don't know how to handle it*/
+     if (M.uordblks > 0) total_used += M.uordblks / (1024*1024);
+     total_free = ml_total_mem - total_used;
+     sprintf(method,"Using mallinfo()");
+   }
+   fragments = M.ordblks + M.hblks;
+
+   largest_free = -1;
+#endif /*ifdef ML_TFLOP*/
 
    /* Only print if fmt string is not empty */
    /* This allows for an intialization of   */
@@ -847,102 +891,176 @@ char * ML_memory_check(char *fmt, ... )
    if (strlen(fmt) == 0)    return(ml_memory_label);
 
 
-   isrcvec[0] = fragments;
-   isrcvec[1] = total_free;
-   isrcvec[2] = largest_free;
-   isrcvec[3] = total_used;
-   isrcvec[4] = total_free+total_used;
-   isrcvec[5] = (int) (((double)total_used*1000)/
-                          ((double)(total_free+total_used)));
-   dsrcvec[0] = elapsed_time;
+   //isrcvec[0].value = fragments;
+   isrcvec[0].value = 0;
+   isrcvec[1].value = total_free;
+   isrcvec[2].value = largest_free;
+   isrcvec[3].value = total_used;
+   isrcvec[4].value = total_free + total_used;
+   /*TODO could this overflow?*/
+   isrcvec[5].value = (int) ( ((double)total_used*1000) /
+                        ((double)(total_free+total_used)) );
+   isrcvec[6].value = total_swap_free;
+   isrcvec[7].value = total_swap_used;
+   isrcvec[8].value = total_swap;
+   /*TODO could this overflow?*/
+   isrcvec[9].value = (int) ( ((double)total_swap_used*1000) /
+                        ((double)(total_swap)) );
+   dsrcvec[0].value = elapsed_time;
+   dsrcvec[1].value = fragments;
+
+#ifdef ML_MPI
+   for (i =0; i < ML_NIntStats; i++)
+      MPI_Comm_rank(MPI_COMM_WORLD,&(isrcvec[i].rank));
+   for (i =0; i < ML_NDblStats; i++)
+      MPI_Comm_rank(MPI_COMM_WORLD,&(dsrcvec[i].rank));
+#endif
+
+   for (i =0; i < ML_NIntStats; i++) isrcvec_copy[i] = isrcvec[i].value;
+   for (i =0; i < ML_NDblStats; i++) dsrcvec_copy[i] = dsrcvec[i].value;
+
    nnodes = 1;
    id = 0;
 #ifdef ML_MPI
    MPI_Comm_rank(MPI_COMM_WORLD,&id);
    MPI_Comm_size(MPI_COMM_WORLD,&nnodes);
-   MPI_Reduce(isrcvec,imaxvec,ML_NIntStats,MPI_LONG,MPI_MAX,0,MPI_COMM_WORLD); 
-   MPI_Reduce(isrcvec,iminvec,ML_NIntStats,MPI_LONG,MPI_MIN,0,MPI_COMM_WORLD);
-   MPI_Reduce(isrcvec,iavgvec,ML_NIntStats,MPI_LONG,MPI_SUM,0,MPI_COMM_WORLD);
-   MPI_Reduce(dsrcvec,dmaxvec,ML_NDblStats,MPI_DOUBLE,MPI_MAX,0,MPI_COMM_WORLD); 
-   MPI_Reduce(dsrcvec,dminvec,ML_NDblStats,MPI_DOUBLE,MPI_MIN,0,MPI_COMM_WORLD);
-   MPI_Reduce(dsrcvec,davgvec,ML_NDblStats,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+   MPI_Reduce(isrcvec,imaxvec,ML_NIntStats,MPI_2INT,MPI_MAXLOC,0,MPI_COMM_WORLD); 
+   MPI_Reduce(isrcvec,iminvec,ML_NIntStats,MPI_2INT,MPI_MINLOC,0,MPI_COMM_WORLD);
+   MPI_Reduce(isrcvec_copy,iavgvec,ML_NIntStats,MPI_INT,MPI_SUM,0,MPI_COMM_WORLD);
+   MPI_Reduce(dsrcvec,dmaxvec,ML_NDblStats,MPI_DOUBLE_INT,MPI_MAXLOC,0,MPI_COMM_WORLD); 
+   MPI_Reduce(dsrcvec,dminvec,ML_NDblStats,MPI_DOUBLE_INT,MPI_MINLOC,0,MPI_COMM_WORLD);
+   MPI_Reduce(dsrcvec_copy,davgvec,ML_NDblStats,MPI_DOUBLE,MPI_SUM,0,MPI_COMM_WORLD);
+   MPI_Reduce(&overflowDetected,&i,1,MPI_INT,MPI_MAX,0,MPI_COMM_WORLD);
+   overflowDetected = i;
 #else
    for (i =0; i < ML_NIntStats; i++) {
-     imaxvec[i] = isrcvec[i];
-     iminvec[i] = isrcvec[i];
-     iavgvec[i] = isrcvec[i];
+     imaxvec[i].value = isrcvec[i].value;
+     iminvec[i].value = isrcvec[i].value;
+     iavgvec[i] = isrcvec[i].value;
    }
    for (i =0; i < ML_NDblStats; i++) {
-     dmaxvec[i] = dsrcvec[i];
-     dminvec[i] = dsrcvec[i];
-     davgvec[i] = dsrcvec[i];
+     dmaxvec[i].value = dsrcvec[i].value;
+     dminvec[i].value = dsrcvec[i].value;
+     davgvec[i] = dsrcvec[i].value;
    }
 #endif
 /* uncomment lines below if you want individual processor information */
 /*
-   printf("%s(%d): blks = %d, free = %d, max free = %d, used = %d, total = %d, %% used = %e, time = %e\n",
+   printf("%s(%d): blks = %ld, free = %ld, max free = %ld, used = %ld, total = %ld, %% used = %e, time = %e\n",
 	  ml_memory_label,id,fragments, total_free, largest_free, total_used,
 	  total_free+total_used, 
           ((double)total_used)/((double)(total_free+total_used)),elapsed_time);
 */
 
-
-
    if (id == 0 && ML_Get_PrintLevel() > 0) {
-    for (i =0; i < ML_NIntStats; i++) iavgvec[i] = iavgvec[i]/((double) nnodes);
-    printf("Summary Heap data at %s\n",ml_memory_label);
-    printf("                        avg           min             max\n");
-    printf("---------------------------------------------------------\n");
-    printf("    blks     %14d %14d %14d %s\n",iavgvec[0], iminvec[0],imaxvec[0],
-	   ml_memory_label);
-    printf("    free     %14d %14d %14d %s\n",iavgvec[1], iminvec[1],imaxvec[1],
-	   ml_memory_label);
-    if (iavgvec[2] != -1)
-      printf("    max free %14d %14d %14d %s\n",iavgvec[2], iminvec[2],imaxvec[2],
-	   ml_memory_label);
-    printf("    used     %14d %14d %14d %s\n",iavgvec[3], iminvec[3],imaxvec[3],
-	   ml_memory_label);
-    printf("    total    %14d %14d %14d %s\n",iavgvec[4], iminvec[4],imaxvec[4],
-	   ml_memory_label);
-    printf("    %% used   %14.1f %14.1f %14.1f %s\n",
-	   ((double)iavgvec[5])/10.,((double)iminvec[5])/10.,((double)imaxvec[5])/10.,
-	   ml_memory_label);
-    printf("    time   %14.1f %14.1f %14.1f %s\n",
-	   davgvec[0],dminvec[0],dmaxvec[0], ml_memory_label);
-   }
+     for (i =0; i < ML_NIntStats; i++)
+       iavgvec[i] = (int) (iavgvec[i]/((double) nnodes));
+     for (i =0; i < ML_NDblStats; i++)
+       davgvec[i] = davgvec[i] / nnodes;
+     printf("-------------------------------------------------------------\n");
+     printf("Summary Heap data (Mbytes) at %s\n",ml_memory_label);
+     printf("%s\n",method);
+     if (overflowDetected)
+        printf("*WARNING* mallinfo() counter overflow detected\n");
+     printf("                       avg           min             max\n");
+     printf("-------------------------------------------------------------\n");
+     printf(" blks       %11d %11d (%5d) %11d (%5d) %s\n",
+            (int) davgvec[1], (int) dminvec[1].value, dminvec[1].rank,
+            (int) dmaxvec[1].value, dmaxvec[1].rank, ml_memory_label);
+     printf(" free       %11d %11d (%5d) %11d (%5d) %s\n",
+            iavgvec[1], iminvec[1].value, iminvec[1].rank,
+            imaxvec[1].value, imaxvec[1].rank, ml_memory_label);
+     if (iavgvec[2] != -1)
+       printf(" max free   %11d %11d (%5d) %11d (%5d) %s\n",
+              iavgvec[2], iminvec[2].value, iminvec[2].rank,
+              imaxvec[2].value, imaxvec[2].rank, ml_memory_label);
+     printf(" used       %11d %11d (%5d) %11d (%5d) %s\n",
+              iavgvec[3], iminvec[3].value, iminvec[3].rank,
+              imaxvec[3].value, imaxvec[3].rank, ml_memory_label);
+     printf(" total      %11d %11d (%5d) %11d (%5d) %s\n",
+              iavgvec[4], iminvec[4].value, iminvec[4].rank,
+              imaxvec[4].value, imaxvec[4].rank, ml_memory_label);
+     printf(" %% used       %9.1f   %9.1f (%5d)   %9.1f (%5d) %s\n",
+            ((double)iavgvec[5])/10., ((double)iminvec[5].value)/10.,
+            iminvec[5].rank,
+            ((double)imaxvec[5].value)/10., imaxvec[5].rank, ml_memory_label);
+     printf(" time         %9.1f   %9.1f (%5d)   %9.1f (%5d) %s\n",
+            davgvec[0],dminvec[0].value,dminvec[0].rank,
+            dmaxvec[0].value, dmaxvec[0].rank, ml_memory_label);
+     if (haveMemInfo) {
+       printf(" swap free  %11d %11d (%5d) %11d (%5d) %s\n",
+              iavgvec[6], iminvec[6].value,iminvec[6].rank,
+              imaxvec[6].value, iminvec[6].rank, ml_memory_label);
+       printf(" swap used  %11d %11d (%5d) %11d (%5d) %s\n",
+                iavgvec[7], iminvec[7].value, iminvec[7].rank,
+                imaxvec[7].value, imaxvec[7].rank, ml_memory_label);
+       printf(" total swap %11d %11d (%5d) %11d (%5d) %s\n",
+                iavgvec[8], iminvec[8].value, iminvec[8].rank,
+                imaxvec[8].value, imaxvec[8].rank, ml_memory_label);
+       printf(" %% swap used  %9.1f   %9.1f (%5d)   %9.1f (%5d) %s\n",
+              ((double)iavgvec[9])/10., ((double)iminvec[9].value)/10.,
+              iminvec[9].rank,
+              ((double)imaxvec[9].value)/10., imaxvec[9].rank, ml_memory_label);
+     }
+   } /*if (id == 0 ... */
    return(ml_memory_label);
 #else
    return(NULL);
 #endif
-}
+} /*ML_memory_check*/
 
-/* returns the maximum allocatable contiguous memory, in Mbytes, using malloc() */
+/** ********************************************************************** **/
+
+/* Returns an estimate (in megabytes) of the amount of total memory */
+/* available on the system by using malloc.                         */
+/*                                                                  */
+/* A major caveat is that there is no way to detect swap space.     */
+/* Experience has shown that this approach is unreliable, as malloc */
+/* may very well allocate memory that it cannot back.               */
+/*                                                                  */
+/* Start by doubling memory requests until reaching a size that     */
+/* cannot be malloc'd. Then use a binary search to get close to     */
+/* the upper limit.  Finally, step by 4 byte increments to get the  */
+/* maximum size that can be malloc'd.                               */
+/*                                                                  */
 int ML_MaxAllocatableSize()
 {
-  
-  size_t left_size = 1024;
-  size_t right_size = 1024*1024*1024;
-  size_t max_size;
-  void * ptr;
-  
-  do {
+  int* junk = NULL;
+  long long int upper, mid, lower;
+  long long int ml_total_mem;
 
-    max_size = (right_size + left_size)/2;
-    
-    ptr = malloc( max_size );
-    if( ptr == 0 )  right_size = max_size;
+  ml_total_mem = 10000;
+  while ( (junk = (int*) malloc(sizeof(int)*ml_total_mem)) != NULL) {
+    ml_total_mem *= 2;
+    free(junk);
+  }
+  ml_total_mem = ml_total_mem/2;
+
+  lower = ml_total_mem;
+  upper = ml_total_mem * 2;
+  while (upper > (lower+10)) {
+    mid   = (lower+upper)/2;
+    junk = (int*) malloc(sizeof(int)*(mid));
+    if (junk == NULL)
+      upper = mid;
     else {
-      left_size = max_size;
-      free( ptr );
+      lower = mid; 
+      free(junk);
     }
+  }
+  ml_total_mem = lower;
 
-    
-  } while( right_size - left_size > 16*1024 );
+  /* step by 4 bytes the rest of the way */
+  while ( (junk = (int*) malloc(sizeof(int)*ml_total_mem)) != NULL) {
+    ml_total_mem = ml_total_mem + 1;
+    free(junk);
+  }
+  ml_total_mem = ml_total_mem - 1;
+  return (int)( ml_total_mem * sizeof(int) / (1024*1024) );
 
-  return (int)(max_size/(1024*1024));
-  
-}
+} /*ML_MaxAllocatableSize()*/
 
+/** ********************************************************************** **/
     
 #include "ml_utils.h" 
 #ifdef ML_MALLINFO
@@ -950,17 +1068,24 @@ int ML_MaxAllocatableSize()
 #endif
 /* returns the maximum allocatable memory, in Mbytes, using mallinfo() */
 int ML_MaxMemorySize()
-{ 
+{
 #ifdef ML_MALLINFO
-  long int fragments, total_free, largest_free, total_used; 
+  size_t fragments;
+  long long int total_free, largest_free, total_used; 
   /* int percent; */
   
 #ifndef  ML_TFLOP 
   struct mallinfo M; 
 #endif 
+#ifdef  ML_TFLOP
+   unsigned long ultotal_free=0, ullargest_free=0, ultotal_used=0;
+#endif 
   
 #ifdef ML_TFLOP 
-  heap_info(&fragments, &total_free, &largest_free, &total_used);  
+  heap_info(&fragments, &ultotal_free, &ullargest_free, &ultotal_used);  
+  total_free=(int) (ultotal_free / 1024);
+  largest_free= (int) (ullargest_free / 1024);
+  total_used = (int) (ultotal_used /1024);
 #else
   /* use system call to get memory used information */ 
   
@@ -977,4 +1102,4 @@ int ML_MaxMemorySize()
 #else
   return -1;
 #endif
-} 
+}
