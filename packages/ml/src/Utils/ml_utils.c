@@ -2486,6 +2486,29 @@ int ML_find_index(int key, int list[], int length)
 
 /******************************************************************************/
 
+
+static int ml_random_vec_seed = 0;
+static int ml_random_vec_start = 1;
+void ML_reseed_random_vec(int seed){
+/*******************************************************************************
+
+  Resets the seed for the ML_random_vec function
+
+  Author:          Chris Siefert
+  =======
+
+  Parameter list:
+  ===============
+
+  seed:            New seed to use
+*******************************************************************************/
+
+  ml_random_vec_seed=seed;
+  ml_random_vec_start=0;
+}
+
+
+
 void ML_random_vec(double u[], int N, ML_Comm *comm) 
 
 /*******************************************************************************
@@ -2507,8 +2530,8 @@ void ML_random_vec(double u[], int N, ML_Comm *comm)
 
   /* local variables */
 
-  static int seed = 0;
-  static int start = 1;
+  /*  static int seed = 0; */
+  /*  static int start = 1;*/
   int        i;
   int maxint = 2147483647; /* 2^31 -1 */
 
@@ -2519,14 +2542,14 @@ void ML_random_vec(double u[], int N, ML_Comm *comm)
    * in parallel when multiplying by a PID.  It would be better to use
    * a good parallel random number generator. */
 
-  if (start) {
-    seed = (int)((maxint-1) * (1.0 -(comm->ML_mypid+1)/(comm->ML_nprocs+1.0)) );
-    start = 0;
+  if (ml_random_vec_start) {
+    ml_random_vec_seed = (int)((maxint-1) * (1.0 -(comm->ML_mypid+1)/(comm->ML_nprocs+1.0)) );
+    ml_random_vec_start = 0;
   }
-  if (seed < 1 || seed == maxint)
-    pr_error("ML*ERR* Problem detected in ML_random_vec with seed = %d.\nML*ERR* It should be in the interval [1,2^31-2].\n",seed);
+  if (ml_random_vec_seed < 1 || ml_random_vec_seed == maxint)
+    pr_error("ML*ERR* Problem detected in ML_random_vec with seed = %d.\nML*ERR* It should be in the interval [1,2^31-2].\n",ml_random_vec_seed);
 
-  for (i = 0; i < N; i++) u[i] = ML_srandom1(&seed);
+  for (i = 0; i < N; i++) u[i] = ML_srandom1(&ml_random_vec_seed);
 
 } /* ML_random_vec */
 
@@ -2868,7 +2891,8 @@ int ML_Operator_Print_UsingGlobalOrdering( ML_Operator *matrix,
         matrix->invec_leng );
               
        for (i = 0 ; i < Nrows; i++)
-       {
+         {
+           //           printf("Print: Grabbing Matrix row %d\n",i);//hax
          ML_get_matrix_row(matrix, 1, &i, &allocated, &bindx, &val,
                  &row_length, 0);
   
