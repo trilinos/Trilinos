@@ -474,7 +474,8 @@ char *ML_allocate(unsigned int isize) {
                                      /* MALLOC AND NOT AN ML_ALLOCATE */
 
     if (ptr == NULL) {
-       ML_free(ml_widget);
+       ML_free(ml_widget);           /* THIS FREE() NEEDS TO STAY A */
+                                     /* FREE AND NOT AN ML_FREE     */
        return(NULL);
     }
     ml_allo_count++;
