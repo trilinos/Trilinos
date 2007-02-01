@@ -134,8 +134,6 @@ int ML_Epetra::MultiLevelPreconditioner::DestroyPreconditioner()
   // destroy main objects
   if (agg_ != 0) { ML_Aggregate_Destroy(&agg_); agg_ = 0; }
   if (ml_comm_ != 0) { ML_Comm_Destroy(&ml_comm_); ml_comm_ = 0; }
-  if (ml_ != 0) { ML_Destroy(&ml_); ml_ = 0; }
-  if (ml_nodes_ != 0) { ML_Destroy(&ml_nodes_); ml_nodes_ = 0; }
 
   if (TMatrixML_ != 0) {
     ML_Operator_Destroy(&TMatrixML_);
@@ -182,6 +180,12 @@ int ML_Epetra::MultiLevelPreconditioner::DestroyPreconditioner()
     delete [] CurlCurlMatrix_array;
     CurlCurlMatrix_array = 0;
   }
+
+  // These should be destroyed after all the individual operators, as the
+  // communicator may be used in profiling some of the individual ML_Operators
+  // in the hierarchy at when they are destroyed.
+  if (ml_ != 0) { ML_Destroy(&ml_); ml_ = 0; }
+  if (ml_nodes_ != 0) { ML_Destroy(&ml_nodes_); ml_nodes_ = 0; }
 
   if (Label_) { 
     delete [] Label_; 
@@ -2656,7 +2660,6 @@ int ML_Epetra::MultiLevelPreconditioner::SetAggregation()
 
 int ML_Epetra::MultiLevelPreconditioner::SetPreconditioner() 
 {
-
   string str = List_.get("prec type","MGV");
 
   if( str == "one-level-postsmoothing" ) {
@@ -2743,7 +2746,8 @@ int ML_Epetra::MultiLevelPreconditioner::SetPreconditioner()
   } else {
 
     if( Comm().MyPID() == 0 ) {
-      cerr << ErrorMsg_ << "`prec type' has an incorrect value. It should be" << endl
+      cerr << ErrorMsg_ << "`prec type' has an incorrect value of '"
+       << str << "'. It should be" << endl
        << ErrorMsg_ << "<one-level-postsmoothing> / <two-level-additive>" << endl
        << ErrorMsg_ << "<two-level-hybrid> / <two-level-hybrid2>" << endl;
     }
