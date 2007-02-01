@@ -53,7 +53,8 @@ void TestForException_break();
  * @param  Exception
  *               [in] This should be the name of an exception class.  The
  *               only requirement for this class is that it have a constructor
- *               that accepts and null terminated C string (i.e. <tt>const char*</tt>).
+ *               that accepts an std::string object (as all of the standard
+ *               exception classes do).
  * @param  msg   [in] This is any expression that can be included in an
  *               output stream operation.  This is useful when buinding
  *               error messages on the fly.  Note that the code in this
@@ -116,7 +117,7 @@ void TestForException_break();
               << __FILE__ << ":" << __LINE__ << ":" \
               << "\n\nThrow test that evaluated to true: "#throw_exception_test << "\n\n" \
               << msg; \
-	    throw Exception(TEUCHOS_OSTRINGSTREAM_GET_C_STR(omsg)); \
+	    throw Exception(omsg.str());              \
     } \
 }
 
@@ -133,7 +134,7 @@ void TestForException_break();
 	    TeuchosOStringStream omsg; \
 	    omsg \
               << msg; \
-	    throw Exception(TEUCHOS_OSTRINGSTREAM_GET_C_STR(omsg)); \
+	    throw Exception(omsg.str());              \
     } \
 }
 
