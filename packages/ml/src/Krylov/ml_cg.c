@@ -172,6 +172,11 @@ int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
        data->ML_eigen_min = 0.;
        return 1;
    }
+   if ( (totallength == 1) && (scale_by_diag)) {
+       data->ML_eigen_max = 1.;
+       data->ML_eigen_min = 1.;
+       return 1;
+   }
 
    if ( length > 0 ) {
       r     = (double *) ML_allocate(length * sizeof(double));
@@ -446,6 +451,17 @@ int ML_SubspaceIteration_ComputeEigenvalues(ML_Krylov *data, int length, int sca
    maxiter     = ML_Krylov_Get_MaxIterations(data);
    if ( totallength < maxiter ) maxiter = totallength;
 
+   if (totallength == 0) {
+       data->ML_eigen_max = 0.;
+       data->ML_eigen_min = 0.;
+       return 1;
+   }
+   if ( (totallength == 1) && (scale_by_diag)) {
+       data->ML_eigen_max = 1.;
+       data->ML_eigen_min = 1.;
+       return 1;
+   }
+
 
    /* ----------------------------------------------------------------*/
    /* allocate temporary memory  */
@@ -604,6 +620,16 @@ int ML_Power_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
    maxiter     = ML_Krylov_Get_MaxIterations(data);
    if ( totallength < maxiter ) maxiter = totallength;
 
+   if (totallength == 0) {
+       data->ML_eigen_max = 0.;
+       data->ML_eigen_min = 0.;
+       return 1;
+   }
+   if ( (totallength == 1) && (scale_by_diag)) {
+       data->ML_eigen_max = 1.;
+       data->ML_eigen_min = 1.;
+       return 1;
+   }
 
    /* ----------------------------------------------------------------*/
    /* allocate temporary memory  */
