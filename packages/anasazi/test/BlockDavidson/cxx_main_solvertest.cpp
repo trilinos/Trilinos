@@ -81,7 +81,7 @@ void checks( RefCountPtr<BlockDavidson<ScalarType,MV,OP> > solver, int blocksize
   TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.X)  != solver->getBlockSize(),get_out,"blockSize() does not match allocated size for X.");
   TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.KX) != solver->getBlockSize(),get_out,"blockSize() does not match allocated size for KX.");
   TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*solver->getRitzVectors()) != solver->getBlockSize(),get_out,"blockSize() does not match getRitzVectors().");
-  TEST_FOR_EXCEPTION(state.T->size() != (unsigned int)solver->getMaxSubspaceDim(),get_out,"state.T->size() does not match getMaxSubspaceDim().");
+  TEST_FOR_EXCEPTION(state.T->size() != (unsigned int)solver->getCurSubspaceDim(),get_out,"state.T->size() does not match getCurSubspaceDim().");
   if (solver->getProblem().getM() != null) {
     TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*state.MX) != solver->getBlockSize(),get_out,"blockSize() does not match allocated size for MX.");
   }

@@ -69,12 +69,16 @@ int main(int argc, char *argv[])
   bool verbose = false;
   bool debug = false;
   bool shortrun = false;
+  bool insitu = false;
+  bool locking = true;
   std::string filename("mhd1280b.cua");
   std::string which("LM");
 
   CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
   cmdp.setOption("debug","nodebug",&debug,"Print debugging information.");
+  cmdp.setOption("insitu","exsitu",&insitu,"Perform in situ restarting.");
+  cmdp.setOption("locking","nolocking",&locking,"Perform locking.");
   cmdp.setOption("sort",&which,"Targetted eigenvalues (SM or LM).");
   cmdp.setOption("shortrun","longrun",&shortrun,"Allow only a small number of iterations.");
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
@@ -171,8 +175,9 @@ int main(int argc, char *argv[])
   MyPL.set( "Num Blocks", numBlocks );
   MyPL.set( "Maximum Restarts", maxRestarts );
   MyPL.set( "Convergence Tolerance", tol );
-  MyPL.set( "Use Locking", true );
+  MyPL.set( "Use Locking", locking );
   MyPL.set( "Locking Tolerance", tol/10 );
+  MyPL.set( "In Situ Restarting", insitu );
   //
   // Create the solver manager
   Anasazi::BlockDavidsonSolMgr<ScalarType,MV,OP> MySolverMan(problem, MyPL);

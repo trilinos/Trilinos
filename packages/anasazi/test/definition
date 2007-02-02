@@ -15,7 +15,6 @@
             LOBPCG/LOBPCG_solvertest.exe,
             LOBPCG/LOBPCG_auxtest.exe,
             LOBPCG/LOBPCG_simple.exe,
-            BlockDavidson/BlockDavidson_test.exe,
             BlockDavidson/BlockDavidson_solvertest.exe,
             BlockDavidson/BlockDavidson_auxtest.exe,
             BlockKrylovSchur/BlockKrylovSchur_test.exe,
@@ -27,6 +26,13 @@
             StatusTest/StatusTest_test.exe;
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = --verbose;
+    COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK,INSTALL,AnasaziTests,AnasaziEpetraTests) {
+    TESTS = BlockDavidson/BlockDavidson_test.exe,
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = --verbose --insitu --locking, --verbose --exsitu --locking, --verbose --exsitu --nolocking, --verbose --insitu --nolocking;
     COMM = SERIAL, MPI;
 }
 
@@ -96,13 +102,6 @@
 (COVERAGE) {
     TESTS = LOBPCG/LOBPCG_test.exe;
     EXIT-STATUS = STRING-COMPARISON;
-    ARGS = --debug --testrecovery --nofullortho;
-    COMM = SERIAL, MPI;
-}
-
-(COVERAGE) {
-    TESTS = LOBPCG/LOBPCG_test.exe;
-    EXIT-STATUS = STRING-COMPARISON;
-    ARGS = --debug --testrecovery --fullortho;
+    ARGS = --debug --testrecovery --nofullortho, --debug --testrecovery --fullortho;
     COMM = SERIAL, MPI;
 }

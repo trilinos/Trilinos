@@ -93,7 +93,7 @@ namespace Anasazi {
     /*! 
       @param k [in] the number of Householder reflectors composing the product
       @param V [in/out] the multivector to be modified, with \f$n\f$ columns
-      @param H [in] a \f$n \times n\f$ matrix containing the encoded Householder vectors, as returned from \c GEQRF (see below)
+      @param H [in] a \f$n \times k\f$ matrix containing the encoded Householder vectors, as returned from \c GEQRF (see below)
       @param tau [in] the \f$n\f$ coefficients for the Householder reflects, as returned from \c GEQRF
       @param workMV [work] (optional) a multivector used for workspace. it need contain only a single vector; it if contains more, only the first vector will be modified.
 
@@ -307,10 +307,11 @@ namespace Anasazi {
     else {
       TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*workMV) < 1,std::invalid_argument,"Anasazi::SolverUtils::applyHouse(): work multivector was empty.");
     }
-    // Q = H_1 ... H_k must be square, with as many rows as V has vectors
-    TEST_FOR_EXCEPTION( H.numRows() != H.numCols(), std::invalid_argument,"Anasazi::SolverUtils::applyHouse(): H should be square.");
-    TEST_FOR_EXCEPTION( H.numRows() != (int)tau.size(), std::invalid_argument,"Anasazi::SolverUtils::applyHouse(): Size of H,tau inconsistent.");
-    TEST_FOR_EXCEPTION( H.numRows() != MVT::GetNumberVecs(V), std::invalid_argument,"Anasazi::SolverUtils::applyHouse(): Size of H,V inconsistent.");
+    // Q = H_1 ... H_k is square, with as many rows as V has vectors
+    // however, H need only have k columns, one each for the k reflectors.
+    TEST_FOR_EXCEPTION( H.numCols() != k, std::invalid_argument,"Anasazi::SolverUtils::applyHouse(): H must have at least k columns.");
+    TEST_FOR_EXCEPTION( (int)tau.size() != k, std::invalid_argument,"Anasazi::SolverUtils::applyHouse(): tau must have at least k entries.");
+    TEST_FOR_EXCEPTION( H.numRows() != MVT::GetNumberVecs(V), std::invalid_argument,"Anasazi::SolverUtils::applyHouse(): Size of H,V are inconsistent.");
 
     // perform the loop
     // flops: Sum_{i=0:k-1} 4 m (n-i) == 4mnk - 2m(k^2- k)

@@ -93,7 +93,7 @@ namespace Anasazi {
      *  H is a pointer into V, and is only useful when BlockDavidson::iterate() throw a BlockDavidsonOrthoFailure exception.
      */
     Teuchos::RefCountPtr<const MV> H;
-    //! The current Ritz values.
+    //! The current Ritz values. This vector is a copy of the internal 
     Teuchos::RefCountPtr<const std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> > T;
     /*! \brief The current projected K matrix.
      *
@@ -717,7 +717,12 @@ namespace Anasazi {
     state.R = R_;
     state.H = H_;
     state.KK = KK_;
-    state.T = Teuchos::rcp(new std::vector<MagnitudeType>(theta_));
+    if (curDim_ > 0) {
+      state.T = Teuchos::rcp(new std::vector<MagnitudeType>(&theta_[0],&theta_[curDim_]));
+    }
+    else {
+      state.T = Teuchos::rcp(new std::vector<MagnitudeType>(0));
+    }
     return state;
   }
 
@@ -915,16 +920,16 @@ namespace Anasazi {
 
 
       // put data in V
+      std::vector<int> nevind(curDim_);
+      for (int i=0; i<curDim_; ++i) nevind[i] = i;
       if (newstate.V != V_) {
-        std::vector<int> nevind(curDim_);
-        for (int i=0; i<curDim_; ++i) nevind[i] = i;
         MVT::SetBlock(*newstate.V,nevind,*V_);
-        lclV = MVT::CloneView(*V_,nevind);
       }
+      lclV = MVT::CloneView(*V_,nevind);
 
       // put data into KK_
+      lclKK = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*KK_,curDim_,curDim_) );
       if (newstate.KK != KK_) {
-        lclKK = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*KK_,curDim_,curDim_) );
         Teuchos::SerialDenseMatrix<int,ScalarType> newKK(Teuchos::View,*newstate.KK,curDim_,curDim_);
         lclKK->assign(newKK);
       }
