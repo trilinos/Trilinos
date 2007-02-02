@@ -232,6 +232,8 @@ T2(F, operator*)
 T2(F, operator/)
 T2(F, atan2)
 T2(F, pow)
+T2(F, max)
+T2(F, min)
 T2(int, operator<)
 T2(int, operator<=)
 T2(int, operator==)
@@ -365,6 +367,8 @@ F r f <>(Ai,int);
 	T1(R,atan)
 	T1(R,atanh)
 	T2(R,atan2)
+	T2(R,max)
+	T2(R,min)
 	T1(R,cos)
 	T1(R,cosh)
 	T1(R,exp)
@@ -540,6 +544,8 @@ T2(F, operator-)
 T2(F, operator*)
 T2(F, operator/)
 T2(F, atan2)
+T2(F, max)
+T2(F, min)
 T2(F, pow)
 #undef F
 #define F friend int
@@ -1548,6 +1554,52 @@ atan2(const ADvari<Double> &L, Double y) {
 
  template<typename Double>
  ADvari<Double>&
+max(const ADvari<Double> &L, const ADvari<Double> &R) {
+	const ADvari<Double> &x = L.Val >= R.Val ? L : R;
+	return *(new ADvar1<Double>(STDCC x.Val, &x.adc.One, &x));
+	}
+
+ template<typename Double>
+ ADvari<Double>&
+max(Double L, const ADvari<Double> &R) {
+	if (L >= R.Val)
+		return *(new ADvari<Double>(L));
+	return *(new ADvar1<Double>(STDCC R.Val, &R.adc.One, &R));
+	}
+
+ template<typename Double>
+ ADvari<Double>&
+max(const ADvari<Double> &L, Double R) {
+	if (L.Val >= R)
+		return *(new ADvar1<Double>(STDCC L.Val, &L.adc.One, &L));
+	return *(new ADvari<Double>(R));
+	}
+
+ template<typename Double>
+ ADvari<Double>&
+min(const ADvari<Double> &L, const ADvari<Double> &R) {
+	const ADvari<Double> &x = L.Val <= R.Val ? L : R;
+	return *(new ADvar1<Double>(STDCC x.Val, &x.adc.One, &x));
+	}
+
+ template<typename Double>
+ ADvari<Double>&
+min(Double L, const ADvari<Double> &R) {
+	if (L <= R.Val)
+		return *(new ADvari<Double>(L));
+	return *(new ADvar1<Double>(STDCC R.Val, &R.adc.One, &R));
+	}
+
+ template<typename Double>
+ ADvari<Double>&
+min(const ADvari<Double> &L, Double R) {
+	if (L.Val <= R)
+		return *(new ADvar1<Double>(STDCC L.Val, &L.adc.One, &L));
+	return *(new ADvari<Double>(R));
+	}
+
+ template<typename Double>
+ ADvari<Double>&
 cos(const ADvari<Double> &v) {
 	return *(new ADvar1s<Double>(STDCC cos(v.Val), -STDCC sin(v.Val), &v));
 	}
@@ -1748,6 +1800,8 @@ T2(F, operator*)
 T2(F, operator/)
 T2(F, atan2)
 T2(F, pow)
+T2(F, max)
+T2(F, min)
 T2(int, operator<)
 T2(int, operator<=)
 T2(int, operator==)
