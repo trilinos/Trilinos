@@ -62,9 +62,9 @@ using namespace std;
 %import "Teuchos.i"
 
 // Teuchos::RefCountPtrs typemaps
-TEUCHOS_RCP_TYPEMAPS(NOX::Epetra::Interface::Required)
-TEUCHOS_RCP_TYPEMAPS(NOX::Epetra::Interface::Jacobian)
-TEUCHOS_RCP_TYPEMAPS(NOX::Epetra::Interface::Preconditioner)
+%teuchos_rcp_typemaps(NOX::Epetra::Interface::Required)
+%teuchos_rcp_typemaps(NOX::Epetra::Interface::Jacobian)
+%teuchos_rcp_typemaps(NOX::Epetra::Interface::Preconditioner)
 
 ///////////////////////
 // NOX_Utils support //

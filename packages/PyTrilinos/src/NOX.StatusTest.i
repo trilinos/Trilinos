@@ -55,7 +55,7 @@
 %import "Teuchos.i"
 
 // RefCountPtr typemaps
-TEUCHOS_RCP_TYPEMAPS(NOX::StatusTest::Generic)
+%teuchos_rcp_typemaps(NOX::StatusTest::Generic)
 
 // General ignore directives
 %ignore *::operator=;

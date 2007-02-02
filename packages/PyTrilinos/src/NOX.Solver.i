@@ -52,7 +52,7 @@
 
 // Define macro for handling exceptions thrown by NOX.Solver methods and
 // constructors
-%define NOXSOLVER_EXCEPTION(className,methodName)
+%define %nox_solver_exception(className,methodName)
   %exception NOX::Solver::className::methodName {
   try {
     $action
@@ -98,8 +98,8 @@
 //////////////////////////////////
 // NOX::Solver::Manager support //
 //////////////////////////////////
-NOXSOLVER_EXCEPTION(Manager,Manager)
-NOXSOLVER_EXCEPTION(Manager,getList)
+%nox_solver_exception(Manager,Manager)
+%nox_solver_exception(Manager,getList)
 %ignore NOX::Solver::Manager::Manager(const Teuchos::RefCountPtr< NOX::Abstract::Group & >,
                                    const Teuchos::RefCountPtr< NOX::StatusTest::Generic & >,
                                    const Teuchos::RefCountPtr< Teuchos::ParameterList > &);

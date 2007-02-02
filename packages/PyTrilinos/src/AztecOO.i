@@ -134,7 +134,7 @@ using namespace std;
 #endif
 
 // Exception handling
-%define AZTECOO_EXCEPTION_HANDLER(className,methodName)
+%define %aztecoo_exception(className,methodName)
 %exception className::methodName {
   $action
   if (PyErr_Occurred()) SWIG_fail;
@@ -157,7 +157,7 @@ __version__ = AztecOO_Version().split()[2]
 /////////////////////
 // AztecOO support //
 /////////////////////
-AZTECOO_EXCEPTION_HANDLER(AztecOO,SetParameters)
+%aztecoo_exception(AztecOO,SetParameters)
 %extend AztecOO {
   double GetStatus(int what) {
     const double* status = self->GetAztecStatus();

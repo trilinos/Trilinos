@@ -87,7 +87,7 @@ using namespace NOX::Epetra;
 
 // Define macro for handling exceptions thrown by NOX.Epetra methods and
 // constructors
-%define NOXEPETRA_EXCEPTION(className,methodName)
+%define %nox_epetra_exception(className,methodName)
   %exception NOX::Epetra::className::methodName {
   try {
     $action
@@ -126,11 +126,11 @@ using namespace std;
 %import "Teuchos.i"
 
 // Support for Teuchos::RefCountPtrs
-TEUCHOS_RCP_TYPEMAPS(NOX::Epetra::LinearSystem)
-TEUCHOS_RCP_TYPEMAPS(NOX::Epetra::Scaling)
-TEUCHOS_RCP_TYPEMAPS(Epetra_CrsGraph)
-TEUCHOS_RCP_TYPEMAPS(Epetra_MapColoring)
-TEUCHOS_RCP_TYPEMAPS(Epetra_Operator)
+%teuchos_rcp_typemaps(NOX::Epetra::LinearSystem)
+%teuchos_rcp_typemaps(NOX::Epetra::Scaling)
+%teuchos_rcp_typemaps(Epetra_CrsGraph)
+%teuchos_rcp_typemaps(Epetra_MapColoring)
+%teuchos_rcp_typemaps(Epetra_Operator)
 
 //////////////
 // Typemaps //
@@ -197,7 +197,7 @@ TEUCHOS_RCP_TYPEMAPS(Epetra_Operator)
 //////////////////////////////
 // NOX.Epetra.Group support //
 //////////////////////////////
-NOXEPETRA_EXCEPTION(Group,Group)
+%nox_epetra_exception(Group,Group)
 %rename(Group_None) NOX::Epetra::Group::None;
 %include "NOX_Epetra_Group.H"
 
@@ -211,13 +211,13 @@ NOXEPETRA_EXCEPTION(Group,Group)
 /////////////////////////////////////////
 // NOX.Epetra.FiniteDifference support //
 /////////////////////////////////////////
-NOXEPETRA_EXCEPTION(FiniteDifference,FiniteDifference)
+%nox_epetra_exception(FiniteDifference,FiniteDifference)
 %include "NOX_Epetra_FiniteDifference.H"
 
 /////////////////////////////////////////////////
 // NOX.Epetra.FiniteDifferenceColoring support //
 /////////////////////////////////////////////////
-NOXEPETRA_EXCEPTION(FiniteDifferenceColoring,FiniteDifferenceColoring)
+%nox_epetra_exception(FiniteDifferenceColoring,FiniteDifferenceColoring)
 namespace NOX {
   namespace Epetra {
     %extend FiniteDifferenceColoring {
@@ -265,7 +265,7 @@ namespace NOX {
 ///////////////////////////////////
 // NOX.Epetra.MatrixFree support //
 ///////////////////////////////////
-NOXEPETRA_EXCEPTION(MatrixFree,MatrixFree)
+%nox_epetra_exception(MatrixFree,MatrixFree)
 %include "NOX_Epetra_MatrixFree.H"
 
 ////////////////////////////////
@@ -278,7 +278,7 @@ NOXEPETRA_EXCEPTION(MatrixFree,MatrixFree)
 /////////////////////////////////////
 // NOX.Epetra.LinearSystem support //
 /////////////////////////////////////
-NOXEPETRA_EXCEPTION(LinearSystem,LinearSystem)
+%nox_epetra_exception(LinearSystem,LinearSystem)
 %feature("director") NOX::Epetra::LinearSystem;
 // The following #define is to change the name of NOX method
 // arguments that conflict with a SWIG director method argument
@@ -288,5 +288,5 @@ NOXEPETRA_EXCEPTION(LinearSystem,LinearSystem)
 ////////////////////////////////////////////
 // NOX.Epetra.LinearSystemAztecOO support //
 ////////////////////////////////////////////
-NOXEPETRA_EXCEPTION(LinearSystemAztecOO,LinearSystemAztecOO)
+%nox_epetra_exception(LinearSystemAztecOO,LinearSystemAztecOO)
 %include "NOX_Epetra_LinearSystem_AztecOO.H"

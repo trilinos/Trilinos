@@ -52,7 +52,7 @@
 %import "Teuchos.i"
 
 // Support for Teuchos::RefCountPtrs
-TEUCHOS_RCP_TYPEMAPS(NOX::Abstract::Group)
+%teuchos_rcp_typemaps(NOX::Abstract::Group)
 
 ////////////////////////////////
 // NOX_Abstract_Group support //

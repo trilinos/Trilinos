@@ -85,7 +85,7 @@ using namespace std;
 
 // Define macro for handling exceptions thrown by Teuchos methods and
 // constructors
-%define TEUCHOS_EXCEPTION(className,methodName)
+%define %teuchos_exception(className,methodName)
 %exception Teuchos::className::methodName {
   try {
     $action
@@ -132,14 +132,14 @@ using namespace std;
 ////////////////////////////////////
 // Teuchos::ParameterList support //
 ////////////////////////////////////
-TEUCHOS_EXCEPTION(ParameterList,ParameterList)
-TEUCHOS_EXCEPTION(ParameterList,set)
-TEUCHOS_EXCEPTION(ParameterList,setParameters)
-TEUCHOS_EXCEPTION(ParameterList,get)
-TEUCHOS_EXCEPTION(ParameterList,sublist)
-TEUCHOS_EXCEPTION(ParameterList,type)
-TEUCHOS_EXCEPTION(ParameterList,__setitem__)
-TEUCHOS_EXCEPTION(ParameterList,update)
+%teuchos_exception(ParameterList,ParameterList)
+%teuchos_exception(ParameterList,set)
+%teuchos_exception(ParameterList,setParameters)
+%teuchos_exception(ParameterList,get)
+%teuchos_exception(ParameterList,sublist)
+%teuchos_exception(ParameterList,type)
+%teuchos_exception(ParameterList,__setitem__)
+%teuchos_exception(ParameterList,update)
 // There are a lot of extensions to the Teuchos::ParameterList class,
 // so I put them all in their own file
 %include "Teuchos_ParameterList_ext.i"
@@ -267,7 +267,7 @@ TEUCHOS_EXCEPTION(ParameterList,update)
 // These typemap macros allow developers to generate typemaps for any
 // classes that are wrapped in RefCountPtr as function or method
 // arguments.
-%define TEUCHOS_RCP_TYPEMAPS(Type)
+%define %teuchos_rcp_typemaps(Type)
 
 %extend_RefCountPtr(Type, Teuchos::RefCountPtr< Type >)
 %template()               Teuchos::RefCountPtr< Type >;
@@ -282,4 +282,4 @@ TEUCHOS_EXCEPTION(ParameterList,update)
 
 // Apply the RefCountPtr typemap macros to ParameterLists
 %ignore Teuchos::RefCountPtr< Teuchos::ParameterList >::get() const;
-TEUCHOS_RCP_TYPEMAPS(Teuchos::ParameterList)
+%teuchos_rcp_typemaps(Teuchos::ParameterList)

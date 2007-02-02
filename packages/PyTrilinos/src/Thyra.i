@@ -99,7 +99,7 @@ using namespace std;
 %include "Thyra_VectorStdOpsDecl.hpp"
 
 // Macro for an interface, templated on type
-%define INTERFACE(type)
+%define %thyra_interface(type)
 
 %ignore Teuchos::RefCountPtr<Thyra::VectorBase<type> >::access_node() const;
 %ignore Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<type> >::access_node() const;
@@ -136,7 +136,7 @@ using namespace std;
 %enddef
 
 // Instantiations of interfaces
-INTERFACE(double)
+%thyra_interface(double)
 
 // Extensions.
 
