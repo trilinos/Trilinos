@@ -39,8 +39,16 @@
 #include "Epetra_Export.h"
 %}
 
-// Ignore directives
-// These are replaced with extensions
+// General ignore directives
+%ignore *::PermuteFromLIDs() const;
+%ignore *::PermuteToLIDs() const;
+%ignore *::RemoteLIDs() const;
+%ignore *::ExportLIDs() const;
+%ignore *::ExportPIDs() const;
+
+/////////////////////////////
+// Epetra_BlockMap support //
+/////////////////////////////
 %ignore Epetra_BlockMap::Epetra_BlockMap(int,int,const int*,int, int,const Epetra_Comm&);
 %ignore Epetra_BlockMap::Epetra_BlockMap(int,int,const int*,const int*,int,const Epetra_Comm&);
 %ignore Epetra_BlockMap::RemoteIDList(int,const int*,int*,int*) const;
@@ -54,48 +62,13 @@
 %ignore Epetra_BlockMap::ElementSizeList() const;
 %ignore Epetra_BlockMap::PointToElementList(int*) const;
 %ignore Epetra_BlockMap::PointToElementList() const;
-%ignore Epetra_Map::Epetra_Map(int,int,const int*,int,const Epetra_Comm&);
-// These are expert methods not wrapped
 %ignore Epetra_BlockMap::ReferenceCount() const;
 %ignore Epetra_BlockMap::DataPtr() const;
-// These are Import/Export methods that get extended below
-%ignore *::PermuteFromLIDs() const;
-%ignore *::PermuteToLIDs() const;
-%ignore *::RemoteLIDs() const;
-%ignore *::ExportLIDs() const;
-%ignore *::ExportPIDs() const;
-
-// Rename directives
-%rename(BlockMap      ) Epetra_BlockMap;
-%rename(Map           ) Epetra_Map;
-%rename(LocalMap      ) Epetra_LocalMap;
-%rename(Directory     ) Epetra_Directory;
-%rename(BasicDirectory) Epetra_BasicDirectory;
-%rename(Import        ) Epetra_Import;
-%rename(Export        ) Epetra_Export;
-
-// Exceptions
-EXCEPTION_HANDLER(Epetra_BlockMap,Epetra_BlockMap )
-EXCEPTION_HANDLER(Epetra_BlockMap,MyGlobalElements)
-EXCEPTION_HANDLER(Epetra_Map     ,Epetra_Map      )
-EXCEPTION_HANDLER(Epetra_Map     ,MyGlobalElements)
-EXCEPTION_HANDLER(Epetra_LocalMap,Epetra_LocalMap )
-EXCEPTION_HANDLER(Epetra_LocalMap,MyGlobalElements)
-EXCEPTION_HANDLER(Epetra_Export  ,Epetra_Export   )
-EXCEPTION_HANDLER(Epetra_Import  ,Epetra_Import   )
-
-// Include directives
+%rename(BlockMap) Epetra_BlockMap;
+EXCEPTION_HANDLER(Epetra_BlockMap, Epetra_BlockMap )
+EXCEPTION_HANDLER(Epetra_BlockMap, MyGlobalElements)
 %include "Epetra_BlockMap.h"
-%include "Epetra_Map.h"
-%include "Epetra_LocalMap.h"
-%include "Epetra_Directory.h"
-%include "Epetra_BasicDirectory.h"
-%include "Epetra_Import.h"
-%include "Epetra_Export.h"
-
-// Extend directives
 %extend Epetra_BlockMap {
-
   Epetra_BlockMap(int                 numGlobalElements,
 		  PyObject *          myGlobalElementArray,
 		  int                 elementSize,
@@ -330,11 +303,17 @@ EXCEPTION_HANDLER(Epetra_Import  ,Epetra_Import   )
     Py_XDECREF(pteArray );
     return NULL;
   }
-
 }
 
+////////////////////////
+// Epetra_Map support //
+////////////////////////
+%ignore Epetra_Map::Epetra_Map(int,int,const int*,int,const Epetra_Comm&);
+%rename(Map) Epetra_Map;
+EXCEPTION_HANDLER(Epetra_Map, Epetra_Map      )
+EXCEPTION_HANDLER(Epetra_Map, MyGlobalElements)
+%include "Epetra_Map.h"
 %extend Epetra_Map {
-
   Epetra_Map(int                 numGlobalElements,
 	     PyObject          * myGlobalElementArray,
 	     int                 indexBase,
@@ -366,6 +345,30 @@ EXCEPTION_HANDLER(Epetra_Import  ,Epetra_Import   )
   }
 }
 
+/////////////////////////////
+// Epetra_LocalMap support //
+/////////////////////////////
+%rename(LocalMap) Epetra_LocalMap;
+EXCEPTION_HANDLER(Epetra_LocalMap, Epetra_LocalMap )
+EXCEPTION_HANDLER(Epetra_LocalMap, MyGlobalElements)
+%include "Epetra_LocalMap.h"
+
+//////////////////////////////
+// Epetra_Directory support //
+//////////////////////////////
+%rename(Directory) Epetra_Directory;
+%include "Epetra_Directory.h"
+
+///////////////////////////////////
+// Epetra_BasicDirectory support //
+///////////////////////////////////
+%rename(BasicDirectory) Epetra_BasicDirectory;
+%include "Epetra_BasicDirectory.h"
+
+///////////////////////////
+// Import/Export support //
+///////////////////////////
+
 // Import/Export extensions are done with a couple of nested macros
 %define MOVER_METHOD(methodName, numMethod)
   PyObject * methodName() {
@@ -393,6 +396,18 @@ EXCEPTION_HANDLER(Epetra_Import  ,Epetra_Import   )
 }
 %enddef
 
+///////////////////////////
+// Epetra_Import support //
+///////////////////////////
+%rename(Import) Epetra_Import;
+EXCEPTION_HANDLER(Epetra_Export, Epetra_Export)
+%include "Epetra_Import.h"
 EXTEND_DATA_MOVER(Import)
+
+///////////////////////////
+// Epetra_Export support //
+///////////////////////////
+%rename(Export) Epetra_Export;
+EXCEPTION_HANDLER(Epetra_Import, Epetra_Import)
+%include "Epetra_Export.h"
 EXTEND_DATA_MOVER(Export)
-// End Import/Export extensions

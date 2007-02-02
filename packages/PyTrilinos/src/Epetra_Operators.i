@@ -42,86 +42,9 @@
 #include "Epetra_LinearProblem.h"
 %}
 
-// Feature directives
-%feature("director") Epetra_Operator;
-%feature("director") Epetra_InvOperator;
-%feature("director") Epetra_RowMatrix;
-
-// Ignore directives
-%ignore Epetra_LinearProblem::SetOperator()(int) const;
-%ignore Epetra_VbrMatrix::Solve(bool, bool, bool,
-				Epetra_Vector const&, Epetra_Vector&) const;
-// These will be implemented in the %extend block below
-%ignore Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess,
-					   const Epetra_Map &,
-					   const int *,
-					   bool);
-%ignore Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess,
-					   const Epetra_Map &,
-					   const Epetra_Map &,
-					   const int *,
-					   bool);
-%ignore Epetra_CrsMatrix::InsertGlobalValues( int,int,double*,int);
-%ignore Epetra_CrsMatrix::ReplaceGlobalValues(int,int,double*,int);
-%ignore Epetra_CrsMatrix::SumIntoGlobalValues(int,int,double*,int);
-%ignore Epetra_CrsMatrix::InsertMyValues(     int,int,double*,int);
-%ignore Epetra_CrsMatrix::ReplaceMyValues(    int,int,double*,int);
-%ignore Epetra_CrsMatrix::SumIntoMyValues(    int,int,double*,int);
-%ignore Epetra_CrsMatrix::ExtractGlobalRowCopy(int,int,int&,double* ,int*);
-%ignore Epetra_CrsMatrix::ExtractMyRowCopy(    int,int,int&,double* ,int*);
-%ignore Epetra_CrsMatrix::ExtractGlobalRowCopy(int,int,int&,double*);
-%ignore Epetra_CrsMatrix::ExtractMyRowCopy(    int,int,int&,double*);
-%ignore Epetra_CrsMatrix::ExtractGlobalRowView(int,int,int&,double*&,int*&);
-%ignore Epetra_CrsMatrix::ExtractMyRowView(    int,int,int&,double*&,int*&);
-%ignore Epetra_CrsMatrix::ExtractGlobalRowView(int,int,int&,double*&);
-%ignore Epetra_CrsMatrix::ExtractMyRowView(    int,int,int&,double*&);
-%ignore Epetra_CrsMatrix::ExtractCrsDataPointers(int*&,int*&,double*&);
-%ignore Epetra_BasicRowMatrix::ExtractMyEntryView(int,double*&,int&,int&);
-%ignore Epetra_JadMatrix::ExtractMyEntryView(int,double*&,int&,int&);
-
-// Rename directives
-%rename(Operator          ) Epetra_Operator;
-%rename(InvOperator       ) Epetra_InvOperator;
-%rename(RowMatrix         ) Epetra_RowMatrix;
-%rename(BasicRowMatrix    ) Epetra_BasicRowMatrix;
-%rename(CrsMatrix         ) Epetra_CrsMatrix;
-%rename(FECrsMatrix       ) Epetra_FECrsMatrix;
-%rename(CrsSingletonFilter) Epetra_CrsSingletonFilter;
-%rename(VbrMatrix         ) Epetra_VbrMatrix;
-%rename(FEVbrMatrix       ) Epetra_FEVbrMatrix;
-%rename(JadMatrix         ) Epetra_JadMatrix;
-%rename(LinearProblem     ) Epetra_LinearProblem;
-
-// Exceptions
-EXCEPTION_HANDLER(Epetra_CrsMatrix    ,Epetra_CrsMatrix   )
-EXCEPTION_HANDLER(Epetra_CrsMatrix    ,InsertGlobalValues )
-EXCEPTION_HANDLER(Epetra_CrsMatrix    ,ReplaceGlobalValues)
-EXCEPTION_HANDLER(Epetra_CrsMatrix    ,SumIntoGlobalValues)
-EXCEPTION_HANDLER(Epetra_CrsMatrix    ,InsertMyValues     )
-EXCEPTION_HANDLER(Epetra_CrsMatrix    ,ReplaceMyValues    )
-EXCEPTION_HANDLER(Epetra_CrsMatrix    ,SumIntoMyValues    )
-EXCEPTION_HANDLER(Epetra_CrsMatrix    ,OptimizeStorage    )
-EXCEPTION_HANDLER(Epetra_CrsMatrix    ,__setitem__        )
-EXCEPTION_HANDLER(Epetra_FastCrsMatrix,FastCrsMatrix      )
-EXCEPTION_HANDLER(Epetra_JadMatrix    ,Epetra_JadMatrix   )
-
-// Include directives
-%warnfilter(473) Epetra_Operator;
-%warnfilter(473) Epetra_InvOperator;
-%warnfilter(473) Epetra_RowMatrix;
-%include "Epetra_Operator.h"
-%include "Epetra_InvOperator.h"
-%include "Epetra_RowMatrix.h"
-%include "Epetra_BasicRowMatrix.h"
-%include "Epetra_CrsMatrix.h"
-%include "Epetra_FECrsMatrix.h"
-%include "Epetra_CrsSingletonFilter.h"
-%include "Epetra_VbrMatrix.h"
-%include "Epetra_FEVbrMatrix.h"
-%include "Epetra_JadMatrix.h"
-%include "Epetra_LinearProblem.h"
-
-// Macro code
+////////////////
+// Macro code //
+////////////////
 %define MANIPULATE_GLOBAL_ROW_VALUES(method)
 int method(int row, PyObject * values, PyObject * indices) {
   int numValEntries;
@@ -194,7 +117,75 @@ int method(int row, PyObject * values, PyObject * indices) {
 }
 %enddef
 
-// Extend directives
+/////////////////////////////
+// Epetra_Operator support //
+/////////////////////////////
+%warnfilter(473)     Epetra_Operator;
+%feature("director") Epetra_Operator;
+%rename(Operator)    Epetra_Operator;
+%include "Epetra_Operator.h"
+
+////////////////////////////////
+// Epetra_InvOperator support //
+////////////////////////////////
+%warnfilter(473)     Epetra_InvOperator;
+%feature("director") Epetra_InvOperator;
+%rename(InvOperator) Epetra_InvOperator;
+%include "Epetra_InvOperator.h"
+
+//////////////////////////////
+// Epetra_RowMatrix support //
+//////////////////////////////
+%warnfilter(473)     Epetra_RowMatrix;
+%feature("director") Epetra_RowMatrix;
+%rename(RowMatrix)   Epetra_RowMatrix;
+%include "Epetra_RowMatrix.h"
+
+///////////////////////////////////
+// Epetra_BasicRowMatrix support //
+///////////////////////////////////
+%ignore Epetra_BasicRowMatrix::ExtractMyEntryView(int,double*&,int&,int&);
+%rename(BasicRowMatrix) Epetra_BasicRowMatrix;
+%include "Epetra_BasicRowMatrix.h"
+
+//////////////////////////////
+// Epetra_CrsMatrix support //
+//////////////////////////////
+%ignore Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess,
+					   const Epetra_Map &,
+					   const int *,
+					   bool);
+%ignore Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess,
+					   const Epetra_Map &,
+					   const Epetra_Map &,
+					   const int *,
+					   bool);
+%ignore Epetra_CrsMatrix::InsertGlobalValues( int,int,double*,int);
+%ignore Epetra_CrsMatrix::ReplaceGlobalValues(int,int,double*,int);
+%ignore Epetra_CrsMatrix::SumIntoGlobalValues(int,int,double*,int);
+%ignore Epetra_CrsMatrix::InsertMyValues(     int,int,double*,int);
+%ignore Epetra_CrsMatrix::ReplaceMyValues(    int,int,double*,int);
+%ignore Epetra_CrsMatrix::SumIntoMyValues(    int,int,double*,int);
+%ignore Epetra_CrsMatrix::ExtractGlobalRowCopy(int,int,int&,double* ,int*);
+%ignore Epetra_CrsMatrix::ExtractMyRowCopy(    int,int,int&,double* ,int*);
+%ignore Epetra_CrsMatrix::ExtractGlobalRowCopy(int,int,int&,double*);
+%ignore Epetra_CrsMatrix::ExtractMyRowCopy(    int,int,int&,double*);
+%ignore Epetra_CrsMatrix::ExtractGlobalRowView(int,int,int&,double*&,int*&);
+%ignore Epetra_CrsMatrix::ExtractMyRowView(    int,int,int&,double*&,int*&);
+%ignore Epetra_CrsMatrix::ExtractGlobalRowView(int,int,int&,double*&);
+%ignore Epetra_CrsMatrix::ExtractMyRowView(    int,int,int&,double*&);
+%ignore Epetra_CrsMatrix::ExtractCrsDataPointers(int*&,int*&,double*&);
+%rename(CrsMatrix) Epetra_CrsMatrix;
+EXCEPTION_HANDLER(Epetra_CrsMatrix, Epetra_CrsMatrix   )
+EXCEPTION_HANDLER(Epetra_CrsMatrix, InsertGlobalValues )
+EXCEPTION_HANDLER(Epetra_CrsMatrix, ReplaceGlobalValues)
+EXCEPTION_HANDLER(Epetra_CrsMatrix, SumIntoGlobalValues)
+EXCEPTION_HANDLER(Epetra_CrsMatrix, InsertMyValues     )
+EXCEPTION_HANDLER(Epetra_CrsMatrix, ReplaceMyValues    )
+EXCEPTION_HANDLER(Epetra_CrsMatrix, SumIntoMyValues    )
+EXCEPTION_HANDLER(Epetra_CrsMatrix, OptimizeStorage    )
+EXCEPTION_HANDLER(Epetra_CrsMatrix, __setitem__        )
+%include "Epetra_CrsMatrix.h"
 %extend Epetra_CrsMatrix {
 
   Epetra_CrsMatrix(Epetra_DataAccess   CV,
@@ -476,6 +467,11 @@ int method(int row, PyObject * values, PyObject * indices) {
   }
 }
 
+////////////////////////////////
+// Epetra_FECrsMatrix support //
+////////////////////////////////
+%rename(FECrsMatrix) Epetra_FECrsMatrix;
+%include "Epetra_FECrsMatrix.h"
 %extend Epetra_FECrsMatrix {
   void __setitem__(PyObject* args, double val) 
   {
@@ -521,48 +517,38 @@ int method(int row, PyObject * values, PyObject * indices) {
     int j2 = j;
     return self->InsertGlobalValues(1, &i, 1, &j2, &val2);
   }
-
-//   int InsertGlobalValues(const int row, PyObject* Values, PyObject* Indices)
-//   {
-//     if (row < 0)
-//       return(-1);
-
-//     if (PyList_Check(Values) == 0 || PyList_Check(Indices) == 0) 
-//     {
-//       cerr << "Input object is not a list" << endl;
-//       return(-1);
-//     }
-
-//     int len = PyList_Size(Values);
-//     if (len != PyList_Size(Indices))
-//     {
-//       cerr << "Length of input lists differ" << endl;
-//       return(-1);
-//     }
-
-//     for (int i = 0 ; i < len ; ++i)
-//     {
-//       PyObject* Value,* Index;
-//       Value = PyList_GetItem(Values, i);
-//       Index = PyList_GetItem(Indices, i);
-
-//       if (PyInt_Check(Index) == 0)
-//       {
-//         cerr << "Indices must be integers" << endl;
-//         return(-1);
-//       }
-
-//       if (PyFloat_Check(Value) == 0)
-//       {
-//         cerr << "Values must be doubles" << endl;
-//         return(-1);
-//       }
-
-//       int cIndex = PyLong_AsLong(Index);
-//       double cValue = PyFloat_AsDouble(Value);
-//       if (self->InsertGlobalValues(1, &row, 1, &cIndex, &cValue) < 0)
-//         return(-1);
-//     }
-//     return(0);
-//   }
 }
+
+///////////////////////////////////////
+// Epetra_CrsSingletonFilter support //
+///////////////////////////////////////
+%rename(CrsSingletonFilter) Epetra_CrsSingletonFilter;
+%include "Epetra_CrsSingletonFilter.h"
+
+//////////////////////////////
+// Epetra_VbrMatrix support //
+//////////////////////////////
+%ignore Epetra_VbrMatrix::Solve(bool, bool, bool,
+				Epetra_Vector const&, Epetra_Vector&) const;
+%rename(VbrMatrix) Epetra_VbrMatrix;
+%include "Epetra_VbrMatrix.h"
+
+////////////////////////////////
+// Epetra_FEVbrMatrix support //
+////////////////////////////////
+%rename(FEVbrMatrix) Epetra_FEVbrMatrix;
+%include "Epetra_FEVbrMatrix.h"
+
+//////////////////////////////
+// Epetra_JadMatrix support //
+//////////////////////////////
+%ignore Epetra_JadMatrix::ExtractMyEntryView(int,double*&,int&,int&);
+%rename(JadMatrix) Epetra_JadMatrix;
+EXCEPTION_HANDLER(Epetra_JadMatrix, Epetra_JadMatrix)
+%include "Epetra_JadMatrix.h"
+
+//////////////////////////////////
+// Epetra_LinearProblem support //
+//////////////////////////////////
+%rename(LinearProblem) Epetra_LinearProblem;
+%include "Epetra_LinearProblem.h"

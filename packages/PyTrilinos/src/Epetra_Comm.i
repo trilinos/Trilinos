@@ -36,11 +36,11 @@
 #include "Epetra_SerialDistributor.h"
 %}
 
-// Cretae python interfaces to MPI initialization and finalization
+// Create python interfaces to MPI initialization and finalization
 PyObject* Init_Argv(PyObject *args);
 PyObject* Finalize();
 
-// Ignore directives
+// General ignore directives
 %ignore *::operator=;
 %ignore *::Broadcast(int*   ,int    ,int) const;  // These are replaced by %extend below:
 %ignore *::Broadcast(long*  ,int    ,int) const;  //   Broadcast(PyObject*,int)
@@ -61,31 +61,24 @@ PyObject* Finalize();
 %ignore *::ScanSum(  long*  ,long*  ,int) const;  //   ScanSum(PyObject*)
 %ignore *::ScanSum(  double*,double*,int) const;
 
-// Rename directives
-%rename(Comm      	 ) Epetra_Comm;
-%rename(SerialComm	 ) Epetra_SerialComm;
-%rename(Distributor  	 ) Epetra_Distributor;
-%rename(SerialDistributor) Epetra_Distributor;
-
-// Include directives
+/////////////////////////
+// Epetra_Comm support //
+/////////////////////////
+%rename(Comm) Epetra_Comm;
 %include "Epetra_Comm.h"
-%include "Epetra_SerialComm.h"
-%include "Epetra_Distributor.h"
-%include "Epetra_SerialDistributor.h"
+// Many of the communicator methods take C arrays as input or output
+// arguments.  Here I allow the python user to use numpy arrays
+// instead, and for pure input arrays, any python object that can be
+// used to construct a numpy array.  Typemaps are not used because
+// these methods are overloaded by array type, and the SWIG
+// overloading mechanism cannot disambiguate arrays by type.  I only
+// extend the base class (Epetra_Comm), which is where I do type
+// checking, and rely on python's polymorphism for the derived
+// classes.  Also, I do not return an int, but rather raise an
+// exception if the routines return a non-zero error code.  Output
+// arrays are moved from the argument list to being returned by the
+// method.
 
-/* Extend directives.  Many of the communicator methods take C arrays
- * as input or output arguments.  These extensions allow the python
- * user to use numpy arrays instead, and for pure input arrays, any
- * python object that can be used to construct a numpy array.
- * Typemaps are not used because these methods are overloaded by array
- * type, and the SWIG overloading mechanism cannot disambiguate arrays
- * by type.  I only extend the base class (Epetra_Comm), which is
- * where I do type checking, and rely on python's polymorphism for the
- * derived classes.  Also, I do not return an int, but rather raise an
- * exception if the routines return a non-zero error code.  Output
- * arrays are moved from the argument list to being returned by the
- * method.
- */
 %extend Epetra_Comm {
 
   PyObject* Broadcast(PyObject* myObj, int root) {
@@ -334,9 +327,27 @@ PyObject* Finalize();
   }
 }
 
+///////////////////////////////
+// Epetra_SerialComm support //
+///////////////////////////////
+%rename(SerialComm) Epetra_SerialComm;
+%include "Epetra_SerialComm.h"
+
+////////////////////////////////
+// Epetra_Distributor support //
+////////////////////////////////
+%rename(Distributor) Epetra_Distributor;
+%include "Epetra_Distributor.h"
+
+//////////////////////////////////////
+// Epetra_SerialDistributor support //
+//////////////////////////////////////
+%rename(SerialDistributor) Epetra_Distributor;
+%include "Epetra_SerialDistributor.h"
+
+
 // Python code.  This will be inserted directly into the python module
 %pythoncode %{
-
 # Call MPI_Init if appropriate
 import sys
 Init_Argv(sys.argv)
@@ -345,8 +356,11 @@ del sys
 # Arrange for MPI_Finalize to be called at exit, if appropriate
 import atexit
 atexit.register(Finalize)
-
 %}
+
+////////////////////////////////////////////////////////////////////////////////
+// The following code is implemented if HAVE_MPI is defined
+////////////////////////////////////////////////////////////////////////////////
 
 #ifdef HAVE_MPI
 %{
@@ -397,17 +411,30 @@ PyObject* Finalize() {
 // leak ;-)
 %inline {extern const MPI_Comm CommWorld = (MPI_COMM_WORLD);}
 
-%rename(MpiComm       ) Epetra_MpiComm;
-%rename(MpiDistributor) Epetra_Distributor;
-
+////////////////////////////
+// Epetra_MpiComm support //
+////////////////////////////
+%rename(MpiComm) Epetra_MpiComm;
 %include "Epetra_MpiComm.h"
+
+///////////////////////////////////
+// Epetra_MpiDistributor support //
+///////////////////////////////////
+%rename(MpiDistributor) Epetra_Distributor;
 %include "Epetra_MpiDistributor.h"
 
+/////////////////////////////////////
+// Epetra.PyComm support under MPI //
+/////////////////////////////////////
 %pythoncode %{
 def PyComm():
   "PyComm() -> Epetra.MpiComm(MPI_COMM_WORLD)"
   return MpiComm(cvar.CommWorld);
 %}
+
+////////////////////////////////////////////////////////////////////////////////
+// The following code is implemented if HAVE_MPI is not defined
+////////////////////////////////////////////////////////////////////////////////
 
 #else
 
@@ -421,6 +448,9 @@ PyObject* Finalize() {
 }
 %}
 
+///////////////////////////////////////
+// Epetra.PyComm support without MPI //
+///////////////////////////////////////
 %pythoncode %{
 def PyComm():
   "PyComm() -> Epetra.SerialComm"

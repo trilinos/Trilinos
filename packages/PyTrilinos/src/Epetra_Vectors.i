@@ -41,10 +41,23 @@
 #include "Epetra_NumPyIntVector.h"
 %}
 
-// Ignore directives
+//////////////
+// Typemaps //
+//////////////
+TYPEMAP_OUT(Epetra_IntVector,   Epetra_NumPyIntVector  )
+TYPEMAP_OUT(Epetra_MultiVector, Epetra_NumPyMultiVector)
+TYPEMAP_OUT(Epetra_Vector,      Epetra_NumPyVector     )
+
+//////////////////////////////
+// Epetra_IntVector support //
+//////////////////////////////
+%inline {struct IntVector{ };}
+%include "Epetra_IntVector.h"
+
+////////////////////////////////
+// Epetra_MultiVector support //
+////////////////////////////////
 %ignore Epetra_MultiVector::operator()(int) const;
-// The following methods are given functionality in the derived class
-// Epetra_NumPyMultiVector
 %ignore Epetra_MultiVector::ExtractCopy(double *, int   ) const;
 %ignore Epetra_MultiVector::ExtractCopy(double **       ) const;
 %ignore Epetra_MultiVector::ExtractView(double **, int *) const;
@@ -57,11 +70,14 @@
 %ignore Epetra_MultiVector::MinValue(double*) const;
 %ignore Epetra_MultiVector::MaxValue(double*) const;
 %ignore Epetra_MultiVector::MeanValue(double*) const;
-// The following are expert methods not supported in python
 %ignore Epetra_MultiVector::ResetView(double **);
 %ignore Epetra_MultiVector::Pointers() const;
-// The following methods are given functionality in the derived class
-// Epetra_NumPyVector
+%inline {struct MultiVector{ };}
+%include "Epetra_MultiVector.h"
+
+///////////////////////////
+// Epetra_Vector support //
+///////////////////////////
 %ignore Epetra_Vector::ExtractCopy(double * ) const;
 %ignore Epetra_Vector::ExtractView(double **) const;
 %ignore Epetra_Vector::ReplaceGlobalValues(int,double*,int*);
@@ -72,54 +88,77 @@
 %ignore Epetra_Vector::SumIntoGlobalValues(int,int,double*,int*);
 %ignore Epetra_Vector::SumIntoMyValues(int,double*,int*);
 %ignore Epetra_Vector::SumIntoMyValues(int,int,double*,int*);
-// The following is an expert method not supported in python
 %ignore Epetra_Vector::ResetView(double *);
-
-// Rename directives
-%rename(NumPyMultiVector) Epetra_NumPyMultiVector;
-%rename(NumPyVector     ) Epetra_NumPyVector;
-%rename(NumPyIntVector  ) Epetra_NumPyIntVector;
-%rename(FEVector        ) Epetra_FEVector;
-
-// These are place-holders on the C++ side for the python-defined
-// MultiVector, Vector and IntVector classes
-%inline {
-  struct MultiVector { };
-  struct Vector      { };
-  struct IntVector   { };
-}
-
-// Exceptions.  The Epetra_NumPy*Vector class constructors can raise
-// python exceptions, but swig must be told explicitely to look for
-// them.
-NUMPY_CONSTRUCTOR_EXCEPTION_HANDLER(Epetra_NumPyMultiVector)
-NUMPY_CONSTRUCTOR_EXCEPTION_HANDLER(Epetra_NumPyVector     )
-NUMPY_CONSTRUCTOR_EXCEPTION_HANDLER(Epetra_NumPyIntVector  )
-
-// Typemaps
-TYPEMAP_OUT(Epetra_MultiVector,Epetra_NumPyMultiVector)
-TYPEMAP_OUT(Epetra_Vector,     Epetra_NumPyVector     )
-TYPEMAP_OUT(Epetra_IntVector,  Epetra_NumPyIntVector  )
-
-// Include directives for Epetra
-%include "Epetra_IntVector.h"
-%include "Epetra_MultiVector.h"
+%inline {struct Vector{ };}
 %include "Epetra_Vector.h"
+
+/////////////////////////////
+// Epetra_FEVector support //
+/////////////////////////////
+%rename(FEVector) Epetra_FEVector;
 %include "Epetra_FEVector.h"
 
-// Local interface includes
-%include "Epetra_NumPyMultiVector.h"
-%include "Epetra_NumPyVector.h"
+///////////////////////////////////
+// Epetra_NumPyIntVector support //
+///////////////////////////////////
+%rename(NumPyIntVector) Epetra_NumPyIntVector;
+NUMPY_CONSTRUCTOR_EXCEPTION_HANDLER(Epetra_NumPyIntVector)
 %include "Epetra_NumPyIntVector.h"
-
-// Python code.  Here we define the Epetra.MultiVector, Epetra.Vector
-// and Epetra.IntVector python classes, which multiply-inherit from
-// the numpy UserArray class (making these classes numpy arrays) and
-// the Epetra_NumPyMultiVector, Epetra_NumPyVector or
-// Epetra_NumPyIntVector class (making these classes also Epetra
-// objects).
 %pythoncode %{
+class IntVector(UserArray,NumPyIntVector):
+    def __init__(self, *args):
+        """
+        __init__(self, BlockMap map, bool zeroOut=True) -> IntVector
+        __init__(self, IntVector source) -> IntVector
+        __init__(self, BlockMap map, PyObject array) -> IntVector
+        __init__(self, PyObject array) -> IntVector
+        """
+        NumPyIntVector.__init__(self, *args)
+        self.__initArray__()
+    def __initArray__(self):
+        UserArray.__init__(self, self.ExtractView(), dtype="i", copy=False)
+    def __str__(self):
+        return str(self.array)
+    def __lt__(self,other):
+        return numpy.less(self.array,other)
+    def __le__(self,other):
+        return numpy.less_equal(self.array,other)
+    def __eq__(self,other):
+        return numpy.equal(self.array,other)
+    def __ne__(self,other):
+        return numpy.not_equal(self.array,other)
+    def __gt__(self,other):
+        return numpy.greater(self.array,other)
+    def __ge__(self,other):
+        return numpy.greater_equal(self.array,other)
+    def __getattr__(self, key):
+        # This should get called when the IntVector is accessed after not
+        # properly being initialized
+        if not "array" in self.__dict__:
+            self.__initArray__()
+        try:
+            return self.array.__getattribute__(key)
+        except AttributeError:
+            return IntVector.__getattribute__(self, key)
+    def __setattr__(self, key, value):
+        "Handle 'this' properly and protect the 'array' attribute"
+        if key == "this":
+            NumPyIntVector.__setattr__(self, key, value)
+        else:
+            if key == "array":
+                if key in self.__dict__:
+                    raise AttributeError, "Cannot change Epetra.IntVector array attribute"
+            UserArray.__setattr__(self, key, value)
+_Epetra.NumPyIntVector_swigregister(IntVector)
+%}
 
+/////////////////////////////////////
+// Epetra_NumPyMultiVector support //
+/////////////////////////////////////
+%rename(NumPyMultiVector) Epetra_NumPyMultiVector;
+NUMPY_CONSTRUCTOR_EXCEPTION_HANDLER(Epetra_NumPyMultiVector)
+%include "Epetra_NumPyMultiVector.h"
+%pythoncode %{
 class MultiVector(UserArray,NumPyMultiVector):
     def __init__(self, *args):
         """
@@ -171,7 +210,15 @@ class MultiVector(UserArray,NumPyMultiVector):
                       " but must have minimum of 2 elements"
             UserArray.__setattr__(self, key, value)
 _Epetra.NumPyMultiVector_swigregister(MultiVector)
+%}
 
+////////////////////////////////
+// Epetra_NumPyVector support //
+////////////////////////////////
+%rename(NumPyVector) Epetra_NumPyVector;
+NUMPY_CONSTRUCTOR_EXCEPTION_HANDLER(Epetra_NumPyVector)
+%include "Epetra_NumPyVector.h"
+%pythoncode %{
 class Vector(UserArray,NumPyVector):
     def __init__(self, *args):
         """
@@ -218,51 +265,4 @@ class Vector(UserArray,NumPyVector):
                     raise AttributeError, "Cannot change Epetra.Vector array attribute"
             UserArray.__setattr__(self, key, value)
 _Epetra.NumPyVector_swigregister(Vector)
-
-class IntVector(UserArray,NumPyIntVector):
-    def __init__(self, *args):
-        """
-        __init__(self, BlockMap map, bool zeroOut=True) -> IntVector
-        __init__(self, IntVector source) -> IntVector
-        __init__(self, BlockMap map, PyObject array) -> IntVector
-        __init__(self, PyObject array) -> IntVector
-        """
-        NumPyIntVector.__init__(self, *args)
-        self.__initArray__()
-    def __initArray__(self):
-        UserArray.__init__(self, self.ExtractView(), dtype="i", copy=False)
-    def __str__(self):
-        return str(self.array)
-    def __lt__(self,other):
-        return numpy.less(self.array,other)
-    def __le__(self,other):
-        return numpy.less_equal(self.array,other)
-    def __eq__(self,other):
-        return numpy.equal(self.array,other)
-    def __ne__(self,other):
-        return numpy.not_equal(self.array,other)
-    def __gt__(self,other):
-        return numpy.greater(self.array,other)
-    def __ge__(self,other):
-        return numpy.greater_equal(self.array,other)
-    def __getattr__(self, key):
-        # This should get called when the IntVector is accessed after not
-        # properly being initialized
-        if not "array" in self.__dict__:
-            self.__initArray__()
-        try:
-            return self.array.__getattribute__(key)
-        except AttributeError:
-            return IntVector.__getattribute__(self, key)
-    def __setattr__(self, key, value):
-        "Handle 'this' properly and protect the 'array' attribute"
-        if key == "this":
-            NumPyIntVector.__setattr__(self, key, value)
-        else:
-            if key == "array":
-                if key in self.__dict__:
-                    raise AttributeError, "Cannot change Epetra.IntVector array attribute"
-            UserArray.__setattr__(self, key, value)
-_Epetra.NumPyIntVector_swigregister(IntVector)
-
 %}

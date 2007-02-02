@@ -33,34 +33,9 @@
 #include "Epetra_OffsetIndex.h"
 %}
 
-// Ignore directives
-
-// These will be replaced by constructors and methods in the %extend
-// directive below
-%ignore Epetra_CrsGraph::Epetra_CrsGraph(Epetra_DataAccess,
-					 const Epetra_BlockMap &,
-					 const int *,
-					 bool);
-%ignore Epetra_CrsGraph::Epetra_CrsGraph(Epetra_DataAccess,
-					 const Epetra_BlockMap &,
-					 const Epetra_BlockMap &,
-					 const int *,
-					 bool);
-%ignore Epetra_CrsGraph::ExtractGlobalRowCopy(int, int, int&, int*) const;
-%ignore Epetra_CrsGraph::ExtractMyRowCopy(int, int, int&, int*) const;
-// The following methods are dangerous and I have disabled them for now
-%ignore Epetra_CrsGraph::ExtractGlobalRowView(int, int&, int*&) const;
-%ignore Epetra_CrsGraph::ExtractMyRowView(int, int&, int*&) const;
-
-// Exceptions
-EXCEPTION_HANDLER(Epetra_CrsGraph,Epetra_CrsGraph)
-EXCEPTION_HANDLER(Epetra_CrsGraph,OptimizeStorage)
-
-// Rename directives
-%rename(CrsGraph   ) Epetra_CrsGraph;
-%rename(OffsetIndex) Epetra_OffsetIndex;
-
-// Typemap directives
+////////////////////////
+// Typemap directives //
+////////////////////////
 
 // Begin input typemap collection for (int NumIndices, int * Indices)
 %typecheck(SWIG_TYPECHECK_INT32_ARRAY) (int NumIndices, int * Indices) {
@@ -94,15 +69,26 @@ EXCEPTION_HANDLER(Epetra_CrsGraph,OptimizeStorage)
 }
 // End argout typemap collection for (int & NumIndices, int * Indices)
 
-// Include directives
+/////////////////////////////
+// Epetra_CrsGraph support //
+/////////////////////////////
+%ignore Epetra_CrsGraph::Epetra_CrsGraph(Epetra_DataAccess,
+					 const Epetra_BlockMap &,
+					 const int *,
+					 bool);
+%ignore Epetra_CrsGraph::Epetra_CrsGraph(Epetra_DataAccess,
+					 const Epetra_BlockMap &,
+					 const Epetra_BlockMap &,
+					 const int *,
+					 bool);
+%ignore Epetra_CrsGraph::ExtractGlobalRowCopy(int, int, int&, int*) const;
+%ignore Epetra_CrsGraph::ExtractMyRowCopy(int, int, int&, int*) const;
+%ignore Epetra_CrsGraph::ExtractGlobalRowView(int, int&, int*&) const;
+%ignore Epetra_CrsGraph::ExtractMyRowView(int, int&, int*&) const;
+%rename(CrsGraph) Epetra_CrsGraph;
+EXCEPTION_HANDLER(Epetra_CrsGraph,Epetra_CrsGraph)
+EXCEPTION_HANDLER(Epetra_CrsGraph,OptimizeStorage)
 %include "Epetra_CrsGraph.h"
-%include "Epetra_OffsetIndex.h"
-
-// Clear the typemaps
-%clear (int   NumIndices, int *  Indices);
-%clear (int & NumIndices, int *& Indices);
-
-// Extend directives
 %extend Epetra_CrsGraph {
 
   Epetra_CrsGraph(Epetra_DataAccess       CV,
@@ -237,7 +223,20 @@ EXCEPTION_HANDLER(Epetra_CrsGraph,OptimizeStorage)
   }
 }
 
-// Epetra_FECrsGraph is apparently not built
+////////////////////////////////
+// Epetra_OffsetIndex support //
+////////////////////////////////
+%rename(OffsetIndex) Epetra_OffsetIndex;
+%include "Epetra_OffsetIndex.h"
+
+///////////////////////////////
+// Epetra_FECrsGraph support //
+///////////////////////////////
+// ** Epetra_FECrsGraph is apparently not built **
 //#include "Epetra_FECrsGraph.h"
-//%rename(FECrsGraph ) Epetra_FECrsGraph;
+//%rename(FECrsGraph) Epetra_FECrsGraph;
 //%include "Epetra_FECrsGraph.h"
+
+// Clear the typemaps
+%clear (int   NumIndices, int *  Indices);
+%clear (int & NumIndices, int *& Indices);
