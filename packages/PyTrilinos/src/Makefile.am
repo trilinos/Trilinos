@@ -32,12 +32,12 @@ EXTRA_DIST = Amesos.i Anasazi.i AztecOO.i \
 	     EpetraExt.i Galeri.i IFPACK.i \
 	     LOCA.__init__.i LOCA.Abstract.i LOCA.Bifurcation.i \
 	     LOCA.Continuation.i LOCA.Epetra.i LOCA.Homotopy.i LOCA.LAPACK.i \
-	     LOCA.Multicontinuation.i LOCA.TimeDependent.i \
+	     LOCA.MultiContinuation.i LOCA.TimeDependent.i \
 	     ML.i \
 	     NOX.__init__.i NOX.Abstract.i NOX.Epetra.__init__.i \
 	     NOX.Epetra.Interface.i NOX.Solver.i NOX.StatusTest.i \
 	     Teuchos.i Teuchos_ParameterList_ext.i \
-	     Thyra.i TriuTils.i \
+	     Thyra.i TriUtils.i \
 	     numpy.i setup.py SharedUtils.py
 
 # Configuration macros

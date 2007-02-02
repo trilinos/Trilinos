@@ -36,7 +36,7 @@ AUTOMAKE_OPTIONS = foreign
 ## #######################################################################
 ACLOCAL	= aclocal -I config
 
-EXTRA_DIST = definition setpath.py gre__115.rua \
+EXTRA_DIST = setpath.py gre__115.rua \
 	     exAmesos_Factory.py exAmesos_Solvers.py exAztecOO.py exAztecOO_Operator.py \
 	     exAztecOO_RowMatrix.py exEpetra.py exEpetra_Comm.py \
 	     exEpetra_CrsMatrix_Easy.py exEpetra_CrsMatrix_Efficient.py \
