@@ -44,7 +44,6 @@ ACLOCAL	= aclocal -I config
 ## Additional files to be included in distribution for 'make dist'
 ## #######################################################################
 EXTRA_DIST = \
-	commonTools/buildTools/MakefileVariables.py \
 	commonTools/buildTools/strip_dup_incl_paths.pl \
 	commonTools/buildTools/strip_dup_libs.pl \
 	commonTools/test/coverage/README \
