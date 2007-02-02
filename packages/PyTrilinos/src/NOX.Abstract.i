@@ -44,17 +44,9 @@
 #include "NOX_Abstract_Vector.H"
 %}
 
-// Ignore directives
+// General ignore directives
 %ignore *::operator=;
 %ignore *::operator[];
-%ignore NOX::Abstract::MultiVector::clone(int) const;
-
-// Rename directive
-%rename(_print) NOX::Abstract::Vector::print;
-%rename(_print) NOX::Abstract::MultiVector::print;
-
-// Feature directives
-%feature("director") NOX::Abstract::PrePostOperator;
 
 // Trilinos module imports
 %import "Teuchos.i"
@@ -62,8 +54,26 @@
 // Support for Teuchos::RefCountPtrs
 TEUCHOS_RCP_TYPEMAPS(NOX::Abstract::Group)
 
-// NOX interface includes
+////////////////////////////////
+// NOX_Abstract_Group support //
+////////////////////////////////
 %include "NOX_Abstract_Group.H"
+
+//////////////////////////////////////////
+// NOX_Abstract_PrePostOperator support //
+//////////////////////////////////////////
+%feature("director") NOX::Abstract::PrePostOperator;
 %include "NOX_Abstract_PrePostOperator.H"
+
+//////////////////////////////////////
+// NOX_Abstract_MultiVector support //
+//////////////////////////////////////
+%ignore NOX::Abstract::MultiVector::clone(int) const;
+%rename(_print) NOX::Abstract::MultiVector::print;
 %include "NOX_Abstract_MultiVector.H"
+
+/////////////////////////////////
+// NOX_Abstract_Vector support //
+/////////////////////////////////
+%rename(_print) NOX::Abstract::Vector::print;
 %include "NOX_Abstract_Vector.H"

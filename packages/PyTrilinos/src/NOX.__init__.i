@@ -28,7 +28,8 @@
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos.NOX") __init__
+%module(package="PyTrilinos.NOX",
+	autodoc = "1") __init__
 
 %{
 // System includes

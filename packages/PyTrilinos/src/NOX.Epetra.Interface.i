@@ -33,12 +33,6 @@
 	autodoc      = "1",
 	implicitconv = "1") Interface
 
-// SWIG does not support wrapping nested classes.  We will %import the
-// NOX::Utils class (ie, tell swig about it, but not wrap it), which
-// has nested classes.  To suppress the swig warning that would
-// otherwise result, we use the following:
-#pragma SWIG nowarn=312
-
 %{
 // Teuchos includes
 #include "Teuchos_PythonParameter.h"
@@ -55,40 +49,45 @@
 #include "NOX_Epetra_Interface_Required.H"
 #include "NOX_Epetra_Interface_Jacobian.H"
 #include "NOX_Epetra_Interface_Preconditioner.H"
-
-// Namespace flattening
-using namespace NOX;
-using namespace NOX::Epetra;
-using namespace NOX::Epetra::Interface;
-using namespace std;
 %}
 
-// Ignore directive
+// General ignore directives
 %ignore *::operator=;
 
-// Rename directive
-%rename(_print) NOX::Utils::print;
-
-// Feature directives
-%feature("director") NOX::Epetra::Interface::Required;
-%feature("director") NOX::Epetra::Interface::Jacobian;
-%feature("director") NOX::Epetra::Interface::Preconditioner;
-
-// SWIG library includes
+// STL support
+using namespace std;
 %include "stl.i"
 
 // Trilinos module imports
 %import "Teuchos.i"
 
-// Support for Teuchos::RefCountPtrs
+// Teuchos::RefCountPtrs typemaps
 TEUCHOS_RCP_TYPEMAPS(NOX::Epetra::Interface::Required)
 TEUCHOS_RCP_TYPEMAPS(NOX::Epetra::Interface::Jacobian)
 TEUCHOS_RCP_TYPEMAPS(NOX::Epetra::Interface::Preconditioner)
 
-// NOX imports
+///////////////////////
+// NOX_Utils support //
+///////////////////////
+// The following #pragma is for nested classes in NOX_Utils.H
+#pragma SWIG nowarn=312
+%rename(_print) NOX::Utils::print;
 %import "NOX_Utils.H"
 
-// NOX::Epetra::Interface includes
+///////////////////////////////////////////
+// NOX_Epetra_Interface_Required support //
+///////////////////////////////////////////
+%feature("director") NOX::Epetra::Interface::Required;
 %include "NOX_Epetra_Interface_Required.H"
+
+///////////////////////////////////////////
+// NOX_Epetra_Interface_Jacobian support //
+///////////////////////////////////////////
+%feature("director") NOX::Epetra::Interface::Jacobian;
 %include "NOX_Epetra_Interface_Jacobian.H"
+
+/////////////////////////////////////////////////
+// NOX_Epetra_Interface_Preconditioner support //
+/////////////////////////////////////////////////
+%feature("director") NOX::Epetra::Interface::Preconditioner;
 %include "NOX_Epetra_Interface_Preconditioner.H"
