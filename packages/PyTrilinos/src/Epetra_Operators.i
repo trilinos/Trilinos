@@ -42,10 +42,15 @@
 #include "Epetra_LinearProblem.h"
 %}
 
+//////////////
+// Typemaps //
+//////////////
+%epetra_argout_typemaps(Epetra_CrsMatrix)
+
 ////////////////
 // Macro code //
 ////////////////
-%define MANIPULATE_GLOBAL_ROW_VALUES(method)
+%define %epetra_global_row_method(method)
 int method(int row, PyObject * values, PyObject * indices) {
   int numValEntries;
   int numIndEntries;
@@ -78,7 +83,7 @@ int method(int row, PyObject * values, PyObject * indices) {
 }
 %enddef
 
-%define MANIPULATE_MY_ROW_VALUES(method)
+%define %epetra_my_row_method(method)
 int method(int row, PyObject * values, PyObject * indices) {
   int numValEntries;
   int numIndEntries;
@@ -176,15 +181,15 @@ int method(int row, PyObject * values, PyObject * indices) {
 %ignore Epetra_CrsMatrix::ExtractMyRowView(    int,int,int&,double*&);
 %ignore Epetra_CrsMatrix::ExtractCrsDataPointers(int*&,int*&,double*&);
 %rename(CrsMatrix) Epetra_CrsMatrix;
-EXCEPTION_HANDLER(Epetra_CrsMatrix, Epetra_CrsMatrix   )
-EXCEPTION_HANDLER(Epetra_CrsMatrix, InsertGlobalValues )
-EXCEPTION_HANDLER(Epetra_CrsMatrix, ReplaceGlobalValues)
-EXCEPTION_HANDLER(Epetra_CrsMatrix, SumIntoGlobalValues)
-EXCEPTION_HANDLER(Epetra_CrsMatrix, InsertMyValues     )
-EXCEPTION_HANDLER(Epetra_CrsMatrix, ReplaceMyValues    )
-EXCEPTION_HANDLER(Epetra_CrsMatrix, SumIntoMyValues    )
-EXCEPTION_HANDLER(Epetra_CrsMatrix, OptimizeStorage    )
-EXCEPTION_HANDLER(Epetra_CrsMatrix, __setitem__        )
+%epetra_exception(Epetra_CrsMatrix, Epetra_CrsMatrix   )
+%epetra_exception(Epetra_CrsMatrix, InsertGlobalValues )
+%epetra_exception(Epetra_CrsMatrix, ReplaceGlobalValues)
+%epetra_exception(Epetra_CrsMatrix, SumIntoGlobalValues)
+%epetra_exception(Epetra_CrsMatrix, InsertMyValues     )
+%epetra_exception(Epetra_CrsMatrix, ReplaceMyValues    )
+%epetra_exception(Epetra_CrsMatrix, SumIntoMyValues    )
+%epetra_exception(Epetra_CrsMatrix, OptimizeStorage    )
+%epetra_exception(Epetra_CrsMatrix, __setitem__        )
 %include "Epetra_CrsMatrix.h"
 %extend Epetra_CrsMatrix {
 
@@ -260,12 +265,12 @@ EXCEPTION_HANDLER(Epetra_CrsMatrix, __setitem__        )
   }
 
   // These macros expand into code for the various methods
-  MANIPULATE_GLOBAL_ROW_VALUES(InsertGlobalValues)
-  MANIPULATE_GLOBAL_ROW_VALUES(ReplaceGlobalValues)
-  MANIPULATE_GLOBAL_ROW_VALUES(SumIntoGlobalValues)
-  MANIPULATE_MY_ROW_VALUES(InsertMyValues)
-  MANIPULATE_MY_ROW_VALUES(ReplaceMyValues)
-  MANIPULATE_MY_ROW_VALUES(SumIntoMyValues)
+  %epetra_global_row_method(InsertGlobalValues)
+  %epetra_global_row_method(ReplaceGlobalValues)
+  %epetra_global_row_method(SumIntoGlobalValues)
+  %epetra_my_row_method(InsertMyValues)
+  %epetra_my_row_method(ReplaceMyValues)
+  %epetra_my_row_method(SumIntoMyValues)
 
   PyObject * ExtractGlobalRowCopy(int globalRow) const {
     int        lrid          = 0;
@@ -544,7 +549,7 @@ EXCEPTION_HANDLER(Epetra_CrsMatrix, __setitem__        )
 //////////////////////////////
 %ignore Epetra_JadMatrix::ExtractMyEntryView(int,double*&,int&,int&);
 %rename(JadMatrix) Epetra_JadMatrix;
-EXCEPTION_HANDLER(Epetra_JadMatrix, Epetra_JadMatrix)
+%epetra_exception(Epetra_JadMatrix, Epetra_JadMatrix)
 %include "Epetra_JadMatrix.h"
 
 //////////////////////////////////

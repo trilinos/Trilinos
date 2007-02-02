@@ -44,9 +44,12 @@
 //////////////
 // Typemaps //
 //////////////
-TYPEMAP_OUT(Epetra_IntVector,   Epetra_NumPyIntVector  )
-TYPEMAP_OUT(Epetra_MultiVector, Epetra_NumPyMultiVector)
-TYPEMAP_OUT(Epetra_Vector,      Epetra_NumPyVector     )
+%epetra_array_output_typemaps(Epetra_IntVector,   Epetra_NumPyIntVector  )
+%epetra_array_output_typemaps(Epetra_MultiVector, Epetra_NumPyMultiVector)
+%epetra_array_output_typemaps(Epetra_Vector,      Epetra_NumPyVector     )
+%epetra_array_argout_typemaps(IntVector)
+%epetra_array_argout_typemaps(MultiVector)
+%epetra_array_argout_typemaps(Vector)
 
 //////////////////////////////
 // Epetra_IntVector support //
@@ -102,7 +105,7 @@ TYPEMAP_OUT(Epetra_Vector,      Epetra_NumPyVector     )
 // Epetra_NumPyIntVector support //
 ///////////////////////////////////
 %rename(NumPyIntVector) Epetra_NumPyIntVector;
-NUMPY_CONSTRUCTOR_EXCEPTION_HANDLER(Epetra_NumPyIntVector)
+%epetra_numpy_ctor_exception(Epetra_NumPyIntVector)
 %include "Epetra_NumPyIntVector.h"
 %pythoncode %{
 class IntVector(UserArray,NumPyIntVector):
@@ -156,7 +159,7 @@ _Epetra.NumPyIntVector_swigregister(IntVector)
 // Epetra_NumPyMultiVector support //
 /////////////////////////////////////
 %rename(NumPyMultiVector) Epetra_NumPyMultiVector;
-NUMPY_CONSTRUCTOR_EXCEPTION_HANDLER(Epetra_NumPyMultiVector)
+%epetra_numpy_ctor_exception(Epetra_NumPyMultiVector)
 %include "Epetra_NumPyMultiVector.h"
 %pythoncode %{
 class MultiVector(UserArray,NumPyMultiVector):
@@ -216,7 +219,7 @@ _Epetra.NumPyMultiVector_swigregister(MultiVector)
 // Epetra_NumPyVector support //
 ////////////////////////////////
 %rename(NumPyVector) Epetra_NumPyVector;
-NUMPY_CONSTRUCTOR_EXCEPTION_HANDLER(Epetra_NumPyVector)
+%epetra_numpy_ctor_exception(Epetra_NumPyVector)
 %include "Epetra_NumPyVector.h"
 %pythoncode %{
 class Vector(UserArray,NumPyVector):

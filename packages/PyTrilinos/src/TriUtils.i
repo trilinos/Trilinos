@@ -28,7 +28,8 @@
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos") TriUtils
+%module(package = "PyTrilinos",
+	autodoc = "1") TriUtils
 
 %{
 // System includes
@@ -57,79 +58,32 @@
 // Auto-documentation feature
 %feature("autodoc", "1");
 
-// Ignore directives
+// General ignore directives
 #pragma SWIG nowarn=503
 %ignore *::operator<< ;
-%ignore Trilinos_Util::CrsMatrixGallery::operator<<(ostream&,
-						    const Trilinos_Util::CrsMatrixGallery&);
-
-// Rename directives
-%rename (TriUtils_Version) Triutils_Version;
-%rename (ReadHB          ) Trilinos_Util_ReadHb2Epetra;
-
-// Typemap directives
-%typemap(argout) (Epetra_Map       *& OutMap,
-                  Epetra_CrsMatrix *& OutMatrix,
-                  Epetra_Vector    *& OutX,
-                  Epetra_Vector    *& OutB,
-                  Epetra_Vector    *& OutXexact) 
-{
-  PyObject *oMap, *oMatrix, *oX, *oB, *oXexact;
-  oMap    = SWIG_NewPointerObj((void*)(*$1), SWIGTYPE_p_Epetra_Map,       1);
-  oMatrix = SWIG_NewPointerObj((void*)(*$2), SWIGTYPE_p_Epetra_CrsMatrix, 1);
-  oX      = SWIG_NewPointerObj((void*)(*$3), SWIGTYPE_p_Epetra_Vector,    1);
-  oB      = SWIG_NewPointerObj((void*)(*$4), SWIGTYPE_p_Epetra_Vector,    1);
-  oXexact = SWIG_NewPointerObj((void*)(*$5), SWIGTYPE_p_Epetra_Vector,    1);
-  $result = Py_BuildValue("(OOOOO)",oMap,oMatrix,oX,oB,oXexact);
-}
-
-%typemap(in,numinputs=0) Epetra_Map *&OutMap(Epetra_Map* _map) {
-    $1 = &_map;
-}
-
-%typemap(in,numinputs=0) Epetra_CrsMatrix *&OutMatrix(Epetra_CrsMatrix* _matrix) {
-    $1 = &_matrix;
-}
-
-%typemap(in,numinputs=0) Epetra_Vector *&OutX(Epetra_Vector* _x) {
-    $1 = &_x;
-}
-
-%typemap(in,numinputs=0) Epetra_Vector *&OutB(Epetra_Vector* _B) {
-    $1 = &_B;
-}
-
-%typemap(in,numinputs=0) Epetra_Vector *&OutXexact(Epetra_Vector* _xexact) {
-    $1 = &_xexact;
-}
-
-// %typemap(out) Epetra_MultiVector * {
-//   Epetra_NumPyMultiVector * npmv;
-//   static swig_type_info *ty = SWIG_TypeQuery("Epetra_NumPyMultiVector *");
-//   npmv = new Epetra_NumPyMultiVector(*$1);
-//   $result = SWIG_NewPointerObj(npmv, ty, 1);
-// }
-
-// %inline {
-// void Trilinos_Util_ReadHb2Epetra(char               * data_file,
-// 				 const Epetra_Comm  & comm, 
-// 				 Epetra_Map        *& OutMap, 
-// 				 Epetra_CrsMatrix  *& OutMatrix, 
-// 				 Epetra_Vector     *& OutX, 
-// 				 Epetra_Vector     *& OutB,
-// 				 Epetra_Vector     *& OutXexact);
-// }
 
 // Epetra interface includes
 using namespace std;
 %import "Epetra.i"
 
-// Triutils interface includes
-%include "Trilinos_Util_ReadHb2Epetra.cpp"
-%include "Trilinos_Util_CrsMatrixGallery.h"
+///////////////////////////////////
+// Trilinos_Util_Version support //
+///////////////////////////////////
+%rename (TriUtils_Version) Triutils_Version;
 %include "Trilinos_Util_Version.h"
-
-// Python code
 %pythoncode %{
 __version__ = TriUtils_Version().split()[2]
 %}
+
+///////////////////////////////////
+// Trilinos_Util_Version support //
+///////////////////////////////////
+%rename (ReadHB) Trilinos_Util_ReadHb2Epetra;
+%include "Trilinos_Util_ReadHb2Epetra.cpp"
+
+///////////////////////////////////
+// Trilinos_Util_Version support //
+///////////////////////////////////
+%ignore Trilinos_Util::CrsMatrixGallery::operator<<(ostream&,
+						    const Trilinos_Util::CrsMatrixGallery&);
+%include "Trilinos_Util_CrsMatrixGallery.h"

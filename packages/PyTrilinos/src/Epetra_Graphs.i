@@ -86,8 +86,8 @@
 %ignore Epetra_CrsGraph::ExtractGlobalRowView(int, int&, int*&) const;
 %ignore Epetra_CrsGraph::ExtractMyRowView(int, int&, int*&) const;
 %rename(CrsGraph) Epetra_CrsGraph;
-EXCEPTION_HANDLER(Epetra_CrsGraph,Epetra_CrsGraph)
-EXCEPTION_HANDLER(Epetra_CrsGraph,OptimizeStorage)
+%epetra_exception(Epetra_CrsGraph,Epetra_CrsGraph)
+%epetra_exception(Epetra_CrsGraph,OptimizeStorage)
 %include "Epetra_CrsGraph.h"
 %extend Epetra_CrsGraph {
 

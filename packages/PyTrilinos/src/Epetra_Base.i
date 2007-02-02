@@ -84,9 +84,9 @@ except ImportError:
 %}
 
 // General ignore directives
-%ignore *::operator=;         // Not overrideable in python
-%ignore *::operator[];        // Replaced with __setitem__ method
-%ignore *::operator[] const;  // Replaced with __getitem__ method
+%ignore *::operator=;                // Not overrideable in python
+%ignore *::operator[];               // Replaced with __setitem__ method
+%ignore *::operator[] const;         // Replaced with __getitem__ method
 %ignore *::UpdateFlops(int) const;   // Use long int version
 %ignore *::UpdateFlops(float) const; // Use double version
 
@@ -99,7 +99,7 @@ except ImportError:
 
 // Define macro for handling exceptions thrown by Epetra methods and
 // constructors
-%define EXCEPTION_HANDLER(className,methodName)
+%define %epetra_exception(className,methodName)
 %exception className::methodName {
   try {
     $action
@@ -113,7 +113,7 @@ except ImportError:
 
 // Define macro for handling exceptions thrown by Epetra_NumPy*
 // constructors
-%define NUMPY_CONSTRUCTOR_EXCEPTION_HANDLER(className)
+%define %epetra_numpy_ctor_exception(className)
 %exception className::className {
   try {
     $action
@@ -128,9 +128,13 @@ except ImportError:
 }
 %enddef
 
+//////////////////////////////
+// Raw data buffer handling //
+//////////////////////////////
+
 // Define macros for converting a method that returns a pointer to
 // an array of doubles (or ints) to returning a NumPy array
-%define METHOD_WITH_OUTPUT_INTARRAY1D(className,methodName,dimMethod)
+%define %epetra_intarray1d_output_method(className,methodName,dimMethod)
 %ignore className::methodName() const;
 %extend className {
   PyObject * methodName() {
@@ -151,12 +155,8 @@ except ImportError:
 }
 %enddef
 
-//////////////////////////////
-// Raw data buffer handling //
-//////////////////////////////
-
 // Provide a mechnism for converting 1D array output to numpy array
-%define METHOD_WITH_OUTPUT_ARRAY1D(className,methodName,dimMethod)
+%define %epetra_array1d_output_method(className,methodName,dimMethod)
 %ignore className::methodName() const;
 %extend className {
   PyObject * methodName() {
@@ -178,7 +178,7 @@ except ImportError:
 %enddef
 
 // Provide a mechnism for converting 2D array output to numpy array
-%define METHOD_WITH_OUTPUT_ARRAY2D(className,methodName,dimMethod1,dimMethod2)
+%define %epetra_array2d_output_method(className,methodName,dimMethod1,dimMethod2)
 %ignore className::methodName() const;
 %extend className {
   PyObject * methodName() {
@@ -204,13 +204,65 @@ except ImportError:
 // Epetra_NumPy*Matrix or Epetra_NumPy*Vector.  There is additional
 // magic in the python code to convert the Epetra_NumPy*Matrix or
 // Epetra_NumPy*Vector to to an Epetra.*Matrix or Epetra.*Vector.
-%define TYPEMAP_OUT(array,numPyArray)
+%define %epetra_array_output_typemaps(array,numPyArray)
 %typemap(out) array * {
   if ($1 == NULL) $result = Py_BuildValue("");
   else {
     numPyArray * npa = new numPyArray(*$1);
     static swig_type_info *ty = SWIG_TypeQuery("numPyArray *");
     $result = SWIG_NewPointerObj(npa, ty, 1);
+  }
+}
+%typemap(out) array & {
+  numPyArray * npa = new numPyArray(*$1);
+  static swig_type_info *ty = SWIG_TypeQuery("numPyArray *");
+  $result = SWIG_NewPointerObj(npa, ty, 1);
+}
+%enddef
+
+// Define macro for a typemap that converts a reference to a pointer
+// to an object, into a return argument (which might be placed into a
+// tuple, if there are more than one).
+%define %epetra_argout_typemaps(ClassName)
+%typemap(in,numinputs=0) ClassName *& (ClassName * _object) {
+  $1 = &_object;
+}
+%typemap(argout) ClassName *& {
+  PyObject * obj1;
+  PyObject * obj2;
+  static swig_type_info * swig_CN_ptr = SWIG_TypeQuery("ClassName *");
+  obj1 = SWIG_NewPointerObj((void*)(*$1), swig_CN_ptr, 1);
+  if ($result == Py_None) {
+    Py_DECREF($result);
+    $result = obj1;
+  } else {
+    if (!PyTuple_Check($result)) $result = Py_BuildValue("(O)", $result);
+    obj2 = Py_BuildValue("(O)", obj1);
+    $result = PySequence_Concat($result,obj2);
+  }
+}
+%enddef
+
+// Define macro for a typemap that converts a reference to a pointer
+// to an Epetra array object, into a return argument (which might be
+// placed into a tuple, if there are more than one).
+%define %epetra_array_argout_typemaps(ClassName)
+%typemap(in,numinputs=0) Epetra_ ## ClassName *& (Epetra_ ## ClassName * _object) {
+  $1 = &_object;
+}
+%typemap(argout) Epetra_ ## ClassName *& {
+  PyObject * obj1;
+  PyObject * obj2;
+  static swig_type_info * swig_NP_ptr = SWIG_TypeQuery("Epetra_NumPy" "ClassName *");
+  Epetra_NumPy ## ClassName * npa = new Epetra_NumPy ## ClassName(**$1);
+  obj1 = SWIG_NewPointerObj((void*)npa, swig_NP_ptr, 1);
+  if ($result == Py_None) {
+    Py_DECREF($result);
+    $result = obj1;
+  } else {
+    if (!PyTuple_Check($result)) $result = Py_BuildValue("(O)", $result);
+    obj2 = Py_BuildValue("(O)", obj1);
+    $result = PySequence_Concat($result,obj2);
   }
 }
 %enddef
@@ -238,7 +290,7 @@ __version__ = Version().split()[2]
 // Epetra_Object support //
 ///////////////////////////
 %rename(Object) Epetra_Object;
-EXCEPTION_HANDLER(Epetra_Object,Print)
+%epetra_exception(Epetra_Object,Print)
 %extend Epetra_Object {
   // The __str__() method is used by the python str() operator on any
   // object given to the python print command.

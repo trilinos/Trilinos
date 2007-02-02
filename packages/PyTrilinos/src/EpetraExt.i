@@ -101,95 +101,19 @@ The most important classes of the EpetraExt module are:
 #include "EpetraExt_VectorOut.h"
 #include "EpetraExt_MultiVectorOut.h"
 #include "EpetraExt_RowMatrixOut.h"
-
 #include "EpetraExt_BlockMapIn.h"
 #include "EpetraExt_VectorIn.h"
 #include "EpetraExt_MultiVectorIn.h"
 #include "EpetraExt_CrsMatrixIn.h"
 #include "EpetraExt_MatrixMatrix.h"
-
 #include "EpetraExt_HDF5.h"
 #include "EpetraExt_XMLReader.h"
-#include "EpetraExt_XMLWriter.h" // FIXME: memory management still scary...
-
+#include "EpetraExt_XMLWriter.h"
 %}
 
-// Ignore directives
-%ignore EpetraExt::HDF5::Read;
-%ignore EpetraExt::XMLReader::Read;
-
-using namespace std;
-// C++ STL support
-%include "stl.i"
-
-// Trilinos interface support
-%import  "Teuchos.i"
-%import  "Epetra.i"
-
-// Typemaps
-%define OUTPUT_ARGUMENT(ClassName)
-%typemap(in,numinputs=0) ClassName *& (ClassName * _object) {
-  $1 = &_object;
-}
-%typemap(argout) ClassName *& {
-  PyObject * obj1;
-  PyObject * obj2;
-  static swig_type_info * swig_CN_ptr = SWIG_TypeQuery("ClassName *");
-  obj1 = SWIG_NewPointerObj((void*)(*$1), swig_CN_ptr, 1);
-  if (result < 0) obj1 = Py_BuildValue("");
-  if (!PyTuple_Check($result)) $result = Py_BuildValue("(O)", $result);
-  obj2 = Py_BuildValue("(O)", obj1);
-  $result = PySequence_Concat($result,obj2);
-}
-%enddef
-
-%define OUTPUT_EPETRA_ARRAY_ARGUMENT(ClassName)
-%typemap(in,numinputs=0) Epetra_ ## ClassName *& (Epetra_ ## ClassName * _object) {
-  $1 = &_object;
-}
-%typemap(argout) Epetra_ ## ClassName *& {
-  PyObject * obj1;
-  PyObject * obj2;
-  static swig_type_info * swig_NP_ptr = SWIG_TypeQuery("Epetra_NumPy" "ClassName *");
-  Epetra_NumPy ## ClassName * npa = new Epetra_NumPy ## ClassName(**$1);
-  obj1 = SWIG_NewPointerObj((void*)npa, swig_NP_ptr, 1);
-  if (result < 0) obj1 = Py_BuildValue("");
-  if (!PyTuple_Check($result)) $result = Py_BuildValue("(O)", $result);
-  obj2 = Py_BuildValue("(O)", obj1);
-  $result = PySequence_Concat($result,obj2);
-}
-%enddef
-
-OUTPUT_ARGUMENT(Epetra_BlockMap )
-OUTPUT_ARGUMENT(Epetra_Map      )
-OUTPUT_ARGUMENT(Epetra_CrsMatrix)
-
-OUTPUT_EPETRA_ARRAY_ARGUMENT(MultiVector)
-OUTPUT_EPETRA_ARRAY_ARGUMENT(Vector     )
-
-// EpetraExt interface includes
-%include "EpetraExt_Version.h"
-%include "EpetraExt_HDF5.h"
-%include "EpetraExt_XMLReader.h"
-%include "EpetraExt_XMLWriter.h"
-
-%include "EpetraExt_Transform.h"
-%template () std::vector<Epetra_IntVector>;
-%template () EpetraExt::Transform<Epetra_CrsGraph, Epetra_MapColoring>;
-%template () EpetraExt::Transform<Epetra_CrsGraph, std::vector<Epetra_IntVector,
-							       std::allocator<Epetra_IntVector> > >;
-%template () EpetraExt::StructuralTransform<Epetra_CrsGraph, Epetra_MapColoring>;
-%template () EpetraExt::StructuralTransform<Epetra_CrsGraph, std::vector<Epetra_IntVector> >;
-
-%include "EpetraExt_MapColoring.h"
-%include "EpetraExt_MapColoringIndex.h"
-
-%include "EpetraExt_MultiVectorIn.h"
-%include "EpetraExt_MultiVectorOut.h"
-%include "EpetraExt_CrsMatrixIn.h"
-%include "EpetraExt_RowMatrixOut.h"
-%include "EpetraExt_BlockMapIn.h"
-%include "EpetraExt_BlockMapOut.h"
+////////////
+// Macros //
+////////////
 
 // The overloaded HDF5 and XMLReader Read() methods cannot be
 // type-disambiguated in python.  We therefore replace selected
@@ -204,7 +128,7 @@ OUTPUT_EPETRA_ARRAY_ARGUMENT(Vector     )
 //
 // These translations are made possible by the following macro:
 //
-%define READ_EPETRA_CLASS(ClassName)
+%define %epetraext_read_method(ClassName)
 Epetra_ ## ClassName * Read ## ClassName(string name)
 {
   Epetra_ ## ClassName * obj = NULL;
@@ -218,44 +142,119 @@ Epetra_ ## ClassName * Read ## ClassName(string name)
 }
 %enddef
 
-namespace EpetraExt {
+// C++ STL support
+using namespace std;
+%include "stl.i"
 
+// Trilinos interface support
+%import "Teuchos.i"
+%import "Epetra.i"
+
+///////////////////////////////
+// EpetraExt_Version support //
+///////////////////////////////
+%include "EpetraExt_Version.h"
+%pythoncode %{
+__version__ = EpetraExt_Version().split()[2]
+%}
+
+////////////////////////////
+// EpetraExt_HDF5 support //
+////////////////////////////
+%ignore EpetraExt::HDF5::Read;
+%include "EpetraExt_HDF5.h"
+namespace EpetraExt {
 #ifdef HAVE_EPETRAEXT_HDF5
   %extend HDF5 {
-
-    READ_EPETRA_CLASS(BlockMap   )
-    READ_EPETRA_CLASS(Map        )
-    READ_EPETRA_CLASS(MultiVector)
-    READ_EPETRA_CLASS(CrsGraph   )
-    READ_EPETRA_CLASS(CrsMatrix  )
-    READ_EPETRA_CLASS(IntVector  )
+    %epetraext_read_method(BlockMap   )
+    %epetraext_read_method(Map        )
+    %epetraext_read_method(MultiVector)
+    %epetraext_read_method(CrsGraph   )
+    %epetraext_read_method(CrsMatrix  )
+    %epetraext_read_method(IntVector  )
   }    // HDF5
 #endif
+}
 
+/////////////////////////////////
+// EpetraExt_XMLReader support //
+/////////////////////////////////
+%ignore EpetraExt::XMLReader::Read;
+%include "EpetraExt_XMLReader.h"
+namespace EpetraExt {
   %extend XMLReader {
-
-    READ_EPETRA_CLASS(Map        )
-    READ_EPETRA_CLASS(MultiVector)
-    READ_EPETRA_CLASS(CrsGraph   )
-    READ_EPETRA_CLASS(CrsMatrix  )
+    %epetraext_read_method(Map        )
+    %epetraext_read_method(MultiVector)
+    %epetraext_read_method(CrsGraph   )
+    %epetraext_read_method(CrsMatrix  )
   }    // XMLReader
+}
 
-}    // EpetraExt
+/////////////////////////////////
+// EpetraExt_XMLWriter support //
+/////////////////////////////////
+%include "EpetraExt_XMLWriter.h"
 
+/////////////////////////////////
+// EpetraExt_Transform support //
+/////////////////////////////////
+%include "EpetraExt_Transform.h"
+%template () std::vector<Epetra_IntVector>;
+%template () EpetraExt::Transform<Epetra_CrsGraph, Epetra_MapColoring>;
+%template () EpetraExt::Transform<Epetra_CrsGraph, std::vector<Epetra_IntVector,
+							       std::allocator<Epetra_IntVector> > >;
+%template () EpetraExt::StructuralTransform<Epetra_CrsGraph, Epetra_MapColoring>;
+%template () EpetraExt::StructuralTransform<Epetra_CrsGraph, std::vector<Epetra_IntVector> >;
 
+///////////////////////////////
+// EpetraExt_Version support //
+///////////////////////////////
+%include "EpetraExt_MapColoring.h"
+
+///////////////////////////////
+// EpetraExt_Version support //
+///////////////////////////////
+%include "EpetraExt_MapColoringIndex.h"
+
+///////////////////////////////
+// EpetraExt_Version support //
+///////////////////////////////
+%include "EpetraExt_MultiVectorIn.h"
+
+///////////////////////////////
+// EpetraExt_Version support //
+///////////////////////////////
+%include "EpetraExt_MultiVectorOut.h"
+
+///////////////////////////////
+// EpetraExt_Version support //
+///////////////////////////////
+%include "EpetraExt_CrsMatrixIn.h"
+
+///////////////////////////////
+// EpetraExt_Version support //
+///////////////////////////////
+%include "EpetraExt_RowMatrixOut.h"
+
+///////////////////////////////
+// EpetraExt_Version support //
+///////////////////////////////
+%include "EpetraExt_BlockMapIn.h"
+
+///////////////////////////////
+// EpetraExt_Version support //
+///////////////////////////////
+%include "EpetraExt_BlockMapOut.h"
+
+/////////////////////////////
+// EpetraExt.Add() support //
+/////////////////////////////
 %inline %{
-  namespace EpetraExt
-  {
+  namespace EpetraExt {
     int Add(Epetra_CrsMatrix& A, const bool flag, const double ValA,
-            Epetra_CrsMatrix& B, const double ValB)
-    {
+            Epetra_CrsMatrix& B, const double ValB) {
       EpetraExt::MatrixMatrix M;
       return(M.Add(A, flag, ValA, B, ValB));
     }
   }
-%}
-
-// Python code.
-%pythoncode %{
-  __version__ = EpetraExt_Version().split()[2]
 %}

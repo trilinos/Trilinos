@@ -46,6 +46,12 @@
 %ignore *::ExportLIDs() const;
 %ignore *::ExportPIDs() const;
 
+//////////////
+// Typemaps //
+//////////////
+%epetra_argout_typemaps(Epetra_BlockMap)
+%epetra_argout_typemaps(Epetra_Map)
+
 /////////////////////////////
 // Epetra_BlockMap support //
 /////////////////////////////
@@ -65,8 +71,8 @@
 %ignore Epetra_BlockMap::ReferenceCount() const;
 %ignore Epetra_BlockMap::DataPtr() const;
 %rename(BlockMap) Epetra_BlockMap;
-EXCEPTION_HANDLER(Epetra_BlockMap, Epetra_BlockMap )
-EXCEPTION_HANDLER(Epetra_BlockMap, MyGlobalElements)
+%epetra_exception(Epetra_BlockMap, Epetra_BlockMap )
+%epetra_exception(Epetra_BlockMap, MyGlobalElements)
 %include "Epetra_BlockMap.h"
 %extend Epetra_BlockMap {
   Epetra_BlockMap(int                 numGlobalElements,
@@ -310,8 +316,8 @@ EXCEPTION_HANDLER(Epetra_BlockMap, MyGlobalElements)
 ////////////////////////
 %ignore Epetra_Map::Epetra_Map(int,int,const int*,int,const Epetra_Comm&);
 %rename(Map) Epetra_Map;
-EXCEPTION_HANDLER(Epetra_Map, Epetra_Map      )
-EXCEPTION_HANDLER(Epetra_Map, MyGlobalElements)
+%epetra_exception(Epetra_Map, Epetra_Map      )
+%epetra_exception(Epetra_Map, MyGlobalElements)
 %include "Epetra_Map.h"
 %extend Epetra_Map {
   Epetra_Map(int                 numGlobalElements,
@@ -349,8 +355,8 @@ EXCEPTION_HANDLER(Epetra_Map, MyGlobalElements)
 // Epetra_LocalMap support //
 /////////////////////////////
 %rename(LocalMap) Epetra_LocalMap;
-EXCEPTION_HANDLER(Epetra_LocalMap, Epetra_LocalMap )
-EXCEPTION_HANDLER(Epetra_LocalMap, MyGlobalElements)
+%epetra_exception(Epetra_LocalMap, Epetra_LocalMap )
+%epetra_exception(Epetra_LocalMap, MyGlobalElements)
 %include "Epetra_LocalMap.h"
 
 //////////////////////////////
@@ -370,7 +376,7 @@ EXCEPTION_HANDLER(Epetra_LocalMap, MyGlobalElements)
 ///////////////////////////
 
 // Import/Export extensions are done with a couple of nested macros
-%define MOVER_METHOD(methodName, numMethod)
+%define %epetra_mover_method(methodName, numMethod)
   PyObject * methodName() {
     intp       numIDs[]    = {self->numMethod()};
     int      * ids         = NULL;
@@ -386,13 +392,13 @@ EXCEPTION_HANDLER(Epetra_LocalMap, MyGlobalElements)
   }
 %enddef
 
-%define EXTEND_DATA_MOVER(type)
+%define %epetra_mover_class(type)
 %extend Epetra_ ## type {
-  MOVER_METHOD(PermuteFromLIDs,	NumPermuteIDs)
-  MOVER_METHOD(PermuteToLIDs,  	NumPermuteIDs)
-  MOVER_METHOD(RemoteLIDs,     	NumRemoteIDs )
-  MOVER_METHOD(ExportLIDs,     	NumExportIDs )
-  MOVER_METHOD(ExportPIDs,     	NumExportIDs )
+  %epetra_mover_method(PermuteFromLIDs,	NumPermuteIDs)
+  %epetra_mover_method(PermuteToLIDs,  	NumPermuteIDs)
+  %epetra_mover_method(RemoteLIDs,     	NumRemoteIDs )
+  %epetra_mover_method(ExportLIDs,     	NumExportIDs )
+  %epetra_mover_method(ExportPIDs,     	NumExportIDs )
 }
 %enddef
 
@@ -400,14 +406,14 @@ EXCEPTION_HANDLER(Epetra_LocalMap, MyGlobalElements)
 // Epetra_Import support //
 ///////////////////////////
 %rename(Import) Epetra_Import;
-EXCEPTION_HANDLER(Epetra_Export, Epetra_Export)
+%epetra_exception(Epetra_Export, Epetra_Export)
 %include "Epetra_Import.h"
-EXTEND_DATA_MOVER(Import)
+%epetra_mover_class(Import)
 
 ///////////////////////////
 // Epetra_Export support //
 ///////////////////////////
 %rename(Export) Epetra_Export;
-EXCEPTION_HANDLER(Epetra_Import, Epetra_Import)
+%epetra_exception(Epetra_Import, Epetra_Import)
 %include "Epetra_Export.h"
-EXTEND_DATA_MOVER(Export)
+%epetra_mover_class(Export)
