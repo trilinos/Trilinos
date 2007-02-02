@@ -2145,6 +2145,7 @@ void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
       }
     }
 
+    if (Cgrid_info->x != NULL) ML_free(Cgrid_info->x);
     Cgrid_info->x = new_x_coord;
   }
 
@@ -2176,6 +2177,7 @@ void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
       }
     }
 
+    if (Cgrid_info->y != NULL) ML_free(Cgrid_info->y);
     Cgrid_info->y = new_y_coord;
   }
 
@@ -2207,6 +2209,7 @@ void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
       }
     }
 
+    if (Cgrid_info->z != NULL) ML_free(Cgrid_info->z);
     Cgrid_info->z = new_z_coord;
   }
 
