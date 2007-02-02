@@ -67,10 +67,10 @@ Comm = Epetra.PyComm()
 failures = 0
 try:
   Map, Matrix, X, B, Xexact = Galeri.ReadHB("gre__115.rua", Comm);
-except:
+except Exception, e:
   failures += 1
-  print "Problems reading matrix file, perhaps you are in"
-  print "the wrong directory"
+  print "Problems reading matrix file.  Error message is:"
+  print "   ", e
 
 # at this point you can use the objects in any PyTrilinos module,
 # for example AztecOO, Amesos, IFPACK, ML, and so on. 
