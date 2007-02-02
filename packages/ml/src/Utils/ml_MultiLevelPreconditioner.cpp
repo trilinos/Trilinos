@@ -118,7 +118,8 @@ int ML_Epetra::MultiLevelPreconditioner::DestroyPreconditioner()
   }
   
   // may need to clean up after visualization and statistics
-  if (List_.get("viz: enable", false) || List_.get("repartition: enable",0))
+  if (List_.get("viz: enable", false) || List_.get("repartition: enable",0) ||
+        (List_.get("aggregation: aux: enable", false) ) ) 
   {
     ML_Aggregate_VizAndStats_Clean(ml_);
     if (ml_nodes_ != 0) ML_Aggregate_VizAndStats_Clean(ml_nodes_);
