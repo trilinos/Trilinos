@@ -920,7 +920,7 @@ class EpetraSerialDenseSolverTestCase(unittest.TestCase):
         "Test Epetra.SerialDenseSolver EquilibrateMatrix method"
         sds = Epetra.SerialDenseSolver()
         try:
-            A0  = mat(self.A,copy=True)
+            A0 = mat(self.A,copy=True)
         except TypeError:
             A0 = matrix(self.A,copy=True)
         self.buildProblem(sds)
@@ -1000,7 +1000,7 @@ class EpetraSerialDenseSolverTestCase(unittest.TestCase):
         sds = Epetra.SerialDenseSolver()
         self.buildProblem(sds)
         matrix = sds.Matrix()
-        self.assertEqual(isinstance(matrix,Epetra.SerialDenseMatrix), True)
+        self.failUnless(isinstance(matrix,Epetra.SerialDenseMatrix))
         self.failUnless((matrix == self.A).all())
 
     def testMatrixBad(self):
@@ -1013,12 +1013,12 @@ class EpetraSerialDenseSolverTestCase(unittest.TestCase):
         sds = Epetra.SerialDenseSolver()
         self.buildProblem(sds)
         matrix = sds.FactoredMatrix()
-        self.assertEqual(isinstance(matrix,Epetra.SerialDenseMatrix), True)
+        self.failUnless(isinstance(matrix,Epetra.SerialDenseMatrix))
         self.failUnless((matrix == self.A).all())
         result = sds.Factor()
         self.assertEqual(result,0)
         matrix = sds.FactoredMatrix()
-        self.assertEqual(isinstance(matrix,Epetra.SerialDenseMatrix), True)
+        self.failUnless(isinstance(matrix,Epetra.SerialDenseMatrix))
 
     def testFactoredMatrixBad(self):
         "Test Epetra.SerialDenseSolver FactoredMatrix method, called before problem defined"
@@ -1030,7 +1030,7 @@ class EpetraSerialDenseSolverTestCase(unittest.TestCase):
         sds = Epetra.SerialDenseSolver()
         self.buildProblem(sds)
         vectors = sds.LHS()
-        self.assertEqual(isinstance(vectors,Epetra.SerialDenseMatrix), True)
+        self.failUnless(isinstance(vectors,Epetra.SerialDenseMatrix))
         self.failUnless((vectors[:,0] == self.x).all())
 
     def testLHSBad(self):
@@ -1043,7 +1043,7 @@ class EpetraSerialDenseSolverTestCase(unittest.TestCase):
         sds = Epetra.SerialDenseSolver()
         self.buildProblem(sds)
         vectors = sds.RHS()
-        self.assertEqual(isinstance(vectors,Epetra.SerialDenseMatrix), True)
+        self.failUnless(isinstance(vectors,Epetra.SerialDenseMatrix))
         self.failUnless((vectors[:,0] == self.b).all())
 
     def testRHSBad(self):
