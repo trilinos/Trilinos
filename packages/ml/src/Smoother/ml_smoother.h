@@ -240,6 +240,9 @@ extern  int ML_Smoother_GaussSeidel(ML_Smoother *, int, double *, int, double *)
 extern  int ML_Smoother_SGSSequential(ML_Smoother *, int,double *, int, double *);
 extern  int ML_Smoother_SGS(ML_Smoother *, int, double *, int, double *);
 extern  int ML_Smoother_BlockGS(ML_Smoother *, int, double *, int, double *);
+extern int ML_Smoother_NewGS(ML_Smoother *sm,int inlen,double x[],int outlen,
+                        double rhs[]);
+
 extern int ML_BlockScaledApply(ML_Operator *Amat, int inlen, double in[],
 			       int outlen, double out[]);
 
