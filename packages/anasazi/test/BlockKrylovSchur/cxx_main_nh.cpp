@@ -65,11 +65,13 @@ int main(int argc, char *argv[]) {
 
   bool verbose = true;
   bool debug = false;
+  bool insitu = false;
   std::string which("SM");
 
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
   cmdp.setOption("debug","nodebug",&debug,"Print debugging information.");
+  cmdp.setOption("insitu","exsitu",&insitu,"Perform in situ restarting.");
   cmdp.setOption("sort",&which,"Targetted eigenvalues (SM,LM,SR,LR,SI,or LI).");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
 #ifdef HAVE_MPI
@@ -290,6 +292,7 @@ int main(int argc, char *argv[]) {
   MyPL.set( "Maximum Restarts", maxRestarts );
   //MyPL.set( "Step Size", stepSize );
   MyPL.set( "Convergence Tolerance", tol );
+  MyPL.set( "In Situ Restarting", insitu );
 
   // Create an Epetra_MultiVector for an initial vector to start the solver.
   // Note:  This needs to have the same number of columns as the blocksize.

@@ -17,8 +17,6 @@
             LOBPCG/LOBPCG_simple.exe,
             BlockDavidson/BlockDavidson_solvertest.exe,
             BlockDavidson/BlockDavidson_auxtest.exe,
-            BlockKrylovSchur/BlockKrylovSchur_test.exe,
-            BlockKrylovSchur/BlockKrylovSchur_nh_test.exe,
             BlockKrylovSchur/BlockKrylovSchur_solvertest.exe,
             OrthoManager/OrthoManager_test.exe,
             OrthoManager/OrthoManager_basic_test.exe,
@@ -33,6 +31,14 @@
     TESTS = BlockDavidson/BlockDavidson_test.exe,
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = --verbose --insitu --locking, --verbose --exsitu --locking, --verbose --exsitu --nolocking, --verbose --insitu --nolocking;
+    COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK,INSTALL,AnasaziTests,AnasaziEpetraTests) {
+    TESTS = BlockKrylovSchur/BlockKrylovSchur_test.exe,
+            BlockKrylovSchur/BlockKrylovSchur_nh_test.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = --verbose --insitu, --verbose --exsitu;
     COMM = SERIAL, MPI;
 }
 

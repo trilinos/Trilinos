@@ -30,7 +30,7 @@
 #define ANASAZI_BLOCK_KRYLOV_SCHUR_SOLMGR_HPP
 
 /*! \file AnasaziBlockKrylovSchurSolMgr.hpp
- *  \brief The Anasazi::BlockKrylovSchurSolMgr provides a powerful solver manager for the BlockKrylovSchur eigensolver.
+ *  \brief The Anasazi::BlockKrylovSchurSolMgr provides a solver manager for the BlockKrylovSchur eigensolver.
 */
 
 #include "AnasaziConfigDefs.hpp"
@@ -49,7 +49,9 @@
 #include "AnasaziStatusTestCombo.hpp"
 #include "AnasaziStatusTestOutput.hpp"
 #include "AnasaziBasicOutputManager.hpp"
+#include "AnasaziSolverUtils.hpp"
 #include "Teuchos_BLAS.hpp"
+#include "Teuchos_LAPACK.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
 /** \example BlockKrylovSchur/BlockKrylovSchurEpetraEx.cpp
@@ -166,10 +168,12 @@ class BlockKrylovSchurSolMgr : public SolverManager<ScalarType,MV,OP> {
   bool _relconvtol,_conjSplit;
   int _blockSize, _numBlocks, _stepSize, _nevBlocks, _xtra_nevBlocks;
   int _verbosity;
+  bool _inSituRestart;
 
   std::vector<Value<ScalarType> > _ritzValues;
 
   Teuchos::RefCountPtr<Teuchos::Time> _timerSolve, _timerRestarting;
+
 };
 
 
@@ -192,6 +196,7 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::BlockKrylovSchurSolMgr(
   _nevBlocks(0),
   _xtra_nevBlocks(0),
   _verbosity(Anasazi::Errors),
+  _inSituRestart(false),
   _timerSolve(Teuchos::TimeMonitor::getNewTimer("BKSSolMgr::solve()")),
   _timerRestarting(Teuchos::TimeMonitor::getNewTimer("BKSSolMgr restarting"))
 {
@@ -266,6 +271,15 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::BlockKrylovSchurSolMgr(
       _verbosity = (int)Teuchos::getParameter<Anasazi::MsgType>(pl,"Verbosity");
     }
   }
+
+  // restarting technique: V*Q or applyHouse(V,H,tau)
+  if (pl.isParameter("In Situ Restarting")) {
+    if (Teuchos::isParameterType<bool>(pl,"In Situ Restarting")) {
+      _inSituRestart = pl.get("In Situ Restarting",_inSituRestart);
+    } else {
+      _inSituRestart = (bool)Teuchos::getParameter<int>(pl,"In Situ Restarting");
+    }
+  }
 }
 
 
@@ -279,6 +293,8 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
   ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
 
   Teuchos::BLAS<int,ScalarType> blas;
+  Teuchos::LAPACK<int,ScalarType> lapack;
+  typedef SolverUtils<ScalarType,MV,OP> msutils;
 
   //////////////////////////////////////////////////////////////////////////////////////
   // Output manager
@@ -330,6 +346,28 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
     bks_solver->setAuxVecs( Teuchos::tuple< Teuchos::RefCountPtr<const MV> >(probauxvecs) );
   }
 
+  // Create workspace for the Krylov basis generated during a restart
+  // Need at most (_nevBlocks*_blockSize+1) for the updated factorization and another block for the current factorization residual block (F).
+  //  ---> (_nevBlocks*_blockSize+1) + _blockSize
+  // If Hermitian, this becomes _nevBlocks*_blockSize + _blockSize
+  // we only need this if there is the possibility of restarting, ex situ
+  Teuchos::RefCountPtr<MV> workMV;
+  if (_maxRestarts > 0) {
+    if (_inSituRestart==true) {
+      // still need one work vector for applyHouse()
+      workMV = MVT::Clone( *_problem->getInitVec(), 1 );
+    }
+    else { // inSituRestart == false
+      if (_problem->isHermitian()) {
+        workMV = MVT::Clone( *_problem->getInitVec(), _nevBlocks*_blockSize + _blockSize );
+      } else {
+        workMV = MVT::Clone( *_problem->getInitVec(), _nevBlocks*_blockSize+1 + _blockSize );
+      }
+    }
+  } else {
+    workMV = Teuchos::null;
+  }
+
   // go ahead and initialize the solution to nothing in case we throw an exception
   Eigensolution<ScalarType,MV> sol;
   sol.numVecs = 0;
@@ -342,20 +380,28 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
   {
     Teuchos::TimeMonitor slvtimer(*_timerSolve);
   
-  
     // tell bks_solver to iterate
     while (1) {
       try {
         bks_solver->iterate();
     
+        ////////////////////////////////////////////////////////////////////////////////////
+        //
         // check convergence first
+        //
+        ////////////////////////////////////////////////////////////////////////////////////
         if (convtest->getStatus() == Passed ) {
           // we have convergence
           // convtest->whichVecs() tells us which vectors from solver state are the ones we want
           // convtest->howMany() will tell us how many
           break;
         }
-        // check for restarting:  this is for the Hermitian case, or non-Hermitian conjugate split situation.
+        ////////////////////////////////////////////////////////////////////////////////////
+        //
+        // check for restarting, i.e. the subspace is full
+        //
+        ////////////////////////////////////////////////////////////////////////////////////
+        // this is for the Hermitian case, or non-Hermitian conjugate split situation.
         // --> for the Hermitian case the current subspace dimension needs to match the maximum subspace dimension
         // --> for the non-Hermitican case:
         //     --> if a conjugate pair was detected in the previous restart then the current subspace dimension needs to match the
@@ -377,16 +423,16 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
           // Update the Schur form of the projected eigenproblem, then sort it.
           if (!bks_solver->isSchurCurrent())
             bks_solver->computeSchurForm( true );
-          
+
           // Get the most current Ritz values before we continue.
           _ritzValues = bks_solver->getRitzValues();
-  
+
           // Get the state.
           BlockKrylovSchurState<ScalarType,MV> oldState = bks_solver->getState();
-          
+
           // Get the current dimension of the factorization
           int curDim = oldState.curDim;
-  
+
           // Determine if the storage for the nev eigenvalues of interest splits a complex conjugate pair.
           std::vector<int> ritzIndex = bks_solver->getRitzIndex();
           if (ritzIndex[_nevBlocks*_blockSize-1]==1) {
@@ -396,63 +442,139 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
             _conjSplit = false;
             cur_nevBlocks = _nevBlocks*_blockSize;
           }
-          
+
           // Update the Krylov-Schur decomposition
-  
+
           // Get a view of the Schur vectors of interest.
           Teuchos::SerialDenseMatrix<int,ScalarType> Qnev(Teuchos::View, *(oldState.Q), curDim, cur_nevBlocks);
-  
+
           // Get a view of the current Krylov basis.
           std::vector<int> curind( curDim );
           for (int i=0; i<curDim; i++) { curind[i] = i; }
           Teuchos::RefCountPtr<const MV> basistemp = MVT::CloneView( *(oldState.V), curind );
-  
-          // Create a vector for the new Krylov basis.
-          // Need cur_nevBlocks for the updated factorization and another block for the current factorization residual block (F).
-          Teuchos::RefCountPtr<MV> newV = MVT::Clone( *(oldState.V), cur_nevBlocks + _blockSize );
-          curind.resize(cur_nevBlocks);
-          Teuchos::RefCountPtr<MV> tmp_newV = MVT::CloneView( *newV, curind );
-          
-          // Compute the new Krylov basis.
-          // --> Vnew = V*Qnev
-          MVT::MvTimesMatAddMv( one, *basistemp, Qnev, zero, *tmp_newV );
-  
+
+          // Compute the new Krylov basis: Vnew = V*Qnev
+          // 
+          // this will occur ex situ in workspace allocated for this purpose (tmpMV)
+          // or in situ in the solver's memory space.
+          //
+          // we will also set a pointer for the location that the current factorization residual block (F),
+          // currently located after the current basis in oldstate.V, will be moved to
+          //
+          Teuchos::RefCountPtr<MV> newF;
+          if (_inSituRestart) {
+            //
+            // get non-const pointer to solver's basis so we can work in situ
+            Teuchos::RefCountPtr<MV> solverbasis = Teuchos::rcp_const_cast<MV>(oldState.V);
+            Teuchos::SerialDenseMatrix<int,ScalarType> copyQnev(Qnev);
+            // 
+            // perform Householder QR of copyQnev = Q [D;0], where D is unit diag. We will want D below.
+            std::vector<ScalarType> tau(cur_nevBlocks), work(cur_nevBlocks);
+            int info;
+            lapack.GEQRF(curDim,cur_nevBlocks,copyQnev.values(),copyQnev.stride(),&tau[0],&work[0],work.size(),&info);
+            TEST_FOR_EXCEPTION(info != 0,std::logic_error,
+                               "Anasazi::BlockDavidsonSolMgr::solve(): error calling GEQRF during restarting.");
+            // we need to get the diagonal of D
+            std::vector<ScalarType> d(cur_nevBlocks);
+            for (int j=0; j<copyQnev.numCols(); j++) {
+              d[j] = copyQnev(j,j);
+            }
+            if (printer->isVerbosity(Debug)) {
+              Teuchos::SerialDenseMatrix<int,ScalarType> R(Teuchos::Copy,copyQnev,cur_nevBlocks,cur_nevBlocks);
+              for (int j=0; j<R.numCols(); j++) {
+                R(j,j) = SCT::magnitude(R(j,j)) - 1.0;
+                for (int i=j+1; i<R.numRows(); i++) {
+                  R(i,j) = zero;
+                }
+              }
+              printer->stream(Debug) << "||Triangular factor of Su - I||: " << R.normFrobenius() << endl;
+            }
+            // 
+            // perform implicit V*Qnev
+            // this actually performs V*[Qnev Qtrunc*M] = [newV truncV], for some unitary M
+            // we are interested in only the first cur_nevBlocks vectors of the result
+            curind.resize(curDim);
+            for (int i=0; i<curDim; i++) curind[i] = i;
+            Teuchos::RefCountPtr<MV> oldV = MVT::CloneView(*solverbasis,curind);
+            msutils::applyHouse(cur_nevBlocks,*oldV,copyQnev,tau,workMV);
+            // clear pointer
+            oldV = Teuchos::null;
+            // multiply newV*D
+            // get pointer to new basis
+            curind.resize(cur_nevBlocks);
+            for (int i=0; i<cur_nevBlocks; i++) { curind[i] = i; }
+            oldV = MVT::CloneView( *solverbasis, curind );
+            MVT::MvScale(*oldV,d);
+            oldV = Teuchos::null;
+            // get pointer to new location for F
+            curind.resize(_blockSize);
+            for (int i=0; i<_blockSize; i++) { curind[i] = cur_nevBlocks + i; }
+            newF = MVT::CloneView( *solverbasis, curind );
+          }
+          else {
+            // get pointer to first part of work space
+            curind.resize(cur_nevBlocks);
+            for (int i=0; i<cur_nevBlocks; i++) { curind[i] = i; }
+            Teuchos::RefCountPtr<MV> tmp_newV = MVT::CloneView(*workMV, curind );
+            // perform V*Qnev
+            MVT::MvTimesMatAddMv( one, *basistemp, Qnev, zero, *tmp_newV );
+            tmp_newV = Teuchos::null;
+            // get pointer to new location for F
+            curind.resize(_blockSize);
+            for (int i=0; i<_blockSize; i++) { curind[i] = cur_nevBlocks + i; }
+            newF = MVT::CloneView( *workMV, curind );
+          }
+
           // Move the current factorization residual block (F) to the last block of newV.
           curind.resize(_blockSize);
           for (int i=0; i<_blockSize; i++) { curind[i] = curDim + i; }
           Teuchos::RefCountPtr<const MV> oldF = MVT::CloneView( *(oldState.V), curind );
-          for (int i=0; i<_blockSize; i++) { curind[i] = cur_nevBlocks + i; }
-          MVT::SetBlock( *oldF, curind, *newV );
-          
+          for (int i=0; i<_blockSize; i++) { curind[i] = i; }
+          MVT::SetBlock( *oldF, curind, *newF );
+          newF = Teuchos::null;
+
+
           // Update the Krylov-Schur quasi-triangular matrix.
-          
+          //
           // Create storage for the new Schur matrix of the Krylov-Schur factorization
           // Copy over the current quasi-triangular factorization of oldState.H which is stored in oldState.S.
           Teuchos::SerialDenseMatrix<int,ScalarType> oldS(Teuchos::View, *(oldState.S), cur_nevBlocks+_blockSize, cur_nevBlocks);
           Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > newH = 
             Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( oldS ) );
-  
+          //
           // Get a view of the B block of the current factorization
           Teuchos::SerialDenseMatrix<int,ScalarType> oldB(Teuchos::View, *(oldState.H), _blockSize, _blockSize, curDim, curDim-_blockSize);
-  
+          //
           // Get a view of the a block row of the Schur vectors.
           Teuchos::SerialDenseMatrix<int,ScalarType> subQ(Teuchos::View, *(oldState.Q), _blockSize, cur_nevBlocks, curDim-_blockSize);
-          
+          //
           // Get a view of the new B block of the updated Krylov-Schur factorization
           Teuchos::SerialDenseMatrix<int,ScalarType> newB(Teuchos::View, *newH,  _blockSize, cur_nevBlocks, cur_nevBlocks);
-  
+          //
           // Compute the new B block.
           blas.GEMM( Teuchos::NO_TRANS, Teuchos::NO_TRANS, _blockSize, cur_nevBlocks, _blockSize, one, 
                      oldB.values(), oldB.stride(), subQ.values(), subQ.stride(), zero, newB.values(), newB.stride() );
-   
+
+
+          //
           // Set the new state and initialize the solver.
           BlockKrylovSchurState<ScalarType,MV> newstate;
-          newstate.V = newV;
+          if (_inSituRestart) {
+            newstate.V = oldState.V;
+          } else {
+            newstate.V = workMV;
+          }
           newstate.H = newH;
           newstate.curDim = cur_nevBlocks;
           bks_solver->initialize(newstate);
   
-        }
+        } // end of restarting
+        ////////////////////////////////////////////////////////////////////////////////////
+        //
+        // we returned from iterate(), but none of our status tests Passed.
+        // something is wrong, and it is probably our fault.
+        //
+        ////////////////////////////////////////////////////////////////////////////////////
         else {
           TEST_FOR_EXCEPTION(true,std::logic_error,"Anasazi::BlockKrylovSchurSolMgr::solve(): Invalid return from bks_solver::iterate().");
         }
@@ -463,6 +585,8 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
         throw;
       }
     }
+
+    workMV = Teuchos::null;
   
     // Get the most current Ritz values before we return
     _ritzValues = bks_solver->getRitzValues();

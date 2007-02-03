@@ -71,11 +71,13 @@ int main(int argc, char *argv[])
   bool verbose = false;
   bool debug = false;
   bool shortrun = false;
+  bool insitu = false;
   std::string which("LM");
 
   CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
   cmdp.setOption("debug","nodebug",&debug,"Print debugging information.");
+  cmdp.setOption("insitu","exsitu",&insitu,"Perform in situ restarting.");
   cmdp.setOption("sort",&which,"Targetted eigenvalues (SM or LM).");
   cmdp.setOption("shortrun","longrun",&shortrun,"Allow only a small number of iterations.");
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
@@ -191,6 +193,7 @@ int main(int argc, char *argv[])
   MyPL.set( "Maximum Restarts", maxRestarts );
   MyPL.set( "Step Size", stepSize );
   MyPL.set( "Convergence Tolerance", tol );
+  MyPL.set( "In Situ Restarting", insitu );
   //
   // Create the solver manager
   Anasazi::BlockKrylovSchurSolMgr<ScalarType,MV,OP> MySolverMgr(problem, MyPL);
@@ -201,6 +204,7 @@ int main(int argc, char *argv[])
       MyPL.getEntryPtr("Num Blocks")->isUsed() == false ||
       MyPL.getEntryPtr("Maximum Restarts")->isUsed() == false ||
       MyPL.getEntryPtr("Step Size")->isUsed() == false ||
+      MyPL.getEntryPtr("In Situ Restarting")->isUsed() == false ||
       MyPL.getEntryPtr("Convergence Tolerance")->isUsed() == false) {
     if (verbose && MyPID==0) {
       cout << "Failure! Unused parameters: " << endl;

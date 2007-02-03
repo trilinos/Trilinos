@@ -31,7 +31,7 @@
 #define ANASAZI_BLOCKDAVIDSON_SOLMGR_HPP
 
 /*! \file AnasaziBlockDavidsonSolMgr.hpp
- *  \brief The Anasazi::BlockDavidsonSolMgr provides a powerful solver manager for the BlockDavidson eigensolver.
+ *  \brief The Anasazi::BlockDavidsonSolMgr provides a solver manager for the BlockDavidson eigensolver.
 */
 
 #include "AnasaziConfigDefs.hpp"
@@ -533,11 +533,22 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
           Teuchos::RefCountPtr<MV> solverbasis = Teuchos::rcp_const_cast<MV>(state.V);
           // 
           // perform Householder QR of Sr = Q [D;0], where D is unit diag.
+          // WARNING: this will overwrite Sr; however, we do not need Sr anymore after this
           std::vector<ScalarType> tau(newdim), work(newdim);
           int info;
           lapack.GEQRF(curdim,newdim,Sr.values(),Sr.stride(),&tau[0],&work[0],work.size(),&info);
           TEST_FOR_EXCEPTION(info != 0,std::logic_error,
                              "Anasazi::BlockDavidsonSolMgr::solve(): error calling GEQRF during restarting.");
+          if (printer->isVerbosity(Debug)) {
+            Teuchos::SerialDenseMatrix<int,ScalarType> R(Teuchos::Copy,Sr,newdim,newdim);
+            for (int j=0; j<newdim; j++) {
+              R(j,j) = SCT::magnitude(R(j,j)) - 1.0;
+              for (int i=j+1; i<newdim; i++) {
+                R(i,j) = ZERO;
+              }
+            }
+            printer->stream(Debug) << "||Triangular factor of Sr - I||: " << R.normFrobenius() << endl;
+          }
           // 
           // perform implicit oldV*Sr
           // this actually performs oldV*[Sr Su*M] = [newV truncV], for some unitary M

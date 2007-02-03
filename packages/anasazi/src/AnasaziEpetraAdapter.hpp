@@ -633,16 +633,16 @@ namespace Anasazi {
       }
     }
 
-    /*! \brief Scale each element of the vectors in \c *this with \c alpha.
+    /*! \brief Scale each element of the vectors in \c mv with \c alpha.
      */
-    void MvScale ( const double alpha, Epetra_MultiVector& mv ) 
+    static void MvScale ( Epetra_MultiVector& mv, const double alpha ) 
     { int ret = mv.Scale( alpha ); 
       assert( ret == 0 );
     }
     
-    /*! \brief Scale each element of the \c i-th vector in \c *this with \c alpha[i].
+    /*! \brief Scale each element of the \c i-th vector in \c mv with \c alpha[i].
      */
-    void MvScale ( const std::vector<double>& alpha, Epetra_MultiVector& mv )
+    static void MvScale ( Epetra_MultiVector& mv, const std::vector<double>& alpha )
     { 
       // Check to make sure the vector is as long as the multivector has columns.
       int numvecs = mv.NumVectors();

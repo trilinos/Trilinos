@@ -190,6 +190,7 @@ int main(int argc, char *argv[])
       MyPL.getEntryPtr("Maximum Restarts")->isUsed() == false ||
       MyPL.getEntryPtr("Convergence Tolerance")->isUsed() == false ||
       MyPL.getEntryPtr("Use Locking")->isUsed() == false ||
+      MyPL.getEntryPtr("In Situ Restarting")->isUsed() == false ||
       MyPL.getEntryPtr("Locking Tolerance")->isUsed() == false) {
     if (verbose && MyPID==0) {
       cout << "Failure! Unused parameters: " << endl;

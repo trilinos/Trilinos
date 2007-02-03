@@ -949,7 +949,7 @@ namespace Anasazi {
                           std::invalid_argument, errstr );
       TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.V) < blockSize_,
                           std::invalid_argument, errstr );
-      TEST_FOR_EXCEPTION( MVT::GetNumberVecs(*newstate.V) > blockSize_*numBlocks_+1,
+      TEST_FOR_EXCEPTION( newstate.curDim > blockSize_*numBlocks_+1,
                           std::invalid_argument, errstr );
 
       curDim_ = newstate.curDim;
@@ -964,12 +964,11 @@ namespace Anasazi {
                                   << "The last " << lclDim - blockSize_ << " vectors of the kernel will be overwritten on the first call to iterate()." << endl;
       }
 
-      // create index vector to copy over current basis vectors
-      std::vector<int> nevind(lclDim);
-      for (int i=0; i<lclDim; i++) nevind[i] = i;
 
       // copy basis vectors from newstate into V
       if (newstate.V != V_) {
+        std::vector<int> nevind(lclDim);
+        for (int i=0; i<lclDim; i++) nevind[i] = i;
         MVT::SetBlock(*newstate.V,nevind,*V_);
       }
 
