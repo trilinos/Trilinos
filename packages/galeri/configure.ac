@@ -347,10 +347,8 @@ AC_CONFIG_FILES([
 		Makefile.export.galeri
 		src/Makefile
 		src-fem/Makefile
-		src-pfem/Makefile
 		example/Makefile
 		example-fem/Makefile
-		example-pfem/Makefile
 		test/Makefile
 		test/VerySimple/Makefile
 		])

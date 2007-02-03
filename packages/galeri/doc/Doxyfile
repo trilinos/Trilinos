@@ -245,7 +245,7 @@ WARN_FORMAT            = "$file:$line: $text"
 
 INPUT                  = index.doc maps.doc matrices.doc utils.doc fe.doc
 INPUT                 += ../src ../src/Maps/ ../src/CrsMatrices
-INPUT                 += ../src-fem ../src-pfem
+INPUT                 += ../src-fem
 
 # If the value of the INPUT tag contains directories, you can use the 
 # FILE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp 
@@ -278,7 +278,7 @@ EXCLUDE_PATTERNS       = *.x \
 # directories that contain example code fragments that are included (see 
 # the \include command). 
 
-EXAMPLE_PATH           = ../example ../ ../example-fem/ ../example-pfem/
+EXAMPLE_PATH           = ../example ../ ../example-fem/
 
 # If the value of the EXAMPLE_PATH tag contains directories, you can use the 
 # EXAMPLE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp 

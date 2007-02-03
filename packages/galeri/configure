@@ -721,13 +721,13 @@ echo X"$0" |
   	  /^X\(\/\).*/{ s//\1/; q; }
   	  s/.*/./; q'`
   srcdir=$ac_confdir
-  if test ! -r $srcdir/$ac_unique_file; then
+  if test ! -r "$srcdir/$ac_unique_file"; then
     srcdir=..
   fi
 else
   ac_srcdir_defaulted=no
 fi
-if test ! -r $srcdir/$ac_unique_file; then
+if test ! -r "$srcdir/$ac_unique_file"; then
   if test "$ac_srcdir_defaulted" = yes; then
     { echo "$as_me: error: cannot find sources ($ac_unique_file) in $ac_confdir or .." >&2
    { (exit 1); exit 1; }; }
@@ -736,7 +736,7 @@ if test ! -r $srcdir/$ac_unique_file; then
    { (exit 1); exit 1; }; }
   fi
 fi
-(cd $srcdir && test -r ./$ac_unique_file) 2>/dev/null ||
+(cd $srcdir && test -r "./$ac_unique_file") 2>/dev/null ||
   { echo "$as_me: error: sources are in $srcdir, but \`cd $srcdir' does not work" >&2
    { (exit 1); exit 1; }; }
 srcdir=`echo "$srcdir" | sed 's%\([^\\/]\)[\\/]*$%\1%'`
@@ -10459,7 +10459,7 @@ fi
 # Output files
 # ------------------------------------------------------------------------
 
-                                                                                                              ac_config_files="$ac_config_files Makefile Makefile.export Makefile.export.galeri src/Makefile src-fem/Makefile src-pfem/Makefile example/Makefile example-fem/Makefile example-pfem/Makefile test/Makefile test/VerySimple/Makefile"
+                                                                                          ac_config_files="$ac_config_files Makefile Makefile.export Makefile.export.galeri src/Makefile src-fem/Makefile example/Makefile example-fem/Makefile test/Makefile test/VerySimple/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -11093,10 +11093,8 @@ do
   "Makefile.export.galeri" ) CONFIG_FILES="$CONFIG_FILES Makefile.export.galeri" ;;
   "src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
   "src-fem/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-fem/Makefile" ;;
-  "src-pfem/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-pfem/Makefile" ;;
   "example/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/Makefile" ;;
   "example-fem/Makefile" ) CONFIG_FILES="$CONFIG_FILES example-fem/Makefile" ;;
-  "example-pfem/Makefile" ) CONFIG_FILES="$CONFIG_FILES example-pfem/Makefile" ;;
   "test/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
   "test/VerySimple/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/VerySimple/Makefile" ;;
   "depfiles" ) CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
