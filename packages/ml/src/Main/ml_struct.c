@@ -951,7 +951,7 @@ int ML_Gen_Smoother_Jacobi( ML *ml , int nl, int pre_or_post, int ntimes,
    }
 
    fun = ML_Smoother_Jacobi;
-   if (omega == ML_DEFAULT) omega = .5;
+   if (omega == ML_DDEFAULT) omega = .5;
 
    if (pre_or_post == ML_PRESMOOTHER) {
       for (i = start_level; i <= end_level; i++) {
@@ -982,158 +982,27 @@ int ML_Gen_Smoother_Jacobi( ML *ml , int nl, int pre_or_post, int ntimes,
 }
 
 /* ------------------------------------------------------------------------- */
-/* generate the Gauss Seidel smoother (SOR)                                  */
-/* ------------------------------------------------------------------------- */
-
-int ML_Gen_Smoother_GaussSeidel( ML *ml , int nl, int pre_or_post, int ntimes,
-                                double omega)
-{
-   int (*fun)(ML_Smoother *, int, double *, int, double *);
-   int start_level, end_level, i, status = 1;
-   char str[80];
-
-   if (nl == ML_ALL_LEVELS) { start_level = 0; end_level = ml->ML_num_levels-1;}
-   else { start_level = nl; end_level = nl;}
-   if (start_level < 0) {
-      printf("ML_Gen_Smoother_GaussSeidel: cannot set smoother on level %d\n",start_level);
-      return 1;
-   }
-
-   fun = ML_Smoother_GaussSeidel;
-
-   if (pre_or_post == ML_PRESMOOTHER) {
-      for (i = start_level; i <= end_level; i++) {
-             sprintf(str,"GS_pre%d",i);
-             status = ML_Smoother_Set(&(ml->pre_smoother[i]), NULL,
-                                      fun, ntimes, omega, str);
-      }
-   }
-   else if (pre_or_post == ML_POSTSMOOTHER) {
-      for (i = start_level; i <= end_level; i++) {
-             sprintf(str,"GS_post%d",i);
-             status = ML_Smoother_Set(&(ml->post_smoother[i]),NULL,
-                             fun, ntimes, omega, str);
-      }
-   }
-   else if (pre_or_post == ML_BOTH) {
-      for (i = start_level; i <= end_level; i++) {
-             sprintf(str,"GS_pre%d",i);
-             status = ML_Smoother_Set(&(ml->pre_smoother[i]), NULL,
-                                      fun, ntimes, omega, str);
-             sprintf(str,"GS_post%d",i);
-             status = ML_Smoother_Set(&(ml->post_smoother[i]), NULL,
-                             fun, ntimes, omega, str);
-      }
-   }
-   else return(pr_error("ML_Gen_Gauss-Seidel: unknown pre_or_post choice\n"));
-   return(status);
-}
-
-/* ------------------------------------------------------------------------- */
 /* generate the symmetric Gauss Seidel smoother                              */
 /* ------------------------------------------------------------------------- */
 
 int ML_Gen_Smoother_SymGaussSeidel( ML *ml , int nl, int pre_or_post,
                                    int ntimes, double omega)
 {
-   int         start_level, end_level, i, j, status = 0, Nrows, count;
-   int         *bindx;
-   double      *nums, **sgs_nums = NULL, *num2;
-   double      *val = NULL, temp_omega;
-   double       tomega, spectral_radius;
-   ML_Operator *Amat;
-   int         (*fun)(ML_Smoother *, int, double *, int, double *);
-   void        (*fun2)(void *) = NULL;
-   struct ML_CSR_MSRdata *ptr = NULL;
-   char        str[80];
+   int start_level, end_level, i;
 
+   ML_Gen_Smoother_GaussSeidel(ml,nl,pre_or_post,ntimes,omega);
    if (nl == ML_ALL_LEVELS) { start_level = 0; end_level = ml->ML_num_levels-1;}
    else { start_level = nl; end_level = nl;}
-   if (start_level < 0) {
-      printf("ML_Gen_Smoother_SymGaussSeidel: cannot set smoother on level %d\n",start_level);
-      return 1;
-   }
 
-   tomega = omega;
    for (i = start_level; i <= end_level; i++) {
-      Amat = &(ml->Amat[i]);
-
-     if (omega == ML_DEFAULT) 
-     {
-       ML_Smoother_ComputeOmegaViaSpectralradius(Amat, ML_Smoother_GaussSeidel,
-                                               NULL, &spectral_radius, &tomega);
-       if (ML_Get_PrintLevel() > 8 && ml->comm->ML_mypid == 0)
-         printf("Optimal SGS damping parameter = %e\n", tomega);
+     if (pre_or_post ==  ML_PRESMOOTHER) ml->pre_smoother[i].symmetric_sweep=1;
+     if (pre_or_post == ML_POSTSMOOTHER) ml->post_smoother[i].symmetric_sweep=1;
+     if (pre_or_post == ML_BOTH) {
+	ml->pre_smoother[i].symmetric_sweep=1;
+	ml->post_smoother[i].symmetric_sweep=1;
      }
-
-     fun  = ML_Smoother_SGS;
-
-      if (Amat->getrow->func_ptr == MSR_getrows){
-         ptr   = (struct ML_CSR_MSRdata *) Amat->data;
-         val   = ptr->values;
-         bindx = ptr->columns;
-      }
-
-#ifdef AZTEC
-      else AZ_get_MSR_arrays(Amat, &bindx, &val);
-#endif
-      if (val != NULL) {
-         fun = ML_Smoother_MSR_SGS;
-	 if (tomega != 1.0) {
-	   sgs_nums = (double **) ML_allocate( sizeof(double)*2);
-	   Nrows    = Amat->getrow->Nrows;
-	   nums     = (double *) ML_allocate( Nrows * sizeof(double));
-	   num2     = (double *) ML_allocate( Nrows * sizeof(double));
-	   sgs_nums[0] = nums;
-	   sgs_nums[1] = num2;
-	   for (j = 0; j < Nrows; j++) {
-	     count = 0;
-	     /*
-	       for (j = bindx[j]; j < bindx[j+1]; j++) if (bindx[j] >= Nrows) count++;
-	       */
-
-	     if (bindx[j] != bindx[j+1])
-               temp_omega = tomega*(1.0 - .5*((double) count) /
-				   ((double) (bindx[j+1]-bindx[j])));
-	     else temp_omega = 1.;
-
-	     num2[j] = 1. - temp_omega;
-	     if (val[j] != 0.0) nums[j] = temp_omega/val[j];
-	     else { nums[j] = 0.0; num2[j] = 1.; }
-	   }
-	   fun2 = ML_Smoother_Clean_MSR_GS;
-	 }
-	 else {
-	   fun = ML_Smoother_MSR_SGSnodamping;
-	 }
-      }
-
-      if (pre_or_post == ML_PRESMOOTHER) {
-         sprintf(str,"SGS_pre%d",i);
-         status = ML_Smoother_Set(&(ml->pre_smoother[i]), 
-                                  sgs_nums, fun, ntimes, tomega, str);
-	 ml->pre_smoother[i].data_destroy = fun2;
-      }
-      else if (pre_or_post == ML_POSTSMOOTHER) {
-         sprintf(str,"SGS_post%d",i);
-	 status = ML_Smoother_Set(&(ml->post_smoother[i]), 
-                                  sgs_nums, fun, ntimes, tomega, str);
-	 ml->post_smoother[i].data_destroy = fun2;
-      }
-      else if (pre_or_post == ML_BOTH) {
-         sprintf(str,"SGS_pre%d",i);
-         status = ML_Smoother_Set(&(ml->pre_smoother[i]), 
-                                  sgs_nums, fun, ntimes, tomega, str);
-         sprintf(str,"SGS_post%d",i);
-	 status = ML_Smoother_Set(&(ml->post_smoother[i]), 
-                                  sgs_nums, fun, ntimes, tomega, str);
-	 ml->post_smoother[i].data_destroy = fun2;
-      }
-      else return(pr_error("Print unknown pre_or_post choice\n"));
-      fun2 = NULL;
-      sgs_nums = NULL;
    }
-   return(status);
+   return 0;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -1157,7 +1026,7 @@ int ML_Gen_Smoother_SymGaussSeidelSequential(ML *ml , int nl, int pre_or_post,
    }
 
    fun = ML_Smoother_SGSSequential;
-   if (omega == ML_DEFAULT) omega = 1.;
+   if (omega == ML_DDEFAULT) omega = 1.;
 
    for (i = start_level; i <= end_level; i++)
    {
@@ -1210,7 +1079,7 @@ int ML_Gen_SmootherGSextra( ML *ml , int nl, int pre_or_post, int ntimes,
       return 1;
    }
 
-   if (omega == ML_DEFAULT) omega = 1.;
+   if (omega == ML_DDEFAULT) omega = 1.;
    Amat = &(ml->Amat[nl]);
    fun  = ML_Smoother_SGS;
 
@@ -1289,7 +1158,7 @@ int ML_Gen_Smoother_OrderedSymGaussSeidel(ML *ml , int nl, int pre_or_post,
    }
 
    fun = ML_Smoother_OrderedSGS;
-   if (omega == ML_DEFAULT) omega = 1.;
+   if (omega == ML_DDEFAULT) omega = 1.;
 
    if (pre_or_post == ML_PRESMOOTHER)
       for (i = start_level; i <= end_level; i++) {
@@ -1346,6 +1215,88 @@ int ML_Gen_Smoother_SymBlockGaussSeidel(ML *ml , int nl, int pre_or_post,
    return 0;
 }
 
+int ML_Gen_Smoother_GaussSeidel(ML *ml , int nl, int pre_or_post,
+                                     int ntimes, double omega)
+{
+   int            (*fun)(ML_Smoother *, int, double *, int, double *);
+   int            start_level, end_level, i, status = 1;
+   char           str[80];
+   double         spectral_radius, tomega;
+#ifdef ML_TIMING
+   double         t0;
+   t0 = GetClock();
+#endif
+
+   if (nl == ML_ALL_LEVELS) { start_level = 0; end_level = ml->ML_num_levels-1;}
+   else { start_level = nl; end_level = nl;}
+   if (start_level < 0) {
+      printf("ML_Gen_Smoother_GaussSeidel: cannot set smoother on level %d\n",start_level);
+      return 1;
+   }
+
+   fun = ML_Smoother_NewGS;
+   tomega  = omega;
+
+   if (pre_or_post == ML_PRESMOOTHER) {
+      for (i = start_level; i <= end_level; i++) {
+         sprintf(str,"GS_pre%d",i);
+     	 if (omega == ML_DDEFAULT) {
+       	   ML_Smoother_ComputeOmegaViaSpectralradius(&(ml->Amat[i]), 
+					 ML_Smoother_NewGS, NULL,
+                                         &spectral_radius, &tomega);
+           if (ML_Get_PrintLevel() > 8 && ml->comm->ML_mypid == 0)
+             printf("Optimal SGS damping parameter = %e\n", tomega);
+         }
+         status = ML_Smoother_Set(&(ml->pre_smoother[i]), 
+		                 NULL, fun, ntimes, tomega, str);
+#ifdef ML_TIMING
+         ml->pre_smoother[i].build_time = GetClock() - t0;
+         ml->timing->total_build_time   += ml->pre_smoother[i].build_time;
+#endif
+      }
+   }
+   else if (pre_or_post == ML_POSTSMOOTHER) {
+      for (i = start_level; i <= end_level; i++) {
+         sprintf(str,"GS_post%d",i);
+     	 if (omega == ML_DDEFAULT) {
+       	   ML_Smoother_ComputeOmegaViaSpectralradius(&(ml->Amat[i]), 
+					 ML_Smoother_NewGS, NULL,
+					 &spectral_radius, &tomega);
+           if (ML_Get_PrintLevel() > 8 && ml->comm->ML_mypid == 0)
+             printf("Optimal SGS damping parameter = %e\n", tomega);
+         }
+	 status = ML_Smoother_Set(&(ml->post_smoother[i]), 
+			      NULL, fun, ntimes, tomega, str);
+#ifdef ML_TIMING
+         ml->post_smoother[i].build_time = GetClock() - t0;
+         ml->timing->total_build_time   += ml->post_smoother[i].build_time;
+#endif
+      }
+   }
+   else if (pre_or_post == ML_BOTH) {
+      for (i = start_level; i <= end_level; i++) {
+         sprintf(str,"GS_pre%d",i);
+     	 if (omega == ML_DDEFAULT) {
+       	   ML_Smoother_ComputeOmegaViaSpectralradius(&(ml->Amat[i]), 
+					 ML_Smoother_NewGS, NULL,
+					 &spectral_radius, &tomega);
+           if (ML_Get_PrintLevel() > 8 && ml->comm->ML_mypid == 0)
+             printf("Optimal SGS damping parameter = %e\n", tomega);
+         }
+         status = ML_Smoother_Set(&(ml->pre_smoother[i]), 
+		                 NULL, fun, ntimes, tomega, str);
+#ifdef ML_TIMING
+         ml->pre_smoother[i].build_time = GetClock() - t0;
+         ml->timing->total_build_time   += ml->pre_smoother[i].build_time;
+#endif
+         sprintf(str,"GS_post%d",i);
+	 status = ML_Smoother_Set(&(ml->post_smoother[i]), 
+			      NULL, fun, ntimes, tomega, str);
+      }
+   }
+   else return(pr_error("Print unknown pre_or_post choice\n"));
+   return(status);
+}
 int ML_Gen_Smoother_BlockGaussSeidel(ML *ml , int nl, int pre_or_post,
                                      int ntimes, double omega, int blocksize)
 {
@@ -1378,7 +1329,7 @@ int ML_Gen_Smoother_BlockGaussSeidel(ML *ml , int nl, int pre_or_post,
 				       data);
 	 ml->pre_smoother[i].data_destroy = ML_Smoother_Clean_BGS_Data;
          sprintf(str,"BGS_pre%d",i);
-     	 if (omega == ML_DEFAULT) 
+     	 if (omega == ML_DDEFAULT) 
          {
        	   ML_Smoother_ComputeOmegaViaSpectralradius(&(ml->Amat[i]), 
 					 ML_Smoother_BlockGS,(void *) data, 
@@ -1405,7 +1356,7 @@ int ML_Gen_Smoother_BlockGaussSeidel(ML *ml , int nl, int pre_or_post,
 
 	 ml->post_smoother[i].data_destroy = ML_Smoother_Clean_BGS_Data;
          sprintf(str,"BGS_post%d",i);
-     	 if (omega == ML_DEFAULT) 
+     	 if (omega == ML_DDEFAULT) 
          {
        	   ML_Smoother_ComputeOmegaViaSpectralradius(&(ml->Amat[i]), 
 					 ML_Smoother_BlockGS,(void *) data, 
@@ -1430,7 +1381,7 @@ int ML_Gen_Smoother_BlockGaussSeidel(ML *ml , int nl, int pre_or_post,
 				       data);
 
          sprintf(str,"BGS_pre%d",i);
-     	 if (omega == ML_DEFAULT) 
+     	 if (omega == ML_DDEFAULT) 
          {
        	   ML_Smoother_ComputeOmegaViaSpectralradius(&(ml->Amat[i]), 
 					 ML_Smoother_BlockGS,(void *) data, 
@@ -1475,7 +1426,7 @@ int ML_Gen_Smoother_VBlockJacobi( ML *ml , int nl, int pre_or_post,
       return 1;
    }
    fun = ML_Smoother_VBlockJacobi;
-   if (omega == ML_DEFAULT) myomega = .5;
+   if (omega == ML_DDEFAULT) myomega = .5;
    else                     myomega = omega;
 
    ML_Smoother_Create_BGS_Data(&data);
@@ -1625,7 +1576,7 @@ int ML_Gen_Smoother_VBlockKrylovJacobi( ML *ml , int nl, int pre_or_post,
       return 1;
    }
    fun = ML_Smoother_VBlockKrylovJacobi;
-   if (omega == ML_DEFAULT) myomega = .5;
+   if (omega == ML_DDEFAULT) myomega = .5;
    else                     myomega = omega;
 
    ML_Smoother_Create_BGS_Data(&data);
