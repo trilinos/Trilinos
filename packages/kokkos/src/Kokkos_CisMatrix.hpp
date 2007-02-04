@@ -46,13 +46,17 @@ namespace Kokkos {
   class CisMatrix {
   public:
 
-    //@{ \name Constructors/Destructor.
+    //! @name Constructors/Destructor
+
+    //@{
 
     //! CisMatrix Destructor
     virtual ~CisMatrix(){};
     //@}
 
-    //@{ \name Matrix entry access methods.
+    //! @name Matrix entry access methods
+
+    //@{
 
     //! Returns number of entries in ith row/column, and pointer to an array of these indices.
     /*! Extract the number of entries and a pointer to the indices in the ith row/column of the matrix.  Note that
@@ -81,7 +85,9 @@ namespace Kokkos {
 	
     //@}
 
-    //@{ \name Matrix Attribute access methods.
+    //! @name Matrix Attribute access methods
+
+    //@{
 	
     //! Returns true if the compressed index matrix should be interpreted as a row matrix.
     virtual bool getIsRowOriented() const = 0;

@@ -78,7 +78,10 @@ namespace Kokkos {
   class OskiSparseMultiply: public virtual SparseOperation<OrdinalType, ScalarType> {
   public:
 
-    //@{ \name Constructors/Destructor.
+    //! @name Constructors/Destructor
+
+    //@{
+
     //! OskiSparseMultiply constuctor with variable number of indices per row.
     OskiSparseMultiply();
   
@@ -88,8 +91,10 @@ namespace Kokkos {
     //! OskiSparseMultiply Destructor
     virtual ~OskiSparseMultiply();
     //@}
-    //@{ \name Abstract Kokkos::OskiMatrix Interface Initialization Methods
- 
+    //! @name Abstract Kokkos::OskiMatrix Interface Initialization Methods
+
+    //@{ 
+
     //! Initialize structure of matrix
     /*!
       This interface supports matrices that implement the Kokkos::OskiMatrix matrix interface.
@@ -118,7 +123,9 @@ namespace Kokkos {
  
     //@}
 
-    //@{ \name Computational methods.
+    //! @name Computational methods
+
+    //@{
 
 // We won't use a Vector version of this because OskiVector inherits from 
 // OskiMultiVector - we need this to satisfy the requirement that certain
@@ -140,7 +147,9 @@ namespace Kokkos {
 		      bool transA = false, bool conjA = false) const;
     //@}
 	
-    //@{ \name Operator attribute access methods.
+    //! @name Operator attribute access methods
+
+    //@{
 
     //! Returns true for this implementation.
     /*! This implementation will use the user's copy of the matrix structure.

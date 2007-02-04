@@ -70,7 +70,10 @@ namespace Kokkos {
   class PackedSparseMultiply: public virtual SparseOperation<OrdinalType, ScalarType> {
   public:
 
-    //@{ \name Constructors/Destructor.
+    //! @name Constructors/Destructor
+
+    //@{
+
     //! PackedSparseMultiply constuctor with variable number of indices per row.
     PackedSparseMultiply();
   
@@ -80,7 +83,9 @@ namespace Kokkos {
     //! PackedSparseMultiply Destructor
     virtual ~PackedSparseMultiply();
     //@}
-    //@{ \name Abstract Kokkos::CisMatrix Interface Initialization Methods
+    //! @name Abstract Kokkos::CisMatrix Interface Initialization Methods
+
+    //@{
  
     //! Initialize structure of matrix
     /*!
@@ -110,7 +115,9 @@ namespace Kokkos {
  
     //@}
 
-    //@{ \name Computational methods.
+    //! @name Computational methods
+
+    //@{
 	
     //! Returns the result of a Kokkos_PackedSparseMultiply multiplied by a vector x in y.
     /*! 
@@ -137,7 +144,9 @@ namespace Kokkos {
 		      bool transA = false, bool conjA = false) const;
     //@}
 	
-    //@{ \name Operator attribute access methods.
+    //! @name Operator attribute access methods
+
+    //@{
 
     //! Returns false for this implementation.
     /*! This implementation will not use the user's copy of the matrix structure.

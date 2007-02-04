@@ -46,13 +46,17 @@ namespace Kokkos {
   class Vector {
   public:
 
-    //@{ \name Constructors/Destructor.
+    //! @name Constructors/Destructor
+
+    //@{
 
     //! Vector Destructor
     virtual ~Vector(){};
     //@}
 
-    //@{ \name Vector access methods.
+    //! @name Vector access methods
+
+    //@{
 
     //! Returns a pointer to an array of values in the vector.
     /*! Extract a pointer to the values in the vector.  Note that
@@ -65,8 +69,10 @@ namespace Kokkos {
 	
     //@}
 
-    //@{ \name Vector Attribute access methods.
-	
+    //! @name Vector Attribute access methods
+
+    //@{
+
     //! Length of vector
     virtual OrdinalType getLength() const = 0;
 	

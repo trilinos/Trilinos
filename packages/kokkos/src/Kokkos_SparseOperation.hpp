@@ -74,7 +74,9 @@ namespace Kokkos {
   class SparseOperation: public CompObject {
   public:
 
-    //@{ \name Constructors/Destructor.
+    //! @name Constructors/Destructor
+
+    //@{
 
     //! SparseOperation Constructor
     SparseOperation(): CompObject(){};
@@ -82,7 +84,9 @@ namespace Kokkos {
     //! SparseOperation Destructor
     virtual ~SparseOperation(){};
     //@}
-    //@{ \name Abstract Kokkos::CisMatrix Interface Initialization Methods
+    //! @name Abstract Kokkos::CisMatrix Interface Initialization Methods
+
+    //@{
  
     //! Initialize structure of matrix
     /*!
@@ -117,8 +121,10 @@ namespace Kokkos {
  
     //@}
 
-    //@{ \name Computational methods.
-	
+    //! @name Computational methods
+
+    //@{
+
     //! Returns the result of a Kokkos_SparseOperation multiplied by a vector x in y.
     /*! 
       \param x (In) A Kokkos::Vector to operate on.
@@ -144,7 +150,9 @@ namespace Kokkos {
 		      bool transA, bool conjA) const = 0;
     //@}
 	
-    //@{ \name Operator attribute access methods.
+    //! @name Operator attribute access methods
+
+    //@{
 
     //! Returns true if this implementation of Kokkos::SparseOperation can benefit from the user keeping the passed in structure.
     /*! Some implementations of optimized kernels do not rely on the user's data except for the initial 

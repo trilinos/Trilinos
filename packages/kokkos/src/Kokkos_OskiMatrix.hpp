@@ -53,7 +53,9 @@ namespace Kokkos {
   class OskiMatrix: public virtual CisMatrix<OrdinalType,ScalarType> {
   public:
 
-    //@{ \name Constructors/Destructor.
+    //! @name Constructors/Destructor
+
+    //@{
 
     //! Default OskiMatrix constuctor.
     OskiMatrix(void);
@@ -65,8 +67,10 @@ namespace Kokkos {
     virtual ~OskiMatrix();
     //@}
   
-    //@{ \name OskiMatrix Initialization Methods
-	
+    //! @name OskiMatrix Initialization Methods
+
+    //@{
+
     //! Initialize structure of the matrix
     /*!
       \param numRows (In)  Row dimension.
@@ -107,7 +111,9 @@ namespace Kokkos {
 	
     //@}
 
-    //@{ \name Matrix Format Initialization Methods
+    //! @name Matrix Format Initialization Methods
+
+    //@{
  
     //! Initialize structure of matrix
     /*!
@@ -133,7 +139,9 @@ namespace Kokkos {
     int initializeValues(ScalarType ** values);
     //@}
 
-    //@{ \name Matrix entry access methods.
+    //! @name Matrix entry access methods
+
+    //@{
 
     //! Returns number of entries in ith row/column, and pointer to an array of these indices.
     /*! Extract the number of entries and a pointer to the indices in the ith row/column of the matrix.  Note that
@@ -162,7 +170,9 @@ namespace Kokkos {
 	
     //@}
 
-    //@{ \name Validity tests.
+    //! @name Validity tests
+
+    //@{
 
     //! Check if the matrix structure is valid for user-assertion of Upper/Lower Triangular and implicit unit diagonal.
     /*!
@@ -179,7 +189,9 @@ namespace Kokkos {
 
     //@}
 
-    //@{ \name Matrix Attribute access methods.
+    //! @name Matrix Attribute access methods
+
+    //@{
 	
     //! Returns true if the compressed index matrix was formed using an OSKI CSR or CSC matrix.
 //    bool getIsOskiMatrix() const {return(isOskiMatrix_);};

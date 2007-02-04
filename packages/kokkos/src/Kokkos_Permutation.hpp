@@ -65,7 +65,9 @@ namespace Kokkos {
   class Permutation {
   public:
 
-    //@{ \name Constructors/Destructor.
+    //! @name Constructors/Destructor
+
+    //@{
 
     //! Default constructor
     Permutation(void):
@@ -94,8 +96,10 @@ namespace Kokkos {
     //@}
 
 
-    //@{ \name Intialization methods.
-	
+    //! @name Intialization methods
+
+    //@{
+
     //! Defines a nontrivial permutation.
     /*! Post-construction definition of the permutation.  The array indices will be interpreted as a left
         permutation by the apply() method such that if j = indices[i], then row j of the operand 
@@ -119,8 +123,10 @@ namespace Kokkos {
     //@}
 
 
-    //@{ \name Computational methods.
-	
+    //! @name Computational methods
+
+    //@{
+
     //! Returns the result of a Kokkos::Permutation applied to a vector x in y.
     /*! 
       \param x (In) A Kokkos::Vector to permute.
@@ -159,8 +165,10 @@ namespace Kokkos {
 
     //@}
 	
-    //@{ \name Permutation Attribute access methods.
-	
+    //! @name Permutation Attribute access methods
+
+    //@{
+
     //! Length (dimension) of permutation operator.
     virtual OrdinalType getLength() const {return(length_);};
 	

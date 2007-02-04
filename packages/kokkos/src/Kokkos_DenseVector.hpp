@@ -48,7 +48,9 @@ namespace Kokkos {
   class DenseVector: public virtual Vector<OrdinalType,ScalarType> {
   public:
 
-    //@{ \name Constructors/Destructor.
+    //! @name Constructors/Destructor
+
+    //@{
 
     //! Default constructor
     DenseVector(void):
@@ -68,8 +70,10 @@ namespace Kokkos {
     virtual ~DenseVector(){};
     //@}
 
-    //@{ \name Initialization methods
-	
+    //! @name Initialization methods
+
+    //@{
+
     //! Initialize using a pointer
     /*!
       This is the only way to initialize a Kokkos::DenseVector object.
@@ -90,7 +94,9 @@ namespace Kokkos {
 	
     //@}
 
-    //@{ \name DenseVector access methods.
+    //! @name DenseVector access methods
+
+    //@{
 
     //! Returns a pointer to an array of values in the vector.
     /*! Extract a pointer to the values in the vector.  Note that
@@ -103,7 +109,9 @@ namespace Kokkos {
 	
     //@}
 
-    //@{ \name DenseVector Attribute access methods.
+    //! @name DenseVector Attribute access methods
+
+    //@{
 	
     //! Length of vector
     virtual OrdinalType getLength() const {return(length_);};

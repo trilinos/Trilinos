@@ -50,7 +50,9 @@ namespace Kokkos {
     class OskiVector: public OskiMultiVector<OrdinalType,ScalarType> {
   public:
 
-    //@{ \name Constructors/Destructor.
+    //! @name Constructors/Destructor
+
+    //@{
 
     //! Default constructor
     OskiVector(void):
@@ -66,8 +68,10 @@ namespace Kokkos {
     virtual ~OskiVector(){};
     //@}
 
-    //@{ \name Initialization methods
-	
+    //! @name Initialization methods
+
+    //@{
+
     //! Initialize using a pointer
     /*!
       This is the only way to initialize a Kokkos::OskiVector object.
@@ -85,7 +89,9 @@ namespace Kokkos {
 	
     //@}
 
-    //@{ \name OskiVector access methods.
+    //! @name OskiVector access methods
+
+    //@{
 
     //! Returns a pointer to an array of values in the vector.
     /*! Extract a pointer to the values in the vector.  Note that
@@ -100,7 +106,9 @@ namespace Kokkos {
 	
     //@}
 
-    //@{ \name OskiVector Attribute access methods.
+    //! @name OskiVector Attribute access methods
+
+    //@{
 	
     //! Length of vector
     virtual OrdinalType getLength() const {return(OskiMultiVector<OrdinalType,ScalarType>::getNumRows());};

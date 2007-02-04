@@ -46,7 +46,10 @@ namespace Kokkos {
   class Flops {
     
   public:
-    //@{ \name Constructors/Destructor.
+    //! @name Constructors/Destructor
+
+    //@{
+
     //! Flops Constructor.
     /*! Creates a Flops instance. This instance can be queried for
       the number of floating point operations performed for the associated
@@ -67,7 +70,10 @@ namespace Kokkos {
     //@}
 
 
-    //@{ \name Attribute access/reset methods.
+    //! @name Attribute access/reset methods
+
+    //@{
+
     //! Returns the number of floating point operations with \e this object and resets the count.
     double getFlops() const {double tmp = flops_; flops_ = 0.0; return(tmp);};
 
@@ -75,7 +81,10 @@ namespace Kokkos {
     void resetFlops() {flops_=0.0;};
     //@}
 
-    //@{ \name Friend class.
+    //! @name Friend class
+
+    //@{
+
     //! CompObject needs to be able to set the flopCounter_ attribute of Flops
     friend class CompObject;
     //@}

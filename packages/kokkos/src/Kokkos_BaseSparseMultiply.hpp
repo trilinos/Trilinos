@@ -76,7 +76,10 @@ namespace Kokkos {
   class BaseSparseMultiply: public virtual SparseOperation<OrdinalType, ScalarType> {
   public:
 
-    //@{ \name Constructors/Destructor.
+    //! @name Constructors/Destructor
+
+    //@{
+
     //! BaseSparseMultiply constuctor with variable number of indices per row.
     BaseSparseMultiply();
   
@@ -86,7 +89,9 @@ namespace Kokkos {
     //! BaseSparseMultiply Destructor
     virtual ~BaseSparseMultiply();
     //@}
-    //@{ \name Abstract Kokkos::CisMatrix Interface Initialization Methods
+    //! @name Abstract Kokkos::CisMatrix Interface Initialization Methods
+
+    //@{
  
     //! Initialize structure of matrix
     /*!
@@ -125,7 +130,9 @@ namespace Kokkos {
  
     //@}
 
-    //@{ \name Computational methods.
+    //! @name Computational methods
+
+    //@{
 	
     //! Returns the result of a Kokkos_BaseSparseMultiply multiplied by a vector x in y.
     /*! 
@@ -152,7 +159,9 @@ namespace Kokkos {
 		      bool transA = false, bool conjA = false) const;
     //@}
 	
-    //@{ \name Operator attribute access methods.
+    //! @name Operator attribute access methods
+
+    //@{
 
     //! Returns true if this implementation of Kokkos::BaseSparseMultiply can benefit from the user keeping the passed in structure.
     /*! Some implementations of optimized kernels do not rely on the user's data except for the initial 

@@ -74,7 +74,10 @@ namespace Kokkos {
   class BaseSparseSolve: public virtual SparseOperation<OrdinalType, ScalarType> {
   public:
 
-    //@{ \name Constructors/Destructor.
+    //! @name Constructors/Destructor
+
+    //@{
+
     //! BaseSparseSolve constuctor with variable number of indices per row.
     BaseSparseSolve();
   
@@ -84,8 +87,10 @@ namespace Kokkos {
     //! BaseSparseSolve Destructor
     virtual ~BaseSparseSolve();
     //@}
-    //@{ \name Abstract Kokkos::CisMatrix Interface Initialization Methods
- 
+    //! @name Abstract Kokkos::CisMatrix Interface Initialization Methods
+
+    //@{ 
+
     //! Initialize structure of matrix
     /*!
       This interface supports matrices that implement the Kokkos::CisMatrix matrix interface.
@@ -127,7 +132,9 @@ namespace Kokkos {
  
     //@}
 
-    //@{ \name Computational methods.
+    //! @name Computational methods
+
+    //@{
 	
     //! Returns the result of a Kokkos_BaseSparseSolve multiplied by a vector x in y.
     /*! 
@@ -156,7 +163,9 @@ namespace Kokkos {
 		      bool transA = false, bool conjA = false) const;
     //@}
 	
-    //@{ \name Operator attribute access methods.
+    //! @name Operator attribute access methods
+
+    //@{
 
     //! Returns true if this implementation of Kokkos::BaseSparseSolve can benefit from the user keeping the passed in structure.
     /*! Some implementations of optimized kernels do not rely on the user's data except for the initial 

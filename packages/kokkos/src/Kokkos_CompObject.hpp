@@ -44,7 +44,10 @@ class CompObject {
 
   public:
 
-  //@{ \name Constructors/Destructor.
+  //! @name Constructors/Destructor
+
+  //@{
+
   //! Basic CompObject constuctor.
   CompObject() {
     flopCounter_ = 0;
@@ -60,7 +63,10 @@ class CompObject {
   virtual ~CompObject(){flopCounter_=0;};
   //@}
 
-  //@{ \name Set/Get counter method.
+  //! @name Set/Get counter method
+
+  //@{
+
 
   //! Set the internal Flops() pointer.
   void setFlopCounter(const Flops & flopCounter) {flopCounter_= (Flops *) &flopCounter; return;};
@@ -76,7 +82,9 @@ class CompObject {
 
   //@}
 
-  //@{ \name Set flop count methods.
+  //! @name Set flop count methods
+
+  //@{
 
   //! Resets the number of floating point operations to zero for \e this multi-vector.
   void resetFlops() const {if (flopCounter_!=0) flopCounter_->resetFlops(); return;};
@@ -85,7 +93,10 @@ class CompObject {
   double getFlops() const {if (flopCounter_!=0) return(flopCounter_->getFlops()); else return(0.0);};
   //@}
 
-  //@{ \name Update flop count methods.
+  //! @name Update flop count methods
+
+  //@{
+
   //! Increment flop count for \e this object
   void updateFlops(int flops) const {if (flopCounter_!=0) flopCounter_->updateFlops(flops); return;};
 

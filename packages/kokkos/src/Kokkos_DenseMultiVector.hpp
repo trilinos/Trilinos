@@ -72,7 +72,9 @@ namespace Kokkos {
   class DenseMultiVector: public virtual MultiVector<OrdinalType,ScalarType> {
   public:
 
-    //@{ \name Constructors/Destructor.
+    //! @name Constructors/Destructor
+
+    //@{
 
     //! Default constructor
     DenseMultiVector(void):
@@ -111,7 +113,9 @@ namespace Kokkos {
     };
     //@}
 
-    //@{ \name Initialization methods
+    //! @name Initialization methods
+
+    //@{
 	
     //! Initialize using an array of pointers
     /*!
@@ -169,7 +173,9 @@ namespace Kokkos {
 	
     //@}
 
-    //@{ \name Multivector entry access methods.
+    //! @name Multivector entry access methods
+
+    //@{
 
     //! Returns an array of pointers such that the ith pointer points to an array of values in the ith column of the multivector.
     /*! Extract an array of pointers such that the ith pointer points to the values in the ith column of the multivector.  Note that
@@ -198,7 +204,9 @@ namespace Kokkos {
 	
     //@}
 
-    //@{ \name DenseMultiVector Attribute access methods.
+    //! @name DenseMultiVector Attribute access methods
+
+    //@{
 	
     //! Number of rows
     virtual OrdinalType getNumRows() const {return(numRows_);};
