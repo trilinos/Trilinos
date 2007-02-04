@@ -48,7 +48,9 @@ namespace Kokkos {
   class HbMatrix: public virtual CisMatrix<OrdinalType,ScalarType> {
   public:
 
-    //@{ \name Constructors/Destructor.
+    //! @name Constructors/Destructor
+
+   //@{
 
     //! Default HbMatrix constuctor.
     HbMatrix(void);
@@ -60,7 +62,9 @@ namespace Kokkos {
     virtual ~HbMatrix();
     //@}
   
-    //@{ \name Classical Harwell-Boeing Format Initialization Methods
+    //! @name Classical Harwell-Boeing Format Initialization Methods
+
+    //@{
 	
     //! Initialize structure of matrix (Classical Harwell-Boeing Format)
     /*!
@@ -89,7 +93,9 @@ namespace Kokkos {
 	
     //@}
 
-    //@{ \name Generalized Harwell-Boeing Format Initialization Methods
+    //! @name Generalized Harwell-Boeing Format Initialization Methods
+
+    //@{
  
     //! Initialize structure of matrix (Generalized Harwell-Boeing Format)
     /*!
@@ -117,7 +123,9 @@ namespace Kokkos {
     int initializeValues(ScalarType ** values);
     //@}
 
-    //@{ \name Matrix entry access methods.
+    //! @name Matrix entry access methods
+
+    //@{
 
     //! Returns number of entries in ith row/column, and pointer to an array of these indices.
     /*! Extract the number of entries and a pointer to the indices in the ith row/column of the matrix.  Note that
@@ -146,7 +154,9 @@ namespace Kokkos {
 	
     //@}
 
-    //@{ \name Matrix Attribute set methods.
+    //! @name Matrix Attribute set methods
+
+    //@{
 
     //! Set whether or not the compressed index matrix has no entries below the diagonal, assumed false.
     virtual int setIsUpperTriangular(bool tf) {isUpperTriangular_=tf; return(0);};
@@ -168,7 +178,9 @@ namespace Kokkos {
 
     //@}
 
-    //@{ \name Validity tests.
+    //! @name Validity tests
+
+    //@{
 
     //! Check if the matrix structure is valid for user-assertion of Upper/Lower Triangular and implicit unit diagonal.
     /*!
@@ -185,8 +197,10 @@ namespace Kokkos {
 
     //@}
 
-    //@{ \name Matrix Attribute access methods.
-	
+    //! @name Matrix Attribute access methods
+
+    //@{
+
     //! Returns true if the compressed index matrix was formed using a classic HB matrix.
     bool getIsClassicHbMatrix() const {return(isClassicHbMatrix_);};
 	
