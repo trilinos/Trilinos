@@ -101,6 +101,7 @@ FiniteElementProblem::FiniteElementProblem(int numGlobalElements, Epetra_Comm& c
   // is called.
   A = new Epetra_CrsMatrix (Copy, *AA);
   A->FillComplete();
+  A->OptimizeStorage();
 }
 
 // Destructor
@@ -232,6 +233,7 @@ bool FiniteElementProblem::evaluate(FillType f,
   Comm->Barrier();
  
   A->FillComplete();
+  A->OptimizeStorage();
 
   return true;
 }
@@ -271,6 +273,7 @@ Epetra_CrsGraph& FiniteElementProblem::generateGraph(Epetra_CrsGraph& AA)
     }
   }
   AA.FillComplete();
+  AA.OptimizeStorage();
 //   AA.SortIndices();
 //   AA.RemoveRedundantIndices();
   return AA;
