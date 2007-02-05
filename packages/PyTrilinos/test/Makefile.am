@@ -112,7 +112,8 @@ TEST_SUITE = $(TEUCHOS_TESTS)   $(THYRA_TESTS)   $(EPETRA_TESTS) $(TRIUTILS_TEST
 
 TEST_PYSCRIPTS = $(TEST_SUITE:=.py) 
 
-SETPATH = setpath.py
+SHOULD_COPY = should_copy.py
+SETPATH     = setpath.py
 
 # The following line helps the test harness recover from build errors.
 all:
@@ -120,16 +121,30 @@ all:
 	@echo "Trilinos package PyTrilinos subdirectory test built successfully."
 	@echo ""
 
-all-local: $(TEST_SUITE)
-	@if [ `$(PYTHON) -c "import os; print os.path.abspath('$(srcdir)')"` != `pwd` ]; then \
+$(SHOULD_COPY):
+	@echo "Constructing $(SHOULD_COPY) script"
+	@echo "import sys, os"                                              > $@
+	@echo "filename = sys.argv[1]"                                     >> $@
+	@echo "if os.path.abspath('$(srcdir)') == os.getcwd():"            >> $@
+	@echo "    print 'false'; sys.exit()"                              >> $@
+	@echo "if not os.path.exists(filename):"                           >> $@
+	@echo "    print 'true'; sys.exit()"                               >> $@
+	@echo "if (os.path.getmtime(filename) <"                           >> $@
+	@echo "    os.path.getmtime(os.path.join('$(srcdir)',filename))):" >> $@
+	@echo "    print 'true'; sys.exit()"                               >> $@
+	@echo "print 'false'"                                              >> $@
+
+all-local: $(SHOULD_COPY) $(TEST_SUITE)
+	@if [ `$(PYTHON) $(SHOULD_COPY) $(SETPATH)` == 'true' ]; then \
 	  echo "copying $(SETPATH)"; /bin/cp $(srcdir)/$(SETPATH) . ; fi
 
-test%:
-	@if [ `$(PYTHON) -c "import os; print os.path.abspath('$(srcdir)')"` != `pwd` ]; then \
+test%: $(SHOULD_COPY)
+	@if [ `$(PYTHON) $(SHOULD_COPY) $@.py` == 'true' ]; then \
 	  echo "copying $@.py"; /bin/cp $(srcdir)/$@.py . ; fi
 
 run-tests: all-local
 	@for test_script in $(TEST_PYSCRIPTS); do if [ $$test_script != '.py' ]; then \
 	  echo; echo "Running $$test_script"; echo; $$test_script -t; fi; done
 
-CLEANFILES = $(TEST_PYSCRIPTS) $(SETPATH) *.pyc *.dat
+CLEANFILES = $(TEST_PYSCRIPTS) $(SHOULD_COPY) $(SETPATH) \
+	     *.pyc *.dat

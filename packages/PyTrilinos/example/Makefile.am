@@ -156,9 +156,9 @@ EXAMPLE_SUITE = $(TEUCHOS_EXAMPLES)  $(THYRA_EXAMPLES)     $(EPETRA_EXAMPLES) \
 
 EXAMPLE_PYSCRIPTS = $(EXAMPLE_SUITE:=.py) 
 
-SETPATH = setpath.py
-
-GRE__115 = gre__115.rua
+SHOULD_COPY = should_copy.py
+SETPATH     = setpath.py
+GRE__115    = gre__115.rua
 
 # The following line helps the test harness recover from build errors.
 all:
@@ -166,18 +166,31 @@ all:
 	@echo "Trilinos package PyTrilinos subdirectory example built successfully."
 	@echo ""
 
-all-local: $(EXAMPLE_SUITE)
-	@if [ `$(PYTHON) -c "import os; print os.path.abspath('$(srcdir)')"` != `pwd` ]; then \
+$(SHOULD_COPY):
+	@echo "Constructing $(SHOULD_COPY) script"
+	@echo "import sys, os"                                              > $@
+	@echo "filename = sys.argv[1]"                                     >> $@
+	@echo "if os.path.abspath('$(srcdir)') == os.getcwd():"            >> $@
+	@echo "    print 'false'; sys.exit()"                              >> $@
+	@echo "if not os.path.exists(filename):"                           >> $@
+	@echo "    print 'true'; sys.exit()"                               >> $@
+	@echo "if (os.path.getmtime(filename) <"                           >> $@
+	@echo "    os.path.getmtime(os.path.join('$(srcdir)',filename))):" >> $@
+	@echo "    print 'true'; sys.exit()"                               >> $@
+	@echo "print 'false'"                                              >> $@
+
+all-local: $(SHOULD_COPY) $(EXAMPLE_SUITE)
+	@if [ `$(PYTHON) $(SHOULD_COPY) $(SETPATH)` == 'true' ]; then \
 	  echo "copying $(SETPATH)"; /bin/cp $(srcdir)/$(SETPATH) . ; fi
-	@if [ `$(PYTHON) -c "import os; print os.path.abspath('$(srcdir)')"` != `pwd` ]; then \
+	@if [ `$(PYTHON) $(SHOULD_COPY) $(GRE__115)` == 'true' ]; then \
 	  echo "copying $(GRE__115)"; /bin/cp $(srcdir)/$(GRE__115) . ; fi
 
-ex%:
-	@if [ `$(PYTHON) -c "import os; print os.path.abspath('$(srcdir)')"` != `pwd` ]; then \
+ex%: $(SHOULD_COPY)
+	@if [ `$(PYTHON) $(SHOULD_COPY) $@.py` == 'true' ]; then \
 	  echo "copying $@.py"; /bin/cp $(srcdir)/$@.py . ; fi
 
 run-examples: all-local
 	@for ex_script in $(EXAMPLE_PYSCRIPTS); do if [ $$ex_script != '.py' ]; then \
 	  echo; echo "Running $$ex_script"; echo; $$ex_script -t; fi; done
 
-CLEANFILES = $(EXAMPLE_PYSCRIPTS) $(SETPATH) *.pyc *.dat
+CLEANFILES = $(EXAMPLE_PYSCRIPTS) $(SHOULD_COPY) $(SETPATH) $(GRE__115) *.pyc *.dat
