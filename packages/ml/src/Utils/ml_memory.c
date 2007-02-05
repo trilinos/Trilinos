@@ -892,7 +892,7 @@ char * ML_memory_check(char *fmt, ... )
    if (strlen(fmt) == 0)    return(ml_memory_label);
 
 
-   //isrcvec[0].value = fragments;
+   /*isrcvec[0].value = fragments; */
    isrcvec[0].value = 0;
    isrcvec[1].value = total_free;
    isrcvec[2].value = largest_free;

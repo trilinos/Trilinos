@@ -2892,7 +2892,6 @@ int ML_Operator_Print_UsingGlobalOrdering( ML_Operator *matrix,
               
        for (i = 0 ; i < Nrows; i++)
          {
-           //           printf("Print: Grabbing Matrix row %d\n",i);//hax
          ML_get_matrix_row(matrix, 1, &i, &allocated, &bindx, &val,
                  &row_length, 0);
   
@@ -3247,7 +3246,6 @@ void ML_hash_it( int new_val, int hash_list[], int hash_length,int *hash_used,
 
   ui = new_val<<1;
   if (ui < 0) ui = new_val;
-  //index = ((int) ui) % hash_length;
   *index = ui % hash_length;
   while ( hash_list[*index] != new_val) {
     if (hash_list[*index] == -1) { (*hash_used)++; break;}
