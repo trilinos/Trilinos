@@ -53,32 +53,32 @@ int main(int argc, char *argv[]) {
       if (Map.LID(node) == -1)
         continue;
 
-      double val = 4.0;
+      double val = 8.0;
       int pos = node;
       A.InsertGlobalValues(node, 1, &val, &pos);
       if (iY > 0) {
-        val = -2.0;
+        val = -1.0;
         pos = iX + (iY-1)*(numElePerDirection-1);
         A.InsertGlobalValues(node, 1, &val, &pos);
       }
       if (iY < numElePerDirection-2) {
-        val = -2.0;
+        val = -1.0;
         pos = iX + (iY+1)*(numElePerDirection-1);
         A.InsertGlobalValues(node, 1, &val, &pos);
       }
 
       // Insert values on the left side of stencil
       if (iX > 0) {
-        val = -2.0;
+        val = -1.0;
         pos = iX-1 + iY*(numElePerDirection-1);
         A.InsertGlobalValues(node, 1, &val, &pos);
         if (iY > 0) {
-          val = 1.0;
+          val = -1.0;
           pos = iX-1 + (iY-1)*(numElePerDirection-1);
           A.InsertGlobalValues(node, 1, &val, &pos);
         }
         if (iY < numElePerDirection-2) {
-          val = 1.0;
+          val = -1.0;
           pos = iX-1 + (iY+1)*(numElePerDirection-1);
           A.InsertGlobalValues(node, 1, &val, &pos);
         }
@@ -86,16 +86,16 @@ int main(int argc, char *argv[]) {
 
       // Insert values on the right side of stencil
       if (iX < numElePerDirection - 2) {
-        val = -2.0;
+        val = -1.0;
         pos = iX+1 + iY*(numElePerDirection-1);
         A.InsertGlobalValues(node, 1, &val, &pos);
         if (iY > 0) {
-          val = 1.0;
+          val = -1.0;
           pos = iX+1 + (iY-1)*(numElePerDirection-1);
           A.InsertGlobalValues(node, 1, &val, &pos);
         }
         if (iY < numElePerDirection-2) {
-          val = 1.0;
+          val = -1.0;
           pos = iX+1 + (iY+1)*(numElePerDirection-1);
           A.InsertGlobalValues(node, 1, &val, &pos);
         }
@@ -104,6 +104,7 @@ int main(int argc, char *argv[]) {
     } // for (int iX = 0; iX < numElePerDirection - 1; ++iX)
   } // for (int iY = 0; iY < numElePerDirection - 1; ++iY)
   A.FillComplete();
+  A.OptimizeStorage();
 
   // Define the ML preconditioner
   int AMG_NLevels = 10;
