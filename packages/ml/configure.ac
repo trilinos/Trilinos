@@ -715,6 +715,7 @@ AC_CONFIG_FILES([
         test/METISCoarsening/Makefile
         test/MatrixFree/Makefile
         test/Miscellaneous/Makefile
+        test/Scalability/Makefile
         thyra/Makefile  
         thyra/src/Makefile
         matlab/Makefile

@@ -131,15 +131,17 @@ am__objects_2 = ml_rbm.$(OBJEXT) ml_aztec_utils.$(OBJEXT) \
 	ml_MultiLevelPreconditioner_Aux.$(OBJEXT) \
 	ml_MultiLevelPreconditioner_XML.$(OBJEXT) ml_anasazi.$(OBJEXT) \
 	ml_MultiLevelOperator.$(OBJEXT) ml_RowMatrix.$(OBJEXT) \
-	ml_DD_prec.$(OBJEXT) ml_MatrixFreePreconditioner.$(OBJEXT) \
-	MLAPI_Defaults.$(OBJEXT) MLAPI_Gallery.$(OBJEXT) \
-	MLAPI_InverseOperator.$(OBJEXT) MLAPI_Operator_Utils.$(OBJEXT) \
-	MLAPI_Eig.$(OBJEXT) MLAPI_Krylov.$(OBJEXT) \
-	MLAPI_Workspace.$(OBJEXT) MLAPI_Expressions.$(OBJEXT) \
-	MLAPI_MultiVector_Utils.$(OBJEXT) MLAPI_BaseObject.$(OBJEXT) \
-	MLAPI_Aggregation.$(OBJEXT) MLAPI_Error.$(OBJEXT) \
-	MLAPI_DistributedMatrix.$(OBJEXT) MLAPI_SAMIS.$(OBJEXT) \
-	MLAPI_LinearCombinations.$(OBJEXT) \
+	ml_DD_prec.$(OBJEXT) Epetra_Multi_CrsMatrix.$(OBJEXT) \
+	ml_EdgeMatrixFreePreconditioner.$(OBJEXT) \
+	ml_RefMaxwell_11_Operator.$(OBJEXT) ml_RefMaxwell.$(OBJEXT) \
+	ml_MatrixFreePreconditioner.$(OBJEXT) MLAPI_Defaults.$(OBJEXT) \
+	MLAPI_Gallery.$(OBJEXT) MLAPI_InverseOperator.$(OBJEXT) \
+	MLAPI_Operator_Utils.$(OBJEXT) MLAPI_Eig.$(OBJEXT) \
+	MLAPI_Krylov.$(OBJEXT) MLAPI_Workspace.$(OBJEXT) \
+	MLAPI_Expressions.$(OBJEXT) MLAPI_MultiVector_Utils.$(OBJEXT) \
+	MLAPI_BaseObject.$(OBJEXT) MLAPI_Aggregation.$(OBJEXT) \
+	MLAPI_Error.$(OBJEXT) MLAPI_DistributedMatrix.$(OBJEXT) \
+	MLAPI_SAMIS.$(OBJEXT) MLAPI_LinearCombinations.$(OBJEXT) \
 	nlnml_prepostoperator.$(OBJEXT) \
 	nlnml_ConstrainedMultiLevelOperator.$(OBJEXT) \
 	nlnml_linearsystem.$(OBJEXT) nlnml_nonlinearlevel.$(OBJEXT) \
@@ -155,7 +157,8 @@ libml_a_OBJECTS = $(am_libml_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I.
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/MLAPI_Aggregation.Po \
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Epetra_Multi_CrsMatrix.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/MLAPI_Aggregation.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/MLAPI_BaseObject.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/MLAPI_Defaults.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/MLAPI_DistributedMatrix.Po \
@@ -171,6 +174,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/MLAPI_SAMIS.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/MLAPI_Workspace.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/driver.Po ./$(DEPDIR)/ml_DD_prec.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_EdgeMatrixFreePreconditioner.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_MatrixFreePreconditioner.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_MultiLevelOperator.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_MultiLevelPreconditioner.Po \
@@ -184,6 +188,8 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/ml_MultiLevelPreconditioner_Test.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_MultiLevelPreconditioner_Viz.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_MultiLevelPreconditioner_XML.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_RefMaxwell.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_RefMaxwell_11_Operator.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_RowMatrix.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_agg_METIS.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_agg_MIS.Po \
@@ -590,6 +596,12 @@ $(srcdir)/Utils/ml_FilterType.h                          \
 $(srcdir)/Utils/ml_DD_prec.h                             \
 $(srcdir)/Utils/ml_Ifpack_ML.h                           \
 $(srcdir)/Utils/ml_Epetra_wrap_CrsGraph_as_RowMatrix.H   \
+$(srcdir)/Utils/ml_Preconditioner.h                      \
+$(srcdir)/Utils/Epetra_Operator_With_MatMat.h            \
+$(srcdir)/Utils/Epetra_Multi_CrsMatrix.h                 \
+$(srcdir)/RefMaxwell/ml_EdgeMatrixFreePreconditioner.h   \
+$(srcdir)/RefMaxwell/ml_RefMaxwell_11_Operator.h         \
+$(srcdir)/RefMaxwell/ml_RefMaxwell.h                     \
 $(srcdir)/MatrixFree/ml_MatrixFreePreconditioner.h       \
 $(srcdir)/MatrixFree/ml_ElementByElement_SingleElement.h \
 $(srcdir)/NonlinML/nlnml_ConstrainedMultiLevelOperator.H \
@@ -666,6 +678,10 @@ $(srcdir)/Utils/ml_anasazi.cpp                                   \
 $(srcdir)/Utils/ml_MultiLevelOperator.cpp                        \
 $(srcdir)/Utils/ml_RowMatrix.cpp                                 \
 $(srcdir)/Utils/ml_DD_prec.cpp                                   \
+$(srcdir)/Utils/Epetra_Multi_CrsMatrix.cpp                       \
+$(srcdir)/RefMaxwell/ml_EdgeMatrixFreePreconditioner.cpp         \
+$(srcdir)/RefMaxwell/ml_RefMaxwell_11_Operator.cpp               \
+$(srcdir)/RefMaxwell/ml_RefMaxwell.cpp                           \
 $(srcdir)/MatrixFree/ml_MatrixFreePreconditioner.cpp             \
 $(srcdir)/MLAPI/MLAPI_Defaults.cpp                               \
 $(srcdir)/MLAPI/MLAPI_Gallery.cpp                                \
@@ -962,6 +978,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Epetra_Multi_CrsMatrix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MLAPI_Aggregation.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MLAPI_BaseObject.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MLAPI_Defaults.Po@am__quote@
@@ -979,6 +996,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MLAPI_Workspace.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/driver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_DD_prec.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_EdgeMatrixFreePreconditioner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_MatrixFreePreconditioner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_MultiLevelOperator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_MultiLevelPreconditioner.Po@am__quote@
@@ -992,6 +1010,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_MultiLevelPreconditioner_Test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_MultiLevelPreconditioner_Viz.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_MultiLevelPreconditioner_XML.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_RefMaxwell.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_RefMaxwell_11_Operator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_RowMatrix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_agg_METIS.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_agg_MIS.Po@am__quote@
@@ -2548,6 +2568,70 @@ ml_DD_prec.obj: $(srcdir)/Utils/ml_DD_prec.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_DD_prec.obj `if test -f '$(srcdir)/Utils/ml_DD_prec.cpp'; then $(CYGPATH_W) '$(srcdir)/Utils/ml_DD_prec.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Utils/ml_DD_prec.cpp'; fi`
 
+Epetra_Multi_CrsMatrix.o: $(srcdir)/Utils/Epetra_Multi_CrsMatrix.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Epetra_Multi_CrsMatrix.o -MD -MP -MF "$(DEPDIR)/Epetra_Multi_CrsMatrix.Tpo" -c -o Epetra_Multi_CrsMatrix.o `test -f '$(srcdir)/Utils/Epetra_Multi_CrsMatrix.cpp' || echo '$(srcdir)/'`$(srcdir)/Utils/Epetra_Multi_CrsMatrix.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Epetra_Multi_CrsMatrix.Tpo" "$(DEPDIR)/Epetra_Multi_CrsMatrix.Po"; else rm -f "$(DEPDIR)/Epetra_Multi_CrsMatrix.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Utils/Epetra_Multi_CrsMatrix.cpp' object='Epetra_Multi_CrsMatrix.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Epetra_Multi_CrsMatrix.Po' tmpdepfile='$(DEPDIR)/Epetra_Multi_CrsMatrix.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_Multi_CrsMatrix.o `test -f '$(srcdir)/Utils/Epetra_Multi_CrsMatrix.cpp' || echo '$(srcdir)/'`$(srcdir)/Utils/Epetra_Multi_CrsMatrix.cpp
+
+Epetra_Multi_CrsMatrix.obj: $(srcdir)/Utils/Epetra_Multi_CrsMatrix.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Epetra_Multi_CrsMatrix.obj -MD -MP -MF "$(DEPDIR)/Epetra_Multi_CrsMatrix.Tpo" -c -o Epetra_Multi_CrsMatrix.obj `if test -f '$(srcdir)/Utils/Epetra_Multi_CrsMatrix.cpp'; then $(CYGPATH_W) '$(srcdir)/Utils/Epetra_Multi_CrsMatrix.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Utils/Epetra_Multi_CrsMatrix.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Epetra_Multi_CrsMatrix.Tpo" "$(DEPDIR)/Epetra_Multi_CrsMatrix.Po"; else rm -f "$(DEPDIR)/Epetra_Multi_CrsMatrix.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Utils/Epetra_Multi_CrsMatrix.cpp' object='Epetra_Multi_CrsMatrix.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Epetra_Multi_CrsMatrix.Po' tmpdepfile='$(DEPDIR)/Epetra_Multi_CrsMatrix.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_Multi_CrsMatrix.obj `if test -f '$(srcdir)/Utils/Epetra_Multi_CrsMatrix.cpp'; then $(CYGPATH_W) '$(srcdir)/Utils/Epetra_Multi_CrsMatrix.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Utils/Epetra_Multi_CrsMatrix.cpp'; fi`
+
+ml_EdgeMatrixFreePreconditioner.o: $(srcdir)/RefMaxwell/ml_EdgeMatrixFreePreconditioner.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ml_EdgeMatrixFreePreconditioner.o -MD -MP -MF "$(DEPDIR)/ml_EdgeMatrixFreePreconditioner.Tpo" -c -o ml_EdgeMatrixFreePreconditioner.o `test -f '$(srcdir)/RefMaxwell/ml_EdgeMatrixFreePreconditioner.cpp' || echo '$(srcdir)/'`$(srcdir)/RefMaxwell/ml_EdgeMatrixFreePreconditioner.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_EdgeMatrixFreePreconditioner.Tpo" "$(DEPDIR)/ml_EdgeMatrixFreePreconditioner.Po"; else rm -f "$(DEPDIR)/ml_EdgeMatrixFreePreconditioner.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/RefMaxwell/ml_EdgeMatrixFreePreconditioner.cpp' object='ml_EdgeMatrixFreePreconditioner.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_EdgeMatrixFreePreconditioner.Po' tmpdepfile='$(DEPDIR)/ml_EdgeMatrixFreePreconditioner.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_EdgeMatrixFreePreconditioner.o `test -f '$(srcdir)/RefMaxwell/ml_EdgeMatrixFreePreconditioner.cpp' || echo '$(srcdir)/'`$(srcdir)/RefMaxwell/ml_EdgeMatrixFreePreconditioner.cpp
+
+ml_EdgeMatrixFreePreconditioner.obj: $(srcdir)/RefMaxwell/ml_EdgeMatrixFreePreconditioner.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ml_EdgeMatrixFreePreconditioner.obj -MD -MP -MF "$(DEPDIR)/ml_EdgeMatrixFreePreconditioner.Tpo" -c -o ml_EdgeMatrixFreePreconditioner.obj `if test -f '$(srcdir)/RefMaxwell/ml_EdgeMatrixFreePreconditioner.cpp'; then $(CYGPATH_W) '$(srcdir)/RefMaxwell/ml_EdgeMatrixFreePreconditioner.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/RefMaxwell/ml_EdgeMatrixFreePreconditioner.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_EdgeMatrixFreePreconditioner.Tpo" "$(DEPDIR)/ml_EdgeMatrixFreePreconditioner.Po"; else rm -f "$(DEPDIR)/ml_EdgeMatrixFreePreconditioner.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/RefMaxwell/ml_EdgeMatrixFreePreconditioner.cpp' object='ml_EdgeMatrixFreePreconditioner.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_EdgeMatrixFreePreconditioner.Po' tmpdepfile='$(DEPDIR)/ml_EdgeMatrixFreePreconditioner.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_EdgeMatrixFreePreconditioner.obj `if test -f '$(srcdir)/RefMaxwell/ml_EdgeMatrixFreePreconditioner.cpp'; then $(CYGPATH_W) '$(srcdir)/RefMaxwell/ml_EdgeMatrixFreePreconditioner.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/RefMaxwell/ml_EdgeMatrixFreePreconditioner.cpp'; fi`
+
+ml_RefMaxwell_11_Operator.o: $(srcdir)/RefMaxwell/ml_RefMaxwell_11_Operator.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ml_RefMaxwell_11_Operator.o -MD -MP -MF "$(DEPDIR)/ml_RefMaxwell_11_Operator.Tpo" -c -o ml_RefMaxwell_11_Operator.o `test -f '$(srcdir)/RefMaxwell/ml_RefMaxwell_11_Operator.cpp' || echo '$(srcdir)/'`$(srcdir)/RefMaxwell/ml_RefMaxwell_11_Operator.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_RefMaxwell_11_Operator.Tpo" "$(DEPDIR)/ml_RefMaxwell_11_Operator.Po"; else rm -f "$(DEPDIR)/ml_RefMaxwell_11_Operator.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/RefMaxwell/ml_RefMaxwell_11_Operator.cpp' object='ml_RefMaxwell_11_Operator.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_RefMaxwell_11_Operator.Po' tmpdepfile='$(DEPDIR)/ml_RefMaxwell_11_Operator.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_RefMaxwell_11_Operator.o `test -f '$(srcdir)/RefMaxwell/ml_RefMaxwell_11_Operator.cpp' || echo '$(srcdir)/'`$(srcdir)/RefMaxwell/ml_RefMaxwell_11_Operator.cpp
+
+ml_RefMaxwell_11_Operator.obj: $(srcdir)/RefMaxwell/ml_RefMaxwell_11_Operator.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ml_RefMaxwell_11_Operator.obj -MD -MP -MF "$(DEPDIR)/ml_RefMaxwell_11_Operator.Tpo" -c -o ml_RefMaxwell_11_Operator.obj `if test -f '$(srcdir)/RefMaxwell/ml_RefMaxwell_11_Operator.cpp'; then $(CYGPATH_W) '$(srcdir)/RefMaxwell/ml_RefMaxwell_11_Operator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/RefMaxwell/ml_RefMaxwell_11_Operator.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_RefMaxwell_11_Operator.Tpo" "$(DEPDIR)/ml_RefMaxwell_11_Operator.Po"; else rm -f "$(DEPDIR)/ml_RefMaxwell_11_Operator.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/RefMaxwell/ml_RefMaxwell_11_Operator.cpp' object='ml_RefMaxwell_11_Operator.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_RefMaxwell_11_Operator.Po' tmpdepfile='$(DEPDIR)/ml_RefMaxwell_11_Operator.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_RefMaxwell_11_Operator.obj `if test -f '$(srcdir)/RefMaxwell/ml_RefMaxwell_11_Operator.cpp'; then $(CYGPATH_W) '$(srcdir)/RefMaxwell/ml_RefMaxwell_11_Operator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/RefMaxwell/ml_RefMaxwell_11_Operator.cpp'; fi`
+
+ml_RefMaxwell.o: $(srcdir)/RefMaxwell/ml_RefMaxwell.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ml_RefMaxwell.o -MD -MP -MF "$(DEPDIR)/ml_RefMaxwell.Tpo" -c -o ml_RefMaxwell.o `test -f '$(srcdir)/RefMaxwell/ml_RefMaxwell.cpp' || echo '$(srcdir)/'`$(srcdir)/RefMaxwell/ml_RefMaxwell.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_RefMaxwell.Tpo" "$(DEPDIR)/ml_RefMaxwell.Po"; else rm -f "$(DEPDIR)/ml_RefMaxwell.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/RefMaxwell/ml_RefMaxwell.cpp' object='ml_RefMaxwell.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_RefMaxwell.Po' tmpdepfile='$(DEPDIR)/ml_RefMaxwell.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_RefMaxwell.o `test -f '$(srcdir)/RefMaxwell/ml_RefMaxwell.cpp' || echo '$(srcdir)/'`$(srcdir)/RefMaxwell/ml_RefMaxwell.cpp
+
+ml_RefMaxwell.obj: $(srcdir)/RefMaxwell/ml_RefMaxwell.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ml_RefMaxwell.obj -MD -MP -MF "$(DEPDIR)/ml_RefMaxwell.Tpo" -c -o ml_RefMaxwell.obj `if test -f '$(srcdir)/RefMaxwell/ml_RefMaxwell.cpp'; then $(CYGPATH_W) '$(srcdir)/RefMaxwell/ml_RefMaxwell.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/RefMaxwell/ml_RefMaxwell.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_RefMaxwell.Tpo" "$(DEPDIR)/ml_RefMaxwell.Po"; else rm -f "$(DEPDIR)/ml_RefMaxwell.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/RefMaxwell/ml_RefMaxwell.cpp' object='ml_RefMaxwell.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_RefMaxwell.Po' tmpdepfile='$(DEPDIR)/ml_RefMaxwell.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_RefMaxwell.obj `if test -f '$(srcdir)/RefMaxwell/ml_RefMaxwell.cpp'; then $(CYGPATH_W) '$(srcdir)/RefMaxwell/ml_RefMaxwell.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/RefMaxwell/ml_RefMaxwell.cpp'; fi`
+
 ml_MatrixFreePreconditioner.o: $(srcdir)/MatrixFree/ml_MatrixFreePreconditioner.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ml_MatrixFreePreconditioner.o -MD -MP -MF "$(DEPDIR)/ml_MatrixFreePreconditioner.Tpo" -c -o ml_MatrixFreePreconditioner.o `test -f '$(srcdir)/MatrixFree/ml_MatrixFreePreconditioner.cpp' || echo '$(srcdir)/'`$(srcdir)/MatrixFree/ml_MatrixFreePreconditioner.cpp; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_MatrixFreePreconditioner.Tpo" "$(DEPDIR)/ml_MatrixFreePreconditioner.Po"; else rm -f "$(DEPDIR)/ml_MatrixFreePreconditioner.Tpo"; exit 1; fi
@@ -2998,7 +3082,7 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
-	$(mkdir_p) $(distdir)/Coarsen $(distdir)/Comm $(distdir)/FEGrid $(distdir)/Include $(distdir)/Krylov $(distdir)/MLAPI $(distdir)/Main $(distdir)/MatrixFree $(distdir)/NonlinML $(distdir)/Operator $(distdir)/Smoother $(distdir)/Utils
+	$(mkdir_p) $(distdir)/Coarsen $(distdir)/Comm $(distdir)/FEGrid $(distdir)/Include $(distdir)/Krylov $(distdir)/MLAPI $(distdir)/Main $(distdir)/MatrixFree $(distdir)/NonlinML $(distdir)/Operator $(distdir)/RefMaxwell $(distdir)/Smoother $(distdir)/Utils
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
