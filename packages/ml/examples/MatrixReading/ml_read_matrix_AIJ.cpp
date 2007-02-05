@@ -223,17 +223,20 @@ int main(int argc, char *argv[])
     DistributedMap = SerialMap;
     DistributedMatrix = SerialMatrix;
   }
+  DistributedMatrix->OptimizeStorage();
 
   // =========================== begin of ML part ===========================
 
   // create a parameter list for ML options
   ParameterList MLList;
 
-  ML_Epetra::SetDefaults("SA", MLList);
-  MLList.set("smoother: type (level 0)", "symmetric Gauss-Seidel");
-  MLList.set("smoother: type (level 1)", "Aztec");
-  MLList.set("aggregation: damping factor", 0.0);
-  MLList.set("PDE equations", 1);
+  ML_Epetra::SetDefaults("SA", MLList);          // Use NSSA for highly nonsymmetric
+  MLList.set("smoother: type", "Chebyshev");
+  MLList.set("smoother : sweeps", 3);
+  MLList.set("eigen-analysis: type", "cg");     // use power-method and 15
+  MLList.set("eigen-analysis: iterations", 10); // iterations for nonsymmetric
+                                                // systems.
+  MLList.set("aggregation: threshold", 0.0);
 
   ML_Epetra::MultiLevelPreconditioner* MLPrec = 
     new ML_Epetra::MultiLevelPreconditioner(*DistributedMatrix, MLList);
@@ -250,9 +253,8 @@ int main(int argc, char *argv[])
   Epetra_LinearProblem Problem(DistributedMatrix,&LHS,&RHS);
   AztecOO solver(Problem);
 
-  solver.SetAztecOption(AZ_solver, AZ_cg);
+  solver.SetAztecOption(AZ_solver, AZ_cg);  // Change (e.g. AZ_gmres) for nonsymmetric
   solver.SetAztecOption(AZ_output, 32);
-  //solver.SetAztecOption(AZ_precond, AZ_none);
   solver.SetPrecOperator(MLPrec);
 
   // solve with 500 iterations and 1e-12 as tolerance on the
