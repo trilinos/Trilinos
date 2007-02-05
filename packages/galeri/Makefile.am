@@ -143,7 +143,7 @@ if BUILD_EXAMPLES
 EXAMPLE_SUBDIR=example example-fem
 endif
 
-SUBDIRS = src $(TEST_SUBDIR) $(EXAMPLE_SUBDIR)
+SUBDIRS = src src-fem $(TEST_SUBDIR) $(EXAMPLE_SUBDIR)
 
 TRILINOS_HOME_DIR=@abs_top_srcdir@/../..
 TRILINOS_BUILD_DIR=@abs_top_builddir@/../..

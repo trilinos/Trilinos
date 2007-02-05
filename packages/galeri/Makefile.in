@@ -115,7 +115,7 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	uninstall-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = src test example example-fem
+DIST_SUBDIRS = src src-fem test example example-fem
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -309,7 +309,7 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 
 @BUILD_TESTS_TRUE@TEST_SUBDIR = test
 @BUILD_EXAMPLES_TRUE@EXAMPLE_SUBDIR = example example-fem
-SUBDIRS = src $(TEST_SUBDIR) $(EXAMPLE_SUBDIR)
+SUBDIRS = src src-fem $(TEST_SUBDIR) $(EXAMPLE_SUBDIR)
 TRILINOS_HOME_DIR = @abs_top_srcdir@/../..
 TRILINOS_BUILD_DIR = @abs_top_builddir@/../..
 @HAVE_MPI_FALSE@GALERI_CHECK_COMM = serial
