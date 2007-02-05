@@ -144,7 +144,7 @@ int main(int argc, char *argv[])
   if (boolret != true) {
     if (verbose && MyPID == 0) {
       cout << "Anasazi::BasicEigenproblem::SetProblem() returned with error." << endl
-           << "End Result: TEST FAILED" << endl;	
+           << "End Result: TEST FAILED" << endl;
     }
 #ifdef HAVE_MPI
     MPI_Finalize() ;
@@ -273,7 +273,7 @@ int main(int argc, char *argv[])
 
   if (testFailed) {
     if (verbose && MyPID==0) {
-      cout << "End Result: TEST FAILED" << endl;	
+      cout << "End Result: TEST FAILED" << endl;
     }
     return -1;
   }
@@ -285,5 +285,4 @@ int main(int argc, char *argv[])
   }
   return 0;
 
-
-}	
+}

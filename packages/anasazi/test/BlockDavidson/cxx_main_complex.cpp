@@ -76,20 +76,27 @@ int main(int argc, char *argv[])
   bool testFailed;
   bool verbose = false;
   bool debug = false;
+  bool shortrun = false;
+  bool insitu = false;
+  bool locking = true;
   std::string filename("mhd1280b.cua");
   std::string which("LM");
 
   CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
   cmdp.setOption("debug","nodebug",&debug,"Print debugging information.");
+  cmdp.setOption("insitu","exsitu",&insitu,"Perform in situ restarting.");
+  cmdp.setOption("locking","nolocking",&locking,"Perform locking.");
   cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
   cmdp.setOption("sort",&which,"Targetted eigenvalues (SM or LM).");
+  cmdp.setOption("shortrun","longrun",&shortrun,"Allow only a small number of iterations.");
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
 #ifdef HAVE_MPI
     MPI_Finalize();
 #endif
     return -1;
   }
+  if (debug) verbose = true;
 
 #ifndef HAVE_ANASAZI_TRIUTILS
   cout << "This test requires Triutils. Please configure with --enable-triutils." << endl;
@@ -198,7 +205,13 @@ int main(int argc, char *argv[])
 
   // Eigensolver parameters
   int numBlocks = 8;
-  int maxRestarts = 100;
+  int maxRestarts;
+  if (shortrun) {
+    maxRestarts = 10;
+  }
+  else {
+    maxRestarts = 100;
+  }
   MagnitudeType tol = 1.0e-6;
   //
   // Create parameter list to pass into the solver manager
@@ -209,16 +222,33 @@ int main(int argc, char *argv[])
   MyPL.set( "Num Blocks", numBlocks );
   MyPL.set( "Maximum Restarts", maxRestarts );
   MyPL.set( "Convergence Tolerance", tol );
-  MyPL.set( "Use Locking", true );
+  MyPL.set( "Use Locking", locking );
   MyPL.set( "Locking Tolerance", tol/10 );
+  MyPL.set( "In Situ Restarting", insitu );
   //
   // Create the solver manager
   Anasazi::BlockDavidsonSolMgr<ScalarType,MV,OP> MySolverMan(problem, MyPL);
+  // 
+  // Check that the parameters were all consumed
+  if (MyPL.getEntryPtr("Verbosity")->isUsed() == false ||
+      MyPL.getEntryPtr("Which")->isUsed() == false ||
+      MyPL.getEntryPtr("Block Size")->isUsed() == false ||
+      MyPL.getEntryPtr("Num Blocks")->isUsed() == false ||
+      MyPL.getEntryPtr("Maximum Restarts")->isUsed() == false ||
+      MyPL.getEntryPtr("Convergence Tolerance")->isUsed() == false ||
+      MyPL.getEntryPtr("Use Locking")->isUsed() == false ||
+      MyPL.getEntryPtr("In Situ Restarting")->isUsed() == false ||
+      MyPL.getEntryPtr("Locking Tolerance")->isUsed() == false) {
+    if (verbose && MyPID==0) {
+      cout << "Failure! Unused parameters: " << endl;
+      MyPL.unused(cout);
+    }
+  }
 
   // Solve the problem to the specified tolerances or length
   Anasazi::ReturnType returnCode = MySolverMan.solve();
   testFailed = false;
-  if (returnCode != Anasazi::Converged) {
+  if (returnCode != Anasazi::Converged && shortrun==false) {
     testFailed = true;
   }
 

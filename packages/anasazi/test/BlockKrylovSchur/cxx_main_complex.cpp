@@ -62,8 +62,8 @@ using namespace Teuchos;
 int main(int argc, char *argv[]) 
 {
   int info = 0;
-  int MyPID = 0;
   bool boolret;
+  int MyPID = 0;
 
 #ifdef HAVE_MPI
   // Initialize MPI
@@ -75,20 +75,25 @@ int main(int argc, char *argv[])
   bool testFailed;
   bool verbose = false;
   bool debug = false;
-  std::string filename("mhd1280b.cua");
+  bool shortrun = false;
+  bool insitu = false;
   std::string which("LM");
+  std::string filename("mhd1280b.cua");
 
   CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
   cmdp.setOption("debug","nodebug",&debug,"Print debugging information.");
-  cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
+  cmdp.setOption("insitu","exsitu",&insitu,"Perform in situ restarting.");
   cmdp.setOption("sort",&which,"Targetted eigenvalues (SM or LM).");
+  cmdp.setOption("shortrun","longrun",&shortrun,"Allow only a small number of iterations.");
+  cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
 #ifdef HAVE_MPI
     MPI_Finalize();
 #endif
     return -1;
   }
+  if (debug) verbose = true;
 
 #ifndef HAVE_ANASAZI_TRIUTILS
   cout << "This test requires Triutils. Please configure with --enable-triutils." << endl;
@@ -96,7 +101,7 @@ int main(int argc, char *argv[])
   MPI_Finalize() ;
 #endif
   if (verbose && MyPID == 0) {
-    cout << "End Result: TEST FAILED" << endl;	
+    cout << "End Result: TEST FAILED" << endl;
   }
   return -1;
 #endif
@@ -176,7 +181,7 @@ int main(int argc, char *argv[])
   if (boolret != true) {
     if (verbose && MyPID == 0) {
       cout << "Anasazi::BasicEigenproblem::SetProblem() returned with error." << endl
-           << "End Result: TEST FAILED" << endl;	
+           << "End Result: TEST FAILED" << endl;
     }
 #ifdef HAVE_MPI
     MPI_Finalize() ;
@@ -196,8 +201,16 @@ int main(int argc, char *argv[])
 
 
   // Eigensolver parameters
-  int numBlocks = 8;
-  int maxRestarts = 100;
+  int numBlocks;
+  int maxRestarts;
+  if (shortrun) {
+    maxRestarts = 25;
+    numBlocks = 5;
+  }
+  else {
+    maxRestarts = 50;
+    numBlocks = 10;
+  }
   MT tol = 1.0e-6;
   //
   // Create parameter list to pass into the solver manager
@@ -208,6 +221,7 @@ int main(int argc, char *argv[])
   MyPL.set( "Num Blocks", numBlocks );
   MyPL.set( "Maximum Restarts", maxRestarts );
   MyPL.set( "Convergence Tolerance", tol );
+  MyPL.set( "In Situ Restarting", insitu );
   //
   // Create the solver manager
   Anasazi::BlockKrylovSchurSolMgr<ST,MV,OP> MySolverMgr(problem, MyPL);
@@ -215,7 +229,7 @@ int main(int argc, char *argv[])
   // Solve the problem to the specified tolerances or length
   Anasazi::ReturnType returnCode = MySolverMgr.solve();
   testFailed = false;
-  if (returnCode != Anasazi::Converged) {
+  if (returnCode != Anasazi::Converged && shortrun==false) {
     testFailed = true;
   }
 
@@ -258,9 +272,8 @@ int main(int argc, char *argv[])
     if (verbose && MyPID==0) {
       cout << endl << os.str() << endl;
     }
-
   }
-  
+
 #ifdef HAVE_MPI
   MPI_Finalize() ;
 #endif
@@ -272,7 +285,7 @@ int main(int argc, char *argv[])
 
   if (testFailed) {
     if (verbose && MyPID==0) {
-      cout << "End Result: TEST FAILED" << endl;	
+      cout << "End Result: TEST FAILED" << endl;
     }
     return -1;
   }
@@ -280,8 +293,8 @@ int main(int argc, char *argv[])
   // Default return value
   //
   if (verbose && MyPID==0) {
-    cout << "End Result: TEST PASSED" << endl;	
-  } 
+    cout << "End Result: TEST PASSED" << endl;
+  }
   return 0;
 
-}	
+}

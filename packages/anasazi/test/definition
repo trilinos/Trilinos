@@ -30,7 +30,14 @@
 (FRAMEWORK,INSTALL,AnasaziTests,AnasaziEpetraTests) {
     TESTS = BlockDavidson/BlockDavidson_test.exe,
     EXIT-STATUS = STRING-COMPARISON;
-    ARGS = --verbose --insitu --locking, --verbose --exsitu --locking, --verbose --exsitu --nolocking, --verbose --insitu --nolocking;
+    ARGS = --verbose --insitu --locking, 
+           --verbose --exsitu --locking, 
+           --verbose --exsitu --nolocking, 
+           --verbose --insitu --nolocking,
+           --verbose --insitu --rblocks=4 --locking, 
+           --verbose --exsitu --rblocks=4 --locking, 
+           --verbose --exsitu --rblocks=4 --nolocking, 
+           --verbose --insitu --rblocks=4 --nolocking;
     COMM = SERIAL, MPI;
 }
 
@@ -62,10 +69,26 @@
     TESTS = MVOPTester/MVOPComplex_test.exe,
             OrthoManager/OrthoManagerComplex_test.exe,
             LOBPCG/LOBPCGComplex_test.exe,
-            BlockDavidson/BlockDavidsonComplex_test.exe,
-            BlockKrylovSchur/BlockKrylovSchur_complex_test.exe;
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = --verbose --filename=$ABS_TOP_SRCDIR/packages/anasazi/test/MVOPTester/mhd1280b.cua;
+    COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK,INSTALL,AnasaziTests,AnasaziComplexTests,COVERAGE) {
+    TESTS = BlockDavidson/BlockDavidsonComplex_test.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = --verbose --filename=$ABS_TOP_SRCDIR/packages/anasazi/test/MVOPTester/mhd1280b.cua --insitu --longrun --locking, 
+           --verbose --filename=$ABS_TOP_SRCDIR/packages/anasazi/test/MVOPTester/mhd1280b.cua --insitu --longrun --nolocking, 
+           --verbose --filename=$ABS_TOP_SRCDIR/packages/anasazi/test/MVOPTester/mhd1280b.cua --exsitu --longrun --nolocking, 
+           --verbose --filename=$ABS_TOP_SRCDIR/packages/anasazi/test/MVOPTester/mhd1280b.cua --exsitu --longrun --locking;
+    COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK,INSTALL,AnasaziTests,AnasaziComplexTests,COVERAGE) {
+    TESTS = BlockKrylovSchur/BlockKrylovSchur_complex_test.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = --verbose --filename=$ABS_TOP_SRCDIR/packages/anasazi/test/MVOPTester/mhd1280b.cua --insitu --longrun,
+           --verbose --filename=$ABS_TOP_SRCDIR/packages/anasazi/test/MVOPTester/mhd1280b.cua --exsitu --longrun;
     COMM = SERIAL, MPI;
 }
 

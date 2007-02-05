@@ -73,6 +73,7 @@ int main(int argc, char *argv[])
   bool locking = true;
   std::string filename("mhd1280b.cua");
   std::string which("LM");
+  int  rblocks = 1;
 
   CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
@@ -81,6 +82,7 @@ int main(int argc, char *argv[])
   cmdp.setOption("locking","nolocking",&locking,"Perform locking.");
   cmdp.setOption("sort",&which,"Targetted eigenvalues (SM or LM).");
   cmdp.setOption("shortrun","longrun",&shortrun,"Allow only a small number of iterations.");
+  cmdp.setOption("rblocks",&rblocks,"Number of blocks after restart.");
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
 #ifdef HAVE_MPI
     MPI_Finalize();
@@ -178,6 +180,7 @@ int main(int argc, char *argv[])
   MyPL.set( "Use Locking", locking );
   MyPL.set( "Locking Tolerance", tol/10 );
   MyPL.set( "In Situ Restarting", insitu );
+  MyPL.set( "Num Restart Blocks", rblocks );
   //
   // Create the solver manager
   Anasazi::BlockDavidsonSolMgr<ScalarType,MV,OP> MySolverMan(problem, MyPL);
@@ -191,6 +194,7 @@ int main(int argc, char *argv[])
       MyPL.getEntryPtr("Convergence Tolerance")->isUsed() == false ||
       MyPL.getEntryPtr("Use Locking")->isUsed() == false ||
       MyPL.getEntryPtr("In Situ Restarting")->isUsed() == false ||
+      MyPL.getEntryPtr("Num Restart Blocks")->isUsed() == false || 
       MyPL.getEntryPtr("Locking Tolerance")->isUsed() == false) {
     if (verbose && MyPID==0) {
       cout << "Failure! Unused parameters: " << endl;
