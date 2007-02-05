@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
   if (argc > 1)
     nx = (int) strtol(argv[1],NULL,10);
   else
-    nx = 50;
+    nx = 256;
   int ny = nx * Comm.NumProc(); // each subdomain is a square
 
   ParameterList GaleriList;
@@ -147,10 +147,12 @@ int main(int argc, char *argv[])
   // use Uncoupled scheme to create the aggregate
   MLList.set("aggregation: type", "Uncoupled");
 
-  // smoother is symmetric Gauss-Seidel. Example file 
+  // smoother is Chebyshev. Example file 
   // `ml/examples/TwoLevelDD/ml_2level_DD.cpp' shows how to use
   // AZTEC's preconditioners as smoothers
-  MLList.set("smoother: type","symmetric Gauss-Seidel");
+
+  MLList.set("smoother: type","Chebyshev");
+  MLList.set("smoother: sweeps",3);
 
   // use both pre and post smoothing
   MLList.set("smoother: pre or post", "both");
@@ -162,8 +164,6 @@ int main(int argc, char *argv[])
   // this is for testing purposes only, you should have 
   // a direct solver for the coarse problem (either Amesos, or the SuperLU/
   // SuperLU_DIST interface of ML)
-  MLList.set("aggregation: type", "MIS");
-  MLList.set("smoother: type","Jacobi");
   MLList.set("coarse: type","Jacobi");
 #endif
 
@@ -198,7 +198,7 @@ int main(int argc, char *argv[])
   
   solver.SetPrecOperator(MLPrec);
   solver.SetAztecOption(AZ_solver, AZ_cg);
-  solver.SetAztecOption(AZ_output, 1);
+  solver.SetAztecOption(AZ_output, 32);
   solver.Iterate(500, 1e-12);
 
   // destroy the preconditioner
