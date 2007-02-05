@@ -289,7 +289,7 @@ ML_Aggregate_Set_MaxCoarseSize( ag, 300);
 	}
 	
         ML_Gen_CoarseSolverSuperLU( ml, coarsest_level);
-	ML_Gen_Solver(ml, ML_MGV, N_levels-1, coarsest_level); 
+	ML_Gen_Solver(ml, ML_MGW, N_levels-1, coarsest_level); 
 	AZ_defaults(options, params);
 	
         options[AZ_solver]   = AZ_gmres;
