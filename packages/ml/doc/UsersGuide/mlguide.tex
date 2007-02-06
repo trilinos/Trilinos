@@ -3250,8 +3250,10 @@ the Trilinos configure line.  Currently, MLMEX will not compile under
 Solaris. 
 
 The build system uses the \texttt{mexext} script from Mathworks to
-detect the appropriate file extension for the architecture.  At least
-at present, this means that cross-compilation is not possible.  
+detect the appropriate file extension for the architecture.  At
+present, this means that cross-compilation is not possible.  It also
+means that MLMEX will only support MATLAB 7.2 (R2006a) and up.
+
 
 \subsection{Using MLMEX}\label{sec:mlmex:usage}
 MLMEX is designed to be interfaced with via the MATLAB script
