@@ -12,12 +12,6 @@
 #include "ml_aztec_utils.h"
 #include <limits.h>
 
-#include <stdint.h>     /* defines uint32_t etc */
-#include <sys/param.h>  /* attempt to define endianness */
-#ifdef linux
-# include <endian.h>    /* attempt to define endianness */
-#endif
-
 #define HASH_SIZE     1024   /* should be a power of two */
 #define MASK          01777  /* should be bit pattern of hash size minus 1 */
 

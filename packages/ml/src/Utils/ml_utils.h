@@ -51,7 +51,13 @@
 #define ML_UseInlinedHashFunction
 
 #ifdef ML_UseInlinedHashFunction
+/* work around for compiling on qt (ax_create_stdint_h.m4 didn't work) */
+#ifdef HAVE_STDINT_H
 #include <stdint.h>
+#endif
+#ifdef HAVE_INTTYPES_H
+#include <inttypes.h>
+#endif
 extern uint32_t ml_unew_val;
 /* Important: If you want to use ML_fast_hash, the table size must be 2^k for a
    positive integer k. */
