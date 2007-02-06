@@ -43,6 +43,9 @@ namespace Teuchos {
 extern "C" {
 #endif
 
+#include "Epetra_DataAccess.h"
+
+  
 // ====================================================================== 
 //! Matrix-vector function for Epetra matrices.
 /*! This is the ML matrix-vector wrap for Epetra matrices.
@@ -169,6 +172,26 @@ int EpetraMatrix2MLMatrix(ML *ml_handle, int level,
  *  \note ML requires A->RowMatrixRowMap() == A->OperatorRangeMap()
  */
 int ML_Operator_WrapEpetraMatrix(Epetra_RowMatrix * A, ML_Operator *Result);
+
+
+//! Wraps an Epetra_CrsMatrix into an ML_Operator, for the given level.
+/*! This is an *ultra* cheap wrap in that I wrap the pointers that come out of
+ *  Epetra's ExtractCrsDataPointers function.
+ *
+ *  You need to have remapped the Epetra Matrix to include all the columns
+ *  before this routine gets called or else this won't work in parallel.
+ *
+ *  \note ML requires A->RowMatrixRowMap() == A->OperatorRangeMap()
+ */
+int ML_Operator_WrapEpetraCrsMatrix(Epetra_CrsMatrix * A, ML_Operator *newMatrix);
+
+
+//! Wraps a ML_Operator into a Epetra_CrsMatrix.
+/*! This is a somewhat cheap wrap in that the pointers get dumped into the Epetra_CrsMatrix.  
+ */
+void Epetra_CrsMatrix_Wrap_ML_Operator(ML_Operator * A, const Epetra_Comm &Comm, const Epetra_Map &RowMap,Epetra_CrsMatrix **Result,Epetra_DataAccess CV=View);
+//void Epetra_CrsMatrix_Wrap_ML_Operator(ML_Operator * A, Epetra_CrsMatrix *Result);
+
 
 //! Multiplies two Epetra_RowMatrix's, returns the results as an Epetra_CrsMatrix.
 Epetra_CrsMatrix *Epetra_MatrixMult(Epetra_RowMatrix *B, Epetra_RowMatrix *Bt);
