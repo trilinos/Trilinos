@@ -1,8 +1,8 @@
-BINTEST +  1.  2.  3.   1.   1.		1
-BINTEST -  7.  4   3.   1.  -1.		1
-BINTEST *  6.  7. 42.   7.   6.		1
-BINTEST / 24. 6.  4.  1/6. -2./3.	1
-BINTEST <  2. 3.  1.    0.   0.		1
-BINTEST <  3. 3.  0.    0.   0.		1
-BINTEST <= 2. 3.  1.    0.   0.		1
-BINTEST <= 4. 3.  0.    0.   0.		1
+BINTEST operator>= 2. 3.  0.    0.   0.
+BINTEST operator>= 4. 3.  1.    0.   0.
+BINTEST operator>  2. 2.  0.    0.   0.
+BINTEST operator>  4. 3.  1.    0.   0.
+BINTEST >= 2. 3.  0.    0.   0.		1
+BINTEST >= 4. 3.  1.    0.   0.		1
+BINTEST >  2. 2.  0.    0.   0.		1
+BINTEST >  4. 3.  1.    0.   0.		1

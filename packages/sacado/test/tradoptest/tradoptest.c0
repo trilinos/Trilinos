@@ -4,6 +4,10 @@ BINTEST operator*  6.  7. 42.   7.   6.
 BINTEST operator/ 24. 6.  4.  1/6. -2./3.
 BINTEST atan2	   3.  4. atan2(3.,4.) 0.16 -0.12
 BINTEST pow	   2.  3.  8.   12.  8.*log(2.)
+BINTEST max 4. 3. 4.	1.   0.
+BINTEST max 4. 5. 5.	0.   1.
+BINTEST min 4. 3. 3.	0.   1.
+BINTEST min 4. 5. 4.	1.   0.
 BINTEST operator<  2. 3.  1.    0.   0.
 BINTEST operator<  3. 3.  0.    0.   0.
 BINTEST operator<= 2. 3.  1.    0.   0.
