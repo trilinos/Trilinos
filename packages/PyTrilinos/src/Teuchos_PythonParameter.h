@@ -217,7 +217,7 @@ namespace Teuchos {
     PyObject * key   = NULL;
     PyObject * value = NULL;
     PyObject * param = NULL;
-    int        pos   = 0;
+    Py_ssize_t pos   = 0;
     string     name;
 
     // The dict pointer must point to a dictionary
@@ -326,11 +326,11 @@ namespace Teuchos {
   // function returns false.
 
   bool updateParameterListWithPyDict(PyObject * dict, ParameterList & plist) {
-    PyObject   * key     = NULL;
-    PyObject   * value   = NULL;
-    int          pos     = 0;
-    bool         result  = true;
-    string       name;
+    PyObject * key     = NULL;
+    PyObject * value   = NULL;
+    Py_ssize_t pos     = 0;
+    bool       result  = true;
+    string     name;
 
     // The dict pointer must point to a dictionary
     if (!PyDict_Check(dict)) return false;
