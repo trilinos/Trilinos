@@ -119,7 +119,7 @@ int main(int argc, char *argv[])
   Teuchos::ParameterList MLList;
   ML_Epetra::SetDefaults("maxwell", MLList);
   
-  MLList.set("output", 0);
+  MLList.set("ML output", 0);
 
   MLList.set("aggregation: type", "Uncoupled");
   MLList.set("coarse: max size", 30);

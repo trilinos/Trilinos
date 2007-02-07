@@ -280,7 +280,7 @@ int main(int argc, char *argv[])
   ML_Epetra::SetDefaults("maxwell", MLList, options, params);
 
   // how verbose ML is
-  MLList.set("output", 10);
+  MLList.set("ML output", 10);
 
   // controls repartitioning (load-balancing) of multigrid operators in parallel
   MLList.set("repartition: enable",1);

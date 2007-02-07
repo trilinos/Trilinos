@@ -287,7 +287,6 @@ int main(int argc, char *argv[])
   double *params  = new double[AZ_PARAMS_SIZE];
   ML_Epetra::SetDefaults("maxwell", MLList, options, params);
 
-  MLList.set("output", 0);
   MLList.set("aggregation: type", "Uncoupled");
   MLList.set("coarse: max size", 30);
   MLList.set("aggregation: threshold", 0.0);

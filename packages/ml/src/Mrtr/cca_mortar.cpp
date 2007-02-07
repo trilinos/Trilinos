@@ -718,7 +718,7 @@ int solve_mortar(struct _DIST_VECTOR *sol, struct _DIST_VECTOR *rhs)
   // argument sublist for ml
   Teuchos::ParameterList& mlparams = params.sublist("ML");
   ML_Epetra::SetDefaults("SA",mlparams);
-  mlparams.set("output",10);
+  mlparams.set("ML output",10);
   mlparams.set("print unused",1/*-2*/);
   mlparams.set("increasing or decreasing","increasing");
   mlparams.set("PDE equations",3);

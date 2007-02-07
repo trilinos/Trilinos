@@ -119,7 +119,7 @@ int main(int argc, char *argv[]) {
           MLList.set("smoother: sweeps", sweeps);
           MLList.set("smoother: damping factor", Damping[k]);
 
-          MLList.set("output", 0);
+          MLList.set("ML output", 0);
 
           Epetra_Time Time(Comm);
 
@@ -161,7 +161,7 @@ int main(int argc, char *argv[]) {
           // MS // to compute the residual in ML.
           //IFPACKList.set("relaxation: zero starting solution", true);
 
-          MLList.set("output", 0);
+          MLList.set("ML output", 0);
           Time.ResetStartTime();
 
           MLPrec = new MultiLevelPreconditioner(*A, MLList);
@@ -219,7 +219,7 @@ int main(int argc, char *argv[]) {
     MLList.set("smoother: type", "MLS");
     MLList.set("smoother: MLS polynomial order", degree);
     MLList.set("smoother: MLS polynomial order", degree);
-    MLList.set("output", 0);
+    MLList.set("ML output", 0);
 
     MultiLevelPreconditioner* MLPrec = 
       new MultiLevelPreconditioner(*A, MLList);

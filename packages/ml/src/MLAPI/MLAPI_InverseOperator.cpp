@@ -185,8 +185,9 @@ void InverseOperator::Reshape(const Operator& Op, const string Type,
       }
     Teuchos::ParameterList mlparams;
     ML_Epetra::SetDefaults("SA",mlparams);
-    int output = List.get("output",-1);
-    if (output != -1) mlparams.set("output",output);
+    int output = List.get("ML output",-47);
+    if (output == -47) output = List.get("output",-1);
+    if (output != -1) mlparams.set("ML output",output);
     mlparams.set("max levels",1);
     int sweeps = List.get("smoother: sweeps",1);
     mlparams.set("coarse: sweeps",sweeps);

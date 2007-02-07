@@ -257,7 +257,8 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
   int MaximumIterations = List_.get("eigen-analysis: max iters", 10);
   string EigenType_ = List_.get("eigen-analysis: type", "cg");
   double boost = List_.get("eigen-analysis: boost for lambda max", 1.0);
-  int OutputLevel = List_.get("output", 10);
+  int OutputLevel = List_.get("ML output", -47);
+  if (OutputLevel == -47) OutputLevel =  List_.get("output", 10);
   omega_ = List_.get("smoother: damping", omega_);
   ML_Set_PrintLevel(OutputLevel);
   bool LowMemory = List_.get("low memory", true);

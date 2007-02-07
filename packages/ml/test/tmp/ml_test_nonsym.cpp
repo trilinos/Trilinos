@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
   ML_Epetra::SetDefaults("SA",MLList);
   
   // output level, 0 being silent and 10 verbose
-  MLList.set("output", 10);
+  MLList.set("ML output", 10);
   // maximum number of levels
   MLList.set("max levels",5);
   // set finest level to 0

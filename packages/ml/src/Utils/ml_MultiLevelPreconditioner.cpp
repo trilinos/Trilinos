@@ -730,7 +730,11 @@ ComputePreconditioner(const bool CheckPreconditioner)
   NumLevels_ = List_.get("max levels",10);  
   MaxLevels_ = NumLevels_;
 
-  int OutputLevel = List_.get("output", 0);  
+  // 'ML output' replaces just 'output' but for backward compatibility
+  // we still allow just 'output' if 'ML output' is not set.
+
+  int OutputLevel = List_.get("ML output", -47);  
+  if (OutputLevel == -47) OutputLevel = List_.get("output", 0);  
   ML_Set_PrintLevel(OutputLevel);
 
   verbose_ = ( (5 < ML_Get_PrintLevel()) && (Comm().MyPID() == 0) );
@@ -1757,7 +1761,8 @@ ReComputePreconditioner()
   // re-build the preconditioner //
   // =========================== //
 
-  int OutputLevel = List_.get("output", 0);  
+  int OutputLevel = List_.get("ML output", -47);  
+  if (OutputLevel == -47) OutputLevel = List_.get("output", 0);  
   ML_Set_PrintLevel(OutputLevel);
 
   Epetra_Time Time(Comm());
@@ -2810,7 +2815,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothingDamping()
     List_.set("field-of-values: restart", 100);
     List_.set("field-of-values: ", 20);
     List_.set("field-of-values: print current status", false);
-    List_.set("output",0);
+    List_.set("ML output",0);
 
     struct ML_Field_Of_Values* field_of_values;
 

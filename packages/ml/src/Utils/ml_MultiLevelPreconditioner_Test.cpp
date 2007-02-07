@@ -162,7 +162,7 @@ TestSmoothers(Teuchos::ParameterList& InputList,
       Time.ResetStartTime();
 
       Teuchos::ParameterList NewList(InputList);
-      NewList.set("output", 0);
+      NewList.set("ML output", 0);
       for (int ilevel = 0 ; ilevel < MaxLevels ; ++ilevel) {
 	sprintf(parameter,"smoother: type (level %d)", LevelID_[ilevel]);
 	NewList.set(parameter, "Jacobi");
@@ -209,7 +209,7 @@ TestSmoothers(Teuchos::ParameterList& InputList,
       Time.ResetStartTime();
 
       Teuchos::ParameterList NewList(InputList);
-      NewList.set("output", 0);
+      NewList.set("ML output", 0);
 
       for (int ilevel = 0 ; ilevel < MaxLevels ; ++ilevel) {
 	sprintf(parameter,"smoother: type (level %d)", LevelID_[ilevel]);
@@ -256,7 +256,7 @@ TestSmoothers(Teuchos::ParameterList& InputList,
       Time.ResetStartTime();
 
       Teuchos::ParameterList NewList(InputList);
-      NewList.set("output", 0);
+      NewList.set("ML output", 0);
 
       for (int ilevel = 0 ; ilevel < MaxLevels ; ++ilevel) {
 	sprintf(parameter,"smoother: type (level %d)", LevelID_[ilevel]);
@@ -303,7 +303,7 @@ TestSmoothers(Teuchos::ParameterList& InputList,
       Time.ResetStartTime();
 
       Teuchos::ParameterList NewList(InputList);
-      NewList.set("output", 0);
+      NewList.set("ML output", 0);
 
       for (int ilevel = 0 ; ilevel < MaxLevels ; ++ilevel) {
 	sprintf(parameter,"smoother: type (level %d)", LevelID_[ilevel]);
@@ -356,7 +356,7 @@ TestSmoothers(Teuchos::ParameterList& InputList,
       Time.ResetStartTime();
 
       Teuchos::ParameterList NewList(InputList);
-      NewList.set("output", 0);
+      NewList.set("ML output", 0);
 
       for (int ilevel = 0 ; ilevel < MaxLevels ; ++ilevel) {
 	sprintf(parameter,"smoother: type (level %d)", LevelID_[ilevel]);
@@ -405,7 +405,7 @@ TestSmoothers(Teuchos::ParameterList& InputList,
       Time.ResetStartTime();
 
       Teuchos::ParameterList NewList(InputList);
-      NewList.set("output", 0);
+      NewList.set("ML output", 0);
 
       for (int ilevel = 0 ; ilevel < MaxLevels ; ++ilevel) {
 	sprintf(parameter,"smoother: type (level %d)", LevelID_[ilevel]);
@@ -453,7 +453,7 @@ TestSmoothers(Teuchos::ParameterList& InputList,
     Time.ResetStartTime();
 
     Teuchos::ParameterList NewList(InputList);
-    NewList.set("output", 0);
+    NewList.set("ML output", 0);
 
     for (int ilevel = 0 ; ilevel < MaxLevels ; ++ilevel) {
       sprintf(parameter,"smoother: type (level %d)", LevelID_[ilevel]);
@@ -500,7 +500,7 @@ TestSmoothers(Teuchos::ParameterList& InputList,
       Time.ResetStartTime();
 
       Teuchos::ParameterList NewList(InputList);
-      NewList.set("output", 0);
+      NewList.set("ML output", 0);
 
       for (int ilevel = 0 ; ilevel < MaxLevels ; ++ilevel) {
         sprintf(parameter,"smoother: type (level %d)", LevelID_[ilevel]);
@@ -550,7 +550,7 @@ TestSmoothers(Teuchos::ParameterList& InputList,
       Time.ResetStartTime();
 
       Teuchos::ParameterList NewList(InputList);
-      NewList.set("output", 0);
+      NewList.set("ML output", 0);
 
       for (int ilevel = 0 ; ilevel < MaxLevels ; ++ilevel) {
         sprintf(parameter,"smoother: type (level %d)", LevelID_[ilevel]);
@@ -606,7 +606,7 @@ TestSmoothers(Teuchos::ParameterList& InputList,
     Time.ResetStartTime();
 
     Teuchos::ParameterList NewList(InputList);
-    NewList.set("output", 0);
+    NewList.set("ML output", 0);
 
     for (int ilevel = 0 ; ilevel < MaxLevels ; ++ilevel) {
       sprintf(parameter,"smoother: type (level %d)", LevelID_[ilevel]);
@@ -615,7 +615,7 @@ TestSmoothers(Teuchos::ParameterList& InputList,
 
     Teuchos::ParameterList& SelfList = NewList.sublist("smoother: self list");
     SetDefaults("DD-ML", SelfList);
-    SelfList.set("output", 0);
+    SelfList.set("ML output", 0);
 
     yo = new ML_Epetra::MultiLevelPreconditioner(*RowMatrix_,NewList, true);
     assert (yo != 0);

@@ -408,7 +408,7 @@ public:
   // This is an example configuration:
   Teuchos::ParameterList& mlparams = params.sublist("ML");
   ML_Epetra::SetDefaults("SA",mlparams);
-  mlparams.set("output",6);
+  mlparams.set("ML output",6);
   mlparams.set("print unused",-2);
   mlparams.set("increasing or decreasing","increasing");
   mlparams.set("PDE equations",3);

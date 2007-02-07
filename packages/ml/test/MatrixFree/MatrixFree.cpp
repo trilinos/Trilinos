@@ -93,11 +93,11 @@ int main(int argc, char *argv[])
   OrigNullSpace.Random();
   Epetra_MultiVector NullSpace(OrigNullSpace);
   Teuchos::ParameterList MLList;
-  MLList.set("output", 0);
+  MLList.set("ML output", 0);
   MLList.set("prec: type", "hybrid");
   MLList.set("smoother: type", "Chebyshev");
   MLList.set("low memory", true);
-  MLList.sublist("ML list").set("output", 0);
+  MLList.sublist("ML list").set("ML output", 0);
   MLList.sublist("ML list").set("max levels", 10);
   MLList.sublist("ML list").set("smoother: type", "Aztec");
   MLList.sublist("ML list").set("aggregation: damping factor", 0.0);
@@ -258,7 +258,7 @@ int main(int argc, char *argv[])
 
   Teuchos::ParameterList MLList2;
   MLList2.set("PDE equations", NumPDEEqns);
-  MLList2.set("output", 0);
+  MLList2.set("ML output", 0);
   MLList2.set("max levels", 10);
   MLList2.set("coarse: max size", 32);
   MLList2.set("smoother: type", "MLS");

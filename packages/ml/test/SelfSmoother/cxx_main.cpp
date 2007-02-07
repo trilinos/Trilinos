@@ -73,7 +73,7 @@ int TestAdditiveSchwarz()
 
   Teuchos::ParameterList List;
   ML_Epetra::SetDefaults("SA", List);
-  List.set("output", 0);
+  List.set("ML output", 0);
   List.set("schwarz: combine mode", Add);
   List.set("cycle applications", 10);
 
@@ -125,7 +125,7 @@ int TestML(const bool UseSelf)
   MLList.set("max levels",5);
   MLList.set("aggregation: type", "Uncoupled");
   MLList.set("smoother: pre or post","pre");
-  MLList.set("output", 0);
+  MLList.set("ML output", 0);
 
   // toggle the following to compare with more classical smoothing
 
@@ -139,7 +139,7 @@ int TestML(const bool UseSelf)
 
     Teuchos::ParameterList& SelfList = MLList.sublist("smoother: self list");
     ML_Epetra::SetDefaults("DD-ML", SelfList);
-    SelfList.set("output", 0);
+    SelfList.set("ML output", 0);
     SelfList.set("coarse: max size", 128);
     SelfList.set("cycle applications", 10);
     SelfList.set("aggregation: damping factor", 0.0);

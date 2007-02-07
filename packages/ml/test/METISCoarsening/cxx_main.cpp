@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
   ParameterList MLList;
   ML_Epetra::SetDefaults("SA",MLList);
   
-  MLList.set("output", 10);
+  MLList.set("ML output", 10);
   MLList.set("max levels",5);
   MLList.set("increasing or decreasing","increasing");
 

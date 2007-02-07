@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
   MLList.set("coarse: max size", 1024);
   MLList.set("aggregation: damping factor", 0.0);
 
-  MLList.set("output", 10);
+  MLList.set("ML output", 10);
   MLList.set("max levels",MaxLevels);
   MLList.set("increasing or decreasing","increasing");
   MLList.set("aggregation: type", "Uncoupled");

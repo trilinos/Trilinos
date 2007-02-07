@@ -578,7 +578,9 @@ int GetFieldOfValuesBox(const Epetra_RowMatrix * RowMatrix,
   double tol = List.get("field-of-values: tolerance", 1.0e-5);
   int restarts = List.get("field-of-values: restart", 100);
 
-  int output = List.get("output", 5);
+  int output = List_.get("ML output", -47);  
+  if (output == -47) output = List_.get("output", 5);  
+
   
   if( output > 5 && MyPID == 0 ) {
     cout << "ML_Anasazi : Estimate box containing the field of values" << endl;

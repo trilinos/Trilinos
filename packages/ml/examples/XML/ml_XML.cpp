@@ -140,7 +140,7 @@ int main(int argc, char *argv[])
   //      MLList.set("read XML", false);
   // to your MLList.
   Teuchos::ParameterList MLList;
-  MLList.set("output", 10);
+  MLList.set("ML output", 10);
 
   // Since a file called ml_ParameterList.xml is present in the working
   // directory, ML will parse this XML file and use it to specify the

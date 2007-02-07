@@ -212,7 +212,7 @@ int main(int argc, char *argv[])
   MLList.set("smoother: ifpack list", IFPACKList);
   MLList.set("eigen-analysis: type", "Anorm");
   
-  MLList.set("output", 0);
+  MLList.set("ML output", 0);
   MLList.set("energy minimization: enable", false);
   MLList.set("energy minimization: type", 16);
 

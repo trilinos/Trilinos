@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
     ParameterList MLList;
 
     ML_Epetra::SetDefaults("SA",MLList);
-    MLList.set("output", 0);
+    MLList.set("ML output", 0);
 
     ML_Epetra::MultiLevelPreconditioner* MLPrec = 
       new ML_Epetra::MultiLevelPreconditioner(*A, MLList);

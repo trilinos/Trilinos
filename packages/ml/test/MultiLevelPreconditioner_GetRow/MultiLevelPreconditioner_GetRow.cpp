@@ -68,7 +68,7 @@ int solve(Epetra_RowMatrix&A, const bool UseIFPACK = true)
   ParameterList MLList;
   ML_Epetra::SetDefaults("SA",MLList);
   MLList.set("aggregation: damping factor", 0.0);
-  MLList.set("output", 0);
+  MLList.set("ML output", 0);
 
   if (UseIFPACK)
   {

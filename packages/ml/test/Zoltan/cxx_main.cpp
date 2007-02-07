@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
   Gallery.GetCartesianCoordinates(x_coord, y_coord, z_coord);
 
   ParameterList MLList;
-  MLList.set("output",8);
+  MLList.set("ML output",8);
 
   MLList.set("max levels",10);
   MLList.set("increasing or decreasing","increasing");

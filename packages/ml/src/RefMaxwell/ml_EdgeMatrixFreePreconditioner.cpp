@@ -94,7 +94,8 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ComputePreconditioner(const bool Ch
   ML_Comm_Create(&ml_comm_);
 
   /* Parameter List Options */
-  int OutputLevel = List_.get("output", 10);
+  int OutputLevel = List_.get("ML output", -47);
+  if (OutputLevel == -47) OutputLevel = List_.get("output", 10);
   num_cycles  = List_.get("cycle applications",1);
   ML_Set_PrintLevel(OutputLevel);
 
