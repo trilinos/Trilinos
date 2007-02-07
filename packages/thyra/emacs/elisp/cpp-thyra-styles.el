@@ -70,6 +70,7 @@
   (setq fill-column 78)
   (setq indent-tabs-mode nil)
   (setq tab-width 2)
+  (setq c-auto-align-backslashes nil)
   )
 
 ;; Note that above, we make 'thyra' the default style since we can not use
