@@ -55,6 +55,9 @@ EpetraExt contains a number of classes.  They can be categorized as follows:
 <li> View: For sub-block views of existing Epetra objects including EpetraExt::CrsGraph_View,
      EpetraExt::CrsMatrix_View and EpetraExt::MultiVector_View
 
+<li> Permutation: EpetraExt::Permutation is used for simple permutations of Epetra_CrsGraph,
+     Epetra_CrsMatrix, and Epetra_MultiVector given a new Epetra_Map object.
+
 </ol>
 
 </ul>
