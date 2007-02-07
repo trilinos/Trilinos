@@ -540,12 +540,12 @@ namespace Anasazi {
       /* A'*X */
       info = temp_vec.Multiply( 'T', 'N', 1.0, *Epetra_MV, *vec_X, 0.0 );
       TEST_FOR_EXCEPTION( info != 0, OperatorError, 
-                          "Anasazi::EpetraSymMVOp::Apply(): Error returned from Epetra_Operator::Apply()" );
+                          "Anasazi::EpetraSymMVOp::Apply(): Error returned from Epetra_MultiVector::Multiply()" );
       
       /* A*(A'*X) */
       info = vec_Y->Multiply( 'N', 'N', 1.0, *Epetra_MV, temp_vec, 0.0 );      
       TEST_FOR_EXCEPTION( info != 0, OperatorError, 
-                          "Anasazi::EpetraSymMVOp::Apply(): Error returned from Epetra_Operator::Apply()" );
+                          "Anasazi::EpetraSymMVOp::Apply(): Error returned from Epetra_MultiVector::Multiply()" );
     } 
     else {
       
@@ -554,13 +554,54 @@ namespace Anasazi {
       /* A*X */
       info = temp_vec.Multiply( 'N', 'N', 1.0, *Epetra_MV, *vec_X, 0.0 );
       TEST_FOR_EXCEPTION( info != 0, OperatorError, 
-                          "Anasazi::EpetraSymMVOp::Apply(): Error returned from Epetra_Operator::Apply()" );
+                          "Anasazi::EpetraSymMVOp::Apply(): Error returned from Epetra_MultiVector::Multiply()" );
       
       /* A'*(A*X) */
       info = vec_Y->Multiply( 'T', 'N', 1.0, *Epetra_MV, temp_vec, 0.0 );
       TEST_FOR_EXCEPTION( info != 0, OperatorError, 
-                          "Anasazi::EpetraSymMVOp::Apply(): Error returned from Epetra_Operator::Apply()" );
+                          "Anasazi::EpetraSymMVOp::Apply(): Error returned from Epetra_MultiVector::Multiply()" );
     }
   }
 
+  ///////////////////////////////////////////////////////////////////////////////
+  //
+  //--------Anasazi::EpetraWSymMVOp Implementation--------------------------------
+  //
+  ///////////////////////////////////////////////////////////////////////////////
+
+  //
+  // Anasazi::Operator constructors
+  //
+  EpetraWSymMVOp::EpetraWSymMVOp(const Teuchos::RefCountPtr<Epetra_MultiVector> &MV, 
+                                const Teuchos::RefCountPtr<Epetra_Operator> &OP ) 
+    : Epetra_MV(MV), Epetra_OP(OP)
+  {
+      MV_blockmap = Teuchos::rcp( &Epetra_MV->Map(), false );
+      Epetra_WMV = Teuchos::rcp( new Epetra_MultiVector( *MV_blockmap, Epetra_MV->NumVectors() ) ); 
+      Epetra_OP->Apply( *Epetra_MV, *Epetra_WMV );
+  }
+  
+  //
+  // AnasaziOperator applications
+  //
+  void EpetraWSymMVOp::Apply ( const MultiVec<double>& X, MultiVec<double>& Y ) const 
+  {
+    int info=0;
+    MultiVec<double> & temp_X = const_cast<MultiVec<double> &>(X);
+    Epetra_MultiVector* vec_X = dynamic_cast<Epetra_MultiVector* >(&temp_X);
+    Epetra_MultiVector* vec_Y = dynamic_cast<Epetra_MultiVector* >(&Y);
+    
+    Epetra_MultiVector temp_vec( *MV_blockmap, temp_X.GetNumberVecs() );
+      
+    /* WA*X */
+    info = temp_vec.Multiply( 'N', 'N', 1.0, *Epetra_WMV, *vec_X, 0.0 );
+    TEST_FOR_EXCEPTION( info != 0, OperatorError, 
+                        "Anasazi::EpetraWSymMVOp::Apply(): Error returned from Epetra_MultiVector::Multiply()" );
+      
+    /* (WA)'*(WA*X) */
+    info = vec_Y->Multiply( 'T', 'N', 1.0, *Epetra_WMV, temp_vec, 0.0 );
+    TEST_FOR_EXCEPTION( info != 0, OperatorError, 
+                        "Anasazi::EpetraWSymMVOp::Apply(): Error returned from Epetra_MultiVector::Multiply()" );
+    
+  }
 } // end namespace Anasazi

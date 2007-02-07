@@ -456,6 +456,48 @@ namespace Anasazi {
     bool isTrans_;
   };
 
+  //////////////////////////////////////////////////////////////////
+  //
+  //--------template class AnasaziEpetraWSymMVOp---------------------
+  //
+  //////////////////////////////////////////////////////////////////
+
+  /*! 
+    \brief Adapter class for creating a weighted symmetric operator from an Epetra_MultiVector and Epetra_Operator.
+
+    This class will apply the operation \f$(WA)^T*WA\f$ for the \c Apply method of the
+    Anasazi::Operator.  The Anasazi::EpetraWSymMvOp operator is useful when trying to compute
+    a few singular values of the Epetra_MultiVector \f$A\f$ under the weighting matrix \f$W\f$.  
+    The singular values are the square-root of the eigenvalues of \f$(WA)^T*WA\f$.
+
+    \note The Epetra package performs double-precision arithmetic, so the use of Epetra with Anasazi will
+    only provide a double-precision eigensolver.
+  */
+
+  class EpetraWSymMVOp : public virtual Operator<double> {
+  public:
+    //! Basic constructor for applying operator \f$A^TA\f$ [default] or \f$AA^T\f$.
+    /*! If \c isTrans is false this operator will apply \f$A^TA\f$, else it will apply \f$AA^T\f$.
+    */
+    EpetraWSymMVOp(const Teuchos::RefCountPtr<Epetra_MultiVector> &MV, 
+		   const Teuchos::RefCountPtr<Epetra_Operator> &OP );
+    
+    //! Destructor
+    ~EpetraWSymMVOp() {};
+    
+    //! Apply method 
+    /*! This method will apply \f$(WA)^T*WA\f$ to \c X, returning \c Y.
+     */
+    void Apply ( const MultiVec<double>& X, MultiVec<double>& Y ) const; 
+
+  private:
+    Teuchos::RefCountPtr<Epetra_MultiVector> Epetra_MV, Epetra_WMV;
+    Teuchos::RefCountPtr<Epetra_Operator> Epetra_OP;
+    Teuchos::RefCountPtr<const Epetra_Map> MV_localmap;
+    Teuchos::RefCountPtr<const Epetra_BlockMap> MV_blockmap;
+  };
+
+  
   
   ////////////////////////////////////////////////////////////////////
   //
