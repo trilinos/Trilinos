@@ -64,6 +64,7 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
   struct aztec_context  *Ccontext;
   struct ML_vbrdata     *Cvbr_mat;
   int hashTableIsPowerOfTwo = 0;
+  int nearbyIndex;
 
 
   printf("This is an experimental routine. It basically works but ...\n");
@@ -451,6 +452,14 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
     if (Bmatrix->getrow->pre_comm != NULL) 
       i = Bmatrix->getrow->pre_comm->total_rcv_length;
 
+    /* Record a "nearby" index for use as a column index in any empty rows. */
+    /* This avoids creating a communication pattern in which a single       */
+    /* processor must communicate with all others in                        */
+    /* ML_CommInfoOP_GenUsingGIDExternals().                                */
+
+    if (subB_Nnz > 0) nearbyIndex = Bcols[0];
+    else              nearbyIndex = 0;
+
     tcols = 0;
     hash_used = 0;
     if (hashTableIsPowerOfTwo)
@@ -751,7 +760,7 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
       /* if entire row is zero, store one entry to avoid empty row */
 
       if (Ncols == 0) {
-	Cbindx[next_nz] = 0;
+	Cbindx[next_nz] = nearbyIndex;
 	Cindx[next_nz] = next_value;
 	next_nz++;
 	for (iii = 0; iii < NcolsPerBlock; iii++) {
@@ -879,6 +888,7 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
    int *acc_col_ptr, *Bcol_ptr; double *acc_val_ptr, *Bval_ptr;
    int allzeros;
    int hashTableIsPowerOfTwo = 0;
+   int nearbyIndex;
    /*
    t1 = GetClock();
    */
@@ -1236,6 +1246,14 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
    tcols = 0;
    hash_used = 0;
 
+   /* Record a "nearby" index for use as a column index in any empty rows. */
+   /* This avoids creating a communication pattern in which a single       */
+   /* processor must communicate with all others in                        */
+   /* ML_CommInfoOP_GenUsingGIDExternals().                                */
+
+   if (subB_Nnz > 0) nearbyIndex = Bcols[0];
+   else              nearbyIndex = 0;
+
    if (hashTableIsPowerOfTwo)
    {
      int ilm1 = index_length-1;
@@ -1397,10 +1415,10 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
 	acc_col_ptr++;
       }
 
-      /* empty row. Let's just put a zero in the first column */
+      /* empty row. Let's put a zero in a nearby column. */
 
       if (Ncols == 0) {
-         accum_col[Ncols] = 0;
+         accum_col[Ncols] = nearbyIndex;
          accum_val[Ncols++] = 0.0;
       }
 
