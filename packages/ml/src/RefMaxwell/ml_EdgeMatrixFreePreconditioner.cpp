@@ -14,6 +14,9 @@ double cms_compute_residual(const Epetra_Operator * op,const Epetra_MultiVector&
 extern void Epetra_CrsMatrix_Print(const Epetra_CrsMatrix& A, ostream& os);
 extern void MVOUT (const Epetra_MultiVector & A, ostream & os);
 extern void IVOUT(const Epetra_IntVector & A, ostream & os);
+extern void MVOUT2(const Epetra_MultiVector & A,char* pref,int idx);
+
+
 
 // ================================================ ====== ==== ==== == =
 /* This function does a "view" getrow in an ML_Operator.  This is intended to be
@@ -32,7 +35,6 @@ int CSR_getrow_ones(ML_Operator *data, int N_requested_rows, int requested_rows[
 {
    register int    *bindx, j;
    int     *rowptr,  row, itemp;
-   register double *val;
    struct ML_CSR_MSRdata *input_matrix;
    ML_Operator *mat_in;
 
@@ -53,7 +55,6 @@ int CSR_getrow_ones(ML_Operator *data, int N_requested_rows, int requested_rows[
    for (j = 0 ; j < *row_lengths; j++) {
       *columns++ = *bindx++;
    }
-   val    = &(input_matrix->values[itemp]);
    for (j = 0 ; j < *row_lengths; j++) {
       *values++  = 1;
    }
@@ -133,6 +134,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ComputePreconditioner(const bool Ch
 
   /* Setup Preconditioner on Coarse Matrix */
   printf("EMFP: Building Coarse Precond\n");
+  List_.print(cout);
   CoarsePC = new MultiLevelPreconditioner(*CoarseMatrix,List_);
   if(!CoarsePC) ML_CHK_ERR(-2);
 
@@ -165,7 +167,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::SetupSmoother()
   int MaximumIterations = List_.get("eigen-analysis: max iters", 10);
   string EigenType_ = List_.get("eigen-analysis: type", "cg");
   double boost = List_.get("eigen-analysis: boost for lambda max", 1.0);
-  double omega_ = List_.get("smoother: damping", 1.0);
+  //  double omega_ = List_.get("smoother: damping", 1.0);
 
 
   ofstream ofs("inv_diagonal.dat");
@@ -182,17 +184,29 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::SetupSmoother()
   else
     ML_CHK_ERR(-1); // not recognized
 
+  //  lambda_max=2.208272181732208e+00;// EGREGIOUS HAQ!!!!!
+  lambda_max=3.546366881747402e+01;
+    printf("WARNING: Hacking lambda_max to %6.4e\n",lambda_max);
+  double alpha = List_.get("chebyshev: alpha",30.0001);
+  lambda_min=lambda_max / alpha;
+  
   /* Setup the Smoother's List*/
   IFPACKList.set("chebyshev: min eigenvalue", lambda_min);
   IFPACKList.set("chebyshev: max eigenvalue", boost * lambda_max);
+  IFPACKList.set("chebyshev: ratio eigenvalue",alpha);
   IFPACKList.set("chebyshev: operator inv diagonal", InvDiagonal_);
   IFPACKList.set("chebyshev: degree", PolynomialDegree);
+  IFPACKList.set("chebyshev: zero starting solution",false);
+
   printf("Chebyshev Smoother: lmin/lmax %6.4e/%6.4e\n",lambda_min,lambda_max);//DEBUG
+
+  //NTS: Need to create two of these lists, one to use in the first iteration
+  // (with zero starting solution set to true) and another to use when it's set
+  // to false.
   
   /* Build the Smoother */
   Smoother_ = new Ifpack_Chebyshev(Operator_);
   if (Smoother_ == 0) ML_CHK_ERR(-1); // memory error?
-  IFPACKList.set("chebyshev: zero starting solution", true);
   ML_CHK_ERR(Smoother_->SetParameters(IFPACKList));
   ML_CHK_ERR(Smoother_->Initialize());
   ML_CHK_ERR(Smoother_->Compute());
@@ -272,7 +286,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
     MLAggr->coarsen_scheme = ML_AGGR_METIS;
     ML_Aggregate_Set_NodesPerAggr(0, MLAggr, 0, NodesPerAggr);
   }/*end if*/
-  else {ML_CHK_ERR(-1);}
+  else {printf("aggregation: type = %d\n",CoarsenType.c_str()); ML_CHK_ERR(-1);}
 
   /* Aggregate Nodes */
   int NumAggregates = ML_Aggregate_Coarsen(MLAggr, TMT_ML, &P, ml_comm_);
@@ -280,7 +294,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
     cerr << "Found 0 aggregates, perhaps the problem is too small." << endl;
     ML_CHK_ERR(-2);
   }/*end if*/
-  else printf("[%d] EMFP: %d aggregates created %d invec_leng=%d\n",Comm_->MyPID(),NumAggregates,P->invec_leng);
+  else printf("[%d] EMFP: %d aggregates created invec_leng=%d\n",Comm_->MyPID(),NumAggregates,P->invec_leng);
 
 
   /* DEBUG: Dump aggregates */
@@ -322,8 +336,10 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
   /* Allocate the Prolongator */
   printf("[%d] EMFP: Building Prolongator\n",Comm_->MyPID());
   Prolongator=new Epetra_CrsMatrix(Copy,*EdgeRangeMap_,0);
-  int ne1, *idx1, idx2[dim*AbsD0P->max_nz_per_row];
-  double *vals1, vals2[dim*AbsD0P->max_nz_per_row];
+  int ne1, *idx1, *idx2;
+  idx2=new int [dim*AbsD0P->max_nz_per_row];
+  double *vals1, *vals2;
+  vals2=new double[dim*AbsD0P->max_nz_per_row];
 
   for(int i=0;i<Prolongator->NumMyRows();i++){
     Psparse->ExtractMyRowView(i,ne1,vals1,idx1);
@@ -353,6 +369,9 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
   ML_Operator_Destroy(&P);
   delete Psparse;
 
+
+  delete [] idx2;
+  delete [] vals2;
   return 0;
 }/*end BuildProlongator*/
   
@@ -414,6 +433,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::DestroyPreconditioner(){
   if (CoarsePC) {delete CoarsePC; CoarsePC=0;}
   if (CoarseMap_) {delete CoarseMap_; CoarseMap_=0;}
   if (Smoother_) {delete Smoother_; Smoother_=0;}
+  return 0;
 }/*end DestroyPreconditioner*/
 
 
@@ -421,6 +441,10 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::DestroyPreconditioner(){
 // ================================================ ====== ==== ==== == = 
 //! Apply the preconditioner to an Epetra_MultiVector X, puts the result in Y
 int ML_Epetra::EdgeMatrixFreePreconditioner::ApplyInverse(const Epetra_MultiVector& B, Epetra_MultiVector& X) const{
+
+  static int iteration=0;  //HAQ
+
+
   /* Sanity Checks */
   int NumVectors=B.NumVectors();
   if (!B.Map().SameAs(*EdgeDomainMap_)) ML_CHK_ERR(-1);
@@ -433,60 +457,69 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ApplyInverse(const Epetra_MultiVect
 
   // NTS: Matrices appear to be correct.  Add debugging output in here to see
   // what is breaking.  FIX!!!!!
-  double nrm    [NumVectors];
-  //  X.Norm2(nrm);printf("Norm 0 %6.4e\n",nrm[0]);      
   for(int i=0;i<num_cycles;i++){    
     /* Pre-smoothing */
+    MVOUT2(X,"xinit11",iteration);
+    
+
     double re0=cms_compute_residual(Operator_,B,X);
-    ML_CHK_ERR(Smoother_->ApplyInverse(X,X));
+    ML_CHK_ERR(Smoother_->ApplyInverse(B,X));
+
+    MVOUT2(X,"sm11-1",iteration);
+
     //cms_residual_check("(1,1)-S1",Operator_,X,Y);//DEBUG
     double re1=cms_compute_residual(Operator_,B,X);
 
-    //    X.Norm2(nrm);printf("Norm 1 %6.4e\n",nrm[0]);
-    /* Calculate Residual (r_
-       e = b - (S+M+Addon) * x) */
-    ML_CHK_ERR(Operator_->Apply(B,r_edge));
+    /* Calculate Residual (r_e = b - (S+M+Addon) * x) */
+    ML_CHK_ERR(Operator_->Apply(X,r_edge));
     ML_CHK_ERR(r_edge.Update(1.0,B,-1.0));
-    //    r_edge.Norm2(nrm);printf("Norm 2 %6.4e\n",nrm[0]);
-    
+
+    MVOUT2(r_edge,"re11",iteration);
+
     /* Xfer to coarse grid (r_n = P' * r_e) */
     ML_CHK_ERR(Prolongator->Multiply(true,r_edge,r_node));
 
-    //    r_node.Norm2(nrm);printf("Norm 3 %6.4e\n",nrm[0]);
+    MVOUT2(r_node,"rn11",iteration);
     
     /* AMG on coarse grid  (e_n = (CoarseMatrix)^{-1} r_n) */
     ML_CHK_ERR(CoarsePC->ApplyInverse(r_node,e_node));
 
+    MVOUT2(e_node,"en11",iteration);
+    
     double rn1=cms_compute_residual(CoarseMatrix,r_node,e_node);
 
     
     //    cms_residual_check("(1,1)-C ",CoarseMatrix,r_node,e_node);//DEBUG
-    //    e_node.Norm2(nrm);printf("Norm 4 %6.4e\n",nrm[0]);
 
-        /* Xfer back to fine grid (e_e = P * e_n) */
+    /* Xfer back to fine grid (e_e = P * e_n) */
     ML_CHK_ERR(Prolongator->Multiply(false,e_node,e_edge));
-    //    e_edge.Norm2(nrm);printf("Norm 5 %6.4e\n",nrm[0]);
+
+    MVOUT2(e_edge,"ee11",iteration);
     
     /* Add in correction (x = x + e_e) */
     ML_CHK_ERR(X.Update(1.0,e_edge,1.0));
 
+    MVOUT2(X,"xup11",iteration);
+    
     double re2=cms_compute_residual(Operator_,B,X);
     
-    //    X.Norm2(nrm);printf("Norm 6 %6.4e\n",nrm[0]);
     
     /* Post-Smoothing*/
-    ML_CHK_ERR(Smoother_->ApplyInverse(X,X));
+    ML_CHK_ERR(Smoother_->ApplyInverse(B,X));
 
     double re3=cms_compute_residual(Operator_,B,X);
     
-    //    X.Norm2(nrm);printf("Norm 7 %6.4e\n",nrm[0]);    
     //    cms_residual_check("(1,1)-S1",Operator_,temp_edge2,Y);//DEBUG    
 
     if(Comm_->MyPID()==0)
-      printf("11 Resid Reduction: [%6.4e] %6.4e / %6.4e / %6.4e / %6.4e\n",rn1,re1/re0,re2/re1,re3/re2,re3/re0);
+      printf("11 Resid Reduction: %6.4e / %6.4e / %6.4e / %6.4e\n",re1/re0,re2/re1,re3/re2,re3/re0);
 
   }/*end for*/
 
+  /* Debug - Dump Vectors */
+  MVOUT2(B,"b11",iteration);
+  MVOUT2(X,"x11",iteration);
+  iteration++;//HAQ
   
   return 0;
 }/*end ApplyInverse*/
