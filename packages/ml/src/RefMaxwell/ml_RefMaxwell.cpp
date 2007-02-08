@@ -196,7 +196,7 @@ void cms_residual_check(const char * tag, const Epetra_Operator * op,const Epetr
     for(int i=0;i<NumVectors;i++)
       printf("%s[%d]: Norm Reduction %6.4e [%6.4e]\n",tag,i,norm_new[i] / norm_old[i],norm_old[i]);  
 
-  delete norm_old; delete_norm_new;
+  delete norm_old; delete norm_new;
 }
 
 double cms_compute_residual(const Epetra_Operator * op,const Epetra_MultiVector& rhs, const Epetra_MultiVector& lhs){
@@ -213,7 +213,7 @@ double cms_compute_residual(const Epetra_Operator * op,const Epetra_MultiVector&
   double rv=norm_new[0] / norm_old[0];
 
 
-  delete norm_old; delete_norm_new;
+  delete norm_old; delete norm_new;
   return rv;
 }
 
