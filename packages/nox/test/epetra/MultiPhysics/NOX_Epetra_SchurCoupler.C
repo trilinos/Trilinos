@@ -35,7 +35,7 @@
 //  $Revision$
 // ************************************************************************
 //@HEADER
-                                                                                
+                                                                               #include "Epetra_Map.h" 
 #include "NOX_Epetra_SchurCoupler.H"
 
 using namespace NOX;
