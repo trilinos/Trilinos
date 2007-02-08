@@ -277,6 +277,7 @@ int main(int argc, char *argv[])
   NOX::Solver::Manager solver(grp, statusTestsCombo, solverParametersPtr);
 
   // Print the starting point
+  grp->computeF();
   cout << "\n" << "-- Starting Point --" << "\n";
   cout << "|| F(x0) || = " << utils.sciformat(grp->getNormF()) << endl;
   // grp.print();
