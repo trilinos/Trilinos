@@ -37,6 +37,7 @@
 #include "Amesos.h"
 #include "Teuchos_dyn_cast.hpp"
 #include "Teuchos_TimeMonitor.hpp"
+#include "Teuchos_TypeNameTraits.hpp"
 
 #ifdef HAVE_AMESOS_KLU
 #include "Amesos_Klu.h"
@@ -279,11 +280,17 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
     // Do the initial factorization
     {
       Teuchos::TimeMonitor symbolicTimeMonitor(*symbolicTimer);
-      amesosSolver->SymbolicFactorization();
+      const int err = amesosSolver->SymbolicFactorization();
+      TEST_FOR_EXCEPTION( 0!=err, CatastrophicSolveFailure,
+        "Error, SymbolicFactorization() on amesos solver of type \'"<<Teuchos::typeName(*amesosSolver)<<"\'\n"
+        "returned error code "<<err<<"!" );
     }
     {
       Teuchos::TimeMonitor factorTimeMonitor(*factorTimer);
-      amesosSolver->NumericFactorization();
+      const int err = amesosSolver->NumericFactorization();
+      TEST_FOR_EXCEPTION( 0!=err, CatastrophicSolveFailure,
+        "Error, NumericFactorization() on amesos solver of type \'"<<Teuchos::typeName(*amesosSolver)<<"\'\n"
+        "returned error code "<<err<<"!" );
     }
     // Initialize the LOWS object and we are done!
     amesosOp->initialize(fwdOp,fwdOpSrc,epetraLP,amesosSolver,epetraFwdOpTransp,epetraFwdOpScalar);
@@ -307,11 +314,17 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
     // Repivot if asked
     if(refactorizationPolicy_==Amesos::REPIVOT_ON_REFACTORIZATION) {
       Teuchos::TimeMonitor symbolicTimeMonitor(*symbolicTimer);
-      amesosSolver->SymbolicFactorization();
+      const int err = amesosSolver->SymbolicFactorization();
+      TEST_FOR_EXCEPTION( 0!=err, CatastrophicSolveFailure,
+        "Error, SymbolicFactorization() on amesos solver of type \'"<<Teuchos::typeName(*amesosSolver)<<"\'\n"
+        "returned error code "<<err<<"!" );
     }
     {
       Teuchos::TimeMonitor factorTimeMonitor(*factorTimer);
-      amesosSolver->NumericFactorization();
+      const int err = amesosSolver->NumericFactorization();
+      TEST_FOR_EXCEPTION( 0!=err, CatastrophicSolveFailure,
+        "Error, NumericFactorization() on amesos solver of type \'"<<Teuchos::typeName(*amesosSolver)<<"\'\n"
+        "returned error code "<<err<<"!" );
     }
     // Reinitialize the LOWS object and we are done! (we must do this to get the
     // possibly new transpose and scaling factors back in)

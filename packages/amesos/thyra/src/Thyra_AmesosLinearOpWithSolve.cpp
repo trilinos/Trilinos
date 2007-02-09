@@ -239,9 +239,10 @@ void AmesosLinearOpWithSolve::solve(
   //
   const bool oldUseTranspose = amesosSolver_->UseTranspose();
   amesosSolver_->SetUseTranspose(amesosOpTransp==TRANS);
-  TEST_FOR_EXCEPTION(
-    0!=amesosSolver_->Solve(), CatastrophicSolveFailure
-    ,"Error, the Amesos solver of type \'"<<typeName(*amesosSolver_)<<"\' could not perform the solve!"
+  const int err = amesosSolver_->Solve();
+  TEST_FOR_EXCEPTION( 0!=err, CatastrophicSolveFailure,
+    "Error, the function Solve() on the amesos solver of type\n"
+    "\'"<<typeName(*amesosSolver_)<<"\' failed with error code "<<err<<"!"
     );
   amesosSolver_->SetUseTranspose(oldUseTranspose);
   //
