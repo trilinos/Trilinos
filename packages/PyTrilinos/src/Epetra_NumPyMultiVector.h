@@ -46,9 +46,9 @@ public:
   Epetra_NumPyMultiVector(const Epetra_MultiVector & source);
   Epetra_NumPyMultiVector(const Epetra_BlockMap & blockMap, PyObject * pyObject);
   Epetra_NumPyMultiVector(Epetra_DataAccess CV, const Epetra_NumPyMultiVector & source,
-			  PyObject * range);
+			  PyObject * range = NULL);
   Epetra_NumPyMultiVector(Epetra_DataAccess CV, const Epetra_MultiVector & source,
-			  PyObject * range);
+			  PyObject * range = NULL);
   Epetra_NumPyMultiVector(PyObject * pyObject);
 
   // Destructor
@@ -98,9 +98,9 @@ private:
   static double     * getArray(     PyObject *);
   static Epetra_Map & getMap(       PyObject *);
   static int          getNumVectors(PyObject *);
-  static int        * getRange(     PyObject *);
-  static int          getRangeLen(  PyObject *);
   static int          getVectorSize(PyObject *);
+  static int        * getRange(     PyObject *, const Epetra_MultiVector &);
+  static int          getRangeLen(  PyObject *, const Epetra_MultiVector &);
   static double     * getArray(     const Epetra_BlockMap &, PyObject *);
   static int          getNumVectors(const Epetra_BlockMap &, PyObject *);
 

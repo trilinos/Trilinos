@@ -231,6 +231,16 @@ class EpetraVectorTestCase(unittest.TestCase):
         self.assertRaises((TypeError,ValueError), Epetra.Vector, list)
 
     def testConstructor16(self):
+        "Test Epetra.Vector (Copy,Vector) constructor"
+        list = [0, 1, 2, 3, 4, 5, 5, 4, 3]
+        ev1  = Epetra.Vector(self.map,list)
+        ev2  = Epetra.Vector(Epetra.Copy,ev1)
+        self.assertEquals(ev2.NumVectors(),1)
+        self.assertEquals(ev2.MyLength(),self.length)
+        self.assertEquals(ev2.GlobalLength(), self.length*comm.NumProc())
+        self.failUnless((abs(ev1[:] - ev2[:]) < 1.0e-10).all())
+
+    def testConstructor17(self):
         "Test Epetra.Vector (Copy,MultiVector,int) constructor"
         list = [[0, 1, 2, 3, 4, 5, 5, 4, 3],
                 [2, 1, 0, 0, 1, 2, 3, 4, 5]]
@@ -242,7 +252,29 @@ class EpetraVectorTestCase(unittest.TestCase):
         for i in range(ev.shape[0]):
             self.assertEquals(ev[i], emv[1,i])
 
-    def testConstructor17(self):
+    def testConstructor18(self):
+        "Test Epetra.Vector (View,Vector) constructor"
+        list = [0, 1, 2, 3, 4, 5, 5, 4, 3]
+        ev1  = Epetra.Vector(self.map,list)
+        ev2  = Epetra.Vector(Epetra.View,ev1)
+        self.assertEquals(ev2.NumVectors(),1)
+        self.assertEquals(ev2.MyLength(),self.length)
+        self.assertEquals(ev2.GlobalLength(), self.length*comm.NumProc())
+        self.failUnless((ev1 == ev2[:]).all())
+
+    def testConstructor19(self):
+        "Test Epetra.Vector (View,MultiVector,int) constructor"
+        list = [[0, 1, 2, 3, 4, 5, 5, 4, 3],
+                [2, 1, 0, 0, 1, 2, 3, 4, 5]]
+        emv  = Epetra.MultiVector(self.map,list)
+        ev   = Epetra.Vector(Epetra.View,emv,1)
+        self.assertEquals(ev.NumVectors(),1)
+        self.assertEquals(ev.MyLength(),self.length)
+        self.assertEquals(ev.GlobalLength(), self.length*comm.NumProc())
+        for i in range(ev.shape[0]):
+            self.assertEquals(ev[i], emv[1,i])
+
+    def testConstructor20(self):
         "Test Epetra.Vector copy constructor"
         ev1 = Epetra.Vector(self.map)
         ev2 = Epetra.Vector(ev1)

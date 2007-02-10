@@ -229,6 +229,17 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
         self.assertRaises((TypeError,ValueError), Epetra.MultiVector, list)
 
     def testConstructor18(self):
+        "Test Epetra.MultiVector (Copy,MultiVector) constructor"
+        list = [[0, 1, 2, 3, 4, 5, 5, 4, 3],
+                [2, 1, 0, 0, 1, 2, 3, 4, 5]]
+        emv1  = Epetra.MultiVector(self.map,list)
+        emv2  = Epetra.MultiVector(Epetra.Copy,emv1)
+        self.assertEquals(emv2.NumVectors(),2)
+        self.assertEquals(emv2.MyLength(),self.length)
+        self.assertEquals(emv2.GlobalLength(), self.length*comm.NumProc())
+        self.failUnless((abs(emv2[:,:] - emv1[:,:]) < 1.0e-10).all())
+
+    def testConstructor19(self):
         "Test Epetra.MultiVector (Copy,MultiVector,range-of-1) constructor"
         list = [[0, 1, 2, 3, 4, 5, 5, 4, 3],
                 [2, 1, 0, 0, 1, 2, 3, 4, 5]]
@@ -239,7 +250,7 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
         self.assertEquals(emv2.GlobalLength(), self.length*comm.NumProc())
         self.failUnless((abs(emv2[0,:] - emv1[1,:]) < 1.0e-10).all())
 
-    def testConstructor19(self):
+    def testConstructor20(self):
         "Test Epetra.MultiVector (Copy,MultiVector,range-of-4) constructor"
         squareArray = [[-1.2,  3.4, -5.6],
                        [ 7.8, -9.0,  1.2],
@@ -253,7 +264,7 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
         for i in range(emv2.shape[0]):
             self.assertEquals(emv2[i], emv1[i])
 
-    def testConstructor20(self):
+    def testConstructor21(self):
         "Test Epetra.MultiVector (Copy,MultiVector,discontinuous-range) constructor"
         squareArray = [[-1.2,  3.4, -5.6],
                        [ 7.8, -9.0,  1.2],
@@ -268,7 +279,7 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
         for i in range(emv2.shape[0]):
             self.assertEquals(emv2[i], emv1[indexes[i]])
 
-    def testConstructor21(self):
+    def testConstructor22(self):
         "Test Epetra.MultiVector (Copy,MultiVector,bad-list) constructor"
         squareArray = [[-1.2,  3.4, -5.6],
                        [ 7.8, -9.0,  1.2],
@@ -279,7 +290,18 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
         self.assertRaises((TypeError,ValueError), Epetra.MultiVector,
                           Epetra.Copy, emv1, indexes)
 
-    def testConstructor22(self):
+    def testConstructor23(self):
+        "Test Epetra.MultiVector (View,MultiVector) constructor"
+        list = [[0, 1, 2, 3, 4, 5, 5, 4, 3],
+                [2, 1, 0, 0, 1, 2, 3, 4, 5]]
+        emv1  = Epetra.MultiVector(self.map,list)
+        emv2  = Epetra.MultiVector(Epetra.View,emv1)
+        self.assertEquals(emv2.NumVectors(),2)
+        self.assertEquals(emv2.MyLength(),self.length)
+        self.assertEquals(emv2.GlobalLength(), self.length*comm.NumProc())
+        self.failUnless((emv2[:,:] == emv1[:,:]).all())
+
+    def testConstructor24(self):
         "Test Epetra.MultiVector (View,MultiVector,range-of-1) constructor"
         list = [[0, 1, 2, 3, 4, 5, 5, 4, 3],
                 [2, 1, 0, 0, 1, 2, 3, 4, 5]]
@@ -290,7 +312,7 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
         self.assertEquals(emv2.GlobalLength(), self.length*comm.NumProc())
         self.failUnless((emv2[0,:] == emv1[1,:]).all())
 
-    def testConstructor23(self):
+    def testConstructor25(self):
         "Test Epetra.MultiVector (View,MultiVector,range-of-4) constructor"
         squareArray = [[-1.2,  3.4, -5.6],
                        [ 7.8, -9.0,  1.2],
@@ -304,7 +326,7 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
         for i in range(emv2.shape[0]):
             self.assertEquals(emv2[i], emv1[i])
 
-    def testConstructor24(self):
+    def testConstructor26(self):
         "Test Epetra.MultiVector (View,MultiVector,discontinuous-range) constructor"
         squareArray = [[-1.2,  3.4, -5.6],
                        [ 7.8, -9.0,  1.2],
@@ -319,7 +341,7 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
         for i in range(emv2.shape[0]):
             self.assertEquals(emv2[i], emv1[indexes[i]])
 
-    def testConstructor25(self):
+    def testConstructor27(self):
         "Test Epetra.MultiVector (View,MultiVector,bad-list) constructor"
         squareArray = [[-1.2,  3.4, -5.6],
                        [ 7.8, -9.0,  1.2],
@@ -330,7 +352,7 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
         self.assertRaises((TypeError,ValueError), Epetra.MultiVector,
                           Epetra.View, emv1, indexes)
 
-    def testConstructor26(self):
+    def testConstructor28(self):
         "Test Epetra.MultiVector copy constructor"
         emv1 = Epetra.MultiVector(self.map,4)
         emv2 = Epetra.MultiVector(emv1)

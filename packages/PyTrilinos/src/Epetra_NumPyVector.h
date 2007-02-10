@@ -45,6 +45,7 @@ public:
   Epetra_NumPyVector(const Epetra_BlockMap & blockMap, bool zeroOut=true);
   Epetra_NumPyVector(const Epetra_Vector & source);
   Epetra_NumPyVector(const Epetra_BlockMap & blockMap, PyObject * pyObject);
+  Epetra_NumPyVector(Epetra_DataAccess CV, const Epetra_Vector & source);
   Epetra_NumPyVector(Epetra_DataAccess CV, const Epetra_MultiVector & source, int index);
   Epetra_NumPyVector(PyObject * pyObject);
 

@@ -69,9 +69,9 @@ PyTrilinos To Do List
 
 ****** Improve package documentation strings
 
-****** Have PyTrilinos package install a correct __init__.py
+[Done] Have PyTrilinos package install a correct __init__.py
 
-****** Wrap Epetra_Flops class
+[Done] Wrap Epetra_Flops class
 
 [Done] Parallelization (wrap Epetra_MpiComm)
 
@@ -83,13 +83,13 @@ PyTrilinos To Do List
     [Done] Move Epetra module to RawEpetra
     [Done] Write new Epetra module that redefines Vector class to
     	   inherit from UserArray and Epetra_NumPyVector classes
-        ++++++ Epetra_MultiVector
+        [Done] Epetra_MultiVector
         [Done] Epetra_Vector
-        ++++++ Epetra_SerialDenseVector
-        ++++++ Epetra_SerialDenseMatrix
-        ++++++ Epetra_IntVector
-        ++++++ Epetra_IntSerialDenseVector
-        ++++++ Epetra_IntSerialDenseMatrix
+        [Done] Epetra_SerialDenseVector
+        [Done] Epetra_SerialDenseMatrix
+        [Done] Epetra_IntVector
+        [Done] Epetra_IntSerialDenseVector
+        [Done] Epetra_IntSerialDenseMatrix
     [Done] Protect Epetra.{Vector,...} against changing array attribute
     ------ Use typemaps to change (double *) or (int *) arguments to
            Numeric arrays
@@ -102,17 +102,25 @@ PyTrilinos To Do List
 ****** Get rid of extraneous C++ code
     [Done] CallbackVectorLoadTest
     [Done] PyObjectHolder
-    ------ Epetra_VectorHelper
-    ------ NumPyWrapper
-    ------ NumPyArray
+    [Done] Epetra_VectorHelper
+    [Done] NumPyWrapper
+    [Done] NumPyArray
+    ------ Epetra_DArray
+    ------ Epetra_IArray
+    ------ MLAPI_PyMatrix
+    ------ PyEpetra_Utils.h
 
-****** Make testVector.py unit test more extensive
+[Done] Make testVector.py unit test more extensive
 
-****** Have PyInterface automatically set the associated attribute in the
-       Problem class, or come up with a cleaner solution.
+[Done] Have PyInterface automatically set the associated attribute in
+       the Problem class, or come up with a cleaner solution.  Cleaner
+       solution: NOX.Epetra.Interface.Required (and Jacobian and
+       Preconditioner) can now be inherited from directly in python
+       and their computeF(), etc., methods are called back
+       automatically.
 
 ==================================================
-Summer, 2006, List of Project Tasks (Tentative)
+Summer, 2007, List of Project Tasks (Tentative)
 
 * Complete wrapping of Epetra
   - Other classes

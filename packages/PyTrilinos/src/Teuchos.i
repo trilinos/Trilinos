@@ -30,7 +30,7 @@
 
 // This documentation string will be the python help facility help
 // string
-%define DOCSTRING
+%define TEUCHOS_DOCSTRING
 "The Teuchos module allows access to The Trilinos package
 Teuchos.  Use the python help() facility for local documentation
 on classes and methods, or see the on-line documentation for more
@@ -41,7 +41,7 @@ in-depth information."
 %module(package      = "PyTrilinos",
 	autodoc      = "1",
 	implicitconv = "1",
-	docstring    = DOCSTRING) Teuchos
+	docstring    = TEUCHOS_DOCSTRING) Teuchos
 
 // SWIG does not support wrapping nested classes.  We will %import the
 // Teuchos::any class (ie, tell swig about it, but not wrap it), which
@@ -82,11 +82,11 @@ typedef int Py_ssize_t;
 // and makes certain conversions seamless, such as between std::string
 // and python strings.
 %include "stl.i"
+using namespace std;
 namespace std {
   class logic_error;
   class runtime_error;
 }
-using namespace std;
 
 // Define macro for handling exceptions thrown by Teuchos methods and
 // constructors
@@ -131,7 +131,7 @@ using namespace std;
 //////////////////////////////////////
 %include "Teuchos_Version.hpp"
 %pythoncode %{
-  __version__ = Teuchos_Version().split()[2]
+__version__ = Teuchos_Version().split()[2]
 %}
 
 ////////////////////////////////////

@@ -28,24 +28,21 @@
 # ************************************************************************
 # @HEADER
 
-######################################################################
+################################################################################
 #
-# Example of how to define an Epetra_Operator derived class in Python
+# Example of how to define an Epetra.Operator derived class in python
 #
-# An Epetra_Operator is an object that can be applied to vectors to
-# return vector, but has no structure -- that is, there is no "row"
-# or "graph". Basically, an Epetra_Operator is defined by two methods:
-# Apply() and ApplyInverse(). In this case, the operator represents 
-# a 1D Laplacian on a structure grid. The linear system is solved using
-# AztecOO and no preconditioning. This example is only serial, but it 
-# can be easily extended to parallel.
+# An Epetra_Operator is an object that can be applied to vectors to return a
+# vector, but has no structure -- that is, there is no "row" or "graph".
+# Basically, an Epetra_Operator is defined by two methods: Apply() and
+# ApplyInverse().  In this case, the operator represents a 1D Laplacian on a
+# structure grid.  The linear system is solved using AztecOO and no
+# preconditioning (since algebraic preconditioners are hard to define for pure
+# Operator classes).
 #
-# \authors Marzio Sala, 9214
-#          Bill Spotz,  1433
+# Based on a script originally written by Marzio Sala.  Updated by Bill Spotz.
 #
-# \date Last updated on 22 Feb 2006
-#
-######################################################################
+################################################################################
 
 try:
     import setpath
@@ -57,91 +54,142 @@ except:
 
 ################################################################################
 
-class MyOperator(Epetra.Operator):
+class Laplace1D(Epetra.Operator):
 
-    def __init__(self, map):
+    def __init__(self, n, comm=None):
+        """
+        __init__(self, n) -> Laplace1D (with an Epetra.PyComm() communicator)
+        __init__(self, n, comm) -> Laplace1D (with given communicator)
+        """
+        # Initialize the base class.  This is REQUIRED
         Epetra.Operator.__init__(self)
-        self.__comm            = map.Comm()
-        self.__map             = map
-        self.__label           = "1D Laplace"
+        # Determine the communicator
+        if comm is None:
+            self.__comm = Epetra.PyComm()
+        else:
+            self.__comm = comm
+        # Default indexes
+        self.__y0 =  1
+        self.__y1 = -1
+        # Create the range map
+        self.__rangeMap = Epetra.Map(n,0,self.__comm)
+        # Create the domain map
+        myIndexes = list(self.__rangeMap.MyGlobalElements())
+        if self.__comm.MyPID() > 0:
+            self.__y0 = None    # Equivalent to index 0
+            myIndexes.insert(0,myIndexes[0]-1)
+        if self.__comm.MyPID() < comm.NumProc()-1:
+            self.__y1 = None    # Equivalent to last index
+            myIndexes.append(myIndexes[-1]+1)
+        self.__domainMap = Epetra.Map(n,myIndexes,0,self.__comm)
+        # Store a label for the operator
+        self.__label = "1D Laplace"
+        # Transpose flag
         self.__setUseTranspose = False
 
     def __str__(self):
+        "Return the operator's label"
         return self.__label
 
     def Label(self):
+        "Required implementation of Epetra.Operator class"
         return self.__label
 
+    def OperatorDomainMap(self):
+        "Required implementation of Epetra.Operator class"
+        return self.__domainMap
+
+    def OperatorRangeMap(self):
+        "Required implementation of Epetra.Operator class"
+        return self.__rangeMap
+
+    def Map(self):
+        "Required implementation of Epetra.Operator class"
+        return self.__rangeMap
+
+    def Comm(self):
+        "Required implementation of Epetra.Operator class"
+        return self.__comm
+
     def Apply(self,x,y):
-        # Arguments x and y will be Epetra.Epetra_MultiVectors, i.e. raw wrappers to
-        # the C++ class.  In order to have nice python indexing, we need to convert
-        # them to Epetra.MultiVectors (or, in this case, Epetra.Vectors).
-        lhs = Epetra.Vector(Epetra.View,x,0)
-        rhs = Epetra.Vector(Epetra.View,y,0)
-        rhs[0]    = 2.0 * lhs[0]    - lhs[1]
-        rhs[1:-1] = 2.0 * lhs[1:-1] - lhs[:-2] - lhs[2:]
-        rhs[-1]   = 2.0 * lhs[-1]   - lhs[-2]
+        """
+        Required implementation of Epetra.Operator class.  This method will be
+        called by the AztecOO solver in order to compute y = Ax, where A is this
+        operator.
+        """
+        try:
+            # Apply operator to interior points
+            y[:,self.__y0:self.__y1] = 2.0 * x[:,1:-1] - x[:,:-2] - x[:,2:]
+            # Apply left boundary condition
+            if self.__comm.MyPID() == 0:
+                y[:,0] = x[:,0]
+            # Apply right boundary condition
+            if self.__comm.MyPID() == self.__comm.NumProc() - 1:
+                y[:,-1] = x[:,-1]
+        except Exception, e:
+            print e
+            return -1
 
         return 0
 
     def ApplyInverse(self):
+        "Required implementation of Epetra.Operator class"
         return -1
 
-    def OperatorDomainMap(self):
-        return self.__map
-
-    def OperatorRangeMap(self):
-        return self.__map
-
-    def Map(self):
-        return self.__map
-
-    def Comm(self):
-        return self.__comm
-
     def HasNormInf(self):
+        "Required implementation of Epetra.Operator class"
         return True
 
     def NormInf(self):
+        "Required implementation of Epetra.Operator class"
         return 4.0
 
     def SetUseTranspose(self, useTranspose):
+        "Required implementation of Epetra.Operator class"
         self.__useTranspose = bool(useTranspose)
 
     def UseTranspose(self):
+        "Required implementation of Epetra.Operator class"
         return self.__useTranspose
 
 ################################################################################
 
 def main():
 
-    n    = 100
-    comm = Epetra.PyComm()
-    if comm.NumProc() != 1:
-        print "This example is only serial, sorry"
-        return
-    map = Epetra.Map(n, 0, comm)
-    op  = MyOperator(map)
+    # Problem initialization
+    n     = 100
+    bc0   = 0.0
+    bc1   = 1.0
+    tol   = 1.0e-5
+    comm  = Epetra.PyComm()
+    lap1d = Laplace1D(n, comm)
 
-    print op.Label()
-    print op.__class__.__bases__
-    lhs = Epetra.Vector(map)
-    rhs = Epetra.Vector(map)
+    # Create solution and RHS vectors
+    x = Epetra.Vector(lap1d.OperatorDomainMap())
+    b = Epetra.Vector(lap1d.OperatorRangeMap() )
 
-    rhs.PutScalar(1.0)
-    lhs.PutScalar(0.0)
+    # Initialize vectors: x will be a straight line between its boundary values,
+    # and b=1, with its boundary values equal to x on the boundaries
+    x[:] = bc0 + (bc1-bc0) * (x.Map().MyGlobalElements() / (n-1.0))
+    b.PutScalar(1.0)
+    if comm.MyPID() == 0:
+        b[0] = bc0
+    if comm.MyPID() == comm.NumProc()-1:
+        b[-1] = bc1
 
-    Problem = Epetra.LinearProblem(op, lhs, rhs)
-    print "Creating Solver"
-    Solver  = AztecOO.AztecOO(Problem)
-    print "Solver Created"
+    # Build the linear system solver
+    problem = Epetra.LinearProblem(lap1d, x, b)
+    solver  = AztecOO.AztecOO(problem)
+    solver.SetParameters({"Solver"  : "CG",
+                          "Precond" : "None",
+                          "Output"  : 16    })
 
-    Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_cg)
-    Solver.SetAztecOption(AztecOO.AZ_precond, AztecOO.AZ_none)
-    Solver.SetAztecOption(AztecOO.AZ_output, 16)
-    Solver.Iterate(1550, 1e-5)
-
-    if comm.MyPID() == 0: print "End Result: TEST PASSED"
+    # Solve the problems
+    solver.Iterate(n, tol)
+    if solver.TrueResidual() < tol:
+        if comm.MyPID() == 0: print "End Result: TEST PASSED"
+    else:
+        if comm.MyPID() == 0: print "End Result: TEST FAILED"
 
 ################################################################################
 

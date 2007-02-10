@@ -297,7 +297,9 @@ EXAMPLE_PYSCRIPTS = $(EXAMPLE_SUITE:=.py)
 SHOULD_COPY = should_copy.py
 SETPATH = setpath.py
 GRE__115 = gre__115.rua
-CLEANFILES = $(EXAMPLE_PYSCRIPTS) $(SHOULD_COPY) $(SETPATH) $(GRE__115) *.pyc *.dat
+CLEANFILES = $(EXAMPLE_PYSCRIPTS) $(SHOULD_COPY) $(SETPATH) $(GRE__115) \
+	     *.pyc *.dat *.mm *.xml
+
 all: all-am
 
 .SUFFIXES:

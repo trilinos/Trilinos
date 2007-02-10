@@ -193,6 +193,21 @@ Epetra_NumPyVector::Epetra_NumPyVector(const Epetra_BlockMap & blockMap,
 }
 
 // =============================================================================
+Epetra_NumPyVector::Epetra_NumPyVector(Epetra_DataAccess CV, const Epetra_Vector & source):
+  Epetra_Vector(CV,source,0)
+{
+  // Store the Epetra_Vector's map
+  map = new Epetra_BlockMap(source.Map());
+
+  // Wrap the Epetra_Vector
+  intp dims[ ] = { (intp) map->NumMyElements() };
+  double *v = NULL;
+  Epetra_Vector::ExtractView(&v);
+  array = (PyArrayObject *) PyArray_SimpleNewFromData(1,dims,PyArray_DOUBLE,
+						      (void *)v);
+}
+
+// =============================================================================
 Epetra_NumPyVector::Epetra_NumPyVector(Epetra_DataAccess CV, const Epetra_MultiVector & source,
 				       int index):
   Epetra_Vector(CV,source,index)

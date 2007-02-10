@@ -50,6 +50,8 @@
 %epetra_array_argout_typemaps(IntVector)
 %epetra_array_argout_typemaps(MultiVector)
 %epetra_array_argout_typemaps(Vector)
+%epetra_array_director_typemaps(MultiVector)
+%epetra_array_director_typemaps(Vector)
 
 //////////////////////////////
 // Epetra_IntVector support //
@@ -168,6 +170,7 @@ class MultiVector(UserArray,NumPyMultiVector):
         __init__(self, BlockMap map, int numVectors, bool zeroOut=True) -> MultiVector
         __init__(self, MultiVector source) -> MultiVector
         __init__(self, BlockMap map, PyObject array) -> MultiVector
+        __init__(self, DataAccess CV, MultiVector source) -> MultiVector
         __init__(self, DataAccess CV, MultiVector source, PyObject range) -> MultiVector
         __init__(self, PyObject array) -> MultiVector
         """
@@ -228,6 +231,7 @@ class Vector(UserArray,NumPyVector):
         __init__(self, BlockMap map, bool zeroOut=True) -> Vector
         __init__(self, Vector source) -> Vector
         __init__(self, BlockMap map, PyObject array) -> Vector
+        __init__(self, DataAccess CV, Vector source) -> Vector
         __init__(self, DataAccess CV, MultiVector source, PyObject index) -> Vector
         __init__(self, PyObject array) -> Vector
         """

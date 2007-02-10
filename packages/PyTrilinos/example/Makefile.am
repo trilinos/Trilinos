@@ -193,4 +193,5 @@ run-examples: all-local
 	@for ex_script in $(EXAMPLE_PYSCRIPTS); do if [ $$ex_script != '.py' ]; then \
 	  echo; echo "Running $$ex_script"; echo; $$ex_script -t; fi; done
 
-CLEANFILES = $(EXAMPLE_PYSCRIPTS) $(SHOULD_COPY) $(SETPATH) $(GRE__115) *.pyc *.dat
+CLEANFILES = $(EXAMPLE_PYSCRIPTS) $(SHOULD_COPY) $(SETPATH) $(GRE__115) \
+	     *.pyc *.dat *.mm *.xml

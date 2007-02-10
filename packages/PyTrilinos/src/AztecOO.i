@@ -136,8 +136,13 @@ using namespace std;
 // Exception handling
 %define %aztecoo_exception(className,methodName)
 %exception className::methodName {
-  $action
-  if (PyErr_Occurred()) SWIG_fail;
+  try {
+    $action
+    if (PyErr_Occurred()) SWIG_fail;
+  } catch(int errCode) {
+    PyErr_Format(PyExc_RuntimeError, "Error code = %d\nSee stderr for details", errCode);
+    SWIG_fail;
+  }
 }
 %enddef
 
@@ -158,6 +163,7 @@ __version__ = AztecOO_Version().split()[2]
 // AztecOO support //
 /////////////////////
 %aztecoo_exception(AztecOO,SetParameters)
+%aztecoo_exception(AztecOO,Iterate      )
 %extend AztecOO {
   double GetStatus(int what) {
     const double* status = self->GetAztecStatus();
