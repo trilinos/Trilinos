@@ -197,6 +197,18 @@ void SpmdVectorBase<Scalar>::applyOp(
 #endif // THYRA_SPMD_VECTOR_BASE_DUMP
 }
 
+// Overridden from Teuchos::Describable
+
+template<class Scalar>
+std::string SpmdVectorBase<Scalar>::description() const
+{
+  using Teuchos::RefCountPtr; using Teuchos::Comm; using Teuchos::null;
+  using Teuchos::typeName;
+  std::ostringstream ostr;
+  ostr<<typeName(*this)<<"{spmdSpace="<<spmdSpace()->description()<<"}";
+  return ostr.str();
+}
+
 // Overridden from VectorBase
 
 template<class Scalar>

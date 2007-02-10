@@ -37,7 +37,7 @@
 namespace Thyra {
 
 /** \brief Base class for SPMD vectors that can provide views of contiguous
- * elements in a process..
+ * elements in a process.
  *
  * By inheriting from this base class, vector implementations allow their
  * vector objects to be seamlessly combined with other SPMD vector objects (of
@@ -248,6 +248,12 @@ public:
     ,const Index                    global_offset
     ) const;
 
+  //@}
+
+  /** @name Overridden form Teuchos::Describable */
+  //@{
+  /** \brief . */
+  std::string description() const;
   //@}
 
   /** @name Overridden from MultiVectorBase */

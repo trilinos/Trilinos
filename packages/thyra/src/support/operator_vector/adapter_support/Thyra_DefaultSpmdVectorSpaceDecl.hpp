@@ -147,12 +147,6 @@ public:
 
   //@}
 
-  /** @name Overridden form Teuchos::Describable */
-  //@{
-  /** \brief . */
-  std::string description() const;
-  //@}
-
   /** @name Public overridden from VectorSpaceBase */
   //@{
   /** \brief Returns true if all the elements in <tt>rng</tt> are in this

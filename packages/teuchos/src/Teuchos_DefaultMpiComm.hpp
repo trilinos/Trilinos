@@ -36,6 +36,7 @@
 #include "Teuchos_MpiReductionOpSetter.hpp"
 #include "Teuchos_SerializationTraitsHelpers.hpp"
 #include "Teuchos_Workspace.hpp"
+#include "Teuchos_TypeNameTraits.hpp"
 #include "mpi.h"
 
 //#define TEUCHOS_MPI_COMM_DUMP
@@ -418,9 +419,10 @@ std::string MpiComm<Ordinal>::description() const
 {
   std::ostringstream oss;
   oss
-    << "Teuchos::MpiComm<"<<OrdinalTraits<Ordinal>::name()<<">"
+    << typeName(*this)
     << "{"
     << "size="<<size_
+    << ",rank="<<rank_
     << ",rawMpiComm="<<static_cast<MPI_Comm>(*rawMpiComm_)
     <<"}";
   return oss.str();

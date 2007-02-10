@@ -55,6 +55,25 @@ Index SpmdVectorSpaceDefaultBase<Scalar>::mapCode() const
   return mapCode_;
 }
 
+
+template<class Scalar>
+std::string SpmdVectorSpaceDefaultBase<Scalar>::description() const
+{
+  using Teuchos::RefCountPtr; using Teuchos::Comm; using Teuchos::null;
+  std::ostringstream ostr;
+  ostr << Teuchos::typeName(*this) << "{comm=";
+  RefCountPtr<const Comm<Index> > comm;
+  if ( (comm=this->getComm())!=null ) {
+    ostr << comm->description();
+  }
+  else {
+    ostr << "NULL";
+  }
+  ostr << "}";
+  return ostr.str();
+}
+
+
 // Overridden from VectorSpaceBase
 
 template<class Scalar>

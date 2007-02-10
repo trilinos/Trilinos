@@ -100,15 +100,6 @@ void DefaultSpmdVectorSpace<Scalar>::uninitialize()
   localSubDim_  = 0;
 }
 
-// Overridden from Teuchos::Describable
-
-template<class Scalar>
-std::string DefaultSpmdVectorSpace<Scalar>::description() const
-{
-  return (std::string("DefaultSpmdVectorSpace<")
-          + Teuchos::ScalarTraits<Scalar>::name() + std::string(">"));
-}
-
 // Overridden from VectorSpace
 
 template<class Scalar>

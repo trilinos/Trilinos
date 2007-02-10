@@ -88,15 +88,6 @@ void DefaultSpmdVector<Scalar>::uninitialize(
   this->updateSpmdSpace();
 }
 
-// Overridden from Teuchos::Describable
-
-template<class Scalar>
-std::string DefaultSpmdVector<Scalar>::description() const
-{
-  return (std::string("DefaultSpmdVector<")
-          + Teuchos::ScalarTraits<Scalar>::name() + std::string(">"));
-}
-
 // Overridden from SpmdVectorBase
 
 template<class Scalar>

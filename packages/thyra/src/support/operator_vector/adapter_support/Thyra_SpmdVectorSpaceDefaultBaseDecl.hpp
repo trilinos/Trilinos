@@ -129,6 +129,12 @@ public:
 
   //@}
 
+  /** @name Overridden form Teuchos::Describable */
+  //@{
+  /** \brief . */
+  std::string description() const;
+  //@}
+
   /** @name Overridden from VectorSpaceBase */
   //@{
 
