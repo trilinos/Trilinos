@@ -61,7 +61,11 @@ std::string SpmdVectorSpaceDefaultBase<Scalar>::description() const
 {
   using Teuchos::RefCountPtr; using Teuchos::Comm; using Teuchos::null;
   std::ostringstream ostr;
-  ostr << Teuchos::typeName(*this) << "{comm=";
+  ostr << Teuchos::typeName(*this) << "{";
+  ostr << "globalDim="<<this->dim();
+  ostr << ",localSubDim="<<this->localSubDim();
+  ostr << ",localOffset="<<this->localOffset();
+  ostr << ",comm=";
   RefCountPtr<const Comm<Index> > comm;
   if ( (comm=this->getComm())!=null ) {
     ostr << comm->description();
