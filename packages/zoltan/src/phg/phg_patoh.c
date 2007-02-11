@@ -97,9 +97,18 @@ char *yo = "Zoltan_HG_PaToH";
   if (!partweight)
     ZOLTAN_PATOH_ERROR("Memory error.", ZOLTAN_MEMERR);
 
-  if (hg->VtxWeightDim <= 1)
-    PaToH_Partition(&pargs, hg->nVtx, hg->nEdge, ivwgts, iewgts, hg->hindex,
+  if (hg->VtxWeightDim <= 1){
+    if (hgp->UseFixedVtx){
+      /* Copy fixed vertices from hg->fixed_part */
+      memcpy(partvec, hg->fixed_part, hg->nVtx*sizeof(int) );
+      PaToH_Partition_with_FixCells(&pargs, hg->nVtx, hg->nEdge, 
+                    ivwgts, iewgts, hg->hindex,
                     hg->hvertex, partvec, partweight, &cut);
+      }
+    else
+      PaToH_Partition(&pargs, hg->nVtx, hg->nEdge, ivwgts, iewgts, hg->hindex,
+                    hg->hvertex, partvec, partweight, &cut);
+  }
   else 
     PaToH_MultiConst_Partition(&pargs, hg->nVtx, hg->nEdge, hg->VtxWeightDim,
                                ivwgts, hg->hindex, hg->hvertex, partvec,
