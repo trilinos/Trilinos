@@ -453,8 +453,9 @@ LOCA::Extended::MultiVector::update(
 			       gamma);
 
   // update scalars
-  scalarsPtr->multiply(Teuchos::NO_TRANS, transb, alpha, *(a.scalarsPtr), 
-		       b, gamma);
+  if (numScalarRows > 0)
+    scalarsPtr->multiply(Teuchos::NO_TRANS, transb, alpha, *(a.scalarsPtr), 
+			 b, gamma);
 
   return *this;
 }
@@ -593,8 +594,9 @@ LOCA::Extended::MultiVector::multiply(
   }
 
   // Compute and add in product for scalars
-  b.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, alpha, *y.scalarsPtr,
-	     *scalarsPtr, 1.0);
+  if (numScalarRows > 0)
+    b.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, alpha, *y.scalarsPtr,
+	       *scalarsPtr, 1.0);
 
 }
 
@@ -712,7 +714,8 @@ LOCA::Extended::MultiVector::getVector(int i)
 					k, 
 					Teuchos::rcp(&(*multiVectorPtrs[k])[i],
 						     false));
-    extendedVectorPtrs[i]->setScalarArray((*scalarsPtr)[i]);
+    if (numScalarRows > 0)
+      extendedVectorPtrs[i]->setScalarArray((*scalarsPtr)[i]);
   }
 
   return extendedVectorPtrs[i];
@@ -732,7 +735,8 @@ LOCA::Extended::MultiVector::getVector(int i) const
 				      k, 
 				      Teuchos::rcp(&(*multiVectorPtrs[k])[i], 
 						   false));
-    extendedVectorPtrs[i]->setScalarArray((*scalarsPtr)[i]);
+    if (numScalarRows > 0)
+      extendedVectorPtrs[i]->setScalarArray((*scalarsPtr)[i]);
   }
 
   return extendedVectorPtrs[i];
