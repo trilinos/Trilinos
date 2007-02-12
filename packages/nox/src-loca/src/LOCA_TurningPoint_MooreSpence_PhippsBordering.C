@@ -47,6 +47,7 @@
 #include "LOCA_Factory.H"
 #include "LOCA_ErrorCheck.H"
 #include "Teuchos_LAPACK.hpp"  // for 3x3 matrix solve
+#include "LOCA_BorderedSolver_JacobianOperator.H"
 
 LOCA::TurningPoint::MooreSpence::PhippsBordering::PhippsBordering(
 	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
@@ -97,7 +98,9 @@ LOCA::TurningPoint::MooreSpence::PhippsBordering::setBlocks(
   JnMultiVector->scale(1.0/s);
 
   // Set blocks in bordered solver
-  borderedSolver->setMatrixBlocksMultiVecConstraint(group, 
+  Teuchos::RefCountPtr<const LOCA::BorderedSolver::JacobianOperator> op =
+    Teuchos::rcp(new  LOCA::BorderedSolver::JacobianOperator(group));
+  borderedSolver->setMatrixBlocksMultiVecConstraint(op, 
 						    JnMultiVector, 
 						    nullMultiVector, 
 						    Teuchos::null);

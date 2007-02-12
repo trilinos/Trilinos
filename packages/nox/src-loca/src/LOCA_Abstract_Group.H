@@ -47,7 +47,7 @@
 #include "LOCA_Homotopy_AbstractGroup.H"
 #include "LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.H"
 #include "LOCA_Pitchfork_MinimallyAugmented_AbstractGroup.H"
-#include "LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.H"
+#include "LOCA_Hopf_MinimallyAugmented_FiniteDifferenceGroup.H"
 
 namespace LOCA { 
 
@@ -71,7 +71,7 @@ namespace LOCA {
       public virtual LOCA::Homotopy::AbstractGroup,
       public virtual LOCA::TurningPoint::MinimallyAugmented::FiniteDifferenceGroup,
       public virtual LOCA::Pitchfork::MinimallyAugmented::AbstractGroup,
-      public virtual LOCA::Hopf::MooreSpence::FiniteDifferenceGroup
+      public virtual LOCA::Hopf::MinimallyAugmented::FiniteDifferenceGroup
     {
 
     public:
@@ -208,6 +208,47 @@ namespace LOCA {
 			       const NOX::Abstract::MultiVector& input_imag,
 			       NOX::Abstract::MultiVector& result_real,
 			       NOX::Abstract::MultiVector& result_imag) const;
+
+      //@}
+
+      /*! 
+       * @name Implementation of LOCA::Hopf::MinimallyAugmented::AbstractGroup virtual methods.
+       */
+      //@{
+
+      /*!
+       * Computes conjugate-tranpose matrix vector product 
+       * \f$ (J+i\omega B)^H (x + iy) \f$.
+       */
+      /*!
+       * Implementation here prints an error message and returns 
+       * NOX::Abstract::Group::NotDefined.
+       */
+      virtual NOX::Abstract::Group::ReturnType 
+      applyComplexTranspose(const NOX::Abstract::Vector& input_real,
+			    const NOX::Abstract::Vector& input_imag,
+			    NOX::Abstract::Vector& result_real,
+			    NOX::Abstract::Vector& result_imag) const;
+
+      /*!
+       * Computes conjugate-tranpose matrix vector product 
+       * \f$ (J+i\omega B)^H (x + iy) \f$.
+       */
+      virtual NOX::Abstract::Group::ReturnType 
+      applyComplexTransposeMultiVector(
+			   const NOX::Abstract::MultiVector& input_real,
+			   const NOX::Abstract::MultiVector& input_imag,
+			   NOX::Abstract::MultiVector& result_real,
+			   NOX::Abstract::MultiVector& result_imag) const;
+
+      //! Solve \f$(J+i\omega B)^H (x + iy) = a+ib\f$
+      virtual NOX::Abstract::Group::ReturnType
+      applyComplexTransposeInverseMultiVector(
+			    Teuchos::ParameterList& params,
+			    const NOX::Abstract::MultiVector& input_real,
+			    const NOX::Abstract::MultiVector& input_imag,
+			    NOX::Abstract::MultiVector& result_real,
+			    NOX::Abstract::MultiVector& result_imag) const;
 
       //@}
 

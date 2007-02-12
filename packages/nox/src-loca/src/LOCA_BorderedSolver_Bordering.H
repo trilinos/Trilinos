@@ -50,9 +50,6 @@ namespace LOCA {
   namespace Parameter {
     class SublistParser;
   }
-  namespace Abstract {
-    class TransposeSolveGroup;
-  }
 }
 
 namespace LOCA {
@@ -93,9 +90,7 @@ namespace LOCA {
      * is implemented.  Note however that for the transpose, the constraint
      * object representing \f$B\f$ must implement the 
      * LOCA::MultiContinuation::ConstraintInterfaceMVDX since \f$B\f$ 
-     * appears on the right-hand-side of a linear system, and the group
-     * must implement the LOCA::Abstract::TransposeSolveGroup interface
-     * to solve the Jacobian transpose system.
+     * appears on the right-hand-side of a linear system.
     */
     class Bordering : public LOCA::BorderedSolver::AbstractStrategy {
 
@@ -123,7 +118,7 @@ namespace LOCA {
        * via ConstraintInterface::isConstraintDerivativesXZero.
        */
       virtual void setMatrixBlocks(
-	  const Teuchos::RefCountPtr<const NOX::Abstract::Group>& group,
+	  const Teuchos::RefCountPtr<const LOCA::BorderedSolver::AbstractOperator>& op,
 	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>& blockA,
 	  const Teuchos::RefCountPtr<const LOCA::MultiContinuation::ConstraintInterface>& blockB,
 	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>& blockC);
@@ -228,8 +223,7 @@ namespace LOCA {
        * \em isZeroF or \em isZeroG is true, than the corresponding
        * \em F or \em G pointers may be NULL.  Note that for the transpose
        * solve B must be of type 
-       * LOCA::MultiContinuation::ConstraintInterfaceMVDX and the group
-       * must implement LOCA::Abstract::TransposeSolveGroup.
+       * LOCA::MultiContinuation::ConstraintInterfaceMVDX.
        */
       virtual NOX::Abstract::Group::ReturnType 
       applyInverseTranspose(Teuchos::ParameterList& params,
@@ -312,11 +306,8 @@ namespace LOCA {
       //! Solver parameters
       Teuchos::RefCountPtr<Teuchos::ParameterList> solverParams;
 
-      //! Pointer to group storing J
-      Teuchos::RefCountPtr<const NOX::Abstract::Group> grp;
-
-      //! Pointer to group with transpose-solve interface
-      Teuchos::RefCountPtr<const LOCA::Abstract::TransposeSolveGroup> ts_grp;
+      //! Pointer to operator
+      Teuchos::RefCountPtr<const LOCA::BorderedSolver::AbstractOperator> op;
 
       //! Pointer to A block
       Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> A;

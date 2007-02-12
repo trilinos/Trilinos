@@ -39,8 +39,8 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef LOCA_PITCHFORK_MINIMALLYAUGMENTED_EXTENDEDGROUP_H
-#define LOCA_PITCHFORK_MINIMALLYAUGMENTED_EXTENDEDGROUP_H
+#ifndef LOCA_HOPF_MINIMALLYAUGMENTED_EXTENDEDGROUP_H
+#define LOCA_HOPF_MINIMALLYAUGMENTED_EXTENDEDGROUP_H
 
 #include "Teuchos_RefCountPtr.hpp"
 
@@ -59,7 +59,7 @@ namespace LOCA {
   namespace Parameter {
     class SublistParser;
   }
-  namespace Pitchfork {
+  namespace Hopf {
     namespace MinimallyAugmented {
       class AbstractGroup;
       class Constraint;
@@ -73,38 +73,36 @@ namespace LOCA {
 
 namespace LOCA {
 
-  namespace Pitchfork {
+  namespace Hopf {
     
     namespace MinimallyAugmented {
 
       /*! 
-       * \brief A group representing the minimally augemented pitchfork
+       * \brief A group representing the minimally augemented Hopf
        * equations. 
        */
       /*!
-       * The LOCA::Pitchfork::MinimallyAugmented::ExtendedGroup is a 
+       * The LOCA::Hopf::MinimallyAugmented::ExtendedGroup is a 
        * concrete implementation of the NOX::Abstract::Group, 
        * LOCA::MultiContinuation::AbstractGroup and 
        * LOCA::Extended::MultiAbstractGroup that defines the following 
-       * extended set of equations that are regular at a generic pitchfork:
+       * extended set of equations that are regular at a generic Hopf:
        * \f[
        *     G(z) = \left[
        *      \begin{array}{c}
-       *         F(x,p)+s\psi\\
-       *         \sigma \\
-       *         \langle x,\psi \rangle
+       *         F(x,p)\\
+       *         \sigma 
        *      \end{array}
        *      \right] = 0
        *   \f]
-       * where \f$z = [x, p, s]\in\Re^{n+2}\f$, \f$x\f$ is the solution vector,
-       * \f$s\f$ is the slack variable representing the asymmetry, 
-       * \f$p\f$ is the bifurcation parameter, \f$\psi\f$ is the asymmetric
-       * vector, and \f$\sigma\in\Re\f$ is a measure of the singularity of 
-       * \f$F\f$ and is defined via
+       * where \f$z = [x, p, \omega]\in\Re^{n+2}\f$, \f$x\f$ is the 
+       * solution vector, \f$p\f$ is the bifurcation parameter, \f$\omega\f$
+       * is the Hopf frequency and \f$\sigma\in\Re\f$ is a measure of the 
+       * singularity of \f$J+i\omega M\f$ and is defined via
        * \f[
        *     \begin{bmatrix}
-       *       J   & a \\
-       *       b^T & 0 
+       *       J+i\omega M & a \\
+       *       b^H         & 0 
        *     \end{bmatrix}
        *     \begin{bmatrix}
        *       v \\
@@ -117,8 +115,8 @@ namespace LOCA {
        * \f]
        * \f[
        *     \begin{bmatrix}
-       *       J^T & b \\
-       *       a^T & 0 
+       *       J^T-i\omega M^T & b \\
+       *       a^H             & 0 
        *     \end{bmatrix}
        *     \begin{bmatrix}
        *       w \\
@@ -130,23 +128,25 @@ namespace LOCA {
        *     \end{bmatrix},
        * \f]
        * \f[
-       *     \sigma = w^T J v/n
+       *     \sigma = w^H J+i\omega M v/n
        * \f]
-       * for any vectors \f$a\f$ and \f$b\f$ in \f$\Re^n\f$.  Using these
-       * relationships, it is easy to show
+       * for any vectors \f$a\f$ and \f$b\f$ in \f$\mathbb{C}^n\f$.  Using 
+       * these relationships, it is easy to show
        * \f[
        *     \begin{split}
-       *        \sigma_x &= (w^T J v)_x/n = w^T J_x v/n \\
-       *        \sigma_p &= (w^T J v)_p/n = w^T J_p v/n
+       *        \sigma_x &= (w^H(J+i\omega M)v)_x/n = w^H(J+i\omega M)_x v/n \\
+       *        \sigma_p &= (w^H(J+i\omega M)v)_p/n = w^H(J+i\omega M)_p v/n
        *     \end{split}
        * \f]
        *
        * The group stores an underlying group of type 
-       * LOCA::Pitchfork::MinimallyAugmented::AbstractGroup to represent 
+       * LOCA::Hopf::MinimallyAugmented::AbstractGroup to represent 
        * the equations \f$F(x,p) = 0\f$ and to manipulate the underlying 
-       * Jacobian \f$J\f$.  This interface defines methods for computing
-       * the derivatives \f$(w^T J v)_x\f$ and \f$(w^T J v)_p\f$ and
-       * computing the inner product \f$\langle \psi,x \rangle \f$ as well.
+       * complex matrix \f$C = J+i\omega M\f$.  This interface defines methods 
+       * for computing the derivatives \f$(w^H C v)_x\f$ and \f$(w^H C v)_p\f$.
+       * Since %LOCA is not able to deal with complex vectors and matrices
+       * directly, the real-equivalent formulation is used for all complex
+       * calculations.
        *
        * This class implements all of the NOX::Abstract::Group, 
        * LOCA::MultiContinuation::AbstractGroup, and 
@@ -156,14 +156,13 @@ namespace LOCA {
        * pitchfork or to the LOCA::Stepper to compute a family of 
        * pitchforks in a second parameter.
        *
-       * The class is intialized via the \c pfParams parameter list argument 
+       * The class is intialized via the \c hpfParams parameter list argument 
        * to the constructor.  The parameters this class recognizes are:
        * <ul>
        * <li> "Bifurcation Parameter" -- [string] (Must be supplied) - 
        *    Name of the bifurcation parameter \f$p\f$
-       * <li> "Antisymmetric Vector"  -- 
-       *      [Teuchos::RefCountPtr<NOX::Abstract::Vector>] (Must be supplied) 
-       *      Vector storing antisymmetric vector \f$\psi\f$
+       * <li> "Initial Frequency" -- [double] (Must be supplied)
+       *      Initial guess for the Hopf frequency \f$\omega\f$.
        * <li> "Bordered Solver Method" -- [string] (default "Bordering") 
        *      Method for solving bordered systems of equations.  See 
        *      LOCA::BorderedSolver::Factory for a description.
@@ -179,14 +178,26 @@ namespace LOCA {
        *           parameter list, in which case the following parameters
        *           are relevant:
        *           <ul>
-       *           <li> "Initial A Vector"  -- 
+       *           <li> "Initial Real A Vector"  -- 
        *                [Teuchos::RefCountPtr<NOX::Abstract::Vector>] 
        *                (Must be supplied) - 
-       *                 Vector storing initial value for \f$a\f$ vector
-       *           <li> "Initial B Vector"  -- 
+       *                 Vector storing initial value for the real component
+       *                 of the \f$a\f$ vector
+       *           <li> "Initial Imaginary A Vector"  -- 
+       *                [Teuchos::RefCountPtr<NOX::Abstract::Vector>] 
+       *                (Must be supplied) - 
+       *                 Vector storing initial value for the imaginary 
+       *                 component of the \f$a\f$ vector
+       *           <li> "Initial Real B Vector"  -- 
        *                 [Teuchos::RefCountPtr<NOX::Abstract::Vector>] 
        *                 (Must be supplied for nonsymmetric Jacobians) - 
-       *                 Vector storing initial value for \f$b\f$ vector
+       *                 Vector storing initial value for the real component
+       *                 of the \f$b\f$ vector
+       *           <li> "Initial Imaginary B Vector"  -- 
+       *                [Teuchos::RefCountPtr<NOX::Abstract::Vector>] 
+       *                (Must be supplied) - 
+       *                 Vector storing initial value for the imaginary 
+       *                 component of the \f$b\f$ vector
        *           </ul>
        *      <li> "Solve df/dp" - Compute \f$a = J^{-T}df/dp\f$ and 
        *           \f$b = J^{-1} df/dp\f$ where \f$p\f$ is the bifurcation
@@ -213,15 +224,15 @@ namespace LOCA {
 	/*!
 	 * \param global_data [in] Global data object
 	 * \param topParams [in] Parsed top-level parameter list.
-	 * \param pfParams [in] Parameter list determining the
+	 * \param hpfParams [in] Parameter list determining the
 	 * bordered solver method.
 	 * \param grp [in] Group representing \f$f\f$.
 	 */
       ExtendedGroup(
        const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
        const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-       const Teuchos::RefCountPtr<Teuchos::ParameterList>& pfParams,
-       const Teuchos::RefCountPtr<LOCA::Pitchfork::MinimallyAugmented::AbstractGroup>& grp);
+       const Teuchos::RefCountPtr<Teuchos::ParameterList>& hpfParams,
+       const Teuchos::RefCountPtr<LOCA::Hopf::MinimallyAugmented::AbstractGroup>& grp);
 
 	//! Copy constructor
 	ExtendedGroup(const ExtendedGroup& source, 
@@ -516,9 +527,11 @@ namespace LOCA {
 
 	//! Computes initial "a" and "b" vectors
 	void getInitialVectors(
-			 Teuchos::RefCountPtr<NOX::Abstract::Vector>& aVecPtr,
-			 Teuchos::RefCountPtr<NOX::Abstract::Vector>& bVecPtr,
-			 bool isSymmetric);
+		    Teuchos::RefCountPtr<NOX::Abstract::Vector>& aVecPtr_real,
+		    Teuchos::RefCountPtr<NOX::Abstract::Vector>& aVecPtr_imag,
+		    Teuchos::RefCountPtr<NOX::Abstract::Vector>& bVecPtr_real,
+		    Teuchos::RefCountPtr<NOX::Abstract::Vector>& bVecPtr_imag,
+		    bool isSymmetric);
 
       private:
 	
@@ -533,17 +546,17 @@ namespace LOCA {
 	//! Parsed top-level parameters
 	Teuchos::RefCountPtr<LOCA::Parameter::SublistParser> parsedParams;
 
-	//! Pitchfork parameter list
-	Teuchos::RefCountPtr<Teuchos::ParameterList> pitchforkParams;
+	//! Hopf parameter list
+	Teuchos::RefCountPtr<Teuchos::ParameterList> hopfParams;
 
 	//! Pointer to base group that defines \f$F\f$
-	Teuchos::RefCountPtr<LOCA::Pitchfork::MinimallyAugmented::AbstractGroup> grpPtr;
+	Teuchos::RefCountPtr<LOCA::Hopf::MinimallyAugmented::AbstractGroup> grpPtr;
 
 	//! Pointer to base group as a bordered group
 	Teuchos::RefCountPtr<LOCA::BorderedSystem::AbstractGroup> bordered_grp;
 
 	//! Pointer to constraint object
-	Teuchos::RefCountPtr<LOCA::Pitchfork::MinimallyAugmented::Constraint> constraintsPtr;
+	Teuchos::RefCountPtr<LOCA::Hopf::MinimallyAugmented::Constraint> constraintsPtr;
 
 	//! Stores the extended solution vector
 	LOCA::MultiContinuation::ExtendedMultiVector xMultiVec;
@@ -559,9 +572,6 @@ namespace LOCA {
 
 	//! Stores view of first column of xMultiVec
 	Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedVector> xVec;
-
-	//! Vector for \f$\psi\f$
-	Teuchos::RefCountPtr<NOX::Abstract::Vector> psiVec;
 
 	//! Stores view of first column of fMultiVec
 	Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedVector> fVec;
@@ -615,8 +625,8 @@ namespace LOCA {
 
     } // Namespace MinimallyAugmented
 
-  } // Namespace Pitchfork
+  } // Namespace Hopf
 
 } // Namespace LOCA
 
-#endif // LOCA_PITCHFORK_MINIMALLYAUGMENTED_EXTENDEDGROUP_H
+#endif // LOCA_HOPF_MINIMALLYAUGMENTED_EXTENDEDGROUP_H

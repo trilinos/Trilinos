@@ -64,6 +64,7 @@ namespace LOCA {
   }
   namespace BorderedSolver {
     class AbstractStrategy;
+    class JacobianOperator;
   }
 }
 
@@ -478,6 +479,9 @@ namespace LOCA {
 
       //! Stores view of first column of gradientMultiVec
       Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedVector> gradientVec;
+
+      // Stores operator for bordered solver
+      Teuchos::RefCountPtr<LOCA::BorderedSolver::JacobianOperator> jacOp;
 
       //! Stores bordered solver strategy
       Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy> borderedSolver;

@@ -50,9 +50,6 @@ namespace LOCA {
   namespace Parameter {
     class SublistParser;
   }
-  namespace Abstract {
-    class TransposeSolveGroup;
-  }
 }
 
 namespace LOCA {
@@ -88,9 +85,7 @@ namespace LOCA {
      * may be zero.  The solve
      * for the non-transposed system is implemented by the solve() method,
      * while the solve for the transposed system is implemented by the
-     * solveTranspose() method.  Note that for the transpose solve, the
-     * group representing \f$J\f$ must implement the 
-     * LOCA::Abstract::TransposeSolveGroup interface.
+     * solveTranspose() method.
     */
     class UpperTriangularBlockElimination {
 
@@ -114,7 +109,7 @@ namespace LOCA {
        */
       NOX::Abstract::Group::ReturnType  
       solve(Teuchos::ParameterList& params,
-	    const NOX::Abstract::Group& grp,
+	    const LOCA::BorderedSolver::AbstractOperator& op,
 	    const NOX::Abstract::MultiVector* A,
 	    const NOX::Abstract::MultiVector::DenseMatrix& C,
 	    const NOX::Abstract::MultiVector* F,
@@ -131,7 +126,7 @@ namespace LOCA {
        */
       NOX::Abstract::Group::ReturnType  
       solveTranspose(Teuchos::ParameterList& params,
-		     const LOCA::Abstract::TransposeSolveGroup& grp,
+		     const LOCA::BorderedSolver::AbstractOperator& op,
 		     const NOX::Abstract::MultiVector* A,
 		     const NOX::Abstract::MultiVector::DenseMatrix& C,
 		     const NOX::Abstract::MultiVector* F,

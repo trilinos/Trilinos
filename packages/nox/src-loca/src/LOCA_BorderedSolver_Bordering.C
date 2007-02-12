@@ -40,6 +40,7 @@
 //@HEADER
 
 #include "LOCA_BorderedSolver_Bordering.H"
+#include "LOCA_BorderedSolver_AbstractOperator.H"
 #include "LOCA_GlobalData.H"
 #include "LOCA_ErrorCheck.H"
 #include "LOCA_MultiContinuation_ConstraintInterface.H"
@@ -55,8 +56,7 @@ LOCA::BorderedSolver::Bordering::Bordering(
 	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& slvrParams): 
   globalData(global_data),
   solverParams(slvrParams),
-  grp(),
-  ts_grp(),
+  op(),
   A(),
   B(),
   C(),
@@ -74,12 +74,12 @@ LOCA::BorderedSolver::Bordering::~Bordering()
 
 void
 LOCA::BorderedSolver::Bordering::setMatrixBlocks(
-         const Teuchos::RefCountPtr<const NOX::Abstract::Group>& group,
+         const Teuchos::RefCountPtr<const LOCA::BorderedSolver::AbstractOperator>& oper,
 	 const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>& blockA,
 	 const Teuchos::RefCountPtr<const LOCA::MultiContinuation::ConstraintInterface>& blockB,
 	 const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>& blockC)
 {
-  grp = group;
+  op = oper;
   A = blockA;
   B = blockB;
   C = blockC;
@@ -99,10 +99,6 @@ LOCA::BorderedSolver::Bordering::setMatrixBlocks(
     globalData->locaErrorCheck->throwError(
 			    "LOCA::BorderedSolver::Bordering::setMatrixBlocks",
 			    "Blocks A and C cannot both be zero");
-
-  // cast group to a transpose-solve group for applyInverseTranspose()
-  ts_grp = 
-    Teuchos::rcp_dynamic_cast<const LOCA::Abstract::TransposeSolveGroup>(grp);
 }
 
 NOX::Abstract::Group::ReturnType 
@@ -126,7 +122,7 @@ LOCA::BorderedSolver::Bordering::apply(
 {
   // Compute J*X
   NOX::Abstract::Group::ReturnType status = 
-    grp->applyJacobianMultiVector(X, U);
+    op->apply(X, U);
 
   // Compute J*X + A*Y
   if (!isZeroA)
@@ -159,7 +155,7 @@ LOCA::BorderedSolver::Bordering::applyTranspose(
 {
   // Compute J*X
   NOX::Abstract::Group::ReturnType status = 
-    grp->applyJacobianTransposeMultiVector(X, U);
+    op->applyTranspose(X, U);
 
   // Compute J*X + B*Y
   if (!isZeroA)
@@ -200,12 +196,12 @@ LOCA::BorderedSolver::Bordering::applyInverse(
 
    if (isZeroA) {
      LOCA::BorderedSolver::LowerTriangularBlockElimination ltbe(globalData);
-     status = ltbe.solve(params, *grp, *B, *C, F, G, X, Y);
+     status = ltbe.solve(params, *op, *B, *C, F, G, X, Y);
    }
    
    else if (isZeroB) {
      LOCA::BorderedSolver::UpperTriangularBlockElimination utbe(globalData);
-     status = utbe.solve(params, *grp, A.get(), *C, F, G, X, Y);
+     status = utbe.solve(params, *op, A.get(), *C, F, G, X, Y);
 
    }
    
@@ -261,14 +257,6 @@ LOCA::BorderedSolver::Bordering::applyInverseTranspose(
   isZeroF = (F == NULL);
   isZeroG = (G == NULL);
 
-  // The group must implement the transpose solve interface 
-  if (ts_grp == Teuchos::null)
-    globalData->locaErrorCheck->throwError(
-	 callingFunction,
-	 string("Group must implement the LOCA::Abstract::TransposeSolveGroup")
-	 + string(" interface in order to solve the transpose of the bordered")
-	 + string(" system via bordering."));
-
   // For the transpose solve, B must be a multi-vec constraint if it is nonzero
   Teuchos::RefCountPtr<const LOCA::MultiContinuation::ConstraintInterfaceMVDX> B_mvdx;
   const NOX::Abstract::MultiVector* BB = NULL;
@@ -284,12 +272,12 @@ LOCA::BorderedSolver::Bordering::applyInverseTranspose(
 
    if (isZeroA) {
      LOCA::BorderedSolver::UpperTriangularBlockElimination utbe(globalData);
-     status = utbe.solveTranspose(params, *ts_grp, BB, *C, F, G, X, Y);
+     status = utbe.solveTranspose(params, *op, BB, *C, F, G, X, Y);
    }
    
    else if (isZeroB) {
      LOCA::BorderedSolver::LowerTriangularBlockElimination ltbe(globalData);
-     status = ltbe.solveTranspose(params, *ts_grp, *A, *C, F, G, X, Y);
+     status = ltbe.solveTranspose(params, *op, *A, *C, F, G, X, Y);
 
    }
    
@@ -361,7 +349,7 @@ LOCA::BorderedSolver::Bordering::solveFZero(
     AA->clone(NOX::ShapeCopy);
 
   // compute Xt = J^-1 A
-  status = grp->applyJacobianInverseMultiVector(params, *AA, *Xt);
+  status = op->applyInverse(params, *AA, *Xt);
   finalStatus = 
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
 							   callingFunction);
@@ -418,7 +406,7 @@ LOCA::BorderedSolver::Bordering::solveContiguous(
   NOX::Abstract::Group::ReturnType status;
 
   // compute [X1 X2] = J^-1 [F A]
-  status = grp->applyJacobianInverseMultiVector(params, *F, X);
+  status = op->applyInverse(params, *F, X);
   finalStatus = 
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
 							   callingFunction);
@@ -493,7 +481,7 @@ LOCA::BorderedSolver::Bordering::solveFZeroTrans(
     BB->clone(NOX::ShapeCopy);
 
   // compute Xt = J^-T B
-  status = ts_grp->applyJacobianTransposeInverseMultiVector(params, *BB, *Xt);
+  status = op->applyInverseTranspose(params, *BB, *Xt);
   finalStatus = 
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
 							   callingFunction);
@@ -552,7 +540,7 @@ LOCA::BorderedSolver::Bordering::solveContiguousTrans(
   NOX::Abstract::Group::ReturnType status;
 
   // compute [X1 X2] = J^-T [F B]
-  status = ts_grp->applyJacobianTransposeInverseMultiVector(params, *F, X);
+  status = op->applyInverseTranspose(params, *F, X);
   finalStatus = 
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
 							   callingFunction);

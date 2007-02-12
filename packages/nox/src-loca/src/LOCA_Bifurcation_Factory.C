@@ -54,6 +54,8 @@
 #include "LOCA_Pitchfork_MinimallyAugmented_AbstractGroup.H"
 #include "LOCA_Hopf_MooreSpence_ExtendedGroup.H"
 #include "LOCA_Hopf_MooreSpence_AbstractGroup.H"
+#include "LOCA_Hopf_MinimallyAugmented_ExtendedGroup.H"
+#include "LOCA_Hopf_MinimallyAugmented_AbstractGroup.H"
 
 LOCA::Bifurcation::Factory::Factory(
 	        const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data) : 
@@ -174,6 +176,25 @@ LOCA::Bifurcation::Factory::create(
 							     topParams,
 							     bifurcationParams,
 							     msg));
+  }
+  else if (name == "Hopf:  Minimally Augmented") {
+
+    // Cast group to MinimallyAugmented group
+    Teuchos::RefCountPtr<LOCA::Hopf::MinimallyAugmented::AbstractGroup> mag = 
+      Teuchos::rcp_dynamic_cast<LOCA::Hopf::MinimallyAugmented::AbstractGroup>(grp);
+    if (mag.get() == NULL)
+      globalData->locaErrorCheck->throwError(
+	    methodName,
+	    string("Underlying group must be derived from ") + 
+	    string("LOCA::Hopf::MinimallyAugmented::AbstractGroup ") +
+	    string("for minimally augmented Hopf continuation!"));
+
+    strategy = 
+      Teuchos::rcp(new LOCA::Hopf::MinimallyAugmented::ExtendedGroup(
+							   globalData,
+							   topParams,
+							   bifurcationParams,
+							   mag));
   }
   else if (name == "User-Defined") {
 

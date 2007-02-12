@@ -39,11 +39,11 @@
 // ************************************************************************
 //@HEADER
 
+#include "LOCA_Hopf_MinimallyAugmented_ExtendedGroup.H"
+
 #include "Teuchos_ParameterList.hpp"
-#include "LOCA_MultiContinuation_AbstractGroup.H"
-#include "LOCA_MultiContinuation_ConstraintInterface.H"
-#include "LOCA_MultiContinuation_ConstraintInterfaceMVDX.H"
-#include "LOCA_MultiContinuation_ConstrainedGroup.H"
+#include "LOCA_Hopf_MinimallyAugmented_AbstractGroup.H"
+#include "LOCA_Hopf_MinimallyAugmented_Constraint.H"
 #include "LOCA_GlobalData.H"
 #include "LOCA_Factory.H"
 #include "LOCA_Parameter_SublistParser.H"
@@ -51,82 +51,122 @@
 #include "LOCA_ErrorCheck.H"
 #include "NOX_Utils.H"
 #include "LOCA_Parameter_Vector.H"
+#include "LOCA_Abstract_TransposeSolveGroup.H"
 #include "LOCA_BorderedSolver_JacobianOperator.H"
 
-LOCA::MultiContinuation::ConstrainedGroup::ConstrainedGroup(
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+ExtendedGroup(
        const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
        const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-       const Teuchos::RefCountPtr<Teuchos::ParameterList>& conParams,
-       const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& g,
-       const Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>& constraints,
-       const vector<int>& paramIDs)
+       const Teuchos::RefCountPtr<Teuchos::ParameterList>& hpfParams,
+       const Teuchos::RefCountPtr<LOCA::Hopf::MinimallyAugmented::AbstractGroup>& g)
   : globalData(global_data),
     parsedParams(topParams),
-    constraintParams(conParams),
+    hopfParams(hpfParams),
     grpPtr(g),
     bordered_grp(),
-    constraintsPtr(constraints),
-    numParams(paramIDs.size()),
-    xMultiVec(globalData, g->getX(), 1, numParams, NOX::DeepCopy),
-    fMultiVec(globalData, g->getX(), numParams+1, numParams, NOX::ShapeCopy),
-    newtonMultiVec(globalData, g->getX(), 1, numParams, NOX::ShapeCopy),
-    gradientMultiVec(globalData, g->getX(), 1, numParams, NOX::ShapeCopy),
+    constraintsPtr(),
+    xMultiVec(globalData, g->getX(), 1, 2, NOX::DeepCopy),
+    fMultiVec(globalData, g->getX(), 3, 2, NOX::ShapeCopy),
+    newtonMultiVec(globalData, g->getX(), 1, 2, NOX::ShapeCopy),
+    gradientMultiVec(globalData, g->getX(), 1, 2, NOX::ShapeCopy),
     xVec(),
     fVec(),
     ffMultiVec(),
     dfdpMultiVec(),
+    fBifMultiVec(),
     newtonVec(),
     gradientVec(),
     jacOp(),
     borderedSolver(),
     index_f(1),
-    index_dfdp(numParams),
-    constraintParamIDs(paramIDs),
+    index_dfdp(2),
+    bifParamID(-1),
     isValidF(false),
     isValidJacobian(false),
     isValidNewton(false),
     isValidGradient(false),
-    isBordered(false),
-    skipDfDp(false)
+    isBordered(false)
 {
+  const char *func = "LOCA::Hopf::MinimallyAugmented::ExtendedGroup()";
+
   // Set up multi-vector views
   setupViews(); 
 
+  // Get bifurcation parameter name
+  if (!hopfParams->isParameter("Bifurcation Parameter")) {
+    globalData->locaErrorCheck->throwError(func,
+				 "\"Bifurcation Parameter\" name is not set!");
+  }
+  string bifParamName = hopfParams->get("Bifurcation Parameter", "None");
+  const ParameterVector& p = grpPtr->getParams();
+  bifParamID = p.getIndex(bifParamName);
+
+  // Get Hopf frequency
+  if (!hopfParams->isParameter("Initial Frequency")) {
+    globalData->locaErrorCheck->throwError(func,
+					 "\"Initial Frequency\" is not set!");
+  }
+  double omega = 
+    hopfParams->get("Initial Frequency", 1.0);
+
+  // Get symmetric flag
+  bool isSymmetric = hopfParams->get("Symmetric Jacobian", false);
+
+  // Compute/get initial "a" & "b" vectors
+  Teuchos::RefCountPtr<NOX::Abstract::Vector> aVecPtr_real;
+  Teuchos::RefCountPtr<NOX::Abstract::Vector> aVecPtr_imag;
+  Teuchos::RefCountPtr<NOX::Abstract::Vector> bVecPtr_real;
+  Teuchos::RefCountPtr<NOX::Abstract::Vector> bVecPtr_imag;
+  getInitialVectors(aVecPtr_real, aVecPtr_imag, bVecPtr_real, bVecPtr_imag,
+		    isSymmetric);
+
+  // Create constraint equation
+  constraintsPtr = 
+    Teuchos::rcp(new LOCA::Hopf::MinimallyAugmented::Constraint(
+							   globalData,
+							   parsedParams,
+							   hopfParams,
+							   grpPtr,
+							   isSymmetric,
+							   *aVecPtr_real,
+							   *aVecPtr_imag,
+							   bVecPtr_real.get(),
+							   bVecPtr_imag.get(),
+							   bifParamID,
+							   omega));
+
   // Set parameters in solution vector
-  for (int i=0; i<numParams; i++)
-    xVec->getScalar(i) = grpPtr->getParam(constraintParamIDs[i]);
+  xVec->getScalar(0) = grpPtr->getParam(bifParamID);
+  xVec->getScalar(1) = omega;
 
   // Set parameters and solution vector in constraints
-  constraintsPtr->setParams(constraintParamIDs, *xVec->getScalars());
+  constraintsPtr->setParam(bifParamID, xVec->getScalar(0));
   constraintsPtr->setX(*(xVec->getXVec()));
 
   // Instantiate bordered solver
-  borderedSolver = globalData->locaFactory->createBorderedSolverStrategy(
-				   parsedParams,
-				   constraintParams);
+  borderedSolver = 
+    globalData->locaFactory->createBorderedSolverStrategy(parsedParams,
+							  hopfParams);
 
   // Determine if underlying group is bordered
   bordered_grp = 
     Teuchos::rcp_dynamic_cast<LOCA::BorderedSystem::AbstractGroup>(grpPtr);
   isBordered = (bordered_grp != Teuchos::null);
 
-  // Determine whether we should skip df/dp
-  skipDfDp = constraintParams->get("Skip df/dp", false);
-
   // Create Jacobian operator for bordered solver
   jacOp = Teuchos::rcp(new LOCA::BorderedSolver::JacobianOperator(grpPtr));
 }
 
-LOCA::MultiContinuation::ConstrainedGroup::ConstrainedGroup(
-		     const LOCA::MultiContinuation::ConstrainedGroup& source,
-		     NOX::CopyType type)
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+ExtendedGroup(const LOCA::Hopf::MinimallyAugmented::ExtendedGroup& source,
+	      NOX::CopyType type)
   : globalData(source.globalData),
     parsedParams(source.parsedParams),
-    constraintParams(source.constraintParams),
-    grpPtr(Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::AbstractGroup>(source.grpPtr->clone(type))),
+    hopfParams(source.hopfParams),
+    grpPtr(Teuchos::rcp_dynamic_cast<LOCA::Hopf::MinimallyAugmented::AbstractGroup>(source.grpPtr->clone(type))),
     bordered_grp(),
-    constraintsPtr(source.constraintsPtr->clone(type)),
-    numParams(source.numParams),
+    constraintsPtr(Teuchos::rcp_dynamic_cast<LOCA::Hopf::MinimallyAugmented::Constraint>(source.constraintsPtr->clone(type))),
     xMultiVec(source.xMultiVec, type),
     fMultiVec(source.fMultiVec, type),
     newtonMultiVec(source.newtonMultiVec, type),
@@ -135,27 +175,27 @@ LOCA::MultiContinuation::ConstrainedGroup::ConstrainedGroup(
     fVec(),
     ffMultiVec(),
     dfdpMultiVec(),
+    fBifMultiVec(),
     newtonVec(),
     gradientVec(),
     jacOp(),
     borderedSolver(source.borderedSolver),
     index_f(1),
-    index_dfdp(numParams),
-    constraintParamIDs(source.constraintParamIDs),
+    index_dfdp(2),
+    bifParamID(source.bifParamID),
     isValidF(source.isValidF),
     isValidJacobian(source.isValidJacobian),
     isValidNewton(source.isValidNewton),
     isValidGradient(source.isValidGradient),
-    isBordered(false),
-    skipDfDp(source.skipDfDp)
+    isBordered(false)
 {
   // Set up multi-vector views
   setupViews();
 
   // Instantiate bordered solver
-  borderedSolver = globalData->locaFactory->createBorderedSolverStrategy(
-				   parsedParams,
-				   constraintParams);
+  borderedSolver = 
+    globalData->locaFactory->createBorderedSolverStrategy(parsedParams,
+							  hopfParams);
 
   if (type == NOX::ShapeCopy) {
     isValidF = false;
@@ -169,113 +209,98 @@ LOCA::MultiContinuation::ConstrainedGroup::ConstrainedGroup(
     Teuchos::rcp_dynamic_cast<LOCA::BorderedSystem::AbstractGroup>(grpPtr);
   isBordered = (bordered_grp != Teuchos::null);
 
+  constraintsPtr->setGroup(grpPtr);
+
   // Create Jacobian operator for bordered solver
   jacOp = Teuchos::rcp(new LOCA::BorderedSolver::JacobianOperator(grpPtr));
 
   // Set blocks in bordered solver
   if (isValidJacobian) {
-    if (skipDfDp) 
-      borderedSolver->setMatrixBlocks(jacOp, 
-				      Teuchos::null, 
-				      constraintsPtr,
-				      dfdpMultiVec->getScalars());
-    else
-      borderedSolver->setMatrixBlocks(jacOp, 
-				      dfdpMultiVec->getXMultiVec(),
-				      constraintsPtr,
-				      dfdpMultiVec->getScalars());
+    borderedSolver->setMatrixBlocks(jacOp, 
+				    dfdpMultiVec->getXMultiVec(),
+				    constraintsPtr,
+				    dfdpMultiVec->getScalars());
     NOX::Abstract::Group::ReturnType status = borderedSolver->initForSolve();
     globalData->locaErrorCheck->checkReturnType(status, 
-						"LOCA::MultiContinuation::ConstrainedGroup::ConstrainedGroup()");
+						"LOCA::Hopf::MinimallyAugmented::ExtendedGroup()");
   }
 }
 
 
-LOCA::MultiContinuation::ConstrainedGroup::~ConstrainedGroup() 
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+~ExtendedGroup() 
 {
-}
-
-void
-LOCA::MultiContinuation::ConstrainedGroup::setConstraintParameter(int i,
-								  double val) 
-{
-  grpPtr->setParam(constraintParamIDs[i],val);
-  xVec->getScalar(i) = val;
-  constraintsPtr->setParam(constraintParamIDs[i],val);
-
-  resetIsValid();
 }
 
 double
-LOCA::MultiContinuation::ConstrainedGroup::getConstraintParameter(int i) const
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+getBifParam() const
 {
-  return grpPtr->getParam(constraintParamIDs[i]);
-}
-
-const vector<int>&
-LOCA::MultiContinuation::ConstrainedGroup::getConstraintParamIDs() const
-{
-  return constraintParamIDs;
+  return grpPtr->getParam(bifParamID);
 }
 
 NOX::Abstract::Group&
-LOCA::MultiContinuation::ConstrainedGroup::operator=(
-					  const NOX::Abstract::Group& source)
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+operator=(const NOX::Abstract::Group& source)
 {
   copy(source);
   return *this;
 }
 
 Teuchos::RefCountPtr<NOX::Abstract::Group>
-LOCA::MultiContinuation::ConstrainedGroup::clone(NOX::CopyType type) const
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+clone(NOX::CopyType type) const
 {
-  return Teuchos::rcp(new ConstrainedGroup(*this, type));
+  return Teuchos::rcp(new ExtendedGroup(*this, type));
 }
 
 void
-LOCA::MultiContinuation::ConstrainedGroup::setX(
-					     const NOX::Abstract::Vector& y)  
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+setX(const NOX::Abstract::Vector& y)  
 {
   const LOCA::MultiContinuation::ExtendedVector& my = 
     dynamic_cast<const LOCA::MultiContinuation::ExtendedVector&>(y);
 
   grpPtr->setX( *(my.getXVec()) );
-  grpPtr->setParamsMulti(constraintParamIDs, *my.getScalars());
+  grpPtr->setParam(bifParamID, my.getScalar(0));
   *xVec = my;
   constraintsPtr->setX( *(my.getXVec()) );
-  constraintsPtr->setParams(constraintParamIDs, *my.getScalars());
+  constraintsPtr->setParam(bifParamID, my.getScalar(0));
+  constraintsPtr->setFrequency(my.getScalar(1));
 
   resetIsValid();
 }
 
 void
-LOCA::MultiContinuation::ConstrainedGroup::computeX(
-					      const NOX::Abstract::Group& g, 
-					      const NOX::Abstract::Vector& d,
-					      double step) 
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+computeX(const NOX::Abstract::Group& g, 
+	 const NOX::Abstract::Vector& d,
+	 double step) 
 {
-  const LOCA::MultiContinuation::ConstrainedGroup& mg = 
-    dynamic_cast<const LOCA::MultiContinuation::ConstrainedGroup&>(g);
+  const LOCA::Hopf::MinimallyAugmented::ExtendedGroup& mg = 
+    dynamic_cast<const LOCA::Hopf::MinimallyAugmented::ExtendedGroup&>(g);
   const LOCA::MultiContinuation::ExtendedVector& md = 
     dynamic_cast<const LOCA::MultiContinuation::ExtendedVector&>(d);
 
   grpPtr->computeX(*(mg.grpPtr), *(md.getXVec()), step);
   xVec->update(1.0, mg.getX(), step, md, 0.0);
-  grpPtr->setParamsMulti(constraintParamIDs, *xVec->getScalars());
+  grpPtr->setParam(bifParamID, xVec->getScalar(0));
   constraintsPtr->setX( *(xVec->getXVec()) );
-  constraintsPtr->setParams(constraintParamIDs, *xVec->getScalars());
+  constraintsPtr->setParam(bifParamID, xVec->getScalar(0));
+  constraintsPtr->setFrequency(xVec->getScalar(1));
 
   resetIsValid();
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::MultiContinuation::ConstrainedGroup::computeF() 
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+computeF() 
 {
   if (isValidF)
     return NOX::Abstract::Group::Ok;
 
   string callingFunction = 
-    "LOCA::MultiContinuation::ConstrainedGroup::computeF()";
+    "LOCA::Hopf::MinimallyAugmented::ExtendedGroup::computeF()";
   NOX::Abstract::Group::ReturnType status;
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
 
@@ -288,7 +313,7 @@ LOCA::MultiContinuation::ConstrainedGroup::computeF()
 							      callingFunction);
   }
   *(fVec->getXVec()) = grpPtr->getF();
-  
+
   // Compute constraints
   if (!constraintsPtr->isConstraints()) {
     status = constraintsPtr->computeConstraints();
@@ -301,26 +326,30 @@ LOCA::MultiContinuation::ConstrainedGroup::computeF()
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::MultiContinuation::ConstrainedGroup::computeJacobian() 
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+computeJacobian() 
 {
   if (isValidJacobian)
     return NOX::Abstract::Group::Ok;
 
   string callingFunction = 
-    "LOCA::MultiContinuation::ConstrainedGroup::computeJacobian()";
+    "LOCA::Hopf::MinimallyAugmented::ExtendedGroup::computeJacobian()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
 
   // Compute underlying df/dp (may invalidate underlying data)
-  if (!skipDfDp) {
-    status = grpPtr->computeDfDpMulti(constraintParamIDs, 
-				      *fMultiVec.getXMultiVec(), 
-				      isValidF);
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
-  }
+  std::vector<int> paramIDs(1); 
+  paramIDs[0] = bifParamID;
+  status = grpPtr->computeDfDpMulti(paramIDs, 
+				    *(fBifMultiVec->getXMultiVec()), 
+				    isValidF);
+  finalStatus = 
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							   finalStatus,
+							   callingFunction);
+
+  // Compute derivative w.r.t. omega
+  (*(dfdpMultiVec->getXMultiVec()))[1].init(0.0);
 
   // We need to compute the constraint derivatives before computing the
   // Jacobian, because the constraint derivatives might involve derivatives
@@ -334,14 +363,23 @@ LOCA::MultiContinuation::ConstrainedGroup::computeJacobian()
 							      finalStatus,
 							      callingFunction);
   }
-  status = 
-    constraintsPtr->computeDP(constraintParamIDs,
-			      *fMultiVec.getScalars(),
-			      isValidF);
+  status = constraintsPtr->computeDP(paramIDs,
+				     *(fBifMultiVec->getScalars()),
+				     isValidF);
   finalStatus = 
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							    finalStatus,
-							    callingFunction);
+							   finalStatus,
+							   callingFunction);
+
+  // Compute derivative w.r.t. omega
+  NOX::Abstract::MultiVector::DenseMatrix tmp(2,1);
+  status = constraintsPtr->computeDOmega(tmp);
+  finalStatus = 
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							   finalStatus,
+							   callingFunction);
+  dfdpMultiVec->getScalar(0,1) = tmp(0,0);
+  dfdpMultiVec->getScalar(1,1) = tmp(1,0);
 
   // Compute underlying Jacobian
   if (!grpPtr->isJacobian()) {
@@ -353,16 +391,10 @@ LOCA::MultiContinuation::ConstrainedGroup::computeJacobian()
   }
 
   // Set blocks in bordered solver
-  if (skipDfDp) 
-    borderedSolver->setMatrixBlocks(jacOp, 
-				    Teuchos::null, 
-				    constraintsPtr,
-				    dfdpMultiVec->getScalars());
-  else
-    borderedSolver->setMatrixBlocks(jacOp, 
-				    dfdpMultiVec->getXMultiVec(),
-				    constraintsPtr,
-				    dfdpMultiVec->getScalars());
+  borderedSolver->setMatrixBlocks(jacOp, 
+				  dfdpMultiVec->getXMultiVec(), 
+				  constraintsPtr,
+				  dfdpMultiVec->getScalars());
   status = borderedSolver->initForSolve();
   finalStatus = 
       globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
@@ -375,13 +407,14 @@ LOCA::MultiContinuation::ConstrainedGroup::computeJacobian()
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::MultiContinuation::ConstrainedGroup::computeGradient() 
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+computeGradient() 
 {
   if (isValidGradient)
     return NOX::Abstract::Group::Ok;
 
   string callingFunction = 
-    "LOCA::MultiContinuation::ConstrainedGroup::computeGradient()";
+    "LOCA::Hopf::MinimallyAugmented::ExtendedGroup::computeGradient()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
 
@@ -402,34 +435,13 @@ LOCA::MultiContinuation::ConstrainedGroup::computeGradient()
 							      finalStatus,
 							      callingFunction);
   }
-  
-  // Compute underlying gradient
-  if (!grpPtr->isGradient()) {
-    status = grpPtr->computeGradient();
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							      finalStatus,
-							      callingFunction);
-  }
 
-  // Get grad f
-  *gradientVec->getXVec() = grpPtr->getGradient();
-
-  // compute grad f + dg/dx^T * g
-  constraintsPtr->addDX(Teuchos::TRANS, 1.0, 
-			constraintsPtr->getConstraints(),
-			1.0, 
-			*gradientMultiVec.getXMultiVec());
-
-  // compute df/dp^T * f
-  ffMultiVec->getXMultiVec()->multiply(1.0, *dfdpMultiVec->getXMultiVec(), 
-				       *gradientMultiVec.getScalars());
-
-  // compute df/dp^T * f + dg/dp^T * g
-  gradientMultiVec.getScalars()->multiply(
-			       Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, 
-			       *dfdpMultiVec->getScalars(),
-			       constraintsPtr->getConstraints(), 1.0);
+  // Compute J^T*f for hopf group
+  status = applyJacobianTranspose(*fVec, *gradientVec);
+  finalStatus = 
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							   finalStatus,
+							   callingFunction);
 
   isValidGradient = true;
 
@@ -437,14 +449,14 @@ LOCA::MultiContinuation::ConstrainedGroup::computeGradient()
 }
    
 NOX::Abstract::Group::ReturnType
-LOCA::MultiContinuation::ConstrainedGroup::computeNewton(
-					       Teuchos::ParameterList& params) 
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+computeNewton(Teuchos::ParameterList& params) 
 {
   if (isValidNewton)
     return NOX::Abstract::Group::Ok;
 
   string callingFunction = 
-    "LOCA::MultiContinuation::ConstrainedGroup::computeNewton()";
+    "LOCA::Hopf::MinimallyAugmented::ExtendedGroup::computeNewton()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
 
@@ -484,9 +496,9 @@ LOCA::MultiContinuation::ConstrainedGroup::computeNewton(
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::MultiContinuation::ConstrainedGroup::applyJacobian(
-					  const NOX::Abstract::Vector& input,
-					  NOX::Abstract::Vector& result) const 
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+applyJacobian(const NOX::Abstract::Vector& input,
+	      NOX::Abstract::Vector& result) const 
 {
   // Convert input, result to multivectors
   Teuchos::RefCountPtr<NOX::Abstract::MultiVector> mv_input = 
@@ -505,9 +517,9 @@ LOCA::MultiContinuation::ConstrainedGroup::applyJacobian(
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::MultiContinuation::ConstrainedGroup::applyJacobianTranspose(
-					  const NOX::Abstract::Vector& input,
-					  NOX::Abstract::Vector& result) const 
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+applyJacobianTranspose(const NOX::Abstract::Vector& input,
+		       NOX::Abstract::Vector& result) const 
 {
   // Convert input, result to multivectors
   Teuchos::RefCountPtr<NOX::Abstract::MultiVector> mv_input = 
@@ -526,10 +538,10 @@ LOCA::MultiContinuation::ConstrainedGroup::applyJacobianTranspose(
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::MultiContinuation::ConstrainedGroup::applyJacobianInverse(
-					  Teuchos::ParameterList& params, 
-					  const NOX::Abstract::Vector& input,
-					  NOX::Abstract::Vector& result) const 
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+applyJacobianInverse(Teuchos::ParameterList& params, 
+		     const NOX::Abstract::Vector& input,
+		     NOX::Abstract::Vector& result) const 
 {
   // Convert input, result to multivectors
   Teuchos::RefCountPtr<NOX::Abstract::MultiVector> mv_input = 
@@ -548,12 +560,12 @@ LOCA::MultiContinuation::ConstrainedGroup::applyJacobianInverse(
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::MultiContinuation::ConstrainedGroup::applyJacobianMultiVector(
-				     const NOX::Abstract::MultiVector& input,
-				     NOX::Abstract::MultiVector& result) const 
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+applyJacobianMultiVector(const NOX::Abstract::MultiVector& input,
+			 NOX::Abstract::MultiVector& result) const 
 {
   string callingFunction = 
-    "LOCA::MultiContinuation::ConstrainedGroup::applyJacobianMultiVector()";
+    "LOCA::Hopf::MinimallyAugmented::ExtendedGroup::applyJacobianMultiVector()";
   
   if (!isJacobian()) {
     globalData->locaErrorCheck->throwError(callingFunction,
@@ -585,12 +597,12 @@ LOCA::MultiContinuation::ConstrainedGroup::applyJacobianMultiVector(
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::MultiContinuation::ConstrainedGroup::applyJacobianTransposeMultiVector(
-				     const NOX::Abstract::MultiVector& input,
-				     NOX::Abstract::MultiVector& result) const 
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+applyJacobianTransposeMultiVector(const NOX::Abstract::MultiVector& input,
+				  NOX::Abstract::MultiVector& result) const 
 {
   string callingFunction = 
-    "LOCA::MultiContinuation::ConstrainedGroup::applyJacobianTransposeMultiVector()";
+    "LOCA::Hopf::MinimallyAugmented::ExtendedGroup::applyJacobianTransposeMultiVector()";
   
   if (!isJacobian()) {
     globalData->locaErrorCheck->throwError(callingFunction,
@@ -623,13 +635,13 @@ LOCA::MultiContinuation::ConstrainedGroup::applyJacobianTransposeMultiVector(
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::MultiContinuation::ConstrainedGroup::applyJacobianInverseMultiVector(
-				     Teuchos::ParameterList& params,
-				     const NOX::Abstract::MultiVector& input,
-				     NOX::Abstract::MultiVector& result) const 
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+applyJacobianInverseMultiVector(Teuchos::ParameterList& params,
+				const NOX::Abstract::MultiVector& input,
+				NOX::Abstract::MultiVector& result) const 
 {
   string callingFunction = 
-    "LOCA::MultiContinuation::ConstrainedGroup::applyJacobianInverseMultiVector()";
+    "LOCA::Hopf::MinimallyAugmented::ExtendedGroup::applyJacobianInverseMultiVector()";
   
   if (!isJacobian()) {
     globalData->locaErrorCheck->throwError(callingFunction,
@@ -662,64 +674,74 @@ LOCA::MultiContinuation::ConstrainedGroup::applyJacobianInverseMultiVector(
 }
 
 bool
-LOCA::MultiContinuation::ConstrainedGroup::isF() const 
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+isF() const 
 {
   return isValidF;
 }
 
 bool
-LOCA::MultiContinuation::ConstrainedGroup::isJacobian() const 
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+isJacobian() const 
 {
   return isValidJacobian;
 }
 
 bool
-LOCA::MultiContinuation::ConstrainedGroup::isGradient() const 
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+isGradient() const 
 {
   return isValidGradient;
 }
 
 bool
-LOCA::MultiContinuation::ConstrainedGroup::isNewton() const 
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+isNewton() const 
 {
   return isValidNewton;
 }
   
 const NOX::Abstract::Vector&
-LOCA::MultiContinuation::ConstrainedGroup::getX() const 
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+getX() const 
 {
   return *xVec;
 }
 
 const NOX::Abstract::Vector&
-LOCA::MultiContinuation::ConstrainedGroup::getF() const 
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+getF() const 
 {
   return *fVec;
 }
 
 double
-LOCA::MultiContinuation::ConstrainedGroup::getNormF() const 
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+getNormF() const 
 {
   return fVec->norm();
 }
 
 const NOX::Abstract::Vector&
-LOCA::MultiContinuation::ConstrainedGroup::getGradient() const 
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+getGradient() const 
 {
   return *gradientVec;
 }
 
 const NOX::Abstract::Vector&
-LOCA::MultiContinuation::ConstrainedGroup::getNewton() const 
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+getNewton() const 
 {
   return *newtonVec;
 }
 
 double
-LOCA::MultiContinuation::ConstrainedGroup::getNormNewtonSolveResidual() const 
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+getNormNewtonSolveResidual() const 
 {
   string callingFunction = 
-    "LOCA::MultiContinuation::ConstrainedGroup::getNormNewtonSolveResidual()";
+    "LOCA::Hopf::MinimallyAugmented::ExtendedGroup::getNormNewtonSolveResidual()";
   NOX::Abstract::Group::ReturnType finalStatus;
   LOCA::MultiContinuation::ExtendedVector residual = *fVec;
   
@@ -731,118 +753,110 @@ LOCA::MultiContinuation::ConstrainedGroup::getNormNewtonSolveResidual() const
 }
 
 Teuchos::RefCountPtr<const LOCA::MultiContinuation::AbstractGroup>
-LOCA::MultiContinuation::ConstrainedGroup::getUnderlyingGroup() const
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+getUnderlyingGroup() const
 {
   return grpPtr;
 }
 
 Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>
-LOCA::MultiContinuation::ConstrainedGroup::getUnderlyingGroup()
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+getUnderlyingGroup()
 {
   return grpPtr;
 }
 
 void
-LOCA::MultiContinuation::ConstrainedGroup::copy(
-					      const NOX::Abstract::Group& src) 
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+copy(const NOX::Abstract::Group& src) 
 {
 
-  const LOCA::MultiContinuation::ConstrainedGroup& source = 
-    dynamic_cast<const LOCA::MultiContinuation::ConstrainedGroup&>(src);
+  const LOCA::Hopf::MinimallyAugmented::ExtendedGroup& source = 
+    dynamic_cast<const LOCA::Hopf::MinimallyAugmented::ExtendedGroup&>(src);
 
   // Protect against A = A
   if (this != &source) {
     globalData = source.globalData;
     parsedParams = source.parsedParams;
-    constraintParams = source.constraintParams;
+    hopfParams = source.hopfParams;
     grpPtr->copy(*source.grpPtr);
     constraintsPtr->copy(*source.constraintsPtr);
-    numParams = source.numParams;
     xMultiVec = source.xMultiVec;
     fMultiVec = source.fMultiVec;
     newtonMultiVec = source.newtonMultiVec;
     gradientMultiVec = source.gradientMultiVec;
     index_f = source.index_f;
     index_dfdp = source.index_dfdp;
-    constraintParamIDs = source.constraintParamIDs;
+    bifParamID = source.bifParamID;
     isValidF = source.isValidF;
     isValidJacobian = source.isValidJacobian;
     isValidNewton = source.isValidNewton;
     isValidGradient = source.isValidGradient;
-    skipDfDp = source.skipDfDp;
 
     // set up views again just to be safe
     setupViews();
 
     // Instantiate bordered solver
     borderedSolver = 
-      globalData->locaFactory->createBorderedSolverStrategy(
-				   parsedParams,
-				   constraintParams);
+      globalData->locaFactory->createBorderedSolverStrategy(parsedParams,
+							    hopfParams);
 
     // Set blocks in bordered solver
     if (isValidJacobian) {
-      if (skipDfDp) 
-	borderedSolver->setMatrixBlocks(jacOp, 
-					Teuchos::null, 
-					constraintsPtr,
-					dfdpMultiVec->getScalars());
-      else
-	borderedSolver->setMatrixBlocks(jacOp, 
-					dfdpMultiVec->getXMultiVec(),
-					constraintsPtr,
-					dfdpMultiVec->getScalars());
+      borderedSolver->setMatrixBlocks(jacOp, 
+				      dfdpMultiVec->getXMultiVec(),
+				      constraintsPtr,
+				      dfdpMultiVec->getScalars());
       NOX::Abstract::Group::ReturnType status = borderedSolver->initForSolve();
       globalData->locaErrorCheck->checkReturnType(status, 
-						  "LOCA::MultiContinuation::ConstrainedGroup::copy()");
-    }
+						  "LOCA::Hopf::MinimallyAugmented::copy()");
+  }
   }
 }
 
 void
-LOCA::MultiContinuation::ConstrainedGroup::setParamsMulti(
-		     const vector<int>& paramIDs, 
-		     const NOX::Abstract::MultiVector::DenseMatrix& vals)
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+setParamsMulti(const vector<int>& paramIDs, 
+	       const NOX::Abstract::MultiVector::DenseMatrix& vals)
 {
   grpPtr->setParamsMulti(paramIDs, vals);
   constraintsPtr->setParams(paramIDs, vals);
 
   for (unsigned int i=0; i<paramIDs.size(); i++)
-    for (unsigned int j=0; j<constraintParamIDs.size(); j++)
-      if (paramIDs[i] == constraintParamIDs[j])
-	xVec->getScalar(j) = vals(i,0);
+    if (paramIDs[i] == bifParamID)
+	xVec->getScalar(0) = vals(i,0);
 
   resetIsValid();
 }
 
 void
-LOCA::MultiContinuation::ConstrainedGroup::setParams(
-					       const LOCA::ParameterVector& p)
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+setParams(const LOCA::ParameterVector& p)
 {
   grpPtr->setParams(p);
   for (int i=0; i<p.length(); i++)
     constraintsPtr->setParam(i, p[i]);
-  for (int i=0; i<numParams; i++)
-    xVec->getScalar(i) = p[constraintParamIDs[i]];
+  xVec->getScalar(0) = p[bifParamID];
 
   resetIsValid();
 }
 
 void
-LOCA::MultiContinuation::ConstrainedGroup::setParam(int paramID, double val)
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+setParam(int paramID, double val)
 {
   grpPtr->setParam(paramID, val);
   constraintsPtr->setParam(paramID, val);
 
-  for (unsigned int j=0; j<constraintParamIDs.size(); j++)
-    if (paramID == constraintParamIDs[j])
-      xVec->getScalar(j) = val;
+  if (paramID == bifParamID)
+    xVec->getScalar(0) = val;
 
   resetIsValid();
 }
 
 void
-LOCA::MultiContinuation::ConstrainedGroup::setParam(string paramID, double val)
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+setParam(string paramID, double val)
 {
   const LOCA::ParameterVector& p = grpPtr->getParams();
   int id = p.getIndex(paramID);
@@ -850,31 +864,34 @@ LOCA::MultiContinuation::ConstrainedGroup::setParam(string paramID, double val)
 }
 
 const LOCA::ParameterVector&
-LOCA::MultiContinuation::ConstrainedGroup::getParams() const
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+getParams() const
 {
   return grpPtr->getParams();
 }
 
 double
-LOCA::MultiContinuation::ConstrainedGroup::getParam(int paramID) const
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+getParam(int paramID) const
 {
   return grpPtr->getParam(paramID);
 }
 
 double
-LOCA::MultiContinuation::ConstrainedGroup::getParam(string paramID) const
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+getParam(string paramID) const
 {
   return grpPtr->getParam(paramID);
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::MultiContinuation::ConstrainedGroup::computeDfDpMulti(
-					     const vector<int>& paramIDs, 
-					     NOX::Abstract::MultiVector& dfdp, 
-					     bool isValid_F)
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+computeDfDpMulti(const vector<int>& paramIDs, 
+		 NOX::Abstract::MultiVector& dfdp, 
+		 bool isValid_F)
 {
   string callingFunction = 
-    "LOCA::MultiContinuation::ConstrainedGroup::computeDfDpMulti()";
+    "LOCA::Hopf::MinimallyAugmented::ExtendedGroup::computeDfDpMulti()";
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
   NOX::Abstract::Group::ReturnType status;
 
@@ -903,45 +920,45 @@ LOCA::MultiContinuation::ConstrainedGroup::computeDfDpMulti(
 }
 
 void
-LOCA::MultiContinuation::ConstrainedGroup::preProcessContinuationStep(
-			     LOCA::Abstract::Iterator::StepStatus stepStatus)
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+preProcessContinuationStep(LOCA::Abstract::Iterator::StepStatus stepStatus)
 {
   grpPtr->preProcessContinuationStep(stepStatus);
   constraintsPtr->preProcessContinuationStep(stepStatus);
 }
 
 void
-LOCA::MultiContinuation::ConstrainedGroup::postProcessContinuationStep(
-			     LOCA::Abstract::Iterator::StepStatus stepStatus)
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+postProcessContinuationStep(LOCA::Abstract::Iterator::StepStatus stepStatus)
 {
   grpPtr->postProcessContinuationStep(stepStatus);
   constraintsPtr->postProcessContinuationStep(stepStatus);
 }
 
 void
-LOCA::MultiContinuation::ConstrainedGroup::projectToDraw(
-					      const NOX::Abstract::Vector& x,
-					      double *px) const
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+projectToDraw(const NOX::Abstract::Vector& x,
+	      double *px) const
 {
   const LOCA::MultiContinuation::ExtendedVector& mx = 
     dynamic_cast<const LOCA::MultiContinuation::ExtendedVector&>(x);
 
   grpPtr->projectToDraw(*mx.getXVec(), px);
-  for (int i=0; i<numParams; i++) {
+  for (int i=0; i<2; i++)
     px[grpPtr->projectToDrawDimension()+i] = mx.getScalar(i);
-  }
 }
 
 int
-LOCA::MultiContinuation::ConstrainedGroup::projectToDrawDimension() const
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+projectToDrawDimension() const
 {
-  return grpPtr->projectToDrawDimension() + numParams;
+  return grpPtr->projectToDrawDimension() + 2;
 }
 
 double
-LOCA::MultiContinuation::ConstrainedGroup::computeScaledDotProduct(
-				       const NOX::Abstract::Vector& a,
-				       const NOX::Abstract::Vector& b) const
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+computeScaledDotProduct(const NOX::Abstract::Vector& a,
+			const NOX::Abstract::Vector& b) const
 {
   const LOCA::MultiContinuation::ExtendedVector& ma = 
     dynamic_cast<const LOCA::MultiContinuation::ExtendedVector&>(a);
@@ -949,7 +966,7 @@ LOCA::MultiContinuation::ConstrainedGroup::computeScaledDotProduct(
     dynamic_cast<const LOCA::MultiContinuation::ExtendedVector&>(b);
 
   double val = grpPtr->computeScaledDotProduct(*ma.getXVec(), *mb.getXVec());
-  for (int i=0; i<numParams; i++) {
+  for (int i=0; i<2; i++) {
     val += ma.getScalar(i) * mb.getScalar(i);
   }
 
@@ -957,38 +974,112 @@ LOCA::MultiContinuation::ConstrainedGroup::computeScaledDotProduct(
 }
 
 void
-LOCA::MultiContinuation::ConstrainedGroup::printSolution(
-						 const double conParam) const
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+printSolution(const double conParam) const
 {
-  printSolution(*xVec, conParam);
+  if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
+    globalData->locaUtils->out() << 
+      "LOCA::Hopf::MinimallyAugmented::ExtendedGroup::printSolution\n";
+
+    globalData->locaUtils->out() << "Hopf point located at: " << 
+      globalData->locaUtils->sciformat(conParam) << "   " << 
+      globalData->locaUtils->sciformat(xVec->getScalar(0)) << "   " << 
+      globalData->locaUtils->sciformat(xVec->getScalar(1)) << std::endl;
+
+    globalData->locaUtils->out() << 
+      "\tPrinting Solution Vector for conParam = " << 
+      globalData->locaUtils->sciformat(conParam) << std::endl;
+  }
+  grpPtr->printSolution(conParam);
+  if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
+    globalData->locaUtils->out() << 
+      "\tPrinting Real Component of Right Null Vector for bif param = " << 
+      globalData->locaUtils->sciformat(xVec->getScalar(0)) << std::endl;
+  }
+  grpPtr->printSolution(*(constraintsPtr->getRightNullVecReal()), 
+			xVec->getScalar(0));
+  if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
+    globalData->locaUtils->out() << 
+      "\tPrinting Imaginary Component of Right Null Vector for bif param = " <<
+      globalData->locaUtils->sciformat(xVec->getScalar(1)) << std::endl;
+  }
+  grpPtr->printSolution(*(constraintsPtr->getRightNullVecImag()), 
+			xVec->getScalar(1));
+  if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
+    globalData->locaUtils->out() << 
+      "\tPrinting Real Component of Left Null Vector for real sigma = " << 
+      globalData->locaUtils->sciformat(constraintsPtr->getSigmaReal()) << 
+      std::endl;
+  }
+  grpPtr->printSolution(*(constraintsPtr->getLeftNullVecReal()), 
+			constraintsPtr->getSigmaReal());
+ if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
+    globalData->locaUtils->out() << 
+      "\tPrinting Imaginary Component of Left Null Vector for imaginary sigma = " <<
+      globalData->locaUtils->sciformat(constraintsPtr->getSigmaImag()) << 
+      std::endl;
+  }
+  grpPtr->printSolution(*(constraintsPtr->getLeftNullVecImag()), 
+			constraintsPtr->getSigmaImag()); 
 }
 
 void
-LOCA::MultiContinuation::ConstrainedGroup::printSolution(
-					      const NOX::Abstract::Vector& x,
-					      const double conParam) const
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+printSolution(const NOX::Abstract::Vector& x,
+	      const double conParam) const
 {
   const LOCA::MultiContinuation::ExtendedVector& mx = 
     dynamic_cast<const LOCA::MultiContinuation::ExtendedVector&>(x);
 
   if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
     globalData->locaUtils->out() << 
-      "LOCA::MultiContinuation::ConstrainedGroup::printSolution\n";
+      "LOCA::Hopf::MinimallyAugmented::ExtendedGroup::printSolution\n";
+
+    globalData->locaUtils->out() << "Hopf located at: " << 
+      globalData->locaUtils->sciformat(conParam) << "   " << 
+      globalData->locaUtils->sciformat(mx.getScalar(0)) << "   " << 
+      globalData->locaUtils->sciformat(mx.getScalar(1))<< std::endl;
 
     globalData->locaUtils->out() << 
       "\tPrinting Solution Vector for conParam = " << 
       globalData->locaUtils->sciformat(conParam) << std::endl;
   }
   grpPtr->printSolution(*mx.getXVec(), conParam);
-  if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
-    globalData->locaUtils->out() << "\tPrinting constraint parameters\n";
-    mx.getScalars()->print(globalData->locaUtils->out());
+   if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
+    globalData->locaUtils->out() << 
+      "\tPrinting Real Component of Right Null Vector for bif param = " << 
+      globalData->locaUtils->sciformat(mx.getScalar(0)) << std::endl;
   }
+  grpPtr->printSolution(*(constraintsPtr->getRightNullVecReal()), 
+			mx.getScalar(0));
+  if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
+    globalData->locaUtils->out() << 
+      "\tPrinting Imaginary Component of Right Null Vector for bif param = " <<
+      globalData->locaUtils->sciformat(mx.getScalar(1)) << std::endl;
+  }
+  grpPtr->printSolution(*(constraintsPtr->getRightNullVecImag()), 
+			mx.getScalar(1));
+  if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
+    globalData->locaUtils->out() << 
+      "\tPrinting Real Component of Left Null Vector for real sigma = " << 
+      globalData->locaUtils->sciformat(constraintsPtr->getSigmaReal()) << 
+      std::endl;
+  }
+  grpPtr->printSolution(*(constraintsPtr->getLeftNullVecReal()), 
+			constraintsPtr->getSigmaReal());
+ if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
+    globalData->locaUtils->out() << 
+      "\tPrinting Imaginary Component of Left Null Vector for imaginary sigma = " <<
+      globalData->locaUtils->sciformat(constraintsPtr->getSigmaImag()) << 
+      std::endl;
+  }
+  grpPtr->printSolution(*(constraintsPtr->getLeftNullVecImag()), 
+			constraintsPtr->getSigmaImag());
 }
 
 void
-LOCA::MultiContinuation::ConstrainedGroup::scaleVector(
-					       NOX::Abstract::Vector& x) const
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+scaleVector(NOX::Abstract::Vector& x) const
 {
   LOCA::MultiContinuation::ExtendedVector& mx = 
     dynamic_cast<LOCA::MultiContinuation::ExtendedVector&>(x);
@@ -997,9 +1088,10 @@ LOCA::MultiContinuation::ConstrainedGroup::scaleVector(
 }
 
 int
-LOCA::MultiContinuation::ConstrainedGroup::getBorderedWidth() const
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+getBorderedWidth() const
 {
-  int my_width = numParams;
+  int my_width = 2;
   if (isBordered)
     return my_width + bordered_grp->getBorderedWidth();
   else
@@ -1007,7 +1099,8 @@ LOCA::MultiContinuation::ConstrainedGroup::getBorderedWidth() const
 }
 
 Teuchos::RefCountPtr<const NOX::Abstract::Group>
-LOCA::MultiContinuation::ConstrainedGroup::getUnborderedGroup() const
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+getUnborderedGroup() const
 {
   if (isBordered)
     return bordered_grp->getUnborderedGroup();
@@ -1016,162 +1109,30 @@ LOCA::MultiContinuation::ConstrainedGroup::getUnborderedGroup() const
 }
 
 bool
-LOCA::MultiContinuation::ConstrainedGroup::isCombinedAZero() const
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+isCombinedAZero() const
 {
-  return false;  // A is always considered non-zero (A = df/dp)
+  return false;  // A is always considered non-zero (A = [df/dp 0])
 }
 
 bool
-LOCA::MultiContinuation::ConstrainedGroup::isCombinedBZero() const
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+isCombinedBZero() const
 {
-  if (isBordered)
-    return constraintsPtr->isDXZero() && bordered_grp->isCombinedBZero();
-  else
-    return constraintsPtr->isDXZero();
+  return false; // B is always considered non-zero (B =[dsigma1/dx dsigma2/dx])
 }
 
 bool
-LOCA::MultiContinuation::ConstrainedGroup::isCombinedCZero() const
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+isCombinedCZero() const
 {
-  return false;  // C is always considered non-zero (C = dg/dp)
+  return false;  // C is always considered non-zero (C = [dsigma1/dp 0; dsigma2/dp 0] )
 }
-
-// void
-// LOCA::MultiContinuation::ConstrainedGroup::decomposeMultiVec(
-// 			   bool use_transpose,
-//                            const NOX::Abstract::MultiVector& v,
-//                            NOX::Abstract::MultiVector& v_x,
-//                            NOX::Abstract::MultiVector::DenseMatrix& v_p) const
-// {
-//   // cast v to an extended multi-vec
-//   const LOCA::MultiContinuation::ExtendedMultiVec& mc_v = 
-//     dynamic_cast<const LOCA::MultiContinuation::ExtendedMultiVec&>(v);
-  
-//   // break mc_v into solution and parameter components
-//   Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> mc_v_x =
-//     mc_v.getXMultiVec();
-//   Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix> mc_v_p =
-//     mc_v.getScalars();
-
-//   // If the underlying system isn't bordered, we're done
-//   if (!isBordered) {
-//     v_x = *mc_v_x;
-//     if (!use_transpose)
-//       v_p.assign(*mc_v_p);
-//     else
-//       for (int j=0; j<v_p.numCols(); j++)
-// 	for (int i=0; i<v_p.numRows(); i++)
-// 	  v_p(i,j) = (*mc_v_p)(j,i);
-//     return;
-//   }
-
-//   int w = bordered_grp->getBorderedWidth();
-//   if (!use_transpose) {
-//     // Split v_p into 2 block rows, the top to store mc_v_x_p and the bottom
-//     // to store mc_v_p
-    
-//     int num_cols = v_p.numCols();
-//     NOX::Abstract::MultiVector::DenseMatrix v_p_1(Teuchos::View, v_p,
-// 						  w, num_cols, 0, 0);
-//     NOX::Abstract::MultiVector::DenseMatrix v_p_2(Teuchos::View, v_p,
-// 						  numParams, num_cols, w, 0);
-
-//     // Decompose mc_v_x
-//     bordered_grp->decomposeMultiVec(use_transpose,*mc_v_x, v_x, v_p_1);
-//     v_p_2.assign(*mc_v_p);
-//   }
-//   else {
-//     // Split v_p into 2 block columns, the first to store mc_v_x_p^t and the 
-//     // the second to store mc_v_p^T
-//     int num_rows = v_p.numRows();
-//     NOX::Abstract::MultiVector::DenseMatrix v_p_1(Teuchos::View, v_p,
-// 						  num_rows, w, 0, 0);
-//     NOX::Abstract::MultiVector::DenseMatrix v_p_2(Teuchos::View, v_p,
-// 						  num_rows, numParams, 0, w);
-
-//     // Decompose mc_v_x
-//     bordered_grp->decomposeMultiVec(use_transpose,*mc_v_x, v_x, v_p_1);
-//     for (int j=0; j<numParams; j++)
-//       for (int i=0; i<num_rows; i++)
-// 	v_p_2(i,j) = (*mc_v_p)(j,i);
-//   }
-// }
-
-// void
-// LOCA::MultiContinuation::ConstrainedGroup::combineBlocks(
-// 	                     NOX::Abstract::MultiVector& A,
-// 			     NOX::Abstract::MultiVector& B,
-// 	                     NOX::Abstract::MultiVector::DenseMatrix& C) const
-// {
-//   string callingFunction = 
-//     "LOCA::MultiContinuation::ConstrainedGroup::combineBlocks";
-
-//   Teuchos::RefCountPtr<const LOCA::MultiContinuation::ConstraintInterfaceMVDX> constraints_mvdx = Teuchos::rcp_dynamic_cast<const LOCA::MultiContinuation::ConstraintInterfaceMVDX>(constraints);
-//   if (constraints_mvdx == Teuchos::null)
-//     global_data.locaErrorCheck->throwError(
-// 				callingFunction,
-// 				string("Constraints object must be of type") +
-// 				string("ConstraintInterfaceMVDX"));
-
-//   Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> my_A = 
-//     dfdpMultiVec->getXMultiVec();
-//   Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> my_B = 
-//     Teuchos::rcp(constraints_mvdx->getDX(),false);
-//   Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix> my_C = 
-//     dfdpMultiVec->getScalars();
-
-//   // If the underlying system isn't bordered, we're done
-//   if (!isBordered) {
-//     A = *my_A;
-//     B = *my_B;
-//     C = *my_C;
-//     return;
-//   }
-
-//   // Create views for underlying group
-//   int w = bordered_grp->getBorderedWidth();
-//   std::vector<int> idx1(w);
-//   for (int i=0; i<w; i++)
-//     idx1[i] = i;
-//   Teuchos::RefCountPtr<NOX::Abstract::MultiVector> underlyingA = 
-//     A.subView(idx1);
-//   Teuchos::RefCountPtr<NOX::Abstract::MultiVector> underlyingB = 
-//     B.subView(idx1);
-//   NOX::Abstract::MultiVector::DenseMatrix underlyingC(Teuchos::View, C,
-// 						      w, w, 0, 0);
-
-//   // Combine blocks in underlying group
-//   bordered_grp->combineBlocks(underlyingA, underlyingB, underlyingC);
-
-//   // Create views for my blocks
-//   std::vector<int> idx2(numParams);
-//   for (int i=0; i<numParams; i++)
-//     idx2[i] = w+i;
-//   Teuchos::RefCountPtr<NOX::Abstract::MultiVector> my_A_x = 
-//     A.subView(idx2);
-//   Teuchos::RefCountPtr<NOX::Abstract::MultiVector> my_B_x = 
-//     B.subView(idx2);
-//   NOX::Abstract::MultiVector::DenseMatrix my_A_p(Teuchos::View, C,
-// 						 w, numParams, 0, w);
-//   NOX::Abstract::MultiVector::DenseMatrix my_B_p(Teuchos::View, C,
-// 						 numParams, w, w, 0);
-//   NOX::Abstract::MultiVector::DenseMatrix my_CC(Teuchos::View, C,
-// 						numParams, numParams, w, w);
-
-//   // Split my A into solution and parameter components
-//   bordered_grp->decomposeMultiVec(false, my_A, my_A_x, my_A_p);
-
-//   // Split my B into solution and parameter components
-//   bordered_grp->decomposeMultiVec(true, my_B, my_B_x, my_B_p);
-
-//   // Copy in my_C
-//   my_CC.assign(*my_C);
-// }
 
 void
-LOCA::MultiContinuation::ConstrainedGroup::extractSolutionComponent(
-			                const NOX::Abstract::MultiVector& v,
-                                        NOX::Abstract::MultiVector& v_x) const
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+extractSolutionComponent(const NOX::Abstract::MultiVector& v,
+			 NOX::Abstract::MultiVector& v_x) const
 {
   // cast v to an extended multi-vec
   const LOCA::MultiContinuation::ExtendedMultiVector& mc_v = 
@@ -1192,10 +1153,10 @@ LOCA::MultiContinuation::ConstrainedGroup::extractSolutionComponent(
 }
 
 void
-LOCA::MultiContinuation::ConstrainedGroup::extractParameterComponent(
-			   bool use_transpose,
-                           const NOX::Abstract::MultiVector& v,
-                           NOX::Abstract::MultiVector::DenseMatrix& v_p) const
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+extractParameterComponent(bool use_transpose,
+			  const NOX::Abstract::MultiVector& v,
+			  NOX::Abstract::MultiVector::DenseMatrix& v_p) const
 {
   // cast v to an extended multi-vec
   const LOCA::MultiContinuation::ExtendedMultiVector& mc_v = 
@@ -1226,7 +1187,7 @@ LOCA::MultiContinuation::ConstrainedGroup::extractParameterComponent(
     NOX::Abstract::MultiVector::DenseMatrix v_p_1(Teuchos::View, v_p,
 						  w, num_cols, 0, 0);
     NOX::Abstract::MultiVector::DenseMatrix v_p_2(Teuchos::View, v_p,
-						  numParams, num_cols, w, 0);
+						  2, num_cols, w, 0);
 
     // Decompose mc_v_x
     bordered_grp->extractParameterComponent(use_transpose,*mc_v_x, v_p_1);
@@ -1239,21 +1200,21 @@ LOCA::MultiContinuation::ConstrainedGroup::extractParameterComponent(
     NOX::Abstract::MultiVector::DenseMatrix v_p_1(Teuchos::View, v_p,
 						  num_rows, w, 0, 0);
     NOX::Abstract::MultiVector::DenseMatrix v_p_2(Teuchos::View, v_p,
-						  num_rows, numParams, 0, w);
+						  num_rows, 2, 0, w);
 
     // Decompose mc_v_x
     bordered_grp->extractParameterComponent(use_transpose,*mc_v_x, v_p_1);
-    for (int j=0; j<numParams; j++)
+    for (int j=0; j<2; j++)
       for (int i=0; i<num_rows; i++)
 	v_p_2(i,j) = (*mc_v_p)(j,i);
   }
 }
 
 void
-LOCA::MultiContinuation::ConstrainedGroup::loadNestedComponents(
-			   const NOX::Abstract::MultiVector& v_x,
-			   const NOX::Abstract::MultiVector::DenseMatrix& v_p,
-			   NOX::Abstract::MultiVector& v) const
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+loadNestedComponents(const NOX::Abstract::MultiVector& v_x,
+		     const NOX::Abstract::MultiVector::DenseMatrix& v_p,
+		     NOX::Abstract::MultiVector& v) const
 {
   // cast X to an extended multi-vec
   LOCA::MultiContinuation::ExtendedMultiVector& mc_v = 
@@ -1278,7 +1239,7 @@ LOCA::MultiContinuation::ConstrainedGroup::loadNestedComponents(
   NOX::Abstract::MultiVector::DenseMatrix v_p_1(Teuchos::View, v_p,
 						w, num_cols, 0, 0);
   NOX::Abstract::MultiVector::DenseMatrix v_p_2(Teuchos::View, v_p,
-						numParams, num_cols, w, 0);
+						2, num_cols, w, 0);
 
   // load v_x, v_p_1 into mc_v_x
   bordered_grp->loadNestedComponents(v_x, v_p_1, *mc_v_x);
@@ -1288,11 +1249,11 @@ LOCA::MultiContinuation::ConstrainedGroup::loadNestedComponents(
 }
 
 void
-LOCA::MultiContinuation::ConstrainedGroup::fillA(
-	                                 NOX::Abstract::MultiVector& A) const
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+fillA(NOX::Abstract::MultiVector& A) const
 {
   string callingFunction = 
-    "LOCA::MultiContinuation::ConstrainedGroup::fillA";
+    "LOCA::Hopf::MinimallyAugmented::ExtendedGroup::fillA";
 
   Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> my_A = 
     dfdpMultiVec->getXMultiVec();
@@ -1315,8 +1276,8 @@ LOCA::MultiContinuation::ConstrainedGroup::fillA(
   bordered_grp->fillA(*underlyingA);
 
   // Create views for my blocks
-  std::vector<int> idx2(numParams);
-  for (int i=0; i<numParams; i++)
+  std::vector<int> idx2(2);
+  for (int i=0; i<2; i++)
     idx2[i] = w+i;
   Teuchos::RefCountPtr<NOX::Abstract::MultiVector> my_A_x = 
     A.subView(idx2);
@@ -1326,32 +1287,18 @@ LOCA::MultiContinuation::ConstrainedGroup::fillA(
 }
 
 void
-LOCA::MultiContinuation::ConstrainedGroup::fillB(
-	                                  NOX::Abstract::MultiVector& B) const
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+fillB(NOX::Abstract::MultiVector& B) const
 {
   string callingFunction = 
-    "LOCA::MultiContinuation::ConstrainedGroup::fillB";
+    "LOCA::Hopf::MinimallyAugmented::ExtendedGroup::fillB";
 
-  bool isZeroB = constraintsPtr->isDXZero();
-  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> my_B;
-
-  if (!isZeroB) {
-    Teuchos::RefCountPtr<const LOCA::MultiContinuation::ConstraintInterfaceMVDX> constraints_mvdx = Teuchos::rcp_dynamic_cast<const LOCA::MultiContinuation::ConstraintInterfaceMVDX>(constraintsPtr);
-    if (constraints_mvdx == Teuchos::null)
-      globalData->locaErrorCheck->throwError(
-				callingFunction,
-				string("Constraints object must be of type") +
-				string("ConstraintInterfaceMVDX"));
-
-    my_B = Teuchos::rcp(constraints_mvdx->getDX(),false);
-  }
+  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> my_B =
+    Teuchos::rcp(constraintsPtr->getDX(),false);
 
   // If the underlying system isn't bordered, we're done
   if (!isBordered) {
-    if (isZeroB)
-      B.init(0.0);
-    else
-      B = *my_B;
+    B = *my_B;
     return;
   }
 
@@ -1367,25 +1314,22 @@ LOCA::MultiContinuation::ConstrainedGroup::fillB(
   bordered_grp->fillB(*underlyingB);
 
   // Create views for my blocks
-  std::vector<int> idx2(numParams);
-  for (int i=0; i<numParams; i++)
+  std::vector<int> idx2(2);
+  for (int i=0; i<2; i++)
     idx2[i] = w+i;
   Teuchos::RefCountPtr<NOX::Abstract::MultiVector> my_B_x = 
     B.subView(idx2);
 
   // Extract solution component from my_B and store in B
-  if (isZeroB)
-    my_B_x->init(0.0);
-  else
-    bordered_grp->extractSolutionComponent(*my_B, *my_B_x);
+  bordered_grp->extractSolutionComponent(*my_B, *my_B_x);
 }
 
 void
-LOCA::MultiContinuation::ConstrainedGroup::fillC(
-	                     NOX::Abstract::MultiVector::DenseMatrix& C) const
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+fillC(NOX::Abstract::MultiVector::DenseMatrix& C) const
 {
   string callingFunction = 
-    "LOCA::MultiContinuation::ConstrainedGroup::fillC";
+    "LOCA::Hopf::MinimallyAugmented::ExtendedGroup::fillC";
 
   Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix> my_C = 
     dfdpMultiVec->getScalars();
@@ -1396,19 +1340,8 @@ LOCA::MultiContinuation::ConstrainedGroup::fillC(
     return;
   }
 
-  bool isZeroB = constraintsPtr->isDXZero();
-  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> my_B;
-
-  if (!isZeroB) {
-    Teuchos::RefCountPtr<const LOCA::MultiContinuation::ConstraintInterfaceMVDX> constraints_mvdx = Teuchos::rcp_dynamic_cast<const LOCA::MultiContinuation::ConstraintInterfaceMVDX>(constraintsPtr);
-    if (constraints_mvdx == Teuchos::null)
-      globalData->locaErrorCheck->throwError(
-				callingFunction,
-				string("Constraints object must be of type") +
-				string("ConstraintInterfaceMVDX"));
-
-    my_B = Teuchos::rcp(constraints_mvdx->getDX(),false);
-  }
+  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> my_B = 
+    Teuchos::rcp(constraintsPtr->getDX(),false);
 
   Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> my_A = 
     dfdpMultiVec->getXMultiVec();
@@ -1423,41 +1356,26 @@ LOCA::MultiContinuation::ConstrainedGroup::fillC(
 
   // Create views for my blocks
   NOX::Abstract::MultiVector::DenseMatrix my_A_p(Teuchos::View, C,
-						 w, numParams, 0, w);
+						 w, 2, 0, w);
   NOX::Abstract::MultiVector::DenseMatrix my_B_p(Teuchos::View, C,
-						 numParams, w, w, 0);
+						 2, w, w, 0);
   NOX::Abstract::MultiVector::DenseMatrix my_CC(Teuchos::View, C,
-						numParams, numParams, w, w);
+						2, 2, w, w);
 
   // Extract solution component from my_A and store in my_A_p
   bordered_grp->extractParameterComponent(false, *my_A, my_A_p);
 
   // Extract solution component from my_B and store in my_B_p
-  if (isZeroB)
-    my_B_p.putScalar(0.0);
-  else
-    bordered_grp->extractParameterComponent(true, *my_B, my_B_p);
+  bordered_grp->extractParameterComponent(true, *my_B, my_B_p);
 
   // Copy in my_C
   my_CC.assign(*my_C);
 }
 
-
-
-Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>
-LOCA::MultiContinuation::ConstrainedGroup::getGroup()
-{
-  return grpPtr;
-}
-
-Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>
-LOCA::MultiContinuation::ConstrainedGroup::getConstraints()
-{
-  return constraintsPtr;
-}
-
 void
-LOCA::MultiContinuation::ConstrainedGroup::resetIsValid() {
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+resetIsValid() 
+{
   isValidF = false;
   isValidJacobian = false;
   isValidNewton = false;
@@ -1465,10 +1383,11 @@ LOCA::MultiContinuation::ConstrainedGroup::resetIsValid() {
 }
 
 void
-LOCA::MultiContinuation::ConstrainedGroup::setupViews()
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+setupViews()
 {
   index_f[0] = 0;
-  for (int i=0; i<numParams; i++)
+  for (int i=0; i<2; i++)
     index_dfdp[i] = i+1;
   
   xVec = Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::ExtendedVector>(xMultiVec.getVector(0),true);
@@ -1480,4 +1399,72 @@ LOCA::MultiContinuation::ConstrainedGroup::setupViews()
 
   dfdpMultiVec = Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::ExtendedMultiVector>(fMultiVec.subView(index_dfdp),true);
 
+  std::vector<int> index_fbif(2);
+  index_fbif[0] = 0; index_fbif[1] = 1;
+  fBifMultiVec = Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::ExtendedMultiVector>(fMultiVec.subView(index_fbif),true);
+
+}
+
+void
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+setBifParam(double val) 
+{
+  grpPtr->setParam(bifParamID, val);
+  xVec->getScalar(0) = val;
+  constraintsPtr->setParam(bifParamID, val);
+
+  resetIsValid();
+}
+
+void
+LOCA::Hopf::MinimallyAugmented::ExtendedGroup::
+getInitialVectors(Teuchos::RefCountPtr<NOX::Abstract::Vector>& aVecPtr_real,
+		  Teuchos::RefCountPtr<NOX::Abstract::Vector>& aVecPtr_imag,
+		  Teuchos::RefCountPtr<NOX::Abstract::Vector>& bVecPtr_real,
+		  Teuchos::RefCountPtr<NOX::Abstract::Vector>& bVecPtr_imag,
+		  bool isSymmetric)
+{
+  string callingFunction = 
+    "LOCA::Hopf::MinimallyAugmented::ExtendedGroup::getIntitialVectors()";
+ 
+
+  // Get initial "a" vector
+  if (!hopfParams->isParameter("Initial Real A Vector")) {
+    globalData->locaErrorCheck->throwError(
+				     callingFunction,
+				     "\"Initial Real A Vector\" is not set!");
+  }
+  aVecPtr_real = 
+    (*hopfParams).INVALID_TEMPLATE_QUALIFIER 
+    get< Teuchos::RefCountPtr<NOX::Abstract::Vector> >(
+						    "Initial Real A Vector");
+  if (!hopfParams->isParameter("Initial Imaginary A Vector")) {
+    globalData->locaErrorCheck->throwError(
+				 callingFunction,
+				 "\"Initial Imaginary A Vector\" is not set!");
+  }
+  aVecPtr_imag = 
+    (*hopfParams).INVALID_TEMPLATE_QUALIFIER 
+    get< Teuchos::RefCountPtr<NOX::Abstract::Vector> >(
+						"Initial Imaginary A Vector");
+
+  // Get initial "b" vector
+  if (!isSymmetric) {
+    if (!hopfParams->isParameter("Initial Real B Vector")) {
+      globalData->locaErrorCheck->throwError(callingFunction,
+				      "\"Initial Real B Vector\" is not set!");
+    }
+    bVecPtr_real = 
+      (*hopfParams).INVALID_TEMPLATE_QUALIFIER 
+      get< Teuchos::RefCountPtr<NOX::Abstract::Vector> >(
+						"Initial Real B Vector");
+    if (!hopfParams->isParameter("Initial Imaginary B Vector")) {
+      globalData->locaErrorCheck->throwError(callingFunction,
+				 "\"Initial Imaginary B Vector\" is not set!");
+    }
+    bVecPtr_imag = 
+      (*hopfParams).INVALID_TEMPLATE_QUALIFIER 
+      get< Teuchos::RefCountPtr<NOX::Abstract::Vector> >(
+						"Initial Imaginary B Vector");
+  }
 }

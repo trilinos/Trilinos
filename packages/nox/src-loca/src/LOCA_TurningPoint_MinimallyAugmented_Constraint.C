@@ -48,6 +48,7 @@
 #include "LOCA_Factory.H"
 #include "NOX_Utils.H"
 #include "Teuchos_ParameterList.hpp"
+#include "LOCA_BorderedSolver_JacobianOperator.H"
 
 LOCA::TurningPoint::MinimallyAugmented::Constraint::
 Constraint(
@@ -275,7 +276,9 @@ computeConstraints()
 							   callingFunction);
 
   // Set up bordered systems
-  borderedSolver->setMatrixBlocksMultiVecConstraint(grpPtr, 
+  Teuchos::RefCountPtr<const LOCA::BorderedSolver::JacobianOperator> op =
+    Teuchos::rcp(new  LOCA::BorderedSolver::JacobianOperator(grpPtr));
+  borderedSolver->setMatrixBlocksMultiVecConstraint(op, 
 						    a_vector, 
 						    b_vector, 
 						    Teuchos::null);

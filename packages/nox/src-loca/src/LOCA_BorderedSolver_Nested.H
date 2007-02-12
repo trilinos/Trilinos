@@ -85,8 +85,8 @@ namespace LOCA {
      * any other parameters for that method, and any method that can
      * be instantiated through the LOCA::Factory is available.
      *
-     * Note that the group representing \f$J\f$ must implement the
-     * LOCA::BorderedSystem::AbstractGroup interface, and the constraint
+     * Note that the operator representing \f$J\f$ must implement the
+     * LOCA::BorderedSolver::BorderedOperator interface, and the constraint
      * object representing \f$B\f$ must be of type
      * LOCA::MultiContinuation::ConstraintInterfaceMVDX.
      */
@@ -116,7 +116,7 @@ namespace LOCA {
        * via ConstraintInterface::isConstraintDerivativesXZero.
        */
       virtual void setMatrixBlocks(
-	  const Teuchos::RefCountPtr<const NOX::Abstract::Group>& group,
+	  const Teuchos::RefCountPtr<const LOCA::BorderedSolver::AbstractOperator>& op,
 	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>& blockA,
 	  const Teuchos::RefCountPtr<const LOCA::MultiContinuation::ConstraintInterface>& blockB,
 	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>& blockC);

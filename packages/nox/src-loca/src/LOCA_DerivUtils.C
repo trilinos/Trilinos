@@ -44,6 +44,7 @@
 
 #include "LOCA_MultiContinuation_AbstractGroup.H" 
 #include "LOCA_Hopf_MooreSpence_AbstractGroup.H"
+#include "LOCA_Hopf_MinimallyAugmented_AbstractGroup.H"
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_MultiVector.H"
 #include "LOCA_Parameter_Vector.H"
@@ -451,9 +452,9 @@ LOCA::DerivUtils::computeDwtJnDx(LOCA::MultiContinuation::AbstractGroup& grp,
 							   finalStatus,
 							   callingFunction);
 
-    // Difference perturbed and base vector 
-    result.update(-1.0, *wtJ, 1.0);
-    result.scale(1.0/eps);
+  // Difference perturbed and base vector 
+  result.update(-1.0, *wtJ, 1.0);
+  result.scale(1.0/eps);
   
   // Restore original solution vector
   grp.setX(*Xvec);
@@ -620,6 +621,182 @@ LOCA::DerivUtils::computeDCeDxa(
 
   }
 
+  // Restore original solution vector
+  grp.setX(*Xvec);
+
+  return finalStatus;
+}
+
+NOX::Abstract::Group::ReturnType 
+LOCA::DerivUtils::computeDwtCeDp(
+			  LOCA::Hopf::MinimallyAugmented::AbstractGroup& grp,
+			  const vector<int>& paramIDs, 
+			  const NOX::Abstract::Vector& w1,
+			  const NOX::Abstract::Vector& w2,
+			  const NOX::Abstract::Vector& yVector,
+			  const NOX::Abstract::Vector& zVector,
+			  double omega,
+			  NOX::Abstract::MultiVector::DenseMatrix& result_real,
+			  NOX::Abstract::MultiVector::DenseMatrix& result_imag,
+			  bool isValid) const
+{
+  string callingFunction = 
+    "LOCA::DerivUtils::computeDwtCeDp()";
+  NOX::Abstract::Group::ReturnType status, finalStatus;
+
+  // Views of Ce, d(Ce)/dp
+  Teuchos::RefCountPtr<NOX::Abstract::Vector> CeReal = 
+    w1.clone(NOX::ShapeCopy);
+  Teuchos::RefCountPtr<NOX::Abstract::Vector> CeImag = 
+    w2.clone(NOX::ShapeCopy);
+
+  // Compute base w^T*C*e
+  if (!isValid) {
+    finalStatus = grp.computeComplex(omega);
+    globalData->locaErrorCheck->checkReturnType(finalStatus, callingFunction);
+
+    status = grp.applyComplex(yVector, zVector, *CeReal, *CeImag);
+    finalStatus = 
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							     finalStatus,
+							     callingFunction);
+
+    // Conjugate transpose
+    result_real(0,0) = w1.innerProduct(*CeReal) + w2.innerProduct(*CeImag);
+    result_imag(0,0) = w1.innerProduct(*CeImag) - w2.innerProduct(*CeReal);
+  }
+  else
+    finalStatus = NOX::Abstract::Group::Ok;
+
+  double param;
+  double eps;
+
+  // Loop over each parameter
+  for (unsigned int i=0; i<paramIDs.size(); i++) {
+
+    // Perturb single parameter in this group, and return perturbation, eps
+    eps = perturbParam(grp, param, paramIDs[i]);
+
+    // Fill perturbed Ce vectors
+    status = grp.computeComplex(omega);
+    finalStatus = 
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
+							   callingFunction);
+
+    status = grp.applyComplex(yVector, zVector, *CeReal, *CeImag);
+    finalStatus = 
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							     finalStatus,
+							     callingFunction);
+
+    // Difference perturbed and base values
+    // Conjugate transpose
+    result_real(0,i+1) = (w1.innerProduct(*CeReal) + w2.innerProduct(*CeImag) -
+			  result_real(0,0)) / eps;
+    result_imag(0,i+1) = (w1.innerProduct(*CeImag) - w2.innerProduct(*CeReal) -
+			  result_imag(0,0)) /eps;
+    
+    // Restore original parameter value
+    grp.setParam(paramIDs[i], param);
+
+  }
+
+  return finalStatus;
+}
+
+NOX::Abstract::Group::ReturnType 
+LOCA::DerivUtils::computeDwtCeDx(
+			    LOCA::Hopf::MinimallyAugmented::AbstractGroup& grp,
+			    const NOX::Abstract::Vector& w1,
+			    const NOX::Abstract::Vector& w2,
+			    const NOX::Abstract::Vector& yVector,
+			    const NOX::Abstract::Vector& zVector,
+			    double omega,
+			    NOX::Abstract::Vector& result_real,
+			    NOX::Abstract::Vector& result_imag) const
+{
+  string callingFunction = 
+    "LOCA::DerivUtils::computeDwtCeDxa()";
+  NOX::Abstract::Group::ReturnType status, finalStatus = 
+    NOX::Abstract::Group::Ok;
+
+  // Vectors to store w^T*C
+  Teuchos::RefCountPtr<NOX::Abstract::Vector> wtC_real = 
+    w1.clone(NOX::ShapeCopy);
+  Teuchos::RefCountPtr<NOX::Abstract::Vector> wtC_imag = 
+    w2.clone(NOX::ShapeCopy);
+  
+  // Compute base w^T*C
+  finalStatus = grp.computeComplex(omega);
+  globalData->locaErrorCheck->checkReturnType(finalStatus, callingFunction);
+
+  status = grp.applyComplexTranspose(w1, w2, *wtC_real, *wtC_imag);
+  finalStatus = 
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
+							   callingFunction);
+
+  // Copy original solution vector
+  Teuchos::RefCountPtr<NOX::Abstract::Vector> Xvec = 
+    grp.getX().clone(NOX::DeepCopy);
+
+  // Perturb solution vector in direction of yVector, return perturbation
+  double eps = perturbXVec(grp, *Xvec, yVector);
+
+  // Compute perturbed wtC vectors
+  status = grp.computeComplex(omega);
+  finalStatus = 
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							   finalStatus,
+							   callingFunction);
+
+  status = 
+    grp.applyComplexTranspose(w1, w2, result_real, result_imag);
+  finalStatus = 
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							   finalStatus,
+							   callingFunction);
+  
+  // Difference perturbed and base vector and return approximate derivative
+  result_real.update(-1.0, *wtC_real, 1.0); result_real.scale(1.0/eps);
+  result_imag.update(-1.0, *wtC_imag, 1.0); result_imag.scale(1.0/eps);
+
+  // Take conjugate
+  result_imag.scale(-1.0);
+
+  // Restore original solution vector
+  grp.setX(*Xvec);
+
+  // Perturb solution vector in direction of zVector, return perturbation
+  eps = perturbXVec(grp, *Xvec, zVector);
+
+  // Compute perturbed wtC vectors
+  status = grp.computeComplex(omega);
+  finalStatus = 
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							   finalStatus,
+							   callingFunction);
+
+  Teuchos::RefCountPtr<NOX::Abstract::Vector> tmp_r = 
+    result_real.clone(NOX::ShapeCopy);
+  Teuchos::RefCountPtr<NOX::Abstract::Vector> tmp_i = 
+    result_imag.clone(NOX::ShapeCopy);
+  status = 
+    grp.applyComplexTranspose(w1, w2, *tmp_r, *tmp_i);
+  finalStatus = 
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							   finalStatus,
+							   callingFunction);
+  
+  // Difference perturbed and base vector and return approximate derivative
+  tmp_r->update(-1.0, *wtC_real, 1.0); tmp_r->scale(1.0/eps);
+  tmp_i->update(-1.0, *wtC_imag, 1.0); tmp_i->scale(1.0/eps);
+
+  // Take conjugate
+  tmp_i->scale(-1.0);
+
+  result_real.update(-1.0, *tmp_i, 1.0);
+  result_imag.update( 1.0, *tmp_r, 1.0);
+  
   // Restore original solution vector
   grp.setX(*Xvec);
 

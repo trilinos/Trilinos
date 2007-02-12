@@ -175,6 +175,46 @@ LOCA::Abstract::Group::applyComplexInverseMultiVector(
   return NOX::Abstract::Group::NotDefined;
 }
 
+NOX::Abstract::Group::ReturnType
+LOCA::Abstract::Group::applyComplexTranspose(
+				      const NOX::Abstract::Vector& input_real,
+				      const NOX::Abstract::Vector& input_imag,
+				      NOX::Abstract::Vector& result_real,
+				      NOX::Abstract::Vector& result_imag) const
+{
+  globalData->locaErrorCheck->throwError(
+			     "LOCA::Abstract::Group::applyComplexTranspose",
+			     "Method not defined for group");
+  return NOX::Abstract::Group::NotDefined;
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::Abstract::Group::applyComplexTransposeMultiVector(
+				const NOX::Abstract::MultiVector& input_real,
+				const NOX::Abstract::MultiVector& input_imag,
+				NOX::Abstract::MultiVector& result_real,
+				NOX::Abstract::MultiVector& result_imag) const
+{
+  globalData->locaErrorCheck->throwError(
+		    "LOCA::Abstract::Group::applyComplexTransposeMultiVector",
+		    "Method not defined for group");
+  return NOX::Abstract::Group::NotDefined;
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::Abstract::Group::applyComplexTransposeInverseMultiVector(
+				Teuchos::ParameterList& params,
+				const NOX::Abstract::MultiVector& input_real,
+				const NOX::Abstract::MultiVector& input_imag,
+				NOX::Abstract::MultiVector& result_real,
+				NOX::Abstract::MultiVector& result_imag) const
+{
+  globalData->locaErrorCheck->throwError(
+	      "LOCA::Abstract::Group::applyComplexTransposeInverseMultiVector",
+	      "Method not defined for group");
+  return NOX::Abstract::Group::NotDefined;
+}
+
 void
 LOCA::Abstract::Group::copy(const NOX::Abstract::Group& src)
 {

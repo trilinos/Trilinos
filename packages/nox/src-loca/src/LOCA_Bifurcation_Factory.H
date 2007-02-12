@@ -101,6 +101,8 @@ namespace LOCA {
      *           <ul>
      *           <li> "Moore-Spence" [Default]
      *                (LOCA::Hopf::MooreSpence::ExtendedGroup)
+     *           <li> "Minimally Augmented" 
+     *               (LOCA::Hopf::MinimallyAugmented::ExtendedGroup)
      *           </ul>
      *      </ul>
      * </ul>

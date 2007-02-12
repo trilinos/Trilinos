@@ -53,6 +53,9 @@ namespace LOCA {
     class ConstraintInterface;
     class ConstraintInterfaceMVDX;
   }
+  namespace BorderedSolver {
+    class AbstractOperator;
+  }
 }
 
 namespace LOCA {
@@ -80,7 +83,8 @@ namespace LOCA {
      * where \f$J\f$ is an \f$n\times n\f$ matrix, \f$A\f$ and \f$B\f$ are
      * \f$n\times m\f$, \f$C\f$ is \f$m\times m\f$, \f$X\f$ and \f$F\f$ are
      * \f$n\times p\f$ and \f$Y\f$ and \f$G\f$ are \f$m\times p\f$.  The action
-     * of \f$J\f$ and its inverse are represnted by a NOX::Abstract::Group
+     * of \f$J\f$ and its inverse are represnted by a 
+     * LOCA::BorderedSolver::AbstractOperator
      * while \f$A\f$ is a NOX::Abstract::MultiVector and \f$B\f$, \f$C\f$ are 
      * represtend by the solution and parameter components of the derivative
      * of a constraint contained in 
@@ -125,7 +129,7 @@ namespace LOCA {
        * via ConstraintInterface::isConstraintDerivativesXZero.
        */
       virtual void setMatrixBlocks(
-	  const Teuchos::RefCountPtr<const NOX::Abstract::Group>& group,
+	  const Teuchos::RefCountPtr<const LOCA::BorderedSolver::AbstractOperator>& op,
 	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>& blockA,
 	  const Teuchos::RefCountPtr<const LOCA::MultiContinuation::ConstraintInterface>& blockB,
 	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>& blockC) = 0;
@@ -138,7 +142,7 @@ namespace LOCA {
        * is then passed to the setMatrixBlocks() method.
        */
       virtual void setMatrixBlocksMultiVecConstraint(
-	  const Teuchos::RefCountPtr<const NOX::Abstract::Group>& group,
+	  const Teuchos::RefCountPtr<const LOCA::BorderedSolver::AbstractOperator>& op,
 	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>& blockA,
 	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>& blockB,
 	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>& blockC);
@@ -239,10 +243,7 @@ namespace LOCA {
 			    const NOX::Abstract::MultiVector* F,
 			    const NOX::Abstract::MultiVector::DenseMatrix* G,
 			    NOX::Abstract::MultiVector& X,
-			    NOX::Abstract::MultiVector::DenseMatrix& Y) const
-      {
-	return NOX::Abstract::Group::NotDefined;
-      }
+			    NOX::Abstract::MultiVector::DenseMatrix& Y) const = 0;
 
     private:
 

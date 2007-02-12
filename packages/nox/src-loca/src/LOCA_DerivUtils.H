@@ -56,6 +56,9 @@ namespace LOCA {
     namespace MooreSpence {
       class AbstractGroup;
     }
+     namespace MinimallyAugmented {
+      class AbstractGroup;
+    }
   }
 }
 
@@ -160,7 +163,7 @@ namespace LOCA {
 		   const NOX::Abstract::Vector& nullVector,
 		   NOX::Abstract::Vector& result) const;
 
-    //! Compute derivative of (J+iwB)(y+iz) with respect to parameter, 
+    //! Compute derivative of (J+iwM)(y+iz) with respect to parameter, 
     virtual NOX::Abstract::Group::ReturnType 
     computeDCeDp(LOCA::Hopf::MooreSpence::AbstractGroup& grp,
 		 const vector<int>& paramIDs,	     
@@ -171,7 +174,7 @@ namespace LOCA {
 		 NOX::Abstract::MultiVector& result_imag,
 		 bool isValid) const;
 
-    //! Compute vector (J+iwB)(y+iz))_{x}a  given a
+    //! Compute vector (J+iwM)(y+iz))_{x}a  given a
     virtual NOX::Abstract::Group::ReturnType 
     computeDCeDxa(LOCA::Hopf::MooreSpence::AbstractGroup& grp,
 		  const NOX::Abstract::Vector& yVector,
@@ -181,7 +184,7 @@ namespace LOCA {
 		  NOX::Abstract::MultiVector& result_real,
 		  NOX::Abstract::MultiVector& result_imag) const;
   
-    //! Compute vector (J+iwB)(y+iz))_{x}a  given a and (J+iwB)(y+iz) vector
+    //! Compute vector (J+iwM)(y+iz))_{x}a  given a and (J+iwM)(y+iz) vector
     virtual NOX::Abstract::Group::ReturnType 
     computeDCeDxa(LOCA::Hopf::MooreSpence::AbstractGroup& grp,
 		  const NOX::Abstract::Vector& yVector,
@@ -192,6 +195,30 @@ namespace LOCA {
 		  const NOX::Abstract::Vector& Ce_imag,
 		  NOX::Abstract::MultiVector& result_real,
 		  NOX::Abstract::MultiVector& result_imag) const;
+
+    //! Compute derivative of (w1+iw2)^T(J+iwM)(y+iz) w.r.t. parameter p
+    virtual NOX::Abstract::Group::ReturnType 
+    computeDwtCeDp(LOCA::Hopf::MinimallyAugmented::AbstractGroup& grp,
+		   const vector<int>& paramIDs, 
+		   const NOX::Abstract::Vector& w1,
+		   const NOX::Abstract::Vector& w2,
+		   const NOX::Abstract::Vector& yVector,
+		   const NOX::Abstract::Vector& zVector,
+		   double omega,
+		   NOX::Abstract::MultiVector::DenseMatrix& result_real,
+		   NOX::Abstract::MultiVector::DenseMatrix& result_imag,
+		   bool isValid) const;
+
+    //! Compute vector (w1+iw2)^T(J+iwM)(y+iz))_{x}
+    virtual NOX::Abstract::Group::ReturnType 
+    computeDwtCeDx(LOCA::Hopf::MinimallyAugmented::AbstractGroup& grp,
+		   const NOX::Abstract::Vector& w1,
+		   const NOX::Abstract::Vector& w2,
+		   const NOX::Abstract::Vector& yVector,
+		   const NOX::Abstract::Vector& zVector,
+		   double omega,
+		   NOX::Abstract::Vector& result_real,
+		   NOX::Abstract::Vector& result_imag) const;
 
   protected:
 

@@ -52,6 +52,7 @@
 #include "NOX_Utils.H"
 #include "LOCA_Parameter_Vector.H"
 #include "LOCA_Abstract_TransposeSolveGroup.H"
+#include "LOCA_BorderedSolver_JacobianOperator.H"
 
 LOCA::Pitchfork::MinimallyAugmented::ExtendedGroup::
 ExtendedGroup(
@@ -77,6 +78,7 @@ ExtendedGroup(
     fBifMultiVec(),
     newtonVec(),
     gradientVec(),
+    jacOp(),
     borderedSolver(),
     index_f(1),
     index_dfdp(2),
@@ -149,6 +151,9 @@ ExtendedGroup(
   bordered_grp = 
     Teuchos::rcp_dynamic_cast<LOCA::BorderedSystem::AbstractGroup>(grpPtr);
   isBordered = (bordered_grp != Teuchos::null);
+
+  // Create Jacobian operator for bordered solver
+  jacOp = Teuchos::rcp(new LOCA::BorderedSolver::JacobianOperator(grpPtr));
 }
 
 LOCA::Pitchfork::MinimallyAugmented::ExtendedGroup::
@@ -172,6 +177,7 @@ ExtendedGroup(const LOCA::Pitchfork::MinimallyAugmented::ExtendedGroup& source,
     fBifMultiVec(),
     newtonVec(),
     gradientVec(),
+    jacOp(),
     borderedSolver(source.borderedSolver),
     index_f(1),
     index_dfdp(2),
@@ -204,9 +210,12 @@ ExtendedGroup(const LOCA::Pitchfork::MinimallyAugmented::ExtendedGroup& source,
 
   constraintsPtr->setGroup(grpPtr);
 
+  // Create Jacobian operator for bordered solver
+  jacOp = Teuchos::rcp(new LOCA::BorderedSolver::JacobianOperator(grpPtr));
+
   // Set blocks in bordered solver
   if (isValidJacobian) {
-    borderedSolver->setMatrixBlocks(grpPtr, 
+    borderedSolver->setMatrixBlocks(jacOp, 
 				    dfdpMultiVec->getXMultiVec(),
 				    constraintsPtr,
 				    dfdpMultiVec->getScalars());
@@ -379,7 +388,7 @@ computeJacobian()
   }
 
   // Set blocks in bordered solver
-  borderedSolver->setMatrixBlocks(grpPtr, 
+  borderedSolver->setMatrixBlocks(jacOp, 
 				  dfdpMultiVec->getXMultiVec(), 
 				  constraintsPtr,
 				  dfdpMultiVec->getScalars());
@@ -597,12 +606,6 @@ applyJacobianTransposeMultiVector(const NOX::Abstract::MultiVector& input,
 					    "Called with invalid Jacobian!");
   }
 
-  // Set blocks in bordered solver
-  borderedSolver->setMatrixBlocks(grpPtr, 
-				  dfdpMultiVec->getXMultiVec(), 
-				  constraintsPtr,
-				  dfdpMultiVec->getScalars());
-
   // Cast inputs to continuation multivectors
   const LOCA::MultiContinuation::ExtendedMultiVector& c_input = 
     dynamic_cast<const LOCA::MultiContinuation::ExtendedMultiVector&>(input);
@@ -797,7 +800,7 @@ copy(const NOX::Abstract::Group& src)
 
     // Set blocks in bordered solver
     if (isValidJacobian) {
-      borderedSolver->setMatrixBlocks(grpPtr, 
+      borderedSolver->setMatrixBlocks(jacOp, 
 				      dfdpMultiVec->getXMultiVec(),
 				      constraintsPtr,
 				      dfdpMultiVec->getScalars());

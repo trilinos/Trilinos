@@ -40,12 +40,12 @@
 //@HEADER
 
 #include "LOCA_BorderedSolver_LowerTriangularBlockElimination.H"
+#include "LOCA_BorderedSolver_AbstractOperator.H"
 #include "LOCA_GlobalData.H"
 #include "LOCA_ErrorCheck.H"
 #include "LOCA_MultiContinuation_ConstraintInterface.H"
 #include "LOCA_MultiContinuation_MultiVecConstraint.H"
 #include "Teuchos_LAPACK.hpp"    // for LAPACK solve
-#include "LOCA_Abstract_TransposeSolveGroup.H"
 
 LOCA::BorderedSolver::LowerTriangularBlockElimination::
 LowerTriangularBlockElimination(
@@ -63,7 +63,7 @@ LOCA::BorderedSolver::LowerTriangularBlockElimination::
 NOX::Abstract::Group::ReturnType 
 LOCA::BorderedSolver::LowerTriangularBlockElimination::
 solve(Teuchos::ParameterList& params,
-      const NOX::Abstract::Group& grp,
+      const LOCA::BorderedSolver::AbstractOperator& op,
       const LOCA::MultiContinuation::ConstraintInterface& B,
       const NOX::Abstract::MultiVector::DenseMatrix& C,
       const NOX::Abstract::MultiVector* F,
@@ -88,7 +88,7 @@ solve(Teuchos::ParameterList& params,
     X.init(0.0);
   else {
     // Solve X = J^-1 F, note F must be nonzero
-    status = grp.applyJacobianInverseMultiVector(params, *F, X);
+    status = op.applyInverse(params, *F, X);
     finalStatus = 
       globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
 							     finalStatus,
@@ -144,7 +144,7 @@ solve(Teuchos::ParameterList& params,
 NOX::Abstract::Group::ReturnType 
 LOCA::BorderedSolver::LowerTriangularBlockElimination::
 solve(Teuchos::ParameterList& params,
-      const NOX::Abstract::Group& grp,
+      const LOCA::BorderedSolver::AbstractOperator& op,
       const NOX::Abstract::MultiVector& B,
       const NOX::Abstract::MultiVector::DenseMatrix& C,
       const NOX::Abstract::MultiVector* F,
@@ -156,13 +156,13 @@ solve(Teuchos::ParameterList& params,
   LOCA::MultiContinuation::MultiVecConstraint cB(Teuchos::rcp(&B,false));
 
   // Call other version
-  return solve(params, grp, cB, C, F, G, X, Y);
+  return solve(params, op, cB, C, F, G, X, Y);
 }
 
 NOX::Abstract::Group::ReturnType 
 LOCA::BorderedSolver::LowerTriangularBlockElimination::
 solveTranspose(Teuchos::ParameterList& params,
-	       const LOCA::Abstract::TransposeSolveGroup& grp,
+	       const LOCA::BorderedSolver::AbstractOperator& op,
 	       const LOCA::MultiContinuation::ConstraintInterface& B,
 	       const NOX::Abstract::MultiVector::DenseMatrix& C,
 	       const NOX::Abstract::MultiVector* F,
@@ -187,7 +187,7 @@ solveTranspose(Teuchos::ParameterList& params,
     X.init(0.0);
   else {
     // Solve X = J^-T F, note F must be nonzero
-    status = grp.applyJacobianTransposeInverseMultiVector(params, *F, X);
+    status = op.applyInverseTranspose(params, *F, X);
     finalStatus = 
       globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
 							     finalStatus,
@@ -243,7 +243,7 @@ solveTranspose(Teuchos::ParameterList& params,
 NOX::Abstract::Group::ReturnType 
 LOCA::BorderedSolver::LowerTriangularBlockElimination::
 solveTranspose(Teuchos::ParameterList& params,
-	       const LOCA::Abstract::TransposeSolveGroup& grp,
+	       const LOCA::BorderedSolver::AbstractOperator& op,
 	       const NOX::Abstract::MultiVector& B,
 	       const NOX::Abstract::MultiVector::DenseMatrix& C,
 	       const NOX::Abstract::MultiVector* F,
@@ -255,5 +255,5 @@ solveTranspose(Teuchos::ParameterList& params,
   LOCA::MultiContinuation::MultiVecConstraint cB(Teuchos::rcp(&B,false));
 
   // Call other version
-  return solveTranspose(params, grp, cB, C, F, G, X, Y);
+  return solveTranspose(params, op, cB, C, F, G, X, Y);
 }

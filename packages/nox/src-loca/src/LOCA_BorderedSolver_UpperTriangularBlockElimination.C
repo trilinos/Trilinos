@@ -40,6 +40,7 @@
 //@HEADER
 
 #include "LOCA_BorderedSolver_UpperTriangularBlockElimination.H"
+#include "LOCA_BorderedSolver_AbstractOperator.H"
 #include "LOCA_GlobalData.H"
 #include "LOCA_ErrorCheck.H"
 #include "Teuchos_LAPACK.hpp"    // for LAPACK solve
@@ -60,7 +61,7 @@ LOCA::BorderedSolver::UpperTriangularBlockElimination::
 NOX::Abstract::Group::ReturnType
 LOCA::BorderedSolver::UpperTriangularBlockElimination::
 solve(Teuchos::ParameterList& params,
-      const NOX::Abstract::Group& grp,
+      const LOCA::BorderedSolver::AbstractOperator& op,
       const NOX::Abstract::MultiVector* A,
       const NOX::Abstract::MultiVector::DenseMatrix& C,
       const NOX::Abstract::MultiVector* F,
@@ -118,7 +119,7 @@ solve(Teuchos::ParameterList& params,
     X.init(0.0);
   else if (isZeroA || isZeroY) {
     // Solve X = J^-1 F, note F must be nonzero
-    status = grp.applyJacobianInverseMultiVector(params, *F, X);
+    status = op.applyInverse(params, *F, X);
     finalStatus = 
       globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
 							     finalStatus,
@@ -136,7 +137,7 @@ solve(Teuchos::ParameterList& params,
       RHS->update(Teuchos::NO_TRANS, -1.0, *A, Y, 1.0);
     }
     // Solve X = J^-1 (F-A*Y)
-    status = grp.applyJacobianInverseMultiVector(params, *RHS, X);
+    status = op.applyInverse(params, *RHS, X);
     finalStatus = 
       globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
 							     finalStatus,
@@ -149,7 +150,7 @@ solve(Teuchos::ParameterList& params,
 NOX::Abstract::Group::ReturnType
 LOCA::BorderedSolver::UpperTriangularBlockElimination::
 solveTranspose(Teuchos::ParameterList& params,
-	       const LOCA::Abstract::TransposeSolveGroup& grp,
+	       const LOCA::BorderedSolver::AbstractOperator& op,
 	       const NOX::Abstract::MultiVector* A,
 	       const NOX::Abstract::MultiVector::DenseMatrix& C,
 	       const NOX::Abstract::MultiVector* F,
@@ -207,7 +208,7 @@ solveTranspose(Teuchos::ParameterList& params,
     X.init(0.0);
   else if (isZeroA || isZeroY) {
     // Solve X = J^-T F, note F must be nonzero
-    status = grp.applyJacobianTransposeInverseMultiVector(params, *F, X);
+    status = op.applyInverseTranspose(params, *F, X);
     finalStatus = 
       globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
 							     finalStatus,
@@ -225,7 +226,7 @@ solveTranspose(Teuchos::ParameterList& params,
       RHS->update(Teuchos::NO_TRANS, -1.0, *A, Y, 1.0);
     }
     // Solve X = J^-T (F-A*Y)
-    status = grp.applyJacobianTransposeInverseMultiVector(params, *RHS, X);
+    status = op.applyInverseTranspose(params, *RHS, X);
     finalStatus = 
       globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
 							     finalStatus,

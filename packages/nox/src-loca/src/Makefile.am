@@ -91,6 +91,10 @@ LOCA_EXTENDED = \
 	$(srcdir)/LOCA_Extended_MultiAbstractGroup.C
 
 LOCA_BORDERED_SOLVER_H = \
+	$(srcdir)/LOCA_BorderedSolver_AbstractOperator.H \
+	$(srcdir)/LOCA_BorderedSolver_JacobianOperator.H \
+	$(srcdir)/LOCA_BorderedSolver_ComplexOperator.H \
+	$(srcdir)/LOCA_BorderedSolver_BorderedOperator.H \
 	$(srcdir)/LOCA_BorderedSolver_AbstractStrategy.H \
 	$(srcdir)/LOCA_BorderedSolver_LowerTriangularBlockElimination.H \
 	$(srcdir)/LOCA_BorderedSolver_UpperTriangularBlockElimination.H \
@@ -101,6 +105,8 @@ LOCA_BORDERED_SOLVER_H = \
 	$(srcdir)/LOCA_BorderedSolver_Factory.H
 
 LOCA_BORDERED_SOLVER = \
+	$(srcdir)/LOCA_BorderedSolver_JacobianOperator.C \
+	$(srcdir)/LOCA_BorderedSolver_ComplexOperator.C \
 	$(srcdir)/LOCA_BorderedSolver_LowerTriangularBlockElimination.C \
 	$(srcdir)/LOCA_BorderedSolver_UpperTriangularBlockElimination.C \
 	$(srcdir)/LOCA_BorderedSolver_AbstractStrategy.C \
@@ -184,6 +190,12 @@ LOCA_BIFURCATION_H = \
 	$(srcdir)/LOCA_Hopf_MooreSpence_SolverStrategy.H \
 	$(srcdir)/LOCA_Hopf_MooreSpence_SalingerBordering.H \
 	$(srcdir)/LOCA_Hopf_MooreSpence_SolverFactory.H \
+	$(srcdir)/LOCA_Hopf_ComplexVector.H \
+	$(srcdir)/LOCA_Hopf_ComplexMultiVector.H \
+	$(srcdir)/LOCA_Hopf_MinimallyAugmented_AbstractGroup.H \
+	$(srcdir)/LOCA_Hopf_MinimallyAugmented_FiniteDifferenceGroup.H \
+	$(srcdir)/LOCA_Hopf_MinimallyAugmented_Constraint.H \
+	$(srcdir)/LOCA_Hopf_MinimallyAugmented_ExtendedGroup.H \
 	$(srcdir)/LOCA_Bifurcation_Factory.H
 
 LOCA_BIFURCATION = \
@@ -212,6 +224,11 @@ LOCA_BIFURCATION = \
 	$(srcdir)/LOCA_Hopf_MooreSpence_ExtendedGroup.C \
 	$(srcdir)/LOCA_Hopf_MooreSpence_SalingerBordering.C \
 	$(srcdir)/LOCA_Hopf_MooreSpence_SolverFactory.C \
+	$(srcdir)/LOCA_Hopf_ComplexVector.C \
+	$(srcdir)/LOCA_Hopf_ComplexMultiVector.C \
+	$(srcdir)/LOCA_Hopf_MinimallyAugmented_FiniteDifferenceGroup.C \
+	$(srcdir)/LOCA_Hopf_MinimallyAugmented_Constraint.C \
+	$(srcdir)/LOCA_Hopf_MinimallyAugmented_ExtendedGroup.C \
 	$(srcdir)/LOCA_Bifurcation_Factory.C
 
 LOCA_HOMOTOPY_H = \

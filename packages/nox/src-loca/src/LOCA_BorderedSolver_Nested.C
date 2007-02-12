@@ -40,6 +40,8 @@
 //@HEADER
 
 #include "LOCA_BorderedSolver_Nested.H"
+#include "LOCA_BorderedSolver_BorderedOperator.H"
+#include "LOCA_BorderedSolver_JacobianOperator.H"
 #include "LOCA_GlobalData.H"
 #include "LOCA_ErrorCheck.H"
 #include "LOCA_Factory.H"
@@ -77,7 +79,7 @@ LOCA::BorderedSolver::Nested::~Nested()
 
 void
 LOCA::BorderedSolver::Nested::setMatrixBlocks(
-         const Teuchos::RefCountPtr<const NOX::Abstract::Group>& group,
+         const Teuchos::RefCountPtr<const LOCA::BorderedSolver::AbstractOperator>& oper,
 	 const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>& blockA,
 	 const Teuchos::RefCountPtr<const LOCA::MultiContinuation::ConstraintInterface>& blockB,
 	 const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>& blockC)
@@ -85,14 +87,22 @@ LOCA::BorderedSolver::Nested::setMatrixBlocks(
   string callingFunction = 
     "LOCA::BorderedSolver::Nested::setMatrixBlocks()";
 
-  // Cast group to a bordered group
-  grp = 
-    Teuchos::rcp_dynamic_cast<const LOCA::BorderedSystem::AbstractGroup>(group);
+  // Cast oper to a bordered operator
+  Teuchos::RefCountPtr<const LOCA::BorderedSolver::JacobianOperator> op = 
+    Teuchos::rcp_dynamic_cast<const LOCA::BorderedSolver::JacobianOperator>(oper);
+  if (op == Teuchos::null) 
+    globalData->locaErrorCheck->throwError(
+      callingFunction,
+      string("Operaror must be of type LOCA::BorderedSolver::JacobianOperator")
+      + string(" in order to use nested bordered solver strategy."));
+
+  // Get bordered group
+  grp = Teuchos::rcp_dynamic_cast<const LOCA::BorderedSystem::AbstractGroup>(op->getGroup());
   if (grp == Teuchos::null) 
     globalData->locaErrorCheck->throwError(
       callingFunction,
-      string("Group must implement the LOCA::BorderedSystem::AbstractGroup")
-      + string(" interface in order to use nested bordered solver strategy."));
+      string("Group must be of type LOCA::BorderedSystem::AbstractGroup")
+      + string(" in order to use nested bordered solver strategy."));
 
   Teuchos::RefCountPtr<const LOCA::MultiContinuation::ConstraintInterfaceMVDX> con_mvdx = Teuchos::rcp_dynamic_cast<const LOCA::MultiContinuation::ConstraintInterfaceMVDX>(blockB);
   if (con_mvdx == Teuchos::null)
@@ -119,6 +129,7 @@ LOCA::BorderedSolver::Nested::setMatrixBlocks(
 				         callingFunction,
 				         "Blocks A and C cannot both be zero");
 
+  // Get unbordered group
   unbordered_grp = grp->getUnborderedGroup();
 
   // get number of outer constraints
@@ -207,9 +218,13 @@ LOCA::BorderedSolver::Nested::setMatrixBlocks(
 						  underlyingWidth);
     my_CC.assign(*blockC);
   }
+
+  // Create unbordered operator
+  Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractOperator> unbordered_op = 
+    Teuchos::rcp(new LOCA::BorderedSolver::JacobianOperator(unbordered_grp));
     
   // set blocks in solver
-  solver->setMatrixBlocksMultiVecConstraint(unbordered_grp, A, B, C);
+  solver->setMatrixBlocksMultiVecConstraint(unbordered_op, A, B, C);
 }
 
 NOX::Abstract::Group::ReturnType 
