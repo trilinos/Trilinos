@@ -27,6 +27,7 @@
 //@HEADER
 
 #include "EpetraExt_BlockMultiVector.h"
+#include "EpetraExt_BlockUtility.h"
 #include "Epetra_Map.h"
 
 using std::vector;
@@ -41,23 +42,8 @@ BlockMultiVector::BlockMultiVector(
       int NumVectors )
   : Epetra_MultiVector( GlobalMap, NumVectors ),
     BaseMap_( BaseMap ),
-    NumBlocks_(1)
+    Offset_( BlockUtility::CalculateOffset( BaseMap ) )
 {
-  AllocateBlocks_();
-}
-
-//=============================================================================
-// EpetraExt::BlockMultiVector Constructor
-BlockMultiVector::BlockMultiVector(
-      const Epetra_BlockMap & BaseMap,
-      const Epetra_BlockMap & GlobalMap,
-      int NumBlocks,
-      int NumVectors )
-  : Epetra_MultiVector( GlobalMap, NumVectors ),
-    BaseMap_( BaseMap ),
-    NumBlocks_(NumBlocks)
-{
-  AllocateBlocks_();
 }
 
 //==========================================================================
@@ -65,46 +51,57 @@ BlockMultiVector::BlockMultiVector(
 BlockMultiVector::BlockMultiVector(const BlockMultiVector& Source)
   : Epetra_MultiVector( dynamic_cast<const Epetra_MultiVector &>(Source) ),
     BaseMap_( Source.BaseMap_ ),
-    NumBlocks_( Source.NumBlocks_ )
+    Offset_( Source.Offset_ )
 {
-  AllocateBlocks_();
 }
 
 //=========================================================================
 BlockMultiVector::~BlockMultiVector()
 {
-  DeleteBlocks_();
 }
 
 //=========================================================================
-void BlockMultiVector::AllocateBlocks_(void)
+int BlockMultiVector::ExtractBlockValues(Epetra_MultiVector & BaseVector, int GlobalBlockRow) const
 {
-  int NumElements = BaseMap_.NumMyElements();
-  Ptrs_.resize(NumBlocks_);
-  for( int i = 0; i < NumBlocks_; ++i ) Ptrs_[i] = new double*[NumVectors()];
+   int IndexOffset = GlobalBlockRow * Offset_;
+   int localIndex=0;
 
-  double ** OrigPtrs;
-  ExtractView( &OrigPtrs );
+   // For each entry in the base vector, translate its global ID
+   // by the IndexOffset and extract the value from this blockVector
+   for (int i=0; i<BaseMap_.NumMyElements(); i++) {
+      localIndex = this->Map().LID((IndexOffset + BaseMap_.GID(i)));
+      if (localIndex==-1) { 
+	     cout << "Error in  BlockMultiVector::GetBlock: " << i << " " 
+		  << IndexOffset << " " << BaseMap_.GID(i) << endl;
+	     return -1;
+      }
+      for (int j=0; j<NumVectors(); j++)
+	BaseVector[j][i] = (*this)[j][localIndex]; 
+   }
 
-  for( int i = 0; i < NumBlocks_; ++i )
-  {
-    for( int j = 0; j < NumVectors(); ++j )
-      Ptrs_[i][j] = OrigPtrs[j]+(i*NumElements);
-
-    Blocks_[i] = new Epetra_MultiVector( View, BaseMap_, Ptrs_[i], NumVectors() );
-  }
+   return 0;
 }
 
 //=========================================================================
-void BlockMultiVector::DeleteBlocks_(void)
+int BlockMultiVector::LoadBlockValues(const Epetra_MultiVector & BaseVector, int GlobalBlockRow) 
 {
-  for( int i = 0; i < NumBlocks_; ++i )
-  {
-    delete Blocks_[i];
-    Blocks_[i] = 0;
-    delete [] Ptrs_[i];
-    Ptrs_[i] = 0;
-  }
+   int IndexOffset = GlobalBlockRow * Offset_;
+   int localIndex=0;
+
+   // For each entry in the base vector, translate its global ID
+   // by the IndexOffset and load into this blockVector
+   for (int i=0; i<BaseMap_.NumMyElements(); i++) {
+      localIndex = this->Map().LID((IndexOffset + BaseMap_.GID(i)));
+      if (localIndex==-1) { 
+	     cout << "Error in  BlockMultiVector::GetBlock: " << i << " " 
+		  << IndexOffset << " " << BaseMap_.GID(i) << endl;
+	     return -1;
+      }
+      for (int j=0; j<NumVectors(); j++)
+	(*this)[j][localIndex] = BaseVector[j][i];
+   }
+
+   return 0;
 }
 
 } //namespace EpetraExt
