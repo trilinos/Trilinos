@@ -44,6 +44,7 @@
 
 #include "LOCA_BorderedSolver_AbstractStrategy.H"
 #include "LOCA_Parameter_SublistParser.H"
+#include "LOCA_BorderedSolver_JacobianOperator.H"
 
 #include "ChanProblemInterface.H"
 #include "LinearConstraint.H"
@@ -51,6 +52,7 @@
 
 // Global variables used in main() and testSolve()
 Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup> grp;
+Teuchos::RefCountPtr<LOCA::BorderedSolver::JacobianOperator> op;
 Teuchos::RefCountPtr<LinearConstraint> constraints;
 Teuchos::RefCountPtr<LOCA::Parameter::SublistParser> parsedParams;
 Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy> bordering;
@@ -96,10 +98,10 @@ testSolve(bool flagA, bool flagB, bool flagC, bool flagF, bool flagG,
   constraints->setIsZeroDX(flagB);
 
   // Set up bordered problem
-  bordering->setMatrixBlocks(grp, a, constraints, c);
+  bordering->setMatrixBlocks(op, a, constraints, c);
   bordering->initForSolve();
 
-  direct->setMatrixBlocks(grp, a, constraints, c);
+  direct->setMatrixBlocks(op, a, constraints, c);
   direct->initForSolve();
 
   X_bordering->init(0.0);
@@ -221,6 +223,9 @@ int main(int argc, char *argv[])
     // specified problem.
     grp = Teuchos::rcp(new LOCA::LAPACK::Group(globalData, chan));
     grp->setParams(p);
+
+    // Create Jacobian operator
+    op = Teuchos::rcp(new LOCA::BorderedSolver::JacobianOperator(grp));
 
     // Change initial guess to a random vector
     Teuchos::RefCountPtr<NOX::Abstract::Vector> xnew = grp->getX().clone();
