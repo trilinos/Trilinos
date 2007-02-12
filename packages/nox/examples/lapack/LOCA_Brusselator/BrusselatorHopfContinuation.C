@@ -95,6 +95,20 @@ int main()
     Teuchos::RefCountPtr<NOX::Abstract::Vector> phi_vec =
       Teuchos::rcp(&phi,false);
 
+    // Create initial values for a and b for minimally augmented method
+    Teuchos::RefCountPtr<NOX::Abstract::Vector> a_vec_real = 
+      Teuchos::rcp(new NOX::LAPACK::Vector(2*n));
+    Teuchos::RefCountPtr<NOX::Abstract::Vector> a_vec_imag = 
+      Teuchos::rcp(new NOX::LAPACK::Vector(2*n));
+    Teuchos::RefCountPtr<NOX::Abstract::Vector> b_vec_real = 
+      Teuchos::rcp(new NOX::LAPACK::Vector(2*n));
+    Teuchos::RefCountPtr<NOX::Abstract::Vector> b_vec_imag = 
+      Teuchos::rcp(new NOX::LAPACK::Vector(2*n));
+    *a_vec_real = *y_vec;
+    *a_vec_imag = *z_vec;
+    *b_vec_real = *y_vec;
+    *b_vec_imag = *z_vec;
+
     // Create parameter list
     Teuchos::RefCountPtr<Teuchos::ParameterList> paramList = 
       Teuchos::rcp(new Teuchos::ParameterList);
@@ -105,6 +119,7 @@ int main()
     // Create the stepper sublist and set the stepper parameters
     Teuchos::ParameterList& stepperList = locaParamsList.sublist("Stepper");
     stepperList.set("Continuation Method", "Arc Length");   // Default
+    //stepperList.set("Continuation Method", "Natural");   // Default
     stepperList.set("Continuation Parameter", "alpha");
     stepperList.set("Initial Value", alpha);
     stepperList.set("Max Value", 1.0);
@@ -116,41 +131,63 @@ int main()
     Teuchos::ParameterList& bifurcationList = 
       locaParamsList.sublist("Bifurcation");
     bifurcationList.set("Type", "Hopf");
-    bifurcationList.set("Formulation", "Moore-Spence");          // Default
-    bifurcationList.set("Solver Method", "Salinger Bordering");  // Default
     bifurcationList.set("Bifurcation Parameter", "beta");        // Must set
-    bifurcationList.set("Length Normalization Vector", phi_vec); // Must set
-    bifurcationList.set("Initial Real Eigenvector", y_vec);      // Must set
-    bifurcationList.set("Initial Imaginary Eigenvector", z_vec); // Must set
     bifurcationList.set("Initial Frequency", w);                 // Must set
+
+//     // For Moore-Spence Formulation
+//     bifurcationList.set("Formulation", "Moore-Spence");          // Default
+//     bifurcationList.set("Solver Method", "Salinger Bordering");  // Default    
+//     bifurcationList.set("Length Normalization Vector", phi_vec); // Must set
+//     bifurcationList.set("Initial Real Eigenvector", y_vec);      // Must set
+//     bifurcationList.set("Initial Imaginary Eigenvector", z_vec); // Must set
+
+    // For minimally augmented formulation
+    bifurcationList.set("Formulation", "Minimally Augmented");
+    bifurcationList.set("Initial Real A Vector", a_vec_real);       // Must set
+    bifurcationList.set("Initial Imaginary A Vector", a_vec_imag);  // Must set
+    bifurcationList.set("Initial Real B Vector", b_vec_real);       // Must set
+    bifurcationList.set("Initial Imaginary B Vector", b_vec_imag);  // Must set
+    bifurcationList.set("Update Null Vectors Every Continuation Step", true);
+
+    // For minimally augmented method, should set these for good performance
+    // Direct solve of bordered equations
+    bifurcationList.set("Bordered Solver Method",  "LAPACK Direct Solve");
+    // Combine arc-length and turning point bordered rows & columns
+    stepperList.set("Bordered Solver Method", "Nested");
+    Teuchos::ParameterList& nestedList = 
+      stepperList.sublist("Nested Bordered Solver");
+    // Direct solve of combined bordered system
+    nestedList.set("Bordered Solver Method", "LAPACK Direct Solve");
 
     // Create predictor sublist
     Teuchos::ParameterList& predictorList = 
       locaParamsList.sublist("Predictor");
     predictorList.set("Method", "Secant");     // Default
 
-    // Should use w/Secant predictor
-    Teuchos::ParameterList& firstStepPredictor 
-      = predictorList.sublist("First Step Predictor");
-    firstStepPredictor.set("Method", "Random");
-    firstStepPredictor.set("Epsilon", 1.0e-3);
+//     // Should use w/Secant predictor & Moore-Spence formulation
+//     Teuchos::ParameterList& firstStepPredictor 
+//       = predictorList.sublist("First Step Predictor");
+//     firstStepPredictor.set("Method", "Random");
+//     firstStepPredictor.set("Epsilon", 1.0e-3);
 
-    // Should use w/Secant predictor
-    Teuchos::ParameterList& lastStepPredictor 
-      = predictorList.sublist("Last Step Predictor");
-    lastStepPredictor.set("Method", "Random");
-    lastStepPredictor.set("Epsilon", 1.0e-3);
+//     // Should use w/Secant predictor & Moore-Spence fomulation
+//     Teuchos::ParameterList& lastStepPredictor 
+//       = predictorList.sublist("Last Step Predictor");
+//     lastStepPredictor.set("Method", "Random");
+//     lastStepPredictor.set("Epsilon", 1.0e-3);
 
     // Create step size sublist
     Teuchos::ParameterList& stepSizeList = locaParamsList.sublist("Step Size");
     stepSizeList.set("Method", "Adaptive");      // Default
     stepSizeList.set("Initial Step Size", 0.02);
     stepSizeList.set("Min Step Size", 1.0e-3);
-    stepSizeList.set("Max Step Size", 0.02);
+    stepSizeList.set("Max Step Size", 0.1);
+    stepSizeList.set("Aggressiveness", 0.5);
 
     // Create the "Solver" parameters sublist to be used with NOX Solvers
     Teuchos::ParameterList& nlParams = paramList->sublist("NOX");
     Teuchos::ParameterList& nlPrintParams = nlParams.sublist("Printing");
+    nlPrintParams.set("Output Precision", 3);
     nlPrintParams.set("Output Information", 
 		      NOX::Utils::OuterIteration + 
 		      NOX::Utils::OuterIterationStatusTest + 
@@ -185,7 +222,7 @@ int main()
     // Create a group which uses that problem interface. The group will
     // be initialized to contain the default initial guess for the
     // specified problem.
-    Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup> grp = 
+    Teuchos::RefCountPtr<LOCA::LAPACK::Group> grp = 
       Teuchos::rcp(new LOCA::LAPACK::Group(globalData, brus));
 
     grp->setParams(p);
