@@ -1329,7 +1329,7 @@ static int pmatching_agg_ipm (ZZ *zz,
     
   if (hg->nVtx)  
     if (!(lhead  = (int*)   ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))
-        || !(lheadpref = (int*)   ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))
+        || (hgp->UsePrefPart && !(lheadpref = (int*)   ZOLTAN_MALLOC (hg->nVtx * sizeof(int))))
         || !(visited= (char*)  ZOLTAN_MALLOC (hg->nVtx * sizeof(char)))
         || !(cw     = (float*) ZOLTAN_MALLOC (VtxDim * hg->nVtx * sizeof(float)))
         || !(tw     = (float*) ZOLTAN_MALLOC (VtxDim * sizeof(float)))
@@ -1387,7 +1387,7 @@ static int pmatching_agg_ipm (ZZ *zz,
   for (i=0; i< hg->nVtx; ++i) {
     visited[i] = 0;
     lhead[i] = i;
-    lheadpref[i] = hg->pref_part[i];
+    if (hgp->UsePrefPart) lheadpref[i] = hg->pref_part[i];
     match[i] = VTX_LNO_TO_GNO(hg, i);
   }
   for (i=0; i<VtxDim; ++i)
