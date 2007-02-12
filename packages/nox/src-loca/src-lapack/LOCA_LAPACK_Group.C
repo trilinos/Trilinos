@@ -564,6 +564,147 @@ LOCA::LAPACK::Group::applyComplexInverseMultiVector(
     return NOX::Abstract::Group::Failed;
 }
 
+NOX::Abstract::Group::ReturnType
+LOCA::LAPACK::Group::applyComplexTranspose(
+				  const NOX::Abstract::Vector& input_real,
+				  const NOX::Abstract::Vector& input_imag,
+				  NOX::Abstract::Vector& result_real,
+				  NOX::Abstract::Vector& result_imag) const
+{
+   // Check validity of the Jacobian
+  if (!isComplex()) 
+    return NOX::Abstract::Group::BadDependency;
+
+  int n = complexSolver.getMatrix().numCols();
+
+  // Copy inputs into a complex vector
+  std::vector< std::complex<double> > input(n);
+  std::vector< std::complex<double> > result(n);
+  const NOX::LAPACK::Vector& lapack_input_real = 
+    dynamic_cast<const NOX::LAPACK::Vector&>(input_real);
+  const NOX::LAPACK::Vector& lapack_input_imag = 
+    dynamic_cast<const NOX::LAPACK::Vector&>(input_imag);
+  for (int i=0; i<n; i++)
+    input[i] = std::complex<double>(lapack_input_real(i),
+				    lapack_input_imag(i));
+
+  // Apply complex matrix
+  complexSolver.apply(true, 1, &input[0], &result[0]);
+
+  // Copy result into NOX vectors
+  NOX::LAPACK::Vector& lapack_result_real = 
+    dynamic_cast<NOX::LAPACK::Vector&>(result_real);
+  NOX::LAPACK::Vector& lapack_result_imag = 
+    dynamic_cast<NOX::LAPACK::Vector&>(result_imag);
+  for (int i=0; i<n; i++) {
+    lapack_result_real(i) = result[i].real();
+    lapack_result_imag(i) = result[i].imag();
+  }
+
+  return NOX::Abstract::Group::Ok;
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::LAPACK::Group::applyComplexTransposeMultiVector(
+				const NOX::Abstract::MultiVector& input_real,
+				const NOX::Abstract::MultiVector& input_imag,
+				NOX::Abstract::MultiVector& result_real,
+				NOX::Abstract::MultiVector& result_imag) const
+{
+   // Check validity of the Jacobian
+  if (!isComplex()) 
+    return NOX::Abstract::Group::BadDependency;
+
+  int n = complexSolver.getMatrix().numRows();
+  int p = input_real.numVectors();
+
+  // Copy inputs into a complex vector
+  std::vector< std::complex<double> > input(n*p);
+  std::vector< std::complex<double> > result(n*p);
+  const NOX::LAPACK::Vector* lapack_input_real;
+  const NOX::LAPACK::Vector* lapack_input_imag;
+  for (int j=0; j<p; j++) {
+    lapack_input_real = 
+      dynamic_cast<const NOX::LAPACK::Vector*>(&(input_real[j]));
+    lapack_input_imag = 
+      dynamic_cast<const NOX::LAPACK::Vector*>(&(input_imag[j]));
+    for (int i=0; i<n; i++)
+      input[i+n*j] = std::complex<double>((*lapack_input_real)(i),
+					  (*lapack_input_imag)(i));
+  }
+
+  // Apply complex matrix
+  complexSolver.apply(true, p, &input[0], &result[0]);
+
+  // Copy result into NOX vectors
+  NOX::LAPACK::Vector* lapack_result_real;
+  NOX::LAPACK::Vector* lapack_result_imag;
+  for (int j=0; j<p; j++) {
+    lapack_result_real = 
+      dynamic_cast<NOX::LAPACK::Vector*>(&(result_real[j]));
+    lapack_result_imag = 
+      dynamic_cast<NOX::LAPACK::Vector*>(&(result_imag[j]));
+    for (int i=0; i<n; i++) {
+      (*lapack_result_real)(i) = result[i+n*j].real();
+      (*lapack_result_imag)(i) = result[i+n*j].imag();
+    }
+  }
+
+  return NOX::Abstract::Group::Ok;
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::LAPACK::Group::applyComplexTransposeInverseMultiVector(
+				Teuchos::ParameterList& params,
+				const NOX::Abstract::MultiVector& input_real,
+				const NOX::Abstract::MultiVector& input_imag,
+				NOX::Abstract::MultiVector& result_real,
+				NOX::Abstract::MultiVector& result_imag) const
+{
+   // Check validity of the Jacobian
+  if (!isComplex()) 
+    return NOX::Abstract::Group::BadDependency;
+
+  int n = complexSolver.getMatrix().numRows();
+  int p = input_real.numVectors();
+
+  // Copy inputs into a complex vector
+  std::vector< std::complex<double> > input(n*p);
+  const NOX::LAPACK::Vector* lapack_input_real;
+  const NOX::LAPACK::Vector* lapack_input_imag;
+  for (int j=0; j<p; j++) {
+    lapack_input_real = 
+      dynamic_cast<const NOX::LAPACK::Vector*>(&(input_real[j]));
+    lapack_input_imag = 
+      dynamic_cast<const NOX::LAPACK::Vector*>(&(input_imag[j]));
+    for (int i=0; i<n; i++)
+      input[i+n*j] = std::complex<double>((*lapack_input_real)(i),
+					  (*lapack_input_imag)(i));
+  }
+
+  // Solve complex matrix
+  bool res = complexSolver.solve(true, p, &input[0]);
+
+  // Copy result into NOX vectors
+  NOX::LAPACK::Vector* lapack_result_real;
+  NOX::LAPACK::Vector* lapack_result_imag;
+  for (int j=0; j<p; j++) {
+    lapack_result_real = 
+      dynamic_cast<NOX::LAPACK::Vector*>(&(result_real[j]));
+    lapack_result_imag = 
+      dynamic_cast<NOX::LAPACK::Vector*>(&(result_imag[j]));
+    for (int i=0; i<n; i++) {
+      (*lapack_result_real)(i) = input[i+n*j].real();
+      (*lapack_result_imag)(i) = input[i+n*j].imag();
+    }
+  }
+
+  if (res)
+    return NOX::Abstract::Group::Ok;
+  else
+    return NOX::Abstract::Group::Failed;
+}
+
 NOX::Abstract::Group::ReturnType 
 LOCA::LAPACK::Group::augmentJacobianForHomotopy(double conParamValue)
 {

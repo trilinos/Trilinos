@@ -303,6 +303,43 @@ namespace LOCA {
       //@}
 
       /*! 
+       * @name Implementation of LOCA::Hopf::MinimallyAugmented::AbstractGroup virtual methods.
+       */
+      //@{
+
+      /*!
+       * Computes conjugate-tranpose matrix vector product 
+       * \f$ (J+i\omega B)^H (x + iy) \f$.
+       */
+      virtual NOX::Abstract::Group::ReturnType 
+      applyComplexTranspose(const NOX::Abstract::Vector& input_real,
+			    const NOX::Abstract::Vector& input_imag,
+			    NOX::Abstract::Vector& result_real,
+			    NOX::Abstract::Vector& result_imag) const;
+
+      /*!
+       * Computes conjugate-tranpose matrix vector product 
+       * \f$ (J+i\omega B)^H (x + iy) \f$.
+       */
+      virtual NOX::Abstract::Group::ReturnType 
+      applyComplexTransposeMultiVector(
+			   const NOX::Abstract::MultiVector& input_real,
+			   const NOX::Abstract::MultiVector& input_imag,
+			   NOX::Abstract::MultiVector& result_real,
+			   NOX::Abstract::MultiVector& result_imag) const;
+
+      //! Solve \f$(J+i\omega B)^H (x + iy) = a+ib\f$
+      virtual NOX::Abstract::Group::ReturnType
+      applyComplexTransposeInverseMultiVector(
+			    Teuchos::ParameterList& params,
+			    const NOX::Abstract::MultiVector& input_real,
+			    const NOX::Abstract::MultiVector& input_imag,
+			    NOX::Abstract::MultiVector& result_real,
+			    NOX::Abstract::MultiVector& result_imag) const;
+
+      //@}
+
+      /*! 
        * @name Implementation of LOCA::Homotopy::AbstractGroup virtual methods.
        */
       //@{
@@ -333,6 +370,17 @@ namespace LOCA {
       //! Return reference to shifted matrix
       const NOX::LAPACK::Matrix<double>& getShiftedMatrix() const {
 	return shiftedSolver.getMatrix();
+      }
+
+      //! Return reference to complex matrix
+      NOX::LAPACK::Matrix< std::complex<double> >& getComplexMatrix() {
+	return complexSolver.getMatrix();
+      }
+
+      //! Return reference to complex matrix
+      const NOX::LAPACK::Matrix< std::complex<double> >& 
+      getComplexMatrix() const {
+	return complexSolver.getMatrix();
       }
 
     protected:

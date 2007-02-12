@@ -111,7 +111,7 @@ namespace LOCA {
        * via ConstraintInterface::isConstraintDerivativesXZero.
        */
       virtual void setMatrixBlocks(
-          const Teuchos::RefCountPtr<const NOX::Abstract::Group>& group,
+          const Teuchos::RefCountPtr<const LOCA::BorderedSolver::AbstractOperator>& op,
 	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>& blockA,
 	  const Teuchos::RefCountPtr<const LOCA::MultiContinuation::ConstraintInterface>& blockB,
 	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>& blockC);
@@ -221,6 +221,17 @@ namespace LOCA {
 			    NOX::Abstract::MultiVector& X,
 			    NOX::Abstract::MultiVector::DenseMatrix& Y) const;
 
+    protected:
+
+      //! Solve linear system
+      NOX::Abstract::Group::ReturnType 
+      solve(bool trans, 
+	    Teuchos::ParameterList& params,
+	    const NOX::Abstract::MultiVector* F,
+	    const NOX::Abstract::MultiVector::DenseMatrix* G,
+	    NOX::Abstract::MultiVector& X,
+	    NOX::Abstract::MultiVector::DenseMatrix& Y) const;
+
     private:
 
       //! Private to prohibit copying
@@ -237,8 +248,11 @@ namespace LOCA {
       //! Solver parameters
       Teuchos::RefCountPtr<Teuchos::ParameterList> solverParams;
 
-      //! Pointer to group storing J
+      //! Pointer to group
       Teuchos::RefCountPtr<const LOCA::LAPACK::Group> grp;
+
+      //! Pointer to operator
+      Teuchos::RefCountPtr<const LOCA::BorderedSolver::AbstractOperator> op;
 
       //! Pointer to A block
       Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> A;
@@ -250,15 +264,18 @@ namespace LOCA {
       Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix> C;
 
       //! The augmented Jacobian matrix solver
-      Teuchos::RefCountPtr< NOX::LAPACK::LinearSolver<double> > augmentedSolver;
+      Teuchos::RefCountPtr< NOX::LAPACK::LinearSolver<double> > augJacSolver;
 
-      //! Jacobian dimension
+      //! The augmented complex matrix solver
+      Teuchos::RefCountPtr< NOX::LAPACK::LinearSolver< std::complex<double> > > augComplexSolver;
+
+      //! Matrix dimension
       int n;
 
       //! Number of additional rows/columns
       int m;
 
-      //! Size of augmented Jacobian
+      //! Size of augmented matrix
       int N;
 
       //! flag indicating whether A block is zero
@@ -275,6 +292,9 @@ namespace LOCA {
 
       //! flag indicating whether G block is zero
       bool isZeroG;
+
+      //! flag indicating whether we are solving the complex matrix or not
+      bool isComplex;
 
     };
   } // namespace BorderedSolver
