@@ -44,6 +44,7 @@
 
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_LAPACK.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 
 #include "NOX_LAPACK_Matrix.H"
 
@@ -201,8 +202,12 @@ NOX::LAPACK::LinearSolver<T>::apply(bool trans, int ncols, const T* input,
 			      T* output) const
 {
   Teuchos::ETransp tr = Teuchos::NO_TRANS;
-  if (trans)
-    tr = Teuchos::TRANS;
+  if (trans) {
+    if (Teuchos::ScalarTraits<T>::isComplex)
+      tr = Teuchos::CONJ_TRANS;
+    else
+      tr = Teuchos::TRANS;
+  }
 
   int n = mat.numRows();
   blas.GEMM(tr, Teuchos::NO_TRANS, n, ncols, n, 1.0, &mat(0,0), n, 
@@ -227,8 +232,12 @@ NOX::LAPACK::LinearSolver<T>::solve(bool trans, int ncols, T* output)
 
   // Solve using LU factorization
   char tr = 'N';
-  if (trans)
-    tr = 'T';
+  if (trans) {
+     if (Teuchos::ScalarTraits<T>::isComplex)
+       tr = 'C';
+     else
+       tr = 'T';
+  }
   lapack.GETRS(tr, n, ncols, &lu(0,0), n, &pivots[0], output, n, &info);
 
   if (info != 0)
