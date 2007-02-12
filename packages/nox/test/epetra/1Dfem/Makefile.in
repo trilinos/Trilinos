@@ -46,7 +46,7 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(1Dfem_SOURCES) $(1DfemAztecPrecRebuild_SOURCES) $(1DfemAztecPrecReuse_SOURCES) $(1DfemAztecSolverPrecRebuild_SOURCES) $(1DfemAztecSolverPrecRecompute_SOURCES) $(1DfemAztecSolverPrecReuse_SOURCES) $(1DfemBelos_SOURCES) $(1DfemIfpackRebuild_SOURCES) $(1DfemIfpackRecompute_SOURCES) $(1DfemIfpackReuse_SOURCES) $(1DfemMLPreconditioner_SOURCES) $(1DfemNonlinearCG_SOURCES) $(1DfemScaled_SOURCES) $(1DfemScaledInexactTrustRegion_SOURCES) $(1DfemTransient_SOURCES) $(1DfemWithModelEvaluator_SOURCES)
+SOURCES = $(1Dfem_SOURCES) $(1DfemAztecPrecRebuild_SOURCES) $(1DfemAztecPrecReuse_SOURCES) $(1DfemAztecSolverPrecRebuild_SOURCES) $(1DfemAztecSolverPrecRecompute_SOURCES) $(1DfemAztecSolverPrecReuse_SOURCES) $(1DfemBelos_SOURCES) $(1DfemIfpackRebuild_SOURCES) $(1DfemIfpackRecompute_SOURCES) $(1DfemIfpackReuse_SOURCES) $(1DfemMLPreconditioner_SOURCES) $(1DfemNonlinearCG_SOURCES) $(1DfemScaled_SOURCES) $(1DfemScaledInexactTrustRegion_SOURCES) $(1DfemTensorBased_SOURCES) $(1DfemTransient_SOURCES) $(1DfemWithModelEvaluator_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -83,6 +83,7 @@ host_triplet = @host@
 @BUILD_EPETRA_TESTS_TRUE@	1DfemIfpackRecompute$(EXEEXT) \
 @BUILD_EPETRA_TESTS_TRUE@	1DfemIfpackRebuild$(EXEEXT) \
 @BUILD_EPETRA_TESTS_TRUE@	1DfemNonlinearCG$(EXEEXT) \
+@BUILD_EPETRA_TESTS_TRUE@	1DfemTensorBased$(EXEEXT) \
 @BUILD_EPETRA_TESTS_TRUE@	$(am__EXEEXT_1) $(am__EXEEXT_2)
 subdir = test/epetra/1Dfem
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
@@ -168,6 +169,9 @@ am_1DfemScaledInexactTrustRegion_OBJECTS = 1DfemInterface.$(OBJEXT) \
 	1DfemScaledInexactTrustRegion.$(OBJEXT)
 1DfemScaledInexactTrustRegion_OBJECTS =  \
 	$(am_1DfemScaledInexactTrustRegion_OBJECTS)
+am_1DfemTensorBased_OBJECTS = 1DfemInterface.$(OBJEXT) \
+	1DfemTensorBased.$(OBJEXT)
+1DfemTensorBased_OBJECTS = $(am_1DfemTensorBased_OBJECTS)
 am_1DfemTransient_OBJECTS = 1DfemInterface.$(OBJEXT) \
 	1DfemTransient.$(OBJEXT)
 1DfemTransient_OBJECTS = $(am_1DfemTransient_OBJECTS)
@@ -196,6 +200,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/1DfemPrePostOperator.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/1DfemScaled.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/1DfemScaledInexactTrustRegion.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/1DfemTensorBased.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/1DfemTransient.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/1DfemWithModelEvaluator.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
@@ -216,7 +221,8 @@ SOURCES = $(1Dfem_SOURCES) $(1DfemAztecPrecRebuild_SOURCES) \
 	$(1DfemIfpackReuse_SOURCES) $(1DfemMLPreconditioner_SOURCES) \
 	$(1DfemNonlinearCG_SOURCES) $(1DfemScaled_SOURCES) \
 	$(1DfemScaledInexactTrustRegion_SOURCES) \
-	$(1DfemTransient_SOURCES) $(1DfemWithModelEvaluator_SOURCES)
+	$(1DfemTensorBased_SOURCES) $(1DfemTransient_SOURCES) \
+	$(1DfemWithModelEvaluator_SOURCES)
 DIST_SOURCES = $(1Dfem_SOURCES) $(1DfemAztecPrecRebuild_SOURCES) \
 	$(1DfemAztecPrecReuse_SOURCES) \
 	$(1DfemAztecSolverPrecRebuild_SOURCES) \
@@ -226,7 +232,8 @@ DIST_SOURCES = $(1Dfem_SOURCES) $(1DfemAztecPrecRebuild_SOURCES) \
 	$(1DfemIfpackReuse_SOURCES) $(1DfemMLPreconditioner_SOURCES) \
 	$(1DfemNonlinearCG_SOURCES) $(1DfemScaled_SOURCES) \
 	$(1DfemScaledInexactTrustRegion_SOURCES) \
-	$(1DfemTransient_SOURCES) $(1DfemWithModelEvaluator_SOURCES)
+	$(1DfemTensorBased_SOURCES) $(1DfemTransient_SOURCES) \
+	$(1DfemWithModelEvaluator_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -608,6 +615,16 @@ AM_CPPFLAGS = $(TEST_INCLUDES)
                               $(top_builddir)/src-epetra/libnoxepetra.a
 
 1DfemNonlinearCG_LDADD = $(TEST_LIBS)
+1DfemTensorBased_SOURCES = \
+                         $(srcdir)/1DfemInterface.H \
+                         $(srcdir)/1DfemInterface.C \
+                         $(srcdir)/1DfemTensorBased.C
+
+1DfemTensorBased_DEPENDENCIES = \
+                              $(top_builddir)/src/libnox.a \
+                              $(top_builddir)/src-epetra/libnoxepetra.a
+
+1DfemTensorBased_LDADD = $(TEST_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -686,6 +703,9 @@ clean-noinstPROGRAMS:
 1DfemScaledInexactTrustRegion$(EXEEXT): $(1DfemScaledInexactTrustRegion_OBJECTS) $(1DfemScaledInexactTrustRegion_DEPENDENCIES) 
 	@rm -f 1DfemScaledInexactTrustRegion$(EXEEXT)
 	$(CXXLINK) $(1DfemScaledInexactTrustRegion_LDFLAGS) $(1DfemScaledInexactTrustRegion_OBJECTS) $(1DfemScaledInexactTrustRegion_LDADD) $(LIBS)
+1DfemTensorBased$(EXEEXT): $(1DfemTensorBased_OBJECTS) $(1DfemTensorBased_DEPENDENCIES) 
+	@rm -f 1DfemTensorBased$(EXEEXT)
+	$(CXXLINK) $(1DfemTensorBased_LDFLAGS) $(1DfemTensorBased_OBJECTS) $(1DfemTensorBased_LDADD) $(LIBS)
 1DfemTransient$(EXEEXT): $(1DfemTransient_OBJECTS) $(1DfemTransient_DEPENDENCIES) 
 	@rm -f 1DfemTransient$(EXEEXT)
 	$(CXXLINK) $(1DfemTransient_LDFLAGS) $(1DfemTransient_OBJECTS) $(1DfemTransient_LDADD) $(LIBS)
@@ -716,6 +736,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/1DfemPrePostOperator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/1DfemScaled.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/1DfemScaledInexactTrustRegion.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/1DfemTensorBased.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/1DfemTransient.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/1DfemWithModelEvaluator.Po@am__quote@
 
@@ -990,6 +1011,22 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/1DfemScaledInexactTrustRegion.Po' tmpdepfile='$(DEPDIR)/1DfemScaledInexactTrustRegion.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o 1DfemScaledInexactTrustRegion.obj `if test -f '$(srcdir)/1DfemScaledInexactTrustRegion.C'; then $(CYGPATH_W) '$(srcdir)/1DfemScaledInexactTrustRegion.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/1DfemScaledInexactTrustRegion.C'; fi`
+
+1DfemTensorBased.o: $(srcdir)/1DfemTensorBased.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT 1DfemTensorBased.o -MD -MP -MF "$(DEPDIR)/1DfemTensorBased.Tpo" -c -o 1DfemTensorBased.o `test -f '$(srcdir)/1DfemTensorBased.C' || echo '$(srcdir)/'`$(srcdir)/1DfemTensorBased.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/1DfemTensorBased.Tpo" "$(DEPDIR)/1DfemTensorBased.Po"; else rm -f "$(DEPDIR)/1DfemTensorBased.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/1DfemTensorBased.C' object='1DfemTensorBased.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/1DfemTensorBased.Po' tmpdepfile='$(DEPDIR)/1DfemTensorBased.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o 1DfemTensorBased.o `test -f '$(srcdir)/1DfemTensorBased.C' || echo '$(srcdir)/'`$(srcdir)/1DfemTensorBased.C
+
+1DfemTensorBased.obj: $(srcdir)/1DfemTensorBased.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT 1DfemTensorBased.obj -MD -MP -MF "$(DEPDIR)/1DfemTensorBased.Tpo" -c -o 1DfemTensorBased.obj `if test -f '$(srcdir)/1DfemTensorBased.C'; then $(CYGPATH_W) '$(srcdir)/1DfemTensorBased.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/1DfemTensorBased.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/1DfemTensorBased.Tpo" "$(DEPDIR)/1DfemTensorBased.Po"; else rm -f "$(DEPDIR)/1DfemTensorBased.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/1DfemTensorBased.C' object='1DfemTensorBased.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/1DfemTensorBased.Po' tmpdepfile='$(DEPDIR)/1DfemTensorBased.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o 1DfemTensorBased.obj `if test -f '$(srcdir)/1DfemTensorBased.C'; then $(CYGPATH_W) '$(srcdir)/1DfemTensorBased.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/1DfemTensorBased.C'; fi`
 
 1DfemTransient.o: $(srcdir)/1DfemTransient.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT 1DfemTransient.o -MD -MP -MF "$(DEPDIR)/1DfemTransient.Tpo" -c -o 1DfemTransient.o `test -f '$(srcdir)/1DfemTransient.C' || echo '$(srcdir)/'`$(srcdir)/1DfemTransient.C; \

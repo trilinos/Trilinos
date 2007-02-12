@@ -487,7 +487,7 @@ bool
 NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
 					 const NOX::Solver::Generic& solver)
 {
-  NOX::Abstract::Group::ReturnType status;
+  NOX::Abstract::Group::ReturnType dir_status;
   
   Teuchos::ParameterList& linearParams = paramsPtr->sublist("Direction").
     sublist(paramsPtr->sublist("Direction").
@@ -495,13 +495,13 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
     sublist("Linear Solver");
 
   // Compute F at current solution.
-  status = soln.computeF();
-  if (status != NOX::Abstract::Group::Ok) 
+  dir_status = soln.computeF();
+  if (dir_status != NOX::Abstract::Group::Ok) 
     throwError("computeTensorDirection", "Unable to compute F");
 
   // Compute Jacobian at current solution.
-  status = soln.computeJacobian();
-  if (status != NOX::Abstract::Group::Ok) 
+  dir_status = soln.computeJacobian();
+  if (dir_status != NOX::Abstract::Group::Ok) 
     throwError("computeTensorDirection", "Unable to compute Jacobian");
   
   // Begin processing for the tensor step, if necessary.
@@ -579,11 +579,11 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
     
     // Compute the term inv(J)*Fp....
     tmpVecPtr->init(0.0);
-    status = soln.applyJacobianInverse(linearParams, *residualVecPtr, 
+    dir_status = soln.applyJacobianInverse(linearParams, *residualVecPtr, 
 				       *tmpVecPtr);
 
     // If it didn't converge, maybe we can recover. 
-    if (status != NOX::Abstract::Group::Ok)
+    if (dir_status != NOX::Abstract::Group::Ok)
     {
       if (doRescue == false)
 	throwError("computeTensorDirection", "Unable to apply Jacobian inverse");
@@ -626,10 +626,10 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
   }
 
   // Compute the Newton direction
-  status = soln.computeNewton(linearParams);
+  dir_status = soln.computeNewton(linearParams);
 
   // If it didn't converge, maybe we can recover. 
-  if (status != NOX::Abstract::Group::Ok)
+  if (dir_status != NOX::Abstract::Group::Ok)
   {
     if (doRescue == false)
       throwError("computeTensorDirection", "Unable to apply Jacobian inverse");
@@ -732,14 +732,14 @@ double NOX::Solver::TensorBased::calculateBeta(double qa,
 					       double& lambdaBar,
 					       double lambda) const
 {
-  double beta = 0.0;
+  double beta_value = 0.0;
   double discriminant = qb*qb - 4*qa*qc*lambda;
 
   if (discriminant < 0.0)
   {
     // no real root
-    beta = -qb / qa / 2.0;
-    qval = (qa * beta * beta) + (qb * beta) + (lambda * qc);
+    beta_value = -qb / qa / 2.0;
+    qval = (qa * beta_value * beta_value) + (qb * beta_value) + (lambda * qc);
     lambdaBar = qb*qb / (4*qa*qc);
 #if DEBUG_LEVEL > 0
     if (utilsPtr->isPrintType(NOX::Utils::Details))
@@ -756,13 +756,13 @@ double NOX::Solver::TensorBased::calculateBeta(double qa,
       if (utilsPtr->isPrintType(NOX::Utils::Details))
 	utilsPtr->out() << "  qa is relatively small\n";
 #endif 
-      beta = -lambda * qc / qb;
+      beta_value = -lambda * qc / qb;
     }
     else
     {
       double tmp1 = (-qb + sqrt(discriminant)) / (2*qa);
       double tmp2 = (-qb - sqrt(discriminant)) / (2*qa);
-      beta = (fabs(tmp1) < fabs(tmp2)) ? tmp1 : tmp2; // bwb - temporary test
+      beta_value = (fabs(tmp1) < fabs(tmp2)) ? tmp1 : tmp2; // bwb - temporary test
 #if DEBUG_LEVEL > 1
       if (utilsPtr->isPrintType(NOX::Utils::Details))
 	utilsPtr->out() << "  tmp1 = " << utilsPtr->sciformat(tmp1, 6)
@@ -778,11 +778,11 @@ double NOX::Solver::TensorBased::calculateBeta(double qa,
     utilsPtr->out() << "  qa,qb,qc = " << utilsPtr->sciformat(qa, 6)
 	 << utilsPtr->sciformat(qb, 6)
 	 << utilsPtr->sciformat(qc, 6)
-	 << "   beta = " << utilsPtr->sciformat(beta, 6)
+	 << "   beta = " << utilsPtr->sciformat(beta_value, 6)
 	 << endl;
 #endif
 
-  return beta;
+  return beta_value;
 }
 
 
@@ -820,7 +820,7 @@ NOX::Solver::TensorBased::computeCurvilinearStep(NOX::Abstract::Vector& dir,
 
 bool
 NOX::Solver::TensorBased::implementGlobalStrategy(NOX::Abstract::Group& newGrp,
-					  double& stepSize, 
+					  double& in_stepSize, 
 					  const NOX::Solver::Generic& s)
 {
   bool ok;
@@ -836,7 +836,7 @@ NOX::Solver::TensorBased::implementGlobalStrategy(NOX::Abstract::Group& newGrp,
 
   // Do line search and compute new soln.
   if ((lsType != Dual) || (isNewtonDirection))
-    ok = performLinesearch(newGrp, stepSize, searchDirection, s);
+    ok = performLinesearch(newGrp, in_stepSize, searchDirection, s);
   else if (lsType == Dual)
   {
     double fTensor = 0.0;
@@ -850,14 +850,14 @@ NOX::Solver::TensorBased::implementGlobalStrategy(NOX::Abstract::Group& newGrp,
     // Backtrack along tensor direction if it is descent direction.
     if (fprime < 0)
     {
-      ok = performLinesearch(newGrp, stepSize, searchDirection, s);
+      ok = performLinesearch(newGrp, in_stepSize, searchDirection, s);
       fTensor = 0.5 * newGrp.getNormF() * newGrp.getNormF();
-      tensorStep = stepSize;
+      tensorStep = in_stepSize;
       isTensorDescent = true;
     }
 
     // Backtrack along the Newton direction.
-    ok = performLinesearch(newGrp, stepSize, *newtonVecPtr, s);
+    ok = performLinesearch(newGrp, in_stepSize, *newtonVecPtr, s);
     fNew = 0.5 * newGrp.getNormF() * newGrp.getNormF();
 
     // If backtracking on the tensor step produced a better step, then use it.
@@ -874,7 +874,7 @@ NOX::Solver::TensorBased::implementGlobalStrategy(NOX::Abstract::Group& newGrp,
 
 bool
 NOX::Solver::TensorBased::performLinesearch(NOX::Abstract::Group& newSoln,
-					    double& stepSize,
+					    double& in_stepSize,
 					    const NOX::Abstract::Vector& lsDir,
 					    const NOX::Solver::Generic& s)
 {
@@ -907,15 +907,15 @@ NOX::Solver::TensorBased::performLinesearch(NOX::Abstract::Group& newSoln,
   double fOld = 0.5 * oldSoln.getNormF() * oldSoln.getNormF();  
 
   // Compute first trial point and its function value
-  stepSize = defaultStep;
-  newSoln.computeX(oldSoln, lsDir, stepSize);
+  in_stepSize = defaultStep;
+  newSoln.computeX(oldSoln, lsDir, in_stepSize);
   newSoln.computeF();    
   double fNew = 0.5 * newSoln.getNormF() * newSoln.getNormF();  
 
   // Stop here if only using the full step
   if (lsType == FullStep)
   {
-      print.printStep(lsIterations, stepSize, fOld, fNew, message);
+      print.printStep(lsIterations, in_stepSize, fOld, fNew, message);
       return (!isFailed);
   }
   
@@ -928,7 +928,7 @@ NOX::Solver::TensorBased::performLinesearch(NOX::Abstract::Group& newSoln,
   numJvMults++;  // computeSlope() has J*v inside of it
   
   // Compute the convergence criteria for the line search 
-  double threshold = fOld + alpha*stepSize*fprime;
+  double threshold = fOld + alpha*in_stepSize*fprime;
   isAcceptable = (fNew < threshold);
 
   // Update counter and temporarily hold direction if a linesearch is needed
@@ -949,7 +949,7 @@ NOX::Solver::TensorBased::performLinesearch(NOX::Abstract::Group& newSoln,
       break;
     }
 
-    print.printStep(lsIterations, stepSize, fOld, fNew);
+    print.printStep(lsIterations, in_stepSize, fOld, fNew);
 
     // Is the full tensor step a descent direction?  If not, switch to Newton
     if (isFirstPass &&
@@ -967,13 +967,13 @@ NOX::Solver::TensorBased::performLinesearch(NOX::Abstract::Group& newSoln,
     }
     else
     {
-      stepSize = selectLambda(fNew, fOld, fprime, stepSize);
+      in_stepSize = selectLambda(fNew, fOld, fprime, in_stepSize);
     }
     
     isFirstPass = false;
 
     // Check for linesearch failure
-    if (stepSize < minStep)
+    if (in_stepSize < minStep)
     {
       isFailed = true;
       message = "(FAILED - Min Step)";
@@ -987,19 +987,19 @@ NOX::Solver::TensorBased::performLinesearch(NOX::Abstract::Group& newSoln,
     // Compute new trial point and its function value
     if ((lsType == Curvilinear) && !(isNewtonDirection))
     {
-      computeCurvilinearStep(*tmpVecPtr, oldSoln, s, stepSize);
+      computeCurvilinearStep(*tmpVecPtr, oldSoln, s, in_stepSize);
       // Note: oldSoln is needed above to get correct preconditioner 
       newSoln.computeX(oldSoln, *tmpVecPtr, 1.0);
     }
     else
     {
-      newSoln.computeX(oldSoln, *tmpVecPtr, stepSize);
+      newSoln.computeX(oldSoln, *tmpVecPtr, in_stepSize);
     }
     newSoln.computeF();    
     fNew = 0.5 * newSoln.getNormF() * newSoln.getNormF();
 
     // Recompute convergence criteria based on new step
-    threshold = fOld + alpha*stepSize*fprime;
+    threshold = fOld + alpha*in_stepSize*fprime;
     isAcceptable = (fNew < threshold);
   }
 
@@ -1010,8 +1010,8 @@ NOX::Solver::TensorBased::performLinesearch(NOX::Abstract::Group& newSoln,
 
     if (recoveryStepType == Constant)
     {
-      stepSize = recoveryStep;
-      if (stepSize == 0.0)
+      in_stepSize = recoveryStep;
+      if (in_stepSize == 0.0)
       {
 	newSoln = oldSoln;
 	newSoln.computeF();
@@ -1022,15 +1022,15 @@ NOX::Solver::TensorBased::performLinesearch(NOX::Abstract::Group& newSoln,
 	// Update the group using recovery step
 	if ((lsType == Curvilinear) && !(isNewtonDirection))
 	{
-	  computeCurvilinearStep(*tmpVecPtr, oldSoln, s, stepSize);
+	  computeCurvilinearStep(*tmpVecPtr, oldSoln, s, in_stepSize);
 	  // Note: oldSoln is needed above to get correct preconditioner 
 	  newSoln.computeX(oldSoln, *tmpVecPtr, 1.0);
 	}
 	else
 	{
-	  newSoln.computeX(oldSoln, *tmpVecPtr, stepSize);
+	  newSoln.computeX(oldSoln, *tmpVecPtr, in_stepSize);
 	}
-	//newSoln.computeX(oldSoln, lsDir, stepSize);
+	//newSoln.computeX(oldSoln, lsDir, in_stepSize);
 	newSoln.computeF();
 	fNew = 0.5 * newSoln.getNormF() * newSoln.getNormF();
 	message = "(USING RECOVERY STEP!)";
@@ -1040,7 +1040,7 @@ NOX::Solver::TensorBased::performLinesearch(NOX::Abstract::Group& newSoln,
       message = "(USING LAST STEP!)";
   }
   
-  print.printStep(lsIterations, stepSize, fOld, fNew, message);
+  print.printStep(lsIterations, in_stepSize, fOld, fNew, message);
   counter.setValues(paramsPtr->sublist("Line Search"));
 
   return (!isFailed);
@@ -1064,10 +1064,10 @@ NOX::Solver::TensorBased::getNormModelResidual(
   // Compute residual of Tensor model, if requested...
   if (isTensorModel)
   {
-    double beta = sVecPtr->innerProduct(dir);
+    double tmp = sVecPtr->innerProduct(dir);
     if (utilsPtr->isPrintType(NOX::Utils::Details))
-      utilsPtr->out() << " sc'*dt   = " << utilsPtr->sciformat(beta, 6) << endl;
-    residualPtr->update(beta*beta, *aVecPtr, 1.0);
+      utilsPtr->out() << " sc'*dt   = " << utilsPtr->sciformat(tmp, 6) << endl;
+    residualPtr->update(tmp*tmp, *aVecPtr, 1.0);
   }
 
   double modelNorm = residualPtr->norm();
@@ -1076,7 +1076,7 @@ NOX::Solver::TensorBased::getNormModelResidual(
 
 
 void
-NOX::Solver::TensorBased::printDirectionInfo(char* dirName,
+NOX::Solver::TensorBased::printDirectionInfo(std::string dirName,
 					const NOX::Abstract::Vector& dir,
 					const NOX::Abstract::Group& soln,
 					bool isTensorModel) const

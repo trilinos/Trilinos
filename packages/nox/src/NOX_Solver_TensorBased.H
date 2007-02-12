@@ -333,7 +333,7 @@ protected:
 			      bool isTensorModel) const;
 
   //! Print pertinent information about the direction
-  void printDirectionInfo(char* dirName,
+  void printDirectionInfo(std::string dirName,
 			  const NOX::Abstract::Vector& dir,
 			  const NOX::Abstract::Group& soln,
 			  bool isTensorModel) const;
