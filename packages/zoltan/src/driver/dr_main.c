@@ -60,7 +60,7 @@ static void print_input_info(FILE *, int, PROB_INFO_PTR, PARIO_INFO_PTR, float )
 static void initialize_mesh(MESH_INFO_PTR, int proc);
 static void remove_random_vertices(MESH_INFO_PTR mesh, int iter, float factor);
 #ifdef DEBUG_READ_MESH
-static void print_mesh(MESH_INFO_PTR m, int *tp, int *the, int *tv);
+static void print_mesh(int proc, MESH_INFO_PTR m, int *tp, int *the, int *tv);
 #endif
 
 extern void safe_free(void **ptr);
@@ -163,6 +163,7 @@ int main(int argc, char *argv[])
   pio_info.pdsk_add_fact	= -1;
   pio_info.zeros		= -1;
   pio_info.file_type		= -1;
+  pio_info.chunk_reader         = 0;
   pio_info.init_dist_type	= -1;
   pio_info.init_size		= -1;
   pio_info.init_dim 		= -1;
@@ -298,6 +299,7 @@ int main(int argc, char *argv[])
      * now run Zoltan to get a new load balance and perform
      * the migration
      */
+
     if (!run_zoltan(zz, Proc, &prob, &mesh, &pio_info)) {
       Gen_Error(0, "fatal: Error returned from run_zoltan\n");
       error_report(Proc);
@@ -448,7 +450,7 @@ static int read_mesh(
   for (i=0; i<Num_Proc; i++){
     if (i == Proc){
       printf("Process %d:\n",i);
-      print_mesh(mesh, &pins, &he, &verts);
+      print_mesh(Proc, mesh, &pins, &he, &verts);
     }
     MPI_Barrier(MPI_COMM_WORLD);
   }
@@ -489,6 +491,9 @@ int i;
   if ((pio->init_dist_procs > 0) && (pio->init_dist_procs != Num_Proc)){
     fprintf(fp, "\n  Distribute input objects to only %d processes initially.\n", 
              pio->init_dist_procs);
+  }
+  if (pio->chunk_reader > 0){
+    fprintf(fp, "\n  Initially read input file in chunks (due to file size)\n");
   }
   if (pio->init_dist_type >= 0){
     fprintf(fp, "\n  Initially distribute input objects");
@@ -558,6 +563,7 @@ static void initialize_mesh(MESH_INFO_PTR mesh, int proc)
                   = mesh->global_blank_count
                   = 0;
   mesh->eb_names       = NULL;
+  mesh->eb_etypes      = NULL;
   mesh->eb_ids         = NULL;
   mesh->eb_cnts        = NULL;
   mesh->eb_nnodes      = NULL;
@@ -671,9 +677,10 @@ ELEM_INFO *elem;
 }
 
 #ifdef DEBUG_READ_MESH
-static void print_mesh(MESH_INFO_PTR m, int *tp, int *the, int *tv)
+static void print_mesh(int proc, MESH_INFO_PTR m, int *tp, int *the, int *tv)
 {
-  int i, j;
+  int i, j, ii, adj, globalID;
+  ELEM_INFO_PTR el;
   printf("Global number of hyperedges %d\n",m->gnhedges);
   if (m->format == ZOLTAN_COMPRESSED_EDGE){
     printf("Pins: %d edges\n",m->nhedges);
@@ -683,17 +690,34 @@ static void print_mesh(MESH_INFO_PTR m, int *tp, int *the, int *tv)
   }
   for (i=0; i<m->nhedges; i++){
     printf("  %d: ", m->hgid[i]);
-    for (j=m->hindex[i]; j<m->hindex[i+1]; j++){
+    for (j=m->hindex[i],ii=0; j<m->hindex[i+1]; j++,ii++){
+      if (ii && (ii%15==0)) printf("\n       ");
       printf("%d ", m->hvertex[j]);
     }
     printf("\n");
   }
   
   printf("Total pins: %d\n", m->hindex[m->nhedges]);
-
   printf("%d vertices: ", m->num_elems);
+
+  el = m->elements;
+  
   for (i=0; i<m->num_elems; i++){
-    printf("%d ", m->elements[i].globalID);
+    printf("%d (%d adj: ", el->globalID, el->nadj);
+    for (j=0; j<el->nadj; j++){
+      adj = el->adj[j];
+      if (el->adj_proc[j] == proc){
+        globalID = m->elements[adj].globalID;
+      }
+      else{
+        globalID = adj;
+      } 
+      if (j && (j%15==0)) printf("\n       ");
+      printf("%d ",globalID);
+    }
+    printf(")\n");
+
+    el++;
   }
   printf("\n");
   fflush(stdout);

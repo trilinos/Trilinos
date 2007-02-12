@@ -245,13 +245,13 @@ static int Zoltan_LB(
 char *yo = "Zoltan_LB";
 int gmax;    /* Maximum number of imported/exported objects 
                 over all processors.                       */
-int error;    /* Error code */
+int error = ZOLTAN_OK;    /* Error code */
 double start_time, end_time;
 double lb_time[2] = {0.0,0.0};
 char msg[256];
 int comm[3],gcomm[3]; 
 float *part_sizes = NULL, *fdummy = NULL;
-int part_dim;
+int wgt_dim, part_dim;
 int all_num_obj, i, ts, idIdx;
 struct Hash_Node **ht;
 int *export_all_procs, *export_all_to_part, *parts=NULL;
@@ -303,18 +303,16 @@ ZOLTAN_ID_PTR gid;
    *  communicator.
    */
 
-  if (ZOLTAN_PROC_NOT_IN_COMMUNICATOR(zz)) {
-    ZOLTAN_TRACE_EXIT(zz, yo);
-    return (ZOLTAN_OK);
-  }
+  if (ZOLTAN_PROC_NOT_IN_COMMUNICATOR(zz)) 
+    goto End;
 
   if (zz->LB.Method == NONE) {
     if (zz->Proc == zz->Debug_Proc && zz->Debug_Level >= ZOLTAN_DEBUG_PARAMS)
       printf("%s Balancing method selected == NONE; no balancing performed\n",
               yo);
 
-    ZOLTAN_TRACE_EXIT(zz, yo);
-    return (ZOLTAN_WARN);
+    error = ZOLTAN_WARN;
+    goto End;
   }
 
   /*
@@ -329,21 +327,18 @@ ZOLTAN_ID_PTR gid;
 
   error = Zoltan_Build_Machine_Desc(zz);
 
-  if (error == ZOLTAN_FATAL){
-    ZOLTAN_TRACE_EXIT(zz, yo);
-    return (error);
-  }
+  if (error == ZOLTAN_FATAL)
+    goto End;
 
   ZOLTAN_TRACE_DETAIL(zz, yo, "Done machine description");
 
   /* Since generating a new partition, need to free old mapping vector */
-  ZOLTAN_FREE(&zz->LB.Remap);
+  zz->LB.OldRemap = zz->LB.Remap;
+  zz->LB.Remap = NULL;
 
   error = Zoltan_LB_Build_PartDist(zz);
-  if (error != ZOLTAN_OK && error != ZOLTAN_WARN) {
-    ZOLTAN_TRACE_EXIT(zz, yo);
-    return (error);
-  }
+  if (error != ZOLTAN_OK && error != ZOLTAN_WARN)
+    goto End;
 
   if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL) {
     int i, np, fp;
@@ -361,14 +356,15 @@ ZOLTAN_ID_PTR gid;
   /* set partition sizes computed by DRUM, if requested */
   Zoltan_Drum_Set_Part_Sizes(zz);
 
-  part_dim = ((zz->Obj_Weight_Dim > 0) ? zz->Obj_Weight_Dim : 1);
+  wgt_dim = zz->Obj_Weight_Dim;
+  part_dim = ((wgt_dim > 0) ? wgt_dim : 1);
 
   part_sizes = (float *) ZOLTAN_MALLOC(sizeof(float) * part_dim 
                                      * zz->LB.Num_Global_Parts);
   if (part_sizes == NULL) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
-    ZOLTAN_TRACE_EXIT(zz, yo);
-    return (ZOLTAN_MEMERR);
+    error = ZOLTAN_MEMERR;
+    goto End;
   }
 
   /* Get partition sizes. */
@@ -390,8 +386,7 @@ ZOLTAN_ID_PTR gid;
   if (error == ZOLTAN_FATAL || error == ZOLTAN_MEMERR){
     sprintf(msg, "Partitioning routine returned code %d.", error);
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
-    ZOLTAN_TRACE_EXIT(zz, yo);
-    return (error);
+    goto End;
   }
   else if (error){
     if (zz->Debug_Level >ZOLTAN_DEBUG_NONE) {
@@ -436,19 +431,23 @@ ZOLTAN_ID_PTR gid;
        * This parameter setting requires that all local objects
        * and their assignments appear in the export list.
        */
-      error= Zoltan_Get_Obj_List(zz, num_export_objs, 
+      error= Zoltan_Get_Obj_List_Special_Malloc(zz, num_export_objs, 
                export_global_ids, export_local_ids,
-               0, &fdummy, export_to_part);
+               wgt_dim, &fdummy, export_to_part);
 
-      *export_procs = (int *)ZOLTAN_MALLOC(*num_export_objs * sizeof(int));
-
-      for (i=0; i<*num_export_objs; i++){
-        (*export_procs)[i] = zz->Proc;
+      if (error == ZOLTAN_OK){
+        ZOLTAN_FREE(&fdummy);
+        if (Zoltan_Special_Malloc(zz, (void **)export_procs, *num_export_objs,
+                            ZOLTAN_SPECIAL_MALLOC_INT)){
+          for (i=0; i<*num_export_objs; i++)
+            (*export_procs)[i] = zz->Proc;
+        }
+        else{
+          error = ZOLTAN_MEMERR;
+        }
       }
     }
-
-    ZOLTAN_TRACE_EXIT(zz, yo);
-    return (ZOLTAN_OK);
+    goto End;
   }
 
   /*
@@ -471,10 +470,10 @@ ZOLTAN_ID_PTR gid;
         /* This condition should never happen!! */
         /* Methods should not return arrays if no lists are requested. */
         *num_import_objs = *num_export_objs = -1;
-        Zoltan_LB_Free_Part(import_global_ids, import_local_ids, import_procs,
-                            import_to_part);
-        Zoltan_LB_Free_Part(export_global_ids, export_local_ids, export_procs,
-                            export_to_part);
+        Zoltan_LB_Free_Part_F90(zz, import_global_ids, import_local_ids, 
+                            import_procs, import_to_part);
+        Zoltan_LB_Free_Part_F90(zz, export_global_ids, export_local_ids, 
+                            export_procs, export_to_part);
         ZOLTAN_PRINT_WARN(zz->Proc, yo, 
                       "Method returned lists, but no lists requested.");
       }
@@ -493,16 +492,15 @@ ZOLTAN_ID_PTR gid;
         sprintf(msg, "Error building return arguments; "
                      "%d returned by Zoltan_Compute_Destinations\n", error);
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
-        ZOLTAN_TRACE_EXIT(zz, yo);
-        return error;
+        goto End;
       }
       if (zz->LB.Return_Lists == ZOLTAN_LB_EXPORT_LISTS ||
           zz->LB.Return_Lists == ZOLTAN_LB_COMPLETE_EXPORT_LISTS) {
         /* Method returned import lists, but only export lists were desired. */
         /* Import lists not needed; free them. */
         *num_import_objs = -1;
-        Zoltan_LB_Free_Part(import_global_ids, import_local_ids, import_procs,
-                            import_to_part);
+        Zoltan_LB_Free_Part_F90(zz, import_global_ids, import_local_ids, 
+                            import_procs, import_to_part);
       }
     }
   }
@@ -523,15 +521,14 @@ ZOLTAN_ID_PTR gid;
           sprintf(msg, "Error building return arguments; "
                        "%d returned by Zoltan_Compute_Destinations\n", error);
           ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
-          ZOLTAN_TRACE_EXIT(zz, yo);
-          return error;
+          goto End;
         }
         if (zz->LB.Return_Lists == ZOLTAN_LB_IMPORT_LISTS) {
           /* Method returned export lists, but only import lists are desired. */
           /* Export lists not needed; free them. */
           *num_export_objs = -1;
-          Zoltan_LB_Free_Part(export_global_ids, export_local_ids, export_procs,
-                             export_to_part);
+          Zoltan_LB_Free_Part_F90(zz, export_global_ids, export_local_ids, 
+                              export_procs, export_to_part);
         }
       }
     }
@@ -540,8 +537,8 @@ ZOLTAN_ID_PTR gid;
         /* No map at all available */
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Load-balancing function returned "
                "neither import nor export data.");
-        ZOLTAN_TRACE_EXIT(zz, yo);
-        return ZOLTAN_WARN;
+        error = ZOLTAN_WARN;
+        goto End;
       }
     }
   }
@@ -557,16 +554,23 @@ ZOLTAN_ID_PTR gid;
 
     if (*num_export_objs == 0){
       /* all local objects are remaining on processor */
-       
-      Zoltan_Get_Obj_List(zz, num_export_objs, 
+
+      error= Zoltan_Get_Obj_List_Special_Malloc(zz, num_export_objs,
                export_global_ids, export_local_ids,
-               0, &fdummy, export_to_part);
+               wgt_dim, &fdummy, export_to_part);
 
-      *export_procs = (int *)ZOLTAN_MALLOC(*num_export_objs * sizeof(int));
-
-      for (i=0; i<*num_export_objs; i++){
-        (*export_procs)[i] = zz->Proc;
+      if (error == ZOLTAN_OK){
+        ZOLTAN_FREE(&fdummy);
+        if (Zoltan_Special_Malloc(zz, (void **)export_procs, *num_export_objs,
+                            ZOLTAN_SPECIAL_MALLOC_INT)){
+          for (i=0; i<*num_export_objs; i++)
+            (*export_procs)[i] = zz->Proc;
+        }
+        else{
+          error = ZOLTAN_MEMERR;
+        }
       }
+      if ((error != ZOLTAN_OK) && (error != ZOLTAN_WARN)) goto End;
     }
     else{
       all_num_obj = zz->Get_Num_Obj(zz->Get_Num_Obj_Data, &error);
@@ -586,20 +590,27 @@ ZOLTAN_ID_PTR gid;
   
         /* Create a list of all gids, lids and partitions */
   
-        error= Zoltan_Get_Obj_List(zz, &all_num_obj, 
+        error= Zoltan_Get_Obj_List_Special_Malloc(zz, &all_num_obj, 
                  &all_global_ids, &all_local_ids,
-                 0, &fdummy, &parts);
+                 wgt_dim, &fdummy, &parts);
+
+        if ((error == ZOLTAN_OK) || (error == ZOLTAN_WARN)){
+          ZOLTAN_FREE(&fdummy);
+          if ((Zoltan_Special_Malloc(zz, (void **)&export_all_procs, 
+                 all_num_obj, ZOLTAN_SPECIAL_MALLOC_INT)==0) ||
+              (Zoltan_Special_Malloc(zz, (void **)&export_all_to_part, 
+                 all_num_obj, ZOLTAN_SPECIAL_MALLOC_INT)==0)){
+
+            error = ZOLTAN_MEMERR;
+          }
+        }
   
         if ((error != ZOLTAN_OK) && (error != ZOLTAN_WARN)){
           sprintf(msg, "Error building complete export list; "
                        "%d returned by Zoltan_Get_Obj_List\n", error);
           ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
-          ZOLTAN_TRACE_EXIT(zz, yo);
-          return error;
+          goto End;
         }
-  
-        export_all_procs = (int *)ZOLTAN_MALLOC(all_num_obj * sizeof(int));
-        export_all_to_part = (int *)ZOLTAN_MALLOC(all_num_obj * sizeof(int));
   
         gid = all_global_ids;
   
@@ -608,6 +619,7 @@ ZOLTAN_ID_PTR gid;
           idIdx = search_hash_table(zz, gid, ht, ts);
   
           if (idIdx >= 0){
+
             export_all_procs[i] = (*export_procs)[idIdx];
             export_all_to_part[i] = (*export_to_part)[idIdx];
           }
@@ -618,12 +630,11 @@ ZOLTAN_ID_PTR gid;
         }
   
         free_hash_table(ht, ts);
-  
-        ZOLTAN_FREE(export_global_ids); 
-        ZOLTAN_FREE(export_local_ids); 
-        ZOLTAN_FREE(export_procs);
-        ZOLTAN_FREE(export_to_part);
-        ZOLTAN_FREE(&parts);
+
+        Zoltan_LB_Free_Part_F90(zz, export_global_ids, export_local_ids, 
+                            export_procs, export_to_part);
+        Zoltan_Special_Free(zz, (void **)&parts, 
+                            ZOLTAN_SPECIAL_MALLOC_INT);
   
         *export_global_ids = all_global_ids;
         *export_local_ids = all_local_ids;
@@ -681,8 +692,7 @@ ZOLTAN_ID_PTR gid;
       sprintf(msg, "Error in auto-migration; %d returned from "
                     "Zoltan_Help_Migrate\n", error);
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
-      ZOLTAN_TRACE_EXIT(zz, yo);
-      return error;
+      goto End;
     }
     end_time = Zoltan_Time(zz->Timer);
     lb_time[1] = end_time - start_time;
@@ -704,11 +714,9 @@ ZOLTAN_ID_PTR gid;
 
   *changes = 1;
 
+End:
   ZOLTAN_TRACE_EXIT(zz, yo);
-  if (error)
-    return (error);
-  else
-    return (ZOLTAN_OK);
+  return (error);
 }
 
 /*****************************************************************************/

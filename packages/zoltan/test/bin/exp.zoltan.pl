@@ -2,12 +2,14 @@
 #
 
 # environment variables supported:
-# EXACT_DRIVER - mpirun command.  For solaris, it defaults to
+# EXACT_DRIVER - mpirun command.  Defaults to mpirun -np
+#   For solaris, it should be
 #   "/Net/local/mpi/build/solaris/ch_p4/bin/mpirun -np"
 # ZOLTAN_ARCH - architechture of the machine.  Choices are generally:
-#   generic, solaris, sun, linux, qed.  Defaults to "solaris"
+#   generic, solaris, sun, linux, qed.  Defaults to "sun"
 # ZOLTAN_ZDRIVE - location of zdrive, defaults to
-#   "../../Obj_$ZOLTAN_ARCH/zdrive" 
+#   "../../Obj_$ZOLTAN_ARCH/zdrive".  Usually not set, if ZOLTAN_ARCH
+#   has been set, except for special purposes.
 
 use Sys::Hostname;
 my $host = hostname();
@@ -15,11 +17,11 @@ my $host = hostname();
 use Data::Dumper;
 
 # defaults, can be overridden in experiment.xml
-my $zarch = "sun";
-my $zdrive = "../../Obj_$zarch/zdrive";
+my ($mpi,$zarch,$zdrive);	# filled in below based on env
 my $zinp_def = "zdrive.inp";	# static, used below for checks
 my $zinp = $zinp_def;		# zdrive.inp used
 my $mpi= "/Net/local/mpi/build/solaris/ch_p4/bin/mpirun -np";
+my $np=0;
 
 # values to track and print by parse() routine
 my (%bal, %cutl, %cutn);
@@ -29,10 +31,20 @@ my $ckok = '';	# output string for pass/fail of checksums
 # use specified driver if environment var is set.  Set up defaults here
 if ($ENV{EXACT_DRIVER}) {
   $mpi = $ENV{EXACT_DRIVER};
-} elsif ($host eq "qed.sandia.gov") {
-  $mpi = "mpiexec -n";
 } else {
-  $mpi = "/Net/local/mpi/build/solaris/ch_p4/bin/mpirun -np";
+  $mpi = "mpirun -np";
+}
+
+if ($ENV{ZOLTAN_ARCH}) {
+  $zarch = $ENV{ZOLTAN_ARCH};
+} else {
+  $zarch = "sun";
+}
+
+if ($ENV{ZOLTAN_ZDRIVE}) {
+  $zdrive = $ENV{ZOLTAN_ZDRIVE};
+} else {
+  $zdrive = "../../Obj_$zarch/zdrive";
 }
 
 # contents of $infile, after parseinfile()
@@ -252,7 +264,9 @@ foreach $f (@checkfiles) {
     $fail++;
   }
 }
-$ckok = "OutputPass\tnumeric/int\t$pass\nOutputFail\tnumeric/int\t$fail\n";
+$ckok = "OutputPass\tnumeric/integer\t$pass\n";
+$ckok .= "OutputFail\tnumeric/integer\t$fail\n";
+$ckok .= "AllPass\tnumeric/boolean\t" . (($pass > 0 && $pass == $np) ? "1\n" : "0\n");
 
 printvars($outfile);
 

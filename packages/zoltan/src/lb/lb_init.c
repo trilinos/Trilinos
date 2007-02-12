@@ -68,6 +68,7 @@ void Zoltan_LB_Init(struct Zoltan_LB_Struct *lb, int num_proc)
   lb->LB_Fn = Zoltan_RCB;
   lb->Remap_Flag = 1;
   lb->Remap = NULL;
+  lb->OldRemap = NULL;
   lb->Return_Lists = ZOLTAN_LB_RETURN_LISTS_DEF;
   lb->Uniform_Parts = 1;
   lb->Data_Structure = NULL;

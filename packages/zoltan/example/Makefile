@@ -99,7 +99,7 @@ ZOLTAN_INCLUDE= -I. -I$(ZUTIL)/Communication \
                 -I$(ZTOP)/lb \
                 -I$(ZTOP)/include
 
-INCLUDE = -I../lib $(ZOLTAN_INCLUDE) $(INCLUDE_PATH)
+INCLUDE = -I../lib $(ZOLTAN_INCLUDE) $(INCLUDE_PATH) $(MPI_INCPATH)
 
 ##############################################################################
 # 

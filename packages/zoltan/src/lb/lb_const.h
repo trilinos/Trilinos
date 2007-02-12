@@ -131,6 +131,8 @@ struct Zoltan_LB_Struct {
                                       should be remapped to reduce data mvmt. */
   int *Remap;                     /*  Remapping array; relabels computed 
                                       partitions to decrease data mvmt. */
+  int *OldRemap;                  /*  Remapping array computed in previous
+                                      invocation of partitioning. */
   int Return_Lists;               /*  Flag indicating which lists (if any)
                                       should be returned by Zoltan_LB_Balance.*/
   int Uniform_Parts;              /*  Flag indicating whether partitions are

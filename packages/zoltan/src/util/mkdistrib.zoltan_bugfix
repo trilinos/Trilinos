@@ -33,8 +33,10 @@ cd Zoltan; /bin/rm -f docs/Zoltan_html/lgpl.pl; gmake ZOLTAN_ARCH=zscript zscrip
 cd Zoltan; /bin/mv Utilities/Memory/zoltan_mem.h include; cd ..
 cd Zoltan; /bin/mv Utilities/Communication/zoltan_comm.h include; cd ..
 cd Zoltan; /bin/mv Utilities/DDirectory/zoltan_dd.h include; cd ..
+cd Zoltan; /bin/mv Utilities/Timer/zoltan_timer.h include; cd ..
 cd Zoltan; /bin/mv Utilities/Communication/zoltan_comm_cpp.h include; cd ..
 cd Zoltan; /bin/mv Utilities/DDirectory/zoltan_dd_cpp.h include; cd ..
+cd Zoltan; /bin/mv Utilities/Timer/zoltan_timer_cpp.h include; cd ..
 #
 # Remove $ from Revision so that other people don't change Revision when
 # checking Zoltan into their own CVS repositories.

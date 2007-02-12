@@ -139,6 +139,7 @@ int Zoltan_HSFC(
    /* obtain dot information: gids, lids, weights  */
    err = Zoltan_Get_Obj_List (zz, &ndots, &gids, &lids, zz->Obj_Weight_Dim,
     &weights, &parts);
+printf("%d, get obj list rc %d\n",zz->Proc,err); fflush(stdout);
    if (err)
       ZOLTAN_HSFC_ERROR (ZOLTAN_FATAL, "Error in Zoltan_Get_Obj_List.");
 
@@ -164,6 +165,7 @@ int Zoltan_HSFC(
    err = Zoltan_Get_Coordinates(zz, ndots, gids, lids, &(d->ndimension),
                                 &geom_vec);
 
+printf("%d, get coordinates rc %d\n",zz->Proc,err); fflush(stdout);
    if (err != 0) 
       ZOLTAN_HSFC_ERROR(ZOLTAN_FATAL, "Error in Zoltan_Get_Coordinates.");
 
@@ -573,6 +575,8 @@ int Zoltan_HSFC(
 
 End:
    MPI_Op_free (&mpi_op);
+
+printf("%d, hsfc end %d\n",zz->Proc,err); fflush(stdout);
 
    Zoltan_Multifree (__FILE__, __LINE__, 12, &dots, &gids, &lids, &partition,
     &grand_partition, &grand_weight, &temp_weight, &weights, &target, &delta,

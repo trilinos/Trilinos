@@ -19,12 +19,11 @@ Test zoltan-sun-smoke
 seamus,pill.sandia.gov
 csh -f ../../zoltan.build $tname
 
-###
-### Portability Tests
-###
-##
-## Acro
-##
-#Test acro-acro-n
-#zamboni,bobo.sandia.gov,pill.sandia.gov,aruru,barnie
-#$pwd/bin/svn.a checkout -q acro; cd acro; ./setup --o=$odir --name=$tname configure build --check test --tag=nightly
+Test zoltan-linux-smoke
+pill.sandia.gov,bobo.sandia.gov
+csh -f ../../zoltan.build $tname
+
+Test zoltan-codecheck
+software.sandia.gov
+csh -f ../../zoltan.build --codecheck $tname
+

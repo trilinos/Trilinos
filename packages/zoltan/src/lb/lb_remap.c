@@ -40,7 +40,7 @@ static int local_HEs_from_import_lists(ZZ *, int, int, int *, int *, int *,
   int *, int **);
 static int local_HEs_from_export_lists(ZZ *, int, int, int *, int *, int *,
   int *, int **);
-static float measure_stays(ZZ *, HGraph *, int, char *);
+static float measure_stays(ZZ *, HGraph *, int, int *, char *);
 
 /******************************************************************************/
 
@@ -515,9 +515,12 @@ int *used = NULL;             /* Vector indicating which partitions are used
                                  in the matching. */
 int limit;                    /* Maximum number of matches that are allowed */
 HGraph hg;                    /* Hypergraph for matching */
-float before,                 /* Amount of data that overlaps between old and */
-      after;                  /* new decomposition before and after remapping, 
+float before_remap = 0,       /* Amount of data that overlaps between old and */
+      after_remap = 0;        /* new decomposition before and after remapping, 
                                  respectively. */
+float with_oldremap = 0;      /* Amount of data that overlaps between old and
+                                 new decomposition using the OldRemap vector
+                                 (remapping from the previous decomposition). */
 
 
   /* Gather HEs from each processor into a local complete HG. */
@@ -601,7 +604,11 @@ float before,                 /* Amount of data that overlaps between old and */
     if (ierr < 0) goto End;
   }
 
-  before = measure_stays(zz, &hg, max0, "BEFORE");
+  before_remap = measure_stays(zz, &hg, max0, NULL, "BEFORE");
+
+  /* Compute the amount of overlap when using the old remap vector. */
+
+  with_oldremap = measure_stays(zz, &hg, max0, zz->LB.OldRemap, "WITHOLD");
 
   /* Do matching */
 
@@ -671,20 +678,31 @@ float before,                 /* Amount of data that overlaps between old and */
     }
   }
 
-  if (*new_map) {
-    after = measure_stays(zz, &hg, max0, "AFTER ");
+  if (*new_map) 
+    after_remap = measure_stays(zz, &hg, max0, zz->LB.Remap, "AFTER ");
 
-    if (before >= after) {
-      /* No benefit from remapping; don't keep it! */
-      ZOLTAN_FREE(&zz->LB.Remap);
-      *new_map = 0;
-    }
-
-    if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL && zz->Proc == zz->Debug_Proc &&
-        zz->LB.Remap) 
-      for (i = 0; i < zz->LB.Num_Global_Parts; i++) 
-        printf("%d REMAP Part %d to Part %d\n", zz->Proc, i, zz->LB.Remap[i]);
+  if ((before_remap >= after_remap) && (before_remap >= with_oldremap)) {
+    /* No benefit from remapping; don't keep it! */
+    ZOLTAN_FREE(&zz->LB.Remap);
+    ZOLTAN_FREE(&zz->LB.OldRemap);
+    *new_map = 0;
   }
+  else if (with_oldremap >= after_remap) {
+    /* The old remap vector is better than the new one; keep the old one. */
+    ZOLTAN_FREE(&zz->LB.Remap);
+    zz->LB.Remap = zz->LB.OldRemap;
+    zz->LB.OldRemap = NULL;
+    *new_map = 1;
+  }
+  else {
+    /* Going to use the new remap vector; free the old one. */
+    ZOLTAN_FREE(&zz->LB.OldRemap);
+  }
+
+  if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL && zz->Proc == zz->Debug_Proc &&
+      zz->LB.Remap) 
+    for (i = 0; i < zz->LB.Num_Global_Parts; i++) 
+      printf("%d REMAP Part %d to Part %d\n", zz->Proc, i, zz->LB.Remap[i]);
 
 End:
   ZOLTAN_FREE(&match);
@@ -699,6 +717,7 @@ static float measure_stays(
   ZZ *zz,
   HGraph *hg, 
   int max0,
+  int *remapvec,
   char *when
 )
 {
@@ -711,8 +730,8 @@ int tmp, i;
 
   for (i = 0; i < hg->nEdge; i++) {
     tmp = i + i;
-    if (zz->LB.Remap) {
-      if (hg->hvertex[tmp] == zz->LB.Remap[hg->hvertex[tmp+1]-max0]) 
+    if (remapvec) {
+      if (hg->hvertex[tmp] == remapvec[hg->hvertex[tmp+1]-max0]) 
         stay += hg->ewgt[i];
     }
     else {

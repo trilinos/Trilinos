@@ -33,6 +33,9 @@ extern "C" {
 #endif
 
 #define ZOLTAN_VERSION_NUMBER   2.2
+/* 2.101 is update for Plimpton/Crozier; fixed memory leak in HG partitioning */
+/* 2.102 is update for Steensland; improve partition remapping to consider
+   previous remapping vector. */
 
 /*****************************************************************************
  *  Data types and functions describing the interface between the
@@ -2988,6 +2991,14 @@ extern int Zoltan_LB_Free_Part(
   int **to_part
 );
 
+extern int Zoltan_LB_Free_Part_F90(
+  struct Zoltan_Struct *zz, 
+  ZOLTAN_ID_PTR *global_ids, 
+  ZOLTAN_ID_PTR *local_ids,
+  int **procs,
+  int **to_part
+);
+
 /*****************************************************************************/
 /*
  *  Routine to free the data arrays returned by Zoltan_Balance.  The arrays
@@ -3016,6 +3027,18 @@ extern int Zoltan_LB_Free_Data(
   ZOLTAN_ID_PTR *export_local_ids,
   int **export_procs
 );
+
+extern int Zoltan_LB_Free_Data_F90(
+  struct Zoltan_Struct *zz, 
+  ZOLTAN_ID_PTR *import_global_ids, 
+  ZOLTAN_ID_PTR *import_local_ids,
+  int **import_procs,
+  ZOLTAN_ID_PTR *export_global_ids, 
+  ZOLTAN_ID_PTR *export_local_ids,
+  int **export_procs
+);
+
+/*****************************************************************************/
 
 /*****************************************************************************/
 /* 

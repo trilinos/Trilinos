@@ -611,8 +611,10 @@ typedef struct Zoltan_Transform_Struct ZZ_Transform;
 /*****************************************************************************/
 /*****************************************************************************/
 /* PROTOTYPES */
-extern int Zoltan_Get_Obj_List(ZZ *, int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, 
-                               int, float**, int **);
+extern int Zoltan_Get_Obj_List(ZZ *, int *, 
+              ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int, float**, int **);
+extern int Zoltan_Get_Obj_List_Special_Malloc(ZZ *, int *, 
+              ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int, float**, int **);
 
 extern int Zoltan_Print_Obj_List( ZZ *zz, ZOLTAN_ID_PTR Gids, ZOLTAN_ID_PTR Lids,
   int wdim, float *Weights, int *Parts, int howMany);

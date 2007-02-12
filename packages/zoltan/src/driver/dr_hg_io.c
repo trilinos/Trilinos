@@ -44,6 +44,45 @@ extern "C" {
 
 #define IS_BLANK(c) ((c == '\t') || (c == ' '))
 
+#if 0
+static void debug_elements(int Proc, int Num_Proc, int num, ELEM_INFO_PTR el)
+{
+  int i,e;
+  for (i=0; i<Num_Proc; i++){
+    if (i == Proc){
+      printf("Process %d (%d elements):\n",i,num);
+      for (e=0; e<num; e++){
+        if (e%20==0) printf("\n    ");
+        printf("%d ",el[e].globalID);
+      }
+      printf("\n");
+      fflush(stdout);
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
+  }
+}
+static void debug_lists(int Proc, int Num_Proc, int nedge, int *index, int *vtx, int *vtx_proc, int *egid)
+{
+  int i,e,v,nvtxs;
+  for (i=0; i<Num_Proc; i++){
+    if (i == Proc){
+      printf("Process %d\n",i);
+      for (e=0; e<nedge; e++){
+        nvtxs = index[e+1]-index[e];
+        printf("%d ) ",egid[e]);
+        for (v=0; v<nvtxs; v++){
+          if (v && (v%10==0)) printf("\n    ");
+          printf("%d (%d) ",*vtx++,*vtx_proc++);
+        }
+        printf("\n");
+      }
+      fflush(stdout);
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
+  }
+}
+#endif
+
 static int dist_hyperedges(MPI_Comm comm, PARIO_INFO_PTR, int, int, int, int *,
                            int *, int **, int **, int **, int **, 
                            int *, float **, short *);
@@ -90,13 +129,13 @@ int read_hypergraph_file(
   const char  *yo = "read_hypergraph_file";
   char   cmesg[256];
 
-  int    i, gnvtxs; 
+  int    i, gnvtxs, distributed_pins, edge, vertex, nextEdge; 
   int    nvtxs = 0, gnhedges = 0, nhedges = 0, npins = 0;
-  int    vwgt_dim=0, hewgt_dim=0;
+  int    vwgt_dim=0, hewgt_dim=0, vtx, edgeSize, global_npins;
   int   *hindex = NULL, *hvertex = NULL, *hvertex_proc = NULL;
   int   *hgid = NULL;
   float *hewgts = NULL, *vwgts = NULL;
-  FILE  *fp;
+  FILE  *fp=NULL;
   int base = 0;   /* Smallest vertex number; usually zero or one. */
   char filename[256];
 
@@ -109,7 +148,9 @@ int read_hypergraph_file(
    * LB_Eval results.
    */
   int    ch_nvtxs = 0;        /* Temporary values for chaco_read_graph.   */
+#ifdef KDDKDD
   int    ch_vwgt_dim = 0;     /* Their values are ignored, as vertex      */
+#endif
   float *ch_vwgts = NULL;     /* info is provided by hypergraph file.     */
   int   *ch_start = NULL, *ch_adj = NULL, ch_ewgt_dim = 0;
   short *ch_assignments = NULL;
@@ -145,37 +186,65 @@ int read_hypergraph_file(
     file_error = (fp == NULL);
   }
 
+
   MPI_Bcast(&file_error, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
   if (file_error) {
-    sprintf(cmesg, "fatal:  Could not open hypergraph file %s", filename);
+    sprintf(cmesg, 
+      "fatal:  Could not open hypergraph file %s",pio_info->pexo_fname);
     Gen_Error(0, cmesg);
     return 0;
   }
 
-  if (Proc == 0) {
-
+  if (pio_info->file_type == HYPERGRAPH_FILE) {
     /* read the array in on processor 0 */
-    if (pio_info->file_type == HYPERGRAPH_FILE) {
+    if (Proc == 0) {
       if (HG_readfile(Proc, fp, &nvtxs, &nhedges, &npins,
-                      &hindex, &hvertex, &vwgt_dim, &vwgts, 
-                      &hewgt_dim, &hewgts, &base) != 0){
+                    &hindex, &hvertex, &vwgt_dim, &vwgts, 
+                    &hewgt_dim, &hewgts, &base) != 0){
         Gen_Error(0, "fatal: Error returned from HG_readfile");
         return 0;
       }
     }
-    else if (pio_info->file_type == MATRIXMARKET_FILE) {
-      if (MM_readfile(Proc, fp, &nvtxs, &nhedges, &npins,
-                      &hindex, &hvertex, &vwgt_dim, &vwgts, 
-                      &hewgt_dim, &hewgts, &base, pio_info->matrix_obj) 
-                      != 0){
-        Gen_Error(0, "fatal: Error returned from MM_readfile");
-        return 0;
-      }
+  }
+  else if (pio_info->file_type == MATRIXMARKET_FILE) {
+    /* 
+     * pio_info->chunk_reader == 0  (the usual case)
+     *   process 0 will read entire file in MM_readfile,
+     *   and will distribute vertices in chaco_dist_graph and pins in
+     *   dist_hyperedges later.   (distributed_pins==0)
+     *
+     * pio_info->chunk_reader == 1  ("initial read = chunks" in zdrive.inp)
+     *   process 0 will read the file in chunks, and will send vertices 
+     *   and pins to other processes before reading the next chunk, all 
+     *   in MM_readfile.  (distributed_pins==1)
+     */
+
+    global_npins = MM_readfile(Proc, Num_Proc, fp, pio_info,
+                    &nvtxs,     /* global number of vertices */
+                    &nhedges,   /* global number of hyperedges */
+                    &npins,     /* local number of pins */
+                    &hindex, &hvertex, &vwgt_dim, &vwgts, 
+                    &hewgt_dim, &hewgts, &ch_start, &ch_adj,
+                    &base);
+
+    if (global_npins == 0){
+      Gen_Error(0, "fatal: Error returned from MM_readfile");
+      return 0;
     }
 
-    fclose(fp);
+    if (fp) fclose(fp);
 
+    if ((Num_Proc > 1) && pio_info->chunk_reader && (global_npins > Num_Proc)){
+      distributed_pins = 1;   
+    }
+    else{
+      distributed_pins = 0;
+    }
+  }
+
+
+#ifdef KDDKDD
     /* If CHACO graph file is available, read it. */
     sprintf(filename, "%s.graph", pio_info->pexo_fname);
     fp = fopen(filename, "r");
@@ -203,49 +272,97 @@ int read_hypergraph_file(
         return 0;
       }
     }
+#endif
 
-       /* Read Chaco assignment file, if requested */
-    if (pio_info->init_dist_type == INITIAL_FILE) {
-      sprintf(filename, "%s.assign", pio_info->pexo_fname);
-      fp = fopen(filename, "r");
-      if (fp == NULL) {
-        sprintf(cmesg, "Error:  Could not open Chaco assignment file %s; "
-                "initial distribution cannot be read",
-                filename);
-        Gen_Error(0, cmesg);
+     /* Read Chaco assignment file, if requested */
+  if (pio_info->init_dist_type == INITIAL_FILE) {
+    sprintf(filename, "%s.assign", pio_info->pexo_fname);
+    fp = fopen(filename, "r");
+    if (fp == NULL) {
+      sprintf(cmesg, "Error:  Could not open Chaco assignment file %s; "
+              "initial distribution cannot be read",
+              filename);
+      Gen_Error(0, cmesg);
+      return 0;
+    }
+    else {
+      /* read the coordinates in on processor 0 */
+      ch_assignments = (short *) malloc(nvtxs * sizeof(short));
+      if (nvtxs && !ch_assignments) {
+        Gen_Error(0, "fatal: memory error in read_hypergraph_file");
         return 0;
       }
-      else {
-        /* read the coordinates in on processor 0 */
-        ch_assignments = (short *) malloc(nvtxs * sizeof(short));
-        if (nvtxs && !ch_assignments) {
-          Gen_Error(0, "fatal: memory error in read_hypergraph_file");
-          return 0;
-        }
-        if (chaco_input_assign(fp, filename, ch_nvtxs, ch_assignments) != 0){
-          Gen_Error(0, "fatal: Error returned from chaco_input_assign");
-          return 0;
-        }
+      /* closes fp when done */
+      if (chaco_input_assign(fp, filename, ch_nvtxs, ch_assignments) != 0){
+        Gen_Error(0, "fatal: Error returned from chaco_input_assign");
+        return 0;
       }
     }
   }
   
   MPI_Bcast(&base, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-  /* Distribute hypergraph graph */
-  /* Use hypergraph vertex information and chaco edge information. */
-  if (!chaco_dist_graph(MPI_COMM_WORLD, pio_info, 0, &gnvtxs, &nvtxs, 
+  if (distributed_pins){
+    gnhedges = nhedges;
+    nhedges = 0;
+    hewgt_dim = 0;
+    hewgts = NULL;
+    for (edge=0; edge<gnhedges; edge++){
+      edgeSize = hindex[edge+1] - hindex[edge];
+      if (edgeSize > 0) nhedges++;
+    }
+    hgid = (int *)malloc(nhedges * sizeof(int));
+    hvertex_proc = (int *)malloc(npins * sizeof(int)); 
+    nextEdge=0;
+    vtx=0;
+    for (edge=0; edge<gnhedges; edge++){
+      edgeSize = hindex[edge+1] - hindex[edge];
+      if (edgeSize > 0){
+        hgid[nextEdge] = edge+1;
+        if (nextEdge < edge){
+          hindex[nextEdge+1] = hindex[nextEdge] + edgeSize;
+        }
+        for (vertex=0; vertex<edgeSize; vertex++,vtx++){
+          hvertex_proc[vtx] = ch_dist_proc(hvertex[vtx], NULL, 1); 
+        }
+        nextEdge++;
+      } 
+    }
+    gnvtxs = nvtxs;
+    nvtxs = ch_dist_num_vtx(Proc, NULL);
+    if (ch_start){    /* need to include only vertices this process owns */
+      for (i=0,vertex=0; i<gnvtxs; i++){
+        if ((ch_start[i+1] > ch_start[vertex]) || /* vtx has adjacencies so it's mine */
+            (ch_dist_proc(i, NULL, 0) == Proc))   /* my vtx with no adjacencies */
+          {
+          if (i > vertex){
+            ch_start[vertex+1] = ch_start[i+1];
+          }
+          vertex++;
+        }
+      }
+    }
+#if 0
+    debug_lists(Proc, Num_Proc, nhedges, hindex, hvertex, hvertex_proc, hgid);
+#endif
+  } else{
+
+    /* Distribute hypergraph graph */
+    /* Use hypergraph vertex information and chaco edge information. */
+  
+    if (!chaco_dist_graph(MPI_COMM_WORLD, pio_info, 0, &gnvtxs, &nvtxs, 
              &ch_start, &ch_adj, &vwgt_dim, &vwgts, &ch_ewgt_dim, &ch_ewgts,
              &ch_ndim, &ch_x, &ch_y, &ch_z, &ch_assignments) != 0) {
-    Gen_Error(0, "fatal: Error returned from chaco_dist_graph");
-    return 0;
-  }
+      Gen_Error(0, "fatal: Error returned from chaco_dist_graph");
+      return 0;
+    }
 
-  if (!dist_hyperedges(MPI_COMM_WORLD, pio_info, 0, base, gnvtxs, &gnhedges,
+    if (!dist_hyperedges(MPI_COMM_WORLD, pio_info, 0, base, gnvtxs, &gnhedges,
                        &nhedges, &hgid, &hindex, &hvertex, &hvertex_proc,
                        &hewgt_dim, &hewgts, ch_assignments)) {
-    Gen_Error(0, "fatal: Error returned from dist_hyperedges");
-    return 0;
+      Gen_Error(0, "fatal: Error returned from dist_hyperedges");
+      return 0;
+    }
   }
                        
 
@@ -335,6 +452,9 @@ int read_hypergraph_file(
     Gen_Error(0, "fatal: Error returned from chaco_fill_elements");
     return 0;
   }
+#if 0
+  debug_elements(Proc, Num_Proc, mesh->num_elems,mesh->elements);
+#endif
 
   safe_free((void **) &vwgts);
   safe_free((void **) &ch_ewgts);
@@ -474,7 +594,7 @@ int hedge_init_dist_type;
       if (hedge_init_dist_type == INITIAL_CYCLIC)  
         p = h % num_dist_procs;
       else if (hedge_init_dist_type == INITIAL_LINEAR) 
-        p = (int) ((float) (h * num_dist_procs) / (float)(*gnhedges));
+        p = (int) ((float) h * (float) num_dist_procs / (float)(*gnhedges));
       else if (hedge_init_dist_type == INITIAL_OWNER) 
         p = ch_dist_proc(old_hvertex[old_hindex[h]], assignments, base);
       size[p] += (old_hindex[h+1] - old_hindex[h]);

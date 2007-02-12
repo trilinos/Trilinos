@@ -160,7 +160,13 @@ int read_cmd_file (
            value, &n);
           keepreading += nread;
           if (nread == 2){
-            if (!strcmp(string, "distribution")) {
+            if (!strcmp(string, "read")) {
+              if ((value[0] == 'c') && (value[1] == 'h') &&
+                  (value[2] == 'u') &&(value[3] == 'n') &&(value[4] == 'k')){
+                pio_info->chunk_reader = 1;
+              }
+            }
+            else if (!strcmp(string, "distribution")) {
               if      (!strcmp(value, "linear"))  i = INITIAL_LINEAR;
               else if (!strcmp(value, "block"))   i = INITIAL_LINEAR;
               else if (!strcmp(value, "cyclic"))  i = INITIAL_CYCLIC;

@@ -22,13 +22,15 @@
 extern "C" {
 #endif
 
+#include "dr_input_const.h"
+
 /* Hypergraph read from file */
 int HG_readfile (int, FILE*, int*, int*, int*, int**, int**, int*,
  float**, int*, float**, int*);
 
 /* MatrixMarket read from file */
-int MM_readfile (int, FILE*, int*, int*, int*, int**, int**, int*,
- float**, int*, float**, int*, int);
+int MM_readfile (int, int, FILE*, PARIO_INFO_PTR, int*, int*, int*, int**, int**, int*,
+ float**, int*, float**, int**, int**, int*);
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

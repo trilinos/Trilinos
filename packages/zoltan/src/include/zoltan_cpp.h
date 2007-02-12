@@ -204,7 +204,7 @@ public:
                     int **procs,
                     int **to_part )
   {
-    return Zoltan_LB_Free_Part( global_ids, local_ids, procs, to_part );
+    return Zoltan_LB_Free_Part( ZZ_Ptr, global_ids, local_ids, procs, to_part );
   }
 
   int Set_Fn  ( const ZOLTAN_FN_TYPE &fn_type,

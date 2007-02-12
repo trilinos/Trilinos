@@ -63,6 +63,8 @@ int proc = fromZZ->Proc;
 
   COPY_BUFFER(Remap, int, to->Num_Global_Parts);
 
+  COPY_BUFFER(OldRemap, int, to->Num_Global_Parts);
+
   COPY_BUFFER(PartDist, int, to->Num_Global_Parts + 1);
 
   COPY_BUFFER(ProcDist, int, fromZZ->Num_Proc + 1);

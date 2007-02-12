@@ -81,11 +81,11 @@ int gen_geom, int gen_graph, int gen_hg)
   float *float_vwgt, *ewgts, *eWgts, *wptr;
   double *xyz;
   int i, j, k, num_obj, num_geom, num_edges, reduce;
-  int glob_nvtxs, glob_edges, glob_hedges, glob_pins, glob_ewgts;
+  int glob_nvtxs, glob_edges=0, glob_hedges, glob_pins, glob_ewgts;
   int minid, maxid, minEdgeId, maxEdgeId, minVtxId, maxVtxId;
   int numPins, edgeOffset, vtxOffset;
   int print_vtx_num = ZOLTAN_PRINT_VTX_NUM;
-  int have_pin_callbacks;
+  int have_pin_callbacks=0;
   int nEdges, nEwgts;
   ZOLTAN_ID_PTR edgeIds, vtxIds, eWgtIds, eptr, vptr;
   int lenGID = zz->Num_GID;
@@ -496,7 +496,7 @@ End:
   ZOLTAN_FREE(&ewgts);
   ZOLTAN_FREE(&part);
   
-  if ( have_pin_callbacks){
+  if (have_pin_callbacks){
     ZOLTAN_FREE(&edgeSize);
     ZOLTAN_FREE(&edgeIds);
     ZOLTAN_FREE(&vtxIds);

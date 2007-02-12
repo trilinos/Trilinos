@@ -27,6 +27,8 @@ double Timer_Callback_Time, Timer_Global_Callback_Time;
 #include <stdlib.h>
 #include <stdio.h>
 #include <strings.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include "dr_const.h"
 #include "dr_err_const.h"
@@ -44,6 +46,7 @@ extern "C" {
 
 static int Num_Global_Parts;
 static int Num_GID = 1, Num_LID = 1;
+static int Export_Lists_Special = 0;
 static void test_drops(int, MESH_INFO_PTR, PARIO_INFO_PTR,
    struct Zoltan_Struct *);
 static void setup_fixed_obj(MESH_INFO_PTR mesh);
@@ -116,6 +119,7 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
   psize = (float *) malloc(nprocs*sizeof(float)); 
   partid = (int *) malloc(2*nprocs*sizeof(int)); 
   idx = partid + nprocs;
+  Export_Lists_Special = 0;
 
   /* Set the user-specified parameters */
   for (i = 0; i < prob->num_params; i++) {
@@ -138,6 +142,8 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
       Num_GID = atoi(prob->params[i].Val);
     else if (strcasecmp(prob->params[i].Name, "NUM_LID_ENTRIES") == 0) 
       Num_LID = atoi(prob->params[i].Val);
+    else if (strcasecmp(prob->params[i].Name, "RETURN_LISTS") == 0) 
+      Export_Lists_Special = (strstr(prob->params[i].Val,"partition") != NULL);
   }
 
   /* Set the load-balance method */
@@ -585,8 +591,8 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     MPI_Allreduce(mine, gmax, 2, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
     MPI_Allreduce(mine, gmin, 2, MPI_INT, MPI_MIN, MPI_COMM_WORLD);
     if (Proc == 0) {
-      printf("DRIVER:  Min/Max Import: %d %d\n", gmin[0], gmax[0]);
-      printf("DRIVER:  Min/Max Export: %d %d\n", gmin[1], gmax[1]);
+      printf("DRIVER:  new_decomp %d Min/Max Import: %d %d\n", new_decomp, gmin[0], gmax[0]);
+      printf("DRIVER:  new_decomp %d Min/Max Export: %d %d\n", new_decomp, gmin[1], gmax[1]);
     }
     }
 
@@ -602,8 +608,12 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
      */
     MPI_Barrier(MPI_COMM_WORLD);   /* For timings only */
     stime = MPI_Wtime();
-    if (new_decomp && (num_exported != -1 || num_imported != -1)){/*EBEB6/8/06*/
-      /* Migrate if new decomposition and RETURN_LISTS != NONE */
+    if (new_decomp && (num_exported != -1 || num_imported != -1) &&
+         !Export_Lists_Special){
+
+      /* Migrate if new decomposition and RETURN_LISTS != NONE and
+         RETURN_LISTS != PARTITIONS */
+
       if (!migrate_elements(Proc, mesh, zz, num_gid_entries, num_lid_entries,
           num_imported, import_gids, import_lids, import_procs, import_to_part,
           num_exported, export_gids, export_lids, export_procs, export_to_part)){
@@ -696,9 +706,9 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     }
     
     /* Clean up */
-    Zoltan_LB_Free_Part(&import_gids, &import_lids,
+    Zoltan_LB_Free_Part_F90(zz, &import_gids, &import_lids,
                         &import_procs, &import_to_part);
-    Zoltan_LB_Free_Part(&export_gids, &export_lids,
+    Zoltan_LB_Free_Part_F90(zz, &export_gids, &export_lids,
                         &export_procs, &export_to_part);
   }
 
