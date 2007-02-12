@@ -66,6 +66,15 @@ int main()
     Teuchos::RefCountPtr<Teuchos::ParameterList> paramList = 
       Teuchos::rcp(new Teuchos::ParameterList);
 
+    // Create initial values for a and b for minimally augmented method
+    Teuchos::RefCountPtr<NOX::Abstract::Vector> a_vec = 
+      Teuchos::rcp(new NOX::LAPACK::Vector(n));
+    *a_vec = *asymVec;
+
+    Teuchos::RefCountPtr<NOX::Abstract::Vector> b_vec = 
+      Teuchos::rcp(new NOX::LAPACK::Vector(n));
+    *b_vec = *asymVec;
+
     // Create LOCA sublist
     Teuchos::ParameterList& locaParamsList = paramList->sublist("LOCA");
 
@@ -83,15 +92,32 @@ int main()
     Teuchos::ParameterList& bifurcationList = 
       locaParamsList.sublist("Bifurcation");
     bifurcationList.set("Type", "Pitchfork");
-    bifurcationList.set("Formulation", "Moore-Spence");           // Default
-    //bifurcationList.set("Solver Method", "Salinger Bordering"); // Default
-    bifurcationList.set("Solver Method", "Phipps Bordering");
-    bifurcationList.set("Bordered Solver Method", 
-			"LAPACK Direct Solve");  // For Phipps Bordering
     bifurcationList.set("Bifurcation Parameter", "lambda");       // Must set
-    bifurcationList.set("Length Normalization Vector", asymVec);  // Must set
-    bifurcationList.set("Initial Null Vector", asymVec);          // Must set
     bifurcationList.set("Antisymmetric Vector", asymVec);         // Must set
+
+//     // For Moore-Spence Formulation
+//     bifurcationList.set("Formulation", "Moore-Spence");           // Default
+//     //bifurcationList.set("Solver Method", "Salinger Bordering"); // Default
+//     bifurcationList.set("Solver Method", "Phipps Bordering");
+//     bifurcationList.set("Bordered Solver Method", 
+//     		          "LAPACK Direct Solve");  // For Phipps Bordering
+//     bifurcationList.set("Length Normalization Vector", asymVec);  // Must set
+//     bifurcationList.set("Initial Null Vector", asymVec);          // Must set
+    
+    // For minimally augmented formulation
+    bifurcationList.set("Formulation", "Minimally Augmented");
+    bifurcationList.set("Initial A Vector", a_vec);                // Must set
+    bifurcationList.set("Initial B Vector", b_vec);                // Must set
+
+    // For minimally augmented method, should set these for good performance
+    // Direct solve of bordered equations
+    bifurcationList.set("Bordered Solver Method",  "LAPACK Direct Solve");
+    // Combine arc-length and turning point bordered rows & columns
+    stepperList.set("Bordered Solver Method", "Nested");
+    Teuchos::ParameterList& nestedList = 
+      stepperList.sublist("Nested Bordered Solver");
+    // Direct solve of combined bordered system
+    nestedList.set("Bordered Solver Method", "LAPACK Direct Solve");
 
     // Create predictor sublist
     Teuchos::ParameterList& predictorList = 
@@ -155,7 +181,7 @@ int main()
 
     // Set up the status tests
     Teuchos::RefCountPtr<NOX::StatusTest::NormF> statusTestA = 
-      Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8, 
+      Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-10, 
 					      NOX::StatusTest::NormF::Scaled));
     Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> statusTestB = 
       Teuchos::rcp(new NOX::StatusTest::MaxIters(maxNewtonIters));
