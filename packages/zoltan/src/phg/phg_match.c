@@ -930,11 +930,13 @@ static int pmatching_ipm (ZZ *zz,
       for (i = 0; i < hgc->nProc_y; i++)
         rows[i] = recsize;       /* sentinal in case no row's data available */
       k = 0;
-      for (r = rec; r < rec + recsize; r++)
-        if (*r < 0)  {
-          *r = -(*r) - 1;           /* make sentinal candidate_index positive */
-          rows[k++] = (r - rec) - 1;  /* points to gno */
+      for (r = rec; r < rec+recsize; r+=(HEADER_SIZE+2*(*(r+2)))) {
+        if (*(r+1) < 0)  {
+          *(r+1) = -(*(r+1)) - 1;           /* make sentinal candidate_index positive */
+          rows[k++] = (r - rec);  /* points to gno */
         }
+      }
+
     
       /* merge partial i.p. sum data to compute total inner products */
       s = send; 
@@ -1604,14 +1606,16 @@ static int pmatching_agg_ipm (ZZ *zz,
       for (i = 0; i < hgc->nProc_y; i++)
         rows[i] = recsize;       /* sentinal in case no row's data available */
       k = 0;
-      for (r = rec; r < rec + recsize; r++)
-        if (*r < 0)  {
-          *r = -(*r) - 1;           /* make sentinal candidate_index positive */
-          rows[k++] = (r - rec) - 1;  /* points to gno */
+      for (r = rec; r < rec+recsize; r+=(HEADER_SIZE+2*(*(r+2)))) {
+        if (*(r+1) < 0)  {
+          *(r+1) = -(*(r+1)) - 1;           /* make sentinal candidate_index positive */
+          rows[k++] = (r - rec);  /* points to gno */
         }
+      }
+
       /* UVCUVC */
       if (k>hgc->nProc_y)
-          errexit("k(%d)!=nProc_y(%d)", k, hgc->nProc_y);
+          errexit("k(%d)!=nProc_y(%d) recsize %d", k, hgc->nProc_y, recsize);
     
       /* merge partial i.p. sum data to compute total inner products */
       s = send; 
