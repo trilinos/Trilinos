@@ -60,9 +60,7 @@ MultiVector(const Teuchos::RefCountPtr<Epetra_MultiVector>& source,
   : noxEpetraVectors(source->NumVectors())
 {
   if (memoryType == NOX::Epetra::MultiVector::CreateView) {
-    epetraMultiVec = 
-      Teuchos::rcp(new Epetra_MultiVector(View, *source, 0, 
-					  source->NumVectors()));
+    epetraMultiVec = source;
   }
   else {
   
