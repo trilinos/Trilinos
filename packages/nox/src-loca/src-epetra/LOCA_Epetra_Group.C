@@ -54,10 +54,13 @@
 #include "LOCA_Epetra_TransposeLinearSystem_Factory.H"
 #include "LOCA_GlobalData.H"
 #include "LOCA_ErrorCheck.H"
+#include "NOX_Epetra_MultiVector.H"
+#include "LOCA_Parameter_SublistParser.H"
 
 #ifdef HAVE_NOX_EPETRAEXT
 #include "EpetraExt_BlockCrsMatrix.h"
 #include "EpetraExt_BlockVector.h"
+#include "EpetraExt_BlockMultiVector.h"
 #endif
 
 LOCA::Epetra::Group::Group(
@@ -325,7 +328,7 @@ LOCA::Epetra::Group::applyJacobianTransposeInverse(
     tls_strategy = tls_factory.create(Teuchos::rcp(&params, false), linSys);
      
   // Compute Jacobian transpose J^T
-  tls_strategy->computeJacobianTranspose(xVector);
+  tls_strategy->createJacobianTranspose();
 
   // Now compute preconditioner for J^T
   tls_strategy->createTransposePreconditioner(xVector, params);
@@ -374,7 +377,7 @@ LOCA::Epetra::Group::applyJacobianTransposeInverseMultiVector(
     tls_strategy = tls_factory.create(Teuchos::rcp(&params, false), linSys);
      
   // Compute Jacobian transpose J^T
-  tls_strategy->computeJacobianTranspose(xVector);
+  tls_strategy->createJacobianTranspose();
 
   // Now compute preconditioner for J^T
   tls_strategy->createTransposePreconditioner(xVector, params);
@@ -786,6 +789,30 @@ LOCA::Epetra::Group::computeComplex(double frequency)
   complexMatrix->LoadBlock(*jac, 0, 0);
   complexMatrix->LoadBlock(*jac, 1, 1);
 
+  // Create linear system
+  if (complexSharedLinearSystem == Teuchos::null) {
+
+    NOX::Epetra::Vector nev(complexVec, NOX::Epetra::Vector::CreateView);
+
+    Teuchos::RefCountPtr<Teuchos::ParameterList> lsParams = 
+      globalData->parsedParams->getSublist("Linear Solver");
+
+    // Create the Linear System
+    Teuchos::RefCountPtr<NOX::Epetra::Interface::Required> iReq;
+    Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> iJac;
+    Teuchos::RefCountPtr<NOX::Epetra::LinearSystem> complexLinSys = 
+      Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, 
+							*lsParams,
+							iReq, 
+							iJac, 
+							complexMatrix, 
+							nev));
+    complexLinSys->setJacobianOperatorForSolve(complexMatrix);
+    complexSharedLinearSystem = 
+      Teuchos::rcp(new NOX::SharedObject<NOX::Epetra::LinearSystem, 
+		                         LOCA::Epetra::Group>(complexLinSys));
+  }
+
   if (finalStatus == NOX::Abstract::Group::Ok)
     isValidComplex = true;
 
@@ -845,6 +872,30 @@ LOCA::Epetra::Group::applyComplex(const NOX::Abstract::Vector& input_real,
 #endif
 }
 
+// NOX::Abstract::Group::ReturnType
+// LOCA::Epetra::Group::applyComplexMultiVector(
+// 				const NOX::Abstract::MultiVector& input_real,
+// 				const NOX::Abstract::MultiVector& input_imag,
+// 				NOX::Abstract::MultiVector& result_real,
+// 				NOX::Abstract::MultiVector& result_imag) const
+// {
+//   string callingFunction = 
+//     "LOCA::Epetra::Group::applyComplexMultiVector()";
+//   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
+//   NOX::Abstract::Group::ReturnType status;
+
+//   for (int i=0; i<input_real.numVectors(); i++) {
+//     status = applyComplex(input_real[i], input_imag[i], 
+// 			  result_real[i], result_imag[i]);
+//     finalStatus = 
+//       globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+// 							     finalStatus,
+// 							     callingFunction);
+//   }
+  
+//   return finalStatus;
+// }
+
 NOX::Abstract::Group::ReturnType
 LOCA::Epetra::Group::applyComplexMultiVector(
 				const NOX::Abstract::MultiVector& input_real,
@@ -854,19 +905,49 @@ LOCA::Epetra::Group::applyComplexMultiVector(
 {
   string callingFunction = 
     "LOCA::Epetra::Group::applyComplexMultiVector()";
-  NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
-  NOX::Abstract::Group::ReturnType status;
+  // We must have the time-dependent interface
+  if (userInterfaceTime == Teuchos::null)
+    return NOX::Abstract::Group::BadDependency;
 
-  for (int i=0; i<input_real.numVectors(); i++) {
-    status = applyComplex(input_real[i], input_imag[i], 
-			  result_real[i], result_imag[i]);
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
-  }
-  
-  return finalStatus;
+#ifdef HAVE_NOX_EPETRAEXT
+  const NOX::Epetra::MultiVector& epetra_input_real =
+    dynamic_cast<const NOX::Epetra::MultiVector&>(input_real);
+  const NOX::Epetra::MultiVector& epetra_input_imag =
+    dynamic_cast<const NOX::Epetra::MultiVector&>(input_imag);
+  NOX::Epetra::MultiVector& epetra_result_real =
+    dynamic_cast<NOX::Epetra::MultiVector&>(result_real);
+  NOX::Epetra::MultiVector& epetra_result_imag =
+    dynamic_cast<NOX::Epetra::MultiVector&>(result_imag);
+
+  // Get Jacobian matrix for row map
+  Teuchos::RefCountPtr<Epetra_RowMatrix> jac = Teuchos::rcp_dynamic_cast<Epetra_RowMatrix>(sharedLinearSystem.getObject(this)->getJacobianOperator());
+
+  EpetraExt::BlockMultiVector complex_input(jac->RowMatrixRowMap(),
+					    complexMatrix->RowMap(),
+					    input_real.numVectors());
+  complex_input.LoadBlockValues(epetra_input_real.getEpetraMultiVector(), 0);
+  complex_input.LoadBlockValues(epetra_input_imag.getEpetraMultiVector(), 1);
+
+  EpetraExt::BlockMultiVector complex_result(jac->RowMatrixRowMap(),
+					     complexMatrix->RowMap(),
+					     input_real.numVectors());
+  complex_result.PutScalar(0.0);
+
+  complexMatrix->Apply(complex_input, complex_result);
+
+  complex_result.ExtractBlockValues(epetra_result_real.getEpetraMultiVector(), 
+				    0);
+  complex_result.ExtractBlockValues(epetra_result_imag.getEpetraMultiVector(), 
+				    1);
+
+  return NOX::Abstract::Group::Ok;
+#else
+
+  globalData->locaErrorCheck->throwError(callingFunction, 
+					 "Must have EpetraExt support for Hopf tracking.  Configure trilinos with --enable-epetraext");
+  return NOX::Abstract::Group::BadDependency;
+
+#endif
 }
 
 NOX::Abstract::Group::ReturnType
@@ -885,26 +966,7 @@ LOCA::Epetra::Group::applyComplexInverseMultiVector(
     return NOX::Abstract::Group::BadDependency;
 
 #ifdef HAVE_NOX_EPETRAEXT
-  if (complexSharedLinearSystem == Teuchos::null) {
-
-    NOX::Epetra::Vector nev(complexVec, NOX::Epetra::Vector::CreateView);
-
-    // Create the Linear System
-    Teuchos::RefCountPtr<NOX::Epetra::Interface::Required> iReq;
-    Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> iJac;
-    Teuchos::RefCountPtr<NOX::Epetra::LinearSystem> complexLinSys = 
-      Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, 
-							lsParams,
-							iReq, 
-							iJac, 
-							complexMatrix, 
-							nev));
-    complexLinSys->setJacobianOperatorForSolve(complexMatrix);
-    complexSharedLinearSystem = 
-      Teuchos::rcp(new NOX::SharedObject<NOX::Epetra::LinearSystem, 
-		                         LOCA::Epetra::Group>(complexLinSys));
-  }
-
+  
   // Compute the preconditioner
   NOX::Epetra::LinearSystem::PreconditionerReusePolicyType precPolicy = 
     complexSharedLinearSystem->getObject(this)->getPreconditionerPolicy();
@@ -962,6 +1024,185 @@ LOCA::Epetra::Group::applyComplexInverseMultiVector(
     
     finalStatus = finalStatus && status;
   }
+  
+  if (finalStatus)
+    return NOX::Abstract::Group::Ok;
+  else
+    return NOX::Abstract::Group::NotConverged;
+#else
+
+  globalData->locaErrorCheck->throwError(callingFunction, 
+					 "Must have EpetraExt support for Hopf tracking.  Configure trilinos with --enable-epetraext");
+  return NOX::Abstract::Group::BadDependency;
+
+#endif
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::Epetra::Group::applyComplexTranspose(
+				  const NOX::Abstract::Vector& input_real,
+				  const NOX::Abstract::Vector& input_imag,
+				  NOX::Abstract::Vector& result_real,
+				  NOX::Abstract::Vector& result_imag) const
+{
+  string callingFunction = 
+    "LOCA::Epetra::Group::applyComplexTranspose()";
+
+  // We must have the time-dependent interface
+  if (userInterfaceTime == Teuchos::null)
+    return NOX::Abstract::Group::BadDependency;
+
+#ifdef HAVE_NOX_EPETRAEXT
+  const NOX::Epetra::Vector& epetra_input_real =
+    dynamic_cast<const NOX::Epetra::Vector&>(input_real);
+  const NOX::Epetra::Vector& epetra_input_imag =
+    dynamic_cast<const NOX::Epetra::Vector&>(input_imag);
+  NOX::Epetra::Vector& epetra_result_real =
+    dynamic_cast<NOX::Epetra::Vector&>(result_real);
+  NOX::Epetra::Vector& epetra_result_imag =
+    dynamic_cast<NOX::Epetra::Vector&>(result_imag);
+
+  EpetraExt::BlockVector complex_input(*complexVec);
+  complex_input.LoadBlockValues(epetra_input_real.getEpetraVector(), 0);
+  complex_input.LoadBlockValues(epetra_input_imag.getEpetraVector(), 1);
+
+  EpetraExt::BlockVector complex_result(*complexVec);
+  complex_result.PutScalar(0.0);
+
+  // Note:  transpose of block matrix is equivalent to conjugate transpose
+  // of complex matrix.  Hence we don't need to take a conjugate
+
+  complexMatrix->SetUseTranspose(true);
+  complexMatrix->Apply(complex_input, complex_result);
+  complexMatrix->SetUseTranspose(false);
+
+  complex_result.ExtractBlockValues(epetra_result_real.getEpetraVector(), 0);
+  complex_result.ExtractBlockValues(epetra_result_imag.getEpetraVector(), 1);
+  
+  return NOX::Abstract::Group::Ok;
+#else
+
+  globalData->locaErrorCheck->throwError(callingFunction, 
+					 "Must have EpetraExt support for Hopf tracking.  Configure trilinos with --enable-epetraext");
+  return NOX::Abstract::Group::BadDependency;
+
+#endif
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::Epetra::Group::applyComplexTransposeMultiVector(
+				const NOX::Abstract::MultiVector& input_real,
+				const NOX::Abstract::MultiVector& input_imag,
+				NOX::Abstract::MultiVector& result_real,
+				NOX::Abstract::MultiVector& result_imag) const
+{
+  string callingFunction = 
+    "LOCA::Epetra::Group::applyComplexTransposeMultiVector()";
+  NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
+  NOX::Abstract::Group::ReturnType status;
+
+  for (int i=0; i<input_real.numVectors(); i++) {
+    status = applyComplexTranspose(input_real[i], input_imag[i], 
+				   result_real[i], result_imag[i]);
+    finalStatus = 
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							     finalStatus,
+							     callingFunction);
+  }
+  
+  return finalStatus;
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::Epetra::Group::applyComplexTransposeInverseMultiVector(
+			    Teuchos::ParameterList& lsParams,
+			    const NOX::Abstract::MultiVector& input_real,
+			    const NOX::Abstract::MultiVector& input_imag,
+			    NOX::Abstract::MultiVector& result_real,
+			    NOX::Abstract::MultiVector& result_imag) const
+{
+  string callingFunction = 
+    "LOCA::Epetra::Group::applyComplexTransposeInverseMultiVector()";
+
+  // We must have the time-dependent interface
+  if (userInterfaceTime == Teuchos::null)
+    return NOX::Abstract::Group::BadDependency;
+
+#ifdef HAVE_NOX_EPETRAEXT
+  if (complexSharedLinearSystem == Teuchos::null) {
+
+    NOX::Epetra::Vector nev(complexVec, NOX::Epetra::Vector::CreateView);
+
+    // Create the Linear System
+    Teuchos::RefCountPtr<NOX::Epetra::Interface::Required> iReq;
+    Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> iJac;
+    Teuchos::RefCountPtr<NOX::Epetra::LinearSystem> complexLinSys = 
+      Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, 
+							lsParams,
+							iReq, 
+							iJac, 
+							complexMatrix, 
+							nev));
+    complexLinSys->setJacobianOperatorForSolve(complexMatrix);
+    complexSharedLinearSystem = 
+      Teuchos::rcp(new NOX::SharedObject<NOX::Epetra::LinearSystem, 
+		                         LOCA::Epetra::Group>(complexLinSys));
+  }
+  Teuchos::RefCountPtr<NOX::Epetra::LinearSystem> complexLinSys = 
+    Teuchos::rcp_const_cast<NOX::Epetra::LinearSystem>(complexSharedLinearSystem->getObject());
+
+  // Instantiate transpose solver
+  LOCA::Epetra::TransposeLinearSystem::Factory tls_factory(globalData);
+  if (tls_strategy == Teuchos::null)
+    tls_strategy = tls_factory.create(Teuchos::rcp(&lsParams, false), 
+				      complexLinSys);
+
+  // Compute complex transpose
+  tls_strategy->createJacobianTranspose();
+
+  // Now compute preconditioner
+  tls_strategy->createTransposePreconditioner(xVector, lsParams);
+
+  // Solve each complex system
+  EpetraExt::BlockVector complex_input(*complexVec);
+  EpetraExt::BlockVector complex_result(*complexVec);
+  NOX::Epetra::Vector nev_input(Teuchos::rcp(&complex_input,false),
+				NOX::Epetra::Vector::CreateView);
+  NOX::Epetra::Vector nev_result(Teuchos::rcp(&complex_result,false), 
+				 NOX::Epetra::Vector::CreateView);
+  const NOX::Epetra::Vector* epetra_input_real;
+  const NOX::Epetra::Vector* epetra_input_imag;
+  NOX::Epetra::Vector* epetra_result_real; 
+  NOX::Epetra::Vector* epetra_result_imag; 
+  bool status;
+  bool finalStatus = true;
+  for (int i=0; i<input_real.numVectors(); i++) {
+    epetra_input_real = 
+      dynamic_cast<const NOX::Epetra::Vector*>(&input_real[i]);
+    epetra_input_imag = 
+      dynamic_cast<const NOX::Epetra::Vector*>(&input_imag[i]);
+    epetra_result_real = dynamic_cast<NOX::Epetra::Vector*>(&result_real[i]);
+    epetra_result_imag = dynamic_cast<NOX::Epetra::Vector*>(&result_imag[i]);
+
+    complex_input.LoadBlockValues(epetra_input_real->getEpetraVector(), 0);
+    complex_input.LoadBlockValues(epetra_input_imag->getEpetraVector(), 1);
+    complex_result.PutScalar(0.0);
+    
+    status = 
+      tls_strategy->applyJacobianTransposeInverse(lsParams, 
+						  nev_input,
+						  nev_result);
+
+    complex_result.ExtractBlockValues(epetra_result_real->getEpetraVector(),0);
+    complex_result.ExtractBlockValues(epetra_result_imag->getEpetraVector(),1);
+    
+    finalStatus = finalStatus && status;
+  }
+
+  // Set original operators in linear system
+  complexMatrix->SetUseTranspose(false);
+  complexLinSys->setJacobianOperatorForSolve(complexMatrix);
+  complexLinSys->destroyPreconditioner();
   
   if (finalStatus)
     return NOX::Abstract::Group::Ok;
@@ -1067,4 +1308,25 @@ LOCA::Epetra::Group::resetIsValid()
   isValidShiftedPrec = false;
   isValidComplex = false;
   isValidComplexPrec = false;
+}
+
+Teuchos::RefCountPtr<const NOX::Epetra::LinearSystem>
+LOCA::Epetra::Group::getComplexLinearSystem() const
+{
+  return complexSharedLinearSystem->getObject();
+}
+
+Teuchos::RefCountPtr<NOX::Epetra::LinearSystem>
+LOCA::Epetra::Group::getComplexLinearSystem()
+{
+  return complexSharedLinearSystem->getObject(this);
+}
+
+void
+LOCA::Epetra::Group::getComplexMaps(
+		 Teuchos::RefCountPtr<const Epetra_BlockMap>& baseMap,
+		 Teuchos::RefCountPtr<const Epetra_BlockMap>& globalMap) const
+{
+  baseMap = Teuchos::rcp(&(xVector.getEpetraVector().Map()),false);
+  globalMap = Teuchos::rcp(&(complexVec->Map()),false);
 }

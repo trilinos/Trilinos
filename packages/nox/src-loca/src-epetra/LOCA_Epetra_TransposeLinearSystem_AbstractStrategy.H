@@ -92,12 +92,22 @@ namespace LOCA {
   
 
 	//! Evaluates the Jacobian-transpose based on the solution vector x.
+	/*!
+	 * Note:  For flexibility, this method does not compute the original
+	 * Jacobian matrix.  It uses whatever is currently stored in the
+	 * linear system.
+	 */
 	virtual bool 
-	computeJacobianTranspose(const NOX::Epetra::Vector& x) = 0;
+	createJacobianTranspose() = 0;
  
 	/*! 
 	 * \brief Explicitly constructs a preconditioner based on the solution 
 	 * vector x and the parameter list p.  
+	 */
+	/*!
+	 * Note:  \c x is only needed for user-supplied preconditioners.
+	 * When using a built-in preconditioner (e.g., Ifpack), \c x will
+	 * note be used.
 	 */
 	virtual bool 
 	createTransposePreconditioner(const NOX::Epetra::Vector& x, 

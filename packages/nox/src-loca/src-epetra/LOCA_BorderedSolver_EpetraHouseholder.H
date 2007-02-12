@@ -48,7 +48,9 @@
 #include "Teuchos_BLAS.hpp" // class data element
 
 // forward declarations
+class Epetra_Operator;
 class Epetra_CrsMatrix;
+class Epetra_BlockMap;
 namespace LOCA {
   class GlobalData;
   namespace Parameter {
@@ -60,6 +62,14 @@ namespace LOCA {
   namespace Epetra {
     class Group;
   }
+}
+namespace NOX {
+  namespace Epetra {
+    class LinearSystem;
+  }
+}
+namespace EpetraExt {
+  class BlockMultiVector;
 }
 
 namespace LOCA {
@@ -256,7 +266,7 @@ namespace LOCA {
        * via ConstraintInterface::isConstraintDerivativesXZero.
        */
       virtual void setMatrixBlocks(
-          const Teuchos::RefCountPtr<const NOX::Abstract::Group>& group,
+          const Teuchos::RefCountPtr<const LOCA::BorderedSolver::AbstractOperator>& op,
 	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>& blockA,
 	  const Teuchos::RefCountPtr<const LOCA::MultiContinuation::ConstraintInterface>& blockB,
 	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>& blockC);
@@ -372,6 +382,27 @@ namespace LOCA {
 
     protected:
 
+      /*! 
+       * \brief Solves the extended system using the technique described
+       * above.
+       */
+      virtual NOX::Abstract::Group::ReturnType 
+      solve(Teuchos::ParameterList& params,
+	    const NOX::Abstract::MultiVector* F,
+	    const NOX::Abstract::MultiVector::DenseMatrix* G,
+	    NOX::Abstract::MultiVector& X,
+	    NOX::Abstract::MultiVector::DenseMatrix& Y) const;
+
+      /*! 
+       * \brief Solves the transpose of the extended system as defined above
+       */
+      virtual NOX::Abstract::Group::ReturnType 
+      solveTranspose(Teuchos::ParameterList& params,
+		     const NOX::Abstract::MultiVector* F,
+		     const NOX::Abstract::MultiVector::DenseMatrix* G,
+		     NOX::Abstract::MultiVector& X,
+		     NOX::Abstract::MultiVector::DenseMatrix& Y) const;
+
       //! Compute \f$U\f$ and \f$V\f$ multivectors in \f$P = J+U V^T\f$. 
       NOX::Abstract::Group::ReturnType  
       computeUV(const NOX::Abstract::MultiVector::DenseMatrix& Y1,
@@ -390,7 +421,12 @@ namespace LOCA {
 					   const NOX::Abstract::MultiVector& V,
 					   Epetra_CrsMatrix& jac) const;
 
-      
+      Teuchos::RefCountPtr<NOX::Abstract::MultiVector> 
+      createBlockMV(const NOX::Abstract::MultiVector& v) const;
+
+      void
+      setBlockMV(const NOX::Abstract::MultiVector& bv,
+		 NOX::Abstract::MultiVector& v) const;
 
     private:
 
@@ -409,7 +445,10 @@ namespace LOCA {
       Teuchos::RefCountPtr<Teuchos::ParameterList> solverParams;
 
       //! Pointer to group storing J
-      Teuchos::RefCountPtr<const LOCA::Epetra::Group> grp;
+      Teuchos::RefCountPtr<LOCA::Epetra::Group> grp;
+
+      // Operator
+      Teuchos::RefCountPtr<const LOCA::BorderedSolver::AbstractOperator> op;
 
       //! Pointer to A block
       Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> A;
@@ -462,6 +501,24 @@ namespace LOCA {
       //! V matrix in low-rank update form P = J + U*V^T for transposed system
       Teuchos::RefCountPtr<NOX::Abstract::MultiVector> V_trans;
 
+      //! Pointer to A block as an Epetra multivector
+      Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> Ablock;
+
+      //! Pointer to B block as an Epetra multivector
+      Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> Bblock;
+
+      //! Pointer to linear system
+      Teuchos::RefCountPtr<NOX::Epetra::LinearSystem> linSys;
+
+      //! Pointer to Epetra operator
+      Teuchos::RefCountPtr<Epetra_Operator> epetraOp;
+
+      //! Pointer to base map for block vectors
+      Teuchos::RefCountPtr<const Epetra_BlockMap> baseMap;
+
+      //! Pointer to global map for block vectors
+      Teuchos::RefCountPtr<const Epetra_BlockMap> globalMap;
+
       //! Number of constraint equations
       int numConstraints;
 
@@ -494,6 +551,12 @@ namespace LOCA {
 
       //! Flag indicating whether to use P = J + U*V^T in preconditioner
       bool use_P_For_Prec;
+
+      //! Flag indicating whether we are doing a complex solve
+      bool isComplex;
+
+      //! Frequency for complex systems
+      double omega;
 
     };
   } // namespace BorderedSolver

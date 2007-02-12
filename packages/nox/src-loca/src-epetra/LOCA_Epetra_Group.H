@@ -68,6 +68,7 @@ namespace EpetraExt {
   class BlockCrsMatrix;
   class BlockVector;
 }
+class Epetra_BlockMap;
 
 namespace LOCA {
 
@@ -446,6 +447,43 @@ namespace LOCA {
 
       //@}
 
+      /*! 
+       * @name Implementation of LOCA::Hopf::MinimallyAugmented::AbstractGroup virtual methods.
+       */
+      //@{
+
+      /*!
+       * Computes conjugate-tranpose matrix vector product 
+       * \f$ (J+i\omega B)^H (x + iy) \f$.
+       */
+      virtual NOX::Abstract::Group::ReturnType 
+      applyComplexTranspose(const NOX::Abstract::Vector& input_real,
+			    const NOX::Abstract::Vector& input_imag,
+			    NOX::Abstract::Vector& result_real,
+			    NOX::Abstract::Vector& result_imag) const;
+
+      /*!
+       * Computes conjugate-tranpose matrix vector product 
+       * \f$ (J+i\omega B)^H (x + iy) \f$.
+       */
+      virtual NOX::Abstract::Group::ReturnType 
+      applyComplexTransposeMultiVector(
+			   const NOX::Abstract::MultiVector& input_real,
+			   const NOX::Abstract::MultiVector& input_imag,
+			   NOX::Abstract::MultiVector& result_real,
+			   NOX::Abstract::MultiVector& result_imag) const;
+
+      //! Solve \f$(J+i\omega B)^H (x + iy) = a+ib\f$
+      virtual NOX::Abstract::Group::ReturnType
+      applyComplexTransposeInverseMultiVector(
+			    Teuchos::ParameterList& params,
+			    const NOX::Abstract::MultiVector& input_real,
+			    const NOX::Abstract::MultiVector& input_imag,
+			    NOX::Abstract::MultiVector& result_real,
+			    NOX::Abstract::MultiVector& result_imag) const;
+
+      //@}
+
       //! Return the userInterface.
       virtual Teuchos::RefCountPtr<NOX::Epetra::Interface::Required> 
       getUserInterface();
@@ -460,6 +498,18 @@ namespace LOCA {
       //! Sets the Jacobian operator
       void setJacobianOperatorForSolve(
 		 const Teuchos::RefCountPtr<const Epetra_Operator>& op) const;
+
+      //! Return the Linear System.
+      virtual Teuchos::RefCountPtr<const NOX::Epetra::LinearSystem> 
+      getComplexLinearSystem() const;
+
+      //! Return the Linear System.
+      virtual Teuchos::RefCountPtr<NOX::Epetra::LinearSystem> 
+      getComplexLinearSystem();
+
+      virtual void
+      getComplexMaps(Teuchos::RefCountPtr<const Epetra_BlockMap>& baseMap,
+		     Teuchos::RefCountPtr<const Epetra_BlockMap>& globalMap) const;
 
     protected:
 

@@ -117,7 +117,7 @@ namespace LOCA {
        * via ConstraintInterface::isConstraintDerivativesXZero.
        */
       virtual void setMatrixBlocks(
-          const Teuchos::RefCountPtr<const NOX::Abstract::Group>& group,
+          const Teuchos::RefCountPtr<const LOCA::BorderedSolver::AbstractOperator>& op,
 	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>& blockA,
 	  const Teuchos::RefCountPtr<const LOCA::MultiContinuation::ConstraintInterface>& blockB,
 	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>& blockC);
@@ -218,6 +218,21 @@ namespace LOCA {
 		   NOX::Abstract::MultiVector& X,
 		   NOX::Abstract::MultiVector::DenseMatrix& Y) const;
 
+      /*! 
+       * \brief Solves the transpose of the extended system as defined above
+       */
+      /*!
+       * The \em params argument is the linear solver parameters. 
+       */
+      virtual NOX::Abstract::Group::ReturnType 
+      applyInverseTranspose(Teuchos::ParameterList& params,
+			    const NOX::Abstract::MultiVector* F,
+			    const NOX::Abstract::MultiVector::DenseMatrix* G,
+			    NOX::Abstract::MultiVector& X,
+			    NOX::Abstract::MultiVector::DenseMatrix& Y) const {
+	return NOX::Abstract::Group::NotDefined;
+      }
+
     private:
 
       //! Private to prohibit copying
@@ -236,6 +251,9 @@ namespace LOCA {
 
       //! Pointer to group storing J
       Teuchos::RefCountPtr<LOCA::Epetra::Group> grp;
+
+      // Operator
+      Teuchos::RefCountPtr<const LOCA::BorderedSolver::AbstractOperator> op;
 
       //! Pointer to A block
       Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> A;

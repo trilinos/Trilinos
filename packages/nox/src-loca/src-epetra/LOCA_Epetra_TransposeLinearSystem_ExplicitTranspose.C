@@ -100,17 +100,16 @@ applyJacobianTransposeInverse(Teuchos::ParameterList &params,
 
 bool
 LOCA::Epetra::TransposeLinearSystem::ExplicitTranspose::
-computeJacobianTranspose(const NOX::Epetra::Vector& x)
+createJacobianTranspose()
 {
-  // Compute the Jacobian
-  bool res = linsys->computeJacobian(x);
+  // Get Jacobian
   Teuchos::RefCountPtr<Epetra_RowMatrix> jac = 
     Teuchos::rcp_dynamic_cast<Epetra_RowMatrix>(linsys->getJacobianOperator());
 
   if (jac == Teuchos::null)
     globalData->locaErrorCheck->throwError(
 	 string("LOCA::Epetra::TransposeLinearSystem::ExplicitTranspose::") +
-	 string("computeJacobianTranspose()"), 
+	 string("createJacobianTranspose()"), 
 	 string("Jacobian operator must be of type Epetra_RowMatrix for ") +
 	 string("Explicit Transpose method"));
 
@@ -120,7 +119,7 @@ computeJacobianTranspose(const NOX::Epetra::Vector& x)
   else
     transposer.fwd();
 
-  return res;
+  return true;
 }
 
 bool

@@ -50,6 +50,7 @@
 #include "LOCA_Epetra_AugmentedOp.H"
 #include "LOCA_BorderedSolver_LowerTriangularBlockElimination.H"
 #include "LOCA_BorderedSolver_UpperTriangularBlockElimination.H"
+#include "LOCA_BorderedSolver_JacobianOperator.H"
 
 LOCA::BorderedSolver::EpetraAugmented::EpetraAugmented(
 	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
@@ -58,6 +59,7 @@ LOCA::BorderedSolver::EpetraAugmented::EpetraAugmented(
   globalData(global_data),
   solverParams(slvrParams),
   grp(),
+  op(),
   A(),
   B(),
   C(),
@@ -75,13 +77,22 @@ LOCA::BorderedSolver::EpetraAugmented::~EpetraAugmented()
 
 void
 LOCA::BorderedSolver::EpetraAugmented::setMatrixBlocks(
-         const Teuchos::RefCountPtr<const NOX::Abstract::Group>& group,
+         const Teuchos::RefCountPtr<const LOCA::BorderedSolver::AbstractOperator>& op_,
 	 const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>& blockA,
 	 const Teuchos::RefCountPtr<const LOCA::MultiContinuation::ConstraintInterface>& blockB,
 	 const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>& blockC)
 {
   string callingFunction = 
     "LOCA::BorderedSolver::EpetraAugmented::setMatrixBlocks";
+
+  op = op_;
+
+  // Get Jacobian operator
+  Teuchos::RefCountPtr<const LOCA::BorderedSolver::JacobianOperator> jacOp =
+    Teuchos::rcp_dynamic_cast<const LOCA::BorderedSolver::JacobianOperator>(op);
+
+  Teuchos::RefCountPtr<const NOX::Abstract::Group> group = 
+    jacOp->getGroup();
 
   // Cast away const
   Teuchos::RefCountPtr<NOX::Abstract::Group> non_const_group = 
@@ -252,12 +263,12 @@ LOCA::BorderedSolver::EpetraAugmented::applyInverse(
 
   if (isZeroA) {
     LOCA::BorderedSolver::LowerTriangularBlockElimination ltbe(globalData);
-    return ltbe.solve(params, *grp, *constraints, *C, F, G, X, Y);
+    return ltbe.solve(params, *op, *constraints, *C, F, G, X, Y);
   }
   
   if (isZeroB) {
     LOCA::BorderedSolver::UpperTriangularBlockElimination utbe(globalData);
-    return utbe.solve(params, *grp, A.get(), *C, F, G, X, Y);
+    return utbe.solve(params, *op, A.get(), *C, F, G, X, Y);
   }
    
   // Get underlying Epetra vectors

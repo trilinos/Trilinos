@@ -97,14 +97,13 @@ applyJacobianTransposeInverse(Teuchos::ParameterList &params,
 
 bool
 LOCA::Epetra::TransposeLinearSystem::TransposePreconditioner::
-computeJacobianTranspose(const NOX::Epetra::Vector& x)
+createJacobianTranspose()
 {
-  // Compute the Jacobian and set it to use the transpose
-  bool res = linsys->computeJacobian(x);
+  // Set Jacobian to use the transpose
   jac = linsys->getJacobianOperator();
   jac->SetUseTranspose(true);
 
-  return res;
+  return true;
 }
 
 bool
