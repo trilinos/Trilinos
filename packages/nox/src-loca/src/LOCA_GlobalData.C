@@ -44,6 +44,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "LOCA_ErrorCheck.H"
 #include "LOCA_Factory.H"
+#include "LOCA_Parameter_SublistParser.H"
 
 LOCA::GlobalData::GlobalData(
 	       const Teuchos::RefCountPtr<NOX::Utils>& loca_utils,
@@ -51,7 +52,8 @@ LOCA::GlobalData::GlobalData(
 	       const Teuchos::RefCountPtr<LOCA::Factory>& loca_factory) :
   locaUtils(loca_utils),
   locaErrorCheck(loca_error_check),
-  locaFactory(loca_factory)
+  locaFactory(loca_factory),
+  parsedParams()
 {
 }
 
@@ -84,6 +86,11 @@ LOCA::createGlobalData(
 							     userFactory));
   else
     globalData->locaFactory = Teuchos::rcp(new LOCA::Factory(globalData));
+
+  // Parse parameter list
+  globalData->parsedParams = 
+    Teuchos::rcp(new Parameter::SublistParser(globalData));
+  globalData->parsedParams->parseSublists(paramList);
   
   return globalData;
 }
@@ -95,4 +102,5 @@ LOCA::destroyGlobalData(
   globalData->locaUtils = Teuchos::null;
   globalData->locaErrorCheck = Teuchos::null;
   globalData->locaFactory = Teuchos::null;
+  globalData->parsedParams = Teuchos::null;
 }

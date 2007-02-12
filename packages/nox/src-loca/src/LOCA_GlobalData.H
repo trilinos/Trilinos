@@ -57,6 +57,9 @@ namespace LOCA {
   namespace Abstract {
     class Factory;
   }
+  namespace Parameter {
+    class SublistParser;
+  }
 }
 
 namespace LOCA {
@@ -93,6 +96,9 @@ namespace LOCA {
 
     //! Ref-count pointer to LOCA::Factory object
     Teuchos::RefCountPtr<LOCA::Factory> locaFactory;
+
+    //! Ref-count pointer to parsed parameter list
+    Teuchos::RefCountPtr<LOCA::Parameter::SublistParser> parsedParams;
 
   private:
 
