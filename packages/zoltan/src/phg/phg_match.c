@@ -1823,7 +1823,7 @@ static int pmatching_agg_ipm (ZZ *zz,
         ++s; /* skip candidate_index*/
 
         plno=*s++;
-        ++s; /* skip fixex vertex */
+        if (hgp->UsePrefPart) ++s; /* skip fixed vertex */
         visited[plno] = 1;
 /*        uprintf(hgc, "Set visited flag of %d (gno=%d)\n", plno, VTX_LNO_TO_GNO(hg, plno)); */
         memcpy(&cw[plno*VtxDim], s, sizeof(float)*VtxDim);
