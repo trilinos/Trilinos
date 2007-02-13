@@ -61,13 +61,11 @@ LOCA::Abstract::Group::Group(
 
 LOCA::Abstract::Group::Group(const LOCA::Abstract::Group& source, 
 			     NOX::CopyType type) : 
-  LOCA::MultiContinuation::FiniteDifferenceGroup(source, type),
-  LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup(source, type),
-  LOCA::TurningPoint::MinimallyAugmented::FiniteDifferenceGroup(source, type),
-  LOCA::Hopf::MooreSpence::FiniteDifferenceGroup(source, type),
-  LOCA::Hopf::MinimallyAugmented::FiniteDifferenceGroup(source, type),
   globalData(source.globalData)
 {
+  // We use copy here instead of copy constructors to avoid issues with
+  // multiple virtual inheritence
+  copy(source);
 }
 
 
@@ -223,7 +221,7 @@ LOCA::Abstract::Group::copy(const NOX::Abstract::Group& src)
     dynamic_cast<const LOCA::Abstract::Group&>(src);
 
   // Copy parent classes
-  LOCA::TurningPoint::MinimallyAugmented::FiniteDifferenceGroup::copy(src);
+  LOCA::MultiContinuation::FiniteDifferenceGroup::copy(src);
   globalData = source.globalData;
 }
 
