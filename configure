@@ -867,7 +867,6 @@ Optional Features:
                           --disable-default-packages option is used
   --enable-pliris         Build pliris (default is no)
   --enable-pytrilinos     Build PyTrilinos (default is no)
-  --enable-python         Build PyTrilinos (default is no)
   --enable-rbgen          Build rbgen (default is no)
   --enable-rythmos        Build rythmos (default is no)
   --enable-sacado         Build sacado (default is no)
@@ -913,11 +912,6 @@ topics that will be helpful for Trilinos Users.  The Trilinos
 User Guide can be found at:
 "http://software.sandia.gov/trilinos/publications.html".
 
-
-Optional Packages:
-  --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
-  --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
-  --with-python           Build PyTrilinos (default is no)
 
 Report bugs to <maherou@sandia.gov>.
 _ACEOF
@@ -2521,75 +2515,6 @@ fi
 
 
 
-# Check whether --enable-python or --disable-python was given.
-if test "${enable_python+set}" = set; then
-  enableval="$enable_python"
-  ac_cv_use_python=$enableval
-ac_cv_use_python_explicit=$enableval
-else
-  ac_cv_use_python=no
-ac_cv_use_python_explicit=no
-fi;
-
-echo "$as_me:$LINENO: checking whether to use python" >&5
-echo $ECHO_N "checking whether to use python... $ECHO_C" >&6
-
-if test "X$ac_cv_use_python" != "Xno"; then
-  echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_EPYTHON
-_ACEOF
-
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-
-if test "X$ac_cv_use_python" != "Xno"; then
-  ac_hold_python="yes"
-fi
-
-
-
-# Check whether --with-python or --without-python was given.
-if test "${with_python+set}" = set; then
-  withval="$with_python"
-  ac_cv_use_python=$withval
-else
-  ac_cv_use_python=no
-fi;
-
-echo "$as_me:$LINENO: checking whether to use python" >&5
-echo $ECHO_N "checking whether to use python... $ECHO_C" >&6
-
-if test "X$ac_cv_use_python" != "Xno"; then
-  echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_WPYTHON
-_ACEOF
-
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-
-#We need to do this to support with and enable options with the same argument.
-#Eventually, we should maybe change the base m4's if this situation becomes
-#common.
-
-if test "X$ac_cv_use_python" != "Xyes" && test "X$ac_hold_python" != "Xyes"; then
-  ac_cv_use_python="no"
-else
-  ac_cv_use_python="yes"
-fi
-
-
 # Check whether --enable-rbgen or --disable-rbgen was given.
 if test "${enable_rbgen+set}" = set; then
   enableval="$enable_rbgen"
@@ -3602,8 +3527,7 @@ fi
 
 
 if test "X$ac_cv_use_pytrilinos" != "Xno" ||
-	test "X$ac_cv_use_webtrilinos" != "Xno" ||
-	test "X$ac_cv_use_python" != "Xno"; then
+	test "X$ac_cv_use_webtrilinos" != "Xno"; then
 
 
 subdirs="$subdirs packages/PyTrilinos"

@@ -75,7 +75,6 @@ am__aclocal_m4_deps =  \
 	$(top_srcdir)/config/tac_arg_enable_default_feature.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub.m4 \
-	$(top_srcdir)/config/tac_arg_with_package.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
