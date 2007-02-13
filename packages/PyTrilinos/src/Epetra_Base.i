@@ -356,20 +356,19 @@ __version__ = Version().split()[2]
 /////////////////////////
 // Epetra_BLAS support //
 /////////////////////////
-%rename(BLAS) Epetra_BLAS;
 // I do not want to expose this functionality to python
-%import  "Epetra_BLAS.h"
+%import "Epetra_BLAS.h"
 
 ///////////////////////////
 // Epetra_LAPACK support //
 ///////////////////////////
-%rename(FLOPS) Epetra_Flops;
 // I do not want to expose this functionality to python
-%import  "Epetra_LAPACK.h"
+%import "Epetra_LAPACK.h"
 
 //////////////////////////
 // Epetra_Flops support //
 //////////////////////////
+%rename(FLOPS) Epetra_Flops;
 %include "Epetra_Flops.h"
 
 /////////////////////////
