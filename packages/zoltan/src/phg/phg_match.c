@@ -1562,13 +1562,11 @@ static int pmatching_agg_ipm (ZZ *zz,
           /* flag first data in each destination row for merging */
           if (rows[candidate_gno % hgc->nProc_y] != 1)  {
             rows[candidate_gno % hgc->nProc_y] = 1;
-            dest[sendcnt]   = candidate_gno % hgc->nProc_y;    /* destination */
             candidate_index = -candidate_index -1;
-          } else
-            dest[sendcnt]   = candidate_gno % hgc->nProc_y;    /* destination */
-           
-          
+          } 
+
           /* current partial sums fit, so put them into the send buffer */
+          dest[sendcnt]   = candidate_gno % hgc->nProc_y;    /* destination */            
           size[sendcnt++] = msgsize;          /* size of message */
           sendsize       += msgsize;          /* cummulative size of message */
           *s++ = candidate_gno;
@@ -1644,7 +1642,7 @@ static int pmatching_agg_ipm (ZZ *zz,
             uprintf(hgc, "for index=%d no local partner\n", n);
 */
         for (i = 0; i < m; i++)  {
-          float val, mcw=0.0;;
+          float val, mcw=0.0;
           int  lno=aux[i];
 
 
@@ -1669,9 +1667,10 @@ static int pmatching_agg_ipm (ZZ *zz,
         
         /* Put <candidate_gno, candidate_index, count, <lno, tsum>> into send */
         if (bestlno >= 0)  {
-          if (s - send + HEADER_SIZE + 2 * count > nSend ) {
+          if (s - send + HEADER_SIZE + 2 * m > nSend ) {
             sendsize = s - send;
-            MACRO_REALLOC (1.2*(sendsize + HEADER_SIZE + 2*count), nSend, send);
+            uprintf(hgc, "resize with nSend=%d sendsize=%d m=%d\n", nSend, sendsize, m);
+            MACRO_REALLOC (1.2*(sendsize + HEADER_SIZE + 2*m), nSend, send);
             s = send + sendsize;         /* since realloc buffer could move */
           }      
           *s++ = candidate_gno;
@@ -1828,9 +1827,13 @@ static int pmatching_agg_ipm (ZZ *zz,
 
         plno=*s++;
         if (hgp->UsePrefPart) ++s; /* skip fixed vertex */
-        visited[plno] = 1;
+        f = (float *) s;
+        if (*f<0.0) { /* reject due to weight constraint*/
+        } else {
 /*        uprintf(hgc, "Set visited flag of %d (gno=%d)\n", plno, VTX_LNO_TO_GNO(hg, plno)); */
-        memcpy(&cw[plno*VtxDim], s, sizeof(float)*VtxDim);
+          visited[plno] = 1;          
+          memcpy(&cw[plno*VtxDim], s, sizeof(float)*VtxDim);
+        }
         s += VtxDim;
       }      
     }
