@@ -65,6 +65,7 @@ LOCA::Abstract::Group::Group(const LOCA::Abstract::Group& source,
   LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup(source, type),
   LOCA::TurningPoint::MinimallyAugmented::FiniteDifferenceGroup(source, type),
   LOCA::Hopf::MooreSpence::FiniteDifferenceGroup(source, type),
+  LOCA::Hopf::MinimallyAugmented::FiniteDifferenceGroup(source, type),
   globalData(source.globalData)
 {
 }
