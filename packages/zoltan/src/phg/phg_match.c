@@ -1896,9 +1896,9 @@ static int pmatching_agg_ipm (ZZ *zz,
         
         if (hgp->UsePrefPart)
             pref = *s++;
-        lhead[lno] = lheadno;
-        match[lno] = partner;
         if (lheadno!=-1) { 
+          lhead[lno] = lheadno;
+          match[lno] = partner;
           memcpy(&cw[lheadno*VtxDim], s, sizeof(float)*VtxDim);
           if (hgp->UsePrefPart)
               lheadpref[lheadno] = pref;
