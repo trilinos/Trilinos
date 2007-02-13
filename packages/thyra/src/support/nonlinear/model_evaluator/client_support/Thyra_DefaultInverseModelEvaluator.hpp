@@ -248,6 +248,9 @@ public:
 
 private:
 
+  // ////////////////////////////////
+  // Private data members
+
   mutable Teuchos::RefCountPtr<const Teuchos::ParameterList> validParamList_;
   Teuchos::RefCountPtr<Teuchos::ParameterList>  paramList_;
 
@@ -257,12 +260,8 @@ private:
   int            p_idx_;
   int            Ng_;
 
-  double         observationMultiplier_; 
-  std::string    observationTargetFileNameBase_;
-  std::string    observationScaleFileNameBase_;
+  double         observationMultiplier_;
   double         parameterMultiplier_; 
-  std::string    parameterBaseFileNameBase_;
-  std::string    parameterScaleFileNameBase_;
 
   mutable ParameterDrivenMultiVectorInput<Scalar> observationTargetReader_;
   mutable ParameterDrivenMultiVectorInput<Scalar> parameterBaseReader_;
@@ -282,6 +281,11 @@ private:
   static const double ParameterMultiplier_default_;
 
   static const std::string ParameterBaseVector_name_;
+
+  // ////////////////////////////////
+  // Private member functions
+
+  void initializeDefaults();
 
 };
 
@@ -410,6 +414,8 @@ void DefaultInverseModelEvaluator<Scalar>::setParameterList(
     observationTargetReader_.readVector(
       "observation target vector",&observationTarget_);
   }
+  parameterMultiplier_ = paramList_->get(
+    ParameterMultiplier_name_,ParameterMultiplier_default_);
   if(get_parameterBaseIO().get()) {
     parameterBaseReader_.set_vecSpc(this->get_p_space(p_idx_));
     Teuchos::VerboseObjectTempState<ParameterDrivenMultiVectorInput<Scalar> >
@@ -715,6 +721,18 @@ std::string DefaultInverseModelEvaluator<Scalar>::description() const
     oss << "NULL";
   oss << "}";
   return oss.str();
+}
+
+// private
+
+template<class Scalar>
+void DefaultInverseModelEvaluator<Scalar>::initializeDefaults()
+{
+  obs_idx_ = ObservationIndex_default_;
+  p_idx_ = ParameterSubvectorIndex_default_;
+  Ng_ = 0;
+  observationMultiplier_ = ObservationMultiplier_default_;
+  parameterMultiplier_ = ParameterMultiplier_default_; 
 }
 
 } // namespace Thyra
