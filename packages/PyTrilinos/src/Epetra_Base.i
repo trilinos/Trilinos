@@ -270,10 +270,10 @@ except ImportError:
 // Define a macro for a directorin typemap that converts a C++
 // Epetra_[Multi]Vector to a python Epetra.[Multi]Vector.
 %define %epetra_array_director_typemaps(ClassName)
-%typemap(directorin) Epetra_ ## ClassName & {
-  Epetra_NumPy ## ClassName * npa = new Epetra_NumPy ## ClassName(View,$1_name);
-  $input = SWIG_NewPointerObj(npa, $descriptor(Epetra_NumPy ## ClassName*), 1);
-}
+%typemap(directorin) Epetra_ ## ClassName & %{
+  Epetra_NumPy ## ClassName npa$argnum = Epetra_NumPy ## ClassName(View,$1_name);
+  $input = SWIG_NewPointerObj(&npa$argnum, $descriptor(Epetra_NumPy ## ClassName*), 0);
+%}
 %enddef
 
 ////////////////////////////
