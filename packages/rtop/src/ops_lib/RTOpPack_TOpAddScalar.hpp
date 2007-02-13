@@ -45,7 +45,7 @@ public:
   Scalar alpha() const { return this->scalarData(); }
   /** \brief . */
   TOpAddScalar( const Scalar &alpha = Teuchos::ScalarTraits<Scalar>::zero() )
-    : ROpScalarTransformationBase<Scalar>(alpha), RTOpT<Scalar>("TOpAddScalar")
+    : RTOpT<Scalar>("TOpAddScalar"), ROpScalarTransformationBase<Scalar>(alpha)
     {}
   /** @name Overridden from RTOpT */
   //@{
