@@ -65,9 +65,6 @@ class ImplicitBDFStepper : virtual public StepperBase<Scalar>
       );
 
     /** \brief . */
-    void InitializeStepper(Teuchos::RefCountPtr<Teuchos::ParameterList> &implicitBDFParameters);
-
-    /** \brief . */
     void setModel(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model);
 
     /** \brief . */
@@ -252,121 +249,14 @@ class ImplicitBDFStepper : virtual public StepperBase<Scalar>
 // Defintions
 
 template<class Scalar>
-void ImplicitBDFStepper<Scalar>::InitializeStepper(
-    Teuchos::RefCountPtr<Teuchos::ParameterList> &implicitBDFParameters
-    )
-{
-  typedef Teuchos::ScalarTraits<Scalar> ST;
-  // Initialize algorithm coefficients
-  setParameterList(implicitBDFParameters);
-  maxOrder = parameterList->get("maxOrder",int(5)); // maximum order
-  maxOrder = max(1,min(maxOrder,5)); // 1 <= maxOrder <= 5
-  currentOrder=1; // Current order of integration
-  oldOrder=1; // previous order of integration
-  usedOrder=1;  // order used in current step (used after currentOrder is updated)
-  alpha_s=Scalar(-ST::one());  // $\alpha_s$ fixed-leading coefficient of this BDF method
-  alpha.reserve(maxOrder+1);  // $\alpha_j(n)=h_n/\psi_j(n)$ coefficient used in local error test
-                  // note:   $h_n$ = current step size, n = current time step
-  gamma.reserve(maxOrder+1);  // calculate time derivative of history array for predictor 
-  beta.reserve(maxOrder+1);   // coefficients used to evaluate predictor from history array
-  psi.reserve(maxOrder+1);    // $\psi_j(n) = t_n-t_{n-j}$ intermediary variable used to 
-                  // compute $\beta_j(n;$
-  sigma.reserve(maxOrder+1);  // $\sigma_j(n) = \frac{h_n^j(j-1)!}{\psi_1(n)*\cdots *\psi_j(n)}$
-  for (int i=0 ; i<maxOrder ; ++i)
-  {
-    alpha.push_back(ST::zero());
-    beta.push_back(ST::zero());
-    gamma.push_back(ST::zero());
-    psi.push_back(ST::zero());
-    sigma.push_back(ST::zero());
-  }
-  alpha_0=ST::zero();   // $-\sum_{j=1}^k \alpha_j(n)$ coefficient used in local error test
-  cj=ST::zero();      // $-\alpha_s/h_n$ coefficient used in local error test
-  ck=ST::zero();      // local error coefficient gamma_[0] = 0; // $\gamma_j(n)=\sum_{l=1}^{j-1}1/\psi_l(n)$ coefficient used to
-  hh=ST::zero();
-  numberOfSteps=0;   // number of total time integration steps taken
-  nef=0;
-  usedStep=ST::zero();
-  nscsco=0;
-  Ek=ST::zero();
-  Ekm1=ST::zero();
-  Ekm2=ST::zero();
-  Ekp1=ST::zero();
-  Est=ST::zero();
-  Tk=ST::zero();
-  Tkm1=ST::zero();
-  Tkm2=ST::zero();
-  Tkp1=ST::zero();
-  newOrder=1;
-  initialPhase=true;
-
-  relErrTol = parameterList->get( "relErrTol", Scalar(1.0e-4) );
-  absErrTol = parameterList->get( "absErrTol", Scalar(1.0e-6) );
-  constantStepSize = parameterList->get( "constantStepSize", false );
-  stopTime = parameterList->get( "stopTime", Scalar(10.0) );
-
-  int outputLevel = parameterList->get( "outputLevel", int(-1) );
-  outputLevel = min(max(outputLevel,-1),4);
-  this->setVerbLevel(static_cast<Teuchos::EVerbosityLevel>(outputLevel));
-  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
-  out->precision(15);
-  out->setMaxLenLinePrefix(28);
-  out->pushLinePrefix("Rythmos::ImplicitBDFStepper");
-  out->setShowLinePrefix(true);
-  out->setTabIndentStr("    ");
-
-  setDefaultMagicNumbers(parameterList->sublist("magicNumbers"));
-
-  Teuchos::OSTab ostab(out,1,"InitializeStepper");
-  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
-  {
-    *out << "maxOrder = " << maxOrder << endl;
-    *out << "currentOrder = " << currentOrder << endl;
-    *out << "oldOrder = " << oldOrder << endl;
-    *out << "usedOrder = " << usedOrder << endl;
-    *out << "alpha_s = " << alpha_s << endl;
-    for (int i=0 ; i<maxOrder ; ++i)
-    {
-      *out << "alpha[" << i << "] = " << alpha[i] << endl;
-      *out << "beta[" << i << "] = " << beta[i] << endl;
-      *out << "gamma[" << i << "] = " << gamma[i] << endl;
-      *out << "psi[" << i << "] = " << psi[i] << endl;
-      *out << "sigma[" << i << "] = " << sigma[i] << endl;
-    }
-    *out << "alpha_0 = " << alpha_0 << endl;
-    *out << "cj = " << cj << endl;
-    *out << "ck = " << ck << endl;
-    *out << "numberOfSteps = " << numberOfSteps << endl;
-    *out << "nef = " << nef << endl;
-    *out << "usedStep = " << usedStep << endl;
-    *out << "nscsco = " << nscsco << endl;
-    *out << "Ek = " << Ek << endl;
-    *out << "Ekm1 = " << Ekm1 << endl;
-    *out << "Ekm2 = " << Ekm2 << endl;
-    *out << "Ekp1 = " << Ekp1 << endl;
-    *out << "Est = " << Est << endl;
-    *out << "Tk = " << Tk << endl;
-    *out << "Tkm1 = " << Tkm1 << endl;
-    *out << "Tkm2 = " << Tkm2 << endl;
-    *out << "Tkp1 = " << Tkp1 << endl;
-    *out << "newOrder = " << newOrder << endl;
-    *out << "initialPhase = " << initialPhase << endl;
-    *out << "relErrTol  = " << relErrTol  << endl;
-    *out << "absErrTol  = " << absErrTol  << endl;
-    *out << "constantStepSize  = " << constantStepSize  << endl;
-    *out << "stopTime  = " << stopTime  << endl;
-  }
-}
-
-template<class Scalar>
 ImplicitBDFStepper<Scalar>::ImplicitBDFStepper(
   const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model
   ,const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > &solver
   ,Teuchos::RefCountPtr<Teuchos::ParameterList> &parameterList
   )
 {
-  InitializeStepper(parameterList);
-
+  if( parameterList == Teuchos::null )
+    this->setParameterList(parameterList);
   // Now we instantiate the model and the solver
   setModel(model);
   setSolver(solver);
@@ -378,9 +268,6 @@ ImplicitBDFStepper<Scalar>::ImplicitBDFStepper(
   ,const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > &solver
   )
 {
-  Teuchos::ParameterList emptyList;
-  InitializeStepper(emptyList);
-
   // Now we instantiate the model and the solver
   setModel(model);
   setSolver(solver);
@@ -1364,7 +1251,109 @@ int ImplicitBDFStepper<Scalar>::GetOrder() const
 template<class Scalar>
 void ImplicitBDFStepper<Scalar>::setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList)
 {
+
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+
   parameterList = paramList;
+
+  maxOrder = parameterList->get("maxOrder",int(5)); // maximum order
+  maxOrder = max(1,min(maxOrder,5)); // 1 <= maxOrder <= 5
+  currentOrder=1; // Current order of integration
+  oldOrder=1; // previous order of integration
+  usedOrder=1;  // order used in current step (used after currentOrder is updated)
+  alpha_s=Scalar(-ST::one());  // $\alpha_s$ fixed-leading coefficient of this BDF method
+  alpha.reserve(maxOrder+1);  // $\alpha_j(n)=h_n/\psi_j(n)$ coefficient used in local error test
+                  // note:   $h_n$ = current step size, n = current time step
+  gamma.reserve(maxOrder+1);  // calculate time derivative of history array for predictor 
+  beta.reserve(maxOrder+1);   // coefficients used to evaluate predictor from history array
+  psi.reserve(maxOrder+1);    // $\psi_j(n) = t_n-t_{n-j}$ intermediary variable used to 
+                  // compute $\beta_j(n;$
+  sigma.reserve(maxOrder+1);  // $\sigma_j(n) = \frac{h_n^j(j-1)!}{\psi_1(n)*\cdots *\psi_j(n)}$
+  for (int i=0 ; i<maxOrder ; ++i)
+  {
+    alpha.push_back(ST::zero());
+    beta.push_back(ST::zero());
+    gamma.push_back(ST::zero());
+    psi.push_back(ST::zero());
+    sigma.push_back(ST::zero());
+  }
+  alpha_0=ST::zero();   // $-\sum_{j=1}^k \alpha_j(n)$ coefficient used in local error test
+  cj=ST::zero();      // $-\alpha_s/h_n$ coefficient used in local error test
+  ck=ST::zero();      // local error coefficient gamma_[0] = 0; // $\gamma_j(n)=\sum_{l=1}^{j-1}1/\psi_l(n)$ coefficient used to
+  hh=ST::zero();
+  numberOfSteps=0;   // number of total time integration steps taken
+  nef=0;
+  usedStep=ST::zero();
+  nscsco=0;
+  Ek=ST::zero();
+  Ekm1=ST::zero();
+  Ekm2=ST::zero();
+  Ekp1=ST::zero();
+  Est=ST::zero();
+  Tk=ST::zero();
+  Tkm1=ST::zero();
+  Tkm2=ST::zero();
+  Tkp1=ST::zero();
+  newOrder=1;
+  initialPhase=true;
+
+  relErrTol = parameterList->get( "relErrTol", Scalar(1.0e-4) );
+  absErrTol = parameterList->get( "absErrTol", Scalar(1.0e-6) );
+  constantStepSize = parameterList->get( "constantStepSize", false );
+  stopTime = parameterList->get( "stopTime", Scalar(10.0) );
+
+  int outputLevel = parameterList->get( "outputLevel", int(-1) );
+  outputLevel = min(max(outputLevel,-1),4);
+  this->setVerbLevel(static_cast<Teuchos::EVerbosityLevel>(outputLevel));
+  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
+  out->precision(15);
+  out->setMaxLenLinePrefix(28);
+  out->pushLinePrefix("Rythmos::ImplicitBDFStepper");
+  out->setShowLinePrefix(true);
+  out->setTabIndentStr("    ");
+
+  setDefaultMagicNumbers(parameterList->sublist("magicNumbers"));
+
+  Teuchos::OSTab ostab(out,1,"setParameterList");
+  if ( static_cast<int>(this->getVerbLevel()) >= static_cast<int>(Teuchos::VERB_HIGH) )
+  {
+    *out << "maxOrder = " << maxOrder << endl;
+    *out << "currentOrder = " << currentOrder << endl;
+    *out << "oldOrder = " << oldOrder << endl;
+    *out << "usedOrder = " << usedOrder << endl;
+    *out << "alpha_s = " << alpha_s << endl;
+    for (int i=0 ; i<maxOrder ; ++i)
+    {
+      *out << "alpha[" << i << "] = " << alpha[i] << endl;
+      *out << "beta[" << i << "] = " << beta[i] << endl;
+      *out << "gamma[" << i << "] = " << gamma[i] << endl;
+      *out << "psi[" << i << "] = " << psi[i] << endl;
+      *out << "sigma[" << i << "] = " << sigma[i] << endl;
+    }
+    *out << "alpha_0 = " << alpha_0 << endl;
+    *out << "cj = " << cj << endl;
+    *out << "ck = " << ck << endl;
+    *out << "numberOfSteps = " << numberOfSteps << endl;
+    *out << "nef = " << nef << endl;
+    *out << "usedStep = " << usedStep << endl;
+    *out << "nscsco = " << nscsco << endl;
+    *out << "Ek = " << Ek << endl;
+    *out << "Ekm1 = " << Ekm1 << endl;
+    *out << "Ekm2 = " << Ekm2 << endl;
+    *out << "Ekp1 = " << Ekp1 << endl;
+    *out << "Est = " << Est << endl;
+    *out << "Tk = " << Tk << endl;
+    *out << "Tkm1 = " << Tkm1 << endl;
+    *out << "Tkm2 = " << Tkm2 << endl;
+    *out << "Tkp1 = " << Tkp1 << endl;
+    *out << "newOrder = " << newOrder << endl;
+    *out << "initialPhase = " << initialPhase << endl;
+    *out << "relErrTol  = " << relErrTol  << endl;
+    *out << "absErrTol  = " << absErrTol  << endl;
+    *out << "constantStepSize  = " << constantStepSize  << endl;
+    *out << "stopTime  = " << stopTime  << endl;
+  }
+
 }
 
 template<class Scalar>
