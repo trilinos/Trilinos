@@ -10,7 +10,6 @@
   --disable-default-packages \
   --disable-examples \
   --disable-tests \
-  --enable-python \
   --enable-teuchos \
   --enable-teuchos-expat \
   --enable-epetra \

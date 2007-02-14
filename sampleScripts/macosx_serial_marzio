@@ -20,7 +20,6 @@ $HOME/Trilinos/$1/configure \
   --with-ldflags="-Wl,-multiply_defined -Wl,suppress" \
   --with-libs="-framework vecLib -lf2c" \
   --disable-default-packages \
-  --enable-python \
   --enable-teuchos \
   --enable-epetra \
   --enable-epetraext \

@@ -17,7 +17,6 @@ $HOME/Trilinos/$1/configure \
   --with-install="/usr/bin/install -p" \
   --with-gnumake \
   --disable-default-packages \
-  --enable-python \
   --enable-teuchos \
   --enable-teuchos-extended \
   --enable-teuchos-complex \

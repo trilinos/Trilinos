@@ -23,4 +23,3 @@ ${HOME}/Trilinos/$1/configure \
   --enable-ml \
   --enable-webtrilinos \
   --enable-didasko \
-  --enable-python

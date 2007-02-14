@@ -34,5 +34,5 @@ ${HOME}/Trilinos/$1/configure \
   --enable-amesos \
   --enable-amesos-klu \
   --enable-ml
-# enable-python ??
+# enable-pytrilinos ??
 

@@ -64,7 +64,7 @@ FFLAGS=-O3 \
 --enable-nox-lapack-examples \
 --enable-nox-tests \
 --enable-pliris \
---enable-python \
+--enable-pytrilinos \
 --enable-rtop \
 --enable-rythmos \
 --enable-teuchos \

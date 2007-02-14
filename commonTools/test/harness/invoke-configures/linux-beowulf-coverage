@@ -42,7 +42,7 @@ F77=g77 \
 --enable-nox-lapack \
 --enable-nox-lapack-examples \
 --enable-nox-tests \
---enable-python \
+--enable-pytrilinos \
 --enable-rtop \
 --enable-rythmos \
 --enable-sacado \

@@ -23,7 +23,7 @@ ${HOME}/Trilinos/$1/configure \
   --disable-default-packages \
   --disable-examples \
   --disable-tests \
-  --enable-python \
+  --enable-pytrilinos \
   --enable-teuchos \
   --enable-epetra \
   --enable-triutils \
