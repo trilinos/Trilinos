@@ -47,11 +47,7 @@
 #include "NOX_Abstract_Group.H"
   
 // Forward declarations
-class Epetra_Vector;
-
-namespace LOCA {
-  class ParameterVector;
-}
+class Epetra_Operator;
 
 namespace LOCA {
   namespace Epetra {
