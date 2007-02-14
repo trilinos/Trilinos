@@ -229,6 +229,8 @@ if __name__ == "__main__":
           description  = "Python interface to Trilinos",
           author       = "Bill Spotz",
           author_email = "wfspotz@sandia.gov",
+          url          = "http://software.sandia.gov/trilinos/packages/pytrilinos",
+          download_url = "http://software.sandia.gov/trilinos/downloads/trilinos-7.0.html",
           packages     = packages,
           ext_modules  = ext_modules
           )
