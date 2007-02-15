@@ -89,7 +89,7 @@ endif
 
 noinst_PROGRAMS = $(EXAMPLES_MPI) example_AmesosFactory_Tridiag $(EXAMPLES_STRATIMIKOS)  $(EXAMPLES_GALERI) $(EXAMPLES_MC64)
 
-EXTRA_DIST = In_662_bus.rsa _stratimikos_amesos_lapack.xml
+EXTRA_DIST = In_662_bus.rsa _stratimikos_amesos_lapack.xml _FourByFour.mtx
 
 #stratimikos_example_SOURCES      = $(srcdir)/stratimikos_example.cpp  $(srcdir)/simpleStratimikosSolve.cpp $(srcdir)/Thyra_AmesosLinearOpWithSolveFactory.cpp
 #stratimikos_example_DEPENDENCIES = $(top_builddir)/src/libamesos.a $(top_builddir)/../stratimikos/src/libstratimikos.a 

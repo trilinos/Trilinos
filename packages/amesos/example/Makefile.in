@@ -360,7 +360,7 @@ target_vendor = @target_vendor@
 @HAVE_AMESOS_MC64_TRUE@EXAMPLES_MC64 = example_MC64
 @HAVE_MPI_FALSE@EXAMPLES_MPI = 
 @HAVE_MPI_TRUE@EXAMPLES_MPI = a_trivial_mpi_test
-EXTRA_DIST = In_662_bus.rsa _stratimikos_amesos_lapack.xml
+EXTRA_DIST = In_662_bus.rsa _stratimikos_amesos_lapack.xml _FourByFour.mtx
 
 #stratimikos_example_SOURCES      = $(srcdir)/stratimikos_example.cpp  $(srcdir)/simpleStratimikosSolve.cpp $(srcdir)/Thyra_AmesosLinearOpWithSolveFactory.cpp
 #stratimikos_example_DEPENDENCIES = $(top_builddir)/src/libamesos.a $(top_builddir)/../stratimikos/src/libstratimikos.a 
