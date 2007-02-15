@@ -416,9 +416,8 @@ public:
   mlparams.set("aggregation: type","Uncoupled");
   mlparams.set("coarse: max size",2500);
   mlparams.set("coarse: type","Amesos-KLU");
-  mlparams.set("smoother: type","MLS");
-  mlparams.set("smoother: MLS polynomial order",3);
-  mlparams.set("smoother: sweeps",1);
+  mlparams.set("smoother: type","Chebyshev");
+  mlparams.set("smoother: sweeps",3);
   mlparams.set("smoother: pre or post","both");
   mlparams.set("null space: type","pre-computed");
   mlparams.set("null space: add default vectors",false);

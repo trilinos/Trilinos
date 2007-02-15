@@ -394,7 +394,7 @@ double max_diag, min_diag, max_sum, sum;
      /* does a Gauss-Seidel on its local submatrix independent of the     */
      /* other processors.                                                 */
 
-     /* ML_Gen_Smoother_MLS(ml, level, ML_BOTH, 30., nsmooth); */
+     /* ML_Gen_Smoother_Cheby(ml, level, ML_BOTH, 30., nsmooth); */
      Ndof = ml->Amat[level].invec_leng;
 
      ML_Gen_Blocks_Aggregates(ag, level, &nBlocks, &blockIndices);
@@ -458,7 +458,7 @@ double max_diag, min_diag, max_sum, sum;
    /* Choose coarse grid solver: mls, superlu, symGS, or Aztec */
 
    /*
-   ML_Gen_Smoother_MLS(ml, coarsest_level, ML_BOTH, 30., nsmooth); 	   
+   ML_Gen_Smoother_Cheby(ml, coarsest_level, ML_BOTH, 30., nsmooth); 	   
    ML_Gen_CoarseSolverSuperLU( ml, coarsest_level);
    */
    /*

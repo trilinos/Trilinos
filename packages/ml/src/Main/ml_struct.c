@@ -2063,14 +2063,14 @@ int ML_Gen_Smoother_BlockDiagScaledCheby(ML *ml, int nl, int pre_or_post,
   }
   Amat = &(ml->Amat[nl]);
 
-  /* put in a bogus value for lambda so that ML_Gen_Smoother_MLS() */
+  /* put in bogus value for lambda so that ML_Gen_Smoother_Cheby() */
   /* does not try to compute the eigenvalues of A. What we         */
   /* actually need are the eigenvalues of  Dinv A. These will be   */
   /* computed later in this function.                              */
 
   temp = Amat->lambda_max;
   Amat->lambda_max = 1.;
-  ML_Gen_Smoother_MLS(ml, nl, pre_or_post, eig_ratio, deg);
+  ML_Gen_Smoother_Cheby(ml, nl, pre_or_post, eig_ratio, deg);
   Amat->lambda_max = temp;
 
   if (pre_or_post != ML_POSTSMOOTHER) {
@@ -2230,8 +2230,14 @@ int ML_Gimmie_Eigenvalues(ML_Operator *Amat, int scale_by_diag,
   }
   return 0;
 } 
-
 int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post,
+			double eig_ratio, int deg)
+{
+   ML_Gen_Smoother_Cheby(ml, nl, pre_or_post, eig_ratio, deg);
+   return 0;
+}
+
+int ML_Gen_Smoother_Cheby(ML *ml, int nl, int pre_or_post,
 			double eig_ratio, int deg)
 {
    int              start_level, end_level, i, j, errCode=0;
@@ -2252,13 +2258,13 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post,
    else { start_level = nl; end_level = nl;}
 
    if (start_level < 0) {
-      printf("ML_Gen_Smoother_MLS: cannot set smoother on level %d\n",
+      printf("ML_Gen_Smoother_Cheby: cannot set smoother on level %d\n",
 		      start_level);
       return 1;
    }
 
 
-   fun = ML_Smoother_MLS_Apply;
+   fun = ML_Smoother_Cheby_Apply;
    iii = 0;
    degree = 1;
 
@@ -2304,12 +2310,12 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post,
 	 widget->eig_ratio = eig_ratio;
 	 if (pre_or_post == ML_PRESMOOTHER) {
 	   ml->pre_smoother[i].data_destroy = ML_Smoother_Destroy_MLS;
-           sprintf(str,"MLS_pre%d",i);
+           sprintf(str,"Cheby_pre%d",i);
            errCode=ML_Smoother_Set(&(ml->pre_smoother[i]), 
 				  (void *) widget, fun, 
 				   ntimes, 0.0, str);
 	   /* set up the values needed for MLS  */
-	   if (fun == ML_Smoother_MLS_Apply) {
+	   if (fun == ML_Smoother_Cheby_Apply) {
 	     if (ML_MLS_Setup_Coef(&(ml->pre_smoother[i]), 1,ml->symmetrize_matrix)) {
 	       return pr_error("*** MLS setup failed!\n");
 	     }
@@ -2317,12 +2323,12 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post,
 	 }
 	 else if (pre_or_post == ML_POSTSMOOTHER) {
 	   ml->post_smoother[i].data_destroy = ML_Smoother_Destroy_MLS;
-	   sprintf(str,"MLS_post%d",i);
+	   sprintf(str,"Cheby_post%d",i);
 	   errCode=ML_Smoother_Set(&(ml->post_smoother[i]), 
 				  (void *) widget, fun, 
 				  ntimes, 0.0, str);
 	   /* set up the values needed for MLS  */
-	   if (fun == ML_Smoother_MLS_Apply) {
+	   if (fun == ML_Smoother_Cheby_Apply) {
 	     if (ML_MLS_Setup_Coef(&(ml->post_smoother[i]), 1,ml->symmetrize_matrix)) {
 	       return pr_error("*** MLS setup failed!\n");
 	     }
@@ -2331,19 +2337,19 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post,
 	 else if (pre_or_post == ML_BOTH) {
 
 	   ml->post_smoother[i].data_destroy = ML_Smoother_Destroy_MLS;
-	   sprintf(str,"MLS_pre%d",i);
+	   sprintf(str,"Cheby_pre%d",i);
 
 	   ML_Smoother_Set(&(ml->pre_smoother[i]), 
                         (void *) widget, fun, ntimes,
 			0.0, str);
-	   sprintf(str,"MLS_post%d",i);
+	   sprintf(str,"Cheby_post%d",i);
 	   errCode = ML_Smoother_Set(&(ml->post_smoother[i]), 
                (void *) widget, fun, ntimes, 0.0, str);
 
 
 	   /* set up the values needed for MLS  */
 
-	   if (fun == ML_Smoother_MLS_Apply) {
+	   if (fun == ML_Smoother_Cheby_Apply) {
 	     if (ML_MLS_Setup_Coef(&(ml->post_smoother[i]), 1,ml->symmetrize_matrix)) {
 	       return pr_error("*** MLS setup failed!\n");
 	     }

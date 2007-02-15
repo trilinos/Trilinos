@@ -125,7 +125,7 @@ int main(int argc, char *argv[]) {
   // Set a smoother for the AMG method
   int degree = 2;
   for (int j = 0; j < AMG_NLevels; j++)
-    ML_Gen_Smoother_MLS(ml_handle, j, ML_BOTH, 30., degree);
+    ML_Gen_Smoother_Cheby(ml_handle, j, ML_BOTH, 30., degree);
 
   ML_Gen_Solver(ml_handle, ML_MGV, 0, AMG_NLevels-1);
 

@@ -76,7 +76,7 @@ Amesos (level 4) : Time for numerical fact = 4.5e-05 (s)
 
 		*******************************************************
 		***** Preconditioned CG solution
-		***** 4 level MG ( MLS_pre7/MLS_post7, /Amesos_KLU_4)
+		***** 4 level MG ( Cheby_pre7/Cheby_post7, /Amesos_KLU_4)
 		***** No scaling
 		*******************************************************
 

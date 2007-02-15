@@ -83,7 +83,7 @@ int main(int argc, char *argv[])
   coarsest_level = MaxMgLevels - Nlevels;
 
   for (level = MaxMgLevels-1; level > coarsest_level; level--)
-    ML_Gen_Smoother_MLS(ml, level, ML_BOTH, 30., 3);
+    ML_Gen_Smoother_Cheby(ml, level, ML_BOTH, 30., 3);
 
   /* ML_Gen_CoarseSolverSuperLU( ml, coarsest_level); */
 

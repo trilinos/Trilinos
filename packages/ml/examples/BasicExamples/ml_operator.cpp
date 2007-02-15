@@ -146,7 +146,7 @@ int main(int argc, char *argv[])
   // set up some smoothers. Here we suppose a symmetric problem
   int nits = 1;
   for (int level = maxMgLevels-1; level > coarsestLevel; level--)
-    ML_Gen_Smoother_MLS(ml_handle, level, ML_BOTH, 30., 3);
+    ML_Gen_Smoother_Cheby(ml_handle, level, ML_BOTH, 30., 3);
 
   // simple coarse solver. You may want to use Amesos to access
   // to a large variety of direct solvers, serial and parallel

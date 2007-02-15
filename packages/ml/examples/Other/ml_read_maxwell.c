@@ -1736,7 +1736,7 @@ nx = nx--; /* rst dirichlet */
          smooth and nodal/edge combination on post-smooth.   This maintains
          symmetry of the preconditioner. */
 	}
-      else if (ML_strcmp(context->subsmoother,"MLS") == 0)
+      else if (ML_strcmp(context->subsmoother,"Chebyshev") == 0)
 	{
 #ifndef ML_BENCHMARK
 	  /* printf("polynomial degree?\n");
@@ -1755,8 +1755,8 @@ nx = nx--; /* rst dirichlet */
       }
       fclose(ifp);
 #endif /*ifndef ML_BENCHMARK*/
-	  edge_smoother  = (void *) ML_Gen_Smoother_MLS;
-	  nodal_smoother = (void *) ML_Gen_Smoother_MLS;
+	  edge_smoother  = (void *) ML_Gen_Smoother_Cheby;
+	  nodal_smoother = (void *) ML_Gen_Smoother_Cheby;
 	  nodal_omega    = 1.0;
 	  edge_omega     = 1.0;
 	  nodal_args = ML_Smoother_Arglist_Create(2);
@@ -1793,7 +1793,7 @@ nx = nx--; /* rst dirichlet */
           /* Setting omega to any other value will override the automatic
              calculation in ML_Smoother_Gen_Hiptmair_Data. */
           omega = (double) ML_DEFAULT;
-	  if (edge_smoother == (void *) ML_Gen_Smoother_MLS) {
+	  if (edge_smoother == (void *) ML_Gen_Smoother_Cheby) {
 	    edge_eig_ratio[level] = eig_ratio_tol;
 	    nodal_eig_ratio[level] = eig_ratio_tol;
 	    temp1[0] = Tmat_array[level]->outvec_leng;
@@ -1922,7 +1922,7 @@ nx = nx--; /* rst dirichlet */
     edge_eig_ratio[coarsest_level] = eig_ratio_tol;
     nodal_eig_ratio[coarsest_level] = eig_ratio_tol;
     omega = (double) ML_DEFAULT;
-    if (edge_smoother == (void *) ML_Gen_Smoother_MLS)
+    if (edge_smoother == (void *) ML_Gen_Smoother_Cheby)
     {
        ML_Smoother_Arglist_Set(edge_args, 1, &(edge_eig_ratio[coarsest_level]));
        ML_Smoother_Arglist_Set(nodal_args,1,&(nodal_eig_ratio[coarsest_level]));

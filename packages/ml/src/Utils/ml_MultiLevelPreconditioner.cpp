@@ -2319,7 +2319,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
   if( verbose_ ) cout << msg << "Chebyshev (degree="
                         << ChebyshevPolyOrder << ",alpha=" << ChebyshevAlpha
                         << "," << PreOrPostSmoother << ")" << endl;
-     ML_Gen_Smoother_MLS(ml_, LevelID_[NumLevels_-1], pre_or_post,
+     ML_Gen_Smoother_Cheby(ml_, LevelID_[NumLevels_-1], pre_or_post,
                          ChebyshevAlpha, ChebyshevPolyOrder);
 
   } else if( CoarseSolution == "Hiptmair" ) {
@@ -2345,10 +2345,10 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
       // only MLS and SGS are currently supported
       if ( (SubSmootherType == "MLS") || (SubSmootherType == "Chebyshev"))
       {
-        nodal_smoother=(void *) ML_Gen_Smoother_MLS;
+        nodal_smoother=(void *) ML_Gen_Smoother_Cheby;
         // set polynomial degree
         ML_Smoother_Arglist_Set(nodal_args_, 0, &nodal_its);
-        edge_smoother=(void *) ML_Gen_Smoother_MLS;
+        edge_smoother=(void *) ML_Gen_Smoother_Cheby;
         ML_Smoother_Arglist_Set(edge_args_, 0, &edge_its);
                                                                                 
         // set alpha (lower bound of smoothing interval (alpha,beta) )

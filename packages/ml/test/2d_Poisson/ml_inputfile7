@@ -39,7 +39,7 @@ Number of processors         = 4
       Solution Specifications
 -----------------------------------------------
 Max Number of Levels         = 9
-Type of Smoother             = MLS
+Type of Smoother             = Chebyshev
 #                              [Parasails, GaussSeidel, SymGaussSeidel, 
 #                               BlockGaussSeidel, Aggregate, Jacobi, Metis]
 Smoother steps per level     = 4

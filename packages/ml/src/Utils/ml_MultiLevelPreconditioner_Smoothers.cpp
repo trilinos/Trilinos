@@ -364,7 +364,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
         MyChebyshevAlpha = edge_coarsening_rate;
       } //if (SolvingMaxwell_)
 
-      ML_Gen_Smoother_MLS(ml_, LevelID_[level], pre_or_post,
+      ML_Gen_Smoother_Cheby(ml_, LevelID_[level], pre_or_post,
                           MyChebyshevAlpha, MyChebyshevPolyOrder);
 
       if (verbose_) {
@@ -671,9 +671,9 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
         if (SubAlpha == -2.) SubAlpha = 20.;
 
 
-        nodal_smoother=(void *) ML_Gen_Smoother_MLS;
+        nodal_smoother=(void *) ML_Gen_Smoother_Cheby;
         ML_Smoother_Arglist_Set(nodal_args_, 0, &Mynodal_its);
-        edge_smoother=(void *) ML_Gen_Smoother_MLS;
+        edge_smoother=(void *) ML_Gen_Smoother_Cheby;
         ML_Smoother_Arglist_Set(edge_args_, 0, &Myedge_its);
 
         // FIXME:  T could be NULL
@@ -760,7 +760,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
            double tmp = Amat->lambda_max;
            Amat->lambda_max = fabs(Amat->lambda_min);
            Amat->lambda_min = fabs(tmp);
-           ML_Gen_Smoother_MLS(ml_subproblem,0,ML_PRESMOOTHER,eig_ratio,degree);
+           ML_Gen_Smoother_Cheby(ml_subproblem,0,ML_PRESMOOTHER,eig_ratio,degree);
                                                                                 
            //post-smoother
            hiptmairSmData = (ML_Sm_Hiptmair_Data *)
@@ -775,7 +775,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
            ml_subproblem->pre_smoother->data_destroy(
                ml_subproblem->pre_smoother->smoother->data);
                                                                                 
-           ML_Gen_Smoother_MLS(ml_subproblem,0,ML_PRESMOOTHER,eig_ratio,degree);
+           ML_Gen_Smoother_Cheby(ml_subproblem,0,ML_PRESMOOTHER,eig_ratio,degree);
         }
       }
 

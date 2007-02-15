@@ -246,7 +246,7 @@ extern int ML_Smoother_NewGS(ML_Smoother *sm,int inlen,double x[],int outlen,
 extern int ML_BlockScaledApply(ML_Operator *Amat, int inlen, double in[],
 			       int outlen, double out[]);
 
-extern  int ML_Smoother_MLS_Apply(ML_Smoother *, int, double *, int, double *);
+extern  int ML_Smoother_Cheby_Apply(ML_Smoother *, int, double *, int, double *);
 extern int ML_Cheby(ML_Smoother *sm, int inlen, double x[], int outlen, double rhs[]);
 
 #ifdef WKC

@@ -3705,7 +3705,7 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
 
    /* For the MLS ... we really want to switch to a complex version */
 #ifdef GREG
-   if (edge_smoother == (void *) ML_Gen_Smoother_MLS) {
+   if (edge_smoother == (void *) ML_Gen_Smoother_Cheby) {
 
      dataptr->ml_edge->pre_smoother[0].smoother->func_ptr = ML_complex_Cheby;
 #ifdef IWANTONESTEP
@@ -6501,7 +6501,7 @@ int DinvA(ML_Operator *data,  int in, double p[], int out, double ap[])
   return 0;
 }
 
-int ML_Smoother_MLS_Apply(ML_Smoother *sm,int inlen,double x[],int outlen,
+int ML_Smoother_Cheby_Apply(ML_Smoother *sm,int inlen,double x[],int outlen,
                           double rhs[])
 { /****************************************************************************	
    *
@@ -6535,9 +6535,9 @@ int ML_Smoother_MLS_Apply(ML_Smoother *sm,int inlen,double x[],int outlen,
    res   = (double *) ML_allocate((n+1)*sizeof(double));
    y     = (double *) ML_allocate((n+1)*sizeof(double));
 
-   if (pAux == NULL) pr_error("ML_Smoother_MLS_Apply: allocation failed\n");
-   if (res  == NULL) pr_error("ML_Smoother_MLS_Apply: allocation failed\n");
-   if (y    == NULL) pr_error("ML_Smoother_MLS_Apply: allocation failed\n");
+   if (pAux == NULL) pr_error("ML_Smoother_Cheby_Apply: allocation failed\n");
+   if (res  == NULL) pr_error("ML_Smoother_Cheby_Apply: allocation failed\n");
+   if (y    == NULL) pr_error("ML_Smoother_Cheby_Apply: allocation failed\n");
 #endif
 
 #ifdef RST_MODIF
@@ -7052,11 +7052,11 @@ int ML_Smoother_HiptmairSubsmoother_Create(ML **ml_subproblem,
    ML_Operator_halfClone_Init( &((*ml_subproblem)->Amat[0]),
 				   Amat);
 
-   if (smoother == (void *) ML_Gen_Smoother_MLS) {
+   if (smoother == (void *) ML_Gen_Smoother_Cheby) {
 
 
      if (ML_Smoother_Arglist_Nargs(args) != 2) {
-       printf("ML_Smoother_Gen_Hiptmair_Data: Need 2 arguments for ML_Gen_Smoother_MLS() got %d arguments\n", ML_Smoother_Arglist_Nargs(args));
+       printf("ML_Smoother_Gen_Hiptmair_Data: Need 2 arguments for ML_Gen_Smoother_Cheby() got %d arguments\n", ML_Smoother_Arglist_Nargs(args));
        exit(1);
      }
      dbl_arg1 = (double *) ML_Smoother_Arglist_Get(args, 1); /* eig ratio     */
@@ -7077,10 +7077,10 @@ int ML_Smoother_HiptmairSubsmoother_Create(ML **ml_subproblem,
 					  nblocks, block_list); 
      }
      else
-       ML_Gen_Smoother_MLS(*ml_subproblem, 0, ML_PRESMOOTHER,*dbl_arg1,
+       ML_Gen_Smoother_Cheby(*ml_subproblem, 0, ML_PRESMOOTHER,*dbl_arg1,
 			   *int_arg2*10);
 #else
-       ML_Gen_Smoother_MLS(*ml_subproblem, 0, ML_PRESMOOTHER,*dbl_arg1,
+       ML_Gen_Smoother_Cheby(*ml_subproblem, 0, ML_PRESMOOTHER,*dbl_arg1,
 			   *int_arg2);
 #endif
 
@@ -7217,9 +7217,9 @@ int ML_Cheby(ML_Smoother *sm, int inlen, double x[], int outlen, double rhs[])
    pAux  = (double *) ML_allocate((n+1)*sizeof(double));
    dk     = (double *) ML_allocate((n+1)*sizeof(double));
 
-   if (pAux == NULL) pr_error("ML_Smoother_MLS_Apply: allocation failed\n");
+   if (pAux == NULL) pr_error("ML_Smoother_Cheby_Apply: allocation failed\n");
    if (dk    == NULL) {
-     pr_error("ML_Smoother_MLS_Apply: allocation failed\n");
+     pr_error("ML_Smoother_Cheby_Apply: allocation failed\n");
      ML_avoid_unused_param((void *) &inlen);
    }
 
@@ -7623,9 +7623,9 @@ int ML_complex_Cheby(ML_Smoother *sm, int inlen, double x[], int outlen, double 
   pAux  = (double *) ML_allocate(2*(n+1)*sizeof(double));
   dk     = (double *) ML_allocate(2*(n+1)*sizeof(double));
 
-  if (pAux == NULL) pr_error("ML_Smoother_MLS_Apply: allocation failed\n");
+  if (pAux == NULL) pr_error("ML_Smoother_Cheby_Apply: allocation failed\n");
   if (dk    == NULL) {
-    pr_error("ML_Smoother_MLS_Apply: allocation failed\n");
+    pr_error("ML_Smoother_Cheby_Apply: allocation failed\n");
     ML_avoid_unused_param((void *) &inlen);
   }
 
@@ -7868,9 +7868,9 @@ int ML_DiagScaled_1stepKrylov(ML_Smoother *sm, int inlen, double x[], int outlen
   pAux  = (double *) ML_allocate(2*(n+1)*sizeof(double));
   dk     = (double *) ML_allocate(2*(n+1)*sizeof(double));
 
-  if (pAux == NULL) pr_error("ML_Smoother_MLS_Apply: allocation failed\n");
+  if (pAux == NULL) pr_error("ML_Smoother_Cheby_Apply: allocation failed\n");
   if (dk    == NULL) {
-    pr_error("ML_Smoother_MLS_Apply: allocation failed\n");
+    pr_error("ML_Smoother_Cheby_Apply: allocation failed\n");
     ML_avoid_unused_param((void *) &inlen);
   }
 

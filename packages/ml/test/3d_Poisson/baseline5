@@ -76,7 +76,7 @@ Amesos (level 5) : Time for numerical fact = 4.5e-05 (s)
 
 		*******************************************************
 		***** Preconditioned GMRES solution
-		***** 4 level MG ( MLS_pre8/MLS_post8, /Amesos_KLU_5)
+		***** 4 level MG ( Cheby_pre8/Cheby_post8, /Amesos_KLU_5)
 		***** No scaling
 		*******************************************************
 

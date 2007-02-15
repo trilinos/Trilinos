@@ -1761,7 +1761,7 @@ nx = nx--; /* rst dirichlet */
 #endif
   coarsest_level = N_levels - coarsest_level;
 
- /* The MLS smoother needs the largest eigenvalue of the matrix. */
+ /* The Cheby smoother needs the largest eigenvalue of the matrix. */
   /* Normally, this happens automatically within ML by checking   */
   /* if the eigenvalue is not already defined and then calling a  */
   /* CG routine to compute it. However, CG won't work for the     */
@@ -1851,12 +1851,12 @@ nx = nx--; /* rst dirichlet */
          symmetry of the preconditioner. */
 //	  ML_Smoother_Arglist_Set(edge_args, 2, &reduced_smoother_flag);
 	}
-      else if (ML_strcmp(context->subsmoother,"MLS") == 0)
+      else if (ML_strcmp(context->subsmoother,"Chebyshev") == 0)
 	{
 	  printf("mls\n");
-	  //	  edge_smoother  = (void *) ML_Gen_Smoother_MLS;
-	  edge_smoother  = (void *) ML_Gen_Smoother_MLS;
-	  nodal_smoother = (void *) ML_Gen_Smoother_MLS;
+	  //	  edge_smoother  = (void *) ML_Gen_Smoother_Cheby;
+	  edge_smoother  = (void *) ML_Gen_Smoother_Cheby;
+	  nodal_smoother = (void *) ML_Gen_Smoother_Cheby;
 	  nodal_omega    = 1.0;
 	  edge_omega     = 1.0;
 	  nodal_args = ML_Smoother_Arglist_Create(2);
@@ -1871,7 +1871,7 @@ nx = nx--; /* rst dirichlet */
 	{
 	  printf("IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII\n");
 	  edge_smoother  = (void *) ML_Gen_Smoother_ERF_1StepKrylov;
-	  nodal_smoother = (void *) ML_Gen_Smoother_MLS;
+	  nodal_smoother = (void *) ML_Gen_Smoother_Cheby;
 	  nodal_omega    = 1.0;
 	  edge_omega     = 1.0;
 	  nodal_args = ML_Smoother_Arglist_Create(2);
@@ -1932,7 +1932,7 @@ nx = nx--; /* rst dirichlet */
                 mls_poly_degree);
 	  }
 
-	  if (edge_smoother == (void *) ML_Gen_Smoother_MLS) {
+	  if (edge_smoother == (void *) ML_Gen_Smoother_Cheby) {
 
 	    printf("more mls %u %u\n",temp1, temp2);
 	    edge_eig_ratio[level] = eig_ratio_tol;
@@ -2079,7 +2079,7 @@ nx = nx--; /* rst dirichlet */
        printf("\n\nChebychev polynomial degree hardwired to %d\a\a\n\n",
               mls_poly_degree);
     }
-    if (edge_smoother == (void *) ML_Gen_Smoother_MLS) {
+    if (edge_smoother == (void *) ML_Gen_Smoother_Cheby) {
        ML_Smoother_Arglist_Set(edge_args, 1, &(edge_eig_ratio[coarsest_level]));
        ML_Smoother_Arglist_Set(nodal_args, 1, &(nodal_eig_ratio[coarsest_level]));
        mls_poly_degree = 1;

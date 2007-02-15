@@ -285,6 +285,7 @@ bool ML_NOX::ML_Nox_Preconditioner::SetSmoothers(string finesmoothertype,
       smoothertype != "AmesosKLU" &&
       smoothertype != "BSGS" &&
       smoothertype != "Bcheby" &&
+      smoothertype != "Cheby" &&
       smoothertype != "MLS")
   {
     cout << "**ERR**: ML_Nox_Preconditioner::SetSmoothers:\n"
@@ -300,6 +301,7 @@ bool ML_NOX::ML_Nox_Preconditioner::SetSmoothers(string finesmoothertype,
       finesmoothertype != "AmesosKLU" &&
       finesmoothertype != "BSGS" &&
       finesmoothertype != "Bcheby" &&
+      finesmoothertype != "Cheby" &&
       finesmoothertype != "MLS")
   {
     cout << "**ERR**: ML_Nox_Preconditioner::SetSmoothers:\n"
@@ -315,6 +317,7 @@ bool ML_NOX::ML_Nox_Preconditioner::SetSmoothers(string finesmoothertype,
       coarsesolve != "AmesosKLU" &&
       coarsesolve != "BSGS" &&
       coarsesolve != "Bcheby" &&
+      coarsesolve != "Cheby" &&
       coarsesolve != "MLS")
   {
     cout << "**ERR**: ML_Nox_Preconditioner::ML_Nox_Preconditioner:\n"
@@ -1511,8 +1514,8 @@ bool ML_NOX::ML_Nox_Preconditioner::Set_Smoothers()
         ML_free(blockpde);
      }
    }
-   else if (ml_fsmoothertype_ == "MLS")
-     ML_Gen_Smoother_MLS(ml_,0,ML_BOTH,30.,nsmooth_fine_);
+   else if ( (ml_fsmoothertype_ == "MLS") || (ml_fsmoothertype_ == "Cheby")) 
+     ML_Gen_Smoother_Cheby(ml_,0,ML_BOTH,30.,nsmooth_fine_);
    else if (ml_fsmoothertype_ == "AmesosKLU")
      ML_Gen_Smoother_Amesos(ml_,0,ML_AMESOS_KLU,-1,0.0);
    else
@@ -1580,8 +1583,8 @@ bool ML_NOX::ML_Nox_Preconditioner::Set_Smoothers()
            ML_free(blockpde);
         }
       }
-      else if (ml_smoothertype_ == "MLS")
-        ML_Gen_Smoother_MLS(ml_,i,ML_BOTH,30.,nsmooth_);
+      else if ((ml_smoothertype_ == "MLS")||(ml_smoothertype_ == "Cheby"))
+        ML_Gen_Smoother_Cheby(ml_,i,ML_BOTH,30.,nsmooth_);
       else if (ml_smoothertype_ == "AmesosKLU")
         ML_Gen_Smoother_Amesos(ml_,i,ML_AMESOS_KLU,-1,0.0);
       else
@@ -1646,8 +1649,8 @@ bool ML_NOX::ML_Nox_Preconditioner::Set_Smoothers()
         ML_free(blockpde);
      }
    }
-   else if (ml_smoothertype_ == "MLS")
-      ML_Gen_Smoother_MLS(ml_,ml_coarsestlev_,ML_BOTH,30.,nsmooth_coarse_);
+   else if ( (ml_smoothertype_ == "MLS") || (ml_smoothertype_ == "Cheby")) 
+      ML_Gen_Smoother_Cheby(ml_,ml_coarsestlev_,ML_BOTH,30.,nsmooth_coarse_);
    else
    {
      cout << "**ERR**: ML_Nox_Preconditioner::ML_Nox_compute_Jacobian_Linearpreconditioner:\n"

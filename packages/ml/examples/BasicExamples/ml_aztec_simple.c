@@ -154,7 +154,7 @@ int main(int argc, char *argv[])
   ****************************************************************/
 
   /***************************************************************************/
-  /*      ML_Gen_Smoother_MLS: this corresponds to polynomial relaxation.    */
+  /*      ML_Gen_Smoother_Cheby: this corresponds to polynomial relaxation.  */
   /*      The degree of the polynomial is the last argument.                 */
   /*      If the degree is '-1', Marian Brezina's MLS polynomial is chosen.  */
   /*      Otherwise, a Chebyshev polynomial is used over high frequencies    */
@@ -166,7 +166,7 @@ int main(int argc, char *argv[])
   /***************************************************************************/
 
   for (level = MaxMgLevels-1; level > coarsest_level; level--)
-    ML_Gen_Smoother_MLS(ml, level, ML_BOTH, 30., 3);
+    ML_Gen_Smoother_Cheby(ml, level, ML_BOTH, 30., 3);
 
   ML_Gen_Smoother_Amesos(ml, coarsest_level, ML_AMESOS_KLU, 1, 0.0);
 

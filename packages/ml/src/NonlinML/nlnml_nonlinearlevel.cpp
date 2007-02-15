@@ -331,8 +331,8 @@ bool NLNML::NLNML_NonlinearLevel::Set_Smoother(ML* ml, ML_Aggregate* ag,
     ML_Gen_Smoother_Jacobi(thislevel_ml,0,ML_BOTH,nsmooth,0.2);
   else if (smoothertype == "AmesosKLU")
     ML_Gen_Smoother_Amesos(thislevel_ml,0,ML_AMESOS_KLU,-1,0.0);
-  else if (smoothertype == "MLS")
-    ML_Gen_Smoother_MLS(thislevel_ml,0,ML_BOTH,30.,nsmooth);
+  else if ((smoothertype == "MLS")||(smoothertype == "Cheby"))
+    ML_Gen_Smoother_Cheby(thislevel_ml,0,ML_BOTH,30.,nsmooth);
   else if (smoothertype == "BSGS")
   {
     int  nblocks  = 0;

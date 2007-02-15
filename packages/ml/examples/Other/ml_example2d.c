@@ -704,7 +704,7 @@ null_vect[ i*ndim+ leng + 1 ]=-1.;
 	    if (temp1[1] != 0)
 	       eig_ratio = ((double) temp1[0])/ ((double) temp1[1]);
 	    if (eig_ratio < 4.) eig_ratio = 4.;
-	    ML_Gen_Smoother_MLS(ml, level, ML_BOTH, eig_ratio,nsmooth);
+	    ML_Gen_Smoother_Cheby(ml, level, ML_BOTH, eig_ratio,nsmooth);
 	 */
 #else
 	 if (ML_strcmp(context->smoother,"Parasails") == 0) {
@@ -719,8 +719,8 @@ null_vect[ i*ndim+ leng + 1 ]=-1.;
 	 /* does a Gauss-Seidel on its local submatrix independent of the     */
 	 /* other processors.                                                 */
 
-	 else if (ML_strcmp(context->smoother,"MLS") == 0) {
-	    ML_Gen_Smoother_MLS(ml, level, ML_BOTH, 10.,nsmooth);
+	 else if (ML_strcmp(context->smoother,"Chebyshev") == 0) {
+	    ML_Gen_Smoother_Cheby(ml, level, ML_BOTH, 10.,nsmooth);
 	 }
 	 else if (ML_strcmp(context->smoother,"GaussSeidel") == 0) {
 	   ML_Gen_Smoother_GaussSeidel(ml , level, ML_BOTH, nsmooth,1.);
@@ -787,8 +787,8 @@ null_vect[ i*ndim+ leng + 1 ]=-1.;
 				  parasails_loadbal, parasails_factorized);
       }
 
-      else if (ML_strcmp(context->coarse_solve,"MLS") == 0) {
-	ML_Gen_Smoother_MLS(ml, coarsest_level, ML_BOTH, 20.,nsmooth);
+      else if (ML_strcmp(context->coarse_solve,"Chebyshev") == 0) {
+	ML_Gen_Smoother_Cheby(ml, coarsest_level, ML_BOTH, 20.,nsmooth);
       }
       else if (ML_strcmp(context->coarse_solve,"GaussSeidel") == 0) {
 	ML_Gen_Smoother_GaussSeidel(ml , coarsest_level, ML_BOTH, nsmooth,1.);

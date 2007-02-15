@@ -216,9 +216,8 @@ int main(int argc, char *argv[]) {
 
     ParameterList MLList;
 
-    MLList.set("smoother: type", "MLS");
-    MLList.set("smoother: MLS polynomial order", degree);
-    MLList.set("smoother: MLS polynomial order", degree);
+    MLList.set("smoother: type", "Chebyshev");
+    MLList.set("smoother: sweeps", degree);
     MLList.set("ML output", 0);
 
     MultiLevelPreconditioner* MLPrec = 

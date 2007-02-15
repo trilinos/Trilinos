@@ -37,7 +37,7 @@ Tolerance                    = 1.0e-11
       Solution Specifications
 -----------------------------------------------
 Max Number of Levels         = 8
-Type of Smoother             = MLS
+Type of Smoother             = Chebyshev
 #                              [Parasails, GaussSeidel, SymGaussSeidel, 
 #                               BlockGaussSeidel, Aggregate, Jacobi, Metis]
 Smoother steps per level     = 3

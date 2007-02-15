@@ -87,7 +87,7 @@ Coarse level = 3
 
 		*******************************************************
 		***** Preconditioned CG solution
-		***** 5 level MG ( MLS_pre7/MLS_post7, SuperLU)
+		***** 5 level MG ( Cheby_pre7/Cheby_post7, SuperLU)
 		***** No scaling
 		*******************************************************
 

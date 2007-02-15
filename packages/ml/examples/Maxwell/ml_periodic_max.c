@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
   /*      the damping is set to '1' on one processor. On multiple processors */
   /*      a lower damping value is set. This is needed to converge processor */
   /*      local SOR.                                                         */
-  /*   2) ML_Gen_Smoother_MLS: this corresponds to polynomial relaxation.    */
+  /*   2) ML_Gen_Smoother_Cheby: this corresponds to polynomial relaxation.    */
   /*      The degree of the polynomial is set via 'edge_its' or 'nodal_its'. */
   /*      If the degree is '-1', Marian Brezina's MLS polynomial is chosen.  */
   /*      Otherwise, a Chebyshev polynomial is used over high frequencies    */
@@ -120,10 +120,10 @@ int main(int argc, char *argv[])
   /***************************************************************************/
 
   void  *edge_smoother=(void *)     /* Edge relaxation:                     */
-               ML_Gen_Smoother_MLS; /*     ML_Gen_Smoother_MLS              */
+               ML_Gen_Smoother_Cheby; /*   ML_Gen_Smoother_Cheby            */
                                     /*     ML_Gen_Smoother_SymGaussSeidel   */
   void *nodal_smoother=(void *)     /* Nodal relaxation                     */
-               ML_Gen_Smoother_MLS; /*     ML_Gen_Smoother_MLS              */
+               ML_Gen_Smoother_Cheby;/*     ML_Gen_Smoother_Cheby           */
                                     /*     ML_Gen_Smoother_SymGaussSeidel   */
 
   int  edge_its = 3;                /* Iterations or polynomial degree for  */
@@ -309,13 +309,13 @@ update_ghost_edges(xxx, (void *) &Edge_Partition);
     ML_Smoother_Arglist_Set(edge_args, 0, &edge_its);
     ML_Smoother_Arglist_Set(edge_args, 1, &edge_omega);
   }
-  if (nodal_smoother == (void *) ML_Gen_Smoother_MLS) {
+  if (nodal_smoother == (void *) ML_Gen_Smoother_Cheby) {
     nodal_args = ML_Smoother_Arglist_Create(2);
     ML_Smoother_Arglist_Set(nodal_args, 0, &nodal_its);
     Nfine_node = Tmat_array[MaxMgLevels-1]->invec_leng;
     Nfine_node = ML_gsum_int(Nfine_node, ml_edges->comm);
   }
-  if (edge_smoother == (void *) ML_Gen_Smoother_MLS) {
+  if (edge_smoother == (void *) ML_Gen_Smoother_Cheby) {
     edge_args = ML_Smoother_Arglist_Create(2);
     ML_Smoother_Arglist_Set(edge_args, 0, &edge_its);
     Nfine_edge = Tmat_array[MaxMgLevels-1]->outvec_leng;
@@ -329,14 +329,14 @@ update_ghost_edges(xxx, (void *) &Edge_Partition);
 
   for (level = MaxMgLevels-1; level > coarsest_level; level--)
     {
-      if (edge_smoother == (void *) ML_Gen_Smoother_MLS) {
+      if (edge_smoother == (void *) ML_Gen_Smoother_Cheby) {
 	Ncoarse_edge = Tmat_array[level-1]->outvec_leng;
 	Ncoarse_edge = ML_gsum_int(Ncoarse_edge, ml_edges->comm);
 	edge_coarsening_rate =  2.*((double) Nfine_edge)/ ((double) Ncoarse_edge);
 	ML_Smoother_Arglist_Set(edge_args, 1, &edge_coarsening_rate);
 	Nfine_edge = Ncoarse_edge;
       }
-      if (nodal_smoother == (void *) ML_Gen_Smoother_MLS) {
+      if (nodal_smoother == (void *) ML_Gen_Smoother_Cheby) {
 	Ncoarse_node = Tmat_array[level-1]->invec_leng;
 	Ncoarse_node = ML_gsum_int(Ncoarse_node, ml_edges->comm);
 	node_coarsening_rate =  2.*((double) Nfine_node)/ ((double) Ncoarse_node);
@@ -352,11 +352,11 @@ update_ghost_edges(xxx, (void *) &Edge_Partition);
   * Set up coarsest level smoother
   *******************************************/
 
-  if (edge_smoother == (void *) ML_Gen_Smoother_MLS) {
+  if (edge_smoother == (void *) ML_Gen_Smoother_Cheby) {
     edge_coarsening_rate = (double) Nfine_edge;
     ML_Smoother_Arglist_Set(edge_args, 1, &edge_coarsening_rate);
   }
-  if (nodal_smoother == (void *) ML_Gen_Smoother_MLS) {
+  if (nodal_smoother == (void *) ML_Gen_Smoother_Cheby) {
     node_coarsening_rate = (double) Nfine_node;
     ML_Smoother_Arglist_Set(nodal_args,1,&node_coarsening_rate);
   }

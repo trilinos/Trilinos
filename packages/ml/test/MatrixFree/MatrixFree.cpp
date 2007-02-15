@@ -261,8 +261,8 @@ int main(int argc, char *argv[])
   MLList2.set("ML output", 0);
   MLList2.set("max levels", 10);
   MLList2.set("coarse: max size", 32);
-  MLList2.set("smoother: type", "MLS");
-  MLList2.set("smoother: MLS polynomial order", 3);
+  MLList2.set("smoother: type", "Chebyshev");
+  MLList2.set("smoother: sweeps", 3);
   MLList2.set("smoother: type (level 1)", "Aztec");
   //MLList2.set("prec type", "two-level-additive");
   MLList2.set("aggregation: damping factor", 0.0);

@@ -182,13 +182,13 @@ int main(int argc, char *argv[]) {
                                TotalErrorExactSol);
 
   // =========================== //
-  // default options for SA, MLS //
+  // default options for SA, Cheby //
   // =========================== //
 
   if (Comm.MyPID() == 0) PrintLine();
 
   ML_Epetra::SetDefaults("SA",MLList);
-  MLList.set("smoother: type", "MLS");
+  MLList.set("smoother: type", "Chebyshev");
 
   TestMultiLevelPreconditioner(mystring, MLList, Problem, 
                                TotalErrorResidual, TotalErrorExactSol);

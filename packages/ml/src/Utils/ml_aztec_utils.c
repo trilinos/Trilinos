@@ -3342,12 +3342,12 @@ int MLAZ_Setup_MLandAggregate( int N_update, int num_PDE_eqns,
 
     case MLAZ_MLS:
       if( proc_config[AZ_node] == 0 ) 
-	printf("Smoother (level %d) : MLS (order=%d,alpha=%e)\n",
+	printf("Smoother (level %d) : Chebyshev (order=%d,alpha=%e)\n",
 	       i,
 	       Settings.MLS_poly_order,
 	       Settings.MLS_alpha );
-      sprintf( label, "MLS"); 
-      ML_Gen_Smoother_MLS(ml, i, pre_or_post_smoother,
+      sprintf( label, "Chebyshev"); 
+      ML_Gen_Smoother_Cheby(ml, i, pre_or_post_smoother,
 			  Settings.MLS_alpha,
 			  Settings.MLS_poly_order);
       break;

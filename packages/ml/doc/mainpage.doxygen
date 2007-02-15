@@ -633,7 +633,7 @@ suppose to deal with a symmetric problem. We also set a simple coarse solver
   
   int nits = 1;
   for(int level = maxMgLevels-1; level > coarsestLevel; level--)
-    ML_Gen_Smoother_MLS(ml_handle, level, ML_BOTH, 30., 3);
+    ML_Gen_Smoother_Cheby(ml_handle, level, ML_BOTH, 30., 3);
 
   ML_Gen_Smoother_SymGaussSeidel(ml_handle, coarsestLevel, ML_BOTH, 
 				 nits, ML_DEFAULT);

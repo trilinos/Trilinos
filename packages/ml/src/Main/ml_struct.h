@@ -254,6 +254,8 @@ extern int ML_Gen_Smoother_SymGaussSeidelSequential(ML*,int nl,int pre_post,
                      int ntimes, double omega);
 extern int ML_Gen_Smoother_MLS(ML*,int nl,int pre_post, double eig,
                      int degree);
+extern int ML_Gen_Smoother_Cheby(ML*,int nl,int pre_post, double eig,
+                     int degree);
 extern int ML_Gen_Smoother_ERF_1StepKrylov(ML *ml, int nl, int pre_or_post);
 
 extern int ML_Gen_Smoother_SubdomainOverlap(ML *ml, int level, int overlap);

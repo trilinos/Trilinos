@@ -94,14 +94,14 @@ int main(int argc, char *argv[])
   MLList.set("aggregation: nodes per aggregate", 100);
   MLList.set("aggregation: smoothing sweeps", 5);
 
-  MLList.set("smoother: type","MLS");
-  MLList.set("smoother: MLS polynomial order", 5);
+  MLList.set("smoother: type","Chebyshev");
+  MLList.set("smoother: sweeps", 5);
   MLList.set("smoother: pre or post", "both");
 
 #ifdef HAVE_ML_AMESOS
   MLList.set("coarse: type","Amesos-KLU");
 #else
-  MLList.set("coarse: type","MLS");
+  MLList.set("coarse: type","Chebyshev");
 #endif
 
   ML_Epetra::MultiLevelPreconditioner* MLPrec = 

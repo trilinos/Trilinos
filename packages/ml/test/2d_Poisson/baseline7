@@ -104,7 +104,7 @@ Coarse level = 3
 
 		*******************************************************
 		***** Preconditioned GMRES solution
-		***** 6 level MG ( MLS_pre8/MLS_post8, SuperLU)
+		***** 6 level MG ( Cheby_pre8/Cheby_post8, SuperLU)
 		***** No scaling
 		*******************************************************
 

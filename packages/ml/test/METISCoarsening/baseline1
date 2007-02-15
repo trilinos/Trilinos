@@ -160,7 +160,7 @@ Unused parameters:
 		*******************************************************
 		***** Problem: Epetra::CrsMatrix
 		***** Preconditioned CG solution
-		***** ML (L=4, MLS_pre0/MLS_post0, ~/Amesos_KLU_3)
+		***** ML (L=4, Cheby_pre0/Cheby_post0, ~/Amesos_KLU_3)
 		***** No scaling
 		*******************************************************
 

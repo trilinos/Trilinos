@@ -738,8 +738,8 @@ that is necessary.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\addcontentsline{toc}{subsection}{ML\_Gen\_Smoother\_MLS}
-\protobox{int ML\_Gen\_Smoother\_MLS(ML *ml\_object, int k, int pre\_or\_post, 
+\addcontentsline{toc}{subsection}{ML\_Gen\_Smoother\_Cheby}
+\protobox{int ML\_Gen\_Smoother\_Cheby(ML *ml\_object, int k, int pre\_or\_post, 
           double ratio, int ntimes)}
 
 \vspace{2em}
@@ -761,7 +761,7 @@ Note: polynomial uses spectral radius (and not the convex hull of the
 \vspace{1em}
 
 \optionbox{ml\_object}{   On input, \ML\  object pointer (see ML\_Create). On output, the pre or
-                  post smoother of level k is set to MLS (Chebyshev).}
+                  post smoother of level k is set to Chebyshev.}
 
 \optionbox{k}{   On input, indicates level within ml\_object hierarchy (should be between
                   0 and Nlevels${}^\dagger$-1). ML\_ALL\_LEVELS sets the smoothing on all levels in ml\_object.}
@@ -1327,7 +1327,7 @@ This spectral radius estimate is
 used when smoothing the initial prolongation operator  
 (see ML\_Aggregate\_Set\_DampingFactor)
 and is also used for polynomial smoothers
-(see ML\_Gen\_Smoother\_MLS).
+(see ML\_Gen\_Smoother\_Cheby).
 
 \vspace{2em}
 {\flushleft{\bf Parameters} \hrulefill}
@@ -1355,7 +1355,7 @@ to be
 the infinity norm. This spectral radius estimate is used when smoothing
 the initial prolongation operator  (see ML\_Aggregate\_Set\_DampingFactor)
 and is also used for polynomial smoothers
-(see ML\_Gen\_Smoother\_MLS).
+(see ML\_Gen\_Smoother\_Cheby).
 
 \vspace{2em}
 {\flushleft{\bf Parameters} \hrulefill}
@@ -1381,7 +1381,7 @@ to be
 conjugate gradient. This spectral radius estimate is used when smoothing
 the initial prolongation operator  (see ML\_Aggregate\_Set\_DampingFactor)
 and is also used for polynomial smoothers
-(see ML\_Gen\_Smoother\_MLS).
+(see ML\_Gen\_Smoother\_Cheby).
 
 \vspace{2em}
 {\flushleft{\bf Parameters} \hrulefill}
@@ -1408,7 +1408,7 @@ This should be used when the matrix is nonsymmetric.
 This spectral radius estimate is used when smoothing
 the initial prolongation operator  (see ML\_Aggregate\_Set\_DampingFactor)
 and is also used for polynomial smoothers
-(see ML\_Gen\_Smoother\_MLS).
+(see ML\_Gen\_Smoother\_Cheby).
 
 \vspace{2em}
 {\flushleft{\bf Parameters} \hrulefill}

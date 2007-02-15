@@ -588,8 +588,8 @@ int construct_ml_grids(int N_elements, int *proc_config, AZ_MATRIX **Amat_f,
 	 /* does a Gauss-Seidel on its local submatrix independent of the     */
 	 /* other processors.                                                 */
 
-	 else if (ML_strcmp(context->smoother,"MLS") == 0) {
-	    ML_Gen_Smoother_MLS(ml, level, ML_BOTH, 10.,nsmooth);
+	 else if (ML_strcmp(context->smoother,"Chebyshev") == 0) {
+	    ML_Gen_Smoother_Cheby(ml, level, ML_BOTH, 10.,nsmooth);
 	 }
 	 else if (ML_strcmp(context->smoother,"GaussSeidel") == 0) {
 	   ML_Gen_Smoother_GaussSeidel(ml , level, ML_BOTH, nsmooth,1.);
@@ -735,8 +735,8 @@ int construct_ml_grids(int N_elements, int *proc_config, AZ_MATRIX **Amat_f,
 				  parasails_loadbal, parasails_factorized);
       }
 
-      else if (ML_strcmp(context->coarse_solve,"MLS") == 0) {
-	ML_Gen_Smoother_MLS(ml, coarsest_level, ML_BOTH, 20.,nsmooth);
+      else if (ML_strcmp(context->coarse_solve,"Chebyshev") == 0) {
+	ML_Gen_Smoother_Cheby(ml, coarsest_level, ML_BOTH, 20.,nsmooth);
       }
       else if (ML_strcmp(context->coarse_solve,"GaussSeidel") == 0) {
 	ML_Gen_Smoother_GaussSeidel(ml , coarsest_level, ML_BOTH, nsmooth,1.);
