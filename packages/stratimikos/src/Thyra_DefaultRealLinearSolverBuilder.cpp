@@ -94,7 +94,7 @@ DefaultRealLinearSolverBuilder::~DefaultRealLinearSolverBuilder()
 #ifdef TEUCHOS_DEBUG
   // Validate that we read the parameters correctly!
   if(paramList_.get())
-    paramList_->validateParameters(*this->getValidParameters(),0);
+    paramList_->validateParameters(*this->getValidParameters(),1);
 #endif    
 }
 
@@ -189,8 +189,10 @@ void DefaultRealLinearSolverBuilder::setParameterList(
   )
 {
   TEST_FOR_EXCEPT(!paramList.get());
-  // Only validate this level of parameters and sublists
-  paramList->validateParameters(*this->getValidParameters(),0);
+  // Only validate the zeroth and first level of parameters and sublists as
+  // these are all that this class directly controls.  All other parameters
+  // and sublusts are handed off to different LOWSFB and PFB objects.
+  paramList->validateParameters(*this->getValidParameters(),1);
   paramList_ = paramList;
 }
 
@@ -328,7 +330,7 @@ DefaultRealLinearSolverBuilder::createPreconditioningStrategy(
     pf = Teuchos::null;
   // Get the index of this preconditioning strategy (this will validate!)
   const int
-    pf_idx = pfValidator->getIntegralValue(pfname,PreconditionerTypes_name);
+    pf_idx = pfValidator->getIntegralValue(pfname,PreconditionerType_name);
   if( pf_idx != 0 ) {
     Teuchos::RefCountPtr<PreconditionerFactoryBase<double> >
       pf = pfArray_[pf_idx-1]->create(); // We offset by -1 since "None" is first!
