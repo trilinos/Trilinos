@@ -231,7 +231,7 @@ int main(int argc, char *argv[])
     else
       MLList.set("output", 0);
 
-    lsParams.set("ML Teuchos Parameter List", MLList);
+    lsParams.set("ML", MLList);
 
   }
 #endif

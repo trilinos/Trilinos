@@ -250,7 +250,9 @@ below (See the Aztec 2.1 manual for more information):
 
   </ul>
 
-<li> "New Ifpack Preconditioner" - If the "Preconditioner" flag is set to "New Ifpack" then any of the options supported by the Ifpack Create factory can be specified using a Teuchos::ParameterList containing the Ifpack options and then setting this as a parameter named "IfPack Teuchos Parameter List" in the "Linear Solver" sublist.
+<li> "Ifpack" - If the "Preconditioner" flag is set to "New Ifpack" then any of the options supported by the Ifpack Create factory can be specified using a Teuchos::ParameterList containing the Ifpack options and then setting this as a parameter named "Ifpack" in the "Linear Solver" sublist.
+
+<li> "ML" - If the "Preconditioner" flag is set to "ML" then any of the options supported by the ML factory can be specified using a Teuchos::ParameterList containing the ML options and then setting this as a parameter named "ML" in the "Linear Solver" sublist.
 
 <li> "Preconditioner Reuse Policy" - (string) Allows the user to set how and when the preconditioner should be computed.  This flag supports native Aztec, Ifpack and ML preconditioners.  There are three options:
     <ul>

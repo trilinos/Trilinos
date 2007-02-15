@@ -1091,7 +1091,7 @@ createNewIfpackPreconditioner(Teuchos::ParameterList& p) const
 
   // Ensure we have a valid Teuchos parameter list to pass to Ifpack
   Teuchos::ParameterList& teuchosParams = 
-    p.sublist("Ifpack Teuchos Parameter List");
+    p.sublist("Ifpack");
 
   if (utils.isPrintType(Utils::Debug)) {
     utils.out() << "NOX::Epetra::LinearSolverAztecOO : createNewIfpackPrecon - \n"
@@ -1146,7 +1146,7 @@ createMLPreconditioner(Teuchos::ParameterList& p) const
     throwError("createMLPreconditioner", "ML Prec NOT NULL");
 
   // Ensure we have a valid Teuchos parameter list to pass to ML
-  Teuchos::ParameterList& teuchosParams = p.sublist("ML Teuchos Parameter List");
+  Teuchos::ParameterList& teuchosParams = p.sublist("ML");
 
   if (utils.isPrintType(Utils::Debug)) 
   {

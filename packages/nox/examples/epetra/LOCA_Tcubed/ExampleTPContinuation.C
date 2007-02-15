@@ -228,7 +228,7 @@ int main(int argc, char *argv[])
   //lsParams.set("Preconditioner", "New Ifpack");
   //Teuchos::ParameterList ifpackParams;
   //ifpackParams.set("fact: level-of-fill", 1);
-  //lsParams.set("Ifpack Teuchos Parameter List", &ifpackParams);
+  //lsParams.set("Ifpack", &ifpackParams);
 
   // Create and initialize the parameter vector
   LOCA::ParameterVector pVector;

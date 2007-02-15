@@ -2383,7 +2383,7 @@ Problem_Manager::createBlockInverseOperator( int probId, Teuchos::ParameterList 
   Teuchos::RefCountPtr<Ifpack_Preconditioner> inverseOperator;
 
   // Get any relevant parameters for the Inverting package using sublists
-  Teuchos::ParameterList& teuchosParams = pList.sublist("Ifpack Teuchos Parameter List");
+  Teuchos::ParameterList& teuchosParams = pList.sublist("Ifpack");
 
   Ifpack Factory;
 
