@@ -245,8 +245,16 @@ void BelosLinearOpWithSolveFactory<Scalar>::setParameterList(Teuchos::RefCountPt
   paramList->validateParameters(*this->getValidParameters(),1); // Validate 0th and 1st level deep
   paramList_ = paramList;
   //
-  if(precFactory_.get())
-    precFactory_->setParameterList(Teuchos::sublist(paramList_,precFactoryName_));
+  if(precFactory_.get()) {
+    // Only reset the PF's PL if the sublist exists or the PF does ot already
+    // have a PL.  We don't want to overwrite an externally set PL for the PF
+    // if we don't have a nested sublist defined here!
+    const bool nestedPFSublistExists = paramList_->isSublist(precFactoryName_);
+    const bool alreadyHasSublist = !is_null(precFactory_->getParameterList());
+    if( nestedPFSublistExists || !alreadyHasSublist ) {
+      precFactory_->setParameterList(Teuchos::sublist(paramList_,precFactoryName_));
+    }
+  }
   //
   const std::string &solverType = paramList_->get(SolverType_name,SolverType_default);
   if(solverType==GMRES_name)

@@ -34,6 +34,7 @@
 #include "Thyra_EpetraOperatorWrapper.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_Time.hpp"
+#include "Teuchos_implicit_cast.hpp"
 
 namespace {
 
@@ -55,6 +56,47 @@ Teuchos::ETransp convert( Thyra::ETransp trans_in )
   }
   return trans_out;
 }
+
+class SetAztecOStream {
+public:
+  SetAztecOStream( 
+    const Teuchos::RefCountPtr<AztecOO> &aztecSolver,
+    const Teuchos::RefCountPtr<Teuchos::FancyOStream> &fancyOStream
+    )
+    :aztecSolver_(aztecSolver.assert_not_null())
+    {
+      if(!is_null(fancyOStream)) {
+        // AztecOO puts in two tabs before it prints anything.  Therefore,
+        // there is not much that we can do to improve the layout of the
+        // indentation so just leave it!
+        fancyOStream_= Teuchos::tab(
+          fancyOStream,
+          0, // Don't indent since AztecOO already puts in two tabs (not spaces!)
+          Teuchos::implicit_cast<std::string>("AZTECOO")
+          );
+        aztecSolver_->SetOutputStream(*fancyOStream_);
+        aztecSolver_->SetErrorStream(*fancyOStream_);
+        // Note, above we can not save the current output and error streams
+        // since AztecOO does not define functions to get them.  In the
+        // future, AztecOO should define these functions if we are to avoid
+        // treading on each others print statements.  However, since the
+        // AztecOO object is most likely owned by these Thyra wrappers, this
+        // should not be a problem.
+      }
+    }
+  ~SetAztecOStream()
+    {
+      if(!is_null(fancyOStream_)) {
+        aztecSolver_->SetOutputStream(std::cout);
+        aztecSolver_->SetErrorStream(std::cerr);
+        *fancyOStream_ << "\n";
+      }
+    }
+private:
+  Teuchos::RefCountPtr<AztecOO> aztecSolver_;
+  Teuchos::RefCountPtr<Teuchos::FancyOStream>  fancyOStream_;
+  SetAztecOStream(); // Not defined and not to be called!
+};
 
 } // namespace
 
@@ -407,7 +449,10 @@ void AztecOOLinearOpWithSolve::solve(
     // Solve the linear system
     //
     timer.start(true);
-    aztecSolver->Iterate( maxIterations, tol ); // We ignore the returned status but get it below
+    {
+      SetAztecOStream setAztecOStream(aztecSolver,out);
+      aztecSolver->Iterate( maxIterations, tol ); // We ignore the returned status but get it below
+    }
     timer.stop();
     //
     // Scale the solution 

@@ -254,8 +254,16 @@ void AztecOOLinearOpWithSolveFactory::setParameterList(Teuchos::RefCountPtr<Teuc
   defaultAdjMaxIterations_ = adjSolvePL.get(MaxIterations_name,defaultAdjMaxIterations_);
   defaultAdjTolerance_ = adjSolvePL.get(Tolerance_name,defaultAdjTolerance_);
   //
-  if(precFactory_.get())
-    precFactory_->setParameterList(Teuchos::sublist(paramList_,precFactoryName_));
+  if(precFactory_.get()) {
+    // Only reset the PF's PL if the sublist exists or the PF does ot already
+    // have a PL.  We don't want to overwrite an externally set PL for the PF
+    // if we don't have a nested sublist defined here!
+    const bool nestedPFSublistExists = paramList_->isSublist(precFactoryName_);
+    const bool alreadyHasSublist = !is_null(precFactory_->getParameterList());
+    if( nestedPFSublistExists || !alreadyHasSublist ) {
+      precFactory_->setParameterList(Teuchos::sublist(paramList_,precFactoryName_));
+    }
+  }
 }
 
 Teuchos::RefCountPtr<Teuchos::ParameterList>
@@ -289,7 +297,13 @@ AztecOOLinearOpWithSolveFactory::getValidParameters() const
 std::string AztecOOLinearOpWithSolveFactory::description() const
 {
   std::ostringstream oss;
-  oss << "Thyra::AztecOOLinearOpWithSolveFactory";
+  oss << "Thyra::AztecOOLinearOpWithSolveFactory{";
+  oss << "precFactory=";
+  if(!is_null(precFactory_))
+    oss << precFactory_->description();
+  else
+    oss << "NULL";
+  oss << "}";
   return oss.str();
 }
 
@@ -621,20 +635,15 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
   if(startingOver) {
     // Forward solver
     aztecFwdSolver = rcp(new AztecOO());
-    //aztecFwdSolver->SetAztecOption(AZ_output,AZ_none); // Don't mess up output
-    //aztecFwdSolver->SetAztecOption(AZ_conv,AZ_rhs);    // Specified by this interface (may change)
     aztecFwdSolver->SetAztecOption(AZ_diagnostics,AZ_none); // This was turned off in NOX?
     aztecFwdSolver->SetAztecOption(AZ_keep_info,1);
     // Adjoint solver (if supported)
     if(
       epetra_epetraFwdOpAdjointSupport==EPETRA_OP_ADJOINT_SUPPORTED
       && localPrecType!=PT_AZTEC_FROM_OP && localPrecType!=PT_AZTEC_FROM_APPROX_FWD_MATRIX
-      //&& (epetra_epetraPrecOp.get()==NULL ||epetra_epetraPrecOpAdjointSupport==EPETRA_OP_ADJOINT_SUPPORTED)
       )
     {
       aztecAdjSolver = rcp(new AztecOO());
-      //aztecAdjSolver->SetAztecOption(AZ_output,AZ_none);
-      //aztecAdjSolver->SetAztecOption(AZ_conv,AZ_rhs);
       aztecAdjSolver->SetAztecOption(AZ_diagnostics,AZ_none);
       //aztecAdjSolver->SetAztecOption(AZ_keep_info,1);
     }

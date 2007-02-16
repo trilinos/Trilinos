@@ -134,6 +134,9 @@ public:
   void pushTab(const int tabs);
 
   /** \brief . */
+  int getNumCurrTabs() const;
+
+  /** \brief . */
   void popTab();
 
   /** \brief . */
@@ -401,10 +404,13 @@ public:
   //! @name Functions designed to be used by basic_OSTab 
   //@{
 
-  /** \brief. */
+  /** \brief . */
   void pushTab(const int tabs = 1);
 
-  /** \brief. */
+  /** \brief . */
+  int getNumCurrTabs() const;
+
+  /** \brief . */
   void popTab();
 
   /** \brief . */
@@ -838,8 +844,20 @@ int basic_FancyOStream_buf<CharT,Traits>::getOutputToRootOnly() const
 template<typename CharT, typename Traits>
 void basic_FancyOStream_buf<CharT,Traits>::pushTab(const int tabs)
 {
-  tabIndentStack_.push_back(tabs);
-  tabIndent_ += tabs;
+  if( tabIndent_ + tabs < 0 ) {
+    tabIndentStack_.push_back(-tabIndent_);
+    tabIndent_ = 0;
+  }
+  else {
+    tabIndentStack_.push_back(tabs);
+    tabIndent_ += tabs;
+  }
+}
+
+template<typename CharT, typename Traits>
+int basic_FancyOStream_buf<CharT,Traits>::getNumCurrTabs() const
+{
+  return tabIndent_;
 }
 
 template<typename CharT, typename Traits>
@@ -1136,6 +1154,12 @@ template<typename CharT, typename Traits>
 void basic_FancyOStream<CharT,Traits>::pushTab(const int tabs)
 {
   streambuf_.pushTab(tabs);
+}
+
+template<typename CharT, typename Traits>
+int basic_FancyOStream<CharT,Traits>::getNumCurrTabs() const
+{
+  return streambuf_.getNumCurrTabs();
 }
 
 template<typename CharT, typename Traits>

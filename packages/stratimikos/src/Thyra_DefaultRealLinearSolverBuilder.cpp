@@ -332,8 +332,7 @@ DefaultRealLinearSolverBuilder::createPreconditioningStrategy(
   const int
     pf_idx = pfValidator->getIntegralValue(pfname,PreconditionerType_name);
   if( pf_idx != 0 ) {
-    Teuchos::RefCountPtr<PreconditionerFactoryBase<double> >
-      pf = pfArray_[pf_idx-1]->create(); // We offset by -1 since "None" is first!
+    pf = pfArray_[pf_idx-1]->create(); // We offset by -1 since "None" is first!
     pf->setParameterList(sublist(sublist(paramList_,PreconditionerTypes_name),pfname));
   }
   return pf;
