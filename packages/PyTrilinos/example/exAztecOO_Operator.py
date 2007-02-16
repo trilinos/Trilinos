@@ -54,12 +54,12 @@ except:
 
 ################################################################################
 
-class Laplace1D(Epetra.Operator):
+class Laplace1D_Operator(Epetra.Operator):
 
     def __init__(self, n, comm=None):
         """
-        __init__(self, n) -> Laplace1D (with an Epetra.PyComm() communicator)
-        __init__(self, n, comm) -> Laplace1D (with given communicator)
+        __init__(self, n) -> Laplace1D_Operator (with an Epetra.PyComm() communicator)
+        __init__(self, n, comm) -> Laplace1D_Operator (with given communicator)
         """
         # Initialize the base class.  This is REQUIRED
         Epetra.Operator.__init__(self)
@@ -78,18 +78,22 @@ class Laplace1D(Epetra.Operator):
         if self.__comm.MyPID() > 0:
             self.__y0 = None    # Equivalent to index 0
             myIndexes.insert(0,myIndexes[0]-1)
-        if self.__comm.MyPID() < comm.NumProc()-1:
+        if self.__comm.MyPID() < self.__comm.NumProc()-1:
             self.__y1 = None    # Equivalent to last index
             myIndexes.append(myIndexes[-1]+1)
-        self.__domainMap = Epetra.Map(n,myIndexes,0,self.__comm)
+        self.__domainMap = Epetra.Map(n, myIndexes, 0, self.__comm)
         # Store a label for the operator
-        self.__label = "1D Laplace"
+        self.__label = "1D Laplace Operator"
         # Transpose flag
-        self.__setUseTranspose = False
+        self.__useTranspose = False
 
     def __str__(self):
         "Return the operator's label"
         return self.__label
+
+    def Map(self):
+        "Required implementation of Epetra.SrcDistObject class"
+        return self.__rangeMap
 
     def Label(self):
         "Required implementation of Epetra.Operator class"
@@ -100,10 +104,6 @@ class Laplace1D(Epetra.Operator):
         return self.__domainMap
 
     def OperatorRangeMap(self):
-        "Required implementation of Epetra.Operator class"
-        return self.__rangeMap
-
-    def Map(self):
         "Required implementation of Epetra.Operator class"
         return self.__rangeMap
 
@@ -162,7 +162,7 @@ def main():
     bc1   = 1.0
     tol   = 1.0e-5
     comm  = Epetra.PyComm()
-    lap1d = Laplace1D(n, comm)
+    lap1d = Laplace1D_Operator(n, comm)
 
     # Create solution and RHS vectors
     x = Epetra.Vector(lap1d.OperatorDomainMap())
@@ -180,7 +180,7 @@ def main():
     # Build the linear system solver
     problem = Epetra.LinearProblem(lap1d, x, b)
     solver  = AztecOO.AztecOO(problem)
-    solver.SetParameters({"Solver"  : "CG",
+    solver.SetParameters({"Solver"  : "GMRES",
                           "Precond" : "None",
                           "Output"  : 16    })
 

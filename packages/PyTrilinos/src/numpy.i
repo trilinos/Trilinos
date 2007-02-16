@@ -250,7 +250,7 @@ int require_dimensions_n(PyArrayObject* ary, int* exact_dimensions, int n) {
  * array has the specified shape, return 1.  Otherwise, set the python
  * error string and return 0.
  */
-int require_size(PyArrayObject* ary, int* size, int n) {
+int require_size(PyArrayObject* ary, intp* size, int n) {
   int i;
   int success = 1;
   int len;

@@ -30,26 +30,19 @@
 
 ######################################################################
 #
-# Example of 1D Laplacian on one processor.
+# Example of how to define an Epetra.RowMatrix derived class in python
 # 
-# This example shows how to derive class Epetra_RowMatrix in Python.
-# For the sake of simplicity, the example runs only with one processor.
-# The main procedure is as follows:
-# - create a Python class derived from Epetra.RowMatrix
-# - define all the methods as done in this file. Probably, the most
-#   important methods are Apply, Multiply, and ExtractMyRowCopy. Some
-#   methods do not need to be implemented; in this case simply returns
-#   `False.'
-# - declare the object and use it in all Trilions modules that accept
-#   Epetra_RowMatrix's.
+# This example shows how to derive from the class Epetra.RowMatrix in python.
+# The main procedure is as follows: - create a python class derived from
+# Epetra.RowMatrix -- in this case a 1D Laplacian matrix.  Define all the
+# methods as done in this file.  The most important methods are probably
+# Apply(), Multiply(), and ExtractMyRowCopy() (note that the return signature
+# for NumMyRowEntries() and ExtractMyRowCopy() are different for python than for
+# C++).  Some methods do not need to be implemented; in this case they simply
+# return -1.  You may now create an instance of your derived class and supply it
+# to any Trilinos solver that can use it (in this case AztecOO).
 #
-# Note: You might need to be able to allocate/use integer and double
-#       pointers or references. Some tools are available for that:
-#       use for example the DArray and IArray classes of the Epetra module.
-#
-# \author Marzio Sala, ETHZ/COLAB
-#
-# \date Last updated on 04-Dec-05
+# Based on a script originally written by Marzio Sala.  Updated by Bill Spotz.
 #
 ######################################################################
 
@@ -65,225 +58,272 @@ import numpy
 
 ################################################################################
 
-class Laplace1D(Epetra.RowMatrix):
+class Laplace1D_Matrix(Epetra.RowMatrix):
 
-    def __init__(self, n, comm):
+    def __init__(self, n, comm=None):
+        """
+        __init__(self, n) -> Laplace1D_Matrix (with and Epetra.PyComm() communicator)
+        __init__(self, n, comm) -> Laplace1D_Matrix (with given communicator)
+        """
+        # Initialize the base class.  This is REQUIRED
         Epetra.RowMatrix.__init__(self)
+        # Determine the communicator
+        if comm is None:
+            self.__comm = Epetra.PyComm()
+        else:
+            self.__comm = comm
+        # Default indexes
+        self.__y0 =  1
+        self.__y1 = -1
+        # Create the row map
+        self.__rowMap = Epetra.Map(n, 0, self.__comm)
+        # Create the col map
+        myIndexes = list(self.__rowMap.MyGlobalElements())
+        if self.__comm.MyPID() > 0:
+            self.__y0 = None    # Equivalent to index 0
+            myIndexes.insert(0,myIndexes[0]-1)
+        if self.__comm.MyPID() < self.__comm.NumProc()-1:
+            self.__y1 = None    # Equivalent to last index
+            myIndexes.append(myIndexes[-1]+1)
+        self.__colMap = Epetra.Map(n, myIndexes, 0, self.__comm)
+        # Store a label for the row matrix
+        self.__label = "1D Laplace Row Matrix"
+        # Store the matrix properties
+        self.__numRows = n
+        self.__numCols = n
         self.__useTranspose = False
-        self.__comm         = comm
-        self.__numRows      = n
-        self.__numCols      = n
-        self.__rowMap       = Epetra.Map(self.__numRows, 0, comm)
-        self.__colMap       = Epetra.Map(self.__numCols, 0, comm)
-        self.__numEntries   = Epetra.IArray(1)
-        self.__indices      = Epetra.IArray(3)
-        self.__values       = Epetra.DArray(3)
-        #self.__numEntries   = numpy.array([0])
-        #self.__indices      = numpy.array([0,0,0])
-        #self.__values       = numpy.array([0.0,0.0,0.0])
 
     def __str__(self):
-        return "Laplace1D"
-
-    ###############################################################################
-    # The following method is an implementation of the Epetra.SrcDistObject class #
-    ###############################################################################
+        "Return the row matrix label"
+        return self.__label
 
     def Map(self):
+        "Required implementation of Epetra.SrcDistObject class"
         return self.__rowMap
 
-    ##########################################################################
-    # The following methods are implementations of the Epetra.Operator class #
-    ##########################################################################
-
     def SetUseTranspose(self, useTranspose):
+        "Required implementation of Epetra.Operator class"
         self.__useTranspose = bool(useTranspose)
 
     def UseTranspose(self):
+        "Required implementation of Epetra.Operator class"
         return self.__useTranspose
 
     def Apply(self, LHS, RHS):
+        "Required implementation of Epetra.Operator class"
         return self.Multiply(self.__useTranspose, LHS, RHS)
 
     def ApplyInverse(self):
+        "Required implementation of Epetra.Operator class"
         return -2
 
     def HasNormInf(self):
+        "Required implementation of Epetra.Operator class"
         return True
 
     def NormInf(self):
+        "Required implementation of Epetra.Operator class"
         return 4.0
 
     def Label(self):
-        return "Laplace1D"
+        "Required implementation of Epetra.Operator class"
+        return self.__label
 
     def Comm(self):
+        "Required implementation of Epetra.Operator class"
         return self.__comm
 
     def OperatorDomainMap(self):
-        return self.__rowMap
+        "Required implementation of Epetra.Operator class"
+        return self.__colMap
 
     def OperatorRangeMap(self):
+        "Required implementation of Epetra.Operator class"
         return self.__rowMap
 
-    ###########################################################################
-    # The following methods are implementations of the Epetra.RowMatrix class #
-    ###########################################################################
-
-    def NumMyRowEntries(self, MyRow, n):
-        NumEntries = Epetra.IArray(n, 1)
-        if MyRow == 0 or MyRow == self.__numRows:
-            NumEntries[0] = 2
+    def NumMyRowEntries(self, MyRow, NumEntries):
+        """
+        Required implementation of Epetra.RowMatrix class.  In C++, NumEntries
+        is an int& argument intended as output.  When called via callbacks from
+        C++, this int& is converted to a numpy array of length 1 so that it can
+        be altered in-place via NumEntries[0] = ...
+        """
+        globalRow = self.__rowMap.GID(MyRow)
+        if globalRow == 0 or globalRow == self.__numRows-1:
+            NumEntries[0] = 1
         else:
             NumEntries[0] = 3
         return 0
 
     def MaxNumEntries(self):
+        "Required implementation of Epetra.RowMatrix class"
         return 3
 
-    # Input to this function one has an int* pointer (NumEntries),
-    # a double* pointer (Values) and an int* pointer(Indices); these
-    # pointers are wrapped as IArray's and DArray's
-    def ExtractMyRowCopy(self, MyRow, Length, n, vals, ind):
-        if (Length < 3):
-            return -1
-        NumEntries = Epetra.IArray(n,    1     )
-        Values     = Epetra.DArray(vals, Length)
-        Indices    = Epetra.IArray(ind,  Length)
-        n = self.__numRows
-        if MyRow == 0:
-            Indices[0] = 0
-            Indices[1] = 1
-            Values[0] = 2.0
-            Values[1] = -1.0
-            NumEntries[0] = 2
-        elif MyRow == n - 1:
-            Indices[0] = n - 1; Indices[1] = n - 2
-            Values[0] = 2.0; Values[1] = -1.0
-            NumEntries[0] = 2
+    def ExtractMyRowCopy(self, MyRow, Length, NumEntries, Values, Indices):
+        """
+        Required implementation of Epetra.RowMatrix class.  In C++, NumEntries,
+        Values, and Indices are all output arguments.  When called via callbacks
+        from C++, these arguments are converted to numpy arrays so that we can
+        manipulate the data in-place.  NumEntries is a scalar in C++, but must
+        be accessed as NumEntries[0] in python.
+        """
+        globalRow = self.__rowMap.GID(MyRow)
+        if globalRow == 0 or globalRow == self.__numRows-1:
+            if (Length < 1):
+                return -1
+            NumEntries[0] = 1
+            Values[0]     = 1.0
+            Indices[0]    = MyRow
         else:
-            Indices[0] = MyRow; Indices[1] = MyRow - 1; Indices[2] = MyRow + 1
-            Values[0] = 2.0; Values[1] = -1.0; Values[2] = -1.0
+            if (Length < 3):
+                return -1
             NumEntries[0] = 3
+            Values[:3]    = [   -1.0,   2.0,    -1.0]
+            Indices[:3]   = [MyRow-1, MyRow, MyRow+1]
         return 0
 
     def ExtractDiagonalCopy(self, Diagonal):
+        "Required implementation of Epetra.RowMatrix class"
         Diagonal.PutScalar(2.0)
+        myPID = self.__comm.MyPID()
+        if myPID == 0:                       Diagonal[ 0] = 1.0
+        if myPID == self.__comm.NumProc()-1: Diagonal[-1] = 1.0
         return 0
 
-    def Multiply(self, UseTranspose, LHS, RHS):
-        Indices      = self.__indices
-        Values       = self.__values
-        NumEntries   = self.__numEntries
-
-        n = RHS.MyLength()
-        if LHS.NumVectors() != 1:
-            print "this Apply() function has been implemented for a single vector"
+    def Multiply(self, UseTranspose, x, y):
+        "Required implementation of Epetra.RowMatrix class"
+        try:
+            # Apply operator to interior points
+            y[:,self.__y0:self.__y1] = 2.0 * x[:,1:-1] - x[:,:-2] - x[:,2:]
+            # Apply left boundary condition
+            if self.__comm.MyPID() == 0:
+                y[:,0] = x[:,0]
+            # Apply right boundary condition
+            if self.__comm.MyPID() == self.__comm.NumProc() - 1:
+                y[:,-1] = x[:,-1]
+            return 0
+        except Exception, e:
+            print e
             return -1
 
-        # I need to wrap the Values() array as DArray; if I use the bracket
-        # operator the code crashes...
-        LHS_V = Epetra.DArray(LHS.Values(), n)
-        RHS_V = Epetra.DArray(RHS.Values(), n)
-
-        for i in xrange(self.__numRows):
-            ierr = self.ExtractMyRowCopy(i, 5, NumEntries.Values(),
-                                         Values.Values(), Indices.Values())
-            total = 0.0
-            for j in xrange(NumEntries[0]):
-                total = total + LHS_V[Indices[j]] * Values[j]
-            RHS_V[i] = total  
-
-        return 0
-
     def Solve(self, upper, trans, unitDiagonal, x, y):
+        "Required implementation of Epetra.RowMatrix class"
         return -1
 
     def InvRowSums(self, x):
+        "Required implementation of Epetra.RowMatrix class"
         return -1
 
     def LeftScale(self, x):
+        "Required implementation of Epetra.RowMatrix class"
         return -1
 
     def InvColSums(self, x):
+        "Required implementation of Epetra.RowMatrix class"
         return -1
 
     def RightScale(self, x):
+        "Required implementation of Epetra.RowMatrix class"
         return -1
 
     def Filled(self):
+        "Required implementation of Epetra.RowMatrix class"
         return True
 
     def NormOne(self):
+        "Required implementation of Epetra.RowMatrix class"
         return 4.0
 
     def NumGlobalNonzeros(self):
+        "Required implementation of Epetra.RowMatrix class"
         return 3 * self.__numRows - 2
 
     def NumGlobalRows(self):
+        "Required implementation of Epetra.RowMatrix class"
         return self.__numRows
 
     def NumGlobalCols(self):
+        "Required implementation of Epetra.RowMatrix class"
         return self.__numCols
 
     def NumGlobalDiagonals(self):
+        "Required implementation of Epetra.RowMatrix class"
         return self.__numRows
 
     def NumMyNonzeros(self):
+        "Required implementation of Epetra.RowMatrix class"
         return 3 * self.__numRows - 2
 
     def NumMyRows(self):
+        "Required implementation of Epetra.RowMatrix class"
         return self.__numRows
 
     def NumMyCols(self):
+        "Required implementation of Epetra.RowMatrix class"
         return self.__numCols
 
     def NumMyDiagonals(self):
+        "Required implementation of Epetra.RowMatrix class"
         return self.__numRows
 
     def LowerTriangular(self):
+        "Required implementation of Epetra.RowMatrix class"
         return False
 
     def UpperTriangular(self):
+        "Required implementation of Epetra.RowMatrix class"
         return False
 
     def RowMatrixRowMap(self):
+        "Required implementation of Epetra.RowMatrix class"
         return self.__rowMap
 
     def RowMatrixColMap(self):
+        "Required implementation of Epetra.RowMatrix class"
         return self.__colMap
 
     def RowMatrixImporter(self):
-        return Epetra.Import(self.__rowMap, self.__rowMap)
+        "Required implementation of Epetra.RowMatrix class"
+        return Epetra.Import(self.__rowMap, self.__colMap)
 
 ################################################################################
 
 def main():
 
     # Problem initialization
-    n = 10
-    comm = Epetra.PyComm()
-    if comm.NumProc() != 1:
-        print "This example is only serial, sorry"
-        return
+    n     = 100
+    bc0   = 0.0
+    bc1   = 1.0
+    tol   = 1.0e-5
+    comm  = Epetra.PyComm()
+    lap1d = Laplace1D_Matrix(n, comm)
 
-    # Create a 1D Laplacian linear system
-    matrix = Laplace1D(n, comm)
-    lhs    = Epetra.Vector(matrix.Map())
-    rhs    = Epetra.Vector(matrix.Map())
-    lhs.PutScalar(0.0)
-    rhs.PutScalar(1.0)
-    solver = AztecOO.AztecOO(matrix, lhs, rhs)
+    # Create solution and RHS vectors
+    x = Epetra.Vector(lap1d.RowMatrixColMap())
+    b = Epetra.Vector(lap1d.RowMatrixRowMap())
 
-    # Set the AztecOO options
-    solver.SetAztecOption(AztecOO.AZ_solver,AztecOO.AZ_gmres)
-    solver.SetAztecOption(AztecOO.AZ_precond, AztecOO.AZ_Jacobi)
-    solver.SetAztecOption(AztecOO.AZ_output, 16)
+    # Initialize vectors: x will be a straight line between its boundary values,
+    # and b=1, with its boundary values equal to x on the boundaries
+    x[:] = bc0 + (bc1-bc0) * (x.Map().MyGlobalElements() / (n-1.0))
+    b.PutScalar(1.0)
+    if comm.MyPID() == 0:
+        b[0] = bc0
+    if comm.MyPID() == comm.NumProc()-1:
+        b[-1] = bc1
+
+    # Build the linear system solver
+    problem = Epetra.LinearProblem(lap1d, x, b)
+    solver  = AztecOO.AztecOO(problem)
+    solver.SetParameters({"Solver"  : "CG",
+                          "Precond" : "Jacobi",
+                          "Output"  : 16      })
 
     # Solve the problem
-    solver.Iterate(1550, 1e-5)
-
-    if comm.MyPID() == 0: print "End Result: TEST PASSED"
+    solver.Iterate(5*n, tol)
+    if solver.TrueResidual() < tol:
+        if comm.MyPID() == 0: print "End Result: TEST PASSED"
+    else:
+        if comm.MyPID() == 0: print "End Result: TEST FAILED"
 
 ################################################################################
 

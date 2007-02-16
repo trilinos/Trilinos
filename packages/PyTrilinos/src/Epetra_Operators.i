@@ -144,7 +144,29 @@ int method(int row, PyObject * values, PyObject * indices) {
 %warnfilter(473)     Epetra_RowMatrix;
 %feature("director") Epetra_RowMatrix;
 %rename(RowMatrix)   Epetra_RowMatrix;
+// These typemaps are specifically for the NumMyRowEntries() and
+// ExtractMyRowCopy() methods.  They turn output arguments NumEntries,
+// Values and Indices into numpy arrays with appropriate data buffers.
+// The user therefore has access to these buffers via the [ ]
+// (bracket) operators (__setitem__ and __getitem__).  NumEntries,
+// even though it is a scalar in C++, must be accessed as
+// NumEntries[0].
+%typemap(directorin) int &NumEntries %{
+  intp dims$argnum[ ] = { (intp) 1 };
+  $input = PyArray_SimpleNewFromData(1, dims$argnum, PyArray_INT, (void*)&$1_name);
+%}
+%typemap(directorin) double *Values %{
+  intp dims$argnum[ ] = { (intp) Length };
+  $input = PyArray_SimpleNewFromData(1, dims$argnum, PyArray_DOUBLE, (void*)$1_name);
+%}
+%typemap(directorin) int *Indices %{
+  intp dims$argnum[ ] = { (intp) Length };
+  $input = PyArray_SimpleNewFromData(1, dims$argnum, PyArray_INT, (void*)$1_name);
+%}
 %include "Epetra_RowMatrix.h"
+%clear int    &NumEntries;
+%clear double *Values;
+%clear int    *Indices;
 
 ///////////////////////////////////
 // Epetra_BasicRowMatrix support //
