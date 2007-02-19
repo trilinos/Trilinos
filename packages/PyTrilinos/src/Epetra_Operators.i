@@ -164,16 +164,34 @@ int method(int row, PyObject * values, PyObject * indices) {
   $input = PyArray_SimpleNewFromData(1, dims$argnum, PyArray_INT, (void*)$1_name);
 %}
 %include "Epetra_RowMatrix.h"
-%clear int    &NumEntries;
-%clear double *Values;
-%clear int    *Indices;
 
 ///////////////////////////////////
 // Epetra_BasicRowMatrix support //
 ///////////////////////////////////
-%ignore Epetra_BasicRowMatrix::ExtractMyEntryView(int,double*&,int&,int&);
+%warnfilter(473)        Epetra_BasicRowMatrix;
+%feature("director")    Epetra_BasicRowMatrix;
 %rename(BasicRowMatrix) Epetra_BasicRowMatrix;
+%ignore Epetra_BasicRowMatrix::ExtractMyEntryView(int,const double*&,int&,int&) const;
+// Typemap for double * & Value
+%typemap(directorin) double *&Value %{
+  intp dims$argnum[ ] = { (intp) 1 };
+  $input = PyArray_SimpleNewFromData(1, dims$argnum, PyArray_DOUBLE, (void*)$1_name);
+%}
+// Apply the referenced int typemap for NumEntries to RowIndex and ColIndex
+%apply int &NumEntries {int &RowIndex, int &ColIndex};
 %include "Epetra_BasicRowMatrix.h"
+// Make sure the following typemaps specific to Epetra_BasicRowMap
+// are not applied after this point.
+%clear double *& Value;
+%clear int    &  RowIndex;
+%clear int    &  ColIndex;
+// The typemaps below were defined for the Epetra_RowMatrix support
+// just above, but they apply to the Epetra_BasicRowMap as well.
+// However, we also want to make sure they do not get applied after
+// this point.
+%clear int    & NumEntries;
+%clear double * Values;
+%clear int    * Indices;
 
 //////////////////////////////
 // Epetra_CrsMatrix support //

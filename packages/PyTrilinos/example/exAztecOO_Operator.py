@@ -91,10 +91,6 @@ class Laplace1D_Operator(Epetra.Operator):
         "Return the operator's label"
         return self.__label
 
-    def Map(self):
-        "Required implementation of Epetra.SrcDistObject class"
-        return self.__rangeMap
-
     def Label(self):
         "Required implementation of Epetra.Operator class"
         return self.__label
@@ -180,16 +176,15 @@ def main():
     # Build the linear system solver
     problem = Epetra.LinearProblem(lap1d, x, b)
     solver  = AztecOO.AztecOO(problem)
-    solver.SetParameters({"Solver"  : "GMRES",
+    solver.SetParameters({"Solver"  : "CG",
                           "Precond" : "None",
                           "Output"  : 16    })
 
-    # Solve the problems
+    # Solve the problem
     solver.Iterate(n, tol)
-    if solver.TrueResidual() < tol:
-        if comm.MyPID() == 0: print "End Result: TEST PASSED"
-    else:
-        if comm.MyPID() == 0: print "End Result: TEST FAILED"
+    if comm.MyPID() == 0:
+        if solver.ScaledResidual() < tol: print "End Result: TEST PASSED"
+        else:                             print "End Result: TEST FAILED"
 
 ################################################################################
 

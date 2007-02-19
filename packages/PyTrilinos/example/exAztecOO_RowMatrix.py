@@ -320,10 +320,9 @@ def main():
 
     # Solve the problem
     solver.Iterate(5*n, tol)
-    if solver.TrueResidual() < tol:
-        if comm.MyPID() == 0: print "End Result: TEST PASSED"
-    else:
-        if comm.MyPID() == 0: print "End Result: TEST FAILED"
+    if comm.MyPID() == 0:
+        if solver.ScaledResidual() < tol: print "End Result: TEST PASSED"
+        else:                             print "End Result: TEST FAILED"
 
 ################################################################################
 

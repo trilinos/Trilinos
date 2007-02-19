@@ -38,8 +38,8 @@ ACLOCAL	= aclocal -I config
 
 EXTRA_DIST = setpath.py gre__115.rua \
 	     exAmesos_Factory.py exAmesos_Solvers.py exAztecOO.py exAztecOO_Operator.py \
-	     exAztecOO_RowMatrix.py exEpetra.py exEpetra_Comm.py \
-	     exEpetra_CrsMatrix_Easy.py exEpetra_CrsMatrix_Efficient.py \
+	     exAztecOO_RowMatrix.py exAztecOO_BasicRowMatrix.py exEpetra.py \
+	     exEpetra_Comm.py exEpetra_CrsMatrix_Easy.py exEpetra_CrsMatrix_Efficient.py \
 	     exEpetra_FECrsMatrix_Easy.py exEpetra_ImportExport.py \
 	     exEpetraExt_IO_MatrixMarket.py exEpetraExt_IO_XML.py \
 	     exEpetraExt_MatrixMatrix.py exGaleri.py exGaleri_ReadHB.py exIFPACK.py \
@@ -90,7 +90,7 @@ if HAVE_PYTRILINOS_EPETRA
 if HAVE_PYTRILINOS_GALERI
 AZTECOO_EX1 = exAztecOO
 endif
-AZTECOO_EX2 = exAztecOO_Operator exAztecOO_RowMatrix
+AZTECOO_EX2 = exAztecOO_Operator exAztecOO_RowMatrix exAztecOO_BasicRowMatrix
 AZTECOO_EXAMPLES = $(AZTECOO_EX1) $(AZTECOO_EX2)
 endif
 endif

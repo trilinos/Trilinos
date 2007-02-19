@@ -45,8 +45,6 @@
 #include "Epetra_MapColoring.h"
 
 // Local includes
-#include "Epetra_DArray.h"
-#include "Epetra_IArray.h"
 #include "PyEpetra_Utils.h"  
 
 // Teuchos include
@@ -463,15 +461,3 @@ __version__ = Version().split()[2]
   }
 }
 %include "Epetra_MapColoring.h"
-
-///////////////////////////
-// Epetra_DArray support //
-///////////////////////////
-%rename(DArray) Epetra_DArray;
-%include "Epetra_DArray.h"
-
-///////////////////////////
-// Epetra_IArray support //
-///////////////////////////
-%rename(IArray) Epetra_IArray;
-%include "Epetra_IArray.h"
