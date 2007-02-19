@@ -146,6 +146,17 @@ using namespace std;
 }
 %enddef
 
+// Macro for methods that return C arrays
+%define %aztecoo_return_array(className,methodName,type,typeName,length)
+%extend className {
+  PyObject * methodName() const {
+    intp dims[ ] = { (intp) length };
+    return PyArray_SimpleNewFromData(1, dims, typeName, (void*)self->methodName());
+  }
+}
+%ignore className::methodName() const;
+%enddef
+
 //////////////////////////////////////
 // AztecOO enumerated types support //
 //////////////////////////////////////
@@ -164,10 +175,8 @@ __version__ = AztecOO_Version().split()[2]
 /////////////////////
 %aztecoo_exception(AztecOO,SetParameters)
 %aztecoo_exception(AztecOO,Iterate      )
-%extend AztecOO {
-  double GetStatus(int what) {
-    const double* status = self->GetAztecStatus();
-    return(status[what]);
-  }
-}
+%ignore AztecOO::GetAllAztecStatus(double*);
+%aztecoo_return_array(AztecOO, GetAllAztecOptions, int,    PyArray_INT,    AZ_OPTIONS_SIZE)
+%aztecoo_return_array(AztecOO, GetAllAztecParams,  double, PyArray_DOUBLE, AZ_PARAMS_SIZE )
+%aztecoo_return_array(AztecOO, GetAztecStatus,     double, PyArray_DOUBLE, AZ_STATUS_SIZE )
 %include "AztecOO.h"
