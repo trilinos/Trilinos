@@ -203,6 +203,7 @@ namespace Anasazi {
     {
       Teuchos::RefCountPtr<MV> B = MVT::Clone(*A,numvecs);
       std::vector<MagType> norms(2*numvecs);
+      bool ResizeWarning = false;
       if ( MVT::GetNumberVecs(*B) != numvecs ) {
         om->stream(Warnings)
           << "*** ERROR *** MultiVecTraits::Clone()." << endl
@@ -216,11 +217,11 @@ namespace Anasazi {
         return false;
       }
       MVT::MvNorm(*B, &norms);
-      if ( norms.size() != 2*numvecs ) {
+      if ( norms.size() != 2*numvecs && ResizeWarning==false ) {
         om->stream(Warnings)
-          << "*** ERROR *** MultiVecTraits::MvNorm()." << endl
+          << "*** WARNING *** MultiVecTraits::MvNorm()." << endl
           << "Method resized the output vector." << endl;
-        return false;
+        ResizeWarning = true;
       }
       for (i=0; i<numvecs; i++) {
         if ( norms[i] < zero_mag ) {
