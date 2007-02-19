@@ -153,7 +153,7 @@ class Epetra_BasicRowMatrix: public Epetra_CompObject, public Epetra_Object, pub
 
     //! Returns a reference to the ith entry in the matrix, along with its row and column index.
     /*! 
-    \param CurEntry (In) - Local entry to extract.
+    \param CurEntry (In) - Index of local entry (from 0 to NumMyNonzeros()-1) to extract.
     \param Value (Out) - Extracted reference to current values.
     \param RowIndex (Out) - Row index for current entry.
     \param ColIndex (Out) - Column index for current entry.
@@ -164,7 +164,7 @@ class Epetra_BasicRowMatrix: public Epetra_CompObject, public Epetra_Object, pub
 
     //! Returns a const reference to the ith entry in the matrix, along with its row and column index.
     /*! 
-    \param CurEntry (In) - Local entry to extract.
+    \param CurEntry (In) - Index of local entry (from 0 to NumMyNonzeros()-1) to extract.
     \param Value (Out) - Extracted reference to current values.
     \param RowIndex (Out) - Row index for current entry.
     \param ColIndex (Out) - Column index for current entry.
