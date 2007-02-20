@@ -243,10 +243,10 @@ EXTRA_DIST = definition setpath.py \
 	     testEpetra_IntSerialDense.py testEpetra_IntVector.py \
 	     testEpetra_LinearProblem.py testEpetra_LocalMap.py testEpetra_Map.py \
 	     testEpetra_MapColoring.py testEpetra_MultiVector.py testEpetra_Object.py \
-	     testEpetra_SerialDense.py testEpetra_Vector.py testGaleri_CrsMatrices.py \
-	     testGaleri_Maps.py testIFPACK.py testML_Preconditioner.py \
-	     testNOX_StatusTest.py testTeuchos.py testTeuchos_ParameterList.py \
-	     testThyra.py testTriUtils.py
+	     testEpetra_SerialDense.py testEpetra_Util.py testEpetra_Vector.py \
+	     testGaleri_CrsMatrices.py testGaleri_Maps.py testIFPACK.py \
+	     testML_Preconditioner.py testNOX_StatusTest.py testTeuchos.py \
+	     testTeuchos_ParameterList.py testThyra.py testTriUtils.py
 
 MAINTAINERCLEANFILES = Makefile.in
 @HAVE_PYTRILINOS_TEUCHOS_TRUE@TEUCHOS_TESTS = testTeuchos testTeuchos_ParameterList
@@ -259,7 +259,7 @@ MAINTAINERCLEANFILES = Makefile.in
 @HAVE_PYTRILINOS_EPETRA_TRUE@	       testEpetra_IntSerialDense testEpetra_IntVector \
 @HAVE_PYTRILINOS_EPETRA_TRUE@	       testEpetra_LinearProblem testEpetra_LocalMap testEpetra_Map \
 @HAVE_PYTRILINOS_EPETRA_TRUE@	       testEpetra_MapColoring testEpetra_MultiVector testEpetra_Object \
-@HAVE_PYTRILINOS_EPETRA_TRUE@	       testEpetra_SerialDense testEpetra_Vector
+@HAVE_PYTRILINOS_EPETRA_TRUE@	       testEpetra_SerialDense testEpetra_Util testEpetra_Vector
 
 @HAVE_PYTRILINOS_TRIUTILS_TRUE@TRIUTILS_TESTS = testTriUtils
 @HAVE_PYTRILINOS_EPETRAEXT_TRUE@EPETRAEXT_TESTS = testEpetraExt_Coloring

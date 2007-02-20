@@ -378,6 +378,7 @@ __version__ = Version().split()[2]
 /////////////////////////
 // Epetra_Util support //
 /////////////////////////
+%ignore Epetra_Util::Sort;
 %rename(Util) Epetra_Util;
 %include "Epetra_Util.h"
 

@@ -43,10 +43,10 @@ EXTRA_DIST = definition setpath.py \
 	     testEpetra_IntSerialDense.py testEpetra_IntVector.py \
 	     testEpetra_LinearProblem.py testEpetra_LocalMap.py testEpetra_Map.py \
 	     testEpetra_MapColoring.py testEpetra_MultiVector.py testEpetra_Object.py \
-	     testEpetra_SerialDense.py testEpetra_Vector.py testGaleri_CrsMatrices.py \
-	     testGaleri_Maps.py testIFPACK.py testML_Preconditioner.py \
-	     testNOX_StatusTest.py testTeuchos.py testTeuchos_ParameterList.py \
-	     testThyra.py testTriUtils.py
+	     testEpetra_SerialDense.py testEpetra_Util.py testEpetra_Vector.py \
+	     testGaleri_CrsMatrices.py testGaleri_Maps.py testIFPACK.py \
+	     testML_Preconditioner.py testNOX_StatusTest.py testTeuchos.py \
+	     testTeuchos_ParameterList.py testThyra.py testTriUtils.py
 
 MAINTAINERCLEANFILES = Makefile.in
 
@@ -67,7 +67,7 @@ EPETRA_TESTS = testEpetra_BlockMap testEpetra_Comm testEpetra_CompObject \
 	       testEpetra_IntSerialDense testEpetra_IntVector \
 	       testEpetra_LinearProblem testEpetra_LocalMap testEpetra_Map \
 	       testEpetra_MapColoring testEpetra_MultiVector testEpetra_Object \
-	       testEpetra_SerialDense testEpetra_Vector
+	       testEpetra_SerialDense testEpetra_Util testEpetra_Vector
 endif
 
 if HAVE_PYTRILINOS_TRIUTILS
