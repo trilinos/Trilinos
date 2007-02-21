@@ -127,19 +127,23 @@ class Interface(NOX.Epetra.Interface.Required):
         self.__h                 = (self.__xmax - self.__xmin) / (len(self.__x)-1)
         self.initializeSoln()
 
-    def computeF(self, x, fVec, fillType=NOX.Epetra.Interface.Required.Residual):
-        # x and fVec come in as raw Epetra.Epetra_Vectors.  Convert them to
-        # enhanced Epetra.Vectors
-        soln = Epetra.Vector(Epetra.View, x,    0)
-        rhs  = Epetra.Vector(Epetra.View, fVec, 0)
-        h    = self.__h
-        # Compute the residual
-        if self.__haveBC0: rhs[0] = soln[0] - self.__bc0
-        rhs[1:-1] = (soln[:-2] - 2*soln[1:-1] + soln[2:]) / (h*h) - \
-                    self.__k * soln[1:-1] * soln[1:-1]
-        if self.__haveBC1: rhs[-1] = soln[-1] - self.__bc1
-
-        return True
+    def computeF(self, u, F, flag):
+        """
+        This is the function that NOX calls back to in order to compute F(u).
+        Arguments u and F are provided as Epetra.Vector objects, complete with
+        numpy interface.
+        """
+        try:
+            # Compute the residual on the interior
+            F[1:-1] = (u[:-2] - 2*u[1:-1] + u[2:]) / (self.__h*self.__h) - \
+                      self.__k * u[1:-1] * u[1:-1]
+            # Compute the residual on the boundaries
+            if self.__haveBC0: F[ 0] = u[ 0] - self.__bc0
+            if self.__haveBC1: F[-1] = u[-1] - self.__bc1
+            return True
+        except Exception, e:
+            print e
+            return False
 
     def getSolution(self):
         return self.__initialSoln
@@ -319,7 +323,7 @@ def main():
         mp.plot(x,f2)
         mp.title("exNOX_1Dfem Problem Solution, k = %d" % options.k)
         mp.xlabel("x")
-        mp.ylabel("f")
+        mp.ylabel("u(x)")
         mp.show()
 
     return status

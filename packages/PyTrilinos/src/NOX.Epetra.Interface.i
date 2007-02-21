@@ -42,6 +42,9 @@
 #include "Epetra_Operator.h"
 #include "Epetra_RowMatrix.h"
 
+// Local Epetra includes
+#include "Epetra_NumPyVector.h"
+
 // NOX include
 #include "NOX_Utils.H"
 
@@ -65,6 +68,12 @@ using namespace std;
 %teuchos_rcp_typemaps(NOX::Epetra::Interface::Required)
 %teuchos_rcp_typemaps(NOX::Epetra::Interface::Jacobian)
 %teuchos_rcp_typemaps(NOX::Epetra::Interface::Preconditioner)
+
+// Epetra_Vector directorin typemap
+%typemap(directorin) Epetra_Vector & %{
+  Epetra_NumPyVector npa$argnum = Epetra_NumPyVector(View,$1_name);
+  $input = SWIG_NewPointerObj(&npa$argnum, $descriptor(Epetra_NumPyVector*), 0);
+%}
 
 ///////////////////////
 // NOX_Utils support //

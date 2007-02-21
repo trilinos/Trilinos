@@ -41,7 +41,6 @@ from pkg_info          import *
 ######################################################################
 
 def makePyTrilinosExtensions(moduleName):
-
     """
     makePyTrilinosExtensions(str) -> list of distutils Extension objects
 
@@ -157,7 +156,8 @@ def makePyTrilinosExtensions(moduleName):
             sources.extend(epetraNumPySrc)
         if moduleName in ("EpetraExt","TriUtils","AztecOO","Galeri","IFPACK"):
             sources.extend(epetraNumPyVectorSrc)
-        if extName in ("PyTrilinos.NOX.Epetra.___init__",):
+        if extName in ("PyTrilinos.NOX.Epetra.___init__",
+                       "PyTrilinos.NOX.Epetra.Interface"):
             sources.extend(epetraNumPyVectorSrc)
 
         # Create the Extension object and add it to the list
