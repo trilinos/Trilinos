@@ -47,7 +47,7 @@ namespace Thyra {
  * \ingroup Equation_solve_foundation_code_grp
  */
 enum ESolveMeasureNormType {
-  SOLVE_MEASURE_ONE                   ///< Not solve measure (i.e. same as 1)
+  SOLVE_MEASURE_ONE                   ///< No solve measure (i.e. same as 1.0)
   ,SOLVE_MEASURE_NORM_RESIDUAL        ///< Norm of the current residual vector (i.e. <tt>||A*x-b||</tt>)
   ,SOLVE_MEASURE_NORM_SOLUTION        ///< Norm of the current solution vector (i.e. <tt>||x||</tt>)
   ,SOLVE_MEASURE_NORM_INIT_RESIDUAL   ///< Norm of the initial residual vector given a non-zero guess (i.e. <tt>||A*xo-b||</tt>)

@@ -10,8 +10,8 @@
 
 \section thyra_src_interfaces_nonlinear_model_evaluator_ana_fundamental_into_sec Introduction
 
-This doxygen collection documents a minimal set of interfaces for for
-nonlinear models that are derived from or extend the <a
+This doxygen collection contains a minimal set of interfaces for nonlinear
+models that are derived from or extend the <a
 href="../../../../../operator_vector/ana/fundamental/doc/html/index.html">Fundamental
 Thyra ANA Operator/Vector Interfaces</a> and the <a
 href="../../../../../operator_solve/ana/fundamental/doc/html/index.html">Fundamental

@@ -151,9 +151,12 @@ public:
   };
 
   /** \brief . */
-  enum EDerivativeLinearOp { DERIV_LINEAR_OP };
+  enum EDerivativeLinearOp {
+    DERIV_LINEAR_OP ///< .
+  };
 
-  /** \brief . */
+  /** \brief Determines the forms of a general derivative that are
+   * supported. */
   class DerivativeSupport {
   public:
     /** \brief . */

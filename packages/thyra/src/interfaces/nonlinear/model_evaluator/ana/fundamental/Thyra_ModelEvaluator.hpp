@@ -1,4 +1,4 @@
-// @HEADER
+/ @HEADER
 // ***********************************************************************
 // 
 //    Thyra: Interfaces and Support for Abstract Numerical Algorithms
@@ -49,25 +49,33 @@ namespace Thyra {
  *     <li>\ref Thyra_ME_equality_constrained_optimization_sec
  *     </ul>
  * <li>\ref Thyra_ME_derivatives_sec
+ * <li>\ref Thyra_ME_nominal_values_sec
+ * <li>\ref Thyra_ME_bounds_sec
+ * <li>\ref Thyra_ME_checking_sec
  * <li>\ref Thyra_ME_dev_notes_sec
  * </ul>
  *
  * \section Thyra_ME_intro_sec Introduction
  *
- * The model represented by this interface is composed of the following
- * general functions:
+ * This interface defines a very loosely mathematically typed interface to a
+ * very wide variety of simulation-based models that can support a very wide
+ * range of simulation-based numerical algorithms.
+ *
+ * For the most part, a model represented by this interface is composed:
  *
  * <ul>
  *
  * <li><b>State vector function:</b>
  *
- * <tt>(x_dot,x,{p(l)},t}) -> f</tt>
+ * <tt>(x_dot,x,{p(l)},t,...}) -> f <: f_space</tt>
  *
  * <li><b>Auxiliary response vector functions:</b>
  *
- * <tt>(x_dot,x,{p(l)},t}) -> g(j)</tt>,
+ * <tt>(x_dot,x,{p(l)},t,...}) -> g(j) <: g_space(j)</tt>, for <tt>j=0...Ng-1</tt>
  *
- * for <tt>j=0...Ng-1</tt>
+ * <li><b>Other outputs:</b>
+ *
+ * A model can compute other objects as well (see derivatives below).
  *
  * </ul>
  *
@@ -77,135 +85,172 @@ namespace Thyra {
  *
  * <li><b>State variables vector:</b>
  *
- * <tt>x</tt>
+ * <tt>x <: x_space</tt>
  *
  * <li><b>State variables derivative w.r.t. <tt>t</tt> vector:</b>
  *
- * <tt>x_dot</tt>
+ * <tt>x_dot <: x_space</tt>
  *
  * <li><b>Auxiliary parameter vectors:</b>
  *
- * <tt>p(l)</tt>,
+ * <tt>p(l) <: p_space(l)</tt>, for <tt>l=0...Np-1</tt>
  *
- * for <tt>l=0...Np-1</tt>
+ * <li><b>Time point (or some other independent variable):</b>
  *
- * <li>Time point (or some other independent variable):
+ * <tt>t <: Scalar</tt>
  *
- * <tt>t</tt>
+ * <li><b>Other inputs:</b>
+ *
+ * A model can accept additional input objects as well (see below).
  *
  * </ul>
+ *
+ * where <tt>x_space</tt>, <tt>f_space</tt>, <tt>p_space(l)</tt> (for
+ * <tt>l=0...Np-1</tt>), and <tt>g_space(j)</tt> (for <tt>j=0...Ng-1</tt>) are
+ * <tt>%Thyra</tt> vector spaces.
  *
  * Above, the notation <tt>{p(l)}</tt> is shorthand for the set of parameter
  * vectors <tt>{ p(0), p(1), ..., p(Np-1) }</tt>.
  *
  * All of the above variables/parameters and functions are represented as
  * abstract <tt>Thyra::VectorBase</tt> objects.  The vector spaces associated
- * with these vector quantities are returned by <tt>get_space_x()</tt>,
- * <tt>get_p_space(int)</tt>, <tt>get_space_f()</tt>, and
- * <tt>get_g_space(int)</tt>.
+ * with these vector quantities are returned by <tt>get_x_space()</tt>,
+ * <tt>get_p_space()</tt>, <tt>get_f_space()</tt>, and
+ * <tt>get_g_space()</tt>.
  *
- * These functions all get computed at the same time in the function
- * <tt>evalModel()</tt>
+ * All of the input variables/parameters are specified as a
+ * <tt>ModelEvaluatorBase::InArgs</tt> object, all functions to be computed
+ * are specified as a <tt>ModelEvaluatorBase::OutArgs</tt> object, and
+ * evaluations of all function at a single set of variable values is performed in a single
+ * call to <tt>evalModel()</tt>.
  *
- * \section Thyra_ME_problem_types_sec Problem Types
+ * A particular <tt>%ModelEvaluator</tt> subclass can support any subset of
+ * these inputs and outputs and it is up to the client to map these
+ * variables/parameters and functions into abstract mathematical problems.
+ * Some of the different types of abstract mathematical problems that can be
+ * represented through this interface are given in the next section.
+ *
+ * This interface can also support the computation of various derivatives of
+ * these functions w.r.t. the input arguments (see the section \ref
+ * Thyra_ME_derivatives_sec below).
+ *
+ * \section Thyra_ME_problem_types_sec Examples of Abstract Problem Types
  *
  * There are a number of different types of mathematical problems that can be
- * formulated using this interface.
+ * formulated using this interface.  In the following subsections, a few
+ * different examples of specific abstract problems types are given.
  *
  * \subsection Thyra_ME_nonlinear_equations_sec Nonlinear Equations
  *
  
  \verbatim
-
-  f(x) = 0.
-
+    f(x) = 0
  \endverbatim 
+
+ * Here it is assumed that <tt>D(f)/D(x)</tt> is nonsingular in general but
+ * this is not strictly required.  If <tt>W=D(f)/D(x)</tt> is supported, the
+ * nature of <tt>D(f)/D(x)</tt> may be given by
+ * <tt>this->createOutArgs().get_W_properties()</tt>.
  
  * \subsection Thyra_ME_explicit_ode_sec Explicit ODEs
  *
  
  \verbatim
-
-  x_dot = f(x,t).
-
+    x_dot = f(x,t)
  \endverbatim 
 
- * Here the argument <tt>t</tt> may or may not be accepted by <tt>*this</tt>.
+ * Here it is assumed that <tt>D(f)/D(x)</tt> is nonsingular in general but
+ * this is not strictly required.  If <tt>W=D(f)/D(x)</tt> is supported, the
+ * nature of <tt>D(f)/D(x)</tt> may be given by
+ * <tt>this->createOutArgs().get_W_properties()</tt>.
+
+ * Above, the argument <tt>t</tt> may or may not be accepted by the model
+ * (i.e. <tt>createInArgs().supports(IN_ARG_t)</tt> may return
+ * <tt>false</tt>).
  *
  * \subsection Thyra_ME_implicit_dae_sec Implicit ODEs or DAEs
  
  \verbatim
-
-  f(x_dot,x,t) = 0.
-
+    f(x_dot,x,t) = 0
  \endverbatim
- 
- * Whether the problem is an implicit ODE or DAE is determined by the nature
- * of the derivative matrix <tt>d(f)/d(x_dot)</tt>:
+
+ * Here it is assumed that <tt>D(f)/D(x)</tt> is nonsingular in general but
+ * this is not strictly required.
+ *
+ * The problem is either an implicit ODE or DAE depending on the nature of the
+ * derivative matrix <tt>D(f)/D(x_dot)</tt>:
  *
  * <ul>
- * <li> ODE: <tt>d(f)/d(x_dot)</tt> is full rank
- * <li> DAE: <tt>d(f)/d(x_dot)</tt> is not full rank
+ * <li> ODE: <tt>D(f)/D(x_dot)</tt> is full rank
+ * <li> DAE: <tt>D(f)/D(x_dot)</tt> is <em>not</em> full rank
  * </ul>
  *
- * This information is given by the function ??? (ToDo: Add this function!)
+ * If supported, the nature of <tt>W=alpha*D(f)/D(x_dot)+beta*D(f)/D(x)</tt>
+ * may be given by <tt>this->createOutArgs().get_W_properties()</tt>.
  *
  * Here the argument <tt>t</tt> may or may not be accepted by <tt>*this</tt>.
  *
  * \subsection Thyra_ME_unconstrained_optimization_sec Unconstrained optimization
  
  \verbatim
-
-  min g(x,{p(l)})
-
+    min g(x,{p(l)})
  \endverbatim
 
  * where the objective function <tt>g(x,{p(l)})</tt> is some aggregated
  * function built from some subset of the the auxiliary response functions
  * <tt>g(j)(x,{p(l)})</tt>, for <tt>j=1...Ng</tt>.
  *
+ * In general, it would be assumed that the Hessian <tt>D^2(g)/D(x^2)</tt> is
+ * symmetric semidefinite but this is not strictly required.
+ *
  * \subsection Thyra_ME_equality_constrained_optimization_sec Equality constrained optimization
  
  \verbatim
+    min g(x,{p(l)})
 
-  min g(x,{p(l)})
-
-  s.t. f(x,{p(l)}) = 0
-
+    s.t. f(x,{p(l)}) = 0
  \endverbatim 
 
  * where the objective function <tt>g(x,{p(l)})</tt> is some aggregated
  * function built from some subset of the the auxiliary response functions
  * <tt>g(j)(x,{p(l)})</tt>, for <tt>j=0...Ng-1</tt>.
  *
- * \subsection Thyra_ME_general_constrained_optimization_sec Equality constrained optimization
+ * Here it is assumed that <tt>D(f)/D(x)</tt> is nonsingular in general but
+ * this is not strictly required.  If <tt>W=D(f)/D(x)</tt> is supported, the
+ * nature of <tt>D(f)/D(x)</tt> may be given by
+ * <tt>this->createOutArgs().get_W_properties()</tt>.
+ *
+ * \subsection Thyra_ME_general_constrained_optimization_sec General constrained optimization
  
  \verbatim
+    min g(x,{p(l)})
 
-  min g(x,{p(l)})
-
-  s.t. f(x,{p(l)}) = 0
-       r(x,{p(l)}) = 0
-       hL <= h(x,{p(l)}) <= hU
-       xL <= x <= xU
-       pL(l) <= p(l) <= pU(l)
-
+    s.t. f(x,{p(l)}) = 0
+         r(x,{p(l)}) = 0
+         hL <= h(x,{p(l)}) <= hU
+         xL <= x <= xU
+         pL(l) <= p(l) <= pU(l)
  \endverbatim 
 
  * where the objective function <tt>g(x,{p(l)})</tt> and the auxiliary
  * equality <tt>r(x,{p(l)})</tt> and inequality <tt>h(x,{p(l)})</tt>
  * constraint functions are aggregated functions built from some subset of the
  * the auxiliary response functions <tt>g(j)(x,{p(l)})</tt>, for
- * <tt>j=0...Ng-1</tt>.  The auxiliary response functions for a particualar
+ * <tt>j=0...Ng-1</tt>.  The auxiliary response functions for a particular
  * model can be interpreted in a wide variety of ways and can be mapped into a
  * number of different optimization problems.
  *
+ * Here it is assumed that <tt>D(f)/D(x)</tt> is nonsingular in general but
+ * this is not strictly required.  If <tt>W=D(f)/D(x)</tt> is supported, the
+ * nature of <tt>D(f)/D(x)</tt> may be given by
+ * <tt>this->createOutArgs().get_W_properties()</tt>.
+ *
  * \section Thyra_ME_derivatives_sec Function derivatives and sensitivities
  *
- * A model can also optionally support various derivatives of the underlying
- * model functions.  The primary use for these derivatives is in the
- * computation of varyious types of sensitivities.  Specifically, direct and
- * adjoint sensitivities will be considered.
+ * A model can also optionally support the computation of various derivatives
+ * of the underlying model functions.  The primary use for these derivatives
+ * is in the computation of various types of sensitivities.  Specifically,
+ * direct and adjoint sensitivities will be considered.
  *
  * To illustrate the issues involved, consider a single auxiliary parameter
  * <tt>p</tt> and a single auxiliary response function <tt>g</tt> of the form
@@ -213,36 +258,154 @@ namespace Thyra {
  * equation <tt>f(x,p)=0</tt> and that <tt>D(f)/D(x)</tt> is full rank, then
  * <tt>f(x,p)=0</tt> defines the implicit function <tt>p ==> x(p)</tt>.  Given
  * this implicit function, the reduced auxiliary function is
- *
- * <tt>g_hat(p) = g(x(p),p)</tt>
- *
+ 
+ \verbatim
+    g_hat(p) = g(x(p),p)
+ \endverbatim
+ 
  * The reduced derivative <tt>D(g_hat)/D(p)</tt> is given as:
- *
- * <tt>D(g_hat)/D(p) = D(g)/D(x) * D(x)/D(p) + D(g)/D(p)</tt>
- *
- * where <tt>D(x)/D(p) = - [D(f)/D(x)]^{-1} * [D(f)/D(p)]</tt>
- *
+ 
+ \verbatim
+    D(g_hat)/D(p) = D(g)/D(x) * D(x)/D(p) + D(g)/D(p)
+ \endverbatim
+ 
+ * where
+
+ \verbatim
+    D(x)/D(p) = - [D(f)/D(x)]^{-1} * [D(f)/D(p)]
+ \endverbatim
+ 
  * Restated, the reduced derivative <tt>D(g_hat)/D(p)</tt> is given as:
- *
- * <tt>D(g_hat)/D(p) = - [D(g)/D(x)] * [D(f)/D(x)]^{-1} * [D(f)/D(p)] + D(g)/D(p)</tt>
- *
+ 
+ \verbatim
+    D(g_hat)/D(p) = - [D(g)/D(x)] * [D(f)/D(x)]^{-1} * [D(f)/D(p)] + D(g)/D(p)
+ \endverbatim
+ 
  * The reduced derivative <tt>D(g_hat)/D(p)</tt> can be computed using the
- * direct or the adjoint approahces.
+ * direct or the adjoint approaches.
+ *
+ * The <b>direct sensitivity approach</b> first solves for
+
+ \verbatim
+    D(x)/D(p) = - [D(f)/D(x)]^{-1} * [D(f)/D(p)]
+ \endverbatim
+
+ * explicitly, then computes
+
+ \verbatim
+    D(g_hat)/D(p) = D(g)/D(x) * D(x)/D(p) + D(g)/D(p).
+ \endverbatim
+
+ * In this case, <tt>D(f)/D(p)</tt> is needed as a multivector since it forms
+ * the RHS for a set of linear equations.  However, only the action of
+ * <tt>D(g)/D(x)</tt> on the multivector <tt>D(x)/D(p)</tt> is needed and
+ * therefore <tt>D(g)/D(x)</tt> can be returned as only a linear operator
+ * (i.e. a <tt>LinearOpBase</tt> object).  Note that in Thyra a multivector
+ * <em>is a</em> linear operator and therefore every derivative object
+ * returned as a multivector automatically implements the forward and adjoint
+ * linear operators for the derivative operator.
+ *
+ * The final derivative <tt>D(g)/D(p)</tt> should be returned as a multivector
+ * that can be added to the multivector <tt>D(g)/D(x)*D(x)/D(p)</tt>.
+ *
+ * The <b>adjoint sensitivity approach</b> computes
+
+ \verbatim
+    D(g_hat)/D(p)^T =  [D(f)/D(p)]^T * ( - [D(f)/D(x)]^{-T} * [D(g)/D(x)]^T ) + [D(g)/D(p)]^T
+ \endverbatim
+
+ * by first solving the adjoint system 
+
+ \verbatim
+    Lambda = - [D(f)/D(x)]^{-T} * [D(g)/D(x)]^T
+ \endverbatim
+
+ * for the multivector <tt>Lambda</tt> and then computes
+
+ \verbatim
+    D(g_hat)/D(p)^T =  [D(f)/D(p)]^T * Lambda + [D(g)/D(p)]^T.
+ \endverbatim
+
+ * In this case, <tt>[D(g)/D(x)]^T</tt> is needed as an explicit multivector
+ * since it forms the RHS for the linear adjoint equations.  Also, only the
+ * adjoint operator application[D(f)/D(p)]^T is needed.  And in this case, the
+ * multivector form of the adjoint <tt>[D(g)/D(p)]^T</tt> is required.
+ *
+
+
+
+
+
+
+ * As demonstrated above, general derivative objects (e.g. <tt>D(f)/D(p)</tt>,
+ * <tt>D(g)/D(x)</tt>, and <tt>D(g)/D(p)</tt>) may be needed as either only a
+ * linear operator (where it's forward or adjoint application is required) or
+ * as a multivector for its forward or adjoint forms.  A derivative
+ * <tt>D(h)/D(z)</tt> for some function <tt>h(z)</tt> can be supported in any
+ * of the following forms:
  *
  * <ul>
  *
- * <li><b>State function derivatives</b>
+ * <li> <tt><b>D(h)/D(z)</b></tt> as a <tt>LinearOpBase</tt> object where the
+ * forward and/or adjoint operator applications are supported
+ *
+ * <li> <tt><b>D(h)/D(z)</b></tt> as a <tt>MultiVectorBase</tt> object where
+ * each column in the multivector <tt>i</tt> represents <tt>D(h)/D(z(i))</tt>,
+ * the derivatives for all of the functions <tt>h</tt> for the single variable
+ * <tt>z(i)</tt>
+ *
+ * <li> <tt><b>[D(h)/D(z)]^T</b></tt> as a <tt>MultiVectorBase</tt> object
+ * where each column in the multivector <tt>k</tt> represents
+ * <tt>[D(h(k))/D(z)]^T</tt>, the derivatives for the function <tt>h(k)</tt>
+ * for all of the variables <tt>z</tt>
+ *
+ * </ul>
+ *
+ * A model can sign up to compute any, or all, or none of these forms of a
+ * derivative and this information is returned from
+ * <tt>this->createOutArgs().supports(OUT_ARG_blah,...)</tt> as a
+ * <tt>ModelEvaluatorBase::DerivativeSupport</tt> object, where <tt>blah</tt>
+ * is either <tt>DfDp</tt>, <tt>DgDx</tt>, or <tt>DgDp</tt>.  The
+ * <tt>LinearOpBase</tt> form of a derivative is supported if
+ * <tt>this->createOutArgs().supports(OUT_ARG_blah,...).supports(DERIV_LINEAR_OP)==true</tt>.
+ * The forward <tt>MultiVectorBase</tt> form of the derivative is supported if
+ * <tt>this->createOutArgs().supports(OUT_ARG_blah,...).supports(DERIV_MV_BY_COL)==true</tt>
+ * while the adjoint form of the derivative is supported if
+ * <tt>this->createOutArgs().supports(OUT_ARG_blah,...).supports(DERIV_TRANS_MV_BY_ROW)==true</tt>.
+ * 
+ * In order to accommodate these different forms of a derivative, the simple
+ * class <tt>ModelEvaluatorBase::Derivative</tt> is defined that can store
+ * either a <tt>LinearOpBase</tt> or one of two <tt>MultiVectorBase</tt> forms
+ * (i.e. forward or adjoint) of the derivative.  A
+ * <tt>%ModelEvaluatorBase::%Derivative</tt> object can only store one (or
+ * zero) forms of a derivative object at one time.
+ *
+ * We now describe each of these derivative objects in more detail:
+ *
+ * <ul>
+ *
+ * <li><b>State function <tt>f(x_dot,x,{p(l)},t,...)</tt> derivatives</b>
  *
  *     <ul>
  *     
  *     <li><b>State variable derivatives</b>
+
+       \verbatim
+       W = alpha*D(f)/D(x_dot) + beta*D(f)/D(x)
+       \endverbatim
+
+ *     This derivative operator is a special object that is derived from the
+ *     <tt>LinearOpWithSolveBase</tt> interface and therefore supports linear
+ *     solves.  Objects of this type are created with the function
+ *     <tt>create_W()</tt> and set on the <tt>InArgs</tt> object before they
+ *     are computed in <tt>evalModel()</tt>.  Note that if the model does not
+ *     define or support an <tt>x_dot</tt> vector then the scalars
+ *     <tt>alpha</tt> and <tt>beta</tt> need not be supported.
  *
- *     <tt>W = alpha*D(f)/D(x_dot) + beta*D(f)/D(x)</tt>
- *
- *     This is derivative operator is a special object that is derived from
- *     the <tt>LinearOpWithSolveBase</tt> interface and therefore supports
- *     linear solves.  Objects of this type are created with the function
- *     <tt>create_W()</tt> before they are computed in <tt>evalModel()</tt>.
+ *     The <tt>LinearOpWithSolveBase</tt> form of this derivative is supported
+ *     if <tt>this->createOutArgs().supports(OUT_ARG_W)==true</tt>.  The
+ *     <tt>LinearOpBase</tt>-only form of this derivative is supported if
+ *     <tt>this->createOutArgs().supports(OUT_ARG_W_op)==true</tt>
  *
  *     <li><b>State variable Taylor coefficients</b>
  *
@@ -264,22 +427,109 @@ namespace Thyra {
  *     differentiation, but this is generally the only means of doing so.
  *     
  *     <li><b>Auxiliary parameter derivatives</b>
- *
- *     <tt>DfDp(l) = D(f)/D(p(l))</tt>, for <tt>l=0...Np-1</tt>
- *
+
+       \verbatim
+       DfDp(l) = D(f)/D(p(l))
+       \endverbatim
+
+ *     for <tt>l=0...Np-1</tt>.
+
  *     These are derivative objects that represent the derivative of the state
  *     function <tt>f</tt> with respect to the auxiliary parameters
- *     <tt>p(l)</tt>.  This object can either be represented and manipulated
- *     in a very abstract fashion through the <tt>LinearOpBase</tt> interface
- *     interface or as a multi-vector object.
+ *     <tt>p(l)</tt>.  This derivative is manipulated as a
+ *     <tt>ModelEvaluatorBase::Derivative</tt> object.
  *
  *     </ul>
  *
- * <li><b>Auxiliary response function derivatives</b>
+ * <li><b>Auxiliary response function <tt>g(j)(x,{p(l)},t,...)</tt> derivatives</b>
+ *
+ *     <ul>
+ *     
+ *     <li><b>State variable derivatives</b>
+ 
+       \verbatim
+       DgDx(j) = D(g(j))/D(x)
+       \endverbatim
+ 
+ *     for <tt>j=0...Ng-1</tt>.
+ *
+ *     These are derivative objects that represent the derivative of the
+ *     axillary function <tt>g(j)</tt> with respect to the state variables
+ *     <tt>x</tt>.  This derivative is manipulated as a
+ *     <tt>ModelEvaluatorBase::Derivative</tt> object.
+ *     
+ *     <li><b>Auxiliary parameter derivatives</b>
+ *
+       \verbatim
+       DgDp(j,l) = D(g(j))/D(p(l))
+       \endverbatim
+
+ *     for <tt>j=0...Ng-1</tt>, <tt>l=0...Np-1</tt>.
+ *
+ *     These are derivative objects that represent the derivative of the
+ *     axillary function <tt>g(j)</tt> with respect to the auxiliary
+ *     parameters <tt>p(l)</tt>.  This derivative is manipulated as a
+ *     <tt>ModelEvaluatorBase::Derivative</tt> object.
+ *
+ *     </ul>
  *
  * </ul>
  *
- * \section Thyra_ME_dev_notes_sec Notes to subclass devleopers
+ * \section Thyra_ME_nominal_values_sec Nominal values
+ *
+ * A model can optionally define a nominal value for any of the input
+ * arguments and these are returned from the <tt>getNominalValues()</tt>
+ * function as a <tt>const ModelEvaluatorBase::InArgs</tt> object.  These
+ * nominal values can be used as initial guesses, as typical values (e.g. for
+ * scaling), or for other purposes.  See <tt>evalModel()</tt> a discussion of
+ * how nonminal values are treated in an evaluation where the client does not
+ * pass in the values explicitly.
+ *
+ * \section Thyra_ME_bounds_sec Variable and Function Bounds
+ *
+ * A model can optionally define a set of upper and/or lower bounds for each
+ * of the input variables/parameters.  These bounds are returned as
+ * <tt>const</tt> <tt>ModelEvaluatorBase::InArgs</tt> objects from the
+ * functions <tt>getLowerBounds()</tt> and <tt>getUpperBounds()</tt>.  These
+ * bounds are typically used to define regions in space where the model
+ * functions are well defined.  A client algorithm is free to ignore these
+ * bounds if they can not handle these types of constraints.
+ *
+ * That fact that a model can defined reasonable bounds but most numerical
+ * algorithms can not handle bounds is no reason to leave bounds out of this
+ * interface.  Again, if the client algorithm can not handle bounds then then
+ * can be simply ignored and there is not harm done (except the client
+ * algorithm might run into lots of trouble computing functions with undefined
+ * values)..
+ *
+ * \section Thyra_ME_checking_sec Compile-Time and Run-Time Safety and Checking
+ *
+ * The <tt>%ModelEvaluator</tt> interface is designed to allow for great
+ * flexibility in how models are defined.  The idea is that, at runtime, a
+ * model can decide what input and output arguments it will support and client
+ * algorithms must decide how to interpret what the model provides in order to
+ * form an abstract problem to solve.  As a result, the
+ * <tt>%ModelEvaluator</tt> interface is weakly typed mathematically.
+ * However, the interface is strongly typed in terms of the types of objects
+ * involved.  For example, while a single <tt>%ModelEvaluator</tt> object can
+ * represent anything and everything from a set of nonlinear equations to a
+ * full-blown constrained transient optimization problem, if the state vector
+ * <tt>x</tt> is supported, it must be manipulated as a <tt>VectorBase</tt>
+ * object, and this is checked at comple time.
+ *
+ * In order for highly dynamically configurable software to be safe and
+ * usable, a great deal of runtime checking and good error reporting is
+ * required.  Practically all of the runtime checking and error reporting work
+ * associated with a <tt>%ModelEvaluator</tt> object is handled by the
+ * concrete <tt>ModelEvaluatorBase::InArgs</tt> and
+ * <tt>ModelEvaluatorBase::OutArgs</tt> classes.  Once a concrete
+ * <tt>%ModelEvaluator</tt> object has setup what input and output arguments
+ * the model supports, as returned by the <tt>createInArgs()</tt> and
+ * <tt>createOutArgs()</tt> functions, all runtime checking for the proper
+ * setting of input and output arguments and error reporting is automatically
+ * handled.
+ *
+ * \section Thyra_ME_dev_notes_sec Notes to subclass developers
  *
  * Subclass developers should consider deriving from either
  * <tt>StateFuncModelEvaluatorBase</tt> or
@@ -299,7 +549,7 @@ public:
   /** \brief . */
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
 
-  /** \name Basic inforamtion */
+  /** \name Basic information */
   //@{
 
   /** \brief Return the number of sets of auxiliary parameters.
@@ -359,16 +609,33 @@ public:
   /** \name Initial guess and upper and lower bounds */
   //@{
   
-  /** \brief Return the set of nominal values or initial guesses for the input
-   * arguments.
+  /** \brief Return the set of nominal values or initial guesses for the
+   * supported the input arguments.
+   *
+   * In most cases, when a supported input argument is not specified in an
+   * <tt>InArgs</tt> object passed to <tt>evalModel()</tt>, the nominal value
+   * is assumed (see <tt>evalModel()</tt> for more details).
+   *
+   * A model does not have to return nominal values for every supported input
+   * argument.  Therefore, just because
+   * <tt>returnVal.supports(IN_ARG_blah)==true</tt>, the client should not
+   * assume that <tt>returnVal.get_blah()!=null</tt>.
    */
   virtual ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const = 0;
   
   /** \brief Return the set of lower bounds for the input arguments.
+   *
+   * It is not required for the client to supply lower bounds for every input
+   * argument.  If a lower bound object for an input argument is null, then
+   * the bounds of negative infinity should be assumed by the client.
    */
   virtual ModelEvaluatorBase::InArgs<Scalar> getLowerBounds() const = 0;
   
   /** \brief Return the set of upper bounds for the input arguments.
+   *
+   * It is not required for the client to supply upper bounds for every input
+   * argument.  If an upper bound object for an input argument is null, then
+   * the bounds of positive infinity should be assumed by the client.
    */
   virtual ModelEvaluatorBase::InArgs<Scalar> getUpperBounds() const = 0;
 
@@ -440,13 +707,77 @@ public:
   /** \name Computational functions */
   //@{
 
-  /** \brief . */
+  /** \brief Create an empty input arguments object that can be set up and
+   * passed to <tt>evalModel()</tt>.
+   *
+   * <b>Postconditions:</b><ul>
+   * <li><tt>returnVal.supports(IN_ARG_blah)</tt> gives the variables that are
+   * supported or not supported by the underlying model.
+   * <li><tt>returnVal.get_blah(...)==null</tt> for all variables/parameters
+   * that are supported.
+   * </ul>
+   * 
+   */
   virtual ModelEvaluatorBase::InArgs<Scalar> createInArgs() const = 0;
 
-  /** \brief . */
+  /** \brief Create an empty output functions/derivatives object that can be
+   * set up and passed to <tt>evalModel()</tt>.
+   *
+   * <b>Postconditions:</b><ul>
+   * <li><tt>returnVal.supports(OUT_ARG_blah...)</tt> gives the functions/derivatives that
+   * are supported or not supported by the underlying model.
+   * <li><tt>returnVal.get_blah(...) == null</tt> for all functions/derivatives
+   * that are supported.
+   * </ul>
+   *
+   */
   virtual ModelEvaluatorBase::OutArgs<Scalar> createOutArgs() const = 0;
 
-  /** \brief . */
+  /** \brief Compute all of the requested functions/derivatives at the given
+   * point.
+   *
+   * \param  inArgs
+   *           [in] Gives the values of the input variables and parameters
+   *           that are supported by the model.  This object must have been
+   *           initially created by <tt>this->createInArgs()</tt> before being
+   *           set up by the client.  All supported variables/parameters that
+   *           are not set by the client
+   *           (i.e. <tt>inArgs.get_blah(...)==null</tt>) are assumed to be at
+   *           the nominal value.  If a particular input variable/parameter is
+   *           not set and does not have a nominal value
+   *           (i.e. <tt>this->getNominalValues().get_blah(...)==null</tt>,
+   *           then the evaluation is undefined and an exception should be
+   *           thrown by a good implementation.  The one exception this rule
+   *           is support for <tt>x_dot</tt>.  If <tt>x_dot</tt> is supported
+   *           but not specified in <tt>inArgs</tt>, then it is implicitly
+   *           assumed to be zero.
+   * \param  outArgs
+   *           [out] Gives the objects for the supported functions and
+   *           derivatives that are to be computed at the given point.  This
+   *           object must have been created by <tt>this->createOutArgs()</tt>
+   *           before being set up by the client.  Only functions and
+   *           derivatives that are set will be computed.
+   *
+   * <b>Preconditions:</b><ul>
+   * <li><tt>this->createInArgs().isCompatible(inArgs)==true</tt>
+   * <li><tt>this->creatOutnArgs().isCompatible(outArgs)==true</tt>
+   * <li>[<tt>inArgs.supports(IN_ARG_blah)==true</tt>] <tt>inArgs.get_blah(...)!=null
+   * || this->getNominalValues().get_blah(...)!=null</tt>.
+   * <li><tt>inArgs.get_p(l)!=null ||
+   * this->getNominalValues().get_pl(l)!=null</tt>, for
+   * <tt>l=0...inArgs.Np()-1</tt>.
+   * </ul>
+   *
+   * This function is the real meat of the <tt>%ModelEvaluator</tt> interface.
+   * A whole set of supported functions and/or their various supported
+   * derivatives are computed in one shot at a given point (i.e. set of values
+   * for input variables and parameters).  This allows a model to be
+   * stateless in the sense that, in general, a model's behavior is assumed to
+   * be unaffected by evaluations at previous points.  This greatly simplifies
+   * software maintenance and makes data dependences explicit.
+   *
+   * TODO: Define behavior for state-full models!
+   */
   virtual void evalModel(
     const ModelEvaluatorBase::InArgs<Scalar>       &inArgs
     ,const ModelEvaluatorBase::OutArgs<Scalar>     &outArgs
@@ -461,7 +792,7 @@ public:
    * solved or not.
    *
    * ToDo: Add a PL to InArgs to allow extra data like Lagrange multipliers to
-   * be passed back as well.
+   * be passed back as well?
    */
   virtual void reportFinalPoint(
     const ModelEvaluatorBase::InArgs<Scalar>      &finalPoint
