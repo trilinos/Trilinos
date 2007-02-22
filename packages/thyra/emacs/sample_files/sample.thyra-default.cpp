@@ -110,7 +110,7 @@ void NamespaceA::func1( int a, int b, int c,
         aa = 6.0;
         break;
       default:
-        TEST_FOR_EXCEPT(!"Should never get here!");
+        TEST_FOR_EXCEPT("Should never get here!");
     }
 
     // For control statements that extend over one line, use "unindented
