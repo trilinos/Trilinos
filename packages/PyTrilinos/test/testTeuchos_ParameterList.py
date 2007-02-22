@@ -104,7 +104,7 @@ class ParameterListTestCase(unittest.TestCase):
              "s" : "New Mexico",
              1   : "Should fail"
              }
-        self.assertRaises(ValueError, Teuchos.ParameterList, d)
+        self.assertRaises(TypeError, Teuchos.ParameterList, d)
 
     def testConstructor5(self):
         "Test Teuchos.ParameterList dictionary constructor, bad value"

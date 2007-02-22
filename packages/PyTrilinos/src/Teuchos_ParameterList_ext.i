@@ -46,11 +46,10 @@ namespace Teuchos {
     /******************************************************************/
     // Dictionary constructor
     ParameterList(PyObject * dict, string name = string("ANONYMOUS")) {
-      Teuchos::ParameterList * plist = Teuchos::pyDictToNewParameterList(dict);
-      if (plist == NULL) {
-	PyErr_SetString(PyExc_ValueError, "Invalid dictionary in ParameterList constructor");
-	goto fail;
-      }
+      Teuchos::ParameterList * plist = Teuchos::pyDictToNewParameterList(dict,
+									 Teuchos::raiseError);
+      if (plist == NULL) goto fail;
+
       plist->setName(name);
       return plist;
     fail:
@@ -190,24 +189,36 @@ namespace Teuchos {
     /******************************************************************/
     // Comparison operators
     int __cmp__(PyObject * obj) const {
-      PyObject * dict = Teuchos::parameterListToNewPyDict(*self);
+      PyObject * dict = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
+      if (dict == NULL) goto fail;
       int result = PyObject_Compare(dict,obj);
       Py_DECREF(dict);
       return result;
+    fail:
+      Py_XDECREF(dict);
+      return -2;
     }
+
     int __cmp__(const ParameterList & plist) const {
-      PyObject * dict1 = Teuchos::parameterListToNewPyDict(*self);
-      PyObject * dict2 = Teuchos::parameterListToNewPyDict(plist);
+      PyObject * dict1 = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
+      PyObject * dict2 = Teuchos::parameterListToNewPyDict(plist,Teuchos::ignore);
+      if (dict1 == NULL) goto fail;
+      if (dict2 == NULL) goto fail;
       int result = PyObject_Compare(dict1,dict2);
       Py_DECREF(dict1);
       Py_DECREF(dict2);
       return result;
+    fail:
+      Py_XDECREF(dict1);
+      Py_XDECREF(dict2);
+      return -2;
     }
     
     /******************************************************************/
     // Contains operator
     int __contains__(const string & name) const {
-      PyObject * dict = Teuchos::parameterListToNewPyDict(*self);
+      PyObject * dict = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
+      if (dict == NULL) goto fail;
       // There is a simpler form in python 2.4, but this should be
       // backward-compatible
       PyObject * keys   = PyDict_Keys(dict);
@@ -217,23 +228,36 @@ namespace Teuchos {
       Py_DECREF(keys  );
       Py_DECREF(keyStr);
       return result;
+    fail:
+      Py_XDECREF(dict);
+      return NULL;
     }
 
     /******************************************************************/
     // Equals operators
     PyObject * __eq__(PyObject * obj) const {
-      PyObject * dict   = Teuchos::parameterListToNewPyDict(*self);
+      PyObject * dict   = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
+      if (dict == NULL) goto fail;
       PyObject * result = PyObject_RichCompare(dict,obj,Py_EQ);
       Py_DECREF(dict);
       return result;
+    fail:
+      return NULL;
     }
+
     PyObject * __eq__(const ParameterList & plist) const {
-      PyObject * dict1  = Teuchos::parameterListToNewPyDict(*self);
-      PyObject * dict2  = Teuchos::parameterListToNewPyDict(plist);
+      PyObject * dict1  = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
+      PyObject * dict2  = Teuchos::parameterListToNewPyDict(plist,Teuchos::ignore);
+      if (dict1 == NULL) goto fail;
+      if (dict2 == NULL) goto fail;
       PyObject * result = PyObject_RichCompare(dict1,dict2,Py_EQ);
       Py_DECREF(dict1);
       Py_DECREF(dict2);
       return result;
+    fail:
+      Py_XDECREF(dict1);
+      Py_XDECREF(dict2);
+      return NULL;
     }
 
     /******************************************************************/
@@ -246,36 +270,52 @@ namespace Teuchos {
     /******************************************************************/
     // __iter__ method
     PyObject * __iter__() const {
-      PyObject * dict = Teuchos::parameterListToNewPyDict(*self);
+      PyObject * dict = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
+      if (dict == NULL) goto fail;
       PyObject * iter = PyObject_GetIter(PyDict_Keys(dict));
       Py_DECREF(dict);
       return iter;
+    fail:
+      return NULL;
     }
 
     /******************************************************************/
     // Length operator
     int __len__() const {
-      PyObject * dict = Teuchos::parameterListToNewPyDict(*self);
+      PyObject * dict = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
+      if (dict == NULL) goto fail;
       int len = PyDict_Size(dict);
       Py_DECREF(dict);
       return len;
+    fail:
+      return -1;
     }
 
     /******************************************************************/
     // Not equals operators
     PyObject * __ne__(PyObject * obj) const {
-      PyObject * dict   = Teuchos::parameterListToNewPyDict(*self);
+      PyObject * dict   = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
+      if (dict == NULL) goto fail;
       PyObject * result = PyObject_RichCompare(dict,obj,Py_NE);
       Py_DECREF(dict);
       return result;
+    fail:
+      return NULL;
     }
+
     PyObject * __ne__(const ParameterList & plist) const {
-      PyObject * dict1  = Teuchos::parameterListToNewPyDict(*self);
-      PyObject * dict2  = Teuchos::parameterListToNewPyDict(plist);
+      PyObject * dict1  = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
+      PyObject * dict2  = Teuchos::parameterListToNewPyDict(plist,Teuchos::ignore);
+      if (dict1 == NULL) goto fail;
+      if (dict2 == NULL) goto fail;
       PyObject * result = PyObject_RichCompare(dict1,dict2,Py_NE);
       Py_DECREF(dict1);
       Py_DECREF(dict2);
       return result;
+    fail:
+      Py_XDECREF(dict1);
+      Py_XDECREF(dict2);
+      return NULL;
     }
 
     /******************************************************************/
@@ -288,30 +328,39 @@ namespace Teuchos {
     /******************************************************************/
     // String representation method
     PyObject * __repr__() const {
-      PyObject * dict    = Teuchos::parameterListToNewPyDict(*self);
+      string reprStr;
+      PyObject * dict    = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
+      if (dict == NULL) goto fail;
       PyObject * dictStr = PyObject_Str(dict);
-      string     reprStr = string("ParameterList(") + 
-                           string(PyString_AsString(dictStr)) +
-	                   string(")");
+      reprStr = string("ParameterList(") + 
+	        string(PyString_AsString(dictStr)) +
+	        string(")");
       PyObject * result = PyString_FromString(reprStr.c_str());
       Py_DECREF(dict   );
       Py_DECREF(dictStr);
       return result;
+    fail:
+      Py_XDECREF(dict);
+      return NULL;
     }
 
     /******************************************************************/
     // String conversion method
     PyObject * __str__() const {
-      PyObject * dict = Teuchos::parameterListToNewPyDict(*self);
+      PyObject * dict = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
+      if (dict == NULL) goto fail;
       PyObject * str  = PyObject_Str(dict);
       Py_DECREF(dict);
       return str;
+    fail:
+      return NULL;
     }
 
     /******************************************************************/
     // Has_key method
     int has_key(const string & name) const {
-      PyObject * dict = Teuchos::parameterListToNewPyDict(*self);
+      PyObject * dict = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
+      if (dict == NULL) goto fail;
       // There is a simpler form in python 2.4, but this should be
       // backward-compatible
       PyObject * keys   = PyDict_Keys(dict);
@@ -321,60 +370,79 @@ namespace Teuchos {
       Py_DECREF(keys  );
       Py_DECREF(keyStr);
       return result;
+    fail:
+      return -2;
     }
 
     /******************************************************************/
     // Items method
     PyObject * items() const {
-      PyObject * dict   = Teuchos::parameterListToNewPyDict(*self);
+      PyObject * dict   = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
+      if (dict == NULL) goto fail;
       PyObject * result = PyDict_Items(dict);
       Py_DECREF(dict);
       return result;
+    fail:
+      return NULL;
     }
 
     /******************************************************************/
     // Iteritems method
     PyObject * iteritems() const {
-      PyObject * dict   = Teuchos::parameterListToNewPyDict(*self);
+      PyObject * dict   = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
+      if (dict == NULL) goto fail;
       PyObject * result = PyObject_GetIter(PyDict_Items(dict));
       Py_DECREF(dict);
       return result;
+    fail:
+      return NULL;
     }
 
     /******************************************************************/
     // Iterkeys method
     PyObject * iterkeys() const {
-      PyObject * dict   = Teuchos::parameterListToNewPyDict(*self);
+      PyObject * dict   = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
+      if (dict == NULL) goto fail;
       PyObject * result = PyObject_GetIter(PyDict_Keys(dict));
       Py_DECREF(dict);
       return result;
+    fail:
+      return NULL;
     }
 
     /******************************************************************/
     // Itervalues method
     PyObject * itervalues() const {
-      PyObject * dict   = Teuchos::parameterListToNewPyDict(*self);
+      PyObject * dict   = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
+      if (dict == NULL) goto fail;
       PyObject * result = PyObject_GetIter(PyDict_Values(dict));
       Py_DECREF(dict);
       return result;
+    fail:
+      return NULL;
     }
 
     /******************************************************************/
     // Keys method
     PyObject * keys() const {
-      PyObject * dict   = Teuchos::parameterListToNewPyDict(*self);
+      PyObject * dict   = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
+      if (dict == NULL) goto fail;
       PyObject * result = PyDict_Keys(dict);
       Py_DECREF(dict);
       return result;
+    fail:
+      return NULL;
     }
 
     /******************************************************************/
     // Update methods
-    void update(PyObject * dict) {
-      if (!updateParameterListWithPyDict(dict,*self)) {
-	PyErr_SetString(PyExc_ValueError, "Invalid ParameterList python dictionary");
-      }
+    void update(PyObject * dict, bool strict=true) {
+      Teuchos::ResponseToIllegalParameters flag;
+      if (strict) flag = Teuchos::raiseError;
+      else        flag = Teuchos::storeNames;
+      updateParameterListWithPyDict(dict,*self,flag);
     }
+
     void update(const ParameterList & plist) {
       self->setParameters(plist);
     }
@@ -382,17 +450,20 @@ namespace Teuchos {
     /******************************************************************/
     // Values method
     PyObject * values() const {
-      PyObject * dict   = Teuchos::parameterListToNewPyDict(*self);
+      PyObject * dict   = Teuchos::parameterListToNewPyDict(*self,Teuchos::ignore);
+      if (dict == NULL) goto fail;
       PyObject * result = PyDict_Values(dict);
       Py_DECREF(dict);
       return result;
+    fail:
+      return NULL;
     }
 
     /******************************************************************/
     // AsDict method: return a dictionary equivalent to the
     // ParameterList
     PyObject * asDict() const {
-      return Teuchos::parameterListToNewPyDict(*self);
+      return Teuchos::parameterListToNewPyDict(*self,Teuchos::storeNames);
     }
 
   }    // %extend ParameterList

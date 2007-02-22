@@ -62,8 +62,21 @@
 
 namespace Teuchos {
 
+  // ****************************************************************** //
+
+  // The following enumeration is used as an optional flag in certain
+  // routines to indicate how the routine is supposed to react to
+  // illegal parameters.
+
+  enum ResponseToIllegalParameters {raiseError,
+				    ignore,
+				    storeNames };
+
+  // ****************************************************************** //
+
   // Forward declaration
-  ParameterList * pyDictToNewParameterList(PyObject *);
+  ParameterList * pyDictToNewParameterList(PyObject * dict,
+					   ResponseToIllegalParameters flag=raiseError);
 
   // ****************************************************************** //
 
@@ -273,7 +286,9 @@ namespace Teuchos {
   // dictionary, or any of the ParameterList entries are of
   // unsupported type, the function returns false.
 
-  bool updatePyDictWithParameterList(PyObject * dict, const ParameterList & plist) {
+  bool updatePyDictWithParameterList(PyObject * dict, const ParameterList & plist,
+				     ResponseToIllegalParameters flag=raiseError) {
+    static char  illegalParam[ ] = "Illegal Parameters";
     PyObject   * value   = NULL;
     PyObject   * param   = NULL;
     bool         result  = true;
@@ -281,7 +296,10 @@ namespace Teuchos {
     string       name;
 
     // The dict pointer must point to a dictionary
-    if (!PyDict_Check(dict)) return false;
+    if (!PyDict_Check(dict)) {
+      PyErr_SetString(PyExc_TypeError, "Expected a dictionary");
+      goto fail;
+    }
 
     // Iterate over all entries in ParameterList and ensure they are
     // mirrored in the python dictionary
@@ -291,8 +309,35 @@ namespace Teuchos {
       param   = getPythonParameter(plist,nameStr);
       value   = PyDict_GetItemString(dict,nameStr);
 
-      // If param is NULL, then we don't support the conversion
-      if (param == NULL) result = false;
+      // If param is NULL, then behavior is determined by flag
+      if (param == NULL) {
+	switch (flag) {
+	case ignore:
+	  break;
+	case storeNames:
+	  result = false;
+	  value = PyDict_GetItemString(dict, illegalParam);
+	  if (value == NULL) {
+	    PyDict_SetItemString(dict, illegalParam, Py_BuildValue("(s)", nameStr));
+	  }
+	  else {
+	    if (!PyTuple_Check(value)) {
+	      PyErr_Format(PyExc_ValueError, "Parameter '%s' has unexpected type",
+			   illegalParam);
+	      goto fail;
+	    }
+	    PyDict_SetItemString(dict, illegalParam,
+				 PySequence_Concat(value, Py_BuildValue("(s)", nameStr)));
+	  }
+	  break;
+	case raiseError:
+	  PyErr_Format(PyExc_ValueError, "Parameter '%s' is of unsupported type", nameStr);
+	  goto fail;
+	default:
+	  PyErr_Format(PyExc_RuntimeError, "Unexpected enumeration encountered");
+	  goto fail;
+	}
+      }
       else {
 
 	// If param is a sublist, mirror with a dictionary by calling
@@ -314,6 +359,8 @@ namespace Teuchos {
       Py_XDECREF(param);
     }
     return result;
+  fail:
+    return false;
   }    // updatePyDictWithParameterList
 
   // **************************************************************** //
@@ -325,28 +372,69 @@ namespace Teuchos {
   // if any of the dictionary values are of unsupported type, then the
   // function returns false.
 
-  bool updateParameterListWithPyDict(PyObject * dict, ParameterList & plist) {
-    PyObject * key     = NULL;
-    PyObject * value   = NULL;
-    Py_ssize_t pos     = 0;
-    bool       result  = true;
-    string     name;
+  bool updateParameterListWithPyDict(PyObject * dict, ParameterList & plist,
+				     ResponseToIllegalParameters flag=raiseError) {
+    static char illegalKey[ ] = "Illegal Keys";
+    PyObject *  key    = NULL;
+    PyObject *  value  = NULL;
+    Py_ssize_t  pos    = 0;
+    bool        result = true;
+    string      name;
 
     // The dict pointer must point to a dictionary
-    if (!PyDict_Check(dict)) return false;
+    if (!PyDict_Check(dict)) {
+      PyErr_SetString(PyExc_TypeError, "Expected a dictionary");
+      goto fail;
+    }
 
     // Iterate over all items in the python dictionary and ensure they
     // are synchronized with the ParameterList
     while (PyDict_Next(dict, &pos, &key, &value)) {
 
       // If the key is not a string, we can't synchronize
-      if (!PyString_Check(key)) result = false;
-      else {
-	name = string(PyString_AsString(key));
-	result = result and setPythonParameter(plist, name, value);
+      if (!PyString_Check(key)) {
+	PyErr_SetString(PyExc_TypeError, "Encountered non-string key in dictionary");
+	goto fail;
+      }
+
+      name = string(PyString_AsString(key));
+      if (!setPythonParameter(plist, name, value)) {
+
+	// If value is not settable, behavior is determined by flag
+	switch (flag) {
+	case ignore:
+	  break;
+	case storeNames:
+	  result = false;
+	  if (plist.isParameter(illegalKey)) {
+	    const ParameterEntry * entry = plist.getEntryPtr(name);
+	    if (entry->isType<string>()) {
+	      string names = any_cast<string>(entry->getAny(false));
+	      plist.set(illegalKey, names + string(", ") + name);
+	    }
+	    else {
+	      PyErr_Format(PyExc_TypeError, "Parameter '%s' has unexpected type",
+			   illegalKey);
+	      goto fail;
+	    }
+	  }
+	  else {
+	    plist.set(illegalKey, name);
+	  }
+	  break;
+	case raiseError:
+	  PyErr_Format(PyExc_ValueError, "Parameter '%s' has unsupported value",
+		       illegalKey);
+	  goto fail;
+	default:
+	  PyErr_Format(PyExc_RuntimeError, "Unexpected enumeration encountered");
+	  goto fail;
+	}
       }
     }
     return result;
+  fail:
+    return false;
   }    // updateParameterListWithPyDict
 
   // **************************************************************** //
@@ -359,10 +447,11 @@ namespace Teuchos {
   // dictionary or the ParameterList or python dictionary had at least
   // one value of an unsupported type.
 
-  bool synchronizeParameters(PyObject * dict, ParameterList & plist) {
+  bool synchronizeParameters(PyObject * dict, ParameterList & plist,
+			     ResponseToIllegalParameters flag=raiseError) {
     bool result = true;
-    result = result and updatePyDictWithParameterList(dict,plist);
-    result = result and updateParameterListWithPyDict(dict,plist);
+    result = result && updatePyDictWithParameterList(dict,plist,flag);
+    result = result && updateParameterListWithPyDict(dict,plist,flag);
     return result;
   }    // synchronizeParameters
 
@@ -374,19 +463,36 @@ namespace Teuchos {
   // not a valid dictionary (non-string keys or unsupported value
   // types) then the function returns NULL.
 
-  ParameterList * pyDictToNewParameterList(PyObject * dict) {
+  ParameterList * pyDictToNewParameterList(PyObject * dict,
+					   ResponseToIllegalParameters flag) {
 
     // The dict pointer must point to a dictionary
-    if (!PyDict_Check(dict)) return NULL;
+    if (!PyDict_Check(dict)) {
+      PyErr_SetString(PyExc_ValueError, "Expected a dictionary");
+      goto fail;
+    }
 
     // Create a new ParameterList and synchronize it with the python
     // dictionary
     ParameterList * plist = new ParameterList();
-    if (!updateParameterListWithPyDict(dict,*plist)) {
-      delete plist;
-      plist = NULL;
+    if (!updateParameterListWithPyDict(dict,*plist,flag)) {
+
+      // If update failed, behavior is determined by flag
+      switch (flag) {
+      case ignore:
+      case storeNames:
+	break;
+      case raiseError:
+	delete plist;
+	goto fail;
+      default:
+	delete plist;
+	goto fail;
+      }
     }
     return plist;
+  fail:
+    return NULL;
   }    // pyDictToNewParameterList
 
   // **************************************************************** //
@@ -396,16 +502,27 @@ namespace Teuchos {
   // python dictionary.  If the ParameterList contains entries of
   // invalid type, then a python error is raised and NULL is returned.
 
-  PyObject * parameterListToNewPyDict(const ParameterList & plist) {
+  PyObject * parameterListToNewPyDict(const ParameterList & plist,
+				      ResponseToIllegalParameters flag=raiseError) {
     
     // Create a new dictionary and synchronize it with the ParameterList
     PyObject * dict = PyDict_New();
     if (!updatePyDictWithParameterList(dict,plist)) {
-      PyErr_SetString(PyExc_ValueError, "ParameterList has values of unsupported type");
-      Py_DECREF(dict);
-      dict = NULL;
+
+      // If update failed, behavior is determined by flag
+      switch (flag) {
+      case ignore:
+      case storeNames:
+	break;
+      case raiseError:
+      default:
+	Py_XDECREF(dict);
+	goto fail;
+      }
     }
     return dict;
+  fail:
+    return NULL;
   }    // parameterListToNewPyDict
 
 }    // namespace Teuchos
