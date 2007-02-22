@@ -70,7 +70,7 @@ namespace Sacado {
       MemPool& operator=(const MemPool&);
 
       //! Allocate a new chunk
-      void grow();
+      inline void grow();
 
     protected:
 
