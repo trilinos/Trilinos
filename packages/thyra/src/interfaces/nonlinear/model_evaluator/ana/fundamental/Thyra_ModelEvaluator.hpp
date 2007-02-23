@@ -1,4 +1,4 @@
-/ @HEADER
+// @HEADER
 // ***********************************************************************
 // 
 //    Thyra: Interfaces and Support for Abstract Numerical Algorithms
