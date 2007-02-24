@@ -211,11 +211,12 @@ except ImportError:
     $result = SWIG_NewPointerObj(npa, ty, 1);
   }
 }
-%typemap(out) array & {
-  numPyArray * npa = new numPyArray(*$1);
-  static swig_type_info *ty = SWIG_TypeQuery("numPyArray *");
-  $result = SWIG_NewPointerObj(npa, ty, 1);
-}
+%apply (array *) {array &}
+//%typemap(out) array & {
+//  numPyArray * npa = new numPyArray(*$1);
+//  static swig_type_info *ty = SWIG_TypeQuery("numPyArray *");
+//  $result = SWIG_NewPointerObj(npa, ty, 1);
+//}
 %enddef
 
 // Define macro for a typemap that converts a reference to a pointer

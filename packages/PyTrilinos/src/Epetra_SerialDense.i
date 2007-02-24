@@ -46,6 +46,11 @@
 #include "Epetra_SerialDenseSVD.h"
 %}
 
+// This feature is turned on for most of the rest of the Epetra
+// wrappers.  However, here it appears to causes errors, so we turn it
+// off.
+%feature("compactdefaultargs", "0");
+
 //////////////
 // Typemaps //
 //////////////
@@ -456,3 +461,5 @@ _Epetra.NumPySerialDenseVector_swigregister(SerialDenseVector)
 //#include "Epetra_SerialSpdDenseSolver.h"
 //%rename(SerialSpdDenseSolver  ) Epetra_SerialSpdDenseSolver;
 //%include "Epetra_SerialSpdDenseSolver.h"
+
+%feature("compactdefaultargs");       // Turn the feature back on

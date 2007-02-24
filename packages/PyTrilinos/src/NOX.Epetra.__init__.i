@@ -159,7 +159,7 @@ using namespace std;
                                          %convertptr_flags)) ? 1 : 0;
 }
 %typemap(freearg) NOX::Epetra::Vector {
-  delete $1;
+  if ($1 != NULL) delete $1;
 }
 
 // Convert NOX::Abstract::Vector return arguments to Epetra.Vectors

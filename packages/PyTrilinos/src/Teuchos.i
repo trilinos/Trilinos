@@ -74,8 +74,9 @@ typedef int Py_ssize_t;
 #endif
 %}
 
-// Auto-documentation feature
+// Global swig features
 %feature("autodoc", "1");
+%feature("compactdefaultargs");
 
 // C++ STL support.  If the wrapped class uses standard template
 // library containers, the following %include wraps the containers

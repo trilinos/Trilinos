@@ -230,6 +230,7 @@ int method(int row, PyObject * values, PyObject * indices) {
 %epetra_exception(Epetra_CrsMatrix, SumIntoMyValues    )
 %epetra_exception(Epetra_CrsMatrix, OptimizeStorage    )
 %epetra_exception(Epetra_CrsMatrix, __setitem__        )
+%feature("compactdefaultargs", "0");  // Turn compact default arguments off: leads to error
 %include "Epetra_CrsMatrix.h"
 %extend Epetra_CrsMatrix {
 
@@ -511,6 +512,7 @@ int method(int row, PyObject * values, PyObject * indices) {
     return NULL;
   }
 }
+%feature("compactdefaultargs");  // Turn compact default arguments back on
 
 ////////////////////////////////
 // Epetra_FECrsMatrix support //

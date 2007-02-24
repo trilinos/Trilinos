@@ -185,6 +185,9 @@ def main():
     myPID   = comm.MyPID()
     numProc = comm.NumProc()
 
+    # Suppress 'Aztec status AZ_loss: loss of precision' messages
+    comm.SetTracebackMode(0)
+
     # Get the number of elements from the command line
     numGlobalElements = options.numelem + 1
     if numGlobalElements < numProc:
@@ -214,8 +217,7 @@ def main():
     nlParams = {"Nonlinear Solver" : "Line Search Based",
                 "Printing"         : {"MyPID"            : myPID,
                                       "Output Precision" : 3,
-                                      "Output Processor" : 0
-                                      },
+                                      "Output Processor" : 0    },
                 "Line Search"      : {"Method" : "Full Step"},
                 "Direction"        : {"Method" : "Newton"},
                 "Newton"           : {"Forcing Term Method" : "Constant"},
@@ -223,7 +225,7 @@ def main():
                                       "Max Iterations"  : 800,
                                       "Tolerance"       : 1e-4,
                                       "Preconditioner"  : "Ifpack",
-                                      "Max Age Of Prec" : 5},
+                                      "Max Age Of Prec" : 5       },
                 #"Solver Options"   : {"Status Test Check Type" : NOX.StatusTest.Complete}
                 }
     printParams = nlParams["Printing"]

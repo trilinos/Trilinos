@@ -94,8 +94,9 @@ IntSerialDenseMatrix classes.
 #include "NumPyImporter.h"
 %}
 
-// Auto-documentation feature
+// Global swig features
 %feature("autodoc", "1");
+%feature("compactdefaultargs");
 
 // SWIG library includes
 using namespace std;

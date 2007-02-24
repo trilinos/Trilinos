@@ -264,7 +264,8 @@ namespace Teuchos {
     // GetItem operator
     PyObject * __getitem__(const string & name) const {
       // I'm using SWIG's mangling scheme here
-      return Teuchos_ParameterList_get__SWIG_0(self,name);
+      // return Teuchos_ParameterList_get__SWIG_0(self,name);
+      return Teuchos_ParameterList_get(self,name);
     }
 
     /******************************************************************/

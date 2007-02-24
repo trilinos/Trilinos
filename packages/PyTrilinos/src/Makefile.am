@@ -94,7 +94,7 @@ all-local: build
 
 # Include swig rules
 include $(top_srcdir)/config/swig.am
-SWIG_DEFINES=
+SWIG_OPTS =
 
 # For the package-enabling macros that follow, I would have preferred
 # all info (interface file names, python proxy file names, wrapper code
@@ -145,7 +145,7 @@ include $(top_builddir)/../aztecoo/Makefile.export.aztecoo
 AZTECOO_INTERFACES = AztecOO.i
 AZTECOO_PROXIES = PyTrilinos/AztecOO.py
 if HAVE_PYTRILINOS_AZTECOO_TEUCHOS
-SWIG_DEFINES+=-DHAVE_AZTECOO_TEUCHOS 
+SWIG_OPTS += -DHAVE_AZTECOO_TEUCHOS 
 endif
 endif
 

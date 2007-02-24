@@ -48,7 +48,7 @@ include $(DEPFILES)
 CLEANFILES = $(DEPDIR)/*.Pi
 
 # Define the SWIGCOMPILE macro
-SWIGCOMPILE = $(SWIG) $(SWIG_PYTHON_OPT) $(SWIG_DEFINES)
+SWIGCOMPILE = $(SWIG) $(SWIG_PYTHON_OPT) $(SWIG_OPTS)
 
 # Wrapper and proxy targets
 %_wrap.cpp: $(srcdir)/%.i
