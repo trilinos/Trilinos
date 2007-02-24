@@ -207,16 +207,10 @@ except ImportError:
   if ($1 == NULL) $result = Py_BuildValue("");
   else {
     numPyArray * npa = new numPyArray(*$1);
-    static swig_type_info *ty = SWIG_TypeQuery("numPyArray *");
-    $result = SWIG_NewPointerObj(npa, ty, 1);
+    $result = SWIG_NewPointerObj(npa, $descriptor(numPyArray*), 1);
   }
 }
 %apply (array *) {array &}
-//%typemap(out) array & {
-//  numPyArray * npa = new numPyArray(*$1);
-//  static swig_type_info *ty = SWIG_TypeQuery("numPyArray *");
-//  $result = SWIG_NewPointerObj(npa, ty, 1);
-//}
 %enddef
 
 // Define macro for a typemap that converts a reference to a pointer
@@ -229,8 +223,7 @@ except ImportError:
 %typemap(argout) ClassName *& {
   PyObject * obj1;
   PyObject * obj2;
-  static swig_type_info * swig_CN_ptr = SWIG_TypeQuery("ClassName *");
-  obj1 = SWIG_NewPointerObj((void*)(*$1), swig_CN_ptr, 1);
+  obj1 = SWIG_NewPointerObj((void*)(*$1), $descriptor(ClassName*), 1);
   if ($result == Py_None) {
     Py_DECREF($result);
     $result = obj1;
@@ -252,9 +245,8 @@ except ImportError:
 %typemap(argout) Epetra_ ## ClassName *& {
   PyObject * obj1;
   PyObject * obj2;
-  static swig_type_info * swig_NP_ptr = SWIG_TypeQuery("Epetra_NumPy" "ClassName *");
   Epetra_NumPy ## ClassName * npa = new Epetra_NumPy ## ClassName(**$1);
-  obj1 = SWIG_NewPointerObj((void*)npa, swig_NP_ptr, 1);
+  obj1 = SWIG_NewPointerObj((void*)npa, $descriptor(Epetra_NumPy ## ClassName*), 1);
   if ($result == Py_None) {
     Py_DECREF($result);
     $result = obj1;

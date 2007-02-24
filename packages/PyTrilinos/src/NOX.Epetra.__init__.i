@@ -164,22 +164,20 @@ using namespace std;
 
 // Convert NOX::Abstract::Vector return arguments to Epetra.Vectors
 %typemap(out) NOX::Abstract::Vector & {
-  static swig_type_info * swig_ENPV_ptr = SWIG_TypeQuery("Epetra_NumPyVector*");
   NOX::Epetra::Vector * nevResult = dynamic_cast<NOX::Epetra::Vector*>($1);
   if (nevResult == NULL) {
     // If we can't upcast, then return the NOX::Abstract::Vector
     $result = SWIG_NewPointerObj((void*)&$1, $descriptor, 1);
   } else {
     Epetra_NumPyVector * enpvResult = new Epetra_NumPyVector(View, nevResult->getEpetraVector(), 0);
-    $result = SWIG_NewPointerObj((void*)enpvResult, swig_ENPV_ptr, 1);
+    $result = SWIG_NewPointerObj((void*)enpvResult, $descriptor(Epetra_NumPyVector*), 1);
   }
 }
 
 // Convert Epetra_Vector return arguments to Epetra.Vectors
 %typemap(out) Epetra_Vector & {
-  static swig_type_info * swig_ENPV_ptr = SWIG_TypeQuery("Epetra_NumPyVector*");
   Epetra_NumPyVector * enpvResult = new Epetra_NumPyVector(View, *$1, 0);
-  $result = SWIG_NewPointerObj((void*)enpvResult, swig_ENPV_ptr, 1);
+  $result = SWIG_NewPointerObj((void*)enpvResult, $descriptor(Epetra_NumPyVector*), 1);
 }
 
 // Epetra imports
