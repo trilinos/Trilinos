@@ -112,6 +112,7 @@ if __name__ == "__main__":
     trilinosVersion = processMakefile(os.path.join("..","..","..","Makefile"))["PACKAGE_VERSION"]
 
     # Determine the installation information
+    srcdir            = makeMacros["srcdir"]
     prefix            = makeMacros["prefix"]
     pythonPrefix      = makeMacros["PYTHON_PREFIX"]
     pyTrilinosVersion = makeMacros["PACKAGE_VERSION"]
