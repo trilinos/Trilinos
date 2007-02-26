@@ -1228,6 +1228,10 @@ ComputePreconditioner(const bool CheckPreconditioner)
   // minor settings                                                         //
   // ====================================================================== //
 
+  double AggressiveFactor = .5;
+  AggressiveFactor = List_.get("aggregation: aggressive", AggressiveFactor);
+  ML_Aggregate_Set_Phase3AggregateCreationAggressiveness(agg_,AggressiveFactor);
+
   double Threshold = 0.0;
   Threshold = List_.get("aggregation: threshold", Threshold);
   ML_Aggregate_Set_Threshold(agg_,Threshold);
