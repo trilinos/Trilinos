@@ -321,13 +321,21 @@ class AztecOO {
   //! Get a pointer to the Linear Problem used to construct this solver; returns zero if not available.
   Epetra_LinearProblem * GetProblem() const {return(Problem_);};
    //! Get a pointer to the user operator A.
-  Epetra_Operator * GetUserOperator() const {return(UserOperatorData_->A);};
+  Epetra_Operator * GetUserOperator() const {
+    return(UserOperatorData_ != 0 ? UserOperatorData_->A : 0);
+  };
   //! Get a pointer to the user matrix A.
-  Epetra_RowMatrix * GetUserMatrix() const {return(UserMatrixData_->A);};
+  Epetra_RowMatrix * GetUserMatrix() const {
+    return(UserMatrixData_ != 0 ? UserMatrixData_->A : 0);
+  };
   //! Get a pointer to the preconditioner operator.
-  Epetra_Operator * GetPrecOperator() const {return(PrecOperatorData_->A);};
+  Epetra_Operator * GetPrecOperator() const {
+    return(PrecOperatorData_ != 0 ? PrecOperatorData_->A : 0);
+  };
   //! Get a pointer to the matrix used to construct the preconditioner.
-  Epetra_RowMatrix * GetPrecMatrix() const {return(PrecMatrixData_->A);};
+  Epetra_RowMatrix * GetPrecMatrix() const {
+    return(PrecMatrixData_ != 0 ? PrecMatrixData_->A : 0);
+  };
   //! Get a pointer to the left-hand-side X.
   Epetra_MultiVector * GetLHS() const {return(X_);};
   //! Get a pointer to the right-hand-side B.
