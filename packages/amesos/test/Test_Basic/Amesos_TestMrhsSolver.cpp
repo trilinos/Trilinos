@@ -72,9 +72,6 @@
 #ifdef HAVE_AMESOS_SCALAPACK
 #include "Amesos_Scalapack.h"
 #endif
-#ifdef HAVE_AMESOS_KUNDERT
-#include "KundertOO.h"
-#endif
 #ifdef HAVE_AMESOS_SLUD
 #include "SuperludistOO.h"
 #endif
@@ -742,15 +739,6 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
       spooles.SetTrans( transpose ) ; 
       spooles.Solve() ;
 #endif 
-#ifdef HAVE_AMESOS_KUNDERT
-    } else if ( SparseSolver == KUNDERT ) { 
-      KundertOO kundert( (Epetra_RowMatrix *) passA, 
-			 (Epetra_MultiVector *) passx, 
-			 (Epetra_MultiVector *) passb ) ; 
-    
-      kundert.SetTrans( transpose ) ; 
-      kundert.Solve( ) ; 
-#endif
 #ifdef TEST_SPOOLESSERIAL
     } else if ( SparseSolver == SPOOLESSERIAL ) { 
       SpoolesserialOO spoolesserial( (Epetra_RowMatrix *) passA, 

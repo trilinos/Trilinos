@@ -204,24 +204,7 @@ am__libamesos_a_SOURCES_DIST = $(srcdir)/Amesos_Status.cpp \
 	$(srcdir)/Amesos_Paraklete.cpp $(srcdir)/Amesos_MC64.cpp \
 	$(srcdir)/Amesos_Scalapack.cpp $(srcdir)/Amesos.cpp \
 	$(srcdir)/Amesos_Superlu.cpp $(srcdir)/Amesos_Superludist.cpp \
-	$(srcdir)/Amesos_Lapack.cpp \
-	$(srcdir)/Epetra_CrsKundertSparse.cpp \
-	$(srcdir)/ksparse/alloc.c $(srcdir)/ksparse/smplinkrows.c \
-	$(srcdir)/ksparse/spbuild.c $(srcdir)/ksparse/spoutput.c \
-	$(srcdir)/ksparse/spsolve.c $(srcdir)/ksparse/spalloc.c \
-	$(srcdir)/ksparse/spfactor.c $(srcdir)/ksparse/spsmp.c \
-	$(srcdir)/ksparse/spmatrix.h $(srcdir)/ksparse/sperror.h \
-	$(srcdir)/ksparse/spconfig.h $(srcdir)/ksparse/iferrmsg.h \
-	$(srcdir)/ksparse/strext.h $(srcdir)/ksparse/spice.h \
-	$(srcdir)/ksparse/util.h $(srcdir)/ksparse/misc.h \
-	$(srcdir)/ksparse/suffix.h $(srcdir)/ksparse/port.h \
-	$(srcdir)/ksparse/hw.h $(srcdir)/ksparse/config.h \
-	$(srcdir)/ksparse/capabil.h $(srcdir)/ksparse/os_linux.h \
-	$(srcdir)/ksparse/os_unix.h $(srcdir)/ksparse/hw_ieee.h \
-	$(srcdir)/ksparse/smpdefs.h $(srcdir)/ksparse/spdefs.h \
-	$(srcdir)/ksparse/sppars.h $(srcdir)/ksparse/spmat.h \
-	$(srcdir)/ksparse/complex.h $(srcdir)/ksparse/sputils.c \
-	$(srcdir)/CrsMatrixTranspose.cpp
+	$(srcdir)/Amesos_Lapack.cpp $(srcdir)/CrsMatrixTranspose.cpp
 am__objects_1 = Amesos_Status.$(OBJEXT) Amesos_Control.$(OBJEXT) \
 	Amesos_Support.$(OBJEXT)
 @HAVE_AMESOS_DSCPACK_TRUE@am__objects_2 = Amesos_Dscpack.$(OBJEXT)
@@ -312,22 +295,13 @@ am__objects_14 = Amesos.$(OBJEXT)
 @HAVE_AMESOS_SUPERLUDIST_TRUE@am__objects_16 =  \
 @HAVE_AMESOS_SUPERLUDIST_TRUE@	Amesos_Superludist.$(OBJEXT)
 @HAVE_AMESOS_LAPACK_TRUE@am__objects_17 = Amesos_Lapack.$(OBJEXT)
-@HAVE_AMESOS_KUNDERT_TRUE@am__objects_18 =  \
-@HAVE_AMESOS_KUNDERT_TRUE@	Epetra_CrsKundertSparse.$(OBJEXT) \
-@HAVE_AMESOS_KUNDERT_TRUE@	alloc.$(OBJEXT) \
-@HAVE_AMESOS_KUNDERT_TRUE@	smplinkrows.$(OBJEXT) \
-@HAVE_AMESOS_KUNDERT_TRUE@	spbuild.$(OBJEXT) spoutput.$(OBJEXT) \
-@HAVE_AMESOS_KUNDERT_TRUE@	spsolve.$(OBJEXT) spalloc.$(OBJEXT) \
-@HAVE_AMESOS_KUNDERT_TRUE@	spfactor.$(OBJEXT) spsmp.$(OBJEXT) \
-@HAVE_AMESOS_KUNDERT_TRUE@	sputils.$(OBJEXT)
-am__objects_19 = CrsMatrixTranspose.$(OBJEXT)
+am__objects_18 = CrsMatrixTranspose.$(OBJEXT)
 am_libamesos_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
 	$(am__objects_3) $(am__objects_4) $(am__objects_5) \
 	$(am__objects_6) $(am__objects_7) $(am__objects_9) \
 	$(am__objects_10) $(am__objects_11) $(am__objects_12) \
 	$(am__objects_13) $(am__objects_14) $(am__objects_15) \
-	$(am__objects_16) $(am__objects_17) $(am__objects_18) \
-	$(am__objects_19)
+	$(am__objects_16) $(am__objects_17) $(am__objects_18)
 libamesos_a_OBJECTS = $(am_libamesos_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I.
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -350,10 +324,8 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/Amesos_Taucs.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Amesos_Umfpack.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/CrsMatrixTranspose.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/Epetra_CrsKundertSparse.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/alloc.Po ./$(DEPDIR)/amd_1.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/amd_2.Po ./$(DEPDIR)/amd_aat.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/amd_control.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/amd_1.Po ./$(DEPDIR)/amd_2.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/amd_aat.Po ./$(DEPDIR)/amd_control.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/amd_defaults.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/amd_dump.Po ./$(DEPDIR)/amd_global.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/amd_info.Po ./$(DEPDIR)/amd_order.Po \
@@ -422,10 +394,6 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/paraklete_node.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/paraklete_solve.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/paraklete_usolve_node.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/smplinkrows.Po ./$(DEPDIR)/spalloc.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/spbuild.Po ./$(DEPDIR)/spfactor.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/spoutput.Po ./$(DEPDIR)/spsmp.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/spsolve.Po ./$(DEPDIR)/sputils.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/strongcomp.Po
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
@@ -462,8 +430,7 @@ am__include_HEADERS_DIST = $(srcdir)/Amesos_Dscpack.h \
 	$(srcdir)/Amesos_Scalapack.h \
 	$(srcdir)/Amesos_SCALAPACK_wrappers.h $(srcdir)/Amesos.h \
 	$(srcdir)/Amesos_Superlu.h $(srcdir)/Amesos_Superludist.h \
-	$(srcdir)/Epetra_CrsKundertSparse.h $(srcdir)/Amesos_Lapack.h \
-	$(srcdir)/Amesos_BaseSolver.h \
+	$(srcdir)/Amesos_Lapack.h $(srcdir)/Amesos_BaseSolver.h \
 	$(srcdir)/Amesos_ComponentBaseSolver.h \
 	$(srcdir)/Amesos_ConfigDefs.h $(srcdir)/CrsMatrixTranspose.h \
 	$(srcdir)/Amesos_NoCopiable.h $(srcdir)/Amesos_Utils.h \
@@ -521,8 +488,6 @@ HAVE_AMESOS_GALERI_FALSE = @HAVE_AMESOS_GALERI_FALSE@
 HAVE_AMESOS_GALERI_TRUE = @HAVE_AMESOS_GALERI_TRUE@
 HAVE_AMESOS_KLU_FALSE = @HAVE_AMESOS_KLU_FALSE@
 HAVE_AMESOS_KLU_TRUE = @HAVE_AMESOS_KLU_TRUE@
-HAVE_AMESOS_KUNDERT_FALSE = @HAVE_AMESOS_KUNDERT_FALSE@
-HAVE_AMESOS_KUNDERT_TRUE = @HAVE_AMESOS_KUNDERT_TRUE@
 HAVE_AMESOS_LAPACK_FALSE = @HAVE_AMESOS_LAPACK_FALSE@
 HAVE_AMESOS_LAPACK_TRUE = @HAVE_AMESOS_LAPACK_TRUE@
 HAVE_AMESOS_MC64_FALSE = @HAVE_AMESOS_MC64_FALSE@
@@ -909,45 +874,6 @@ PARAKLETE_KLU_COMMON_H = \
 @HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/UFsparse/CCOLAMD/ccolamd_global.c \
 @HAVE_AMESOS_PARAKLETE_TRUE@	$(srcdir)/Amesos_Paraklete.cpp
 
-@HAVE_AMESOS_KUNDERT_FALSE@KUNDERT_H = 
-@HAVE_AMESOS_KUNDERT_TRUE@KUNDERT_H = \
-@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/Epetra_CrsKundertSparse.h
-
-@HAVE_AMESOS_KUNDERT_FALSE@KUNDERT = 
-@HAVE_AMESOS_KUNDERT_TRUE@KUNDERT = \
-@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/Epetra_CrsKundertSparse.cpp \
-@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/alloc.c \
-@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/smplinkrows.c \
-@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/spbuild.c \
-@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/spoutput.c \
-@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/spsolve.c \
-@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/spalloc.c \
-@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/spfactor.c \
-@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/spsmp.c \
-@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/spmatrix.h \
-@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/sperror.h \
-@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/spconfig.h \
-@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/iferrmsg.h \
-@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/strext.h \
-@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/spice.h \
-@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/util.h \
-@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/misc.h \
-@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/suffix.h \
-@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/port.h \
-@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/hw.h \
-@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/config.h \
-@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/capabil.h \
-@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/os_linux.h \
-@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/os_unix.h \
-@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/hw_ieee.h \
-@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/smpdefs.h \
-@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/spdefs.h \
-@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/sppars.h \
-@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/spmat.h \
-@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/smpdefs.h \
-@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/complex.h \
-@HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/ksparse/sputils.c
-
 
 #
 #  This file does not need to be copied to the include directory
@@ -975,29 +901,12 @@ FACTORY_H = \
 FACTORY = \
 	$(srcdir)/Amesos.cpp
 
-@HAVE_AMESOS_KUNDERT_FALSE@KUNDERT_CPPFLAGS = 
-
-#
-#  I turned off the addition of external/slu to the include path 
-#  so that I could get SLU dist to work.  Ken Feb 11, 2003
-#
-#Specify locations of include files within Trilinos, but outside Amesos
-# AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
-#		-I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src \
-#	       -I$(top_srcdir)/../../external/slu -I$(top_srcdir)/src/ksparse
-
-# if BUILD_SLUSERIAL
-# SLUSERIAL_CPPFLAGS = -I$(top_srcdir)/../../external/slu
-# else
-# SLUSERIAL_CPPFLAGS = 
-# endif
-@HAVE_AMESOS_KUNDERT_TRUE@KUNDERT_CPPFLAGS = -I$(top_srcdir)/src/ksparse
 @HAVE_AMESOS_EPETRAEXT_FALSE@EPETRA_EXT_INCLUDE = 
 @HAVE_AMESOS_EPETRAEXT_TRUE@EPETRA_EXT_INCLUDE = -I$(top_srcdir)/../epetraext/src/transform -I$(top_builddir)/../epetraext/src/transform -I$(top_srcdir)/../epetraext/src -I$(top_builddir)/../epetraext/src 
 @USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(AMESOS_INCLUDES)
 @USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(AMESOS_INCLUDES))
 UFSPARSE_CPPFLAGS = -DNSUPERNODAL
-AM_CPPFLAGS = $(EXPORT_INCLUDES) $(EPETRA_EXT_INCLUDE) $(SLUSERIAL_CPPFLAGS) $(KUNDERT_CPPFLAGS) $(UFSPARSE_CPPFLAGS) \
+AM_CPPFLAGS = $(EXPORT_INCLUDES) $(EPETRA_EXT_INCLUDE) $(SLUSERIAL_CPPFLAGS) $(UFSPARSE_CPPFLAGS) \
 	      -I$(top_srcdir)/src/UFsparse/AMD/Include \
 	      -I$(top_srcdir)/src/UFsparse/PARAKLETE \
 	      -I$(top_srcdir)/src/UFsparse/CHOLMOD/Include \
@@ -1029,7 +938,6 @@ AMESOS_H = \
 	$(FACTORY_H) \
 	$(SUPERLU_H) \
 	$(SUPERLUDIST_H) \
-	$(KUNDERT_H) \
 	$(LAPACK_H) \
 	$(COMP_H) \
 	$(srcdir)/Amesos_BaseSolver.h \
@@ -1053,7 +961,6 @@ libamesos_a_SOURCES = \
 	$(SUPERLU) \
 	$(SUPERLUDIST) \
 	$(LAPACK) \
-	$(KUNDERT) \
 	$(COMP)
 
 EXTRA_libamesos_a_SOURCES = \
@@ -1215,8 +1122,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Taucs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Amesos_Umfpack.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CrsMatrixTranspose.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Epetra_CrsKundertSparse.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/alloc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amd_1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amd_2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/amd_aat.Po@am__quote@
@@ -1301,14 +1206,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/paraklete_node.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/paraklete_solve.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/paraklete_usolve_node.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/smplinkrows.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spalloc.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spbuild.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spfactor.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spoutput.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spsmp.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spsolve.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sputils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/strongcomp.Po@am__quote@
 
 .c.o:
@@ -2687,150 +2584,6 @@ ccolamd_global.obj: $(srcdir)/UFsparse/CCOLAMD/ccolamd_global.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ccolamd_global.obj `if test -f '$(srcdir)/UFsparse/CCOLAMD/ccolamd_global.c'; then $(CYGPATH_W) '$(srcdir)/UFsparse/CCOLAMD/ccolamd_global.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/UFsparse/CCOLAMD/ccolamd_global.c'; fi`
 
-alloc.o: $(srcdir)/ksparse/alloc.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT alloc.o -MD -MP -MF "$(DEPDIR)/alloc.Tpo" -c -o alloc.o `test -f '$(srcdir)/ksparse/alloc.c' || echo '$(srcdir)/'`$(srcdir)/ksparse/alloc.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/alloc.Tpo" "$(DEPDIR)/alloc.Po"; else rm -f "$(DEPDIR)/alloc.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ksparse/alloc.c' object='alloc.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/alloc.Po' tmpdepfile='$(DEPDIR)/alloc.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o alloc.o `test -f '$(srcdir)/ksparse/alloc.c' || echo '$(srcdir)/'`$(srcdir)/ksparse/alloc.c
-
-alloc.obj: $(srcdir)/ksparse/alloc.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT alloc.obj -MD -MP -MF "$(DEPDIR)/alloc.Tpo" -c -o alloc.obj `if test -f '$(srcdir)/ksparse/alloc.c'; then $(CYGPATH_W) '$(srcdir)/ksparse/alloc.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ksparse/alloc.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/alloc.Tpo" "$(DEPDIR)/alloc.Po"; else rm -f "$(DEPDIR)/alloc.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ksparse/alloc.c' object='alloc.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/alloc.Po' tmpdepfile='$(DEPDIR)/alloc.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o alloc.obj `if test -f '$(srcdir)/ksparse/alloc.c'; then $(CYGPATH_W) '$(srcdir)/ksparse/alloc.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ksparse/alloc.c'; fi`
-
-smplinkrows.o: $(srcdir)/ksparse/smplinkrows.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT smplinkrows.o -MD -MP -MF "$(DEPDIR)/smplinkrows.Tpo" -c -o smplinkrows.o `test -f '$(srcdir)/ksparse/smplinkrows.c' || echo '$(srcdir)/'`$(srcdir)/ksparse/smplinkrows.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/smplinkrows.Tpo" "$(DEPDIR)/smplinkrows.Po"; else rm -f "$(DEPDIR)/smplinkrows.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ksparse/smplinkrows.c' object='smplinkrows.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/smplinkrows.Po' tmpdepfile='$(DEPDIR)/smplinkrows.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o smplinkrows.o `test -f '$(srcdir)/ksparse/smplinkrows.c' || echo '$(srcdir)/'`$(srcdir)/ksparse/smplinkrows.c
-
-smplinkrows.obj: $(srcdir)/ksparse/smplinkrows.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT smplinkrows.obj -MD -MP -MF "$(DEPDIR)/smplinkrows.Tpo" -c -o smplinkrows.obj `if test -f '$(srcdir)/ksparse/smplinkrows.c'; then $(CYGPATH_W) '$(srcdir)/ksparse/smplinkrows.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ksparse/smplinkrows.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/smplinkrows.Tpo" "$(DEPDIR)/smplinkrows.Po"; else rm -f "$(DEPDIR)/smplinkrows.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ksparse/smplinkrows.c' object='smplinkrows.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/smplinkrows.Po' tmpdepfile='$(DEPDIR)/smplinkrows.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o smplinkrows.obj `if test -f '$(srcdir)/ksparse/smplinkrows.c'; then $(CYGPATH_W) '$(srcdir)/ksparse/smplinkrows.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ksparse/smplinkrows.c'; fi`
-
-spbuild.o: $(srcdir)/ksparse/spbuild.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spbuild.o -MD -MP -MF "$(DEPDIR)/spbuild.Tpo" -c -o spbuild.o `test -f '$(srcdir)/ksparse/spbuild.c' || echo '$(srcdir)/'`$(srcdir)/ksparse/spbuild.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/spbuild.Tpo" "$(DEPDIR)/spbuild.Po"; else rm -f "$(DEPDIR)/spbuild.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ksparse/spbuild.c' object='spbuild.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/spbuild.Po' tmpdepfile='$(DEPDIR)/spbuild.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spbuild.o `test -f '$(srcdir)/ksparse/spbuild.c' || echo '$(srcdir)/'`$(srcdir)/ksparse/spbuild.c
-
-spbuild.obj: $(srcdir)/ksparse/spbuild.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spbuild.obj -MD -MP -MF "$(DEPDIR)/spbuild.Tpo" -c -o spbuild.obj `if test -f '$(srcdir)/ksparse/spbuild.c'; then $(CYGPATH_W) '$(srcdir)/ksparse/spbuild.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ksparse/spbuild.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/spbuild.Tpo" "$(DEPDIR)/spbuild.Po"; else rm -f "$(DEPDIR)/spbuild.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ksparse/spbuild.c' object='spbuild.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/spbuild.Po' tmpdepfile='$(DEPDIR)/spbuild.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spbuild.obj `if test -f '$(srcdir)/ksparse/spbuild.c'; then $(CYGPATH_W) '$(srcdir)/ksparse/spbuild.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ksparse/spbuild.c'; fi`
-
-spoutput.o: $(srcdir)/ksparse/spoutput.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spoutput.o -MD -MP -MF "$(DEPDIR)/spoutput.Tpo" -c -o spoutput.o `test -f '$(srcdir)/ksparse/spoutput.c' || echo '$(srcdir)/'`$(srcdir)/ksparse/spoutput.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/spoutput.Tpo" "$(DEPDIR)/spoutput.Po"; else rm -f "$(DEPDIR)/spoutput.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ksparse/spoutput.c' object='spoutput.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/spoutput.Po' tmpdepfile='$(DEPDIR)/spoutput.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spoutput.o `test -f '$(srcdir)/ksparse/spoutput.c' || echo '$(srcdir)/'`$(srcdir)/ksparse/spoutput.c
-
-spoutput.obj: $(srcdir)/ksparse/spoutput.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spoutput.obj -MD -MP -MF "$(DEPDIR)/spoutput.Tpo" -c -o spoutput.obj `if test -f '$(srcdir)/ksparse/spoutput.c'; then $(CYGPATH_W) '$(srcdir)/ksparse/spoutput.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ksparse/spoutput.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/spoutput.Tpo" "$(DEPDIR)/spoutput.Po"; else rm -f "$(DEPDIR)/spoutput.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ksparse/spoutput.c' object='spoutput.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/spoutput.Po' tmpdepfile='$(DEPDIR)/spoutput.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spoutput.obj `if test -f '$(srcdir)/ksparse/spoutput.c'; then $(CYGPATH_W) '$(srcdir)/ksparse/spoutput.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ksparse/spoutput.c'; fi`
-
-spsolve.o: $(srcdir)/ksparse/spsolve.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spsolve.o -MD -MP -MF "$(DEPDIR)/spsolve.Tpo" -c -o spsolve.o `test -f '$(srcdir)/ksparse/spsolve.c' || echo '$(srcdir)/'`$(srcdir)/ksparse/spsolve.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/spsolve.Tpo" "$(DEPDIR)/spsolve.Po"; else rm -f "$(DEPDIR)/spsolve.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ksparse/spsolve.c' object='spsolve.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/spsolve.Po' tmpdepfile='$(DEPDIR)/spsolve.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spsolve.o `test -f '$(srcdir)/ksparse/spsolve.c' || echo '$(srcdir)/'`$(srcdir)/ksparse/spsolve.c
-
-spsolve.obj: $(srcdir)/ksparse/spsolve.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spsolve.obj -MD -MP -MF "$(DEPDIR)/spsolve.Tpo" -c -o spsolve.obj `if test -f '$(srcdir)/ksparse/spsolve.c'; then $(CYGPATH_W) '$(srcdir)/ksparse/spsolve.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ksparse/spsolve.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/spsolve.Tpo" "$(DEPDIR)/spsolve.Po"; else rm -f "$(DEPDIR)/spsolve.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ksparse/spsolve.c' object='spsolve.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/spsolve.Po' tmpdepfile='$(DEPDIR)/spsolve.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spsolve.obj `if test -f '$(srcdir)/ksparse/spsolve.c'; then $(CYGPATH_W) '$(srcdir)/ksparse/spsolve.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ksparse/spsolve.c'; fi`
-
-spalloc.o: $(srcdir)/ksparse/spalloc.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spalloc.o -MD -MP -MF "$(DEPDIR)/spalloc.Tpo" -c -o spalloc.o `test -f '$(srcdir)/ksparse/spalloc.c' || echo '$(srcdir)/'`$(srcdir)/ksparse/spalloc.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/spalloc.Tpo" "$(DEPDIR)/spalloc.Po"; else rm -f "$(DEPDIR)/spalloc.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ksparse/spalloc.c' object='spalloc.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/spalloc.Po' tmpdepfile='$(DEPDIR)/spalloc.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spalloc.o `test -f '$(srcdir)/ksparse/spalloc.c' || echo '$(srcdir)/'`$(srcdir)/ksparse/spalloc.c
-
-spalloc.obj: $(srcdir)/ksparse/spalloc.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spalloc.obj -MD -MP -MF "$(DEPDIR)/spalloc.Tpo" -c -o spalloc.obj `if test -f '$(srcdir)/ksparse/spalloc.c'; then $(CYGPATH_W) '$(srcdir)/ksparse/spalloc.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ksparse/spalloc.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/spalloc.Tpo" "$(DEPDIR)/spalloc.Po"; else rm -f "$(DEPDIR)/spalloc.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ksparse/spalloc.c' object='spalloc.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/spalloc.Po' tmpdepfile='$(DEPDIR)/spalloc.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spalloc.obj `if test -f '$(srcdir)/ksparse/spalloc.c'; then $(CYGPATH_W) '$(srcdir)/ksparse/spalloc.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ksparse/spalloc.c'; fi`
-
-spfactor.o: $(srcdir)/ksparse/spfactor.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spfactor.o -MD -MP -MF "$(DEPDIR)/spfactor.Tpo" -c -o spfactor.o `test -f '$(srcdir)/ksparse/spfactor.c' || echo '$(srcdir)/'`$(srcdir)/ksparse/spfactor.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/spfactor.Tpo" "$(DEPDIR)/spfactor.Po"; else rm -f "$(DEPDIR)/spfactor.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ksparse/spfactor.c' object='spfactor.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/spfactor.Po' tmpdepfile='$(DEPDIR)/spfactor.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spfactor.o `test -f '$(srcdir)/ksparse/spfactor.c' || echo '$(srcdir)/'`$(srcdir)/ksparse/spfactor.c
-
-spfactor.obj: $(srcdir)/ksparse/spfactor.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spfactor.obj -MD -MP -MF "$(DEPDIR)/spfactor.Tpo" -c -o spfactor.obj `if test -f '$(srcdir)/ksparse/spfactor.c'; then $(CYGPATH_W) '$(srcdir)/ksparse/spfactor.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ksparse/spfactor.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/spfactor.Tpo" "$(DEPDIR)/spfactor.Po"; else rm -f "$(DEPDIR)/spfactor.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ksparse/spfactor.c' object='spfactor.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/spfactor.Po' tmpdepfile='$(DEPDIR)/spfactor.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spfactor.obj `if test -f '$(srcdir)/ksparse/spfactor.c'; then $(CYGPATH_W) '$(srcdir)/ksparse/spfactor.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ksparse/spfactor.c'; fi`
-
-spsmp.o: $(srcdir)/ksparse/spsmp.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spsmp.o -MD -MP -MF "$(DEPDIR)/spsmp.Tpo" -c -o spsmp.o `test -f '$(srcdir)/ksparse/spsmp.c' || echo '$(srcdir)/'`$(srcdir)/ksparse/spsmp.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/spsmp.Tpo" "$(DEPDIR)/spsmp.Po"; else rm -f "$(DEPDIR)/spsmp.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ksparse/spsmp.c' object='spsmp.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/spsmp.Po' tmpdepfile='$(DEPDIR)/spsmp.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spsmp.o `test -f '$(srcdir)/ksparse/spsmp.c' || echo '$(srcdir)/'`$(srcdir)/ksparse/spsmp.c
-
-spsmp.obj: $(srcdir)/ksparse/spsmp.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT spsmp.obj -MD -MP -MF "$(DEPDIR)/spsmp.Tpo" -c -o spsmp.obj `if test -f '$(srcdir)/ksparse/spsmp.c'; then $(CYGPATH_W) '$(srcdir)/ksparse/spsmp.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ksparse/spsmp.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/spsmp.Tpo" "$(DEPDIR)/spsmp.Po"; else rm -f "$(DEPDIR)/spsmp.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ksparse/spsmp.c' object='spsmp.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/spsmp.Po' tmpdepfile='$(DEPDIR)/spsmp.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o spsmp.obj `if test -f '$(srcdir)/ksparse/spsmp.c'; then $(CYGPATH_W) '$(srcdir)/ksparse/spsmp.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ksparse/spsmp.c'; fi`
-
-sputils.o: $(srcdir)/ksparse/sputils.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT sputils.o -MD -MP -MF "$(DEPDIR)/sputils.Tpo" -c -o sputils.o `test -f '$(srcdir)/ksparse/sputils.c' || echo '$(srcdir)/'`$(srcdir)/ksparse/sputils.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/sputils.Tpo" "$(DEPDIR)/sputils.Po"; else rm -f "$(DEPDIR)/sputils.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ksparse/sputils.c' object='sputils.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/sputils.Po' tmpdepfile='$(DEPDIR)/sputils.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o sputils.o `test -f '$(srcdir)/ksparse/sputils.c' || echo '$(srcdir)/'`$(srcdir)/ksparse/sputils.c
-
-sputils.obj: $(srcdir)/ksparse/sputils.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT sputils.obj -MD -MP -MF "$(DEPDIR)/sputils.Tpo" -c -o sputils.obj `if test -f '$(srcdir)/ksparse/sputils.c'; then $(CYGPATH_W) '$(srcdir)/ksparse/sputils.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ksparse/sputils.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/sputils.Tpo" "$(DEPDIR)/sputils.Po"; else rm -f "$(DEPDIR)/sputils.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ksparse/sputils.c' object='sputils.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/sputils.Po' tmpdepfile='$(DEPDIR)/sputils.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o sputils.obj `if test -f '$(srcdir)/ksparse/sputils.c'; then $(CYGPATH_W) '$(srcdir)/ksparse/sputils.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ksparse/sputils.c'; fi`
-
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
@@ -3119,22 +2872,6 @@ Amesos_Lapack.obj: $(srcdir)/Amesos_Lapack.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Amesos_Lapack.obj `if test -f '$(srcdir)/Amesos_Lapack.cpp'; then $(CYGPATH_W) '$(srcdir)/Amesos_Lapack.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Amesos_Lapack.cpp'; fi`
 
-Epetra_CrsKundertSparse.o: $(srcdir)/Epetra_CrsKundertSparse.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Epetra_CrsKundertSparse.o -MD -MP -MF "$(DEPDIR)/Epetra_CrsKundertSparse.Tpo" -c -o Epetra_CrsKundertSparse.o `test -f '$(srcdir)/Epetra_CrsKundertSparse.cpp' || echo '$(srcdir)/'`$(srcdir)/Epetra_CrsKundertSparse.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Epetra_CrsKundertSparse.Tpo" "$(DEPDIR)/Epetra_CrsKundertSparse.Po"; else rm -f "$(DEPDIR)/Epetra_CrsKundertSparse.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Epetra_CrsKundertSparse.cpp' object='Epetra_CrsKundertSparse.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Epetra_CrsKundertSparse.Po' tmpdepfile='$(DEPDIR)/Epetra_CrsKundertSparse.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_CrsKundertSparse.o `test -f '$(srcdir)/Epetra_CrsKundertSparse.cpp' || echo '$(srcdir)/'`$(srcdir)/Epetra_CrsKundertSparse.cpp
-
-Epetra_CrsKundertSparse.obj: $(srcdir)/Epetra_CrsKundertSparse.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Epetra_CrsKundertSparse.obj -MD -MP -MF "$(DEPDIR)/Epetra_CrsKundertSparse.Tpo" -c -o Epetra_CrsKundertSparse.obj `if test -f '$(srcdir)/Epetra_CrsKundertSparse.cpp'; then $(CYGPATH_W) '$(srcdir)/Epetra_CrsKundertSparse.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Epetra_CrsKundertSparse.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Epetra_CrsKundertSparse.Tpo" "$(DEPDIR)/Epetra_CrsKundertSparse.Po"; else rm -f "$(DEPDIR)/Epetra_CrsKundertSparse.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Epetra_CrsKundertSparse.cpp' object='Epetra_CrsKundertSparse.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Epetra_CrsKundertSparse.Po' tmpdepfile='$(DEPDIR)/Epetra_CrsKundertSparse.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_CrsKundertSparse.obj `if test -f '$(srcdir)/Epetra_CrsKundertSparse.cpp'; then $(CYGPATH_W) '$(srcdir)/Epetra_CrsKundertSparse.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Epetra_CrsKundertSparse.cpp'; fi`
-
 CrsMatrixTranspose.o: $(srcdir)/CrsMatrixTranspose.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CrsMatrixTranspose.o -MD -MP -MF "$(DEPDIR)/CrsMatrixTranspose.Tpo" -c -o CrsMatrixTranspose.o `test -f '$(srcdir)/CrsMatrixTranspose.cpp' || echo '$(srcdir)/'`$(srcdir)/CrsMatrixTranspose.cpp; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/CrsMatrixTranspose.Tpo" "$(DEPDIR)/CrsMatrixTranspose.Po"; else rm -f "$(DEPDIR)/CrsMatrixTranspose.Tpo"; exit 1; fi
@@ -3361,6 +3098,21 @@ all-local:
 	@echo "Trilinos package amesos subdirectory src built successfully."
 	@echo ""
 
+#
+#  I turned off the addition of external/slu to the include path 
+#  so that I could get SLU dist to work.  Ken Feb 11, 2003
+#
+#Specify locations of include files within Trilinos, but outside Amesos
+# AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
+#		-I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src \
+#	       -I$(top_srcdir)/../../external/slu -I$(top_srcdir)/src/ksparse
+
+# if BUILD_SLUSERIAL
+# SLUSERIAL_CPPFLAGS = -I$(top_srcdir)/../../external/slu
+# else
+# SLUSERIAL_CPPFLAGS = 
+# endif
+
 #AM_CPPFLAGS = -I$(top_srcdir)/../epetraext/src/transform \
 #	-I$(top_srcdir)/../epetraext/src \
 #	-I$(top_srcdir)/../epetra/src \
@@ -3373,7 +3125,7 @@ all-local:
 #	-I$(top_srcdir)/../teuchos/src  -I$(top_builddir)/../teuchos/src \
 #	-I$(top_builddir)/../epetraext/src \
 #	-I$(top_builddir)/../epetra/src \
-#	      $(SLUSERIAL_CPPFLAGS) $(KUNDERT_CPPFLAGS)
+#	      $(SLUSERIAL_CPPFLAGS)
 
 include $(top_builddir)/Makefile.export.amesos
 

@@ -329,50 +329,6 @@ PARAKLETE_H =
 PARAKLETE =
 endif
 
-
-
-
-if HAVE_AMESOS_KUNDERT
-KUNDERT_H = \
-       $(srcdir)/Epetra_CrsKundertSparse.h
-KUNDERT = \
-       $(srcdir)/Epetra_CrsKundertSparse.cpp \
-       $(srcdir)/ksparse/alloc.c \
-       $(srcdir)/ksparse/smplinkrows.c \
-       $(srcdir)/ksparse/spbuild.c \
-       $(srcdir)/ksparse/spoutput.c \
-       $(srcdir)/ksparse/spsolve.c \
-       $(srcdir)/ksparse/spalloc.c \
-       $(srcdir)/ksparse/spfactor.c \
-       $(srcdir)/ksparse/spsmp.c \
-       $(srcdir)/ksparse/spmatrix.h \
-       $(srcdir)/ksparse/sperror.h \
-       $(srcdir)/ksparse/spconfig.h \
-       $(srcdir)/ksparse/iferrmsg.h \
-       $(srcdir)/ksparse/strext.h \
-       $(srcdir)/ksparse/spice.h \
-       $(srcdir)/ksparse/util.h \
-       $(srcdir)/ksparse/misc.h \
-       $(srcdir)/ksparse/suffix.h \
-       $(srcdir)/ksparse/port.h \
-       $(srcdir)/ksparse/hw.h \
-       $(srcdir)/ksparse/config.h \
-       $(srcdir)/ksparse/capabil.h \
-       $(srcdir)/ksparse/os_linux.h \
-       $(srcdir)/ksparse/os_unix.h \
-       $(srcdir)/ksparse/hw_ieee.h \
-       $(srcdir)/ksparse/smpdefs.h \
-       $(srcdir)/ksparse/spdefs.h \
-       $(srcdir)/ksparse/sppars.h \
-       $(srcdir)/ksparse/spmat.h \
-       $(srcdir)/ksparse/smpdefs.h \
-       $(srcdir)/ksparse/complex.h \
-       $(srcdir)/ksparse/sputils.c
-else
-KUNDERT_H = 
-KUNDERT =
-endif
-
 #
 #  This file does not need to be copied to the include directory
 #	$(srcdir)/CrsMatrixTranspose.h
@@ -413,12 +369,6 @@ FACTORY = \
 # SLUSERIAL_CPPFLAGS = 
 # endif
 
-if HAVE_AMESOS_KUNDERT
-KUNDERT_CPPFLAGS = -I$(top_srcdir)/src/ksparse
-else
-KUNDERT_CPPFLAGS = 
-endif
-
 #AM_CPPFLAGS = -I$(top_srcdir)/../epetraext/src/transform \
 #	-I$(top_srcdir)/../epetraext/src \
 #	-I$(top_srcdir)/../epetra/src \
@@ -431,7 +381,7 @@ endif
 #	-I$(top_srcdir)/../teuchos/src  -I$(top_builddir)/../teuchos/src \
 #	-I$(top_builddir)/../epetraext/src \
 #	-I$(top_builddir)/../epetra/src \
-#	      $(SLUSERIAL_CPPFLAGS) $(KUNDERT_CPPFLAGS)
+#	      $(SLUSERIAL_CPPFLAGS)
 
 include $(top_builddir)/Makefile.export.amesos
 
@@ -449,7 +399,7 @@ endif
 
 UFSPARSE_CPPFLAGS = -DNSUPERNODAL
 
-AM_CPPFLAGS = $(EXPORT_INCLUDES) $(EPETRA_EXT_INCLUDE) $(SLUSERIAL_CPPFLAGS) $(KUNDERT_CPPFLAGS) $(UFSPARSE_CPPFLAGS) \
+AM_CPPFLAGS = $(EXPORT_INCLUDES) $(EPETRA_EXT_INCLUDE) $(SLUSERIAL_CPPFLAGS) $(UFSPARSE_CPPFLAGS) \
 	      -I$(top_srcdir)/src/UFsparse/AMD/Include \
 	      -I$(top_srcdir)/src/UFsparse/PARAKLETE \
 	      -I$(top_srcdir)/src/UFsparse/CHOLMOD/Include \
@@ -483,7 +433,6 @@ AMESOS_H = \
 	$(FACTORY_H) \
 	$(SUPERLU_H) \
 	$(SUPERLUDIST_H) \
-	$(KUNDERT_H) \
 	$(LAPACK_H) \
 	$(COMP_H) \
 	$(srcdir)/Amesos_BaseSolver.h \
@@ -508,7 +457,6 @@ libamesos_a_SOURCES = \
 	$(SUPERLU) \
 	$(SUPERLUDIST) \
 	$(LAPACK) \
-	$(KUNDERT) \
 	$(COMP)
 
 EXTRA_libamesos_a_SOURCES = \

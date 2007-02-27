@@ -40,9 +40,6 @@
 #include "Epetra_LinearProblem.h"
 #include "Amesos_Time.h"
 
-#ifdef HAVE_AMESOS_KUNDERT
-#include "KundertOO.h"
-#endif
 #ifdef TEST_SPOOLES
 #include "SpoolesOO.h"
 #endif

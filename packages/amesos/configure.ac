@@ -697,13 +697,23 @@ else
 fi
 
 #  =========  #
-#  Paraklete  #
+#  PARAKLETE  #
 #  =========  #
 
 if test "X$ac_cv_use_amesos_paraklete" != "Xno"; then
 
+  if test "X$ac_cv_use_amesos_tests" != "Xno" || test "X$ac_cv_use_amesos_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
+
+    AC_TRY_LINK_FUNC(METIS_EstimateMemory,,
+    AC_MSG_ERROR([[Paraklete requires METIS:  Cannot find the METIS library, specify a location using --with-libs, (ex. --with-libs="/home/username/lib/libmetis.a", or use --with-libs="-lmetis" --with-ldflags=-L/home/username/lib).]]))
+
+  fi
+ 
+  AC_CHECK_HEADER([metis.h],,AC_MSG_ERROR([[Paraklete requires METIS:  Cannot find METIS header file (metis.h), specify a location using --with-incdirs (ex.  --with-incdirs=/home/username/include).]]))
+
   AM_CONDITIONAL(HAVE_AMESOS_PARAKLETE, true ) 
   AM_CONDITIONAL(NEED_PARAMETER_LIST, true ) 
+
 else
   AM_CONDITIONAL(HAVE_AMESOS_PARAKLETE, false ) 
 fi
@@ -740,52 +750,6 @@ if test "X$ac_cv_use_amesos_mc64" != "Xno"; then
 else
   AM_CONDITIONAL(HAVE_AMESOS_MC64, false ) 
 fi
-
-#
-#  --enable-amesos-kundert
-#
-#  NOTE:  Kundert is supported, but not tested as of May 13, 2003 
-#  HAVE_AMESOS_KUNDERT is undef'd in Amesos_ConfigDefs.h 
-#
-
-#if test "X$ac_cv_use_amesos_kundert" != "Xno"; then
-#  AM_CONDITIONAL(HAVE_AMESOS_KUNDERT, true ) 
-
-  # ------------------------------------------------------------------------
-  # Setup Platform for Kundert
-  # ------------------------------------------------------------------------
-
-# case "$target" in
-#  *freebsd*) PLATFORM=freebsd
-#           ;;
-#  *linux*) PLATFORM=linux
-#         ;;
-#  *sgi*) PLATFORM=sgi
-#       ;;
-#  *powerpc-apple*) PLATFORM=ppc
-#      ;;
-#  *powerpc-ibm-aix*) PLATFORM=aix
-#      ;;
-#  *solaris*) PLATFORM=solaris
-#      ;;
-#  i386*mingw32msvc) PLATFORM=mingw
-#       ;;
-#  alpha*-dec-osf*) PLATFORM=DEC
-#       ;;
-#  *)   if test "x$PLATFORM" = "x"; then
-#         AC_MSG_NOTICE([Unrecognized target, using generic linux for PLATFORM])
-#         Xyce_ARCH=linux
-#         PLATFORM=linux
-#       fi
-#       ;;
-# esac
-#
-# AC_MSG_NOTICE([Adding Platform Define $PLATFORM to CCFLAGS])
-# CPPFLAGS="$CPPFLAGS -D$PLATFORM"
-#else
-  AM_CONDITIONAL(HAVE_AMESOS_KUNDERT, false ) 
-#fi
-
 
 AC_LANG_POP
 

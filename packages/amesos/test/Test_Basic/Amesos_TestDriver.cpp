@@ -32,7 +32,7 @@
 //  usage: 
 //     Amesos_TestDriver.exe Solver InputMatrix MatrixType Special Numsolves Transpose MaxError MaxResid 
 //     Where solver is:  SuperLU, SuperLUdist, SuperLUdist2, 
-//       UMFPACK, KUNDERT, SPOOLES, DSCPACK, DSCPACKOLD, KLU, 
+//       UMFPACK, SPOOLES, DSCPACK, DSCPACKOLD, KLU, 
 //       SPOOLESERIAL, MUMPS, SUPERLU, SCALAPACK or AZTEC 
 //     special is, at present, only used in SuperLU, where 0 means dgssv
 //     and 1 means dgssvx 

@@ -28,8 +28,7 @@
 #
 #  AmesosDscpack.exe, the Direct Sparse Solver Regresion Test, tests and times the 
 #  direct sparse solvers supported by the AME interface.  At present, it 
-#  tests two direct solvers:  Kundert and SuperLU MPI.  It also tests an 
-#  indirect solver, AZTEC, for comparison.  
+#  tests the direct solver:  SuperLU MPI.  It also tests an indirect solver, AZTEC, for comparison.  
 #
 #  RETURNS 0 if the test succeeds and 1 if the test fails 
 #

@@ -38,9 +38,6 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_LinearProblem.h"
 #include "Epetra_Time.h"
-#ifdef HAVE_AMESOS_KUNDERT
-#include "KundertOO.h"
-#endif
 #ifdef HAVE_AMESOS_SLUD
 #include "SuperludistOO.h"
 #endif
@@ -310,15 +307,6 @@ int Amesos_TestMultiSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
     
       spooles.SetTrans( transpose ) ; 
       spooles.Solve() ; 
-#endif
-#ifdef HAVE_AMESOS_KUNDERT
-    } else if ( SparseSolver == KUNDERT ) { 
-      KundertOO kundert( (Epetra_RowMatrix *) passA, 
-			 (Epetra_MultiVector *) passx, 
-			 (Epetra_MultiVector *) passb ) ; 
-    
-      kundert.SetTrans( transpose ) ; 
-      kundert.Solve() ; 
 #endif
 #ifdef HAVE_AMESOS_DSCPACK
     } else if ( SparseSolver == DSCPACK ) { 
