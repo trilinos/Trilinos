@@ -38,11 +38,13 @@
 #include "Epetra_CrsGraph.h"
 #include "Epetra_CrsMatrix.h"
 #include "Teuchos_ParameterList.hpp"
-using namespace Teuchos;
+#include "Teuchos_RefCountPtr.hpp"
+using Teuchos::RefCountPtr;
+using Teuchos::rcp;
 
 //==============================================================================
 Ifpack_ILU::Ifpack_ILU(Epetra_RowMatrix* Matrix) :
-  A_(Matrix),
+  A_(rcp(Matrix,false)),
   Comm_(Matrix->Comm()),
   UseTranspose_(false),
   NumMyDiagonals_(0),
@@ -70,18 +72,6 @@ Ifpack_ILU::Ifpack_ILU(Epetra_RowMatrix* Matrix) :
 //==============================================================================
 void Ifpack_ILU::Destroy()
 {
-/*
-  if (L_)             delete L_;             L_ = 0;
-  if (U_)             delete U_;             U_ = 0;
-  if (D_)             delete D_;             D_ = 0;
-  if (Graph_)         delete Graph_;         Graph_ = 0;
-  if (CrsGraph_)      delete CrsGraph_;      CrsGraph_ = 0;
-  if (L_Graph_)       delete L_Graph_;       L_Graph_ = 0;
-  if (U_Graph_)       delete U_Graph_;       U_Graph_ = 0;
-  if (IlukRowMap_)    delete IlukRowMap_;    IlukRowMap_ = 0;
-  if (IlukDomainMap_) delete IlukDomainMap_; IlukDomainMap_ = 0;
-  if (IlukRangeMap_)  delete IlukRangeMap_;  IlukRangeMap_ = 0;
-*/
   // reset pointers to already allocated stuff
   U_DomainMap_ = 0;
   L_RangeMap_ = 0;
@@ -122,18 +112,16 @@ int Ifpack_ILU::ComputeSetup()
   // this is the old InitAllValues()
   int ierr = 0;
   int i, j;
-  int * InI=0, * LI=0, * UI = 0;
-  double * InV=0, * LV=0, * UV = 0;
   int NumIn, NumL, NumU;
   bool DiagFound;
   int NumNonzeroDiags = 0;
 
-  InI = new int[MaxNumEntries]; // Allocate temp space
-  LI = new int[MaxNumEntries];
-  UI = new int[MaxNumEntries];
-  InV = new double[MaxNumEntries];
-  LV = new double[MaxNumEntries];
-  UV = new double[MaxNumEntries];
+  vector<int> InI(MaxNumEntries); // Allocate temp space
+  vector<int> LI(MaxNumEntries);
+  vector<int> UI(MaxNumEntries);
+  vector<double> InV(MaxNumEntries);
+  vector<double> LV(MaxNumEntries);
+  vector<double> UV(MaxNumEntries);
 
   bool ReplaceValues = (L_->StaticGraph() || L_->IndicesAreLocal()); // Check if values should be inserted or replaced
 
@@ -150,7 +138,7 @@ int Ifpack_ILU::ComputeSetup()
 
   for (i=0; i< NumMyRows(); i++) {
 
-    IFPACK_CHK_ERR(Matrix().ExtractMyRowCopy(i, MaxNumEntries, NumIn, InV, InI)); // Get Values and Indices
+    IFPACK_CHK_ERR(Matrix().ExtractMyRowCopy(i, MaxNumEntries, NumIn, &InV[0], &InI[0])); // Get Values and Indices
     
     // Split into L and U (we don't assume that indices are ordered).
     
@@ -187,30 +175,23 @@ int Ifpack_ILU::ComputeSetup()
 
     if (NumL) {
       if (ReplaceValues) {
-	(L_->ReplaceMyValues(i, NumL, LV, LI));
+	(L_->ReplaceMyValues(i, NumL, &LV[0], &LI[0]));
       }
       else {
-	IFPACK_CHK_ERR(L_->InsertMyValues(i, NumL, LV, LI));
+	IFPACK_CHK_ERR(L_->InsertMyValues(i, NumL, &LV[0], &LI[0]));
       }
     }
 
     if (NumU) {
       if (ReplaceValues) {
-	(U_->ReplaceMyValues(i, NumU, UV, UI));
+	(U_->ReplaceMyValues(i, NumU, &UV[0], &UI[0]));
       }
       else {
-	IFPACK_CHK_ERR(U_->InsertMyValues(i, NumU, UV, UI));
+	IFPACK_CHK_ERR(U_->InsertMyValues(i, NumU, &UV[0], &UI[0]));
       }
     }
     
   }
-
-  delete [] LI;
-  delete [] UI;
-  delete [] LV;
-  delete [] UV;
-  delete [] InI;
-  delete [] InV;
 
   if (!ReplaceValues) {
     // The domain of L and the range of U are exactly their own row maps (there is no communication).
@@ -222,8 +203,6 @@ int Ifpack_ILU::ComputeSetup()
   }
 
   // At this point L and U have the values of A in the structure of L and U, and diagonal vector D
-
-
   int TotalNonzeroDiags = 0;
   IFPACK_CHK_ERR(Graph().L_Graph().RowMap().Comm().SumAll(&NumNonzeroDiags, &TotalNonzeroDiags, 1));
   NumMyDiagonals_ = NumNonzeroDiags;
@@ -243,7 +222,7 @@ int Ifpack_ILU::Initialize()
   Destroy();
 
   Epetra_CrsMatrix* CrsMatrix;
-  CrsMatrix = dynamic_cast<Epetra_CrsMatrix*>(A_);
+  CrsMatrix = dynamic_cast<Epetra_CrsMatrix*>(&*A_);
   if (CrsMatrix == 0) {
     // this means that we have to create
     // the graph from a given Epetra_RowMatrix. Note
@@ -317,16 +296,16 @@ int Ifpack_ILU::Compute()
 
   int ierr = 0;
   int i, j, k;
-  int * LI=0, * UI = 0;
-  double * LV=0, * UV = 0;
+  int *LI, *UI;
+  double *LV, *UV;
   int NumIn, NumL, NumU;
 
   // Get Maximun Row length
   int MaxNumEntries = L_->MaxNumEntries() + U_->MaxNumEntries() + 1;
 
-  int * InI = new int[MaxNumEntries]; // Allocate temp space
-  double * InV = new double[MaxNumEntries];
-  int * colflag = new int[NumMyCols()];
+  vector<int> InI(MaxNumEntries); // Allocate temp space
+  vector<double> InV(MaxNumEntries);
+  vector<int> colflag(NumMyCols());
 
   double *DV;
   ierr = D_->ExtractView(&DV); // Get view of diagonal
@@ -348,17 +327,17 @@ int Ifpack_ILU::Compute()
     // Fill InV, InI with current row of L, D and U combined
 
     NumIn = MaxNumEntries;
-    IFPACK_CHK_ERR(L_->ExtractMyRowCopy(i, NumIn, NumL, InV, InI));
-    LV = InV;
-    LI = InI;
+    IFPACK_CHK_ERR(L_->ExtractMyRowCopy(i, NumIn, NumL, &InV[0], &InI[0]));
+    LV = &InV[0];
+    LI = &InI[0];
 
     InV[NumL] = DV[i]; // Put in diagonal
     InI[NumL] = i;
     
-    IFPACK_CHK_ERR(U_->ExtractMyRowCopy(i, NumIn-NumL-1, NumU, InV+NumL+1, InI+NumL+1));
+    IFPACK_CHK_ERR(U_->ExtractMyRowCopy(i, NumIn-NumL-1, NumU, &InV[NumL+1], &InI[NumL+1]));
     NumIn = NumL+NumU+1;
-    UV = InV+NumL+1;
-    UI = InI+NumL+1;
+    UV = &InV[NumL+1];
+    UI = &InI[NumL+1];
 
     // Set column flags
     for (j=0; j<NumIn; j++) colflag[InI[j]] = j;
@@ -440,10 +419,6 @@ int Ifpack_ILU::Compute()
 
   // add to this object's counter
   ComputeFlops_ += total_flops;
-  
-  delete [] InI;
-  delete [] InV;
-  delete [] colflag;
   
   IsComputed_ = true;
   NumCompute_++;
@@ -535,16 +510,13 @@ int Ifpack_ILU::ApplyInverse(const Epetra_MultiVector& X,
 
   // AztecOO gives X and Y pointing to the same memory location,
   // need to create an auxiliary vector, Xcopy
-  const Epetra_MultiVector* Xcopy;
+  Teuchos::RefCountPtr< const Epetra_MultiVector > Xcopy;
   if (X.Pointers()[0] == Y.Pointers()[0])
-    Xcopy = new Epetra_MultiVector(X);
+    Xcopy = Teuchos::rcp( new Epetra_MultiVector(X) );
   else
-    Xcopy = &X;
+    Xcopy = Teuchos::rcp( &X, false );
 
   IFPACK_CHK_ERR(Solve(Ifpack_ILU::UseTranspose(), *Xcopy, Y));
-
-  if (Xcopy != &X)
-    delete Xcopy;
 
   // approx is the number of nonzeros in L and U
   ApplyInverseFlops_ += X.NumVectors() * 4 * 

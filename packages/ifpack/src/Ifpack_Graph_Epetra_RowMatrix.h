@@ -102,7 +102,7 @@ private:
   //! Pointer to the wrapped Epetra_CrsGraph.
   Teuchos::RefCountPtr<const Epetra_RowMatrix> RowMatrix_;
   //! Vectors that can be used in calls to ExtractMyRowView of the Row matrix.
-  mutable std::vector<double> Values_;
+  mutable vector<double> Values_;
 };
 
 #endif

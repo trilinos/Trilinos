@@ -52,8 +52,6 @@ Ifpack_CrsIct::Ifpack_CrsIct(const Epetra_CrsMatrix & A, double Droptol, int Lfi
     Rthresh_(1.0),
     Droptol_(Droptol),
     Lfil_(Lfil),
-    OverlapX_(0),
-    OverlapY_(0),
     LevelOverlap_(0),
     OverlapMode_(Zero),
     Aict_(0),
@@ -75,8 +73,6 @@ Ifpack_CrsIct::Ifpack_CrsIct(const Ifpack_CrsIct & FactoredMatrix)
     Rthresh_(FactoredMatrix.Rthresh_),
     Droptol_(FactoredMatrix.Droptol_),
     Lfil_(FactoredMatrix.Lfil_),
-    OverlapX_(0),
-    OverlapY_(0),
     LevelOverlap_(FactoredMatrix.LevelOverlap_),
     OverlapMode_(FactoredMatrix.OverlapMode_),
     Aict_(0),
@@ -84,8 +80,8 @@ Ifpack_CrsIct::Ifpack_CrsIct(const Ifpack_CrsIct & FactoredMatrix)
     Ldiag_(0)
   
 {
-  U_ = new Epetra_CrsMatrix(FactoredMatrix.U());
-  D_ = new Epetra_Vector(FactoredMatrix.D());
+  U_ = Teuchos::rcp( new Epetra_CrsMatrix(FactoredMatrix.U()) );
+  D_ = Teuchos::rcp( new Epetra_Vector(FactoredMatrix.D()) );
   
 }
 
@@ -94,8 +90,8 @@ int Ifpack_CrsIct::Allocate() {
 
   // Allocate Epetra_CrsMatrix using ILUK graphs
   if (LevelOverlap_==0) {
-    U_ = new Epetra_CrsMatrix(Copy, A_.RowMatrixRowMap(), A_.RowMatrixRowMap(), 0);
-    D_ = new Epetra_Vector(A_.RowMatrixRowMap());
+    U_ = Teuchos::rcp( new Epetra_CrsMatrix(Copy, A_.RowMatrixRowMap(), A_.RowMatrixRowMap(), 0) );
+    D_ = Teuchos::rcp( new Epetra_Vector(A_.RowMatrixRowMap()) );
   }
   else {
     EPETRA_CHK_ERR(-1); // LevelOverlap > 0 not implemented yet
@@ -103,20 +99,12 @@ int Ifpack_CrsIct::Allocate() {
     //    D_ = new Epetra_Vector(OverlapRowMap());
   }
     
-  
-  
     SetAllocated(true);
     return(0);
 }
 //==============================================================================
 Ifpack_CrsIct::~Ifpack_CrsIct(){
 
-
-  delete U_;
-  delete D_; // Diagonal is stored separately.  We store the inverse.
-
-  if (OverlapX_!=0) delete OverlapX_;
-  if (OverlapY_!=0) delete OverlapY_;
 
   if (Lict_!=0) {
     Matrix * Lict = (Matrix *) Lict_;
@@ -163,8 +151,6 @@ int Ifpack_CrsIct::InitValues(const Epetra_CrsMatrix & A) {
 
   int ierr = 0;
   int i, j;
-  int * InI=0, * UI = 0;
-  double * InV=0, * UV = 0;
   int NumIn, NumL, NumU;
   bool DiagFound;
   int NumNonzeroDiags = 0;
@@ -180,10 +166,10 @@ int Ifpack_CrsIct::InitValues(const Epetra_CrsMatrix & A) {
   // Get Maximun Row length
   int MaxNumEntries = OverlapA->MaxNumEntries();
 
-  InI = new int[MaxNumEntries]; // Allocate temp space
-  UI = new int[MaxNumEntries];
-  InV = new double[MaxNumEntries];
-  UV = new double[MaxNumEntries];
+  vector<int> InI(MaxNumEntries); // Allocate temp space
+  vector<int> UI(MaxNumEntries);
+  vector<double> InV(MaxNumEntries);
+  vector<double> UV(MaxNumEntries);
 
   double *DV;
   ierr = D_->ExtractView(&DV); // Get view of diagonal
@@ -195,7 +181,7 @@ int Ifpack_CrsIct::InitValues(const Epetra_CrsMatrix & A) {
 
   for (i=0; i< NumRows; i++) {
 
-    OverlapA->ExtractMyRowCopy(i, MaxNumEntries, NumIn, InV, InI); // Get Values and Indices
+    OverlapA->ExtractMyRowCopy(i, MaxNumEntries, NumIn, &InV[0], &InI[0]); // Get Values and Indices
     
     // Split into L and U (we don't assume that indices are ordered).
     
@@ -222,17 +208,11 @@ int Ifpack_CrsIct::InitValues(const Epetra_CrsMatrix & A) {
     // Check in things for this row of L and U
 
     if (DiagFound) NumNonzeroDiags++;
-    if (NumU) U_->InsertMyValues(i, NumU, UV, UI);
+    if (NumU) U_->InsertMyValues(i, NumU, &UV[0], &UI[0]);
     
   }
 
-  delete [] UI;
-  delete [] UV;
-  delete [] InI;
-  delete [] InV;
-
   if (LevelOverlap_>0 && U().DistributedGlobal()) delete OverlapA;
-
 
   U_->FillComplete(A_.OperatorDomainMap(), A_.OperatorRangeMap());
   SetValuesInitialized(true);
@@ -260,7 +240,7 @@ int Ifpack_CrsIct::Factor() {
   int * ptr=0, * ind;
   double * val, * rhs, * lhs;
 
-  int ierr = Epetra_Util_ExtractHbData(U_, 0, 0, m, n, nz, ptr, ind,
+  int ierr = Epetra_Util_ExtractHbData(U_.get(), 0, 0, m, n, nz, ptr, ind,
 			    val, Nrhs, rhs, ldrhs, lhs, ldlhs);
   if (ierr<0) EPETRA_CHK_ERR(ierr);
 
@@ -286,14 +266,12 @@ int Ifpack_CrsIct::Factor() {
 
   // Get rid of unnecessary data
   delete [] ptr;
-  delete U_;
-  delete D_;
 
   // Create Epetra View of L from crout_ict
 
   if (LevelOverlap_==0) {
-    U_ = new Epetra_CrsMatrix(View, A_.RowMatrixRowMap(), A_.RowMatrixRowMap(),0);
-    D_ = new Epetra_Vector(View, A_.RowMatrixRowMap(), Ldiag_);
+    U_ = Teuchos::rcp( new Epetra_CrsMatrix(View, A_.RowMatrixRowMap(), A_.RowMatrixRowMap(),0) );
+    D_ = Teuchos::rcp( new Epetra_Vector(View, A_.RowMatrixRowMap(), Ldiag_) );
   }
   else {
     EPETRA_CHK_ERR(-1); // LevelOverlap > 0 not implemented yet

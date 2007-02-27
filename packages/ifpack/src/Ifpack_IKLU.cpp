@@ -251,7 +251,7 @@ int Ifpack_IKLU::Compute()
   // Create L and U as a view of the information stored in csrnN_->L and csrnN_->U
   csr* L = csrnN_->L;
   csr* U = csrnN_->U;
-  std::vector<int> numEntriesL( NumMyRows_ ), numEntriesU( NumMyRows_ );
+  vector<int> numEntriesL( NumMyRows_ ), numEntriesU( NumMyRows_ );
   for (int i=0; i < NumMyRows_; ++i) {
     numEntriesL[i] = ( L->p[i+1] - L->p[i] );
     numEntriesU[i] = ( U->p[i+1] - U->p[i] );
@@ -298,7 +298,7 @@ int Ifpack_IKLU::ApplyInverse(const Epetra_MultiVector& X,
   //
   // AztecOO gives X and Y pointing to the same memory location,
   // need to create an auxiliary vector, Xcopy and apply permutation.
-  std::vector<int> invq( NumMyRows_ );
+  vector<int> invq( NumMyRows_ );
 
   for (int i=0; i<NumMyRows_; ++i ) {
     csrnN_->perm[ csrnN_->pinv[i] ] = i;

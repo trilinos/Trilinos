@@ -3,6 +3,14 @@
 
 #include "Ifpack_ConfigDefs.h"
 #include "Ifpack_Preconditioner.h"
+
+#include "Epetra_Vector.h"
+#include "Epetra_Time.h"
+#include "Epetra_RowMatrix.h"
+#include "Epetra_Import.h"
+
+#include "Teuchos_RefCountPtr.hpp"
+
 namespace Teuchos {
   class ParameterList;
 }
@@ -10,11 +18,7 @@ class Epetra_MultiVector;
 class Epetra_Vector;
 class Epetra_Map;
 class Epetra_Comm;
-class Epetra_Time;
-class Epetra_Vector;
-class Epetra_RowMatrix;
 class Epetra_CrsMatrix;
-class Epetra_Import;
 
 //! Ifpack_PointRelaxation: a class to define point relaxation preconditioners of for Epetra_RowMatrix's.
 
@@ -95,7 +99,7 @@ public:
   Ifpack_PointRelaxation(const Epetra_RowMatrix* Matrix);
 
   //! Destructor.
-  virtual ~Ifpack_PointRelaxation();
+  virtual ~Ifpack_PointRelaxation() {}
 
   //@}
 
@@ -381,13 +385,13 @@ private:
   //! Number of global nonzeros.
   int NumGlobalNonzeros_;
   //! Pointers to the matrix to be preconditioned.
-  const Epetra_RowMatrix* Matrix_;
+  Teuchos::RefCountPtr<const Epetra_RowMatrix> Matrix_;
   //! Importer for parallel GS and SGS
-  Epetra_Import* Importer_;
+  Teuchos::RefCountPtr<Epetra_Import> Importer_;
   //! Contains the diagonal elements of \c Matrix.
-  mutable Epetra_Vector* Diagonal_;
+  mutable Teuchos::RefCountPtr<Epetra_Vector> Diagonal_;
   //! Time object to track timing.
-  Epetra_Time* Time_;
+  Teuchos::RefCountPtr<Epetra_Time> Time_;
   //! If \c true, more than 1 processor is currently used.
   bool IsParallel_;
   //! If \c true, the starting solution is always the zero vector.

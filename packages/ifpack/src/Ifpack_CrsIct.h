@@ -37,11 +37,13 @@
 #include "Epetra_Operator.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Object.h"
+#include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
+
+#include "Teuchos_RefCountPtr.hpp"
+
 class Epetra_Comm;
 class Epetra_Map;
-class Epetra_CrsMatrix;
-class Epetra_MultiVector;
 
 namespace Teuchos {
   class ParameterList;
@@ -352,7 +354,6 @@ class Ifpack_CrsIct: public Epetra_Object, public Epetra_CompObject, public virt
   //@}
 
  protected:
- protected:
   void SetFactored(bool Flag) {Factored_ = Flag;};
   void SetValuesInitialized(bool Flag) {ValuesInitialized_ = Flag;};
   bool Allocated() const {return(Allocated_);};
@@ -365,8 +366,8 @@ class Ifpack_CrsIct: public Epetra_Object, public Epetra_CompObject, public virt
     
   const Epetra_CrsMatrix &A_;
   const Epetra_Comm & Comm_;
-  Epetra_CrsMatrix * U_;
-  Epetra_Vector * D_;
+  Teuchos::RefCountPtr<Epetra_CrsMatrix> U_;
+  Teuchos::RefCountPtr<Epetra_Vector> D_;
   bool UseTranspose_;
 
   
@@ -379,8 +380,8 @@ class Ifpack_CrsIct: public Epetra_Object, public Epetra_CompObject, public virt
   double Droptol_;
   int Lfil_;
 
-  mutable Epetra_MultiVector * OverlapX_;
-  mutable Epetra_MultiVector * OverlapY_;
+  mutable Teuchos::RefCountPtr<Epetra_MultiVector> OverlapX_;
+  mutable Teuchos::RefCountPtr<Epetra_MultiVector> OverlapY_;
   int LevelOverlap_;
   Epetra_CombineMode OverlapMode_;
 

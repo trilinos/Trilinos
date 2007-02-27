@@ -36,7 +36,8 @@
 #include "Ifpack_Preconditioner.h"
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
-class Epetra_RowMatrix;
+#include "Epetra_RowMatrix.h"
+
 class Epetra_Comm;
 class Epetra_Map;
 class Epetra_MultiVector;
@@ -107,12 +108,12 @@ class Ifpack_IC: public Ifpack_Preconditioner {
 
   const Epetra_RowMatrix& Matrix() const
   {
-    return(A_);
+    return(*A_);
   }
 
   Epetra_RowMatrix& Matrix()
   {
-    return(A_);
+    return(*A_);
   }
 
   bool IsInitialized() const
@@ -223,10 +224,10 @@ class Ifpack_IC: public Ifpack_Preconditioner {
     bool UseTranspose() const {return(UseTranspose_);};
 
     //! Returns the Epetra_Map object associated with the domain of this operator.
-    const Epetra_Map & OperatorDomainMap() const {return(A_.OperatorDomainMap());};
+    const Epetra_Map & OperatorDomainMap() const {return(A_->OperatorDomainMap());};
 
     //! Returns the Epetra_Map object associated with the range of this operator.
-    const Epetra_Map & OperatorRangeMap() const{return(A_.OperatorRangeMap());};
+    const Epetra_Map & OperatorRangeMap() const{return(A_->OperatorRangeMap());};
 
     //! Returns the Epetra_BlockMap object associated with the range of this matrix operator.
     const Epetra_Comm & Comm() const{return(Comm_);};
@@ -321,7 +322,7 @@ class Ifpack_IC: public Ifpack_Preconditioner {
     return(Droptol_);
   }
 
-  Epetra_RowMatrix &A_;
+  Teuchos::RefCountPtr<Epetra_RowMatrix> A_;
   const Epetra_Comm & Comm_;
   Teuchos::RefCountPtr<Epetra_CrsMatrix> U_;
   Teuchos::RefCountPtr<Epetra_Vector> D_;

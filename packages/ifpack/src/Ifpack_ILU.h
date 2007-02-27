@@ -363,7 +363,7 @@ private:
   // @{ Internal data
   
   //! Pointer to the Epetra_RowMatrix to factorize
-  Epetra_RowMatrix* A_;
+  Teuchos::RefCountPtr<Epetra_RowMatrix> A_;
   Teuchos::RefCountPtr<Ifpack_IlukGraph> Graph_;
   Teuchos::RefCountPtr<Epetra_CrsGraph> CrsGraph_;
   Teuchos::RefCountPtr<Epetra_Map> IlukRowMap_;

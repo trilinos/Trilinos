@@ -367,26 +367,26 @@ private:
   // @{ Other data
   //! Containers_[i] contains all the necessary information to solve on each subblock.
   //! Pointers to the matrix to be preconditioned.
-  const Epetra_RowMatrix* Matrix_;
-  mutable vector<T*> Containers_;
+  Teuchos::RefCountPtr< const Epetra_RowMatrix > Matrix_;
+  mutable vector<Teuchos::RefCountPtr<T> > Containers_;
   //! Contains information about non-overlapping partitions.
-  Ifpack_Partitioner* Partitioner_;
+  Teuchos::RefCountPtr<Ifpack_Partitioner> Partitioner_;
   string PartitionerType_;
   int PrecType_;
   //! Label for \c this object
   string Label_;
   //! If \c true, starting solution is the zero vector.
   bool ZeroStartingSolution_;
-  Ifpack_Graph* Graph_;
+  Teuchos::RefCountPtr<Ifpack_Graph> Graph_;
   //! Weights for overlapping Jacobi only.
-  Epetra_Vector* W_;
+  Teuchos::RefCountPtr<Epetra_Vector> W_;
   // Level of overlap among blocks (for Jacobi only).
   int OverlapLevel_;
   mutable Epetra_Time Time_;
   bool IsParallel_;
-  Epetra_Import* Importer_;
+  Teuchos::RefCountPtr<Epetra_Import> Importer_;
   // @}
-
+  
 }; // class Ifpack_BlockRelaxation
 
 //==============================================================================
@@ -407,18 +407,13 @@ Ifpack_BlockRelaxation(const Epetra_RowMatrix* Matrix) :
   NumSweeps_(1),
   DampingFactor_(1.0),
   NumLocalBlocks_(1),
-  Matrix_(Matrix),
-  Containers_(0),
-  Partitioner_(0),
+  Matrix_(Teuchos::rcp(Matrix,false)),
   PartitionerType_("greedy"),
   PrecType_(IFPACK_JACOBI),
   ZeroStartingSolution_(true),
-  Graph_(0),
-  W_(0),
   OverlapLevel_(0),
   Time_(Comm()),
-  IsParallel_(false),
-  Importer_(0)
+  IsParallel_(false)
 {
   if (Matrix->Comm().NumProc() != 1)
     IsParallel_ = true;
@@ -428,16 +423,6 @@ Ifpack_BlockRelaxation(const Epetra_RowMatrix* Matrix) :
 template<typename T>
 Ifpack_BlockRelaxation<T>::~Ifpack_BlockRelaxation()
 {
-  for (int i = 0 ; i < NumLocalBlocks() ; ++i)
-    delete Containers_[i];
-  if (Partitioner_)
-    delete Partitioner_;
-  if (Graph_)
-    delete Graph_;
-  if (W_)
-    delete W_;
-  if (Importer_)
-    delete Importer_;
 }
 
 //==============================================================================
@@ -484,7 +469,7 @@ template<typename T>
 int Ifpack_BlockRelaxation<T>::ExtractSubmatrices()
 {
 
-  if (Partitioner_ == 0)
+  if (Partitioner_ == Teuchos::null)
     IFPACK_CHK_ERR(-3);
 
   NumLocalBlocks_ = Partitioner_->NumLocalParts();
@@ -494,12 +479,12 @@ int Ifpack_BlockRelaxation<T>::ExtractSubmatrices()
   for (int i = 0 ; i < NumLocalBlocks() ; ++i) {
 
     int rows = Partitioner_->NumRowsInPart(i);
-    Containers_[i] = new T(rows);
+    Containers_[i] = Teuchos::rcp( new T(rows) );
     
     //Ifpack_DenseContainer* DC = 0;
     //DC = dynamic_cast<Ifpack_DenseContainer*>(Containers_[i]);
 
-    if (Containers_[i] == 0)
+    if (Containers_[i] == Teuchos::null)
       IFPACK_CHK_ERR(-5);
     
     IFPACK_CHK_ERR(Containers_[i]->SetParameters(List_));
@@ -539,10 +524,10 @@ int Ifpack_BlockRelaxation<T>::Compute()
   
   if (IsParallel_ && PrecType_ != IFPACK_JACOBI) {
     // not needed by Jacobi (done by matvec)
-    Importer_ = new Epetra_Import(Matrix().RowMatrixColMap(),
-                                  Matrix().RowMatrixRowMap());
+    Importer_ = Teuchos::rcp( new Epetra_Import(Matrix().RowMatrixColMap(),
+                                                Matrix().RowMatrixRowMap()) );
 
-    if (Importer_ == 0) IFPACK_CHK_ERR(-5);
+    if (Importer_ == Teuchos::null) IFPACK_CHK_ERR(-5);
   }
   IsComputed_ = true;
   ComputeTime_ += Time_.ElapsedTime();
@@ -567,11 +552,11 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 
   // AztecOO gives X and Y pointing to the same memory location,
   // need to create an auxiliary vector, Xcopy
-  const Epetra_MultiVector* Xcopy;
+  Teuchos::RefCountPtr< const Epetra_MultiVector > Xcopy;
   if (X.Pointers()[0] == Y.Pointers()[0])
-    Xcopy = new Epetra_MultiVector(X);
+    Xcopy = Teuchos::rcp( new Epetra_MultiVector(X) );
   else
-    Xcopy = &X;
+    Xcopy = Teuchos::rcp( &X, false );
 
   switch (PrecType_) {
   case IFPACK_JACOBI:
@@ -584,9 +569,6 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     IFPACK_CHK_ERR(ApplyInverseSGS(*Xcopy,Y));
     break;
   }
-
-  if (Xcopy != &X)
-    delete Xcopy;
 
   ApplyInverseTime_ += Time_.ElapsedTime();
   ++NumApplyInverse_;
@@ -749,11 +731,11 @@ DoGaussSeidel(Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   // an additonal vector is needed by parallel computations
   // (note that applications through Ifpack_AdditiveSchwarz
   // are always seen are serial)
-  Epetra_MultiVector* Y2;
+  Teuchos::RefCountPtr< Epetra_MultiVector > Y2;
   if (IsParallel_)
-    Y2 = new Epetra_MultiVector(Importer_->TargetMap(), NumVectors);
+    Y2 = Teuchos::rcp( new Epetra_MultiVector(Importer_->TargetMap(), NumVectors) );
   else
-    Y2 = &Y;
+    Y2 = Teuchos::rcp( &Y, false );
 
   double** y_ptr;
   double** y2_ptr;
@@ -824,9 +806,6 @@ DoGaussSeidel(Epetra_MultiVector& X, Epetra_MultiVector& Y) const
       for (int i = 0 ; i < NumMyRows ; ++i)
         y_ptr[m][i] = y2_ptr[m][i];
 
-  if (IsParallel_)
-    delete Y2;
-
   return(0);
 }
 
@@ -867,11 +846,11 @@ DoSGS(const Epetra_MultiVector& X, Epetra_MultiVector& Xcopy,
   // an additonal vector is needed by parallel computations
   // (note that applications through Ifpack_AdditiveSchwarz
   // are always seen are serial)
-  Epetra_MultiVector* Y2;
+  Teuchos::RefCountPtr< Epetra_MultiVector > Y2;
   if (IsParallel_)
-    Y2 = new Epetra_MultiVector(Importer_->TargetMap(), NumVectors);
+    Y2 = Teuchos::rcp( new Epetra_MultiVector(Importer_->TargetMap(), NumVectors) );
   else
-    Y2 = &Y;
+    Y2 = Teuchos::rcp( &Y, false );
 
   double** y_ptr;
   double** y2_ptr;
@@ -989,9 +968,6 @@ DoSGS(const Epetra_MultiVector& X, Epetra_MultiVector& Xcopy,
     for (int m = 0 ; m < NumVectors ; ++m) 
       for (int i = 0 ; i < NumMyRows ; ++i)
         y_ptr[m][i] = y2_ptr[m][i];
-
-  if (IsParallel_)
-    delete Y2;
 
   return(0);
 }
@@ -1130,28 +1106,23 @@ int Ifpack_BlockRelaxation<T>::Initialize()
   IsInitialized_ = false;
   Time_.ResetStartTime();
 
-  if (Partitioner_)
-    delete Partitioner_;
-  if (Graph_)
-    delete Graph_;
-
-  Graph_ = new Ifpack_Graph_Epetra_RowMatrix(Teuchos::rcp(&Matrix(),false));
-  if (Graph_ == 0) IFPACK_CHK_ERR(-5);
+  Graph_ = Teuchos::rcp( new Ifpack_Graph_Epetra_RowMatrix(Teuchos::rcp(&Matrix(),false)) );
+  if (Graph_ == Teuchos::null) IFPACK_CHK_ERR(-5);
 
   if (PartitionerType_ == "linear")
-    Partitioner_ = new Ifpack_LinearPartitioner(Graph_);
+    Partitioner_ = Teuchos::rcp( new Ifpack_LinearPartitioner(&*Graph_) );
   else if (PartitionerType_ == "greedy")
-    Partitioner_ = new Ifpack_GreedyPartitioner(Graph_);
+    Partitioner_ = Teuchos::rcp( new Ifpack_GreedyPartitioner(&*Graph_) );
   else if (PartitionerType_ == "metis")
-    Partitioner_ = new Ifpack_METISPartitioner(Graph_);
+    Partitioner_ = Teuchos::rcp( new Ifpack_METISPartitioner(&*Graph_) );
   else if (PartitionerType_ == "equation")
-    Partitioner_ = new Ifpack_EquationPartitioner(Graph_);
+    Partitioner_ = Teuchos::rcp( new Ifpack_EquationPartitioner(&*Graph_) );
   else if (PartitionerType_ == "user")
-    Partitioner_ = new Ifpack_UserPartitioner(Graph_);
+    Partitioner_ = Teuchos::rcp( new Ifpack_UserPartitioner(&*Graph_) );
   else
     IFPACK_CHK_ERR(-2);
 
-  if (Partitioner_ == 0) IFPACK_CHK_ERR(-5);
+  if (Partitioner_ == Teuchos::null) IFPACK_CHK_ERR(-5);
 
   // need to partition the graph of A
   IFPACK_CHK_ERR(Partitioner_->SetParameters(List_));
@@ -1161,9 +1132,7 @@ int Ifpack_BlockRelaxation<T>::Initialize()
   NumLocalBlocks_ = Partitioner_->NumLocalParts();
 
   // weight of each vertex
-  if (W_)
-    delete W_;
-  W_ = new Epetra_Vector(Matrix().RowMatrixRowMap());
+  W_ = Teuchos::rcp( new Epetra_Vector(Matrix().RowMatrixRowMap()) );
   W_->PutScalar(0.0);
 
   for (int i = 0 ; i < NumLocalBlocks() ; ++i) {

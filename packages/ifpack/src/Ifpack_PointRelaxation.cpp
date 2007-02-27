@@ -1,14 +1,10 @@
 #include "Ifpack_ConfigDefs.h"
 #include <iomanip>
 #include "Epetra_Operator.h"
-#include "Epetra_RowMatrix.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
 #include "Epetra_MultiVector.h"
-#include "Epetra_Vector.h"
-#include "Epetra_Time.h"
-#include "Epetra_Import.h"
 #include "Ifpack_Preconditioner.h"
 #include "Ifpack_PointRelaxation.h"
 #include "Ifpack_Utils.h"
@@ -42,24 +38,10 @@ Ifpack_PointRelaxation(const Epetra_RowMatrix* Matrix) :
   NumMyNonzeros_(0),
   NumGlobalRows_(0),
   NumGlobalNonzeros_(0),
-  Matrix_(Matrix),
-  Importer_(0),
-  Diagonal_(0),
-  Time_(0),
+  Matrix_(Teuchos::rcp(Matrix,false)),
   IsParallel_(false),
   ZeroStartingSolution_(true)
 {
-}
-
-//==============================================================================
-Ifpack_PointRelaxation::~Ifpack_PointRelaxation()
-{
-  if (Diagonal_)
-    delete Diagonal_;
-  if (Time_)
-    delete Time_;
-  if (Importer_)
-    delete Importer_;
 }
 
 //==============================================================================
@@ -137,11 +119,11 @@ int Ifpack_PointRelaxation::Initialize()
 {
   IsInitialized_ = false;
 
-  if (Matrix_ == 0)
+  if (Matrix_ == Teuchos::null)
     IFPACK_CHK_ERR(-2);
 
-  if (Time_ == 0)
-    Time_ = new Epetra_Time(Comm());
+  if (Time_ == Teuchos::null)
+    Time_ = Teuchos::rcp( new Epetra_Time(Comm()) );
 
   if (Matrix().NumGlobalRows() != Matrix().NumGlobalCols())
     IFPACK_CHK_ERR(-2); // only square matrices
@@ -177,11 +159,9 @@ int Ifpack_PointRelaxation::Compute()
   if (NumSweeps_ <= 0)
     IFPACK_CHK_ERR(-2); // at least one application
   
-  if (Diagonal_)
-    delete Diagonal_;
-  Diagonal_ = new Epetra_Vector(Matrix().RowMatrixRowMap());
+  Diagonal_ = Teuchos::rcp( new Epetra_Vector(Matrix().RowMatrixRowMap()) );
 
-  if (Diagonal_ == 0)
+  if (Diagonal_ == Teuchos::null)
     IFPACK_CHK_ERR(-5);
 
   IFPACK_CHK_ERR(Matrix().ExtractDiagonalCopy(*Diagonal_));
@@ -215,9 +195,9 @@ int Ifpack_PointRelaxation::Compute()
   // from Y2 (to save some time).
   //
   if (IsParallel_ && ((PrecType_ == IFPACK_GS) || (PrecType_ == IFPACK_SGS))) {
-    Importer_ = new Epetra_Import(Matrix().RowMatrixColMap(),
-                                  Matrix().RowMatrixRowMap());
-    if (Importer_ == 0) IFPACK_CHK_ERR(-5);
+    Importer_ = Teuchos::rcp( new Epetra_Import(Matrix().RowMatrixColMap(),
+                                  Matrix().RowMatrixRowMap()) );
+    if (Importer_ == Teuchos::null) IFPACK_CHK_ERR(-5);
   }
 
   ++NumCompute_;
@@ -343,11 +323,11 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 
   // AztecOO gives X and Y pointing to the same memory location,
   // need to create an auxiliary vector, Xcopy
-  const Epetra_MultiVector* Xcopy;
+  Teuchos::RefCountPtr< const Epetra_MultiVector > Xcopy;
   if (X.Pointers()[0] == Y.Pointers()[0])
-    Xcopy = new Epetra_MultiVector(X);
+    Xcopy = Teuchos::rcp( new Epetra_MultiVector(X) );
   else
-    Xcopy = &X;
+    Xcopy = Teuchos::rcp( &X, false );
     
   if (ZeroStartingSolution_)
     Y.PutScalar(0.0);
@@ -367,9 +347,6 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     IFPACK_CHK_ERR(-1); // something wrong
   }
 
-  if (Xcopy != &X)
-    delete Xcopy;
-
   ++NumApplyInverse_;
   ApplyInverseTime_ += Time_->ElapsedTime();
   return(0);
@@ -384,20 +361,17 @@ ApplyInverseJacobi(const Epetra_MultiVector& RHS, Epetra_MultiVector& LHS) const
 {
 
   int NumVectors = LHS.NumVectors();
-  Epetra_MultiVector* A_times_LHS;
-  A_times_LHS = new Epetra_MultiVector(LHS.Map(),NumVectors);
-  if (A_times_LHS == 0) IFPACK_CHK_ERR(-5);
+  Epetra_MultiVector A_times_LHS( LHS.Map(),NumVectors );
 
   for (int j = 0; j < NumSweeps_ ; j++) {
 
-    IFPACK_CHK_ERR(Apply(LHS,*A_times_LHS));
-    IFPACK_CHK_ERR(A_times_LHS->Update(1.0,RHS,-1.0));
+    IFPACK_CHK_ERR(Apply(LHS,A_times_LHS));
+    IFPACK_CHK_ERR(A_times_LHS.Update(1.0,RHS,-1.0));
     for (int v = 0 ; v < NumVectors ; ++v)
-      IFPACK_CHK_ERR(LHS(v)->Multiply(DampingFactor_, *(*A_times_LHS)(v), 
+      IFPACK_CHK_ERR(LHS(v)->Multiply(DampingFactor_, *(A_times_LHS(v)), 
                                      *Diagonal_, 1.0));
 
   }
-  delete A_times_LHS;
 
   // Flops:
   // - matrix vector              (2 * NumGlobalNonzeros_)
@@ -416,7 +390,7 @@ ApplyInverseJacobi(const Epetra_MultiVector& RHS, Epetra_MultiVector& LHS) const
 int Ifpack_PointRelaxation::
 ApplyInverseGS(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
-  const Epetra_CrsMatrix* CrsMatrix = dynamic_cast<const Epetra_CrsMatrix*>(Matrix_);
+  const Epetra_CrsMatrix* CrsMatrix = dynamic_cast<const Epetra_CrsMatrix*>(&*Matrix_);
   // try to pick the best option; performances may be improved
   // if several sweeps are used.
   if (CrsMatrix != 0)
@@ -440,11 +414,11 @@ ApplyInverseGS_RowMatrix(const Epetra_MultiVector& X, Epetra_MultiVector& Y) con
   vector<int> Indices(Length);
   vector<double> Values(Length);
 
-  Epetra_MultiVector* Y2;
+  Teuchos::RefCountPtr< Epetra_MultiVector > Y2;
   if (IsParallel_)
-    Y2 = new Epetra_MultiVector(Importer_->TargetMap(), NumVectors);
+    Y2 = Teuchos::rcp( new Epetra_MultiVector(Importer_->TargetMap(), NumVectors) );
   else
-    Y2 = &Y;
+    Y2 = Teuchos::rcp( &Y, false );
 
   // extract views (for nicer and faster code)
   double** y_ptr, ** y2_ptr, ** x_ptr, *d_ptr;
@@ -519,9 +493,6 @@ ApplyInverseGS_RowMatrix(const Epetra_MultiVector& X, Epetra_MultiVector& Y) con
     }
   }
 
-  if (IsParallel_)
-    delete Y2;
-
   ApplyInverseFlops_ += NumVectors * (4 * NumGlobalRows_ + 2 * NumGlobalNonzeros_);
 
   return(0);
@@ -536,12 +507,12 @@ ApplyInverseGS_CrsMatrix(const Epetra_CrsMatrix* A, const Epetra_MultiVector& X,
   int* Indices;
   double* Values;
 
-  Epetra_MultiVector* Y2;
+  Teuchos::RefCountPtr< Epetra_MultiVector > Y2;
   if (IsParallel_) {
-    Y2 = new Epetra_MultiVector(Importer_->TargetMap(), NumVectors);
+    Y2 = Teuchos::rcp( new Epetra_MultiVector(Importer_->TargetMap(), NumVectors) );
   }
   else
-    Y2 = &Y;
+    Y2 = Teuchos::rcp( &Y, false );
 
   double** y_ptr, ** y2_ptr, ** x_ptr, *d_ptr;
   X.ExtractView(&x_ptr);
@@ -583,9 +554,6 @@ ApplyInverseGS_CrsMatrix(const Epetra_CrsMatrix* A, const Epetra_MultiVector& X,
           y_ptr[m][i] = y2_ptr[m][i];
   }
 
-  if (IsParallel_)
-    delete Y2;
-
   ApplyInverseFlops_ += NumVectors * (8 * NumGlobalRows_ + 4 * NumGlobalNonzeros_);
   return(0);
 } //ApplyInverseGS_CrsMatrix()
@@ -604,12 +572,12 @@ ApplyInverseGS_FastCrsMatrix(const Epetra_CrsMatrix* A, const Epetra_MultiVector
 
   int NumVectors = X.NumVectors();
 
-  Epetra_MultiVector* Y2;
+  Teuchos::RefCountPtr< Epetra_MultiVector > Y2;
   if (IsParallel_) {
-    Y2 = new Epetra_MultiVector(Importer_->TargetMap(), NumVectors);
+    Y2 = Teuchos::rcp( new Epetra_MultiVector(Importer_->TargetMap(), NumVectors) );
   }
   else
-    Y2 = &Y;
+    Y2 = Teuchos::rcp( &Y, false );
 
   double** y_ptr, ** y2_ptr, ** x_ptr, *d_ptr;
   X.ExtractView(&x_ptr);
@@ -648,9 +616,6 @@ ApplyInverseGS_FastCrsMatrix(const Epetra_CrsMatrix* A, const Epetra_MultiVector
           y_ptr[m][i] = y2_ptr[m][i];
   }
 
-  if (IsParallel_)
-    delete Y2;
-
   ApplyInverseFlops_ += NumVectors * (8 * NumGlobalRows_ + 4 * NumGlobalNonzeros_);
   return(0);
 } //ApplyInverseGS_FastCrsMatrix()
@@ -659,7 +624,7 @@ ApplyInverseGS_FastCrsMatrix(const Epetra_CrsMatrix* A, const Epetra_MultiVector
 int Ifpack_PointRelaxation::
 ApplyInverseSGS(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
-  const Epetra_CrsMatrix* CrsMatrix = dynamic_cast<const Epetra_CrsMatrix*>(Matrix_);
+  const Epetra_CrsMatrix* CrsMatrix = dynamic_cast<const Epetra_CrsMatrix*>(&*Matrix_);
   // try to pick the best option; performances may be improved
   // if several sweeps are used.
   if (CrsMatrix != 0)
@@ -682,12 +647,12 @@ ApplyInverseSGS_RowMatrix(const Epetra_MultiVector& X, Epetra_MultiVector& Y) co
   vector<int> Indices(Length);
   vector<double> Values(Length);
 
-  Epetra_MultiVector* Y2;
+  Teuchos::RefCountPtr< Epetra_MultiVector > Y2;
   if (IsParallel_) {
-    Y2 = new Epetra_MultiVector(Importer_->TargetMap(), NumVectors);
+    Y2 = Teuchos::rcp( new Epetra_MultiVector(Importer_->TargetMap(), NumVectors) );
   }
   else
-    Y2 = &Y;
+    Y2 = Teuchos::rcp( &Y, false );
 
   double** y_ptr, ** y2_ptr, ** x_ptr, *d_ptr;
   X.ExtractView(&x_ptr);
@@ -752,9 +717,6 @@ ApplyInverseSGS_RowMatrix(const Epetra_MultiVector& X, Epetra_MultiVector& Y) co
         for (int i = 0 ; i < NumMyRows_ ; ++i)
           y_ptr[m][i] = y2_ptr[m][i];
   }
-
-  if (IsParallel_)
-    delete Y2;
 
   ApplyInverseFlops_ += NumVectors * (8 * NumGlobalRows_ + 4 * NumGlobalNonzeros_);
   return(0);
@@ -769,12 +731,12 @@ ApplyInverseSGS_CrsMatrix(const Epetra_CrsMatrix* A, const Epetra_MultiVector& X
   int* Indices;
   double* Values;
 
-  Epetra_MultiVector* Y2;
+  Teuchos::RefCountPtr< Epetra_MultiVector > Y2;
   if (IsParallel_) {
-    Y2 = new Epetra_MultiVector(Importer_->TargetMap(), NumVectors);
+    Y2 = Teuchos::rcp( new Epetra_MultiVector(Importer_->TargetMap(), NumVectors) );
   }
   else
-    Y2 = &Y;
+    Y2 = Teuchos::rcp( &Y, false );
 
   double** y_ptr, ** y2_ptr, ** x_ptr, *d_ptr;
   X.ExtractView(&x_ptr);
@@ -837,9 +799,6 @@ ApplyInverseSGS_CrsMatrix(const Epetra_CrsMatrix* A, const Epetra_MultiVector& X
         for (int i = 0 ; i < NumMyRows_ ; ++i)
           y_ptr[m][i] = y2_ptr[m][i];
   }
-
-  if (IsParallel_)
-    delete Y2;
 
   ApplyInverseFlops_ += NumVectors * (8 * NumGlobalRows_ + 4 * NumGlobalNonzeros_);
   return(0);
@@ -857,12 +816,12 @@ ApplyInverseSGS_FastCrsMatrix(const Epetra_CrsMatrix* A, const Epetra_MultiVecto
 
   int NumVectors = X.NumVectors();
 
-  Epetra_MultiVector* Y2;
+  Teuchos::RefCountPtr< Epetra_MultiVector > Y2;
   if (IsParallel_) {
-    Y2 = new Epetra_MultiVector(Importer_->TargetMap(), NumVectors);
+    Y2 = Teuchos::rcp( new Epetra_MultiVector(Importer_->TargetMap(), NumVectors) );
   }
   else
-    Y2 = &Y;
+    Y2 = Teuchos::rcp( &Y, false );
 
   double** y_ptr, ** y2_ptr, ** x_ptr, *d_ptr;
   X.ExtractView(&x_ptr);
@@ -925,9 +884,6 @@ ApplyInverseSGS_FastCrsMatrix(const Epetra_CrsMatrix* A, const Epetra_MultiVecto
         for (int i = 0 ; i < NumMyRows_ ; ++i)
           y_ptr[m][i] = y2_ptr[m][i];
   }
-
-  if (IsParallel_)
-    delete Y2;
 
   ApplyInverseFlops_ += NumVectors * (8 * NumGlobalRows_ + 4 * NumGlobalNonzeros_);
   return(0);

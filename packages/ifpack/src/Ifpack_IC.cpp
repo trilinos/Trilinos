@@ -41,11 +41,12 @@
 #include "Epetra_Util.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RefCountPtr.hpp"
-using namespace Teuchos;
+using Teuchos::RefCountPtr;
+using Teuchos::rcp;
 
 //==============================================================================
 Ifpack_IC::Ifpack_IC(Epetra_RowMatrix* A) :
-  A_(*A),
+  A_(rcp(A,false)),
   Comm_(A->Comm()),
   UseTranspose_(false),
   Condest_(-1.0),
@@ -124,16 +125,12 @@ int Ifpack_IC::ComputeSetup()
   U_ = rcp(new Epetra_CrsMatrix(Copy, Matrix().RowMatrixRowMap(), 
                                 Matrix().RowMatrixRowMap(), 0));
   D_ = rcp(new Epetra_Vector(Matrix().RowMatrixRowMap()));
-
+  
   if (U_.get() == 0 || D_.get() == 0)
     IFPACK_CHK_ERR(-5); // memory allocation error
 
   int ierr = 0;
   int i, j;
-  int* InI;
-  int* UI;
-  double* InV;
-  double* UV;
   int NumIn, NumL, NumU;
   bool DiagFound;
   int NumNonzeroDiags = 0;
@@ -141,10 +138,10 @@ int Ifpack_IC::ComputeSetup()
   // Get Maximun Row length
   int MaxNumEntries = Matrix().MaxNumEntries();
 
-  InI = new int[MaxNumEntries]; // Allocate temp space
-  UI  = new int[MaxNumEntries];
-  InV = new double[MaxNumEntries];
-  UV  = new double[MaxNumEntries];
+  vector<int> InI(MaxNumEntries); // Allocate temp space
+  vector<int> UI(MaxNumEntries);
+  vector<double> InV(MaxNumEntries);
+  vector<double> UV(MaxNumEntries);
 
   double *DV;
   ierr = D_->ExtractView(&DV); // Get view of diagonal
@@ -155,7 +152,7 @@ int Ifpack_IC::ComputeSetup()
 
   for (i=0; i< NumRows; i++) {
 
-    Matrix().ExtractMyRowCopy(i, MaxNumEntries, NumIn, InV, InI); // Get Values and Indices
+    Matrix().ExtractMyRowCopy(i, MaxNumEntries, NumIn, &InV[0], &InI[0]); // Get Values and Indices
     
     // Split into L and U (we don't assume that indices are ordered).
     NumL = 0; 
@@ -182,23 +179,18 @@ int Ifpack_IC::ComputeSetup()
     // Check in things for this row of L and U
 
     if (DiagFound) NumNonzeroDiags++;
-    if (NumU) U_->InsertMyValues(i, NumU, UV, UI);
+    if (NumU) U_->InsertMyValues(i, NumU, &UV[0], &UI[0]);
     
   }
 
-  delete [] UI;
-  delete [] UV;
-  delete [] InI;
-  delete [] InV;
-
   U_->FillComplete(Matrix().OperatorDomainMap(), 
-		       Matrix().OperatorRangeMap());
-
+		   Matrix().OperatorRangeMap());
+  
   int ierr1 = 0;
   if (NumNonzeroDiags<U_->NumMyRows()) ierr1 = 1;
   Matrix().Comm().MaxAll(&ierr1, &ierr, 1);
   IFPACK_CHK_ERR(ierr);
-
+  
   return(0);
 }
 
@@ -209,21 +201,21 @@ int Ifpack_IC::Compute() {
     IFPACK_CHK_ERR(Initialize());
 
   IsComputed_ = false;
-
+  
   // copy matrix into L and U.
   IFPACK_CHK_ERR(ComputeSetup());
-
+  
   int i;
-
+  
   int m, n, nz, Nrhs, ldrhs, ldlhs;
   int * ptr=0, * ind;
   double * val, * rhs, * lhs;
-
+  
   int ierr = Epetra_Util_ExtractHbData(U_.get(), 0, 0, m, n, nz, ptr, ind,
 				       val, Nrhs, rhs, ldrhs, lhs, ldlhs);
   if (ierr < 0) 
     IFPACK_CHK_ERR(ierr);
-
+  
   Ifpack_AIJMatrix * Aict;
   if (Aict_==0) {
     Aict = new Ifpack_AIJMatrix;
@@ -246,72 +238,69 @@ int Ifpack_IC::Compute() {
 
   // Get rid of unnecessary data
   delete [] ptr;
-
+  
   // Create Epetra View of L from crout_ict
-  U_ = rcp(new Epetra_CrsMatrix(View, A_.RowMatrixRowMap(), A_.RowMatrixRowMap(),0));
-  D_ = rcp(new Epetra_Vector(View, A_.RowMatrixRowMap(), Ldiag_));
-
+  U_ = rcp(new Epetra_CrsMatrix(View, A_->RowMatrixRowMap(), A_->RowMatrixRowMap(),0));
+  D_ = rcp(new Epetra_Vector(View, A_->RowMatrixRowMap(), Ldiag_));
+  
   ptr = Lict->ptr;
   ind = Lict->col;
   val = Lict->val;
-    
+  
   for (i=0; i< m; i++) {
     int NumEntries = ptr[i+1]-ptr[i];
     int * Indices = ind+ptr[i];
     double * Values = val+ptr[i];
     U_->InsertMyValues(i, NumEntries, Values, Indices);
   }
-
-  U_->FillComplete(A_.OperatorDomainMap(), A_.OperatorRangeMap());
+  
+  U_->FillComplete(A_->OperatorDomainMap(), A_->OperatorRangeMap());
   D_->Reciprocal(*D_); // Put reciprocal of diagonal in this vector
- 
+  
   double current_flops = 2 * nz; // Just an estimate
   double total_flops = 0;
-    
-  A_.Comm().SumAll(&current_flops, &total_flops, 1); // Get total madds across all PEs
-
+  
+  A_->Comm().SumAll(&current_flops, &total_flops, 1); // Get total madds across all PEs
+  
   ComputeFlops_ += total_flops; 
   // Now count the rest. NOTE: those flops are *global*
   ComputeFlops_ += (double) U_->NumGlobalNonzeros(); // Accounts for multiplier above
   ComputeFlops_ += (double) D_->GlobalLength(); // Accounts for reciprocal of diagonal
-
+  
   IsComputed_ = true;
-
+  
   return(0);
-
+  
 }
 
 //=============================================================================
 // This function finds Y such that LDU Y = X or U(trans) D L(trans) Y = X for multiple RHS
 int Ifpack_IC::ApplyInverse(const Epetra_MultiVector& X, 
-			     Epetra_MultiVector& Y) const
+			    Epetra_MultiVector& Y) const
 {
-
+  
   if (!IsComputed())
     IFPACK_CHK_ERR(-3); // compute preconditioner first
-
+  
   if (X.NumVectors() != Y.NumVectors()) 
     IFPACK_CHK_ERR(-2); // Return error: X and Y not the same size
-
+  
   bool Upper = true;
   bool UnitDiagonal = true;
-
+  
   // AztecOO gives X and Y pointing to the same memory location,
   // need to create an auxiliary vector, Xcopy
-  const Epetra_MultiVector* Xcopy;
+  RefCountPtr< const Epetra_MultiVector > Xcopy;
   if (X.Pointers()[0] == Y.Pointers()[0])
-    Xcopy = new Epetra_MultiVector(X);
+    Xcopy = rcp( new Epetra_MultiVector(X) );
   else
-    Xcopy = &X;
-
+    Xcopy = rcp( &X, false );
+  
   U_->Solve(Upper, true, UnitDiagonal, *Xcopy, Y);
   Y.Multiply(1.0, *D_, Y, 0.0); // y = D*y (D_ has inverse of diagonal)
   U_->Solve(Upper, false, UnitDiagonal, Y, Y); // Solve Uy = y
-
-  if (Xcopy != &X)
-    delete Xcopy;
-
-  ++NumApplyInverse_;
+  
+    ++NumApplyInverse_;
   ApplyInverseFlops_ += 4.0 * U_->NumGlobalNonzeros();
   ApplyInverseFlops_ += D_->GlobalLength();
   return(0);
@@ -329,7 +318,7 @@ int Ifpack_IC::Apply(const Epetra_MultiVector& X,
 
   Epetra_MultiVector * X1 = (Epetra_MultiVector *) &X;
   Epetra_MultiVector * Y1 = (Epetra_MultiVector *) &Y;
-
+  
   U_->Multiply(false, *X1, *Y1);
   Y1->Update(1.0, *X1, 1.0); // Y1 = Y1 + X1 (account for implicit unit diagonal)
   Y1->ReciprocalMultiply(1.0, *D_, *Y1, 0.0); // y = D*y (D_ has inverse of diagonal)
@@ -341,15 +330,15 @@ int Ifpack_IC::Apply(const Epetra_MultiVector& X,
 
 //=============================================================================
 double Ifpack_IC::Condest(const Ifpack_CondestType CT, 
-                            const int MaxIters, const double Tol,
-                            Epetra_RowMatrix* Matrix)
+			  const int MaxIters, const double Tol,
+			  Epetra_RowMatrix* Matrix)
 {
   if (!IsComputed()) // cannot compute right now
     return(-1.0);
-
+  
   if (Condest_ == -1.0)
     Condest_ = Ifpack_Condest(*this, CT, MaxIters, Tol, Matrix);
-
+  
   return(Condest_);
 }
 
@@ -366,7 +355,7 @@ Ifpack_IC::Print(std::ostream& os) const
     os << "Relative threshold = " << RelativeThreshold() << endl;
     os << "Drop tolerance     = " << DropTolerance() << endl;
     os << "Condition number estimate = " << Condest() << endl;
-    os << "Global number of rows            = " << A_.NumGlobalRows() << endl;
+    os << "Global number of rows            = " << A_->NumGlobalRows() << endl;
     if (IsComputed_) {
       os << "Number of nonzeros of H         = " << U_->NumGlobalNonzeros() << endl;
       os << "nonzeros / rows                 = " 
