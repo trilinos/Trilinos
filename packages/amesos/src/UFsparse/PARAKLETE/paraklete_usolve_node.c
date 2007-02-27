@@ -188,8 +188,10 @@ int paraklete_usolve_node
 		    cn_child - cn_nfound)) ;
 	    MPI (MPI_Isend (Xchild, cn_child - cn_nfound, MPI_DOUBLE,
 			Sched [child], TAG0, Common->mpicomm, &req)) ;
+            MPI (MPI_Request_free (&req)) ;
 	}
     }
+
 
     return (TRUE) ;
 }

@@ -563,13 +563,15 @@ paraklete_numeric *paraklete_factorize
 		/* send this matrix to the process that owns node c */
 		MPI (MPI_Isend (Cp, cn+1, MPI_INT, Sched [c],
 			    TAG0, Common->mpicomm, &req)) ;
+                MPI (MPI_Request_free (&req)) ; 
 		MPI (MPI_Isend (Ci, cnz,  MPI_INT, Sched [c],
 			    TAG0, Common->mpicomm, &req)) ;
+                MPI (MPI_Request_free (&req)) ; 
 		MPI (MPI_Isend (Cx, cnz,  MPI_DOUBLE, Sched [c],
 			    TAG0, Common->mpicomm, &req)) ;
+                MPI (MPI_Request_free (&req)) ; 
 	    }
 	}
-
     }
     else
     {
@@ -591,6 +593,7 @@ paraklete_numeric *paraklete_factorize
 	    }
 	}
     }
+
 
     /* ---------------------------------------------------------------------- */
     /* free temporary copy of A(p,p) */

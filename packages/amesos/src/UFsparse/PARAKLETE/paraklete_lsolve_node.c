@@ -206,7 +206,9 @@ int paraklete_lsolve_node
     {
 	MPI (MPI_Isend (X, cn, MPI_DOUBLE, Sched [parent], TAG0, Common->mpicomm,
 	    &req)) ;
+        MPI (MPI_Request_free (&req)) ;
     }
+
 
     return (TRUE) ;
 }
