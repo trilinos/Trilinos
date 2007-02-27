@@ -5,7 +5,7 @@
  *
  * \brief Matrix-Free preconditioning class for edge Maxwell Problems. 
  *
- * \date Last update do Doxygen: 13-Nov-06
+ * \date Last update do Doxygen: 8-Feb-07
  *
  */
 
@@ -23,6 +23,7 @@
 #include "Epetra_Operator_With_MatMat.h"
 #include "Ifpack_Chebyshev.h"
 
+#include "ml_include.h"
 #include "ml_MultiLevelPreconditioner.h"//HAQ
 
 class Ifpack_Chebyshev;// wha??
@@ -36,7 +37,9 @@ namespace ML_Epetra
     //@{ 
     //! Constructor
     EdgeMatrixFreePreconditioner(const Epetra_Operator_With_MatMat & Operator, const Epetra_Vector& Diagonal,
-                                 const Epetra_CrsMatrix & D0_matrix,const Epetra_CrsMatrix & TMT_matrix,
+                                 const Epetra_CrsMatrix & D0_Matrix,const Epetra_CrsMatrix & D0_Clean_Matrix,
+                                 const Epetra_CrsMatrix &TMT_Matrix,const ML_Aggregate* Nodal_Aggregates,
+                                 const int* BCedges, const int numBCedges,
                                  const Teuchos::ParameterList &List,const bool ComputePrec = true);
     //@}
     
@@ -140,11 +143,21 @@ namespace ML_Epetra
     //! Fine-level operator
     const Epetra_Operator_With_MatMat * Operator_;
 
-    //! D0 or T matrix.  Needed to generate the nullspace
+    //! D0 or T matrix w/ dirichlet nodes and edges zero'd.  Used to generate prolongator.
     const Epetra_CrsMatrix * D0_Matrix_;
 
-    //! T' M1 T matrix.  Needed for nodal aggregation
-    const Epetra_CrsMatrix * TMT_Matrix_;
+    //! D0 or T matrix w/ nothing zero'd.  Needed to generate the nullspace
+    const Epetra_CrsMatrix * D0_Clean_Matrix_;
+
+    //! TMT_Matrix.  Needed for nodal maps
+    const Epetra_CrsMatrix * TMT_Matrix_;    
+
+    //! Nodal aggregates    
+    const ML_Aggregate* MLAggr;
+    
+    //! Dirichlet edges
+    const int* BCedges_;
+    const int numBCedges_;
     
     //! Prolongator
     Epetra_CrsMatrix * Prolongator;
@@ -176,7 +189,7 @@ namespace ML_Epetra
     const Epetra_Map* NodeRangeMap_;    
     //! Coarse Domain/Range Map
     Epetra_Map* CoarseMap_;
-
+    
     //! Number of V-cycles to run
     int num_cycles;
     

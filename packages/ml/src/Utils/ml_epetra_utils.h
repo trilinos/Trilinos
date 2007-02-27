@@ -17,6 +17,7 @@ class Epetra_MultiVector;
 class Epetra_RowMatrix;
 class Epetra_Map;
 class Epetra_Vector;
+class Epetra_IntVector;
 class Epetra_Import;
 class Epetra_Object;
 class Epetra_CrsGraph;
@@ -222,6 +223,55 @@ inline int ML_Operator2EpetraCrsMatrix(ML_Operator *Ke, Epetra_CrsMatrix * &
 Epetra_Map* Epetra_ML_readupdatevector(char* filename, Epetra_Comm& comm);
 Epetra_CrsMatrix* Epetra_ML_readaztecmatrix(char* filename,Epetra_Map& map,
                                             Epetra_Comm& comm);
+
+
+
+namespace ML_Epetra{
+  //! Finds the Dirichlet rows in a square matrix that got the one-and-zeros
+  //treatment
+  /*! Returns the local Dirichlet rows for a square matrix that go the
+   *  ones-and-zeros treatment for BCs.
+   */
+  int* FindLocalDiricheltRowsFromOnesAndZeros(const Epetra_CrsMatrix & Matrix, int &numBCRows);
+
+  //! Applies Dirichlet conditions to columns that rows already have.
+  /*! Apply the Dirichlet BC's specified by the dirichletRows to remove all
+   * columns (across all processors) that have entries zero'd by the BC's.  This
+   * will symmetrize a square matrix, though the routine can be run on
+   *  non-square matrices.
+   */  
+  void Apply_BCsToMatrixColumns(const int *dirichletRows, int numBCRows, const Epetra_CrsMatrix & Matrix);
+  
+  //! Applies Dirichlet conditions to matrix rows.
+  void Apply_BCsToMatrixRows(const int *dirichletRows, int numBCRows, const Epetra_CrsMatrix & Matrix);
+
+  //! Applies Dirichlet conditions to columns that rows already have.
+  /*! Apply the Dirichlet BC's specified by BoundaryMatrix to remove all
+   * columns (across all processors) that have entries zero'd by the BC's.  This
+   * will symmetrize a square matrix, though the routine can be run on
+   *  non-square matrices.
+   */  
+  void Apply_BCsToMatrixColumns(const Epetra_RowMatrix & iBoundaryMatrix, const Epetra_RowMatrix & iMatrix);
+  void Apply_BCsToMatrixColumns(const Epetra_IntVector &dirichletColumns,const Epetra_CrsMatrix & Matrix);
+
+  
+  //! Applies boundary conditions to gradient matrix.  (Maxwell's equations)
+  void Apply_BCsToGradient( const Epetra_RowMatrix & EdgeMatrix,
+                            const Epetra_RowMatrix & T);
+
+
+  //! Does Row/Column OAZ to a matrix.
+  void Apply_OAZToMatrix(int *dirichletRows, int numBCRows, const Epetra_CrsMatrix & Matrix);
+
+  //! Returns the local column numbers of the local rows passed in.
+  Epetra_IntVector * LocalRowstoColumns(int *Rows, int numRows,const Epetra_CrsMatrix & Matrix);
+
+
+    //! Finds Dirichlet the local Dirichlet columns, given the local Dirichlet rows
+  Epetra_IntVector * FindLocalDirichletColumnsFromRows(const int *dirichletRows, int numBCRows,const Epetra_CrsMatrix & Matrix);
+  
+};
+
 
 #ifdef FIXME
 string ML_toString(const int& x);

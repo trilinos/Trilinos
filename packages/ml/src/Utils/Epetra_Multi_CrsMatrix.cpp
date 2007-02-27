@@ -8,6 +8,23 @@
 #include "Epetra_Comm.h"
 #include "EpetraExt_MatrixMatrix.h"//haq
 
+extern void Epetra_CrsMatrix_Print(const Epetra_CrsMatrix& A, ostream& os);//haq
+
+
+void ML_Matrix_Print(ML_Operator *ML,const Epetra_Comm &Comm,const Epetra_Map &Map, char *fname){
+  Epetra_CrsMatrix *Temp_;
+  ofstream ofs(fname);
+  Epetra_CrsMatrix_Wrap_ML_Operator(ML,Comm,Map,&Temp_,View);
+  Epetra_CrsMatrix_Print(*Temp_,ofs);
+  delete Temp_;
+}
+
+
+
+
+
+
+
 // ================================================ ====== ==== ==== == = 
 // Constructor
 ML_Epetra::Epetra_Multi_CrsMatrix::Epetra_Multi_CrsMatrix(int NumMatrices,Epetra_CrsMatrix ** CrsMatrices)
@@ -78,10 +95,20 @@ int  ML_Epetra::Epetra_Multi_CrsMatrix::MatrixMatrix_Multiply(const Epetra_CrsMa
     rv=ML_Operator_WrapEpetraCrsMatrix(CrsMatrices_[i],CV);
     ML_CHK_ERR(rv);
 
+
     //    printf("[%d] Matmat %d/%d Prewrapped\n",A.Comm().MyPID(),NumMatrices_-i,NumMatrices_);
     //    printf("[%d] MV[i%%2]=%#x MV[(i+1)%%2]=%#x\n",A.Comm().MyPID(),MV[i%2],MV[(i+1)%2]);
 
     ML_2matmult(CV,MV[i%2],MV[(i+1)%2],ML_CSR_MATRIX);
+
+    /* DEBUG */
+    char str[80];
+    sprintf(str,"op11.%d.dat",NumMatrices_-1-i);
+    ML_Matrix_Print(MV[(i+1)%2],A.Comm(),CrsMatrices_[i]->RangeMap(),str);
+
+
+
+
     ML_Operator_Destroy(&CV);
     //    printf("[%d] Matmat %d/%d Complete\n",A.Comm().MyPID(),NumMatrices_-i,NumMatrices_);    
   }/*end for*/

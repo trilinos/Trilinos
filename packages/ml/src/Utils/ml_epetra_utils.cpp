@@ -21,12 +21,14 @@
 #include "ml_epetra.h"
 #include "ml_epetra_utils.h"
 #include "Epetra_Map.h"
+#include "Epetra_IntVector.h"
 #include "Epetra_Vector.h"
 #include "Epetra_CrsGraph.h"
 #include "Epetra_FECrsMatrix.h"
 #include "Epetra_VbrMatrix.h"
 #include "Epetra_SerialDenseMatrix.h"
 #include "Epetra_Import.h"
+#include "Epetra_Export.h"
 #include "Epetra_Time.h"
 #ifdef ML_MPI
 #include "Epetra_MpiComm.h"
@@ -890,6 +892,286 @@ void Epetra_CrsMatrix_Wrap_ML_Operator(ML_Operator * A, const Epetra_Comm &Comm,
 #endif
 }/*end Epetra_CrsMatrix_Wrap_ML_Operator*/
 
+
+// ============================================================================
+int* ML_Epetra::FindLocalDiricheltRowsFromOnesAndZeros(const Epetra_CrsMatrix & Matrix, int &numBCRows){
+  int *dirichletRows = new int[Matrix.NumMyRows()];
+  numBCRows = 0;
+  for (int i=0; i<Matrix.NumMyRows(); i++) {
+    int numEntries, *cols;
+    double *vals;
+    int ierr = Matrix.ExtractMyRowView(i,numEntries,vals,cols);
+    if (ierr == 0) {
+      int nz=0;
+      for (int j=0; j<numEntries; j++) if (vals[j] != 0.0) nz++;
+      if (nz == 1) dirichletRows[numBCRows++] = i;      
+    }/*end if*/
+  }/*end fpr*/
+  return dirichletRows;
+}/*end FindLocalDiricheltRowsFromOnesAndZeros*/
+
+
+// ====================================================================== 
+ //! Finds Dirichlet the local Dirichlet columns, given the local Dirichlet rows
+Epetra_IntVector * ML_Epetra::FindLocalDirichletColumnsFromRows(const int *dirichletRows, int numBCRows,const Epetra_CrsMatrix & Matrix){
+  const Epetra_Map & ColMap = Matrix.ColMap();
+  int indexBase = ColMap.IndexBase();
+  Epetra_Map globalMap(Matrix.NumGlobalCols(),indexBase,Matrix.Comm());
+
+  // create the exporter from this proc's column map to global 1-1 column map
+  Epetra_Export Exporter(ColMap,globalMap);
+
+  // create a vector of global column indices that we will export to
+  Epetra_IntVector globColsToZero(globalMap);
+  // create a vector of local column indices that we will export from
+  Epetra_IntVector *myColsToZero= new Epetra_IntVector(ColMap);
+  //  myColsToZero->PutScalar(0);
+  myColsToZero->PutValue(0);  
+
+  // for each local column j in a local dirichlet row, set myColsToZero[j]=1
+  for (int i=0; i < numBCRows; i++) {
+    int numEntries;
+    double *vals;
+    int *cols;
+    Matrix.ExtractMyRowView(dirichletRows[i],numEntries,vals,cols);
+    for (int j=0; j < numEntries; j++)
+      (*myColsToZero)[ cols[j] ] = 1;
+  }/*end for*/
+
+  // export to the global column map
+  globColsToZero.Export(*myColsToZero,Exporter,Add);
+  // now import from the global column map to the local column map
+  myColsToZero->Import(globColsToZero,Exporter,Insert);
+
+  return myColsToZero;
+}/*end FindLocalDirichletColumnsFromRows*/
+
+
+  // ====================================================================== 
+Epetra_IntVector * ML_Epetra::LocalRowstoColumns(int *Rows, int numRows,const Epetra_CrsMatrix & Matrix){
+  const Epetra_Map & ColMap = Matrix.ColMap();
+  int indexBase = ColMap.IndexBase();
+  Epetra_Map globalMap(Matrix.NumGlobalCols(),indexBase,Matrix.Comm());
+
+  // create the exporter from this proc's column map to global 1-1 column map
+  Epetra_Export Exporter(ColMap,globalMap);
+
+  // create a vector of global column indices that we will export to
+  Epetra_IntVector globColsToZero(globalMap);
+  // create a vector of local column indices that we will export from
+  Epetra_IntVector *myColsToZero= new Epetra_IntVector(ColMap);
+  myColsToZero->PutValue(0);  
+
+  // flag all local columns corresponding to the local rows specified
+  for (int i=0; i < numRows; i++) 
+    (*myColsToZero)[Matrix.LCID(Matrix.GRID(Rows[i]))]=1;
+
+  // export to the global column map
+  globColsToZero.Export(*myColsToZero,Exporter,Add);
+  // now import from the global column map to the local column map
+  myColsToZero->Import(globColsToZero,Exporter,Insert);
+
+  return myColsToZero;
+}/*end LocalRowstoColumns*/
+
+  // ====================================================================== 
+void ML_Epetra::Apply_BCsToMatrixRows(const int *dirichletRows, int numBCRows, const Epetra_CrsMatrix & Matrix)
+{
+  /* This function zeros out *rows* of Matrix that correspond to Dirichlet rows.
+     Input:
+         Matrix             matrix
+     Output:
+         Grad               matrix with Dirichlet *rows* zeroed out
+
+     Comments: The graph of Matrix is unchanged.
+  */
+  
+  // -------------------------
+  // now zero out the rows
+  // -------------------------
+  for (int i=0; i < numBCRows; i++) {
+    int numEntries;
+    double *vals;
+    int *cols;
+    Matrix.ExtractMyRowView(dirichletRows[i],numEntries,vals,cols);
+    for (int j=0; j < numEntries; j++)
+      vals[j] = 0.0;
+  }/*end for*/
+}/*end Apply_BCsToMatrixRows*/
+
+
+
+// ====================================================================== 
+void ML_Epetra::Apply_BCsToMatrixColumns(const Epetra_IntVector &dirichletColumns,const Epetra_CrsMatrix & Matrix){
+  /* This function zeros out columns of Matrix.
+     Input:
+         dirichletColumns   outpuy from FindLocalDirichletColumnsFromRow
+         Matrix             matrix to nuke columns of 
+     Output:
+         Matrix             matrix with columns zeroed out
+
+     Comments: The graph of Matrix is unchanged.
+  */
+  for (int i=0; i < Matrix.NumMyRows(); i++) {
+    int numEntries;
+    double *vals;
+    int *cols;
+    Matrix.ExtractMyRowView(i,numEntries,vals,cols);
+    for (int j=0; j < numEntries; j++) {
+      if (dirichletColumns[ cols[j] ] > 0)  vals[j] = 0.0;
+    }/*end for*/
+  }/*end for*/
+}/* end Apply_BCsToMatrixColumns */
+
+
+// ====================================================================== 
+void ML_Epetra::Apply_BCsToMatrixColumns(const int *dirichletRows, int numBCRows, const Epetra_CrsMatrix & Matrix){
+  /* This function zeros out columns of Matrix.
+     Input:
+         dirichletRows      output from FindLocalDirichletRowsFromOnesAndZeros
+         numBCRows          output from FindLocalDirichletRowsFromOnesAndZeros
+         Matrix             matrix to nuke columns of 
+     Output:
+         Matrix             matrix with columns zeroed out
+
+     Comments: The graph of Matrix is unchanged.
+  */
+  Epetra_IntVector* dirichletColumns=FindLocalDirichletColumnsFromRows(dirichletRows,numBCRows,Matrix);
+  Apply_BCsToMatrixColumns(*dirichletColumns,Matrix);
+  delete dirichletColumns;  
+}/* end Apply_BCsToMatrixColumns */
+
+// ====================================================================== 
+void ML_Epetra::Apply_BCsToMatrixColumns(const Epetra_RowMatrix & iBoundaryMatrix, const Epetra_RowMatrix & iMatrix){
+  const Epetra_CrsMatrix *BoundaryMatrix = dynamic_cast<const Epetra_CrsMatrix*> (&iBoundaryMatrix);
+  const Epetra_CrsMatrix *Matrix = dynamic_cast<const Epetra_CrsMatrix*>(&iMatrix);
+
+  if (BoundaryMatrix == 0 || Matrix == 0) {
+    cout << "Not applying Dirichlet boundary conditions to gradient "
+         << "because cast failed." << endl;
+    return;
+  }
+
+  // locate Dirichlet edges
+  int numBCRows;
+  int *dirichletRows = FindLocalDiricheltRowsFromOnesAndZeros(*Matrix,numBCRows);
+  Apply_BCsToMatrixColumns(dirichletRows,numBCRows,*Matrix);
+
+  delete [] dirichletRows;
+}/* end Apply_BCsToMatrixColumns */
+
+
+
+
+
+
+
+// ====================================================================== 
+void ML_Epetra::Apply_OAZToMatrix(int *dirichletRows, int numBCRows, const Epetra_CrsMatrix & Matrix)
+{
+  /* This function does row/column ones-and-zeros on a matrix, given the
+     rows/columns to nuke.
+     Input:
+         Matrix             matrix
+     Output:
+         Grad               matrix with Dirichlet rows/columns OAZ'd.
+
+     Comments: The graph of Matrix is unchanged.
+  */
+
+  int numEntries;
+  double *vals;
+  int *cols;
+
+  /* Find the local column numbers to nuke */
+  Epetra_IntVector *dirichletColumns=LocalRowstoColumns(dirichletRows,numBCRows,Matrix);
+
+  /* Zero the columns */
+  FILE *f=fopen("dcols.dat","w");
+  for (int i=0; i < Matrix.NumMyRows(); i++) {
+    Matrix.ExtractMyRowView(i,numEntries,vals,cols);
+    for (int j=0; j < numEntries; j++) 
+      if ((*dirichletColumns)[ cols[j] ] > 0){
+        vals[j] = 0.0;
+        fprintf(f,"%d\n",cols[j]);
+      }
+    
+  }/*end for*/
+  
+  /* Zero the rows, add ones to diagonal */
+  for (int i=0; i < numBCRows; i++) {
+    Matrix.ExtractMyRowView(dirichletRows[i],numEntries,vals,cols);
+    for (int j=0; j < numEntries; j++)
+      if(Matrix.GRID(dirichletRows[i])==Matrix.GCID(cols[j])) vals[j]=1.0;
+      else vals[j] = 0.0;
+  }/*end for*/
+
+
+  delete dirichletColumns;  
+}/*end Apply_OAZToMatrix*/
+
+
+
+
+
+// ====================================================================== 
+void ML_Epetra::Apply_BCsToGradient(
+             const Epetra_RowMatrix & iEdgeMatrix,
+             const Epetra_RowMatrix & iGrad)
+{
+  /* This function zeros out *rows* of T that correspond to Dirichlet rows in
+     the curl-curl matrix.  It mimics what was done previously in
+     ML_Tmat_applyDirichletBC().
+     Input:
+         EdgeMatrix         curl-curl matrix
+         Grad               gradient matrix
+     Output:
+         Grad               gradient matrix with *rows* zeroed out
+
+     Comments: The graph of Grad is unchanged.
+  */
+
+  const Epetra_CrsMatrix *EdgeMatrix = dynamic_cast<const Epetra_CrsMatrix*>
+                                           (&iEdgeMatrix );
+  const Epetra_CrsMatrix *Grad = dynamic_cast<const Epetra_CrsMatrix*>(&iGrad );
+
+  if (EdgeMatrix == 0 || Grad == 0) {
+    cout << "Not applying Dirichlet boundary conditions to gradient "
+         << "because cast failed." << endl;
+    return;
+  }
+
+  // locate Dirichlet edges
+  int *dirichletEdges = new int[EdgeMatrix->NumMyRows()];
+  int numBCEdges = 0;
+  for (int i=0; i<EdgeMatrix->NumMyRows(); i++) {
+    int numEntries, *cols;
+    double *vals;
+    int ierr = EdgeMatrix->ExtractMyRowView(i,numEntries,vals,cols);
+    if (ierr == 0) {
+      int nz=0;
+      for (int j=0; j<numEntries; j++) if (vals[j] != 0.0) nz++;
+      if (nz == 1) {
+        dirichletEdges[numBCEdges++] = i;
+      }
+    }
+  }
+  printf("Picking up %d Dirichlet rows\n",numBCEdges);
+
+  
+  // -------------------------
+  // now zero out the rows
+  // -------------------------
+  for (int i=0; i < numBCEdges; i++) {
+    int numEntries;
+    double *vals;
+    int *cols;
+    Grad->ExtractMyRowView(dirichletEdges[i],numEntries,vals,cols);
+    for (int j=0; j < numEntries; j++)
+      vals[j] = 0.0;
+  }
+  delete [] dirichletEdges;
+} //Apply_BCsToGradient
 
 // ====================================================================== 
 

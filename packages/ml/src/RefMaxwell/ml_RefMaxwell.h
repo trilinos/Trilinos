@@ -47,12 +47,12 @@ namespace ML_Epetra
     //! Constructs a RefMaxwellPreconditioner.
     // WARNING: All of these matrices will be shallow pointed to.  Please be
     //sure the matrices last until after RefMaxwellPreconditioner does.
-    RefMaxwellPreconditioner(const Epetra_CrsMatrix& SM_Matrix,    //S+M
-                             const Epetra_CrsMatrix& D0_Matrix,    //T or D0
-                             const Epetra_CrsMatrix& Ms_Matrix,    //M1(sigma)
-                             const Epetra_CrsMatrix& M0inv_Matrix, //M0^{-1}
-                             const Epetra_CrsMatrix& M1_Matrix,    //M1(1)
-                             const Epetra_CrsMatrix& TMT_Matrix,   //T' M1(sigma) T
+    RefMaxwellPreconditioner(const Epetra_CrsMatrix& SM_Matrix,      //S+M
+                             const Epetra_CrsMatrix& D0_Clean_Matrix,//T or D0 w/ nothing zero'd
+                             const Epetra_CrsMatrix& Ms_Matrix,      //M1(sigma)
+                             const Epetra_CrsMatrix& M0inv_Matrix,   //M0^{-1}
+                             const Epetra_CrsMatrix& M1_Matrix,      //M1(1)
+                             //                             const Epetra_CrsMatrix& TMT_Matrix,     //T' M1(sigma) T
                              const Teuchos::ParameterList& List,
                              const bool ComputePrec = true);
     //@}
@@ -136,8 +136,8 @@ namespace ML_Epetra
 
   private:
 
-    //@{ \name Internal functions
-
+    //@{ \name Internal functions   
+    
     //! Implicitly applies in the inverse in a 2-1-2 format
     int ApplyInverse_Implicit_212(const Epetra_MultiVector& B, Epetra_MultiVector& X) const;
 
@@ -154,8 +154,10 @@ namespace ML_Epetra
     
     //! Matrix: S+M1(sigma)
     const Epetra_CrsMatrix * SM_Matrix_;
-    //! Matrix: T or D0
-    const Epetra_CrsMatrix * D0_Matrix_;  
+    //! Matrix: T or D0 w/ dirichlet nodes and edges zero'd
+    Epetra_CrsMatrix * D0_Matrix_;
+    //! Matrix: D0 w/ nothing zero'd
+    const Epetra_CrsMatrix * D0_Clean_Matrix_;      
     //! Matrix: M1(sigma)
     const Epetra_CrsMatrix * Ms_Matrix_;
     //! Matrix: M0^{-1}
@@ -163,8 +165,14 @@ namespace ML_Epetra
     //! Matrix: M1(1)
     const Epetra_CrsMatrix * M1_Matrix_;
     //! Matrix: D0' M1(sigma) D0
-    const Epetra_CrsMatrix * TMT_Matrix_;
+    //    const Epetra_CrsMatrix * TMT_Matrix_;
+    Epetra_CrsMatrix * TMT_Matrix_;
 
+    //! Dirichelt Edges
+    int* BCrows;
+    int numBCrows;
+
+    
     //! Vector: Diagonal of reformulated operator
     Epetra_Vector* Diagonal_;
     //! (1,1) Block Operator

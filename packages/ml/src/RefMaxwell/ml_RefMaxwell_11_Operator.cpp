@@ -21,6 +21,8 @@
 extern Epetra_RowMatrix* ModifyEpetraMatrixColMap(const Epetra_RowMatrix &A,
                                                   EpetraExt::CrsMatrix_SolverMap &transform);//haq
 
+extern void ML_Matrix_Print(ML_Operator *ML,const Epetra_Comm &Comm,const Epetra_Map &Map, char *fname);
+
 extern void print_stats(const Epetra_CrsMatrix& A, char *label);//haq
 // ================================================ ====== ==== ==== == = 
 // Constructor
@@ -80,7 +82,7 @@ ML_Epetra::ML_RefMaxwell_11_Operator::ML_RefMaxwell_11_Operator(const Epetra_Crs
 ML_Epetra::ML_RefMaxwell_11_Operator::~ML_RefMaxwell_11_Operator()
 {
   if(Label_) free(Label_);
-  if(Addon_Matrix_) delete Addon_Matrix_;
+  if(Addon_Matrix_) delete [] Addon_Matrix_;
   if(Addon_) delete Addon_;
   if(Core_Matrix_) delete Core_Matrix_;
 }/*end destructor*/
@@ -123,6 +125,10 @@ int  ML_Epetra::ML_RefMaxwell_11_Operator::MatrixMatrix_Multiply(const Epetra_Cr
   ML_2matmult(SM_ML,A_ML,temp1,ML_CSR_MATRIX);
 
 
+  /* DEBUG: Output */
+  ML_Matrix_Print(temp1,*Comm_,*RangeMap_,"smp.dat");
+
+  
 #define SANITY_CHECK 1
 #ifdef SANITY_CHECK
   /* DEBUG */
@@ -150,13 +156,19 @@ int  ML_Epetra::ML_RefMaxwell_11_Operator::MatrixMatrix_Multiply(const Epetra_Cr
   //  printf("[%d] RM11: Addon Part of Matmat commencing\n",A.Comm().MyPID());
   Addon_->MatrixMatrix_Multiply(A,comm,&temp2);
 
+  ML_Matrix_Print(temp2,*Comm_,*RangeMap_,"add_p.dat");
+  
   //  ML_Operator_Print_UsingGlobalOrdering(temp2,"addon.ml",0,0);
 
   
   /* Add the matrices together */
   //  printf("[%d] RM11: Final Matrix Add commencing\n",A.Comm().MyPID());
   ML_Operator_Add(temp1,temp2,*C,ML_CSR_MATRIX,1.0);
+  // THIS IS WRONG!!!!! Check out ml_operator.c:1825.  We'll need to hack that
+  // right :(
 
+  ML_Matrix_Print(*C,*Comm_,*RangeMap_,"tfinal.dat");
+  
   //  ML_Operator_Print_UsingGlobalOrdering(*C,"res.ml",0,0);
   
   /* Cleanup */
