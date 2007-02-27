@@ -3,6 +3,7 @@
 //#include "ml_epetra.h"
 #include "ml_epetra_utils.h"
 //#include "ml_mat_formats.h"
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_EPETRAEXT)
 #include "EpetraExt_Transpose_RowMatrix.h"
 #include "EpetraExt_SolverMap_CrsMatrix.h"
 
@@ -15,7 +16,6 @@
 #include "EpetraExt_SolverMap_CrsMatrix.h" //haq?
 
 
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_EPETRAEXT)
 
 
 extern Epetra_RowMatrix* ModifyEpetraMatrixColMap(const Epetra_RowMatrix &A,

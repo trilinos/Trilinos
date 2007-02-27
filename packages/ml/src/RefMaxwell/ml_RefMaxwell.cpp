@@ -6,12 +6,12 @@
 #include "ml_MultiLevelPreconditioner.h"
 #include "ml_RefMaxwell_11_Operator.h"
 #include "ml_EdgeMatrixFreePreconditioner.h"
-#include "EpetraExt_MatrixMatrix.h" //haq
 extern void MVOUT (const Epetra_MultiVector & A, ostream & os);//HAQ
 extern void MVOUT2(const Epetra_MultiVector & A,char* pref,int idx);//HAQ
 extern void Epetra_CrsMatrix_Print(const Epetra_CrsMatrix& A, ostream& os);//HAQ
-#include "EpetraExt_CrsMatrixIn.h"//haq
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_EPETRAEXT)
+#include "EpetraExt_MatrixMatrix.h" //haq
+#include "EpetraExt_CrsMatrixIn.h"//haq
 
 
 // ================================================ ====== ==== ==== == = 

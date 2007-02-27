@@ -7,7 +7,7 @@
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS)
 
 //hax
-#include "EpetraExt_RowMatrixOut.h"
+//#include "EpetraExt_RowMatrixOut.h"
 //mucho hax
 void cms_residual_check(const char * tag, const Epetra_Operator * op,const Epetra_MultiVector& rhs, const Epetra_MultiVector& lhs);
 double cms_compute_residual(const Epetra_Operator * op,const Epetra_MultiVector& rhs, const Epetra_MultiVector& lhs);

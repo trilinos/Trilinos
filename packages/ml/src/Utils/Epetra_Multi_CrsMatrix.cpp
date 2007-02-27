@@ -6,7 +6,7 @@
 #if defined(HAVE_ML_EPETRA)
 
 #include "Epetra_Comm.h"
-#include "EpetraExt_MatrixMatrix.h"//haq
+//#include "EpetraExt_MatrixMatrix.h"//haq
 
 extern void Epetra_CrsMatrix_Print(const Epetra_CrsMatrix& A, ostream& os);//haq
 
