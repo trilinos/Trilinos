@@ -40,13 +40,8 @@ Ifpack_IlukGraph::Ifpack_IlukGraph(const Epetra_CrsGraph & Graph, int LevelFill,
     DomainMap_(Graph.DomainMap()),
     RangeMap_(Graph.RangeMap()),
     Comm_(Graph.Comm()),
-    OverlapGraph_(0),
-    OverlapRowMap_(0),
-    OverlapImporter_(0),
     LevelFill_(LevelFill),
     LevelOverlap_(LevelOverlap),
-    L_Graph_(0),
-    U_Graph_(0),
     IndexBase_(Graph.IndexBase()),
     NumGlobalRows_(Graph.NumGlobalRows()),
     NumGlobalCols_(Graph.NumGlobalCols()),
@@ -76,8 +71,6 @@ Ifpack_IlukGraph::Ifpack_IlukGraph(const Ifpack_IlukGraph & Graph)
     OverlapImporter_(Graph.OverlapImporter_),
     LevelFill_(Graph.LevelFill_),
     LevelOverlap_(Graph.LevelOverlap_),
-    L_Graph_(0),
-    U_Graph_(0),
     IndexBase_(Graph.IndexBase_),
     NumGlobalRows_(Graph.NumGlobalRows_),
     NumGlobalCols_(Graph.NumGlobalCols_),
@@ -96,18 +89,13 @@ Ifpack_IlukGraph::Ifpack_IlukGraph(const Ifpack_IlukGraph & Graph)
 {
   Epetra_CrsGraph & L_Graph_In = Graph.L_Graph();
   Epetra_CrsGraph & U_Graph_In = Graph.U_Graph();
-  L_Graph_ = new Epetra_CrsGraph(L_Graph_In);
-  U_Graph_ = new Epetra_CrsGraph(U_Graph_In);
+  L_Graph_ = Teuchos::rcp( new Epetra_CrsGraph(L_Graph_In) );
+  U_Graph_ = Teuchos::rcp( new Epetra_CrsGraph(U_Graph_In) );
 }
 
 //==============================================================================
 Ifpack_IlukGraph::~Ifpack_IlukGraph()
 {
-  delete L_Graph_;
-  delete U_Graph_;
-  if (OverlapGraph_!=&Graph_) delete OverlapGraph_;
-  if (OverlapRowMap_!=&Graph_.RowMap()) delete OverlapRowMap_;
-  if (OverlapImporter_!=0) delete OverlapImporter_;
 }
 
 //==============================================================================
@@ -128,29 +116,29 @@ int Ifpack_IlukGraph::SetParameters(const Teuchos::ParameterList& parameterlist,
 //==============================================================================
 int Ifpack_IlukGraph::ConstructOverlapGraph() {
 
-  OverlapGraph_ = (Epetra_CrsGraph *) &Graph_;
-  OverlapRowMap_ = (Epetra_BlockMap *) &Graph_.RowMap();
+  OverlapGraph_ = Teuchos::rcp( (Epetra_CrsGraph *) &Graph_, false );
+  OverlapRowMap_ = Teuchos::rcp( (Epetra_BlockMap *) &Graph_.RowMap(), false );
   
   if (LevelOverlap_==0 || !Graph_.DomainMap().DistributedGlobal()) return(0); // Nothing to do
 
-  Epetra_CrsGraph * OldGraph;
-  Epetra_BlockMap * OldRowMap;
+  Teuchos::RefCountPtr<Epetra_CrsGraph> OldGraph;
+  Teuchos::RefCountPtr<Epetra_BlockMap> OldRowMap;
   Epetra_BlockMap * DomainMap = (Epetra_BlockMap *) &Graph_.DomainMap();
   Epetra_BlockMap * RangeMap = (Epetra_BlockMap *) &Graph_.RangeMap();
   for (int level=1; level <= LevelOverlap_; level++) {
     OldGraph = OverlapGraph_; 
     OldRowMap = OverlapRowMap_;
 
-    OverlapImporter_ = (Epetra_Import *) OldGraph->Importer();
-    OverlapRowMap_ = new Epetra_BlockMap(OverlapImporter_->TargetMap());
+    OverlapImporter_ = Teuchos::rcp( (Epetra_Import *) OldGraph->Importer(), false );
+    OverlapRowMap_ = Teuchos::rcp( new Epetra_BlockMap(OverlapImporter_->TargetMap()) );
 
     
     if (level<LevelOverlap_)
-      OverlapGraph_ = new Epetra_CrsGraph(Copy, *OverlapRowMap_, 0);
+      OverlapGraph_ = Teuchos::rcp( new Epetra_CrsGraph(Copy, *OverlapRowMap_, 0) );
     else
       // On last iteration, we want to filter out all columns except those that correspond
       // to rows in the graph.  This assures that our matrix is square
-      OverlapGraph_ = new Epetra_CrsGraph(Copy, *OverlapRowMap_, *OverlapRowMap_, 0);
+      OverlapGraph_ = Teuchos::rcp( new Epetra_CrsGraph(Copy, *OverlapRowMap_, *OverlapRowMap_, 0) );
 
     EPETRA_CHK_ERR(OverlapGraph_->Import( Graph_, *OverlapImporter_, Insert));
     if (level<LevelOverlap_) {
@@ -158,12 +146,9 @@ int Ifpack_IlukGraph::ConstructOverlapGraph() {
     }
     else {
       // Copy last OverlapImporter because we will use it later
-      OverlapImporter_ = new Epetra_Import(*OverlapRowMap_, *DomainMap);
+      OverlapImporter_ = Teuchos::rcp( new Epetra_Import(*OverlapRowMap_, *DomainMap) );
       EPETRA_CHK_ERR(OverlapGraph_->FillComplete(*DomainMap, *RangeMap));
     }
-
-    if (OldGraph!=&Graph_) delete OldGraph;
-    if (OldRowMap!=&Graph_.RowMap()) delete OldRowMap;
   }
 
     NumMyBlockRows_ = OverlapGraph_->NumMyBlockRows();
@@ -178,23 +163,22 @@ int Ifpack_IlukGraph::ConstructOverlapGraph() {
 int Ifpack_IlukGraph::ConstructFilledGraph() {
   int ierr = 0;
   int i, j;
-  int * In=0, * L=0, * U = 0;
+  int * In=0;
   int NumIn, NumL, NumU;
   bool DiagFound;
 
   
   EPETRA_CHK_ERR(ConstructOverlapGraph());
 
-  L_Graph_ = new Epetra_CrsGraph(Copy, OverlapGraph_->RowMap(), OverlapGraph_->RowMap(),  0);
-  U_Graph_ = new Epetra_CrsGraph(Copy, OverlapGraph_->RowMap(), OverlapGraph_->RowMap(),  0);
+  L_Graph_ = Teuchos::rcp( new Epetra_CrsGraph(Copy, OverlapGraph_->RowMap(), OverlapGraph_->RowMap(),  0) );
+  U_Graph_ = Teuchos::rcp( new Epetra_CrsGraph(Copy, OverlapGraph_->RowMap(), OverlapGraph_->RowMap(),  0));
 
 
   // Get Maximun Row length
   int MaxNumIndices = OverlapGraph_->MaxNumIndices();
 
-  L = new int[MaxNumIndices];
-  U = new int[MaxNumIndices];
-    
+  vector<int> L(MaxNumIndices);
+  vector<int> U(MaxNumIndices);
 
   // First we copy the user's graph into L and U, regardless of fill level
 
@@ -231,13 +215,10 @@ int Ifpack_IlukGraph::ConstructFilledGraph() {
     // Check in things for this row of L and U
 
     if (DiagFound) NumMyBlockDiagonals_++;
-    if (NumL) L_Graph_->InsertMyIndices(i, NumL, L);
-    if (NumU) U_Graph_->InsertMyIndices(i, NumU, U);
+    if (NumL) L_Graph_->InsertMyIndices(i, NumL, &L[0]);
+    if (NumU) U_Graph_->InsertMyIndices(i, NumU, &U[0]);
     
   }
-
-  delete [] L;
-  delete [] U;
 
   if (LevelFill_ > 0) {
 
@@ -254,13 +235,11 @@ int Ifpack_IlukGraph::ConstructFilledGraph() {
     // LevelFill is greater than zero, so continue...
 
     int MaxRC = NumMyBlockRows_;
-    int *LinkList = new int[MaxRC];
-    int *CurrentLevel = new int[MaxRC];
-    int **Levels = new int*[MaxRC];
-    int *CurrentRow = new int[MaxRC];
-    int *LevelsRowU = new int[MaxRC];
-
-    for (i=0; i<NumMyBlockRows_; i++) Levels[i] = 0; // Initialize Levels
+    vector<vector<int> > Levels(MaxRC);
+    vector<int> LinkList(MaxRC);
+    vector<int> CurrentLevel(MaxRC);
+    vector<int> CurrentRow(MaxRC);
+    vector<int> LevelsRowU(MaxRC);
 
     for (i=0; i<NumMyBlockRows_; i++)
     {
@@ -272,10 +251,10 @@ int Ifpack_IlukGraph::ConstructFilledGraph() {
       int LenU = U_Graph_->NumMyIndices(i);
       int Len = LenL + LenU + 1;
       
-      EPETRA_CHK_ERR(L_Graph_->ExtractMyRowCopy(i, LenL, LenL, CurrentRow));      // Get L Indices
+      EPETRA_CHK_ERR(L_Graph_->ExtractMyRowCopy(i, LenL, LenL, &CurrentRow[0]));      // Get L Indices
       CurrentRow[LenL] = i;                                     // Put in Diagonal
       //EPETRA_CHK_ERR(U_Graph_->ExtractMyRowCopy(i, LenU, LenU, CurrentRow+LenL+1)); // Get U Indices
-      int ierr1 = U_Graph_->ExtractMyRowCopy(i, LenU, LenU, CurrentRow+LenL+1); // Get U Indices
+      int ierr1 = U_Graph_->ExtractMyRowCopy(i, LenU, LenU, &CurrentRow[LenL+1]); // Get U Indices
       if (ierr1!=0) {
 	cout << "ierr1 = "<< ierr1 << endl;
 	cout << "i = " << i << endl;
@@ -357,7 +336,7 @@ int Ifpack_IlukGraph::ConstructFilledGraph() {
       }
 
       EPETRA_CHK_ERR(L_Graph_->RemoveMyIndices(i)); // Delete current set of Indices
-      int ierr11 = L_Graph_->InsertMyIndices(i, LenL, CurrentRow);
+      int ierr11 = L_Graph_->InsertMyIndices(i, LenL, &CurrentRow[0]);
       if (ierr11 < 0) EPETRA_CHK_ERR(ierr1);
 
       // Diagonal
@@ -381,24 +360,15 @@ int Ifpack_IlukGraph::ConstructFilledGraph() {
         }
 
       EPETRA_CHK_ERR(U_Graph_->RemoveMyIndices(i)); // Delete current set of Indices
-      int ierr2 = U_Graph_->InsertMyIndices(i, LenU, CurrentRow);
+      int ierr2 = U_Graph_->InsertMyIndices(i, LenU, &CurrentRow[0]);
       if (ierr2<0) EPETRA_CHK_ERR(ierr2);
 
       // Allocate and fill Level info for this row
-      Levels[i] = new int[LenU+1];
+      Levels[i] = vector<int>(LenU+1);
       for (int jj=0; jj<LenU+1; jj++) Levels[i][jj] = LevelsRowU[jj];
 
     }
-    
-    delete [] LinkList;
-    delete [] CurrentLevel;
-
-    for (i=0; i<NumMyBlockRows_; i++) if (Levels[i]!=0) delete [] Levels[i];
-    delete [] Levels;
-    delete [] CurrentRow;
-    delete [] LevelsRowU;
-    
-  }
+  }    
 
   // Complete Fill steps
   Epetra_BlockMap L_DomainMap = (Epetra_BlockMap) OverlapGraph_->RowMap();

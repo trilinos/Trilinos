@@ -155,7 +155,7 @@ int Ifpack_CrsIct::InitValues(const Epetra_CrsMatrix & A) {
   bool DiagFound;
   int NumNonzeroDiags = 0;
 
-  Epetra_CrsMatrix * OverlapA = (Epetra_CrsMatrix *) &A_;
+  Teuchos::RefCountPtr<Epetra_CrsMatrix> OverlapA = Teuchos::rcp( (Epetra_CrsMatrix *) &A_ , false );
 
   if (LevelOverlap_>0) {
     EPETRA_CHK_ERR(-1); // Not implemented yet
@@ -211,8 +211,6 @@ int Ifpack_CrsIct::InitValues(const Epetra_CrsMatrix & A) {
     if (NumU) U_->InsertMyValues(i, NumU, &UV[0], &UI[0]);
     
   }
-
-  if (LevelOverlap_>0 && U().DistributedGlobal()) delete OverlapA;
 
   U_->FillComplete(A_.OperatorDomainMap(), A_.OperatorRangeMap());
   SetValuesInitialized(true);

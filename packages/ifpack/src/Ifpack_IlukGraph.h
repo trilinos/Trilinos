@@ -33,6 +33,9 @@
 #include "Ifpack_ConfigDefs.h"
 #include "Epetra_Object.h" 
 #include "Epetra_CrsGraph.h"
+#include "Epetra_Import.h"
+
+#include "Teuchos_RefCountPtr.hpp"
 
 namespace Teuchos {
   class ParameterList;
@@ -170,10 +173,10 @@ class Ifpack_IlukGraph {
   virtual Epetra_CrsGraph & U_Graph() const {return(*U_Graph_);};
   
   //! Returns the importer used to create the overlapped graph.
-  virtual Epetra_Import * OverlapImporter() const  {return(OverlapImporter_);};
+  virtual Epetra_Import * OverlapImporter() const  {return(&*OverlapImporter_);};
   
   //! Returns the the overlapped graph.
-  virtual Epetra_CrsGraph * OverlapGraph() const  {return(OverlapGraph_);};
+  virtual Epetra_CrsGraph * OverlapGraph() const  {return(&*OverlapGraph_);};
 
     //! Returns the Epetra_BlockMap object associated with the domain of this matrix operator.
     virtual const Epetra_BlockMap & DomainMap() const {return(DomainMap_);};
@@ -191,13 +194,13 @@ class Ifpack_IlukGraph {
   const Epetra_BlockMap & DomainMap_;
   const Epetra_BlockMap & RangeMap_;
   const Epetra_Comm & Comm_;
-  Epetra_CrsGraph * OverlapGraph_;
-  Epetra_BlockMap * OverlapRowMap_;
-  Epetra_Import * OverlapImporter_;
+  Teuchos::RefCountPtr<Epetra_CrsGraph> OverlapGraph_;
+  Teuchos::RefCountPtr<Epetra_BlockMap> OverlapRowMap_;
+  Teuchos::RefCountPtr<Epetra_Import> OverlapImporter_;
   int LevelFill_;
   int LevelOverlap_;
-  Epetra_CrsGraph * L_Graph_;
-  Epetra_CrsGraph * U_Graph_;
+  Teuchos::RefCountPtr<Epetra_CrsGraph> L_Graph_;
+  Teuchos::RefCountPtr<Epetra_CrsGraph> U_Graph_;
   int IndexBase_;
   int NumGlobalRows_;
   int NumGlobalCols_;

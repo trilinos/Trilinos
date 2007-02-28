@@ -37,13 +37,14 @@
 #include "Epetra_Operator.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Object.h"
+#include "Epetra_MultiVector.h"
+#include "Epetra_Vector.h"
+#include "Epetra_Map.h"
 class Epetra_Comm;
-class Epetra_Map;
-class Epetra_CrsMatrix;
 class Epetra_VbrMatrix;
 class Epetra_RowMatrix;
-class Epetra_Vector;
-class Epetra_MultiVector;
+
+#include "Teuchos_RefCountPtr.hpp"
 
 namespace Teuchos {
   class ParameterList;
@@ -449,25 +450,26 @@ class Ifpack_CrsRiluk: public Epetra_Object, public Epetra_CompObject, public vi
   int AllocateCrs();
   int AllocateVbr();
   int InitAllValues(const Epetra_RowMatrix & A, int MaxNumEntries);
-  int BlockMap2PointMap(const Epetra_BlockMap & BlockMap, Epetra_Map * & PointMap);
+  int BlockMap2PointMap(const Epetra_BlockMap & BlockMap, Teuchos::RefCountPtr<Epetra_Map>* PointMap);
   int GenerateXY(bool Trans, 
 		 const Epetra_MultiVector& Xin, const Epetra_MultiVector& Yin,
-		 Epetra_MultiVector * & Xout, Epetra_MultiVector * & Yout) const;
+		 Teuchos::RefCountPtr<Epetra_MultiVector>* Xout, 
+                 Teuchos::RefCountPtr<Epetra_MultiVector>* Yout) const;
   bool UserMatrixIsVbr_;
   bool UserMatrixIsCrs_;
   bool IsOverlapped_;
   const Ifpack_IlukGraph & Graph_;
-  Epetra_Map * IlukRowMap_;
-  Epetra_Map * IlukDomainMap_;
-  Epetra_Map * IlukRangeMap_;
-  const Epetra_Map * U_DomainMap_;
-  const Epetra_Map * L_RangeMap_;
+  Teuchos::RefCountPtr<Epetra_Map> IlukRowMap_;
+  Teuchos::RefCountPtr<Epetra_Map> IlukDomainMap_;
+  Teuchos::RefCountPtr<Epetra_Map> IlukRangeMap_;
+  Teuchos::RefCountPtr<const Epetra_Map> U_DomainMap_;
+  Teuchos::RefCountPtr<const Epetra_Map> L_RangeMap_;
   const Epetra_Comm & Comm_;
-  Epetra_CrsMatrix * L_;
-  Epetra_CrsMatrix * U_;
-  Epetra_CrsGraph * L_Graph_;
-  Epetra_CrsGraph * U_Graph_;
-  Epetra_Vector * D_;
+  Teuchos::RefCountPtr<Epetra_CrsMatrix> L_;
+  Teuchos::RefCountPtr<Epetra_CrsMatrix> U_;
+  Teuchos::RefCountPtr<Epetra_CrsGraph> L_Graph_;
+  Teuchos::RefCountPtr<Epetra_CrsGraph> U_Graph_;
+  Teuchos::RefCountPtr<Epetra_Vector> D_;
   bool UseTranspose_;
 
   int NumMyDiagonals_;
@@ -479,10 +481,10 @@ class Ifpack_CrsRiluk: public Epetra_Object, public Epetra_CompObject, public vi
   double Rthresh_;
   mutable double Condest_;
 
-  mutable Epetra_MultiVector * OverlapX_;
-  mutable Epetra_MultiVector * OverlapY_;
-  mutable Epetra_MultiVector * VbrX_;
-  mutable Epetra_MultiVector * VbrY_;
+  mutable Teuchos::RefCountPtr<Epetra_MultiVector> OverlapX_;
+  mutable Teuchos::RefCountPtr<Epetra_MultiVector> OverlapY_;
+  mutable Teuchos::RefCountPtr<Epetra_MultiVector> VbrX_;
+  mutable Teuchos::RefCountPtr<Epetra_MultiVector> VbrY_;
   Epetra_CombineMode OverlapMode_;
 
 
