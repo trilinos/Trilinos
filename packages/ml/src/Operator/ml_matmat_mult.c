@@ -12,9 +12,6 @@
 #include "ml_aztec_utils.h"
 #include <limits.h>
 
-#define HASH_SIZE     1024   /* should be a power of two */
-#define MASK          01777  /* should be bit pattern of hash size minus 1 */
-
 /* ******************************************************************** */
 /* matrix matrix multiplication                                         */ 
 /* Cmatrix = Amatrix * Bmatrix                                          */
@@ -23,8 +20,10 @@
 /*       description of the matrix structure ML_matrix.                 */
 /* -------------------------------------------------------------------- */
 
+/* ******************************************************************** */
 void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
 		       ML_Operator **Cmatrix)
+/* -------------------------------------------------------------------- */
 {
   int    i,k, jj, next_nz, Ncols, N, Nnz_estimate, sub_i, accum_size, row;
   int    *Cbpntr, *Cbindx, *A_i_cols, rowi_N, *accum_col, row2_N;
@@ -860,10 +859,12 @@ void ML_blkmatmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
   (*Cmatrix)->outvec_leng   = save_ints[1]; 
   (*Cmatrix)->invec_leng    = save_ints[5];   
 
-}
+} /* ML_blkmatmat_mult() */
 
+/* ******************************************************************** */
 void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
                     ML_Operator **Cmatrix)
+/* -------------------------------------------------------------------- */
 {
    int    i,k, jj, next_nz, Ncols, N, Nnz_estimate, sub_i, accum_size, row;
    int    *C_ptr, *Ccol, *A_i_cols, rowi_N, *accum_col, row2_N;
@@ -881,17 +882,11 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
    int *col_inds, B_total_Nnz, itemp, B_allocated, hash_val, *accum_index, lots_of_space;
    int rows_that_fit, rows_length, *rows, NBrows, end, start = 0;
    int subB_Nnz, Next_est, total_cols = 0;
-   /*
-   double t1, t6;
-   */
    int tcols, hash_used, j, *tptr;
    int *acc_col_ptr, *Bcol_ptr; double *acc_val_ptr, *Bval_ptr;
    int allzeros;
    int hashTableIsPowerOfTwo = 0;
    int nearbyIndex;
-   /*
-   t1 = GetClock();
-   */
    N  = Amatrix->getrow->Nrows;
 
    /**************************************************************************/
@@ -945,18 +940,18 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
    Next_est = 0;
    while(current != NULL) {
       if (current->getrow->pre_comm != NULL) {
-	if (current->getrow->pre_comm->total_rcv_length <= 0) {
+    if (current->getrow->pre_comm->total_rcv_length <= 0) {
 #ifdef charles
       if (Amatrix->comm->ML_mypid == 0)
          printf("*** ML_matmat_mult: %s x %s\n",Amatrix->label,Bmatrix->label);
-	  printf("*** %d: recomputing rcv length (%u %u)\n",Bmatrix->comm->ML_mypid,Bmatrix,current); fflush(stdout);
+      printf("*** %d: recomputing rcv length (%u %u)\n",Bmatrix->comm->ML_mypid,Bmatrix,current); fflush(stdout);
 #endif
-	  ML_CommInfoOP_Compute_TotalRcvLength(current->getrow->pre_comm);
-	}
+      ML_CommInfoOP_Compute_TotalRcvLength(current->getrow->pre_comm);
+    }
 
          Next_est += current->getrow->pre_comm->total_rcv_length;
 #ifdef charles
-	  printf("*** %d: Nghost = %d  %d (%d x %d)\n",Bmatrix->comm->ML_mypid,Next_est,current->getrow->pre_comm->total_rcv_length,Bmatrix->outvec_leng,Bmatrix->invec_leng); fflush(stdout);
+      printf("*** %d: Nghost = %d  %d (%d x %d)\n",Bmatrix->comm->ML_mypid,Next_est,current->getrow->pre_comm->total_rcv_length,Bmatrix->outvec_leng,Bmatrix->invec_leng); fflush(stdout);
 #endif
       }
 #ifdef charles
@@ -1158,12 +1153,6 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
       lots_of_space++;
       if (Bcols != NULL) ML_free(Bcols);
       Bcols     = (int    *) ML_allocate( B_allocated * sizeof(int));
-      /*
-if ((lots_of_space < 7) ) Bvals = NULL; else 
-      */
-  /*
-if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else 
-  */
       Bvals     = (double *) ML_allocate( B_allocated * sizeof(double));
       B_allocated /= 2;
    }
@@ -1173,13 +1162,13 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
    Bvals     = (double *) ML_allocate( B_allocated * sizeof(double));
    if (lots_of_space != 1) lots_of_space = 0;
 
-     if (Bmatrix->outvec_leng != 0) {
-       dtemp = ((double) B_allocated)/ ( (double) B_total_Nnz);
-       dtemp *= .9;
-       rows_that_fit = (int) (( (double) Bmatrix->outvec_leng) * dtemp);
-       if (rows_that_fit == 0) rows_that_fit++;
-     }
-      else rows_that_fit = 1;
+   if (Bmatrix->outvec_leng != 0) {
+     dtemp = ((double) B_allocated)/ ( (double) B_total_Nnz);
+     dtemp *= .9;
+     rows_that_fit = (int) (( (double) Bmatrix->outvec_leng) * dtemp);
+     if (rows_that_fit == 0) rows_that_fit++;
+   }
+   else rows_that_fit = 1;
 
 
    *Cmatrix        = NULL;
@@ -1212,20 +1201,20 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
       rows = (int *) ML_allocate(rows_length*sizeof(int));
       for (i=0; i < rows_length; i++) rows[i] = -1;
       ML_determine_Brows(start, &end, Amatrix,
-		       &rows, &rows_length, &NBrows,
-			 &rows_that_fit, Agetrow);
+               &rows, &rows_length, &NBrows,
+             &rows_that_fit, Agetrow);
 
       jj = 0;
       itemp = 0;
       ML_az_sort(rows, NBrows, NULL, NULL);
       for (i = 0; i < Bmatrix->getrow->Nrows; i++ ) {
-	if (rows[jj] == i) {
-	  jj++;
-	  k = B_allocated;
-	  Bgetrow(Bmatrix,1, &i, &B_allocated, &Bcols, &Bvals, &row2_N, itemp);
-	  itemp += row2_N;
-	}
-	Bptr[i+1] = itemp;
+    if (rows[jj] == i) {
+      jj++;
+      k = B_allocated;
+      Bgetrow(Bmatrix,1, &i, &B_allocated, &Bcols, &Bvals, &row2_N, itemp);
+      itemp += row2_N;
+    }
+    Bptr[i+1] = itemp;
       }
       subB_Nnz = itemp;
    }
@@ -1235,11 +1224,11 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
 
    i = 0;
    if (Bmatrix->getrow->pre_comm != NULL) 
-	  i = Bmatrix->getrow->pre_comm->total_rcv_length;
+      i = Bmatrix->getrow->pre_comm->total_rcv_length;
 #ifdef charles
    printf("%d: before hashing, hash table size = %d invec and Nghost = (%d %d)\n",
 
-	  Bmatrix->comm->ML_mypid, index_length, Bmatrix->invec_leng, Next_est);
+      Bmatrix->comm->ML_mypid, index_length, Bmatrix->invec_leng, Next_est);
    fflush(stdout);
 #endif
 
@@ -1262,7 +1251,7 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
 #ifdef charles
          printf("%d: running out of hashing space: row = %d, tcols=%d"
                 " hash_length=%d, hash_used = %d\n",
-  	          Bmatrix->comm->ML_mypid,i,tcols,index_length,hash_used);
+                Bmatrix->comm->ML_mypid,i,tcols,index_length,hash_used);
          fflush(stdout);
 #endif
          ML_free(accum_index);
@@ -1300,7 +1289,7 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
 #ifdef charles
          printf("%d: running out of hashing space: row = %d, tcols=%d"
                 " hash_length=%d, hash_used = %d\n",
-  	          Bmatrix->comm->ML_mypid,i,tcols,index_length,hash_used);
+                Bmatrix->comm->ML_mypid,i,tcols,index_length,hash_used);
          fflush(stdout);
 #endif
          ML_free(accum_index);
@@ -1353,7 +1342,7 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
       accum_col = (int *) ML_allocate(accum_size*sizeof(int));
       accum_val = (double *) ML_allocate(accum_size*sizeof(double));
       if (accum_val == NULL) 
-	pr_error("ML_matmat_mult: no room for accumulator\n");
+    pr_error("ML_matmat_mult: no room for accumulator\n");
    }
 
    /**************************************************************************/
@@ -1373,36 +1362,36 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
       /*---------------------------------------------------------------------*/
 
       if (rowi_N != 0) {
-         multiplier = A_i_vals[0];
-         if ( multiplier != 0.0 ) {
-	   jj = Bptr[*A_i_cols];
-	   Bval_ptr = &(Bvals[jj]);
-	   Bcol_ptr = &(Bcols[jj]);
-	   while (jj++ < Bptr[*A_i_cols+1]) {
-	     *acc_col_ptr =  *Bcol_ptr; acc_col_ptr++;
-	     *acc_val_ptr = multiplier*(*Bval_ptr); acc_val_ptr++; Bval_ptr++;
-	     accum_index[*Bcol_ptr] = Ncols++; Bcol_ptr++;
-	   }
-	 }
+        multiplier = A_i_vals[0];
+        if ( multiplier != 0.0 ) {
+          jj = Bptr[*A_i_cols];
+          Bval_ptr = &(Bvals[jj]);
+          Bcol_ptr = &(Bcols[jj]);
+          while (jj++ < Bptr[*A_i_cols+1]) {
+            *acc_col_ptr =  *Bcol_ptr; acc_col_ptr++;
+            *acc_val_ptr = multiplier*(*Bval_ptr); acc_val_ptr++; Bval_ptr++;
+            accum_index[*Bcol_ptr] = Ncols++; Bcol_ptr++;
+          }
+        }
       }
       for (k = 1; k < rowi_N; k++) {
-	multiplier = A_i_vals[k];
-	if ( multiplier != 0.0 ) {
-	  jj = Bptr[A_i_cols[k]];
-	  Bval_ptr = &(Bvals[jj]);
-	  Bcol_ptr = &(Bcols[jj]);
-	  while (jj++ < Bptr[A_i_cols[k]+1]) {
-	    if (accum_index[*Bcol_ptr] < 0) {
-	      *acc_col_ptr = *Bcol_ptr; acc_col_ptr++;
-	      *acc_val_ptr = multiplier*(*Bval_ptr); acc_val_ptr++; Bval_ptr++;
-	      accum_index[*Bcol_ptr] = Ncols++; Bcol_ptr++;
-	    }
-	    else {
-	      accum_val[accum_index[*Bcol_ptr]] += multiplier*(*Bval_ptr);
-	      Bcol_ptr++; Bval_ptr++;
-	    }
-	  }
-	}
+        multiplier = A_i_vals[k];
+        if ( multiplier != 0.0 ) {
+          jj = Bptr[A_i_cols[k]];
+          Bval_ptr = &(Bvals[jj]);
+          Bcol_ptr = &(Bcols[jj]);
+          while (jj++ < Bptr[A_i_cols[k]+1]) {
+            if (accum_index[*Bcol_ptr] < 0) {
+              *acc_col_ptr = *Bcol_ptr; acc_col_ptr++;
+              *acc_val_ptr = multiplier*(*Bval_ptr); acc_val_ptr++; Bval_ptr++;
+              accum_index[*Bcol_ptr] = Ncols++; Bcol_ptr++;
+            }
+            else {
+              accum_val[accum_index[*Bcol_ptr]] += multiplier*(*Bval_ptr);
+              Bcol_ptr++; Bval_ptr++;
+            }
+          }
+        }
       }
       /***********************************************************************/
       /* Convert back to the original column indices.                        */
@@ -1410,9 +1399,9 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
 
       acc_col_ptr = accum_col;
       for (jj = 0; jj < Ncols; jj++ ) {
-	accum_index[*acc_col_ptr] = -1;
-	*acc_col_ptr = col_inds[*acc_col_ptr];
-	acc_col_ptr++;
+    accum_index[*acc_col_ptr] = -1;
+    *acc_col_ptr = col_inds[*acc_col_ptr];
+    acc_col_ptr++;
       }
 
       /* empty row. Let's put a zero in a nearby column. */
@@ -1442,8 +1431,8 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
          current = ML_Operator_Create(Amatrix->comm);
          ML_Operator_Set_1Levels(current, Bmatrix->from, Amatrix->to);
          ML_Operator_Set_ApplyFuncData(current, Bmatrix->invec_leng, 
-				       Amatrix->outvec_leng, temp,
-				       i,NULL,0);
+                       Amatrix->outvec_leng, temp,
+                       i,NULL,0);
 
          ML_Operator_Set_Getrow(current, i, CSR_getrow);
 
@@ -1505,7 +1494,6 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
           Cval[next_nz++] = accum_val[0];
         }
       }
-      /*      */
       C_ptr[sub_i+1] = next_nz;
       sub_i++;
       if (Ncols > max_nz_row_new) max_nz_row_new = Ncols;
@@ -1521,10 +1509,6 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
    ML_free(accum_val);
    ML_free(A_i_vals);
    ML_free(A_i_cols);
-   /*
-   t6 = GetClock();
-   printf("matmat  ==> %e   %d\n", t6-t1,Bmatrix->comm->ML_mypid); fflush(stdout);
-   */
 
    /* create 'parent' object corresponding to the resulting matrix */
 
@@ -1536,7 +1520,7 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
    *Cmatrix = ML_Operator_Create(Amatrix->comm);
    ML_Operator_Set_1Levels(*Cmatrix, Bmatrix->from, Amatrix->to);
    ML_Operator_Set_ApplyFuncData(*Cmatrix,Bmatrix->invec_leng, 
-			        Amatrix->outvec_leng,temp,N,NULL,0);
+                    Amatrix->outvec_leng,temp,N,NULL,0);
    ML_Operator_Set_Getrow(*Cmatrix, N, CSR_getrow);
    (*Cmatrix)->getrow->Nrows = N;
    (*Cmatrix)->max_nz_per_row = max_nz_row_new;
@@ -1551,7 +1535,7 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
 
    if (Bmatrix->getrow->pre_comm != NULL) {
      ML_CommInfoOP_Clone(&((*Cmatrix)->getrow->pre_comm),
-			 Bmatrix->getrow->pre_comm);
+             Bmatrix->getrow->pre_comm);
    }
 } /* ML_matmat_mult() */
 
@@ -1735,67 +1719,60 @@ int ML_determine_Brows(int start, int *end, ML_Operator *Amatrix,
   rows = *irows;
   rows_length = *irows_length;
   N = Amatrix->getrow->Nrows;
-   for (i = 0; i < rows_length; i++) rows[i] = -1;
-   i = start;
-   j = 0;
-   rowi_N = 0;
-   hash_used = 0;
+  for (i = 0; i < rows_length; i++) rows[i] = -1;
+  i = start;
+  j = 0;
+  rowi_N = 0;
+  hash_used = 0;
 
-#ifdef charles
-   printf("%d: in ML_determine\n",Amatrix->comm->ML_mypid);
-   fflush(stdout);
-#endif
-   while ( *NBrows < *rows_that_fit ) {
-      if (j < rowi_N) {
-        ML_hash_it(A_i_cols[j], rows, rows_length, &hash_used, &hash_val);
-         if (rows[hash_val] == -1) {
-            (*NBrows)++;
-	    if ( *NBrows == *rows_that_fit) {
-	      if ( (j+1 < rowi_N) && (i-1 == start)) {
-                 (*rows_that_fit)++;
-                 if ( *rows_that_fit > rows_length) {
-		   (*irows_length) += 5;
-		   *irows = (int *) ML_allocate((*irows_length)*sizeof(int));
-		   if (*irows == NULL) pr_error("matmat: out of space\n");
-		   for (kk = 0; kk < rows_length; kk++) (*irows)[kk]=rows[kk];
-		   for (kk = rows_length; kk < *irows_length; kk++) (*irows)[kk]=-1;
-		   ML_free(rows);
-                   rows = *irows;
-		   rows_length = *irows_length;
-		 }
-	      }
-      	    }
-	 }
-         rows[hash_val] = A_i_cols[j++];
-      }
-      else {
-        if (i == N) *rows_that_fit = -(*rows_that_fit);
-        else {
-           Agetrow(Amatrix,1, &i, &A_i_allocated, &A_i_cols, &A_i_vals, 
-                   &rowi_N, 0);
-           i++;
-           j = 0;
+  while ( *NBrows < *rows_that_fit ) {
+    if (j < rowi_N) {
+      ML_hash_it(A_i_cols[j], rows, rows_length, &hash_used, &hash_val);
+      if (rows[hash_val] == -1) {
+        (*NBrows)++;
+        if ( *NBrows == *rows_that_fit) {
+          if ( (j+1 < rowi_N) && (i-1 == start)) {
+            (*rows_that_fit)++;
+            if ( *rows_that_fit > rows_length) {
+              (*irows_length) += 5;
+              *irows = (int *) ML_allocate((*irows_length)*sizeof(int));
+              if (*irows == NULL) pr_error("matmat: out of space\n");
+              for (kk = 0; kk < rows_length; kk++) (*irows)[kk]=rows[kk];
+              for (kk = rows_length; kk < *irows_length; kk++) (*irows)[kk]=-1;
+              ML_free(rows);
+              rows = *irows;
+              rows_length = *irows_length;
+            }
+          }
         }
       }
-   }
-   if (*rows_that_fit < 0) { *rows_that_fit = -(*rows_that_fit);}
-   if (j != rowi_N) i--;
-   *end = i;
-   j = 0;
-   for (i = 0; i < rows_length; i++) {
-      if ( rows[i] != -1) rows[j++] = rows[i];
-   }
-#ifdef charles
-   printf("%d: leaving ML_determine\n",Amatrix->comm->ML_mypid);
-   fflush(stdout);
-#endif
-   return 0;
-} 
+      rows[hash_val] = A_i_cols[j++];
+    } else {
+      if (i == N) *rows_that_fit = -(*rows_that_fit);
+      else {
+        Agetrow(Amatrix,1, &i, &A_i_allocated, &A_i_cols, &A_i_vals, &rowi_N,0);
+        i++;
+        j = 0;
+      }
+    }
+  }
+  if (*rows_that_fit < 0) { *rows_that_fit = -(*rows_that_fit);}
+  if (j != rowi_N) i--;
+  *end = i;
+  j = 0;
+  for (i = 0; i < rows_length; i++) {
+    if ( rows[i] != -1) rows[j++] = rows[i];
+  }
+  return 0;
+} /* ML_determine_Brows() */
+
+/* ******************************************************************** */
 int ML_determine_Bblkrows(int start, int *end, ML_Operator *Amatrix,
                int *irows[], int *irows_length, int *NBrows,
                int *rows_that_fit, 
-                void   (*Agetrow)(ML_Operator *,int,int *,int *,int **,
+               void   (*Agetrow)(ML_Operator *,int,int *,int *,int **,
                        int **,int *,int))
+/* -------------------------------------------------------------------- */
 {
   int i, j, rowi_N, hash_val = 0, N, *rows, rows_length,kk;
   int A_i_allocated = 0, *A_i_cols = NULL, hash_used;
@@ -1804,59 +1781,49 @@ int ML_determine_Bblkrows(int start, int *end, ML_Operator *Amatrix,
   rows = *irows;
   rows_length = *irows_length;
   N = Amatrix->getrow->Nrows;
-   for (i = 0; i < rows_length; i++) rows[i] = -1;
-   i = start;
-   j = 0;
-   rowi_N = 0;
-   hash_used = 0;
+  for (i = 0; i < rows_length; i++) rows[i] = -1;
+  i = start;
+  j = 0;
+  rowi_N = 0;
+  hash_used = 0;
 
-#ifdef charles
-   printf("%d: in ML_determine\n",Amatrix->comm->ML_mypid);
-   fflush(stdout);
-#endif
-   while ( *NBrows < *rows_that_fit ) {
-      if (j < rowi_N) {
-         ML_hash_it(A_i_cols[j], rows, rows_length, &hash_used, &hash_val);
-         if (rows[hash_val] == -1) {
-            (*NBrows)++;
+  while ( *NBrows < *rows_that_fit ) {
+    if (j < rowi_N) {
+      ML_hash_it(A_i_cols[j], rows, rows_length, &hash_used, &hash_val);
+      if (rows[hash_val] == -1) {
+        (*NBrows)++;
         if ( *NBrows == *rows_that_fit) {
           if ( (j+1 < rowi_N) && (i-1 == start)) {
-                 (*rows_that_fit)++;
-                 if ( *rows_that_fit > rows_length) {
-           (*irows_length) += 5;
-           *irows = (int *) ML_allocate((*irows_length)*sizeof(int));
-           if (*irows == NULL) pr_error("matmat: out of space\n");
-           for (kk = 0; kk < rows_length; kk++) (*irows)[kk]=rows[kk];
-           for (kk = rows_length; kk < *irows_length; kk++) (*irows)[kk]=-1;
-           ML_free(rows);
-                   rows = *irows;
-           rows_length = *irows_length;
-         }
-          }
+            (*rows_that_fit)++;
+            if ( *rows_that_fit > rows_length) {
+              (*irows_length) += 5;
+              *irows = (int *) ML_allocate((*irows_length)*sizeof(int));
+              if (*irows == NULL) pr_error("matmat: out of space\n");
+              for (kk = 0; kk < rows_length; kk++) (*irows)[kk]=rows[kk];
+              for (kk = rows_length; kk < *irows_length; kk++) (*irows)[kk]=-1;
+              ML_free(rows);
+              rows = *irows;
+              rows_length = *irows_length;
             }
-     }
-         rows[hash_val] = A_i_cols[j++];
-      }
-      else {
-        if (i == N) *rows_that_fit = -(*rows_that_fit);
-        else {
-           Agetrow(Amatrix,1, &i, &A_i_allocated, &A_i_cols, &A_i_vals, 
-                   &rowi_N, 0);
-           i++;
-           j = 0;
+          }
         }
       }
-   }
-   if (*rows_that_fit < 0) { *rows_that_fit = -(*rows_that_fit);}
-   if (j != rowi_N) i--;
-   *end = i;
-   j = 0;
-   for (i = 0; i < rows_length; i++) {
-      if ( rows[i] != -1) rows[j++] = rows[i];
-   }
-#ifdef charles
-   printf("%d: leaving ML_determine\n",Amatrix->comm->ML_mypid);
-   fflush(stdout);
-#endif
-   return 0;
-}
+      rows[hash_val] = A_i_cols[j++];
+    } else {
+      if (i == N) *rows_that_fit = -(*rows_that_fit);
+      else {
+        Agetrow(Amatrix,1, &i, &A_i_allocated, &A_i_cols, &A_i_vals,&rowi_N,0);
+        i++;
+        j = 0;
+      }
+    }
+  }
+  if (*rows_that_fit < 0) { *rows_that_fit = -(*rows_that_fit);}
+  if (j != rowi_N) i--;
+  *end = i;
+  j = 0;
+  for (i = 0; i < rows_length; i++) {
+    if ( rows[i] != -1) rows[j++] = rows[i];
+  }
+  return 0;
+} /* ML_determine_Bblkrows() */
