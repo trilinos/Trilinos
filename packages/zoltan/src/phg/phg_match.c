@@ -1334,11 +1334,14 @@ static int pmatching_agg_ipm (ZZ *zz,
         || (hgp->UsePrefPart && !(lheadpref = (int*)   ZOLTAN_MALLOC (hg->nVtx * sizeof(int))))
         || !(visited= (char*)  ZOLTAN_MALLOC (hg->nVtx * sizeof(char)))
         || !(cw     = (float*) ZOLTAN_MALLOC (VtxDim * hg->nVtx * sizeof(float)))
-        || !(tw     = (float*) ZOLTAN_MALLOC (VtxDim * sizeof(float)))
-        || !(maxw   = (float*) ZOLTAN_MALLOC (VtxDim * sizeof(float)))
         || !(visit  = (int*)   ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))
         || !(aux    = (int*)   ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))     
         || !(sums   = (float*) ZOLTAN_CALLOC (hg->nVtx,  sizeof(float))))
+      MEMORY_ERROR;
+
+  if (VtxDim) 
+    if (!(tw = (float*) ZOLTAN_MALLOC (VtxDim * sizeof(float)))
+        || !(maxw = (float*) ZOLTAN_MALLOC (VtxDim * sizeof(float))))
       MEMORY_ERROR;
 
   if (hgc->myProc_y==0 && total_nCandidates ) {  
@@ -1403,12 +1406,10 @@ static int pmatching_agg_ipm (ZZ *zz,
     for (i=0; i< hg->nVtx; ++i)                 
       cw[i] = 1.0;
   }
-  if (hg->nVtx) {
-    MPI_Allreduce(tw, maxw, VtxDim, MPI_FLOAT, MPI_SUM, hgc->row_comm);
-    for (j=0; j<VtxDim; ++j)
-      maxw[j] /= 4.0; /* we don't allow a cluster to grow more than half of
-                         a part */
-  }
+  MPI_Allreduce(tw, maxw, VtxDim, MPI_FLOAT, MPI_SUM, hgc->row_comm);
+  for (j=0; j<VtxDim; ++j)
+    maxw[j] /= 4.0; /* we don't allow a cluster to grow more than half of
+                       a part */
 
                     
   vindex = 0;                        /* marks current position in visit array */
