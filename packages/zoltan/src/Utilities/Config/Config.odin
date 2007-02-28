@@ -45,8 +45,8 @@ F90_MODULE_PREFIX 	= -M
 #MPI_LIB			= -lmpich -lpmpich -lnsl -lgcc
 #MPI_LIBPATH		= -L/usr/local/mpich-1.2.6-eth/lib
 
-PARMETIS_LIBPATH 	= -L/home/zoltan/ParMETIS3_1/
-PARMETIS_INCPATH 	= -I/home/zoltan/ParMETIS3_1/
+PARMETIS_LIBPATH 	= -L/home/software/ParMETIS/ParMETIS3_1/
+PARMETIS_INCPATH 	= -I/home/software/ParMETIS/ParMETIS3_1/
 #
 #JOSTLE_LIBPATH 		= -L/Net/local/proj/zoltan/arch/solaris/lib
 #JOSTLE_INCPATH 		= -I/Net/local/proj/zoltan/arch/all/src
