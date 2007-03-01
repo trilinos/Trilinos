@@ -233,10 +233,12 @@ LOCA_BIFURCATION = \
 
 LOCA_HOMOTOPY_H = \
 	$(srcdir)/LOCA_Homotopy_AbstractGroup.H \
-        $(srcdir)/LOCA_Homotopy_Group.H 
+        $(srcdir)/LOCA_Homotopy_Group.H \
+	$(srcdir)/LOCA_Homotopy_DeflatedGroup.H
 
 LOCA_HOMOTOPY = \
-	$(srcdir)/LOCA_Homotopy_Group.C 
+	$(srcdir)/LOCA_Homotopy_Group.C \
+	$(srcdir)/LOCA_Homotopy_DeflatedGroup.C
 
 LOCA_DERIVUTILS_H = \
         $(srcdir)/LOCA_DerivUtils.H

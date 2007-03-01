@@ -227,7 +227,7 @@ LOCA::Homotopy::Group::computeJacobian()
 
   // Compute p*J + (1-p)*I
   NOX::Abstract::Group::ReturnType augHomTest = 
-    grpPtr->augmentJacobianForHomotopy(conParam);
+    grpPtr->augmentJacobianForHomotopy(conParam, 1.0-conParam);
   // If it is not implemented, augment the Jacobian during the 
   // applyJacobian() call.
   if (augHomTest == NOX::Abstract::Group::NotDefined)

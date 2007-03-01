@@ -74,7 +74,7 @@ LOCA::Abstract::Group::~Group()
 }
 
 NOX::Abstract::Group::ReturnType 
-LOCA::Abstract::Group::augmentJacobianForHomotopy(double conParamValue)
+LOCA::Abstract::Group::augmentJacobianForHomotopy(double a, double b)
 {
   return NOX::Abstract::Group::NotDefined;
 }
