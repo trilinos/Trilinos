@@ -779,6 +779,9 @@ void ImplicitBDFStepper<Scalar>::initialize()
   typedef Teuchos::ScalarTraits<Scalar> ST;
   using Thyra::createMember;
 
+  TEST_FOR_EXCEPT(model != Teuchos::null)
+  TEST_FOR_EXCEPT(solver != Teuchos::null)
+
   if (parameterList == Teuchos::null) {
     Teuchos::RefCountPtr<Teuchos::ParameterList> emptyParameterList;
     this->setParameterList(emptyParameterList);
