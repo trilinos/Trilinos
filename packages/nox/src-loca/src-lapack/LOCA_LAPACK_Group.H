@@ -344,11 +344,11 @@ namespace LOCA {
        */
       //@{
       /*! 
-       * \brief Replace Jacobian \f$J\f$ by \f$pJ+(1-p)I\f$ where \f$I\f$ is 
-       * the identity matrix and \f$p\f$ is a scalar.
+       * \brief Replace Jacobian \f$J\f$ by \f$aJ+bI\f$ where \f$I\f$ is 
+       * the identity matrix.
        */
       virtual NOX::Abstract::Group::ReturnType 
-      augmentJacobianForHomotopy(double conParamValue);
+      augmentJacobianForHomotopy(double a, double b);
 
       //@}
 

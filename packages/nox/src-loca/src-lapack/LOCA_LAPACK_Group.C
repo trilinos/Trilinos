@@ -706,17 +706,17 @@ LOCA::LAPACK::Group::applyComplexTransposeInverseMultiVector(
 }
 
 NOX::Abstract::Group::ReturnType 
-LOCA::LAPACK::Group::augmentJacobianForHomotopy(double conParamValue)
+LOCA::LAPACK::Group::augmentJacobianForHomotopy(double a, double b)
 {
   NOX::LAPACK::Matrix<double>& jacobianMatrix = jacSolver.getMatrix();
   int size = jacobianMatrix.numRows();
 
   // Scale the matrix by the value of the homotopy continuation param
-  jacobianMatrix.scale(conParamValue);
+  jacobianMatrix.scale(a);
 
   // Add the scaled identity matrix to the jacobian
   for (int i = 0; i < size; i++) 
-    jacobianMatrix(i,i) += (1.0 - conParamValue);
+    jacobianMatrix(i,i) += b;
 
   return NOX::Abstract::Group::Ok;
 }
