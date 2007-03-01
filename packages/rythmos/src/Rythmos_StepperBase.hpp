@@ -32,6 +32,7 @@
 
 #include "Teuchos_RefCountPtr.hpp"
 #include "Thyra_VectorBase.hpp"
+#include "Thyra_ModelEvaluator.hpp"
 #include "Teuchos_Describable.hpp"
 #include "Rythmos_InterpolationBufferBase.hpp"
 
@@ -53,7 +54,13 @@ class StepperBase : virtual public InterpolationBufferBase<Scalar>
     virtual Scalar TakeStep()=0;
 
     /// Get solution vector
-    virtual Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_solution() const = 0;
+    virtual Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > 
+      get_solution() const = 0;
+
+    /// Specify initial condition
+    virtual void setInitialCondition(const 
+        Thyra::ModelEvaluatorBase::InArgs<Scalar> &initialCondition
+        ) {};
 
 };
 

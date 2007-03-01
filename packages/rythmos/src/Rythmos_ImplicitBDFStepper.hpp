@@ -52,6 +52,9 @@ class ImplicitBDFStepper : virtual public StepperBase<Scalar>
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
 
     /** \brief . */
+    ImplicitBDFStepper();
+
+    /** \brief . */
     ImplicitBDFStepper(
       const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> >  &model
       ,const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> >  &solver
@@ -69,6 +72,11 @@ class ImplicitBDFStepper : virtual public StepperBase<Scalar>
 
     /** \brief . */
     void setSolver(const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > &solver);
+
+    /** \brief . */
+    void setInitialCondition(const 
+        Thyra::ModelEvaluatorBase::InArgs<Scalar> &initialCondition
+        );
 
     /** \brief . */
     Scalar TakeStep(Scalar dt);
@@ -147,6 +155,7 @@ class ImplicitBDFStepper : virtual public StepperBase<Scalar>
   private:
 
 
+    void getInitialCondition();
     void obtainPredictor();
     void obtainResidual();
     void obtainJacobian();
@@ -220,6 +229,8 @@ class ImplicitBDFStepper : virtual public StepperBase<Scalar>
     bool initialPhase;
     Scalar stopTime;
     bool constantStepSize;
+    bool haveInitialCondition;
+    bool isInitialized;
 
     // Magic Numbers:
     Scalar h0_safety;
@@ -249,17 +260,26 @@ class ImplicitBDFStepper : virtual public StepperBase<Scalar>
 // Defintions
 
 template<class Scalar>
+ImplicitBDFStepper<Scalar>::ImplicitBDFStepper()
+{
+  haveInitialCondition = false;
+  isInitialized=false;
+}
+
+template<class Scalar>
 ImplicitBDFStepper<Scalar>::ImplicitBDFStepper(
   const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model
   ,const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > &solver
   ,Teuchos::RefCountPtr<Teuchos::ParameterList> &parameterList
   )
 {
-  if( parameterList == Teuchos::null )
+  if( parameterList != Teuchos::null ) {
     this->setParameterList(parameterList);
+  }
   // Now we instantiate the model and the solver
   setModel(model);
   setSolver(solver);
+  isInitialized=false;
 }
 
 template<class Scalar>
@@ -271,6 +291,7 @@ ImplicitBDFStepper<Scalar>::ImplicitBDFStepper(
   // Now we instantiate the model and the solver
   setModel(model);
   setSolver(solver);
+  isInitialized=false;
 }
 
 template<class Scalar>
@@ -322,42 +343,53 @@ template<class Scalar>
 void ImplicitBDFStepper<Scalar>::setModel(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model_)
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
+  TEST_FOR_EXCEPT(model_ == Teuchos::null)
   model = model_;
   time = ST::zero();
-  xn0 = model->getNominalValues().get_x()->clone_v();
-  xpn0 = model->getNominalValues().get_x_dot()->clone_v(); 
-  x_dot_base = model->getNominalValues().get_x_dot()->clone_v();
-  ee = model->getNominalValues().get_x()->clone_v();
-  delta = model->getNominalValues().get_x()->clone_v();
-  residual = Thyra::createMember(model->get_f_space());
-  errWtVec = xn0->clone_v();
-  ErrWtVecSet(&*errWtVec,*xn0);
-  xHistory.push_back(xn0->clone_v());
-  xHistory.push_back(xpn0->clone_v());
-  for (int i=2 ; i<=maxOrder ; ++i) // Store maxOrder+1 vectors
-  {
-    xHistory.push_back(xn0->clone_v()); 
-    V_S(&*xHistory[i],ST::zero());
+}
+
+template<class Scalar>
+void ImplicitBDFStepper<Scalar>::getInitialCondition()
+{
+  if (!haveInitialCondition) {
+    TEST_FOR_EXCEPT(model->getNominalValues().get_x()==Teuchos::null);
+    TEST_FOR_EXCEPT(model->getNominalValues().get_x_dot()==Teuchos::null);
+    xn0 = model->getNominalValues().get_x()->clone_v();
+    xpn0 = model->getNominalValues().get_x_dot()->clone_v(); 
   }
-  initialize(); // Now that we have the model, we can do our initialization 
 }
 
 template<class Scalar>
 void ImplicitBDFStepper<Scalar>::setSolver(const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > &solver_)
 {
+  TEST_FOR_EXCEPT(solver_ == Teuchos::null)
   solver = solver_;
+}
+
+template<class Scalar>
+void ImplicitBDFStepper<Scalar>::setInitialCondition(
+    const Thyra::ModelEvaluatorBase::InArgs<Scalar> &initialCondition
+    )
+{
+  TEST_FOR_EXCEPT(initialCondition.get_x()==Teuchos::null);
+  TEST_FOR_EXCEPT(initialCondition.get_x_dot()==Teuchos::null);
+  xn0 = initialCondition.get_x()->clone_v();
+  xpn0 = initialCondition.get_x_dot()->clone_v(); 
+  haveInitialCondition = true;
 }
 
 template<class Scalar>
 Scalar ImplicitBDFStepper<Scalar>::TakeStep()
 {
+  if (!isInitialized) {
+    initialize(); 
+  }
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef typename Thyra::ModelEvaluatorBase::InArgs<Scalar>::ScalarMag ScalarMag;
   Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::OSTab ostab(out,1,"TakeStep");
   BDFstatusFlag status;
-  while (1)
-  {
+  while (1) {
     // Set up problem coefficients (and handle first step)
     updateCoeffs();
     // Set Error weight vector
@@ -447,12 +479,20 @@ Scalar ImplicitBDFStepper<Scalar>::TakeStep(Scalar dt)
 template<class Scalar>
 Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > ImplicitBDFStepper<Scalar>::get_solution() const
 {
+  if (!isInitialized) {
+    Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > emptyRFC;
+    return(emptyRFC); 
+  }
   return(xHistory[0]);
 }
 
 template<class Scalar>
 Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > ImplicitBDFStepper<Scalar>::get_residual() const
 {
+  if (!isInitialized) {
+    Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > emptyRFC;
+    return(emptyRFC); 
+  }
   return(residual);
 }
 
@@ -469,6 +509,10 @@ void ImplicitBDFStepper<Scalar>::describe(
       ,const Teuchos::EVerbosityLevel      verbLevel
       ) const
 {
+  if (!isInitialized) {
+    out << "This stepper is not initialized yet" << std::endl;
+    return;
+  }
   if ( (static_cast<int>(verbLevel) == static_cast<int>(Teuchos::VERB_DEFAULT) ) ||
        (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW)     )
      )
@@ -521,6 +565,9 @@ void ImplicitBDFStepper<Scalar>::describe(
 template<class Scalar>
 void ImplicitBDFStepper<Scalar>::obtainPredictor()
 {
+  if (!isInitialized) {
+    return;
+  }
   typedef Teuchos::ScalarTraits<Scalar> ST;
 
   Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
@@ -559,6 +606,9 @@ bool ImplicitBDFStepper<Scalar>::interpolateSolution(
         ,ScalarMag* accuracy_ptr_
         ) const
 {
+  if (!isInitialized) {
+    return(false);
+  }
   typedef Teuchos::ScalarTraits<Scalar> ST;
   Scalar tfuzz;   // fuzz factor to check for valid output time
   Scalar tp;      // approximately t{n-1}
@@ -602,7 +652,6 @@ bool ImplicitBDFStepper<Scalar>::interpolateSolution(
 template<class Scalar>
 void ImplicitBDFStepper<Scalar>::updateHistory()
 {
-
   // Save Newton correction for potential order increase on next step.
   if (usedOrder < maxOrder)  
   {
@@ -720,6 +769,32 @@ template<class Scalar>
 void ImplicitBDFStepper<Scalar>::initialize()
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
+  using Thyra::createMember;
+
+  if (parameterList == Teuchos::null) {
+    Teuchos::RefCountPtr<Teuchos::ParameterList> emptyParameterList;
+    this->setParameterList(emptyParameterList);
+  }
+
+  this->getInitialCondition();
+  // Generate vectors for use in calculations
+  Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > 
+    x_space = model->get_x_space();
+  Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > 
+    f_space = model->get_f_space();
+  x_dot_base = createMember(x_space);
+  ee = createMember(x_space);
+  delta = createMember(x_space);
+  residual = createMember(f_space);
+  errWtVec = createMember(x_space); 
+  ErrWtVecSet(&*errWtVec,*xn0);
+  xHistory.push_back(xn0->clone_v());
+  xHistory.push_back(xpn0->clone_v());
+  // Store maxOrder+1 vectors
+  for (int i=2 ; i<=maxOrder ; ++i) {
+    xHistory.push_back(createMember(x_space)); 
+    V_S(&*xHistory[i],ST::zero());
+  }
 
   // Choose initial step-size
   Scalar time_to_stop = stopTime - time;
@@ -768,6 +843,8 @@ void ImplicitBDFStepper<Scalar>::initialize()
   psi[0] = hh;
   cj = 1/psi[0];
   nscsco = 0;
+
+  isInitialized = true;
 }
 
 template<class Scalar>
@@ -1144,6 +1221,9 @@ void ImplicitBDFStepper<Scalar>::completeStep()
 template<class Scalar>
 bool ImplicitBDFStepper<Scalar>::ErrWtVecSet(Thyra::VectorBase<Scalar> *w_in, const Thyra::VectorBase<Scalar> &y)
 {
+  if (!isInitialized) {
+    return(false);
+  }
   typedef Teuchos::ScalarTraits<Scalar> ST;
   Thyra::VectorBase<Scalar> &w = *w_in;
   abs(&w,y);
@@ -1230,6 +1310,9 @@ bool ImplicitBDFStepper<Scalar>::SetRange(
 template<class Scalar>
 bool ImplicitBDFStepper<Scalar>::GetNodes(std::vector<Scalar>* time_vec) const
 {
+  if (!isInitialized) {
+    return(false);
+  }
   if (numberOfSteps > 0)
     time_vec->push_back(time-usedStep);
   time_vec->push_back(time);
@@ -1245,6 +1328,9 @@ bool ImplicitBDFStepper<Scalar>::RemoveNodes(std::vector<Scalar>& time_vec)
 template<class Scalar>
 int ImplicitBDFStepper<Scalar>::GetOrder() const
 {
+  if (!isInitialized) {
+    return(-1);
+  }
   return(currentOrder);
 }
 
@@ -1255,6 +1341,10 @@ void ImplicitBDFStepper<Scalar>::setParameterList(Teuchos::RefCountPtr<Teuchos::
   typedef Teuchos::ScalarTraits<Scalar> ST;
 
   parameterList = paramList;
+  if (parameterList == Teuchos::null)
+  {
+    parameterList = Teuchos::rcp(new Teuchos::ParameterList);
+  }
 
   maxOrder = parameterList->get("maxOrder",int(5)); // maximum order
   maxOrder = max(1,min(maxOrder,5)); // 1 <= maxOrder <= 5
