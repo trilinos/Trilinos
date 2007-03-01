@@ -111,8 +111,19 @@ int main()
 					       statusTestA, statusTestB));
 
     // Create the homotopy group
-    Teuchos::RefCountPtr<LOCA::Homotopy::Group> hGrp = 
-      Teuchos::rcp(new LOCA::Homotopy::Group(locaParamsList, globalData, grp));
+//     Teuchos::RefCountPtr<LOCA::Homotopy::Group> hGrp = 
+//       Teuchos::rcp(new LOCA::Homotopy::Group(locaParamsList, globalData, grp));
+
+    Teuchos::RefCountPtr<Teuchos::ParameterList> hParams = 
+      Teuchos::rcp(&locaParamsList.sublist("Homotopy"),false);
+    hParams->set("Bordered Solver Method", "LAPACK Direct Solve");
+    Teuchos::RefCountPtr<NOX::Abstract::Vector> startVec = 
+      grp->getX().clone(NOX::ShapeCopy);
+    startVec->random();
+    startVec->abs(*startVec);
+    std::vector< Teuchos::RefCountPtr<const NOX::Abstract::Vector> > solns;
+    Teuchos::RefCountPtr<LOCA::Homotopy::DeflatedGroup> hGrp = 
+      Teuchos::rcp(new LOCA::Homotopy::DeflatedGroup(globalData, paramList, hParams, grp, startVec, solns)); 
 
     // Override default parameters
     stepperList.set("Max Nonlinear Iterations", maxNewtonIters);
