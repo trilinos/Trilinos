@@ -480,8 +480,16 @@ template<class Scalar>
 Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > ImplicitBDFStepper<Scalar>::get_solution() const
 {
   if (!isInitialized) {
-    Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > emptyRFC;
-    return(emptyRFC); 
+    if (model == Teuchos::null) {
+      Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > emptyRFC;
+      return(emptyRFC); 
+    } else {
+      Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > 
+        x_space = model->get_x_space();
+      Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > 
+        x_temp = createMember(x_space);
+      return(x_temp);
+    }
   }
   return(xHistory[0]);
 }
