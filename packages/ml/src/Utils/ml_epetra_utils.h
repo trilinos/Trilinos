@@ -270,7 +270,7 @@ namespace ML_Epetra{
     //! Finds Dirichlet the local Dirichlet columns, given the local Dirichlet rows
   Epetra_IntVector * FindLocalDirichletColumnsFromRows(const int *dirichletRows, int numBCRows,const Epetra_CrsMatrix & Matrix);
   
-};
+}
 
 
 #ifdef FIXME
