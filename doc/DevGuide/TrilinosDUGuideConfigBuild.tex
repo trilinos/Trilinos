@@ -46,7 +46,7 @@ Figure~\ref{Figure:TrilinosDirectoryStructure} illustrates the
 \end{center}
 \caption{\label{Figure:TrilinosDirectoryStructure}Recommended Layout for Trilinos Build Directories}
 \end{figure}recommended layout.  First, from the highest 
-directory in the source tree (Trilinos for a repository copy, Trilinos-3.0.2 
+directory in the source tree (Trilinos for a repository copy, trilinos-7.0.5 
 for a distribution), make a new directory - for an MPI build
 on a Linux platform, a 
 typical name is \InlineDirectory{LINUX\_MPI}.  
@@ -140,7 +140,8 @@ necessary, but to exclude a package that is built by default, AztecOO for
 example, append \newline \InlineCommand{--disable-aztecoo} to the configure 
 invocation  line.  Similarly, to include a package that is not currently built 
 by default, Komplex for example, append \InlineCommand{--enable-komplex} to 
-the configure invocation line.  
+the configure invocation line.  Most Trilinos packages are not built by
+default; virtually all users will have to enable additional packages. 
 
 \begin{minipage}[c]{\textwidth}
 \begin{minipage}[l]{.6\textwidth}
@@ -212,7 +213,8 @@ are examples only and are primarily useful for the values of options such as
 \InlineCommand{LDFLAGS}, \InlineCommand{CPPFLAGS}, 
 and \InlineCommand{CXXFLAGS}.  Do not expect to be able to find a 
 script that can be used without modification; try to find a script for a 
-similar machine to use as a guide.  
+similar machine to use as a guide.  Users will also have to enable
+the correct set of packages based on their individual needs. 
 
 The scripts in the 
 repository are not always up to date.  If a user submits a script for a 
@@ -249,6 +251,26 @@ package and type \DisplayCommand{./configure --help}
 Basic Options
 
 \begin{itemize}
+
+\item \InlineCommand{--with-gnumake}
+
+Gnu's make has special functions we can use to eliminate redundant
+paths in the build and link lines. {\bf Use this option if you use 
+gnu-make to build Trilinos.}  This requires that perl is in your path
+or that you have specified the perl executable with 
+\InlineCommand{--with-perl=<perl executable>}.  For example 
+\InlineCommand{--with-perl=/usr/bin/perl}.
+
+\item \InlineCommand{--with-blas=<lib>}
+
+Specify which BLAS library to use.  For example \newline 
+\InlineCommand{--with-blas=/usr/path/lib/libblas.a}.
+
+\item \InlineCommand{--with-lapack=<lib>}
+
+Specify which LAPACK library to use.  For example \newline
+\InlineCommand{--with-lapack="-L/usr/path/lib/ -llapack"}. 
+
 \item \InlineCommand{--enable-examples}
 
 Build examples for all Trilinos packages (that are sensitive to 

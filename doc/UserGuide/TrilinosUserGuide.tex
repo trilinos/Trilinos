@@ -17,7 +17,7 @@ Albuquerque, NM 87185-1110
 
 
 \SANDnum{SAND2003-2952}
-\SANDprintDate{Printed August 2003}
+\SANDprintDate{August 2003, last updated March 2007}
 \SANDauthor{
 Michael A. Heroux and James M. Willenbring \\
 Computational Math and Algorithms Department \\
@@ -100,10 +100,11 @@ documentation for individual Trilinos packages are provided.
 %documentation.  How to obtain Trilinos.
 
 For a higher-level view of the Trilinos project, please see An Overview
-of Trilinos~\cite{Trilinos-Overview}.  A document is also 
-available specifically for Trilinos developers; please see the Trilinos 
-Developers Guide~\cite{Trilinos-Dev-Guide}.  The Developers Guide contains 
-both tutorial and general reference material.  
+of Trilinos~\cite{Trilinos-Overview}.  The Trilinos Tutorial is useful
+resource for new and existing Trilinos users~\cite{Trilinos-Tutorial}.  A
+document is also available specifically for Trilinos developers; please see
+the Trilinos Developers Guide~\cite{Trilinos-Dev-Guide}.  The Developers
+Guide contains both tutorial and general reference material.  
 
 The current set of packages in Trilinos is shown in 
 Figure~\ref{Figure:TrilinosPackages}.
@@ -175,9 +176,9 @@ most commonly
 download Trilinos in the form of a tarball from the Trilinos website at 
 \newline \InlineDirectory{http://software.sandia.gov/trilinos/downloads.html}.
 On most systems, the following commands can be used to expand the tarball:
-\DisplayCommand{gunzip trilinos-4.0.tar.gz}
-\DisplayCommand{tar xf trilinos-4.0.tar}
-For versions of Trilinos other than 4.0, the name of the file in the above
+\DisplayCommand{gunzip trilinos-7.0.5.tar.gz}
+\DisplayCommand{tar xf trilinos-7.0.5.tar}
+For versions of Trilinos other than 7.0.5, the file names in the above
 commands will need to be adjusted.
 
 Users who download the tarball from the website may skip to 
@@ -219,7 +220,7 @@ package in the current directory, type
 \DisplayCommand{cvs checkout <package\_name>}
 
 Replace ``package\_name'' with the name of the package.  Please note 
-that many packages have dependencies on other Trilinos packages.
+that most packages have dependencies on other Trilinos packages.
 
 If the machine that is downloading Trilinos from software.sandia.gov has gzip
 available, it is possible to speed up the checkout proces using the -z 

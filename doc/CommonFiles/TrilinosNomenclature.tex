@@ -11,11 +11,27 @@ A self-contained collection of software in Trilinos
 focused on one primary class of numerical
 methods.  Also a fundamental, integral unit in the Trilinos framework.
 
+\item[Didasko]
+The tutorial of Trilinos.  Offers a quick introduction to several
+Trilinos packages. It contains a printable PDF document and a
+variety of well-commented browsable examples that illustrate how
+to use Trilinos.
+
+Didasko contains examples for the following Trilinos packages:
+Teuchos, Epetra, EpetraExt, TriUtils, Galeri, AztecOO, IFPACK,ML,
+NOX, Anasazi, TPetra.
+
 \item[new\_package] A sample Trilinos package containing all of the
 infrastructure to install a new package into the Trilinos framework.
 Contains the basic directory structure, a collection of sample
 configuration and build files and a sample ``Hello World'' package.
 Also a website.
+
+\item[Amesos]
+The Direct Sparse Solver Package in Trilinos. The goal of
+Amesos is to make AX=B as easy as it sounds, at least for direct
+methods. Amesos provides clean and consistent interfaces to
+several popular third party libraries.
 
 \item[Anasazi]
 An extensible and interoperable framework for large-scale eigenvalue
@@ -38,11 +54,48 @@ on any concrete linear algebra library.  Instead, Belos solvers can be
 used with any concrete linear algebra library that implements the TSF
 abstract interfaces. 
 
+\item[Claps]
+Claps is a collection of domain decomposition preconditioners and
+solvers.
+
+\item[Epetra]
+See description under "Petra".
+
+\item[EpetraExt]
+A set of extensions to Epetra. To allow Epetra to remain focused on
+it's primary functionality as a Linear Algebra object support,
+EpetraExt was created to maintain additional support for such
+capabilities as transformations (permutions, sub-block views, etc.),
+coloring support, partitioning (Zoltan), and I/O.
+ 
+\item[Galeri]
+Contains a suite of utilities and classes to generate a variety of
+(distributed) linear systems. Galeri's functionalities are very close
+to that of the MATLAB's gallery() function.
+
 \item[Ifpack] 
 Object-oriented algebraic preconditioner, compatible with 
 Epetra and AztecOO.  Supports construction and use of parallel
 distributed memory preconditioners such as overlapping Schwarz domain
 decomposition, Jacobi scaling and local Gauss-Seidel relaxations.
+
+\item[Isorropia]
+A repartitioning/rebalancing package intended to assist with
+redistributing objects such as matrices and matrix-graphs in a parallel
+execution setting, to allow for more efficient computations.
+Isorropia is primarily an interface to the Zoltan library, but can
+be built and used with minimal capability without Zoltan. 
+
+\item[Jpetra]
+See description under "Petra".
+
+\item[Kokkos]
+A collection of the handful of sparse and dense kernels that determine
+much of the performance for preconditioned Krylov methods. In particular,
+it contains function class for sparse matrix vector multiplication and
+triangular solves, and also for dense kernels that are not part of the
+standard BLAS.  Kokkos is not intended as a user package, but to be
+incorporated into other packages that need high performance kernels.
 
 \item[Komplex] 
 Complex linear equation solver using equivalent real 
@@ -63,6 +116,16 @@ variables such as Navier-Stokes problems.
 \item[ML]
 Algebraic multi-level preconditioner package.  Provides scalable
 preconditioning capabilities for a variety of problem classes.  
+
+\item[Moertel]
+Supplies capabilities for nonconforming mesh tying and contact
+formulations in 2 and 3 dimensions using Mortar methods.
+
+\item[MOOCHO]
+MOOCHO (Multifunctional Object-Oriented arCHitecture for Optimization) is
+designed to solve large-scale, equality and inequality nonlinearly
+constrained, non-convex optimization problems (i.e. nonlinear programs)
+using reduced-space successive quadratic programming (SQP) methods. 
 
 \item[NOX]
 A collection of nonlinear solvers, designed to be easily integrated
@@ -96,6 +159,39 @@ byte-code portable and can be executed across multiple compute nodes.
 
 \end{itemize}
 
+\item[Pliris]
+An object-oriented interface to a LU solver for dense matrices on
+parallel platforms.  These matrices are double precision real
+matrices distributed on a parallel machine.
+
+\item[PyTrilinos]
+A set of python wrappers for selected Trilinos packages.  Allows a
+python programmer to dynamically import Trilinos packages into a python
+script or the python command-line interpreter, allowing the creation
+and modification of Trilinos objects and the execution of Trilinos
+algorithms, without the need to constantly recompile.
+
+\item[RTOp]
+RTOp (reduction/transformation operators) provides the basic mechanism
+for implementing vector operations in a flexible and efficient manner.
+
+\item[Rythmos]
+A transient integrator for ordinary differential equations and
+differential-algebraic equations with support for explicit, implicit,
+one-step and multi-step algorithms.  Aimed at supporting operator-split
+algorithms, multi-physics applications, block linear algebra, and
+adjoint integration.
+
+\item[Sacado]
+A set of automatic differentiation tools for C++ applications.  Provides
+templated classes for forward, reverse and Taylor mode automatic
+differentiation.
+
+\item[Stratimikos]
+Contains a unified set of Thyra-based wrappers to linear solver and
+preconditioner capabilities in Trilinos.  Can also be used for unified
+testing of linear solvers and preconditioners.
+
 \item[Teuchos] A collection of classes and service software that is
 useful to almost all Trilinos packages.  Includes
 reference-counted pointers, parameter lists, templated interfaces to
@@ -107,21 +203,15 @@ foundation of all of these interfaces are the mathematical concepts of
 vectors, vector spaces, and linear operators. All other interfaces and support 
 software is built on the basic operator/vector interfaces.
 
-\item[TSF] A collection of abstract interfaces that supports application
-access to a variety of Trilinos capabilities, supports
-interoperability betweeen Trilinos packages and provides future extensibility.
-TSF is composed of several packages.  The primary user packages are:  
-\begin{itemize}
+\item[Tpetra]
+See description under "Petra".
 
-\item[TSFCore] Note: Obsolete - see Thyra.  TSFCore provides 
-a basic collection of abstract interfaces to vectors, linear
-operators, solvers, etc.  These interfaces provide a common
-interface for applications to access one or more packages that
-implement the abstract interface.  These interfaces can also be used
-by other packages in Trilinos to accomplish the same purpose.
+\item[TriUtils]
+A package of utilities for other Trilinos packages. 
 
-\item[TSFExtended] TSFExtended builds on top of Thyra, providing implicit
-aggregation capabilities and overloaded operators.  
-\end{itemize}
+\item[WebTrilinos]
+A scientific portal; a web-based environment to use several Trilinos
+packages through the web. 
+
 \end{itemize}
 
