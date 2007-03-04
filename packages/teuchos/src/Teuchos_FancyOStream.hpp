@@ -440,6 +440,30 @@ private:
   basic_FancyOStream<CharT,Traits> operator=(const basic_FancyOStream<CharT,Traits>&);
 
 };
+/** \brief Dynamically allocate a FancyOStream and return it wrapped in an RCP
+ * object.
+ *
+ * \relates basic_FancyOStream
+ */
+template <typename CharT, typename Traits>
+RefCountPtr<basic_FancyOStream<CharT,Traits> >
+fancyOStream(
+  const RefCountPtr< std::basic_ostream<CharT,Traits> >& oStream,
+  const std::basic_string<CharT,Traits>& tabIndentStr = " ",
+  const int startingTab = 0,
+  const bool showLinePrefix = false,
+  const int maxLenLinePrefix = 10,
+  const bool showTabCount = false,
+  const bool showProcRank = false
+  )
+{
+  return rcp(
+    new basic_FancyOStream<CharT,Traits>(
+      oStream,tabIndentStr,startingTab,showLinePrefix,
+      maxLenLinePrefix,showTabCount,showProcRank
+      )
+    );
+}
 
 /** \brief Get a FancyOStream from an std::ostream object.
  *
