@@ -256,7 +256,7 @@ Basic Options
 
 Gnu's make has special functions we can use to eliminate redundant
 paths in the build and link lines. {\bf Use this option if you use 
-gnu-make to build Trilinos.}  This requires that perl is in your path
+GNU make to build Trilinos.}  This requires that perl is in your path
 or that you have specified the perl executable with 
 \InlineCommand{--with-perl=<perl executable>}.  For example 
 \InlineCommand{--with-perl=/usr/bin/perl}.
@@ -447,6 +447,42 @@ A more complete FAQ list may be found online...
 
 \item Any code that links to Trilinos libraries must define
 \InlineCommand{HAVE\_CONFIG\_H}.
+
+\item It is difficult to build Trilinos with different compiler versions.
+For example, if using g++ 4.1.1, it is best to use gcc 4.1.1 and gfortran
+4.1.1.  On some systems, multiple sets of compilers are available.  If,
+for instance, there is one GCC 4 compiler set and one GCC 3 compiler set,
+it is possible that configure will pull the g++ and gcc compilers from
+GCC 4 and the g77 compiler from GCC 3.  
+
+This will usually result in a gxx\_personality error in the \newline 
+\InlineDirectory{packages/teuchos/config.log} file.  Another possible 
+clue in the \InlineDirectory{config.log} file is paths for linking to
+libraries that refer to multiple compiler sets.  For example, 
+\InlineCommand{-L/usr/lib/gcc/x86\_64-redhat-linux/4.1.1} and
+\newline \InlineCommand{-L/usr/lib/gcc/x86\_64-redhat-linux/3.3.2}.
+
+The easiest way to avoid these problems is to explictly specify
+which compilers you want to use in the list of configure arguments.  
+For example, \newline \InlineCommand{CXX=/path/g++},
+\InlineCommand{CC=/path/gcc}, and \InlineCommand{F77=/path/gfortran}.
+
+\item Trilinos should be built with the \InlineCommand{--with-gnumake}
+option whenever GNU make is used to build Trilinos.  On most systems, 
+"make" will point to GNU make.  It is easy to check, simply type 
+\InlineCommand{man make} on any UNIX-like machine.  When building a 
+large number of packages without using the gnumake option, the
+following error is common: 
+
+\begin{verbatim}
+execv: Argument list too long
+\end{verbatim}
+
+If GNU make is not available and this error is encountered, it will
+be necessary to disable the test or example that was linking when
+the error occurred.
+
+
 
 \item Do not attempt to specify optimization flags using the
 \InlineCommand{--with-cxxflags}, \InlineCommand{--with-cflags}, or

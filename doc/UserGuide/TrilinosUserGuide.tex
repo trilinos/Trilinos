@@ -242,15 +242,37 @@ complete listing of CVS commands, see the GNU CVS Home Page~\cite{CVS}.
 \subsection{Testing the Build}
 \label{subsect:TestHarness}
 
-Trilinos contains a script that can be used for the purpose of 
-verification testing. Unfortunately, the process is currently tailored to 
-fit the needs of developers.  The Trilinos team is in the process of
-creating a verification process that is more suitable for users.  For 
-instructions on how to use the current process, go to 
+There are two ways that users can run one or more sanity tests after building
+Trilinos.
 
-\InlineDirectory{http://software.sandia.gov/trilinos/developer/test\_harness.html} 
+%Once it is stabilized, we should also mention the ability to test
+%an installed version of Trilinos via the tests Ross wrote.
 
-and look at the section entitled ``Running the Test Harness Locally''.
+The runtests utility, which is a component of the Trilinos test
+harness, can be accessed via the runtests-serial and runtests-mpi make
+targets.
+To run the test suite (the tool will only attempt to run tests that were 
+built), simply do a make first and then type:
+
+\DisplayCommand{make runtests-serial}
+
+to run the entire test suite (for the base Trilinos test directory).
+
+To run the test suite for a single package, cd to 
+\InlineDirectory{package/test} (replace "package" with the name of a 
+particular package) before running the above command.
+
+The runtests-mpi target is very similar, but expects to you supply the 
+variable \InlineCommand{TRILINOS\_MPI\_GO}, either in the environment or as an
+argument to make.  Here is an example of how to call the runtests-mpi make 
+target: 
+
+\DisplayCommand{make runtests-mpi TRILINOS\_MPI\_GO="'mpiexec -np 2'"}
+
+Alternatively, the following set of arguments can be used: \newline
+\InlineCommand{TRILINOS\_MPI\_MAX\_PROC=2 TRILINOS\_MPI\_GO="'~/bin/linux/mpirun -np '"}.
+Note that in either case, the \InlineCommand{TRILINOS\_MPI\_GO} argument
+must be double quoted.
 
 A simple alternative that provides a quick santity check is to execute one
 or more Trilinos tests manually.  For example, if Epetra was one of the 
@@ -275,10 +297,12 @@ For a serial build, the process is shorter:
 	echo $status
 \end{verbatim}
 
-In either case, the status returned will be zero if the tests passed, nonzero
-if the tests failed.  Epetra has many other tests in subdirectories that are 
-peers to the CrsMatrix directory listed above.  There are also examples that
-are located in the example 
+In the serial case, the status returned will be zero if the tests passed,
+nonzero if the tests failed.  The return codes for mpi executables is less
+reliable, so it is necessary to check the output of the test.  Negative
+non zero error codes are errors, positive codes are warnings.  Epetra has 
+many other tests in subdirectories that are peers to the CrsMatrix directory 
+listed above.  There are also examples that are located in the example 
 directory that is a peer to the test directory.  Most other packages have a 
 number of tests and or examples that can be run using the same basic process. 
 
