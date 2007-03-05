@@ -2385,7 +2385,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
                           << PreOrPostSmoother << "," << SubSmootherType
                           << "," << subsmDetails << ")" << endl;
 
-      ML_Gen_Smoother_Hiptmair(ml_, logical_level, ML_BOTH,
+      ML_Gen_Smoother_Hiptmair(ml_, logical_level, pre_or_post,
                  NumSmootherSteps, Tmat_array, Tmat_trans_array, NULL,
                  MassMatrix_array,
                  edge_smoother, edge_args_, nodal_smoother, nodal_args_,
