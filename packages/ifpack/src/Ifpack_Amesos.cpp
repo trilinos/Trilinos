@@ -28,7 +28,6 @@
 */
 
 #include "Ifpack_ConfigDefs.h"
-#ifdef HAVE_IFPACK_AMESOS
 #include "Ifpack_Preconditioner.h"
 #include "Ifpack_Amesos.h"
 #include "Ifpack_Condest.h"
@@ -347,4 +346,3 @@ std::ostream& Ifpack_Amesos::Print(std::ostream& os) const
 
   return(os);
 }
-#endif // HAVE_IFPACK_AMESOS 

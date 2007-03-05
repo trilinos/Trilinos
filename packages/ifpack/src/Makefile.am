@@ -138,7 +138,6 @@ COMP_H = \
 	$(srcdir)/Ifpack_UserPartitioner.h        \
 	$(srcdir)/Ifpack_Utils.h                  \
 	$(srcdir)/Ifpack_HashTable.h              \
-	$(srcdir)/Ifpack_Amesos.h                 \
 	$(srcdir)/Ifpack_Reordering.h             \
 	$(srcdir)/Ifpack_RCMReordering.h          \
 	$(srcdir)/Ifpack_SPARSKIT.h               \
@@ -177,7 +176,6 @@ COMP = \
 	$(srcdir)/Ifpack_Graph_Epetra_RowMatrix.cpp \
 	$(srcdir)/Ifpack_Graph_Epetra_CrsGraph.cpp  \
 	$(srcdir)/Ifpack_Utils.cpp                  \
-	$(srcdir)/Ifpack_Amesos.cpp                 \
 	$(srcdir)/Ifpack_Chebyshev.cpp              \
 	$(srcdir)/Ifpack_OverlappingPartitioner.cpp \
 	$(srcdir)/Ifpack_LinearPartitioner.cpp      \
@@ -189,6 +187,25 @@ COMP = \
 	$(srcdir)/Ifpack_METISReordering.cpp        \
 	$(srcdir)/Ifpack_OverlappingRowMatrix.cpp   \
 	$(srcdir)/Ifpack_ValidParameters.cpp
+
+
+# Conditionally compile in Amesos support files
+
+EXTRA_AMESOS_COMP_H = \
+	$(srcdir)/Ifpack_AMDReordering.h \
+        $(srcdir)/Ifpack_Amesos.h
+
+EXTRA_AMESOS_COMP = \
+	$(srcdir)/Ifpack_AMDReordering.cpp \
+        $(srcdir)/Ifpack_Amesos.cpp
+
+if HAVE_IFPACK_AMESOS
+AMESOS_COMP_H = $(EXTRA_AMESOS_COMP_H)
+AMESOS_COMP = $(EXTRA_AMESOS_COMP)
+else
+AMESOS_COMP_H = 
+AMESOS_COMP = 
+endif
 
 # ------------------------------------------------------------------------
 # Ifpack library specifications
@@ -205,6 +222,7 @@ IFPACK_H = \
 	$(LANG_WRAPS_H) \
 	$(DIST_H) \
 	$(COMP_H) \
+	$(AMESOS_COMP_H) \
 	$(MPI_H) \
 	$(MPISMP_H)
 
@@ -214,6 +232,7 @@ libifpack_a_SOURCES = \
 	$(LANG_WRAPS) \
 	$(DIST) \
 	$(COMP) \
+	$(AMESOS_COMP) \
 	$(MPI) \
 	$(MPISMP)
 
@@ -240,13 +259,23 @@ endif
 
 # ------------------------------------------------------------------------
 # Includes for required and optional library dependencies
+# NOTE:  Amesos path is conditionally added for AMD
 # ------------------------------------------------------------------------
 include $(top_builddir)/Makefile.export.ifpack
 
-if USING_GNUMAKE
-EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(IFPACK_INCLUDES))
+if HAVE_IFPACK_AMESOS
+IFPACK_INCLUDES_EXTRA = \
+	$(IFPACK_INCLUDES) \
+	-I$(top_srcdir)/../amesos/src/UFsparse/AMD/Include \
+	-I$(top_srcdir)/../amesos/src/UFsparse/UFconfig
 else
-EXPORT_INCLUDES = $(IFPACK_INCLUDES)
+IFPACK_INCLUDES_EXTRA = $(IFPACK_INCLUDES)
+endif
+
+if USING_GNUMAKE
+EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(IFPACK_INCLUDES_EXTRA))
+else
+EXPORT_INCLUDES = $(IFPACK_INCLUDES_EXTRA)
 endif
 
 AM_CPPFLAGS = $(EXPORT_INCLUDES)

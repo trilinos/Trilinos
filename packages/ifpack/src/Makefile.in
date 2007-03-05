@@ -69,7 +69,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
 subdir = src
-DIST_COMMON = $(include_HEADERS) $(srcdir)/Ifpack_config.h.in \
+DIST_COMMON = $(am__include_HEADERS_DIST) $(srcdir)/Ifpack_config.h.in \
 	$(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
@@ -108,6 +108,39 @@ libLIBRARIES_INSTALL = $(INSTALL_DATA)
 LIBRARIES = $(lib_LIBRARIES)
 am__DEPENDENCIES_1 =
 libifpack_a_DEPENDENCIES = $(am__DEPENDENCIES_1)
+am__libifpack_a_SOURCES_DIST = $(srcdir)/Ifpack_IlukGraph.cpp \
+	$(srcdir)/Ifpack_CrsRiluk.cpp $(srcdir)/Ifpack_ILU.cpp \
+	$(srcdir)/Ifpack_IKLU.cpp $(srcdir)/Ifpack_IKLU_Utils.cpp \
+	$(srcdir)/Ifpack_ILUT.cpp $(srcdir)/Ifpack_CrsIct.cpp \
+	$(srcdir)/Ifpack_ICT.cpp $(srcdir)/Ifpack_IC.cpp \
+	$(srcdir)/Ifpack_IC_Utils.cpp \
+	$(srcdir)/Ifpack_OverlapGraph.cpp \
+	$(srcdir)/icrout_cholesky_mex.c $(srcdir)/icrout_quicksort.c \
+	$(srcdir)/ifp_parameters.cpp \
+	$(srcdir)/Ifpack_DiagPreconditioner.cpp \
+	$(srcdir)/Ifpack_PointRelaxation.cpp \
+	$(srcdir)/Ifpack_Condest.cpp $(srcdir)/Ifpack.cpp \
+	$(srcdir)/Ifpack_DenseContainer.cpp \
+	$(srcdir)/Ifpack_LocalFilter.cpp \
+	$(srcdir)/Ifpack_DropFilter.cpp \
+	$(srcdir)/Ifpack_SparsityFilter.cpp \
+	$(srcdir)/Ifpack_ReorderFilter.cpp \
+	$(srcdir)/Ifpack_SingletonFilter.cpp \
+	$(srcdir)/Ifpack_DiagonalFilter.cpp \
+	$(srcdir)/Ifpack_Graph_Epetra_RowMatrix.cpp \
+	$(srcdir)/Ifpack_Graph_Epetra_CrsGraph.cpp \
+	$(srcdir)/Ifpack_Utils.cpp $(srcdir)/Ifpack_Chebyshev.cpp \
+	$(srcdir)/Ifpack_OverlappingPartitioner.cpp \
+	$(srcdir)/Ifpack_LinearPartitioner.cpp \
+	$(srcdir)/Ifpack_GreedyPartitioner.cpp \
+	$(srcdir)/Ifpack_METISPartitioner.cpp \
+	$(srcdir)/Ifpack_EquationPartitioner.cpp \
+	$(srcdir)/Ifpack_UserPartitioner.cpp \
+	$(srcdir)/Ifpack_RCMReordering.cpp \
+	$(srcdir)/Ifpack_METISReordering.cpp \
+	$(srcdir)/Ifpack_OverlappingRowMatrix.cpp \
+	$(srcdir)/Ifpack_ValidParameters.cpp \
+	$(srcdir)/Ifpack_AMDReordering.cpp $(srcdir)/Ifpack_Amesos.cpp
 am__objects_1 =
 am__objects_2 = Ifpack_IlukGraph.$(OBJEXT) Ifpack_CrsRiluk.$(OBJEXT) \
 	Ifpack_ILU.$(OBJEXT) Ifpack_IKLU.$(OBJEXT) \
@@ -125,7 +158,7 @@ am__objects_2 = Ifpack_IlukGraph.$(OBJEXT) Ifpack_CrsRiluk.$(OBJEXT) \
 	Ifpack_DiagonalFilter.$(OBJEXT) \
 	Ifpack_Graph_Epetra_RowMatrix.$(OBJEXT) \
 	Ifpack_Graph_Epetra_CrsGraph.$(OBJEXT) Ifpack_Utils.$(OBJEXT) \
-	Ifpack_Amesos.$(OBJEXT) Ifpack_Chebyshev.$(OBJEXT) \
+	Ifpack_Chebyshev.$(OBJEXT) \
 	Ifpack_OverlappingPartitioner.$(OBJEXT) \
 	Ifpack_LinearPartitioner.$(OBJEXT) \
 	Ifpack_GreedyPartitioner.$(OBJEXT) \
@@ -136,14 +169,17 @@ am__objects_2 = Ifpack_IlukGraph.$(OBJEXT) Ifpack_CrsRiluk.$(OBJEXT) \
 	Ifpack_METISReordering.$(OBJEXT) \
 	Ifpack_OverlappingRowMatrix.$(OBJEXT) \
 	Ifpack_ValidParameters.$(OBJEXT)
+am__objects_3 = Ifpack_AMDReordering.$(OBJEXT) Ifpack_Amesos.$(OBJEXT)
+@HAVE_IFPACK_AMESOS_TRUE@am__objects_4 = $(am__objects_3)
 am_libifpack_a_OBJECTS = $(am__objects_1) $(am__objects_1) \
 	$(am__objects_1) $(am__objects_1) $(am__objects_2) \
-	$(am__objects_1) $(am__objects_1)
+	$(am__objects_4) $(am__objects_1) $(am__objects_1)
 libifpack_a_OBJECTS = $(am_libifpack_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I.
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Ifpack.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Ifpack_AMDReordering.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Ifpack_Amesos.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Ifpack_Chebyshev.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Ifpack_Condest.Po \
@@ -192,7 +228,46 @@ CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
 SOURCES = $(libifpack_a_SOURCES) $(EXTRA_libifpack_a_SOURCES)
-DIST_SOURCES = $(libifpack_a_SOURCES) $(EXTRA_libifpack_a_SOURCES)
+DIST_SOURCES = $(am__libifpack_a_SOURCES_DIST) \
+	$(EXTRA_libifpack_a_SOURCES)
+am__include_HEADERS_DIST = $(srcdir)/Ifpack_ConfigDefs.h \
+	$(srcdir)/Ifpack_Version.h $(srcdir)/Ifpack_IlukGraph.h \
+	$(srcdir)/Ifpack_CrsRiluk.h $(srcdir)/Ifpack_ILU.h \
+	$(srcdir)/Ifpack_IKLU.h $(srcdir)/Ifpack_IKLU_Utils.h \
+	$(srcdir)/Ifpack_ILUT.h $(srcdir)/Ifpack_OverlapGraph.h \
+	$(srcdir)/Ifpack_ScalingType.h $(srcdir)/Ifpack_CrsIct.h \
+	$(srcdir)/Ifpack_ICT.h $(srcdir)/Ifpack_IC.h \
+	$(srcdir)/Ifpack_IC_Utils.h $(srcdir)/icrout_cholesky_mex.h \
+	$(srcdir)/ifp_parameters.h $(srcdir)/Ifpack_Preconditioner.h \
+	$(srcdir)/Ifpack_CondestType.h $(srcdir)/Ifpack_Condest.h \
+	$(srcdir)/Ifpack.h $(srcdir)/Ifpack_DiagPreconditioner.h \
+	$(srcdir)/Ifpack_PointRelaxation.h \
+	$(srcdir)/Ifpack_BlockRelaxation.h \
+	$(srcdir)/Ifpack_Container.h \
+	$(srcdir)/Ifpack_SparseContainer.h \
+	$(srcdir)/Ifpack_DenseContainer.h \
+	$(srcdir)/Ifpack_AdditiveSchwarz.h \
+	$(srcdir)/Ifpack_LocalFilter.h $(srcdir)/Ifpack_DropFilter.h \
+	$(srcdir)/Ifpack_SparsityFilter.h \
+	$(srcdir)/Ifpack_ReorderFilter.h \
+	$(srcdir)/Ifpack_SingletonFilter.h \
+	$(srcdir)/Ifpack_DiagonalFilter.h $(srcdir)/Ifpack_Graph.h \
+	$(srcdir)/Ifpack_Graph_Epetra_RowMatrix.h \
+	$(srcdir)/Ifpack_Graph_Epetra_CrsGraph.h \
+	$(srcdir)/Ifpack_Partitioner.h \
+	$(srcdir)/Ifpack_OverlappingPartitioner.h \
+	$(srcdir)/Ifpack_LinearPartitioner.h \
+	$(srcdir)/Ifpack_GreedyPartitioner.h \
+	$(srcdir)/Ifpack_METISPartitioner.h \
+	$(srcdir)/Ifpack_EquationPartitioner.h \
+	$(srcdir)/Ifpack_UserPartitioner.h $(srcdir)/Ifpack_Utils.h \
+	$(srcdir)/Ifpack_HashTable.h $(srcdir)/Ifpack_Reordering.h \
+	$(srcdir)/Ifpack_RCMReordering.h $(srcdir)/Ifpack_SPARSKIT.h \
+	$(srcdir)/Ifpack_Chebyshev.h \
+	$(srcdir)/Ifpack_METISReordering.h \
+	$(srcdir)/Ifpack_OverlappingRowMatrix.h \
+	$(srcdir)/Ifpack_ValidParameters.h \
+	$(srcdir)/Ifpack_AMDReordering.h $(srcdir)/Ifpack_Amesos.h
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 nodist_execincludeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS) $(nodist_execinclude_HEADERS)
@@ -420,7 +495,6 @@ COMP_H = \
 	$(srcdir)/Ifpack_UserPartitioner.h        \
 	$(srcdir)/Ifpack_Utils.h                  \
 	$(srcdir)/Ifpack_HashTable.h              \
-	$(srcdir)/Ifpack_Amesos.h                 \
 	$(srcdir)/Ifpack_Reordering.h             \
 	$(srcdir)/Ifpack_RCMReordering.h          \
 	$(srcdir)/Ifpack_SPARSKIT.h               \
@@ -458,7 +532,6 @@ COMP = \
 	$(srcdir)/Ifpack_Graph_Epetra_RowMatrix.cpp \
 	$(srcdir)/Ifpack_Graph_Epetra_CrsGraph.cpp  \
 	$(srcdir)/Ifpack_Utils.cpp                  \
-	$(srcdir)/Ifpack_Amesos.cpp                 \
 	$(srcdir)/Ifpack_Chebyshev.cpp              \
 	$(srcdir)/Ifpack_OverlappingPartitioner.cpp \
 	$(srcdir)/Ifpack_LinearPartitioner.cpp      \
@@ -472,6 +545,20 @@ COMP = \
 	$(srcdir)/Ifpack_ValidParameters.cpp
 
 
+# Conditionally compile in Amesos support files
+EXTRA_AMESOS_COMP_H = \
+	$(srcdir)/Ifpack_AMDReordering.h \
+        $(srcdir)/Ifpack_Amesos.h
+
+EXTRA_AMESOS_COMP = \
+	$(srcdir)/Ifpack_AMDReordering.cpp \
+        $(srcdir)/Ifpack_Amesos.cpp
+
+@HAVE_IFPACK_AMESOS_FALSE@AMESOS_COMP_H = 
+@HAVE_IFPACK_AMESOS_TRUE@AMESOS_COMP_H = $(EXTRA_AMESOS_COMP_H)
+@HAVE_IFPACK_AMESOS_FALSE@AMESOS_COMP = 
+@HAVE_IFPACK_AMESOS_TRUE@AMESOS_COMP = $(EXTRA_AMESOS_COMP)
+
 # ------------------------------------------------------------------------
 # Ifpack library specifications
 # ------------------------------------------------------------------------
@@ -484,6 +571,7 @@ IFPACK_H = \
 	$(LANG_WRAPS_H) \
 	$(DIST_H) \
 	$(COMP_H) \
+	$(AMESOS_COMP_H) \
 	$(MPI_H) \
 	$(MPISMP_H)
 
@@ -493,6 +581,7 @@ libifpack_a_SOURCES = \
 	$(LANG_WRAPS) \
 	$(DIST) \
 	$(COMP) \
+	$(AMESOS_COMP) \
 	$(MPI) \
 	$(MPISMP)
 
@@ -510,8 +599,14 @@ EXTRA_libifpack_a_SOURCES = \
 # fails to define <lib>_AR of USE_ALTERNATE_AR is false, so we have to
 # define it manually.
 @USE_ALTERNATE_AR_TRUE@libifpack_a_AR = $(ALTERNATE_AR)
-@USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(IFPACK_INCLUDES)
-@USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(IFPACK_INCLUDES))
+@HAVE_IFPACK_AMESOS_FALSE@IFPACK_INCLUDES_EXTRA = $(IFPACK_INCLUDES)
+@HAVE_IFPACK_AMESOS_TRUE@IFPACK_INCLUDES_EXTRA = \
+@HAVE_IFPACK_AMESOS_TRUE@	$(IFPACK_INCLUDES) \
+@HAVE_IFPACK_AMESOS_TRUE@	-I$(top_srcdir)/../amesos/src/UFsparse/AMD/Include \
+@HAVE_IFPACK_AMESOS_TRUE@	-I$(top_srcdir)/../amesos/src/UFsparse/UFconfig
+
+@USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(IFPACK_INCLUDES_EXTRA)
+@USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(IFPACK_INCLUDES_EXTRA))
 AM_CPPFLAGS = $(EXPORT_INCLUDES)
 
 # ------------------------------------------------------------------------
@@ -649,6 +744,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ifpack.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ifpack_AMDReordering.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ifpack_Amesos.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ifpack_Chebyshev.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ifpack_Condest.Po@am__quote@
@@ -1169,22 +1265,6 @@ Ifpack_Utils.obj: $(srcdir)/Ifpack_Utils.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Ifpack_Utils.obj `if test -f '$(srcdir)/Ifpack_Utils.cpp'; then $(CYGPATH_W) '$(srcdir)/Ifpack_Utils.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Ifpack_Utils.cpp'; fi`
 
-Ifpack_Amesos.o: $(srcdir)/Ifpack_Amesos.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Ifpack_Amesos.o -MD -MP -MF "$(DEPDIR)/Ifpack_Amesos.Tpo" -c -o Ifpack_Amesos.o `test -f '$(srcdir)/Ifpack_Amesos.cpp' || echo '$(srcdir)/'`$(srcdir)/Ifpack_Amesos.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Ifpack_Amesos.Tpo" "$(DEPDIR)/Ifpack_Amesos.Po"; else rm -f "$(DEPDIR)/Ifpack_Amesos.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Ifpack_Amesos.cpp' object='Ifpack_Amesos.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Ifpack_Amesos.Po' tmpdepfile='$(DEPDIR)/Ifpack_Amesos.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Ifpack_Amesos.o `test -f '$(srcdir)/Ifpack_Amesos.cpp' || echo '$(srcdir)/'`$(srcdir)/Ifpack_Amesos.cpp
-
-Ifpack_Amesos.obj: $(srcdir)/Ifpack_Amesos.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Ifpack_Amesos.obj -MD -MP -MF "$(DEPDIR)/Ifpack_Amesos.Tpo" -c -o Ifpack_Amesos.obj `if test -f '$(srcdir)/Ifpack_Amesos.cpp'; then $(CYGPATH_W) '$(srcdir)/Ifpack_Amesos.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Ifpack_Amesos.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Ifpack_Amesos.Tpo" "$(DEPDIR)/Ifpack_Amesos.Po"; else rm -f "$(DEPDIR)/Ifpack_Amesos.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Ifpack_Amesos.cpp' object='Ifpack_Amesos.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Ifpack_Amesos.Po' tmpdepfile='$(DEPDIR)/Ifpack_Amesos.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Ifpack_Amesos.obj `if test -f '$(srcdir)/Ifpack_Amesos.cpp'; then $(CYGPATH_W) '$(srcdir)/Ifpack_Amesos.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Ifpack_Amesos.cpp'; fi`
-
 Ifpack_Chebyshev.o: $(srcdir)/Ifpack_Chebyshev.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Ifpack_Chebyshev.o -MD -MP -MF "$(DEPDIR)/Ifpack_Chebyshev.Tpo" -c -o Ifpack_Chebyshev.o `test -f '$(srcdir)/Ifpack_Chebyshev.cpp' || echo '$(srcdir)/'`$(srcdir)/Ifpack_Chebyshev.cpp; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Ifpack_Chebyshev.Tpo" "$(DEPDIR)/Ifpack_Chebyshev.Po"; else rm -f "$(DEPDIR)/Ifpack_Chebyshev.Tpo"; exit 1; fi
@@ -1360,6 +1440,38 @@ Ifpack_ValidParameters.obj: $(srcdir)/Ifpack_ValidParameters.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Ifpack_ValidParameters.Po' tmpdepfile='$(DEPDIR)/Ifpack_ValidParameters.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Ifpack_ValidParameters.obj `if test -f '$(srcdir)/Ifpack_ValidParameters.cpp'; then $(CYGPATH_W) '$(srcdir)/Ifpack_ValidParameters.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Ifpack_ValidParameters.cpp'; fi`
+
+Ifpack_AMDReordering.o: $(srcdir)/Ifpack_AMDReordering.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Ifpack_AMDReordering.o -MD -MP -MF "$(DEPDIR)/Ifpack_AMDReordering.Tpo" -c -o Ifpack_AMDReordering.o `test -f '$(srcdir)/Ifpack_AMDReordering.cpp' || echo '$(srcdir)/'`$(srcdir)/Ifpack_AMDReordering.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Ifpack_AMDReordering.Tpo" "$(DEPDIR)/Ifpack_AMDReordering.Po"; else rm -f "$(DEPDIR)/Ifpack_AMDReordering.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Ifpack_AMDReordering.cpp' object='Ifpack_AMDReordering.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Ifpack_AMDReordering.Po' tmpdepfile='$(DEPDIR)/Ifpack_AMDReordering.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Ifpack_AMDReordering.o `test -f '$(srcdir)/Ifpack_AMDReordering.cpp' || echo '$(srcdir)/'`$(srcdir)/Ifpack_AMDReordering.cpp
+
+Ifpack_AMDReordering.obj: $(srcdir)/Ifpack_AMDReordering.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Ifpack_AMDReordering.obj -MD -MP -MF "$(DEPDIR)/Ifpack_AMDReordering.Tpo" -c -o Ifpack_AMDReordering.obj `if test -f '$(srcdir)/Ifpack_AMDReordering.cpp'; then $(CYGPATH_W) '$(srcdir)/Ifpack_AMDReordering.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Ifpack_AMDReordering.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Ifpack_AMDReordering.Tpo" "$(DEPDIR)/Ifpack_AMDReordering.Po"; else rm -f "$(DEPDIR)/Ifpack_AMDReordering.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Ifpack_AMDReordering.cpp' object='Ifpack_AMDReordering.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Ifpack_AMDReordering.Po' tmpdepfile='$(DEPDIR)/Ifpack_AMDReordering.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Ifpack_AMDReordering.obj `if test -f '$(srcdir)/Ifpack_AMDReordering.cpp'; then $(CYGPATH_W) '$(srcdir)/Ifpack_AMDReordering.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Ifpack_AMDReordering.cpp'; fi`
+
+Ifpack_Amesos.o: $(srcdir)/Ifpack_Amesos.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Ifpack_Amesos.o -MD -MP -MF "$(DEPDIR)/Ifpack_Amesos.Tpo" -c -o Ifpack_Amesos.o `test -f '$(srcdir)/Ifpack_Amesos.cpp' || echo '$(srcdir)/'`$(srcdir)/Ifpack_Amesos.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Ifpack_Amesos.Tpo" "$(DEPDIR)/Ifpack_Amesos.Po"; else rm -f "$(DEPDIR)/Ifpack_Amesos.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Ifpack_Amesos.cpp' object='Ifpack_Amesos.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Ifpack_Amesos.Po' tmpdepfile='$(DEPDIR)/Ifpack_Amesos.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Ifpack_Amesos.o `test -f '$(srcdir)/Ifpack_Amesos.cpp' || echo '$(srcdir)/'`$(srcdir)/Ifpack_Amesos.cpp
+
+Ifpack_Amesos.obj: $(srcdir)/Ifpack_Amesos.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Ifpack_Amesos.obj -MD -MP -MF "$(DEPDIR)/Ifpack_Amesos.Tpo" -c -o Ifpack_Amesos.obj `if test -f '$(srcdir)/Ifpack_Amesos.cpp'; then $(CYGPATH_W) '$(srcdir)/Ifpack_Amesos.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Ifpack_Amesos.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Ifpack_Amesos.Tpo" "$(DEPDIR)/Ifpack_Amesos.Po"; else rm -f "$(DEPDIR)/Ifpack_Amesos.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Ifpack_Amesos.cpp' object='Ifpack_Amesos.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Ifpack_Amesos.Po' tmpdepfile='$(DEPDIR)/Ifpack_Amesos.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Ifpack_Amesos.obj `if test -f '$(srcdir)/Ifpack_Amesos.cpp'; then $(CYGPATH_W) '$(srcdir)/Ifpack_Amesos.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Ifpack_Amesos.cpp'; fi`
 uninstall-info-am:
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)
@@ -1572,6 +1684,7 @@ all-local:
 
 # ------------------------------------------------------------------------
 # Includes for required and optional library dependencies
+# NOTE:  Amesos path is conditionally added for AMD
 # ------------------------------------------------------------------------
 include $(top_builddir)/Makefile.export.ifpack
 
