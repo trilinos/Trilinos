@@ -201,10 +201,10 @@ public:
     divide_by = 1.0 / (det_J_);
 
     /* transformation from the actual to the reference */
-    J_(0,0) =   divide_by * ijacobian[0][0];
-    J_(1,0) = - divide_by * ijacobian[0][1];
-    J_(0,1) = - divide_by * ijacobian[1][0];
-    J_(1,1) =   divide_by * ijacobian[1][1];
+    J_(1,1) = divide_by * ijacobian[0][0];
+    J_(0,1) = - divide_by * ijacobian[0][1];
+    J_(1,0) = - divide_by * ijacobian[1][0];
+    J_(0,0) = divide_by * ijacobian[1][1];
   }
 
   void ComputeQuadrNodes(const int QuadrNode,

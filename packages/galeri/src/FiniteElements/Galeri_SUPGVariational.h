@@ -286,10 +286,10 @@ public:
           conv_y(x,y,z) * PhiY * Psi +
           conv_z(x,y,z) * PhiZ * Psi;
     // SUPG stabilization
-    res += tau_ * ((conv_x(z, y, z) * PsiX + 
+    res += tau_ * ((conv_x(x, y, z) * PsiX + 
                     conv_y(x, y, z) * PsiY + 
                     conv_z(x, y, z) * PsiZ) *
-                   (conv_x(z, y, z) * PhiX + 
+                   (conv_x(x, y, z) * PhiX + 
                     conv_y(x, y, z) * PhiY + 
                     conv_z(x, y, z) * PhiZ));
     return(res);
@@ -300,12 +300,12 @@ public:
                     const double x, const double y, const double z) const
   {
     double res;
-    // Galerkin contribution
-    res = force(x,y,z)*Psi;
-    // SUPG stabilization
-    res += tau_ * (conv_x(x, y, z) * PsiX +
-                   conv_y(x, y, z) * PsiY +
-                   conv_z(x, y, z) * PsiZ);
+
+    // Galerkin contribution and SUPG stabilization
+    res = force(x,y,z) * (Psi + tau_
+                       * (conv_x(x, y, z) * PsiX +
+                          conv_y(x, y, z) * PsiY +
+                          conv_z(x, y, z) * PsiZ) );
     return(res);
   }
 
@@ -323,9 +323,9 @@ private:
   //! Computes the norm of the convective term a point (x, y, z).
   inline double ConvNorm(const double x, const double y, const double z) const
   {
-    double cx = conv_x(z, y, z);
-    double cy = conv_x(z, y, z);
-    double cz = conv_x(z, y, z);
+    double cx = conv_x(x, y, z);
+    double cy = conv_y(x, y, z);
+    double cz = conv_z(x, y, z);
     return (sqrt(cx * cx + cy * cy + cz * cz));
   }
 
