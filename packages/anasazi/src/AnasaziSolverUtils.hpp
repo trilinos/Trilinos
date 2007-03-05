@@ -79,7 +79,7 @@ namespace Anasazi {
     //@{ 
     
     //! Permute the vectors in a multivector according to the permutation vector \c perm, and optionally the residual vector \c resids
-    static void permuteVectors(const int n, const std::vector<int> &perm, MV &Q, std::vector<MagnitudeType>* resids = 0);
+    static void permuteVectors(const int n, const std::vector<int> &perm, MV &Q, std::vector< typename Teuchos::ScalarTraits<ScalarType>::magnitudeType >* resids = 0);
 
     //! Permute the columns of a Teuchos::SerialDenseMatrix according to the permutation vector \c perm
     static void permuteVectors(const std::vector<int> &perm, Teuchos::SerialDenseMatrix<int,ScalarType> &Q);
@@ -148,7 +148,7 @@ namespace Anasazi {
     static int directSolver(int size, const Teuchos::SerialDenseMatrix<int,ScalarType> &KK, 
                      const Teuchos::SerialDenseMatrix<int,ScalarType> *MM,
                      Teuchos::SerialDenseMatrix<int,ScalarType> *EV,
-                     std::vector<MagnitudeType>* theta,
+                     std::vector< typename Teuchos::ScalarTraits<ScalarType>::magnitudeType >* theta,
                      int* nev, int esType = 0);
     //@}
 
@@ -158,7 +158,7 @@ namespace Anasazi {
     //! Return the maximum coefficient of the matrix \f$M * X - MX\f$ scaled by the maximum coefficient of \c MX.
     /*! \note When \c M is not specified, the identity is used.
      */
-    static MagnitudeType errorEquality(const MV &X, const MV &MX, Teuchos::RefCountPtr<const OP> M = Teuchos::null);
+    static typename Teuchos::ScalarTraits<ScalarType>::magnitudeType errorEquality(const MV &X, const MV &MX, Teuchos::RefCountPtr<const OP> M = Teuchos::null);
     
     //@}
     
@@ -196,7 +196,7 @@ namespace Anasazi {
               const int n,
               const std::vector<int> &perm, 
               MV &Q, 
-              std::vector<MagnitudeType>* resids)
+              std::vector< typename Teuchos::ScalarTraits<ScalarType>::magnitudeType >* resids)
   {
     // Permute the vectors according to the permutation vector \c perm, and
     // optionally the residual vector \c resids
@@ -356,7 +356,7 @@ namespace Anasazi {
   int SolverUtils<ScalarType, MV, OP>::directSolver(int size, const Teuchos::SerialDenseMatrix<int,ScalarType> &KK, 
                                                          const Teuchos::SerialDenseMatrix<int,ScalarType> *MM,
                                                          Teuchos::SerialDenseMatrix<int,ScalarType>* EV,
-                                                         std::vector<MagnitudeType>* theta,
+                                                         std::vector< typename Teuchos::ScalarTraits<ScalarType>::magnitudeType >* theta,
                                                          int* nev, int esType)
   {
     // Routine for computing the first NEV generalized eigenpairs of the symmetric pencil (KK, MM)
