@@ -1074,6 +1074,7 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
    /*      col_inds[].                                                       */
    /*------------------------------------------------------------------------*/
 
+#ifdef TO_BE_CHECKED
    if (Bmatrix->N_nonzeros <= 0) {
       B_total_Nnz = 0;
       for (i = 0; i < Bmatrix->getrow->Nrows; i++ ) {
@@ -1082,6 +1083,12 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
       }
    }
    else B_total_Nnz = Bmatrix->N_nonzeros;
+#endif
+   B_total_Nnz = 0;
+   for (i = 0; i < Bmatrix->getrow->Nrows; i++ ) {
+     Bgetrow(Bmatrix,1,&i,&accum_size, &accum_col, &accum_val, &row2_N, 0);
+     B_total_Nnz += row2_N;
+   }
    B_total_Nnz++; /* avoid possible division by zero below */
 
    /* ******************************************************************
