@@ -147,8 +147,8 @@ ChanProblemInterface::printSolution(const NOX::LAPACK::Vector &x,
 {
   if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
     globalData->locaUtils->out() 
-      << "At parameter value: " << conParam 
-      << "   the solution vector is\n";
+      << "At parameter value: " << setprecision(8) << conParam
+      << "   the solution vector (norm="<<x.norm()<<") is\n";
 
     if (n < 8) {
       for (int i=0; i<n; i++) 

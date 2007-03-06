@@ -46,12 +46,23 @@
 int main()
 {
   int n = 100;
-  double alpha = 10.0;
+  double alpha = 3.5;
   double beta = 0.0;
   double scale = 1.0;
-  int maxNewtonIters = 50;
+  int maxNewtonIters = 10;
 
   alpha = alpha / scale;
+
+  // These seeds were found to work -- not the first try
+  int seed1 = 3;
+  int seed2 = 4; //Subsequent seeds keep incrementing by seed2-seed1
+  double homScale = -1.0;
+
+  /* Uncomment for interactive mode 
+  std::cout << "Input first seed" << endl;     std::cin >> seed1;
+  std::cout << "Input second seed" << endl;    std::cin >> seed2;
+  std::cout << "Input identity-scale" << endl; std::cin >> homScale;
+  */
 
   try {
 
@@ -64,6 +75,7 @@ int main()
 
     // Create the stepper sublist and set the stepper parameters
     Teuchos::ParameterList& stepperList = locaParamsList.sublist("Stepper");
+    Teuchos::ParameterList& stepSizeList = locaParamsList.sublist("Step Size");
 
     // Create the "Solver" parameters sublist to be used with NOX Solvers
     Teuchos::ParameterList& nlParams = paramList->sublist("NOX");
@@ -119,33 +131,64 @@ int main()
     hParams->set("Bordered Solver Method", "LAPACK Direct Solve");
     Teuchos::RefCountPtr<NOX::Abstract::Vector> startVec = 
       grp->getX().clone(NOX::ShapeCopy);
-    startVec->random();
+    startVec->random(true, seed1); /* Always use same seed for testing */
     startVec->abs(*startVec);
     std::vector< Teuchos::RefCountPtr<const NOX::Abstract::Vector> > solns;
-    Teuchos::RefCountPtr<LOCA::Homotopy::DeflatedGroup> hGrp = 
-      Teuchos::rcp(new LOCA::Homotopy::DeflatedGroup(globalData, paramList, hParams, grp, startVec, solns)); 
 
-    // Override default parameters
-    stepperList.set("Max Nonlinear Iterations", maxNewtonIters);
+    LOCA::Abstract::Iterator::IteratorStatus status
+         = LOCA::Abstract::Iterator::Finished;
 
-    // Create the stepper  
-    LOCA::Stepper stepper(globalData, hGrp, combo, paramList);
+    int deflationIter = 0;
+    const int maxDeflationIters = 4;
 
-    // Solve the nonlinear system
-    LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
+    while (deflationIter < maxDeflationIters
+           &&  status==LOCA::Abstract::Iterator::Finished) {
 
-    if (status != LOCA::Abstract::Iterator::Finished)
-      globalData->locaUtils->out() << "Stepper failed to converge!" 
+      // ToDo:  Add deflateAndReset(vec) to Homotopy group,
+      //        including option to perturb startVec
+
+      Teuchos::RefCountPtr<LOCA::Homotopy::DeflatedGroup> hGrp = 
+        Teuchos::rcp(new LOCA::Homotopy::DeflatedGroup(globalData,
+                        paramList, hParams, grp, startVec, solns,homScale)); 
+
+      // Override default parameters
+      stepperList.set("Max Nonlinear Iterations", maxNewtonIters);
+      stepperList.set("Continuation Method", "Arc Length");
+      stepperList.set("Max Steps", 100);
+
+      stepSizeList.set("Min Step Size", 1.0e-5);
+
+
+      // Create the stepper  
+      LOCA::Stepper stepper(globalData, hGrp, combo, paramList);
+
+      // Solve the nonlinear system
+      status = stepper.run();
+
+      if (status != LOCA::Abstract::Iterator::Finished) 
+        globalData->locaUtils->out() << "Stepper failed to converge!" 
 				   << std::endl;
+      else {
+        // Deflate with soln vector just solved for
+        solns.push_back(grp->getX().clone(NOX::DeepCopy));
+ 
+        // If seed1=seed2, then all seeds the same. Otherwise, keep incrementing seed
+        startVec->random(true, seed2 + deflationIter*(seed2-seed1)); 
+      }
 
-    // Output the parameter list
-    if (globalData->locaUtils->isPrintType(NOX::Utils::StepperParameters)) {
-      globalData->locaUtils->out() 
-	<< std::endl << "Final Parameters" << std::endl
-	<< "****************" << std::endl;
-      stepper.getList()->print(globalData->locaUtils->out());
-      globalData->locaUtils->out() << std::endl;
-    }
+      deflationIter++;
+
+      // Output the parameter list
+      if (globalData->locaUtils->isPrintType(NOX::Utils::StepperParameters)) {
+        globalData->locaUtils->out() 
+  	<< std::endl << "Final Parameters for deflation iter " 
+        << deflationIter << std::endl
+  	<< "****************" << std::endl;
+        stepper.getList()->print(globalData->locaUtils->out());
+        globalData->locaUtils->out() << std::endl;
+      }
+
+    } //End While loop over delfation iters
 
     LOCA::destroyGlobalData(globalData);
   }
