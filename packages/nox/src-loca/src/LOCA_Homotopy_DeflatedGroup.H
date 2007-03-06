@@ -96,13 +96,14 @@ namespace LOCA {
      * The modified system of equations, \f$ g(x, \lambda) \f$, supplied by 
      * the HomotopyGroup is defined as:
      *
-     * \f[ g(x, \lambda) = \lambda F(x) + (1.0 - \lambda)(x - a) \f]
+     * \f[ g(x, \lambda) = \lambda F(x) + (1.0 - \lambda)(x - a)(S) \f]
      *
      * where \f$x\f$ is the solution vector, \f$ \lambda \f$ is an artificial 
      * parameter, \f$ F(x) \f$ is the set of nonlinear equations the user 
      * supplies, \f$ g(x) \f$ is the corresponding set of 
-     * homotopy equations that LOCA will solve, and \f$ a \f$ is a random 
-     * vector.
+     * homotopy equations that LOCA will solve, \f$ a \f$ is a random 
+     * vector, and  \f$ S \f$ is a scaling factor used to switch sign of 
+     * the last term (typically valued 1.0 or -1.0).
      *
      * This group requires the loca Stepper for continuation
      * from \f$ \lambda \f$ = 0.0 (a simple set of equations to solve) to 
@@ -140,7 +141,8 @@ namespace LOCA {
        const Teuchos::RefCountPtr<Teuchos::ParameterList>& hParams,
        const Teuchos::RefCountPtr<LOCA::Homotopy::AbstractGroup>& grp,
        const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& start_vec,
-       const std::vector< Teuchos::RefCountPtr<const NOX::Abstract::Vector> >& prev_solns);
+       const std::vector< Teuchos::RefCountPtr<const NOX::Abstract::Vector> >& prev_solns,
+       const double identity_sign = 1.0);
 
       //! Copy constructor
       DeflatedGroup(const DeflatedGroup& source, 
@@ -484,6 +486,9 @@ namespace LOCA {
 
       //! Stores the starting vector, \f$ x^\ast \f$.
       Teuchos::RefCountPtr<const NOX::Abstract::Vector> startVec;
+
+      //! 
+      double identitySign;
 
       //! Stores array of deflated solution vectors
       std::vector< Teuchos::RefCountPtr<const NOX::Abstract::Vector> > solns;

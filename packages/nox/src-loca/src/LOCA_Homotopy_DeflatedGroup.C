@@ -60,7 +60,8 @@ DeflatedGroup(
        const Teuchos::RefCountPtr<Teuchos::ParameterList>& hParams,
        const Teuchos::RefCountPtr<LOCA::Homotopy::AbstractGroup>& g,
        const Teuchos::RefCountPtr<const NOX::Abstract::Vector>& start_vec,
-       const std::vector< Teuchos::RefCountPtr<const NOX::Abstract::Vector> >& prev_solns)
+       const std::vector< Teuchos::RefCountPtr<const NOX::Abstract::Vector> >& prev_solns,
+       const double identity_sign)
   : globalData(global_data),
     parsedParams(),
     homotopyParams(hParams),
@@ -75,6 +76,7 @@ DeflatedGroup(
     newtonVec(),
     gradientVec(),
     startVec(start_vec),
+    identitySign(identity_sign),
     solns(prev_solns),
     distVec(startVec->clone(NOX::ShapeCopy)),
     totalDistMultiVec(startVec->createMultiVector(1, NOX::ShapeCopy)),
@@ -115,7 +117,9 @@ DeflatedGroup(
   parsedParams = Teuchos::rcp(new LOCA::Parameter::SublistParser(globalData));
   parsedParams->parseSublists(topParams);
 
-  // Set parameters in solution vector
+  // Set initial solution and parameters in solution vector
+  grpPtr->setX(*startVec);
+  *(xVec->getXVec()) = *startVec;
   xVec->getScalar(0) = conParam;
 
   // Create "C" block in bordered solver
@@ -153,6 +157,7 @@ DeflatedGroup(const LOCA::Homotopy::DeflatedGroup& source,
     newtonVec(),
     gradientVec(),
     startVec(source.startVec),
+    identitySign(source.identitySign),
     solns(source.solns),
     distVec(source.distVec->clone(type)),
     totalDistMultiVec(source.totalDistMultiVec->clone(type)),
@@ -295,12 +300,12 @@ computeF()
     distances[i] = distVec->norm();
     distProd *= distances[i];
   }
-  distVec->update(1.0, grpPtr->getX(), -1.0, *startVec, 0.0);
+  distVec->update(identitySign, grpPtr->getX(), -identitySign, *startVec, 0.0);
   fVec->getXVec()->update(conParam / distProd, grpPtr->getF(), 
 			  1.0 - conParam, *distVec, 0.0);
   fVec->getScalar(0) = 0.0;
   (*underlyingF)[0] = grpPtr->getF();
-  
+
   isValidF = true;
 
   return finalStatus;
@@ -338,7 +343,7 @@ computeJacobian()
   totalDistVec->scale(conParam / distProd);
 
   NOX::Abstract::Group::ReturnType augHomTest = 
-    grpPtr->augmentJacobianForHomotopy(conParam/distProd, 1.0-conParam);
+    grpPtr->augmentJacobianForHomotopy(conParam/distProd, identitySign*(1.0-conParam));
 
   // If it is not implemented, augment the Jacobian during the 
   // applyJacobian() call.
@@ -775,6 +780,7 @@ copy(const NOX::Abstract::Group& src)
     newtonMultiVec = source.newtonMultiVec;
     gradientMultiVec = source.gradientMultiVec;
     startVec = source.startVec;
+    identitySign = source.identitySign;
     solns = source.solns;
     *distVec = *source.distVec;
     *totalDistMultiVec = *source.totalDistMultiVec;
