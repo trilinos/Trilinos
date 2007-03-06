@@ -29,7 +29,9 @@
 #include "zz_id_const.h"
 #include "zoltan_util.h"
 #include "par_const.h"
+#ifdef ZOLTAN_DRUM
 #include "ha_drum.h"
+#endif
 #include "zoltan_timer.h"
 
 #ifdef __cplusplus
@@ -530,7 +532,9 @@ struct Zoltan_Struct {
   /***************************************************************************/
   struct Zoltan_LB_Struct LB;          /* Struct with info for load balancing */
   struct Zoltan_Migrate_Struct Migrate;/* Struct with info for migration.     */
+#ifdef ZOLTAN_DRUM
   struct Zoltan_Drum_Struct Drum;      /* Struct with info for DRUM interface */
+#endif
 };
 
 typedef struct Zoltan_Struct ZZ;

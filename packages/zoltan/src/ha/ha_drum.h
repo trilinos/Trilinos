@@ -11,6 +11,8 @@
  *    $Revision$
  ****************************************************************************/
 
+#ifdef ZOLTAN_DRUM
+
 #ifndef __HA_DRUM_H
 #define __HA_DRUM_H
 
@@ -63,3 +65,5 @@ extern int Zoltan_Drum_Set_Part_Sizes(struct Zoltan_Struct *zz);
 #endif
 
 #endif
+
+#endif /* ZOLTAN_DRUM */

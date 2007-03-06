@@ -11,6 +11,8 @@
  *    $Revision$
  ****************************************************************************/
 
+#ifdef ZOLTAN_DRUM
+
 /* Implementation of DRUM interface with Zoltan */
 /* Compile with ZOLTAN_DRUM and set USE_DRUM parameter to 1 to use */
 
@@ -23,13 +25,11 @@ extern "C" {
 #include "zz_const.h"
 #include <string.h>
 
-#ifdef ZOLTAN_DRUM
 /* These belong in drum.h, but we want to avoid the dependency on
    drum.h for Zoltan_Struct */
 extern int DRUM_hierCreateCallbacks(DRUM_machineModel *dmm, 
 				    struct Zoltan_Struct *zz);
 extern void DRUM_hierSetCallbacks(struct Zoltan_Struct *zz);
-#endif
 
 /**********  parameters structure for DRUM-related methods **********/
 static PARAM_VARS Drum_params[] = {
@@ -58,18 +58,13 @@ char *val)			/* value of variable */
 }
 
 int Zoltan_Drum_Init_Struct(struct Zoltan_Drum_Struct *zds) {
-  char *yo = "Zoltan_Drum_Init_Struct";
 
-#ifdef ZOLTAN_DRUM
   zds->dmm = NULL;
-#endif
 
   return ZOLTAN_OK;
 }
 
 int Zoltan_Drum_Init(ZZ *zz) {
-  char *yo = "Zoltan_Drum_Init";
-  int ierr;
 
   /* bind DRUM-related Zoltan parameters */
   Zoltan_Bind_Param(Drum_params, "USE_DRUM", (void *) &zz->Drum.use_drum);
@@ -92,10 +87,8 @@ int Zoltan_Drum_Init(ZZ *zz) {
 		    (void *) &zz->Drum.use_nws);
 
   /* set default values */
-#ifdef ZOLTAN_DRUM
   /* can't do this - this is called on each LB_Balance invocation */
   /*zz->Drum.dmm = NULL;*/
-#endif
   zz->Drum.use_drum = 0;
   zz->Drum.drum_hier = 0;
   zz->Drum.build_tree = 1;
@@ -122,7 +115,6 @@ int Zoltan_Drum_Create_Model(ZZ *zz) {
   /* check params */
   Zoltan_Drum_Init(zz);
 
-#ifdef ZOLTAN_DRUM
   if (zz->Drum.use_drum && !zz->Drum.dmm) {
     if (zz->Drum.build_tree) {
       zz->Drum.dmm = DRUM_createMachineModel(zz->Communicator,
@@ -183,12 +175,6 @@ int Zoltan_Drum_Create_Model(ZZ *zz) {
       }
     }
   }
-#else
-  if (zz->Drum.use_drum) {
-    ZOLTAN_PRINT_WARN(zz->Proc, yo, "DRUM support not compiled into Zoltan");
-    return ZOLTAN_WARN;
-  }
-#endif
 
   return ZOLTAN_OK;
 }
@@ -196,21 +182,17 @@ int Zoltan_Drum_Create_Model(ZZ *zz) {
 /****************************************************************************/
 void Zoltan_Drum_Free_Structure(ZZ *zz) {
 
-#ifdef ZOLTAN_DRUM
   if (zz->Drum.dmm) {
     DRUM_deleteMachineModel(zz->Drum.dmm);
   }
   zz->Drum.dmm = NULL;
-#endif
 }
 
 /****************************************************************************/
 void Zoltan_Drum_Copy_Struct(struct Zoltan_Drum_Struct *to,
 			     struct Zoltan_Drum_Struct const *from) {
 
-#ifdef ZOLTAN_DRUM
   to->dmm = from->dmm;
-#endif
   to->use_drum = from->use_drum;
   to->build_tree = from->build_tree;
   to->start_monitors = from->start_monitors;
@@ -225,7 +207,6 @@ void Zoltan_Drum_Copy_Struct(struct Zoltan_Drum_Struct *to,
 /****************************************************************************/
 
 int Zoltan_Drum_Start_Monitors(ZZ *zz) {
-#ifdef ZOLTAN_DRUM
   int ierr;
   char *yo = "Zoltan_Drum_Start_Monitors";
 
@@ -242,12 +223,10 @@ int Zoltan_Drum_Start_Monitors(ZZ *zz) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Unable to start DRUM monitors");
     return ZOLTAN_FATAL;
   }
-#endif
   return ZOLTAN_OK;
 }
 
 int Zoltan_Drum_Stop_Monitors(ZZ *zz) {
-#ifdef ZOLTAN_DRUM
   int ierr;
   char *yo = "Zoltan_Drum_Stop_Monitors";
   FILE *fp;
@@ -289,12 +268,11 @@ int Zoltan_Drum_Stop_Monitors(ZZ *zz) {
       printf("Skipping power file output\n"); fflush(stdout);
     }
   }
-#endif
+
   return ZOLTAN_OK;
 }
 
 int Zoltan_Drum_Set_Part_Sizes(ZZ *zz) {
-#ifdef ZOLTAN_DRUM
   /* for now this work for a single weight dimension and exactly
      one partition per process.  It may make sense to enhance it, 
      particularly in relation to hierarchical balancing.
@@ -332,10 +310,11 @@ int Zoltan_Drum_Set_Part_Sizes(ZZ *zz) {
   /* now set the part size computed by DRUM */
   Zoltan_LB_Set_Part_Sizes(zz, 0, 1, &part_id, &wgt_idx, &part_size);
 
-#endif
   return ZOLTAN_OK;
 }
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
 #endif
+
+#endif /* ZOLTAN_DRUM */
