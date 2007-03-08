@@ -652,7 +652,7 @@ uninstall-info: uninstall-info-recursive
 
 #The following line helps the test harness recover from build errors. 
 all-local:
-	@echo "Sacado built successfully"
+	@echo "Trilinos package sacado built successfully"
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

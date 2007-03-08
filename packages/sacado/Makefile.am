@@ -59,7 +59,7 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 
 #The following line helps the test harness recover from build errors. 
 all-local:
-	@echo "Sacado built successfully"
+	@echo "Trilinos package sacado built successfully"
 
 ## #######################################################################
 ## Subdirectories to be make'd recursively
