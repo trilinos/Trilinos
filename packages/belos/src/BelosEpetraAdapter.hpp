@@ -145,13 +145,51 @@ namespace Belos {
   ///////////////////////////////////////////////////////////////
   //--------template class BelosEpetraPrecOp---------------------
   
-  class EpetraPrecOp : public virtual Operator<double> {
+  class EpetraPrecOp : public virtual Operator<double>, public virtual Epetra_Operator {
   public:
+    //! Basic constructor for applying the operator as its inverse.
     EpetraPrecOp( const Teuchos::RefCountPtr<Epetra_Operator> &Op );
-    ~EpetraPrecOp() {};
+
+    //! Destructor
+    virtual ~EpetraPrecOp() {};
+
+    //! Apply method for a Belos::MultiVec [inherited from Belos::Operator class]
     ReturnType Apply ( const MultiVec<double>& x, MultiVec<double>& y, ETrans trans=NOTRANS ) const;
+
+    //! Apply method for an Epetra_MultiVector [inherited from Epetra_Operator class]
+    int Apply( const Epetra_MultiVector &X, Epetra_MultiVector &Y ) const;
+
+    //! Apply inverse method for an Epetra_MultiVector [inherited from Epetra_Operator class]
+    int ApplyInverse( const Epetra_MultiVector &X, Epetra_MultiVector &Y ) const;
+
+    //! Returns a character string describing the operator.
+    const char* Label() const { return "Epetra_Operator applying A^{-1} as A"; };
+
+    //! Returns the current UseTranspose setting [always false for this operator].
+    bool UseTranspose() const { return (false); };
+
+    //! If set true, the transpose of this operator will be applied [not functional for this operator].
+    int SetUseTranspose(bool UseTranspose) { return 0; };
+
+    //! Returns true if this object can provide an approximate inf-norm [always false for this operator].
+    bool HasNormInf() const { return (false); };
+
+    //! Returns the infinity norm of the global matrix [not functional for this operator].
+    double NormInf() const  { return (-1.0); };
+
+    //! Returns the Epetra_Comm communicator associated with this operator.
+    const Epetra_Comm& Comm() const { return Epetra_Op->Comm(); };
+
+    //! Returns the Epetra_Map object associated with the domain of this operator.
+    const Epetra_Map& OperatorDomainMap() const { return Epetra_Op->OperatorDomainMap(); };
+
+    //! Returns the Epetra_Map object associated with the range of this operator.
+    const Epetra_Map& OperatorRangeMap() const { return Epetra_Op->OperatorRangeMap(); };
+    
   private:
+
     Teuchos::RefCountPtr<Epetra_Operator> Epetra_Op;
+
   };
 
   

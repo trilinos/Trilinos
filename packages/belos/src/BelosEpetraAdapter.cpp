@@ -307,3 +307,23 @@ ReturnType EpetraPrecOp::Apply ( const MultiVec<double>& x,
   return Ok;	
 }
 
+int EpetraPrecOp::Apply ( const Epetra_MultiVector &X, Epetra_MultiVector &Y ) const 
+{
+  //
+  // This operator applies Y = A^{-1}*X
+  //
+  int info = 0;
+  info = Epetra_Op->ApplyInverse( X, Y );
+  return info;
+}
+
+int EpetraPrecOp::ApplyInverse( const Epetra_MultiVector &X, Epetra_MultiVector &Y ) const
+{
+  //
+  // This operator applies Y = A*X
+  //
+  int info = 0;
+  info = Epetra_Op->Apply( X, Y );
+  return info;
+}
+
