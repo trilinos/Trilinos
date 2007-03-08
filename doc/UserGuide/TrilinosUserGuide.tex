@@ -106,15 +106,12 @@ document is also available specifically for Trilinos developers; please see
 the Trilinos Developers Guide~\cite{Trilinos-Dev-Guide}.  The Developers
 Guide contains both tutorial and general reference material.  
 
-The current set of packages in Trilinos is shown in 
-Figure~\ref{Figure:TrilinosPackages}.
-
-\begin{figure}
-\begin{center}
-\includegraphics[height=6in,angle=90]{../CommonFiles/TrilinosPackagesDiagram}
-\end{center}
-\caption{\label{Figure:TrilinosPackages}Current collection of Trilinos Packages}
-\end{figure}
+An overview of current Trilinos package capabilities can be found on the
+Trilinos website at 
+\InlineDirectory{http://software.sandia.gov/trilinos/capabilities.html}.
+A summary of the packages included in every Trilinos release is also on
+the website at 
+\InlineDirectory{http://software.sandia.gov/trilinos/versions.html}.
 
 \subsection{Typographical Conventions}
 
@@ -255,8 +252,6 @@ To run the test suite (the tool will only attempt to run tests that were
 built), simply do a make first and then type:
 
 \DisplayCommand{make runtests-serial}
-
-to run the entire test suite (for the base Trilinos test directory).
 
 To run the test suite for a single package, cd to 
 \InlineDirectory{package/test} (replace "package" with the name of a 
