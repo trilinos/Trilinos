@@ -63,7 +63,7 @@ public:
 
 	/*! \brief Creates a new empty %Belos::MultiVec containing \c numvecs columns.
 
-	    \return Pointer to the new multivector	
+	    \return Pointer to the new multivector with uninitialized values	
 	*/
 
 	virtual MultiVec<ScalarType> * Clone ( const int numvecs ) const = 0;

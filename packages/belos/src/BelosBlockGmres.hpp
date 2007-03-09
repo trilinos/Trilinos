@@ -58,6 +58,7 @@
 #include "BelosOperatorTraits.hpp"
 #include "BelosMultiVecTraits.hpp"
 #include "BelosDGKSOrthoManager.hpp"
+#include "BelosICGSOrthoManager.hpp"
 
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_LAPACK.hpp"
@@ -213,6 +214,9 @@ namespace Belos {
     //! Whether this solver is using the flexible variant or not.
     bool _flexible;
 
+    //! What type of orthogonalization being used in this solver.
+    string _orthoType;
+
     //! Storage for QR factorization of the least-squares system.
     Teuchos::SerialDenseVector<int,ScalarType> beta, sn;
     Teuchos::SerialDenseVector<int,MagnitudeType> cs;
@@ -248,12 +252,16 @@ namespace Belos {
     _totaliter(0),
     _iter(0),
     _flexible( (_pl->isParameter("Variant"))&&(Teuchos::getParameter<std::string>(*_pl, "Variant")=="Flexible") ),
+    _orthoType( "DGKS" ),
     _restartTimers(true),
     _timerOp(Teuchos::TimeMonitor::getNewTimer("Operation Op*x")),
     _timerPrec(Teuchos::TimeMonitor::getNewTimer("Operation Prec*x")),
     _timerOrtho(Teuchos::TimeMonitor::getNewTimer("Orthogonalization")),
     _timerTotal(Teuchos::TimeMonitor::getNewTimer("Total time"))    
   {
+    if (_pl->isParameter("Ortho Type")) {
+      _orthoType = Teuchos::getParameter<std::string>(*_pl, "Ortho Type" );
+    }
   }
     
   template <class ScalarType, class MV, class OP>
@@ -350,7 +358,10 @@ namespace Belos {
     //
     // Create the orthogonalization manager.
     //
-    _ortho = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>() );
+    if (_orthoType=="ICGS")
+      _ortho = Teuchos::rcp( new ICGSOrthoManager<ScalarType,MV,OP>() );
+    else 
+      _ortho = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>() );
     //
     // Obtain the output stream from the OutputManager.
     //
@@ -390,8 +401,8 @@ namespace Belos {
       //
       // Create the rectangular Hessenberg matrix and right-hand side of least squares problem.
       //
-      _hessmatrix.shape((_length+1)*_blocksize, _length*_blocksize);
-      _z.shape((_length+1)*_blocksize, _blocksize); 
+      _hessmatrix.shapeUninitialized((_length+1)*_blocksize, _length*_blocksize);
+      _z.shapeUninitialized((_length+1)*_blocksize, _blocksize); 
       //
       //
       for ( _restartiter=0; _stest->CheckStatus(this) == Unconverged && restart_flg; ++_restartiter ) {
@@ -416,7 +427,11 @@ namespace Belos {
 	_z.putScalar();
 	Teuchos::RefCountPtr< Teuchos::SerialDenseMatrix<int,ScalarType> > G10
 	  = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View, _z, _blocksize, _blocksize) );
-	int rank = _ortho->normalize( *U_vec, G10 );
+        int rank = 0;
+        {
+          Teuchos::TimeMonitor OrthoTimer(*_timerOrtho);
+	  rank = _ortho->normalize( *U_vec, G10 );
+        }
 	//
 	if (rank != _blocksize){
 	  if (_om->isVerbosityAndPrint( Errors )){
@@ -655,7 +670,11 @@ namespace Belos {
     //
     // Orthonormalize the new block of the Krylov expansion
     // 
-    int rank = _ortho->projectAndNormalize( *AU_vec, h_array, r_new, V_array );
+    int rank = 0;
+    {
+      Teuchos::TimeMonitor OrthoTimer(*_timerOrtho);
+      rank = _ortho->projectAndNormalize( *AU_vec, h_array, r_new, V_array );
+    }
 
     if (rank != _blocksize) {
       flg = true;

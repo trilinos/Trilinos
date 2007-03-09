@@ -49,8 +49,8 @@ EpetraMultiVec::EpetraMultiVec(const Epetra_BlockMap& Map, double * array,
 }
 
 
-EpetraMultiVec::EpetraMultiVec(const Epetra_BlockMap& Map, const int numvecs)
-  : Epetra_MultiVector(Map, numvecs) 
+EpetraMultiVec::EpetraMultiVec(const Epetra_BlockMap& Map, const int numvecs, bool zeroOut)
+  : Epetra_MultiVector(Map, numvecs, zeroOut) 
 {
 }
 
@@ -82,7 +82,7 @@ EpetraMultiVec::~EpetraMultiVec()
 
 MultiVec<double>* EpetraMultiVec::Clone ( const int numvecs ) const
 {
-  EpetraMultiVec * ptr_apv = new EpetraMultiVec(Map(), numvecs);
+  EpetraMultiVec * ptr_apv = new EpetraMultiVec(Map(), numvecs, false);
   return ptr_apv; // safe upcast.
 }
 //

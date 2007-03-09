@@ -23,6 +23,7 @@ CORE_H = \
 	$(srcdir)/BelosDGKSOrthoManager.hpp \
 	$(srcdir)/BelosEpetraAdapter.hpp \
 	$(srcdir)/BelosEpetraOperator.h \
+	$(srcdir)/BelosICGSOrthoManager.hpp \
 	$(srcdir)/BelosIterativeSolver.hpp \
 	$(srcdir)/BelosLinearProblem.hpp \
 	$(srcdir)/BelosMatOrthoManager.hpp \

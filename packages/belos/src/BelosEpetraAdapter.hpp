@@ -50,7 +50,7 @@ namespace Belos {
   public:
     // constructors
     EpetraMultiVec(const Epetra_BlockMap& Map, double * array, const int numvecs, const int stride=0);
-    EpetraMultiVec(const Epetra_BlockMap& Map, const int numvecs);
+    EpetraMultiVec(const Epetra_BlockMap& Map, const int numvecs, bool zeroOut=true);
     EpetraMultiVec(Epetra_DataAccess CV, const Epetra_MultiVector& P_vec, const std::vector<int>& index);
     EpetraMultiVec& operator=(const EpetraMultiVec& pv) { Epetra_MultiVector::operator=(pv); return *this; }
     EpetraMultiVec(const Epetra_MultiVector & P_vec);
@@ -61,7 +61,7 @@ namespace Belos {
     //  the following is a virtual copy constructor returning
     //  a pointer to the pure virtual class. vector values are
     //  not copied; instead a new MultiVec is created containing
-    //  a non-zero amount of columns.
+    //  a non-zero amount of columns.  
     //
     MultiVec<double> * Clone ( const int numvecs ) const;
     //
@@ -205,7 +205,7 @@ namespace Belos {
   public:
     ///
     static Teuchos::RefCountPtr<Epetra_MultiVector> Clone( const Epetra_MultiVector& mv, const int numvecs )
-    { return Teuchos::rcp( new Epetra_MultiVector(mv.Map(), numvecs) ); }
+    { return Teuchos::rcp( new Epetra_MultiVector(mv.Map(), numvecs, false) ); }
     ///
     static Teuchos::RefCountPtr<Epetra_MultiVector> CloneCopy( const Epetra_MultiVector& mv )
     { return Teuchos::rcp( new Epetra_MultiVector( mv ) ); }
