@@ -33,8 +33,6 @@
     \brief Timer functions for C that starts and stops timers for C code.
 */
 
-#include "Teuchos_config.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
