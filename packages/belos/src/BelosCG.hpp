@@ -173,7 +173,7 @@ namespace Belos {
     bool _restartTimers;
 
     //! Internal timers
-    Teuchos::RefCountPtr<Teuchos::Time> _timerOp, _timerPrec, _timerTotal;
+    Teuchos::RefCountPtr<Teuchos::Time> _timerTotal;
   };
   
   //
@@ -193,8 +193,6 @@ namespace Belos {
     _os(om->GetOStream()),
     _iter(0),
     _restartTimers(true),
-    _timerOp(Teuchos::TimeMonitor::getNewTimer("Operation Op*x")),
-    _timerPrec(Teuchos::TimeMonitor::getNewTimer("Operation Prec*x")),
     _timerTotal(Teuchos::TimeMonitor::getNewTimer("Total time"))
   { 
   }
@@ -214,11 +212,6 @@ namespace Belos {
   CG<ScalarType,MV,OP>::Solve () 
   {
     Teuchos::TimeMonitor LocalTimer(*_timerTotal,_restartTimers);
-
-    if ( _restartTimers ) {
-      _timerOp->reset();
-      _timerPrec->reset();
-    }
 
     // Get the output stream from the OutputManager
     _os = _om->GetOStream();
@@ -264,10 +257,7 @@ namespace Belos {
       // Multiply the current solution by A and store in _Ap
       //       _Ap = A*_p 
       //
-      {
-	Teuchos::TimeMonitor OpTimer(*_timerOp);
-	_lp->ApplyOp( *_p, *_Ap );
-      }
+      _lp->ApplyOp( *_p, *_Ap );
       //
       // Compute initial residual and store in _residvec
       //     _residvec = cur_block_rhs - _Ap
@@ -278,10 +268,7 @@ namespace Belos {
       // Initially, they are set to the preconditioned residuals
       //
       if ( isPrec ) {
-	{
-	  Teuchos::TimeMonitor PrecTimer(*_timerPrec);
-	  _lp->ApplyLeftPrec( *_residvec, *_z ); 
-	}
+	_lp->ApplyLeftPrec( *_residvec, *_z ); 
 	MVT::MvAddMv( one, *_z, zero, *_z, *_p );
       } else {
 	MVT::MvAddMv( one, *_residvec, zero, *_residvec, *_z ); 
@@ -302,10 +289,7 @@ namespace Belos {
 	  // Multiply the current direction vector by A and store in _Ap
 	  //       _Ap = A*_p 
 	  //
-	  {
-	    Teuchos::TimeMonitor OpTimer(*_timerOp);
-	    _lp->ApplyOp( *_p, *_Ap );
-	  }
+	  _lp->ApplyOp( *_p, *_Ap );
 	  //
 	  // Compute alpha := <_residvec, _z> / <_p, _Ap >
 	  //
@@ -340,10 +324,7 @@ namespace Belos {
 	  // and the new direction vector p.
 	  //
 	  if ( isPrec ) {
-	    {
-	      Teuchos::TimeMonitor PrecTimer(*_timerPrec);
-	      _lp->ApplyLeftPrec( *_residvec, *_z );
-	    }
+	    _lp->ApplyLeftPrec( *_residvec, *_z );
 	  } else {
 	    MVT::MvAddMv( one, *_residvec, zero, *_residvec, *_z ); 
 	  }

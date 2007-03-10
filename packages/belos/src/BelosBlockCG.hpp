@@ -196,8 +196,7 @@ private:
   bool _restartTimers;
 
   //! Internal timers
-  Teuchos::RefCountPtr<Teuchos::Time> _timerOp, _timerPrec, 
-                                      _timerOrtho, _timerTotal;
+  Teuchos::RefCountPtr<Teuchos::Time> _timerOrtho, _timerTotal;
 };
   
   //
@@ -221,8 +220,6 @@ private:
     _prec(1.0), 
     _dep_tol(1.0),
     _restartTimers(true),
-    _timerOp(Teuchos::TimeMonitor::getNewTimer("Operation Op*x")),
-    _timerPrec(Teuchos::TimeMonitor::getNewTimer("Operation Prec*x")),
     _timerOrtho(Teuchos::TimeMonitor::getNewTimer("Orthogonalization")),
     _timerTotal(Teuchos::TimeMonitor::getNewTimer("Total time"))
   { 
@@ -265,8 +262,6 @@ private:
     Teuchos::TimeMonitor LocalTimer(*_timerTotal,_restartTimers);
 
     if ( _restartTimers ) {
-      _timerOp->reset();
-      _timerPrec->reset();
       _timerOrtho->reset();
     }
     //
@@ -394,10 +389,7 @@ private:
     // Multiply by A and store in AP_prev
     //       AP_prev = A*P_prev
     //
-    {
-      Teuchos::TimeMonitor OpTimer(*_timerOp);
-      _lp->ApplyOp( *P_prev, *AP_prev );
-    }
+    _lp->ApplyOp( *P_prev, *AP_prev );
     //
     // Compute initial residual block and store in 1st block of _residvecs
     //     R_prev = cur_block_rhs - A*P_prev
@@ -436,7 +428,6 @@ private:
       // Initially, they are set to the preconditioned residuals
       //
       if ( isPrec ) {
-	Teuchos::TimeMonitor PrecTimer(*_timerPrec);
 	_lp->ApplyLeftPrec( *R_prev, *P_prev );
       } else {
 	MVT::MvAddMv( one , *R_prev, zero, *R_prev, *P_prev); 
@@ -541,10 +532,7 @@ private:
 	alpha.reshape( ind_blksz, _blocksize );
 	T2.reshape( ind_blksz, ind_blksz );
       }
-      {
-	Teuchos::TimeMonitor OpTimer(*_timerOp);
-	_lp->ApplyOp( *P_prev, *AP_prev );
-      }
+      _lp->ApplyOp( *P_prev, *AP_prev );
       MVT::MvTransMv( one, *P_prev, *R_prev, alpha);   
       MVT::MvTransMv( one, *P_prev, *AP_prev, T2);
       //
@@ -648,7 +636,6 @@ private:
       // since P_new = precond_resid + P_prev * beta
       //
       if ( isPrec ) {
-	Teuchos::TimeMonitor PrecTimer(*_timerPrec);
 	_lp->ApplyLeftPrec( *R_new, *P_new );
       } else { 
 	MVT::MvAddMv( one, *R_new, zero, *R_new, *P_new ); 
@@ -938,10 +925,7 @@ private:
     int numvecs2 = MVT::GetNumberVecs( P2 );
     //
     RefCountPtr<MV> AP = MVT::Clone( P1, numvecs1 );
-    {
-      Teuchos::TimeMonitor OpTimer(*_timerOp);
-      _lp->ApplyOp(P1, *AP);
-    }
+    _lp->ApplyOp(P1, *AP);
     //
     Teuchos::SerialDenseMatrix<int,ScalarType> PAP(numvecs2, numvecs1);
     MVT::MvTransMv( one, P2, *AP, PAP);

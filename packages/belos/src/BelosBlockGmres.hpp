@@ -225,8 +225,7 @@ namespace Belos {
     bool _restartTimers;
     
     //! Internal timers
-    Teuchos::RefCountPtr<Teuchos::Time> _timerOp, _timerPrec, 
-                                        _timerOrtho, _timerTotal;
+    Teuchos::RefCountPtr<Teuchos::Time> _timerOrtho, _timerTotal;
   };
 
   //
@@ -254,8 +253,6 @@ namespace Belos {
     _flexible( (_pl->isParameter("Variant"))&&(Teuchos::getParameter<std::string>(*_pl, "Variant")=="Flexible") ),
     _orthoType( "DGKS" ),
     _restartTimers(true),
-    _timerOp(Teuchos::TimeMonitor::getNewTimer("Operation Op*x")),
-    _timerPrec(Teuchos::TimeMonitor::getNewTimer("Operation Prec*x")),
     _timerOrtho(Teuchos::TimeMonitor::getNewTimer("Orthogonalization")),
     _timerTotal(Teuchos::TimeMonitor::getNewTimer("Total time"))    
   {
@@ -341,8 +338,6 @@ namespace Belos {
     Teuchos::TimeMonitor LocalTimer(*_timerTotal,_restartTimers);
 
     if ( _restartTimers ) {
-      _timerOp->reset();
-      _timerPrec->reset();
       _timerOrtho->reset();
     }
 
@@ -427,11 +422,7 @@ namespace Belos {
 	_z.putScalar();
 	Teuchos::RefCountPtr< Teuchos::SerialDenseMatrix<int,ScalarType> > G10
 	  = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View, _z, _blocksize, _blocksize) );
-        int rank = 0;
-        {
-          Teuchos::TimeMonitor OrthoTimer(*_timerOrtho);
-	  rank = _ortho->normalize( *U_vec, G10 );
-        }
+        int rank = _ortho->normalize( *U_vec, G10 );
 	//
 	if (rank != _blocksize){
 	  if (_om->isVerbosityAndPrint( Errors )){
@@ -627,23 +618,15 @@ namespace Belos {
       //
       //  Apply right preconditioning and store it in _z_basisvecs.             
       //                                                                        
-      {
-	Teuchos::TimeMonitor PrecTimer(*_timerPrec);
-	_lp->ApplyRightPrec( *U_vec, *Z_vec );                                    
-      }
+      _lp->ApplyRightPrec( *U_vec, *Z_vec );                                    
       //                                                                        
       //  Apply operator and store it in AU_vec.                                
       //                                                                        
-      {
-	Teuchos::TimeMonitor OpTimer(*_timerOp);
-	_lp->ApplyOp( *Z_vec, *AU_vec );                                          
-      }
+      _lp->ApplyOp( *Z_vec, *AU_vec );                                          
     } 
-    else                                                                      
-      { 
-	Teuchos::TimeMonitor OpTimer(*_timerOp);
-	_lp->Apply( *U_vec, *AU_vec ); 
-      }
+    else {                                                                     
+      _lp->Apply( *U_vec, *AU_vec ); 
+    }
 
     // Clean up pointer to the j-th block of _basisvecs
     U_vec = Teuchos::null;

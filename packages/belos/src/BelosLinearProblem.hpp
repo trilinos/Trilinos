@@ -37,6 +37,7 @@
 #include "BelosMultiVecTraits.hpp"
 #include "BelosOperatorTraits.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 
 using Teuchos::RefCountPtr;
 using Teuchos::rcp;
@@ -345,6 +346,9 @@ namespace Belos {
     //! Parameter list for defining the behavior of the linear problem class
     RefCountPtr<ParameterList> PL_;
 
+    //! Timers
+    Teuchos::RefCountPtr<Teuchos::Time> timerOp_, timerPrec_;
+
     //! Default block size of linear system.
     int default_blocksize_;
     
@@ -377,6 +381,8 @@ namespace Belos {
   
   template <class ScalarType, class MV, class OP>
   LinearProblem<ScalarType,MV,OP>::LinearProblem(void) : 
+    timerOp_(Teuchos::TimeMonitor::getNewTimer("Operation Op*x")),
+    timerPrec_(Teuchos::TimeMonitor::getNewTimer("Operation Prec*x")),
     default_blocksize_(1),
     blocksize_(1),
     num_to_solve_(0),
@@ -400,6 +406,8 @@ namespace Belos {
     A_(A),
     X_(X),
     B_(B),
+    timerOp_(Teuchos::TimeMonitor::getNewTimer("Operation Op*x")),
+    timerPrec_(Teuchos::TimeMonitor::getNewTimer("Operation Prec*x")),
     default_blocksize_(1),
     blocksize_(1),
     num_to_solve_(1),
@@ -428,6 +436,8 @@ namespace Belos {
     LP_(Problem.LP_),
     RP_(Problem.RP_),
     PL_(Problem.PL_),
+    timerOp_(Problem.timerOp_),
+    timerPrec_(Problem.timerPrec_),
     default_blocksize_(Problem.default_blocksize_),
     blocksize_(Problem.blocksize_),
     num_to_solve_(Problem.num_to_solve_),
@@ -658,31 +668,55 @@ namespace Belos {
     //
     // No preconditioning.
     // 
-    if (!Left_Prec_ && !Right_Prec_){ OPT::Apply( *A_, x, y );}
+    if (!Left_Prec_ && !Right_Prec_){ 
+      Teuchos::TimeMonitor OpTimer(*timerOp_);
+      OPT::Apply( *A_, x, y );
+    }
     //
     // Preconditioning is being done on both sides
     //
     else if( Left_Prec_ && Right_Prec_ ) 
       {
-	OPT::Apply( *RP_, x, y );   
-	OPT::Apply( *A_, y, *ytemp );
-	OPT::Apply( *LP_, *ytemp, y );
+        {
+          Teuchos::TimeMonitor PrecTimer(*timerPrec_);
+	  OPT::Apply( *RP_, x, y );   
+        }
+        {
+          Teuchos::TimeMonitor OpTimer(*timerOp_);
+	  OPT::Apply( *A_, y, *ytemp );
+        }
+        {
+          Teuchos::TimeMonitor PrecTimer(*timerPrec_);
+	  OPT::Apply( *LP_, *ytemp, y );
+        }
       }
     //
     // Preconditioning is only being done on the left side
     //
     else if( Left_Prec_ ) 
       {
-	OPT::Apply( *A_, x, *ytemp );
-	OPT::Apply( *LP_, *ytemp, y );
+        {
+          Teuchos::TimeMonitor PrecTimer(*timerPrec_);
+	  OPT::Apply( *A_, x, *ytemp );
+        }
+        {
+          Teuchos::TimeMonitor OpTimer(*timerOp_);
+	  OPT::Apply( *LP_, *ytemp, y );
+        }
       }
     //
     // Preconditioning is only being done on the right side
     //
     else 
       {
-	OPT::Apply( *RP_, x, *ytemp );
-	OPT::Apply( *A_, *ytemp, y );
+        {
+          Teuchos::TimeMonitor PrecTimer(*timerPrec_);
+	  OPT::Apply( *RP_, x, *ytemp );
+        }
+        {
+          Teuchos::TimeMonitor OpTimer(*timerOp_);
+      	  OPT::Apply( *A_, *ytemp, y );
+        }
       }  
     return Ok;
   }
@@ -690,8 +724,10 @@ namespace Belos {
   template <class ScalarType, class MV, class OP>
   ReturnType LinearProblem<ScalarType,MV,OP>::ApplyOp( const MV& x, MV& y )
   {
-    if (A_.get())
+    if (A_.get()) {
+      Teuchos::TimeMonitor OpTimer(*timerOp_);
       return ( OPT::Apply( *A_,x, y) );   
+    }
     else
       return Undefined;
   }
@@ -699,8 +735,10 @@ namespace Belos {
   template <class ScalarType, class MV, class OP>
   ReturnType LinearProblem<ScalarType,MV,OP>::ApplyLeftPrec( const MV& x, MV& y )
   {
-    if (Left_Prec_)
+    if (Left_Prec_) {
+      Teuchos::TimeMonitor PrecTimer(*timerPrec_);
       return ( OPT::Apply( *LP_,x, y) );
+    }
     else 
       return Undefined;
   }
@@ -708,8 +746,10 @@ namespace Belos {
   template <class ScalarType, class MV, class OP>
   ReturnType LinearProblem<ScalarType,MV,OP>::ApplyRightPrec( const MV& x, MV& y )
   {
-    if (Right_Prec_)
+    if (Right_Prec_) {
+      Teuchos::TimeMonitor PrecTimer(*timerPrec_);
       return ( OPT::Apply( *RP_,x, y) );
+    }
     else
       return Undefined;
   }
