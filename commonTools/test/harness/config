@@ -40,6 +40,25 @@ RUN (beowulf-nightly-mpi) {
 
 ###############################################################################
 #
+# beowulf coverage
+#
+###############################################################################
+
+RUN (beowulf-coverage) {
+    
+    BUILD-LABEL         = coverage;
+    BUILD-DIR           = COVERAGE;
+    COMM                = serial;
+    INVOKE-CONFIGURE    = linux-beowulf-coverage;
+   #TEST-CATEGORY       = COVERAGE; # set up later
+    TEST-CATEGORY       = FRAMEWORK;
+    TTR-DIR             = /common/TrilinosTestHarness/TrilinosTestResults;
+    SSG-USERNAME        = mnpheno;
+
+}
+
+###############################################################################
+#
 # beowulf-n6 nightly mpi
 #
 ###############################################################################
@@ -84,11 +103,87 @@ RUN (beowulf-n8-nightly-mpi) {
 
 ###############################################################################
 #
-# beowulf coverage
+# beowulf-n10 nightly mpi
 #
 ###############################################################################
 
-RUN (beowulf-coverage) {
+RUN (beowulf-n10-nightly-mpi) {
+    
+    BUILD-LABEL         = default;
+    BUILD-DIR           = MPI;
+    COMM                = mpi;
+    INVOKE-CONFIGURE    = linux-beowulf-mpi;
+    TEST-CATEGORY       = FRAMEWORK;
+    MAX-PROC            = 2;
+    MPI-START           = lamboot /home/mnphenow/.lamhosts_n10-n11;
+    MPI-PING            = mpitask;
+    MPI-STOP            = lamhalt;    
+    TTR-DIR             = /local/TrilinosTestHarness/TrilinosTestResults;
+    SSG-USERNAME        = mnpheno;
+
+}
+
+###############################################################################
+#
+# beowulf-n12 nightly serial
+#
+###############################################################################
+ 
+RUN (beowulf-n12-nightly-serial) {
+    
+    BUILD-LABEL         = default;
+    BUILD-DIR           = SERIAL;
+    COMM                = serial;
+    INVOKE-CONFIGURE    = linux-beowulf;
+    TEST-CATEGORY       = FRAMEWORK;
+    TTR-DIR             = /local/TrilinosTestHarness/TrilinosTestResults;
+    SSG-USERNAME        = mnpheno;
+
+}
+
+###############################################################################
+#
+# beowulf-n13 nightly serial
+#
+###############################################################################
+ 
+RUN (beowulf-n13-nightly-serial) {
+    
+    BUILD-LABEL         = default;
+    BUILD-DIR           = SERIAL;
+    COMM                = serial;
+    INVOKE-CONFIGURE    = linux-beowulf;
+    TEST-CATEGORY       = FRAMEWORK;
+    TTR-DIR             = /local/TrilinosTestHarness/TrilinosTestResults;
+    SSG-USERNAME        = mnpheno;
+
+}
+
+###############################################################################
+#
+# beowulf-n14 nightly serial
+#
+###############################################################################
+ 
+RUN (beowulf-n14-nightly-serial) {
+    
+    BUILD-LABEL         = default;
+    BUILD-DIR           = SERIAL;
+    COMM                = serial;
+    INVOKE-CONFIGURE    = linux-beowulf;
+    TEST-CATEGORY       = FRAMEWORK;
+    TTR-DIR             = /local/TrilinosTestHarness/TrilinosTestResults;
+    SSG-USERNAME        = mnpheno;
+
+}
+
+###############################################################################
+#
+# beowulf-n15 coverage
+#
+###############################################################################
+
+RUN (beowulf-n15-coverage) {
     
     BUILD-LABEL         = coverage;
     BUILD-DIR           = COVERAGE;
@@ -96,7 +191,7 @@ RUN (beowulf-coverage) {
     INVOKE-CONFIGURE    = linux-beowulf-coverage;
    #TEST-CATEGORY       = COVERAGE; # set up later
     TEST-CATEGORY       = FRAMEWORK;
-    TTR-DIR             = /common/TrilinosTestHarness/TrilinosTestResults;
+    TTR-DIR             = /local/TrilinosTestHarness/TrilinosTestResults;
     SSG-USERNAME        = mnpheno;
 
 }
