@@ -74,29 +74,8 @@ int Epetra_ML_GetCrsDataptrs(ML_Operator *data, double **values, int **cols, int
   Epetra_CrsMatrix * CrsA = NULL;
 
   CrsA = dynamic_cast<Epetra_CrsMatrix *>(A);
-  if( CrsA != NULL ) {
-     CrsA->OptimizeStorage();
-/*   These are commented out for now until we get an epetra call to 
-     return the data pointer arrays. If you want to use these, uncomment
-     this code line 
-*/
-        CrsA->ExtractCrsDataPointers(*rowptr, *cols, *values);
-/*
+  if( CrsA != NULL ) CrsA->ExtractCrsDataPointers(*rowptr, *cols, *values);
 
-     and stick the following in Epetra_CrsMatrix.h:
-
-  int ExtractCrsDataPointers(int *& IndexOffset, int *& Indices, double *& Values) const {
-    if (StorageOptimized()) {
-        IndexOffset = Graph().IndexOffset();
-        Indices = Graph().All_Indices();
-        Values  = All_Values();
-        return 0;
-     } 
-     else { IndexOffset = NULL; Indices = NULL; Values  = NULL; return -1;} }
-
-*/
-
-  }
   return 0;
 }
 
